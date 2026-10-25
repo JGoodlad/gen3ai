@@ -3,11 +3,14 @@
 🚨 **ALWAYS-CURRENT (owner, 2026-09-27; `README.md` in this directory).** When a decision, build or read differs from
 this doc, update the doc in the same commit and say in the Decision record (§8) what changed and why.
 
-**Status (2026-10-20): DESIGN; LG-0 READ (X55, [`x55_league_headroom_2026-10-20/`](../research_state/measurements/x55_league_headroom_2026-10-20/README.md), the
-same day: §2.4).** Nothing else here is built, registered or launched. The roadmap in §6 is sequenced AFTER
-X35 batch 1 ([`design_compute_efficiency.md`](design_compute_efficiency.md) §5.6, launch sheet
-[`BATCH1_LAUNCH_SHEET.md`](../research_state/measurements/x35_breakers_stage_2026-10-17/BATCH1_LAUNCH_SHEET.md)), whose
-toy block is on the GPU now. Every launch needs the orchestrator's GO, and a design block is not a launch command.
+**Status (2026-10-25): DESIGN; LG-0 READ (X55, [`x55_league_headroom_2026-10-20/`](../research_state/measurements/x55_league_headroom_2026-10-20/README.md),
+this doc's §2.4). No league arm (LG-1 to LG-5) is built, registered or launched.** X35 batch 1 has since been read: A1 (the archive pool) NULL, FINAL
+2026-10-22 (R1 +0.19 pp [-1.07, +1.46]; ledger L28259), so §7's "A1 NULL" row applies and LG-2 is DROPPED; R0-prod read HEADROOM H +11.1 pp with
+LG-1's 5M statistic +6.0 pp, so A6 is not triggered (ledger L28204); D1 UNDECIDED and the SPRT arm NULL (10-24). Whether LG-3 / LG-4 are re-ranked on
+these reads is the orchestrator's call and is not recorded here. The roadmap in §6 keeps X35's staging
+([`design_compute_efficiency.md`](design_compute_efficiency.md) §5.6, launch sheet
+[`BATCH1_LAUNCH_SHEET.md`](../research_state/measurements/x35_breakers_stage_2026-10-17/BATCH1_LAUNCH_SHEET.md)). Every launch needs the
+orchestrator's GO, and a design block is not a launch command.
 
 **Trigger.** This is goal 4 of the owner's 2026-10-17 order: (1) the strongest baseline, (2) vs Metamon, (3) where we
 are, (4) **classic AlphaStar-style approaches (league, PFSP, exploiters) as the plateau-breakers**, (5) what search
@@ -498,3 +501,4 @@ UNDECIDED, the branch uses the sign of Δ̂ only to ORDER work, never to adopt (
 | 2026-10-20 | **AM-RP: the orchestrator's rulings on the X35 REPLAN memo** (registration worker; `BATCH1_LAUNCH_SHEET.md` §0 AM-RP) | LG-2 runs only on an A1 GAIN and its second arm is dropped; A2 is dropped from batch 1; the transfer calibration is accepted as NOT SHOWN now, so LG-3 on the toy is descriptive; A3's verdict is "R2 falls AND G-F passes AND R1 not LOSS", labelled ROBUSTNESS GAIN. §6's LG-2 row and §7's A1 / A2 / calibration / LG-1 rows changed | LG-2 on an A1 UNDECIDED with Δ̂ > 0 (f_hard over A1's archive is near-uniform, max / min 1.3, so LG-2 ≈ A1); A2 deferred rather than dropped | [`REPLAN_2026-10-20.md`](../research_state/measurements/x35_breakers_stage_2026-10-17/REPLAN_2026-10-20.md) §1, §4; §2.4 |
 | 2026-10-20 | **F-AS-8 VERIFIED** (the AM-RP registration worker, CPU, read-only) | a new arm CAN share its side's C0 at a written pin (the pin and the pool record are per side); the kit needs the arm registered first (≈ 0.25–0.5 agent-day) | each batch-2 arm with its own C0 (+ ≈ 13 GPU-h per side) | `STAGED_PLAN.md` §4.3; `batch2_sprt/f_as_8_kit_dryform.txt` |
 | 2026-10-20 | **AM-R0: R0 registered as an exploitability CURVE on both sides** (registration worker; launch sheet §0 AM-R0, the owner's direction "train an exploiter … against prod to see how much head room we have") | R0-toy (T\*, toy pin, right after the GPU battery) and R0-prod (P\*, production pin, right after P1's C0 seeds), +20M each, read every 2M; R0-prod's first 5M is LG-1's R0, so LG-1 drops to ≈ 18 GPU-h; "exploiter + pi search" registered as DESCRIPTIVE cells needing a live search player | a 5M R0 only (no saturation read); a full-pool best responder (no meter) | [`R0_REGISTRATION.md`](../research_state/measurements/x35_breakers_stage_2026-10-17/R0_REGISTRATION.md) |
+| 2026-10-25 | Status line made true (docs-health pass) | the 2026-10-20 status said X35 batch 1's toy block was "on the GPU now" and nothing else was read; it now records A1 NULL (LG-2 DROPPED by §7), R0-prod H +11.1 pp (A6 not triggered), D1 UNDECIDED, SPRT NULL, and that no LG arm has run | leaving the 10-20 wording | ledger L28259, L28204, L28324, L28471, L28497; `UNDERSTANDING.md` §4.10, §4.11; `EXPERIMENT_BACKLOG.md` CE-3a, AS-1 to AS-4 |

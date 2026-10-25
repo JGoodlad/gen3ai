@@ -1,5 +1,16 @@
 # Vacuous tests and guards — when green does not mean what it looks like
 
+> **Correction (2026-10-25):** the taxonomy, the five design rules and the meta-lesson stand; the specimens are a
+> dated record (2026-08-22/23), and some of the files they lived in are gone. `counterfactual_fuzz_test`,
+> `search_clone_parity_fuzz_test` (both deleted with the offline counterfactual stack, T27 P6 slice 6d-1,
+> 2026-10-08) and `server_port_threading_test` (deleted with the Python eval stack, slice 6c-EVAL) no longer exist,
+> and the `SYNTHETIC unit-test sample` timeout warning lived in the same deleted stack. The specimen counts
+> ("38 hits", "52 sites", "5,988 green", "~5,000 tests") are as of 2026-08-23. The class the tree now polices by
+> a standing gate is the stub that never reaches its target (`src/test_stub_vacuity_gate_test.py`, scan engine
+> `src/stub_vacuity_scan.py`); the static tier is listed by `python -m utils.static_gates` (count and names live
+> there and in `docs/DEVELOPING.md`, not here). The skip example `compile_trainer_test` below has since been
+> rewritten the other way (see Part 1).
+
 > **What this is.** A durable explainer for the failure mode where a test, a gate or a defensive
 > guard **passes without evaluating the thing it exists to prove**. It is not flakiness (a flaky
 > test fails sometimes), it is not a bug in the test (a wrong test fails loudly), and it is not
@@ -116,9 +127,10 @@ Two live examples from this tree, deliberately resolved in opposite directions:
   value_entity_pool_full=True, value_threat_inject=True` (the last since deleted, legacy deletion U3) and then
   skipped "if this build resolved without both value parts". It **asked** for both parts. Resolving without them is a flag-resolution
   bug. That is now an assertion.
-- `compile_trainer_test` skips without CUDA. The box either has a card or it does not; the test
-  arranged nothing. That skip is correct — and it is falsifiable, because this box has a card and
-  the test runs here.
+- `compile_trainer_test` once skipped without CUDA. The box either has a card or it does not; the
+  test arranged nothing, so that skip was correct, and falsifiable because this box has a card. (Its
+  current `test_cpu_is_refused` goes one better: it asserts that the compile gate REFUSES a CPU model
+  with `CompileTrainerError`, so the CPU branch is driven everywhere and no skip is needed.)
 
 ### The falsifiability half of a skip
 
@@ -143,7 +155,7 @@ work.*
 
 ## Part 2 — The taxonomy, with the measured record
 
-Ten specimens, found 2026-08-22/23. They are the evidence base for the whole note; the pattern
+Ten specimens, found 2026-08-22/23 (some of the files named have since been deleted; see the banner). They are the evidence base for the whole note; the pattern
 numbers are used throughout.
 
 ### 1. Guarded assertions — `if x is not None: assert ...`
@@ -151,7 +163,7 @@ numbers are used throughout.
 The decisive comparison sits inside a conditional with no `else`, so an empty/None intermediate
 walks past it in silence.
 
-- Both prober integration tests (`lookahead`, `better_line`) could pass **while walking past the
+- Both prober integration tests (`lookahead`, `better_line`, still in `src/main/prober/`) could pass **while walking past the
   only thing they exist to prove**; the falsifier asserted on a list that could be empty.
 - `counterfactual_fuzz_test` hung its checks 3 and 4 — divergence-to-terminal and the Monte-Carlo
   reseed, **six assertions**, and the larger half of the script's purpose — off
@@ -310,7 +322,7 @@ A gate whose verdict rides one random artifact.
 - The same week produced the mirror-image error on the reporting side: a unit test fed
   `timed_out=4, attempted=12` into the *real* warning function, so under `-s` it emitted
   `⚠️ small run: 4/12 battles TIMED OUT (33%)` into the same stream as live measurements — and was
-  taken for one **during this very investigation**. Its label is now `SYNTHETIC unit-test sample`.
+  taken for one **during this very investigation**. It was relabelled `SYNTHETIC unit-test sample` (that warning and its test went with the deleted eval stack).
   *A number that cannot be told apart from a measurement will eventually be read as one.*
 
 **Detection:** for each gate, ask "how many independent draws back this verdict?" If the answer is
@@ -392,7 +404,7 @@ briefed from it. When a deferral dies, **delete it**.
 
 ### Only adversarial reading finds these
 
-Notice what did *not* find any of the ten: the test suite (5,988 green), code review at the time
+Notice what did *not* find any of the ten: the test suite (5,988 green on 2026-08-23), code review at the time
 of writing, CI, or coverage tooling. Coverage is especially seductive and especially useless here
 — **a vacuous test has excellent line coverage.** The `logits > -1e8` recovery executed on every
 run for a year. Every line was covered. Every line was wrong.
@@ -449,7 +461,7 @@ entire research programme.
 
 ## Appendix — the hunt as a procedure
 
-Reusable. Roughly an afternoon over a ~5,000-test tree.
+Reusable. Roughly an afternoon over a ~5,000-test tree (the size on 2026-08-23).
 
 | # | pattern | instrument | precision |
 |---|---|---|---|

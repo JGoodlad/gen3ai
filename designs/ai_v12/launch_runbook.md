@@ -1,11 +1,18 @@
 # ai_v12 — CLEAN-WORLD LAUNCH RUNBOOK
 
-> **[STATE]** The four commands below are **verified launchable**: every one passes
-> `python -m main.checkargs --argv "…"` at exit 0, and every one has been run as a real
+> **SUPERSEDED / HISTORY (2026-10-25):** the ai_v12 chapter is CLOSED (2026-09-26), and this runbook is its
+> launch record, not what the training session executes. Its arms never ran as written here: the flags they carry
+> were later deleted, and the win-probability critic and its terminal reward are now constants of every trainer
+> namespace. Do not copy a command from it. What the model and the production recipe are now:
+> `designs/ARCHITECTURE.md`; where the programme is going: `designs/endstate/README.md`; how to launch:
+> `designs/ops/training_runbook.md`.
+
+> **[STATE at 2026-09-06]** The four commands below were **verified launchable** then: every one passed
+> `python -m main.checkargs --argv "…"` at exit 0, and every one was run as a real
 > `--debug --steps 8000` CPU smoke whose reward banner, round-trip test and `train/pbrs_*`
-> scalars are recorded in §5. This document is the thing the training session executes from.
+> scalars are recorded in §5.
 >
-> It is a RUNBOOK, not a registration. The arms, the endpoints and the escalation rules are
+> It is a RUNBOOK, not a registration. The arms, the endpoints and the escalation rules were
 > already registered — ledger `e22bd08` (the three-arm ladder), `627ab58` (no launch bias;
 > earned escalation), `cfbc9bf` (draw = −1; the coefficient spelling), `2d38a4a` (PopArt
 > retirement), `db9bb5c` (the V_shaped-constancy prediction), `4d22ae4` (the pure-sparse control

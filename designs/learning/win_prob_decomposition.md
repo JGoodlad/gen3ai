@@ -5,6 +5,15 @@ hidden-information floor). "Critic surprise" began as one number and ended as a 
 decomposition, each component with its own instrument, its own size, and its own lever — or a
 proof that no lever exists. The reference numbers are gen-17 @24M; the structure is durable.*
 
+> **Correction (2026-10-25):** the measurements below are dated history, and two pieces of machinery they
+> mention are gone. The evidential Beta head (`--cf-evidential`, axis 5) and the counterfactual label stack
+> (the label factory, `gen3_cf_*`) were deleted at config v134 after the 2026-09-12 cf-labels arm and leaf
+> battery found no lever that moves leaf quality (`designs/deleted_flags.md`); "R1" below is the label-supply
+> lever proposed in August, not a current one. The critic itself is now the win-prob critic
+> (`sigmoid(win_head(value_pooled))`, BCE against the terminal outcome; `designs/ARCHITECTURE.md` §
+> "WHICH readout is the critic"). The five-way taxonomy and its instruments (tight-MC, strata, `sd_true_excess`,
+> determinization) are the durable part.
+
 ## 1. Intuitive: "the model was confident and lost" is five different sentences
 
 A head says P(win) = 0.85 and the game is lost. That observation is compatible with ALL of:
@@ -58,12 +67,12 @@ verdicts evaluated floor-subtracted; arm-vs-control differences primary (the flo
 population property and cancels).
 
 **Axis 5 — the model's own confessed uncertainty (the EPISTEMIC layer).** All four axes above
-are measured from outside. The evidential Beta head (`cf_evidential`, dormant) is the inside
+are measured from outside. The evidential Beta head (`cf_evidential`, since deleted at v134) was the inside
 view: Beta(α, β) over P(win), where WIDTH is the head saying "I don't know" — distinct from
-"it's a coin flip" (a sharp 0.5). Its pre-registered meter: predicted width should CORRELATE
-with measured `sd_true_excess` per stratum (`width_vs_blur_spearman`). It cannot remove blur
-(same trunk read); it can localize it — which the label factory's priority sampler and the
-awareness stack consume. Note the aleatoric side itself splits in kind: dice-aleatoric resolves
+"it's a coin flip" (a sharp 0.5). Its pre-registered meter was: predicted width should CORRELATE
+with measured `sd_true_excess` per stratum (`width_vs_blur_spearman`). It could not remove blur
+(same trunk read); it could localize it — which the label factory's priority sampler and the
+(also deleted) awareness stack were to consume. Note the aleatoric side itself splits in kind: dice-aleatoric resolves
 through PLAY (future randomness), hidden-info-aleatoric resolves through REVELATION (present
 unknown state) — same irreducibility to the head, different dynamics over a game.
 

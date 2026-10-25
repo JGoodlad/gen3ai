@@ -1,8 +1,9 @@
 # The gen3ou FORMAT SPEC — one declaration, one story per rule
 
-**ALWAYS-CURRENT** (`designs/endstate/README.md`). Status 2026-10-07: BUILT and LANDED — the spec, team validation,
-the drift gate and the board-state readers (`5e8d2956`), then the prior filter (§5.1, `gen3_format_spec_priors_v1`),
-landed once the orchestrator confirmed the X5 look-3 cross had finished (10:02, `c344ccd1`) with no pinned run live.
+**Status: BUILT and LANDED 2026-10-07, nothing pending (checked present at HEAD 2026-10-25: `agents.gen3_data.format_spec`, `main.format_drift`).**
+ALWAYS-CURRENT (`designs/endstate/README.md`). The spec, team validation, the drift gate and the board-state readers landed in `5e8d2956`; the
+prior filter (§5.1, `gen3_format_spec_priors_v1`) landed once the orchestrator confirmed the X5 look-3 cross had finished (10:02, `c344ccd1`) with
+no pinned run live.
 
 Owner direction (2026-10-07): *"I want the clauses to have a clear story, prefer setting the prior to 0 for
 banned items; for more complex things like sleep clause, the observation can help it out"* ("or whatever you
@@ -281,3 +282,4 @@ effect, a new trapper, a changed Sleep Clause body) and requires each to fail wi
 | 2026-10-07 | F7b's Quick Claw gate | `move_order.quick_claw_live()` reads `format_spec` (one source) | its landed hard-coded `False` (a second banlist) | `d02aded6` left the read for this spec |
 | 2026-10-07 | Sequencing | ship the spec, validation, drift gate and readers (production byte-identical, `5e8d2956`); HOLD the prior filter until the X5 look-3 cross finishes, then land it (orchestrator OK 10:02) | landing all at once | orchestrator brief 2026-10-07 |
 | 2026-10-07 | Versioning of the prior filter | a TRAINING-INPUT BOUNDARY, no `ARCH_SIGNATURE` / config bump (`gen3_format_spec_priors_v1` in the docs and goldens) | an ARCH bump (would strand every archived checkpoint; the weights are unchanged and loadable) | precedent `2d29c4c0`, `f0d673fd` |
+| 2026-10-25 | Status line added (docs-health pass) | a `**Status` line: BUILT and LANDED 2026-10-07, nothing pending; the old line was a prose "Status 2026-10-07" inside the always-current banner | leaving the status implicit | `5e8d2956`, `c344ccd1`; `src/agents/gen3_data/format_spec.py`, `src/main/format_drift.py` |

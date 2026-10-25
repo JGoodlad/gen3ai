@@ -1,11 +1,24 @@
 # Marginalization, Jensen, and How a Model Carries Uncertainty
 
+> **Correction (2026-10-25):** the teaching below (Jensen, marginalize vs mean-field, convex
+> combinations, the loss as a prior) stands; several named mechanisms were deleted or replaced, and
+> read here in the PAST tense where they are history. The distributional value head
+> (`ValueDistHead`, v29) was deleted at config v131: the critic is now a scalar win-probability
+> head, `sigmoid(win_head(value_pooled))`, trained with BCE against the terminal win indicator
+> (`../ARCHITECTURE.md` §3.4). The v36 `--threat-prob-outspeed` (speed gap over a believed std,
+> through a sigmoid) was dropped as a dead flag (2026-09-06); P(outspeed) is now an exact
+> expectation over the species' discrete Smogon Speed distribution (`../ARCHITECTURE.md` §4,
+> "P(we act first)"). The op's P(KO) is now the exact P(KO) over the 16 rolls plus the
+> crit chance (`../ARCHITECTURE.md` §4; the earlier crit-split design below is history), the presence-scaled hard max over believed moves became
+> the alpha-weighted expectation plus a noisy-OR worst case, and "belief slots" are X5's
+> hypothesis tokens. Read live structure from `../ARCHITECTURE.md`, never from this note.
+
 > **What this is.** A durable explainer for one concept cluster in our models: why we
 > **marginalize** (sum outcomes over a belief) instead of **mean-field** (plug the average
 > state into the calc), why that matters for thresholds like P(KO) / P(outspeed), and the
 > machinery a neural net actually uses to *represent* and *reason over* uncertainty. Written
 > to teach — intuitive first, then technical, no code. Grounded in the `DamageOperator`, the
-> belief heads, and the distributional value head.
+> belief heads, and (historically) the distributional value head.
 
 ---
 
@@ -28,9 +41,9 @@
 - **The primitive under all of it is the convex combination** (`Σ w_i x_i`, `w ≥ 0`, `Σw = 1`).
   An expectation over a finite set *is* one; a convex *function* is *defined* by how it interacts
   with one (that definition, generalized, is Jensen). On a feature vector it combines
-  coordinate-wise, so it preserves **units, range and scale** — which is why `ValueDistHead`'s mean
-  cannot escape `[v_min, v_max]`, and why an attention *value* carries a magnitude where an
-  attention *bias* cannot (§ *Convex combinations — the primitive under all of this*).
+  coordinate-wise, so it preserves **units, range and scale** — which is why the deleted
+  `ValueDistHead`'s mean could not escape `[v_min, v_max]`, and why an attention *value* carries a
+  magnitude where an attention *bias* cannot (§ *Convex combinations — the primitive under all of this*).
 
 ---
 
@@ -153,11 +166,11 @@ convex combination in **every coordinate independently**, so if dim 0 of every i
 as a fraction of max HP," dim 0 of the output still means that. Three consequences:
 
 1. **Range closure** — `min_i x_i ≤ Σ w_i x_i ≤ max_i x_i` per coordinate. An HP-fraction in
-   `[0,1]` stays in `[0,1]`, no renormalization. *This is not abstract*: `ValueDistHead`'s point
-   estimate `Σ_b p_b·z_b` is a convex combination of the atom locations and is therefore
-   **mathematically incapable** of leaving `[v_min, v_max]` — which is exactly why "widen vmax
-   before shaping" is the fix and not a loss-tuning problem
-   ([[project_value_dist_head_status]] in memory; the support is a hard clamp *by convexity*).
+   `[0,1]` stays in `[0,1]`, no renormalization. *This is not abstract*: the (now deleted)
+   `ValueDistHead`'s point estimate `Σ_b p_b·z_b` was a convex combination of the atom locations
+   and therefore **mathematically incapable** of leaving `[v_min, v_max]` — which is exactly why
+   "widen vmax before shaping" was the fix and not a loss-tuning problem (the support is a hard
+   clamp *by convexity*).
 2. **Degree-1 homogeneity** — `Σ w_i (c·x_i) = c·Σ w_i x_i`. Double the damages, double the output.
    This is the formal content of "carries an absolute," and it is what the Shaw value term buys
    over the key-side bias ([[entity_tokens_biases_pointers]] § *The output-slot ladder*).
@@ -186,9 +199,9 @@ differences within a row, and it saturates.)
 | where | combination | weights |
 |---|---|---|
 | every `TeamTransformer` attention layer | `Σ_j α_ij·v_j` | softmax `α` |
-| the proposed Shaw value term (PV) | `Σ_k α_jk·W_p·cell_kj` | softmax `α` |
+| the proposed Shaw value term (PV; a proposal, not built: `../ARCHITECTURE.md` has no PV term as of 2026-10-25) | `Σ_k α_jk·W_p·cell_kj` | softmax `α` |
 | `DamageOperator` marginalization | `Σ_m P(move=m)·damage_m` | the belief posterior |
-| `ValueDistHead` point estimate | `Σ_b p_b·z_b` | the categorical over atoms |
+| the deleted `ValueDistHead`'s point estimate | `Σ_b p_b·z_b` | the categorical over atoms |
 | GAE(λ), infinite-horizon form | `Σ_n (1−λ)λ^(n−1)·A^(n)` | exponentially decaying, sums to 1 |
 | PFSP opponent sampling | which snapshot to play | the PFSP distribution over the pool |
 
@@ -196,7 +209,7 @@ differences within a row, and it saturates.)
 add and LayerNorm immediately after rescale the whole vector, so "still an HP-fraction" degrades to
 "an HP-fraction *relative to the vector's norm*." Far better than the bias path (which destroys a
 uniform level exactly), but it does not hand you an invariant scalar all the way to the head — the
-same caveat this note's Part 3 makes about raw floats entering through `prefuse_proj`.
+same caveat that applies to raw floats entering through `prefuse_proj` ([[shortcut_learning_and_feature_delivery]]).
 
 ### The three-way principle
 
@@ -215,19 +228,28 @@ the aleatoric rolls — both taken by summing outcomes, never by averaging input
 
 ### Where this lives in our architecture
 
-- **`gen3_incoming_crit_split_v1`** — splits P(KO) into a **modal no-crit** term + a separate
-  **crit-risk delta** (∈ [0, crit_p]). A marginalization choice: don't blend the 1/16 crit
-  world into one mushy mean; expose the two regimes so the policy prices the modal line
-  correctly *and* sees the tax. Same spirit as the v28 Choice-Band-conditional OHKO tail,
-  decorrelated from `p_cb` because OHKO is a nonlinear threshold a blend would blur.
-- **v36 `--threat-prob-outspeed`** — divide the speed gap by the **believed speed std**, push
-  through a sigmoid (≈ a normal CDF). That marginalizes the threshold over the spread belief:
-  `P(speed_us > speed_them)` instead of `1[speed_us > E[speed_them]]`. A point estimate is the
-  degenerate case where you pretend the std is zero.
-- **v36 expected-latent defender** — the deliberate *exception*: for an unrevealed switch-in
-  the op marginalizes `P(species)` through the type chart + spread prior for expected damage,
-  but **nulls P(KO)** — a full-HP switch-in is ~never OHKO'd, so the KO-threshold term carries
-  almost no signal while adding all the Jensen-gap subtlety. Dropping the nonlinear threshold
+- **P(KO) is exact, not a ramp at the mean** (`agents/model/ko_exact.py`, `../ARCHITECTURE.md` §4):
+  every P(KO) the op prices is the probability over the 16 gen-3 damage rolls mixed with the move's
+  crit chance, each roll's KO resolved against the observed HP interval, in closed form. The
+  earlier `gen3_incoming_crit_split_v1` design split P(KO) into a **modal no-crit** term and a
+  separate **crit-risk delta** so the policy priced the modal line and saw the tax. Both are the
+  same marginalization lesson: do not blend the 1/16 crit world into one mushy mean.
+  The Choice-Band-conditional OHKO tail (v28) is still a separate term next to the shared `p_cb`,
+  because OHKO is a nonlinear threshold a blend would blur.
+- **P(outspeed) is a marginalization over their Speed distribution** (`../ARCHITECTURE.md` §4,
+  "P(we act first)"): OUR speed is exact; THEIR speed is the species' discrete Smogon distribution
+  over the Speed stat, each support point pushed through the same exact stage and paralysis
+  arithmetic, `Σ_v w_v (1[s > f(v)] + ½·1[s = f(v)])`. The learned spread belief is not read by
+  these sites. History: v36's `--threat-prob-outspeed` divided the gap by a believed speed std and
+  pushed it through a sigmoid (≈ a normal CDF), the moment-carrying version of the same idea
+  (`P(speed_us > speed_them)` instead of `1[speed_us > E[speed_them]]`; a point estimate is the
+  degenerate case where you pretend the std is zero); the flag is deleted.
+- **The expected-latent defender** — a hidden opponent slot is priced as its concrete hypothesis
+  species, and a hypothesis DEFENDER has P(KO) defined (`../ARCHITECTURE.md` §2). The deliberate
+  *exception* survives only on the pooled OTHER_species tail, whose defender is the
+  probability-weighted `P_tail @ tables` with **P(KO) nulled**: a blended defender makes the
+  KO-threshold term carry almost no signal while adding all the Jensen-gap subtlety. (In the
+  v36 design every unrevealed switch-in was priced that way.) Dropping the nonlinear threshold
   where it doesn't pay is the exception that proves the rule.
 
 ---
@@ -255,15 +277,17 @@ must be engineered. There are four ways.
 
 Fix a support of atoms (returns from −1..+1 in N bins), predict a softmax weight per atom. The
 output is an arbitrary-shaped histogram: sharp = confident, wide = uncertain, bimodal =
-coinflip. This is the canonical "carry the distribution" (C51 / QR-DQN / IQN). **It is exactly
-our `ValueDistHead` (v29).**
+coinflip. This is the canonical "carry the distribution" (C51 / QR-DQN / IQN). **It was exactly
+our `ValueDistHead` (v29), deleted at v131**; the critic that replaced it carries one number, a
+win probability, which is itself the full distribution of a binary outcome (see the loss section).
 
 ### 3. Carry sufficient statistics + propagate analytically
 
 Sometimes a couple of **moments** + a closed-form push-through suffices. Carry mean *and* std,
-propagate through the nonlinearity analytically. **v36 `--threat-prob-outspeed`** is precisely
-this: one extra scalar (the speed std) → a hard 0/1 threshold becomes a calibrated
-`P(outspeed)` via a sigmoid (≈ normal CDF). Cheap, no sampling, a genuine marginalization.
+propagate through the nonlinearity analytically. The deleted **v36 `--threat-prob-outspeed`**
+was precisely this: one extra scalar (the speed std) → a hard 0/1 threshold becomes a calibrated
+`P(outspeed)` via a sigmoid (≈ normal CDF). Cheap, no sampling, a genuine marginalization; the
+op now enumerates the (small, discrete) Speed support instead, which is exact (method 5 below).
 
 ### 4. Implicit / latent representation (free-form)
 
@@ -282,11 +306,14 @@ have the right bias:
 - **Attention is a soft marginalization primitive.** `output = Σ_i softmax(scores)_i·value_i`
   is literally `Σ P(i)·v_i` — a weighted sum over hypotheses, the shape of a marginalization.
   Arrange each hypothesis as its own **token** (a candidate species, a candidate move) and
-  attention can *learn* to weight-and-sum them. This is why we use **belief slots** (distinct
-  unknown-mon tokens) and the **top-K discrete incoming block (v30)** (each candidate move is
-  its own addressable row) *instead of* the collapsed `_chan_max` worst-case. The move from a
-  single pooled vector to a *set of tokens* is the whole game: **a pooled vector forces
-  mean-field (nothing left to weight-and-sum); separable units enable marginalize.**
+  attention can *learn* to weight-and-sum them. This is why we use **hypothesis tokens**
+  (X5: a hidden opponent slot holds its concrete candidate species as its own token, plus an
+  OTHER tail token) and the **top-K incoming matrix** (each candidate move is its own addressable
+  row, ordered by a fixed-mass presence) *instead of* a collapsed worst-case; the op's own
+  reduction over believed moves is the alpha-weighted expectation (plus a noisy-OR worst case for
+  binary events), not the presence-scaled hard max it replaced. The move from a single pooled
+  vector to a *set of tokens* is the whole game: **a pooled vector forces mean-field (nothing left
+  to weight-and-sum); separable units enable marginalize.**
 - **Distributional / quantile heads** are the proven tool for "predict a distribution over a
   scalar I care about," beating a Gaussian head on multimodal truth and a point head whenever
   you care about the tail.
@@ -303,8 +330,10 @@ To carry spread you need a **proper scoring rule** whose minimizer is the *distr
 - **CRPS** (full distributional outputs).
 
 So "help it carry the distribution" is as much about the *loss* as the *head*. Our belief
-heads train with cross-entropy against the true hidden species/moves (a proper scoring rule);
-the distributional value head is set up for a distributional aux loss, not MSE-to-the-mean.
+heads train with cross-entropy against the true hidden species/moves (a proper scoring rule),
+and the critic is a win-probability head trained with BCE against the terminal win indicator
+(also a proper scoring rule, whose minimizer is the win PROBABILITY, not a regression mean of a
+shaped return). The deleted distributional value head was the same bet one step richer.
 
 ### How to help the model marginalize, not mean (ranked by leverage)
 
@@ -321,14 +350,14 @@ the distributional value head is set up for a distributional aux loss, not MSE-t
    mean-field upstream.
 3. **Output distribution parameters + train with a proper scoring rule** (categorical+CE,
    quantile+pinball). Never MSE if you care about spread.
-4. **Carry moments + propagate analytically** when the question is a threshold (mean+std → CDF;
-   v36 outspeed).
+4. **Carry moments + propagate analytically** when the question is a threshold and the support
+   is large (mean+std → CDF; v36 outspeed, since replaced by exact enumeration).
 5. **Enumerate-and-sum when the support is small** — the aleatoric rolls aren't sampled; we
-   carry the explicit 16-roll support + 2-point crit distribution and integrate
-   `P(KO|hit) = fraction of rolls ≥ HP`. Exact Monte-Carlo over a tiny support (same for the
-   16 typed Hidden-Power candidates).
+   carry the explicit 16-roll support + the crit chance and integrate
+   `P(KO|hit) = fraction of rolls ≥ HP` (now in closed form, equal to the 16-roll sum). Exact
+   over a tiny support (same for the 16 typed Hidden-Power candidates and the Speed support).
 6. **Decorrelate regimes** so an additive head can't re-collapse what you marginalized
-   (crit-split, CB-conditional tail).
+   (the CB-conditional tail; the retired crit-split).
 
 ---
 
@@ -349,11 +378,11 @@ from an MSE loss or a pre-collapsed input.
 
 ## See also
 
-- Root `CLAUDE.md` → Feature Extractor Architecture (the `DamageOperator`, belief heads,
-  `ValueDistHead`), and Model Versioning (v19/v21 damage op, distributional value head,
-  v30 top-K incoming, v36 bidirectional threat / prob-outspeed).
-- `src/agents/model/CLAUDE.md` — the 7-phase extractor contract.
-- `designs/ai_v6/design_differentiable_damage_op.md`, `design_distributional_value_critic.md`,
-  `design_bidirectional_threat_trunk.md`.
-- Memory: `project_gpu_damage_op.md` (COMPUTE deterministic / learn epistemic / distribution
-  aleatoric; Jensen — MARGINALIZE not mean-field).
+- `designs/ARCHITECTURE.md` §4 (the `DamageOperator`, exact P(KO), the speed physics, the
+  principled reduction) and §3 (the belief heads, the critic readout); `designs/model/versioning.md`
+  for what each model version changed.
+- `src/agents/model/CLAUDE.md` — the extractor contract and the phase pipeline pointer.
+- `designs/ai_v6/design_differentiable_damage_op.md`, `design_distributional_value_critic.md`
+  (the deleted head's design, history), `design_bidirectional_threat_trunk.md`.
+- The rule the whole note serves: COMPUTE the deterministic, LEARN the epistemic, carry the
+  DISTRIBUTION of the aleatoric; Jensen — MARGINALIZE, not mean-field.

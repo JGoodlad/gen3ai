@@ -1,0 +1,3 @@
+# ai_v9 (CLOSED, history)
+
+> **CLOSED (2026-10-25):** the entity-graph generation (pointer-native action head, op tensors, belief stack, history entity; `designs/ai_v9/design_generation_roadmap.md` is the alignment doc). BUILT: its mechanisms are the substrate of the current model. `designs/ai_v9/design_frame_deletion_coverage_gaps.md` holds the standing rule on reading a delta-V ablation. Explicit-only history, never auto-updated: read it for what was designed and why, then check the code before believing it still holds. What the model is now: `designs/ARCHITECTURE.md`; how it got there: `designs/research_state/ledger.md` and `designs/CHANGELOG.md`.

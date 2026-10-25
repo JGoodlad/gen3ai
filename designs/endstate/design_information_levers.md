@@ -3,9 +3,9 @@
 🚨 **ALWAYS-CURRENT (owner, 2026-09-27; `README.md` in this directory).** A decision or build that differs from this
 doc updates it in the same commit, and the Decision record at the end says what changed and why.
 
-**Status (2026-10-25): §13 points at the HUMAN-DATA switch (`--human-data`, PROPOSED, not built). Status (2026-10-12): the SPEC, the LOG SOURCE, the SEARCH WORLD BUILDER (honest by default), the MODEL-INPUT
-INJECTION, the GENDER PAD and the AUDIT SUITE are BUILT; consumer (a), the TRAINING OBSERVATION's `--oracle-reveal
-<spec>`, and its diagnostic-fork consent are BUILT (§6).** Owner, 2026-10-12: "I want a single dried
+**Status (2026-10-25): BUILT, one spec (`agents.info_levers`) and all three consumers: the SPEC, the LOG SOURCE, the SEARCH WORLD BUILDER
+(honest by default), the MODEL-INPUT INJECTION, the GENDER PAD, the AUDIT SUITE, and the TRAINING OBSERVATION's `--oracle-reveal <spec>` with its
+diagnostic-fork consent (§4, §6). Not built: the human-data switch `--human-data` (§13, PROPOSED).** Owner, 2026-10-12: "I want a single dried
 out implementation for giving both search and training additional information that would not generally be available
 so that we can understand what the ceilings are and what is our constraint and how much value there would be in
 improving determinization." It serves the hidden-information study ([`design_hidden_info_binding.md`](design_hidden_info_binding.md))
@@ -809,3 +809,4 @@ and §5; the plan is [`design_human_replay_lever.md`](design_human_replay_lever.
 | 2026-10-19 | **The damage-roll leg of seed reuse cured behind an option (F1 tier A of `design_world_sampler.md`)** | §7.5: `WorldSampler(dice="rolls")` (default `seed`) replays each damage roll on any value that prints what the searched side saw, the stream aligned, the world weighted; the speed-tie and silent-dice legs stay (tier B) | making it the default (changes every honest read); tier B now | `design_world_sampler.md` §3.3.1; `measurements/world_rolls_f1a_2026-10-19/` |
 | 2026-10-25 | **§13 ADDED: the HUMAN-DATA levers registered as a second spec family (DESIGN, DRAFT; nothing built)** (owner's grant: human replays may train the policy, toggleable, off by default) | one flag `--human-data` with ONE clause (`bc` / `teams` / `kl` / `judge`) and a snapshot id, its own hash prefix `human_data_v1`, provenance as the reveal spec's | folding human data into `--oracle-reveal` (it reveals nothing about the battle played; mixing the two would make "honest" ambiguous); one flag per lever (the complexity budget) | `design_human_replay_lever.md` |
 | 2026-10-25 | **§13 reduced to a pointer** (REVIEW C F10: the grammar, the hash prefix and the provenance rules lived in three docs and had already drifted on inheritance) | §13 keeps the boundary (no hidden fact; never with `--oracle-reveal`) and points at `human_data_architecture.md` §5–§6, which owns the grammar (`judge` dropped, rowset / model ids, fork and resume refuse without a typed clause) | restating the grammar here (a second home drifts) | `measurements/human_replay_quality_2026-10-25/RESPONSE.md` |
+| 2026-10-25 | Status line made single (docs-health pass) | the 2026-10-25 and 2026-10-12 status blocks, run together in one paragraph, are one status: all three consumers BUILT (§4), `--human-data` PROPOSED and not built (`grep` finds no such flag under `src/`) | two stacked dated status blocks | §4; `src/agents/info_levers/`, `src/main/train/parser/env_core.py` |

@@ -1,0 +1,3 @@
+# ai_v4 (CLOSED, history)
+
+> **CLOSED (2026-10-25):** data quality and encapsulation (own-team spreads, Hidden Power inference, damaging-event attribution, the unified transformer). BUILT: `designs/ai_v4/impl_step*.md` are the as-built records; `designs/ai_v4/design_*.md` carry forward ideas, some never implemented (read each file's status line). Explicit-only history, never auto-updated: read it for what was designed and why, then check the code before believing it still holds. What the model is now: `designs/ARCHITECTURE.md`; how it got there: `designs/research_state/ledger.md` and `designs/CHANGELOG.md`.

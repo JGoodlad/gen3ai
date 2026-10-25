@@ -1,8 +1,22 @@
 # Imperfect information and equilibria — what the belief stack approximates
 
 *CFR, public belief states, and why optimal play in a simultaneous-move hidden-information game
-is an equilibrium rather than a best line. The theory our belief stack and α/β heads are an
-empirical approximation of.*
+is an equilibrium rather than a best line. The theory our belief stack and opponent-intent
+pointer (formerly the α/β heads) are an empirical approximation of.*
+
+> **Correction (2026-10-25):** the theory stands; four machinery names around it changed.
+> (1) The α/β heads (`AlphaIntentHead` / `BetaSwitchHead`) are deleted: X5's FLAT opponent pointer
+> (`agents/model/flat_intent.py`) scores the opponent's move seats, OTHER_move, a switch to each of
+> their slots and OTHER_species in one softmax, and its α / β read-outs are what the rest of the
+> model consumes (`../ARCHITECTURE.md` §2.1). The "α is a function of the board, found by training"
+> argument below holds for it unchanged. (2) The exploiter FOLD (distilling specialist exploiters
+> into the generalist, the `--distill-teacher` family) is deleted (config v133: the era-1 fold trained worse than
+> nothing), so every "we distill the exploiters back" sentence below describes the earlier recipe;
+> today an exploiter (`--exploiter`) is a best-response PROBE, and the league programme is
+> `../endstate/design_alphastar_league_path.md`. (3) BaitBot (the bait-loop opponent) was deleted
+> with its flags (deletion pass P11d; the bait hunt is closed), and the FiLM conditioning family
+> was deleted at v78. (4) We play search-free; the search program is offline measurement and is
+> paused (`../endstate/search_ledger.md`).
 
 ## 1. Intuitive: the opponent's uncertainty is part of the board
 
@@ -23,7 +37,7 @@ home) is its purest expression.
 **Information sets and CFR.** Poker-style solving groups states the player cannot distinguish
 into INFORMATION SETS and minimizes regret per set (Counterfactual Regret Minimization) —
 converging to Nash in two-player zero-sum. CFR itself is not our tool (the game tree is too rich
-and we forbid inference-time search), but its vocabulary is load-bearing: our obs IS an
+and the network we play is search-free), but its vocabulary is load-bearing: our obs IS an
 information set encoding, and "the model can't distinguish these states" is a statement about
 which facts the obs carries — the coverage audits are information-set audits.
 
@@ -33,8 +47,9 @@ be solved with perfect-information tools because the uncertainty has been made p
 **Our belief stack is an empirical PBS approximation**: the species posterior over hidden slots,
 the move/spread/item beliefs, all computed from public history, all fed to the physics. What we
 do NOT do is solve on it — we train a policy that reads it. The gap between those two is exactly
-what ReBeL closes with search, and what our no-search constraint deliberately leaves on the
-table for the training loop to approximate.
+what ReBeL closes with search, and what our search-free play leaves on the table for the training
+loop to approximate (whether search could close it for us is the question
+`../endstate/search_ledger.md` tracks).
 
 **α as a trained fixed point — and why it must not read our logits.** The opponent's action
 distribution depends on their read of OUR policy, which depends on our read of theirs —
@@ -50,16 +65,19 @@ plan in it (PIMC — the search-time approach, and the team-completion model's s
 MARGINALIZE — act on expectations under the posterior (our entire forward pass; see
 [`marginalization_and_uncertainty.md`](marginalization_and_uncertainty.md) for when each is
 exact). The known costs of our choice, measured: per-slot independent marginals cannot express
-the species clause (the 14.2% duplicate-top-1 display finding), and expectation over multimodal
-successors can name a state that never occurs (the outcome-latent design's §6 honesty item).
+the species clause (the duplicate-top-1 display finding: 6.5% to 14.2% of decisions from 2M to 6M
+steps, `../prober/beliefs_and_threats.md`; X5's fixed-mass hypothesis tokens are the current belief
+representation), and expectation over multimodal successors can name a state that never occurs (the
+honesty item in the never-built `../ai_v10/design_outcome_latent.md` §6).
 
 **Exploitability vs exploitation — the two corners of correct play.** A Nash strategy is SAFE
 (bounded loss vs anything) but leaves value against weak opponents on the table; a best response
 MAXIMALLY exploits one opponent and may be wide open to others. Our system deliberately occupies
 both corners at different layers: the GENERALIST trains toward the safe center (self-play against
 a pool ≈ an approximate equilibrium of the meta-game), while the EXPLOITERS are pure best
-responses to frozen opponents — maximum exploitation, zero robustness, safe only because they are
-distilled back rather than deployed. Naming the corners keeps the roles from blurring: an
+responses to frozen opponents — maximum exploitation, zero robustness, never deployed (the earlier
+recipe distilled them back into the generalist; that route is deleted, so today they are probes).
+Naming the corners keeps the roles from blurring: an
 exploiter's win rate is not a strength claim, it is an exploitability measurement of its target.
 
 **The honest gap: we never reason about what our OWN actions reveal.** The belief stack models
@@ -70,15 +88,17 @@ here so it reads as a boundary, not a bug.
 
 ## 3. What this buys operationally
 
-- Belief-quality metrics (species acc, α/β info gain) are measurements of a PBS approximation —
-  their ceiling arguments (β capped by belief coverage, mask rates as the belief's failure) are
-  the standard PBS decomposition, not ad-hoc bookkeeping.
+- Belief-quality metrics (species accuracy, the `opp_intent/*` intent-pointer metrics) are
+  measurements of a PBS approximation — their ceiling arguments (switch-target recall capped by
+  belief coverage, a belief miss as the belief's failure) are the standard PBS decomposition, not
+  ad-hoc bookkeeping.
 - Any future search layer must search over BELIEFS, not sampled worlds alone (or must sample
-  many) — the CRN-anchored beam already respects this by branching from the recorded belief
-  state.
-- "Is α correct?" has a precise meaning: calibrated against the CURRENT opponent population's
-  play at this fixed point — which is why `_pool`-stratified α metrics are the real ones and the
-  bot-stratified ones are decision-tree modeling.
+  many) — the prober's offline CRN-anchored beam (`better-line`) is the instrument that branches
+  from a recorded state, and `../endstate/design_world_sampler.md` is the study of which worlds to
+  draw.
+- "Is the intent pointer correct?" has a precise meaning: calibrated against the CURRENT opponent
+  population's play at this fixed point — which is why the `_pool`-stratified `opp_intent/*`
+  metrics are the real ones and the `_bot`-stratified ones are decision-tree modeling.
 
 **The question you can answer after this note:** *why can't we just train α to predict the
 theoretically-optimal opponent?* — because the optimal opponent is an equilibrium object defined
@@ -104,24 +124,28 @@ section maps the population-level literature onto our components.*
 - **AlphaStar league** (Vinyals 2019): PSRO industrialized — main agents (train vs everything),
   main exploiters (best-respond to the current main), league exploiters (best-respond to the
   whole league), PFSP opponent sampling weighted toward beatable-but-not-beaten. Our
-  main-run + exploiter + fold-back recipe is closest to this, with ONE structural difference:
-  we DISTILL the exploiters back into a single policy rather than keeping a population + a
-  meta-mixture at play time.
+  main-run + exploiter + fold-back recipe was closest to this, with ONE structural difference:
+  we DISTILLED the exploiters back into a single policy rather than keeping a population + a
+  meta-mixture at play time (the fold is deleted at v133; the league design is
+  `../endstate/design_alphastar_league_path.md`).
 - **NeuPL** (Liu 2022): the population held in ONE conditioned network rather than N frozen
-  copies — the population version of our conditioning/FiLM line.
+  copies — the population version of conditioning (the FiLM conditioning family we ran was deleted
+  at v78 and closed NULL).
 
 **The convergence subtleties that bite in practice:**
-- **Distillation is our convergence operator, not just compression.** Fictitious play converges
-  in the AVERAGE; a last-iterate self-play policy can orbit a cycle indefinitely. Folding
-  exploiters + pool behavior into one network is an averaging step — the thing the theory says
-  actually converges. (The retention ablation — distilled skill sticks at ~76% with teachers
-  retired — is what makes this real rather than aspirational.)
+- **Distillation was the designed convergence operator, not just compression.** Fictitious play
+  converges in the AVERAGE; a last-iterate self-play policy can orbit a cycle indefinitely.
+  Folding exploiters + pool behavior into one network is an averaging step — the thing the theory
+  says actually converges. (An earlier retention ablation — distilled skill stuck at ~76% with
+  teachers retired — made this look real; but the era-1 fold then trained worse than nothing and
+  the route was deleted at v133, so the averaging argument is theory we do not currently run.)
 - **Entropy-regularized PPO converges to a QUANTAL RESPONSE equilibrium, not Nash** (QRE:
   logit-smoothed best responses; equivalently the Nash of an entropy-bonused game). Our
   `--ent-coef` sets the smoothing temperature — the fixed point is deliberately soft. Mindful:
   the smoothing is not uniform across states; the bait saturation (0.97 confidence) shows local
   corners survive a global entropy bonus.
-- **Cycles are load-bearing, not noise.** Bait propagates through self-play pools (measured);
+- **Cycles are load-bearing, not noise.** Bait propagated through self-play pools (measured, with
+  the now-deleted BaitBot);
   RPS-like dynamics mean a strategy can be "beaten" by re-discovering its counter's counter.
   The pool's retention + the anchor bots are what prevent re-cycling; deleting old snapshots is
   how populations forget and re-enter orbits.
@@ -162,11 +186,12 @@ section maps the population-level literature onto our components.*
    games with three different equilibria. A claim like "approach Nash" must say which; our
    ladder constraint (play humans) means the TEAM meta-game's equilibrium is ultimately set by
    the human ladder distribution, not by our pool.
-2. **An exploiter is an instrument until distilled** (BaitBot lesson): finding a hole ≠ teaching
-   the fix; the credit conviction says the fix arrives only through the distillation target.
+2. **An exploiter is an instrument until its lesson is folded in** (BaitBot lesson): finding a
+   hole ≠ teaching the fix; the credit conviction says the fix arrives only through a training
+   target, and the one fold route we built is deleted (v133), so today an exploiter measures.
 3. **Do not chase last-iterate Nash with on-policy RL** — smooth (QRE) fixed points + averaging
-   via distillation is the convergent recipe we already run; adding explicit Nash solvers at
-   play time is ruled out by the no-search constraint and unnecessary at current evidence.
+   over a pool is the convergent recipe in theory; adding explicit Nash solvers at play time is
+   outside our search-free play and unnecessary at current evidence.
 4. **Exploitability curves need matched budget AND matched fork policy** (warm-fork vs scratch
    changed the measured number by ~0.2 at 10x compute).
 5. **Population forgetting re-opens closed holes** — retention policy on the pool is a

@@ -1,5 +1,16 @@
 # Activation functions — is ReLU the right choice for our model?
 
+> **Correction (2026-10-25):** two things this note called open have moved. (1) The SB3 tower's `tanh` is no
+> longer an implicit default: it has been pinned explicitly since 2026-08-16 (`gen3_policy_activation_pin_v1`,
+> `POLICY_ACTIVATION_FN` in `agents/model/policy.py`), so the "cheap first move" in section 4 is DONE; the
+> pin governs new models only (SB3 rebuilds a loaded policy from the checkpoint's own saved kwargs).
+> (2) The production trunk is deeper than the `TRANSFORMER_N_LAYERS = 2` default this note reasons from:
+> `--trunk-layers` is 3 in production (`designs/ARCHITECTURE.md`), and the production token encoder is the
+> static per-mon one (`static_tokens.py`), not the `PokemonEncoder` of section 3's table. The dead-unit and
+> capacity probes (2026-08-16) were taken on gen-12 and are dated measurements of that model, not of the
+> production network; the three-tier argument is unchanged (all of those sites are still ReLU). Source line
+> numbers that older drafts quoted have been replaced by file and function names, which survive refactors.
+
 **TL;DR.** ReLU is a *defensible default* and almost certainly not what is costing us strength —
 but the question "should different parts use different activations?" has an answer we already
 live by without having written it down: **our model uses three distinct nonlinearity tiers**, and
@@ -8,13 +19,14 @@ only one of them is a free choice.
 | Tier | What it is | What we use | Is it a choice? |
 |---|---|---|---|
 | **Generic** | our MLP hidden layers, transformer FFNs, head bottlenecks | **ReLU** | **Yes** — swappable |
-| **SB3 policy/value tower** | `net_arch = [512,512]`, both branches | **tanh** — an SB3 *default* we never set | Yes, but currently implicit |
+| **SB3 policy tower** | `net_arch = [512,512]`, the actor branch (the critic has no tower since the F1 version break) | **tanh** — the SB3 default, now pinned explicitly (`POLICY_ACTIVATION_FN`) | Yes, but it was never an authored decision |
 | **Bounded scorer** | the pointer head's per-action projection | **tanh** | Yes, but deliberate |
 | **Semantic** | damage op, belief posteriors, attention | sigmoid / softmax / clamp | **No** — these are the math |
 
-⚠️ The tower row is easy to miss: we pass `net_arch` in `policy_kwargs` but **never**
-`activation_fn`, so `MaskableActorCriticPolicy`'s default `nn.Tanh` silently governs 4 of the
-policy path's layers. See §2.4.
+⚠️ The tower row is easy to miss: until 2026-08-16 we passed `net_arch` in `policy_kwargs` but **never**
+`activation_fn`, so `MaskableActorCriticPolicy`'s default `nn.Tanh` silently governed 4 of the
+policy path's layers. It is now pinned (same function, so behaviour-neutral); the choice itself is still
+an inherited default, not a measured one. See §2.4.
 
 The generic tier is the only place a GELU/SiLU swap even means anything. The single site where
 the choice has a real structural consequence is the extractor's **output** projection
@@ -101,7 +113,7 @@ signed?" question.
 
 Three structural facts work in our favour:
 
-- **We are shallow.** `TRANSFORMER_N_LAYERS = 2` (`arch_constants.py`), and every MLP is 2 layers
+- **We are shallow.** `TRANSFORMER_N_LAYERS = 2` is the default in `arch_constants.py` (production runs `--trunk-layers 3`), and every MLP is 2 layers
   (`ROLE_ENCODER_HIDDEN = [256,128]`, `MOVE_NET_HIDDEN = [96,32]`). Dying-ReLU compounds with
   depth; at 2 layers there is very little to compound.
 - **LayerNorm is everywhere.** Post-LN transformer blocks (`norm_first=False`,
@@ -201,8 +213,8 @@ a sign encoded across a distributed subspace rather than a clean pair.
 generation without confounding it, so "cheap to try later" is not on the table. Re-run both probes
 if the activation ever changes; they are the pre-registered metrics.
 
-There is also a historical note worth keeping: `model_version.py:326` records that the retired FiLM
-conditioning generators were zero-init and applied **post-projection, pre-ReLU**. A modulation
+There is also a historical note worth keeping: the version-migration record (`model_version/migrations.py`, v78) names the deleted FiLM
+conditioning generators, which were zero-init and applied **post-projection, pre-ReLU**. A modulation
 signal starting at exactly zero has to grow through the ReLU's gate, and the gate is closed on
 whichever channels are currently negative. That is a mechanistically plausible contributor to the
 FiLM line's null results — but the conditioning work has a *separate*, measured explanation (see
@@ -215,17 +227,17 @@ The full route from trunk to action logits is not "ReLU trunk → pointer head".
 
 ```
 trunk blocks .............. ReLU          (team_transformer.py: BiasedEncoderLayer / TeamTransformer)
-extractor OUTPUT .......... ReLU          (:3223, applied :4009-4010)   → pi_features ≥ 0
+extractor OUTPUT .......... ReLU          (extractor_build.py `self.activation`)   → pi_features ≥ 0
 SB3 mlp_extractor ......... Linear(512) tanh  Linear(512) tanh          → latent_pi ∈ [-1,1]
-pointer head .............. tanh          (:2374)  → zero-init scorer   → 11 logits
+pointer head .............. tanh          (pointer_head.py)  → zero-init scorer   → 11 logits
 ```
 
-The middle stage is the one nobody chose. `train_rl_agent.py:3766` builds `policy_kwargs` with
-`net_arch` and the extractor kwargs, and **no `activation_fn`** — so
-`MaskableActorCriticPolicy`'s signature default (`activation_fn: type[nn.Module] = nn.Tanh`,
-`sb3_contrib/common/maskable/policies.py:51`) applies. That is the classic PPO/MuJoCo default and
+The middle stage is the one nobody chose. Until 2026-08-16 the policy build passed `net_arch` and the extractor kwargs but **no `activation_fn`** — so
+`MaskableActorCriticPolicy`'s signature default (`activation_fn: type[nn.Module] = nn.Tanh`, in
+sb3_contrib's `common/maskable/policies.py`) applied. That is the classic PPO/MuJoCo default and
 is a well-tested choice for on-policy control, but it arrived here by omission rather than by a
-decision about *our* discrete, 11-action, heavily-structured policy.
+decision about *our* discrete, 11-action, heavily-structured policy. It is now pinned to the same function
+as `POLICY_ACTIVATION_FN` (`agents/model/policy.py`), still undecided on the merits.
 
 The structural observation that follows: between the trunk and the logits the signal passes
 through **one one-sided stage and three saturating ones**. Nothing about that is known to be
@@ -266,18 +278,18 @@ comparison* (tanh).
 In the `DamageOperator` and the belief heads, the nonlinearity **is the quantity**, and swapping it
 would be a physics bug, not a tuning change:
 
-- `torch.sigmoid(move_belief_logits)` (`damage_op.py:589`, `:1756`) — a per-move **probability** the
+- `torch.sigmoid(move_belief_logits)` (`damage_op.py`) — a per-move **probability** the
   opponent carries that move. Sigmoid because independent multi-label, not softmax.
-- `sigmoid((our_spe - opp_spe) / (opp_spe_std / 1.702))` (`damage_op.py:763`) — a deliberate
+- `sigmoid((our_spe - opp_spe) / (opp_spe_std / 1.702))` (`damage_op.py`; the constant is `_DMG_SPEED_STD_K` in `damage_op_layout.py`) — a deliberate
   **normal-CDF approximation**; the `1.702` is the constant that makes a logistic match a Gaussian.
   This is not "an activation", it is `P(we outspeed)` under speed uncertainty.
-- The damage clamps (`_DMG_CHIP_CAP`, `:656-659`) — **physical bounds** on a damage roll as a
+- The damage clamps (`_DMG_CHIP_CAP`) — **physical bounds** on a damage roll as a
   fraction of max HP.
-- `log_softmax` for species posteriors (`t0_species.py:85`) — and note the `gen3_species_posterior_spelling_v1`
+- `log_softmax` for species posteriors (`t0_species.py`) — and note the `gen3_species_posterior_spelling_v1`
   rule there: it must be spelled `log_softmax(...).exp()` and never `torch.softmax`, because
   Inductor's CPU backend cannot codegen the latter. Nonlinearity choice interacts with the compile
   path.
-- `F.relu(target - std)` in `belief_bank.py:302` — a VICReg **hinge**, i.e. `max(0, ·)` used as a
+- `F.relu(target - std)` in the belief bank (`agents/training/belief_bank.py`) — a VICReg **hinge**, i.e. `max(0, ·)` used as a
   one-sided penalty. Not an activation at all; the name is a coincidence.
 
 Anyone doing a global find-and-replace of `ReLU` would break the first tier and leave the third
@@ -291,14 +303,14 @@ untouched only by luck. The tiers must be edited by hand.
 |---|---|---|
 | Transformer FFN (trunk) | `team_transformer.py` — `TeamTransformer` (post-LN) | ReLU |
 | Edge-bias encoder-layer clone | `team_transformer.py` — `BiasedEncoderLayer` | ReLU |
-| `MoveLatentEncoder` MLP | `encoders.py` — `MoveLatentEncoder` | ReLU |
+| `MoveLatentEncoder` MLP (the pre-static-token encoder) | `encoders.py` — `MoveLatentEncoder` | ReLU |
 | Shared move network | `encoders.py` — `PokemonEncoder.move_network` | ReLU |
-| Per-mon role encoder | `encoders.py` — `PokemonEncoder.role_encoder` | ReLU |
+| Per-mon role encoder | `encoders.py` — `PokemonEncoder.role_encoder`; production's static-token twin is in `static_tokens.py` | ReLU |
 | Value head / `WinProbHead` bottleneck | `aux_value_heads.py` — `WinProbHead` / `ValueDistHead` | ReLU |
-| **Extractor output projection** | `features_extractor.py` — `self.activation`, applied in `forward` | ReLU |
-| **SB3 policy/value tower `[512,512]`** | `train_rl_agent.py:3766` (no `activation_fn` passed) | **tanh** (SB3 default) |
+| **Extractor output projection** | `extractor_build.py` — `self.activation`, applied in the extractor's forward | ReLU |
+| **SB3 policy tower `[512,512]`** | `policy.py` `POLICY_ACTIVATION_FN`, passed by the model build | **tanh** (the SB3 default, pinned) |
 | **Pointer (action) head** | `pointer_head.py` (`PointerNativeActionHead`) | **tanh** |
-| `OppIntent` / `PairReduce` / team-completion MLPs | `opp_intent.py:72`, `pair_reduce.py:77`, `team_completion_model.py:134` | ReLU |
+| `OppIntent` / `PairReduce` / team-completion MLPs | `opp_intent.py`, `pair_reduce.py`, `team_completion_model.py` | ReLU |
 | Damage op, belief posteriors, attention | `damage_op.py`, `t0_species.py`, everywhere | sigmoid / softmax / clamp |
 
 Relevant constants (`arch_constants.py`): `D_MODEL = 128`, `TRANSFORMER_N_LAYERS = 2`,
@@ -310,18 +322,18 @@ Relevant constants (`arch_constants.py`): `D_MODEL = 128`, `TRANSFORMER_N_LAYERS
    identical, so `model_config.json` / `check_compatible` (`agents/model/snapshot.py`) will
    **not** catch it — an old checkpoint would load cleanly into a network computing a different
    function, with no `[ModelVersion] FATAL`. Any such change must bump `ARCH_SIGNATURE`
-   (`model_version.py:1011`) deliberately, exactly as the model-versioning playbook in
-   `src/agents/model/CLAUDE.md` requires for a structural change.
+   (`model_version/constants.py`) deliberately, exactly as the model-versioning playbook in
+   `designs/model/versioning.md` requires for a structural change.
 
-   Sharpened: `ModelVersion.from_layout_and_policy_kwargs` records
-   `net_arch=list(policy_kwargs.get("net_arch", NET_ARCH))` (`model_version.py:1461`) and **no
+   Sharpened: `ModelVersion.from_layout_and_policy_kwargs` (`model_version/construct.py`) records
+   `net_arch` and **no
    activation field at all** — so the tower's shape is versioned while its nonlinearity is not.
-   A corollary worth knowing: because we never pass `activation_fn`, an SB3/sb3-contrib upgrade
-   that changed that default would silently change 4 layers of the live policy, and no gate in
-   this repo would notice. Passing `activation_fn=nn.Tanh` explicitly would pin today's behaviour
-   at zero behavioural cost — a cheap defensive change independent of any decision to swap.
-2. **It must re-pass the compile gates.** `--compile-opponents` (the measured 6.53× B=1 CPU
-   forward) and `--compile-trainer` (1.75× on the PPO step) both depend on Inductor lowering the
+   A corollary that motivated the pin: had we kept relying on the default, an SB3/sb3-contrib upgrade
+   that changed it would have silently changed 4 layers of the live policy, and no gate in
+   this repo would notice. Passing `activation_fn=nn.Tanh` explicitly now fixes new models' behaviour
+   at zero behavioural cost; a checkpoint written before the pin still takes the installed default on resume.
+2. **It must re-pass the compile gates.** The offline compiled CPU opponent (the measured 6.53× B=1 CPU
+   forward; its trainer-side `--compile-opponents` path was deleted, deletion pass U3) and `--compile-trainer` (1.75× on the PPO step) both depend on Inductor lowering the
    whole graph. GELU lowers fine in general, but this graph already has two known Inductor
    refusals (the damage op's `atomic_add` scatter on the C++ backend; `torch.softmax` on the last
    dim). `extractor_compiles_test.py` is the default-on gate.
@@ -371,7 +383,7 @@ gradient-preserving nonlinearity (ReLU); the action scorer takes a bounded signe
 the damage op and belief heads take whichever function *is* the quantity being computed (sigmoid,
 softmax, clamp)** — where it is not a hyperparameter at all. The one part of that split we did not
 author is the SB3 tower's tanh, which is a default rather than a decision; the cheap first move
-there is to pin it explicitly, not to change it.
+there (pin it explicitly, do not change it) has been made (`POLICY_ACTIVATION_FN`).
 
 ## See also
 

@@ -1,12 +1,24 @@
 # Reading the Latent-Belief SimSiam Metrics (and What Collapse Looks Like)
 
+> **Correction (2026-10-25): the SimSiam latent-belief head this note reads was deleted at v75.**
+> `opp_belief_latent`, `--opp-belief-latent-coef`, the `BeliefHead` latent predictor, the `belief_target_slots`
+> training-only obs key and the `belief/latent_*` metrics were removed (`designs/CHANGELOG.md` v75;
+> `src/agents/model/model_version/migrations.py`; `designs/deleted_flags.md`): the head was never fed forward (a
+> side readout with no path into `pi` or `vf`), cost about 13% of the train step, and its own probe had found
+> "decodable does not mean helps". What survives of the belief stack is the species / moves cross-entropy
+> `BeliefHead` readout and the hypothesis tokens (`designs/ARCHITECTURE.md`, the belief sections). Read this note as
+> a **teaching record of the 2026-07 `ai_v6_13` run** (v18-era head): the collapse theory, the matched-minus-mismatched
+> `above_chance` trick, and the "std falling while discriminability rises is sharpening" reading transfer to any
+> future non-contrastive self-supervised head; the metric names, constants and the "where it lives" section describe
+> a head that no longer exists. The tense below is the 2026-07 present.
+
 > **What this is.** A durable explainer for how to read the `belief/latent_*` metrics our
 > latent-belief head emits — specifically why `latent_cosine_above_chance` rises *continuously*
 > while `latent_std` traces an *inverted-U*, and how to tell a healthy run from a collapsing one.
 > Self-supervised (SimSiam-style) representation learning has a famous failure mode — **collapse**
 > — and these two metrics are the two complementary detectors for it. Written to teach: intuitive
-> first, then technical, no code. Grounded in the v18 latent head (`--opp-belief-latent-coef`) and
-> the live `ai_v6_13_outgoing_dmg_0620` run.
+> first, then technical, no code. Grounded in the (deleted) v18 latent head (`--opp-belief-latent-coef`) and
+> the then-live `ai_v6_13_outgoing_dmg_0620` run.
 
 ---
 
@@ -107,7 +119,7 @@ losses. Because it's anchored to a real task it can't drift to a trivial constan
 collapse resistance without BYOL's momentum-encoder machinery — the stop-grad + VICReg floor are
 the "belt and braces."
 
-### The live decomposition (ai_v6_13, 0 → 73M steps)
+### The decomposition as measured (ai_v6_13, 0 → 73M steps, 2026-07)
 
 | Metric | Early | Late | Shape |
 |---|---|---|---|
@@ -321,9 +333,11 @@ decorrelate dims). We use **Variance + Invariance** but **not Covariance**.
 
 ---
 
-## Where this lives in our architecture
+## Where this lived in our architecture (deleted at v75)
 
-- **Model side (`src/agents/model/CLAUDE.md` → LATENT belief, v18).** `BeliefHead` carries an
+Everything in this section is **history**: none of these flags, keys, loss terms or metrics exist now (v75).
+
+- **Model side (v18-v74; the `src/agents/model/CLAUDE.md` section is gone).** `BeliefHead` carries an
   asymmetric SimSiam predictor MLP; each believed slot's refined transformer token is regressed
   (cosine) toward the **stop-grad `pokemon_encoder` role-token** of the true hidden mon. Gated by
   `--opp-belief-latent-coef > 0`, which **requires `--opp-belief-aux-coef > 0`** (it rides the
@@ -336,8 +350,8 @@ decorrelate dims). We use **Variance + Invariance** but **not Covariance**.
   `obs["observation"]`, so the omniscient target can't leak. Fuzz-guarded
   (`poke_env_gaps/belief_target_fuzz_test.py`: target == an independent fresh encode of the actual
   hidden mon).
-- **Loss + metrics (`src/agents/training/CLAUDE.md` → Latent-belief loss;
-  `instrumented_ppo._belief_aux_loss`).** On the species-CE Hungarian assignment, the latent term =
+- **Loss + metrics (the old `src/agents/training/CLAUDE.md` latent-belief section;
+  `instrumented_ppo._belief_aux_loss`, which now carries only the species / moves terms).** On the species-CE Hungarian assignment, the latent term =
   mean cosine distance to the matched stop-grad target + the VICReg floor; folded at
   `opp_belief_latent_coef`. Constants `_LATENT_STD_TARGET = 1.0`, `_LATENT_VICREG_WEIGHT = 1.0`. All
   `belief/latent_*` metrics defined above; the trunk pull is broken out as **`grad/latent_share`**
@@ -377,13 +391,9 @@ not that it **helps** — only an A/B settles that.
 
 ## See also
 
-- `src/agents/model/CLAUDE.md` → **LATENT belief (v18)** — the SimSiam predictor, stop-grad
-  task-anchored target, VICReg floor, the `std→0 while cosine→1 = collapse` NO-GO.
-- `src/agents/training/CLAUDE.md` → **Latent-belief loss (`--opp-belief-latent-coef`)** — the loss,
-  every `belief/latent_*` metric, the `cosine_baseline` / `above_chance` interpretability anchor,
-  and `grad/latent_share`.
-- Root `CLAUDE.md` → Feature Extractor Architecture (belief heads, the `--opp-belief-latent-coef`
-  SimSiam latent predictor) and Model Versioning (v18).
+- `designs/CHANGELOG.md` v75 ("the SimSiam LATENT belief is deleted": the cost table and the reasons) and v18 (its
+  introduction); `designs/deleted_flags.md` (`--opp-belief-latent-coef`).
+- `designs/ARCHITECTURE.md` — the belief stack as it is now (hypothesis tokens, the species / moves `BeliefHead`).
 - `designs/learning/marginalization_and_uncertainty.md` — the *other* belief-head concept (how a
   net carries/marginalizes uncertainty); this note is the *diagnostics* companion (how to read
   whether a self-supervised belief head is actually learning vs collapsing).

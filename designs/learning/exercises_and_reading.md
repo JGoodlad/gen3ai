@@ -1,5 +1,12 @@
 # Learning Exercises & Reading Plan
 
+> **Correction (2026-10-25):** these exercises were written against the ai_v8-era model. Four things they call
+> "your" or "the next build" no longer exist: the SimSiam latent belief head (deleted v75), the value-dist head
+> (v131), the public-info value head and its calibration artifact (`--pubval-mode`, deleted v88), and the
+> `tmp/` scripts they cite. The exercises themselves are toy builds and stay valid as study material; where one
+> says "against your real trunk", use today's win-prob critic (`aux_value_heads.py` `WinProbHead`; the model as it
+> is: `designs/ARCHITECTURE.md`) and the belief heads (`belief_heads.py`).
+
 A guided, LLM-assisted self-study plan for the imperfect-information / value-function / metric-learning
 cluster relevant to gen3ai. Sibling to `rl_concepts_studyguide.md` (glossary) and
 `pbs_value_functions_and_search.md` (theory narrative).
@@ -78,10 +85,10 @@ cluster relevant to gen3ai. Sibling to `rl_concepts_studyguide.md` (glossary) an
 
 - **Goal:** add a supervised aux head reading the shared trunk, trained on a label; verify it (a) learns,
   (b) enriches the shared representation, (c) is leak-safe and OFF-byte-identical.
-- **Context:** the pattern behind your belief / win-prob / value-dist heads **and** the public-info value head
-  (`design_public_info_value.md`) — the next real build. Understand this and the public-value integration is
-  mechanical.
-- **Read:** your own `belief_head` / `win_prob_head` code (the in-repo pattern is the best reference);
+- **Context:** the pattern behind your belief / win-prob heads (and, historically, the value-dist head) **and** the
+  public-info value head (`design_public_info_value.md`, a closed ai_v8 design; its subsystem was deleted at v88).
+  Understand this and any such aux-head integration is mechanical.
+- **Read:** your own `belief_heads.py` / `aux_value_heads.py` (`WinProbHead`) code (the in-repo pattern is the best reference);
   Jaderberg et al. 2016, *UNREAL* (auxiliary tasks in RL); the "interpretability by construction" section of
   the concept glossary; the soundness rule in `pbs_value_functions_and_search.md` §9.
 - **Do:** add a toy aux head predicting a *known* board feature (e.g., turn count, or spikes-count) on the
@@ -98,13 +105,13 @@ cluster relevant to gen3ai. Sibling to `rl_concepts_studyguide.md` (glossary) an
 
 - **Goal:** implement the losses that pull a *predicted* latent toward the *correct/nearest* item in an
   embedding space, and understand the collapse problem: cosine-to-target (SimSiam-style) vs triplet vs InfoNCE.
-- **Context:** your **latent belief head already does this** (predict a slot's refined token → cosine toward the
+- **Context:** your **latent belief head did this** (deleted at v75; predict a slot's refined token → cosine toward the
   stop-grad `pokemon_encoder` role-token of the *true* hidden mon, VICReg floor to avoid collapse). This
   exercise makes that machinery legible and generalizes it to the future **team/failure latent + KNN retrieval
   curriculum** (`design_curriculum_uncertainty.md`).
 - **Read:** Schroff et al. 2015, *FaceNet* (triplet loss); van den Oord et al. 2018, *CPC* (InfoNCE); Chen et
   al. 2020, *SimCLR*; Chen & He 2021, *SimSiam*; Grill et al. 2020, *BYOL*; Bardes et al. 2021, *VICReg*
-  (collapse prevention); and your own latent-belief head code.
+  (collapse prevention); and the deleted latent-belief head (a closed result, see `latent_belief_metrics_and_collapse.md`).
 - **Do:** on a toy embedding, implement (a) **cosine-to-target** regression (SimSiam-style: predictor +
   stop-grad target); (b) **triplet** (anchor / positive / negative, margin); (c) **InfoNCE** (contrast the
   positive against a batch of negatives). Then **reproduce latent collapse** (everything → one point) and
@@ -122,8 +129,8 @@ cluster relevant to gen3ai. Sibling to `rl_concepts_studyguide.md` (glossary) an
 
 - **Goal:** compute AUC, a reliability curve, and the Murphy decomposition on a predictor; internalize why
   *discrimination (AUC)*, not calibration, is the value-quality metric.
-- **Context:** the star metric of the whole value-function thesis; you already have the AUC-by-style script
-  (`tmp/calibration_explore.py`) and the public-value leakage guard (`tmp/pubval_experiment.py`).
+- **Context:** the star metric of the whole value-function thesis; there was an AUC-by-style script
+  (`tmp/calibration_explore.py`) and a public-value leakage guard (`tmp/pubval_experiment.py`); neither is in the tree.
 - **Read:** the calibration/discrimination section of the concept glossary + §2 of the theory doc; any
   reliability-diagram / Brier-decomposition reference (Murphy 1973).
 - **Do:** on the public-value predictor (or the critic traces), plot AUC, a reliability diagram, AUC by

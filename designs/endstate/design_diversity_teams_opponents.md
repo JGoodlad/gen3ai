@@ -1,6 +1,6 @@
 # Diversity of training: our teams, the opponents' teams, the opponents, and the evaluation sets
 
-**Status: DESIGN 2026-10-18 (owner request; planning input; X37a stages 1 and 2 READ 2026-10-18, §0, §3, §5.2).** §5 was REWORKED the
+**Status: DESIGN 2026-10-18 (owner request; planning input), PARTLY EXECUTED as of 2026-10-25: X37a stages 1 and 2 READ 2026-10-18 (§0, §3, §5.2); X37b READ 2026-10-19 (H1 UNDECIDED); D1 (X38) RAN and READ 2026-10-24 (FINAL): UNDECIDED, H +2.10 pp [-0.92, +5.11], P -1.61 [-2.90, -0.32] (ledger L28471); D3 (X41) BUILT and REGISTERED 2026-10-25, LAUNCHED the same day as `rb_x35_d3mut_s3501` (look 1, no read yet). D2, D4, D5 and D7 (X39, X40, X42, X43) have no ledger read.** §5 was REWORKED the
 same day into an EVALUATION MATRIX on the owner's input. Two zero-game, post-hoc, descriptive reads were run for it:
 D0a (§2.4) and the ladder resemblance with its strata weights (§5.0). ALWAYS-CURRENT (owner, 2026-09-27): a later decision,
 build or measurement that differs updates this doc in the same commit, and the Decision record (§11) says what
@@ -767,8 +767,8 @@ pin-safe), plus ≈ 13 GPU-h for the arm.
 **Rank.** Below D1. D1 uses real human sets. D3 is the fallback if D1 reads TRADE with a large in-pool cost, or the
 alternative if W_hl's repair fails validation at scale.
 
-**BUILT 2026-10-25 as (a), set resampling: X41 / D3** (`x41_d3_setmut_2026-10-25/PREREG.md`; not launched, the GO is
-the orchestrator's).
+**BUILT 2026-10-25 as (a), set resampling: X41 / D3** (`x41_d3_setmut_2026-10-25/PREREG.md`; launched 2026-10-25 as
+`rb_x35_d3mut_s3501`, look 1).
 - **The corpus `d3_setmut_v1`** (`src/utils/team_corpora/`, `python -m utils.team_corpora.build_d3_setmut [--check]`,
   deterministic): 4 variants of each of the 719 pool teams, so 2,876 teams.
   - Each variant redraws k ∈ {1, 2} mons (uniform) from the Smogon priors: 4 moves by P(move in set), the item, and
@@ -1503,3 +1503,4 @@ held-out gain and in-pool cost, is the right design. Three amendments:
 | 2026-10-22 | **AM-D1-FIX: the corpus refuses teams the env's label path cannot encode; D1 gets a corpus-only pin** (corpus label-guard worker, orchestrator brief, after D1 s3501's crash loop) | builder rule `level` (Showdown's packed level ≠ 100) applied LAST, after the curator cap, plus a `format` rule; the reader's throwing guard (`load_dir`); `w_forum_v1` 1,982 → **1,981** (only `sfv2_5051`, L5, tier C; the source's other two non-100 teams had already left at `engine_unplayable` / `panel`); soak v2 declares every core label family (19,810 battles, 0 core errors); D1's pin = `f4b25238` + the one corpus-only commit (`batch.D1_PIN`, `pin-check --arm d1`) | the `level` drop before the cap (it re-permutes tier C: 197 teams swapped, measured); relaunching D1 at a new main HEAD (its trainer code would differ from C0's at `f4b25238`); skipping the bad team at draw time (a silent per-draw filter instead of a guard) | launch sheet §0 AM-D1-FIX; `w_forum_v1/manifest.json` `label_guard`; `team_corpora_test.py`, `batch_test.py` |
 | 2026-10-19 | **AM-5: D1's H interval WIDENED for seed overdispersion** (X35 amendment worker; the orchestrator's ruling on the batch-1 review F-RV-5, before any D1 data) | each Newcombe half-width × √max(1, φ̂), φ̂ = the mean over arms of the between-seed variance of the per-seed panel means over its binomial expectation (df 2(n−1)); classes on the widened interval; self-check 11 / 11 | the pooled-binomial interval (8–21 % false GAIN at a seed SD of 2–4 pp); a t-quantile on φ̂'s df (the amendment scales the half-widths, as the review simulated) | `main.x35.d1.overdispersion`; `selfcheck.check_d1_overdispersion`; `X35_BATCH1_REVIEW.md` F-RV-5 |
 | 2026-10-25 | **D3 (§4.5 (a), X41) BUILT and registered** (training-lever builder, orchestrator brief) | an offline set-mutation corpus `d3_setmut_v1` (2,876 = 719 pool teams × 4; k ∈ {1, 2}; Smogon priors only; HP by the L1 repair; validator; no held-out-panel neighbour), the lever `--team-mix d3_setmut_v1@ALL:0.3 --team-mix-sides both`, its own corpus-only pin (D1's pattern) and D1's readout rule | per-episode resampling in the trainer (a trainer build, so C0's code would differ); excluding home72 / away cores (they are the lever's target); (b) / (c) (separate levers) | `x41_d3_setmut_2026-10-25/PREREG.md` |
+| 2026-10-25 | Status line made true (docs-health pass) | the 10-18 status stopped at X37a stage 2; the Decision record above already holds X37b (10-19), D1's launch-readiness and D3's build (10-25), and ledger L28471 holds D1's FINAL read; the status now says which arms ran and which have no read | the old line | this Decision record; `ledger_index.md` L28471; `EXPERIMENT_BACKLOG.md` DV-1 to DV-10 |

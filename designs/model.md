@@ -1,5 +1,12 @@
 # model.md — Running log of the Gen3AI model
 
+> **SUPERSEDED / HISTORY (2026-10-25):** a log that stopped running on 2026-08-04, over a "Current state"
+> table dated 2026-06-17 (obs dimension, architecture signature and config version all long since replaced). Do
+> not read any row here as the model today, and do not append to it: the "How to keep it" paragraph below is void.
+> What the model is now: [`ARCHITECTURE.md`](ARCHITECTURE.md); the version and signature constants:
+> `src/agents/model/model_version/`; how it got here: [`CHANGELOG.md`](CHANGELOG.md) and
+> [`research_state/ledger.md`](research_state/ledger.md).
+
 **What this is.** A curated, dated journal of the *model's* architecture + research state — the
 "what's going on with the network" that's otherwise scattered across `CLAUDE.md` version notes,
 `src/agents/model/CLAUDE.md`, the per-feature `designs/ai_v6/design_*.md`, the memory files, and

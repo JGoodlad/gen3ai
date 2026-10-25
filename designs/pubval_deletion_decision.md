@@ -1,5 +1,13 @@
 # V_pub (`--pubval-mode` / `--pubval-coef` + `PubValHead`) — deletion decision package
 
+> **SUPERSEDED / HISTORY (2026-10-25):** the decision was taken and the subsystem is DELETED. The "NOT DELETED"
+> status line below is the state of the v78 batch, not of the tree: `--pubval-mode` and `--pubval-coef` were removed
+> at v88 (`gen3_dead_flag_purge_v1`) with `agents.training.pubval`, the pubval head, its loss and the calibration
+> artifact; none of those exists now (rows in [`deleted_flags.md`](deleted_flags.md), which also records the
+> measured NULL; the version break lives in `src/agents/model/model_version/`). Kept for the evidence only; the
+> scratch experiment is [`ai_v8/design_public_info_value.md`](ai_v8/design_public_info_value.md). What the model
+> is now: [`ARCHITECTURE.md`](ARCHITECTURE.md).
+
 **Status: NOT DELETED. Prepared for owner decision, deliberately kept out of the v78 batch.**
 
 The v78 flag-surface cleanup (`gen3_flag_surface_p1_v1`) deleted two closed research lines. V_pub was

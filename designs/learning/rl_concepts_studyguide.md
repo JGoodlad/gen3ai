@@ -2,7 +2,14 @@
 
 A brush-up reference for the concepts behind the gen3ai diagnosis and roadmap. For each: the
 **intuition**, the **technical** version, and **where it bit us** (the connection to this project).
-Companion to `designs/ai_v8/design_curriculum_uncertainty.md` and `design_opponent_system_parity.md`.
+Companion to `designs/ai_v8/design_curriculum_uncertainty.md` (a closed-chapter record).
+
+> **Correction (2026-10-25):** this guide teaches concepts; its "where it bit us" lines are the ai_v7/ai_v8-era
+> diagnosis and are history, not the current model. Machinery named in them that no longer exists: FiLM / z_arch
+> conditioning (deleted v78), the OPD and search-teacher distillation losses (`--search-teacher`, `--distill-*`,
+> deleted v133), team-PFSP (v134), PopArt (v131). A second companion design doc (on opponent-system parity), once cited
+> here, is not in the tree. The current model is described in `designs/ARCHITECTURE.md`; the
+> research state in `designs/research_state/UNDERSTANDING.md`.
 
 ---
 
@@ -120,13 +127,13 @@ Companion to `designs/ai_v8/design_curriculum_uncertainty.md` and `design_oppone
 
 **MuZero vs AlphaZero** — MuZero *learns* the dynamics and plans in latent space (rules unknown/expensive); AlphaZero searches the *real* rules. With a fast exact sim → AlphaZero-with-a-real-model, not MuZero.
 
-**Expert Iteration (ExIt) / search-as-teacher / distillation** — slow search makes better decisions → train the fast net to imitate → repeat. Your search-teacher / OPD machinery.
+**Expert Iteration (ExIt) / search-as-teacher / distillation** — slow search makes better decisions → train the fast net to imitate → repeat. Your search-teacher / OPD machinery (deleted at v133; the idea, not the code, is what this entry teaches).
 
 **Rollout-to-terminal vs value-bootstrap** — MC return: unbiased under the rollout policy, high-variance, policy-dependent. Bootstrap `V_θ`: low-variance, biased. Rollouts for *training targets*, bootstrap for *search leaves*. (The "sim is µs but policy is ms" correction.)
 
 **CRN (common random numbers)** — replay counterfactual actions under the *same* dice → luck cancels in the difference. The prober's `falsify`/`lookahead`; the deterministic sim's superpower.
 
-**AWR / KL distillation** — AWR: `-E[exp(A/β)·log π]` (advantage-weighted imitation). KL: `KL(π_target‖π_θ)` (match the whole distribution). Search-teacher uses AWR toward A*; OPD uses KL toward π'.
+**AWR / KL distillation** — AWR: `-E[exp(A/β)·log π]` (advantage-weighted imitation). KL: `KL(π_target‖π_θ)` (match the whole distribution). The (deleted, v133) search-teacher used AWR toward A*; OPD used KL toward π'.
 
 ---
 
@@ -152,11 +159,11 @@ Companion to `designs/ai_v8/design_curriculum_uncertainty.md` and `design_oppone
 
 **Transformers / attention / tokens / CLS pooling** — tokens (mons + history + global) attend `softmax(QK^T/√d)V`; a learned CLS query pools to a fixed vector. Your ~20-token trunk.
 
-**FiLM (Feature-wise Linear Modulation)** — a context (archetype) retunes features: `γ(c)⊙h+β(c)`. Cheap conditional computation → give the defensive "mode" its own effective params.
+**FiLM (Feature-wise Linear Modulation)** — a context (archetype) retunes features: `γ(c)⊙h+β(c)`. Cheap conditional computation → give the defensive "mode" its own effective params (our head FiLM was built in v44 and deleted at v78 after a NULL result; see `conditioning_architectures.md`).
 
 **MoE / routing / shared-expert isolation** — router gates over experts, top-k active; a shared always-on expert holds common structure so routed experts specialize (DeepSeek). Learned experts ≠ human categories.
 
-**Multi-task / negative transfer / gradient interference** — joint objectives can conflict (negative gradient cosine on shared weights). The `--belief-grad-mode detached` rationale; the OPD interference fingerprint.
+**Multi-task / negative transfer / gradient interference** — joint objectives can conflict (negative gradient cosine on shared weights). The `--belief-grad-mode detached` rationale; the (historical) OPD interference fingerprint.
 
 **Compute-vs-learn principle** — compute exact physics (differentiable damage op) rather than learning it; only learn the uncertain (belief) part. The DamageOperator + the "does it need to be differentiable" debate.
 

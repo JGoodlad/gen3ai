@@ -4,6 +4,18 @@
 bootstrapped critic's errors propagate. Intuition first, then the machinery, grounded in our
 measured record.*
 
+> **Correction (2026-10-25):** the critic this note was written about (the shaped scalar value, MSE on a
+> +-30 return at gamma 0.9999, bootstrapped, with PopArt and a distributional head) is gone. PopArt and the
+> distributional head went at config v131, `--td-aux-coef` at v135, and the offline counterfactual label stack
+> (`--q-top-n`, the twin / evidential / Q heads) at v134 and the 2026-10-08 producer deletion; the whole list is
+> in `designs/deleted_flags.md`. The only critic is now the win-prob critic: `sigmoid(win_head(value_pooled))`
+> in [0, 1], trained by BCE against the terminal win indicator at `--vf-coef` (0.5), gamma 1.0
+> (`designs/ARCHITECTURE.md` § "WHICH readout is the critic"). Its target is the terminal outcome, not a
+> bootstrap of itself, so the "bootstrap error propagation" and "TD-aux" paragraphs below teach what the old
+> critic did (read them in the past tense); the GAE lambda dial still governs the POLICY's advantages
+> (`--policy-gae-lambda`, 0.80). The failure-cause map, the readout finding of section 4 and the measured
+> numbers stand as dated history.
+
 ## 1. Intuitive: one bit, forty decisions
 
 A battle ends win or lose: ~1 bit of ground truth spread across ~40 decisions. Reinforcement
@@ -33,25 +45,27 @@ is that protection.
 built FROM ITSELF (`r + γV(s′)`). An error at state s′ becomes a wrong target for s, which
 becomes a wrong target for the state before it: value errors travel BACKWARD through time, and a
 systematic bias (e.g. over-valuing boards with a live sweeper behind) self-reinforces until some
-ground truth (a terminal) interrupts it. This is why the TD-aux line (ledger C5) is a
+ground truth (a terminal) interrupts it. This is why the TD-aux line (ledger C5, `--td-aux-coef`, since deleted) was a
 *consistency* pressure — it makes the critic agree with itself along real transitions — and why
-its measured ceiling is exactly what theory predicts: **consistency suppresses noise but cannot
+its measured ceiling was exactly what theory predicts: **consistency suppresses noise but cannot
 create signal**. A critic can be perfectly self-consistent and consistently wrong.
 
-**Scale arbitration on a shared trunk.** With γ≈0.9999 the returns run to ±hundreds, and the
-value MSE gradient can swamp the shared trunk (the measured `grad/value_policy_logratio`
-pathology). PopArt is the fix in production: the head trains in normalized space and the POP
-rescale keeps the de-normalized function unchanged. `vf_coef` is the residual arbitration knob —
+**Scale arbitration on a shared trunk.** In the shaped-critic era, with γ≈0.9999 the returns ran to
+±hundreds, and the value MSE gradient could swamp the shared trunk (the measured
+`grad/value_policy_logratio` pathology). PopArt was the fix then: the head trained in normalized space
+and the POP rescale kept the de-normalized function unchanged. The win-prob critic removed the problem
+(a [0, 1] probability has no return scale), leaving `--vf-coef` as the arbitration knob —
 resume-immutable because silently changing the actor/critic gradient ratio mid-run changes what
 the trunk is FOR.
 
-**What distributional heads buy — and what they measurably did not buy here.** A return
-DISTRIBUTION makes tail risk visible (the awareness stack: `knew_by_turn`, `blind_loss`, the
+**What distributional heads bought — and what they measurably did not buy here (the head is deleted,
+config v131).** A return
+DISTRIBUTION made tail risk visible (the former prober awareness fields: `knew_by_turn`, `blind_loss`, the
 stall signature of bottom-atom mass under a positive mean — things a scalar V cannot express) and
-enables calibration audits (PIT: gen-10 read pit_mean 0.396, coverage80 0.44 vs nominal 0.80 —
+enabled calibration audits (PIT: gen-10 read pit_mean 0.396, coverage80 0.44 vs nominal 0.80 —
 optimistic AND overconfident). What it did NOT buy: a strength lever via tail-reweighting — the
 measured verdict is that our value residuals are sub-Gaussian, no heavy tail to re-weight. Ledger
-rule: the distributional head is an INSTRUMENT here, not a lever.
+rule at the time: the distributional head is an INSTRUMENT here, not a lever (and it was later deleted).
 
 **The instrument hierarchy** (the ledger's standing method): post-hoc ablation measures
 DEPENDENCE; lesion-eval measures HARM-AS-TRAINED; a training-time A/B measures CAUSATION. Value
@@ -79,8 +93,9 @@ traces; 3 vs 4 by whether a probe can decode the danger from the trunk while the
 misses it — decodable-but-unvalued ⇒ 3, undecodable ⇒ the fact never survived to the trunk.)
 
 Related notes: [`marginalization_and_uncertainty.md`](marginalization_and_uncertainty.md) (the
-distributional head's mean/support mechanics); PopArt and the reward composition live in
-`src/agents/model/CLAUDE.md` and `src/agents/training/CLAUDE.md`.
+distributional head's mean/support mechanics); PopArt is deleted
+(see `popart_value_scale_and_currencies.md`); the current critic is described in `designs/ARCHITECTURE.md` and the reward in
+`src/agents/training/CLAUDE.md`.
 
 ## 4. What the 2026-08-31 campaign settled about the critic (status as of 2026-09-01)
 
@@ -120,15 +135,15 @@ recovers 70% of the available crater improvement; an oracle over the bot's reply
 changes a decision, so the right objective is induced-policy regret, concentrated at the
 sigmoid's steep middle. But at the boundary, decision relevance and label NOISE arrive together
 (a 50/50 outcome is a coin), so "care more" must be implemented as MORE SAMPLES (re-seed,
-multi-rollout: the harvest's Beta-evidence priority, `--q-top-n`), never as larger per-sample
-weights, which amplify exactly the noise you cannot afford. `--value-tail-weight` is the
+multi-rollout: the harvest's Beta-evidence priority (`src/main/harvest.py`) and the deleted cf producer's `--q-top-n` cut), never as larger per-sample
+weights, which amplify exactly the noise you cannot afford. The deleted `--value-tail-weight` was the
 hand-rolled cousin of Emphatic TD's interest function; the meta-learned version stays shelved
 until a hand rule measurably underperforms.
 
 **And the fold does not fix it (M5).** Distillation moves the critic's off-slice *level*, not its
 *resolution*, in both eras; the policy is the mover. Whatever repairs the readout will come from
-the value target and its label supply (the counterfactual label factory, the twin/evidential/Q
-heads gated behind `gen3_cf_*` flags), not from teachers.
+the value target and its label supply (the counterfactual label factory and the twin / evidential / Q
+heads that were gated behind `gen3_cf_*` flags, both since deleted), not from teachers.
 
 **The question you can answer after this section:** *the head says 0.66 on a state whose true
 value is 0.91 — is that a capacity problem?* No: check whether a linear probe on `value_pooled`

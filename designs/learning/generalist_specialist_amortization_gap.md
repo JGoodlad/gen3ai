@@ -1,13 +1,25 @@
 # The generalist–specialist amortization gap (why our self-play net won't learn per-team play)
 
+> **Correction (2026-10-25): the diagnosis and the teaching stand; most of the LEVERS named below no longer exist.**
+> The mechanisms (averaged objective, credit assignment, coarse representation) and the 2026-07 measurements are
+> historical results on the ai_v7 generation and are not re-measured on the current model. What was deleted since:
+> the critic-side levers `--value-dist-mode` / `ValueDistHead`, `--value-tail-weight` and PopArt (v131, deletion pass
+> L1); the distillation levers `--opd-coef`, `--search-teacher` (+ AWR) and `--distill-*` (v133, L3); team-level PFSP
+> `--team-pfsp*` (v134, L4); and the archetype-conditioning family `z_arch` / FiLM, which was BUILT as lever 2 and
+> closed NULL (LUT arm +0.024, CI [-0.016, +0.064]; deleted v78, see [[conditioning_architectures]] and
+> [[self_discovered_archetype_latent]]). The current model is the static per-mon-token architecture with the win-prob
+> critic (`designs/ARCHITECTURE.md`, top table), which replaced the shaped scalar critic whose "tail-blindness" is
+> diagnosed here. What survives and can still be typed: `--exploiter`, `--pfsp-scale`, `--stable-opponents`,
+> `--trainee-team` (`designs/deleted_flags.md` lists the rest). Read every "we have" / "today" below as 2026-07.
+
 **TL;DR.** Our self-play generalist can *see* its own team (the obs carries the full 6-mon
 "Our team" block) and the trunk attends over it — so its inability to pilot a specific team
 expertly is **not** an obs or architecture bug. It's the **amortization gap**: one policy trained
-on a *distribution* of ~700 teams under an *averaged* objective, with a *tail-blind critic* and no
+on a *distribution* of ~700 teams under an *averaged* objective, with a *tail-blind critic* (the shaped critic of 2026-07) and no
 architectural pressure to specialize, converges to a coarse team-**agnostic** policy that plays
 every team adequately and none expertly. A specialist exploiter beats it not with a better team but
 by being a **dedicated per-team solution** (a fine-tune) that never has to *condition* at all.
-Measured proof it isn't conditioning: on the free axis (switching) behavior is flat ~30% across
+Measured (2026-07, ai_v7 generation) proof it isn't conditioning: on the free axis (switching) behavior is flat ~30% across
 archetypes; the equal-pilot mirror shows the generalist pilots a canonical SkarmBliss team to only
 0.375 vs the pool. The fix is credit-assignment / architecture / curriculum / distillation — not a
 wiring fix.
@@ -46,11 +58,11 @@ by construction.
 
 **2. Long-horizon team plans need a critic that can credit them — ours can't.** Reinforcing a 25-turn
 balance line requires the critic to assign rising value to *patient positional* moves (Spikes,
-Protect-to-scout, Toxic-then-stall) that pay off many turns later. Our critic is **tail-blind**
+Protect-to-scout, Toxic-then-stall) that pay off many turns later. The shaped scalar critic of that era was **tail-blind**
 (`td_resid_tail` stuck negative across runs; loss-analysis traces losses to critic tail-blindness on
 recovery/attrition coverage). If the critic under-values the patient line, the **policy gradient
 never credits it**, so the policy defaults to greedy immediate-value moves — precisely the "adequate,
-no long game" behavior.
+no long game" behavior. *(The win-prob critic that has since replaced the shaped critic was not re-measured for tail-blindness on this question: [unverified 2026-10-25].)*
 
 **3. The representation has collapsed coarse.** A rank probe found the 128-dim trunk runs in only
 **~3–5 effective dimensions** — far fewer than a policy conditioning on *(my archetype × opponent
@@ -60,7 +72,7 @@ the ai_v7_02-era trunk, not re-measured on ai_v7_14 specifically; _14 shares the
 
 ### Measured evidence it isn't conditioning (not theory)
 
-- **Equal-pilot mirror** (`tmp/team_matchup_mirror.py`, 2026-07-14): ai_v7_14 pilots a canonical
+- **Equal-pilot mirror** (a scratch script, no longer in the tree, 2026-07-14): ai_v7_14 pilots a canonical
   SkarmBliss team to only **0.375** vs the pool at equal skill — it genuinely pilots balance *poorly*
   (trap 0.483, CM-pass 0.383). See `project_exploiter_no_team_advantage`.
 - **Archetype competence gradient:** behavioral differences across teams are **mostly
@@ -74,32 +86,39 @@ the ai_v7_02-era trunk, not re-measured on ai_v7_14 specifically; _14 shares the
 
 ## Where this lives in our architecture
 
-- **Team is in the obs — no fix needed there.** `OFFSET_OUR_TEAM` → the "Our team (6 × 110)" block
-  (`src/agents/observation/state_encoder.py`). The 6 our-team tokens pass through `TeamTransformer`
-  alongside the 6 opp tokens into the CLS pools (`src/agents/model/features_extractor.py`), so both
-  the input and the attention path to *condition* already exist.
-- **Critic-side levers (the credit-assignment half):** `--value-dist-mode` (v29 `ValueDistHead`), the
-  tail-weighted value loss (`--value-tail-weight`), and the search-teacher AWR line
-  (`project_search_teacher`) all target valuing patient/long-horizon lines.
-- **Specialist-side levers:** `--exploiter` is a per-team fine-tune by construction; the league
-  fold-back and on-policy self-distillation (`--opd-coef`, `on_policy_self_distillation.md`) inject a
-  specialist's conditioning back into the generalist.
+- **Team is in the obs — no fix needed there.** `OFFSET_OUR_TEAM` → the "Our team" block, 6 per-mon
+  slots of `POKEMON_FULL_DIM` each (layout in `src/agents/observation/constants.py`; read it from
+  `Gen3ObservationEncoder.get_layout()`, never an offset; the row itself is written by the Rust
+  encoder). The model turns the 6 our-team slots into per-mon tokens that go through the trunk
+  (`TeamTransformer`, `src/agents/model/team_transformer.py`) alongside the 6 opp tokens and the board
+  tokens, so both the input and the attention path to *condition* exist.
+- **Critic-side levers (the credit-assignment half), all deleted:** `--value-dist-mode` (the v29
+  `ValueDistHead`) and the tail-weighted value loss (`--value-tail-weight`) went at v131; the
+  search-teacher AWR line (`--search-teacher`) at v133. All three targeted valuing patient /
+  long-horizon lines; the critic itself was then replaced by the win-prob critic.
+- **Specialist-side levers:** `--exploiter` is a per-team fine-tune by construction and is still a
+  flag. The league fold-back and on-policy self-distillation (`--opd-coef`, deleted v133;
+  [[on_policy_self_distillation]] keeps the teaching) injected a specialist's conditioning back into
+  the generalist.
 - **Data for a real fix exists:** `data/teams/gen3_team_archetypes.json` labels every pool team by
-  archetype — raw material for archetype-conditioned routing or archetype-aware sampling, neither
-  built yet.
+  archetype (719 teams, five classes, as of its 2026-07-11 generation; read the file's `meta`) — raw
+  material for archetype-conditioned routing or archetype-aware sampling. Both were tried and
+  deleted: team-level PFSP (`--team-pfsp`, v134) and the `z_arch` / FiLM conditioning (v78).
 
 ### Four levers to close the gap (increasing ambition)
-1. **Fix the critic (deepest).** The **tail-weighted value loss** (`--value-tail-weight`) + the
-   search-teacher, so patient team-specific lines get valued in the *scalar* critic — otherwise the
+*(Status 2026-10-25: levers 1, 2 and 4 were built and have been deleted; lever 3 was built as team-PFSP and deleted. See the correction at the top.)*
+1. **Fix the critic (deepest).** The **tail-weighted value loss** (`--value-tail-weight`, deleted v131) + the
+   search-teacher (deleted v133), so patient team-specific lines get valued in the *scalar* critic — otherwise the
    gradient *can't* reinforce a long game. NOTE: the **distributional value head** (`--value-dist-mode`,
-   `ValueDistHead`) is NOT this lever — it is a side readout, never in pi/vf or GAE; even in `shaping`
+   `ValueDistHead`, deleted v131) was NOT this lever — it was a side readout, never in pi/vf or GAE; even in `shaping`
    mode it only backprops as a representation-aux. The value PPO credits is the scalar mean V and the
    reward is scalar per turn, so the distribution does nothing for *credit assignment* (see the
    distributional caveat below).
 2. **Architectural conditioning.** An archetype embedding / FiLM / mixture-of-experts head keyed on
-   team composition, so the net *routes* to a per-archetype sub-policy instead of amortizing.
+   team composition, so the net *routes* to a per-archetype sub-policy instead of amortizing. (Built
+   as `z_arch` + head FiLM and closed NULL; deleted v78. [[conditioning_architectures]].)
 3. **Curriculum / DRO.** Up-weight the teams it pilots *worst* (balance/stall) so it can't hide
-   mediocrity behind the offense teams it's good at — PFSP, but over our own teams.
+   mediocrity behind the offense teams it's good at — PFSP, but over our own teams (built as `--team-pfsp`, deleted v134).
 4. **Distill the specialists back.** League fold-back: each exploiter's per-team policy distilled into
    the generalist — literally injecting the conditioning it won't discover alone.
 
@@ -116,15 +135,15 @@ network is good at. So the highest-ceiling path is **distillation, not cleverer 
    NOT as an opponent but as a teacher: when the generalist pilots team T, add a KL/BC term pulling
    its policy toward exploiter_T on those states. The specialist already solved the credit
    assignment; the generalist just copies the mapping. This is AlphaStar-league / **Distral**
-   ("distill & transfer"). We have the machinery — `--opd-coef` (KL-to-teacher), search-teacher AWR,
-   fold-back plumbing — but today fold-back wires exploiters as **adversarial opponents** (harden _14
+   ("distill & transfer"). In 2026-07 we had the machinery — `--opd-coef` (KL-to-teacher), search-teacher AWR,
+   fold-back plumbing (all since deleted, v133) — but fold-back wired exploiters as **adversarial opponents** (harden _14
    to *resist* them), the OPPOSITE of the **teacher** wiring (make _14 *play like* them). The dream is
-   the teacher wiring. *(Open: teacher-side fold-back is not built; the opponent-side is.)*
+   the teacher wiring. *(Open as of 2026-07: teacher-side fold-back was never built; the opponent-side was.)*
 2. **Routing capacity — only if interference bites.** Distillation can hit an *interference* wall
    (specialist targets fight over shared weights and re-average). Fix = archetype FiLM / MoE routing.
    But the ~3–5-dim rank collapse says capacity is NOT the current bind → try plain distillation
    first; add routing only if per-team WR plateaus below the specialists.
-3. **Per-archetype advantage normalization.** PPO advantage-norm (and PopArt) use GLOBAL batch
+3. **Per-archetype advantage normalization.** PPO advantage-norm (and PopArt, since deleted) use GLOBAL batch
    statistics. When archetypes differ in *variance*, the pooled std is dominated by the loud, swingy
    archetype (hyper-offense, big |A|), so dividing everything by it shrinks the QUIET archetype's
    advantages (stall/balance) to near-zero → they get the weakest gradient and are learned slowest — a
@@ -165,7 +184,7 @@ generalization). Levers that shrink the covering set + make it work:
   several teams, each supervised by ITS OWN archetype-teacher (KL/BC), with **per-archetype loss
   normalization** so none dominates. The student learns all N mappings at once — this is where the
   dense-trunk superposition capacity is spent (N sparse teacher-programs in one trunk). Needs the
-  teachers kept in a small snapshot pool (we have that machinery).
+  teachers kept in a small snapshot pool (the snapshot pool machinery exists; the distillation loss it would feed was deleted, v133).
 - **Blending = learned soft conditioning, never hand-assigned.** A 60/40 team's policy lands *between*
   the offense/balance regions the student learned. Mixed teams: either pure interpolation (distill on
   archetype-pure teams, generalize) or a membership-weighted **soft-mixture target**
@@ -183,7 +202,7 @@ per-team teacher *selection*, not a new loss).
 
 ### The simplest MVP (one teacher, one team) + how the aux loss works
 
-**MVP needs NO new exploiter — the specialists already exist on disk** (`ai_v7_10`, `ai_v7_15`). Test
+**MVP needs NO new exploiter — the specialists existed on disk in 2026-07** (`ai_v7_10`, `ai_v7_15`; `models/` is read-only history). Test
 "can one dense trunk absorb a specialist without breaking the rest" on N=1:
 1. Resume generalist training (fork _14).
 2. Bias team sampling toward `tss_starmie.txt` (~30–50% of episodes); the rest of the pool is the
@@ -211,17 +230,17 @@ richer when the teacher only gives one action; full-distribution KL is simpler/b
 a queryable policy (an exploiter is). **Do NOT distill the value head** — the teacher's value is on its
 own PopArt/opponent scale and just fights your critic; policy-only KL, value stays your own PPO.
 
-**We mostly have it:** `--opd-coef` already implements this KL-to-frozen-teacher aux loss; today the
-teacher is a search beam. The MVP change = swap the teacher source to "frozen exploiter forward on this
-state" (CHEAPER than the beam), gated on the team being piloted. *(Confirm the exact loss wiring in code
-before building — machinery is there.)*
+**We mostly had it (2026-07):** `--opd-coef` implemented this KL-to-frozen-teacher aux loss, with a search beam as
+the teacher; it was deleted at v133 (deletion pass L3), so building the MVP now means re-adding the loss. The MVP
+change would have been to swap the teacher source to "frozen exploiter forward on this state" (CHEAPER than
+the beam), gated on the team being piloted.
 
 ### The concrete PSRO loop for us (weakness-finding + covering sets)
 
 **PSRO (Policy-Space Response Oracles, Lanctot 2017)** generalizes self-play/fictitious-play/double-
 oracle: keep a POPULATION, build an empirical payoff matrix, solve it for a META-STRATEGY σ (which
 opponents to face — self-play=newest, fictitious=uniform, **PFSP**=oversample-who-you-lose-to, which we
-have via `--pfsp-scale`), train a BEST-RESPONSE (oracle) vs σ, add it, repeat. Convergence = a fresh
+have via `--pfsp-scale`, still a flag), train a BEST-RESPONSE (oracle) vs σ, add it, repeat. Convergence = a fresh
 best-response can't gain (exploitability → 0). Our pool + PFSP + `--exploiter` is already a crude PSRO.
 
 **Our two twists:** (1) DISTILL best-responses into one generalist instead of keeping a mixture (single-
@@ -230,7 +249,7 @@ best-response — currently hand-picked; principled = search/retrieve the team t
 
 **Finding what it's worst at — two granularities:**
 - *Which teams* — a bridge TOURNAMENT SWEEP: frozen G vs the pool, per-team WR, rank ascending, aggregate
-  by archetype (`gen3_team_archetypes.json`). Scale the equal-pilot mirror / `run_local_battles`. Cheap.
+  by archetype (`gen3_team_archetypes.json`). Scale the equal-pilot mirror (built on the Python-era `run_local_battles`, since replaced by the Rust eval path). Cheap.
 - *Which skill + is it coachable* — the PROBER (`triage`/`scan`/`falsify-scan`): decompose the worst
   cluster's losses into levers, and FILTER OUT team-draw (uncoachable) so an exploiter isn't wasted.
 
@@ -311,8 +330,9 @@ average, or distilling the specialists back in — not a fix to how the model "s
 
 - `designs/learning/on_policy_self_distillation.md` — folding specialist policies back into the trunk
 - `designs/learning/pbs_value_functions_and_search.md` — the critic / value-function credit-assignment half
-- `src/agents/model/CLAUDE.md` — the feature-extractor phase contract, `ValueDistHead`, projection heads
-- `src/agents/observation/CLAUDE.md` — the "Our team (6 × 110)" obs block layout
-- Memory: `project_exploiter_no_team_advantage` (equal-pilot mirror), `project_archetype_competence_gradient`
-  (switch-flat / move-availability), `project_plateau_research_2026_06_25` (self-play flat fixed point),
-  `project_search_teacher`, `project_positional_grind_decomposition` (tail-blind critic on the long game)
+- `designs/learning/conditioning_architectures.md`, `designs/learning/self_discovered_archetype_latent.md` — the conditioning line (lever 2) and why it closed NULL
+- `src/agents/model/CLAUDE.md` — the feature-extractor phase contract
+- `src/agents/observation/CLAUDE.md` — the observation contract (the "Our team" block is read from `get_layout()`)
+- Memory notes of 2026-06/07 (some no longer in the memory directory): `project_exploiter_no_team_advantage` (equal-pilot mirror),
+  `project_archetype_competence_gradient` (switch-flat / move-availability), `project_plateau_research_2026_06_25`
+  (self-play flat fixed point), `project_search_teacher`, `project_positional_grind_decomposition` (tail-blind critic on the long game)

@@ -3,6 +3,16 @@
 *MAP-Elites, POET, and stepping stones: the literature for when you want a good one of EACH kind
 rather than the best one overall — and why the slice registry is already a hand-built instance.*
 
+> **Correction (2026-10-25):** the flywheel this note maps onto (`../ai_v10/design_flywheel_tick_tock.md`)
+> is a FORWARD DESIGN that was never built (`../ai_v10/README.md`: closed 2026-10-25). There is no
+> slice registry, no tock, no T1.5 regression and no QD-score or coverage report in the code; read
+> every "the flywheel does X" below as "the design specifies X", and the QD vocabulary as a lens
+> for any future exploiter programme. The nearest built thing is the generated exploiter coverage
+> board (`../research_state/exploiter_coverage_board.md`, which already applies this note's
+> merge/split rules to archetype cells), and the live population / league direction is
+> `../endstate/design_alphastar_league_path.md`. The measured figures quoted below (0.456, the
+> warm-fork 0.84 vs ~0.65) are gen-12-era numbers from `../ai_v10/design_exploiter_scaling.md`.
+
 ## 1. Intuitive: illumination, not optimization
 
 Ordinary optimization asks "what is the best policy?" Quality-diversity (QD) asks "for each KIND
@@ -12,18 +22,18 @@ problems, directly chasing the objective often fails, because the stepping stone
 solutions do not themselves score well — a system rewarding only the objective discards them.
 Diversity is not a nicety; it is how search escapes deception.
 
-The flywheel's owner-decided structure is already QD-shaped: the goal was never "one exploiter
-that wins the most" but "coverage of the meta's kinds" — ~50 teams across curated similarity
-slices, each slice getting its own specialist, folded into one generalist.
+The flywheel design's owner-decided structure (2026-08-18) is already QD-shaped: the goal was never
+"one exploiter that wins the most" but "coverage of the meta's kinds" — ~50 teams across curated
+similarity slices, each slice getting its own specialist, folded into one generalist.
 
 ## 2. The formal objects
 
 **MAP-Elites.** Define BEHAVIOR DESCRIPTORS (axes that say what kind of solution this is, not how
 good); grid the descriptor space into cells; keep the best-so-far solution PER CELL (the elite);
 mutate elites and file offspring wherever they land. Output: an archive — quality everywhere, one
-per niche. **The slice registry is a hand-built MAP-Elites archive**: the descriptors are team
-composition (pace class + style tags in `gen3_team_archetypes.json`), the cells are the curated
-slices, the elites are the slice teachers, and the tock is the mutation operator. Two QD metrics
+per niche. **The design's slice registry is a hand-built MAP-Elites archive**: the descriptors are team
+composition (pace class + style tags in `data/teams/gen3_team_archetypes.json`), the cells are the
+curated slices, the elites are the slice teachers, and the tock is the mutation operator. Two QD metrics
 translate directly: COVERAGE (how many cells have an elite — the ~50-team target) and QD-SCORE
 (sum of elite qualities — the sum of per-slice headroom captured). The archetype-novelty
 regression (T1.5: does marginal gain track slice novelty?) is the QD question "are new cells
@@ -40,22 +50,23 @@ are real; whether they are the RIGHT axes is what revolution-1 evidence should s
 **POET (paired open-ended trailblazer).** The step beyond a fixed archive: co-evolve the NICHES
 themselves alongside the agents — generate new environments at the frontier of solvability,
 transfer agents between niches, let the curriculum invent itself. The flywheel's analog question
-arrives at revolution 3+: today the owner curates slices from a fixed 719-team pool; the POET
+arrives at revolution 3+: the design has the owner curate slices from a fixed pool (719 teams in
+the training pool, per `../endstate/design_format_spec.md`'s census); the POET
 move is letting the system PROPOSE slices — teams (or team perturbations) where the current
 generalist's exploitability bound is fattest. Team-building as niche generation is the natural
 end state and is deliberately out of scope until the fixed-pool loop is proven.
 
 **Stepping stones and goal-switching.** QD's deepest claim: solutions to hard niches are often
 REACHED VIA other niches (an agent transferred from an easier environment solves one the direct
-optimizer never cracks). The flywheel already banks on a weak form — the warm-fork result (fork
-0.84@2M vs scratch ~0.65@20M) is "the generalist is a stepping stone to every exploiter." The
+optimizer never cracks). The flywheel design banks on a weak form — the warm-fork result measured
+at gen-12 (fork 0.84@2M vs scratch ~0.65@20M) is "the generalist is a stepping stone to every exploiter." The
 strong form worth watching for: an EXPLOITER as the stepping stone to another exploiter (a
 trap-core specialist warm-starting a spin-denial specialist), which the task-arithmetic preview
 could detect as unusually compatible deltas.
 
 ## 3. What this buys operationally
 
-- Report the flywheel in QD terms alongside ELO: coverage (slices with a banked teacher),
+- If a flywheel or league is ever run, report it in QD terms alongside ELO: coverage (slices with a banked teacher),
   QD-score (Σ headroom captured), and illumination rate (new-cell gains vs re-fill gains, T1.5).
   A flat ELO with rising QD-score is a real and reportable state — the map is getting better
   before the single deployable point does.
@@ -75,4 +86,5 @@ fingerprint aux or POET-style slice proposal earns its re-visit.
 
 Related: [`population_game_theory.md`](population_game_theory.md) (the spinning-top width these
 niches live in); the flywheel design (`../ai_v10/design_flywheel_tick_tock.md`) §2-§3; the
-descriptor artifacts are `data/teams/gen3_team_archetypes.json` + the owner's slice worksheet.
+descriptor artifact is `data/teams/gen3_team_archetypes.json` (the generated coverage board
+replaced the owner's hand-curated slice worksheet).

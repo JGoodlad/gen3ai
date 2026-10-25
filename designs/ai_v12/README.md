@@ -1,0 +1,3 @@
+# ai_v12 (CLOSED, history)
+
+> **CLOSED (2026-10-25):** the win-probability-critic chapter (the win-prob critic and its terminal as the value function, the behaviour-coupling routes, the launch runbook). BUILT and CLOSED (2026-09-26): the critic and its terminal reward are constants of the model today, while the runbook's arms never ran as written. `designs/ai_v12/promotion_exclusions.json` is still read by `main.promote_teams` (rebuild: `--regenerate-exclusions`). Explicit-only history, never auto-updated: read it for what was designed and why, then check the code before believing it still holds. What the model is now: `designs/ARCHITECTURE.md`; how it got there: `designs/research_state/ledger.md` and `designs/CHANGELOG.md`.

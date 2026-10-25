@@ -1,7 +1,16 @@
 # Continual learning and forgetting — the tick's quiet risk
 
-*Why neural networks forget, the three fix families, and which of them the flywheel already is.
+*Why neural networks forget, the three fix families, and which of them the (intended) flywheel would be.
 Grounded in the retention measurements this project has actually taken.*
+
+> **Correction (2026-10-25):** the machinery this note maps forgetting onto has changed. The distillation fold
+> (the `--distill-*` loss family, incl. the anchor-regularizer levers) was deleted at v133
+> (`gen3_retired_levers_l3_v1`; `designs/deleted_flags.md`), the zarch / FiLM family at v78, and the ai_v10
+> tick-tock is a forward design never built (`designs/CLAUDE.md`, the version-folders table); the fold is a
+> measured HISTORICAL result (`distillation_flywheel_lessons.md`), not a running pipeline. The three-family
+> taxonomy, the stability-plasticity frame and the three-cause decay diagnostic are unaffected. Read "the
+> flywheel already is / lives with / runs" as "the intended engine would be", and every measured anchor in
+> section 3 as dated history (taken on earlier-era runs, before the current architecture; provenance in the ledger).
 
 ## 1. Intuitive: networks learn by overwriting
 
@@ -11,7 +20,7 @@ nothing marks them as load-bearing. That is catastrophic forgetting, and it is n
 problem (the network could store both) but an OPTIMIZATION problem: nothing in SGD says "keep
 what you had."
 
-The flywheel lives with this on both clock edges. The TICK distills K teachers into the
+The intended flywheel would live with this on both clock edges. The TICK distills K teachers into the
 generalist while RL keeps training — new skills overwriting old ones, and each teacher's slice
 overwriting the others'. The TOCK forks an exploiter and specializes it hard — the fork's
 generalist competence erodes while the exploit sharpens (measured: the double-sided recipe exists
@@ -20,7 +29,7 @@ precisely because a naive exploiter's defense rotted).
 ## 2. The three fix families — and which ones we already run
 
 **Rehearsal (replay old data).** The simplest and empirically strongest family: keep interleaving
-samples of the old task. **The flywheel's teacher data IS rehearsal** — supervised distillation
+samples of the old task. **The flywheel's teacher data would BE rehearsal** — supervised distillation
 targets are replayable, so a slice's restoring force is a data-mixing dial rather than a shrinking
 share of on-policy experience. This is the structural reason the fold has no 1/N wall (ai_v10 §9)
 while pure multi-team RL does, and the leaky-bucket refresh (a decayed slice's teacher returns for
@@ -36,7 +45,7 @@ regularizer (you keep being tested against what you used to be).
 
 **Architectural (separate parameters per task).** Adapters, LoRA, FiLM — give each task its own
 small parameter set so interference is impossible by construction. This project has TWO measured
-nulls against it in its own domain: the zarch/FiLM conditioning family moved the N=20 ceiling
+nulls against it in its own domain: the zarch/FiLM conditioning family (deleted at v78) moved the N=20 ceiling
 +0.024 CI [−0.016,+0.064], and the orthogonal 2×2 showed team COUNT dominating conditioning. The
 sharper finding underneath: FiLM gradient ANALYSIS showed per-team gradients nearly orthogonal at
 300M — the interference these methods exist to prevent was not the binding constraint here.

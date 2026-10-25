@@ -1,0 +1,3 @@
+# ai_v5 (CLOSED, history)
+
+> **CLOSED (2026-10-25):** self-play and the league (snapshot pool, exploiters, PFSP, ELO rating, stable opponents). PARTLY BUILT: the self-play, rating and observation steps shipped and their mechanisms are live in the pool and league code, while some league designs stayed forward plans; `designs/ai_v5/todo.md` gives each doc's state as of its writing. Explicit-only history, never auto-updated: read it for what was designed and why, then check the code before believing it still holds. What the model is now: `designs/ARCHITECTURE.md`; how it got there: `designs/research_state/ledger.md` and `designs/CHANGELOG.md`.

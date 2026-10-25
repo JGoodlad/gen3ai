@@ -1,6 +1,12 @@
 # design — THE WIN-PROB-ONLY CRITIC: one value function, in outcome units
 
-> **[STATE 2026-09-06]** **DESIGN + GAP AUDIT. Nothing here is built and nothing is sanctioned to
+> **SUPERSEDED / HISTORY (2026-10-25):** this design was BUILT and the chapter is CLOSED: the win-probability
+> critic and its terminal reward are now constants of every trainer namespace (no flag, no mode), and the
+> "nothing is built" framing below is the state at the 2026-09-06 date. Read the body for what was designed and
+> why; the model as it stands is `designs/ARCHITECTURE.md` (the critic section), the programme is
+> `designs/endstate/README.md`, and the history is `designs/CHANGELOG.md`.
+>
+> **[STATE 2026-09-06]** **DESIGN + GAP AUDIT. Nothing here was built yet and nothing was sanctioned to
 > run.** The owner direction (2026-09-06) is that the next generation uses the win-probability head
 > as the critic's ONLY signal — a cleaner value function to serve as the starting point for long
 > (3-day, 75M-step) runs and for search, whose leaf is this critic. This document states what is

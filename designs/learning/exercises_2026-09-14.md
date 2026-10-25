@@ -6,8 +6,8 @@ and a rough time. Do them in order within a track; tracks can interleave. The po
 exercise is the same: **be able to verify a claim from its artifact without asking anyone.**
 Explicit-only doc — not auto-maintained.
 
-Setup for the toy tracks (once, ~1 h): the `gen3ai_stable` env already has numpy, pandas and
-torch. Work in `tmp/exercises/` (gitignored). A C++/Python engineer needs three idioms and
+Setup for the toy tracks (once, ~1 h): the `gen3ai_torch28` env (the project's interpreter; `gen3ai_stable` is
+the frozen legacy one) already has numpy, pandas and torch. Work in `tmp/exercises/` (gitignored). A C++/Python engineer needs three idioms and
 nothing else to start: numpy broadcasting (`a[:, None] * b[None, :]`), pandas `groupby` /
 `merge`, and torch's `tensor → loss.backward() → optimizer.step()` loop. Exercise T1 teaches all
 three on purpose.
@@ -73,7 +73,7 @@ against the ERA. Reconcile: which claim was about S-vs-W and which about S-vs-er
 *Done:* one paragraph; then say what a "key-by-key" verification must read to be complete.
 
 **R8 · Profile one training step.** (2 h, hands-on, needs the GPU free)
-`train_rl_agent.py --debug --steps 5000` under `torch.profiler` (or `py-spy top` on a real
+`train_rl_agent.py --debug --steps 5000` (set `GEN3AI_MODELS_DIR` to a scratch dir so the smoke run lands there) under `torch.profiler` (or `py-spy top` on a real
 launch's child PID). Where does the wall clock go: env stepping, obs build, forward, backward?
 *Done:* a four-row table with percentages and the one thing you would optimise first.
 

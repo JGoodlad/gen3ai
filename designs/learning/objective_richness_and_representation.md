@@ -1,5 +1,15 @@
 # Richer objectives force richer representations (and why that makes distillation more efficient)
 
+> **Correction (2026-10-25):** the representation argument below is general and stands; the machinery it was
+> applied to is gone. The scalar value target, the HL-Gauss distributional value head (`ValueDistHead`,
+> `_value_dist_loss`; deleted at config v131) and the whole distillation fold (`--distill-coef`,
+> `--distill-value-coef`, `--distill-value-feat-coef`, `--distill-value-dist-coef`; deleted at config v133
+> after the era-1 fold trained worse than nothing) no longer exist; `designs/deleted_flags.md` lists each.
+> The only critic is the win-prob critic, `sigmoid(win_head(value_pooled))` trained by BCE against the terminal
+> win indicator (`designs/ARCHITECTURE.md` § "WHICH readout is the critic"), which is already a
+> classification-style loss in the sense of the Farebrother section. Read every "our flag" below as history.
+> `rank/value_cls_pr` is still a live diagnostic (`src/agents/training/rank_metrics.py`).
+
 **TL;DR.** A trained network's representation is approximately the *minimal sufficient statistic* for
 its objective — it keeps exactly the directions it is *forced* to keep, and gradient descent actively
 collapses the rest ("it doesn't add richness for free"). So a **scalar-mean** value target
@@ -83,7 +93,7 @@ more directions (the sufficiency argument above), and (b) cross-entropy over a b
 is simply *better-conditioned* against noisy, non-stationary targets than MSE (robust: "HL-Gauss
 degrades slower than MSE as noise increases"). Both push effective rank up; don't over-attribute to (a).
 Recommended HL-Gauss: σ ≈ 0.75·(bin width) (mass over ~6 atoms) — which is what our `_value_dist_loss`
-already uses.
+used (deleted with the head, v131).
 
 ## Why this makes distillation more effective — the bits-per-decision ladder
 
@@ -92,18 +102,18 @@ Your second intuition — "a richer target lets us distill more information per 
 similarity), far more bits than a hard label, so the student learns more per example. Extended to our
 value/policy channels, the signal-per-decision ladder is:
 
-| Distill target | ~info per decision | our flag |
+| Distill target | ~info per decision | flag (all deleted at v133) |
 |---|---|---|
 | Game outcome (win/loss) | ~1 bit / **game** | the RL reward itself |
 | Policy KL (full action dist) | ~log₂\|A\| bits / decision | `--distill-coef` (≈7–10× more step-efficient than outcome — see [[on_policy_self_distillation]]) |
 | Scalar value V | 1 real / decision (and it *crystallizes*) | `--distill-value-coef` |
-| **FitNets feature hint** | ~128-D direction / decision | `--distill-value-feat-coef` (SHIPPED — [[project_value_distill_fitnet]]) |
-| **Return distribution (KL)** | ~50-D distribution / decision | future `--distill-value-dist-coef` (side `ValueDistHead`) |
+| **FitNets feature hint** | ~128-D direction / decision | `--distill-value-feat-coef` (was shipped; memory note `project_value_distill_fitnet`) |
+| **Return distribution (KL)** | ~50-D distribution / decision | the never-shipped `--distill-value-dist-coef` (side `ValueDistHead`) |
 
 More bits/turn = more sample-efficient transfer — **provided two things hold**: the student has a head
 capable of *representing* those bits (a scalar critic can't receive a distribution), and the teacher's
 extra bits are real signal, not noise. Our geometry check (the 4 teachers' value subspaces are low-rank,
-complementary, non-competing — `tmp/fitnet_analysis.py`) is exactly the "are the extra bits real"
+complementary, non-competing — a one-off analysis script, not kept) is exactly the "are the extra bits real"
 verification before spending capacity on them.
 
 ## Case study: why AlphaZero's *scalar* value looks robust (and isn't a counterexample)
@@ -127,8 +137,8 @@ conflict. AlphaZero could afford the crystallization for four reasons, three of 
    bootstrapping-induced rank collapse. (We're a mixed case: GAE carries some bootstrapping, and our
    crystallization came from distilling a *scalar teacher V*.)
 3. **Search launders value errors.** AlphaZero's *trustworthy evaluation* is value **+ MCTS** — the tree
-   averages many leaf values and does policy improvement, washing out value mistakes. **We have no
-   search** (owner constraint), so the critic *is* the evaluation → a rich critic matters *more* for us.
+   averages many leaf values and does policy improvement, washing out value mistakes. **We had no
+   search** (owner constraint at the time of this note; the current search scope is one ply, `designs/endstate/search_ledger.md`), so the critic *is* the evaluation → a rich critic matters *more* for us.
 4. **Continuous refit on fresh self-play + a clean, quasi-stationary target.** Go is deterministic,
    fully observed, clean ±1 (low-noise → MSE collapse is mildest), and the value is constantly refit as
    the policy improves *slowly along one self-play path*, so "current distribution" tracks the policy.
@@ -144,8 +154,8 @@ policy-distribution bias the rank story predicts, not a counterexample to it.
 **The one-sentence reconciliation:** crystallization is over-fitting to the current distribution; it
 *looks* like robustness right up until the distribution moves — AlphaZero kept the distribution moving
 slowly and covered the residue with search, so its value's specialization read as trustworthiness; we
-move the distribution *deliberately* (grafting per-team specialist behaviors in via distillation) and
-have *no* search, so the same specialization reads as a limit — which is why keeping the critic
+moved the distribution *deliberately* (grafting per-team specialist behaviors in via distillation, a
+route since deleted) and had *no* search, so the same specialization reads as a limit — which is why keeping the critic
 representation rich matters more for us than it did for them.
 
 ## Synthesis
@@ -164,9 +174,9 @@ the teacher per turn.
 - `designs/learning/shortcut_learning_and_feature_delivery.md` — **the input-side dual of this note**:
   richer *targets* force richer reps; richer/easier *inputs* permit lazier ones (gradient starvation,
   amortization-vs-bottleneck, the axis rule, the P1 ablation numbers)
-- `src/agents/model/CLAUDE.md` → distributional value head (v29, `ValueDistHead`, HL-Gauss `_value_dist_loss`)
-- `src/agents/training/CLAUDE.md` → Exploiter distillation (`--distill-value-coef` scalar vs `--distill-value-feat-coef` FitNets) and the gradient-balance probe; `designs/training/critic_and_value_losses.md` → `--value-tail-weight`
+- `designs/ARCHITECTURE.md` § "WHICH readout is the critic" (the current critic; the distributional head and `--value-tail-weight` are deleted)
+- `designs/training/critic_and_value_losses.md` (the value losses, including the deleted ones as history)
 - `designs/ai_v6/design_distributional_value_critic.md` (Phase A done / Phase B — the distributional critic)
 - `designs/learning/marginalization_and_uncertainty.md` (how a net carries uncertainty — the distributional head is where that lives)
 - `designs/learning/on_policy_self_distillation.md` (the bits-per-decision / dense-signal argument for policy distillation)
-- Memory: [[project_value_distill_fitnet]] (scalar crystallizes → FitNets hint), [[project_representation_probe]] (our rank/effective-dim probe harness)
+- Memory notes (not files in this directory): `project_value_distill_fitnet` (scalar crystallizes → FitNets hint), `project_representation_probe` (our rank/effective-dim probe harness)

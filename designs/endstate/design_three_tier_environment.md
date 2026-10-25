@@ -1,6 +1,6 @@
 # Design — The three-tier environment: a Rust battle core, one inference tier, and the retirement of poke-env
 
-**Status: END STATE, being built (updated 2026-09-27).** Authored 2026-09-22 at the owner's request,
+**Status: END STATE, BUILT and in production (updated 2026-10-25).** Authored 2026-09-22 at the owner's request,
 after a month in which every search-cost crossing (the Rust bridge, the one-sided view, the
 materializer flip, the one-fork-per-decision landing) bought a large per-op speedup and a small
 end-to-end one. The owner licensed the build on 2026-09-23 as the RUST CORE PROGRAM, on unification
@@ -12,17 +12,17 @@ statement of the end state and its "why". 🚨 **ALWAYS-CURRENT (owner, 2026-09-
 **Companion:** [`design_model_management.md`](design_model_management.md) — the model-side end state
 (the registry, the pool, the inference tier's catalogue). This document owns the environment side.
 
-**Where it stands (2026-09-27).** Detail and evidence: `program_rust_core.md` §2 and the ledger.
+**Where it stands (2026-10-25).** Detail and evidence: `program_rust_core.md` §2 and its Decision record, and the ledger.
 
 | piece | status |
 |---|---|
 | Tier 1a–1c: typed events at the source (M1), `BattleVersion` + `present()` + legality (M2), trackers + `TurnDelta` + the win-indicator reward on the version (M3), the whole observation in Rust (M4) | **BUILT** 2026-09-23 → 09-24, each at zero parity divergences (ledger 2026-09-23 *M1 BUILT*, *M2 LANDED*; 2026-09-24 *M3 CLOSED*, *M4 CLOSED*) |
-| The cutover (M6): training reads the Rust core's observation (`--obs-source core`, the default on the rust bridge) | **DONE** `ac0b6469`, 2026-09-25 (owner); labels, reward, the Python tracker fold and the mapper still run in Python |
-| Deletion pass, part 1: search is core-only; the port's one-sided view projection deleted; the shaped reward path deleted | **DONE** `43712881`, `97a30387`, `2c7e6acb`, `e3ef16db` (2026-09-26). Five manifest rows blocked on M5 / M7 (TASK_BACKLOG T10) |
-| M5 — N envs per process (§3.6) | **Phase A DONE** 2026-09-26: ONE env core with TWO thin front ends (FFI and a shared-memory process), the default per consumer set by crash isolation, 12 build lanes. Lane 0 scheduled (TASK_BACKLOG T1) |
-| Tier 2 — the inference service (§4) | **scheduled with Lane 0** (TASK_BACKLOG T2); shape re-stated in §4.5 |
-| Memory-triggered restarts; allocator discipline | **proposed / in Lane 0** — §3.7 |
-| M7 — the ladder client on the core (§6's `play.py` row) | **proposed** (TASK_BACKLOG T9) |
+| The cutover (M6): training reads the Rust core's observation | **DONE** `ac0b6469`, 2026-09-25 (owner) |
+| Deletion pass | **DONE**: part 1 2026-09-26 (`43712881`, `97a30387`, `2c7e6acb`, `e3ef16db`); the Python core, collector and loop 2026-10-02 (U3 / U4); the Python battle layer, trackers and encode path 2026-10-08 (T27 P6, `designs/ops/deletion_pass_manifest.md` §8); the legacy surface 2026-10-15 |
+| M5 — N envs per process (§3.6) | **DONE**: the M5 gate met 2026-09-30, the SWITCH shipped 2026-10-02 (`gen3_env_core_switch_v1`); a fresh `--arch production` run is N = 256 (`production_config.json` `recipe.sizing`) |
+| Tier 2 — the inference service (§4) | **BUILT** (`src/agents/inference/service/`; trainee, opponent and eval forwards through one service); its perf levers `--t2-lead-trainee` and `--t2-grouped-opponents` are built, default OFF |
+| Memory-triggered restarts | **not built** (`../ops/TASK_BACKLOG.md` T7, which needs an RSS metric first); the periodic restart is a launcher setting |
+| M7 — the ladder client on the core (§6's `play.py` row) | **DONE** as T27 (2026-10-08): live play, anchors and the prober read the core; poke-env is deleted (`src/poke_env_absent_gate_test.py`); the Metamon peer process runs upstream poke-env in its own interpreter |
 
 ---
 
@@ -448,3 +448,4 @@ line in `ledger_index.md`'s numbering.
 | 2026-09-27 | Long-lived processes (TASK_BACKLOG rows) | Allocator discipline in Lane 0; memory-triggered restarts (proposed) | Restarts on a fixed clock only | TASK_BACKLOG T1, T7 (`93745a66`) |
 | 2026-09-27 | Ladder client | M7 after the cutover (TASK_BACKLOG T9) | Moving the ladder client early (would ADD a path) | `program_rust_core.md` §1 rule 5 |
 | 2026-10-08 | poke-env and the Python oracles (T27 P6, owner's single-stack direction) | Retired ENTIRELY: the vendored fork, the Python battle layer, trackers, encoder encode path and action stack are deleted; the Rust core's own goldens are the parity references | Keeping the Python encoder / `Gen3Battle` as a standing oracle (§6 and open question 3) | `designs/ops/deletion_pass_manifest.md` §8.3–§8.6; `designs/deleted_flags.md` "Deleted PATHS" |
+| 2026-10-25 | **Status table brought current (docs-health pass)** | The "Where it stands" table (2026-09-27) still read "being built", "scheduled with Lane 0", "proposed". True now: M5 and its switch, Tier 2, the deletion pass and the ladder client (as T27) are built; only the memory-triggered restarts are not | — | `program_rust_core.md` Status and Decision record; `src/poke_env_absent_gate_test.py`; `designs/production_config.json` |

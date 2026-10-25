@@ -1,5 +1,19 @@
 # Conditioning architectures — FiLM, LoRA, MoE, what to condition on, and the sample economics
 
+> **Correction (2026-10-25): SUPERSEDED as a description of our model.** The `z_arch` team-conditioning
+> and FiLM family this note analyses (head FiLM, the `ZArchEncoder`, the per-team LUT arm, the group
+> accumulator `--film-grad-accum-steps`, and the `film/*` and `zarch/*` monitors) was **deleted at v78**
+> (`gen3_flag_surface_p1_v1`, 2026-08-14; `src/agents/model/model_version/migrations.py`, `designs/CHANGELOG.md`
+> v78) after the line closed NULL: the LUT arm, a FREE per-team code, moved the N=20 multi-team ceiling by
+> +0.024, CI [-0.016, +0.064], and team COUNT (20 to 10, +0.077) dominated conditioning (+0.027, n.s.). The
+> current model has **no team-conditioning latent and no FiLM**; it is the static per-mon-token architecture
+> with the win-prob critic (`designs/ARCHITECTURE.md`, the top table and sections 2-3; deleted flags:
+> `designs/deleted_flags.md`). Read this note as a **historical teaching record**: the FiLM / LoRA / MoE
+> taxonomy, the sample-economics and SNR argument (sections 5-5b) and the ill-conditioning story still teach
+> well, but every "our FiLM", "currently" and "we log" below describes the deleted v44-v77 machinery, not the
+> model that trains today. `train/noise_scale_ratio` (global) still exists; the `film/*` and `zarch/*`
+> families do not.
+
 **TL;DR.** Conditioning is how ONE network holds MANY behaviours. There are three independent design
 axes, and confusing them wastes runs:
 
@@ -7,22 +21,22 @@ axes, and confusing them wastes runs:
    MoE (select an expert). FiLM and LoRA are **mathematically complementary** — neither contains the
    other — and can be summed. MoE is the wrong family for us (it splits samples K ways).
 2. **WHERE you modulate** — head (reweight an already-computed summary) vs trunk (change what gets
-   computed at all). Our FiLM is head-only; that is a real expressivity limit, and a more compelling
+   computed at all). Our (since deleted) FiLM was head-only; that was a real expressivity limit, and a more compelling
    argument for trunk conditioning than the diagonal-vs-low-rank one.
-3. **WHAT you condition on** — our team (current `z_arch`), the *matchup* (our team ⊗ believed opp
+3. **WHAT you condition on** — our team (the deleted `z_arch`), the *matchup* (our team ⊗ believed opp
    team), the board phase. Finer conditioning is more expressive but **quadratically more
    sample-hungry** — there is a bias/variance tradeoff in the conditioning granularity itself.
 
 And the unifying economic fact: **conditioning does not add samples, it improves the SNR of the
 per-team gradient by giving it its own subspace so it stops fighting the shared gradient.** Batch size
-is a *noise* lever, not a *coverage* lever — and we already have the surgical version
-(`--film-grad-accum-steps`) plus the metric that says when to use it (`film/noise_scale_ratio`).
+is a *noise* lever, not a *coverage* lever — and we had the surgical version
+(`--film-grad-accum-steps`, deleted at v78) plus the metric that said when to use it (`film/noise_scale_ratio`, deleted with it).
 
 ---
 
 ## 1. The intuitive picture
 
-Imagine one chef who must cook 719 different dishes.
+Imagine one chef who must cook 719 different dishes (the team pool's size when this was written).
 
 - **Amortized (no conditioning)** — one recipe, averaged over all dishes. Edible, excellent at nothing.
   This is the generalist, and the averaging is the amortization gap.
@@ -90,7 +104,7 @@ diagnostics ever say head-FiLM is the constraint.
 
 This is the argument I would rank *above* the diagonal-vs-low-rank one.
 
-Our FiLM sits at the **two projection heads** — after the transformer, after CLS pooling. By then the
+Our FiLM sat at the **two projection heads** — after the transformer, after CLS pooling. By then the
 trunk has already computed one board representation and pooled it to a summary. Head conditioning can
 only **reweight a summary that was computed team-blind**.
 
@@ -107,7 +121,7 @@ Ranking of interventions by how deep they reach:
 
 | intervention | changes | cost |
 |---|---|---|
-| head FiLM (current) | how the summary is weighted | tiny |
+| head FiLM (was ours, v44-v77) | how the summary is weighted | tiny |
 | trunk FiLM | which features survive each block | small |
 | conditional LoRA in trunk | how features are mixed | medium |
 | z-conditioned attention bias | **what attends to what** | medium, most targeted |
@@ -117,7 +131,7 @@ Ranking of interventions by how deep they reach:
 
 ## 4. `z_arch` over the OPPONENT belief — the matchup latent
 
-Currently `z_arch = f(our 6 mons)`: team-static, deterministic, LUT-like. The natural extension is a
+In the deleted v44-v77 design `z_arch = f(our 6 mons)` was team-static, deterministic and LUT-like. The natural extension is a
 **matchup** latent `z(our team, believed opponent team)`, since we already run a belief over the
 opponent's species/moves/spread (`BeliefSlots` / `BeliefHead`).
 
@@ -158,10 +172,10 @@ This is the part most worth internalising, because the intuition is subtly wrong
 
 ### What actually determines per-team coverage
 
-Naively: with 719 teams and a 2048 minibatch, each team gets ~3 samples — hopeless. But that is not
+Naively (ai_v8-era numbers, 2026-07): with 719 teams and a 2048 minibatch, each team gets ~3 samples — hopeless. But that is not
 the structure. Teams are drawn **per episode per env**, and an episode is ~50–100 decisions:
 
-- rollout = `n_steps × n_envs` = 2048 × 48 ≈ **98k samples**
+- rollout = `n_steps × n_envs` = 2048 × 48 ≈ **98k samples** (that era's values; today's come from the run's recipe)
 - each env holds one team for an episode (or N episodes under `--team-block-episodes`)
 - so a rollout covers roughly **48–200 distinct teams with ~500–2000 samples each** — and **zero** for
   the other ~500 teams
@@ -174,7 +188,7 @@ given team is revisited only every ~15 rollouts."** That changes which lever mat
 | `--n-envs` ↑ | **more distinct teams covered** per rollout (parallel team draws) |
 | `--team-block-episodes` ↑ | **fewer teams, more samples each** — concentration + the team is replayed right after its gradient lands |
 | `--batch-size` / `--grad-accum-steps` ↑ | **gradient noise only** — does *not* change which teams are covered |
-| `--team-pfsp` | **which** teams get covered (targeted at the weak ones) |
+| `--team-pfsp` (deleted at v134) | **which** teams got covered (targeted at the weak ones) |
 
 **The key correction: batch size is a noise lever, not a coverage lever.** Enlarging the batch averages
 over the same team distribution more precisely; it does not visit more teams per unit of experience.
@@ -201,13 +215,13 @@ This single relation explains everything we have observed:
 ### The principled batch-size answer we already have
 
 McCandlish's **gradient noise scale** `B_simple = tr(Σ)/|G|²` is the critical batch size — below it,
-more batch buys ~linear progress; above it, diminishing returns. We log it:
+more batch buys ~linear progress; above it, diminishing returns. We logged it (the global one survives):
 
 - `train/noise_scale_ratio` — global. ≫1 = noise-limited (raise the effective batch); ≪1 = over-batched.
-- `film/noise_scale_ratio` — restricted to the **FiLM generator parameter group**, because the global
+- `film/noise_scale_ratio` (deleted at v78) — restricted to the **FiLM generator parameter group**, because the global
   number cannot resolve whether a ~33k-parameter conditioning gradient is signal or noise inside a
   ~10M-parameter total.
-- **`--film-grad-accum-steps`** — the surgical response: accumulate *only* the FiLM group's gradient
+- **`--film-grad-accum-steps`** (deleted at v78) — the surgical response: accumulate *only* the FiLM group's gradient
   across N optimizer steps so each applied conditioning update sees N× the effective batch, while
   everything else updates normally.
 
@@ -258,7 +272,7 @@ nothing to equalize variance **across teams**. We normalize the wrong axis for t
 | standardize z ACROSS teams (BatchNorm-style / cluster-center + rescale) | ✅ | ❌ | ✅ |
 | per-team LUT embedding (exploiter-only; fixed known team set) | ✅ | ✅ | ❌ |
 | hybrid `z + Embedding[team_id]` (drop the embedding at distill time) | ✅ | ✅ | ✅ |
-| param-group LR boost on the FiLM generators (there is currently **no** separate group — they run at the 10M-param trunk's LR) | partial | ❌ | ✅ |
+| param-group LR boost on the FiLM generators (there was **no** separate group — they ran at the 10M-param trunk's LR) | partial | ❌ | ✅ |
 
 The LUT's advantage is NOT expressivity — it is that a one-hot index is **perfectly conditioned** (every
 team an orthogonal unit-variance direction) and **interference-free** (row A's gradient moves only row A).
@@ -330,7 +344,7 @@ strategy directions, not team count.**
    the *healthy* clustering we want — the distinction matters.)
 4. **`--zarch-dim` 32 vs 64 A/B.** Definitive, costs a run. Only worth it if 1–2 say we are near.
 
-Live monitors: `zarch/pr` (z-cloud participation ratio), `film/{pi,vf}_team_std` (per-team
+Monitors of the deleted design: `zarch/pr` (z-cloud participation ratio), `film/{pi,vf}_team_std` (per-team
 differential — if adding teams stops raising it, the generators are out of room).
 
 ---
@@ -392,8 +406,9 @@ guessed, and the real limit was signal.
 - `designs/learning/regularization_and_noise_in_ppo.md` — noise scale, batch sizing, PPO specifics.
 - `designs/learning/on_policy_self_distillation.md` — dark knowledge, why distillation transfers so
   much more per sample than RL.
-- `designs/ai_v8/exploiter_batch_strategy.md` — the z-cluster targeting + the **retention ablation**
+- `designs/ai_v8/exploiter_batch_strategy.md` (a closed-chapter record) — the z-cluster targeting + the **retention ablation**
   protocol (acquisition vs retention).
-- `src/agents/model/CLAUDE.md` → Team-archetype latent + head FiLM (v44); `src/agents/training/CLAUDE.md`
-  → z_arch aux, team-PFSP, gradient noise scale.
+- `designs/ARCHITECTURE.md` (the model as it is now) and `designs/deleted_flags.md` (the zarch / FiLM / team-PFSP
+  flags and their deletion versions); the live gradient-noise-scale logging is covered in
+  `designs/training/step_size_and_batch.md`.
 - Memory: `project_exploiter_fork_vs_scratch` (the count sweep + fork-vs-scratch results).

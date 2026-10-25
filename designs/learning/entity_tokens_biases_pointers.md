@@ -1,12 +1,30 @@
 # Entity-based modeling — tokens, edge biases, pointer heads
 
+> **Correction (2026-10-25):** this is the vocabulary and teaching note for the ai_v9 generation, written
+> 2026-08-03 to 2026-08-08 around v51-v60; its concepts stand, but several of its present-tense stage lists
+> and figures describe that build, not today's. What drifted: (1) the **history block** the note calls
+> "current" (7 turns x 159 dims of `TurnDelta` frames) was deleted at v90 (`gen3_frame_deletion_v1`) and
+> replaced by the **event window** (32 records x 30 columns, one attention seat each, plus the `r` reference
+> edges); history rungs 2 and 3 below therefore shipped (v81 and the H-C `r` family, 2026-08-16); (2) the edge
+> families are **seventeen** now (the note's fifteen plus `h`, pair-history tendencies, and `r`); (3) the
+> **observation size** is not quoted here: read it from `Gen3ObservationEncoder.get_layout()` in
+> `src/agents/observation/` (2845 dims as of 2026-10-25, `designs/ARCHITECTURE.md` section 1); every
+> "2.8k", seat count (29, 35) or block width (807) below is a dated snapshot of the build then; (4) the op
+> **head-concat** was deleted at v61 (`gen3_no_concat_v1`), the **FiLM / `z_arch`** conditioning at v78,
+> **PopArt** (v131) and the **distributional value head** (2026-10-02),
+> the **OAX** switch-cell row with its flag (v88), the **refine loop** at v70, and the proposals
+> OA1/OA2 and **PV** (the Shaw value-side route) were built (v94-v95) and later deleted (PV at v135, OA1/OA2
+> with the legacy per-action blocks at v157, replaced by MOVE RESOLUTION); the multi-seed critic readout was
+> built at v61 and deleted at v96. **`designs/ARCHITECTURE.md` is the always-current statement** of the model
+> (sections 2.3 for the seats, 3 for the heads, 5 for the edge families); this note keeps the explanations.
+
 > **What this is.** A durable explainer for the concept cluster the ai_v9 generation is built
 > on: what "entity-based" (a.k.a. entity-centric / object-centric / relational) modeling *is*,
 > where it came from, why it beats a flat MLP, how a computed per-pair quantity like **expected
 > damage** gets delivered, and how **history** is represented once positions stop being
 > identities. Intuitive first, then technical, no code. Grounded in our `PokemonEncoder` /
-> `TeamTransformer`, the `DamageOperator`, the v51 `PointerNativeActionHead`, and the 7×159
-> `TurnDelta` block.
+> `TeamTransformer`, the `DamageOperator`, the `PointerNativeActionHead` (introduced at v51), and
+> the 7×159 `TurnDelta` block as it stood in 2026-08 (since deleted, above).
 
 ---
 
@@ -31,21 +49,23 @@
 - **The cost, honestly:** equivariant models are strictly **less expressive** by construction,
   attention is O(n²) in tokens, and *we measured that structure is not automatically a win* —
   physics-into-the-trunk was NULL 3-for-3 (ledger K9/K10) while the crude flat head-concat
-  carried the policy's largest dependency (P1).
+  carried the policy's largest dependency (P1; that concat was later deleted at v61).
 - **Edges route; they do not transmit magnitude.** Softmax normalizes the row, so a bias moves
   *who attends to whom* but delivers a **ratio**, not "53% of max HP". Absolutes need **token
   content** (`prefuse_proj`) or **per-action cells** (`pointer_cells`) — which is why the flat
-  op head-concat is still the policy's largest dependency even as the edges grow
+  op head-concat was still the policy's largest dependency (2026-08) even as the edges grew
   ([[shortcut_learning_and_feature_delivery]] Part 6).
 - **We shipped half of Shaw et al. 2018.** Relative-position representations add the pair term to
-  the **keys** *and* the **values**; all fifteen of our edge families are key-side only. The key
+  the **keys** *and* the **values**; all of our edge families (fifteen when this was written, seventeen as
+  of 2026-10-25) are key-side only. The key
   path is scale-destroying (`softmax(logits + c·1) = softmax(logits)`); the value path is
   scale-*preserving* (`Σα = 1` ⇒ homogeneous of degree 1). **The bias chooses the weighting, the
   value carries the number** — and driving α from a *different* channel than the one averaged turns
   a weighted mean into a **conditional expectation**, which is OA1 in closed form. The choice
   between PMA / entity cross-attention / multi-query seeds / pair-token promotion is one dial —
   *how many output slots* — where the seeds are the underused middle and the cost lands in a side
-  module rather than on the trunk (§ *The output-slot ladder*).
+  module rather than on the trunk (§ *The output-slot ladder*; the seed readout was in fact built
+  at v61 and deleted at v96, see the status note under the seed-collapse monitors).
 - **Expected damage lives on an EDGE**, because it is a property of the (move, defender, board)
   **triple** — an *activation* recomputed every forward, never a weight. The move token carries
   only invariants (BP/type/category/accuracy); randomness rides as a distribution summary
@@ -62,17 +82,20 @@
 - **Edges ROUTE; they never carry payload.** A softmax row is shift-invariant, so a bias can
   only express *contrast within a row* — never a level, never a magnitude past the point the
   row saturates. Magnitude reaches the decision through the **pointer cells** (exact, per-action)
-  and the critic through the **op concat**. That is why we run three routes, and why every
+  and, in the 2026-08 build, the critic through the **op concat** (since v61 the critic's route is token content, the
+  `value_entity_pool` injection). That is why we ran three routes, and why every
   real family audit reads **outgoing dominant, incoming near-decorative IN THE EDGES** — a
   replication of the ledger's P1 shape, with the explanations (two now tested) in §6.2. The
   direction split **inverts by channel**: in the concat, INCOMING dominates (gen-3 @9.6M,
   shuffle-controlled: `in_matrix` 16.27% vs `out_active` 6.25%), which is exactly what the
   routing-vs-payload argument predicts — absolutes ride the payload route, ranking rides the
   routing one.
-- **The heads are a severe funnel** (§6.5): 35 seats → three pooled 128-vectors for the policy and
-  **one** for the critic. The op concat is the only un-pooled route for *both*; the pointer head is
+- **The heads are a severe funnel** (§6.5; as measured on the v51-v60 build): 35 seats → three
+  pooled 128-vectors for the policy and **one** for the critic. The op concat was then the only
+  un-pooled route for *both* (it was deleted at v61; the critic's un-pooled route today is the
+  `value_entity_pool` attention pool, `designs/ARCHITECTURE.md` section 3); the pointer head is
   a second un-pooled route for the *policy only*. v51 made the policy entity-native and left the
-  critic reading one microphone — which is exactly why D2 carries the largest measured `|ΔV|`.
+  critic reading one microphone — which is exactly why D2 carried the largest measured `|ΔV|`.
   The critic's deficiency is **conditionality, not bandwidth**: "widen the value pool" is refuted
   (P3), but P3 tested *width*, never *multiplicity*, and the measured pathology is credit
   assignment (the self-KO floor leak), which an episode-outcome AUC cannot see.
@@ -84,7 +107,8 @@
   strategy, not a best path**.
 - **Equivariance and conditioning are two halves of one decision** (§6.7): *share weights where a
   symmetry is real, un-share along axes where it is false.* Edge biases and FiLM are the same
-  hypernetwork shape at different **clock speeds** (computed-per-forward vs learned-per-battle);
+  hypernetwork shape at different **clock speeds** (computed-per-forward vs learned-per-battle;
+  the FiLM head conditioning, v44-v77, was deleted at v78 after the nulls below);
   LoRA would attach to the shared functions entity design manufactures — but the conditioning ladder
   is under two independent measured nulls, so that stays an open, not a plan.
 - **Equivariant is NOT position-blind** (§6.9). Invariance, equivariance and true
@@ -93,12 +117,13 @@
   OA introduces no positional axis anywhere (pre-registered permutation gate). Exactly **one**
   axis is still undecided: the six per-defender cells inside a widened seat, which is precisely
   what separates critic route **7a** (positional, fully expressive) from **7b/PV** (equivariant,
-  rank-*h*).
+  rank-*h*). (That was the position on 2026-08-08. PV was built as `--pair-value-route` at v95, no recorded
+  run ever enabled it, and it was deleted at v135, so 7b was never decided by a measurement.)
 
 - **Depth is plies of who-threatens-whom, and recurrence IN DEPTH is not the recurrence we vetoed.**
   A looped transformer (Saunshi 2025, Huginn, Ouro) re-applies one block for adaptive depth at zero
-  extra parameters; we already ran the miniature (the v8-era `damage_refine_rounds` physics loop) and
-  measured it inert 3-for-3, so it carries a high build bar and a named pre-probe (Part 4).
+  extra parameters; we already ran the miniature (the v8-era `damage_refine_rounds` physics loop, since
+  deleted at v70) and measured it inert 3-for-3, so it carries a high build bar and a named pre-probe (Part 4).
 
 ---
 
@@ -120,12 +145,12 @@ Three ideas, and they are the same idea three times:
 | **Things get seats** (tokens) | one shared encoder over every entity; identity comes from content | team slots, move slots |
 | **Relationships get computed and whispered** (edge biases) | we *know* the damage formula — compute it, deliver it as "these two matter to each other" | the pairwise structure that had no home at all |
 | **Decisions are read off the chooser** (pointer head) | the logit for "switch to Zapdos" is computed from *Zapdos's own token* | action indices |
-| *(still to come)* **Time gets content, not slots** | "three turns ago" becomes a feature, not a weight range | the history block |
+| **Time gets content, not slots** *(still to come when this was written; it landed as the event window, v81-v90)* | "three turns ago" becomes a feature, not a weight range | the history block |
 
 ```
         BEFORE                                   AFTER
    ┌──────────────────────┐            ┌────┐┌────┐┌────┐┌────┐┌────┐
-   │ 2925 numbers in a    │            │mon ││mon ││move││thrt││glob│   ← things, seats
+   │ ~2.8k numbers in a   │            │mon ││mon ││move││thrt││glob│   ← things, seats
    │ row; meaning = index │    ──►     └─┬──┘└─┬──┘└─┬──┘└─┬──┘└─┬──┘
    │                      │              └──┬──┴─────┴──┬──┴─────┘
    │ one Linear → 11      │            attention, biased by computed physics
@@ -141,10 +166,16 @@ classes become *impossible to write* rather than *guarded against*.
 now has to be promoted to explicit content; and the action head can no longer form arbitrary
 relationships *between* candidate actions — that burden moves upstream into attention.
 
-**Where we are.** Stage 0 (pointer head) ✅ · Stage 1 (move/threat/tail seats) ✅ · Stage 2 (fifteen
-edge families, incl. the whole C consequence set) ✅ · Stage 3 (one declarative schema; the flat
-vector dies) — schema view + generator half in · **history: rung 1 shipped** (`gen3_entity_recency_v1`,
-obs 2889 → 2925), and Part 4 explains why the rest is deliberately last rather than procrastinated.
+**Where we were (2026-08-08), and where it went.** Stage 0 (pointer head) ✅ · Stage 1 (move/threat/tail
+seats) ✅ · Stage 2 (fifteen edge families, incl. the whole C consequence set) ✅ · Stage 3 (one
+declarative schema; the flat vector dies) — schema view + generator half in · **history: rung 1 shipped**
+(`gen3_entity_recency_v1`, a +36-dim obs widening: 3 dims x 12 mons), and Part 4 explains why the rest was
+deliberately last rather than procrastinated. **As of 2026-10-25:** Stages 0-2 stand, with seventeen edge
+families (`h` and `r` added) and the E3/E4/E5 seats now sitting among 64 tokens in production
+(`designs/ARCHITECTURE.md` section 2.3); history rungs 2 and 3 shipped (the event window at v81, the `r`
+reference edges on 2026-08-16) and the TurnDelta frames were deleted at v90; the flat vector did not die: the
+observation is still one flat row (2845 dims, written by the Rust encoder and read through `get_layout()`), with
+the Stage-3 re-home (v60) having moved per-entity facts onto the mon slots.
 
 Parts 1–5 are the detailed version; Part 6 is why the pieces compose.
 
@@ -212,7 +243,9 @@ Three mechanisms turn that into measurable payoff:
    you cannot represent.
 3. **Bug classes become unrepresentable.** If move logit *k* is *computed from* the entity at
    request-slot *k*, a sorted-vs-request misalignment cannot occur — not "is guarded against."
-   We maintained `src/agents/action/ordering_integrity.py` purely to police that class.
+   We maintained `src/agents/action/ordering_integrity.py` purely to police that class (it survives as
+   the throwing `check_obs_move_order` guard on the sorted-vs-request move orders of every served
+   observation row).
 
 **The honest cost.** Equivariance buys sample efficiency and correctness, **not** expressiveness
 — an equivariant model is strictly *less* expressive by construction. That is the point, and it
@@ -232,8 +265,12 @@ with enough data will simply memorize the map.
 - **Tokens** — the seat at the table: one fixed-width vector per entity + a **type embedding**
   saying what kind of thing it is. Fixed width lets one set of attention weights process any
   mix of types. Attention is the table conversation: each seat decides who is relevant (query·key)
-  and absorbs summaries (values). Current trunk: 12 mon seats + 2 CLS note-takers (one pi, one
-  vf) **plus a global token and, since v54, the E3/E4 move seats**.
+  and absorbs summaries (values). The trunk in 2026-08: 12 mon seats + 2 CLS note-takers (one pi, one
+  vf) **plus a global token and, since v54, the E3/E4 move seats**. As of 2026-10-25 production has 64
+  seats: the 12 mon seats, three board tokens (our side, their side, the field) in place of the global
+  token, the E3/E4/E5 move seats, one OTHER_species seat and the 32 event seats; the pools are three
+  learned queries (`our_cls`, `their_cls`, `value_cls`) read out after the trunk
+  (`designs/ARCHITECTURE.md` sections 2.3 and 3.1).
 - **Edge biases** — attention normally LEARNS relevance from scratch: `logit(i,j) = qᵢ·kⱼ`. A
   bias ADDS a computed term: `logit(i,j) = qᵢ·kⱼ + b_ij`. A trusted expert (the exact damage
   calc) whispering *"these two — pay attention."* Costs **zero token dimensions** (it modifies
@@ -281,7 +318,9 @@ representation would have to re-derive it from evidence scattered across separat
 1. **Concatenate at the readout — SHIPPED (v51).** `DamageOperator.pointer_cells` slices the
    flat damage block into per-action cells: move cell *k* → `[low, high, crit, pko, p_land,
    known, sec×7]`; switch cell *j* → its incoming per-defender row + the Choice-Band
-   conditional tail + (under `--damage-matrices-outgoing-all`) its OAX attacker row. The
+   conditional tail + (in the build that had `--damage-matrices-outgoing-all`, deleted at v88 and
+   never enabled in a gen-8+ run) its OAX attacker row. Production's cells have since gained the
+   move-resolution block and the switch hazard (`designs/ARCHITECTURE.md` section 3.3). The
    pointer head concatenates those onto the entity token before scoring. Two properties worth
    copying: the **op owns its own layout** (consumers never hardcode an offset; offsets are
    pinned against `decode_damage_block`), and the cells are a *pure slice of the same tensor*
@@ -291,10 +330,10 @@ representation would have to re-derive it from evidence scattered across separat
    cell → per-head additive scalar (one head can attend by KO-range, another by expected chip),
    with the full cell available as edge features where marginals need it. Requires a custom MHA
    (stock `TransformerEncoderLayer` takes no per-pair float bias). **Kernel proven on our
-   stack** (`src/agents/model/entity_spike_benchmark.py`, 2026-08-03): SDPA with an additive
+   stack** (the `entity_spike_benchmark.py` spike, 2026-08-03; the script has since been deleted): SDPA with an additive
    float mask matches a float64 reference at max|Δ| 1.2e-7, `bias=0` reproduces `bias=None`
    exactly, and it compiles `fullgraph=True` with **zero graph breaks** — non-negotiable, since
-   the compiled-opponent path is a shipped 6.5× lever and a break would be an invisible
+   the compiled-opponent path was a shipped 6.5× lever (measured 2026-08) and a break would be an invisible
    regression.
 3. **Make the model learn it.** We deliberately do not. (See `[[objective_richness_and_representation]]`
    and the provide-vs-learn principle: give the model raw KNOWN facts; don't make it
@@ -325,10 +364,11 @@ consequences:
 This is a capacity/conditioning claim, not an impossibility proof — a model *can* dedicate a
 head with near-constant keys so the bias row alone drives `α`, and read magnitude back out of
 the attention weight; it just pays a head for a relative, saturating, ill-conditioned code.
-The practical consequence is the measured one: the v56 edge system is **load-bearing and
-growing**, yet zeroing the op's flat head-concat still flips **more** actions than turning
+The practical consequence is the measured one: the v56 edge system was **load-bearing and
+growing**, yet zeroing the op's flat head-concat still flipped **more** actions than turning
 **every** edge family off (gen-1 35.5% vs 26.9%; gen-2 33.1% vs 31.5%). The edges added a
-capability the concat never had; they did not replace the one it does have. The full treatment —
+capability the concat never had; they did not replace the one it had (the concat was nonetheless
+deleted at v61, on a later read; see Part 5). The full treatment —
 the audit table, the pre-registered delete-vs-re-home decision rule, and the four confounds —
 is in [[shortcut_learning_and_feature_delivery]] Part 6.
 
@@ -356,9 +396,11 @@ The reason to attach a number to the entity's own token rather than a free-float
 token" is **binding**: a free-floating number recreates the exact problem entity models exist to
 solve (which number goes with which mon).
 
-**What promotion actually COSTS (measured 2026-08-07, `entity_spike_benchmark.py`).** Production
-today is **n = 29** seats (12 team + 1 global + 4 E3 + 6 E4 + 6 E5 tail — `EntitySeats.n_seats`
-= `4 + topk_seats + TEAM_SIZE`). Promoting the pair cells that D1/D3 *already compute* adds:
+**What promotion actually COSTS (measured 2026-08-07 with the `entity_spike_benchmark.py` spike,
+since deleted).** Production then was **n = 29** seats (12 team + 1 global + 4 E3 + 6 E4 + 6 E5 tail
+— `EntitySeats.n_seats` = `4 + topk_seats + TEAM_SIZE`, which still sums the E3/E4/E5 seats; production
+as of 2026-10-25 runs 64 tokens, `designs/ARCHITECTURE.md` section 2.3, so every timing below is the
+2026-08 build's). Promoting the pair cells that D1/D3 *already compute* adds:
 our-4-moves × their-6-mons = **+24** (n=53); their-K=6-moves × our-6-mons = **+36** (n=65); both
 = **+60** (n=89). Trunk-only, B=1, threads=1 (the PFSP env-worker regime):
 
@@ -450,7 +492,7 @@ outputs and you have committed to a 6:1 reduction — arithmetic, not a flaw in 
   means. Heads and seeds both buy rank but in different currencies — heads are cheap rank from
   *one* question (shared query, different projections); seeds are rank from *different* questions
   (independent query content, a full `D_MODEL` each). So k=2 on top of h=4 is 8 means per mon.
-- **(C) is trivial in FLOPs** against a trunk already running n=29 × 4 heads × 2 layers. Each seed
+- **(C) is trivial in FLOPs** against a trunk then running n=29 × 4 heads × 2 layers. Each seed
   learns a different question asked of every mon: *"the biggest hit I take"*, *"the most likely
   hit"*, *"what status lands on me"*, *"what I take from the move they'll actually use"*. **That
   last one is OA1**, learned rather than hand-computed (see the conditional-expectation identity
@@ -477,7 +519,7 @@ entities change any output? For seeds, no — the seed set is shared across the 
 
 **The failure mode to instrument: SEED COLLAPSE.** With k too large the seeds converge, all learn
 the same question, and you have paid for k reads and got one. This is not hypothetical — it is the
-measured `z_arch` pathology (≈2/3 of z's energy in ONE shared direction at 300M, both regularizers
+measured `z_arch` pathology (the team-archetype latent, deleted at v78; ≈2/3 of z's energy in ONE shared direction at 300M, both regularizers
 inactive, the VICReg **covariance term never wired**; see [[self_discovered_archetype_latent]] and
 [[latent_belief_metrics_and_collapse]]). Monitor both:
 
@@ -493,6 +535,15 @@ wired** (the `z_arch` post-mortem is that the hinge alone went slack). **Start a
 cheapest thing strictly more than the heads already give — and raise only when *both* gates pass:
 the collapse monitor says the seeds stay distinct, **and** a probe says more rank is needed.
 Raising k against a collapsing monitor buys rank you are not receiving.
+
+> **Status of this ladder (2026-10-25).** The seed rung was built and measured. The v61
+> `MultiSeedValueReadout` (k=4 seeds of 64 dims cross-attending over the op's per-our-mon incoming rows,
+> critic only) shipped with the collapse monitors above and read **0.0000 bit-exact** dependence in gen-13
+> and gen-14; it was deleted at v96. The surviving critic-side pool is the v80 `value_entity_pool`
+> (`UnifiedValueReadout`: `UVR_K`=4 learned queries over the 12 team tokens plus the op's per-our-mon
+> rows, injected into `value_pooled`), which read dV 5.490 on gen-14 (`designs/ARCHITECTURE.md` section 3.1,
+> `designs/CHANGELOG.md` v96). So "more queries" was tried, in that form, and the outcome sits there; read the
+> bullets above as the design reasoning, not as an untested proposal.
 
 #### Shaw et al. 2018 — and why we shipped only half of it
 
@@ -516,8 +567,9 @@ values:  out_i = Σ_j α_ij ( x_j W_v + a^V_ij )         ← what comes back
   *shared* `W_p` is what makes averaging semantically legal at all:
   [[marginalization_and_uncertainty]] § *Convex combinations*).
 
-**All fifteen of our edge families are `a^K`. We have implemented exactly half of Shaw — and the
-half we skipped is the half that carries numbers.** The bias chooses the weighting; the value
+**All of our edge families (fifteen when this was written, seventeen now) are `a^K`. We have implemented
+exactly half of Shaw — and the half we skipped is the half that carries numbers** (PV, the value-side
+route, was built at v95 and deleted at v135 without ever being enabled in a recorded run). The bias chooses the weighting; the value
 carries the number.
 
 *(Footnote worth knowing: later relative-position work — T5's scalar buckets, RoPE — dropped the
@@ -562,7 +614,7 @@ width is free relative to everything else here); raise k.
 **Two routes, not one — and why PV is required rather than optional.** OA1/OA2 serve the **policy**
 losslessly, because *the action space supplies the output slots* (6 switch logits = 6 exact cells,
 zero collapse) — but the pointer head is policy-only. The **critic** has exactly one un-pooled
-route (the op concat: `|dV|` **5.67** concat vs **1.86** all-edges-off), and PV writes into the
+route (in 2026-08 the op concat: `|dV|` **5.67** concat vs **1.86** all-edges-off), and PV would write into the
 trunk, which is what the value head reads. That is why the concat-deletion precondition is
 two-route. What PV/promotion buys beyond per-action magnitude is **cross-pair reasoning** — joint
 properties of the matrix (*"their Ice Beam threatens three of my mons"*, *"every switch-in I have
@@ -603,6 +655,12 @@ pair-values need α materialized, which breaks fused SDPA, and the compiled trun
 6.5× lever. Keep the main layers fused; zero-init `W_p`; register it in `restore_identity_init()`.
 Full spec: `designs/ai_v9/design_conditional_opponent_cells.md` §2b.
 
+> **Status (2026-10-25).** The "live decision" above never resolved by measurement. PV was built as the
+> `--pair-value-route` critic route at v95 (token content on the value pool's copy, a zero-init
+> `Linear(14, 128)`), its re-entry gate (the C4-style offline gate) was never met, no recorded run enabled
+> it, and it was deleted at v135 (`designs/CHANGELOG.md` v95 and the 2026-10-03 P11c entry). The critic's
+> physics now reaches `value_pooled` through `value_entity_pool` (`designs/ARCHITECTURE.md` section 3.1).
+
 **2. WHAT do you deliver — which TRANSFORM of the number?**
 
 This matters more than placement and is the cheapest thing to get right.
@@ -616,7 +674,7 @@ This matters more than placement and is the cheapest thing to get right.
 - **Probabilities SATURATE; margins don't.** `pko` is flat at ~0 across "barely survives" and
   "survives comfortably" — but that difference is exactly what decides whether to switch. A
   signed **margin** channel (`high_frac − hp_frac`: >0 means dead) carries the gradient the
-  probability throws away, and thresholds at a constant 0. *Proposal — not yet built.*
+  probability throws away, and thresholds at a constant 0. *Proposal — not built as of 2026-08-08 [unverified 2026-10-25: no signed-margin cell is named in `designs/ARCHITECTURE.md` section 4].*
 - **Deliver a distribution, not a point.** `[low, high, crit, pko]` already does this
   ([[marginalization_and_uncertainty]]).
 
@@ -627,9 +685,10 @@ This matters more than placement and is the cheapest thing to get right.
   *relative to the vector's norm* — far better than softmax's per-row normalization, but not
   free), and an MLP has to carve a sharp threshold out of a single low-frequency coordinate.
 - **Resolution is a real, fixable problem.** Sinusoidal / random **Fourier features** of the
-  scalar (Tancik 2020) or **soft-binning** (the same trick as the `ValueDistHead`'s HL-Gauss
+  scalar (Tancik 2020) or **soft-binning** (the same trick as the deleted `ValueDistHead`'s HL-Gauss
   target, applied to an *input*) make a threshold one linear cut away instead of a
-  high-frequency function to be learned. **We do this nowhere on inputs today** — every physics
+  high-frequency function to be learned. **We did this nowhere on inputs as of 2026-08** (a search of
+  `src/agents/model` on 2026-10-25 still finds no Fourier or soft-binned input encoding) — every physics
   scalar enters as a raw float. *Untested here; cheap to try.*
 - **Inject additively through a zero-init Linear** (`prefuse_proj`'s pattern): identity-at-init,
   clean A/B, and the number lands in a learned subspace instead of displacing existing geometry.
@@ -667,8 +726,9 @@ same intervention family as physics-into-the-trunk, which measured NULL 3-for-3 
 **And the P1 dependence table says the axis promotion would buy is the WEAKER one.** The
 attacker axis reads far higher than the defender axis: the our-6-mons × their-active matrix at
 **21.4%** of the ablation ceiling against the our-4-moves × their-6-mons at **6.3%** (both on the
-2026-07-25 P1 snapshot, whose config had BOTH matrices; the current production config has
-neither) — while
+2026-07-25 P1 snapshot, whose config had BOTH matrices as flat blocks; the attacker-matrix flat block was
+deleted at v88 and the other is no longer in the flat block, and `designs/ARCHITECTURE.md` section 4.2
+explains why that whole table is not current and must not be quoted as today's dependence) — while
 the single-active per-action OUTGOING block dominates at 65.7%. The attacker axis is *already
 entity-native* (our 6 mon tokens exist), so the fact the policy demonstrably uses needs no new
 seats; the fact promotion would deliver measured near-inert. (Caveat: P1 predates the pointer
@@ -695,8 +755,9 @@ The core gen3ou defensive pivot, decomposed into what the architecture must actu
 3. **Ranking** over *j*.
 
 **Where each piece lives.** `_incoming_matrix` has everything — cell `(k, j)` is exactly step 2,
-and cell `(k, our_active)` is exactly step 1. But it reaches the policy only through the flat
-concat → `latent_pi`, i.e. as **shared context**, identical for every action. What reaches the
+and cell `(k, our_active)` is exactly step 1. But in the build this example was written against it
+reached the policy only through the flat concat → `latent_pi`, i.e. as **shared context**, identical for
+every action (that concat was deleted at v61, leaving the edges and the trunk as the matrix's routes). What reached the
 switch LOGIT per-action is `pointer_cells`' switch cell = the **collapsed** incoming row
 (`max_k` per defender) + the CB tail. That collapse takes an INDEPENDENT max per defender, so it
 answers *"worst case for Blissey over all their moves"* — decorrelated from the move they are
@@ -727,9 +788,16 @@ greedy one, so the model discovers how rational to assume the opponent is instea
 **Honest residuals.** (a) It assumes the opponent aims at the current active — real players aim
 at the predicted switch-in, and λ only partly absorbs that. (b) It is still a soft reduction over
 k; the full joint at the logit needs the pair-value cross-attention or pair tokens above. (c) It
-covers only the DEFENSIVE half — and gen-3 runs `damage_matrices_outgoing_all: False`, so the
-switch cell carries **no offensive information about the switch-in at all**; "defensive pivot →
-offensive pivot" is missing its second half at the per-action path, not just its plan.
+covers only the DEFENSIVE half — and gen-3 ran `damage_matrices_outgoing_all: False` (the flag was
+deleted at v88; the `d2` edge family now carries a bench mon's offense), so the switch cell carried **no
+offensive information about the switch-in at all**; "defensive pivot → offensive pivot" was missing its
+second half at the per-action path, not just its plan.
+
+> **Status (2026-10-25).** This cell was built: OA1 as `conditional_threat_cell` (v95) and its mirror OA2
+> as `switch_branch_cell` (v94), among the seven per-action alpha blocks. All seven were inert in production
+> from the 2026-10-12 end-state adoption and were deleted in legacy deletion U3 (config v157). Their job
+> is now done by MOVE RESOLUTION, the one per-action alpha family (`designs/ARCHITECTURE.md` section 3.3: the
+> move cell is 13 + 38 = 51 wide, the switch cell 15 + 18 = 33 wide plus the 2-wide switch hazard).
 
 ### The MIRROR — "they'll switch out, so hit the switch-in"
 
@@ -760,8 +828,9 @@ REVEALED-gated (unrevealed opp slots zeroed), so a revealed-gated `q_b` reads �
 when switching is most frequent — and the model concludes "my move always lands on the active."
 That is the same GIGO class as the typeless-HP "immune" bug. The fix exists: the
 expected-latent defender (`SPECIES_EXP_MULT` ⊕ `SPECIES_SPREAD_PRIOR` marginalised through the
-species belief) — but it rides `--threat-refine-outgoing`, hence `--damage-refine-rounds > 0`,
-which the prefuse config sets to 0, so **it is inert in gen-3**.
+species belief) — but it rode `--threat-refine-outgoing`, hence `--damage-refine-rounds > 0`,
+which the prefuse config set to 0, so **it was inert in gen-3** (both flags, and the refine loop they
+belonged to, were deleted: the model fields at v70, the CLI spelling by v76).
 
 **The robust per-move form: keep the two branches DECORRELATED, do not pre-blend.** Per move *k*:
 `[X(k → their active) …, X_switch(k) …]` plus the one shared `p_switch` scalar — never
@@ -777,10 +846,10 @@ permutation-invariant in *b*, magnitude-preserving (still an HP fraction), diffe
 indexed per-move by *k*, which is the action's own entity. No positional axis, same as the
 incoming conditional cell.
 
-**What gen-3 is missing today.** The move cell in `pointer_cells` is
+**What gen-3 was missing (2026-08; the OA2 status note above says what became of it).** The move cell in `pointer_cells` is
 `[low, high, crit, pko, p_land, known, sec×7]` — **vs their ACTIVE only**. The switch branch is
-not in the per-action path at all; it exists only as a D1 *edge* (ratios, revealed-gated, #2
-family at 6.05% flips). So "punish the switch" has no magnitude route to the move logit. Note
+not in the per-action path at all; it existed only as a D1 *edge* (ratios, revealed-gated, #2
+family at 6.05% flips). So "punish the switch" had no magnitude route to the move logit. Note
 also that this is why several edges read decorative: **the X (Pursuit) and T (trapping) edges are
 priced but nothing consumes them** — a switch-branch cell would give both a consumer.
 
@@ -788,7 +857,8 @@ priced but nothing consumes them** — a switch-branch cell would give both a co
 
 The `DamageOperator` is not a learned damage predictor — it is the **actual Gen 3 damage
 formula written in PyTorch**, fuzz-validated against constructed Showdown probes
-(`damage_op_probe_fuzz_test.py`, one modifier per scenario: type/STAB/SE/resist/4×/immunity/
+(`damage_op_probe_fuzz_test.py`, 22/22 in the v61 gate, one modifier per scenario; that test drove the Python
+battle layer and was deleted with it on 2026-10-08, T27 P6 slice 6d-2; the scenario list: type/STAB/SE/resist/4×/immunity/
 Thick Fat/Choice Band/item/boosts/burn/screens/weather). Two reasons to bother, and the second
 is the good one:
 
@@ -833,7 +903,7 @@ was merely the first consequence priced. Every move class gets edges; only the c
   never a table.
 
 Migration note: almost no NEW computation. v24 secondary chances, v26 physics, v27 landing, v37
-split, wish/protect wiring are already fuzz-validated; the work is **re-homing** them from flat
+split, wish/protect wiring were already fuzz-validated (2026-08); the work was **re-homing** them from flat
 positional blocks onto the structure matching their shape.
 
 ---
@@ -842,8 +912,16 @@ positional blocks onto the structure matching their shape.
 
 ### The two defects, and they are the ones v51 just fixed for actions
 
-The current history block is 7 turns × 159 dims of `TurnDelta` frames
-(`N_HISTORY_TURNS`, v42). It is:
+> **Status (2026-10-25).** This Part is the design argument as of 2026-08; its "current" block no longer
+> exists. The history block it criticises (7 turns × 159 dims of `TurnDelta` lag frames, `N_HISTORY_TURNS`,
+> v42) was deleted at v90 (`gen3_frame_deletion_v1`), when the event seats out-measured it (critic dV 2.7714
+> for the event seats against 1.3015 for the frames, gen-13.5). History in production is the **event window**:
+> the last 32 decision-relevant events as typed 30-column records, each one attention seat with a log-saturated
+> recency column, wired to the mon tokens by the `r` edge family, plus the per-entity recency dims and the
+> `h` pair-history tendencies (`designs/ARCHITECTURE.md` sections 1.1, 2.3 and 5.1).
+
+The history block in 2026-08 was 7 turns × 159 dims of `TurnDelta` frames
+(`N_HISTORY_TURNS`, v42). It was:
 
 - **Positional in time** — turn *t−3* is a fixed weight range, so the same event at a different
   lag lands on different weights and must be learned separately. (Identical disease to "logit
@@ -876,25 +954,30 @@ counter, pending Wish, choice-lock state, revealed movesets are all *history com
 state*. The irreducibly sequential remainder (opponent tendencies, PP-war pacing, momentum) is
 small.
 
-**The decided ladder** (`designs/ai_v9/design_generation_roadmap.md` §4), in landing order:
+**The decided ladder** (`designs/ai_v9/design_generation_roadmap.md` §4; the history redesign it led to is
+`designs/ai_v9/design_history_entity.md`, tiers H-A, H-B and H-C), in landing order:
 
-1. **Per-entity recency features — SHIPPED** (`gen3_entity_recency_v1`, obs 2889 → 2925): three
+1. **Per-entity recency features — SHIPPED** (`gen3_entity_recency_v1`, a +36-dim obs widening: 3 per-mon dims x 12 mons): three
    per-mon dims at `POKEMON_RECENCY_OFFSET` — `[turns_since_seen, turns_since_acted,
    turns_since_was_hit]` — log-saturated over a 10-turn cap, both sides (all three derive from
-   public protocol), sourced from the same `EpisodeTracker` as the progress clock. **TURN-ANCHORED**
+   public protocol), sourced then from the same Python `EpisodeTracker` as the progress clock (that
+   tracker is deleted; the fold now lives in the Rust core's trackers). **TURN-ANCHORED**
    (`cur_turn − event_turn`) rather than tick-then-reset: the fuzz caught the counter form reading
    differently across forced-switch turns, so anchoring on event turns makes it
-   processing-order invariant. Gate: `poke_env_gaps/recency_fuzz_test.py` (encoded scalars ==
-   an independent full-log recount). Cheap, entity-native, and the event-sourced fold already
+   processing-order invariant. Gate then: `poke_env_gaps/recency_fuzz_test.py` (encoded scalars ==
+   an independent full-log recount; deleted with the Python battle layer, 2026-10-08). Cheap, entity-native, and the event-sourced fold already
    computed all of it — which is why it was rung 1.
-2. **A short window of turn/event TOKENS** for the residue, entering attention with a **recency
-   embedding** instead of a fixed slot. Equivariant in the token dimension, trivially
+2. **A short window of turn/event TOKENS — SHIPPED** (Tier H-B, `gen3_event_window_v1`, v81, 2026-08-16;
+   reshaped by `gen3_event_record_v2` to 32 records of 30 columns, one seat each) for the residue, entering
+   attention with a **recency embedding** (a log-saturated recency column) instead of a fixed slot. Equivariant in the token dimension, trivially
    variable-length; the policy can now *query* patterns ("they Protect on Toxic turns") rather
    than have them smeared across a weight range.
-3. **Entity-LINKED event tokens** — the end state, gated on an attention-usage audit. Each event
+3. **Entity-LINKED event tokens — SHIPPED in structural form** (Tier H-C, the `r` edge family, 2026-08-16,
+   no config bump: per (event seat, mon token) reference cells `[is_actor, is_target]` at first, `is_rel` added by `gen3_event_record_v2`; species-num
+   equality side-gated against mirror false links). It was the end state, gated on an attention-usage audit. Each event
    becomes a token whose actor/move fields ARE the same embeddings as the live entity tokens,
-   so history becomes **edges between past events and present entities**. The `BattleEvent` log
-   is already the validated source of truth; this is a re-encoding of trusted data, not new
+   so history becomes **edges between past events and present entities**. The public-protocol event log
+   is already the validated source of truth (then the Python `BattleEvent` log, now the Rust core's folds); this is a re-encoding of trusted data, not new
    state tracking.
 
 The general lesson for any entity-centric model: **history is either compiled into entity
@@ -907,14 +990,14 @@ Take a single concrete thing the model should notice: *"this Blissey has now Pro
 Toxic turns."* Here is what each rung can represent.
 
 ```
-RUNG 0 — today (7 × 159 positional frames)
+RUNG 0 — as of 2026-08 (7 × 159 positional frames; deleted at v90)
   turn t−1 frame: [... opp_move_id = Protect ...]      ← a fixed weight range
   turn t−3 frame: [... opp_move_id = Protect ...]      ← a DIFFERENT fixed weight range
   ✗ "Protect at lag 1" and "Protect at lag 3" are separate weights, learned separately
   ✗ neither is connected to the Blissey token, or to its protect counter
 ```
 ```
-RUNG 1 — recency ON the entity                                  ✅ SHIPPED (obs 2889 → 2925)
+RUNG 1 — recency ON the entity                                  ✅ SHIPPED (+36 obs dims)
   Blissey's token: [... turns_since_seen, turns_since_acted, turns_since_was_hit,
                        protect_counter = 2 ...]
   ✓ the fact now lives on the thing it is about
@@ -922,7 +1005,7 @@ RUNG 1 — recency ON the entity                                  ✅ SHIPPED (o
   ✗ still cannot express the CONDITIONAL ("...on my Toxic turns")
 ```
 ```
-RUNG 2 — turn tokens, recency as CONTENT     (the sequential residue gets seats)
+RUNG 2 — turn tokens, recency as CONTENT     (the sequential residue gets seats)   SHIPPED (v81 event window)
   seat: [what happened, how long ago = 1]
   seat: [what happened, how long ago = 3]
   ✓ the same pattern at lag 2 or lag 6 hits the SAME weights
@@ -930,7 +1013,7 @@ RUNG 2 — turn tokens, recency as CONTENT     (the sequential residue gets seat
   ✗ the Protect in history and the Blissey in the lineup are still unrelated objects
 ```
 ```
-RUNG 3 — entity-LINKED event tokens         (gated on an attention-usage audit)
+RUNG 3 — entity-LINKED event tokens         SHIPPED as the `r` reference edges (H-C)
   event token: [actor = ←the SAME Blissey embedding, move = Protect, when = t−1]
   ✓ history becomes EDGES between past events and present entities
   ✓ "THIS mon Protects when I status it" is representable — a per-opponent tendency
@@ -955,13 +1038,15 @@ vetoed by a debuggability invariant.** Given how much of this project's progress
 prober, that trade reads as correct.
 
 **Deferral, then rung 1 (2026-08-03 → 2026-08-07):** history was deferred past Stages 1–2 — the
-7×159 block is a self-contained obs slice with its own encoder path, and Stages 1–2 change the model
+7×159 block was a self-contained obs slice with its own encoder path, and Stages 1–2 change the model
 side only, so it rode along unchanged (attribution discipline: one fewer simultaneous change in the
-riskiest stages). **Rung 1 has now landed** (`gen3_entity_recency_v1`), which is the cheap
-sufficient-statistic half — balances, not statements. The 7×159 positional block is still there and
-still unchanged; the forcing point for it remains Stage 3, whose minimal port is 7 opaque "history
-tokens" through a per-type input projection, preserving every signal without deciding rungs 2–3.
-Those wait on the attention-usage audit, exactly as the edge families waited on theirs.
+riskiest stages). **Rung 1 had landed by 2026-08-07** (`gen3_entity_recency_v1`), which is the cheap
+sufficient-statistic half — balances, not statements. At that date the 7×159 positional block was still
+there and unchanged, the forcing point for it was Stage 3 (whose minimal port was 7 opaque "history
+tokens" through a per-type input projection, preserving every signal without deciding rungs 2–3), and
+rungs 2–3 waited on the attention-usage audit, exactly as the edge families waited on theirs. **What
+followed:** the pair-history tier H-A landed at v79, the event window H-B at v81, the `r` edges H-C on
+2026-08-16, and the 7×159 block was deleted at v90 once the event seats out-measured it.
 
 ### Depth, and the looped transformer — recurrence WITHIN a forward is a different thing
 
@@ -970,7 +1055,7 @@ The veto above is on recurrence **across decisions**: a hidden state carried fro
 nothing across decisions and breaks no forensic invariant. It is a capacity question, and it is
 worth stating what depth means in an entity model before asking for more of it.
 
-**What a layer is here.** One transformer layer is one round of message passing over the 29 seats:
+**What a layer is here.** One transformer layer is one round of message passing over the seats (29 in the 2026-08 build, 64 in production as of 2026-10-25):
 my mon reads what every opposing mon threatens. Two layers give a second hop: my mon can read what
 their Tyranitar has learned about my Swampert, which is the "they will go to Skarmory, which walls
 me" reasoning. Depth is plies of who-threatens-whom, one hop per layer. Battles are short
@@ -998,8 +1083,9 @@ attention refines the belief. The v8-era `damage_refine_rounds` loop was exactly
 small: a lean physics kernel re-run between the two layers from the current belief, its summary
 injected back onto the tokens (input injection, both directions, plus status). It cost about a fifth
 of the per-forward CPU and the trunk-enrichment audit found it near-inert three times (ledger
-K9/K10; the lean kernel was already a 92%-agreement proxy for the full one). It was deleted at v50,
-and the tier contract now *enforces* one pass, belief then physics then attention, because one pass
+K9/K10; the lean kernel was already a 92%-agreement proxy for the full one). It was deleted at v70
+(`gen3_refine_loop_removed_v1`; it had been 0 rounds in production), and the tier contract now *enforces*
+one pass, belief then physics then attention (`designs/ARCHITECTURE.md` section 2.1), because one pass
 matched the measurements. That is the strongest prior we own against "the trunk needs more
 iterations".
 
@@ -1010,8 +1096,8 @@ iterations".
   parameters. The belief-refinement story is also genuine: after attending over the revealed team,
   the teammate priors sharpen the guess at their sets, and physics recomputed from the sharper guess
   is not the first pass again.
-- *Cost: the rollout.* Opponents run at batch one on 48 CPU workers and are two thirds of worker
-  time; compilation bought a 6.5× per-forward win there and the gain has saturated. A loop of L
+- *Cost: the rollout.* At the time of writing (2026-08/09; [unverified 2026-10-25]) opponents ran at batch one on 48 CPU workers and were two thirds of worker
+  time; compilation bought a 6.5× per-forward win there and the gain had saturated. A loop of L
   multiplies the trunk cost by L, and if the physics op sits inside the loop it multiplies the most
   expensive block in the forward. Training pays truncated backprop through the loop, and a variable L
   fights the compiled trainer, which is fail-loud by design.
@@ -1044,12 +1130,16 @@ separated. A looped or deeper trunk therefore stays behind the high build bar, n
 ## Part 5 — Where this lives in our architecture
 
 - **Already entity-based:** `PokemonEncoder` (one shared per-mon encoder over 12 slots) →
-  `TeamTransformer` (12 mon tokens + 2 CLS pools, pi and vf) — textbook Deep Sets → attention.
+  `TeamTransformer` (12 mon tokens + the CLS pools) — textbook Deep Sets → attention. (Production
+  now runs `--token-encoding static`: the per-mon token is built from static dex facts plus the dynamic
+  state, still one shared function over the 12 mon seats; `PokemonEncoder` is the legacy encoding's
+  encoder, `designs/ARCHITECTURE.md` sections 2.1 and 2.3. The pools are three learned queries,
+  `our_cls`, `their_cls` and `value_cls`.)
 - **Stage 0 SHIPPED — `gen3_pointer_native_v1`** (`f25e708`, 2026-08-03): the flat
   `action_net` is **deleted** (a raising stub takes its slot; the optimizer is rebuilt) and
   `PointerNativeActionHead` IS the action head. Move logit *k* ← the REQUEST-slot-*k* move token
-  ⊕ its op cells; switch logit *j* ← our-team token *j* ⊕ its incoming/CB/OAX cells; struggle ←
-  the context; ctx = `latent_pi`, so the op block / beliefs / FiLM condition every score. Zero-init
+  ⊕ its op cells; switch logit *j* ← our-team token *j* ⊕ its incoming/CB/OAX cells (OAX deleted at v88); struggle ←
+  the context; ctx = `latent_pi`, so the op block / beliefs / FiLM conditioned every score (the FiLM was deleted at v78). Zero-init
   scorers built AFTER SB3's ortho-init ⇒ cold start is uniform-over-legal. It structurally
   dissolved **F2** (switch logits read from a permutation-*invariant* CLS pool, so a bench mon's
   token could never reach its own logit — the information was destroyed by the pooling) and the
@@ -1069,7 +1159,8 @@ separated. A looped or deeper trunk therefore stays behind the high build bar, n
   growing the token-type table (which would break loading in-generation checkpoints into newer code) and
   are appended LAST so the pointer stash's E3 slice is untouched. This is the truncation insurance the
   bimodal-miss finding in [[shortcut_learning_and_feature_delivery]] asked for.
-- **Stage 2 SHIPPED — `gen3_edge_bias_trunk_v1`, now FIFTEEN families:** the encoder
+- **Stage 2 SHIPPED — `gen3_edge_bias_trunk_v1`, FIFTEEN families when it landed (seventeen as of
+  2026-10-25: `h` and `r` were added later, `designs/ARCHITECTURE.md` section 5):** the encoder
   stack is now `BiasedEncoderLayer` (the spike-proven clone taking an additive per-pair per-head
   float bias; the key-padding mask rides the same tensor as a −1e9 addend). `EdgeBias` delivers
   fifteen families behind `--edge-bias-families` — **D1** (our active's 4 moves × the opp's 6 mons,
@@ -1088,7 +1179,8 @@ separated. A looped or deeper trunk therefore stays behind the high build bar, n
   **C4** Protect (at the (Protect E3 seat, GLOBAL) pair), **C1/C1b** setup-move post-boost deltas,
   **C3** recovery-flip, **C2** status-landing consequence (all three at the (E3 seat, opp-mon)
   route, behind D1/S1), and **C5** Baton Pass (the first family on the (E3 seat, OUR-mon) route —
-  the receiver axis). All maps **zero-init ⇒ families ON is bitwise-identical to OFF at init**,
+  the receiver axis). (In production the single GLOBAL seat these route to is split into OUR SIDE, THEIR SIDE and
+  FIELD: X goes to the mon's own side token, G and C4 to FIELD.) All maps **zero-init ⇒ families ON is bitwise-identical to OFF at init**,
   test-pinned. Measured B=1: D1+D3 = **+0.63 ms** on a ~3.5 ms forward. Note the family set grows
   *without* a version bump — the string gate catches any mismatch, and `'d'` stays a FROZEN
   `d1,d3` alias so a saved config never silently grows maps.
@@ -1096,35 +1188,40 @@ separated. A looped or deeper trunk therefore stays behind the high build bar, n
   it zeroes each family's map in turn (zero bias == that family absent — identity-at-init in reverse)
   and re-measures masked KL / argmax-flip rate / |ΔV| over REAL eval-trace decision states. There is
   deliberately no random-obs mode: off-distribution vectors would understate every number. It also
-  carries **`concat` / `concat_cells` arms** (zero the op block at the ProjectionAssembler only —
-  the exact deletion counterfactual), which is what turned the op-concat question from *deferred*
-  into *answered*. Both reads are in §6.2.
+  carried **`concat` / `concat_cells` arms** (`concat` zeroed the op block at the ProjectionAssembler
+  only — the exact deletion counterfactual), which is what turned the op-concat question from *deferred*
+  into *answered*. Both reads are in §6.2. (As of 2026-10-25 the `concat` arm is deleted — its subject, the
+  concat, died at v61 — and `concat_cells`, which zeroes the pointer head's op cells, remains as a live tripwire.)
 - **Stage 3 groundwork SHIPPED — `agents.observation.schema`:** ONE declarative module naming every
   contiguous block of the flat observation, with a **tiling proof** (blocks are ordered, gap-free,
   and sum to `total_dim`; children tile their parent) that throws on any violation. It starts as a
   validated *view* derived from the live `get_layout()`, so it cannot drift while both exist; the
   second half (generating packer / unpacker / spaces FROM it, and re-homing the flat vector into
-  entity blocks) builds on that.
-- **Physics delivery today — and the concat deletion is now REFUTED, not deferred.** The op rides
+  entity blocks) was to build on that; as of 2026-10-25 the module still describes itself as the first
+  half and the observation is still one flat row written by the Rust encoder, so that second half did
+  not happen in this form.
+- **Physics delivery on 2026-08-07 — the concat deletion looked REFUTED, not deferred (overtaken two
+  days later: the owner's no-concat milestone deleted the concat at v61, `gen3_no_concat_v1`, on the
+  gen-4 read of a net flat-block policy dependence of +0.00%).** The op rode
   *three* routes: the flat post-pool concat, the v51 per-action pointer cells, and the edge biases.
-  The plan was to delete the concat once the edges had a home. **The audit says don't:** its
-  `concat` arm (zero the 807-dim block at the ProjectionAssembler only — edges, prefuse injection
+  The plan was to delete the concat once the edges had a home. **The audit said don't:** its
+  `concat` arm (zero the then-807-dim block at the ProjectionAssembler only — edges, prefuse injection
   and pointer cells all left intact, i.e. the exact deletion counterfactual) reads **KL 0.482 /
   35.5% flips / |ΔV| 7.45** on gen-1 and **0.537 / 33.1% / |ΔV| 7.44** on gen-2's full stack —
   **larger than switching the entire edge system off** (0.330/26.9%/2.51 and 0.491/31.5%). The
   edges did **not** absorb the concat's role; they added on top of it. Twice measured, on two
-  generations. The concat stays.
-- **Feasibility, MEASURED** (`entity_spike_benchmark.py`, threads=1, idle box): the 2-layer
+  generations. The concat stayed, for those two days.
+- **Feasibility, MEASURED** (the `entity_spike_benchmark.py` spike, since deleted; threads=1, idle box): the 2-layer
   production-shape trunk *with* the bias map at B=1 CPU is 0.183 ms at n=14 tokens → 0.374 ms at
   n=50 — **1.57×/2.05× growth where quadratic predicts 6.6×/12.8×** (the B=1 opponent forward is
   dispatch-bound, not tensor-size-bound). Absolute verdict: **a full ~50-seat entity trunk costs
   +0.19 ms on a ~4.6 ms forward (~4%)**. The spike held on delivery — E4 K=5 measured +0.18 ms,
   D1+D3 +0.63 ms. Honest caveat: the B=256 learner proxy grows faster (3.5× at n=50), but that
-  runs on GPU. The predicted *net refund* has **not** landed yet: it was premised on Stage 2
-  deleting the ~2.4 ms op flat sweep, and the head-concat deliberately still stands.
+  runs on GPU. The predicted *net refund* had **not** landed as of 2026-08-07: it was premised on Stage 2
+  deleting the ~2.4 ms op flat sweep, and the head-concat deliberately still stood (it was deleted at v61).
 - **The measured caution.** Entity structure is **not** automatically a win here: physics
   injected into the TRUNK measured NULL 3-for-3 (ledger K9/K10) while the flat HEAD-concat
-  carried the policy's largest measured dependency (P1). Stage 2's edge biases are a bet that
+  carried the policy's largest measured dependency (P1; the concat has since been deleted). Stage 2's edge biases are a bet that
   those nulls were about *delivery-as-residual-injection*, not about attention-over-physics per
   se. Mitigations: the pointer head keeps a direct lossless physics→logit route regardless, and
   a per-family bias-ablation audit decides what stays.
@@ -1286,6 +1383,11 @@ the **document**. Reranking never edits the document.
 
 #### The seat layout you are writing biases into
 
+*(Drawn as of 2026-08-04. The history seats shown here were the TurnDelta frames, deleted at
+v90; production as of 2026-10-25 has 64 tokens: our 6 mons 0-5, their 6 mons 6-11, OUR SIDE / THEIR SIDE /
+FIELD 12-14, E3 15-18, E4 19-24, E5 25-30, OTHER_species 31, and the 32 event seats 32-63, always last.
+`designs/ARCHITECTURE.md` section 2.3 is the table.)*
+
 ```
  seat  0 ──────── 5  6 ──────── 11  12 ──────── 18   19    20 ── 23  24 ── 24+K  … +6
       ┌─────────────┬──────────────┬──────────────┬──────┬─────────┬──────────┬─────────┐
@@ -1300,6 +1402,10 @@ That "appended after" discipline is why v54/v57 could add seats without touching
 callback's tail concat, the pointer stash's E3 slice, or any family's index math.
 
 #### The fifteen families, drawn as the blocks they occupy
+
+*(As of 2026-08-04. Two families were added later and are not in the grid: **h** (our mon x their mon, five
+obs-fed pair-history tendencies) and **r** (event seat x mon, the reference cells); the GLOBAL column is
+OUR SIDE / THEIR SIDE / FIELD in production. `designs/ARCHITECTURE.md` section 5.1 is the current grid.)*
 
 Every family is a rectangle in the (from-seat × to-seat) grid. Seeing them laid out is the fastest
 way to grasp that the sorting rule *tiles a space* rather than accreting features:
@@ -1336,13 +1442,14 @@ contract paying off, not a coincidence.
 
 Board: their Tyranitar is active, our Zapdos is on the bench, `--entity-topk-seats 5`.
 
-1. **Seat construction (E4).** The move belief runs *pre*-transformer (`--move-belief-prefuse` +
-   `--damage-op-prefuse`), so a composed posterior over the opponent's moveset exists before any
+1. **Seat construction (E4).** The move belief runs *pre*-transformer (in 2026-08 behind
+   `--move-belief-prefuse` + `--damage-op-prefuse`, both since deleted: the tier order T0 belief, T1 physics,
+   attention is now the only order, `designs/ARCHITECTURE.md` section 2.1), so a composed posterior over the opponent's moveset exists before any
    attention. `DamageOperator.refine_candidates(k=K)` picks the K most-believed candidates from it —
    typed Hidden Power already scattered onto its 16 real move-nums, so HP-Ice and HP-Rock are separate
    candidates. Rock Slide is candidate *c*. Its seat is
    `threat_seat_proj([move latent(32) ⊕ w ⊕ accuracy ⊕ is_phys])` → `d_model`, appended after the
-   global token. The **index is detached** (selection isn't differentiable), the **belief weight `w`
+   global token (after the three board tokens in production). The **index is detached** (selection isn't differentiable), the **belief weight `w`
    is not** — so the policy gradient reaches the move belief through the seat's own content.
 2. **Cell computation (D3).** `pairwise_incoming` runs the pre-collapse `_incoming_rolls` physics at
    **exactly the same detached candidate selection the seats stashed** (`EntityMoveSeats.last_cand`).
@@ -1367,10 +1474,11 @@ Board: their Tyranitar is active, our Zapdos is on the bench, `--entity-topk-sea
    strongly-believed Rock-type move is the salient thing pointed at me."* A **contextualised identity**,
    not a number.
 6. **How the pointer head reads it.** The switch logit for Zapdos is
-   `switch_score(ReLU(switch_proj([our_team_out[Zapdos] ⊕ Zapdos's op switch cells])) + ctx_proj(latent_pi))`.
+   `switch_score(tanh(switch_proj([our_team_out[Zapdos] ⊕ Zapdos's op switch cells]) + ctx_proj(latent_pi)))`
+   (the `tanh` sits after the sum, as in the Bahdanau-style scorer of Part 3).
    `our_team_out[Zapdos]` is the refined token from step 5, so the edge's contribution arrives as a
-   **shift in that token**. The literal magnitude — 0.78 maxhp, the CB-conditional tail, the OAX
-   attacker row — arrives separately, through the **switch cells**, which are a lossless slice of the
+   **shift in that token**. The literal magnitude — 0.78 maxhp, the CB-conditional tail (and, in the build that had
+   it, the OAX attacker row) — arrives separately, through the **switch cells**, which are a lossless slice of the
    same op tensor the projection heads consume.
 
 So: **the edge decided what Zapdos's token is about; the cells decided what the numbers are.**
@@ -1421,6 +1529,9 @@ So: **the edge decided what Zapdos's token is about; the cells decided what the 
 | physics visible to the **critic** | ✅ **the only direct route** (the pointer head is policy-only) | ✗ | indirect, via refined tokens → CLS pools |
 | cross-entity composition *before* pooling | ✗ (post-pool by construction) | ✗ | ✅ |
 
+*(Table as of 2026-08-04. The op head-concat column was deleted at v61; the critic's direct physics route
+is now the `value_entity_pool` injection into `value_pooled`, `designs/ARCHITECTURE.md` section 3.1.)*
+
 That third row is the one people miss, and it predicts something the audit then found.
 
 #### The audit reads: two generations, and the story changed with training
@@ -1459,7 +1570,7 @@ against outgoing ≈92% of edge dependence.**
 
 Same outgoing-dominant shape as ledger P1, now on a third independent architecture. And d2 — a
 *bench-offense* family — carrying the largest \|ΔV\| is exactly what the route table predicts: the
-critic has no pointer head, so an edge is one of only two ways board physics reaches it.
+critic has no pointer head, so in that build an edge was one of only two ways board physics reached it (the concat was the other).
 
 **Owner decision (2026-08-06): KEEP ALL FAMILIES.** The decorative ones encode strategy-critical
 mechanics a 40M self-play run may simply not have discovered — Protect×Toxic timing, Explosion
@@ -1475,11 +1586,11 @@ The mid-training asymmetry got three candidate stories. Training partly adjudica
 too and stayed near-decorative in absolute terms (d3 0.0009 → 0.0021). So immaturity explains the
 **level** at 9.6M, not the **asymmetry**.
 
-**E-a (redundancy) — now the leading story, and the concat arm supports it.** Incoming physics has a
+**E-a (redundancy) — then the leading story, and the concat arm supports it.** Incoming physics has a
 per-candidate route into exactly the logit it should drive (the pointer switch cells), and the concat
 arm shows the flat block is *still* carrying more than the entire edge system. The edges did not
 absorb it; they added on top. Marginal ablation of one redundant route under-reads by construction.
-*Test still open:* joint ablation — zero `d3_map` AND the op's incoming concat rows AND the pointer
+*Test still open on 2026-08-07 [unverified 2026-10-25 whether it was ever run]:* joint ablation — zero `d3_map` AND the op's incoming concat rows AND the pointer
 switch cells, and see whether the joint effect vastly exceeds the sum of marginals.
 
 > ⚠️ **Correction (2026-08-07): that per-candidate route is NOT lossless.** The pointer switch cell
@@ -1543,8 +1654,9 @@ model **literally cannot express** "pair (2,5) is special", which is why it cann
 - **The ordering class.** The extractor reads moves sorted-by-id; the action space is request-ordered.
   The permutation now happens **once, by move-num identity** (`_request_order_move_tokens`), and every
   downstream consumer — the E3 seats, the pointer head's move logits, D1's rows, S1's rows, C4's
-  Protect gate — reads that one ordering. `agents/action/ordering_integrity.py` existed solely to
-  police a class that no longer has a representation.
+  Protect gate — reads that one ordering. `agents/action/ordering_integrity.py` was written solely to
+  police a class that no longer has a representation at the logits; it survives as the throwing
+  `check_obs_move_order` guard on the obs row's two move orders at the inference service.
 - **F2.** Switch logits used to be read from a permutation-*invariant* CLS pool. The pooling had
   **destroyed** the per-slot information, so a bench mon's own token could never reach its own logit
   — no amount of training could fix it. The pointer head reads `our_team_out[j]` directly.
@@ -1592,7 +1704,7 @@ no mutation, no learned parameters, no ordering dependence. Therefore:
 > `atk_boost += 2`.
 
 One input changed, one extra kernel call, the same fuzz-validated physics (the constructed-probe
-oracle covers it, 22/22), and still differentiable — so the gradient continues to reach the belief.
+oracle covered it, 22/22, before that test was retired with the Python battle layer), and still differentiable — so the gradient continues to reach the belief.
 Compare what a simulator would need: mutate a battle state, advance a turn, resolve both sides'
 actions, re-encode an observation, re-run the network. C1 needs none of it, because the **only** thing
 the hypothetical changes is an *input to a pure function*. **Purity is what makes counterfactuals
@@ -1639,7 +1751,8 @@ lookahead. Be precise about each limit:
 So the honest framing, and the division of labour with the search line: **C edges amortise the cheap,
 exactly-computable part of one-ply lookahead into the forward pass at the cost of roughly one kernel
 call. What they cannot do is precisely what search is for.** The `better-line` CRN-anchored beam and
-the search-as-teacher / OPD work run offline and expensively and produce *targets*; the C edges make
+the search-as-teacher / OPD work ran offline and expensively and produced *targets* (the search-teacher flags
+were wound down in 2026-09 and deleted at v133; `better-line` remains in the prober); the C edges make
 the arithmetic free so search does not have to spend depth re-deriving it. See
 [[on_policy_self_distillation]] and [[pbs_value_functions_and_search]].
 
@@ -1648,7 +1761,17 @@ or in-place mutation kills the entire C family.** The purity is load-bearing, no
 
 ### 6.5 How all of it reaches the two heads — the funnel
 
-Everything above happens in a 35-seat trunk. The heads are two 512-dim vectors. Between them is a
+> **Snapshot (2026-10-25).** Everything in this section, diagram included, describes the v51-v60 build that
+> the audits above measured. Since then: the 807-dim op block concat ("DI box") was deleted at v61, FiLM at
+> v78, PopArt (v131) and the value network / distributional head with the shaped critic, the TurnDelta history
+> seats at v90, and the critic lost its 512-wide projection (the critic is `sigmoid(win_head(value_pooled))`,
+> `value_pooled` read directly, config v144). In production the trunk has 64 seats, the policy projection is
+> `pi_projection` `Linear(1152, 512)` over `our_team_pooled`, `their_team_pooled`, `our_active_refined` and a 768-wide
+> `hidden_opp_belief`, and the critic's physics reaches `value_pooled` through the `value_entity_pool`
+> injection. The mixing-desk reasoning below still explains why the audits read as they did; the generated
+> tables in `designs/ARCHITECTURE.md` section 3.1 are the current wiring.
+
+Everything above happens in a 35-seat trunk (the 2026-08 build). The heads were two 512-dim vectors. Between them is a
 **severe bottleneck**, and understanding its exact shape explains most of the measured results in
 this note.
 
@@ -1661,8 +1784,8 @@ Think of the 35 seats as 35 musicians. The heads cannot hear the musicians — t
   moves, wired straight to the pointer head, bypassing the mix entirely.
 - The **critic** gets **one** microphone (`value_pooled`, a single learned query over all 12 mon
   tokens). No channel strips. The pointer head is policy-only.
-- The **op block** is a DI box: 807 dims soldered directly to the master bus on *both* heads,
-  bypassing the room mics altogether.
+- The **op block** was a DI box: 807 dims (in the gen-3 build) soldered directly to the master bus on *both*
+  heads, bypassing the room mics altogether (deleted at v61).
 
 That picture is the whole architecture's information economy, and it predicts the audit.
 
@@ -1711,25 +1834,25 @@ That picture is the whole architecture's information economy, and it predicts th
                           11 action logits
 ```
 
-#### Five things this diagram tells you
+#### Five things this diagram told you (in the 2026-08 build)
 
 1. **The edges never add a dimension anywhere.** They change *what the pools contain* and *what
    `our_team_out[j]` encodes*. Every projection width is identical with families on or off — which is
    why growing the family set is not a version bump.
-2. **The op block is the only route that skips pooling for BOTH heads.** That is the mechanical
+2. **The op block was the only route that skipped pooling for BOTH heads.** That is the mechanical
    explanation of ledger P1: zeroing it costs masked KL 0.9385 because it is the one un-compressed
    channel the critic has at all.
 3. **v51 made the POLICY entity-native; the critic was not touched.** The pointer head reads
-   per-token, pre-pool state. The critic still reads one 128-dim summary. So the policy has two
-   lossless routes (pointer cells + per-token reads) and the critic has one (the concat).
+   per-token, pre-pool state. The critic still read one 128-dim summary. So the policy had two
+   lossless routes (pointer cells + per-token reads) and the critic had one (the concat).
 4. **That asymmetry predicts the audit's `|ΔV|` results — and the concat arm confirmed it hard.**
    D2, a bench-offense family, carries the largest edge-side critic dependence for exactly this
    reason. And when the concat arm was finally run, **the critic was hit ~3× harder by removing the
    concat (\|ΔV\| 7.45) than by removing every edge family combined (2.51)**. That is this diagram,
    measured: the policy has alternatives and the critic does not.
-5. **FiLM sits at the very end**, after both projections, before both ReLUs — downstream of every
-   phase including the op concat, so it composes with every toggle and modulates the *finished* head
-   features rather than the contested trunk.
+5. **FiLM sat at the very end**, after both projections, before both ReLUs — downstream of every
+   phase including the op concat, so it composed with every toggle and modulated the *finished* head
+   features rather than the contested trunk (the FiLM was deleted at v78).
 
 #### The honest counterweight on the critic's narrow readout
 
@@ -1750,11 +1873,13 @@ version, not as a plan.
 mon tokens, so rank 3–4 is what **one question** extracts — which says nothing about what *k*
 different questions would extract. More dims on one query is measured-dead; more *queries* is the
 (A)-PMA rung of the output-slot ladder (§ *The output-slot ladder*), costs linear in k, adds no
-seats, and is untested. Its failure mode is exactly **seed collapse**, with the monitors given
+seats, and was untested on 2026-08-08 (built at v61 as the multi-seed readout and deleted at v96 after
+reading 0.0000, while the v80 `value_entity_pool` with `UVR_K`=4 queries is the surviving critic pool; see
+the status note after the seed-collapse monitors). Its failure mode is exactly **seed collapse**, with the monitors given
 there — and that makes it diagnostic: if k seeds stay distinct *and* the value loss improves, you
 have directly measured that one query was the binding constraint, which P3's width arm could not.
 
-**And the critic's measured pathology is not outcome prediction at all.** AUC 0.833 says
+**And the critic's measured pathology (2026-08) is not outcome prediction at all.** AUC 0.833 says
 "who is winning" is answered well; the broken thing is **credit assignment** — the floor leak
 (the critic **over-values self-KO**; ~18% of games lost to bots a human beats 100% of the time,
 with the reward itself correct) and whatever `calibration` assigns to `critic_overvalued` rather
@@ -1762,7 +1887,8 @@ than `lost_position`. An episode-outcome AUC cannot detect either. So the defici
 **conditionality, not bandwidth**: every fact reaches the value head pre-averaged. Ranked routes:
 **PV *or* generalized token-content injection** (the two admissible critic routes — both write
 absolutes where `value_pooled` can read them; the amendment requires the *route*, not PV
-specifically), then **PMA seeds** (cheap, untested, self-diagnosing), then per-candidate reads.
+specifically), then **PMA seeds** (cheap, untested, self-diagnosing), then per-candidate reads (the
+2026-08 ranking; PV and the seed readout were subsequently built and deleted, see the status notes above).
 
 ⚠️ **The naive per-candidate version is an action-dependent baseline — a known trap.** A `b(s,a)`
 baseline is biased without a correction term, and Tucker et al. 2018 (*The Mirage of
@@ -1846,7 +1972,7 @@ rather than merely expensive:
    rollout opponent become the right levers for a search.
 4. **The search's output is a distribution, and distributions are what OPD wants.** A beam that
    returns an improved *policy* (not just an argmax) is a teacher target; see
-   [[on_policy_self_distillation]] for the KL(π′‖π) upgrade over the current AWR-toward-`A*`.
+   [[on_policy_self_distillation]] for the KL(π′‖π) upgrade over the AWR-toward-`A*` of the time (that distillation weight, `--distill-beta`, was deleted at v133).
 
 #### The limit that matters most, stated plainly
 
@@ -1867,7 +1993,9 @@ claim about equilibrium play. Keeping those two questions separate is the discip
 ### 6.7 Entity structure vs FiLM/LoRA — two orthogonal factorisations
 
 These get conflated because both are answers to "one shared function is averaging conflicting
-things." They act on different axes.
+things." They act on different axes. (FiLM here is the head conditioning on the `z_arch` team-archetype
+latent, v44-v77; both were deleted at v78 after the nulls below, so the FiLM rows are history and the
+LoRA row stays hypothetical. The entity-side rows are current.)
 
 > **Entity structure factorises the INPUT by a symmetry.**
 > **Modulation (FiLM / LoRA) factorises the PARAMETERS by a context.**
@@ -1903,7 +2031,7 @@ is the *source* of the modulator and how fast it changes:
 |---|---|---|---|---|
 | **edge bias** | a computed physics cell (a *known function* of the board) | attention logits, per pair per head | forward, per pair | the map is; the cell is not |
 | **pointer cells** | a slice of the op tensor | the entity's own score input | forward, per action | no — lossless passthrough |
-| **FiLM(z_arch)** | a learned DeepSets latent over our team | head features, post-projection pre-ReLU | battle (team-static) | fully |
+| **FiLM(z_arch)** *(deleted at v78)* | a learned DeepSets latent over our team | head features, post-projection pre-ReLU | battle (team-static) | fully |
 | **LoRA (hypothetical)** | any context code | a shared function's *weights*, low-rank | whatever you key it on | fully |
 
 Reading the table top to bottom is reading a **clock-speed axis**: physics changes every turn, team
@@ -1979,10 +2107,12 @@ recipient) pair via the candidate's *current* HP deficit and its incoming threat
 `[resolves_this_turn, hp_deficit_capped_at_half, pko_flips]` — where `pko_flips` is the C3-shaped
 recomputation of which incoming P(KO) cells fall to ~0 after the heal, i.e. it reuses the pure-kernel
 trick. *Whether the pivot turn is safe* is future-facing → **attention**, never tabled. **Gate:**
-requires `damage_op` for the pko recomputation, and the Wish reconstruction from the event log (poke-env
-tracks none of it). **GIGO risk:** the slot-keying — a naive implementation keys the heal to the *mon*
+requires `damage_op` for the pko recomputation, and the Wish reconstruction from the event log (the protocol
+stream carries no Wish field; when this was written poke-env tracked none of it, and today the Rust
+`trackers/history.rs::WishFold` does it). **GIGO risk:** the slot-keying — a naive implementation keys the heal to the *mon*
 rather than the *slot*, which silently misprices exactly the pivot case the feature exists for; guard
-with the existing wish fuzz that checks every real resolve was flagged pending the turn before.
+with a fuzz that checks every real resolve was flagged pending the turn before (the 2026-08 wish fuzz drove
+the Python battle layer and was retired with it).
 
 **Q2.** The drag target is a uniform draw over the eligible bench, so the edge's other endpoint cannot
 be a specific mon. Two defensible shapes: (a) an edge at **(the phazing move seat, the GLOBAL/side
@@ -2033,11 +2163,11 @@ inexpressible.
 
 | Thing | Status | Verdict |
 |---|---|---|
-| Token *types* (`OUR_TEAM` / `THEIR_TEAM` / `OUR_MOVE` / `THEIR_THREAT` / `HISTORY` / `GLOBAL`) | typing, not ordering | **correct** — a real asymmetry, promoted to content |
-| Event seats 29–60 (the last 32 event records, `history_events`) | time as CONTENT, not position — each record carries a log-saturated recency column and its actor / target / REL mons, linked to the mon tokens by the structural `r` edges; no learned weight is bound to a seat index | **correct** — time's order is kept as a fact on each record, so the true (ordered) function stays expressible without a positional embedding. The old positional lag-frame seats were deleted with the frames (`gen3_frame_deletion_v1`) |
+| Token *types* (`OUR_TEAM` / `THEIR_TEAM` / `OUR_MOVE` / `THEIR_THREAT` / `HISTORY`, plus `OUR_SIDE` / `THEIR_SIDE` / `FIELD` in production, `GLOBAL` under the legacy encoding) | typing, not ordering | **correct** — a real asymmetry, promoted to content |
+| Event seats (the last 32 event records, `history_events`; seats 32–63 in production, 30–61 under the legacy encoding) | time as CONTENT, not position — each record carries a log-saturated recency column and its actor / target / REL mons, linked to the mon tokens by the structural `r` edges; no learned weight is bound to a seat index | **correct** — time's order is kept as a fact on each record, so the true (ordered) function stays expressible without a positional embedding. The old positional lag-frame seats were deleted with the frames (`gen3_frame_deletion_v1`) |
 | Pointer logits over our 6 switches | equivariant | **correct** — one shared scorer, indexed by content |
 | Action layout `[switch ×6, move ×4, struggle]` | an environment interface | **not a model property** — the head scores from the token, so the index binding is a relabeling both sides share |
-| Seat-index convention (`13 + offset`; the event seats always LAST) | index arithmetic for stable slicing | **not positional** — no learned weight is bound to it |
+| Seat-index convention (`_total_tokens + offset`, i.e. 15 + offset in production; the event seats always LAST) | index arithmetic for stable slicing | **not positional** — no learned weight is bound to it |
 | PV's *k* seeds | not slots | **not positional** — seed *s* is a *question*, applied identically to every entity (§ *Shaw et al. 2018*) |
 | Embedding tables (`table[species.num]`) | identity lookup | **content-addressed**, not positional |
 | **The within-seat defender axis** | **genuinely positional — if we take route 7a** | **the one open choice, below** |
@@ -2075,6 +2205,11 @@ across all seats, so it is one ordering convention rather than a per-pair table 
 the thing §6.3 says the generation was built to make unrepresentable. The coverage probe chooses
 between them; it is a route chooser, not a veto.
 
+> **Status (2026-10-25).** The choice was never made by measurement: OA1/OA2 were built (v94-v95) and deleted
+> with the other legacy per-action blocks (legacy deletion U3, v157, replaced by MOVE RESOLUTION), and
+> PV (7b) was built (v95) and deleted unused (v135). The critic's physics now rides the `value_entity_pool`
+> injection (`designs/ARCHITECTURE.md` section 3.1). The three-property vocabulary above is what stays useful.
+
 **What keeps this from silently regressing.** In the `OpTensors` end state each fact has exactly
 one home *typed by its arity* (board / opp_move / our_move / our_mon / pair_in / pair_out) and
 consumers take **views**, not slices. Concatenating an axis then requires declaring it, so a
@@ -2107,7 +2242,7 @@ model, every new fact has exactly one home and nothing else has to move. Because
 *cells* and families merely *deliver* them, a family is reusable as another family's ingredient —
 which is how the per-mon HP ledger became the Protect-consequence edge for the cost of one call and
 a sum. Because the physics kernel is a **pure function**, every "what if" is a re-run with one input
-changed rather than a simulator. Fifteen edge families, a pointer head, three seat families, an
+changed rather than a simulator. Fifteen edge families (seventeen as of 2026-10-25), a pointer head, three seat families, an
 ablation audit and a schema were built largely independently and fit together — not because they
 were coordinated, but because each one was answering the same question the same way. That is what
 makes it a system rather than a pile: **the pieces share a contract, not a plan.**
@@ -2147,7 +2282,8 @@ makes it a system rather than a pile: **the pieces share a contract, not a plan.
 - `designs/ai_v9/design_entity_graph.md` — the entity/edge INVENTORY (E1–E9, D/S/C/V/T/X, the
   sorting rule §0, the nothing-lost audit §6, the open questions §7)
 - `designs/ai_v9/design_pointer_action_head.md` §0 — the fresh-generation reset + v51 spec
-- `src/agents/model/CLAUDE.md` — the current phase contract these stages supersede; the v51–v57
-  versioning notes are the literal specs for everything in Part 6
+- `designs/ARCHITECTURE.md` — the always-current statement of the model (the seat table in section 2.3, the
+  heads in section 3, the edge-family grid in section 5); `src/agents/model/CLAUDE.md` and `designs/model/`
+  own the rules; the v51–v57 entries of `designs/CHANGELOG.md` are the literal specs for everything in Part 6
 - `src/agents/model/edge_ablation_audit.py` — the verdict instrument behind §6.2's numbers
 - `src/agents/observation/schema.py` — Stage 3's tiling-proof view over the flat observation

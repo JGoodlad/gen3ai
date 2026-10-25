@@ -1,0 +1,3 @@
+# ai_v8 (CLOSED, history)
+
+> **CLOSED (2026-10-25):** the conditioning and credit-assignment epoch (the conditioning-ceiling arms, curriculum and exploiter batches), with the first records of the Rust simulator. BUILT and CLOSED: its architecture family was later deleted, and its code runs only from a pinned era checkout (`designs/research_state/UNDERSTANDING.md`, the era map). Explicit-only history, never auto-updated: read it for what was designed and why, then check the code before believing it still holds. What the model is now: `designs/ARCHITECTURE.md`; how it got there: `designs/research_state/ledger.md` and `designs/CHANGELOG.md`.

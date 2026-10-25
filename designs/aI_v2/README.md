@@ -1,0 +1,3 @@
+# aI_v2 (CLOSED, history)
+
+> **CLOSED (2026-10-25):** the feature-extractor redesign (a shared move processor, then a role encoder, active-matchup attention and team-wide attention, as the `impl_step*.md` plans lay out). BUILT in sequence and then replaced by the ai_v4 unified transformer; `designs/aI_v2/todo.md` holds ideas that were never taken up. (The folder name has a capital I on disk.) Explicit-only history, never auto-updated: read it for what was designed and why, then check the code before believing it still holds. What the model is now: `designs/ARCHITECTURE.md`; how it got there: `designs/research_state/ledger.md` and `designs/CHANGELOG.md`.

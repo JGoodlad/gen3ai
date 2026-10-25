@@ -1,0 +1,3 @@
+# ai_v6 (CLOSED, history)
+
+> **CLOSED (2026-10-25):** anticipation: the MCTS route and the latent-predictive auxiliary, with the replay-collection, behavioural-cloning and team-completion steps that fed them. The steps are mixed built and designed (`designs/ai_v6/todo.md` marks each); the MCTS-over-a-JavaScript-bridge route is SUPERSEDED, and search today is Rust only (`designs/endstate/search_ledger.md`). Explicit-only history, never auto-updated: read it for what was designed and why, then check the code before believing it still holds. What the model is now: `designs/ARCHITECTURE.md`; how it got there: `designs/research_state/ledger.md` and `designs/CHANGELOG.md`.

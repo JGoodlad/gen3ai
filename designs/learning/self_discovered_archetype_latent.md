@@ -1,5 +1,18 @@
 # Self-discovered team-archetype latent (z_arch, VIB, β, UMAP)
 
+> **Correction (2026-10-25): the machinery this note describes was DELETED at v78.** The `z_arch` latent
+> (`ZArchEncoder`), head FiLM (`--zarch-film heads`), the per-team LUT arm, `--zarch-dim`,
+> `--zarch-recon-coef` / `--zarch-vicreg-coef` and the `zarch/*` and `film/*` monitors left the code at v78
+> (`gen3_flag_surface_p1_v1`, 2026-08-14; `src/agents/model/model_version/migrations.py`,
+> `designs/CHANGELOG.md` v78, `designs/deleted_flags.md`) because the line closed NULL: the free per-team
+> LUT arm moved the N=20 multi-team ceiling by +0.024, CI [-0.016, +0.064], and team COUNT dominated
+> conditioning. The model that trains today has **no team-archetype latent**; see `designs/ARCHITECTURE.md`
+> (the top table) for what it is. What survives here as teaching: the marginal-trap argument, the
+> VIB / beta / rate-distortion concepts, the self-discovery spectrum, the "tune a regularizer on a held-out
+> signal, never on the training fit" rule, and the geometry diagnostics (silhouette, kNN purity,
+> participation ratio). Read every "is", "ships" and "lives" below as the history of v44-v77, and the
+> "Implementation" and "Where this lives" sections as the design record, not the current stack.
+
 **TL;DR.** We want the policy/value to condition on *what style of team it's piloting* — a low-dim
 "team vibe" vector **z_arch** — so it stops playing the team-blind *marginal* optimum (see
 [[generalist_specialist_amortization_gap]]). The hard part isn't building the token, it's making it
@@ -9,7 +22,7 @@ win), **β** tunes how hard you squeeze, and **UMAP** (diagnostic only) lets you
 self-organized by play-style. The purest version has **no target at all** — the RL task + a
 compression penalty are the only pressures, so the model carves its own archetypes.
 
-**Status (2026-07-17): v1 is BUILT as `gen3_zarch_film_v1` (v44, `--zarch-film heads`), with three
+**Status (2026-07-17; deleted at v78, see the banner): v1 WAS BUILT as `gen3_zarch_film_v1` (v44, `--zarch-film heads`), with three
 deliberate deviations from this note's original spec, each evidence-driven** (see
 [[amortization_gap_and_conditioning]] for the probes): **(1) the z source is NOT a CLSPool query over
 the trunk's team tokens** — the team pool probed core-dominated (flex twist ~chance) and a
@@ -21,7 +34,7 @@ epoch-recomputed ratio, and breaks eval determinism; and the chosen LUT-first op
 needs no rate limiter — anti-collapse comes from composition-reconstruction + a VICReg variance floor
 instead (VIB is the *style-generalization phase's* tool, and needs per-EPISODE sampling when it
 lands). **(3) FiLM is applied at the two root heads only** (post-projection pre-ReLU, zero-init) —
-trunk-token FiLM is the follow-up A/B (`--zarch-film trunk`, not yet built). The β/rate-distortion
+trunk-token FiLM is the follow-up A/B (`--zarch-film trunk`, never built). The β/rate-distortion
 theory below is kept as the design record for that later phase.
 
 ## Why a latent at all (the connection to the marginal trap)
@@ -102,7 +115,7 @@ z_arch generates `(γ,β_film)` that *modulate* the pi/vf features: `h' = γ(z_a
 better target.** Value is intrinsically archetype-conditional (the SAME board is "winning" for stall,
 "losing" for offense), so an unconditioned critic averages them into the blurry ~4-effective-dim marginal
 we measured (`value_cls` rank flat `_14→_18→_19`). Value-FiLM is the escape-the-marginal move for the
-critic, and it's the **architectural complement to VALUE DISTILLATION** (`--distill-value-coef`):
+critic, and it's the **architectural complement to VALUE DISTILLATION** (`--distill-value-coef`, itself deleted at v133):
 distillation supplies the per-team value TARGET, FiLM supplies the CAPACITY to represent it — do only one
 and it under-delivers (distill w/o capacity can't de-blur; FiLM w/o supervision = learns≠helps); together
 they de-blur the critic per archetype. Value-FiLM also helps the policy indirectly (better critic → better
@@ -139,20 +152,19 @@ Team tokens → **attention-pool** into `N(μ,σ)` → **VIB** samples z_arch, *
 (+ optional self-prediction) shapes *what* survives → **FiLM** forces the heads to condition on it →
 **UMAP** reveals the emergent archetypes afterward. No labels, no fixed K, self-discovered.
 
-## Where this lives in our stack (v1 as-built — supersedes the original CLSPool sketch)
-**Shipped (v44, `gen3_zarch_film_v1`):** `ZArchEncoder` (a dedicated static-atom DeepSets encoder in
+## Where this lived in our stack (v1 as-built, v44-v77 — deleted at v78)
+**Shipped then, since deleted (v44, `gen3_zarch_film_v1`):** `ZArchEncoder` (a dedicated static-atom DeepSets encoder in
 `features_extractor.py` — NOT a CLSPool query; see the TL;DR status note for why) → deterministic z →
 zero-init `film_pi`/`film_vf` on the root heads. Flags `--zarch-film {off,heads}` + `--zarch-dim`
 (default 32), coefs `--zarch-recon-coef`/`--zarch-vicreg-coef` (training-only, auto-zeroed on
 single-team runs), OFF byte-identical, version-gated in `check_compatible`
-(`MODEL_CONFIG_VERSION` 44), **leak-trivial** (our own public roster). Monitors: `zarch/std`
+(`MODEL_CONFIG_VERSION` 44 at the time), **leak-trivial** (our own public roster). Monitors: `zarch/std`
 (collapse), `zarch/recon_topk_acc`, `film/{pi,vf}_{gamma,beta}_norm` (deviation-from-identity = is
 FiLM alive). Validation gate = *does conditioning improve per-archetype win-rate* (the team-PFSP
 win-rate history) and *does distilling an anchor now lift its neighbors without regressing the rest* —
-NOT "does z_arch predict archetype." Model details: `src/agents/model/CLAUDE.md` → Team-archetype
-latent + head FiLM.
+NOT "does z_arch predict archetype." The model leaf no longer documents it (deleted at v78).
 
-## Implementation: FiLM via VIB + low-rank
+## Implementation: FiLM via VIB + low-rank (the original design sketch; v1 built a deterministic variant, never this)
 - **VIB:** the `archetype_cls` pool emits `(μ, logσ²)`; sample `z_arch = μ + σ⊙ε` (reparam), penalize
   `β·KL(N(μ,σ)‖N(0,I))`. z_arch is deliberately **low-dim** (~16–32) — that IS the bottleneck.
 - **Low-rank FiLM:** generate the modulation with a **single linear** map `z_arch → (γ,β_film)`.
@@ -180,7 +192,7 @@ collapsing (too much) or memorizing team-ID (too little). Three tiers, cheap →
   - *Density per anchor* (# teams within radius r + neighborhood overlap) → how populated & distinct
     each style is. *Effective modes* (participation ratio / effective rank of the z_arch cloud) → the
     **emergent number of styles**, with no K imposed.
-  - **SHIPPED as `zarch/pr`** (v44 follow-up; `instrumented_ppo._zarch_participation_ratio`): the
+  - **Was shipped as `zarch/pr`** (v44 follow-up, deleted with the family at v78; `instrumented_ppo._zarch_participation_ratio`): the
     participation ratio of the minibatch z cloud, recorded live each train() — the "emergent number
     of styles" read this TODO called for. First offline measurement (719 teams, ai_v8_01 @164M):
     **PR 17.0/32, flat spectrum, kNN(10) archetype purity above chance +0.198** — globally
@@ -202,8 +214,8 @@ the downstream A/B.
 LUT* every time. The signal that pulls toward *style* must be a **generalization** signal (held-out /
 transfer) — the only place LUT loses. The knob and the metric are inseparable, and the metric has to be
 held-out.
-- **Static (MVP):** fix β at the **rate-distortion elbow**; watch `rank/archetype_cls_*` (extend the
-  `rank_metrics.py` probe) as the live LUT-vs-style gauge — high effective rank ≈ LUT, low-but-alive ≈
+- **Static (MVP):** fix β at the **rate-distortion elbow**; a proposed `rank/archetype_cls_*` (an extension of the
+  `rank_metrics.py` probe; never built) as the live LUT-vs-style gauge — high effective rank ≈ LUT, low-but-alive ≈
   style, ~0 = collapsed.
 - **Dynamic:** a **Lagrangian/PID controller (GECO, "Taming VAEs")** makes β a *dual variable* that
   targets a level: slack → raise β (squeeze to style), hurting → lower β (keep more). Drive it with a
@@ -228,6 +240,6 @@ check it landed on *style* and not noise.
 - [[generalist_specialist_amortization_gap]] — the marginal trap this latent attacks.
 - [[latent_belief_metrics_and_collapse]] — collapse/std diagnostics + VICReg, reused here as the
   anti-collapse guard.
-- `src/agents/model/CLAUDE.md` — `CLSPool`, `ProjectionAssembler`, the belief-head arch-toggle pattern.
-- `designs/training/team_curriculum.md` → Team-side PFSP — the per-team accumulator the behavioral grounding
-  (and the validation win-rate history) reuse.
+- `src/agents/model/CLAUDE.md` — `CLSPool`, `ProjectionAssembler`, the belief-head arch-toggle pattern (the z_arch pieces are gone).
+- `designs/training/team_curriculum.md` — the per-team win-rate tracker that survives (team-PFSP itself is deleted,
+  v134).

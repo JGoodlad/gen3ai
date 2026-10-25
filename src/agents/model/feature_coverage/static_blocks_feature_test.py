@@ -3,9 +3,9 @@ Network-REACHABILITY coverage for the STATIC (non-history) observation blocks.
 
 The turn-history (TurnDelta) edge cases get full capture+network tests elsewhere
 in this folder. THIS file proves the major *static* obs regions — per-Pokémon
-fields, the global env/weather/hazards/screens block, the reactive scalars
-(including the gen3_trapping_signals_v1 trapped/maybe_trapped bits and one
-matchup cell), and the active-context volatiles — actually reach the real
+fields (including the trapped / maybe_trapped / protect_odds bits, which live
+in the per-mon slots), the global env/weather/hazards/screens block, the reactive
+scalars, and the active-context volatiles — actually reach the real
 `Gen3FeaturesExtractor` output (no dead obs regions a stale layout index or a
 dropped concat would silently bury).
 
@@ -320,7 +320,7 @@ def test_screen_mist_reaches_network():
 
 
 # ===========================================================================
-# C. Reactive block (scalars + trapping signals + one matchup cell)
+# C. Reactive scalars, plus the trapped / maybe_trapped / protect_odds bits at their per-mon homes
 # ===========================================================================
 
 # gen3_entity_rehome_v1: forced_struggle is DELETED from the obs (derivable — the action mask

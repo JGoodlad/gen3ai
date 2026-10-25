@@ -1,0 +1,3 @@
+# ai_v10 (CLOSED, history)
+
+> **CLOSED (2026-10-25):** exploiter scaling and the flywheel (forward design documents). NEVER BUILT as a chapter (`designs/research_state/UNDERSTANDING.md`, the era map, says "nothing built"); most files open with a forward-design status line, and the flywheel revolution-two file is an experiment record. Explicit-only history, never auto-updated: read it for what was designed and why, then check the code before believing it still holds. What the model is now: `designs/ARCHITECTURE.md`; how it got there: `designs/research_state/ledger.md` and `designs/CHANGELOG.md`.

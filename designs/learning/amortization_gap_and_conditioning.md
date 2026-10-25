@@ -1,5 +1,20 @@
 # The amortization gap: why one shared policy under-performs its specialists, and why a perfect critic can't fix it
 
+> **Correction (2026-10-25): the argument stands; the machinery it ends in is gone.** The `z_arch` archetype latent
+> and head FiLM this note builds toward (`--zarch-film`, `--zarch-dim`, the `ZArchEncoder`, the `film/*` and `zarch/*`
+> monitors, the group accumulator `--film-grad-accum-steps`) were built (v44) and run, the line closed NULL, and the
+> whole family was **deleted at v78** (`gen3_flag_surface_p1_v1`; `designs/deleted_flags.md`, `designs/CHANGELOG.md`
+> v78; the LUT arm moved the N=20 ceiling +0.024, CI [-0.016, +0.064]). The distillation and search levers it leans
+> on were deleted later: `--distill-coef` / `--distill-*` and `--search-teacher` at v133, `--team-pfsp*` at v134, PopArt
+> and the distributional value head at v131, the SimSiam latent belief (`aux/belief_latent_std`) at v75. The current
+> model is the static per-mon-token architecture with the win-prob critic and no team-conditioning latent
+> (`designs/ARCHITECTURE.md`, top table). The extraction/storage decomposition, the "a perfect critic cannot fix
+> storage" argument, the washing diagnosis and the measured numbers are historical teaching (2026-07/08, ai_v7/ai_v8
+> generations, never re-measured on the current model); every "is BUILT", "we have", "the shipped" and "next step"
+> below describes that period, and the `tmp/*.py` probe scripts it names were scratch scripts not kept in the tree.
+> Siblings with the same banner: [[conditioning_architectures]], [[self_discovered_archetype_latent]]; the sibling
+> [[generalist_specialist_amortization_gap]] carries the shorter obs-side version of this diagnosis.
+
 **TL;DR.** A single self-play generalist plays every team with **one** shared policy head, so the
 per-team optimal strategies get **averaged in weight space** — team A's plan and team B's plan partially
 cancel wherever they conflict, and the net lands at a compromise that's mediocre on *every* team relative
@@ -7,8 +22,9 @@ to a specialist. That's the **amortization gap**. It has two sub-problems — **
 per-team signal out of the noise) and **storage** (hold conflicting per-team behaviors in one weight set
 without cancellation). A better critic (and distillation) win *extraction*; they are **powerless on
 storage**, because the cancellation happens in the *shared parameters*, downstream of the advantage. The
-storage fix is **conditioning** (FiLM on a learned archetype latent `z_arch`), an architectural change,
-not a critic change.
+storage fix proposed here was **conditioning** (FiLM on a learned archetype latent `z_arch`), an architectural
+change, not a critic change; it was built, closed NULL and deleted (see the correction above and the
+2026-08 status correction below).
 
 **Status (2026-07-17): FiLM is justified by evidence.** Probes this session showed (a) the base model
 plays greedy-local and trades away its counters (the averaging is real), (b) distillation *fixes it on
@@ -62,7 +78,7 @@ from it.
   (lower-variance, unbiased advantage ⇒ higher signal-to-noise ⇒ the small signal survives), and
   **distillation helps even more** (the specialist teacher hands the student the per-team optimal *action
   distribution* directly — a full-distribution supervised target, far higher-SNR than any RL advantage;
-  this is why offense *transfers*, [[project_double_sided_recipe]]).
+  this is why offense *transfers*; memory note `project_double_sided_recipe`, no longer in the memory directory).
 - **Storage** — holding team A's "stay and trap" and team B's "switch to preserve the core" in **one
   shared head** without them overwriting each other. **This is the part the critic cannot touch.**
 
@@ -109,8 +125,8 @@ estimate changes that pressure.
 
 | Sub-problem | Lever | Mechanism | Status |
 |---|---|---|---|
-| **Extraction** — get the small per-team signal | good critic + **distillation** | raise the SNR / hand over a supervised per-team target | distillation done; critic improved (FitNets un-crystallized it) |
-| **Storage** — hold conflicting behaviors without cancelling | **conditioning: FiLM on `z_arch`** | per-archetype affine gain/bias on the head features ⇒ per-team gradients modulate *different* subspaces instead of overwriting one shared weight | **v1 BUILT (v44, `gen3_zarch_film_v1`, `--zarch-film heads`) — not yet run** |
+| **Extraction** — get the small per-team signal | good critic + **distillation** | raise the SNR / hand over a supervised per-team target | distillation done and critic improved in 2026-07 (FitNets un-crystallized it); the distillation and FitNets levers are since deleted, v133 |
+| **Storage** — hold conflicting behaviors without cancelling | **conditioning: FiLM on `z_arch`** | per-archetype affine gain/bias on the head features ⇒ per-team gradients modulate *different* subspaces instead of overwriting one shared weight | **built as v44 `gen3_zarch_film_v1` (`--zarch-film heads`), run, closed NULL; deleted v78** |
 | **Surpassing** — improve *beyond* the distilled teacher | good critic again | advantage SNR for the non-imitation RL climb | gated by the critic |
 
 They're aligned in **goal** (close the gap) but act on **different mechanisms**, so a perfect critic maxes
@@ -120,8 +136,8 @@ perfectly-extracted, perfectly-scored per-team signals cancel when one shared he
 
 ## FiLM as the storage fix — and how we'd know if it's needed
 
-FiLM (Feature-wise Linear Modulation) conditions the trunk on a learned archetype latent `z_arch`: it
-applies `γ(z_arch) ⊙ h + β(z_arch)` to the trunk features, so "this kind of board" is *computed
+FiLM (Feature-wise Linear Modulation), as designed here, conditioned the head features on a learned archetype latent `z_arch`: it
+applied `γ(z_arch) ⊙ h + β(z_arch)` to the features, so "this kind of board" is *computed
 differently* under trap-mode vs stall-mode. The per-team updates then land in different modulated
 subspaces instead of fighting over the same weights — soft per-archetype parameter routing. Identity-at-
 init (`γ≈1, β≈0`) so ON starts == baseline, like every structural toggle we ship.
@@ -256,13 +272,13 @@ failure modes, two fixes:
   to a constant (a constant can't reconstruct different teams). This is the *same* objective as the
   day-0 composition prior, so anti-collapse comes free with the structure, label-free, no exploiters.
   Belt-and-suspenders: **VICReg** (a per-dim variance floor kills constant-collapse; a covariance term
-  decorrelates dims) — we already have this from the belief-latent head (`aux/belief_latent_std` is the
-  monitor). **The VIB β is NOT a collapse guard — it *causes* collapse if too high** (it compresses
+  decorrelates dims) — the SimSiam belief-latent head of that period had exactly this (`aux/belief_latent_std` was
+  its monitor; deleted v75). **The VIB β is NOT a collapse guard — it *causes* collapse if too high** (it compresses
   toward the prior mean); β is the rate-distortion / LUT-vs-style knob, balanced *against*
   reconstruction+variance. Don't reach for β to prevent collapse.
 - **Dead** (`z_arch` informative but FiLM ignores it — γ→1, β→0 downstream). Guard: the *use* pressure
   from RL + specialist distillation (weak without exploiters → `z_arch` under-used but *harmless*, since
-  FiLM is identity-at-init; strong with exploiters → FiLM routes). Monitor: FiLM γ/β deviation from
+  FiLM is identity-at-init; strong with exploiters → FiLM routes). The monitor it prescribed: FiLM γ/β deviation from
   identity + the gradient share into `z_arch`.
 
 So "play well" alone is insufficient, but **reconstruction + VICReg** guarantee an informative latent from
@@ -289,8 +305,8 @@ back off.
 
 1. **Adding FiLM does NOT invalidate the existing specialists** — it's computed from the *existing obs*
    (team tokens), so it doesn't change the obs vector; the 4 specialists consume the same obs and we distill
-   their (arch-agnostic) *action distributions*. So there is **no chicken-and-egg for building FiLM now** —
-   we have 4 specialists on the current arch.
+   their (arch-agnostic) *action distributions*. So there was **no chicken-and-egg for building FiLM then** —
+   4 specialists existed on the arch of the day.
 2. **The circularity only bites at a full *obs*-retrain** (old checkpoints die), and even there it breaks:
    the **composition prior needs zero specialists** (structure from day 0), and **exploiters are single-team
    so they escape amortization regardless of the generalist's quality** (a mediocre bootstrap generalist
@@ -427,7 +443,7 @@ component (a generic scale/shift = free capacity) while the per-team DIFFERENTIA
 de-amortization, stays weak (fed by the small extraction-limited per-team advantage). Distillation =
 the *sharpener* of the differential, not an aliveness prerequisite. (2) The monitor this section
 prescribed ("FiLM γ/β deviation from identity") **cannot distinguish those two modes** — the shipped
-upgrade is the split `film/{side}_dev` (mean |modulation|) vs `film/{side}_team_std` (modulation
+upgrade (since deleted with the family) was the split `film/{side}_dev` (mean |modulation|) vs `film/{side}_team_std` (modulation
 spread ACROSS teams): `team_std`≈0 while `dev` grows = lazy generic mode, both rising = real routing.
 
 ## Why FiLM "adds capacity" — three distinct claims (2026-07-20 owner discussion)
@@ -529,7 +545,7 @@ init; **MoE** = a hypernetwork QUANTIZED to N choices + a router.
 team-specific best play and generalist play REACHING the gradient. On-policy PPO cannot see the
 advantage of a line the collapsed policy never samples — counterfactual invisibility at any batch
 size (blocking/batch fixed density and noise; this barrier remains). Ranked by yield: (1)
-**search-as-teacher** (BUILT, coef-0) — the CRN beam finds VERIFIED better lines and distils them
+**search-as-teacher** (built then, coef-0; `--search-teacher` deleted v133) — the CRN beam finds VERIFIED better lines and distils them
 (AWR × confirmed Δwin): manufactures counterfactual signal instead of waiting to sample it; (2)
 **exploiter distillation** (validated, ai_v7_19 double-sided recipe) — a dedicated per-team
 signal-mining run, and FiLM now provides per-team storage for the transfer (the Phase-2 pairing);
@@ -560,9 +576,9 @@ when the slope flattens.
 **Correction (owner: "we are CPU-flops limited").** The scarce currency is CPU-HOURS (~86% of
 wall is rollout, obs-build ~88% of per-decision CPU, encode ~80%); the GPU is ~86% IDLE. This
 re-sorts the list: **(0) engineering multipliers on the CPU bottleneck** — a Rust
-`state_encoder` hot path (the Rust bridge exists; "encoder is the bottleneck, not the
-transformer") and verifying whether `--unified-obs` still COMPUTES the masked blocks env-side (if
-so, skipping them is a pure CPU refund) — a 2–3× encoder speedup buys 2–3× of EVERY signal
+`state_encoder` hot path ("encoder is the bottleneck, not the
+transformer"; the observation is now written by the Rust encoder alone, `designs/ARCHITECTURE.md` section 1) and verifying whether `--unified-obs` (a since-deleted flag) still COMPUTED the masked blocks env-side (if
+so, skipping them was a pure CPU refund) — a 2–3× encoder speedup buys 2–3× of EVERY signal
 source; **(1) GPU-side free riders are even freer** (privileged critic, tail-weighted vf, bigger
 critic — they spend the idle resource); **(2) mining vs rollouts is a REALLOCATION of the same
 saturated CPU** (search/falsify re-rolls ARE bridge battles + obs builds; "spare CPU" ≈ cycle
@@ -727,11 +743,12 @@ H3 is the one worth spending on first: it is the only one whose lever is already
    than requiring life support. If the goal is pool coverage, two N=10 runs beat one N=20 run today.
 2. **Attack signal density (H3).** On-policy self-distillation and the search-as-teacher loop turn ~1
    bit/game into a full target distribution per state — the ~7–10× step-efficiency claim in
-   [[on_policy_self_distillation]]. Both are built and unshipped. This is the highest-information
+   [[on_policy_self_distillation]]. Both were built and unshipped, and have since been deleted (`--opd-coef` and `--search-teacher`, v133),
+   so this now means re-adding the loss. In 2026-08 this was the highest-information
    experiment available: a clean positive both closes the practical gap *and* adjudicates H1 vs H3.
-3. **Sample allocation / curriculum (H1, H2).** Team-blocked episodes already exist; the unbuilt piece
-   is **non-uniform team sampling weighted by per-team deficit** (regret- or PFSP-weighted over teams
-   rather than uniform), plus the pool-shrink probe for H2. Cheap, and it directly targets the one
+3. **Sample allocation / curriculum (H1, H2).** Team-blocked episodes exist (`--team-block-episodes`); the unbuilt piece
+   was **non-uniform team sampling weighted by per-team deficit** (regret- or PFSP-weighted over teams
+   rather than uniform; it was then built as `--team-pfsp` and deleted v134), plus the pool-shrink probe for H2. Cheap, and it directly targets the one
    factor measured to dominate.
 4. **Let the architecture do it (see next section).** Re-measure the N curve on the fresh generation
    with conditioning **off**. Free — it rides a run you are doing anyway.
@@ -770,7 +787,7 @@ ceiling now" into "which hypothesis is alive":
 
 - **Add a steps-per-team axis, even coarsely.** One extra N=20 arm at 2× steps separates H1 from
   everything else in a single run. If N=20@2× ≈ N=10@1×, it is budget, full stop.
-- **Run the whole sweep with conditioning OFF** (`--zarch-film off`). Conditioning was +0.027 n.s.;
+- **Run the whole sweep with conditioning OFF** (`--zarch-film off`, the then-flag; the family is gone and conditioning is always off now). Conditioning was +0.027 n.s.;
   carrying it adds a confound to the generation-vs-generation read for no measured benefit. Add it
   back only if the curve says something needs it.
 - **Match team strength across the N sets**, or baseline every team by a fixed-opponent pilot rate.
@@ -787,7 +804,6 @@ ceiling now" into "which hypothesis is alive":
 - [[on_policy_self_distillation]] — the dense-signal lever (H3): why a full target distribution per state is ~7–10× more step-efficient than PPO's ~1 bit/game, and the beam-as-teacher upgrade
 - [[entity_tokens_biases_pointers]] §6.7 — why equivariance and conditioning are two halves of one decision ("share where a symmetry is real, condition where it is false"), and where LoRA would attach if the ladder is ever reopened
 - [[objective_richness_and_representation]] — the simplicity bias / minimal-sufficient-statistic backbone (why the shared solution wins by default) + the distillation bits-ladder
-- `src/agents/model/CLAUDE.md` → dual-head value readout, the shared trunk (where the interference lives)
-- `src/agents/training/CLAUDE.md` → Exploiter distillation (extraction: policy KL + FitNets + scalar/value distill), grad-balance (per-head trunk-pull cosines — the interference instrument)
-- `designs/learning/self_discovered_archetype_latent.md` — z_arch pooling → VIB (the β = LUT-vs-style knob) → FiLM (the v8 capstone design)
-- Memory: [[project_value_distill_fitnet]], [[project_double_sided_recipe]], `project_model_frontier_roadmap`, `project_archetype_competence_gradient` (the flat ~30% switch-axis = the gap in the wild)
+- `src/agents/model/CLAUDE.md` — the shared trunk (where the interference lives); the dual-head value readout and the exploiter-distillation recipe this note cites (policy KL + FitNets + value distill) are deleted, see `designs/deleted_flags.md`
+- `designs/learning/conditioning_architectures.md`, `designs/learning/self_discovered_archetype_latent.md` — the conditioning line: z_arch pooling → VIB (the β = LUT-vs-style knob) → FiLM, with the v78 deletion banner
+- Memory notes of 2026-07 (some no longer in the memory directory): `project_value_distill_fitnet`, `project_double_sided_recipe`, `project_model_frontier_roadmap`, `project_archetype_competence_gradient` (the flat ~30% switch-axis = the gap in the wild)

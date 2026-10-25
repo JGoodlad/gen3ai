@@ -1,6 +1,6 @@
 # Design — Model management, the end state
 
-**Status: DESIGN; the registry / record half is not scheduled (updated 2026-09-27).** Authored
+**Status: DESIGN; the registry / record half is not scheduled and not built (updated 2026-10-25); the inference tier it names is built (step 6 of §5).** Authored
 2026-09-22 at the owner's request. 🚨 **ALWAYS-CURRENT (owner, 2026-09-27)**: see
 [`README.md`](README.md). It states what the
 model-side of the system looks like when the environment side of
@@ -28,7 +28,7 @@ run directory's own recorded metadata; nothing is re-derived.
 | piece | what it does | record |
 |---|---|---|
 | `model_config.json` (per run) | the weight-SHAPE record; `check_compatible` makes a mismatch a `[ModelVersion] FATAL` at startup | root `CLAUDE.md`; `src/agents/model/model_version/` |
-| the model version and the era wall | `MODEL_CONFIG_VERSION` **123** (v121 the observation-architecture batch, obs 2501 → 2761; v122 the shaped-reward deletion; v123 `--policy-gae-lambda`); **`MIGRATION_FLOOR` 121**: no checkpoint older than v121 loads on HEAD, so every earlier model is read at a pinned commit (≤ `56837827`) | `b0a28b5b`, `e3ef16db`, `2cc83080`; `model_version/migrations.py` |
+| the model version and the era wall | `MODEL_CONFIG_VERSION` (read it from `model_version/constants.py`; it was 123 on 2026-09-27: v121 the observation-architecture batch, v122 the shaped-reward deletion, v123 `--policy-gae-lambda`); **`MIGRATION_FLOOR`**: no checkpoint older than the floor loads on HEAD (121 then; `model_version/migrations.py`), so every earlier model is read at a pinned commit (≤ `56837827`) | `b0a28b5b`, `e3ef16db`, `2cc83080`; `model_version/migrations.py` |
 | the shaped-reward refusal | a resume or fork of a checkpoint trained with the (deleted) shaped reward REFUSES with `ShapedRewardCheckpointError` in `resolve_config` and `checkargs` (fix: pin ≤ `029cee83`); never a silent switch to terminal-only | `e3ef16db` (owner decision); ledger 2026-09-26 |
 | the launcher's restart role | a same-run restart re-launches in the RESUME role (fresh-only flags such as `--arch` stripped, `--model` → the latest checkpoint); a FRESH launch into a directory that already holds progress REFUSES (`FreshRunDirHasProgress`, `FATAL_CONFIG`) | `ab27425f`, after `ai_v14_01_base` died at its first restart (~40 GPU-min) |
 | `metadata.json` (per run) | provenance; three IMMUTABLE blocks written once — `original_command`, `lineage` (who forked whom, with the file every reference RESOLVED to), `pin_history` (which commit ran which steps); the `matchup` hash; `eval_sentinel_greedy` (the eval regime) | root `CLAUDE.md`; `designs/training/matchup_and_lineage.md` |
@@ -210,7 +210,7 @@ runs through `inference`. None loads a network itself.
 | 3 | roles in the registry; `registry.admit` printing the ledger line | 1, 2 | not started |
 | 4 | apply the ladder refit to the archive (the v9 gen1–gen7 re-read is impossible, §3.5); backfill recipe v3 for N0 (TASK_BACKLOG T5) | nothing | tool landed; apply not run; the N0 backfill queued after N0's reads |
 | 5 | H18's size attached to every anchor row | the bias cell | sized (\|bias\| < 0.02); not yet attached as data |
-| 6 | the Tier 2 catalogue manifest; opponents move first | the inference tier (companion doc §4.5: fixed weight SLOTS, so the manifest is a slot table) | scheduled with M5 Lane 0 (TASK_BACKLOG T2) |
+| 6 | the Tier 2 catalogue manifest; opponents move first | the inference tier (companion doc §4.5: fixed weight SLOTS, so the manifest is a slot table) | the slot-based inference service is BUILT (`src/agents/inference/service/`); the catalogue manifest and "opponents move first" are not |
 | 7 | retention as a function of roles | 3 | not started |
 
 Steps 1–3 are Python, need no parity oracle, and land between reads. Step 6 is the companion
@@ -251,3 +251,4 @@ Owner decisions are marked **(owner)**. `L…` is the ledger line as `ledger_ind
 | 2026-09-26 | The untaught meter's fixed opponent in the new lineage **(owner)** | `untaught_meter_opponent_v14` = N0's 24M snapshot, a NEW name; the 3.69 pp floor carried provisionally | Re-measuring the floor (≈ 9 GPU-h); reusing the pre-v121 opponent (cannot load) | ledger L21415; baseline set 2026-09-27, `4a614bd4` |
 | 2026-09-27 | Ladder recipe v3 **(owner)** | The games that SELECTED a snapshot no longer RATE it: 200 fresh games per promoting sentinel; a frozen-only RELATIVE column | v2's reuse of the eval cycle's games (winner's curse ~+15..+40 Elo at n = 100) | `d3efa93e`; `designs/training/eval_and_rating.md` |
 | 2026-10-01 | Mirrored pairs + SPRT promotion **(owner)** | Every head-to-head eval CAN play mirrored team pairs (`--eval-mirrored-pairs`, v128; the pair the unit) and pool promotion CAN be a per-candidate pentanomial SPRT (`--promotion-sprt`, v129); both BUILT DEFAULT OFF, recorded and inherited, flipped together at the X26 baseline (one regime boundary) | Flipping either mid-comparison of the M5 sizing arms; per-game CIs on paired games; the threshold gate's optional stopping | T17 + T6; `designs/training/eval_and_rating.md` → *Mirrored team pairs*, *SPRT promotion*; `designs/research_state/measurements/sprt_promotion/` |
+| 2026-10-25 | **Status line and two stale facts corrected (docs-health pass)** | Status now says the registry / record half is NOT BUILT (no `model_record.json`, `main.model_diff` or `main.admission` exists under `src/`) and that the inference tier is built; §1's version row points at the code instead of v123; §5 step 6 no longer reads "scheduled with Lane 0" | — | `src/agents/inference/service/`; `src/agents/model/model_version/constants.py` |

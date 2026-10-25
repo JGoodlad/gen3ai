@@ -1,5 +1,19 @@
 # The distillation flywheel — what the v8 reproduction campaign actually taught us
 
+> **Correction (2026-10-25): a historical measurement record; the machinery and the headline reading have moved on.**
+> (1) The whole fold loss family (`--distill-teacher`, `--distill-coef`, `--distill-team-bias`,
+> `--distill-value-coef`, `--distill-value-feat-coef`, the `--distill-anchor-*` and `--distill-stop-*` levers) and
+> `--search-teacher` were **deleted at v133** (`gen3_retired_levers_l3_v1`; `designs/deleted_flags.md`), after the
+> fold measured worse than no distillation (ledger, 2026-09-20..23). The tick-tock flywheel (`ai_v10`) is a forward
+> design that was never built (`designs/CLAUDE.md`, the version-folders table); X15 (expert iteration) would be a
+> rebuild, not a flag. Still live: `--exploiter`, `--trainee-teams`, `--stable-opponent-*`. (2) The reading in this
+> note's TL;DR (v8's gift as a broad re-weighting of *when to switch*) is **superseded** by later cells: v8's gift
+> replicates but a plain continuation of the same parent gains the same, so the recipe was equivalent to training the
+> parent on (`designs/research_state/UNDERSTANDING.md`, claims 2-5; ledger 2026-09-05..06). The research view of
+> record is `UNDERSTANDING.md`; `ledger.md` wins any disagreement. (3) Sections 3-4 below record the 2026-09-01 state
+> (what was running, what was owed), not the tree. The instrument lessons (meter stamps, replicate floor, extraction
+> vs transfer, regime vs composition) and the intuition remain good teaching.
+
 *Status note as of 2026-09-01. Why "fold the exploiters back into the generalist" gave +69 ELO
 once (v8, ai_v8_14) and has not gifted since; what a fold measurably does to a student; and the
 instrument lessons that changed how every fold number must be read. Intuition first, then the
@@ -72,9 +86,9 @@ predict gain (ρ = −0.13); *direction* did (ρ = +0.57 on switch-while-winning
 
 ## 2. Technical level
 
-**The objective.** A fold minimises PPO's loss plus a distillation term, in action-form (a KL
+**The objective.** A fold minimised PPO's loss plus a distillation term, in action-form (a KL
 between the teacher's action distribution and the student's on the student's own states), weighted
-`--distill-coef`, restricted toward teacher teams by `--distill-team-bias`. Action-form beat
+`--distill-coef`, restricted toward teacher teams by `--distill-team-bias` (both deleted at v133). Action-form beat
 target-form by +7.6pp at matched dose (KL-alone corrupted; rank decoupled from performance). The
 value side is a FitNets-style cosine hint on `value_pooled`, because scalar value distillation
 crystallised the value classifier's rank.
@@ -113,13 +127,13 @@ larger mover and the only meter ordered against the gift: `KL(fold‖parent)` vs
 
 **The optimizer, not the age (M7).** Maturity does not reduce distillation harm in the
 distillability index; the *step size* does. `--lr`, `--batch-size` and `--n-steps` are INERT on a
-fork (the resume path restores the checkpoint's optimizer; `model_build.py` prints "ignored on
-resume"), so every gen-era fold ran at whatever the parent had annealed to, and v8's fold was
+fork (the resume path restores the checkpoint's optimizer; `src/main/train/model_build.py` prints "ignored on
+resume"; this still holds), so every gen-era fold ran at whatever the parent had annealed to, and v8's fold was
 3.2–6.6× gentler per step than any gen-era fold. The lr licensing probe (18 cells, the actual rev-4
 ingredients) found distill-term lr 1e-4 Pareto-dominates 3e-4 on 6/6 arms: collateral KL −39%,
 absorption ceiling higher everywhere, net teacher content unchanged — the whole saving is the
-content-free overshoot half. The live levers on a fork are `--grad-accum-steps`, `--n-epochs`,
-`--min-lr`.
+content-free overshoot half. At the time the live levers on a fork were `--grad-accum-steps`, `--n-epochs`,
+`--min-lr`; a recordable fork step size has since been added (`--fork-lr`, `--fork-lr-freeze`).
 
 **Shape.** Count dominates conditioning (20→10 teams/teacher +0.077 SIG); a free per-team code
 did not close the N=20 gap (+0.024 n.s.), so the conditioning-signal theory is unsupported.
@@ -140,17 +154,17 @@ wins are early, dice-fair, launched from already-ahead positions — knowledge a
 against a static victim on pinned teams. That inversion holds under ground-truth Monte-Carlo
 anchors (boundary-share ratio 0.10 under truth vs 0.59 under the head).
 
-## 3. Where this lives in our architecture and record
+## 3. Where this lived in our architecture and record
 
-- Flags: `--exploiter`, `--distill-teacher`, `--distill-coef`, `--distill-team-bias`,
-  `--distill-value-coef` / `--distill-value-feat-coef` (the FitNets hint), `--stable-opponent-*`,
-  `--trainee-teams`; the fork-inert set is documented in `src/main/train/model_build.py` and
-  `src/agents/training/CLAUDE.md`.
-- Meters: `python -m main.exploitability` (bookkeeping over admission artifacts, the meter/coverage
+- Flags (2026-09): `--exploiter`, `--stable-opponent-*` and `--trainee-teams` are live; the fold flags
+  `--distill-teacher`, `--distill-coef`, `--distill-team-bias`, `--distill-value-coef` /
+  `--distill-value-feat-coef` (the FitNets hint) were deleted at v133 (`designs/deleted_flags.md`). The fork-inert
+  set is visible in `src/main/train/model_build.py`.
+- Meters (the measurement scripts are kept as records): `python -m main.exploitability` (bookkeeping over admission artifacts, the meter/coverage
   split, refuses schema drift); the untaught-8 instrument
   (`designs/research_state/measurements/axis_split_untaught_arm.py`, `plain_training_robbery.py`,
   `greedy_meter_arm.py` — verbatim copies of one meter with one flag flipped, by design); the
-  behavioural fingerprint (`v8_fold_behavioral_fingerprint_2026-08-31`, 25 model-free axes read
+  behavioural fingerprint (`designs/research_state/measurements/v8_fold_behavioral_fingerprint_analyze.py` and its `_2026-08-31` row files, 25 model-free axes read
   from `LegalActions` + `gen3_data`, ports across architectures); `distillability_index_probe`;
   `lr_licensing_probe.py`.
 - Team promotion: `python -m main.promote_teams` (seed-recorded uniform draw, exclusions in
@@ -162,7 +176,7 @@ anchors (boundary-share ratio 0.10 under truth vs 0.59 under the head).
   `project_fold_failure_eliminations`, `project_teacher_ceiling`, `project_fork_inert_flags`,
   `feedback_matched_extraction_row`, `project_distillability_index`.
 
-## 4. What is running and what is owed
+## 4. What was running and what was owed (as of 2026-09-01; since overtaken, see the banner)
 
 - The 40-team fleet (20 teachers × 2 teams × 1.5M, target R2ACTION) completes ~Wed 02:30–04:00;
   the 8-arm funding split (2.5M/team) is chained to it. Its load-bearing read is the UNTAUGHT cut,
@@ -194,4 +208,4 @@ a one-week run as its test.
 - `on_policy_self_distillation.md` — the search-as-teacher variant of the same loss.
 - `credit_assignment_and_value_errors.md` §4 — what the same campaign taught about the critic.
 - `designs/research_state/critic_calibration_plan.md`, `ladder_readiness.md`; `designs/ops/training_runbook.md`
-  → *Exploitability*; `src/agents/training/CLAUDE.md` → distillation and fork flags.
+  → *Exploitability*; `src/main/train/parser/hyperparameters.py` for the fork flags.

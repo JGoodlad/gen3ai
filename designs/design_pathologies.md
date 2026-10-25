@@ -1,5 +1,13 @@
 # design_pathologies.md — Model Pathology Register
 
+> **SUPERSEDED / HISTORY (2026-10-25):** a historical register of one May-June 2026 ai_v4 pass (its last entry is
+> 2026-06-06), over a run directory that is no longer in `models/`. The instruction below to "review this before
+> every retrain" is void, and its architecture signatures and obs sizes (`gen3_move_effects_v1`,
+> `gen3_incoming_damage_v1`) are long replaced. The pathologies it hunted continued as the ai_v5 re-evaluation list
+> (`ai_v5/todo_pathologies.md`). Open questions and retired hypotheses now live in
+> [`research_state/UNDERSTANDING.md`](research_state/UNDERSTANDING.md) (§5, §6) and the ledger
+> ([`research_state/ledger.md`](research_state/ledger.md)); what the model is: [`ARCHITECTURE.md`](ARCHITECTURE.md).
+
 A **living register** of observed model pathologies, the fixes applied, and what each fix should
 change. Unlike the `ai_vN/impl_step*.md` records (what was built) and `design_*.md` (forward
 plans), this is the **diagnostic thread**: *what's wrong → what we changed → what we expect to be

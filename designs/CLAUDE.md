@@ -42,6 +42,10 @@ owner's word).
 | [`tools/`](tools/) | `tools/CLAUDE.md`, `src/agents/gen3_data/CLAUDE.md`, `src/main/reads/` | index: [`tools/README.md`](tools/README.md) |
 | [`ops/`](ops/) | the root `CLAUDE.md` | the procedures below |
 
+The freshness gate scans the seven topic trees for dead paths, flags and `python -m` modules and caps each doc at
+120 KB (target 40 KB; `ops/` is scanned by name, uncapped). A log of CLOSED rounds is history: it goes to
+`research_state/claude_md_archive/` (the Rust port's lives there), not into a tree.
+
 **`ops/`:** `TRAINING_RUN_SOP.md` and `ORCHESTRATOR_SOP.md` are the procedures of record for the two
 long-lived sessions; an owner ruling on how a session operates goes into the owning section there, not
 into a memory file. `EXTERNAL_ANCHORS_SOP.md` (strength against agents we did not train; box paths in
@@ -61,14 +65,15 @@ is written).
   hand-edited together with `endstate/design_learner_recipe.md` §3.22 (`src/recipe_doc_gate_test.py`
   fails when either moves alone). **`baselines.json`** changes only by `python -m main.baselines set …
   --reason`.
-- **`design_pathologies.md`** — the model-pathology register (what is wrong → what we changed → what we
-  expect). Review it before a retrain; after an eval, add a row saying whether a predicted change landed.
+- **`design_pathologies.md`** — a HISTORICAL register of one May-June 2026 pass (banner-superseded); open questions
+  live in `research_state/UNDERSTANDING.md` §6 and the ledger.
 
 ## Version folders `ai_vN` (history)
 
 Each holds `todo.md`, `impl_step*.md` (post-implementation records; match the folder's style) and
-`design_*.md` (forward designs). All are explicit-only, never auto-updated. Read one for what was
-designed and why, then check the code before believing it still holds.
+`design_*.md` (forward designs). All are explicit-only, never auto-updated, and every closed chapter folder has a
+one-paragraph `README.md` saying so (`ai_v3`'s is the frozen one). Read one for what was designed and why, then
+check the code before believing it still holds.
 
 | folder | the chapter |
 |---|---|
@@ -83,7 +88,7 @@ designed and why, then check the code before believing it still holds.
 | `ai_v9` | the entity-graph generation (`design_generation_roadmap.md`); `design_frame_deletion_coverage_gaps.md` holds the standing rule on reading a dV ablation |
 | `ai_v10` | exploiter scaling (forward docs, never built) |
 | `ai_v11` | human ladder replays (forward doc, never built) |
-| `ai_v12` | the win-probability-critic chapter (`launch_runbook.md`'s arms carry deleted flags); `promotion_exclusions.json` is still read by `main.promote_teams` (rebuild: `--regenerate-exclusions`) |
+| `ai_v12` | the win-probability-critic chapter, BUILT and CLOSED (the critic and its terminal are constants, `ARCHITECTURE.md`); `launch_runbook.md` is a bannered history record (its arms never ran as written); `promotion_exclusions.json` is still read by `main.promote_teams` (rebuild: `--regenerate-exclusions`) |
 
 ## `learning/`
 

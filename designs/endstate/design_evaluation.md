@@ -9,8 +9,12 @@
   - cycling detection is a STANDING instrument (the cycle monitor, §2.5);
   - background eval starts GPU-WINDOW-ONLY.
 
-  Each must-fix item's resolution is in the Decision record. The design is still a PROPOSAL awaiting the owner's
-  answers to §11.2. Nothing in it is built unless marked BUILT.
+  Each must-fix item's resolution is in the Decision record. **Truth at 2026-10-25: BUILT IN PART.** BUILT: the
+  ledger v2 core (U1), the in-loop cycle and SPRT rows (U2), the offline multi-cell engine (U6), the plateau's Tier 1
+  (U9a), and the cycle monitor + Tier 2 offline (U5 + U9), all listed below. NOT BUILT (`TASK_BACKLOG` T19 / T20): the
+  scheduler and GPU window (U4, U4a, U4b), the backfill and the reader migration (U3, U3b, U3c), the pool matrix and
+  eviction (U7, U7a, U7b, U8) and the Rust p1 policy route (U10). Q1-Q9 (§11.2) stand as the orchestrator's
+  PROVISIONAL answers; no owner ruling on them is recorded.
 - **U1, the ledger v2 core, is BUILT (2026-10-03):** §0b's schema, streams, claims, reader API, audit and static gate
   (§0b.1, §10's U1 hand-off). The orchestrator's provisional answers to Q1–Q9 are in the Decision record, for the
   owner's review on 10-04.
@@ -1057,13 +1061,14 @@ The two-tier plateau plus the monitor are 2.7–4.0 % of that.
 
 ## 7. TODO (fill in as implemented)
 - [x] U1 the ledger v2 core (§0b, §10) — BUILT 2026-10-03, incl. the h2h archive default and the bot round robin.
-- [ ] U2 in-loop migration (cycle rows, SPRT rows + decisions, ladder dual-write).
+- [x] U2 in-loop migration (cycle rows, SPRT rows + decisions) — DONE 2026-10-04 (the ladder dual-write moved to U7 / U7a).
 - [ ] U3 backfill (SHRUNK by D-L4 to the verbatim copies + anchors, N0's ladder on request); U3b anchors / untaught /
       gap onto the ledger; U3c the `eval_results.jsonl` readers.
 - [ ] U4 the scheduler + generalized window (+ its first measurement); U4a slot-direct snapshot loads; U4b SPRT resume.
 - [x] U9a the plateau's Tier 1, offline — BUILT 2026-10-06 (`agents/training/plateau_t1.py`, `main.plateau`; §8.1 "As built").
-- [ ] U5 the cycle monitor (+ its offline driver); U9 the two-tier plateau check (Tier 2 + the panel + the 2-check
-      rule's joint OC, on top of U9a).
+- [~] U5 the cycle monitor (+ its offline driver); U9 the two-tier plateau check (Tier 2 + the panel + the 2-check
+      rule's joint OC, on top of U9a) — OFFLINE SLICE BUILT 2026-10-19 (`main.cycle_monitor`, `main.plateau status`); the
+      in-window rows (U4), bot members and the G6 joint OC simulation are not.
 - [x] U6 the multi-cell offline engine — BUILT 2026-10-04 (`main.h2h play-many`, `main/h2h/many.py`): up to TWO architectures per engine since 2026-10-04 (F-U6-1 closed, `main/h2h/arch.py`): the X5 cross's two-architecture cells play on it (§10 U6 row).
 - [ ] U7 T20 estimators; U7a retire the ladder updater; U7b eviction operating characteristics; U8 §2.7's validation
       + the N0 back-test (references and plateau).
@@ -1706,3 +1711,4 @@ the public `opponent_builder` (the rows' `team_set`). `rust_eval.launch.run_seed
 | 2026-10-19 | **AMENDMENT: the size bar on a counted cycling flag (ORCHESTRATOR ruling on F-ED-27)** | the monitor's test unchanged; a SUSPECTED / CONFIRMED check COUNTS for the plateau only when its non-transitive size on the RECENT WINDOW (the last 8 checks' nodes: the complete dense-lag subgraph, 80M at Δ = 10M) is MATERIAL (one-sided 95 % lower bound > 1.7 pp, Q9's target); NEGLIGIBLE (upper bound < 1.7 pp) counts as NONE; the bar inside the interval is INCONCLUSIVE (rule 8). The size is the per-edge cyclic SD (the target's scale), its interval the noncentral-χ² inversion (Steiger & Lind; MacCallum et al.'s close-fit test). `gen3_plateau_t2_v2`; computed by the reader, no decision row changes | a window of the last 80M of STEPS (the same at Δ = 10M; a check count is what every row plays in full); the accumulated matrix's excess RMS (grows nothing but still mixes old history in); a size test with the bar as H0 alone (no NEGLIGIBLE call: a plateau would wait on power the window does not have); the excess weighted RMS as the scale (it under-reads an iid perturbation by √(df/E) ≈ 0.88 and is not the target's scale) | §8.2 "The size bar"; F-ED-27, F-ED-28; `measurements/cycle_monitor_retro_2026-10-19/` |
 | 2026-10-19 | **The first OUTSIDE PANEL, `outside_v1` (ORCHESTRATOR ruling on F-ED-26)** | the named baselines loadable at HEAD's architecture: `production` alone (the other ten are era-checkout-only), by run-relative path + sha256; ≈ 8–14 min of CPU a check | Kakuna / SmallRL (days a cell on CPU); Rust roster bots (need a bot cell on `main.h2h`, ≈ 1 agent-day, and all score 0.89–1.0: out of band); the seven other closing-test seeds (not named baselines: proposed, not registered) | §8.2 "As built"; F-ED-26, F-ED-29 |
 | 2026-10-20 | **The SIX-member OUTSIDE PANEL, `outside_v2` (ORCHESTRATOR ruling on F-ED-29)** | `production` + five more closing-test end-state seeds (`outside_es_end2_s2001`, `s2002`, `s2003`, `s2006`, `s2007`, each a new named baseline that strict-LOADS at HEAD), a NEW name so `outside_v1` and its rows stay as registered; every member MEASURED in band, 25.9–39.8 % as the player against X26 P* (280M) and X34 T* (290M), 200 mirrored pairs each; P(PANEL FLAT given zero gain) 0.89 / 0.92 per check at 1,000 pairs (from the cells' pair SDs), up from 0.34 | editing `outside_v1` in place (rows are keyed by the name); the closing test's production-arm seeds (refused by the strict loader at HEAD: legacy levers deleted; `arch_status` reads them current, record-only); the two remaining end-state seeds (the design sizes six); picking seeds by score | §8.2 "The registered panel `outside_v2`"; F-ED-29; `plateau_panels.json`; `baselines.json`; `cycle_monitor_test.py` |
+| 2026-10-25 | **Status line made true (docs-health pass)** | the status said "a PROPOSAL awaiting the owner's answers" and "nothing built" while U1, U2, U6, U9a and the offline U5 + U9 are BUILT; it now lists built and not-built units (`TASK_BACKLOG` T19 / T20) and says Q1-Q9 are the orchestrator's provisional answers; §7's U2 and U5 / U9 boxes corrected | leaving the PROPOSED wording | the Decision record above; `src/agents/training/{eval_ledger,cycle_ledger,plateau_t1,plateau_t2,cycle_monitor}`, `src/main/{h2h,plateau,cycle_monitor}` |

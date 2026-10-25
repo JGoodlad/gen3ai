@@ -1,5 +1,17 @@
 # Negative transfer and the shared function — why you cannot teach eight teams without touching the other 711
 
+> **Correction (2026-10-25):** the mechanism taught here (one shared function, gift and leak as one displacement,
+> content sets the sign and dose the length) stands as a general explanation; the MACHINERY it was measured on
+> is gone. The whole distillation fold was deleted at **v133** (`gen3_retired_levers_l3_v1`, 2026-09-23: wider
+> targets cost more and the fold's own loss carried the cost): every `--distill-*` flag this note names
+> (`--distill-teacher`, `--distill-coef`, `--distill-anchor-*`), the anchor, grad-projection and stop-rule
+> modules, and the `distill/*` meters are history (`designs/deleted_flags.md`). The z-code/FiLM conditioning of
+> v8's line went at v78, PopArt at v131, the damage-refine loop at v50. The trunk "identical to today's" in §3
+> was the 2026-09 build (two layers, one global token); production now runs trunk depth 3 on three board tokens,
+> 17 edge families, and the win-prob critic (`designs/ARCHITECTURE.md` top table and §2.1; read the live values
+> from `agents/model/arch_constants.py` and `model_version/constants.py`). Every number below is a dated
+> measurement on the 2026-09 gen-era models, not a property of the current network.
+
 > **What this is.** A durable explainer for one concept cluster: why a distillation fold on a
 > handful of taught teams moves the policy on every untaught team, why that movement is one
 > displacement judged from two places (the GIFT and the LEAK), what sets its sign, and whether the
@@ -28,12 +40,14 @@
 - **Every gen-era fold digs a hole then recovers** if the teachers are near the parent, and does not
   recover if they are funded. The mechanism story (dense supervised pull first, noisy RL restoring
   force later) is an interpretation; the recovery gap is a measurement.
-- **The architecture changed across the v8 boundary in two ways that matter here**: v8 had the flat
+- **The architecture changed across the v8 boundary in two ways that matter here** (both are now history; see
+  the banner): v8 had the flat
   positional action head and a two-round physics-in-the-loop refine; the gen era has the
   pointer-native head and no loop. The sharing argument says entity structure *amplifies* transfer
   in both directions, so it cannot flip the sign by itself. The candidate that could is that
   **closed-form physics leaves a teacher only team-specific content to teach**, and team-specific
-  content is what leaks. That hypothesis is pre-registered and under test (§4).
+  content is what leaks. That hypothesis was pre-registered and then REFUTED by the content-locality probe (§3): the teachers that
+  robbed differed from the parent everywhere, not only on their own teams.
 
 ---
 
@@ -85,8 +99,8 @@ have acted, and the gift then grew to a peak near +9.7 before decaying. It is a 
 transient: a hump where we get a hole. Under the soundboard picture that means v8's teachers'
 direction was aligned with off-slice improvement from the very first update, or the 277-million-step
 parent had a trunk geometry where the taught-to-untaught coupling ran positive. The gen-era data
-cannot separate those. The replication in flight (three short arms to +1.09M on the era code) asks
-the prior question first: does the no-hole fact even reproduce.
+cannot separate those. The replication that was then in flight (three short arms to +1.09M on the era code) asked
+the prior question first: does the no-hole fact even reproduce. The next section gives the answer.
 
 ### Update, 2026-09-06: the anomaly dissolved
 
@@ -115,7 +129,7 @@ progress. The mechanism in §1 and §2 stands unchanged; what changed is the bas
 updates are drift" account is dead.** Both plain continuations walk diffusively: v8's 277M-step parent moves as
 t^0.49 [0.46, 0.53] and ours as t^0.47 [0.47, 0.49], each within a hundredth of a pure random walk, and the
 within-arm cosine between two depths sits within 0.002 of the random-walk prediction √(t₁/t₂) on our side. The
-output-side twin agrees. What did separate was the critic group alone, and only after removing PopArt's
+output-side twin agrees. What did separate was the critic group alone, and only after removing PopArt's (deleted at v131)
 gradient-free rescaling of the value net (which carried up to 28% of that group's squared displacement on v8):
 v8's critic moves as t^0.29 against ours at t^0.42, read as "the mature critic has largely stopped moving",
 never as "the mature update is directed". So a mature parent's gain on untaught teams is not a cleaner
@@ -149,13 +163,16 @@ Three consequences follow, and the campaign measured all three.
   and "harmful spillover". The kernel is the same object; alignment of the teacher's direction with
   the untaught teams' need sets which branch you are on.
 
-### What the remedies buy and cost
+### What the remedies bought and cost
 
-- **Anchor or trust region on off-slice displacement** (`--distill-anchor-target-kl` and its
+These were the fold's levers; all the flags are deleted (banner), so read this as the design space of any
+future distillation, not as options on the current trainer.
+
+- **Anchor or trust region on off-slice displacement** (the deleted `--distill-anchor-target-kl` and its
   monitor). Bounds the leak by bounding the displacement seen from untaught states. It bounds the
   gift by the same amount, because they are one displacement. It trades the chance of a v8 for
   protection against a robbery.
-- **Gradient projection** (`--distill-anchor-mode grad_project`). Removes the component of the
+- **Gradient projection** (the deleted `--distill-anchor-mode grad_project`). Removes the component of the
   distillation gradient that changes off-slice behaviour and leaves PPO's gradient free. Cleaner in
   principle, since it separates the two *sources* at the update. If gift and leak share a subspace,
   projection kills both, and the subspace is estimated from a finite sample of off-slice states.
@@ -171,13 +188,14 @@ Three consequences follow, and the campaign measured all three.
 ### What actually changed across the v8 boundary
 
 Checked from git and the runs' `model_config.json`, not from memory. At v8's commit (b13b30b2) the
-trunk was identical to today's: two transformer layers, width 128, four heads, twelve mon tokens
+trunk was identical to the 2026-09 gen-era build's (production has since added a third, identity-init trunk
+round and three board tokens in place of the one global token): two transformer layers, width 128, four heads, twelve mon tokens
 plus a global token. Two things differed:
 
 - **v8 had the flat action head.** Eleven logits came from SB3's stock linear layer over the policy
   latent. The logit for "move slot 2" had its own weight column regardless of which move sat in slot
   2 on this team. The pointer-native head (`gen3_pointer_native_v1`, v51) landed 2026-08-03, after
-  v8's fold; today move k is scored from move k's own token plus its physics cells and switch j from
+  v8's fold; in the build that head replaced it with, move k is scored from move k's own token plus its physics cells and switch j from
   mon j's token, with one shared scorer per entity family.
 - **v8 had a loop.** Its config carries `damage_refine_rounds: 2` with the outgoing and status
   refine flags on: a lean damage kernel re-ran *between* the two transformer layers from the current
@@ -188,7 +206,7 @@ plus a global token. Two things differed:
 
 So v8 gifted on a flatter head with a loop, and the gen era robs on a more structured head without
 one. Everything else changed too (a 277M-step parent vs 28M, a different pool, the frame deletion,
-fifteen edge families, the move seats), so this is one correlation across one boundary.
+fifteen edge families then, 17 now, the move seats), so this is one correlation across one boundary.
 
 ### The sharing argument, and which way it points
 
@@ -209,7 +227,7 @@ too, and it cannot explain a sign flip.
 equivariance is structural now where the flat model had to learn it from every slot ordering. Cold
 start is uniform over legal actions by construction. Type effectiveness, damage rolls, speed order,
 status landing, trapping and chip are computed, not learned, and delivered as per-action cells and
-as fifteen families of attention bias. Faster early learning is what fresh generations show.
+as families of attention bias (fifteen at the time of the campaign, 17 in the current build). Faster early learning is what fresh generations show.
 
 **The version that could flip the sign.** Split what a specialist teacher knows into *general game
 skill* and *team-specific tactics*. General skill gifts, because it is true on every team.
@@ -242,7 +260,7 @@ Both are offline, CPU-only, on existing checkpoints; results land under
 the premise failed.** The gen-era cross/within ratio was higher than v8's in direction only
 (delta +0.28, paired CI [−0.27, +0.95], permutation p 0.19), the action head was the *one* group where
 the difference ran the other way, and the pointer head carries **0.66% of the policy-gradient norm**
-against the flat head's 6.2%. In the current model 85% of that norm sits in the encoders (52%) and
+against the flat head's 6.2%. In the gen-era model measured then, 85% of that norm sat in the encoders (52%) and
 the team transformer (34%). Within either era the taught/untaught split is not a direction the kernel
 distinguishes at all (cross cosines 0.003–0.011, every ratio within 1.6 null SDs of 1). So "the
 pointer head shares more" is dead as stated: whatever couples taught to untaught teams lives in the
@@ -308,7 +326,8 @@ Within the gen era, locality still does not separate the robbing teachers from t
 the reader must carry: the v8 headline rests on the thinnest cell, a three-team teacher whose off-slice
 divergence sits 1.6× above the floor, so the direction is robust and the magnitude less so.
 
-**FiLM result (z-swap probe, `arch_transfer_2026-09-05/zswap/`): REFUTED.** v8's whole line carried a
+**FiLM result (z-swap probe, `arch_transfer_2026-09-05/zswap/`): REFUTED.** (The z-code/FiLM machinery was
+deleted at v78.) v8's whole line carried a
 32-dimensional team code: a DeepSets mean over our six mons' static facts, entering the network at exactly
 one line as a FiLM on both heads after projection and never touching the trunk. Substituting the parent's
 code into a v8 teacher removes 3.8% [2.1, 5.5] of the teacher's on-slice divergence against a 20% rail, and
@@ -359,12 +378,13 @@ crossed by a fork, so the head hypothesis lives or dies on the two probes above.
 
 ## 4. Where this lives in our architecture and record
 
-- The fold loss and its instruments: `src/agents/training/instrumented_ppo/` (`distill_anchor.py`
-  for the off-slice trust region and collateral meters, `distill_grad_project.py` for the
-  source-separated sibling, `distill_stop_callback.py` for the plateau-and-rise stop rule).
-- The flags: `--distill-teacher`, `--distill-coef`, `--distill-anchor-target-kl`,
-  `--distill-anchor-mode grad_project`, `--fork-lr` / `--fork-lr-freeze` (the dose pin). Read a run's
-  dose with `python -m main.dose <run>`.
+- The fold loss and its instruments (the off-slice trust region and collateral meters, the
+  source-separated gradient-projection sibling, the plateau-and-rise stop rule) were deleted with the
+  fold at v133; `designs/deleted_flags.md` lists each module and flag with the reason. They are
+  recoverable only by pinning to a pre-v133 commit (`model_version.retired_levers.LAST_COMMIT_L3`).
+- The dose pin that survives is `--fork-lr` / `--fork-lr-freeze`. Read a run's dose with
+  `python -m main.dose <run>`. The fold's own flags (`--distill-teacher`, `--distill-coef`,
+  `--distill-anchor-target-kl`, `--distill-anchor-mode`) are gone.
 - The offline off-slice displacement column and its reproducibility rule (concurrency=1, five seeds):
   `designs/research_state/measurements/reuse_batch_2026-09-03/offline_collateral_kl/`.
 - The 2×2 teacher-content batch (funded vs unfunded, two frozen replicate pairs):
@@ -374,7 +394,8 @@ crossed by a fork, so the head hypothesis lives or dies on the two probes above.
   meter `v8_gift_timing_probe.py`; the phase-1 replication pre-registration in the ledger
   (commit 006a2886).
 - The architecture boundary: `designs/CHANGELOG.md` v50 (prefuse, refine-loop deletion) and v51
-  (pointer-native head); `designs/ARCHITECTURE.md` §2–§3 for the current chain and head inputs.
+  (pointer-native head); `designs/ARCHITECTURE.md` §2–§3 for the current chain and head inputs (the
+  current model, not the 2026-09 one this note measured).
 - Floors and vocabulary (SIGNIFICANT / WITHIN FLOOR / NOT DETECTED; every floor is OPERATIONAL and
   includes self-play pool divergence): the ledger entries of 2026-09-04 and the memory
   `project_untaught_meter_axes`.
@@ -386,11 +407,12 @@ experiences that as a gift or a leak is decided by the direction of the displace
 teacher's content, and not by its length, which is the dose. The gen-era campaign measured exactly
 this pattern: content moves the untaught side, dose does not, a scalar divergence cannot tell the
 two apart, and the loss-off control moves nothing. Every gen-era fold digs an early hole; near-parent
-teachers let RL fill it back in and funded teachers do not. v8 is the anomaly because its
-displacement pointed the right way from the first update, and the architecture is a live suspect
-for why ours do not: the pointer head shares more, which amplifies transfer without choosing its
-sign, and closed-form physics may leave teachers with only the team-specific content that leaks.
-Two pre-registered offline probes decide whether that story has data behind it.
+teachers let RL fill it back in and funded teachers do not. v8 was the anomaly, and it dissolved: its recipe was equivalent to simply training its parent on
+(§1 update). The architecture was a suspect for why ours robbed, and the two pre-registered offline probes
+cleared it: the sharing kernel was NOT DETECTED (the pointer head carries under 1% of the policy-gradient
+norm; whatever couples teams lives in the trunk, in both eras) and content locality was REFUTED with its
+sign reversed (what separated robbing teachers from neutral ones was how far they sat from the parent
+everywhere, not where). Closed-form physics leaving only team-specific content to teach did not hold.
 
 ## See also
 

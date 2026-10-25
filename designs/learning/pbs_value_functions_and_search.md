@@ -1,5 +1,24 @@
 # Imperfect-Information Search, PBS, and Value Functions — A Study Guide
 
+> **Correction (2026-10-25):** the theory here (§1-§10: the advantage-signal principle, calibration
+> vs discrimination, PBS, CFR, the gadget, ReBeL, the soundness rule) is timeless; the BUILD STATUS
+> around it was written in the 2026 plateau-research period and is history. (1) Every measured
+> figure (the offense/defensive AUCs, `rank/trunk_pr`, the loss attribution, the L1-L4 tree) comes
+> from shaped-critic-era models and is not a current meter. The critic is now a win-probability
+> head (`sigmoid(win_head(value_pooled))`, BCE on the terminal win), whose discrimination is
+> tracked in `win_prob_decomposition.md` and `../endstate/design_value_discrimination.md`. (2)
+> `--search-teacher` (ExIt/AWR), `--opd-coef` (on-policy distillation), the distributional value
+> head (`--value-dist-mode`), PopArt and the FiLM archetype conditioning (v78, closed NULL) are all
+> DELETED (`../deleted_flags.md`); `better-line`, `lookahead`, `falsify-scan` and `calibration`
+> survive as offline prober queries (`python -m main.prober.query`), now on the Rust
+> `search_driver` (the Node clone-and-branch server is gone). (3) Search is an offline measurement
+> program, PAUSED, not a training lever: what it found, and what binds it (the world sampler, i.e.
+> identifying the opponent's TEAM), is in `../endstate/search_ledger.md`. (4) The "ordered plan"
+> (§11, §13) is the plan of that period, not the current backlog; the current backlog is
+> `../research_state/EXPERIMENT_BACKLOG.md`, and human replays are the design in
+> `../endstate/human_data_architecture.md` (no human decisions in training today). What the model
+> is now: `../ARCHITECTURE.md`.
+
 An offline-study companion covering the whole thread on value functions, Public Belief States (PBS),
 Counterfactual Regret Minimization (CFR), depth-limited search, and how they connect to breaking the
 gen3ai plateau. Written to be read on its own. Sibling to `rl_concepts_studyguide.md` (the broad glossary);
@@ -27,7 +46,7 @@ Two refinements that make this precise:
 - **Discrimination, not calibration, is the currency** (§2). A V that predicts the *mean* everywhere is
   calibrated and useless — it produces zero advantage.
 
-The behavioral symptom, in one line: **"trivially okay in matchups, not great at games"** = V reads the
+The behavioral symptom (as read in the plateau research), in one line: **"trivially okay in matchups, not great at games"** = V reads the
 *local/immediate* board (offense AUC ≈ 0.63) but is *blind to long-horizon/positional* value (defensive
 AUC ≈ 0.50). Local readability → sane trades. Positional blindness → no multi-turn game plan → generic
 reactive play. **Give V positional discrimination → positional advantage appears → the policy learns to
@@ -92,8 +111,8 @@ amortize**; the net can only compile the average of what its own shallow policy 
 
 ### "It spends capacity on heuristics" — the correction
 
-The evidence says it is **not spending capacity on heuristics; it is declining to spend capacity
-at all.** `rank/trunk_pr` is **24 → 35 of 128 and rising**; eight offline probes concluded **"no
+The evidence of that period said it is **not spending capacity on heuristics; it is declining to spend capacity
+at all.** `rank/trunk_pr` (a participation-ratio meter that still exists) read **24 → 35 of 128 and rising**; eight offline probes concluded **"no
 obvious representational hole"**; the critic's rank ~3 is *appropriate* (one scalar out;
 `value_pooled` AUC 0.833 vs the policy's 384 dims at 0.835). The capacity is idle because
 heuristics already minimize the loss it is given — gradient starvation
@@ -104,7 +123,7 @@ its own state distribution**. It can avoid entering positions its heuristic cann
 then never receives the gradient that would expose the failure. A supervised learner is stuck with
 its dataset; a policy can quietly stop visiting its own counterexamples. That is a self-confirming
 loop and a plausible mechanism for a **flat** fixed point rather than a slow one
-([[project_plateau_research_2026_06_25]]).
+(the June 2026 plateau research).
 
 ### The pattern across every null we have: information, never computation
 
@@ -128,26 +147,34 @@ mon and is silent on the second. (The L3 memory flags this itself — "a one-tur
 fully exclude arbitrary-depth anticipation" — and guards it with the zero win/loss skew. That
 guard is real evidence against **one-ply** mattering, and no evidence about depth.)
 
-### The lever that fits the no-runtime-search constraint — already built, never run
+### The lever that fits search-free play — built then, since partly deleted
 
-On-model search is owner-ruled-out. That rules out search **at inference**, not search **in the
-loop**: `better-line` (CRN-anchored beam over the critic, clone-and-branch search server),
-`--search-teacher` (ExIt/AWR), and `--opd-coef` (full-distribution on-policy distillation) all
-exist. Search runs at *training* time as a supervision oracle; the deployed model stays one
-forward pass. That is the AlphaZero split exactly, and it is **the named survivor in the closed
-L1–L4 tree** ("an offline search-teacher distilled into the net"). See
+The network we play is one forward pass, which rules out search **at inference**, not search **in
+the loop**. When this guide was written three pieces existed: `better-line` (a CRN-anchored beam
+over the critic on a clone-and-branch search server), `--search-teacher` (ExIt/AWR), and
+`--opd-coef` (full-distribution on-policy distillation). Search would run at *training* time as
+a supervision oracle with the deployed model staying one forward pass. That is the AlphaZero split
+exactly, and it was **the named survivor in the closed L1–L4 tree** ("an offline search-teacher
+distilled into the net"). **Status 2026-10-25:** `better-line` survives as a prober query on the
+Rust search driver; `--search-teacher` and `--opd-coef` were deleted at config v133 (the
+composition gate's verdict was never recorded; X15 would rebuild the route on the Rust driver),
+and the search program since is offline measurement (`../endstate/search_ledger.md`). See
 [[on_policy_self_distillation]] for the bits-per-decision argument and the minimal first
-experiment. Note also that **v51 already delivers depth-0 discrete structure** — every action has
-its own seat and its own consequence cells; the gap is *depth*, not *discreteness*.
+experiment. Note also that **v51 first delivered depth-0 discrete structure** — every action has
+its own seat and its own consequence cells (today the four move seats and the pointer head's
+per-move cells, `../ARCHITECTURE.md` §3.3); the gap is *depth*, not *discreteness*.
 
 ### Honest counterweights (do not skip these)
+
+*(Figures in 1-2 are the plateau-research loss attribution, run and date not recorded in this
+guide; read them as then-measured, not as a current meter.)*
 
 1. **~30% of losses are attributable LUCK.** High-variance stochastic games reward depth *less* —
    variance swamps the depth advantage. Pokémon is not chess here, and the deliberation ceiling is
    lower than the chess analogy implies.
 2. **~64% is UNATTRIBUTED = UNKNOWN**, and only **~6% is proven policy-reducible**. Reasoning
    about deliberation headroom is reasoning into a measurement gap. (Never re-inflate this into a
-   "team-draw / unwinnable" claim — [[feedback_no_circular_unwinnable_claims]].)
+   "team-draw / unwinnable" claim — the owner's standing rule against circular unwinnable claims.)
 3. **Wang 2024 is the counter-counterweight** — Gen 4 PPO + MCTS, 78.6% → 90.8% vs Heuristic: the
    closest direct evidence that lookahead pays *in Pokémon specifically*, and it is large.
 
@@ -156,7 +183,12 @@ its own seat and its own consequence cells; the gap is *depth*, not *discretenes
 `critic_overvalued` vs `lost_position`), then run `better-line` offline on the worst decisions and
 ask *"does depth-3 search find a materially better line here?"* Zero training cost, existing
 tooling. **No better line at our worst decisions ⇒ the discrete-reasoning thesis is falsified
-cheaply. Better lines ⇒ the teacher targets are already in hand.**
+cheaply. Better lines ⇒ the teacher targets are already in hand.** What the search ledger has
+since measured, dated and PROVISIONAL (`../endstate/search_ledger.md` §1): playing every action out
+in the TRUE battle (the oracle world) improves the policy's pick by +0.081 win probability per
+decision at 8 rollouts (end-state checkpoint) against the critic's +0.026, but FULLY honest search
+(hidden facts drawn from Smogon usage) gains only +0.006 [-0.004, +0.017] — the oracle edge is
+hidden information about the opponent's team, not search depth.
 
 ---
 
@@ -382,8 +414,9 @@ The AlphaZero loop, transplanted to PBSs:
 
 In self-play this converges to approximate **Nash** — the correct solution concept for a simultaneous-move
 imperfect-info game — rather than the *average-return fixed point* that PPO alone converges to (the archetype-
-blind, exploitable policy). **What maps to Pokémon:** your belief heads = (part of) the PBS; your critic +
-win-prob head = the `V`; the Rust sim = affordable search; your search-teacher/OPD = the distillation loop.
+blind, exploitable policy). **What maps to Pokémon:** your belief stack (X5's hypothesis tokens) = (part of) the PBS; your
+win-prob critic = the `V`; the Rust battle core and its `search_driver` = affordable search; the
+distillation loop (the search-teacher / OPD route) was built and then deleted at v133.
 **What's hard:** simultaneous moves (each node's local solve is the §6 matrix game), the huge private space
 (needs abstraction/sampling), and the expensive value forward (needs a distilled light leaf net).
 
@@ -446,7 +479,10 @@ representation is improved), so the advantage stays on-policy. Do **not** wire `
 (2) it's `V^{human}`, not `V^π`, so it's a representation-shaper/target, not the live baseline. Quality is
 bounded by replay strength (gen3ou ladder median ~1242 → rating-filter hard).
 
-**Logistics — an early win, offline, credits-friendly:** parse the `/replays` corpus (137k gen3ou), rating-
+**Logistics — an early win, offline, credits-friendly (the plan of that period; the corpus counted
+here as 137k gen3ou replays is today's `hr_spec_v1` snapshot of 376,410 logs, and the current
+human-data design is `../endstate/human_data_architecture.md` and `../endstate/design_human_replay_lever.md`,
+nothing built):** parse the `/replays` corpus, rating-
 filter, extract `(public_state, turn) → outcome`, train a supervised win-prob net on the *public/revealed*
 obs subset (reuses the existing pipeline). No Rust sim, no live-training contention, embarrassingly parallel.
 Doubles as a universal position evaluator for the prober/curriculum.
@@ -455,12 +491,17 @@ Doubles as a universal position evaluator for the prober/curriculum.
 
 ## 11. Improving the value function — the early-wins ladder
 
+*(The ladder of the plateau-research period. Status 2026-10-25: item 2 (the distributional value
+aux) was deleted at v131 — shaped vs win-prob NOT DETECTED, +17.5 Elo; item 7 (archetype FiLM) was
+deleted at v78 and closed NULL; item 5 is a design, not a build; items 6 and 9 became the search
+program (`../endstate/search_ledger.md`); the remaining items' status is not tracked here.)*
+
 Every topic, re-sorted by its *value-function* lever, cheap-first:
 
 **Tier A — cheap, current architecture:**
 1. **Belief-condition the critic** — route the existing belief heads into `V` → discriminative features for
    hidden-info positions → lower advantage variance. *Better inputs.*
-2. **Enable the distributional value aux loss** (the v29 head exists in `read_only`) — a richer target than a
+2. **Enable the distributional value aux loss** (the v29 head existed in `read_only`; deleted at v131) — a richer target than a
    scalar; a known cure for value-learning instability/rank collapse. *Better target + anti-collapse.*
 3. **Plasticity hygiene** — LayerNorm + weight decay (± light resets) → fights TD-bootstrapping rank collapse →
    lets V recruit the dimensions it needs. *Better capacity use.*
@@ -475,7 +516,7 @@ Every topic, re-sorted by its *value-function* lever, cheap-first:
    moments. Injects positional discrimination the sparse terminal reward can't. Seed of the search-teacher.
 
 **Tier C — the ceiling-raisers (regime change):**
-7. **Archetype conditioning (FiLM) on the critic** — lets V compute a *different* value per style (a defensive-V
+7. **Archetype conditioning (FiLM) on the critic** (deleted at v78, closed NULL) — lets V compute a *different* value per style (a defensive-V
    that isn't overwritten by the offense-V). Needs balanced data under it.
 8. **Contested curriculum + DRO** — restores the advantage gradient the RL-native way (§1). Value-free driver
    (learning progress), since a value-driven curriculum is circular.
@@ -503,8 +544,9 @@ The decisive distinction: **inference-time search** (search only when playing, o
   is feasible in weeks; from-scratch full-game PBS is gated by **belief engineering**, not FLOPs.
 
 **Bottlenecks are the value-net leaf evals + the sim + the belief representation — not the CFR arithmetic.** The
-ai_v8 plan (Rust sim, distilled light leaf net, belief-collapse late-game) attacks exactly these. **Compute
-caveat:** the plateau is *regime-bound, not compute-bound* — more of the same recipe reaches the same fixed
+ai_v8-era plan (Rust sim, distilled light leaf net, belief-collapse late-game) targeted exactly these; the
+Rust battle core has since been built (`../endstate/program_rust_core.md`). **Compute
+caveat (the plateau-research reading):** the plateau is *regime-bound, not compute-bound* — more of the same recipe reaches the same fixed
 point faster, not higher. Spend compute on *algorithm experiments in parallel*, not on scaling one run.
 
 ---
@@ -526,7 +568,7 @@ exactly where the interesting games are decided.**
 - **The public-info value function** (§10) is the *cheap, exogenous, universal* slice of PBS — trainable on
   human replays — that breaks the bootstrap and teaches positional discrimination.
 
-**Ordered plan (mostly pre-Rust-sim):**
+**Ordered plan of the plateau-research period (mostly pre-Rust-sim; superseded, see the banner and §11's status note):**
 1. **Public-info human-replay value head** (§10) + **belief-condition the critic** + **distributional aux +
    LayerNorm** (§11 Tier A/B) — one architecture pass; re-run watching **defensive AUC**. The "improve V" bundle,
    mostly parts you already own.

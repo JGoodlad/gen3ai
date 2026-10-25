@@ -1,12 +1,25 @@
 # On-Policy Self-Distillation, Search-as-Teacher, and the Subset Exploiter
 
+> **Correction (2026-10-25): the machinery this note builds on is deleted; the argument is a design record.**
+> `--search-teacher` (the AWR search-as-teacher: the `agents/training/teacher/` package, `SearchTeacherCallback`, the
+> `CorrectionBuffer`, the `teacher/*` TB family) and `--opd-coef` / `--opd-beta` (the KL-to-`pi'` upgrade proposed
+> here) were **deleted at v133** (`gen3_retired_levers_l3_v1`; `designs/deleted_flags.md`), with the whole
+> `--distill-*` fold family, after the fold measured worse than no distillation (ledger, 2026-09-20..23; research
+> view of record `designs/research_state/UNDERSTANDING.md`). Search is wound down (since 2026-09-12; the always-current
+> record is `designs/endstate/search_ledger.md`). The critic is now the win-prob critic; the distributional value
+> head named below was deleted at v131 and PopArt with it. Still live: `--exploiter` (a run's sole fixed opponent), and
+> the prober's `better_line` / `lookahead` / `replay_counterfactual` (Rust search driver). So every "we have / today /
+> current" about `search-teacher`, `CorrectionBuffer`, `teacher/yield` and the OPD term below describes the
+> **2026-07 design and what was built then**, not the tree; the OPD teaching (information density, the beam as a
+> policy-improvement operator, completed-Q, the opponent-axis collapse, the honest caveats) stands.
+
 > **What this is.** A durable explainer for one concept cluster: **on-policy distillation (OPD)**
 > as a training regime, why it's information-dense vs PPO, and how it maps onto *our* tooling — the
-> `better-line` beam (a policy-improvement operator), the `search-teacher` AWR loss (which we
-> upgrade to a full-distribution KL), cheap Gumbel-style search under our expensive
+> `better-line` beam (a policy-improvement operator), the (since deleted) `search-teacher` AWR loss (proposed to be
+> upgraded to a full-distribution KL), cheap Gumbel-style search under an expensive
 > `DamageOperator` critic, and the **exploiter-on-a-team-subset** as the place OPD pays off most.
-> Intuitive first, then technical, no code. Grounded in `--exploiter`, `--search-teacher`, the
-> `CorrectionBuffer`, `main/prober/better_line.py`, and `designs/ai_v6/design_search_teacher.md`.
+> Intuitive first, then technical, no code. Grounded in `--exploiter`, the deleted `--search-teacher` and
+> `CorrectionBuffer`, `main/prober/better_line.py`, and `designs/ai_v6/design_search_teacher.md` (the built-then design).
 
 ---
 
@@ -19,7 +32,7 @@
   states — so no train/test distribution shift, no exposure bias.
 - **Our `better-line` beam IS a policy-improvement operator** (ExIt/AlphaZero lens; Grill 2020: the
   search step is an approximate KL-regularized policy improvement around the prior).
-- **Upgrade `search-teacher`:** today it distills toward a single `A*` (AWR-weighted CE). OPD
+- **The proposed upgrade to `search-teacher`:** as built it distilled toward a single `A*` (AWR-weighted CE). OPD
   distills the **whole improved distribution `π'`** via `KL(π' || π_student)` on the student's own
   states — transfers ties/coverage, not just the argmax.
 - **This dissolves the `V^{π*}`/GAE-bias pitfall we flagged:** the policy KL is a *classification*
@@ -100,12 +113,12 @@ the critic. You then **distill `π'` back into the net** by supervised regressio
 approximate policy iteration. Grill et al. (ICML 2020, arXiv:2007.12509) proved the search step is an
 **approximate KL-regularized policy improvement** around the prior — the same "improve-then-project
 under a trust region" skeleton as MPO (Abdolmaleki et al. 2018) and the exp-advantage weighting of
-AWR (Peng et al. 2019, arXiv:1910.00177). **Our `search-teacher` is the AWR branch of this exact
+AWR (Peng et al. 2019, arXiv:1910.00177). **Our `search-teacher` (deleted at v133) was the AWR branch of this exact
 literature.**
 
 ### Upgrade: from single-`A*` AWR → KL to the full `π'`
 
-Current Phase-2 policy term (`design_search_teacher.md` §1): `coef_pi · CE(π(·|s), A*)`, weighted by
+The built Phase-2 policy term (`design_search_teacher.md` §1): `coef_pi · CE(π(·|s), A*)`, weighted by
 confirmed Δwin. That's **mode-seeking on a single action** — it discards everything else the search
 learned. The OPD move distills the **whole search-induced distribution** on the student's own visited
 states:
@@ -152,9 +165,9 @@ biases GAE," which is why it weights AWR by **confirmed Δwin**, not critic adva
 
 - The policy term is a **supervised classification target** (`KL(π' || π_student)`) that never touches
   GAE, the rollout buffer, the clip objective, or the advantage. It's an aux loss beside the
-  belief/win-prob/value-dist heads (the `instrumented_ppo._*_loss` pattern). No importance-sampling
+  other auxiliary heads (the `instrumented_ppo` aux-loss pattern; the value-dist head of that era is gone). No importance-sampling
   correction to get wrong — you're regressing a distribution, not doing off-policy policy-gradient.
-- The value side stays where `search-teacher` already put it: regress the critic **only** toward the
+- The value side stays where `search-teacher` had put it: regress the critic **only** toward the
   **rollout-CONFIRMED** return (Wilson-CI-gated realized win-rate of `A*` vs the EXACT reloaded
   opponent), *never* the beam's optimistic backed-up value (the demo: critic 95% vs confirmed 62% on
   Spore — distill 62%).
@@ -254,14 +267,14 @@ more compute-efficient**, for four compounding reasons.
 2. On the exploiter's OWN visited crater states, run the cheap beam improvement
      (Gumbel top-k × believed-opp collapse × depth 1-2), building π' + confirmed values.
 3. KL-distill π' into the exploiter + regress the critic on confirmed returns
-     (rides the CorrectionBuffer + non-blocking frozen-snapshot workers already built).
+     (as designed: the CorrectionBuffer + non-blocking frozen-snapshot workers, both since deleted).
 4. The exploiter specializes fast on the slice → win_rate_vs_target climbs.
 5. Its corrections REVEAL the target's blind spots on that matchup family.
 6. Fold the specialist back into a league (baked corrections → league states/opponents).
 ```
 
-Steps 2-3 are the **only new wiring**; `--exploiter`, `CorrectionBuffer`, frozen-snapshot workers,
-and the beam all exist.
+At design time steps 2-3 were the **only new wiring**: `--exploiter` and the beam (`better_line`) still exist;
+`CorrectionBuffer` and the frozen-snapshot workers were deleted with `--search-teacher` (v133).
 
 ### Why the specialist beats a pure-PPO exploiter per unit compute
 
@@ -274,16 +287,19 @@ you change how many bits each explored state teaches** (a distribution/state vs 
 Regime reading: DeepNash/R-NaD (Science 2022, arXiv:2206.15378) and **Metamon** (arXiv:2504.04395,
 *our exact domain*) argue the plateau is a **regime problem** fixed by amortized-NE training + **team
 diversity**, not test-time solving. The subset-exploiter is the surgical version: narrow diversity to
-specialize + surface blind spots, then fold back (the league re-introduces diversity). It composes
-with our one proven plateau lever (critic-shaping via win-prob + value-dist heads in shaping mode) —
-OPD densifies the *policy* signal the way critic-shaping densified the *value* signal. **BC/human
-replay is dead** (our agent exceeds the corpus), so a self-teacher, not a human teacher, is the play.
+specialize + surface blind spots, then fold back (the league re-introduces diversity). At writing time (2026-07) it was
+to compose with the then-proven plateau lever (critic-shaping via win-prob + value-dist heads in shaping mode; that
+lever did not survive, see the banner) — OPD would densify the *policy* signal the way critic-shaping densified the
+*value* signal. At writing time **BC/human replay was judged dead** (our agent exceeded the corpus), hence a
+self-teacher, not a human teacher; the human-data program has since reopened that question
+(`designs/endstate/human_data_architecture.md`).
 
 ---
 
 ## Part 5 — A concrete, minimal first experiment
 
-**Reuse:** `better-line` beam, `--exploiter`, `--run-name`, `CorrectionBuffer`, the non-blocking
+**Reuse (as of 2026-07; the `CorrectionBuffer`, frozen-snapshot workers and CI gate were deleted at v133):**
+`better-line` beam, `--exploiter`, `--run-name`, `CorrectionBuffer`, the non-blocking
 frozen-snapshot workers, the 3-tier CI gate. **New wiring: one KL aux term + the `π'` construction.**
 
 1. **Narrow slice.** 1-3 teams for the exploiter, one fixed strong `ckpt` as the target. `--exploiter
@@ -314,7 +330,7 @@ frozen-snapshot workers, the 3-tier CI gate. **New wiring: one KL aux term + the
   (greedy, not the real stochastic sample). Distill the **first (divergence) action distribution** at
   full weight; treat deeper PV as soft/value-only (§9 edge cases).
 - **Teacher cost:** the beam + confirm-rollouts are the expense; the subset restriction is what makes
-  it affordable. Budget (`--teacher-search-budget`), prioritize by `|ΔV|·P(reducible mistake)`.
+  it affordable. Budget (the deleted `--teacher-search-budget`), prioritize by `|ΔV|·P(reducible mistake)`.
 - **No known uncoachable ceiling (RETRACTED 2026-07-24):** the old "~⅔ of grind losses are
   uncoachable team-draw" bound was CIRCULAR (our own policy judged it) and is dead. The subset lens is
   still right — fixed teams shrink the state manifold — but do NOT budget around a matchup-lost floor.
@@ -355,14 +371,14 @@ equilibrium, and don't distill a beam that's worse than the policy.
 
 ## See also
 
-- `designs/ai_v6/design_search_teacher.md` — the AWR search-as-teacher we upgrade (the two heads, the
+- `designs/ai_v6/design_search_teacher.md` — the AWR search-as-teacher (built, since deleted) that this note proposed to upgrade (the two heads, the
   3-tier CI gate, the EXACT-opponent interior+confirm, the `V^{π*}`/GAE-bias rationale, selection,
   metrics, edge cases). **This note's Part 2 is the OPD generalization of that doc's §1 policy head.**
-- Root `CLAUDE.md` → Prober (`better-line` beam, `lookahead`, `replay-counterfactual`), Training →
-  Bot evaluation / self-play (frozen-snapshot workers, eval sharding), `--exploiter` / `--run-name`.
-- `src/main/prober/better_line.py`, `utils/bridge/search_session.py` (clone-and-branch search server),
-  `utils/bridge/counterfactual.py` (rollout-confirm), `agents/training/teacher/` + the
-  `instrumented_ppo._*_loss` aux pattern + `CorrectionBuffer`.
+- `src/main/prober/CLAUDE.md` (`better-line` beam, `lookahead`, `replay-counterfactual`) and the `--exploiter` /
+  `--run-name` flags in `src/main/train/parser/`.
+- `src/main/prober/better_line.py`, `src/utils/bridge/search_session.py` (clone-and-branch search server over the
+  Rust `search_driver`), `src/main/prober/replay.py` (rollout-confirm, `replay_counterfactual`). The training side
+  (`agents/training/teacher/`, `CorrectionBuffer`) is deleted (v133); `designs/deleted_flags.md` has the flags.
 - `designs/learning/marginalization_and_uncertainty.md` — why the believed-opp collapse must be
   belief-averaged (marginalize, not point-estimate); the `DamageOperator` that makes the critic
   expensive.

@@ -1,5 +1,19 @@
 # Shortcut learning and feature delivery — when feeding the head directly is a plus
 
+> **Correction (2026-10-25):** the principles here (amortization vs bottleneck, the axis rule, gradient
+> starvation needs substitutes, an edge bias cannot carry an absolute) stand; the delivery graph Parts 3, 6
+> and 7 audit is an EARLIER generation's. **The flat op head-concat in Part 6 was deleted at config v61
+> (`gen3_no_concat_v1`, 2026-08-09; `designs/CHANGELOG.md` v61):** the gen-4 evidence showed net policy dependence
+> on the flat block at +0.00% and all-edges-off above the concat arm, so the pre-registered branch A
+> (absorbed, delete) is what happened, and the "live case" below is closed. Today the op reaches the heads
+> through the pointer cells, the `prefuse_proj` token injection and the edge cells, with the
+> `ProjectionAssembler` concat carrying no op block; production computes both damage matrices but does not
+> render them into the flat block (`op_drop_renders`), so the flat block is 138 wide, not the 660 or ~807 the
+> audits below saw; all 17 edge families are on, not 6 / 11 / 15; `damage_candidate_k` is 0 (the truncation of
+> Part 3's corollary is off) and the E5 tail seats are on (`entity_tail_seats`); the critic is the win-prob
+> critic, not a scalar V. Read the numbers as dated history; `designs/ARCHITECTURE.md` §3.1, §4 and §5 hold
+> the current graph and `designs/deleted_flags.md` the retired flags.
+
 > **What this is.** A durable explainer for the question *"if I hand the model a strong computed
 > feature straight into the head, does it just get lazy — and is that good or bad?"* Covers the
 > real mechanism (simplicity bias → **gradient starvation**), the distinction that resolves it
@@ -39,7 +53,8 @@
   to it* — a shortcut is attractive only when it's the best thing available.
 - **The reframe:** you cannot stop gradient descent being lazy, so **make the lazy path be the
   correct path.** That is exactly what the pointer head does.
-- **The op head-concat did NOT starve the edges — and the edges did not absorb the concat.**
+- **The op head-concat did NOT starve the edges — and the edges did not absorb the concat
+  (as measured at the time; the concat was later deleted, v61).**
   Measured three times (gen-1 @40M, gen-2 @40M, gen-2.5 @25M): the concat arm flips *more*
   actions than turning the **entire** edge system off, while edge dependence still **grew ~3×**
   with training. Paths compete only when they are **substitutes**; these two do different jobs.
@@ -52,7 +67,7 @@
 - **Pre-registered decision rule** (recorded 2026-08-07, before gen-3's audit): absorption ⇒
   mask → A/B → delete; a fourth replication ⇒ **widen token-content delivery** and localize the
   residual per sub-block, then re-audit. Explicitly banned: *"wait longer"* and *"delete
-  anyway."* **Amended 2026-08-08:** the concat dies **last**, the precondition is **two-route**
+  anyway."* (Resolved at v61: the concat was deleted; see the Correction above.) **Amended 2026-08-08:** the concat dies **last**, the precondition is **two-route**
   (OA1 for the policy **+ PV/token-injection for the critic** — the pointer head never reaches the
   value head, and the concat is the critic's largest dependency), and acceptance requires the
   concat arm below all-edges-off on **flips AND `|dV|`**. Residual already localized to
@@ -106,8 +121,8 @@ A fourth, RL-specific mechanism compounds it: **implicit under-parameterization*
 The variable is not the delivery route. It is **sufficiency for the decision**.
 
 **Case A — the damage formula (a plus, unambiguously).** The `DamageOperator` is the exact Gen 3
-formula in PyTorch, fuzz-validated against constructed Showdown probes
-(`damage_op_probe_fuzz_test.py`). There is no version of "the trunk learns the arithmetic from
+formula in PyTorch, validated against constructed Showdown probes
+(tests: `src/agents/model/damage_op_test.py`). There is no version of "the trunk learns the arithmetic from
 scratch" that beats the arithmetic. And the shortcut is *simultaneously the training signal for
 the hard part*: the op consumes the believed opp moveset from `MoveBelief`, so policy loss →
 damage → belief. The lazy route trains the non-lazy component. See
@@ -127,7 +142,8 @@ max phys / max spec damage per defender. That is:
 > **Collapse along axes you are not choosing over. Never collapse along an axis you must choose
 > along.**
 
-This rule *is* the v30→v39 progression, each version un-collapsing an axis the policy chooses along:
+This rule *is* the v30→v39 progression, each version un-collapsing an axis the policy chooses along
+(history: production now sets `damage_topk_k` 6 and computes both matrices; `--damage-matrices-outgoing-all` was deleted at v88):
 
 | Version | Axis un-collapsed |
 |---|---|
@@ -142,7 +158,8 @@ This rule *is* the v30→v39 progression, each version un-collapsing an axis the
 
 > ⚠️ **PROVENANCE — the table below is a HISTORICAL result, not the current model.** Measured
 > **2026-07-25** on a pre-pointer-head snapshot, in a config that included the `outgoing_matrix` and
-> `outgoing_attacker_matrix` blocks. **The current production config has neither**, and the head
+> `outgoing_attacker_matrix` blocks. **The config current at the time (2026-08-07) had neither** (production
+> today computes both matrices but does not render them into the flat block, `designs/ARCHITECTURE.md` §4), and the head
 > route it measured (a flat positional `action_net`) no longer exists. The current-config
 > replacement is
 > [`designs/research_state/measurements/gen3_op_block_dependence_6k.json`](../research_state/measurements/gen3_op_block_dependence_6k.json)
@@ -152,11 +169,11 @@ This rule *is* the v30→v39 progression, each version un-collapsing an axis the
 > table for the *reasoning* it supports (collapsed aggregates were dead weight, which is why they
 > were deleted); do not quote its percentages as current. Its raw output was never committed.
 
-**P1 ablation probe** (`tmp/op_block_ablation_probe.py`, 2026-07-25; 4000 real eval states, exact
+**P1 ablation probe** (a one-off script, 2026-07-25, never committed; 4000 real eval states, exact
 producing snapshot, per-block zero → masked KL against the policy's own distribution; a SHUFFLE
 control exceeded zeroing everywhere, so the head reads state-specific content):
 
-| Block | % of the zero-whole-op ceiling | In the current production config? |
+| Block | % of the zero-whole-op ceiling | In the 2026-08-07 config? |
 |---|---|---|
 | OUTGOING (per-action, un-collapsed) | **65.7%** (75% of the *moves* ceiling) | yes |
 | outgoing-attacker matrix (our 6 mons → their active) | 21.4% | **no** |
@@ -176,8 +193,8 @@ slp/psn/tox columns (12 dims — *structural zeros*, measured: gen3 has no damag
 inflicts sleep, and the psn/tox carriers appear on 1 / 0 of the 773 pool teams), and the v30 lean
 `_topk_block` (a strict subset of the incoming matrix, measured at **0 calls per forward**).
 Removing the two collapses also took the unmasked belief read out of forward entirely, leaving
-`w_all` as the op's single belief read. `damage_topk_k` now means "the incoming matrix's K", and
-K>0 without the matrix RAISES in both the extractor and the op — never a silent empty block.
+`w_all` as the op's single belief read. `damage_topk_k` came to mean "the incoming matrix's K", and
+K>0 without the matrix raised in both the extractor and the op at that change — never a silent empty block.
 A third outcome worth naming: *a lossy summary usually doesn't become an attractive shortcut — it
 becomes useless, and you pay compute for nothing.*
 
@@ -190,7 +207,7 @@ provide the per-action axis and let the collapsed version die on its own.**
 
 **Compute is allocated inversely to dependence.** The INCOMING family is ~⅓ of dependence but
 ~64% of batch compute (`_damage_rolls` = 49% of the op at B=256) — which is what motivates
-top-K candidate capping (v49 `--damage-candidate-k`).
+top-K candidate capping (v49 `--damage-candidate-k`, which production leaves at 0 = off).
 
 ### Corollary: top-K is TWO things, and only one of them is free
 
@@ -208,7 +225,7 @@ opposite jobs:
 measured top-16 owning **94.2% of channels** — but the **misses are BIMODAL**: truncation loses
 a candidate *entirely* rather than shaving its estimate. And the loss lands on our already-weakest
 read — the OHKO belief is well calibrated overall (AUC 0.79) but **under-reads surprise OHKOs**
-([[project_incoming_damage_outcome]]). v49 shipped with **no tail bound**, which is defensible as
+((memory note `project_incoming_damage_outcome`)). v49 shipped with **no tail bound** (production has since left it off, `damage_candidate_k` 0, and the E5 tail seats supply a tail bound for the seats), which was defensible as
 a *learner* compute knob (+63.5% op at B=256, +0.3% at B=1) and wrong as the representation the
 policy reasons over.
 
@@ -227,10 +244,10 @@ it, cheapest first:
    at n=14 → 0.374 ms at n=50, sub-quadratic (dispatch-bound), so the roadmap's own conclusion is
    *"bench-K sizing is NOT compute-constrained in this range — choose K on belief-quality
    grounds, not budget."*
-2. **Add the tail bound (E5) — STILL UNSHIPPED as of v56, and now the standing gap.** Stage 1
+2. **Add the tail bound (E5) — UNSHIPPED as of v56, then the standing gap; the E5 tail seats have since shipped (`entity_tail_seats` is on in production, the token-seat table in `designs/ARCHITECTURE.md`).** Stage 1
    landed E3/E4 (`gen3_entity_move_seats_v1`, `--entity-topk-seats K`) and Stage 2 landed the
    D3/S3 edge families priced at **the same detached top-K candidate selection** — so truncation
-   is now load-bearing in *three* places (the op's candidate axis, the E4 seats, and the D3/S3
+   was then load-bearing in *three* places (the op's candidate axis, the E4 seats, and the D3/S3
    edges) with no floor under any of them. The insurance is
    `[P(tail mass), tail worst phys, tail worst spec]` from a
    precomputed per-(type, category) max-BP table (damage is monotone in BP × effectiveness, so
@@ -247,7 +264,7 @@ outside top-K). Note this also exposes an objective mismatch: the belief is trai
 mismatch is the first suspect, not capacity.
 
 **And the record on "make the belief richer" is discouraging enough to demand the gate first:**
-under `--belief-grad-mode detached` the belief heads **collapsed to chance** (latent cosine
+under `--belief-grad-mode detached` (production runs `shaping`) the belief heads **collapsed to chance** (latent cosine
 0.004–0.013, species-acc → baseline) across a run that hit **best-ever 0.92 WR / ~1998 ELO**; the
 belief-latent probe found species geometry strong but the **move-id table NONE**; and the standing
 verdict on the family is *"LEARN but unmeasured if they HELP."* If the gate does fail, the
@@ -269,7 +286,7 @@ crutch." Partly OOD (zeroing produces states never seen), marginal rather than S
 standing caveat is the audit's own: **KL = USE, not VALUE — "learns ≠ helps."**
 
 **(b) Linear probe on the trunk** (`python -m main.prober.query probe <run> <target>`,
-[[project_representation_probe]]). Does the model *internally represent* the quantity, or only
+memory note `project_representation_probe`). Does the model *internally represent* the quantity, or only
 read the answer? This gives the cleanest evidence for the laziness thesis:
 
 - `damage_taken`: trunk r² only **+0.06** vs the provided feature's +0.02 — *"the rep barely
@@ -280,7 +297,7 @@ read the answer? This gives the cleanest evidence for the laziness thesis:
 **Where we hand it the answer, it doesn't build the concept; where we don't, it does.** That
 contrast is the phenomenon, measured on our own model.
 
-**(c) Behavioural counterfactual — the sharp test, NOT YET BUILT.** Construct state pairs with
+**(c) Behavioural counterfactual — the sharp test, NOT BUILT as of this note (2026-08).** Construct state pairs with
 the *same* collapsed summary but *different* move identity, where the correct pivot differs. If
 the policy's pivot doesn't change, it is reasoning over the summary. Directly buildable on the
 existing `reroll_many` / `better-line` / `replay-counterfactual` infrastructure; currently the
@@ -309,8 +326,8 @@ in our favour.
 
 Levers, in order of how much they're trusted here:
 
-1. **Don't create the lossy summary.** Un-collapse the choice axis. (Done: v30/v34/v35/v39.)
-2. **Structure delivery so the correct route is cheapest.** (Done: v51.)
+1. **Don't create the lossy summary.** Un-collapse the choice axis. (Done at the time: v30/v34/v35/v39.)
+2. **Structure delivery so the correct route is cheapest.** (Done at the time: v51.)
 3. **Feature dropout on the op block** — randomly zero it in training so the trunk must sometimes
    carry the load. The only one of the three that applies **pressure** rather than merely
    offering **availability**. *Hypothesis, not recommendation:* the closely-related "give the
@@ -319,7 +336,7 @@ Levers, in order of how much they're trusted here:
    content, not form, and bring a cheap pre-build probe). Dropout is arguably a different
    intervention class, which is the only reason it is listed at all.
 4. **Enrich the objective instead of the input** — [[objective_richness_and_representation]].
-5. **Stop-grad the easy path.** `--belief-grad-mode detached` is this pattern applied to the
+5. **Stop-grad the easy path.** `--belief-grad-mode detached` was this pattern applied to the
    belief heads. **Caution from the record:** under `detached`, the belief heads collapsed to
    chance (latent cosine 0.004–0.013) across an entire run that nonetheless hit best-ever
    0.92 WR / ~1998 ELO — cutting a gradient can make the machinery inert without hurting, which
@@ -329,7 +346,7 @@ Levers, in order of how much they're trusted here:
 
 SB3's `ActorCriticPolicy._build()` orthogonally re-initialized **13** Linears documented as
 zero-init — including `refine_proj`, the trunk-injection path — in **every real run until
-2026-08-01** ([[project_sb3_ortho_init_clobber]]). So "the trunk route is starved" is entangled
+2026-08-01** (memory note `project_sb3_ortho_init_clobber`). So "the trunk route is starved" is entangled
 with "the trunk route was partly broken." This caveat stands over the whole K9/K10 trunk-delivery
 result family and should be restated whenever those nulls are cited as evidence about laziness.
 
@@ -337,13 +354,13 @@ result family and should be restated whenever those nulls are cited as evidence 
 
 ## Part 6 — "Magnitude needs an entity home": the concat end-state
 
-This part is the live case, and it is the most instructive one in the note because **the feared
+This part was the live case when written (2026-08; it closed at v61, see the Correction at the top), and it is the most instructive one in the note because **the feared
 mechanism did not fire** and the interesting question turned out to be structural rather than
 about laziness at all.
 
 ### The setup
 
-Computed physics reaches the policy by **three** routes today:
+At the time of these audits (gen-1 to gen-3, before v61) computed physics reached the policy by **three** routes:
 
 | Route | What it is | Bandwidth per forward |
 |---|---|---|
@@ -395,7 +412,7 @@ Our stack violates both.
 - **Zero-init ≠ starved-at-init.** A zero-init map has zero *output* but a **non-zero weight
   gradient** (∂out/∂W = input × upstream grad). Identity-at-init buys a clean A/B without
   costing the path its funding. (Standing caveat: until 2026-08-01 SB3 clobbered those inits —
-  [[project_sb3_ortho_init_clobber]], ledger **M1**.)
+  memory note `project_sb3_ortho_init_clobber`, ledger **M1**.)
 
 > **Rule to carry:** two delivery paths compete when they are *substitutes* and complement when
 > they are *complements*. Before worrying about starvation, ask what function each path is
@@ -594,7 +611,7 @@ Three ML-specific sharpenings:
 
 ### The endgame — and why it *dissolves* rather than answers
 
-Stage 3 removes the flat observation vector entirely, so every fact's only delivery is
+The 2026-08 roadmap's Stage 3 planned to remove the flat observation vector entirely (the head concat itself went at v61), so every fact's only delivery would be
 entity-attached: the Part-5 reframe applied to the input ("make the lazy path **be** the entity
 path"). Note what that does epistemically:
 
@@ -657,9 +674,9 @@ content, not the route.**
    Down-weighting a channel that goes silent precisely when it matters is **correct Bayesian
    behaviour**, not laziness.
 2. **Counterfactual credit assignment.** Offense produces a realized event (they faint; material
-   PBRS fires). Defense produces a **non-event** — the damage you didn't take. A return-based
+   PBRS fired, in the shaped-critic era). Defense produces a **non-event** — the damage you didn't take. A return-based
    estimator sees the first densely and the second only diffused into later returns. This is the
-   documented defensive/positional value blindness that motivated v43 `--pubval-mode`.
+   documented defensive/positional value blindness that motivated v43 `--pubval-mode` (deleted at v88).
 3. **It is a TWO-PLY PLAN, i.e. the amortization gap.** *Defensive pivot → offensive pivot* pays
    at ply 2; ply 1 alone looks bad (tempo surrendered, chip taken). A one-step amortized policy
    scores each decision on its own expected value. More *information* about incoming damage
@@ -674,7 +691,7 @@ content, not the route.**
 (slower), switch-rate climbs monotonically **22% → 38%** with pko, while conditioned on faster it
 is correctly flat ~20%. So the policy *does* respond to incoming where it fires; the aggregate
 dilutes it. And **switch RATE is a first-moment match that says nothing about pivot quality** —
-the model now switches 31.4% vs strong humans' 28.0% (under-switching is RESOLVED), which leaves
+the model then switched 31.4% vs strong humans' 28.0% (under-switching is RESOLVED), which leaves
 *which* pivot and *in what sequence* entirely unmeasured.
 
 ### MEASURED 2026-08-07 — gen-3 @9.6M

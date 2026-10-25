@@ -1,6 +1,6 @@
 # X5 trade-offs: what the chosen semantics give up, and when to revisit
 
-**Status:** ALWAYS-CURRENT (an end-state doc). Owner decisions 2026-10-03. Companion to
+**Status (2026-10-25):** ALWAYS-CURRENT (an end-state doc). Owner decisions 2026-10-03; X5 was ADOPTED 2026-10-07. **M2 = C is SUPERSEDED in production:** `--op-reduction principled` (F6b, `L23629`, 2026-10-08) replaced the presence-scaled max with an α-weighted expectation plus a noisy-OR KO worst case, and is the only reduction since legacy deletion U1 (2026-10-15), so §1's limitations and its "option A, after X26" follow-up describe the superseded rule. M3 = (c) (OTHER priced as the averaged tail) stands. Companion to
 [`design_x5_belief_tokens.md`](design_x5_belief_tokens.md) §9, which holds the option tables, measurements and citations.
 This doc exists so that, once X5 has run, we can judge from evidence whether a richer choice is worth its cost
 (owner: "pick something reasonable with respect to richness and training budget … think about other, better options
@@ -116,3 +116,4 @@ binding AND the upgrade's strength-per-GPU-hour is non-inferior.
 | 2026-10-03 | A/B margin (ORCHESTRATOR, under the owner's "reasonable richness vs budget") | 3.5 pp if P0's σ_h ≤ 2.5, else 4.5 pp at ≤ 41 GPU-h; fixed before P0 reports | 3.5 pp at power ≈ 0.57; raising the budget | §9 power table |
 | 2026-10-03 | Tier 0 read (ORCHESTRATOR) | M3 (c) at 1:1 CONFIRMED; follow-ups ranked belief sharpness > M2 option A > budget +6 | budget +6 now (≈ 1 pp of race flips for ≈ +7 % FLOPs) | §4; `cda60edb` |
 | 2026-10-04 | Tier-0 F4 (a) / (b) (ORCHESTRATOR) | (a) the tail's expected attacker stats (`P_tail @ tables`); (b) max-site presence 1 − Π(1 − π) | (b) the mass capped at 1 (Tier 0's stand-in) | §4; `design_x5_belief_tokens.md` Decision record |
+| 2026-10-25 | **M2 = C superseded (docs-health pass; the decision made elsewhere, 2026-10-08 / 10-15)** | The principled operator reduction (an α-weighted expectation plus the noisy-OR KO worst case, F6b) is production's only reduction since legacy deletion U1; the status line says so and §1 is kept as the history of the rule it replaced | — | ledger `L23629`; `designs/ARCHITECTURE.md` (the op's incoming reduction); `design_x5_belief_tokens.md` Decision record |

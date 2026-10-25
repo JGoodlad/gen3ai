@@ -1,8 +1,10 @@
 # PopArt, value scale, and the two-currency boundary
 
 > **STATUS (2026-10-02): the lever this note teaches — PopArt, `--use-popart` — was DELETED with the Python core (deletion pass L1, config v131; `designs/deleted_flags.md`).** The concept (a normalizer splits value into two currencies with one conversion boundary) stays worth knowing; the code is at commit `3bc3e77e` and earlier.
+>
+> **Correction (2026-10-25):** read everything below in the PAST tense. The model's only critic is now the win-prob critic: `sigmoid(win_head(value_pooled))` in [0, 1], trained by BCE against the terminal win indicator, so there is no return scale to track, no μ/σ, no `_denorm` window and no distributional value head (`designs/ARCHITECTURE.md` § "WHICH readout is the critic"). The shaped-critic checkpoints this note describes are below `MIGRATION_FLOOR` and load only pinned to their own commit. The two-currency lesson is the part that still applies (name the currency in any cross-head comparison).
 
-**TL;DR:** PopArt splits the value system into two currencies — normalized z-space (what the
+**TL;DR (past tense, see the correction above):** PopArt split the value system into two currencies — normalized z-space (what the
 network predicts, what losses see; O(1) forever) and raw return space (what rewards/GAE mean) —
 with one conversion boundary `denorm(v) = μ + σ·v`. It exists because raw-scale value gradients
 swamp the shared trunk (measured: `value_share` 1.0 → 0.39, ELO 1400 → 1850 when shipped). The
@@ -10,11 +12,11 @@ distributional head lives in z-space ON PURPOSE (a fixed categorical support and
 scale are natural enemies; normalized returns are scale-stationary so a fixed support works
 forever). Corollaries: (1) any comparison/distill/GAE hookup across the boundary must name its
 currency — the 2026-07-21 E[Z]-vs-V probe first read slope 0.066 = exactly 1/σ (a currency
-error), and in matched units read pearson 0.988 / slope 1.03; (2) the ±12 support is 12σ in the
-head's actual units — nothing legitimate lives there; narrow to ~±4 (the head occupies ±2.2σ);
+error), and in matched units read pearson 0.988 / slope 1.03; (2) the ±12 support was 12σ in the
+head's actual units — nothing legitimate lived there; the lesson was to narrow it to ~±4 (the head occupied ±2.2σ);
 (3) exact output-preservation under μ/σ updates exists only for LINEAR heads — the categorical
-head's raw meaning drifts slightly and is re-fit continuously (negligible at converged σ; watch
-`pit_mean` early in a fresh run).
+head's raw meaning drifted slightly and was re-fit continuously (negligible at converged σ; the
+`pit_mean` meter was the early-run check).
 
 ## Intuitive level
 
@@ -26,9 +28,9 @@ scalar head's last linear layer so the DENORMALIZED output is unchanged ("preser
 precisely") — statistics drift without yanking the function.
 
 The mental model: the network earns and thinks in z-dollars; the environment pays and settles
-in raw-yen; there is exactly one exchange window (`_denorm` in `predict_values`). Every
-consumer must know which side of the window it stands on. The scalar readout hands out yen;
-the `ValueDistHead`'s E[Z] is quoted in z-dollars (its CE targets are normalized before the
+in raw-yen; there was exactly one exchange window (`_denorm` in the policy's `predict_values`). Every
+consumer must know which side of the window it stands on. The scalar readout handed out yen;
+the (since-deleted) `ValueDistHead`'s E[Z] was quoted in z-dollars (its CE targets are normalized before the
 loss — see `_value_dist_loss`'s docstring).
 
 ## Why the categorical head is z-native
@@ -42,7 +44,7 @@ never wanders.
 
 ## Where this bit us / where it will bite again
 
-- The Phase-B continuity probe (`tmp/dist_vs_scalar_probe.py`): raw-vs-z comparison looked
+- The Phase-B continuity probe (`tmp/dist_vs_scalar_probe.py`, a scratch script no longer in the tree): raw-vs-z comparison looked
   broken (slope 1/σ, bias from μ, "47% of V beyond support"); matched-units comparison showed
   near-identity (tails best: 0.993, zero sign flips). Rule: NAME THE CURRENCY in every
   cross-head comparison, distillation target (`_value_distill_mse` takes a popart arg for
@@ -53,7 +55,7 @@ never wanders.
   absorb it; watch `pit_mean` ≈ 0.5.
 
 ## See also
-- `src/agents/model/popart.py`, `policy.py` `_denorm` (the one exchange window)
+- History only: `src/agents/model/popart.py` and `policy.py`'s `_denorm` (the one exchange window) are deleted (`designs/deleted_flags.md`); read them at commit `3bc3e77e` and earlier
 - `designs/ai_v6/design_distributional_value_critic.md` (v29) + `designs/ai_v8/next_run_plan.md`
   item 2 (the measured Phase-B warm-start verdict)
 - [[regularization_and_noise_in_ppo]] — the sibling "where may X live" rule for randomness

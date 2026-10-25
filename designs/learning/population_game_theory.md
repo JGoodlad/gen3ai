@@ -4,6 +4,14 @@
 number. Two levels: intuition first, then the formal objects, grounded in this project's own
 machinery and measurements.*
 
+> **Correction (2026-10-25):** the "flywheel" / tick-tock this note maps onto (`designs/ai_v10/`) is a forward
+> design that was never built (`designs/CLAUDE.md`, the version-folders table), and team-PFSP was deleted at v134
+> (`designs/deleted_flags.md`; the opponent-side `--pfsp-scale` remains). Read the PSRO mapping in section 2
+> and the flywheel kill condition as a CONCEPTUAL translation of that design, not a description of the running
+> pipeline; the matrix / Nash-averaging / spinning-top / exploitability material and the Hodge instrument
+> (`agents/training/hodge.py`) are unaffected. The ladder reading quoted below ("gen-15", 46 ELO excess width)
+> is a dated historical measurement, not the current ladder.
+
 ## 1. Intuitive: strength is a matrix
 
 A single number ("ELO 2056") pretends the game is **transitive**: if A beats B and B beats C,

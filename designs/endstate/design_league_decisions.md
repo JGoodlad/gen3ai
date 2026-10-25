@@ -1,6 +1,9 @@
 # League decisions end state — promotion, eviction, plateau
 
-**Status: ALWAYS-CURRENT SKELETON (owner, 2026-10-02).** This doc covers the three DECISIONS made about the
+**Status: ALWAYS-CURRENT (owner, 2026-10-02). Truth at 2026-10-25: BUILT = promotion's GSPRT (`--promotion-sprt`, default OFF; used by the
+X35 SPRT arm only), plateau Tier 1 (U9a) and the cycle monitor + Tier 2 + the outside panel `outside_v2`, all OFFLINE. PROPOSED, NOT BUILT = the
+eviction rule and pool matrix (T20 U7), promotion vs the Nash mixture, and the monitor's rows in the trainer's GPU window (U4); eviction today is
+the 20-snapshot sliding window. Q6 / Q8 stand as the orchestrator's provisional answers.** This doc covers the three DECISIONS made about the
 population: who joins the pool (promotion), who stays (eviction), and whether plain training has stopped paying
 (plateau). They share one problem, measuring strength in a game that is not fully transitive, and they use one
 machinery: the game ledger, the scheduler and the estimators in [`design_evaluation.md`](design_evaluation.md). A
@@ -29,7 +32,7 @@ build or decision that differs updates this doc and its Decision record in the s
 ## A. Promotion — who joins the pool
 - **Built:** GSPRT on mirrored pairs (Fishtest's pentanomial method + a minimum pair count), H0 0.50 / H1 0.55,
   α = β = 0.05, cap 1,680 pairs, against a pool frozen at the test's start, on its own seeds; no re-tests
-  (`sprt_promotion.py`, `e9c5ab2d`). Default OFF; flips ON at X26.
+  (`sprt_promotion.py`, `e9c5ab2d`). Default OFF: X26 ran with it OFF (`model_config.json` `promotion_sprt: false`); the X35 SPRT arm (2026-10-24) is its one use.
 - TODO: promotion vs the pool's NASH MIXTURE rather than the pool sampled uniformly. That is consistent with §0, and
   the matrix (§B) makes it possible.
 
@@ -134,7 +137,7 @@ build or decision that differs updates this doc and its Decision record in the s
 - [ ] T20 build with its validation gate (§B).
 - [x] Plateau Tier 1, offline (U9a, 2026-10-06): `main.plateau`, one decision row per check.
 - [ ] Plateau: the owner answers Q8 (two-tier, `design_evaluation.md` §11.2); the N0 back-test. [x] U9's offline
-  slice: Tier 2 + the panel rule + the 2-check signature (2026-10-19). [ ] Register a panel (an in-band rule); bot
+  slice: Tier 2 + the panel rule + the 2-check signature (2026-10-19). [x] A panel registered (`outside_v2`, 2026-10-20); [ ] bot
   members; the G6 joint OC simulation.
 - [x] The cycle monitor (`design_evaluation.md` §2.5, U5), OFFLINE (2026-10-19): `main.cycle_monitor`. [ ] Its rows in
   the trainer's GPU window (U4), so it runs from step 0 at production speed.
@@ -155,3 +158,4 @@ build or decision that differs updates this doc and its Decision record in the s
 | 2026-10-06 | The plateau meter's FIRST slice (plateau-meter agent, for the owner's plateau-first plan) | Tier 1 BUILT offline (U9a): the registered GSPRT newest vs W-back as a pure rule over ledger rows, `main.plateau tick / status`, a Tier-1 status beside an explicit "Tier 2 not built" caveat | waiting for U4's scheduler and U5's monitor before any plateau read (a deep run would start with no "done" signal at all) | `design_evaluation.md` §8.1 "As built", Decision record |
 | 2026-10-17 | The plateau-breaker readout (X35; design worker, for the orchestrator) | breakers scored against a frozen POPULATION (own archive + another lineage, band-filtered), with exploitability a guard everywhere and the co-primary for exploiter / magnet arms; the head-to-head a guard | the b-ON × b-OFF head-to-head as the verdict (one opponent, which §0 rules out in a cyclic regime); the archive Nash mixture as the primary (not built; F-ED-3's instability) | [`design_compute_efficiency.md`](design_compute_efficiency.md) §5.6.4 |
 | 2026-10-19 | The plateau's TIER 2 BUILT offline (meter-build worker, for the orchestrator) | the cycle monitor (§0(c)) on `main.h2h`'s engine, one family per run, one `cycle_flag` decision per check, and the two-tier status in `main.plateau status`; the panel a REGISTERED checkpoint set (none registered yet), with `PLATEAU_BUT_PANEL` naming a plateau that lacks only the outside check; the in-run snapshot ladder read descriptively for pinned runs (X26) | Tier-1-only stops; Metamon / Kakuna as gating panel members (days a cell on CPU; they stay reported milestones) | `design_evaluation.md` §2.5 / §8.2 "As built", F-ED-24–F-ED-26; the X26 / X34 retro reads in `research_state/measurements/cycle_monitor_retro_2026-10-19/` |
+| 2026-10-25 | Status line made true (docs-health pass) | the status said "SKELETON" and §A said promotion SPRT "flips ON at X26"; it now lists built (offline meters, promotion GSPRT default OFF) and proposed-not-built (eviction rule, pool matrix, Nash-mixture promotion); X26 ran with `promotion_sprt` false; the TODO's panel box is checked (`outside_v2`, `design_evaluation.md` Decision record 2026-10-20) | keeping the skeleton wording | `models/rb_x26_s2601/model_config.json`; `design_evaluation.md` Decision record |

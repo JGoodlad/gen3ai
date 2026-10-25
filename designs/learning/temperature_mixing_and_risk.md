@@ -1,10 +1,25 @@
 # Temperature, Nash mixing, and risk awareness — what a policy's distribution *means*
 
+> **Correction (2026-10-25): the theory stands; the machinery in sections 1 and 2's flywheel passages is gone.** The
+> distillation flags this note leans on (`--distill-target`, `--distill-topk`, `--distill-team-bias`, and the whole
+> `--distill-*` fold family) were **deleted at v133** (`gen3_retired_levers_l3_v1`; `designs/deleted_flags.md`)
+> after the fold measured worse than no distillation, and the "flywheel = fictitious play with the fold as the
+> averaging operator" picture was never built as a running loop (the `ai_v10` tick-tock is a forward design;
+> `designs/CLAUDE.md`, the version-folders table; read `designs/research_state/UNDERSTANDING.md` for the research
+> view). The +7.6pp action-form result is a 2026-08 measurement on the deleted fold. The ai_v12 / ai_v13 chapter
+> closed 2026-09-26; its clean world is now simply the model: the win-prob critic is the only critic and the reward
+> is the terminal alone (shaped-reward deletion, config v122), so section 3's "risk-correct by construction" is a
+> property of production, not of a pending arm. Whether the policy USES the win-prob signal to modulate risk was
+> **UNMEASURED when written; this pass did not find a later measurement** (check the ledger before quoting
+> either way). `--ent-coef` was 0.02 at measurement time; the production recipe now carries 0.05
+> (`designs/production_config.json`, `recipe.fresh.ent_coef`). The temperature, Nash-indifference and
+> sigmoid-curvature arguments are unaffected.
+
 **TL;DR.** A policy is a distribution over actions, and three different questions hide inside
 "how sharp should it be?": (1) **Distillation temperature** — how much of a teacher's
 distribution to copy. Our measured answer is T→0 (copy only the argmax): an RL teacher's tail
 is contaminated by the entropy bonus and extrapolation noise, so full-KL matching transplants
-garbage (`--distill-target action`, `--distill-topk 1` — the +7.6pp result). (2) **Play
+garbage (the since-deleted `--distill-target action`, `--distill-topk 1` — the +7.6pp result). (2) **Play
 temperature vs Nash** — temperature cannot produce equilibrium mixing, because Nash
 probabilities are set by the *opponent's* indifference conditions, not by our own action
 values; the right transformation of a contaminated policy is support restriction (top-p), not
@@ -12,8 +27,9 @@ temperature. Mixing must be *learned*, and the league (flywheel = fictitious pla
 fold as the averaging operator) is the machine that learns it. (3) **Risk appetite** — under
 a win/loss objective, "gamble when behind, consolidate when ahead" is not psychology; it is
 the curvature of the P(win) sigmoid, and an agent maximizing P(win) inherits it for free.
-Whether *our* policy actually modulates risk is UNMEASURED — the ai_v12 capstone probe
-(`designs/ai_v12/probe_risk_modulation_capstone.md`) exists to measure it.
+Whether *our* policy actually modulates risk was UNMEASURED when this was written — the ai_v12
+capstone probe (`designs/ai_v12/probe_risk_modulation_capstone.md`, pre-registered 2026-08-30) was the
+instrument for it.
 
 ---
 
@@ -99,10 +115,10 @@ amputated.
 
 **Leagues and cycling** (summary — detail in `population_game_theory.md`). Naive best-response
 dynamics cycle at guess points (each side over-corrects, orbiting the mixed point). Two fixes,
-both of which we run: *smoothing* (the entropy term damps the cycle into a convergent spiral —
+the first of which we run and the second of which was the flywheel design: *smoothing* (the entropy term damps the cycle into a convergent spiral —
 ent-coef is the convergence mechanism for mixed equilibria, not just exploration) and
 *averaging* (fictitious play converges by averaging historical best responses — **the flywheel
-is fictitious play at era scale**: exploiters are the best-response oracle, the distillation
+was to be fictitious play at era scale**: exploiters are the best-response oracle, the distillation
 fold is the averaging operator; this is the PSRO construction). A league's pool is monotone
 memory, so gross cycles ("always rock") die; residual cycling survives in exactly three
 places: (i) the sampling-window leak (PFSP down-weights old counters toward zero pressure —
@@ -148,8 +164,9 @@ maximizing a calibrated P(win) inherits the entire risk policy with no explicit 
 *be* P(win). Material-flavored shaping partially maximizes expected material — risk-neutral
 exactly where correctness demands curvature. PBRS is policy-invariant in theory (the
 clean-world design keeps the lunch); the old hand-shaping biases had no such guarantee.
-**The ai_v12 sparse arm (±1 terminal) is risk-correct by construction in the limit** — the
-clean-world experiment is a risk-correctness experiment, not only a credit-assignment one.
+**The ai_v12 sparse arm (±1 terminal) was risk-correct by construction in the limit** — the
+clean-world experiment was a risk-correctness experiment, not only a credit-assignment one; the terminal-only
+reward is now the production reward.
 
 **Our model: knows vs uses.** KNOWS the score, substantially, measured: win-prob head knows
 96.4% of whiffs (probe L); calibration CLI splits critic-overvalued from lost-position;
@@ -169,15 +186,17 @@ the ai_v12 capstone: `designs/ai_v12/probe_risk_modulation_capstone.md`.
 
 ## Where this lives in our architecture
 
-- Distill target form: `--distill-target action --distill-topk 1` (the +7.6pp cell); the
-  entropy source of tail contamination: `--ent-coef 0.02`; team-bias constant:
-  `--distill-team-bias 0.4` (mechanism-map category #10, never varied).
+- Distill target form (deleted at v133): `--distill-target action --distill-topk 1` (the +7.6pp cell); team-bias
+  constant `--distill-team-bias 0.4` (mechanism-map category #10, never varied). The entropy source of tail
+  contamination is `--ent-coef` (0.02 when measured; the production recipe now reads 0.05).
 - Temperatures: `--self-play-temp` / `--stable-opponent-temp` (generation, warm);
-  eval greedy (`stochastic=False` in the eval players); no play-time top-p exists today.
+  eval greedy (`stochastic=False` in the eval players); no play-time top-p was found in `src/main/play.py` or
+  `src/agents` as of 2026-10-25.
 - Cycle meter: `eval/hodge_cyclic_fraction` / `eval/hodge_width_elo`
   (`agents/training/hodge.py`, `python -m main.elo`).
-- Win-prob head: `--win-prob-mode` (v107 adds `--q-winprob-mode read_only`); calibration:
-  `python -m main.prober.query calibration`; the clean world: `designs/ai_v12/launch_runbook.md`.
+- Win-prob head: now the critic itself (`critic` is `winprob` in `designs/production_config.json`; there is no
+  `--critic` flag); `--win-prob-mode` sets its readout; calibration: `python -m main.prober.query calibration`;
+  the clean-world history: `designs/ai_v12/launch_runbook.md`.
 - Reroll/spread machinery: `utils/bridge/reconstruction` `reroll_many`, the falsify
   aleatoric split (`python -m main.prober.query falsify`).
 
