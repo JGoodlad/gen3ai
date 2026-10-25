@@ -84,7 +84,11 @@ entries naming what they supersede) → **dispatch** the next probe or build to 
   queueing, so a refused agent reports BLOCKED, never polls. `scripts/ops/gpu_lease.sh status` shows the
   holder; a lease whose agent died is ended with `release --force` (the orchestrator's alone; leases also
   expire at `--max-hours`, default 12, and a stale record is cleared by `status`). A `--wait` on
-  `gpu_lock.sh` is the orchestrator's (or a training launch's) deliberate act only. The training run's
+  `gpu_lock.sh` is the orchestrator's (or a training launch's) deliberate act only. **Preempting a GPU job
+  = `kill -TERM -- -<pgid>` (`-KILL` to force) on the job's PROCESS GROUP, never the wrapper's pid** (a
+  wrapper's pid reaches one process; SIGKILL of it leaves the job running): `gpu_lock.sh --status` /
+  `gpu_lease.sh status` print each running job's pgid, and a T46 guest's job is stopped by
+  `python -m main.launcher.gpu_window preempt <run_dir>`. The training run's
   lease: `TRAINING_RUN_SOP.md` §1 step 0. Mechanism: `src/utils/gpu_lease.py`.
 - **Opus subagents DRIVE the work — "period" (owner, 2026-09-07).** The default for doing a thing
   — an analysis, a verification, a probe, a build — is to brief an Opus agent for it; the

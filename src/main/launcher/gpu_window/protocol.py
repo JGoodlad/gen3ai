@@ -13,7 +13,9 @@ file                        written by        meaning
 ``w_<id>/request.json``     the launcher      the request, CONSUMED (renamed) at the trigger
 ``w_<id>/GO.json``          the launcher      the run has checkpointed, exited and left the GPU
 ``w_<id>/claim.json``       guest / launcher  created ``O_EXCL`` by exactly ONE side: the guest (it runs)
-                                              or the launcher (the guest MISSED its start bound)
+                                              or the launcher (the guest MISSED its start bound). The guest
+                                              then REPLACES it (atomically) with the same record plus ``job``:
+                                              the command's own SESSION / process group (pgid, leader identity)
 ``w_<id>/DONE.json``        the guest         the guest command's exit code
 ``w_<id>/RESUME.json``      ``resume``        an operator ends a HOLD
 ==========================  ================  ==========================================================
@@ -133,6 +135,35 @@ def identity_alive(ident: Optional[dict]) -> bool:
         return st is not None and st.starttime == int(ident["start_ticks"]) and st.state != "Z"
     except (KeyError, TypeError, ValueError):
         return False
+
+
+def job_members(job: Optional[dict], procs: "Optional[dict]" = None) -> "list[procfs.Proc]":
+    """The LIVE processes of a guest's job, from the ``job`` record its claim carries: every process in the
+    job's SESSION (the guest runs its command with ``setsid``, so the session is the command's and holds its
+    nested groups too, e.g. a ``gpu_lock.sh`` inside it) that is not the pid-reuse impostor of the leader.
+    ``[]`` for no record, a malformed one, or a job that has ended."""
+    try:
+        sid = int(job["sid"])                                 # type: ignore[index]
+        leader_ticks = int(job["leader"]["start_ticks"])      # type: ignore[index]
+    except (KeyError, TypeError, ValueError):
+        return []
+    procs = procfs.snapshot() if procs is None else procs
+    return sorted((p for p in procs.values()
+                   if p.session == sid and p.state not in ("Z", "X") and not (p.pid == sid and p.starttime != leader_ticks)),
+                  key=lambda p: p.pid)
+
+
+def job_note(job: Optional[dict], procs: "Optional[dict]" = None) -> str:
+    """One clause for a HOLD reason: what is left of the guest's job (its group, judged by the group, not by
+    the guest's wrapper pid)."""
+    if not job:
+        return "no job group was recorded in its claim"
+    members = job_members(job, procs)
+    if not members:
+        return f"its job (pgid {job.get('pgid')}) has no live process"
+    shown = ", ".join(f"{p.pid} ({p.comm})" for p in members[:6]) + (" …" if len(members) > 6 else "")
+    return (f"its job (pgid {job.get('pgid')}) STILL RUNS {len(members)} process(es): {shown}; "
+            "`python -m main.launcher.gpu_window preempt <run_dir>` stops exactly that job")
 
 
 @dataclass(frozen=True)

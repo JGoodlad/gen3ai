@@ -225,11 +225,21 @@ class WindowController:
             self._sleep(self._wait_poll_s)
 
         guest = claim.get("guest") or {}
+        job = claim.get("job")
         self._set_phase(req, P.CLAIMED, f"guest pid {guest.get('pid')} running (window ends by "
                                         f"{P.describe_epoch(go_epoch + req.max_window_s)})",
                         go_epoch=go_epoch, guest=guest)
         self._event(f"🏃 GPU window {req.window_id}: guest pid {guest.get('pid')} claimed the GPU")
         while True:
+            if not job:
+                # the guest records its command's process group in the claim right after it starts the command
+                job = (P.read_json(wdir / P.CLAIM_FILE) or {}).get("job")
+                if job:
+                    self._set_phase(req, P.CLAIMED, f"guest pid {guest.get('pid')} running its job "
+                                                    f"(pgid {job.get('pgid')}; window ends by "
+                                                    f"{P.describe_epoch(go_epoch + req.max_window_s)})",
+                                    go_epoch=go_epoch, guest=guest, job=job)
+                    self._event(f"🏃 GPU window {req.window_id}: the guest's job is process group {job.get('pgid')}")
             done = P.read_json(wdir / P.DONE_FILE)
             if done is not None and done.get("window_id") == req.window_id:
                 rc_guest = done.get("rc")
@@ -250,18 +260,23 @@ class WindowController:
             if not P.identity_alive(guest):
                 if P.read_json(wdir / P.DONE_FILE) is not None:
                     continue                               # it wrote DONE as it exited: read it
-                return self._hold(req, wdir, f"the guest (pid {guest.get('pid')}) died without writing DONE",
-                                  should_quit)
+                job = job or (P.read_json(wdir / P.CLAIM_FILE) or {}).get("job")
+                return self._hold(req, wdir, f"the guest (pid {guest.get('pid')}) died without writing DONE; "
+                                             f"{P.job_note(job)}", should_quit)
             if self._clock() - go_epoch > req.max_window_s:
+                job = job or (P.read_json(wdir / P.CLAIM_FILE) or {}).get("job")
                 return self._hold(req, wdir, f"the guest overran the window ({req.max_window_s / 60:.0f} min "
-                                             "after GO) and may still hold the GPU", should_quit)
+                                             f"after GO) and may still hold the GPU; {P.job_note(job)}",
+                                  should_quit)
             self._sleep(self._wait_poll_s)
 
-    def _await_empty_gpu(self, req: P.Request, wdir, after: str,
-                         should_quit: Callable[[], bool]) -> Optional[str]:
-        """None once ``nvidia-smi`` lists no compute process (or is ABSENT: warned, not checked); else the
-        window's outcome — ``"quit"``, or the operator's ``"resume"`` that ends the HOLD this enters when
-        the GPU is still busy, or ``nvidia-smi`` still fails, ``gpu_release_timeout_s`` after ``after``."""
+    def _wait_gpu_empty(self, should_quit: Callable[[], bool],
+                        on_wait: Optional[Callable[[Optional[List[int]], Optional[str]], None]] = None
+                        ) -> "tuple[str, str]":
+        """Wait until ``nvidia-smi`` lists no compute process. Returns ``("clean", "")``; ``("absent", "")`` when
+        ``nvidia-smi`` is ABSENT (a CPU box: warned, not checked); ``("quit", "")``; or ``("timeout", what)`` once
+        ``gpu_release_timeout_s`` has passed with the GPU still busy (``what`` names the pids) or ``nvidia-smi``
+        still failing. ``on_wait(pids, failed)`` is told the state at every poll that is not clean."""
         t0 = self._clock()
         while True:
             failed = None
@@ -272,34 +287,83 @@ class WindowController:
             if failed is None:
                 if pids is None:
                     self._event("⚠️  GPU window: nvidia-smi absent — the GPU's release is NOT checked")
-                    return None
+                    return "absent", ""
                 if not pids:
-                    return None
+                    return "clean", ""
+            if on_wait is not None:
+                on_wait(pids, failed)
             if should_quit():
-                return self._quit(req)
+                return "quit", ""
             if self._clock() - t0 > self._gpu_release_timeout_s:
                 what = (f"nvidia-smi still fails ({failed})" if failed is not None
                         else f"the GPU still lists compute pid(s) {pids}")
-                return self._hold(req, wdir, f"{what} {self._gpu_release_timeout_s:.0f} s after {after}",
-                                  should_quit)
+                return "timeout", what
             self._sleep(self._wait_poll_s)
+
+    def _await_empty_gpu(self, req: P.Request, wdir, after: str,
+                         should_quit: Callable[[], bool]) -> Optional[str]:
+        """None once the GPU is empty (or ``nvidia-smi`` is ABSENT); else the window's outcome — ``"quit"``, or the
+        operator's ``"resume"`` that ends the HOLD this enters when the GPU is still busy, or ``nvidia-smi`` still
+        fails, ``gpu_release_timeout_s`` after ``after``."""
+        verdict, what = self._wait_gpu_empty(should_quit)
+        if verdict in ("clean", "absent"):
+            return None
+        if verdict == "quit":
+            return self._quit(req)
+        return self._hold(req, wdir, f"{what} {self._gpu_release_timeout_s:.0f} s after {after}", should_quit)
 
     def _quit(self, req: P.Request) -> str:
         self.abandon(req, "the launcher is quitting")
         return "quit"
 
     def _hold(self, req: P.Request, wdir, why: str, should_quit: Callable[[], bool]) -> str:
-        """Stay paused until an operator writes ``RESUME.json`` for THIS window (or the launcher quits)."""
+        """Stay paused until an operator writes ``RESUME.json`` for THIS window (or the launcher quits).
+
+        A ``resume`` is an INTENT, not a go: the trainer re-launches only onto an EMPTY GPU, the check the window
+        made at its entry (:meth:`_wait_gpu_empty`). While the GPU lists a compute pid (a guest command that
+        outlived its wrapper, the pids are named) or ``nvidia-smi`` fails, the HOLD stays, its reason says what
+        it waits on, and the launcher waits up to ``gpu_release_timeout_s`` for the card to empty. Past that the
+        resume is REFUSED: ``RESUME.json`` is set aside (``RESUME.refused_<epoch>.json``), the HOLD stays with the
+        reason, and a new ``resume`` is needed. A re-launch onto a busy card OOMs at its first update and burns the
+        3 rapid-crash restarts."""
         self._set_phase(req, P.HOLD, why)
         self._event(f"🛑 GPU WINDOW HOLD {req.window_id}: {why}. The run stays PAUSED until "
-                    f"`python -m main.launcher.gpu_window resume {self._run_dir_fn()} --reason …`")
+                    f"`python -m main.launcher.gpu_window resume {self._run_dir_fn()} --reason …` "
+                    "(and the GPU is empty)")
         while True:
             res = P.read_json(wdir / P.RESUME_FILE)
             if res is not None and res.get("window_id") == req.window_id:
+                waiting: list = [None]
+
+                def on_wait(pids: Optional[List[int]], failed: Optional[str]) -> None:
+                    state = failed if failed is not None else tuple(pids or ())
+                    if state == waiting[0]:
+                        return
+                    waiting[0] = state
+                    what = (f"nvidia-smi fails ({failed})" if failed is not None
+                            else f"the GPU still lists compute pid(s) {pids}")
+                    self._set_phase(req, P.HOLD, f"{why} | resume requested, waiting up to "
+                                                 f"{self._gpu_release_timeout_s:.0f} s: {what}", hold_reason=why)
+                    self._event(f"⏳ GPU window {req.window_id}: resume requested but {what} - the run re-launches "
+                                f"only onto an empty GPU (waiting up to {self._gpu_release_timeout_s:.0f} s)")
+                verdict, what = self._wait_gpu_empty(should_quit, on_wait)
+                if verdict == "quit":
+                    return self._quit(req)
+                if verdict == "timeout":
+                    try:
+                        os.rename(wdir / P.RESUME_FILE, wdir / f"RESUME.refused_{int(self._clock())}.json")
+                    except FileNotFoundError:
+                        pass
+                    reason = (f"resume REFUSED: {what} {self._gpu_release_timeout_s:.0f} s after the operator's "
+                              f"resume; free the GPU, then `resume` again (HOLD was: {why})")
+                    self._set_phase(req, P.HOLD, reason, hold_reason=why)
+                    self._event(f"🛑 GPU WINDOW HOLD {req.window_id}: {reason}")
+                    continue
                 self._set_phase(req, P.RESUMED, f"operator resume after HOLD: {res.get('reason', '')}",
                                 hold_reason=why)
                 self._event(f"▶ GPU window {req.window_id}: HOLD ended by `resume` ({res.get('reason', '')}) "
-                            "— resuming the run")
+                            f"— {'GPU empty' if verdict == 'clean' else 'nvidia-smi absent, GPU not checked'}, "
+                            "resuming the run")
                 return "resume"
             if should_quit():
                 return self._quit(req)

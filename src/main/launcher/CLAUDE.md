@@ -65,8 +65,9 @@ codes in `crashes_and_exit_codes.md`, the child's interpreter in `interpreter.md
   `sys.exit`.
 - **A GPU window pauses through the SAME stop and restart paths** (`--gpu-window`, `gpu_window/`): SIGTERM to
   the safe-point save, then the ordinary same-run RESTART (same pin, same command); the launcher stays alive so
-  the lease stays with its holder. Every step that cannot finish cleanly HOLDS (never auto-resumes over it), and
-  a request is honoured only by the launcher it names (`designs/launcher/gpu_window.md`).
+  the lease stays with its holder. Every step that cannot finish cleanly HOLDS (never auto-resumes; an operator's
+  `resume` re-launches only onto an empty GPU), the guest's job is its own session (`preempt` stops it, never the
+  wrapper's pid), and a request is honoured only by the launcher it names (`designs/launcher/gpu_window.md`).
 - **The child's interpreter is decided once per launcher session** (`torch_runtime.resolve_for_launch`;
   a resume or fork gets the torch its run recorded) and held in the child's `$GEN3AI_PYTHON`, so every
   restart spawns the same one; never a machine path (`interpreter_test.py`).

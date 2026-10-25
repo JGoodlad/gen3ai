@@ -1,8 +1,10 @@
 # The GPU window: pause a live run for a guest GPU job (`--gpu-window`, T46)
 
-> Always-current (`README.md`). Code: `src/main/launcher/gpu_window/` (`protocol.py`, `controller.py`, `cli.py`)
-> and its two hooks in `run._supervise`. Tests: `gpu_window/window_cycle_test.py` (a real supervisor over a
-> tiny CPU child, `integration`) and `gpu_window/protocol_cli_test.py` (unit).
+> Always-current (`README.md`). Code: `src/main/launcher/gpu_window/` (`protocol.py`, `controller.py`, `cli.py`),
+> `src/utils/procgroup.py` (the guest's session) and its two hooks in `run._supervise`. Tests:
+> `gpu_window/window_cycle_test.py` (a real supervisor over a tiny CPU child, `integration`),
+> `gpu_window/guest_group_test.py` (real guest processes: session, claim record, `preempt`; `integration`) and
+> `gpu_window/protocol_cli_test.py` (unit, fake GPU probes).
 
 ## Why
 
@@ -48,11 +50,21 @@ safe point, exits INTERRUPTED ─▶ checkpoint + empty GPU checked ─▶ GO �
   GPU check covers the whole box, because under the lease only its holder uses the GPU. Only an ABSENT
   `nvidia-smi` (a CPU box) skips it, with a warning; one that fails or hangs is not a free GPU (it HOLDS).
 - **The run comes back only to an empty GPU.** After DONE rc 0 the same check runs again, so a worker the
-  guest spawned and left behind holds the window instead of OOMing the trainer's first update.
+  guest spawned and left behind holds the window instead of OOMing the trainer's first update. An operator's
+  `resume` is checked the same way (see HOLD).
 - **One claimant.** `w_<id>/claim.json` is created `O_EXCL`, by the guest (which then runs) or by the launcher
   when no guest claimed within `--guest-start-timeout-s` (default 180). A launcher claim makes the window
   MISSED, and the run resumes, because nothing ran on the GPU. A late guest then finds the claim taken and
   never runs its command.
+- **The guest's job is a SESSION, not a pid.** The guest runs its command with `setsid` (`utils.procgroup`), so the
+  command leads a session and a process group of its own (`pgid == sid ==` its pid), and records them in the claim
+  (`job: {pgid, sid, leader: {pid, start_ticks}}`, atomically REPLACED right after the start; the exclusive create
+  already decided who runs). The claim still names the guest wrapper (`guest`), but the launcher judges the job by
+  the session: every HOLD that follows a dead wrapper or an overrun names the job's live processes (pids, `STILL
+  RUNS`) or says it has ended, so an operator sees whether the card is still held. A stop signal sent to the guest
+  (SIGINT / SIGTERM / SIGHUP) is forwarded to every group of the job's session and the guest still writes DONE (a
+  signal death is `128+N`, so a SIGTERM reads `rc 143` and HOLDs); SIGKILL of the guest cannot be forwarded, and
+  leaves the job running (the HOLD then names it). The command has no controlling terminal.
 - **The lease never moves.** `arm` and `guest` require the caller to HOLD the GPU lease: its token must be in
   the environment. `--no-lease-check REASON` is for a box with NO lease (a CPU run, a test) and is refused
   while anyone holds one. The guest's GPU commands go through
@@ -66,15 +78,31 @@ The run stays PAUSED (no child, launcher alive, lease kept) whenever one of thes
 - the pause saves no checkpoint;
 - the GPU is not released within 600 s, or `nvidia-smi` keeps failing (before GO, and again after DONE rc 0);
 - the guest exits non-zero;
-- the guest dies without writing DONE (its pid and start ticks are in its claim);
-- the guest is still running `--max-window-min` after GO (default 60). It may still hold the GPU.
+- the guest dies without writing DONE (its pid and start ticks are in its claim); the reason names what is left
+  of its job (the session's live pids, or "no live process");
+- the guest is still running `--max-window-min` after GO (default 60). It may still hold the GPU; the reason
+  names the job's live pids.
 
 The reason goes to `current.json`, to the events (`🛑 GPU WINDOW HOLD …`) and to the red status badge.
 Only an operator ends a HOLD: `python -m main.launcher.gpu_window resume <run_dir> --reason "…"`, or a quit.
-The launcher never auto-resumes over a failure (`TRAINING_RUN_SOP.md` §3 rule 3). An operator's `resume` does
-NOT re-check the GPU: after an overrun or a dead guest, check `nvidia-smi` first (the guest's identity is its
-wrapper pid, so a command it started can outlive it). A window left OPEN by a launcher that died is closed as
-`abandoned` by the next `--gpu-window` launcher of the run, so it cannot block `arm` forever.
+The launcher never auto-resumes over a failure (`TRAINING_RUN_SOP.md` §3 rule 3). A window left OPEN by a launcher
+that died is closed as `abandoned` by the next `--gpu-window` launcher of the run, so it cannot block `arm` forever.
+
+**A `resume` is an intent, not a go.** The launcher re-checks the GPU first, with the check the window made at
+its entry: it re-launches the run only when `nvidia-smi` lists no compute process (or is absent: warned). While
+a pid is listed, or `nvidia-smi` fails, the HOLD stays, its reason reads `… | resume requested, waiting up to 600 s:
+the GPU still lists compute pid(s) […]` (also an event), and the launcher waits up to `GPU_RELEASE_TIMEOUT_S`
+(600 s) for the card to empty. Past that the resume is REFUSED: `RESUME.json` is set aside as
+`RESUME.refused_<epoch>.json`, the HOLD stays (`resume REFUSED: …`), and the operator frees the card (the usual
+tool: `preempt`) and resumes again. A re-launch onto a busy card OOMs at the trainer's first update and burns the
+3 rapid-crash restarts.
+
+**`preempt` stops the guest's job.** `python -m main.launcher.gpu_window preempt <run_dir> [--kill]` (window in
+CLAIMED or HOLD, a job on record) sends SIGTERM (`--kill`: SIGKILL) to every process group of the job's recorded
+SESSION, re-derived from the live process table: the command's group and any group inside it (a `gpu_lock.sh`
+makes one), not the guest wrapper, not a pid, nothing outside the session. It refuses when the record names the
+caller's or the guest's own group or session. The guest then writes DONE with `128+N` and the window HOLDs; a
+SIGTERM-ignoring job needs `--kill`.
 
 ## Files (`<run_dir>/gpu_window/`) and phases
 
@@ -83,7 +111,7 @@ wrapper pid, so a command it started can outlive it). A window left OPEN by a la
 | `launcher.json` | launcher (start) | this launcher (pid + start ticks) honours windows |
 | `request.json` | `arm` | the armed window: id, launcher, trigger epoch, bounds, precheck record, lease line |
 | `current.json` | launcher | the window in flight: `phase`, `reason`, `since_epoch` (the status line) |
-| `w_<id>/request.json` · `GO.json` · `claim.json` · `DONE.json` · `RESUME.json` | launcher · launcher · guest or launcher · guest · `resume` | the window's record, every file carrying the window id |
+| `w_<id>/request.json` · `GO.json` · `claim.json` · `DONE.json` · `RESUME.json` | launcher · launcher · guest or launcher · guest · `resume` | the window's record, every file carrying the window id. `claim.json` carries the guest's `job` (pgid, sid, leader identity); `DONE.json` its `pgid`; a refused resume is kept as `RESUME.refused_<epoch>.json` |
 
 Phases: `pausing` → `go` → `claimed` → `done` → `resumed`. The other endings are `missed` → `resumed`,
 `hold` → `resumed`, `abandoned` (a quit, or the run completed first) and `refused`. The phases `pausing`, `go`,
@@ -101,7 +129,8 @@ GEN3AI_GPU_LEASE_TOKEN_FILE=<holder token file> python -m main.launcher.gpu_wind
 GEN3AI_GPU_LEASE_TOKEN_FILE=<holder token file> nohup python -m main.launcher.gpu_window guest models/<run> \
     --wait-max-min 240 -- scripts/ops/gpu_lock.sh <battery …> > guest.log 2>&1 < /dev/null &
 python -m main.launcher.gpu_window status models/<run>
-python -m main.launcher.gpu_window resume models/<run> --reason "…"   # ends a HOLD
+python -m main.launcher.gpu_window resume models/<run> --reason "…"   # ends a HOLD, once the GPU is empty
+python -m main.launcher.gpu_window preempt models/<run> [--kill]      # stops the guest's job (its session), nothing else
 python -m main.launcher.gpu_window cancel models/<run>                # withdraws an armed, untriggered request
 ```
 
@@ -117,7 +146,8 @@ for GO.
 - It does not stop a run for good, and it does not chain across runs (a stop at a plateau, then the next arm).
   Those stay operator scripts.
 - It does not run the guest itself.
-- It does not watch the guest's GPU use beyond the pid and the time bound.
+- It does not watch the guest's GPU use beyond its job's processes and the time bound, and it never kills the job on
+  its own (`preempt` is an operator's act).
 
 ## Hazards
 
@@ -130,6 +160,10 @@ for GO.
   with the run's alert watcher.
 - **The layer-1 watcher knows windows.** `scripts/ops/watch_run.sh` does not call an open window a wedge, and
   it writes one `ALERT: GPU WINDOW HOLD` line per held window (`watch_run_gpu_window_test.py`).
+- **A guest that `setsid`s a worker out of the job's session is outside `preempt`** (and outside the HOLD's list of
+  live pids); the empty-GPU re-check on `resume` is what still catches it.
+- **SIGKILL of the guest wrapper leaves its job running** in its own session (nothing can forward a SIGKILL): the
+  HOLD says so, `preempt` stops it. This is why a preempt names the job, never the wrapper's pid.
 - **Quitting the launcher during a window ends its lease watch.** A lease whose `--watch-pid` is the launcher
   ends when the launcher exits, even if a guest is still running.
 

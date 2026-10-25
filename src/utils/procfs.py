@@ -40,6 +40,8 @@ class Proc:
     cutime: int
     cstime: int
     starttime: int
+    pgrp: int = 0           # the process GROUP id (``/proc/<pid>/stat`` field 5); 0 = not read
+    session: int = 0        # the SESSION id (field 6)
 
     @property
     def key(self) -> str:
@@ -66,7 +68,7 @@ def read_stat(pid: int, proc: str = _PROC) -> Optional[Proc]:
     try:
         return Proc(pid=pid, comm=raw[lp + 1:rp], state=rest[0], ppid=int(rest[1]),
                     utime=int(rest[11]), stime=int(rest[12]), cutime=int(rest[13]), cstime=int(rest[14]),
-                    starttime=int(rest[19]))
+                    starttime=int(rest[19]), pgrp=int(rest[2]), session=int(rest[3]))
     except (IndexError, ValueError):
         return None
 

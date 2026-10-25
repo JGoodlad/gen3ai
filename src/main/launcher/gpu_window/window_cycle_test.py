@@ -92,7 +92,8 @@ def _guest(run_dir: Path, *cmd: str) -> subprocess.Popen:
 
 
 class _Harness:
-    """`_supervise` over the fake trainer, with a real `WindowController` (GPU probe: always free)."""
+    """`_supervise` over the fake trainer, with a real `WindowController`. The GPU probe is the test's: ``self.gpu``
+    (``busy`` = the pids it lists, ``polls`` = how often it was asked); free unless a test sets ``busy``."""
 
     def __init__(self, tmp_path: Path, monkeypatch, defer_report: bool = False):
         monkeypatch.setenv("GEN3AI_GPU_LOCK", str(tmp_path / "gpu.lock"))   # never the box's real lease
@@ -110,11 +111,16 @@ class _Harness:
                                child_env=_build_child_env(), train_script=str(script), src_dir=str(src_root()),
                                run_dir=str(self.run_dir), run_dir_box=[str(self.run_dir)],
                                session_start=time.time() - 5, interval_seconds=0, grace_seconds=1200.0, pin=False)
+        self.gpu = {"busy": [], "polls": 0}
         self.window = WindowController(lambda: self.ctx.run_dir_box[0], add_event=self.state.add_event,
-                                       set_status=self.state.set_window_status, gpu_pids=lambda: [],
-                                       request_poll_s=0.1, wait_poll_s=0.1)
+                                       set_status=self.state.set_window_status, gpu_pids=self._probe,
+                                       request_poll_s=0.1, wait_poll_s=0.1, gpu_release_timeout_s=60.0)
         self.window.announce()
         self.shutdown = threading.Event()
+
+    def _probe(self):
+        self.gpu["polls"] += 1
+        return list(self.gpu["busy"])
 
     def supervise(self) -> int:
         return _supervise(self.state, queue.Queue(), self.ctx, interval_hours=0, grace_minutes=20.0,
@@ -188,7 +194,11 @@ def test_window_pauses_runs_the_guest_and_resumes_the_same_run(tmp_path, monkeyp
     assert cur["phase"] == P.RESUMED and cur["outcome"] == P.DONE, cur
     wdir = P.window_dir(h.run_dir, cur["window_id"])
     assert P.read_json(wdir / P.DONE_FILE)["rc"] == 0
-    assert P.read_json(wdir / P.CLAIM_FILE)["by"] == "guest"
+    claim = P.read_json(wdir / P.CLAIM_FILE)
+    assert claim["by"] == "guest"
+    assert claim["job"]["pgid"] == claim["job"]["sid"] > 1 and claim["job"]["pgid"] != claim["guest"]["pid"], \
+        "the claim records the command's OWN session / process group, not the guest wrapper's pid"
+    assert P.read_json(wdir / P.DONE_FILE)["pgid"] == claim["job"]["pgid"]
     assert not (P.window_root(h.run_dir) / P.REQUEST_FILE).exists(), "the request is CONSUMED at the trigger"
     ev = h.events()
     assert "GO —" in ev and "guest DONE (rc 0)" in ev
@@ -227,6 +237,51 @@ def test_a_failing_guest_holds_the_run_paused_until_resume(tmp_path, monkeypatch
     cur = P.read_current(h.run_dir)
     assert cur["phase"] == P.RESUMED and cur["outcome"] == P.RESUMED, cur
     assert "GPU WINDOW HOLD" in h.events()
+
+
+def test_preempting_a_running_guest_holds_the_window_and_a_resume_onto_an_empty_gpu_brings_the_run_back(tmp_path, monkeypatch):
+    """The whole chain on a real supervisor: a guest job is running -> `preempt` stops exactly its group -> the guest
+    writes DONE with the job's death -> the window HOLDS (never auto-resumes over a failure) -> `resume` re-checks the
+    GPU (a probe the test flips from busy to empty) and only then the run re-launches."""
+    h = _Harness(tmp_path, monkeypatch)
+
+    def operator():
+        assert h.arm() == 0
+        g = _guest(h.run_dir, sys.executable, "-c", "import time; time.sleep(120)")
+        wdir_of = lambda: P.window_dir(h.run_dir, P.read_current(h.run_dir)["window_id"])       # noqa: E731
+        _wait_for(lambda: h.phase() == P.CLAIMED and (P.read_json(wdir_of() / P.CLAIM_FILE) or {}).get("job"), 60,
+                  "the guest's job to be recorded")
+        assert cli.main(["preempt", str(h.run_dir)]) == 0
+        g.communicate(timeout=60)
+        _wait_for(lambda: h.phase() == P.HOLD, 30, "the HOLD")
+        reason = (P.read_current(h.run_dir) or {})["reason"]
+        time.sleep(0.6)
+        starts_in_hold = sum(1 for k in _children(h.run_dir) if k["event"] == "start")
+        h.gpu["busy"] = [4242]                                    # a worker of the guest still holds the card
+        polls_before = h.gpu["polls"]
+        assert cli.main(["resume", str(h.run_dir), "--reason", "test: preempted on purpose"]) == 0
+        _wait_for(lambda: "resume requested" in (P.read_current(h.run_dir) or {}).get("reason", ""), 30,
+                  "the resume to wait for the GPU")
+        time.sleep(0.6)
+        starts_while_busy = sum(1 for k in _children(h.run_dir) if k["event"] == "start")
+        h.gpu["busy"] = []                                        # the card empties
+        return g.returncode, reason, starts_in_hold, starts_while_busy, h.gpu["polls"] - polls_before
+
+    t, res = _in_thread(operator)
+    try:
+        code = h.supervise()
+    finally:
+        h.shutdown.set()
+    t.join(60)
+    assert "e" not in res, res.get("e")
+    guest_rc, reason, starts_in_hold, starts_while_busy, probes = res["v"]
+    assert code == 0 and guest_rc == 128 + 15
+    assert f"the guest exited rc {128 + 15}" in reason, reason
+    assert starts_in_hold == 1, "the HOLD re-launched the run on its own"
+    assert starts_while_busy == 1 and probes >= 2, "the run re-launched onto a GPU that still listed a compute pid"
+    assert sum(1 for k in _children(h.run_dir) if k["event"] == "start") == 2
+    cur = P.read_current(h.run_dir)
+    assert cur["phase"] == P.RESUMED and cur["outcome"] == P.RESUMED, cur
 
 
 def test_a_guest_that_never_starts_is_missed_and_the_run_resumes(tmp_path, monkeypatch):

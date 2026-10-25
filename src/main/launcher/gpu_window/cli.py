@@ -9,7 +9,8 @@ USAGE
         --wait-max-min 120 -- scripts/ops/gpu_lock.sh <the GPU job …>
     # watch / end
     python -m main.launcher.gpu_window status models/<run>
-    python -m main.launcher.gpu_window resume models/<run> --reason "…"     # ends a HOLD (the run re-launches)
+    python -m main.launcher.gpu_window resume models/<run> --reason "…"     # ends a HOLD (the run re-launches once the GPU is empty)
+    python -m main.launcher.gpu_window preempt models/<run> [--kill]        # stops the guest's job (its session / group, nothing else)
     python -m main.launcher.gpu_window cancel models/<run>                  # withdraws a request not yet triggered
 
 The run's launcher must have been started with ``--gpu-window``; the mechanism and its rules are
@@ -24,13 +25,17 @@ from __future__ import annotations
 import argparse
 import os
 import shlex
+import signal
 import subprocess
 import sys
 import time
 from pathlib import Path
 from typing import List, Optional, Sequence
 
+from main.launcher.gpu_window import controller
 from main.launcher.gpu_window import protocol as P
+from utils import procgroup
+from utils.procgroup import run_in_own_group
 
 EXIT_REFUSED, EXIT_NOT_RUN, EXIT_NO_GO = 3, 4, 5
 PRECHECK_TIMEOUT_S = 900.0
@@ -181,20 +186,34 @@ def cmd_guest(a: argparse.Namespace) -> int:
             return EXIT_NO_GO
         time.sleep(GUEST_POLL_S)
     me = P.process_identity(os.getpid())
-    if not P.create_json_exclusive(wdir / P.CLAIM_FILE, {"by": "guest", "window_id": wid, "guest": me,
-                                                         "cmd": shlex.join(cmd), "claimed_epoch": time.time()}):
+    claim = {"by": "guest", "window_id": wid, "guest": me, "cmd": shlex.join(cmd), "claimed_epoch": time.time(),
+             "job": None}
+    if not P.create_json_exclusive(wdir / P.CLAIM_FILE, claim):
         print(f"[gpu_window guest] window {wid} was claimed first ({P.read_json(wdir / P.CLAIM_FILE)}) — NOT running",
               flush=True)
         return EXIT_NOT_RUN
     started = time.time()
     print(f"[gpu_window guest] CLAIMED window {wid}; running: {shlex.join(cmd)}", flush=True)
+    job: dict = {}
+
+    def record_job(pgid: int) -> None:
+        """The command is the leader of its OWN session: record that group in the claim (atomically REPLACED, the
+        exclusive create above already decided who runs), so the launcher judges the job by the group and an
+        operator's `preempt` signals exactly that group."""
+        job.update({"pgid": pgid, "sid": pgid, "leader": P.process_identity(pgid), "started_epoch": time.time()})
+        P.write_json_atomic(wdir / P.CLAIM_FILE, {**claim, "job": job})
+        print(f"[gpu_window guest] the job is session / process group {pgid}: preempt = `python -m "
+              f"main.launcher.gpu_window preempt {run_dir}` or `kill -TERM -- -{pgid}` (never this guest's pid)",
+              flush=True)
+
     try:
-        rc = subprocess.call(cmd)
+        rc = run_in_own_group(cmd, session=True, on_start=record_job)
     except OSError as e:
         print(f"[gpu_window guest] could not start the guest command: {e}", flush=True)
         rc = 127
     P.write_json_atomic(wdir / P.DONE_FILE, {"window_id": wid, "rc": rc, "started_epoch": started,
-                                             "ended_epoch": time.time(), "cmd": shlex.join(cmd)})
+                                             "ended_epoch": time.time(), "cmd": shlex.join(cmd),
+                                             "pgid": job.get("pgid")})
     print(f"[gpu_window guest] DONE window {wid}: rc {rc}", flush=True)
     return rc
 
@@ -216,6 +235,10 @@ def cmd_status(a: argparse.Namespace) -> int:
     if cur is not None:
         print(f"  window   : {cur.get('window_id')} — {str(cur.get('phase')).upper()} since "
               f"{P.describe_epoch(float(cur.get('since_epoch', 0)))}: {cur.get('reason')}")
+        if cur.get("phase") in (P.CLAIMED, P.HOLD):
+            claim = P.read_json(P.window_dir(run_dir, str(cur.get("window_id"))) / P.CLAIM_FILE) or {}
+            if claim.get("by") == "guest":
+                print(f"  guest job: {P.job_note(claim.get('job'))}")
     elif req is None:
         print("  window   : none yet")
     return 0
@@ -229,8 +252,44 @@ def cmd_resume(a: argparse.Namespace) -> int:
     wid = str(cur["window_id"])
     P.write_json_atomic(P.window_dir(run_dir, wid) / P.RESUME_FILE, {
         "window_id": wid, "reason": a.reason, "epoch": time.time(), "by": P.process_identity(os.getpid())})
-    print(f"RESUME written for window {wid} (HOLD: {cur.get('reason')}); the launcher re-launches the run "
-          "within seconds")
+    print(f"RESUME written for window {wid} (HOLD: {cur.get('reason')}). The launcher re-checks the GPU first: it "
+          "re-launches the run once `nvidia-smi` lists no compute process (waiting up to "
+          f"{controller.GPU_RELEASE_TIMEOUT_S:.0f} s, naming the pids it waits on), else the HOLD stays with the "
+          "reason and a new `resume` is needed. `status` shows which.")
+    return 0
+
+
+def cmd_preempt(a: argparse.Namespace) -> int:
+    """Stop the guest's JOB: SIGTERM (``--kill``: SIGKILL) to the process group(s) of the SESSION its claim recorded.
+    Never the guest's own pid or group, never a pid: the groups are re-derived from the live session (a command that
+    nests a group of its own, e.g. a ``gpu_lock.sh`` inside it, is stopped whole, and a SIGKILL needs no forwarding)."""
+    run_dir = _run_dir(a.run_dir)
+    cur = P.read_current(run_dir)
+    if cur is None or cur.get("phase") not in (P.CLAIMED, P.HOLD):
+        raise Refused(f"no window with a running or held guest for {run_dir} (phase: {(cur or {}).get('phase', 'none')})")
+    wid = str(cur["window_id"])
+    claim = P.read_json(P.window_dir(run_dir, wid) / P.CLAIM_FILE) or {}
+    job = claim.get("job")
+    if claim.get("by") != "guest" or claim.get("window_id") != wid or not job:
+        raise Refused(f"window {wid} has no guest job group on record (claim: {claim or 'none'}): nothing to preempt")
+    members = P.job_members(job)
+    if not members:
+        print(f"window {wid}: the guest's job (pgid {job.get('pgid')}) has no live process; nothing to signal")
+        return 0
+    groups = sorted({p.pgrp for p in members}, key=lambda g: (g != job.get("pgid"), g))
+    guest_pid = (claim.get("guest") or {}).get("pid")
+    unsafe = [g for g in groups if g <= 1 or g == os.getpgrp() or g == guest_pid]
+    if job.get("sid") in (os.getsid(0), 0, 1) or (isinstance(guest_pid, int) and job.get("sid") == guest_pid):
+        unsafe.append(job.get("sid"))
+    if unsafe:
+        raise Refused(f"refusing to signal {unsafe}: this caller's own group / session, or the guest's: the claim's job "
+                      f"record {job} is not trustworthy")
+    sig = signal.SIGKILL if a.kill else signal.SIGTERM
+    for g in groups:
+        procgroup.killpg_quiet(g, sig)
+    print(f"PREEMPT window {wid}: {signal.Signals(sig).name} to process group(s) {groups} "
+          f"({len(members)} live process(es): {', '.join(str(p.pid) for p in members[:8])}) - the guest's job only; "
+          "the guest then writes DONE with a non-zero rc and the window HOLDS until `resume`")
     return 0
 
 
@@ -291,6 +350,12 @@ def build_parser() -> argparse.ArgumentParser:
     rs.add_argument("run_dir")
     rs.add_argument("--reason", required=True)
     rs.set_defaults(fn=cmd_resume)
+
+    pr = sub.add_parser("preempt", help="stop the guest's job: SIGTERM (--kill: SIGKILL) to its session's group(s) only",
+                        allow_abbrev=False)
+    pr.add_argument("run_dir")
+    pr.add_argument("--kill", action="store_true", help="SIGKILL instead of SIGTERM")
+    pr.set_defaults(fn=cmd_preempt)
 
     c = sub.add_parser("cancel", help="withdraw an armed request that has not triggered", allow_abbrev=False)
     c.add_argument("run_dir")

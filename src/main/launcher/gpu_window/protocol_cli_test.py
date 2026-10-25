@@ -320,3 +320,117 @@ def test_no_lease_check_is_refused_while_a_lease_is_held(run_dir, capsys, monkey
     assert _arm(run_dir) == cli.EXIT_REFUSED
     assert "refused while a GPU lease is held" in capsys.readouterr().err
     assert not (P.window_root(run_dir) / P.REQUEST_FILE).exists()
+
+
+# ── 2026-10-25: an operator's `resume` re-checks the GPU (T46 adversarial review) ──────────────────
+
+def _resume_cmd(run_dir: Path) -> int:
+    return cli.main(["resume", str(run_dir), "--reason", "test: the failure is understood"])
+
+
+def _hold_then(run_dir: Path, ctl: WindowController, req: P.Request, script) -> str:
+    """Run the window (entering a HOLD at once: the paused child 'crashed'); ``script(cur, step)`` plays the operator
+    and returns True to quit. Returns the window's outcome."""
+    step = [0]
+
+    def should_quit() -> bool:
+        cur = P.read_current(run_dir) or {}
+        step[0] += 1
+        return bool(script(cur, step[0]))
+    return ctl.run_window(req, int(TrainExitCode.CRASH), time.time() - 1, should_quit)
+
+
+def test_a_resume_waits_for_the_gpu_to_empty_and_names_the_pids_it_waits_on(run_dir):
+    """The HOLD of an overrun or a dead guest is exactly when a guest process may still hold the card: the run must
+    not re-launch onto it (OOM at the first update, 3 rapid-crash restarts burnt)."""
+    polls: list = []
+
+    def pids():
+        polls.append(1)
+        return [4242] if len(polls) <= 5 else []
+    events: list = []
+    ctl = _controller(run_dir, events, gpu_pids=pids, gpu_release_timeout_s=60.0)
+    req = _request(run_dir, ctl)
+    resumed, reasons = [], []
+
+    def operator(cur, step):
+        if cur.get("phase") == P.HOLD and not resumed:
+            assert _resume_cmd(run_dir) == 0
+            resumed.append(1)
+        elif resumed:
+            reasons.append(cur.get("reason", ""))
+        return False
+    assert _hold_then(run_dir, ctl, req, operator) == "resume"
+    assert len(polls) == 6, "polled until the card was empty, then re-launched"
+    assert any("4242" in r and "resume requested" in r for r in reasons), reasons
+    assert any("4242" in e and "resume requested" in e for e in events), events
+    assert P.read_current(run_dir)["phase"] == P.RESUMED
+
+
+def test_a_resume_onto_a_busy_gpu_is_refused_and_the_hold_stays_until_a_new_resume_finds_it_empty(run_dir):
+    state = {"pids": [4242]}
+    events: list = []
+    ctl = _controller(run_dir, events, gpu_pids=lambda: state["pids"], gpu_release_timeout_s=0.05)
+    req = _request(run_dir, ctl)
+    wdir = P.window_dir(run_dir, req.window_id)
+    seen: dict = {}
+
+    def operator(cur, step):
+        reason = cur.get("reason", "")
+        if cur.get("phase") == P.HOLD and "seen_first" not in seen:
+            seen["seen_first"] = reason
+            assert _resume_cmd(run_dir) == 0
+        elif "resume REFUSED" in reason and "refused" not in seen:
+            seen["refused"] = reason
+            seen["phase"] = cur["phase"]
+            seen["files"] = sorted(p.name for p in wdir.glob("RESUME*"))
+            state["pids"] = []                              # the operator freed the card ...
+            assert _resume_cmd(run_dir) == 0                # ... and resumes again
+        return False
+    assert _hold_then(run_dir, ctl, req, operator) == "resume"
+    assert seen["phase"] == P.HOLD and "4242" in seen["refused"], seen
+    assert len(seen["files"]) == 1 and seen["files"][0].startswith("RESUME.refused_"), \
+        f"the refused RESUME must be set aside, not left to fire later: {seen['files']}"
+    assert any("resume REFUSED" in e for e in events)
+
+
+def test_a_resume_is_not_honoured_while_nvidia_smi_fails(run_dir):
+    def failing():
+        raise C.GpuQueryFailed("nvidia-smi exited rc 15")
+    ctl = _controller(run_dir, [], gpu_pids=failing, gpu_release_timeout_s=0.05)
+    req = _request(run_dir, ctl)
+    seen: dict = {}
+
+    def operator(cur, step):
+        if cur.get("phase") == P.HOLD and "resumed" not in seen:
+            seen["resumed"] = True
+            assert _resume_cmd(run_dir) == 0
+        return "resume REFUSED" in cur.get("reason", "")        # quit once the refusal is on record
+    assert _hold_then(run_dir, ctl, req, operator) == "quit", "a failing nvidia-smi must not read as a free GPU"
+    assert P.read_current(run_dir)["phase"] == P.ABANDONED
+
+
+def test_a_resume_on_a_box_without_nvidia_smi_proceeds_and_says_it_did_not_check(run_dir):
+    events: list = []
+    ctl = _controller(run_dir, events, gpu_pids=lambda: None)
+    req = _request(run_dir, ctl)
+
+    def operator(cur, step):
+        if cur.get("phase") == P.HOLD and step == 1:
+            assert _resume_cmd(run_dir) == 0
+        return False
+    assert _hold_then(run_dir, ctl, req, operator) == "resume"
+    assert any("nvidia-smi absent" in e for e in events)
+
+
+def test_quitting_while_a_resume_waits_for_the_gpu_ends_the_window(run_dir):
+    ctl = _controller(run_dir, [], gpu_pids=lambda: [4242], gpu_release_timeout_s=60.0)
+    req = _request(run_dir, ctl)
+
+    def operator(cur, step):
+        if cur.get("phase") == P.HOLD and step == 1:
+            assert _resume_cmd(run_dir) == 0
+            return False
+        return "resume requested" in cur.get("reason", "")       # the launcher is quitting mid-wait
+    assert _hold_then(run_dir, ctl, req, operator) == "quit"
+    assert P.read_current(run_dir)["phase"] == P.ABANDONED

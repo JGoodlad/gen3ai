@@ -56,3 +56,4 @@ def test_this_process_reads_back():
     me = P.read_stat(os.getpid())
     assert me is not None and me.ppid == os.getppid() and me.key == f"{os.getpid()}:{me.starttime}"
     assert os.getppid() in P.ancestors(os.getpid())
+    assert me.pgrp == os.getpgrp() and me.session == os.getsid(0), "the group and session ids are parsed"

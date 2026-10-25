@@ -32,6 +32,11 @@ it is a verified no-op. If the caller's GEN3AI_GPU_LEASE_TOKEN owns the lease th
 taking the flock. Otherwise: a lease held by someone else = exit 6 at once (even with --wait); a one-off
 holder = exit 5 at once unless --wait (then the holder's pid and command line are printed every 60 s); a
 holder that is this command's own ANCESTOR (a bare `flock` around it) is refused at once (exit 3).
+PREEMPT a running job with `kill -TERM -- -<pgid>` (-KILL to force) on its PROCESS GROUP, never the wrapper's pid:
+the command is the leader of a group of its own, logged at start ("running ... as process group N"), listed by --status
+and `gpu_lease.sh status`; SIGINT/SIGTERM/SIGHUP sent to the wrapper are forwarded to that whole group, a SIGKILL of the
+wrapper is not (the job lives on in its group); a group a descendant made of its own (timeout, a nested gpu_lock.sh) is
+listed by --status and misses a SIGKILL of -<pgid>. On a terminal the command takes the foreground like a shell job.
 Exit status: the command's own (128+N if signal N killed it); 2 = no command; 3 = self-deadlock;
 4 = --timeout-s expired; 5 = GPU busy (one-off holder); 6 = GPU leased to someone else.
 USAGE_EOF

@@ -29,6 +29,20 @@ USAGE
     scripts/ops/gpu_lock.sh timeout 3000 <cmd>            # right
     timeout 3000 scripts/ops/gpu_lock.sh <cmd>            # WRONG
 
+PREEMPT = ``kill -TERM -- -<pgid>`` (``-KILL`` to force) on the job's PROCESS GROUP, never the wrapper's pid. The
+command runs as the LEADER of a process group of its own (``utils.procgroup``; the group id is its pid), and the
+wrapper logs it at start (``[gpu_lock] running … as process group N``), records it in ``<lock>.jobs/<wrapper pid>.json``
+and shows it in ``--status`` (here and in ``gpu_lease.sh status``).
+* A SIGINT / SIGTERM / SIGHUP sent to the WRAPPER is forwarded to that whole group, so it reaches grandchildren (a
+  ``mem_cap`` supervisor, pytest workers). A SIGKILL of the wrapper cannot be forwarded: it dies, the lock is released
+  and the job lives on in its group, which is why a preempt names the group.
+* A group a descendant made of its own (``timeout``, a nested ``gpu_lock.sh``) misses a SIGKILL of ``-<pgid>``
+  (``--status`` lists them; a SIGTERM is forwarded on by those wrappers); a descendant that ``setsid()``s itself is
+  outside the group altogether.
+* Before 2026-10-25 the command shared the LAUNCHING tool's group and only the one child was signalled.
+* On a terminal the command's group takes the foreground like a shell job (reads, ^C and ^Z work as before).
+* If the command exits leaving processes in its group, the wrapper says so (the lock is released all the same).
+
 WHY. On 2026-09-30 an agent wrapped the M5 gate harness's GPU run (``main.rust_core_m5 gates … --gpu``,
 deleted in deletion pass U3) in ``flock ~/.claude/jobs/gpu.lock``. The harness took that same lock itself around its GPU pytest, and a
 ``flock`` on a NEW open of the file is a different lock owner, so the inner flock waited 15 min at 0%
@@ -57,8 +71,7 @@ from __future__ import annotations
 import contextlib
 import fcntl
 import os
-import signal
-import subprocess
+import shlex
 import sys
 import threading
 import time
@@ -68,6 +81,7 @@ from typing import Callable, Iterator, List, Mapping, Optional, Sequence, Union
 from utils import gpu_lease as L
 from utils import procfs
 from utils.gpu_lease import GpuBusy, GpuLeased, GpuUnavailable  # noqa: F401  (re-exported: the typed refusals)
+from utils.procgroup import group_members, run_in_own_group
 
 GPU_LOCK_ENV = "GEN3AI_GPU_LOCK"
 HELD_ENV = "GEN3AI_GPU_LOCK_HELD"
@@ -296,18 +310,32 @@ def gpu_lock(path: Optional[PathLike] = None, *, wait: bool = False, report_ever
 
 
 def run_under_lock(cmd: Sequence[str], **kw) -> int:
-    """Run ``cmd`` as a CHILD while this process holds the lock (so the lock dies with this process,
-    never with a daemonised grandchild); SIGINT/SIGTERM/SIGHUP are forwarded. Returns the child's exit
-    code, or 128+N when a signal killed it."""
-    with gpu_lock(**kw):
-        child = subprocess.Popen(list(cmd))
-        fwd = {s: signal.signal(s, lambda n, _f: child.send_signal(n)) for s in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP)}
+    """Run ``cmd`` as a CHILD, the LEADER of a process group of its own, while this process holds the lock (so the
+    lock dies with this process, never with a daemonised grandchild); SIGINT/SIGTERM/SIGHUP are forwarded to the
+    whole group. The group id is logged, recorded (``<lock>.jobs/``) and shown by ``--status``: a preempt is
+    ``kill -- -<pgid>``, never the wrapper's pid (module docs). Returns the child's exit code, or 128+N when a
+    signal killed it."""
+    log = kw.get("log", _stderr)
+    lock = Path(kw["path"]) if kw.get("path") is not None else lock_path()
+    argv = list(cmd)
+    job: dict = {}
+    with gpu_lock(**kw) as holder:
+        def started(pgid: int) -> None:
+            job["pgid"] = pgid
+            log(f"[gpu_lock] running {shlex.join(argv)[:160]!r} as process group {pgid} (wrapper pid {os.getpid()}): "
+                f"PREEMPT = kill -TERM -- -{pgid} (-KILL to force), never the wrapper's pid")
+            job["record"] = L.write_job(lock, {"pgid": pgid, "holder_pid": holder, "cmd": shlex.join(argv)})
+
         try:
-            rc = child.wait()
+            rc = run_in_own_group(argv, on_start=started)
         finally:
-            for s, h in fwd.items():
-                signal.signal(s, h)
-    return 128 - rc if rc < 0 else rc
+            L.remove_job(job.get("record"))
+    left = group_members(job["pgid"]) if "pgid" in job else []
+    if left:
+        log(f"[gpu_lock] the command exited rc {rc} but its process group {job['pgid']} still has "
+            f"{len(left)} live process(es) (pids {', '.join(str(p.pid) for p in left[:8])}); the lock is "
+            f"released. PREEMPT = kill -TERM -- -{job['pgid']}")
+    return rc
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:

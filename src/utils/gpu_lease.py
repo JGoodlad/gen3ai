@@ -5,7 +5,9 @@ USAGE
         # --watch-pid N must be ALIVE after a ~1 s settle (the long-lived launcher, NOT a `nohup setsid ... &` wrapper): else exit 2
         # stdout:  export GEN3AI_GPU_LEASE_TOKEN=<token>      (stderr carries the human line)
         # held by someone else or by a one-off job: exits 6 / 5 AT ONCE naming the holder
-    scripts/ops/gpu_lease.sh status               # who holds the GPU now (lease or one-off), stale leases cleared
+    scripts/ops/gpu_lease.sh status               # who holds the GPU now (lease or one-off), stale leases cleared; one
+                                                  # `job:` line per command running under gpu_lock.sh, with its process
+                                                  # GROUP id: a preempt is `kill -TERM -- -<pgid>`, never the wrapper's pid
     scripts/ops/gpu_lease.sh release              # idempotent; needs the token (env) — or --force (orchestrator)
     # then every GPU command, in a shell that has the token (an agent's Bash tool does NOT keep exports
     # across calls: put GEN3AI_GPU_LEASE_TOKEN=... in front of the call, or --token-file F once and
@@ -127,6 +129,83 @@ def lease_file(lock: object) -> Path:
 
 def _mu_file(lock: object) -> Path:
     return Path(str(lock) + ".lease.mu")
+
+
+# ---------------------------------------------------------------------------------- the running jobs
+# One record per live ``utils.gpu_lock`` WRAPPER that is running a command (flock holder or lease pass-through): the
+# command's PROCESS GROUP id, which is what a preempt signals (``kill -TERM -- -<pgid>``, never the wrapper's pid).
+# ``<lock>.jobs/<wrapper pid>.json``; a record whose wrapper is gone (SIGKILLed: it cannot clean up) is dropped on read.
+
+def jobs_dir(lock: object) -> Path:
+    return Path(str(lock) + ".jobs")
+
+
+def write_job(lock: object, rec: dict) -> Optional[Path]:
+    """Record the running job of THIS process (adds the wrapper's pid, start ticks and the start time). ``None``
+    when it could not be written: a record is information, never a reason to fail the job."""
+    me = os.getpid()
+    st = procfs.read_stat(me)
+    full = {"wrapper_pid": me, "wrapper_start_ticks": st.starttime if st else -1, "started_epoch": time.time(), **rec}
+    d = jobs_dir(lock)
+    path = d / f"{me}.json"
+    try:
+        d.mkdir(parents=True, exist_ok=True)
+        tmp = d / f".{me}.tmp"
+        tmp.write_text(json.dumps(full, sort_keys=True))
+        os.replace(tmp, path)
+    except OSError:
+        return None
+    return path
+
+
+def remove_job(path: Optional[Path]) -> None:
+    if path is not None:
+        try:
+            path.unlink()
+        except OSError:
+            pass
+
+
+def live_jobs(lock: object) -> List[dict]:
+    """The jobs now running under ``lock``: one record per LIVE wrapper (same pid AND start time), oldest first."""
+    out: List[dict] = []
+    d = jobs_dir(lock)
+    try:
+        names = sorted(n for n in os.listdir(d) if n.endswith(".json") and not n.startswith("."))
+    except OSError:
+        return out
+    for n in names:
+        try:
+            rec = json.loads((d / n).read_text())
+            st = procfs.read_stat(int(rec["wrapper_pid"]))
+            alive = st is not None and st.starttime == rec["wrapper_start_ticks"] and st.state != "Z"
+        except (OSError, ValueError, KeyError, TypeError):
+            continue
+        if alive:
+            out.append(rec)
+        else:
+            remove_job(d / n)
+    return sorted(out, key=lambda r: r.get("started_epoch", 0.0))
+
+
+def nested_groups(pgid: int, procs: "Optional[dict]" = None) -> List[int]:
+    """The process groups INSIDE a job's group: those of the descendants of the group's members that made a group of
+    their own (a ``timeout``, a nested ``gpu_lock.sh``, a job-control shell). A SIGKILL of ``-<pgid>`` does not reach
+    them (a SIGTERM is forwarded on by those wrappers)."""
+    procs = procfs.snapshot() if procs is None else procs
+    kids = procfs.children_map(procs)
+    found = {procs[d].pgrp for p in procs.values() if p.pgrp == pgid for d in procfs.descendants(p.pid, kids) if d in procs}
+    return sorted(g for g in found if g != pgid)
+
+
+def describe_job(rec: dict, procs: "Optional[dict]" = None) -> str:
+    pg = rec.get("pgid")
+    since = time.strftime("%Y-%m-%dT%H:%M:%S%z", time.localtime(float(rec.get("started_epoch", 0.0))))
+    nested = nested_groups(int(pg), procs) if isinstance(pg, int) else []
+    more = (f"; groups inside it, which a SIGKILL of -{pg} misses: {', '.join('-' + str(g) for g in nested)}"
+            if nested else "")
+    return (f"process group {pg} (gpu_lock wrapper pid {rec.get('wrapper_pid')}, since {since}): "
+            f"{str(rec.get('cmd', ''))[:120]!r} - PREEMPT = kill -TERM -- -{pg}, never the wrapper's pid{more}")
 
 
 def token_hash(token: str) -> str:
@@ -395,14 +474,15 @@ def status(lock: object) -> str:
     cleared = clear_stale(lock)
     lease = read_lease(lock)
     head = "[a stale lease record was cleared]\n" if cleared else ""
+    jobs = "".join("\n  job: " + describe_job(j) for j in live_jobs(lock))
     if lease is not None:
-        return head + f"LEASED: {lease.describe()}"
+        return head + f"LEASED: {lease.describe()}" + jobs
     key = procfs.file_key(str(lock))
     hs: List[int] = procfs.holders(key) if key else []
     if hs:
         return head + f"BUSY (one-off hold, no lease): {lock} held by " + ", ".join(
-            f"pid {h} ({procfs.cmdline(h)[:160] or 'gone'!r})" for h in hs)
-    return head + f"FREE: {lock} (no lease, no holder)"
+            f"pid {h} ({procfs.cmdline(h)[:160] or 'gone'!r})" for h in hs) + jobs
+    return head + f"FREE: {lock} (no lease, no holder)" + jobs
 
 
 # ------------------------------------------------------------------------------------------- CLI
