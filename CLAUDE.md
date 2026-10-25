@@ -139,7 +139,7 @@ Full chapter: [`designs/ops/testing.md`](designs/ops/testing.md). Prefix each co
 
 - **Cut tiers on `slow`, never `-m "not integration and not e2e"`.** A tier is declared by marker, never inferred
   from a filename.
-- **Seventeen static gates** run in every tier (`python -m utils.static_gates` lists them; the table with every
+- **Eighteen static gates** run in every tier (`python -m utils.static_gates` lists them; the table with every
   opt-out is `docs/DEVELOPING.md`); a missing tool FAILS. Their allowlists are empty: fix the code (decompose a file
   over 2,000 lines, fix a vacuous stub at the source), never add an entry.
 - A deselected `slow` test cannot fail the routine gate, so the slow tier records its verdicts in

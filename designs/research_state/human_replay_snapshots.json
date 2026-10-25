@@ -1,9 +1,11 @@
 {
- "schema": "gen3_human_replay_snapshots_v1",
- "doc": "designs/endstate/human_data_architecture.md §3",
+ "schema": "gen3_human_replay_snapshots_v2",
+ "doc": "designs/endstate/human_data_architecture.md §5 (the snapshot -> rowset -> model chain); pinned by src/human_data_doc_gate_test.py",
  "store": "~/gen3ai_archive/human_replay_snapshots/ (<id>.tsv.gz: relative path, sha256, bytes per log; <id>.json)",
+ "durable_store": "~/gen3ai_archive/human_snapshots/<id>/ (logs.tar.zst + a copy of the manifest + ARCHIVE.json; the account-hash salt and name map beside them, never in the repo)",
  "corpus": "<main checkout>/replays/showdown/gen3ou",
- "producer": "designs/research_state/measurements/human_replay_quality_2026-10-25/hrq.py snapshot",
+ "producer": "designs/research_state/measurements/human_replay_quality_2026-10-25/hrq.py snapshot | archive",
+ "status_values": "reference (at most one) | candidate (at most one) | measurement | retired",
  "snapshots": {
   "hr_spec_v1": {
    "population": "spectator",
@@ -11,20 +13,77 @@
    "rule": "every path of replays/showdown/gen3ou/SPECTATOR_MANIFEST_2026-09-23.txt",
    "files": 376410,
    "bytes": 3488238306,
-   "dates": ["2026-05-18", "2026-09-23"],
-   "splits": {"train": "dates <= 2026-09-20", "held_out": "2026-09-21..2026-09-23 (X50's; read-only for evaluation)"},
+   "dates": [
+    "2026-05-18",
+    "2026-09-23"
+   ],
+   "splits": {
+    "train": "dates <= 2026-09-20",
+    "held_out": "2026-09-21..2026-09-23 (X50's; read-only for evaluation)"
+   },
    "manifest_sha256": "e7d491e7f7a1b98093360ece7929eca0d2880c0ffc5706244edee4700935f3b1",
-   "frozen_since": "2026-10-25 (the X50 reads of 2026-10-20..24 ran on exactly these paths)"
+   "frozen_since": "2026-10-25 (the X50 reads of 2026-10-20..24 ran on exactly these paths)",
+   "status": "reference",
+   "locations": {
+    "original": "<main checkout>/replays/showdown/gen3ou (gitignored; only ever read)",
+    "durable": "~/gen3ai_archive/human_snapshots/hr_spec_v1/logs.tar.zst"
+   },
+   "durable": {
+    "archive": "~/gen3ai_archive/human_snapshots/hr_spec_v1/logs.tar.zst",
+    "archive_sha256": "315a9d1b13a7423deb1fe863416dc02af3467e52fc38e55275db63271731f09c",
+    "archive_bytes": 297057181,
+    "members_verified": 376410,
+    "verified_at": "2026-10-25T19:46:54+00:00"
+   },
+   "drift_reference": {
+    "meter": "species-usage TVD of full-six rated sides; accounts split into halves by a keyed hash, 20 splits; WITHIN = TVD(A_m, B_m); EXCESS = CROSS(m, m+1) - mean WITHIN (hrq.py drift_by_account)",
+    "within_month_mean": [
+     0.047,
+     0.064
+    ],
+    "excess_mean_per_month": [
+     0.0046,
+     0.0108
+    ],
+    "excess_share_positive": [
+     0.95,
+     1.0
+    ],
+    "alarm": {
+     "excess_mean_above": 0.016,
+     "every_split_positive": true,
+     "mean_rating_shift_elo": 50
+    },
+    "superseded": "the side-level split-half floor 0.009 (ignores repeat players, REVIEW A m1)",
+    "source": "designs/research_state/measurements/human_replay_quality_2026-10-25/results/results.json drift.by_account"
+   },
+   "actor_side": "public",
+   "opp_side": "public"
   },
   "hr_arch_2026-10-24": {
    "population": "archive",
    "source_class": "(a) uploaded / archived replays (SKEWED vs the spectator stream, fd7f4624)",
-   "rule": "every .log under a date folder <= 2026-10-24 that is NOT in the spectator manifest, as on disk 2026-10-25",
+   "rule": "the manifest IS the definition (16,490 paths): the .logs under date folders <= 2026-10-24 that are NOT in the spectator manifest, as on disk 2026-10-25 (late uploads land in old folders, so the folder rule alone is not reproducible)",
    "files": 16490,
    "bytes": 206499219,
-   "dates": ["2026-06-16", "2026-10-24"],
+   "dates": [
+    "2026-06-16",
+    "2026-10-24"
+   ],
    "manifest_sha256": "ad940108978dd6a52a72cf2d637cc108c652d3eaa5c673346e8351c0f1f2f7a2",
-   "frozen_since": "2026-10-25"
+   "frozen_since": "2026-10-25",
+   "status": "measurement",
+   "locations": {
+    "original": "<main checkout>/replays/showdown/gen3ou (gitignored; only ever read)",
+    "durable": null
+   },
+   "durable": null,
+   "actor_side": "public",
+   "opp_side": "public"
   }
- }
+ },
+ "rowsets": {},
+ "models": {},
+ "rowsets_schema": "<snapshot>.r<n>: {snapshot, filter_spec, panel_exclusion_set (the held-out panels it excluded), rows_manifest_sha256, c_game_commit, extraction_commit, layout_hash, status}; a new held-out panel retires it",
+ "models_schema": "hom_<rowset>: {rowset, checkpoint_sha256, recipe, status}"
 }

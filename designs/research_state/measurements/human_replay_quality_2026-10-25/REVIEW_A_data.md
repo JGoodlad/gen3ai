@@ -212,8 +212,9 @@ teaches H-BC, the HOM and HB0 that a sleeping mon is switched out 2.1× as often
   human Showdown ladder"; "we have become a lot more cautious about laddering".
 - Its public eval agents `PastaMittens` (the Kakuna router family) and `Exeggcute` can be run by anyone, under any
   name.
-- The card itself found `ExeggcuteOrder67`, and a 24-hour fleet of generated names (GraniteFerret, CobaltMarten,
-  TidalBrindle, Sablecurrent, QuolarkPrime).
+- The card itself found an account named like a Metamon public agent (`acct_9f2ef7808db6`), and a 24-hour fleet of
+  generated names (`acct_64c8a8570c27`, `acct_bd194687c6bd`, `acct_5aed467f14fc`, `acct_cc4b77376004`,
+  `acct_b1887901ed8f`). (Account names replaced by the card's salted ids in the 2026-10-25 revision, REVIEW C F13.)
 - The rule flags by name, volume (≥ 100 games a day) or hours (≥ 20).
   - 31 unflagged accounts have ≥ 100 games, zero chat, and ≥ 50 games or ≥ 14 active hours in one day. They hold
     1.3 % of ≥ 1500 TRAIN sides (`A_zero_chat_heavy_unflagged_*`).

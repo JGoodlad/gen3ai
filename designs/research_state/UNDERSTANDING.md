@@ -1842,18 +1842,21 @@ not read. [SIGNIFICANT on the registered contrasts · one checkpoint · ledger 2
 *X50 R0*, 2026-10-24 *X50 R-b1*, *X50 R-b2* · `measurements/x50_r1_intent_read_2026-10-20/`, `measurements/x50_r1b_r0_2026-10-23/`,
 `measurements/x50_r1b_hom_2026-10-23/`]
 
-**The data card (2026-10-25; the owner's grant lets human replays train the policy as a toggleable lever, off by
-default).** On the frozen spectator snapshot `hr_spec_v1` (376,410 ladder logs, 05-18 → 09-23; 0 parse errors, one rule
-set, 99.39 % of seats completed): the actors rated ≥ 1500 give 1.80M informative rows; about 6 % of sides belong to
-rule-flagged bot accounts (one 24-hour fleet among them); about half of all games end in a forfeit at every rating.
-At least 15.9 % of ≥ 1500 human sides sit in the region our unfamiliar panels occupy (≤ 2 mons fitting any pool team's
-sets; self-play never goes there), and humans pilot cores near most heldout72 and forum72 teams, so the panel
-exclusion a training use needs removes the best-covered part. **Human choices are equally learnable everywhere, and P\*
-predicts them no worse on unfamiliar teams than on pool-like ones** (1.762 vs 1.738 nats): no offline evidence that
-human labels carry the unfamiliar-team skill goal (b) lacks; the HOM against Kakuna (X59, CPU) is the planned test.
-The ladder's species mix drifts ≈ 0.04 TVD a month (4–5× the sampling floor) while its distance to our pool and panels
-stays flat. [MEASURED · DESCRIPTIVE, post hoc on R-b1's forwards · `measurements/human_replay_quality_2026-10-25/`;
-the architecture `../endstate/human_data_architecture.md`, the plan `../endstate/design_human_replay_lever.md`, both DRAFT]
+**The data card (2026-10-25; revised after three adversarial reviews; the owner's grant lets human replays train the
+policy as a toggleable lever, off by default).** On the frozen spectator snapshot `hr_spec_v1` (376,410 ladder logs,
+05-18 → 09-23; 0 parse errors, one rule set, 99.39 % of seats completed; now re-hashed against its manifest at every
+extraction and copied durably): the actors rated ≥ 1500 give 1.80M informative rows; about 6 % of sides belong to
+rule-flagged bot accounts; about half of all games end in a forfeit at every rating. At least 15.9 % of full-six
+≥ 1500 human sides sit in the region our unfamiliar panels occupy, but a 3-set core of a held-out panel team sits in
+most ≥ 1500 battles, so keeping the panels unfamiliar removes ≈ 71 % of them. **Human choices are learnable, and not
+only by account memory:** on held-out accounts that never played on the train dates the HOM beats P\* by 0.503 nats
+[0.467, 0.542] (0.605 on seen accounts). **Whether human labels carry the unfamiliar-team skill goal (b) lacks is
+UNKNOWN:** the familiarity proxy (P\*'s NLL by team familiarity; full-six sides +0.064 [−0.016, +0.149] nats) has no
+prediction under that hypothesis, so it is uninformative, and the matched-student contest X59-S is the planned test.
+The ladder's species mix drifts slowly: beyond an account-disjoint floor, consecutive months differ by an excess of
+0.005–0.011 TVD, and its distance to our pool and panels stays flat. [MEASURED · DESCRIPTIVE, post hoc on R-b1's
+forwards · `measurements/human_replay_quality_2026-10-25/` (+ `RESPONSE.md`); the architecture
+`../endstate/human_data_architecture.md`, the plan `../endstate/design_human_replay_lever.md`, both REVISED DRAFT]
 
 ### 4.9 Toy depth 2 → 4 at the plateau: UNDECIDED, Δ̂ ≤ 0, ended at look 1 (X47, 2026-10-21)
 

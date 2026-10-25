@@ -135,7 +135,7 @@ golden test rode `main` red three separate times.
 
 ### The static gates
 
-**Seventeen static gates run inside the suite** (there is no CI on this box, so a check outside the
+**Eighteen static gates run inside the suite** (there is no CI on this box, so a check outside the
 suite is a check that rots). All declare the `static` tier, so they run in every tier, and all are
 ~free warm. A missing linter **fails** rather than skips: a linter that silently opts out reads
 exactly like one that found nothing.
@@ -149,6 +149,7 @@ exactly like one that found nothing.
 | `src/test_stub_vacuity_gate_test.py` | every `monkeypatch.setattr` / `patch` target is a symbol the code under test actually reads; a stub that stubs nothing fails | `GEN3AI_SKIP_STUB_GATE=1` (the scan memoises per-file facts by content hash in `~/.cache/gen3ai/stub_vacuity/`; `GEN3AI_STUB_NO_CACHE=1` turns that off) |
 | `src/slow_tier_status_gate_test.py` | the last recorded verdict of every `slow` test; a recorded failure fails the routine gate that deselected it | `GEN3AI_SKIP_SLOW_STATUS_GATE=1` |
 | `src/mode_flag_doc_gate_test.py` | every mode-flag value `designs/ARCHITECTURE.md` states in prose equals `designs/production_config.json` | `GEN3AI_SKIP_MODE_FLAG_DOC_GATE=1` |
+| `src/human_data_doc_gate_test.py` | `designs/endstate/human_data_architecture.md`'s STATUS box and snapshot table equal the snapshot registry and the data card's `results.json`; the switch reads NOT BUILT while `agents.info_levers.human_data` does not exist (and `designs/deleted_flags.md` lists `--human-data` as PROPOSED), the production mirror has no `human_data` key until then and resolves `off` after; every live rowset excluded the current held-out panels | `GEN3AI_SKIP_HUMAN_DATA_DOC_GATE=1` |
 | `src/recipe_doc_gate_test.py` | every training-recipe value `designs/endstate/design_learner_recipe.md` states equals the `recipe.fresh` / `recipe.fork` blocks of `designs/production_config.json` | `GEN3AI_SKIP_RECIPE_DOC_GATE=1` |
 | `src/trace_summary_reader_gate_test.py` | no module but `main/prober/core_trace.py` opens an eval-trace `*_summary.json`; every reader goes through its loaders | `GEN3AI_SKIP_SUMMARY_READER_GATE=1` |
 | `src/ledger_index_gate_test.py` | `designs/research_state/ledger_index.md` matches what `python -m main.ledger_index` renders | `GEN3AI_SKIP_LEDGER_INDEX_GATE=1` |

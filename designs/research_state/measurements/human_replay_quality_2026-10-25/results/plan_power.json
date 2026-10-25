@@ -1,0 +1,285 @@
+{
+ "seed": 20261026,
+ "x59s": {
+  "U games/student=1200 delta=0pp base=0.30": {
+   "HUMAN_BETTER": 0.025,
+   "OWN_BETTER": 0.0251,
+   "HUMAN_BETTER_replicated": 0.001,
+   "halfwidth_pp": 3.66
+  },
+  "U games/student=1200 delta=3pp base=0.30": {
+   "HUMAN_BETTER": 0.355,
+   "OWN_BETTER": 0.0002,
+   "HUMAN_BETTER_replicated": 0.125,
+   "halfwidth_pp": 3.71
+  },
+  "U games/student=1200 delta=4pp base=0.30": {
+   "HUMAN_BETTER": 0.557,
+   "OWN_BETTER": 0.0,
+   "HUMAN_BETTER_replicated": 0.311,
+   "halfwidth_pp": 3.73
+  },
+  "U games/student=1200 delta=5pp base=0.30": {
+   "HUMAN_BETTER": 0.746,
+   "OWN_BETTER": 0.0,
+   "HUMAN_BETTER_replicated": 0.556,
+   "halfwidth_pp": 3.74
+  },
+  "MDE80_pp at U games/student=1200 (p=0.5, worst case)": 5.72,
+  "U games/student=2400 delta=0pp base=0.30": {
+   "HUMAN_BETTER": 0.025,
+   "OWN_BETTER": 0.0249,
+   "HUMAN_BETTER_replicated": 0.001,
+   "halfwidth_pp": 2.59
+  },
+  "U games/student=2400 delta=3pp base=0.30": {
+   "HUMAN_BETTER": 0.611,
+   "OWN_BETTER": 0.0,
+   "HUMAN_BETTER_replicated": 0.373,
+   "halfwidth_pp": 2.63
+  },
+  "U games/student=2400 delta=4pp base=0.30": {
+   "HUMAN_BETTER": 0.844,
+   "OWN_BETTER": 0.0,
+   "HUMAN_BETTER_replicated": 0.713,
+   "halfwidth_pp": 2.64
+  },
+  "U games/student=2400 delta=5pp base=0.30": {
+   "HUMAN_BETTER": 0.96,
+   "OWN_BETTER": 0.0,
+   "HUMAN_BETTER_replicated": 0.92,
+   "halfwidth_pp": 2.64
+  },
+  "MDE80_pp at U games/student=2400 (p=0.5, worst case)": 4.04,
+  "U games/student=3600 delta=0pp base=0.30": {
+   "HUMAN_BETTER": 0.025,
+   "OWN_BETTER": 0.0248,
+   "HUMAN_BETTER_replicated": 0.001,
+   "halfwidth_pp": 2.12
+  },
+  "U games/student=3600 delta=3pp base=0.30": {
+   "HUMAN_BETTER": 0.782,
+   "OWN_BETTER": 0.0,
+   "HUMAN_BETTER_replicated": 0.611,
+   "halfwidth_pp": 2.14
+  },
+  "U games/student=3600 delta=4pp base=0.30": {
+   "HUMAN_BETTER": 0.954,
+   "OWN_BETTER": 0.0,
+   "HUMAN_BETTER_replicated": 0.91,
+   "halfwidth_pp": 2.15
+  },
+  "U games/student=3600 delta=5pp base=0.30": {
+   "HUMAN_BETTER": 0.995,
+   "OWN_BETTER": 0.0,
+   "HUMAN_BETTER_replicated": 0.99,
+   "halfwidth_pp": 2.16
+  },
+  "MDE80_pp at U games/student=3600 (p=0.5, worst case)": 3.3,
+  "in-house S-H vs S-P half-width (pp) at 2,000 / 4,000 / 8,000 games per panel": [
+   2.19,
+   1.55,
+   1.1
+  ]
+ },
+ "x60_fixed": {
+  "games/panel/seed=420 seed_sd=0.0pp dF=0.0 dP72=0.0": {
+   "GAIN": 0.03,
+   "NULL": 0.292,
+   "LOSS": 0.019,
+   "UNDECIDED": 0.659,
+   "halfwidth_look2_pp": 2.14
+  },
+  "games/panel/seed=420 seed_sd=0.0pp dF=2.0 dP72=2.0": {
+   "GAIN": 0.429,
+   "NULL": 0.097,
+   "LOSS": 0.0,
+   "UNDECIDED": 0.474,
+   "halfwidth_look2_pp": 2.14
+  },
+  "games/panel/seed=420 seed_sd=0.0pp dF=2.5 dP72=2.5": {
+   "GAIN": 0.604,
+   "NULL": 0.049,
+   "LOSS": 0.0,
+   "UNDECIDED": 0.347,
+   "halfwidth_look2_pp": 2.14
+  },
+  "games/panel/seed=420 seed_sd=0.0pp dF=4.0 dP72=0.0": {
+   "GAIN": 0.362,
+   "NULL": 0.099,
+   "LOSS": 0.0,
+   "UNDECIDED": 0.538,
+   "halfwidth_look2_pp": 2.14
+  },
+  "games/panel/seed=420 seed_sd=0.0pp dF=3.0 dP72=1.0": {
+   "GAIN": 0.416,
+   "NULL": 0.097,
+   "LOSS": 0.0,
+   "UNDECIDED": 0.486,
+   "halfwidth_look2_pp": 2.14
+  },
+  "games/panel/seed=420 seed_sd=2.7pp dF=0.0 dP72=0.0": {
+   "GAIN": 0.076,
+   "NULL": 0.026,
+   "LOSS": 0.051,
+   "UNDECIDED": 0.847,
+   "halfwidth_look2_pp": 3.81
+  },
+  "games/panel/seed=420 seed_sd=2.7pp dF=2.0 dP72=2.0": {
+   "GAIN": 0.268,
+   "NULL": 0.017,
+   "LOSS": 0.01,
+   "UNDECIDED": 0.705,
+   "halfwidth_look2_pp": 3.82
+  },
+  "games/panel/seed=420 seed_sd=2.7pp dF=2.5 dP72=2.5": {
+   "GAIN": 0.339,
+   "NULL": 0.014,
+   "LOSS": 0.007,
+   "UNDECIDED": 0.64,
+   "halfwidth_look2_pp": 3.81
+  },
+  "games/panel/seed=420 seed_sd=2.7pp dF=4.0 dP72=0.0": {
+   "GAIN": 0.256,
+   "NULL": 0.017,
+   "LOSS": 0.01,
+   "UNDECIDED": 0.717,
+   "halfwidth_look2_pp": 3.82
+  },
+  "games/panel/seed=420 seed_sd=2.7pp dF=3.0 dP72=1.0": {
+   "GAIN": 0.266,
+   "NULL": 0.018,
+   "LOSS": 0.01,
+   "UNDECIDED": 0.706,
+   "halfwidth_look2_pp": 3.82
+  },
+  "games/panel/seed=630 seed_sd=0.0pp dF=0.0 dP72=0.0": {
+   "GAIN": 0.03,
+   "NULL": 0.58,
+   "LOSS": 0.019,
+   "UNDECIDED": 0.372,
+   "halfwidth_look2_pp": 1.74
+  },
+  "games/panel/seed=630 seed_sd=0.0pp dF=2.0 dP72=2.0": {
+   "GAIN": 0.578,
+   "NULL": 0.189,
+   "LOSS": 0.0,
+   "UNDECIDED": 0.233,
+   "halfwidth_look2_pp": 1.74
+  },
+  "games/panel/seed=630 seed_sd=0.0pp dF=2.5 dP72=2.5": {
+   "GAIN": 0.768,
+   "NULL": 0.083,
+   "LOSS": 0.0,
+   "UNDECIDED": 0.149,
+   "halfwidth_look2_pp": 1.74
+  },
+  "games/panel/seed=630 seed_sd=0.0pp dF=4.0 dP72=0.0": {
+   "GAIN": 0.449,
+   "NULL": 0.189,
+   "LOSS": 0.0,
+   "UNDECIDED": 0.362,
+   "halfwidth_look2_pp": 1.74
+  },
+  "games/panel/seed=630 seed_sd=0.0pp dF=3.0 dP72=1.0": {
+   "GAIN": 0.557,
+   "NULL": 0.186,
+   "LOSS": 0.0,
+   "UNDECIDED": 0.257,
+   "halfwidth_look2_pp": 1.74
+  },
+  "games/panel/seed=630 seed_sd=2.7pp dF=0.0 dP72=0.0": {
+   "GAIN": 0.077,
+   "NULL": 0.046,
+   "LOSS": 0.055,
+   "UNDECIDED": 0.821,
+   "halfwidth_look2_pp": 3.63
+  },
+  "games/panel/seed=630 seed_sd=2.7pp dF=2.0 dP72=2.0": {
+   "GAIN": 0.288,
+   "NULL": 0.034,
+   "LOSS": 0.011,
+   "UNDECIDED": 0.668,
+   "halfwidth_look2_pp": 3.63
+  },
+  "games/panel/seed=630 seed_sd=2.7pp dF=2.5 dP72=2.5": {
+   "GAIN": 0.367,
+   "NULL": 0.026,
+   "LOSS": 0.007,
+   "UNDECIDED": 0.6,
+   "halfwidth_look2_pp": 3.63
+  },
+  "games/panel/seed=630 seed_sd=2.7pp dF=4.0 dP72=0.0": {
+   "GAIN": 0.276,
+   "NULL": 0.033,
+   "LOSS": 0.011,
+   "UNDECIDED": 0.679,
+   "halfwidth_look2_pp": 3.62
+  },
+  "games/panel/seed=630 seed_sd=2.7pp dF=3.0 dP72=1.0": {
+   "GAIN": 0.288,
+   "NULL": 0.032,
+   "LOSS": 0.011,
+   "UNDECIDED": 0.67,
+   "halfwidth_look2_pp": 3.62
+  },
+  "(REVIEW B frame, 3 panels, 420 games) delta=0.0pp": {
+   "GAIN": 0.031,
+   "NULL": 0.579,
+   "LOSS": 0.019,
+   "UNDECIDED": 0.371,
+   "halfwidth_look1_pp": 2.25,
+   "halfwidth_look2_pp": 1.74
+  },
+  "(REVIEW B frame, 3 panels, 420 games) delta=2.5pp": {
+   "GAIN": 0.771,
+   "NULL": 0.083,
+   "LOSS": 0.0,
+   "UNDECIDED": 0.146,
+   "halfwidth_look1_pp": 2.25,
+   "halfwidth_look2_pp": 1.74
+  }
+ },
+ "contrasts": {
+  "arm contrast on F+P72, 630 x 5 seeds, delta=0pp": {
+   "halfwidth_pp": 1.74,
+   "P(LB>0)": 0.025
+  },
+  "arm contrast on F+P72, 630 x 5 seeds, delta=2pp": {
+   "halfwidth_pp": 1.74,
+   "P(LB>0)": 0.614
+  },
+  "arm contrast on F+P72, 630 x 5 seeds, delta=3pp": {
+   "halfwidth_pp": 1.74,
+   "P(LB>0)": 0.921
+  },
+  "arm contrast on F+P72, 630 x 5 seeds, delta=4pp": {
+   "halfwidth_pp": 1.74,
+   "P(LB>0)": 0.994
+  }
+ },
+ "positive_control": {
+  "H-p ON-OFF, 420 x 5 seeds, delta=3pp": {
+   "halfwidth_pp": 3.02,
+   "P(LB>0)": 0.495
+  },
+  "H-p ON-OFF, 420 x 5 seeds, delta=5pp": {
+   "halfwidth_pp": 3.02,
+   "P(LB>0)": 0.901
+  },
+  "H-p ON-OFF, 420 x 5 seeds, delta=8pp": {
+   "halfwidth_pp": 3.02,
+   "P(LB>0)": 0.999
+  }
+ },
+ "first_reads": {
+  "P* vs human-only model: half-width (pp) at n=400, p=0.5 / p=0.7": [
+   4.9,
+   4.49
+  ],
+  "P* vs human-only model: half-width (pp) at n=1200, p=0.5 / p=0.7": [
+   2.83,
+   2.59
+  ]
+ }
+}

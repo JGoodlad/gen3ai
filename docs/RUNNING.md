@@ -130,9 +130,9 @@ Two orthogonal marker axes: capability (*what a test needs* — `integration`, `
 | **The routine gate** (before any commit) | `pytest src/ -m "not slow and not e2e" -q -n 6` | ~4.3 min (`-n 4` beside a training run) |
 | Everything (before a release/ship) | `pytest src/ -q` | ~47 min |
 
-Seventeen static gates run inside the suite, all declaring the `static` tier so they run in every tier:
+Eighteen static gates run inside the suite, all declaring the `static` tier so they run in every tier:
 mypy, ruff, file size, `CLAUDE.md` freshness, stub vacuity, slow-tier status, the `ARCHITECTURE.md`
-mode-flag mirror, the training-recipe mirror, the ledger index, the eval-trace summary readers, the
+mode-flag mirror, the training-recipe mirror, the human-data architecture mirror, the ledger index, the eval-trace summary readers, the
 enum-string comparison, the learner lifecycle, the global-RNG seeding, the strict checkpoint load, the
 eval-ledger readers, the poke-env import ratchet and the poke-env absence. (`src/packaging_gate_test.py`
 guards the import path and is not one of them.) The full table with each gate's opt-out is in

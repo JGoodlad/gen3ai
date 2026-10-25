@@ -3,7 +3,7 @@
 🚨 **ALWAYS-CURRENT (owner, 2026-09-27; `README.md` in this directory).** A decision or build that differs from this
 doc updates it in the same commit, and the Decision record at the end says what changed and why.
 
-**Status (2026-10-25): §13 adds the HUMAN-DATA levers (`--human-data`, a DRAFT design, not built). Status (2026-10-12): the SPEC, the LOG SOURCE, the SEARCH WORLD BUILDER (honest by default), the MODEL-INPUT
+**Status (2026-10-25): §13 points at the HUMAN-DATA switch (`--human-data`, PROPOSED, not built). Status (2026-10-12): the SPEC, the LOG SOURCE, the SEARCH WORLD BUILDER (honest by default), the MODEL-INPUT
 INJECTION, the GENDER PAD and the AUDIT SUITE are BUILT; consumer (a), the TRAINING OBSERVATION's `--oracle-reveal
 <spec>`, and its diagnostic-fork consent are BUILT (§6).** Owner, 2026-10-12: "I want a single dried
 out implementation for giving both search and training additional information that would not generally be available
@@ -780,25 +780,13 @@ For a decision-level score IMP (the study's: win probability per decision over t
 
 ---
 
-## 13. THE HUMAN-DATA LEVERS (DESIGN 2026-10-25, DRAFT for review; NOT BUILT)
+## 13. THE HUMAN-DATA LEVERS (PROPOSED, NOT BUILT; REVISED DRAFT 2026-10-25)
 
-The owner's 2026-10-25 grant lets human replays train the POLICY, only as a TOGGLEABLE lever, off by default. Those
-levers register HERE as a second spec family beside the reveal spec, so one place answers "what did this run get that
-plain self-play does not". Design, data card and the pre-registered A/B:
-[`design_human_replay_lever.md`](design_human_replay_lever.md).
-
-- **The spec (to build: `agents.info_levers.human_data`):** `--human-data off` (the default; what `--arch production`
-  resolves) or ONE clause `bc:<snapshot>@<coef>` (an auxiliary BC loss on human rows), `teams:<snapshot>@<share>`
-  (human ladder teams in the self-play pool), `kl:<snapshot>@<coef>` (a piKL-style KL to the HOM on self-play states)
-  or `judge:<snapshot>` (the HOM as search's opponent-choice judge; R-b2 read it HOM-NONE, so it stays off). Hash
-  `sha256("human_data_v1:" + canonical)[:16]`; a `record()` block carries the snapshot id and its manifest sha256.
-- **What it is NOT:** an information lever in this doc's sense. It reveals no hidden fact of the battle being played;
-  the observation, every prior and every input are unchanged. It changes the LOSS or the POOL. So it never combines
-  with `--oracle-reveal` in one class, and a consumer refuses a clause it does not honour by name, as §3's do.
-- **Provenance:** recorded in `model_config.json`, `metadata.json` and the immutable lineage; never inherited silently
-  by a resume; a human-data ancestor is shown by `main.lineage` and refused as a baseline without a stated reason.
-- **Snapshots:** a lever names an immutable corpus snapshot (`hr_spec_v1`: the 376,410-log spectator manifest),
-  registered in `designs/research_state/human_replay_snapshots.json`.
+The human-data switch `--human-data` is a second spec family beside the reveal spec, so one place answers "what did
+this run get that plain self-play does not". It reveals no hidden fact of the battle being played: it changes the LOSS
+or the POOL, never the observation, and never combines with `--oracle-reveal`. Its grammar, provenance, refusal rules
+and the snapshot → rowset → model chain have ONE home, [`human_data_architecture.md`](human_data_architecture.md) §6
+and §5; the plan is [`design_human_replay_lever.md`](design_human_replay_lever.md).
 
 ---
 
@@ -820,3 +808,4 @@ plain self-play does not". Design, data card and the pre-registered A/B:
 | 2026-10-19 | **Showdown's VALIDATOR in the search world builder (F2 of `design_world_sampler.md`)**: 5.2 % of the stored honest worlds held sets no player can hold (egg / event move combinations) | §7.2: every drawn set and returned world passes the pinned `TeamValidator('gen3ou')` by REJECTION (`main.value_search.world_legality`; never-seen sets redrawn with their lever coins flipped once, seen mons' unrevealed moves redrawn after the screen, gender-made and team-level failures redrawn); the TRUE team must pass or `LegalityRuleError` raises; `world_guard.check_legal` and the audit's `legality` (`showdown_invalid`) re-check; a seen mon's stale Hidden Power type FIELD dropped (`world_screen.clear_stale_hp_type`). 316-state rebuild: 0 illegal worlds, no exclusion caused by the rule. Worlds before / after are not comparable | a derived per-species combination table (a second copy of the rules); re-weighting species or spreads by their sets' legality rate | `design_world_sampler.md` §6.1 / §7 F2; `measurements/world_legality_f2_2026-10-19/` |
 | 2026-10-19 | **The damage-roll leg of seed reuse cured behind an option (F1 tier A of `design_world_sampler.md`)** | §7.5: `WorldSampler(dice="rolls")` (default `seed`) replays each damage roll on any value that prints what the searched side saw, the stream aligned, the world weighted; the speed-tie and silent-dice legs stay (tier B) | making it the default (changes every honest read); tier B now | `design_world_sampler.md` §3.3.1; `measurements/world_rolls_f1a_2026-10-19/` |
 | 2026-10-25 | **§13 ADDED: the HUMAN-DATA levers registered as a second spec family (DESIGN, DRAFT; nothing built)** (owner's grant: human replays may train the policy, toggleable, off by default) | one flag `--human-data` with ONE clause (`bc` / `teams` / `kl` / `judge`) and a snapshot id, its own hash prefix `human_data_v1`, provenance as the reveal spec's | folding human data into `--oracle-reveal` (it reveals nothing about the battle played; mixing the two would make "honest" ambiguous); one flag per lever (the complexity budget) | `design_human_replay_lever.md` |
+| 2026-10-25 | **§13 reduced to a pointer** (REVIEW C F10: the grammar, the hash prefix and the provenance rules lived in three docs and had already drifted on inheritance) | §13 keeps the boundary (no hidden fact; never with `--oracle-reveal`) and points at `human_data_architecture.md` §5–§6, which owns the grammar (`judge` dropped, rowset / model ids, fork and resume refuse without a typed clause) | restating the grammar here (a second home drifts) | `measurements/human_replay_quality_2026-10-25/RESPONSE.md` |

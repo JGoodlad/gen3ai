@@ -1,13 +1,16 @@
 """Human-replay DATA CARD (2026-10-25): is the public gen3ou replay corpus good training data, by stratum?
 
-    python hrq.py extract --cache <dir> [--workers 3]          # one jsonl.gz per date folder (resumable); text + reveals
-    python hrq.py analyze --cache <dir> --out <dir>            # the card: results.json + results.md
+    python hrq.py extract --snapshot <id> --cache <dir>        # the snapshot's MANIFEST, each log re-hashed; per date
+    python hrq.py analyze --cache <dir> --out <dir>            # the card: results.json, stamped with the snapshot ids
+    python hrq.py snapshot --population spec|arch --id <id> --out <dir>   # freeze a manifest
+    python hrq.py archive --snapshot <id>                      # the durable copy: logs.tar.zst, re-hashed after writing
 
 CPU only, read-only on the corpus (``$HRQ_CORPUS``, default the main checkout's ``replays/showdown/gen3ou``), on
 ``data/teams`` (the 719-team pool), on the registered panels (never the SEALED ``forum216b``) and on the X50 rung-1b
-archive (``$HRQ_X50``: the extraction's part JSONs / small npz keys and R-b1's cached per-row forwards). Design and
-registration: ``designs/endstate/design_human_replay_lever.md`` §2 (the thresholds below are restated there and were
-fixed before the analysis ran).
+archive (``$HRQ_X50``: the extraction's part JSONs / small npz keys and R-b1's cached per-row forwards). Design:
+``designs/endstate/design_human_replay_lever.md``. The thresholds below arrived in one commit with their results, so
+"fixed before the analysis ran" is this file's claim and cannot be checked from history (REVIEW A m7). Account names
+never reach a committed artifact: ``acct()`` salts them with ``~/gen3ai_archive/human_snapshots/salt``.
 """
 from __future__ import annotations
 
@@ -26,12 +29,25 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
 
+def _repo() -> Path:
+    from utils.paths import repo_path
+
+    return Path(repo_path())
+
+
+REPO = Path(os.environ.get("HRQ_REPO", str(_repo())))
 CORPUS = Path(os.environ.get("HRQ_CORPUS", "/home/goodlad/dev/gen3ai/replays/showdown/gen3ou"))
 X50 = Path(os.environ.get("HRQ_X50", str(Path.home() / "gen3ai_archive" / "x50_r1b")))
 MANIFEST = "SPECTATOR_MANIFEST_2026-09-23.txt"
-REPO = Path(os.environ.get("HRQ_REPO", str(Path(__file__).resolve().parents[4])))
+#: the snapshot manifests (<id>.tsv.gz: relative path, sha256, bytes) and the committed registry
+STORE = Path(os.environ.get("HRQ_SNAPSHOTS", str(Path.home() / "gen3ai_archive" / "human_replay_snapshots")))
+#: the DURABLE copies (<id>/logs.tar.zst + its manifest) and the account-hash salt (never in the repo)
+DURABLE = Path(os.environ.get("HRQ_DURABLE", str(Path.home() / "gen3ai_archive" / "human_snapshots")))
+REGISTRY = REPO / "designs" / "research_state" / "human_replay_snapshots.json"
+#: the population's header signature: every spectator log starts with it, no archive log does (REVIEW A, G_*)
+HEADER = b"|init|battle"
 
-# ---- the registered thresholds (design §2.1; fixed before `analyze` first ran) ----
+# ---- the thresholds (fixed in code before `analyze` first ran; see the docstring) ----
 STRATA = ((0, 1300, "<1300"), (1300, 1500, "1300-1499"), (1500, 1600, "1500-1599"), (1600, 1700, "1600-1699"),
           (1700, 10_000, "1700+"))
 #: a name a bot or an agent harness uses (Metamon's PAC-* / h2h-* accounts and its public ensembles; ours).
@@ -42,6 +58,7 @@ BOT_HOURS_PER_DAY = 20       # or games started in >= this many distinct clock h
 FAST_S_PER_TURN = 2.0        # a game played faster than this per turn (>= 10 turns) is machine speed on BOTH sides
 EARLY_FORFEIT_TURNS = 3      # a forfeit / timer loss at or before this turn is a walk-over
 TRAIN_LAST = "2026-09-20"    # X50's train / held-out split (held out 09-21..23)
+DRIFT_SPLITS = 20            # account-disjoint halves for the drift floor (REVIEW A m1; added at the revision)
 
 _PLAYER = re.compile(r"^\|player\|(p[12])\|([^|]*)\|([^|]*)\|(\d*)")
 _SWITCH = re.compile(r"^\|(?:switch|drag|replace)\|(p[12])[ab]?: [^|]*\|([^|,]+)")
@@ -52,6 +69,23 @@ _SKIP_BODY = ("|init|", "|title|", "|j|", "|J|", "|l|", "|L|", "|c|", "|raw|", "
 
 def toid(s: str) -> str:
     return re.sub(r"[^a-z0-9]", "", s.lower())
+
+
+_SALT: Optional[bytes] = None
+
+
+def acct(name: str, salt: Optional[bytes] = None) -> str:
+    """A public account's id in COMMITTED artifacts: a salted hash, never the name (REVIEW C F13). The salt lives only
+    in ``<DURABLE>/salt``; the name map stays beside it."""
+    global _SALT
+    if salt is None:
+        if _SALT is None:
+            sp = DURABLE / "salt"
+            if not sp.exists():
+                raise SystemExit(f"no account salt at {sp}: committed artifacts never carry account names")
+            _SALT = sp.read_text().strip().encode()
+        salt = _SALT
+    return "acct_" + hashlib.sha256(salt + b":" + toid(name).encode()).hexdigest()[:12]
 
 
 def parse(text: str) -> Optional[dict]:
@@ -168,26 +202,81 @@ def manifest_set() -> set:
     return set((CORPUS / MANIFEST).read_text().split())
 
 
+class SnapshotError(SystemExit):
+    """A snapshot whose manifest, file hash, size or header disagrees with the registry: every consumer refuses."""
+
+
+def registry_row(snap: str, registry: Path = REGISTRY) -> Dict[str, Any]:
+    reg = json.loads(Path(registry).read_text())
+    if snap not in reg["snapshots"]:
+        raise SnapshotError(f"snapshot {snap!r} is not in the registry {registry}")
+    return reg["snapshots"][snap]
+
+
+def read_manifest(snap: str, store: Path = STORE, registry: Path = REGISTRY) -> List[Tuple[str, str, int]]:
+    """The snapshot's (relative path, sha256, bytes) rows, after checking the manifest's digest against the registry
+    (REVIEW A M5: extraction reads THE MANIFEST, never a date folder)."""
+    row = registry_row(snap, registry)
+    with gzip.open(Path(store) / f"{snap}.tsv.gz", "rb") as fh:
+        body = fh.read()
+    digest = hashlib.sha256(body).hexdigest()
+    if digest != row["manifest_sha256"]:
+        raise SnapshotError(f"{snap}: manifest sha256 {digest} != registry {row['manifest_sha256']}")
+    out = []
+    for ln in body.decode().splitlines():
+        rel, sha, n = ln.split("\t")
+        out.append((rel, sha, int(n)))
+    if len(out) != row["files"]:
+        raise SnapshotError(f"{snap}: manifest rows {len(out)} != registry files {row['files']}")
+    return out
+
+
+def verify_bytes(snap: str, population: str, rel: str, sha: str, n: int, b: bytes) -> None:
+    """Refuse a log whose bytes, size or population header differ from the manifest."""
+    if len(b) != n or hashlib.sha256(b).hexdigest() != sha:
+        raise SnapshotError(f"{snap}: {rel} differs from its manifest row (size {len(b)} vs {n}, or sha256)")
+    if (population == "spectator") != b.startswith(HEADER):
+        raise SnapshotError(f"{snap}: {rel} has the wrong header signature for population {population!r}")
+
+
+def stamp(snap: str, registry: Path = REGISTRY) -> Dict[str, Any]:
+    """What every derived artefact carries: the snapshot id, its manifest digest, the extraction commit, this file."""
+    import subprocess
+
+    row = registry_row(snap, registry)
+    try:
+        commit = subprocess.run(["git", "-C", str(REPO), "rev-parse", "HEAD"], capture_output=True, text=True,
+                                check=True).stdout.strip()
+    except (OSError, subprocess.CalledProcessError):
+        commit = None
+    return {"snapshot_id": snap, "manifest_sha256": row["manifest_sha256"], "files": row["files"],
+            "extraction_commit": commit, "hrq_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest()}
+
+
+POP = {"spectator": "spec", "archive": "arch"}
+
+
 def extract_day(args) -> str:
-    date, cache, spec = args
+    """One date's logs OF THE SNAPSHOT, each re-hashed against its manifest row before it is parsed."""
+    snap, population, date, items, cache = args
     out = Path(cache) / f"{date}.jsonl.gz"
     if out.exists():
         return f"{date} cached"
     rows, errs = [], 0
-    for p in sorted((CORPUS / date).iterdir()):
-        if p.suffix != ".log":
-            continue
+    for rel, sha, n in items:
+        b = (CORPUS / rel).read_bytes()
+        verify_bytes(snap, population, rel, sha, n, b)             # refuses: never a silent substitute
+        stem = Path(rel).stem
         try:
-            rec = parse(p.read_text(errors="replace"))
+            rec = parse(b.decode(errors="replace"))
         except Exception as e:                                     # noqa: BLE001 - counted, never silent
             errs += 1
-            rows.append({"id": p.stem, "date": date, "err": f"{type(e).__name__}: {e}"[:200]})
+            rows.append({"id": stem, "date": date, "err": f"{type(e).__name__}: {e}"[:200]})
             continue
         if rec is None:
-            rows.append({"id": p.stem, "date": date, "err": "no player line"})
+            rows.append({"id": stem, "date": date, "err": "no player line"})
             continue
-        rec["id"], rec["date"] = p.stem, date
-        rec["pop"] = "spec" if f"{date}/{p.name}" in spec else "arch"
+        rec["id"], rec["date"], rec["pop"] = stem, date, POP[population]
         rows.append(rec)
     tmp = out.with_suffix(".tmp")
     with gzip.open(tmp, "wt") as f:
@@ -198,12 +287,84 @@ def extract_day(args) -> str:
 
 
 def cmd_extract(a) -> None:
-    Path(a.cache).mkdir(parents=True, exist_ok=True)
-    spec = manifest_set()
-    dates = sorted(d.name for d in CORPUS.iterdir() if d.is_dir() and re.fullmatch(r"\d{4}-\d{2}-\d{2}", d.name))
+    """``extract --snapshot <id> --cache <dir>``: the cache lives in ``<dir>/<id>/`` with a STAMP; a cached day is
+    reused only under the same stamp (REVIEW A M5: the old cache mixed in 79 logs beyond the archive snapshot)."""
+    row = registry_row(a.snapshot)
+    population = row["population"]
+    items = read_manifest(a.snapshot)
+    cache = Path(a.cache) / a.snapshot
+    cache.mkdir(parents=True, exist_ok=True)
+    st = stamp(a.snapshot)
+    sp = cache / "STAMP.json"
+    if sp.exists():
+        old = json.loads(sp.read_text())
+        if (old["snapshot_id"], old["manifest_sha256"], old["hrq_sha256"]) != (
+                st["snapshot_id"], st["manifest_sha256"], st["hrq_sha256"]):
+            raise SnapshotError(f"{cache}: cached under another stamp {old}; use a fresh --cache")
+    else:
+        sp.write_text(json.dumps(st, indent=1))
+    by_date: Dict[str, List[Tuple[str, str, int]]] = collections.defaultdict(list)
+    for it in items:
+        by_date[it[0][:10]].append(it)
     with Pool(a.workers) as pool:
-        for msg in pool.imap_unordered(extract_day, [(d, a.cache, spec) for d in dates]):
+        for msg in pool.imap_unordered(extract_day, [(a.snapshot, population, d, v, str(cache))
+                                                     for d, v in sorted(by_date.items())]):
             print(msg, flush=True)
+
+
+def cmd_archive(a) -> None:
+    """``archive --snapshot <id>``: a DURABLE copy of the snapshot's logs (REVIEW A M6), ``<DURABLE>/<id>/logs.tar.zst``
+    beside a copy of its manifest; every member re-hashed against the manifest after writing. The originals are only
+    read (never moved or deleted)."""
+    import shutil
+    import subprocess
+    import tarfile
+
+    row = registry_row(a.snapshot)
+    items = read_manifest(a.snapshot)
+    out = Path(a.out) / a.snapshot
+    out.mkdir(parents=True, exist_ok=True)
+    for f in (f"{a.snapshot}.tsv.gz", f"{a.snapshot}.json"):
+        shutil.copy2(STORE / f, out / f)
+    tar = out / "logs.tar.zst"
+    if not tar.exists():
+        lst = out / "members.txt"
+        lst.write_text("".join(rel + "\n" for rel, _, _ in items))
+        tmp = out / "logs.tar.zst.tmp"
+        with open(tmp, "wb") as fo:
+            t = subprocess.Popen(["tar", "-C", str(CORPUS), "--no-recursion", "-cf", "-", "-T", str(lst)],
+                                 stdout=subprocess.PIPE)
+            z = subprocess.run(["zstd", f"-T{a.workers}", "-12", "-q", "-c"], stdin=t.stdout, stdout=fo, check=True)
+            t.stdout.close()
+            if t.wait() != 0 or z.returncode != 0:
+                raise SnapshotError("tar | zstd failed")
+        tmp.rename(tar)
+        lst.unlink()
+    # verify: stream the archive back, re-hash every member against the manifest
+    want = {rel: (sha, n) for rel, sha, n in items}
+    seen = 0
+    d = subprocess.Popen(["zstd", "-dc", str(tar)], stdout=subprocess.PIPE)
+    with tarfile.open(fileobj=d.stdout, mode="r|") as tf:
+        for m in tf:
+            if not m.isfile():
+                continue
+            if m.name not in want:
+                raise SnapshotError(f"{tar}: member {m.name} is not in the manifest")
+            b = tf.extractfile(m).read()
+            sha, n = want.pop(m.name)
+            verify_bytes(a.snapshot, row["population"], m.name, sha, n, b)
+            seen += 1
+    if d.wait() != 0 or want:
+        raise SnapshotError(f"{tar}: {len(want)} manifest rows missing from the archive")
+    h = hashlib.sha256()
+    with open(tar, "rb") as fh:
+        for chunk in iter(lambda: fh.read(1 << 22), b""):
+            h.update(chunk)
+    rec = {"snapshot_id": a.snapshot, "manifest_sha256": row["manifest_sha256"], "members_verified": seen,
+           "archive": str(tar), "archive_sha256": h.hexdigest(), "archive_bytes": tar.stat().st_size,
+           "original": str(CORPUS), "verified_at": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")}
+    (out / "ARCHIVE.json").write_text(json.dumps(rec, indent=1))
+    print(json.dumps(rec, indent=1))
 
 
 def _sha(path: Path) -> Tuple[str, int]:
@@ -398,8 +559,10 @@ def x50_rows() -> Dict[str, Any]:
     return {"parts": len(parts), "counts": dict(counts), "by_stratum": {k: dict(v) for k, v in tot.items()}}
 
 
-def hom_join(by_path: Dict[str, dict], teams: Teams) -> Dict[str, Any]:
-    """R-b1's cached per-row NLLs (HOM, P*) joined to the acting human's battle and team (descriptive, post hoc)."""
+def hom_join(by_path: Dict[str, dict], teams: Teams, train_accounts: Optional[set] = None) -> Dict[str, Any]:
+    """R-b1's cached per-row NLLs (HOM, P*) joined to the acting human's battle and team (descriptive, post hoc).
+    ``train_accounts``: the accounts seen on the train dates, for the ACCOUNT-disjoint re-read (REVIEW A M2)."""
+    train_accounts = train_accounts or set()
     from main.x50_r1.read_r0 import _ci, joint_boot
 
     rows = collections.defaultdict(list)
@@ -428,6 +591,8 @@ def hom_join(by_path: Dict[str, dict], teams: Teams) -> Dict[str, Any]:
             rows["fam_sp"].append(fam[0])
             rows["fam_fit"].append(fam[1])
             rows["end"].append(rec["end"] if rec else "?")
+            rows["seen_acct"].append(bool(rec) and toid(rec.get("n" + s) or "") in train_accounts)
+            rows["full6"].append(bool(rec) and len(rec.get("o" + s) or []) == 6)
             rows["turns"].append(rec["turns"] if rec else -1)
             rows["cluster"].append(int(re.sub(r"\D", "", Path(key).stem)))
         rows["rv"].append(rv)
@@ -457,13 +622,58 @@ def hom_join(by_path: Dict[str, dict], teams: Teams) -> Dict[str, Any]:
         "game ends in forfeit / timer": prim & np.isin(A["end"], ["forfeit", "timer"]),
         "game played out (KO)": prim & (A["end"] == "ko"),
     }
+    unseen = prim & ~A["seen_acct"].astype(bool)
+    strata.update({
+        "acting account UNSEEN on the train dates": unseen,
+        "acting account seen on the train dates": prim & A["seen_acct"].astype(bool),
+        "full-six side, set fits <= 2": prim & A["full6"].astype(bool) & (A["fam_fit"] >= 0) & (A["fam_fit"] <= 2),
+        "full-six side, set fits >= 4": prim & A["full6"].astype(bool) & (A["fam_fit"] >= 4),
+    })
     out["strata"] = {k: cell(s) for k, s in strata.items() if s.sum() >= 200}
+
+    def diff(sa, sb, key):
+        """The DIFFERENCE of two strata's means, one joint battle-cluster bootstrap (REVIEW A M1: overlapping
+        intervals are not equivalence)."""
+        b = A["cluster"]
+        bt = joint_boot({"a": (A[key][sa], b[sa]), "b": (A[key][sb], b[sb])}, np.random.default_rng(50))
+        d = bt["a"] - bt["b"]
+        return {"mean": float(np.mean(A[key][sa]) - np.mean(A[key][sb])), "ci95": _ci(d[~np.isnan(d)])}
+    f6 = prim & A["full6"].astype(bool)
+    out["contrasts"] = {
+        "P* NLL: full-six fits <= 2 minus full-six fits >= 4":
+            diff(f6 & (A["fam_fit"] >= 0) & (A["fam_fit"] <= 2), f6 & (A["fam_fit"] >= 4), "pstar"),
+        "P* NLL: all sides fits <= 2 minus fits >= 4 (the card's original cut)":
+            diff(prim & (A["fam_fit"] >= 0) & (A["fam_fit"] <= 2), prim & (A["fam_fit"] >= 4), "pstar"),
+    }
+    dd = A["hom"] - A["pstar"]
+    A["d"] = dd
+    out["contrasts"]["HOM - P*: unseen minus seen accounts"] = diff(unseen, prim & A["seen_acct"].astype(bool), "d")
+    out["unseen_account_share_ge1500_rows"] = float(unseen.sum() / max(1, prim.sum()))
     return out
 
 
+def load_snapshots(cache: Path, snaps: List[str]) -> Tuple[List[dict], Dict[str, Any]]:
+    """Every record of the named snapshots' caches, each cache's STAMP checked against the registry and its record
+    count against the manifest (a consumer refuses a stamp the registry does not hold)."""
+    recs: List[dict] = []
+    stamps: Dict[str, Any] = {}
+    for snap in snaps:
+        row = registry_row(snap)
+        d = Path(cache) / snap
+        st = json.loads((d / "STAMP.json").read_text())
+        if st["manifest_sha256"] != row["manifest_sha256"]:
+            raise SnapshotError(f"{d}: stamp {st['manifest_sha256']} != registry {row['manifest_sha256']}")
+        got = load(d)
+        if len(got) != row["files"]:
+            raise SnapshotError(f"{d}: {len(got)} records != the snapshot's {row['files']} files (extract is partial)")
+        recs += got
+        stamps[snap] = st
+    return recs, stamps
+
+
 def cmd_analyze(a) -> None:
-    recs = load(Path(a.cache))
-    res: Dict[str, Any] = {"schema": "hrq_v1", "corpus": str(CORPUS)}
+    recs, stamps = load_snapshots(Path(a.cache), a.snapshots)
+    res: Dict[str, Any] = {"schema": "hrq_v2", "snapshots": stamps, "corpus": str(CORPUS)}
     errs = [r for r in recs if "err" in r]
     ok = [r for r in recs if "err" not in r]
     spec = [r for r in ok if r["pop"] == "spec"]
@@ -491,20 +701,26 @@ def cmd_analyze(a) -> None:
     res["accounts"] = {"n": len(per), "sides": sides, "top1_share": games[0] / sides,
                        "top10_share": sum(games[:10]) / sides, "top100_share": sum(games[:100]) / sides,
                        "games_per_account": pct(games, (50, 90, 99)),
-                       "flagged": {k: {"name": per[k]["name"], "why": v, "games": per[k]["games"],
+                       "account_ids": "salted sha256 (hrq.acct); the salt and the name map stay in ~/gen3ai_archive",
+                       "flagged": {acct(k): {"why": v, "games": per[k]["games"],
                                        "max_per_day": max(per[k]["days"].values()) if per[k]["days"] else 0,
                                        "max_hours": max((len(x) for x in per[k]["hours"].values()), default=0),
                                        "mean_rating": float(np.mean(per[k]["rat"])) if per[k]["rat"] else None,
                                        "top_team_share": (per[k]["teams"].most_common(1)[0][1] / per[k]["games"])
                                        if per[k]["teams"] else None}
                                    for k, v in sorted(flags.items(), key=lambda kv: -per[kv[0]]["games"])},
-                       "top25": [{"name": a_["name"], "games": a_["games"],
+                       "top25": [{"acct": acct(a_["name"]), "games": a_["games"],
                                   "max_per_day": max(a_["days"].values()) if a_["days"] else 0,
                                   "mean_rating": float(np.mean(a_["rat"])) if a_["rat"] else None,
                                   "top_team_share": (a_["teams"].most_common(1)[0][1] / a_["games"])
                                   if a_["teams"] else None}
                                  for a_ in sorted(per.values(), key=lambda x: -x["games"])[:25]]}
     flagged = set(flags)
+    names = {acct(per[k]["name"]): per[k]["name"]
+             for k in set(flags) | {toid(a_["name"]) for a_ in sorted(per.values(), key=lambda x: -x["games"])[:25]}}
+    nm = DURABLE / "account_names.json"                            # the archive only: never committed
+    nm.write_text(json.dumps(names, indent=1, sort_keys=True))
+    os.chmod(nm, 0o600)
     # ---- side-level table by stratum (spectator, rated)
     teams = Teams()
     side_rows = []
@@ -516,7 +732,8 @@ def cmd_analyze(a) -> None:
                               "won": r["win"] == "p" + s, "quit": r["loser_quit"] == "p" + s,
                               "bot": toid(r.get("n" + s) or "") in flagged,
                               "opp_bot": toid(r.get("n" + o) or "") in flagged,
-                              "fast": fast, "nseen": len(r["o" + s]), "m": r["m" + s], "o": r["o" + s]})
+                              "fast": fast, "nseen": len(r["o" + s]), "m": r["m" + s], "o": r["o" + s],
+                              "acct": toid(r.get("n" + s) or "")})
     by = collections.defaultdict(list)
     for x in side_rows:
         by[x["st"]].append(x)
@@ -551,7 +768,8 @@ def cmd_analyze(a) -> None:
     # ---- labels (X50 extraction), the HOM by stratum
     res["labels_x50_train"] = x50_rows()
     by_path = {f"{r['date']}/battle-gen3ou-{r['id'].split('-')[-1]}.log": r for r in spec if r["date"] > TRAIN_LAST}
-    res["hom_join"] = hom_join(by_path, teams)
+    train_accounts = {toid(r.get(k) or "") for r in spec if r["date"] <= TRAIN_LAST for k in ("n1", "n2")}
+    res["hom_join"] = hom_join(by_path, teams, train_accounts)
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
     (out / "results.json").write_text(json.dumps(res, indent=1, default=float))
@@ -603,7 +821,41 @@ def drift(teams: Teams, side_rows: List[dict], ok: List[dict]) -> Dict[str, Any]
     ix = rng.permutation(len(groups[big]))
     h = len(ix) // 2
     floor = tvd(marg([groups[big][i]["o"] for i in ix[:h]]), marg([groups[big][i]["o"] for i in ix[h:]]))
-    return {"by_month": months, "split_half_floor": {"month": big, "tvd": floor, "half_sides": h}}
+    return {"by_month": months, "split_half_floor": {"month": big, "tvd": floor, "half_sides": h,
+                                                     "note": "by SIDE: ignores repeat players (REVIEW A m1)"},
+            "by_account": drift_by_account(marg, tvd, groups)}
+
+
+def drift_by_account(marg, tvd, groups: Dict[str, List[dict]], k_splits: int = DRIFT_SPLITS) -> Dict[str, Any]:
+    """The drift read with repeat players (REVIEW A m1). Accounts are split into halves A / B by a keyed hash, K times.
+    WITHIN month m: TVD(A_m, B_m), what two account-disjoint samples of one month differ by. CROSS for consecutive
+    months: (TVD(A_m, B_m+1) + TVD(B_m, A_m+1)) / 2, account-disjoint across the months too. EXCESS = CROSS minus the
+    mean of the two months' WITHIN: the drift beyond what disjoint player sets make at the same sample size."""
+    spec = sorted(g for g in groups if g.startswith("spec") and len(groups[g]) >= 500)
+    within: Dict[str, List[float]] = collections.defaultdict(list)
+    cross: Dict[str, List[float]] = collections.defaultdict(list)
+    excess: Dict[str, List[float]] = collections.defaultdict(list)
+    for k in range(k_splits):
+        half: Dict[str, Tuple[Dict[str, float], Dict[str, float]]] = {}
+        for g in spec:
+            ab: Tuple[List[Any], List[Any]] = ([], [])
+            for x in groups[g]:
+                h = hashlib.sha256(f"{k}:{x['acct']}".encode()).digest()[0] & 1
+                ab[h].append(x["o"])
+            half[g] = (marg(ab[0]), marg(ab[1]))
+            within[g].append(tvd(*half[g]))
+        for g0, g1 in zip(spec, spec[1:]):
+            c = 0.5 * (tvd(half[g0][0], half[g1][1]) + tvd(half[g0][1], half[g1][0]))
+            key = f"{g0[5:]}->{g1[5:]}"
+            cross[key].append(c)
+            excess[key].append(c - 0.5 * (within[g0][-1] + within[g1][-1]))
+
+    def summ(v: List[float]) -> Dict[str, float]:
+        a_ = np.asarray(v)
+        return {"mean": float(a_.mean()), "min": float(a_.min()), "max": float(a_.max())}
+    return {"k_splits": k_splits, "within_month": {g[5:]: summ(v) for g, v in within.items()},
+            "cross_month": {g: summ(v) for g, v in cross.items()},
+            "excess": {g: {**summ(v), "share_positive": float(np.mean(np.asarray(v) > 0))} for g, v in excess.items()}}
 
 
 def team_distance(teams: Teams, hi: List[dict], allr: List[dict]) -> Dict[str, Any]:
@@ -673,8 +925,13 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
     e = sub.add_parser("extract")
+    e.add_argument("--snapshot", required=True, help="a registered snapshot id: its manifest is the file list")
     e.add_argument("--cache", required=True)
     e.add_argument("--workers", type=int, default=3)
+    v = sub.add_parser("archive")
+    v.add_argument("--snapshot", required=True)
+    v.add_argument("--out", default=str(DURABLE))
+    v.add_argument("--workers", type=int, default=3)
     n = sub.add_parser("snapshot")
     n.add_argument("--population", choices=("spec", "arch"), required=True)
     n.add_argument("--id", required=True)
@@ -683,9 +940,10 @@ def main(argv: Optional[List[str]] = None) -> int:
     n.add_argument("--workers", type=int, default=3)
     z = sub.add_parser("analyze")
     z.add_argument("--cache", required=True)
+    z.add_argument("--snapshots", nargs="+", default=["hr_spec_v1", "hr_arch_2026-10-24"])
     z.add_argument("--out", required=True)
     a = ap.parse_args(argv)
-    {"extract": cmd_extract, "snapshot": cmd_snapshot, "analyze": cmd_analyze}[a.cmd](a)
+    {"extract": cmd_extract, "snapshot": cmd_snapshot, "analyze": cmd_analyze, "archive": cmd_archive}[a.cmd](a)
     return 0
 
 

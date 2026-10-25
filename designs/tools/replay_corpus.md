@@ -78,5 +78,7 @@ write only under `<main>/replays/showdown/gen3ou/`, at `Nice=19`, `CPUAffinity=5
   is the archive pull.
 - **Frozen snapshots (2026-10-25):** `hr_spec_v1` (the manifest's 376,410 logs) and `hr_arch_2026-10-24` (the 16,490
   archive logs through 10-24), by per-file sha256 manifest (`designs/research_state/human_replay_snapshots.json`;
-  [`../endstate/human_data_architecture.md`](../endstate/human_data_architecture.md) §3). A result cites one of them,
-  never a date range.
+  [`../endstate/human_data_architecture.md`](../endstate/human_data_architecture.md) §5). A result cites one of them,
+  never a date range; the card's `hrq.py extract --snapshot <id>` reads the manifest and refuses a changed log.
+  `hr_spec_v1`'s bytes also have a durable, verified copy outside this gitignored tree
+  (`~/gen3ai_archive/human_snapshots/hr_spec_v1/logs.tar.zst`).

@@ -28597,3 +28597,34 @@ units.
 **Evidence:** `research_state/measurements/x26c_continuation_2026-10-25/` (`PREREG.md`, `README.md`, `finals.py`,
 `s_read.py`, `verdict.py`, `read/`); raw units and ledgers in `~/gen3ai_archive/x26c_read/`. See `UNDERSTANDING.md`
 (the Kakuna block) and `design_beat_metamon_path.md` §0 / §3 / §9.
+
+### 2026-10-25 · MEASUREMENT · **THE HUMAN-REPLAY DATA CARD REVISED after reviews A / B / C (DESCRIPTIVE): learnability is mostly not account memory (the HOM beats P\* by 0.503 nats [0.467, 0.542] on accounts never seen on the train dates, 0.605 on seen ones); the familiarity proxy is UNINFORMATIVE (full-six +0.064 [−0.016, +0.149]); ladder drift beyond an account-disjoint floor is 0.005–0.011 TVD a month, not ≈ 0.04**
+
+**Question.** Do the card's claims survive the three adversarial reviews' checks that need no new data: an
+account-disjoint held-out read (REVIEW A M2), a full-six familiarity contrast with an interval on the difference
+(A M1), and a drift floor that respects repeat players (A m1)? And can every number be tied to a frozen snapshot (A M5)?
+
+**Design.** `hrq.py extract --snapshot <id>` now reads each snapshot's manifest, checks its digest against the registry,
+re-hashes every log and checks the population header (refusing on any mismatch); `analyze` re-ran on the stamped caches
+of `hr_spec_v1` and `hr_arch_2026-10-24`. The held-out rows (09-21..23, actor ≥ 1500, R-b1's cached forwards) were cut
+by whether the acting account played on the train dates; contrasts use one joint battle-cluster bootstrap (2,000
+resamples, seed 50). Drift: 20 keyed account splits; WITHIN = TVD of two account-disjoint halves of one month; EXCESS =
+the same across consecutive months minus WITHIN.
+
+**Result.**
+- Unseen accounts (22.5 % of rows): HOM − P\* **−0.503 [−0.542, −0.467]**; seen −0.605 [−0.624, −0.586]; difference
+  +0.102 [+0.060, +0.143]: ≈ 17 % of the HOM's gain is account memory.
+- P\* NLL, full-six sides, fits ≤ 2 minus fits ≥ 4: **+0.064 [−0.016, +0.149]** (all sides: +0.024 [−0.043, +0.097]).
+  No bar was registered and the metric has no prediction under A-1: uninformative, not negative.
+- Drift: WITHIN 0.047–0.064 by month; EXCESS +0.009, +0.011, +0.005, +0.010 for 05→06 … 08→09, positive in 20, 20, 19,
+  20 of 20 splits. The side-level floor 0.009 understated the noise; real drift is ≈ 4–8× smaller than the raw
+  month-to-month TVD (0.038–0.049).
+- Manifests: 376,410 + 16,490 logs re-hashed, 0 mismatches. Every spectator number is unchanged; the archive's
+  2026-10 row lost the 79 logs beyond its manifest (9,548 → 9,462 sides).
+- `hr_spec_v1` has a durable copy, every member re-verified: `~/gen3ai_archive/human_snapshots/hr_spec_v1/logs.tar.zst`
+  (297 MB, sha256 `315a9d1b…f09c`). Committed artifacts carry salted account ids from here on.
+
+**Evidence:** `research_state/measurements/human_replay_quality_2026-10-25/` (README, `RESPONSE.md`, `hrq.py`,
+`results/results.json`, `plan_power.py`, `results/plan_power.json`); caches under
+`~/gen3ai_archive/human_replay_quality/cache_v2/`. Design: `endstate/human_data_architecture.md` and
+`endstate/design_human_replay_lever.md` (both REVISED DRAFT). See `UNDERSTANDING.md` §4.8.
