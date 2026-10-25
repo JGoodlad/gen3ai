@@ -124,6 +124,10 @@ disagree, **the ledger wins and the view is wrong** — fix the view.
   literature says search under hidden information needs (PIMC and its failures, opponent-choice inference, IS-MCTS,
   public-belief-state methods, Obscuro, Ataraxos, DeepNash, the Pokémon bots), placed against our numbers, with the
   ranked experiments L1–L6 that `endstate/search_ledger.md` carries.
+  [`sota_survey_2026-10-26.md`](literature/sota_survey_2026-10-26.md): how we compare with the state of the art
+  (Metamon, the PokéAgent Challenge, Foul Play, PokéChamp, PokéLLMon, Wang 2024, VGC-Bench, AlphaStar, DeepNash,
+  ReBeL, piKL, Procgen and environment design) on generalising to UNFAMILIAR teams, with five ranked new levers
+  (N1–N5) and their falsifiable first tests.
 - **[reviews/](reviews/)** — dated independent CODE reviews (correctness only, each finding CONFIRMED by a
   repro or marked PLAUSIBLE); a snapshot as of its commit. Confirmed findings become TECH_DEBT_BACKLOG rows.
   [`core_review_2026-10-20.md`](reviews/core_review_2026-10-20.md): the owned PPO loop, learner lifecycle,
