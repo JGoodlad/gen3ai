@@ -1,0 +1,9703 @@
+{
+ "result": {
+  "n": 600,
+  "familiar_set": {
+   "kl_mean": 0.0602,
+   "kl_median": 0.0144,
+   "abs_dv": 0.0185,
+   "signed_dv": -0.005,
+   "flip": 0.1433,
+   "switch_to_swapped_mon_dprob": 0.0049
+  },
+  "unfamiliar_set": {
+   "kl_mean": 0.0717,
+   "kl_median": 0.017,
+   "abs_dv": 0.0189,
+   "signed_dv": -0.0061,
+   "flip": 0.1267,
+   "switch_to_swapped_mon_dprob": -0.0069
+  },
+  "n_games": 48,
+  "n_distinct_swaps": {
+   "familiar": 158,
+   "unfamiliar": 158
+  },
+  "unf_minus_fam": {
+   "kl": [
+    0.0115,
+    [
+     0.001,
+     0.0227
+    ]
+   ],
+   "abs_dv": [
+    0.0004,
+    [
+     -0.0023,
+     0.0026
+    ]
+   ],
+   "bootstrap": "2,000 resamples of GAMES (rows cluster by game)"
+  },
+  "by_swapped_in_usage": {
+   "[0.3,2.0)": {
+    "n_fam": 282,
+    "kl_fam": 0.0546,
+    "dv_fam": 0.0199,
+    "n_unf": 296,
+    "kl_unf": 0.073,
+    "dv_unf": 0.0196
+   },
+   "[0.05,0.3)": {
+    "n_fam": 211,
+    "kl_fam": 0.0629,
+    "dv_fam": 0.0161,
+    "n_unf": 259,
+    "kl_unf": 0.0747,
+    "dv_unf": 0.0182
+   },
+   "[0.0,0.05)": {
+    "n_fam": 107,
+    "kl_fam": 0.0694,
+    "dv_fam": 0.0196,
+    "n_unf": 45,
+    "kl_unf": 0.0455,
+    "dv_unf": 0.0183
+   }
+  },
+  "by_pattern": {
+   "moves1_item0": {
+    "n": 587,
+    "kl_fam": 0.0552,
+    "kl_unf": 0.0675
+   },
+   "moves1_item1": {
+    "n": 9,
+    "kl_fam": 0.3131,
+    "kl_unf": 0.2962
+   },
+   "moves2_item1": {
+    "n": 4,
+    "kl_fam": 0.2208,
+    "kl_unf": 0.1767
+   }
+  },
+  "bench_permutation": {
+   "max_abs_dprob": 1e-05,
+   "mean_abs_dprob_max": 1e-06,
+   "max_abs_dv": 0.0,
+   "mean_kl": 0.0,
+   "flip": 0.0
+  }
+ },
+ "meta": [
+  {
+   "row": 1337,
+   "game": 23,
+   "slot": 4,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 245,
+   "fam_in": [
+    46
+   ],
+   "unf_in": [
+    57
+   ]
+  },
+  {
+   "row": 792,
+   "game": 0,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 245,
+   "fam_in": [
+    58
+   ],
+   "unf_in": [
+    214
+   ]
+  },
+  {
+   "row": 3063,
+   "game": 66,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 379,
+   "fam_in": [
+    68
+   ],
+   "unf_in": [
+    68
+   ]
+  },
+  {
+   "row": 667,
+   "game": 18,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 135,
+   "fam_in": [
+    46
+   ],
+   "unf_in": [
+    365
+   ]
+  },
+  {
+   "row": 833,
+   "game": 0,
+   "slot": 4,
+   "pattern": [
+    1,
+    1
+   ],
+   "species": 344,
+   "fam_in": [
+    157
+   ],
+   "unf_in": [
+    94
+   ]
+  },
+  {
+   "row": 2096,
+   "game": 3,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    157
+   ],
+   "unf_in": [
+    188
+   ]
+  },
+  {
+   "row": 826,
+   "game": 0,
+   "slot": 4,
+   "pattern": [
+    1,
+    1
+   ],
+   "species": 344,
+   "fam_in": [
+    94
+   ],
+   "unf_in": [
+    94
+   ]
+  },
+  {
+   "row": 2806,
+   "game": 2,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 146,
+   "fam_in": [
+    46
+   ],
+   "unf_in": [
+    46
+   ]
+  },
+  {
+   "row": 594,
+   "game": 12,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    56
+   ],
+   "unf_in": [
+    46
+   ]
+  },
+  {
+   "row": 853,
+   "game": 10,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 385,
+   "fam_in": [
+    85
+   ],
+   "unf_in": [
+    347
+   ]
+  },
+  {
+   "row": 3193,
+   "game": 64,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 385,
+   "fam_in": [
+    273
+   ],
+   "unf_in": [
+    347
+   ]
+  },
+  {
+   "row": 337,
+   "game": 11,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 344,
+   "fam_in": [
+    247
+   ],
+   "unf_in": [
+    287
+   ]
+  },
+  {
+   "row": 1303,
+   "game": 23,
+   "slot": 4,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 245,
+   "fam_in": [
+    92
+   ],
+   "unf_in": [
+    156
+   ]
+  },
+  {
+   "row": 108,
+   "game": 16,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 385,
+   "fam_in": [
+    273
+   ],
+   "unf_in": [
+    347
+   ]
+  },
+  {
+   "row": 1362,
+   "game": 23,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 245,
+   "fam_in": [
+    58
+   ],
+   "unf_in": [
+    214
+   ]
+  },
+  {
+   "row": 909,
+   "game": 15,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 248,
+   "fam_in": [
+    280
+   ],
+   "unf_in": [
+    38
+   ]
+  },
+  {
+   "row": 2467,
+   "game": 65,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 245,
+   "fam_in": [
+    46
+   ],
+   "unf_in": [
+    58
+   ]
+  },
+  {
+   "row": 136,
+   "game": 1,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    309
+   ],
+   "unf_in": [
+    182
+   ]
+  },
+  {
+   "row": 260,
+   "game": 9,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 91,
+   "fam_in": [
+    58
+   ],
+   "unf_in": [
+    58
+   ]
+  },
+  {
+   "row": 2607,
+   "game": 50,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    228
+   ],
+   "unf_in": [
+    89
+   ]
+  },
+  {
+   "row": 996,
+   "game": 17,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 251,
+   "fam_in": [
+    360
+   ],
+   "unf_in": [
+    226
+   ]
+  },
+  {
+   "row": 1285,
+   "game": 23,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 385,
+   "fam_in": [
+    92
+   ],
+   "unf_in": [
+    164
+   ]
+  },
+  {
+   "row": 441,
+   "game": 8,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 385,
+   "fam_in": [
+    92
+   ],
+   "unf_in": [
+    347
+   ]
+  },
+  {
+   "row": 1551,
+   "game": 35,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 135,
+   "fam_in": [
+    273
+   ],
+   "unf_in": [
+    365
+   ]
+  },
+  {
+   "row": 966,
+   "game": 15,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 142,
+   "fam_in": [
+    359
+   ],
+   "unf_in": [
+    164
+   ]
+  },
+  {
+   "row": 3319,
+   "game": 53,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    182
+   ],
+   "unf_in": [
+    182
+   ]
+  },
+  {
+   "row": 1410,
+   "game": 37,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 248,
+   "fam_in": [
+    38
+   ],
+   "unf_in": [
+    264
+   ]
+  },
+  {
+   "row": 3072,
+   "game": 66,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 248,
+   "fam_in": [
+    46
+   ],
+   "unf_in": [
+    228
+   ]
+  },
+  {
+   "row": 1391,
+   "game": 37,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    355
+   ],
+   "unf_in": [
+    94
+   ]
+  },
+  {
+   "row": 200,
+   "game": 4,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 245,
+   "fam_in": [
+    156
+   ],
+   "unf_in": [
+    46
+   ]
+  },
+  {
+   "row": 1207,
+   "game": 19,
+   "slot": 5,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 344,
+   "fam_in": [
+    157
+   ],
+   "unf_in": [
+    58
+   ]
+  },
+  {
+   "row": 1322,
+   "game": 23,
+   "slot": 4,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 245,
+   "fam_in": [
+    46
+   ],
+   "unf_in": [
+    57
+   ]
+  },
+  {
+   "row": 1724,
+   "game": 38,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    92
+   ],
+   "unf_in": [
+    363
+   ]
+  },
+  {
+   "row": 417,
+   "game": 6,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 121,
+   "fam_in": [
+    56
+   ],
+   "unf_in": [
+    105
+   ]
+  },
+  {
+   "row": 1756,
+   "game": 43,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 227,
+   "fam_in": [
+    65
+   ],
+   "unf_in": [
+    269
+   ]
+  },
+  {
+   "row": 3088,
+   "game": 66,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 248,
+   "fam_in": [
+    164
+   ],
+   "unf_in": [
+    349
+   ]
+  },
+  {
+   "row": 436,
+   "game": 8,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 143,
+   "fam_in": [
+    264
+   ],
+   "unf_in": [
+    174
+   ]
+  },
+  {
+   "row": 713,
+   "game": 21,
+   "slot": 4,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 344,
+   "fam_in": [
+    153
+   ],
+   "unf_in": [
+    153
+   ]
+  },
+  {
+   "row": 1364,
+   "game": 23,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 245,
+   "fam_in": [
+    58
+   ],
+   "unf_in": [
+    164
+   ]
+  },
+  {
+   "row": 1944,
+   "game": 25,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    46
+   ],
+   "unf_in": [
+    156
+   ]
+  },
+  {
+   "row": 1440,
+   "game": 40,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    56
+   ],
+   "unf_in": [
+    264
+   ]
+  },
+  {
+   "row": 1292,
+   "game": 23,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    97
+   ],
+   "unf_in": [
+    182
+   ]
+  },
+  {
+   "row": 1896,
+   "game": 24,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 248,
+   "fam_in": [
+    242
+   ],
+   "unf_in": [
+    53
+   ]
+  },
+  {
+   "row": 2018,
+   "game": 30,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 385,
+   "fam_in": [
+    92
+   ],
+   "unf_in": [
+    164
+   ]
+  },
+  {
+   "row": 188,
+   "game": 4,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    157
+   ],
+   "unf_in": [
+    157
+   ]
+  },
+  {
+   "row": 983,
+   "game": 17,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 51,
+   "fam_in": [
+    157
+   ],
+   "unf_in": [
+    251
+   ]
+  },
+  {
+   "row": 2620,
+   "game": 50,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 82,
+   "fam_in": [
+    86
+   ],
+   "unf_in": [
+    86
+   ]
+  },
+  {
+   "row": 150,
+   "game": 1,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 248,
+   "fam_in": [
+    92
+   ],
+   "unf_in": [
+    264
+   ]
+  },
+  {
+   "row": 590,
+   "game": 12,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    56
+   ],
+   "unf_in": [
+    56
+   ]
+  },
+  {
+   "row": 207,
+   "game": 4,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    355
+   ],
+   "unf_in": [
+    97
+   ]
+  },
+  {
+   "row": 82,
+   "game": 7,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 385,
+   "fam_in": [
+    34
+   ],
+   "unf_in": [
+    363
+   ]
+  },
+  {
+   "row": 2714,
+   "game": 2,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 146,
+   "fam_in": [
+    46
+   ],
+   "unf_in": [
+    46
+   ]
+  },
+  {
+   "row": 2114,
+   "game": 3,
+   "slot": 4,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    363
+   ],
+   "unf_in": [
+    360
+   ]
+  },
+  {
+   "row": 1161,
+   "game": 19,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 245,
+   "fam_in": [
+    58
+   ],
+   "unf_in": [
+    58
+   ]
+  },
+  {
+   "row": 1075,
+   "game": 14,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 251,
+   "fam_in": [
+    347
+   ],
+   "unf_in": [
+    202
+   ]
+  },
+  {
+   "row": 1767,
+   "game": 43,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 82,
+   "fam_in": [
+    363
+   ],
+   "unf_in": [
+    92
+   ]
+  },
+  {
+   "row": 952,
+   "game": 15,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 142,
+   "fam_in": [
+    361
+   ],
+   "unf_in": [
+    164
+   ]
+  },
+  {
+   "row": 1295,
+   "game": 23,
+   "slot": 4,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 245,
+   "fam_in": [
+    92
+   ],
+   "unf_in": [
+    57
+   ]
+  },
+  {
+   "row": 3260,
+   "game": 53,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 82,
+   "fam_in": [
+    86
+   ],
+   "unf_in": [
+    240
+   ]
+  },
+  {
+   "row": 1455,
+   "game": 40,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 379,
+   "fam_in": [
+    68
+   ],
+   "unf_in": [
+    174
+   ]
+  },
+  {
+   "row": 1549,
+   "game": 35,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 135,
+   "fam_in": [
+    273
+   ],
+   "unf_in": [
+    365
+   ]
+  },
+  {
+   "row": 2223,
+   "game": 42,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 227,
+   "fam_in": [
+    269
+   ],
+   "unf_in": [
+    182
+   ]
+  },
+  {
+   "row": 993,
+   "game": 17,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 251,
+   "fam_in": [
+    360
+   ],
+   "unf_in": [
+    363
+   ]
+  },
+  {
+   "row": 3176,
+   "game": 55,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    46
+   ],
+   "unf_in": [
+    89
+   ]
+  },
+  {
+   "row": 1662,
+   "game": 45,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    153
+   ],
+   "unf_in": [
+    153
+   ]
+  },
+  {
+   "row": 3296,
+   "game": 53,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 242,
+   "fam_in": [
+    92
+   ],
+   "unf_in": [
+    92
+   ]
+  },
+  {
+   "row": 2619,
+   "game": 50,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    228
+   ],
+   "unf_in": [
+    157
+   ]
+  },
+  {
+   "row": 2266,
+   "game": 42,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 248,
+   "fam_in": [
+    349
+   ],
+   "unf_in": [
+    349
+   ]
+  },
+  {
+   "row": 1039,
+   "game": 17,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 251,
+   "fam_in": [
+    360
+   ],
+   "unf_in": [
+    363
+   ]
+  },
+  {
+   "row": 2683,
+   "game": 2,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 51,
+   "fam_in": [
+    157
+   ],
+   "unf_in": [
+    241
+   ]
+  },
+  {
+   "row": 1548,
+   "game": 35,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    287
+   ],
+   "unf_in": [
+    46
+   ]
+  },
+  {
+   "row": 679,
+   "game": 18,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 135,
+   "fam_in": [
+    273
+   ],
+   "unf_in": [
+    46
+   ]
+  },
+  {
+   "row": 1022,
+   "game": 17,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 251,
+   "fam_in": [
+    360
+   ],
+   "unf_in": [
+    105
+   ]
+  },
+  {
+   "row": 2331,
+   "game": 41,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 248,
+   "fam_in": [
+    68
+   ],
+   "unf_in": [
+    363
+   ]
+  },
+  {
+   "row": 3078,
+   "game": 66,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 248,
+   "fam_in": [
+    349
+   ],
+   "unf_in": [
+    58
+   ]
+  },
+  {
+   "row": 2293,
+   "game": 41,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 121,
+   "fam_in": [
+    105
+   ],
+   "unf_in": [
+    56
+   ]
+  },
+  {
+   "row": 2485,
+   "game": 36,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 205,
+   "fam_in": [
+    362
+   ],
+   "unf_in": [
+    192
+   ]
+  },
+  {
+   "row": 2612,
+   "game": 50,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 82,
+   "fam_in": [
+    86
+   ],
+   "unf_in": [
+    164
+   ]
+  },
+  {
+   "row": 2512,
+   "game": 36,
+   "slot": 4,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 242,
+   "fam_in": [
+    47
+   ],
+   "unf_in": [
+    86
+   ]
+  },
+  {
+   "row": 1538,
+   "game": 35,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 205,
+   "fam_in": [
+    89
+   ],
+   "unf_in": [
+    89
+   ]
+  },
+  {
+   "row": 2361,
+   "game": 57,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 378,
+   "fam_in": [
+    360
+   ],
+   "unf_in": [
+    360
+   ]
+  },
+  {
+   "row": 2950,
+   "game": 68,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 373,
+   "fam_in": [
+    280
+   ],
+   "unf_in": [
+    280
+   ]
+  },
+  {
+   "row": 3171,
+   "game": 55,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    46
+   ],
+   "unf_in": [
+    46
+   ]
+  },
+  {
+   "row": 1556,
+   "game": 35,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 135,
+   "fam_in": [
+    86
+   ],
+   "unf_in": [
+    365
+   ]
+  },
+  {
+   "row": 2789,
+   "game": 2,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 146,
+   "fam_in": [
+    315
+   ],
+   "unf_in": [
+    46
+   ]
+  },
+  {
+   "row": 1193,
+   "game": 19,
+   "slot": 5,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 344,
+   "fam_in": [
+    156
+   ],
+   "unf_in": [
+    156
+   ]
+  },
+  {
+   "row": 1615,
+   "game": 32,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 251,
+   "fam_in": [
+    365
+   ],
+   "unf_in": [
+    226
+   ]
+  },
+  {
+   "row": 838,
+   "game": 10,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 248,
+   "fam_in": [
+    87
+   ],
+   "unf_in": [
+    363
+   ]
+  },
+  {
+   "row": 109,
+   "game": 16,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 373,
+   "fam_in": [
+    53
+   ],
+   "unf_in": [
+    89
+   ]
+  },
+  {
+   "row": 2443,
+   "game": 65,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    182
+   ],
+   "unf_in": [
+    97
+   ]
+  },
+  {
+   "row": 1881,
+   "game": 24,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    157
+   ],
+   "unf_in": [
+    157
+   ]
+  },
+  {
+   "row": 2810,
+   "game": 2,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 146,
+   "fam_in": [
+    46
+   ],
+   "unf_in": [
+    315
+   ]
+  },
+  {
+   "row": 1066,
+   "game": 14,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 251,
+   "fam_in": [
+    368
+   ],
+   "unf_in": [
+    202
+   ]
+  },
+  {
+   "row": 2985,
+   "game": 54,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    287
+   ],
+   "unf_in": [
+    182
+   ]
+  },
+  {
+   "row": 1502,
+   "game": 33,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 373,
+   "fam_in": [
+    280
+   ],
+   "unf_in": [
+    280
+   ]
+  },
+  {
+   "row": 3021,
+   "game": 54,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 143,
+   "fam_in": [
+    174
+   ],
+   "unf_in": [
+    174
+   ]
+  },
+  {
+   "row": 1719,
+   "game": 38,
+   "slot": 1,
+   "pattern": [
+    2,
+    1
+   ],
+   "species": 377,
+   "fam_in": [
+    86,
+    368
+   ],
+   "unf_in": [
+    174,
+    368
+   ]
+  },
+  {
+   "row": 507,
+   "game": 13,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    368
+   ],
+   "unf_in": [
+    97
+   ]
+  },
+  {
+   "row": 159,
+   "game": 1,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 344,
+   "fam_in": [
+    287
+   ],
+   "unf_in": [
+    58
+   ]
+  },
+  {
+   "row": 1141,
+   "game": 19,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 227,
+   "fam_in": [
+    92
+   ],
+   "unf_in": [
+    168
+   ]
+  },
+  {
+   "row": 1470,
+   "game": 40,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 379,
+   "fam_in": [
+    68
+   ],
+   "unf_in": [
+    174
+   ]
+  },
+  {
+   "row": 1274,
+   "game": 23,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 385,
+   "fam_in": [
+    359
+   ],
+   "unf_in": [
+    164
+   ]
+  },
+  {
+   "row": 2285,
+   "game": 41,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 121,
+   "fam_in": [
+    105
+   ],
+   "unf_in": [
+    56
+   ]
+  },
+  {
+   "row": 512,
+   "game": 13,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    38
+   ],
+   "unf_in": [
+    182
+   ]
+  },
+  {
+   "row": 2008,
+   "game": 30,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    46
+   ],
+   "unf_in": [
+    46
+   ]
+  },
+  {
+   "row": 2380,
+   "game": 57,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 385,
+   "fam_in": [
+    273
+   ],
+   "unf_in": [
+    347
+   ]
+  },
+  {
+   "row": 855,
+   "game": 10,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 248,
+   "fam_in": [
+    280
+   ],
+   "unf_in": [
+    363
+   ]
+  },
+  {
+   "row": 2310,
+   "game": 41,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 248,
+   "fam_in": [
+    216
+   ],
+   "unf_in": [
+    264
+   ]
+  },
+  {
+   "row": 530,
+   "game": 13,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 248,
+   "fam_in": [
+    38
+   ],
+   "unf_in": [
+    53
+   ]
+  },
+  {
+   "row": 99,
+   "game": 16,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 373,
+   "fam_in": [
+    273
+   ],
+   "unf_in": [
+    157
+   ]
+  },
+  {
+   "row": 1028,
+   "game": 17,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 242,
+   "fam_in": [
+    58
+   ],
+   "unf_in": [
+    53
+   ]
+  },
+  {
+   "row": 514,
+   "game": 13,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    38
+   ],
+   "unf_in": [
+    182
+   ]
+  },
+  {
+   "row": 2286,
+   "game": 41,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 248,
+   "fam_in": [
+    216
+   ],
+   "unf_in": [
+    242
+   ]
+  },
+  {
+   "row": 1846,
+   "game": 24,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 245,
+   "fam_in": [
+    363
+   ],
+   "unf_in": [
+    57
+   ]
+  },
+  {
+   "row": 2502,
+   "game": 36,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 385,
+   "fam_in": [
+    273
+   ],
+   "unf_in": [
+    347
+   ]
+  },
+  {
+   "row": 2439,
+   "game": 65,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 143,
+   "fam_in": [
+    247
+   ],
+   "unf_in": [
+    280
+   ]
+  },
+  {
+   "row": 1614,
+   "game": 32,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 82,
+   "fam_in": [
+    156
+   ],
+   "unf_in": [
+    363
+   ]
+  },
+  {
+   "row": 418,
+   "game": 6,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    156
+   ],
+   "unf_in": [
+    182
+   ]
+  },
+  {
+   "row": 719,
+   "game": 21,
+   "slot": 4,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 344,
+   "fam_in": [
+    153
+   ],
+   "unf_in": [
+    153
+   ]
+  },
+  {
+   "row": 2761,
+   "game": 2,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 146,
+   "fam_in": [
+    46
+   ],
+   "unf_in": [
+    315
+   ]
+  },
+  {
+   "row": 1177,
+   "game": 19,
+   "slot": 5,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 344,
+   "fam_in": [
+    157
+   ],
+   "unf_in": [
+    287
+   ]
+  },
+  {
+   "row": 2426,
+   "game": 57,
+   "slot": 5,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    153
+   ],
+   "unf_in": [
+    153
+   ]
+  },
+  {
+   "row": 1855,
+   "game": 24,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    368
+   ],
+   "unf_in": [
+    157
+   ]
+  },
+  {
+   "row": 857,
+   "game": 10,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 94,
+   "fam_in": [
+    202
+   ],
+   "unf_in": [
+    7
+   ]
+  },
+  {
+   "row": 1510,
+   "game": 33,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 373,
+   "fam_in": [
+    280
+   ],
+   "unf_in": [
+    280
+   ]
+  },
+  {
+   "row": 257,
+   "game": 9,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 82,
+   "fam_in": [
+    182
+   ],
+   "unf_in": [
+    240
+   ]
+  },
+  {
+   "row": 425,
+   "game": 6,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    264
+   ],
+   "unf_in": [
+    46
+   ]
+  },
+  {
+   "row": 167,
+   "game": 1,
+   "slot": 5,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 385,
+   "fam_in": [
+    363
+   ],
+   "unf_in": [
+    363
+   ]
+  },
+  {
+   "row": 324,
+   "game": 11,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 344,
+   "fam_in": [
+    287
+   ],
+   "unf_in": [
+    287
+   ]
+  },
+  {
+   "row": 400,
+   "game": 6,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    182
+   ],
+   "unf_in": [
+    57
+   ]
+  },
+  {
+   "row": 2906,
+   "game": 60,
+   "slot": 5,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    153
+   ],
+   "unf_in": [
+    153
+   ]
+  },
+  {
+   "row": 2684,
+   "game": 2,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 227,
+   "fam_in": [
+    65
+   ],
+   "unf_in": [
+    269
+   ]
+  },
+  {
+   "row": 2882,
+   "game": 60,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 378,
+   "fam_in": [
+    240
+   ],
+   "unf_in": [
+    69
+   ]
+  },
+  {
+   "row": 1068,
+   "game": 14,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 251,
+   "fam_in": [
+    363
+   ],
+   "unf_in": [
+    94
+   ]
+  },
+  {
+   "row": 2641,
+   "game": 50,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    228
+   ],
+   "unf_in": [
+    89
+   ]
+  },
+  {
+   "row": 1599,
+   "game": 32,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 251,
+   "fam_in": [
+    73
+   ],
+   "unf_in": [
+    73
+   ]
+  },
+  {
+   "row": 809,
+   "game": 0,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 245,
+   "fam_in": [
+    214
+   ],
+   "unf_in": [
+    58
+   ]
+  },
+  {
+   "row": 1950,
+   "game": 25,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    182
+   ],
+   "unf_in": [
+    182
+   ]
+  },
+  {
+   "row": 2645,
+   "game": 50,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 91,
+   "fam_in": [
+    58
+   ],
+   "unf_in": [
+    358
+   ]
+  },
+  {
+   "row": 1191,
+   "game": 19,
+   "slot": 5,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 344,
+   "fam_in": [
+    157
+   ],
+   "unf_in": [
+    58
+   ]
+  },
+  {
+   "row": 249,
+   "game": 9,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 82,
+   "fam_in": [
+    182
+   ],
+   "unf_in": [
+    86
+   ]
+  },
+  {
+   "row": 906,
+   "game": 15,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 227,
+   "fam_in": [
+    369
+   ],
+   "unf_in": [
+    92
+   ]
+  },
+  {
+   "row": 2425,
+   "game": 57,
+   "slot": 5,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    153
+   ],
+   "unf_in": [
+    153
+   ]
+  },
+  {
+   "row": 3303,
+   "game": 53,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    57
+   ],
+   "unf_in": [
+    368
+   ]
+  },
+  {
+   "row": 2699,
+   "game": 2,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 227,
+   "fam_in": [
+    65
+   ],
+   "unf_in": [
+    269
+   ]
+  },
+  {
+   "row": 2644,
+   "game": 50,
+   "slot": 5,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 373,
+   "fam_in": [
+    126
+   ],
+   "unf_in": [
+    349
+   ]
+  },
+  {
+   "row": 2311,
+   "game": 41,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 121,
+   "fam_in": [
+    105
+   ],
+   "unf_in": [
+    105
+   ]
+  },
+  {
+   "row": 1706,
+   "game": 38,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    264
+   ],
+   "unf_in": [
+    46
+   ]
+  },
+  {
+   "row": 1992,
+   "game": 30,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 248,
+   "fam_in": [
+    280
+   ],
+   "unf_in": [
+    363
+   ]
+  },
+  {
+   "row": 2730,
+   "game": 2,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 146,
+   "fam_in": [
+    46
+   ],
+   "unf_in": [
+    315
+   ]
+  },
+  {
+   "row": 1939,
+   "game": 25,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    182
+   ],
+   "unf_in": [
+    182
+   ]
+  },
+  {
+   "row": 3136,
+   "game": 55,
+   "slot": 4,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 214,
+   "fam_in": [
+    361
+   ],
+   "unf_in": [
+    264
+   ]
+  },
+  {
+   "row": 1810,
+   "game": 47,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    8
+   ],
+   "unf_in": [
+    182
+   ]
+  },
+  {
+   "row": 1743,
+   "game": 38,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    156
+   ],
+   "unf_in": [
+    46
+   ]
+  },
+  {
+   "row": 1908,
+   "game": 25,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 82,
+   "fam_in": [
+    86
+   ],
+   "unf_in": [
+    164
+   ]
+  },
+  {
+   "row": 2648,
+   "game": 50,
+   "slot": 5,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 373,
+   "fam_in": [
+    126
+   ],
+   "unf_in": [
+    157
+   ]
+  },
+  {
+   "row": 423,
+   "game": 6,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 121,
+   "fam_in": [
+    105
+   ],
+   "unf_in": [
+    94
+   ]
+  },
+  {
+   "row": 1993,
+   "game": 30,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    182
+   ],
+   "unf_in": [
+    182
+   ]
+  },
+  {
+   "row": 2213,
+   "game": 42,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 242,
+   "fam_in": [
+    69
+   ],
+   "unf_in": [
+    312
+   ]
+  },
+  {
+   "row": 1913,
+   "game": 25,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    182
+   ],
+   "unf_in": [
+    57
+   ]
+  },
+  {
+   "row": 272,
+   "game": 9,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 251,
+   "fam_in": [
+    360
+   ],
+   "unf_in": [
+    226
+   ]
+  },
+  {
+   "row": 1348,
+   "game": 23,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 245,
+   "fam_in": [
+    214
+   ],
+   "unf_in": [
+    58
+   ]
+  },
+  {
+   "row": 1029,
+   "game": 17,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 251,
+   "fam_in": [
+    105
+   ],
+   "unf_in": [
+    226
+   ]
+  },
+  {
+   "row": 3126,
+   "game": 55,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 248,
+   "fam_in": [
+    361
+   ],
+   "unf_in": [
+    38
+   ]
+  },
+  {
+   "row": 1784,
+   "game": 43,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 385,
+   "fam_in": [
+    34
+   ],
+   "unf_in": [
+    363
+   ]
+  },
+  {
+   "row": 3215,
+   "game": 64,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 82,
+   "fam_in": [
+    164
+   ],
+   "unf_in": [
+    363
+   ]
+  },
+  {
+   "row": 928,
+   "game": 15,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 82,
+   "fam_in": [
+    164
+   ],
+   "unf_in": [
+    240
+   ]
+  },
+  {
+   "row": 2495,
+   "game": 36,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    68
+   ],
+   "unf_in": [
+    89
+   ]
+  },
+  {
+   "row": 872,
+   "game": 10,
+   "slot": 4,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 143,
+   "fam_in": [
+    264
+   ],
+   "unf_in": [
+    264
+   ]
+  },
+  {
+   "row": 2736,
+   "game": 2,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 146,
+   "fam_in": [
+    46
+   ],
+   "unf_in": [
+    46
+   ]
+  },
+  {
+   "row": 152,
+   "game": 1,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 344,
+   "fam_in": [
+    102
+   ],
+   "unf_in": [
+    156
+   ]
+  },
+  {
+   "row": 3019,
+   "game": 54,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 143,
+   "fam_in": [
+    216
+   ],
+   "unf_in": [
+    174
+   ]
+  },
+  {
+   "row": 1705,
+   "game": 38,
+   "slot": 1,
+   "pattern": [
+    2,
+    1
+   ],
+   "species": 377,
+   "fam_in": [
+    86,
+    368
+   ],
+   "unf_in": [
+    174,
+    368
+   ]
+  },
+  {
+   "row": 2456,
+   "game": 65,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 143,
+   "fam_in": [
+    247
+   ],
+   "unf_in": [
+    247
+   ]
+  },
+  {
+   "row": 584,
+   "game": 12,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    46
+   ],
+   "unf_in": [
+    92
+   ]
+  },
+  {
+   "row": 1464,
+   "game": 40,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 379,
+   "fam_in": [
+    68
+   ],
+   "unf_in": [
+    68
+   ]
+  },
+  {
+   "row": 2258,
+   "game": 42,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 248,
+   "fam_in": [
+    264
+   ],
+   "unf_in": [
+    242
+   ]
+  },
+  {
+   "row": 3161,
+   "game": 55,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    46
+   ],
+   "unf_in": [
+    46
+   ]
+  },
+  {
+   "row": 1188,
+   "game": 19,
+   "slot": 5,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 344,
+   "fam_in": [
+    247
+   ],
+   "unf_in": [
+    287
+   ]
+  },
+  {
+   "row": 535,
+   "game": 13,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    156
+   ],
+   "unf_in": [
+    57
+   ]
+  },
+  {
+   "row": 155,
+   "game": 1,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 248,
+   "fam_in": [
+    355
+   ],
+   "unf_in": [
+    355
+   ]
+  },
+  {
+   "row": 1832,
+   "game": 47,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    309
+   ],
+   "unf_in": [
+    182
+   ]
+  },
+  {
+   "row": 1288,
+   "game": 23,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    92
+   ],
+   "unf_in": [
+    92
+   ]
+  },
+  {
+   "row": 501,
+   "game": 13,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    355
+   ],
+   "unf_in": [
+    97
+   ]
+  },
+  {
+   "row": 2291,
+   "game": 41,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 121,
+   "fam_in": [
+    56
+   ],
+   "unf_in": [
+    56
+   ]
+  },
+  {
+   "row": 583,
+   "game": 12,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 248,
+   "fam_in": [
+    216
+   ],
+   "unf_in": [
+    355
+   ]
+  },
+  {
+   "row": 336,
+   "game": 11,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 344,
+   "fam_in": [
+    247
+   ],
+   "unf_in": [
+    287
+   ]
+  },
+  {
+   "row": 2700,
+   "game": 2,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 242,
+   "fam_in": [
+    58
+   ],
+   "unf_in": [
+    92
+   ]
+  },
+  {
+   "row": 325,
+   "game": 11,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    228
+   ],
+   "unf_in": [
+    89
+   ]
+  },
+  {
+   "row": 2119,
+   "game": 3,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    363
+   ],
+   "unf_in": [
+    94
+   ]
+  },
+  {
+   "row": 632,
+   "game": 18,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    182
+   ],
+   "unf_in": [
+    182
+   ]
+  },
+  {
+   "row": 1305,
+   "game": 23,
+   "slot": 4,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 245,
+   "fam_in": [
+    46
+   ],
+   "unf_in": [
+    57
+   ]
+  },
+  {
+   "row": 1006,
+   "game": 17,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 251,
+   "fam_in": [
+    360
+   ],
+   "unf_in": [
+    363
+   ]
+  },
+  {
+   "row": 1093,
+   "game": 14,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 145,
+   "fam_in": [
+    363
+   ],
+   "unf_in": [
+    65
+   ]
+  },
+  {
+   "row": 1184,
+   "game": 19,
+   "slot": 5,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 344,
+   "fam_in": [
+    157
+   ],
+   "unf_in": [
+    157
+   ]
+  },
+  {
+   "row": 2412,
+   "game": 57,
+   "slot": 5,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    153
+   ],
+   "unf_in": [
+    360
+   ]
+  },
+  {
+   "row": 1282,
+   "game": 23,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    182
+   ],
+   "unf_in": [
+    97
+   ]
+  },
+  {
+   "row": 671,
+   "game": 18,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 135,
+   "fam_in": [
+    46
+   ],
+   "unf_in": [
+    46
+   ]
+  },
+  {
+   "row": 984,
+   "game": 17,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 82,
+   "fam_in": [
+    86
+   ],
+   "unf_in": [
+    86
+   ]
+  },
+  {
+   "row": 1874,
+   "game": 24,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    157
+   ],
+   "unf_in": [
+    157
+   ]
+  },
+  {
+   "row": 2113,
+   "game": 3,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    363
+   ],
+   "unf_in": [
+    94
+   ]
+  },
+  {
+   "row": 1112,
+   "game": 14,
+   "slot": 5,
+   "pattern": [
+    1,
+    1
+   ],
+   "species": 142,
+   "fam_in": [
+    355
+   ],
+   "unf_in": [
+    355
+   ]
+  },
+  {
+   "row": 3313,
+   "game": 53,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 245,
+   "fam_in": [
+    58
+   ],
+   "unf_in": [
+    214
+   ]
+  },
+  {
+   "row": 1728,
+   "game": 38,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    156
+   ],
+   "unf_in": [
+    182
+   ]
+  },
+  {
+   "row": 648,
+   "game": 18,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    182
+   ],
+   "unf_in": [
+    156
+   ]
+  },
+  {
+   "row": 643,
+   "game": 18,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    264
+   ],
+   "unf_in": [
+    182
+   ]
+  },
+  {
+   "row": 3270,
+   "game": 53,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 82,
+   "fam_in": [
+    156
+   ],
+   "unf_in": [
+    240
+   ]
+  },
+  {
+   "row": 2908,
+   "game": 60,
+   "slot": 5,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    153
+   ],
+   "unf_in": [
+    153
+   ]
+  },
+  {
+   "row": 2015,
+   "game": 30,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 94,
+   "fam_in": [
+    153
+   ],
+   "unf_in": [
+    7
+   ]
+  },
+  {
+   "row": 1331,
+   "game": 23,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 245,
+   "fam_in": [
+    58
+   ],
+   "unf_in": [
+    58
+   ]
+  },
+  {
+   "row": 1564,
+   "game": 35,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 135,
+   "fam_in": [
+    92
+   ],
+   "unf_in": [
+    365
+   ]
+  },
+  {
+   "row": 398,
+   "game": 6,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    182
+   ],
+   "unf_in": [
+    156
+   ]
+  },
+  {
+   "row": 2677,
+   "game": 2,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 51,
+   "fam_in": [
+    251
+   ],
+   "unf_in": [
+    157
+   ]
+  },
+  {
+   "row": 2880,
+   "game": 60,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 378,
+   "fam_in": [
+    240
+   ],
+   "unf_in": [
+    360
+   ]
+  },
+  {
+   "row": 3261,
+   "game": 53,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 242,
+   "fam_in": [
+    86
+   ],
+   "unf_in": [
+    92
+   ]
+  },
+  {
+   "row": 2280,
+   "game": 42,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 248,
+   "fam_in": [
+    264
+   ],
+   "unf_in": [
+    264
+   ]
+  },
+  {
+   "row": 2475,
+   "game": 65,
+   "slot": 4,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 242,
+   "fam_in": [
+    86
+   ],
+   "unf_in": [
+    92
+   ]
+  },
+  {
+   "row": 1575,
+   "game": 35,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 135,
+   "fam_in": [
+    46
+   ],
+   "unf_in": [
+    86
+   ]
+  },
+  {
+   "row": 2282,
+   "game": 42,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 248,
+   "fam_in": [
+    264
+   ],
+   "unf_in": [
+    349
+   ]
+  },
+  {
+   "row": 113,
+   "game": 16,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 373,
+   "fam_in": [
+    53
+   ],
+   "unf_in": [
+    53
+   ]
+  },
+  {
+   "row": 210,
+   "game": 4,
+   "slot": 4,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 251,
+   "fam_in": [
+    365
+   ],
+   "unf_in": [
+    360
+   ]
+  },
+  {
+   "row": 1503,
+   "game": 33,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 373,
+   "fam_in": [
+    280
+   ],
+   "unf_in": [
+    126
+   ]
+  },
+  {
+   "row": 1789,
+   "game": 43,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 385,
+   "fam_in": [
+    34
+   ],
+   "unf_in": [
+    363
+   ]
+  },
+  {
+   "row": 1237,
+   "game": 44,
+   "slot": 5,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 214,
+   "fam_in": [
+    264
+   ],
+   "unf_in": [
+    280
+   ]
+  },
+  {
+   "row": 848,
+   "game": 10,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 248,
+   "fam_in": [
+    363
+   ],
+   "unf_in": [
+    89
+   ]
+  },
+  {
+   "row": 2377,
+   "game": 57,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 378,
+   "fam_in": [
+    360
+   ],
+   "unf_in": [
+    69
+   ]
+  },
+  {
+   "row": 3137,
+   "game": 55,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 248,
+   "fam_in": [
+    362
+   ],
+   "unf_in": [
+    38
+   ]
+  },
+  {
+   "row": 1850,
+   "game": 24,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 248,
+   "fam_in": [
+    242
+   ],
+   "unf_in": [
+    242
+   ]
+  },
+  {
+   "row": 2009,
+   "game": 30,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 94,
+   "fam_in": [
+    153
+   ],
+   "unf_in": [
+    153
+   ]
+  },
+  {
+   "row": 554,
+   "game": 13,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    182
+   ],
+   "unf_in": [
+    46
+   ]
+  },
+  {
+   "row": 1043,
+   "game": 17,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 251,
+   "fam_in": [
+    360
+   ],
+   "unf_in": [
+    360
+   ]
+  },
+  {
+   "row": 661,
+   "game": 18,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 135,
+   "fam_in": [
+    92
+   ],
+   "unf_in": [
+    46
+   ]
+  },
+  {
+   "row": 1554,
+   "game": 35,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 135,
+   "fam_in": [
+    86
+   ],
+   "unf_in": [
+    365
+   ]
+  },
+  {
+   "row": 2634,
+   "game": 50,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    228
+   ],
+   "unf_in": [
+    368
+   ]
+  },
+  {
+   "row": 818,
+   "game": 0,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 245,
+   "fam_in": [
+    58
+   ],
+   "unf_in": [
+    56
+   ]
+  },
+  {
+   "row": 771,
+   "game": 0,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 385,
+   "fam_in": [
+    34
+   ],
+   "unf_in": [
+    363
+   ]
+  },
+  {
+   "row": 2016,
+   "game": 30,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 385,
+   "fam_in": [
+    363
+   ],
+   "unf_in": [
+    164
+   ]
+  },
+  {
+   "row": 1528,
+   "game": 35,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 205,
+   "fam_in": [
+    68
+   ],
+   "unf_in": [
+    89
+   ]
+  },
+  {
+   "row": 2394,
+   "game": 57,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 94,
+   "fam_in": [
+    261
+   ],
+   "unf_in": [
+    223
+   ]
+  },
+  {
+   "row": 525,
+   "game": 13,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 248,
+   "fam_in": [
+    38
+   ],
+   "unf_in": [
+    126
+   ]
+  },
+  {
+   "row": 1138,
+   "game": 19,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 227,
+   "fam_in": [
+    369
+   ],
+   "unf_in": [
+    92
+   ]
+  },
+  {
+   "row": 2904,
+   "game": 60,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 143,
+   "fam_in": [
+    264
+   ],
+   "unf_in": [
+    174
+   ]
+  },
+  {
+   "row": 847,
+   "game": 10,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 385,
+   "fam_in": [
+    85
+   ],
+   "unf_in": [
+    347
+   ]
+  },
+  {
+   "row": 1862,
+   "game": 24,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    157
+   ],
+   "unf_in": [
+    94
+   ]
+  },
+  {
+   "row": 415,
+   "game": 6,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 121,
+   "fam_in": [
+    105
+   ],
+   "unf_in": [
+    105
+   ]
+  },
+  {
+   "row": 389,
+   "game": 6,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 121,
+   "fam_in": [
+    105
+   ],
+   "unf_in": [
+    105
+   ]
+  },
+  {
+   "row": 696,
+   "game": 21,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 350,
+   "fam_in": [
+    95
+   ],
+   "unf_in": [
+    58
+   ]
+  },
+  {
+   "row": 799,
+   "game": 0,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 245,
+   "fam_in": [
+    214
+   ],
+   "unf_in": [
+    58
+   ]
+  },
+  {
+   "row": 2222,
+   "game": 42,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 242,
+   "fam_in": [
+    69
+   ],
+   "unf_in": [
+    69
+   ]
+  },
+  {
+   "row": 1546,
+   "game": 35,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 205,
+   "fam_in": [
+    89
+   ],
+   "unf_in": [
+    68
+   ]
+  },
+  {
+   "row": 3283,
+   "game": 53,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 242,
+   "fam_in": [
+    86
+   ],
+   "unf_in": [
+    92
+   ]
+  },
+  {
+   "row": 3140,
+   "game": 55,
+   "slot": 4,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 214,
+   "fam_in": [
+    361
+   ],
+   "unf_in": [
+    264
+   ]
+  },
+  {
+   "row": 1671,
+   "game": 45,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    38
+   ],
+   "unf_in": [
+    97
+   ]
+  },
+  {
+   "row": 102,
+   "game": 16,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 385,
+   "fam_in": [
+    85
+   ],
+   "unf_in": [
+    347
+   ]
+  },
+  {
+   "row": 1434,
+   "game": 40,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    287
+   ],
+   "unf_in": [
+    92
+   ]
+  },
+  {
+   "row": 1955,
+   "game": 25,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    182
+   ],
+   "unf_in": [
+    156
+   ]
+  },
+  {
+   "row": 3117,
+   "game": 55,
+   "slot": 1,
+   "pattern": [
+    1,
+    1
+   ],
+   "species": 82,
+   "fam_in": [
+    240
+   ],
+   "unf_in": [
+    92
+   ]
+  },
+  {
+   "row": 138,
+   "game": 1,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    8
+   ],
+   "unf_in": [
+    182
+   ]
+  },
+  {
+   "row": 933,
+   "game": 15,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 142,
+   "fam_in": [
+    361
+   ],
+   "unf_in": [
+    361
+   ]
+  },
+  {
+   "row": 205,
+   "game": 4,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    157
+   ],
+   "unf_in": [
+    94
+   ]
+  },
+  {
+   "row": 319,
+   "game": 11,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    228
+   ],
+   "unf_in": [
+    368
+   ]
+  },
+  {
+   "row": 1,
+   "game": 20,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 385,
+   "fam_in": [
+    34
+   ],
+   "unf_in": [
+    363
+   ]
+  },
+  {
+   "row": 1179,
+   "game": 19,
+   "slot": 5,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 344,
+   "fam_in": [
+    157
+   ],
+   "unf_in": [
+    58
+   ]
+  },
+  {
+   "row": 807,
+   "game": 0,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 245,
+   "fam_in": [
+    214
+   ],
+   "unf_in": [
+    56
+   ]
+  },
+  {
+   "row": 3147,
+   "game": 55,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    46
+   ],
+   "unf_in": [
+    46
+   ]
+  },
+  {
+   "row": 3205,
+   "game": 64,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 82,
+   "fam_in": [
+    240
+   ],
+   "unf_in": [
+    363
+   ]
+  },
+  {
+   "row": 958,
+   "game": 15,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 142,
+   "fam_in": [
+    359
+   ],
+   "unf_in": [
+    164
+   ]
+  },
+  {
+   "row": 2881,
+   "game": 60,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 143,
+   "fam_in": [
+    264
+   ],
+   "unf_in": [
+    174
+   ]
+  },
+  {
+   "row": 3163,
+   "game": 55,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    46
+   ],
+   "unf_in": [
+    46
+   ]
+  },
+  {
+   "row": 564,
+   "game": 12,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    56
+   ],
+   "unf_in": [
+    56
+   ]
+  },
+  {
+   "row": 2518,
+   "game": 36,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    287
+   ],
+   "unf_in": [
+    89
+   ]
+  },
+  {
+   "row": 286,
+   "game": 9,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 251,
+   "fam_in": [
+    360
+   ],
+   "unf_in": [
+    360
+   ]
+  },
+  {
+   "row": 652,
+   "game": 18,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    156
+   ],
+   "unf_in": [
+    46
+   ]
+  },
+  {
+   "row": 2063,
+   "game": 3,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 242,
+   "fam_in": [
+    92
+   ],
+   "unf_in": [
+    86
+   ]
+  },
+  {
+   "row": 22,
+   "game": 20,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 242,
+   "fam_in": [
+    86
+   ],
+   "unf_in": [
+    92
+   ]
+  },
+  {
+   "row": 1402,
+   "game": 37,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 248,
+   "fam_in": [
+    242
+   ],
+   "unf_in": [
+    53
+   ]
+  },
+  {
+   "row": 1063,
+   "game": 14,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 227,
+   "fam_in": [
+    92
+   ],
+   "unf_in": [
+    168
+   ]
+  },
+  {
+   "row": 2886,
+   "game": 60,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 143,
+   "fam_in": [
+    264
+   ],
+   "unf_in": [
+    174
+   ]
+  },
+  {
+   "row": 811,
+   "game": 0,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 245,
+   "fam_in": [
+    214
+   ],
+   "unf_in": [
+    56
+   ]
+  },
+  {
+   "row": 1257,
+   "game": 44,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 51,
+   "fam_in": [
+    251
+   ],
+   "unf_in": [
+    182
+   ]
+  },
+  {
+   "row": 767,
+   "game": 0,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 385,
+   "fam_in": [
+    34
+   ],
+   "unf_in": [
+    34
+   ]
+  },
+  {
+   "row": 1311,
+   "game": 23,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 245,
+   "fam_in": [
+    58
+   ],
+   "unf_in": [
+    363
+   ]
+  },
+  {
+   "row": 1149,
+   "game": 19,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 242,
+   "fam_in": [
+    87
+   ],
+   "unf_in": [
+    69
+   ]
+  },
+  {
+   "row": 433,
+   "game": 8,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 227,
+   "fam_in": [
+    182
+   ],
+   "unf_in": [
+    46
+   ]
+  },
+  {
+   "row": 2915,
+   "game": 60,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 143,
+   "fam_in": [
+    264
+   ],
+   "unf_in": [
+    174
+   ]
+  },
+  {
+   "row": 411,
+   "game": 6,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 121,
+   "fam_in": [
+    56
+   ],
+   "unf_in": [
+    105
+   ]
+  },
+  {
+   "row": 248,
+   "game": 9,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 82,
+   "fam_in": [
+    365
+   ],
+   "unf_in": [
+    182
+   ]
+  },
+  {
+   "row": 2384,
+   "game": 57,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 385,
+   "fam_in": [
+    8
+   ],
+   "unf_in": [
+    347
+   ]
+  },
+  {
+   "row": 2771,
+   "game": 2,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 146,
+   "fam_in": [
+    46
+   ],
+   "unf_in": [
+    46
+   ]
+  },
+  {
+   "row": 2679,
+   "game": 2,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 51,
+   "fam_in": [
+    157
+   ],
+   "unf_in": [
+    157
+   ]
+  },
+  {
+   "row": 644,
+   "game": 18,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 94,
+   "fam_in": [
+    202
+   ],
+   "unf_in": [
+    85
+   ]
+  },
+  {
+   "row": 3172,
+   "game": 55,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    46
+   ],
+   "unf_in": [
+    89
+   ]
+  },
+  {
+   "row": 1886,
+   "game": 24,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 248,
+   "fam_in": [
+    242
+   ],
+   "unf_in": [
+    53
+   ]
+  },
+  {
+   "row": 1478,
+   "game": 33,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 227,
+   "fam_in": [
+    182
+   ],
+   "unf_in": [
+    65
+   ]
+  },
+  {
+   "row": 2003,
+   "game": 30,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    182
+   ],
+   "unf_in": [
+    182
+   ]
+  },
+  {
+   "row": 3010,
+   "game": 54,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 143,
+   "fam_in": [
+    264
+   ],
+   "unf_in": [
+    174
+   ]
+  },
+  {
+   "row": 2757,
+   "game": 2,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 146,
+   "fam_in": [
+    46
+   ],
+   "unf_in": [
+    315
+   ]
+  },
+  {
+   "row": 1409,
+   "game": 37,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 248,
+   "fam_in": [
+    355
+   ],
+   "unf_in": [
+    355
+   ]
+  },
+  {
+   "row": 343,
+   "game": 11,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 344,
+   "fam_in": [
+    156
+   ],
+   "unf_in": [
+    58
+   ]
+  },
+  {
+   "row": 1203,
+   "game": 19,
+   "slot": 5,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 344,
+   "fam_in": [
+    287
+   ],
+   "unf_in": [
+    58
+   ]
+  },
+  {
+   "row": 783,
+   "game": 0,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    309
+   ],
+   "unf_in": [
+    182
+   ]
+  },
+  {
+   "row": 2062,
+   "game": 3,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 251,
+   "fam_in": [
+    94
+   ],
+   "unf_in": [
+    363
+   ]
+  },
+  {
+   "row": 1247,
+   "game": 44,
+   "slot": 5,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 214,
+   "fam_in": [
+    264
+   ],
+   "unf_in": [
+    203
+   ]
+  },
+  {
+   "row": 91,
+   "game": 16,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 82,
+   "fam_in": [
+    92
+   ],
+   "unf_in": [
+    92
+   ]
+  },
+  {
+   "row": 2795,
+   "game": 2,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 146,
+   "fam_in": [
+    46
+   ],
+   "unf_in": [
+    46
+   ]
+  },
+  {
+   "row": 1921,
+   "game": 25,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    182
+   ],
+   "unf_in": [
+    156
+   ]
+  },
+  {
+   "row": 542,
+   "game": 13,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    264
+   ],
+   "unf_in": [
+    156
+   ]
+  },
+  {
+   "row": 726,
+   "game": 21,
+   "slot": 4,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    38
+   ],
+   "unf_in": [
+    97
+   ]
+  },
+  {
+   "row": 154,
+   "game": 1,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 344,
+   "fam_in": [
+    157
+   ],
+   "unf_in": [
+    287
+   ]
+  },
+  {
+   "row": 1399,
+   "game": 37,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 248,
+   "fam_in": [
+    242
+   ],
+   "unf_in": [
+    242
+   ]
+  },
+  {
+   "row": 1877,
+   "game": 24,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    355
+   ],
+   "unf_in": [
+    157
+   ]
+  },
+  {
+   "row": 141,
+   "game": 1,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    8
+   ],
+   "unf_in": [
+    182
+   ]
+  },
+  {
+   "row": 585,
+   "game": 12,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 248,
+   "fam_in": [
+    355
+   ],
+   "unf_in": [
+    242
+   ]
+  },
+  {
+   "row": 1709,
+   "game": 38,
+   "slot": 1,
+   "pattern": [
+    2,
+    1
+   ],
+   "species": 377,
+   "fam_in": [
+    86,
+    368
+   ],
+   "unf_in": [
+    174,
+    368
+   ]
+  },
+  {
+   "row": 1711,
+   "game": 38,
+   "slot": 1,
+   "pattern": [
+    2,
+    1
+   ],
+   "species": 377,
+   "fam_in": [
+    86,
+    368
+   ],
+   "unf_in": [
+    86,
+    355
+   ]
+  },
+  {
+   "row": 3138,
+   "game": 55,
+   "slot": 4,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 214,
+   "fam_in": [
+    361
+   ],
+   "unf_in": [
+    164
+   ]
+  },
+  {
+   "row": 2229,
+   "game": 42,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 242,
+   "fam_in": [
+    53
+   ],
+   "unf_in": [
+    69
+   ]
+  },
+  {
+   "row": 3011,
+   "game": 54,
+   "slot": 5,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 130,
+   "fam_in": [
+    269
+   ],
+   "unf_in": [
+    269
+   ]
+  },
+  {
+   "row": 287,
+   "game": 9,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    240
+   ],
+   "unf_in": [
+    369
+   ]
+  },
+  {
+   "row": 191,
+   "game": 4,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 82,
+   "fam_in": [
+    86
+   ],
+   "unf_in": [
+    240
+   ]
+  },
+  {
+   "row": 508,
+   "game": 13,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 121,
+   "fam_in": [
+    56
+   ],
+   "unf_in": [
+    56
+   ]
+  },
+  {
+   "row": 586,
+   "game": 12,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    174
+   ],
+   "unf_in": [
+    46
+   ]
+  },
+  {
+   "row": 2363,
+   "game": 57,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 378,
+   "fam_in": [
+    240
+   ],
+   "unf_in": [
+    240
+   ]
+  },
+  {
+   "row": 275,
+   "game": 9,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 91,
+   "fam_in": [
+    58
+   ],
+   "unf_in": [
+    196
+   ]
+  },
+  {
+   "row": 2083,
+   "game": 3,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    174
+   ],
+   "unf_in": [
+    57
+   ]
+  },
+  {
+   "row": 709,
+   "game": 21,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 350,
+   "fam_in": [
+    58
+   ],
+   "unf_in": [
+    58
+   ]
+  },
+  {
+   "row": 1181,
+   "game": 19,
+   "slot": 5,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 344,
+   "fam_in": [
+    287
+   ],
+   "unf_in": [
+    58
+   ]
+  },
+  {
+   "row": 274,
+   "game": 9,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 251,
+   "fam_in": [
+    365
+   ],
+   "unf_in": [
+    363
+   ]
+  },
+  {
+   "row": 262,
+   "game": 9,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 82,
+   "fam_in": [
+    240
+   ],
+   "unf_in": [
+    182
+   ]
+  },
+  {
+   "row": 1428,
+   "game": 40,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    56
+   ],
+   "unf_in": [
+    56
+   ]
+  },
+  {
+   "row": 2290,
+   "game": 41,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 248,
+   "fam_in": [
+    164
+   ],
+   "unf_in": [
+    264
+   ]
+  },
+  {
+   "row": 2504,
+   "game": 36,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 385,
+   "fam_in": [
+    85
+   ],
+   "unf_in": [
+    347
+   ]
+  },
+  {
+   "row": 1094,
+   "game": 14,
+   "slot": 5,
+   "pattern": [
+    1,
+    1
+   ],
+   "species": 142,
+   "fam_in": [
+    361
+   ],
+   "unf_in": [
+    355
+   ]
+  },
+  {
+   "row": 2926,
+   "game": 60,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 143,
+   "fam_in": [
+    264
+   ],
+   "unf_in": [
+    174
+   ]
+  },
+  {
+   "row": 2489,
+   "game": 36,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 205,
+   "fam_in": [
+    153
+   ],
+   "unf_in": [
+    89
+   ]
+  },
+  {
+   "row": 2548,
+   "game": 36,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    287
+   ],
+   "unf_in": [
+    56
+   ]
+  },
+  {
+   "row": 1026,
+   "game": 17,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 242,
+   "fam_in": [
+    273
+   ],
+   "unf_in": [
+    58
+   ]
+  },
+  {
+   "row": 1534,
+   "game": 35,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 205,
+   "fam_in": [
+    192
+   ],
+   "unf_in": [
+    68
+   ]
+  },
+  {
+   "row": 2259,
+   "game": 42,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 251,
+   "fam_in": [
+    347
+   ],
+   "unf_in": [
+    347
+   ]
+  },
+  {
+   "row": 122,
+   "game": 16,
+   "slot": 4,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    38
+   ],
+   "unf_in": [
+    94
+   ]
+  },
+  {
+   "row": 465,
+   "game": 8,
+   "slot": 5,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 94,
+   "fam_in": [
+    8
+   ],
+   "unf_in": [
+    8
+   ]
+  },
+  {
+   "row": 2092,
+   "game": 3,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    92
+   ],
+   "unf_in": [
+    360
+   ]
+  },
+  {
+   "row": 1448,
+   "game": 40,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 379,
+   "fam_in": [
+    68
+   ],
+   "unf_in": [
+    276
+   ]
+  },
+  {
+   "row": 1467,
+   "game": 40,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 379,
+   "fam_in": [
+    68
+   ],
+   "unf_in": [
+    68
+   ]
+  },
+  {
+   "row": 1349,
+   "game": 23,
+   "slot": 4,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 245,
+   "fam_in": [
+    46
+   ],
+   "unf_in": [
+    164
+   ]
+  },
+  {
+   "row": 2691,
+   "game": 2,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 242,
+   "fam_in": [
+    58
+   ],
+   "unf_in": [
+    273
+   ]
+  },
+  {
+   "row": 1273,
+   "game": 23,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    97
+   ],
+   "unf_in": [
+    92
+   ]
+  },
+  {
+   "row": 2719,
+   "game": 2,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 242,
+   "fam_in": [
+    273
+   ],
+   "unf_in": [
+    273
+   ]
+  },
+  {
+   "row": 2407,
+   "game": 57,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 385,
+   "fam_in": [
+    8
+   ],
+   "unf_in": [
+    347
+   ]
+  },
+  {
+   "row": 115,
+   "game": 16,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 373,
+   "fam_in": [
+    53
+   ],
+   "unf_in": [
+    89
+   ]
+  },
+  {
+   "row": 2530,
+   "game": 36,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    68
+   ],
+   "unf_in": [
+    287
+   ]
+  },
+  {
+   "row": 1491,
+   "game": 33,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 330,
+   "fam_in": [
+    156
+   ],
+   "unf_in": [
+    182
+   ]
+  },
+  {
+   "row": 2879,
+   "game": 60,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 143,
+   "fam_in": [
+    264
+   ],
+   "unf_in": [
+    174
+   ]
+  },
+  {
+   "row": 1074,
+   "game": 14,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 330,
+   "fam_in": [
+    156
+   ],
+   "unf_in": [
+    164
+   ]
+  },
+  {
+   "row": 65,
+   "game": 7,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 385,
+   "fam_in": [
+    34
+   ],
+   "unf_in": [
+    363
+   ]
+  },
+  {
+   "row": 578,
+   "game": 12,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    56
+   ],
+   "unf_in": [
+    214
+   ]
+  },
+  {
+   "row": 658,
+   "game": 18,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 135,
+   "fam_in": [
+    86
+   ],
+   "unf_in": [
+    46
+   ]
+  },
+  {
+   "row": 1824,
+   "game": 47,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 205,
+   "fam_in": [
+    153
+   ],
+   "unf_in": [
+    89
+   ]
+  },
+  {
+   "row": 1946,
+   "game": 25,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    156
+   ],
+   "unf_in": [
+    156
+   ]
+  },
+  {
+   "row": 2937,
+   "game": 68,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    228
+   ],
+   "unf_in": [
+    182
+   ]
+  },
+  {
+   "row": 1168,
+   "game": 19,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 242,
+   "fam_in": [
+    312
+   ],
+   "unf_in": [
+    363
+   ]
+  },
+  {
+   "row": 2656,
+   "game": 50,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 91,
+   "fam_in": [
+    363
+   ],
+   "unf_in": [
+    358
+   ]
+  },
+  {
+   "row": 2710,
+   "game": 2,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 227,
+   "fam_in": [
+    18
+   ],
+   "unf_in": [
+    364
+   ]
+  },
+  {
+   "row": 1739,
+   "game": 38,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    182
+   ],
+   "unf_in": [
+    182
+   ]
+  },
+  {
+   "row": 454,
+   "game": 8,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 330,
+   "fam_in": [
+    92
+   ],
+   "unf_in": [
+    92
+   ]
+  },
+  {
+   "row": 2345,
+   "game": 41,
+   "slot": 5,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 6,
+   "fam_in": [
+    164
+   ],
+   "unf_in": [
+    164
+   ]
+  },
+  {
+   "row": 2890,
+   "game": 60,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 378,
+   "fam_in": [
+    240
+   ],
+   "unf_in": [
+    240
+   ]
+  },
+  {
+   "row": 1335,
+   "game": 23,
+   "slot": 4,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 245,
+   "fam_in": [
+    92
+   ],
+   "unf_in": [
+    57
+   ]
+  },
+  {
+   "row": 2707,
+   "game": 2,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 242,
+   "fam_in": [
+    58
+   ],
+   "unf_in": [
+    273
+   ]
+  },
+  {
+   "row": 2335,
+   "game": 41,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 248,
+   "fam_in": [
+    92
+   ],
+   "unf_in": [
+    363
+   ]
+  },
+  {
+   "row": 1825,
+   "game": 47,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    309
+   ],
+   "unf_in": [
+    182
+   ]
+  },
+  {
+   "row": 1085,
+   "game": 14,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 251,
+   "fam_in": [
+    94
+   ],
+   "unf_in": [
+    359
+   ]
+  },
+  {
+   "row": 1943,
+   "game": 25,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    57
+   ],
+   "unf_in": [
+    182
+   ]
+  },
+  {
+   "row": 2307,
+   "game": 41,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 121,
+   "fam_in": [
+    56
+   ],
+   "unf_in": [
+    56
+   ]
+  },
+  {
+   "row": 1033,
+   "game": 17,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 251,
+   "fam_in": [
+    360
+   ],
+   "unf_in": [
+    360
+   ]
+  },
+  {
+   "row": 2633,
+   "game": 50,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 82,
+   "fam_in": [
+    86
+   ],
+   "unf_in": [
+    164
+   ]
+  },
+  {
+   "row": 2064,
+   "game": 3,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 242,
+   "fam_in": [
+    312
+   ],
+   "unf_in": [
+    92
+   ]
+  },
+  {
+   "row": 1916,
+   "game": 25,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 82,
+   "fam_in": [
+    86
+   ],
+   "unf_in": [
+    86
+   ]
+  },
+  {
+   "row": 1413,
+   "game": 40,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 248,
+   "fam_in": [
+    58
+   ],
+   "unf_in": [
+    280
+   ]
+  },
+  {
+   "row": 701,
+   "game": 21,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 143,
+   "fam_in": [
+    264
+   ],
+   "unf_in": [
+    264
+   ]
+  },
+  {
+   "row": 1170,
+   "game": 19,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 242,
+   "fam_in": [
+    312
+   ],
+   "unf_in": [
+    86
+   ]
+  },
+  {
+   "row": 3139,
+   "game": 55,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    46
+   ],
+   "unf_in": [
+    46
+   ]
+  },
+  {
+   "row": 1016,
+   "game": 17,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 251,
+   "fam_in": [
+    360
+   ],
+   "unf_in": [
+    363
+   ]
+  },
+  {
+   "row": 2379,
+   "game": 57,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 94,
+   "fam_in": [
+    85
+   ],
+   "unf_in": [
+    85
+   ]
+  },
+  {
+   "row": 3292,
+   "game": 53,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 242,
+   "fam_in": [
+    273
+   ],
+   "unf_in": [
+    92
+   ]
+  },
+  {
+   "row": 1597,
+   "game": 32,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 248,
+   "fam_in": [
+    126
+   ],
+   "unf_in": [
+    363
+   ]
+  },
+  {
+   "row": 2945,
+   "game": 68,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    228
+   ],
+   "unf_in": [
+    368
+   ]
+  },
+  {
+   "row": 2239,
+   "game": 42,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 242,
+   "fam_in": [
+    69
+   ],
+   "unf_in": [
+    69
+   ]
+  },
+  {
+   "row": 193,
+   "game": 4,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    157
+   ],
+   "unf_in": [
+    97
+   ]
+  },
+  {
+   "row": 241,
+   "game": 4,
+   "slot": 5,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 373,
+   "fam_in": [
+    280
+   ],
+   "unf_in": [
+    280
+   ]
+  },
+  {
+   "row": 1079,
+   "game": 14,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 330,
+   "fam_in": [
+    126
+   ],
+   "unf_in": [
+    126
+   ]
+  },
+  {
+   "row": 2718,
+   "game": 2,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 146,
+   "fam_in": [
+    315
+   ],
+   "unf_in": [
+    46
+   ]
+  },
+  {
+   "row": 1072,
+   "game": 14,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 227,
+   "fam_in": [
+    269
+   ],
+   "unf_in": [
+    92
+   ]
+  },
+  {
+   "row": 2220,
+   "game": 42,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 242,
+   "fam_in": [
+    85
+   ],
+   "unf_in": [
+    69
+   ]
+  },
+  {
+   "row": 2367,
+   "game": 57,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 378,
+   "fam_in": [
+    360
+   ],
+   "unf_in": [
+    360
+   ]
+  },
+  {
+   "row": 1544,
+   "game": 35,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 205,
+   "fam_in": [
+    68
+   ],
+   "unf_in": [
+    68
+   ]
+  },
+  {
+   "row": 252,
+   "game": 9,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 91,
+   "fam_in": [
+    58
+   ],
+   "unf_in": [
+    58
+   ]
+  },
+  {
+   "row": 280,
+   "game": 9,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 251,
+   "fam_in": [
+    360
+   ],
+   "unf_in": [
+    105
+   ]
+  },
+  {
+   "row": 3132,
+   "game": 55,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 143,
+   "fam_in": [
+    247
+   ],
+   "unf_in": [
+    126
+   ]
+  },
+  {
+   "row": 279,
+   "game": 9,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    182
+   ],
+   "unf_in": [
+    182
+   ]
+  },
+  {
+   "row": 3080,
+   "game": 66,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 248,
+   "fam_in": [
+    349
+   ],
+   "unf_in": [
+    126
+   ]
+  },
+  {
+   "row": 915,
+   "game": 15,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 142,
+   "fam_in": [
+    228
+   ],
+   "unf_in": [
+    164
+   ]
+  },
+  {
+   "row": 1777,
+   "game": 43,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 373,
+   "fam_in": [
+    53
+   ],
+   "unf_in": [
+    157
+   ]
+  },
+  {
+   "row": 3275,
+   "game": 53,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 242,
+   "fam_in": [
+    273
+   ],
+   "unf_in": [
+    86
+   ]
+  },
+  {
+   "row": 1318,
+   "game": 23,
+   "slot": 4,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 245,
+   "fam_in": [
+    156
+   ],
+   "unf_in": [
+    156
+   ]
+  },
+  {
+   "row": 8,
+   "game": 20,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 385,
+   "fam_in": [
+    34
+   ],
+   "unf_in": [
+    363
+   ]
+  },
+  {
+   "row": 1222,
+   "game": 44,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 205,
+   "fam_in": [
+    360
+   ],
+   "unf_in": [
+    355
+   ]
+  },
+  {
+   "row": 1875,
+   "game": 24,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    157
+   ],
+   "unf_in": [
+    97
+   ]
+  },
+  {
+   "row": 3134,
+   "game": 55,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 143,
+   "fam_in": [
+    89
+   ],
+   "unf_in": [
+    34
+   ]
+  },
+  {
+   "row": 1110,
+   "game": 14,
+   "slot": 5,
+   "pattern": [
+    1,
+    1
+   ],
+   "species": 142,
+   "fam_in": [
+    355
+   ],
+   "unf_in": [
+    361
+   ]
+  },
+  {
+   "row": 2965,
+   "game": 68,
+   "slot": 4,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 251,
+   "fam_in": [
+    73
+   ],
+   "unf_in": [
+    226
+   ]
+  },
+  {
+   "row": 196,
+   "game": 4,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 82,
+   "fam_in": [
+    86
+   ],
+   "unf_in": [
+    240
+   ]
+  },
+  {
+   "row": 467,
+   "game": 8,
+   "slot": 5,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 94,
+   "fam_in": [
+    261
+   ],
+   "unf_in": [
+    363
+   ]
+  },
+  {
+   "row": 3165,
+   "game": 55,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    46
+   ],
+   "unf_in": [
+    46
+   ]
+  },
+  {
+   "row": 1722,
+   "game": 38,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    57
+   ],
+   "unf_in": [
+    182
+   ]
+  },
+  {
+   "row": 1339,
+   "game": 23,
+   "slot": 4,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 245,
+   "fam_in": [
+    57
+   ],
+   "unf_in": [
+    164
+   ]
+  },
+  {
+   "row": 730,
+   "game": 21,
+   "slot": 5,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 214,
+   "fam_in": [
+    179
+   ],
+   "unf_in": [
+    179
+   ]
+  },
+  {
+   "row": 1340,
+   "game": 23,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 245,
+   "fam_in": [
+    58
+   ],
+   "unf_in": [
+    164
+   ]
+  },
+  {
+   "row": 2121,
+   "game": 3,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    97
+   ],
+   "unf_in": [
+    157
+   ]
+  },
+  {
+   "row": 702,
+   "game": 21,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 350,
+   "fam_in": [
+    95
+   ],
+   "unf_in": [
+    58
+   ]
+  },
+  {
+   "row": 1240,
+   "game": 44,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 51,
+   "fam_in": [
+    228
+   ],
+   "unf_in": [
+    251
+   ]
+  },
+  {
+   "row": 1781,
+   "game": 43,
+   "slot": 5,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 214,
+   "fam_in": [
+    264
+   ],
+   "unf_in": [
+    280
+   ]
+  },
+  {
+   "row": 1849,
+   "game": 24,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    355
+   ],
+   "unf_in": [
+    94
+   ]
+  },
+  {
+   "row": 2510,
+   "game": 36,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    287
+   ],
+   "unf_in": [
+    56
+   ]
+  },
+  {
+   "row": 645,
+   "game": 18,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    182
+   ],
+   "unf_in": [
+    182
+   ]
+  },
+  {
+   "row": 1238,
+   "game": 44,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 51,
+   "fam_in": [
+    251
+   ],
+   "unf_in": [
+    251
+   ]
+  },
+  {
+   "row": 2413,
+   "game": 57,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 385,
+   "fam_in": [
+    8
+   ],
+   "unf_in": [
+    347
+   ]
+  },
+  {
+   "row": 2078,
+   "game": 3,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    92
+   ],
+   "unf_in": [
+    157
+   ]
+  },
+  {
+   "row": 1239,
+   "game": 44,
+   "slot": 5,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 214,
+   "fam_in": [
+    264
+   ],
+   "unf_in": [
+    362
+   ]
+  },
+  {
+   "row": 1248,
+   "game": 44,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 51,
+   "fam_in": [
+    103
+   ],
+   "unf_in": [
+    251
+   ]
+  },
+  {
+   "row": 500,
+   "game": 13,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 121,
+   "fam_in": [
+    56
+   ],
+   "unf_in": [
+    56
+   ]
+  },
+  {
+   "row": 3,
+   "game": 20,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 248,
+   "fam_in": [
+    92
+   ],
+   "unf_in": [
+    355
+   ]
+  },
+  {
+   "row": 140,
+   "game": 1,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    309
+   ],
+   "unf_in": [
+    182
+   ]
+  },
+  {
+   "row": 2943,
+   "game": 68,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    228
+   ],
+   "unf_in": [
+    368
+   ]
+  },
+  {
+   "row": 1002,
+   "game": 17,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 251,
+   "fam_in": [
+    360
+   ],
+   "unf_in": [
+    363
+   ]
+  },
+  {
+   "row": 2066,
+   "game": 3,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 242,
+   "fam_in": [
+    92
+   ],
+   "unf_in": [
+    53
+   ]
+  },
+  {
+   "row": 45,
+   "game": 7,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 385,
+   "fam_in": [
+    34
+   ],
+   "unf_in": [
+    363
+   ]
+  },
+  {
+   "row": 840,
+   "game": 10,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 248,
+   "fam_in": [
+    126
+   ],
+   "unf_in": [
+    363
+   ]
+  },
+  {
+   "row": 982,
+   "game": 17,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 82,
+   "fam_in": [
+    86
+   ],
+   "unf_in": [
+    182
+   ]
+  },
+  {
+   "row": 665,
+   "game": 18,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 135,
+   "fam_in": [
+    46
+   ],
+   "unf_in": [
+    86
+   ]
+  },
+  {
+   "row": 3094,
+   "game": 66,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 251,
+   "fam_in": [
+    73
+   ],
+   "unf_in": [
+    226
+   ]
+  },
+  {
+   "row": 2217,
+   "game": 42,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 242,
+   "fam_in": [
+    69
+   ],
+   "unf_in": [
+    69
+   ]
+  },
+  {
+   "row": 678,
+   "game": 18,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 135,
+   "fam_in": [
+    365
+   ],
+   "unf_in": [
+    86
+   ]
+  },
+  {
+   "row": 349,
+   "game": 11,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 344,
+   "fam_in": [
+    58
+   ],
+   "unf_in": [
+    156
+   ]
+  },
+  {
+   "row": 2437,
+   "game": 65,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    363
+   ],
+   "unf_in": [
+    182
+   ]
+  },
+  {
+   "row": 1787,
+   "game": 43,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 385,
+   "fam_in": [
+    34
+   ],
+   "unf_in": [
+    34
+   ]
+  },
+  {
+   "row": 911,
+   "game": 15,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 248,
+   "fam_in": [
+    280
+   ],
+   "unf_in": [
+    38
+   ]
+  },
+  {
+   "row": 2991,
+   "game": 54,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 385,
+   "fam_in": [
+    92
+   ],
+   "unf_in": [
+    164
+   ]
+  },
+  {
+   "row": 314,
+   "game": 11,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    92
+   ],
+   "unf_in": [
+    97
+   ]
+  },
+  {
+   "row": 2460,
+   "game": 65,
+   "slot": 4,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 242,
+   "fam_in": [
+    92
+   ],
+   "unf_in": [
+    47
+   ]
+  },
+  {
+   "row": 1863,
+   "game": 24,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    157
+   ],
+   "unf_in": [
+    157
+   ]
+  },
+  {
+   "row": 2940,
+   "game": 68,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 373,
+   "fam_in": [
+    280
+   ],
+   "unf_in": [
+    280
+   ]
+  },
+  {
+   "row": 2993,
+   "game": 54,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 385,
+   "fam_in": [
+    92
+   ],
+   "unf_in": [
+    363
+   ]
+  },
+  {
+   "row": 2622,
+   "game": 50,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 82,
+   "fam_in": [
+    86
+   ],
+   "unf_in": [
+    164
+   ]
+  },
+  {
+   "row": 3258,
+   "game": 53,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 82,
+   "fam_in": [
+    86
+   ],
+   "unf_in": [
+    240
+   ]
+  },
+  {
+   "row": 462,
+   "game": 8,
+   "slot": 5,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 94,
+   "fam_in": [
+    8
+   ],
+   "unf_in": [
+    363
+   ]
+  },
+  {
+   "row": 536,
+   "game": 13,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 248,
+   "fam_in": [
+    38
+   ],
+   "unf_in": [
+    355
+   ]
+  },
+  {
+   "row": 1425,
+   "game": 40,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 379,
+   "fam_in": [
+    68
+   ],
+   "unf_in": [
+    276
+   ]
+  },
+  {
+   "row": 1139,
+   "game": 19,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 227,
+   "fam_in": [
+    369
+   ],
+   "unf_in": [
+    92
+   ]
+  },
+  {
+   "row": 1587,
+   "game": 32,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 248,
+   "fam_in": [
+    363
+   ],
+   "unf_in": [
+    363
+   ]
+  },
+  {
+   "row": 3084,
+   "game": 66,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 379,
+   "fam_in": [
+    68
+   ],
+   "unf_in": [
+    174
+   ]
+  },
+  {
+   "row": 2722,
+   "game": 2,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 146,
+   "fam_in": [
+    164
+   ],
+   "unf_in": [
+    46
+   ]
+  },
+  {
+   "row": 3309,
+   "game": 53,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 245,
+   "fam_in": [
+    214
+   ],
+   "unf_in": [
+    58
+   ]
+  },
+  {
+   "row": 1845,
+   "game": 24,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    157
+   ],
+   "unf_in": [
+    157
+   ]
+  },
+  {
+   "row": 1685,
+   "game": 45,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 251,
+   "fam_in": [
+    94
+   ],
+   "unf_in": [
+    360
+   ]
+  },
+  {
+   "row": 1726,
+   "game": 38,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    157
+   ],
+   "unf_in": [
+    369
+   ]
+  },
+  {
+   "row": 3204,
+   "game": 64,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 82,
+   "fam_in": [
+    156
+   ],
+   "unf_in": [
+    86
+   ]
+  },
+  {
+   "row": 1221,
+   "game": 44,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 143,
+   "fam_in": [
+    216
+   ],
+   "unf_in": [
+    126
+   ]
+  },
+  {
+   "row": 2442,
+   "game": 65,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    97
+   ],
+   "unf_in": [
+    92
+   ]
+  },
+  {
+   "row": 1477,
+   "game": 33,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 373,
+   "fam_in": [
+    280
+   ],
+   "unf_in": [
+    280
+   ]
+  },
+  {
+   "row": 86,
+   "game": 16,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    182
+   ],
+   "unf_in": [
+    46
+   ]
+  },
+  {
+   "row": 449,
+   "game": 8,
+   "slot": 4,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    38
+   ],
+   "unf_in": [
+    94
+   ]
+  },
+  {
+   "row": 1791,
+   "game": 43,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 385,
+   "fam_in": [
+    34
+   ],
+   "unf_in": [
+    363
+   ]
+  },
+  {
+   "row": 3281,
+   "game": 53,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 242,
+   "fam_in": [
+    273
+   ],
+   "unf_in": [
+    92
+   ]
+  },
+  {
+   "row": 424,
+   "game": 6,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 121,
+   "fam_in": [
+    56
+   ],
+   "unf_in": [
+    105
+   ]
+  },
+  {
+   "row": 3249,
+   "game": 53,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 385,
+   "fam_in": [
+    34
+   ],
+   "unf_in": [
+    34
+   ]
+  },
+  {
+   "row": 1009,
+   "game": 17,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 242,
+   "fam_in": [
+    273
+   ],
+   "unf_in": [
+    58
+   ]
+  },
+  {
+   "row": 2546,
+   "game": 36,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    68
+   ],
+   "unf_in": [
+    164
+   ]
+  },
+  {
+   "row": 1152,
+   "game": 19,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 245,
+   "fam_in": [
+    58
+   ],
+   "unf_in": [
+    214
+   ]
+  },
+  {
+   "row": 1422,
+   "game": 40,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 205,
+   "fam_in": [
+    192
+   ],
+   "unf_in": [
+    153
+   ]
+  },
+  {
+   "row": 327,
+   "game": 11,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 344,
+   "fam_in": [
+    156
+   ],
+   "unf_in": [
+    58
+   ]
+  },
+  {
+   "row": 1484,
+   "game": 33,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 227,
+   "fam_in": [
+    65
+   ],
+   "unf_in": [
+    182
+   ]
+  },
+  {
+   "row": 3060,
+   "game": 66,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 248,
+   "fam_in": [
+    349
+   ],
+   "unf_in": [
+    280
+   ]
+  },
+  {
+   "row": 2946,
+   "game": 68,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 373,
+   "fam_in": [
+    280
+   ],
+   "unf_in": [
+    280
+   ]
+  },
+  {
+   "row": 1732,
+   "game": 38,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    264
+   ],
+   "unf_in": [
+    46
+   ]
+  },
+  {
+   "row": 3143,
+   "game": 55,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    46
+   ],
+   "unf_in": [
+    46
+   ]
+  },
+  {
+   "row": 2315,
+   "game": 41,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 248,
+   "fam_in": [
+    355
+   ],
+   "unf_in": [
+    355
+   ]
+  },
+  {
+   "row": 1801,
+   "game": 43,
+   "slot": 5,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 330,
+   "fam_in": [
+    126
+   ],
+   "unf_in": [
+    355
+   ]
+  },
+  {
+   "row": 1994,
+   "game": 30,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 248,
+   "fam_in": [
+    182
+   ],
+   "unf_in": [
+    363
+   ]
+  },
+  {
+   "row": 3213,
+   "game": 64,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 82,
+   "fam_in": [
+    86
+   ],
+   "unf_in": [
+    240
+   ]
+  },
+  {
+   "row": 2917,
+   "game": 60,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 143,
+   "fam_in": [
+    264
+   ],
+   "unf_in": [
+    174
+   ]
+  },
+  {
+   "row": 1866,
+   "game": 24,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 248,
+   "fam_in": [
+    157
+   ],
+   "unf_in": [
+    89
+   ]
+  },
+  {
+   "row": 3290,
+   "game": 53,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 82,
+   "fam_in": [
+    240
+   ],
+   "unf_in": [
+    182
+   ]
+  },
+  {
+   "row": 437,
+   "game": 8,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 385,
+   "fam_in": [
+    92
+   ],
+   "unf_in": [
+    363
+   ]
+  },
+  {
+   "row": 831,
+   "game": 0,
+   "slot": 4,
+   "pattern": [
+    1,
+    1
+   ],
+   "species": 344,
+   "fam_in": [
+    157
+   ],
+   "unf_in": [
+    94
+   ]
+  },
+  {
+   "row": 2689,
+   "game": 2,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 242,
+   "fam_in": [
+    58
+   ],
+   "unf_in": [
+    85
+   ]
+  },
+  {
+   "row": 1162,
+   "game": 19,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 242,
+   "fam_in": [
+    92
+   ],
+   "unf_in": [
+    69
+   ]
+  },
+  {
+   "row": 517,
+   "game": 13,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 248,
+   "fam_in": [
+    355
+   ],
+   "unf_in": [
+    53
+   ]
+  },
+  {
+   "row": 2408,
+   "game": 57,
+   "slot": 4,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 344,
+   "fam_in": [
+    287
+   ],
+   "unf_in": [
+    157
+   ]
+  },
+  {
+   "row": 3100,
+   "game": 66,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 251,
+   "fam_in": [
+    73
+   ],
+   "unf_in": [
+    226
+   ]
+  },
+  {
+   "row": 521,
+   "game": 13,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 248,
+   "fam_in": [
+    38
+   ],
+   "unf_in": [
+    126
+   ]
+  },
+  {
+   "row": 1245,
+   "game": 44,
+   "slot": 5,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 214,
+   "fam_in": [
+    264
+   ],
+   "unf_in": [
+    280
+   ]
+  },
+  {
+   "row": 524,
+   "game": 13,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    156
+   ],
+   "unf_in": [
+    57
+   ]
+  },
+  {
+   "row": 3248,
+   "game": 53,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 82,
+   "fam_in": [
+    319
+   ],
+   "unf_in": [
+    182
+   ]
+  },
+  {
+   "row": 3220,
+   "game": 64,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 82,
+   "fam_in": [
+    86
+   ],
+   "unf_in": [
+    164
+   ]
+  },
+  {
+   "row": 48,
+   "game": 7,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 385,
+   "fam_in": [
+    359
+   ],
+   "unf_in": [
+    34
+   ]
+  },
+  {
+   "row": 1540,
+   "game": 35,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 205,
+   "fam_in": [
+    192
+   ],
+   "unf_in": [
+    89
+   ]
+  },
+  {
+   "row": 2065,
+   "game": 3,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 251,
+   "fam_in": [
+    368
+   ],
+   "unf_in": [
+    94
+   ]
+  },
+  {
+   "row": 130,
+   "game": 16,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 385,
+   "fam_in": [
+    273
+   ],
+   "unf_in": [
+    347
+   ]
+  },
+  {
+   "row": 335,
+   "game": 11,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    228
+   ],
+   "unf_in": [
+    89
+   ]
+  },
+  {
+   "row": 10,
+   "game": 20,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 385,
+   "fam_in": [
+    34
+   ],
+   "unf_in": [
+    363
+   ]
+  },
+  {
+   "row": 3015,
+   "game": 54,
+   "slot": 5,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 130,
+   "fam_in": [
+    361
+   ],
+   "unf_in": [
+    156
+   ]
+  },
+  {
+   "row": 1233,
+   "game": 44,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 51,
+   "fam_in": [
+    241
+   ],
+   "unf_in": [
+    92
+   ]
+  },
+  {
+   "row": 791,
+   "game": 0,
+   "slot": 5,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 373,
+   "fam_in": [
+    363
+   ],
+   "unf_in": [
+    363
+   ]
+  },
+  {
+   "row": 762,
+   "game": 0,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    309
+   ],
+   "unf_in": [
+    182
+   ]
+  },
+  {
+   "row": 1934,
+   "game": 25,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    182
+   ],
+   "unf_in": [
+    46
+   ]
+  },
+  {
+   "row": 2544,
+   "game": 36,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    287
+   ],
+   "unf_in": [
+    56
+   ]
+  },
+  {
+   "row": 291,
+   "game": 9,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    363
+   ],
+   "unf_in": [
+    182
+   ]
+  },
+  {
+   "row": 3291,
+   "game": 53,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    56
+   ],
+   "unf_in": [
+    182
+   ]
+  },
+  {
+   "row": 103,
+   "game": 16,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 373,
+   "fam_in": [
+    53
+   ],
+   "unf_in": [
+    89
+   ]
+  },
+  {
+   "row": 1354,
+   "game": 23,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 245,
+   "fam_in": [
+    58
+   ],
+   "unf_in": [
+    58
+   ]
+  },
+  {
+   "row": 663,
+   "game": 18,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 135,
+   "fam_in": [
+    92
+   ],
+   "unf_in": [
+    86
+   ]
+  },
+  {
+   "row": 292,
+   "game": 9,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    157
+   ],
+   "unf_in": [
+    157
+   ]
+  },
+  {
+   "row": 2215,
+   "game": 42,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 242,
+   "fam_in": [
+    69
+   ],
+   "unf_in": [
+    86
+   ]
+  },
+  {
+   "row": 3098,
+   "game": 66,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 251,
+   "fam_in": [
+    73
+   ],
+   "unf_in": [
+    226
+   ]
+  },
+  {
+   "row": 1045,
+   "game": 17,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 251,
+   "fam_in": [
+    105
+   ],
+   "unf_in": [
+    105
+   ]
+  },
+  {
+   "row": 549,
+   "game": 13,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    182
+   ],
+   "unf_in": [
+    182
+   ]
+  },
+  {
+   "row": 1100,
+   "game": 14,
+   "slot": 5,
+   "pattern": [
+    1,
+    1
+   ],
+   "species": 142,
+   "fam_in": [
+    359
+   ],
+   "unf_in": [
+    355
+   ]
+  },
+  {
+   "row": 2631,
+   "game": 50,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    228
+   ],
+   "unf_in": [
+    157
+   ]
+  },
+  {
+   "row": 288,
+   "game": 9,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 251,
+   "fam_in": [
+    360
+   ],
+   "unf_in": [
+    363
+   ]
+  },
+  {
+   "row": 1584,
+   "game": 32,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 379,
+   "fam_in": [
+    68
+   ],
+   "unf_in": [
+    68
+   ]
+  },
+  {
+   "row": 1291,
+   "game": 23,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 385,
+   "fam_in": [
+    92
+   ],
+   "unf_in": [
+    363
+   ]
+  },
+  {
+   "row": 646,
+   "game": 18,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    92
+   ],
+   "unf_in": [
+    182
+   ]
+  },
+  {
+   "row": 1840,
+   "game": 47,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    309
+   ],
+   "unf_in": [
+    182
+   ]
+  },
+  {
+   "row": 1020,
+   "game": 17,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 251,
+   "fam_in": [
+    360
+   ],
+   "unf_in": [
+    363
+   ]
+  },
+  {
+   "row": 715,
+   "game": 21,
+   "slot": 4,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 344,
+   "fam_in": [
+    153
+   ],
+   "unf_in": [
+    153
+   ]
+  },
+  {
+   "row": 316,
+   "game": 11,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 245,
+   "fam_in": [
+    58
+   ],
+   "unf_in": [
+    58
+   ]
+  },
+  {
+   "row": 2304,
+   "game": 41,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 248,
+   "fam_in": [
+    363
+   ],
+   "unf_in": [
+    363
+   ]
+  },
+  {
+   "row": 3192,
+   "game": 64,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 248,
+   "fam_in": [
+    280
+   ],
+   "unf_in": [
+    363
+   ]
+  },
+  {
+   "row": 340,
+   "game": 11,
+   "slot": 4,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 94,
+   "fam_in": [
+    8
+   ],
+   "unf_in": [
+    85
+   ]
+  },
+  {
+   "row": 3250,
+   "game": 53,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 82,
+   "fam_in": [
+    86
+   ],
+   "unf_in": [
+    240
+   ]
+  },
+  {
+   "row": 2383,
+   "game": 57,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 94,
+   "fam_in": [
+    85
+   ],
+   "unf_in": [
+    261
+   ]
+  },
+  {
+   "row": 1819,
+   "game": 47,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    8
+   ],
+   "unf_in": [
+    182
+   ]
+  },
+  {
+   "row": 1300,
+   "game": 23,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    92
+   ],
+   "unf_in": [
+    97
+   ]
+  },
+  {
+   "row": 2101,
+   "game": 3,
+   "slot": 4,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    363
+   ],
+   "unf_in": [
+    360
+   ]
+  },
+  {
+   "row": 1352,
+   "game": 23,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 245,
+   "fam_in": [
+    58
+   ],
+   "unf_in": [
+    58
+   ]
+  },
+  {
+   "row": 1666,
+   "game": 45,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    153
+   ],
+   "unf_in": [
+    363
+   ]
+  },
+  {
+   "row": 7,
+   "game": 20,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 248,
+   "fam_in": [
+    363
+   ],
+   "unf_in": [
+    355
+   ]
+  },
+  {
+   "row": 1729,
+   "game": 38,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    363
+   ],
+   "unf_in": [
+    157
+   ]
+  },
+  {
+   "row": 3181,
+   "game": 55,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    46
+   ],
+   "unf_in": [
+    46
+   ]
+  },
+  {
+   "row": 2723,
+   "game": 2,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 242,
+   "fam_in": [
+    58
+   ],
+   "unf_in": [
+    53
+   ]
+  },
+  {
+   "row": 1007,
+   "game": 17,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 242,
+   "fam_in": [
+    68
+   ],
+   "unf_in": [
+    85
+   ]
+  },
+  {
+   "row": 1918,
+   "game": 25,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 82,
+   "fam_in": [
+    86
+   ],
+   "unf_in": [
+    86
+   ]
+  },
+  {
+   "row": 246,
+   "game": 4,
+   "slot": 5,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 373,
+   "fam_in": [
+    280
+   ],
+   "unf_in": [
+    126
+   ]
+  },
+  {
+   "row": 17,
+   "game": 20,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 243,
+   "fam_in": [
+    365
+   ],
+   "unf_in": [
+    365
+   ]
+  },
+  {
+   "row": 2919,
+   "game": 60,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 143,
+   "fam_in": [
+    264
+   ],
+   "unf_in": [
+    174
+   ]
+  },
+  {
+   "row": 551,
+   "game": 13,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    92
+   ],
+   "unf_in": [
+    182
+   ]
+  },
+  {
+   "row": 577,
+   "game": 12,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    46
+   ],
+   "unf_in": [
+    56
+   ]
+  },
+  {
+   "row": 3157,
+   "game": 55,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    46
+   ],
+   "unf_in": [
+    46
+   ]
+  },
+  {
+   "row": 739,
+   "game": 21,
+   "slot": 5,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 214,
+   "fam_in": [
+    264
+   ],
+   "unf_in": [
+    280
+   ]
+  },
+  {
+   "row": 5,
+   "game": 20,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 248,
+   "fam_in": [
+    355
+   ],
+   "unf_in": [
+    242
+   ]
+  },
+  {
+   "row": 270,
+   "game": 9,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 251,
+   "fam_in": [
+    360
+   ],
+   "unf_in": [
+    363
+   ]
+  },
+  {
+   "row": 913,
+   "game": 15,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 142,
+   "fam_in": [
+    359
+   ],
+   "unf_in": [
+    361
+   ]
+  },
+  {
+   "row": 146,
+   "game": 1,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    309
+   ],
+   "unf_in": [
+    182
+   ]
+  },
+  {
+   "row": 1823,
+   "game": 47,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    309
+   ],
+   "unf_in": [
+    182
+   ]
+  },
+  {
+   "row": 123,
+   "game": 16,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 385,
+   "fam_in": [
+    273
+   ],
+   "unf_in": [
+    347
+   ]
+  },
+  {
+   "row": 1430,
+   "game": 40,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    56
+   ],
+   "unf_in": [
+    46
+   ]
+  },
+  {
+   "row": 1108,
+   "game": 14,
+   "slot": 5,
+   "pattern": [
+    1,
+    1
+   ],
+   "species": 142,
+   "fam_in": [
+    355
+   ],
+   "unf_in": [
+    361
+   ]
+  },
+  {
+   "row": 3197,
+   "game": 64,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 82,
+   "fam_in": [
+    156
+   ],
+   "unf_in": [
+    363
+   ]
+  },
+  {
+   "row": 1485,
+   "game": 33,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 373,
+   "fam_in": [
+    280
+   ],
+   "unf_in": [
+    280
+   ]
+  },
+  {
+   "row": 1165,
+   "game": 19,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 245,
+   "fam_in": [
+    214
+   ],
+   "unf_in": [
+    58
+   ]
+  },
+  {
+   "row": 910,
+   "game": 15,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 227,
+   "fam_in": [
+    92
+   ],
+   "unf_in": [
+    168
+   ]
+  },
+  {
+   "row": 950,
+   "game": 15,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 142,
+   "fam_in": [
+    359
+   ],
+   "unf_in": [
+    359
+   ]
+  },
+  {
+   "row": 1144,
+   "game": 19,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 245,
+   "fam_in": [
+    58
+   ],
+   "unf_in": [
+    58
+   ]
+  },
+  {
+   "row": 375,
+   "game": 6,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    182
+   ],
+   "unf_in": [
+    156
+   ]
+  },
+  {
+   "row": 1774,
+   "game": 43,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 146,
+   "fam_in": [
+    46
+   ],
+   "unf_in": [
+    46
+   ]
+  },
+  {
+   "row": 2447,
+   "game": 65,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    97
+   ],
+   "unf_in": [
+    97
+   ]
+  },
+  {
+   "row": 1314,
+   "game": 23,
+   "slot": 4,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 245,
+   "fam_in": [
+    46
+   ],
+   "unf_in": [
+    46
+   ]
+  },
+  {
+   "row": 2896,
+   "game": 60,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 245,
+   "fam_in": [
+    46
+   ],
+   "unf_in": [
+    46
+   ]
+  },
+  {
+   "row": 2895,
+   "game": 60,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 143,
+   "fam_in": [
+    216
+   ],
+   "unf_in": [
+    156
+   ]
+  },
+  {
+   "row": 2509,
+   "game": 36,
+   "slot": 4,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 242,
+   "fam_in": [
+    86
+   ],
+   "unf_in": [
+    312
+   ]
+  },
+  {
+   "row": 2381,
+   "game": 57,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 94,
+   "fam_in": [
+    85
+   ],
+   "unf_in": [
+    223
+   ]
+  },
+  {
+   "row": 1494,
+   "game": 33,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 330,
+   "fam_in": [
+    182
+   ],
+   "unf_in": [
+    355
+   ]
+  },
+  {
+   "row": 2608,
+   "game": 50,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 82,
+   "fam_in": [
+    86
+   ],
+   "unf_in": [
+    86
+   ]
+  },
+  {
+   "row": 2071,
+   "game": 3,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 82,
+   "fam_in": [
+    92
+   ],
+   "unf_in": [
+    182
+   ]
+  },
+  {
+   "row": 2449,
+   "game": 65,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 245,
+   "fam_in": [
+    58
+   ],
+   "unf_in": [
+    58
+   ]
+  },
+  {
+   "row": 2812,
+   "game": 2,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 146,
+   "fam_in": [
+    46
+   ],
+   "unf_in": [
+    46
+   ]
+  },
+  {
+   "row": 322,
+   "game": 11,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 344,
+   "fam_in": [
+    157
+   ],
+   "unf_in": [
+    156
+   ]
+  },
+  {
+   "row": 1651,
+   "game": 45,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 376,
+   "fam_in": [
+    153
+   ],
+   "unf_in": [
+    153
+   ]
+  },
+  {
+   "row": 3273,
+   "game": 53,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 242,
+   "fam_in": [
+    92
+   ],
+   "unf_in": [
+    92
+   ]
+  },
+  {
+   "row": 631,
+   "game": 18,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 94,
+   "fam_in": [
+    85
+   ],
+   "unf_in": [
+    269
+   ]
+  },
+  {
+   "row": 683,
+   "game": 18,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    156
+   ],
+   "unf_in": [
+    156
+   ]
+  },
+  {
+   "row": 199,
+   "game": 4,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 82,
+   "fam_in": [
+    182
+   ],
+   "unf_in": [
+    240
+   ]
+  },
+  {
+   "row": 1622,
+   "game": 32,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 82,
+   "fam_in": [
+    86
+   ],
+   "unf_in": [
+    240
+   ]
+  },
+  {
+   "row": 2977,
+   "game": 68,
+   "slot": 4,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 251,
+   "fam_in": [
+    73
+   ],
+   "unf_in": [
+    226
+   ]
+  },
+  {
+   "row": 1718,
+   "game": 38,
+   "slot": 1,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    182
+   ],
+   "unf_in": [
+    156
+   ]
+  },
+  {
+   "row": 1312,
+   "game": 23,
+   "slot": 4,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 245,
+   "fam_in": [
+    46
+   ],
+   "unf_in": [
+    57
+   ]
+  },
+  {
+   "row": 1486,
+   "game": 33,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 330,
+   "fam_in": [
+    182
+   ],
+   "unf_in": [
+    182
+   ]
+  },
+  {
+   "row": 3308,
+   "game": 53,
+   "slot": 3,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 260,
+   "fam_in": [
+    56
+   ],
+   "unf_in": [
+    214
+   ]
+  },
+  {
+   "row": 1358,
+   "game": 23,
+   "slot": 2,
+   "pattern": [
+    1,
+    0
+   ],
+   "species": 245,
+   "fam_in": [
+    58
+   ],
+   "unf_in": [
+    58
+   ]
+  }
+ ]
+}

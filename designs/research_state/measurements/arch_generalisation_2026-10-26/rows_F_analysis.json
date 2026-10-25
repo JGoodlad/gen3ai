@@ -1,0 +1,146 @@
+{
+ "panel": "F",
+ "n_rows": 3636,
+ "n_games": 48,
+ "moves_revealed_mons": {
+  "side0": {
+   "n": 7100,
+   "prec_post": 0.669,
+   "prec_prior": 0.5777,
+   "bce_post": 2.1794,
+   "bce_prior": 2.4713
+  },
+  "side1": {
+   "n": 7399,
+   "prec_post": 0.5446,
+   "prec_prior": 0.5623,
+   "bce_post": 2.8294,
+   "bce_prior": 2.6454
+  }
+ },
+ "hidden_species": {
+  "side0": {
+   "n": 1346,
+   "hit_post": 0.7508,
+   "hit_prior": 0.4682,
+   "ll_post": -0.7031,
+   "ll_prior": -1.7809
+  },
+  "side1": {
+   "n": 1218,
+   "hit_post": 0.2581,
+   "hit_prior": 0.2959,
+   "ll_post": -6.2392,
+   "ll_prior": -2.3583
+  }
+ },
+ "hidden_items": {
+  "side0": {
+   "n": 1992,
+   "ce_post": 0.3425,
+   "ce_prior": 0.5242,
+   "acc_post": 0.8991,
+   "acc_prior": 0.8318
+  },
+  "side1": {
+   "n": 2480,
+   "ce_post": 0.96,
+   "ce_prior": 0.9524,
+   "acc_post": 0.7927,
+   "acc_prior": 0.6819
+  }
+ },
+ "critic": {
+  "side0": {
+   "n_rows": 1831,
+   "n_games": 48,
+   "mean_v": 0.4474,
+   "mean_outcome_rowwt": 0.296,
+   "brier": 0.1571,
+   "first_v_mean": 0.5516,
+   "game_win_rate": 0.3125
+  },
+  "side1": {
+   "n_rows": 1805,
+   "n_games": 48,
+   "mean_v": 0.5692,
+   "mean_outcome_rowwt": 0.6803,
+   "brier": 0.1602,
+   "first_v_mean": 0.5962,
+   "game_win_rate": 0.6875
+  }
+ },
+ "patched_identity_max_abs_dprob": 3.7401914596557617e-06,
+ "S_mean_ablation": {
+  "species_id": {
+   "side0": {
+    "n": 338,
+    "kl": 0.3749,
+    "abs_dv": 0.0663,
+    "flip": 0.3609
+   },
+   "side1": {
+    "n": 302,
+    "kl": 0.2894,
+    "abs_dv": 0.0585,
+    "flip": 0.3444
+   }
+  },
+  "move_id": {
+   "side0": {
+    "n": 338,
+    "kl": 0.4144,
+    "abs_dv": 0.0511,
+    "flip": 0.3787
+   },
+   "side1": {
+    "n": 302,
+    "kl": 0.3363,
+    "abs_dv": 0.0509,
+    "flip": 0.3344
+   }
+  },
+  "item_id": {
+   "side0": {
+    "n": 338,
+    "kl": 0.0456,
+    "abs_dv": 0.0144,
+    "flip": 0.1036
+   },
+   "side1": {
+    "n": 302,
+    "kl": 0.0401,
+    "abs_dv": 0.0091,
+    "flip": 0.106
+   }
+  },
+  "stats": {
+   "side0": {
+    "n": 338,
+    "kl": 0.0245,
+    "abs_dv": 0.0116,
+    "flip": 0.0947
+   },
+   "side1": {
+    "n": 302,
+    "kl": 0.0334,
+    "abs_dv": 0.0125,
+    "flip": 0.0894
+   }
+  },
+  "move_feats": {
+   "side0": {
+    "n": 338,
+    "kl": 0.2066,
+    "abs_dv": 0.0249,
+    "flip": 0.2781
+   },
+   "side1": {
+    "n": 302,
+    "kl": 0.1795,
+    "abs_dv": 0.0259,
+    "flip": 0.2881
+   }
+  }
+ }
+}
