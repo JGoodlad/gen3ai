@@ -6,8 +6,8 @@
    "abilities": 77,
    "items": 63,
    "conditions": 59,
-   "moves": 305,
-   "rows": 1094
+   "moves": 308,
+   "rows": 1097
   },
   "excluded_deferred": {
    "forecast": "Castform forme+TYPE change under weather — deferred (probe_forecast_rng.js settled the map; the reporting surface is unprobed); the port FAIL-LOUDs in state::MonState::from_set (GIGO guard: an unmodeled ability would silently no-op then desync under weather); NOT in MODELED/NOOP + REJECT_ABILITIES/REJECT_SPECIES so the e2e filter + randbats adapter exclude its teams",
@@ -3688,6 +3688,12 @@
    "anchor": "turn.rs::apply_secondaries",
    "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
   },
+  "move:blastburn:self": {
+   "disposition": "implemented",
+   "fp": "val:{\"volatileStatus\":\"mustrecharge\"}",
+   "anchor": "moves.rs::RECHARGE_MOVES",
+   "reason": "gen3_recharge_family_v1: Hyper Beam's self.volatileStatus mustrecharge with another type — the same RECHARGE_MOVES site, golden tests/recharge_family_golden_test.rs"
+  },
   "move:blazekick:critRatio": {
    "disposition": "implemented",
    "fp": "val:2",
@@ -4454,6 +4460,12 @@
    "anchor": "turn.rs::move_priority",
    "reason": "the action-order priority sort (draws only on a priority+speed tie)"
   },
+  "move:frenzyplant:self": {
+   "disposition": "implemented",
+   "fp": "val:{\"volatileStatus\":\"mustrecharge\"}",
+   "anchor": "moves.rs::RECHARGE_MOVES",
+   "reason": "gen3_recharge_family_v1: Hyper Beam's self.volatileStatus mustrecharge with another type — the same RECHARGE_MOVES site, golden tests/recharge_family_golden_test.rs"
+  },
   "move:furyattack:multihit": {
    "disposition": "implemented",
    "fp": "val:[2,5]",
@@ -4645,6 +4657,12 @@
    "fp": "val:true",
    "anchor": "turn.rs::never_miss",
    "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:hydrocannon:self": {
+   "disposition": "implemented",
+   "fp": "val:{\"volatileStatus\":\"mustrecharge\"}",
+   "anchor": "moves.rs::RECHARGE_MOVES",
+   "reason": "gen3_recharge_family_v1: Hyper Beam's self.volatileStatus mustrecharge with another type — the same RECHARGE_MOVES site, golden tests/recharge_family_golden_test.rs"
   },
   "move:hyperbeam:self": {
    "disposition": "implemented",

@@ -383,7 +383,7 @@ const BATCH7_E2E_EXCLUDED = false;
 // (Blast Burn / Frenzy Plant / Hydro Cannon via `self.volatileStatus`+`flags.recharge`;
 // Razor Wind / Sky Attack / Skull Bash / Fly / Dig / Dive / Bounce via `flags.charge`;
 // no other gen3 `futuremove` exists).
-const MODELED_BATCH4C_MOVES = new Set(['hyperbeam', 'solarbeam', 'doomdesire', 'futuresight', 'recharge']);
+const MODELED_BATCH4C_MOVES = new Set(['hyperbeam', 'blastburn', 'frenzyplant', 'hydrocannon', 'solarbeam', 'doomdesire', 'futuresight', 'recharge']);
 const BATCH4C_E2E_EXCLUDED = false;
 
 // MOVE-COVERAGE BATCH 5 (`gen3_move_coverage_batch5_v1`): the REACTIVE fixed-damage family

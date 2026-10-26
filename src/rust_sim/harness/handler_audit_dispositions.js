@@ -392,6 +392,7 @@ add([mv('thunder', 'onModifyMove')], IMPL('turn.rs::run_move', 'the id-gated wea
 // SOLAR BEAM (twoturnmove) / DOOM DESIRE + FUTURE SIGHT (futuremove). The three
 // cross-turn conditions are enumerated explicitly in dump_gen3_handlers.js's
 // ENGINE_CONDITIONS (standalone conditions, not `m.condition` sub-objects).
+add([mv('blastburn', 'self'), mv('frenzyplant', 'self'), mv('hydrocannon', 'self')], IMPL('moves.rs::RECHARGE_MOVES', 'gen3_recharge_family_v1: Hyper Beam\'s self.volatileStatus mustrecharge with another type — the same RECHARGE_MOVES site, golden tests/recharge_family_golden_test.rs'));
 add([mv('hyperbeam', 'self')], IMPL('turn.rs::run_move', 'self.volatileStatus mustrecharge — applied DRAW-FREE on a SUCCESSFUL damaging hit (plain/sub-absorb/sub-break/target-KO; NOT miss/immune/Protect-block), |-mustrecharge| after the damage/sub line'));
 add([cond('mustrecharge', 'onStart')], IMPL('turn.rs::run_move', 'the |-mustrecharge|<user> announce at the apply site (log.must_recharge)'));
 add([cond('mustrecharge', 'onBeforeMove'), cond('mustrecharge', 'onBeforeMovePriority')], IMPL('turn.rs::run_move', 'the priority-11 recharge cant at the TOP of run_move (before every status handler — a par/slp locked user rolls/decrements NOTHING): |cant|…|recharge, clear must_recharge, ZERO draws, NO PP; removeVolatile(truant) is a no-op in the truant_turn toggle model (the order-27 toggle consumes the loaf — probed cadence)'));

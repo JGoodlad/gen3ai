@@ -7,12 +7,12 @@ the GATE is `node src/rust_sim/harness/dump_gen3_handlers.js --audit` (wired int
 handler, a STALE manifest row, a body-FINGERPRINT drift, a dead `implemented` anchor.
 
 Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
-59 conditions (engine state space + attached), 305 modeled moves
-→ **1094 (effect, hook) rows**.
+59 conditions (engine state space + attached), 308 modeled moves
+→ **1097 (effect, hook) rows**.
 
 | disposition | rows |
 |---|---|
-| implemented | 1041 |
+| implemented | 1044 |
 | noop_justified | 36 |
 | unreachable_justified | 17 |
 
@@ -615,7 +615,7 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | yawn | onResidualSubOrder | implemented | `turn.rs::run_residuals` |
 | yawn | onStart | implemented | `turn.rs::run_status_move` |
 
-## move (510 rows: implemented=506, noop_justified=2, unreachable_justified=2)
+## move (513 rows: implemented=509, noop_justified=2, unreachable_justified=2)
 
 | effect | hook | disposition | anchor / reason |
 |---|---|---|---|
@@ -655,6 +655,7 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | bellydrum | onHit | implemented | `turn.rs::run_status_move` |
 | bind | volatileStatus | implemented | `turn.rs::is_partial_trap_move` |
 | bite | secondaries | implemented | `turn.rs::apply_secondaries` |
+| blastburn | self | implemented | `moves.rs::RECHARGE_MOVES` |
 | blazekick | critRatio | implemented | `turn.rs::CRIT_MULT` |
 | blazekick | secondaries | implemented | `turn.rs::apply_secondaries` |
 | blizzard | secondaries | implemented | `turn.rs::apply_secondaries` |
@@ -783,6 +784,7 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | focusenergy | volatileStatus | implemented | `turn/status_moves.rs::run_status_move` |
 | focuspunch | onTry | implemented | `turn.rs::run_move` |
 | focuspunch | priority | implemented | `turn.rs::move_priority` |
+| frenzyplant | self | implemented | `moves.rs::RECHARGE_MOVES` |
 | furyattack | multihit | implemented | `turn.rs::run_multihit` |
 | furycutter | onHit | implemented | `turn/moves.rs::run_move` |
 | furyswipes | multihit | implemented | `turn.rs::run_multihit` |
@@ -815,6 +817,7 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | howl | boosts | implemented | `turn.rs::self_boost_spec` |
 | howl | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | howl | neverMiss | implemented | `turn.rs::never_miss` |
+| hydrocannon | self | implemented | `moves.rs::RECHARGE_MOVES` |
 | hyperbeam | self | implemented | `turn.rs::run_move` |
 | hyperfang | secondaries | implemented | `turn.rs::apply_secondaries` |
 | hypnosis | ignoreImmunity | implemented | `turn.rs::run_status_move` |

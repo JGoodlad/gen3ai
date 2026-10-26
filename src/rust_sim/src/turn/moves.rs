@@ -9,6 +9,12 @@ use super::status::DamagingHitPhase;
 use super::*;
 use super::helpers::*;
 
+/// The RECHARGE family (`gen3_recharge_family_v1`): every gen-3 move whose resolved data carries
+/// `self: {volatileStatus: 'mustrecharge'}` (`flags.recharge`), all four the same 150 BP /
+/// 90-accuracy shape with no handler of their own (`Dex.mod('gen3').moves`), differing only in
+/// type. Pinned against the resolved dex by `tests/recharge_family_test.rs`.
+pub const RECHARGE_MOVES: [&str; 4] = ["hyperbeam", "blastburn", "frenzyplant", "hydrocannon"];
+
 impl crate::state::BattleState {
 
     /// Resolve the [`MoveData`]-like move for a side's active move slot. `None` for
@@ -243,22 +249,12 @@ impl crate::state::BattleState {
             return MoveResolution::done(false, false, false);
         }
 
-        // --- FAIL-LOUD: the UNMODELED recharge / charge siblings (`gen3_move_coverage_
-        //     batch4c_v1`). Blast Burn / Frenzy Plant / Hydro Cannon ARE gen3-legal with
-        //     the identical `self:mustrecharge` machinery but are UNPROBED for their
-        //     specifics → fail-loud rather than silently run recharge-less. Razor Wind /
-        //     Sky Attack / Skull Bash (+ the semi-invulnerable Fly / Dig / Dive / Bounce,
+        // --- FAIL-LOUD: the UNMODELED charge moves (`gen3_move_coverage_batch4c_v1`). Razor
+        //     Wind / Sky Attack / Skull Bash (+ the semi-invulnerable Fly / Dig / Dive / Bounce,
         //     whose conditions DIFFER from Solar Beam's) are `flags.charge` moves the port
-        //     does not model → fail-loud rather than silently collapse to one turn.
-        //     (gigaimpact / rockwrecker / roaroftime are `isNonstandard:'Future'` — not
-        //     gen3-legal, absent from gen3_moves.json.) Only `hyperbeam` / `solarbeam` are
-        //     modeled; `doomdesire` / `futuresight` are BOTH modeled (probe-settled
-        //     same-mechanic). ---
+        //     does not model → fail-loud rather than silently collapse to one turn. Only
+        //     `solarbeam` is modeled; the recharge family is [`RECHARGE_MOVES`]. ---
         match move_id.as_str() {
-            "blastburn" | "frenzyplant" | "hydrocannon" => panic!(
-                "gen3_move_coverage_batch4c_v1: the RECHARGE move {move_id:?} is NOT modeled \
-                 (only hyperbeam is) — fail-loud, not a silent recharge-less desync"
-            ),
             "razorwind" | "skyattack" | "skullbash" | "fly" | "dig" | "dive" | "bounce" => panic!(
                 "gen3_move_coverage_batch4c_v1: the CHARGE move {move_id:?} is NOT modeled \
                  (only solarbeam is) — fail-loud, not a silent one-turn collapse"
@@ -1607,8 +1603,9 @@ impl crate::state::BattleState {
             }
         }
 
-        // --- HYPER BEAM's MUSTRECHARGE (`gen3_move_coverage_batch4c_v1`,
-        //     `hyperbeam.self = {volatileStatus:'mustrecharge'}`): applied on a SUCCESSFUL
+        // --- THE RECHARGE FAMILY's MUSTRECHARGE (`gen3_move_coverage_batch4c_v1`, widened by
+        //     `gen3_recharge_family_v1` to [`RECHARGE_MOVES`]: `self = {volatileStatus:
+        //     'mustrecharge'}` on all four in the resolved gen3 dex): applied on a SUCCESSFUL
         //     damaging hit — plain hit, sub-absorb AND sub-break, AND a target-KO (the
         //     `|-mustrecharge|` prints BEFORE `|faint|`, which `process_faints` emits
         //     later; the lock persists across the opponent's force-switch). NOT on a miss
@@ -1616,7 +1613,7 @@ impl crate::state::BattleState {
         //     self.volatileStatus apply consumes no PRNG, unlike the selfDrops boost
         //     random(100)). Emitted `|-mustrecharge|<user>` right after the damage/sub
         //     line (the probed position). ---
-        if move_id == "hyperbeam" {
+        if RECHARGE_MOVES.contains(&move_id.as_str()) {
             self.sides[side].pokemon[slot].must_recharge = true;
             self.sides[side].pokemon[slot].must_recharge_duration = 2; // gen3_recharge_expiry_v1
             if self.logging() {

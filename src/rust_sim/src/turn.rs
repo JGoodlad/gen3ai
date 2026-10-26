@@ -112,6 +112,8 @@ mod switch;
 /// so the bridge's `|request|` serializer can price Curse's `nonGhostTarget` off the SAME
 /// runtime types the engine uses (`gen3_bridge_curse_request_target_v1`).
 pub(crate) use helpers::mon_types;
+/// The recharge family (`gen3_recharge_family_v1`), public so its pin can check it against the dex.
+pub use moves::RECHARGE_MOVES;
 
 /// The denominators `critMult[critRatio]` for gen ≤ 5 (`battle-actions.ts:1631`):
 /// index by the (clamped 0..5) crit ratio. A normal damaging move resolves to

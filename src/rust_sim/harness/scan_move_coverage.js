@@ -146,7 +146,7 @@ const DEFERRED_FIXED_DAMAGE = new Set([
 //              Flail / Reversal / Low Kick.
 const MODELED_BATCH4 = new Set(['focuspunch', 'pursuit']);
 const MODELED_BATCH4B = new Set(['beatup', 'thunder', 'waterspout', 'eruption']);  // gen3_eruption_v1
-const MODELED_BATCH4C = new Set(['hyperbeam', 'solarbeam', 'doomdesire', 'futuresight']);
+const MODELED_BATCH4C = new Set(['hyperbeam', 'blastburn', 'frenzyplant', 'hydrocannon', 'solarbeam', 'doomdesire', 'futuresight']);
 const MODELED_VARBP = new Set(['return', 'frustration', 'flail', 'reversal', 'lowkick']);
 // MOVE-COVERAGE BATCH 7 (`gen3_move_coverage_batch7_v1`) — the generic MULTI-STRIKE family
 // (`run_multihit`): the FIXED-2 trio + the variable [2,5] family. `triplekick` (the sole
