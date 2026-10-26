@@ -404,3 +404,103 @@ def test_the_real_peer_started_from_a_derived_config_verifies_the_registry_weigh
             proc.wait()
     assert "weights pinned" in text and "sha256-verified" in text, text[-2500:]
     assert "REFUSING" not in text
+
+
+# ---------------------------------------------------------------- the long-lane fallback (N1-P unit, 2026-10-26)
+class FakePopen:
+    """A stand-in for ``subprocess.Popen`` in :mod:`main.x35.kakuna`: records each unit command, and ends with the
+    next scripted ``(rc, counted)``. A counted end writes the unit's ``summary.json`` (``--out`` of its argv)."""
+
+    script: list = []
+    argvs: list = []
+
+    def __init__(self, argv, **_kw):
+        self.argv = list(argv)
+        self.pid = 4242
+        FakePopen.argvs.append(self.argv)
+
+    def wait(self):
+        rc, counted = FakePopen.script.pop(0)
+        if counted:
+            out = Path(self.argv[self.argv.index("--out") + 1])
+            out.mkdir(parents=True, exist_ok=True)
+            (out / "summary.json").write_text(json.dumps(GOOD))
+        return rc
+
+
+class _Claim:
+    def close(self) -> None:
+        pass
+
+
+def install_fake_play(monkeypatch):
+    """No game: preflight passes, the port claim is a no-op, ``Popen`` is :class:`FakePopen` (script it via
+    ``FakePopen.script``). Shared with ``main.reads.runner_test``."""
+    FakePopen.script, FakePopen.argvs = [], []
+    monkeypatch.setattr(KA, "preflight", lambda u: None)
+    monkeypatch.setattr(KA, "claim_port", lambda *a, **k: (9555, _Claim()))
+    monkeypatch.setattr(KA.subprocess, "Popen", FakePopen)
+    return FakePopen
+
+
+@pytest.fixture
+def fake_play(monkeypatch):
+    return install_fake_play(monkeypatch)
+
+
+def _unit(name="a__away__00"):
+    return KA.Unit(name=name, label="a", arm="A", seed=1, teamset="away", unit_seed=0, model="/m.zip", model_sha256="")
+
+
+def _events(state):
+    evs = (json.loads(x) for x in (state / "units.jsonl").read_text().splitlines())
+    return [(e["event"], e.get("short"), e.get("rc")) for e in evs if e["event"] != "pid"]
+
+
+def test_the_long_unit_argv_is_a_normal_heavy_slot_job_bounded_by_timeout():
+    u = _unit()
+    short, long_ = KA.unit_argv(u, Path("/o"), 9541, py="PY"), KA.unit_argv(u, Path("/o"), 9541, py="PY", short=False)
+    assert "--max-s" in short and "--max-s" not in long_, "a long job declares no short lane"
+    i = long_.index("PY")
+    assert long_[:7] == short[:7], "rule 5b's nice / taskset / mem_cap.sh wrapping is the same"
+    assert long_[7:9] == ["--name", "x35kakuna"] and long_[9:i] == [KA.MEM_GB, "timeout", str(KA.UNIT_LONG_S)]
+    assert long_[i:] == short[short.index("PY"):], "the same command, only the lane differs"
+    assert 0 < KA.UNIT_LONG_S <= 45 * 60
+
+
+def test_a_unit_that_overruns_the_short_lane_is_played_once_more_as_a_long_job(tmp_path, fake_play):
+    """mem_cap's exit 88 = the short lane killed it past its bound. Before: an uncounted attempt, and a unit that
+    overran twice was never counted; now the SAME attempt plays it once as a normal heavy-slot job (FR-3's queue)."""
+    u = _unit()
+    fake_play.script = [(KA.SHORT_LANE_OVERRUN, False), (0, True)]
+    assert KA.run_unit(tmp_path, u) == 0 and KA.is_done(tmp_path, u)
+    first, second = fake_play.argvs
+    assert "--max-s" in first and "--max-s" not in second and "timeout" in second
+    assert _events(tmp_path) == [("start", True, None), ("end", True, 88), ("short_lane_overrun", None, 88),
+                                 ("start", False, None), ("end", False, 0)]
+
+
+def test_only_an_overrun_is_retried_long_and_a_short_success_is_not_played_twice(tmp_path, fake_play):
+    ok, hard_fail, over_but_counted = _unit("a__away__01"), _unit("a__away__02"), _unit("a__away__03")
+    fake_play.script = [(0, True)]
+    assert KA.run_unit(tmp_path, ok) == 0 and len(fake_play.argvs) == 1
+    fake_play.script = [(1, False)]                     # a crash, not an overrun: no long retry (the supervisor's
+    assert KA.run_unit(tmp_path, hard_fail) == 1        # MAX_ATTEMPTS counts it)
+    assert len(fake_play.argvs) == 2 and not KA.is_done(tmp_path, hard_fail)
+    fake_play.script = [(KA.SHORT_LANE_OVERRUN, True)]  # killed after its summary landed: counted, nothing to replay
+    assert KA.run_unit(tmp_path, over_but_counted) == KA.SHORT_LANE_OVERRUN and len(fake_play.argvs) == 3
+    assert not any(e[0] == "short_lane_overrun" for e in _events(tmp_path))
+
+
+def test_a_unit_that_overran_goes_straight_to_the_long_job_on_its_next_attempt(tmp_path, fake_play):
+    """The long retry itself failed (timeout 124): the supervisor's second attempt must not queue it short again."""
+    u, other = _unit(), _unit("a__away__01")
+    fake_play.script = [(KA.SHORT_LANE_OVERRUN, False), (124, False)]
+    assert KA.run_unit(tmp_path, u) == 124 and not KA.is_done(tmp_path, u)
+    fake_play.script = [(0, True)]
+    assert KA.run_unit(tmp_path, u) == 0 and KA.is_done(tmp_path, u)
+    assert len(fake_play.argvs) == 3 and "--max-s" not in fake_play.argvs[2]
+    assert sum(e[0] == "short_lane_overrun" for e in _events(tmp_path)) == 1, "one overrun, one record"
+    fake_play.script = [(0, True)]
+    KA.run_unit(tmp_path, other)
+    assert "--max-s" in fake_play.argvs[3], "another unit still starts on the short lane"

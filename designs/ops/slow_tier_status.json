@@ -4630,10 +4630,10 @@
   },
   "src/main/x35/kakuna_test.py::test_the_real_peer_started_from_a_derived_config_verifies_the_registry_weights": {
    "status": "pass",
-   "commit": "a1370436f65d312ba84bf1409abde40393b2a30e",
-   "at": "2026-10-26T14:03:58Z",
-   "duration_s": 8.13,
-   "contention": 2.24,
+   "commit": "c5c0fddb3725b7b739df3e2b0130b0c4e962704d",
+   "at": "2026-10-26T15:47:07Z",
+   "duration_s": 10.14,
+   "contention": 3.47,
    "detail": ""
   },
   "src/node_free_search_integration_test.py::test_search_replay_and_the_prober_run_with_node_impossible": {
@@ -4933,5 +4933,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-26T15:16:18Z"
+ "last_written": "2026-10-26T15:47:07Z"
 }

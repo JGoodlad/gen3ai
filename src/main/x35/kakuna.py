@@ -12,6 +12,10 @@ re-checked before EVERY unit: a moved team is a refusal, never a different read.
 A UNIT is one ``python -m main.anchors`` invocation of 20 role-balanced games with ``--team-seed = --seed-base =``
 the unit seed; the seeds 0-6 are SHARED across arms. It runs from the checkout ROOT (the pool source's CWD hazard,
 X26 read FINDING 1), under ``nice -n 19 taskset -c 5-7,13-15`` inside ``scripts/ops/mem_cap.sh`` (rule 5b), one lane.
+It starts on the heavy slots' SHORT lane; one the lane kills past its bound (exit 88) and that is not counted is played
+ONCE more as a normal heavy-slot job (:func:`run_unit`). ``run`` is ONE supervisor per state PATH: the shared path lock
+outside the state, the ``/proc`` scan and the dir-identity stop of :mod:`main.reads.supervisors`, beside the in-state
+``supervisor.lock`` (:func:`cmd_run`).
 A unit COUNTS iff ``status == OK``, ``n == 20``, ``regime_verified_decisions``, no ``team_source_asymmetry`` and
 ``peer_clean`` (§5.6.6). A T28 halt marker refuses every unit (``main.live.halt``).
 
@@ -112,8 +116,13 @@ PORT_RANGE = (9540, 9599)
 #: never pick the same port, which bind-and-release alone could not promise (D1 look 1's 9540 collision).
 PORT_LOCK_DIR = Path.home() / ".claude" / "jobs" / "x35_kakuna_ports"
 #: A unit DECLARES the heavy slots' SHORT LANE (``mem_cap.sh --max-s``): it plays in 2-5 min, so it need not wait
-#: out the 40-min S chunks ahead of it (D1 look 1's starvation). An overrun (exit 88) is an uncounted attempt.
+#: out the 40-min S chunks ahead of it (D1 look 1's starvation). An overrun is killed at ``UNIT_MAX_S`` + 30 s and
+#: exits :data:`SHORT_LANE_OVERRUN`; :func:`run_unit` then plays the unit ONCE more as a normal heavy-slot (long) job.
 UNIT_MAX_S = 600
+#: ``mem_cap.sh``'s exit for a declared-short job that overran its hard timeout (its work is incomplete).
+SHORT_LANE_OVERRUN = 88
+#: The long retry's own bound, inside its heavy slot (``timeout``; the slots' chunk rule is <= 45 min).
+UNIT_LONG_S = 2700
 MANIFEST_SCHEMA = "x35_home72_manifest_v1"
 MAX_ATTEMPTS = 2
 
@@ -386,7 +395,9 @@ def config_side(teamset: str) -> str:
     return PANEL_CELLS[teamset].teamset if teamset in PANEL_CELLS else TEAMSETS[teamset]
 
 
-def unit_argv(u: Unit, out: Path, port: int, py: str = sys.executable) -> List[str]:
+def unit_argv(u: Unit, out: Path, port: int, py: str = sys.executable, *, short: bool = True) -> List[str]:
+    """One unit's command. ``short``: the heavy slots' short lane (``--max-s``, hard-killed past it, exit
+    :data:`SHORT_LANE_OVERRUN`); otherwise a normal heavy-slot job bounded by ``timeout`` :data:`UNIT_LONG_S`."""
     a = [py, "-m", "main.anchors", "--model", u.model, "--opponent", u.opponent, "--regime", "greedy",
          "--teamset", config_side(u.teamset), "--games", str(u.games), "--team-seed", str(u.unit_seed),
          "--seed-base", str(u.unit_seed), "--device", "cpu", "--port", str(port), "--nice", "19", "--out", str(out)]
@@ -397,8 +408,9 @@ def unit_argv(u: Unit, out: Path, port: int, py: str = sys.executable) -> List[s
         # piloted in each game (F-DV-6 / F-DV-17), so a matchup-clustered sensitivity read stays possible (F-DV-18).
         # It changes no stamp and no play (the seed comes from --seed-base); home72 / away units are unchanged.
         a += ["--capture-dir", str(out / "capture")]
+    cap = ["--max-s", str(UNIT_MAX_S), MEM_GB] if short else [MEM_GB, "timeout", str(UNIT_LONG_S)]
     return ["nice", "-n", "19", "taskset", "-c", CORES, str(repo_path("scripts/ops/mem_cap.sh")), "--name",
-            "x35kakuna", "--max-s", str(UNIT_MAX_S), MEM_GB, *a]
+            "x35kakuna", *cap, *a]
 
 
 def unit_env(base: Optional[Mapping[str, str]] = None, config: Path = CONFIG) -> Dict[str, str]:
@@ -476,15 +488,35 @@ def _jl(state: Path, obj: Mapping[str, Any]) -> None:
         f.write(json.dumps({"t": time.time(), **obj}) + "\n")
 
 
-def run_unit(state: Path, u: Unit) -> int:
+def _overran(state: Path, u: Unit) -> bool:
+    """Has this unit already overrun the short lane (a ``short_lane_overrun`` event in the state's log)? Then every
+    later attempt plays it as a long job at once, never short again."""
+    try:
+        lines = (state / "units.jsonl").read_text().splitlines()
+    except OSError:
+        return False
+    for line in lines:
+        try:
+            ev = json.loads(line)
+        except ValueError:
+            continue
+        if ev.get("event") == "short_lane_overrun" and ev.get("unit") == u.name:
+            return True
+    return False
+
+
+def _play(state: Path, u: Unit, *, short: bool) -> int:
+    """ONE attempt of a unit on the short lane or as a long job: its partial dir (a killed earlier attempt's) is moved
+    aside, its port is claimed with a held flock, and the child's exit code is returned."""
     preflight(u)
     out = state / "cells" / u.name
     if out.exists():
         out.rename(out.with_name(f"{u.name}.partial.{int(time.time())}"))
     port, claim = claim_port()
     try:
-        argv = unit_argv(u, out, port)
-        _jl(state, {"event": "start", "unit": u.name, "port": port, "argv": argv, "load": os.getloadavg()})
+        argv = unit_argv(u, out, port, short=short)
+        _jl(state, {"event": "start", "unit": u.name, "port": port, "short": short, "argv": argv,
+                    "load": os.getloadavg()})
         (state / "logs").mkdir(parents=True, exist_ok=True)
         t0 = time.time()
         with open(state / "logs" / f"{u.name}.log", "ab") as log:
@@ -496,8 +528,21 @@ def run_unit(state: Path, u: Unit) -> int:
             rc = proc.wait()
     finally:
         claim.close()
-    _jl(state, {"event": "end", "unit": u.name, "rc": rc, "counted": is_done(state, u),
+    _jl(state, {"event": "end", "unit": u.name, "rc": rc, "counted": is_done(state, u), "short": short,
                 "wall_s": round(time.time() - t0, 1)})
+    return rc
+
+
+def run_unit(state: Path, u: Unit) -> int:
+    """Play ``u`` (one ATTEMPT). It starts on the short lane; if that overran (exit :data:`SHORT_LANE_OVERRUN`) and the
+    unit is not counted, it is played ONCE more as a normal heavy-slot job (``short_lane_overrun`` is logged), as FR-3's
+    queue did, so an overrun is never left uncounted for want of a second chance. A unit that has overrun before goes
+    straight to the long job on every later attempt. Returns the last child's exit code."""
+    short = not _overran(state, u)
+    rc = _play(state, u, short=short)
+    if short and rc == SHORT_LANE_OVERRUN and not is_done(state, u):
+        _jl(state, {"event": "short_lane_overrun", "unit": u.name, "rc": rc})
+        rc = _play(state, u, short=False)
     return rc
 
 
@@ -515,24 +560,43 @@ def check_stop_epoch(e: Optional[int], now: Optional[float] = None, horizon_s: i
 
 
 def cmd_run(state: Path, stop_at: Optional[int]) -> int:
+    """The standalone queue: ONE supervisor per kakuna state PATH. It takes the shared path lock OUTSIDE the state plus
+    the ``/proc`` scan (:class:`main.reads.supervisors.Hold`; a lock inside the state moves with a renamed dir, the D3
+    reader's duplicate, 2026-10-26) and the in-state ``supervisor.lock`` too (a supervisor of older code takes only
+    that one). It stops, writing nothing, when its path no longer names the dir it started on."""
+    from main.reads import supervisors as SV
+
     check_stop_epoch(stop_at)
+    try:
+        hold = SV.Hold(state, SV.KAKUNA_LANE)
+    except SV.SupervisorError as exc:
+        raise KakunaError(str(exc)) from None
     lock = open(state / "supervisor.lock", "w")
     try:
-        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-    except OSError:
-        raise KakunaError(f"another supervisor holds {state / 'supervisor.lock'}") from None
-    _jl(state, {"event": "supervisor_start", "pid": os.getpid()})
-    fails: Dict[str, int] = {}
-    for u in load_plan(state):
-        while not is_done(state, u) and fails.get(u.name, 0) < MAX_ATTEMPTS:
-            if stop_at is not None and time.time() >= stop_at:
-                _jl(state, {"event": "supervisor_stop_at"})
-                return 0
-            run_unit(state, u)
-            if not is_done(state, u):
-                fails[u.name] = fails.get(u.name, 0) + 1
-    _jl(state, {"event": "supervisor_done", "not_counted": sorted(n for n, k in fails.items() if k >= MAX_ATTEMPTS)})
-    return 0
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError:
+            raise KakunaError(f"another supervisor holds {state / 'supervisor.lock'}") from None
+        _jl(state, {"event": "supervisor_start", "pid": os.getpid()})
+        fails: Dict[str, int] = {}
+        for u in load_plan(state):
+            while not is_done(state, u) and fails.get(u.name, 0) < MAX_ATTEMPTS:
+                try:
+                    hold.check()                     # the path still names the dir this supervisor started on
+                except SV.SupervisorError as exc:
+                    raise KakunaError(str(exc)) from None
+                if stop_at is not None and time.time() >= stop_at:
+                    _jl(state, {"event": "supervisor_stop_at"})
+                    return 0
+                run_unit(state, u)
+                if not is_done(state, u):
+                    fails[u.name] = fails.get(u.name, 0) + 1
+        _jl(state, {"event": "supervisor_done",
+                    "not_counted": sorted(n for n, k in fails.items() if k >= MAX_ATTEMPTS)})
+        return 0
+    finally:
+        lock.close()
+        hold.close()
 
 
 def pool(state: Path, units: Sequence[Unit]) -> Dict[str, Dict[str, Dict[str, Any]]]:

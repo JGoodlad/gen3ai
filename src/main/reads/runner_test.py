@@ -11,6 +11,7 @@ import pytest
 
 from main.reads import layout as LY
 from main.reads import runner as RN
+from main.x35.kakuna_test import install_fake_play
 
 CODE = {"commit": "e05c45eeb" + "0" * 31, "dirty": False, "root": "/tmp/pin"}
 
@@ -121,6 +122,29 @@ def test_the_anchor_lane_works_every_unit_once_then_stops(tmp_path, run_archive_
     assert len(played) == 4, "a counted unit is never replayed"
     st = RN.status(state)
     assert st["anchor"]["u"] == {"old": {"counted": 2, "planned": 2}, "new": {"counted": 2, "planned": 2}}
+
+
+def test_the_anchor_lane_counts_a_unit_that_overran_the_short_lane_by_playing_it_once_more_long(
+        tmp_path, run_archive_env, monkeypatch):
+    """N1-P unit (2026-10-26): through the lane's DEFAULT unit runner, a unit killed past the short lane (exit 88) was an
+    uncounted attempt, and one that overran twice was never counted. Now the same attempt plays it again as a normal
+    heavy-slot job, and the lane counts it; nothing else is replayed."""
+    fake_play = install_fake_play(monkeypatch)
+    spec = _spec(tmp_path, run_archive_env)
+    _zip(run_archive_env / "rb_new", age=3600)
+    state = tmp_path / "state"
+    RN.plan(spec, state, code=CODE, step_of=_step)
+    monkeypatch.setattr(RN, "checkout_code", lambda root=None: CODE)
+    fake_play.script = [(88, False), (0, True), (0, True), (0, True), (0, True)]
+    assert RN.run(state, "anchor", time.time() + 3600, sleep=lambda s: None) == 0
+    assert len(fake_play.argvs) == 5, "four units, one of them played twice"
+    assert "--max-s" in fake_play.argvs[0] and "--max-s" not in fake_play.argvs[1] and "timeout" in fake_play.argvs[1]
+    assert all("--max-s" in a for a in fake_play.argvs[2:])
+    assert RN.status(state)["anchor"]["u"] == {"old": {"counted": 2, "planned": 2}, "new": {"counted": 2, "planned": 2}}
+    jl = [json.loads(x) for x in (LY.anchor_state(state, "u", "old") / "units.jsonl").read_text().splitlines()]
+    assert [e["unit"] for e in jl if e["event"] == "short_lane_overrun"] == ["old__heldout72_hpfix__00"]
+    assert not any(e.get("event") == "done" and e["not_counted"] for e in
+                   (json.loads(x) for x in (state / "anchor_supervisor.jsonl").read_text().splitlines()))
 
 
 def test_a_lane_has_one_supervisor_and_a_registered_stop(tmp_path, run_archive_env, monkeypatch):

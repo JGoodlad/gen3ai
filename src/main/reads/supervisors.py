@@ -11,6 +11,10 @@ So a supervisor is refused when either of two independent signals says another o
   (resolved against that process's own cwd) naming the same canonical path. This one also sees a supervisor started
   by older code, which never took the path lock.
 
+The standalone Kakuna queue (``python -m main.x35.kakuna run --state S``) is a supervisor of the same kind, in the one
+lane :data:`KAKUNA_LANE` (it has no ``--lane``): it takes the same path lock and runs the same scan, so two of them on
+one kakuna state are refused, whatever became of the in-state ``supervisor.lock`` (N1-P unit, 2026-10-26).
+
 A running supervisor also pins its state dir's IDENTITY (device, inode) at start: if the path stops naming that dir
 (renamed aside, replaced), it stops instead of writing into whatever now sits at the path (:func:`check_same_dir`).
 
@@ -33,6 +37,12 @@ LOCK_DIR_ENV = "GEN3AI_READS_LOCK_DIR"
 #: The verbs that ARE a lane supervisor (``s-unit`` is a child inside a heavy slot, not a supervisor).
 SUPERVISOR_VERBS = ("run", "resume")
 LANES = ("anchor", "s")
+#: The standalone Kakuna queue: ``python -m main.x35.kakuna run --state S`` (no ``--lane``; one lane of its own).
+KAKUNA_MODULE = "main.x35.kakuna"
+KAKUNA_VERBS = ("run",)
+KAKUNA_LANE = "kakuna"
+#: ``{module: verbs}`` of every process that IS a supervisor.
+_SUPERVISOR_MODULES = {"main.reads": SUPERVISOR_VERBS, KAKUNA_MODULE: KAKUNA_VERBS}
 
 
 class SupervisorError(RuntimeError):
@@ -84,13 +94,14 @@ def acquire(state: "str | os.PathLike[str]", lane: str) -> Any:
 
 
 def parse_argv(argv: Sequence[str]) -> Optional[Tuple[str, Optional[str], Optional[str]]]:
-    """``(verb, state, lane)`` of a ``main.reads`` supervisor argv, else ``None``. The ``-m main.reads`` pair may sit
-    anywhere (an interpreter flag or wrapper before it); ``--state X`` and ``--state=X`` both parse."""
+    """``(verb, state, lane)`` of a supervisor argv, else ``None``: ``main.reads run|resume`` (its ``--lane``) or
+    ``main.x35.kakuna run`` (lane :data:`KAKUNA_LANE`). The ``-m <module>`` pair may sit anywhere (an interpreter flag
+    or wrapper before it); ``--state X`` and ``--state=X`` both parse."""
     a = list(argv)
     for i in range(len(a) - 2):
-        if a[i] == "-m" and a[i + 1] == "main.reads":
-            verb = a[i + 2]
-            if verb not in SUPERVISOR_VERBS:
+        if a[i] == "-m" and a[i + 1] in _SUPERVISOR_MODULES:
+            module, verb = a[i + 1], a[i + 2]
+            if verb not in _SUPERVISOR_MODULES[module]:
                 return None
             opts: Dict[str, Optional[str]] = {"--state": None, "--lane": None}
             rest = a[i + 3:]
@@ -100,14 +111,15 @@ def parse_argv(argv: Sequence[str]) -> Optional[Tuple[str, Optional[str], Option
                         opts[k] = rest[j + 1]
                     elif tok.startswith(k + "="):
                         opts[k] = tok[len(k) + 1:]
-            return verb, opts["--state"], opts["--lane"]
+            return verb, opts["--state"], (KAKUNA_LANE if module == KAKUNA_MODULE else opts["--lane"])
     return None
 
 
 def live_supervisors(state: "str | os.PathLike[str]", *, lane: Optional[str] = None, proc: str = "/proc",
                      exclude: Iterable[int] = ()) -> Dict[str, List[int]]:
-    """``{lane: [pid, ...]}`` of every LIVE ``main.reads run|resume`` naming ``state``'s canonical path (each argv's
-    ``--state`` resolved against that process's own ``cwd``), from ``/proc`` alone. ``exclude``: pids to skip (the
+    """``{lane: [pid, ...]}`` of every LIVE supervisor (``main.reads run|resume``, or the standalone
+    ``main.x35.kakuna run`` as lane :data:`KAKUNA_LANE`) naming ``state``'s canonical path (each argv's ``--state``
+    resolved against that process's own ``cwd``), from ``/proc`` alone. ``exclude``: pids to skip (the
     caller and its ancestors, whose argv may carry the same words)."""
     want = canonical(state)
     skip = set(exclude)
@@ -116,7 +128,7 @@ def live_supervisors(state: "str | os.PathLike[str]", *, lane: Optional[str] = N
         if pid in skip:
             continue
         raw = procfs.read_text(pid, "cmdline", proc)
-        if "main.reads" not in raw:
+        if not any(m in raw for m in _SUPERVISOR_MODULES):
             continue
         got = parse_argv([t for t in raw.split("\0") if t != ""])
         if got is None or got[1] is None:

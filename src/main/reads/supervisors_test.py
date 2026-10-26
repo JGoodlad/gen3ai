@@ -20,13 +20,14 @@ from main.reads.runner_test import CODE, _spec, _step, _zip
 from utils import procfs
 
 
-def _fake_supervisor(cwd: Path, argv_tail: list) -> subprocess.Popen:
-    """A REAL process whose argv is a reads supervisor's (``python -c <sleep> -m main.reads run ...``): ``-c`` takes
-    the code, the rest is only argv, so nothing runs but the sleep. Waits (bounded) until ``/proc`` shows the argv."""
-    p = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(120)", "-m", "main.reads", *argv_tail],
+def _fake_supervisor(cwd: Path, argv_tail: list, module: str = "main.reads") -> subprocess.Popen:
+    """A REAL process whose argv is a supervisor's (``python -c <sleep> -m main.reads run ...``; ``module`` may be the
+    standalone ``main.x35.kakuna``): ``-c`` takes the code, the rest is only argv, so nothing runs but the sleep. Waits
+    (bounded) until ``/proc`` shows the argv."""
+    p = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(120)", "-m", module, *argv_tail],
                          cwd=str(cwd), stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     t_end = time.monotonic() + 20
-    while "main.reads" not in procfs.cmdline(p.pid):
+    while module not in procfs.cmdline(p.pid):
         if time.monotonic() > t_end:
             p.kill()
             p.wait()
@@ -130,3 +131,105 @@ def test_plan_refuses_a_fresh_state_that_a_live_supervisor_names(tmp_path, run_a
         _stop(q)
     assert RN.status(state)["supervisors"] == {"anchor": [], "s": []}
     assert LY.spec_file(state).is_file()
+
+
+# ------------------------------------------------ the standalone Kakuna queue (python -m main.x35.kakuna run), 2026-10-26
+def _kakuna_state(tmp_path: Path, name: str = "kstate") -> Path:
+    """A kakuna state with a one-unit plan (``away`` x unit seed 0), nothing played."""
+    from main.x35 import kakuna as KA
+
+    state = tmp_path / name
+    state.mkdir()
+    units = KA.plan_units([{"label": "a", "arm": "A", "seed": 1, "path": "/m.zip"}], hash_models=False,
+                          teamsets=("away",), unit_seeds=(0,))
+    (state / "plan.json").write_text(json.dumps({"units": [u.__dict__ for u in units]}))
+    return state
+
+
+def test_parse_argv_reads_the_standalone_kakuna_queue_as_a_lane_of_its_own():
+    assert SV.parse_argv(["py", "-m", "main.x35.kakuna", "run", "--state", "S", "--stop-at-epoch", "9"]) == (
+        "run", "S", SV.KAKUNA_LANE)
+    assert SV.parse_argv(["py", "-m", "main.x35.kakuna", "run", "--state=S"]) == ("run", "S", "kakuna")
+    for verb in ("plan", "status", "smoke", "gk", "d1h"):             # only `run` plays a queue
+        assert SV.parse_argv(["py", "-m", "main.x35.kakuna", verb, "--state", "S"]) is None
+    assert SV.parse_argv(["py", "-m", "main.x35.kakuna", "run"]) == ("run", None, "kakuna")
+
+
+def _stub_play(monkeypatch):
+    """`kakuna run` with no game: a unit 'plays' by writing a counted summary."""
+    from main.x35 import kakuna as KA
+    from main.x35.kakuna_test import GOOD
+
+    played = []
+
+    def run_unit(st, u):
+        played.append(u.name)
+        d = st / "cells" / u.name
+        d.mkdir(parents=True)
+        (d / "summary.json").write_text(json.dumps(GOOD))
+        return 0
+
+    monkeypatch.setattr(KA, "run_unit", run_unit)
+    return played
+
+
+def test_the_standalone_kakuna_queue_is_refused_by_the_path_lock_after_its_state_was_renamed_aside(tmp_path,
+                                                                                                   monkeypatch):
+    """THE INCIDENT for `kakuna run`: its in-state `supervisor.lock` moved with the renamed dir, so a second queue on
+    the re-planned dir at the same path found it free. The path lock (outside the state) refuses the second queue."""
+    from main.x35 import kakuna as KA
+
+    played = _stub_play(monkeypatch)
+    state = _kakuna_state(tmp_path)
+    first = SV.Hold(state, SV.KAKUNA_LANE)               # the first queue's claims
+    try:
+        state.rename(tmp_path / "kstate.aside")
+        state = _kakuna_state(tmp_path)                  # a new plan at the same path: its supervisor.lock is free
+        with pytest.raises(KA.KakunaError, match="path lock"):
+            KA.cmd_run(state, None)
+        assert played == [] and not (state / "units.jsonl").exists(), "the refused queue played and wrote nothing"
+    finally:
+        first.close()
+    assert KA.cmd_run(state, None) == 0 and played == ["a__away__00"]       # released with the first queue
+
+
+def test_the_standalone_kakuna_queue_is_refused_by_the_proc_scan_of_a_queue_that_took_no_path_lock(tmp_path,
+                                                                                                    monkeypatch):
+    """An older `kakuna run` took only the in-state lock; the /proc scan still sees it (its relative --state resolved
+    against ITS cwd). The scan sees nobody on another state, and a reaped process is not live."""
+    from main.x35 import kakuna as KA
+
+    played = _stub_play(monkeypatch)
+    (tmp_path / "w").mkdir()
+    state = _kakuna_state(tmp_path / "w")
+    p = _fake_supervisor(tmp_path / "w", ["run", "--state", state.name, "--stop-at-epoch", "9999999999"],
+                         module="main.x35.kakuna")
+    try:
+        assert SV.live_supervisors(state) == {SV.KAKUNA_LANE: [p.pid]}
+        assert SV.live_supervisors(state, lane="anchor") == {} and SV.live_supervisors(tmp_path / "other") == {}
+        with pytest.raises(KA.KakunaError, match=rf"pid\(s\) \[{p.pid}\]"):
+            KA.cmd_run(state, None)
+        assert played == [] and not (state / "units.jsonl").exists()
+    finally:
+        _stop(p)
+    assert SV.live_supervisors(state) == {}
+    assert KA.cmd_run(state, None) == 0 and played == ["a__away__00"]
+
+
+def test_a_standalone_kakuna_queue_stops_when_its_dir_is_moved_from_the_path(tmp_path, monkeypatch):
+    from main.x35 import kakuna as KA
+
+    state = _kakuna_state(tmp_path)
+    played = []
+
+    def unit_then_rename(st, u):
+        played.append(u.name)
+        state.rename(tmp_path / "kstate.aside")
+        state.mkdir()                                    # someone re-plans at the path
+        return 1                                         # the unit did not count: the queue would try again
+
+    monkeypatch.setattr(KA, "run_unit", unit_then_rename)
+    with pytest.raises(KA.KakunaError, match="moved or replaced"):
+        KA.cmd_run(state, None)
+    assert len(played) == 1, "no unit is played into the dir that now sits at the path"
+    assert list(state.iterdir()) == [], "the stopped queue wrote nothing into the new dir"

@@ -1,9 +1,10 @@
 """PLAN / RUN / STATUS: a read's games, on the box's two lanes (``designs/tools/reads.md`` §4).
 
 * THE ANCHOR LANE plays :mod:`main.x35.kakuna` units, unchanged: 20-game units on the heavy slots' SHORT lane
-  (``mem_cap.sh --max-s 600``), each on a 95xx port claimed with a held flock (``kakuna.claim_port``), each preflighted
-  (the T28 halt marker, the committed team manifest / panel cell, the model's bytes). One kakuna state per (group,
-  model), planned only once the model SETTLES (``main.reads.models``), so a not-yet-final model is never played.
+  (``mem_cap.sh --max-s 600``; one killed past its bound, exit 88, is played once more as a long job), each on a 95xx
+  port claimed with a held flock (``kakuna.claim_port``), each preflighted (the T28 halt marker, the committed team
+  manifest / panel cell, the model's bytes). One kakuna state per (group, model), planned only once the model SETTLES
+  (``main.reads.models``), so a not-yet-final model is never played.
 * THE S LANE plays S against the frozen R: ``main.h2h play-many`` cells of ``pairs`` mirrored pairs recorded in
   ``batch_pairs`` batches (the resume grain) into the group's own eval ledger and family; a UNIT is up to ``workers``
   engines inside ONE heavy slot (``mem_cap.sh --slot``), time-boxed to ``unit_s`` (<= 40 min), at nice 19 on the

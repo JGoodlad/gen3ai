@@ -83,7 +83,11 @@ that one agent, exactly the registry's entry. Each unit re-checks the derived fi
 committed config plus that agent (`kakuna.check_derived_config`). The peer is offline on the pinned revision
 (`HF_HUB_OFFLINE`, a260e9c3), and the registry's weights are the banked ones, so the regime id is unchanged by them.
 
-- 20-game units on the heavy slots' short lane (`mem_cap.sh --max-s 600`);
+- 20-game units on the heavy slots' short lane (`mem_cap.sh --max-s 600`). A unit the short lane kills past its
+  bound (exit 88) and that is not counted is played ONCE more in the same attempt as a normal heavy-slot job
+  (`mem_cap.sh 12 timeout 2700`, `kakuna.run_unit`, logged `short_lane_overrun`), as FR-3's queue did. A unit that has
+  overrun goes straight to the long job on every later attempt, so a unit whose long retry also failed is not queued
+  short again; `MAX_ATTEMPTS` (2) still bounds the attempts;
 - 95xx ports claimed with a held flock;
 - each unit preflighted: the T28 halt marker, the committed team manifest or panel cell, and the model bytes.
 
@@ -113,7 +117,10 @@ settles. Unit seeds are the outer loop, so a stopped queue stays balanced by see
   cwd, names the same path (this also sees a supervisor of older code, which took only the in-state lock, still
   taken too). A running supervisor stops, writing nothing, when its path no longer names the dir it started on (device
   and inode). `plan` refuses a FRESH state (no `spec.json`) that a live supervisor names. `status` lists the live
-  supervisor pids per lane;
+  supervisor pids per lane. The standalone queue `python -m main.x35.kakuna run --state S` takes the same claims through
+  `supervisors.Hold` (lane `kakuna`: the path lock, the `/proc` scan, the dir-identity stop) beside its in-state
+  `supervisor.lock`. A `kakuna run` aimed at a state INSIDE a reads state (`<state>/anchor/<group>/<label>/`) is not
+  seen by the reads supervisors, and the reverse (§10);
 - a registered stop (`--hours` or `--stop-at-epoch`, never open-ended);
 - a counted unit or a recorded batch is never replayed;
 - every child gets THIS checkout's `src` on `PYTHONPATH`;
@@ -139,7 +146,11 @@ each label with the same arm, seed and load options. `assemble` refuses unless t
 state resolved (both `models.json` sha256s). Imported anchor units then pool with this state's own only under one
 regime id per team set (else the group is INCONCLUSIVE, as within one state); an imported S node is read from the
 earlier ledger and family and must carry the group's regime. The record's `imports` names each import (state, spec
-sha256, rows and their digest, the earlier playing commit; for S the family and ledger digest).
+sha256, rows and their digest, the earlier playing commit; for S the family and ledger digest). `spec_sha256` is the
+sha256 of the earlier spec FILE's bytes (`plan` copies it byte for byte into `spec.json`), so a later look registers it
+as soon as the earlier spec is committed, with no need to wait for the earlier state; only the earlier STATE path must
+be agreed in advance. Pin it with a test that hashes the committed earlier spec (`rules_test`, X61P look 2), since
+editing the earlier spec moves it.
 
 ## 4. Assemble: the regime id is ALWAYS recorded (`main.reads.assemble`)
 
@@ -209,6 +220,9 @@ A new rule is a new `Rule` entry with a test. It never replaces an existing rule
 K9(b) record (`<k9b_dir>/<run>.json`) must read PASS, and on a batch-2 arm its V-S1 / V-S2 (SPRT) or LR-F KL guard
 (`main.x35.batch2_void.read_void`) too. Any other verdict refuses the decision and names the seed: a VOID seed enters no
 read (SPRT's `assemble.py` STOP). The record carries the gate, and a record of a batch-2 arm without one is refused.
+The gate reads K9(b) records and the batch-2 guards only. A read whose PREREG lists other VOID guards (N1-P's §9: the
+startup banner, the pin and corpus, the pool seed, a corpus-team crash) registers K9(b) here and keeps the rest as
+named operator checks in its PREREG amendment (AM-N1P-1, FINDING 11).
 
 **Reported-only groups** (`Rule.reported`; N1-P FINDING 7). A group a rule carries for description and no verdict
 reads (`d1`'s `reported_group`) never blocks the record of the decided primary. When it is short (unplayed units, no
@@ -283,6 +297,8 @@ skips and names why.
 | a later look re-plays the earlier look's finals (N1-P F6) | every multi-look read | the sha-checked, regime-matched cross-state import (§3) |
 | a short reported-only group blocks the primary's record (N1-P F7) | X61P's spec | reported groups recorded INCOMPLETE (§5) |
 | a VOID seed read (SPRT's STOP, absent from `x35_r1`; be60f24f F3) | latent | the registered VOID gate before `decide` (§5) |
+| a short-lane overrun (exit 88) left uncounted (FR-3's queue re-ran it once by hand; the module did not) | yes | the once-only long retry (§3) |
+| two standalone `kakuna run` queues on one state | latent (the same lock-inside-the-state flaw) | the path lock and `/proc` scan, shared with the lanes (§3) |
 
 ## 9. What was migrated, wrapped, left
 
@@ -307,11 +323,12 @@ skips and names why.
 
 - **Reported-only extras** (SPRT's mechanism block, dose from launcher summaries) stay per-read. A rule's `params`
   can carry them, but only the VOID gate reads run dirs.
-- **No long-lane fallback for an anchor unit.** A unit runs on the short lane only (`--max-s 600`); FR-3's queue
-  re-ran an overrun (exit 88) once as a long job. Its feasibility smoke put LargeRL / LargeIL units inside 600 s, but a
-  unit that overruns twice is never counted here.
-- **The committed X61P specs register no VOID gate** (`d1`'s is optional, being K9(b) only). A read that registers
-  K9(b) as VOID adds `params.void` before its look.
+- **Nested supervisors.** A `kakuna run` on `<state>/anchor/<group>/<label>/` and a `main.reads run --lane anchor` on
+  `<state>` can both play that kakuna state: the lanes call `run_unit` without taking the sub-state's
+  `supervisor.lock`, and neither path scan looks at a parent or child path.
+- **The `d1` VOID gate is K9(b) only.** X61P's specs register it (AM-N1P-1); the rest of its PREREG §9 (banner, pin and
+  corpus, pool seed, corpus-team crash) is checked by the operator from the kit's launch records and the launcher log,
+  which lives outside the run dir. A module guard for them would read `pin_history` and `snapshots/pool_seed.json`.
 - **The always-run D1 golden re-decides only.** `rules.h_input` / `p_input` are compared with the shipped
   input only in the archive half (D1's per-unit rows are not committed); off the owner's box that half skips.
 - **The tests stub play.** The verbs are tested with a stubbed unit runner and stubbed heavy slots (`runner_test`,
