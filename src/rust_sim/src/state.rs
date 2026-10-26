@@ -976,6 +976,29 @@ pub struct MonState {
     /// the fifth, forever. Starts at 0 (unlike `active_turns`, which starts at 1) and resets to 0
     /// on EVERY switch-in — voluntary, drag, forced replacement and Baton Pass alike.
     pub active_move_actions: u32,
+    /// The **GRUDGE** volatile (`gen3_b5_moves_v1`, `data/moves.ts` grudge `condition`, untouched
+    /// by the gen-3/4 mods): `true` from the cast (`|-singlemove|<user>|Grudge`) until the
+    /// holder's NEXT move attempt — `onBeforeMovePriority: 100`, the FIRST BeforeMove handler,
+    /// so it is removed SILENTLY even on a turn the holder then cannot move (asleep, recharging,
+    /// fully paralysed). While up, a FOE-MOVE KO (not a futuremove) of the holder zeroes the
+    /// killer's last-used move's PP (`onFaint`). No `noCopy`, but the passer's own Baton Pass
+    /// attempt removes it first, so it never reaches a pass. Cleared on switch-out + faint.
+    pub grudge: bool,
+    /// The pending GRUDGE trigger: `Some(killer_side)` when a qualifying foe-move hit zeroed this
+    /// mon's HP while `grudge` was up (set at the same damage sites as `destiny_bond_ko_by`).
+    /// Read by `process_faints` when the corpse is drained (`grudge.onFaint`).
+    pub grudge_ko_by: Option<usize>,
+    /// The **NIGHTMARE** volatile (`gen3_b5_moves_v1`, the resolved gen-3 `nightmare` condition,
+    /// `noCopy`): `true` while this SLEEPING mon is nightmared. Residual order 10 subOrder 7
+    /// chips `floor(baseMaxhp/4)` (`[from] Nightmare`). Every sleep cure removes it with
+    /// `|-end|<mon>|Nightmare|[silent]` right after the cure line (`sim/pokemon.ts` `cureStatus`
+    /// / `clearStatus`), via `BattleState::end_nightmare_on_cure`. Cleared on switch-out + faint.
+    pub nightmare: bool,
+    /// The **INGRAIN** volatile (`gen3_b5_moves_v1`, base `data/moves.ts` ingrain `condition`):
+    /// residual order 10 subOrder 1 heals `floor(baseMaxhp/16)` (`[from] Ingrain`), FIRM-traps
+    /// the holder (`onTrapPokemon` → bare `tryTrap()`), and blocks a Roar / Whirlwind drag
+    /// (`onDragOut` → `|-activate|<mon>|move: Ingrain`). No `noCopy` → Baton-Passed.
+    pub ingrain: bool,
 }
 
 /// The TRANSFORM copy-overlay restore record (`gen3_transform_v1`).
@@ -1567,6 +1590,10 @@ impl MonState {
             torment: false,
             last_item: String::new(),
             active_move_actions: 0,
+            grudge: false,
+            grudge_ko_by: None,
+            nightmare: false,
+            ingrain: false,
         })
     }
 

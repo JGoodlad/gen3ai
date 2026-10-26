@@ -705,6 +705,141 @@ impl crate::state::BattleState {
             return MoveResolution::done(false, false, false);
         }
 
+        // ═══════════════════ GEN3 FULL PARITY B5 (`gen3_b5_moves_v1`) ═══════════════════
+        // Spite, Grudge, Nightmare, Ingrain (Snore is a damaging move: `run_move`). The settled
+        // spec, with every draw and line, is `harness/probe_b5_moves.js`'s header; the live
+        // differential is `tests/b5_moves_golden_test.rs`.
+
+        // --- SPITE (`data/mods/gen3/moves.ts` spite; accuracy 100, `flags: protect, mirror,
+        //     bypasssub`): [1] the accuracy `randomChance(100,100)` (drawn, a miss is
+        //     reachable through evasion), [2] Protect blocks at TryHit (no further draw), the
+        //     Substitute does NOT (bypasssub), [3] `onHit`: `const roll = this.random(2, 6)`
+        //     — DRAWN BEFORE the checks, so a Spite that then fails still consumed it — then
+        //     `if (target.lastMove && target.deductPP(target.lastMove.id, roll))` →
+        //     `|-activate|<target>|move: Spite|<lastMove id>|<roll>`, else `return false` →
+        //     the `[still]` retro-edit + `|-fail|<user>`. `deductPP` (`sim/pokemon.ts:895`)
+        //     returns 0 — so Spite fails — when the target has no lastMove, when it was
+        //     Struggle (in no slot), when the id is in no slot (a self-overwriting Mimic), or
+        //     when that slot is ALREADY at 0 PP; otherwise it removes `min(roll, pp)` and the
+        //     line still prints the ROLL. No Pressure on this deduction (Pressure is a
+        //     `DeductPP` on the MOVE USER's own PP). The lastMove is the move the target
+        //     last ran through `runMove` (Sleep Talk, not the move it called; an Encored or
+        //     Choice-locked move like any other). ---
+        if move_id == "spite" {
+            if !never_miss {
+                let acc_hit = self.roll_accuracy(_side, _slot, foe, foe_slot, accuracy, never_miss, move_type, dex);
+                if !acc_hit {
+                    if self.logging() {
+                        let user = self.mon_ref(_side, _slot, dex);
+                        let target = self.mon_ref(foe, foe_slot, dex);
+                        self.log.attr_last_move_miss();
+                        self.log.miss(&user, Some(&target));
+                    }
+                    return MoveResolution::done(true, false, false);
+                }
+            }
+            if self.protect_blocks(foe, foe_slot, false) {
+                if self.logging() {
+                    let target = self.mon_ref(foe, foe_slot, dex);
+                    self.log.activate(&target, "Protect", None);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            let roll = self.prng.random_range(2, 6);
+            let hit = self.last_move_id(foe, foe_slot).and_then(|id| {
+                let k = *self.slots_with_move_id(foe, foe_slot, &id).first()?;
+                (self.sides[foe].pokemon[foe_slot].move_pp[k] > 0).then_some((id, k))
+            });
+            match hit {
+                Some((id, k)) => {
+                    self.sides[foe].pokemon[foe_slot].deduct_pp(k, roll as u16);
+                    if self.logging() {
+                        let target = self.mon_ref(foe, foe_slot, dex);
+                        self.log.activate_spite(&target, &id, roll);
+                    }
+                }
+                None => {
+                    if self.logging() {
+                        self.log.attr_last_move_still();
+                        let user = self.mon_ref(_side, _slot, dex);
+                        self.log.fail(&user, None, false);
+                    }
+                }
+            }
+            return MoveResolution::done(false, false, false);
+        }
+
+        // --- GRUDGE (`data/moves.ts` grudge, untouched by the gen-3/4 mods; `accuracy: true`,
+        //     `target: self`): ZERO draws. `volatileStatus: 'grudge'` → `|-singlemove|<user>|
+        //     Grudge`. A re-cast always succeeds: the holder's own `onBeforeMove` (priority
+        //     100, in `run_move`) removed the old volatile first. The `onFaint` PP wipe runs in
+        //     `process_faints`. ---
+        if move_id == "grudge" {
+            self.sides[_side].pokemon[_slot].grudge = true;
+            if self.logging() {
+                let user = self.mon_ref(_side, _slot, dex);
+                self.log.singlemove(&user, "Grudge");
+            }
+            return MoveResolution::done(false, false, false);
+        }
+
+        // --- NIGHTMARE (`data/mods/gen3/moves.ts` nightmare: `accuracy: true`; the condition
+        //     from `data/mods/gen4/moves.ts`): ZERO draws. TryHit order: Protect
+        //     (`-activate|<t>|Protect`) > the Substitute (no `bypasssub`: `onTryPrimaryHit` →
+        //     `[still]` + `-fail|<user>`) > `addVolatile` (already nightmared → false) >
+        //     `onStart` (`if (pokemon.status !== 'slp') return false`) — each failure the
+        //     `[still]` retro-edit + `|-fail|<user>`. Success: `|-start|<target>|Nightmare`.
+        //     The residual chip is `run_residuals` (order 10 subOrder 7); every sleep cure
+        //     ends it (`end_nightmare_on_cure`). ---
+        if move_id == "nightmare" {
+            if self.protect_blocks(foe, foe_slot, false) {
+                if self.logging() {
+                    let target = self.mon_ref(foe, foe_slot, dex);
+                    self.log.activate(&target, "Protect", None);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            let t = &self.sides[foe].pokemon[foe_slot];
+            let fails = t.substitute.is_some() || t.nightmare || !matches!(t.status, Some(Status::Sleep(_)));
+            if fails {
+                if self.logging() {
+                    self.log.attr_last_move_still();
+                    let user = self.mon_ref(_side, _slot, dex);
+                    self.log.fail(&user, None, false);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            self.sides[foe].pokemon[foe_slot].nightmare = true;
+            if self.logging() {
+                let target = self.mon_ref(foe, foe_slot, dex);
+                self.log.volatile_start(&target, "Nightmare");
+            }
+            return MoveResolution::done(false, false, false);
+        }
+
+        // --- INGRAIN (base `data/moves.ts` ingrain, the gen-4 mod changes nothing gen 3 reads;
+        //     `accuracy: true`, `target: self`, `flags: snatch`): ZERO draws. Already rooted →
+        //     `addVolatile` false → the `[still]` retro-edit + `|-fail|<user>`; else
+        //     `|-start|<user>|move: Ingrain`. Snatch steals it through the generic interception
+        //     above. The heal is the order-10 subOrder-1 residual; the trap is `is_trapped`;
+        //     the Roar / Whirlwind block is the phaze arm's DragOut gate. ---
+        if move_id == "ingrain" {
+            if self.sides[_side].pokemon[_slot].ingrain {
+                if self.logging() {
+                    self.log.attr_last_move_still();
+                    let user = self.mon_ref(_side, _slot, dex);
+                    self.log.fail(&user, None, false);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            self.sides[_side].pokemon[_slot].ingrain = true;
+            if self.logging() {
+                let user = self.mon_ref(_side, _slot, dex);
+                self.log.volatile_start(&user, "move: Ingrain");
+            }
+            return MoveResolution::done(false, false, false);
+        }
+
         // --- PERISH SONG — a field-wide (`target: all`) never-miss sound move; the
         //     cast is COMPLETELY DRAW-FREE in every branch (P1-P5: cast / all-counted
         //     re-cast / immune re-cast all match the splash-control seed trajectory).
@@ -1557,7 +1692,7 @@ impl crate::state::BattleState {
                     self.log.fail(&caster, None, false);
                 }
                 return MoveResolution {
-                    missed: false, crit: false, landed: false, force_switch_foe: None, aborted: false,
+                    missed: false, crit: false, landed: false, force_switch_foe: None, aborted: false, nopp: false,
                 };
             }
             // (2d) SUCTION CUPS (`gen3_ability_batch2_v1`, `suctioncups.onDragOut`) — reached
@@ -1580,12 +1715,25 @@ impl crate::state::BattleState {
                 }
                 return MoveResolution::done(false, false, false);
             }
+            // (2e) INGRAIN (`gen3_b5_moves_v1`, the `ingrain` condition's `onDragOut`:
+            //      `this.add('-activate', pokemon, 'move: Ingrain'); return null;`) — the same
+            //      DragOut event, so the same shape as Suction Cups: no `forceSwitchFlag`, NO
+            //      `sample` draw, no `-fail`. Suction Cups (`onDragOutPriority: 1`) runs FIRST
+            //      and stops the event, so a rooted Suction Cups holder shows only the ability
+            //      line (probe `harness/probe_b5_moves.js`, its Ingrain + Suction Cups board).
+            if self.sides[foe].pokemon[foe_slot].ingrain {
+                if self.logging() {
+                    let target = self.mon_ref(foe, foe_slot, dex);
+                    self.log.activate(&target, "move: Ingrain", None);
+                }
+                return MoveResolution::done(false, false, false);
+            }
             // (3) The foe has an eligible bench mon (2c) and was not DragOut-blocked (2d) →
             //     signal the pending drag. The `|drag|` line is emitted later at the runAction
             //     tail (Phase 1's `drag_in`), which also draws the `sample`. The no-bench FAIL
             //     is handled at (2c) above — it must precede the DragOut gate.
             return MoveResolution {
-                missed: false, crit: false, landed: false, force_switch_foe: Some(foe), aborted: false,
+                missed: false, crit: false, landed: false, force_switch_foe: Some(foe), aborted: false, nopp: false,
             };
         }
 
@@ -2721,6 +2869,12 @@ impl crate::state::BattleState {
                     };
                     self.log.curestatus_silent(&ident, tok);
                 }
+                // Heal Bell's `cureStatus(true)` / Aromatherapy's `clearStatus()` both end a
+                // NIGHTMARE (`sim/pokemon.ts:1678` / `:1757`) — reachable when the nightmared
+                // sleeper calls either through Sleep Talk (gen3_b5_moves_v1).
+                if tok == "slp" {
+                    self.end_nightmare_on_cure(_side, i, dex);
+                }
             }
             return MoveResolution::done(false, false, false);
         }
@@ -3798,6 +3952,24 @@ impl crate::state::BattleState {
                 }
                 return MoveResolution::done(false, false, false);
             }
+        }
+
+        // (2d) UPROAR blocks Rest's own sleep (`gen3_b5_moves_v1`, the TECH_DEBT (c) row found by
+        //      `gen_sim_bridge_diff.js --mode lockin` seed 303 battle 15). Rest's `onHit` runs
+        //      `target.setStatus('slp', source, move)` (`data/moves.ts` rest), whose
+        //      `runEvent('SetStatus')` reaches the `uproar` condition's `onAnySetStatus`
+        //      (`data/mods/gen3/moves.ts` uproar): for `slp` it adds `|-fail|<mon>|slp|[from]
+        //      Uproar` (`|[msg]` when the mon is the uproarer itself) and returns null, so
+        //      `setStatus` is false and Rest's `onHit` returns before the `random(2,6)` sleep
+        //      roll and the heal. Inside the SetStatus event, so AFTER the gen3ou clause shuffle
+        //      above (uproar's handler has a defined speed and sorts alone — the shuffle count
+        //      is unchanged, as in `try_set_status`). PP is already spent; no `[still]`. ---
+        if let Some((uside, uslot)) = self.any_uproarer() {
+            if self.logging() {
+                let user = self.mon_ref(side, slot, dex);
+                self.log.fail_slp_from_uproar(&user, uside == side && uslot == slot);
+            }
+            return MoveResolution::done(false, false, false);
         }
 
         // (3)+(4) SELF-SLEEP + status CURE (setStatus overrides any prior major status).

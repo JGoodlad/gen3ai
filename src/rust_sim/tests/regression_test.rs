@@ -17212,3 +17212,39 @@ fn the_species_clause_keys_on_the_dex_num_so_a_nickname_or_a_forme_does_not_hide
     let o = BattleOptions { format_id: "gen3ou".to_string(), ..opts_cg(nick, foe, "1,2,3,4") };
     assert!(Battle::start(&o, &d).is_err(), "a nickname does not make a second species");
 }
+
+/// B5-RU (`gen3_b5_moves_v1`, the TECH_DEBT (c) row found by `gen_sim_bridge_diff.js --mode lockin`
+/// seed 303 battle 15): REST under a live UPROAR fails. Rest's `onHit` → `setStatus('slp')` →
+/// `runEvent('SetStatus')` reaches `uproar.onAnySetStatus` (`data/mods/gen3/moves.ts`), which adds
+/// `|-fail|<mon>|slp|[from] Uproar` and returns null: no `-status`, no heal, no `random(2,6)` sleep
+/// roll. Sim-recorded (`harness/gen_b5_moves_golden.js` boards `ru_*`; these teams from the sim's
+/// post-start seed 18944,54804,63962,18698): in gen3customgame the turn draws no clause shuffle; in gen3ou the SetStatus clause
+/// shuffle still draws (uproar's handler sorts alone), so both seeds pin the draw count. Before the
+/// fix the port printed `-status|…|slp|[from] move: Rest` plus the heal and drew the sleep roll.
+#[test]
+fn rest_under_a_live_uproar_fails_without_the_sleep_roll() {
+    let d = dex();
+    let snorlax = |m2: &str| format!("Snorlax|Snorlax||ThickFat|rest,{m2}|Hardy|85,85,85,85,85,85|M||||");
+    let exploud = "Exploud|Exploud||Soundproof|uproar|Hardy|85,85,85,85,85,85|M||||";
+    for (format, m2, seed_after, hp) in [
+        ("gen3customgame", "splash", "28376,17824,3029,24061", "334/482"),
+        ("gen3ou", "bodyslam", "6367,58923,25654,30952", "335/482"),
+    ] {
+        let o = BattleOptions { format_id: format.to_string(), ..opts_cg(&snorlax(m2), exploud, "18944,54804,63962,18698") };
+        let mut b = Battle::start_with_switchins(&o, &d).expect("start");
+        let st = b.state_mut().expect("state");
+        let (_o, lines) = st.run_full_battle_logged(
+            &[
+                ScriptDecision::both(Choice::Move(1), Choice::Move(0)),
+                ScriptDecision::both(Choice::Move(0), Choice::Move(0)),
+            ],
+            &d,
+        );
+        let lines: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+        let fail = lines.iter().position(|l| l == "|-fail|p1a: Snorlax|slp|[from] Uproar").unwrap_or_else(|| panic!("{format}: no Uproar fail in {lines:?}"));
+        assert_eq!(lines[fail - 1], "|move|p1a: Snorlax|Rest|p1a: Snorlax", "{format}: the plain announce, no [still]");
+        assert!(!lines.iter().any(|l| l.contains("[from] move: Rest") || l.contains("|-heal|p1a: Snorlax")), "{format}: no sleep, no heal");
+        assert_eq!(st.sides[0].pokemon[0].hp.to_string() + "/482", hp, "{format}: HP unhealed");
+        assert_eq!(st.prng_seed(), seed_after, "{format}: the sim's seed (no sleep roll)");
+    }
+}

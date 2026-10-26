@@ -33,9 +33,8 @@
 //! Plus the revealed-opponent truths no projection can make (the Python slice V's `truth_checks`,
 //! moved here so the board has ONE reader): a disclosed item / ability / move is the engine's, a
 //! consumed item is no longer held, a living mon's types are the engine's, and the fifteen audited
-//! volatiles ([`TRUTH_VOLATILES`]) are present on the view exactly when the engine holds them. Two of the
-//! fifteen — Ingrain and Nightmare ([`ENGINE_CANNOT_HOLD`]) — are held to an engine that CANNOT hold them
-//! (it fails loud on both moves), so for those the audit is one-sided: the view must never report one.
+//! volatiles ([`TRUTH_VOLATILES`]) are present on the view exactly when the engine holds them (Ingrain
+//! and Nightmare included since `gen3_b5_moves_v1` modeled both moves).
 
 use super::dex;
 use super::view::{MonView, OneSidedView, SideView};
@@ -65,14 +64,6 @@ pub const TRUTH_VOLATILES: [(&str, &str); 15] = [
     ("yawn", "yawn"),
 ];
 
-/// The [`TRUTH_VOLATILES`] the ENGINE cannot hold: their moves (Ingrain, Nightmare) FAIL LOUD in `run_status_move`
-/// (`scan_move_probe`: `status move "ingrain" is not modeled`), so no battle the engine plays contains either and
-/// `search::volatile_names` has no such field. The audit still names them — the `eot_residual` lever and the encoder read
-/// both off the view's active context, and a live (Showdown) battle can hold them — but only ONE direction can fail
-/// here: a view that reports one the engine cannot hold. The other direction (the engine holds it, the view misses it)
-/// needs the engine to model the move: `tests/version_test.rs::the_engine_still_fails_loud_on_the_volatiles_the_audit_cannot_check`
-/// FAILS the day it does, telling the author to add the engine field to `volatile_names` and delete the entry here.
-pub const ENGINE_CANNOT_HOLD: [&str; 2] = ["ingrain", "nightmare"];
 
 /// The audit of one view: how many facts were checked, and every one that failed as
 /// `(class, detail)` — the class names the field and the rule, the detail the two values.

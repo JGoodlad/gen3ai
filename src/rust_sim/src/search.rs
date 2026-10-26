@@ -1075,6 +1075,16 @@ pub fn volatile_names(mon: &MonState) -> Vec<&'static str> {
     if mon.flash_fire {
         v.push("flashfire");
     }
+    // The B5 volatiles (`gen3_b5_moves_v1`): all three live across a turn boundary.
+    if mon.grudge {
+        v.push("grudge");
+    }
+    if mon.ingrain {
+        v.push("ingrain");
+    }
+    if mon.nightmare {
+        v.push("nightmare");
+    }
     if mon.focus_energy {
         v.push("focusenergy");
     }

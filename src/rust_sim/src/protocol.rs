@@ -1171,6 +1171,20 @@ impl ProtocolBuilder {
             ])
         });
     }
+    /// `|-activate|<target>|move: Spite|<moveid>|<n>` — SPITE cut `n` PP (`gen3_b5_moves_v1`,
+    /// `data/mods/gen3/moves.ts` spite `onHit`: `this.add("-activate", target, 'move: Spite',
+    /// target.lastMove.id, roll)`). The move is the raw ID, and `n` is the ROLL, not the PP
+    /// actually removed (a 2-PP move Spited for 5 prints 5).
+    pub fn activate_spite(&mut self, target: &MonRef, move_id: &str, roll: u32) {
+        self.emit(|| {
+            Line::new(Kw::Activate, vec![
+                Field::mon(target),
+                Field::text("move: Spite"),
+                typed_or_text(Kw::Activate, 2, move_id),
+                typed_or_text(Kw::Activate, 3, &roll.to_string()),
+            ])
+        });
+    }
     /// `|-transform|<user>|<target>` — the TRANSFORM copy landed (`gen3_transform_v1`,
     /// `pokemon.transformInto`'s `this.battle.add('-transform', this, pokemon)`). A plain
     /// Transform passes no `effect`, so gen3 never emits the `|[from] <effect>` variant

@@ -172,12 +172,10 @@ const MOVE_ID_BLOCKLIST = new Set([
   // NOTE: `sleeptalk` is NO LONGER blocklisted — MODELED (`gen3_move_coverage_batch5_v1`);
   // its pickability is CARRIER-conditional (see `sleepTalkPoolModeled` in pickMove: the
   // sampled pool must be all-modeled, since the CALLED move bypasses the picker). `snore`
-  // (the other gen-3 sleepUsable move) stays out: its while-asleep execution + awake
-  // onTry fail are unmodeled.
+  // (the other gen-3 sleepUsable move) is NO LONGER blocklisted (`gen3_b5_moves_v1`): a plain
+  // damaging move to these gates (its `onTry` is draw-free), modeled in run_move.
   // NOTE: `fakeout` is NO LONGER blocklisted — MODELED (`gen3_fakeout_v1`) and ADMITTED via
-  // MODELED_FAKEOUT_MOVES. `snore` stays out (its while-asleep execution + awake onTry fail are
-  // unmodeled, and run_move fail-louds on it).
-  'snore',
+  // MODELED_FAKEOUT_MOVES.
   // NOTE: `destinybond` is NO LONGER blocklisted — MODELED bit-for-bit
   // (`gen3_move_coverage_batch6_v1`) and ADMITTED via MODELED_BATCH6_MOVES in the
   // Status branch of `isModeledMove`. `snatch` (the LAST gen-3 status move) is likewise
@@ -426,6 +424,11 @@ const BATCH6_E2E_EXCLUDED = false;
 // it closes 722/722 (the last team-blocking move). The port no longer FAIL-LOUDs on snatch.
 const MODELED_SNATCH_MOVES = new Set(['snatch']);
 const SNATCH_E2E_EXCLUDED = false;
+
+// GEN3 FULL PARITY B5 (`gen3_b5_moves_v1`) — the category-Status members (Snore is damaging and
+// passes the damaging gates once off the blocklist). Kept in lockstep with the src/turn
+// status_moves.rs B5 arms; golden `gen_b5_moves_golden.js` → `tests/b5_moves_golden_test.rs`.
+const MODELED_B5_MOVES = new Set(['spite', 'grudge', 'nightmare', 'ingrain']);
 
 // FOCUS ENERGY (`gen3_focus_energy_move_v1`, ROUND 59) — a `target: self`, NEVER-MISS,
 // **DRAW-FREE** status move that sets the `focusenergy` volatile (+2 crit stages). The volatile
@@ -829,6 +832,7 @@ function isModeledMove(id, allowHiddenPower = false) {
       // moves the picker also picks (all `isModeledMove`), so the steal always re-dispatches
       // a modeled arm (never a fail-loud). Closes 722/722.
       (SNATCH_E2E_EXCLUDED ? false : MODELED_SNATCH_MOVES.has(id)) ||
+      MODELED_B5_MOVES.has(id) ||
       MODELED_FOCUS_ENERGY_MOVES.has(id) ||
       // HAZE (`gen3_haze_v1`) — the boost-reset FIELD move, category Status + bit-for-bit modeled.
       (HAZE_E2E_EXCLUDED ? false : MODELED_HAZE_MOVES.has(id)) ||

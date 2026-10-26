@@ -288,6 +288,36 @@ impl crate::state::BattleState {
                 });
             }
 
+            // --- INGRAIN / NIGHTMARE (`gen3_b5_moves_v1`) — VOLATILES, gathered in the volatiles
+            //     group (after the status DoT, before the item): Ingrain order 10 subOrder 1,
+            //     Nightmare order 10 subOrder 7 (the resolved gen-3 conditions). Each subOrder is
+            //     unique among the order-10 handlers, so either only ties the OTHER mon's same
+            //     volatile at equal cached speed. ⚠️ The sim gathers a mon's volatiles in
+            //     `pokemon.volatiles` INSERTION order; the port's fixed volatile-group order is
+            //     the same approximation every other volatile here makes (only Perish tracks its
+            //     insertion turn), which matters only to the selection sort's swaps when another
+            //     tied group exists on the same board. ---
+            if mon.ingrain {
+                handlers.push(EventHandler {
+                    order: STATUS_RESIDUAL_ORDER,
+                    priority: 0,
+                    speed,
+                    sub_order: INGRAIN_RESIDUAL_SUBORDER,
+                    effect_order: 0,
+                    handler: ResidualAction::Ingrain { side, slot },
+                });
+            }
+            if mon.nightmare {
+                handlers.push(EventHandler {
+                    order: STATUS_RESIDUAL_ORDER,
+                    priority: 0,
+                    speed,
+                    sub_order: NIGHTMARE_RESIDUAL_SUBORDER,
+                    effect_order: 0,
+                    handler: ResidualAction::Nightmare { side, slot },
+                });
+            }
+
             // --- The CURSE volatile's residual chip (`gen3_move_coverage_batch3_v1`). Order
             //     10, subOrder 8 (the gen-3 `curse` condition's `onResidualOrder: 10,
             //     onResidualSubOrder: 8`) — so at order 10 it sorts AFTER Leftovers (4) / Leech
@@ -1296,6 +1326,23 @@ impl crate::state::BattleState {
                     }
                     self.apply_berry_residual(side, slot, dex);
                 }
+                // INGRAIN heal / NIGHTMARE chip (`gen3_b5_moves_v1`). The `fieldEvent` loop skips a
+                // fainted holder AND a handler whose volatile was removed by an earlier handler
+                // this phase (`expectedStateLocation !== handler.state`, `sim/battle.ts`
+                // fieldEvent) — a Shed Skin wake (subOrder 3) ends the Nightmare before its
+                // chip (7). Both fall through to the per-handler faintMessages.
+                ResidualAction::Ingrain { side, slot } => {
+                    if self.sides[side].pokemon[slot].fainted || !self.sides[side].pokemon[slot].ingrain {
+                        continue;
+                    }
+                    self.apply_ingrain(side, slot, dex);
+                }
+                ResidualAction::Nightmare { side, slot } => {
+                    if self.sides[side].pokemon[slot].fainted || !self.sides[side].pokemon[slot].nightmare {
+                        continue;
+                    }
+                    self.apply_nightmare(side, slot, dex);
+                }
                 // CURSE chip (`gen3_move_coverage_batch3_v1`, order 10 subOrder 8): the cursed
                 // holder loses floor(maxhp/4). DRAW-FREE.
                 ResidualAction::Curse { side, slot } => {
@@ -1665,6 +1712,12 @@ impl crate::state::BattleState {
             let m = self.mon_ref(side, slot, dex);
             self.log.activate(&m, "ability: Shed Skin", None);
             self.log.curestatus(&m, tok, true);
+        }
+        // Shed Skin's `cureStatus()` ends a NIGHTMARE (gen3_b5_moves_v1) — and the nightmare
+        // handler gathered for this residual then finds its volatile gone and is skipped
+        // (`fieldEvent`'s `expectedStateLocation !== handler.state` continue, `sim/battle.ts`).
+        if tok == "slp" {
+            self.end_nightmare_on_cure(side, slot, dex);
         }
     }
 
@@ -2038,6 +2091,34 @@ impl crate::state::BattleState {
             let mon_ref = self.mon_ref(side, slot, dex);
             let hp = self.hp_status(side, slot);
             self.log.damage(&mon_ref, &hp, Some(&Cause::Bare("Curse".to_string())));
+        }
+    }
+
+    /// INGRAIN's residual heal (`gen3_b5_moves_v1`; `ingrain.onResidual(pokemon) {
+    /// this.heal(pokemon.baseMaxhp / 16) }`). `battle.heal` bumps a sub-1 amount to 1 and
+    /// truncates (`max(1, floor(maxhp/16))`), and adds nothing when the holder is at full HP.
+    /// Line `|-heal|<mon>|<hp>|[from] Ingrain` (the condition's fullname, no `[of]`). DRAW-FREE.
+    fn apply_ingrain(&mut self, side: usize, slot: usize, dex: &Dex) {
+        let amount = (self.sides[side].pokemon[slot].maxhp / 16).max(1);
+        if self.apply_heal(side, slot, amount) && self.logging() {
+            let m = self.mon_ref(side, slot, dex);
+            let hp = self.hp_status(side, slot);
+            self.log.heal(&m, &hp, Some(&Cause::Bare("Ingrain".to_string())));
+        }
+    }
+
+    /// NIGHTMARE's residual chip (`gen3_b5_moves_v1`; `nightmare.onResidual(pokemon) {
+    /// this.damage(pokemon.baseMaxhp / 4) }`): `max(1, floor(maxhp/4))`, `|-damage|<mon>|<hp>
+    /// slp|[from] Nightmare`. A `Damage` event like Curse's, so Focus Band's `onDamage` roll
+    /// draws (no survive — not a Move effect). Probe "nightmare focus band".
+    fn apply_nightmare(&mut self, side: usize, slot: usize, dex: &Dex) {
+        let dmg = (self.sides[side].pokemon[slot].maxhp / 4).max(1);
+        let dmg = self.focus_band_damage(side, slot, dmg, false, false, dex);
+        self.apply_damage(side, slot, dmg);
+        if dmg > 0 && self.logging() {
+            let m = self.mon_ref(side, slot, dex);
+            let hp = self.hp_status(side, slot);
+            self.log.damage(&m, &hp, Some(&Cause::Bare("Nightmare".to_string())));
         }
     }
 

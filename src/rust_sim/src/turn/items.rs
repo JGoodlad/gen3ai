@@ -294,6 +294,11 @@ impl crate::state::BattleState {
                 self.log.curestatus(&m, tok, true);
             }
             self.sides[side].pokemon[slot].status = None;
+            // `cureStatus()` ends a NIGHTMARE on a sleep cure (gen3_b5_moves_v1, the Insomnia /
+            // Vital Spirit gained through Skill Swap / Trace).
+            if tok == "slp" {
+                self.end_nightmare_on_cure(side, slot, dex);
+            }
         }
     }
 
@@ -358,6 +363,10 @@ impl crate::state::BattleState {
             if self.logging() {
                 let m = self.mon_ref(side, slot, dex);
                 self.log.curestatus(&m, tok, true);
+            }
+            // Chesto / Lum `cureStatus()` ends a NIGHTMARE (gen3_b5_moves_v1).
+            if tok == "slp" {
+                self.end_nightmare_on_cure(side, slot, dex);
             }
         }
         if cure_confusion {

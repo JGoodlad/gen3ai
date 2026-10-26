@@ -666,6 +666,34 @@ add([cond('destinybond', 'onBeforeMove'), cond('destinybond', 'onBeforeMovePrior
   IMPL('turn.rs::run_move', 'the window closes at the users next move ATTEMPT: priority −1 removal for any move != destinybond + the onMoveAborted removal at every cant site (MC84)'));
 add([cond('destinybond', 'onFaint')],
   IMPL('turn.rs::process_faints', 'the mutual-faint chain: |faint| victim → -activate → the killers hp zeroed + drained in the SAME faintMessages worklist (a foe-Move KO only — the damage sites record destiny_bond_ko_by; residual/futuremove/sub-absorbed never trigger; MC83/MC85)'));
+// GEN3 FULL PARITY B5 (`gen3_b5_moves_v1`) — Spite, Grudge, Snore, Nightmare, Ingrain. The settled
+// spec is harness/probe_b5_moves.js; the differential is tests/b5_moves_golden_test.rs.
+add([mv('spite', 'onHit'), mv('spite', 'ignoreImmunity')],
+  IMPL('status_moves.rs::run_status_move', 'the spite arm: accuracy, Protect, then random(2,6) DRAWN FIRST, then lastMove + deductPP (BattleState::last_move_id / slots_with_move_id): -activate prints the roll; a failure [still] + -fail; bypasssub (no sub gate); Status-default ignoreImmunity'));
+add([mv('grudge', 'volatileStatus'), cond('grudge', 'onStart'), mv('grudge', 'ignoreImmunity'), mv('grudge', 'neverMiss')],
+  IMPL('status_moves.rs::run_status_move', 'the grudge arm: a ZERO-draw cast, MonState::grudge + |-singlemove|<user>|Grudge'));
+add([cond('grudge', 'onBeforeMove'), cond('grudge', 'onBeforeMovePriority')],
+  IMPL('moves.rs::run_move', 'priority 100, the FIRST BeforeMove handler: removed silently at the top of every runMove (before the recharge / sleep / freeze / truant / flinch / paralysis cants); not for a useMove (Pursuit strike, Sleep-Talk call)'));
+add([cond('grudge', 'onFaint')],
+  IMPL('switch.rs::process_faints', 'the damage sites record grudge_ko_by (a foe Move, not futuremove); the drain zeroes every killer slot with lastMove.id and adds -activate|<killer>|move: Grudge|<Move> right after the corpse |faint|, unless the killer is already fainted (an Explosion user)'));
+add([mv('snore', 'sleepUsable')],
+  IMPL('moves.rs::SLEEP_USABLE_MOVES', 'the slp onBeforeMove cants then lets it proceed (skippedTime++); the set is pinned against the resolved dex (b5_moves_test.rs B5-0)'));
+add([mv('snore', 'onTry')],
+  IMPL('moves.rs::run_move', 'awake (incl. the wake turn) → the bare announce, no line, ZERO draws, before accuracy / Protect / immunity'));
+add([mv('snore', 'secondaries')],
+  IMPL('turn.rs::apply_secondaries', 'the 30 % flinch rides the plain single-secondary path'));
+add([mv('nightmare', 'volatileStatus'), cond('nightmare', 'onStart'), mv('nightmare', 'ignoreImmunity'), mv('nightmare', 'neverMiss')],
+  IMPL('status_moves.rs::run_status_move', 'the nightmare arm: ZERO draws; Protect > Substitute > already-on > not-asleep (the last three [still] + -fail|<user>); -start|<t>|Nightmare; comatose is gen 7+'));
+add([cond('nightmare', 'onResidual'), cond('nightmare', 'onResidualOrder'), cond('nightmare', 'onResidualSubOrder')],
+  IMPL('residuals.rs::apply_nightmare', 'order 10 subOrder 7: max(1, maxhp/4) [from] Nightmare, Focus Band roll; skipped once a cure removed the volatile; every sleep cure ends it (end_nightmare_on_cure)'));
+add([mv('ingrain', 'volatileStatus'), cond('ingrain', 'onStart'), mv('ingrain', 'ignoreImmunity'), mv('ingrain', 'neverMiss')],
+  IMPL('status_moves.rs::run_status_move', 'the ingrain arm: ZERO draws, -start|<u>|move: Ingrain, a recast [still] + -fail; snatchable through the generic interception'));
+add([cond('ingrain', 'onResidual'), cond('ingrain', 'onResidualOrder'), cond('ingrain', 'onResidualSubOrder')],
+  IMPL('residuals.rs::apply_ingrain', 'order 10 subOrder 1: max(1, maxhp/16) [from] Ingrain, nothing at full HP'));
+add([cond('ingrain', 'onTrapPokemon')],
+  IMPL('switch.rs::is_trapped', 'a FIRM trap (trap_is_firm) + a Condition handler in the endTurn TrapPokemon sort (speed.rs::trap_event_shuffles)'));
+add([cond('ingrain', 'onDragOut')],
+  IMPL('status_moves.rs::run_status_move', 'the phaze arm: after Suction Cups (priority 1), -activate|<u>|move: Ingrain and no drag, no sample draw'));
 add([mv('endure', 'onPrepareHit'), mv('endure', 'stallingMove'), mv('endure', 'priority'), mv('endure', 'onHit'), mv('endure', 'volatileStatus'), cond('endure', 'onStart')],
   IMPL('turn.rs::run_protect', 'the endure arm rides the SHARED protect stallingMove machinery (willAct gate + randomChance(1,counter) 2→4→8 no-delete-on-fail; priority 4); success sets MonState::endure'));
 add([cond('endure', 'onDamage'), cond('endure', 'onDamagePriority')],

@@ -15,6 +15,11 @@ use super::helpers::*;
 /// type. Pinned against the resolved dex by `tests/recharge_family_test.rs`.
 pub const RECHARGE_MOVES: [&str; 4] = ["hyperbeam", "blastburn", "frenzyplant", "hydrocannon"];
 
+/// The gen-3 `sleepUsable` moves (`gen3_b5_moves_v1`): the slp `onBeforeMove` prints `|cant|<mon>|
+/// slp` and then lets these PROCEED (`if (move.sleepUsable) { skippedTime++; return; }`,
+/// `data/mods/gen3/conditions.ts`). Pinned against the resolved dex by `tests/b5_moves_test.rs`.
+pub const SLEEP_USABLE_MOVES: [&str; 2] = ["sleeptalk", "snore"];
+
 impl crate::state::BattleState {
 
     /// Resolve the [`MoveData`]-like move for a side's active move slot. `None` for
@@ -195,26 +200,6 @@ impl crate::state::BattleState {
             move_name
         };
 
-        // --- SNORE fail-loud guard (`gen3_move_coverage_batch5_v1` scope edge): Snore
-        //     is a bp-40 damaging move carrying `sleepUsable` + an asleep-only `onTry`
-        //     — the port models NEITHER (Sleep Talk is the ONLY modeled sleepUsable
-        //     move; `on_before_move`'s slp arm proceeds only for sleeptalk). Running it
-        //     as a plain damaging move silently mismodels BOTH branches: AWAKE the sim
-        //     onTry-fails silently (the port would deal damage); ASLEEP the sim cants
-        //     then sleepUsable-PROCEEDS (the port cants + blocks). No pool team carries
-        //     it (e2e-picker-blocklisted, `gen_e2e_fuzz.js`), but a future team source
-        //     (e.g. the training bridge) could reach the engine directly — PANIC per
-        //     the fail-loud canon, BEFORE any draw (the guard sits before
-        //     `on_before_move`, so an asleep Snore selection panics too). ---
-        if move_id == "snore" {
-            panic!(
-                "unmodeled sleepUsable move 'snore' reached run_move — Snore's asleep-only \
-                 onTry + the sleepUsable cant-then-proceed are NOT modeled (Sleep Talk is the \
-                 only modeled sleepUsable move). Model it bit-for-bit or keep it off the \
-                 pickable set — do NOT let it run as a plain bp-40 damaging move."
-            );
-        }
-
         // BATCH-1 post-hit effect specs (`gen3_move_coverage_batch1_v1`): recoil / drain /
         // self-drop fractions read from the move data. Struggle's recoil rides its OWN
         // dedicated gen-3 path below (so leave it 0 here to avoid a double recoil). Rapid
@@ -277,6 +262,17 @@ impl crate::state::BattleState {
         //     move at all in the sim (the priority-11 cant precedes move resolution), so an
         //     unmodeled charge/recharge move sitting in the resolved slot must not panic on
         //     a recharge turn (review finding, batch-4c Lens 2). ---
+        // --- GRUDGE's `onBeforeMove` (`gen3_b5_moves_v1`, `data/moves.ts` grudge condition,
+        //     `onBeforeMovePriority: 100`): the HIGHEST-priority BeforeMove handler, so the
+        //     holder's next `runMove` removes the volatile SILENTLY before the recharge (11) /
+        //     sleep / freeze (10) / truant / flinch / paralysis cants can abort the move — a
+        //     Grudge user that is then asleep or fully paralysed has still lost its Grudge. Not
+        //     for a `useMove` (the Pursuit strike, a Sleep-Talk-called move): those run no
+        //     BeforeMove (the OUTER Sleep Talk's own runMove already removed it). DRAW-FREE. ---
+        if !pursuit_strike && !sleep_talk_call {
+            self.sides[side].pokemon[slot].grudge = false;
+        }
+
         if !pursuit_strike && !sleep_talk_call && self.sides[side].pokemon[slot].must_recharge {
             self.sides[side].pokemon[slot].must_recharge = false;
             self.sides[side].pokemon[slot].must_recharge_duration = 0;
@@ -610,6 +606,30 @@ impl crate::state::BattleState {
         //     user splashed then was KO'd the same turn → NO mutual faint). DRAW-FREE. ---
         if move_id != "destinybond" {
             self.sides[side].pokemon[slot].destiny_bond = false;
+        }
+
+        // --- `cant … nopp` (`gen3_b5_moves_v1`; `sim/battle-actions.ts` runMove: `if
+        //     (!lockedMove) { if (!pokemon.deductPP(baseMove, null, target) && move.id !==
+        //     'struggle') { add('cant', pokemon, 'nopp', move); clearActiveMove(true); return; } }`).
+        //     The choice validated a slot with PP, but a faster foe's SPITE emptied it before the
+        //     move ran: after BeforeMove passed (a sleeper's `|cant|…|slp` + sleepUsable proceed
+        //     comes first), `|cant|<mon>|nopp|<Move>` and return — DRAW-FREE, no PP, no lastMove,
+        //     no `MoveAborted` and no `AfterMove`. A locked repeat (Uproar / Outrage / Rollout /
+        //     Solar Beam's fire) skips the check, as it skips the deduction. Rage's own
+        //     BeforeMove (priority 100) already ran, so it ends here too. ---
+        if !struggle
+            && !locked_fire
+            && !locked_uproar
+            && !locked_lockin
+            && !locked_rollout
+            && self.sides[side].pokemon[slot].move_pp.get(move_index).copied().unwrap_or(0) == 0
+        {
+            self.sides[side].pokemon[slot].rage = false;
+            if self.logging() {
+                let user = self.mon_ref(side, slot, dex);
+                self.log.cant(&user, "nopp", Some(&move_name));
+            }
+            return MoveResolution::nopp();
         }
 
         // --- PP DEDUCTION (`gen3_pp_tracking_v1`), mirroring `deductPP` at
@@ -974,6 +994,25 @@ impl crate::state::BattleState {
         //
         //     The predicate is `active_move_actions > 1` AFTER this run's increment: probe-settled
         //     that a CANT turn burns the gate while a CANCELLED action does not. `landed = false`.
+        // --- SNORE's `onTry` (`gen3_b5_moves_v1`; `data/mods/gen4/moves.ts` snore, inherited by
+        //     gen 3: `onTry(source) { return source.status === 'slp' || comatose }`). It runs at
+        //     gen-3 `tryMoveHit`'s `singleEvent('Try')` (`data/mods/gen3/scripts.ts`), after the
+        //     announce and BEFORE the accuracy roll, Protect and the type/Soundproof immunity —
+        //     and a `false` return there adds NO line (no `[still]`, no `-fail`). So an AWAKE
+        //     Snore (including the wake turn: `slp.onBeforeMove` cured it first) is the bare
+        //     announce, ZERO draws, PP spent. An ASLEEP Snore reached here through the slp
+        //     `onBeforeMove`'s `sleepUsable` branch (`|cant|<mon>|slp` printed, then proceed) and
+        //     runs as the plain 40-BP Normal move below (accuracy, crit, damage, 30 % flinch).
+        //     Probe `harness/probe_b5_moves.js`, its Snore boards. ---
+        if move_id == "snore" && !matches!(self.sides[side].pokemon[slot].status, Some(Status::Sleep(_))) {
+            if self.logging() {
+                let user = self.mon_ref(side, slot, dex);
+                let target = self.mon_ref(foe, foe_slot, dex);
+                self.log.move_used(&user, &move_name, Some(&target), false, false);
+            }
+            return MoveResolution::done(false, false, false);
+        }
+
         if move_id == "fakeout" && self.sides[side].pokemon[slot].active_move_actions > 1 {
             if self.logging() {
                 let user = self.mon_ref(side, slot, dex);
@@ -1632,6 +1671,11 @@ impl crate::state::BattleState {
             {
                 self.sides[foe].pokemon[foe_slot].destiny_bond_ko_by = Some(side);
             }
+            // GRUDGE trigger record (`gen3_b5_moves_v1`): the same foe-Move KO gate (the chain runs
+            // in `process_faints`, after the corpse's `|faint|`). DRAW-FREE.
+            if self.sides[foe].pokemon[foe_slot].hp == 0 && self.sides[foe].pokemon[foe_slot].grudge {
+                self.sides[foe].pokemon[foe_slot].grudge_ko_by = Some(side);
+            }
             // FOCUS PUNCH lostFocus (`gen3_move_coverage_batch4_v1`,
             // `focuspunch.condition.onHit`): a NON-Status move that HIT the FP user DIRECTLY
             // (this `!absorbed` block = the mon took the damage, not its sub) sets
@@ -1845,6 +1889,8 @@ impl crate::state::BattleState {
                         let m = self.mon_ref(s2, sl2, dex);
                         self.log.curestatus(&m, "slp", true);
                     }
+                    // `uproar.onTryHit` → `cureStatus()` ends a NIGHTMARE (gen3_b5_moves_v1).
+                    self.end_nightmare_on_cure(s2, sl2, dex);
                 }
             }
         }
@@ -2311,6 +2357,11 @@ impl crate::state::BattleState {
                 {
                     self.sides[foe].pokemon[foe_slot].destiny_bond_ko_by = Some(side);
                 }
+                // GRUDGE trigger record (`gen3_b5_moves_v1`): the same foe-Move KO gate (the chain runs
+                // in `process_faints`, after the corpse's `|faint|`). DRAW-FREE.
+                if self.sides[foe].pokemon[foe_slot].hp == 0 && self.sides[foe].pokemon[foe_slot].grudge {
+                    self.sides[foe].pokemon[foe_slot].grudge_ko_by = Some(side);
+                }
                 // COUNTER / MIRROR COAT recorder (`gen3_move_coverage_batch5_v1`): Beat
                 // Up's strikes are **Special** (the resolved gen3 category — Dark) Move
                 // hits, so each DIRECT strike arms the target's MIRROR COAT (never
@@ -2563,6 +2614,11 @@ impl crate::state::BattleState {
                     && self.sides[foe].pokemon[foe_slot].destiny_bond
                 {
                     self.sides[foe].pokemon[foe_slot].destiny_bond_ko_by = Some(side);
+                }
+                // GRUDGE trigger record (`gen3_b5_moves_v1`): the same foe-Move KO gate (the chain runs
+                // in `process_faints`, after the corpse's `|faint|`). DRAW-FREE.
+                if self.sides[foe].pokemon[foe_slot].hp == 0 && self.sides[foe].pokemon[foe_slot].grudge {
+                    self.sides[foe].pokemon[foe_slot].grudge_ko_by = Some(side);
                 }
                 if let Some(fp) = self.sides[foe].pokemon[foe_slot].focus_punch.as_mut() {
                     *fp = true;
@@ -2949,6 +3005,11 @@ impl crate::state::BattleState {
             {
                 self.sides[foe].pokemon[foe_slot].destiny_bond_ko_by = Some(side);
             }
+            // GRUDGE trigger record (`gen3_b5_moves_v1`): the same foe-Move KO gate (the chain runs
+            // in `process_faints`, after the corpse's `|faint|`). DRAW-FREE.
+            if self.sides[foe].pokemon[foe_slot].hp == 0 && self.sides[foe].pokemon[foe_slot].grudge {
+                self.sides[foe].pokemon[foe_slot].grudge_ko_by = Some(side);
+            }
             // COUNTER / MIRROR COAT recorder (`gen3_move_coverage_batch5_v1`): a
             // fixed-damage foe hit IS a Move-effect Damage event — Seismic Toss
             // (Fighting → Physical) arms Counter for 2×100 (probed CS), Dragon Rage
@@ -3149,6 +3210,9 @@ impl crate::state::BattleState {
                     let mon_ref = self.mon_ref(side, slot, dex);
                     self.log.curestatus(&mon_ref, "slp", true);
                 }
+                // NIGHTMARE ends with the sleep (gen-3 `slp.onBeforeMove` → `cureStatus()`,
+                // `sim/pokemon.ts:1678`): `|-end|<mon>|Nightmare|[silent]` after the cure.
+                self.end_nightmare_on_cure(side, slot, dex);
                 // (fall through to the next-lower handlers, like the sim's `return`
                 //  from the slp handler — but slp is exclusive, so none else fire.)
                 // A WAKE-turn Sleep Talk then executes AWAKE → its onTry fails SILENTLY
@@ -3161,10 +3225,8 @@ impl crate::state::BattleState {
                     let mon_ref = self.mon_ref(side, slot, dex);
                     self.log.cant(&mon_ref, "slp", None);
                 }
-                // --- `move.sleepUsable` (`gen3_move_coverage_batch5_v1`, SLEEP TALK —
-                //     the ONLY modeled sleepUsable move; Snore is UNMODELED — it
-                //     FAIL-LOUD-panics at run_move's top, `snore_panics_fail_loud`):
-                //     the slp handler `return`s instead of
+                // --- `move.sleepUsable` (`gen3_move_coverage_batch5_v1` SLEEP TALK,
+                //     `gen3_b5_moves_v1` SNORE): the slp handler `return`s instead of
                 //     `return false`, so the move PROCEEDS while still asleep — and the
                 //     gen3 slp state does `skippedTime++` (a normal blocked cant RESETS
                 //     it to 0; the onSwitchIn restore lives in `run_switch`). The bare
@@ -3174,7 +3236,7 @@ impl crate::state::BattleState {
                 let sleep_usable = !struggle
                     && self
                         .move_at(side, slot, move_index, dex)
-                        .map(|m| m.id == "sleeptalk")
+                        .map(|m| SLEEP_USABLE_MOVES.contains(&m.id.as_str()))
                         .unwrap_or(false);
                 if sleep_usable {
                     self.sides[side].pokemon[slot].sleep_skipped =

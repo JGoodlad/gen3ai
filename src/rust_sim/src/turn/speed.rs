@@ -285,6 +285,11 @@ impl crate::state::BattleState {
         if me.partial_trap.is_some() {
             conditions.push(me.cached_speed as f64);
         }
+        // INGRAIN (`gen3_b5_moves_v1`) carries `onTrapPokemon` too: a third Condition handler at
+        // subOrder 2, so rooted + trapped / wrapped ties and draws (no `onMaybeTrapPokemon`).
+        if me.ingrain {
+            conditions.push(me.cached_speed as f64);
+        }
 
         const ABILITY_SUBORDER: i32 = 7;
         const CONDITION_SUBORDER: i32 = 2;

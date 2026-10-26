@@ -113,7 +113,7 @@ mod switch;
 /// runtime types the engine uses (`gen3_bridge_curse_request_target_v1`).
 pub(crate) use helpers::mon_types;
 /// The recharge family (`gen3_recharge_family_v1`), public so its pin can check it against the dex.
-pub use moves::RECHARGE_MOVES;
+pub use moves::{RECHARGE_MOVES, SLEEP_USABLE_MOVES};
 
 /// The denominators `critMult[critRatio]` for gen ≤ 5 (`battle-actions.ts:1631`):
 /// index by the (clamped 0..5) crit ratio. A normal damaging move resolves to
@@ -276,6 +276,15 @@ const WISH_DURATION: u8 = 2;
 /// with the VOLATILES (after leech, before the item / the NO_ORDER duration volatiles),
 /// mirroring `findPokemonEventHandlers`'s status→volatiles→item order.
 const CURSE_RESIDUAL_SUBORDER: i32 = 8;
+/// INGRAIN's residual heal (`gen3_b5_moves_v1`; base `data/moves.ts` ingrain condition
+/// `onResidualOrder: 10, onResidualSubOrder: 1`): the FIRST order-10 handler, before the
+/// residual abilities (3) and Leftovers (4). Unique, so it only ties the OTHER mon's Ingrain at
+/// equal cached speed.
+const INGRAIN_RESIDUAL_SUBORDER: i32 = 1;
+/// NIGHTMARE's residual chip (`gen3_b5_moves_v1`; `data/mods/gen4/moves.ts` nightmare
+/// condition `onResidualOrder: 10, onResidualSubOrder: 7`): after the status DoT (6), before
+/// Curse (8). Unique, so it only ties the OTHER mon's Nightmare at equal cached speed.
+const NIGHTMARE_RESIDUAL_SUBORDER: i32 = 7;
 /// The **PARTIAL-TRAP** volatile's `onResidualSubOrder` **9** (`gen3_partial_trap_v1` — the
 /// gen4-mod `partiallytrapped` override `onResidualOrder: 10, onResidualSubOrder: 9`,
 /// SOURCE-read at `data/mods/gen4/conditions.ts:110` and confirmed by the probe traces).
@@ -435,22 +444,31 @@ pub(crate) struct MoveResolution {
     /// A move that PASSED BeforeMove then missed / was immune / Damp-blocked / applied a
     /// status STILL reaches `AfterMove` → NOT aborted (those return via `done()`).
     aborted: bool,
+    /// The move hit `runMove`'s `cant … nopp` (`gen3_b5_moves_v1`): its slot was emptied between
+    /// the choice and the execution (Spite), so `deductPP` failed after BeforeMove passed. The sim
+    /// returns there (`sim/battle-actions.ts` runMove) — no `MoveAborted` and no `AfterMove`, so
+    /// the caller must neither consume Charge nor run the AfterMove hooks. Implies `aborted`.
+    nopp: bool,
 }
 
 impl MoveResolution {
     /// An out-of-scope (unknown / status / 0-BP) move: no draws, never landed.
     fn no_op() -> MoveResolution {
-        MoveResolution { missed: false, crit: false, landed: false, force_switch_foe: None, aborted: false }
+        MoveResolution { missed: false, crit: false, landed: false, force_switch_foe: None, aborted: false, nopp: false }
     }
     /// The common terminal: a resolved move that drew its taxes but is not landed and
     /// triggers no forced switch (a miss / immune / status-applied / boost / heal).
     fn done(missed: bool, crit: bool, landed: bool) -> MoveResolution {
-        MoveResolution { missed, crit, landed, force_switch_foe: None, aborted: false }
+        MoveResolution { missed, crit, landed, force_switch_foe: None, aborted: false, nopp: false }
     }
     /// A move ABORTED at `onBeforeMove` (a cant) — like [`Self::done`] but flags that the
     /// sim's `AfterMove` event never fired (so the `onAnyAfterMove` White Herb hook is skipped).
     fn aborted() -> MoveResolution {
-        MoveResolution { missed: false, crit: false, landed: false, force_switch_foe: None, aborted: true }
+        MoveResolution { missed: false, crit: false, landed: false, force_switch_foe: None, aborted: true, nopp: false }
+    }
+    /// `runMove`'s `cant … nopp` return (see [`Self::nopp`]).
+    fn nopp() -> MoveResolution {
+        MoveResolution { missed: false, crit: false, landed: false, force_switch_foe: None, aborted: true, nopp: true }
     }
 }
 
@@ -555,6 +573,12 @@ enum ResidualAction {
     /// volatiles (after leech, before Taunt). The `source_side` is stored for parity with
     /// leech but the chip has no source-heal (unlike leech).
     Curse { side: usize, slot: usize },
+    /// INGRAIN's heal (`gen3_b5_moves_v1`, order 10 subOrder 1): `this.heal(baseMaxhp / 16)`,
+    /// `|-heal|<mon>|<hp>|[from] Ingrain`; nothing at full HP. DRAW-FREE.
+    Ingrain { side: usize, slot: usize },
+    /// NIGHTMARE's chip (`gen3_b5_moves_v1`, order 10 subOrder 7): `this.damage(baseMaxhp /
+    /// 4)`, `|-damage|<mon>|<hp>|[from] Nightmare`; Focus Band's onDamage roll draws.
+    Nightmare { side: usize, slot: usize },
     /// The **PARTIAL-TRAP** residual (`gen3_partial_trap_v1`, order 10 subOrder **9** — the
     /// gen4-mod `partiallytrapped.onResidualOrder/SubOrder`), so at order 10 it sorts after
     /// Leftovers (4) / Leech Seed (5) / status DoT (6) / Curse (8) and before Encore (14) /
@@ -2700,23 +2724,6 @@ mod tests {
         let tauros = "Tauros||leftovers||bodyslam,earthquake|Adamant|,252,,,,252|||||";
         let mut state = BattleState::start(&opts_cg(snorlax, tauros, "1,2,3,4"), &d).expect("start");
         // Bide is is_fixed_damage_move=true but fixed_damage_amount=None → fail-loud.
-        let _ = state.run_move(MoveAction { side: 0, slot: 0, move_index: 0, struggle: false }, true, true, &d);
-    }
-
-    // FAIL-LOUD: SNORE (`gen3_move_coverage_batch5_v1` scope edge) — a bp-40 damaging
-    // move with `sleepUsable` + an asleep-only `onTry`, NEITHER modeled (Sleep Talk is
-    // the only modeled sleepUsable move). Without the guard it runs as a plain damaging
-    // move: a silent mismodel both awake (sim: silent onTry fail) and asleep (sim:
-    // cant-then-PROCEEDS; port: cant + blocked). The e2e picker blocklists it, but the
-    // engine itself must fail loud for any future team source (the review's Lens-1
-    // finding: the "Snore is fail-loud" claim was picker-only before this guard).
-    #[test]
-    #[should_panic(expected = "unmodeled sleepUsable move 'snore'")]
-    fn snore_panics_fail_loud() {
-        let d = dex();
-        let snorlax = "Snorlax||leftovers||snore,bodyslam|Careful|252,,,,252,|||||";
-        let tauros = "Tauros||leftovers||bodyslam,earthquake|Adamant|,252,,,,252|||||";
-        let mut state = BattleState::start(&opts_cg(snorlax, tauros, "1,2,3,4"), &d).expect("start");
         let _ = state.run_move(MoveAction { side: 0, slot: 0, move_index: 0, struggle: false }, true, true, &d);
     }
 

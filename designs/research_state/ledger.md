@@ -29038,3 +29038,22 @@ decides. A look-2 GAIN carries D1's two-look false-GAIN rate of 3.5–7.4 % from
 `inputs.json`, `decision.json`, the banked guard rows); record
 `x35_breakers_stage_2026-10-17/reads/d3_look1.json`; state `~/gen3ai_archive/x41_d3_read/look1/`. View:
 `UNDERSTANDING.md` (the D3 paragraph), `endstate/design_beat_metamon_path.md` §0, §6.4, §9.
+## 2026-10-26 · RUST SIM · gen3 full parity B5: Spite, Grudge, Snore, Nightmare, Ingrain, and Rest under Uproar (moves 332 → 337 of 369)
+
+**B5** (`gen3_b5_moves_v1`, spec `harness/probe_b5_moves.js`; built by a subagent, merged onto B4 and gated here).
+SPITE draws `random(2, 6)` BEFORE checking the target's last move (a failed Spite still spends the draw) and prints
+the ROLL, not the PP removed; the last move is what `runMove` ran (Sleep Talk itself, the locked or Encored move).
+Emptying a move the target already chose now gives the sim's `|cant|<mon>|nopp|<Move>` (no draw). GRUDGE's removal
+runs before every other pre-move check; a foe's MOVE KO zeroes the killer's last move with an `-activate` after the
+holder's `|faint|` (recoil-KO'd killers included; Explosion and Future Sight excluded). SNORE: a sleeper's
+`|cant|…|slp` then the attack; an awake user just shows the move (PP spent, no fail line). NIGHTMARE: Protect,
+Substitute, already active, target awake fail in that order; `maxhp/4` after Leftovers and Leech Seed, before Curse;
+EVERY sleep cure ends it with `|-end|<t>|Nightmare|[silent]` (waking, Uproar, Shed Skin, Chesto / Lum, a gained
+Insomnia, Heal Bell / Aromatherapy, Natural Cure). INGRAIN heals `maxhp/16` first among the end-of-turn effects,
+traps (`"trapped":true` from the next request), blocks Roar / Whirlwind (Suction Cups first), passes with Baton Pass,
+can be Snatched. REST under a live Uproar fails `|-fail|<mon>|slp|[from] Uproar`, no heal, no sleep draw (the TECH_DEBT
+P3 row, closed). Golden 552 rows / 68 boards (gen3ou rows included), 14 pins, all revert-verified.
+
+**Pre-existing, found by the B5 agent and owned by the fix batch (BF):** Uproar's wake order; an Insomnia / Vital
+Spirit Rest drawing the gen3ou clause shuffle (by reading, unverified); a Pursuit interrupt's `last_move` flag; Rage's
+removal timing. Merged-tree gates and fuzz results are in the commit body.

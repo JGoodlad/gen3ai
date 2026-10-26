@@ -1661,6 +1661,57 @@ impl crate::state::BattleState {
         }
         None
     }
+
+    /// The ID of the mon's `pokemon.lastMove` as Showdown holds it (`gen3_b5_moves_v1`), for
+    /// SPITE (`target.deductPP(target.lastMove.id, roll)`) and GRUDGE (`source.lastMove`).
+    /// `None` = no lastMove OR a Struggle (the port stores Struggle as `last_move == None`;
+    /// Struggle is in no moveslot, so both readers fail on it exactly as on no lastMove). A
+    /// self-overwriting Mimic / Transform recorded its OWN id (`last_move_used`), which is no
+    /// longer the id in that slot. A typed Hidden Power slot reads as the bare `hiddenpower`
+    /// (Showdown's moveslot id).
+    pub(crate) fn last_move_id(&self, side: usize, slot: usize) -> Option<String> {
+        let m = &self.sides[side].pokemon[slot];
+        let k = m.last_move?;
+        let id = if m.last_move_was_self_overwrite {
+            m.last_move_used.clone()?
+        } else {
+            to_id(m.set.moves.get(k)?)
+        };
+        Some(if id.starts_with("hiddenpower") { "hiddenpower".to_string() } else { id })
+    }
+
+    /// The moveslot indices whose (bare) id is `id` — `pokemon.getMoveData(id)` /
+    /// `for (const moveSlot of source.moveSlots) if (moveSlot.id === move.id)`.
+    pub(crate) fn slots_with_move_id(&self, side: usize, slot: usize, id: &str) -> Vec<usize> {
+        self.sides[side].pokemon[slot]
+            .set
+            .moves
+            .iter()
+            .enumerate()
+            .filter(|(_, mv)| {
+                let mid = to_id(mv);
+                let mid = if mid.starts_with("hiddenpower") { "hiddenpower".to_string() } else { mid };
+                mid == id
+            })
+            .map(|(k, _)| k)
+            .collect()
+    }
+
+    /// NIGHTMARE ends with the sleep (`gen3_b5_moves_v1`): every gen-3 sleep cure runs
+    /// `pokemon.cureStatus()` / `clearStatus()` (`sim/pokemon.ts:1678` / `:1757`), which do
+    /// `if (this.status === 'slp' && this.removeVolatile('nightmare')) add('-end', this,
+    /// 'Nightmare', '[silent]')` — RIGHT AFTER the `-curestatus` line. Call this at every site
+    /// that cures a sleep, after its cure line. DRAW-FREE; a no-op without the volatile.
+    pub(crate) fn end_nightmare_on_cure(&mut self, side: usize, slot: usize, dex: &Dex) {
+        if !self.sides[side].pokemon[slot].nightmare {
+            return;
+        }
+        self.sides[side].pokemon[slot].nightmare = false;
+        if self.logging() {
+            let m = self.mon_ref(side, slot, dex);
+            self.log.volatile_end_silent(&m, "Nightmare");
+        }
+    }
 }
 
 pub(crate) fn mon_types(mon: &crate::state::MonState, dex: &Dex) -> Vec<Type> {

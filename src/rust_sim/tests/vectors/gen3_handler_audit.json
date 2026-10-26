@@ -5,9 +5,9 @@
   "surface": {
    "abilities": 77,
    "items": 67,
-   "conditions": 63,
-   "moves": 316,
-   "rows": 1130
+   "conditions": 66,
+   "moves": 321,
+   "rows": 1158
   },
   "excluded_deferred": {
    "forecast": "Castform forme+TYPE change under weather — deferred (probe_forecast_rng.js settled the map; the reporting surface is unprobed); the port FAIL-LOUDs in state::MonState::from_set (GIGO guard: an unmodeled ability would silently no-op then desync under weather); NOT in MODELED/NOOP + REJECT_ABILITIES/REJECT_SPECIES so the e2e filter + randbats adapter exclude its teams",
@@ -1415,6 +1415,30 @@
    "anchor": "state.rs::future_move",
    "reason": "FutureMove {duration:3, damage, move_id, accuracy, source_side/uid} — the slot-keyed pending strike (the Wish precedent)"
   },
+  "condition:grudge:onBeforeMove": {
+   "disposition": "implemented",
+   "fp": "fn:0d0ecd94:onBeforeMove(pokemon) { this.debug(\"removing Grudge before attack\"); pokemon.removeVolatile(\"grudge\"); }",
+   "anchor": "moves.rs::run_move",
+   "reason": "priority 100, the FIRST BeforeMove handler: removed silently at the top of every runMove (before the recharge / sleep / freeze / truant / flinch / paralysis cants); not for a useMove (Pursuit strike, Sleep-Talk call)"
+  },
+  "condition:grudge:onBeforeMovePriority": {
+   "disposition": "implemented",
+   "fp": "val:100",
+   "anchor": "moves.rs::run_move",
+   "reason": "priority 100, the FIRST BeforeMove handler: removed silently at the top of every runMove (before the recharge / sleep / freeze / truant / flinch / paralysis cants); not for a useMove (Pursuit strike, Sleep-Talk call)"
+  },
+  "condition:grudge:onFaint": {
+   "disposition": "implemented",
+   "fp": "fn:13dfbced:onFaint(target, source, effect) { if (!source || source.fainted || !effect) return; if (effect.effectType === \"Move\" && ",
+   "anchor": "switch.rs::process_faints",
+   "reason": "the damage sites record grudge_ko_by (a foe Move, not futuremove); the drain zeroes every killer slot with lastMove.id and adds -activate|<killer>|move: Grudge|<Move> right after the corpse |faint|, unless the killer is already fainted (an Explosion user)"
+  },
+  "condition:grudge:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:5a7b6caa:onStart(pokemon) { this.add(\"-singlemove\", pokemon, \"Grudge\"); }",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the grudge arm: a ZERO-draw cast, MonState::grudge + |-singlemove|<user>|Grudge"
+  },
   "condition:hail:duration": {
    "disposition": "implemented",
    "fp": "val:5",
@@ -1504,6 +1528,42 @@
    "fp": "fn:bd812db1:onStart(target) { this.add(\"-start\", target, \"move: Imprison\"); }",
    "anchor": "turn/status_moves.rs::run_status_move",
    "reason": "the imprison arm: DRAW-FREE both ways, no accuracy roll, no duration, no residual tick and no -end line — it lasts while the caster is out. Succeeds iff the caster SHARES a move with the current foe (|-start|<u>|move: Imprison), else the [still] did-nothing form plus a bare -fail on the USER. The restriction is re-derived as a movepool INTERSECTION whenever consulted, so a Mimic that rewrites a slot changes what is imprisoned for free."
+  },
+  "condition:ingrain:onDragOut": {
+   "disposition": "implemented",
+   "fp": "fn:87473033:onDragOut(pokemon) { this.add(\"-activate\", pokemon, \"move: Ingrain\"); return null; }",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the phaze arm: after Suction Cups (priority 1), -activate|<u>|move: Ingrain and no drag, no sample draw"
+  },
+  "condition:ingrain:onResidual": {
+   "disposition": "implemented",
+   "fp": "fn:8b0f1d3d:onResidual(pokemon) { this.heal(pokemon.baseMaxhp / 16); }",
+   "anchor": "residuals.rs::apply_ingrain",
+   "reason": "order 10 subOrder 1: max(1, maxhp/16) [from] Ingrain, nothing at full HP"
+  },
+  "condition:ingrain:onResidualOrder": {
+   "disposition": "implemented",
+   "fp": "val:10",
+   "anchor": "residuals.rs::apply_ingrain",
+   "reason": "order 10 subOrder 1: max(1, maxhp/16) [from] Ingrain, nothing at full HP"
+  },
+  "condition:ingrain:onResidualSubOrder": {
+   "disposition": "implemented",
+   "fp": "val:1",
+   "anchor": "residuals.rs::apply_ingrain",
+   "reason": "order 10 subOrder 1: max(1, maxhp/16) [from] Ingrain, nothing at full HP"
+  },
+  "condition:ingrain:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:bc031200:onStart(pokemon) { this.add(\"-start\", pokemon, \"move: Ingrain\"); }",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the ingrain arm: ZERO draws, -start|<u>|move: Ingrain, a recast [still] + -fail; snatchable through the generic interception"
+  },
+  "condition:ingrain:onTrapPokemon": {
+   "disposition": "implemented",
+   "fp": "fn:cd8dddd3:onTrapPokemon(pokemon) { pokemon.tryTrap(); }",
+   "anchor": "switch.rs::is_trapped",
+   "reason": "a FIRM trap (trap_is_firm) + a Condition handler in the endTurn TrapPokemon sort (speed.rs::trap_event_shuffles)"
   },
   "condition:leechseed:onResidual": {
    "disposition": "implemented",
@@ -1642,6 +1702,30 @@
    "fp": "fn:e1880e8b:onStart(pokemon) { this.add(\"-mustrecharge\", pokemon); }",
    "anchor": "turn.rs::run_move",
    "reason": "the |-mustrecharge|<user> announce at the apply site (log.must_recharge)"
+  },
+  "condition:nightmare:onResidual": {
+   "disposition": "implemented",
+   "fp": "fn:bd1f08df:onResidual(pokemon) { this.damage(pokemon.baseMaxhp / 4); }",
+   "anchor": "residuals.rs::apply_nightmare",
+   "reason": "order 10 subOrder 7: max(1, maxhp/4) [from] Nightmare, Focus Band roll; skipped once a cure removed the volatile; every sleep cure ends it (end_nightmare_on_cure)"
+  },
+  "condition:nightmare:onResidualOrder": {
+   "disposition": "implemented",
+   "fp": "val:10",
+   "anchor": "residuals.rs::apply_nightmare",
+   "reason": "order 10 subOrder 7: max(1, maxhp/4) [from] Nightmare, Focus Band roll; skipped once a cure removed the volatile; every sleep cure ends it (end_nightmare_on_cure)"
+  },
+  "condition:nightmare:onResidualSubOrder": {
+   "disposition": "implemented",
+   "fp": "val:7",
+   "anchor": "residuals.rs::apply_nightmare",
+   "reason": "order 10 subOrder 7: max(1, maxhp/4) [from] Nightmare, Focus Band roll; skipped once a cure removed the volatile; every sleep cure ends it (end_nightmare_on_cure)"
+  },
+  "condition:nightmare:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:1caecbef:onStart(pokemon) { if (pokemon.status !== \"slp\" && !pokemon.hasAbility(\"comatose\")) { return false; } this.add(\"-start\",",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the nightmare arm: ZERO draws; Protect > Substitute > already-on > not-asleep (the last three [still] + -fail|<user>); -start|<t>|Nightmare; comatose is gen 7+"
   },
   "condition:par:onBeforeMove": {
    "disposition": "implemented",
@@ -4712,6 +4796,24 @@
    "anchor": "turn.rs::never_miss",
    "reason": "accuracy === true — NO accuracy draw at all"
   },
+  "move:grudge:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the grudge arm: a ZERO-draw cast, MonState::grudge + |-singlemove|<user>|Grudge"
+  },
+  "move:grudge:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the grudge arm: a ZERO-draw cast, MonState::grudge + |-singlemove|<user>|Grudge"
+  },
+  "move:grudge:volatileStatus": {
+   "disposition": "implemented",
+   "fp": "val:\"grudge\"",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the grudge arm: a ZERO-draw cast, MonState::grudge + |-singlemove|<user>|Grudge"
+  },
   "move:hail:ignoreImmunity": {
    "disposition": "implemented",
    "fp": "val:true",
@@ -4909,6 +5011,24 @@
    "fp": "val:\"imprison\"",
    "anchor": "turn/status_moves.rs::run_status_move",
    "reason": "the imprison arm: DRAW-FREE both ways, no accuracy roll, no duration, no residual tick and no -end line — it lasts while the caster is out. Succeeds iff the caster SHARES a move with the current foe (|-start|<u>|move: Imprison), else the [still] did-nothing form plus a bare -fail on the USER. The restriction is re-derived as a movepool INTERSECTION whenever consulted, so a Mimic that rewrites a slot changes what is imprisoned for free."
+  },
+  "move:ingrain:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the ingrain arm: ZERO draws, -start|<u>|move: Ingrain, a recast [still] + -fail; snatchable through the generic interception"
+  },
+  "move:ingrain:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the ingrain arm: ZERO draws, -start|<u>|move: Ingrain, a recast [still] + -fail; snatchable through the generic interception"
+  },
+  "move:ingrain:volatileStatus": {
+   "disposition": "implemented",
+   "fp": "val:\"ingrain\"",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the ingrain arm: ZERO draws, -start|<u>|move: Ingrain, a recast [still] + -fail; snatchable through the generic interception"
   },
   "move:irondefense:boosts": {
    "disposition": "implemented",
@@ -5286,6 +5406,24 @@
    "fp": "val:[{\"chance\":30,\"volatileStatus\":\"flinch\"}]",
    "anchor": "turn.rs::apply_secondaries",
    "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:nightmare:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the nightmare arm: ZERO draws; Protect > Substitute > already-on > not-asleep (the last three [still] + -fail|<user>); -start|<t>|Nightmare; comatose is gen 7+"
+  },
+  "move:nightmare:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the nightmare arm: ZERO draws; Protect > Substitute > already-on > not-asleep (the last three [still] + -fail|<user>); -start|<t>|Nightmare; comatose is gen 7+"
+  },
+  "move:nightmare:volatileStatus": {
+   "disposition": "implemented",
+   "fp": "val:\"nightmare\"",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the nightmare arm: ZERO draws; Protect > Substitute > already-on > not-asleep (the last three [still] + -fail|<user>); -start|<t>|Nightmare; comatose is gen 7+"
   },
   "move:nightshade:damage": {
    "disposition": "implemented",
@@ -6071,6 +6209,24 @@
    "anchor": "turn.rs::run_status_move",
    "reason": "the snatch-cast arm: priority +4 sets MonState::snatch DRAW-FREE + emits |move|U|Snatch|U + |-singleturn|U|Snatch (the onStart line); landed FALSE"
   },
+  "move:snore:onTry": {
+   "disposition": "implemented",
+   "fp": "fn:67cf1dbe:onTry(source) { return source.status === \"slp\" || source.hasAbility(\"comatose\"); }",
+   "anchor": "moves.rs::run_move",
+   "reason": "awake (incl. the wake turn) → the bare announce, no line, ZERO draws, before accuracy / Protect / immunity"
+  },
+  "move:snore:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":30,\"volatileStatus\":\"flinch\"}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the 30 % flinch rides the plain single-secondary path"
+  },
+  "move:snore:sleepUsable": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "moves.rs::SLEEP_USABLE_MOVES",
+   "reason": "the slp onBeforeMove cants then lets it proceed (skippedTime++); the set is pinned against the resolved dex (b5_moves_test.rs B5-0)"
+  },
   "move:softboiled:heal": {
    "disposition": "implemented",
    "fp": "val:[1,2]",
@@ -6154,6 +6310,18 @@
    "fp": "val:\"spikes\"",
    "anchor": "turn.rs::apply_entry_hazards",
    "reason": "the Spikes side-condition arm (layers + grounded entry chip)"
+  },
+  "move:spite:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the spite arm: accuracy, Protect, then random(2,6) DRAWN FIRST, then lastMove + deductPP (BattleState::last_move_id / slots_with_move_id): -activate prints the roll; a failure [still] + -fail; bypasssub (no sub gate); Status-default ignoreImmunity"
+  },
+  "move:spite:onHit": {
+   "disposition": "implemented",
+   "fp": "fn:73d22f87:onHit(target) { const roll = this.random(2, 6); if (target.lastMove && target.deductPP(target.lastMove.id, roll)) { this",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the spite arm: accuracy, Protect, then random(2,6) DRAWN FIRST, then lastMove + deductPP (BattleState::last_move_id / slots_with_move_id): -activate prints the roll; a failure [still] + -fail; bypasssub (no sub gate); Status-default ignoreImmunity"
   },
   "move:splash:ignoreImmunity": {
    "disposition": "implemented",

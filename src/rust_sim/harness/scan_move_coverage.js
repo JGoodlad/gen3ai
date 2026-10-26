@@ -152,6 +152,9 @@ const MODELED_BATCH4B = new Set(['beatup', 'thunder', 'waterspout', 'eruption'])
 const MODELED_BATCH4C = new Set(['hyperbeam', 'blastburn', 'frenzyplant', 'hydrocannon', 'solarbeam', 'doomdesire', 'futuresight',
   'razorwind', 'skyattack', 'skullbash', 'fly', 'bounce', 'dig', 'dive']);
 const MODELED_VARBP = new Set(['return', 'frustration', 'flail', 'reversal', 'lowkick']);
+// GEN3 FULL PARITY B5 (`gen3_b5_moves_v1`) — the category-Status members (Snore is damaging,
+// classified in classifyDamaging).
+const MODELED_B5 = new Set(['spite', 'grudge', 'nightmare', 'ingrain']);
 // MOVE-COVERAGE BATCH 7 (`gen3_move_coverage_batch7_v1`) — the generic MULTI-STRIKE family
 // (`run_multihit`): the FIXED-2 trio + the variable [2,5] family. `triplekick` (the sole
 // `multiaccuracy` carrier) stays an ENGINE fail-loud and is deliberately NOT here.
@@ -198,9 +201,9 @@ function classifyDamaging(m, id) {
   if (DEFERRED_FIXED_DAMAGE.has(id)) return { cov: 'UNMODELED', mech: 'reactive-or-ohko-fixed' };
   if (m.ohko) return { cov: 'UNMODELED', mech: 'ohko' };
 
-  // SNORE (`gen3_move_coverage_batch5_v1`): the other sleepUsable move — fail-loud in
-  // the engine (its awake-use onTry fail + the asleep proceed are unbuilt).
-  if (id === 'snore') return { cov: 'UNMODELED', mech: 'sleep-usable damaging (fail-loud)' };
+  // SNORE (`gen3_b5_moves_v1`): the other sleepUsable move — the asleep proceed + the awake
+  // `onTry` fail are modeled (its 30 % flinch rides the plain secondary path).
+  if (id === 'snore') return { cov: 'MODELED', mech: 'sleep-usable damaging (gen3_b5_moves_v1)' };
 
   // The batch-4/4b/4c/5 modeled sets — checked BEFORE the generic MISMODELED buckets
   // (each carries a callback/flag shape the generic checks would stale-classify):
@@ -314,6 +317,8 @@ function classifyStatus(m, id) {
   // sleep-talker whose POOL carries an unmodeled move is blocked by THAT move's own
   // row (the called move bypasses no gate the pool member itself doesn't).
   if (id === 'sleeptalk') return { cov: 'MODELED', mech: 'sleep-talk (batch 5)' };
+  // GEN3 FULL PARITY B5 (`gen3_b5_moves_v1`) — Spite, Grudge, Nightmare, Ingrain.
+  if (MODELED_B5.has(id)) return { cov: 'MODELED', mech: `b5 (${id})` };
   // MOVE-COVERAGE BATCH 6 (`gen3_move_coverage_batch6_v1`) — the final tail.
   if (MODELED_BATCH6.has(id)) return { cov: 'MODELED', mech: `batch-6 (${id})` };
   // MOVE-COVERAGE BATCH 3 (`gen3_move_coverage_batch3_v1`) — Curse / Wish / Baton Pass.

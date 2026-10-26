@@ -850,10 +850,10 @@ const LOCKERS = [
   { species: 'Meganium', ability: 'Overgrow', moves: ['petaldance', 'splash'], gender: 'M' },
   { species: 'Exploud', ability: 'Soundproof', moves: ['thrash', 'splash'], gender: 'M' },
   // UPROAR is not the `lockedmove` condition (its own `uproar` volatile, a different duration and no end confusion) but the
-  // same cancelled-repeat surface, so it rides in this mode too. No Rest anywhere in the mode: a Rest under a live Uproar
-  // diverges for a reason of its own (the sim's `uproar.onAnySetStatus` fails the Rest; the port's Rest path never asks
-  // `any_uproarer`), found by this mode's first Uproar run and filed in TECH_DEBT.
-  { species: 'Exploud', ability: 'Soundproof', moves: ['uproar', 'splash'], gender: 'M' },
+  // same cancelled-repeat surface, so it rides in this mode too, with REST beside it: a Rest under a live Uproar (its own,
+  // once a Disable / Encore frees the choice, or the foe's) fails `[from] Uproar` (`gen3_b5_moves_v1`; this mode's first
+  // Uproar run found the port resting through it).
+  { species: 'Exploud', ability: 'Soundproof', moves: ['uproar', 'rest'], gender: 'M' },
   { species: 'Snorlax', ability: 'Immunity', moves: ['thrash', 'curse'], gender: 'M' },
   { species: 'Salamence', ability: 'Intimidate', moves: ['outrage', 'earthquake', 'dragonclaw', 'rockslide'], gender: 'M' },
 ];

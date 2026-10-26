@@ -7,12 +7,12 @@ the GATE is `node src/rust_sim/harness/dump_gen3_handlers.js --audit` (wired int
 handler, a STALE manifest row, a body-FINGERPRINT drift, a dead `implemented` anchor.
 
 Surface: 77 abilities (MODELED ∪ NOOP), 67 items,
-63 conditions (engine state space + attached), 316 modeled moves
-→ **1130 (effect, hook) rows**.
+66 conditions (engine state space + attached), 321 modeled moves
+→ **1158 (effect, hook) rows**.
 
 | disposition | rows |
 |---|---|
-| implemented | 1077 |
+| implemented | 1105 |
 | noop_justified | 36 |
 | unreachable_justified | 17 |
 
@@ -352,7 +352,7 @@ Surface: 77 abilities (MODELED ∪ NOOP), 67 items,
 | wikiberry | onResidualSubOrder | implemented | `turn.rs::apply_berry_residual` |
 | wikiberry | onTryEatItem | noop_justified | the runEvent(TryHeal) guard before a heal-berry eat — NO TryHeal handler exists in the gen3 modeled universe, so the guard is vacuous (the eat always proceeds) |
 
-## condition (277 rows: implemented=262, noop_justified=9, unreachable_justified=6)
+## condition (291 rows: implemented=276, noop_justified=9, unreachable_justified=6)
 
 | effect | hook | disposition | anchor / reason |
 |---|---|---|---|
@@ -460,6 +460,10 @@ Surface: 77 abilities (MODELED ∪ NOOP), 67 items,
 | futuremove | onResidual | implemented | `turn.rs::apply_future_move` |
 | futuremove | onResidualOrder | implemented | `turn.rs::apply_future_move` |
 | futuremove | onStart | implemented | `state.rs::future_move` |
+| grudge | onBeforeMove | implemented | `moves.rs::run_move` |
+| grudge | onBeforeMovePriority | implemented | `moves.rs::run_move` |
+| grudge | onFaint | implemented | `switch.rs::process_faints` |
+| grudge | onStart | implemented | `status_moves.rs::run_status_move` |
 | hail | duration | implemented | `turn.rs::apply_weather_chip` |
 | hail | durationCallback | implemented | `turn.rs::apply_weather_chip` |
 | hail | onFieldEnd | implemented | `turn.rs::apply_weather_chip` |
@@ -475,6 +479,12 @@ Surface: 77 abilities (MODELED ∪ NOOP), 67 items,
 | imprison | onFoeBeforeMovePriority | implemented | `turn/moves.rs::run_move` |
 | imprison | onFoeDisableMove | implemented | `turn/moves.rs::run_move` |
 | imprison | onStart | implemented | `turn/status_moves.rs::run_status_move` |
+| ingrain | onDragOut | implemented | `status_moves.rs::run_status_move` |
+| ingrain | onResidual | implemented | `residuals.rs::apply_ingrain` |
+| ingrain | onResidualOrder | implemented | `residuals.rs::apply_ingrain` |
+| ingrain | onResidualSubOrder | implemented | `residuals.rs::apply_ingrain` |
+| ingrain | onStart | implemented | `status_moves.rs::run_status_move` |
+| ingrain | onTrapPokemon | implemented | `switch.rs::is_trapped` |
 | leechseed | onResidual | implemented | `turn.rs::apply_leech_seed` |
 | leechseed | onResidualOrder | implemented | `turn.rs::apply_leech_seed` |
 | leechseed | onResidualSubOrder | implemented | `turn.rs::apply_leech_seed` |
@@ -498,6 +508,10 @@ Surface: 77 abilities (MODELED ∪ NOOP), 67 items,
 | mustrecharge | onBeforeMovePriority | implemented | `turn.rs::run_move` |
 | mustrecharge | onLockMove | implemented | `state.rs::move_locked` |
 | mustrecharge | onStart | implemented | `turn.rs::run_move` |
+| nightmare | onResidual | implemented | `residuals.rs::apply_nightmare` |
+| nightmare | onResidualOrder | implemented | `residuals.rs::apply_nightmare` |
+| nightmare | onResidualSubOrder | implemented | `residuals.rs::apply_nightmare` |
+| nightmare | onStart | implemented | `status_moves.rs::run_status_move` |
 | par | onBeforeMove | implemented | `turn.rs::run_move` |
 | par | onBeforeMovePriority | implemented | `turn.rs::run_move` |
 | par | onModifySpe | implemented | `turn.rs::effective_speed` |
@@ -634,7 +648,7 @@ Surface: 77 abilities (MODELED ∪ NOOP), 67 items,
 | yawn | onResidualSubOrder | implemented | `turn.rs::run_residuals` |
 | yawn | onStart | implemented | `turn.rs::run_status_move` |
 
-## move (527 rows: implemented=523, noop_justified=2, unreachable_justified=2)
+## move (541 rows: implemented=537, noop_justified=2, unreachable_justified=2)
 
 | effect | hook | disposition | anchor / reason |
 |---|---|---|---|
@@ -826,6 +840,9 @@ Surface: 77 abilities (MODELED ∪ NOOP), 67 items,
 | growth | boosts | implemented | `turn.rs::self_boost_spec` |
 | growth | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | growth | neverMiss | implemented | `turn.rs::never_miss` |
+| grudge | ignoreImmunity | implemented | `status_moves.rs::run_status_move` |
+| grudge | neverMiss | implemented | `status_moves.rs::run_status_move` |
+| grudge | volatileStatus | implemented | `status_moves.rs::run_status_move` |
 | hail | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | hail | neverMiss | implemented | `turn.rs::never_miss` |
 | hail | weather | implemented | `turn.rs::modeled_weather_set_move` |
@@ -859,6 +876,9 @@ Surface: 77 abilities (MODELED ∪ NOOP), 67 items,
 | imprison | neverMiss | implemented | `turn/status_moves.rs::run_status_move` |
 | imprison | onTryHit | implemented | `turn/status_moves.rs::run_status_move` |
 | imprison | volatileStatus | implemented | `turn/status_moves.rs::run_status_move` |
+| ingrain | ignoreImmunity | implemented | `status_moves.rs::run_status_move` |
+| ingrain | neverMiss | implemented | `status_moves.rs::run_status_move` |
+| ingrain | volatileStatus | implemented | `status_moves.rs::run_status_move` |
 | irondefense | boosts | implemented | `turn.rs::self_boost_spec` |
 | irondefense | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | irondefense | neverMiss | implemented | `turn.rs::never_miss` |
@@ -922,6 +942,9 @@ Surface: 77 abilities (MODELED ∪ NOOP), 67 items,
 | mudshot | secondaries | implemented | `turn.rs::apply_secondaries` |
 | mudslap | secondaries | implemented | `turn.rs::apply_secondaries` |
 | needlearm | secondaries | implemented | `turn.rs::apply_secondaries` |
+| nightmare | ignoreImmunity | implemented | `status_moves.rs::run_status_move` |
+| nightmare | neverMiss | implemented | `status_moves.rs::run_status_move` |
+| nightmare | volatileStatus | implemented | `status_moves.rs::run_status_move` |
 | nightshade | damage | implemented | `turn.rs::fixed_damage_amount` |
 | octazooka | secondaries | implemented | `turn.rs::apply_secondaries` |
 | outrage | self | implemented | `turn/moves.rs::run_move` |
@@ -1053,6 +1076,9 @@ Surface: 77 abilities (MODELED ∪ NOOP), 67 items,
 | snatch | neverMiss | implemented | `turn.rs::run_status_move` |
 | snatch | priority | implemented | `turn.rs::run_status_move` |
 | snatch | volatileStatus | implemented | `turn.rs::run_status_move` |
+| snore | onTry | implemented | `moves.rs::run_move` |
+| snore | secondaries | implemented | `turn.rs::apply_secondaries` |
+| snore | sleepUsable | implemented | `moves.rs::SLEEP_USABLE_MOVES` |
 | softboiled | heal | implemented | `turn.rs::recovery_heal_amount` |
 | softboiled | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | softboiled | neverMiss | implemented | `turn.rs::never_miss` |
@@ -1067,6 +1093,8 @@ Surface: 77 abilities (MODELED ∪ NOOP), 67 items,
 | spikes | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | spikes | neverMiss | implemented | `turn.rs::never_miss` |
 | spikes | sideCondition | implemented | `turn.rs::apply_entry_hazards` |
+| spite | ignoreImmunity | implemented | `status_moves.rs::run_status_move` |
+| spite | onHit | implemented | `status_moves.rs::run_status_move` |
 | splash | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | splash | neverMiss | implemented | `turn.rs::never_miss` |
 | splash | onTry | unreachable_justified | the Gravity gate — Gravity is a gen4 pseudo-weather, not in the gen3 universe |

@@ -31,11 +31,11 @@ cd harness && SCAN_UNIVERSE=1 node scan_move_coverage.js            # the 0-MISM
 `scan_move_probe` is the engine running, so its count cannot drift; the JS scan's universe verdict is a
 hand-mirrored copy of `turn.rs` and keeps only the invariant gate (`move_census.md`).
 
-## Summary (recounted 2026-10-26 after B9 and B4)
+## Summary (recounted 2026-10-26 after B5)
 
 | universe | gen3 ids | engine runs it | fails loud | how |
 |---|---:|---:|---:|---|
-| moves | 369 | **332** | **37** | `PROBE_KIND=move`; JS gate: 332 / 37 / **0 MISMODELED** |
+| moves | 369 | **337** | **32** | `PROBE_KIND=move`; JS gate: 337 / 32 / **0 MISMODELED** |
 | items | 106 | **106** | 0 | `PROBE_KIND=item` (B3 closed the last four) |
 | abilities | 76 | **76** | 0 | `PROBE_KIND=ability`; the handler audit dispositions every hook |
 | species | 392 | **392** | 0 | `PROBE_KIND=species` |
@@ -100,10 +100,13 @@ surface:
 
 | what | evidence | batch |
 |---|---|---|
-| Rest under a live Uproar succeeds in the port and fails in Showdown | TECH_DEBT (c) P3 row; `gen_sim_bridge_diff.js --mode lockin`, seed 303 battle 15 | B5 |
+| Rest under a live Uproar succeeded in the port and failed in Showdown | `gen_sim_bridge_diff.js --mode lockin`, seed 303 battle 15 | fixed in B5 |
 | Custom Game's EV-balance `\|bigerror\|` (one side over 510 EVs) was not emitted | the B9 golden's 677-EV boards; `tests/ev_balance_test.rs` | fixed in B9 |
-| Rage prints `-boost` before `-damage`; Fury Cutter after a missed use; Uproar's wake prints its cure after the damage; Smelling Salts cures a fainted target; False Swipe at 1 HP drops its `-damage` line; an Insomnia / Vital Spirit Rest may draw the gen3ou clause shuffle | the random-mode fuzz of B4 and B5 (seeds 5501 / 91337), the B5 agent's reading | BF (fix batch) |
-| the random-universe byte fuzz: 95 divergences in 300 battles (seeds 5501 / 91337, before ROUNDS 57-59) | `designs/research_state/measurements/rust_core_m1_2026-09-23/README.md` | recount, then triage into the batch of each mechanic class |
+| the random-universe fuzz, RECOUNTED on the B2 + B3 + B9 + B4 tree (`ab_fuzz.js --mode random`, seeds 5501 / 91337 protocol and 7701 state, 450 battles, plus `bridge_ab_fuzz.js --mode random` 100): 14 + 3 divergences, every one a class below or Rest under Uproar; the 09-23 count was 95 in 300 | `designs/research_state/measurements/rust_core_m1_2026-09-23/README.md` (the old count) | — |
+| RAGE prints `\|-boost\|<t>\|atk\|1` BEFORE the `-damage` line (the sim after), inside a multi-hit too; the volatile is removed after the pre-move checks, where Showdown removes it first | the recounts (12 of 17) | BF |
+| FURY CUTTER's counter advances on a missed or cancelled use (the port updates it at base-power time, before BeforeMove and accuracy) | the recounts (3 of 17) | BF |
+| UPROAR's wake prints the sleeper's `-curestatus` after the `-damage` line (the sim at TryHit, before it) | the recounts | BF |
+| SMELLING SALTS cures paralysis on a fainted target; FALSE SWIPE at 1 HP drops its `-damage` line; an Insomnia / Vital Spirit Rest may draw the gen3ou clause shuffle | the recounts, the B5 agent's reading | BF |
 
 ## Usage: how the ranking is measured
 
@@ -126,7 +129,7 @@ The downloads and scripts were a one-off measurement in a scratch directory, not
 by fetching `https://www.smogon.com/stats/<YYYY-MM>/chaos/<tier>-0.json` for the months listed per tier
 in the index pages and applying the formula above.
 
-## The ranked gap: 37 moves
+## The ranked gap: 32 moves
 
 Usage columns are percentages of fielded mons (ladder) or of battles (replays). Risk: **S** reuses
 existing machinery; **M** adds a self-contained volatile or mechanic; **L** crosses many mechanics (a
@@ -136,13 +139,8 @@ calls arbitrary moves).
 | id | family | tier mean | OU | non-OU pooled | top tier | OU replays | learners | risk | batch |
 |---|---|---:|---:|---:|---|---:|---:|:-:|:-:|
 | metronome | move-caller | 0.062 | 0.054 | 0.055 | 1v1 0.22 | 0.224 | 55 | L | B11 |
-| spite | PP | 0.038 | 0.004 | 0.035 | 1v1 0.25 | 0.010 | 21 | M | B5 |
 | swagger | confusion + boost | 0.030 | 0.000 | 0.041 | lc 0.15 | 0.005 | 373 | M | B6 |
-| snore | sleep | 0.020 | 0.019 | 0.025 | 1v1 0.05 | 0.084 | 373 | M | B5 |
-| grudge | PP | 0.018 | 0.007 | 0.008 | pu 0.06 | 0.031 | 12 | M | B5 |
-| nightmare | sleep | 0.017 | 0.007 | 0.015 | uu 0.04 | 0.013 | 70 | M | B5 |
 | assist | move-caller | 0.015 | 0.000 | 0.022 | ru 0.07 | 0.010 | 10 | L | B11 |
-| ingrain | residual | 0.012 | 0.006 | 0.012 | uu 0.05 | 0.058 | 22 | M | B5 |
 | foresight | identify | 0.012 | 0.001 | 0.011 | uu 0.05 | 0.010 | 45 | M | B6 |
 | odorsleuth | identify | 0.010 | 0.002 | 0.017 | uubl 0.05 | 0.010 | 21 | M | B6 |
 | magiccoat | reflect | 0.008 | 0.003 | 0.011 | uu 0.03 | 0.003 | 6 | M | B6 |
@@ -189,7 +187,7 @@ commit.
 | B2 | Blast Burn, Frenzy Plant, Hydro Cannon | shipped |
 | B3 | Shell Bell, Macho Brace, Mail, Mental Herb | shipped |
 | B4 | the two-turn and semi-invulnerable family: Sky Attack, Dig, Fly, Dive, Bounce, Skull Bash, Razor Wind | shipped |
-| B5 | Spite, Grudge, Snore, Nightmare, Ingrain | open |
+| B5 | Spite, Grudge, Snore, Nightmare, Ingrain; Rest under Uproar fails | shipped |
 | B6 | Swagger, Flatter, Foresight, Odor Sleuth, Magic Coat | open |
 | B7 | Stockpile, Spit Up, Swallow, Mud Sport, Water Sport, Mist, Lock-On, Mind Reader | open |
 | B8 | Bide, Magnitude, Psywave, Present, Triple Kick, the four OHKO moves | open |

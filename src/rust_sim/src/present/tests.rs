@@ -196,9 +196,8 @@ fn pe_v10_a_fainted_mon_holds_no_stages() {
     assert_eq!(opp(&v, "zapdos").boosts, vec![("spa", 1)], "non-vacuity: the boost was read");
 }
 
-/// Ingrain and Nightmare — the two volatiles `audit::TRUTH_VOLATILES` names but the engine cannot hold
-/// (`audit::ENGINE_CANNOT_HOLD`), so the engine audit cannot check their READING. These pin it on the sim's own emission
-/// strings: Ingrain `-start|…|move: Ingrain` (data/moves.ts ingrain `onStart`), Nightmare `-start|…|Nightmare` and its
+/// Ingrain and Nightmare (`audit::TRUTH_VOLATILES`; the engine holds both since `gen3_b5_moves_v1`) — their READING
+/// pinned on the sim's own emission strings: Ingrain `-start|…|move: Ingrain` (data/moves.ts ingrain `onStart`), Nightmare `-start|…|Nightmare` and its
 /// silent removal on waking, `-curestatus|…|slp` then `-end|…|Nightmare|[silent]` (sim/pokemon.ts `cureStatus`); a mon
 /// that leaves the field loses both (`clearVolatile`).
 #[test]

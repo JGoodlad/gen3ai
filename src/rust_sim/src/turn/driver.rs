@@ -378,6 +378,7 @@ impl crate::state::BattleState {
                     //     Gate on hp > 0 (the `removeVolatile` false-on-0-HP rule). ---
                     if self.sides[side].pokemon[slot].charge
                         && self.sides[side].pokemon[slot].hp > 0
+                        && !res.nopp
                     {
                         let executed_is_charge = !struggle
                             && self
