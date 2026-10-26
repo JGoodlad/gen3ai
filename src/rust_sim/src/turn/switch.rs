@@ -353,6 +353,9 @@ impl crate::state::BattleState {
                 // (the `beat_up` stale-flag hazard class — a fainted snatcher must not
                 // gather a residual duration handler on re-entry).
                 mon.snatch = false;
+                // MAGIC COAT + FORESIGHT (`gen3_b6_moves_v1`): clearVolatile drops both with the corpse.
+                mon.magic_coat = false;
+                mon.foresight = false;
                 mon.trapped_by = None;
                 // PARTIAL TRAP (`gen3_partial_trap_v1`): `clearVolatile` drops the
                 // `partiallytrapped` volatile with the corpse — a fainted victim is no longer
@@ -1153,6 +1156,11 @@ impl crate::state::BattleState {
             // handler on re-entry). A snatch is +4, so a voluntary switch same-turn is
             // impossible; the drag-out path is the reachable one.
             m.snatch = false;
+            // MAGIC COAT + FORESIGHT (`gen3_b6_moves_v1`): clearVolatile on switch-out. Foresight
+            // is `noCopy` (the condition, `data/moves.ts` foresight), so the Baton Pass snapshot
+            // above never carries it; the coat holder can only leave by a drag (+4 priority).
+            m.magic_coat = false;
+            m.foresight = false;
             m.destiny_bond = false;
             m.destiny_bond_ko_by = None;
             m.trapped_by = None;

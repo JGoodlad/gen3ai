@@ -52,6 +52,9 @@ const MODELED_STATUS = new Set([
   'confuseray', 'supersonic', 'sweetkiss', 'teeterdance',
   // ATTRACT (`gen3_attract_move_v1`, gen3 full parity B9): its own arm in `status_moves.rs`.
   'attract',
+  // B6 (`gen3_b6_moves_v1`): Swagger / Flatter (target boost + confusion), Foresight / Odor Sleuth
+  // (the `foresight` volatile) and Magic Coat (the bounce) — each its own arm in `status_moves.rs`.
+  'swagger', 'flatter', 'foresight', 'odorsleuth', 'magiccoat',
 ]);
 // Self-boost SETUP moves — DATA-DRIVEN from gen3_moves.json `selfBoosts` (== engine's
 // `self_boost_spec`, which reads `MoveData::self_boosts`).

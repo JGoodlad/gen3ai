@@ -560,8 +560,15 @@ impl crate::state::BattleState {
             // s==0 divides by table[0]=1 (a no-op float divide, matching the sim's `else`).
             acc /= BOOST_TABLE[(-acc_stage) as usize];
         }
-        // Defender evasion stage.
-        let eva_stage = self.sides[foe].pokemon[foe_slot].boosts[6].clamp(-6, 6);
+        // Defender evasion stage. FORESIGHT (`gen3_b6_moves_v1`): the identified mon's
+        // `onModifyBoost` (`data/moves.ts` foresight condition) zeroes a POSITIVE evasion stage
+        // in the `runEvent('ModifyBoost', target)` copy gen-3 `tryMoveHit` reads
+        // (`data/mods/gen3/scripts.ts` tryMoveHit, the `!move.ignoreEvasion` block); a negative
+        // stage is kept (probe_b6_moves.js FS7 / FS13: 80 and 100 rolled into +3 / +6 evasion).
+        let mut eva_stage = self.sides[foe].pokemon[foe_slot].boosts[6].clamp(-6, 6);
+        if self.sides[foe].pokemon[foe_slot].foresight && eva_stage > 0 {
+            eva_stage = 0;
+        }
         if eva_stage > 0 {
             acc /= BOOST_TABLE[eva_stage as usize];
         } else if eva_stage < 0 {

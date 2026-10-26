@@ -31,11 +31,11 @@ cd harness && SCAN_UNIVERSE=1 node scan_move_coverage.js            # the 0-MISM
 `scan_move_probe` is the engine running, so its count cannot drift; the JS scan's universe verdict is a
 hand-mirrored copy of `turn.rs` and keeps only the invariant gate (`move_census.md`).
 
-## Summary (recounted 2026-10-26 after B5)
+## Summary (recounted 2026-10-26 after B6)
 
 | universe | gen3 ids | engine runs it | fails loud | how |
 |---|---:|---:|---:|---|
-| moves | 369 | **337** | **32** | `PROBE_KIND=move`; JS gate: 337 / 32 / **0 MISMODELED** |
+| moves | 369 | **342** | **27** | `PROBE_KIND=move`; JS gate: 342 / 27 / **0 MISMODELED** |
 | items | 106 | **106** | 0 | `PROBE_KIND=item` (B3 closed the last four) |
 | abilities | 76 | **76** | 0 | `PROBE_KIND=ability`; the handler audit dispositions every hook |
 | species | 392 | **392** | 0 | `PROBE_KIND=species` |
@@ -129,7 +129,7 @@ The downloads and scripts were a one-off measurement in a scratch directory, not
 by fetching `https://www.smogon.com/stats/<YYYY-MM>/chaos/<tier>-0.json` for the months listed per tier
 in the index pages and applying the formula above.
 
-## The ranked gap: 32 moves
+## The ranked gap: 27 moves
 
 Usage columns are percentages of fielded mons (ladder) or of battles (replays). Risk: **S** reuses
 existing machinery; **M** adds a self-contained volatile or mechanic; **L** crosses many mechanics (a
@@ -139,11 +139,7 @@ calls arbitrary moves).
 | id | family | tier mean | OU | non-OU pooled | top tier | OU replays | learners | risk | batch |
 |---|---|---:|---:|---:|---|---:|---:|:-:|:-:|
 | metronome | move-caller | 0.062 | 0.054 | 0.055 | 1v1 0.22 | 0.224 | 55 | L | B11 |
-| swagger | confusion + boost | 0.030 | 0.000 | 0.041 | lc 0.15 | 0.005 | 373 | M | B6 |
 | assist | move-caller | 0.015 | 0.000 | 0.022 | ru 0.07 | 0.010 | 10 | L | B11 |
-| foresight | identify | 0.012 | 0.001 | 0.011 | uu 0.05 | 0.010 | 45 | M | B6 |
-| odorsleuth | identify | 0.010 | 0.002 | 0.017 | uubl 0.05 | 0.010 | 21 | M | B6 |
-| magiccoat | reflect | 0.008 | 0.003 | 0.011 | uu 0.03 | 0.003 | 6 | M | B6 |
 | stockpile | stockpile | 0.008 | 0.001 | 0.004 | pu 0.03 | 0.018 | 16 | M | B7 |
 | mirrormove | move-caller | 0.006 | 0.001 | 0.006 | lc 0.01 | 0.013 | 19 | L | B11 |
 | mudsport | field sport | 0.005 | 0.002 | 0.007 | lc 0.03 | 0.008 | 45 | M | B7 |
@@ -156,7 +152,6 @@ calls arbitrary moves).
 | psywave | variable damage | 0.002 | 0.001 | 0.002 | pu 0.01 | 0.003 | 14 | M | B8 |
 | lockon | lock-on | 0.001 | 0.002 | 0.002 | lc 0.00 | 0.005 | 11 | M | B7 |
 | followme | redirect | 0.001 | 0.000 | 0.001 | uu 0.01 | 0.000 | 13 | S | B10 |
-| flatter | confusion + boost | 0.001 | 0.000 | 0.002 | uu 0.01 | 0.008 | 8 | M | B6 |
 | mindreader | lock-on | 0.001 | 0.000 | 0.001 | nu 0.01 | 0.015 | 18 | M | B7 |
 | teleport | escape | 0.001 | 0.000 | 0.001 | lc 0.00 | 0.000 | 11 | S | B10 |
 | roleplay | ability copy | 0.001 | 0.000 | 0.001 | uu 0.01 | 0.000 | 8 | M | B10 |
@@ -188,7 +183,7 @@ commit.
 | B3 | Shell Bell, Macho Brace, Mail, Mental Herb | shipped |
 | B4 | the two-turn and semi-invulnerable family: Sky Attack, Dig, Fly, Dive, Bounce, Skull Bash, Razor Wind | shipped |
 | B5 | Spite, Grudge, Snore, Nightmare, Ingrain; Rest under Uproar fails | shipped |
-| B6 | Swagger, Flatter, Foresight, Odor Sleuth, Magic Coat | open |
+| B6 | Swagger, Flatter, Foresight, Odor Sleuth, Magic Coat | shipped |
 | B7 | Stockpile, Spit Up, Swallow, Mud Sport, Water Sport, Mist, Lock-On, Mind Reader | open |
 | B8 | Bide, Magnitude, Psywave, Present, Triple Kick, the four OHKO moves | open |
 | B9 | Attract (M6 resolved by design: harnesses pin genders); the Custom Game EV-balance warning | shipped |

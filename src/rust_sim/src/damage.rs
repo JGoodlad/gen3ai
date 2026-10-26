@@ -149,6 +149,31 @@ pub struct Combatant {
     pub burned: bool,
     /// Whether the mon has Guts (burn does NOT halve a Guts mon's physical damage).
     pub has_guts: bool,
+    /// FORESIGHT / ODOR SLEUTH identified this mon (`gen3_b6_moves_v1`, `MonState::foresight`):
+    /// as a DEFENDER, a Normal- or Fighting-type move reads its Ghost type as NEUTRAL instead of
+    /// immune ([`type_effectiveness`]). Unused on the attacker side.
+    pub identified: bool,
+}
+
+/// The type-effectiveness product of `attacking` into `defending`, with the FORESIGHT exception
+/// (`gen3_b6_moves_v1`): an `identified` defender's Ghost type stops being immune to Normal and
+/// Fighting. Showdown splits immunity from effectiveness — the foresight condition's
+/// `onNegateImmunity` (`data/moves.ts` foresight) skips `runImmunity`, and `getEffectiveness`
+/// reads `damageTaken: 3` (immune) as typeMod 0 — so the Ghost factor becomes 1×, not 0×, and a
+/// Fighting move into Ghost/Poison is still `-resisted` (probe_b6_moves.js FS1). Every site that
+/// reads a battle DEFENDER's effectiveness goes through here.
+pub fn type_effectiveness(dex: &Dex, attacking: Type, defending: &[Type], identified: bool) -> f64 {
+    let chart = dex.type_chart();
+    defending
+        .iter()
+        .map(|&d| {
+            if identified && d == Type::Ghost && matches!(attacking, Type::Normal | Type::Fighting) {
+                1.0
+            } else {
+                chart.multiplier(d, attacking)
+            }
+        })
+        .product()
 }
 
 impl Default for Combatant {
@@ -163,6 +188,7 @@ impl Default for Combatant {
             boosts: [0; 5],
             burned: false,
             has_guts: false,
+            identified: false,
         }
     }
 }
@@ -394,7 +420,7 @@ pub fn calc_damage(ctx: &DamageContext, dex: &Dex) -> DamageResult {
     // type immunity (Electric→Ground etc.) → 0 damage, handled like runImmunity.
     let move_type = ctx.mv.move_type;
     let type_mult: f64 = match move_type {
-        Some(t) => dex.type_chart().effectiveness(t, &ctx.defender.types),
+        Some(t) => type_effectiveness(dex, t, &ctx.defender.types, ctx.defender.identified),
         None => 1.0, // typeless: neutral
     };
     if type_mult == 0.0 {

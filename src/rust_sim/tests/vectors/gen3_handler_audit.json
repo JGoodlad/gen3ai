@@ -5,9 +5,9 @@
   "surface": {
    "abilities": 77,
    "items": 67,
-   "conditions": 66,
-   "moves": 321,
-   "rows": 1158
+   "conditions": 68,
+   "moves": 326,
+   "rows": 1181
   },
   "excluded_deferred": {
    "forecast": "Castform forme+TYPE change under weather — deferred (probe_forecast_rng.js settled the map; the reporting surface is unprobed); the port FAIL-LOUDs in state::MonState::from_set (GIGO guard: an unmodeled ability would silently no-op then desync under weather); NOT in MODELED/NOOP + REJECT_ABILITIES/REJECT_SPECIES so the e2e filter + randbats adapter exclude its teams",
@@ -1327,6 +1327,24 @@
    "anchor": "turn.rs::apply_secondaries",
    "reason": "the focuspunch volatile BLOCKS a flinch (the flinch-secondary random(100) still draws; draw-then-block)"
   },
+  "condition:foresight:onModifyBoost": {
+   "disposition": "implemented",
+   "fp": "fn:92df05ad:onModifyBoost(boosts) { if (boosts.evasion && boosts.evasion > 0) { boosts.evasion = 0; } }",
+   "anchor": "speed.rs::effective_accuracy",
+   "reason": "an identified defender's POSITIVE evasion stage reads 0 in every accuracy check"
+  },
+  "condition:foresight:onNegateImmunity": {
+   "disposition": "implemented",
+   "fp": "fn:e0ea752a:onNegateImmunity(pokemon, type) { if (pokemon.hasType(\"Ghost\") && [\"Normal\", \"Fighting\"].includes(type)) return false; }",
+   "anchor": "damage.rs::type_effectiveness",
+   "reason": "an identified defender's Ghost type reads NEUTRAL (not immune) to Normal and Fighting at every effectiveness site"
+  },
+  "condition:foresight:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:ccc265bc:onStart(pokemon) { this.add(\"-start\", pokemon, \"Foresight\"); }",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the foresight arm: accuracy 100, Protect, bypasssub, MonState::foresight (|-start|<t>|Foresight for both moves; an identified target fails [still] -fail); onTryHit is the Miracle Eye gate, unreachable in gen 3"
+  },
   "condition:freezeclausemod:onBegin": {
    "disposition": "noop_justified",
    "fp": "fn:55b5237c:onBegin() { this.add(\"rule\", \"Freeze Clause Mod: Limit one foe frozen\"); }",
@@ -1624,6 +1642,30 @@
    "fp": "fn:6eaeba2c:onSideStart(side) { this.add(\"-sidestart\", side, \"move: Light Screen\"); }",
    "anchor": "turn.rs::modeled_screen_move",
    "reason": "the |-sidestart| line + the 5-turn counter set (the screen-set arm in run_status_move)"
+  },
+  "condition:magiccoat:duration": {
+   "disposition": "implemented",
+   "fp": "val:1",
+   "anchor": "turn.rs::run_residuals",
+   "reason": "the duration:1 volatile registers the NO_ORDER/subOrder-2 residual duration handler (a Magic Coat mirror draws one tie-shuffle more, probe MC1b); cleared at turn-top / switch-out / faint"
+  },
+  "condition:magiccoat:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:242cf0e9:onStart(target, source, effect) { this.add(\"-singleturn\", target, \"move: Magic Coat\"); if (effect?.effectType === \"Move\"",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the magiccoat cast: priority +4, sets MonState::magic_coat DRAW-FREE, |-singleturn|U|move: Magic Coat"
+  },
+  "condition:magiccoat:onTryHit": {
+   "disposition": "implemented",
+   "fp": "fn:c1938f79:onTryHit(target, source, move) { if (target === source || move.hasBounced || !move.flags[\"reflectable\"]) { return; } tar",
+   "anchor": "status_moves.rs::magic_coat_bounce",
+   "reason": "every REFLECTABLE_MOVES arm calls it after Protect (priority 3 > 2, TryHit sorts left-to-right: no draw): removeVolatile, the holder lastMoveUsed, then a recursive run_status_move with [from] Magic Coat (no PP, no BeforeMove, the move's own draws only); the original move returns null"
+  },
+  "condition:magiccoat:onTryHitPriority": {
+   "disposition": "implemented",
+   "fp": "val:2",
+   "anchor": "status_moves.rs::magic_coat_bounce",
+   "reason": "every REFLECTABLE_MOVES arm calls it after Protect (priority 3 > 2, TryHit sorts left-to-right: no draw): removeVolatile, the holder lastMoveUsed, then a recursive run_status_move with [from] Magic Coat (no PP, no BeforeMove, the move's own draws only); the original move returns null"
   },
   "condition:minimize:onRestart": {
    "disposition": "implemented",
@@ -4670,6 +4712,24 @@
    "anchor": "turn.rs::run_status_move",
    "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
   },
+  "move:flatter:boosts": {
+   "disposition": "implemented",
+   "fp": "val:{\"spa\":1}",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the TARGET_BOOST_MOVES arm: accuracy, Protect, the Magic Coat bounce, the Substitute block, then the capped -boost (delta 0 printed at +6) and the confusion add (Own Tempo -immune / already-confused silent / Safeguard -activate / random(2,6)); [still] -fail only for a delta-0 boost into an already-confused target; ignoreImmunity: a Status move skips the type chart"
+  },
+  "move:flatter:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the TARGET_BOOST_MOVES arm: accuracy, Protect, the Magic Coat bounce, the Substitute block, then the capped -boost (delta 0 printed at +6) and the confusion add (Own Tempo -immune / already-confused silent / Safeguard -activate / random(2,6)); [still] -fail only for a delta-0 boost into an already-confused target; ignoreImmunity: a Status move skips the type chart"
+  },
+  "move:flatter:volatileStatus": {
+   "disposition": "implemented",
+   "fp": "val:\"confusion\"",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the TARGET_BOOST_MOVES arm: accuracy, Protect, the Magic Coat bounce, the Substitute block, then the capped -boost (delta 0 printed at +6) and the confusion add (Own Tempo -immune / already-confused silent / Safeguard -activate / random(2,6)); [still] -fail only for a delta-0 boost into an already-confused target; ignoreImmunity: a Status move skips the type chart"
+  },
   "move:fly:onTryMove": {
    "disposition": "implemented",
    "fp": "fn:a08b7624:onTryMove(attacker, defender, move) { if (attacker.removeVolatile(move.id)) { return; } this.add(\"-prepare\", attacker, m",
@@ -4705,6 +4765,24 @@
    "fp": "val:-3",
    "anchor": "turn.rs::move_priority",
    "reason": "the action-order priority sort (draws only on a priority+speed tie)"
+  },
+  "move:foresight:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the foresight arm: accuracy 100, Protect, bypasssub, MonState::foresight (|-start|<t>|Foresight for both moves; an identified target fails [still] -fail); onTryHit is the Miracle Eye gate, unreachable in gen 3"
+  },
+  "move:foresight:onTryHit": {
+   "disposition": "implemented",
+   "fp": "fn:a1863c72:onTryHit(target) { if (target.volatiles[\"miracleeye\"]) return false; }",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the foresight arm: accuracy 100, Protect, bypasssub, MonState::foresight (|-start|<t>|Foresight for both moves; an identified target fails [still] -fail); onTryHit is the Miracle Eye gate, unreachable in gen 3"
+  },
+  "move:foresight:volatileStatus": {
+   "disposition": "implemented",
+   "fp": "val:\"foresight\"",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the foresight arm: accuracy 100, Protect, bypasssub, MonState::foresight (|-start|<t>|Foresight for both moves; an identified target fails [still] -fail); onTryHit is the Miracle Eye gate, unreachable in gen 3"
   },
   "move:frenzyplant:self": {
    "disposition": "implemented",
@@ -5179,6 +5257,30 @@
    "anchor": "turn.rs::never_miss",
    "reason": "accuracy === true — NO accuracy draw at all"
   },
+  "move:magiccoat:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the magiccoat cast: priority +4, sets MonState::magic_coat DRAW-FREE, |-singleturn|U|move: Magic Coat"
+  },
+  "move:magiccoat:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the magiccoat cast: priority +4, sets MonState::magic_coat DRAW-FREE, |-singleturn|U|move: Magic Coat"
+  },
+  "move:magiccoat:priority": {
+   "disposition": "implemented",
+   "fp": "val:4",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the magiccoat cast: priority +4, sets MonState::magic_coat DRAW-FREE, |-singleturn|U|move: Magic Coat"
+  },
+  "move:magiccoat:volatileStatus": {
+   "disposition": "implemented",
+   "fp": "val:\"magiccoat\"",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the magiccoat cast: priority +4, sets MonState::magic_coat DRAW-FREE, |-singleturn|U|move: Magic Coat"
+  },
   "move:meanlook:ignoreImmunity": {
    "disposition": "implemented",
    "fp": "val:true",
@@ -5436,6 +5538,24 @@
    "fp": "val:[{\"chance\":50,\"boosts\":{\"accuracy\":-1}}]",
    "anchor": "turn.rs::apply_secondaries",
    "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:odorsleuth:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the foresight arm: accuracy 100, Protect, bypasssub, MonState::foresight (|-start|<t>|Foresight for both moves; an identified target fails [still] -fail); onTryHit is the Miracle Eye gate, unreachable in gen 3"
+  },
+  "move:odorsleuth:onTryHit": {
+   "disposition": "implemented",
+   "fp": "fn:a1863c72:onTryHit(target) { if (target.volatiles[\"miracleeye\"]) return false; }",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the foresight arm: accuracy 100, Protect, bypasssub, MonState::foresight (|-start|<t>|Foresight for both moves; an identified target fails [still] -fail); onTryHit is the Miracle Eye gate, unreachable in gen 3"
+  },
+  "move:odorsleuth:volatileStatus": {
+   "disposition": "implemented",
+   "fp": "val:\"foresight\"",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the foresight arm: accuracy 100, Protect, bypasssub, MonState::foresight (|-start|<t>|Foresight for both moves; an identified target fails [still] -fail); onTryHit is the Miracle Eye gate, unreachable in gen 3"
   },
   "move:outrage:self": {
    "disposition": "implemented",
@@ -6483,6 +6603,24 @@
    "fp": "val:\"confusion\"",
    "anchor": "secondaries.rs::add_confusion",
    "reason": "the confusion volatile via the shared add_confusion — the same path Water Pulse & co use, owning the KO / already-confused / Own-Tempo gates and the random(2,6) duration draw (gen3_confuse_ray_v1)"
+  },
+  "move:swagger:boosts": {
+   "disposition": "implemented",
+   "fp": "val:{\"atk\":2}",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the TARGET_BOOST_MOVES arm: accuracy, Protect, the Magic Coat bounce, the Substitute block, then the capped -boost (delta 0 printed at +6) and the confusion add (Own Tempo -immune / already-confused silent / Safeguard -activate / random(2,6)); [still] -fail only for a delta-0 boost into an already-confused target; ignoreImmunity: a Status move skips the type chart"
+  },
+  "move:swagger:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the TARGET_BOOST_MOVES arm: accuracy, Protect, the Magic Coat bounce, the Substitute block, then the capped -boost (delta 0 printed at +6) and the confusion add (Own Tempo -immune / already-confused silent / Safeguard -activate / random(2,6)); [still] -fail only for a delta-0 boost into an already-confused target; ignoreImmunity: a Status move skips the type chart"
+  },
+  "move:swagger:volatileStatus": {
+   "disposition": "implemented",
+   "fp": "val:\"confusion\"",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the TARGET_BOOST_MOVES arm: accuracy, Protect, the Magic Coat bounce, the Substitute block, then the capped -boost (delta 0 printed at +6) and the confusion add (Own Tempo -immune / already-confused silent / Safeguard -activate / random(2,6)); [still] -fail only for a delta-0 boost into an already-confused target; ignoreImmunity: a Status move skips the type chart"
   },
   "move:sweetkiss:ignoreImmunity": {
    "disposition": "implemented",

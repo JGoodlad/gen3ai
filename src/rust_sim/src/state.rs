@@ -862,6 +862,27 @@ pub struct MonState {
     /// both-Splash control's 7). Cleared on switch-out + faint. `false` at construction.
     pub snatch: bool,
 
+    /// The **MAGIC COAT** singleturn volatile (`gen3_b6_moves_v1`, gen3 full parity B6): `true`
+    /// while this mon's Magic Coat (`volatileStatus:'magiccoat'`, condition `duration: 1`,
+    /// `data/moves.ts` magiccoat) is up. Set DRAW-FREE on the priority-+4 cast
+    /// (`|-singleturn|<user>|move: Magic Coat`); while up, the FIRST `flags.reflectable` move
+    /// aimed at it is bounced back at its user (the gen-4 mod's `onTryHit`,
+    /// `data/mods/gen4/moves.ts` magiccoat, which `removeVolatile`s the coat first — one bounce
+    /// per coat). Like `snatch` it clears at the NEXT turn-top (`clear_flinch`) and registers the
+    /// NO_ORDER/subOrder-2 residual DURATION handler (a MAGIC COAT MIRROR at equal speed draws
+    /// ONE residual tie-shuffle, `harness/probe_b6_moves.js` MC1b vs MC1c). Cleared on
+    /// switch-out + faint. `false` at construction.
+    pub magic_coat: bool,
+
+    /// The **FORESIGHT** volatile (`gen3_b6_moves_v1`): `true` once Foresight or Odor Sleuth
+    /// (both `volatileStatus: 'foresight'`, `data/moves.ts` foresight) landed on this mon. The
+    /// condition's `onModifyBoost` zeroes a POSITIVE evasion stage in every accuracy check
+    /// against it, and its `onNegateImmunity` lets Normal- and Fighting-type moves hit it
+    /// through a Ghost type (the Ghost factor reads NEUTRAL, Showdown's `damageTaken: 3` →
+    /// typeMod 0). No duration, no residual handler; `noCopy` (Baton Pass does NOT pass it);
+    /// cleared on switch-out + faint. `false` at construction.
+    pub foresight: bool,
+
     /// Whether this mon's CURRENT sleep was SELF-inflicted by **Rest** (vs foe-inflicted
     /// by a sleep move / Effect Spore). Mirrors `statusState.source?.isAlly(pokemon)` for
     /// the gen-3 **Sleep Clause Mod** (`rulesets.ts` `sleepclausemod.onSetStatus`): a mon
@@ -1583,6 +1604,8 @@ impl MonState {
             charge: false,
             mimic_overlay: None,
             snatch: false,
+            magic_coat: false,
+            foresight: false,
             sleep_from_rest: false,
             switchin_foe_uid: None,
             yawn: None,

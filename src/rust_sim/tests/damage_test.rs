@@ -268,6 +268,7 @@ fn damage_golden_matches_showdown() {
             boosts: atk_boosts,
             burned: atk_status == "brn",
             has_guts: atk_has_guts,
+            identified: false,
         };
         let defender = Combatant {
             level: 100,
@@ -279,6 +280,7 @@ fn damage_golden_matches_showdown() {
             boosts: def_boosts,
             burned: def_status == "brn",
             has_guts: pokesim::dex::to_id(def_ability_id) == "guts",
+            identified: false,
         };
         let mv = MoveInput { minimize_doubles: false, base_power: bp, move_type, category, halves_defense: halves_def };
 

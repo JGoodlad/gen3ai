@@ -29087,3 +29087,23 @@ say:** a difference under ±4 pp on U, the ensemble on Metamon's own team set or
 **Evidence:** `research_state/measurements/metamon_strongest_2026-10-25/` (PREREG, README, `cells.json`,
 `rows.jsonl`, scripts); state `/home/goodlad/dev/gen3ai-reads/mm_strongest_2026-10-25/`. View: `UNDERSTANDING.md`
 (after the X51 paragraph), `endstate/design_beat_metamon_path.md` §2, §6.7, §8, §9; SOP §4.
+## 2026-10-26 · RUST SIM · gen3 full parity B6: Swagger, Flatter, Foresight, Odor Sleuth, Magic Coat (moves 337 → 342 of 369)
+
+**B6** (`gen3_b6_moves_v1`, spec `harness/probe_b6_moves.js`; built by a subagent, merged onto B5 and gated here).
+SWAGGER / FLATTER, the 09-08 blocked pair: accuracy, Protect, the Magic Coat bounce, the Substitute block, then the
+boost (the capped amount, `atk|0` at +6; a raise, so Clear Body never blocks it) BEFORE the confusion (Own Tempo
+`-immune`, an already-confused target fails silently, Safeguard `-activate`); the move fails `[still]` + `-fail` only
+when the boost is capped AND the target already confused. The boost maps are hardcoded and node-checked (B6M1);
+`data/` is unchanged. FORESIGHT / ODOR SLEUTH: a `foresight` volatile zeroes the target's positive evasion in every
+accuracy check and makes a Ghost neutral to Normal / Fighting, through one new `damage::type_effectiveness` that every
+live-defender effectiveness site now calls. MAGIC COAT: priority +4, a single-turn volatile; all 41 reflectable gen-3
+moves bounce at the gen-4 mod's TryHit point (after the original accuracy roll and Protect, before Soundproof, the
+immunity report, Yawn's own TryHit and Substitute), announced `[from] Magic Coat`, no PP for the holder, the holder's
+last-used move set; an unused coat adds Snatch's end-of-turn handler. Golden 738 rows / 118 boards (one Magic Coat
+board per reflectable move); 15 pins, 12 revert mutations.
+
+**OU-visible (FINDING).** `protocol.rs::move_used` now writes `[from] X` before an up-front `[still]`, the order of the
+sim's retro-edit; the e2e capstone regenerates byte for byte and the obs golden reproduces, so no committed OU battle
+carries the pair. The effectiveness refactor changes nothing without the `foresight` volatile. **Left:** a Snatch steal
+does not set the snatcher's last-used move (a later Conversion 2 diverges); the Hidden Power belief tracker ignores
+Foresight; Bitter Berry (gen-2 `Past`) is inert in the port but cures confusion in an unvalidated Custom Game.

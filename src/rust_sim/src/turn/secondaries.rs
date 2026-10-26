@@ -285,8 +285,8 @@ impl crate::state::BattleState {
         // SAFEGUARD (`gen3_safeguard_v1`): the side condition's `onTryAddVolatile` blocks a
         // FOE-sourced confusion, BEFORE the onStart → the `random(2,6)` is NOT drawn (the same
         // draw-suppressing shape as Own Tempo). A confusion SECONDARY's own `random(100)`
-        // already drew in the caller. Probe-settled; note Swagger is PARTIAL — its +2 Atk
-        // still applies and only the confusion is blocked (Swagger is not modeled yet).
+        // already drew in the caller. Probe-settled; note Swagger / Flatter are PARTIAL — the
+        // boost still applies and only the confusion is blocked (`gen3_b6_moves_v1`, probe SW8).
         // A SELF-sourced add (a lock end, the holder's berry) passes the `target !== source`
         // test and is NOT blocked (`gen3_lockin_fatigue_v1`).
         if self.sides[foe].safeguard > 0 {

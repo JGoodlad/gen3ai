@@ -29,7 +29,7 @@ stale). Commands: `move_census.md`.
 - **MODELED means "does not fail loud"**, not "gated" and not "draws right". Before touching a move, check
   whether a committed battle golden has ever executed it.
 - The engine-playable pool and the TRAINING pool are different filters; never reconcile their counts.
-- Before admitting a blocked move (Swagger, Flatter), read its findings in `move_census.md` and
+- Before admitting a blocked move (`gen3_full_parity.md`'s gap table), read its findings in `move_census.md` and
   `designs/research_state/claude_md_archive/rust_sim_port_build_log.md`, and probe its current status.
 
 ## Rust core rules

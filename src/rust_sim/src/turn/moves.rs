@@ -1195,7 +1195,7 @@ impl crate::state::BattleState {
                 .unwrap_or(false)
         {
             let connects = match move_type {
-                Some(t) => dex.type_chart().effectiveness(t, &ctx.defender.types) > 1.0,
+                Some(t) => crate::damage::type_effectiveness(dex, t, &ctx.defender.types, ctx.defender.identified) > 1.0,
                 None => true, // unreachable (guarded by move_type.is_some() above)
             };
             if !connects {
@@ -1530,8 +1530,7 @@ impl crate::state::BattleState {
             // `-resisted` (<1, non-zero); a 0× is the immune path above. Emitted
             // BEFORE `-crit` (the sim's order, verified vs the golden).
             if let Some(mt) = move_type {
-                let def_types = mon_types(&self.sides[foe].pokemon[foe_slot], dex);
-                let eff = dex.type_chart().effectiveness(mt, &def_types);
+                let eff = self.defender_effectiveness(mt, foe, foe_slot, dex);
                 if eff > 1.0 {
                     self.log.supereffective(&target);
                 } else if eff < 1.0 && eff > 0.0 {
@@ -2259,6 +2258,7 @@ impl crate::state::BattleState {
                     boosts: [0; 5],
                     burned: false,
                     has_guts: false,
+                    identified: false,
                 },
                 defender: Combatant {
                     level: user_level, // the defender's level is unused by the formula
@@ -2270,6 +2270,7 @@ impl crate::state::BattleState {
                     boosts: [0; 5],
                     burned: false,
                     has_guts: false,
+                    identified: false,
                 },
                 mv: MoveInput {
                     minimize_doubles: false,
@@ -2531,9 +2532,8 @@ impl crate::state::BattleState {
 
             // Per-strike EFFECTIVENESS — read from the LIVE defender types (a mid-multihit Color
             // Change re-types later strikes). Emitted BEFORE `-crit`, per the sim's per-hit order.
-            let def_types = mon_types(&self.sides[foe].pokemon[foe_slot], dex);
             if let (Some(mt), true) = (move_type, self.logging()) {
-                let eff = dex.type_chart().effectiveness(mt, &def_types);
+                let eff = self.defender_effectiveness(mt, foe, foe_slot, dex);
                 let target = self.mon_ref(foe, foe_slot, dex);
                 if eff > 1.0 {
                     self.log.supereffective(&target);
@@ -2914,9 +2914,8 @@ impl crate::state::BattleState {
                 .map(|a| a.wonder_guard)
                 .unwrap_or(false)
         {
-            let def_types = mon_types(&self.sides[foe].pokemon[foe_slot], dex);
             let connects = match move_type {
-                Some(t) => dex.type_chart().effectiveness(t, &def_types) > 1.0,
+                Some(t) => self.defender_effectiveness(t, foe, foe_slot, dex) > 1.0,
                 None => true, // unreachable (guarded by move_type.is_some())
             };
             if !connects {
@@ -3516,6 +3515,7 @@ impl crate::state::BattleState {
             boosts: [mon.boosts[0], mon.boosts[1], mon.boosts[2], mon.boosts[3], mon.boosts[4]],
             burned: mon.status == Some(Status::Burn),
             has_guts: to_id(&mon.ability) == "guts",
+            identified: false, // the typeless self-hit reads no type chart
         };
         // The attacker's stat-phase item + ability mods `getDamage` folds: Choice Band ×1.5
         // (physical, type-agnostic) — and, data-driven, any species-gated PHYSICAL stat item
@@ -3677,6 +3677,7 @@ impl crate::state::BattleState {
             ],
             burned: atk_mon.status == Some(Status::Burn),
             has_guts: to_id(&atk_mon.ability) == "guts",
+            identified: false,
         };
         let defender = Combatant {
             level: def_mon.level,
@@ -3694,6 +3695,9 @@ impl crate::state::BattleState {
             ],
             burned: false,
             has_guts: false,
+            // FORESIGHT (`gen3_b6_moves_v1`): the defender's Ghost type reads neutral to
+            // Normal / Fighting (`crate::damage::type_effectiveness`).
+            identified: def_mon.foresight,
         };
 
         let mv = MoveInput {

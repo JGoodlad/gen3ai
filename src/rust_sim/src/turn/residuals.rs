@@ -632,7 +632,11 @@ impl crate::state::BattleState {
             //     protect/flinch this turn (it spent its +4 action on Snatch), so the
             //     same-mon gather position is unobservable — the only tie is the OTHER
             //     mon's same volatile. ---
-            if mon.snatch {
+            // MAGIC COAT (`gen3_b6_moves_v1`) registers the SAME duration handler as Snatch
+            // (probe MC1b: a Magic Coat mirror draws one tie-shuffle more than the Splash control
+            // MC1c). A bounce removes the coat first, so only an UNUSED coat gathers here; a mon
+            // cannot hold both (each is its +4 action).
+            if mon.snatch || mon.magic_coat {
                 handlers.push(EventHandler {
                     order: NO_ORDER,
                     priority: 0,

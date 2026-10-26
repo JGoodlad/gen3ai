@@ -51,9 +51,11 @@ leaf had gone stale by 28 moves before the 2026-08-23 doc audit.
 🚨 **SWAGGER and FLATTER inflict confusion and are NOT in that family** — they carry a TARGET
 `boosts` map whose half succeeds INDEPENDENTLY of the confusion half (probe-measured: into an
 already-confused target the +2 Atk still lands and there is NO `-fail`; at the +6 cap the delta-0
-`-boost|…|atk|0` prints AND the confusion still applies). They remain FAIL-LOUD; closing them needs
-a positive foe-directed `targetBoosts` field in `gen3_moves.json` (`statDropBoosts` is
-negative-only). ROUND 57 in the build log has the measurement.
+`-boost|…|atk|0` prints AND the confusion still applies; only a capped boost into an
+already-confused target fails). ROUND 57 left them fail-loud; gen3 full parity B6
+(`gen3_b6_moves_v1`) closed them with their own arm and the boost maps HARDCODED in Rust
+(`TARGET_BOOST_MOVES`, checked against the resolved dex by `tests/b6_moves_test.rs` B6M1)
+instead of a `gen3_moves.json` field. Spec: `harness/probe_b6_moves.js`.
 
 🚨 **ATTRACT is MODELED since gen3 full parity B9 (`gen3_attract_move_v1`), and its old blocker is a
 harness rule now.** The sim samples an unspecified gender at construction (`sample(['M','F'])`): the

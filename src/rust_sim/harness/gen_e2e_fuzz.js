@@ -200,13 +200,15 @@ const MODELED_STATUS_MOVES = new Set([
   // inflicts MAJOR statuses). Confuse Ray was admitted at ROUND 44; its three siblings differ
   // only in accuracy and join it here. The shared `add_confusion` path supplies the random(2,6)
   // duration draw and the `-start|confusion`; the arm supplies the accuracy roll and the TryHit
-  // gates. 🚨 SWAGGER and FLATTER are deliberately ABSENT — they carry a TARGET `boosts` map
-  // whose half succeeds independently of the confusion half, so they are a different move shape
-  // and still fail loud.
+  // gates. SWAGGER and FLATTER are NOT in this family — their TARGET `boosts` half succeeds
+  // independently of the confusion half — and have their own B6 arm (below).
   'confuseray', 'supersonic', 'sweetkiss', 'teeterdance',
   // ATTRACT (`gen3_attract_move_v1`, gen3 full parity B9): its own arm. A team that can reach it
   // needs explicit genders on the post-construction-seed path (the generators pin them).
   'attract',
+  // B6 (`gen3_b6_moves_v1`): Swagger / Flatter, Foresight / Odor Sleuth, Magic Coat — each its
+  // own arm in `status_moves.rs` (spec `harness/probe_b6_moves.js`).
+  'swagger', 'flatter', 'foresight', 'odorsleuth', 'magiccoat',
   'thunderwave', 'stunspore', 'glare',
   'poisonpowder', 'poisongas',
   'toxic',

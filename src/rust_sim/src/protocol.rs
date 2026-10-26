@@ -452,12 +452,16 @@ impl ProtocolBuilder {
         self.emit(|| {
             let mut f = vec![Field::mon(user), text_or_empty(move_name)];
             if still {
-                // Empty target field + [still] (e.g. Protect: `|move|…|Protect||[still]`).
+                // Empty target field + [still] (e.g. Protect: `|move|…|Protect||[still]`). A
+                // `[from]` fold comes FIRST: the sim prints the announce with its `[from]` and
+                // `attrLastMove('[still]')` then blanks the target and APPENDS `[still]`
+                // (`gen3_b6_moves_v1`, probe_b6_moves.js MC11:
+                // `|move|…|Screech||[from] Magic Coat|[still]`).
                 f.push(Field::Empty);
-                f.push(Field::tag("[still]"));
                 if let Some(e) = &from {
                     f.push(Field::from_text(e));
                 }
+                f.push(Field::tag("[still]"));
             } else if let Some(t) = target {
                 f.push(Field::mon(t));
                 // The `[from]` fold precedes a `[miss]` (the announce carries the from-attr;

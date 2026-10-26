@@ -764,6 +764,25 @@ add([mv('painsplit', 'onHit')],
   IMPL('turn.rs::run_status_move', 'the painsplit arm: protect/sub block; avg = floor((u+t)/2), EACH side clamped at its OWN maxhp (MC96); -sethp target [silent] then user'));
 add([mv('psychup', 'onHit')],
   IMPL('turn.rs::run_status_move', 'the psychup arm: copies ALL 7 stages VERBATIM (zeros overwrite — MC97); NO protect flag (copies through a Protect); bypasssub'));
+// B6 (gen3_b6_moves_v1, gen3 full parity B6) — spec harness/probe_b6_moves.js.
+add([mv('swagger', 'boosts'), mv('swagger', 'volatileStatus'), mv('swagger', 'ignoreImmunity'),
+     mv('flatter', 'boosts'), mv('flatter', 'volatileStatus'), mv('flatter', 'ignoreImmunity')],
+  IMPL('status_moves.rs::run_status_move', 'the TARGET_BOOST_MOVES arm: accuracy, Protect, the Magic Coat bounce, the Substitute block, then the capped -boost (delta 0 printed at +6) and the confusion add (Own Tempo -immune / already-confused silent / Safeguard -activate / random(2,6)); [still] -fail only for a delta-0 boost into an already-confused target; ignoreImmunity: a Status move skips the type chart'));
+add([mv('foresight', 'volatileStatus'), mv('foresight', 'ignoreImmunity'), mv('foresight', 'onTryHit'),
+     mv('odorsleuth', 'volatileStatus'), mv('odorsleuth', 'ignoreImmunity'), mv('odorsleuth', 'onTryHit'),
+     cond('foresight', 'onStart')],
+  IMPL('status_moves.rs::run_status_move', 'the foresight arm: accuracy 100, Protect, bypasssub, MonState::foresight (|-start|<t>|Foresight for both moves; an identified target fails [still] -fail); onTryHit is the Miracle Eye gate, unreachable in gen 3'));
+add([cond('foresight', 'onModifyBoost')],
+  IMPL('speed.rs::effective_accuracy', 'an identified defender\'s POSITIVE evasion stage reads 0 in every accuracy check'));
+add([cond('foresight', 'onNegateImmunity')],
+  IMPL('damage.rs::type_effectiveness', 'an identified defender\'s Ghost type reads NEUTRAL (not immune) to Normal and Fighting at every effectiveness site'));
+add([mv('magiccoat', 'volatileStatus'), mv('magiccoat', 'priority'), mv('magiccoat', 'neverMiss'),
+     mv('magiccoat', 'ignoreImmunity'), cond('magiccoat', 'onStart')],
+  IMPL('status_moves.rs::run_status_move', 'the magiccoat cast: priority +4, sets MonState::magic_coat DRAW-FREE, |-singleturn|U|move: Magic Coat'));
+add([cond('magiccoat', 'onTryHit'), cond('magiccoat', 'onTryHitPriority')],
+  IMPL('status_moves.rs::magic_coat_bounce', 'every REFLECTABLE_MOVES arm calls it after Protect (priority 3 > 2, TryHit sorts left-to-right: no draw): removeVolatile, the holder lastMoveUsed, then a recursive run_status_move with [from] Magic Coat (no PP, no BeforeMove, the move\'s own draws only); the original move returns null'));
+add([cond('magiccoat', 'duration')],
+  IMPL('turn.rs::run_residuals', 'the duration:1 volatile registers the NO_ORDER/subOrder-2 residual duration handler (a Magic Coat mirror draws one tie-shuffle more, probe MC1b); cleared at turn-top / switch-out / faint'));
 // SNATCH (gen3_snatch_v1) — the LAST gen-3 status move, the status-steal.
 add([mv('snatch', 'volatileStatus'), mv('snatch', 'priority'), cond('snatch', 'onStart')],
   IMPL('turn.rs::run_status_move', 'the snatch-cast arm: priority +4 sets MonState::snatch DRAW-FREE + emits |move|U|Snatch|U + |-singleturn|U|Snatch (the onStart line); landed FALSE'));

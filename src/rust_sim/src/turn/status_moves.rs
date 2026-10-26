@@ -131,15 +131,22 @@ impl crate::state::BattleState {
         //     `[still]`). The fuzz_r25 repro `rms9nh02e_ab_707_4`: a Primeape (Vital Spirit) that
         //     had just Substituted. ---
         let yawn_protect = move_id == "yawn" && self.protect_blocks(foe, foe_slot, false);
+        // MAGIC COAT (`gen3_b6_moves_v1`) bounces a Yawn at TryHit, after Protect and BEFORE
+        // yawn's own `onTryHit` (a `singleEvent` in `spreadMoveHit`, `sim/battle-actions.ts`), so
+        // a coated target's status / sub / immunity never decide the CAST's announce form.
+        let yawn_coat = move_id == "yawn" && !yawn_protect && self.magic_coat_will_bounce(foe, foe_slot, move_id);
         let yawn_statused = move_id == "yawn"
             && !yawn_protect
+            && !yawn_coat
             && self.sides[foe].pokemon[foe_slot].status.is_some();
         let yawn_subbed = move_id == "yawn"
             && !yawn_protect
+            && !yawn_coat
             && !yawn_statused
             && self.sides[foe].pokemon[foe_slot].substitute.is_some();
         let yawn_immune = move_id == "yawn"
             && !yawn_protect
+            && !yawn_coat
             && !yawn_statused
             && !yawn_subbed
             && dex
@@ -155,6 +162,7 @@ impl crate::state::BattleState {
         // settle it. The CAST block and the RESOLVE exemption are opposite by design.
         let yawn_safeguarded = move_id == "yawn"
             && !yawn_protect
+            && !yawn_coat
             && !yawn_statused
             && !yawn_subbed
             && !yawn_immune
@@ -943,6 +951,13 @@ impl crate::state::BattleState {
                     let target = self.mon_ref(foe, foe_slot, dex);
                     self.log.activate(&target, "Protect", None);
                 }
+                return MoveResolution::done(false, false, false);
+            }
+            // (TryHit) MAGIC COAT (`gen3_b6_moves_v1`): priority 2, after Protect's 3.
+            if self.magic_coat_bounce(
+                _side, _slot, foe, foe_slot, accuracy, never_miss, move_type, move_id, move_name,
+                targets_self, status_inflicted, will_act, dex,
+            ) {
                 return MoveResolution::done(false, false, false);
             }
             // (2) SUBSTITUTE blocks (no bypasssub): `[still]` + `-fail|<user>`, draw-free.
@@ -2422,6 +2437,17 @@ impl crate::state::BattleState {
                 }
                 return MoveResolution::done(false, false, false);
             }
+            // (TryHit) MAGIC COAT (`gen3_b6_moves_v1`): on the accPass branch, after Protect and
+            // BEFORE the Grass natural-immunity report (probe MC6: a Venusaur's seed bounces back
+            // and only THEN reports `-immune` on the Venusaur).
+            if acc_hit
+                && self.magic_coat_bounce(
+                    _side, _slot, foe, foe_slot, accuracy, never_miss, move_type, move_id, move_name,
+                    targets_self, status_inflicted, will_act, dex,
+                )
+            {
+                return MoveResolution::done(false, false, false);
+            }
             // (3) GRASS IMMUNITY — resolved AFTER the accuracy draw (same draw count), and
             //     reported after the TryHit handlers above (hit) or instead of `-miss` (miss).
             let target_is_grass = mon_types(&self.sides[foe].pokemon[foe_slot], dex)
@@ -3027,6 +3053,13 @@ impl crate::state::BattleState {
                 }
                 return MoveResolution::done(false, false, false);
             }
+            // (TryHit) MAGIC COAT (`gen3_b6_moves_v1`): priority 2, after Protect's 3.
+            if self.magic_coat_bounce(
+                _side, _slot, foe, foe_slot, accuracy, never_miss, move_type, move_id, move_name,
+                targets_self, status_inflicted, will_act, dex,
+            ) {
+                return MoveResolution::done(false, false, false);
+            }
             // (3) SOUNDPROOF (sound stat-drops only): immune after the accuracy roll + AFTER
             //     the Protect check (a Protecting foe already returned above).
             if self.move_is_sound(move_id, dex)
@@ -3134,6 +3167,15 @@ impl crate::state::BattleState {
                     let target = self.mon_ref(foe, foe_slot, dex);
                     self.log.activate(&target, "Protect", None);
                 }
+                return MoveResolution::done(false, false, false);
+            }
+            // (1b) (TryHit) MAGIC COAT (`gen3_b6_moves_v1`) — `yawn_coat` above.
+            if yawn_coat {
+                let bounced = self.magic_coat_bounce(
+                    _side, _slot, foe, foe_slot, accuracy, never_miss, move_type, move_id, move_name,
+                    targets_self, status_inflicted, will_act, dex,
+                );
+                debug_assert!(bounced, "yawn_coat was computed from magic_coat_will_bounce");
                 return MoveResolution::done(false, false, false);
             }
             // (2) onTryHit: the target ALREADY has a major status → `[still]` + `-fail|<user>`, no
@@ -3421,8 +3463,8 @@ impl crate::state::BattleState {
         //     accuracy is the ONLY thing that differs between them, so they are one arm.
         //     ⚠️ SWAGGER and FLATTER are deliberately NOT here: they carry a TARGET `boosts` map
         //     as well, which makes them a structurally different move (the two halves succeed and
-        //     fail INDEPENDENTLY — see `harness/probe_confusion_family.js` case 2), and the boost
-        //     map is not in `gen3_moves.json` yet.
+        //     fail INDEPENDENTLY — see `harness/probe_confusion_family.js` case 2); they have
+        //     their own `TARGET_BOOST_MOVES` arm (`gen3_b6_moves_v1`).
         //
         //     PROBE-SETTLED (`harness/probe_confusion_family.js` + `harness/probe_confuseray.js`,
         //     both re-runnable — do NOT re-derive from source):
@@ -3495,6 +3537,13 @@ impl crate::state::BattleState {
                     let target = self.mon_ref(foe, foe_slot, dex);
                     self.log.activate(&target, "Protect", None);
                 }
+                return MoveResolution::done(false, false, false);
+            }
+            // (TryHit) MAGIC COAT (`gen3_b6_moves_v1`): priority 2, after Protect's 3.
+            if self.magic_coat_bounce(
+                _side, _slot, foe, foe_slot, accuracy, never_miss, move_type, move_id, move_name,
+                targets_self, status_inflicted, will_act, dex,
+            ) {
                 return MoveResolution::done(false, false, false);
             }
             // (3) (TryHit) SOUNDPROOF — Supersonic is the family's only `sound` move.
@@ -3594,6 +3643,13 @@ impl crate::state::BattleState {
                 }
                 return MoveResolution::done(false, false, false);
             }
+            // (TryHit) MAGIC COAT (`gen3_b6_moves_v1`): priority 2, after Protect's 3.
+            if self.magic_coat_bounce(
+                _side, _slot, foe, foe_slot, accuracy, never_miss, move_type, move_id, move_name,
+                targets_self, status_inflicted, will_act, dex,
+            ) {
+                return MoveResolution::done(false, false, false);
+            }
             if immune {
                 if self.logging() {
                     let target = self.mon_ref(foe, foe_slot, dex);
@@ -3615,6 +3671,170 @@ impl crate::state::BattleState {
             if self.logging() {
                 let t = self.mon_ref(foe, foe_slot, dex);
                 self.log.volatile_start(&t, "Attract");
+            }
+            return MoveResolution::done(false, false, false);
+        }
+
+        // --- SWAGGER / FLATTER (`gen3_b6_moves_v1`, gen3 full parity B6). A TARGET `boosts` map
+        //     (`data/moves.ts` swagger `boosts: {atk: 2}`, flatter `boosts: {spa: 1}`) PLUS
+        //     `volatileStatus: 'confusion'`, run in gen-3 `tryMoveHit`'s order
+        //     (`data/mods/gen3/scripts.ts` tryMoveHit) and then `spreadMoveHit` /
+        //     `runMoveEffects` (`sim/battle-actions.ts`, the `moveData.boosts` block BEFORE the
+        //     `moveData.volatileStatus` block). Both carry `ignoreImmunity` (Status) and no
+        //     `bypasssub`; both are `reflectable`. The boost maps are HARDCODED
+        //     ([`TARGET_BOOST_MOVES`], checked against the resolved dex by
+        //     `tests/b6_moves_test.rs` B6M1) because `gen3_moves.json` carries no foe-directed
+        //     positive boost field and `data/` does not change in this batch.
+        //     PROBE-SETTLED (`harness/probe_b6_moves.js` SW1-SW17):
+        //       miss        : accuracy only -> `[miss]` + `-miss`
+        //       Protect     : accuracy only -> `-activate|<t>|Protect`
+        //       Magic Coat  : bounced at TryHit (below)
+        //       Substitute  : accuracy only -> `[still]` + `-fail|<USER>` (`onTryPrimaryHit`)
+        //       the BOOST   : `battle.boost` (`sim/battle.ts` boost) emits `-boost|<t>|<stat>|<n>`
+        //                     with the CAPPED delta, INCLUDING `0` at +6 (the `!isSecondary &&
+        //                     !isSelf` branch); positive, so Clear Body / Hyper Cutter never gate it
+        //       CONFUSION   : `addVolatile` after the boost — Own Tempo `-immune|<t>|confusion|[from]
+        //                     ability: Own Tempo`, already confused SILENT, Safeguard
+        //                     `-activate|<t>|move: Safeguard`, else `random(2,6)` + `-start|<t>|confusion`
+        //       the -fail   : `combineResults(boost, addVolatile)` is `false` only for a delta-0
+        //                     boost (`null`) AND an already-confused target (`false`): then
+        //                     `[still]` + `-fail|<USER>` AFTER the `-boost|…|0` line (SW4). Own
+        //                     Tempo / Safeguard return `null`, so a capped boost into either does
+        //                     NOT fail (SW6). ---
+        if let Some((stat, stages)) = target_boost_of(move_id) {
+            let acc_hit = if never_miss {
+                true
+            } else {
+                self.roll_accuracy(_side, _slot, foe, foe_slot, accuracy, never_miss, move_type, dex)
+            };
+            if !acc_hit {
+                if self.logging() {
+                    self.log.attr_last_move_miss();
+                    let user = self.mon_ref(_side, _slot, dex);
+                    let target = self.mon_ref(foe, foe_slot, dex);
+                    self.log.miss(&user, Some(&target));
+                }
+                return MoveResolution::done(true, false, false);
+            }
+            // (TryHit) PROTECT, then MAGIC COAT (priority 3 > 2).
+            if self.protect_blocks(foe, foe_slot, false) {
+                if self.logging() {
+                    let target = self.mon_ref(foe, foe_slot, dex);
+                    self.log.activate(&target, "Protect", None);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            if self.magic_coat_bounce(
+                _side, _slot, foe, foe_slot, accuracy, never_miss, move_type, move_id, move_name,
+                targets_self, status_inflicted, will_act, dex,
+            ) {
+                return MoveResolution::done(false, false, false);
+            }
+            // (onTryPrimaryHit) SUBSTITUTE.
+            if self.sides[foe].pokemon[foe_slot].substitute.is_some() {
+                if self.logging() {
+                    self.log.attr_last_move_still();
+                    let user = self.mon_ref(_side, _slot, dex);
+                    self.log.fail(&user, None, false);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            // (boosts) the capped delta, emitted even at 0.
+            let cur = self.sides[foe].pokemon[foe_slot].boosts[stat] as i32;
+            let next = (cur + stages as i32).clamp(-6, 6);
+            self.sides[foe].pokemon[foe_slot].boosts[stat] = next as i8;
+            let boosted = next != cur;
+            if self.logging() {
+                let t = self.mon_ref(foe, foe_slot, dex);
+                self.log.boost_applied(&t, stat, stages, (next - cur) as i8, next as i8);
+            }
+            // (volatileStatus) confusion: Own Tempo -> null, already confused -> false,
+            // Safeguard -> null (emitted by `add_confusion`), else the add.
+            let target = &self.sides[foe].pokemon[foe_slot];
+            let already = target.confusion.is_some();
+            if to_id(&target.ability) == "owntempo" {
+                if self.logging() {
+                    let t = self.mon_ref(foe, foe_slot, dex);
+                    self.log.immune_effect_from_ability(&t, "confusion", "Own Tempo");
+                }
+            } else if already {
+                if !boosted && self.logging() {
+                    self.log.attr_last_move_still();
+                    let user = self.mon_ref(_side, _slot, dex);
+                    self.log.fail(&user, None, false);
+                }
+            } else {
+                self.add_confusion(foe, foe_slot, super::secondaries::ConfusionSource::Foe { announce: true }, dex);
+            }
+            return MoveResolution::done(false, false, false);
+        }
+
+        // --- FORESIGHT / ODOR SLEUTH (`gen3_b6_moves_v1`). Both are `volatileStatus: 'foresight'`
+        //     (`data/moves.ts` foresight / odorsleuth; the gen-3 mod sets `accuracy: 100`,
+        //     `data/mods/gen3/moves.ts` foresight / odorsleuth, and the gen-4 mod drops
+        //     `reflectable` from their flags, `data/mods/gen4/moves.ts` foresight / odorsleuth, so
+        //     Magic Coat does NOT bounce them — probe MC31). PROBE-SETTLED
+        //     (`harness/probe_b6_moves.js` FS1-FS13):
+        //       accuracy     : `randomChance(100)` against the target's evasion — a target ALREADY
+        //                      identified has its positive evasion zeroed (FS13: 100 into +6)
+        //       miss         : `[miss]` + `-miss`
+        //       Protect      : `-activate|<t>|Protect` (flags.protect)
+        //       Substitute   : does NOT block (gen-4 flags carry `bypasssub`; FS4)
+        //       identified   : `addVolatile` false -> `[still]` + `-fail|<USER>` (FS2; Odor Sleuth
+        //                      after Foresight is the same volatile, FS3)
+        //       success      : `-start|<t>|Foresight` for BOTH moves (the condition's onStart, FS6)
+        //     The move's `onTryHit` (Miracle Eye) never fires in gen 3. The volatile's two reads live
+        //     in `effective_accuracy` (evasion) and `crate::damage::type_effectiveness` (Ghost). ---
+        if move_id == "foresight" || move_id == "odorsleuth" {
+            let acc_hit = if never_miss {
+                true
+            } else {
+                self.roll_accuracy(_side, _slot, foe, foe_slot, accuracy, never_miss, move_type, dex)
+            };
+            if !acc_hit {
+                if self.logging() {
+                    self.log.attr_last_move_miss();
+                    let user = self.mon_ref(_side, _slot, dex);
+                    let target = self.mon_ref(foe, foe_slot, dex);
+                    self.log.miss(&user, Some(&target));
+                }
+                return MoveResolution::done(true, false, false);
+            }
+            if self.protect_blocks(foe, foe_slot, false) {
+                if self.logging() {
+                    let target = self.mon_ref(foe, foe_slot, dex);
+                    self.log.activate(&target, "Protect", None);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            if self.sides[foe].pokemon[foe_slot].foresight {
+                if self.logging() {
+                    self.log.attr_last_move_still();
+                    let user = self.mon_ref(_side, _slot, dex);
+                    self.log.fail(&user, None, false);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            self.sides[foe].pokemon[foe_slot].foresight = true;
+            if self.logging() {
+                let t = self.mon_ref(foe, foe_slot, dex);
+                self.log.volatile_start(&t, "Foresight");
+            }
+            return MoveResolution::done(false, false, false);
+        }
+
+        // --- MAGIC COAT CAST (`gen3_b6_moves_v1`). `target: self`, `accuracy: true`, priority +4,
+        //     flags `{metronome}` only (not snatchable, `data/moves.ts` magiccoat). DRAW-FREE: the
+        //     condition's onStart emits `|-singleturn|<user>|move: Magic Coat` (probe MC1). The
+        //     volatile lives through this turn (so it bounces the foe's reflectable move — see
+        //     [`Self::magic_coat_bounce`] — or registers the residual duration handler) and clears
+        //     at the next turn-top (`clear_flinch`). ---
+        if move_id == "magiccoat" {
+            debug_assert!(never_miss, "magiccoat: expected the gen3 never-miss dex row");
+            self.sides[_side].pokemon[_slot].magic_coat = true;
+            if self.logging() {
+                let user = self.mon_ref(_side, _slot, dex);
+                self.log.singleturn(&user, "move: Magic Coat");
             }
             return MoveResolution::done(false, false, false);
         }
@@ -3646,10 +3866,8 @@ impl crate::state::BattleState {
         //     other modeled status moves IGNORE type immunity. ---
         let natural_immunity = if status_move_checks_type_immunity(move_id) {
             match move_type {
-                Some(t) => {
-                    let def_types = mon_types(&self.sides[foe].pokemon[foe_slot], dex);
-                    dex.type_chart().effectiveness(t, &def_types) == 0.0
-                }
+                // FORESIGHT negates Glare's Ghost immunity (`gen3_b6_moves_v1`, probe FS8).
+                Some(t) => self.defender_effectiveness(t, foe, foe_slot, dex) == 0.0,
                 None => false,
             }
         } else {
@@ -3683,6 +3901,13 @@ impl crate::state::BattleState {
                     let target = self.mon_ref(foe, foe_slot, dex);
                     self.log.activate(&target, "Protect", None);
                 }
+                return MoveResolution::done(false, false, false);
+            }
+            // (TryHit) MAGIC COAT (`gen3_b6_moves_v1`): priority 2, after Protect's 3.
+            if self.magic_coat_bounce(
+                _side, _slot, foe, foe_slot, accuracy, never_miss, move_type, move_id, move_name,
+                targets_self, status_inflicted, will_act, dex,
+            ) {
                 return MoveResolution::done(false, false, false);
             }
             // (TryHit) SOUNDPROOF — a SOUND status move (Sing / Grass Whistle) into a
@@ -3852,6 +4077,72 @@ impl crate::state::BattleState {
         // A status move never fires the in-tryMoveHit Update shuffle (moveHit returns
         // undefined): not missed, NOT landed.
         MoveResolution::done(false, false, false)
+    }
+
+    /// Would MAGIC COAT bounce `move_id` off the mon at `(foe, foe_slot)` right now? The coat is
+    /// up and the move is `flags.reflectable` ([`REFLECTABLE_MOVES`]). The gen-4 mod's
+    /// `onTryHit` (`data/mods/gen4/moves.ts` magiccoat) also skips `target === source` and
+    /// `move.hasBounced`: in gen-3 singles the bounced move's NEW target is the original user,
+    /// which spent its action on that move and so holds no coat, and the holder's coat is
+    /// removed before the bounce, so neither guard can fire here. Draw-free read.
+    pub(crate) fn magic_coat_will_bounce(&self, foe: usize, foe_slot: usize, move_id: &str) -> bool {
+        let m = &self.sides[foe].pokemon[foe_slot];
+        m.magic_coat && !m.fainted && m.hp > 0 && is_reflectable(move_id)
+    }
+
+    /// MAGIC COAT's BOUNCE (`gen3_b6_moves_v1`): called by every reflectable move's arm right
+    /// after its (TryHit) Protect check — the coat is `onTryHitPriority: 2`, Protect's is 3, and
+    /// `runEvent('TryHit')` sorts left-to-right by priority with NO speed tie-shuffle
+    /// (`sim/battle.ts` runEvent: `compareLeftToRightOrder` for TryHit), so the bounce costs no
+    /// draw. It runs AFTER the original move's accuracy roll (gen-3 `tryMoveHit` rolls accuracy
+    /// before `runEvent('TryHit')`, `data/mods/gen3/scripts.ts` tryMoveHit) and BEFORE every
+    /// later gate: Soundproof's TryHit (priority 0), the natural-immunity report (a Thunder Wave
+    /// into a GROUND coat holder still bounces, probe MC15), the move's own `onTryHit` (Yawn's
+    /// already-statused check) and the Substitute's `onTryPrimaryHit`.
+    ///
+    /// The bounce (`data/mods/gen4/moves.ts` magiccoat condition `onTryHit`): `removeVolatile(
+    /// 'magiccoat')` (silent, no onEnd), then `actions.useMove(newMove, holder, {target:
+    /// source})` — gen-3 `useMoveInner` with `sourceEffect` = the coat, so the holder announces
+    /// `|move|<holder>|<Move>|<user>|[from] Magic Coat` (probe MC2; the `conditions.get` name,
+    /// no `move:` prefix), deducts NO PP (the `!sourceEffect` Pressure branch is skipped), runs
+    /// no BeforeMove (no paralysis / confusion roll), sets the holder's `lastMoveUsed` to the
+    /// bounced move (but not `lastMove`), and then runs the move's full `tryMoveHit` against
+    /// the original user: its own accuracy roll (the bounce's ONLY draws are that move's own),
+    /// that user's Substitute / immunity / ability. The original move then returns `null` from
+    /// TryHit: no further line, no `-fail`. Returns whether the move was bounced.
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn magic_coat_bounce(
+        &mut self,
+        side: usize,
+        slot: usize,
+        foe: usize,
+        foe_slot: usize,
+        accuracy: u16,
+        never_miss: bool,
+        move_type: Option<Type>,
+        move_id: &str,
+        move_name: &str,
+        targets_self: bool,
+        status_inflicted: Option<&str>,
+        will_act: bool,
+        dex: &Dex,
+    ) -> bool {
+        if !self.magic_coat_will_bounce(foe, foe_slot, move_id) {
+            return false;
+        }
+        self.sides[foe].pokemon[foe_slot].magic_coat = false;
+        self.sides[foe].pokemon[foe_slot].last_move_used = Some(move_id.to_string());
+        self.log.set_next_move_from("Magic Coat");
+        // The bounced move is the HOLDER's, nested inside the user's action (the Snatch shape):
+        // its lines carry the holder's source scope (`gen3_core_nested_move_scope_v1`).
+        self.in_nested_move_scope(foe, |s| {
+            s.run_status_move(
+                foe, foe_slot, side, slot, accuracy, never_miss, move_type, move_id, move_name,
+                targets_self, status_inflicted, /*foe_will_move*/ false, will_act,
+                /*was_choice_locked*/ false, dex,
+            )
+        });
+        true
     }
 
     /// REST (`data/moves.ts::rest`, gen-3 — the `onTry` + `onHit` path), verified
@@ -4252,8 +4543,7 @@ impl crate::state::BattleState {
         // check). Mirror the standalone arm's `natural_immunity` gate.
         if status_move_checks_type_immunity(move_id) {
             if let Some(t) = self.move_type_of(move_id, dex) {
-                let def_types = mon_types(&self.sides[foe].pokemon[foe_slot], dex);
-                if dex.type_chart().effectiveness(t, &def_types) == 0.0 {
+                if self.defender_effectiveness(t, foe, foe_slot, dex) == 0.0 {
                     return None; // `-immune` path, not an already-statused fail
                 }
             }
@@ -4265,4 +4555,32 @@ impl crate::state::BattleState {
             Some(StatusMoveFail::Different)
         }
     }
+}
+
+/// The gen-3 status moves with a TARGET `boosts` map (`gen3_b6_moves_v1`): `(id, (stat index
+/// into [`crate::protocol::STAT_TOKENS`], stages))`, from the RESOLVED `Dex.mod('gen3')`
+/// (`data/moves.ts` swagger `boosts: {atk: 2}`, flatter `boosts: {spa: 1}`; no mod overrides
+/// them). Hardcoded because `data/` carries no positive foe-boost field; `tests/b6_moves_test.rs`
+/// B6M1 checks this table against node.
+pub const TARGET_BOOST_MOVES: [(&str, (usize, i8)); 2] = [("flatter", (2, 1)), ("swagger", (0, 2))];
+
+pub(crate) fn target_boost_of(move_id: &str) -> Option<(usize, i8)> {
+    TARGET_BOOST_MOVES.iter().find(|(id, _)| *id == move_id).map(|(_, b)| *b)
+}
+
+/// Every gen-3 move with `flags.reflectable` in the RESOLVED `Dex.mod('gen3')` (`gen3_b6_moves_v1`)
+/// — the moves Magic Coat bounces. Sorted. Each one's arm in `run_status_move` calls
+/// `magic_coat_bounce` after its Protect check; `tests/b6_moves_test.rs` B6M2 checks this list
+/// against node, and B6M3 that every member's arm bounces.
+pub const REFLECTABLE_MOVES: [&str; 41] = [
+    "attract", "block", "charm", "confuseray", "cottonspore", "faketears", "featherdance", "flash",
+    "flatter", "glare", "grasswhistle", "growl", "hypnosis", "kinesis", "leechseed", "leer",
+    "lovelykiss", "meanlook", "metalsound", "poisongas", "poisonpowder", "sandattack", "scaryface",
+    "screech", "sing", "sleeppowder", "smokescreen", "spiderweb", "spore", "stringshot", "stunspore",
+    "supersonic", "swagger", "sweetkiss", "sweetscent", "tailwhip", "thunderwave", "tickle",
+    "toxic", "willowisp", "yawn",
+];
+
+pub(crate) fn is_reflectable(move_id: &str) -> bool {
+    REFLECTABLE_MOVES.binary_search(&move_id).is_ok()
 }

@@ -114,6 +114,8 @@ mod switch;
 pub(crate) use helpers::mon_types;
 /// The recharge family (`gen3_recharge_family_v1`), public so its pin can check it against the dex.
 pub use moves::{RECHARGE_MOVES, SLEEP_USABLE_MOVES};
+/// The B6 tables (`gen3_b6_moves_v1`), public so their pins can check them against the dex.
+pub use status_moves::{REFLECTABLE_MOVES, TARGET_BOOST_MOVES};
 
 /// The denominators `critMult[critRatio]` for gen ≤ 5 (`battle-actions.ts:1631`):
 /// index by the (clamped 0..5) crit ratio. A normal damaging move resolves to

@@ -1088,6 +1088,10 @@ pub fn volatile_names(mon: &MonState) -> Vec<&'static str> {
     if mon.focus_energy {
         v.push("focusenergy");
     }
+    if mon.foresight {
+        // `gen3_b6_moves_v1`: Foresight / Odor Sleuth's volatile (no duration — live at the boundary).
+        v.push("foresight");
+    }
     if mon.leech_seed.is_some() {
         v.push("leechseed");
     }

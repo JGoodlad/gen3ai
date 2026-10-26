@@ -373,6 +373,9 @@ impl crate::state::BattleState {
             //     is cleared here at the FOLLOWING turn-top (probe SN1: t2 vols=(none)).
             //     DRAW-FREE. ---
             self.sides[side].pokemon[a].snatch = false;
+            // MAGIC COAT's `duration: 1` volatile (`gen3_b6_moves_v1`) — the same turn-top
+            // clear as Snatch. DRAW-FREE (the condition has no onEnd).
+            self.sides[side].pokemon[a].magic_coat = false;
         }
     }
 
@@ -1052,7 +1055,7 @@ pub(crate) fn move_is_immune(ctx: &DamageContext, dex: &Dex) -> bool {
         return true;
     }
     match ctx.mv.move_type {
-        Some(t) => dex.type_chart().effectiveness(t, &ctx.defender.types) == 0.0,
+        Some(t) => crate::damage::type_effectiveness(dex, t, &ctx.defender.types, ctx.defender.identified) == 0.0,
         None => false,
     }
 }
@@ -1202,10 +1205,11 @@ pub(crate) fn modeled_phaze_move(move_id: &str) -> bool {
 /// rendering the FOE).
 ///
 /// 🚨 **SWAGGER and FLATTER are NOT members**, even though they also inflict confusion. They
-/// carry a TARGET `boosts` map, and probe measurement (`harness/probe_confusion_family.js`)
-/// shows the two halves succeed and fail **independently**: a Swagger into an already-confused
-/// target still lands its +2 Atk and emits NO `-fail`, where every move here fails as a unit.
-/// A "confusion move" predicate that swept them in would emit the wrong bytes.
+/// carry a TARGET `boosts` map, and probe measurement (`harness/probe_confusion_family.js`,
+/// `harness/probe_b6_moves.js`) shows the two halves succeed and fail **independently**: a
+/// Swagger into an already-confused target still lands its +2 Atk and emits NO `-fail`, where
+/// every move here fails as a unit. They have their own arm (`status_moves.rs`,
+/// `TARGET_BOOST_MOVES`, `gen3_b6_moves_v1`).
 pub(crate) fn is_pure_confusion_move(move_id: &str) -> bool {
     matches!(move_id, "confuseray" | "supersonic" | "sweetkiss" | "teeterdance")
 }
@@ -1711,6 +1715,15 @@ impl crate::state::BattleState {
             let m = self.mon_ref(side, slot, dex);
             self.log.volatile_end_silent(&m, "Nightmare");
         }
+    }
+
+    /// The type effectiveness of `attacking` into the battle mon at `(side, slot)`, through its
+    /// CURRENT types (`mon_types`) and the FORESIGHT exception (`gen3_b6_moves_v1`,
+    /// `crate::damage::type_effectiveness`). Every site that reads a live defender's
+    /// effectiveness outside a `DamageContext` goes through here.
+    pub(crate) fn defender_effectiveness(&self, attacking: Type, side: usize, slot: usize, dex: &Dex) -> f64 {
+        let mon = &self.sides[side].pokemon[slot];
+        crate::damage::type_effectiveness(dex, attacking, &mon_types(mon, dex), mon.foresight)
     }
 }
 
