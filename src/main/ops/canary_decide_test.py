@@ -38,10 +38,34 @@ def test_the_registered_family_bars():
 
 
 @pytest.mark.parametrize("name,fam", [("rb_x35t_c0_s3601", "c0"), ("rb_x35_c0_s3505", "c0"),
-                                      ("rb_x35t_x47d4_s3602", "x47"), ("rb_x35_d1wide_s3505", None),
+                                      ("rb_x35t_x47d4_s3602", "x47"), ("rb_x35_d1wide_s3505", "c0"),
                                       ("/a/b/rb_x35t_c0_s3601/", "c0")])
 def test_the_family_is_read_from_the_run_name(name, fam):
     assert cd.family_of(name) == fam
+
+
+#: Every X35 run name that exists under models/ (2026-10-26) plus the planned lrfloor arm: production = C0 (a fork of
+#: P* at production pins), toy C0 = C0, toy X47 = X47.
+PRODUCTION_ARMS = ["rb_x35_c0_s3501", "rb_x35_a1arch_s3501", "rb_x35_sprt_s3503", "rb_x35_d1wide_s3505",
+                   "rb_x35_d1wide_s3501.crashed-20261022", "rb_x35_x52prac_s3502", "rb_x35_d3mut_s3503",
+                   "rb_x35_n1p_s3502", "rb_x35_lrfloor_s3501"]
+
+
+@pytest.mark.parametrize("name", PRODUCTION_ARMS)
+def test_every_production_x35_arm_is_judged_at_the_c0_bar(tmp_path, name):
+    assert cd.family_of(name) == "c0"
+    ok = _go(tmp_path, name, compiled=2.63, eager=1.0)
+    held = _go(tmp_path, name + "_b", compiled=2.65, eager=1.0)
+    assert ok.verdict == cd.RESUME and ok.bar == 2.64, ok.reasons
+    assert held.verdict == cd.HOLD and any("> 2.64" in r for r in held.reasons)
+
+
+@pytest.mark.parametrize("name", ["rb_x35_r0_s3531", "rb_x35t_r0_s3631", "rb_x36_c0_s3601", "rb_x26_s2601",
+                                  "xrb_x35_c0_s3501", "rb_x35_c0", "rb_x35_zzz_s3501", "rb_x35t_a1arch_s3601"])
+def test_an_unknown_run_name_holds_with_no_bar(tmp_path, name):
+    assert cd.family_of(name) is None
+    d = _go(tmp_path, name, compiled=0.1, eager=1.0)
+    assert d.verdict == cd.HOLD and d.bar is None and any("no family bar" in r for r in d.reasons)
 
 
 @pytest.mark.parametrize("name,compiled,verdict", [
@@ -58,12 +82,12 @@ def test_the_ratio_is_judged_against_its_own_family_bar(tmp_path, name, compiled
 def test_a_typed_bar_wins_and_is_stated_as_this_run_only(tmp_path):
     rec = [_record(compiled=2.5, eager=1.0)]
     held = cd.decide_run(_run(tmp_path, "rb_x35t_x47d4_s3601", rec))
-    ok = cd.decide_run(_run(tmp_path, "rb_x35_d1wide_s3505", rec), bar=2.64)
+    ok = cd.decide_run(_run(tmp_path, "rb_x35_r0_s3531", rec), bar=2.64)
     assert held.verdict == cd.HOLD and ok.verdict == cd.RESUME and "typed --bar 2.64 (this run only)" in ok.bar_source
 
 
 def test_a_run_of_no_family_and_no_typed_bar_holds_and_says_why(tmp_path):
-    d = _go(tmp_path, "rb_x35_d1wide_s3505")
+    d = _go(tmp_path, "rb_x35_r0_s3531")
     assert d.verdict == cd.HOLD and any("no family bar" in r for r in d.reasons)
 
 

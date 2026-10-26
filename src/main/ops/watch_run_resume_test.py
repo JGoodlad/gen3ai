@@ -22,6 +22,10 @@ from utils.paths import repo_path
 
 SCRIPT = repo_path("scripts", "ops", "watch_run.sh")
 
+#: Seconds between the watcher's ticks (`sleep` takes a fraction). 1 s per tick made every "still watching" check a real
+#: 2-3 s sleep and the crash -> resume -> final test 7.5-8 s beside a live run; the checks below count TICKS, not seconds.
+TICK = "0.25"
+
 TRACEBACK = 'Traceback (most recent call last):\n  File "x.py", line 1, in <module>\nValueError: boom\n'
 CRASH = "[03:04:13] 🛑 Child crashed (exit 1) — saved crashes/restart_err_x.txt · crash #{n}\n"
 RESUME = "[03:04:13] ♻️  Auto-restart #{n} after crash from checkpoint_14000046_steps.zip\n"
@@ -44,7 +48,7 @@ class Harness:
         if launcher_log:
             self.launcher.write_text(launcher_text)
         self.status_path = tmp_path / "status.txt"
-        argv = ["bash", str(SCRIPT), "r", "--status-file", str(self.status_path), "--interval", "1",
+        argv = ["bash", str(SCRIPT), "r", "--status-file", str(self.status_path), "--interval", TICK,
                 "--launcher-log", str(self.launcher), *extra]
         argv += ["--pid-file", str(pid_file)] if pid_file else ["--no-pid-check"]
         env = dict(os.environ, GEN3AI_MODELS_DIR=str(self.models))
@@ -64,10 +68,18 @@ class Harness:
             time.sleep(0.2)
         raise AssertionError(f"never saw {needle!r} in:\n{self.status()}")
 
-    def alive_for(self, seconds):
-        """The watcher is still running after `seconds` of further ticks."""
-        time.sleep(seconds)
-        return self.proc.poll() is None
+    def alive_for(self, ticks, timeout=25):
+        """The watcher is still running after `ticks` FURTHER ticks (each tick appends one `ok step=` line, so a watcher
+        that had exited would never add them). False if it exits first or the ticks never come."""
+        base = self.status().count("] ok step=")
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            if self.proc.poll() is not None:
+                return False
+            if self.status().count("] ok step=") >= base + ticks:
+                return self.proc.poll() is None
+            time.sleep(0.1)
+        return False
 
     def append(self, path, text):
         with open(path, "a") as fh:

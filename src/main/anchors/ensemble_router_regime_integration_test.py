@@ -8,16 +8,60 @@ and after. Each test here fails if the instrument is reverted.
 """
 from __future__ import annotations
 
+import ast
 import json
+import subprocess
+import sys
+import textwrap
 
 import pytest
 
 from main.anchors.config import load_config
-from main.anchors.windowed_attention_integration_test import _metamon_or_skip, _run
+from main.anchors.windowed_attention_integration_test import _SCRIPT, _metamon_or_skip, _run
+from utils.paths import src_path
+
+_ENSEMBLE_MODULE = "metamon.rl.experimental.ensemble.ensemble"
+
+
+def _run_light(cfg, body: str) -> dict:
+    """``metamon_side`` loaded in THIS repo's interpreter (it needs only the stdlib), with NO ``import metamon``: the
+    package's ``__init__`` pulls torch + amago (7-13 s of imports beside a live run, the cost that made the two real-
+    class tests below 12-22 s). The body gets ``ms`` and ``ens_dir`` (the checkout's ensemble package directory)."""
+    code = textwrap.dedent(f"""
+        import importlib.util, json, sys, types
+        spec = importlib.util.spec_from_file_location("metamon_side", {str(_SCRIPT)!r})
+        ms = importlib.util.module_from_spec(spec); spec.loader.exec_module(ms)
+        ens_dir = {str(cfg.checkout / "metamon" / "rl" / "experimental" / "ensemble")!r}
+    """) + textwrap.dedent(body)
+    proc = subprocess.run([sys.executable, "-c", code], env={"PYTHONPATH": str(src_path()), "CUDA_VISIBLE_DEVICES": "",
+                                                              "PATH": "/usr/bin:/bin"},
+                          capture_output=True, text=True, timeout=120)
+    assert proc.returncode == 0, proc.stderr[-3000:]
+    return json.loads(proc.stdout.strip().splitlines()[-1])
 
 pytestmark = pytest.mark.integration
 
 
+def test_install_names_a_router_class_that_the_checkout_defines() -> None:
+    """The cheap routine half of the real-class test below. ``RegimeProbe.install`` imports the router inside a
+    ``try/except ImportError`` that falls back to NOT instrumenting it, so a renamed class or module would silently
+    return every ensemble unit to ``regime_verified_decisions = false``. Read both sides as SOURCE, no import: the name
+    ``install`` imports, and the class (with ``get_actions``) the checkout's module defines."""
+    cfg = _metamon_or_skip()
+    install = next(n for n in ast.walk(ast.parse(_SCRIPT.read_text()))
+                   if isinstance(n, ast.FunctionDef) and n.name == "install")
+    imported = [(n.module, a.name) for n in ast.walk(install) if isinstance(n, ast.ImportFrom) and n.module
+                and n.module.startswith("metamon.rl.experimental.ensemble") for a in n.names]
+    assert imported == [(_ENSEMBLE_MODULE, "HeuristicRouterEnsemblePolicy")], imported
+    path = cfg.checkout.joinpath(*_ENSEMBLE_MODULE.split(".")).with_suffix(".py")
+    cls = next((n for n in ast.parse(path.read_text()).body
+                if isinstance(n, ast.ClassDef) and n.name == "HeuristicRouterEnsemblePolicy"), None)
+    assert cls is not None, f"{path} defines no HeuristicRouterEnsemblePolicy"
+    assert any(isinstance(n, ast.FunctionDef) and n.name == "get_actions" for n in cls.body), \
+        "the router class has no get_actions of its own to wrap (it would wrap an inherited one)"
+
+
+@pytest.mark.slow  # 12.8 s beside a live run: imports torch + amago + the real ensemble module
 def test_install_instruments_the_real_router_class() -> None:
     cfg = _metamon_or_skip()
     out = _run(cfg, """
@@ -83,6 +127,42 @@ def test_the_rule(regime, rate, n_dec, router_rate, n_router, ok) -> None:
     assert out is ok
 
 
+def test_the_pin_check_on_the_checkouts_preset_file() -> None:
+    """The cheap routine half of the real-model test below: ``check_preset`` on a stand-in model whose members are the
+    preset file's own entries (built from the JSON, not by importing ``metamon``, which is 13 s of torch + amago). The
+    pin passes; a wrong pin and a wrong member list are each refused with the pin named."""
+    cfg = _metamon_or_skip()
+    name, sha = load_config().opponent("metamon").preset("PastaMittens")
+    out = _run_light(cfg, f"""
+        import dataclasses
+        stub = types.ModuleType("metamon.rl.experimental.ensemble"); stub.__file__ = ens_dir + "/__init__.py"
+        for m in ("metamon", "metamon.rl", "metamon.rl.experimental"):
+            sys.modules[m] = types.ModuleType(m)
+        sys.modules["metamon.rl.experimental.ensemble"] = stub
+        presets = json.load(open(ens_dir + "/ensemble_presets.json"))
+        Spec = dataclasses.make_dataclass("Spec", [("model_name", str), ("checkpoint", object), ("gxe", float),
+                                                   ("proposer_bias", float), ("judge_bias", float),
+                                                   ("shortlist_k", int), ("proposal_roles", tuple),
+                                                   ("action_temperature", float)])
+        def model_of(preset):
+            members = [Spec(**{{**e, "proposal_roles": tuple(e["proposal_roles"])}}) for e in presets[preset]]
+            return type("Ens", (), {{"MEMBER_SPECS": members}})()
+        other = next(k for k in presets if k != {name!r})
+        out = {{"good": ms.check_preset(model_of({name!r}), {name!r}, {sha!r})}}
+        for label, (model, pin) in {{"wrong_pin": (model_of({name!r}), "0" * 64),
+                                     "wrong_members": (model_of(other), {sha!r})}}.items():
+            try:
+                ms.check_preset(model, {name!r}, pin)
+                out[label] = "played"
+            except SystemExit as exc:
+                out[label] = str(exc)
+        print(json.dumps(out))
+    """)
+    assert out["good"] == {"preset": name, "preset_sha256": sha}, out
+    assert "the pin is" in out["wrong_pin"] and "the pin is" in out["wrong_members"], out
+
+
+@pytest.mark.slow  # 22 s beside a live run: builds the two real nickname ensembles through `metamon.rl.pretrained`
 def test_the_pinned_preset_passes_and_a_wrong_pin_is_refused() -> None:
     cfg = _metamon_or_skip()
     name, sha = load_config().opponent("metamon").preset("PastaMittens")

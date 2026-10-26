@@ -239,6 +239,24 @@ def test_a_loader_refusal_on_a_CURRENT_generation_entry_is_arch_drift_not_a_lice
 
 
 @pytest.mark.integration
+def test_every_current_generation_baseline_resolves_and_the_production_name_loads():
+    """The cheap routine half of the every-entry load below (that one is ~2.5 s per checkpoint, 21 s beside a live
+    run, so it is `slow`). It guards the same class at a fraction of the cost: EVERY current-generation checkpoint
+    entry still resolves to its files through the one choke point (a thinned or renamed run fails here, by name), and
+    the one name the incident was about, `production`, loads through the sanitizing loader."""
+    if main_models_dir() is None:
+        pytest.skip(models_skip_reason())
+    current = [n for n in baselines.names()
+               if baselines.get(n).kind == "checkpoint" and not baselines.get(n).era_checkout_only]
+    assert len(current) >= 5, "the registry should hold at least the five current-generation entries"
+    for n in current:
+        r = baselines.resolve(n)
+        assert r.zip_path.endswith(".zip") and r.config_path, f"{n}: resolved to {r}"
+    assert baselines.load("production") is not None
+
+
+@pytest.mark.slow  # 21 s beside a live run: ~2.5 s per checkpoint over the whole registry
+@pytest.mark.integration
 def test_EVERY_named_baseline_either_loads_or_raises_the_typed_error_naming_the_fix():
     """The row's acceptance test: iterate the whole registry, load every checkpoint entry."""
     if main_models_dir() is None:

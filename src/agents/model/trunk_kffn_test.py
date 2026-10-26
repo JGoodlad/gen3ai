@@ -46,6 +46,15 @@ def _build(seed: int = 0, **over: Any) -> Any:
     return model
 
 
+@pytest.fixture(scope="module", autouse=True)
+def _warm_production_build() -> None:
+    """The FIRST production build in a process pays ~4-5 s of one-time work (lazy imports, the belief tables), 0.6-1 s
+    after. A module fixture moves that off whichever test happens to run first (the ship gate's 8 s bar charges a
+    module-scoped fixture to the module, once, not to a test; `designs/ops/testing.md`)."""
+    with torch_globals(num_threads=1):
+        _build(0)
+
+
 @pytest.fixture(scope="module")
 def rows() -> Tuple[np.ndarray, np.ndarray]:
     from agents.model.growth_test import _rows
@@ -269,6 +278,7 @@ def test_k6_an_identity_round_with_experts_is_the_identity() -> None:
     assert r.kind_ffn is not None and torch.equal(x, y)
 
 
+@pytest.mark.slow  # ship gate (2026-10-26): 17 s beside a live run (a trained parent + the fork-time gate's two CPU builds + a fresh depth-4 build)
 def test_k6_growing_depth_on_a_kffn_parent_stays_bit_identical(rows) -> None:
     """K-6 (second half). ``--grow trunk_layers=4`` on a TRAINED kffn parent (depth 3): the new round carries zero
     experts and the network's table, the gate passes, and the grown state dict is a fresh depth-4 ``on`` build's."""
@@ -289,6 +299,64 @@ def test_k6_growing_depth_on_a_kffn_parent_stays_bit_identical(rows) -> None:
 
 
 # ---------------------------------------------------------------------------------------------------- K-7, K-8
+def _grow_in_place(model: Any) -> Tuple[Any, Dict[str, int]]:
+    """``off -> on`` through the two growth steps `apply_growth` runs, WITHOUT its fork-time gate (two fresh CPU builds
+    and four forwards, 5-8 s beside a live run): the grower and the optimizer rule, on the model itself."""
+    grown = G.grow_trunk_ffn_by_kind(model.policy, "on")
+    return grown, G.regrow_optimizer(model.policy, [p for _, p in grown.new], grown.copies)
+
+
+def test_k7_routine_the_grow_fork_is_the_parents_function_and_copies_the_optimizer_state(rows) -> None:
+    """K-7, the routine half of the slow test below (the same class without the fork-time gate's two extra builds):
+    ``off -> on`` on a production parent after one AdamW step is the parent's function bit for bit on the same
+    rows, adds exactly the experts, carries every parent parameter's AdamW state object, and gives every expert an
+    independent CLONE of its shared source's state (ruling Q-K3). Fails on revert of the copy or the optimizer rule."""
+    obs, mask = rows
+    with torch_globals(num_threads=1):
+        model = _parent(obs, mask)
+        old_opt = model.policy.optimizer
+        old_params = list(old_opt.param_groups[0]["params"])
+        old_state = {id(p): old_opt.state.get(p, {}) for p in old_params}
+        before = _record(model, obs, mask)
+        grown, counts = _grow_in_place(model)
+        after = _record(model, obs, mask)
+    assert _same(before, after)
+    assert len(grown.new) == 48 and sum(p.numel() for _, p in grown.new) == EXPERT_ELEMENTS
+    opt = model.policy.optimizer
+    with_state = [p for p in old_params if old_state[id(p)]]
+    assert counts == {"carried": len(with_state), "no_state": len(old_params) - len(with_state), "fresh": 0, "copied": 48}
+    assert len(with_state) > 200 and all(opt.state[p] is old_state[id(p)] for p in with_state)
+    for r in _rounds(model):
+        for e in r.kind_ffn.values():
+            for lin in ("linear1", "linear2"):
+                for attr in ("weight", "bias"):
+                    p, src = getattr(getattr(e, lin), attr), getattr(getattr(r, lin), attr)
+                    assert torch.equal(p, src)
+                    st, s0 = opt.state[p], opt.state[src]
+                    assert set(st) == set(s0) and all(torch.equal(st[k], s0[k]) for k in s0)
+                    assert all(st[k].data_ptr() != s0[k].data_ptr() for k in s0)            # a clone, not an alias
+    assert model.policy.features_extractor.trunk_ffn_by_kind == "on"
+
+
+def test_k8_routine_experts_that_are_not_copies_are_not_the_parents_function(rows, monkeypatch: pytest.MonkeyPatch) -> None:
+    """K-8, the routine half of the slow gate test below: with the copy monkeypatched away the grown network's function
+    MOVES (so the fork-time gate has something to refuse); with it, K-7 above reads it unchanged. Fails if growth stops
+    depending on the copy."""
+    obs, mask = rows
+
+    def _no_copy(r: Any) -> List[Tuple[torch.nn.Parameter, torch.nn.Parameter]]:
+        return [(getattr(getattr(e, lin), a), getattr(getattr(r, lin), a))
+                for e in r.kind_ffn.values() for lin in ("linear1", "linear2") for a in ("weight", "bias")]
+
+    with torch_globals(num_threads=1):
+        model = _parent(obs, mask)
+        before = _record(model, obs, mask)
+        monkeypatch.setattr(K, "copy_shared_into_experts", _no_copy)
+        _grow_in_place(model)
+        assert not _same(before, _record(model, obs, mask))
+
+
+@pytest.mark.slow  # ship gate (2026-10-26): 19 s beside a live run; the routine half is `test_k7_routine_...` above (no gate)
 def test_k7_the_grow_fork_is_the_parents_function_and_copies_the_optimizer_state(rows) -> None:
     """K-7. A production parent after one AdamW step, ``off -> on``: the gate's CPU builds AND the live child are the
     parent's function bit for bit; the grown state dict loads strictly into (and IS, key for key in order) a fresh
@@ -342,6 +410,7 @@ def test_k7_the_grow_fork_is_the_parents_function_and_copies_the_optimizer_state
                                                                   *r.linear2.parameters()])
 
 
+@pytest.mark.slow  # ship gate (2026-10-26): 10 s beside a live run (a trained parent + the gate's two CPU builds); routine half: `test_k8_routine_...`
 def test_k8_a_non_copy_expert_init_is_refused_by_the_gate(rows, monkeypatch: pytest.MonkeyPatch) -> None:
     """K-8. Experts left at their fresh init (the copy monkeypatched away) are NOT the parent's function: refused."""
     obs, mask = rows
@@ -357,6 +426,7 @@ def test_k8_a_non_copy_expert_init_is_refused_by_the_gate(rows, monkeypatch: pyt
             G.apply_growth(model, FIELDS, rows=(obs, mask))
 
 
+@pytest.mark.slow  # ship gate (2026-10-26): 11 s beside a live run (a trained parent + the gate + a fresh depth-4 build)
 def test_k7_depth_and_experts_at_one_fork_apply_depth_first(rows) -> None:
     """Several fields at one fork apply in ``GROWABLE``'s order: depth FIRST, so the new round's experts are copies of
     its own (zero) FFN (its ``linear1`` included) rather than fresh experts; the result is a fresh depth-4 ``on``

@@ -68,6 +68,7 @@ def one_thread(restore_torch_globals):
 # ------------------------------------------------------------------------------ the option, as data
 def test_the_cpu_option_is_a_real_inductor_config_of_this_torch():
     import torch._inductor.config as ic
+    assert cr.CPU_INDUCTOR_OPTIONS == {"cpp.simdlen": 1}, "the step-around is scalar C++ kernels (no tiling); empty = dropped"
     for key, val in cr.CPU_INDUCTOR_OPTIONS.items():
         obj = ic
         for part in key.split("."):
@@ -95,12 +96,19 @@ def test_the_option_falls_back_to_the_policys_parameters_when_the_learner_has_no
 
 
 # ------------------------------------------------------------------------------ the wiring in install
+def _stand_in_learner():
+    """What `cr.install` reads of a learner to COMPILE R1: a policy with an extractor, a device, a batch size. (A real
+    `build_learner()` is 1.5-5 s to build and this test is about the kwargs `torch.compile` receives, not the learner;
+    `r1_declaration`, which reads the real `_micro_static`, is stubbed in the test and owned by `compile_regions_test`.)"""
+    fe = types.SimpleNamespace()
+    return types.SimpleNamespace(policy=types.SimpleNamespace(features_extractor=fe), batch_size=64)
+
+
 @pytest.mark.parametrize("device,expect", [("cpu", {"options": cr.CPU_INDUCTOR_OPTIONS}), ("cuda", {})])
 def test_install_hands_R1_the_cpu_option_and_a_cuda_learner_nothing(monkeypatch, device, expect):
     """CPU: R1's `torch.compile` carries `CPU_INDUCTOR_OPTIONS`. CUDA: exactly the production kwargs
     (`fullgraph`, `dynamic`), no `options` — byte for byte what it was before this fix."""
     from agents.model import compile_control as cc
-    from agents.training import learner_golden as LG
     seen = []
     real = torch.compile
 
@@ -110,9 +118,10 @@ def test_install_hands_R1_the_cpu_option_and_a_cuda_learner_nothing(monkeypatch,
 
     cc._reset_control_for_tests()
     torch._dynamo.reset()
-    model = LG.build_learner()
+    model = _stand_in_learner()
     try:
         monkeypatch.setattr(torch, "compile", spy)
+        monkeypatch.setattr(cr, "r1_declaration", lambda m: "declared")
         model.device = torch.device(device)
         cc.control().install()
         cr.install(model)
@@ -158,6 +167,8 @@ def test_the_smallest_repro_compiles_and_matches_eager_with_the_cpu_option(one_t
     torch.testing.assert_close(out[0], ref[0], rtol=1e-5, atol=1e-6)
 
 
+@pytest.mark.slow  # 14 s: a cold g++ attempt that is MEANT to fail; the routine guard of this class is
+#                    `test_the_cpu_option_is_a_real_inductor_config_of_this_torch` + `inductor_compile_test` (the seam applies it)
 @_skip_compile
 @pytest.mark.skipif(not torch.__version__.startswith("2.8.0"),
                     reason="the bug is recorded on torch 2.8.0 (the env pins it); another build is a measurement of its own")

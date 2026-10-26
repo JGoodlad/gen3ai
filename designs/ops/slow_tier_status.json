@@ -1169,12 +1169,20 @@
    "contention": 1.61,
    "detail": ""
   },
+  "src/agents/model/cpu_inductor_tile2d_test.py::test_the_bug_is_still_in_this_torch_so_the_option_is_still_needed": {
+   "status": "pass",
+   "commit": "44dce6bdf54c3a97739ed40d64a11bacbde28743",
+   "at": "2026-10-26T15:20:42Z",
+   "duration_s": 0.59,
+   "contention": 1.24,
+   "detail": ""
+  },
   "src/agents/model/cpu_inductor_tile2d_test.py::test_the_smallest_repro_compiles_and_matches_eager_with_the_cpu_option": {
    "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:41:46Z",
-   "duration_s": 0.02,
-   "contention": 1.53,
+   "commit": "44dce6bdf54c3a97739ed40d64a11bacbde28743",
+   "at": "2026-10-26T15:20:42Z",
+   "duration_s": 0.82,
+   "contention": 1.64,
    "detail": ""
   },
   "src/agents/model/dense_attn_bias_test.py::test_cuda_inductor_n64_bias_reproduction": {
@@ -1766,10 +1774,42 @@
   },
   "src/agents/model/trunk_kffn_test.py::test_k11_the_kffn_extractor_compiles_fullgraph_and_matches_eager": {
    "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:11:57Z",
-   "duration_s": 233.45,
-   "contention": 1.44,
+   "commit": "44dce6bdf54c3a97739ed40d64a11bacbde28743",
+   "at": "2026-10-26T15:20:42Z",
+   "duration_s": 288.55,
+   "contention": 1.59,
+   "detail": ""
+  },
+  "src/agents/model/trunk_kffn_test.py::test_k6_growing_depth_on_a_kffn_parent_stays_bit_identical": {
+   "status": "pass",
+   "commit": "44dce6bdf54c3a97739ed40d64a11bacbde28743",
+   "at": "2026-10-26T15:20:42Z",
+   "duration_s": 10.93,
+   "contention": 1.77,
+   "detail": ""
+  },
+  "src/agents/model/trunk_kffn_test.py::test_k7_depth_and_experts_at_one_fork_apply_depth_first": {
+   "status": "pass",
+   "commit": "44dce6bdf54c3a97739ed40d64a11bacbde28743",
+   "at": "2026-10-26T15:20:42Z",
+   "duration_s": 5.72,
+   "contention": 1.76,
+   "detail": ""
+  },
+  "src/agents/model/trunk_kffn_test.py::test_k7_the_grow_fork_is_the_parents_function_and_copies_the_optimizer_state": {
+   "status": "pass",
+   "commit": "44dce6bdf54c3a97739ed40d64a11bacbde28743",
+   "at": "2026-10-26T15:20:42Z",
+   "duration_s": 7.09,
+   "contention": 1.82,
+   "detail": ""
+  },
+  "src/agents/model/trunk_kffn_test.py::test_k8_a_non_copy_expert_init_is_refused_by_the_gate": {
+   "status": "pass",
+   "commit": "44dce6bdf54c3a97739ed40d64a11bacbde28743",
+   "at": "2026-10-26T15:20:42Z",
+   "duration_s": 4.07,
+   "contention": 1.79,
    "detail": ""
   },
   "src/agents/model/update_performance_shape_test.py::test_R1s_attention_profile_on_cpu_is_pinned": {
@@ -1810,6 +1850,14 @@
    "at": "2026-10-21T19:41:46Z",
    "duration_s": 5.25,
    "contention": 1.39,
+   "detail": ""
+  },
+  "src/agents/training/baselines_loadability_test.py::test_EVERY_named_baseline_either_loads_or_raises_the_typed_error_naming_the_fix": {
+   "status": "pass",
+   "commit": "44dce6bdf54c3a97739ed40d64a11bacbde28743",
+   "at": "2026-10-26T15:20:42Z",
+   "duration_s": 10.45,
+   "contention": 1.31,
    "detail": ""
   },
   "src/agents/training/cpu_load_no_cuda_test.py::test_a_cpu_load_that_creates_a_cuda_context_is_refused": {
@@ -3018,6 +3066,22 @@
    "at": "2026-10-26T05:34:19Z",
    "duration_s": 25.51,
    "contention": 1.0,
+   "detail": ""
+  },
+  "src/main/anchors/ensemble_router_regime_integration_test.py::test_install_instruments_the_real_router_class": {
+   "status": "pass",
+   "commit": "44dce6bdf54c3a97739ed40d64a11bacbde28743",
+   "at": "2026-10-26T15:20:42Z",
+   "duration_s": 7.73,
+   "contention": 1.19,
+   "detail": ""
+  },
+  "src/main/anchors/ensemble_router_regime_integration_test.py::test_the_pinned_preset_passes_and_a_wrong_pin_is_refused": {
+   "status": "pass",
+   "commit": "44dce6bdf54c3a97739ed40d64a11bacbde28743",
+   "at": "2026-10-26T15:20:42Z",
+   "duration_s": 7.33,
+   "contention": 1.18,
    "detail": ""
   },
   "src/main/anchors/live_side_test.py::test_a_rust_bot_plays_our_side_on_its_own_reading_and_its_streams_are_seeded": {

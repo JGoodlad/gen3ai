@@ -26,8 +26,10 @@ THE BAR is the registered ratio bar of the arm FAMILY, fixed from the healthy-PA
   ``c0``  2.64  = 1.25 x 2.108 (C0 s3603 u500, the healthy PASS max over three seeds; ruling 2026-10-21 ~01:55)
   ``x47`` 2.40  = 1.25 x 1.893 (X47 s3601 u700, the healthy PASS max; ruling 2026-10-20 ~11:00)
 
-The family is read from the run name (``_c0_`` or ``_x47`` in it: ``rb_x35t_c0_s3601``, ``rb_x35_c0_s3505``,
-``rb_x35t_x47d4_s3602``); any other run needs ``--family`` or a typed ``--bar``. A typed ``--bar`` wins, is printed
+The family is read from the run name (``FAMILY_NAME_PATTERNS``): the production arms ``rb_x35_{c0,a1*,sprt,lrfloor*,
+d1wide,x52*,d3mut,n1p}_s*`` are all C0 (forks of P* at production pins), the toy ``rb_x35t_c0_s*`` is C0 and
+``rb_x35t_x47*_s*`` is X47; any other run (``rb_x35_r0_*``) needs ``--family`` or a typed ``--bar``. The bars'
+provenance is in ``designs/training/compile_flags.md`` ("The canary-FATAL resume rule"). A typed ``--bar`` wins, is printed
 with its source, and is appended to ``--log`` when given (the 2026-10-24 ruling that judged D1 s3505 at the C0
 family's 2.64 was exactly that, typed once, this run only). A bar typed by hand into an untested script is where a
 canary verdict goes wrong; this one is tested.
@@ -56,13 +58,22 @@ RESUME, HOLD = "RESUME", "HOLD"
 EXIT = {RESUME: 0, HOLD: 3}
 
 
+#: Run name -> family, ANCHORED at the start of the name (a suffix such as ``.crashed-20261022`` is ignored). Every
+#: production X35 arm is a fork of P* (rb_x26_s2601 @280M) at production pins, the same family as C0; the toy arms
+#: are the toy C0 (bar C0) and the toy X47 (bar X47). Anything else (``rb_x35_r0_*``, another batch) is unknown and HOLDs.
+FAMILY_NAME_PATTERNS: "tuple[tuple[str, str], ...]" = (
+    (r"rb_x35_(?:c0|a1[a-z0-9]*|sprt|lrfloor[a-z0-9]*|d1wide|x52[a-z0-9]*|d3mut|n1p)_s\d+", "c0"),
+    (r"rb_x35t_c0_s\d+", "c0"),
+    (r"rb_x35t_x47[a-z0-9]*_s\d+", "x47"),
+)
+
+
 def family_of(run_name: str) -> Optional[str]:
-    """The arm family a run name belongs to (``c0`` / ``x47``), else ``None``."""
+    """The arm family a run name belongs to (``c0`` / ``x47``), else ``None`` (an unknown name HOLDs)."""
     n = run_name.rstrip("/").split("/")[-1]
-    if re.search(r"_c0_", n):
-        return "c0"
-    if re.search(r"_x47", n):
-        return "x47"
+    for pattern, fam in FAMILY_NAME_PATTERNS:
+        if re.match(pattern, n):
+            return fam
     return None
 
 
