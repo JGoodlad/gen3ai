@@ -121,3 +121,27 @@ reads it per token type and per depth on the bank instead (the same participatio
 - The damage / speed / residual labels are approximate physics (§3); rare facts (screens, rain, Wish, Substitute)
   are too rare to read in a 25k bank.
 - The policy readout of the read checkpoints is `tower`, so there is no state-query site; `PI` is the actor latent.
+
+## 8. Running it: what a first run on a current checkpoint taught (2026-10-26)
+
+Exercised end to end on P* (`rb_x26_s2601`, the 250 / 260 / 270 / 280 M checkpoints as two arms of two, plus one
+random-init build per arm) at the X26 pin `9c033489`, CPU only, `--pairs 2 --target 1500`: bank (24 games, 1,784
+replayed → 1,500 decisions, 2,845-dim rows), capture (64 tokens, 3 trunk rounds, the board seats 12-14), probe (114
+facts), report, behaviour (`self_check` 1,500 rows), depth and depth-report (a verdict per arm) all ran on the
+production architecture with no change to the pipeline itself.
+
+- **The checkout must be a usable pin, and the CLI now says so before it queues** (`bank.preflight_checkout`): a pin
+  made by a bare `git worktree add` has an EMPTY `deps/pokemon-showdown`, and the first `bank` waited 38 minutes for a
+  heavy slot and then died in the team validator (`Cannot find module …/deps/pokemon-showdown`). `scripts/bootstrap.sh`
+  in the pin fills it; the worker builds the pin's own release `rust_env` at start, and `core_events` is used from the
+  pin's `src/rust_sim/target/release/` when it exists (build it there first, so the replay is the pin's engine).
+- **Every worker step takes a heavy slot of its own, and `capture` / `behaviour` / `depth` take one PER CHECKPOINT.**
+  Measured on that run: 16 worker steps (2-30 s each; `play` 161 s) plus the 187 s HEAD-side `probe` were 3.5 minutes
+  of compute behind about 3 hours of queue, because each step re-queues at the back (7-20 minutes apiece beside a
+  live run, the short lane included). **Hold ONE slot for a whole command instead**: wrap the CLI call itself,
+  `scripts/ops/mem_cap.sh --name probebat-capture [--max-s 600] 24 python -m main.probe_battery capture …`; the worker
+  `mem_cap.sh` calls inside a holder take none (checked: the inner scope started with no slot of its own). A step of
+  at most ten minutes in total declares `--max-s` (the short lane, hard-killed at S + 30 s, exit 88 ⇒ re-run it
+  without); a full 25,000-row bank does not fit that and keeps the long lane in 40-minute chunks.
+- A bank this small ranks nearly everything `poor` with intervals that span zero: the pipeline is exercised, not the
+  question answered. The read of record stays `designs/research_state/measurements/probe_battery_2026-10-09/`.

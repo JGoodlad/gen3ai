@@ -53,6 +53,10 @@ the throwing guard; and both surfaces, `battle_turns` / the CLI `turns` on a tmp
 `analyze_invocation`). A mutation of each fix (status clause, stage hints, window precedence, the seat, `caused`,
 `also`, the guard, the forced-switch rule, netting, nickname-only actor) was run and each failed a test.
 
+`src/main/probe_battery/probe_battery_test.py` (pure) also pins the pre-queue checkout refusal
+(`bank.preflight_checkout`: an empty / unbuilt `deps/pokemon-showdown`, a wrong HEAD and a non-checkout are refused
+before the worker is spawned, so before any heavy-slot wait).
+
 `engine_test.py` (pure, FakeProbeModel + offset regression, + the loss-attribution
 taxonomy and the `fit_probe` stats as pure cases — decodable-vs-noise,
 regression, too-few-graceful), `session_test.py` (tmp_path traces for the agent

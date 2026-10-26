@@ -100,7 +100,47 @@ def worker_argv(checkout: Path, expect_commit: Optional[str], args: Sequence[str
     return head + list(args), env
 
 
+_PREFLIGHT_OK: set = set()
+
+
+def preflight_checkout(checkout: Path, expect_commit: Optional[str]) -> None:
+    """Refuse a checkout the worker cannot run in BEFORE the worker queues for a heavy slot.
+
+    The worker's own checks (`--expect-commit`, the team validator) fire only once it HOLDS a slot, and the slot
+    queue is 10-40 minutes long: on 2026-10-26 a `bank` on a pin worktree whose `deps/pokemon-showdown` was an
+    empty directory waited 38 minutes and then died in the team validator (`Cannot find module …/deps/
+    pokemon-showdown`). This reads the same facts from the filesystem (no git process, no slot). The worker keeps
+    its own checks: this is a fast refusal, not the authority."""
+    co = Path(checkout).resolve()
+    key = (str(co), expect_commit)
+    if key in _PREFLIGHT_OK:
+        return
+    problems: List[str] = []
+    if not (co / "src" / "main" / "probe_battery").is_dir() and not (co / "src" / "main" / "h2h").is_dir():
+        problems.append(f"{co} is not a gen3ai checkout (no src/main/h2h)")
+    ps = co / "deps" / "pokemon-showdown"
+    if not (ps / "package.json").is_file():
+        problems.append(f"{ps} is empty or missing — the team validator (Node, Showdown's own) cannot load it; "
+                        "`scripts/bootstrap.sh` in that checkout fills it")
+    elif not (ps / "dist").exists():
+        problems.append(f"{ps}/dist is missing (Showdown is not built there); `scripts/bootstrap.sh` links it")
+    if expect_commit:
+        try:
+            from main.probe_battery.pin_worker import _checkout_head
+
+            head = _checkout_head(co)
+        except Exception as e:  # noqa: BLE001 — an unreadable HEAD is itself the refusal
+            problems.append(f"cannot read {co}'s HEAD ({type(e).__name__}: {e})")
+        else:
+            if not head.startswith(expect_commit):
+                problems.append(f"{co} is at {head[:8]}, not --expect-commit {expect_commit}")
+    if problems:
+        raise BatteryError("REFUSED before queueing for a heavy slot:\n  - " + "\n  - ".join(problems))
+    _PREFLIGHT_OK.add(key)
+
+
 def run_worker(checkout: Path, expect_commit: Optional[str], args: Sequence[str], **kw: Any) -> Dict[str, Any]:
+    preflight_checkout(checkout, expect_commit)
     argv, env = worker_argv(checkout, expect_commit, args, **kw)
     print("[probe_battery] $ " + " ".join(shlex.quote(a) for a in argv), file=sys.stderr, flush=True)
     p = subprocess.run(argv, env=env, stdout=subprocess.PIPE, text=True, check=False)

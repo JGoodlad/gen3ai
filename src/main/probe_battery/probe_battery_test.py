@@ -110,6 +110,47 @@ def test_refuses_models_as_an_output(tmp_path, monkeypatch):
     B.refuse_models_output(tmp_path / "elsewhere")   # anything else is fine
 
 
+def _fake_checkout(tmp_path, *, deps="built", head="9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"):
+    """A directory shaped like a checkout as far as the worker's FILESYSTEM needs go: src/main/h2h, a detached
+    `.git/HEAD`, and `deps/pokemon-showdown` empty / unbuilt / built."""
+    co = tmp_path / "pin"
+    (co / "src" / "main" / "h2h").mkdir(parents=True)
+    (co / ".git").mkdir()
+    (co / ".git" / "HEAD").write_text(head + "\n")
+    ps = co / "deps" / "pokemon-showdown"
+    ps.mkdir(parents=True)
+    if deps in ("unbuilt", "built"):
+        (ps / "package.json").write_text("{}")
+    if deps == "built":
+        (ps / "dist").mkdir()
+    return co
+
+
+def test_a_checkout_the_worker_cannot_run_in_is_refused_before_any_heavy_slot_wait(tmp_path, monkeypatch):
+    """2026-10-26: a `bank` on a pin whose `deps/pokemon-showdown` was an EMPTY directory queued 38 minutes for a heavy
+    slot and then died in the team validator. The same facts are read from the filesystem first, so the refusal is
+    immediate, names the cause and spawns nothing."""
+    spawned = []
+    monkeypatch.setattr(B.subprocess, "run", lambda *a, **k: spawned.append(a) or None)
+    B._PREFLIGHT_OK.clear()
+    for deps, why in (("empty", "empty or missing"), ("unbuilt", "dist is missing")):
+        with pytest.raises(B.BatteryError, match=why):
+            B.run_worker(_fake_checkout(tmp_path / deps, deps=deps), "9c033489", ["archetypes"])
+    with pytest.raises(B.BatteryError, match="not --expect-commit"):
+        B.run_worker(_fake_checkout(tmp_path / "wrong", head="6c6d2e09" + "0" * 32), "9c033489", ["archetypes"])
+    with pytest.raises(B.BatteryError, match="not a gen3ai checkout"):
+        B.run_worker(tmp_path / "nowhere", None, ["archetypes"])
+    assert spawned == [], "a refused checkout must not reach the worker (and so never waits for a slot)"
+
+
+def test_a_usable_checkout_passes_the_preflight_once(tmp_path):
+    B._PREFLIGHT_OK.clear()
+    co = _fake_checkout(tmp_path)
+    B.preflight_checkout(co, "9c033489")
+    B.preflight_checkout(co, None)                        # no expectation: only the filesystem facts
+    assert (str(co.resolve()), "9c033489") in B._PREFLIGHT_OK
+
+
 def test_spec_parsing():
     assert parse_spec("L1=/a/b.zip") == ("L1", "/a/b.zip", None)
     assert parse_spec("Lr2=/a/b.zip@rand7") == ("Lr2", "/a/b.zip", 7)
