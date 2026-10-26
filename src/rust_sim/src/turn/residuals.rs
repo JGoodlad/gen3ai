@@ -681,6 +681,20 @@ impl crate::state::BattleState {
                     handler: ResidualAction::TwoTurnDuration { side, slot },
                 });
             }
+            // --- BIDE's `duration: 3` volatile (`gen3_b8_moves_v1`) — the same NO_ORDER/subOrder-2
+            //     duration group (no `onResidualOrder`, no `onResidual`): present on the cast-turn
+            //     and the wait-turn residuals (a bide + King's-Rock self-flinch mon ties itself:
+            //     one shuffle draw: the King's Rock Bide boards of the B8 probe, pinned by B8-7). ---
+            if mon.bide.is_some() {
+                handlers.push(EventHandler {
+                    order: NO_ORDER,
+                    priority: 0,
+                    speed,
+                    sub_order: VOLATILE_RESIDUAL_SUBORDER,
+                    effect_order: 0,
+                    handler: ResidualAction::BideDuration { side, slot },
+                });
+            }
             // --- The SEMI-INVULNERABLE sub-volatile's own `duration: 2` (`gen3_twoturn_family_v1`):
             //     Fly / Bounce / Dig / Dive's move-id volatile carries `condition.duration: 2`, so
             //     while it is up (the charge-turn residual; the strike-turn residual only when a
@@ -1185,6 +1199,28 @@ impl crate::state::BattleState {
                     // so `fieldEvent` runs the per-handler `faintMessages()` — draining a faint
                     // an earlier END handler deferred (the order-12 Perish `continue`) BEFORE
                     // `|upkeep|` (`gen3_duration_nonend_faint_drain_v1`). Fall through.
+                }
+                // BIDE's duration tick (`gen3_b8_moves_v1`): `fieldEvent('Residual')`'s
+                // `duration--; if (!duration) end()` for a callback-less duration handler. The end
+                // runs `bide.onEnd` → `|-end|<mon>|move: Bide|[silent]`.
+                ResidualAction::BideDuration { side, slot } => {
+                    let Some(mut b) = self.sides[side].pokemon[slot].bide else {
+                        continue;
+                    };
+                    if self.sides[side].pokemon[slot].fainted {
+                        continue;
+                    }
+                    b.duration = b.duration.saturating_sub(1);
+                    if b.duration == 0 {
+                        self.sides[side].pokemon[slot].bide = None;
+                        if self.logging() {
+                            let u = self.mon_ref(side, slot, dex);
+                            self.log.volatile_end_silent(&u, "move: Bide");
+                        }
+                        continue; // duration-END → skip faintMessages
+                    }
+                    self.sides[side].pokemon[slot].bide = Some(b);
+                    // NON-ending: falls through to the per-handler faintMessages.
                 }
                 // ROLLOUT's duration tick (`gen3_rollout_lock_duration_v1`): 2 -> 1 after a
                 // landed hit keeps the lock; 1 -> gone ends it (a miss, a Protect, a turn the
@@ -2339,7 +2375,12 @@ impl crate::state::BattleState {
             // live). Focus Band still rolls (its `randomChance(1,10)` draws on any Damage event).
             // DRAW-FREE (endure_clamp consumes no PRNG either way).
             let realized = self.focus_band_damage(side, slot, realized, true, true, dex);
+            let hp_before = self.sides[side].pokemon[slot].hp;
             self.apply_damage(side, slot, realized);
+            // BIDE stores the strike (a Move-effect Damage event, `gen3_b8_moves_v1`; probed: a
+            // Future Sight landing on a biding mon is released doubled).
+            let lost = hp_before.saturating_sub(self.sides[side].pokemon[slot].hp) as u32;
+            self.bide_store(side, slot, lost);
             if realized > 0 && self.logging() {
                 let t = self.mon_ref(side, slot, dex);
                 let hp = self.hp_status(side, slot);

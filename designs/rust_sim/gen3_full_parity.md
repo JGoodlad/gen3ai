@@ -31,11 +31,11 @@ cd harness && SCAN_UNIVERSE=1 node scan_move_coverage.js            # the 0-MISM
 `scan_move_probe` is the engine running, so its count cannot drift; the JS scan's universe verdict is a
 hand-mirrored copy of `turn.rs` and keeps only the invariant gate (`move_census.md`).
 
-## Summary (recounted 2026-10-26 after B7)
+## Summary (recounted 2026-10-26 after B8)
 
 | universe | gen3 ids | engine runs it | fails loud | how |
 |---|---:|---:|---:|---|
-| moves | 369 | **350** | **19** | `PROBE_KIND=move`; JS gate: 350 / 19 / **0 MISMODELED** |
+| moves | 369 | **359** | **10** | `PROBE_KIND=move`; JS gate: 359 / 10 / **0 MISMODELED** |
 | items | 106 | **106** | 0 | `PROBE_KIND=item` (B3 closed the last four) |
 | abilities | 76 | **76** | 0 | `PROBE_KIND=ability`; the handler audit dispositions every hook |
 | species | 392 | **392** | 0 | `PROBE_KIND=species` |
@@ -92,6 +92,7 @@ mod) are other mods with their own data. Every one of them is an `Err` at constr
 | M5 | Team Preview + picked team size (`gen31v1`) | not modeled, **refused** (B1) | — | a construction-phase extension, not scheduled |
 | M6 | the construction-time gender draw (`sample(['M','F'])`) | drawn on the raw-seed bridge path (`run_turn0_construction`); the post-construction-seed path (`start_with_switchins`, the goldens and fuzzers) cannot know a sampled gender, so Attract and Cute Charm PANIC on an unspecified one (fail-loud) and every harness pins genders | — | B9: resolved by design |
 | M7 | Endless Battle Clause staleness (Skill Swap's external `volatileStaleness`, restorative-berry cycling through Trick / Recycle) | **not modeled, silent** | the clause can never end a battle in the port; reaching it needs both actives stale past turn 100. Affects `gen3ou` too (rare) | B10 |
+| M8 | Psywave from a user below level 100 into a Substitute | **refused** at the hit (B8): Showdown takes the RAW `random(50, 151) * level / 100` float off the sub's HP (`data/mods/gen4/moves.ts` substitute), leaving a fractional sub HP the port does not hold; every fuzz mode that picks Psywave plays level 100 | — | B8: fail-loud by design |
 
 ## Implemented, and known to diverge
 
@@ -104,7 +105,7 @@ surface:
 | Custom Game's EV-balance `\|bigerror\|` (one side over 510 EVs) was not emitted | the B9 golden's 677-EV boards; `tests/ev_balance_test.rs` | fixed in B9 |
 | the random-universe fuzz (the 09-23 count was 95 divergences in 300 battles) | recounted after every batch; after BF only Rest under Uproar remained on BF's own branch, which B5 fixes | — |
 | RAGE (boost after `-damage`, per multi-hit strike and on fixed-damage hits; removed at any move attempt), FURY CUTTER (the multiplier doubles only on a hit), UPROAR's wake (at TryHit, before `-damage`), SMELLING SALTS (no cure on a KO'd target), FALSE SWIPE (the 0-delta `-damage` at 1 HP; Endure first), REST by an Insomnia / Vital Spirit user (fails in `onTry`, no gen3ou clause shuffle), the PURSUIT interrupt's last move, the DEFROST thaw (after BeforeMove), a FAINTED caster's ident (slot-less), LANSAT on a focused holder (no `-start`), a MIMIC'd Curse's request target | `tests/regression_test.rs` `bf1`-`bf11`, `harness/probe_bf_classes.js` | fixed in BF |
-| found by the merged-tree fuzz and the B8 agent: OWN TEMPO / OBLIVIOUS gained through Skill Swap cure the confusion / infatuation at the next Update; a LOAFING Truant user's Pursuit lays no volatile (no interrupt, no residual handler); SYNCHRONIZE into a Safeguard announces `-activate`; a MULTI-HIT move stops when its user falls asleep (Effect Spore) or faints (Rough Skin) | `tests/regression_test.rs` `bf12`-`bf16`, `harness/probe_bf_classes.js` | fixed in BF |
+| found by the merged-tree fuzz and the B8 agent: OWN TEMPO / OBLIVIOUS gained through Skill Swap cure the confusion / infatuation at the next Update; a LOAFING Truant user's Pursuit lays no volatile (no interrupt, no residual handler); SYNCHRONIZE into a Safeguard announces `-activate`; a MULTI-HIT move stops when its user falls asleep (Effect Spore) or faints (Rough Skin); LOCK-ON before an OHKO move skips the roll (the level check too against a locked semi-invulnerable target), the B7 × B8 merge | `tests/regression_test.rs` `bf12`-`bf17`, `harness/probe_bf_classes.js` | fixed in BF (`bf17` with B8) |
 | a Snatch steal does not set the snatcher's last-used move (a later Conversion 2 reads it); the Hidden Power belief tracker ignores Foresight; Bitter Berry (gen-2 `Past`) cures confusion in an unvalidated Custom Game but is inert in the port | the B6 agent | open |
 | the timed side conditions (Reflect, Light Screen, Safeguard) were gathered for the residual in a FIXED order with Safeguard / Light Screen after the lock-in volatiles; the sim walks `side.sideConditions` in insertion order, which decides a tie's `-sideend` order | the B7 Mist + screens golden board (`mi_screens_b`) | fixed in B7 |
 
@@ -129,7 +130,7 @@ The downloads and scripts were a one-off measurement in a scratch directory, not
 by fetching `https://www.smogon.com/stats/<YYYY-MM>/chaos/<tier>-0.json` for the months listed per tier
 in the index pages and applying the formula above.
 
-## The ranked gap: 19 moves
+## The ranked gap: 10 moves
 
 Usage columns are percentages of fielded mons (ladder) or of battles (replays). Risk: **S** reuses
 existing machinery; **M** adds a self-contained volatile or mechanic; **L** crosses many mechanics (a
@@ -141,22 +142,16 @@ calls arbitrary moves).
 | metronome | move-caller | 0.062 | 0.054 | 0.055 | 1v1 0.22 | 0.224 | 55 | L | B11 |
 | assist | move-caller | 0.015 | 0.000 | 0.022 | ru 0.07 | 0.010 | 10 | L | B11 |
 | mirrormove | move-caller | 0.006 | 0.001 | 0.006 | lc 0.01 | 0.013 | 19 | L | B11 |
-| bide | variable damage | 0.005 | 0.001 | 0.004 | 1v1 0.03 | 0.003 | 20 | M | B8 |
-| magnitude | variable BP | 0.005 | 0.001 | 0.003 | ru 0.02 | 0.005 | 15 | M | B8 |
 | camouflage | type change | 0.003 | 0.000 | 0.003 | 1v1 0.03 | 0.000 | 3 | S | B10 |
-| triplekick | variable BP | 0.002 | 0.000 | 0.002 | 1v1 0.01 | 0.010 | 2 | M | B8 |
-| psywave | variable damage | 0.002 | 0.001 | 0.002 | pu 0.01 | 0.003 | 14 | M | B8 |
 | followme | redirect | 0.001 | 0.000 | 0.001 | uu 0.01 | 0.000 | 13 | S | B10 |
 | teleport | escape | 0.001 | 0.000 | 0.001 | lc 0.00 | 0.000 | 11 | S | B10 |
 | roleplay | ability copy | 0.001 | 0.000 | 0.001 | uu 0.01 | 0.000 | 8 | M | B10 |
-| present | variable BP | 0.001 | 0.000 | 0.001 | uu 0.00 | 0.013 | 20 | M | B8 |
 | sketch | move-caller | 0.000 | 0.001 | 0.000 | 1v1 0.00 | 0.003 | 1 | L | B11 |
 | helpinghand | ally boost | 0.000 | 0.000 | 0.000 | uu 0.00 | 0.000 | 56 | S | B10 |
 | naturepower | move-caller | 0.000 | 0.000 | 0.000 | uubl 0.00 | 0.003 | 14 | L | B11 |
-| sheercold / fissure / guillotine / horndrill | OHKO | 0.000 | 0.000 | 0.000 | ubers 0.00 | ≤ 0.013 | 7–15 | M | B8 |
 
-The OHKO moves are banned by the OHKO Clause in every Standard tier, so their ladder usage is zero by
-construction; they are legal in Custom Game.
+A batch's moves leave this table once modeled (B8's nine included the four OHKO moves, which the OHKO Clause bans
+from every Standard tier).
 
 ## The batch plan
 
@@ -177,7 +172,7 @@ commit.
 | B5 | Spite, Grudge, Snore, Nightmare, Ingrain; Rest under Uproar fails | shipped |
 | B6 | Swagger, Flatter, Foresight, Odor Sleuth, Magic Coat | shipped |
 | B7 | Stockpile, Spit Up, Swallow, Mud Sport, Water Sport, Mist, Lock-On, Mind Reader | shipped |
-| B8 | Bide, Magnitude, Psywave, Present, Triple Kick, the four OHKO moves | open |
+| B8 | Bide, Magnitude, Psywave, Present, Triple Kick, the four OHKO moves | shipped |
 | B9 | Attract (M6 resolved by design: harnesses pin genders); the Custom Game EV-balance warning | shipped |
 | B10 | Teleport, Follow Me, Helping Hand, Role Play, Camouflage, Endless Battle Clause staleness (M7) | open |
 | B11 | Metronome, Mirror Move, Assist, Nature Power, Sketch | open |

@@ -261,6 +261,8 @@ impl MoveData {
         self.category == MoveCategory::Status
             && !self.is_fixed_damage()
             && !self.is_variable_bp()
+            // Magnitude / Present (`gen3_b8_moves_v1`): BP drawn in `onModifyMove`, Physical.
+            && !matches!(self.id.as_str(), "magnitude" | "present")
             && !self.id.starts_with("hiddenpower")
     }
 
@@ -271,7 +273,7 @@ impl MoveData {
         matches!(
             self.id.as_str(),
             "seismictoss" | "nightshade" | "sonicboom" | "dragonrage" | "superfang"
-                | "psywave" | "fissure" | "horndrill" | "guillotine"
+                | "psywave" | "fissure" | "horndrill" | "guillotine" | "sheercold"
                 | "counter" | "mirrorcoat" | "bide" | "endeavor"
         )
     }

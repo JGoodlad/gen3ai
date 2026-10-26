@@ -46,6 +46,8 @@ impl crate::state::BattleState {
         // Pursuit run inside a switch) gets its own, and the caller's resumes after it.
         let outer = std::mem::replace(&mut self.move_total_damage, (0, None));
         let res = self.run_move_body(action, will_act, foe_will_move, dex);
+        // A Magnitude `onUseMoveMessage` is consumed by its own announce; never let one leak.
+        self.log.clear_use_move_message();
         let total = std::mem::replace(&mut self.move_total_damage, outer);
         self.shell_bell(action.side, action.slot, total, dex);
         res
@@ -75,9 +77,11 @@ impl crate::state::BattleState {
     /// The move's damage, recorded for `move.totalDamage` (SHELL BELL's basis): the HP the
     /// strike actually took off the target mon. Called right after each foe `apply_damage` of a
     /// move strike (the main hit, a multi-hit strike, a Beat Up strike, a fixed-damage hit).
-    fn record_move_damage(&mut self, foe: usize, foe_slot: usize, hp_before: u16) {
+    /// The same HP feeds BIDE's damage store (`gen3_b8_moves_v1`, [`Self::bide_store`]).
+    pub(crate) fn record_move_damage(&mut self, foe: usize, foe_slot: usize, hp_before: u16) {
         let lost = hp_before.saturating_sub(self.sides[foe].pokemon[foe_slot].hp) as u32;
         self.move_total_damage = (self.move_total_damage.0 + lost, Some((foe, foe_slot)));
+        self.bide_store(foe, foe_slot, lost);
     }
 
     /// SHELL BELL (`gen3_items_b3_v1`): `shellbell.onAfterMoveSecondarySelf` (`data/items.ts`,
@@ -562,6 +566,9 @@ impl crate::state::BattleState {
             // move LOSES its charge (`twoturnmove.onMoveAborted`, `gen3_twoturn_family_v1` —
             // probed: an imprisoned Skull Bash strike turn ends with no volatiles).
             self.sides[side].pokemon[slot].two_turn = None;
+            // …and a biding mon's Bide ends (`bide.onMoveAborted`, `gen3_b8_moves_v1`; probed
+            // `|cant|<u>|move: Imprison|Bide` then `|-end|<u>|move: Bide|[silent]`).
+            self.bide_end_on_abort(side, slot, dex);
             return MoveResolution::done(false, false, false);
         }
 
@@ -587,8 +594,11 @@ impl crate::state::BattleState {
         // (`gen3_taunt_disable_v1`): a derived-Status move that is NOT a fixed-damage move
         // (Seismic Toss etc. are bp-0 but a non-Status Showdown category, so Taunt does not
         // block them — VERIFIED vs the sim). Struggle is physical so this is false anyway.
-        let is_status_move =
-            category == MoveCategory::Status && !is_fixed_damage_move(&move_id);
+        // MAGNITUDE / PRESENT (`gen3_b8_moves_v1`) draw their BP after this gate, so their bp-0
+        // data row still reads Status here; their resolved category is Physical.
+        let is_status_move = category == MoveCategory::Status
+            && !is_fixed_damage_move(&move_id)
+            && !super::variable_moves::is_random_bp_move(&move_id);
         if !self.on_before_move(side, slot, move_index, is_status_move, struggle, dex) {
             // The move was cancelled (full-para / still-asleep / frozen-no-thaw /
             // flinched / confusion self-hit / DISABLED move / TAUNTED status move). Like a
@@ -614,6 +624,10 @@ impl crate::state::BattleState {
             // volatile's own `onMoveAborted` (any move != charge) is consumed by the
             // CALLER (turn_loop's post-run_move consumption — the abort path included).
             self.sides[side].pokemon[slot].destiny_bond = false;
+            // BIDE's `onMoveAborted` (`gen3_b8_moves_v1`): any cant on a locked Bide turn removes
+            // the volatile — `|-end|<u>|move: Bide|[silent]` after the cant (probed: sleep, full
+            // paralysis, a confusion self-hit, Disable).
+            self.bide_end_on_abort(side, slot, dex);
             // ABORTED (cant) — the sim runs `MoveAborted` and returns BEFORE `AfterMove`, so
             // the caller must SKIP the `onAnyAfterMove` White Herb restore this move.
             return MoveResolution::aborted();
@@ -647,6 +661,14 @@ impl crate::state::BattleState {
         //     user splashed then was KO'd the same turn → NO mutual faint). DRAW-FREE. ---
         if move_id != "destinybond" {
             self.sides[side].pokemon[slot].destiny_bond = false;
+        }
+
+        // --- BIDE's locked turns (`gen3_b8_moves_v1`): the condition's `onBeforeMove` (priority
+        //     0 — after every cant above; Destiny Bond's −1 already cleared the window) prints the
+        //     wait `-activate` or runs the release, and `runMove` ends there either way (no PP, no
+        //     lastMove). See `variable_moves.rs`. ---
+        if self.sides[side].pokemon[slot].bide.is_some() {
+            return self.bide_before_move(side, slot, dex);
         }
 
         // --- `cant … nopp` (`gen3_b5_moves_v1`; `sim/battle-actions.ts` runMove: `if
@@ -743,6 +765,34 @@ impl crate::state::BattleState {
         // the Mimic success block re-sets it TRUE after it overlays its own slot.
         self.sides[side].pokemon[slot].last_move_was_self_overwrite = false;
         } // end `if !pursuit_strike && !sleep_talk_call` (on_before_move + PP + lastMove)
+
+        // --- MAGNITUDE / PRESENT `onModifyMove` (`gen3_b8_moves_v1`): the draw runs in
+        //     `useMoveInner` (`data/mods/gen3/scripts.ts:145`) after BeforeMove and the PP
+        //     deduction and BEFORE the `|move|` announce — so a miss, a Protect, an immunity or a
+        //     semi-invulnerable target still consumed it (probed). Magnitude: one `random(100)` →
+        //     (magnitude, BP) and its `onUseMoveMessage` line after the announce; Present: one
+        //     `random(10)` → BP 40 / 80 / 120, or the HEAL branch (`present_heal`). The category is
+        //     re-derived from the drawn BP (both are physical by type). A Sleep-Talk-called use
+        //     draws here too (its own `useMove`). ---
+        let mut present_heal = false;
+        let (base_power, category) = match move_id.as_str() {
+            "magnitude" => {
+                let (mag, bp) = self.magnitude_roll();
+                if self.logging() {
+                    let u = self.mon_ref(side, slot, dex);
+                    self.log.set_magnitude_message(&u, mag);
+                }
+                (bp, crate::dex::moves::derive_category(3, bp, move_type))
+            }
+            "present" => match self.present_roll() {
+                Some(bp) => (bp, crate::dex::moves::derive_category(3, bp, move_type)),
+                None => {
+                    present_heal = true;
+                    (base_power, category)
+                }
+            },
+            _ => (base_power, category),
+        };
 
         // --- FOCUS PUNCH onTry cancel (`gen3_move_coverage_batch4_v1`,
         //     `focuspunch.move.onTry`): fires at the `singleEvent('Try')` step INSIDE
@@ -929,6 +979,15 @@ impl crate::state::BattleState {
         //     secondary. The DEFERRED fixed-damage set (Psywave / the OHKO moves / Counter /
         //     Mirror Coat / Bide / Endeavor) is routed here too but has NO `fixed_damage_amount`
         //     entry, so `run_fixed_damage_move` PANICS fail-loud rather than silently desync. ---
+        // --- BIDE's CAST and PRESENT's HEAL branch (`gen3_b8_moves_v1`, `variable_moves.rs`):
+        //     both carry a bp-0 data row, so they are routed before the fixed-damage and status
+        //     branches. ---
+        if move_id == "bide" {
+            return self.run_bide_cast(side, slot, move_index, &move_name, dex);
+        }
+        if present_heal {
+            return self.run_present_heal(side, slot, foe, foe_slot, accuracy, &move_name, dex);
+        }
         if is_fixed_damage_move(&move_id) {
             return self.run_fixed_damage_move(
                 side, slot, foe, foe_slot, accuracy, never_miss, move_type, &move_id,
@@ -1513,8 +1572,8 @@ impl crate::state::BattleState {
         }
 
         // --- MULTI-STRIKE moves (`gen3_move_coverage_batch7_v1`) — Double Kick / Twineedle /
-        //     Bonemerang (fixed 2), Triple Kick (fixed 3, multiaccuracy → FAIL-LOUD in
-        //     `run_multihit`), and the variable [2,5] family (Pin Missile / Bullet Seed / Icicle
+        //     Bonemerang (fixed 2), Triple Kick (fixed 3, multiaccuracy — the per-strike accuracy
+        //     re-roll and 10/20/30 BP in `run_multihit`, `gen3_b8_moves_v1`), and the variable [2,5] family (Pin Missile / Bullet Seed / Icicle
         //     Spear / Rock Blast / Barrage / Comet Punch / Double Slap / Spike Cannon / Arm
         //     Thrust / Fury Attack / Fury Swipes / Bone Rush). Routed here (like Beat Up) AFTER
         //     the shared accuracy + immunity/protect checks, BEFORE the single-hit block: each
@@ -1530,7 +1589,7 @@ impl crate::state::BattleState {
             return self.run_multihit(
                 side, slot, foe, foe_slot, ctx, move_type, category, move_index, crit_ratio,
                 &move_id, &move_name, is_contact, is_fire, suppress_announce, mh, multiaccuracy,
-                dex,
+                accuracy, dex,
             );
         }
 
@@ -2566,9 +2625,11 @@ impl crate::state::BattleState {
     ///     `targets.every(!hp)` guard at the top of each iteration); a KO on the last landing
     ///     strike defers the Quick Claw (the deferred-faint protocol).
     /// Emits `|move|` once + per-strike effectiveness/`-crit`/`-damage` + `|-hitcount|N`.
-    /// TRIPLE KICK (multiaccuracy) — the ONLY gen3 carrier — re-rolls accuracy per strike AND
-    /// escalates BP per strike; it FAIL-LOUDS here rather than silently mismodel (no gen3ou team
-    /// carries it, and the picker never admits it).
+    /// TRIPLE KICK (`gen3_b8_moves_v1`; `multiaccuracy`, the ONLY gen3 carrier, pinned by
+    /// `tests/b8_moves_test.rs`): every strike after the first RE-ROLLS accuracy at its top
+    /// (`data/mods/gen3/scripts.ts:414-439`: the stage fold, `ModifyAccuracy`, `Accuracy`, then
+    /// `randomChance`) and a failed re-roll ENDS the sequence with no line (`-hitcount` counts the
+    /// strikes that landed); the BP is `basePowerCallback` `10 * move.hit` — 10 / 20 / 30.
     #[allow(clippy::too_many_arguments)]
     fn run_multihit(
         &mut self,
@@ -2588,12 +2649,14 @@ impl crate::state::BattleState {
         suppress_announce: bool,
         mh: MultiHit,
         multiaccuracy: bool,
+        accuracy: u16,
         dex: &Dex,
     ) -> MoveResolution {
+        // The only gen-3 `multiaccuracy` move is Triple Kick, whose BP callback is `10 * move.hit`;
+        // any other carrier would need its own callback — fail loud rather than guess one.
         assert!(
-            !multiaccuracy,
-            "run_multihit: multiaccuracy move ({move_id}) is unmodeled (per-strike accuracy \
-             re-roll + escalating BP — Triple Kick) — fail-loud rather than silently desync"
+            !multiaccuracy || move_id == "triplekick",
+            "run_multihit: multiaccuracy move ({move_id}) other than Triple Kick is unmodeled"
         );
 
         // [EMIT] the move announce `|move|<user>|<Name>|<foe>` ONCE, before the strikes. A
@@ -2634,7 +2697,7 @@ impl crate::state::BattleState {
         // true and its sleep guard never fires.
         let sleep_usable = matches!(self.sides[side].pokemon[slot].status, Some(Status::Sleep(_)));
         let mut hits = 0u32;
-        for _ in 0..count {
+        for strike in 0..count {
             // STOP if the target already fainted (a prior strike KO'd it, OR the target entered
             // at 0 HP) — the sim's `targets.every(!hp)` guard at the top of each iteration.
             if self.sides[foe].pokemon[foe_slot].hp == 0 {
@@ -2651,6 +2714,16 @@ impl crate::state::BattleState {
             {
                 break;
             }
+            // TRIPLE KICK's per-strike accuracy re-roll (`multiaccuracy && i > 0`), BEFORE the
+            // strike's crit / damage draws; a miss ends the move silently.
+            if multiaccuracy
+                && strike > 0
+                && !self.roll_accuracy(side, slot, foe, foe_slot, accuracy, false, move_type, dex)
+            {
+                break;
+            }
+            // TRIPLE KICK's `basePowerCallback`: `10 * move.hit` (move.hit = strike + 1).
+            let strike_bp = if multiaccuracy { 10 * (strike as u16 + 1) } else { ctx.mv.base_power };
 
             // Per-strike EFFECTIVENESS — read from the LIVE defender types (a mid-multihit Color
             // Change re-types later strikes). Emitted BEFORE `-crit`, per the sim's per-hit order.
@@ -2691,7 +2764,7 @@ impl crate::state::BattleState {
                 slot,
                 foe,
                 foe_slot,
-                ctx.mv.base_power,
+                strike_bp,
                 move_type,
                 category,
                 ctx.mv.halves_defense,
@@ -3002,12 +3075,11 @@ impl crate::state::BattleState {
     /// returns a truthy damage number, so `tryMoveHit`'s `if (!damage && damage !== 0)
     /// return` does NOT short-circuit); FALSE on a miss / immune / block.
     ///
-    /// FAIL-LOUD: the DEFERRED fixed-damage family (Psywave / Fissure / Horn Drill /
-    /// Guillotine / Bide) is routed here by `is_fixed_damage_move` but has NO
-    /// `fixed_damage_amount` entry, so this PANICS rather than silently no-op (they
-    /// need extra RNG or reactive/OHKO machinery). Counter / Mirror Coat / Endeavor
-    /// are MODELED since `gen3_move_coverage_batch5_v1` (the onTry gates below + the
-    /// reactive-volatile `fixed_damage_amount` arms).
+    /// Counter / Mirror Coat / Endeavor are MODELED since `gen3_move_coverage_batch5_v1` (the
+    /// onTry gates below + the reactive-volatile `fixed_damage_amount` arms); Psywave and the four
+    /// OHKO moves since `gen3_b8_moves_v1` (the amount computed at the hit; the OHKO accuracy and
+    /// Sturdy gates below; the tail is `variable_moves.rs` `apply_fixed_hit`). A member of
+    /// `is_fixed_damage_move` with no formula still PANICS rather than silently no-op.
     #[allow(clippy::too_many_arguments)]
     fn run_fixed_damage_move(
         &mut self,
@@ -3064,23 +3136,25 @@ impl crate::state::BattleState {
             return MoveResolution::done(false, false, false);
         }
 
-        // FAIL-LOUD: only the modeled fixed-damage set has a formula. A DEFERRED
-        // fixed-damage move (Psywave / OHKO / Bide) reaches here via
-        // `is_fixed_damage_move` but has no amount → PANIC (never a silent desync —
-        // these draw an unmodeled number/order or need accumulator machinery).
-        let amount = match fixed_damage_amount(
+        // PSYWAVE and the OHKO moves (`gen3_b8_moves_v1`) compute their amount at the hit, after
+        // the accuracy roll and the TryHit gates (Psywave's `random(50, 151)` runs inside
+        // `getDamage`; an OHKO deals the target's CURRENT HP). Bide never reaches here (its cast
+        // and release are `variable_moves.rs`).
+        let psywave = move_id == "psywave";
+        let ohko = super::variable_moves::is_ohko_move(move_id);
+        // FAIL-LOUD: only the modeled fixed-damage set has a formula — a member of
+        // `is_fixed_damage_move` without one PANICS (never a silent desync).
+        let classic_amount = fixed_damage_amount(
             move_id,
             &self.sides[side].pokemon[slot],
             &self.sides[foe].pokemon[foe_slot],
-        ) {
-            Some(a) => a,
-            None => panic!(
+        );
+        if classic_amount.is_none() && !psywave && !ohko {
+            panic!(
                 "unmodeled FIXED-DAMAGE move {move_id:?} routed to run_fixed_damage_move — \
-                 Psywave (variable RNG) / the OHKO moves (Fissure/Horn Drill/Guillotine) / \
-                 Bide (a 2-turn accumulator) are DEFERRED. Model it bit-for-bit or keep it \
-                 off the pickable set — do NOT let it silently no-op."
-            ),
-        };
+                 model it bit-for-bit or keep it off the pickable set — do NOT let it silently no-op."
+            );
+        }
 
         // --- 1. ACCURACY: random(100) < effAcc (acc/eva stages + accMod folded via
         //     `roll_accuracy`), drawn unless never_miss. Drawn NOW (draw-order parity) but
@@ -3101,8 +3175,37 @@ impl crate::state::BattleState {
             return MoveResolution::done(true, false, false);
         }
 
-        let acc_hit =
-            self.roll_accuracy(side, slot, foe, foe_slot, accuracy, never_miss, move_type, dex);
+        // --- The OHKO ACCURACY (`gen3_b8_moves_v1`, `data/mods/gen3/scripts.ts:346-361`): a user
+        //     below the target's level gets `|-immune|<target>|[ohko]` with NO draw — before
+        //     Protect, Wonder Guard and the natural-immunity report (a Ghost / Flying / Levitate
+        //     target shows the `[ohko]` form too, probed); else `randomChance(30 + level gap, 100)`
+        //     with the stages and every `ModifyAccuracy` holder ignored (one draw even at 100+). ---
+        //     LOCK-ON / MIND READER (`gen3_bf_lockon_ohko_v1`, the B7 x B8 merge; probe
+        //     `harness/probe_bf_classes.js` BF17): the user's `lockon` answers the `Accuracy` event
+        //     that follows (`onSourceAccuracy` -> true), so a locked OHKO draws no roll; the level
+        //     check still runs first (a lower-level user stays `-immune|[ohko]`), EXCEPT against a
+        //     semi-invulnerable target, which the sim's `if (!target.isSemiInvulnerable())` skips
+        //     (only a locked user reaches here against one: `semi_invulnerable_miss` above). ---
+        let locked = self.lock_on_holds(side, slot, foe, foe_slot);
+        let acc_hit = if ohko && locked && self.sides[foe].pokemon[foe_slot].semi_invulnerable().is_some() {
+            true
+        } else if ohko {
+            match self.ohko_accuracy(side, slot, foe, foe_slot) {
+                Some(_) if locked => true,
+                Some(acc) => (self.prng.random_below(100)) < acc,
+                None => {
+                    if self.logging() {
+                        let user = self.mon_ref(side, slot, dex);
+                        let target = self.mon_ref(foe, foe_slot, dex);
+                        self.log.move_used(&user, move_name, Some(&target), false, false);
+                        self.log.immune_ohko(&target);
+                    }
+                    return MoveResolution::done(false, false, false);
+                }
+            }
+        } else {
+            self.roll_accuracy(side, slot, foe, foe_slot, accuracy, never_miss, move_type, dex)
+        };
 
         // --- PROTECT BLOCK (foe side): if the accuracy roll PASSED and the foe is
         //     `protected` and this move TARGETS the foe, the move is BLOCKED at the
@@ -3160,6 +3263,20 @@ impl crate::state::BattleState {
             }
         }
 
+        // --- STURDY vs an OHKO move (`gen3_b8_moves_v1`; base `data/abilities.ts` sturdy
+        //     `onTryHit`, the gen-4 mod only drops its `onDamage`): `|-immune|<t>|[from] ability:
+        //     Sturdy` and `return null` at TryHit — after the accuracy roll, before the natural
+        //     immunity report. ---
+        if acc_hit && ohko && to_id(&self.sides[foe].pokemon[foe_slot].ability) == "sturdy" {
+            if self.logging() {
+                let user = self.mon_ref(side, slot, dex);
+                let target = self.mon_ref(foe, foe_slot, dex);
+                self.log.move_used(&user, move_name, Some(&target), false, false);
+                self.log.immune_from_ability(&target, "Sturdy");
+            }
+            return MoveResolution::done(false, false, false);
+        }
+
         // --- IMMUNITY short-circuit: a type-chart 0× (Fighting→Ghost, Ghost→Normal,
         //     Normal→Ghost) or an ability immunity. Build a DamageContext (no PRNG) purely
         //     to reuse `move_is_immune` — the base_power/category are placeholders (a
@@ -3207,106 +3324,22 @@ impl crate::state::BattleState {
             self.log.move_used(&user, move_name, Some(&target), false, false);
         }
 
+        // --- The AMOUNT: the classic formula, Psywave's draw (`variable_moves.rs`), or an OHKO's
+        //     target HP (`getDamage`: `if (move.ohko) return gen === 3 ? target.hp : …`,
+        //     `sim/battle-actions.ts:1610` — the MON's HP, also against a Substitute). ---
+        let amount = if psywave {
+            let into_sub = self.sides[foe].pokemon[foe_slot].substitute.is_some();
+            self.psywave_damage(side, slot, into_sub)
+        } else if ohko {
+            self.sides[foe].pokemon[foe_slot].hp
+        } else {
+            classic_amount.expect("checked above")
+        };
         // --- APPLY the FIXED amount through the sub-absorb / faint machinery (identical
-        //     to the damaging path). NO crit, NO damage roll — `amount` is the exact fixed
-        //     value. A sub takes the number (breaks with no carry); else the mon takes it
-        //     (fainting at 0 via the deferred-faint protocol). A fixed-damage move has NO
-        //     secondary, so nothing follows the apply. ---
-        let sub = self.absorb_into_sub(foe, foe_slot, amount);
-        let absorbed = sub != SubAbsorb::NoSub;
-        if !absorbed {
-            // ENDURE clamps a FIXED-damage Move hit too (`gen3_move_coverage_batch6_v1`
-            // — probe ED6: a lethal Seismic Toss into an endurer leaves it at 1 HP;
-            // endure −10 precedes Focus Band's −40). DRAW-FREE.
-            let amount = self.endure_clamp(foe, foe_slot, amount, dex);
-            // FOCUS BAND: a fixed-damage move is a MOVE-effect Damage event — the roll
-            // draws and a lethal Seismic Toss can be survived at 1. `gen3_ability_batch4_v1`.
-            let pre_hp = self.sides[foe].pokemon[foe_slot].hp;
-            let amount = self.focus_band_damage(foe, foe_slot, amount, true, true, dex);
-            self.apply_damage(foe, foe_slot, amount);
-            self.record_move_damage(foe, foe_slot, pre_hp);
-            // DESTINY BOND trigger record (`gen3_move_coverage_batch6_v1`): a
-            // fixed-damage foe Move KO — incl. a Counter/Mirror-Coat RETURN (a foe
-            // Move) — with the DB volatile up marks the pending mutual faint. DRAW-FREE.
-            if self.sides[foe].pokemon[foe_slot].hp == 0
-                && self.sides[foe].pokemon[foe_slot].destiny_bond
-            {
-                self.sides[foe].pokemon[foe_slot].destiny_bond_ko_by = Some(side);
-            }
-            // GRUDGE trigger record (`gen3_b5_moves_v1`): the same foe-Move KO gate (the chain runs
-            // in `process_faints`, after the corpse's `|faint|`). DRAW-FREE.
-            if self.sides[foe].pokemon[foe_slot].hp == 0 && self.sides[foe].pokemon[foe_slot].grudge {
-                self.sides[foe].pokemon[foe_slot].grudge_ko_by = Some(side);
-            }
-            // COUNTER / MIRROR COAT recorder (`gen3_move_coverage_batch5_v1`): a
-            // fixed-damage foe hit IS a Move-effect Damage event — Seismic Toss
-            // (Fighting → Physical) arms Counter for 2×100 (probed CS), Dragon Rage
-            // (Dragon → Special) would arm Mirror Coat. The gen3 category is the
-            // TYPE-derived one (`derive_category` with a nonzero bp forces the type
-            // branch); `dealt` = the post-Focus-Band applied amount, clamped.
-            let dealt = amount.min(pre_hp);
-            let cat = crate::dex::moves::derive_category(3, 1, move_type);
-            self.record_reactive_hit(foe, foe_slot, cat, move_id, dealt);
-            // FOCUS PUNCH lostFocus (`gen3_move_coverage_batch4_v1`,
-            // `focuspunch.condition.onHit`): a FIXED-DAMAGE hit is a NON-Status move
-            // that HIT the FP user DIRECTLY, so it cancels a queued Focus Punch exactly
-            // like the normal damaging path (SIM-VERIFIED by the batch-5 e2e admission
-            // itself — e2e_202 dec44: a Blissey Seismic Toss into a Focus-Punch
-            // Dragonite → `|cant|…|Focus Punch`; the port's missing set let the punch
-            // land, KO'ing the Blissey — a LATENT gap unreachable while the
-            // fixed-damage family was blocklist-shadowed out of the e2e). DRAW-FREE.
-            if let Some(fp) = self.sides[foe].pokemon[foe_slot].focus_punch.as_mut() {
-                *fp = true;
-            }
-            // [EMIT] `|-damage|<foe>|<HP>` with the POST-damage HP. The modeled fixed-
-            // damage moves always deal >= 1 to a non-immune target, so the emit fires.
-            if amount > 0 && self.logging() {
-                let target = self.mon_ref(foe, foe_slot, dex);
-                let hp = self.hp_status(foe, foe_slot);
-                self.log.damage(&target, &hp, None);
-            }
-            // RAGE reacts to a fixed-damage hit too: Seismic Toss / Night Shade / Counter … are
-            // Physical / Special, so `runEvent('Hit')` boosts the holder (`gen3_bf_rage_v1`).
-            self.rage_on_hit(foe, foe_slot, dex);
-        } else if self.logging() {
-            // [EMIT] the SUBSTITUTE result (INSTEAD of `-damage`): a survived absorb shows
-            // `|-activate|<foe>|Substitute|[damage]`, a broken sub `|-end|<foe>|Substitute`.
-            let target = self.mon_ref(foe, foe_slot, dex);
-            match sub {
-                SubAbsorb::Held => self.log.activate(&target, "Substitute", Some("[damage]")),
-                SubAbsorb::Broke => self.log.volatile_end(&target, "Substitute"),
-                SubAbsorb::NoSub => unreachable!(),
-            }
-        }
-
-        // --- KING'S ROCK on a fixed-damage LISTED move (Seismic Toss — probed: the
-        //     appended secondary rolls right after the damage apply, `random(100,)` with
-        //     no crit/randomizer preceding it) + COLOR CHANGE (a fixed-damage move has a
-        //     real move TYPE for the override). Same DamagingHit-region ordering as the
-        //     damaging path. `gen3_ability_batch4_v1`. ---
-        self.apply_kings_rock_secondary(side, slot, foe, foe_slot, move_id, absorbed, dex);
-        // --- CONTACT_PROC (+ Rough Skin recoil) on a CONTACT fixed-damage hit
-        //     (`gen3_ability_batch2_v1` × the fixed-damage family — Seismic Toss /
-        //     Super Fang / Counter / Endeavor carry `flags.contact`; Night Shade /
-        //     Sonic Boom / Dragon Rage / Mirror Coat do NOT): the DEFENDER's
-        //     `onDamagingHit` fires for a fixed-damage hit exactly like the normal
-        //     damaging path (AFTER the appended King's Rock secondary, NOT behind a
-        //     sub). THE e2e_7 FIX (`gen3_move_coverage_batch6_v1` regen): the sim
-        //     rolled Effect Spore's `randomChance(1,10)` after a Seismic Toss into
-        //     Breloom (mods/gen3/abilities.js onDamagingHit) while the port drew
-        //     nothing — a LATENT batch-5-era gap (fixed damage was only e2e-admitted
-        //     in batch 5, and no ST-into-a-contact-proc-holder board was sampled until
-        //     the batch-6 corpus reshuffle). Pin MC99. ---
-        //     PHASE: `All` — no fire-thaw precedes this tail (no modeled fixed-damage move is
-        //     Fire-typed), so there is no un-ordered handler for an ORDERED one to sort against
-        //     and the `gen3_damaging_hit_order_v1` split is moot here.
-        let is_contact = dex.moves(move_id).map(|m| m.contact).unwrap_or(false);
-        if is_contact && !absorbed && amount > 0 {
-            self.apply_contact_proc(side, slot, foe, foe_slot, DamagingHitPhase::All, dex);
-        }
-        if !absorbed && amount > 0 {
-            self.apply_color_change(foe, foe_slot, move_type, dex);
-        }
+        //     to the damaging path), then the King's Rock / contact-proc / Color Change tail
+        //     (`variable_moves.rs` `apply_fixed_hit`). NO crit, NO damage roll. ---
+        let kind = if ohko { super::variable_moves::FixedHit::Ohko } else { super::variable_moves::FixedHit::Normal };
+        self.apply_fixed_hit(side, slot, foe, foe_slot, amount, move_type, move_id, kind, dex);
 
         // The move landed (a sub hit STILL fires the in-tryMoveHit Update). NO crit.
         MoveResolution::done(false, false, true)
@@ -3897,7 +3930,7 @@ impl crate::state::BattleState {
     /// type-item / Sea Incense stat mods + burn + weather + screens (screens are
     /// none in this bounded step — no side conditions are tracked yet).
     #[allow(clippy::too_many_arguments)]
-    fn build_damage_context(
+    pub(crate) fn build_damage_context(
         &self,
         side: usize,
         slot: usize,

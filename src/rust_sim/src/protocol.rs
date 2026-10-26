@@ -228,6 +228,13 @@ pub struct ProtocolBuilder {
     /// just before the recursive called-move run; consumed (cleared) by the next
     /// `move_used`. PRNG-free like everything here.
     pending_move_from: Option<String>,
+    /// A ONE-SHOT `onUseMoveMessage` line the NEXT `|move|` announce is followed by
+    /// (`gen3_b8_moves_v1`, Magnitude: `|-activate|<user>|move: Magnitude|<n>`, printed by
+    /// `data/mods/gen3/scripts.ts:195` right after the announce and before the hit pipeline, so it
+    /// precedes a `-miss` / `-immune` / Protect line and a later `attrLastMove('[miss]')` still
+    /// edits the `|move|` line above it). Set just before the move resolves; consumed by the next
+    /// `move_used`; cleared by `run_move` when the move ends. PRNG-free like everything here.
+    pending_use_move: Option<(MonRef, u8)>,
     /// The index (into `lines`) just past the most recent `|turn|N` marker — the
     /// sim's "SEND boundary" (`gen3_omniscient_byte_fuzz_v1`, class A: the spurious
     /// `[miss]` retro-tag). Showdown STREAMS each turn's lines at `makeRequest`, so an
@@ -274,6 +281,20 @@ impl ProtocolBuilder {
             return;
         }
         self.pending_move_from = Some(effect.to_string());
+    }
+
+    /// Queue Magnitude's `onUseMoveMessage` for the next `|move|` announce (see
+    /// `pending_use_move`).
+    pub fn set_magnitude_message(&mut self, user: &MonRef, magnitude: u8) {
+        if !self.enabled {
+            return;
+        }
+        self.pending_use_move = Some((user.clone(), magnitude));
+    }
+
+    /// Drop a queued `onUseMoveMessage` the move never announced (`run_move`'s end).
+    pub fn clear_use_move_message(&mut self) {
+        self.pending_use_move = None;
     }
 
     /// Enable emission (the logged battle path calls this). The seed suite never
@@ -477,6 +498,9 @@ impl ProtocolBuilder {
             }
             Line::new(Kw::Move, f)
         });
+        if let Some((m, n)) = self.pending_use_move.take() {
+            self.activate_magnitude(&m, n);
+        }
     }
 
     /// Retro-edit the MOST RECENT `|move|` line into the `[still]` did-nothing form —
@@ -1174,6 +1198,27 @@ impl ProtocolBuilder {
                 Field::tag("[consumed]"),
             ])
         });
+    }
+    /// `|-activate|<user>|move: Magnitude|<n>` — Magnitude's `onUseMoveMessage`
+    /// (`data/moves.ts` magnitude; `gen3_b8_moves_v1`).
+    pub fn activate_magnitude(&mut self, user: &MonRef, magnitude: u8) {
+        self.emit(|| {
+            Line::new(Kw::Activate, vec![
+                Field::mon(user),
+                Field::text("move: Magnitude"),
+                typed_or_text(Kw::Activate, 2, &magnitude.to_string()),
+            ])
+        });
+    }
+    /// `|-ohko|` — an OHKO move knocked its target out (`data/mods/gen3/scripts.ts:466`) or hit
+    /// a Substitute (`data/mods/gen4/moves.ts:1309`). `gen3_b8_moves_v1`.
+    pub fn ohko(&mut self) {
+        self.emit(|| Line::new(Kw::Ohko, vec![]));
+    }
+    /// `|-immune|<target>|[ohko]` — an OHKO move whose user is below the target's level
+    /// (`data/mods/gen3/scripts.ts:352`). `gen3_b8_moves_v1`.
+    pub fn immune_ohko(&mut self, target: &MonRef) {
+        self.emit(|| Line::new(Kw::Immune, vec![Field::mon(target), Field::tag("[ohko]")]));
     }
     /// `|-activate|<target>|move: Spite|<moveid>|<n>` — SPITE cut `n` PP (`gen3_b5_moves_v1`,
     /// `data/mods/gen3/moves.ts` spite `onHit`: `this.add("-activate", target, 'move: Spite',

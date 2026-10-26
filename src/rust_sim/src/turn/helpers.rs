@@ -1353,11 +1353,9 @@ pub(crate) fn recovery_heal_amount(move_id: &str, mon: &crate::state::MonState, 
 /// zero-draw-failed when un-armed) and **Endeavor** (`target.hp − pokemon.hp`, the
 /// caller's onTry gate already failed `hp >= target.hp`).
 ///
-/// DEFERRED (fail-loud — these need extra RNG or accumulator/OHKO machinery the caller
-/// PANICS on, never silently no-ops): **Psywave** (variable — draws RNG), the OHKO
-/// moves **Fissure / Horn Drill / Guillotine** (accuracy-gated instakill + the level
-/// gate), **Bide** (a 2-turn accumulator). They are NOT in this set → the caller's
-/// fixed-damage fail-loud guard fires.
+/// NOT here (`gen3_b8_moves_v1`): **Psywave** (its draw runs at the hit) and the **OHKO**
+/// moves (the target's HP at the hit), computed by the caller after the TryHit gates, and
+/// **Bide** (`turn/variable_moves.rs`).
 pub(crate) fn fixed_damage_amount(
     move_id: &str,
     attacker: &crate::state::MonState,
@@ -1393,26 +1391,23 @@ pub(crate) fn fixed_damage_amount(
 
 /// Whether `move_id` (already `to_id`-normalized) is a FIXED-DAMAGE / FIXED-FORMULA
 /// move — one whose damage BYPASSES `getDamage` (a `damage:` / `damageCallback` move).
-/// This set is the ROUTING gate in `run_move`: a `true` sends the move to
-/// `run_fixed_damage_move`, which handles the MODELED ones bit-for-bit and PANICS
-/// fail-loud on the DEFERRED ones (never a silent `base_power == 0` no-op / desync).
+/// This set is the ROUTING gate in `run_move` (and keeps Taunt off these bp-0 rows): a
+/// `true` sends the move to `run_fixed_damage_move`, which PANICS fail-loud on a member it has
+/// no formula for (never a silent `base_power == 0` no-op / desync).
 ///
-/// It is the UNION of the modeled set (`fixed_damage_amount` — Seismic Toss / Night
-/// Shade / Sonic Boom / Dragon Rage / Super Fang, plus the `gen3_move_coverage_batch5_v1`
-/// reactive family Counter / Mirror Coat / Endeavor) AND the DEFERRED fixed-damage family
-/// (Psywave — variable, draws RNG; the OHKO moves Fissure / Horn Drill / Guillotine —
-/// accuracy-gated instakill + a level gate; Bide — a 2-turn accumulator). Listing the
-/// deferred ones here (not relying on the `base_power == 0` fall-through) makes their
-/// exclusion EXPLICIT + FAIL-LOUD: a real team that carries one PANICS in
-/// `run_fixed_damage_move` instead of quietly desyncing.
+/// The members: `fixed_damage_amount`'s set (Seismic Toss / Night Shade / Sonic Boom / Dragon
+/// Rage / Super Fang, plus the `gen3_move_coverage_batch5_v1` reactive family Counter / Mirror
+/// Coat / Endeavor), and since `gen3_b8_moves_v1` Psywave (its `random(50, 151)` at the hit),
+/// the four OHKO moves (the level-gated accuracy, the target's HP) and Bide (its cast and
+/// release are routed before this gate, `turn/variable_moves.rs`).
 pub(crate) fn is_fixed_damage_move(move_id: &str) -> bool {
     matches!(
         move_id,
-        // Modeled (bit-for-bit):
         "seismictoss" | "nightshade" | "sonicboom" | "dragonrage" | "superfang"
         | "counter" | "mirrorcoat" | "endeavor"
-        // Deferred (fail-loud in run_fixed_damage_move):
-        | "psywave" | "fissure" | "horndrill" | "guillotine" | "bide"
+        // `gen3_b8_moves_v1`: Psywave and the four OHKO moves run in `run_fixed_damage_move`;
+        // Bide's cast and release are routed before it (`turn/variable_moves.rs`).
+        | "psywave" | "fissure" | "horndrill" | "guillotine" | "sheercold" | "bide"
     )
 }
 

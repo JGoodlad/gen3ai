@@ -29160,3 +29160,24 @@ Cutter (fixed in BF), 0 B7. **OU-visible (FINDING):** the insertion-order gather
 changes a tied `-sideend` pair's order (and the sport tie draw needs two sport holders, 0.0002 % of OU mons); e2e
 capstone and obs golden unchanged. **Left:** Beat Up and the Jump Kick crash may skip the screens' tie shuffle the sim
 runs for them (unverified).
+## 2026-10-26 · RUST SIM · gen3 full parity B8: Bide, Magnitude, Psywave, Present, Triple Kick and the OHKO moves (moves 350 → 359 of 369)
+
+**B8** (`gen3_b8_moves_v1`, spec `harness/probe_b8_moves.js`, code `src/turn/variable_moves.rs`; built by a subagent,
+merged onto B7 and gated here). BIDE has no
+duration draw: the cast is a real accuracy roll against the user itself (a +evasion user can miss itself),
+`-start`; the next turn prints only `-activate`; the third releases twice the Move damage taken since the cast
+through an ordinary hit pipeline with no `|move|` line (accuracy, Protect, Wonder Guard, a Ghost is immune, a sub
+takes it, contact abilities proc, no King's Rock, no Shell Bell), or `-fail` with nothing stored; every cant on a
+locked turn ends it (`-end|…|[silent]`), and so does the residual when a faint cancelled the release. MAGNITUDE and
+PRESENT draw before the `|move|` line (so a miss or an immunity still spends the draw); Magnitude prints
+`-activate|…|move: Magnitude|<n>` right after the announce; Present's heal branch draws no crit, fails into a sub or
+at full HP. PSYWAVE floors `random(50, 151) × level / 100`; into a sub it subtracts the raw float, so a user below
+level 100 FAILS LOUD there. TRIPLE KICK re-rolls accuracy before each later strike (10 / 20 / 30 BP). The OHKO moves:
+a lower-level user is `-immune|[ohko]` with no draw; else accuracy 30 + the level gap, stages and Bright Powder
+ignored; Sturdy blocks; the damage is the target's current HP, so a sub can outlive its mon; `-ohko` after the KO.
+Golden 816 rows / 85 boards, 22 pins, 18 revert mutations each caught. OU carry of the five OU-legal ones ≤ 0.0023 %;
+OU goldens unchanged.
+
+**Found:** a multi-hit move kept striking after its user fell asleep (Effect Spore) or fainted (Rough Skin) mid-
+sequence; fixed in BF (`bf16`), which Triple Kick now shares. **Left:** the ladder corpus still drops teams carrying
+Psywave / Triple Kick (built before B8).

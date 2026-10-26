@@ -5,9 +5,9 @@
   "surface": {
    "abilities": 77,
    "items": 67,
-   "conditions": 73,
-   "moves": 334,
-   "rows": 1224
+   "conditions": 74,
+   "moves": 343,
+   "rows": 1243
   },
   "excluded_deferred": {
    "forecast": "Castform forme+TYPE change under weather — deferred (probe_forecast_rng.js settled the map; the reporting surface is unprobed); the port FAIL-LOUDs in state::MonState::from_set (GIGO guard: an unmodeled ability would silently no-op then desync under weather); NOT in MODELED/NOOP + REJECT_ABILITIES/REJECT_SPECIES so the e2e filter + randbats adapter exclude its teams",
@@ -614,9 +614,10 @@
    "reason": "base-data residue: the gen5+ survive-at-1 onDamage is not in the gen3 resolution — only its priority number survives"
   },
   "ability:sturdy:onTryHit": {
-   "disposition": "unreachable_justified",
+   "disposition": "implemented",
    "fp": "fn:d9afd493:onTryHit(pokemon, target, move) { if (move.ohko) { this.add(\"-immune\", pokemon, \"[from] ability: Sturdy\"); return null; ",
-   "reason": "the OHKO-move immunity — the OHKO family is deferred (fail-loud + MOVE_ID_BLOCKLIST keeps it off the modeled path)"
+   "anchor": "moves.rs::run_fixed_damage_move",
+   "reason": "the OHKO-move immunity (gen3_b8_moves_v1): -immune|<t>|[from] ability: Sturdy at TryHit, after the OHKO accuracy roll, before the natural-immunity report (b8_moves_test.rs B8-13c)"
   },
   "ability:suctioncups:onDragOut": {
    "disposition": "implemented",
@@ -855,6 +856,54 @@
    "fp": "val:-101",
    "anchor": "turn.rs::run_beat_up",
    "reason": "the stat swap: attacker SpA REPLACED by the current ally dex baseStats.atk (event.modifier=1) — computed directly in the per-strike DamageContext"
+  },
+  "condition:bide:duration": {
+   "disposition": "implemented",
+   "fp": "val:3",
+   "anchor": "variable_moves.rs::run_bide_cast",
+   "reason": "the cast: one accuracy roll against the user itself (its own stages and accuracy holders), -start|<u>|move: Bide, MonState::bide {duration 3, total 0}, the King's Rock flinch roll against the user; no duration draw"
+  },
+  "condition:bide:onBeforeMove": {
+   "disposition": "implemented",
+   "fp": "fn:3a68021b:onBeforeMove(pokemon, target, move) { if (this.effectState.duration === 1) { this.add(\"-end\", pokemon, \"move: Bide\"); if",
+   "anchor": "variable_moves.rs::bide_before_move",
+   "reason": "priority 0, after every cant: duration 2 → -activate (beforeMoveCallback ends runMove, no PP / MoveAborted / AfterMove); duration 1 → -end, -fail on nothing stored, else the tryMoveHit release (run_bide_release: no |move| line, accuracy, Protect, Wonder Guard, Ghost -immune, 2× fixed damage, contact procs, Update) then removeVolatile"
+  },
+  "condition:bide:onDamage": {
+   "disposition": "implemented",
+   "fp": "fn:5861b7eb:onDamage(damage, target, source, move) { if (!move || move.effectType !== \"Move\" || !source) return; this.effectState.to",
+   "anchor": "variable_moves.rs::bide_store",
+   "reason": "priority -101 (after Endure / Focus Band): every Move-effect hit on the holder adds the HP it took — record_move_damage (every move strike), the Future Sight / Doom Desire strike and a Bide release; a sub-absorbed hit and residual damage add nothing"
+  },
+  "condition:bide:onDamagePriority": {
+   "disposition": "implemented",
+   "fp": "val:-101",
+   "anchor": "variable_moves.rs::bide_store",
+   "reason": "priority -101 (after Endure / Focus Band): every Move-effect hit on the holder adds the HP it took — record_move_damage (every move strike), the Future Sight / Doom Desire strike and a Bide release; a sub-absorbed hit and residual damage add nothing"
+  },
+  "condition:bide:onEnd": {
+   "disposition": "implemented",
+   "fp": "fn:e49f315b:onEnd(pokemon) { this.add(\"-end\", pokemon, \"move: Bide\", \"[silent]\"); }",
+   "anchor": "variable_moves.rs::bide_end_on_abort",
+   "reason": "every BeforeMove cant of a locked turn (sleep, freeze, flinch, Disable, Imprison, a confusion self-hit, attraction, full paralysis) and the release end it with -end|<u>|move: Bide|[silent]; the residual BideDuration tick ends a release that never ran; switch-out / faint clear it silently"
+  },
+  "condition:bide:onLockMove": {
+   "disposition": "implemented",
+   "fp": "val:\"bide\"",
+   "anchor": "state.rs::locked_slot",
+   "reason": "move_locked() / locked_slot() fold the bide lock: the one-entry trapped request, the locked choice maps to the Bide slot (driver)"
+  },
+  "condition:bide:onMoveAborted": {
+   "disposition": "implemented",
+   "fp": "fn:bf846503:onMoveAborted(pokemon) { pokemon.removeVolatile(\"bide\"); }",
+   "anchor": "variable_moves.rs::bide_end_on_abort",
+   "reason": "every BeforeMove cant of a locked turn (sleep, freeze, flinch, Disable, Imprison, a confusion self-hit, attraction, full paralysis) and the release end it with -end|<u>|move: Bide|[silent]; the residual BideDuration tick ends a release that never ran; switch-out / faint clear it silently"
+  },
+  "condition:bide:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:4623420f:onStart(pokemon) { this.effectState.totalDamage = 0; this.add(\"-start\", pokemon, \"move: Bide\"); }",
+   "anchor": "variable_moves.rs::run_bide_cast",
+   "reason": "the cast: one accuracy roll against the user itself (its own stages and accuracy holders), -start|<u>|move: Bide, MonState::bide {duration 3, total 0}, the King's Rock flinch roll against the user; no duration draw"
   },
   "condition:bounce:duration": {
    "disposition": "implemented",
@@ -4042,6 +4091,18 @@
    "anchor": "turn.rs::run_status_move",
    "reason": "the bellydrum arm: the FLOAT hp<=maxhp/2 gate as integer-exact 2*hp<=maxhp (262/524 fails, 263 succeeds — MC92) + atk>=6 + maxhp==1 fails; directDamage(floor(maxhp/2)) then the SET to +6 (-setboost)"
   },
+  "move:bide:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "variable_moves.rs::run_bide_cast",
+   "reason": "the cast: one accuracy roll against the user itself (its own stages and accuracy holders), -start|<u>|move: Bide, MonState::bide {duration 3, total 0}, the King's Rock flinch roll against the user; no duration draw"
+  },
+  "move:bide:volatileStatus": {
+   "disposition": "implemented",
+   "fp": "val:\"bide\"",
+   "anchor": "variable_moves.rs::run_bide_cast",
+   "reason": "the cast: one accuracy roll against the user itself (its own stages and accuracy holders), -start|<u>|move: Bide, MonState::bide {duration 3, total 0}, the King's Rock flinch roll against the user; no duration draw"
+  },
   "move:bind:volatileStatus": {
    "disposition": "implemented",
    "fp": "val:\"partiallytrapped\"",
@@ -4796,6 +4857,12 @@
    "anchor": "turn.rs::is_partial_trap_move",
    "reason": "the post-hit partial-trap arm in run_move: gated on !absorbed (a Substitute intercepts before runMoveEffects — no volatile, NO duration draw) + a LIVE target (addVolatile early-returns on hp 0) + no trap already present (addVolatile returns false, no -fail); sets MonState::partial_trap and emits |-activate|<t>|move: <M>|[of] <u> after the -damage"
   },
+  "move:fissure:ohko": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "variable_moves.rs::ohko_accuracy",
+   "reason": "the gen-3 OHKO branch in run_fixed_damage_move: a lower-level user → -immune|<t>|[ohko] with no draw; else randomChance(30 + level gap, 100) ignoring stages and ModifyAccuracy; Sturdy; damage = the target's current HP (also against a sub); -ohko after a sub line or after a KO (apply_fixed_hit)"
+  },
   "move:flamethrower:secondaries": {
    "disposition": "implemented",
    "fp": "val:[{\"chance\":10,\"status\":\"brn\"}]",
@@ -5000,6 +5067,12 @@
    "anchor": "status_moves.rs::run_status_move",
    "reason": "the grudge arm: a ZERO-draw cast, MonState::grudge + |-singlemove|<user>|Grudge"
   },
+  "move:guillotine:ohko": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "variable_moves.rs::ohko_accuracy",
+   "reason": "the gen-3 OHKO branch in run_fixed_damage_move: a lower-level user → -immune|<t>|[ohko] with no draw; else randomChance(30 + level gap, 100) ignoring stages and ModifyAccuracy; Sturdy; damage = the target's current HP (also against a sub); -ohko after a sub line or after a KO (apply_fixed_hit)"
+  },
   "move:hail:ignoreImmunity": {
    "disposition": "implemented",
    "fp": "val:true",
@@ -5089,6 +5162,12 @@
    "fp": "fn:5859cdde:onMoveFail(target, source, move) { if (target.runImmunity(\"Fighting\")) { const damage = this.actions.getDamage(source, t",
    "anchor": "turn.rs::apply_jump_kick_crash",
    "reason": "the crash on miss/protect-block: getDamage-with-crit+roll halved, clamp [1, floor(target.maxhp/2)] (gen3_jump_kick_crash_v1 — the audit's HA1 fix)"
+  },
+  "move:horndrill:ohko": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "variable_moves.rs::ohko_accuracy",
+   "reason": "the gen-3 OHKO branch in run_fixed_damage_move: a lower-level user → -immune|<t>|[ohko] with no draw; else randomChance(30 + level gap, 100) ignoring stages and ModifyAccuracy; Sturdy; damage = the target's current HP (also against a sub); -ohko after a sub line or after a KO (apply_fixed_hit)"
   },
   "move:howl:boosts": {
    "disposition": "implemented",
@@ -5406,6 +5485,18 @@
    "fp": "val:\"magiccoat\"",
    "anchor": "status_moves.rs::run_status_move",
    "reason": "the magiccoat cast: priority +4, sets MonState::magic_coat DRAW-FREE, |-singleturn|U|move: Magic Coat"
+  },
+  "move:magnitude:onModifyMove": {
+   "disposition": "implemented",
+   "fp": "fn:5463cf2d:onModifyMove(move, pokemon) { const i = this.random(100); if (i < 5) { move.magnitude = 4; move.basePower = 10; } else i",
+   "anchor": "variable_moves.rs::magnitude_roll",
+   "reason": "one random(100) at useMoveInner ModifyMove (after BeforeMove + PP, before the announce): MAGNITUDE_TABLE (pinned against the resolved handler, B8-0c) → BP, category re-derived Physical"
+  },
+  "move:magnitude:onUseMoveMessage": {
+   "disposition": "implemented",
+   "fp": "fn:0ffa47d1:onUseMoveMessage(pokemon, target, move) { this.add(\"-activate\", pokemon, \"move: Magnitude\", move.magnitude); }",
+   "anchor": "protocol.rs::set_magnitude_message",
+   "reason": "the -activate|<u>|move: Magnitude|<n> one-shot printed right after the |move| announce in every branch (miss / immune / Protect / hit), before any outcome line"
   },
   "move:meanlook:ignoreImmunity": {
    "disposition": "implemented",
@@ -5857,6 +5948,12 @@
    "anchor": "turn.rs::apply_secondaries",
    "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
   },
+  "move:present:onModifyMove": {
+   "disposition": "implemented",
+   "fp": "fn:d4bd227d:onModifyMove(move, pokemon, target) { const rand = this.random(10); if (rand < 2) { move.heal = [1, 4]; move.infiltrates",
+   "anchor": "variable_moves.rs::present_roll",
+   "reason": "one random(10) at ModifyMove: PRESENT_TABLE → BP 40 / 80 / 120 (the ordinary hit) or the heal branch (run_present_heal: accuracy, Protect, Wonder Guard, Ghost -immune, a sub fails [still] + -fail|<u>, full HP -fail|<t>|heal, else -heal floor(maxhp/4); no crit roll)"
+  },
   "move:protect:ignoreImmunity": {
    "disposition": "implemented",
    "fp": "val:true",
@@ -6304,6 +6401,12 @@
    "fp": "val:true",
    "anchor": "turn.rs::never_miss",
    "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:sheercold:ohko": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "variable_moves.rs::ohko_accuracy",
+   "reason": "the gen-3 OHKO branch in run_fixed_damage_move: a lower-level user → -immune|<t>|[ohko] with no draw; else randomChance(30 + level gap, 100) ignoring stages and ModifyAccuracy; Sturdy; damage = the target's current HP (also against a sub); -ohko after a sub line or after a KO (apply_fixed_hit)"
   },
   "move:shockwave:neverMiss": {
    "disposition": "implemented",
@@ -7113,6 +7216,18 @@
    "fp": "fn:f4c83ddf:onTryImmunity(target) { return !target.hasAbility(\"stickyhold\"); }",
    "anchor": "turn.rs::run_status_move",
    "reason": "the trick arm Sticky-Hold onTryImmunity gate (!target.hasAbility(stickyhold)): a Sticky-Hold target draws the accuracy then reports PLAIN |-immune|<foe> (NO [from] ability), NO swap"
+  },
+  "move:triplekick:multiaccuracy": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "moves.rs::run_multihit",
+   "reason": "fixed 3 strikes; each strike after the first re-rolls accuracy first (roll_accuracy: stages, ModifyAccuracy) and a miss ends the move silently; BP 10 × move.hit (pinned against the resolved callback, B8-0b)"
+  },
+  "move:triplekick:multihit": {
+   "disposition": "implemented",
+   "fp": "val:3",
+   "anchor": "moves.rs::run_multihit",
+   "reason": "fixed 3 strikes; each strike after the first re-rolls accuracy first (roll_accuracy: stages, ModifyAccuracy) and a miss ends the move silently; BP 10 × move.hit (pinned against the resolved callback, B8-0b)"
   },
   "move:twineedle:multihit": {
    "disposition": "implemented",

@@ -107,6 +107,7 @@ mod speed;
 mod status;
 mod status_moves;
 mod switch;
+mod variable_moves;
 
 /// Re-export the live per-mon TYPE read (species types ⊕ Color Change `types_override`)
 /// so the bridge's `|request|` serializer can price Curse's `nonGhostTarget` off the SAME
@@ -116,6 +117,8 @@ pub(crate) use helpers::mon_types;
 pub use moves::{RECHARGE_MOVES, SLEEP_USABLE_MOVES};
 /// The B6 tables (`gen3_b6_moves_v1`), public so their pins can check them against the dex.
 pub use status_moves::{REFLECTABLE_MOVES, TARGET_BOOST_MOVES};
+/// The B8 move families (`gen3_b8_moves_v1`), public so their pins can check them against the dex.
+pub use variable_moves::{MAGNITUDE_TABLE, OHKO_MOVES, PRESENT_TABLE, RANDOM_BP_MOVES};
 
 /// The denominators `critMult[critRatio]` for gen ≤ 5 (`battle-actions.ts:1631`):
 /// index by the (clamped 0..5) crit ratio. A normal damaging move resolves to
@@ -455,6 +458,7 @@ pub(crate) struct MoveResolution {
     /// the choice and the execution (Spite), so `deductPP` failed after BeforeMove passed. The sim
     /// returns there (`sim/battle-actions.ts` runMove) — no `MoveAborted` and no `AfterMove`, so
     /// the caller must neither consume Charge nor run the AfterMove hooks. Implies `aborted`.
+    /// Bide's wait turn returns the same way (`beforeMoveCallback`, `gen3_b8_moves_v1`).
     nopp: bool,
 }
 
@@ -475,6 +479,12 @@ impl MoveResolution {
     }
     /// `runMove`'s `cant … nopp` return (see [`Self::nopp`]).
     fn nopp() -> MoveResolution {
+        MoveResolution { missed: false, crit: false, landed: false, force_switch_foe: None, aborted: true, nopp: true }
+    }
+    /// BIDE's WAIT turn (`gen3_b8_moves_v1`): `beforeMoveCallback` returned true, so `runMove`
+    /// returned with neither `MoveAborted` nor `AfterMove` — the same caller-side shape as
+    /// [`Self::nopp`] (no Charge consumption, no AfterMove hooks).
+    fn bide_wait() -> MoveResolution {
         MoveResolution { missed: false, crit: false, landed: false, force_switch_foe: None, aborted: true, nopp: true }
     }
 }
@@ -704,6 +714,11 @@ enum ResidualAction {
     UproarDuration { side: usize, slot: usize },
     /// FURY CUTTER's `duration: 2` lapse (`gen3_bp_modifier_cluster_v1`), NO_ORDER/sub 2.
     FuryCutterDuration { side: usize, slot: usize },
+    /// BIDE's `duration: 3` volatile tick (`gen3_b8_moves_v1`): a NO_ORDER / subOrder-2 duration
+    /// handler with no `onResidual`; 3 → 2 → 1, and the release at the user's turn-3 BeforeMove
+    /// removes it first. Reaching 0 (the turn-3 action never ran — gen 3 cancels every queued
+    /// action after a faint) ends it with `|-end|<mon>|move: Bide|[silent]` (`onEnd`).
+    BideDuration { side: usize, slot: usize },
     /// The `rollout` volatile's duration tick (`gen3_rollout_lock_duration_v1`).
     RolloutDuration { side: usize, slot: usize },
     /// The OUTRAGE / PETAL DANCE / THRASH lock tick (`gen3_lockin_family_v1`), NO_ORDER/sub 2.
@@ -2721,23 +2736,24 @@ mod tests {
         assert_eq!(state.prng_seed(), seed_before, "a first Endure draws NOTHING (no stall roll at counter 0)");
     }
 
-    // FAIL-LOUD: a DEFERRED fixed-damage move (Counter — a reactive damageCallback) is in
-    // `is_fixed_damage_move` (so it can never silently no-op via the bp==0 fall-through) but
-    // has NO `fixed_damage_amount` entry, so it PANICS in `run_fixed_damage_move` rather than
-    // desync. Mirrors `endure_panics_fail_loud`; pins the deferred-set guarantee so a future
-    // change that drops a deferred id from `is_fixed_damage_move` (or adds a wrong amount)
-    // can't silently regress it. (Psywave / the OHKO moves / Bide share this path;
-    // Counter / Mirror Coat / Endeavor are MODELED since `gen3_move_coverage_batch5_v1`,
-    // so the pin is keyed on Bide now.)
+    // BIDE's CAST (`gen3_b8_moves_v1`; it failed loud here until B8): ONE accuracy roll (accuracy
+    // 100, not `true` — the user's own stages and holders fold in), the `bide` volatile at
+    // `duration: 3` with nothing stored, PP paid, and never `landed`.
     #[test]
-    #[should_panic(expected = "unmodeled FIXED-DAMAGE move")]
-    fn deferred_fixed_damage_move_panics_fail_loud() {
+    fn bide_cast_draws_one_accuracy_roll_and_starts_the_volatile() {
         let d = dex();
-        let snorlax = "Snorlax||leftovers||bide,bodyslam|Careful|252,,,,252,|||||";
+        let shuckle = "Shuckle||leftovers||bide,toxic|Careful|252,,,,252,|||||";
         let tauros = "Tauros||leftovers||bodyslam,earthquake|Adamant|,252,,,,252|||||";
-        let mut state = BattleState::start(&opts_cg(snorlax, tauros, "1,2,3,4"), &d).expect("start");
-        // Bide is is_fixed_damage_move=true but fixed_damage_amount=None → fail-loud.
-        let _ = state.run_move(MoveAction { side: 0, slot: 0, move_index: 0, struggle: false }, true, true, &d);
+        let mut state = BattleState::start(&opts_cg(shuckle, tauros, "1,2,3,4"), &d).expect("start");
+        let mut probe = state.clone();
+        let _ = probe.prng.random_below(100);
+        let res = state.run_move(MoveAction { side: 0, slot: 0, move_index: 0, struggle: false }, true, true, &d);
+        assert!(!res.landed && !res.missed, "a Bide cast never lands");
+        assert_eq!(state.prng_seed(), probe.prng_seed(), "the cast draws exactly one roll");
+        let b = state.sides[0].pokemon[0].bide.expect("the bide volatile is up");
+        assert_eq!((b.duration, b.total_damage, b.move_index), (3, 0, 0));
+        assert_eq!(state.sides[0].pokemon[0].move_pp[0], state.sides[0].pokemon[0].move_maxpp[0] - 1);
+        assert!(state.sides[0].pokemon[0].move_locked(), "the lock holds the user to Bide");
     }
 
     // SPIKES (the entry hazard): the Spikes MOVE is never-miss + DRAW-FREE — it increments

@@ -457,7 +457,10 @@ armed `pokesim` session does, and `log_from_json` reads and checks `rolls`. The 
 `src/main/value_search/world_rolls_integration_test.py`.
 
 **Honest limits** (the design doc's F1 tier A row): the speed-tie dice, a dice ability or item that did not trigger,
-the crit roll and the pre-root counters are still the truth's dice (tier B); the choice inside C prefers the drawn
+the crit roll, the pre-root counters and the move-owned damage dice that are not the `random(16)` randomizer —
+Psywave's `random(50, 151)`, Magnitude's `random(100)` and Present's `random(10)` (`gen3_b8_moves_v1`; Magnitude's
+and Present's damage branches still roll through the single-hit site, Triple Kick's strikes through the multi-hit
+site) — are still the truth's dice (tier B); the choice inside C prefers the drawn
 roll, so the hidden exact HP a matched world carries after a site is the truth's whenever the truth's roll is
 consistent; the weight is the likelihood ALONG the trajectory the choice took, not marginalised over the other
 members of C.

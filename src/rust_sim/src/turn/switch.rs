@@ -309,6 +309,7 @@ impl crate::state::BattleState {
                 mon.last_move = None;
                 mon.last_move_used = None; // gen3_conversion_v1
                 mon.uproar = None; // gen3_uproar_v1 — silent on faint too
+                mon.bide = None; // gen3_b8_moves_v1 — clearVolatile, no onEnd
                 mon.fury_cutter = None; // gen3_bp_modifier_cluster_v1
                 mon.locked_move = None; // gen3_lockin_family_v1
                 mon.rollout = None;
@@ -1108,6 +1109,9 @@ impl crate::state::BattleState {
             // UPROAR's lock clears SILENTLY on switch-out — a phazed-out uproarer emits no
             // `-end` line (`gen3_uproar_v1`, clearVolatile).
             m.uproar = None;
+            // BIDE clears SILENTLY on switch-out (`gen3_b8_moves_v1`, probed: a Roar on a biding
+            // mon prints only the `|drag|`; `clearVolatile` fires no `onEnd`). Not Baton-Passed.
+            m.bide = None;
             // FURY CUTTER's counter + REVENGE's this-turn record clear on switch-out.
             m.fury_cutter = None;
             m.locked_move = None; // gen3_lockin_family_v1 — silent on switch-out

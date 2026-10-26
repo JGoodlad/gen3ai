@@ -18400,3 +18400,90 @@ fn bf16_b_a_multihit_stops_when_its_user_faints_to_rough_skin() {
         &["3090,29639,52671,47823", "51644,13992,14189,6510"],
     );
 }
+
+/// BF17 (the B7 x B8 merge; `gen3_bf_lockon_ohko_v1`): LOCK-ON / MIND READER before an OHKO move. gen 3's OHKO
+/// accuracy (data/mods/gen3/scripts.ts:346-363) runs the level check (`-immune|[ohko]` for a lower-level user) only
+/// `if (!target.isSemiInvulnerable())`, then `runEvent('Accuracy')`, where the user's `lockon`
+/// (`onSourceAccuracy` -> true) skips the roll: no draw (BF17a), still immune from a lower level (BF17b), and a
+/// locked DIGGING target skips the level check (BF17c). Replaces B8's fail-loud tripwire.
+/// Ground truth: `harness/probe_bf_classes.js` (BF17a-c).
+#[test]
+fn bf17_a_a_locked_ohko_draws_no_accuracy_roll() {
+    bf_check(
+        "BF17a",
+        "gen3customgame",
+        "1,2,3,4",
+        "Smeargle||none|owntempo|lockon,fissure|Hardy|85,85,85,85,85,85|M|||100|",
+        "Snorlax||none|thickfat|splash|Hardy|85,85,85,85,85,85|M|||100|",
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0)), ScriptDecision::both(Choice::Move(1), Choice::Move(0))],
+        &[
+            "|move|p1a: Smeargle|Lock-On|p2a: Snorlax",
+            "|-activate|p1a: Smeargle|move: Lock-On|[of] p2a: Snorlax",
+            "|move|p2a: Snorlax|Splash|p2a: Snorlax",
+            "|-nothing",
+            "|upkeep",
+            "|turn|2",
+            "|move|p1a: Smeargle|Fissure|p2a: Snorlax",
+            "|-damage|p2a: Snorlax|0 fnt",
+            "|-ohko",
+            "|faint|p2a: Snorlax",
+            "|win|P1",
+        ],
+        &["43514,9542,40559,8561", "43514,9542,40559,8561"],
+    );
+}
+
+#[test]
+fn bf17_b_a_locked_ohko_from_a_lower_level_user_is_still_immune() {
+    bf_check(
+        "BF17b",
+        "gen3customgame",
+        "1,2,3,4",
+        "Smeargle||none|owntempo|lockon,fissure|Hardy|85,85,85,85,85,85|M|||50|",
+        "Snorlax||none|thickfat|splash|Hardy|85,85,85,85,85,85|M|||100|",
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0)), ScriptDecision::both(Choice::Move(1), Choice::Move(0))],
+        &[
+            "|move|p2a: Snorlax|Splash|p2a: Snorlax",
+            "|-nothing",
+            "|move|p1a: Smeargle|Lock-On|p2a: Snorlax",
+            "|-activate|p1a: Smeargle|move: Lock-On|[of] p2a: Snorlax",
+            "|upkeep",
+            "|turn|2",
+            "|move|p2a: Snorlax|Splash|p2a: Snorlax",
+            "|-nothing",
+            "|move|p1a: Smeargle|Fissure|p2a: Snorlax",
+            "|-immune|p2a: Snorlax|[ohko]",
+            "|upkeep",
+            "|turn|3",
+        ],
+        &["43514,9542,40559,8561", "8769,17248,37115,18776"],
+    );
+}
+
+#[test]
+fn bf17_c_a_locked_ohko_into_a_digging_target_skips_the_level_check() {
+    bf_check(
+        "BF17c",
+        "gen3customgame",
+        "1,2,3,4",
+        "Smeargle||none|owntempo|lockon,fissure|Hardy|85,85,85,85,85,85|M|||50|",
+        "Dugtrio||none|arenatrap|dig,splash|Hardy|85,85,85,85,85,85|M|||100|",
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(1)), ScriptDecision::both(Choice::Move(1), Choice::Move(0))],
+        &[
+            "|move|p2a: Dugtrio|Splash|p2a: Dugtrio",
+            "|-nothing",
+            "|move|p1a: Smeargle|Lock-On|p2a: Dugtrio",
+            "|-activate|p1a: Smeargle|move: Lock-On|[of] p2a: Dugtrio",
+            "|upkeep",
+            "|turn|2",
+            "|move|p2a: Dugtrio|Dig||[still]",
+            "|-prepare|p2a: Dugtrio|Dig",
+            "|move|p1a: Smeargle|Fissure|p2a: Dugtrio",
+            "|-damage|p2a: Dugtrio|0 fnt",
+            "|-ohko",
+            "|faint|p2a: Dugtrio",
+            "|win|P1",
+        ],
+        &["43514,9542,40559,8561", "43514,9542,40559,8561"],
+    );
+}

@@ -1051,6 +1051,10 @@ pub fn volatile_names(mon: &MonState) -> Vec<&'static str> {
     if mon.attract.is_some() {
         v.push("attract");
     }
+    // BIDE (`gen3_b8_moves_v1`) lives across the cast and wait turns' boundaries.
+    if mon.bide.is_some() {
+        v.push("bide");
+    }
     if mon.charge {
         v.push("charge");
     }

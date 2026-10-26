@@ -125,10 +125,13 @@ impl Recency {
 
 // ---------------------------------------------------------------------------- pair history
 
-/// Gen-3 damaging moves the dex records at basePower 0 (`episode_tracker._ZERO_BP_DAMAGING`).
-const ZERO_BP_DAMAGING: [&str; 19] = [
+/// Gen-3 damaging moves the dex records at basePower 0 (`episode_tracker._ZERO_BP_DAMAGING`), plus
+/// the four OHKO moves (`gen3_b8_moves_v1`: the engine runs them since B8, and a used OHKO move is
+/// an attack, not a status click; `main.policy_spectrum.categories.ZERO_BP_DAMAGING` lists all four).
+const ZERO_BP_DAMAGING: [&str; 23] = [
     "seismictoss", "nightshade", "sonicboom", "dragonrage", "psywave", "superfang", "counter", "mirrorcoat", "bide",
     "endeavor", "return", "frustration", "flail", "reversal", "magnitude", "present", "lowkick", "spitup", "beatup",
+    "fissure", "horndrill", "guillotine", "sheercold",
 ];
 
 /// `episode_tracker._move_is_damaging`.

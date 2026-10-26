@@ -175,7 +175,7 @@ add([ab('pressure', 'onStart')], IMPL('turn.rs::emit_ability_start_lines', 'the 
 add([ab('pickup', 'onResidualOrder'), ab('pickup', 'onResidualSubOrder')],
   NOOP('base-data residue: an out-of-battle pickup residual ORDER with NO function handler in the gen3 resolution'));
 add([ab('stench', 'onModifyMovePriority')], NOOP('base-data residue: the gen9 stench-flinch onModifyMove is not in the gen3 resolution — only its priority number survives'));
-add([ab('sturdy', 'onTryHit')], UNREACH('the OHKO-move immunity — the OHKO family is deferred (fail-loud + MOVE_ID_BLOCKLIST keeps it off the modeled path)'));
+add([ab('sturdy', 'onTryHit')], IMPL('moves.rs::run_fixed_damage_move', 'the OHKO-move immunity (gen3_b8_moves_v1): -immune|<t>|[from] ability: Sturdy at TryHit, after the OHKO accuracy roll, before the natural-immunity report (b8_moves_test.rs B8-13c)'));
 add([ab('sturdy', 'onDamagePriority')], NOOP('base-data residue: the gen5+ survive-at-1 onDamage is not in the gen3 resolution — only its priority number survives'));
 add([ab('rockhead', 'onDamage')], NOOP(
   'negates recoil EXCEPT Struggle (the resolved handler: `if (this.activeMove.id !== "struggle") return null`) — Struggle is the ONLY recoil source in the modeled universe, so the handler never changes anything'));
@@ -666,6 +666,29 @@ add([cond('destinybond', 'onBeforeMove'), cond('destinybond', 'onBeforeMovePrior
   IMPL('turn.rs::run_move', 'the window closes at the users next move ATTEMPT: priority −1 removal for any move != destinybond + the onMoveAborted removal at every cant site (MC84)'));
 add([cond('destinybond', 'onFaint')],
   IMPL('turn.rs::process_faints', 'the mutual-faint chain: |faint| victim → -activate → the killers hp zeroed + drained in the SAME faintMessages worklist (a foe-Move KO only — the damage sites record destiny_bond_ko_by; residual/futuremove/sub-absorbed never trigger; MC83/MC85)'));
+// GEN3 FULL PARITY B8 (`gen3_b8_moves_v1`) — Bide, Magnitude, Psywave, Present, Triple Kick and the
+// four OHKO moves (src/turn/variable_moves.rs). The settled spec is harness/probe_b8_moves.js; the
+// differential is tests/b8_moves_golden_test.rs; the pins tests/b8_moves_test.rs.
+add([mv('bide', 'volatileStatus'), mv('bide', 'ignoreImmunity'), cond('bide', 'onStart'), cond('bide', 'duration')],
+  IMPL('variable_moves.rs::run_bide_cast', 'the cast: one accuracy roll against the user itself (its own stages and accuracy holders), -start|<u>|move: Bide, MonState::bide {duration 3, total 0}, the King\'s Rock flinch roll against the user; no duration draw'));
+add([cond('bide', 'onLockMove')],
+  IMPL('state.rs::locked_slot', 'move_locked() / locked_slot() fold the bide lock: the one-entry trapped request, the locked choice maps to the Bide slot (driver)'));
+add([cond('bide', 'onBeforeMove')],
+  IMPL('variable_moves.rs::bide_before_move', 'priority 0, after every cant: duration 2 → -activate (beforeMoveCallback ends runMove, no PP / MoveAborted / AfterMove); duration 1 → -end, -fail on nothing stored, else the tryMoveHit release (run_bide_release: no |move| line, accuracy, Protect, Wonder Guard, Ghost -immune, 2× fixed damage, contact procs, Update) then removeVolatile'));
+add([cond('bide', 'onDamage'), cond('bide', 'onDamagePriority')],
+  IMPL('variable_moves.rs::bide_store', 'priority -101 (after Endure / Focus Band): every Move-effect hit on the holder adds the HP it took — record_move_damage (every move strike), the Future Sight / Doom Desire strike and a Bide release; a sub-absorbed hit and residual damage add nothing'));
+add([cond('bide', 'onMoveAborted'), cond('bide', 'onEnd')],
+  IMPL('variable_moves.rs::bide_end_on_abort', 'every BeforeMove cant of a locked turn (sleep, freeze, flinch, Disable, Imprison, a confusion self-hit, attraction, full paralysis) and the release end it with -end|<u>|move: Bide|[silent]; the residual BideDuration tick ends a release that never ran; switch-out / faint clear it silently'));
+add([mv('magnitude', 'onModifyMove')],
+  IMPL('variable_moves.rs::magnitude_roll', 'one random(100) at useMoveInner ModifyMove (after BeforeMove + PP, before the announce): MAGNITUDE_TABLE (pinned against the resolved handler, B8-0c) → BP, category re-derived Physical'));
+add([mv('magnitude', 'onUseMoveMessage')],
+  IMPL('protocol.rs::set_magnitude_message', 'the -activate|<u>|move: Magnitude|<n> one-shot printed right after the |move| announce in every branch (miss / immune / Protect / hit), before any outcome line'));
+add([mv('present', 'onModifyMove')],
+  IMPL('variable_moves.rs::present_roll', 'one random(10) at ModifyMove: PRESENT_TABLE → BP 40 / 80 / 120 (the ordinary hit) or the heal branch (run_present_heal: accuracy, Protect, Wonder Guard, Ghost -immune, a sub fails [still] + -fail|<u>, full HP -fail|<t>|heal, else -heal floor(maxhp/4); no crit roll)'));
+add([mv('triplekick', 'multiaccuracy'), mv('triplekick', 'multihit')],
+  IMPL('moves.rs::run_multihit', 'fixed 3 strikes; each strike after the first re-rolls accuracy first (roll_accuracy: stages, ModifyAccuracy) and a miss ends the move silently; BP 10 × move.hit (pinned against the resolved callback, B8-0b)'));
+add([mv('fissure', 'ohko'), mv('horndrill', 'ohko'), mv('guillotine', 'ohko'), mv('sheercold', 'ohko')],
+  IMPL('variable_moves.rs::ohko_accuracy', 'the gen-3 OHKO branch in run_fixed_damage_move: a lower-level user → -immune|<t>|[ohko] with no draw; else randomChance(30 + level gap, 100) ignoring stages and ModifyAccuracy; Sturdy; damage = the target\'s current HP (also against a sub); -ohko after a sub line or after a KO (apply_fixed_hit)'));
 // GEN3 FULL PARITY B5 (`gen3_b5_moves_v1`) — Spite, Grudge, Snore, Nightmare, Ingrain. The settled
 // spec is harness/probe_b5_moves.js; the differential is tests/b5_moves_golden_test.rs.
 add([mv('spite', 'onHit'), mv('spite', 'ignoreImmunity')],

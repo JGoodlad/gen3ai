@@ -138,7 +138,8 @@ const MOVE_ID_BLOCKLIST = new Set([
   // NOTE: return/frustration/flail/reversal/lowkick are NO LONGER blocklisted — they are
   // MODELED bit-for-bit AND e2e-ADMITTED (`gen3_move_coverage_batch5_v1`) via
   // MODELED_BATCH5_VARBP_MOVES in `isModeledMove`.
-  'grassknot', 'magnitude', 'present',
+  // magnitude / present are NO LONGER blocklisted (`gen3_b8_moves_v1`, MODELED_B8_MOVES).
+  'grassknot',
   'gyroball', 'fling', 'punishment', 'trumpcard', 'wringout', 'crushgrip',
   // hidden power: gated in `isModeledMove` by the `allowHiddenPower` param (the
   // byte fuzzer's `pool` mode admits it — engine models typed HP at fixed BP 70,
@@ -151,9 +152,9 @@ const MOVE_ID_BLOCKLIST = new Set([
   // early-admit; they are modeled bit-for-bit (fixeddamage_test.rs + FD1-FD4).
   // counter/mirrorcoat/endeavor are likewise NO LONGER blocklisted — MODELED
   // (`gen3_move_coverage_batch5_v1`) via MODELED_BATCH5_REACTIVE_MOVES.
-  'psywave', 'bide', 'finalgambit',
-  // OHKO
-  'fissure', 'horndrill', 'guillotine', 'sheercold',
+  // psywave / bide and the four OHKO moves are NO LONGER blocklisted (`gen3_b8_moves_v1`,
+  // MODELED_B8_MOVES).
+  'finalgambit',
   // switch-trap / item-swap / leaves-1 / fakeout / future / sleeptalk. NOTE:
   // knockoff/thief/covet (item REMOVAL) + rapidspin are NO LONGER blocklisted — they are
   // MODELED bit-for-bit (`gen3_move_coverage_batch1_v1`) and ADMITTED via
@@ -366,9 +367,9 @@ const BATCH4B_E2E_EXCLUDED = false;
 // Bullet Seed / Icicle Spear / Rock Blast / Barrage / Comet Punch / Double Slap / Spike Cannon /
 // Arm Thrust / Fury Attack / Fury Swipes / Bone Rush). All carry `m.multihit` (which is rejected
 // below), so `isModeledMove` ADMITS them by an EARLY special-case (before the `m.multihit` reject),
-// kept in lockstep with `run_multihit` in src/turn.rs. TRIPLE KICK (`triplekick`) is EXCLUDED — it
-// is `multiaccuracy` (a per-strike accuracy re-roll + escalating BP), which the engine FAIL-LOUDS
-// on, so the picker must never pick it. Twineedle's 20% psn is the ordinary per-strike secondary.
+// kept in lockstep with `run_multihit` in src/turn.rs. TRIPLE KICK (`triplekick`, multiaccuracy) is
+// admitted by MODELED_B8_MOVES (`gen3_b8_moves_v1`). Twineedle's 20% psn is the ordinary per-strike
+// secondary.
 const MODELED_BATCH7_MULTIHIT_MOVES = new Set([
   'doublekick', 'twineedle', 'bonemerang',
   'pinmissile', 'bulletseed', 'iciclespear', 'rockblast', 'barrage', 'cometpunch', 'doubleslap',
@@ -529,6 +530,16 @@ const PARTIALTRAP_E2E_EXCLUDED = false;
 // `damageCallback` rejects + the blocklist keep it off the pickable path.
 const MODELED_FIXED_DAMAGE_MOVES = new Set([
   'seismictoss', 'nightshade', 'sonicboom', 'dragonrage', 'superfang',
+]);
+
+// GEN3 FULL PARITY B8 (`gen3_b8_moves_v1`, `src/turn/variable_moves.rs`): Bide, Magnitude, Psywave,
+// Present, Triple Kick and the four OHKO moves. Each carries a shape a damaging-move reject below
+// would drop (bp 0, `damageCallback`, `ohko`, `multihit`, `onModifyMove`), so `isModeledMove`
+// ADMITS them by an EARLY special-case. Golden `gen_b8_moves_golden.js` → `tests/b8_moves_golden_test.rs`.
+// (Psywave from a user below level 100 into a Substitute FAILS LOUD in the engine — the sub keeps a
+// float HP; every mode that picks it plays level 100.)
+const MODELED_B8_MOVES = new Set([
+  'bide', 'magnitude', 'psywave', 'present', 'triplekick', 'fissure', 'horndrill', 'guillotine', 'sheercold',
 ]);
 
 // MOVE-COVERAGE BATCH 1 (`gen3_move_coverage_batch1_v1`): the DRAW-FREE post-hit effects a
@@ -766,6 +777,7 @@ function isModeledMove(id, allowHiddenPower = false) {
   // The port models them bit-for-bit (`gen_fixeddamage_golden.js` / `fixeddamage_test.rs` +
   // the FD1-FD4 regression pins); the DEFERRED fixed-damage family stays out (fail-loud).
   if (MODELED_FIXED_DAMAGE_MOVES.has(id)) return true;
+  if (MODELED_B8_MOVES.has(id)) return true;
   // MOVE-COVERAGE BATCH 4 (`gen3_move_coverage_batch4_v1`) — FOCUS PUNCH + PURSUIT, ADMITTED
   // HERE (before the damaging-move `beforeTurnCallback` / `basePowerCallback` / `onModifyMove`
   // rejects below, which would else drop them). Both are damaging (bp>0) with no secondary, so
@@ -861,7 +873,7 @@ function isModeledMove(id, allowHiddenPower = false) {
   if (m.ohko) return false;
   // MOVE-COVERAGE BATCH 7 (`gen3_move_coverage_batch7_v1`) — the GENERIC MULTI-STRIKE family,
   // ADMITTED HERE (before the `m.multihit` reject), the port runs the per-strike loop bit-for-bit
-  // (`run_multihit`). Triple Kick (multiaccuracy) is NOT in the set → still rejected by `m.multihit`.
+  // (`run_multihit`). Triple Kick (multiaccuracy) was admitted above (MODELED_B8_MOVES).
   if (!BATCH7_E2E_EXCLUDED && MODELED_BATCH7_MULTIHIT_MOVES.has(id)) return true;
   if (m.multihit) return false;
   // RECOIL / DRAIN (`gen3_move_coverage_batch1_v1`) — a recoil/drain damaging move is admitted
@@ -1455,9 +1467,12 @@ function firstMoverSince(log, fromIdx) {
   for (let i = fromIdx; i < log.length; i++) {
     const parts = log[i].split('|');
     const tag = parts[1];
+    // BIDE's locked turns (`gen3_b8_moves_v1`) print no `|move|`: the wait turn's
+    // `|-activate|<u>|move: Bide` and the release's bare `|-end|<u>|move: Bide` ARE the user's action.
     const isAction =
       tag === 'move' || tag === 'switch' || tag === 'cant' ||
-      (tag === '-activate' && (parts[3] || '') === 'confusion');
+      (tag === '-activate' && ((parts[3] || '') === 'confusion' || (parts[3] || '') === 'move: Bide')) ||
+      (tag === '-end' && parts.length === 4 && parts[3] === 'move: Bide');
     if (isAction && parts.length >= 3) {
       const actor = parts[2].trim();
       if (actor.startsWith('p1a:')) return 'p1';

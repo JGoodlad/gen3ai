@@ -890,6 +890,8 @@ impl FullBattleDriver {
                         // …and so does the outrage/petaldance/thrash lock.
                         .or_else(|| bs.sides[side].pokemon[active].locked_move.map(|l| l.move_index))
                         .or_else(|| bs.sides[side].pokemon[active].rollout.map(|(_, k)| k))
+                        // …and Bide's `onLockMove` (`gen3_b8_moves_v1`).
+                        .or_else(|| bs.sides[side].pokemon[active].bide.map(|b| b.move_index))
                         .unwrap_or(mi);
                     // A mon with NO usable move (all slots at 0 PP) has `moveid:'struggle'`
                     // substituted by `side.choose` — regardless of the scripted slot `mi`.

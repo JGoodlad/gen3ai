@@ -312,3 +312,15 @@ run('BF16a multihit: the user falls asleep to Effect Spore', 'gen3customgame', [
 run('BF16b multihit: the user faints to Rough Skin', 'gen3customgame', [5, 6, 7, 8],
   SET('Shedinja', 'wonderguard', 'furyswipes') + ']' + SET('Snorlax', 'thickfat', 'splash'),
   SET('Sharpedo', 'roughskin', 'splash'), [M(1, 1), ['switch 2', '']]);
+// ---- BF17 (the B7 x B8 merge) LOCK-ON / MIND READER before an OHKO move ----
+// gen 3's OHKO accuracy (data/mods/gen3/scripts.ts:346-363): `if (!target.isSemiInvulnerable())` the level check
+// (`-immune|[ohko]` for a lower-level user) and `accuracy = 30 + gap`; then `runEvent('Accuracy')`, where the user's
+// `lockon` (data/moves.ts lockon.condition `onSourceAccuracy` -> true) skips the roll. A locked semi-invulnerable
+// target skips the level check too (the Invulnerability event let the move through: `onSourceInvulnerability`).
+const SMEARGLE_LO = (lv) => LV('Smeargle', 'owntempo', 'lockon,fissure', lv);
+run('BF17a lockon ohko: no accuracy roll', 'gen3customgame', [1, 2, 3, 4], SMEARGLE_LO(100),
+  LV('Snorlax', 'thickfat', 'splash', 100), [M(1, 1), M(2, 1)]);
+run('BF17b lockon ohko: a lower-level user is still immune', 'gen3customgame', [1, 2, 3, 4], SMEARGLE_LO(50),
+  LV('Snorlax', 'thickfat', 'splash', 100), [M(1, 1), M(2, 1)]);
+run('BF17c lockon ohko: a locked digging target skips the level check', 'gen3customgame', [1, 2, 3, 4], SMEARGLE_LO(50),
+  LV('Dugtrio', 'arenatrap', 'dig,splash', 100), [M(1, 2), M(2, 1)]);

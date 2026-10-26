@@ -136,9 +136,11 @@ const MODELED_FIXED_DAMAGE = new Set([
   'seismictoss', 'nightshade', 'sonicboom', 'dragonrage', 'superfang',
   'counter', 'mirrorcoat', 'endeavor',
 ]);
-// DEFERRED fixed-damage (`is_fixed_damage_move` true but no amount → fail-loud panic).
-const DEFERRED_FIXED_DAMAGE = new Set([
-  'psywave', 'fissure', 'horndrill', 'guillotine', 'bide',
+// GEN3 FULL PARITY B8 (`gen3_b8_moves_v1`, `src/turn/variable_moves.rs`) — the last of the
+// fixed-damage family (Psywave's draw at the hit, the four OHKO moves, Bide's cast + release),
+// the onModifyMove-BP pair (Magnitude, Present) and Triple Kick (multiaccuracy).
+const MODELED_B8 = new Set([
+  'psywave', 'fissure', 'horndrill', 'guillotine', 'sheercold', 'bide', 'magnitude', 'present', 'triplekick',
 ]);
 // MOVE-COVERAGE BATCH 4 / 4b / 4c / 5 damaging-side modeled sets (mirrored from the
 // src/turn.rs id-gates — the pre-batch-5 scan STALELY classified these MISMODELED):
@@ -163,8 +165,8 @@ const MODELED_B5 = new Set(['spite', 'grudge', 'nightmare', 'ingrain']);
 // in MODELED_VARBP).
 const MODELED_B7 = new Set(['stockpile', 'swallow', 'mudsport', 'watersport', 'mist', 'lockon', 'mindreader']);
 // MOVE-COVERAGE BATCH 7 (`gen3_move_coverage_batch7_v1`) — the generic MULTI-STRIKE family
-// (`run_multihit`): the FIXED-2 trio + the variable [2,5] family. `triplekick` (the sole
-// `multiaccuracy` carrier) stays an ENGINE fail-loud and is deliberately NOT here.
+// (`run_multihit`): the FIXED-2 trio + the variable [2,5] family.
+// (`triplekick`, the sole `multiaccuracy` carrier, is MODELED since B8 — `MODELED_B8`.)
 const MODELED_BATCH7_MULTIHIT = new Set([
   'doublekick', 'twineedle', 'bonemerang',
   'pinmissile', 'bulletseed', 'iciclespear', 'rockblast', 'barrage', 'cometpunch',
@@ -205,7 +207,7 @@ function classifyDamaging(m, id) {
   }
   // A move whose damage bypasses getDamage → fixed-damage routing.
   if (MODELED_FIXED_DAMAGE.has(id)) return { cov: 'MODELED', mech: 'fixed-damage' };
-  if (DEFERRED_FIXED_DAMAGE.has(id)) return { cov: 'UNMODELED', mech: 'reactive-or-ohko-fixed' };
+  if (MODELED_B8.has(id)) return { cov: 'MODELED', mech: `b8 (${id})` };
   if (m.ohko) return { cov: 'UNMODELED', mech: 'ohko' };
 
   // SNORE (`gen3_b5_moves_v1`): the other sleepUsable move — the asleep proceed + the awake
@@ -227,14 +229,13 @@ function classifyDamaging(m, id) {
   // guard PANICS → UNMODELED (honest fail-loud). A remaining variable-BP move with a
   // NON-ZERO placeholder bp reaches the damaging path and runs at the wrong flat BP →
   // MISMODELED (silent desync).
-  // BATCH 7: the generic multi-strike family is MODELED (`run_multihit`); `triplekick`
-  // (the sole multiaccuracy carrier, ALSO a basePowerCallback holder — checked BEFORE the
-  // variable-BP buckets) is an explicit engine fail-loud, NOT a silent run.
+  // BATCH 7: the generic multi-strike family is MODELED (`run_multihit`; Triple Kick, the sole
+  // multiaccuracy carrier, is `MODELED_B8` above).
   if (MODELED_BATCH7_MULTIHIT.has(id)) return { cov: 'MODELED', mech: 'multi-strike (batch 7)' };
-  if (id === 'triplekick') return { cov: 'UNMODELED', mech: 'multiaccuracy (fail-loud)' };
-  // ANY remaining bp-0 damaging move (basePowerCallback OR onModifyMove-derived BP —
-  // Magnitude / Present) fail-louds: the engine's gen-3 `derive_category` classifies bp 0 as
-  // Status → `run_status_move`'s guard PANICS (probe-verified for magnitude/present).
+  if (m.multiaccuracy) return { cov: 'UNMODELED', mech: 'multiaccuracy (fail-loud)' };
+  // ANY remaining bp-0 damaging move (basePowerCallback OR onModifyMove-derived BP) fail-louds:
+  // the engine's gen-3 `derive_category` classifies bp 0 as Status → `run_status_move`'s guard
+  // PANICS. (Magnitude / Present are MODELED since B8.)
   if (!(m.basePower > 0) && !m.damage && !m.damageCallback) {
     return { cov: 'UNMODELED', mech: 'bp0 → status fail-loud' };
   }

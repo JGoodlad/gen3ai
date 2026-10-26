@@ -98,6 +98,24 @@ impl LockedMove {
     }
 }
 
+/// The `bide` volatile (`gen3_b8_moves_v1`; the resolved gen-3 condition is
+/// `data/mods/gen3/moves.ts` `bide` over `data/moves.ts`): Showdown's `effectState.duration` (3 at
+/// the cast, ticked by the residual, so the user waits one turn at 2 and releases at 1 — no
+/// duration draw) and `effectState.totalDamage` (the Move-effect damage the holder took since the
+/// cast, accumulated by `onDamage` at `onDamagePriority: -101`, i.e. after Endure / Focus Band).
+/// `lastDamageSource` is not kept: in singles every release target resolves to the current foe
+/// active (a source that is still active IS that mon; an inactive one goes through
+/// `getRandomTarget`, which in singles is `pokemon.side.foe.active[0]`, `sim/battle.ts`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Bide {
+    /// Showdown's `effectState.duration`.
+    pub duration: u8,
+    /// Showdown's `effectState.totalDamage`.
+    pub total_damage: u32,
+    /// The move slot the lock (`onLockMove: 'bide'`) holds the user to.
+    pub move_index: usize,
+}
+
 /// Gen-3 field weather. `None` = clear (the construction-time value; Sand Stream
 /// / Drizzle / Drought / the Hail move set it via a switch-in or move EVENT, not
 /// built here).
@@ -537,6 +555,10 @@ pub struct MonState {
     /// single-move `trapped:true` request shape for free. Cleared SILENTLY on switch-out and
     /// faint (a phazed-out uproarer emits no `-end`).
     pub uproar: Option<(u8, usize)>,
+    /// The BIDE volatile (`gen3_b8_moves_v1`, see [`Bide`]). Folds into `move_locked()` /
+    /// `locked_slot()` (the `onLockMove` request: the one `{move, id}` entry, `trapped:true`).
+    /// Cleared SILENTLY on switch-out and faint (`clearVolatile` runs no `onEnd`).
+    pub bide: Option<Bide>,
     /// Was this mon DAMAGED BY THE CURRENT FOE this turn? (`gen3_bp_modifier_cluster_v1`.)
     /// REVENGE's `basePowerCallback` doubles on `pokemon.attackedBy.some(p => p.source ===
     /// target && p.damage > 0 && p.thisTurn)`. Deliberately NOT reusing `reactive`: that is
@@ -1601,6 +1623,7 @@ impl MonState {
             types_override: None,
             last_move_used: None,
             uproar: None,
+            bide: None,
             damaged_by_foe_this_turn: false,
             fury_cutter: None,
             locked_move: None,
@@ -1760,10 +1783,12 @@ impl MonState {
             || self.locked_move.is_some()
             // ROLLOUT / ICE BALL lock for 5 executions (`gen3_rollout_defensecurl_v1`).
             || self.rollout.is_some()
+            // BIDE (`gen3_b8_moves_v1`): `onLockMove: 'bide'` — the same FIRM shape.
+            || self.bide.is_some()
     }
 
     /// The move SLOT a lock holds the mon to (`gen3_locked_request_move_v1`) — the two-turn
-    /// charge, the Outrage / Thrash / Petal Dance lock, Rollout / Ice Ball, or Uproar, i.e.
+    /// charge, the Outrage / Thrash / Petal Dance lock, Rollout / Ice Ball, Uproar or Bide, i.e.
     /// Showdown's `lockedMove`. `None` for Recharge (a pseudo-move with no slot) and for an
     /// unlocked mon. The ONE place both the locked `|request|` entry and the wire's
     /// `move <name>` resolution read it: each used to read the two-turn slot only, so every
@@ -1775,6 +1800,7 @@ impl MonState {
             .or(self.locked_move.map(|l| l.move_index))
             .or(self.rollout.map(|(_, s)| s))
             .or(self.uproar.map(|(_, s)| s))
+            .or(self.bide.map(|b| b.move_index))
     }
 
     /// The current PP of move slot `k` (`gen3_pp_tracking_v1`), or `0` for an
