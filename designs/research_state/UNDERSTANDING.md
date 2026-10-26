@@ -848,15 +848,19 @@ production pin, to 480,081,209):
   deterministic per (model, unit seed), so banked P\* cells stay comparable.
 [ledger 2026-10-25 · *X26c CONTINUATION vs KAKUNA*]
 
-**The next lever on the shelf is set mutation (D3 / X41), BUILT and pre-registered, not run (2026-10-25,
-`measurements/x41_d3_setmut_2026-10-25/PREREG.md`):** [BUILT · no measurement yet]
+**Set mutation (D3 / X41) reads CONTINUE at look 1: a small, undetected gain on unfamiliar teams at no in-pool cost
+(2026-10-26, `measurements/x41_d3_setmut_2026-10-25/read/`):** [MEASURED · preregistered (`9938d7b6`) · 3 seeds per
+arm · 1,260 D3 Kakuna games; C0's rows banked from D1's read and reused after a game-for-game replay guard (7 / 7)]
 - **What it is:** P\* + 20M with 30 % of each side's teams drawn from 2,876 of our pool teams, each with 1–2 mons'
-  sets redrawn from Smogon usage. The species cores stay; the exact sets change.
-- **What it tests:** whether the CORE-stratum piloting deficit (familiar species, unfamiliar sets, ≈ 11 pp) is
-  exact-set memorisation.
-- **How it is read:** by D1's rule, against the same C0.
-- **The registered guess:** H +1.5 pp, 80 % [−1.5, +4.5], most likely UNDECIDED at the final look. Nothing above
-  changes until it is read.
+  sets redrawn from Smogon usage. The species cores stay; the exact sets change. It tests whether the CORE-stratum
+  piloting deficit (familiar species, unfamiliar sets, ≈ 11 pp) is exact-set memorisation.
+- **H (Kakuna, the three unfamiliar panels): +1.27 pp [−2.63, +5.16]**, D3 0.491 vs C0 0.479; per seed +2.4 / −2.9 /
+  +4.3; per panel H +2.9, P72 +1.0, F +0.0. Without H: +0.48 [−4.29, +5.24]. UNDECIDED, Δ̂ > 0 ⇒ look 2 decides.
+- **P (in-house S on home72): −0.24 pp [−1.10, +0.62], NON-INFERIOR.** D1's breadth cost −1.61 pp; set mutation
+  shows no such cost.
+- Read against the registered guess (H +1.5): on track, and not yet distinguishable from zero. Goal (b) is not met by
+  D3 (LB 0.464).
+[ledger 2026-10-26 · *X41 D3 LOOK 1*]
 
 **Behind it, the literature's common factor is built and pre-registered at the plateau: breadth at 10⁴ teams (N1-P /
 X61P, 2026-10-26, `measurements/x61p_n1_production_2026-10-26/PREREG.md`):** [BUILT · no measurement yet]

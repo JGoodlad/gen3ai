@@ -59,9 +59,10 @@ Smogon-usage teams; U = the three UNFAMILIAR panels H, F and P72; "pilot" = play
      small to call, and too large to kill exposure as a lever. D1 proceeds as staged (§6.2).
   3. **X38 / D1: widen the pool**, run in X35; FINAL (look 2) reads UNDECIDED: H +2.10 pp [−0.92, +5.11], and
      it costs in-pool strength (P −1.61 [−2.90, −0.32]); §6.3.
-  4. **X41 / D3: set mutation.** BUILT and pre-registered 2026-10-25 (§6.4): 2,876 pool teams with 1–2 mons' sets
-     redrawn from Smogon usage, mixed in at 0.3 per side, read by D1's rule against the shared C0. ≈ 12.1 GPU-h at
-     look 1, ≈ 20.2 with look 2. It runs only on the orchestrator's GO.
+  4. **X41 / D3: set mutation.** Look 1 READ 2026-10-26: **CONTINUE** (§6.4). 2,876 pool teams with 1–2 mons'
+     sets redrawn from Smogon usage, mixed in at 0.3 per side, read by D1's rule against the shared C0. H +1.27 pp
+     [−2.63, +5.16] (D3 0.491, LB 0.464; 2 of 3 seeds positive), +0.48 [−4.29, +5.24] without H; P −0.24 pp [−1.10,
+     +0.62], NON-INFERIOR. Look 2 (s3504–s3505, ≈ 8.1 GPU-h) is licensed and decides.
   5. **X61P / N1-P: breadth at 10⁴ teams, at the plateau.** BUILT and pre-registered 2026-10-26 (§6.5b): 12,000
      procedural teams drawn from Smogon usage alone, 0.5 of each side's draws, forked from P\* at C0's pin + the corpus,
      read by D1's rule on F alone against the shared C0 (≈ 12.3 GPU-h at look 1, ≈ 20.5 with look 2). GO (F GAIN)
@@ -387,7 +388,21 @@ taken as ON − OFF.
 - **Next:** none of §6's D1 triggers fired as written (D3 "on D1's verdict"; X53 "if NULL from plasticity or GAIN but
   short"), so whether D3 or X53 runs is the orchestrator's ruling (FINDING 11; RULED 2026-10-24: neither now — the X26 continuation fork runs instead, see the decision record).
 
-### 6.4 X41 / D3 — BUILT and REGISTERED 2026-10-25; runs on the orchestrator's GO
+### 6.4 X41 / D3 — REGISTERED 2026-10-25; look 1 READ 2026-10-26: CONTINUE
+
+**Look 1 (s3501–s3503, 12.54 GPU-h; [`read/README.md`](../research_state/measurements/x41_d3_setmut_2026-10-25/read/README.md)):**
+
+- **H, UNDECIDED → CONTINUE:** +1.27 pp [−2.63, +5.16] (D3 0.491 vs C0 0.479, 420 games per panel per arm; φ̂ 0.60,
+  so not widened). Per seed +2.4 / −2.9 / +4.3 pp. Per panel H +2.9, P72 +1.0, F +0.0, none detected.
+- **Without H** (F + P72): +0.48 pp [−4.29, +5.24].
+- **P, NON-INFERIOR:** −0.24 pp [−1.10, +0.62]. Unlike D1 (−1.61 pp), the set mutation costs no detectable in-pool
+  strength.
+- **Guards:** not read (H is not a GAIN).
+- **C0's banked rows:** reused after the game-for-game replay guard passed 7 of 7 units.
+- **Look 2** (s3504–s3505) is licensed by the rule. A look-2 GAIN carries D1's two-look false-GAIN rate of
+  3.5–7.4 % beside it (5b84bca6).
+- **The registered guess:** H +1.5 pp; read +1.27.
+
 
 **The written triggers did not fire.** D3 was to run if D1 read TRADE, or GAIN with the target unreached. D1's final
 was UNDECIDED (FINDING 11), and X26c's revisit rule ("FLAT with S rising") did not fire either. The build was the
@@ -594,6 +609,7 @@ with the interval named in the registration.
 | 2026-10-25 | **X61 / N1 BUILT and REGISTERED** (training-lever builder, orchestrator brief after the 2026-10-26 literature survey; CPU only) | the procedural corpus `n1_proc_v1` (12,000 teams, Smogon facade only, ≥ 3-fit panel exclusion, the pinned validator, the label-path soak) and the held-out procedural panel `n1p72`; the lever `--team-mix n1_proc_v1@ALL:0.7 --team-mix-sides both`; the fresh toy pair `main.x61.arms` (toy_c0f / toy_n1, s6101, 100M, one pin); the PREREG with U_HF as the primary (P72 excluded as the corpus's own population), a seed-widened Newcombe, GO / KILL / BELOW-GO / UNDECIDED, K0 before launch; §0 item 5, §5, §6.5b and §6.8 quote it | adding breadth at a plateau again (D1's shape); P72 in the primary; reusing X35's toy C0 (another pin, a fork, fp64 τ); N4 as a third arm (no width flag); building the replay-team arm now (human data: its own toggle and snapshot, PREREG §10) | `x61_n1_breadth_2026-10-25/PREREG.md`; `sota_survey_2026-10-26.md` §5 N1 |
 | 2026-10-26 | **X61's toy design NOT-READY (review `aed145fd`) ⇒ X61P / N1-P BUILT and REGISTERED** (training-lever builder, orchestrator brief; CPU only) | the review's recommended design: kit arm `n1p` = C0's argv + `--team-mix n1_proc_v1@ALL:0.5 --team-mix-sides both`, s3501–s3503 (+ s3504–s3505 on CONTINUE), 20M from P\*, against the shared C0; its own pin `5f8f6cfa` = `f4b25238` + the corpus's three files and its `CORPORA` line only (tag `x61p-n1p-pin-5f8f6cfa`), WITHOUT the 10-26 GIGO fixes (C0 ran without them); the primary Δ_F on F alone at 1,200 games per arm per seed by D1's rule (`d1` gains per-arm panels and a reported group); H / P72 / home72 / U / Δ_H − Δ_F reported (B1); GO ⇒ X53-N1; NULL ⇒ only "N1 at the plateau"; the M4 hazard named; `main.reads` specs; checkargs exit 0 and a dry-run FORK refused only on CUDA visibility | the toy design as registered (B1, B2, M1); the toy Option T now (the from-step-0 screen stays available by a new registration); D3's whole corpus subtree in the pin (more than the brief's "corpus files only"); the GIGO fixes in the pin (a second lever against C0); importing D1's banked P rows (no regime id) | `x61p_n1_production_2026-10-26/PREREG.md`; `x61_n1_breadth_2026-10-25/REVIEW.md` |
 | 2026-10-26 | **Goal (b)'s panels checked for Kakuna familiarity** (measurement-validity worker; CPU, no games; survey F3) | the panels STAND: H, F and P72 at equal weight, with "unfamiliar" meaning unseen by OUR training and Kakuna's exposure reported, not required to be zero. The read found that Kakuna's exposure to an H team is at most its one source replay (≲ 2 trajectories; hl's window UNVERIFIED). H's ladder near-copy rate (4.2 % at ≥ 4) matches a random hl team's, and F's is 14 %. home72 is the most Kakuna-familiar panel: 8 exact `competitive` copies. Dropping H gives P\* 0.481 [0.447, 0.516], lower. X51, X26c and D1 look 2 are unchanged on every subset. U − H is reported beside U from now on; X54 is asked for two descriptive forum216b secondaries (without its 9 hl-≥ 4 teams; the 86 teams posted in 2026) | dropping H from (b) (no evidence of familiarity; it lowers the score and costs a third of the n); downloading Metamon's Kakuna-era team sets now (no go; listed as the open question's cost) | `goal_b_panel_validity_2026-10-26/` |
+| 2026-10-26 | **D3 LOOK 1 READ: CONTINUE** (readout worker; CPU, 1,260 D3 Kakuna games + 140 guard re-plays + 10,500 in-house pairs; `main.reads` spec, D1's rule verbatim) | H +1.27 pp [−2.63, +5.16] (D3 0.491, LB 0.464; seeds +2.4 / −2.9 / +4.3), without H +0.48 [−4.29, +5.24]; P −0.24 [−1.10, +0.62] NON-INFERIOR; guards not read; C0's banked rows reused after the determinism guard re-played 7 / 7 units game for game; goal (b) not met by D3; look 2 licensed; §0 item 4 and §6.4 quote it | reading +1.27 as a set-generalisation gain (LB < 0); re-playing C0 (the guard passed; +1,260 Kakuna games + 10,500 pairs); calling the look a NULL (UB +5.2 > +3) | `x41_d3_setmut_2026-10-25/read/`; `x35_breakers_stage_2026-10-17/reads/d3_look1.json` |
 | 2026-10-20 | Expected pp per lever | quoted from measured effects where they exist (X37b's 100M → 280M transfer; L1's search null; FACE_c), GUESS elsewhere, with the arithmetic that (b) needs +6–8 pp | single-number promises | §1, §5 |
 | 2026-10-25 | Status line made true (docs-health pass) | the status still said D3 / X53's trigger "is the orchestrator's call"; it now carries the 2026-10-24 ruling (neither now) and the X26c FLAT read (rows above) | the old line | this Decision record 2026-10-24, 2026-10-25 rows |
 | 2026-10-25 | **The human-replay lever row re-stated after REVIEW D** (design worker) | the first reads (FR-1 / FR-3 playing; X59-S built and registered: three matched student arms × 5 seeds, Δ_data = S-H − S-S answers the owner); H-TEAMS then H-BC; H-INIT dropped; X60 NOT-READY | X59 as the first read (withdrawn: its rule rewarded forgetting); H-BC called "the only gradient on unfamiliar states" (struck) | `human_replay_quality_2026-10-25/RESPONSE.md` §D; `x59s_matched_students_2026-10-25/PREREG.md` |

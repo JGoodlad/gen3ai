@@ -1,0 +1,147 @@
+{
+ "schema": "gen3_read_spec_v1",
+ "read": "x41_d3_look1_2026-10-26",
+ "prereg": "designs/research_state/measurements/x41_d3_setmut_2026-10-25/PREREG.md",
+ "note": "D3 look 1 as registered (PREREG 9938d7b6 \u00a73-\u00a76): H = D1's rule on Kakuna's three unfamiliar panels, P = S on home72; C0 s3501-s3503 imported from D1's committed look-2 input (the same finals, panels, unit seeds), H's only if the guard group re-plays C0 s3501's 7 banked heldout72_hpfix units game for game.",
+ "models": {
+  "d3_s3501": {
+   "arm": "D3",
+   "seed": 3501,
+   "ref": {
+    "kind": "final",
+    "run": "models/rb_x35_d3mut_s3501",
+    "min_step": 300000170,
+    "quiet_s": 300,
+    "done_marker": [
+     "/home/goodlad/.claude/jobs/x35/status.txt",
+     "X35END: rb_x35_d3mut_s3501 complete:"
+    ]
+   }
+  },
+  "d3_s3502": {
+   "arm": "D3",
+   "seed": 3502,
+   "ref": {
+    "kind": "final",
+    "run": "models/rb_x35_d3mut_s3502",
+    "min_step": 300000170,
+    "quiet_s": 300,
+    "done_marker": [
+     "/home/goodlad/.claude/jobs/x35/status.txt",
+     "X35END: rb_x35_d3mut_s3502 complete:"
+    ]
+   }
+  },
+  "d3_s3503": {
+   "arm": "D3",
+   "seed": 3503,
+   "ref": {
+    "kind": "final",
+    "run": "models/rb_x35_d3mut_s3503",
+    "min_step": 300000170,
+    "quiet_s": 300,
+    "done_marker": [
+     "/home/goodlad/.claude/jobs/x35/status.txt",
+     "X35END: rb_x35_d3mut_s3503 complete:"
+    ]
+   }
+  },
+  "c0_s3501": {
+   "arm": "C0",
+   "seed": 3501,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x35_c0_s3501/final_model.zip",
+    "sha256": "09a6a2df48509a59fd9aefe6d20d9722aad6717f1730c6dfd75274446b283303"
+   }
+  }
+ },
+ "anchor": {
+  "h": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "heldout72_hpfix",
+    "forum72",
+    "p72"
+   ],
+   "unit_seeds": "0-6",
+   "models": [
+    "d3_s3501",
+    "d3_s3502",
+    "d3_s3503"
+   ]
+  },
+  "guard": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "heldout72_hpfix"
+   ],
+   "unit_seeds": "0-6",
+   "models": [
+    "c0_s3501"
+   ]
+  }
+ },
+ "s": {
+  "p": {
+   "refpop": "designs/research_state/measurements/x35_breakers_stage_2026-10-17/reference_population_production.json",
+   "refpop_content_sha256": "cef0960eac605f1dc026442d1089dc23654e23df91010feaaeea7890901e4519",
+   "panel": "home72",
+   "pairs": 500,
+   "batch_pairs": 100,
+   "family": "x41_d3_p_2026-10-26",
+   "models": [
+    "d3_s3501",
+    "d3_s3502",
+    "d3_s3503"
+   ],
+   "regime_id": "d4de0fd7c16a2658"
+  }
+ },
+ "decision": {
+  "rule": "d1",
+  "params": {
+   "arm": "X41",
+   "look": 1,
+   "on": "D3",
+   "off": "C0",
+   "anchor_group": "h",
+   "s_group": "p",
+   "import_off": {
+    "path": "designs/research_state/measurements/x35_breakers_stage_2026-10-17/d1_read/read_look2_input.json",
+    "sha256": "8c4884aafcb5fa77a15b2e8be517460cf64f411a43a6ffa67bf02d1f4f2170b7",
+    "labels": {
+     "3501": "c0_s3501",
+     "3502": "c0_s3502",
+     "3503": "c0_s3503"
+    },
+    "regimes": {
+     "anchor": "09f297883701a35a",
+     "s": "d4de0fd7c16a2658"
+    }
+   },
+   "determinism_guard": {
+    "group": "guard",
+    "label": "c0_s3501",
+    "banked": {
+     "path": "designs/research_state/measurements/x41_d3_setmut_2026-10-25/read/c0_s3501_heldout72_banked_games.jsonl",
+     "sha256": "be989806098e1b06f994ce9175c81238f6926ef94f367ab74b450db2e30ba336",
+     "cells": {
+      "heldout72_hpfix": "heldout72_hpfix"
+     }
+    }
+   },
+   "reported_without": [
+    "heldout72_hpfix"
+   ],
+   "guards_not_read": {
+    "guards": [
+     "G-F",
+     "G-E",
+     "G-C"
+    ],
+    "why": "H is not a GAIN: the guards gate only a qualifying primary (the A1 ruling (a)); not played"
+   }
+  }
+ }
+}

@@ -1,0 +1,305 @@
+{
+ "arm": "X41",
+ "guards": {
+  "G-C": {
+   "detail": {},
+   "guard": "G-C",
+   "near_boundary": [],
+   "reasons": [
+    "H is not a GAIN: the guards gate only a qualifying primary (the A1 ruling (a)); not played"
+   ],
+   "status": "INCONCLUSIVE"
+  },
+  "G-E": {
+   "detail": {},
+   "guard": "G-E",
+   "near_boundary": [],
+   "reasons": [
+    "H is not a GAIN: the guards gate only a qualifying primary (the A1 ruling (a)); not played"
+   ],
+   "status": "INCONCLUSIVE"
+  },
+  "G-F": {
+   "detail": {},
+   "guard": "G-F",
+   "near_boundary": [],
+   "reasons": [
+    "H is not a GAIN: the guards gate only a qualifying primary (the A1 ruling (a)); not played"
+   ],
+   "status": "INCONCLUSIVE"
+  }
+ },
+ "h": {
+  "ci95_pp": [
+   -2.628338612166302,
+   5.162572280677053
+  ],
+  "ci95_unwidened_pp": [
+   -2.628338612166302,
+   5.162572280677053
+  ],
+  "class": "UNDECIDED",
+  "delta_pp": 1.2698412698412709,
+  "final": false,
+  "look": 1,
+  "near_boundary": [],
+  "off": {
+   "mean": 0.4785714285714286,
+   "n_eff": 1260.7064546191552,
+   "per_panel": {
+    "forum72": [
+     208,
+     420
+    ],
+    "heldout72_hpfix": [
+     198,
+     420
+    ],
+    "p72": [
+     197,
+     420
+    ]
+   },
+   "var": 0.0001979372877898955,
+   "wilson95": [
+    0.45110359293144797,
+    0.5061694561541467
+   ]
+  },
+  "on": {
+   "mean": 0.4912698412698413,
+   "n_eff": 1260.4256703097228,
+   "per_panel": {
+    "forum72": [
+     208,
+     420
+    ],
+    "heldout72_hpfix": [
+     210,
+     420
+    ],
+    "p72": [
+     201,
+     420
+    ]
+   },
+   "var": 0.00019828522237819288,
+   "wilson95": [
+    0.463739321609065,
+    0.5188534138725204
+   ]
+  },
+  "outcome": "CONTINUE",
+  "overdispersion": {
+   "df": 4,
+   "half_width_factor": 1.0,
+   "phi_hat": 0.6002597243140582,
+   "ratio_off": 0.4118680015507779,
+   "ratio_on": 0.7886514470773385
+  },
+  "per_panel_reported": {
+   "forum72": {
+    "ci95_pp": [
+     -6.731502876033327,
+     6.731502876033327
+    ],
+    "delta_pp": 0.0,
+    "off": [
+     208,
+     420
+    ],
+    "on": [
+     208,
+     420
+    ],
+    "role": "a population X41 does not train on (Smogon forum, human-built)"
+   },
+   "heldout72_hpfix": {
+    "ci95_pp": [
+     -3.8875329964887904,
+     9.565226729876883
+    ],
+    "delta_pp": 2.857142857142858,
+    "off": [
+     198,
+     420
+    ],
+    "on": [
+     210,
+     420
+    ],
+    "role": "a population X41 does not train on (ladder replays, HP repaired)"
+   },
+   "p72": {
+    "ci95_pp": [
+     -5.776131729258516,
+     7.668719804080938
+    ],
+    "delta_pp": 0.9523809523809545,
+    "off": [
+     197,
+     420
+    ],
+    "on": [
+     201,
+     420
+    ],
+    "role": "a population X41 does not train on (procedural Smogon usage, MATERIALLY WEAKER, F-DV-20)"
+   }
+  },
+  "positive_seeds": 2,
+  "reasons": [],
+  "seed_deltas_pp": {
+   "3501": 2.380952380952378,
+   "3502": -2.857142857142864,
+   "3503": 4.285714285714287
+  },
+  "sign_ok": true,
+  "sign_rule": ">= 2 of 3"
+ },
+ "look": 1,
+ "p": {
+  "bar_pp": -2.0,
+  "class": "NON-INFERIOR",
+  "look": 1,
+  "near_boundary": [],
+  "reasons": [],
+  "stat": {
+   "ci_pp": [
+    -1.1027308779630198,
+    0.621778497010646
+   ],
+   "confidence": 0.975,
+   "delta_pp": -0.24047619047618696,
+   "df": 3.6838653834457253,
+   "mean_off_pp": 57.009523809523806,
+   "mean_on_pp": 56.76904761904762,
+   "n_off": 3,
+   "n_on": 3,
+   "q": 3.6543235683733526,
+   "se_pp": 0.23595466338812685,
+   "var_off": 0.10797619047619153,
+   "var_on": 0.059047619047621194
+  }
+ },
+ "reasons": [
+  "H UNDECIDED with \u0394\u0302 > 0 at look 1: go to look 2"
+ ],
+ "reported": {
+  "dose": {
+   "read": false
+  },
+  "without": {
+   "ci95_pp": [
+    -4.292799015561164,
+    5.242124744795325
+   ],
+   "ci95_unwidened_pp": [
+    -4.292799015561164,
+    5.242124744795325
+   ],
+   "class": "UNDECIDED",
+   "delta_pp": 0.47619047619048005,
+   "dropped": [
+    "heldout72_hpfix"
+   ],
+   "final": false,
+   "look": 1,
+   "near_boundary": [],
+   "off": {
+    "mean": 0.48214285714285715,
+    "n_eff": 840.5773228668476,
+    "per_panel": {
+     "forum72": [
+      208,
+      420
+     ],
+     "p72": [
+      197,
+      420
+     ]
+    },
+    "var": 0.000297035282366915,
+    "wilson95": [
+     0.44852150444165223,
+     0.5159266824949804
+    ]
+   },
+   "on": {
+    "mean": 0.48690476190476195,
+    "n_eff": 840.2335584179766,
+    "per_panel": {
+     "forum72": [
+      208,
+      420
+     ],
+     "p72": [
+      201,
+      420
+     ]
+    },
+    "var": 0.0002973322265414102,
+    "wilson95": [
+     0.4532450051940994,
+     0.5206837137506583
+    ]
+   },
+   "outcome": "CONTINUE",
+   "overdispersion": {
+    "df": 4,
+    "half_width_factor": 1.0,
+    "phi_hat": 0.4405944474319048,
+    "ratio_off": 0.5319185349991438,
+    "ratio_on": 0.3492703598646658
+   },
+   "panels": [
+    "forum72",
+    "p72"
+   ],
+   "per_panel_reported": {
+    "forum72": {
+     "ci95_pp": [
+      -6.731502876033327,
+      6.731502876033327
+     ],
+     "delta_pp": 0.0,
+     "off": [
+      208,
+      420
+     ],
+     "on": [
+      208,
+      420
+     ],
+     "role": "a population X41 does not train on (Smogon forum, human-built)"
+    },
+    "p72": {
+     "ci95_pp": [
+      -5.776131729258516,
+      7.668719804080938
+     ],
+     "delta_pp": 0.9523809523809545,
+     "off": [
+      197,
+      420
+     ],
+     "on": [
+      201,
+      420
+     ],
+     "role": "a population X41 does not train on (procedural Smogon usage, MATERIALLY WEAKER, F-DV-20)"
+    }
+   },
+   "positive_seeds": 2,
+   "reasons": [],
+   "seed_deltas_pp": {
+    "3501": 0.7142857142857117,
+    "3502": -2.8571428571428523,
+    "3503": 3.57142857142857
+   },
+   "sign_ok": true,
+   "sign_rule": ">= 2 of 3"
+  }
+ },
+ "verdict": "CONTINUE"
+}

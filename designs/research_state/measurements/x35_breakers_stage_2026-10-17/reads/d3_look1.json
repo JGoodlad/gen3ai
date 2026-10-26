@@ -1,0 +1,1109 @@
+{
+ "arm": "X41",
+ "cells_inconclusive": [],
+ "code": {
+  "commit": "2cc864f2fb6b69a7dac42204d01ae88079f26c6d",
+  "diff_sha": "e3b0c44298fc1c14",
+  "dirty": false,
+  "pin": null,
+  "root": "/home/goodlad/dev/gen3ai/.claude/worktrees/d3-play"
+ },
+ "created": "2026-10-26T13:15:28-0700",
+ "decision": {
+  "arm": "X41",
+  "guards": {
+   "G-C": {
+    "detail": {},
+    "guard": "G-C",
+    "near_boundary": [],
+    "reasons": [
+     "H is not a GAIN: the guards gate only a qualifying primary (the A1 ruling (a)); not played"
+    ],
+    "status": "INCONCLUSIVE"
+   },
+   "G-E": {
+    "detail": {},
+    "guard": "G-E",
+    "near_boundary": [],
+    "reasons": [
+     "H is not a GAIN: the guards gate only a qualifying primary (the A1 ruling (a)); not played"
+    ],
+    "status": "INCONCLUSIVE"
+   },
+   "G-F": {
+    "detail": {},
+    "guard": "G-F",
+    "near_boundary": [],
+    "reasons": [
+     "H is not a GAIN: the guards gate only a qualifying primary (the A1 ruling (a)); not played"
+    ],
+    "status": "INCONCLUSIVE"
+   }
+  },
+  "h": {
+   "ci95_pp": [
+    -2.628338612166302,
+    5.162572280677053
+   ],
+   "ci95_unwidened_pp": [
+    -2.628338612166302,
+    5.162572280677053
+   ],
+   "class": "UNDECIDED",
+   "delta_pp": 1.2698412698412709,
+   "final": false,
+   "look": 1,
+   "near_boundary": [],
+   "off": {
+    "mean": 0.4785714285714286,
+    "n_eff": 1260.7064546191552,
+    "per_panel": {
+     "forum72": [
+      208,
+      420
+     ],
+     "heldout72_hpfix": [
+      198,
+      420
+     ],
+     "p72": [
+      197,
+      420
+     ]
+    },
+    "var": 0.0001979372877898955,
+    "wilson95": [
+     0.45110359293144797,
+     0.5061694561541467
+    ]
+   },
+   "on": {
+    "mean": 0.4912698412698413,
+    "n_eff": 1260.4256703097228,
+    "per_panel": {
+     "forum72": [
+      208,
+      420
+     ],
+     "heldout72_hpfix": [
+      210,
+      420
+     ],
+     "p72": [
+      201,
+      420
+     ]
+    },
+    "var": 0.00019828522237819288,
+    "wilson95": [
+     0.463739321609065,
+     0.5188534138725204
+    ]
+   },
+   "outcome": "CONTINUE",
+   "overdispersion": {
+    "df": 4,
+    "half_width_factor": 1.0,
+    "phi_hat": 0.6002597243140582,
+    "ratio_off": 0.4118680015507779,
+    "ratio_on": 0.7886514470773385
+   },
+   "per_panel_reported": {
+    "forum72": {
+     "ci95_pp": [
+      -6.731502876033327,
+      6.731502876033327
+     ],
+     "delta_pp": 0.0,
+     "off": [
+      208,
+      420
+     ],
+     "on": [
+      208,
+      420
+     ],
+     "role": "a population X41 does not train on (Smogon forum, human-built)"
+    },
+    "heldout72_hpfix": {
+     "ci95_pp": [
+      -3.8875329964887904,
+      9.565226729876883
+     ],
+     "delta_pp": 2.857142857142858,
+     "off": [
+      198,
+      420
+     ],
+     "on": [
+      210,
+      420
+     ],
+     "role": "a population X41 does not train on (ladder replays, HP repaired)"
+    },
+    "p72": {
+     "ci95_pp": [
+      -5.776131729258516,
+      7.668719804080938
+     ],
+     "delta_pp": 0.9523809523809545,
+     "off": [
+      197,
+      420
+     ],
+     "on": [
+      201,
+      420
+     ],
+     "role": "a population X41 does not train on (procedural Smogon usage, MATERIALLY WEAKER, F-DV-20)"
+    }
+   },
+   "positive_seeds": 2,
+   "reasons": [],
+   "seed_deltas_pp": {
+    "3501": 2.380952380952378,
+    "3502": -2.857142857142864,
+    "3503": 4.285714285714287
+   },
+   "sign_ok": true,
+   "sign_rule": ">= 2 of 3"
+  },
+  "look": 1,
+  "p": {
+   "bar_pp": -2.0,
+   "class": "NON-INFERIOR",
+   "look": 1,
+   "near_boundary": [],
+   "reasons": [],
+   "stat": {
+    "ci_pp": [
+     -1.1027308779630198,
+     0.621778497010646
+    ],
+    "confidence": 0.975,
+    "delta_pp": -0.24047619047618696,
+    "df": 3.6838653834457253,
+    "mean_off_pp": 57.009523809523806,
+    "mean_on_pp": 56.76904761904762,
+    "n_off": 3,
+    "n_on": 3,
+    "q": 3.6543235683733526,
+    "se_pp": 0.23595466338812685,
+    "var_off": 0.10797619047619153,
+    "var_on": 0.059047619047621194
+   }
+  },
+  "reasons": [
+   "H UNDECIDED with \u0394\u0302 > 0 at look 1: go to look 2"
+  ],
+  "reported": {
+   "dose": {
+    "read": false
+   },
+   "without": {
+    "ci95_pp": [
+     -4.292799015561164,
+     5.242124744795325
+    ],
+    "ci95_unwidened_pp": [
+     -4.292799015561164,
+     5.242124744795325
+    ],
+    "class": "UNDECIDED",
+    "delta_pp": 0.47619047619048005,
+    "dropped": [
+     "heldout72_hpfix"
+    ],
+    "final": false,
+    "look": 1,
+    "near_boundary": [],
+    "off": {
+     "mean": 0.48214285714285715,
+     "n_eff": 840.5773228668476,
+     "per_panel": {
+      "forum72": [
+       208,
+       420
+      ],
+      "p72": [
+       197,
+       420
+      ]
+     },
+     "var": 0.000297035282366915,
+     "wilson95": [
+      0.44852150444165223,
+      0.5159266824949804
+     ]
+    },
+    "on": {
+     "mean": 0.48690476190476195,
+     "n_eff": 840.2335584179766,
+     "per_panel": {
+      "forum72": [
+       208,
+       420
+      ],
+      "p72": [
+       201,
+       420
+      ]
+     },
+     "var": 0.0002973322265414102,
+     "wilson95": [
+      0.4532450051940994,
+      0.5206837137506583
+     ]
+    },
+    "outcome": "CONTINUE",
+    "overdispersion": {
+     "df": 4,
+     "half_width_factor": 1.0,
+     "phi_hat": 0.4405944474319048,
+     "ratio_off": 0.5319185349991438,
+     "ratio_on": 0.3492703598646658
+    },
+    "panels": [
+     "forum72",
+     "p72"
+    ],
+    "per_panel_reported": {
+     "forum72": {
+      "ci95_pp": [
+       -6.731502876033327,
+       6.731502876033327
+      ],
+      "delta_pp": 0.0,
+      "off": [
+       208,
+       420
+      ],
+      "on": [
+       208,
+       420
+      ],
+      "role": "a population X41 does not train on (Smogon forum, human-built)"
+     },
+     "p72": {
+      "ci95_pp": [
+       -5.776131729258516,
+       7.668719804080938
+      ],
+      "delta_pp": 0.9523809523809545,
+      "off": [
+       197,
+       420
+      ],
+      "on": [
+       201,
+       420
+      ],
+      "role": "a population X41 does not train on (procedural Smogon usage, MATERIALLY WEAKER, F-DV-20)"
+     }
+    },
+    "positive_seeds": 2,
+    "reasons": [],
+    "seed_deltas_pp": {
+     "3501": 0.7142857142857117,
+     "3502": -2.8571428571428523,
+     "3503": 3.57142857142857
+    },
+    "sign_ok": true,
+    "sign_rule": ">= 2 of 3"
+   }
+  },
+  "verdict": "CONTINUE"
+ },
+ "guards": {
+  "G-C": {
+   "detail": {},
+   "guard": "G-C",
+   "near_boundary": [],
+   "reasons": [
+    "H is not a GAIN: the guards gate only a qualifying primary (the A1 ruling (a)); not played"
+   ],
+   "status": "INCONCLUSIVE"
+  },
+  "G-E": {
+   "detail": {},
+   "guard": "G-E",
+   "near_boundary": [],
+   "reasons": [
+    "H is not a GAIN: the guards gate only a qualifying primary (the A1 ruling (a)); not played"
+   ],
+   "status": "INCONCLUSIVE"
+  },
+  "G-F": {
+   "detail": {},
+   "guard": "G-F",
+   "near_boundary": [],
+   "reasons": [
+    "H is not a GAIN: the guards gate only a qualifying primary (the A1 ruling (a)); not played"
+   ],
+   "status": "INCONCLUSIVE"
+  }
+ },
+ "h": {
+  "ci95_pp": [
+   -2.628338612166302,
+   5.162572280677053
+  ],
+  "ci95_unwidened_pp": [
+   -2.628338612166302,
+   5.162572280677053
+  ],
+  "class": "UNDECIDED",
+  "delta_pp": 1.2698412698412709,
+  "final": false,
+  "look": 1,
+  "near_boundary": [],
+  "off": {
+   "mean": 0.4785714285714286,
+   "n_eff": 1260.7064546191552,
+   "per_panel": {
+    "forum72": [
+     208,
+     420
+    ],
+    "heldout72_hpfix": [
+     198,
+     420
+    ],
+    "p72": [
+     197,
+     420
+    ]
+   },
+   "var": 0.0001979372877898955,
+   "wilson95": [
+    0.45110359293144797,
+    0.5061694561541467
+   ]
+  },
+  "on": {
+   "mean": 0.4912698412698413,
+   "n_eff": 1260.4256703097228,
+   "per_panel": {
+    "forum72": [
+     208,
+     420
+    ],
+    "heldout72_hpfix": [
+     210,
+     420
+    ],
+    "p72": [
+     201,
+     420
+    ]
+   },
+   "var": 0.00019828522237819288,
+   "wilson95": [
+    0.463739321609065,
+    0.5188534138725204
+   ]
+  },
+  "outcome": "CONTINUE",
+  "overdispersion": {
+   "df": 4,
+   "half_width_factor": 1.0,
+   "phi_hat": 0.6002597243140582,
+   "ratio_off": 0.4118680015507779,
+   "ratio_on": 0.7886514470773385
+  },
+  "per_panel_reported": {
+   "forum72": {
+    "ci95_pp": [
+     -6.731502876033327,
+     6.731502876033327
+    ],
+    "delta_pp": 0.0,
+    "off": [
+     208,
+     420
+    ],
+    "on": [
+     208,
+     420
+    ],
+    "role": "a population X41 does not train on (Smogon forum, human-built)"
+   },
+   "heldout72_hpfix": {
+    "ci95_pp": [
+     -3.8875329964887904,
+     9.565226729876883
+    ],
+    "delta_pp": 2.857142857142858,
+    "off": [
+     198,
+     420
+    ],
+    "on": [
+     210,
+     420
+    ],
+    "role": "a population X41 does not train on (ladder replays, HP repaired)"
+   },
+   "p72": {
+    "ci95_pp": [
+     -5.776131729258516,
+     7.668719804080938
+    ],
+    "delta_pp": 0.9523809523809545,
+    "off": [
+     197,
+     420
+    ],
+    "on": [
+     201,
+     420
+    ],
+    "role": "a population X41 does not train on (procedural Smogon usage, MATERIALLY WEAKER, F-DV-20)"
+   }
+  },
+  "positive_seeds": 2,
+  "reasons": [],
+  "seed_deltas_pp": {
+   "3501": 2.380952380952378,
+   "3502": -2.857142857142864,
+   "3503": 4.285714285714287
+  },
+  "sign_ok": true,
+  "sign_rule": ">= 2 of 3"
+ },
+ "inputs": {
+  "arm": "X41",
+  "h": {
+   "off": {
+    "3501": {
+     "forum72": [
+      72,
+      140
+     ],
+     "heldout72_hpfix": [
+      69,
+      140
+     ],
+     "p72": [
+      59,
+      140
+     ]
+    },
+    "3502": {
+     "forum72": [
+      68,
+      140
+     ],
+     "heldout72_hpfix": [
+      66,
+      140
+     ],
+     "p72": [
+      74,
+      140
+     ]
+    },
+    "3503": {
+     "forum72": [
+      68,
+      140
+     ],
+     "heldout72_hpfix": [
+      63,
+      140
+     ],
+     "p72": [
+      64,
+      140
+     ]
+    }
+   },
+   "on": {
+    "3501": {
+     "forum72": [
+      73,
+      140
+     ],
+     "heldout72_hpfix": [
+      77,
+      140
+     ],
+     "p72": [
+      60,
+      140
+     ]
+    },
+    "3502": {
+     "forum72": [
+      65,
+      140
+     ],
+     "heldout72_hpfix": [
+      62,
+      140
+     ],
+     "p72": [
+      69,
+      140
+     ]
+    },
+    "3503": {
+     "forum72": [
+      70,
+      140
+     ],
+     "heldout72_hpfix": [
+      71,
+      140
+     ],
+     "p72": [
+      72,
+      140
+     ]
+    }
+   },
+   "ties": {
+    "off": {
+     "3501": {
+      "forum72": 0,
+      "heldout72_hpfix": 1,
+      "p72": 0
+     },
+     "3502": {
+      "forum72": 0,
+      "heldout72_hpfix": 0,
+      "p72": 0
+     },
+     "3503": {
+      "forum72": 0,
+      "heldout72_hpfix": 0,
+      "p72": 0
+     }
+    },
+    "on": {
+     "3501": {
+      "forum72": 0,
+      "heldout72_hpfix": 0,
+      "p72": 0
+     },
+     "3502": {
+      "forum72": 1,
+      "heldout72_hpfix": 0,
+      "p72": 0
+     },
+     "3503": {
+      "forum72": 0,
+      "heldout72_hpfix": 0,
+      "p72": 0
+     }
+    }
+   },
+   "units": {
+    "off": {
+     "3501": {
+      "forum72": {
+       "counted": 7,
+       "skipped": []
+      },
+      "heldout72_hpfix": {
+       "counted": 7,
+       "skipped": []
+      },
+      "p72": {
+       "counted": 7,
+       "skipped": []
+      }
+     },
+     "3502": {
+      "forum72": {
+       "counted": 7,
+       "skipped": []
+      },
+      "heldout72_hpfix": {
+       "counted": 7,
+       "skipped": []
+      },
+      "p72": {
+       "counted": 7,
+       "skipped": []
+      }
+     },
+     "3503": {
+      "forum72": {
+       "counted": 7,
+       "skipped": []
+      },
+      "heldout72_hpfix": {
+       "counted": 7,
+       "skipped": []
+      },
+      "p72": {
+       "counted": 7,
+       "skipped": []
+      }
+     }
+    },
+    "on": {
+     "3501": {
+      "forum72": {
+       "counted": 7,
+       "skipped": []
+      },
+      "heldout72_hpfix": {
+       "counted": 7,
+       "skipped": []
+      },
+      "p72": {
+       "counted": 7,
+       "skipped": []
+      }
+     },
+     "3502": {
+      "forum72": {
+       "counted": 7,
+       "skipped": []
+      },
+      "heldout72_hpfix": {
+       "counted": 7,
+       "skipped": []
+      },
+      "p72": {
+       "counted": 7,
+       "skipped": []
+      }
+     },
+     "3503": {
+      "forum72": {
+       "counted": 7,
+       "skipped": []
+      },
+      "heldout72_hpfix": {
+       "counted": 7,
+       "skipped": []
+      },
+      "p72": {
+       "counted": 7,
+       "skipped": []
+      }
+     }
+    }
+   }
+  },
+  "import_off": {
+   "guard": {
+    "banked_source": {
+     "path": "designs/research_state/measurements/x41_d3_setmut_2026-10-25/read/c0_s3501_heldout72_banked_games.jsonl",
+     "sha256": "be989806098e1b06f994ce9175c81238f6926ef94f367ab74b450db2e30ba336"
+    },
+    "group": "guard",
+    "label": "c0_s3501",
+    "passed": true,
+    "reasons": [],
+    "regime_id": "a1c6cf53f17a355b",
+    "units": [
+     {
+      "banked": {
+       "n": 20,
+       "wins": 16
+      },
+      "counted": true,
+      "games_equal": true,
+      "n": 20,
+      "panel": "heldout72_hpfix",
+      "unit": "c0_s3501__heldout72_hpfix__00",
+      "unit_seed": 0,
+      "wins": 16
+     },
+     {
+      "banked": {
+       "n": 20,
+       "wins": 10
+      },
+      "counted": true,
+      "games_equal": true,
+      "n": 20,
+      "panel": "heldout72_hpfix",
+      "unit": "c0_s3501__heldout72_hpfix__01",
+      "unit_seed": 1,
+      "wins": 10
+     },
+     {
+      "banked": {
+       "n": 20,
+       "wins": 10
+      },
+      "counted": true,
+      "games_equal": true,
+      "n": 20,
+      "panel": "heldout72_hpfix",
+      "unit": "c0_s3501__heldout72_hpfix__02",
+      "unit_seed": 2,
+      "wins": 10
+     },
+     {
+      "banked": {
+       "n": 20,
+       "wins": 7
+      },
+      "counted": true,
+      "games_equal": true,
+      "n": 20,
+      "panel": "heldout72_hpfix",
+      "unit": "c0_s3501__heldout72_hpfix__03",
+      "unit_seed": 3,
+      "wins": 7
+     },
+     {
+      "banked": {
+       "n": 20,
+       "wins": 8
+      },
+      "counted": true,
+      "games_equal": true,
+      "n": 20,
+      "panel": "heldout72_hpfix",
+      "unit": "c0_s3501__heldout72_hpfix__04",
+      "unit_seed": 4,
+      "wins": 8
+     },
+     {
+      "banked": {
+       "n": 20,
+       "wins": 10
+      },
+      "counted": true,
+      "games_equal": true,
+      "n": 20,
+      "panel": "heldout72_hpfix",
+      "unit": "c0_s3501__heldout72_hpfix__05",
+      "unit_seed": 5,
+      "wins": 10
+     },
+     {
+      "banked": {
+       "n": 20,
+       "wins": 8
+      },
+      "counted": true,
+      "games_equal": true,
+      "n": 20,
+      "panel": "heldout72_hpfix",
+      "unit": "c0_s3501__heldout72_hpfix__06",
+      "unit_seed": 6,
+      "wins": 8
+     }
+    ]
+   },
+   "h_pooled": true,
+   "labels": {
+    "3501": "c0_s3501",
+    "3502": "c0_s3502",
+    "3503": "c0_s3503"
+   },
+   "path": "designs/research_state/measurements/x35_breakers_stage_2026-10-17/d1_read/read_look2_input.json",
+   "regimes": {
+    "anchor": "09f297883701a35a",
+    "s": "d4de0fd7c16a2658"
+   },
+   "sha256": "8c4884aafcb5fa77a15b2e8be517460cf64f411a43a6ffa67bf02d1f4f2170b7"
+  },
+  "look": 1,
+  "p": {
+   "inconclusive": [],
+   "off": {
+    "3501": 56.778571428571425,
+    "3502": 57.385714285714286,
+    "3503": 56.864285714285714
+   },
+   "on": {
+    "3501": 57.00714285714286,
+    "3502": 56.778571428571425,
+    "3503": 56.521428571428565
+   },
+   "panel": "home72",
+   "per_final": {
+    "c0_s3501": {
+     "final": "09a6a2df48509a59fd9aefe6d20d9722aad6717f1730c6dfd75274446b283303",
+     "inconclusive": [],
+     "per_member_pp": {
+      "production": 73.45,
+      "tstar": 57.550000000000004,
+      "x26_080m": 59.150000000000006,
+      "x26_140m": 53.300000000000004,
+      "x26_210m": 51.849999999999994,
+      "x26_270m": 50.849999999999994,
+      "x26_pstar": 51.300000000000004
+     },
+     "s_pp": 56.778571428571425
+    },
+    "c0_s3502": {
+     "final": "7e9a9890e2b397de6d8b87588c597d7f53e39b84efd3d1080305f77dbf22feec",
+     "inconclusive": [],
+     "per_member_pp": {
+      "production": 75.44999999999999,
+      "tstar": 59.35,
+      "x26_080m": 59.4,
+      "x26_140m": 54.85,
+      "x26_210m": 50.949999999999996,
+      "x26_270m": 52.300000000000004,
+      "x26_pstar": 49.4
+     },
+     "s_pp": 57.385714285714286
+    },
+    "c0_s3503": {
+     "final": "99096be8eccfc1cef4268ab4d6de15063a386cda475e72340212fdbf3a1b7e26",
+     "inconclusive": [],
+     "per_member_pp": {
+      "production": 75.5,
+      "tstar": 59.45,
+      "x26_080m": 54.6,
+      "x26_140m": 52.849999999999994,
+      "x26_210m": 53.1,
+      "x26_270m": 50.64999999999999,
+      "x26_pstar": 51.9
+     },
+     "s_pp": 56.864285714285714
+    },
+    "d3_s3501": {
+     "final": "ffe73d318beea94ff22a70dd00f8b4216a02dcc8306f1f5131babe29f02dd481",
+     "inconclusive": [],
+     "per_member_pp": {
+      "production": 73.1,
+      "tstar": 61.1,
+      "x26_080m": 56.45,
+      "x26_140m": 52.900000000000006,
+      "x26_210m": 52.15,
+      "x26_270m": 50.64999999999999,
+      "x26_pstar": 52.7
+     },
+     "s_pp": 57.00714285714286
+    },
+    "d3_s3502": {
+     "final": "6f1e26af9bdcac64c76cddf0006d53ade3e9fed3a1067db19ee9d7505d3147c1",
+     "inconclusive": [],
+     "per_member_pp": {
+      "production": 73.85000000000001,
+      "tstar": 60.35,
+      "x26_080m": 58.95,
+      "x26_140m": 53.449999999999996,
+      "x26_210m": 51.4,
+      "x26_270m": 48.699999999999996,
+      "x26_pstar": 50.74999999999999
+     },
+     "s_pp": 56.778571428571425
+    },
+    "d3_s3503": {
+     "final": "e00a90c4f6200fba05a6a3d70c3a20902ddaf8d723dbe35c54027eb0c746b9c9",
+     "inconclusive": [],
+     "per_member_pp": {
+      "production": 72.89999999999999,
+      "tstar": 58.85,
+      "x26_080m": 57.85,
+      "x26_140m": 51.6,
+      "x26_210m": 51.74999999999999,
+      "x26_270m": 52.75,
+      "x26_pstar": 49.95
+     },
+     "s_pp": 56.521428571428565
+    }
+   },
+   "team_set": "ts:08142ee8b0c18e8a"
+  }
+ },
+ "ledgers": {
+  "p": {
+   "digest": "0ffdcb976e56b5345950fb532b398f3c0693ae9e6e48c342d061338914a5698a",
+   "family": "x41_d3_p_2026-10-26",
+   "rows": 105
+  }
+ },
+ "look": 1,
+ "models": {
+  "c0_s3501": {
+   "arm": "C0",
+   "seed": 3501,
+   "sha256": "09a6a2df48509a59fd9aefe6d20d9722aad6717f1730c6dfd75274446b283303",
+   "source": "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3501/final_model.zip",
+   "step": 300061940
+  },
+  "d3_s3501": {
+   "arm": "D3",
+   "seed": 3501,
+   "sha256": "ffe73d318beea94ff22a70dd00f8b4216a02dcc8306f1f5131babe29f02dd481",
+   "source": "/home/goodlad/dev/gen3ai/models/rb_x35_d3mut_s3501/final_model.zip",
+   "step": 300061750
+  },
+  "d3_s3502": {
+   "arm": "D3",
+   "seed": 3502,
+   "sha256": "6f1e26af9bdcac64c76cddf0006d53ade3e9fed3a1067db19ee9d7505d3147c1",
+   "source": "/home/goodlad/dev/gen3ai/models/rb_x35_d3mut_s3502/final_model.zip",
+   "step": 300062535
+  },
+  "d3_s3503": {
+   "arm": "D3",
+   "seed": 3503,
+   "sha256": "e00a90c4f6200fba05a6a3d70c3a20902ddaf8d723dbe35c54027eb0c746b9c9",
+   "source": "/home/goodlad/dev/gen3ai/models/rb_x35_d3mut_s3503/final_model.zip",
+   "step": 300061458
+  }
+ },
+ "p": {
+  "bar_pp": -2.0,
+  "class": "NON-INFERIOR",
+  "look": 1,
+  "near_boundary": [],
+  "reasons": [],
+  "stat": {
+   "ci_pp": [
+    -1.1027308779630198,
+    0.621778497010646
+   ],
+   "confidence": 0.975,
+   "delta_pp": -0.24047619047618696,
+   "df": 3.6838653834457253,
+   "mean_off_pp": 57.009523809523806,
+   "mean_on_pp": 56.76904761904762,
+   "n_off": 3,
+   "n_on": 3,
+   "q": 3.6543235683733526,
+   "se_pp": 0.23595466338812685,
+   "var_off": 0.10797619047619153,
+   "var_on": 0.059047619047621194
+  }
+ },
+ "prereg": "designs/research_state/measurements/x41_d3_setmut_2026-10-25/PREREG.md",
+ "read": "x41_d3_look1_2026-10-26",
+ "reasons": [
+  "H UNDECIDED with \u0394\u0302 > 0 at look 1: go to look 2"
+ ],
+ "regimes": {
+  "anchor": {
+   "guard": "a1c6cf53f17a355b",
+   "h": "09f297883701a35a"
+  },
+  "s": {
+   "p": "d4de0fd7c16a2658"
+  }
+ },
+ "reported": {
+  "dose": {
+   "read": false
+  },
+  "without": {
+   "ci95_pp": [
+    -4.292799015561164,
+    5.242124744795325
+   ],
+   "ci95_unwidened_pp": [
+    -4.292799015561164,
+    5.242124744795325
+   ],
+   "class": "UNDECIDED",
+   "delta_pp": 0.47619047619048005,
+   "dropped": [
+    "heldout72_hpfix"
+   ],
+   "final": false,
+   "look": 1,
+   "near_boundary": [],
+   "off": {
+    "mean": 0.48214285714285715,
+    "n_eff": 840.5773228668476,
+    "per_panel": {
+     "forum72": [
+      208,
+      420
+     ],
+     "p72": [
+      197,
+      420
+     ]
+    },
+    "var": 0.000297035282366915,
+    "wilson95": [
+     0.44852150444165223,
+     0.5159266824949804
+    ]
+   },
+   "on": {
+    "mean": 0.48690476190476195,
+    "n_eff": 840.2335584179766,
+    "per_panel": {
+     "forum72": [
+      208,
+      420
+     ],
+     "p72": [
+      201,
+      420
+     ]
+    },
+    "var": 0.0002973322265414102,
+    "wilson95": [
+     0.4532450051940994,
+     0.5206837137506583
+    ]
+   },
+   "outcome": "CONTINUE",
+   "overdispersion": {
+    "df": 4,
+    "half_width_factor": 1.0,
+    "phi_hat": 0.4405944474319048,
+    "ratio_off": 0.5319185349991438,
+    "ratio_on": 0.3492703598646658
+   },
+   "panels": [
+    "forum72",
+    "p72"
+   ],
+   "per_panel_reported": {
+    "forum72": {
+     "ci95_pp": [
+      -6.731502876033327,
+      6.731502876033327
+     ],
+     "delta_pp": 0.0,
+     "off": [
+      208,
+      420
+     ],
+     "on": [
+      208,
+      420
+     ],
+     "role": "a population X41 does not train on (Smogon forum, human-built)"
+    },
+    "p72": {
+     "ci95_pp": [
+      -5.776131729258516,
+      7.668719804080938
+     ],
+     "delta_pp": 0.9523809523809545,
+     "off": [
+      197,
+      420
+     ],
+     "on": [
+      201,
+      420
+     ],
+     "role": "a population X41 does not train on (procedural Smogon usage, MATERIALLY WEAKER, F-DV-20)"
+    }
+   },
+   "positive_seeds": 2,
+   "reasons": [],
+   "seed_deltas_pp": {
+    "3501": 0.7142857142857117,
+    "3502": -2.8571428571428523,
+    "3503": 3.57142857142857
+   },
+   "sign_ok": true,
+   "sign_rule": ">= 2 of 3"
+  }
+ },
+ "rule": "d1",
+ "schema": "gen3_read_record_v1",
+ "spec_sha256": "4c51064fabbd079af350b846d2a5a90ac224a9dfb02a0a9c716ffd07c200a0cb",
+ "verdict": "CONTINUE"
+}

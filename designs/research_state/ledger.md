@@ -29005,3 +29005,36 @@ it (search only, never the observation). The e2e capstone regenerates byte for b
 new miss gate, where Showdown changes it only on a hit; 3 of the agent's 6 random-fuzz divergences, plus Rage's
 `-boost` / `-damage` order and Uproar's wake order (the other 3). For B7: Lock-On / Mind Reader must bypass the gate
 (`lockon`'s `onSourceInvulnerability`).
+
+### 2026-10-26 · MEASUREMENT · **X41 D3 LOOK 1, read under its registration (`9938d7b6`): CONTINUE. Set mutation scores H +1.27 pp [−2.63, +5.16] on Kakuna's three unfamiliar panels (D3 0.491 vs C0 0.479; +0.48 [−4.29, +5.24] without H) at no in-pool cost (P −0.24 pp [−1.10, +0.62], NON-INFERIOR); look 2 decides**
+
+**Question.** Does training on our pool teams with 1–2 mons' sets redrawn from Smogon usage (familiar species
+cores, unfamiliar sets; `d3_setmut_v1`, 0.3 per side) raise our piloting of unfamiliar teams against Kakuna (goal
+(b))? D3's PREREG (`x41_d3_setmut_2026-10-25/PREREG.md`): D1's rule verbatim, arm `X41`.
+
+**Design.** P\* + 20M at D3_PIN `9e289ba4`, s3501–s3503 (each K9(b) PASS, every VOID guard PASS), against C0
+s3501–s3503. H: Kakuna ckpt 34, greedy vs greedy, symmetric `heldout72_hpfix` / `forum72` / `p72`, 7 × 20-game units
+per panel per final (420 games per panel per arm). P: S on `home72` vs the frozen R, 7 × 500 mirrored pairs per final.
+C0's H and P rows are D1's banked ones (`d1_read/read_look2_input.json`), used because a game-for-game guard passed
+(C0 s3501's 7 `heldout72_hpfix` units re-played identically) and both regime ids match D1's (Kakuna
+`09f297883701a35a`, home72 `d4de0fd7c16a2658`). `main.reads` spec `read/read_spec_look1.json`, playing code
+`2cc864f2f` (= `aac96a565` + the `d1` rule's banked-import build), `HF_HUB_OFFLINE=1`, CPU only.
+
+**Predictions (registered).** H +1.5 pp, 80 % [−1.5, +4.5]; P −0.8 [−2.5, +0.9]; look 1 CONTINUE with probability 0.6.
+
+**Result.**
+- **H UNDECIDED → CONTINUE:** +1.27 pp [−2.63, +5.16] (φ̂ 0.60, not widened); per seed +2.4 / −2.9 / +4.3 (2 of 3
+  positive). Per panel (reported): H +2.9 [−3.9, +9.6], P72 +1.0 [−5.8, +7.7], F +0.0 [−6.7, +6.7].
+- **Without H** (the panel-validity ruling's view): +0.48 pp [−4.29, +5.24], D3 0.487.
+- **P NON-INFERIOR:** −0.24 pp [−1.10, +0.62] (Welch 97.5 %); D3 S 57.01 / 56.78 / 56.52, C0 56.78 / 57.39 / 56.86.
+- Guards G-F / G-E / G-C not read (H not a GAIN). Goal (b) not met by D3 (LB 0.464). Dose D3 12.54 GPU-h vs C0
+  12.47 (0.6 %, no confound).
+- Against the guess: H on the predicted point; P closer to 0 than predicted.
+
+**What it cannot say.** Whether the gain is real (the interval spans 0 and its UB exceeds +3); look 2 (s3504–s3505)
+decides. A look-2 GAIN carries D1's two-look false-GAIN rate of 3.5–7.4 % from the seed SD (5b84bca6).
+
+**Evidence:** `research_state/measurements/x41_d3_setmut_2026-10-25/read/` (README, spec, `cells.json`,
+`inputs.json`, `decision.json`, the banked guard rows); record
+`x35_breakers_stage_2026-10-17/reads/d3_look1.json`; state `~/gen3ai_archive/x41_d3_read/look1/`. View:
+`UNDERSTANDING.md` (the D3 paragraph), `endstate/design_beat_metamon_path.md` §0, §6.4, §9.

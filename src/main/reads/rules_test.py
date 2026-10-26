@@ -273,3 +273,97 @@ def test_a_short_reported_group_is_recorded_incomplete_and_never_blocks_the_prim
     cells["anchor"]["primary"] = dict(primary, unplayed=3)
     with pytest.raises(REC.RecordError, match="anchor.primary: 3 unit"):
         REC.build(sp, cells, RU.inputs("d1", cells, sp.params, sp), dec, {"commit": "c" * 40, "dirty": False})
+
+
+# ---------------------------------------- D3 (X41, 2026-10-26): the d1 rule's banked OFF side + determinism guard
+STAGE_D1 = "designs/research_state/measurements/x35_breakers_stage_2026-10-17/d1_read/read_look2_input.json"
+D1_INPUT_SHA = "8c4884aafcb5fa77a15b2e8be517460cf64f411a43a6ffa67bf02d1f4f2170b7"
+D3_PANELS = ["heldout72_hpfix", "forum72", "p72"]
+
+
+def _d3_spec(tmp_path, banked_rows, **over):
+    import hashlib
+    import json
+
+    from main.reads.spec import parse
+
+    bp = tmp_path / "banked.jsonl"
+    bp.write_text("".join(json.dumps(r) + "\n" for r in banked_rows))
+    on = [f"d3_s{s}" for s in (3501, 3502, 3503)]
+    models = {lab: {"arm": "D3", "seed": int(lab[-4:]), "ref": {"kind": "pinned", "path": f"/x/{lab}.zip",
+                                                                "sha256": "0" * 64}} for lab in on}
+    models["c0_s3501"] = {"arm": "C0", "seed": 3501, "ref": {"kind": "pinned", "path": "/x/c0.zip", "sha256": "1" * 64}}
+    params = {"arm": "X41", "look": 1, "on": "D3", "off": "C0", "anchor_group": "h", "s_group": "p",
+              "import_off": {"path": STAGE_D1, "sha256": D1_INPUT_SHA,
+                             "labels": {"3501": "c0_s3501", "3502": "c0_s3502", "3503": "c0_s3503"},
+                             "regimes": {"anchor": "aaaa", "s": "bbbb"}},
+              "determinism_guard": {"group": "guard", "label": "c0_s3501",
+                                    "banked": {"path": str(bp), "sha256": hashlib.sha256(bp.read_bytes()).hexdigest(),
+                                               "cells": {"heldout72_hpfix": "heldout72_hpfix"}}},
+              "reported_without": ["heldout72_hpfix"], "dose": {"on": [4.4, 4.3, 4.2], "off": [4.4, 4.0, 4.0]}}
+    params.update(over)
+    return parse({
+        "schema": "gen3_read_spec_v1", "read": "x41_test", "models": models,
+        "anchor": {"h": {"opponent": "metamon:Kakuna", "teamsets": D3_PANELS, "unit_seeds": "0-6", "models": on},
+                   "guard": {"opponent": "metamon:Kakuna", "teamsets": ["heldout72_hpfix"], "unit_seeds": "0-1",
+                             "models": ["c0_s3501"]}},
+        "s": {"p": {"refpop": "/x/r.json", "refpop_content_sha256": "0" * 64, "panel": "home72", "pairs": 500,
+                    "batch_pairs": 100, "family": "f", "models": on}},
+        "decision": {"rule": "d1", "params": params}})
+
+
+def _d3_cells(guard_games, *, anchor_regime="aaaa", s_regime="bbbb"):
+    def cell(w):
+        return {"wins": w, "n": 140, "ties": 0, "units": 7, "skipped": []}
+
+    on = {f"d3_s{s}": {ts: cell(75) for ts in D3_PANELS} for s in (3501, 3502, 3503)}
+    units = [{"unit": f"c0_s3501__heldout72_hpfix__{s:02d}", "label": "c0_s3501", "panel": "heldout72_hpfix",
+              "unit_seed": s, "counted": True, "n": len(g), "wins": sum(x[3] == "win" for x in g), "games": g}
+             for s, g in guard_games.items()]
+    return {"anchor": {"h": {"cells": on, "regime_id": anchor_regime},
+                       "guard": {"cells": {}, "units": units, "regime_id": "cccc"}},
+            "s": {"p": {"nodes": {lab: {"s_pp": 56.0, "population_score": {}} for lab in on}, "inconclusive": [],
+                        "panel": "home72", "team_set": "ts:08142ee8b0c18e8a", "regime_id": s_regime}}}
+
+
+GAMES = {0: [["ours_challenge", 1, "t1.txt", "win", 30], ["peer_challenge", 1, "t2.txt", "loss", 40]],
+         1: [["ours_challenge", 1, "t3.txt", "loss", 22]]}
+
+
+def _banked(games):
+    return [{"read_cell": "heldout72_hpfix", "unit_seed": s, "half": g[0], "index": g[1], "our_team": g[2],
+             "result": g[3], "turns": g[4]} for s, gs in games.items() for g in gs]
+
+
+def test_d3_pools_the_banked_c0_side_only_when_the_guard_replays_it_game_for_game(tmp_path):
+    sp = _d3_spec(tmp_path, _banked(GAMES))
+    doc = RU.inputs("d1", _d3_cells(GAMES), sp.params, sp)
+    assert doc["import_off"]["h_pooled"] is True and doc["import_off"]["guard"]["passed"] is True
+    assert doc["h"]["off"]["3501"] == {"forum72": [72, 140], "heldout72_hpfix": [69, 140], "p72": [59, 140]}
+    assert sorted(doc["h"]["off"]) == sorted(doc["p"]["off"]) == ["3501", "3502", "3503"]
+    assert doc["p"]["off"]["3501"] == 56.778571428571425 and "c0_s3501" in doc["p"]["per_final"]
+    v = RU.decide("d1", doc, sp.params)
+    assert v["h"]["class"] is not None and not any("determinism" in r for r in v["reasons"])
+    w = v["reported"]["without"]
+    assert w["panels"] == ["forum72", "p72"] and set(w["per_panel_reported"]) == {"forum72", "p72"}
+    assert v["reported"]["dose"]["read"] is True
+    # one game differs: H's banked rows are NOT pooled, H has no OFF side, and the reason names the guard
+    bad = {0: [GAMES[0][0], ["peer_challenge", 1, "t2.txt", "win", 40]], 1: GAMES[1]}
+    doc = RU.inputs("d1", _d3_cells(bad), sp.params, sp)
+    assert doc["import_off"]["h_pooled"] is False and doc["h"]["off"] == {}
+    v = RU.decide("d1", doc, sp.params)
+    assert v["h"]["class"] is None and any("determinism guard failed" in r for r in v["reasons"])
+    # a guard unit short of the banked ones also fails it
+    doc = RU.inputs("d1", _d3_cells({0: GAMES[0]}), sp.params, sp)
+    assert doc["import_off"]["h_pooled"] is False
+
+
+def test_d3_refuses_the_banked_side_on_another_regime_or_without_a_guard(tmp_path):
+    sp = _d3_spec(tmp_path, _banked(GAMES))
+    for kw in ({"anchor_regime": "zzzz"}, {"s_regime": "zzzz"}):
+        with pytest.raises(RU.RuleInputError, match="re-play the control"):
+            RU.inputs("d1", _d3_cells(GAMES, **kw), sp.params, sp)
+    with pytest.raises(Exception, match="determinism_guard"):
+        _d3_spec(tmp_path, _banked(GAMES), determinism_guard=None)
+    with pytest.raises(Exception, match="reported_without"):
+        _d3_spec(tmp_path, _banked(GAMES), reported_without=list(D3_PANELS))

@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-29,008-line file. **The ledger itself is append-only and is never edited by this**;
+29,041-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**952 headings · 897 dated · 2026-08-01 → 2026-10-26 · ledger 29,008 lines.**
+**953 headings · 898 dated · 2026-08-01 → 2026-10-26 · ledger 29,041 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -972,3 +972,4 @@ rename.
 - `L28917` · `2026-10-26` · RUST SIM · gen3 full parity B0 + B1: the recount, and the FORMAT table — nine gen-3 formats ran silently as OU (12 of 13 gen3-mod singles formats exact, `gen31v1` refused)
 - `L28952` · `2026-10-26` · RUST SIM · gen3 full parity B2 + B3 + B9: the recharge trio, the last four items, and Attract (moves 321 → 325 of 369, items 102 → 106 of 106)
 - `L28985` · `2026-10-26` · RUST SIM · gen3 full parity B4: the two-turn and semi-invulnerable family (moves 325 → 332 of 369)
+  - `L29009` · `2026-10-26` · MEASUREMENT · **X41 D3 LOOK 1, read under its registration (`9938d7b6`): CONTINUE. Set mutation scores H +1.27 pp [−2.63, +5.16] on Kakuna's three unfamiliar panels (D3 0.491 vs C0 0.479; +0.48 [−4.29, +5.24] without H) at no in-pool cost (P −0.24 pp [−1.10, +0.62], NON-INFERIOR); look 2 decides**
