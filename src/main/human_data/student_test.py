@@ -136,3 +136,39 @@ def test_train_export_reload_on_synthetic_rows(tmp_path, restore_torch_globals):
     assert a["init_sha256"] == b["init_sha256"]        # one seed, one initial network, in every arm
     with pytest.raises(ST.StudentError, match="another arm"):
         ST.train("human", rows, None, 5901, other, epochs=1, budget_min=0, threads=1)
+
+
+def test_the_unrestricted_arm_needs_legal_labels_only():
+    z = _z()
+    lab = np.array([1, 0, -1, 6, 6, -1], np.int8)            # 1 is legal but outside the consistent set
+    t = ST.targets("pstar0", z, lab)
+    assert t[0, 1] == 1 and (t[2] == z["moveset"][2]).all()
+    bad = lab.copy()
+    bad[0] = 3                                          # not a legal action
+    with pytest.raises(ST.StudentError, match="legal"):
+        ST.targets("pstar0", z, bad)
+    with pytest.raises(ST.StudentError, match="VOID"):
+        ST.targets("pstar", z, lab)
+
+
+def test_the_trainer_refuses_unregistered_inputs():
+    reg = {"pass": True, "rows_manifest_sha256": "r", "selfplay_manifest_sha256": "s",
+           "labels_manifest_sha256": "l", "labels0_manifest_sha256": "l0"}
+    ST.check_registration(reg, "human", "r", None)
+    ST.check_registration(reg, "selfplay", "s", None)
+    ST.check_registration(reg, "pstar0", "r", "l0")
+    for arm, rows, lab in (("human", "s", None), ("selfplay", "r", None), ("pstar", "r", "l0"), ("pstar0", "r", "l")):
+        with pytest.raises(ST.StudentError, match="VOID"):
+            ST.check_registration(reg, arm, rows, lab)
+    with pytest.raises(ST.StudentError):
+        ST.check_registration({**reg, "pass": False}, "human", "r", None)
+
+
+def test_the_learned_nothing_guard():
+    assert ST.learned_guard({"hist": [1.95, 1.80], "uniform_val_nll": 1.95})["pass"]
+    assert not ST.learned_guard({"hist": [1.95, 1.86], "uniform_val_nll": 1.95})["pass"]
+    assert not ST.learned_guard({"hist": [1.95, 1.85], "uniform_val_nll": 1.95})["pass"]     # the tie: VOID
+    assert not ST.learned_guard({"hist": [], "uniform_val_nll": 1.95})["pass"]
+    V = {"mask": np.array([[1, 1, 1, 1, 0], [1, 1, 0, 0, 0]], np.int8),
+         "target": np.array([[1, 0, 0, 0, 0], [1, 1, 0, 0, 0]], np.int8)}
+    assert ST.uniform_nll(V) == pytest.approx((np.log(4) + 0.0) / 2)

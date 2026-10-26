@@ -167,3 +167,27 @@ routes nothing through it), or DEFERRED (with the reason). X59-S is rebuilt on t
 5. **Torch at 6 threads on the agent cores ran 60× slower** than at 2 (160 vs 2.6 ms a row) under the live run's
    contention; the new tools default to 2 threads.
 6. **The durable copy and the salt** share one disk (D-m3), unchanged.
+
+---
+
+# E. RESPONSE to REVIEW E, the adversarial review of the X59-S registration (2026-10-25)
+
+[REVIEW E](../x59s_matched_students_2026-10-25/REVIEW_E.md) (`d02550c0`) read X59-S NOT-READY: two BLOCKERs, eight
+MAJORs, seven MINORs. Every fix is in the PREREG's **Amendment 2** (rules, registered before the audit's flags, the
+regenerated S-S rows or any training) and **Amendment 2b** (the inputs as built). No GPU was used.
+
+| finding | disposition |
+|---|---|
+| **E-B1** S-S is held to a looser panel-proximity standard than S-H | **FIXED.** S-S's team pair is redrawn before each game while either side's SIMULATED human reveal is near a held-out panel team (the human rule's matcher, panels incl. `forum216b`, threshold), from a reveal profile of 35,554 candidate human sides; every game's pair is recorded; S-S regenerated (seed 5910). **Departure:** the profile is the CANDIDATE sides', not the kept ones' (the kept sides are selected for revealing little, so they would under-exclude). Measured on the pool before generation: 16.6 % of pairs pass, against the 16.8 % of human battles the rule kept. Also matched: S-S drops games of < 11 turns (E-m7). Δ_data per panel is reported |
+| **E-B2** the Kakuna-family sensitivity cannot be read as registered; the audit misses 78 % of the rows | **FIXED, the preferred way:** the audit runs FIRST, on every ≥ 1300 account with ≥ 10 kept games (83.1 % of TRAIN rows; REVIEW E proposed ≥ 20, 67.9 %; a seeded 10 games an account keeps the cost flat), score Kakuna − P\* log-likelihood, flag above the chat-active reference's p99, a POWER control on Kakuna's own captured seats. Flagged rows > 1.0 % of TRAIN rows ⇒ the flagged accounts leave the rowset before training. §8.4's "sensitivity re-read" and its retrain are retired |
+| **E-M1** the quitter's degraded play runs past the 2 dropped decisions | **FIXED:** rows with `0 ≤ quit_dist ≤ 9` leave (the derived rowset); S-P's labels carry over unchanged; S-S is cut to the new counts. The ≤ 10-turn filter stays |
+| **E-M2** S-P is P\* restricted to the human's whole-game support | **FIXED.** Named "P\*-restricted-to-human-support" with REVIEW E's numbers as its definition; OWN-LABELS-BETTER is conservative; HUMAN-LABELS-BETTER is reported against the restricted teacher and routes H-BC only if the S-P students' yardstick on S-S validation is below the S-H students' (Welch, UB < 0). **Departure:** REVIEW E proposed "within a registered margin of the S-S students'"; no margin can be set before data, and S-S's states differ, so the same-states falsifier against S-H replaces it. **S-P0 ADDED** (descriptive): P\*'s unrestricted sample from the stored logits (labels free), 5 students ≈ 1 GPU-h after the primary 15 |
+| **E-M3** the drawn-move signature is not matched against S-S | **DOCUMENTED + GATED:** a registered limit expected to cost S-H; FR-2 is read before Δ_data is reported (the read code refuses without it); ARTEFACT ⇒ a SELF-PLAY-DATA-BETTER closes nothing. FR-2 is NOT run in this unit (≈ 1 lane-h + 0.2 agent-day): a FINDING |
+| **E-M4** no UNINFORMATIVE outcome; no floor reference | **FIXED:** `bot:random` and `bot:aggressive` (max-damage) vs Kakuna on the pilot twins (240 games each, CPU, before the floor pilot); UNINFORMATIVE = every arm ≤ the better floor + 5 pp, or the fallback fires (closes and routes nothing); a learned-nothing VOID guard (final own-label validation NLL ≥ 0.1 nat below uniform) |
+| **E-M5** the closure speaks for human data in general | **FIXED:** closure scoped to "1300+ ladder data, at this mix and volume"; the conditional ≥ 1500 follow-up (S-H≥1500, S-H-mix, S-S cut at matched rows, 5 seeds each, in-house; ≈ 0.7 GPU-h) is registered, firing when Δ_data is neither HUMAN-DATA-BETTER nor UNINFORMATIVE |
+| **E-M6** NOT-RESOLVED merges "no difference" and "no information" | **FIXED:** NO-DIFFERENCE-AT-4PP (the whole 95 % interval inside ±4 pp, the MDE), with its own action, in code (`x59s_read.classify`) |
+| **E-M7** the CUDA path has no pass criteria | **FIXED:** `cuda_preflight.py` implements the 8 checks (CPU-vs-CUDA parity, TF32 off, resume, export, cost, learning by step 1,000); `window.py` continues a student only on exit 3, runs each chunk under `gpu_lock.sh mem_cap.sh 8`, primary students first. Tested CPU-vs-CPU only: a FINDING until the first GPU minutes |
+| **E-M8** no rule when Kakuna and the in-house meter disagree | **FIXED:** KAKUNA-SPECIFIC (in code, `x59s_read.verdict`); the in-house head-to-heads play for every read |
+| E-m1 … E-m7 | **FIXED as reporting rules** (Amendment 2 A2.11); E-m4 (the trainer refuses unregistered inputs) is enforced in code (`student --registration`); E-m7 also changes S-S (the < 11-turn drop) |
+
+The audit's result, the derived rowset's counts and the regenerated S-S registration are in Amendment 2b.

@@ -3,14 +3,15 @@
     python -m main.human_data.checks hom-repro --rows <rowset>/rows --parts <rowset>/parts \
         --hom ~/gen3ai_archive/x50_r1b/train --n 200 --out <dir>/results/hom_repro.json
     python -m main.human_data.checks register --rows <rowset>/rows --labels <rowset>/labels_pstar \
-        --selfplay <dir>/ss_rows --out <dir>/results/registration.json
+        --labels0 <rowset>/labels_pstar0 --selfplay <dir>/ss_rows --out <dir>/results/registration.json
 
 * ``hom-repro`` (VOID 8): a seeded sample of kept battles that the rung-1b HOM extraction also read; for every
   decision both extractions hold, the completed row must be BYTE-equal and the own-action label equal. The rung-1b
   parts keep a decision when either label is known, so a hidden-move row is compared where that extraction kept it.
 * ``register``: the sha256 of the rows manifest, the S-P labels manifest and the S-S rows manifest, their row counts
   and the cross-checks the trainer relies on (S-S has the rowset's train / validation counts; the labels were made on
-  this rowset). Written BEFORE any student trains; a student trained on other inputs is VOID.
+  this rowset; Amendment 2: the S-P0 labels too, and S-S's team draw faced the human panel rule). Written BEFORE any
+  student trains; the trainer refuses any other input (``student.check_registration``).
 """
 from __future__ import annotations
 
@@ -83,7 +84,8 @@ def hom_repro(rows: Path, parts: Path, hom: Path, n: int, corpus_prefix: str) ->
     return {"seed": SEED, "battles_in_both": len(both), "battles_sampled": len(chosen), **dict(c), "pass": ok}
 
 
-def register(rows: Path, labels: Path, selfplay: Path) -> Dict[str, Any]:
+def register(rows: Path, labels: Path, selfplay: Path, labels0: Optional[Path] = None,
+             require_panel_rule: bool = False) -> Dict[str, Any]:
     man, sha = RS.load_manifest(rows)
     lman = json.loads((labels / "labels_manifest.json").read_text())
     lsha = RS.S_sha(labels / "labels_manifest.json")
@@ -99,10 +101,22 @@ def register(rows: Path, labels: Path, selfplay: Path) -> Dict[str, Any]:
         problems.append("the S-S row counts differ from the rowset's")
     if [s["rows"] for s in sman["train_shards"]] != [s["rows"] for s in man["train_shards"]]:
         problems.append("the S-S shard sizes differ from the rowset's (the step budgets would differ)")
+    l0sha = None
+    if labels0 is not None:
+        l0man = json.loads((labels0 / "labels_manifest.json").read_text())
+        l0sha = RS.S_sha(labels0 / "labels_manifest.json")
+        if l0man["rows_manifest_sha256"] != sha or len(l0man["shards"]) != len(man["train_shards"]) + 1:
+            problems.append("the S-P0 labels were made on other rows, or do not cover every shard")
+        if l0man.get("pstar_sha256") != lman["pstar_sha256"]:
+            problems.append("the S-P0 and S-P labels name different P* checkpoints")
+    if require_panel_rule and not (sman.get("panel_rule") or {}).get("profile_sha256"):
+        problems.append("the S-S team draw did not face the human panel rule (REVIEW E B1)")
     return {"rowset": man["rowset"], "rows_manifest_sha256": sha, "train_rows": man["train_rows"],
             "val_rows": man["val_rows"], "train_hidden": man["train_hidden"],
             "labels_manifest_sha256": lsha, "pstar_sha256": lman["pstar_sha256"],
             "selfplay_manifest_sha256": ssha, "selfplay_rows": [sman["train_rows"], sman["val_rows"]],
+            "labels0_manifest_sha256": l0sha,
+            "selfplay_panel_rule_profile_sha256": (sman.get("panel_rule") or {}).get("profile_sha256"),
             "problems": problems, "pass": not problems}
 
 
@@ -119,13 +133,16 @@ def main(argv: Optional[List[str]] = None) -> int:
     r.add_argument("--rows", required=True)
     r.add_argument("--labels", required=True)
     r.add_argument("--selfplay", required=True)
+    r.add_argument("--labels0", default=None, help="the S-P0 labels (Amendment 2)")
+    r.add_argument("--require-panel-rule", action="store_true", help="Amendment 2: S-S must face the panel rule")
     for p in (h, r):
         p.add_argument("--out", required=True)
     a = ap.parse_args(argv)
     if a.cmd == "hom-repro":
         res = hom_repro(Path(a.rows), Path(a.parts), Path(a.hom), a.n, a.corpus_prefix)
     else:
-        res = register(Path(a.rows), Path(a.labels), Path(a.selfplay))
+        res = register(Path(a.rows), Path(a.labels), Path(a.selfplay), Path(a.labels0) if a.labels0 else None,
+                       a.require_panel_rule)
     Path(a.out).parent.mkdir(parents=True, exist_ok=True)
     Path(a.out).write_text(json.dumps(res, indent=1))
     print(json.dumps(res, indent=1))

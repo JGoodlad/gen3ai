@@ -1,7 +1,8 @@
 r"""X59-S's two NON-HUMAN label sources, both from frozen P\* (``x59s_matched_students_2026-10-25/PREREG.md``).
 
     python -m main.human_data.teacher label    --rows <rowset>/rows --pstar <P* zip> --out <rowset>/labels_pstar
-    python -m main.human_data.teacher selfplay --pstar <P* zip> --like <rowset>/rows --out <dir>/ss_rows
+    python -m main.human_data.teacher selfplay --pstar <P* zip> --like <rowset>/rows --profile <reveal profile> \
+        --out <dir>/ss_rows [--part i]
 
 * ``label`` (the S-P arm): on every row of a human rowset, ONE action sampled from P\*'s policy at T = 1 RESTRICTED
   and renormalised to the row's CONSISTENT set (REVIEW D M2: the legal actions the log leaves possible for the
@@ -15,6 +16,10 @@ r"""X59-S's two NON-HUMAN label sources, both from frozen P\* (``x59s_matched_st
   T = 1 and recorded as the label (on-policy self-play data), until the rowset ``--like`` has as many TRAIN and
   VALIDATION rows and shard sizes; decisions with one legal action are skipped (the human rowset's filter). A game is
   the split unit (its key mod 50 validates). It runs in :data:`SELFPLAY_PARTS` parts, each its own seeded job.
+  **The team draw faces the human rowset's panel rule** (REVIEW E B1, :mod:`.ss_rule`): a game's team pair is
+  redrawn, before the game is played, while either side's SIMULATED human-like reveal (``--profile``) fits >= 3 mons
+  of one held-out panel team; every kept game's pair is recorded. A game of fewer than ``rowset.MIN_TURNS`` turns
+  is dropped, as the human rowset drops one (both Amendment 2).
 
 Both write shards in :mod:`.rowset`'s format plus a manifest whose sha256 is the label source's identity. CPU.
 """
@@ -27,13 +32,14 @@ import os
 import sys
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 
 from main.human_data import rowset as RS
 
-SEED_SELFPLAY = 5900
+#: the S-S seed (Amendment 2: the regenerated, panel-ruled rows; Amendment 1's unruled rows used 5900)
+SEED_SELFPLAY = 5910
 THREADS = 2          # intra-op threads: 6 on the shared agent cores oversubscribed them 60x (measured)
 BATCH = 512
 
@@ -148,11 +154,12 @@ def label(rows: Path, pstar: Path, out: Path, threads: int = THREADS) -> Dict[st
 SELFPLAY_PARTS = 8
 
 
-def play_part(pstar: Path, want_rows: int, out_npz: Path, seed: int, part: int, threads: int = THREADS,
+def play_part(pstar: Path, want_rows: int, out_npz: Path, seed: int, part: int, rule: Any, threads: int = THREADS,
               n_envs: int = 32) -> Dict[str, Any]:
     """One self-play PART: P* vs P* on the pool until ``want_rows`` rows (both seats, n_legal >= 2) of FINISHED games
-    are kept; the games in flight at the end are discarded. Seeds ``[seed, part, 0]`` (teams, battle seeds) and
-    ``[seed, part, 1]`` (actions)."""
+    are kept; the games in flight at the end are discarded. Seeds ``[seed, part, 0]`` (teams, battle seeds),
+    ``[seed, part, 1]`` (actions) and ``[seed, part, 2]`` (the simulated reveals of ``rule``, a
+    :class:`.ss_rule.PairRule` on the pool in the core's team order). Each kept game's team pair (p1, p2) is saved."""
     from main.policy_spectrum.reader import inference_globals
     from utils.rust_env import ffi
     from utils.rust_env import protocol as P
@@ -161,16 +168,22 @@ def play_part(pstar: Path, want_rows: int, out_npz: Path, seed: int, part: int, 
     from utils.team_sources import packed_teams
 
     teams = list(packed_teams("pool"))
+    if len(teams) != len(rule.teams):
+        raise RS.RowsetError(f"the panel rule holds {len(rule.teams)} teams, the core's table {len(teams)}")
     limit = stall_threshold()
     spec = P.spec_json(n=n_envs, threads=1, teams=teams, names=NAMES, turn_limit=limit, refusal_budget=4,
                        bank_dir=None, opponents=[{"kind": "external"}])
     rng_env = np.random.default_rng([seed, part, 0])
     rng_act = np.random.default_rng([seed, part, 1])
+    rng_rev = np.random.default_rng([seed, part, 2])
+    draws0, redraws0 = rule.draws, rule.redraws
     nxt = 0
+    pair_of: Dict[int, Tuple[int, int]] = {}
     staged: Dict[int, int] = {}
     in_flight: Dict[int, int] = {}
     games: List[Dict[str, np.ndarray]] = []
     n_rows = 0
+    short = 0
     t0 = time.time()
     with inference_globals(threads):
         model = _load(pstar, threads)
@@ -181,7 +194,8 @@ def play_part(pstar: Path, want_rows: int, out_npz: Path, seed: int, part: int, 
             """The NEXT episode of each env (the core reads it at every auto-reset: kept one episode ahead)."""
             nonlocal nxt
             for e in envs:
-                c["ep_team"][e] = rng_env.choice(len(teams), 2, replace=False)
+                pair_of[nxt] = rule.draw_pair(rng_env, rng_rev)
+                c["ep_team"][e] = pair_of[nxt]
                 c["ep_seed"][e] = rng_env.integers(0, 65536, 4)
                 c["ep_opp"][e] = 0
                 staged[e] = nxt
@@ -214,13 +228,17 @@ def play_part(pstar: Path, want_rows: int, out_npz: Path, seed: int, part: int, 
                     stage([e])
                     if not got or n_rows >= want_rows:
                         continue
+                    if int(f["end_turn"]) < RS.MIN_TURNS:      # the human rowset's >= 11-turn floor (Amendment 2)
+                        short += 1
+                        continue
                     gk = RS.key64(f"x59s_ss|{seed}|{part}|{gid}")
                     k = len(got)
                     games.append({"rows": np.stack([r[0] for r in got]), "mask": np.stack([r[1] for r in got]),
                                   "act": np.asarray([r[2] for r in got], np.int8),
                                   "seat": np.asarray([r[3] for r in got], np.int8),
                                   "turn": np.asarray([r[4] for r in got], np.int16),
-                                  "bkey": np.full(k, gk, np.int64)})
+                                  "bkey": np.full(k, gk, np.int64), "g_bkey": np.asarray([gk], np.int64),
+                                  "g_team": np.asarray([pair_of[gid]], np.int16)})
                     n_rows += k
                     if len(games) % 200 == 0:
                         print(f"[teacher] selfplay part {part}: {n_rows}/{want_rows} rows, {len(games)} games "
@@ -229,15 +247,26 @@ def play_part(pstar: Path, want_rows: int, out_npz: Path, seed: int, part: int, 
             close = getattr(core, "close", None)
             if close is not None:
                 close()
-    arr = {f: np.concatenate([g[f] for g in games]) for f in ("rows", "mask", "act", "seat", "turn", "bkey")}
+    arr = {f: np.concatenate([g[f] for g in games])
+           for f in ("rows", "mask", "act", "seat", "turn", "bkey", "g_bkey", "g_team")}
     tmp = out_npz.with_suffix(".tmp.npz")
     np.savez_compressed(tmp, **arr)  # type: ignore[arg-type]
     os.replace(tmp, out_npz)
     rec = {"part": part, "seed": seed, "rows": int(len(arr["act"])), "games": len(games), "games_started": nxt,
            "sha256": sha256_file(out_npz), "seconds": round(time.time() - t0, 1), "threads": threads,
-           "n_envs": n_envs}
+           "n_envs": n_envs, "pair_draws": rule.draws - draws0, "pair_redraws": rule.redraws - redraws0,
+           "short_games_dropped": short}
     out_npz.with_suffix(".json").write_text(json.dumps(rec, indent=1))
     return rec
+
+
+def _play(pstar: Path, want: int, out_npz: Path, seed: int, part: int, rule: Any, threads: int, n_envs: int,
+          prof_sha: str) -> Dict[str, Any]:
+    """:func:`play_part`, its record stamped with the reveal profile it ran under."""
+    r = play_part(pstar, want, out_npz, seed, part, rule, threads, n_envs)
+    r["profile_sha256"] = prof_sha
+    out_npz.with_suffix(".json").write_text(json.dumps(r, indent=1))
+    return r
 
 
 def _ss_fields(z: Dict[str, np.ndarray], seed: int) -> Dict[str, np.ndarray]:
@@ -256,13 +285,24 @@ def _ss_fields(z: Dict[str, np.ndarray], seed: int) -> Dict[str, np.ndarray]:
             "end": np.zeros(k, np.int8)}
 
 
-def selfplay(pstar: Path, like: Path, out: Path, threads: int = THREADS, n_envs: int = 32,
+def selfplay(pstar: Path, like: Path, out: Path, profile: Path, threads: int = THREADS, n_envs: int = 32,
              seed: int = SEED_SELFPLAY, parts: int = SELFPLAY_PARTS, only_part: Optional[int] = None,
-             max_rows: Optional[int] = None) -> Dict[str, Any]:
+             max_rows: Optional[int] = None, rule: Any = None) -> Dict[str, Any]:
     """The S-S rows (module docstring): play every missing PART (or only ``only_part``), then, once all exist, merge
     them into shards of exactly the human rowset's train / validation counts and shard sizes. ``max_rows`` caps the
-    TRAIN rows (a smoke)."""
+    TRAIN rows (a smoke). A part already on disk is reused whatever rowset sized it (it only has to hold enough
+    rows); every part must have been played under the SAME reveal profile (``--profile``, checked)."""
+    from main.human_data import ss_rule as SR
+
     like_man, like_sha = RS.load_manifest(like)
+    shapes, probs, prof_sha = SR.load_profile(profile)
+    _rule: List[Any] = [rule]
+
+    def get_rule() -> Any:
+        if _rule[0] is None:
+            _rule[0] = SR.PairRule(shapes, probs, SR.pool_teams())
+        return _rule[0]
+
     want_train = int(like_man["train_rows"]) if max_rows is None else int(max_rows)
     want_val = int(like_man["val_rows"]) if max_rows is None else max(1, int(max_rows) // 50)
     # a part plays its share of (train + val) rows plus 6 % slack for the game-level split's noise
@@ -273,7 +313,7 @@ def selfplay(pstar: Path, like: Path, out: Path, threads: int = THREADS, n_envs:
         if only_part is not None and i != only_part:
             continue
         if not (pdir / f"part_{i:02d}.json").exists():
-            r = play_part(pstar, per, pdir / f"part_{i:02d}.npz", seed, i, threads, n_envs)
+            r = _play(pstar, per, pdir / f"part_{i:02d}.npz", seed, i, get_rule(), threads, n_envs, prof_sha)
             print(f"[teacher] selfplay part {i}: {r['rows']} rows in {r['seconds']} s", flush=True)
     if any(not (pdir / f"part_{i:02d}.json").exists() for i in range(parts)):
         return {"done": False}
@@ -289,7 +329,8 @@ def selfplay(pstar: Path, like: Path, out: Path, threads: int = THREADS, n_envs:
     while have_val < want_val:
         if not (pdir / f"part_{n_parts:02d}.json").exists():
             need = int(np.ceil((want_val - have_val) * 50 * 1.5))
-            r = play_part(pstar, need, pdir / f"part_{n_parts:02d}.npz", seed, n_parts, threads, n_envs)
+            r = _play(pstar, need, pdir / f"part_{n_parts:02d}.npz", seed, n_parts, get_rule(), threads, n_envs,
+                      prof_sha)
             print(f"[teacher] selfplay validation top-up part {n_parts}: {r['rows']} rows", flush=True)
         have_val += _val_rows(n_parts)
         n_parts += 1
@@ -297,6 +338,8 @@ def selfplay(pstar: Path, like: Path, out: Path, threads: int = THREADS, n_envs:
         [min(RS.SHARD, want_train - i) for i in range(0, want_train, RS.SHARD)]
     # STREAMED: one part in memory at a time plus the carry (the rows of 1.3M decisions do not fit at once)
     shards: List[Dict[str, Any]] = []
+    games_b: List[np.ndarray] = []
+    games_t: List[np.ndarray] = []
     carry: List[Dict[str, np.ndarray]] = []
     n_carry = 0
     val: List[Dict[str, np.ndarray]] = []
@@ -306,8 +349,14 @@ def selfplay(pstar: Path, like: Path, out: Path, threads: int = THREADS, n_envs:
         rec = json.loads((pdir / f"part_{i:02d}.json").read_text())
         if sha256_file(pdir / f"part_{i:02d}.npz") != rec["sha256"]:
             raise RS.RowsetError(f"self-play part {i}: sha256 differs from its record")
+        if rec.get("profile_sha256") != prof_sha or rec.get("seed") != seed:
+            raise RS.RowsetError(f"self-play part {i} was played under another reveal profile or seed")
         recs.append(rec)
-        z = _ss_fields(dict(np.load(pdir / f"part_{i:02d}.npz")), seed)
+        zf = dict(np.load(pdir / f"part_{i:02d}.npz"))
+        games_b.append(zf["g_bkey"])
+        games_t.append(zf["g_team"])
+        z = _ss_fields(zf, seed)
+        del zf
         v = np.array([RS.is_val_key(b) for b in z["bkey"]], bool)
         if n_val < want_val:
             val.append({f: z[f][v] for f in RS.FIELDS})
@@ -328,12 +377,31 @@ def selfplay(pstar: Path, like: Path, out: Path, threads: int = THREADS, n_envs:
                              "validation rows): raise the slack")
     vcat = {f: np.concatenate([t[f] for t in val]) for f in RS.FIELDS}
     vrec = RS._write_shard(out, "val", {f: vcat[f][:want_val] for f in RS.FIELDS})
+    gp = out / "games.npz"
+    np.savez_compressed(gp, bkey=np.concatenate(games_b), team=np.concatenate(games_t))  # type: ignore[arg-type]
+    used = np.unique(np.concatenate([np.unique(np.load(out / f"{s['name']}.npz")["bkey"]) for s in shards]
+                                    + [np.unique(vcat["bkey"][:want_val])]))
+    gb = np.concatenate(games_b)
+    if not np.isin(used, gb).all():
+        raise RS.RowsetError("a merged row's game has no recorded team pair")
+    gt = np.concatenate(games_t)[np.isin(gb, used)]
+    team_use = np.bincount(gt.ravel().astype(np.int64))
     man = {"schema": "gen3_x59s_selfplay_rows_v1", "rowset": f"ss_like_{like_man['rowset']}",
            "like_rows_manifest_sha256": like_sha, "pstar": str(pstar), "pstar_sha256": sha256_file(pstar),
            "seed": seed, "parts": recs, "teams": "the 719-team pool (utils.team_sources.packed_teams('pool'))",
+           "panel_rule": {"profile_sha256": prof_sha, "near": SR.T.NEAR, "panels": "every held-out panel "
+                          "(textpass.PanelMatcher(), forum216b included)", "rule": "a team pair is redrawn before "
+                          "the game while either side's simulated human reveal is near (REVIEW E B1)",
+                          "pair_draws": int(sum(r["pair_draws"] for r in recs)),
+                          "pair_redraws": int(sum(r["pair_redraws"] for r in recs)),
+                          "short_games_dropped": int(sum(r.get("short_games_dropped", 0) for r in recs))},
+           "games_file": {"name": "games.npz", "sha256": sha256_file(gp), "games_used": int(len(used)),
+                          "teams_used": int((team_use > 0).sum()),
+                          "effective_teams": round(float(1 / ((team_use / team_use.sum()) ** 2).sum()), 1)},
            "rule": "P* vs P*, both seats recorded, action ~ P* at T = 1 (the label); n_legal >= 2; finished games "
-                   "only; parts concatenated in order; game key mod 50 validates; cut to the human rowset's shard "
-                   "sizes", "train_shards": shards, "val": vrec, "train_rows": int(sum(s["rows"] for s in shards)),
+                   "only; the team pair faces the human panel rule (panel_rule); parts concatenated in order; game "
+                   "key mod 50 validates; cut to the human rowset's shard sizes", "train_shards": shards,
+           "val": vrec, "train_rows": int(sum(s["rows"] for s in shards)),
            "val_rows": vrec["rows"], "train_hidden": 0, "code": RS._code_identity()}
     (out / "rows_manifest.json").write_text(json.dumps(man, indent=1))
     return {"done": True, **man}
@@ -349,6 +417,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     sp.add_argument("--max-rows", type=int, default=None)
     sp.add_argument("--envs", type=int, default=32)
     sp.add_argument("--part", type=int, default=None, help="play only this part (each part is its own job)")
+    sp.add_argument("--profile", required=True, help="the reveal profile (python -m main.human_data.ss_rule profile)")
     for p in (lb, sp):
         p.add_argument("--pstar", required=True)
         p.add_argument("--out", required=True)
@@ -360,8 +429,8 @@ def main(argv: Optional[List[str]] = None) -> int:
             m = label(Path(a.rows), Path(a.pstar), Path(a.out), a.threads)
             print(json.dumps({"shards": len(m["shards"])}), flush=True)
         else:
-            m = selfplay(Path(a.pstar), Path(a.like), Path(a.out), a.threads, a.envs, only_part=a.part,
-                         max_rows=a.max_rows)
+            m = selfplay(Path(a.pstar), Path(a.like), Path(a.out), Path(a.profile), a.threads, a.envs,
+                         only_part=a.part, max_rows=a.max_rows)
             print(json.dumps({k: m[k] for k in ("done", "train_rows", "val_rows") if k in m}), flush=True)
     except RS.RowsetError as exc:
         print(f"[teacher] REFUSED: {exc}", file=sys.stderr, flush=True)

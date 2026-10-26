@@ -4124,6 +4124,14 @@
    "contention": 3.36,
    "detail": ""
   },
+  "src/main/human_data/cuda_preflight_test.py::test_preflight_cpu_against_cpu": {
+   "status": "pass",
+   "commit": "a260e9c3f4ea7f7d915910798546a65a329ca089",
+   "at": "2026-10-26T06:38:28Z",
+   "duration_s": 50.13,
+   "contention": 1.56,
+   "detail": ""
+  },
   "src/main/info_audit/info_audit_integration_test.py::test_every_check_passes_on_the_real_builder": {
    "status": "pass",
    "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
@@ -4877,5 +4885,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-26T05:34:19Z"
+ "last_written": "2026-10-26T06:38:28Z"
 }

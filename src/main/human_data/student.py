@@ -1,13 +1,17 @@
 r"""X59-S's MATCHED STUDENTS: our architecture from the same random init per seed, taught one label source each.
 
-    python -m main.human_data.student train  --arm human|pstar|selfplay --rows <rows> [--labels <labels_pstar>] \
-        --seed 5901 --out <dir>/s_h_5901 [--epochs 3] [--budget-min 40] [--device cpu|cuda]
+    python -m main.human_data.student train  --arm human|pstar|pstar0|selfplay --rows <rows> [--labels <labels>] \
+        --registration <results/registration.json> --seed 5901 --out <dir>/s_h_5901 [--epochs 3] [--budget-min 40] \
+        [--device cpu|cuda]
     python -m main.human_data.student export --out <dir>/s_h_5901
 
 The three arms (``x59s_matched_students_2026-10-25/PREREG.md``):
 
 * ``human`` (S-H): the human rowset's rows, the HUMAN's action as the label;
-* ``pstar`` (S-P): the SAME rows, P\*'s restricted sample (``teacher label``) as the label;
+* ``pstar`` (S-P): the SAME rows, P\*'s sample RESTRICTED to the human's consistent set as the label (a
+  "P\*-restricted-to-human-support" teacher, PREREG Amendment 2 M2: not P\* as an independent teacher);
+* ``pstar0`` (S-P0, descriptive): the SAME rows, P\*'s UNRESTRICTED sample over the legal actions
+  (``derive``'s ``labels_pstar0``);
 * ``selfplay`` (S-S): P\*'s own self-play rows (``teacher selfplay``), P\*'s sampled action as the label.
 
 A hidden-move row (plan §3.2) is trained on its SET label in S-H and S-P alike: the loss is, for every row,
@@ -46,7 +50,15 @@ import numpy as np
 
 from main.human_data import rowset as RS
 
-ARMS = ("human", "pstar", "selfplay")
+ARMS = ("human", "pstar", "pstar0", "selfplay")
+LABEL_ARMS = ("pstar", "pstar0")
+#: the registration key of each arm's rows and labels (``checks register``; PREREG Amendment 2, REVIEW E m4)
+REG_ROWS = {"human": "rows_manifest_sha256", "pstar": "rows_manifest_sha256", "pstar0": "rows_manifest_sha256",
+            "selfplay": "selfplay_manifest_sha256"}
+REG_LABELS = {"pstar": "labels_manifest_sha256", "pstar0": "labels0_manifest_sha256"}
+#: the learned-nothing guard (Amendment 2, REVIEW E M4): the final validation NLL on the arm's OWN labels must be at
+#: least this far below the uniform NLL over the legal actions, else the student is VOID (a bug or a recipe failure)
+LEARNED_MARGIN = 0.1
 BATCH = 512
 LR_MAX, LR_MIN = 3e-4, 3e-5
 WARMUP = 1000
@@ -55,6 +67,7 @@ EVALS_PER_EPOCH = 4
 BUFFER_SHARDS = 8
 THREADS = 2          # intra-op threads: 6 on the shared agent cores oversubscribed them 60x (measured)
 SAVE_EVERY_S = 600.0
+LOSS_EVERY = 100     # the training loss is recorded every LOSS_EVERY steps (the CUDA pre-flight's parity points)
 TRAIN_FIELDS = ("rows", "mask", "act", "hidden", "moveset", "cons", "rid")
 
 
@@ -84,15 +97,17 @@ def lr_at(step: int, total: int) -> float:
 def targets(arm: str, z: Dict[str, np.ndarray], lab: Optional[np.ndarray]) -> np.ndarray:
     """``[n, 11]`` int8: the TARGET set of every row (module docstring)."""
     n = len(z["act"])
-    act = z["act"] if arm != "pstar" else lab
+    act = z["act"] if arm not in LABEL_ARMS else lab
     if act is None:
-        raise StudentError("the pstar arm needs its label column")
+        raise StudentError(f"the {arm} arm needs its label column")
     hid = z["hidden"].astype(bool)
-    if arm == "pstar":
+    if arm in LABEL_ARMS:
         if ((act < 0) != hid).any():
             raise StudentError("a P* label column whose hidden rows differ from the rowset's")
-        if (z["cons"][np.nonzero(~hid)[0], act[~hid]] != 1).any():
-            raise StudentError("VOID: a P* label is an action the log rules out (outside the consistent set)")
+        allowed = z["cons"] if arm == "pstar" else z["mask"]
+        if (allowed[np.nonzero(~hid)[0], act[~hid]] != 1).any():
+            raise StudentError("VOID: a P* label is an action the log rules out (outside the consistent set)"
+                               if arm == "pstar" else "VOID: a P* label outside the legal actions")
     if ((act < 0) & ~hid).any():
         raise StudentError("an unlabelled row that is not a hidden move")
     t = np.zeros((n, RS.N_ACT), np.int8)
@@ -117,7 +132,7 @@ def set_nll_t(logits, legal, target):
 def _shard(rows: Path, rec: Dict[str, Any], arm: str, labels: Optional[Path]) -> Dict[str, np.ndarray]:
     z = RS.load_shard(rows, rec, TRAIN_FIELDS)
     lab = None
-    if arm == "pstar":
+    if arm in LABEL_ARMS:
         assert labels is not None
         lr = json.loads((labels / f"{rec['name']}.json").read_text())
         if lr["rows_sha256"] != rec["sha256"]:
@@ -130,6 +145,30 @@ def _shard(rows: Path, rec: Dict[str, Any], arm: str, labels: Optional[Path]) ->
             raise StudentError(f"{rec['name']}: the label column's row ids differ from the rows'")
         lab = lz["act_p"]
     return {"rows": z["rows"], "mask": z["mask"], "target": targets(arm, z, lab)}
+
+
+def uniform_nll(V: Dict[str, np.ndarray]) -> float:
+    """The set-NLL of the uniform policy over the legal actions: mean log(|legal| / |target|)."""
+    return float(np.mean(np.log(V["mask"].sum(1).astype(np.float64)) - np.log(V["target"].sum(1).astype(np.float64))))
+
+
+def check_registration(reg: Dict[str, Any], arm: str, rows_sha: str, labels_sha: Optional[str]) -> None:
+    """VOID 1 enforced (REVIEW E m4): the arm's rows and labels are the registered ones, or the trainer refuses."""
+    if not reg.get("pass"):
+        raise StudentError("the registration did not pass")
+    if reg.get(REG_ROWS[arm]) != rows_sha:
+        raise StudentError(f"VOID: the {arm} rows manifest {rows_sha[:12]} is not the registered one")
+    if arm in REG_LABELS and reg.get(REG_LABELS[arm]) != labels_sha:
+        raise StudentError(f"VOID: the {arm} labels manifest is not the registered one")
+
+
+def precision_flags() -> Dict[str, Any]:
+    """What fp32 means on this device (Amendment 2, M7 check 3): TF32 off for matmul and cuDNN, 'highest'."""
+    import torch as th
+
+    return {"matmul_allow_tf32": bool(th.backends.cuda.matmul.allow_tf32),
+            "cudnn_allow_tf32": bool(th.backends.cudnn.allow_tf32),
+            "float32_matmul_precision": th.get_float32_matmul_precision()}
 
 
 def _state_digest(sd: Dict[str, Any]) -> str:
@@ -169,7 +208,8 @@ def eval_nll(pol, V: Dict[str, np.ndarray], device: str, batch: int = 1024) -> f
 
 
 def train(arm: str, rows: Path, labels: Optional[Path], seed: int, out: Path, epochs: int, budget_min: float,
-          threads: int = THREADS, device: str = "cpu", limit_steps: Optional[int] = None) -> int:
+          threads: int = THREADS, device: str = "cpu", limit_steps: Optional[int] = None,
+          registration: Optional[Dict[str, Any]] = None) -> int:
     """One resumable chunk of the registered recipe (module docstring). 0 = finished, 3 = budget reached."""
     import torch as th
 
@@ -181,7 +221,9 @@ def train(arm: str, rows: Path, labels: Optional[Path], seed: int, out: Path, ep
         raise StudentError(f"arm {arm!r} is not one of {ARMS}")
     out.mkdir(parents=True, exist_ok=True)
     man, man_sha = RS.load_manifest(rows)
-    lab_sha = RS.S_sha(labels / "labels_manifest.json") if arm == "pstar" and labels is not None else None
+    lab_sha = RS.S_sha(labels / "labels_manifest.json") if arm in LABEL_ARMS and labels is not None else None
+    if registration is not None:
+        check_registration(registration, arm, man_sha, lab_sha)
     sizes = [int(s["rows"]) for s in man["train_shards"]]
     pl = plan(sizes, seed, epochs)
     total = sum(nb for *_, nb in pl)
@@ -205,9 +247,14 @@ def train(arm: str, rows: Path, labels: Optional[Path], seed: int, out: Path, ep
                 raise StudentError(f"{sp} was trained under another arm / rows / labels / seed / init / budget")
             pol.load_state_dict(st["model"])
             opt.load_state_dict(st["opt"])
+            st["resumed_opt_devices"] = sorted({str(v.device) for sv in opt.state.values() for k, v in sv.items()
+                                                if k != "step" and th.is_tensor(v)})
         if st["done"]:
             return 0
         V = _shard(rows, man["val"], arm, labels)
+        st.setdefault("uniform_val_nll", uniform_nll(V))
+        st.setdefault("device_info", {"device": device, "torch": th.__version__,
+                                      "cuda_device": th.cuda.get_device_name(0) if device.startswith("cuda") else None})
 
         def save() -> None:
             st["model"] = pol.state_dict()
@@ -252,9 +299,14 @@ def train(arm: str, rows: Path, labels: Optional[Path], seed: int, out: Path, ep
                 step += 1
                 st["step"] = step
                 st["train_s"] += time.monotonic() - ts
+                if step % LOSS_EVERY == 0:
+                    st.setdefault("loss_at", {})[str(step)] = float(loss.detach())
+                    st.setdefault("precision", precision_flags())
                 if step % 100 == 0:
+                    pf = precision_flags()
                     print(f"[student] {arm} seed {seed} step {step}/{total} epoch {e} loss {float(loss):.4f} "
-                          f"{st['train_s'] / step * 1000:.0f} ms/step", flush=True)
+                          f"{st['train_s'] / step * 1000:.0f} ms/step tf32 {pf['matmul_allow_tf32']}/"
+                          f"{pf['cudnn_allow_tf32']} {pf['float32_matmul_precision']}", flush=True)
                 if step in evs:
                     evaluate()
                 if step == total:
@@ -334,9 +386,18 @@ def export(out: Path, yardsticks: Optional[Dict[str, Tuple[Path, str]]] = None) 
                        "lr": f"warm-up {WARMUP} to {LR_MAX}, cosine to {LR_MIN}", "batch": BATCH, "clip": CLIP,
                        "dtype": "fp32"},
             "zip": str(zp), "zip_sha256": RS.S_sha(zp), "commit": get_git_hash(), "yardsticks": ys,
+            "learned_guard": learned_guard(st), "device_info": st.get("device_info"),
             "reload_logits_bit_equal": True, "anchors_bare_load_bit_equal": True}
     (dst / "student_sidecar.json").write_text(json.dumps(side, indent=1))
     return side
+
+
+def learned_guard(st: Dict[str, Any]) -> Dict[str, Any]:
+    """Amendment 2's learned-nothing VOID guard (:data:`LEARNED_MARGIN`) on the final own-label validation NLL."""
+    final = float(st["hist"][-1]) if st.get("hist") else float("nan")
+    uni = float(st.get("uniform_val_nll", float("nan")))
+    return {"final_val_nll": final, "uniform_val_nll": uni, "margin": LEARNED_MARGIN,
+            "pass": bool(np.isfinite(final) and np.isfinite(uni) and final <= uni - LEARNED_MARGIN - 1e-9)}
 
 
 def _rows_of(st: Dict[str, Any], out: Path) -> str:
@@ -359,6 +420,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     t.add_argument("--threads", type=int, default=THREADS)
     t.add_argument("--device", default="cpu")
     t.add_argument("--limit-steps", type=int, default=None)
+    t.add_argument("--registration", required=True, help="results/registration.json (VOID 1, enforced)")
     x = sub.add_parser("export")
     x.add_argument("--human-rows", default=None, help="yardstick: the human rowset (its validation rows)")
     x.add_argument("--selfplay-rows", default=None, help="yardstick: the S-S rows (their validation rows)")
@@ -369,12 +431,13 @@ def main(argv: Optional[List[str]] = None) -> int:
     try:
         RS._guard_out(out)
         if a.cmd == "train":
-            if (a.arm == "pstar") != (a.labels is not None):
-                raise StudentError("--labels is required for, and only for, the pstar arm")
+            if (a.arm in LABEL_ARMS) != (a.labels is not None):
+                raise StudentError(f"--labels is required for, and only for, the {LABEL_ARMS} arms")
+            reg = json.loads(Path(a.registration).read_text())
             out.mkdir(parents=True, exist_ok=True)
             (out / "rows_path.txt").write_text(str(Path(a.rows).resolve()) + "\n")
             return train(a.arm, Path(a.rows), Path(a.labels) if a.labels else None, a.seed, out, a.epochs,
-                         a.budget_min, a.threads, a.device, a.limit_steps)
+                         a.budget_min, a.threads, a.device, a.limit_steps, registration=reg)
         ys = {}
         if a.human_rows:
             ys["human_val_human_labels"] = (Path(a.human_rows), "human")

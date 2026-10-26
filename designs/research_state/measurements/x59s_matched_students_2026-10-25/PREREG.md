@@ -279,3 +279,182 @@ The S-P labels and the S-S rows were generated on the CPU and registered in
   now plays seeded TOP-UP parts (seed `[5900, i ≥ 8, ·]`) until the validation rows suffice; one part (8; 401,101
   rows, 4,688 games) did. The train shards fill from parts 0–7 alone, as registered. Two fixes made the merge do
   this within its memory cap (`983ee0d7`, `64cd54e4` on main). No student had trained; no game was played.
+
+---
+
+## Amendment 2 (2026-10-25, before any student trained): REVIEW E's BLOCKERs and MAJORs
+
+[REVIEW E](REVIEW_E.md) (`d02550c0`) read the registration NOT-READY. Every rule below is registered BEFORE the
+Kakuna-family audit's flags are read, before the S-S rows are regenerated and before any student trains; the inputs
+as built are registered in Amendment 2b (below, same day, still before training). Nothing here used the GPU. Where a
+rule departs from REVIEW E's proposed fix, the reason is given ([`RESPONSE.md` §E](../human_replay_quality_2026-10-25/RESPONSE.md)).
+
+### A2.1 S-S faces the human rowset's panel rule (B1)
+
+- **The rule** ([`ss_rule.py`](../../../../src/main/human_data/ss_rule.py), [`teacher.py`](../../../../src/main/human_data/teacher.py)):
+  before a self-play game is played, its team pair is REDRAWN while either side's SIMULATED reveal fits ≥ 3 mons of
+  one team of ANY held-out panel (`textpass.PanelMatcher()`, `forum216b` included: the human rule's matcher, panels
+  and threshold). A side's simulated reveal draws one whole human side's REVEAL SHAPE (per seen mon: moves revealed,
+  item revealed, ability revealed), puts it on a uniform subset of the team's mons, reveals that many of each mon's
+  moves uniformly (a Hidden Power as bare `hiddenpower`, as a gen-3 log names it), and its item and ability where the
+  shape says. No game is wasted. Every kept game's team pair (p1, p2) is recorded (`games.npz`, its sha256 in the
+  S-S manifest).
+- **The reveal profile** (`python -m main.human_data.ss_rule profile --snapshot hr_spec_v1 --n 40000`):
+  `~/gen3ai_archive/x59s/reveal_profile_v1.json.gz`, **sha256 `1529f5acff20f18d40943f95fb8fe7231c013eaa2814056a039f96ac7297dc3d`**:
+  the shapes of all 35,554 sides of the 17,777 CANDIDATE battles (TRAIN dates, rated, a result, ≥ 11 turns, a
+  ≥ 1300 seat) in a seeded 40,000-log sample (seed 20261026); 5.56 mons seen per side. **Candidate sides, not kept
+  ones (a departure from REVIEW E's "matched to the kept human sides"):** the human rule acts on battles before it
+  selects them; the kept sides are selected for revealing little (5.14 mons seen against 5.66 among the excluded),
+  so their shapes would under-exclude.
+- **What it does to the pool** (`ss_rule census`, descriptive, read before any S-S row was generated): a pool side
+  is near on 58.7 % of simulated reveals; **16.6 % of team pairs pass, against the 16.8 % of candidate human battles
+  the human rule kept**; 3 pool teams are never near, 5 always; the drawn teams' effective number is 553 of 719.
+- **Also matched (m7):** a self-play game of < 11 turns is dropped, as the human rowset drops one.
+- **Regenerated:** S-S seed **5910** (Amendment 1's unruled rows used 5900), parts 0–7 and the validation top-up as
+  in Amendment 1, merged to Amendment 2b's rowset counts and shard sizes; registered with `checks register
+  --require-panel-rule` (an S-S manifest without the rule is refused).
+- **Δ_data per panel** (H, F, P72) is reported, descriptive.
+- **Registered limits:** the reveal is simulated, not read off the game; mons are chosen uniformly (a lead reveals
+  more in a real game); the profile comes from human games, which are shorter than P\*'s. The direction of the
+  residual is not known.
+
+### A2.2 The Kakuna-family audit runs FIRST, and its flagged accounts leave the rowset before training (B2)
+
+This REPLACES §8.4 and the plan's A-6 re-read: no student is retrained, because the audit decides the rows.
+Code: [`audit.py`](../../../../src/main/human_data/audit.py) and the Metamon-interpreter scorer
+[`kakuna_audit_metamon_side.py`](kakuna_audit_metamon_side.py). CPU only.
+
+1. **Universe:** every account of `hr_spec_v1.r1` (TRAIN and VALIDATION; every actor is ≥ 1300) with **≥ 10 kept
+   seat-games**: 1,051 TRAIN accounts, 83.1 % of the TRAIN rows. The rest are UNAUDITED; their row share is
+   reported. (REVIEW E proposed ≥ 20 games: 561 accounts, 67.9 % of rows; ≥ 10 reaches further at the same cost
+   because of the next rule.)
+2. **Games:** a seeded sample of 10 of each account's seat-games (seed 20261026, keyed per account).
+3. **Per seat-game:** the mean log-probability of the human's action under (i) **Kakuna** (checkpoint 34, the anchors'
+   pinned weights), over the decisions Metamon's own replay parser reconstructs from that seat's view, teacher-forced
+   with the CPU attention `metamon_side.install_cpu_attention` installs; (ii) **P\***, over the rowset's labelled rows
+   of that seat-game (the stored S-P label logits, softmax over the legal actions); (iii) **the HOM**, over the same
+   rows (descriptive).
+4. **Score:** `S = mean LL_Kakuna − mean LL_P*` per account (decision-weighted over its scored games; REVIEW D m7:
+   against P\*, not the HOM, which trained on these accounts); `S_HOM` likewise, descriptive. An account needs ≥ 5
+   scored games, else it is UNSCORED (its row share reported).
+5. **Human reference:** the audited accounts with ≥ 1 chat line a game on average over their sampled games; if fewer
+   than 100 qualify, the reference is every scored account (decided from the count alone, before any score is read).
+6. **Flag:** `S` above the reference's 99th percentile (`np.percentile`, linear).
+7. **The drop rule:** if the flagged accounts hold **more than 1.0 % of `hr_spec_v1.r1`'s TRAIN rows**, every row
+   (TRAIN and VALIDATION) of every flagged account leaves the rowset (A2.3). At or below 1.0 % nothing is dropped and
+   the flagged share is reported. (Without a fleet, ≈ 1 % of the reference sits above its own p99 by construction;
+   one flagged heavy grinder, the profile a bot fleet has, crosses 1.0 % alone.)
+8. **Controls:** Kakuna's OWN seats in captured P\* vs Kakuna games (X51), scored by the same pipeline and pooled 10
+   games per pseudo-account: the audit has **POWER** iff their median mean-LL_Kakuna exceeds the reference's
+   99th percentile of mean-LL_Kakuna. **NO-POWER** drops nothing, is reported as the headline of the audit, and leaves
+   §8.4 as a registered limit guarded by A2.10. Other Metamon-family seats found in captures are reported,
+   descriptive.
+
+### A2.3 The quitter's degraded tail leaves; the rowset is re-derived (M1)
+
+- **`hr_spec_v1.r2`** = `hr_spec_v1.r1`'s rows minus (a) every row of the quitting seat (forfeit or timer) with
+  **`0 ≤ quit_dist ≤ 9`** (its last 10 decisions; r1 already dropped the last 2) and (b) the flagged accounts' rows
+  when A2.2.7 fires; order kept, re-cut into 16,384-row shards
+  ([`derive.py`](../../../../src/main/human_data/derive.py)). The evidence is REVIEW E's table (agreement with the
+  quitter FALLS over its last ~8 kept decisions while it RISES for the forfeit winner and both KO seats), which the
+  data forced, not an outcome. r1 holds 108,740 TRAIN rows with `2 ≤ quit_dist ≤ 9` (8.2 %).
+- **S-P's labels are r1's labels on the surviving rows, unchanged** (each row's matched uniform stays keyed by r1's
+  rows manifest). S-S is cut to r2's counts (A2.1). The ≤ 10-turn battle filter stays.
+
+### A2.4 S-P is "P\*-restricted-to-human-support"; an unrestricted S-P0 arm is added (M2)
+
+- **S-P's teacher is named for what it is:** P\*'s preferences INSIDE the human's realised whole-game support, not an
+  independent P\*. REVIEW E's measurements stand as its definition (`results/review_e_checks.json`, `rows`): P\*'s
+  probability of the human's action 0.364 unrestricted → 0.450 restricted; S-P's label equals the human's on 45.1 %
+  of labelled rows; P\*'s top-1 lies outside the consistent set on 16.8 %; the restriction removes 14.4 % of P\*'s
+  mass from moves and 3.9 % from switches; switch share human 31.4 %, S-P 37.2 %, P\* 34.0 %; the consistent set is
+  the whole legal set on 25.5 % of rows.
+- **Δ_labels is read accordingly:** OWN-LABELS-BETTER is conservative (it holds against a handicapped P\*);
+  HUMAN-LABELS-BETTER is reported as "human labels beat P\*-restricted-to-human-support" and **routes H-BC only if
+  S-P learned its teacher**: the S-P students' yardstick on the S-S validation rows (P\*'s labels on P\*'s states) is
+  below the S-H students' (Welch t across the 10 students, UB < 0). (REVIEW E proposed "within a margin of S-S's";
+  no margin can be set without data, and S-S's states differ from S-P's, so the same-states comparison against S-H
+  is the falsifier with no guessed number.) Δ_states mixes state coverage, the restriction and M3's signature; it
+  stays descriptive.
+- **S-P0 (descriptive, routes nothing):** the SAME rows, one action of P\* at T = 1 over the LEGAL actions
+  (unrestricted), drawn with the same matched uniform from the stored S-P logits (`derive`'s `labels_pstar0`; no new
+  P\* forward). Its labels name drawn options (16.8 % of rows have P\*'s top-1 outside the consistent set), so it
+  measures what the restriction costs, not a clean P\*. **Cost:** labels free; 5 students ≈ 1 GPU-h (ESTIMATE),
+  trained AFTER the 15 primary students so it never delays them; ≈ 20 lane-h of Kakuna games at the full units,
+  played AFTER the primary read. Read: Δ_restriction = S-P0 − S-P with §4's interval, and its yardsticks.
+
+### A2.5 The drawn-move signature against S-S is a registered limit, and FR-2 gates the closure (M3)
+
+S-H's and S-P's own-side inputs carry C-GAME draws that are never a target (≈ 1.1 listed moves an active mon); S-S's
+own side is true. This can only be learned as "some listed options are never chosen", which play never rewards, so
+it is expected to COST S-H and S-P against S-S, never to help them. **FR-2 is read before Δ_data is reported** (the
+read code refuses a verdict without its class), and **if FR-2 reads ARTEFACT, a SELF-PLAY-DATA-BETTER closes
+nothing**. FR-2 was not run in this amendment (≈ 1 lane-h and ≈ 0.2 agent-day, plan §2.2).
+
+### A2.6 Floor references and the UNINFORMATIVE class (M4)
+
+- **Floor references (CPU):** `--our-side bot:random` (random legal) and `--our-side bot:aggressive` (the max-damage
+  heuristic: the highest effective-damage move, never a voluntary switch) against Kakuna on the SAME X51 symmetric
+  configs, units 0–3 of H, F and P72 (240 games each), played before the floor pilot.
+- **UNINFORMATIVE:** every arm's U rate is ≤ the better floor reference's + 5 pp (a tie within 1e-9 counts as within),
+  or the floor fallback fires. Every class is still reported; they close nothing and route nothing beyond "H-TEAMS
+  first". The ≥ 1500 follow-up (A2.7) does not fire under it.
+- **VOID (learned nothing):** a student whose final own-label validation NLL is not at least 0.1 nat below the uniform
+  NLL over the legal actions (exactly 0.1 below is VOID) did not learn: a bug or a recipe failure. Recorded by
+  `export` (`learned_guard`).
+
+### A2.7 The closure is scoped, and a ≥ 1500 follow-up is registered conditionally (M5)
+
+- SELF-PLAY-DATA-BETTER (with A2.5's gate and §5's conditions) closes **"1300+ ladder data, at this mix and volume"**,
+  never human data in general.
+- **The follow-up fires when Δ_data is neither HUMAN-DATA-BETTER nor UNINFORMATIVE.** Three arms at N = r2's
+  ≥ 1500-actor TRAIN rows (recorded in 2b), 5 seeds each (5901–5905, the same inits): **S-H≥1500** (those rows);
+  **S-H-mix** (a seeded ACCOUNT-level subsample of r2's TRAIN rows to exactly N: accounts permuted by seed 5930,
+  taken whole in that order, the last one trimmed to N); **S-S cut** (S-S's first N TRAIN rows). The recipe as §3
+  at 3 epochs of N rows; validation as in r2. Read in-house (`main.h2h`, 400 games a panel on H, F, P72 a pairing):
+  S-H≥1500 − S-H-mix (rating at fixed volume) and S-H≥1500 − S-S cut, each with §5's classes (A2.8 included).
+  ≈ 0.7 GPU-h and ≈ 8 lane-h (ESTIMATE). Its rowset digests are registered in an amendment before it trains.
+
+### A2.8 NO-DIFFERENCE-AT-4PP (M6)
+
+Each contrast gains a class between the two directions and the undecided one: **NO-DIFFERENCE-AT-4PP** iff the whole
+95 % interval lies inside ±4 pp (the registered 80 % MDE; a bound within 1e-9 of ±4 pp takes the undecided class).
+For Δ_data it is sent to the owner as "human data is neither better nor worse than our self-play data by more than
+4 pp at this volume"; it closes nothing (closure needs SELF-PLAY-DATA-BETTER). For Δ_labels it routes as UNCLEAR does
+(H-TEAMS first, with the D1 contrast): a ≤ 4 pp label effect is below X60's own MDE. The undecided classes keep their
+names (NOT-RESOLVED, UNCLEAR) and now mean "not resolved".
+
+### A2.9 The CUDA path's pass criteria and the window (M7)
+
+- **[`cuda_preflight.py`](../../../../src/main/human_data/cuda_preflight.py)** runs once, inside the lease, before
+  the first counted student; any FAIL stops the window. Its 8 checks: (1) seed 5901's `init_sha256` on CUDA equals
+  the CPU-built digest; (2) S-H 5901 for 200 steps on CPU and on CUDA from that init: step-0 validation NLL within
+  1e-5, the losses at steps 100 and 200 within 1e-3, the parameters' relative L2 distance at 200 below 1e-3; (3) TF32
+  off for matmul and cuDNN and the fp32 matmul precision `highest`, read inside the loop; (4) resume parity: 100 steps
+  then a resume to 200 reach step 200, the uninterrupted run's learning rate and its loss within 1e-3, with the
+  optimiser state on the device; (5) export: the bare-load check passes and the CPU logits agree with the CUDA logits
+  within 1e-4 on 256 validation rows; (6) ms a step, peak host and device memory, extrapolated to the window;
+  (7) the retry rule (below); (8) the training loss is below the uniform NLL by step 1,000.
+- **[`window.py`](../../../../src/main/human_data/window.py)** replaces §9's loop: the 15 primary students in
+  registered order, then the 5 S-P0 students, ≤ 3 at once; each chunk is `gpu_lock.sh mem_cap.sh 8 <PY> -m
+  main.human_data.student train … --device cuda --budget-min 45`; **only exit 3 continues a student**, exit 0
+  finishes it, any other exit stops the window and reports. The trainer refuses rows or labels whose manifest is not
+  the registered one (`--registration`, REVIEW E m4).
+
+### A2.10 When Kakuna and the in-house meter disagree (M8)
+
+A HUMAN-DATA-BETTER or HUMAN-LABELS-BETTER read on Kakuna whose in-house point estimate (the matching `main.h2h`
+contrast) is ≤ 0 (a tie within 1e-9 counts as ≤ 0) is reported as **KAKUNA-SPECIFIC**: it opens no lever and routes no
+H-BC. The in-house head-to-heads are therefore played for every read, not only under the floor.
+
+### A2.11 Minors (reporting rules)
+
+m1: the effective labelled rows are reported beside each arm (S-H / S-P carry set labels on hidden rows, S-S none).
+m2: each arm's 5-student SD is reported beside σ̂; the 0.028 false-positive rate at a seed SD of 2–3 pp stands as
+stated. m3: the floor pilot releases only its boolean until the full read, and the read lists the teams units 0–3
+cover. m4: fixed (A2.9). m5: an arm whose validation NLL rises over its last epoch is reported. m6: the yardsticks are
+reported beside every read. m7: S-S's turn-length and legal-action profile is reported beside the human rowset's.
+
+All of A2's read rules are code before any data: `x59s_read.classify` (A2.8), `x59s_read.verdict` (A2.4–A2.7, A2.10).
+**Cost now:** ≈ 3.7 GPU-h for 20 students (ESTIMATE: Amendment 1's ≈ 3 GPU-h scaled by r2's rows, plus S-P0), and the
+conditional ≈ 0.7 GPU-h.
