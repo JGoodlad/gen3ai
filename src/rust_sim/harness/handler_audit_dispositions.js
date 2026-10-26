@@ -410,6 +410,24 @@ add([cond('twoturnmove', 'onLockMove')], IMPL('state.rs::move_locked', 'the lock
 add([cond('twoturnmove', 'onMoveAborted')], IMPL('turn.rs::run_move', 'an onBeforeMove cant clears two_turn entirely — THE CHARGE IS LOST (a fresh charge re-pays PP)'));
 add([cond('twoturnmove', 'onEnd')], IMPL('turn.rs::run_residuals', 'the duration expiry removes the volatile (TwoTurnDuration 2→1→0); its removeVolatile(solarbeam) is a no-op when the beam fired (charging already false)'));
 add([cond('twoturnmove', 'duration')], IMPL('turn.rs::run_residuals', 'the duration:2 volatile registers a NO_ORDER/subOrder-2 residual duration handler on BOTH the charge- and fire-turn residuals (the SB-mirror tie-shuffle; after a fire-turn KO the resumed tail residual cleans the linger)'));
+// THE TWO-TURN FAMILY (`gen3_twoturn_family_v1`, gen3 full parity B4): the seven other charge
+// moves run Solar Beam's twoturnmove machinery; Fly / Bounce / Dig / Dive's sub-volatile carries
+// the semi-invulnerable condition. Probe harness/probe_twoturn_family.js; golden
+// tests/twoturn_family_golden_test.rs; pins tests/twoturn_family_test.rs.
+add([mv('razorwind', 'onTryMove'), mv('skyattack', 'onTryMove'), mv('fly', 'onTryMove'), mv('bounce', 'onTryMove'), mv('dig', 'onTryMove')],
+  IMPL('state.rs::TWO_TURN_MOVES', 'the twoturnmove gate shared with Solar Beam: CHARGE ([still]+-prepare, zero move draws, addVolatile twoturnmove + the move-id sub-volatile) / STRIKE (removeVolatile(move.id) => charging=false, [from] lockedmove, no PP)'));
+add([mv('skullbash', 'onTryMove')], IMPL('state.rs::TWO_TURN_MOVES', 'the twoturnmove gate + the charge-turn boost({def:1}) after -prepare (|-boost|…|def|1; def|0 at +6, probed)'));
+add([mv('dive', 'onTryMove')], IMPL('state.rs::TWO_TURN_MOVES', 'the twoturnmove gate; its Gulp Missile Cramorant forme change is unreachable in gen 3 (no Cramorant, no Gulp Missile)'));
+add([mv('razorwind', 'critRatio'), mv('skyattack', 'critRatio')], IMPL('turn.rs::CRIT_MULT', 'the high-crit denominator table (critRatio 2 => 1/8), on the strike turn'));
+add([mv('skyattack', 'secondaries'), mv('bounce', 'secondaries')], IMPL('turn.rs::apply_secondaries', 'the <=1-col secondary on the strike (Sky Attack 30% flinch, Bounce 30% par)'));
+add([cond('fly', 'duration'), cond('bounce', 'duration'), cond('dig', 'duration'), cond('dive', 'duration')],
+  IMPL('residuals.rs::SemiInvulnerableDuration', 'the sub-volatile duration:2 is a second NO_ORDER subOrder-2 residual duration handler while the user is up (probed: a Fly charge turn draws one more tie shuffle than Razor Wind)'));
+add([cond('fly', 'onInvulnerability'), cond('bounce', 'onInvulnerability'), cond('dig', 'onInvulnerability'), cond('dive', 'onInvulnerability')],
+  IMPL('state.rs::bypassed_by', 'gen-3 tryMoveHit Invulnerability (before immunity and accuracy, zero draws, [miss] + -miss) in run_move / run_fixed_damage_move / run_status_move, Perish Song per mon, the future-move strike'));
+add([cond('fly', 'onSourceModifyDamage'), cond('dig', 'onSourceModifyDamage'), cond('dive', 'onSourceModifyDamage')],
+  IMPL('damage.rs::semi_invulnerable_doubles', 'chainModify(2) at the gen-3 ModifyDamage final modifier for the bypassing moves (Gust/Twister, Earthquake/Magnitude, Surf/Whirlpool)'));
+add([cond('bounce', 'onSourceBasePower')], IMPL('state.rs::doubles_base_power', 'Gust / Twister x2 at the BasePower chain (a different point from Fly\'s ModifyDamage)'));
+add([cond('dig', 'onImmunity'), cond('dive', 'onImmunity')], IMPL('residuals.rs::weather_immune', 'no sandstorm / hail chip while underground / underwater'));
 add([mv('doomdesire', 'onTry'), mv('futuresight', 'onTry')], IMPL('turn.rs::run_future_move_cast', 'the cast: addSlotCondition futuremove (a double-cast fails with a bare |move|, zero draws, PP still deducted) + ONE random(16) getDamage snapshot (typeless, cast-time stats, willCrit false) + |-start|<caster>|<Name>; BEFORE the protect block (a cast-turn Protect does not block)'));
 add([mv('futuresight', 'ignoreImmunity')], IMPL('turn.rs::run_future_move_cast', 'the strike is TYPELESS ??? (move_type None — no chart row, never immune), so the declarative ignoreImmunity is subsumed'));
 add([cond('futuremove', 'onStart')], IMPL('state.rs::future_move', 'FutureMove {duration:3, damage, move_id, accuracy, source_side/uid} — the slot-keyed pending strike (the Wish precedent)'));

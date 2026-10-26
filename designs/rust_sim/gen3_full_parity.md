@@ -31,11 +31,11 @@ cd harness && SCAN_UNIVERSE=1 node scan_move_coverage.js            # the 0-MISM
 `scan_move_probe` is the engine running, so its count cannot drift; the JS scan's universe verdict is a
 hand-mirrored copy of `turn.rs` and keeps only the invariant gate (`move_census.md`).
 
-## Summary (recounted 2026-10-26 after B9)
+## Summary (recounted 2026-10-26 after B9 and B4)
 
 | universe | gen3 ids | engine runs it | fails loud | how |
 |---|---:|---:|---:|---|
-| moves | 369 | **325** | **44** | `PROBE_KIND=move`; JS gate: 325 / 44 / **0 MISMODELED** |
+| moves | 369 | **332** | **37** | `PROBE_KIND=move`; JS gate: 332 / 37 / **0 MISMODELED** |
 | items | 106 | **106** | 0 | `PROBE_KIND=item` (B3 closed the last four) |
 | abilities | 76 | **76** | 0 | `PROBE_KIND=ability`; the handler audit dispositions every hook |
 | species | 392 | **392** | 0 | `PROBE_KIND=species` |
@@ -126,7 +126,7 @@ The downloads and scripts were a one-off measurement in a scratch directory, not
 by fetching `https://www.smogon.com/stats/<YYYY-MM>/chaos/<tier>-0.json` for the months listed per tier
 in the index pages and applying the formula above.
 
-## The ranked gap: 44 moves
+## The ranked gap: 37 moves
 
 Usage columns are percentages of fielded mons (ladder) or of battles (replays). Risk: **S** reuses
 existing machinery; **M** adds a self-contained volatile or mechanic; **L** crosses many mechanics (a
@@ -135,20 +135,15 @@ calls arbitrary moves).
 
 | id | family | tier mean | OU | non-OU pooled | top tier | OU replays | learners | risk | batch |
 |---|---|---:|---:|---:|---|---:|---:|:-:|:-:|
-| skyattack | two-turn | 0.089 | 0.031 | 0.096 | 1v1 0.39 | 0.132 | 28 | L | B4 |
-| dig | two-turn | 0.064 | 0.011 | 0.056 | pu 0.15 | 0.048 | 159 | L | B4 |
 | metronome | move-caller | 0.062 | 0.054 | 0.055 | 1v1 0.22 | 0.224 | 55 | L | B11 |
-| fly | two-turn | 0.061 | 0.026 | 0.073 | ubers 0.16 | 0.137 | 41 | L | B4 |
 | spite | PP | 0.038 | 0.004 | 0.035 | 1v1 0.25 | 0.010 | 21 | M | B5 |
 | swagger | confusion + boost | 0.030 | 0.000 | 0.041 | lc 0.15 | 0.005 | 373 | M | B6 |
 | snore | sleep | 0.020 | 0.019 | 0.025 | 1v1 0.05 | 0.084 | 373 | M | B5 |
 | grudge | PP | 0.018 | 0.007 | 0.008 | pu 0.06 | 0.031 | 12 | M | B5 |
-| dive | two-turn | 0.018 | 0.003 | 0.017 | lc 0.04 | 0.025 | 77 | L | B4 |
 | nightmare | sleep | 0.017 | 0.007 | 0.015 | uu 0.04 | 0.013 | 70 | M | B5 |
 | assist | move-caller | 0.015 | 0.000 | 0.022 | ru 0.07 | 0.010 | 10 | L | B11 |
 | ingrain | residual | 0.012 | 0.006 | 0.012 | uu 0.05 | 0.058 | 22 | M | B5 |
 | foresight | identify | 0.012 | 0.001 | 0.011 | uu 0.05 | 0.010 | 45 | M | B6 |
-| bounce | two-turn | 0.012 | 0.001 | 0.015 | lc 0.06 | 0.005 | 5 | L | B4 |
 | odorsleuth | identify | 0.010 | 0.002 | 0.017 | uubl 0.05 | 0.010 | 21 | M | B6 |
 | magiccoat | reflect | 0.008 | 0.003 | 0.011 | uu 0.03 | 0.003 | 6 | M | B6 |
 | stockpile | stockpile | 0.008 | 0.001 | 0.004 | pu 0.03 | 0.018 | 16 | M | B7 |
@@ -161,7 +156,6 @@ calls arbitrary moves).
 | spitup | stockpile | 0.002 | 0.000 | 0.002 | pu 0.01 | 0.015 | 16 | M | B7 |
 | swallow | stockpile | 0.002 | 0.000 | 0.001 | pu 0.01 | 0.008 | 16 | M | B7 |
 | psywave | variable damage | 0.002 | 0.001 | 0.002 | pu 0.01 | 0.003 | 14 | M | B8 |
-| skullbash | two-turn | 0.001 | 0.001 | 0.001 | nu 0.01 | 0.005 | 11 | L | B4 |
 | lockon | lock-on | 0.001 | 0.002 | 0.002 | lc 0.00 | 0.005 | 11 | M | B7 |
 | followme | redirect | 0.001 | 0.000 | 0.001 | uu 0.01 | 0.000 | 13 | S | B10 |
 | flatter | confusion + boost | 0.001 | 0.000 | 0.002 | uu 0.01 | 0.008 | 8 | M | B6 |
@@ -169,7 +163,6 @@ calls arbitrary moves).
 | teleport | escape | 0.001 | 0.000 | 0.001 | lc 0.00 | 0.000 | 11 | S | B10 |
 | roleplay | ability copy | 0.001 | 0.000 | 0.001 | uu 0.01 | 0.000 | 8 | M | B10 |
 | present | variable BP | 0.001 | 0.000 | 0.001 | uu 0.00 | 0.013 | 20 | M | B8 |
-| razorwind | two-turn | 0.001 | 0.000 | 0.000 | ru 0.00 | 0.000 | 10 | L | B4 |
 | watersport | field sport | 0.000 | 0.000 | 0.000 | nu 0.00 | 0.000 | 30 | M | B7 |
 | mist | side condition | 0.000 | 0.000 | 0.001 | uubl 0.00 | 0.003 | 31 | M | B7 |
 | sketch | move-caller | 0.000 | 0.001 | 0.000 | 1v1 0.00 | 0.003 | 1 | L | B11 |
@@ -195,7 +188,7 @@ commit.
 | B1 | per-format rule table (M1), refuse unknown formats, levels, oversize teams and Team Preview (M2–M5) | shipped |
 | B2 | Blast Burn, Frenzy Plant, Hydro Cannon | shipped |
 | B3 | Shell Bell, Macho Brace, Mail, Mental Herb | shipped |
-| B4 | the two-turn and semi-invulnerable family: Sky Attack, Dig, Fly, Dive, Bounce, Skull Bash, Razor Wind | open |
+| B4 | the two-turn and semi-invulnerable family: Sky Attack, Dig, Fly, Dive, Bounce, Skull Bash, Razor Wind | shipped |
 | B5 | Spite, Grudge, Snore, Nightmare, Ingrain | open |
 | B6 | Swagger, Flatter, Foresight, Odor Sleuth, Magic Coat | open |
 | B7 | Stockpile, Spit Up, Swallow, Mud Sport, Water Sport, Mist, Lock-On, Mind Reader | open |

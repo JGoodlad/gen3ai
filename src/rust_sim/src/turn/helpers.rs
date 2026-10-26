@@ -1128,6 +1128,19 @@ pub(crate) fn status_move_announce_renders_user(target: &str) -> bool {
     )
 }
 
+/// Whether gen-3 `tryMoveHit` runs `runEvent('Invulnerability')` for a move of this target kind
+/// (`gen3_twoturn_family_v1`, data/mods/gen3/scripts.ts:285-305): the `all` / `foeSide` /
+/// `allySide` / `allyTeam` moves return through `TryHitField` / `TryHitSide` before it (Spikes,
+/// Haze, weather — probed to bypass a semi-invulnerable foe), and a self / ally-targeted move's
+/// event target is never a mid-charge foe. Perish Song (`all`) checks it per mon in its own
+/// `onHitField`.
+pub(crate) fn invulnerability_applies(target: &str) -> bool {
+    !matches!(
+        target,
+        "self" | "all" | "foeSide" | "allySide" | "allyTeam" | "allies" | "adjacentAlly" | "adjacentAllyOrSelf"
+    )
+}
+
 pub(crate) fn pressure_targets_foe(target: &str) -> bool {
     // `foeSide` (the only gen-3 `foeSide` move is Spikes) DOES put the Pressure foe in the
     // move's `pressureTargets` → the −2 deduction (SIM-PROBE-CONFIRMED, `gen3_pressure_foeside_v1`:

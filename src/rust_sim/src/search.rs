@@ -1112,8 +1112,20 @@ pub fn volatile_names(mon: &MonState) -> Vec<&'static str> {
     if mon.trapped_by.is_some() {
         v.push("trapped");
     }
-    if mon.two_turn.is_some() {
+    if let Some(t) = mon.two_turn {
         v.push("twoturnmove");
+        // The MOVE-ID sub-volatile twoturnmove's onStart adds (`gen3_twoturn_family_v1`, probed:
+        // a charging Razor Wind holds `["twoturnmove","razorwind"]`), up until the strike lands it.
+        if t.charging {
+            if let Some(id) = mon
+                .set
+                .moves
+                .get(t.move_index)
+                .and_then(|m| crate::state::TWO_TURN_MOVES.iter().find(|x| **x == crate::dex::to_id(m)))
+            {
+                v.push(id);
+            }
+        }
     }
     if mon.yawn.is_some() {
         v.push("yawn");

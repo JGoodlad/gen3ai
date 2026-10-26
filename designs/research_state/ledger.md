@@ -28981,3 +28981,27 @@ mode). Golden 112 rows. The golden's 677-EV Protect boards also found that the p
 **Gates.** All three goldens match seed, framing and bytes; every revert mutation fails its pins (B2 1/1, B3 6/6, B9
 4/4). No OU behaviour changed: none of the ids is on an e2e capstone team, the capstone regenerates byte for byte, and
 the obs golden reproduces. Fuzz and gate results are in the commit bodies.
+
+## 2026-10-26 · RUST SIM · gen3 full parity B4: the two-turn and semi-invulnerable family (moves 325 → 332 of 369)
+
+**B4** (`gen3_twoturn_family_v1`, spec `harness/probe_twoturn_family.js`; built by a subagent, reviewed and shipped
+with B2 / B3 / B9). Razor Wind, Sky Attack, Skull Bash and the semi-invulnerable Fly, Bounce, Dig and Dive reuse
+Solar Beam's `TwoTurnMove` and locked request: the charge turn is `|move|…||[still]` + `|-prepare|` with no move
+draws (Skull Bash +1 Def), the strike turn `[from] lockedmove` with no PP. While Fly / Bounce / Dig / Dive charge, a
+move into the user misses BEFORE immunity and accuracy (gen-3 `tryMoveHit`'s Invulnerability event: zero draws,
+`[miss]` + `-miss`), on the damaging, fixed-damage and status paths alike; Gust / Twister / Thunder / Sky Uppercut,
+Earthquake / Magnitude and Surf / Whirlpool bypass it and double their damage (Bounce doubles Gust / Twister at the
+base-power step, the others at the final damage step); Spikes, Haze and weather moves ignore it; Perish Song misses
+per mon; a Future Sight / Doom Desire strike misses with no draw; Dig and Dive skip the sandstorm / hail chip. The
+move's own sub-volatile is one more duration handler in the end-of-turn tie group, so Fly's charge turn draws one
+more than Razor Wind's. Golden 504 rows; 18 pins, 12 revert mutations.
+
+**OU-visible changes (FINDING).** An Imprison `cant` now loses a two-turn charge, which also fixes the same
+pre-existing bug for Solar Beam (OU: Imprison 0.049 % and Solar Beam 0.14 % of fielded gen3ou mons, 0 pool teams
+carry Imprison); `search::volatile_names` reports the charging move's sub-volatile (`solarbeam`) as Showdown holds
+it (search only, never the observation). The e2e capstone regenerates byte for byte and the obs golden reproduces.
+
+**Left for the fix batch:** the Fury Cutter counter updates at base-power time, before BeforeMove, accuracy and the
+new miss gate, where Showdown changes it only on a hit; 3 of the agent's 6 random-fuzz divergences, plus Rage's
+`-boost` / `-damage` order and Uproar's wake order (the other 3). For B7: Lock-On / Mind Reader must bypass the gate
+(`lockon`'s `onSourceInvulnerability`).

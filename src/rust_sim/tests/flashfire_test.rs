@@ -439,6 +439,7 @@ fn flash_fire_boost_exact_max_roll() {
     // neutral defender (Normal). Special (gen-3 Fire is always Special via the type split).
     let ctx = |flash_fire: bool| DamageContext {
         defender_minimized: false,
+        semi_invulnerable_doubles: false,
         attacker: Combatant { level: 100, spa_stat: 300, types: vec![Type::Fire], ..Default::default() },
         defender: Combatant { level: 100, spd_stat: 200, types: vec![Type::Normal], ..Default::default() },
         mv: MoveInput { minimize_doubles: false, base_power: 95, move_type: Some(Type::Fire), category: MoveCategory::Special, halves_defense: false },
@@ -487,6 +488,7 @@ fn flash_fire_light_screen_chain_combine_exact() {
     // (×0.5) fire in ModifyDamagePhase1; the sim accumulates them → one modifier applied once.
     let ctx = |flash_fire: bool, light_screen: bool| DamageContext {
         defender_minimized: false,
+        semi_invulnerable_doubles: false,
         attacker: Combatant { level: 100, spa_stat: 300, types: vec![Type::Fire], ..Default::default() },
         defender: Combatant { level: 100, spd_stat: 200, types: vec![Type::Normal], ..Default::default() },
         mv: MoveInput { minimize_doubles: false, base_power: 95, move_type: Some(Type::Fire), category: MoveCategory::Special, halves_defense: false },

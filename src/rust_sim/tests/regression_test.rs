@@ -3354,6 +3354,7 @@ fn pinch_bp_boost_fires_at_exactly_one_third_hp() {
         let def = Combatant { level: 100, spd_stat: 200, types: vec![Type::Normal], ..Default::default() };
         let ctx = DamageContext {
             defender_minimized: false,
+            semi_invulnerable_doubles: false,
             attacker: att,
             defender: def,
             mv: MoveInput { minimize_doubles: false, base_power: 95, move_type: Some(Type::Water), category: MoveCategory::Special, halves_defense: false },
@@ -3392,6 +3393,7 @@ fn marvel_scale_is_a_defender_side_def_boost() {
         let def = Combatant { level: 100, def_stat: 250, types: vec![Type::Normal], ..Default::default() };
         let ctx = DamageContext {
             defender_minimized: false,
+            semi_invulnerable_doubles: false,
             attacker: att,
             defender: def,
             mv: MoveInput { minimize_doubles: false, base_power: 100, move_type: None, category: MoveCategory::Physical, halves_defense: false },
@@ -3452,6 +3454,7 @@ fn huge_power_is_x2_atk_physical_only() {
         let def = Combatant { level: 100, def_stat: 250, spd_stat: 250, types: vec![Type::Normal], ..Default::default() };
         let ctx = DamageContext {
             defender_minimized: false,
+            semi_invulnerable_doubles: false,
             attacker: att,
             defender: def,
             // A typeless move (no STAB) so the ×2 shows undiluted.

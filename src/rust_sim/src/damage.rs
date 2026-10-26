@@ -335,6 +335,10 @@ pub struct DamageContext {
     /// step. Note gen-3 has no `onAccuracy` bypass, so this is the volatile's ONLY effect
     /// beyond the evasion stage the accuracy pipeline already folds.
     pub defender_minimized: bool,
+    /// The DEFENDER's semi-invulnerable sub-volatile doubles this (bypassing) move at the FINAL
+    /// ModifyDamage step (`gen3_twoturn_family_v1`: Fly vs Gust / Twister, Dig vs Earthquake /
+    /// Magnitude, Dive vs Surf / Whirlpool — `onSourceModifyDamage` chainModify(2)).
+    pub semi_invulnerable_doubles: bool,
     /// Hard immunity (an ability/Levitate immunity the caller resolved — e.g.
     /// Levitate vs Ground, Water Absorb vs Water). A type-chart `0×` is detected
     /// internally from the chart; this covers the ABILITY immunities the chart
@@ -645,6 +649,12 @@ fn modify_damage(base: u64, ctx: &DamageContext, type_mult: f64) -> DamageResult
     if ctx.defender_minimized && ctx.mv.minimize_doubles {
         bd = modify(bd, 2, 1);
     }
+    // The semi-invulnerable ×2 (`gen3_twoturn_family_v1`) is a member of the same ModifyDamage
+    // chain; ×2 is exact under the chain rounding, so its position against Minimize (which can
+    // never co-occur — no Minimize-flagged move bypasses any of the four) is immaterial.
+    if ctx.semi_invulnerable_doubles {
+        bd = modify(bd, 2, 1);
+    }
 
     // 12 + 13. randomizer (85-100%) then final floor (min 1), over all 16 rolls.
     randomize_all(bd)
@@ -777,6 +787,7 @@ mod tests {
                 bp_mods: vec![],
                 defender_thick_fat: false,
                 defender_minimized: false,
+                semi_invulnerable_doubles: false,
                 immune: false,
                 flash_fire: false,
             };

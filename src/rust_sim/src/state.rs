@@ -704,11 +704,11 @@ pub struct MonState {
     /// the next turn is free. 0 when `must_recharge` is false.
     pub must_recharge_duration: u8,
 
-    /// The **TWOTURNMOVE** charge volatile (`gen3_move_coverage_batch4c_v1`, Solar Beam) —
-    /// `Some` from the CHARGE turn's `onTryMove` (`addVolatile('twoturnmove')`, whose
-    /// onStart adds the `solarbeam` sub-volatile = `charging`) until the residual duration
-    /// expiry / an onMoveAborted / switch-out / faint. See [`TwoTurnMove`]. `None` at
-    /// construction.
+    /// The **TWOTURNMOVE** charge volatile (`gen3_move_coverage_batch4c_v1`, Solar Beam;
+    /// widened to every gen-3 charge move by `gen3_twoturn_family_v1`) — `Some` from the
+    /// CHARGE turn's `onTryMove` (`addVolatile('twoturnmove')`, whose onStart adds the
+    /// MOVE-ID sub-volatile = `charging`) until the residual duration expiry / an
+    /// onMoveAborted / switch-out / faint. See [`TwoTurnMove`]. `None` at construction.
     pub two_turn: Option<TwoTurnMove>,
 
     /// The **COUNTER / MIRROR COAT** reactive volatile (`gen3_move_coverage_batch5_v1` —
@@ -1081,9 +1081,16 @@ pub struct PartialTrap {
 ///     `duration` 2 → 1 → 0 removes it (draw-free). After a fire-turn KO it LINGERS
 ///     through the faint pause and is cleaned by the resumed tail's residual.
 ///   * SUN (`effectiveWeather`, Cloud Nine-aware) SKIPS the charge entirely (no volatile).
+///
+/// `gen3_twoturn_family_v1` (gen3 full parity B4) runs the same state for all eight gen-3
+/// charge moves ([`TWO_TURN_MOVES`]); probe `harness/probe_twoturn_family.js`. The sub-volatile
+/// (`charging`) is the MOVE-ID volatile the twoturnmove `onStart` adds (`data/conditions.ts`
+/// twoturnmove: `attacker.addVolatile(effect.id)`); for Fly / Bounce / Dig / Dive it carries the
+/// move's own `condition` (`semi`), which makes the user SEMI-INVULNERABLE until the strike's
+/// `onTryMove` removes it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TwoTurnMove {
-    /// The user's Solar Beam move-slot index (the locked move).
+    /// The user's charge-move slot index (the locked move).
     pub move_index: usize,
     /// Remaining `twoturnmove` duration (2 at set; decremented at each residual; removed
     /// at 0).
@@ -1092,6 +1099,92 @@ pub struct TwoTurnMove {
     /// request is locked; false = the beam FIRED this turn, the volatile merely awaits its
     /// residual expiry).
     pub charging: bool,
+    /// The sub-volatile's own condition for the four semi-invulnerable moves (`None` for Solar
+    /// Beam / Razor Wind / Sky Attack / Skull Bash, whose sub-volatile has no condition). Live
+    /// only while `charging` (the sub-volatile is the semi-invulnerable state).
+    pub semi: Option<SemiInvulnerable>,
+}
+
+/// The eight gen-3 two-turn CHARGE moves (`gen3_twoturn_family_v1`): every gen-3 move whose
+/// resolved data carries `flags.charge` and the twoturnmove `onTryMove` (`Dex.mod('gen3')`;
+/// pinned against the resolved dex by `tests/twoturn_family_test.rs` TF1).
+pub const TWO_TURN_MOVES: [&str; 8] =
+    ["solarbeam", "razorwind", "skyattack", "skullbash", "fly", "bounce", "dig", "dive"];
+
+/// The four SEMI-INVULNERABLE charge kinds (`gen3_twoturn_family_v1`): the sub-volatile's
+/// resolved gen-3 `condition` (`Dex.mod('gen3').moves.get(id).condition`, `data/moves.ts` via
+/// the mod chain; every member pinned against the resolved handlers by
+/// `tests/twoturn_family_test.rs` TF2):
+///   * `onInvulnerability` — every move but the listed ones misses (`bypassed_by`);
+///   * `onSourceModifyDamage` chainModify(2) — Fly / Dig / Dive double the bypassing moves at
+///     the gen-3 `ModifyDamage` final modifier (`data/mods/gen3/scripts.ts:109`);
+///   * `onSourceBasePower` chainModify(2) — BOUNCE doubles Gust / Twister at the BasePower
+///     chain instead (a different point; Fly's own Thunder / Sky Uppercut bypass is not doubled);
+///   * `onImmunity('sandstorm' | 'hail') => false` — Dig / Dive only (the weather chip skip,
+///     `sim/battle.ts:2113`).
+///   * `duration: 2` — the sub-volatile joins the residual duration tie group.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SemiInvulnerable {
+    Fly,
+    Bounce,
+    Dig,
+    Dive,
+}
+
+impl SemiInvulnerable {
+    /// The kind a charge move's sub-volatile carries (`None` for the non-invulnerable four).
+    pub fn of(move_id: &str) -> Option<SemiInvulnerable> {
+        match move_id {
+            "fly" => Some(SemiInvulnerable::Fly),
+            "bounce" => Some(SemiInvulnerable::Bounce),
+            "dig" => Some(SemiInvulnerable::Dig),
+            "dive" => Some(SemiInvulnerable::Dive),
+            _ => None,
+        }
+    }
+
+    /// The condition's id (the move id).
+    pub fn id(self) -> &'static str {
+        match self {
+            SemiInvulnerable::Fly => "fly",
+            SemiInvulnerable::Bounce => "bounce",
+            SemiInvulnerable::Dig => "dig",
+            SemiInvulnerable::Dive => "dive",
+        }
+    }
+
+    /// `onInvulnerability` returns undefined (the move connects) for these ids. The resolved
+    /// Fly / Bounce list also names hurricane, smackdown and thousandarrows, none of which
+    /// exists in gen 3.
+    pub fn bypassed_by(self, move_id: &str) -> bool {
+        match self {
+            SemiInvulnerable::Fly | SemiInvulnerable::Bounce => {
+                matches!(move_id, "gust" | "twister" | "skyuppercut" | "thunder")
+            }
+            SemiInvulnerable::Dig => matches!(move_id, "earthquake" | "magnitude"),
+            SemiInvulnerable::Dive => matches!(move_id, "surf" | "whirlpool"),
+        }
+    }
+
+    /// `onSourceModifyDamage` chainModify(2) (Fly / Dig / Dive).
+    pub fn doubles_damage(self, move_id: &str) -> bool {
+        match self {
+            SemiInvulnerable::Fly => matches!(move_id, "gust" | "twister"),
+            SemiInvulnerable::Bounce => false,
+            SemiInvulnerable::Dig => matches!(move_id, "earthquake" | "magnitude"),
+            SemiInvulnerable::Dive => matches!(move_id, "surf" | "whirlpool"),
+        }
+    }
+
+    /// `onSourceBasePower` chainModify(2) (Bounce only).
+    pub fn doubles_base_power(self, move_id: &str) -> bool {
+        self == SemiInvulnerable::Bounce && matches!(move_id, "gust" | "twister")
+    }
+
+    /// `onImmunity` returns false for the sandstorm / hail chip (Dig / Dive).
+    pub fn weather_immune(self) -> bool {
+        matches!(self, SemiInvulnerable::Dig | SemiInvulnerable::Dive)
+    }
 }
 
 /// A pending FUTURE-MOVE strike (`gen3_move_coverage_batch4c_v1` — the gen-3 `futuremove`
@@ -1559,6 +1652,14 @@ impl MonState {
     /// (no pp/maxpp/target/disabled) + `trapped:true`; `move 1` is the only legal move
     /// choice and a voluntary switch is REJECTED ("Can't switch: The active Pokémon is
     /// trapped" — the FIRM-trap shape, probe-verified request JSON).
+    /// The SEMI-INVULNERABLE state (`gen3_twoturn_family_v1`, `pokemon.isSemiInvulnerable()`
+    /// for gen 3): the Fly / Bounce / Dig / Dive sub-volatile, present from the charge until the
+    /// strike's `onTryMove` removes it (or an abort / the residual expiry removes the
+    /// twoturnmove that owns it).
+    pub fn semi_invulnerable(&self) -> Option<SemiInvulnerable> {
+        self.two_turn.filter(|t| t.charging).and_then(|t| t.semi)
+    }
+
     pub fn move_locked(&self) -> bool {
         self.must_recharge
             || self.two_turn.map_or(false, |t| t.charging)

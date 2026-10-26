@@ -5,9 +5,9 @@
   "surface": {
    "abilities": 77,
    "items": 67,
-   "conditions": 59,
-   "moves": 309,
-   "rows": 1105
+   "conditions": 63,
+   "moves": 316,
+   "rows": 1130
   },
   "excluded_deferred": {
    "forecast": "Castform forme+TYPE change under weather — deferred (probe_forecast_rng.js settled the map; the reporting surface is unprobed); the port FAIL-LOUDs in state::MonState::from_set (GIGO guard: an unmodeled ability would silently no-op then desync under weather); NOT in MODELED/NOOP + REJECT_ABILITIES/REJECT_SPECIES so the e2e filter + randbats adapter exclude its teams",
@@ -856,6 +856,24 @@
    "anchor": "turn.rs::run_beat_up",
    "reason": "the stat swap: attacker SpA REPLACED by the current ally dex baseStats.atk (event.modifier=1) — computed directly in the per-strike DamageContext"
   },
+  "condition:bounce:duration": {
+   "disposition": "implemented",
+   "fp": "val:2",
+   "anchor": "residuals.rs::SemiInvulnerableDuration",
+   "reason": "the sub-volatile duration:2 is a second NO_ORDER subOrder-2 residual duration handler while the user is up (probed: a Fly charge turn draws one more tie shuffle than Razor Wind)"
+  },
+  "condition:bounce:onInvulnerability": {
+   "disposition": "implemented",
+   "fp": "fn:4f2fef1e:onInvulnerability(target, source, move) { if ([\"gust\", \"twister\", \"skyuppercut\", \"thunder\", \"hurricane\", \"smackdown\", \"t",
+   "anchor": "state.rs::bypassed_by",
+   "reason": "gen-3 tryMoveHit Invulnerability (before immunity and accuracy, zero draws, [miss] + -miss) in run_move / run_fixed_damage_move / run_status_move, Perish Song per mon, the future-move strike"
+  },
+  "condition:bounce:onSourceBasePower": {
+   "disposition": "implemented",
+   "fp": "fn:ebbc6351:onSourceBasePower(basePower, target, source, move) { if (move.id === \"gust\" || move.id === \"twister\") { return this.chai",
+   "anchor": "state.rs::doubles_base_power",
+   "reason": "Gust / Twister x2 at the BasePower chain (a different point from Fly's ModifyDamage)"
+  },
   "condition:brn:onResidual": {
    "disposition": "implemented",
    "fp": "fn:bf41b8fb:onResidual(pokemon) { this.damage(pokemon.baseMaxhp / 8); }",
@@ -1053,6 +1071,30 @@
    "anchor": "turn.rs::run_status_move",
    "reason": "the DB arm: a ZERO-draw cast; the re-cast draw-free self-removes+re-adds (the flag is idempotent) — |-singlemove| each cast, PP −1 each"
   },
+  "condition:dig:duration": {
+   "disposition": "implemented",
+   "fp": "val:2",
+   "anchor": "residuals.rs::SemiInvulnerableDuration",
+   "reason": "the sub-volatile duration:2 is a second NO_ORDER subOrder-2 residual duration handler while the user is up (probed: a Fly charge turn draws one more tie shuffle than Razor Wind)"
+  },
+  "condition:dig:onImmunity": {
+   "disposition": "implemented",
+   "fp": "fn:e7de6313:onImmunity(type, pokemon) { if (type === \"sandstorm\" || type === \"hail\") return false; }",
+   "anchor": "residuals.rs::weather_immune",
+   "reason": "no sandstorm / hail chip while underground / underwater"
+  },
+  "condition:dig:onInvulnerability": {
+   "disposition": "implemented",
+   "fp": "fn:7eba35ed:onInvulnerability(target, source, move) { if ([\"earthquake\", \"magnitude\"].includes(move.id)) { return; } return false; }",
+   "anchor": "state.rs::bypassed_by",
+   "reason": "gen-3 tryMoveHit Invulnerability (before immunity and accuracy, zero draws, [miss] + -miss) in run_move / run_fixed_damage_move / run_status_move, Perish Song per mon, the future-move strike"
+  },
+  "condition:dig:onSourceModifyDamage": {
+   "disposition": "implemented",
+   "fp": "fn:0bc0ed31:onSourceModifyDamage(damage, source, target, move) { if (move.id === \"earthquake\" || move.id === \"magnitude\") { return t",
+   "anchor": "damage.rs::semi_invulnerable_doubles",
+   "reason": "chainModify(2) at the gen-3 ModifyDamage final modifier for the bypassing moves (Gust/Twister, Earthquake/Magnitude, Surf/Whirlpool)"
+  },
   "condition:disable:durationCallback": {
    "disposition": "implemented",
    "fp": "fn:8ee07c32:durationCallback() { return this.random(2, 6); }",
@@ -1088,6 +1130,30 @@
    "fp": "fn:d9184044:onStart(pokemon) { if (!this.queue.willMove(pokemon)) { this.effectState.duration++; } if (!pokemon.lastMove) { return f",
    "anchor": "state.rs::disable",
    "reason": "the willMove +1 duration store (gen3_taunt_disable_v1)"
+  },
+  "condition:dive:duration": {
+   "disposition": "implemented",
+   "fp": "val:2",
+   "anchor": "residuals.rs::SemiInvulnerableDuration",
+   "reason": "the sub-volatile duration:2 is a second NO_ORDER subOrder-2 residual duration handler while the user is up (probed: a Fly charge turn draws one more tie shuffle than Razor Wind)"
+  },
+  "condition:dive:onImmunity": {
+   "disposition": "implemented",
+   "fp": "fn:e7de6313:onImmunity(type, pokemon) { if (type === \"sandstorm\" || type === \"hail\") return false; }",
+   "anchor": "residuals.rs::weather_immune",
+   "reason": "no sandstorm / hail chip while underground / underwater"
+  },
+  "condition:dive:onInvulnerability": {
+   "disposition": "implemented",
+   "fp": "fn:317b3ff4:onInvulnerability(target, source, move) { if ([\"surf\", \"whirlpool\"].includes(move.id)) { return; } return false; }",
+   "anchor": "state.rs::bypassed_by",
+   "reason": "gen-3 tryMoveHit Invulnerability (before immunity and accuracy, zero draws, [miss] + -miss) in run_move / run_fixed_damage_move / run_status_move, Perish Song per mon, the future-move strike"
+  },
+  "condition:dive:onSourceModifyDamage": {
+   "disposition": "implemented",
+   "fp": "fn:470f9d3a:onSourceModifyDamage(damage, source, target, move) { if (move.id === \"surf\" || move.id === \"whirlpool\") { return this.ch",
+   "anchor": "damage.rs::semi_invulnerable_doubles",
+   "reason": "chainModify(2) at the gen-3 ModifyDamage final modifier for the bypassing moves (Gust/Twister, Earthquake/Magnitude, Surf/Whirlpool)"
   },
   "condition:encore:durationCallback": {
    "disposition": "implemented",
@@ -1206,6 +1272,24 @@
    "fp": "val:8",
    "anchor": "turn.rs::clear_flinch",
    "reason": "the priority-8 draw-free cant — (order metadata of the sibling onBeforeMove handler)"
+  },
+  "condition:fly:duration": {
+   "disposition": "implemented",
+   "fp": "val:2",
+   "anchor": "residuals.rs::SemiInvulnerableDuration",
+   "reason": "the sub-volatile duration:2 is a second NO_ORDER subOrder-2 residual duration handler while the user is up (probed: a Fly charge turn draws one more tie shuffle than Razor Wind)"
+  },
+  "condition:fly:onInvulnerability": {
+   "disposition": "implemented",
+   "fp": "fn:4f2fef1e:onInvulnerability(target, source, move) { if ([\"gust\", \"twister\", \"skyuppercut\", \"thunder\", \"hurricane\", \"smackdown\", \"t",
+   "anchor": "state.rs::bypassed_by",
+   "reason": "gen-3 tryMoveHit Invulnerability (before immunity and accuracy, zero draws, [miss] + -miss) in run_move / run_fixed_damage_move / run_status_move, Perish Song per mon, the future-move strike"
+  },
+  "condition:fly:onSourceModifyDamage": {
+   "disposition": "implemented",
+   "fp": "fn:dc025b41:onSourceModifyDamage(damage, source, target, move) { if (move.id === \"gust\" || move.id === \"twister\") { return this.chai",
+   "anchor": "damage.rs::semi_invulnerable_doubles",
+   "reason": "chainModify(2) at the gen-3 ModifyDamage final modifier for the bypassing moves (Gust/Twister, Earthquake/Magnitude, Surf/Whirlpool)"
   },
   "condition:focusenergy:onModifyCritRatio": {
    "disposition": "implemented",
@@ -3802,6 +3886,18 @@
    "anchor": "turn.rs::run_multihit",
    "reason": "the multi-strike count + per-strike loop (fixed / [2,5] sample); stops at the target faint"
   },
+  "move:bounce:onTryMove": {
+   "disposition": "implemented",
+   "fp": "fn:a08b7624:onTryMove(attacker, defender, move) { if (attacker.removeVolatile(move.id)) { return; } this.add(\"-prepare\", attacker, m",
+   "anchor": "state.rs::TWO_TURN_MOVES",
+   "reason": "the twoturnmove gate shared with Solar Beam: CHARGE ([still]+-prepare, zero move draws, addVolatile twoturnmove + the move-id sub-volatile) / STRIKE (removeVolatile(move.id) => charging=false, [from] lockedmove, no PP)"
+  },
+  "move:bounce:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":30,\"status\":\"par\"}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary on the strike (Sky Attack 30% flinch, Bounce 30% par)"
+  },
   "move:brickbreak:onTryHit": {
    "disposition": "unreachable_justified",
    "fp": "fn:9f3bf201:onTryHit(target, source) { const foe = source.side.foe; foe.removeSideCondition(\"reflect\"); foe.removeSideCondition(\"lig",
@@ -4166,6 +4262,12 @@
    "fp": "val:\"protect\"",
    "anchor": "turn.rs::run_protect"
   },
+  "move:dig:onTryMove": {
+   "disposition": "implemented",
+   "fp": "fn:a08b7624:onTryMove(attacker, defender, move) { if (attacker.removeVolatile(move.id)) { return; } this.add(\"-prepare\", attacker, m",
+   "anchor": "state.rs::TWO_TURN_MOVES",
+   "reason": "the twoturnmove gate shared with Solar Beam: CHARGE ([still]+-prepare, zero move draws, addVolatile twoturnmove + the move-id sub-volatile) / STRIKE (removeVolatile(move.id) => charging=false, [from] lockedmove, no PP)"
+  },
   "move:disable:ignoreImmunity": {
    "disposition": "implemented",
    "fp": "val:true",
@@ -4183,6 +4285,12 @@
    "fp": "val:\"disable\"",
    "anchor": "state.rs::disable",
    "reason": "the disable volatile (gen3_taunt_disable_v1)"
+  },
+  "move:dive:onTryMove": {
+   "disposition": "implemented",
+   "fp": "fn:5e5d36f1:onTryMove(attacker, defender, move) { if (attacker.removeVolatile(move.id)) { return; } if (attacker.hasAbility(\"gulpmis",
+   "anchor": "state.rs::TWO_TURN_MOVES",
+   "reason": "the twoturnmove gate; its Gulp Missile Cramorant forme change is unreachable in gen 3 (no Cramorant, no Gulp Missile)"
   },
   "move:dizzypunch:secondaries": {
    "disposition": "implemented",
@@ -4477,6 +4585,12 @@
    "fp": "val:true",
    "anchor": "turn.rs::run_status_move",
    "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:fly:onTryMove": {
+   "disposition": "implemented",
+   "fp": "fn:a08b7624:onTryMove(attacker, defender, move) { if (attacker.removeVolatile(move.id)) { return; } this.add(\"-prepare\", attacker, m",
+   "anchor": "state.rs::TWO_TURN_MOVES",
+   "reason": "the twoturnmove gate shared with Solar Beam: CHARGE ([still]+-prepare, zero move draws, addVolatile twoturnmove + the move-id sub-volatile) / STRIKE (removeVolatile(move.id) => charging=false, [from] lockedmove, no PP)"
   },
   "move:focusenergy:ignoreImmunity": {
    "disposition": "implemented",
@@ -5441,6 +5555,18 @@
    "anchor": "turn.rs::CRIT_MULT",
    "reason": "the high-crit denominator table (critRatio 2 => 1/8)"
   },
+  "move:razorwind:critRatio": {
+   "disposition": "implemented",
+   "fp": "val:2",
+   "anchor": "turn.rs::CRIT_MULT",
+   "reason": "the high-crit denominator table (critRatio 2 => 1/8), on the strike turn"
+  },
+  "move:razorwind:onTryMove": {
+   "disposition": "implemented",
+   "fp": "fn:a08b7624:onTryMove(attacker, defender, move) { if (attacker.removeVolatile(move.id)) { return; } this.add(\"-prepare\", attacker, m",
+   "anchor": "state.rs::TWO_TURN_MOVES",
+   "reason": "the twoturnmove gate shared with Solar Beam: CHARGE ([still]+-prepare, zero move draws, addVolatile twoturnmove + the move-id sub-volatile) / STRIKE (removeVolatile(move.id) => charging=false, [from] lockedmove, no PP)"
+  },
   "move:recover:heal": {
    "disposition": "implemented",
    "fp": "val:[1,2]",
@@ -5788,6 +5914,30 @@
    "fp": "fn:d6688131:onHit(target, source, move) { return this.skillSwap(source, target); }",
    "anchor": "turn.rs::run_status_move",
    "reason": "the skillswap arm: never-miss (zero draws), Protect blocks / Substitute does not (bypasssub), FAIL on Wonder Guard (gen-3's only failskillswap) or an identical ability pair. Emits ONE gen<=4 line `|-activate|<u>|Skill Swap|||[of] <t>` (two EMPTY fields, no -endability/-ability). The swapped-in abilities do NOT re-fire onStart (the sim gates those on gen>3), but BOTH outgoing abilities DO fire onEnd — the weather_negate WeatherChange (a random(0,2) at a cached-speed tie) and the armed flash_fire silent -end, which is the ONLY draw this move can create. The switch-out revert is free: execute_switch already restores set.ability."
+  },
+  "move:skullbash:onTryMove": {
+   "disposition": "implemented",
+   "fp": "fn:8466004a:onTryMove(attacker, defender, move) { if (attacker.removeVolatile(move.id)) { return; } this.add(\"-prepare\", attacker, m",
+   "anchor": "state.rs::TWO_TURN_MOVES",
+   "reason": "the twoturnmove gate + the charge-turn boost({def:1}) after -prepare (|-boost|…|def|1; def|0 at +6, probed)"
+  },
+  "move:skyattack:critRatio": {
+   "disposition": "implemented",
+   "fp": "val:2",
+   "anchor": "turn.rs::CRIT_MULT",
+   "reason": "the high-crit denominator table (critRatio 2 => 1/8), on the strike turn"
+  },
+  "move:skyattack:onTryMove": {
+   "disposition": "implemented",
+   "fp": "fn:a08b7624:onTryMove(attacker, defender, move) { if (attacker.removeVolatile(move.id)) { return; } this.add(\"-prepare\", attacker, m",
+   "anchor": "state.rs::TWO_TURN_MOVES",
+   "reason": "the twoturnmove gate shared with Solar Beam: CHARGE ([still]+-prepare, zero move draws, addVolatile twoturnmove + the move-id sub-volatile) / STRIKE (removeVolatile(move.id) => charging=false, [from] lockedmove, no PP)"
+  },
+  "move:skyattack:secondaries": {
+   "disposition": "implemented",
+   "fp": "val:[{\"chance\":30,\"volatileStatus\":\"flinch\"}]",
+   "anchor": "turn.rs::apply_secondaries",
+   "reason": "the <=1-col secondary on the strike (Sky Attack 30% flinch, Bounce 30% par)"
   },
   "move:slackoff:heal": {
    "disposition": "implemented",

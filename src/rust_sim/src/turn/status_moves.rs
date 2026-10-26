@@ -160,6 +160,17 @@ impl crate::state::BattleState {
             && !yawn_immune
             && self.sides[foe].safeguard > 0;
         let yawn_still = yawn_statused || yawn_subbed;
+        // --- SEMI-INVULNERABILITY (`gen3_twoturn_family_v1`): a foe-targeted status move into a
+        //     target mid-Fly / Bounce / Dig / Dive MISSES at gen-3 `tryMoveHit`'s Invulnerability
+        //     event (data/mods/gen3/scripts.ts:300-305), BEFORE every TryHit / onTryHit / accuracy
+        //     check: zero draws, the TARGET-form announce + `[miss]` + `|-miss|` (probed: Thunder
+        //     Wave, Roar, Whirlwind, Taunt, Encore, Disable, Leech Seed, Toxic, Yawn, Mean Look,
+        //     ghost Curse, Memento, Transform, Pain Split, Teeter Dance). Status moves are NOT
+        //     exempt; the field / side / self moves are (`invulnerability_applies`), a non-Ghost
+        //     Curse re-targets to self, and Perish Song checks each mon in its own arm. ---
+        let invuln_miss = !(move_id == "curse" && !curse_ghost)
+            && dex.moves(move_id).map_or(false, |m| invulnerability_applies(&m.target))
+            && self.semi_invulnerable_miss(foe, foe_slot, move_id);
         if self.logging() {
             let user = self.mon_ref(_side, _slot, dex);
             // Spikes at the cap is a top-level `[still]` (did-nothing) case; a
@@ -174,8 +185,8 @@ impl crate::state::BattleState {
             // A ghost-Curse-into-a-sub is the SAME did-nothing `[still]` case; a Yawn cast into
             // an already-statused OR substituted (non-protected, non-immune) foe is likewise
             // (`yawn_still`, `gen3_yawn_v1`).
-            let still_form =
-                (move_id == "spikes" && self.sides[foe].spikes >= 3) || curse_still || yawn_still;
+            let still_form = !invuln_miss
+                && ((move_id == "spikes" && self.sides[foe].spikes >= 3) || curse_still || yawn_still);
             if still_form {
                 self.log.move_used(&user, move_name, None, false, true);
             } else {
@@ -282,6 +293,15 @@ impl crate::state::BattleState {
             });
             // (5) return null — the FOE's move does nothing (not landed, not missed).
             return MoveResolution::done(false, false, false);
+        }
+        if invuln_miss {
+            if self.logging() {
+                let user = self.mon_ref(_side, _slot, dex);
+                let target = self.mon_ref(foe, foe_slot, dex);
+                self.log.attr_last_move_miss();
+                self.log.miss(&user, Some(&target));
+            }
+            return MoveResolution::done(true, false, false);
         }
         // --- SLEEP TALK (`gen3_move_coverage_batch5_v1`, the gen-3 `sleeptalk` — probe
         //     `harness/probe_batch5_sleeptalk.js`, the resolved source dumped there):
@@ -707,6 +727,19 @@ impl crate::state::BattleState {
                 let a = self.sides[s].active;
                 if self.sides[s].pokemon[a].fainted {
                     continue; // getAllActive excludes a fainted mon
+                }
+                // SEMI-INVULNERABLE (`gen3_twoturn_family_v1`): the resolved gen-3
+                // `perishsong.onHitField` runs `runEvent('Invulnerability', pokemon)` per active
+                // FIRST — a mon mid-Fly / Bounce / Dig / Dive gets `|-miss|<user>|<mon>` (no
+                // `[miss]` on the announce), counts as a `result`, and is NOT counted (probed).
+                if self.semi_invulnerable_miss(s, a, "perishsong") {
+                    any_result = true;
+                    if self.logging() {
+                        let u = self.mon_ref(_side, _slot, dex);
+                        let m = self.mon_ref(s, a, dex);
+                        self.log.miss(&u, Some(&m));
+                    }
+                    continue;
                 }
                 let blocks_sound = dex
                     .ability(&to_id(&self.sides[s].pokemon[a].ability))

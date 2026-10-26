@@ -621,6 +621,10 @@ enum ResidualAction {
     /// a same-cached-speed foe duration handler would tie it). After a fire-turn KO the
     /// lingering volatile is cleaned by the RESUMED tail's residual via this handler.
     TwoTurnDuration { side: usize, slot: usize },
+    /// The Fly / Bounce / Dig / Dive sub-volatile's own `duration: 2` handler
+    /// (`gen3_twoturn_family_v1`): a second NO_ORDER tie-group member while the user is
+    /// semi-invulnerable. `ends` = this tick takes it to 0 (the user lands).
+    SemiInvulnerableDuration { side: usize, slot: usize, ends: bool },
     /// The pending **FUTUREMOVE** slot condition's residual handler (`gen3_move_coverage_
     /// batch4c_v1`, Doom Desire / Future Sight — order **11**, after every order-10 mon
     /// handler): decrement the side's `future_move` duration; on reaching 0 RESOLVE the

@@ -382,11 +382,11 @@ const BATCH7_E2E_EXCLUDED = false;
 // SIGHT (the slot-keyed order-11 future strike). All bit-for-bit modeled
 // (movecoverage_batch4c_test.rs + the MC49+ pins). `recharge` is the locked-turn
 // pseudo-move id the sim's request offers — admitted so the picker submits `move 1` on a
-// locked request instead of stalling. The UNMODELED siblings stay fail-loud + rejected
-// (Blast Burn / Frenzy Plant / Hydro Cannon via `self.volatileStatus`+`flags.recharge`;
-// Razor Wind / Sky Attack / Skull Bash / Fly / Dig / Dive / Bounce via `flags.charge`;
-// no other gen3 `futuremove` exists).
-const MODELED_BATCH4C_MOVES = new Set(['hyperbeam', 'blastburn', 'frenzyplant', 'hydrocannon', 'solarbeam', 'doomdesire', 'futuresight', 'recharge']);
+// locked request instead of stalling. The recharge family (`gen3_recharge_family_v1`) and the
+// two-turn family (Razor Wind / Sky Attack / Skull Bash / Fly / Bounce / Dig / Dive,
+// `gen3_twoturn_family_v1`) are modeled; no other gen3 `futuremove` exists.
+const MODELED_BATCH4C_MOVES = new Set(['hyperbeam', 'blastburn', 'frenzyplant', 'hydrocannon', 'solarbeam', 'doomdesire', 'futuresight', 'recharge',
+  'razorwind', 'skyattack', 'skullbash', 'fly', 'bounce', 'dig', 'dive']);
 const BATCH4C_E2E_EXCLUDED = false;
 
 // MOVE-COVERAGE BATCH 5 (`gen3_move_coverage_batch5_v1`): the REACTIVE fixed-damage family

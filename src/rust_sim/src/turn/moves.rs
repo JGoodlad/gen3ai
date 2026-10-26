@@ -4,7 +4,7 @@ use crate::damage::{
 use crate::dex::moves::MultiHit;
 use crate::dex::{to_id, Dex, DmgFold, MoveCategory, Type};
 use crate::protocol::Cause;
-use crate::state::{FutureMove, Status, TwoTurnMove, Weather};
+use crate::state::{FutureMove, SemiInvulnerable, Status, TwoTurnMove, Weather, TWO_TURN_MOVES};
 use super::status::DamagingHitPhase;
 use super::*;
 use super::helpers::*;
@@ -291,18 +291,18 @@ impl crate::state::BattleState {
             return MoveResolution::done(false, false, false);
         }
 
-        // --- FAIL-LOUD: the UNMODELED charge moves (`gen3_move_coverage_batch4c_v1`). Razor
-        //     Wind / Sky Attack / Skull Bash (+ the semi-invulnerable Fly / Dig / Dive / Bounce,
-        //     whose conditions DIFFER from Solar Beam's) are `flags.charge` moves the port
-        //     does not model → fail-loud rather than silently collapse to one turn. Only
-        //     `solarbeam` is modeled; the recharge family is [`RECHARGE_MOVES`]. ---
-        match move_id.as_str() {
-            "razorwind" | "skyattack" | "skullbash" | "fly" | "dig" | "dive" | "bounce" => panic!(
-                "gen3_move_coverage_batch4c_v1: the CHARGE move {move_id:?} is NOT modeled \
-                 (only solarbeam is) — fail-loud, not a silent one-turn collapse"
-            ),
-            _ => {}
-        }
+        // (The seven non-Solar-Beam charge moves failed loud here until `gen3_twoturn_family_v1`
+        //  modeled them: see the TWO-TURN block below and [`TWO_TURN_MOVES`].)
+
+        // --- SEMI-INVULNERABILITY applies (`gen3_twoturn_family_v1`): gen-3 `tryMoveHit`
+        //     (`data/mods/gen3/scripts.ts:285-305`) runs `runEvent('Invulnerability')` for every
+        //     move whose target is NOT `all` / `foeSide` / `allySide` / `allyTeam` (those return
+        //     at :285-298 first); a self-target move's event target is the user itself, which
+        //     can never be mid-charge while choosing another move. ---
+        let invuln_applies = dex
+            .moves(&move_id)
+            .map(|m| invulnerability_applies(&m.target))
+            .unwrap_or(false);
 
         // --- WATER SPOUT variable BP (`gen3_move_coverage_batch4b_v1`,
         //     `waterspout.basePowerCallback`): `bp = clampIntRange(150 * hp / maxhp, 1)` =
@@ -521,8 +521,10 @@ impl crate::state::BattleState {
         //     path skips `deductPP`); everything else (onBeforeMove first — an abort
         //     LOSES the charge — then normal accuracy/crit/damage) runs below. Computed
         //     BEFORE the on_before_move/PP block reads it. ---
+        // `gen3_twoturn_family_v1`: every gen-3 charge move ([`TWO_TURN_MOVES`]) shares it.
+        let two_turn_move = TWO_TURN_MOVES.contains(&move_id.as_str());
         let locked_fire = !pursuit_strike
-            && move_id == "solarbeam"
+            && two_turn_move
             && self.sides[side].pokemon[slot].two_turn.map_or(false, |t| t.charging);
         // UPROAR spends PP ONCE, on the CAST (`gen3_uproar_v1`, probed 16 -> 15 across a
         // 5-turn lock) — every CONTINUING turn is a lockedmove and skips deductPP, exactly
@@ -537,6 +539,11 @@ impl crate::state::BattleState {
                 let name = dex.moves(&move_id).map(|m| m.display_name().to_string()).unwrap_or_default();
                 self.log.cant(&u, "move: Imprison", Some(&name));
             }
+            // The Imprison cant is a BeforeMove abort (`imprison.onFoeBeforeMove` returns false,
+            // so `runMove` fires MoveAborted, sim/battle-actions.ts:252-254): a charged two-turn
+            // move LOSES its charge (`twoturnmove.onMoveAborted`, `gen3_twoturn_family_v1` —
+            // probed: an imprisoned Skull Bash strike turn ends with no volatiles).
+            self.sides[side].pokemon[slot].two_turn = None;
             return MoveResolution::done(false, false, false);
         }
 
@@ -745,20 +752,49 @@ impl crate::state::BattleState {
         // and our own until the next full `|request|`). Found by the LADDER-USAGE corpus's first
         // slice-V run (a Rollout Registeel); 0 pool teams carry any of these moves.
         let mut announce_lockedmove = locked_uproar || locked_lockin || locked_rollout;
-        if move_id == "solarbeam" {
+        // --- THE TWO-TURN FAMILY (`gen3_twoturn_family_v1`, gen3 full parity B4): Razor Wind,
+        //     Sky Attack, Skull Bash, Fly, Bounce, Dig and Dive run Solar Beam's machinery —
+        //     their resolved gen-3 `onTryMove` is the same `twoturnmove` shape (probe
+        //     `harness/probe_twoturn_family.js`, whose header carries the settled spec):
+        //       * CHARGE: `|move|<u>|<Move>||[still]` (the announce, retro-edited by
+        //         twoturnmove's `attrLastMove('[still]')`, data/conditions.ts twoturnmove
+        //         onStart) + `|-prepare|<u>|<Move>`; SKULL BASH alone then `this.boost({def: 1})`
+        //         (`|-boost|<u>|def|1`, `def|0` at +6 — probed); `addVolatile('twoturnmove')`
+        //         whose onStart adds the MOVE-ID sub-volatile (`charging`) — for Fly / Bounce /
+        //         Dig / Dive the sub-volatile carries the semi-invulnerable condition (`semi`).
+        //         ZERO move draws, `landed` false. Only Solar Beam has the sun skip.
+        //       * STRIKE (`locked_fire`): `attacker.removeVolatile(move.id)` — the user LANDS
+        //         (no longer semi-invulnerable) — then the normal execution with the
+        //         `[from] lockedmove` announce; NO PP (the lockedmove path skips deductPP,
+        //         sim/battle-actions.ts:280-290). Razor Wind / Sky Attack crit at critRatio 2,
+        //         Sky Attack's 30 % flinch and Bounce's 30 % paralysis are their data secondaries. ---
+        if two_turn_move {
             if locked_fire {
                 if let Some(t) = self.sides[side].pokemon[slot].two_turn.as_mut() {
-                    t.charging = false; // removeVolatile('solarbeam') → the beam FIRES
+                    t.charging = false; // removeVolatile(move.id) → the move FIRES
                 }
                 announce_lockedmove = true;
             } else {
-                // CHARGE turn (or the sun skip). [EMIT] the `[still]` announce + -prepare.
+                // CHARGE turn (or Solar Beam's sun skip). [EMIT] the `[still]` announce + -prepare.
                 if self.logging() {
                     let user = self.mon_ref(side, slot, dex);
                     self.log.move_used(&user, &move_name, None, false, true);
                     self.log.prepare(&user, &move_name);
                 }
-                if self.effective_weather(dex) == Some(Weather::Sun) {
+                // SKULL BASH's charge-turn `this.boost({def: 1}, attacker, attacker, move)`
+                // (resolved gen-3 `skullbash.onTryMove`, after `-prepare`, before ChargeMove):
+                // draw-free, self-sourced (no onTryBoost blocks), and a primary move boost, so
+                // the line prints even at the +6 cap (`|-boost|<u>|def|0`, probed).
+                if move_id == "skullbash" {
+                    let cur = self.sides[side].pokemon[slot].boosts[1] as i32; // Def
+                    let next = (cur + 1).clamp(-6, 6);
+                    self.sides[side].pokemon[slot].boosts[1] = next as i8;
+                    if self.logging() {
+                        let user = self.mon_ref(side, slot, dex);
+                        self.log.boost_applied(&user, 1, 1, (next - cur) as i8, next as i8);
+                    }
+                }
+                if move_id == "solarbeam" && self.effective_weather(dex) == Some(Weather::Sun) {
                     // SUN SKIP: -anim then IMMEDIATE normal execution (PP already paid -1).
                     if self.logging() {
                         let user = self.mon_ref(side, slot, dex);
@@ -771,6 +807,7 @@ impl crate::state::BattleState {
                         move_index,
                         duration: 2,
                         charging: true,
+                        semi: SemiInvulnerable::of(&move_id),
                     });
                     return MoveResolution::done(false, false, false);
                 }
@@ -947,6 +984,23 @@ impl crate::state::BattleState {
             return MoveResolution::done(false, false, false);
         }
 
+        // --- SEMI-INVULNERABILITY (`gen3_twoturn_family_v1`): gen-3 `tryMoveHit` runs
+        //     `runEvent('Invulnerability')` (data/mods/gen3/scripts.ts:300-305) right after the
+        //     `Try` gates above (Fake Out) and BEFORE the immunity check and the accuracy roll: a
+        //     target mid-Fly / Bounce / Dig / Dive that this move does not bypass is MISSED with
+        //     ZERO draws (`[miss]` + `|-miss|`). Explosion's self-KO above has already happened;
+        //     a Jump Kick / High Jump Kick still crashes (`useMoveInner`'s `MoveFail` on a false
+        //     `tryMoveHit`, scripts.ts:238-240 — probed). ---
+        if invuln_applies && self.semi_invulnerable_miss(foe, foe_slot, &move_id) {
+            self.emit_damaging_miss(side, slot, foe, foe_slot, &move_name, announce_lockedmove, suppress_announce, dex);
+            if move_id == "jumpkick" || move_id == "highjumpkick" {
+                self.apply_jump_kick_crash(
+                    side, slot, foe, foe_slot, base_power, move_type, category, crit_ratio, dex,
+                );
+            }
+            return MoveResolution::done(true, false, false);
+        }
+
         // --- 1. ACCURACY: random(100) < effAcc, drawn unless never_miss
         //     (move.accuracy === true). effAcc folds the acc/eva stage table + the
         //     accMod item/ability handlers (`gen3_accuracy_pipeline_v1`,
@@ -1060,6 +1114,18 @@ impl crate::state::BattleState {
             .moves(&to_id(&move_id))
             .map(|m| m.minimize_doubles)
             .unwrap_or(false);
+        // SEMI-INVULNERABLE damage doubling (`gen3_twoturn_family_v1`): a move that BYPASSED the
+        // target's Fly / Dig / Dive is doubled by the sub-volatile's `onSourceModifyDamage`
+        // chainModify(2) at the gen-3 `ModifyDamage` final modifier (after the type multiplier,
+        // before the randomizer, scripts.ts:109); BOUNCE's `onSourceBasePower` doubles Gust /
+        // Twister at the BasePower chain instead (probed: Gust into Fly 58 / Bounce 57 vs 28 on
+        // the ground). DRAW-FREE.
+        if let Some(si) = self.sides[foe].pokemon[foe_slot].semi_invulnerable() {
+            ctx.semi_invulnerable_doubles = si.doubles_damage(&move_id);
+            if si.doubles_base_power(&move_id) {
+                ctx.bp_mods.push(BpMod::Chain(2, 1));
+            }
+        }
 
         // --- WONDER GUARD (`gen3_wonder_guard_v1`): the SE-ONLY damage gate. The gen4-override
         //     (gen3-inherited) `onTryHit` blocks a DAMAGING move into a Wonder Guard holder unless
@@ -1315,31 +1381,7 @@ impl crate::state::BattleState {
         //     NOT landed (the in-tryMoveHit Update shuffle is skipped). ---
         if !acc_hit {
             // [EMIT] `|move|<user>|<Name>|<foe>|[miss]` then `|-miss|<user>|<foe>`.
-            if self.logging() {
-                let user = self.mon_ref(side, slot, dex);
-                let target = self.mon_ref(foe, foe_slot, dex);
-                if !suppress_announce {
-                    if announce_lockedmove {
-                        // A locked Solar Beam fire-turn MISS: the sim appends `[from] lockedmove`
-                        // (in the useMove announce) BEFORE the `[miss]` (in the accuracy check) →
-                        // `|move|…|[from] lockedmove|[miss]`. So emit the BARE move line, the
-                        // lockedmove attr, THEN the miss attr (NOT `move_used(miss=true)`, which
-                        // would put `[miss]` first). SIM-PROBED (`gen3_omniscient_byte_fuzz_v1`).
-                        self.log.move_used(&user, &move_name, Some(&target), false, false);
-                        self.log.attr_last_move_from_lockedmove();
-                        self.log.attr_last_move_miss();
-                    } else {
-                        self.log.move_used(&user, &move_name, Some(&target), true, false);
-                    }
-                } else {
-                    // SUN-SKIP Solar Beam (`suppress_announce`): its `[still]`+`-prepare`+`-anim`
-                    // lines already emitted BEFORE the accuracy roll. A MISS appends `[miss]` to
-                    // the last move-family line — the `|-anim|` — via `attrLastMove('[miss]')`
-                    // (`|-anim|<u>|Solar Beam|<t>|[miss]`, golden ab_34_10 line 120), THEN `-miss`.
-                    self.log.attr_last_move_miss();
-                }
-                self.log.miss(&user, Some(&target));
-            }
+            self.emit_damaging_miss(side, slot, foe, foe_slot, &move_name, announce_lockedmove, suppress_announce, dex);
             // JUMP KICK / HIGH JUMP KICK crash on a miss (`gen3_jump_kick_crash_v1`):
             // the resolved gen3 `onMoveFail` — the user takes half the damage the move
             // would have dealt (its `getDamage` DRAWS crit + the 16-way roll), clamped
@@ -2200,6 +2242,7 @@ impl crate::state::BattleState {
                 bp_mods: Vec::new(),
                 defender_thick_fat: false,
                 defender_minimized: false,
+                semi_invulnerable_doubles: false,
                 immune: false,
                 flash_fire: false,
             };
@@ -2594,6 +2637,58 @@ impl crate::state::BattleState {
         MoveResolution::done(false, false, true)
     }
 
+    /// The damaging-path MISS emission (`|move|<u>|<Move>|<t>|[miss]` + `|-miss|<u>|<t>`), shared
+    /// by the accuracy miss and the semi-invulnerable miss (`gen3_twoturn_family_v1` — both are
+    /// `attrLastMove('[miss]')` + `-miss` in gen-3 `tryMoveHit`). Emission-only.
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn emit_damaging_miss(
+        &mut self,
+        side: usize,
+        slot: usize,
+        foe: usize,
+        foe_slot: usize,
+        move_name: &str,
+        announce_lockedmove: bool,
+        suppress_announce: bool,
+        dex: &Dex,
+    ) {
+        if self.logging() {
+            let user = self.mon_ref(side, slot, dex);
+            let target = self.mon_ref(foe, foe_slot, dex);
+            if !suppress_announce {
+                if announce_lockedmove {
+                    // A locked Solar Beam fire-turn MISS: the sim appends `[from] lockedmove`
+                    // (in the useMove announce) BEFORE the `[miss]` (in the accuracy check) →
+                    // `|move|…|[from] lockedmove|[miss]`. So emit the BARE move line, the
+                    // lockedmove attr, THEN the miss attr (NOT `move_used(miss=true)`, which
+                    // would put `[miss]` first). SIM-PROBED (`gen3_omniscient_byte_fuzz_v1`).
+                    self.log.move_used(&user, move_name, Some(&target), false, false);
+                    self.log.attr_last_move_from_lockedmove();
+                    self.log.attr_last_move_miss();
+                } else {
+                    self.log.move_used(&user, move_name, Some(&target), true, false);
+                }
+            } else {
+                // SUN-SKIP Solar Beam (`suppress_announce`): its `[still]`+`-prepare`+`-anim`
+                // lines already emitted BEFORE the accuracy roll. A MISS appends `[miss]` to
+                // the last move-family line — the `|-anim|` — via `attrLastMove('[miss]')`
+                // (`|-anim|<u>|Solar Beam|<t>|[miss]`, golden ab_34_10 line 120), THEN `-miss`.
+                self.log.attr_last_move_miss();
+            }
+            self.log.miss(&user, Some(&target));
+        }
+    }
+
+    /// Whether `runEvent('Invulnerability', target, source, move)` returns false
+    /// (`gen3_twoturn_family_v1`): the target holds a Fly / Bounce / Dig / Dive sub-volatile whose
+    /// `onInvulnerability` this move does not bypass. The caller has already checked that the
+    /// move's target kind runs the event at all ([`invulnerability_applies`]). Draw-free.
+    pub(crate) fn semi_invulnerable_miss(&self, tgt_side: usize, tgt_slot: usize, move_id: &str) -> bool {
+        self.sides[tgt_side].pokemon[tgt_slot]
+            .semi_invulnerable()
+            .map_or(false, |si| !si.bypassed_by(move_id))
+    }
+
     /// Resolve + APPLY a FIXED-DAMAGE / FIXED-FORMULA move (Seismic Toss / Night Shade /
     /// Sonic Boom / Dragon Rage / Super Fang) — Showdown's `damage:` / `damageCallback`
     /// path that BYPASSES `getDamage`. The draw model, VERIFIED bit-for-bit vs the
@@ -2707,6 +2802,20 @@ impl crate::state::BattleState {
         //     the miss decision is DEFERRED past the immunity check (gen3 reports `-immune`,
         //     not `-miss`, for an immune move even when the accuracy roll would have failed —
         //     the same draw count either way). ---
+        // --- SEMI-INVULNERABILITY (`gen3_twoturn_family_v1`): after the `Try` gates above
+        //     (Counter / Mirror Coat / Endeavor), BEFORE accuracy — gen-3 `tryMoveHit`
+        //     (scripts.ts:300-305). Zero draws, `[miss]` + `-miss` (probed: Seismic Toss into Fly).
+        //     No fixed-damage move bypasses any of the four conditions. ---
+        if !targets_self && self.semi_invulnerable_miss(foe, foe_slot, move_id) {
+            if self.logging() {
+                let user = self.mon_ref(side, slot, dex);
+                let target = self.mon_ref(foe, foe_slot, dex);
+                self.log.move_used(&user, move_name, Some(&target), true, false);
+                self.log.miss(&user, Some(&target));
+            }
+            return MoveResolution::done(true, false, false);
+        }
+
         let acc_hit =
             self.roll_accuracy(side, slot, foe, foe_slot, accuracy, never_miss, move_type, dex);
 
@@ -3405,6 +3514,7 @@ impl crate::state::BattleState {
             bp_mods: Vec::new(), // type-gated ('???' never matches) — none can fire
             defender_thick_fat: false,
             defender_minimized: false,
+            semi_invulnerable_doubles: false,
             immune: false,
             // Flash Fire is Fire-type-gated; the typeless '???' self-hit is NOT Fire, so an
             // FF-armed mon that confusion-self-hits gets NO ×1.5 (probe-consistent). false.
@@ -3652,6 +3762,7 @@ impl crate::state::BattleState {
             // own `minimize_doubles` flag (set by the caller, which has the move id) it
             // doubles the damage at the FINAL ModifyDamage step.
             defender_minimized: self.sides[foe].pokemon[foe_slot].minimize,
+            semi_invulnerable_doubles: false,
             crit: false, // set by the caller after the crit roll
             weather,
             // SCREENS (`gen3_move_coverage_batch2_v1`): the DEFENDER's side conditions halve

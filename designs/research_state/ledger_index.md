@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-28,951-line file. **The ledger itself is append-only and is never edited by this**;
+29,008-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**950 headings · 895 dated · 2026-08-01 → 2026-10-26 · ledger 28,951 lines.**
+**952 headings · 897 dated · 2026-08-01 → 2026-10-26 · ledger 29,008 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -970,3 +970,5 @@ rename.
   - `L28861` · `2026-10-26` · MEASUREMENT · **THE BELIEF PRIOR MIX at λ = 0.25 against Kakuna, read under its registration (`4ee655648`): NOT DETECTED. Unfamiliar U +1.50 pp [−2.74, +5.74] against X51's banked P\* (0.502 vs 0.487), home72 −0.50 pp [−5.32, +4.32]; the determinism guard replays X51 game for game; D0f (λ = 1) pending**
   - `L28889` · `2026-10-26` · MEASUREMENT · **FR-3: P\* BEATS METAMON'S 200M HUMAN-ONLY MODELS TOO (OURS-BEATS ×2): U 0.631 [0.603, 0.658] vs `LargeRL`, 0.790 [0.766, 0.812] vs `LargeIL`; offline RL beats imitation on the same human data by ≈ 16 pp; no human-only Metamon model outperforms P\***
 - `L28917` · `2026-10-26` · RUST SIM · gen3 full parity B0 + B1: the recount, and the FORMAT table — nine gen-3 formats ran silently as OU (12 of 13 gen3-mod singles formats exact, `gen31v1` refused)
+- `L28952` · `2026-10-26` · RUST SIM · gen3 full parity B2 + B3 + B9: the recharge trio, the last four items, and Attract (moves 321 → 325 of 369, items 102 → 106 of 106)
+- `L28985` · `2026-10-26` · RUST SIM · gen3 full parity B4: the two-turn and semi-invulnerable family (moves 325 → 332 of 369)

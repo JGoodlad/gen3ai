@@ -646,6 +646,24 @@ impl crate::state::BattleState {
                     handler: ResidualAction::TwoTurnDuration { side, slot },
                 });
             }
+            // --- The SEMI-INVULNERABLE sub-volatile's own `duration: 2` (`gen3_twoturn_family_v1`):
+            //     Fly / Bounce / Dig / Dive's move-id volatile carries `condition.duration: 2`, so
+            //     while it is up (the charge-turn residual; the strike-turn residual only when a
+            //     gen-3 faint CANCELLED the strike) it is a SECOND NO_ORDER subOrder-2 duration
+            //     handler, gathered after twoturnmove (its insertion order — twoturnmove's onStart
+            //     adds it). Probed: a Fly charge turn draws one more tie-shuffle than Razor Wind's.
+            //     Its duration always equals twoturnmove's (both set to 2 at the charge, both
+            //     ticked each residual), so it ENDS exactly when twoturnmove's is 1 here. ---
+            if let Some(t) = mon.two_turn.filter(|t| t.charging && t.semi.is_some()) {
+                handlers.push(EventHandler {
+                    order: NO_ORDER,
+                    priority: 0,
+                    speed,
+                    sub_order: VOLATILE_RESIDUAL_SUBORDER,
+                    effect_order: 0,
+                    handler: ResidualAction::SemiInvulnerableDuration { side, slot, ends: t.duration <= 1 },
+                });
+            }
 
             // --- The PERISH SONG counter's residual handler (`gen3_move_coverage_batch6_v1`).
             //     Order **12** — its OWN group, LAST in the modeled ladder (after the
@@ -1324,6 +1342,20 @@ impl crate::state::BattleState {
                         }
                     }
                 }
+                // The SEMI-INVULNERABLE sub-volatile's duration tick (`gen3_twoturn_family_v1`):
+                // draw-free; at 0 the sub-volatile is removed (the user lands) and, like every
+                // duration-END handler, the per-handler faintMessages is skipped.
+                ResidualAction::SemiInvulnerableDuration { side, slot, ends } => {
+                    if self.sides[side].pokemon[slot].fainted {
+                        continue;
+                    }
+                    if ends {
+                        if let Some(t) = self.sides[side].pokemon[slot].two_turn.as_mut() {
+                            t.charging = false;
+                        }
+                        continue; // duration-END → skip faintMessages (D4 order fix)
+                    }
+                }
                 // FUTUREMOVE tick / resolve (`gen3_move_coverage_batch4c_v1`): like Wish,
                 // the effectHolder is the SLOT — a fainted occupant does NOT skip the
                 // decrement; the fainted-skip gate lives inside `apply_future_move` (the
@@ -1566,7 +1598,7 @@ impl crate::state::BattleState {
     fn weather_immune(&self, side: usize, slot: usize, weather: Weather, dex: &Dex) -> bool {
         let mon = &self.sides[side].pokemon[slot];
         let types = mon_types(mon, dex);
-        match weather {
+        (match weather {
             Weather::Sand => {
                 // Rock/Ground/Steel types + the SAND VEIL ability (`gen3_accuracy_pipeline_v1`
                 // — its `onImmunity('sandstorm')` returns false, so a Sand Veil holder takes
@@ -1581,7 +1613,11 @@ impl crate::state::BattleState {
             Weather::Hail => types.iter().any(|t| matches!(t, Type::Ice)),
             // Rain/Sun have no chip.
             Weather::Rain | Weather::Sun => true,
-        }
+        }) || (matches!(weather, Weather::Sand | Weather::Hail)
+            // DIG / DIVE (`gen3_twoturn_family_v1`): the sub-volatile's `onImmunity` returns false
+            // for 'sandstorm' / 'hail', so `runStatusImmunity` skips the chip (sim/battle.ts:2113;
+            // probed: no chip on the charge turn, nor on a strike turn a faint cancelled).
+            && mon.semi_invulnerable().map_or(false, |si| si.weather_immune()))
     }
 
     /// Leftovers heal: `this.heal(maxhp/16)` (floor), capped at maxhp. Draw-free.
@@ -2125,7 +2161,13 @@ impl crate::state::BattleState {
             .slot_of_uid(src_side, fm.source_uid)
             .unwrap_or(self.sides[src_side].active);
         // ONE accuracy roll (typeless → no move_type; never_miss false).
-        let hit = self.roll_accuracy(src_side, src_slot, side, slot, fm.accuracy, false, None, dex);
+        // SEMI-INVULNERABILITY (`gen3_twoturn_family_v1`): the strike is `trySpreadMoveHit`, whose
+        // gen-4 `hitStepInvulnerabilityEvent` (data/mods/gen4/scripts.ts:135-143) precedes the
+        // accuracy step — a target mid-Fly / Bounce / Dig / Dive is MISSED with no accuracy draw,
+        // through the same `[miss]` + `-miss` emission below (probed: Future Sight into a Fly
+        // charge turn's residual).
+        let hit = !self.semi_invulnerable_miss(side, slot, &fm.move_id)
+            && self.roll_accuracy(src_side, src_slot, side, slot, fm.accuracy, false, None, dex);
         if !hit {
             // [EMIT] the `attrLastMove('[miss]')` retro-edit (the `[miss]` lands on the
             // LAST `|move|` line of the turn — the target's own move line, the observed
