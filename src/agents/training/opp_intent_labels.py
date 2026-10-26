@@ -12,12 +12,13 @@ not choices at all, and supervising on them would teach the heads to predict our
 | situation | delta shape | label |
 |---|---|---|
 | they clicked a move | `opp_resolved_move_id`, no switch | **MOVE** |
+| they clicked a move and THEN switched in this window (fainted and replaced, phazed by us, Baton Pass) | `opp_move_before_switch` | **MOVE** — the move was the choice, the switch its consequence (`gen3_intent_label_move_then_switch_v1`) |
 | they voluntarily pivoted | `opp_switch_to`, no faint, no move | **SWITCH** — the only case `β` learns from |
-| we PHAZED them (Roar/Whirlwind) | `opp_switch_to` **and** a move resolved | **UNKNOWN** — our choice, not theirs |
+| a switch and a move with the switch FIRST (two choices in one window), or our phaze with no move of theirs | `opp_switch_to` **and** a move, not `opp_move_before_switch` | **UNKNOWN** |
 | we DRAGGED them after their own switch, or while they were asleep / paralysed / frozen / loafing | `opp_dragged` | **UNKNOWN** — the dragged mon is one they never chose |
 | their mon fainted and was replaced | `opp_switch_to` **and** `opp_fainted` | **UNKNOWN** — forced by the rules |
 | the replacement lands in the NEXT window (the faint lay in the previous one) | `opp_switch_is_replacement` | **UNKNOWN** — the same forced switch |
-| the window closes on a forced switch | `phase_is_forced_switch` | **UNKNOWN** — there was no choice to make |
+| the window closes on OUR forced switch | `phase_is_forced_switch` | **labelled as above** — it holds their genuine choice of the turn before, usually the move that KOed us (the old UNKNOWN mask dropped every KO turn's attack: 2026-10-26 GIGO audit D-1, `gen3_intent_label_move_then_switch_v1`) |
 | they called a move (Sleep Talk → Rest, Mirror Move, Metronome, Assist, Nature Power, Magic Coat, Snatch) | `opp_called_via` | **MOVE the CALLER** — they clicked Sleep Talk, not Rest |
 | our Encore landed before they moved, so the encored move ran in place of their pick | `opp_choice_overridden` | **UNKNOWN** — the executed move is not their choice |
 
@@ -91,9 +92,8 @@ def build_opp_intent_label(
     if delta is None:
         return KIND_UNKNOWN, 0, SWITCH_SLOT_NONE, 0
 
-    # A forced-switch window contains no opponent decision at all.
-    if getattr(delta, "phase_is_forced_switch", False):
-        return KIND_UNKNOWN, 0, SWITCH_SLOT_NONE, 0
+    # gen3_intent_label_move_then_switch_v1: a window that closes on OUR forced switch is NOT masked — it holds their
+    # choice of the turn before (the window after it holds no opponent action and reads UNKNOWN by itself).
     # Our Encore overrode the move they picked: what executed is not what they chose.
     if getattr(delta, "opp_choice_overridden", False):
         return KIND_UNKNOWN, 0, SWITCH_SLOT_NONE, 0
@@ -101,6 +101,8 @@ def build_opp_intent_label(
     # A CALLED move (Sleep Talk → Rest) is the caller's doing: the choice was the CALLER.
     move_id = getattr(delta, "opp_called_via", None) or delta.opp_resolved_move_id
     switch_to = delta.opp_switch_to
+    if move_id and getattr(delta, "opp_move_before_switch", False):
+        switch_to = None      # the move came first: it is the choice, the switch-in its consequence
 
     if switch_to:
         # A switch that co-occurs with a resolved move is a PHAZE (our Roar/Whirlwind moved them),

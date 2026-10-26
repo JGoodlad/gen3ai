@@ -1,0 +1,144 @@
+p1 dec 0 col-turn 0 row-turn 1.000: our active slot 0 species 94.0; OPP ctx trapped=0.0
+p1 dec 1 col-turn 2 row-turn 2.000: our active slot 0 species 94.0; OPP ctx trapped=1.0
+p1 dec 2 col-turn 3 row-turn 3.000: our active slot 1 species 227.0; OPP ctx trapped=1.0
+p1 dec 3 col-turn 4 row-turn 4.000: our active slot 1 species 227.0; OPP ctx trapped=1.0
+p1 dec 4 col-turn 5 row-turn 5.000: our active slot 1 species 227.0; OPP ctx trapped=1.0
+p2 dec 0 turn 0: OWN ctx trapped=0.0  request trapped bit=0.0 maybe=0.0  switch legal=True
+p2 dec 1 turn 2: OWN ctx trapped=1.0  request trapped bit=1.0 maybe=0.0  switch legal=False
+p2 dec 2 turn 3: OWN ctx trapped=1.0  request trapped bit=0.0 maybe=0.0  switch legal=True
+p2 dec 3 turn 4: OWN ctx trapped=1.0  request trapped bit=0.0 maybe=0.0  switch legal=True
+p2 dec 4 turn 5: OWN ctx trapped=1.0  request trapped bit=0.0 maybe=0.0  switch legal=True
+finished: True p1 decisions 44
+p1 record lines (first 60 with trapped / switch / move):
+   {"i":23,"text":"|switch|p1a: Gengar|Gengar, M|261/261","owner":null,"readings":[{"seq":0,"turn":0,"kind":"SWITCH","side":"ours","actor":"gengar","target":null,"value":{},"raw":["","switch","p1a: Genga
+   {"i":24,"text":"|switch|p2a: Snorlax|Snorlax, F|100/100","owner":null,"readings":[{"seq":1,"turn":0,"kind":"SWITCH","side":"opp","actor":"snorlax","target":null,"value":{},"raw":["","switch","p2a: Sno
+   {"i":25,"text":"|turn|1","owner":null,"readings":[]}
+   {"i":26,"text":"|request|{\"active\":[{\"moves\":[{\"move\":\"Mean Look\",\"id\":\"meanlook\",\"pp\":8,\"maxpp\":8,\"target\":\"normal\",\"disabled\":false},{\"move\":\"Thunderbolt\",\"id\":\"thunderb
+   {"i":29,"text":"|move|p1a: Gengar|Mean Look|p2a: Snorlax","owner":null,"readings":[{"seq":2,"turn":1,"kind":"MOVE","side":"ours","actor":"gengar","target":"snorlax","value":{"move_id":"meanlook","targ
+   {"i":30,"text":"|-activate|p2a: Snorlax|trapped","owner":null,"readings":[{"seq":3,"turn":1,"kind":"ACTIVATE","side":"opp","actor":"snorlax","target":null,"value":{"effect":"trapped"},"raw":["","-acti
+   {"i":31,"text":"|move|p2a: Snorlax|Curse|p2a: Snorlax","owner":null,"readings":[{"seq":4,"turn":1,"kind":"MOVE","side":"opp","actor":"snorlax","target":"snorlax","value":{"move_id":"curse","target_sta
+   {"i":37,"text":"|turn|2","owner":null,"readings":[]}
+   {"i":38,"text":"|request|{\"active\":[{\"moves\":[{\"move\":\"Mean Look\",\"id\":\"meanlook\",\"pp\":7,\"maxpp\":8,\"target\":\"normal\",\"disabled\":false},{\"move\":\"Thunderbolt\",\"id\":\"thunderb
+   {"i":41,"text":"|switch|p1a: Skarmory|Skarmory, F|334/334","owner":null,"readings":[{"seq":8,"turn":2,"kind":"SWITCH","side":"ours","actor":"skarmory","target":null,"value":{},"raw":["","switch","p1a:
+   {"i":42,"text":"|move|p2a: Snorlax|Curse|p2a: Snorlax","owner":null,"readings":[{"seq":9,"turn":2,"kind":"MOVE","side":"opp","actor":"snorlax","target":"snorlax","value":{"move_id":"curse","target_sta
+   {"i":48,"text":"|turn|3","owner":null,"readings":[]}
+   {"i":52,"text":"|move|p1a: Skarmory|Spikes|p2a: Snorlax","owner":null,"readings":[{"seq":13,"turn":3,"kind":"MOVE","side":"ours","actor":"skarmory","target":"snorlax","value":{"move_id":"spikes","targ
+   {"i":54,"text":"|move|p2a: Snorlax|Curse|p2a: Snorlax","owner":null,"readings":[{"seq":15,"turn":3,"kind":"MOVE","side":"opp","actor":"snorlax","target":"snorlax","value":{"move_id":"curse","target_st
+   {"i":60,"text":"|turn|4","owner":null,"readings":[]}
+   {"i":64,"text":"|move|p1a: Skarmory|Spikes|p2a: Snorlax","owner":null,"readings":[{"seq":19,"turn":4,"kind":"MOVE","side":"ours","actor":"skarmory","target":"snorlax","value":{"move_id":"spikes","targ
+   {"i":66,"text":"|move|p2a: Snorlax|Curse|p2a: Snorlax","owner":null,"readings":[{"seq":21,"turn":4,"kind":"MOVE","side":"opp","actor":"snorlax","target":"snorlax","value":{"move_id":"curse","target_st
+   {"i":72,"text":"|turn|5","owner":null,"readings":[]}
+   {"i":76,"text":"|move|p1a: Skarmory|Spikes|p2a: Snorlax","owner":null,"readings":[{"seq":25,"turn":5,"kind":"MOVE","side":"ours","actor":"skarmory","target":"snorlax","value":{"move_id":"spikes","targ
+   {"i":78,"text":"|move|p2a: Snorlax|Curse|p2a: Snorlax","owner":null,"readings":[{"seq":27,"turn":5,"kind":"MOVE","side":"opp","actor":"snorlax","target":"snorlax","value":{"move_id":"curse","target_st
+   {"i":84,"text":"|turn|6","owner":null,"readings":[]}
+   {"i":88,"text":"|move|p1a: Skarmory|Spikes||[still]","owner":null,"readings":[{"seq":31,"turn":6,"kind":"MOVE","side":"ours","actor":"skarmory","target":"snorlax","value":{"move_id":"spikes","target_s
+   {"i":90,"text":"|move|p2a: Snorlax|Curse|p2a: Snorlax","owner":null,"readings":[{"seq":33,"turn":6,"kind":"MOVE","side":"opp","actor":"snorlax","target":"snorlax","value":{"move_id":"curse","target_st
+   {"i":96,"text":"|turn|7","owner":null,"readings":[]}
+   {"i":100,"text":"|move|p1a: Skarmory|Spikes||[still]","owner":null,"readings":[{"seq":37,"turn":7,"kind":"MOVE","side":"ours","actor":"skarmory","target":"snorlax","value":{"move_id":"spikes","target_
+   {"i":102,"text":"|move|p2a: Snorlax|Curse|p2a: Snorlax","owner":null,"readings":[{"seq":39,"turn":7,"kind":"MOVE","side":"opp","actor":"snorlax","target":"snorlax","value":{"move_id":"curse","target_s
+   {"i":105,"text":"|turn|8","owner":null,"readings":[]}
+   {"i":109,"text":"|move|p1a: Skarmory|Spikes||[still]","owner":null,"readings":[{"seq":40,"turn":8,"kind":"MOVE","side":"ours","actor":"skarmory","target":"snorlax","value":{"move_id":"spikes","target_
+   {"i":111,"text":"|move|p2a: Snorlax|Curse|p2a: Snorlax","owner":null,"readings":[{"seq":42,"turn":8,"kind":"MOVE","side":"opp","actor":"snorlax","target":"snorlax","value":{"move_id":"curse","target_s
+   {"i":114,"text":"|turn|9","owner":null,"readings":[]}
+   {"i":118,"text":"|move|p1a: Skarmory|Spikes||[still]","owner":null,"readings":[{"seq":43,"turn":9,"kind":"MOVE","side":"ours","actor":"skarmory","target":"snorlax","value":{"move_id":"spikes","target_
+   {"i":120,"text":"|move|p2a: Snorlax|Curse|p2a: Snorlax","owner":null,"readings":[{"seq":45,"turn":9,"kind":"MOVE","side":"opp","actor":"snorlax","target":"snorlax","value":{"move_id":"curse","target_s
+   {"i":123,"text":"|turn|10","owner":null,"readings":[]}
+   {"i":127,"text":"|move|p1a: Skarmory|Spikes||[still]","owner":null,"readings":[{"seq":46,"turn":10,"kind":"MOVE","side":"ours","actor":"skarmory","target":"snorlax","value":{"move_id":"spikes","target
+   {"i":129,"text":"|move|p2a: Snorlax|Curse|p2a: Snorlax","owner":null,"readings":[{"seq":48,"turn":10,"kind":"MOVE","side":"opp","actor":"snorlax","target":"snorlax","value":{"move_id":"curse","target_
+   {"i":132,"text":"|turn|11","owner":null,"readings":[]}
+   {"i":136,"text":"|move|p1a: Skarmory|Spikes||[still]","owner":null,"readings":[{"seq":49,"turn":11,"kind":"MOVE","side":"ours","actor":"skarmory","target":"snorlax","value":{"move_id":"spikes","target
+   {"i":138,"text":"|move|p2a: Snorlax|Curse|p2a: Snorlax","owner":null,"readings":[{"seq":51,"turn":11,"kind":"MOVE","side":"opp","actor":"snorlax","target":"snorlax","value":{"move_id":"curse","target_
+   {"i":141,"text":"|turn|12","owner":null,"readings":[]}
+   {"i":145,"text":"|move|p1a: Skarmory|Spikes||[still]","owner":null,"readings":[{"seq":52,"turn":12,"kind":"MOVE","side":"ours","actor":"skarmory","target":"snorlax","value":{"move_id":"spikes","target
+   {"i":147,"text":"|move|p2a: Snorlax|Curse|p2a: Snorlax","owner":null,"readings":[{"seq":54,"turn":12,"kind":"MOVE","side":"opp","actor":"snorlax","target":"snorlax","value":{"move_id":"curse","target_
+   {"i":150,"text":"|turn|13","owner":null,"readings":[]}
+   {"i":154,"text":"|move|p1a: Skarmory|Spikes||[still]","owner":null,"readings":[{"seq":55,"turn":13,"kind":"MOVE","side":"ours","actor":"skarmory","target":"snorlax","value":{"move_id":"spikes","target
+   {"i":156,"text":"|move|p2a: Snorlax|Curse|p2a: Snorlax","owner":null,"readings":[{"seq":57,"turn":13,"kind":"MOVE","side":"opp","actor":"snorlax","target":"snorlax","value":{"move_id":"curse","target_
+   {"i":159,"text":"|turn|14","owner":null,"readings":[]}
+   {"i":163,"text":"|move|p1a: Skarmory|Spikes||[still]","owner":null,"readings":[{"seq":58,"turn":14,"kind":"MOVE","side":"ours","actor":"skarmory","target":"snorlax","value":{"move_id":"spikes","target
+   {"i":165,"text":"|move|p2a: Snorlax|Curse|p2a: Snorlax","owner":null,"readings":[{"seq":60,"turn":14,"kind":"MOVE","side":"opp","actor":"snorlax","target":"snorlax","value":{"move_id":"curse","target_
+   {"i":168,"text":"|turn|15","owner":null,"readings":[]}
+   {"i":172,"text":"|move|p1a: Skarmory|Spikes||[still]","owner":null,"readings":[{"seq":61,"turn":15,"kind":"MOVE","side":"ours","actor":"skarmory","target":"snorlax","value":{"move_id":"spikes","target
+   {"i":174,"text":"|move|p2a: Snorlax|Curse|p2a: Snorlax","owner":null,"readings":[{"seq":63,"turn":15,"kind":"MOVE","side":"opp","actor":"snorlax","target":"snorlax","value":{"move_id":"curse","target_
+   {"i":177,"text":"|turn|16","owner":null,"readings":[]}
+   {"i":181,"text":"|move|p1a: Skarmory|Spikes||[still]","owner":null,"readings":[{"seq":64,"turn":16,"kind":"MOVE","side":"ours","actor":"skarmory","target":"snorlax","value":{"move_id":"spikes","target
+   {"i":183,"text":"|move|p2a: Snorlax|Curse|p2a: Snorlax","owner":null,"readings":[{"seq":66,"turn":16,"kind":"MOVE","side":"opp","actor":"snorlax","target":"snorlax","value":{"move_id":"curse","target_
+   {"i":186,"text":"|turn|17","owner":null,"readings":[]}
+   {"i":190,"text":"|switch|p2a: Starmie|Starmie|100/100","owner":null,"readings":[{"seq":67,"turn":17,"kind":"SWITCH","side":"opp","actor":"starmie","target":null,"value":{},"raw":["","switch","p2a: Sta
+   {"i":192,"text":"|move|p1a: Skarmory|Spikes||[still]","owner":null,"readings":[{"seq":69,"turn":17,"kind":"MOVE","side":"ours","actor":"skarmory","target":"starmie","value":{"move_id":"spikes","target
+   {"i":197,"text":"|turn|18","owner":null,"readings":[]}
+   {"i":201,"text":"|move|p2a: Starmie|Hydro Pump|p1a: Skarmory","owner":null,"readings":[{"seq":72,"turn":18,"kind":"MOVE","side":"opp","actor":"starmie","target":"skarmory","value":{"move_id":"hydropum
+   {"i":203,"text":"|move|p1a: Skarmory|Spikes||[still]","owner":null,"readings":[{"seq":74,"turn":18,"kind":"MOVE","side":"ours","actor":"skarmory","target":"starmie","value":{"move_id":"spikes","target
+   {"i":209,"text":"|turn|19","owner":null,"readings":[]}
+   {"i":213,"text":"|move|p2a: Starmie|Hydro Pump|p1a: Skarmory","owner":null,"readings":[{"seq":78,"turn":19,"kind":"MOVE","side":"opp","actor":"starmie","target":"skarmory","value":{"move_id":"hydropum
+   {"i":215,"text":"|move|p1a: Skarmory|Spikes||[still]","owner":null,"readings":[{"seq":80,"turn":19,"kind":"MOVE","side":"ours","actor":"skarmory","target":"starmie","value":{"move_id":"spikes","target
+   {"i":221,"text":"|turn|20","owner":null,"readings":[]}
+   {"i":225,"text":"|move|p2a: Starmie|Hydro Pump|p1a: Skarmory","owner":null,"readings":[{"seq":84,"turn":20,"kind":"MOVE","side":"opp","actor":"starmie","target":"skarmory","value":{"move_id":"hydropum
+   {"i":232,"text":"|switch|p1a: Gengar|Gengar, M|261/261","owner":null,"readings":[{"seq":88,"turn":20,"kind":"SWITCH","side":"ours","actor":"gengar","target":null,"value":{},"raw":["","switch","p1a: Ge
+   {"i":236,"text":"|turn|21","owner":null,"readings":[]}
+   {"i":237,"text":"|request|{\"active\":[{\"moves\":[{\"move\":\"Mean Look\",\"id\":\"meanlook\",\"pp\":7,\"maxpp\":8,\"target\":\"normal\",\"disabled\":false},{\"move\":\"Thunderbolt\",\"id\":\"thunder
+   {"i":240,"text":"|move|p2a: Starmie|Hydro Pump|p1a: Gengar","owner":null,"readings":[{"seq":90,"turn":21,"kind":"MOVE","side":"opp","actor":"starmie","target":"gengar","value":{"move_id":"hydropump","
+   {"i":247,"text":"|switch|p1a: Blissey|Blissey, F|714/714","owner":null,"readings":[{"seq":94,"turn":21,"kind":"SWITCH","side":"ours","actor":"blissey","target":null,"value":{},"raw":["","switch","p1a:
+   {"i":251,"text":"|turn|22","owner":null,"readings":[]}
+   {"i":255,"text":"|move|p2a: Starmie|Hydro Pump|p1a: Blissey","owner":null,"readings":[{"seq":96,"turn":22,"kind":"MOVE","side":"opp","actor":"starmie","target":"blissey","value":{"move_id":"hydropump"
+   {"i":257,"text":"|move|p1a: Blissey|Soft-Boiled|p1a: Blissey","owner":null,"readings":[{"seq":98,"turn":22,"kind":"MOVE","side":"ours","actor":"blissey","target":"blissey","value":{"move_id":"softboil
+   {"i":261,"text":"|turn|23","owner":null,"readings":[]}
+   {"i":265,"text":"|move|p2a: Starmie|Hydro Pump|p1a: Blissey","owner":null,"readings":[{"seq":100,"turn":23,"kind":"MOVE","side":"opp","actor":"starmie","target":"blissey","value":{"move_id":"hydropump
+   {"i":267,"text":"|move|p1a: Blissey|Soft-Boiled|p1a: Blissey","owner":null,"readings":[{"seq":102,"turn":23,"kind":"MOVE","side":"ours","actor":"blissey","target":"blissey","value":{"move_id":"softboi
+   {"i":271,"text":"|turn|24","owner":null,"readings":[]}
+   {"i":275,"text":"|move|p2a: Starmie|Hydro Pump|p1a: Blissey","owner":null,"readings":[{"seq":104,"turn":24,"kind":"MOVE","side":"opp","actor":"starmie","target":"blissey","value":{"move_id":"hydropump
+   {"i":277,"text":"|move|p1a: Blissey|Soft-Boiled|p1a: Blissey","owner":null,"readings":[{"seq":106,"turn":24,"kind":"MOVE","side":"ours","actor":"blissey","target":"blissey","value":{"move_id":"softboi
+   {"i":281,"text":"|turn|25","owner":null,"readings":[]}
+   {"i":285,"text":"|move|p2a: Starmie|Hydro Pump|p1a: Blissey|[miss]","owner":null,"readings":[{"seq":108,"turn":25,"kind":"MOVE","side":"opp","actor":"starmie","target":"blissey","value":{"move_id":"hy
+   {"i":287,"text":"|move|p1a: Blissey|Soft-Boiled||[still]","owner":null,"readings":[{"seq":111,"turn":25,"kind":"MOVE","side":"ours","actor":"blissey","target":"blissey","value":{"move_id":"softboiled"
+   {"i":291,"text":"|turn|26","owner":null,"readings":[]}
+   {"i":295,"text":"|switch|p2a: Snorlax|Snorlax, F|100/100","owner":null,"readings":[{"seq":113,"turn":26,"kind":"SWITCH","side":"opp","actor":"snorlax","target":null,"value":{},"raw":["","switch","p2a:
+   {"i":297,"text":"|move|p1a: Blissey|Soft-Boiled||[still]","owner":null,"readings":[{"seq":115,"turn":26,"kind":"MOVE","side":"ours","actor":"blissey","target":"blissey","value":{"move_id":"softboiled"
+   {"i":302,"text":"|turn|27","owner":null,"readings":[]}
+   {"i":306,"text":"|switch|p2a: Starmie|Starmie|100/100","owner":null,"readings":[{"seq":118,"turn":27,"kind":"SWITCH","side":"opp","actor":"starmie","target":null,"value":{},"raw":["","switch","p2a: St
+   {"i":308,"text":"|move|p1a: Blissey|Soft-Boiled||[still]","owner":null,"readings":[{"seq":120,"turn":27,"kind":"MOVE","side":"ours","actor":"blissey","target":"blissey","value":{"move_id":"softboiled"
+   {"i":313,"text":"|turn|28","owner":null,"readings":[]}
+   {"i":317,"text":"|switch|p2a: Snorlax|Snorlax, F|82/100","owner":null,"readings":[{"seq":123,"turn":28,"kind":"SWITCH","side":"opp","actor":"snorlax","target":null,"value":{},"raw":["","switch","p2a: 
+   {"i":319,"text":"|move|p1a: Blissey|Soft-Boiled||[still]","owner":null,"readings":[{"seq":125,"turn":28,"kind":"MOVE","side":"ours","actor":"blissey","target":"blissey","value":{"move_id":"softboiled"
+   {"i":324,"text":"|turn|29","owner":null,"readings":[]}
+   {"i":328,"text":"|switch|p2a: Starmie|Starmie|82/100","owner":null,"readings":[{"seq":128,"turn":29,"kind":"SWITCH","side":"opp","actor":"starmie","target":null,"value":{},"raw":["","switch","p2a: Sta
+   {"i":330,"text":"|move|p1a: Blissey|Soft-Boiled||[still]","owner":null,"readings":[{"seq":130,"turn":29,"kind":"MOVE","side":"ours","actor":"blissey","target":"blissey","value":{"move_id":"softboiled"
+   {"i":335,"text":"|turn|30","owner":null,"readings":[]}
+   {"i":339,"text":"|switch|p2a: Snorlax|Snorlax, F|63/100","owner":null,"readings":[{"seq":133,"turn":30,"kind":"SWITCH","side":"opp","actor":"snorlax","target":null,"value":{},"raw":["","switch","p2a: 
+   {"i":341,"text":"|move|p1a: Blissey|Soft-Boiled||[still]","owner":null,"readings":[{"seq":135,"turn":30,"kind":"MOVE","side":"ours","actor":"blissey","target":"blissey","value":{"move_id":"softboiled"
+   {"i":346,"text":"|turn|31","owner":null,"readings":[]}
+   {"i":350,"text":"|switch|p2a: Starmie|Starmie|63/100","owner":null,"readings":[{"seq":138,"turn":31,"kind":"SWITCH","side":"opp","actor":"starmie","target":null,"value":{},"raw":["","switch","p2a: Sta
+   {"i":352,"text":"|move|p1a: Blissey|Soft-Boiled||[still]","owner":null,"readings":[{"seq":140,"turn":31,"kind":"MOVE","side":"ours","actor":"blissey","target":"blissey","value":{"move_id":"softboiled"
+   {"i":357,"text":"|turn|32","owner":null,"readings":[]}
+   {"i":361,"text":"|switch|p2a: Snorlax|Snorlax, F|44/100","owner":null,"readings":[{"seq":143,"turn":32,"kind":"SWITCH","side":"opp","actor":"snorlax","target":null,"value":{},"raw":["","switch","p2a: 
+   {"i":363,"text":"|move|p1a: Blissey|Soft-Boiled||[still]","owner":null,"readings":[{"seq":145,"turn":32,"kind":"MOVE","side":"ours","actor":"blissey","target":"blissey","value":{"move_id":"softboiled"
+   {"i":368,"text":"|turn|33","owner":null,"readings":[]}
+   {"i":372,"text":"|switch|p2a: Starmie|Starmie|44/100","owner":null,"readings":[{"seq":148,"turn":33,"kind":"SWITCH","side":"opp","actor":"starmie","target":null,"value":{},"raw":["","switch","p2a: Sta
+   {"i":374,"text":"|move|p1a: Blissey|Soft-Boiled||[still]","owner":null,"readings":[{"seq":150,"turn":33,"kind":"MOVE","side":"ours","actor":"blissey","target":"blissey","value":{"move_id":"softboiled"
+   {"i":379,"text":"|turn|34","owner":null,"readings":[]}
+   {"i":383,"text":"|switch|p2a: Snorlax|Snorlax, F|25/100","owner":null,"readings":[{"seq":153,"turn":34,"kind":"SWITCH","side":"opp","actor":"snorlax","target":null,"value":{},"raw":["","switch","p2a: 
+   {"i":389,"text":"|switch|p2a: Starmie|Starmie|26/100","owner":null,"readings":[{"seq":156,"turn":34,"kind":"SWITCH","side":"opp","actor":"starmie","target":null,"value":{},"raw":["","switch","p2a: Sta
+   {"i":394,"text":"|turn|35","owner":null,"readings":[]}
+   {"i":398,"text":"|move|p2a: Starmie|Ice Beam|p1a: Blissey","owner":null,"readings":[{"seq":159,"turn":35,"kind":"MOVE","side":"opp","actor":"starmie","target":"blissey","value":{"move_id":"icebeam","t
+   {"i":400,"text":"|move|p1a: Blissey|Soft-Boiled|p1a: Blissey","owner":null,"readings":[{"seq":161,"turn":35,"kind":"MOVE","side":"ours","actor":"blissey","target":"blissey","value":{"move_id":"softboi
+   {"i":405,"text":"|turn|36","owner":null,"readings":[]}
+   {"i":409,"text":"|move|p2a: Starmie|Ice Beam|p1a: Blissey","owner":null,"readings":[{"seq":164,"turn":36,"kind":"MOVE","side":"opp","actor":"starmie","target":"blissey","value":{"move_id":"icebeam","t
+   {"i":411,"text":"|move|p1a: Blissey|Soft-Boiled|p1a: Blissey","owner":null,"readings":[{"seq":166,"turn":36,"kind":"MOVE","side":"ours","actor":"blissey","target":"blissey","value":{"move_id":"softboi
+   {"i":416,"text":"|turn|37","owner":null,"readings":[]}
+   {"i":420,"text":"|move|p2a: Starmie|Ice Beam|p1a: Blissey","owner":null,"readings":[{"seq":169,"turn":37,"kind":"MOVE","side":"opp","actor":"starmie","target":"blissey","value":{"move_id":"icebeam","t
+   {"i":422,"text":"|move|p1a: Blissey|Soft-Boiled|p1a: Blissey","owner":null,"readings":[{"seq":171,"turn":37,"kind":"MOVE","side":"ours","actor":"blissey","target":"blissey","value":{"move_id":"softboi
+   {"i":427,"text":"|turn|38","owner":null,"readings":[]}
+   {"i":431,"text":"|move|p2a: Starmie|Ice Beam|p1a: Blissey","owner":null,"readings":[{"seq":174,"turn":38,"kind":"MOVE","side":"opp","actor":"starmie","target":"blissey","value":{"move_id":"icebeam","t
+   {"i":433,"text":"|move|p1a: Blissey|Soft-Boiled|p1a: Blissey","owner":null,"readings":[{"seq":176,"turn":38,"kind":"MOVE","side":"ours","actor":"blissey","target":"blissey","value":{"move_id":"softboi
+   {"i":438,"text":"|turn|39","owner":null,"readings":[]}
+   {"i":442,"text":"|move|p2a: Starmie|Ice Beam|p1a: Blissey","owner":null,"readings":[{"seq":179,"turn":39,"kind":"MOVE","side":"opp","actor":"starmie","target":"blissey","value":{"move_id":"icebeam","t
+   {"i":444,"text":"|move|p1a: Blissey|Ice Beam|p2a: Starmie","owner":null,"readings":[{"seq":181,"turn":39,"kind":"MOVE","side":"ours","actor":"blissey","target":"starmie","value":{"move_id":"icebeam","
+   {"i":451,"text":"|turn|40","owner":null,"readings":[]}
+   {"i":455,"text":"|move|p2a: Starmie|Ice Beam|p1a: Blissey","owner":null,"readings":[{"seq":186,"turn":40,"kind":"MOVE","side":"opp","actor":"starmie","target":"blissey","value":{"move_id":"icebeam","t
+   {"i":457,"text":"|move|p1a: Blissey|Ice Beam|p2a: Starmie","owner":null,"readings":[{"seq":188,"turn":40,"kind":"MOVE","side":"ours","actor":"blissey","target":"starmie","value":{"move_id":"icebeam","
+   {"i":464,"text":"|turn|41","owner":null,"readings":[]}
+   {"i":468,"text":"|move|p2a: Starmie|Ice Beam|p1a: Blissey","owner":null,"readings":[{"seq":193,"turn":41,"kind":"MOVE","side":"opp","actor":"starmie","target":"blissey","value":{"move_id":"icebeam","t
+   {"i":470,"text":"|move|p1a: Blissey|Ice Beam|p2a: Starmie","owner":null,"readings":[{"seq":195,"turn":41,"kind":"MOVE","side":"ours","actor":"blissey","target":"starmie","value":{"move_id":"icebeam","
+   {"i":477,"text":"|turn|42","owner":null,"readings":[]}
+   {"i":481,"text":"|move|p2a: Starmie|Ice Beam|p1a: Blissey","owner":null,"readings":[{"seq":200,"turn":42,"kind":"MOVE","side":"opp","actor":"starmie","target":"blissey","value":{"move_id":"icebeam","t
+   {"i":483,"text":"|move|p1a: Blissey|Ice Beam|p2a: Starmie","owner":null,"readings":[{"seq":202,"turn":42,"kind":"MOVE","side":"ours","actor":"blissey","target":"starmie","value":{"move_id":"icebeam","

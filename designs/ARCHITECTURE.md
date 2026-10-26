@@ -357,7 +357,12 @@ was not a choice or not our doing** (`gen3_intent_label_semantics_fixes_v1`,
 `gen3_progress_clock_attribution_fix_v1`): the label is MASKED when the opponent's switch-in was
 DRAGGED by our Roar / Whirlwind, was the free replacement for a faint in the previous window, or
 when our Encore overrode its move before it acted, and a CALLED move (Sleep Talk → Rest, Mirror
-Move, Magic Coat, …) is labelled as its CALLER. The clock's clause (i) ("our move dealt damage")
+Move, Magic Coat, …) is labelled as its CALLER. A move the opponent made BEFORE a switch-in in the
+same window (move → faint → replacement, move → our Roar, Baton Pass) is labelled as that MOVE, and
+the window that closes on OUR forced switch is labelled like any other
+(`gen3_intent_label_move_then_switch_v1`; both were masked until 2026-10-26, which removed every
+Explosion / Self-Destruct and 12-17 % of their attacks from α's supervision:
+`research_state/measurements/gigo_audit_obs_2026-10-26/`). The clock's clause (i) ("our move dealt damage")
 requires our move's OWN hit to clear the 3 % floor as well as the target's net fall, and a
 blocked attack (outcome `fail` against Protect / Detect) is the exogenous FREEZE, not a charged
 no-op.

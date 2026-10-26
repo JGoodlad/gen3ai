@@ -1,0 +1,30 @@
+global layout: {"weather": {"offset": 0, "dim": 7}, "hazards": {"offset": 7, "dim": 2}, "clock": {"offset": 9, "dim": 3}, "screens": {"offset": 12, "dim": 8}}
+rows 238 from 8 games, seed 7, teams pool
+species                      vocab  400  nnz    1879  min    0.000  max  385.000  distinct   25  non-integer 0  out-of-[0,vocab) 0
+item                         vocab  600  nnz    1712  min    0.000  max  234.000  distinct    3  non-integer 0  out-of-[0,vocab) 0
+ability1                     vocab  100  nnz    1879  min    0.000  max   67.000  distinct   17  non-integer 0  out-of-[0,vocab) 0
+ability2                     vocab  100  nnz      69  min    0.000  max   47.000  distinct    3  non-integer 0  out-of-[0,vocab) 0
+type1                        vocab   19  nnz    1879  min    0.000  max   17.000  distinct   15  non-integer 0  out-of-[0,vocab) 0
+type2                        vocab   19  nnz    1427  min    0.000  max   16.000  distinct    9  non-integer 0  out-of-[0,vocab) 0
+move_id                      vocab  400  nnz    6433  min    0.000  max  368.000  distinct   54  non-integer 0  out-of-[0,vocab) 0
+move_type                    vocab   19  nnz    6284  min    0.000  max   18.000  distinct   19  non-integer 0  out-of-[0,vocab) 0
+last_move                    vocab  400  nnz     318  min    0.000  max  349.000  distinct   43  non-integer 0  out-of-[0,vocab) 0
+req_move_id                  vocab  400  nnz     792  min    0.000  max  368.000  distinct   49  non-integer 0  out-of-[0,vocab) 0
+req_move_type                vocab   19  nnz     792  min    0.000  max   18.000  distinct   19  non-integer 0  out-of-[0,vocab) 0
+ev.TYPE                      vocab   12  nnz    5755  min    0.000  max   11.000  distinct   11  non-integer 0  out-of-[0,vocab) 0
+ev.ACTOR_SPECIES             vocab  400  nnz    5739  min    0.000  max  385.000  distinct   25  non-integer 0  out-of-[0,vocab) 0
+ev.TARGET_SPECIES            vocab  400  nnz    4294  min    0.000  max  385.000  distinct   23  non-integer 0  out-of-[0,vocab) 0
+ev.REL_SPECIES               vocab  400  nnz    1925  min    0.000  max  385.000  distinct   23  non-integer 0  out-of-[0,vocab) 0
+ev.MOVE                      vocab  400  nnz    3354  min    0.000  max  349.000  distinct   43  non-integer 0  out-of-[0,vocab) 0
+ev.CALLER                    vocab  400  nnz       0  min    0.000  max    0.000  distinct    1  non-integer 0  out-of-[0,vocab) 0
+ev.STATUS                    vocab    7  nnz     175  min    0.000  max    3.000  distinct    4  non-integer 0  out-of-[0,vocab) 0
+ev.CANT                      vocab   14  nnz     193  min    0.000  max   10.000  distinct    4  non-integer 0  out-of-[0,vocab) 0
+ev.FAINT_CAUSE               vocab   11  nnz     653  min    0.000  max    6.000  distinct    5  non-integer 0  out-of-[0,vocab) 0
+ev.ITEM_TRANSITION           vocab    6  nnz      16  min    0.000  max    3.000  distinct    3  non-integer 0  out-of-[0,vocab) 0
+ev.ENTRY                     vocab    5  nnz    1288  min    0.000  max    3.000  distinct    4  non-integer 0  out-of-[0,vocab) 0
+ev.DENIAL                    vocab    3  nnz     192  min    0.000  max    2.000  distinct    3  non-integer 0  out-of-[0,vocab) 0
+ev.STAT                      vocab    8  nnz     405  min    0.000  max    5.000  distinct    6  non-integer 0  out-of-[0,vocab) 0
+facts.choice_first_move      vocab  400  nnz     208  min    0.000  max  349.000  distinct   12  non-integer 0  out-of-[0,vocab) 0
+weather_turns slice slice(1584, 1591, None) distinct values [0. 1.]
+spikes slice slice(1591, 1593, None) distinct values [0.         0.33333334 0.6666667 ]
+TOTAL VIOLATIONS 0

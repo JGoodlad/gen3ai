@@ -127,6 +127,58 @@ def _run_node(format_id: str, teams: List[str]) -> Tuple[List[Dict[str, Any]], b
         return [{"valid": False, "errors": [f"Subprocess failure: {str(e)}"]} for _ in teams], False
 
 
+class PackIdentityError(ValueError):
+    """Our packed team is not the team Showdown would play from the same paste (gen3_team_pack_oracle_v1)."""
+
+
+_PACK_MEMO: Dict[Tuple[str, str, str, str], List[str]] = {}
+
+
+def pack_identity_defects(format_id: str, pastes: List[str], packs: List[str]) -> List[List[str]]:
+    """Per (paste, OUR packed string) pair, every field where Showdown's reading of the paste (import + the
+    validator's mutations) differs from Showdown's unpack of our pack — empty when they are the same team.
+
+    ``pack_oracle.js`` is the oracle (the 2026-10-26 GIGO audit's C-2 / C-3: an explicit ``Happiness: 0`` and
+    Showdown's Frustration rule were dropped, so Frustration hit at base power 1; a ``Hidden Power: <Type>`` line
+    without the move left the IVs at 31). Memoised per process like the verdicts; an infrastructure failure RAISES
+    (a guard that cannot run must not read as "no defect")."""
+    if len(pastes) != len(packs):
+        raise ValueError(f"{len(pastes)} pastes, {len(packs)} packs")
+    version = validator_version()
+    keys = [(version, format_id, a, b) for a, b in zip(pastes, packs)]
+    results: List[Any] = [None] * len(keys)
+    with _MEMO_LOCK:
+        for i, k in enumerate(keys):
+            if k in _PACK_MEMO:
+                results[i] = list(_PACK_MEMO[k])
+    miss = [i for i, r in enumerate(results) if r is None]
+    if not miss:
+        return results
+    script = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'pack_oracle.js')
+    payload = {"format": format_id, "rows": [{"paste": pastes[i], "packed": packs[i]} for i in miss]}
+    proc = subprocess.run(['node', script], input=json.dumps(payload), capture_output=True, text=True, timeout=600)
+    try:
+        out = json.loads(proc.stdout)
+    except ValueError as e:
+        raise RuntimeError(f"pack_oracle.js gave no verdict (exit {proc.returncode}): {proc.stderr.strip()[:500]}") from e
+    if not (isinstance(out, list) and len(out) == len(miss) and all(isinstance(d, list) for d in out)):
+        raise RuntimeError(f"pack_oracle.js: unexpected output {proc.stdout.strip()[:500]}")
+    with _MEMO_LOCK:
+        for i, d in zip(miss, out):
+            _PACK_MEMO[keys[i]] = list(d)
+            results[i] = list(d)
+    return results
+
+
+def check_pack_identity(format_id: str, pastes: List[str], packs: List[str], where: str) -> None:
+    """RAISE :class:`PackIdentityError` unless every pack is the authored team (:func:`pack_identity_defects`)."""
+    bad = [(i, d) for i, d in enumerate(pack_identity_defects(format_id, pastes, packs)) if d]
+    if bad:
+        lines = "; ".join(f"team {i}: {', '.join(d[:3])}" for i, d in bad[:5])
+        raise PackIdentityError(f"{where}: {len(bad)} packed team(s) are not the team Showdown plays from the "
+                                f"same paste (gen3_team_pack_oracle_v1) — {lines}")
+
+
 if __name__ == "__main__":
     # Quick test
     test_format = "gen3ou"

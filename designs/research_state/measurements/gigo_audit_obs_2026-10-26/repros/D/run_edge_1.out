@@ -1,0 +1,79 @@
+{
+"counts": {
+"cat_labelled_Physical": 162,
+"cat_labelled_Special": 137,
+"cat_labelled_Status": 375,
+"cat_maskforced_Physical": 22,
+"cat_maskforced_Special": 23,
+"cat_maskforced_Status": 8,
+"cat_masknormal_Physical": 33,
+"cat_masknormal_Special": 6,
+"cat_masknormal_Status": 52,
+"chosen_batonpass": 12,
+"chosen_batonpass_labelled_kind0": 7,
+"chosen_batonpass_labelled_kind2": 5,
+"chosen_explosion": 12,
+"chosen_explosion_labelled_kind2": 12,
+"forced_rows": 70,
+"intent_kind_0": 686,
+"intent_kind_1": 405,
+"intent_kind_2": 316,
+"intent_move_labelled": 674,
+"intent_move_masked": 144,
+"intent_move_masked_on_forced_row": 53,
+"intent_move_masked_on_normal_row": 91,
+"intent_switch_labelled": 399,
+"intent_switch_masked": 40,
+"intent_window_len_0": 73,
+"intent_window_len_2": 57,
+"intent_window_len_3": 4,
+"masknormal_move_aerialace": 1,
+"masknormal_move_bodyslam": 8,
+"masknormal_move_crunch": 2,
+"masknormal_move_curse": 1,
+"masknormal_move_earthquake": 3,
+"masknormal_move_explosion": 1,
+"masknormal_move_focuspunch": 3,
+"masknormal_move_hiddenpowerbug": 2,
+"masknormal_move_hiddenpowerfire": 3,
+"masknormal_move_leechseed": 1,
+"masknormal_move_protect": 9,
+"masknormal_move_pursuit": 1,
+"masknormal_move_roar": 2,
+"masknormal_move_rockslide": 4,
+"masknormal_move_seismictoss": 10,
+"masknormal_move_softboiled": 6,
+"masknormal_move_spikes": 4,
+"masknormal_move_surf": 1,
+"masknormal_move_thunderwave": 7,
+"masknormal_move_toxic": 12,
+"masknormal_move_wish": 10,
+"revealed_slots": 7745,
+"rows": 1407,
+"w2_move_then_forced_replacement_kind2": 36
+}
+}
+MISMATCH intent_label_on_window_len_0(info): 13  e.g. [(((1, 1), 20, 19), 1, 0, 1, 260, [], [(17, 0, 8, 8), (17, 1, 9, 7), (17, 0, 4, 4), (18, 0, 2, 7), (18, 1, 4, 4), (18, 0, 6, 4)]), (((0, 0), 106, 101), 0, 126, -100, 0, [], [(99, 0, 1, 6), (99, 1, 6, 6), (99, 0, 5, 2), (100, 0, 9, 5), (100, 1, 9, 6), (100, 0, 3, 1)]), (((0, 1), 30, 29), 1, 0, 2, 242, [], [(26, 1, 3, 9), (27, 0, 4, 8), (27, 1, 2, 9), (28, 0, 3, 8), (28, 1, 5, 9), (28, 0, 6, 4)]), (((1, 2), 23, 21), 0, 126, -100, 0, [], [(19, 0, 7, 8), (19, 1, 7, 7), (19, 0, 5, 4), (20, 0, 9, 7), (20, 1, 9, 7), (20, 0, 1, 3)])]
+MISMATCH intent_label_on_window_len_2(info): 5  e.g. [(((0, 2), 4, 5), 0, 73, -100, 0, [2, 6], [(2, 1, 6, 8), (3, 0, 2, 9), (3, 1, 5, 8), (4, 0, 9, 9), (4, 1, 2, 8), (4, 1, 6, 4)]), (((0, 2), 20, 20), 0, 34, -100, 0, [1, 8], [(18, 1, 2, 8), (18, 1, 8, 4), (18, 1, 3, 4), (19, 0, 4, 5), (19, 1, 1, 7), (19, 1, 8, 4)]), (((1, 3), 12, 13), 0, 56, -100, 0, [0, 6], [(10, 1, 4, 9), (11, 0, 2, 9), (11, 1, 5, 9), (12, 0, 1, 9), (12, 1, 0, 9), (12, 1, 6, 4)]), (((0, 4), 3, 4), 0, 360, -100, 0, [0, 9], [(0, 1, 3, 6), (2, 0, 7, 9), (2, 1, 8, 9), (3, 0, 1, 6), (3, 1, 0, 9), (3, 1, 9, 4)])]
+MISMATCH masknormal_example_aerialace(info): 1  e.g. [((1, 4), 51, 47)]
+MISMATCH masknormal_example_bodyslam(info): 8  e.g. [((0, 2), 22, 22), ((0, 2), 44, 42), ((0, 2), 58, 55), ((0, 2), 85, 82)]
+MISMATCH masknormal_example_crunch(info): 2  e.g. [((0, 5), 39, 39), ((0, 6), 4, 5)]
+MISMATCH masknormal_example_curse(info): 1  e.g. [((0, 4), 73, 70)]
+MISMATCH masknormal_example_earthquake(info): 3  e.g. [((1, 1), 12, 13), ((1, 5), 37, 32), ((0, 6), 64, 59)]
+MISMATCH masknormal_example_explosion(info): 1  e.g. [((1, 3), 72, 70)]
+MISMATCH masknormal_example_focuspunch(info): 3  e.g. [((0, 0), 136, 129), ((0, 0), 149, 142), ((0, 0), 157, 150)]
+MISMATCH masknormal_example_hiddenpowerbug(info): 2  e.g. [((1, 1), 29, 27), ((0, 0), 161, 154)]
+MISMATCH masknormal_example_hiddenpowerfire(info): 3  e.g. [((0, 2), 71, 68), ((0, 2), 78, 75), ((0, 2), 89, 86)]
+MISMATCH masknormal_example_leechseed(info): 1  e.g. [((0, 4), 34, 34)]
+MISMATCH masknormal_example_protect(info): 9  e.g. [((0, 0), 96, 93), ((0, 0), 97, 94), ((0, 0), 146, 139), ((0, 2), 62, 59)]
+MISMATCH masknormal_example_pursuit(info): 1  e.g. [((0, 5), 1, 2)]
+MISMATCH masknormal_example_roar(info): 2  e.g. [((1, 3), 109, 105), ((1, 3), 185, 181)]
+MISMATCH masknormal_example_rockslide(info): 4  e.g. [((0, 0), 140, 133), ((0, 0), 163, 156), ((1, 4), 27, 25), ((0, 6), 33, 30)]
+MISMATCH masknormal_example_seismictoss(info): 10  e.g. [((1, 1), 75, 70), ((1, 1), 76, 71), ((1, 1), 101, 96), ((1, 1), 104, 99)]
+MISMATCH masknormal_example_softboiled(info): 6  e.g. [((0, 0), 59, 58), ((1, 1), 59, 55), ((1, 1), 65, 61), ((1, 1), 100, 95)]
+MISMATCH masknormal_example_spikes(info): 4  e.g. [((0, 0), 122, 115), ((1, 3), 126, 122), ((1, 3), 163, 159), ((1, 3), 176, 172)]
+MISMATCH masknormal_example_surf(info): 1  e.g. [((0, 3), 1, 2)]
+MISMATCH masknormal_example_thunderwave(info): 7  e.g. [((1, 1), 78, 73), ((1, 1), 102, 97), ((1, 1), 106, 101), ((1, 1), 119, 114)]
+MISMATCH masknormal_example_toxic(info): 12  e.g. [((0, 0), 58, 57), ((0, 0), 79, 78), ((0, 0), 108, 103), ((0, 0), 121, 114)]
+MISMATCH masknormal_example_wish(info): 10  e.g. [((1, 1), 72, 67), ((1, 1), 73, 68), ((1, 1), 79, 74), ((1, 1), 95, 90)]
+MISMATCH w2_move_then_replacement_example(info): 36  e.g. [(((0, 0), 24, 24), 2, 0, 'rapidspin'), (((1, 0), 27, 25), 2, 0, 'willowisp'), (((0, 0), 41, 40), 2, 0, 'icebeam'), (((1, 0), 42, 37), 2, 0, 'rockslide')]

@@ -1,0 +1,6 @@
+OUR packed lead : Snorlax||leftovers|thickfat|curse,frustration,rest,earthquake|Careful|252,16,136,,104,|||||
+FIXED packed lead: Snorlax||leftovers|thickfat|curse,frustration,rest,earthquake|Careful|252,16,136,,104,|||||0
+OURS (happiness dropped) seed 11 Frustration event MAGNITUDE rows (dedup by window, oldest first): [-0.01]
+OURS (happiness dropped) seed 12 Frustration event MAGNITUDE rows (dedup by window, oldest first): [-0.01]
+FIXED (happiness 0) seed 11 Frustration event MAGNITUDE rows (dedup by window, oldest first): [-0.79, -0.3, -0.27, -0.21, -0.16, -0.15, -0.14, -0.13, -0.07]
+FIXED (happiness 0) seed 12 Frustration event MAGNITUDE rows (dedup by window, oldest first): [-0.43, -0.39, -0.18, -0.17, -0.16, -0.15, -0.14, -0.12]

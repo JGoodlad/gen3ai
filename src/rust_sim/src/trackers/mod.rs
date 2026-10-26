@@ -62,8 +62,16 @@ impl IntentLabel {
     }
 
     /// `build_opp_intent_label(delta, move_num_of, opp_slot_of_species)`, ids only.
+    ///
+    /// `gen3_intent_label_move_then_switch_v1` (2026-10-26 GIGO audit D-1): the window that CLOSES on our forced
+    /// switch holds the opponent's genuine choice of the turn before (usually the move that KOed us), so it is
+    /// labelled — the old `phase_is_forced_switch` mask dropped every such move (12-17 % of their attacks, 2 % of
+    /// their status moves); the window AFTER a forced switch holds no opponent action and reads UNKNOWN by itself.
+    /// A move that came BEFORE their switch-in (move -> faint -> replacement, move -> our Roar, Baton Pass) is the
+    /// choice and is labelled MOVE; the old rule masked the whole window (every Explosion / Self-Destruct, most
+    /// Baton Passes). A switch with no move, or a switch BEFORE a move, keeps the old masks.
     pub fn build(d: &DeltaProjection, prev_frame: &[String]) -> IntentLabel {
-        if d.phase_is_forced_switch || d.opp_choice_overridden {
+        if d.opp_choice_overridden {
             return Self::unknown();
         }
         // a CALLED move's choice is its CALLER (L4)
@@ -72,8 +80,10 @@ impl IntentLabel {
             .as_deref()
             .filter(|m| !m.is_empty())
             .or_else(|| d.opp_resolved_move_id().filter(|m| !m.is_empty()));
-        if let Some(sw) = d.opp_switch_to.as_deref().filter(|s| !s.is_empty()) {
-            // a phaze, a same-window replacement, a DRAG (L1 / L2) or a straddling replacement (L3)
+        let switch = d.opp_switch_to.as_deref().filter(|s| !s.is_empty());
+        let switch = if move_id.is_some() && d.opp_move_before_switch { None } else { switch };
+        if let Some(sw) = switch {
+            // a switch AFTER a move, a same-window replacement, a DRAG (L1 / L2) or a straddling replacement (L3)
             if move_id.is_some() || d.opp_fainted || d.opp_dragged || d.opp_switch_is_replacement {
                 return Self::unknown();
             }

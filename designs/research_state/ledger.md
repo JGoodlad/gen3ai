@@ -28685,3 +28685,27 @@ off-distribution intervention (the policy was not re-run on mixed beliefs).
 `mix_probe.json`, `scripts/`); the review `model/generalisation_review_2026-10-26.md` §2 P5 / P10, §3 F-AG-1 /
 F-AG-1b. The game test (the belief prior mix and D0f) is registered in
 `research_state/measurements/belief_prior_mix_2026-10-26/PREREG.md`. See `UNDERSTANDING.md` §3.1.
+### 2026-10-26 · FIX · **TRAINING-INPUT CHANGE: the obs / label GIGO audit — six confirmed defects fixed, none invalidating a past result; NO hidden-information leak. The α/β intent label had masked every opponent Explosion / Self-Destruct and 12-17 % of their attacks (all production since `0661bbec4`: a known bias in α's supervision, not a void); a knocked-off Choice Band read as held in the op (config v162); Destiny Bond / Endure / Mean Look volatiles never ended on the row (36 of 991 golden decisions); the packer played Frustration at base power 1 (13 mons)**
+
+**Question.** Is anything on the path from the battle state to the network and the losses silently wrong: the encoder,
+the hidden-information features and priors, the mask, the reward and terminal, the auxiliary labels, team decoding?
+
+**Design.** Four read-only investigators, one per area, each item CONFIRMED only by an executed CPU reproduction against
+Showdown's source or the engine's own state; each fix carries a test that fails on revert and a throwing guard for its
+class. The obs golden, the encoder benchmark (before / after) and an h2h / load check of P\*, X26c and X35 at the fixed
+tree.
+
+**Result.**
+- No cheat: hidden-fact swaps of the opponent's team are byte-identical on our row until the reveal (9 swaps × 3 seeds).
+- Fixed: D-1 (intent label: Explosion 0 / 59 → 54 / 58 labelled, moves masked 668 → 372 on pool self-play); C-1 (consumed
+  item read as held: P(CB) 1.0 on a knocked-off Band, config v162); A-C1 / A-C2 (silent volatile ends;
+  the golden moved on 36 of 991 decisions, all Destiny Bond 1 → 0); C-2 / C-3 (happiness 0, Hidden Power type IVs; a
+  Showdown pack oracle now refuses any pack that is not the authored team).
+- Not fixed (FINDINGs): the engine keeps an Outrage / Thrash lock Showdown ends (no training team carries the moves); the
+  stall-forfeit decision becomes a training row; a refused switch ticks the unread progress clock.
+- FINDING: `OBS_SEMANTICS_VERSION` is NOT raised (orchestrator ruling): `ProbeModel.load` hard-refuses below it, which
+  would blind the prober and the harvest meters for every current model. So pre-v162 checkpoints read `current` in
+  the prober although their op and the Destiny Bond / trapped cells changed; the gap policy is a TECH_DEBT row. h2h,
+  anchors, Kakuna and resumes load and play P\*, X26c and X35 at the fixed tree (executed).
+
+**Evidence:** `research_state/measurements/gigo_audit_obs_2026-10-26/` (README, `repros/A-D`, `repros/me`).

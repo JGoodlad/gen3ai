@@ -1,0 +1,786 @@
+{
+ "n": 5576,
+ "invalid_paste": 0,
+ "invalid_pack": 0,
+ "diffs": [
+  {
+   "src": "pool",
+   "id": "teams/others/yak_attack/88a79879fa283313.txt",
+   "mon": "snorlax",
+   "field": "happiness",
+   "showdown": 0,
+   "ours": 255,
+   "pack_valid": true
+  },
+  {
+   "src": "pool",
+   "id": "teams/others/giraffe/73bea8a147236023.txt",
+   "mon": "salamence",
+   "field": "ivs",
+   "showdown": "31,30,31,30,31,31",
+   "ours": "31,31,31,31,31,31",
+   "pack_valid": true
+  },
+  {
+   "src": "pool",
+   "id": "teams/others/giraffe/2460310e57eb2f9c.txt",
+   "mon": "tyranitar",
+   "field": "ivs",
+   "showdown": "31,30,30,31,30,31",
+   "ours": "31,31,31,31,31,31",
+   "pack_valid": true
+  },
+  {
+   "src": "pool",
+   "id": "teams/others/giraffe/dc99ab0afa2b1da9.txt",
+   "mon": "gengar",
+   "field": "moves",
+   "showdown": "explosion,firepunch,icepunch,wisp",
+   "ours": "explosion,firepunch,icepunch,willowisp",
+   "pack_valid": true
+  },
+  {
+   "src": "pool",
+   "id": "teams/others/mcmegan/3cacf076dcf8f319.txt",
+   "mon": "gyarados",
+   "field": "happiness",
+   "showdown": 0,
+   "ours": 255,
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_0663",
+   "mon": "snorlax",
+   "field": "happiness",
+   "showdown": 0,
+   "ours": 255,
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_0647",
+   "mon": "forretress",
+   "field": "ivs",
+   "showdown": "31,30,30,31,30,31",
+   "ours": "31,31,31,31,31,31",
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_0659",
+   "mon": "snorlax",
+   "field": "happiness",
+   "showdown": 0,
+   "ours": 255,
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_0869",
+   "mon": "celebi",
+   "field": "happiness",
+   "showdown": 0,
+   "ours": 255,
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_0869",
+   "mon": "exeggutor",
+   "field": "happiness",
+   "showdown": 0,
+   "ours": 255,
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_0869",
+   "mon": "metagross",
+   "field": "happiness",
+   "showdown": 0,
+   "ours": 255,
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_0869",
+   "mon": "jirachi",
+   "field": "happiness",
+   "showdown": 0,
+   "ours": 255,
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_0869",
+   "mon": "solrock",
+   "field": "happiness",
+   "showdown": 0,
+   "ours": 255,
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_0869",
+   "mon": "medicham",
+   "field": "happiness",
+   "showdown": 0,
+   "ours": 255,
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_0739",
+   "mon": "gyarados",
+   "field": "happiness",
+   "showdown": 0,
+   "ours": 255,
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_0696",
+   "mon": "skarmory",
+   "field": "ivs",
+   "showdown": "31,30,30,31,30,31",
+   "ours": "31,31,31,31,31,31",
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_4853",
+   "mon": "heracross",
+   "field": "ivs",
+   "showdown": "31,31,30,31,30,31",
+   "ours": "31,31,31,31,31,31",
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_4749",
+   "mon": "tyranitar",
+   "field": "ivs",
+   "showdown": "31,30,30,31,30,31",
+   "ours": "31,31,31,31,31,31",
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_4775",
+   "mon": "tyranitar",
+   "field": "ivs",
+   "showdown": "31,30,30,31,30,31",
+   "ours": "31,31,31,31,31,31",
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_4946",
+   "mon": "tyranitar",
+   "field": "ivs",
+   "showdown": "31,30,30,31,30,31",
+   "ours": "31,31,31,31,31,31",
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_4364",
+   "mon": "tyranitar",
+   "field": "ivs",
+   "showdown": "31,30,30,31,30,31",
+   "ours": "31,31,31,31,31,31",
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_4364",
+   "mon": "metagross",
+   "field": "ivs",
+   "showdown": "31,30,31,30,31,30",
+   "ours": "31,31,31,31,31,31",
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_4784",
+   "mon": "metagross",
+   "field": "ivs",
+   "showdown": "31,30,31,30,31,30",
+   "ours": "31,31,31,31,31,31",
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_4661",
+   "mon": "dugtrio",
+   "field": "happiness",
+   "showdown": 0,
+   "ours": 255,
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_4661",
+   "mon": "gengar",
+   "field": "happiness",
+   "showdown": 0,
+   "ours": 255,
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_4661",
+   "mon": "flygon",
+   "field": "happiness",
+   "showdown": 0,
+   "ours": 255,
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_1186",
+   "mon": "tyranitar",
+   "field": "ivs",
+   "showdown": "31,30,30,31,30,31",
+   "ours": "31,31,31,31,31,31",
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_5041",
+   "mon": "salamence",
+   "field": "ivs",
+   "showdown": "31,30,31,30,31,31",
+   "ours": "31,31,31,31,31,31",
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_4734",
+   "mon": "tyranitar",
+   "field": "ivs",
+   "showdown": "31,30,30,31,30,31",
+   "ours": "31,31,31,31,31,31",
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_4813",
+   "mon": "tyranitar",
+   "field": "ivs",
+   "showdown": "31,30,30,31,30,31",
+   "ours": "31,31,31,31,31,31",
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_0946",
+   "mon": "gengar",
+   "field": "ivs",
+   "showdown": "31,30,31,30,31,31",
+   "ours": "31,31,31,31,31,31",
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_1406",
+   "mon": "zapdos",
+   "field": "happiness",
+   "showdown": 0,
+   "ours": 255,
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_2806",
+   "mon": "moltres",
+   "field": "happiness",
+   "showdown": 0,
+   "ours": 255,
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_2294",
+   "mon": "vaporeon",
+   "field": "happiness",
+   "showdown": 0,
+   "ours": 255,
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_4835",
+   "mon": "tyranitar",
+   "field": "ivs",
+   "showdown": "31,30,30,31,30,31",
+   "ours": "31,31,31,31,31,31",
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_2972",
+   "mon": "salamence",
+   "field": "ivs",
+   "showdown": "31,30,31,30,31,31",
+   "ours": "31,31,31,31,31,31",
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_4950",
+   "mon": "tyranitar",
+   "field": "ivs",
+   "showdown": "31,30,30,31,30,31",
+   "ours": "31,31,31,31,31,31",
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_4709",
+   "mon": "salamence",
+   "field": "ivs",
+   "showdown": "31,30,31,30,31,31",
+   "ours": "31,31,31,31,31,31",
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_2596",
+   "mon": "tyranitar",
+   "field": "happiness",
+   "showdown": 0,
+   "ours": 255,
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_4951",
+   "mon": "heracross",
+   "field": "ivs",
+   "showdown": "31,31,30,31,30,31",
+   "ours": "31,31,31,31,31,31",
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_0973",
+   "mon": "regirock",
+   "field": "ivs",
+   "showdown": "31,31,30,31,30,30",
+   "ours": "31,31,31,31,31,31",
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_3012",
+   "mon": "salamence",
+   "field": "ivs",
+   "showdown": "31,30,31,30,31,31",
+   "ours": "31,31,31,31,31,31",
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_3012",
+   "mon": "gyarados",
+   "field": "happiness",
+   "showdown": 0,
+   "ours": 255,
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_1243",
+   "mon": "tyranitar",
+   "field": "ivs",
+   "showdown": "31,30,30,31,30,31",
+   "ours": "31,31,31,31,31,31",
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_1231",
+   "mon": "snorlax",
+   "field": "happiness",
+   "showdown": 0,
+   "ours": 255,
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_5193",
+   "mon": "forretress",
+   "field": "ivs",
+   "showdown": "31,30,30,31,30,31",
+   "ours": "31,31,31,31,31,31",
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_5124",
+   "mon": "tyranitar",
+   "field": "ivs",
+   "showdown": "31,30,30,31,30,31",
+   "ours": "31,31,31,31,31,31",
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_1037",
+   "mon": "tyranitar",
+   "field": "ivs",
+   "showdown": "31,30,30,31,30,31",
+   "ours": "31,31,31,31,31,31",
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_5302",
+   "mon": "furret",
+   "field": "happiness",
+   "showdown": 0,
+   "ours": 255,
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_5011",
+   "mon": "hariyama",
+   "field": "ivs",
+   "showdown": "31,30,30,31,30,31",
+   "ours": "31,31,31,31,31,31",
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_1254",
+   "mon": "tyranitar",
+   "field": "happiness",
+   "showdown": 0,
+   "ours": 255,
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_1244",
+   "mon": "tyranitar",
+   "field": "ivs",
+   "showdown": "31,30,30,31,30,31",
+   "ours": "31,31,31,31,31,31",
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_1046",
+   "mon": "tyranitar",
+   "field": "ivs",
+   "showdown": "31,30,30,31,30,31",
+   "ours": "31,31,31,31,31,31",
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_5096",
+   "mon": "tyranitar",
+   "field": "ivs",
+   "showdown": "31,30,30,31,30,31",
+   "ours": "31,31,31,31,31,31",
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_3698",
+   "mon": "flygon",
+   "field": "happiness",
+   "showdown": 0,
+   "ours": 255,
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_5003",
+   "mon": "tyranitar",
+   "field": "ivs",
+   "showdown": "31,30,30,31,30,31",
+   "ours": "31,31,31,31,31,31",
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_1072",
+   "mon": "breloom",
+   "field": "ivs",
+   "showdown": "31,31,30,31,30,31",
+   "ours": "31,31,31,31,31,31",
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_3014",
+   "mon": "gyarados",
+   "field": "happiness",
+   "showdown": 0,
+   "ours": 255,
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_5020",
+   "mon": "heracross",
+   "field": "ivs",
+   "showdown": "31,31,30,31,30,31",
+   "ours": "31,31,31,31,31,31",
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_5194",
+   "mon": "metagross",
+   "field": "ivs",
+   "showdown": "31,30,31,30,31,31",
+   "ours": "31,31,31,31,31,31",
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_1056",
+   "mon": "tyranitar",
+   "field": "ivs",
+   "showdown": "31,30,31,30,31,31",
+   "ours": "31,31,31,31,31,31",
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_3647",
+   "mon": "tyranitar",
+   "field": "ivs",
+   "showdown": "31,30,30,31,30,31",
+   "ours": "31,31,31,31,31,31",
+   "pack_valid": true
+  },
+  {
+   "src": "w_forum_v1",
+   "id": "sfv2_3010",
+   "mon": "tyranitar",
+   "field": "ivs",
+   "showdown": "31,30,30,31,30,31",
+   "ours": "31,31,31,31,31,31",
+   "pack_valid": true
+  },
+  {
+   "src": "d3_setmut_v1",
+   "id": "d3m_e82c7826b922_0",
+   "mon": "gengar",
+   "field": "moves",
+   "showdown": "explosion,firepunch,icepunch,wisp",
+   "ours": "explosion,firepunch,icepunch,willowisp",
+   "pack_valid": true
+  },
+  {
+   "src": "d3_setmut_v1",
+   "id": "d3m_9918c74e595f_1",
+   "mon": "snorlax",
+   "field": "happiness",
+   "showdown": 0,
+   "ours": 255,
+   "pack_valid": true
+  },
+  {
+   "src": "d3_setmut_v1",
+   "id": "d3m_eb39be62390b_2",
+   "mon": "charizard",
+   "field": "happiness",
+   "showdown": 0,
+   "ours": 255,
+   "pack_valid": true
+  },
+  {
+   "src": "d3_setmut_v1",
+   "id": "d3m_e7fe344718ca_1",
+   "mon": "salamence",
+   "field": "ivs",
+   "showdown": "31,30,31,30,31,31",
+   "ours": "31,31,31,31,31,31",
+   "pack_valid": true
+  },
+  {
+   "src": "d3_setmut_v1",
+   "id": "d3m_023e134d7121_3",
+   "mon": "gyarados",
+   "field": "happiness",
+   "showdown": 0,
+   "ours": 255,
+   "pack_valid": true
+  },
+  {
+   "src": "d3_setmut_v1",
+   "id": "d3m_023e134d7121_2",
+   "mon": "gyarados",
+   "field": "happiness",
+   "showdown": 0,
+   "ours": 255,
+   "pack_valid": true
+  },
+  {
+   "src": "d3_setmut_v1",
+   "id": "d3m_d04e4f4e9214_1",
+   "mon": "tyranitar",
+   "field": "ivs",
+   "showdown": "31,30,30,31,30,31",
+   "ours": "31,31,31,31,31,31",
+   "pack_valid": true
+  },
+  {
+   "src": "d3_setmut_v1",
+   "id": "d3m_e7fe344718ca_2",
+   "mon": "salamence",
+   "field": "ivs",
+   "showdown": "31,30,31,30,31,31",
+   "ours": "31,31,31,31,31,31",
+   "pack_valid": true
+  },
+  {
+   "src": "d3_setmut_v1",
+   "id": "d3m_fe24deed63a7_0",
+   "mon": "slaking",
+   "field": "happiness",
+   "showdown": 0,
+   "ours": 255,
+   "pack_valid": true
+  },
+  {
+   "src": "d3_setmut_v1",
+   "id": "d3m_e82c7826b922_2",
+   "mon": "gengar",
+   "field": "moves",
+   "showdown": "explosion,firepunch,icepunch,wisp",
+   "ours": "explosion,firepunch,icepunch,willowisp",
+   "pack_valid": true
+  },
+  {
+   "src": "d3_setmut_v1",
+   "id": "d3m_394030b7adc9_2",
+   "mon": "snorlax",
+   "field": "happiness",
+   "showdown": 0,
+   "ours": 255,
+   "pack_valid": true
+  },
+  {
+   "src": "d3_setmut_v1",
+   "id": "d3m_023e134d7121_0",
+   "mon": "gyarados",
+   "field": "happiness",
+   "showdown": 0,
+   "ours": 255,
+   "pack_valid": true
+  },
+  {
+   "src": "d3_setmut_v1",
+   "id": "d3m_e82c7826b922_1",
+   "mon": "gengar",
+   "field": "moves",
+   "showdown": "explosion,firepunch,icepunch,wisp",
+   "ours": "explosion,firepunch,icepunch,willowisp",
+   "pack_valid": true
+  },
+  {
+   "src": "d3_setmut_v1",
+   "id": "d3m_e82c7826b922_3",
+   "mon": "gengar",
+   "field": "moves",
+   "showdown": "explosion,firepunch,icepunch,wisp",
+   "ours": "explosion,firepunch,icepunch,willowisp",
+   "pack_valid": true
+  },
+  {
+   "src": "d3_setmut_v1",
+   "id": "d3m_e7fe344718ca_0",
+   "mon": "salamence",
+   "field": "ivs",
+   "showdown": "31,30,31,30,31,31",
+   "ours": "31,31,31,31,31,31",
+   "pack_valid": true
+  },
+  {
+   "src": "d3_setmut_v1",
+   "id": "d3m_d04e4f4e9214_2",
+   "mon": "tyranitar",
+   "field": "ivs",
+   "showdown": "31,30,30,31,30,31",
+   "ours": "31,31,31,31,31,31",
+   "pack_valid": true
+  },
+  {
+   "src": "d3_setmut_v1",
+   "id": "d3m_d04e4f4e9214_3",
+   "mon": "tyranitar",
+   "field": "ivs",
+   "showdown": "31,30,30,31,30,31",
+   "ours": "31,31,31,31,31,31",
+   "pack_valid": true
+  },
+  {
+   "src": "d3_setmut_v1",
+   "id": "d3m_22c1d4b808c6_1",
+   "mon": "snorlax",
+   "field": "happiness",
+   "showdown": 0,
+   "ours": 255,
+   "pack_valid": true
+  },
+  {
+   "src": "d3_setmut_v1",
+   "id": "d3m_f83bd5881da4_2",
+   "mon": "snorlax",
+   "field": "happiness",
+   "showdown": 0,
+   "ours": 255,
+   "pack_valid": true
+  },
+  {
+   "src": "d3_setmut_v1",
+   "id": "d3m_e7fe344718ca_3",
+   "mon": "salamence",
+   "field": "ivs",
+   "showdown": "31,30,31,30,31,31",
+   "ours": "31,31,31,31,31,31",
+   "pack_valid": true
+  },
+  {
+   "src": "d3_setmut_v1",
+   "id": "d3m_023e134d7121_1",
+   "mon": "gyarados",
+   "field": "happiness",
+   "showdown": 0,
+   "ours": 255,
+   "pack_valid": true
+  },
+  {
+   "src": "d3_setmut_v1",
+   "id": "d3m_9918c74e595f_3",
+   "mon": "snorlax",
+   "field": "happiness",
+   "showdown": 0,
+   "ours": 255,
+   "pack_valid": true
+  },
+  {
+   "src": "d3_setmut_v1",
+   "id": "d3m_9918c74e595f_0",
+   "mon": "snorlax",
+   "field": "happiness",
+   "showdown": 0,
+   "ours": 255,
+   "pack_valid": true
+  }
+ ],
+ "field_counts": {
+  "happiness": 36,
+  "ivs": 45,
+  "moves": 5
+ }
+}

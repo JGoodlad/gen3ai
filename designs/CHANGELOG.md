@@ -15454,3 +15454,19 @@ was downloaded or written under `data/`.
 - **Same unit:** every `CLAUDE.md` and `README.md` swept by the deletion test and checked against the code; the seven TECH_DEBT docs rows
   closed; the endstate README is a compact index whose status column was verified against each doc's status block (13 + 13 status
   blocks were false or stale and were corrected, each with a dated Decision-record line).
+## 2026-10-26 — the obs / label GIGO audit's six fixes: the op reads a consumed item as no item (`gen3_op_held_item_v1`, config v162), silent volatile ends (`gen3_volatile_silent_ends_v1`, OBS VALUES), the α/β label keeps a move made before a switch and the move that forced ours (`gen3_intent_label_move_then_switch_v1`), the packer keeps happiness 0 and a Hidden Power type line's IVs (`gen3_team_pack_happiness_v1`, `gen3_team_pack_hptype_ivs_v1`) behind a Showdown pack oracle (`gen3_team_pack_oracle_v1`)
+
+- **Evidence and every finding:** `research_state/measurements/gigo_audit_obs_2026-10-26/README.md`.
+- **Op (v162, no field, no weight shape; OBS_SEMANTICS_VERSION deliberately KEPT at 151 — FINDING, orchestrator ruling: a raise would make `ProbeModel.load` refuse every current model; TECH_DEBT "obs_semantics marker policy").** `extractor_ctx.held_item_ids` / `item_unrevealed`
+  at every item identity read and item table (their P(Choice Band), our ×1.5, Quick Claw, Leftovers / Lum / Chesto); a
+  knocked-off Band read as held. Gate `held_item_gate_test.py` (AST, empty allowlist; production forward).
+- **Observation values.** The Rust reading ends Endure / Snatch / Helping Hand at `|turn|`, Destiny Bond / Grudge / Rage at
+  the holder's next move or `cant`, Mean Look's `trapped` when its trapper leaves; Baton Pass copies `trapped`. The board
+  audit names `destinybond` and `trapped`. Obs golden: 36 of 991 decisions moved (Destiny Bond 1 → 0). Encoder
+  benchmark unchanged (6.0 → 6.1 µs median).
+- **Labels.** The α/β label no longer masks the window closing on our forced switch, and labels a move made before the
+  opponent's switch-in (Explosion went from 0 / 59 labelled to 54 / 58). Every production run since `0661bbec4` trained
+  α with the old mask: a known bias, not a void.
+- **Teams.** Happiness 0 and Showdown's Frustration rule are packed (Frustration hit at base power 1 on 13 mons); a
+  `Hidden Power: <Type>` line fills IVs without the move (45 mons). `Gen3Teambuilder` runs `pack_oracle.js` on every pool,
+  bias and mix pack and raises `PackIdentityError` on a field difference.

@@ -1,0 +1,152 @@
+{
+"counts": {
+"cat_labelled_Physical": 614,
+"cat_labelled_Special": 496,
+"cat_labelled_Status": 949,
+"cat_maskforced_Physical": 124,
+"cat_maskforced_Special": 84,
+"cat_maskforced_Status": 25,
+"cat_masknormal_Physical": 84,
+"cat_masknormal_Special": 83,
+"cat_masknormal_Status": 106,
+"chosen_batonpass": 24,
+"chosen_batonpass_labelled_kind2": 24,
+"chosen_explosion": 43,
+"chosen_explosion_labelled_kind2": 43,
+"chosen_selfdestruct": 5,
+"chosen_selfdestruct_labelled_kind2": 5,
+"forced_rows": 289,
+"intent_kind_0": 2159,
+"intent_kind_1": 1376,
+"intent_kind_2": 1170,
+"intent_move_labelled": 2059,
+"intent_move_masked": 506,
+"intent_move_masked_on_forced_row": 233,
+"intent_move_masked_on_normal_row": 273,
+"intent_switch_labelled": 1367,
+"intent_switch_masked": 141,
+"intent_window_len_0": 255,
+"intent_window_len_2": 257,
+"intent_window_len_3": 4,
+"item_differs_from_initial": 1273,
+"masknormal_move_aerialace": 4,
+"masknormal_move_aromatherapy": 1,
+"masknormal_move_batonpass": 2,
+"masknormal_move_bodyslam": 2,
+"masknormal_move_brickbreak": 2,
+"masknormal_move_calmmind": 10,
+"masknormal_move_counter": 8,
+"masknormal_move_curse": 5,
+"masknormal_move_doubleedge": 2,
+"masknormal_move_dragondance": 7,
+"masknormal_move_drillpeck": 2,
+"masknormal_move_earthquake": 20,
+"masknormal_move_endeavor": 5,
+"masknormal_move_endure": 1,
+"masknormal_move_explosion": 4,
+"masknormal_move_fireblast": 1,
+"masknormal_move_firepunch": 3,
+"masknormal_move_flamethrower": 1,
+"masknormal_move_focuspunch": 1,
+"masknormal_move_gigadrain": 1,
+"masknormal_move_hiddenpowerbug": 17,
+"masknormal_move_hiddenpowerfighting": 1,
+"masknormal_move_hiddenpowerfire": 3,
+"masknormal_move_hiddenpowerghost": 8,
+"masknormal_move_hiddenpowergrass": 3,
+"masknormal_move_hiddenpowerrock": 3,
+"masknormal_move_hydropump": 2,
+"masknormal_move_icebeam": 7,
+"masknormal_move_icepunch": 2,
+"masknormal_move_leechseed": 3,
+"masknormal_move_meanlook": 2,
+"masknormal_move_meteormash": 1,
+"masknormal_move_perishsong": 1,
+"masknormal_move_protect": 1,
+"masknormal_move_psychic": 2,
+"masknormal_move_pursuit": 1,
+"masknormal_move_rapidspin": 12,
+"masknormal_move_recover": 2,
+"masknormal_move_refresh": 2,
+"masknormal_move_rest": 33,
+"masknormal_move_return": 1,
+"masknormal_move_roar": 13,
+"masknormal_move_rockslide": 8,
+"masknormal_move_screech": 1,
+"masknormal_move_seismictoss": 3,
+"masknormal_move_shadowball": 2,
+"masknormal_move_softboiled": 1,
+"masknormal_move_spikes": 10,
+"masknormal_move_substitute": 1,
+"masknormal_move_surf": 14,
+"masknormal_move_taunt": 3,
+"masknormal_move_thief": 3,
+"masknormal_move_thunderbolt": 18,
+"masknormal_move_thunderwave": 4,
+"masknormal_move_willowisp": 2,
+"masknormal_move_wish": 1,
+"revealed_slots": 25672,
+"rows": 4705,
+"w2_move_then_forced_replacement_kind2": 136
+}
+}
+MISMATCH intent_label_on_window_len_0(info): 27  e.g. [(((0, 2), 8, 8), 0, 355, -100, 0, [], [(5, 1, 5, 9), (6, 0, 9, 6), (6, 1, 3, 9), (7, 0, 5, 6), (7, 1, 8, 9), (7, 0, 9, 1)]), (((0, 2), 10, 9), 0, 355, -100, 0, [], [(7, 0, 5, 6), (7, 1, 8, 9), (7, 0, 9, 1), (8, 0, 3, 6), (8, 1, 8, 6), (8, 0, 9, 1)]), (((0, 2), 12, 10), 1, 0, -100, 242, [], [(8, 0, 3, 6), (8, 1, 8, 6), (8, 0, 9, 1), (9, 0, 5, 6), (9, 1, 1, 6), (9, 0, 9, 1)]), (((0, 2), 18, 15), 0, 332, -100, 0, [], [(12, 1, 9, 9), (13, 0, 9, 9), (13, 1, 3, 9), (14, 0, 1, 9), (14, 1, 6, 9), (14, 0, 9, 4)])]
+MISMATCH intent_label_on_window_len_2(info): 27  e.g. [(((1, 0), 12, 13), 0, 89, -100, 0, [3, 6], [(10, 1, 4, 9), (11, 0, 1, 9), (11, 1, 0, 9), (12, 0, 9, 9), (12, 1, 3, 9), (12, 1, 6, 4)]), (((0, 2), 31, 25), 0, 92, -100, 0, [3, 7], [(23, 0, 0, 9), (23, 1, 2, 6), (23, 0, 7, 4), (24, 0, 1, 9), (24, 1, 3, 9), (24, 1, 7, 4)]), (((1, 7), 8, 8), 0, 34, -100, 0, [5, 6], [(5, 0, 4, 5), (6, 0, 6, 8), (6, 1, 8, 9), (7, 0, 0, 5), (7, 1, 5, 9), (7, 1, 6, 4)]), (((1, 7), 31, 28), 0, 85, -100, 0, [5, 9], [(25, 0, 4, 2), (26, 0, 6, 5), (26, 1, 3, 7), (27, 0, 3, 2), (27, 1, 5, 7), (27, 1, 9, 4)])]
+MISMATCH item_vs_initial(info): 1273  e.g. [(((1, 6), 20, 21), 3, 234, 0), (((1, 6), 21, 22), 3, 234, 0), (((1, 6), 22, 23), 3, 234, 0), (((1, 6), 23, 24), 3, 234, 0)]
+MISMATCH masknormal_example_aerialace(info): 4  e.g. [((0, 2), 17, 14), ((0, 2), 27, 22), ((1, 5), 24, 21), ((1, 21), 15, 14)]
+MISMATCH masknormal_example_aromatherapy(info): 1  e.g. [((1, 27), 16, 15)]
+MISMATCH masknormal_example_batonpass(info): 2  e.g. [((1, 0), 51, 48), ((0, 5), 39, 38)]
+MISMATCH masknormal_example_bodyslam(info): 2  e.g. [((1, 0), 75, 71), ((1, 6), 103, 99)]
+MISMATCH masknormal_example_brickbreak(info): 2  e.g. [((1, 7), 27, 25), ((0, 20), 31, 25)]
+MISMATCH masknormal_example_calmmind(info): 10  e.g. [((0, 0), 34, 31), ((0, 6), 57, 56), ((0, 6), 75, 71), ((0, 11), 37, 35)]
+MISMATCH masknormal_example_counter(info): 8  e.g. [((0, 3), 67, 67), ((0, 3), 69, 69), ((0, 3), 71, 71), ((0, 3), 96, 94)]
+MISMATCH masknormal_example_curse(info): 5  e.g. [((0, 14), 3, 4), ((0, 16), 48, 49), ((0, 24), 82, 78), ((1, 26), 55, 52)]
+MISMATCH masknormal_example_doubleedge(info): 2  e.g. [((1, 0), 74, 70), ((1, 5), 85, 81)]
+MISMATCH masknormal_example_dragondance(info): 7  e.g. [((1, 0), 83, 79), ((1, 15), 59, 50), ((0, 25), 14, 15), ((0, 25), 75, 71)]
+MISMATCH masknormal_example_drillpeck(info): 2  e.g. [((0, 30), 120, 118), ((0, 30), 159, 155)]
+MISMATCH masknormal_example_earthquake(info): 20  e.g. [((1, 0), 33, 32), ((0, 9), 26, 23), ((0, 13), 32, 29), ((1, 11), 24, 25)]
+MISMATCH masknormal_example_endeavor(info): 5  e.g. [((0, 16), 1, 2), ((0, 16), 16, 17), ((0, 16), 32, 33), ((0, 16), 43, 44)]
+MISMATCH masknormal_example_endure(info): 1  e.g. [((1, 26), 61, 58)]
+MISMATCH masknormal_example_explosion(info): 4  e.g. [((1, 11), 25, 26), ((0, 18), 7, 8), ((0, 18), 17, 18), ((0, 30), 6, 7)]
+MISMATCH masknormal_example_fireblast(info): 1  e.g. [((0, 20), 8, 7)]
+MISMATCH masknormal_example_firepunch(info): 3  e.g. [((1, 5), 16, 14), ((0, 6), 63, 61), ((0, 6), 76, 72)]
+MISMATCH masknormal_example_flamethrower(info): 1  e.g. [((1, 25), 37, 37)]
+MISMATCH masknormal_example_focuspunch(info): 1  e.g. [((1, 16), 24, 24)]
+MISMATCH masknormal_example_gigadrain(info): 1  e.g. [((1, 24), 36, 36)]
+MISMATCH masknormal_example_hiddenpowerbug(info): 17  e.g. [((0, 2), 7, 7), ((0, 2), 9, 8), ((0, 3), 68, 68), ((0, 3), 146, 142)]
+MISMATCH masknormal_example_hiddenpowerfighting(info): 1  e.g. [((1, 0), 63, 60)]
+MISMATCH masknormal_example_hiddenpowerfire(info): 3  e.g. [((1, 14), 4, 5), ((0, 19), 46, 42), ((1, 25), 28, 28)]
+MISMATCH masknormal_example_hiddenpowerghost(info): 8  e.g. [((1, 21), 117, 113), ((1, 21), 189, 184), ((1, 21), 192, 187), ((0, 24), 62, 59)]
+MISMATCH masknormal_example_hiddenpowergrass(info): 3  e.g. [((0, 6), 55, 54), ((0, 30), 79, 78), ((0, 30), 125, 123)]
+MISMATCH masknormal_example_hiddenpowerrock(info): 3  e.g. [((1, 24), 7, 8), ((1, 24), 14, 15), ((1, 24), 76, 74)]
+MISMATCH masknormal_example_hydropump(info): 2  e.g. [((0, 16), 28, 29), ((1, 16), 32, 32)]
+MISMATCH masknormal_example_icebeam(info): 7  e.g. [((0, 14), 19, 17), ((0, 14), 29, 27), ((0, 14), 67, 63), ((0, 16), 44, 45)]
+MISMATCH masknormal_example_icepunch(info): 2  e.g. [((1, 0), 69, 65), ((1, 1), 44, 43)]
+MISMATCH masknormal_example_leechseed(info): 3  e.g. [((0, 6), 32, 32), ((1, 15), 39, 34), ((1, 24), 89, 87)]
+MISMATCH masknormal_example_meanlook(info): 2  e.g. [((0, 30), 17, 18), ((0, 30), 117, 115)]
+MISMATCH masknormal_example_meteormash(info): 1  e.g. [((0, 22), 38, 35)]
+MISMATCH masknormal_example_perishsong(info): 1  e.g. [((0, 30), 18, 19)]
+MISMATCH masknormal_example_protect(info): 1  e.g. [((0, 28), 41, 38)]
+MISMATCH masknormal_example_psychic(info): 2  e.g. [((0, 6), 19, 20), ((0, 9), 41, 37)]
+MISMATCH masknormal_example_pursuit(info): 1  e.g. [((0, 20), 24, 19)]
+MISMATCH masknormal_example_rapidspin(info): 12  e.g. [((0, 3), 110, 107), ((0, 3), 147, 143), ((0, 3), 161, 157), ((0, 9), 51, 45)]
+MISMATCH masknormal_example_recover(info): 2  e.g. [((1, 24), 65, 63), ((1, 24), 113, 111)]
+MISMATCH masknormal_example_refresh(info): 2  e.g. [((1, 25), 133, 132), ((1, 25), 234, 230)]
+MISMATCH masknormal_example_rest(info): 33  e.g. [((0, 2), 74, 62), ((0, 7), 30, 29), ((0, 7), 33, 32), ((0, 7), 35, 34)]
+MISMATCH masknormal_example_return(info): 1  e.g. [((1, 26), 85, 78)]
+MISMATCH masknormal_example_roar(info): 13  e.g. [((0, 2), 73, 61), ((0, 21), 4, 5), ((0, 21), 5, 6), ((0, 25), 72, 68)]
+MISMATCH masknormal_example_rockslide(info): 8  e.g. [((1, 0), 34, 33), ((1, 0), 56, 53), ((1, 0), 79, 75), ((1, 14), 44, 40)]
+MISMATCH masknormal_example_screech(info): 1  e.g. [((0, 18), 39, 38)]
+MISMATCH masknormal_example_seismictoss(info): 3  e.g. [((0, 21), 42, 42), ((0, 30), 44, 43), ((1, 27), 17, 16)]
+MISMATCH masknormal_example_shadowball(info): 2  e.g. [((0, 24), 59, 56), ((0, 24), 81, 77)]
+MISMATCH masknormal_example_softboiled(info): 1  e.g. [((0, 24), 34, 31)]
+MISMATCH masknormal_example_spikes(info): 10  e.g. [((0, 3), 115, 112), ((0, 3), 126, 122), ((0, 3), 129, 125), ((1, 21), 43, 42)]
+MISMATCH masknormal_example_substitute(info): 1  e.g. [((1, 24), 72, 70)]
+MISMATCH masknormal_example_surf(info): 14  e.g. [((0, 0), 37, 34), ((0, 11), 26, 25), ((0, 14), 20, 18), ((1, 21), 41, 40)]
+MISMATCH masknormal_example_taunt(info): 3  e.g. [((1, 1), 42, 41), ((0, 21), 111, 106), ((0, 21), 113, 108)]
+MISMATCH masknormal_example_thief(info): 3  e.g. [((1, 6), 95, 91), ((0, 30), 149, 145), ((0, 30), 164, 160)]
+MISMATCH masknormal_example_thunderbolt(info): 18  e.g. [((1, 1), 13, 13), ((1, 1), 27, 27), ((1, 1), 35, 35), ((0, 7), 5, 6)]
+MISMATCH masknormal_example_thunderwave(info): 4  e.g. [((1, 21), 150, 145), ((1, 26), 34, 33), ((1, 26), 35, 34), ((1, 26), 38, 36)]
+MISMATCH masknormal_example_willowisp(info): 2  e.g. [((0, 21), 12, 13), ((0, 21), 99, 94)]
+MISMATCH masknormal_example_wish(info): 1  e.g. [((1, 0), 50, 47)]
+MISMATCH w2_move_then_replacement_example(info): 136  e.g. [(((0, 0), 20, 20), 2, 0, 'rockslide'), (((1, 0), 27, 26), 2, 0, 'substitute'), (((0, 0), 31, 28), 2, 0, 'fireblast'), (((0, 0), 32, 29), 2, 0, 'explosion')]

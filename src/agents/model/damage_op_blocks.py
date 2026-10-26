@@ -55,7 +55,7 @@ from agents.model.damage_op_layout import (  # noqa: F401
     _TypeEncoder, _VOLATILE_SLOTS, _WATER_TIDX, _dmg_imx_dim, decode_damage_block,
 )
 
-from agents.model.extractor_ctx import ability_known, revealed_ability1_ids
+from agents.model.extractor_ctx import ability_known, held_item_ids, revealed_ability1_ids
 from agents.model.move_resolution_tables import S_SG_OPP, S_SG_OURS
 from agents.model.status_rules import incoming_status_mask
 from agents.model.index_max import max_by_index
@@ -243,7 +243,7 @@ class DamageOperatorBlocks:
         our_burn = ctx.pokemon_part[ar, our_act, POKEMON_CONDITION_OFFSET + _COND_BRN_IDX]   # [B]
         # gen3_unified_choice_band_v1: OUR Choice Band ×1.5 physical Atk (our item is KNOWN → deterministic,
         # not a belief). Composes multiplicatively with boosts/burn below; physical only (CB doesn't touch SpA).
-        our_cb = (ctx.item_ids[ar, our_act] == self.cb_item_num).float()                     # [B]
+        our_cb = (held_item_ids(ctx)[ar, our_act] == self.cb_item_num).float()                     # [B]
         our_atk = our_atk * torch.where(our_cb > 0.5, our_atk.new_tensor(self.cb_phys_mult),
                                         our_atk.new_tensor(1.0))
         our_atk = our_atk * self._boost_mult(o_b_atk) * torch.where(
@@ -400,7 +400,7 @@ class DamageOperatorBlocks:
             o_b_atk = o_b_atk + boost_delta[:, 0]
             o_b_spa = o_b_spa + boost_delta[:, 2]
         our_burn = ctx.pokemon_part[ar, our_act, POKEMON_CONDITION_OFFSET + _COND_BRN_IDX]
-        our_cb = (ctx.item_ids[ar, our_act] == self.cb_item_num).float()
+        our_cb = (held_item_ids(ctx)[ar, our_act] == self.cb_item_num).float()
         our_atk = our_atk * torch.where(our_cb > 0.5, our_atk.new_tensor(self.cb_phys_mult), our_atk.new_tensor(1.0))
         our_atk = our_atk * self._boost_mult(o_b_atk) * torch.where(
             our_burn > 0.5, our_atk.new_tensor(0.5), our_atk.new_tensor(1.0))
@@ -569,7 +569,7 @@ class DamageOperatorBlocks:
             # gen3_endstate_facts_v1 (the exact status facts): the HYPOTHETICAL world in which every one of our mons
             # is burned — the burn-loss fact is this world's damage subtracted from the real one (one kernel).
             our_burn = torch.ones_like(our_burn)
-        our_cb = (ctx.item_ids[:, our] == self.cb_item_num).float()                     # [B,6]
+        our_cb = (held_item_ids(ctx)[:, our] == self.cb_item_num).float()                     # [B,6]
         our_atk = our_atk * torch.where(our_cb > 0.5, our_atk.new_tensor(self.cb_phys_mult), our_atk.new_tensor(1.0))
         our_atk = our_atk * atk_boost * torch.where(our_burn > 0.5, our_atk.new_tensor(0.5), our_atk.new_tensor(1.0))
         our_spa = our_spa * spa_boost

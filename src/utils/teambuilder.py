@@ -147,6 +147,12 @@ class Gen3Teambuilder(Teambuilder):
                 + (f" (+{len(oversize) - 5} more)" if len(oversize) > 5 else "")
                 + ". A trailing blank line in a Showdown paste is the usual cause."
             )
+        # 🚨 gen3_team_pack_oracle_v1: every pack must BE the authored team (Showdown's own reading of the paste),
+        # field by field — a pack can be legal and still a different team (a dropped `Happiness: 0` played
+        # Frustration at base power 1; 2026-10-26 GIGO audit C-2 / C-3). Raises; no drop. After the
+        # oversize guard, whose HANG diagnosis is the more specific one.
+        from utils.bridge.team_validator import check_pack_identity
+        check_pack_identity("gen3ou", [teams[i] for i in valid_indices], self.packed_teams, "the team pool")
 
         # Reverse map packed-team → pool index, so the LEGACY uniform draw
         # (``random.choice(self.packed_teams)``, which returns the team and not its index) can still
@@ -174,6 +180,8 @@ class Gen3Teambuilder(Teambuilder):
                     self.bias_packed_teams.append(self.join_team(fixed))
                 else:
                     self.bias_dropped.append((i, res.get("errors")))
+            check_pack_identity("gen3ou", [bias_teams[i] for i, r in enumerate(bias_validations) if r.get("valid")],
+                                self.bias_packed_teams, "the bias teams")
             if self.bias_dropped:
                 print(f"⚠️  [Teambuilder] DROPPED {len(self.bias_dropped)} of {len(bias_teams)} "
                       f"bias team(s) that fail gen3ou validation (index: first error): "
@@ -239,6 +247,9 @@ class Gen3Teambuilder(Teambuilder):
         if oversize:
             raise ValueError(f"--team-mix: {len(oversize)} packed corpus team(s) carry more than 6 Pokemon "
                              f"(first indices {oversize[:5]}) — Showdown would REJECT them and the match HANG")
+        from utils.bridge.team_validator import check_pack_identity
+        check_pack_identity("gen3ou", [mix_teams[i] for i, r in enumerate(res) if r.get("valid")], packed,
+                            "the --team-mix corpus")
         if not packed:
             raise ValueError(f"--team-mix: no corpus team passes gen3ou validation (first error: "
                              f"{(dropped[0][1] if dropped else None)})")

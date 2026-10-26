@@ -622,7 +622,19 @@ from typing import Any, Dict
 #   expert. Gated in check_compatible (its text names --grow). A pre-v161 config migrates to off (the only possible
 #   past). No ARCH_SIGNATURE bump (off builds nothing: every existing state dict and forward is unchanged; the on path is
 #   gated by the field — the trunk_layers precedent), no OBS_SEMANTICS or MIGRATION_FLOOR change.
-MODEL_CONFIG_VERSION = 161
+# v162 (gen3_op_held_item_v1; GIGO fix 2026-10-26, audit C-1): no field, no weight shape. Every item IDENTITY read in the
+#   op (the opponent's P(Choice Band), our Choice Band x1.5 on the outgoing blocks, both Quick Claw reads) and the
+#   Leftovers / Lum / Chesto tables read `extractor_ctx.held_item_ids` — 0 once the item is consumed — where they
+#   compared the RAW id: a Knocked-Off / stolen Choice Band read as HELD (P(CB) = 1 on their active, x1.5 on ours).
+#   Production's op block changes on a row whose active's item is consumed and was a Choice Band (the two tables
+#   already multiplied by `1 - consumed`: bit-identical). The state_dict is unchanged and every past config stamps
+#   through. No ARCH_SIGNATURE bump, no MIGRATION_FLOOR change. OBS_SEMANTICS_VERSION is deliberately NOT raised
+#   (orchestrator 2026-10-26: `ProbeModel.load` hard-refuses below the marker, which would blind the prober and the
+#   harvest meters for every current model; the gap policy is a TECH_DEBT row, raise the marker once it lands). The SAME version carries the observation-value fix
+#   gen3_volatile_silent_ends_v1 (the Rust reading: Destiny Bond / Grudge / Rage end at the holder's next move,
+#   Endure / Snatch / Helping Hand at the turn, Mean Look's `trapped` when its trapper leaves and through Baton Pass;
+#   the obs golden moved on 36 of 991 decisions, all a stale Destiny Bond cell 1 -> 0).
+MODEL_CONFIG_VERSION = 162
 
 # THE OBS-SEMANTICS MARKER (declared 2026-10-09, with v151): the FIRST config version whose OBSERVATION VALUES
 # (the vector the encoder writes, and the model-input cells derived from it) MEAN something different from every

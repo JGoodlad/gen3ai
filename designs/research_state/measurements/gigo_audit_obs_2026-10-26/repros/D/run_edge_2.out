@@ -1,0 +1,50 @@
+{
+"counts": {
+"cat_labelled_Physical": 47,
+"cat_labelled_Special": 63,
+"cat_labelled_Status": 86,
+"cat_maskforced_Physical": 21,
+"cat_maskforced_Special": 21,
+"cat_maskforced_Status": 5,
+"cat_masknormal_Physical": 5,
+"cat_masknormal_Special": 4,
+"cat_masknormal_Status": 2,
+"chosen_batonpass": 1,
+"chosen_batonpass_labelled_kind2": 1,
+"chosen_explosion": 8,
+"chosen_explosion_labelled_kind2": 8,
+"forced_rows": 68,
+"intent_kind_0": 200,
+"intent_kind_1": 238,
+"intent_kind_2": 205,
+"intent_move_labelled": 196,
+"intent_move_masked": 58,
+"intent_move_masked_on_forced_row": 47,
+"intent_move_masked_on_normal_row": 11,
+"intent_switch_labelled": 238,
+"intent_switch_masked": 28,
+"intent_window_len_0": 63,
+"intent_window_len_2": 43,
+"intent_window_len_3": 1,
+"masknormal_move_earthquake": 4,
+"masknormal_move_fireblast": 1,
+"masknormal_move_flamethrower": 1,
+"masknormal_move_hydropump": 1,
+"masknormal_move_icepunch": 1,
+"masknormal_move_thunderbolt": 1,
+"masknormal_move_toxic": 2,
+"revealed_slots": 3150,
+"rows": 643,
+"w2_move_then_forced_replacement_kind2": 20
+}
+}
+MISMATCH intent_label_on_window_len_0(info): 1  e.g. [(((1, 4), 7, 6), 0, 89, -100, 0, [], [(4, 1, 7, 9), (4, 0, 4, 5), (4, 1, 2, 5), (5, 0, 5, 8), (5, 1, 6, 8), (5, 0, 9, 4)])]
+MISMATCH intent_label_on_window_len_2(info): 3  e.g. [(((0, 2), 5, 5), 0, 89, -100, 0, [1, 9], [(3, 0, 8, 9), (3, 1, 9, 9), (3, 0, 2, 5), (4, 0, 1, 8), (4, 1, 1, 9), (4, 1, 9, 4)]), (((0, 2), 8, 8), 0, 58, -100, 0, [2, 7], [(5, 1, 7, 9), (6, 0, 2, 8), (6, 1, 3, 9), (7, 0, 6, 8), (7, 1, 2, 9), (7, 1, 7, 4)]), (((0, 2), 9, 9), 0, 56, -100, 0, [0, 8], [(7, 0, 6, 8), (7, 1, 2, 9), (7, 1, 7, 4), (8, 0, 4, 5), (8, 1, 0, 9), (8, 1, 8, 4)])]
+MISMATCH masknormal_example_earthquake(info): 4  e.g. [((1, 1), 14, 11), ((1, 4), 6, 5), ((1, 4), 8, 6), ((1, 7), 51, 48)]
+MISMATCH masknormal_example_fireblast(info): 1  e.g. [((1, 0), 16, 15)]
+MISMATCH masknormal_example_flamethrower(info): 1  e.g. [((0, 5), 27, 27)]
+MISMATCH masknormal_example_hydropump(info): 1  e.g. [((1, 0), 14, 13)]
+MISMATCH masknormal_example_icepunch(info): 1  e.g. [((0, 2), 49, 48)]
+MISMATCH masknormal_example_thunderbolt(info): 1  e.g. [((1, 3), 16, 16)]
+MISMATCH masknormal_example_toxic(info): 2  e.g. [((0, 0), 17, 16), ((1, 0), 24, 21)]
+MISMATCH w2_move_then_replacement_example(info): 20  e.g. [(((1, 0), 11, 10), 2, 0, 'explosion'), (((0, 0), 31, 28), 2, 0, 'rapidspin'), (((1, 1), 13, 11), 2, 0, 'flamethrower'), (((1, 2), 11, 12), 2, 0, 'explosion')]

@@ -29,7 +29,12 @@ from agents.model.model_version import (
 #: with the commit that moves the golden: if a cell's MEANING changed set OBS_SEMANTICS_VERSION to the config
 #: version that commit stamps; if the golden moved for a reason that changes no cell's meaning (it should not
 #: move at all), say why in the commit and keep the marker.
-_GOLDEN_PIN = ("1b29ad8f1f5c0c8f7bd01b4cf114cd1aacb1bafb5c4f241598048e01ff77d2fc", 151)
+# Re-pinned 2026-10-26 (GIGO audit, config v162) with the marker KEPT at 151: the golden moved on 36 of 991 decisions,
+# every one a stale Destiny Bond volatile cell 1 -> 0 (gen3_volatile_silent_ends_v1: the bond now ends at its holder's
+# next move) — a value FIX of a cell whose meaning is unchanged. The marker is NOT raised by orchestrator ruling
+# (`ProbeModel.load` hard-refuses below it, blinding the prober / harvest meters for every current model); the gap
+# policy is a TECH_DEBT row, and the marker is raised once it lands.
+_GOLDEN_PIN = ("ab3cdda779eb21b340170039667f9e63071d1549de1efbe2f43e3c6f1f897235", 151)
 
 _GOLDEN = Path(__file__).resolve().parents[1] / "training" / "golden_obs_fixture.json"
 

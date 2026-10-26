@@ -29,9 +29,10 @@ def _spnum(sp):
 
 class _D:
     """Minimal TurnDelta stand-in — only the fields the label builder reads."""
-    def __init__(self, move=None, switch=None, fainted=False, forced=False):
+    def __init__(self, move=None, switch=None, fainted=False, forced=False, move_first=False):
         self._move, self.opp_switch_to = move, switch
         self.opp_fainted, self.phase_is_forced_switch = fainted, forced
+        self.opp_move_before_switch = move_first
 
     @property
     def opp_resolved_move_id(self):
@@ -57,8 +58,19 @@ def test_a_post_faint_replacement_is_NOT_their_decision():
     assert build_opp_intent_label(d, _num, _slot, _spnum)[0] == KIND_UNKNOWN
 
 
-def test_a_forced_switch_window_carries_no_decision():
-    assert build_opp_intent_label(_D(move="thunderbolt", forced=True), _num, _slot, _spnum)[0] == KIND_UNKNOWN
+def test_the_window_closing_on_our_forced_switch_carries_their_move():
+    """gen3_intent_label_move_then_switch_v1 (2026-10-26 GIGO audit D-1): the move that KOed us was their choice."""
+    assert build_opp_intent_label(_D(move="thunderbolt", forced=True), _num, _slot, _spnum)[0] == KIND_MOVE
+
+
+def test_a_move_before_their_faint_and_replacement_is_the_move():
+    d = _D(move="thunderbolt", switch="skarmory", fainted=True, move_first=True)
+    assert build_opp_intent_label(d, _num, _slot, _spnum) == (KIND_MOVE, 85, SWITCH_SLOT_NONE, 0)
+
+
+def test_a_switch_before_a_move_stays_masked():
+    d = _D(move="thunderbolt", switch="skarmory", move_first=False)
+    assert build_opp_intent_label(d, _num, _slot, _spnum)[0] == KIND_UNKNOWN
 
 
 def test_an_unnameable_move_RAISES_never_a_silent_unknown():

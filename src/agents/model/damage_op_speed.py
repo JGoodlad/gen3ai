@@ -30,6 +30,7 @@ from typing import Any, Callable, Optional, Tuple, TYPE_CHECKING
 import torch
 
 from agents.model.damage_op_layout import (_BS_SPE, _COND_PAR_IDX, _NAT_SPE)
+from agents.model.extractor_ctx import held_item_ids, item_unrevealed
 from agents.model.move_order import gen3_final_speed, gen3_speed_stat, p_first_same_priority
 from agents.observation.constants import (POKEMON_CONDITION_OFFSET, POKEMON_SPREAD_DIM,
                                           POKEMON_SPREAD_OFFSET, TEAM_SIZE)
@@ -98,7 +99,7 @@ class DamageOperatorSpeed:
         """``[B,6]`` 1 where our mon holds Quick Claw (our items are known); 0 where the format bans it."""
         if not self.quick_claw_live:
             return torch.zeros(ctx.item_ids.shape[0], TEAM_SIZE, device=ctx.device)
-        return (ctx.item_ids[:, :TEAM_SIZE] == self.qc_item_num).float()
+        return (held_item_ids(ctx)[:, :TEAM_SIZE] == self.qc_item_num).float()
 
     def _opp_quick_claw(self, ctx: 'ExtractorContext') -> torch.Tensor:
         """``[B,6]`` P(their mon holds Quick Claw): 1 / 0 once the item is revealed, else the item belief's
@@ -106,11 +107,11 @@ class DamageOperatorSpeed:
         where the format bans it (gen3ou): a banned item has no holder, whatever the stale prior says."""
         if not self.quick_claw_live:
             return torch.zeros(ctx.item_ids.shape[0], TEAM_SIZE, device=ctx.device)
-        item = ctx.item_ids[:, TEAM_SIZE:2 * TEAM_SIZE]                                        # [B,6]
+        held = held_item_ids(ctx)[:, TEAM_SIZE:2 * TEAM_SIZE]                                  # [B,6] gen3_op_held_item_v1
         belief = self.stash.item_qc_prob
         prior = belief if belief is not None else self.SPECIES_QC_PRIOR[ctx.species_ids[:, TEAM_SIZE:2 * TEAM_SIZE]]
-        revealed = (item == self.qc_item_num).float()
-        unrevealed = (item == 0).float()
+        revealed = (held == self.qc_item_num).float()
+        unrevealed = item_unrevealed(ctx)[:, TEAM_SIZE:2 * TEAM_SIZE]
         p_qc: torch.Tensor = revealed + (1.0 - revealed) * unrevealed * prior
         return p_qc
 

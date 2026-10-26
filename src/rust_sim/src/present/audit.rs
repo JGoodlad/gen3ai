@@ -32,9 +32,9 @@
 //!
 //! Plus the revealed-opponent truths no projection can make (the Python slice V's `truth_checks`,
 //! moved here so the board has ONE reader): a disclosed item / ability / move is the engine's, a
-//! consumed item is no longer held, a living mon's types are the engine's, and the thirteen audited
+//! consumed item is no longer held, a living mon's types are the engine's, and the fifteen audited
 //! volatiles ([`TRUTH_VOLATILES`]) are present on the view exactly when the engine holds them. Two of the
-//! thirteen — Ingrain and Nightmare ([`ENGINE_CANNOT_HOLD`]) — are held to an engine that CANNOT hold them
+//! fifteen — Ingrain and Nightmare ([`ENGINE_CANNOT_HOLD`]) — are held to an engine that CANNOT hold them
 //! (it fails loud on both moves), so for those the audit is one-sided: the view must never report one.
 
 use super::dex;
@@ -45,10 +45,13 @@ use crate::state::{BattleState, MonState, Status, Weather};
 /// Engine volatile (`search::volatile_names`) → the `LivePokemon.volatiles` key. Two-way on this
 /// set: the view holds the key iff the engine holds the volatile. Only conditions the protocol
 /// ANNOUNCES belong here (a condition the sim never prints has no reading to check).
-pub const TRUTH_VOLATILES: [(&str, &str); 13] = [
+pub const TRUTH_VOLATILES: [(&str, &str); 15] = [
     ("attract", "attract"),
     ("confusion", "confusion"),
     ("curse", "curse"),
+    // gen3_volatile_silent_ends_v1 (2026-10-26 GIGO audit A-C1 / A-C2): both END silently (Destiny Bond at the
+    // holder's next move attempt, `trapped` when its trapper leaves) and stayed set on the view.
+    ("destinybond", "destinybond"),
     ("disable", "disable"),
     ("encore", "encore"),
     ("flashfire", "flashfire"),
@@ -58,6 +61,7 @@ pub const TRUTH_VOLATILES: [(&str, &str); 13] = [
     ("nightmare", "nightmare"),
     ("substitute", "substitute"),
     ("taunt", "taunt"),
+    ("trapped", "trapped"),
     ("yawn", "yawn"),
 ];
 

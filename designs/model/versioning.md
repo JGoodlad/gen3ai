@@ -252,6 +252,19 @@ reads, so the string compare is the only gate). A pre-v154 config migrates to of
 The NAMED ARM `--arch endstate` records it `on` (owner 2026-10-10, a pre-data amendment of the closing test); no
 config bump came with that: an arm's overlay is a launch surface, and the field already existed.
 
+**v162 (`gen3_op_held_item_v1` + `gen3_volatile_silent_ends_v1`, 2026-10-26 GIGO audit)** — a forward fix and an
+OBSERVATION-VALUE fix with NO field and no weight shape. (1) Every item IDENTITY read of the op (their P(Choice Band), our
+Choice Band ×1.5, both Quick Claw reads) and the Leftovers / Lum / Chesto tables read `extractor_ctx.held_item_ids` (0 once
+the item is consumed): a Knocked-Off / stolen Band read as held (`held_item_gate_test.py`, an AST gate with an empty
+allowlist plus the production forward). (2) The Rust reading ends Destiny Bond / Grudge / Rage at the holder's next move,
+Endure / Snatch / Helping Hand at `|turn|` and Mean Look's `trapped` when its trapper leaves, and Baton Pass carries
+`trapped` (`tests/silent_volatile_end_test.rs`; the board audit now names `destinybond` and `trapped`). The obs golden
+moved on 36 of 991 decisions, all a stale Destiny Bond cell 1 → 0. `_migrate_config` stamps every past config through.
+`OBS_SEMANTICS_VERSION` is deliberately NOT raised (it stays 151; `obs_semantics_test` re-pins the moved golden at 151):
+`ProbeModel.load` hard-refuses below the marker, which would blind the prober and the harvest meters for every current
+model. A checkpoint below v162 therefore reads as `current` in the prober although its op and these cells changed under
+it — a known gap until the marker's gap policy lands (`designs/ops/TECH_DEBT_BACKLOG.md`, "obs_semantics marker policy").
+
 **The exact P(KO) (then `ko_ramp = 'exact'`; flagless since v156) is computed in CLOSED FORM (`gen3_ko_exact_closed_v1`,
 2026-10-10), with NO config, obs-semantics or signature bump.** The value `exact_closed` that carried the closed form beside the 16-roll sum was legal for one
 commit (`6e0a1a7a`, no bump: a new VALUE of an existing field, nothing to migrate, no parameter); the owner's "remove

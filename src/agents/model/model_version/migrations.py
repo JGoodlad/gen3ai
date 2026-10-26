@@ -577,6 +577,10 @@ def _migrate_config(data: dict) -> dict:
     if version < 161:
         data.setdefault("trunk_ffn_by_kind", "off")
         data["config_version"] = 161
+    # v162 (gen3_op_held_item_v1) — no field: the op reads a consumed item as no item (a forward fix; the state_dict is
+    # unchanged), so every past config stamps through.
+    if version < 162:
+        data["config_version"] = 162
     #
     # ---- v97–v120 MIGRATION HISTORY — documentation, not code (floored away at v121) ---------
     # gen3_event_record_v2 (the observation-architecture batch: the E12 event-row reshape, the E4

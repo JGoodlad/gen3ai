@@ -60,7 +60,7 @@ from agents.observation.constants import (BOOSTS_DIM, POKEMON_CONDITION_OFFSET, 
                                           POKEMON_ITEMS_OFFSET, POKEMON_SLEEP_BELIEF_OFFSET, POKEMON_SPREAD_OFFSET,
                                           TEAM_SIZE, WEATHER_ONEHOT_DIM)
 from agents.model.damage_op_pairwise import toxic_next_tick
-from agents.model.extractor_ctx import ability_known, revealed_ability1_ids
+from agents.model.extractor_ctx import ability_known, held_item_ids, revealed_ability1_ids
 from agents.observation.gen3_effects import VOLATILE_SLOTS
 
 if TYPE_CHECKING:
@@ -189,7 +189,7 @@ class EotResidualRule(torch.nn.Module):
         # --- Leftovers: the item where known (0 once consumed / removed), the species prior where not ---
         item_known = pp[..., POKEMON_ITEMS_OFFSET + 1]
         consumed = pp[..., POKEMON_ITEMS_OFFSET + 2]
-        p_lo = (item_known * self.IS_LEFTOVERS[ctx.item_ids] * (1.0 - consumed)
+        p_lo = (item_known * self.IS_LEFTOVERS[held_item_ids(ctx)] * (1.0 - consumed)
                 + (1.0 - item_known) * self.SPECIES_LEFTOVERS_PRIOR[sp])
         leftovers = p_lo / 16.0
 

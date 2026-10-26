@@ -102,7 +102,7 @@ class CureFlags(torch.nn.Module):
 
     def forward(self, ctx: 'ExtractorContext', op: Any, move_belief_logits: torch.Tensor) -> torch.Tensor:
         """[B, 12, CURE_DIM] (`CURE_FACTS`): ours slots 0–5, theirs 6–11."""
-        from agents.model.extractor_ctx import ability_known, revealed_ability1_ids
+        from agents.model.extractor_ctx import ability_known, held_item_ids, revealed_ability1_ids
         from agents.model.op_reduction import noisy_or
         pp = ctx.pokemon_part
         dt = pp.dtype
@@ -146,7 +146,7 @@ class CureFlags(torch.nn.Module):
         # --- Lum / Chesto: the item where known (0 once consumed), the species prior where not ---
         item_known = pp[..., POKEMON_ITEMS_OFFSET + 1][..., None]
         consumed = pp[..., POKEMON_ITEMS_OFFSET + 2][..., None]
-        berry = (item_known * self.CURE_ITEMS[ctx.item_ids] * (1.0 - consumed)
+        berry = (item_known * self.CURE_ITEMS[held_item_ids(ctx)] * (1.0 - consumed)
                  + (1.0 - item_known) * self.SPECIES_CURE_ITEM_PRIOR[ctx.species_ids])      # [B,12,2]
         out = torch.stack([cleric, nc, rest, berry[..., 0], berry[..., 1]], dim=-1)          # [B,12,CURE_DIM]
         gate = alive * torch.cat([torch.ones_like(concrete), concrete], dim=1)

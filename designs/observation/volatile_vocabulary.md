@@ -94,3 +94,10 @@ reading, which mirrored it). All three are FIXED in the Rust reading (`src/rust_
   fail loud), so no training row could hold them: the fixes reach only live and replay reads.
 - Every one-shot effect stays in `mon.effects` until switch-out, which is why `NOT_A_VOLATILE` has
   to exist at all.
+- **Silent ends** (`gen3_volatile_silent_ends_v1`, 2026-10-26 GIGO audit A-C1 / A-C2): the sim ends some volatile SLOTS with
+  no protocol line, and the reading used to keep them set for the whole stint. Endure / Snatch / Helping Hand
+  (`duration: 1`) now end at `|turn|` like Protect; Destiny Bond, Grudge and Rage end at the holder's next `|move|` or
+  `|cant|` (`onBeforeMove` / `onMoveAborted`; a re-used Destiny Bond keeps it); Mean Look's `trapped` ends when its
+  trapper leaves the field (not by Baton Pass), and Baton Pass now copies `trapped` (gen 4's `noCopy: false`, inherited by
+  gen 3). Pinned by `src/rust_sim/tests/silent_volatile_end_test.rs` and the engine-truth audit (`present/audit.rs`
+  `TRUTH_VOLATILES` names `destinybond` and `trapped`).

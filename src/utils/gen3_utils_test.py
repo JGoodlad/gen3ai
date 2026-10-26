@@ -61,3 +61,18 @@ def test_gen3_hp_ivs_is_the_one_table():
 
     assert GEN3_HP_IVS is hidden_power.HP_IVS
     assert len(GEN3_HP_IVS) == 16
+
+
+def test_a_hidden_power_type_line_without_the_move_fills_the_ivs_as_showdown_does():
+    """gen3_team_pack_hptype_ivs_v1 (2026-10-26 GIGO audit C-3): Showdown's validator fills a `Hidden Power: <Type>`
+    line's IVs when every IV is 31 even WITHOUT the move (team-validator.ts, `set.hpType && maxedIVs`); the authored
+    team plays those IVs. Ours left them at 31 (±1 stat point against the authored team)."""
+    mon = TeambuilderPokemon(nickname="Salamence", moves=["Dragon Dance", "Earthquake", "Rock Slide", "Fire Blast"],
+                             ivs=[31] * 6, hiddenpowertype="Flying")
+    fixed = fix_gen3_hp_ivs([mon])[0]
+    want = [GEN3_HP_IVS["Flying"].get(k, 31) for k in ("hp", "atk", "def", "spa", "spd", "spe")]
+    assert want != [31] * 6 and fixed.ivs == want
+    # a set that already chose its IVs is left alone, as Showdown leaves it (not maxed)
+    mon2 = TeambuilderPokemon(nickname="Salamence", moves=["Earthquake"], ivs=[31, 0, 31, 31, 31, 31],
+                              hiddenpowertype="Flying")
+    assert fix_gen3_hp_ivs([mon2])[0].ivs == [31, 0, 31, 31, 31, 31]

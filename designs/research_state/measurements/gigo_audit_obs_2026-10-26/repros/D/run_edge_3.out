@@ -1,0 +1,12 @@
+Traceback (most recent call last):
+  File "/tmp/gigo_audit/D/labels_vs_truth.py", line 285, in <module>
+    main()
+  File "/tmp/gigo_audit/D/labels_vs_truth.py", line 112, in main
+    core.reset()
+  File "/home/goodlad/dev/gen3ai-wt/gigo-audit-obs-1026/src/utils/rust_env/ffi.py", line 325, in reset
+    self.dispatch("RESET")
+  File "/home/goodlad/dev/gen3ai-wt/gigo-audit-obs-1026/src/utils/rust_env/ffi.py", line 322, in dispatch
+    self._check(self.lib.rust_env_dispatch(self._h, self._op[op], self._addrs_p))
+  File "/home/goodlad/dev/gen3ai-wt/gigo-audit-obs-1026/src/utils/rust_env/ffi.py", line 316, in _check
+    raise _error(self.lib, status)
+utils.rust_env.protocol.CoreFault: env 0: labels p2: skarmory: the declared spread (nature careful, evs [252, 0, 0, 0, 252, 4], ivs [31, 31, 31, 31, 31, 31]) gives [196, 316, 104, 262, 177] at L100 but the server's stats are [196, 416, 104, 177, 176]

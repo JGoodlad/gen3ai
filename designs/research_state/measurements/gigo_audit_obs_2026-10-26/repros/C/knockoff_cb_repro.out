@@ -1,0 +1,8 @@
+opp slot 0 species 128 item id 220 (Choice Band=220) known 1.0 consumed 1.0 active 1.0 hp 0.95 -> op revealed_cb = 1.0
+opp slot 0 species 128 item id 220 (Choice Band=220) known 1.0 consumed 1.0 active 1.0 hp 0.91 -> op revealed_cb = 1.0
+opp slot 0 species 128 item id 220 (Choice Band=220) known 1.0 consumed 1.0 active 1.0 hp 0.86 -> op revealed_cb = 1.0
+opp slot 0 species 128 item id 220 (Choice Band=220) known 1.0 consumed 1.0 active 1.0 hp 0.82 -> op revealed_cb = 1.0
+rows x opp slots with a knocked-off Choice Band read as item id = CB: 19
+knocked-off Band (id CB, consumed 1)     op p_cb = 1.0000  cb_high[active] = [0.18007615208625793, 0.41114622354507446, 0.11635047942399979, 0.0, 0.0, 0.0]
+revealed Leftovers (id 234, known 1)     op p_cb = 0.0000  cb_high[active] = [0.18007615208625793, 0.41114622354507446, 0.11635047942399979, 0.0, 0.0, 0.0]
+all-zero item (unrevealed)               op p_cb = 0.7946  cb_high[active] = [0.18007615208625793, 0.41114622354507446, 0.11635047942399979, 0.0, 0.0, 0.0]

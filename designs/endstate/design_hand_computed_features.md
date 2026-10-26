@@ -245,7 +245,7 @@ only +2.44 [+0.31, +4.57] pp (species) / +2.18 [+0.53, +3.84] pp (full) at 15M, 
 | # | feature | what it computes | why | where · status | evidence it helps | learning it replaces | action |
 |---|---|---|---|---|---|---|---|
 | I1 | the flat pointer's prior term | each candidate (their K move seats, OTHER_move, a switch to each slot, OTHER_species) scored by one shared scorer PLUS its detached log π | (c) | `flat_intent.py` · ON | X5 look 3's intent log loss above (1.753 vs 1.904) | the opponent's action distribution without a prior | KEEP |
-| I2 | the intent label rules | masked when their switch-in was dragged by our Roar, was a free replacement, or Encore overrode it; a called move labelled as its caller; a denied action masked | (a) — training labels, not a forward input | `src/rust_env/src/labels/intent.rs` over the TurnDelta fold (`trackers/delta.rs`) · ON | correctness (`gen3_intent_label_semantics_fixes_v1`) | — | KEEP |
+| I2 | the intent label rules | masked when their switch-in was dragged by our Roar, was a free replacement, or Encore overrode it; a called move labelled as its caller; a denied action masked; a move made before their switch-in, and the move that forced our switch, labelled (`gen3_intent_label_move_then_switch_v1`, 2026-10-26) | (a) — training labels, not a forward input | `src/rust_env/src/labels/intent.rs` over the TurnDelta fold (`trackers/delta.rs`) · ON | correctness (`gen3_intent_label_semantics_fixes_v1`) | — | KEEP |
 
 ### 2.10 Format-spec priors
 

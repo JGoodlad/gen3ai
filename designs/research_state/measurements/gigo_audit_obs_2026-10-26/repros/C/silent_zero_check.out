@@ -1,0 +1,4 @@
+ability-prior names with no ability num: 0 []
+prior species not in species table: []
+event rows 5755 MOVE rows 3009 MOVE rows with move id 0: 0 with actor species 0: 0
+any valid row with actor species 0, by type: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 16, 10: 0, 11: 0}

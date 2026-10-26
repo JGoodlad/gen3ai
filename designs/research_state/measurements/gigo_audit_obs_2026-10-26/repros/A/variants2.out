@@ -1,0 +1,124 @@
+🚨🚨🚨 [STALE RUST BUILD ALLOWED] POKESIM_ALLOW_STALE_BUILD=1 — /home/goodlad/dev/gen3ai-wt/gigo-audit-obs-1026/src/rust_env/target/release/libpokesim_env.so: built from src=7c53280566d666ae over 125 files (commit 13c704e6314bb680a1fbd38edd19954b805e11b6), this checkout is src=59326369e7171d5f over 125 (its Rust sources changed since). This process runs Rust behaviour that NO commit pins, so nothing it produces is reproducible from a commit or comparable to a checked run. Unset POKESIM_ALLOW_STALE_BUILD and rebuild: (cd src/rust_env && CARGO_TARGET_DIR=$PWD/target cargo build --release --lib --bin rust_env_proc)
+🚨🚨🚨 [STALE RUST BUILD ALLOWED] POKESIM_ALLOW_STALE_BUILD=1 — /home/goodlad/dev/gen3ai-wt/gigo-audit-obs-1026/src/rust_env/target/release/libpokesim_env.so: built from src=7c53280566d666ae over 125 files (commit 13c704e6314bb680a1fbd38edd19954b805e11b6), this checkout is src=59326369e7171d5f over 125 (its Rust sources changed since). This process runs Rust behaviour that NO commit pins, so nothing it produces is reproducible from a commit or comparable to a checked run. Unset POKESIM_ALLOW_STALE_BUILD and rebuild: (cd src/rust_env && CARGO_TARGET_DIR=$PWD/target cargo build --release --lib --bin rust_env_proc)
+######## seed [11, 22, 33, 44]
+== lead 4th move (toxic -> drillpeck): decisions 85 vs 85
+   IDENTICAL over 85 decisions
+== lead item (metalcoat -> sharpbeak): decisions 85 vs 85
+   IDENTICAL over 85 decisions
+== lead SpA EVs (0 -> 252): decisions 85 vs 85
+   IDENTICAL over 85 decisions
+== lead nature (Careful -> Calm: +SpD kept, Atk/SpA unused): decisions 85 vs 85
+   IDENTICAL over 85 decisions
+== lead IVs (SpA 31 -> 0): decisions 85 vs 85
+   IDENTICAL over 85 decisions
+== lead ability (keeneye -> sturdy): decisions 85 vs 85
+   IDENTICAL over 85 decisions
+== bench slot 6 species (Starmie -> Zapdos): decisions 85 vs 85
+   first difference at p1 decision 84: 16 cells; mask equal=True
+     cell 1342 opp_team[5].species+0: np.float32(121.0) vs np.float32(145.0)
+     cell 1343 opp_team[5].species+1: np.float32(0.23529412) vs np.float32(0.3529412)
+     cell 1344 opp_team[5].species+2: np.float32(0.29411766) vs np.float32(0.3529412)
+     cell 1346 opp_team[5].species+4: np.float32(0.39215687) vs np.float32(0.49019608)
+     cell 1347 opp_team[5].species+5: np.float32(0.33333334) vs np.float32(0.3529412)
+     cell 1348 opp_team[5].species+6: np.float32(0.4509804) vs np.float32(0.39215687)
+     cell 1352 opp_team[5].types+0: np.float32(11.0) vs np.float32(5.0)
+     cell 1353 opp_team[5].types+1: np.float32(3.0) vs np.float32(10.0)
+     cell 1354 opp_team[5].abilities+0: np.float32(30.0) vs np.float32(46.0)
+     cell 1355 opp_team[5].abilities+1: np.float32(35.0) vs np.float32(0.0)
+     cell 1356 opp_team[5].abilities+2: np.float32(0.9919631) vs np.float32(1.0)
+     cell 1357 opp_team[5].abilities+3: np.float32(0.0) vs np.float32(1.0)
+     cell 1409 opp_team[5].hp+0: np.float32(0.84) vs np.float32(1.0)
+     cell 1453 opp_team[5].recency+2: np.float32(0.28906482) vs np.float32(1.0)
+     cell 2732 event[31]+1: np.float32(121.0) vs np.float32(145.0)
+     cell 2736 event[31]+5: np.float32(-0.16) vs np.float32(0.0)
+== bench slot 2 Blissey item (leftovers -> lumberry): decisions 85 vs 85
+   first difference at p1 decision 10: 4 cells; mask equal=True
+     cell 861 opp_team[1].items+0: np.float32(234.0) vs np.float32(0.0)
+     cell 862 opp_team[1].items+1: np.float32(1.0) vs np.float32(0.0)
+     cell 921 opp_team[1].hp+0: np.float32(1.0) vs np.float32(0.94)
+     cell 2803 obs_facts+42: np.float32(1.0) vs np.float32(0.0)
+== bench Tyranitar HP type (hpbug -> hpgrass IVs): decisions 85 vs 85
+   first difference at p1 decision 29: 2 cells; mask equal=True
+     cell 311 our_team[2].hp+0: np.float32(0.682243) vs np.float32(0.67912775)
+     cell 2736 event[31]+5: np.float32(-0.317757) vs np.float32(-0.32087228)
+######## seed [5, 6, 7, 8]
+== lead 4th move (toxic -> drillpeck): decisions 76 vs 76
+   IDENTICAL over 76 decisions
+== lead item (metalcoat -> sharpbeak): decisions 76 vs 76
+   IDENTICAL over 76 decisions
+== lead SpA EVs (0 -> 252): decisions 76 vs 76
+   IDENTICAL over 76 decisions
+== lead nature (Careful -> Calm: +SpD kept, Atk/SpA unused): decisions 76 vs 76
+   IDENTICAL over 76 decisions
+== lead IVs (SpA 31 -> 0): decisions 76 vs 76
+   IDENTICAL over 76 decisions
+== lead ability (keeneye -> sturdy): decisions 76 vs 76
+   IDENTICAL over 76 decisions
+== bench slot 6 species (Starmie -> Zapdos): decisions 76 vs 76
+   first difference at p1 decision 54: 15 cells; mask equal=True
+     cell 1342 opp_team[5].species+0: np.float32(121.0) vs np.float32(145.0)
+     cell 1343 opp_team[5].species+1: np.float32(0.23529412) vs np.float32(0.3529412)
+     cell 1344 opp_team[5].species+2: np.float32(0.29411766) vs np.float32(0.3529412)
+     cell 1346 opp_team[5].species+4: np.float32(0.39215687) vs np.float32(0.49019608)
+     cell 1347 opp_team[5].species+5: np.float32(0.33333334) vs np.float32(0.3529412)
+     cell 1348 opp_team[5].species+6: np.float32(0.4509804) vs np.float32(0.39215687)
+     cell 1352 opp_team[5].types+0: np.float32(11.0) vs np.float32(5.0)
+     cell 1353 opp_team[5].types+1: np.float32(3.0) vs np.float32(10.0)
+     cell 1354 opp_team[5].abilities+0: np.float32(30.0) vs np.float32(46.0)
+     cell 1355 opp_team[5].abilities+1: np.float32(35.0) vs np.float32(0.0)
+     cell 1356 opp_team[5].abilities+2: np.float32(0.9919631) vs np.float32(1.0)
+     cell 1357 opp_team[5].abilities+3: np.float32(0.0) vs np.float32(1.0)
+     cell 1409 opp_team[5].hp+0: np.float32(0.84) vs np.float32(1.0)
+     cell 2732 event[31]+1: np.float32(121.0) vs np.float32(145.0)
+     cell 2736 event[31]+5: np.float32(-0.16) vs np.float32(0.0)
+== bench slot 2 Blissey item (leftovers -> lumberry): decisions 76 vs 76
+   first difference at p1 decision 10: 4 cells; mask equal=True
+     cell 861 opp_team[1].items+0: np.float32(234.0) vs np.float32(0.0)
+     cell 862 opp_team[1].items+1: np.float32(1.0) vs np.float32(0.0)
+     cell 921 opp_team[1].hp+0: np.float32(1.0) vs np.float32(0.94)
+     cell 2803 obs_facts+42: np.float32(1.0) vs np.float32(0.0)
+== bench Tyranitar HP type (hpbug -> hpgrass IVs): decisions 76 vs 76
+   first difference at p1 decision 29: 2 cells; mask equal=True
+     cell 311 our_team[2].hp+0: np.float32(0.69158876) vs np.float32(0.6884735)
+     cell 2736 event[31]+5: np.float32(-0.3084112) vs np.float32(-0.31152648)
+######## seed [901, 3, 77, 12]
+== lead 4th move (toxic -> drillpeck): decisions 86 vs 86
+   IDENTICAL over 86 decisions
+== lead item (metalcoat -> sharpbeak): decisions 86 vs 86
+   IDENTICAL over 86 decisions
+== lead SpA EVs (0 -> 252): decisions 86 vs 86
+   IDENTICAL over 86 decisions
+== lead nature (Careful -> Calm: +SpD kept, Atk/SpA unused): decisions 86 vs 86
+   IDENTICAL over 86 decisions
+== lead IVs (SpA 31 -> 0): decisions 86 vs 86
+   IDENTICAL over 86 decisions
+== lead ability (keeneye -> sturdy): decisions 86 vs 86
+   IDENTICAL over 86 decisions
+== bench slot 6 species (Starmie -> Zapdos): decisions 86 vs 93
+   first difference at p1 decision 53: 15 cells; mask equal=True
+     cell 1220 opp_team[4].species+0: np.float32(121.0) vs np.float32(145.0)
+     cell 1221 opp_team[4].species+1: np.float32(0.23529412) vs np.float32(0.3529412)
+     cell 1222 opp_team[4].species+2: np.float32(0.29411766) vs np.float32(0.3529412)
+     cell 1224 opp_team[4].species+4: np.float32(0.39215687) vs np.float32(0.49019608)
+     cell 1225 opp_team[4].species+5: np.float32(0.33333334) vs np.float32(0.3529412)
+     cell 1226 opp_team[4].species+6: np.float32(0.4509804) vs np.float32(0.39215687)
+     cell 1230 opp_team[4].types+0: np.float32(11.0) vs np.float32(5.0)
+     cell 1231 opp_team[4].types+1: np.float32(3.0) vs np.float32(10.0)
+     cell 1232 opp_team[4].abilities+0: np.float32(30.0) vs np.float32(46.0)
+     cell 1233 opp_team[4].abilities+1: np.float32(35.0) vs np.float32(0.0)
+     cell 1234 opp_team[4].abilities+2: np.float32(0.9919631) vs np.float32(1.0)
+     cell 1235 opp_team[4].abilities+3: np.float32(0.0) vs np.float32(1.0)
+     cell 1287 opp_team[4].hp+0: np.float32(0.84) vs np.float32(1.0)
+     cell 2732 event[31]+1: np.float32(121.0) vs np.float32(145.0)
+     cell 2736 event[31]+5: np.float32(-0.16) vs np.float32(0.0)
+== bench slot 2 Blissey item (leftovers -> lumberry): decisions 86 vs 86
+   first difference at p1 decision 7: 5 cells; mask equal=True
+     cell 861 opp_team[1].items+0: np.float32(234.0) vs np.float32(0.0)
+     cell 862 opp_team[1].items+1: np.float32(1.0) vs np.float32(0.0)
+     cell 921 opp_team[1].hp+0: np.float32(1.0) vs np.float32(0.94)
+     cell 1606 reactive+2: np.float32(0.28906482) vs np.float32(0.0)
+     cell 2803 obs_facts+42: np.float32(1.0) vs np.float32(0.0)
+== bench Tyranitar HP type (hpbug -> hpgrass IVs): decisions 86 vs 86
+   first difference at p1 decision 29: 2 cells; mask equal=True
+     cell 311 our_team[2].hp+0: np.float32(0.66043615) vs np.float32(0.65732086)
+     cell 2736 event[31]+5: np.float32(-0.33956388) vs np.float32(-0.3426791)

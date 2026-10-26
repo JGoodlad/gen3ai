@@ -1,0 +1,13 @@
+species n= 419 min (1, 'bulbasaur') max (386, 'deoxysspeed') table 400 neg [] zero [] n_zero 0
+  >= table: []
+  dup nums (non-forme): []
+moves n= 370 min (1, 'pound') max (370, 'hiddenpowerwater') table 400 neg [] zero [] n_zero 0
+  >= table: []
+  dup nums (non-forme): []
+items n= 132 min (1, 'masterball') max (499, 'sportball') table 600 neg [] zero [] n_zero 0
+  >= table: []
+  dup nums (non-forme): [(153, ['aspearberry', 'burntberry']), (155, ['berry', 'oranberry']), (156, ['bitterberry', 'persimberry']), (149, ['cheriberry', 'przcureberry']), (150, ['chestoberry', 'mintberry']), (158, ['goldberry', 'sitrusberry']), (152, ['iceberry', 'rawstberry']), (154, ['leppaberry', 'mysteryberry']), (157, ['lumberry', 'miracleberry']), (151, ['pechaberry', 'psncureberry'])]
+abilities n= 76 min (1, 'stench') max (76, 'airlock') table 100 neg [] zero [] n_zero 0
+  >= table: []
+  dup nums (non-forme): []
+max_types 20

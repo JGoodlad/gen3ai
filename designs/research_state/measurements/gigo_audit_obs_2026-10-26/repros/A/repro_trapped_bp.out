@@ -1,0 +1,13 @@
+🚨🚨🚨 [STALE RUST BUILD ALLOWED] POKESIM_ALLOW_STALE_BUILD=1 — /home/goodlad/dev/gen3ai-wt/gigo-audit-obs-1026/src/rust_env/target/release/libpokesim_env.so: built from src=7c53280566d666ae over 125 files (commit 13c704e6314bb680a1fbd38edd19954b805e11b6), this checkout is src=99064c56e6292560 over 125 (its Rust sources changed since). This process runs Rust behaviour that NO commit pins, so nothing it produces is reproducible from a commit or comparable to a checked run. Unset POKESIM_ALLOW_STALE_BUILD and rebuild: (cd src/rust_env && CARGO_TARGET_DIR=$PWD/target cargo build --release --lib --bin rust_env_proc)
+🚨🚨🚨 [STALE RUST BUILD ALLOWED] POKESIM_ALLOW_STALE_BUILD=1 — /home/goodlad/dev/gen3ai-wt/gigo-audit-obs-1026/src/rust_env/target/release/libpokesim_env.so: built from src=7c53280566d666ae over 125 files (commit 13c704e6314bb680a1fbd38edd19954b805e11b6), this checkout is src=99064c56e6292560 over 125 (its Rust sources changed since). This process runs Rust behaviour that NO commit pins, so nothing it produces is reproducible from a commit or comparable to a checked run. Unset POKESIM_ALLOW_STALE_BUILD and rebuild: (cd src/rust_env && CARGO_TARGET_DIR=$PWD/target cargo build --release --lib --bin rust_env_proc)
+p1 dec 0: OPP ctx trapped=0  opp spa boost cells=0.000
+p1 dec 1: OPP ctx trapped=1  opp spa boost cells=0.167
+p1 dec 2: OPP ctx trapped=0  opp spa boost cells=0.167
+p1 dec 3: OPP ctx trapped=0  opp spa boost cells=0.167
+p1 dec 4: OPP ctx trapped=0  opp spa boost cells=0.167
+p2 dec 0: active slot 0 OWN ctx trapped=0 request trapped=0 maybe=0 switch legal=True
+p2 dec 1: active slot 0 OWN ctx trapped=1 request trapped=1 maybe=0 switch legal=False
+p2 dec 2: active slot 0 OWN ctx trapped=1 request trapped=0 maybe=0 switch legal=True
+p2 dec 3: active slot 1 OWN ctx trapped=0 request trapped=1 maybe=0 switch legal=False
+p2 dec 4: active slot 1 OWN ctx trapped=0 request trapped=1 maybe=0 switch legal=False
+p2 dec 5: active slot 1 OWN ctx trapped=0 request trapped=0 maybe=0 switch legal=True

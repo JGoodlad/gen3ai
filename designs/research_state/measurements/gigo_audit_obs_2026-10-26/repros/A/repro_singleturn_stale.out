@@ -1,0 +1,12 @@
+p1 dec 0 (before turn 1): OPP ctx destinybond=0 endure=0 protect=0 snatch=0 rage=0 grudge=0
+p1 dec 1 (before turn 2): OPP ctx destinybond=1 endure=0 protect=0 snatch=0 rage=0 grudge=0
+p1 dec 2 (before turn 3): OPP ctx destinybond=1 endure=1 protect=0 snatch=0 rage=0 grudge=0
+p1 dec 3 (before turn 4): OPP ctx destinybond=1 endure=1 protect=0 snatch=0 rage=0 grudge=0
+p1 dec 4 (before turn 5): OPP ctx destinybond=1 endure=1 protect=0 snatch=0 rage=0 grudge=0
+p1 dec 5 (before turn 6): OPP ctx destinybond=1 endure=1 protect=0 snatch=0 rage=0 grudge=0
+p2 dec 0 (before turn 1): OWN ctx destinybond=0 endure=0 protect=0 snatch=0 rage=0 grudge=0
+p2 dec 1 (before turn 2): OWN ctx destinybond=1 endure=0 protect=0 snatch=0 rage=0 grudge=0
+p2 dec 2 (before turn 3): OWN ctx destinybond=1 endure=1 protect=0 snatch=0 rage=0 grudge=0
+p2 dec 3 (before turn 4): OWN ctx destinybond=1 endure=1 protect=0 snatch=0 rage=0 grudge=0
+p2 dec 4 (before turn 5): OWN ctx destinybond=1 endure=1 protect=0 snatch=0 rage=0 grudge=0
+p2 dec 5 (before turn 6): OWN ctx destinybond=1 endure=1 protect=0 snatch=0 rage=0 grudge=0

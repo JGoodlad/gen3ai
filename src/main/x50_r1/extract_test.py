@@ -48,22 +48,25 @@ def test_golden_log_gives_exactly_the_hand_read_labels(reader):
     lines, info = _human()
     want = {
         # p1 views p2: Lovely Kiss; a switch to an unseen Exeggutor; Exeggutor fainted before acting and was
-        # replaced (UNKNOWN); Body Slam; Body Slam co-occurring with OUR Roar's drag (UNKNOWN: a phaze); Thunderbolt;
+        # replaced (UNKNOWN); Body Slam; Body Slam and THEN our Roar's drag (the move before the switch is their choice:
+        # gen3_intent_label_move_then_switch_v1, 2026-10-26; it was UNKNOWN as "a phaze"); Thunderbolt;
         # a switch back to the REVEALED Snorlax (slot 2 of Jynx, Exeggutor, Snorlax, Starmie); a paralysis `cant`
         # (UNKNOWN); the last decision (no successor).
-        "p1": [_mv("lovelykiss"), _sw("exeggutor"), UNK, _mv("bodyslam"), UNK, _mv("thunderbolt"),
+        "p1": [_mv("lovelykiss"), _sw("exeggutor"), UNK, _mv("bodyslam"), _mv("bodyslam"), _mv("thunderbolt"),
                _sw("snorlax", 2), UNK, UNK],
-        # p2 views p1: a sleep `cant` (UNKNOWN); a switch to an unseen Dugtrio; Hidden Power in a window that closes
-        # on p2's own forced replacement (UNKNOWN); the replacement window (no p1 action); back to the revealed
+        # p2 views p1: a sleep `cant` (UNKNOWN); a switch to an unseen Dugtrio; Hidden Power (the KO) in a window that
+        # closes on p2's own forced replacement — labelled since gen3_intent_label_move_then_switch_v1 (it was
+        # UNKNOWN; untyped 237: a spectator never learns the type); the replacement window (no p1 action); back to the revealed
         # Suicune (slot 0); Roar; a switch to an unseen Raikou; Substitute; Thunderbolt; the last decision.
-        "p2": [UNK, _sw("dugtrio"), UNK, UNK, _sw("suicune", 0), _mv("roar"), _sw("raikou"), _mv("substitute"),
+        "p2": [UNK, _sw("dugtrio"), _mv("hiddenpower"), UNK, _sw("suicune", 0), _mv("roar"), _sw("raikou"), _mv("substitute"),
                _mv("thunderbolt"), UNK],
     }
     for seat in ("p1", "p2"):
         read = E.read_spectator(reader, lines, seat, info[seat]["name"])
         lab, hp = read.labels()
         assert [tuple(int(x) for x in row) for row in lab] == want[seat], seat
-        assert not hp.any()
+        # the bare (untyped) Hidden Power flag: only p2's KO Hidden Power, labelled since the move-then-switch rule
+        assert hp.tolist() == [i == 2 and seat == "p2" for i in range(len(lab))], (seat, hp.tolist())
         assert all(np.isfinite(r).all() for r in read.rows)
     # the turn-1 lead has no revealed move and no revealed bench: the declared Struggle placeholder opened it
     assert E.read_spectator(reader, lines, "p1", info["p1"]["name"]).placeholder[0]

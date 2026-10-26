@@ -1,0 +1,9 @@
+Traceback (most recent call last):
+  File "/tmp/gigo_audit/D/labels_vs_truth.py", line 285, in <module>
+    main()
+  File "/tmp/gigo_audit/D/labels_vs_truth.py", line 99, in main
+    core = ffi.FfiCore(spec, lib=ffi.load(ffi.default_path("release")))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/goodlad/dev/gen3ai-wt/gigo-audit-obs-1026/src/utils/rust_env/ffi.py", line 290, in __init__
+    raise _error(self.lib, P.STATUSES[1].code)
+utils.rust_env.protocol.CallerError: spec: team 1: the reading refuses it as p1: from_packed("Snorlax||leftovers|thickfat|bodyslam,curse|Careful|255,85,1,,167,|||31,0,31,31,31,0|||"): expected 12 fields, got 13 (ValueError)

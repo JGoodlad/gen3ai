@@ -1,0 +1,2 @@
+[encoder-bench]          encode_us: median      6.1 µs   p90      7.0 µs   max     11.0 µs   (40 decisions × 300 reps)
+[encoder-bench]  present_encode_us: median     10.0 µs   p90     11.4 µs   max     17.0 µs   (40 decisions × 300 reps)

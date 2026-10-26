@@ -1,0 +1,4 @@
+real edge rows (265, 2845) forward ok, finite: True
+worst-case last-row ids: forward ok, finite: True
+type 19 (== scatter width) -> RAISED IndexError index 19 is out of bounds for dimension 0 with size 19
+type -1 -> RAISED IndexError index out of range in self

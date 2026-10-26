@@ -1114,6 +1114,13 @@ pub struct EffectRow {
 }
 
 /// Every `Effect` member, sorted by NAME.
+///
+/// `gen3_volatile_silent_ends_v1` (2026-10-26 GIGO audit A-C1 / A-C2): ENDURE, SNATCH and HELPING_HAND are
+/// `duration: 1` conditions the sim ends with no protocol line (`data/moves.ts`), so they end at `|turn|` like
+/// PROTECT (they stayed set for the rest of the stint); TRAPPED is Baton-Pass COPIED in gen 3 (`data/mods/gen4/
+/// conditions.ts`: `trapped` / `trapper` `noCopy: false`). The silent ends that are NOT turn-bound — Destiny Bond,
+/// Grudge, Rage at the holder's next move attempt, `trapped` when its trapper leaves — live in `PMon::moved` /
+/// `PMon::cant_move` and `BoardReading::release_foe_trap`.
 pub static EFFECTS: &[EffectRow] = &[
     EffectRow { name: "AFTERMATH", ends_on_turn: false, turn_countable: false, action_countable: false, breaks_protect: false, bp_copied: false },
     EffectRow { name: "AFTER_YOU", ends_on_turn: true, turn_countable: false, action_countable: false, breaks_protect: false, bp_copied: false },
@@ -1154,7 +1161,7 @@ pub static EFFECTS: &[EffectRow] = &[
     EffectRow { name: "EMBARGO", ends_on_turn: false, turn_countable: true, action_countable: false, breaks_protect: false, bp_copied: false },
     EffectRow { name: "EMERGENCY_EXIT", ends_on_turn: false, turn_countable: false, action_countable: false, breaks_protect: false, bp_copied: false },
     EffectRow { name: "ENCORE", ends_on_turn: false, turn_countable: true, action_countable: false, breaks_protect: false, bp_copied: false },
-    EffectRow { name: "ENDURE", ends_on_turn: false, turn_countable: false, action_countable: false, breaks_protect: false, bp_copied: false },
+    EffectRow { name: "ENDURE", ends_on_turn: true, turn_countable: false, action_countable: false, breaks_protect: false, bp_copied: false },
     EffectRow { name: "FAIRY_LOCK", ends_on_turn: false, turn_countable: false, action_countable: false, breaks_protect: false, bp_copied: false },
     EffectRow { name: "FALLEN", ends_on_turn: false, turn_countable: false, action_countable: false, breaks_protect: false, bp_copied: false },
     EffectRow { name: "FALLEN1", ends_on_turn: false, turn_countable: false, action_countable: false, breaks_protect: false, bp_copied: false },
@@ -1191,7 +1198,7 @@ pub static EFFECTS: &[EffectRow] = &[
     EffectRow { name: "HEALER", ends_on_turn: false, turn_countable: false, action_countable: false, breaks_protect: false, bp_copied: false },
     EffectRow { name: "HEAL_BELL", ends_on_turn: false, turn_countable: false, action_countable: false, breaks_protect: false, bp_copied: false },
     EffectRow { name: "HEAL_BLOCK", ends_on_turn: false, turn_countable: true, action_countable: false, breaks_protect: false, bp_copied: false },
-    EffectRow { name: "HELPING_HAND", ends_on_turn: false, turn_countable: false, action_countable: false, breaks_protect: false, bp_copied: false },
+    EffectRow { name: "HELPING_HAND", ends_on_turn: true, turn_countable: false, action_countable: false, breaks_protect: false, bp_copied: false },
     EffectRow { name: "HYDRATION", ends_on_turn: false, turn_countable: false, action_countable: false, breaks_protect: false, bp_copied: false },
     EffectRow { name: "HYPERSPACE_FURY", ends_on_turn: false, turn_countable: false, action_countable: false, breaks_protect: true, bp_copied: false },
     EffectRow { name: "HYPERSPACE_HOLE", ends_on_turn: false, turn_countable: false, action_countable: false, breaks_protect: true, bp_copied: false },
@@ -1292,7 +1299,7 @@ pub static EFFECTS: &[EffectRow] = &[
     EffectRow { name: "SLOW_START", ends_on_turn: false, turn_countable: true, action_countable: false, breaks_protect: false, bp_copied: false },
     EffectRow { name: "SMACK_DOWN", ends_on_turn: false, turn_countable: false, action_countable: false, breaks_protect: false, bp_copied: false },
     EffectRow { name: "SNAP_TRAP", ends_on_turn: false, turn_countable: true, action_countable: false, breaks_protect: false, bp_copied: false },
-    EffectRow { name: "SNATCH", ends_on_turn: false, turn_countable: false, action_countable: false, breaks_protect: false, bp_copied: false },
+    EffectRow { name: "SNATCH", ends_on_turn: true, turn_countable: false, action_countable: false, breaks_protect: false, bp_copied: false },
     EffectRow { name: "SPARKLING_ARIA", ends_on_turn: false, turn_countable: false, action_countable: false, breaks_protect: false, bp_copied: false },
     EffectRow { name: "SPEED_SWAP", ends_on_turn: false, turn_countable: false, action_countable: false, breaks_protect: false, bp_copied: false },
     EffectRow { name: "SPIKY_SHIELD", ends_on_turn: true, turn_countable: false, action_countable: false, breaks_protect: false, bp_copied: false },
@@ -1325,7 +1332,7 @@ pub static EFFECTS: &[EffectRow] = &[
     EffectRow { name: "TIDY_UP", ends_on_turn: false, turn_countable: false, action_countable: false, breaks_protect: false, bp_copied: false },
     EffectRow { name: "TORMENT", ends_on_turn: false, turn_countable: false, action_countable: false, breaks_protect: false, bp_copied: false },
     EffectRow { name: "TOXIC_DEBRIS", ends_on_turn: false, turn_countable: false, action_countable: false, breaks_protect: false, bp_copied: false },
-    EffectRow { name: "TRAPPED", ends_on_turn: false, turn_countable: false, action_countable: false, breaks_protect: false, bp_copied: false },
+    EffectRow { name: "TRAPPED", ends_on_turn: false, turn_countable: false, action_countable: false, breaks_protect: false, bp_copied: true },
     EffectRow { name: "TRICK", ends_on_turn: false, turn_countable: false, action_countable: false, breaks_protect: false, bp_copied: false },
     EffectRow { name: "TYPEADD", ends_on_turn: false, turn_countable: false, action_countable: false, breaks_protect: false, bp_copied: false },
     EffectRow { name: "TYPECHANGE", ends_on_turn: false, turn_countable: false, action_countable: false, breaks_protect: false, bp_copied: false },
