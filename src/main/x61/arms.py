@@ -28,10 +28,10 @@ import shlex
 import sys
 from typing import Dict, List, Optional, Sequence, Tuple
 
-#: The pin both arms launch at (tag ``x61-n1-pin-<8>``): the commit that landed the corpus, so the trainer's
-#: ``utils.team_corpora`` at the pin holds ``n1_proc_v1``. ``None`` until that commit exists on origin.
-PIN: Optional[str] = None
-PIN_TAG_PREFIX = "x61-n1-pin-"
+#: The pin both arms launch at (tag ``x61-n1-pin-de269480`` on origin): the commit that landed the corpus, so the
+#: trainer's ``utils.team_corpora`` at the pin holds ``n1_proc_v1``.
+PIN: Optional[str] = "de2694804a67086be56c7ae7d8f827f09ec604fa"
+PIN_TAG = "x61-n1-pin-de269480"
 CORPUS = "n1_proc_v1"
 CORPUS_TIER = "ALL"
 N1_SHARE = "0.7"

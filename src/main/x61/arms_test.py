@@ -104,3 +104,18 @@ def test_the_corpus_check_loads_this_trees_corpus():
 
     ident = A.check_corpus_at(str(repo_root()))
     assert ident["corpus"] == A.CORPUS and ident["n"] >= 10_000
+
+
+def test_the_pin_is_written_tagged_and_carries_the_corpus():
+    import re
+    import subprocess
+
+    from utils.paths import repo_root
+
+    assert re.fullmatch(r"[0-9a-f]{40}", A.PIN) and A.PIN_TAG == "x61-n1-pin-" + A.PIN[:8]
+    git = ["git", "-C", str(repo_root())]
+    if subprocess.run(git + ["cat-file", "-e", A.PIN + "^{commit}"], capture_output=True).returncode != 0:
+        pytest.skip("the pin commit is not in this clone")
+    tree = subprocess.run(git + ["ls-tree", "--name-only", A.PIN, "src/utils/team_corpora/n1_proc_v1/"],
+                          capture_output=True, text=True, check=True).stdout.split()
+    assert {"manifest.json", "teams.jsonl.gz", "soak_selfcheck.json"} <= {t.rsplit("/", 1)[-1] for t in tree}

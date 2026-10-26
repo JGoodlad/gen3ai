@@ -427,8 +427,9 @@ seeds for calibration.
 - **A held-out procedural panel `n1p72`**, drawn first from the same generator; the corpus excludes its neighbours.
 - **The lever:** `--team-mix n1_proc_v1@ALL:0.7 --team-mix-sides both`; the pool keeps a 0.3 share.
 - **The arms (`main.x61.arms`):** `toy_c0f`, a FRESH toy C0 (T-ENT's command at the new pin), and `toy_n1` = that argv
-  + the lever; one seed each (s6101), 100M steps, one pin (`x61-n1-pin-*`). X35's toy C0 is not a valid control (a
-  fork at `4609c155` with fp64 τ).
+  plus the lever; one seed each (s6101), 100M steps, one pin (`de269480`, tag `x61-n1-pin-de269480`; `checkargs` exit 0
+  and `--dry-run` would launch but for the hidden GPU, both arms). X35's toy C0 is not a valid control (a fork at
+  `4609c155` with fp64 τ).
 - **The read:** the primary is **U_HF** (H and F, the human-built unfamiliar panels) against Kakuna, 600 games per
   panel per final, Newcombe widened for seed spread by a declared floor; P72 is NOT in the primary because it is a
   sibling generator's sample over the same Smogon tables (the corpus trains on its population). GO (Δ̂ ≥ +4, LB > 0)

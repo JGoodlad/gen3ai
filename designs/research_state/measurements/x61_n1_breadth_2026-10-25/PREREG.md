@@ -72,22 +72,28 @@ random-battle bots: a fresh team every game), and Procgen's held-out gap closes 
   `main.x61.arms_test` pins the derivation and that the two arms differ by the lever alone.
 - **Not the old toy C0.** X35's toy C0 (`rb_x35t_c0_*`, forks of T\* at `4609c155`, fp64 τ) is a different pin, a
   fork and another step range; it is NOT this control. Both arms here are fresh at ONE pin.
-- **The pin:** `main.x61.arms.PIN` (tag `x61-n1-pin-<8>` on origin) = the commit that landed the corpus, so the
-  trainer's `utils.team_corpora` at the pin holds `n1_proc_v1`. It carries the pinned-data root
-  (`gen3_pinned_data_root_v1`).
+- **The pin: `de2694804a67086be56c7ae7d8f827f09ec604fa`** (`main.x61.arms.PIN`; annotated tag `x61-n1-pin-de269480`
+  on origin) = the commit that landed the corpus, so the trainer's `utils.team_corpora` at the pin holds
+  `n1_proc_v1`. It carries the pinned-data root (`gen3_pinned_data_root_v1`). Pin check (a detached worktree of the
+  pin, `python -m main.x61.arms check --tree`): `n1_proc_v1` ALL, n = 12,000, data sha256 `99e3425a…0bad6`, tier
+  sha256 `d59f44f0…5314f`, manifest sha256 `4db822ba…e067`.
 - **Steps:** `--steps 100000000` each, `--restart-interval-hours 6`, checkpoints every 1M. The read uses each run's
   first checkpoint at ≥ 100,000,000 steps (the final).
 - **Paired dice:** the same seed per pair. Look 2 adds seed 6102 to BOTH arms.
 - **N4 (a wider network from step 0) is NOT an arm** (FINDING 1).
-- **The validation transcripts** (CPU, `CUDA_VISIBLE_DEVICES=""`): `argv_<arm>_s6101.txt`, `checkargs_<arm>_s6101.txt`
-  (exit 0, the pinned parser), `dryrun_<arm>_s6101.txt` ("would launch" except the CUDA-visibility preflight, which
-  refuses because this unit hides the GPU by rule 5).
+- **The validation transcripts at the pin** (CPU, `CUDA_VISIBLE_DEVICES=""`, run from a checkout AT the pin, so
+  `checkargs` reads the pin's own parser): `argv_<arm>_s6101.txt`; `checkargs_<arm>_s6101.txt`: **exit 0** for both
+  arms (46 / 50 flags, 0 unrecognized, 2 launcher-owned; K9(b) `warn`, typed); `dryrun_<arm>_s6101.txt`: role FRESH,
+  pin `de269480` (source `pin_commit`), `--steps 100,000,000` from 0, desktop-GPU / disk (20.35 GiB required, 380 free)
+  / Showdown deps ✓, refused ONLY by the CUDA-visibility preflight, because this unit hides the GPU (rule 5): exit 3,
+  as D3's. The two argvs differ by `--team-mix n1_proc_v1@ALL:0.7 --team-mix-sides both` and the run name alone.
 
 ## 3. Pre-launch checks (a failure is a HOLD, never a launch)
 
 1. This PREREG has passed an adversarial review (the orchestrator dispatches it).
-2. The tag `x61-n1-pin-<8>` is on origin and equals `main.x61.arms.PIN`; `python -m main.x61.arms check --tree <a
-   detached worktree of the pin>` prints `n1_proc_v1` ALL, n = 12,000, data sha256 `99e3425a…`.
+2. The tag `x61-n1-pin-de269480` is on origin and dereferences to `main.x61.arms.PIN`; `python -m main.x61.arms check
+   --tree <a detached worktree of the pin>` prints `n1_proc_v1` ALL, n = 12,000, data sha256 `99e3425a…`: DONE
+   2026-10-25 (§2); re-run at launch.
 3. `checkargs` exit 0 and `launcher --dry-run` "would launch" for both arms, re-run with the GPU visible at launch.
 4. The committed `soak_selfcheck.json` reads PASS for this corpus's data sha256 (10 rounds, in two 5-round chunks):
    DONE 2026-10-25 (§1).

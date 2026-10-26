@@ -1,0 +1,94 @@
+
+── launcher --dry-run — resolving only, nothing will be created ────────────
+  role        : FRESH
+  run dir     : /home/goodlad/dev/gen3ai/models/rb_x61t_n1_s6101   [would be created]
+  on restart  : RESUME role — drops FRESH-only --arch (inherited from model_config.json); --model → the run's latest checkpoint
+  pin         : de2694804a67086be56c7ae7d8f827f09ec604fa  (source: pin_commit)
+                ↳ feat(team corpora): n1_proc_v1, X61 / N1's procedural corpus (12,000 whole teams from Smogon usage only), its held-out procedural panel n1p72, the fresh toy arms main.x61.arms and the PREREG, before any launch
+                (a real launch would create an isolated worktree at this commit — the dry run does not)
+  steps       : --steps 100,000,000 (fresh run, from 0)
+  interpreter : /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3  (torch 2.8.0+cu126) — FRESH launch; this torch is recorded at the run's first save
+  transport   : in-process bridge [rust] (no Showdown server)
+  restarts    : every 6.0h, grace 20.0 min, max 3 crash restart(s), nice 10
+  gpu window  : off (--gpu-window enables; designs/launcher/gpu_window.md)
+  effective   : the argv IS the config (no --model, nothing to inherit)
+      --grad-accum-steps     32           (default - neither typed nor inherited)
+      --fork-lr              None         (default - neither typed nor inherited)
+      --fork-lr-freeze       False        (default - neither typed nor inherited)
+      --checkpoint-every-steps 1000000      (TYPED - from the argv)
+      --eval-freq            None         (default - neither typed nor inherited)
+      --eval-games           None         (default - neither typed nor inherited)
+      --seed                 6101         (TYPED - from the argv)
+  env core    : rust  [the only core]
+  K9(b) check : warn  (typed)  ⚠️  NOT fatal: a behaviour-policy mismatch is logged, not fatal
+  (child-only: a declared growth's fork-time gate (--grow: the grown network's logits + values bit-identical to the parent's on real rows) and the seeded pool's growth)
+  (child-only: the ModelVersion round-trip smoke test)
+  (child-only: the resolved --compile-trainer / --compile-opponents decisions (they read the device))
+  (child-only: self-play pool SEEDING from a fork parent (agents.training.pool_seed runs in the child))
+  (child-only: the observation dimension and arch signature)
+  arch        : --arch production — 40 ARCH-surface key(s) applied from designs/production_config.json for every flag this argv leaves unset
+  ARCH SURFACE vs designs/production_config.json  [production_config@45933ed5b8fb]
+    --arch production applied the production surface (explicit flags still win)
+    ⚠️  NOT applied — by neither the ARCH surface nor the RECIPE surface (the RECIPE block below applies the critic mode and the supervision doses). These critic READOUTS are implied by the win-prob critic or sit at their defaults; type them yourself if you want them pinned:
+        --win-prob-mode 'shaping'  --belief-grad-mode 'shaping'  --ridealong-ensemble 0  --ridealong-rnd False  --ridealong-adv 0  --ridealong-opp 0  --ridealong-rnd-variants 'off'
+    27 of 40 ARCH-surface key(s) differ from production (40 of 49 registry toggles are the ARCH surface; 6 critic readouts + 3 non-structural rows are excluded by their own declaration):
+        opp_belief_cls_k             0              (this argv, argv)   production: 6
+        opp_belief_slots             False          (this argv, argv)   production: True
+        move_belief_mode             'off'          (this argv, argv)   production: 'both'
+        damage_op                    False          (this argv, argv)   production: True
+        move_prior_fusion            False          (this argv, argv)   production: True
+        damage_outgoing              False          (this argv, argv)   production: True
+        move_latent                  False          (this argv, argv)   production: True
+        spread_belief                False          (this argv, argv)   production: True
+        damage_topk_k                0              (this argv, argv)   production: 6
+        damage_matrices_outgoing     False          (this argv, argv)   production: True
+        damage_matrices_incoming     False          (this argv, argv)   production: True
+        spread_belief_nature         False          (this argv, argv)   production: True
+        entity_topk_seats            0              (this argv, argv)   production: 6
+        edge_bias_families           'off'          (this argv, argv)   production: 'd1,d2,d3,d4,s1,s3,v,t,x,g,c4,c1,c3,c2,c5,h,r'
+        entity_tail_seats            False          (this argv, argv)   production: True
+        opp_intent                   False          (this argv, argv)   production: True
+        species_prior_fusion         False          (this argv, argv)   production: True
+        t0_species_prior             False          (this argv, argv)   production: True
+        value_entity_pool_full       False          (this argv, argv)   production: True
+        history_events               False          (this argv, argv)   production: True
+        value_entity_pool            False          (this argv, argv)   production: True
+        item_belief                  False          (this argv, argv)   production: True
+        op_drop_renders              False          (this argv, argv)   production: True
+        op_believed_lean             False          (this argv, argv)   production: True
+        mon_hazard_cost              'off'          (this argv, argv)   production: 'on'
+        trunk_layers                 2              (this argv, argv)   production: 3
+        move_set_closure             'off'          (this argv, argv)   production: 'on'
+    ℹ️  --allow-nonproduction-arch — the drift above is an EXPLICIT choice and is recorded in model_config.json's arch_source.
+  RECIPE SURFACE vs designs/production_config.json recipe.fresh  [production_config@45933ed5b8fb]
+    --arch production applied recipe.fresh + recipe.sizing (every knob this argv did not type; explicit flags still win)
+    sizing      : N 256, n_steps max 384 — verdict SIZING 2026-10-02 (program_rust_core.md Decision record): N* = 256, Part L guard NO LOSS DETECTED (n = 1 flagged), fits at steady state on 07eebe13; recipe.fresh n_epochs stays 10
+    trunk       : bf16 — the learner's trunk rounds run under bf16 autocast in R1 (T2 / eval / the K9(b) probe stay fp32); `--trunk-precision fp32` is the explicit opt-out
+    7 of 31 RECIPE knob(s) differ from recipe.fresh:
+        opp_belief_aux_coef      0.0        (TYPED)   production: 0.05
+        opp_intent_coef          0.0        (TYPED)   production: 0.05
+        move_belief_coef         0.0        (TYPED)   production: 0.05
+        move_belief_latent_coef  0.0        (TYPED)   production: 0.05
+        spread_belief_coef       0.0        (TYPED)   production: 0.05
+        hp_type_belief_coef      0.0        (TYPED)   production: 0.05
+        item_belief_coef         0.0        (TYPED)   production: 0.05
+    ℹ️  every differing knob was TYPED — a deliberate deviation, recorded in metadata.json's cli_args.
+  desktop GPU : ✓ no display process (gnome-shell / Xorg / Xwayland / …) holds the GPU
+  disk space  : ✓ 380.43 GiB free on /home/goodlad/dev/gen3ai/models vs 20.35 GiB REQUIRED (checkpoint archive run rb_x35_d3mut_s3501 (same ARCH_SIGNATURE) checkpoint_300000193_steps.zip)
+                the arithmetic:
+          periodic checkpoints      5.34 GiB   = 100 x 54.7 MiB  (steps 100,000,000 // 1,000,000 - resume 0 // 1,000,000)
+          final/best/aborted       164.2 MiB   = 3 x 54.7 MiB
+          eval traces               3.52 GiB   = 50 cycles x 72.0 MiB  (ceil(100,000,000 / 2,000,000))
+          pool snapshots            1.07 GiB   = 20 x 54.7 MiB  (cap 20)
+          compile cache             2.39 GiB   = 2.39 GiB - 0.0 MiB already on disk
+          shared compile cache       0.0 MiB   = cap 20.00 GiB - 21.71 GiB in use at /home/goodlad/.cache/gen3ai/compile_shared (this filesystem: counted)
+          sidecar + tb + logs      600.0 MiB   = 100.0M steps x 6.0 MiB/M
+          fixed                     16.0 MiB   = metadata, ledgers, sidecar json
+          subtotal                 13.08 GiB
+          + margin 25%              3.27 GiB
+          + reserve left free       4.00 GiB   (the 2026-10-09 near-miss had 2.2 GB free at 100 %)
+          = REQUIRED               20.35 GiB
+  showdown deps : ✓ /home/goodlad/dev/gen3ai/.claude/worktrees/n1-proc/deps/pokemon-showdown serves team validation (13 required files present, node /usr/bin/node)
+  cuda devices : ✗ REFUSED (FATAL_CONFIG): CUDA_VISIBLE_DEVICES='' is set in the environment this launch hands the child, and it hides every GPU, but the launch is --device cuda: the child would die at startup with "No CUDA GPUs are available". Fix: `unset CUDA_VISIBLE_DEVICES` (or set the device index to use) before launching, or launch with --device cpu
+  ✗ DRY RUN — this command would NOT launch. Nothing was created or modified.
+exit 3
