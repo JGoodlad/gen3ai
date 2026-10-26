@@ -257,3 +257,25 @@ every game on the CPU afterwards.
 6. **The trainer's CUDA path is untested** (no lease in this unit); the CPU path is tested end to end (train, export,
    reload, the anchors `bare` load). The first GPU student's first chunk is the CUDA smoke.
 7. Experiment id X59-S is named in the plan and here only, not in `EXPERIMENT_BACKLOG.md`.
+
+---
+
+## Amendment 1 (2026-10-25, before any student trained): the inputs are registered
+
+The S-P labels and the S-S rows were generated on the CPU and registered in
+[`results/registration.json`](results/registration.json) (`checks register`: PASS, no problems):
+
+| input | manifest sha256 | rows | made by |
+|---|---|---:|---|
+| `hr_spec_v1.r1` | `e9e0df4224b589798dc507d005c60bcaa8ede9744e1e7403901664899e8fe492` | 1,330,809 / 32,102 | `5cbf46dc` lineage (`source_sha256` `40f8a5d2…`) |
+| S-P labels | `d768020976d6b92e159b7208e522666cf1bf54c5eb0ea6ff1a3335f679bc3ab2` | 1,362,911 (every row) | the pinned `5cbf46dc` |
+| S-S rows | `0ddb9f62c3c0123b8f771faa9d93f3361d40a27a98972e6e1a48a23b91015674` | 1,330,809 / 32,102, the rowset's 82 shard sizes | parts 0–7 at `5cbf46dc`; the validation top-up part 8 and the merge at `14f324c9` |
+
+- **What the labels show:** P\* puts 19.7 % of its mass outside the consistent set (the restriction removes that);
+  its sample equals the human's action on 44.8 % of labelled rows; its top-1 agrees on 36.0 %; its NLL of the human's
+  label is 1.871 nats (actor ≥ 1300).
+- **One change to §2.3, forced by the data, not by any outcome:** the human rowset's account split put 2.36 % of
+  rows in VALIDATION, a game split about 2 %, so eight parts held only 26,754 of the 32,102 validation rows. The merge
+  now plays seeded TOP-UP parts (seed `[5900, i ≥ 8, ·]`) until the validation rows suffice; one part (8; 401,101
+  rows, 4,688 games) did. The train shards fill from parts 0–7 alone, as registered. Two fixes made the merge do
+  this within its memory cap (`df756e6a`, `14f324c9`). No student had trained; no game was played.

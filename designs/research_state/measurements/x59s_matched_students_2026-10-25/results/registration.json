@@ -1,0 +1,16 @@
+{
+ "rowset": "hr_spec_v1.r1",
+ "rows_manifest_sha256": "e9e0df4224b589798dc507d005c60bcaa8ede9744e1e7403901664899e8fe492",
+ "train_rows": 1330809,
+ "val_rows": 32102,
+ "train_hidden": 108573,
+ "labels_manifest_sha256": "d768020976d6b92e159b7208e522666cf1bf54c5eb0ea6ff1a3335f679bc3ab2",
+ "pstar_sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed",
+ "selfplay_manifest_sha256": "0ddb9f62c3c0123b8f771faa9d93f3361d40a27a98972e6e1a48a23b91015674",
+ "selfplay_rows": [
+  1330809,
+  32102
+ ],
+ "problems": [],
+ "pass": true
+}
