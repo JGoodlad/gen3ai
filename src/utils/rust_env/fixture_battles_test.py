@@ -72,3 +72,14 @@ def test_self_play_answers_both_sides_with_the_policy(lib):
     assert max(seen) >= 2, "p2's decisions never reached the policy (both sides open at once)"
     with pytest.raises(ValueError, match="self_play needs a policy"):
         play_rows(1, seed=3, self_play=True, lib=lib)
+
+
+@pytest.mark.slow  # four short games on one env
+def test_every_episode_gets_its_own_teams_and_seed(lib):
+    """The core reads the staged teams / seed at every AUTO-RESET: an env must be re-staged after each finished
+    episode, or every episode after its second replays the second's teams and seed, and a DETERMINISTIC policy
+    (here the lowest legal action, against the episode-seeded bot) repeats that game exactly."""
+    from utils.rust_env.fixture_battles import play_rows
+
+    games = play_rows(4, seed=21, n_envs=1, policy=lambda obs, mask: mask.argmax(axis=1), lib=lib)
+    assert len(games) == 4 and len({g[0].tobytes() for g in games}) == 4, "two episodes replayed one game"

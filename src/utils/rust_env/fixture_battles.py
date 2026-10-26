@@ -5,8 +5,9 @@ to take its battle from): the SAME battles every run, on the observation path tr
 declared, never assumed — fixed teams (the pool's first ``n_teams`` packed teams, drawn by a seeded generator), a
 fixed battle seed per episode (four 16-bit words from the same generator), a seeded uniform-over-the-mask policy for
 p1, a Rust BOT on p2 with ``"streams": "episode"`` (its draws a function of the game alone), ONE thread and the
-envs stepped in index order. Two calls with the same arguments return byte-identical rows (pinned by
-``fixture_battles_test.py``).
+envs stepped in index order. Every episode gets its OWN staged teams and seed (re-staged one episode ahead after each
+auto-reset, the column contract), so even a deterministic policy plays distinct games. Two calls with the same
+arguments return byte-identical rows (pinned by ``fixture_battles_test.py``).
 
 :func:`play_rows` returns p1's decision rows and masks (what ``agents.model.compile_parity_fixture`` takes its rows
 from). The core is the cdylib :func:`utils.rust_env.build.ensure_built` builds for ``profile``.
@@ -98,7 +99,13 @@ def play_rows(n_battles: int, *, seed: int, n_teams: Optional[int] = 12, turn_li
                         buf[e].append((obs[k], mask[k]))
                     c["action"][e, s] = int(acts[k])
             core.step()
-            for f in core.finished():
+            done = core.finished()
+            # the column contract (`columns.py` ep_team / ep_seed): the core reads the staged teams and seed at
+            # every AUTO-RESET, so an env that just ended (and restarted from the staged pair) gets the NEXT one
+            # staged now. Staging only at reset replayed each env's second pair forever after (a deterministic
+            # policy then repeated its games).
+            stage(f["env"] for f in done)
+            for f in done:
                 e = f["env"]
                 rows, buf[e] = buf[e], []
                 if len(out) < n_battles and rows:
