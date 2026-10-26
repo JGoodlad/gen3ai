@@ -7,12 +7,12 @@ the GATE is `node src/rust_sim/harness/dump_gen3_handlers.js --audit` (wired int
 handler, a STALE manifest row, a body-FINGERPRINT drift, a dead `implemented` anchor.
 
 Surface: 77 abilities (MODELED ∪ NOOP), 67 items,
-59 conditions (engine state space + attached), 308 modeled moves
-→ **1102 (effect, hook) rows**.
+59 conditions (engine state space + attached), 309 modeled moves
+→ **1105 (effect, hook) rows**.
 
 | disposition | rows |
 |---|---|
-| implemented | 1049 |
+| implemented | 1052 |
 | noop_justified | 36 |
 | unreachable_justified | 17 |
 
@@ -620,7 +620,7 @@ Surface: 77 abilities (MODELED ∪ NOOP), 67 items,
 | yawn | onResidualSubOrder | implemented | `turn.rs::run_residuals` |
 | yawn | onStart | implemented | `turn.rs::run_status_move` |
 
-## move (513 rows: implemented=509, noop_justified=2, unreachable_justified=2)
+## move (516 rows: implemented=512, noop_justified=2, unreachable_justified=2)
 
 | effect | hook | disposition | anchor / reason |
 |---|---|---|---|
@@ -644,6 +644,9 @@ Surface: 77 abilities (MODELED ∪ NOOP), 67 items,
 | aromatherapy | neverMiss | implemented | `turn.rs::never_miss` |
 | aromatherapy | onHit | implemented | `turn.rs::run_status_move` |
 | astonish | secondaries | implemented | `turn.rs::apply_secondaries` |
+| attract | ignoreImmunity | implemented | `status_moves.rs::attract` |
+| attract | onTryImmunity | implemented | `status_moves.rs::attract` |
+| attract | volatileStatus | implemented | `status_moves.rs::attract` |
 | aurorabeam | secondaries | implemented | `turn.rs::apply_secondaries` |
 | barrage | multihit | implemented | `turn.rs::run_multihit` |
 | barrier | boosts | implemented | `turn.rs::self_boost_spec` |

@@ -6,8 +6,8 @@
    "abilities": 77,
    "items": 67,
    "conditions": 59,
-   "moves": 308,
-   "rows": 1102
+   "moves": 309,
+   "rows": 1105
   },
   "excluded_deferred": {
    "forecast": "Castform forme+TYPE change under weather — deferred (probe_forecast_rng.js settled the map; the reporting surface is unprobed); the port FAIL-LOUDs in state::MonState::from_set (GIGO guard: an unmodeled ability would silently no-op then desync under weather); NOT in MODELED/NOOP + REJECT_ABILITIES/REJECT_SPECIES so the e2e filter + randbats adapter exclude its teams",
@@ -3622,6 +3622,24 @@
    "fp": "val:[{\"chance\":30,\"volatileStatus\":\"flinch\"}]",
    "anchor": "turn.rs::apply_secondaries",
    "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:attract:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "status_moves.rs::attract",
+   "reason": "gen3_attract_move_v1: the move arm — onTryImmunity (M<->F only) as the natural immunity, the accuracy draw regardless, Protect first, then the attract volatile add ([still] -fail on already-attracted / Oblivious); ignoreImmunity: a Status move skips the type chart"
+  },
+  "move:attract:onTryImmunity": {
+   "disposition": "implemented",
+   "fp": "fn:f920a515:onTryImmunity(target, source) { return target.gender === \"M\" && source.gender === \"F\" || target.gender === \"F\" && source",
+   "anchor": "status_moves.rs::attract",
+   "reason": "gen3_attract_move_v1: the move arm — onTryImmunity (M<->F only) as the natural immunity, the accuracy draw regardless, Protect first, then the attract volatile add ([still] -fail on already-attracted / Oblivious); ignoreImmunity: a Status move skips the type chart"
+  },
+  "move:attract:volatileStatus": {
+   "disposition": "implemented",
+   "fp": "val:\"attract\"",
+   "anchor": "status_moves.rs::attract",
+   "reason": "gen3_attract_move_v1: the move arm — onTryImmunity (M<->F only) as the natural immunity, the accuracy draw regardless, Protect first, then the attract volatile add ([still] -fail on already-attracted / Oblivious); ignoreImmunity: a Status move skips the type chart"
   },
   "move:aurorabeam:secondaries": {
    "disposition": "implemented",

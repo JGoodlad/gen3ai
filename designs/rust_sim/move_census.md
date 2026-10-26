@@ -55,11 +55,10 @@ already-confused target the +2 Atk still lands and there is NO `-fail`; at the +
 a positive foe-directed `targetBoosts` field in `gen3_moves.json` (`statDropBoosts` is
 negative-only). ROUND 57 in the build log has the measurement.
 
-🚨 **ATTRACT (338 learners — the largest single-move gap) IS BLOCKED BY A CONSTRUCTION DRAW, not by
-Attract.** Its spec is settled and committed (`harness/probe_attract_move.js`), but
-`MonState::from_set` stores only the PACKED gender, while the sim's ctor is
-`set.gender || species.gender || sample(['M','F'])` — and that sample is a construction-time draw
-the `start_with_switchins` path does not model. A `None` gender PANICS at the attract compare, which
-is harmless today only because Cute Charm is on 0 pool teams. Admitting the MOVE would fail-loud
-across every corpus. The prerequisite round is the construction gender, and modelling that sample
-adds draws and moves **every committed golden's seed**. ROUND 59b has the full finding.
+🚨 **ATTRACT is MODELED since gen3 full parity B9 (`gen3_attract_move_v1`), and its old blocker is a
+harness rule now.** The sim samples an unspecified gender at construction (`sample(['M','F'])`): the
+raw-seed bridge path draws it (`run_turn0_construction`), but the post-construction-seed path every
+golden, probe and fuzzer uses (`start_with_switchins`) cannot know it, so Attract and Cute Charm PANIC on
+an unspecified gender. Every harness pins genders (`scan_move_probe` M into F, `ab_fuzz.js` random mode
+draws an explicit one per set, the byte paths `pinGenders`). Spec `harness/probe_attract_move.js`;
+gates `tests/attract_move_test.rs`, `tests/attract_move_golden_test.rs`.

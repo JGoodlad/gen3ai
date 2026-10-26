@@ -555,6 +555,19 @@ impl crate::state::BattleState {
         self.log.gen(self.gen);
         self.log.tier("[Gen 3] Custom Game");
         self.log.rule("HP Percentage Mod: HP is shown in percentages");
+        // The EV-BALANCE warning (`gen3_ev_balance_bigerror_v1`): a `debug` format (Custom Game)
+        // runs `checkEVBalance()` at the end of `Battle.start()`'s rule `onBegin`s
+        // (`sim/battle.ts` start / checkEVBalance): when exactly one side holds a mon whose EVs
+        // sum past 510, `|bigerror|Warning: One player isn't adhering to a 510 EV limit, and
+        // the other player is.` Protocol only, draw-free. Found by the B9 golden's 677-EV boards.
+        if self.rules.exact_hp {
+            let unlimited = |side: usize| {
+                self.sides[side].pokemon.iter().any(|m| m.set.evs.iter().map(|&e| e as u32).sum::<u32>() > 510)
+            };
+            if unlimited(0) != unlimited(1) {
+                self.log.bigerror("Warning: One player isn't adhering to a 510 EV limit, and the other player is.");
+            }
+        }
         self.log.separator();
         self.log.timestamp();
         self.log.teamsize(0, self.sides[0].pokemon.len());

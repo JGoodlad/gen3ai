@@ -16,7 +16,8 @@ running; every future mechanic layer becomes automatically stress-tested.
   random-battle generator, with sets adapted at the SET level to be port-replayable (adjustment rate
   logged per chunk); **`random`** — the MODELED-UNIVERSE generator, the coverage multiplier that
   flushes out modeled-predicate ↔ engine drift (195 species / 146 distinct moves on its first smoke,
-  vs the pool's 21 / 37); **`pool`** — the filter-clean `data/teams/` teams with fresh seeds/choices.
+  vs the pool's 21 / 37), with an explicit gender per set so the state path can replay Attract / Cute
+  Charm (`gen3_attract_move_v1`); **`pool`** — the filter-clean `data/teams/` teams with fresh seeds/choices.
   Flags: `--battles N` / `--hours H`, `--master-seed S` (defaults from time, **ALWAYS printed** ⇒
   reproducible), `--chunk N`, `--out DIR`, `--keep-chunks`.
 - **The verdict taxonomy** `ab_replay` emits per battle, in precedence order:

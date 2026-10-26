@@ -50,6 +50,8 @@ const MODELED_STATUS = new Set([
   'thunderwave', 'stunspore', 'glare', 'toxic', 'poisonpowder', 'poisongas',
   'willowisp', 'spore', 'sleeppowder', 'hypnosis', 'sing', 'lovelykiss', 'grasswhistle',
   'confuseray', 'supersonic', 'sweetkiss', 'teeterdance',
+  // ATTRACT (`gen3_attract_move_v1`, gen3 full parity B9): its own arm in `status_moves.rs`.
+  'attract',
 ]);
 // Self-boost SETUP moves — DATA-DRIVEN from gen3_moves.json `selfBoosts` (== engine's
 // `self_boost_spec`, which reads `MoveData::self_boosts`).

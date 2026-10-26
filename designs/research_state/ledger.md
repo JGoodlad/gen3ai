@@ -28948,3 +28948,36 @@ Veil Dugtrio; seed, bytes, framing and `maybeTrapped` all match). A/B fuzz, the 
 formats so every divergence is the format's: `--mode pool --protocol --format gen3ubers` 119 ok + 1 allowlisted
 (the turn-0 mirror tie), `gen3uu` 120 / 120 ok, the `gen3ou` control 149 ok + 1 allowlisted; the bridge fuzz
 `pool gen3ubers`, `trapping gen3uu`, `trapping gen3ou` 300 / 300 clean.
+
+## 2026-10-26 · RUST SIM · gen3 full parity B2 + B3 + B9: the recharge trio, the last four items, and Attract (moves 321 → 325 of 369, items 102 → 106 of 106)
+
+**B2, the recharge family** (`gen3_recharge_family_v1`). Blast Burn, Frenzy Plant and Hydro Cannon resolve in gen 3 to
+Hyper Beam's exact shape (150 BP, 90 accuracy, `self.volatileStatus: 'mustrecharge'`, no handler of their own); the
+engine applied the lock to `hyperbeam` alone and fail-louded the three. `turn/moves.rs::RECHARGE_MOVES` (checked
+against the resolved dex by node, `tests/recharge_family_test.rs` RF1) widens the one site. Golden 216 rows (Hyper
+Beam the control on every board: cycles with accuracy misses, Protect, Substitute, a KO holding the lock across the
+forced switch, Flash Fire / Water Absorb / Ghost, a paralysed recharge turn, Truant). Blast Burn was the largest gap:
+0.28 % of fielded mons as a mean over the gen-3 tiers, 2.7 % in 1v1.
+
+**B3, the last four items** (`gen3_items_b3_v1`, spec `harness/probe_items_b3.js`). SHELL BELL heals
+`max(1, floor(totalDamage / 8))` at the end of each `useMove`, after recoil and before the action's faints;
+`totalDamage` is the HP taken off the MON (a multi-hit sums its strikes, Beat Up too, a Substitute strike adds 0
+because gen-3 `moveHit` returns `undefined` for HIT_SUBSTITUTE), `[of]` the target; a Sleep Talk's called move and a
+Pursuit on a switch each heal off their own `useMove`. MACHO BRACE ×0.5 joins the ModifySpe chain, and the draw-free
+turn-0 lead order now reads it too (a raw-faster Drought lead halved below a Drizzle lead fires last, so its sun
+stands). MAIL makes Trick fail either way; Knock Off / Thief / Covet still take it. MENTAL HERB cures attraction at
+the Update after it lands. The construction guard keeps only `berryjuice` (gen-3 `Unobtainable`). Golden 168 rows.
+
+**B9, Attract** (`gen3_attract_move_v1`, spec `harness/probe_attract_move.js`). The move's `onTryImmunity` (an M<->F
+pair) is the natural immunity, the accuracy roll is drawn anyway (a miss on an immune target shows `-immune`),
+Protect shows first, Oblivious and an already-attracted target fail `[still]` + `-fail`, a Substitute and Safeguard
+do not block it, success is a bare `-start`. Its 09-08 blocker, the construction-time gender sample, is resolved by
+design: the raw-seed bridge path already draws it; the post-construction path every harness uses cannot know a
+sampled gender, so an unspecified one panics and every harness pins genders (`scan_move_probe`, `ab_fuzz.js` random
+mode). Golden 112 rows. The golden's 677-EV Protect boards also found that the port never emitted Custom Game's
+`|bigerror|Warning: One player isn't adhering to a 510 EV limit, and the other player is.` (`checkEVBalance` in a
+`debug` format, after the rules); fixed and pinned (`tests/ev_balance_test.rs`).
+
+**Gates.** All three goldens match seed, framing and bytes; every revert mutation fails its pins (B2 1/1, B3 6/6, B9
+4/4). No OU behaviour changed: none of the ids is on an e2e capstone team, the capstone regenerates byte for byte, and
+the obs golden reproduces. Fuzz and gate results are in the commit bodies.

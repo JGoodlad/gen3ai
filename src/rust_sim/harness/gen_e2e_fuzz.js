@@ -206,6 +206,9 @@ const MODELED_STATUS_MOVES = new Set([
   // whose half succeeds independently of the confusion half, so they are a different move shape
   // and still fail loud.
   'confuseray', 'supersonic', 'sweetkiss', 'teeterdance',
+  // ATTRACT (`gen3_attract_move_v1`, gen3 full parity B9): its own arm. A team that can reach it
+  // needs explicit genders on the post-construction-seed path (the generators pin them).
+  'attract',
   'thunderwave', 'stunspore', 'glare',
   'poisonpowder', 'poisongas',
   'toxic',

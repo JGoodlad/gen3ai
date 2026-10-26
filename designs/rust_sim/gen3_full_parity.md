@@ -31,20 +31,21 @@ cd harness && SCAN_UNIVERSE=1 node scan_move_coverage.js            # the 0-MISM
 `scan_move_probe` is the engine running, so its count cannot drift; the JS scan's universe verdict is a
 hand-mirrored copy of `turn.rs` and keeps only the invariant gate (`move_census.md`).
 
-## Summary (recounted 2026-10-26 at `a1370436`)
+## Summary (recounted 2026-10-26 after B9)
 
 | universe | gen3 ids | engine runs it | fails loud | how |
 |---|---:|---:|---:|---|
-| moves | 369 | **321** | **48** | `PROBE_KIND=move`; JS gate: 321 / 48 / **0 MISMODELED** |
-| items | 106 | **102** | **4** | `PROBE_KIND=item` (`shellbell` `machobrace` `mentalherb` `mail`) |
+| moves | 369 | **325** | **44** | `PROBE_KIND=move`; JS gate: 325 / 44 / **0 MISMODELED** |
+| items | 106 | **106** | 0 | `PROBE_KIND=item` (B3 closed the last four) |
 | abilities | 76 | **76** | 0 | `PROBE_KIND=ability`; the handler audit dispositions every hook |
 | species | 392 | **392** | 0 | `PROBE_KIND=species` |
 | gen3-mod singles formats | 13 | **12** exact | **1** refused (`gen31v1`) | the format table below (B1) |
 | engine mechanics | — | — | — | the mechanics table below |
 
 The item universe was cross-checked against the resolved handlers: every gen3 item outside the modeled
-set either has no battle handler (the fossils, evolution items, balls, the Pokéblock and EV berries, whose
-`onEat` is never triggered in gen 3) or is one of the four fail-loud items.
+set has no battle handler (the fossils, evolution items, balls, the Pokéblock and EV berries, whose
+`onEat` is never triggered in gen 3); `berryjuice`, the one handler-bearing item still refused, is gen-3
+`Unobtainable`, outside the universe.
 
 ## Formats: the gen3-mod singles formats Showdown defines
 
@@ -89,7 +90,7 @@ mod) are other mods with their own data. Every one of them is an `Err` at constr
 | M3 | levels | 1–100 exact; 0 reads as 100 as in Showdown; above 100 (`gen3customgame` allows 9999) **refused** (B1) | before B1 a level ≥ 256 silently became 100 | B1 |
 | M4 | team size > 6, more than 4 moves (`gen3customgame`: up to 24 each) | more than 6 mons **refused** (B1, ungated); up to 24 moves run (a 6-move set is pinned, `regression_test.rs` WB1), a 25th refused | — | B1 |
 | M5 | Team Preview + picked team size (`gen31v1`) | not modeled, **refused** (B1) | — | a construction-phase extension, not scheduled |
-| M6 | the construction-time gender draw (`sample(['M','F'])`) on the `start_with_switchins` path | not modeled (modeled on the bridge's turn-0 path) | Cute Charm against an unspecified gender PANICS (fail-loud); blocks Attract | B9 |
+| M6 | the construction-time gender draw (`sample(['M','F'])`) | drawn on the raw-seed bridge path (`run_turn0_construction`); the post-construction-seed path (`start_with_switchins`, the goldens and fuzzers) cannot know a sampled gender, so Attract and Cute Charm PANIC on an unspecified one (fail-loud) and every harness pins genders | — | B9: resolved by design |
 | M7 | Endless Battle Clause staleness (Skill Swap's external `volatileStaleness`, restorative-berry cycling through Trick / Recycle) | **not modeled, silent** | the clause can never end a battle in the port; reaching it needs both actives stale past turn 100. Affects `gen3ou` too (rare) | B10 |
 
 ## Implemented, and known to diverge
@@ -100,6 +101,8 @@ surface:
 | what | evidence | batch |
 |---|---|---|
 | Rest under a live Uproar succeeds in the port and fails in Showdown | TECH_DEBT (c) P3 row; `gen_sim_bridge_diff.js --mode lockin`, seed 303 battle 15 | B5 |
+| Custom Game's EV-balance `\|bigerror\|` (one side over 510 EVs) was not emitted | the B9 golden's 677-EV boards; `tests/ev_balance_test.rs` | fixed in B9 |
+| Rage prints `-boost` before `-damage`; Fury Cutter after a missed use; Uproar's wake prints its cure after the damage; Smelling Salts cures a fainted target; False Swipe at 1 HP drops its `-damage` line; an Insomnia / Vital Spirit Rest may draw the gen3ou clause shuffle | the random-mode fuzz of B4 and B5 (seeds 5501 / 91337), the B5 agent's reading | BF (fix batch) |
 | the random-universe byte fuzz: 95 divergences in 300 battles (seeds 5501 / 91337, before ROUNDS 57-59) | `designs/research_state/measurements/rust_core_m1_2026-09-23/README.md` | recount, then triage into the batch of each mechanic class |
 
 ## Usage: how the ranking is measured
@@ -123,7 +126,7 @@ The downloads and scripts were a one-off measurement in a scratch directory, not
 by fetching `https://www.smogon.com/stats/<YYYY-MM>/chaos/<tier>-0.json` for the months listed per tier
 in the index pages and applying the formula above.
 
-## The ranked gap: 48 moves and 4 items
+## The ranked gap: 44 moves
 
 Usage columns are percentages of fielded mons (ladder) or of battles (replays). Risk: **S** reuses
 existing machinery; **M** adds a self-contained volatile or mechanic; **L** crosses many mechanics (a
@@ -132,18 +135,12 @@ calls arbitrary moves).
 
 | id | family | tier mean | OU | non-OU pooled | top tier | OU replays | learners | risk | batch |
 |---|---|---:|---:|---:|---|---:|---:|:-:|:-:|
-| blastburn | recharge | 0.282 | 0.018 | 0.331 | 1v1 2.70 | 0.086 | 5 | S | B2 |
-| shellbell | item | 0.090 | 0.042 | 0.098 | uu 0.15 | 0.333 | — | S | B3 |
 | skyattack | two-turn | 0.089 | 0.031 | 0.096 | 1v1 0.39 | 0.132 | 28 | L | B4 |
-| frenzyplant | recharge | 0.072 | 0.005 | 0.085 | 1v1 0.65 | 0.031 | 5 | S | B2 |
 | dig | two-turn | 0.064 | 0.011 | 0.056 | pu 0.15 | 0.048 | 159 | L | B4 |
 | metronome | move-caller | 0.062 | 0.054 | 0.055 | 1v1 0.22 | 0.224 | 55 | L | B11 |
 | fly | two-turn | 0.061 | 0.026 | 0.073 | ubers 0.16 | 0.137 | 41 | L | B4 |
-| attract | attraction | 0.044 | 0.016 | 0.045 | 1v1 0.09 | 0.132 | 339 | L | B9 |
-| hydrocannon | recharge | 0.041 | 0.004 | 0.047 | 1v1 0.35 | 0.033 | 5 | S | B2 |
 | spite | PP | 0.038 | 0.004 | 0.035 | 1v1 0.25 | 0.010 | 21 | M | B5 |
 | swagger | confusion + boost | 0.030 | 0.000 | 0.041 | lc 0.15 | 0.005 | 373 | M | B6 |
-| machobrace | item | 0.022 | 0.009 | 0.020 | ru 0.07 | — | — | S | B3 |
 | snore | sleep | 0.020 | 0.019 | 0.025 | 1v1 0.05 | 0.084 | 373 | M | B5 |
 | grudge | PP | 0.018 | 0.007 | 0.008 | pu 0.06 | 0.031 | 12 | M | B5 |
 | dive | two-turn | 0.018 | 0.003 | 0.017 | lc 0.04 | 0.025 | 77 | L | B4 |
@@ -159,8 +156,6 @@ calls arbitrary moves).
 | mudsport | field sport | 0.005 | 0.002 | 0.007 | lc 0.03 | 0.008 | 45 | M | B7 |
 | bide | variable damage | 0.005 | 0.001 | 0.004 | 1v1 0.03 | 0.003 | 20 | M | B8 |
 | magnitude | variable BP | 0.005 | 0.001 | 0.003 | ru 0.02 | 0.005 | 15 | M | B8 |
-| mail | item | 0.004 | 0.000 | 0.004 | 1v1 0.02 | — | — | S | B3 |
-| mentalherb | item | 0.003 | 0.002 | 0.004 | ubers 0.01 | — | — | M | B9 |
 | camouflage | type change | 0.003 | 0.000 | 0.003 | 1v1 0.03 | 0.000 | 3 | S | B10 |
 | triplekick | variable BP | 0.002 | 0.000 | 0.002 | 1v1 0.01 | 0.010 | 2 | M | B8 |
 | spitup | stockpile | 0.002 | 0.000 | 0.002 | pu 0.01 | 0.015 | 16 | M | B7 |
@@ -198,13 +193,13 @@ commit.
 |---|---|---|
 | B0 | this recount and table | shipped with this file |
 | B1 | per-format rule table (M1), refuse unknown formats, levels, oversize teams and Team Preview (M2–M5) | shipped |
-| B2 | Blast Burn, Frenzy Plant, Hydro Cannon | open |
-| B3 | Shell Bell, Macho Brace, Mail | open |
+| B2 | Blast Burn, Frenzy Plant, Hydro Cannon | shipped |
+| B3 | Shell Bell, Macho Brace, Mail, Mental Herb | shipped |
 | B4 | the two-turn and semi-invulnerable family: Sky Attack, Dig, Fly, Dive, Bounce, Skull Bash, Razor Wind | open |
 | B5 | Spite, Grudge, Snore, Nightmare, Ingrain | open |
 | B6 | Swagger, Flatter, Foresight, Odor Sleuth, Magic Coat | open |
 | B7 | Stockpile, Spit Up, Swallow, Mud Sport, Water Sport, Mist, Lock-On, Mind Reader | open |
 | B8 | Bide, Magnitude, Psywave, Present, Triple Kick, the four OHKO moves | open |
-| B9 | the construction gender draw (M6), Attract, Mental Herb | open |
+| B9 | Attract (M6 resolved by design: harnesses pin genders); the Custom Game EV-balance warning | shipped |
 | B10 | Teleport, Follow Me, Helping Hand, Role Play, Camouflage, Endless Battle Clause staleness (M7) | open |
 | B11 | Metronome, Mirror Move, Assist, Nature Power, Sketch | open |

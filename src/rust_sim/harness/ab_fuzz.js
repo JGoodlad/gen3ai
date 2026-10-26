@@ -25,7 +25,7 @@
 //                        gen3 learnset ∩ the modeled move universe has >=4 moves
 //                        (>=1 modeled DAMAGING move forced per mon), a modeled/
 //                        no-op ability, a modeled item, random nature/EVs/IVs,
-//                        level 100 — packed with the real Teams.pack.
+//                        an explicit gender, level 100 — packed with the real Teams.pack.
 //   pool               — the e2e capstone's 22 filter-clean data/teams/ teams.
 //   ourandom           — gen3ou-RANDBATS (harness/ou_random_teams.js): Smogon-derived, validated.
 //   ladder             — the LADDER-USAGE corpus (harness/ladder_corpus.js): real public-ladder
@@ -325,7 +325,13 @@ function genRandomSet(entry, rng) {
   }
   const ivs = {};
   for (const k of keys) ivs[k] = randInt(rng, 32);
+  // An EXPLICIT gender (`gen3_attract_move_v1`): an unset one makes the sim sample it at
+  // construction, before the init seed the port replays from, so Attract / Cute Charm would
+  // fail loud on the port. A ratio species draws M or F here; a fixed one keeps its own.
+  const fixed = dex3.species.get(entry.sid).gender;
+  const gender = fixed || (randInt(rng, 2) ? 'F' : 'M');
   return {
+    gender,
     name: entry.name,
     species: entry.name,
     moves,

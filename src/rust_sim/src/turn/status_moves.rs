@@ -3358,6 +3358,80 @@ impl crate::state::BattleState {
             return MoveResolution::done(false, false, false);
         }
 
+        // --- ATTRACT (`gen3_attract_move_v1`, gen3 full parity B9). The volatile itself is
+        //     modelled (`MonState::attract`, its onBeforeMove immobilize and its clears); this is
+        //     the MOVE's entry, in gen-3 `tryMoveHit`'s order (`data/mods/gen3/scripts.ts`
+        //     tryMoveHit): the move's `onTryImmunity` (`data/moves.ts` attract: an M<->F pair
+        //     only) sets `naturalImmunity`; the accuracy roll is drawn ANYWAY; a miss on an immune
+        //     target shows `-immune`, not `-miss`; Protect (TryHit) shows before the immunity;
+        //     then `addVolatile('attract')` fails `[still]` + `-fail|<user>` when the target is
+        //     already attracted or Oblivious (`runEvent('Attract')` in the condition's
+        //     `onStart`), else `|-start|<t>|Attract` (bare: no `[from]`). `bypasssub`: a
+        //     Substitute does not block it, and Safeguard does not cover it. A mon with an
+        //     UNSPECIFIED gender panics in the compare (the sim sampled one at construction,
+        //     which the post-construction-seed path cannot know). Spec: `harness/probe_attract_move.js`.
+        if move_id == "attract" {
+            let gender = |s: &Self, side: usize, slot: usize, who: &str| -> char {
+                s.sides[side].pokemon[slot].gender.unwrap_or_else(|| {
+                    panic!(
+                        "Attract reached a mon with an UNSPECIFIED gender ({who}) — the sim samples one \
+                         at construction, which the post-construction-seed path does not model; pin \
+                         genders explicitly (the raw-seed bridge path draws them)"
+                    )
+                })
+            };
+            let (gt, gs) = (gender(self, foe, foe_slot, "target"), gender(self, _side, _slot, "user"));
+            let immune = !((gt == 'M' && gs == 'F') || (gt == 'F' && gs == 'M'));
+            let acc_hit = if never_miss {
+                true
+            } else {
+                self.roll_accuracy(_side, _slot, foe, foe_slot, accuracy, never_miss, move_type, dex)
+            };
+            if !acc_hit {
+                if self.logging() {
+                    let target = self.mon_ref(foe, foe_slot, dex);
+                    if immune {
+                        self.log.immune(&target);
+                    } else {
+                        self.log.attr_last_move_miss();
+                        let user = self.mon_ref(_side, _slot, dex);
+                        self.log.miss(&user, Some(&target));
+                    }
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            if self.protect_blocks(foe, foe_slot, false) {
+                if self.logging() {
+                    let target = self.mon_ref(foe, foe_slot, dex);
+                    self.log.activate(&target, "Protect", None);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            if immune {
+                if self.logging() {
+                    let target = self.mon_ref(foe, foe_slot, dex);
+                    self.log.immune(&target);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            let target = &self.sides[foe].pokemon[foe_slot];
+            if target.attract.is_some() || target.fainted || target.hp == 0 || to_id(&target.ability) == "oblivious" {
+                if self.logging() {
+                    self.log.attr_last_move_still();
+                    let user = self.mon_ref(_side, _slot, dex);
+                    self.log.fail(&user, None, false);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            let src_uid = self.sides[_side].pokemon[_slot].uid;
+            self.sides[foe].pokemon[foe_slot].attract = Some((_side, src_uid));
+            if self.logging() {
+                let t = self.mon_ref(foe, foe_slot, dex);
+                self.log.volatile_start(&t, "Attract");
+            }
+            return MoveResolution::done(false, false, false);
+        }
+
         // FAIL-LOUD GUARD: only the explicitly-modeled foe-targeting major-status
         // moves are allowed. Any other status move (recovery/boost/phaze/hazard/field)
         // would draw an UNMODELED number/order of PRNG calls → a silent desync. PANIC
