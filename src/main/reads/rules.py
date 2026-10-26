@@ -206,7 +206,10 @@ def _r1_decide(doc: Mapping[str, Any], p: Mapping[str, Any]) -> Dict[str, Any]:
 
 
 # ------------------------------------------------------------------------------------------------ d1
-_D1_KEYS = ("arm", "look", "on", "off", "anchor_group", "s_group", "reported_group", "guards_not_read")
+_D1_KEYS = ("arm", "look", "on", "off", "anchor_group", "s_group", "reported_group", "guards_not_read",
+            "import_off", "determinism_guard", "dose", "reported_without")
+#: ``import_off``'s keys: a banked OFF side from ANOTHER read's committed d1 input (D3's PREREG §3 / §4)
+_IMPORT_KEYS = ("path", "sha256", "labels", "regimes")
 
 
 def _d1_check(p: Mapping[str, Any], *, models: Any, anchor: Any, s: Any) -> List[str]:
@@ -237,7 +240,86 @@ def _d1_check(p: Mapping[str, Any], *, models: Any, anchor: Any, s: Any) -> List
             probs.append(f"reported_group {rg!r} plays models {sorted(r.models)}, the primary {sorted(a.models)}")
     if p.get("s_group") not in s:
         probs.append(f"s_group {p.get('s_group')!r} is not an S group")
+    probs += _d1_import_check(p, models=models, anchor=anchor)
+    rw = p.get("reported_without")
+    if rw is not None and (not isinstance(rw, list) or a is None or not set(rw) < set(a.teamsets)):
+        probs.append("reported_without: a list of primary panels to drop (at least one panel stays)")
     return probs
+
+
+def _d1_import_check(p: Mapping[str, Any], *, models: Any, anchor: Any) -> List[str]:
+    """``import_off`` (``{path, sha256, labels: {seed: label}, regimes: {anchor, s}}``) needs a
+    ``determinism_guard`` (``{group, label, banked: {path, sha256, cells}}``): banked Kakuna rows are pooled only
+    when a guard group re-plays some of them game for game (D3's PREREG §3); the OFF arm then plays in no primary
+    group."""
+    probs: List[str] = []
+    imp, dg = p.get("import_off"), p.get("determinism_guard")
+    if imp is None and dg is None:
+        return probs
+    if not isinstance(imp, dict) or sorted(imp) != sorted(_IMPORT_KEYS) or not isinstance(imp.get("labels"), dict) \
+            or not isinstance(imp.get("regimes"), dict) or sorted(imp["regimes"]) != ["anchor", "s"]:
+        probs.append(f"import_off: {{{', '.join(_IMPORT_KEYS)}}} with labels {{seed: label}} and regimes {{anchor, s}}")
+    if not isinstance(dg, dict) or dg.get("group") not in anchor or dg.get("group") == p.get("anchor_group") \
+            or dg.get("label") not in models or models[dg["label"]].load:
+        probs.append("determinism_guard: {group, label, banked}: an anchor group other than the primary playing the "
+                     "UNCHANGED model")
+    else:
+        b = dg.get("banked") or {}
+        if not (isinstance(b, dict) and isinstance(b.get("path"), str) and isinstance(b.get("sha256"), str)
+                and isinstance(b.get("cells"), dict)):
+            probs.append("determinism_guard.banked: {path, sha256, cells: {teamset: read_cell}}")
+        if models[dg["label"]].arm != p.get("off"):
+            probs.append(f"determinism_guard: label {dg['label']!r} is not an {p.get('off')} final")
+    a = anchor.get(p.get("anchor_group"))
+    if a is not None and any(models[lab].arm == p.get("off") for lab in a.models if lab in models):
+        probs.append(f"import_off: the primary anchor group also plays {p.get('off')} finals")
+    return probs
+
+
+def imported_d1(entry: Mapping[str, Any]) -> Dict[str, Any]:
+    """The OFF side ``{h: {off, ties, units}, p: {off, per_final, panel, team_set}}`` of ANOTHER read's committed
+    d1 input (``d1_read/read_look2_input.json``), the file's sha256 checked, restricted to ``labels``' seeds: a
+    banked control, never re-played (D3's PREREG §3 / §4)."""
+    from main.reads.models import sha256_file, spec_path
+
+    path = spec_path(str(entry["path"]))
+    got = sha256_file(path)
+    if got != entry["sha256"]:
+        raise RuleInputError(f"imported d1 input {path}: sha256 {got[:12]} != the spec's {str(entry['sha256'])[:12]}")
+    doc = json.loads(path.read_text())
+    labels = {str(k): str(v) for k, v in entry["labels"].items()}
+    h, pp = doc["h"], doc["p"]
+    missing = [s for s in labels if s not in h["off"] or s not in pp["off"] or labels[s] not in pp["per_final"]]
+    if missing:
+        raise RuleInputError(f"imported d1 input {path}: no OFF rows for seed(s) {missing}")
+    return {"h": {k: {s: h[k]["off"][s] if k != "off" else h["off"][s] for s in labels}
+                  for k in ("off", "ties", "units")},
+            "p": {"off": {s: pp["off"][s] for s in labels}, "per_final": {labels[s]: pp["per_final"][labels[s]]
+                                                                          for s in labels},
+                  "panel": pp.get("panel"), "team_set": pp.get("team_set")}}
+
+
+def _d1_guard(cells: Mapping[str, Any], dg: Mapping[str, Any]) -> Dict[str, Any]:
+    """The game-for-game determinism guard: each re-played unit of ``dg``'s group against its banked unit."""
+    bank = banked_units(dg["banked"])
+    g = _group(cells, "anchor", dg["group"])
+    checks = []
+    for u in g["units"]:
+        want = bank.get(u["panel"], {}).get(int(u["unit_seed"]))
+        checks.append({"unit": u["unit"], "panel": u["panel"], "unit_seed": int(u["unit_seed"]),
+                       "counted": bool(u["counted"]), "n": u.get("n"), "wins": u.get("wins"),
+                       "banked": None if want is None else {"n": want["n"], "wins": want["wins"]},
+                       "games_equal": (want is not None and u.get("games") is not None
+                                       and [list(x) for x in u["games"]] == want["games"])})
+    planned = sum(len(by) for by in bank.values())
+    why = [] if checks else ["no guard unit played"]
+    why += [f"{c['unit']}: not counted" for c in checks if not c["counted"]]
+    why += [f"{c['unit']}: its games differ from the banked unit's" for c in checks if not c["games_equal"]]
+    if len(checks) != planned:
+        why.append(f"{len(checks)} guard unit(s) played, {planned} banked")
+    return {"label": dg["label"], "group": dg["group"], "units": checks, "regime_id": g.get("regime_id"),
+            "banked_source": {"path": dg["banked"]["path"], "sha256": dg["banked"]["sha256"]},
+            "passed": not why, "reasons": why}
 
 
 def h_input(group: Mapping[str, Any], spec: Any, on: str, off: str) -> Dict[str, Any]:
@@ -277,11 +359,60 @@ def _d1_inputs(cells: Mapping[str, Any], p: Mapping[str, Any], spec: Any) -> Dic
     if p.get("reported_group") is not None:                  # REPORTED panels (``d1.reported_panels``), no rule
         r = h_input(_group(cells, "anchor", p["reported_group"]), spec, p["on"], p["off"])
         doc["reported_panels"] = {"on": r["on"], "off": r["off"]}
+    if p.get("import_off") is not None:
+        _d1_import(doc, cells, p)
+    if p.get("dose"):
+        doc["dose"] = dict(p["dose"])
     return doc
 
 
+def _d1_import(doc: Dict[str, Any], cells: Mapping[str, Any], p: Mapping[str, Any]) -> None:
+    """Pool the banked OFF side into ``doc`` (H only when the determinism guard passes; P only on its regime)."""
+    imp = p["import_off"]
+    if doc["h"]["off"] or doc["p"]["off"]:
+        raise RuleInputError("import_off with OFF finals also played in this read's primary groups")
+    got = {"anchor": _group(cells, "anchor", p["anchor_group"]).get("regime_id"),
+           "s": _group(cells, "s", p["s_group"]).get("regime_id")}
+    for lane in ("anchor", "s"):
+        if got[lane] != imp["regimes"][lane]:
+            raise RuleInputError(f"import_off: this read's {lane} regime {got[lane]} is not the banked rows' "
+                                 f"{imp['regimes'][lane]} (re-play the control)")
+    bank = imported_d1(imp)
+    if (bank["p"]["panel"], bank["p"]["team_set"]) != (doc["p"]["panel"], doc["p"]["team_set"]):
+        raise RuleInputError(f"import_off: the banked P panel / team set {bank['p']['panel']} / "
+                             f"{bank['p']['team_set']} is not this read's {doc['p']['panel']} / {doc['p']['team_set']}")
+    guard = _d1_guard(cells, p["determinism_guard"])
+    doc["import_off"] = {"path": imp["path"], "sha256": imp["sha256"], "labels": dict(imp["labels"]),
+                         "regimes": dict(imp["regimes"]), "h_pooled": guard["passed"], "guard": guard}
+    doc["p"]["off"] = bank["p"]["off"]
+    doc["p"]["per_final"].update(bank["p"]["per_final"])
+    if guard["passed"]:
+        for k in ("off", "ties", "units"):
+            tgt = doc["h"][k] if k == "off" else doc["h"][k]["off"]
+            tgt.update(bank["h"][k])
+
+
 def _d1_decide(doc: Mapping[str, Any], p: Mapping[str, Any]) -> Dict[str, Any]:
-    return guards_not_read(_jsonable(D.read_d1(doc).as_dict()), p.get("guards_not_read"))
+    v = guards_not_read(_jsonable(D.read_d1(doc).as_dict()), p.get("guards_not_read"))
+    imp = doc.get("import_off")
+    if imp is not None and not imp["h_pooled"]:
+        v["reasons"] = list(v["reasons"]) + [f"the determinism guard failed ({'; '.join(imp['guard']['reasons'])}): "
+                                             "the banked OFF Kakuna rows are not pooled; re-play every OFF unit"]
+    if p.get("reported_without"):
+        v["reported"]["without"] = _d1_without(doc, list(p["reported_without"]))
+    return v
+
+
+def _d1_without(doc: Mapping[str, Any], drop: Sequence[str]) -> Dict[str, Any]:
+    """DESCRIPTIVE, no rule reads it: H's own statistic (``d1_primary``, AM-5 widening, sign rule) recomputed with
+    the ``drop`` panels left out (the goal-(b) panel-validity ruling's "without H", 4f555e57)."""
+    arm, look = str(doc.get("arm")), int(doc["look"])
+    keep = tuple(k for k in D.arm_panels(arm) if k not in drop)
+    sub = {side: {seed: {k: c for k, c in by.items() if k in keep} for seed, by in (doc["h"].get(side) or {}).items()}
+           for side in ("on", "off")}
+    h = D.d1_primary(look, sub["on"], sub["off"], panels=keep, roles=D.PANEL_ROLES.get(arm, D.PANEL_ROLE),
+                     units=D.arm_units(arm))
+    return dict(_jsonable(h.as_dict()), panels=list(keep), dropped=list(drop))
 
 
 # --------------------------------------------------------------------------------------- anchor_trajectory
