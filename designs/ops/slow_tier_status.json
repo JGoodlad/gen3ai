@@ -1276,6 +1276,30 @@
    "contention": 1.51,
    "detail": ""
   },
+  "src/agents/model/held_item_gate_test.py::test_a_consumed_item_never_moves_the_op_whatever_its_id[ours]": {
+   "status": "pass",
+   "commit": "ff54265e4204cde0b12098cd76671828471cdd54",
+   "at": "2026-10-26T07:25:35Z",
+   "duration_s": 8.49,
+   "contention": 1.59,
+   "detail": ""
+  },
+  "src/agents/model/held_item_gate_test.py::test_a_consumed_item_never_moves_the_op_whatever_its_id[theirs]": {
+   "status": "pass",
+   "commit": "ff54265e4204cde0b12098cd76671828471cdd54",
+   "at": "2026-10-26T07:25:35Z",
+   "duration_s": 0.41,
+   "contention": 1.56,
+   "detail": ""
+  },
+  "src/agents/model/held_item_gate_test.py::test_a_knocked_off_band_on_their_active_reads_p_cb_zero": {
+   "status": "pass",
+   "commit": "ff54265e4204cde0b12098cd76671828471cdd54",
+   "at": "2026-10-26T07:25:35Z",
+   "duration_s": 0.38,
+   "contention": 1.57,
+   "detail": ""
+  },
   "src/agents/model/inductor_compile_test.py::test_compile_on_compiles_the_repro_at_the_failing_batch[16]": {
    "status": "pass",
    "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
@@ -4893,5 +4917,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-26T07:21:00Z"
+ "last_written": "2026-10-26T07:25:35Z"
 }

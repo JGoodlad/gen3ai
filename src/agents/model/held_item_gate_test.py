@@ -12,7 +12,10 @@ only through `extractor_ctx.held_item_ids` (0 once consumed) and the prior branc
 read the raw id unsubscripted (``item_embedding(ctx.item_ids)``), beside its ``consumed`` bit. The allowlist is
 EMPTY: a new raw read FAILS here, naming the line.
 
-The behavioural half runs the PRODUCTION extractor on a real fixture row: a consumed item never moves the op's
+The behavioural half has two tiers. ROUTINE (milliseconds): the two functions that carry the rule, `held_item_ids`
+and `item_unrevealed`, on a hand-built context: a consumed item reads as no item whatever its id, a held one reads as
+itself, and a consumed id is not "unrevealed". SLOW (builds the production extractor, ~6 s alone and 24 s under gate
+contention, past the 8 s bar): the PRODUCTION extractor on a real fixture row: a consumed item never moves the op's
 block whatever its id, and a knocked-off Choice Band on their active reads P(CB) = 0.
 """
 from __future__ import annotations
@@ -69,7 +72,33 @@ def test_the_gate_sees_the_defect_it_guards():
 
 
 # ----------------------------------------------------------------------------------------------------------------
-# behaviour: the production extractor on a real fixture row
+# behaviour, ROUTINE: the two rule functions on a hand-built context (no model, no battle)
+# ----------------------------------------------------------------------------------------------------------------
+
+def _ctx(ids, consumed):
+    """The two fields the rule functions read: `item_ids [B,12]` and the item block's `consumed` column."""
+    from types import SimpleNamespace
+
+    from agents.model.extractor_ctx import POKEMON_ITEM_CONSUMED_OFFSET
+    ids = torch.tensor(ids, dtype=torch.long)
+    part = torch.zeros(*ids.shape, POKEMON_ITEM_CONSUMED_OFFSET + 1)
+    part[..., POKEMON_ITEM_CONSUMED_OFFSET] = torch.tensor(consumed, dtype=torch.float32)
+    return SimpleNamespace(item_ids=ids, pokemon_part=part)
+
+
+def test_held_item_ids_reads_a_consumed_item_as_no_item():
+    from agents import gen3_data
+    from agents.model.extractor_ctx import held_item_ids, item_unrevealed
+    items = gen3_data.items.raw()
+    band, lefties, lum = (items[k]["num"] for k in ("choiceband", "leftovers", "lumberry"))
+    ctx = _ctx([[band, band, lefties, lum, 0, 0]], [[0, 1, 1, 1, 0, 1]])
+    assert held_item_ids(ctx).tolist() == [[band, 0, 0, 0, 0, 0]]     # held stays itself; every consumed id reads 0
+    # a consumed item is known GONE, not unrevealed (the prior branch); an all-zero id with nothing known is
+    assert item_unrevealed(ctx).tolist() == [[0.0, 0.0, 0.0, 0.0, 1.0, 1.0]]
+
+
+# ----------------------------------------------------------------------------------------------------------------
+# behaviour, SLOW: the production extractor on a real fixture row
 # ----------------------------------------------------------------------------------------------------------------
 
 @pytest.fixture(scope="module")
@@ -124,6 +153,7 @@ def _pick_row(obs: np.ndarray) -> np.ndarray:
     raise AssertionError("no fixture row with two live actives")
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("side", [0, 1], ids=["ours", "theirs"])
 def test_a_consumed_item_never_moves_the_op_whatever_its_id(_prod, side):
     fe, obs, nums = _prod
@@ -139,6 +169,7 @@ def test_a_consumed_item_never_moves_the_op_whatever_its_id(_prod, side):
     assert not torch.equal(held, ref), "a held Choice Band does not move the op block: the test cannot see the class"
 
 
+@pytest.mark.slow
 def test_a_knocked_off_band_on_their_active_reads_p_cb_zero(_prod):
     fe, obs, nums = _prod
     row = _pick_row(obs)
