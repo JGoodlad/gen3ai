@@ -858,6 +858,24 @@ production pin, to 480,081,209):
 - **The registered guess:** H +1.5 pp, 80 % [−1.5, +4.5], most likely UNDECIDED at the final look. Nothing above
   changes until it is read.
 
+**…and the BELIEF STACK memorises the pool: off-pool it is confidently wrong (2026-10-26, the architecture-generalisation
+review, `model/generalisation_review_2026-10-26.md` P5 / P10):** [MEASURED · DESCRIPTIVE · 48 P\*-vs-P\* games per
+panel, one checkpoint] H3's mechanism, read on calibration:
+- Against FAMILIAR opponents the learned deltas roughly halve the species error (hidden-species hit@k 0.71–0.76
+  against the Smogon prior's 0.34–0.49).
+- Against UNFAMILIAR ones they rank no better than the prior (0.26 / 0.37 / 0.15 on F / H / P72 against 0.30 / 0.39 /
+  0.16) and are far worse calibrated: the true hidden species' log-presence is **−6.2 / −4.6 / −10.0 against the
+  prior's −2.4 / −2.0 / −3.2**, and the moves delta is worse than its prior.
+- So **63–85 % of an unfamiliar team's hidden slots hold the wrong species hypothesis** (24–29 % on a familiar one),
+  and the damage operator prices those species.
+- Our OWN unseen sets are not the problem: the encoder places them where their parts put them, and the team is
+  permutation-equivariant (F-AG-2).
+- Offline, a fixed quarter-weight mix with the prior keeps every familiar ranking and repairs most of the unfamiliar
+  calibration (−7.06 → −2.99). Whether it wins GAMES is the registered belief-prior-mix read (λ = 0.25 and D0f's
+  λ = 1, `measurements/belief_prior_mix_2026-10-26/PREREG.md`). This channel is FACING, the smaller part of the Kakuna
+  gap by X37a.
+[ledger 2026-10-26 · *H3 (BELIEF-HEAD MEMORISATION) BANKED ON CALIBRATION*]
+
 **…and X26's plateau sits beside a small, REAL cyclic component (2026-10-19, the cycle monitor's retro read,
 `measurements/cycle_monitor_retro_2026-10-19/`):** [MEASURED · DESCRIPTIVE · the in-run snapshot ladder, not the
 registered instrument] Read by the cycle monitor's four signals, X26's ladder (72 snapshots, 1,150 mirrored lines) is

@@ -28646,3 +28646,42 @@ understates our standing? No games; banked rows only.
 
 **Evidence:** `research_state/measurements/goal_b_panel_validity_2026-10-26/` (README, `validity.py`, `results.json`).
 Design: `endstate/design_beat_metamon_path.md` §0, §9. Open: Kakuna's self-play team sets (needs downloads).
+
+### 2026-10-26 · MEASUREMENT · **H3 (BELIEF-HEAD MEMORISATION) BANKED ON CALIBRATION: P\*'s learned belief deltas hold the POOL's expectation; on unfamiliar opponents the species posterior is confidently wrong (true hidden species' log-presence −6.2 / −4.6 / −10.0 against the Smogon prior's −2.4 / −2.0 / −3.2 on F / H / P72) and the moves delta is worse than its prior; a quarter-weight mix with the prior keeps every familiar ranking (DESCRIPTIVE; the generalisation review's P5 / P10)**
+
+**Question** (`endstate/design_diversity_teams_opponents.md` §3, H3). Do the opponent-belief stack's LEARNED deltas
+(X5's δ_θ over the Smogon species prior, the move and item deltas) encode the training pool, so that against teams
+we never trained on the network acts on a wrong world? H3's game-level kill test is D0f; this is its calibration read.
+
+**Design** (`model/generalisation_review_2026-10-26.md` §2, P5 and P10). P\* greedy against P\* greedy on the Rust
+env core with its belief / item label columns, 48 games per panel (player 1 pilots the panel's first 48 teams, player
+2 a home72 draw), 3,349–3,757 decision rows per panel. FAMILIAR = facing a home72 team; UNFAMILIAR = facing an F / H /
+P72 team. The posterior P\* acts on against the Smogon prior inside it (the delta zeroed); P10 mixes the two,
+`(1 − λ)·posterior + λ·prior` per leg.
+
+**Result.**
+- **Familiar opponents: the deltas help a lot.** Hidden-species hit@k 0.71–0.76 (prior 0.34–0.49); true species'
+  log-presence −0.66 … −0.74 (prior −1.73 … −2.16); revealed mons' unrevealed-move precision 0.63–0.70 (0.55–0.59).
+- **Unfamiliar opponents: no better at ranking, far worse calibrated.** Species hit@k 0.258 / 0.367 / 0.152 (F / H /
+  P72; prior 0.296 / 0.392 / 0.158); log-presence **−6.24 / −4.63 / −10.04** (prior −2.36 / −1.98 / −3.24); move
+  precision 0.545 / 0.475 / 0.428 (prior 0.562 / 0.509 / 0.506) and move BCE worse than the prior's. The item delta
+  still helps top-1 (items are species-typical) at a little calibration cost.
+- X5 turns the top-k species into concrete hypothesis tokens, so **63–85 % of an unfamiliar team's hidden slots hold
+  the wrong species** (24–29 % on a familiar one), and the damage operator prices them.
+- **P10, offline:** at λ = 0.25 the familiar rankings are unchanged (species hit@k 0.737 → 0.736, move precision
+  0.667 → 0.672) and the unfamiliar species log-presence moves −7.06 → −2.99 (prior −2.55). Off-pool species
+  RANKING cannot be bought this way: it is capped by the prior's 0.28.
+
+**Reading.** H3's mechanism is MEASURED on calibration: the deltas learned the pool's conditional distribution (in
+self-play every opponent pilots a pool team, so "revealed X + Y ⇒ this pool team's other four" is exactly what the
+loss rewards). Whether it costs GAMES is not shown: the policy was trained on the unmixed belief, and X37a put most of
+the Kakuna gap in PILOTING (+0.123) rather than FACING (+0.017, n.d.), which is where this channel acts.
+
+**FINDINGS.** One checkpoint, one seed, P\* piloting both sides (not Kakuna's or a human's piloting); 48 games per
+panel, so every figure is descriptive; Hidden Power moves are excluded from the move metrics; P10 is an
+off-distribution intervention (the policy was not re-run on mixed beliefs).
+
+**Evidence:** `research_state/measurements/arch_generalisation_2026-10-26/` (`rows_*_analysis.json`,
+`mix_probe.json`, `scripts/`); the review `model/generalisation_review_2026-10-26.md` §2 P5 / P10, §3 F-AG-1 /
+F-AG-1b. The game test (the belief prior mix and D0f) is registered in
+`research_state/measurements/belief_prior_mix_2026-10-26/PREREG.md`. See `UNDERSTANDING.md` §3.1.

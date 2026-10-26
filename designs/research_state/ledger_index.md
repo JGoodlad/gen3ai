@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-28,649-line file. **The ledger itself is append-only and is never edited by this**;
+28,688-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**940 headings · 885 dated · 2026-08-01 → 2026-10-26 · ledger 28,649 lines.**
+**941 headings · 886 dated · 2026-08-01 → 2026-10-26 · ledger 28,688 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -960,3 +960,4 @@ rename.
   - `L28567` · `2026-10-25` · MEASUREMENT · **X26c CONTINUATION vs KAKUNA, read under its registration (`e05c45eeb`): goal (b) NOT met; FLAT. X26 trained on from 380M to 480M scores U 0.4875 [0.459, 0.516] on the unfamiliar panels against P\*'s 0.4867 in the same harness, Δ +0.08 pp [−3.90, +4.06]; in-house S 58.22 vs 58.23 at 380M (−0.01 [−1.54, +1.52]), so the drift slope did not continue and the D3-revisit trigger does not fire**
   - `L28601` · `2026-10-25` · MEASUREMENT · **THE HUMAN-REPLAY DATA CARD REVISED after reviews A / B / C (DESCRIPTIVE): learnability is mostly not account memory (the HOM beats P\* by 0.503 nats [0.467, 0.542] on accounts never seen on the train dates, 0.605 on seen ones); the familiarity proxy is UNINFORMATIVE (full-six +0.064 [−0.016, +0.149]); ladder drift beyond an account-disjoint floor is 0.005–0.011 TVD a month, not ≈ 0.04**
   - `L28632` · `2026-10-26` · MEASUREMENT · **GOAL (b)'S PANELS ARE NOT SHOWN KAKUNA-FAMILIAR; dropping H LOWERS P\* to 0.481 [0.447, 0.516]; no verdict changes (DESCRIPTIVE; survey F3)**
+  - `L28650` · `2026-10-26` · MEASUREMENT · **H3 (BELIEF-HEAD MEMORISATION) BANKED ON CALIBRATION: P\*'s learned belief deltas hold the POOL's expectation; on unfamiliar opponents the species posterior is confidently wrong (true hidden species' log-presence −6.2 / −4.6 / −10.0 against the Smogon prior's −2.4 / −2.0 / −3.2 on F / H / P72) and the moves delta is worse than its prior; a quarter-weight mix with the prior keeps every familiar ranking (DESCRIPTIVE; the generalisation review's P5 / P10)**

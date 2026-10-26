@@ -1,0 +1,94 @@
+{
+ "schema": "gen3_read_spec_v1",
+ "read": "belief_prior_mix_l025_2026-10-26",
+ "prereg": "designs/research_state/measurements/belief_prior_mix_2026-10-26/PREREG.md",
+ "pin": "4ee655648",
+ "note": "lambda=0.25 against X51's banked P* (lambda 0), unit-paired on seeds 0-19; guard: P* unchanged at seed 0 must replay X51 game for game",
+ "models": {
+  "pstar_l025": {
+   "arm": "pstar_l025",
+   "seed": 2601,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip",
+    "sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed"
+   },
+   "load": {
+    "belief_prior_mix": 0.25
+   }
+  },
+  "pstar": {
+   "arm": "pstar",
+   "seed": 2601,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip",
+    "sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed"
+   }
+  }
+ },
+ "anchor": {
+  "arm_l025": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "heldout72_hpfix",
+    "forum72",
+    "p72",
+    "home72"
+   ],
+   "unit_seeds": "0-19",
+   "models": [
+    "pstar_l025"
+   ]
+  },
+  "guard": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "heldout72_hpfix",
+    "forum72",
+    "p72",
+    "home72"
+   ],
+   "unit_seeds": "0",
+   "models": [
+    "pstar"
+   ]
+  }
+ },
+ "decision": {
+  "rule": "prior_mix_ab",
+  "params": {
+   "arms": {
+    "l025": {
+     "group": "arm_l025",
+     "label": "pstar_l025"
+    }
+   },
+   "primary": "l025",
+   "banked": {
+    "path": "designs/research_state/measurements/x51_plateau_vs_kakuna_2026-10-20/rows.jsonl",
+    "sha256": "27a8d7edad0365746579135bfa2a84850d266a9aceec083f509469fa791b6e28",
+    "cells": {
+     "heldout72_hpfix": "pstar_hpfix",
+     "forum72": "pstar_forum72",
+     "p72": "pstar_p72",
+     "home72": "pstar_home72"
+    }
+   },
+   "guard": {
+    "group": "guard",
+    "label": "pstar"
+   },
+   "unfamiliar": [
+    "heldout72_hpfix",
+    "forum72",
+    "p72"
+   ],
+   "familiar": "home72",
+   "heldout": "heldout72_hpfix",
+   "min_unit_frac": 0.9,
+   "home_margin_pp": 3.0,
+   "did_ub_pp": 3.0
+  }
+ }
+}
