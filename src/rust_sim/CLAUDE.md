@@ -1,6 +1,7 @@
 # CLAUDE.md — `src/rust_sim/` (pokesim)
 
-A Rust port of the Pokémon Showdown simulator for Gen 3 OU singles. Its hard requirement is
+A Rust port of the Pokémon Showdown simulator for Gen 3 singles (OU first; the full-gen3 coverage table is
+`designs/rust_sim/gen3_full_parity.md`). Its hard requirement is
 **bit-for-bit identical** output to upstream Showdown for the same seed, teams and choices. It is also
 the RUST CORE: the typed event layer, the one-sided reading, the trackers and the encoder that every
 training row comes from. `sim_bridge` (in-process) is the only training / eval transport; the Node bridge
@@ -137,7 +138,7 @@ node src/rust_sim/harness/dump_gen3_handlers.js --audit    # handler completenes
 | I am about to… | Read |
 |---|---|
 | edit a module | `module_map.md` (its row first) |
-| count or admit a move | `move_census.md` |
+| count or admit a move, item or format | `gen3_full_parity.md` (the current table), `move_census.md` |
 | change a gate-ladder rung, or the e2e capstone | `differential_gates.md`, `e2e_capstone.md` |
 | touch `search_driver`, replay or clone-and-branch | `search_and_replay_drivers.md` |
 | add or read a regression pin | `regression_pins.md` |

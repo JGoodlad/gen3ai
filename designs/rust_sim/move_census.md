@@ -26,11 +26,9 @@ it said 309/60 where the engine itself runs **312/57**. `scan_move_probe` cannot
 *is* the engine running. The JS scan keeps the two jobs the probe cannot do: the team-pool report and
 the `0 MISMODELED` invariant gate.
 
-**Measured 2026-09-08 by `scan_move_probe`, after ROUND 59: 369 gen3-legal moves → 321 MODELED ·
-48 FAIL-LOUD · 0 MISMODELED**; **abilities 76/76 and species 392/392 are CLOSED**; **items 102/106**
-(the four fail-loud: `shellbell` / `machobrace` / `mentalherb` / `mail`). The full ranked gap, by
-family and by legal-learner count, is [`designs/rust_sim/gen3_coverage_census_2026-09-08.md`](gen3_coverage_census_2026-09-08.md) —
-a dated SNAPSHOT, not a current number.
+**The current counts, per universe, with the formats, the engine mechanics and the usage-ranked gap,
+are in [`gen3_full_parity.md`](gen3_full_parity.md)** (recounted with the tool; the 09-08
+[`gen3_coverage_census_2026-09-08.md`](gen3_coverage_census_2026-09-08.md) is the dated predecessor).
 
 🚨 **"MODELED" MEANS "THE ENGINE DOES NOT FAIL LOUD" — IT DOES NOT MEAN "GATED", AND IT DOES NOT MEAN
 "THE DRAW COUNT IS RIGHT".** ROUND 57 found that `confuseray` — shipped at ROUND 44, carrying a

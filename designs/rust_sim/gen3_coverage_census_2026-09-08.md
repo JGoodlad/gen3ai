@@ -6,6 +6,10 @@ census asks a different question from every earlier coverage record — not *"ca
 762-team OU pool"* (it can: 762/762) but **"can the port execute every move, ability, item and species
 that Showdown's gen3 data makes legal in ANY gen3 format"** — OU, UU, NU, Ubers, LC, randoms.
 
+> **SUPERSEDED as the current view (2026-10-26) by [`gen3_full_parity.md`](gen3_full_parity.md)**, which
+> recounts every universe, adds the formats and engine mechanics, and ranks the gap by ladder usage across
+> all gen3 tiers. This file is history.
+
 🚨 **This file is a SNAPSHOT, deliberately dated, and it is NOT the always-current number.** The
 current answer is always the tool (see *How to re-measure* below). It exists so the gap is on the
 record BEFORE the rounds that close it move it.
