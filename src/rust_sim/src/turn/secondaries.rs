@@ -385,9 +385,35 @@ impl crate::state::BattleState {
                 self.log.fail_unboost_from_ability(&target, &name, stat);
             }
         }
+        // MIST (`gen3_b7_moves_v1`; `data/moves.ts` mist.condition `onTryBoost`, on the TARGET's
+        // side): for a boost whose source is not the target it deletes every NEGATIVE key of the
+        // CAPPED boost — after the target's own ability handler (the side condition sorts at speed
+        // 0, behind the mon), so a stat Clear Body / Hyper Cutter / Keen Eye already removed is not
+        // Mist's, and a stat already at −6 (capped to 0) survives to print its `-unboost|…|0`. It
+        // announces `|-activate|<target>|move: Mist` once, unless the effect is a move SECONDARY
+        // (`!effect.secondaries`): Growl / Screech / Charm / Tickle / Memento show it, Crunch /
+        // Psychic / Icy Wind drop silently (their chance roll already drew). DRAW-FREE. Probe
+        // `harness/probe_b7_moves.js`, the Mist boards. ---
+        let mist_up = !want_self && self.sides[t_side].mist > 0;
+        let mist_deletes = |s: &Self, idx: usize, stages: i8| {
+            mist_up
+                && stages < 0
+                && !stat_drop_blocked(&foe_ability, idx)
+                && s.sides[t_side].pokemon[t_slot].boosts[idx] > -6
+        };
+        if is_primary_drop
+            && self.logging()
+            && spec.boosts.iter().any(|&(idx, stages)| mist_deletes(self, idx, stages))
+        {
+            let target = self.mon_ref(t_side, t_slot, _dex);
+            self.log.activate(&target, "move: Mist", None);
+        }
         for &(idx, stages) in &spec.boosts {
             if !want_self && stat_drop_blocked(&foe_ability, idx) {
                 continue; // Clear Body / White Smoke / Hyper Cutter / Keen Eye.
+            }
+            if mist_deletes(self, idx, stages) {
+                continue; // Mist.
             }
             let cur = self.sides[t_side].pokemon[t_slot].boosts[idx] as i32;
             let next = (cur + stages as i32).clamp(-6, 6);

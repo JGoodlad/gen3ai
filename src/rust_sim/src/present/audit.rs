@@ -200,7 +200,7 @@ fn side_check(a: &mut Audit, sv: &SideView, st: &BattleState, side: usize, own: 
     if sd.spikes > 0 {
         want.push(("spikes", Some(sd.spikes as u32)));
     }
-    for (k, rem) in [("reflect", sd.reflect), ("light_screen", sd.light_screen), ("safeguard", sd.safeguard)] {
+    for (k, rem) in [("reflect", sd.reflect), ("light_screen", sd.light_screen), ("safeguard", sd.safeguard), ("mist", sd.mist)] {
         if rem > 0 {
             want.push((k, None));
         }

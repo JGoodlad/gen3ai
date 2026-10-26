@@ -636,7 +636,11 @@ impl crate::state::BattleState {
         move_type: Option<Type>,
         dex: &Dex,
     ) -> bool {
-        if never_miss {
+        // LOCK-ON (`gen3_b7_moves_v1`): the attacker's `lockon` volatile `onSourceAccuracy`
+        // returns `true` against its locked mon (`data/moves.ts` lockon.condition), and the gen-3
+        // `tryMoveHit` only draws `randomChance` for a non-`true` accuracy — so no draw. Every
+        // caller passes (attacker, target); a Future Sight strike passes its caster.
+        if never_miss || self.lock_on_holds(side, slot, foe, foe_slot) {
             return true;
         }
         let eff = self.effective_accuracy(side, slot, foe, foe_slot, accuracy, move_type, dex);

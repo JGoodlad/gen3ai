@@ -288,7 +288,9 @@ impl MoveData {
     pub fn is_variable_bp(&self) -> bool {
         matches!(
             self.id.as_str(),
-            "return" | "frustration" | "flail" | "reversal" | "lowkick"
+            // SPIT UP (`gen3_b7_moves_v1`): `basePowerCallback` = 100 × the user's stockpile
+            // layers over a bp-0 row; gen-3 Normal → Physical, so Taunt does not block it.
+            "return" | "frustration" | "flail" | "reversal" | "lowkick" | "spitup"
         )
     }
 }

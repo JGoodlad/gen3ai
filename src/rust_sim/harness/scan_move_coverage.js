@@ -154,10 +154,14 @@ const MODELED_BATCH4B = new Set(['beatup', 'thunder', 'waterspout', 'eruption'])
 // gen3_twoturn_family_v1 (gen3 full parity B4) admits the seven other charge moves.
 const MODELED_BATCH4C = new Set(['hyperbeam', 'blastburn', 'frenzyplant', 'hydrocannon', 'solarbeam', 'doomdesire', 'futuresight',
   'razorwind', 'skyattack', 'skullbash', 'fly', 'bounce', 'dig', 'dive']);
-const MODELED_VARBP = new Set(['return', 'frustration', 'flail', 'reversal', 'lowkick']);
+// SPIT UP joins the family in GEN3 FULL PARITY B7 (`gen3_b7_moves_v1`): 100 × stockpile layers.
+const MODELED_VARBP = new Set(['return', 'frustration', 'flail', 'reversal', 'lowkick', 'spitup']);
 // GEN3 FULL PARITY B5 (`gen3_b5_moves_v1`) — the category-Status members (Snore is damaging,
 // classified in classifyDamaging).
 const MODELED_B5 = new Set(['spite', 'grudge', 'nightmare', 'ingrain']);
+// GEN3 FULL PARITY B7 (`gen3_b7_moves_v1`) — the category-Status members (Spit Up is damaging,
+// in MODELED_VARBP).
+const MODELED_B7 = new Set(['stockpile', 'swallow', 'mudsport', 'watersport', 'mist', 'lockon', 'mindreader']);
 // MOVE-COVERAGE BATCH 7 (`gen3_move_coverage_batch7_v1`) — the generic MULTI-STRIKE family
 // (`run_multihit`): the FIXED-2 trio + the variable [2,5] family. `triplekick` (the sole
 // `multiaccuracy` carrier) stays an ENGINE fail-loud and is deliberately NOT here.
@@ -322,6 +326,9 @@ function classifyStatus(m, id) {
   if (id === 'sleeptalk') return { cov: 'MODELED', mech: 'sleep-talk (batch 5)' };
   // GEN3 FULL PARITY B5 (`gen3_b5_moves_v1`) — Spite, Grudge, Nightmare, Ingrain.
   if (MODELED_B5.has(id)) return { cov: 'MODELED', mech: `b5 (${id})` };
+  // GEN3 FULL PARITY B7 (`gen3_b7_moves_v1`) — Stockpile, Swallow, the sports, Mist, Lock-On,
+  // Mind Reader.
+  if (MODELED_B7.has(id)) return { cov: 'MODELED', mech: `b7 (${id})` };
   // MOVE-COVERAGE BATCH 6 (`gen3_move_coverage_batch6_v1`) — the final tail.
   if (MODELED_BATCH6.has(id)) return { cov: 'MODELED', mech: `batch-6 (${id})` };
   // MOVE-COVERAGE BATCH 3 (`gen3_move_coverage_batch3_v1`) — Curse / Wish / Baton Pass.

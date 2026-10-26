@@ -31,11 +31,11 @@ cd harness && SCAN_UNIVERSE=1 node scan_move_coverage.js            # the 0-MISM
 `scan_move_probe` is the engine running, so its count cannot drift; the JS scan's universe verdict is a
 hand-mirrored copy of `turn.rs` and keeps only the invariant gate (`move_census.md`).
 
-## Summary (recounted 2026-10-26 after B6)
+## Summary (recounted 2026-10-26 after B7)
 
 | universe | gen3 ids | engine runs it | fails loud | how |
 |---|---:|---:|---:|---|
-| moves | 369 | **342** | **27** | `PROBE_KIND=move`; JS gate: 342 / 27 / **0 MISMODELED** |
+| moves | 369 | **350** | **19** | `PROBE_KIND=move`; JS gate: 350 / 19 / **0 MISMODELED** |
 | items | 106 | **106** | 0 | `PROBE_KIND=item` (B3 closed the last four) |
 | abilities | 76 | **76** | 0 | `PROBE_KIND=ability`; the handler audit dispositions every hook |
 | species | 392 | **392** | 0 | `PROBE_KIND=species` |
@@ -106,6 +106,7 @@ surface:
 | RAGE (boost after `-damage`, per multi-hit strike and on fixed-damage hits; removed at any move attempt), FURY CUTTER (the multiplier doubles only on a hit), UPROAR's wake (at TryHit, before `-damage`), SMELLING SALTS (no cure on a KO'd target), FALSE SWIPE (the 0-delta `-damage` at 1 HP; Endure first), REST by an Insomnia / Vital Spirit user (fails in `onTry`, no gen3ou clause shuffle), the PURSUIT interrupt's last move, the DEFROST thaw (after BeforeMove), a FAINTED caster's ident (slot-less), LANSAT on a focused holder (no `-start`), a MIMIC'd Curse's request target | `tests/regression_test.rs` `bf1`-`bf11`, `harness/probe_bf_classes.js` | fixed in BF |
 | found by the merged-tree fuzz and the B8 agent: OWN TEMPO / OBLIVIOUS gained through Skill Swap cure the confusion / infatuation at the next Update; a LOAFING Truant user's Pursuit lays no volatile (no interrupt, no residual handler); SYNCHRONIZE into a Safeguard announces `-activate`; a MULTI-HIT move stops when its user falls asleep (Effect Spore) or faints (Rough Skin) | `tests/regression_test.rs` `bf12`-`bf16`, `harness/probe_bf_classes.js` | fixed in BF |
 | a Snatch steal does not set the snatcher's last-used move (a later Conversion 2 reads it); the Hidden Power belief tracker ignores Foresight; Bitter Berry (gen-2 `Past`) cures confusion in an unvalidated Custom Game but is inert in the port | the B6 agent | open |
+| the timed side conditions (Reflect, Light Screen, Safeguard) were gathered for the residual in a FIXED order with Safeguard / Light Screen after the lock-in volatiles; the sim walks `side.sideConditions` in insertion order, which decides a tie's `-sideend` order | the B7 Mist + screens golden board (`mi_screens_b`) | fixed in B7 |
 
 ## Usage: how the ranking is measured
 
@@ -128,7 +129,7 @@ The downloads and scripts were a one-off measurement in a scratch directory, not
 by fetching `https://www.smogon.com/stats/<YYYY-MM>/chaos/<tier>-0.json` for the months listed per tier
 in the index pages and applying the formula above.
 
-## The ranked gap: 27 moves
+## The ranked gap: 19 moves
 
 Usage columns are percentages of fielded mons (ladder) or of battles (replays). Risk: **S** reuses
 existing machinery; **M** adds a self-contained volatile or mechanic; **L** crosses many mechanics (a
@@ -139,24 +140,16 @@ calls arbitrary moves).
 |---|---|---:|---:|---:|---|---:|---:|:-:|:-:|
 | metronome | move-caller | 0.062 | 0.054 | 0.055 | 1v1 0.22 | 0.224 | 55 | L | B11 |
 | assist | move-caller | 0.015 | 0.000 | 0.022 | ru 0.07 | 0.010 | 10 | L | B11 |
-| stockpile | stockpile | 0.008 | 0.001 | 0.004 | pu 0.03 | 0.018 | 16 | M | B7 |
 | mirrormove | move-caller | 0.006 | 0.001 | 0.006 | lc 0.01 | 0.013 | 19 | L | B11 |
-| mudsport | field sport | 0.005 | 0.002 | 0.007 | lc 0.03 | 0.008 | 45 | M | B7 |
 | bide | variable damage | 0.005 | 0.001 | 0.004 | 1v1 0.03 | 0.003 | 20 | M | B8 |
 | magnitude | variable BP | 0.005 | 0.001 | 0.003 | ru 0.02 | 0.005 | 15 | M | B8 |
 | camouflage | type change | 0.003 | 0.000 | 0.003 | 1v1 0.03 | 0.000 | 3 | S | B10 |
 | triplekick | variable BP | 0.002 | 0.000 | 0.002 | 1v1 0.01 | 0.010 | 2 | M | B8 |
-| spitup | stockpile | 0.002 | 0.000 | 0.002 | pu 0.01 | 0.015 | 16 | M | B7 |
-| swallow | stockpile | 0.002 | 0.000 | 0.001 | pu 0.01 | 0.008 | 16 | M | B7 |
 | psywave | variable damage | 0.002 | 0.001 | 0.002 | pu 0.01 | 0.003 | 14 | M | B8 |
-| lockon | lock-on | 0.001 | 0.002 | 0.002 | lc 0.00 | 0.005 | 11 | M | B7 |
 | followme | redirect | 0.001 | 0.000 | 0.001 | uu 0.01 | 0.000 | 13 | S | B10 |
-| mindreader | lock-on | 0.001 | 0.000 | 0.001 | nu 0.01 | 0.015 | 18 | M | B7 |
 | teleport | escape | 0.001 | 0.000 | 0.001 | lc 0.00 | 0.000 | 11 | S | B10 |
 | roleplay | ability copy | 0.001 | 0.000 | 0.001 | uu 0.01 | 0.000 | 8 | M | B10 |
 | present | variable BP | 0.001 | 0.000 | 0.001 | uu 0.00 | 0.013 | 20 | M | B8 |
-| watersport | field sport | 0.000 | 0.000 | 0.000 | nu 0.00 | 0.000 | 30 | M | B7 |
-| mist | side condition | 0.000 | 0.000 | 0.001 | uubl 0.00 | 0.003 | 31 | M | B7 |
 | sketch | move-caller | 0.000 | 0.001 | 0.000 | 1v1 0.00 | 0.003 | 1 | L | B11 |
 | helpinghand | ally boost | 0.000 | 0.000 | 0.000 | uu 0.00 | 0.000 | 56 | S | B10 |
 | naturepower | move-caller | 0.000 | 0.000 | 0.000 | uubl 0.00 | 0.003 | 14 | L | B11 |
@@ -183,7 +176,7 @@ commit.
 | B4 | the two-turn and semi-invulnerable family: Sky Attack, Dig, Fly, Dive, Bounce, Skull Bash, Razor Wind | shipped |
 | B5 | Spite, Grudge, Snore, Nightmare, Ingrain; Rest under Uproar fails | shipped |
 | B6 | Swagger, Flatter, Foresight, Odor Sleuth, Magic Coat | shipped |
-| B7 | Stockpile, Spit Up, Swallow, Mud Sport, Water Sport, Mist, Lock-On, Mind Reader | open |
+| B7 | Stockpile, Spit Up, Swallow, Mud Sport, Water Sport, Mist, Lock-On, Mind Reader | shipped |
 | B8 | Bide, Magnitude, Psywave, Present, Triple Kick, the four OHKO moves | open |
 | B9 | Attract (M6 resolved by design: harnesses pin genders); the Custom Game EV-balance warning | shipped |
 | B10 | Teleport, Follow Me, Helping Hand, Role Play, Camouflage, Endless Battle Clause staleness (M7) | open |

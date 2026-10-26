@@ -362,6 +362,9 @@ impl crate::state::BattleState {
                         let upd = self.each_event_shuffle(); // in-tryMoveHit Update (landed)
                         self.run_update_items(&upd, dex); // cure-berry/Leppa onUpdate (draw-free)
                     }
+                    // SPIT UP's `onAfterMove` (`gen3_b7_moves_v1`) — the move's own singleEvent,
+                    // ahead of the runEvent('AfterMove') handlers below.
+                    self.spit_up_after_move(side, slot, &res, dex);
                     // --- CHARGE consumption (`gen3_move_coverage_batch6_v1` —
                     //     `charge.onAfterMove` + `onMoveAborted`, both `if (move.id !==
                     //     'charge') removeVolatile('charge')`): the volatile lasts until

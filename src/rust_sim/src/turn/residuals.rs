@@ -154,18 +154,39 @@ impl crate::state::BattleState {
             //     the active mon being fainted (a side handler's effectHolder is the SIDE, not the
             //     active — so the gather sits above the `mon.fainted` continue below). speed 0 /
             //     priority 0; Reflect order 1, Light Screen order 2, subOrder 4. Only the SAME
-            //     screen on the OTHER side ties (order 1↔1 / 2↔2, speed 0↔0), so the relative
-            //     gather order of reflect vs lightscreen within a side is unobservable (distinct
-            //     orders never tie). The apply decrements the counter and emits `|-sideend|` at 0. ---
-            if self.sides[side].reflect > 0 {
-                handlers.push(EventHandler {
-                    order: REFLECT_RESIDUAL_ORDER,
-                    priority: 0,
-                    speed: 0.0,
-                    sub_order: SIDE_CONDITION_SUBORDER,
-                    effect_order: 0,
-                    handler: ResidualAction::ScreenDuration { side, is_reflect: true },
-                });
+            //     screen on the OTHER side ties (order 1↔1 / 2↔2, speed 0↔0). The apply
+            //     decrements the counter and emits `|-sideend|` at 0.
+            // MIST joins the three (`gen3_b7_moves_v1`, order 3), and all four are gathered in the
+            // side's `sideConditions` INSERTION order (`side_cond_stamp`), ahead of the mon's
+            // handlers — `findSideEventHandlers` walks the object's keys. The order is load-bearing
+            // for two tied conditions' `-sideend` order: the non-stable selection sort's swaps hand
+            // a tie group whatever order the earlier groups' swaps leave (probe
+            // `harness/probe_b7_moves.js`, the Mist + screens boards; before B7 the port gathered
+            // Reflect first and Safeguard / Light Screen after the lock-in volatiles). ---
+            {
+                let sd = &self.sides[side];
+                let mut conds: Vec<(u32, EventHandler<ResidualAction>)> = Vec::new();
+                let mut add = |up: bool, stamp: usize, order: u64, handler: ResidualAction| {
+                    if up {
+                        conds.push((
+                            sd.side_cond_stamp[stamp],
+                            EventHandler {
+                                order,
+                                priority: 0,
+                                speed: 0.0,
+                                sub_order: SIDE_CONDITION_SUBORDER,
+                                effect_order: 0,
+                                handler,
+                            },
+                        ));
+                    }
+                };
+                add(sd.reflect > 0, crate::state::SIDE_COND_REFLECT, REFLECT_RESIDUAL_ORDER, ResidualAction::ScreenDuration { side, is_reflect: true });
+                add(sd.light_screen > 0, crate::state::SIDE_COND_LIGHT_SCREEN, LIGHT_SCREEN_RESIDUAL_ORDER, ResidualAction::ScreenDuration { side, is_reflect: false });
+                add(sd.safeguard > 0, crate::state::SIDE_COND_SAFEGUARD, SAFEGUARD_RESIDUAL_ORDER, ResidualAction::SafeguardDuration { side });
+                add(sd.mist > 0, crate::state::SIDE_COND_MIST, MIST_RESIDUAL_ORDER, ResidualAction::MistDuration { side });
+                conds.sort_by_key(|(stamp, _)| *stamp);
+                handlers.extend(conds.into_iter().map(|(_, h)| h));
             }
             // FURY CUTTER's `duration: 2` volatile (`gen3_bp_modifier_cluster_v1`) — a
             // NO_ORDER/subOrder-2 DURATION handler like protect/flinch/stall, so it JOINS that
@@ -220,26 +241,6 @@ impl crate::state::BattleState {
                     sub_order: UPROAR_RESIDUAL_SUBORDER,
                     effect_order: 0,
                     handler: ResidualAction::UproarDuration { side, slot: sl },
-                });
-            }
-            if self.sides[side].safeguard > 0 {
-                handlers.push(EventHandler {
-                    order: SAFEGUARD_RESIDUAL_ORDER,
-                    priority: 0,
-                    speed: 0.0,
-                    sub_order: SIDE_CONDITION_SUBORDER,
-                    effect_order: 0,
-                    handler: ResidualAction::SafeguardDuration { side },
-                });
-            }
-            if self.sides[side].light_screen > 0 {
-                handlers.push(EventHandler {
-                    order: LIGHT_SCREEN_RESIDUAL_ORDER,
-                    priority: 0,
-                    speed: 0.0,
-                    sub_order: SIDE_CONDITION_SUBORDER,
-                    effect_order: 0,
-                    handler: ResidualAction::ScreenDuration { side, is_reflect: false },
                 });
             }
 
@@ -699,6 +700,24 @@ impl crate::state::BattleState {
                 });
             }
 
+            // --- LOCK-ON's `lockon` volatile (`gen3_b7_moves_v1`, `duration: 2`, no residual
+            //     callback) — a NO_ORDER/subOrder-2 DURATION handler like the rest of this group,
+            //     so it joins the tie group at the holder's speed: a Lock-On MIRROR at equal speed
+            //     draws one `random(0,2)` on each of the two residuals it lives through (probe
+            //     `harness/probe_b7_moves.js`, the mirror and Baton Pass boards). Gathered last in
+            //     the NO_ORDER block (a lock is usually the newest volatile — the insertion-order
+            //     approximation every volatile here makes). ---
+            if mon.lock_on.is_some() {
+                handlers.push(EventHandler {
+                    order: NO_ORDER,
+                    priority: 0,
+                    speed,
+                    sub_order: VOLATILE_RESIDUAL_SUBORDER,
+                    effect_order: 0,
+                    handler: ResidualAction::LockOnDuration { side, slot },
+                });
+            }
+
             // --- The PERISH SONG counter's residual handler (`gen3_move_coverage_batch6_v1`).
             //     Order **12** — its OWN group, LAST in the modeled ladder (after the
             //     order-10 mon handlers + the order-11 futuremove, before Truant's 27 and
@@ -1117,6 +1136,38 @@ impl crate::state::BattleState {
                     }
                     // NON-ending: `fieldEvent` ran `onResidual` and then the per-handler
                     // `faintMessages()` (`gen3_duration_nonend_faint_drain_v1`). Fall through.
+                }
+                // MIST's duration tick (`gen3_b7_moves_v1`) — the safeguard sibling at order 3.
+                ResidualAction::MistDuration { side } => {
+                    if self.sides[side].mist == 0 {
+                        continue;
+                    }
+                    self.sides[side].mist -= 1;
+                    if self.sides[side].mist == 0 {
+                        // [EMIT] `|-sideend|<side>|Mist` (`mist.condition.onSideEnd`).
+                        if self.logging() {
+                            let side_ref = crate::protocol::ProtocolBuilder::side_ref(
+                                side,
+                                &self.sides[side].name,
+                            );
+                            self.log.sideend(&side_ref, "Mist");
+                        }
+                        continue; // duration-END → skip faintMessages (D4 order fix)
+                    }
+                }
+                // LOCK-ON's duration tick (`gen3_b7_moves_v1`): 2 -> 1 -> gone, silently (the
+                // lockon condition has no onEnd) — the Fury Cutter shape.
+                ResidualAction::LockOnDuration { side, slot } => {
+                    let Some(l) = self.sides[side].pokemon[slot].lock_on else {
+                        continue;
+                    };
+                    if l.duration <= 1 {
+                        self.sides[side].pokemon[slot].lock_on = None;
+                        continue; // duration-END → skip faintMessages
+                    }
+                    self.sides[side].pokemon[slot].lock_on = Some(crate::state::LockOn { duration: l.duration - 1, ..l });
+                    // A NON-ending decrement falls through to the per-handler faintMessages
+                    // (`gen3_duration_nonend_faint_drain_v1`), as Fury Cutter's does.
                 }
                 // FURY CUTTER's duration tick (`gen3_bp_modifier_cluster_v1`): 2 -> 1 -> gone.
                 // No emission (the sim's condition has no onEnd); the duration-END `continue`
@@ -2251,7 +2302,7 @@ impl crate::state::BattleState {
         // accuracy step — a target mid-Fly / Bounce / Dig / Dive is MISSED with no accuracy draw,
         // through the same `[miss]` + `-miss` emission below (probed: Future Sight into a Fly
         // charge turn's residual).
-        let hit = !self.semi_invulnerable_miss(side, slot, &fm.move_id)
+        let hit = !self.semi_invulnerable_miss(src_side, src_slot, side, slot, &fm.move_id)
             && self.roll_accuracy(src_side, src_slot, side, slot, fm.accuracy, false, None, dex);
         if !hit {
             // [EMIT] the `attrLastMove('[miss]')` retro-edit (the `[miss]` lands on the

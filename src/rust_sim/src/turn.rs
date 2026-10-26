@@ -359,6 +359,11 @@ const LIGHT_SCREEN_RESIDUAL_ORDER: u64 = 2;
 /// SAME condition on the OTHER side ties, and BOTH sides carrying Safeguard is exactly that
 /// tie: it draws ONE extra `random(0,2)` per residual (measured 8 → 9 draws on a mirror).
 const SAFEGUARD_RESIDUAL_ORDER: u64 = 4;
+/// MIST's `onSideResidualOrder` (`gen3_b7_moves_v1`; `data/mods/gen4/moves.ts` mist.condition
+/// `onSideResidualOrder: 3`, subOrder undefined → the side-condition 4). Only the other side's
+/// Mist ties it: both sides misted draw one `random(0,2)` per residual (probe
+/// `harness/probe_b7_moves.js`, the both-sides Mist board).
+const MIST_RESIDUAL_ORDER: u64 = 3;
 
 /// UPROAR's residual tick (`gen3_uproar_v1`): order 10, subOrder **11** — probe-captured,
 /// sitting between the status DoT (10/6) and Taunt (10/15). A live tick emits
@@ -689,6 +694,12 @@ enum ResidualAction {
     /// SAFEGUARD's side-condition duration tick (`gen3_safeguard_v1`), order 4 / subOrder 4 /
     /// speed 0 — the reflect/lightscreen sibling. Decrement, `|-sideend|<side>|Safeguard` at 0.
     SafeguardDuration { side: usize },
+    /// MIST's side-condition duration tick (`gen3_b7_moves_v1`), order 3 / subOrder 4 / speed 0.
+    /// Decrement, `|-sideend|<side>|Mist` at 0.
+    MistDuration { side: usize },
+    /// LOCK-ON's `duration: 2` volatile tick (`gen3_b7_moves_v1`), NO_ORDER / subOrder 2 at the
+    /// holder's speed; ends silently (the condition has no `onEnd`).
+    LockOnDuration { side: usize, slot: usize },
     /// UPROAR's lock tick (`gen3_uproar_v1`), order 10 / subOrder 11.
     UproarDuration { side: usize, slot: usize },
     /// FURY CUTTER's `duration: 2` lapse (`gen3_bp_modifier_cluster_v1`), NO_ORDER/sub 2.

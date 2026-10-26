@@ -5,9 +5,9 @@
   "surface": {
    "abilities": 77,
    "items": 67,
-   "conditions": 68,
-   "moves": 326,
-   "rows": 1181
+   "conditions": 73,
+   "moves": 334,
+   "rows": 1224
   },
   "excluded_deferred": {
    "forecast": "Castform forme+TYPE change under weather — deferred (probe_forecast_rng.js settled the map; the reporting surface is unprobed); the port FAIL-LOUDs in state::MonState::from_set (GIGO guard: an unmodeled ability would silently no-op then desync under weather); NOT in MODELED/NOOP + REJECT_ABILITIES/REJECT_SPECIES so the e2e filter + randbats adapter exclude its teams",
@@ -1643,6 +1643,30 @@
    "anchor": "turn.rs::modeled_screen_move",
    "reason": "the |-sidestart| line + the 5-turn counter set (the screen-set arm in run_status_move)"
   },
+  "condition:lockon:duration": {
+   "disposition": "implemented",
+   "fp": "val:2",
+   "anchor": "residuals.rs::run_residuals",
+   "reason": "a NO_ORDER / subOrder-2 duration handler at the holder speed, ended silently at 0; Baton-Passed with its target and duration"
+  },
+  "condition:lockon:onSourceAccuracy": {
+   "disposition": "implemented",
+   "fp": "fn:e84dc761:onSourceAccuracy(accuracy, target, source, move) { if (move && source === this.effectState.target && target === this.eff",
+   "anchor": "speed.rs::roll_accuracy",
+   "reason": "lock_on_holds(attacker, target) → true with no draw: every move class, a Sleep-Talk call, a Future Sight strike by its caster"
+  },
+  "condition:lockon:onSourceInvulnerability": {
+   "disposition": "implemented",
+   "fp": "fn:45fe1e54:onSourceInvulnerability(target, source, move) { if (move && source === this.effectState.target && target === this.effect",
+   "anchor": "moves.rs::semi_invulnerable_miss",
+   "reason": "priority 1, ahead of the Fly / Dig / Dive / Bounce handlers: the locked target is not missed (damaging, status, fixed-damage, Future Sight, Perish Song)"
+  },
+  "condition:lockon:onSourceInvulnerabilityPriority": {
+   "disposition": "implemented",
+   "fp": "val:1",
+   "anchor": "moves.rs::semi_invulnerable_miss",
+   "reason": "priority 1, ahead of the Fly / Dig / Dive / Bounce handlers: the locked target is not missed (damaging, status, fixed-damage, Future Sight, Perish Song)"
+  },
   "condition:magiccoat:duration": {
    "disposition": "implemented",
    "fp": "val:1",
@@ -1714,6 +1738,54 @@
    "fp": "fn:c32788bc:onStart(target, source, move) { this.effectState.slot = null; this.effectState.damage = 0; }",
    "anchor": "turn.rs::run_full_battle",
    "reason": "the order-5 beforeTurnMove lays the reactive volatile with a RESET record ({slot:null,damage:0} — prev-turn damage never counts); draw-free, no protocol line"
+  },
+  "condition:mist:duration": {
+   "disposition": "implemented",
+   "fp": "val:5",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the mist arm: ZERO draws; already up → [still] + -fail; SideState::mist = 5, -sidestart|<side>|Mist; snatchable"
+  },
+  "condition:mist:onSideEnd": {
+   "disposition": "implemented",
+   "fp": "fn:ab4304c0:onSideEnd(side) { this.add(\"-sideend\", side, \"Mist\"); }",
+   "anchor": "residuals.rs::run_residuals",
+   "reason": "order 3 / subOrder 4 / speed 0, gathered in sideConditions insertion order (side_cond_stamp); -sideend|<side>|Mist at 0; a Mist on each side ties"
+  },
+  "condition:mist:onSideResidualOrder": {
+   "disposition": "implemented",
+   "fp": "val:3",
+   "anchor": "residuals.rs::run_residuals",
+   "reason": "order 3 / subOrder 4 / speed 0, gathered in sideConditions insertion order (side_cond_stamp); -sideend|<side>|Mist at 0; a Mist on each side ties"
+  },
+  "condition:mist:onSideStart": {
+   "disposition": "implemented",
+   "fp": "fn:0676ad7e:onSideStart(side) { this.add(\"-sidestart\", side, \"Mist\"); }",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the mist arm: ZERO draws; already up → [still] + -fail; SideState::mist = 5, -sidestart|<side>|Mist; snatchable"
+  },
+  "condition:mist:onTryBoost": {
+   "disposition": "implemented",
+   "fp": "fn:fe44727e:onTryBoost(boost, target, source, effect) { if (effect.effectType === \"Move\" && effect.infiltrates && !target.isAlly(sou",
+   "anchor": "secondaries.rs::apply_secondary_boost",
+   "reason": "a foe-sourced drop: after the target ability (Clear Body / Hyper Cutter / Keen Eye), every capped negative key is deleted; -activate|<t>|move: Mist unless the effect is a secondary; Intimidate in event.rs::intimidate_on_start + the helpers.rs emission"
+  },
+  "condition:mudsport:onAnyBasePower": {
+   "disposition": "implemented",
+   "fp": "fn:05a35741:onAnyBasePower(basePower, user, target, move) { if (move.type === \"Electric\") { this.debug(\"Mud Sport weaken\"); return t",
+   "anchor": "moves.rs::sport_bp_fold",
+   "reason": "every holder with HP halves an Electric (Mud) / Fire (Water) move at the BasePower chain, behind Charge and ahead of the pinch abilities / Thick Fat / the priority-0 members"
+  },
+  "condition:mudsport:onAnyBasePowerPriority": {
+   "disposition": "implemented",
+   "fp": "val:3",
+   "anchor": "moves.rs::base_power_sport_shuffle",
+   "reason": "priority 3, speed = the holder, subOrder 2: two sports at one speed tie on every getDamage that reaches BasePower (k-1 draws after the crit, before ModifyDamagePhase1)"
+  },
+  "condition:mudsport:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:4a0572d1:onStart(pokemon) { this.add(\"-start\", pokemon, \"Mud Sport\"); }",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the sport arm: ZERO draws; a recast [still] + -fail; -start|<u>|Mud Sport / move: Water Sport; Baton-Passed (noCopy false), cleared silently on switch-out / faint"
   },
   "condition:mustrecharge:duration": {
    "disposition": "implemented",
@@ -2251,6 +2323,24 @@
    "anchor": "state.rs::protect_counter",
    "reason": "the gen3 stall counter 0→2→4→8 (counterMax 8) + duration-2 expiry (stall_duration)"
   },
+  "condition:stockpile:onEnd": {
+   "disposition": "implemented",
+   "fp": "fn:6232221b:onEnd(target) { this.effectState.layers = 0; this.add(\"-end\", target, \"Stockpile\"); }",
+   "anchor": "moves.rs::spit_up_after_move",
+   "reason": "-end|<u>|Stockpile on the removeVolatile path (Spit Up AfterMove here, Swallow in the swallow arm); switch-out / faint clear it silently (clearVolatile runs no onEnd)"
+  },
+  "condition:stockpile:onRestart": {
+   "disposition": "implemented",
+   "fp": "fn:9f1f77dc:onRestart(target) { if (this.effectState.layers >= 3) return false; this.effectState.layers++; this.add(\"-start\", target",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the stockpile arm: ZERO draws; at 3 layers onTry is false at singleEvent(Try) → the bare announce; else MonState::stockpile += 1 and -start|<u>|stockpile<n> (the gen-3 condition carries no Def/SpD boosts); snatchable through the generic interception"
+  },
+  "condition:stockpile:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:4ab58f05:onStart(target) { this.effectState.layers = 1; this.add(\"-start\", target, \"stockpile\" + this.effectState.layers); }",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the stockpile arm: ZERO draws; at 3 layers onTry is false at singleEvent(Try) → the bare announce; else MonState::stockpile += 1 and -start|<u>|stockpile<n> (the gen-3 condition carries no Def/SpD boosts); snatchable through the generic interception"
+  },
   "condition:substitute:onEnd": {
    "disposition": "noop_justified",
    "fp": "fn:55398a21:onEnd(target) { this.add(\"-end\", target, \"Substitute\"); }",
@@ -2521,6 +2611,24 @@
    "fp": "fn:e5fbb774:onStart(target) { this.add(\"-start\", target, \"Uproar\"); }",
    "anchor": "turn/moves.rs::run_move",
    "reason": "the lock: `MonState::uproar = Some((turns, slot))`, armed on the CAST turn AFTER the damage with a single random(2,6) that is NEVER re-drawn. It folds into `move_locked()`, which gives the FIRM single-move `trapped:true` request shape, the Move(0)->locked-slot mapping at queue-build, and the switch reject, all for free. PP is spent ONCE per CAST — every continuing turn is a lockedmove that skips deductPP, exactly like Solar Beam's fire turn. A cast that did NOT land (miss / type-immune Ghost / Protect) applies no volatile and draws no duration, though its PP is spent."
+  },
+  "condition:watersport:onAnyBasePower": {
+   "disposition": "implemented",
+   "fp": "fn:e3b44643:onAnyBasePower(basePower, user, target, move) { if (move.type === \"Fire\") { this.debug(\"Water Sport weaken\"); return thi",
+   "anchor": "moves.rs::sport_bp_fold",
+   "reason": "every holder with HP halves an Electric (Mud) / Fire (Water) move at the BasePower chain, behind Charge and ahead of the pinch abilities / Thick Fat / the priority-0 members"
+  },
+  "condition:watersport:onAnyBasePowerPriority": {
+   "disposition": "implemented",
+   "fp": "val:3",
+   "anchor": "moves.rs::base_power_sport_shuffle",
+   "reason": "priority 3, speed = the holder, subOrder 2: two sports at one speed tie on every getDamage that reaches BasePower (k-1 draws after the crit, before ModifyDamagePhase1)"
+  },
+  "condition:watersport:onStart": {
+   "disposition": "implemented",
+   "fp": "fn:bc2f4469:onStart(pokemon) { this.add(\"-start\", pokemon, \"move: Water Sport\"); }",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the sport arm: ZERO draws; a recast [still] + -fail; -start|<u>|Mud Sport / move: Water Sport; Baton-Passed (noCopy false), cleared silently on switch-out / faint"
   },
   "condition:wish:duration": {
    "disposition": "implemented",
@@ -5227,6 +5335,24 @@
    "anchor": "turn.rs::modeled_screen_move",
    "reason": "the 5-turn screen side-condition arm (Light Screen/Reflect set + the side-residual countdown + the damage-calc halving)"
   },
+  "move:lockon:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the lock-on arm: Invulnerability miss, accuracy (skipped under a held lock), Protect, then a held lock / a Substitute → [still] + -fail; MonState::lock_on (duration 2) and -activate|<u>|move: Lock-On|[of] <t> (move: Mind Reader)"
+  },
+  "move:lockon:onHit": {
+   "disposition": "implemented",
+   "fp": "fn:7e564e13:onHit(target, source) { source.addVolatile(\"lockon\", target); this.add(\"-activate\", source, \"move: Lock-On\", `[of] ${tar",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the lock-on arm: Invulnerability miss, accuracy (skipped under a held lock), Protect, then a held lock / a Substitute → [still] + -fail; MonState::lock_on (duration 2) and -activate|<u>|move: Lock-On|[of] <t> (move: Mind Reader)"
+  },
+  "move:lockon:onTryHit": {
+   "disposition": "implemented",
+   "fp": "fn:ee88c033:onTryHit(target, source) { if (source.volatiles[\"lockon\"]) return false; }",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the lock-on arm: Invulnerability miss, accuracy (skipped under a held lock), Protect, then a held lock / a Substitute → [still] + -fail; MonState::lock_on (duration 2) and -activate|<u>|move: Lock-On|[of] <t> (move: Mind Reader)"
+  },
   "move:lovelykiss:ignoreImmunity": {
    "disposition": "implemented",
    "fp": "val:true",
@@ -5407,6 +5533,24 @@
    "anchor": "turn.rs::run_status_move",
    "reason": "the mimic arm: sub / no-lastMove / failmimic (data-driven MoveData::fail_mimic) / already-known fails ([still]+-fail, draw-free); the copy overlays the slot {pp: min(5, base), maxpp: calculatePP(copied,3)} via MonState::mimic_overlay; restore_mimic_overlay reverts on switch-out/faint (MC95)"
   },
+  "move:mindreader:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the lock-on arm: Invulnerability miss, accuracy (skipped under a held lock), Protect, then a held lock / a Substitute → [still] + -fail; MonState::lock_on (duration 2) and -activate|<u>|move: Lock-On|[of] <t> (move: Mind Reader)"
+  },
+  "move:mindreader:onHit": {
+   "disposition": "implemented",
+   "fp": "fn:0987d0ff:onHit(target, source) { source.addVolatile(\"lockon\", target); this.add(\"-activate\", source, \"move: Mind Reader\", `[of] $",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the lock-on arm: Invulnerability miss, accuracy (skipped under a held lock), Protect, then a held lock / a Substitute → [still] + -fail; MonState::lock_on (duration 2) and -activate|<u>|move: Lock-On|[of] <t> (move: Mind Reader)"
+  },
+  "move:mindreader:onTryHit": {
+   "disposition": "implemented",
+   "fp": "fn:ee88c033:onTryHit(target, source) { if (source.volatiles[\"lockon\"]) return false; }",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the lock-on arm: Invulnerability miss, accuracy (skipped under a held lock), Protect, then a held lock / a Substitute → [still] + -fail; MonState::lock_on (duration 2) and -activate|<u>|move: Lock-On|[of] <t> (move: Mind Reader)"
+  },
   "move:minimize:boosts": {
    "disposition": "implemented",
    "fp": "val:{\"evasion\":1}",
@@ -5442,6 +5586,24 @@
    "fp": "val:-5",
    "anchor": "turn.rs::move_priority",
    "reason": "the action-order priority sort (draws only on a priority+speed tie)"
+  },
+  "move:mist:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the mist arm: ZERO draws; already up → [still] + -fail; SideState::mist = 5, -sidestart|<side>|Mist; snatchable"
+  },
+  "move:mist:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the mist arm: ZERO draws; already up → [still] + -fail; SideState::mist = 5, -sidestart|<side>|Mist; snatchable"
+  },
+  "move:mist:sideCondition": {
+   "disposition": "implemented",
+   "fp": "val:\"mist\"",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the mist arm: ZERO draws; already up → [still] + -fail; SideState::mist = 5, -sidestart|<side>|Mist; snatchable"
   },
   "move:mistball:secondaries": {
    "disposition": "implemented",
@@ -5502,6 +5664,24 @@
    "fp": "val:[{\"chance\":100,\"boosts\":{\"accuracy\":-1}}]",
    "anchor": "turn.rs::apply_secondaries",
    "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:mudsport:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the sport arm: ZERO draws; a recast [still] + -fail; -start|<u>|Mud Sport / move: Water Sport; Baton-Passed (noCopy false), cleared silently on switch-out / faint"
+  },
+  "move:mudsport:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the sport arm: ZERO draws; a recast [still] + -fail; -start|<u>|Mud Sport / move: Water Sport; Baton-Passed (noCopy false), cleared silently on switch-out / faint"
+  },
+  "move:mudsport:volatileStatus": {
+   "disposition": "implemented",
+   "fp": "val:\"mudsport\"",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the sport arm: ZERO draws; a recast [still] + -fail; -start|<u>|Mud Sport / move: Water Sport; Baton-Passed (noCopy false), cleared silently on switch-out / faint"
   },
   "move:needlearm:secondaries": {
    "disposition": "implemented",
@@ -6443,6 +6623,18 @@
    "anchor": "status_moves.rs::run_status_move",
    "reason": "the spite arm: accuracy, Protect, then random(2,6) DRAWN FIRST, then lastMove + deductPP (BattleState::last_move_id / slots_with_move_id): -activate prints the roll; a failure [still] + -fail; bypasssub (no sub gate); Status-default ignoreImmunity"
   },
+  "move:spitup:onAfterMove": {
+   "disposition": "implemented",
+   "fp": "fn:ab709144:onAfterMove(pokemon) { pokemon.removeVolatile(\"stockpile\"); }",
+   "anchor": "moves.rs::spit_up_after_move",
+   "reason": "the first AfterMove handler, for the EXECUTED move (a Sleep-Talk call included), any outcome but a cant / nopp, not on a 0-HP user"
+  },
+  "move:spitup:onTry": {
+   "disposition": "implemented",
+   "fp": "fn:b74f0bf0:onTry(source) { return !!source.volatiles[\"stockpile\"]; }",
+   "anchor": "moves.rs::run_move",
+   "reason": "no stockpile → the bare announce, ZERO draws, before accuracy / Protect / immunity (the Snore-site Try gate)"
+  },
   "move:splash:ignoreImmunity": {
    "disposition": "implemented",
    "fp": "val:true",
@@ -6483,6 +6675,30 @@
    "fp": "val:[{\"chance\":10,\"self\":{\"boosts\":{\"def\":1}}}]",
    "anchor": "turn.rs::apply_secondaries",
    "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:stockpile:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the stockpile arm: ZERO draws; at 3 layers onTry is false at singleEvent(Try) → the bare announce; else MonState::stockpile += 1 and -start|<u>|stockpile<n> (the gen-3 condition carries no Def/SpD boosts); snatchable through the generic interception"
+  },
+  "move:stockpile:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the stockpile arm: ZERO draws; at 3 layers onTry is false at singleEvent(Try) → the bare announce; else MonState::stockpile += 1 and -start|<u>|stockpile<n> (the gen-3 condition carries no Def/SpD boosts); snatchable through the generic interception"
+  },
+  "move:stockpile:onTry": {
+   "disposition": "implemented",
+   "fp": "fn:e3ca3d1b:onTry(source) { if (source.volatiles[\"stockpile\"] && source.volatiles[\"stockpile\"].layers >= 3) return false; }",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the stockpile arm: ZERO draws; at 3 layers onTry is false at singleEvent(Try) → the bare announce; else MonState::stockpile += 1 and -start|<u>|stockpile<n> (the gen-3 condition carries no Def/SpD boosts); snatchable through the generic interception"
+  },
+  "move:stockpile:volatileStatus": {
+   "disposition": "implemented",
+   "fp": "val:\"stockpile\"",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the stockpile arm: ZERO draws; at 3 layers onTry is false at singleEvent(Try) → the bare announce; else MonState::stockpile += 1 and -start|<u>|stockpile<n> (the gen-3 condition carries no Def/SpD boosts); snatchable through the generic interception"
   },
   "move:stomp:secondaries": {
    "disposition": "implemented",
@@ -6621,6 +6837,30 @@
    "fp": "val:\"confusion\"",
    "anchor": "status_moves.rs::run_status_move",
    "reason": "the TARGET_BOOST_MOVES arm: accuracy, Protect, the Magic Coat bounce, the Substitute block, then the capped -boost (delta 0 printed at +6) and the confusion add (Own Tempo -immune / already-confused silent / Safeguard -activate / random(2,6)); [still] -fail only for a delta-0 boost into an already-confused target; ignoreImmunity: a Status move skips the type chart"
+  },
+  "move:swallow:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the swallow arm: ZERO draws; no stockpile → bare (no Snatch exemption in gen 3: a snatcher needs its own); heal modify(maxhp, 0.25|0.5|1) as -heal, or -fail|<u>|heal at full HP, then -end|<u>|Stockpile"
+  },
+  "move:swallow:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the swallow arm: ZERO draws; no stockpile → bare (no Snatch exemption in gen 3: a snatcher needs its own); heal modify(maxhp, 0.25|0.5|1) as -heal, or -fail|<u>|heal at full HP, then -end|<u>|Stockpile"
+  },
+  "move:swallow:onHit": {
+   "disposition": "implemented",
+   "fp": "fn:c2765d82:onHit(pokemon) { const layers = pokemon.volatiles[\"stockpile\"]?.layers || 1; const healAmount = [0.25, 0.5, 1]; const su",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the swallow arm: ZERO draws; no stockpile → bare (no Snatch exemption in gen 3: a snatcher needs its own); heal modify(maxhp, 0.25|0.5|1) as -heal, or -fail|<u>|heal at full HP, then -end|<u>|Stockpile"
+  },
+  "move:swallow:onTry": {
+   "disposition": "implemented",
+   "fp": "fn:b74f0bf0:onTry(source) { return !!source.volatiles[\"stockpile\"]; }",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the swallow arm: ZERO draws; no stockpile → bare (no Snatch exemption in gen 3: a snatcher needs its own); heal modify(maxhp, 0.25|0.5|1) as -heal, or -fail|<u>|heal at full HP, then -end|<u>|Stockpile"
   },
   "move:sweetkiss:ignoreImmunity": {
    "disposition": "implemented",
@@ -6927,6 +7167,24 @@
    "fp": "val:[{\"chance\":20,\"volatileStatus\":\"confusion\"}]",
    "anchor": "turn.rs::apply_secondaries",
    "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:watersport:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the sport arm: ZERO draws; a recast [still] + -fail; -start|<u>|Mud Sport / move: Water Sport; Baton-Passed (noCopy false), cleared silently on switch-out / faint"
+  },
+  "move:watersport:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the sport arm: ZERO draws; a recast [still] + -fail; -start|<u>|Mud Sport / move: Water Sport; Baton-Passed (noCopy false), cleared silently on switch-out / faint"
+  },
+  "move:watersport:volatileStatus": {
+   "disposition": "implemented",
+   "fp": "val:\"watersport\"",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the sport arm: ZERO draws; a recast [still] + -fail; -start|<u>|Mud Sport / move: Water Sport; Baton-Passed (noCopy false), cleared silently on switch-out / faint"
   },
   "move:weatherball:onModifyMove": {
    "disposition": "implemented",

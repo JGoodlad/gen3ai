@@ -184,6 +184,8 @@ impl crate::state::BattleState {
                 let upd = self.each_event_shuffle(); // [7]/[12] in-tryMoveHit Update
                 self.run_update_items(&upd, dex); // cure-berry/Leppa onUpdate (draw-free)
             }
+            // SPIT UP's `onAfterMove` (`gen3_b7_moves_v1`), as in the queue driver.
+            self.spit_up_after_move(action.side, action.slot, &outcome, dex);
 
             // faintMessages() at the END of runAction sets the `fainted` flag (now the
             // 0-HP mon is excluded from getAllActive). A faint then reaches
@@ -809,6 +811,12 @@ impl crate::state::BattleState {
                         .map(|a| a.name.clone())
                         .unwrap_or(foe_ability);
                     self.log.fail_unboost_from_ability(&foe_ref, &display, stat);
+                } else if !at_floor && self.sides[foe].mist > 0 {
+                    // MIST (`gen3_b7_moves_v1`): the foe side's Mist deleted the drop; the
+                    // effect is the ability (no `secondaries`), so `|-activate|<foe>|move: Mist`
+                    // (probe `harness/probe_b7_moves.js`, Mist vs Intimidate). At the floor the
+                    // capped 0 survives Mist and prints the `-unboost|…|atk|0` below.
+                    self.log.activate(&foe_ref, "move: Mist", None);
                 } else {
                     // The CLAMPED-APPLIED delta `new_atk − pre_atk` ∈ {−1, 0}: a foe already
                     // at the −6 floor drops by 0 → `|-unboost|…|atk|0` (the sim STILL emits
@@ -1516,6 +1524,13 @@ pub(crate) fn variable_bp(
                 _ => 120,
             }
         }
+        // SPIT UP (`gen3_b7_moves_v1`; `data/moves.ts` spitup `basePowerCallback`: `layers *
+        // 100`, and `false` with no stockpile). The move's `onTry` (`!!source.volatiles
+        // ['stockpile']`) fails BEFORE BasePower ever reads this — at gen-3 `tryMoveHit`'s
+        // `singleEvent('Try')`, `run_move`'s Snore-site gate — so the 0-layer value is never used
+        // for damage; it returns 100 only so the bp-0 routing (category Status / the bp-0 no-op)
+        // keeps the move on the damaging path where that gate sits.
+        "spitup" => 100 * (user.stockpile.max(1) as u16),
         _ => return None,
     })
 }

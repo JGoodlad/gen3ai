@@ -29139,3 +29139,24 @@ Conversion 2, 0.0074 %); the multi-hit stop (dice: Effect Spore 0.99 % of mons �
 0.81 %, Safeguard 0.054 %); Skill Swap 0.0085 % for Own Tempo / Oblivious; Slaking with Pursuit 0.0006 %. The e2e
 capstone regenerates byte for byte and the obs golden reproduces 991 / 991: no committed OU battle carries any of
 them. A training-data change only for runs on pins after this commit.
+## 2026-10-26 · RUST SIM · gen3 full parity B7: Stockpile, Spit Up, Swallow, Mud Sport, Water Sport, Mist, Lock-On, Mind Reader (moves 342 → 350 of 369)
+
+**B7** (`gen3_b7_moves_v1`, spec `harness/probe_b7_moves.js`; built by a subagent, merged onto B6 + BF and gated here). STOCKPILE stacks to three
+(`-start|…|stockpile<n>`, no Def/SpD boosts in gen 3); a fourth, and Spit Up / Swallow with none, are the bare
+announce with no draw. SPIT UP is a 100 × layers Physical move with the ordinary random factor; its `onAfterMove`
+ends the stockpile after the damage on every outcome, a Sleep-Talk call included. SWALLOW heals `modify(maxhp,
+¼ | ½ | 1)` or `-fail|…|heal` at full HP, then ends it. The SPORTS halve Electric / Fire base power from every
+holder with HP (Baton-Passed, no duration) and, the one hidden draw, two sport handlers at the same speed tie
+in every BasePower event — any damaging move, Beat Up per strike, a confusion self-hit, a crash, a Future Sight
+cast. MIST deletes foe-sourced drops after the target's own Clear Body / Hyper Cutter / Keen Eye, announces
+only for a non-secondary effect (Intimidate included), leaves a −6 stat's `-unboost|…|0`, and lasts five turns;
+a side's timed conditions are now gathered for the residual in INSERTION order (the port had Safeguard / Light
+Screen after the lock-in volatiles), which decides two tied conditions' `-sideend` order. LOCK-ON / MIND READER
+(accuracy 100 in gen 3) lock the target for the next turn: no accuracy draw and no semi-invulnerable miss against
+it (a Future Sight strike and Perish Song included), a recast fails without a draw, Protect answers first, Baton
+Pass passes the lock and its NO_ORDER residual tie. Golden 712 rows / 80 boards (four gen3ou), 20 pins, all 17
+reverts verified; OU goldens byte-identical; random fuzz 2 × 150 on its own branch: 10 divergences, all Rage / Fury
+Cutter (fixed in BF), 0 B7. **OU-visible (FINDING):** the insertion-order gather of Reflect / Light Screen / Safeguard
+changes a tied `-sideend` pair's order (and the sport tie draw needs two sport holders, 0.0002 % of OU mons); e2e
+capstone and obs golden unchanged. **Left:** Beat Up and the Jump Kick crash may skip the screens' tie shuffle the sim
+runs for them (unverified).

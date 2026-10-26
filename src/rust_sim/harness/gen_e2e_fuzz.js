@@ -398,7 +398,8 @@ const BATCH4C_E2E_EXCLUDED = false;
 // MC61+ pins), kept in lockstep with the src/turn.rs id-gates (`is_fixed_damage_move` /
 // `variable_bp` / the sleeptalk arm).
 const MODELED_BATCH5_REACTIVE_MOVES = new Set(['counter', 'mirrorcoat', 'endeavor']);
-const MODELED_BATCH5_VARBP_MOVES = new Set(['return', 'frustration', 'flail', 'reversal', 'lowkick']);
+// SPIT UP joins in GEN3 FULL PARITY B7 (`gen3_b7_moves_v1`; `variable_bp` / `is_variable_bp`).
+const MODELED_BATCH5_VARBP_MOVES = new Set(['return', 'frustration', 'flail', 'reversal', 'lowkick', 'spitup']);
 const BATCH5_E2E_EXCLUDED = false;
 
 // MOVE-COVERAGE BATCH 6 (`gen3_move_coverage_batch6_v1`) — the FINAL UNMODELED tail,
@@ -431,6 +432,10 @@ const SNATCH_E2E_EXCLUDED = false;
 // passes the damaging gates once off the blocklist). Kept in lockstep with the src/turn
 // status_moves.rs B5 arms; golden `gen_b5_moves_golden.js` → `tests/b5_moves_golden_test.rs`.
 const MODELED_B5_MOVES = new Set(['spite', 'grudge', 'nightmare', 'ingrain']);
+// GEN3 FULL PARITY B7 (`gen3_b7_moves_v1`) — the category-Status members (Spit Up is damaging and
+// rides MODELED_BATCH5_VARBP_MOVES). Kept in lockstep with the status_moves.rs B7 arms; golden
+// `gen_b7_moves_golden.js` → `tests/b7_moves_golden_test.rs`.
+const MODELED_B7_MOVES = new Set(['stockpile', 'swallow', 'mudsport', 'watersport', 'mist', 'lockon', 'mindreader']);
 
 // FOCUS ENERGY (`gen3_focus_energy_move_v1`, ROUND 59) — a `target: self`, NEVER-MISS,
 // **DRAW-FREE** status move that sets the `focusenergy` volatile (+2 crit stages). The volatile
@@ -835,6 +840,7 @@ function isModeledMove(id, allowHiddenPower = false) {
       // a modeled arm (never a fail-loud). Closes 722/722.
       (SNATCH_E2E_EXCLUDED ? false : MODELED_SNATCH_MOVES.has(id)) ||
       MODELED_B5_MOVES.has(id) ||
+      MODELED_B7_MOVES.has(id) ||
       MODELED_FOCUS_ENERGY_MOVES.has(id) ||
       // HAZE (`gen3_haze_v1`) — the boost-reset FIELD move, category Status + bit-for-bit modeled.
       (HAZE_E2E_EXCLUDED ? false : MODELED_HAZE_MOVES.has(id)) ||

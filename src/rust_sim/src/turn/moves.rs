@@ -51,6 +51,27 @@ impl crate::state::BattleState {
         res
     }
 
+    /// SPIT UP's `onAfterMove` (`gen3_b7_moves_v1`; `data/moves.ts` spitup: `pokemon.removeVolatile
+    /// ('stockpile')`): the FIRST AfterMove handler (`runMove` fires `singleEvent('AfterMove',
+    /// move)` before `runEvent('AfterMove')` — Charge, Choice Band, White Herb), after the move
+    /// body and its in-`tryMoveHit` Update. It runs for every Spit Up that reached `useMove`
+    /// (a 0-layer fail, a miss, Protect, a Ghost included; a Sleep Talk call too, since the
+    /// AfterMove move is the activeMove), never for a cant or a `nopp` (no AfterMove), and not on
+    /// a 0-HP user (`removeVolatile` is false for `!this.hp`). `|-end|<user>|Stockpile`.
+    pub(crate) fn spit_up_after_move(&mut self, side: usize, slot: usize, res: &MoveResolution, dex: &Dex) {
+        let pending = std::mem::replace(&mut self.sides[side].pokemon[slot].spit_up_after_move, false);
+        if !pending || res.aborted || self.sides[side].pokemon[slot].hp == 0 {
+            return;
+        }
+        if self.sides[side].pokemon[slot].stockpile > 0 {
+            self.sides[side].pokemon[slot].stockpile = 0;
+            if self.logging() {
+                let user = self.mon_ref(side, slot, dex);
+                self.log.volatile_end(&user, "Stockpile");
+            }
+        }
+    }
+
     /// The move's damage, recorded for `move.totalDamage` (SHELL BELL's basis): the HP the
     /// strike actually took off the target mon. Called right after each foe `apply_damage` of a
     /// move strike (the main hit, a multi-hit strike, a Beat Up strike, a fixed-damage hit).
@@ -1029,6 +1050,26 @@ impl crate::state::BattleState {
             return MoveResolution::done(false, false, false);
         }
 
+        // --- SPIT UP (`gen3_b7_moves_v1`; `data/moves.ts` spitup, untouched by the gen-3/4 mods):
+        //     the move reached `useMove`, so the runMove tail's AfterMove — keyed on the EXECUTED
+        //     move, Sleep Talk's call included — will run `onAfterMove: removeVolatile('stockpile')`
+        //     (`turn/driver.rs`, `spit_up_after_move`). Then its `onTry` (`return !!source.volatiles
+        //     ['stockpile']`) at the same `singleEvent('Try')` as Snore's: with no stockpile, the bare
+        //     announce, ZERO draws, PP spent. With layers, an ordinary 100 × layers BP gen-3 Normal
+        //     (Physical) move: accuracy, crit, damage roll WITH the random factor, Protect / Ghost /
+        //     Substitute / Wonder Guard as any other. Probe `harness/probe_b7_moves.js`. ---
+        if move_id == "spitup" {
+            self.sides[side].pokemon[slot].spit_up_after_move = true;
+            if self.sides[side].pokemon[slot].stockpile == 0 {
+                if self.logging() {
+                    let user = self.mon_ref(side, slot, dex);
+                    let target = self.mon_ref(foe, foe_slot, dex);
+                    self.log.move_used(&user, &move_name, Some(&target), false, false);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+        }
+
         if move_id == "fakeout" && self.sides[side].pokemon[slot].active_move_actions > 1 {
             if self.logging() {
                 let user = self.mon_ref(side, slot, dex);
@@ -1046,7 +1087,7 @@ impl crate::state::BattleState {
         //     ZERO draws (`[miss]` + `|-miss|`). Explosion's self-KO above has already happened;
         //     a Jump Kick / High Jump Kick still crashes (`useMoveInner`'s `MoveFail` on a false
         //     `tryMoveHit`, scripts.ts:238-240 — probed). ---
-        if invuln_applies && self.semi_invulnerable_miss(foe, foe_slot, &move_id) {
+        if invuln_applies && self.semi_invulnerable_miss(side, slot, foe, foe_slot, &move_id) {
             self.emit_damaging_miss(side, slot, foe, foe_slot, &move_name, announce_lockedmove, suppress_announce, dex);
             if move_id == "jumpkick" || move_id == "highjumpkick" {
                 self.apply_jump_kick_crash(
@@ -1270,7 +1311,8 @@ impl crate::state::BattleState {
         //     the user's next move attempt of ANY kind (onAfterMove/onMoveAborted —
         //     handled by the CALLER after this move resolves), so the fold reads the
         //     still-up flag. gen3 Charge has NO +1 SpD. DRAW-FREE. ---
-        if self.sides[side].pokemon[slot].charge && move_type == Some(Type::Electric) {
+        let charge_applies = self.sides[side].pokemon[slot].charge && move_type == Some(Type::Electric);
+        if charge_applies {
             ctx.bp_mods.push(BpMod::Chain(2, 1));
         }
 
@@ -1290,6 +1332,11 @@ impl crate::state::BattleState {
         {
             ctx.bp_mods.push(BpMod::Chain(1, 2));
         }
+
+        // --- MUD SPORT / WATER SPORT (`gen3_b7_moves_v1`): each sport volatile on an active mon
+        //     halves this move's BASE POWER at `runEvent('BasePower')` when the type matches.
+        //     See `sport_bp_fold`. ---
+        self.sport_bp_fold(&mut ctx.bp_mods, move_type, charge_applies);
 
         // --- IMMUNITY short-circuit (the draw-COUNT crux): a type-chart 0× or an
         //     ability/Levitate immunity. gen3 `tryMoveHit` knows immunity up front,
@@ -1627,6 +1674,11 @@ impl crate::state::BattleState {
         // Re-resolve damage WITH the crit flag (crit zeros boosts/screens).
         ctx.crit = crit;
         let dmg = crate::damage::calc_damage(&ctx, dex);
+
+        // --- 2a. THE `runEvent('BasePower')` SPORT TIE SHUFFLE (`gen3_b7_moves_v1`): BasePower runs
+        //     after the crit roll (`getDamage`), BEFORE ModifyDamagePhase1 — see
+        //     `base_power_sport_shuffle`. ---
+        self.base_power_sport_shuffle();
 
         // --- 2b. THE `runEvent('ModifyDamagePhase1')` HANDLER-SORT SHUFFLE
         //     (`gen3_move_coverage_batch2_v1`) — gen3 `modifyDamage` (scripts.js:61) runs
@@ -2343,6 +2395,9 @@ impl crate::state::BattleState {
                 flash_fire: false,
             };
             let dmg = calc_damage(&ctx, dex);
+            // [BasePower sport tie shuffle] per strike (`gen3_b7_moves_v1`; probe: both sports on
+            // one mon add one draw per Beat Up strike, after the crit, before the damage roll).
+            self.base_power_sport_shuffle();
             // [damage] `random(16)` selects the roll — every other damaging move's order.
             let r = self.damage_roll(
             crate::rolls::Site { kind: crate::rolls::SiteKind::BeatUp, att_side: side, tgt_side: foe, tgt_slot: foe_slot, move_id: "beatup", rolls: &dmg.rolls, via_sub: true, false_swipe: false, endure_applies: false },
@@ -2643,7 +2698,13 @@ impl crate::state::BattleState {
                 dex,
             );
             sctx.crit = crit;
+            // The sports' BasePower halving (`gen3_b7_moves_v1`; no gen-3 multihit move is
+            // Electric or Fire, so it never fires today — kept so a type change cannot skip it).
+            self.sport_bp_fold(&mut sctx.bp_mods, move_type, false);
             let dmg = crate::damage::calc_damage(&sctx, dex);
+
+            // [BasePower sport tie shuffle] per strike (`gen3_b7_moves_v1`), before Phase1.
+            self.base_power_sport_shuffle();
 
             // [ModifyDamagePhase1 shuffle] the FULL screen tie group (all screens across BOTH
             // sides — `onAnyModifyDamagePhase1`) → `k-1` draws for k screens, PER STRIKE
@@ -2808,10 +2869,109 @@ impl crate::state::BattleState {
     /// (`gen3_twoturn_family_v1`): the target holds a Fly / Bounce / Dig / Dive sub-volatile whose
     /// `onInvulnerability` this move does not bypass. The caller has already checked that the
     /// move's target kind runs the event at all ([`invulnerability_applies`]). Draw-free.
-    pub(crate) fn semi_invulnerable_miss(&self, tgt_side: usize, tgt_slot: usize, move_id: &str) -> bool {
-        self.sides[tgt_side].pokemon[tgt_slot]
-            .semi_invulnerable()
-            .map_or(false, |si| !si.bypassed_by(move_id))
+    ///
+    /// LOCK-ON (`gen3_b7_moves_v1`): the SOURCE's `lockon` volatile carries
+    /// `onSourceInvulnerabilityPriority: 1`, `onSourceInvulnerability` → `return 0` when the
+    /// target is its locked mon (`data/moves.ts` lockon.condition). The event sorts left-to-right
+    /// by priority, so it runs before the sub-volatile's `onInvulnerability` (priority 0) and a
+    /// falsy 0 stops the event — not `=== false`, so no miss (probe: Ice Beam hits a Dig-ing
+    /// Golem, Perish Song reaches an airborne Swellow).
+    pub(crate) fn semi_invulnerable_miss(
+        &self,
+        src_side: usize,
+        src_slot: usize,
+        tgt_side: usize,
+        tgt_slot: usize,
+        move_id: &str,
+    ) -> bool {
+        !self.lock_on_holds(src_side, src_slot, tgt_side, tgt_slot)
+            && self.sides[tgt_side].pokemon[tgt_slot]
+                .semi_invulnerable()
+                .map_or(false, |si| !si.bypassed_by(move_id))
+    }
+
+    /// MUD SPORT / WATER SPORT's BasePower halving (`gen3_b7_moves_v1`). The resolved gen-3
+    /// conditions (`data/mods/gen4/moves.ts` over the gen-5 volatile form) carry
+    /// `onAnyBasePowerPriority: 3`, `onAnyBasePower` → `chainModify(0.5)` for an Electric (Mud) /
+    /// Fire (Water) move — gathered from EVERY active with HP (`alliesAndSelf()` / `foes()` filter
+    /// on `hp`), so two holders quarter it and the holder's own moves are halved too. They join
+    /// the ONE accumulated BasePower modifier, in priority order: Charge (9) first, then the
+    /// sports (3), then the pinch abilities (2), Thick Fat (1) and the priority-0 members — so the
+    /// halvings go to the FRONT of the chain, behind a Charge ×2 when one applies (the
+    /// `(acc*next+2048)>>12` accumulation is order-sensitive with three or more factors). With no
+    /// sport up nothing changes. DRAW-FREE (the tie draw is `base_power_sport_shuffle`).
+    pub(crate) fn sport_bp_fold(&self, bp_mods: &mut Vec<BpMod>, move_type: Option<Type>, charge_applies: bool) {
+        let halvings: usize = (0..2usize)
+            .map(|s| {
+                let m = &self.sides[s].pokemon[self.sides[s].active];
+                if m.fainted || m.hp == 0 {
+                    return 0;
+                }
+                (m.mud_sport && move_type == Some(Type::Electric)) as usize
+                    + (m.water_sport && move_type == Some(Type::Fire)) as usize
+            })
+            .sum();
+        if halvings == 0 {
+            return;
+        }
+        let mut front: Vec<BpMod> = Vec::new();
+        if charge_applies {
+            // The Charge ×2 pushed above moves to the head (priority 9).
+            if let Some(i) = bp_mods.iter().position(|m| *m == BpMod::Chain(2, 1)) {
+                bp_mods.remove(i);
+            }
+            front.push(BpMod::Chain(2, 1));
+        }
+        front.extend(std::iter::repeat(BpMod::Chain(1, 2)).take(halvings));
+        bp_mods.splice(0..0, front);
+    }
+
+    /// The `runEvent('BasePower')` handler-sort shuffle of the SPORTS (`gen3_b7_moves_v1`). Every
+    /// Mud Sport / Water Sport volatile on an active mon with HP is an `onAnyBasePower` handler at
+    /// priority 3, speed = its holder's, subOrder 2 (a Condition), whatever the move's type — so
+    /// two of them at the same speed (both sports on one mon, or one each on equal-speed mons)
+    /// TIE and the selection sort shuffles them: `k-1` draws for a tie group of `k`, on EVERY
+    /// `getDamage` that reaches BasePower (a damaging move per strike, Beat Up per strike, the
+    /// confusion self-hit, a Jump Kick crash, a future move's cast). No other gen-3 BasePower
+    /// handler has priority 3 (Helping Hand 10, Charge 9, the pinch abilities 2, Thick Fat 1, the
+    /// move / Bounce handlers 0), so the sports only ever tie each other, and the halvings commute
+    /// (exact powers of two of 4096), so only the DRAW matters. A 0-HP holder (an exploding user)
+    /// is not gathered. Drawn after the crit roll, before ModifyDamagePhase1 (probe
+    /// `harness/probe_b7_moves.js`: Tackle into a holder of both sports draws 4, not 3).
+    pub(crate) fn base_power_sport_shuffle(&mut self) {
+        let mut handlers: Vec<crate::event::EventHandler<()>> = Vec::new();
+        for s in 0..2usize {
+            let m = &self.sides[s].pokemon[self.sides[s].active];
+            if m.fainted || m.hp == 0 {
+                continue;
+            }
+            for held in [m.mud_sport, m.water_sport] {
+                if held {
+                    handlers.push(crate::event::EventHandler {
+                        order: crate::event::NO_ORDER,
+                        priority: 3,
+                        speed: m.cached_speed as f64,
+                        sub_order: 2,
+                        effect_order: 0,
+                        handler: (),
+                    });
+                }
+            }
+        }
+        if handlers.len() >= 2 {
+            crate::event::speed_sort(&mut handlers, &mut self.prng);
+        }
+    }
+
+    /// Whether the `lockon` volatile on (`src_side`, `src_slot`) names the mon at (`tgt_side`,
+    /// `tgt_slot`) (`gen3_b7_moves_v1`): `source === this.effectState.target && target ===
+    /// this.effectState.source` in both lockon handlers (`data/moves.ts` lockon.condition). The
+    /// sim compares Pokemon objects, so the uid: a replacement the locked mon switched out for is
+    /// not locked, the same mon switched back in is. Draw-free.
+    pub(crate) fn lock_on_holds(&self, src_side: usize, src_slot: usize, tgt_side: usize, tgt_slot: usize) -> bool {
+        self.sides[src_side].pokemon[src_slot].lock_on.map_or(false, |l| {
+            l.target_side == tgt_side && l.target_uid == self.sides[tgt_side].pokemon[tgt_slot].uid
+        })
     }
 
     /// Resolve + APPLY a FIXED-DAMAGE / FIXED-FORMULA move (Seismic Toss / Night Shade /
@@ -2931,7 +3091,7 @@ impl crate::state::BattleState {
         //     (Counter / Mirror Coat / Endeavor), BEFORE accuracy — gen-3 `tryMoveHit`
         //     (scripts.ts:300-305). Zero draws, `[miss]` + `-miss` (probed: Seismic Toss into Fly).
         //     No fixed-damage move bypasses any of the four conditions. ---
-        if !targets_self && self.semi_invulnerable_miss(foe, foe_slot, move_id) {
+        if !targets_self && self.semi_invulnerable_miss(side, slot, foe, foe_slot, move_id) {
             if self.logging() {
                 let user = self.mon_ref(side, slot, dex);
                 let target = self.mon_ref(foe, foe_slot, dex);
@@ -3206,6 +3366,9 @@ impl crate::state::BattleState {
             side, slot, foe, foe_slot, base_power, None, category, false, dex,
         );
         ctx.crit = false; // willCrit: false — no crit roll, crit never true
+        // The BasePower sport tie shuffle (`gen3_b7_moves_v1`): the cast's `getDamage` runs
+        // `runEvent('BasePower')` too (a typeless move — no halving, only the tie draw).
+        self.base_power_sport_shuffle();
         // The ModifyDamagePhase1 handler-sort shuffle (the FULL screen tie group across BOTH
         // sides — `onAnyModifyDamagePhase1`; `k-1` draws for k screens), mirroring the damaging
         // path's position: inside modifyDamage, BEFORE the randomizer.
@@ -3690,6 +3853,10 @@ impl crate::state::BattleState {
         //     the draw sits AFTER the confusion `randomChance(1,2)`, BEFORE the `random(16)`).
         //     `modify_damage_phase1_shuffle` counts every screen on both sides (once each) — the
         //     same count the sim's gather produces — and draws nothing for 0/1. ---
+        // The BasePower sport tie shuffle first (`gen3_b7_moves_v1`): `getDamage(self, self, 40)`
+        // runs `runEvent('BasePower')` before `modifyDamage` (probe: a confused holder of both
+        // sports self-hits with one extra draw; the typeless self-hit is never halved).
+        self.base_power_sport_shuffle();
         self.modify_damage_phase1_shuffle();
         // ONE random(16) randomizer roll for the self-hit damage.
         let r = self.damage_roll(
@@ -4011,6 +4178,9 @@ impl crate::state::BattleState {
         }
         ctx.crit = crit;
         let dmg = crate::damage::calc_damage(&ctx, dex);
+        // The crash's `getDamage` runs `runEvent('BasePower')` (`gen3_b7_moves_v1`; probe: both
+        // sports on one mon add one draw to a High Jump Kick crash).
+        self.base_power_sport_shuffle();
         let r = self.damage_roll(
             crate::rolls::Site { kind: crate::rolls::SiteKind::Crash, att_side: side, tgt_side: side, tgt_slot: slot, move_id: "crash", rolls: &dmg.rolls, via_sub: false, false_swipe: false, endure_applies: false },
             dex,

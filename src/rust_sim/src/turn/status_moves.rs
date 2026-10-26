@@ -178,7 +178,7 @@ impl crate::state::BattleState {
         //     Curse re-targets to self, and Perish Song checks each mon in its own arm. ---
         let invuln_miss = !(move_id == "curse" && !curse_ghost)
             && dex.moves(move_id).map_or(false, |m| invulnerability_applies(&m.target))
-            && self.semi_invulnerable_miss(foe, foe_slot, move_id);
+            && self.semi_invulnerable_miss(_side, _slot, foe, foe_slot, move_id);
         if self.logging() {
             let user = self.mon_ref(_side, _slot, dex);
             // Spikes at the cap is a top-level `[still]` (did-nothing) case; a
@@ -413,6 +413,171 @@ impl crate::state::BattleState {
                 foe_will_move,
                 dex,
             );
+        }
+
+        // ═══════════════════ GEN3 FULL PARITY B7 (`gen3_b7_moves_v1`) ═══════════════════
+        // Stockpile, Swallow, Mud Sport, Water Sport, Mist, Lock-On, Mind Reader (Spit Up is a
+        // damaging move: `run_move`). The settled spec, every draw and line, is
+        // `harness/probe_b7_moves.js`'s header; the live differential is
+        // `tests/b7_moves_golden_test.rs`. All seven reach here after the generic announce, the
+        // Snatch interception (Stockpile / Swallow / Mist are `snatch`-flagged) and, for the two
+        // foe-targeted ones, the Invulnerability miss (`invuln_miss`, Lock-On-aware).
+
+        // --- STOCKPILE (`data/moves.ts` stockpile + the gen-3 condition `data/mods/gen3/moves.ts`:
+        //     no Def / SpD boosts): ZERO draws. `onTry` fails at 3 layers — gen-3 `tryMoveHit`'s
+        //     `singleEvent('Try')` false adds NO line (the bare announce). Else `addVolatile`:
+        //     `onStart` layers = 1 / `onRestart` layers++, `|-start|<user>|stockpile<n>`. ---
+        if move_id == "stockpile" {
+            let n = self.sides[_side].pokemon[_slot].stockpile;
+            if n >= 3 {
+                return MoveResolution::done(false, false, false);
+            }
+            self.sides[_side].pokemon[_slot].stockpile = n + 1;
+            if self.logging() {
+                let user = self.mon_ref(_side, _slot, dex);
+                self.log.volatile_start(&user, &format!("stockpile{}", n + 1));
+            }
+            return MoveResolution::done(false, false, false);
+        }
+
+        // --- SWALLOW (the resolved gen-3 move: `onTry` from `data/mods/gen4/moves.ts` —
+        //     `return !!source.volatiles['stockpile']`, with no Snatch exemption, so a snatcher
+        //     needs its OWN stockpile — and `onHit` from `data/mods/gen7/moves.ts`): ZERO draws.
+        //     No stockpile → the bare announce. Else `this.heal(this.modify(maxhp, [0.25, 0.5,
+        //     1][layers - 1]))` → `|-heal|<user>|<HP>` (no `[from]`), or at full HP `this.heal`
+        //     is false → `|-fail|<user>|heal`; either way then `removeVolatile('stockpile')` →
+        //     `|-end|<user>|Stockpile`. ---
+        if move_id == "swallow" {
+            let layers = self.sides[_side].pokemon[_slot].stockpile;
+            if layers == 0 {
+                return MoveResolution::done(false, false, false);
+            }
+            let maxhp = self.sides[_side].pokemon[_slot].maxhp as u64;
+            // `battle.modify(maxhp, 0.25 | 0.5 | 1)`: modifier tr(x·4096), +2047 rounding.
+            let modifier: u64 = [1024, 2048, 4096][(layers.min(3) - 1) as usize];
+            let amount = ((maxhp * modifier + 2047) / 4096) as u16;
+            let healed = self.apply_heal(_side, _slot, amount);
+            if self.logging() {
+                let user = self.mon_ref(_side, _slot, dex);
+                if healed {
+                    let hp = self.hp_status(_side, _slot);
+                    self.log.heal(&user, &hp, None);
+                } else {
+                    self.log.fail(&user, Some("heal"), false);
+                }
+            }
+            self.sides[_side].pokemon[_slot].stockpile = 0;
+            if self.logging() {
+                let user = self.mon_ref(_side, _slot, dex);
+                self.log.volatile_end(&user, "Stockpile");
+            }
+            return MoveResolution::done(false, false, false);
+        }
+
+        // --- MUD SPORT / WATER SPORT (`target: all`; the gen-5 mod's `volatileStatus` form on the
+        //     USER, `data/mods/gen5/moves.ts`, under the gen-4 mod's condition): ZERO draws. Already
+        //     held → `addVolatile` false (no `onRestart`) → the `[still]` retro-edit + `|-fail|
+        //     <user>`. Else `|-start|<user>|Mud Sport` / `|-start|<user>|move: Water Sport` (the two
+        //     `onStart` strings differ). The halving is `sport_bp_fold`, the tie draw
+        //     `base_power_sport_shuffle`. ---
+        if move_id == "mudsport" || move_id == "watersport" {
+            let mud = move_id == "mudsport";
+            let held = if mud {
+                self.sides[_side].pokemon[_slot].mud_sport
+            } else {
+                self.sides[_side].pokemon[_slot].water_sport
+            };
+            if held {
+                if self.logging() {
+                    self.log.attr_last_move_still();
+                    let user = self.mon_ref(_side, _slot, dex);
+                    self.log.fail(&user, None, false);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            if mud {
+                self.sides[_side].pokemon[_slot].mud_sport = true;
+            } else {
+                self.sides[_side].pokemon[_slot].water_sport = true;
+            }
+            if self.logging() {
+                let user = self.mon_ref(_side, _slot, dex);
+                self.log.volatile_start(&user, if mud { "Mud Sport" } else { "move: Water Sport" });
+            }
+            return MoveResolution::done(false, false, false);
+        }
+
+        // --- MIST (`data/moves.ts` mist, `target: allySide`, `snatch`): ZERO draws. Already up →
+        //     `addSideCondition` false → the `[still]` retro-edit + `|-fail|<user>`. Else 5 turns,
+        //     `|-sidestart|<side>|Mist`. The block is `apply_secondary_boost` / Intimidate, the
+        //     expiry the order-3 side residual. ---
+        if move_id == "mist" {
+            if self.sides[_side].mist > 0 {
+                if self.logging() {
+                    self.log.attr_last_move_still();
+                    let user = self.mon_ref(_side, _slot, dex);
+                    self.log.fail(&user, None, false);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            self.sides[_side].mist = 5;
+            self.sides[_side].stamp_side_cond(crate::state::SIDE_COND_MIST);
+            if self.logging() {
+                let side_ref = crate::protocol::ProtocolBuilder::side_ref(_side, &self.sides[_side].name);
+                self.log.sidestart(&side_ref, "Mist");
+            }
+            return MoveResolution::done(false, false, false);
+        }
+
+        // --- LOCK-ON / MIND READER (`data/moves.ts` lockon / mindreader with the gen-3 mod's
+        //     `accuracy: 100` and the gen-4 mod's `noCopy: false` condition; `flags: protect,
+        //     mirror`, no `bypasssub`). In gen-3 `tryMoveHit` order: the Invulnerability miss (the
+        //     generic `invuln_miss` above: a mid-Fly / Dig target is missed with zero draws), the
+        //     accuracy roll (drawn — unless the user already holds a lock on this mon, whose
+        //     `onSourceAccuracy` returns true), then TryHit: Protect (`-activate|<t>|Protect`,
+        //     priority 3) before the move's own `onTryHit` (`source.volatiles['lockon']` → fail),
+        //     then the Substitute's `onTryPrimaryHit` (a status move: `-fail`); each failure is the
+        //     `[still]` retro-edit + `|-fail|<user>`. Success: `source.addVolatile('lockon',
+        //     target)` (duration 2) and `|-activate|<user>|move: Lock-On|[of] <target>` (`move:
+        //     Mind Reader` for Mind Reader). ---
+        if move_id == "lockon" || move_id == "mindreader" {
+            let acc_hit = self.roll_accuracy(_side, _slot, foe, foe_slot, accuracy, never_miss, move_type, dex);
+            if !acc_hit {
+                if self.logging() {
+                    let user = self.mon_ref(_side, _slot, dex);
+                    let target = self.mon_ref(foe, foe_slot, dex);
+                    self.log.attr_last_move_miss();
+                    self.log.miss(&user, Some(&target));
+                }
+                return MoveResolution::done(true, false, false);
+            }
+            if self.protect_blocks(foe, foe_slot, false) {
+                if self.logging() {
+                    let target = self.mon_ref(foe, foe_slot, dex);
+                    self.log.activate(&target, "Protect", None);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            if self.sides[_side].pokemon[_slot].lock_on.is_some()
+                || self.sides[foe].pokemon[foe_slot].substitute.is_some()
+            {
+                if self.logging() {
+                    self.log.attr_last_move_still();
+                    let user = self.mon_ref(_side, _slot, dex);
+                    self.log.fail(&user, None, false);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            let target_uid = self.sides[foe].pokemon[foe_slot].uid;
+            self.sides[_side].pokemon[_slot].lock_on =
+                Some(crate::state::LockOn { target_side: foe, target_uid, duration: 2 });
+            if self.logging() {
+                let user = self.mon_ref(_side, _slot, dex);
+                let target = self.mon_ref(foe, foe_slot, dex);
+                let effect = if move_id == "lockon" { "move: Lock-On" } else { "move: Mind Reader" };
+                self.log.activate(&user, effect, Some(&format!("[of] {target}")));
+            }
+            return MoveResolution::done(false, false, false);
         }
 
         // --- PURE SELF-BOOST SETUP MOVE (Swords Dance / Dragon Dance / Calm Mind /
@@ -875,7 +1040,7 @@ impl crate::state::BattleState {
                 // `perishsong.onHitField` runs `runEvent('Invulnerability', pokemon)` per active
                 // FIRST — a mon mid-Fly / Bounce / Dig / Dive gets `|-miss|<user>|<mon>` (no
                 // `[miss]` on the announce), counts as a `result`, and is NOT counted (probed).
-                if self.semi_invulnerable_miss(s, a, "perishsong") {
+                if self.semi_invulnerable_miss(_side, _slot, s, a, "perishsong") {
                     any_result = true;
                     if self.logging() {
                         let u = self.mon_ref(_side, _slot, dex);
@@ -2148,6 +2313,7 @@ impl crate::state::BattleState {
                 self.log.fail(&user, None, false);
             } else {
                 self.sides[_side].safeguard = SAFEGUARD_DURATION;
+                self.sides[_side].stamp_side_cond(crate::state::SIDE_COND_SAFEGUARD);
                 // [EMIT] `|-sidestart|<side>|Safeguard` — the BARE effect name (Light Screen
                 // uses the `move: ` prefix; Safeguard and Reflect do not).
                 if self.logging() {
@@ -2992,8 +3158,10 @@ impl crate::state::BattleState {
             }
             if is_reflect {
                 self.sides[_side].reflect = SCREEN_DURATION;
+                self.sides[_side].stamp_side_cond(crate::state::SIDE_COND_REFLECT);
             } else {
                 self.sides[_side].light_screen = SCREEN_DURATION;
+                self.sides[_side].stamp_side_cond(crate::state::SIDE_COND_LIGHT_SCREEN);
             }
             if self.logging() {
                 let side_ref = crate::protocol::ProtocolBuilder::side_ref(_side, &self.sides[_side].name);

@@ -1144,6 +1144,19 @@ pub fn volatile_names(mon: &MonState) -> Vec<&'static str> {
     if mon.yawn.is_some() {
         v.push("yawn");
     }
+    // The B7 volatiles (`gen3_b7_moves_v1`), by their condition ids.
+    if mon.stockpile > 0 {
+        v.push("stockpile");
+    }
+    if mon.mud_sport {
+        v.push("mudsport");
+    }
+    if mon.water_sport {
+        v.push("watersport");
+    }
+    if mon.lock_on.is_some() {
+        v.push("lockon");
+    }
     v.sort_unstable();
     v
 }
@@ -1172,13 +1185,16 @@ fn move_slots_json(mon: &MonState) -> String {
 }
 
 /// The side conditions the port models, SORTED — `Object.keys(side.sideConditions)`.
-/// gen-3 has exactly these three (Spikes is the only entry hazard; Wish and the future
-/// moves are SLOT conditions, which `preState` does not report).
+/// The modeled set: Light Screen, Mist, Reflect, Spikes (Spikes is the only entry hazard; Wish
+/// and the future moves are SLOT conditions, which `preState` does not report).
 fn side_conditions(st: &BattleState, side: usize) -> Vec<&'static str> {
     let s = &st.sides[side];
     let mut v: Vec<&'static str> = Vec::new();
     if s.light_screen > 0 {
         v.push("lightscreen");
+    }
+    if s.mist > 0 {
+        v.push("mist"); // gen3_b7_moves_v1
     }
     if s.reflect > 0 {
         v.push("reflect");

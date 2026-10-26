@@ -403,6 +403,13 @@ impl crate::state::BattleState {
                 mon.grudge = false;
                 mon.nightmare = false;
                 mon.ingrain = false;
+                // The B7 volatiles (`gen3_b7_moves_v1`) die with the corpse (`clearVolatile`),
+                // silently: no `onEnd` runs (stockpile's `-end` is only its removeVolatile path).
+                mon.stockpile = 0;
+                mon.spit_up_after_move = false;
+                mon.mud_sport = false;
+                mon.water_sport = false;
+                mon.lock_on = None;
                 // `faintMessages` decrements the side's live-mon count — the count `check_win`
                 // reads to END the battle (a side at `pokemon_left == 0` has lost). The `mon`
                 // borrow above ends before this disjoint-field write.
@@ -945,7 +952,7 @@ impl crate::state::BattleState {
             Some((
                 m.boosts, m.substitute, m.leech_seed, m.confusion, m.curse, m.perish,
                 m.trapped_by, m.charge, m.protect_counter, m.stall_duration, m.pursuit,
-                m.partial_trap.clone(), m.ingrain,
+                m.partial_trap.clone(), m.ingrain, m.mud_sport, m.water_sport, m.lock_on,
             ))
         } else {
             None
@@ -1184,6 +1191,14 @@ impl crate::state::BattleState {
             m.grudge_ko_by = None;
             m.nightmare = false;
             m.ingrain = false;
+            // The B7 volatiles (`gen3_b7_moves_v1`) clear on switch-out (`clearVolatile`, no
+            // `onEnd`, so no line): STOCKPILE (noCopy, never passed), MUD / WATER SPORT and
+            // LOCK-ON (noCopy false from the gen-4 mod: the Baton-Pass snapshot above passes them).
+            m.stockpile = 0;
+            m.spit_up_after_move = false;
+            m.mud_sport = false;
+            m.water_sport = false;
+            m.lock_on = None;
             // YAWN (`gen3_yawn_v1`): the pending delayed-sleep volatile clears on switch-out
             // (`clearVolatile`) — a mon that pivots out before the Yawn resolves comes back with no
             // pending sleep (a fresh Yawn is needed); noCopy so it is never Baton-Passed.
@@ -1346,7 +1361,7 @@ impl crate::state::BattleState {
         //     the pending marker. ---
         if let Some((
             boosts, sub, leech, conf, curse, perish, trapped_by, charge, protect_counter,
-            stall_duration, pursuit, partial_trap, ingrain,
+            stall_duration, pursuit, partial_trap, ingrain, mud_sport, water_sport, lock_on,
         )) = bp_snapshot.clone()
         {
             let m = &mut self.sides[side].pokemon[active];
@@ -1378,6 +1393,14 @@ impl crate::state::BattleState {
             // passes it — the entrant heals `[from] Ingrain` off ITS OWN maxhp and is itself
             // firm-trapped (probe `harness/probe_b5_moves.js`, its Ingrain Baton Pass board).
             m.ingrain = ingrain;
+            // MUD SPORT / WATER SPORT / LOCK-ON (`gen3_b7_moves_v1`): the gen-4 mod sets each
+            // condition's `noCopy: false`, so `copyVolatileFrom` passes them — the sports keep
+            // halving from the entrant, and the lock keeps its target (`effectState.source`) and
+            // remaining duration, so its residual duration handler now sits on the entrant
+            // (probe `harness/probe_b7_moves.js`, the Lock-On Baton Pass tie board).
+            m.mud_sport = mud_sport;
+            m.water_sport = water_sport;
+            m.lock_on = lock_on;
         }
         // TOXIC STAGE — the reset does NOT live here (`gen3_tox_stage_persists_v1`):
         // the resolved gen3 `tox.onSwitchIn(){ stage = 0 }` fires via the RUNSWITCH-time

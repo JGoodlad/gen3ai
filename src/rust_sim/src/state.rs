@@ -1020,6 +1020,40 @@ pub struct MonState {
     /// the holder (`onTrapPokemon` → bare `tryTrap()`), and blocks a Roar / Whirlwind drag
     /// (`onDragOut` → `|-activate|<mon>|move: Ingrain`). No `noCopy` → Baton-Passed.
     pub ingrain: bool,
+    /// The **STOCKPILE** volatile's `layers` (`gen3_b7_moves_v1`; the resolved gen-3 condition is
+    /// `data/mods/gen3/moves.ts` stockpile: no Def / SpD boosts, `noCopy`). 0 = no volatile; each
+    /// Stockpile adds one (`|-start|<mon>|stockpile<n>`), and the move's `onTry` fails at 3
+    /// (`data/moves.ts` stockpile). Spit Up (`onAfterMove`) and Swallow (`onHit`) remove it with
+    /// `|-end|<mon>|Stockpile`; a switch-out or faint clears it silently, and Baton Pass does not
+    /// pass it.
+    pub stockpile: u8,
+    /// Spit Up reached `useMove` this action (`gen3_b7_moves_v1`): the driver's AfterMove point
+    /// runs `spitup.onAfterMove` (`removeVolatile('stockpile')`) for the EXECUTED move — the
+    /// activeMove, so a Sleep-Talk-called Spit Up counts (`sim/battle-actions.ts` runMove:
+    /// `if (this.battle.activeMove) move = this.battle.activeMove`). Transient: consumed there.
+    pub spit_up_after_move: bool,
+    /// The **MUD SPORT** volatile (`gen3_b7_moves_v1`; the gen-5 mod turns the move into a
+    /// `volatileStatus` on the user, the gen-4 mod sets `noCopy: false`, `onAnyBasePowerPriority:
+    /// 3` and `chainModify(0.5)`): every Electric move's base power is halved while the holder is
+    /// active. No duration; ends silently on switch-out / faint; Baton-Passed.
+    pub mud_sport: bool,
+    /// The **WATER SPORT** volatile (`gen3_b7_moves_v1`): as [`Self::mud_sport`] for Fire moves.
+    pub water_sport: bool,
+    /// The **LOCK-ON** volatile (`gen3_b7_moves_v1`; `data/moves.ts` lockon.condition, `noCopy:
+    /// false` from the gen-4 mod): set by Lock-On AND Mind Reader on the USER, naming the target.
+    /// While it is up, this mon's moves against THAT mon skip the Invulnerability miss and the
+    /// accuracy roll. `duration: 2`, ticked by a NO_ORDER residual duration handler, ended silently.
+    pub lock_on: Option<LockOn>,
+}
+
+/// The `lockon` volatile's state (`gen3_b7_moves_v1`): `effectState.source` (the locked mon,
+/// by side and uid — the sim compares the Pokemon object, so a switched-in replacement is a
+/// different target) and `duration`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct LockOn {
+    pub target_side: usize,
+    pub target_uid: usize,
+    pub duration: u8,
 }
 
 /// The TRANSFORM copy-overlay restore record (`gen3_transform_v1`).
@@ -1617,6 +1651,11 @@ impl MonState {
             grudge_ko_by: None,
             nightmare: false,
             ingrain: false,
+            stockpile: 0,
+            spit_up_after_move: false,
+            mud_sport: false,
+            water_sport: false,
+            lock_on: None,
         })
     }
 
@@ -1922,6 +1961,23 @@ pub struct SideState {
     /// are immune to FOE-sourced major status + confusion; a SELF-inflicted status
     /// (Rest) passes, and a PENDING Yawn's resolve is exempt. 0 at construction.
     pub safeguard: u8,
+    /// The **MIST** side-condition remaining-turn counter (`gen3_b7_moves_v1`; `data/moves.ts`
+    /// mist.condition `duration: 5`, the gen-4 mod's `onSideResidualOrder: 3`). While > 0, a
+    /// FOE-sourced stat drop on this side's mon is deleted at `TryBoost` (after the mon's own
+    /// Clear Body / Hyper Cutter / Keen Eye handler), with `|-activate|<mon>|move: Mist` unless
+    /// the effect is a move secondary. `|-sideend|<side>|Mist` at 0. 0 at construction.
+    pub mist: u8,
+    /// The INSERTION stamps of the four timed side conditions (`gen3_b7_moves_v1`), indexed
+    /// [`SIDE_COND_REFLECT`] / [`SIDE_COND_LIGHT_SCREEN`] / [`SIDE_COND_SAFEGUARD`] /
+    /// [`SIDE_COND_MIST`]: set from `side_cond_seq` each time the condition STARTS. The sim's
+    /// `fieldEvent('Residual')` gathers a side's condition handlers in `side.sideConditions`
+    /// insertion order (a removed and re-added key goes last), and the non-stable selection sort
+    /// hands a tie group whatever order its swaps leave, so this order is load-bearing for two
+    /// tied conditions' `-sideend` order (probe `harness/probe_b7_moves.js`, the Mist + screens
+    /// boards). Read only by the residual gather.
+    pub side_cond_stamp: [u32; 4],
+    /// The per-side counter `side_cond_stamp` draws from (`gen3_b7_moves_v1`).
+    pub side_cond_seq: u32,
     /// The **WISH** pending slot-condition (`side.slotConditions[0].wish`,
     /// `gen3_move_coverage_batch3_v1`): `Some((duration, wisher_name))` when a Wish cast on
     /// THIS side is pending. `None` = no pending Wish (the construction-time value).
@@ -1973,7 +2029,20 @@ pub struct SideState {
     pub future_move: Option<FutureMove>,
 }
 
+/// [`SideState::side_cond_stamp`] indices (`gen3_b7_moves_v1`).
+pub const SIDE_COND_REFLECT: usize = 0;
+pub const SIDE_COND_LIGHT_SCREEN: usize = 1;
+pub const SIDE_COND_SAFEGUARD: usize = 2;
+pub const SIDE_COND_MIST: usize = 3;
+
 impl SideState {
+    /// Record that the timed side condition `which` (a `SIDE_COND_*` index) just STARTED: it
+    /// takes the next insertion stamp (`gen3_b7_moves_v1`; see [`Self::side_cond_stamp`]).
+    pub fn stamp_side_cond(&mut self, which: usize) {
+        self.side_cond_seq += 1;
+        self.side_cond_stamp[which] = self.side_cond_seq;
+    }
+
     /// The active (lead) mon.
     pub fn active(&self) -> &MonState {
         &self.pokemon[self.active]
@@ -2380,6 +2449,9 @@ fn build_side(name: &str, team: &PackedTeam, dex: &Dex) -> Result<SideState, Str
         light_screen: 0,  // gen3_move_coverage_batch2_v1
         reflect: 0,       // gen3_move_coverage_batch2_v1
         safeguard: 0,     // gen3_safeguard_v1
+        mist: 0,          // gen3_b7_moves_v1
+        side_cond_stamp: [0; 4],
+        side_cond_seq: 0,
         wish_pending: None,         // gen3_move_coverage_batch3_v1
         baton_pass_pending: false,  // gen3_move_coverage_batch3_v1
         future_move: None,          // gen3_move_coverage_batch4c_v1

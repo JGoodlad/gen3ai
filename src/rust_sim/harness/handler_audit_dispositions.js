@@ -694,6 +694,42 @@ add([cond('ingrain', 'onTrapPokemon')],
   IMPL('switch.rs::is_trapped', 'a FIRM trap (trap_is_firm) + a Condition handler in the endTurn TrapPokemon sort (speed.rs::trap_event_shuffles)'));
 add([cond('ingrain', 'onDragOut')],
   IMPL('status_moves.rs::run_status_move', 'the phaze arm: after Suction Cups (priority 1), -activate|<u>|move: Ingrain and no drag, no sample draw'));
+// GEN3 FULL PARITY B7 (`gen3_b7_moves_v1`) — Stockpile, Spit Up, Swallow, Mud Sport, Water Sport,
+// Mist, Lock-On, Mind Reader. The settled spec is harness/probe_b7_moves.js; the differential is
+// tests/b7_moves_golden_test.rs.
+add([mv('stockpile', 'onTry'), mv('stockpile', 'volatileStatus'), mv('stockpile', 'ignoreImmunity'), mv('stockpile', 'neverMiss'),
+  cond('stockpile', 'onStart'), cond('stockpile', 'onRestart')],
+  IMPL('status_moves.rs::run_status_move', 'the stockpile arm: ZERO draws; at 3 layers onTry is false at singleEvent(Try) → the bare announce; else MonState::stockpile += 1 and -start|<u>|stockpile<n> (the gen-3 condition carries no Def/SpD boosts); snatchable through the generic interception'));
+add([cond('stockpile', 'onEnd')],
+  IMPL('moves.rs::spit_up_after_move', '-end|<u>|Stockpile on the removeVolatile path (Spit Up AfterMove here, Swallow in the swallow arm); switch-out / faint clear it silently (clearVolatile runs no onEnd)'));
+add([mv('spitup', 'onTry')],
+  IMPL('moves.rs::run_move', 'no stockpile → the bare announce, ZERO draws, before accuracy / Protect / immunity (the Snore-site Try gate)'));
+add([mv('spitup', 'onAfterMove')],
+  IMPL('moves.rs::spit_up_after_move', 'the first AfterMove handler, for the EXECUTED move (a Sleep-Talk call included), any outcome but a cant / nopp, not on a 0-HP user'));
+add([mv('swallow', 'onTry'), mv('swallow', 'onHit'), mv('swallow', 'ignoreImmunity'), mv('swallow', 'neverMiss')],
+  IMPL('status_moves.rs::run_status_move', 'the swallow arm: ZERO draws; no stockpile → bare (no Snatch exemption in gen 3: a snatcher needs its own); heal modify(maxhp, 0.25|0.5|1) as -heal, or -fail|<u>|heal at full HP, then -end|<u>|Stockpile'));
+add([mv('mudsport', 'volatileStatus'), mv('mudsport', 'ignoreImmunity'), mv('mudsport', 'neverMiss'), cond('mudsport', 'onStart'),
+  mv('watersport', 'volatileStatus'), mv('watersport', 'ignoreImmunity'), mv('watersport', 'neverMiss'), cond('watersport', 'onStart')],
+  IMPL('status_moves.rs::run_status_move', 'the sport arm: ZERO draws; a recast [still] + -fail; -start|<u>|Mud Sport / move: Water Sport; Baton-Passed (noCopy false), cleared silently on switch-out / faint'));
+add([cond('mudsport', 'onAnyBasePower'), cond('watersport', 'onAnyBasePower')],
+  IMPL('moves.rs::sport_bp_fold', 'every holder with HP halves an Electric (Mud) / Fire (Water) move at the BasePower chain, behind Charge and ahead of the pinch abilities / Thick Fat / the priority-0 members'));
+add([cond('mudsport', 'onAnyBasePowerPriority'), cond('watersport', 'onAnyBasePowerPriority')],
+  IMPL('moves.rs::base_power_sport_shuffle', 'priority 3, speed = the holder, subOrder 2: two sports at one speed tie on every getDamage that reaches BasePower (k-1 draws after the crit, before ModifyDamagePhase1)'));
+add([mv('mist', 'sideCondition'), mv('mist', 'ignoreImmunity'), mv('mist', 'neverMiss'), cond('mist', 'onSideStart'), cond('mist', 'duration')],
+  IMPL('status_moves.rs::run_status_move', 'the mist arm: ZERO draws; already up → [still] + -fail; SideState::mist = 5, -sidestart|<side>|Mist; snatchable'));
+add([cond('mist', 'onTryBoost')],
+  IMPL('secondaries.rs::apply_secondary_boost', 'a foe-sourced drop: after the target ability (Clear Body / Hyper Cutter / Keen Eye), every capped negative key is deleted; -activate|<t>|move: Mist unless the effect is a secondary; Intimidate in event.rs::intimidate_on_start + the helpers.rs emission'));
+add([cond('mist', 'onSideResidualOrder'), cond('mist', 'onSideEnd')],
+  IMPL('residuals.rs::run_residuals', 'order 3 / subOrder 4 / speed 0, gathered in sideConditions insertion order (side_cond_stamp); -sideend|<side>|Mist at 0; a Mist on each side ties'));
+add([mv('lockon', 'onTryHit'), mv('lockon', 'onHit'), mv('lockon', 'ignoreImmunity'),
+  mv('mindreader', 'onTryHit'), mv('mindreader', 'onHit'), mv('mindreader', 'ignoreImmunity')],
+  IMPL('status_moves.rs::run_status_move', 'the lock-on arm: Invulnerability miss, accuracy (skipped under a held lock), Protect, then a held lock / a Substitute → [still] + -fail; MonState::lock_on (duration 2) and -activate|<u>|move: Lock-On|[of] <t> (move: Mind Reader)'));
+add([cond('lockon', 'onSourceAccuracy')],
+  IMPL('speed.rs::roll_accuracy', 'lock_on_holds(attacker, target) → true with no draw: every move class, a Sleep-Talk call, a Future Sight strike by its caster'));
+add([cond('lockon', 'onSourceInvulnerability'), cond('lockon', 'onSourceInvulnerabilityPriority')],
+  IMPL('moves.rs::semi_invulnerable_miss', 'priority 1, ahead of the Fly / Dig / Dive / Bounce handlers: the locked target is not missed (damaging, status, fixed-damage, Future Sight, Perish Song)'));
+add([cond('lockon', 'duration')],
+  IMPL('residuals.rs::run_residuals', 'a NO_ORDER / subOrder-2 duration handler at the holder speed, ended silently at 0; Baton-Passed with its target and duration'));
 add([mv('endure', 'onPrepareHit'), mv('endure', 'stallingMove'), mv('endure', 'priority'), mv('endure', 'onHit'), mv('endure', 'volatileStatus'), cond('endure', 'onStart')],
   IMPL('turn.rs::run_protect', 'the endure arm rides the SHARED protect stallingMove machinery (willAct gate + randomChance(1,counter) 2→4→8 no-delete-on-fail; priority 4); success sets MonState::endure'));
 add([cond('endure', 'onDamage'), cond('endure', 'onDamagePriority')],

@@ -7,12 +7,12 @@ the GATE is `node src/rust_sim/harness/dump_gen3_handlers.js --audit` (wired int
 handler, a STALE manifest row, a body-FINGERPRINT drift, a dead `implemented` anchor.
 
 Surface: 77 abilities (MODELED ∪ NOOP), 67 items,
-68 conditions (engine state space + attached), 326 modeled moves
-→ **1181 (effect, hook) rows**.
+73 conditions (engine state space + attached), 334 modeled moves
+→ **1224 (effect, hook) rows**.
 
 | disposition | rows |
 |---|---|
-| implemented | 1128 |
+| implemented | 1171 |
 | noop_justified | 36 |
 | unreachable_justified | 17 |
 
@@ -352,7 +352,7 @@ Surface: 77 abilities (MODELED ∪ NOOP), 67 items,
 | wikiberry | onResidualSubOrder | implemented | `turn.rs::apply_berry_residual` |
 | wikiberry | onTryEatItem | noop_justified | the runEvent(TryHeal) guard before a heal-berry eat — NO TryHeal handler exists in the gen3 modeled universe, so the guard is vacuous (the eat always proceeds) |
 
-## condition (298 rows: implemented=283, noop_justified=9, unreachable_justified=6)
+## condition (316 rows: implemented=301, noop_justified=9, unreachable_justified=6)
 
 | effect | hook | disposition | anchor / reason |
 |---|---|---|---|
@@ -498,6 +498,10 @@ Surface: 77 abilities (MODELED ∪ NOOP), 67 items,
 | lightscreen | onSideEnd | implemented | `turn.rs::run_residuals` |
 | lightscreen | onSideResidualOrder | implemented | `turn.rs::run_residuals` |
 | lightscreen | onSideStart | implemented | `turn.rs::modeled_screen_move` |
+| lockon | duration | implemented | `residuals.rs::run_residuals` |
+| lockon | onSourceAccuracy | implemented | `speed.rs::roll_accuracy` |
+| lockon | onSourceInvulnerability | implemented | `moves.rs::semi_invulnerable_miss` |
+| lockon | onSourceInvulnerabilityPriority | implemented | `moves.rs::semi_invulnerable_miss` |
 | magiccoat | duration | implemented | `turn.rs::run_residuals` |
 | magiccoat | onStart | implemented | `status_moves.rs::run_status_move` |
 | magiccoat | onTryHit | implemented | `status_moves.rs::magic_coat_bounce` |
@@ -510,6 +514,14 @@ Surface: 77 abilities (MODELED ∪ NOOP), 67 items,
 | mirrorcoat | onRedirectTarget | implemented | `turn.rs::run_fixed_damage_move` |
 | mirrorcoat | onRedirectTargetPriority | implemented | `turn.rs::run_fixed_damage_move` |
 | mirrorcoat | onStart | implemented | `turn.rs::run_full_battle` |
+| mist | duration | implemented | `status_moves.rs::run_status_move` |
+| mist | onSideEnd | implemented | `residuals.rs::run_residuals` |
+| mist | onSideResidualOrder | implemented | `residuals.rs::run_residuals` |
+| mist | onSideStart | implemented | `status_moves.rs::run_status_move` |
+| mist | onTryBoost | implemented | `secondaries.rs::apply_secondary_boost` |
+| mudsport | onAnyBasePower | implemented | `moves.rs::sport_bp_fold` |
+| mudsport | onAnyBasePowerPriority | implemented | `moves.rs::base_power_sport_shuffle` |
+| mudsport | onStart | implemented | `status_moves.rs::run_status_move` |
 | mustrecharge | duration | implemented | `turn.rs::run_residuals` |
 | mustrecharge | onBeforeMove | implemented | `turn.rs::run_move` |
 | mustrecharge | onBeforeMovePriority | implemented | `turn.rs::run_move` |
@@ -600,6 +612,9 @@ Surface: 77 abilities (MODELED ∪ NOOP), 67 items,
 | stall | onRestart | implemented | `state.rs::protect_counter` |
 | stall | onStallMove | implemented | `turn.rs::run_protect` |
 | stall | onStart | implemented | `state.rs::protect_counter` |
+| stockpile | onEnd | implemented | `moves.rs::spit_up_after_move` |
+| stockpile | onRestart | implemented | `status_moves.rs::run_status_move` |
+| stockpile | onStart | implemented | `status_moves.rs::run_status_move` |
 | substitute | onEnd | noop_justified | display-only |-end| Substitute line (the port emits it at the break) |
 | substitute | onStart | implemented | `turn.rs::run_status_move` |
 | substitute | onTryPrimaryHit | implemented | `turn.rs::absorb_into_sub` |
@@ -646,6 +661,9 @@ Surface: 77 abilities (MODELED ∪ NOOP), 67 items,
 | uproar | onResidualOrder | implemented | `turn/residuals.rs::run_residuals` |
 | uproar | onResidualSubOrder | implemented | `turn/residuals.rs::run_residuals` |
 | uproar | onStart | implemented | `turn/moves.rs::run_move` |
+| watersport | onAnyBasePower | implemented | `moves.rs::sport_bp_fold` |
+| watersport | onAnyBasePowerPriority | implemented | `moves.rs::base_power_sport_shuffle` |
+| watersport | onStart | implemented | `status_moves.rs::run_status_move` |
 | wish | duration | implemented | `state.rs::wish_pending` |
 | wish | onEnd | implemented | `turn.rs::apply_wish` |
 | wish | onResidualOrder | implemented | `turn.rs::apply_wish` |
@@ -655,7 +673,7 @@ Surface: 77 abilities (MODELED ∪ NOOP), 67 items,
 | yawn | onResidualSubOrder | implemented | `turn.rs::run_residuals` |
 | yawn | onStart | implemented | `turn.rs::run_status_move` |
 
-## move (557 rows: implemented=553, noop_justified=2, unreachable_justified=2)
+## move (582 rows: implemented=578, noop_justified=2, unreachable_justified=2)
 
 | effect | hook | disposition | anchor / reason |
 |---|---|---|---|
@@ -912,6 +930,9 @@ Surface: 77 abilities (MODELED ∪ NOOP), 67 items,
 | lightscreen | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | lightscreen | neverMiss | implemented | `turn.rs::never_miss` |
 | lightscreen | sideCondition | implemented | `turn.rs::modeled_screen_move` |
+| lockon | ignoreImmunity | implemented | `status_moves.rs::run_status_move` |
+| lockon | onHit | implemented | `status_moves.rs::run_status_move` |
+| lockon | onTryHit | implemented | `status_moves.rs::run_status_move` |
 | lovelykiss | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | lovelykiss | status | implemented | `turn.rs::modeled_status_move` |
 | lusterpurge | secondaries | implemented | `turn.rs::apply_secondaries` |
@@ -942,12 +963,18 @@ Surface: 77 abilities (MODELED ∪ NOOP), 67 items,
 | mimic | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | mimic | neverMiss | implemented | `turn.rs::run_status_move` |
 | mimic | onHit | implemented | `turn.rs::run_status_move` |
+| mindreader | ignoreImmunity | implemented | `status_moves.rs::run_status_move` |
+| mindreader | onHit | implemented | `status_moves.rs::run_status_move` |
+| mindreader | onTryHit | implemented | `status_moves.rs::run_status_move` |
 | minimize | boosts | implemented | `turn/status_moves.rs::run_status_move` |
 | minimize | ignoreImmunity | implemented | `turn/status_moves.rs::run_status_move` |
 | minimize | neverMiss | implemented | `turn/status_moves.rs::run_status_move` |
 | minimize | volatileStatus | implemented | `turn/status_moves.rs::run_status_move` |
 | mirrorcoat | onTry | implemented | `turn.rs::run_fixed_damage_move` |
 | mirrorcoat | priority | implemented | `turn.rs::move_priority` |
+| mist | ignoreImmunity | implemented | `status_moves.rs::run_status_move` |
+| mist | neverMiss | implemented | `status_moves.rs::run_status_move` |
+| mist | sideCondition | implemented | `status_moves.rs::run_status_move` |
 | mistball | secondaries | implemented | `turn.rs::apply_secondaries` |
 | moonlight | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | moonlight | neverMiss | implemented | `turn.rs::never_miss` |
@@ -958,6 +985,9 @@ Surface: 77 abilities (MODELED ∪ NOOP), 67 items,
 | muddywater | secondaries | implemented | `turn.rs::apply_secondaries` |
 | mudshot | secondaries | implemented | `turn.rs::apply_secondaries` |
 | mudslap | secondaries | implemented | `turn.rs::apply_secondaries` |
+| mudsport | ignoreImmunity | implemented | `status_moves.rs::run_status_move` |
+| mudsport | neverMiss | implemented | `status_moves.rs::run_status_move` |
+| mudsport | volatileStatus | implemented | `status_moves.rs::run_status_move` |
 | needlearm | secondaries | implemented | `turn.rs::apply_secondaries` |
 | nightmare | ignoreImmunity | implemented | `status_moves.rs::run_status_move` |
 | nightmare | neverMiss | implemented | `status_moves.rs::run_status_move` |
@@ -1115,6 +1145,8 @@ Surface: 77 abilities (MODELED ∪ NOOP), 67 items,
 | spikes | sideCondition | implemented | `turn.rs::apply_entry_hazards` |
 | spite | ignoreImmunity | implemented | `status_moves.rs::run_status_move` |
 | spite | onHit | implemented | `status_moves.rs::run_status_move` |
+| spitup | onAfterMove | implemented | `moves.rs::spit_up_after_move` |
+| spitup | onTry | implemented | `moves.rs::run_move` |
 | splash | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | splash | neverMiss | implemented | `turn.rs::never_miss` |
 | splash | onTry | unreachable_justified | the Gravity gate — Gravity is a gen4 pseudo-weather, not in the gen3 universe |
@@ -1122,6 +1154,10 @@ Surface: 77 abilities (MODELED ∪ NOOP), 67 items,
 | spore | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | spore | status | implemented | `turn.rs::modeled_status_move` |
 | steelwing | secondaries | implemented | `turn.rs::apply_secondaries` |
+| stockpile | ignoreImmunity | implemented | `status_moves.rs::run_status_move` |
+| stockpile | neverMiss | implemented | `status_moves.rs::run_status_move` |
+| stockpile | onTry | implemented | `status_moves.rs::run_status_move` |
+| stockpile | volatileStatus | implemented | `status_moves.rs::run_status_move` |
 | stomp | secondaries | implemented | `turn.rs::apply_secondaries` |
 | stringshot | boosts | implemented | `turn.rs::stat_drop_boosts` |
 | stringshot | ignoreImmunity | implemented | `turn.rs::run_status_move` |
@@ -1145,6 +1181,10 @@ Surface: 77 abilities (MODELED ∪ NOOP), 67 items,
 | swagger | boosts | implemented | `status_moves.rs::run_status_move` |
 | swagger | ignoreImmunity | implemented | `status_moves.rs::run_status_move` |
 | swagger | volatileStatus | implemented | `status_moves.rs::run_status_move` |
+| swallow | ignoreImmunity | implemented | `status_moves.rs::run_status_move` |
+| swallow | neverMiss | implemented | `status_moves.rs::run_status_move` |
+| swallow | onHit | implemented | `status_moves.rs::run_status_move` |
+| swallow | onTry | implemented | `status_moves.rs::run_status_move` |
 | sweetkiss | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | sweetkiss | volatileStatus | implemented | `secondaries.rs::add_confusion` |
 | sweetscent | boosts | implemented | `turn.rs::stat_drop_boosts` |
@@ -1196,6 +1236,9 @@ Surface: 77 abilities (MODELED ∪ NOOP), 67 items,
 | vitalthrow | priority | implemented | `turn.rs::move_priority` |
 | volttackle | recoil | implemented | `turn.rs::apply_recoil` |
 | waterpulse | secondaries | implemented | `turn.rs::apply_secondaries` |
+| watersport | ignoreImmunity | implemented | `status_moves.rs::run_status_move` |
+| watersport | neverMiss | implemented | `status_moves.rs::run_status_move` |
+| watersport | volatileStatus | implemented | `status_moves.rs::run_status_move` |
 | weatherball | onModifyMove | implemented | `turn/moves.rs::run_move` |
 | weatherball | onModifyType | implemented | `turn/moves.rs::run_move` |
 | whirlpool | volatileStatus | implemented | `turn.rs::is_partial_trap_move` |
