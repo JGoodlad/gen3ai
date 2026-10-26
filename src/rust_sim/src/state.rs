@@ -1228,7 +1228,28 @@ impl MonState {
     /// Crash-don't-drop: returns `Err` (never a silent wrong value) if the dex
     /// can't compute the stats (unknown species/nature) — that would corrupt
     /// every downstream HP/damage number.
-    pub fn from_set(set: PokemonSet, position: usize, dex: &Dex) -> Result<MonState, String> {
+    pub fn from_set(mut set: PokemonSet, position: usize, dex: &Dex) -> Result<MonState, String> {
+        // The set's SHAPE, against what the engine models (`gen3_format_rules_v1`). Showdown's
+        // ctor reads `clampIntRange(set.adjustLevel || set.level || 100, 1, 9999)`, so a level of
+        // 0 is 100; gen3customgame allows levels to 9999, which no gate has run, so they are
+        // REFUSED rather than approximated. Its `Max Move Count = 24` is the move limit: the
+        // engine keeps per-slot vectors, and a 6-move Custom Game set is pinned against the sim
+        // (`regression_test.rs` WB1, Weather Ball).
+        if set.level == 0 {
+            set.level = 100;
+        }
+        if set.level > 100 {
+            return Err(format!(
+                "MonState::from_set(slot {position}): level {} is not supported (the engine runs levels 1-100)",
+                set.level
+            ));
+        }
+        if set.moves.len() > 24 {
+            return Err(format!(
+                "MonState::from_set(slot {position}): {} moves is not supported (gen3customgame's Max Move Count is 24)",
+                set.moves.len()
+            ));
+        }
         let stats = compute_stats(&set, dex)
             .map_err(|e| format!("MonState::from_set(slot {position}): {e}"))?;
         let maxhp = stats[0];
@@ -1854,12 +1875,12 @@ pub struct BattleState {
     /// Generation (3) and format id, carried from the options.
     pub gen: u8,
     pub format_id: String,
-    /// Whether the **Sleep Clause Mod** is active (a sleep move that would inflict a
-    /// 2nd foe sleep FAILS). True for ladder formats that carry it via the `Standard`
-    /// ruleset (e.g. `gen3ou`); FALSE for `gen3customgame` (the e2e/secondary/
-    /// fullbattle harness format, which has no clauses). Derived from `format_id` at
-    /// construction (see [`format_has_sleep_clause`]).
-    pub sleep_clause: bool,
+    /// The format's battle-visible rules (`gen3_format_rules_v1`, [`crate::format`]): Sleep
+    /// Clause, Freeze Clause (gen3ou / gen3uubl / gen3draft only, so only they draw the
+    /// 2-clause SetStatus shuffle), Species Clause, Beat Up Nicknames, the trapping-ability
+    /// leak, the framing. Looked up from `format_id` at construction, which REFUSES an id the
+    /// table does not hold.
+    pub rules: &'static crate::format::FormatRules,
     /// Set by `run_move` when an Explosion / Self-Destruct SELF-KO fired this turn (the user
     /// fainted as part of the move, `useMoveInner` battle-actions.ts:501-503). Read into the
     /// per-decision `DecisionRecord.explosion_self_ko` at the turn's boundary + cleared at the
@@ -1991,9 +2012,10 @@ impl BattleState {
     /// silently mis-constructed board.
     pub fn start(opts: &BattleOptions, dex: &Dex) -> Result<BattleState, String> {
         let gen = dex.generation();
+        let rules = crate::format::rules(&opts.format_id)?;
         let p1 = build_side(&opts.p1.name, &opts.p1.team, dex)?;
         let p2 = build_side(&opts.p2.name, &opts.p2.team, dex)?;
-        if format_has_species_clause(&opts.format_id) {
+        if rules.species_clause {
             check_species_clause(&p1, dex)?;
             check_species_clause(&p2, dex)?;
         }
@@ -2015,7 +2037,7 @@ impl BattleState {
             sides: [p1, p2],
             field: Field::default(),
             gen,
-            sleep_clause: format_has_sleep_clause(&opts.format_id),
+            rules,
             format_id: opts.format_id.clone(),
             pending_explosion_self_ko: false,
             turn0_switchin_order: None,
@@ -2134,34 +2156,6 @@ impl BattleState {
 /// constructor does, so the resolved seed is real AND recordable.
 const DEFAULT_CONSTRUCT_SEED: &str = "0,0,0,0";
 
-/// Whether the format `format_id` carries the **Sleep Clause Mod** (a sleep move that
-/// would inflict a 2nd foe sleep FAILS). Ladder tiers include it via the `Standard`
-/// ruleset (Ubers/OU/UU/…); `gen3customgame` (and other `*customgame`) carry NO
-/// clauses. We match on the format SHAPE: anything `gen3customgame` (or any
-/// `*customgame`) → no clause; everything else gen-3 (gen3ou/uu/ubers/…) → clause.
-/// Gen-generic: only `*customgame` is the clause-free family.
-/// Whether the format's rule table carries `obtainableabilities` (`gen3ou`'s `Standard` →
-/// `Obtainable`; NOT `gen3customgame`). It gates endTurn's "canceling switches would leak
-/// information" loop (`sim/battle.ts` ~1729-1754: `(+hackmons || !obtainableabilities) &&
-/// !format.team` → skip), i.e. whether a foe's UNHELD species abilities can raise the request's
-/// `maybeTrapped` (`gen3_known_type_maybe_trap_v1`; probe `harness/probe_maybe_flags.js` S1/S2).
-/// The same customgame-vs-ladder split as [`format_has_sleep_clause`].
-pub fn format_has_obtainable_abilities(format_id: &str) -> bool {
-    format_has_sleep_clause(format_id)
-}
-
-pub fn format_has_sleep_clause(format_id: &str) -> bool {
-    let id: String = format_id.chars().filter(|c| c.is_ascii_alphanumeric()).map(|c| c.to_ascii_lowercase()).collect();
-    !id.ends_with("customgame")
-}
-
-/// Whether the format carries Showdown's **Species Clause** (`gen3_species_clause_v1`): `gen3ou`'s `Standard`
-/// ruleset includes it (`data/mods/gen3/rulesets.ts`, `config/formats.ts`), `gen3customgame` carries no
-/// rule. The same customgame-vs-ladder split as [`format_has_sleep_clause`].
-pub fn format_has_species_clause(format_id: &str) -> bool {
-    format_has_sleep_clause(format_id)
-}
-
 /// **Species Clause** (`gen3_species_clause_v1`): refuse a side whose team holds two mons of one
 /// dex NUM — Showdown's `speciesclause.onValidateTeam` keys a `Set<number>` on `species.num`, so
 /// formes share a num (Deoxys's four formes are one species) and a nickname does not hide a
@@ -2193,6 +2187,13 @@ fn build_side(name: &str, team: &PackedTeam, dex: &Dex) -> Result<SideState, Str
     let sets = unpack(&team.0, dex).map_err(|e| format!("side {name:?}: team unpack failed: {e}"))?;
     if sets.is_empty() {
         return Err(format!("side {name:?}: empty team"));
+    }
+    if sets.len() > 6 {
+        return Err(format!(
+            "side {name:?}: {} Pokémon is not supported: the engine runs teams of at most 6 \
+             (gen3customgame allows 24; refused rather than run unverified, gen3_format_rules_v1)",
+            sets.len()
+        ));
     }
     let mut pokemon = Vec::with_capacity(sets.len());
     for (i, set) in sets.into_iter().enumerate() {

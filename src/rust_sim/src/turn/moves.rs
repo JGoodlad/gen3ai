@@ -2176,12 +2176,12 @@ impl crate::state::BattleState {
             // gen3customgame L-rows DO carry it, contradicting the task's "no activate" claim).
             // GATED on `!beatupnicknamesmod`: the mod's `if (!this.ruleTable.has(
             // "beatupnicknamesmod")) this.add("-activate", …)` — the rule is part of the gen3
-            // **Standard** bundle (present in gen3ou, absent in gen3customgame), so it aligns
-            // exactly with `sleep_clause` (both derive from `format_has_sleep_clause`). `[of]`
+            // **Standard** bundle (present in gen3ou, absent in gen3customgame), read from the
+            // format table (`FormatRules::beatup_nicknames`, `gen3_format_rules_v1`). `[of]`
             // is the CURRENT strike's ally (`move.allies[0]` before the shift). Then (if crit)
             // `|-crit|<foe>`, then the `|-damage|` / Substitute result.
             if self.logging() {
-                if !self.sleep_clause {
+                if !self.rules.beatup_nicknames {
                     let user = self.mon_ref(side, slot, dex);
                     let ally_name = self.display_name(side, ally_idx, dex);
                     self.log.activate(&user, "move: Beat Up", Some(&format!("[of] {ally_name}")));

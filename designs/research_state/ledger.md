@@ -28914,3 +28914,37 @@ in one network: X59-S remains the read for Q-H9 and for Q-H10 in our architectur
 **Evidence:** `research_state/measurements/human_only_vs_pstar_2026-10-25/` (`PREREG.md`, `README.md`, `cells.json`,
 `rows.jsonl.gz`, `scripts/`). View: `UNDERSTANDING.md` §4.8, `endstate/human_data_architecture.md` §7,
 `ops/EXTERNAL_ANCHORS_SOP.md` §3 (H21) and §4.
+## 2026-10-26 · RUST SIM · gen3 full parity B0 + B1: the recount, and the FORMAT table — nine gen-3 formats ran silently as OU (12 of 13 gen3-mod singles formats exact, `gen31v1` refused)
+
+**The owner's 10-27 ask** widens the Rust sim's target to FULL parity with Showdown's `gen3` mod: every move,
+ability, item and mechanic, for any legal gen-3 singles team. **B0** (measurement, `0d95ac99`) recounted with the
+engine as oracle: moves 321/369, items 102/106, abilities 76/76, species 392/392, unchanged since 09-08. The new
+always-current table, `designs/rust_sim/gen3_full_parity.md`, ranks the gap by ladder carry rate across EVERY
+gen-3 tier with published Smogon stats (54 chaos files, 818k battles), a 1-in-10 sample of the gen3ou replay
+corpus and 5,000 generated Random Battle teams (which carry none of the 52 gap ids). Top gaps: Blast Burn (0.28 %
+of mons as a tier mean, 2.7 % in 1v1), Shell Bell, Sky Attack, Frenzy Plant, Dig, Metronome, Fly, Attract.
+
+**B1, the finding.** `state.rs::format_has_sleep_clause` was `!id.ends_with("customgame")`: every other format id
+ran as gen3ou. Showdown's rule tables say only `gen3ou`, `gen3uubl` and `gen3draft` carry Freeze Clause Mod (the
+gen-3 `Standard` ruleset, `data/mods/gen3/rulesets.ts`, has Sleep Clause Mod and no Freeze Clause), so only they
+gather both `onSetStatus` clause handlers and draw the size-2 SetStatus shuffle. Measured on one Thunder Wave turn:
+4 PRNG calls in OU, 3 in Ubers / UU / RU / NU / PU / ZU / LC / Random Battle. So in those nine formats the port
+drew one call too many per status application, applied Freeze Clause, kept the Custom Game `|tier|`/`|rule|`
+framing, and leaked an unheld Arena Trap into `maybeTrapped` where UU / RU ban it. Silent, not fail-loud. Training
+is untouched: every training, eval and live path runs `gen3ou`, whose behaviour B1 does not change.
+
+**B1, the fix.** `src/format.rs`: one row per gen-3 singles format (tier, rule lines, Sleep / Freeze / Species
+Clause, Beat Up Nicknames, the trap leak and its banned abilities, exact HP); `BattleState::rules` holds it; an id
+the table does not hold is REFUSED at construction (doubles, the `gen3rs` / `gen3frlg` / `gen3colosseum` mods,
+`gen31v1`'s Team Preview). Also refused: a level above 100 (a level ≥ 256 used to parse as 100 silently; 0 now
+reads as 100, as in Showdown) and a team above 6 mons; up to 24 moves run (Custom Game's limit; a 6-move set is
+already pinned). `bridge::reframe` writes every format's framing; `ab_replay`'s byte path used to reframe only an id
+containing `gen3ou`, so the new format fuzz failed every non-OU battle on its `|tier|` line until it reframed all.
+
+**Gates.** `tests/format_rules_test.rs` (the table against `harness/dump_gen3_formats.js`'s vector of Showdown's
+resolved rule tables, its `--check` inside the test; the refusals) and `tests/format_rules_golden_test.rs` (288
+rows, 12 formats x 6 boards: a status, a second sleep, a seed-searched second freeze, a self-Rest, Beat Up, a Sand
+Veil Dugtrio; seed, bytes, framing and `maybeTrapped` all match). A/B fuzz, the OU pool replayed under other
+formats so every divergence is the format's: `--mode pool --protocol --format gen3ubers` 119 ok + 1 allowlisted
+(the turn-0 mirror tie), `gen3uu` 120 / 120 ok, the `gen3ou` control 149 ok + 1 allowlisted; the bridge fuzz
+`pool gen3ubers`, `trapping gen3uu`, `trapping gen3ou` 300 / 300 clean.

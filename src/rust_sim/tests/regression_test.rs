@@ -6914,7 +6914,7 @@ fn freeze_clause_blocks_the_second_freeze_in_gen3ou() {
     };
     let mut battle = Battle::start_with_switchins(&opts, &d).expect("start");
     let st = battle.state_mut().expect("state");
-    assert!(st.sleep_clause, "gen3ou carries the clause formats flag");
+    assert!(st.rules.sleep_clause, "gen3ou carries the clause formats flag");
     let plan = [
         ScriptDecision::both(Choice::Move(0), Choice::Move(0)),   // T1: Ice Beam freezes Snorlax
         ScriptDecision::both(Choice::Move(1), Choice::Switch(1)), // T2: splash / switch Blissey
@@ -6971,7 +6971,7 @@ fn sleep_clause_exempts_a_self_rest_sleeper_from_blocking_a_foe_sleep_move() {
     };
     let mut battle = Battle::start_with_switchins(&opts, &d).expect("start");
     let st = battle.state_mut().expect("state");
-    assert!(st.sleep_clause, "gen3ou carries the clause formats flag");
+    assert!(st.rules.sleep_clause, "gen3ou carries the clause formats flag");
     let plan = [
         // T1: p1 Hidden Power Rock chips Zapdos; p2 Zapdos REST (self-sleep + heal).
         ScriptDecision::both(Choice::Move(2), Choice::Move(0)),
@@ -12678,7 +12678,7 @@ fn yawn_resolve_is_blocked_by_the_sleep_clause_in_gen3ou() {
         p2: PlayerOptions { name: "P2".to_string(), team: PackedTeam(p2.clone()) },
     };
     let mut bb = Battle::start_with_switchins(&opts, &d).expect("start");
-    assert!(bb.state().unwrap().sleep_clause, "gen3ou carries the Sleep Clause Mod flag");
+    assert!(bb.state().unwrap().rules.sleep_clause, "gen3ou carries the Sleep Clause Mod flag");
     let ob = bb.state_mut().unwrap().run_full_battle(
         &[
             ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // dec0: Spore -> Blissey-A slp

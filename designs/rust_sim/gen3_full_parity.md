@@ -39,7 +39,7 @@ hand-mirrored copy of `turn.rs` and keeps only the invariant gate (`move_census.
 | items | 106 | **102** | **4** | `PROBE_KIND=item` (`shellbell` `machobrace` `mentalherb` `mail`) |
 | abilities | 76 | **76** | 0 | `PROBE_KIND=ability`; the handler audit dispositions every hook |
 | species | 392 | **392** | 0 | `PROBE_KIND=species` |
-| gen3-mod singles formats | 12 | **2** exact (`gen3ou`, `gen3customgame`) | **0** (9 silently wrong, 1 unsupported) | the format table below |
+| gen3-mod singles formats | 13 | **12** exact | **1** refused (`gen31v1`) | the format table below (B1) |
 | engine mechanics | — | — | — | the mechanics table below |
 
 The item universe was cross-checked against the resolved handlers: every gen3 item outside the modeled
@@ -48,47 +48,47 @@ set either has no battle handler (the fossils, evolution items, balls, the Poké
 
 ## Formats: the gen3-mod singles formats Showdown defines
 
-Showdown's `config/formats.ts` defines 12 gen3-mod singles formats plus `gen3draft`. The rule tables
-differ in ways a battle can see. **Measured** (probe: one Thunder Wave turn, seed `1,2,3,4`): a status
-application draws **4** PRNG calls in `gen3ou` / `gen3uubl` and **3** everywhere else, because only those
-two formats carry BOTH `onSetStatus` clause handlers (`sleepclausemod` + `freezeclausemod`), whose tie is
-a size-2 speed-sort shuffle (`state.rs` comment on the SetStatus shuffle; `data/rulesets.ts`
-`freezeclausemod`). The gen-3 `Standard` ruleset (`data/mods/gen3/rulesets.ts`) carries Sleep Clause Mod
-and no Freeze Clause Mod.
+Showdown's `config/formats.ts` defines 13 gen3-mod singles formats (Draft included). Their rule tables
+differ in ways a battle can see, and `src/format.rs` (`gen3_format_rules_v1`, B1) holds each one's:
+only `gen3ou`, `gen3uubl` and `gen3draft` carry Freeze Clause Mod, so only they gather BOTH
+`onSetStatus` clause handlers and draw the size-2 speed-sort shuffle on every status application
+(measured: a Thunder Wave turn is 4 PRNG calls there, 3 everywhere else; the gen-3 `Standard` ruleset in
+`data/mods/gen3/rulesets.ts` carries Sleep Clause Mod and no Freeze Clause). The table is checked
+against Showdown by `tests/format_rules_test.rs` (the vector `harness/dump_gen3_formats.js` writes,
+`--check` in the same test) and `tests/format_rules_golden_test.rs` (12 formats x 6 boards: seed,
+bytes, framing, `maybeTrapped`).
 
-| format | battles (sample) | framing `\|tier\|` + `\|rule\|` | SetStatus clause handlers | port today |
-|---|---:|---|---:|---|
-| `gen3ou` | 639,039 | OU tier + 12 rules | 2 (shuffle) | **exact** |
-| `gen3uubl` | 26,426 | UUBL tier + 12 rules (`[Gen 3] OU` ruleset) | 2 (shuffle) | wrong framing |
-| `gen3ubers` | 34,317 | Ubers + 11 (Deoxys Camouflage, One Baton Pass) | 1 | **wrong draws** + framing + Freeze Clause |
-| `gen3uu` / `gen3ru` | 14,444 / 4,455 | + 9 | 1 | **wrong draws** + framing + Freeze Clause |
-| `gen3nu` / `gen3pu` / `gen3zu` | 4,636 / 2,001 / 53,593 | + 10 / 10 / 11 | 1 | **wrong draws** + framing + Freeze Clause |
-| `gen3lc` | 18,514 | + 12 (levels 5) | 1 | **wrong draws** + framing + Freeze Clause |
-| `gen3randombattle` | — | + 9 | 1 | **wrong draws** + framing + Freeze Clause |
-| `gen31v1` | 20,656 | Team Preview, picked team size 1 | 1 | **unsupported**: no team-preview phase |
-| `gen3customgame` | — | Custom Game + HP-% rule | 0 | **exact** |
+| format | battles (sample) | framing `\|rule\|` lines | SetStatus clause handlers | other differences | port |
+|---|---:|---:|---:|---|---|
+| `gen3ou` / `gen3uubl` | 639,039 / 26,426 | 12 | 2 (shuffle) | | exact |
+| `gen3draft` | — | 12 | 2 (shuffle) | no Species Clause | exact |
+| `gen3ubers` | 34,317 | 11 | 1 | | exact (B1) |
+| `gen3uu` / `gen3ru` | 14,444 / 4,455 | 9 | 1 | the banlist removes Arena Trap from the `maybeTrapped` leak | exact (B1) |
+| `gen3nu` / `gen3pu` / `gen3zu` | 4,636 / 2,001 / 53,593 | 10 / 10 / 11 | 1 | | exact (B1) |
+| `gen3lc` | 18,514 | 12 | 1 | level 5 by the validator | exact (B1) |
+| `gen3randombattle` | — | 9 | 1 | | exact (B1) |
+| `gen3customgame` | — | 1 | 0 | exact HP, no clauses, Beat Up shows its allies | exact |
+| `gen31v1` | 20,656 | — | — | Team Preview, picked team size 1 | **refused** (no team-preview phase) |
 
-"Battles (sample)" is the Smogon chaos `number of battles` summed over the months in § Usage. **Port
-today:** `state.rs::format_has_sleep_clause` is `!id.ends_with("customgame")`, so every other id is
-treated as OU: it draws the OU shuffle, applies Freeze Clause, and gets OU's Beat Up, Species Clause and
-`maybeTrapped` rules; `bridge.rs::reframe` rewrites only an id containing `gen3ou`, so every other format
-keeps the Custom Game framing. None of this fails loud. No training or eval path is affected (they run
-`gen3ou`), but a non-OU battle desyncs at its first status move.
+"Battles (sample)" is the Smogon chaos `number of battles` summed over the months in § Usage. **Before
+B1** the engine ran every id but `gen3customgame` as OU (`!id.ends_with("customgame")`): one extra draw
+per status application, Freeze Clause and OU's framing in 9 formats, all silent. Training is untouched
+(every training, eval and live path runs `gen3ou`, whose behaviour B1 does not change).
 
-**Out of scope for the `gen3` singles engine, refused rather than approximated:** the doubles formats
-(`gen3doublesou`, `gen3doublescustomgame`, `gen3adv200doubles`, `gen3orrecolosseum`) need a doubles
-engine; `gen3adv200` (`gen3rs` mod), `gen3frlgou` (`gen3frlg` mod) and `gen3hoennstadium`
-(`gen3colosseum` mod) are other mods with their own data.
+**Refused, out of scope for the `gen3` singles engine:** the doubles formats (`gen3doublesou`,
+`gen3doublescustomgame`, `gen3adv200doubles`, `gen3orrecolosseum`) need a doubles engine;
+`gen3adv200` (`gen3rs` mod), `gen3frlgou` (`gen3frlg` mod) and `gen3hoennstadium` (`gen3colosseum`
+mod) are other mods with their own data. Every one of them is an `Err` at construction.
 
 ## Engine mechanics
 
 | # | mechanic | status | effect today | batch |
 |---|---|---|---|---|
-| M1 | per-format rule table (above) | **silently wrong** in 9 formats | a draw desync per status application, wrong Freeze Clause, wrong framing | B1 |
-| M2 | an unknown or out-of-scope format id | **silently treated as OU** | as M1 | B1: refuse |
-| M3 | levels | 1–100 exact | a level ≥ 256 parses as 100 (`team.rs::parse_int_prefix` is `u8`); level 0 is 0 (Showdown: 100); 101–255 unverified | B1: refuse > 100, 0 → 100 |
-| M4 | team size > 6, more than 4 moves (`gen3customgame`: up to 24 each) | unverified | no gate has run it | B1: refuse |
-| M5 | Team Preview + picked team size (`gen31v1`) | not modeled | — | B1 refuses; implementing it is a construction-phase extension |
+| M1 | per-format rule table (above) | **done** (B1) | — | B1 |
+| M2 | an unknown or out-of-scope format id | **refused** at construction (B1) | — | B1 |
+| M3 | levels | 1–100 exact; 0 reads as 100 as in Showdown; above 100 (`gen3customgame` allows 9999) **refused** (B1) | before B1 a level ≥ 256 silently became 100 | B1 |
+| M4 | team size > 6, more than 4 moves (`gen3customgame`: up to 24 each) | more than 6 mons **refused** (B1, ungated); up to 24 moves run (a 6-move set is pinned, `regression_test.rs` WB1), a 25th refused | — | B1 |
+| M5 | Team Preview + picked team size (`gen31v1`) | not modeled, **refused** (B1) | — | a construction-phase extension, not scheduled |
 | M6 | the construction-time gender draw (`sample(['M','F'])`) on the `start_with_switchins` path | not modeled (modeled on the bridge's turn-0 path) | Cute Charm against an unspecified gender PANICS (fail-loud); blocks Attract | B9 |
 | M7 | Endless Battle Clause staleness (Skill Swap's external `volatileStaleness`, restorative-berry cycling through Trick / Recycle) | **not modeled, silent** | the clause can never end a battle in the port; reaching it needs both actives stale past turn 100. Affects `gen3ou` too (rare) | B10 |
 
@@ -197,7 +197,7 @@ commit.
 | batch | content | status |
 |---|---|---|
 | B0 | this recount and table | shipped with this file |
-| B1 | per-format rule table (M1), refuse unknown formats, levels, oversize teams and Team Preview (M2–M5) | open |
+| B1 | per-format rule table (M1), refuse unknown formats, levels, oversize teams and Team Preview (M2–M5) | shipped |
 | B2 | Blast Burn, Frenzy Plant, Hydro Cannon | open |
 | B3 | Shell Bell, Macho Brace, Mail | open |
 | B4 | the two-turn and semi-invulnerable family: Sky Attack, Dig, Fly, Dive, Bounce, Skull Bash, Razor Wind | open |

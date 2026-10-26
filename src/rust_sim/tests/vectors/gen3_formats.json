@@ -1,0 +1,378 @@
+{
+ "_meta": {
+  "generator": "src/rust_sim/harness/dump_gen3_formats.js",
+  "source": "Dex.formats (config/formats.ts) resolved rule tables + a started Battle per format",
+  "out_of_scope": "doubles formats (no doubles engine) and the gen3rs / gen3frlg / gen3colosseum mods"
+ },
+ "supported": [
+  {
+   "id": "gen3customgame",
+   "tier": "[Gen 3] Custom Game",
+   "rules": [
+    "HP Percentage Mod: HP is shown in percentages"
+   ],
+   "sleep_clause": false,
+   "freeze_clause": false,
+   "set_status_clause_handlers": [],
+   "species_clause": false,
+   "beatup_nicknames": false,
+   "ability_leak": false,
+   "leak_banned_abilities": [],
+   "exact_hp": true,
+   "max_level": 9999,
+   "default_level": 100,
+   "max_team_size": 24,
+   "max_move_count": 24
+  },
+  {
+   "id": "gen3draft",
+   "tier": "[Gen 3] Draft",
+   "rules": [
+    "Beat Up Nicknames Mod: Beat Up will not reveal any party members",
+    "Sleep Clause Mod: Limit one foe put to sleep",
+    "OHKO Clause: OHKO moves are banned",
+    "Evasion Clause: Evasion abilities, items, and moves are banned",
+    "Evasion Abilities Clause: Evasion abilities are banned",
+    "Evasion Items Clause: Evasion items are banned",
+    "Evasion Moves Clause: Evasion moves are banned",
+    "Endless Battle Clause: Forcing endless battles is banned",
+    "HP Percentage Mod: HP is shown in percentages",
+    "One Boost Passer Clause: Limit one Baton Passer that has a way to boost its stats",
+    "Freeze Clause Mod: Limit one foe frozen",
+    "Accuracy Moves Clause: Accuracy-lowering moves are banned"
+   ],
+   "sleep_clause": true,
+   "freeze_clause": true,
+   "set_status_clause_handlers": [
+    "freezeclausemod",
+    "sleepclausemod"
+   ],
+   "species_clause": false,
+   "beatup_nicknames": true,
+   "ability_leak": true,
+   "leak_banned_abilities": [],
+   "exact_hp": false,
+   "max_level": 100,
+   "default_level": 100,
+   "max_team_size": 6,
+   "max_move_count": 4
+  },
+  {
+   "id": "gen3lc",
+   "tier": "[Gen 3] LC",
+   "rules": [
+    "HP Percentage Mod: HP is shown in percentages",
+    "Beat Up Nicknames Mod: Beat Up will not reveal any party members",
+    "Endless Battle Clause: Forcing endless battles is banned",
+    "Sleep Clause Mod: Limit one foe put to sleep",
+    "Switch Priority Clause Mod: Faster Pokémon switch first",
+    "Species Clause: Limit one of each Pokémon",
+    "OHKO Clause: OHKO moves are banned",
+    "Evasion Items Clause: Evasion items are banned",
+    "Evasion Moves Clause: Evasion moves are banned",
+    "Pomeg Glitch Clause: Gen 3 Pokémon at level 5+ can have any of their level-up moves.",
+    "Sleep Moves Clause: Sleep-inducing moves are banned",
+    "Accuracy Moves Clause: Accuracy-lowering moves are banned"
+   ],
+   "sleep_clause": true,
+   "freeze_clause": false,
+   "set_status_clause_handlers": [
+    "sleepclausemod"
+   ],
+   "species_clause": true,
+   "beatup_nicknames": true,
+   "ability_leak": true,
+   "leak_banned_abilities": [],
+   "exact_hp": false,
+   "max_level": 5,
+   "default_level": 5,
+   "max_team_size": 6,
+   "max_move_count": 4
+  },
+  {
+   "id": "gen3nu",
+   "tier": "[Gen 3] NU",
+   "rules": [
+    "HP Percentage Mod: HP is shown in percentages",
+    "Beat Up Nicknames Mod: Beat Up will not reveal any party members",
+    "Endless Battle Clause: Forcing endless battles is banned",
+    "Sleep Clause Mod: Limit one foe put to sleep",
+    "Switch Priority Clause Mod: Faster Pokémon switch first",
+    "Species Clause: Limit one of each Pokémon",
+    "OHKO Clause: OHKO moves are banned",
+    "Evasion Items Clause: Evasion items are banned",
+    "Evasion Moves Clause: Evasion moves are banned",
+    "One Boost Passer Clause: Limit one Baton Passer that has a way to boost its stats"
+   ],
+   "sleep_clause": true,
+   "freeze_clause": false,
+   "set_status_clause_handlers": [
+    "sleepclausemod"
+   ],
+   "species_clause": true,
+   "beatup_nicknames": true,
+   "ability_leak": true,
+   "leak_banned_abilities": [],
+   "exact_hp": false,
+   "max_level": 100,
+   "default_level": 100,
+   "max_team_size": 6,
+   "max_move_count": 4
+  },
+  {
+   "id": "gen3ou",
+   "tier": "[Gen 3] OU",
+   "rules": [
+    "HP Percentage Mod: HP is shown in percentages",
+    "Beat Up Nicknames Mod: Beat Up will not reveal any party members",
+    "Endless Battle Clause: Forcing endless battles is banned",
+    "Sleep Clause Mod: Limit one foe put to sleep",
+    "Switch Priority Clause Mod: Faster Pokémon switch first",
+    "Species Clause: Limit one of each Pokémon",
+    "OHKO Clause: OHKO moves are banned",
+    "Evasion Items Clause: Evasion items are banned",
+    "Evasion Moves Clause: Evasion moves are banned",
+    "One Boost Passer Clause: Limit one Baton Passer that has a way to boost its stats",
+    "Freeze Clause Mod: Limit one foe frozen",
+    "Baton Pass Stat Clause: No Baton Passer may have a way to boost its Speed"
+   ],
+   "sleep_clause": true,
+   "freeze_clause": true,
+   "set_status_clause_handlers": [
+    "freezeclausemod",
+    "sleepclausemod"
+   ],
+   "species_clause": true,
+   "beatup_nicknames": true,
+   "ability_leak": true,
+   "leak_banned_abilities": [],
+   "exact_hp": false,
+   "max_level": 100,
+   "default_level": 100,
+   "max_team_size": 6,
+   "max_move_count": 4
+  },
+  {
+   "id": "gen3pu",
+   "tier": "[Gen 3] PU",
+   "rules": [
+    "HP Percentage Mod: HP is shown in percentages",
+    "Beat Up Nicknames Mod: Beat Up will not reveal any party members",
+    "Endless Battle Clause: Forcing endless battles is banned",
+    "Sleep Clause Mod: Limit one foe put to sleep",
+    "Switch Priority Clause Mod: Faster Pokémon switch first",
+    "Species Clause: Limit one of each Pokémon",
+    "OHKO Clause: OHKO moves are banned",
+    "Evasion Items Clause: Evasion items are banned",
+    "Evasion Moves Clause: Evasion moves are banned",
+    "Baton Pass Stat Clause: No Baton Passer may have a way to boost its stats"
+   ],
+   "sleep_clause": true,
+   "freeze_clause": false,
+   "set_status_clause_handlers": [
+    "sleepclausemod"
+   ],
+   "species_clause": true,
+   "beatup_nicknames": true,
+   "ability_leak": true,
+   "leak_banned_abilities": [],
+   "exact_hp": false,
+   "max_level": 100,
+   "default_level": 100,
+   "max_team_size": 6,
+   "max_move_count": 4
+  },
+  {
+   "id": "gen3randombattle",
+   "tier": "[Gen 3] Random Battle",
+   "rules": [
+    "HP Percentage Mod: HP is shown in percentages",
+    "Beat Up Nicknames Mod: Beat Up will not reveal any party members",
+    "Endless Battle Clause: Forcing endless battles is banned",
+    "Sleep Clause Mod: Limit one foe put to sleep",
+    "Switch Priority Clause Mod: Faster Pokémon switch first",
+    "Species Clause: Limit one of each Pokémon",
+    "OHKO Clause: OHKO moves are banned",
+    "Evasion Items Clause: Evasion items are banned",
+    "Evasion Moves Clause: Evasion moves are banned"
+   ],
+   "sleep_clause": true,
+   "freeze_clause": false,
+   "set_status_clause_handlers": [
+    "sleepclausemod"
+   ],
+   "species_clause": true,
+   "beatup_nicknames": true,
+   "ability_leak": true,
+   "leak_banned_abilities": [],
+   "exact_hp": false,
+   "max_level": 100,
+   "default_level": 100,
+   "max_team_size": 6,
+   "max_move_count": 4
+  },
+  {
+   "id": "gen3ru",
+   "tier": "[Gen 3] RU",
+   "rules": [
+    "HP Percentage Mod: HP is shown in percentages",
+    "Beat Up Nicknames Mod: Beat Up will not reveal any party members",
+    "Endless Battle Clause: Forcing endless battles is banned",
+    "Sleep Clause Mod: Limit one foe put to sleep",
+    "Switch Priority Clause Mod: Faster Pokémon switch first",
+    "Species Clause: Limit one of each Pokémon",
+    "OHKO Clause: OHKO moves are banned",
+    "Evasion Items Clause: Evasion items are banned",
+    "Evasion Moves Clause: Evasion moves are banned"
+   ],
+   "sleep_clause": true,
+   "freeze_clause": false,
+   "set_status_clause_handlers": [
+    "sleepclausemod"
+   ],
+   "species_clause": true,
+   "beatup_nicknames": true,
+   "ability_leak": true,
+   "leak_banned_abilities": [
+    "arenatrap"
+   ],
+   "exact_hp": false,
+   "max_level": 100,
+   "default_level": 100,
+   "max_team_size": 6,
+   "max_move_count": 4
+  },
+  {
+   "id": "gen3ubers",
+   "tier": "[Gen 3] Ubers",
+   "rules": [
+    "HP Percentage Mod: HP is shown in percentages",
+    "Beat Up Nicknames Mod: Beat Up will not reveal any party members",
+    "Endless Battle Clause: Forcing endless battles is banned",
+    "Sleep Clause Mod: Limit one foe put to sleep",
+    "Switch Priority Clause Mod: Faster Pokémon switch first",
+    "Species Clause: Limit one of each Pokémon",
+    "OHKO Clause: OHKO moves are banned",
+    "Evasion Items Clause: Evasion items are banned",
+    "Evasion Moves Clause: Evasion moves are banned",
+    "Deoxys Camouflage Clause Mod: Reveals the Deoxys forme when it is sent in battle.",
+    "One Baton Pass Clause: Limit one Baton Passer"
+   ],
+   "sleep_clause": true,
+   "freeze_clause": false,
+   "set_status_clause_handlers": [
+    "sleepclausemod"
+   ],
+   "species_clause": true,
+   "beatup_nicknames": true,
+   "ability_leak": true,
+   "leak_banned_abilities": [],
+   "exact_hp": false,
+   "max_level": 100,
+   "default_level": 100,
+   "max_team_size": 6,
+   "max_move_count": 4
+  },
+  {
+   "id": "gen3uu",
+   "tier": "[Gen 3] UU",
+   "rules": [
+    "HP Percentage Mod: HP is shown in percentages",
+    "Beat Up Nicknames Mod: Beat Up will not reveal any party members",
+    "Endless Battle Clause: Forcing endless battles is banned",
+    "Sleep Clause Mod: Limit one foe put to sleep",
+    "Switch Priority Clause Mod: Faster Pokémon switch first",
+    "Species Clause: Limit one of each Pokémon",
+    "OHKO Clause: OHKO moves are banned",
+    "Evasion Items Clause: Evasion items are banned",
+    "Evasion Moves Clause: Evasion moves are banned"
+   ],
+   "sleep_clause": true,
+   "freeze_clause": false,
+   "set_status_clause_handlers": [
+    "sleepclausemod"
+   ],
+   "species_clause": true,
+   "beatup_nicknames": true,
+   "ability_leak": true,
+   "leak_banned_abilities": [
+    "arenatrap"
+   ],
+   "exact_hp": false,
+   "max_level": 100,
+   "default_level": 100,
+   "max_team_size": 6,
+   "max_move_count": 4
+  },
+  {
+   "id": "gen3uubl",
+   "tier": "[Gen 3] UUBL",
+   "rules": [
+    "HP Percentage Mod: HP is shown in percentages",
+    "Beat Up Nicknames Mod: Beat Up will not reveal any party members",
+    "Endless Battle Clause: Forcing endless battles is banned",
+    "Sleep Clause Mod: Limit one foe put to sleep",
+    "Switch Priority Clause Mod: Faster Pokémon switch first",
+    "Species Clause: Limit one of each Pokémon",
+    "OHKO Clause: OHKO moves are banned",
+    "Evasion Items Clause: Evasion items are banned",
+    "Evasion Moves Clause: Evasion moves are banned",
+    "One Boost Passer Clause: Limit one Baton Passer that has a way to boost its stats",
+    "Freeze Clause Mod: Limit one foe frozen",
+    "Baton Pass Stat Clause: No Baton Passer may have a way to boost its Speed"
+   ],
+   "sleep_clause": true,
+   "freeze_clause": true,
+   "set_status_clause_handlers": [
+    "freezeclausemod",
+    "sleepclausemod"
+   ],
+   "species_clause": true,
+   "beatup_nicknames": true,
+   "ability_leak": true,
+   "leak_banned_abilities": [],
+   "exact_hp": false,
+   "max_level": 100,
+   "default_level": 100,
+   "max_team_size": 6,
+   "max_move_count": 4
+  },
+  {
+   "id": "gen3zu",
+   "tier": "[Gen 3] ZU",
+   "rules": [
+    "HP Percentage Mod: HP is shown in percentages",
+    "Beat Up Nicknames Mod: Beat Up will not reveal any party members",
+    "Endless Battle Clause: Forcing endless battles is banned",
+    "Sleep Clause Mod: Limit one foe put to sleep",
+    "Switch Priority Clause Mod: Faster Pokémon switch first",
+    "Species Clause: Limit one of each Pokémon",
+    "OHKO Clause: OHKO moves are banned",
+    "Evasion Items Clause: Evasion items are banned",
+    "Evasion Moves Clause: Evasion moves are banned",
+    "Sleep Moves Clause: Sleep-inducing moves are banned",
+    "Baton Pass Stat Trap Clause: No Baton Passer may have a way to boost stats or trap Pokémon"
+   ],
+   "sleep_clause": true,
+   "freeze_clause": false,
+   "set_status_clause_handlers": [
+    "sleepclausemod"
+   ],
+   "species_clause": true,
+   "beatup_nicknames": true,
+   "ability_leak": true,
+   "leak_banned_abilities": [],
+   "exact_hp": false,
+   "max_level": 100,
+   "default_level": 100,
+   "max_team_size": 6,
+   "max_move_count": 4
+  }
+ ],
+ "refused": [
+  {
+   "id": "gen31v1",
+   "reason": "Team Preview + Picked Team Size = 1: the engine has no team-preview phase"
+  }
+ ]
+}

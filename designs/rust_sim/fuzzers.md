@@ -50,8 +50,10 @@ protocol byte differential**: per battle it TEES the real omniscient filtered lo
 golden, `ab_replay --protocol` replays via `run_full_battle_logged`, filters BOTH sides through a
 shared DENYLIST (drop `debug`/`error`, normalize `|t:|`), and first-divergence-diffs to a
 `kind:"protocol"` verdict — **reported ONLY after state/seed/winner match, so a draw bug still
-surfaces as `seed`**. `--format {gen3customgame,gen3ou}` threads the run format (gen3ou = the
-clause-shuffle draw path + the OU framing). Genders are pinned (`pinGenders`) so the sim never draws
+surfaces as `seed`**. `--format` threads the run format: any gen-3 singles format the engine runs
+(`tests/vectors/gen3_formats.json`, `gen3_format_rules_v1`; gen3ou / gen3uubl / gen3draft draw the
+2-clause SetStatus shuffle, the other clause tiers do not), and only with `--protocol`, because only a
+protocol chunk records the format for `ab_replay` (`bridge_ab_fuzz.js` takes the same list). Genders are pinned (`pinGenders`) so the sim never draws
 one at construction. Isolated build + run:
 
 ```bash

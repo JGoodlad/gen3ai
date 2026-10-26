@@ -2192,53 +2192,40 @@ fn emit_boundary_request_chunks(
     out
 }
 
-/// The `|tier|` + `|rule|…` framing lines for gen3ou (the crate's `emit_framing`
-/// hard-codes the gen3customgame `[Gen 3] Custom Game` tier + single HP-% rule). The
-/// exact OU sequence is captured verbatim from the golden.
-const GEN3OU_TIER: &str = "|tier|[Gen 3] OU";
-const GEN3OU_RULES: &[&str] = &[
-    "|rule|HP Percentage Mod: HP is shown in percentages",
-    "|rule|Beat Up Nicknames Mod: Beat Up will not reveal any party members",
-    "|rule|Endless Battle Clause: Forcing endless battles is banned",
-    "|rule|Sleep Clause Mod: Limit one foe put to sleep",
-    "|rule|Switch Priority Clause Mod: Faster Pokémon switch first",
-    "|rule|Species Clause: Limit one of each Pokémon",
-    "|rule|OHKO Clause: OHKO moves are banned",
-    "|rule|Evasion Items Clause: Evasion items are banned",
-    "|rule|Evasion Moves Clause: Evasion moves are banned",
-    "|rule|One Boost Passer Clause: Limit one Baton Passer that has a way to boost its stats",
-    "|rule|Freeze Clause Mod: Limit one foe frozen",
-    "|rule|Baton Pass Stat Clause: No Baton Passer may have a way to boost its Speed",
-];
-
-/// Rewrite the crate's (gen3customgame) framing to the target format's tier + rule
-/// list. For gen3ou this replaces `|tier|[Gen 3] Custom Game` + the single
-/// `|rule|HP Percentage Mod…` line with the OU tier + 12-rule list; everything else
-/// (players, gen, teamsize, leads, switch-in ability lines, `|turn|1`) is preserved.
-/// A non-OU format is passed through unchanged.
+/// Rewrite the crate's (gen3customgame) framing to the target format's tier + rule list
+/// (`gen3_format_rules_v1`, [`crate::format::FormatRules`]). The engine's `emit_framing`
+/// writes `|tier|[Gen 3] Custom Game` + the single `|rule|HP Percentage Mod…` line; for any
+/// other format this replaces the tier line with the format's and the HP-% rule line with the
+/// format's whole rule list, in Showdown's order. Everything else (players, gen, teamsize,
+/// leads, switch-in ability lines, `|turn|1`) is preserved. `gen3customgame` (and an id the
+/// table does not hold, which construction has already refused) passes through unchanged.
 ///
 /// `pub` so the omniscient BYTE fuzzer (`src/bin/ab_replay.rs --protocol`) can rewrite a
-/// `run_full_battle_logged` framing to gen3ou before byte-diffing it against the real
-/// gen3ou omniscient capture (`gen3_omniscient_byte_fuzz_v1`).
+/// `run_full_battle_logged` framing before byte-diffing it against the real omniscient capture
+/// (`gen3_omniscient_byte_fuzz_v1`).
 pub fn reframe(raw: &[crate::protocol::ProtocolLine], format_id: &str) -> Vec<String> {
     reframe_indexed(raw, format_id).into_iter().map(|(l, _)| l).collect()
 }
 
+/// The engine's own framing lines, which [`reframe_indexed`] substitutes.
+const ENGINE_TIER: &str = "|tier|[Gen 3] Custom Game";
+const ENGINE_RULE: &str = "|rule|HP Percentage Mod: HP is shown in percentages";
+
 /// [`reframe`], with each output line's SOURCE index into `raw` (`None` for a line the reframe
-/// SUBSTITUTED — the OU tier and rule list, which are the format's frames, not the engine's).
+/// SUBSTITUTED — the format's tier and rule list, which are the format's frames, not the engine's).
 pub fn reframe_indexed(raw: &[crate::protocol::ProtocolLine], format_id: &str) -> Vec<(String, Option<u32>)> {
-    if !format_id.contains("gen3ou") {
-        return raw.iter().enumerate().map(|(i, l)| (l.0.clone(), Some(i as u32))).collect();
-    }
-    let mut out: Vec<(String, Option<u32>)> = Vec::with_capacity(raw.len() + GEN3OU_RULES.len());
+    let rules = match crate::format::rules(format_id) {
+        Ok(r) if r.id != "gen3customgame" => r,
+        _ => return raw.iter().enumerate().map(|(i, l)| (l.0.clone(), Some(i as u32))).collect(),
+    };
+    let mut out: Vec<(String, Option<u32>)> = Vec::with_capacity(raw.len() + rules.rules.len());
     for (i, l) in raw.iter().enumerate() {
         let s = &l.0;
-        if s == "|tier|[Gen 3] Custom Game" {
-            out.push((GEN3OU_TIER.to_string(), None));
-        } else if s == "|rule|HP Percentage Mod: HP is shown in percentages" {
-            // Replace the lone Custom-Game HP% rule with the full OU rule list.
-            for r in GEN3OU_RULES {
-                out.push(((*r).to_string(), None));
+        if s == ENGINE_TIER {
+            out.push((format!("|tier|{}", rules.tier), None));
+        } else if s == ENGINE_RULE {
+            for r in rules.rules {
+                out.push((format!("|rule|{r}"), None));
             }
         } else {
             out.push((s.clone(), Some(i as u32)));
@@ -2249,9 +2236,10 @@ pub fn reframe_indexed(raw: &[crate::protocol::ProtocolLine], format_id: &str) -
 
 /// Whether `format_id` is a `debug:true` format (the gen3 Custom Game) — such a
 /// battle sets `reportExactHP`, so both per-side streams show EXACT HP (no percent
-/// fold). Mirrors the ONE relevant flag from `[Gen 3] Custom Game`'s definition.
+/// fold). Read from the format table ([`crate::format::FormatRules::exact_hp`]); an id the
+/// table does not hold is refused at construction.
 pub(crate) fn format_is_debug(format_id: &str) -> bool {
-    format_id.contains("customgame")
+    crate::format::rules(format_id).map_or(false, |r| r.exact_hp)
 }
 
 /// Which sides are being force-switched at the paused boundary (post-faint

@@ -49,11 +49,11 @@
 //!
 //! * **`pseudoWeather`** — the port has no pseudo-weather MAP. gen-3 has no
 //!   pseudo-weather MOVE (Trick Room / Gravity are gen-4+), so the only entries a
-//!   real gen-3 battle carries are the format's two clause rules, which the port
-//!   DOES model behind one flag ([`BattleState::sleep_clause`], which gates both the
-//!   Sleep Clause Mod and the Freeze Clause Mod). So the list is derived from that
-//!   flag: `["freezeclausemod","sleepclausemod"]` in a clause format, `[]` in
-//!   `gen3customgame`. **VERIFIED** against the golden (6/6 cases, gen3ou).
+//!   real gen-3 battle carries are the format's clause rules, which the port models in
+//!   its format table ([`crate::format::FormatRules::pseudo_weather`]):
+//!   `["freezeclausemod","sleepclausemod"]` in gen3ou, `["sleepclausemod"]` in a
+//!   Sleep-Clause-only tier, `[]` in `gen3customgame`. **VERIFIED** against the golden
+//!   (6/6 cases, gen3ou).
 //! * **`volatiles`** — the port models volatiles as individual typed fields on
 //!   [`MonState`], not as a keyed map, so the NAME list is RECONSTRUCTED by
 //!   [`volatile_names`] from those fields using Showdown's condition ids. The golden
@@ -1223,12 +1223,11 @@ pub fn pre_state(sess: &BridgeSession) -> String {
         return "null".to_string();
     };
     // See the module header: the port has no pseudo-weather map, and gen-3's only
-    // pseudo-weathers are the format's clause rules, which ride one flag.
-    let pseudo = if st.sleep_clause {
-        "[\"freezeclausemod\",\"sleepclausemod\"]"
-    } else {
-        "[]"
-    };
+    // pseudo-weathers are the format's clause rules (`FormatRules::pseudo_weather`).
+    let pseudo = format!(
+        "[{}]",
+        st.rules.pseudo_weather().iter().map(|p| format!("\"{p}\"")).collect::<Vec<_>>().join(",")
+    );
     format!(
         "{{\"turn\":{},\"weather\":{},\"pseudoWeather\":{},\"p1\":{},\"p2\":{}}}",
         // The BOUNDARY's turn, not the raw committed count — `pre_state` is only ever taken at

@@ -138,10 +138,12 @@ impl crate::state::BattleState {
         if held == "magnetpull" && (!known || mon_types(me, dex).contains(&Type::Steel)) {
             return true;
         }
-        if crate::state::format_has_obtainable_abilities(&self.format_id) {
+        if self.rules.ability_leak {
             let species = to_id(&foe.species_id);
             if let Some((_, abilities)) = LEAK_SPECIES_TRAP_ABILITIES.iter().find(|(s, _)| *s == species) {
-                if abilities.iter().any(|a| fires(a)) {
+                // A banned ability is skipped (`ruleTable.has('-ability:' + id)`): UU / RU ban
+                // Arena Trap, so a Dugtrio raises no leak there (`gen3_format_rules_v1`).
+                if abilities.iter().any(|a| !self.rules.leak_banned_abilities.contains(a) && fires(a)) {
                     return true;
                 }
             }

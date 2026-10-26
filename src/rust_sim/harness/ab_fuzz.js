@@ -127,8 +127,18 @@ function parseFlags(argv) {
     else if (a === '--ladder-tier') f.ladderTier = next();
     else { console.error(`unknown flag ${a}`); process.exit(2); }
   }
-  if (!['gen3customgame', 'gen3ou'].includes(f.format)) {
-    console.error(`--format must be gen3customgame|gen3ou, got ${f.format}`);
+  // Every gen-3 singles format the engine runs (`gen3_format_rules_v1`; the table the engine's
+  // `src/format.rs` is checked against).
+  const FORMATS = JSON.parse(fs.readFileSync(path.join(__dirname, '../tests/vectors/gen3_formats.json'), 'utf8'))
+    .supported.map((r) => r.id);
+  if (!FORMATS.includes(f.format)) {
+    console.error(`--format must be one of ${FORMATS.join('|')}, got ${f.format}`);
+    process.exit(2);
+  }
+  // Only a `--protocol` chunk carries the FMT row; without it `ab_replay` replays as
+  // gen3customgame, so any other format would be a different battle on the port's side.
+  if (f.format !== 'gen3customgame' && !f.protocol) {
+    console.error(`--format ${f.format} needs --protocol (only a protocol chunk records the format for ab_replay)`);
     process.exit(2);
   }
   if (!['randbats', 'random', 'pool', 'ourandom', 'ladder'].includes(f.mode)) {

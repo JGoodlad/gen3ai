@@ -3647,11 +3647,12 @@ impl crate::state::BattleState {
         }
 
         // (6) The gen3ou SetStatus handler-sort shuffle (the self-`setStatus('slp')`
-        //     reaches `runEvent('SetStatus')`). Gated by `sleep_clause`; gen3customgame
-        //     draws nothing. A self-Rest is EXEMPT from the Sleep-Clause CAP, so we draw
+        //     reaches `runEvent('SetStatus')`). Only a format with BOTH clause handlers
+        //     draws it (`FormatRules::set_status_shuffle`); gen3customgame and the
+        //     Sleep-Clause-only tiers draw nothing. A self-Rest is EXEMPT from the Sleep-Clause CAP, so we draw
         //     the shuffle (the 2 clause handlers always tie) but never run the sleeper
         //     block.
-        if self.sleep_clause {
+        if self.rules.set_status_shuffle() {
             self.set_status_event_shuffle();
         }
 

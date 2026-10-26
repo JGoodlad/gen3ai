@@ -29,7 +29,7 @@
 //   node src/rust_sim/harness/bridge_ab_fuzz.js
 //        [--mode trapping|randbats|random|pool|ladder]   (default trapping)
 //        [--ladder-tier commit|milestone|full]   (`--mode ladder`: the LADDER-USAGE corpus tier, default milestone)
-//        [--format gen3customgame|gen3ou]         (default gen3customgame)
+//        [--format gen3customgame|gen3ou]         (default gen3customgame; any id in tests/vectors/gen3_formats.json)
 //        [--battles N | --hours H]                (default: run until killed)
 //        [--master-seed S]                        (default: from time; ALWAYS printed)
 //        [--chunk N]                              (default 25 battles per chunk)
@@ -120,8 +120,12 @@ function parseFlags(argv) {
     console.error(`--ladder-tier must be ${ladderCorpus.TIERS.join('|')}, got ${f.ladderTier}`);
     process.exit(2);
   }
-  if (!['gen3customgame', 'gen3ou'].includes(f.format)) {
-    console.error(`--format must be gen3customgame|gen3ou, got ${f.format}`);
+  // Every gen-3 singles format the engine runs (`gen3_format_rules_v1`; the table the engine's
+  // `src/format.rs` is checked against).
+  const FORMATS = JSON.parse(fs.readFileSync(path.join(__dirname, '../tests/vectors/gen3_formats.json'), 'utf8'))
+    .supported.map((r) => r.id);
+  if (!FORMATS.includes(f.format)) {
+    console.error(`--format must be one of ${FORMATS.join('|')}, got ${f.format}`);
     process.exit(2);
   }
   if (f.masterSeed === null) f.masterSeed = (Date.now() ^ (process.pid * 2654435761)) >>> 0;

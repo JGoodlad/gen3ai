@@ -2127,7 +2127,7 @@ mod tests {
         let breloom = "Breloom||leftovers||spore,skyuppercut|Adamant|,252,,,,252|||||";
         let noctowl = "Noctowl||leftovers|insomnia|hypnosis,psychic|Modest|252,,,,252,|||||";
         let mut state = BattleState::start(&opts(breloom, noctowl, "1,2,3,4"), &d).expect("start");
-        assert!(state.sleep_clause, "gen3ou must carry the sleep clause");
+        assert!(state.rules.sleep_clause, "gen3ou must carry the sleep clause");
         let before = state.prng_seed();
         // Reference: a normal status apply's SetStatus event draws exactly one random(0,2).
         // Reconstruct a fresh PRNG at `before` and draw once (the PRNG is deterministic on its
@@ -2150,7 +2150,7 @@ mod tests {
         let breloom = "Breloom||leftovers||spore,skyuppercut|Adamant|,252,,,,252|||||";
         let noctowl = "Noctowl||leftovers|insomnia|hypnosis,psychic|Modest|252,,,,252,|||||";
         let mut state = BattleState::start(&opts_cg(breloom, noctowl, "1,2,3,4"), &d).expect("start");
-        assert!(!state.sleep_clause, "gen3customgame carries no sleep clause");
+        assert!(!state.rules.sleep_clause, "gen3customgame carries no sleep clause");
         let before = state.prng_seed();
         state.try_set_status(1, 0, "slp", None, &d);
         assert_eq!(state.sides[1].pokemon[0].status, None, "Insomnia blocks the sleep");
