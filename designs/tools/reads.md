@@ -134,7 +134,10 @@ is INCONCLUSIVE if any of these holds:
 - the transport and the server;
 - the format and the forfeit limit;
 - both team-content digests;
-- the declared team cell.
+- the declared team cell;
+- a Metamon peer's verified weights (`their_weights` / `our_weights`: hub revision + `weights_sha256`), included only when they
+  differ from `assemble.LEGACY_WEIGHTS` (the one commit every pre-pin read played), so banked ids are unchanged and a
+  re-read of the same weights keeps the id (`EXTERNAL_ANCHORS_SOP.md` § Weight pins).
 
 Each (group, team set) must share ONE id. The group's id is `group_regime_id` over its team sets. The playing commit
 and file paths are recorded per unit but are not part of the id. A unit played on bytes other than the resolved

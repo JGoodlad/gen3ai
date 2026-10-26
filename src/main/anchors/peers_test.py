@@ -47,6 +47,13 @@ def _metamon_plan(cfg, tmp_path: Path, role: str = "acceptor", regime: str = "gr
         team_seed=7, out_dir=tmp_path)
 
 
+def pin_report_fields(plan: PeerPlan) -> dict:
+    """What a peer that VERIFIED the plan's weight pin writes into its report (FR-1 FINDING 3)."""
+    pin = plan.extra["weight_pin"]
+    return {"hf_hub_offline": True, "hf_revision": pin.revision, "weights_verified": dict(pin.weights),
+            "weights_loaded": sorted(pin.weights)}
+
+
 def _foulplay_plan(cfg, tmp_path: Path, role: str = "challenger") -> PeerPlan:
     return FoulPlayPeer().plan(
         cfg=cfg.foulplay, regime="greedy", teamset="home", battle_format="gen3ou",
@@ -144,7 +151,7 @@ def test_a_metamon_report_is_read_back_with_its_regime_verification(cfg, tmp_pat
     plan = _metamon_plan(cfg, tmp_path)
     plan.report_path.write_text(json.dumps({
         "sample_kwarg_values": [False], "argmax_match_rate": 1.0, "regime_check_ok": True,
-        "n_decisions": 152, "median_s": 0.0142}))
+        "n_decisions": 152, "median_s": 0.0142, **pin_report_fields(plan)}))
     report = MetamonPeer.read_report(plan)
     assert report["regime_verified"] is True
     assert report["sample_kwargs"] == [False]
@@ -167,7 +174,8 @@ def test_a_sampling_cell_reads_materially_below_one_which_is_the_positive_contro
     is a different amount of noise for every model."""
     plan = _metamon_plan(cfg, tmp_path, regime="t1")
     plan.report_path.write_text(json.dumps({
-        "sample_kwarg_values": [True], "argmax_match_rate": 0.647, "regime_check_ok": True}))
+        "sample_kwarg_values": [True], "argmax_match_rate": 0.647, "regime_check_ok": True,
+        **pin_report_fields(plan)}))
     report = MetamonPeer.read_report(plan)
     assert report["sample_kwargs"] == [True]
     assert report["argmax_match_rate"] < 1.0
@@ -308,7 +316,7 @@ def test_the_router_rate_reaches_the_report(cfg, tmp_path) -> None:
     plan = _ensemble_plan(cfg, tmp_path)
     plan.report_path.write_text(json.dumps({"regime_verified_decisions": True, "peer_error_free": True,
                                             "sample_kwarg_values": [False], "argmax_match_rate": None,
-                                            "router_no_rng_rate": 1.0}))
+                                            "router_no_rng_rate": 1.0, **pin_report_fields(plan)}))
     rep = MetamonPeer.read_report(plan)
     assert rep["router_no_rng_rate"] == 1.0 and rep["argmax_match_rate"] is None
     assert rep["regime_verified_decisions"] is True

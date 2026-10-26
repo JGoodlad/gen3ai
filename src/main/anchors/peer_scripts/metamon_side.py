@@ -18,6 +18,13 @@ module-level ``LocalhostServerConfiguration``, which poke-env hardcodes to
 There is no CLI flag, no env var and no constructor argument. We rebind the module global before
 any env is constructed (the property reads it at call time) and refuse 8000/8001 in code.
 
+WEIGHTS ARE PINNED (FR-1 FINDING 3)
+-----------------------------------
+Metamon fetches a checkpoint with ``hf_hub_download(repo_id, filename, cache_dir)``: no revision, online. This peer
+forces ``HF_HUB_OFFLINE=1`` at import, replaces that call by ``weight_pins.pinned_downloader`` (the pinned revision,
+the local cache only, sha256-checked) and hashes every pinned file before the model is built
+(:func:`install_weight_pins`); a mismatch or missing file is ``SystemExit``. See ``EXTERNAL_ANCHORS_SOP.md``.
+
 HOW GREEDY IS SET — and why NOT with a temperature (hazard H-D)
 ---------------------------------------------------------------
 ``amago``'s rollout loop calls ``policy.get_actions(..., sample=Experiment.sample_actions_val)``,
@@ -85,6 +92,24 @@ os.environ["CUDA_VISIBLE_DEVICES"] = ""
 # lock, for anyone running the script by hand.
 os.environ.setdefault("OMP_NUM_THREADS", "1")
 os.environ.setdefault("MKL_NUM_THREADS", "1")
+
+
+def _load_weight_pins():
+    """``weight_pins.py`` beside this file, loaded BY PATH: the script runs with ``PYTHONPATH=""`` and may itself be
+    imported by a test under another name, so a sibling ``import`` cannot be relied on."""
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "metamon_weight_pins", os.path.join(os.path.dirname(os.path.abspath(__file__)), "weight_pins.py"))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+WP = _load_weight_pins()
+# Before ANY import of huggingface_hub (it reads these into constants at import): the weights come from the
+# local cache at the pinned revision or not at all. Overrides whatever the caller exported.
+WP.force_offline()
 
 RESERVED_PORTS = {8000: "the shared DEV server",
                   8001: "the reserved TRAINING server (the trainer itself is in-process and connects to none)"}
@@ -499,6 +524,32 @@ def install_cpu_attention(choice, record):
     amago.cli_utils.use_config = use_config
 
 
+def install_weight_pins(args):
+    """Offline, pinned-revision, sha-verified weights (FR-1 FINDING 3): replace ``huggingface_hub.hf_hub_download``
+    (which Metamon calls without a revision) by the pinned downloader, then hash EVERY pinned file BEFORE the model is
+    built or a game played. Any unpinned file, missing file or hash mismatch raises ``SystemExit``."""
+    import huggingface_hub
+    import huggingface_hub.constants as hfc
+    from metamon.rl.pretrained import MODEL_DOWNLOAD_DIR
+
+    try:
+        weights = json.loads(args.weights_json)
+        WP.check_pins(args.hf_revision, weights)
+        WP.assert_offline(hfc)
+        loaded = []
+        download = WP.pinned_downloader(huggingface_hub.hf_hub_download, repo=args.hf_repo,
+                                        revision=args.hf_revision, weights=weights, loaded=loaded)
+        verified = WP.verify_all(download, args.hf_repo, weights, MODEL_DOWNLOAD_DIR)
+    except WP.WeightPinError as exc:
+        raise SystemExit(f"REFUSING TO PLAY: {exc}")
+    huggingface_hub.hf_hub_download = download
+    loaded.clear()
+    print(f"[peer] weights pinned: {args.hf_repo}@{args.hf_revision[:8]} offline, {len(verified)} file(s) sha256-verified "
+          f"({WP.weights_digest(verified)[:12]})", flush=True)
+    return {"hf_hub_offline": True, "hf_repo": args.hf_repo, "hf_revision": args.hf_revision,
+            "weights_verified": verified, "weights_loaded": loaded}
+
+
 def build_parser():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -524,6 +575,10 @@ def build_parser():
     ap.add_argument("--expect-preset", default=None,
                     help="an ENSEMBLE agent: the member preset it must route over (refused otherwise)")
     ap.add_argument("--expect-preset-sha256", default=None)
+    ap.add_argument("--hf-repo", required=True, help="the pinned Hugging Face repo the weights come from")
+    ap.add_argument("--hf-revision", required=True, help="the pinned FULL commit sha of that repo")
+    ap.add_argument("--weights-json", required=True,
+                    help='JSON {"<file path in the repo>": "<sha256>"}: every weight file this agent may load')
     ap.add_argument("--no-verify", dest="verify", action="store_false")
     ap.add_argument("--battle-backend", default=None,
                     help="default: the model's own (SmallRL/SyntheticRLV2 want 'poke-env', Kakuna 'metamon')")
@@ -550,6 +605,7 @@ def main(argv=None):
     elif args.team_seed is not None:
         install_seeded_team_draw(args.team_seed, draw_log)
 
+    pin_record = install_weight_pins(args)
     model = get_pretrained_model(args.agent)
     preset_record = {}
     if args.expect_preset is not None:
@@ -604,6 +660,7 @@ def main(argv=None):
         "error": error,
         **attention_record,
         **preset_record,
+        **pin_record,
     })
     # Metamon's own scoreboard, complementing ours — the independent cross-check that the win
     # accounting is right. Its `won` field is a BOOLEAN, so it books a TIE as its own loss

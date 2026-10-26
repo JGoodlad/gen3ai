@@ -293,6 +293,9 @@ async def run_peer_pair_half(plan: SeriesPlan, cfg: Any, half: str, n_games: int
     report["our_regime_verified"] = our_report.get("regime_verified")
     report["our_regime_verified_decisions"] = our_report.get("regime_verified_decisions")
     report["our_stochastic_kwargs"] = list(our_report.get("sample_kwargs") or [])
+    # OUR peer's weights too (FR-1 FINDING 3): what it verified, beside what theirs verified.
+    report["our_hf_revision"] = our_report.get("hf_revision")
+    report["our_weights_sha256"] = our_report.get("weights_sha256")
     report["model_loader"] = ""
     # BOTH peers are peers here, so the regime question is an AND over the two and the process
     # question is an AND over BOTH return codes.
@@ -553,6 +556,10 @@ def cell_spec(plan: SeriesPlan, report: Dict[str, Any], our_team_count: int) -> 
         our_teamset=plan.our_set,
         our_team_digest=report.get("our_team_digest"),
         their_team_digest=report.get("team_digest"),
+        hf_revision=report.get("hf_revision"),
+        weights_sha256=report.get("weights_sha256"),
+        our_hf_revision=report.get("our_hf_revision"),
+        our_weights_sha256=report.get("our_weights_sha256"),
     )
 
 

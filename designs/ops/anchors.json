@@ -7,6 +7,9 @@
     "absolute path that is TRUE ON ONE BOX belongs in a config, not in a module.",
     "Neither checkout is inside this repo and neither is ours to pin: record the commit that",
     "answered, which `python -m main.anchors` does on every row it writes.",
+    "The Metamon WEIGHTS are pinned here: opponents.metamon.hf_revision is the Hugging Face commit and each",
+    "agent's `weights` maps a file path in that repo to its sha256. The peer runs offline, loads only that",
+    "revision, hashes every file before play and refuses on a mismatch (EXTERNAL_ANCHORS_SOP.md, 'Weight pins').",
     "Full procedure: designs/ops/EXTERNAL_ANCHORS_SOP.md"
   ],
   "showdown": {
@@ -18,14 +21,16 @@
       "checkout": "/home/goodlad/dev/metamon",
       "python": "/home/goodlad/miniconda3/envs/metamon/bin/python",
       "cache_dir": "/home/goodlad/dev/metamon/cache",
+      "hf_repo": "jakegrigsby/metamon",
+      "hf_revision": "ac8e88e7da8dc2a2b85176d88f81fd8854b1445b",
       "agents": {
-        "SmallRL": {"checkpoint": 40, "params": 13938567},
-        "SyntheticRLV2": {"checkpoint": 48, "params": 200894911},
-        "Kakuna": {"checkpoint": 34, "params": 142832563},
-        "Kakuna28": {"policy": "Kakuna", "checkpoint": 28, "params": 142832563},
-        "LargeRL": {"checkpoint": 40, "params": 194792947},
-        "LargeIL": {"checkpoint": 40, "params": 194405089},
-        "PastaMittens": {"preset": "dt4_k34_midjudge_switchk28", "preset_sha256": "1b0d180e82207414132ac03478fedb6b771921146e908906760f71c6a2050a9b"}
+        "SmallRL": {"checkpoint": 40, "params": 13938567, "weights": {"small-rl/ckpts/policy_weights/policy_epoch_40.pt": "f4258211777480643fbfe573ff906a2ef1a86b0bc2ad9cce117efdc797e40369"}},
+        "SyntheticRLV2": {"checkpoint": 48, "params": 200894911, "weights": {"synthetic-rl-v2/ckpts/policy_weights/policy_epoch_48.pt": "fbbca4dd6a8f84936f438ee8f2f621be107df3612639b1c78ea7c88fd3d42c04"}},
+        "Kakuna": {"checkpoint": 34, "params": 142832563, "weights": {"kakuna/ckpts/policy_weights/policy_epoch_34.pt": "7e7474d5b2ec6624afdeb29a7cf1dc5c84817d5aee8ec39c1d35a153b18df26c"}},
+        "Kakuna28": {"policy": "Kakuna", "checkpoint": 28, "params": 142832563, "weights": {"kakuna/ckpts/policy_weights/policy_epoch_28.pt": "87c5450e41ddfadc6b17f7f14324d7fe67e7d74b27625d4b05276a9ad1893ef6"}},
+        "LargeRL": {"checkpoint": 40, "params": 194792947, "weights": {"large-rl/ckpts/policy_weights/policy_epoch_40.pt": "04ed6d5179a0fbc1254384a8199cbf09eed56982c41adf0e22465bfe95044d59"}},
+        "LargeIL": {"checkpoint": 40, "params": 194405089, "weights": {"large-il/ckpts/policy_weights/policy_epoch_40.pt": "8a43fcc7798c41df404a72486002a2d6a7c3ef9f988b948ae062af6a2bb1e89b"}},
+        "PastaMittens": {"preset": "dt4_k34_midjudge_switchk28", "preset_sha256": "1b0d180e82207414132ac03478fedb6b771921146e908906760f71c6a2050a9b", "weights": {"kakuna/ckpts/policy_weights/policy_epoch_28.pt": "87c5450e41ddfadc6b17f7f14324d7fe67e7d74b27625d4b05276a9ad1893ef6", "kakuna/ckpts/policy_weights/policy_epoch_30.pt": "0d66a65ea74f1b02a6d3cf540d22a6ae14d77f9bd2d30e568062569415e9adc5", "kakuna/ckpts/policy_weights/policy_epoch_34.pt": "7e7474d5b2ec6624afdeb29a7cf1dc5c84817d5aee8ec39c1d35a153b18df26c", "alakazam/ckpts/policy_weights/policy_epoch_8.pt": "47a98516df7b346118fa824f9137e6aaaa1428d5a7150af01bf606c1ea935944"}}
       },
       "team_sets": {
         "home": "gen3ai_pool",

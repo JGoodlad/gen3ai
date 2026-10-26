@@ -202,8 +202,8 @@ ensemble presets rate it above the default 34). The peer loads the POLICY (`--ag
 checkpoint, and the rows' `opponent_version` names what was played (`Kakuna@ckpt28`), never the alias. This is what
 lets a pair cell play two checkpoints of one policy: `--opponent-a metamon:Kakuna28 --opponent-b metamon:Kakuna`.
 🚨 The self-pair refusal reads `(policy, checkpoint)`, not the names, so an alias with the other side's policy AND
-checkpoint is still refused as a policy against itself. A new checkpoint's weights download from the Hugging Face
-hub into Metamon's cache on first use; fetch them once by hand and record their sha256 before the first unit.
+checkpoint is still refused as a policy against itself. A new checkpoint's weights are NOT downloaded by a read (the peer is offline): fetch them once by hand at the pinned
+revision and pin their sha256 first (§ Weight pins).
 
 ### An ENSEMBLE agent — `metamon:PastaMittens` (2026-10-25)
 
@@ -217,6 +217,46 @@ checks exactly that per router call — torch's and NumPy's RNG states byte-equa
 state compare blamed the router for 1 call in ~23). The rate is `their_router_no_rng_rate` on every row (exactly
 1.0 in greedy); `--regime t1` never verifies for a router. Pinned by
 `src/main/anchors/ensemble_router_regime_integration_test.py`. CPU cost ≈ 4× Kakuna (§ Cost per read).
+
+### Weight pins — the Metamon weights are one hub revision, offline, sha256-verified (FR-1 FINDING 3, 2026-10-25)
+
+🚨 **The defect.** Metamon fetches a checkpoint with `huggingface_hub.hf_hub_download(repo_id, filename, cache_dir)`: no
+`revision` (the hub's moving `main`) and online. A read could silently load newer upstream weights, changing the
+anchor under a regime id that claimed the same policy.
+
+**The rule.** `designs/ops/anchors.json` carries `opponents.metamon.hf_repo`, a FULL 40-hex `hf_revision` (the commit
+in the box's cache: `ac8e88e7…`; a branch or short sha is refused) and, per agent, `weights`: `{path in the repo:
+sha256}` for EVERY file it may load (a single policy: its one `policy_epoch_<ckpt>.pt`, checked against `checkpoint`; an
+ensemble: every member checkpoint, `PastaMittens` = Kakuna 28 / 30 / 34 + Alakazam 8). An agent with no pin is refused at
+plan time (`MetamonOpponent.pin`). The peer (`peer_scripts/metamon_side.py`, helpers in the stdlib-only
+`peer_scripts/weight_pins.py`, shared with `main.anchors`):
+
+1. forces `HF_HUB_OFFLINE=1` / `TRANSFORMERS_OFFLINE=1` at import, over whatever the caller exported (the plan's env sets them too),
+   and refuses unless the imported hub library really is offline;
+2. replaces `huggingface_hub.hf_hub_download` with a downloader that serves ONLY a pinned file of the pinned repo, adds
+   `revision=<pin>, local_files_only=True`, and hashes the file it returns;
+3. hashes EVERY pinned file through it BEFORE the model is built, and exits `REFUSING TO PLAY` on a missing file, an
+   unpinned file, a revision absent from the cache or any sha256 difference;
+4. reports `hf_hub_offline`, `hf_revision`, `weights_verified`, `weights_loaded`; `MetamonPeer.read_report` FAILS CLOSED on
+   them (no report of the pin, a different revision or sha, not offline, or a load outside the pin ⇒
+   `regime_verified_decisions = false`, so `unit_counts` does not count the unit; the reason is `weights_pin_mismatch`).
+
+Every row and summary stamps `hf_revision` and `weights_sha256` (`main.anchors.peer_scripts.weight_pins.weights_digest`
+of the verified `{path: sha256}`), and `our_hf_revision` / `our_weights_sha256` for a Metamon our-side peer. Teams are
+also fetched from the hub by Metamon, but only into the cache (their content digest is already on the cell); a team set
+absent from the cache now fails offline instead of downloading.
+
+**To pin or move a checkpoint** (a network step, not a read; the orchestrator's go): fetch with
+`hf_hub_download(repo_id, filename, revision=<full sha>, cache_dir=<cache>/pretrained_models)`, `sha256sum` the blob
+(the blob's file name is its sha256), put revision and sha in `anchors.json`, and play a smoke. A new revision is a NEW regime.
+
+**Regime ids.** The weights enter `main.reads.assemble.anchor_regime_id` as `their_weights` / `our_weights`
+(`hf_revision`, `weights_sha256`) so different weights are a different regime. **Banked ids do not move**: every read banked
+before the pins played the one cached commit `ac8e88e7…`, and its summary stamps no weights, so the id is computed
+without them (byte-identical to before; pinned by `assemble_test._BANKED_ID`); a NEW read whose verified (revision, digest)
+equals `assemble.LEGACY_WEIGHTS[agent]` (the frozen digests of that commit) also omits them, so it carries the SAME id and
+is comparable with the banked reads. Any other revision or digest enters the id. `LEGACY_WEIGHTS` is never edited by a repin.
+Reads already running (FR-3, PastaMittens, D0f) use their own pinned checkouts and are unaffected.
 
 ### `--our-teamset {home,away}` — an ASYMMETRIC pair cell (B-D9, 2026-10-18)
 

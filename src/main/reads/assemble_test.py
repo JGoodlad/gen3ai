@@ -124,3 +124,59 @@ def test_an_unregistered_family_is_a_named_refusal(tmp_path):
     _ledger(tmp_path / "led", "fam", "q", [])
     with pytest.raises(AS.AssembleError, match="other"):
         AS.s_group(tmp_path / "led", "other", {"a": "q"}, {"a": K.SHA_A}, MEMBERS)
+
+
+# ------------------------------------------------------------------ the Metamon WEIGHTS in the regime id (FR-1 FINDING 3)
+_WCELL = {"battle_format": "gen3ou", "opponent": "metamon:Kakuna", "opponent_agent": "Kakuna", "opponent_kind": "metamon",
+          "opponent_version": "Kakuna@ckpt34", "our_regime": "greedy", "their_regime": "greedy",
+          "regime_matched": True, "teamset": "away", "our_team_digest": "d1", "their_team_digest": "d1",
+          "our_side": "model"}
+#: ``anchor_regime_id`` of ``_WCELL`` computed by the code BEFORE the weights entered the id (main @ 4d8d9eef): the id
+#: every banked Kakuna read of this shape carries. It must never move.
+_BANKED_ID = "1f40bc89740bcf0f"
+
+
+def _wsummary(**cell):
+    return {"cell": {**_WCELL, **cell}, "declared_team_cell": "symmetric",
+            "team_digest_schema": "gen3_team_set_digest_v1"}
+
+
+def test_banked_regime_ids_do_not_move_and_the_same_weights_re_read_comparably() -> None:
+    """No weights stamped (every banked read) -> the id is the one the old code made; the legacy weights stamped (a NEW
+    read of the same bytes) -> the SAME id, so a new read stays comparable with the banked ones."""
+    assert AS.anchor_regime_id(_wsummary()) == _BANKED_ID
+    assert AS.anchor_regime_id(_wsummary(hf_revision=AS.LEGACY_HF_REVISION,
+                                         weights_sha256=AS.LEGACY_WEIGHTS["Kakuna"])) == _BANKED_ID
+
+
+def test_different_weights_or_revision_are_a_different_regime() -> None:
+    """Fails on revert: if the revision / digest are not regime inputs, these ids equal the banked one."""
+    legacy = {"hf_revision": AS.LEGACY_HF_REVISION, "weights_sha256": AS.LEGACY_WEIGHTS["Kakuna"]}
+    other_rev = AS.anchor_regime_id(_wsummary(**{**legacy, "hf_revision": "b" * 40}))
+    other_sha = AS.anchor_regime_id(_wsummary(**{**legacy, "weights_sha256": "c" * 64}))
+    # another agent's weights under Kakuna's name are not Kakuna's legacy weights either
+    swapped = AS.anchor_regime_id(_wsummary(**{**legacy, "weights_sha256": AS.LEGACY_WEIGHTS["SmallRL"]}))
+    ids = {_BANKED_ID, other_rev, other_sha, swapped}
+    assert len(ids) == 4, ids
+    assert AS.anchor_regime_id(_wsummary(**{**legacy, "hf_revision": "b" * 40})) == other_rev, "and it is deterministic"
+
+
+def test_our_metamon_peers_weights_are_regime_inputs_too() -> None:
+    ours = {"our_side": "metamon:Kakuna28"}
+    base = AS.anchor_regime_id(_wsummary(**ours))
+    legacy = AS.anchor_regime_id(_wsummary(**ours, our_hf_revision=AS.LEGACY_HF_REVISION,
+                                           our_weights_sha256=AS.LEGACY_WEIGHTS["Kakuna28"]))
+    assert legacy == base
+    assert AS.anchor_regime_id(_wsummary(**ours, our_hf_revision="b" * 40,
+                                         our_weights_sha256=AS.LEGACY_WEIGHTS["Kakuna28"])) != base
+
+
+def test_the_legacy_table_is_the_committed_pins_while_they_are_the_legacy_revision() -> None:
+    """The frozen legacy digests are exactly what ``anchors.json`` pins for the legacy revision (a repin to a new
+    revision leaves LEGACY_WEIGHTS alone and is a NEW regime; this test then has nothing to say)."""
+    from main.anchors.config import load_config
+
+    meta = load_config().metamon
+    if meta.hf_revision != AS.LEGACY_HF_REVISION:
+        pytest.skip("anchors.json is repinned past the legacy revision: that is a new regime by design")
+    assert {a: meta.pin(a).digest for a in meta.agents} == AS.LEGACY_WEIGHTS

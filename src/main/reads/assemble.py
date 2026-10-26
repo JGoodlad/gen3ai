@@ -36,6 +36,23 @@ ANCHOR_REGIME_KEYS = ("battle_format", "forfeit_turn_limit", "mirrored_pairs", "
 CELLS_SCHEMA = "gen3_read_cells_v1"
 PROTOCOL = "gen3_eval_protocol_v1_h2h"
 
+#: The Metamon weights EVERY anchor read banked before the pins existed (FR-1 FINDING 3, 2026-10-25) played: the one
+#: hub commit in the box's cache, ``{agent: weights_sha256}`` (``main.anchors.peer_scripts.weight_pins.weights_digest``
+#: of the agent's ``{path: sha256}``, each file hashed against its blob). Those summaries stamp no weights, so their
+#: regime ids were computed without them. A NEW summary whose verified weights equal this entry keeps that SAME id (the
+#: weights are the ones the id always meant); any other revision or digest enters the id (:func:`anchor_regime_id`),
+#: so different weights are a different regime. FROZEN: a repin never edits it.
+LEGACY_HF_REVISION = "ac8e88e7da8dc2a2b85176d88f81fd8854b1445b"
+LEGACY_WEIGHTS: Dict[str, str] = {
+    "SmallRL": "b8849c52b443d7a1607c34e806dd959baa89c254aa0737c8bbdb8160a0f96ce2",
+    "SyntheticRLV2": "3f00c9cbabe6e6bc776f3bbecdc9c134537704c7cc45c7f628fdda4d1e045961",
+    "Kakuna": "bbfa8f2d9425341f0299c721ea847b7d74170cb72b80440951861efb4643992b",
+    "Kakuna28": "7e4c71c28905d31c56cd8bb933c19eaac8641ade81fb3b64eb178181a38cf288",
+    "LargeRL": "b26296d4963eb3d642ee7edcd16f069175bbc22083fa9e71a77addb8b7e82098",
+    "LargeIL": "2167e509ef6e6123b8dbe8b69fe86a966d9781fc9d4c9c250d55d442a83aa02d",
+    "PastaMittens": "b9f2c07e051c9a69d199484f919babc8b160ef7486cac578874fa22aa982e303",
+}
+
 #: S's look read: an A/B family's mirrored greedy-vs-greedy rows at the h2h protocol (``main.h2h.cross``'s terms).
 S_FAMILY_READ = L.ReaderDecl(
     name="main.reads.assemble.s_family", purposes=frozenset({"ab"}),
@@ -55,9 +72,28 @@ def anchor_regime_id(summary: Mapping[str, Any]) -> Optional[str]:
     if not isinstance(cell, dict) or not cell.get("opponent_version"):
         return None
     ident = {k: cell.get(k) for k in ANCHOR_REGIME_KEYS}
+    ident.update(_weights_identity(cell))
     ident.update(schema=ANCHOR_REGIME_SCHEMA, declared_team_cell=summary.get("declared_team_cell"),
                  team_digest_schema=summary.get("team_digest_schema"))
     return hashlib.sha256(json.dumps(ident, sort_keys=True).encode()).hexdigest()[:16]
+
+
+def _weights_identity(cell: Mapping[str, Any]) -> Dict[str, Any]:
+    """The weight-identity inputs of a regime id: ``{"their_weights": {...}}`` / ``{"our_weights": {...}}`` for each
+    Metamon side whose verified (revision, sha256) is NOT :data:`LEGACY_WEIGHTS`; ``{}`` for a summary that stamps none
+    (a pre-pin read) or stamps the legacy weights, so every banked id is unchanged and a re-read of the same weights
+    is comparable to it."""
+    out: Dict[str, Any] = {}
+    sides = (("their", cell.get("opponent_agent"), cell.get("hf_revision"), cell.get("weights_sha256")),
+             ("our", str(cell.get("our_side") or "").partition("metamon:")[2], cell.get("our_hf_revision"),
+              cell.get("our_weights_sha256")))
+    for prefix, agent, revision, digest in sides:
+        if not (revision and digest):
+            continue
+        if revision == LEGACY_HF_REVISION and LEGACY_WEIGHTS.get(agent) == digest:
+            continue
+        out[f"{prefix}_weights"] = {"hf_revision": revision, "weights_sha256": digest}
+    return out
 
 
 def group_regime_id(by_teamset: Mapping[str, Optional[str]]) -> str:

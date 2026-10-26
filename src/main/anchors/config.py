@@ -32,6 +32,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+from main.anchors.peer_scripts import weight_pins as wp
 from utils.paths import repo_path
 
 #: Points at a replacement for the whole file. Set-but-missing RAISES rather than falling back to
@@ -76,6 +77,20 @@ def _plant(blob: Dict[str, Any], dotted: str, value: Any) -> None:
 
 
 @dataclass(frozen=True)
+class WeightPin:
+    """What one Metamon agent is allowed to load: a hub repo at ONE commit and the sha256 of each weight file
+    (:mod:`main.anchors.peer_scripts.weight_pins`). ``digest`` is the weight set's one id."""
+
+    repo: str
+    revision: str
+    weights: Dict[str, str]
+
+    @property
+    def digest(self) -> str:
+        return wp.weights_digest(self.weights)
+
+
+@dataclass(frozen=True)
 class MetamonOpponent:
     """The Metamon checkout, its interpreter, its weight/team cache, and the policies we name."""
 
@@ -87,6 +102,10 @@ class MetamonOpponent:
     #: Metamon's KNOWN team sets, ``{name: directory}``, that every read's ``team_overlap`` measures its
     #: team set against (:mod:`main.anchors.team_overlap`). Empty: every non-``gen3ai_*`` set in the cache.
     reference_team_dirs: Dict[str, str] = field(default_factory=dict)
+    #: The Hugging Face repo and the FULL commit sha every agent's weights are pinned to (a per-agent
+    #: ``hf_revision`` overrides it). Empty = unpinned, which :meth:`pin` refuses.
+    hf_repo: str = ""
+    hf_revision: str = ""
 
     kind: str = "metamon"
 
@@ -100,6 +119,29 @@ class MetamonOpponent:
                 f"(known: {sorted(self.agents)}). Add it with its checkpoint number rather than "
                 "passing one on the CLI — a policy is only an anchor once its checkpoint is pinned."
             )
+        self.pin(agent)
+
+    def pin(self, agent: str) -> WeightPin:
+        """The agent's weight pin, validated: a full commit sha, a non-empty ``{path: sha256}`` map, and (for a
+        single-checkpoint agent) exactly that checkpoint's file. A Metamon agent with no pin is REFUSED: its weights
+        would be whatever the hub's moving ``main`` holds (FR-1 FINDING 3)."""
+        entry = self.agents.get(agent, {})
+        revision = entry.get("hf_revision", self.hf_revision)
+        weights = entry.get("weights")
+        try:
+            if not self.hf_repo:
+                raise wp.WeightPinError("opponents.metamon.hf_repo is not set")
+            wp.check_pins(revision, weights, f"metamon agent {agent!r}")
+        except wp.WeightPinError as exc:
+            raise AnchorConfigError(
+                f"{exc}. Every Metamon agent carries a pinned hub revision and the sha256 of each weight file in "
+                "designs/ops/anchors.json (EXTERNAL_ANCHORS_SOP.md, 'Weight pins').") from None
+        checkpoint = entry.get("checkpoint")
+        if checkpoint is not None and [Path(w).name for w in weights] != [f"policy_epoch_{int(checkpoint)}.pt"]:
+            raise AnchorConfigError(
+                f"metamon agent {agent!r}: checkpoint {checkpoint} but weights name {sorted(weights)}; a single-"
+                f"checkpoint agent pins exactly its policy_epoch_{checkpoint}.pt")
+        return WeightPin(repo=self.hf_repo, revision=revision, weights=dict(weights))
 
     def policy(self, agent: str) -> str:
         """The Metamon PRETRAINED POLICY an agent name plays (the peer's ``get_pretrained_model(<policy>)``):
@@ -265,6 +307,8 @@ def load_config(path: Optional[Path] = None) -> AnchorsConfig:
             agents=dict(meta.get("agents", {})),
             team_sets=dict(meta.get("team_sets", {})),
             reference_team_dirs=dict(meta.get("reference_team_dirs", {})),
+            hf_repo=str(meta.get("hf_repo", "")),
+            hf_revision=str(meta.get("hf_revision", "")),
         ),
         foulplay=FoulPlayOpponent(
             checkout=Path(fp.get("checkout", "")),
@@ -286,6 +330,7 @@ def describe(cfg: AnchorsConfig) -> str:
         ("metamon.cache_dir", str(cfg.metamon.cache_dir),
          ENV_OVERRIDES["opponents.metamon.cache_dir"]),
         ("metamon.agents", ", ".join(sorted(cfg.metamon.agents)), ""),
+        ("metamon.hf_pin", f"{cfg.metamon.hf_repo}@{cfg.metamon.hf_revision}", ""),
         ("metamon.team_sets", json.dumps(cfg.metamon.team_sets), ""),
         ("metamon.reference_team_dirs", json.dumps(cfg.metamon.reference_team_dirs), ""),
         ("foulplay.checkout", str(cfg.foulplay.checkout),

@@ -143,6 +143,14 @@ class CellSpec:
     #: written before the field existed) — never read as agreement.
     our_team_digest: Optional[str] = None
     their_team_digest: Optional[str] = None
+    #: FR-1 FINDING 3: the Hugging Face commit and the ``main.anchors.peer_scripts.weight_pins.weights_digest`` of the
+    #: Metamon weights the peer VERIFIED before play (offline, pinned revision, sha256 per file). THEIRS = the
+    #: opponent peer; ``our_*`` = our side when it is a Metamon peer. None = not a Metamon peer, or a row written
+    #: before the pins existed (those cells played ``ac8e88e7``: ``main.reads.assemble.LEGACY_WEIGHTS``).
+    hf_revision: Optional[str] = None
+    weights_sha256: Optional[str] = None
+    our_hf_revision: Optional[str] = None
+    our_weights_sha256: Optional[str] = None
 
     def stamp(self) -> Dict[str, Any]:
         return asdict(self)
@@ -237,6 +245,8 @@ REQUIRED_ROW_FIELDS = (
     "mirrored_pairs",
     # B-D9 / B-D6: which set OUR side drew from, and each side's CONTENT digest.
     "our_teamset", "our_team_digest", "their_team_digest",
+    # FR-1 FINDING 3: the Metamon weights this cell verified (None for a non-Metamon peer).
+    "hf_revision", "weights_sha256",
 )
 
 
@@ -442,7 +452,9 @@ def render(summary: Dict[str, Any]) -> str:
     lo, hi = summary["wilson95"]
     lines = [
         f"  opponent    {cell['opponent']} @ {cell['opponent_version']} "
-        f"({cell['opponent_commit']})",
+        f"({cell['opponent_commit']})"
+        + (f"  weights {cell['hf_revision'][:8]}/{cell['weights_sha256'][:12]} (offline, sha256-verified)"
+           if cell.get("hf_revision") and cell.get("weights_sha256") else ""),
         f"  regime      ours={cell['our_regime']}  theirs={cell['their_regime']}  "
         f"matched={cell['regime_matched']}",
         f"  team set    {cell['teamset']}  (ours {cell['our_team_count']} teams / "

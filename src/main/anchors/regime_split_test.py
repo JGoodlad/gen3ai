@@ -24,7 +24,7 @@ from main.anchors import results as results_mod
 from main.anchors import runner as runner_mod
 from main.anchors.runner import finalize_regime_fields
 
-from main.anchors.peers_test import _foulplay_plan, _metamon_plan
+from main.anchors.peers_test import _foulplay_plan, _metamon_plan, pin_report_fields
 
 
 @pytest.fixture
@@ -40,7 +40,7 @@ def cfg():
 # ------------------------------------------------------------------ the peer-report read side
 def _metamon_report(tmp_path, cfg_, **blob):
     plan = _metamon_plan(cfg_, tmp_path)
-    plan.report_path.write_text(json.dumps(blob))
+    plan.report_path.write_text(json.dumps({**pin_report_fields(plan), **blob}))
     return MetamonPeer.read_report(plan)
 
 

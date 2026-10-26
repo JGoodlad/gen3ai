@@ -39,6 +39,7 @@ _NOT_OURS_TO_DECLARE = {
     # The Metamon peer script runs in METAMON's own interpreter (root CLAUDE.md, Python Environment).
     "amago": "main/anchors/peer_scripts/metamon_side.py: Metamon's interpreter",
     "gin": "main/anchors/peer_scripts/metamon_side.py: Metamon's interpreter",
+    "huggingface_hub": "main/anchors/peer_scripts/metamon_side.py: Metamon's interpreter (the weight pins patch its download)",
     "metamon": "main/anchors/peer_scripts/metamon_side.py: Metamon's interpreter",
     "poke_env": "main/anchors/peer_scripts/metamon_side.py: upstream poke-env, in Metamon's interpreter",
     # `main/visualize_arch.py` imports netron lazily inside one function: an optional dev tool, installed in the

@@ -123,9 +123,10 @@ def test_an_unpinned_metamon_agent_is_refused_by_name(tmp_path: Path) -> None:
 def test_a_pinned_metamon_agent_is_accepted(tmp_path: Path) -> None:
     """The positive twin of the refusal: once a name is in the file with its checkpoint, `require`
     passes — so the refusal above is about the NAME, not about Metamon being refused wholesale."""
-    agents = {"SmallRL": {"checkpoint": 40}, "Kakuna": {"checkpoint": 34}}
+    pins = {"weights": {"kakuna/ckpts/policy_weights/policy_epoch_34.pt": "0" * 64}}
+    agents = {"SmallRL": {"checkpoint": 40}, "Kakuna": {"checkpoint": 34, **pins}}
     blob = json.loads(_write(tmp_path).read_text())
-    blob["opponents"]["metamon"]["agents"] = agents
+    blob["opponents"]["metamon"].update(agents=agents, hf_repo="owner/models", hf_revision="a" * 40)
     (tmp_path / "anchors.json").write_text(json.dumps(blob))
     cfg = load_config(tmp_path / "anchors.json")
     (tmp_path / "metamon" / "cache").mkdir(parents=True)

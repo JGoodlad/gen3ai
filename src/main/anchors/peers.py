@@ -23,6 +23,7 @@ hang, so the length is checked in code before anything is started.
 """
 from __future__ import annotations
 
+import json
 import os
 import re
 import subprocess
@@ -30,6 +31,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from main.anchors.peer_scripts import weight_pins as wp
 from utils.paths import src_path
 
 #: Showdown's own ceiling, via `action.php`. 19 is REFUSED, so 18 is the last legal length.
@@ -145,6 +147,7 @@ class MetamonPeer(Peer):
              team_seed: int, out_dir: Path, temperature: Optional[float] = None,
              team_sequence: Optional[Path] = None, **_: Any) -> PeerPlan:
         cfg.require(agent)
+        pin = cfg.pin(agent)                      # FR-1 FINDING 3: the weights, by revision and sha256
         # An alias (``"Kakuna28": {"policy": "Kakuna", "checkpoint": 28}``) plays its POLICY at its own pinned
         # checkpoint; the version stamp names the policy and checkpoint actually played, never the alias.
         policy, checkpoint = cfg.identity(agent)
@@ -166,6 +169,9 @@ class MetamonPeer(Peer):
             "--regime", regime,
             "--report-out", str(report_path),
             "--results-dir", str(out_dir / f"peer_{role}_results"),
+            "--hf-repo", pin.repo,
+            "--hf-revision", pin.revision,
+            "--weights-json", json.dumps(pin.weights, sort_keys=True, separators=(",", ":")),
         ]
         if checkpoint is not None:
             argv += ["--checkpoint", str(checkpoint)]
@@ -195,6 +201,9 @@ class MetamonPeer(Peer):
             "NUMEXPR_NUM_THREADS": "1",
             "TORCH_NUM_THREADS": "1",
             "METAMON_CACHE_DIR": str(cfg.cache_dir),
+            # OFFLINE, always: the peer loads the pinned revision from the local cache or refuses. Set here AND forced
+            # in the peer script (an inherited HF_HUB_OFFLINE=0 must not win).
+            **{name: "1" for name in wp.OFFLINE_ENV},
             # The metamon env runs UPSTREAM poke-env; our src/ must not reach its sys.path or the
             # two packages named `poke_env` fight and the loser is silent.
             "PYTHONPATH": "",
@@ -214,6 +223,7 @@ class MetamonPeer(Peer):
             version=(f"{policy}@preset:{preset[0]}" if preset is not None else f"{policy}@ckpt{checkpoint}"),
             commit=git_head(cfg.checkout),
             team_dir=cfg.team_dir(teamset, battle_format),
+            extra={"weight_pin": pin},
         )
 
     @staticmethod
@@ -229,10 +239,10 @@ class MetamonPeer(Peer):
         by ANDing the exit code it alone can see. ``regime_verified`` remains their AND for one
         release and is DEPRECATED — see :data:`REGIME_VERIFIED_DEPRECATION`.
         """
-        import json
         out: Dict[str, Any] = {"regime_verified": False, "regime_verified_decisions": False,
                                "peer_error_free": False, "sample_kwargs": [],
-                               "argmax_match_rate": None, "visits_mean": None, "visits_n": 0}
+                               "argmax_match_rate": None, "visits_mean": None, "visits_n": 0,
+                               "hf_revision": None, "weights_sha256": None}
         if plan.report_path is None or not plan.report_path.exists():
             out["note"] = f"no peer report at {plan.report_path}"
             return out
@@ -260,8 +270,36 @@ class MetamonPeer(Peer):
             # voids every pair rather than trusting the plan.
             "team_draws": list(blob.get("team_draws") or []),
         })
+        MetamonPeer._check_weight_pin(plan, blob, out)
         out["regime_verified"] = bool(out["regime_verified_decisions"] and out["peer_error_free"])
         return out
+
+    @staticmethod
+    def _check_weight_pin(plan: PeerPlan, blob: Dict[str, Any], out: Dict[str, Any]) -> None:
+        """FAIL CLOSED on the weights (FR-1 FINDING 3): the report must say the peer ran OFFLINE at the pinned
+        revision with exactly the pinned sha256 for every pinned file, and the files it LOADED must be pinned ones.
+        Anything else (including a report from a peer script that predates the pins) voids the regime verification, so
+        the unit does not count. ``hf_revision`` / ``weights_sha256`` are what the peer REPORTS it verified."""
+        pin = plan.extra.get("weight_pin")
+        revision, verified = blob.get("hf_revision"), blob.get("weights_verified")
+        out.update({"hf_revision": revision,
+                    "weights_sha256": wp.weights_digest(verified) if isinstance(verified, dict) and verified else None})
+        if pin is None:
+            return
+        why = []
+        if blob.get("hf_hub_offline") is not True:
+            why.append("the peer did not report running offline")
+        if revision != pin.revision:
+            why.append(f"revision {revision!r} != pinned {pin.revision}")
+        if verified != pin.weights:
+            why.append(f"verified weights {verified!r} != pinned {pin.weights!r}")
+        stray = sorted(set(blob.get("weights_loaded") or []) - set(pin.weights))
+        if stray:
+            why.append(f"loaded unpinned file(s) {stray}")
+        if why:
+            out["regime_verified_decisions"] = False
+            out["weights_pin_mismatch"] = "; ".join(why)
+            out["note"] = f"weight pin not verified: {out['weights_pin_mismatch']}"
 
 
 class FoulPlayPeer(Peer):

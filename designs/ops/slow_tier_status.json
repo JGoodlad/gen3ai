@@ -2958,74 +2958,90 @@
   },
   "src/main/anchors/anchors_integration_test.py::test_one_capped_real_game_against_metamon_smallrl": {
    "status": "pass",
-   "commit": "62bb07c002f6a978a42bde8d3ee0e5f208e2e32f",
-   "at": "2026-10-25T19:13:05Z",
-   "duration_s": 27.28,
-   "contention": 1.17,
+   "commit": "4d8d9eef82cfbc50256826c0616f60ec2bcc7113",
+   "at": "2026-10-26T05:34:19Z",
+   "duration_s": 31.18,
+   "contention": 1.42,
    "detail": ""
   },
   "src/main/anchors/anchors_integration_test.py::test_two_real_games_against_metamon_smallrl[node-live]": {
    "status": "pass",
-   "commit": "62bb07c002f6a978a42bde8d3ee0e5f208e2e32f",
-   "at": "2026-10-25T19:13:05Z",
-   "duration_s": 22.92,
-   "contention": 1.17,
+   "commit": "4d8d9eef82cfbc50256826c0616f60ec2bcc7113",
+   "at": "2026-10-26T05:34:19Z",
+   "duration_s": 33.44,
+   "contention": 1.6,
    "detail": ""
   },
   "src/main/anchors/anchors_integration_test.py::test_two_real_games_against_metamon_smallrl[rust-core]": {
    "status": "pass",
-   "commit": "62bb07c002f6a978a42bde8d3ee0e5f208e2e32f",
-   "at": "2026-10-25T19:13:05Z",
-   "duration_s": 23.82,
-   "contention": 1.08,
+   "commit": "4d8d9eef82cfbc50256826c0616f60ec2bcc7113",
+   "at": "2026-10-26T05:34:19Z",
+   "duration_s": 28.34,
+   "contention": 1.25,
    "detail": ""
   },
   "src/main/anchors/anchors_integration_test.py::test_two_real_games_against_metamon_smallrl[rust-live]": {
    "status": "pass",
-   "commit": "62bb07c002f6a978a42bde8d3ee0e5f208e2e32f",
-   "at": "2026-10-25T19:13:05Z",
-   "duration_s": 23.95,
-   "contention": 1.05,
+   "commit": "4d8d9eef82cfbc50256826c0616f60ec2bcc7113",
+   "at": "2026-10-26T05:34:19Z",
+   "duration_s": 30.54,
+   "contention": 1.32,
    "detail": ""
   },
   "src/main/anchors/anchors_integration_test.py::test_two_real_games_with_a_RUST_BOT_as_our_side": {
    "status": "pass",
-   "commit": "62bb07c002f6a978a42bde8d3ee0e5f208e2e32f",
-   "at": "2026-10-25T19:13:05Z",
-   "duration_s": 20.14,
+   "commit": "4d8d9eef82cfbc50256826c0616f60ec2bcc7113",
+   "at": "2026-10-26T05:34:19Z",
+   "duration_s": 25.51,
    "contention": 1.0,
    "detail": ""
   },
   "src/main/anchors/live_side_test.py::test_a_rust_bot_plays_our_side_on_its_own_reading_and_its_streams_are_seeded": {
    "status": "pass",
-   "commit": "62bb07c002f6a978a42bde8d3ee0e5f208e2e32f",
-   "at": "2026-10-25T19:13:05Z",
-   "duration_s": 2.93,
-   "contention": 1.0,
+   "commit": "4d8d9eef82cfbc50256826c0616f60ec2bcc7113",
+   "at": "2026-10-26T05:34:19Z",
+   "duration_s": 6.08,
+   "contention": 1.49,
+   "detail": ""
+  },
+  "src/main/anchors/weight_pins_integration_test.py::test_a_wrong_sha_a_missing_revision_and_an_unpinned_load_are_each_refused": {
+   "status": "pass",
+   "commit": "4d8d9eef82cfbc50256826c0616f60ec2bcc7113",
+   "at": "2026-10-26T05:34:19Z",
+   "duration_s": 6.8,
+   "contention": 1.32,
+   "detail": ""
+  },
+  "src/main/anchors/weight_pins_integration_test.py::test_the_real_model_loads_its_checkpoint_only_through_the_pinned_offline_downloader": {
+   "status": "pass",
+   "commit": "4d8d9eef82cfbc50256826c0616f60ec2bcc7113",
+   "at": "2026-10-26T05:34:19Z",
+   "duration_s": 6.7,
+   "contention": 1.41,
    "detail": ""
   },
   "src/main/anchors/windowed_attention_integration_test.py::test_each_model_resolves_to_its_own_attention[Kakuna-WindowedVanillaAttention-want_window0]": {
    "status": "pass",
-   "commit": "62bb07c002f6a978a42bde8d3ee0e5f208e2e32f",
-   "at": "2026-10-25T19:13:05Z",
-   "duration_s": 4.48,
-   "contention": 1.0,
+   "commit": "4d8d9eef82cfbc50256826c0616f60ec2bcc7113",
+   "at": "2026-10-26T05:34:19Z",
+   "duration_s": 7.58,
+   "contention": 1.73,
    "detail": ""
   },
   "src/main/anchors/windowed_attention_integration_test.py::test_each_model_resolves_to_its_own_attention[SyntheticRLV2-VanillaAttention-want_window1]": {
    "status": "pass",
-   "commit": "62bb07c002f6a978a42bde8d3ee0e5f208e2e32f",
-   "at": "2026-10-25T19:13:05Z",
-   "duration_s": 4.3,
-   "contention": 1.0,
+   "commit": "4d8d9eef82cfbc50256826c0616f60ec2bcc7113",
+   "at": "2026-10-26T05:34:19Z",
+   "duration_s": 6.74,
+   "contention": 1.43,
    "detail": ""
   },
   "src/main/anchors/windowed_attention_integration_test.py::test_windowed_attention_matches_a_naive_sliding_window_reference": {
    "status": "pass",
-   "commit": "62bb07c002f6a978a42bde8d3ee0e5f208e2e32f",
-   "at": "2026-10-25T19:13:05Z",
-   "duration_s": 2.55,
-   "contention": 1.0,
+   "commit": "4d8d9eef82cfbc50256826c0616f60ec2bcc7113",
+   "at": "2026-10-26T05:34:19Z",
+   "duration_s": 4.0,
+   "contention": 1.43,
    "detail": ""
   },
   "src/main/belief_roles/belief_roles_integration_test.py::test_a_pre_break_run_is_refused_by_the_read_with_the_loaders_reason": {
@@ -4861,5 +4877,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-26T04:07:55Z"
+ "last_written": "2026-10-26T05:34:19Z"
 }
