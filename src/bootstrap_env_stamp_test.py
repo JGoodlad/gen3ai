@@ -17,7 +17,10 @@ the stub is the executable it actually runs, and each test asserts on the log it
   `--update-shared-env` (the explicit opt-in) and `--skip-env` (leave the env alone);
 * the main checkout keeps the old behaviour (it updates);
 * the LEGACY `gen3ai_stable` / `environment.yml` is never named by any conda call;
-* the newest legacy per-worktree stamp is adopted when it matches, so the migration refuses nothing.
+* the newest legacy per-worktree stamp is adopted when it matches, so the migration refuses nothing;
+* a READER THAT STOPS EARLY (`bootstrap.sh | head -40`) cannot kill the run: SIGPIPE used to end it mid-step with
+  exit 141 and no diagnosis, which is how a worktree bootstrap "failed in step 7" (2026-10-26) when `head -40`
+  cut the output at "[7/7] Verifying". Reverting the `tee -p` guard makes the last test fail (exit -13).
 
 Reverting the stamp location to `--git-dir` makes the first test fail: the worktree sees no stamp
 and the fake conda logs an `env update`.
@@ -29,6 +32,7 @@ import os
 import shutil
 import stat
 import subprocess
+import time
 from pathlib import Path
 
 import pytest
@@ -321,3 +325,33 @@ def test_an_unknown_variant_is_a_usage_error(clone):
     assert rc == 2 and "unknown --variant" in out and calls == [], out
     rc, out, calls = clone["run"](clone["wt"], "--variant")
     assert rc == 2 and "--variant needs a value" in out, out
+
+
+def test_a_reader_that_stops_early_does_not_kill_the_bootstrap(clone, tmp_path):
+    """`bootstrap.sh | head -3`: the reader closes the pipe after 3 lines; the run must still finish (exit 0) and keep
+    the whole output in its log. Without the `tee -p` guard the next write raises SIGPIPE and the script dies
+    mid-step (exit -13 here, 141 in a shell) -- the 2026-10-26 "step 7 verification failed" that was only `| head -40`."""
+    _plant_stamp(clone["stamp_dir"], _ENV_YML)
+    wt = clone["wt"]
+    keep = tmp_path / "bootstrap_out.log"
+    env = dict(os.environ, PATH=f"{tmp_path / 'bin'}:{os.environ['PATH']}", NO_COLOR="1",
+               FAKE_CONDA_LOG=str(tmp_path / "conda.log"), FAKE_CONDA_BASE=str(clone["base"]),
+               GEN3AI_BOOTSTRAP_LOG=str(keep))
+    env.pop("GIT_DIR", None)
+    env.pop("GIT_WORK_TREE", None)
+    p = subprocess.Popen(["bash", str(wt / "scripts" / "bootstrap.sh"), "--no-rust", "--no-check"], cwd=str(wt),
+                         env=env, text=True, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                         stderr=subprocess.STDOUT)
+    head = [p.stdout.readline() for _ in range(3)]
+    p.stdout.close()                       # the reader walks away, as `head -3` does
+    try:
+        rc = p.wait(timeout=120)
+    finally:
+        if p.poll() is None:
+            p.kill()
+    assert len(head) == 3 and all(head), head
+    assert rc == 0, f"bootstrap died when its reader stopped early (rc={rc}); SIGPIPE is -13"
+    deadline = time.monotonic() + 30
+    while time.monotonic() < deadline and "Bootstrap complete" not in (keep.read_text() if keep.exists() else ""):
+        time.sleep(0.2)
+    assert "Bootstrap complete" in keep.read_text(), "the log must hold the output the reader never saw"

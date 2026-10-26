@@ -21,7 +21,10 @@ purpose). A closed round's log is history and lives in `designs/research_state/c
 1. **Every repo-relative path a CLAUDE.md names must EXIST** (a `data/*.ts` citation is a Showdown source and
    resolves in `deps/pokemon-showdown`; a path gone on purpose is listed in `designs/deleted_flags.md`). Scope is the five owned prefixes
    (`src/`, `designs/`, `data/`, `tools/`, `scripts/`) — `deps/` is a submodule plus untracked
-   build output, so its contents are not a promise this tree can keep in a fresh worktree.
+   build output, so its contents are not a promise this tree can keep in a fresh worktree. **A path git IGNORES**
+   (`git check-ignore`: a build output such as `src/rust_env/target/selfcheck/libpokesim_env.so`) is unverifiable by
+   design and is skipped: a fresh worktree has no Rust build, and a static gate must not depend on one. A tracked
+   path stays strict.
 2. **Every `--flag` a CLAUDE.md names must RESOLVE somewhere in the tree's own CLI surface** —
    or be listed in `designs/deleted_flags.md`, the history file for flags a document names on
    purpose because it is telling you what used to be true.
@@ -70,6 +73,7 @@ import functools
 import os
 import pathlib
 import re
+import subprocess
 from typing import Dict, List, Optional, Set, Tuple
 
 import pytest
@@ -213,6 +217,30 @@ def _bases_for(rel_doc: str, token: str = "") -> List[pathlib.Path]:
         if base.exists():
             bases.append(base)
     return bases
+
+
+def _git_ignored(rel_path: str, root: pathlib.Path) -> bool:
+    """True when git ignores `rel_path` (repo-relative, need not exist): `git check-ignore -q` exits 0. Any other
+    outcome (not ignored, no git, not a repo) is False, so the gate stays strict wherever it cannot tell."""
+    try:
+        r = subprocess.run(["git", "-C", str(root), "check-ignore", "-q", "--", rel_path],
+                           capture_output=True, timeout=30)
+    except (OSError, subprocess.SubprocessError):
+        return False
+    return r.returncode == 0
+
+
+def unverifiable_by_design(rel_doc: str, token: str, root: pathlib.Path = _REPO_ROOT) -> bool:
+    """A claimed path that git ignores is a build output (or other untracked local state): it exists in the checkout
+    that built it and not in a fresh worktree, so its absence is not a documentation defect."""
+    for base in _bases_for(rel_doc, token):
+        try:
+            rel = (base / token).relative_to(root).as_posix()
+        except ValueError:
+            continue
+        if _git_ignored(rel, root):
+            return True
+    return False
 
 
 def collect_path_claims(docs: Optional[List[pathlib.Path]] = None) -> List[Tuple[str, int, str]]:
@@ -470,6 +498,8 @@ def test_every_claude_md_path_exists():
         bases = _bases_for(rel, token)
         if (not bases and _is_upstream_source(token)) or any((base / token).exists() for base in bases):
             continue
+        if unverifiable_by_design(rel, token):
+            continue
         misses.append(f"  {rel}:{lineno}  {token}")
 
     assert not misses, (
@@ -682,6 +712,29 @@ def test_meta_a_rust_sim_detail_doc_may_cite_the_crate_layout_and_nothing_else_m
     assert any((b / token).exists() for b in _bases_for("designs/rust_sim/module_map.md", token))
     assert not any((b / token).exists() for b in _bases_for("designs/training/compile_flags.md", token))
     assert not any((b / token).exists() for b in _bases_for("designs/rust_sim.md", token))   # a prefix, not a substring
+
+
+def test_meta_a_git_ignored_path_is_unverifiable_by_design_and_a_tracked_one_is_not(tmp_path):
+    """Revert-proof (the fresh-worktree defect): a doc citing a build output git ignores (`target/...`, absent in a
+    worktree with no Rust build) must not fail the gate, while a missing TRACKED path still must."""
+    subprocess.run(["git", "init", "-q", str(tmp_path)], check=True)
+    (tmp_path / ".gitignore").write_text("/target\n")
+    (tmp_path / "src").mkdir()
+    (tmp_path / "src" / ".gitignore").write_text("/rust_env/target\n")
+    assert _git_ignored("target/selfcheck/lib.so", tmp_path)
+    assert _git_ignored("src/rust_env/target/selfcheck/libpokesim_env.so", tmp_path)
+    assert not _git_ignored("src/rust_env/src/gone.rs", tmp_path)
+    assert not _git_ignored("designs/gone.md", tmp_path)
+    # outside any repo: strict (cannot tell => not ignored)
+    assert not _git_ignored("target/x", pathlib.Path("/"))
+
+
+def test_the_citation_that_broke_a_fresh_worktree_is_skipped_by_the_live_gate():
+    """The live path the defect hit: `src/rust_env/target/...so` is ignored in THIS repo, so the verdict does not
+    depend on whether this checkout built it."""
+    token = "src/rust_env/target/selfcheck/libpokesim_env.so"
+    assert unverifiable_by_design("designs/prober/session_scans.md", token)
+    assert not unverifiable_by_design("designs/prober/session_scans.md", "src/rust_env/src/never_was.rs")
 
 
 def test_meta_an_upstream_ts_citation_resolves_against_the_submodule_only():

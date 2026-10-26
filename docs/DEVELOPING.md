@@ -31,6 +31,10 @@ Useful flags: `--dry-run` (print the plan, change nothing), `--with-rust` / `--n
 `--force` (redo the conda step), `--update-shared-env`, `--adopt-env`, `--skip-env`, `--variant cu128`,
 `--no-check`, `--help`.
 
+Piping it is safe: with stdout a pipe (`bootstrap.sh | head -40`), the script tees its output into
+`$TMPDIR/gen3ai-bootstrap-<pid>.log` (`GEN3AI_BOOTSTRAP_LOG` names it), so a reader that stops early cannot kill the run
+with SIGPIPE mid-step (that once read as "step 7 failed"; the log holds the rest).
+
 **Say yes to the Rust build if you have ten minutes.** Training runs on the in-process Rust bridge,
 and the first Rust-backed test builds those binaries anyway: mid-test, saturating every core, which
 is a known cause of spurious timeout failures on a fresh checkout.
@@ -145,7 +149,7 @@ exactly like one that found nothing.
 | `src/agents/model/mypy_gate_test.py` | `python -m mypy`, scope from `mypy.ini`'s `files =` (`src/agents/model`, `src/agents/observation`) | `GEN3AI_SKIP_MYPY_GATE=1` |
 | `src/ruff_gate_test.py` | pyflakes over `src/agents`, `src/main`, `src/utils`: `--select F,E9`, wrongness only, never style | `GEN3AI_SKIP_RUFF_GATE=1` |
 | `src/file_size_gate_test.py` | a file over 2,000 lines fails; 1,000-2,000 is reported. The allowlist is empty: decompose instead | `GEN3AI_SKIP_SIZE_GATE=1` |
-| `src/claude_md_freshness_gate_test.py` | every repo-relative path, `--flag` and `python -m` module a `CLAUDE.md`, `designs/ARCHITECTURE.md`, `designs/endstate/*.md`, a `designs/ops/` SOP, `docs/*.md` or an owned `README.md` names still resolves (a deliberately historical one is listed in `designs/deleted_flags.md`); every `<file> § <section>` pointer in any doc or code comment lands on a section (`python -m utils.section_refs`); every instruction file (`CLAUDE.md`, `.claude/commands/`, and, where present, `MEMORY.md` and `~/.claude/agents/`) stays within its byte-budget ratchet (`designs/ops/instruction_docs_budget.json`) | `GEN3AI_SKIP_CLAUDE_MD_GATE=1`; the machine-local files only: `GEN3AI_SKIP_USER_DOC_BUDGET=1` |
+| `src/claude_md_freshness_gate_test.py` | every repo-relative path, `--flag` and `python -m` module a `CLAUDE.md`, `designs/ARCHITECTURE.md`, `designs/endstate/*.md`, a `designs/ops/` SOP, `docs/*.md` or an owned `README.md` names still resolves (a deliberately historical one is listed in `designs/deleted_flags.md`; a path git ignores, i.e. a build output such as `src/rust_env/target/...`, is unverifiable by design and skipped); every `<file> § <section>` pointer in any doc or code comment lands on a section (`python -m utils.section_refs`); every instruction file (`CLAUDE.md`, `.claude/commands/`, and, where present, `MEMORY.md` and `~/.claude/agents/`) stays within its byte-budget ratchet (`designs/ops/instruction_docs_budget.json`) | `GEN3AI_SKIP_CLAUDE_MD_GATE=1`; the machine-local files only: `GEN3AI_SKIP_USER_DOC_BUDGET=1` |
 | `src/test_stub_vacuity_gate_test.py` | every `monkeypatch.setattr` / `patch` target is a symbol the code under test actually reads; a stub that stubs nothing fails | `GEN3AI_SKIP_STUB_GATE=1` (the scan memoises per-file facts by content hash in `~/.cache/gen3ai/stub_vacuity/`; `GEN3AI_STUB_NO_CACHE=1` turns that off) |
 | `src/slow_tier_status_gate_test.py` | the last recorded verdict of every `slow` test; a recorded failure fails the routine gate that deselected it | `GEN3AI_SKIP_SLOW_STATUS_GATE=1` |
 | `src/mode_flag_doc_gate_test.py` | every mode-flag value `designs/ARCHITECTURE.md` states in prose equals `designs/production_config.json` | `GEN3AI_SKIP_MODE_FLAG_DOC_GATE=1` |

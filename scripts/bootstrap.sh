@@ -61,6 +61,20 @@ RUN_CHECK=1
 CURRENT_STEP="startup"
 TOTAL_STEPS=7
 
+# ------------------------------------------------------------------------------- a reader that stops early
+# `./scripts/bootstrap.sh | head -40` closes the pipe after 40 lines; the NEXT write then kills the script with
+# SIGPIPE (exit 141), mid-step, with no diagnosis. That is how a worktree bootstrap "failed in step 7" (2026-10-26):
+# the output is ~90 lines, `head -40` cut it at "[7/7] Verifying", and the pytest verification that followed died
+# on its first write to the dead pipe. Nothing was wrong with the verification. So when stdout is a PIPE, route it
+# through GNU `tee -p` (it keeps going after the reader is gone; BSD tee has no -p, so it is probed first) into a log, which makes a vanished reader
+# harmless to the run; the log keeps what the reader never saw. A TTY or a plain file needs none of this.
+if [ -p /dev/stdout ] && [ -z "${GEN3AI_BOOTSTRAP_NO_TEE:-}" ] && tee -p </dev/null >/dev/null 2>&1; then
+    BOOTSTRAP_LOG="${GEN3AI_BOOTSTRAP_LOG:-${TMPDIR:-/tmp}/gen3ai-bootstrap-$$.log}"
+    exec > >(tee -p "$BOOTSTRAP_LOG") 2>&1
+    printf '(stdout is a pipe: the full output is also kept in %s, so a reader that stops early cannot kill the run)\n' \
+        "$BOOTSTRAP_LOG"
+fi
+
 # ------------------------------------------------------------------------------- output helpers
 if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then
     B=$'\033[1m'; DIM=$'\033[2m'; GRN=$'\033[32m'; YEL=$'\033[33m'; RED=$'\033[31m'; RST=$'\033[0m'
