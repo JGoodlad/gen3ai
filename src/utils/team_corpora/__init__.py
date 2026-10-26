@@ -32,7 +32,7 @@ SCHEMA = "gen3_team_corpus_v1"
 DATA_NAME = "teams.jsonl.gz"
 MANIFEST_NAME = "manifest.json"
 #: The registered corpora, by name. A name not here is refused (a typo must not train on nothing).
-CORPORA: Dict[str, Path] = {"w_forum_v1": HERE / "w_forum_v1"}
+CORPORA: Dict[str, Path] = {"w_forum_v1": HERE / "w_forum_v1", "n1_proc_v1": HERE / "n1_proc_v1"}
 
 
 class CorpusError(RuntimeError):
