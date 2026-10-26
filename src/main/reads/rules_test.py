@@ -126,6 +126,62 @@ def test_x61ps_committed_specs_parse_with_forum72_alone_at_60_units_and_a_report
     assert all(m.ref.kind == ("pinned" if m.arm == "c0" else "final") for m in sp.models.values())
 
 
+@pytest.mark.parametrize("look", [1, 2])
+def test_x61ps_specs_register_the_k9b_void_gate_for_every_on_seed(look):
+    """AM-N1P-1: both committed specs gate EVERY n1p seed on its AM-6 K9(b) arm-end record (PREREG §9 guard 1), reading
+    the run the model's own ``final`` ref names; the committed s3501 record reads PASS; a spec that leaves an ON seed
+    out of the gate is refused."""
+    import copy
+
+    from main.reads.spec import SpecError, load, parse
+    from utils.paths import repo_path
+
+    sp = load(repo_path(f"{X61P}/read_spec_look{look}.json"))
+    v = sp.params["void"]
+    on = {lab for lab, m in sp.models.items() if m.arm == "n1p"}
+    assert set(v["runs"]) == on and len(on) == R.LOOK_SEEDS[look]
+    assert all(v["runs"][lab] == sp.models[lab].ref.run for lab in on)
+    assert (repo_path(v["k9b_dir"]) / "rb_x35_n1p_s3501.json").is_file()
+    gate = RU.void_gate(sp)
+    assert set(gate) == on and gate["n1p_s3501"]["k9b"] == "PASS" and gate["n1p_s3501"]["pass"]
+    doc = copy.deepcopy(sp.raw)
+    del doc["decision"]["params"]["void"]["runs"]["n1p_s3501"]
+    with pytest.raises(SpecError, match="the ON model 'n1p_s3501' has no run"):
+        parse(doc)
+
+
+def test_x61p_look2_imports_the_look1_finals_pinned_to_the_committed_look1_spec(tmp_path):
+    """AM-N1P-1: look 2's three groups import look 1's six finals from look 1's state, registered by the sha256 of
+    ``read_spec_look1.json`` (editing look 1's spec moves it: this test fails, the registration does not rot). Against a
+    state whose ``spec.json`` IS that file, every import passes ``imports.check`` (the same cell, regime, arm / seed)."""
+    import copy
+    import hashlib
+
+    from main.reads import imports as IM
+    from main.reads.spec import load, parse
+    from utils.paths import repo_path
+
+    f1 = repo_path(f"{X61P}/read_spec_look1.json")
+    sp1, sp2 = load(f1), load(repo_path(f"{X61P}/read_spec_look2.json"))
+    assert sp1.anchor["primary"].imports is None and sp1.s["p"].imports is None
+    sha1 = hashlib.sha256(f1.read_bytes()).hexdigest()
+    groups = [("anchor", "primary"), ("anchor", "reported"), ("s", "p")]
+    for lane, g in groups:
+        imp = (sp2.anchor if lane == "anchor" else sp2.s)[g].imports
+        assert imp.spec_sha256 == sha1 and imp.group == g and imp.state == "~/gen3ai_archive/x61p_n1p_read/look1"
+        assert set(imp.models) == set(sp1.models) and len(imp.models) == 6
+    assert set(sp2.params["void"]["runs"]) >= set(sp1.params["void"]["runs"])
+    state1 = tmp_path / "look1"
+    state1.mkdir()
+    (state1 / "spec.json").write_bytes(f1.read_bytes())
+    doc = copy.deepcopy(sp2.raw)
+    for lane, g in groups:
+        doc[lane][g]["import"]["state"] = str(state1)
+    sp = parse(doc)
+    for lane, g in groups:
+        assert IM.check(sp, lane, g).read == sp1.read
+
+
 def test_the_d1_rule_forms_x61ps_reported_panels_from_its_second_group_and_refuses_a_repeated_panel():
     from main.reads.spec import parse
 

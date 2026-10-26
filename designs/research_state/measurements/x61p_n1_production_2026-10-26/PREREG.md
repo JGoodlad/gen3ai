@@ -239,3 +239,75 @@ Goal (b) met by this arm's U: probability 0.05 (and inflated by §8 if it were).
    registry of `de269480`; the pin's startup guard re-derived 0 hits on its own registry, which is what the run reads.
 10. **The X61 toy registration stands unrun.** If the orchestrator wants the from-step-0 screen as well, it is the
     review's Option T (2 seeds per arm, F primary, a one-sided SCREEN-GO), by a new registration.
+
+
+## 14. AMENDMENT AM-N1P-1 (2026-10-26, before any read game): the read specs register the VOID gate and look 2's import
+
+**Why, and when.** Written after s3501 finished (K9(b) PASS, `k9b/rb_x35_n1p_s3501.json`) and before any read of N1-P
+started (no `main.reads plan` has run for either look; no state dir exists). `main.reads` 1bcedc7b closed two classes that
+the committed specs did not yet use (`designs/tools/reads.md` §3, §5): the registered VOID gate that runs before `decide`,
+and the sha-checked cross-state import. **No decision rule changes**: the classes (§4), the bars, the sign rules, the
+floor, AM-5's widening, the co-primary P (§5), the guards (§6), the REPORTED group (§7) and the predictions (§10) stand
+as registered. What changes is which guards the read machine-checks, and where look 2 gets its look-1 cells.
+
+**1. The VOID gate (§9 guard 1, machine-checked).** Both specs carry `decision.params.void = {k9b_dir, runs}`: the
+`k9b` directory of the X35 stage and, for EVERY N1-P seed the look reads (look 1: s3501-s3503; look 2: s3501-s3505), its
+run dir. `decide`, and so `record`, runs the gate FIRST and writes `void.json`: each seed's AM-6 K9(b) arm-end record
+(`k9b/rb_x35_n1p_s<s>.json`, `kit k9b --stage`) must read **PASS**. A VOID, INCONCLUSIVE or MISSING record refuses the
+decision and names the seed; a VOID seed enters no read and is re-run at the same pin and seed after the cause is fixed
+(§9, unchanged). The record carries the gate. The C0 control is not gated here: its K9(b) records are the earlier
+stage's (each PASS, §2).
+
+**2. VOID guards 2-5 are NOT carried by the module.** The `d1` rule's gate reads K9(b) records only
+(`params.void`; `x35_r1`'s batch-2 arms add V-S1 / V-S2 / LR-F). Guards 2-5 stay registered exactly as §9 words them and
+are checked where their evidence lives, by the operator before `main.reads record`, each seed, with the lines cited in
+the ledger entry:
+
+| §9 guard | enforced by | evidence read | at this amendment |
+|---|---|---|---|
+| 2 banner / held-out hits / pool copy | the first launch's log | `~/.claude/jobs/x35/rb_x35_n1p_s<s>.launcher.log` lines "🧬 [TEAM-MIX] n1_proc_v1@ALL (12000 teams, tier sha d59f44f0b33b) share 0.50 on both sides; eval stays on the pool" and "held-out panels: 0 hits over 5 panel(s) …; 0 corpus team(s) pack identically to a pool team" (NOT in the run dir's `launcher_child*.log`) | s3501, s3502: both lines present, 0 hits, 0 pool copies. s3503: at its launch |
+| 3 pin, corpus | `launch_x35.sh` pre-checks 2b (`kit pin-check --arm n1p`) and 2d (`kit corpus-check --arm n1p`): a failure is a HOLD before anything is created | `<run>/metadata.json` `pin_history` (one entry, `5f8f6cfa…`); `~/.claude/jobs/x35/rb_x35_n1p_s<s>.go.{pin,corpus}.txt` | s3501, s3502: pin-check PASS and corpus-check PASS (12,000 teams, 120,000 soak battles); `pin_history` is `5f8f6cfa…` alone. s3503: at its launch |
+| 4 pool seed | `launch_x35.sh`'s post-spawn `kit pool-seed-check` (a FAIL SIGTERMs the launcher by its pid and HOLDs) | `rb_x35_n1p_s<s>.pool_seed_check.txt` | s3501, s3502: "pool seed: PASS". s3503: at its launch |
+| 5 corpus-team crash | the settled rule: a run that stopped on a FATAL has no final at step >= 300,000,170, so `main.reads` never plans its units | the run's `launcher_child.full.log` and the launcher log (a FATAL naming a `corpus_<n>` id) | s3501: finished, 0 `corpus_<n>` mentions in either log. s3502: live, 0 so far. s3503: at its end |
+
+Guards 3 and 4 hold for any seed the kit launched with GO, since the launch aborts on a failure; they are listed so the
+read cites their lines rather than assuming them. A failure of any of guards 2-5 makes the seed VOID by §9, and the
+operator refuses to record: the module cannot refuse it (FINDING 11).
+
+**3. Look 2 imports the look-1 finals (supersedes §11's look-2 row and §13 FINDING 7's "re-plays").** Look 2's spec
+carries an `import` block on each of its three groups (anchor `primary`, anchor `reported`, S `p`): the six look-1 models
+(c0_s3501-s3503 and n1p_s3501-s3503) are taken from the same-named group of **look 1's state**, never re-played. Registered:
+
+- the look-1 state is planned at `~/gen3ai_archive/x61p_n1p_read/look1`, from `read_spec_look1.json` byte for byte;
+  `spec_sha256` of look 1's `spec.json` is `1266daadeefe4142a2f2f339bbdedaf4e052c3f2ef3fb8a8b0d5550fb8729f03` (the
+  sha256 of `read_spec_look1.json` as committed WITH this amendment; `rules_test` pins look 2's import against the file,
+  so editing look 1's spec without this sha fails a test);
+- `plan` refuses unless that state's `spec.json` hashes to it and each group is the same cell (opponent, team sets
+  and unit seeds; R's content, panel, 500 pairs, batch 100 and the registered regime `d4de0fd7c16a2658`; each model's arm, seed
+  and load options), and `assemble` refuses unless look 1 PLAYED the bytes look 2 resolved (the C0 sha256s are pinned; the
+  n1p finals are the settled `final_model.zip`s);
+- imported Kakuna units pool with look 2's own only under ONE regime id per team set (else INCONCLUSIVE); an imported
+  S node is read from look 1's ledger and must carry `d4de0fd7c16a2658`;
+- a look-1 state planned at another path makes look 2's `plan` refuse (typed, naming the path); the path is then amended
+  here before look 2 plays.
+
+*What this changes in the data, declared:* the Kakuna counts of the look-1 finals are identical either way (play is
+deterministic per model and unit seed, X26c); **their S nodes are not**. Look 2 re-playing them (D1 look 2's way, §13
+FINDING 7) would draw fresh 500-pair cells; importing carries look 1's draws into look 2 unchanged. The estimators, the
+Welch interval over 5 + 5 S nodes, the widening from the look's own seeds, and every threshold are the registered ones;
+only these three seeds' S values are look 1's. Look 2's new plays are s3504 and s3505, both arms (C0's under look 2's state and
+playing commit, named in the record's `imports`).
+
+*Cost (ESTIMATE, scaled from §11's per-final rates ≈ 4.5 Kakuna lane-h and ≈ 2.8 P lane-h):* look 2's read falls from ≈ 45 + 29
+to **≈ 18 + 11 CPU lane-h**.
+
+**4. Verified at this amendment** (CPU): `python -m main.reads check-spec` exit 0 on both specs; the gate reads `n1p_s3501` PASS
+and the other seeds MISSING (their records are written at arm end); a unit test (`rules_test`) holds look 2's three imports against a synthetic look-1
+state whose `spec.json` is the committed look-1 spec's bytes, and all three pass `imports.check`.
+
+**FINDING 11 (this amendment).** The registered VOID guards 2-5 are operator checks, not module checks. The `d1` rule's gate
+is K9(b) only, and guard 2's evidence is a launcher log outside the run dir, on this box. A machine check of the run dir's
+own artifacts (`pin_history`, `snapshots/pool_seed.json`) would be a new module guard, built only on the orchestrator's word.
+
+**FINDING 12 (this amendment).** Look 2's S for s3501-s3503 is look 1's draw, not a fresh one: a reader comparing the look-2
+P to a re-played one (D1 look 2) sees different numbers for those seeds' S, from sampling, not from the rule.

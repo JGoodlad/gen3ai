@@ -132,6 +132,14 @@
      "G-C"
     ],
     "why": "the guards gate only a QUALIFYING primary (the orchestrator's A1 ruling (a)): H is not GAIN, so they were not played"
+   },
+   "void": {
+    "k9b_dir": "designs/research_state/measurements/x35_breakers_stage_2026-10-17/k9b",
+    "runs": {
+     "n1p_s3501": "models/rb_x35_n1p_s3501",
+     "n1p_s3502": "models/rb_x35_n1p_s3502",
+     "n1p_s3503": "models/rb_x35_n1p_s3503"
+    }
    }
   }
  }

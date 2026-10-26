@@ -118,7 +118,20 @@
     "n1p_s3503",
     "n1p_s3504",
     "n1p_s3505"
-   ]
+   ],
+   "import": {
+    "state": "~/gen3ai_archive/x61p_n1p_read/look1",
+    "spec_sha256": "1266daadeefe4142a2f2f339bbdedaf4e052c3f2ef3fb8a8b0d5550fb8729f03",
+    "group": "primary",
+    "models": [
+     "c0_s3501",
+     "c0_s3502",
+     "c0_s3503",
+     "n1p_s3501",
+     "n1p_s3502",
+     "n1p_s3503"
+    ]
+   }
   },
   "reported": {
    "opponent": "metamon:Kakuna",
@@ -139,7 +152,20 @@
     "n1p_s3503",
     "n1p_s3504",
     "n1p_s3505"
-   ]
+   ],
+   "import": {
+    "state": "~/gen3ai_archive/x61p_n1p_read/look1",
+    "spec_sha256": "1266daadeefe4142a2f2f339bbdedaf4e052c3f2ef3fb8a8b0d5550fb8729f03",
+    "group": "reported",
+    "models": [
+     "c0_s3501",
+     "c0_s3502",
+     "c0_s3503",
+     "n1p_s3501",
+     "n1p_s3502",
+     "n1p_s3503"
+    ]
+   }
   }
  },
  "s": {
@@ -162,7 +188,20 @@
     "n1p_s3504",
     "n1p_s3505"
    ],
-   "regime_id": "d4de0fd7c16a2658"
+   "regime_id": "d4de0fd7c16a2658",
+   "import": {
+    "state": "~/gen3ai_archive/x61p_n1p_read/look1",
+    "spec_sha256": "1266daadeefe4142a2f2f339bbdedaf4e052c3f2ef3fb8a8b0d5550fb8729f03",
+    "group": "p",
+    "models": [
+     "c0_s3501",
+     "c0_s3502",
+     "c0_s3503",
+     "n1p_s3501",
+     "n1p_s3502",
+     "n1p_s3503"
+    ]
+   }
   }
  },
  "decision": {
@@ -182,6 +221,16 @@
      "G-C"
     ],
     "why": "the guards gate only a QUALIFYING primary (the orchestrator's A1 ruling (a)): H is not GAIN, so they were not played"
+   },
+   "void": {
+    "k9b_dir": "designs/research_state/measurements/x35_breakers_stage_2026-10-17/k9b",
+    "runs": {
+     "n1p_s3501": "models/rb_x35_n1p_s3501",
+     "n1p_s3502": "models/rb_x35_n1p_s3502",
+     "n1p_s3503": "models/rb_x35_n1p_s3503",
+     "n1p_s3504": "models/rb_x35_n1p_s3504",
+     "n1p_s3505": "models/rb_x35_n1p_s3505"
+    }
    }
   }
  }
