@@ -47,6 +47,10 @@ Detail lives in `designs/prober/`, always current and updated with the code:
 - A model view that cannot run is one typed `ArchDriftError`, said before trying: render its `plain`
   sentence with `exc.detail` folded under it, never "analysis failed", and branch on `kind`, never on
   the message.
+- **Every model load declares its use** (`ProbeModel.load(..., use=)`, `_model_for(b, use=)`): `trace_replay` for
+  stored observations, `fresh` for positions encoded now, `stored_score` for a score with no faithfulness claim.
+  One gap policy (`arch_status.decide`) refuses a trace replay across an `obs_semantics` gap and badges the
+  others; a model-running output records its `obs_semantics` block (`designs/prober/arch_drift.md`).
 - Per-battle model resolution is exact → nearest → most recent (the run's last snapshot, via
   `resolve_model_ref`); the `best_model` rung is last and is NAMED in `ModelChoice.detail`.
   Faithfulness is exact only on the `exact` tier.

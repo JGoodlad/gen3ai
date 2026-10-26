@@ -26,6 +26,12 @@ THE KINDS (`KINDS`; one typed diagnosis each — a surface branches on the kind,
   unreadable       the file is there but is not a readable checkpoint
   load_failed      any other failure of the load itself (never leaked raw)
 
+THE GAP POLICY (`decide(verdict, use)`, the table `GAP_POLICY`): what a caller may do with a checkpoint is the
+verdict's GAP crossed with the caller's declared USE — a TRACE REPLAY (the checkpoint re-run on a trace's stored
+observations and read against what it recorded) is refused across an `obs_semantics` gap; a FRESH probe (positions
+encoded now, by HEAD's encoder) or a STORED-obs score (no faithfulness claim) runs with a badge, "trained on
+obs_semantics vN, probed at vM", which the caller records in its output. Weights that do not fit refuse every use.
+
 Recorded versions come from, in order: the eval manifest beside the snapshot (`eval_manifest.json` — the
 per-cycle record of the model that played), else the nearest `model_config.json` (the checkpoint's own dir, then up
 to the run root). A checkpoint with NO record is `unrecorded`: the model views may be TRIED (and their failure is
@@ -43,6 +49,7 @@ from typing import Optional
 from agents.model.model_version.constants import (
     ARCH_SIGNATURE,
     MODEL_CONFIG_VERSION,
+    OBS_SEMANTICS_HISTORY,
     OBS_SEMANTICS_REASON,
     OBS_SEMANTICS_VERSION,
 )
@@ -145,9 +152,12 @@ def plain_sentence(kind: str, *, config_version: Optional[int] = None, arch_sign
         trained = f"{obs_dim} inputs" if obs_dim else "a different number of inputs"
         return (older + tail + f" It was trained on {trained}; the code's observation is {current_obs_dim()} wide.")
     if kind == KIND_OBS_SEMANTICS:
+        trained = obs_semantics_of(config_version)
+        since = f"obs_semantics v{trained}" if trained is not None else "an older observation"
         return (older + tail + " Its weights would load, but the observation changed meaning at config "
-                f"v{OBS_SEMANTICS_VERSION} ({OBS_SEMANTICS_REASON}), so the model would read inputs it never "
-                "trained on.")
+                f"v{OBS_SEMANTICS_VERSION} ({OBS_SEMANTICS_REASON}), so re-running it on its recorded traces "
+                "no longer reproduces what it saw. Fresh probes (lookahead, better-line, the counterfactual "
+                f"replay) still run, badged 'trained on {since}, probed at v{OBS_SEMANTICS_VERSION}'.")
     if kind == KIND_STATE_DICT:
         return (older + tail + " Its saved weights do not fit the network the code builds for it "
                 "(missing, extra or differently-shaped parameters).")
@@ -199,6 +209,123 @@ def verdict_from_record(config_version, arch_signature, obs_dim=None, *,
                            "views will be tried.", None, sig, od, source)
     return ArchVerdict(CURRENT, None, "This run is at the current architecture: the model views can run.",
                        cv, sig, od, source)
+
+
+# -- the obs-semantics GAP POLICY ------------------------------------------------------------------------------------
+#
+# The verdict says WHETHER a checkpoint's recorded identity is HEAD's; what a caller may then DO with it depends on
+# what it feeds the network. Every `ProbeModel.load` declares one of these USES (a required keyword), so nothing
+# refuses — or runs — by accident:
+
+USE_TRACE_REPLAY = "trace_replay"   # the checkpoint re-run on a trace's STORED observations and read against what it
+#                                     recorded (the prober's model views over eval traces, `main.probe_replay`). The
+#                                     forward runs HEAD's model-internal inputs over obs encoded when the trace was
+#                                     written, so across a semantics gap it no longer reproduces what the model saw.
+USE_FRESH = "fresh"                 # positions encoded NOW by HEAD's encoder (lookahead / better-line successors, the
+#                                     counterfactual play-out, a harvest rollout): the model reads inputs whose
+#                                     meaning moved since it trained — it runs, and SAYS so.
+USE_STORED_SCORE = "stored_score"   # stored observations scored with no faithfulness claim (harvest scoring,
+#                                     `main.harvest_meter`, `winprob_finetune`'s value_pooled precompute): it runs and
+#                                     says so; a paired pre/post read moves both arms by the same gap.
+USES = (USE_TRACE_REPLAY, USE_FRESH, USE_STORED_SCORE)
+
+ALLOW = "allow"     # run, no badge
+WARN = "warn"       # run, and record the badge in the output
+REFUSE = "refuse"   # raise the typed `ArchDriftError` (the verdict's kind)
+ACTIONS = (ALLOW, WARN, REFUSE)
+
+GAP_NONE = "none"                   # a CURRENT verdict: trained on the code's observation semantics
+GAP_UNRECORDED = "unrecorded"       # no version record: the semantics it trained on are unknown
+GAP_SEMANTICS = "obs_semantics"     # the weights fit, the observation's meaning moved (`OBS_SEMANTICS_HISTORY`)
+GAP_WEIGHTS = "weights"             # any other incompatible kind: the weights have no home, or nothing loads
+GAPS = (GAP_NONE, GAP_UNRECORDED, GAP_SEMANTICS, GAP_WEIGHTS)
+
+#: THE TABLE — version gap x use => action. Every cell is explicit; `gap_policy_test` pins it cell by cell.
+GAP_POLICY = {
+    GAP_NONE:       {USE_TRACE_REPLAY: ALLOW,  USE_FRESH: ALLOW,  USE_STORED_SCORE: ALLOW},
+    GAP_UNRECORDED: {USE_TRACE_REPLAY: WARN,   USE_FRESH: WARN,   USE_STORED_SCORE: WARN},
+    GAP_SEMANTICS:  {USE_TRACE_REPLAY: REFUSE, USE_FRESH: WARN,   USE_STORED_SCORE: WARN},
+    GAP_WEIGHTS:    {USE_TRACE_REPLAY: REFUSE, USE_FRESH: REFUSE, USE_STORED_SCORE: REFUSE},
+}
+
+_USE_PHRASE = {USE_TRACE_REPLAY: "re-run on its recorded trace observations",
+               USE_FRESH: "probed on positions encoded now",
+               USE_STORED_SCORE: "scored on stored trace observations"}
+
+
+def obs_semantics_of(config_version: Optional[int]) -> Optional[int]:
+    """The observation-semantics marker a config version trained under: the newest `OBS_SEMANTICS_HISTORY` row at or
+    below it. None for a version below the first declared marker (or no version at all)."""
+    cv = _int(config_version)
+    if cv is None:
+        return None
+    marks = [v for v, _ in OBS_SEMANTICS_HISTORY if v <= cv]
+    return marks[-1] if marks else None
+
+
+def semantics_changes_since(trained: Optional[int]) -> "list[dict]":
+    """Every `OBS_SEMANTICS_HISTORY` row newer than `trained` (all of them when it is None): what moved under it."""
+    return [{"version": v, "reason": r} for v, r in OBS_SEMANTICS_HISTORY if trained is None or v > trained]
+
+
+def gap_of(verdict: "ArchVerdict") -> str:
+    """The verdict's row in `GAP_POLICY`."""
+    if verdict.status == CURRENT:
+        return GAP_NONE
+    if verdict.status == UNRECORDED:
+        return GAP_UNRECORDED
+    return GAP_SEMANTICS if verdict.kind == KIND_OBS_SEMANTICS else GAP_WEIGHTS
+
+
+@dataclass(frozen=True)
+class GapDecision:
+    action: str                         # ALLOW | WARN | REFUSE
+    gap: str                            # one of GAPS
+    use: str                            # one of USES
+    trained_semantics: Optional[int]    # the marker the checkpoint trained under (None: unknown / pre-first-marker)
+    config_version: Optional[int]       # the recorded config version the marker was read from
+    badge: Optional[str]                # the one line a surface shows and an output records; None on ALLOW
+
+    @property
+    def refused(self) -> bool:
+        return self.action == REFUSE
+
+    def as_dict(self) -> dict:
+        """The `obs_semantics` block every output of a model-running caller records."""
+        return {"action": self.action, "gap": self.gap, "use": self.use,
+                "trained_semantics": self.trained_semantics, "code_semantics": OBS_SEMANTICS_VERSION,
+                "config_version": self.config_version, "badge": self.badge,
+                "changes_since": (semantics_changes_since(self.trained_semantics)
+                                  if self.gap in (GAP_SEMANTICS, GAP_UNRECORDED) else [])}
+
+
+def _badge(gap: str, use: str, trained: Optional[int]) -> str:
+    where = _USE_PHRASE[use]
+    if gap == GAP_UNRECORDED:
+        return (f"⚠ obs_semantics UNKNOWN: this checkpoint records no config version, so whether it trained on the "
+                f"code's observation semantics (v{OBS_SEMANTICS_VERSION}) cannot be shown; {where}.")
+    trained_s = f"v{trained}" if trained is not None else f"before v{OBS_SEMANTICS_HISTORY[0][0]}"
+    return (f"⚠ trained on obs_semantics {trained_s}, probed at v{OBS_SEMANTICS_VERSION} ({where}): the inputs "
+            "moved since it trained (`changes_since`).")
+
+
+def check_use(use: str) -> str:
+    """`use`, or `ValueError` when it is not one of `USES` — a caller must declare which it is."""
+    if use not in USES:
+        raise ValueError(f"unknown obs-semantics use {use!r}; declare one of {USES}")
+    return use
+
+
+def decide(verdict: "ArchVerdict", use: str) -> GapDecision:
+    """THE gap policy: what a caller declaring `use` may do with a checkpoint (or a trace) whose verdict is
+    `verdict` — `GAP_POLICY[gap_of(verdict)][use]`. Raises `ValueError` for an undeclared use (a caller must say
+    which it is). The caller raises the verdict's `ArchDriftError` on REFUSE and records `as_dict()` otherwise."""
+    check_use(use)
+    gap = gap_of(verdict)
+    action = GAP_POLICY[gap][use]
+    trained = obs_semantics_of(verdict.config_version) if gap != GAP_NONE else OBS_SEMANTICS_VERSION
+    badge = _badge(gap, use, trained) if action == WARN else None
+    return GapDecision(action, gap, use, trained, verdict.config_version, badge)
 
 
 _RANK = {CURRENT: 0, UNRECORDED: 1, INCOMPATIBLE: 2}

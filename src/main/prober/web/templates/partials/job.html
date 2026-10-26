@@ -320,10 +320,13 @@
     {% elif job.kind == "calibration" %}
       {% include "partials/calibration_result.html" %}
     {% elif job.kind == "lookahead" %}
+      {{ m.obs_semantics_badge(r.obs_semantics) }}
       {{ cf_lookahead(r, job) }}
     {% elif job.kind == "better_line" %}
+      {{ m.obs_semantics_badge(r.obs_semantics) }}{{ m.obs_semantics_badge(r.opponent_obs_semantics) }}
       {{ cf_better_line(r, job) }}
     {% elif job.kind == "replay_counterfactual" %}
+      {{ m.obs_semantics_badge(r.obs_semantics) }}{{ m.obs_semantics_badge(r.opponent_obs_semantics) }}
       {{ cf_replay(r, job) }}
     {% endif %}
   {% endif %}

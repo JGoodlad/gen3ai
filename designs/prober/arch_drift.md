@@ -1,7 +1,8 @@
 # Architecture drift — every way a run can be incompatible with HEAD is ONE typed diagnosis
 
 Owned by this tree. The RULE is in `src/main/prober/CLAUDE.md`: a model-loading probe works only on a
-run at the CURRENT architecture (owner decision), the failure is an `ArchDriftError`, and a surface that
+run at the CURRENT architecture (owner decision) — bar the one class the GAP POLICY below decides by use (weights
+that fit, an observation whose meaning moved) — the failure is an `ArchDriftError`, and a surface that
 loads a model renders its **plain sentence** with the diagnosis folded under it rather than collapsing it
 to "analysis failed". This file holds what the diagnosis is made of and where each kind is decided.
 
@@ -21,7 +22,7 @@ and `plain` — ONE plain-language sentence a page shows verbatim:
 |---|---|---|
 | `arch_signature` | the network family differs, or the recorded config is below `MIGRATION_FLOOR` — the weights have no home | the record (pre-load) |
 | `obs_dim` | trained on a different observation width than the encoder writes (`OFFSET_OBS_FACTS + OBS_FACTS_DIM`) | the zip's own layout (`peek_checkpoint`) or `total_dim` in the record (pre-load) |
-| `obs_semantics` | **the silent class**: the weights fit, but the observation changed MEANING since `OBS_SEMANTICS_VERSION` (v151's Toxic cell n/8 → n/15, the Wish flag) | the recorded `config_version` alone (pre-load) |
+| `obs_semantics` | **the silent class**: the weights fit, but the observation changed MEANING since `OBS_SEMANTICS_VERSION` (v151's Toxic cell n/8 → n/15, the Wish flag; v162's consumed-item op reads and stale volatile cells). The ONLY kind the gap policy lets a use through: a trace replay is refused, a fresh probe / stored score runs badged | the recorded `config_version` alone (pre-load) |
 | `newer_than_code` | recorded by NEWER code than the one running (a stale server) | the record (pre-load) |
 | `no_checkpoint` | nothing loadable — a trimmed skeleton, or the file is gone | the ladder finding no path / `os.path.exists` (`NoCheckpointError`, also a `FileNotFoundError`) |
 | `unreadable` | the file is there but is not a zip | `zipfile.is_zipfile` (pre-load) |
@@ -46,17 +47,72 @@ at its newest (or named) step, a checkpoint by its sidecars plus the width its z
 
 **Two sides, and the worse one wins.** The model views re-run a CHECKPOINT on a trace's STORED OBSERVATIONS.
 `model_status(step)` is the worse of the checkpoint's verdict and the trace's own (`arch_status.worst`), and
-`ProbeSession._model_for` refuses on the trace's verdict before loading (an injected test loader skips it): on a
+`ProbeSession._model_for` refuses on the trace's verdict before loading when the gap policy refuses it for the
+declared use — a FRESH probe feeds no stored observation, so a trace's semantics gap does not refuse it (an injected
+test loader skips the trace check): on a
 `nearest` / `recent` rung the checkpoint is not the model that played the step, and a run that resumed across an
 observation change holds old-meaning traces beside a new-meaning checkpoint.
 
+## The gap policy — version gap × use ⇒ allow / warn / refuse (`arch_status.decide`, 2026-10-26)
+
+The verdict says WHETHER a record is HEAD's; what a caller may then DO depends on what it feeds the network. Every
+`ProbeModel.load(path, device, *, use)` and `ProbeSession._model_for(battle, *, use)` / `probe_model` DECLARES a use
+(a required keyword; an unknown one is a `ValueError`), and one pure function, `decide(verdict, use)`, reads the
+table `GAP_POLICY`:
+
+| gap (`gap_of(verdict)`) | `trace_replay` | `fresh` | `stored_score` |
+|---|---|---|---|
+| `none` — a CURRENT verdict | allow | allow | allow |
+| `unrecorded` — no version record | warn | warn | warn |
+| `obs_semantics` — weights fit, meaning moved | **refuse** | warn | warn |
+| `weights` — every other incompatible kind | refuse | refuse | refuse |
+
+- **`trace_replay`**: the checkpoint re-run on a trace's STORED observations and read against what it recorded. The
+  forward runs HEAD's model-internal inputs (the op) over observations encoded when the trace was written, so across a
+  gap it no longer reproduces what the model saw.
+- **`fresh`**: positions encoded NOW by HEAD's encoder — the model reads inputs whose meaning moved since it trained;
+  it runs, and says so.
+- **`stored_score`**: stored observations scored with no faithfulness claim (a paired pre/post read moves both arms
+  by the same gap).
+
+A WARN carries the badge `⚠ trained on obs_semantics vN, probed at vM (<use>)`, with `changes_since` (every
+`OBS_SEMANTICS_HISTORY` row newer than N). `GapDecision.as_dict()` is the `obs_semantics` block a caller records in
+its output (`trained_semantics`, `code_semantics`, `action`, `gap`, `use`, `badge`, `changes_since`); `ProbeModel`
+carries it as `.obs_semantics` and the verdict as `.arch_verdict`, and logs the badge at WARNING on load. The session
+re-judges a CACHED model per use, so a model a fresh probe loaded is still refused to a trace replay.
+
+| caller | use | output that records `obs_semantics` |
+|---|---|---|
+| `analyze`, `find disagree`, `battle_readout` / `decision_attention` (`_capture`), `probe`, `history_saliency` | trace_replay | `analyze`, `battle_readout`, `probe`, `history_saliency` |
+| `main.probe_replay` | trace_replay | prints the badge |
+| `lookahead`, `better_line` (+ its `--interior-opponent ckpt` load) | fresh | `obs_semantics` (+ `opponent_obs_semantics`) |
+| `replay_counterfactual` (bare rollout models, decided from the records by `_play_semantics`) | fresh | `obs_semantics` (+ `opponent_obs_semantics`) |
+| `main.harvest` scoring / its rollouts | stored_score / fresh | manifest `score.obs_semantics` / `rollout_obs_semantics` |
+| `main.harvest_meter`, `winprob_finetune` | stored_score | `report.json` `obs_semantics` |
+
+`gap_policy_test.py` pins the table cell by cell and, by AST over `src/`, the use every call site declares (a new
+caller fails until it is classified). **Surfaces:** a WARN renders as a `p.banner.warn[data-obs-semantics]` on the
+counterfactual job results, `/analyze` and `/game`'s model panel (`_macros.html` `obs_semantics_badge`); an
+`obs_semantics` model-unavailable card names the fresh probes that still run (`data-fresh-probes`). ⚠ On `/analyze`
+the counterfactual FORMS sit inside the analyze result, which a gap run refuses; the fresh probes are reached from
+`python -m main.prober.query lookahead|better-line|replay-counterfactual` and the `/api/jobs/*` routes.
+
+**Why a trace replay is refused although its stored obs ARE what the model saw.** Nothing re-encodes a stored trace;
+the refusal is earned by the MODEL-INTERNAL inputs the forward computes at HEAD (v162: the op's consumed-item reads).
+A future marker row that is purely an ENCODER change (stored obs unchanged, no model-internal input) would leave a
+model's replay of its OWN traces exact; the table does not yet split `obs_semantics` that way.
+
 ## `OBS_SEMANTICS_VERSION` — the marker that makes the silent class detectable
 
-`model_version/constants.py`. The first config version whose observation (and model-input) values mean something
-different, with or without a shape change; set to 151 by the Toxic / Wish fix (v148 / v149's `x`-cell input fixes
-precede it, so one marker covers them). `ARCH_SIGNATURE` / `MIGRATION_FLOOR` only see weights. A commit that
-re-scales or re-defines a cell without a shape change sets the marker to the version it stamps. Nothing gates a
-resume or an opponent load on it — `check_compatible` is unchanged; it is a READER's marker.
+`model_version/constants.py`. The last row of `OBS_SEMANTICS_HISTORY` — `(config version, one-clause reason)` per
+version whose observation (and model-input) values mean something different, with or without a shape change: **151**
+(the Toxic / Wish fix; v148 / v149's `x`-cell input fixes precede it, so one row covers them) and **162** (the
+2026-10-26 GIGO audit: the op reads a consumed item as no item and the stale Destiny Bond / Grudge / Rage / Endure /
+Snatch / Helping Hand / Mean Look `trapped` cells clear, `d8d674b9`; the lock-in and recharge counters end when
+Showdown's do, `f9978586`). A checkpoint "trained on obs_semantics N" has N = the newest row at or below its recorded
+config version (`arch_status.obs_semantics_of`). `ARCH_SIGNATURE` / `MIGRATION_FLOOR` only see weights. A commit that
+re-scales or re-defines a cell without a shape change appends a row for the version it stamps. Nothing gates a resume
+or an opponent load on it — `check_compatible` is unchanged; it is a READER's marker, acted on through the gap policy.
 `agents/model/obs_semantics_test.py` pins the golden-vs-marker coupling: the obs golden's content hash is pinned
 beside the marker, so re-recording the golden fails until the author has decided whether a cell changed meaning.
 ⚠ The pin sees what the golden battles' rows see (991 decisions); a change to a model-INTERNAL input they do not
@@ -80,6 +136,19 @@ plain}`; `python -m main.prober.query` prints `{error, kind, plain}`. **First pa
 away (`partials/model_unavailable.html`) — no loader to wait on, and no password prompt for a view the password
 cannot unlock. The run picker, the context strip, the steps table, the step dropdowns (only a step that differs
 from the newest is marked) and the checkpoint table all read the same verdicts.
+
+## Measured (2026-10-26, the marker raised to 162)
+
+Every current run records config v161 (`rb_x35_*` incl. N1-P, `rb_x26c_s2601`) or older (P\* =
+`rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip`, v158): all read `obs_semantics` (trained v151, code v162), the
+picker files them under "older", and the views over their traces are refused (`query analyze` / `find … disagree` on
+`rb_x35_d3mut_s3501` and on P\*'s own step: `{error, kind: obs_semantics, plain}`, before any load). Model-free
+`query triage rb_x35_d3mut_s3501` is unchanged (98 losses, step 300000193). The fresh path on P\*: `query lookahead
+<step_280000170/heuristic2/loss_003> --worst 1 --ckpt <P*>` ran (86 s, 0.86 GB peak, CPU) with `obs_semantics.action
+= warn` and the badge on stderr; the web app on a 9XXX port rendered the `obs_semantics` card with `data-fresh-probes`
+on `/game` and the badge banner on the `/api/jobs/lookahead` result. Readers that never load through the prober
+(`main.anchors`, `main.h2h`, `main.reads`, `main.x35` incl. Kakuna, `main.team_strength`) import neither
+`arch_status` nor `ProbeModel` and are untouched.
 
 ## The three walls behind the load-time classes (measured 2026-08-13)
 
@@ -110,8 +179,10 @@ logs, no `eval_traces/`) or launches that have not finished a first eval cycle. 
 (`--debug --arch production`, config v151) loads and renders; the same weights re-stamped v150 are refused
 (`obs_semantics`) — before this change they loaded without a word.
 
-Tests: `main/prober/arch_status_test.py` (the verdicts and the record readers), `model_test.py` (every class end
-to end through `ProbeModel.load`, the semantics-only case with a loader that WOULD succeed),
+Tests: `main/prober/arch_status_test.py` (the verdicts and the record readers), `gap_policy_test.py` (the table, the
+badge, every call site's declared use), `model_test.py` (every class end to end through `ProbeModel.load`, the
+semantics-only case with a loader that WOULD succeed — refused for a trace replay, loaded badged for a fresh probe or
+a stored score — and the session refusing / allowing per use on a gap run),
 `web/runs_test.py` + `web/app_test.py` ("the run picker, by architecture"), `agents/model/obs_semantics_test.py`.
 
 ## From the prober leaf (moved 2026-10-10)
@@ -132,7 +203,7 @@ whole tool:
 | tier | works on | why |
 |---|---|---|
 | **model-free** — `scan` · `triage` · `turns` · `battle_story` · `loops` · `overview` · `find` (bar `disagree`) · `falsify` · `falsify_scan` · `calibration` · `decision_table` | **every run, forever** | reads the trace on disk; no checkpoint |
-| **model-loading** — `analyze` · `battle_readout` · `decision_attention` · `probe` · `lookahead` · `better_line` · `replay_counterfactual` · `history_saliency` · `find disagree` | **only a run at the CURRENT arch** | re-runs the policy under today's code |
+| **model-loading** — `analyze` · `battle_readout` · `decision_attention` · `probe` · `lookahead` · `better_line` · `replay_counterfactual` · `history_saliency` · `find disagree` | **only a run at the CURRENT arch** (across an `obs_semantics` gap the three counterfactuals still run, badged: the gap policy above) | re-runs the policy under today's code |
 
 So the durable surface is the model-free one, and it is not a coincidence that the web front end was
 built there first. **The owner's ruling (2026-10-08): the prober supports only the CURRENT architecture**

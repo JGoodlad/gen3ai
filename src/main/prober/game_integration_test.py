@@ -98,7 +98,7 @@ def test_the_readout_re_runs_the_policy_and_reads_every_panel(run, sess):
     assert r["n_decisions"] == len(npz["obs"])
     assert r["model_resolution"]["path"].endswith("final_model.zip")
     # the probabilities are the policy's own (an independent batched path on the same model)
-    model, _ = sess._model_for(b)
+    model, _ = sess._model_for(b, use="trace_replay")
     probs = model.action_probs_batch(npz["obs"], npz["action_mask"])
     got = np.array([[a["p"] for a in d["policy"]] for d in r["decisions"]])
     assert np.allclose(got, probs, atol=1e-5)

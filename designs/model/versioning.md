@@ -13,7 +13,7 @@ gate's hard bound). `agents/model/model_version/__init__.py` is a pure re-export
 
 | module | holds |
 |---|---|
-| `constants.py` | `MODEL_CONFIG_VERSION` · `ARCH_SIGNATURE` · **`OBS_SEMANTICS_VERSION`** (+ `OBS_SEMANTICS_REASON`: the first config version whose observation VALUES mean something different, shape change or not — a reader's marker for the weights-fit-but-inputs-changed class, compared with a checkpoint's recorded `config_version` by `main/prober/arch_status.py`; gates no resume; pinned beside the obs golden by `obs_semantics_test.py`; `designs/prober/arch_drift.md`) · `ModelVersionError` · the reward-immutable field table + `_reward_flag_repr` |
+| `constants.py` | `MODEL_CONFIG_VERSION` · `ARCH_SIGNATURE` · **`OBS_SEMANTICS_VERSION`** (the last row of `OBS_SEMANTICS_HISTORY`, each row a config version whose observation VALUES mean something different, shape change or not, with its clause; `OBS_SEMANTICS_REASON` is the last clause — a reader's marker for the weights-fit-but-inputs-changed class, compared with a checkpoint's recorded `config_version` by `main/prober/arch_status.py`, whose gap policy `decide(verdict, use)` refuses a trace replay below it and badges a fresh probe; gates no resume; pinned beside the obs golden by `obs_semantics_test.py`; `designs/prober/arch_drift.md`) · `ModelVersionError` · the reward-immutable field table + `_reward_flag_repr` |
 | `migrations.py` | `MIGRATION_FLOOR` · `SIGNATURE_FIRST_VERSION` · `_migrate_config`, **including the PRE-FLOOR HISTORY archive** (a deliberate record of what every deleted branch did — do not trim it) |
 | `fields.py` | `ModelVersionFields` — the dataclass field block alone. Declaration ORDER is the constructor's positional order and `asdict()`'s key order |
 | `construct.py` | `from_layout_and_policy_kwargs` |
@@ -260,10 +260,11 @@ allowlist plus the production forward). (2) The Rust reading ends Destiny Bond /
 Endure / Snatch / Helping Hand at `|turn|` and Mean Look's `trapped` when its trapper leaves, and Baton Pass carries
 `trapped` (`tests/silent_volatile_end_test.rs`; the board audit now names `destinybond` and `trapped`). The obs golden
 moved on 36 of 991 decisions, all a stale Destiny Bond cell 1 → 0. `_migrate_config` stamps every past config through.
-`OBS_SEMANTICS_VERSION` is deliberately NOT raised (it stays 151; `obs_semantics_test` re-pins the moved golden at 151):
-`ProbeModel.load` hard-refuses below the marker, which would blind the prober and the harvest meters for every current
-model. A checkpoint below v162 therefore reads as `current` in the prober although its op and these cells changed under
-it — a known gap until the marker's gap policy lands (`designs/ops/TECH_DEBT_BACKLOG.md`, "obs_semantics marker policy").
+`OBS_SEMANTICS_VERSION` was first kept at 151 (a hard refusal in `ProbeModel.load` would have blinded the prober and the
+harvest meters for every current model) and RAISED to 162 the same day, once the gap policy landed
+(`main/prober/arch_status.py` `decide`; `designs/prober/arch_drift.md` "The gap policy"): a trace replay of a pre-v162
+checkpoint is refused, a fresh probe or a stored-obs score runs with the badge "trained on obs_semantics v151, probed at
+v162". The v162 history row also names `f9978586`'s lock-in / recharge counter fixes.
 
 **The exact P(KO) (then `ko_ramp = 'exact'`; flagless since v156) is computed in CLOSED FORM (`gen3_ko_exact_closed_v1`,
 2026-10-10), with NO config, obs-semantics or signature bump.** The value `exact_closed` that carried the closed form beside the 16-roll sum was legal for one
@@ -551,10 +552,11 @@ FATALed. When the past value is unknown, the migration leaves the field `None` r
 (the v125 branch). Gate: `main/train/derived_toggle_resume_test.py`.
 
 🚨 **When you change what an observation cell MEANS without changing a shape** (a re-scale, a re-defined flag — v151's
-Toxic counter n/8 → n/15), set `OBS_SEMANTICS_VERSION` (`model_version/constants.py`) to the config version the commit
-stamps, add its clause to `OBS_SEMANTICS_REASON`, and re-pin `obs_semantics_test.py`'s golden hash. `check_compatible`
-cannot see this (shapes fit, so the weights load); the marker is what lets a READER — the prober's model views, via
-`main/prober/arch_status.py` — refuse a checkpoint recorded below it. It gates no resume. The test fails when the obs
+Toxic counter n/8 → n/15), append an `OBS_SEMANTICS_HISTORY` row (`model_version/constants.py`) for the config version
+the commit stamps, with its one-clause reason, and re-pin `obs_semantics_test.py`'s golden hash. `check_compatible`
+cannot see this (shapes fit, so the weights load); the marker is what lets a READER act on it through the gap policy
+(`main/prober/arch_status.py` `decide`): a trace replay of a checkpoint recorded below it is refused, a fresh probe runs
+with a badge. It gates no resume. The test fails when the obs
 golden moves without it; a model-INTERNAL input fix the golden cannot see (an op edge cell) must be raised by hand.
 
 **When you make a structural change** (different forward pass, new layer type):

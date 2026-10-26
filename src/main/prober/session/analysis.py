@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import asdict
 
+from main.prober.arch_status import USE_TRACE_REPLAY as _TRACE_REPLAY
 from main.prober.engine import (analyze_invocation, build_opp_intent, disagreements, opp_intent_text,
     summary_flags, surprise_phrase, timeline_entry_text)
 from main.prober.session.serialize import _choice_dict
@@ -15,7 +16,7 @@ class _AnalysisMixin:
         (faithfulness, matchups, intervention, saliency, value+TD, outcome, model
         disagreement, belief/spread truth). Loads the exact→nearest→recent model."""
         b = self._battle(battle_id)
-        model, choice = self._model_for(b)
+        model, choice = self._model_for(b, use=_TRACE_REPLAY)    # the step's STORED observations
         opp = self._opp_team_details(b)
         # Extractor kwargs the current code no longer accepts, dropped so this checkpoint could load
         # at all (`ProbeModel.load`). Non-empty ⇒ the rebuilt extractor is NOT bit-identical to the
@@ -38,6 +39,7 @@ class _AnalysisMixin:
                                protocol=protocol)
         d = asdict(a)
         d["model_resolution"] = dict(_choice_dict(choice), dropped_kwargs=list(dropped))
+        d["obs_semantics"] = self.obs_semantics(model, _TRACE_REPLAY)       # the gap policy's record (arch_status)
         # WHICH READOUT IS THE CRITIC. Under the win-prob critic `value` and `win_prob` below are
         # the SAME number, so a surface must be able to say so instead of presenting them as two
         # estimators that happen to agree on every decision ever rendered.
@@ -80,7 +82,7 @@ class _AnalysisMixin:
         n = len(summary["invocations"])
 
         if criterion == "disagree":
-            model, _ = self._model_for(b)
+            model, _ = self._model_for(b, use=_TRACE_REPLAY)
             hits = disagreements(model, summary, self._npz(b))     # batched; per-decision = analyze's `agrees`
         elif criterion in ("value_drop", "low_value", "high_value"):
             values = self._values(b)

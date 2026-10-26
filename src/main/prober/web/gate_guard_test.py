@@ -216,7 +216,7 @@ def swept(app, monkeypatch):
     from main.prober.session import ProbeSession
     rec = _Recorder()
 
-    def boom_model(self, battle):
+    def boom_model(self, battle, **_kw):
         rec.hits.append("model")
         raise FileNotFoundError("recorder: model seam reached")
 

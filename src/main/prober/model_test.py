@@ -252,7 +252,7 @@ def test_load_drops_unknown_kwargs_and_records_the_drop(tmp_path, monkeypatch):
 
     monkeypatch.setattr(snapshot, "load_checkpoint_strict", fake_load)
 
-    pm = ProbeModel.load(ckpt)
+    pm = ProbeModel.load(ckpt, use=A.USE_TRACE_REPLAY)
     assert "deleted_flag" not in seen["kwargs"] and keep in seen["kwargs"]
     assert pm.dropped_kwargs == ("deleted_flag",)
 
@@ -267,7 +267,7 @@ def test_load_turns_any_failure_into_a_diagnosis(tmp_path, monkeypatch):
 
     monkeypatch.setattr(snapshot, "load_checkpoint_strict", boom)
     with pytest.raises(ArchDriftError) as ei:
-        ProbeModel.load(ckpt)
+        ProbeModel.load(ckpt, use=A.USE_TRACE_REPLAY)
     assert "cannot be re-run" in str(ei.value)
     assert isinstance(ei.value.__cause__, RuntimeError)   # the cause is chained, not swallowed
 
@@ -330,7 +330,7 @@ def test_a_recorded_incompatibility_is_refused_typed_before_any_load(tmp_path, m
     ckpt = _run_ckpt(tmp_path, record, obs_end=obs_end)
     _loader_must_not_run(monkeypatch)
     with pytest.raises(ArchDriftError) as ei:
-        ProbeModel.load(ckpt)
+        ProbeModel.load(ckpt, use=A.USE_TRACE_REPLAY)
     e = ei.value
     assert e.kind == kind
     assert e.plain and str(e).startswith(e.plain), "the one plain sentence leads the full diagnosis"
@@ -341,18 +341,91 @@ def test_a_recorded_incompatibility_is_refused_typed_before_any_load(tmp_path, m
 def test_the_semantics_only_class_is_caught_though_the_weights_would_load(tmp_path, monkeypatch):
     """THE SILENT CLASS, end to end: a checkpoint recorded one version below `OBS_SEMANTICS_VERSION` has the
     current signature and the current width, so every shape check passes and the (stubbed) strict load
-    SUCCEEDS — yet it is refused, and the checkpoint one version later is not."""
+    SUCCEEDS — yet a TRACE REPLAY of it is refused, and the checkpoint one version later is not."""
     calls: list = []
     _loader_succeeds(monkeypatch, calls)
     below = _run_ckpt(tmp_path, dict(_HEAD, config_version=OBS_SEMANTICS_VERSION - 1))
     with pytest.raises(ArchDriftError) as ei:
-        ProbeModel.load(below)
+        ProbeModel.load(below, use=A.USE_TRACE_REPLAY)
     assert ei.value.kind == A.KIND_OBS_SEMANTICS and not calls, "refused WITHOUT being loaded"
     assert f"v{OBS_SEMANTICS_VERSION}" in ei.value.plain
 
     (tmp_path / "ok").mkdir()
     at = _run_ckpt(tmp_path / "ok", dict(_HEAD, config_version=OBS_SEMANTICS_VERSION))
-    assert isinstance(ProbeModel.load(at), ProbeModel) and calls == [at]
+    pm = ProbeModel.load(at, use=A.USE_TRACE_REPLAY)
+    assert isinstance(pm, ProbeModel) and calls == [at]
+    assert pm.obs_semantics["action"] == A.ALLOW and pm.obs_semantics["badge"] is None
+
+
+@pytest.mark.parametrize("use", [A.USE_FRESH, A.USE_STORED_SCORE])
+def test_a_fresh_probe_or_a_stored_score_loads_across_the_semantics_gap_and_carries_the_badge(tmp_path, monkeypatch,
+                                                                                              use):
+    """THE GAP POLICY at the model seam: the same below-marker checkpoint a trace replay refuses LOADS for a use
+    that does not claim to reproduce what it saw, and the decision rides the model with its badge."""
+    calls: list = []
+    _loader_succeeds(monkeypatch, calls)
+    below = _run_ckpt(tmp_path, dict(_HEAD, config_version=OBS_SEMANTICS_VERSION - 1))
+    pm = ProbeModel.load(below, use=use)
+    assert calls == [below]
+    sem = pm.obs_semantics
+    assert sem["action"] == A.WARN and sem["gap"] == A.GAP_SEMANTICS and sem["use"] == use
+    assert sem["code_semantics"] == OBS_SEMANTICS_VERSION
+    assert sem["trained_semantics"] == A.obs_semantics_of(OBS_SEMANTICS_VERSION - 1) < OBS_SEMANTICS_VERSION
+    assert f"trained on obs_semantics v{sem['trained_semantics']}, probed at v{OBS_SEMANTICS_VERSION}" in sem["badge"]
+    assert [c["version"] for c in sem["changes_since"]] == [OBS_SEMANTICS_VERSION]
+    json.dumps(sem)                                         # recorded verbatim in an output JSON
+
+
+def test_a_load_must_declare_its_use(tmp_path, monkeypatch):
+    """No default: a caller that does not say what it feeds the network cannot reach a decision by accident."""
+    _loader_must_not_run(monkeypatch)
+    ckpt = _run_ckpt(tmp_path, dict(_HEAD))
+    with pytest.raises(TypeError):
+        ProbeModel.load(ckpt)                               # noqa — the missing keyword IS the test
+    with pytest.raises(ValueError, match="declare one of"):
+        ProbeModel.load(ckpt, use="whatever")
+
+
+def _gap_session(tmp_path, monkeypatch, calls):
+    """The web fixture run stamped one config version below the marker (traces AND checkpoint), its checkpoint
+    loaded by the stub — a run every current model looked like the day the marker rose."""
+    from main.prober.session import ProbeSession
+    from main.prober.web import fixture_run
+    _loader_succeeds(monkeypatch, calls)
+    run = fixture_run.build(str(tmp_path), identity=dict(fixture_run.head_identity(),
+                                                         config_version=OBS_SEMANTICS_VERSION - 1))
+    sess = ProbeSession(run)
+    return sess, sess.tree.all_battles()[0]
+
+
+def test_the_session_refuses_a_trace_replay_and_allows_a_fresh_probe_across_the_gap(tmp_path, monkeypatch):
+    """`ProbeSession._model_for` under each use: the views over STORED observations (analyze, the readout, the
+    saliency probes) are refused; the counterfactuals (FRESH successors) load with the badge; and a model cached
+    by the fresh probe is re-judged — not handed out — when a trace replay asks for it next."""
+    calls: list = []
+    sess, b = _gap_session(tmp_path, monkeypatch, calls)
+    with pytest.raises(ArchDriftError) as ei:
+        sess._model_for(b, use=A.USE_TRACE_REPLAY)
+    assert ei.value.kind == A.KIND_OBS_SEMANTICS and not calls
+
+    model, _choice = sess._model_for(b, use=A.USE_FRESH)
+    assert len(calls) == 1 and model.obs_semantics["action"] == A.WARN
+    assert sess.obs_semantics(model, A.USE_FRESH)["badge"].startswith("⚠ trained on obs_semantics")
+
+    with pytest.raises(ArchDriftError) as ei:
+        sess._model_for(b, use=A.USE_TRACE_REPLAY)          # cached now — and still refused
+    assert ei.value.kind == A.KIND_OBS_SEMANTICS and len(calls) == 1
+    with pytest.raises(ValueError, match="declare one of"):
+        sess._model_for(b, use="analyze")
+
+
+def test_the_model_status_card_names_what_still_runs(tmp_path, monkeypatch):
+    """First paint (`model_status`, model-free) on a gap run: the views over its traces cannot run, and the one
+    sentence says the fresh probes still do, with the badge they will carry."""
+    sess, b = _gap_session(tmp_path, monkeypatch, [])
+    st = sess.model_status(b.summary_path)
+    assert st["kind"] == A.KIND_OBS_SEMANTICS and st["model_views"] is False
+    assert "Fresh probes" in st["plain"] and f"probed at v{OBS_SEMANTICS_VERSION}" in st["plain"]
 
 
 @pytest.mark.parametrize("raised,kind", [
@@ -375,7 +448,7 @@ def test_a_failed_load_is_classified_never_raw(tmp_path, monkeypatch, raised, ki
 
     monkeypatch.setattr(snapshot, "load_checkpoint_strict", boom)
     with pytest.raises(ArchDriftError) as ei:
-        ProbeModel.load(ckpt)
+        ProbeModel.load(ckpt, use=A.USE_TRACE_REPLAY)
     assert ei.value.kind == kind and ei.value.plain
     assert ei.value.__cause__ is raised
 
@@ -383,14 +456,14 @@ def test_a_failed_load_is_classified_never_raw(tmp_path, monkeypatch, raised, ki
 def test_a_missing_or_unreadable_checkpoint_is_typed_not_a_raw_oserror(tmp_path, monkeypatch):
     _loader_must_not_run(monkeypatch)
     with pytest.raises(NoCheckpointError) as ei:
-        ProbeModel.load(str(tmp_path / "gone.zip"))
+        ProbeModel.load(str(tmp_path / "gone.zip"), use=A.USE_TRACE_REPLAY)
     assert ei.value.kind == A.KIND_NO_CHECKPOINT and "no loadable checkpoint" in ei.value.plain
     assert isinstance(ei.value, ArchDriftError) and isinstance(ei.value, FileNotFoundError)
 
     empty = tmp_path / "empty.zip"
     empty.write_bytes(b"")
     with pytest.raises(ArchDriftError) as ei2:
-        ProbeModel.load(str(empty))
+        ProbeModel.load(str(empty), use=A.USE_TRACE_REPLAY)
     assert ei2.value.kind == A.KIND_UNREADABLE and not isinstance(ei2.value, NoCheckpointError)
 
 
@@ -405,5 +478,5 @@ def test_a_record_that_vouches_for_head_still_gets_a_typed_error_when_the_load_f
 
     monkeypatch.setattr(snapshot, "load_checkpoint_strict", boom)
     with pytest.raises(ArchDriftError) as ei:
-        ProbeModel.load(ckpt)
+        ProbeModel.load(ckpt, use=A.USE_TRACE_REPLAY)
     assert ei.value.kind == A.KIND_STATE_DICT and ei.value.saved_version == MODEL_CONFIG_VERSION

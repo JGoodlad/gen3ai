@@ -9,6 +9,16 @@
   {% endif %}
 {% endmacro %}
 
+{# The obs-semantics GAP BADGE (`arch_status.decide(...).as_dict()`, recorded as `obs_semantics` on every output of a
+   model-running probe): rendered only when the policy WARNS — the model runs on inputs whose meaning moved since it
+   trained (or it records no version). Nothing on ALLOW, and a REFUSE never reaches a result. #}
+{% macro obs_semantics_badge(sem) %}{% if sem and sem.badge %}
+<p class="banner warn" data-obs-semantics="{{ sem.gap }}" data-obs-semantics-use="{{ sem.use }}">
+  <strong>{{ sem.badge }}</strong>
+  {% for c in sem.changes_since %}<br><span class="small">v{{ c.version }}: {{ c.reason }}</span>{% endfor %}
+</p>
+{% endif %}{% endmacro %}
+
 {% macro caveats(items, title="caveats — read these before quoting a number") %}
   {% if items %}
   <details class="caveats">

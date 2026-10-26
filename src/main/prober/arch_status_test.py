@@ -53,7 +53,7 @@ def test_the_first_version_with_the_new_observation_meaning_is_current_and_the_o
     assert at.status == A.CURRENT
     assert below.status == A.INCOMPATIBLE and below.kind == A.KIND_OBS_SEMANTICS
     assert not below.model_views
-    assert f"v{OBS_SEMANTICS_VERSION}" in below.plain and "never trained on" in below.plain
+    assert f"v{OBS_SEMANTICS_VERSION}" in below.plain and "no longer reproduces what it saw" in below.plain
 
 
 @pytest.mark.parametrize("version,signature,obs_dim,kind", [

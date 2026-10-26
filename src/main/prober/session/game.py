@@ -19,6 +19,7 @@ from collections import OrderedDict
 
 import numpy as np
 
+from main.prober.arch_status import USE_TRACE_REPLAY as _TRACE_REPLAY
 from main.prober.engine.readout import (action_display, attention_matrix, attention_summary, belief_evolution,
     hypotheses_view, intent_calibration, intent_view, operator_view, opp_actual_action, token_labels)
 from main.prober.engine.scouting import reveal_notes, scouting_view
@@ -44,7 +45,7 @@ def _join_reveal_notes(rows: list, story_turns: list) -> None:
 class _GameMixin:
     # ------------------------------------------------------------------ model
     def _capture(self, b):
-        model, choice = self._model_for(b)
+        model, choice = self._model_for(b, use=_TRACE_REPLAY)     # the step's STORED observations
         cache = self.__dict__.setdefault("_readout_cache", OrderedDict())
         key = (str(choice.path), b.summary_path)
         hit = cache.get(key)
@@ -53,7 +54,8 @@ class _GameMixin:
             if "obs" not in npz or "action_mask" not in npz:
                 raise FileNotFoundError(f"{_short_id(b)}: no stored observations (states.npz) — the model "
                                         "views re-run the policy on them")
-            hit = (model.capture_battle(npz["obs"], npz["action_mask"]), choice)
+            hit = (model.capture_battle(npz["obs"], npz["action_mask"]), choice,
+                   self.obs_semantics(model, _TRACE_REPLAY))
             cache[key] = hit
             while len(cache) > _READOUT_CACHE_CAP:
                 cache.popitem(last=False)
@@ -69,7 +71,7 @@ class _GameMixin:
         ``delta`` against the previous decision's notes). Battle level: the re-run P(win) series, α's calibration,
         the belief evolution, the token layout."""
         b = self._battle(battle_id)
-        cap, choice = self._capture(b)
+        cap, choice, sem = self._capture(b)
         summary = self._summary(b)
         invs = summary.get("invocations") or []
         opp = self._opp_team_details(b)
@@ -105,6 +107,7 @@ class _GameMixin:
                 "scouting": scout})
         _join_reveal_notes(rows, self.battle_story(battle_id)["turns"])
         return {"id": b.summary_path, "short_id": _short_id(b), "model_resolution": _choice_dict(choice),
+                "obs_semantics": sem,
                 "n_decisions": n, "decisions": rows,
                 "win_prob_series": ([{"inv": i, "turn": rows[i]["turn"], "p": rows[i]["win_prob"]}
                                      for i in range(n)] if "win_prob" in cap else None),
@@ -123,7 +126,7 @@ class _GameMixin:
         or averaged over whichever is None, with each seat's plain-word ``labels`` and which keys were
         padded (``masked``). Read from the cached capture (`battle_readout`'s forward)."""
         b = self._battle(battle_id)
-        cap, _choice = self._capture(b)
+        cap, _choice, _sem = self._capture(b)
         if "attention" not in cap:
             raise ValueError("this model exposes no trunk attention (no trunk round (BiasedEncoderLayer / IdentityInitRound) was captured)")
         n = int(cap["attention"].shape[0])

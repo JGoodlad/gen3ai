@@ -477,7 +477,8 @@ def main(argv: "Optional[Sequence[str]]" = None) -> int:
                                                   seed=args.seed)]
     print("harvest_meter: " + ", ".join(f"{len(v)} {k}" for k, v in groups.items()), flush=True)
 
-    pm = ProbeModel.load(subject, "cpu")
+    # STORED-obs scoring, paired pre/post (a semantics gap moves both arms alike): loads across a gap, badged.
+    pm = ProbeModel.load(subject, "cpu", use="stored_score")
     pre = {k: score_battles(pm, v)[0] for k, v in groups.items()}
     print("  pre: " + ", ".join(f"{k}={len(v)}" for k, v in pre.items()), flush=True)
 
@@ -502,6 +503,7 @@ def main(argv: "Optional[Sequence[str]]" = None) -> int:
             for k in groups
         },
         "graft": graft,
+        "obs_semantics": pm.obs_semantics,          # the gap policy's record (main.prober.arch_status.decide)
         "caveats": [
             "The current-arch corpus holds 48 cap battles in TOTAL. Every n here is small and is "
             "printed; a difference whose CI spans zero is reported as not moving, never as a null.",

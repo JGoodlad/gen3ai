@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import numpy as np
 
+from main.prober.arch_status import USE_TRACE_REPLAY as _TRACE_REPLAY
 from main.prober.engine import fit_probe, history_slot_saliency, parse_pct
 from main.prober.session.probe_targets import _PROBE_TARGETS
 from main.prober.session.serialize import _choice_dict
@@ -56,7 +57,7 @@ class _ProbesMixin:
                 break
             try:
                 if model is None:
-                    model, choice = self._model_for(b)
+                    model, choice = self._model_for(b, use=_TRACE_REPLAY)    # STORED observations
             except FileNotFoundError as e:
                 return {"target": target, "step": step, "error": f"no model: {e}"}
             summary, npz = self._summary(b), self._npz(b)
@@ -96,6 +97,7 @@ class _ProbesMixin:
             "run_dir": self.run_dir, "step": step, "opponent": opponent, "target": target,
             "task": spec["task"], "which_features": which, "n_decisions": len(y),
             "model_resolution": _choice_dict(choice) if choice else None,
+            "obs_semantics": self.obs_semantics(model, _TRACE_REPLAY) if model is not None else None,
             "tests": spec["tests"], "how_to_read": spec["how_to_read"], "caveat": spec["caveat"],
             "representation_probe": rep,
             "provided_feature": spec["provided_name"], "provided_feature_baseline": prov_report,
@@ -240,7 +242,7 @@ class _ProbesMixin:
                 break
             try:
                 if model is None:
-                    model, choice = self._model_for(b)
+                    model, choice = self._model_for(b, use=_TRACE_REPLAY)    # STORED observations
             except FileNotFoundError as e:
                 return {"error": f"no model: {e}", "step": step}
             npz = self._npz(b)
@@ -277,6 +279,7 @@ class _ProbesMixin:
         return {
             "run_dir": self.run_dir, "step": step, "opponent": opponent, "n_decisions": npts,
             "n_history_turns": len(pol), "model_resolution": _choice_dict(choice) if choice else None,
+            "obs_semantics": self.obs_semantics(model, _TRACE_REPLAY) if model is not None else None,
             "note": ("per-turn-slot mean|grad|, normalized by the overall obs mean|grad| (1.0 = an "
                      "average obs dim). Slot index is obs order — the transformer's positional "
                      "embedding learns recency. A contiguous run of LOW slots (≪1.0) at one end = "

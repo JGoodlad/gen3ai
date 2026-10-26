@@ -874,7 +874,8 @@ def main(argv: "Optional[Sequence[str]]" = None) -> int:
         return 2
 
     print(f"loading subject {args.subject} on {args.device} ...", flush=True)
-    probe = ProbeModel.load(args.subject, device=args.device)
+    # STORED-obs value_pooled precompute (no faithfulness claim): loads across an obs-semantics gap, badged.
+    probe = ProbeModel.load(args.subject, device=args.device, use="stored_score")
     ds, rep = precompute_value_pooled(
         probe_pooled_fn(probe), rows, models_root=models_root,
         batch_size=max(1, args.batch_size), slice_mode=args.slice_reweight)
@@ -949,6 +950,7 @@ def main(argv: "Optional[Sequence[str]]" = None) -> int:
             "history": [asdict(h) for h in res.history],
             "val_calibration_best_epoch": best_bins,
             "grafted_zip": zip_path,
+            "obs_semantics": probe.obs_semantics,   # the gap policy's record (main.prober.arch_status.decide)
         }, fh, indent=2)
     print(f"report -> {os.path.join(out_dir, 'report.json')}", flush=True)
     return 0

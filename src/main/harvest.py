@@ -491,7 +491,8 @@ def score_candidates(subject_ckpt: str, cands: Sequence[Candidate], *, models_ro
     from main.prober.model import ProbeModel
 
     torch.set_num_threads(1)
-    pm = ProbeModel.load(subject_ckpt, "cpu")
+    # STORED-obs scoring (no faithfulness claim): the gap policy loads it across an obs-semantics gap, badged.
+    pm = ProbeModel.load(subject_ckpt, "cpu", use="stored_score")
     have_evid = getattr(getattr(pm._policy, "features_extractor", None), "cf_evid_head", None) is not None
 
     # Group by npz so each file is opened once. Candidates from one battle are contiguous already,
@@ -536,7 +537,7 @@ def score_candidates(subject_ckpt: str, cands: Sequence[Candidate], *, models_ro
               f"({1000 * dt / max(1, n_scored):.2f} ms/state), {n_failed} failed, "
               f"evidential={'on' if have_evid else 'ABSENT (columns omitted)'}", flush=True)
     return {"n_scored": n_scored, "n_failed": n_failed, "have_evidential": have_evid,
-            "score_seconds": round(dt, 1)}
+            "score_seconds": round(dt, 1), "obs_semantics": pm.obs_semantics}
 
 
 def _win_prob_batch(pm, obs: np.ndarray) -> Optional[np.ndarray]:
@@ -786,6 +787,14 @@ def label_one(sess, abs_prefix: str, decision_idx: int, action: int, n_rollouts:
         "opponent_source": out.get("opponent_source"),
         "seconds": round(time.time() - t0, 2),
     }
+
+
+def _rollout_semantics(subject: str) -> dict:
+    """`arch_status.decide(<subject's verdict>, USE_FRESH)` from its records (no load)."""
+    from main.prober import arch_status as A
+    from main.prober.model import peek_checkpoint
+    v = A.checkpoint_verdict(subject, peek_obs_dim=peek_checkpoint(subject).get("obs_dim"))
+    return A.decide(v, A.USE_FRESH).as_dict()
 
 
 def _label_task(task: dict) -> dict:
@@ -1174,6 +1183,9 @@ def main(argv: "Optional[Sequence[str]]" = None) -> int:
         "harvested_battles": sorted({c.battle_tag for c in chosen}),
         "have_evidential": score_info["have_evidential"],
         "score": score_info,
+        # The gap policy's record for the rollouts (FRESH: the play-out encodes every position now); the scoring's
+        # is `score.obs_semantics` (STORED_SCORE). `main.prober.arch_status.decide`.
+        "rollout_obs_semantics": _rollout_semantics(subject),
         "supply": {
             "runs_scanned": len(runs),
             "candidate_battles": len(battles),

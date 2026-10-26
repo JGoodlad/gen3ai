@@ -5,7 +5,7 @@ gate's hard bound, one line from tripping it — and is now one module per conce
 `__init__.py` re-exporting every name it ever exported. `from agents.model.model_version import
 <anything>` resolves unchanged for all ~48 import sites.
 
-    constants.py      MODEL_CONFIG_VERSION · ARCH_SIGNATURE · OBS_SEMANTICS_VERSION · ModelVersionError ·
+    constants.py      MODEL_CONFIG_VERSION · ARCH_SIGNATURE · OBS_SEMANTICS_VERSION (+ _HISTORY) · ModelVersionError ·
                       the reward-immutable field table
     migrations.py     MIGRATION_FLOOR · SIGNATURE_FIRST_VERSION · `_migrate_config`, including
                       the PRE-FLOOR HISTORY archive
@@ -31,6 +31,7 @@ and that every submodule imports standalone.
 from agents.model.model_version.constants import (
     ARCH_SIGNATURE,
     MODEL_CONFIG_VERSION,
+    OBS_SEMANTICS_HISTORY,
     OBS_SEMANTICS_REASON,
     OBS_SEMANTICS_VERSION,
     ModelVersionError,
@@ -67,6 +68,7 @@ __all__ = [
     "ARCH_SIGNATURE",
     "MIGRATION_FLOOR",
     "MODEL_CONFIG_VERSION",
+    "OBS_SEMANTICS_HISTORY",
     "OBS_SEMANTICS_REASON",
     "OBS_SEMANTICS_VERSION",
     "ModelVersion",

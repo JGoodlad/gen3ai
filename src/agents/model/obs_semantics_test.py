@@ -20,21 +20,22 @@ from agents.model.model_version import (
     ARCH_SIGNATURE,
     MIGRATION_FLOOR,
     MODEL_CONFIG_VERSION,
+    OBS_SEMANTICS_HISTORY,
     OBS_SEMANTICS_REASON,
     OBS_SEMANTICS_VERSION,
     SIGNATURE_FIRST_VERSION,
 )
 
 #: (the obs golden's content hash, the OBS_SEMANTICS_VERSION in force when it was pinned). Move BOTH, together,
-#: with the commit that moves the golden: if a cell's MEANING changed set OBS_SEMANTICS_VERSION to the config
+#: with the commit that moves the golden: if a cell's MEANING changed append an OBS_SEMANTICS_HISTORY row for the config
 #: version that commit stamps; if the golden moved for a reason that changes no cell's meaning (it should not
 #: move at all), say why in the commit and keep the marker.
-# Re-pinned 2026-10-26 (GIGO audit, config v162) with the marker KEPT at 151: the golden moved on 36 of 991 decisions,
-# every one a stale Destiny Bond volatile cell 1 -> 0 (gen3_volatile_silent_ends_v1: the bond now ends at its holder's
-# next move) — a value FIX of a cell whose meaning is unchanged. The marker is NOT raised by orchestrator ruling
-# (`ProbeModel.load` hard-refuses below it, blinding the prober / harvest meters for every current model); the gap
-# policy is a TECH_DEBT row, and the marker is raised once it lands.
-_GOLDEN_PIN = ("ab3cdda779eb21b340170039667f9e63071d1549de1efbe2f43e3c6f1f897235", 151)
+# Re-pinned 2026-10-26 (GIGO audit, config v162): the golden moved on 36 of 991 decisions, every one a stale Destiny
+# Bond volatile cell 1 -> 0 (gen3_volatile_silent_ends_v1: the bond now ends at its holder's next move). The marker was
+# first KEPT at 151 (a hard refusal in `ProbeModel.load` would have blinded every reader of current models) and RAISED
+# to 162 with the same hash once the gap policy landed (`main.prober.arch_status.decide`): a trace replay across the
+# gap is refused, a fresh probe or a stored-obs score runs with a badge.
+_GOLDEN_PIN = ("ab3cdda779eb21b340170039667f9e63071d1549de1efbe2f43e3c6f1f897235", 162)
 
 _GOLDEN = Path(__file__).resolve().parents[1] / "training" / "golden_obs_fixture.json"
 
@@ -52,13 +53,22 @@ def test_the_marker_sits_between_the_floor_and_the_code():
     assert OBS_SEMANTICS_REASON.strip(), "the diagnosis quotes this clause; an empty one reads as a typo"
 
 
+def test_the_history_is_strictly_increasing_and_its_last_row_is_the_marker():
+    """Each row is (config version, the clause a badge and the drift diagnosis quote); the reader's "trained on
+    obs_semantics vN" is the newest row at or below a checkpoint's recorded version."""
+    versions = [v for v, _ in OBS_SEMANTICS_HISTORY]
+    assert versions == sorted(set(versions)), "strictly increasing, no repeats"
+    assert (OBS_SEMANTICS_VERSION, OBS_SEMANTICS_REASON) == OBS_SEMANTICS_HISTORY[-1]
+    assert all(r.strip() for _, r in OBS_SEMANTICS_HISTORY)
+
+
 def test_the_golden_cannot_move_without_the_marker_being_considered():
     have, pinned_at = _golden_hash(), _GOLDEN_PIN[1]
     assert have == _GOLDEN_PIN[0], (
         "the obs GOLDEN moved. That is the signature of an OBSERVATION-VALUE change, and a checkpoint trained "
         "before it reads different inputs from now on, even if its weights load. Decide now: did a cell change "
-        "MEANING? If yes, set OBS_SEMANTICS_VERSION (model_version/constants.py) to the config version this "
-        "commit stamps, add its clause to OBS_SEMANTICS_REASON, and re-pin _GOLDEN_PIN here to "
+        "MEANING? If yes, append an OBS_SEMANTICS_HISTORY row (model_version/constants.py) for the config version "
+        "this commit stamps, with its clause, and re-pin _GOLDEN_PIN here to "
         f"({have!r}, <that version>). If the golden moved but no cell's meaning did, re-pin with the same "
         "marker and say why in the commit body.")
     assert pinned_at == OBS_SEMANTICS_VERSION, (

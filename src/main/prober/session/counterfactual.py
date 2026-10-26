@@ -10,6 +10,7 @@ from __future__ import annotations
 import os
 
 from agents.model.compile_opponents import maybe_compile_extractor
+from main.prober.arch_status import USE_FRESH as _FRESH
 
 
 class _CounterfactualMixin:
@@ -59,7 +60,8 @@ class _CounterfactualMixin:
                 f"no reconstruction record next to this trace ({recon_path}) — lookahead needs the "
                 "re-roll layer's replay data, which only bridge-eval traces carry")
         record = ReconstructionRecord.load(recon_path)
-        model, _ = self._model_for(b)
+        # FRESH: every V(s′) is read on a successor the encoder materializes NOW (`arch_status` gap policy).
+        model, _ = self._model_for(b, use=_FRESH)
         summary, npz = self._summary(b), self._npz(b)
         if inv is not None:
             out = lookahead_decision(model, record, summary, npz, int(inv),
@@ -72,6 +74,7 @@ class _CounterfactualMixin:
         # candidate), so a surface must be able to say "one readout" rather than presenting a
         # column that can never disagree as a second opinion.
         out["critic_currency"] = self.critic_currency()
+        out["obs_semantics"] = self.obs_semantics(model, _FRESH)
         return out
 
     def better_line(self, battle_id: str, inv: int, *, depth: int = 2, beam: int = 3, top_k: int = 4,
@@ -102,7 +105,8 @@ class _CounterfactualMixin:
                 f"no reconstruction record next to this trace ({recon_path}) — better-line needs the "
                 "re-roll layer's replay data, which only bridge-eval traces carry")
         record = ReconstructionRecord.load(recon_path)
-        model, _ = self._model_for(b)
+        # FRESH: the beam reads positions the encoder materializes NOW (`arch_status` gap policy).
+        model, _ = self._model_for(b, use=_FRESH)
         summary, npz = self._summary(b), self._npz(b)
 
         opp_model = None
@@ -112,7 +116,7 @@ class _CounterfactualMixin:
                 if not opponent_ckpt:
                     raise ValueError("interior_opponent='ckpt' requires opponent_ckpt=")
                 from main.prober.model import ProbeModel
-                opp_model = self._models.get(opponent_ckpt) or ProbeModel.load(opponent_ckpt)
+                opp_model = self._models.get(opponent_ckpt) or ProbeModel.load(opponent_ckpt, use=_FRESH)
                 self._models[opponent_ckpt] = opp_model
                 opp_used = f"reloaded:{os.path.basename(opponent_ckpt)}"
             else:                                     # "self" — the trainee as a flagged proxy
@@ -125,6 +129,9 @@ class _CounterfactualMixin:
         out["interior_opponent"] = opp_used
         # The currency the beam's ΔV and every ply's V(s′) are in — see `lookahead` above.
         out["critic_currency"] = self.critic_currency()
+        out["obs_semantics"] = self.obs_semantics(model, _FRESH)
+        if opp_model is not None and opp_model is not model:
+            out["opponent_obs_semantics"] = self.obs_semantics(opp_model, _FRESH)
 
         # Ground-truth CONFIRM of the recommended first action vs the RELOADED REAL opponent.
         if confirm_rollouts > 0 and out.get("best_alternative"):
@@ -166,15 +173,36 @@ class _CounterfactualMixin:
         if choice.path is None:
             raise FileNotFoundError(
                 f"no checkpoint resolved for the counterfactual trainee: {choice.detail}")
+        # FRESH: the play-out encodes every position NOW. The rollout models are bare MaskablePPOs (no
+        # ProbeModel), so the gap policy is asked here, from the records, before either is loaded.
+        sem = self._play_semantics(choice.path)
+        opp_sem = self._play_semantics(opponent_ckpt) if opponent_ckpt else None
         play_model = self._play_model(choice.path)
         opp_model = self._play_model(opponent_ckpt) if opponent_ckpt else None
 
-        return replay_counterfactual_battle(
+        out = replay_counterfactual_battle(
             record, self._summary(b), self._npz(b), int(inv), int(action),
             play_model=play_model, opp_name=b.opponent, opponent_ckpt=opponent_ckpt,
             opp_model=opp_model, opponent_source=opponent_source,
             opponent_stochastic=opponent_stochastic, n_rollouts=n_rollouts,
             narrate=narrate)
+        out["obs_semantics"] = sem
+        if opp_sem is not None:
+            out["opponent_obs_semantics"] = opp_sem
+        return out
+
+    @staticmethod
+    def _play_semantics(path: str) -> dict:
+        """The gap policy's `USE_FRESH` decision for a rollout checkpoint, from its records (no load): the
+        typed `ArchDriftError` on a refusal (weights that do not fit), else the block the output records."""
+        from main.prober import arch_status as A
+        from main.prober.model import arch_drift_error_from_verdict, peek_checkpoint
+        v = A.checkpoint_verdict(path, peek_obs_dim=(peek_checkpoint(path).get("obs_dim")
+                                                     if os.path.exists(path) else None))
+        d = A.decide(v, _FRESH)
+        if d.refused:
+            raise arch_drift_error_from_verdict(path, v)
+        return d.as_dict()
 
     def _cf_record(self, battle_id: str):
         """``(battle, ReconstructionRecord)`` — the counterfactual replay's input, or a typed refusal."""

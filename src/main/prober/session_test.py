@@ -847,7 +847,7 @@ def test_cli_probe_emits_json(tmp_path):
     run = _build_probe_run(tmp_path)
     # Patch ProbeModel.load (the CLI builds its own session) to the fake feature model.
     orig = sess_mod.ProbeSession._model_for
-    sess_mod.ProbeSession._model_for = lambda self, b: (_FakeFeatureModel(), _FAKE_CHOICE)
+    sess_mod.ProbeSession._model_for = lambda self, b, **_kw: (_FakeFeatureModel(), _FAKE_CHOICE)
     argv = sys.argv
     sys.argv = ["query", "probe", run, "is_faster", "--max-decisions", "200"]
     try:

@@ -55,6 +55,8 @@
 
 {# ── banners: everything below is suspect ──────────────────────────────────────────────── #}
 
+{{ m.obs_semantics_badge(a.obs_semantics) }}
+
 {% if a.obs_mismatch %}
 <p class="banner bad">
   ⚠ <strong>OBS MISMATCH</strong> — this trace's observation is {{ a.obs_mismatch[0] }} dims and the

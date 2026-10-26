@@ -6,6 +6,15 @@
 <section class="card model-unavailable" data-model-state="arch_drift" data-model-reason="{{ model_status.kind }}">
   <h2>Model views</h2>
   <p class="warnline">{{ model_status.plain }}</p>
+  {% if model_status.kind == "obs_semantics" %}
+  {# The gap policy (`arch_status.decide`): the views over this run's TRACES are refused; the FRESH probes run, badged. #}
+  <p class="muted small" data-fresh-probes="allowed">
+    The fresh probes encode their positions now, so they run with a badge:
+    <span class="mono">python -m main.prober.query lookahead|better-line|replay-counterfactual …</span>, or
+    <span class="mono">POST /api/jobs/lookahead</span> · <span class="mono">/api/jobs/better-line</span> ·
+    <span class="mono">/api/jobs/replay-counterfactual</span>.
+  </p>
+  {% endif %}
   <p class="muted small">
     Turn story, scan, triage, calibration and every other model-free view work on this run.
     {% if model_status.config_version is not none %}Recorded: config v{{ model_status.config_version }}{% if model_status.arch_signature %}, {{ model_status.arch_signature }}{% endif %}

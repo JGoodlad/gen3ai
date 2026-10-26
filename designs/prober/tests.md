@@ -78,7 +78,7 @@ beam pruning, principal variation) + `better_line_integration_test.py` (`@integr
 fake `V=obs.sum()` model: the depth-1 chosen value == sum(recorded next obs) value_crn anchor, the
 depth-2 beam principal variation, determinism — on the one engine, the Rust `search_driver`; the
 node-vs-rust cross-impl test went with the Node drivers, 2026-10-10), `model_test.py` (the torch boundary — where each
-forward stash LIVES, plus the `ArchDriftError` diagnosis, the dropped-kwarg recovery and — end to end through `ProbeModel.load` — every typed incompatibility kind, including the semantics-only one with a loader that WOULD succeed; `arch_status_test.py` pins the verdicts, the record readers and the picker's mtime cache),
+forward stash LIVES, plus the `ArchDriftError` diagnosis, the dropped-kwarg recovery and — end to end through `ProbeModel.load` — every typed incompatibility kind, including the semantics-only one with a loader that WOULD succeed; `arch_status_test.py` pins the verdicts, the record readers and the picker's mtime cache; `gap_policy_test.py` pins the obs-semantics gap policy's table cell by cell and, by AST, the use every `ProbeModel.load` / `_model_for` call site declares),
 `loops_test.py` (the bait-loop detector, pinned on literal Showdown protocol lines — the whole
 point of the module is that it must not read the rendered timeline), `lookahead_test.py` +
 `replay_test.py` (pure ORCHESTRATION of the Rust-core counterfactual — opponent resolution, regime,

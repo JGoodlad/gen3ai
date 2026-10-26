@@ -489,8 +489,13 @@ class ProbeModel:
         loads at all."""
         return {"observation": ot, "action_mask": mt}
 
+    #: The checkpoint's pre-load verdict (`arch_status.checkpoint_verdict`) and the gap decision for the use it was
+    #: loaded under (`arch_status.decide(...).as_dict()`). A fake / directly-built model carries None.
+    arch_verdict = None
+    obs_semantics: "dict | None" = None
+
     @classmethod
-    def load(cls, ckpt_path: str, device: str = "cpu") -> "ProbeModel":
+    def load(cls, ckpt_path: str, device: str = "cpu", *, use: str) -> "ProbeModel":
         from agents.model.snapshot import load_checkpoint_strict
         from agents.observation.state_encoder import (
             Gen3ObservationEncoder,
@@ -510,10 +515,16 @@ class ProbeModel:
         # without paying a load whose outcome is known — and the semantics-only class (weights that WOULD load)
         # is never loaded to answer about inputs it did not train on. A checkpoint with NO record is tried, and
         # its failure classified below.
+        #
+        # THE GAP POLICY decides it, by the caller's declared `use` (`arch_status.decide`): a TRACE REPLAY across an
+        # `obs_semantics` gap is refused; a FRESH probe or a STORED-obs score across one loads, and the decision —
+        # with its badge, "trained on obs_semantics vN, probed at vM" — rides the model as `obs_semantics` for the
+        # caller to record. Weights that do not fit refuse every use.
         from main.prober import arch_status as A
         peek = peek_checkpoint(ckpt_path)
         verdict = A.checkpoint_verdict(ckpt_path, peek_obs_dim=peek.get("obs_dim"))
-        if verdict.status == A.INCOMPATIBLE:
+        decision = A.decide(verdict, use)
+        if decision.refused:
             raise _arch_drift_error(ckpt_path, peek, (), verdict=verdict)
 
         dropped: "tuple[str, ...]" = ()
@@ -526,13 +537,19 @@ class ProbeModel:
         policy.set_training_mode(False)
         enc = Gen3ObservationEncoder(load_mappings())
         gp = enc.get_layout()["parts"]["global"]
-        return cls(policy=policy, offsets=ObsOffsets.from_encoder(enc),
-                   global_encoder=enc.global_env_encoder,
-                   global_off=gp["start"], global_dim=gp["dim"],
-                   pokemon_encoder=enc.pokemon_encoder,
-                   our_team_off=C.OFFSET_OUR_TEAM, opp_team_off=C.OFFSET_OPP_TEAM,
-                   turn_delta_encoder=getattr(enc, 'turn_delta_encoder', None),
-                   dropped_kwargs=dropped)
+        pm = cls(policy=policy, offsets=ObsOffsets.from_encoder(enc),
+                 global_encoder=enc.global_env_encoder,
+                 global_off=gp["start"], global_dim=gp["dim"],
+                 pokemon_encoder=enc.pokemon_encoder,
+                 our_team_off=C.OFFSET_OUR_TEAM, opp_team_off=C.OFFSET_OPP_TEAM,
+                 turn_delta_encoder=getattr(enc, 'turn_delta_encoder', None),
+                 dropped_kwargs=dropped)
+        pm.arch_verdict = verdict
+        pm.obs_semantics = decision.as_dict()
+        if decision.badge:
+            import logging
+            logging.getLogger(__name__).warning("%s  [%s]", decision.badge, ckpt_path)
+        return pm
 
     def describe_global(self, obs: np.ndarray) -> "dict | None":
         """Decode the field state (weather, spikes, screens, turn, pending Wish) from the obs."""

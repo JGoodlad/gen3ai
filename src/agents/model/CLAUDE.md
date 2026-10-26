@@ -27,10 +27,11 @@ The live `MODEL_CONFIG_VERSION`, `ARCH_SIGNATURE` and `OBS_SEMANTICS_VERSION` ar
 
 - 🚨 **A change to the phase structure or the forward math bumps `ARCH_SIGNATURE`**, even a pure decomposition
   (state_dict keys move). A forward-math change with unchanged widths is caught by nothing else.
-- **A change in what an observation cell MEANS, with no shape change, sets `OBS_SEMANTICS_VERSION`** to the config
-  version the commit stamps (plus its `OBS_SEMANTICS_REASON` clause and a re-pinned `obs_semantics_test.py`). It
-  does not bump `ARCH_SIGNATURE` and gates no resume; readers such as the prober refuse a checkpoint recorded
-  below it. A model-internal input the obs golden cannot see is raised by hand.
+- **A change in what an observation cell MEANS, with no shape change, raises `OBS_SEMANTICS_VERSION`**: append an
+  `OBS_SEMANTICS_HISTORY` row (the config version the commit stamps + its clause) and re-pin `obs_semantics_test.py`.
+  It does not bump `ARCH_SIGNATURE` and gates no resume; a reader acts on it through ONE gap policy
+  (`main.prober.arch_status.decide`: a trace replay below it is refused, a fresh probe runs badged). A
+  model-internal input the obs golden cannot see is raised by hand.
 - An optional new feature is a `ModelVersionFields` field, a `MODEL_CONFIG_VERSION` bump and one `_migrate_config`
   `setdefault` block. Every value `--arch production` writes must be a `ModelVersion` field (a restart inherits
   only what `model_config.json` records).

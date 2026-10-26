@@ -26,6 +26,7 @@
 {% elif r and d %}
 {% set G = r.glossary %}
 {% set scout = d.scouting if d.scouting is defined else none %}
+{{ m.obs_semantics_badge(r.obs_semantics) }}
 
 {# ---------------- their next action: the model's α, sorted, what they did marked (out of band) #}
 <div id="game-intent" class="pcol them" hx-swap-oob="true" data-model-state="ok">

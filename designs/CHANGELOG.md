@@ -15470,3 +15470,30 @@ was downloaded or written under `data/`.
 - **Teams.** Happiness 0 and Showdown's Frustration rule are packed (Frustration hit at base power 1 on 13 mons); a
   `Hidden Power: <Type>` line fills IVs without the move (45 mons). `Gen3Teambuilder` runs `pack_oracle.js` on every pool,
   bias and mix pack and raises `PackIdentityError` on a field difference.
+## 2026-10-26 — the obs-semantics GAP POLICY, and `OBS_SEMANTICS_VERSION` raised 151 → 162 (`d8d674b9` + `f9978586`; no config version, no field, no weight shape)
+
+- **What moved at 162 (the history row's clause).** `d8d674b9`: the damage operator reads a consumed item as no item
+  (`gen3_op_held_item_v1`: a Knocked-Off or stolen Choice Band no longer reads as held — a model-INTERNAL input the obs
+  golden cannot see), and the Destiny Bond / Grudge / Rage / Endure / Snatch / Helping Hand cells and Mean Look's
+  `trapped` clear when their effect ends (`gen3_volatile_silent_ends_v1`, obs golden 36 / 991). `f9978586`: the lock-in
+  and recharge counters end when Showdown's do (`gen3_lockin_cancelled_repeat_v1`, `gen3_recharge_expiry_v1`; golden
+  unmoved). The marker had been KEPT at 151 by orchestrator ruling because `ProbeModel.load` hard-refused below it.
+- **The marker is a history now.** `OBS_SEMANTICS_HISTORY = ((151, …), (162, …))`; `OBS_SEMANTICS_VERSION` /
+  `OBS_SEMANTICS_REASON` are its last row. "Trained on obs_semantics N" = the newest row at or below a checkpoint's
+  recorded config version (`arch_status.obs_semantics_of`). `obs_semantics_test` re-pins the golden at 162 (same hash).
+- **The gap policy** (`main/prober/arch_status.py` `decide(verdict, use)`, the table `GAP_POLICY`). Every
+  `ProbeModel.load` and `ProbeSession._model_for` / `probe_model` declares a use (required keyword): `trace_replay`
+  (stored trace observations read against what was recorded: `analyze`, `find disagree`, `/game`'s readout and
+  attention, `probe`, `history_saliency`, `main.probe_replay`), `fresh` (positions encoded now: `lookahead`,
+  `better_line`, `replay_counterfactual`, the harvest rollouts), `stored_score` (no faithfulness claim: harvest scoring,
+  `main.harvest_meter`, `winprob_finetune`). Across an `obs_semantics` gap a trace replay is REFUSED (typed, before any
+  load) and the other two run with the badge "trained on obs_semantics vN, probed at vM", recorded as `obs_semantics` in
+  every output and rendered as a banner on the web results; an unrecorded checkpoint warns for every use; weights that do
+  not fit refuse every use. `replay_counterfactual` (bare rollout models) and the harvest rollouts ask the policy from the
+  records. A cached model is re-judged per use.
+- **Behaviour change.** Every current run (v161 X35 arms incl. N1-P, X26c; P\* v158) is now `obs_semantics`: its
+  trace-replay views are refused and the picker files it under "older" until a v162 run records traces; the
+  counterfactual probes still run, badged (from the CLI and `/api/jobs/*`; the `/analyze` forms need the refused analyze).
+- **Tests.** `main/prober/gap_policy_test.py` (the table cell by cell; the use every call site declares, by AST);
+  `model_test.py` (the seam and the session per use on a gap run); `app_test.py` (the badge on each fresh job result, the
+  card's fresh-probes line). Doc: `designs/prober/arch_drift.md` "The gap policy".

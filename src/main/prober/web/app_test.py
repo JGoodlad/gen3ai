@@ -1843,6 +1843,26 @@ def test_lookahead_submits_polls_and_renders_its_per_action_value_delta(client):
     assert "common random numbers" in html, "ΔV without the CRN framing is not interpretable"
 
 
+@pytest.mark.parametrize("path,method,payload,fields", [
+    ("/partials/job/lookahead", "lookahead", "_FAKE_LOOKAHEAD", {}),
+    ("/partials/job/better-line", "better_line", "_FAKE_BETTER_LINE", {}),
+    ("/partials/job/replay-counterfactual", "replay_counterfactual", "_FAKE_REPLAY_ONE", {"action": "1"}),
+])
+def test_a_fresh_probe_across_the_obs_semantics_gap_shows_its_badge(client, path, method, payload, fields):
+    """THE GAP POLICY on the page: a FRESH probe of a checkpoint trained below the marker runs (`arch_status.decide`
+    warns), and its result says so in the badge the output records — "trained on obs_semantics vN, probed at vM"
+    plus what changed since. A result recorded at ALLOW shows no badge."""
+    from main.prober import arch_status as A
+    from agents.model.model_version import ARCH_SIGNATURE, OBS_SEMANTICS_VERSION
+    sem = A.decide(A.verdict_from_record(OBS_SEMANTICS_VERSION - 1, ARCH_SIGNATURE), A.USE_FRESH).as_dict()
+    html, _ = _run_cf(client, path, method, dict(globals()[payload], obs_semantics=sem), **fields)
+    assert 'data-obs-semantics="obs_semantics"' in html and 'data-obs-semantics-use="fresh"' in html
+    assert f"probed at v{OBS_SEMANTICS_VERSION}" in html and f"v{OBS_SEMANTICS_VERSION}:" in html
+    ok = A.decide(A.verdict_from_record(OBS_SEMANTICS_VERSION, ARCH_SIGNATURE), A.USE_FRESH).as_dict()
+    html, _ = _run_cf(client, path, method, dict(globals()[payload], obs_semantics=ok), **fields)
+    assert "data-obs-semantics=" not in html
+
+
 def test_better_line_renders_the_contrastive_trajectory_and_its_provenance(client):
     """The port of `B`: "turn T: you played X → better line Y", the headline ΔV / P(win), the
     principal variation ply by ply, and WHO played the interior plies."""
@@ -2508,7 +2528,8 @@ def test_the_model_views_of_a_semantics_only_older_run_are_refused_though_the_sh
     with TestClient(create_app(run, open_access=True)) as c:
         b = c.get("/api/battles").json()[0]["short_id"]
         html = c.get("/game", params={"battle": b}).text
-        assert 'data-model-reason="obs_semantics"' in html and "never trained on" in html
+        assert 'data-model-reason="obs_semantics"' in html and "no longer reproduces what it saw" in html
+        assert "Fresh probes" in html and 'data-fresh-probes="allowed"' in html   # the gap policy: what still runs
         r = c.get("/api/analyze", params={"battle": b})
         assert r.status_code == 400 and r.json()["kind"] == "obs_semantics"
 

@@ -413,6 +413,6 @@ def test_the_reader_surfaces_refuse_a_dropped_submodule_and_the_prober_still_DIA
     with pytest.raises(StrictLoadError, match="win_head"):
         load_policy(str(bad), "cpu")
     with pytest.raises(ArchDriftError) as ei:
-        ProbeModel.load(str(bad))
+        ProbeModel.load(str(bad), use="trace_replay")
     assert isinstance(ei.value.__cause__, StrictLoadError) and "win_head" in str(ei.value.__cause__)
     assert "StrictLoadError" in str(ei.value) and "state dict does not match" in str(ei.value)

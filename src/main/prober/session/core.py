@@ -273,26 +273,43 @@ class ProbeSession(_ReadingMixin, _ScansMixin, _TraceIOMixin, _AnalysisMixin,
             return {k: z[k] for k in z.files}
 
 
-    def probe_model(self, battle_id: str):
-        """``(ProbeModel, ModelChoice)`` for one battle — the PUBLIC face of the resolution ladder.
+    def probe_model(self, battle_id: str, *, use: str):
+        """``(ProbeModel, ModelChoice)`` for one battle — the PUBLIC face of the resolution ladder. ``use`` is the
+        caller's declared `arch_status` USE (the gap policy decides by it; `obs_semantics(model, use)` is the
+        block to record).
 
         Exists for out-of-package readers that need the loaded network itself rather than one of
         the analyses built on it (the deleted `agents.training.cf_audit` read the evidential Beta head off the
         audited checkpoint this way). It is the same cached `_model_for`, so a caller that resolves
         once and reuses pays for one load; every battle in one `step_N` trace dir resolves to the
         same checkpoint, so that is the normal shape."""
-        return self._model_for(self._battle(battle_id))
+        return self._model_for(self._battle(battle_id), use=use)
+
+    @staticmethod
+    def obs_semantics(model, use: str) -> "dict | None":
+        """The `obs_semantics` block an output records for ``model`` run under ``use`` — `arch_status.decide` over
+        the verdict the model was loaded with (None for an injected test model that carries none)."""
+        verdict = getattr(model, "arch_verdict", None)
+        if verdict is None:
+            return None
+        from main.prober import arch_status as A
+        return A.decide(verdict, use).as_dict()
 
     def _resolve(self, battle: BattleTrace) -> ModelChoice:
         return resolve_model_for_step(self.tree, battle.step, self._override, self._tier)
 
-    def _model_for(self, battle: BattleTrace):
+    def _model_for(self, battle: BattleTrace, *, use: str):
+        """``(model, choice)`` for one battle under the caller's declared `arch_status` USE — `USE_TRACE_REPLAY`
+        (the views that re-run the step's STORED observations) or `USE_FRESH` (the counterfactuals, which encode
+        their successor positions now). The gap policy (`arch_status.decide`) refuses or allows both sides — the
+        trace's record and the checkpoint's — and a cached model is re-judged for the new use."""
+        from main.prober import arch_status as A
+        A.check_use(use)                       # an undeclared use raises before any work
         choice = self._resolve(battle)
         if choice.path is None:
             # A run with traces and no weights (a trimmed skeleton) is a TYPED diagnosis like every other way a
             # model view can be unavailable — an `ArchDriftError` (kind `no_checkpoint`) that is also a
             # `FileNotFoundError`, so the probes that treat "no model" as an answer still do.
-            from main.prober import arch_status as A
             from main.prober.model import NoCheckpointError
             plain = A.plain_sentence(A.KIND_NO_CHECKPOINT)
             raise NoCheckpointError(f"{plain}\n\n  {choice.detail}", kind=A.KIND_NO_CHECKPOINT, plain=plain,
@@ -302,18 +319,24 @@ class ProbeSession(_ReadingMixin, _ScansMixin, _TraceIOMixin, _AnalysisMixin,
             # run the checkpoint on this step's STORED observations, which an older run encoded under another
             # meaning (and a `nearest` / `recent` rung is not the model that played the step). Same typed
             # refusal, same surfaces. An injected loader is a test seam and skips it.
-            from main.prober import arch_status as A
+            # Under the gap policy: a FRESH probe does not feed the stored observations, so the trace's semantics gap
+            # does not refuse it (its weights-level kinds still do).
             trace_v = A.verdict_for_step(self.run_dir, battle.step)
-            if trace_v.status == A.INCOMPATIBLE:
+            if A.decide(trace_v, use).refused:
                 from main.prober.model import arch_drift_error_from_verdict
                 raise arch_drift_error_from_verdict(choice.path, trace_v)
         model = self._models.get(choice.path)
+        if model is not None and getattr(model, "arch_verdict", None) is not None \
+                and A.decide(model.arch_verdict, use).refused:
+            # Cached under a use the policy allowed (a fresh probe) and asked for one it refuses (a trace replay).
+            from main.prober.model import arch_drift_error_from_verdict
+            raise arch_drift_error_from_verdict(choice.path, model.arch_verdict)
         if model is None:
             if self._model_loader is not None:
                 model = self._model_loader(choice.path)
             else:
                 from main.prober.model import ProbeModel
-                model = ProbeModel.load(choice.path)
+                model = ProbeModel.load(choice.path, use=use)
             self._models[choice.path] = model
             # BOUNDED, oldest-first. One ProbeModel is a full MaskablePPO (~27 MB of weights plus
             # its graph), and this cache is keyed by CHECKPOINT — a run retains up to
