@@ -1,0 +1,980 @@
+{
+ "seed": 20261028,
+ "sigma_max_pp": 1.5,
+ "panels": 3,
+ "reps": 100000,
+ "grid": {
+  "k=3 m=1200 p=0.50 sigma_s=0.0pp delta=0pp": {
+   "BOUND P(LB>0)": 0.002,
+   "BOUND P(UB<0)": 0.0024,
+   "BOUND halfwidth_pp": 3.33,
+   "guard fires": 0.0,
+   "WELCH P(LB>0)": 0.017,
+   "WELCH P(UB<0)": 0.017,
+   "WELCH halfwidth_pp": 3.41
+  },
+  "k=3 m=1200 p=0.50 sigma_s=0.0pp delta=3pp": {
+   "BOUND P(LB>0)": 0.388,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 3.33,
+   "guard fires": 0.0,
+   "WELCH P(LB>0)": 0.392,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 3.42
+  },
+  "k=3 m=1200 p=0.50 sigma_s=0.0pp delta=4pp": {
+   "BOUND P(LB>0)": 0.713,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 3.33,
+   "guard fires": 0.0,
+   "WELCH P(LB>0)": 0.609,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 3.44
+  },
+  "k=3 m=1200 p=0.50 sigma_s=0.0pp delta=5pp": {
+   "BOUND P(LB>0)": 0.92,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 3.33,
+   "guard fires": 0.0,
+   "WELCH P(LB>0)": 0.793,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 3.42
+  },
+  "k=3 m=1200 p=0.50 sigma_s=1.0pp delta=0pp": {
+   "BOUND P(LB>0)": 0.009,
+   "BOUND P(UB<0)": 0.0092,
+   "BOUND halfwidth_pp": 3.33,
+   "guard fires": 0.007,
+   "WELCH P(LB>0)": 0.018,
+   "WELCH P(UB<0)": 0.0175,
+   "WELCH halfwidth_pp": 4.17
+  },
+  "k=3 m=1200 p=0.50 sigma_s=1.0pp delta=3pp": {
+   "BOUND P(LB>0)": 0.388,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 3.33,
+   "guard fires": 0.007,
+   "WELCH P(LB>0)": 0.283,
+   "WELCH P(UB<0)": 0.0001,
+   "WELCH halfwidth_pp": 4.16
+  },
+  "k=3 m=1200 p=0.50 sigma_s=1.0pp delta=4pp": {
+   "BOUND P(LB>0)": 0.652,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 3.33,
+   "guard fires": 0.007,
+   "WELCH P(LB>0)": 0.456,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 4.17
+  },
+  "k=3 m=1200 p=0.50 sigma_s=1.0pp delta=5pp": {
+   "BOUND P(LB>0)": 0.857,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 3.33,
+   "guard fires": 0.007,
+   "WELCH P(LB>0)": 0.632,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 4.17
+  },
+  "k=3 m=1200 p=0.50 sigma_s=1.5pp delta=0pp": {
+   "BOUND P(LB>0)": 0.019,
+   "BOUND P(UB<0)": 0.0187,
+   "BOUND halfwidth_pp": 3.33,
+   "guard fires": 0.051,
+   "WELCH P(LB>0)": 0.018,
+   "WELCH P(UB<0)": 0.0181,
+   "WELCH halfwidth_pp": 4.95
+  },
+  "k=3 m=1200 p=0.50 sigma_s=1.5pp delta=3pp": {
+   "BOUND P(LB>0)": 0.361,
+   "BOUND P(UB<0)": 0.0001,
+   "BOUND halfwidth_pp": 3.33,
+   "guard fires": 0.051,
+   "WELCH P(LB>0)": 0.21,
+   "WELCH P(UB<0)": 0.0001,
+   "WELCH halfwidth_pp": 4.94
+  },
+  "k=3 m=1200 p=0.50 sigma_s=1.5pp delta=4pp": {
+   "BOUND P(LB>0)": 0.577,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 3.33,
+   "guard fires": 0.052,
+   "WELCH P(LB>0)": 0.344,
+   "WELCH P(UB<0)": 0.0001,
+   "WELCH halfwidth_pp": 4.95
+  },
+  "k=3 m=1200 p=0.50 sigma_s=1.5pp delta=5pp": {
+   "BOUND P(LB>0)": 0.762,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 3.33,
+   "guard fires": 0.051,
+   "WELCH P(LB>0)": 0.495,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 4.94
+  },
+  "k=3 m=1200 p=0.50 sigma_s=2.0pp delta=0pp": {
+   "BOUND P(LB>0)": 0.029,
+   "BOUND P(UB<0)": 0.0306,
+   "BOUND halfwidth_pp": 3.72,
+   "guard fires": 0.176,
+   "WELCH P(LB>0)": 0.017,
+   "WELCH P(UB<0)": 0.0176,
+   "WELCH halfwidth_pp": 5.85
+  },
+  "k=3 m=1200 p=0.50 sigma_s=2.0pp delta=3pp": {
+   "BOUND P(LB>0)": 0.306,
+   "BOUND P(UB<0)": 0.0004,
+   "BOUND halfwidth_pp": 3.72,
+   "guard fires": 0.177,
+   "WELCH P(LB>0)": 0.158,
+   "WELCH P(UB<0)": 0.0004,
+   "WELCH halfwidth_pp": 5.85
+  },
+  "k=3 m=1200 p=0.50 sigma_s=2.0pp delta=4pp": {
+   "BOUND P(LB>0)": 0.468,
+   "BOUND P(UB<0)": 0.0001,
+   "BOUND halfwidth_pp": 3.72,
+   "guard fires": 0.175,
+   "WELCH P(LB>0)": 0.257,
+   "WELCH P(UB<0)": 0.0001,
+   "WELCH halfwidth_pp": 5.85
+  },
+  "k=3 m=1200 p=0.50 sigma_s=2.0pp delta=5pp": {
+   "BOUND P(LB>0)": 0.621,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 3.72,
+   "guard fires": 0.177,
+   "WELCH P(LB>0)": 0.376,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 5.85
+  },
+  "k=3 m=1200 p=0.50 sigma_s=3.0pp delta=0pp": {
+   "BOUND P(LB>0)": 0.037,
+   "BOUND P(UB<0)": 0.0367,
+   "BOUND halfwidth_pp": 6.42,
+   "guard fires": 0.558,
+   "WELCH P(LB>0)": 0.018,
+   "WELCH P(UB<0)": 0.0172,
+   "WELCH halfwidth_pp": 7.93
+  },
+  "k=3 m=1200 p=0.50 sigma_s=3.0pp delta=3pp": {
+   "BOUND P(LB>0)": 0.183,
+   "BOUND P(UB<0)": 0.003,
+   "BOUND halfwidth_pp": 6.37,
+   "guard fires": 0.556,
+   "WELCH P(LB>0)": 0.1,
+   "WELCH P(UB<0)": 0.0015,
+   "WELCH halfwidth_pp": 7.9
+  },
+  "k=3 m=1200 p=0.50 sigma_s=3.0pp delta=4pp": {
+   "BOUND P(LB>0)": 0.262,
+   "BOUND P(UB<0)": 0.0008,
+   "BOUND halfwidth_pp": 6.36,
+   "guard fires": 0.556,
+   "WELCH P(LB>0)": 0.155,
+   "WELCH P(UB<0)": 0.0004,
+   "WELCH halfwidth_pp": 7.89
+  },
+  "k=3 m=1200 p=0.50 sigma_s=3.0pp delta=5pp": {
+   "BOUND P(LB>0)": 0.35,
+   "BOUND P(UB<0)": 0.0003,
+   "BOUND halfwidth_pp": 6.27,
+   "guard fires": 0.553,
+   "WELCH P(LB>0)": 0.226,
+   "WELCH P(UB<0)": 0.0001,
+   "WELCH halfwidth_pp": 7.9
+  },
+  "k=3 m=1200 p=0.30 sigma_s=0.0pp delta=0pp": {
+   "BOUND P(LB>0)": 0.001,
+   "BOUND P(UB<0)": 0.0015,
+   "BOUND halfwidth_pp": 3.2,
+   "guard fires": 0.0,
+   "WELCH P(LB>0)": 0.018,
+   "WELCH P(UB<0)": 0.0174,
+   "WELCH halfwidth_pp": 3.14
+  },
+  "k=3 m=1200 p=0.30 sigma_s=0.0pp delta=3pp": {
+   "BOUND P(LB>0)": 0.418,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 3.22,
+   "guard fires": 0.0,
+   "WELCH P(LB>0)": 0.445,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 3.18
+  },
+  "k=3 m=1200 p=0.30 sigma_s=0.0pp delta=4pp": {
+   "BOUND P(LB>0)": 0.756,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 3.22,
+   "guard fires": 0.0,
+   "WELCH P(LB>0)": 0.668,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 3.2
+  },
+  "k=3 m=1200 p=0.30 sigma_s=0.0pp delta=5pp": {
+   "BOUND P(LB>0)": 0.945,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 3.23,
+   "guard fires": 0.0,
+   "WELCH P(LB>0)": 0.838,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 3.19
+  },
+  "k=3 m=1200 p=0.30 sigma_s=1.5pp delta=0pp": {
+   "BOUND P(LB>0)": 0.019,
+   "BOUND P(UB<0)": 0.0198,
+   "BOUND halfwidth_pp": 3.21,
+   "guard fires": 0.05,
+   "WELCH P(LB>0)": 0.017,
+   "WELCH P(UB<0)": 0.0182,
+   "WELCH halfwidth_pp": 4.75
+  },
+  "k=3 m=1200 p=0.30 sigma_s=1.5pp delta=3pp": {
+   "BOUND P(LB>0)": 0.378,
+   "BOUND P(UB<0)": 0.0001,
+   "BOUND halfwidth_pp": 3.23,
+   "guard fires": 0.051,
+   "WELCH P(LB>0)": 0.223,
+   "WELCH P(UB<0)": 0.0002,
+   "WELCH halfwidth_pp": 4.77
+  },
+  "k=3 m=1200 p=0.30 sigma_s=1.5pp delta=4pp": {
+   "BOUND P(LB>0)": 0.601,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 3.23,
+   "guard fires": 0.05,
+   "WELCH P(LB>0)": 0.362,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 4.78
+  },
+  "k=3 m=1200 p=0.30 sigma_s=1.5pp delta=5pp": {
+   "BOUND P(LB>0)": 0.785,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 3.24,
+   "guard fires": 0.05,
+   "WELCH P(LB>0)": 0.519,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 4.79
+  },
+  "k=3 m=1200 p=0.15 sigma_s=0.0pp delta=0pp": {
+   "BOUND P(LB>0)": 0.0,
+   "BOUND P(UB<0)": 0.0002,
+   "BOUND halfwidth_pp": 2.91,
+   "guard fires": 0.0,
+   "WELCH P(LB>0)": 0.017,
+   "WELCH P(UB<0)": 0.0175,
+   "WELCH halfwidth_pp": 2.45
+  },
+  "k=3 m=1200 p=0.15 sigma_s=0.0pp delta=3pp": {
+   "BOUND P(LB>0)": 0.52,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 2.95,
+   "guard fires": 0.0,
+   "WELCH P(LB>0)": 0.62,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 2.54
+  },
+  "k=3 m=1200 p=0.15 sigma_s=0.0pp delta=4pp": {
+   "BOUND P(LB>0)": 0.881,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 2.96,
+   "guard fires": 0.0,
+   "WELCH P(LB>0)": 0.832,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 2.57
+  },
+  "k=3 m=1200 p=0.15 sigma_s=0.0pp delta=5pp": {
+   "BOUND P(LB>0)": 0.989,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 2.97,
+   "guard fires": 0.0,
+   "WELCH P(LB>0)": 0.942,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 2.6
+  },
+  "k=3 m=1200 p=0.15 sigma_s=1.5pp delta=0pp": {
+   "BOUND P(LB>0)": 0.019,
+   "BOUND P(UB<0)": 0.0191,
+   "BOUND halfwidth_pp": 2.93,
+   "guard fires": 0.049,
+   "WELCH P(LB>0)": 0.017,
+   "WELCH P(UB<0)": 0.0179,
+   "WELCH halfwidth_pp": 4.31
+  },
+  "k=3 m=1200 p=0.15 sigma_s=1.5pp delta=3pp": {
+   "BOUND P(LB>0)": 0.44,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 2.97,
+   "guard fires": 0.05,
+   "WELCH P(LB>0)": 0.257,
+   "WELCH P(UB<0)": 0.0001,
+   "WELCH halfwidth_pp": 4.37
+  },
+  "k=3 m=1200 p=0.15 sigma_s=1.5pp delta=4pp": {
+   "BOUND P(LB>0)": 0.674,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 2.98,
+   "guard fires": 0.051,
+   "WELCH P(LB>0)": 0.419,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 4.4
+  },
+  "k=3 m=1200 p=0.15 sigma_s=1.5pp delta=5pp": {
+   "BOUND P(LB>0)": 0.842,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 2.99,
+   "guard fires": 0.051,
+   "WELCH P(LB>0)": 0.585,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 4.42
+  },
+  "k=3 m=2400 p=0.50 sigma_s=0.0pp delta=0pp": {
+   "BOUND P(LB>0)": 0.0,
+   "BOUND P(UB<0)": 0.0002,
+   "BOUND halfwidth_pp": 2.9,
+   "guard fires": 0.0,
+   "WELCH P(LB>0)": 0.018,
+   "WELCH P(UB<0)": 0.0182,
+   "WELCH halfwidth_pp": 2.42
+  },
+  "k=3 m=2400 p=0.50 sigma_s=0.0pp delta=3pp": {
+   "BOUND P(LB>0)": 0.549,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 2.9,
+   "guard fires": 0.0,
+   "WELCH P(LB>0)": 0.662,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 2.42
+  },
+  "k=3 m=2400 p=0.50 sigma_s=0.0pp delta=4pp": {
+   "BOUND P(LB>0)": 0.908,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 2.9,
+   "guard fires": 0.0,
+   "WELCH P(LB>0)": 0.874,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 2.42
+  },
+  "k=3 m=2400 p=0.50 sigma_s=0.0pp delta=5pp": {
+   "BOUND P(LB>0)": 0.994,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 2.9,
+   "guard fires": 0.0,
+   "WELCH P(LB>0)": 0.965,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 2.42
+  },
+  "k=3 m=2400 p=0.50 sigma_s=1.0pp delta=0pp": {
+   "BOUND P(LB>0)": 0.006,
+   "BOUND P(UB<0)": 0.0057,
+   "BOUND halfwidth_pp": 2.9,
+   "guard fires": 0.002,
+   "WELCH P(LB>0)": 0.017,
+   "WELCH P(UB<0)": 0.0171,
+   "WELCH halfwidth_pp": 3.38
+  },
+  "k=3 m=2400 p=0.50 sigma_s=1.0pp delta=3pp": {
+   "BOUND P(LB>0)": 0.515,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 2.9,
+   "guard fires": 0.002,
+   "WELCH P(LB>0)": 0.398,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 3.39
+  },
+  "k=3 m=2400 p=0.50 sigma_s=1.0pp delta=4pp": {
+   "BOUND P(LB>0)": 0.813,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 2.9,
+   "guard fires": 0.003,
+   "WELCH P(LB>0)": 0.62,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 3.39
+  },
+  "k=3 m=2400 p=0.50 sigma_s=1.0pp delta=5pp": {
+   "BOUND P(LB>0)": 0.958,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 2.9,
+   "guard fires": 0.002,
+   "WELCH P(LB>0)": 0.799,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 3.39
+  },
+  "k=3 m=2400 p=0.50 sigma_s=1.5pp delta=0pp": {
+   "BOUND P(LB>0)": 0.019,
+   "BOUND P(UB<0)": 0.0187,
+   "BOUND halfwidth_pp": 2.9,
+   "guard fires": 0.052,
+   "WELCH P(LB>0)": 0.017,
+   "WELCH P(UB<0)": 0.0172,
+   "WELCH halfwidth_pp": 4.31
+  },
+  "k=3 m=2400 p=0.50 sigma_s=1.5pp delta=3pp": {
+   "BOUND P(LB>0)": 0.454,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 2.9,
+   "guard fires": 0.05,
+   "WELCH P(LB>0)": 0.264,
+   "WELCH P(UB<0)": 0.0001,
+   "WELCH halfwidth_pp": 4.31
+  },
+  "k=3 m=2400 p=0.50 sigma_s=1.5pp delta=4pp": {
+   "BOUND P(LB>0)": 0.692,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 2.9,
+   "guard fires": 0.05,
+   "WELCH P(LB>0)": 0.434,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 4.31
+  },
+  "k=3 m=2400 p=0.50 sigma_s=1.5pp delta=5pp": {
+   "BOUND P(LB>0)": 0.859,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 2.9,
+   "guard fires": 0.05,
+   "WELCH P(LB>0)": 0.609,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 4.3
+  },
+  "k=3 m=2400 p=0.50 sigma_s=2.0pp delta=0pp": {
+   "BOUND P(LB>0)": 0.032,
+   "BOUND P(UB<0)": 0.0319,
+   "BOUND halfwidth_pp": 3.39,
+   "guard fires": 0.222,
+   "WELCH P(LB>0)": 0.017,
+   "WELCH P(UB<0)": 0.0178,
+   "WELCH halfwidth_pp": 5.34
+  },
+  "k=3 m=2400 p=0.50 sigma_s=2.0pp delta=3pp": {
+   "BOUND P(LB>0)": 0.352,
+   "BOUND P(UB<0)": 0.0004,
+   "BOUND halfwidth_pp": 3.38,
+   "guard fires": 0.224,
+   "WELCH P(LB>0)": 0.18,
+   "WELCH P(UB<0)": 0.0003,
+   "WELCH halfwidth_pp": 5.33
+  },
+  "k=3 m=2400 p=0.50 sigma_s=2.0pp delta=4pp": {
+   "BOUND P(LB>0)": 0.524,
+   "BOUND P(UB<0)": 0.0001,
+   "BOUND halfwidth_pp": 3.38,
+   "guard fires": 0.222,
+   "WELCH P(LB>0)": 0.301,
+   "WELCH P(UB<0)": 0.0001,
+   "WELCH halfwidth_pp": 5.33
+  },
+  "k=3 m=2400 p=0.50 sigma_s=2.0pp delta=5pp": {
+   "BOUND P(LB>0)": 0.672,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 3.39,
+   "guard fires": 0.224,
+   "WELCH P(LB>0)": 0.44,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 5.33
+  },
+  "k=3 m=2400 p=0.50 sigma_s=3.0pp delta=0pp": {
+   "BOUND P(LB>0)": 0.036,
+   "BOUND P(UB<0)": 0.0366,
+   "BOUND halfwidth_pp": 7.15,
+   "guard fires": 0.659,
+   "WELCH P(LB>0)": 0.018,
+   "WELCH P(UB<0)": 0.0176,
+   "WELCH halfwidth_pp": 7.52
+  },
+  "k=3 m=2400 p=0.50 sigma_s=3.0pp delta=3pp": {
+   "BOUND P(LB>0)": 0.179,
+   "BOUND P(UB<0)": 0.0026,
+   "BOUND halfwidth_pp": 7.17,
+   "guard fires": 0.661,
+   "WELCH P(LB>0)": 0.107,
+   "WELCH P(UB<0)": 0.0014,
+   "WELCH halfwidth_pp": 7.53
+  },
+  "k=3 m=2400 p=0.50 sigma_s=3.0pp delta=4pp": {
+   "BOUND P(LB>0)": 0.254,
+   "BOUND P(UB<0)": 0.0008,
+   "BOUND halfwidth_pp": 7.17,
+   "guard fires": 0.661,
+   "WELCH P(LB>0)": 0.168,
+   "WELCH P(UB<0)": 0.0004,
+   "WELCH halfwidth_pp": 7.53
+  },
+  "k=3 m=2400 p=0.50 sigma_s=3.0pp delta=5pp": {
+   "BOUND P(LB>0)": 0.337,
+   "BOUND P(UB<0)": 0.0002,
+   "BOUND halfwidth_pp": 7.16,
+   "guard fires": 0.66,
+   "WELCH P(LB>0)": 0.245,
+   "WELCH P(UB<0)": 0.0001,
+   "WELCH halfwidth_pp": 7.53
+  },
+  "k=3 m=2400 p=0.30 sigma_s=0.0pp delta=0pp": {
+   "BOUND P(LB>0)": 0.0,
+   "BOUND P(UB<0)": 0.0001,
+   "BOUND halfwidth_pp": 2.83,
+   "guard fires": 0.0,
+   "WELCH P(LB>0)": 0.019,
+   "WELCH P(UB<0)": 0.0167,
+   "WELCH halfwidth_pp": 2.22
+  },
+  "k=3 m=2400 p=0.30 sigma_s=0.0pp delta=3pp": {
+   "BOUND P(LB>0)": 0.581,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 2.84,
+   "guard fires": 0.0,
+   "WELCH P(LB>0)": 0.721,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 2.25
+  },
+  "k=3 m=2400 p=0.30 sigma_s=0.0pp delta=4pp": {
+   "BOUND P(LB>0)": 0.931,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 2.84,
+   "guard fires": 0.0,
+   "WELCH P(LB>0)": 0.909,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 2.26
+  },
+  "k=3 m=2400 p=0.30 sigma_s=0.0pp delta=5pp": {
+   "BOUND P(LB>0)": 0.997,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 2.85,
+   "guard fires": 0.0,
+   "WELCH P(LB>0)": 0.978,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 2.27
+  },
+  "k=3 m=2400 p=0.30 sigma_s=1.5pp delta=0pp": {
+   "BOUND P(LB>0)": 0.02,
+   "BOUND P(UB<0)": 0.0186,
+   "BOUND halfwidth_pp": 2.83,
+   "guard fires": 0.05,
+   "WELCH P(LB>0)": 0.018,
+   "WELCH P(UB<0)": 0.0172,
+   "WELCH halfwidth_pp": 4.19
+  },
+  "k=3 m=2400 p=0.30 sigma_s=1.5pp delta=3pp": {
+   "BOUND P(LB>0)": 0.47,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 2.84,
+   "guard fires": 0.049,
+   "WELCH P(LB>0)": 0.274,
+   "WELCH P(UB<0)": 0.0001,
+   "WELCH halfwidth_pp": 4.21
+  },
+  "k=3 m=2400 p=0.30 sigma_s=1.5pp delta=4pp": {
+   "BOUND P(LB>0)": 0.709,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 2.85,
+   "guard fires": 0.05,
+   "WELCH P(LB>0)": 0.447,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 4.23
+  },
+  "k=3 m=2400 p=0.30 sigma_s=1.5pp delta=5pp": {
+   "BOUND P(LB>0)": 0.868,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 2.85,
+   "guard fires": 0.051,
+   "WELCH P(LB>0)": 0.624,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 4.23
+  },
+  "k=3 m=2400 p=0.15 sigma_s=0.0pp delta=0pp": {
+   "BOUND P(LB>0)": 0.0,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 2.67,
+   "guard fires": 0.0,
+   "WELCH P(LB>0)": 0.018,
+   "WELCH P(UB<0)": 0.0174,
+   "WELCH halfwidth_pp": 1.73
+  },
+  "k=3 m=2400 p=0.15 sigma_s=0.0pp delta=3pp": {
+   "BOUND P(LB>0)": 0.693,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 2.69,
+   "guard fires": 0.0,
+   "WELCH P(LB>0)": 0.878,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 1.8
+  },
+  "k=3 m=2400 p=0.15 sigma_s=0.0pp delta=4pp": {
+   "BOUND P(LB>0)": 0.982,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 2.7,
+   "guard fires": 0.0,
+   "WELCH P(LB>0)": 0.977,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 1.82
+  },
+  "k=3 m=2400 p=0.15 sigma_s=0.0pp delta=5pp": {
+   "BOUND P(LB>0)": 1.0,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 2.7,
+   "guard fires": 0.0,
+   "WELCH P(LB>0)": 0.997,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 1.84
+  },
+  "k=3 m=2400 p=0.15 sigma_s=1.5pp delta=0pp": {
+   "BOUND P(LB>0)": 0.019,
+   "BOUND P(UB<0)": 0.0196,
+   "BOUND halfwidth_pp": 2.68,
+   "guard fires": 0.05,
+   "WELCH P(LB>0)": 0.018,
+   "WELCH P(UB<0)": 0.0171,
+   "WELCH halfwidth_pp": 3.96
+  },
+  "k=3 m=2400 p=0.15 sigma_s=1.5pp delta=3pp": {
+   "BOUND P(LB>0)": 0.509,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 2.7,
+   "guard fires": 0.049,
+   "WELCH P(LB>0)": 0.3,
+   "WELCH P(UB<0)": 0.0001,
+   "WELCH halfwidth_pp": 4.0
+  },
+  "k=3 m=2400 p=0.15 sigma_s=1.5pp delta=4pp": {
+   "BOUND P(LB>0)": 0.751,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 2.7,
+   "guard fires": 0.051,
+   "WELCH P(LB>0)": 0.485,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 4.01
+  },
+  "k=3 m=2400 p=0.15 sigma_s=1.5pp delta=5pp": {
+   "BOUND P(LB>0)": 0.896,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 2.71,
+   "guard fires": 0.049,
+   "WELCH P(LB>0)": 0.666,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 4.01
+  },
+  "k=5 m=1200 p=0.50 sigma_s=0.0pp delta=0pp": {
+   "BOUND P(LB>0)": 0.002,
+   "BOUND P(UB<0)": 0.0024,
+   "BOUND halfwidth_pp": 2.58,
+   "guard fires": 0.0,
+   "WELCH P(LB>0)": 0.022,
+   "WELCH P(UB<0)": 0.0216,
+   "WELCH halfwidth_pp": 2.09
+  },
+  "k=5 m=1200 p=0.50 sigma_s=0.0pp delta=3pp": {
+   "BOUND P(LB>0)": 0.678,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 2.58,
+   "guard fires": 0.0,
+   "WELCH P(LB>0)": 0.799,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 2.09
+  },
+  "k=5 m=1200 p=0.50 sigma_s=0.0pp delta=4pp": {
+   "BOUND P(LB>0)": 0.941,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 2.58,
+   "guard fires": 0.0,
+   "WELCH P(LB>0)": 0.961,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 2.08
+  },
+  "k=5 m=1200 p=0.50 sigma_s=0.0pp delta=5pp": {
+   "BOUND P(LB>0)": 0.996,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 2.58,
+   "guard fires": 0.0,
+   "WELCH P(LB>0)": 0.996,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 2.08
+  },
+  "k=5 m=1200 p=0.50 sigma_s=1.0pp delta=0pp": {
+   "BOUND P(LB>0)": 0.01,
+   "BOUND P(UB<0)": 0.0097,
+   "BOUND halfwidth_pp": 2.58,
+   "guard fires": 0.003,
+   "WELCH P(LB>0)": 0.022,
+   "WELCH P(UB<0)": 0.0219,
+   "WELCH halfwidth_pp": 2.54
+  },
+  "k=5 m=1200 p=0.50 sigma_s=1.0pp delta=3pp": {
+   "BOUND P(LB>0)": 0.636,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 2.58,
+   "guard fires": 0.003,
+   "WELCH P(LB>0)": 0.632,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 2.54
+  },
+  "k=5 m=1200 p=0.50 sigma_s=1.0pp delta=4pp": {
+   "BOUND P(LB>0)": 0.891,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 2.58,
+   "guard fires": 0.003,
+   "WELCH P(LB>0)": 0.865,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 2.54
+  },
+  "k=5 m=1200 p=0.50 sigma_s=1.0pp delta=5pp": {
+   "BOUND P(LB>0)": 0.983,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 2.58,
+   "guard fires": 0.003,
+   "WELCH P(LB>0)": 0.968,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 2.53
+  },
+  "k=5 m=1200 p=0.50 sigma_s=1.5pp delta=0pp": {
+   "BOUND P(LB>0)": 0.02,
+   "BOUND P(UB<0)": 0.0203,
+   "BOUND halfwidth_pp": 2.58,
+   "guard fires": 0.05,
+   "WELCH P(LB>0)": 0.021,
+   "WELCH P(UB<0)": 0.0221,
+   "WELCH halfwidth_pp": 3.02
+  },
+  "k=5 m=1200 p=0.50 sigma_s=1.5pp delta=3pp": {
+   "BOUND P(LB>0)": 0.562,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 2.58,
+   "guard fires": 0.05,
+   "WELCH P(LB>0)": 0.487,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 3.02
+  },
+  "k=5 m=1200 p=0.50 sigma_s=1.5pp delta=4pp": {
+   "BOUND P(LB>0)": 0.812,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 2.58,
+   "guard fires": 0.05,
+   "WELCH P(LB>0)": 0.735,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 3.01
+  },
+  "k=5 m=1200 p=0.50 sigma_s=1.5pp delta=5pp": {
+   "BOUND P(LB>0)": 0.942,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 2.58,
+   "guard fires": 0.049,
+   "WELCH P(LB>0)": 0.897,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 3.01
+  },
+  "k=5 m=1200 p=0.50 sigma_s=2.0pp delta=0pp": {
+   "BOUND P(LB>0)": 0.028,
+   "BOUND P(UB<0)": 0.029,
+   "BOUND halfwidth_pp": 2.97,
+   "guard fires": 0.245,
+   "WELCH P(LB>0)": 0.022,
+   "WELCH P(UB<0)": 0.0223,
+   "WELCH halfwidth_pp": 3.57
+  },
+  "k=5 m=1200 p=0.50 sigma_s=2.0pp delta=3pp": {
+   "BOUND P(LB>0)": 0.455,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 2.96,
+   "guard fires": 0.243,
+   "WELCH P(LB>0)": 0.373,
+   "WELCH P(UB<0)": 0.0001,
+   "WELCH halfwidth_pp": 3.57
+  },
+  "k=5 m=1200 p=0.50 sigma_s=2.0pp delta=4pp": {
+   "BOUND P(LB>0)": 0.667,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 2.96,
+   "guard fires": 0.245,
+   "WELCH P(LB>0)": 0.584,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 3.57
+  },
+  "k=5 m=1200 p=0.50 sigma_s=2.0pp delta=5pp": {
+   "BOUND P(LB>0)": 0.835,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 2.96,
+   "guard fires": 0.243,
+   "WELCH P(LB>0)": 0.779,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 3.56
+  },
+  "k=5 m=1200 p=0.50 sigma_s=3.0pp delta=0pp": {
+   "BOUND P(LB>0)": 0.028,
+   "BOUND P(UB<0)": 0.0278,
+   "BOUND halfwidth_pp": 4.8,
+   "guard fires": 0.77,
+   "WELCH P(LB>0)": 0.022,
+   "WELCH P(UB<0)": 0.0222,
+   "WELCH halfwidth_pp": 4.82
+  },
+  "k=5 m=1200 p=0.50 sigma_s=3.0pp delta=3pp": {
+   "BOUND P(LB>0)": 0.246,
+   "BOUND P(UB<0)": 0.0007,
+   "BOUND halfwidth_pp": 4.8,
+   "guard fires": 0.768,
+   "WELCH P(LB>0)": 0.223,
+   "WELCH P(UB<0)": 0.0005,
+   "WELCH halfwidth_pp": 4.82
+  },
+  "k=5 m=1200 p=0.50 sigma_s=3.0pp delta=4pp": {
+   "BOUND P(LB>0)": 0.384,
+   "BOUND P(UB<0)": 0.0001,
+   "BOUND halfwidth_pp": 4.81,
+   "guard fires": 0.77,
+   "WELCH P(LB>0)": 0.359,
+   "WELCH P(UB<0)": 0.0001,
+   "WELCH halfwidth_pp": 4.82
+  },
+  "k=5 m=1200 p=0.50 sigma_s=3.0pp delta=5pp": {
+   "BOUND P(LB>0)": 0.545,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 4.8,
+   "guard fires": 0.771,
+   "WELCH P(LB>0)": 0.524,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 4.81
+  },
+  "k=5 m=1200 p=0.30 sigma_s=0.0pp delta=0pp": {
+   "BOUND P(LB>0)": 0.001,
+   "BOUND P(UB<0)": 0.0017,
+   "BOUND halfwidth_pp": 2.48,
+   "guard fires": 0.0,
+   "WELCH P(LB>0)": 0.021,
+   "WELCH P(UB<0)": 0.0214,
+   "WELCH halfwidth_pp": 1.92
+  },
+  "k=5 m=1200 p=0.30 sigma_s=0.0pp delta=3pp": {
+   "BOUND P(LB>0)": 0.726,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 2.49,
+   "guard fires": 0.0,
+   "WELCH P(LB>0)": 0.851,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 1.94
+  },
+  "k=5 m=1200 p=0.30 sigma_s=0.0pp delta=4pp": {
+   "BOUND P(LB>0)": 0.962,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 2.5,
+   "guard fires": 0.0,
+   "WELCH P(LB>0)": 0.978,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 1.95
+  },
+  "k=5 m=1200 p=0.30 sigma_s=0.0pp delta=5pp": {
+   "BOUND P(LB>0)": 0.998,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 2.5,
+   "guard fires": 0.0,
+   "WELCH P(LB>0)": 0.999,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 1.95
+  },
+  "k=5 m=1200 p=0.30 sigma_s=1.5pp delta=0pp": {
+   "BOUND P(LB>0)": 0.02,
+   "BOUND P(UB<0)": 0.0189,
+   "BOUND halfwidth_pp": 2.49,
+   "guard fires": 0.049,
+   "WELCH P(LB>0)": 0.022,
+   "WELCH P(UB<0)": 0.0216,
+   "WELCH halfwidth_pp": 2.9
+  },
+  "k=5 m=1200 p=0.30 sigma_s=1.5pp delta=3pp": {
+   "BOUND P(LB>0)": 0.591,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 2.5,
+   "guard fires": 0.05,
+   "WELCH P(LB>0)": 0.514,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 2.91
+  },
+  "k=5 m=1200 p=0.30 sigma_s=1.5pp delta=4pp": {
+   "BOUND P(LB>0)": 0.833,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 2.5,
+   "guard fires": 0.051,
+   "WELCH P(LB>0)": 0.76,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 2.92
+  },
+  "k=5 m=1200 p=0.30 sigma_s=1.5pp delta=5pp": {
+   "BOUND P(LB>0)": 0.952,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 2.51,
+   "guard fires": 0.049,
+   "WELCH P(LB>0)": 0.915,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 2.92
+  },
+  "k=5 m=1200 p=0.15 sigma_s=0.0pp delta=0pp": {
+   "BOUND P(LB>0)": 0.0,
+   "BOUND P(UB<0)": 0.0003,
+   "BOUND halfwidth_pp": 2.26,
+   "guard fires": 0.0,
+   "WELCH P(LB>0)": 0.022,
+   "WELCH P(UB<0)": 0.0227,
+   "WELCH halfwidth_pp": 1.49
+  },
+  "k=5 m=1200 p=0.15 sigma_s=0.0pp delta=3pp": {
+   "BOUND P(LB>0)": 0.856,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 2.28,
+   "guard fires": 0.0,
+   "WELCH P(LB>0)": 0.964,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 1.55
+  },
+  "k=5 m=1200 p=0.15 sigma_s=0.0pp delta=4pp": {
+   "BOUND P(LB>0)": 0.994,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 2.29,
+   "guard fires": 0.0,
+   "WELCH P(LB>0)": 0.998,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 1.57
+  },
+  "k=5 m=1200 p=0.15 sigma_s=0.0pp delta=5pp": {
+   "BOUND P(LB>0)": 1.0,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 2.3,
+   "guard fires": 0.0,
+   "WELCH P(LB>0)": 1.0,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 1.58
+  },
+  "k=5 m=1200 p=0.15 sigma_s=1.5pp delta=0pp": {
+   "BOUND P(LB>0)": 0.02,
+   "BOUND P(UB<0)": 0.019,
+   "BOUND halfwidth_pp": 2.27,
+   "guard fires": 0.049,
+   "WELCH P(LB>0)": 0.022,
+   "WELCH P(UB<0)": 0.0222,
+   "WELCH halfwidth_pp": 2.64
+  },
+  "k=5 m=1200 p=0.15 sigma_s=1.5pp delta=3pp": {
+   "BOUND P(LB>0)": 0.67,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 2.3,
+   "guard fires": 0.05,
+   "WELCH P(LB>0)": 0.591,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 2.67
+  },
+  "k=5 m=1200 p=0.15 sigma_s=1.5pp delta=4pp": {
+   "BOUND P(LB>0)": 0.89,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 2.31,
+   "guard fires": 0.051,
+   "WELCH P(LB>0)": 0.828,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 2.68
+  },
+  "k=5 m=1200 p=0.15 sigma_s=1.5pp delta=5pp": {
+   "BOUND P(LB>0)": 0.975,
+   "BOUND P(UB<0)": 0.0,
+   "BOUND halfwidth_pp": 2.31,
+   "guard fires": 0.051,
+   "WELCH P(LB>0)": 0.952,
+   "WELCH P(UB<0)": 0.0,
+   "WELCH halfwidth_pp": 2.69
+  }
+ }
+}

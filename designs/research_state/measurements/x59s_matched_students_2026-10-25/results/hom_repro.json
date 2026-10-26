@@ -1,0 +1,9 @@
+{
+ "seed": 20261025,
+ "battles_in_both": 27586,
+ "battles_sampled": 200,
+ "compared": 8878,
+ "row_equal": 8878,
+ "label_equal": 8878,
+ "pass": true
+}
