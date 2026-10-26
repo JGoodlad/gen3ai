@@ -1,0 +1,13 @@
+[x35 kit] pin-check: AM-N1P: N1P's pin 5f8f6cfa37de = the side's pin f4b25238def5 + one commit, 4 file(s), all under ['src/utils/team_corpora/'], corpus tree b273cfe1ff11 (the registered N1-P tree)
+[x35 kit] pin-check: rb_x35_d1wide_s3501.crashed-20261022: a PRE-FIX d1 attempt at X35_PIN_1_production f4b25238def5 (AM-D1-FIX-f: VOID, never read)
+[x35 kit] pin-check: 22 side-pinned production run(s) checked against f4b25238def5
+[x35 kit] pin-check: the other side's run(s), judged at its own launches: ['rb_x35t_c0_s3601', 'rb_x35t_c0_s3602', 'rb_x35t_c0_s3603', 'rb_x35t_r0_s3631', 'rb_x35t_x47d4_s3601', 'rb_x35t_x47d4_s3602', 'rb_x35t_x47d4_s3603']
+rc=0
+[x35 kit] corpus-check: PASS: n1_proc_v1@ALL at the pin 5f8f6cfa37de: 12000 teams, tier sha d59f44f0b33b (the registered corpus), soaked with the label path: 120000 battles, 0 core errors
+rc=0
+[x35 kit] corpus-check: FAIL: the pin f4b25238def5 holds no src/utils/team_corpora/n1_proc_v1/manifest.json: fatal: path 'src/utils/team_corpora/n1_proc_v1/manifest.json' exists on disk, but not in 'f4b25238def57900c0305bb2a3a5a8f9edaef285'
+rc=1
+[x35 kit] stage-check n1p s3501: ALLOWED: n1p s3501: no unmet condition (stage N1P, AM-N1P: the orchestrator's GO)
+rc=0
+[x35 kit] stage-check n1p s3504: PENDING: n1p look 1 is not read yet (look 2 runs only on CONTINUE)
+rc=1

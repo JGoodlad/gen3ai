@@ -780,13 +780,16 @@ alternative if W_hl's repair fails validation at scale.
 - **Declared where this section is open:** an offline corpus, so a finite set of variants rather than a fresh draw
   per episode; both sides; the ability kept.
 
-**BUILT 2026-10-25 as (c), whole procedural teams, at 10⁴ scale FROM STEP 0: X61 / N1**
-(`x61_n1_breadth_2026-10-25/PREREG.md`; the literature survey's top lever, `sota_survey_2026-10-26.md` §5; on the toy
-first, not launched). The corpus `n1_proc_v1` (`python -m utils.team_corpora.build_n1_proc [--check]`): 12,000 whole
-teams from the Smogon facade alone (species by usage + teammate co-usage, sets as (a)), the pinned validator, and no
-team within 2 mon sets of a held-out panel team (REVIEW A's ≥ 3-fit rule). It is (c) in Python over the facade, not
-`ou_random_teams.js`. The lever is q = 0.7 per side (the pool keeps 0.3), and the arm is a FRESH toy beside a fresh toy
-C0 at one pin, not a plateau fork. Its primary leaves P72 out: the corpus trains on P72's population.
+**BUILT as (c), whole procedural teams, at 10⁴ scale: the corpus `n1_proc_v1` (X61, 2026-10-25), run as N1-P
+(X61P, 2026-10-26)** (the literature survey's top lever, `sota_survey_2026-10-26.md` §5). The corpus (`python -m
+utils.team_corpora.build_n1_proc [--check]`): 12,000 whole teams from the Smogon facade alone (species by usage +
+teammate co-usage, sets as (a)), the pinned validator, and no team within 2 mon sets of a held-out panel team (REVIEW
+A's ≥ 3-fit rule). It is (c) in Python over the facade, not `ou_random_teams.js`.
+- **The toy arm from step 0 (X61, q = 0.7) was reviewed NOT-READY** (`x61_n1_breadth_2026-10-25/REVIEW.md`): the
+  corpus holds 62 % of H's full sets (H is generator-adjacent, like P72), and the toy's premium sits below its GO bar.
+- **N1-P runs instead** (`x61p_n1_production_2026-10-26/PREREG.md`): a fork of P\* at q = 0.5 per side (D1's share),
+  both sides, at C0's pin + the corpus only, read by D1's rule on F ALONE against the shared C0. H and P72 are reported
+  only, because the corpus covers their sets; that also inflates any N1-trained model's U.
 
 ### 4.6 L6 — our side's team diversity vs the opponent side's
 
@@ -1513,3 +1516,4 @@ held-out gain and in-pool cost, is the right design. Three amendments:
 | 2026-10-25 | **D3 (§4.5 (a), X41) BUILT and registered** (training-lever builder, orchestrator brief) | an offline set-mutation corpus `d3_setmut_v1` (2,876 = 719 pool teams × 4; k ∈ {1, 2}; Smogon priors only; HP by the L1 repair; validator; no held-out-panel neighbour), the lever `--team-mix d3_setmut_v1@ALL:0.3 --team-mix-sides both`, its own corpus-only pin (D1's pattern) and D1's readout rule | per-episode resampling in the trainer (a trainer build, so C0's code would differ); excluding home72 / away cores (they are the lever's target); (b) / (c) (separate levers) | `x41_d3_setmut_2026-10-25/PREREG.md` |
 | 2026-10-25 | Status line made true (docs-health pass) | the 10-18 status stopped at X37a stage 2; the Decision record above already holds X37b (10-19), D1's launch-readiness and D3's build (10-25), and ledger L28471 holds D1's FINAL read; the status now says which arms ran and which have no read | the old line | this Decision record; `ledger_index.md` L28471; `EXPERIMENT_BACKLOG.md` DV-1 to DV-10 |
 | 2026-10-25 | **§4.5 (c) BUILT at 10⁴ from step 0 as X61 / N1** (training-lever builder, orchestrator brief after the literature survey) | `n1_proc_v1`: 12,000 procedural teams (Smogon facade only, ≥ 3-fit panel exclusion, prefix tiers for a later dose read), q = 0.7 both sides, a fresh toy pair at one pin; primary U_HF (P72 reported only) | (c) at q = 0.3 as an augmentation of the pool (10³ scale, the survey's diagnosis); `ou_random_teams.js` as the generator (not the facade); the registry's radius 4 | `x61_n1_breadth_2026-10-25/PREREG.md` |
+| 2026-10-26 | **§4.5 (c) run as N1-P at the plateau; X61's toy arm NOT-READY** (training-lever builder, orchestrator brief after the X61 review) | kit arm `n1p`: C0's argv + `--team-mix n1_proc_v1@ALL:0.5 --team-mix-sides both`, its own corpus-only pin `5f8f6cfa`, against the shared C0; the primary Δ_F alone (B1: H generator-adjacent) | the toy as registered (B1 / B2 / M1); q = 0.7 at the plateau (no dose rationale, review m6; 0.5 matches D1) | `x61p_n1_production_2026-10-26/PREREG.md` |

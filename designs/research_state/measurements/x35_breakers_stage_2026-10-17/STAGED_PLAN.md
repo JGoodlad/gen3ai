@@ -637,3 +637,17 @@ The registration, the predictions, the VOID guards and the validation transcript
 - **Seeds and control:** look 1 s3501–s3503, look 2 s3504–s3505 on CONTINUE (`batch.D3_STAGES`), against C0 s3501–s3505.
 - **Rule:** D1's (`decide-d1`, arm label `X41`).
 - **Launch:** `launch_x35.sh d3 3501 --pin <D3_PIN> --lease-owner <owner>`; add `GO` only on the orchestrator's go.
+
+## 9. The N1-P arm (X61P, PROCEDURAL BREADTH AT THE PLATEAU), registered 2026-10-26, NEEDS THE ORCHESTRATOR'S GO
+
+The registration, the predictions, the VOID guards and the validation transcripts are
+[`../x61p_n1_production_2026-10-26/PREREG.md`](../x61p_n1_production_2026-10-26/PREREG.md) (the X61 review's
+recommended design, `../x61_n1_breadth_2026-10-25/REVIEW.md`). In one line:
+- **Lever:** C0's argv + `--team-mix n1_proc_v1@ALL:0.5 --team-mix-sides both` (`main.x35.kit` arm `n1p`, run
+  `rb_x35_n1p_s<seed>`).
+- **Pin:** its own corpus-only pin `batch.N1P_PIN` (tag `x61p-n1p-pin-5f8f6cfa`) = `f4b25238` + one commit adding only
+  the corpus's three files and its `CORPORA` line, checked by `kit pin-check --arm n1p` and `kit corpus-check --arm n1p`.
+- **Seeds and control:** look 1 s3501–s3503, look 2 s3504–s3505 on CONTINUE (`batch.N1P_STAGES`), against C0
+  s3501–s3505.
+- **Rule:** D1's on `forum72` alone at 60 units per final (`main.reads` spec `read_spec_look<k>.json`, arm label `X61P`).
+- **Launch:** `launch_x35.sh n1p 3501 --pin <N1P_PIN> --lease-owner <owner>`; add `GO` only on the orchestrator's go.

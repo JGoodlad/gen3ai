@@ -106,3 +106,60 @@ def test_every_rule_is_registered_and_names_its_record_shape():
     assert [n for n, r in sorted(RU.RULES.items()) if r.x35_record] == ["d1", "x35_r1"]
     with pytest.raises(RU.RuleInputError):
         RU.RULES["anchor_trajectory"].verdict_of({"decision": {}})
+
+
+# ------------------------------------------------------- AM-N1P (2026-10-26): X61P's registered read specs, the d1 rule
+X61P = "designs/research_state/measurements/x61p_n1_production_2026-10-26"
+
+
+@pytest.mark.parametrize("look", [1, 2])
+def test_x61ps_committed_specs_parse_with_forum72_alone_at_60_units_and_a_reported_group(look):
+    from main.reads.spec import load
+    from utils.paths import repo_path
+
+    sp = load(repo_path(f"{X61P}/read_spec_look{look}.json"))
+    assert sp.rule == "d1" and sp.params["arm"] == "X61P" and sp.params["look"] == look
+    assert sp.anchor["primary"].teamsets == ("forum72",) and len(sp.anchor["primary"].unit_seeds) == 60
+    assert set(sp.anchor["reported"].teamsets) == {"heldout72_hpfix", "p72", "home72"}
+    assert sorted({m.seed for m in sp.models.values()}) == list(range(3501, 3501 + R.LOOK_SEEDS[look]))
+    assert len(sp.models) == 2 * R.LOOK_SEEDS[look]
+    assert all(m.ref.kind == ("pinned" if m.arm == "c0" else "final") for m in sp.models.values())
+
+
+def test_the_d1_rule_forms_x61ps_reported_panels_from_its_second_group_and_refuses_a_repeated_panel():
+    from main.reads.spec import parse
+
+    labels = ["c0_s3501", "n1p_s3501"]
+
+    def spec(reported_teamsets):
+        return parse({
+            "schema": "gen3_read_spec_v1", "read": "x61p_test",
+            "models": {lab: {"arm": lab[:-6], "seed": 3501, "ref": {"kind": "pinned", "path": f"/x/{lab}.zip",
+                                                                     "sha256": "0" * 64}} for lab in labels},
+            "anchor": {"primary": {"opponent": "metamon:Kakuna", "teamsets": ["forum72"], "unit_seeds": "0-59",
+                                   "models": labels},
+                       "reported": {"opponent": "metamon:Kakuna", "teamsets": reported_teamsets, "unit_seeds": "0-6",
+                                    "models": labels}},
+            "s": {"p": {"refpop": "/x/r.json", "refpop_content_sha256": "0" * 64, "panel": "home72", "pairs": 500,
+                        "batch_pairs": 100, "family": "f", "models": labels}},
+            "decision": {"rule": "d1", "params": {"arm": "X61P", "look": 1, "on": "n1p", "off": "c0",
+                                                  "anchor_group": "primary", "s_group": "p",
+                                                  "reported_group": "reported"}}})
+
+    sp = spec(["heldout72_hpfix"])
+
+    def cell(w, n):
+        return {"wins": w, "n": n, "ties": 0, "units": n // 20, "skipped": []}
+
+    cells = {"anchor": {"primary": {"cells": {"c0_s3501": {"forum72": cell(540, 1200)},
+                                              "n1p_s3501": {"forum72": cell(600, 1200)}}},
+                        "reported": {"cells": {"c0_s3501": {"heldout72_hpfix": cell(70, 140)},
+                                               "n1p_s3501": {"heldout72_hpfix": cell(80, 140)}}}},
+             "s": {"p": {"nodes": {lab: {"s_pp": 50.0, "population_score": {}} for lab in labels},
+                         "inconclusive": [], "panel": "home72", "team_set": "ts"}}}
+    doc = RU.inputs("d1", cells, sp.params, sp)
+    assert doc["h"]["on"] == {"3501": {"forum72": [600, 1200]}}
+    assert doc["reported_panels"] == {"on": {"3501": {"heldout72_hpfix": [80, 140]}},
+                                      "off": {"3501": {"heldout72_hpfix": [70, 140]}}}
+    with pytest.raises(Exception, match="repeats a primary panel"):
+        spec(["forum72", "p72"])

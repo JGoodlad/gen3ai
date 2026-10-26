@@ -1,0 +1,138 @@
+{
+ "schema": "gen3_read_spec_v1",
+ "read": "x61p_n1p_look1_2026-10-26",
+ "prereg": "designs/research_state/measurements/x61p_n1_production_2026-10-26/PREREG.md",
+ "note": "X61P / N1-P look 1: n1p vs the shared C0, D1's rule on forum72 alone (60 units = 1,200 games per final); H / P72 / home72 REPORTED at D1's 7 units; P = S vs the frozen R on home72",
+ "models": {
+  "c0_s3501": {
+   "arm": "c0",
+   "seed": 3501,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x35_c0_s3501/final_model.zip",
+    "sha256": "09a6a2df48509a59fd9aefe6d20d9722aad6717f1730c6dfd75274446b283303"
+   }
+  },
+  "c0_s3502": {
+   "arm": "c0",
+   "seed": 3502,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x35_c0_s3502/final_model.zip",
+    "sha256": "7e9a9890e2b397de6d8b87588c597d7f53e39b84efd3d1080305f77dbf22feec"
+   }
+  },
+  "c0_s3503": {
+   "arm": "c0",
+   "seed": 3503,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x35_c0_s3503/final_model.zip",
+    "sha256": "99096be8eccfc1cef4268ab4d6de15063a386cda475e72340212fdbf3a1b7e26"
+   }
+  },
+  "n1p_s3501": {
+   "arm": "n1p",
+   "seed": 3501,
+   "ref": {
+    "kind": "final",
+    "run": "models/rb_x35_n1p_s3501",
+    "min_step": 300000170,
+    "quiet_s": 300
+   }
+  },
+  "n1p_s3502": {
+   "arm": "n1p",
+   "seed": 3502,
+   "ref": {
+    "kind": "final",
+    "run": "models/rb_x35_n1p_s3502",
+    "min_step": 300000170,
+    "quiet_s": 300
+   }
+  },
+  "n1p_s3503": {
+   "arm": "n1p",
+   "seed": 3503,
+   "ref": {
+    "kind": "final",
+    "run": "models/rb_x35_n1p_s3503",
+    "min_step": 300000170,
+    "quiet_s": 300
+   }
+  }
+ },
+ "anchor": {
+  "primary": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "forum72"
+   ],
+   "unit_seeds": "0-59",
+   "models": [
+    "c0_s3501",
+    "c0_s3502",
+    "c0_s3503",
+    "n1p_s3501",
+    "n1p_s3502",
+    "n1p_s3503"
+   ]
+  },
+  "reported": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "heldout72_hpfix",
+    "p72",
+    "home72"
+   ],
+   "unit_seeds": "0-6",
+   "models": [
+    "c0_s3501",
+    "c0_s3502",
+    "c0_s3503",
+    "n1p_s3501",
+    "n1p_s3502",
+    "n1p_s3503"
+   ]
+  }
+ },
+ "s": {
+  "p": {
+   "refpop": "designs/research_state/measurements/x35_breakers_stage_2026-10-17/reference_population_production.json",
+   "refpop_content_sha256": "cef0960eac605f1dc026442d1089dc23654e23df91010feaaeea7890901e4519",
+   "panel": "home72",
+   "pairs": 500,
+   "batch_pairs": 100,
+   "family": "x61p_n1p_p_look1_2026-10-26",
+   "models": [
+    "c0_s3501",
+    "c0_s3502",
+    "c0_s3503",
+    "n1p_s3501",
+    "n1p_s3502",
+    "n1p_s3503"
+   ],
+   "regime_id": "d4de0fd7c16a2658"
+  }
+ },
+ "decision": {
+  "rule": "d1",
+  "params": {
+   "arm": "X61P",
+   "look": 1,
+   "on": "n1p",
+   "off": "c0",
+   "anchor_group": "primary",
+   "s_group": "p",
+   "reported_group": "reported",
+   "guards_not_read": {
+    "guards": [
+     "G-F",
+     "G-E",
+     "G-C"
+    ],
+    "why": "the guards gate only a QUALIFYING primary (the orchestrator's A1 ruling (a)): H is not GAIN, so they were not played"
+   }
+  }
+ }
+}

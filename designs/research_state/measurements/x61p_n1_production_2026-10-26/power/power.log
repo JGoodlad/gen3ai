@@ -1,0 +1,21 @@
+base 0.49, 1200 games per final, 4000 draws per cell; classes = look-1 outcome / FINAL class
+sigma 0 pp, delta +0 pp: look1 {'CONTINUE': 0.321, 'GAIN': 0.024, 'LOSS': 0.02, 'NULL': 0.309, 'UNDECIDED': 0.327} | final {'GAIN': 0.035, 'LOSS': 0.02, 'NULL': 0.527, 'UNDECIDED': 0.417}
+sigma 0 pp, delta +2 pp: look1 {'CONTINUE': 0.561, 'GAIN': 0.33, 'LOSS': 0.0, 'NULL': 0.09, 'UNDECIDED': 0.018} | final {'GAIN': 0.561, 'LOSS': 0.0, 'NULL': 0.176, 'UNDECIDED': 0.262}
+sigma 0 pp, delta +3 pp: look1 {'CONTINUE': 0.346, 'GAIN': 0.635, 'NULL': 0.018, 'UNDECIDED': 0.001} | final {'GAIN': 0.883, 'NULL': 0.027, 'UNDECIDED': 0.09}
+sigma 0 pp, delta +4 pp: look1 {'CONTINUE': 0.12, 'GAIN': 0.878, 'NULL': 0.002} | final {'GAIN': 0.988, 'NULL': 0.002, 'UNDECIDED': 0.01}
+sigma 0 pp, delta +5 pp: look1 {'CONTINUE': 0.024, 'GAIN': 0.976, 'NULL': 0.0} | final {'GAIN': 1.0, 'NULL': 0.0, 'UNDECIDED': 0.0}
+sigma 1 pp, delta +0 pp: look1 {'CONTINUE': 0.366, 'GAIN': 0.031, 'LOSS': 0.031, 'NULL': 0.208, 'UNDECIDED': 0.363} | final {'GAIN': 0.049, 'LOSS': 0.031, 'NULL': 0.379, 'UNDECIDED': 0.541}
+sigma 1 pp, delta +2 pp: look1 {'CONTINUE': 0.561, 'GAIN': 0.298, 'LOSS': 0.001, 'NULL': 0.087, 'UNDECIDED': 0.052} | final {'GAIN': 0.482, 'LOSS': 0.001, 'NULL': 0.161, 'UNDECIDED': 0.357}
+sigma 1 pp, delta +3 pp: look1 {'CONTINUE': 0.422, 'GAIN': 0.541, 'NULL': 0.027, 'UNDECIDED': 0.009} | final {'GAIN': 0.778, 'NULL': 0.044, 'UNDECIDED': 0.178}
+sigma 1 pp, delta +4 pp: look1 {'CONTINUE': 0.234, 'GAIN': 0.758, 'NULL': 0.006, 'UNDECIDED': 0.001} | final {'GAIN': 0.946, 'NULL': 0.008, 'UNDECIDED': 0.046}
+sigma 1 pp, delta +5 pp: look1 {'CONTINUE': 0.099, 'GAIN': 0.899, 'NULL': 0.001, 'UNDECIDED': 0.001} | final {'GAIN': 0.992, 'NULL': 0.001, 'UNDECIDED': 0.007}
+sigma 2 pp, delta +0 pp: look1 {'CONTINUE': 0.427, 'GAIN': 0.049, 'LOSS': 0.048, 'NULL': 0.068, 'UNDECIDED': 0.409} | final {'GAIN': 0.074, 'LOSS': 0.048, 'NULL': 0.125, 'UNDECIDED': 0.754}
+sigma 2 pp, delta +2 pp: look1 {'CONTINUE': 0.59, 'GAIN': 0.224, 'LOSS': 0.004, 'NULL': 0.041, 'UNDECIDED': 0.141} | final {'GAIN': 0.347, 'LOSS': 0.004, 'NULL': 0.074, 'UNDECIDED': 0.576}
+sigma 2 pp, delta +3 pp: look1 {'CONTINUE': 0.544, 'GAIN': 0.378, 'LOSS': 0.0, 'NULL': 0.021, 'UNDECIDED': 0.057} | final {'GAIN': 0.568, 'LOSS': 0.0, 'NULL': 0.032, 'UNDECIDED': 0.4}
+sigma 2 pp, delta +4 pp: look1 {'CONTINUE': 0.427, 'GAIN': 0.543, 'NULL': 0.007, 'UNDECIDED': 0.022} | final {'GAIN': 0.768, 'NULL': 0.013, 'UNDECIDED': 0.219}
+sigma 2 pp, delta +5 pp: look1 {'CONTINUE': 0.289, 'GAIN': 0.703, 'NULL': 0.005, 'UNDECIDED': 0.004} | final {'GAIN': 0.901, 'NULL': 0.005, 'UNDECIDED': 0.094}
+sigma 3 pp, delta +0 pp: look1 {'CONTINUE': 0.446, 'GAIN': 0.047, 'LOSS': 0.059, 'NULL': 0.014, 'UNDECIDED': 0.433} | final {'GAIN': 0.069, 'LOSS': 0.059, 'NULL': 0.029, 'UNDECIDED': 0.843}
+sigma 3 pp, delta +2 pp: look1 {'CONTINUE': 0.574, 'GAIN': 0.19, 'LOSS': 0.007, 'NULL': 0.012, 'UNDECIDED': 0.217} | final {'GAIN': 0.275, 'LOSS': 0.007, 'NULL': 0.019, 'UNDECIDED': 0.699}
+sigma 3 pp, delta +3 pp: look1 {'CONTINUE': 0.581, 'GAIN': 0.275, 'LOSS': 0.003, 'NULL': 0.008, 'UNDECIDED': 0.133} | final {'GAIN': 0.408, 'LOSS': 0.003, 'NULL': 0.013, 'UNDECIDED': 0.575}
+sigma 3 pp, delta +4 pp: look1 {'CONTINUE': 0.554, 'GAIN': 0.371, 'LOSS': 0.002, 'NULL': 0.006, 'UNDECIDED': 0.067} | final {'GAIN': 0.564, 'LOSS': 0.002, 'NULL': 0.009, 'UNDECIDED': 0.424}
+sigma 3 pp, delta +5 pp: look1 {'CONTINUE': 0.46, 'GAIN': 0.506, 'LOSS': 0.001, 'NULL': 0.004, 'UNDECIDED': 0.029} | final {'GAIN': 0.722, 'LOSS': 0.001, 'NULL': 0.004, 'UNDECIDED': 0.272}

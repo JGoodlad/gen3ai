@@ -502,3 +502,39 @@ def test_corpus_check_reads_d3s_corpus_at_the_pin(tmp_path):
     assert ok and "2876 teams" in line and "57520 battles" in line, line
     ok, line = K.corpus_check("d1", "HEAD", str(repo))            # D1's corpus is not at this pin
     assert not ok
+
+
+# ---------------------------------------------------------------- AM-N1P (2026-10-26): X61P / N1-P, procedural breadth
+def test_n1p_is_c0_plus_the_procedural_mix_and_nothing_else():
+    """X61P / N1-P (the X61 review's recommended design; PREREG x61p_n1_production_2026-10-26): b-ON = C0's argv token
+    for token + the ONE lever (``--team-mix n1_proc_v1@ALL:0.5``, both sides), the same P*, seed, steps."""
+    call = standin_call()
+    for seed in K.PROD_SEEDS:
+        on, off = K.build_argv("n1p", seed, call), K.build_argv("c0", seed, call)
+        assert on[:-2] == off[:-2][:off.index("--seed")] + list(K.N1P_LEVER) + ["--seed", str(seed)]
+        assert on[-2:] == ["--run-name", f"rb_x35_n1p_s{seed}"] and off[-1] == f"rb_x35_c0_s{seed}"
+    assert K.N1P_LEVER == ("--team-mix", "n1_proc_v1@ALL:0.5", "--team-mix-sides", "both")
+    assert K.ARM_CORPUS["n1p"] is K.N1P_CORPUS
+    assert K.N1P_LEVER[1] == f"{K.N1P_CORPUS['corpus']}@{K.N1P_CORPUS['tier']}:0.5"
+    d = K.describe("n1p", 3501, call)
+    assert d["delta_text"] == "+20,000,000 steps" and d["parent_run_dir"].endswith("rb_x26_s2601")
+
+
+def test_n1ps_registered_corpus_is_the_committed_one_and_parses_as_its_lever():
+    from agents.training.matchup_spec import parse_team_mix
+    from utils.team_corpora import load_corpus
+
+    c = load_corpus(K.N1P_CORPUS["corpus"], K.N1P_CORPUS["tier"])
+    assert (len(c), c.tier_sha256, c.data_sha256) == (K.N1P_CORPUS["n"], K.N1P_CORPUS["tier_sha256"],
+                                                      K.N1P_CORPUS["data_sha256"])
+    assert parse_team_mix(K.N1P_LEVER[1]) == ("n1_proc_v1", "ALL", 0.5)
+
+
+def test_corpus_check_passes_n1p_at_its_registered_pin_and_fails_at_the_side_pin():
+    from main.x35 import batch as B
+    from utils.paths import repo_root
+
+    ok, line = K.corpus_check("n1p", B.N1P_PIN, str(repo_root()))
+    assert ok and "12000 teams" in line and "120000 battles" in line, line
+    ok, line = K.corpus_check("n1p", B.N1P_PIN_BASE, str(repo_root()))
+    assert not ok and "holds no" in line, line

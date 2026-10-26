@@ -151,7 +151,7 @@ params)` produces the verdict as recorded. A decision can therefore be re-checke
 | rule | is | from |
 |---|---|---|
 | `x35_r1` | X35 R1 / R2 / guards / verdict on S per seed final (SPRT, LRF, A1 …); `import_off` takes a banked control from another read's committed `results.json`, sha-checked | `main.x35.readout.read` |
-| `d1` | D1's H (the unfamiliar Kakuna panels, widened by AM-5's φ̂) and P (S on home72) | `main.x35.d1.read_d1` |
+| `d1` | D1's H (the arm's primary Kakuna panels, `d1.arm_panels`: D1's / D3's three, X61P's `forum72` alone at 60 units; widened by AM-5's φ̂) and P (S on home72); an optional `reported_group` (an anchor group disjoint from the primary, same models) adds per-panel rows, U and Δ_H − Δ_F to `reported.reported_panels`, which no rule reads | `main.x35.d1.read_d1` |
 | `anchor_trajectory` | x26c PREREG §5: the goal bar on the ON score's Wilson LB; CLIMBING / FLAT on the Newcombe-of-strata Δ; S1 RISING against a banked node; VOID on K9(b) or under-counted units | ported from x26c `verdict.py` |
 | `prior_mix_ab` | the belief-prior-mix read (`measurements/belief_prior_mix_2026-10-26/PREREG.md` §5): each λ arm (its own anchor group, one regime) against a BANKED λ = 0 control (another read's committed per-game rows, sha-checked, never re-played; `banked_units`), unit-paired on the same seeds; VOID unless a guard group re-playing banked units at λ = 0 reproduces them GAME FOR GAME; PRIOR-HELPS / -AT-A-COST / -HURTS / NOT DETECTED; D0f's DiD and H3 kill rule on a λ = 1 arm | new (2026-10-26) |
 

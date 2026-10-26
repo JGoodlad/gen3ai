@@ -55,9 +55,11 @@ conflates pilot competence with team strength (see the tracking section).
   (`utils.team_corpora.CORPORA`): `w_forum_v1` (D1: 1,981 human-built forum teams, tiers A ⊂ AB ⊂ ABC),
   `d3_setmut_v1` (D3: 2,876 pool teams with 1–2 mons' sets redrawn from Smogon usage, one tier `ALL`;
   `utils.team_corpora.build_d3_setmut`) and `n1_proc_v1` (X61 / N1: 12,000 whole procedural teams drawn from Smogon
-  usage alone, prefix tiers K1 ⊂ K3 ⊂ K10 ⊂ ALL; `utils.team_corpora.build_n1_proc`; the arm is a FRESH toy run,
-  `main.x61.arms`). A corpus reaches only a pin that holds it, so each arm that names a new one
-  launches at a pin that carries it (`main.x35.batch.ARM_PINS`; X61's `main.x61.arms.PIN`). A large corpus soaks in
+  usage alone, prefix tiers K1 ⊂ K3 ⊂ K10 ⊂ ALL; `utils.team_corpora.build_n1_proc`; its arm is X61P's production
+  fork `n1p` at its own corpus-only pin; X61's fresh toy arms, `main.x61.arms`, are NOT-READY by review). A corpus
+  reaches only a pin that holds it, so each arm that names a new one launches at a pin that carries it
+  (`main.x35.batch.ARM_PINS`; X61's `main.x61.arms.PIN`). The `CORPORA` registry a run sees is its pin's own: N1-P's pin
+  (`batch.N1P_PIN`) registers `w_forum_v1` and `n1_proc_v1` only. A large corpus soaks in
   chunks of rounds (`soak --first-round`, then `soak merge`).
 - **The startup guard** (`main.train.matchup_setup.team_mix_guard`, FATAL_CONFIG on any failure): the held-out
   panel registry verifies; `main.heldout_panels.contamination` finds NO corpus team that is an exact copy or near

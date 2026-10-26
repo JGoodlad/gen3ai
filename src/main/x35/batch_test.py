@@ -354,6 +354,104 @@ def test_the_registered_d3_pin_is_reachable_and_carries_a_main_commits_corpus_tr
     assert B.D3_CORPORA_TREE in trees
 
 
+# ------------------------------------------- AM-N1P (2026-10-26): N1-P's own corpus-only pin, checked as D3's is
+@pytest.fixture
+def n1p_repo(d1_repo, monkeypatch):
+    """D1's fixture repo, read as N1-P's: ``pin`` is the corpus-only commit on the side pin."""
+    r = d1_repo
+    monkeypatch.setattr(B, "N1P_PIN", r["pin"])
+    monkeypatch.setattr(B, "N1P_PIN_BASE", r["base"])
+    monkeypatch.setattr(B, "N1P_CORPORA_TREE", B.D1_CORPORA_TREE)
+    monkeypatch.setattr(B, "ARM_PINS", {"n1p": r["pin"]})
+    return r
+
+
+def test_n1p_pin_check_accepts_only_the_side_pin_plus_one_corpus_only_commit(n1p_repo, monkeypatch):
+    r = n1p_repo
+    ok, lines = B.n1p_pin_check(r["pin"], r["base"], r["repo"])
+    assert ok and lines[0].startswith("AM-N1P: N1P's pin") and "registered N1-P tree" in lines[0], lines
+    ok, lines = B.n1p_pin_check(r["base"], r["base"], r["repo"])
+    assert not ok and "n1p launches only at N1P_PIN" in lines[0], lines
+    monkeypatch.setattr(B, "N1P_PIN", r["wide"])
+    ok, lines = B.n1p_pin_check(r["wide"], r["base"], r["repo"])
+    assert not ok and "outside: ['src/main/train.py']" in lines[0], lines
+    monkeypatch.setattr(B, "N1P_PIN", r["two"])
+    ok, lines = B.n1p_pin_check(r["two"], r["base"], r["repo"])
+    assert not ok and "parent(s)" in lines[0], lines
+    monkeypatch.setattr(B, "N1P_PIN", r["pin"])
+    monkeypatch.setattr(B, "N1P_CORPORA_TREE", "0" * 40)
+    ok, lines = B.n1p_pin_check(r["pin"], r["base"], r["repo"])
+    assert not ok and "registered N1-P tree" in lines[0], lines
+
+
+def test_pin_check_holds_n1p_to_its_own_pin_and_an_n1p_run_at_the_side_pin_is_refused(n1p_repo, tmp_path):
+    r = n1p_repo
+    stage, models = tmp_path / "stage", tmp_path / "models"
+    stage.mkdir()
+    models.mkdir()
+    B.pin_write_if_absent(r["base"], str(stage), PROD, FP32)
+    assert B.pin_check(r["pin"], str(stage), str(models), PROD, arm="n1p", repo=r["repo"])[0]
+    ok, lines = B.pin_check(r["base"], str(stage), str(models), PROD, arm="n1p", repo=r["repo"])
+    assert not ok and "n1p launches only at N1P_PIN" in lines[0], lines
+    assert "unchanged" in B.pin_write_if_absent(r["pin"], str(stage), PROD, None, arm="n1p")
+    with pytest.raises(B.BatchError, match="AM-N1P"):
+        B.pin_write_if_absent(r["base"], str(stage), PROD, None, arm="n1p")
+    _run(models, "rb_x35_n1p_s3501", r["pin"])
+    assert B.pin_check(r["base"], str(stage), str(models), PROD, arm="c0", repo=r["repo"])[0]
+    _run(models, "rb_x35_n1p_s3502", r["base"])                   # no pre-fix attempt exists for N1-P: refused
+    ok, lines = B.pin_check(r["base"], str(stage), str(models), PROD, arm="c0", repo=r["repo"])
+    assert not ok and any(x.startswith("rb_x35_n1p_s3502:") for x in lines), lines
+
+
+def test_n1p_stages_look1_on_the_side_gate_and_look2_only_on_its_own_continue(tmp_path):
+    stage = tmp_path / "stage"
+    (stage / B.READS_DIR).mkdir(parents=True)
+    st = str(stage)
+    assert B.stage_status(st, "n1p", 3501)[0] == B.PENDING                       # AM-8: no FP32_ALT named
+    _fill_fp32(stage)
+    for seed in (3501, 3502, 3503):
+        status, why = B.stage_status(st, "n1p", seed)
+        assert status == B.ALLOWED and "AM-N1P" in why and B.stage_of("n1p", seed) == "N1P", why
+    assert B.stage_status(st, "n1p", 3504)[0] == B.PENDING and B.stage_of("n1p", 3504) == "N1Pb"
+    rec = {"arm": "X61P", "look": 1, "verdict": "CONTINUE", "h": {"final": False, "class": "UNDECIDED"}}
+    (stage / B.READS_DIR / "n1p_look1.json").write_text(json.dumps(rec))
+    assert B.stage_status(st, "n1p", 3505)[0] == B.ALLOWED
+    (stage / B.READS_DIR / "n1p_look1.json").write_text(json.dumps(dict(rec, verdict="NULL")))
+    assert B.stage_status(st, "n1p", 3504)[0] == B.REFUSED
+    (stage / B.READS_DIR / "n1p_look1.json").write_text(json.dumps(dict(rec, arm="X41")))
+    with pytest.raises(B.BatchError, match="not X61P"):
+        B.stage_status(st, "n1p", 3504)
+
+
+def test_the_registered_n1p_pin_adds_only_the_corpus_files_main_landed_and_its_registry_line():
+    """The real N1P_PIN (tag ``x61p-n1p-pin-<sha8>`` on origin) passes its own check against the production pin; its
+    ``n1_proc_v1`` subtree IS the one main's history holds (the de269480 bytes the soak read), and its
+    ``__init__.py`` differs from the side pin's by the one ``CORPORA`` entry, nothing else (AM-N1P: no builder, no D3
+    corpus, no label-guard or GIGO-fix code)."""
+    from utils.paths import repo_root
+
+    root = str(repo_root())
+    ok, lines = B.n1p_pin_check(B.N1P_PIN, B.N1P_PIN_BASE, root)
+    assert ok, lines
+
+    def git(*a: str) -> str:
+        return subprocess.run(["git", "-C", root, *a], check=True, capture_output=True, text=True).stdout
+
+    assert git("rev-parse", f"{B.N1P_PIN}:src/utils/team_corpora").strip() == B.N1P_CORPORA_TREE
+    assert sorted(git("diff", "--name-only", B.N1P_PIN_BASE, B.N1P_PIN).split()) == [
+        "src/utils/team_corpora/__init__.py", "src/utils/team_corpora/n1_proc_v1/manifest.json",
+        "src/utils/team_corpora/n1_proc_v1/soak_selfcheck.json", "src/utils/team_corpora/n1_proc_v1/teams.jsonl.gz"]
+    sub = "src/utils/team_corpora/n1_proc_v1"
+    assert git("rev-parse", f"{B.N1P_PIN}:{sub}").strip() in {
+        git("rev-parse", f"{c}:{sub}").strip()
+        for c in git("log", "--format=%H", "HEAD", "--", sub).split()}
+    diff = [ln for ln in git("diff", "-U0", B.N1P_PIN_BASE, B.N1P_PIN, "--",
+                             "src/utils/team_corpora/__init__.py").splitlines()
+            if ln[:1] in "+-" and not ln.startswith(("+++", "---"))]
+    assert diff == ['-CORPORA: Dict[str, Path] = {"w_forum_v1": HERE / "w_forum_v1"}',
+                    '+CORPORA: Dict[str, Path] = {"w_forum_v1": HERE / "w_forum_v1", "n1_proc_v1": HERE / "n1_proc_v1"}']
+
+
 # ------------------------------------------------------------------ AM-8: production's FP32_ALT commit, a placeholder
 def _side_file(stage: Path, line: str) -> Path:
     f = stage / B.SIDE_REQUIRED_FILE.format(side=PROD)

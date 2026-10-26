@@ -18,7 +18,9 @@ per-final interval of S), :func:`paired_unit_diff` (x26c's descriptive unit-pair
 THE RULES (:data:`RULES`):
 
 * ``x35_r1`` -- X35's R1 / R2 / guards / verdict (``readout.read``), on S per seed final (SPRT, LRF, A1 ...);
-* ``d1`` -- D1's (X38 / X41) H on the unfamiliar Kakuna panels widened by φ̂, and P (``d1.read_d1``);
+* ``d1`` -- D1's (X38 / X41 / X61P) H on the arm's primary Kakuna panels (``d1.arm_panels``: X61P's is forum72
+  alone) widened by φ̂, and P (``d1.read_d1``); an optional ``reported_group`` adds per-panel rows, U and
+  Δ_H − Δ_F (``d1.reported_panels``), which no rule reads;
 * ``anchor_trajectory`` -- x26c PREREG §5: the goal-(b) bar on an anchor score, CLIMBING / FLAT on its Newcombe
   difference against a comparator, and the in-house S "rising" read against a banked node;
 * ``prior_mix_ab`` -- the belief-prior-mix read (``belief_prior_mix_2026-10-26`` PREREG): each λ arm against a
@@ -204,7 +206,7 @@ def _r1_decide(doc: Mapping[str, Any], p: Mapping[str, Any]) -> Dict[str, Any]:
 
 
 # ------------------------------------------------------------------------------------------------ d1
-_D1_KEYS = ("arm", "look", "on", "off", "anchor_group", "s_group", "guards_not_read")
+_D1_KEYS = ("arm", "look", "on", "off", "anchor_group", "s_group", "reported_group", "guards_not_read")
 
 
 def _d1_check(p: Mapping[str, Any], *, models: Any, anchor: Any, s: Any) -> List[str]:
@@ -218,8 +220,21 @@ def _d1_check(p: Mapping[str, Any], *, models: Any, anchor: Any, s: Any) -> List
     a = anchor.get(p.get("anchor_group"))
     if a is None:
         probs.append(f"anchor_group {p.get('anchor_group')!r} is not an anchor group")
-    elif tuple(a.teamsets) != D.PANELS:
-        probs.append(f"anchor group teamsets {list(a.teamsets)} are not D1's panels {list(D.PANELS)}")
+    elif tuple(a.teamsets) != D.arm_panels(str(p.get("arm"))):
+        probs.append(f"anchor group teamsets {list(a.teamsets)} are not {p.get('arm')}'s primary panels "
+                     f"{list(D.arm_panels(str(p.get('arm'))))}")
+    elif len(a.unit_seeds) != D.arm_units(str(p.get("arm"))):
+        probs.append(f"anchor group plays {len(a.unit_seeds)} unit seeds; {p.get('arm')} registers "
+                     f"{D.arm_units(str(p.get('arm')))} per (seed final, panel)")
+    rg = p.get("reported_group")
+    if rg is not None:
+        r = anchor.get(rg)
+        if r is None:
+            probs.append(f"reported_group {rg!r} is not an anchor group")
+        elif a is not None and set(r.teamsets) & set(a.teamsets):
+            probs.append(f"reported_group {rg!r} repeats a primary panel {sorted(set(r.teamsets) & set(a.teamsets))}")
+        elif a is not None and set(r.models) != set(a.models):
+            probs.append(f"reported_group {rg!r} plays models {sorted(r.models)}, the primary {sorted(a.models)}")
     if p.get("s_group") not in s:
         probs.append(f"s_group {p.get('s_group')!r} is not an S group")
     return probs
@@ -256,9 +271,13 @@ def p_input(group: Mapping[str, Any], spec: Any, on: str, off: str) -> Dict[str,
 
 
 def _d1_inputs(cells: Mapping[str, Any], p: Mapping[str, Any], spec: Any) -> Dict[str, Any]:
-    return {"arm": p["arm"], "look": p["look"],
-            "h": h_input(_group(cells, "anchor", p["anchor_group"]), spec, p["on"], p["off"]),
-            "p": p_input(_group(cells, "s", p["s_group"]), spec, p["on"], p["off"])}
+    doc = {"arm": p["arm"], "look": p["look"],
+           "h": h_input(_group(cells, "anchor", p["anchor_group"]), spec, p["on"], p["off"]),
+           "p": p_input(_group(cells, "s", p["s_group"]), spec, p["on"], p["off"])}
+    if p.get("reported_group") is not None:                  # REPORTED panels (``d1.reported_panels``), no rule
+        r = h_input(_group(cells, "anchor", p["reported_group"]), spec, p["on"], p["off"])
+        doc["reported_panels"] = {"on": r["on"], "off": r["off"]}
+    return doc
 
 
 def _d1_decide(doc: Mapping[str, Any], p: Mapping[str, Any]) -> Dict[str, Any]:

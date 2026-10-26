@@ -11,7 +11,9 @@ canonical flag order (the order carries no meaning to the trainer's parser):
   ``design_diversity_teams_opponents.md`` §4.2: ``--team-mix w_forum_v1@ABC:0.5 --team-mix-sides both``, read
   against C0 by ``main.x35.d1``'s own rule, not R1); ``d3`` (X41, SET MUTATION, §4.5 (a): ``--team-mix
   d3_setmut_v1@ALL:0.3 --team-mix-sides both``, read against C0 by the same D1 rule; its own corpus-only pin
-  ``batch.D3_PIN``, like D1's; ``x41_d3_setmut_2026-10-25/PREREG.md``);
+  ``batch.D3_PIN``, like D1's; ``x41_d3_setmut_2026-10-25/PREREG.md``); ``n1p`` (X61P, N1-P: Procgen-scale procedural
+  breadth at the plateau, ``--team-mix n1_proc_v1@ALL:0.5 --team-mix-sides both``, read against C0 by the D1 rule on
+  ``forum72`` alone; its own corpus-only pin ``batch.N1P_PIN``; ``x61p_n1_production_2026-10-26/PREREG.md``);
 * the TWO-PHASE kits. Phase 1 (+5M, F16's ``--no-self-play`` where the parent self-plays): ``a3_mx`` -- a main
   exploiter of P* (seeds 3511-3513) -- and ``a6_lx`` -- a league exploiter of P* + the archive, share 1.0, stable
   PFSP (seeds 3521-3523). Between the phases, ``phase1-record`` writes ONE write-once record of the three
@@ -116,8 +118,16 @@ D3_LEVER = ("--team-mix", "d3_setmut_v1@ALL:0.3", "--team-mix-sides", "both")
 D3_CORPUS = {"corpus": "d3_setmut_v1", "tier": "ALL", "n": 2876,
              "tier_sha256": "625d664aff2125dc39a0c574eb62bfaa8f28d8b2c7aa107a1cbf2cd9d248bcd3",
              "data_sha256": "fa3674297fcaed2c7508401d2c69774a5289f63902ce8107b18859dd916f6778"}
+#: X61P / N1-P's ONE lever (the X61 review's recommended design N1-P; ``x61p_n1_production_2026-10-26/PREREG.md``):
+#: with probability 0.5 per episode and side (D1's share), the team is one of 12,000 whole procedural teams drawn from
+#: Smogon usage only (``utils.team_corpora.build_n1_proc``), both sides; eval stays on the pool.
+N1P_LEVER = ("--team-mix", "n1_proc_v1@ALL:0.5", "--team-mix-sides", "both")
+#: The corpus N1P_LEVER names, as built and soaked with the label path (de269480; its own pin carries the same bytes).
+N1P_CORPUS = {"corpus": "n1_proc_v1", "tier": "ALL", "n": 12000,
+              "tier_sha256": "d59f44f0b33bd3532a2434b4b9cc4d77da6b871e4a642dd71a9b38d3d875314f",
+              "data_sha256": "99e3425aa687e7d0663525e4ab1df2a3cb52c8d6bf162df35da0bccf7c20bad6"}
 #: The arms whose argv names a team corpus, and the identity their pin must carry.
-ARM_CORPUS = {"d1": D1_CORPUS, "d3": D3_CORPUS}
+ARM_CORPUS = {"d1": D1_CORPUS, "d3": D3_CORPUS, "n1p": N1P_CORPUS}
 #: X47's ONE lever (``design_bot_ideas_screen.md`` §2.1; B-GROW, T64): the toy's 2 attention rounds become 4 at the
 #: fork, the 2 new rounds identity-init, so the grown network starts as T*'s function bit for bit (the child refuses
 #: to start otherwise: ``FATAL_CONFIG``). ``--dry-run`` prints ``grow : DECLARED trunk_layers 2 -> 4``.
@@ -160,6 +170,8 @@ ARMS: Dict[str, Arm] = {a.name: a for a in (
     Arm("d1", "production", L_PROD, PROD_SEEDS, "rb_x35_d1wide_s{seed}", 0, "warn"),
     # X41 / D3, set mutation (PREREG x41_d3_setmut_2026-10-25): look 1 s3501-s3503, look 2 s3504-s3505, as D1's
     Arm("d3", "production", L_PROD, PROD_SEEDS, "rb_x35_d3mut_s{seed}", 0, "warn"),
+    # X61P / N1-P, procedural breadth (PREREG x61p_n1_production_2026-10-26): look 1 s3501-s3503, look 2 s3504-s3505
+    Arm("n1p", "production", L_PROD, PROD_SEEDS, "rb_x35_n1p_s{seed}", 0, "warn"),
     Arm("a3_mx", "production", L_EXPLOITER, (3511, 3512, 3513), "rb_x35_mx_s{seed}", 1, "warn"),
     Arm("a3", "production", L_PROD, PROD_SEEDS, "rb_x35_a3mx_s{seed}", 2, "warn", phase1_of="a3_mx"),
     Arm("a6_lx", "production", L_EXPLOITER, (3521, 3522, 3523), "rb_x35_lx_s{seed}", 1, "warn"),
@@ -264,6 +276,8 @@ def build_argv(arm: str, seed: int, call: Mapping[str, Any], phase1: Optional[Ma
         lever = list(D1_LEVER)
     elif arm == "d3":
         lever = list(D3_LEVER)
+    elif arm == "n1p":
+        lever = list(N1P_LEVER)
     elif arm == "toy_x47":
         lever = list(X47_LEVER)
     elif arm in ("sprt", "toy_sprt"):
@@ -548,7 +562,8 @@ def corpus_check(arm: str, pin: str, repo: str) -> Tuple[bool, str]:
     bad = {k: (got[k], want[k]) for k in got if got[k] != want[k]}
     if bad:
         return False, (f"the pin {pin[:12]}'s {want['corpus']}@{want['tier']} is not {arm}'s registered corpus "
-                       f"(AMENDMENT D1-CORPUS / AM-D3): " + "; ".join(f"{k} {g} != {w}" for k, (g, w) in bad.items()))
+                       f"(AMENDMENT D1-CORPUS / AM-D3 / AM-N1P): "
+                       + "; ".join(f"{k} {g} != {w}" for k, (g, w) in bad.items()))
     soak_rel = f"src/utils/team_corpora/{want['corpus']}/soak_selfcheck.json"
     p = subprocess.run(["git", "-C", repo, "show", f"{pin}:{soak_rel}"], capture_output=True, text=True)
     soak = json.loads(p.stdout) if p.returncode == 0 else {}

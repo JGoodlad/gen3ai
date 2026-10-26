@@ -162,10 +162,15 @@ def test_the_shared_c0_reader_waits_for_any_gain_and_is_refused_when_none_can_co
     _save(st, "d1", 1, "UNDECIDED", verdict="UNDECIDED")
     assert B.stage_status(st, "ge_c0", 3501)[0] == B.PENDING                 # D3 (AM-D3) not read yet
     _save(st, "d3", 1, "NULL", verdict="NULL")
+    assert B.stage_status(st, "ge_c0", 3501)[0] == B.PENDING                 # N1-P (AM-N1P) not read yet
+    _save(st, "n1p", 1, "NULL", verdict="NULL")
     assert B.stage_status(st, "ge_c0", 3501)[0] == B.REFUSED
     _save(st, "d3", 1, "GAIN")
     assert B.stage_status(st, "ge_c0", 3501)[0] == B.ALLOWED
     assert B.stage_status(st, "ge_d3", 3501)[0] == B.ALLOWED and B.stage_status(st, "ge_d1", 3501)[0] == B.REFUSED
+    assert B.stage_status(st, "ge_n1p", 3501)[0] == B.REFUSED
+    _save(st, "n1p", 1, "GAIN")
+    assert B.stage_status(st, "ge_n1p", 3501)[0] == B.ALLOWED
 
 
 def test_production_readers_wait_for_the_fp32_alt_commit(tmp_path):
@@ -285,13 +290,14 @@ def test_r2_is_only_defined_for_the_gain_arms():
 VALIDATED = repo_path("designs/research_state/measurements/x35_breakers_stage_2026-10-17/ge_readers_validation_dfeb3d92")
 
 
-#: The readers validated at dfeb3d92. ``ge_d3`` (AM-D3, 2026-10-25) came later: its argv is the same function's with
-#: D3's final as the target, and it has no transcript of its own (D3's PREREG FINDING).
+#: The readers validated at dfeb3d92. ``ge_d3`` (AM-D3, 2026-10-25) and ``ge_n1p`` (AM-N1P, 2026-10-26) came later: each
+#: argv is the same function's with that arm's final as the target, and neither has a transcript of its own (each
+#: PREREG's FINDING).
 VALIDATED_READERS = ("ge_a1", "ge_a2", "ge_c0", "ge_d1")
 
 
-def test_every_reader_but_d3s_has_a_validation_transcript():
-    assert set(GE.READER_ARMS) - set(VALIDATED_READERS) == {"ge_d3"}
+def test_every_reader_but_d3s_and_n1ps_has_a_validation_transcript():
+    assert set(GE.READER_ARMS) - set(VALIDATED_READERS) == {"ge_d3", "ge_n1p"}
 
 
 @pytest.mark.parametrize("arm", VALIDATED_READERS)

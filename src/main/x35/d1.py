@@ -3,7 +3,10 @@
 ``python -m main.x35.readout decide-d1 <read.json>`` / ``self-check`` (the D1 suite of :mod:`main.x35.selfcheck`).
 
 D1 is an X35 arm read against X35's shared control C0 (same P*, pin and seeds 3501-3503, then 3504-3505 at look 2).
-Its primary is NOT X35's R1 (R1 scores pool teams only).
+Its primary is NOT X35's R1 (R1 scores pool teams only). The same rule reads X41 / D3 and X61P / N1-P under their own
+labels; X61P's primary panel is ``forum72`` ALONE at 60 units per seed final (:data:`ARM_PANELS`, :data:`ARM_UNITS`;
+the X61 review's B1), so its K = 1 and the equal-weight score is the plain proportion; its other panels are REPORTED
+(:func:`reported_panels`).
 
 PRIMARY H -- the gain on the UNFAMILIAR cells. Each seed final plays 7 role-balanced 20-game units per panel against
 ``metamon:Kakuna`` greedy (``main.x35.kakuna --teamsets unfamiliar``; unit seeds 0-6 shared across arms) on the
@@ -99,7 +102,18 @@ PANEL_ROLES: Dict[str, Dict[str, str]] = {
     "X41": {"heldout72_hpfix": "a population X41 does not train on (ladder replays, HP repaired)",
             "forum72": "a population X41 does not train on (Smogon forum, human-built)",
             "p72": "a population X41 does not train on (procedural Smogon usage, MATERIALLY WEAKER, F-DV-20)"},
+    # X61P / N1-P (``x61p_n1_production_2026-10-26/PREREG.md``): 12,000 procedural teams from Smogon usage. Its PRIMARY
+    # is forum72 alone (the X61 review's B1); the other panels are REPORTED (:func:`reported_panels`).
+    "X61P": {"forum72": "the PRIMARY: human-built forum teams; 19 % of its full sets sit in the corpus (X61 review B1)",
+             "heldout72_hpfix": "REPORTED: generator-adjacent (62 % of its full sets sit verbatim in the corpus, B1)",
+             "p72": "REPORTED: a sibling generator over the same Smogon tables (the corpus's own population)",
+             "home72": "REPORTED: the in-pool cost (the pool's own teams)"},
 }
+#: The PRIMARY panels of an arm whose primary is not :data:`PANELS`, by its read label (``read_d1``).
+ARM_PANELS: Dict[str, Tuple[str, ...]] = {"X61P": ("forum72",)}
+#: The units per (seed final, panel) of an arm whose plan is not :data:`UNITS_PER_SEED`, by its read label: X61P plays
+#: 60 units (1,200 games) on its one primary panel, the X61 review's B1 fix (the binomial variance of U_HF at 600 + 600).
+ARM_UNITS: Dict[str, int] = {"X61P": 60}
 #: The NULL band of H, pp.
 H_BAND_PP = 3.0
 #: P's non-inferiority bar, pp.
@@ -121,9 +135,19 @@ CONTINUE, INCONCLUSIVE, ADOPT, TRADE = R.CONTINUE, R.INCONCLUSIVE, R.ADOPT, R.TR
 NON_INFERIOR, NOT_EXCLUDED = "NON-INFERIOR", "INFERIORITY-NOT-EXCLUDED"
 
 
-def min_games(seeds: int) -> int:
-    """The per-arm, per-panel counted-games floor at ``seeds`` seed finals (module docs)."""
-    return UNIT_GAMES * UNITS_PER_SEED * int(seeds) - UNIT_GAMES
+def min_games(seeds: int, units: int = UNITS_PER_SEED) -> int:
+    """The per-arm, per-panel counted-games floor at ``seeds`` seed finals of ``units`` units each (module docs)."""
+    return UNIT_GAMES * int(units) * int(seeds) - UNIT_GAMES
+
+
+def arm_panels(arm: str) -> Tuple[str, ...]:
+    """The PRIMARY panels of the arm with read label ``arm``."""
+    return ARM_PANELS.get(arm, PANELS)
+
+
+def arm_units(arm: str) -> int:
+    """The registered units per (seed final, primary panel) of the arm with read label ``arm``."""
+    return ARM_UNITS.get(arm, UNITS_PER_SEED)
 
 
 def wilson_pn(p: float, n: float, z: float = Z) -> Tuple[float, float]:
@@ -294,9 +318,9 @@ def _check_seeds(look: int, on: Mapping[str, Any], off: Mapping[str, Any], what:
 
 
 def d1_primary(look: int, on: Counts, off: Counts, *, panels: Sequence[str] = PANELS,
-               roles: Optional[Mapping[str, str]] = None) -> HDecision:
+               roles: Optional[Mapping[str, str]] = None, units: int = UNITS_PER_SEED) -> HDecision:
     """PRIMARY H at ``look`` from each side's ``{seed: {panel: (wins, n)}}`` (module docs); ``roles`` (reported
-    only) default to X38's :data:`PANEL_ROLE`."""
+    only) default to X38's :data:`PANEL_ROLE`; ``units`` per (seed final, panel) set the counted-games floor."""
     from main.anchors.results import newcombe
 
     if look not in LOOK_SEEDS:
@@ -319,7 +343,7 @@ def d1_primary(look: int, on: Counts, off: Counts, *, panels: Sequence[str] = PA
             extra = sorted(set(cells) - set(panels))
             if extra:
                 reasons.append(f"{side} seed {seed}: panels {extra} are not D1's {list(panels)}")
-        floor = min_games(len(d))
+        floor = min_games(len(d), units)
         for k in panels:
             if pooled[side][k][1] < floor:
                 reasons.append(f"{side} {k}: {pooled[side][k][1]} counted games < {floor} (at most one uncounted unit)")
@@ -465,7 +489,8 @@ def read_d1(doc: Mapping[str, Any]) -> D1Verdict:
     ``h`` is ``python -m main.x35.kakuna d1h``'s output (its ``on`` / ``off``); P's seed sets must equal H's."""
     arm, look = str(doc.get("arm", "X38")), int(doc["look"])
     hd = doc.get("h") or {}
-    h = d1_primary(look, dict(hd.get("on") or {}), dict(hd.get("off") or {}), roles=PANEL_ROLES.get(arm, PANEL_ROLE))
+    h = d1_primary(look, dict(hd.get("on") or {}), dict(hd.get("off") or {}), panels=arm_panels(arm),
+                   roles=PANEL_ROLES.get(arm, PANEL_ROLE), units=arm_units(arm))
     pd = doc.get("p") or {}
     p_on, p_off = dict(pd.get("on") or {}), dict(pd.get("off") or {})
     extra = []
@@ -487,7 +512,63 @@ def read_d1(doc: Mapping[str, Any]) -> D1Verdict:
     rep: Dict[str, Any] = {"dose": R.dose_confound(dose.get("on"), dose.get("off"))}
     if doc.get("kakuna_in_pool") is not None:
         rep["kakuna_in_pool"] = R.guard_k(doc["kakuna_in_pool"]).detail
+    if doc.get("reported_panels") is not None:
+        rep["reported_panels"] = reported_panels(hd, doc["reported_panels"], roles=PANEL_ROLES.get(arm, PANEL_ROLE))
     return d1_verdict(arm, h, p, guards, reported=rep)
+
+
+#: The panels of the goal's pooled meter U (``design_beat_metamon_path.md``), in order.
+U_PANELS = PANELS
+
+
+def reported_panels(h: Mapping[str, Any], rep: Mapping[str, Any], *,
+                    roles: Optional[Mapping[str, str]] = None) -> Dict[str, Any]:
+    """DESCRIPTIVE, no rule reads it (X61P's PREREG §6): from the primary's ``h`` and a second anchor group's
+    ``rep`` (both ``{on, off}: {seed: {panel: [wins, n]}}``), per panel the pooled ON − OFF Newcombe difference; U
+    (:data:`U_PANELS`, equal weight) per arm with its Newcombe-of-strata difference, unwidened and widened by AM-5's
+    φ̂ over U; and Δ_H − Δ_F (pp), the "learned the generator" line. A panel or seed missing on a side is named in
+    ``reasons`` and its line is left out."""
+    from main.anchors.results import newcombe
+
+    cells: Dict[str, Dict[str, Dict[str, Sequence[int]]]] = {"on": {}, "off": {}}
+    for src in (h, rep):
+        for side in ("on", "off"):
+            for seed, by in (src.get(side) or {}).items():
+                cells[side].setdefault(str(seed), {}).update({k: v for k, v in by.items()})
+    out: Dict[str, Any] = {"per_panel": {}, "reasons": []}
+    panels = sorted({k for side in cells.values() for by in side.values() for k in by})
+    pooled: Dict[str, Dict[str, List[int]]] = {"on": {}, "off": {}}
+    for side in ("on", "off"):
+        for k in panels:
+            have = [by[k] for by in cells[side].values() if k in by]
+            if len(have) != len(cells[side]):
+                out["reasons"].append(f"{side} {k}: counts on {len(have)} of {len(cells[side])} seed finals")
+            pooled[side][k] = [sum(int(c[0]) for c in have), sum(int(c[1]) for c in have)]
+    for k in panels:
+        (x1, n1), (x2, n2) = pooled["on"][k], pooled["off"][k]
+        if n1 <= 0 or n2 <= 0:
+            continue
+        pd, plo, phi = newcombe(x1, n1, x2, n2)
+        out["per_panel"][k] = {"on": [x1, n1], "off": [x2, n2], "delta_pp": 100.0 * pd,
+                               "ci95_pp": [100.0 * plo, 100.0 * phi], "role": (roles or {}).get(k, "")}
+    pp = out["per_panel"]
+    if "heldout72_hpfix" in pp and "forum72" in pp:
+        out["dH_minus_dF_pp"] = pp["heldout72_hpfix"]["delta_pp"] - pp["forum72"]["delta_pp"]
+    if all(k in pp for k in U_PANELS) and not out["reasons"]:
+        try:
+            s_on = strat_score(pooled["on"], U_PANELS)
+            s_off = strat_score(pooled["off"], U_PANELS)
+            d, lo0, hi0 = newcombe_strat(s_on, s_off)
+            u: Dict[str, Any] = {"on": s_on.as_dict(), "off": s_off.as_dict(), "delta_pp": 100.0 * d,
+                                 "ci95_unwidened_pp": [100.0 * lo0, 100.0 * hi0]}
+            if len(cells["on"]) >= 2 and len(cells["off"]) >= 2:
+                od = overdispersion(cells["on"], cells["off"], U_PANELS)
+                lo, hi = widen(d, lo0, hi0, od.factor)
+                u.update(ci95_pp=[100.0 * lo, 100.0 * hi], overdispersion=od.as_dict())
+            out["u"] = u
+        except R.ReadoutInputError as exc:
+            out["reasons"].append(f"U: {exc}")
+    return out
 
 
 # ------------------------------------------------------------------------------------------------ P's input

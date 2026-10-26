@@ -162,3 +162,52 @@ def test_am5_never_narrows_and_an_undefined_phi_is_inconclusive():
     assert h.od is not None and h.od.factor == 1.0 and h.ci_pp == h.ci_unwidened_pp and h.cls == D1.GAIN
     with pytest.raises(R.ReadoutInputError, match="binomial expectation is 0"):
         D1.overdispersion(SC._hc([(0, 140, 0)] * 3), SC._flat(56))
+
+
+# ------------------------------------------------------- AM-N1P (2026-10-26): X61P reads forum72 alone, 60 units a seed
+def _f(wins_per_seed, n=1200, panel="forum72"):
+    return {str(3501 + i): {panel: [w, n]} for i, w in enumerate(wins_per_seed)}
+
+
+def _x61p(on, off, **extra):
+    return {"arm": "X61P", "look": 1, "h": {"on": on, "off": off},
+            "p": {"on": SC._seeds([50.1, 50.2, 50.0]), "off": SC._seeds([50.0, 50.1, 49.9])}, **extra}
+
+
+def test_x61p_primary_is_forum72_alone_at_its_registered_60_units():
+    """The X61 review's B1: X61P's primary is forum72 ALONE, 1,200 games per seed final. K = 1, so the score is the
+    plain proportion. Fails on revert of ARM_PANELS (D1's three panels would be missing) or ARM_UNITS (the 7-unit floor
+    would pass an arm short by two units)."""
+    assert D1.arm_panels("X61P") == ("forum72",) and D1.arm_units("X61P") == 60
+    assert D1.arm_panels("X41") == D1.PANELS and D1.arm_units("X41") == D1.UNITS_PER_SEED
+    assert D1.min_games(3, 60) == 3580 and D1.min_games(3) == 400
+    v = D1.read_d1(_x61p(_f([600, 610, 620]), _f([540, 550, 545])))
+    assert v.h.outcome != D1.INCONCLUSIVE, v.h.reasons
+    assert v.h.on is not None and v.h.on.mean == pytest.approx(1830 / 3600, abs=1e-15)
+    assert set(v.h.per_panel) == {"forum72"} and "PRIMARY" in v.h.per_panel["forum72"]["role"]
+    short = _f([600, 610, 620], n=1180)
+    short["3503"]["forum72"] = [600, 1180 - 20]                    # 3,520 counted: one unit too many short
+    v = D1.read_d1(_x61p(short, _f([540, 550, 545])))
+    assert v.h.outcome == D1.INCONCLUSIVE and any("< 3580" in r for r in v.h.reasons), v.h.reasons
+    three = {s: dict(c, heldout72_hpfix=[600, 1200]) for s, c in _f([600, 610, 620]).items()}
+    v = D1.read_d1(_x61p(three, _f([540, 550, 545])))
+    assert v.h.outcome == D1.INCONCLUSIVE and any("not D1's" in r for r in v.h.reasons), v.h.reasons
+
+
+def test_x61p_reported_panels_carry_u_and_the_learned_the_generator_line_and_no_rule_reads_them():
+    on, off = _f([600, 610, 620]), _f([540, 550, 545])
+    rep = {"on": {s: {"heldout72_hpfix": [110, 200], "p72": [120, 200], "home72": [130, 200]} for s in on},
+           "off": {s: {"heldout72_hpfix": [100, 200], "p72": [100, 200], "home72": [132, 200]} for s in off}}
+    base = D1.read_d1(_x61p(on, off))
+    v = D1.read_d1(_x61p(on, off, reported_panels=rep))
+    assert v.verdict == base.verdict and v.h.as_dict() == base.h.as_dict()          # reported only
+    r = v.reported["reported_panels"]
+    assert r["reasons"] == [] and set(r["per_panel"]) == {"forum72", "heldout72_hpfix", "p72", "home72"}
+    assert r["per_panel"]["heldout72_hpfix"]["delta_pp"] == pytest.approx(100 * (330 - 300) / 600, abs=1e-12)
+    assert r["dH_minus_dF_pp"] == pytest.approx(5.0 - 100 * (1830 - 1635) / 3600, abs=1e-12)
+    u_on = (1830 / 3600 + 330 / 600 + 360 / 600) / 3
+    u_off = (1635 / 3600 + 300 / 600 + 300 / 600) / 3
+    assert r["u"]["delta_pp"] == pytest.approx(100 * (u_on - u_off), abs=1e-12) and "ci95_pp" in r["u"]
+    del rep["on"]["3503"]["p72"]
+    r = D1.read_d1(_x61p(on, off, reported_panels=rep)).reported["reported_panels"]
+    assert "u" not in r and any("on p72: counts on 2 of 3" in x for x in r["reasons"]), r["reasons"]

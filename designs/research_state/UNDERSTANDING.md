@@ -858,18 +858,19 @@ production pin, to 480,081,209):
 - **The registered guess:** H +1.5 pp, 80 % [−1.5, +4.5], most likely UNDECIDED at the final look. Nothing above
   changes until it is read.
 
-**Behind it, the literature's common factor is built and pre-registered for the toy: breadth at 10⁴ teams FROM STEP 0
-(N1 / X61, 2026-10-25, `measurements/x61_n1_breadth_2026-10-25/PREREG.md`):** [BUILT · no measurement yet]
+**Behind it, the literature's common factor is built and pre-registered at the plateau: breadth at 10⁴ teams (N1-P /
+X61P, 2026-10-26, `measurements/x61p_n1_production_2026-10-26/PREREG.md`):** [BUILT · no measurement yet]
 - **Why:** every system that generalises across teams trained on 10⁴–10⁵ of them (Metamon, the random-battle bots),
   and Procgen's held-out gap closes at ≈ 10⁴ levels (`literature/sota_survey_2026-10-26.md` §5). Every breadth test
-  here ran at 10³ teams, at a plateau.
-- **What it is:** a fresh toy from step 0 with 70 % of each side's teams drawn from 12,000 procedural teams
-  (`n1_proc_v1`, Smogon usage only, none within 2 mon sets of a held-out panel team), against a fresh toy C0 at the
-  same pin and seed, both to 100M (≈ 12 toy GPU-h).
-- **How it is read:** U_HF (H and F) against Kakuna, seed-widened; P72 is reported, not decided on, because the corpus
-  trains on P72's own population. GO at +4 pp with LB > 0 licenses the production version.
-- **The registered guess:** +3.0 pp, 80 % [−2.0, +8.0]; GO with probability 0.20. The read can resolve a large effect,
-  not a modest one.
+  here ran at 10³ teams.
+- **The toy design (X61) was reviewed NOT-READY** (`measurements/x61_n1_breadth_2026-10-25/REVIEW.md`): H shares 62 %
+  of its full sets with the procedural corpus, and the toy's familiarity premium sits below its GO bar.
+- **What it is:** a production fork of P\* with half of each side's teams drawn from 12,000 procedural teams
+  (`n1_proc_v1`, Smogon usage only), against the shared C0, 3 seeds (+2 on CONTINUE), at C0's pin + the corpus only.
+- **How it is read:** Kakuna on F alone (1,200 games per arm per seed), D1's rule; H, P72 and U are reported only,
+  because the corpus covers their sets. GAIN funds a from-scratch production run with this corpus; NULL rules out only
+  "N1 at the plateau".
+- **The registered guess:** Δ_F +1.5 pp, 80 % [−1.5, +4.5]. Any N1-trained model's U is inflated on H and P72.
 
 **…and the BELIEF STACK memorises the pool: off-pool it is confidently wrong (2026-10-26, the architecture-generalisation
 review, `model/generalisation_review_2026-10-26.md` P5 / P10):** [MEASURED · DESCRIPTIVE · 48 P\*-vs-P\* games per

@@ -8,10 +8,10 @@
 #                        [--at-epoch EPOCH] [--max-load L] [--t62 VERDICT] [GO]
 #          --t62: the T62 token the SIDE'S FIRST GO records in x35_pin_batch1_<side>.txt (AM-8, 2026-10-20: production
 #          FP32_ALT, because the battery DECIDED it; the toy NA_TOY, it makes no tau-solve call). One pin file PER SIDE.
-#   arms:  c0 a1 a2 d1 d3 (production, +20M; d1 / d3 at their OWN corpus-only pins, batch.ARM_PINS) · a3_mx a6_lx
+#   arms:  c0 a1 a2 d1 d3 n1p (production, +20M; d1 / d3 / n1p at their OWN corpus-only pins, batch.ARM_PINS) · a3_mx a6_lx
 #          (phase 1: exploiters, +5M) · a3 a6 (phase 2, +20M, read
 #          the phase-1 record) · toy_c0 toy_a1 toy_a2 toy_x47 (+70M; toy_x47 = depth growth, X47; the toy arms run K9(b)
-#          `warn`) · ge_a1 ge_a2 ge_d1 ge_d3 ge_c0 (the G-E READERS, main.x35.ge, +5M: <seed> = the TARGET's, 3501; a fresh
+#          `warn`) · ge_a1 ge_a2 ge_d1 ge_d3 ge_n1p ge_c0 (the G-E READERS, main.x35.ge, +5M: <seed> = the TARGET's, 3501; a fresh
 #          best responder of that arm's FINISHED final, launched only when the arm's primary reads GAIN (pre-check 9);
 #          ge_c0 is every arm's shared b-OFF reader) · BATCH 2 (STAGED_PLAN §4.1-§4.3, F-AS-8; each = the side's C0
 #          argv + ONE lever, at the side's written pin): sprt lrfloor (+20M) · toy_sprt toy_lrfloor (+70M)
