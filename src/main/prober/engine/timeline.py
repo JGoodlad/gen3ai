@@ -439,15 +439,25 @@ def cant_phrase(cant: str) -> str:
     return CANT_PHRASE.get(key, str(cant))
 
 
-def surprise_phrase(td: float) -> str:
+SHAPED_CRITIC_SPAN = 60.0   # the shaped-return critic's range (-35..30, `critic_currency`); the
+                            # 0.5 / 3.0 bars below are 1/120 and 1/20 of it
+
+
+def surprise_phrase(td: float, span: float = SHAPED_CRITIC_SPAN) -> str:
     """Plain-language reading of the TD-surprise δ = r + γV(s′) − V(s), so the ML term is
     self-explaining wherever it is shown: negative δ = the turn went worse than the critic predicted.
+
+    ``span`` is the critic's range in its own units (``ProbeSession.critic_currency()["span"]``):
+    the bars are FRACTIONS of it, so the phrase means the same thing on a shaped return (span 60)
+    and on the P(win) critic every current run has (span 1). Unscaled, a 40-point P(win) collapse
+    (δ = -0.40, the biggest swing a turn can carry) read "about what the critic expected", because
+    the 0.5 / 3.0 bars were written in shaped-return units.
 
     Lives HERE, beside `timeline_entry_text` and `CANT_PHRASE`, for the same reason they do — it is
     VOCABULARY, and every surface must say it the same way. (It began as a TUI-local helper; a web
     view re-wording "much worse than the critic expected" is precisely the drift the engine/renderer
     split exists to prevent.)"""
-    mag = abs(td)
+    mag = abs(td) * (SHAPED_CRITIC_SPAN / span if span > 0 else 1.0)
     if mag < 0.5:
         return "about what the critic expected"
     much = "much " if mag >= 3.0 else ""

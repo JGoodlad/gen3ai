@@ -53,7 +53,8 @@ class _AnalysisMixin:
             # ...and its plain-language gloss. The rule is that the ML term never appears without
             # it, so the pairing has to live where the number is produced, not in each renderer.
             if d["value"]["td_residual"] is not None:
-                d["value"]["td_phrase"] = surprise_phrase(d["value"]["td_residual"])
+                d["value"]["td_phrase"] = surprise_phrase(
+                    d["value"]["td_residual"], span=d["critic_currency"]["span"])
         # The engine's RENDERED sentences, attached exactly as `battle_turns` attaches them.
         # `asdict` alone hands a consumer only the structured fields, so a second renderer would
         # re-derive the battle-log line and the α/β sentence — the drift the engine/renderer split

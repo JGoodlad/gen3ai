@@ -138,10 +138,12 @@ via `our_hp_types` [legacy], while the opponent's bare HP stays untyped — no l
 **incoming eff** `worst N×`/`revealed XX%`/`BLANK`, and the
 `incoming_damage` **incoming P(KO)** `active NN%`·`outspd NN%`·`worst-on-team NN%`·opp-recovery — DIM below
 the `🔷` DamageOperator physics when the op is present),
-**Intervention**, **Saliency** (two heads: `π` policy-logit blocks AND `V` critic
-value-gradient blocks, each incl. `their_matchups(144)` and `incoming_damage(33)`, so
-you can see whether the **value** head — where OHKO tail-blindness lives — actually
-reads the belief block vs the rest), **Flow** (`_render_flow`, default-open) — a **`Static`
+**Intervention** (hidden when the run's obs has no move-multiplier block — every current run),
+**Saliency** (two heads: `π` policy-logit blocks AND `V` critic
+value-gradient blocks over the SAME named regions of the row — on a current run the 19 of
+`engine.decode.current_layout_regions` (team slots, active contexts, global, reactive, pair history,
+event window, obs facts; `analyze_output.md`), so you can see which parts of the row the **value**
+head reads vs the policy), **Flow** (`_render_flow`, default-open) — a **`Static`
 box-art DATAFLOW diagram** (not a Tree — a Tree can only nest down-and-right, so it can't DRAW a
 fork or sit the two heads side-by-side) that SHOWS the model instead of asking the reader to imagine
 it. A single left **rail** (`│`, dim cyan) is the forward spine; it flows DOWN into three stage **bands**

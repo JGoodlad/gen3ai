@@ -45,6 +45,11 @@ class MatchupView:
     # ~70-BP attack) — NOT the bare `gen3_data.moves.is_damaging` (= base_power>0), which would
     # wrongly hide our own Hidden Power and the fixed/variable-power attacks.
     applicable: "tuple[bool, ...]"     # per-slot: does the type multiplier mean anything?
+    # False when this run's observation has NO move-multiplier block (every run since
+    # `gen3_cpu_damage_deleted_v1`): `multipliers` is then EMPTY and `applicable` all False. The labels
+    # stay — the action table is keyed on them — but there is no multiplier to show, and a stored
+    # 0.0 would read as "immune" on every attack.
+    present: bool = True
 
 
 @dataclass(frozen=True)

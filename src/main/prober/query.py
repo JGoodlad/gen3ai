@@ -34,6 +34,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import sys
 
 # The outcome buckets the recorder actually writes (`gen3_trace_result_v2`) — every `--outcome`
@@ -461,6 +462,20 @@ def _run(args) -> object:
     return sess.analyze(args.battle, args.inv)  # analyze
 
 
+def _json_safe(obj):
+    """`obj` with every non-finite float replaced by None. `json.dumps` writes NaN / Infinity as bare
+    tokens, which are NOT JSON: a strict parser (a browser's `JSON.parse`, `jq` before 1.7, Go, Rust's
+    serde) rejects the whole document, and the CLI's contract is that an agent always gets parseable
+    output. A NaN here means "no value" (an unrecorded ΔP(win), an empty median), i.e. null."""
+    if isinstance(obj, float):
+        return obj if math.isfinite(obj) else None
+    if isinstance(obj, dict):
+        return {k: _json_safe(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_json_safe(v) for v in obj]
+    return obj
+
+
 def main(argv=None) -> None:
     from utils.bridge.sim_bridge_bin import refuse_search_impl_flag
 
@@ -475,7 +490,9 @@ def main(argv=None) -> None:
             env.update(kind=e.kind, plain=e.plain)
         print(json.dumps(env, indent=2))
         sys.exit(1)
-    print(json.dumps(out, indent=2))
+    print(json.dumps(_json_safe(out), indent=2, allow_nan=False))
+    if isinstance(out, dict) and out.get("error"):    # a session method that RETURNS its failure
+        sys.exit(1)                                   # (probe: too few decisions; history-saliency)
 
 
 if __name__ == "__main__":

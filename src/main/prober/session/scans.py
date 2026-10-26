@@ -81,11 +81,17 @@ class _ScansMixin:
                 continue
             summary = self._summary(b)
             npz = self._npz(b)
+            values = list(npz["values"]) if "values" in npz else None
+            win_probs = list(npz["win_probs"]) if "win_probs" in npz else None
+            if (not win_probs or all(x != x for x in win_probs)) and self.critic_mode() == "winprob":
+                # A core trace stores NaN in `win_probs`; under the win-prob critic V IS P(win), and the
+                # gen-15 baseline's headline ΔP(win) (-0.096) is the number to compare — without this
+                # `critic_delta.median_delta_win_prob` was NaN (invalid JSON) on every current run.
+                win_probs = values
             fold = _analyze_loops(
                 lines, summary.get("invocations", []), outcome=b.outcome,
                 n_turns=(summary.get("meta") or {}).get("turns"),
-                values=(list(npz["values"]) if "values" in npz else None),
-                win_probs=(list(npz["win_probs"]) if "win_probs" in npz else None),
+                values=values, win_probs=win_probs,
                 near_zero_frac=near_zero_frac)
             if fold.skipped:
                 skipped[fold.skipped.split(":")[0]] += 1
@@ -321,6 +327,11 @@ class _ScansMixin:
         # Recorded P(win) at the cliff — the CALIBRATED winning-vs-losing signal that re-centers the
         # grind/throw split (V's sign mis-centers it; see engine._was_winning). None on a no-win-prob run.
         wp_at = _npz_win_prob(npz, best_i)
+        if wp_at is None and self.critic_mode() == "winprob":
+            # Under the win-prob critic V IS P(win) (`critic_currency`), but a core trace stores NaN in
+            # its separate `win_probs` array. Without this the split reported "no win-prob head" on every
+            # current run and the triage page told the reader V had a −6.5 shaped offset (it has none).
+            wp_at = v_at
         td = self._td(_rtotal, v_at, self._v(values, best_i + 1))
         board = build_board(inv)
         our = inv.get("our") or {}
@@ -455,6 +466,7 @@ class _ScansMixin:
         per_opp = defaultdict(lambda: {"n": 0, "cats": defaultdict(list)})
         cat_meta: dict = {}
         n_wp_split = 0                                   # losses whose grind/throw split used the win-prob head
+        n_belief = 0                                     # losses whose turning point carried an incoming-damage belief
         for b in losses:
             feat = self._turning_point_features(b)
             if feat is None:
@@ -462,6 +474,8 @@ class _ScansMixin:
             feat["wp_even"], feat["v_even"] = wp_even, v_even   # the winning-thresholds the taxonomy reads
             if feat.get("wp_at") is not None:
                 n_wp_split += 1
+            if feat.get("active_pko") is not None:
+                n_belief += 1
             a = attribute_turning_point(feat)
             cat_meta[a["category"]] = a
             po = per_opp[b.opponent]
@@ -478,11 +492,16 @@ class _ScansMixin:
                 cat_total[cat] += len(feats)
                 cat_by_opp[cat][opp] = len(feats)
                 for f in feats[:3]:
+                    # The belief fields only when the run HAS the belief: "pko=None" on every example
+                    # is noise that reads like a measurement.
+                    facts = [f"{label}={_r(f.get(key), 2)}"
+                             for label, key in (("pko", "active_pko"), ("outspeed", "active_outspeed"))
+                             if f.get(key) is not None]
+                    facts += [f"dHP={_r(f.get('our_hp_delta'), 2)}",
+                              f"healthy_bench={f.get('n_healthy_bench')}"]
                     cat_examples[cat].append(
                         f"{f['short_id']} t{f.get('turn')}: {f.get('our_species')} chose "
-                        f"{f.get('chosen')} (pko={_r(f.get('active_pko'),2)}, "
-                        f"outspeed={_r(f.get('active_outspeed'),2)}, dHP={_r(f.get('our_hp_delta'),2)}, "
-                        f"healthy_bench={f.get('n_healthy_bench')})")
+                        f"{f.get('chosen')} ({', '.join(facts)})")
         for opp in bot_opps:
             n = per_opp[opp]["n"] or 1
             loss_rate = max(0.0, 1.0 - float(wr.get(opp, 0.0)))
@@ -505,11 +524,17 @@ class _ScansMixin:
                           "loss_rate(opp) × category_share(opp); an UPPER BOUND (assumes fixing "
                           "the lever flips that loss). Ranked descending — this is the lever order.")
         wp_frac = round(n_wp_split / max(1, total), 2)
-        split_signal = (
-            f"grind-vs-throw boundary: P(win) ≥ {wp_even} when the win-prob head is recorded "
-            f"({int(100 * wp_frac)}% of these losses), else V > {v_even}. The calibrated win-prob split "
-            "re-centers the old V>0 test, which OVER-counted grinds (V's zero is ~6 units below 'even' — "
-            "a shaped-return offset, measured via a self-mirror 50/50 reading V<0).")
+        if currency["mode"] == "winprob":
+            split_signal = (
+                f"grind-vs-throw boundary: P(win) ≥ {wp_even} at the cliff. This run's critic IS the "
+                "win-prob head (V = P(win)), so the split reads V directly; there is no shaped-return "
+                "offset to re-center.")
+        else:
+            split_signal = (
+                f"grind-vs-throw boundary: P(win) ≥ {wp_even} when the win-prob head is recorded "
+                f"({int(100 * wp_frac)}% of these losses), else V > {v_even}. The calibrated win-prob "
+                "split re-centers the old V>0 test, which OVER-counted grinds (V's zero is ~6 units "
+                "below 'even' — a shaped-return offset, measured via a self-mirror 50/50 reading V<0).")
         caveats = [
             "Eval traces are LOSS-WEIGHTED (~10 loss / 5 win per opponent), so category SHARES are "
             "per-opponent representative but raw counts are NOT the true loss volume — the recoverable "
@@ -519,6 +544,12 @@ class _ScansMixin:
             "counted (pct_of_sampled_losses) but not rating-weighted (their win-rate is gate-pinned).",
             split_signal,
         ]
+        if total and not n_belief:
+            caveats.append(
+                "No loss carries an incoming-damage belief (the block is deleted from the current "
+                "observation), so the death buckets that read it (surprise_ohko, ignored_threat_death, "
+                "doomed_already, attrition_death) cannot fire. A death is split only by its mon's "
+                "health: death_healthy_unread / death_chipped_unread. Use `analyze` for the cause.")
         if not bot_opps:
             ranking_metric = ("no eval_results.jsonl bot win-rates found — est_recoverable_winrate_pct "
                               "is 0 for every category; ranked by RAW loss volume instead.")
@@ -533,6 +564,7 @@ class _ScansMixin:
             "ranking_metric": ranking_metric,
             "winning_split": {"wp_even": wp_even, "v_even": v_even, "wp_coverage": wp_frac,
                               "critic_mode": currency["mode"], "v_units": currency["units"]},
+            "belief_coverage": {"n": n_belief, "d": total},
             "caveats": caveats,
             "categories": cats,
         }

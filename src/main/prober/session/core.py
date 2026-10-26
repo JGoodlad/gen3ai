@@ -228,7 +228,10 @@ class ProbeSession(_ReadingMixin, _ScansMixin, _TraceIOMixin, _AnalysisMixin,
         if b is None:  # allow a raw summary path not in the original tree
             extra = build_trace_tree(battle_id).all_battles()
             if not extra:
-                raise FileNotFoundError(f"no trace found for {battle_id!r}")
+                hint = "" if str(battle_id).endswith("_summary.json") else (
+                    " — a battle id is the `id` field of list / scan (the full *_summary.json path); "
+                    "`short_id` is the web's token and resolves only inside a run's own session")
+                raise FileNotFoundError(f"no trace found for {battle_id!r}{hint}")
             b = extra[0]
         return b
 

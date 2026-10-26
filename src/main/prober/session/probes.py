@@ -93,12 +93,29 @@ class _ProbesMixin:
         if len(prov_idx) >= 30:
             prov_report = fit_probe([[provided[j]] for j in prov_idx], [y[j] for j in prov_idx],
                                     spec["task"], groups=[groups[j] for j in prov_idx], seed=seed)
+        # What this probe could NOT do on this run, said in the result: `provided_feature_baseline:
+        # null` and a lone "unknown" group read like a measurement of nothing, when they are the
+        # belief features (`active_pko` / `active_exp` / `active_outspeed`) missing from the current
+        # observation (the incoming-damage block is deleted), so `how_to_read`'s comparison and its
+        # contested/easy split do not exist.
+        warnings = []
+        if prov_report is None:
+            warnings.append(
+                f"the provided feature `{spec['provided_name']}` is absent from this run's observation "
+                f"({len(prov_idx)} usable decisions, < 30): there is no representation-vs-provided "
+                "baseline, so `how_to_read`'s comparison does not apply; read the representation "
+                "probe's lift over base_rate (or r2) alone.")
+        if set(groups) == {"unknown"}:
+            warnings.append(
+                "every decision fell in the `unknown` group: the group split needs the incoming-damage "
+                "belief, which this run's observation does not carry; `by_group` is the overall fit.")
         return {
             "run_dir": self.run_dir, "step": step, "opponent": opponent, "target": target,
             "task": spec["task"], "which_features": which, "n_decisions": len(y),
             "model_resolution": _choice_dict(choice) if choice else None,
             "obs_semantics": self.obs_semantics(model, _TRACE_REPLAY) if model is not None else None,
             "tests": spec["tests"], "how_to_read": spec["how_to_read"], "caveat": spec["caveat"],
+            "warnings": warnings,
             "representation_probe": rep,
             "provided_feature": spec["provided_name"], "provided_feature_baseline": prov_report,
         }
@@ -245,6 +262,15 @@ class _ProbesMixin:
                     model, choice = self._model_for(b, use=_TRACE_REPLAY)    # STORED observations
             except FileNotFoundError as e:
                 return {"error": f"no model: {e}", "step": step}
+            off = model.offsets
+            if (off.turn_history_dim or 0) <= 0 or (off.turn_delta_dim or 0) <= 0:
+                # Decided from the layout, once, BEFORE any gradient: the per-decision loop below
+                # `continue`s on a missing block without counting it, so on a current run (the
+                # TurnDelta history was deleted by `gen3_frame_deletion_v1`) it ran forward + two
+                # backward passes over EVERY decision of the step — 15 minutes — to say the same.
+                return {"error": "no turn-history block in this run's observation "
+                                 "(deleted by gen3_frame_deletion_v1): nothing to measure",
+                        "kind": "no_turn_history_block", "step": step, "n_decisions": 0}
             npz = self._npz(b)
             obsmat = npz.get("obs")
             if obsmat is None:

@@ -46,8 +46,9 @@ pinned in `app_test.py` → "usability / information flow":
 - **The run picker is grouped by architecture** (`_picker`): current · older · hidden-no-traces
   ([`web_service.md`](web_service.md) §3).
 - **Cryptic columns explain themselves** via `title=` (`inv`, `ΔV`, `TD δ`), and `wp_coverage=0` is
-  rendered as prose — it means the winning/behind split fell back to `V > 0`, which the project's own
-  docs call systematically wrong.
+  rendered as prose — on a SHAPED run it means the winning/behind split fell back to `V > 0`, which the
+  project's own docs call systematically wrong. A win-prob run (every current one) reads V as P(win), so
+  its `wp_coverage` is 1.0 and the page says `P(win)` with no warning.
 
 ## 2. The critic's CURRENCY, and the thresholds that depend on it
 

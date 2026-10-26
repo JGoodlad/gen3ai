@@ -523,6 +523,8 @@ def _deltas_by_turn(invocations: Sequence[dict],
         if t is None or k + 1 >= len(series):
             continue
         d = float(series[k + 1]) - float(series[k])
+        if d != d:                       # a NaN endpoint (a core trace stores NaN in `win_probs`)
+            continue
         t = int(t)
         if t not in out or d < out[t]:
             out[t] = d

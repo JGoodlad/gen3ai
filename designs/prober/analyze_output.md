@@ -22,6 +22,17 @@ is the block-by-block reference for what `analyze` returns.
   web replay's per-turn *expect* line. Engine: `engine.build_opp_intent` / `opp_intent_text`.
 
 
+## What a current run leaves out
+
+`threats`, `incoming`, `sweep` and `matchups.multipliers` read the matchup / move-multiplier /
+incoming-damage observation blocks, which every current run's observation lacks (deleted
+`gen3_cpu_damage_deleted_v1`, `gen3_entity_rehome_v1`): `threats` and `incoming` are `null`, `sweep`
+is `null`, and `matchups` keeps its `move_labels` (the action table is keyed on them) with
+`present: false`, `multipliers: []`, `applicable` all false. A stored `0.0` would read as "immune"
+and a flat sweep as "the policy ignores type", so absence is never spelled as a number. `value.td_phrase`
+is scaled by the critic's span (`critic_currency.span`): a −0.40 P(win) turn is "much worse than the
+critic expected", not "about what".
+
 ## The threat decodes — `threats` · `incoming` · `damage_op` · `move_belief`
 
   Carries two incoming-threat decodes — **distinguish them**:
@@ -71,6 +82,12 @@ is the block-by-block reference for what `analyze` returns.
     not the extractor — `damage_op_view` reads it there (a prior read of `extractor.last_raw_block`
     silently returned None, hiding the entire incoming/outgoing op view; regression-guarded by
     `model_test.py`).
+  **`saliency` blocks on a current run** (`engine.decode.current_layout_regions`, tiling the whole
+  2845-dim row; the sum of `total_abs` is the gradient's total): `our team slot k(122)` ×6,
+  `opp team slot k(122)` ×6, `our active context(60)`, `opp active context(60)`, `global(20)`,
+  `reactive(17)`, `pair history(180)`, `event window(960)`, `obs facts(84)`. Slot k is team order, NOT
+  "the active mon" (read the active flag, the last dim of the slot). The old list named
+  `our active pokemon block(99)` = `obs[0:99]` and nothing else: 3.5 % of the row, mislabeled.
   Plus `value_saliency` — the **critic** lens: `|d V(s)/d obs|` aggregated into the
   SAME named blocks as the policy `saliency`, so you can see whether the VALUE head
   (where OHKO tail-blindness lives) actually reads `incoming_damage(33)` vs the rest.

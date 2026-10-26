@@ -557,7 +557,10 @@
 {# ── threats ──────────────────────────────────────────────────────────────────────────── #}
 
 {% set dop = a.damage_op %}
-{% if dop or a.switch_in_outgoing or a.matchups or a.threats or a.incoming %}
+{# `a.matchups` is always present (its labels key the action table); it carries multipliers only
+   when this run's observation has the block (`present`) — a run without it shows no "type ×" row. #}
+{% set mu = a.matchups and a.matchups.present %}
+{% if dop or a.switch_in_outgoing or mu or a.threats or a.incoming %}
 <section class="card">
   <h2>threats</h2>
 
@@ -702,7 +705,7 @@
   </div>
   {% endif %}
 
-  {% if a.matchups or a.threats or a.incoming %}
+  {% if mu or a.threats or a.incoming %}
   {# The CPU obs decodes. DIMMED when the operator is present, because it subsumes them (it prices
      base power × Atk·Def × HP × roll; these are effectiveness and a prior-fed belief); at FULL
      strength when there is no operator, which is the graceful-degradation contract. #}
@@ -710,7 +713,7 @@
     <h3>{{ prov(false) }} observation decodes{% if dop %}
       <span class="muted small">— subsumed by the operator above; kept for cross-checking</span>{% endif %}</h3>
 
-    {% if a.matchups %}
+    {% if mu %}
     <p class="benchline"><span class="who">type ×</span>
       {% for lbl in a.matchups.move_labels %}
       <span class="fv"><span class="mono">{{ lbl }}</span>
@@ -813,7 +816,7 @@
     {{ salpanel(a.saliency, "π — policy logit of the chosen action",
                 "what moved the action the model actually took") }}
     {{ salpanel(a.value_saliency, "V — the critic",
-                "where value-head tail-blindness would show up: does V read the threat blocks at all?") }}
+                "where the critic looks: which team slots, the event window, the facts block") }}
   </div>
 </section>
 {% endif %}

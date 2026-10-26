@@ -29,7 +29,10 @@ in `python -m main.prober.query --help`; this file is the per-method reference f
   SKIPPED with a reason and counted in `coverage`, never silently judged.
   Per-decision joins (model-free, from the summary + npz): chosen-probability on whiff decisions,
   ΔV and ΔP(win) bucketed `loop_step` / `other_bait` / `other` (the third bucket is the point — a
-  loop-turn ΔV means nothing without the ordinary turn from the SAME battles), and the α/β readout
+  loop-turn ΔV means nothing without the ordinary turn from the SAME battles; **under the win-prob
+  critic V *is* P(win)**, and a core trace stores NaN in its separate `win_probs` array, so `loops`
+  reads ΔP(win) from `values` there — `median_delta_win_prob` is the number to hold against the
+  baseline's −0.096; a NaN series is dropped, never medianed), and the α/β readout
   on the same pivots split first-time / repeat / loop-step. **β's slot is graded STRUCTURALLY**
   (obs slot *k* = the *k*-th REVEALED opp mon, so the true slot is the arrival's index in the
   reveal order as of that turn) — never against β's printed species, which is an unsupervised
@@ -60,7 +63,14 @@ in `python -m main.prober.query --help`; this file is the per-method reference f
   `loss_rate(opp) × category_share(opp)` (an upper bound: assumes fixing the lever
   flips that loss). Each category carries the **lever** it implicates (obs / reward /
   policy / critic-capacity / upstream / measurement), a blurb, `by_opponent`, and
-  worst-turn `examples`. The taxonomy splits the deaths by the signal that names the
+  worst-turn `examples`. **Every current run has NO incoming-damage belief in its observation**
+  (the block is deleted): `active_pko` is `None`, `belief_coverage` is `{n: 0, d: <losses>}` and a
+  caveat says so. The four belief buckets below (`surprise_ohko`, `ignored_threat_death`,
+  `doomed_already`, `attrition_death`) cannot fire there; a death is split only by its mon's health
+  into `death_healthy_unread` / `death_chipped_unread` (UNATTRIBUTED: the lever is "drill in with
+  `analyze`"). Before 2026-10-26 those deaths were filed as `attrition_death` ("belief only PARTLY
+  fired") — 44 % of `rb_x35_n1p_s3501`'s losses, a claim about a belief that does not exist. The
+  taxonomy splits the deaths by the signal that names the
   lever: belief **under-read** a healthy death = OBS (`surprise_ohko`); belief
   **fired** + a pivot existed but the mon died = REWARD/POLICY (`ignored_threat_death`,
   the under-switch target); no pivot left = UPSTREAM (`doomed_already`); already
@@ -75,7 +85,9 @@ in `python -m main.prober.query --help`; this file is the per-method reference f
   behind"). It falls back to `V > v_even` only when no win-prob was recorded, and **`v_even`
   defaults from the run's CRITIC CURRENCY** (`None` ⇒ 0.0 shaped, **0.5** under the win-prob critic (the only critic),
   where V *is* P(win) and 0.0 is a certain loss rather than "even"); pass `--v-even` =
-  the checkpoint's self-mirror V to re-center a head-less shaped run. The result
+  the checkpoint's self-mirror V to re-center a head-less shaped run. **On a win-prob run the split
+  reads V as P(win) (`wp_coverage` 1.0)** even though a core trace's `win_probs` array is NaN; the
+  "no win-prob head / −6.5 offset" wording is for a SHAPED run only. The result
   carries a `winning_split` block (`wp_even`/`v_even`/`wp_coverage`/`critic_mode`/`v_units`) + a
   caveat naming the signal.
   Reads the
@@ -105,12 +117,73 @@ in `python -m main.prober.query --help`; this file is the per-method reference f
   modelling comprehensively present; the head was FALSIFIED before building.) Every
   result splits **overall vs by-group** (the easy-vs-hard
   contrast is the signal) and reports the representation probe AND the provided-feature
-  baseline. The probe stats (`engine.fit_probe`) are pure numpy — standardized
+  baseline. **`warnings`** says what the probe could not do on this run: the provided features
+  (`active_pko` / `active_exp` / `active_outspeed`) are the incoming-damage belief, absent from every
+  current observation, so `provided_feature_baseline` is `null` (no rep-vs-provided delta; read the
+  representation probe's `lift` over `base_rate`) and a belief-grouped target (`damage_taken`,
+  `faint_soon`, `faint_healthy`, `big_hit_incoming`) has ONE `unknown` group, not the contested band
+  its `how_to_read` describes. A probe that cannot fit (< 30 labeled decisions, no model) returns
+  `error` and the CLI exits 1. The probe stats (`engine.fit_probe`) are pure numpy — standardized
   ridge/logistic, k-fold OUT-OF-FOLD predictions, **auto-tuned l2** over a grid
   (essential at d≈512: a fixed weak penalty overfits to a negative OOF R²). One
   checkpoint load per call (step → one model). Measured @70M: `is_faster` rep
   AUC 0.94 on contested vs the provided feature's 0.75 (the model already infers
   speed — not a feature gap).
+
+- `history_saliency(step=, opponent=, max_decisions=)` — per-turn-slot saliency of the TurnDelta
+  history block, to decide whether `N_HISTORY_TURNS` could shrink. **That block was deleted
+  (`gen3_frame_deletion_v1`), so on every current run it returns `{error, kind:
+  "no_turn_history_block"}` at once** (and the CLI exits 1), decided from the loaded model's layout
+  BEFORE any gradient (on a run the gap policy refuses, its typed `ArchDriftError` comes first). It used to run two backward passes over every decision of the step and only
+  then say "no decisions with a turn-history block" (15 min on `rb_x35_n1p_s3501`).
+  `analyze`'s own `saliency` / `value_saliency` are not that block: on a current run they cover the
+  whole 2845-dim row as 19 named regions (`engine.decode.current_layout_regions`: 6 + 6 team slots,
+  the two active-context blocks, global, reactive, pair history, event window, obs facts).
+
+## Worked sequence on a current run (rb_x35_n1p_s3501, 2026-10-26)
+
+Measured on a box at load average ~18 (a training run live), CPU only, `nice -n 19 taskset -c 5-7,13-15`; paths are
+`models/<run>/…`. A battle id is the `id` field of `list` / `scan` (a full `*_summary.json` path):
+the `short_id` beside it (`step_298000112/heuristic/loss_1002`) is the WEB's token and does not
+resolve in the per-battle CLI commands.
+
+**The model-loading commands split by the gap policy (`arch_drift.md`) since 2026-10-26.** Every current run
+(config v161 and P*'s v158) trained under an older `obs_semantics` than HEAD's 162, so the `trace_replay`
+commands — `analyze`, `find … disagree`, `probe`, `history-saliency`, `/analyze`, the `/game` model panels —
+REFUSE with a typed `ArchDriftError` (`kind: obs_semantics`, exit 1, before any load) and name the way out
+(`git checkout <the run's git_hash>`); the `fresh` commands — `lookahead`, `better-line`,
+`replay-counterfactual` — run and record a `trained on obs_semantics v151, probed at v162` badge. The
+`analyze` / `probe` timings below were measured BEFORE that refusal landed (de9cee938) and are what a run at
+HEAD's semantics will cost; everything else is model-free or `fresh` and unchanged.
+
+```bash
+Q="python -m main.prober.query"; R=models/rb_x35_n1p_s3501
+$Q summary $R                       # 1 s. critic_currency.mode "winprob"; 9 eval steps; model_views.status "current"
+$Q triage $R                        # 11-72 s by load. belief_coverage {n:0}: deaths are death_*_unread, not attrition
+$Q scan $R --outcome loss --opponent heuristic --limit 5      # 1 s. delta_v is ΔP(win); worst turn per loss
+$Q loops $R --opponent 'sentinel_*' # 3.5 min (1017 battles). compare median_delta_win_prob with the baseline's −0.096
+B=$R/eval_traces/step_298000112/heuristic/loss_s1_002_summary.json   # an `id` from list / scan
+$Q overview $B; $Q turns $B         # 2 s each, model-free
+$Q find $B value_drop --limit 3     # [7, 9, 13]
+$Q analyze $B 7                     # REFUSED (obs_semantics) on a current run today; ~1 min when allowed: td_phrase, belief, damage_op, saliency
+$Q lookahead $B --inv 7             # 2.5 min. one-ply V(s′) per legal action; needs the search_driver binary
+$Q better-line $B 7 --depth 2       # 7 min
+$Q falsify $B --inv 7 --seeds 8     # seconds. luck vs mistake for one decision
+$Q probe $R is_faster --max-decisions 150    # REFUSED today (trace_replay); minutes when allowed: one model feature pass per decision
+```
+
+P* (`models/rb_x26_s2601`, 190 eval steps, 42k traced battles) takes the same commands with
+`--step 280000170` (its 280 M eval; without `--step` triage/probe read the NEWEST step). Its
+`summary` is 613 KB of JSON (380 checkpoints, 190 steps × 14 opponents): trim it, e.g.
+`$Q summary $R | jq '{critic_currency, model_views, totals, last: [.steps[-3:][] | {step, totals}]}'`.
+Measured there: triage 71 s, `scan --outcome loss --limit 5` 8 s, `loops --opponent 'sentinel_*'` 57 s,
+`analyze` on a loss at 280 M ~75 s before the refusal (it resolves the NEAREST checkpoint: no `snapshot.zip` was kept for that step).
+
+What is NOT there on a current run (a field that is `null` is the run, not a bug): `threats`,
+`incoming` (the matchup and incoming-damage blocks are deleted), `opp_intent` (`--opp-intent-coef 0`),
+`win_prob` (`values` IS P(win)), `sweep`, `matchups.multipliers` (`present: false`), the loops
+`readouts`. `replay-counterfactual` and the `sim` tests need `src/rust_env/target/selfcheck/libpokesim_env.so`,
+which a fresh worktree does not have (`FfiLoadError` names the `cargo build` line; the main checkout has it).
 
 ## From the prober leaf (moved 2026-10-10)
 

@@ -587,7 +587,8 @@ def _build_triage_run(tmp_path):
                   [_loss_inv(1, "thunderbolt", hp=0.8, hp_delta=-0.1)], [5.0, -10.0])
     _write_battle(run, "heuristic", "loss_002",
                   [_loss_inv(1, "dragondance", hp=0.9, hp_delta=-0.1)], [5.0, -10.0])
-    # aggressive (a bot): an attrition_death (mon died, no belief block → not surprise/ignored)
+    # aggressive (a bot): a death_chipped_unread (a chipped mon died, no belief block → the belief
+    # buckets cannot fire, and attrition_death would CLAIM a belief that is not there)
     _write_battle(run, "aggressive", "loss_003",
                   [_loss_inv(1, "earthquake", hp=0.5, hp_delta=-0.5)], [5.0, -10.0])
     # sentinel_0 (NOT a bot — absent from eval_results): a positional_grind (V<0, no death)
@@ -605,11 +606,11 @@ def test_triage_categorizes_and_ranks_by_recoverable(tmp_path):
     assert out["step"] == 2000000 and out["n_losses_analyzed"] == 4
     assert out["n_bot_opponents"] == 2                          # heuristic + aggressive only
     cats = {c["category"]: c for c in out["categories"]}
-    assert set(cats) == {"critic_blindspot", "greedy_setup", "attrition_death", "positional_grind"}
-    # attrition_death (1 of 1 aggressive losses, loss_rate 0.30) outranks the heuristic buckets
+    assert set(cats) == {"critic_blindspot", "greedy_setup", "death_chipped_unread", "positional_grind"}
+    # death_chipped_unread (1 of 1 aggressive losses, loss_rate 0.30) outranks the heuristic buckets
     # (1 of 2 losses, loss_rate 0.20): 0.30·1·/2 = 15% vs 0.20·0.5/2 = 5%.
-    assert out["categories"][0]["category"] == "attrition_death"
-    assert abs(cats["attrition_death"]["est_recoverable_winrate_pct"] - 15.0) < 1e-6
+    assert out["categories"][0]["category"] == "death_chipped_unread"
+    assert abs(cats["death_chipped_unread"]["est_recoverable_winrate_pct"] - 15.0) < 1e-6
     assert abs(cats["critic_blindspot"]["est_recoverable_winrate_pct"] - 5.0) < 1e-6
     # sentinel loss is counted in the share but NOT rating-weighted (no bot win-rate for it)
     assert cats["positional_grind"]["est_recoverable_winrate_pct"] == 0.0
@@ -706,7 +707,7 @@ def test_cli_triage_emits_json(tmp_path):
     finally:
         sys.argv = argv
     parsed = json.loads(buf.getvalue())
-    assert parsed["categories"][0]["category"] == "attrition_death"
+    assert parsed["categories"][0]["category"] == "death_chipped_unread"
     assert parsed["n_bot_opponents"] == 2
 
 

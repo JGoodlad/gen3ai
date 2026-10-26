@@ -31,6 +31,17 @@ views populated, `damage_op_view` decoding on the production surface, and every 
 populated, sorted, joined to the truth, with each obs-revealed move reading ~1 in its slot's belief row — the
 slot-axis check).
 
+**Current-run health audit (2026-10-26):** `engine_current_run_test.py` (pure: the saliency regions tile
+the live 2845-dim row and conserve the gradient's total, `analyze` names them end to end, a layout with no
+multiplier block gives `matchups.present=False` and `sweep=None`, one with it still gets both) and
+`session_current_run_test.py` (the `td_phrase` bars scale with the critic's span; a death with no belief is
+`death_*_unread`, never `attrition_death`; triage on a win-prob run reads V as P(win); `loops` on a core
+trace's NaN `win_probs` reads ΔP(win) from V and never emits a NaN; the CLI prints strict JSON and exits 1
+on a returned `error`; `history_saliency` refuses from the layout before any gradient; a `probe` names its
+missing baseline), plus the `/analyze` template case in `web/app_test.py` (no `type ×` row, no sweep). Their
+fixtures are shaped like TODAY's runs: the earlier suites' synthetic layout still carried the deleted blocks,
+which is why none of these was ever seen.
+
 `engine_test.py` (pure, FakeProbeModel + offset regression, + the loss-attribution
 taxonomy and the `fit_probe` stats as pure cases — decodable-vs-noise,
 regression, too-few-graceful), `session_test.py` (tmp_path traces for the agent

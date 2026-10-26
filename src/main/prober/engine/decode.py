@@ -60,12 +60,15 @@ def _display_hp(move_id: str, our_species: str, hp_map: "dict | None") -> str:
 
 def _matchups(obs: np.ndarray, labels: list, off, our_species: str = "",
               hp_map: "dict | None" = None) -> MatchupView:
-    # gen3_cpu_damage_deleted_v1: mm_off==0 ⇒ the block is absent from this obs layout.
-    mults = (tuple(float(x) * 4.0 for x in obs[off.mm_off:off.mm_off + 4])
-             if off.mm_off > 0 else (0.0, 0.0, 0.0, 0.0))
     raw = tuple(labels[MOVE_START:MOVE_END])  # the 4 move actions, request order
     # Show OUR Hidden Power typed (hiddenpower(grass)); the multiplier IS already typed in the obs.
     move_labels = tuple(_display_hp(lbl, our_species, hp_map) for lbl in raw)
+    # gen3_cpu_damage_deleted_v1: mm_off==0 ⇒ the block is absent from this obs layout. Say so: the
+    # old zeros rendered "0.00×" (immune) next to every attack on every current run.
+    if off.mm_off <= 0:
+        return MatchupView(multipliers=(), move_labels=move_labels,
+                           applicable=(False,) * len(raw), present=False)
+    mults = tuple(float(x) * 4.0 for x in obs[off.mm_off:off.mm_off + 4])
     # Flag which slots' multipliers are meaningful vs a phantom artefact on a status/self move (from
     # the RAW move id, so is_damaging is exact) — see MatchupView.applicable. _multiplier_meaningful
     # tolerates unknown/empty ids → False.
@@ -78,7 +81,14 @@ def _switch_prob_sum(p: np.ndarray, labels: list) -> float:
 
 
 def _intervention_sweep(model, obs: np.ndarray, mask: np.ndarray, labels: list,
-                        chosen: str, off) -> InterventionSweep:
+                        chosen: str, off) -> "InterventionSweep | None":
+    """Overwrite the chosen move's type multiplier in the obs and watch the policy move.
+
+    None when this run's observation has no multiplier block (`off.mm_off == 0`): there is nothing to
+    overwrite, so every row would be the same re-run and a flat table would read "the policy ignores
+    type matchups" — a finding the run never produced."""
+    if off.mm_off <= 0:
+        return None
     cj = labels.index(chosen)
     if not (MOVE_START <= cj < MOVE_END):
         return InterventionSweep(chosen, -1, 0.0, ())
@@ -88,8 +98,7 @@ def _intervention_sweep(model, obs: np.ndarray, mask: np.ndarray, labels: list,
     rows = []
     for mult in _SWEEP_MULTIPLIERS:
         o = obs.copy()
-        if off.mm_off > 0:                      # no-op when the block was deleted from the obs
-            o[off.mm_off + slot] = mult / 4.0
+        o[off.mm_off + slot] = mult / 4.0
         p, _ = model.action_dist(o, mask)
         rows.append(InterventionRow(
             multiplier=mult,
@@ -99,10 +108,52 @@ def _intervention_sweep(model, obs: np.ndarray, mask: np.ndarray, labels: list,
     return InterventionSweep(chosen, slot, baseline_switches, tuple(rows))
 
 
+def current_layout_regions() -> "tuple[tuple[str, int, int], ...]":
+    """`(name, lo, hi)` for every region of the CURRENT observation row, tiling it exactly (the
+    sizes sum to `OFFSET_OBS_FACTS + OBS_FACTS_DIM`; `engine_current_run_test.py` pins the tiling).
+
+    The saliency used to name only the blocks of the layout before `gen3_entity_rehome_v1` — the
+    matchup matrices, the incoming-damage block, the turn history — all deleted, so on a current run
+    its ONE surviving row was "our active pokemon block(99)" = `obs[0:99]`, which is team slot 0
+    (not the active mon) and 3.5 % of the row, while the other 96 % of the gradient went unnamed.
+    """
+    import agents.observation.constants as C
+
+    def slots(prefix: str, base: int) -> list:
+        return [(f"{prefix} slot {k}({C.POKEMON_FULL_DIM})",
+                 base + k * C.POKEMON_FULL_DIM, base + (k + 1) * C.POKEMON_FULL_DIM)
+                for k in range(C.TEAM_SIZE)]
+
+    ctx = C.OFFSET_CONTEXT
+    return tuple(
+        slots("our team", C.OFFSET_OUR_TEAM) + slots("opp team", C.OFFSET_OPP_TEAM) + [
+            (f"our active context({C.ACTIVE_CONTEXT_DIM})", ctx, ctx + C.ACTIVE_CONTEXT_DIM),
+            (f"opp active context({C.ACTIVE_CONTEXT_DIM})", ctx + C.ACTIVE_CONTEXT_DIM,
+             ctx + 2 * C.ACTIVE_CONTEXT_DIM),
+            (f"global({C.GLOBAL_ENV_DIM})", C.OFFSET_GLOBAL, C.OFFSET_GLOBAL + C.GLOBAL_ENV_DIM),
+            (f"reactive({C.REACTIVE_DIM})", C.OFFSET_REACTIVE, C.OFFSET_REACTIVE + C.REACTIVE_DIM),
+            (f"pair history({C.PAIR_HISTORY_DIM})", C.OFFSET_PAIR_HISTORY,
+             C.OFFSET_PAIR_HISTORY + C.PAIR_HISTORY_DIM),
+            (f"event window({C.EVENT_WINDOW_DIM})", C.OFFSET_EVENT_WINDOW,
+             C.OFFSET_EVENT_WINDOW + C.EVENT_WINDOW_DIM),
+            (f"obs facts({C.OBS_FACTS_DIM})", C.OFFSET_OBS_FACTS, C.OFFSET_OBS_FACTS + C.OBS_FACTS_DIM),
+        ])
+
+
+def _is_current_layout(off) -> bool:
+    """True when `off` was resolved from the live encoder (`ObsOffsets.resolve()` fills `total_dim`);
+    the synthetic offsets of the unit tests leave it 0 and keep the legacy block names."""
+    import agents.observation.constants as C
+    return off.total_dim > 0 and off.total_dim == C.OFFSET_OBS_FACTS + C.OBS_FACTS_DIM
+
+
 def _saliency_from_grad(g: np.ndarray, off) -> Saliency:
     """Aggregate a per-dim gradient into the named obs blocks. Shared by the policy-logit
     saliency and the critic value saliency so both report the SAME regions (incl. the new
     `incoming_damage` block) — the only difference is which head's gradient is fed in.
+
+    On the CURRENT layout the regions are `current_layout_regions()` (every region of the row); the
+    block list below is the legacy one, kept for the synthetic offsets of the unit tests.
 
     A block whose span is EMPTY in this run's layout is OMITTED, never reported as 0.0. Two
     reasons, and the second is the one that bit: `np.mean` of an empty slice is `nan` with a
@@ -120,6 +171,11 @@ def _saliency_from_grad(g: np.ndarray, off) -> Saliency:
             return None
         return SaliencyBlock(name=name, mean_abs=float(seg.mean()), total_abs=float(seg.sum()))
 
+    if _is_current_layout(off):
+        return Saliency(overall_mean_abs=float(g.mean()),
+                        blocks=tuple(b for b in (block(n, lo, hi)
+                                                 for n, lo, hi in current_layout_regions())
+                                     if b is not None))
     blocks = [
 
         *((block("our_matchups(144)", off.om_off, off.om_off + 144),

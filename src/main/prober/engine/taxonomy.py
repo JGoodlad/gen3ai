@@ -119,6 +119,23 @@ LOSS_TAXONOMY = (
          "the decisive move was a SETUP/boost move that got punished",
          lambda f: bool(_f(f, "is_setup"))),
 
+    # A death whose belief is UNKNOWN (`active_pko is None`: the run's obs carries no incoming-damage
+    # belief — every current run, the block is deleted) cannot be sorted into surprise / ignored /
+    # doomed / attrition, all four of which read the belief. Lumping it into `attrition_death` would
+    # CLAIM "the belief only partly fired" of a belief that does not exist, and made that bucket 44 %
+    # of rb_x35_n1p_s3501's losses. These two say only what the outcome shows (was the mon healthy?)
+    # and name the missing input.
+    _Cat("death_healthy_unread", "UNATTRIBUTED (a healthy mon died in one turn; this obs has no incoming-damage belief to say whether it was foreseeable — drill in with analyze)",
+         "a HEALTHY mon DIED in one turn, and this run's obs carries no incoming-damage belief, so "
+         "surprise vs ignored-threat cannot be told",
+         lambda f: bool(_f(f, "faint")) and _f(f, "active_pko") is None
+                   and (_f(f, "our_hp") is None or f["our_hp"] >= HEALTHY_HP)),
+
+    _Cat("death_chipped_unread", "UNATTRIBUTED (an already-chipped mon died; this obs has no incoming-damage belief — attrition vs surprise cannot be told)",
+         "an already-CHIPPED mon DIED, and this run's obs carries no incoming-damage belief, so "
+         "attrition vs a priced threat cannot be told",
+         lambda f: bool(_f(f, "faint")) and _f(f, "active_pko") is None),
+
     _Cat("attrition_death", "obs/critic (chip / partial-belief death — a worn-down mon died, belief only partly fired)",
          "our mon DIED with the belief only PARTLY fired (mid P(KO)) or already chipped below healthy — attrition, not a clean surprise",
          lambda f: bool(_f(f, "faint"))),

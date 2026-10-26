@@ -1585,6 +1585,23 @@ def test_the_intervention_says_so_when_the_chosen_action_is_not_a_move(client):
     assert "0.0×" not in body
 
 
+def test_a_run_with_no_multiplier_block_shows_no_type_row_and_no_sweep(client):
+    """Audit 2026-10-26: on a current run (no move-multiplier block in the observation) the page
+    printed "type × rapidspin 0.00×" beside every attack (read: immune) and a sweep table of four
+    identical re-runs under "a flat response means the policy is not reading this input". Neither
+    input exists in that row, so the page says neither."""
+    _unlock(client)
+    no_block = dict(_FULL_ANALYSIS["matchups"], multipliers=[], applicable=[False] * 4, present=False)
+    _stub_analyze(client, dict(_FULL_ANALYSIS, matchups=no_block, sweep=None, damage_op=None,
+                               switch_in_outgoing=None, threats=None, incoming=None))
+    body = _fragment(client)
+    assert "type ×" not in body and "0.00×" not in body
+    assert "sweep the chosen move" not in body and "A flat response" not in body
+    assert "observation decodes" not in body, "an empty decodes card was rendered"
+    # the action table is still keyed on the matchups' labels
+    assert "thunderbolt" in body
+
+
 def test_the_switch_in_percentages_are_not_scaled_twice(client):
     """`switch_in_outgoing` rows are ALREADY percentages (0–100) while the operator's own
     low/high are FRACTIONS (0–1). A uniform ×100 across the panel turns 42% into 4200%."""

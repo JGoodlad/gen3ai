@@ -69,8 +69,13 @@ Detail lives in `designs/prober/`, always current and updated with the code:
   SELECTION UNKNOWN, never uniform.
 - Move-action labels are already in action-index order; do not re-sort them
   (`engine_test::test_recorded_actions_are_action_index_aligned`).
-- A deleted obs region resolves to offset 0 and every consumer no-ops on it; a trace whose obs length differs
-  gets the `obs_mismatch` banner.
+- A deleted obs region resolves to offset 0, and a consumer must say **absent** (`present=False`, `None`,
+  omitted), never a stored `0.0` or a flat re-run: a zero reads as a measurement ("immune", "the policy
+  ignores type"). The matchup, multiplier, incoming-damage and turn-history blocks are gone from every
+  current run, so `threats`, `incoming` and `active_pko` are `None` and `triage` splits deaths by the mon's
+  health only (`death_*_unread`). A trace whose obs length differs gets the `obs_mismatch` banner.
+- A fixture shaped like an earlier era hides this class: pin the LIVE layout (`ObsOffsets.resolve()`) and a
+  win-prob run (`model_config.json: critic`), as `engine_current_run_test.py` does.
 
 ## Counterfactuals
 

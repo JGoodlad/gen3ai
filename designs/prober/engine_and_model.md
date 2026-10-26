@@ -301,14 +301,17 @@ using `best_model`.
 **`gen3_cpu_damage_deleted_v1` (v48):** two of these regions no longer EXIST in the obs — the
 active-move type multipliers and the `incoming_damage` block were deleted (the DamageOperator
 computes both GPU-side from the learned belief). `ObsOffsets.mm_off` / `incoming_off` / `incoming_dim`
-now resolve to **0 = absent**, and every consumer no-ops on 0 (the saliency block list drops the
-"active move_multipliers(4)" row, `_active_move_mults` returns zeros, the intervention sweep skips
-its write). The fields are KEPT so archived pre-v48 traces still decode.
+now resolve to **0 = absent**, and a consumer must SAY absent, never a stored zero: `_matchups`
+returns `MatchupView(present=False, multipliers=())` (it used to return `[0, 0, 0, 0]` with
+`applicable` true, which the page rendered as `0.00×` = immune), `_intervention_sweep` returns `None`
+(it used to re-run the unchanged obs four times and print a flat table), and on the live layout
+(`off.total_dim` = the current row) the saliency names `current_layout_regions()` instead of the
+legacy block list. The fields are KEPT so archived pre-v48 traces still decode.
 **`gen3_entity_rehome_v1` (v60) extends the same convention to the matchup matrices**: the
 `our_matchups`/`their_matchups` blocks are DELETED from the obs (pair effectiveness is GPU-side —
 the D/V edge families), so `om_off`/`tm_off` also resolve to **0 = absent** — ThreatView returns
-`None` and the two saliency rows drop. The engine's one remaining live obs region beyond the
-per-mon/global blocks is the turn-history span — all resolved at runtime from
+`None` and the two saliency rows drop. (The turn-history span is gone too, `gen3_frame_deletion_v1`:
+`turn_history_dim == 0`.) All resolved at runtime from
 `Gen3ObservationEncoder.get_layout()`. **If the obs layout changes, these move
 automatically** (e.g. `gen3_move_effects_v1` inserted a block before `our_matchups`,
 shifting it; `gen3_cpu_damage_deleted_v1` REMOVED three of them, moving the matchups
