@@ -998,8 +998,47 @@ def k9b_read(run_dir: str) -> K9b:
                      overlap_evidence=evidence)
 
 
+#: Where a K9(b) record is written when the caller names no directory: OUTSIDE every checkout.
+K9B_SCRATCH_ENV = "GEN3AI_X35_K9B_SCRATCH"
+
+
+def k9b_scratch_dir() -> str:
+    """The default output directory for a K9(b) record: ``$GEN3AI_X35_K9B_SCRATCH``, else
+    ``~/.cache/gen3ai/x35_k9b`` (a record lands in the tree only by a shipped commit, never by a read)."""
+    return os.path.abspath(os.environ.get(K9B_SCRATCH_ENV) or os.path.expanduser("~/.cache/gen3ai/x35_k9b"))
+
+
+def _main_checkout_roots() -> List[str]:
+    """The real path of the MAIN checkout (git's common dir parent from this checkout), plus this checkout when it
+    is not a linked worktree. Fails closed: a linked worktree whose main git cannot name raises."""
+    from utils.git import get_main_repo_root
+    from utils.paths import is_linked_worktree, repo_root
+
+    here = str(repo_root())
+    roots: List[str] = [] if is_linked_worktree(Path(here)) else [os.path.realpath(here)]
+    try:
+        roots.append(os.path.realpath(get_main_repo_root(cwd=here)))
+    except Exception as exc:
+        if not roots:
+            raise BatchError(f"cannot name the main checkout from {here} ({exc}): a K9(b) record is not written "
+                             "where main cannot be ruled out") from exc
+    return roots
+
+
+def refuse_inside_main_checkout(path: str, *, roots: Optional[Sequence[str]] = None) -> None:
+    """A K9(b) record is never written inside the MAIN checkout (main is never dirty; CB-11 / F1): a write there
+    is a refusal. A linked worktree is fine (that is how a record lands: written there, then shipped)."""
+    real = os.path.realpath(path)
+    for root in (roots if roots is not None else _main_checkout_roots()):
+        if real == root or real.startswith(root.rstrip(os.sep) + os.sep):
+            raise BatchError(f"refusing to write a K9(b) record into the main checkout ({real} is inside {root}): "
+                             "pass --out-dir (default a scratch dir outside every checkout) or a linked worktree's dir")
+
+
 def k9b_record(stage: str, k: K9b) -> str:
-    """Write (or overwrite: a re-read of a finished arm is the same read) ``k9b/<run>.json``."""
+    """Write (or overwrite: a re-read of a finished arm is the same read) ``k9b/<run>.json`` under ``stage``, which
+    must not be inside the main checkout."""
+    refuse_inside_main_checkout(stage)
     d = os.path.join(stage, K9B_DIR)
     os.makedirs(d, exist_ok=True)
     path = os.path.join(d, f"{k.run}.json")
@@ -1007,23 +1046,26 @@ def k9b_record(stage: str, k: K9b) -> str:
     return path
 
 
-def k9b_batch(stage: str, models_dir: str, *, reader: Any = None) -> Tuple[bool, List[str]]:
+def k9b_batch(stage: str, models_dir: str, *, out_dir: Optional[str] = None, reader: Any = None) -> Tuple[bool, List[str]]:
     """The launch pre-check: every FINISHED side-pinned run (batch 1 + 2, ``final_model.zip``) has a K9(b) arm-end
-    record that PASSes; a missing record is read now (``reader``, default :func:`k9b_read`) and written. VOID /
-    INCONCLUSIVE ⇒ HOLD."""
+    record that PASSes. ``stage`` is only READ (a record already shipped there); a missing record is read now
+    (``reader``, default :func:`k9b_read`) and written to ``out_dir`` (default :func:`k9b_scratch_dir`; refused inside
+    the main checkout), which is also read for a record a previous check left. VOID / INCONCLUSIVE ⇒ HOLD."""
     read = reader or k9b_read
+    out_dir = os.path.abspath(out_dir) if out_dir else k9b_scratch_dir()
+    refuse_inside_main_checkout(out_dir)
     ok, lines = True, []
     ours, _ = _side_pinned_dirs(models_dir)
     for d, _base in ours:
         rd = os.path.join(models_dir, d)
         if d != _base or not os.path.isfile(os.path.join(rd, "final_model.zip")):
             continue
-        path = os.path.join(stage, K9B_DIR, f"{d}.json")
-        if os.path.exists(path):
-            v = json.loads(Path(path).read_text()).get("verdict")
+        have = [p for p in (os.path.join(root, K9B_DIR, f"{d}.json") for root in (stage, out_dir)) if os.path.exists(p)]
+        if have:
+            v = json.loads(Path(have[0]).read_text()).get("verdict")
         else:
             k = read(rd)
-            k9b_record(stage, k)
+            k9b_record(out_dir, k)
             v = k.verdict
         if v != PASS:
             ok = False

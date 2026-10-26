@@ -120,9 +120,10 @@ WINDOW  PENDING ─▶ STARTED ─▶ DONE | DONE_FAILED (on_fail continue)   an
 A window saves `STARTED` before its first step; a supervisor that restarts in `STARTED` HOLDs (a step may still hold the GPU) instead of re-running the window. Any exception other than a HOLD is turned into a HOLD line (`UNEXPECTED <type>`), so the Monitor sees it. A HOLD stops the supervisor at once. Nothing after the held step runs: no thin, no record, no next GO. Exactly one
 status line says why.
 
-**The ship is synchronous, on purpose.** The next arm's dry run runs `kit k9b-batch`, which writes any MISSING
-arm-end record into the stage it is given, and that stage is main's. A next GO started before the previous record
-landed could dirty main (FINDING F1).
+**The ship is synchronous, on purpose.** The next arm's dry run runs `kit k9b-batch --stage <main's stage> --out-dir
+<scratch>`: the stage is only READ, and a MISSING arm-end record is read and written to the scratch dir
+(`$X35_K9B_OUT`, default `<job dir>/k9b_scratch`), never into a checkout. A next GO started before the previous record
+landed therefore re-reads the arm and cannot dirty main; the synchronous ship keeps the record in the stage.
 
 ## 4. Who owns what
 
@@ -180,14 +181,12 @@ Two classes stay with their owners:
 
 ## 6. Hazards that remain (each a FINDING)
 
-- **F1. `kit k9b-batch` writes a missing record into MAIN's stage.**
-  - `launch_x35.sh` pre-check 11 passes main's stage. This is a second route to the CB-11 class.
-  - The chain ships synchronously and HOLDs on a failed ship, so the next dry run never runs before the record has
-    landed.
-  - The kit itself should take a scratch stage or read only. That is a repo fix, not done here.
-- **F2. `launch_x35.sh` still uses `kill -0` on the launcher it spawned** (5 sites). A false-dead result there
-  HOLDs the launch or kills the launcher on the pool-seed path. This is the CB-26 class, and the kit's own fix is
-  out of this unit's scope.
+- **F1 (fixed). `kit k9b-batch` wrote a missing record into MAIN's stage.** It now writes to `--out-dir` (default
+  `$GEN3AI_X35_K9B_SCRATCH` or `~/.cache/gen3ai/x35_k9b`, outside every checkout) and `batch.k9b_record` refuses any
+  directory inside the main checkout (`batch_test.py::test_a_k9b_record_inside_the_main_checkout_is_refused`).
+- **F2 (fixed in `launch_x35.sh`). It used `kill -0` on the launcher it spawned** (3 sites there, not 5). It now reads
+  `/proc` (pid + start ticks, a zombie is gone) and SIGTERMs only a launcher that is still the same process
+  (`launch_x35_test.py`). **Open:** `scripts/ops/watch_run.sh` (the launch script's watcher) has two `kill -0` sites.
 - **F3. The supervisor's niceness is inherited by the GO.** A `nice -n 19` supervisor (rule 5b's default while a
   run is live) would start the trainer at nice 19 for life (RLIMIT_NICE). The GO now HOLDs at any nice but 0, so
   **start the supervisor at nice 0**; its own CPU is negligible, and its CPU children set their own `nice` /

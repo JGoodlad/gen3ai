@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import re
 import subprocess
 from pathlib import Path
@@ -831,8 +832,103 @@ def test_k9b_read_on_a_run_dir_excludes_the_inherited_file(tmp_path):
     stage = tmp_path / "stage"
     stage.mkdir()
     (run / "final_model.zip").write_bytes(b"z")
-    ok, lines = B.k9b_batch(str(stage), str(tmp_path))
-    assert ok and lines == ["rb_x35_c0_s3501: K9(b) arm end PASS"] and (stage / B.K9B_DIR / "rb_x35_c0_s3501.json").is_file()
+    out = tmp_path / "scratch"
+    ok, lines = B.k9b_batch(str(stage), str(tmp_path), out_dir=str(out))
+    assert ok and lines == ["rb_x35_c0_s3501: K9(b) arm end PASS"]
+    # F1 (d4387711): the stage is only READ; the missing record lands in the caller's out dir
+    assert (out / B.K9B_DIR / "rb_x35_c0_s3501.json").is_file() and not (stage / B.K9B_DIR).exists()
+
+
+def _finished(models, name="rb_x35_c0_s3501"):
+    (models / name).mkdir(parents=True)
+    (models / name / "final_model.zip").write_bytes(b"z")
+    return name
+
+
+class _Reads:
+    """A K9(b) reader that counts its calls and PASSes (the rows are covered above)."""
+    def __init__(self, verdict="PASS"):
+        self.calls, self.verdict = [], verdict
+
+    def __call__(self, run_dir):
+        self.calls.append(run_dir)
+        return _k9b(os.path.basename(run_dir), self.verdict)
+
+
+def _k9b(run, verdict):
+    return B.judge_k9b(run, FORK, _series([1e-5], [1e-6])) if verdict == "PASS" else B.judge_k9b(run, FORK, _series([2e-3], [1e-6]))
+
+
+def test_k9b_batch_default_output_is_a_scratch_dir_outside_every_checkout(tmp_path, monkeypatch):
+    """F1 (d4387711): with no out dir the missing record goes to $GEN3AI_X35_K9B_SCRATCH, never into the stage."""
+    name = _finished(tmp_path / "models")
+    scratch, stage = tmp_path / "scr", tmp_path / "stage"
+    stage.mkdir()
+    monkeypatch.setenv(B.K9B_SCRATCH_ENV, str(scratch))
+    reader = _Reads()
+    ok, _ = B.k9b_batch(str(stage), str(tmp_path / "models"), reader=reader)
+    assert ok and (scratch / B.K9B_DIR / f"{name}.json").is_file() and not any(stage.iterdir())
+    B.k9b_batch(str(stage), str(tmp_path / "models"), reader=reader)
+    assert len(reader.calls) == 1                                  # the scratch record is read back, not re-read
+    monkeypatch.delenv(B.K9B_SCRATCH_ENV)
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
+    assert B.k9b_scratch_dir() == str(tmp_path / "home" / ".cache" / "gen3ai" / "x35_k9b")
+
+
+def test_k9b_batch_reads_a_shipped_record_in_the_stage_without_reading_the_run(tmp_path):
+    name = _finished(tmp_path / "models")
+    stage = tmp_path / "stage"
+    (stage / B.K9B_DIR).mkdir(parents=True)
+    (stage / B.K9B_DIR / f"{name}.json").write_text(json.dumps({"verdict": "VOID"}))
+    reader = _Reads()
+    ok, lines = B.k9b_batch(str(stage), str(tmp_path / "models"), out_dir=str(tmp_path / "o"), reader=reader)
+    assert not ok and lines == [f"{name}: K9(b) arm end VOID"] and not reader.calls
+
+
+def test_a_k9b_record_inside_the_main_checkout_is_refused(tmp_path, monkeypatch):
+    """F1 (d4387711): fails on revert. 'main' is a tmp dir here, so a revert writes into tmp, never the real main."""
+    fake_main = tmp_path / "main"
+    (fake_main / "designs").mkdir(parents=True)
+    monkeypatch.setattr(B, "_main_checkout_roots", lambda: [os.path.realpath(fake_main)])
+    name = _finished(tmp_path / "models")
+    for bad in (fake_main / "designs", fake_main / "designs" / "new_dir"):
+        with pytest.raises(B.BatchError, match="main checkout"):
+            B.k9b_batch(str(tmp_path / "stage"), str(tmp_path / "models"), out_dir=str(bad), reader=_Reads())
+        with pytest.raises(B.BatchError, match="main checkout"):
+            B.k9b_record(str(bad), _k9b(name, "PASS"))
+    assert not list(fake_main.rglob("*.json"))
+    # a symlink into main is main too; a sibling that merely shares the name prefix is not
+    link = tmp_path / "link"
+    link.symlink_to(fake_main / "designs")
+    with pytest.raises(B.BatchError, match="main checkout"):
+        B.k9b_record(str(link), _k9b(name, "PASS"))
+    B.k9b_record(str(tmp_path / "main2"), _k9b(name, "PASS"))
+    assert (tmp_path / "main2" / B.K9B_DIR / f"{name}.json").is_file()
+
+
+def test_the_real_main_checkout_is_a_refused_k9b_destination():
+    """Detection only (nothing is written): the real main checkout resolves and its own stage is refused."""
+    from utils.git import get_main_repo_root
+    from utils.paths import repo_root
+
+    main = get_main_repo_root(cwd=str(repo_root()))
+    with pytest.raises(B.BatchError, match="main checkout"):
+        B.refuse_inside_main_checkout(os.path.join(main, "designs", "research_state", "x"))
+    B.refuse_inside_main_checkout(os.path.join(os.path.expanduser("~"), ".cache", "gen3ai", "x35_k9b"))
+
+
+def test_kit_k9b_batch_out_dir_flag_and_main_refusal(tmp_path, monkeypatch, capsys):
+    fake_main = tmp_path / "main"
+    fake_main.mkdir()
+    monkeypatch.setattr(B, "_main_checkout_roots", lambda: [os.path.realpath(fake_main)])
+    models = tmp_path / "models"
+    _finished(models)
+    monkeypatch.setattr(B, "k9b_read", _Reads())
+    base = ["k9b-batch", "--stage", str(tmp_path / "stage"), "--models-dir", str(models)]
+    assert K.main(base + ["--out-dir", str(fake_main / "stage")]) == 2
+    assert "REFUSED" in capsys.readouterr().err and not list(fake_main.rglob("*"))
+    assert K.main(base + ["--out-dir", str(tmp_path / "out")]) == 0
+    assert (tmp_path / "out" / "k9b" / "rb_x35_c0_s3501.json").is_file()
 
 
 # ---- an OVERLAP arm (X14, `--overlap-collect`): `behaviour_snapshot/*` is the REQUIRED family -------------------------

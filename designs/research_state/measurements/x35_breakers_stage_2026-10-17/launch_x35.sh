@@ -51,7 +51,8 @@
 #  10. POOL: the parent's seeded snapshot set (T54's filter, names + sha256) equals the side's record
 #      (x35_pool_batch1_<side>.json, written by the side's first GO)
 #  11. AM-6: every FINISHED batch-1 / batch-2 arm has a K9(b) arm-end record (its own rows after the fork step) that PASSes;
-#      a missing one is read now; VOID or INCONCLUSIVE HOLDs
+#      a missing one is read now and written to $X35_K9B_OUT (default $J/k9b_scratch; the stage is only READ and a
+#      write inside the main checkout is refused); VOID or INCONCLUSIVE HOLDs
 # At GO, after the last pre-check: the side's pin file and pool record are written if absent (once).
 # GO with --at-epoch E: E is checked at arming (now <= E <= now + 24 h, an ABSOLUTE epoch, never a clock string),
 # the script sleeps to E, then RE-RUNS every pre-check; a failure then is a HOLD. A launcher that dies within 180 s
@@ -62,6 +63,7 @@ set -u
 STAGE=${X35_STAGE:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}   # X35_STAGE: tests only
 REPO=${X35_REPO:-/home/goodlad/dev/gen3ai}
 J=${X35_JOB_DIR:-/home/goodlad/.claude/jobs/x35}; ST=$J/status.txt
+K9B_OUT=${X35_K9B_OUT:-$J/k9b_scratch}   # where pre-check 11 writes a missing K9(b) record (outside every checkout)
 PY=${GEN3AI_PYTHON:-/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3}; OPS=$REPO/scripts/ops
 ARM=""; SEED=""; PIN=""; OWNER=""; PHASE1=""; THIN=""; AT=""; MAXLOAD=12; GO=0; T62=""
 while [ $# -gt 0 ]; do
@@ -78,6 +80,21 @@ done
 [ -n "$ARM" ] && [ -n "$SEED" ] && [ -n "$PIN" ] || { sed -n 2,18p "$0" >&2; exit 2; }
 mkdir -p "$J"; log() { echo "[$(date -Is)] $ARM s$SEED: $1" >> "$ST"; }
 hold() { log "HOLD: $1"; echo "HOLD: $1" >&2; exit 7; }
+# ---- liveness helpers (begin; tested by src/main/x35/launch_x35_test.py) --------------------------------------------
+# Liveness is read from /proc, NEVER `kill -0`: in a sandboxed shell kill -0 reads a live pid as dead (acf2193f, CB-26).
+# A zombie (Z) / dead (X) state counts as gone, and pid + START TICKS (stat field 22) is the identity, so a reused
+# pid is never mistaken for the process we spawned.
+pid_start() {   # print <pid>'s start ticks; fail if it is gone, a zombie, or unreadable
+  local st; st=$(cat "/proc/$1/stat" 2>/dev/null) || return 1
+  st=${st##*) }; set -- $st      # drop "pid (comm) ": $1 is the state (field 3), $20 the start ticks (field 22)
+  case "$1" in Z|X|"") return 1;; esac
+  [ -n "${20:-}" ] || return 1
+  echo "${20}"
+}
+pid_alive() { pid_start "$1" > /dev/null 2>&1; }
+# launcher_alive: the process spawned as $LP, identified by $LP_START (its start ticks, taken right after the spawn)
+launcher_alive() { local t; t=$(pid_start "$LP" 2>/dev/null) || return 1; [ -n "${LP_START:-}" ] && [ "$t" = "$LP_START" ]; }
+# ---- liveness helpers (end) -----------------------------------------------------------------------------------------
 kit() { ( cd "$REPO" && PYTHONPATH="$REPO/src" CUDA_VISIBLE_DEVICES="" "$PY" -m main.x35.kit "$@" ); }
 PIN=$(git -C "$REPO" rev-parse --verify "$PIN^{commit}" 2>/dev/null) || hold "the pin does not name a commit"
 case "$ARM" in toy_*) SIDE=toy;; *) SIDE=production;; esac
@@ -160,7 +177,8 @@ prechecks() {
   kit pool-check --arm "$ARM" --call "$R" --stage "$STAGE" > "$out.pool.txt" 2>&1 \
     || hold "pool-check: $(cat "$out.pool.txt")"
   # 11. AM-6: every finished batch-1 / batch-2 arm PASSed K9(b) at its end
-  kit k9b-batch --stage "$STAGE" --models-dir "$MODELS" > "$out.k9b.txt" 2>&1 \
+  # --stage is only READ; a missing record is written to the scratch dir under the job dir, never into a checkout
+  kit k9b-batch --stage "$STAGE" --models-dir "$MODELS" --out-dir "$K9B_OUT" > "$out.k9b.txt" 2>&1 \
     || hold "K9(b) arm-end: $(tr '\n' ' ' < "$out.k9b.txt")"
   log "pre-checks PASS ($tag): pin ${PIN:0:8}, $(cat "$out.disk.txt"), lease: ${lease%%,*}"
 }
@@ -205,23 +223,25 @@ if [ -e "$J/$RUN.launcher.log" ]; then PREV="$J/$RUN.launcher.log.$(date +%Y%m%d
 log "START $RUN: ${A[*]} (pin ${PIN:0:8}, restart 24 h)"
 ( cd "$REPO" && export PYTHONPATH="$REPO/src"; exec taskset -c 0-4,8-12 "$PY" -m main.launcher \
   --restart-interval-hours 24 --pin-commit "$PIN" "${A[@]}" ) >> "$J/$RUN.launcher.log" 2>&1 < /dev/null &
-LP=$!; echo "$LP" > "$J/$RUN.pid"
-for _ in $(seq 36); do kill -0 "$LP" 2>/dev/null || break; sleep 5; done
-if ! kill -0 "$LP" 2>/dev/null; then wait "$LP"; hold "the launcher exited (rc $?) within 180 s (see $J/$RUN.launcher.log)"; fi
+LP=$!; echo "$LP" > "$J/$RUN.pid"; LP_START=$(pid_start "$LP" 2>/dev/null || true)
+for _ in $(seq 36); do launcher_alive || break; sleep 5; done
+if ! launcher_alive; then wait "$LP"; hold "the launcher exited (rc $?) within 180 s (see $J/$RUN.launcher.log)"; fi
 # POST-SPAWN (T54's findings): the pool seed runs in the CHILD, so no dry-run can preview it. Read the fork's
 # snapshots/pool_seed.json (schema 2): fork_step non-null and == P*'s num_timesteps, every seeded snapshot <= it,
 # and the startup "[step filter <= N: …]" line agreeing. A FAIL (a null fork_step included) or no record within
 # 30 min: SIGTERM the launcher BY ITS PID (it saves and stops its child), then HOLD.
 PS_T0=$(date +%s); PS=3
 while [ $(( $(date +%s) - PS_T0 )) -lt 1800 ]; do
-  kill -0 "$LP" 2>/dev/null || { wait "$LP"; hold "the launcher exited (rc $?) before the pool-seed check passed"; }
+  launcher_alive || { wait "$LP"; hold "the launcher exited (rc $?) before the pool-seed check passed"; }
   kit pool-seed-check --arm "$ARM" --run-dir "$MODELS/$RUN" --call "$R" --stage "$STAGE" --log "$J/$RUN.launcher.log" \
     --log "$MODELS/$RUN/launcher_child.full.log" > "$J/$RUN.pool_seed_check.txt" 2>&1; PS=$?
   [ "$PS" -eq 3 ] || break
   sleep 15
 done
 if [ "$PS" -ne 0 ]; then
-  kill -TERM "$LP" 2>/dev/null; log "killed launcher pid $LP (SIGTERM) on the pool-seed check"
+  # only the process we spawned (same pid AND start ticks), never a reused pid
+  if launcher_alive; then kill -TERM "$LP" 2>/dev/null; log "killed launcher pid $LP (SIGTERM) on the pool-seed check"
+  else log "the launcher pid $LP is already gone (not signalled)"; fi
   hold "the post-spawn pool-seed check did not PASS (rc $PS): $(cat "$J/$RUN.pool_seed_check.txt")"
 fi
 log "post-spawn pool-seed check PASS: $(cat "$J/$RUN.pool_seed_check.txt")"

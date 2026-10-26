@@ -57,7 +57,7 @@ THE 2026-10-19 AMENDMENTS, and AM-8 / AM-9 of 2026-10-20 (``main.x35.batch``; ``
     python -m main.x35.kit gate <six_finals_S.json> --stage <stage> --write              # AM-2: G1, exit 1 = HOLD
     python -m main.x35.kit stage-check --arm d1 --seed 3501 --stage <stage>               # AM-9 / AM-3 / AM-4 / AM-8
     python -m main.x35.kit k9b --run-dir models/<run> --stage <stage>                     # AM-6, at each arm's end
-    python -m main.x35.kit k9b-batch --stage <stage>                                      # AM-6 pre-check
+    python -m main.x35.kit k9b-batch --stage <stage> [--out-dir <scratch>]                  # AM-6 pre-check
     python -m main.x35.kit corpus-check --arm d1 --pin <sha>                              # D1-CORPUS: pre-check 2d
 """
 from __future__ import annotations
@@ -662,10 +662,14 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     sc.add_argument("--stage", required=True)
     kb = sub.add_parser("k9b", help="AM-6: K9(b) over the fork's own rows at arm end: exit 0 PASS, 1 VOID, 3 INCONCLUSIVE")
     kb.add_argument("--run-dir", required=True)
-    kb.add_argument("--stage", default=None, help="write the record <stage>/k9b/<run>.json")
+    kb.add_argument("--stage", "--out-dir", dest="stage", default=None,
+                    help="write the record <dir>/k9b/<run>.json (REFUSED inside the main checkout; no write when omitted)")
     kq = sub.add_parser("k9b-batch", help="AM-6 pre-check: every finished batch-1/2 arm's K9(b) record PASSes; exit 0 / 1")
-    kq.add_argument("--stage", required=True)
+    kq.add_argument("--stage", required=True, help="READ only: records already shipped there")
     kq.add_argument("--models-dir", default=None)
+    kq.add_argument("--out-dir", default=None,
+                    help="where a missing record is written (default a scratch dir outside every checkout; REFUSED "
+                         "inside the main checkout)")
     vr = sub.add_parser("validate-run", help="the verdict on one argv's checkargs + dry-run transcripts: exit 0 PASS, 1 FAIL")
     vr.add_argument("--arm", required=True, type=canonical_arm, choices=sorted(ARMS))
     vr.add_argument("--seed", required=True, type=int)
@@ -737,7 +741,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
             md = a.models_dir or str(main_models_dir() or "")
             if a.cmd == "k9b-batch":
-                ok, lines = _B.k9b_batch(a.stage, md)
+                ok, lines = _B.k9b_batch(a.stage, md, out_dir=a.out_dir)
             else:
                 ok, lines = _B.pin_check(a.pin, a.stage, md, a.side, a.t62, arm=a.arm, repo=a.repo)
                 if ok and a.write:
