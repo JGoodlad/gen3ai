@@ -555,8 +555,8 @@ FATALed. When the past value is unknown, the migration leaves the field `None` r
 Toxic counter n/8 → n/15), append an `OBS_SEMANTICS_HISTORY` row (`model_version/constants.py`) for the config version
 the commit stamps, with its one-clause reason, and re-pin `obs_semantics_test.py`'s golden hash. `check_compatible`
 cannot see this (shapes fit, so the weights load); the marker is what lets a READER act on it through the gap policy
-(`main/prober/arch_status.py` `decide`): a trace replay of a checkpoint recorded below it is refused, a fresh probe runs
-with a badge. It gates no resume. The test fails when the obs
+(`main/prober/arch_status.py` `decide`): every use of a checkpoint recorded below it runs with a badge (a trace replay's names the change list); the row's
+third field, `replay: warn | refuse`, makes a trace replay across it refuse when stored observations genuinely mismatch. It gates no resume. The test fails when the obs
 golden moves without it; a model-INTERNAL input fix the golden cannot see (an op edge cell) must be raised by hand.
 
 **When you make a structural change** (different forward pass, new layer type):

@@ -323,7 +323,6 @@ def _loader_succeeds(monkeypatch, calls):
 @pytest.mark.parametrize("record,obs_end,kind", [
     ({"config_version": 143, "arch_signature": "gen3_event_record_v2"}, None, A.KIND_ARCH_SIGNATURE),
     (dict(_HEAD), 2761, A.KIND_OBS_DIM),
-    (dict(_HEAD, config_version=OBS_SEMANTICS_VERSION - 1), None, A.KIND_OBS_SEMANTICS),
     (dict(_HEAD, config_version=MODEL_CONFIG_VERSION + 1), None, A.KIND_NEWER),
 ])
 def test_a_recorded_incompatibility_is_refused_typed_before_any_load(tmp_path, monkeypatch, record, obs_end, kind):
@@ -341,14 +340,27 @@ def test_a_recorded_incompatibility_is_refused_typed_before_any_load(tmp_path, m
 def test_the_semantics_only_class_is_caught_though_the_weights_would_load(tmp_path, monkeypatch):
     """THE SILENT CLASS, end to end: a checkpoint recorded one version below `OBS_SEMANTICS_VERSION` has the
     current signature and the current width, so every shape check passes and the (stubbed) strict load
-    SUCCEEDS — yet a TRACE REPLAY of it is refused, and the checkpoint one version later is not."""
+    SUCCEEDS — and a TRACE REPLAY of it RUNS badged (the gap policy; v151 and v162 declare `replay: warn`), while a
+    marker row declaring `replay: refuse` refuses it WITHOUT a load; the checkpoint one version later has no badge."""
     calls: list = []
     _loader_succeeds(monkeypatch, calls)
     below = _run_ckpt(tmp_path, dict(_HEAD, config_version=OBS_SEMANTICS_VERSION - 1))
+    pm_below = ProbeModel.load(below, use=A.USE_TRACE_REPLAY)
+    assert calls == [below]
+    sem = pm_below.obs_semantics
+    assert sem["action"] == A.WARN and sem["use"] == A.USE_TRACE_REPLAY
+    assert f"replayed at v{OBS_SEMANTICS_VERSION}" in sem["badge"] and "may differ from what the model computed" \
+        in sem["badge"]
+    calls.clear()
+    future = OBS_SEMANTICS_VERSION + 1
+    monkeypatch.setattr(A, "OBS_SEMANTICS_HISTORY", tuple(A.OBS_SEMANTICS_HISTORY) + ((future, "layout moved", "refuse"),))
+    monkeypatch.setattr(A, "OBS_SEMANTICS_VERSION", future)
     with pytest.raises(ArchDriftError) as ei:
         ProbeModel.load(below, use=A.USE_TRACE_REPLAY)
     assert ei.value.kind == A.KIND_OBS_SEMANTICS and not calls, "refused WITHOUT being loaded"
-    assert f"v{OBS_SEMANTICS_VERSION}" in ei.value.plain
+    assert f"v{future}" in ei.value.plain
+    monkeypatch.undo()
+    _loader_succeeds(monkeypatch, calls)
 
     (tmp_path / "ok").mkdir()
     at = _run_ckpt(tmp_path / "ok", dict(_HEAD, config_version=OBS_SEMANTICS_VERSION))
@@ -360,8 +372,8 @@ def test_the_semantics_only_class_is_caught_though_the_weights_would_load(tmp_pa
 @pytest.mark.parametrize("use", [A.USE_FRESH, A.USE_STORED_SCORE])
 def test_a_fresh_probe_or_a_stored_score_loads_across_the_semantics_gap_and_carries_the_badge(tmp_path, monkeypatch,
                                                                                               use):
-    """THE GAP POLICY at the model seam: the same below-marker checkpoint a trace replay refuses LOADS for a use
-    that does not claim to reproduce what it saw, and the decision rides the model with its badge."""
+    """THE GAP POLICY at the model seam: the same below-marker checkpoint LOADS for a use that does not claim to
+    reproduce what it saw, and the decision rides the model with its badge."""
     calls: list = []
     _loader_succeeds(monkeypatch, calls)
     below = _run_ckpt(tmp_path, dict(_HEAD, config_version=OBS_SEMANTICS_VERSION - 1))
@@ -398,34 +410,47 @@ def _gap_session(tmp_path, monkeypatch, calls):
     return sess, sess.tree.all_battles()[0]
 
 
-def test_the_session_refuses_a_trace_replay_and_allows_a_fresh_probe_across_the_gap(tmp_path, monkeypatch):
+def test_the_session_badges_a_trace_replay_and_a_fresh_probe_across_the_gap(tmp_path, monkeypatch):
     """`ProbeSession._model_for` under each use: the views over STORED observations (analyze, the readout, the
-    saliency probes) are refused; the counterfactuals (FRESH successors) load with the badge; and a model cached
-    by the fresh probe is re-judged — not handed out — when a trace replay asks for it next."""
+    saliency probes) run with the change-list badge; the counterfactuals (FRESH successors) run with theirs; the
+    cached model is re-judged per use; and a marker row declaring `replay: refuse` refuses the trace replay (the
+    TRACE's own record, then a cached model) while the fresh probe still runs."""
     calls: list = []
     sess, b = _gap_session(tmp_path, monkeypatch, calls)
-    with pytest.raises(ArchDriftError) as ei:
-        sess._model_for(b, use=A.USE_TRACE_REPLAY)
-    assert ei.value.kind == A.KIND_OBS_SEMANTICS and not calls
+    model, _choice = sess._model_for(b, use=A.USE_TRACE_REPLAY)
+    assert len(calls) == 1
+    sem = sess.obs_semantics(model, A.USE_TRACE_REPLAY)
+    assert sem["action"] == A.WARN and sem["badge"].startswith("⚠ obs_semantics: trained at v")
 
-    model, _choice = sess._model_for(b, use=A.USE_FRESH)
+    model, _choice = sess._model_for(b, use=A.USE_FRESH)    # the same cached model, judged for its own use
     assert len(calls) == 1 and model.obs_semantics["action"] == A.WARN
     assert sess.obs_semantics(model, A.USE_FRESH)["badge"].startswith("⚠ trained on obs_semantics")
 
+    future = OBS_SEMANTICS_VERSION + 1
+    monkeypatch.setattr(A, "OBS_SEMANTICS_HISTORY", tuple(A.OBS_SEMANTICS_HISTORY) + ((future, "layout", "refuse"),))
+    monkeypatch.setattr(A, "OBS_SEMANTICS_VERSION", future)
     with pytest.raises(ArchDriftError) as ei:
-        sess._model_for(b, use=A.USE_TRACE_REPLAY)          # cached now — and still refused
+        sess._model_for(b, use=A.USE_TRACE_REPLAY)          # the trace's record refuses before any load
     assert ei.value.kind == A.KIND_OBS_SEMANTICS and len(calls) == 1
+    assert sess._model_for(b, use=A.USE_FRESH)[0].obs_semantics["action"] == A.WARN
     with pytest.raises(ValueError, match="declare one of"):
         sess._model_for(b, use="analyze")
 
 
 def test_the_model_status_card_names_what_still_runs(tmp_path, monkeypatch):
-    """First paint (`model_status`, model-free) on a gap run: the views over its traces cannot run, and the one
+    """First paint (`model_status`, model-free) on a gap run: the views over its traces RUN, and the one sentence
+    says they are badged with what may differ; once a marker row declares `replay: refuse` they cannot, and the
     sentence says the fresh probes still do, with the badge they will carry."""
     sess, b = _gap_session(tmp_path, monkeypatch, [])
     st = sess.model_status(b.summary_path)
+    assert st["kind"] == A.KIND_OBS_SEMANTICS and st["model_views"] is True
+    assert "every model view runs" in st["plain"] and "may differ from what the model computed" in st["plain"]
+    monkeypatch.setattr(A, "OBS_SEMANTICS_HISTORY", tuple(A.OBS_SEMANTICS_HISTORY) + ((OBS_SEMANTICS_VERSION + 1, "x", "refuse"),))
+    monkeypatch.setattr(A, "OBS_SEMANTICS_VERSION", OBS_SEMANTICS_VERSION + 1)
+    sess2, b2 = _gap_session(tmp_path / "again", monkeypatch, [])
+    st = sess2.model_status(b2.summary_path)
     assert st["kind"] == A.KIND_OBS_SEMANTICS and st["model_views"] is False
-    assert "Fresh probes" in st["plain"] and f"probed at v{OBS_SEMANTICS_VERSION}" in st["plain"]
+    assert "Fresh probes" in st["plain"] and f"probed at v{OBS_SEMANTICS_VERSION + 1}" in st["plain"]
 
 
 @pytest.mark.parametrize("raised,kind", [

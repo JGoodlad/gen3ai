@@ -81,7 +81,7 @@
         <td class="mono">{{ (s.identity.git_hash or "")[:8] if s.identity else "—" }}</td>
         <td class="mono">{{ s.identity.arch_signature if s.identity else "—" }}</td>
         <td>{% if s.identity and s.identity.snapshot_available %}<span class="pos">exact</span>{% else %}<span class="muted">—</span>{% endif %}</td>
-        <td>{% if s.model_views.status == 'current' %}<span class="pos" title="{{ s.model_views.plain }}">current</span>{% elif s.model_views.model_views %}<span class="muted" title="{{ s.model_views.plain }}">untested</span>{% else %}<span class="warnline" data-model-reason="{{ s.model_views.kind }}" title="{{ s.model_views.plain }}">story only{% if s.model_views.config_version is not none %} · v{{ s.model_views.config_version }}{% endif %}</span>{% endif %}</td>
+        <td>{% if s.model_views.status == 'current' %}<span class="pos" title="{{ s.model_views.plain }}">current</span>{% elif s.model_views.model_views and s.model_views.kind == 'obs_semantics' %}<span class="warnline" data-model-reason="obs_semantics" title="{{ s.model_views.plain }}">badged · v{{ s.model_views.config_version }}</span>{% elif s.model_views.model_views %}<span class="muted" title="{{ s.model_views.plain }}">untested</span>{% else %}<span class="warnline" data-model-reason="{{ s.model_views.kind }}" title="{{ s.model_views.plain }}">story only{% if s.model_views.config_version is not none %} · v{{ s.model_views.config_version }}{% endif %}</span>{% endif %}</td>
       </tr>
     {% endfor %}
     </tbody>

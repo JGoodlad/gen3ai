@@ -314,12 +314,25 @@ def test_every_run_lands_in_one_of_three_tiers(archive):
 
 def test_the_semantics_only_class_keeps_a_run_out_of_the_current_tier(tmp_path):
     """A run one version below the obs-semantics marker has HEAD's signature and HEAD's width — every shape
-    fits — yet its model views cannot run. The picker must not offer it as 'current'."""
+    fits. Under the gap policy its model views RUN badged (marker rows declare `replay: warn`), so the picker lists
+    it with the full-view tier but still names the gap in `arch`; a marker row declaring `replay: refuse` returns it
+    to 'older'."""
+    from main.prober import arch_status as A
     root = str(tmp_path / "archive")
     os.makedirs(root)
     _arch_run(root, "rb_prev", dict(_HEAD_REC, config_version=OBS_SEMANTICS_VERSION - 1))
     (row,) = RunStore(root).list_runs()
-    assert row["tier"] == "older" and row["arch"]["kind"] == "obs_semantics"
+    assert row["tier"] == "current" and row["model_views"] is True and row["arch"]["kind"] == "obs_semantics"
+    assert row["arch"]["status"] == "incompatible", "the gap stays named: it is not a CURRENT verdict"
+    mp = pytest.MonkeyPatch()
+    try:
+        mp.setattr(A, "OBS_SEMANTICS_HISTORY", tuple(A.OBS_SEMANTICS_HISTORY) + ((OBS_SEMANTICS_VERSION + 1, "x", "refuse"),))
+        A._RUN_CACHE.clear()
+        (row,) = RunStore(root).list_runs()
+        assert row["tier"] == "older" and row["model_views"] is False
+    finally:
+        mp.undo()
+        A._RUN_CACHE.clear()
 
 
 def test_an_empty_eval_traces_directory_is_not_traces(tmp_path):

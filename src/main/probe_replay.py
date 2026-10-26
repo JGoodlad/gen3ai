@@ -63,8 +63,8 @@ def main():
         print(f"WARNING: invocation {inv_i} has no captured state.")
         return
 
-    # TRACE REPLAY: the recorded obs re-run and read against the recorded distribution — refused across an
-    # obs-semantics gap (main.prober.arch_status.decide).
+    # TRACE REPLAY: the recorded obs re-run and read against the recorded distribution — badged across an
+    # obs-semantics gap (main.prober.arch_status.decide; refused only for a marker row declaring replay: refuse).
     model = ProbeModel.load(ckpt, device="cpu", use="trace_replay")
     analysis = analyze_invocation(model, summ, npz, inv_i, summary_path=summ_path, npz_path=npz_path)
     badge = (model.obs_semantics or {}).get("badge")

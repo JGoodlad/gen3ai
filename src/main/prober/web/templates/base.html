@@ -85,6 +85,8 @@
   <span>·</span>
   {% if run_meta.model_views.model_views and run_meta.model_views.status == 'current' %}
   <span class="pos" title="{{ run_meta.model_views.plain }}">model views: current architecture</span>
+  {% elif run_meta.model_views.model_views and run_meta.model_views.kind == 'obs_semantics' %}
+  <span class="warnline" data-model-reason="obs_semantics" title="{{ run_meta.model_views.plain }}">model views: badged (trained at config v{{ run_meta.model_views.config_version }}; the observation meaning has since moved)</span>
   {% elif run_meta.model_views.model_views %}
   <span class="muted" title="{{ run_meta.model_views.plain }}">model views: untested (architecture not recorded)</span>
   {% else %}

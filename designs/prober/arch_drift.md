@@ -1,8 +1,8 @@
 # Architecture drift — every way a run can be incompatible with HEAD is ONE typed diagnosis
 
 Owned by this tree. The RULE is in `src/main/prober/CLAUDE.md`: a model-loading probe works only on a
-run at the CURRENT architecture (owner decision) — bar the one class the GAP POLICY below decides by use (weights
-that fit, an observation whose meaning moved) — the failure is an `ArchDriftError`, and a surface that
+run at the CURRENT architecture (owner decision) — bar the one class the GAP POLICY below decides (weights
+that fit, an observation whose meaning moved: it runs badged) — the failure is an `ArchDriftError`, and a surface that
 loads a model renders its **plain sentence** with the diagnosis folded under it rather than collapsing it
 to "analysis failed". This file holds what the diagnosis is made of and where each kind is decided.
 
@@ -22,7 +22,7 @@ and `plain` — ONE plain-language sentence a page shows verbatim:
 |---|---|---|
 | `arch_signature` | the network family differs, or the recorded config is below `MIGRATION_FLOOR` — the weights have no home | the record (pre-load) |
 | `obs_dim` | trained on a different observation width than the encoder writes (`OFFSET_OBS_FACTS + OBS_FACTS_DIM`) | the zip's own layout (`peek_checkpoint`) or `total_dim` in the record (pre-load) |
-| `obs_semantics` | **the silent class**: the weights fit, but the observation changed MEANING since `OBS_SEMANTICS_VERSION` (v151's Toxic cell n/8 → n/15, the Wish flag; v162's consumed-item op reads and stale volatile cells). The ONLY kind the gap policy lets a use through: a trace replay is refused, a fresh probe / stored score runs badged | the recorded `config_version` alone (pre-load) |
+| `obs_semantics` | **the silent class**: the weights fit, but the observation changed MEANING since `OBS_SEMANTICS_VERSION` (v151's Toxic cell n/8 → n/15, the Wish flag; v162's consumed-item op reads and stale volatile cells). The ONLY kind the gap policy lets a use through: every use runs badged (a trace replay's badge names the change list); a marker row declaring `replay: refuse` refuses a trace replay | the recorded `config_version` alone (pre-load) |
 | `newer_than_code` | recorded by NEWER code than the one running (a stale server) | the record (pre-load) |
 | `no_checkpoint` | nothing loadable — a trimmed skeleton, or the file is gone | the ladder finding no path / `os.path.exists` (`NoCheckpointError`, also a `FileNotFoundError`) |
 | `unreadable` | the file is there but is not a zip | `zipfile.is_zipfile` (pre-load) |
@@ -48,12 +48,16 @@ at its newest (or named) step, a checkpoint by its sidecars plus the width its z
 **Two sides, and the worse one wins.** The model views re-run a CHECKPOINT on a trace's STORED OBSERVATIONS.
 `model_status(step)` is the worse of the checkpoint's verdict and the trace's own (`arch_status.worst`), and
 `ProbeSession._model_for` refuses on the trace's verdict before loading when the gap policy refuses it for the
-declared use — a FRESH probe feeds no stored observation, so a trace's semantics gap does not refuse it (an injected
-test loader skips the trace check): on a
+declared use (an injected test loader skips the trace check): on a
 `nearest` / `recent` rung the checkpoint is not the model that played the step, and a run that resumed across an
 observation change holds old-meaning traces beside a new-meaning checkpoint.
 
 ## The gap policy — version gap × use ⇒ allow / warn / refuse (`arch_status.decide`, 2026-10-26)
+
+*(Revised the same day: a trace replay across an `obs_semantics` gap was first refused; with every current model
+pinned below v162 and no v162 run with eval traces for days, that blinded the prober, so the orchestrator ruled it
+`warn`. A replay of a model's OWN traces feeds the exact observations it saw, so what may differ is small and
+nameable.)*
 
 The verdict says WHETHER a record is HEAD's; what a caller may then DO depends on what it feeds the network. Every
 `ProbeModel.load(path, device, *, use)` and `ProbeSession._model_for(battle, *, use)` / `probe_model` DECLARES a use
@@ -64,22 +68,25 @@ table `GAP_POLICY`:
 |---|---|---|---|
 | `none` — a CURRENT verdict | allow | allow | allow |
 | `unrecorded` — no version record | warn | warn | warn |
-| `obs_semantics` — weights fit, meaning moved | **refuse** | warn | warn |
+| `obs_semantics` — weights fit, meaning moved | **warn** (refuse if a newer marker row declares `replay: refuse`) | warn | warn |
 | `weights` — every other incompatible kind | refuse | refuse | refuse |
 
 - **`trace_replay`**: the checkpoint re-run on a trace's STORED observations and read against what it recorded. The
-  forward runs HEAD's model-internal inputs (the op) over observations encoded when the trace was written, so across a
-  gap it no longer reproduces what the model saw.
+  stored observations are exactly what the model saw at play time; the forward runs HEAD's model-internal inputs (the
+  op) over them, so across a gap only the rows the change list touches may differ.
 - **`fresh`**: positions encoded NOW by HEAD's encoder — the model reads inputs whose meaning moved since it trained;
   it runs, and says so.
 - **`stored_score`**: stored observations scored with no faithfulness claim (a paired pre/post read moves both arms
   by the same gap).
 
-A WARN carries the badge `⚠ trained on obs_semantics vN, probed at vM (<use>)`, with `changes_since` (every
-`OBS_SEMANTICS_HISTORY` row newer than N). `GapDecision.as_dict()` is the `obs_semantics` block a caller records in
+A WARN carries a badge and `changes_since` (every `OBS_SEMANTICS_HISTORY` row newer than N, each with its
+`replay`). A fresh probe / stored score reads `⚠ trained on obs_semantics vN, probed at vM (<use>)`; a **trace replay**
+says concretely what may differ: `⚠ obs_semantics: trained at vN, replayed at vM: results on rows involving
+v162: <the marker history's change clause> may differ from what the model computed at play time.` (one `vK: reason`
+per row newer than N, joined by `;`). `GapDecision.as_dict()` is the `obs_semantics` block a caller records in
 its output (`trained_semantics`, `code_semantics`, `action`, `gap`, `use`, `badge`, `changes_since`); `ProbeModel`
 carries it as `.obs_semantics` and the verdict as `.arch_verdict`, and logs the badge at WARNING on load. The session
-re-judges a CACHED model per use, so a model a fresh probe loaded is still refused to a trace replay.
+re-judges a CACHED model per use, so a model cached for one use is judged again for the next (relevant when a row declares `replay: refuse`).
 
 | caller | use | output that records `obs_semantics` |
 |---|---|---|
@@ -92,15 +99,24 @@ re-judges a CACHED model per use, so a model a fresh probe loaded is still refus
 
 `gap_policy_test.py` pins the table cell by cell and, by AST over `src/`, the use every call site declares (a new
 caller fails until it is classified). **Surfaces:** a WARN renders as a `p.banner.warn[data-obs-semantics]` on the
-counterfactual job results, `/analyze` and `/game`'s model panel (`_macros.html` `obs_semantics_badge`); an
-`obs_semantics` model-unavailable card names the fresh probes that still run (`data-fresh-probes`). ⚠ On `/analyze`
-the counterfactual FORMS sit inside the analyze result, which a gap run refuses; the fresh probes are reached from
-`python -m main.prober.query lookahead|better-line|replay-counterfactual` and the `/api/jobs/*` routes.
+counterfactual job results, `/analyze` and `/game`'s model panel (`_macros.html` `obs_semantics_badge`), and on `/analyze`'s result. The run picker files a warn-gap run under
+"current" (its `arch` block still names `obs_semantics`) and the context strip reads "model views: badged". Only when a
+marker row declares `replay: refuse` does an `obs_semantics` model-unavailable card appear (it names the fresh probes
+that still run, `data-fresh-probes`), the picker file the run under "older", and `analyze` 400 `{kind: obs_semantics}`.
 
-**Why a trace replay is refused although its stored obs ARE what the model saw.** Nothing re-encodes a stored trace;
-the refusal is earned by the MODEL-INTERNAL inputs the forward computes at HEAD (v162: the op's consumed-item reads).
-A future marker row that is purely an ENCODER change (stored obs unchanged, no model-internal input) would leave a
-model's replay of its OWN traces exact; the table does not yet split `obs_semantics` that way.
+**Each marker row declares its replay action** (`OBS_SEMANTICS_HISTORY` rows are `(version, clause, replay)`;
+`replay` is `warn` or `refuse`, and `decide` refuses a trace replay when ANY row newer than the checkpoint's marker
+says `refuse`). `warn` is justified only where a model's replay of its OWN traces still feeds the observations it saw,
+so just a model-INTERNAL input can differ:
+
+| row | change | replay | why |
+|---|---|---|---|
+| 151 | Toxic counter cell stage/8 → stage/15; the Wish flag's meaning | `warn` | an ENCODE-time re-scale: a trace stores the observation its own model trained on, so its replay is exact; only a trace/checkpoint pair that straddles v151 (a `nearest` / `recent` rung) feeds a mismatched cell, and the badge names the Toxic / Wish cells to doubt |
+| 162 | the op reads a consumed item as no item (30/719 teams with item removal); stale Destiny Bond / Grudge / Rage / Endure / Snatch / Helping Hand / Mean Look volatile cells clear (36/991 golden decisions); lock-in and recharge counters end with Showdown's | `warn` | the op change is model-internal, so the stored observations are unchanged for an own-trace replay and only the damage-op reads on item-removal rows differ; the volatile cells and counters were stale in the OLD encode, so a replay shows the old, stale values the model really saw |
+
+A future row that changes the encoder LAYOUT (a stored trace no longer fits what HEAD's network reads) declares
+`refuse`. ⚠ A `nearest` / `recent` rung pairs a checkpoint with traces it did not play; across a row that re-defines
+a cell the badge covers that pairing only as far as its change list says.
 
 ## `OBS_SEMANTICS_VERSION` — the marker that makes the silent class detectable
 
@@ -139,7 +155,8 @@ from the newest is marked) and the checkpoint table all read the same verdicts.
 
 ## Measured (2026-10-26, the marker raised to 162)
 
-Every current run records config v161 (`rb_x35_*` incl. N1-P, `rb_x26c_s2601`) or older (P\* =
+*(Measured under the first, refusing form of the policy; the trace-replay verdicts below are superseded by the
+"Measured, warn" block after it.)* Every current run records config v161 (`rb_x35_*` incl. N1-P, `rb_x26c_s2601`) or older (P\* =
 `rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip`, v158): all read `obs_semantics` (trained v151, code v162), the
 picker files them under "older", and the views over their traces are refused (`query analyze` / `find … disagree` on
 `rb_x35_d3mut_s3501` and on P\*'s own step: `{error, kind: obs_semantics, plain}`, before any load). Model-free
@@ -149,6 +166,21 @@ picker files them under "older", and the views over their traces are refused (`q
 on `/game` and the badge banner on the `/api/jobs/lookahead` result. Readers that never load through the prober
 (`main.anchors`, `main.h2h`, `main.reads`, `main.x35` incl. Kakuna, `main.team_strength`) import neither
 `arch_status` nor `ProbeModel` and are untouched.
+
+## Measured, warn (2026-10-26, trace replay ⇒ warn)
+
+CPU, read-only on `models/`. `rb_x35_d3mut_s3501` (config v161, trained obs_semantics v151, code v162), battle
+`step_300000193/heuristic2/loss_s1_003`:
+
+- `query analyze <battle> 3` ran (peak 1.12 GB) with `obs_semantics.action = warn`, `use = trace_replay`, the badge
+  `⚠ obs_semantics: trained at v151, replayed at v162: results on rows involving v162: <the clause> may differ from what
+  the model computed at play time.` on stderr and in the JSON, and `changes_since = [{version: 162, replay: warn}]`.
+- `query find <battle> disagree --limit 3` ran (peak 0.56 GB), the badge on stderr, and returned `[]` (no disagreement
+  in that battle).
+- The web app on a 9XXX port (`python -m main.prober.web models/rb_x35_d3mut_s3501 --open`): `/api/run` read
+  `model_views: true, kind: obs_semantics`, the context strip said "model views: badged", `/game` and `/analyze` painted
+  no unavailable card, and `/partials/analyze` rendered `p.banner.warn[data-obs-semantics][data-obs-semantics-use=
+  trace_replay]` with the badge and the `v162` change line.
 
 ## The three walls behind the load-time classes (measured 2026-08-13)
 
@@ -181,8 +213,8 @@ logs, no `eval_traces/`) or launches that have not finished a first eval cycle. 
 
 Tests: `main/prober/arch_status_test.py` (the verdicts and the record readers), `gap_policy_test.py` (the table, the
 badge, every call site's declared use), `model_test.py` (every class end to end through `ProbeModel.load`, the
-semantics-only case with a loader that WOULD succeed — refused for a trace replay, loaded badged for a fresh probe or
-a stored score — and the session refusing / allowing per use on a gap run),
+semantics-only case with a loader that WOULD succeed — loaded badged for every use, a trace replay refused only under a
+marker row declaring `replay: refuse` — and the session judging per use on a gap run),
 `web/runs_test.py` + `web/app_test.py` ("the run picker, by architecture"), `agents/model/obs_semantics_test.py`.
 
 ## From the prober leaf (moved 2026-10-10)

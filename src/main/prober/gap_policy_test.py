@@ -1,9 +1,9 @@
 """THE OBS-SEMANTICS GAP POLICY (`arch_status.decide`, the table `GAP_POLICY`), and every caller's declared use.
 
 A checkpoint recorded below `OBS_SEMANTICS_VERSION` has weights that fit and inputs whose meaning moved. What a reader
-may do with it depends on what it feeds the network: a TRACE REPLAY (stored observations, read against what the model
-recorded) is refused; a FRESH probe (positions encoded now) or a STORED-obs score (no faithfulness claim) runs with a
-badge. This file pins the table cell by cell, the decision's record, and — by AST, so a new caller fails until it is
+may do with it depends on what it feeds the network: every use runs with a badge (a TRACE REPLAY's names the change list, since the model-internal
+inputs HEAD's forward computes may differ from play time); only a marker row declaring `replay: refuse` refuses a
+trace replay. This file pins the table cell by cell, the decision's record, and — by AST, so a new caller fails until it is
 classified — the use every `ProbeModel.load` / `ProbeSession._model_for` / `probe_model` call site declares. The
 behaviour at the model seam and the session is `model_test.py`'s.
 
@@ -22,12 +22,13 @@ from agents.model.model_version import (
     MIGRATION_FLOOR,
     MODEL_CONFIG_VERSION,
     OBS_SEMANTICS_HISTORY,
+    OBS_SEMANTICS_REASON,
     OBS_SEMANTICS_VERSION,
 )
 from main.prober import arch_status as A
 from utils.paths import src_path
 
-# The table as the owner's ruling reads it (2026-10-26). Changing a cell is a policy change: change it here too.
+# The table as the owner's ruling reads it (2026-10-26; trace_replay across obs_semantics: refuse -> warn, same day). Changing a cell is a policy change: change it here too.
 _EXPECTED = {
     (A.GAP_NONE, A.USE_TRACE_REPLAY): A.ALLOW,
     (A.GAP_NONE, A.USE_FRESH): A.ALLOW,
@@ -35,7 +36,7 @@ _EXPECTED = {
     (A.GAP_UNRECORDED, A.USE_TRACE_REPLAY): A.WARN,
     (A.GAP_UNRECORDED, A.USE_FRESH): A.WARN,
     (A.GAP_UNRECORDED, A.USE_STORED_SCORE): A.WARN,
-    (A.GAP_SEMANTICS, A.USE_TRACE_REPLAY): A.REFUSE,
+    (A.GAP_SEMANTICS, A.USE_TRACE_REPLAY): A.WARN,
     (A.GAP_SEMANTICS, A.USE_FRESH): A.WARN,
     (A.GAP_SEMANTICS, A.USE_STORED_SCORE): A.WARN,
     (A.GAP_WEIGHTS, A.USE_TRACE_REPLAY): A.REFUSE,
@@ -92,11 +93,11 @@ def test_the_trained_semantics_is_the_newest_marker_at_or_below_the_recorded_ver
     first = OBS_SEMANTICS_HISTORY[0][0]
     assert A.obs_semantics_of(None) is None
     assert A.obs_semantics_of(first - 1) is None                    # below every declared marker
-    for i, (v, _reason) in enumerate(OBS_SEMANTICS_HISTORY):
+    for i, (v, _reason, _replay) in enumerate(OBS_SEMANTICS_HISTORY):
         assert A.obs_semantics_of(v) == v
         nxt = OBS_SEMANTICS_HISTORY[i + 1][0] if i + 1 < len(OBS_SEMANTICS_HISTORY) else MODEL_CONFIG_VERSION + 1
         assert A.obs_semantics_of(nxt - 1) == v
-    assert [c["version"] for c in A.semantics_changes_since(first)] == [v for v, _ in OBS_SEMANTICS_HISTORY[1:]]
+    assert [c["version"] for c in A.semantics_changes_since(first)] == [r[0] for r in OBS_SEMANTICS_HISTORY[1:]]
 
 
 def test_the_badge_says_trained_n_probed_at_m():
@@ -107,6 +108,61 @@ def test_the_badge_says_trained_n_probed_at_m():
     if A.obs_semantics_of(MIGRATION_FLOOR) is None:
         assert f"before v{OBS_SEMANTICS_HISTORY[0][0]}" in pre.badge
         assert len(pre.as_dict()["changes_since"]) == len(OBS_SEMANTICS_HISTORY)
+
+
+def test_a_trace_replay_badge_names_what_may_differ():
+    """The ruling: "trained at vN, replayed at vM: results on rows involving <the change list from the marker
+    history> may differ from what the model computed at play time"."""
+    first = OBS_SEMANTICS_HISTORY[0][0]
+    d = A.decide(A.verdict_from_record(first - 1 if first - 1 >= MIGRATION_FLOOR else first, _HEAD_SIG),
+                 A.USE_TRACE_REPLAY)
+    assert d.action == A.WARN
+    for v, reason, _ in OBS_SEMANTICS_HISTORY:
+        if v > (d.trained_semantics or 0):
+            assert f"v{v}: {reason}" in d.badge
+    assert f"replayed at v{OBS_SEMANTICS_VERSION}" in d.badge
+    assert "may differ from what the model computed at play time" in d.badge
+    assert d.as_dict()["changes_since"][-1] == {"version": OBS_SEMANTICS_VERSION, "reason": OBS_SEMANTICS_REASON,
+                                                "replay": "warn"}
+
+
+def test_every_declared_marker_row_justifies_its_replay_action():
+    """v151 and v162 both declare `warn`: neither moves an encoder cell's LAYOUT, so a model's replay of its own
+    traces feeds the exact stored observations (v151 re-scales / re-defines cells at ENCODE time; v162 changes an
+    op read and the volatile cells, 36 of 991 golden decisions). A `refuse` is for a change that does not."""
+    assert [(v, a) for v, _, a in OBS_SEMANTICS_HISTORY] == [(151, "warn"), (162, "warn")]
+    assert {a for _, _, a in OBS_SEMANTICS_HISTORY} <= {A.WARN, A.REFUSE}
+
+
+def test_a_marker_row_declaring_refuse_still_refuses_a_trace_replay_but_not_the_other_uses(monkeypatch):
+    """The table is extensible: a FUTURE encoder-layout change (stored observations that genuinely mismatch the
+    network) declares `refuse` on its row, and only a checkpoint recorded below it is refused."""
+    future = OBS_SEMANTICS_VERSION + 1
+    monkeypatch.setattr(A, "OBS_SEMANTICS_HISTORY",
+                        tuple(OBS_SEMANTICS_HISTORY) + ((future, "the cell layout moved", "refuse"),))
+    monkeypatch.setattr(A, "OBS_SEMANTICS_VERSION", future)
+    below = A.verdict_from_record(OBS_SEMANTICS_VERSION, _HEAD_SIG)      # a v162 checkpoint, now one row behind
+    assert A.gap_of(below) == A.GAP_SEMANTICS and not below.model_views
+    assert A.decide(below, A.USE_TRACE_REPLAY).refused
+    assert "cannot be read under" in below.plain
+    for use in (A.USE_FRESH, A.USE_STORED_SCORE):
+        assert A.decide(below, use).action == A.WARN
+    # a checkpoint already past the refusing row is unaffected by an OLDER row's warn
+    at = A.verdict_from_record(future, _HEAD_SIG) if future <= MODEL_CONFIG_VERSION else None
+    assert at is None or A.decide(at, A.USE_TRACE_REPLAY).action == A.ALLOW
+
+
+def test_a_semantics_gap_run_stays_in_the_current_picker_tier_while_a_refusal_does_not(monkeypatch):
+    v = _verdict(A.GAP_SEMANTICS)
+    assert v.model_views and A.tier_of(True, v) == A.TIER_CURRENT
+    monkeypatch.setattr(A, "OBS_SEMANTICS_HISTORY",
+                        tuple(OBS_SEMANTICS_HISTORY) + ((OBS_SEMANTICS_VERSION + 1, "x", "refuse"),))
+    assert not v.model_views and A.tier_of(True, v) == A.TIER_OLDER
+
+
+def test_weights_that_do_not_fit_still_refuse_a_trace_replay():
+    d = A.decide(_verdict(A.GAP_WEIGHTS), A.USE_TRACE_REPLAY)
+    assert d.refused and d.badge is None
 
 
 # -- every caller declares its use (AST over src/, tests excluded) ------------------------------------------------

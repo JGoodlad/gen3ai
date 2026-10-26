@@ -30,7 +30,7 @@ The live `MODEL_CONFIG_VERSION`, `ARCH_SIGNATURE` and `OBS_SEMANTICS_VERSION` ar
 - **A change in what an observation cell MEANS, with no shape change, raises `OBS_SEMANTICS_VERSION`**: append an
   `OBS_SEMANTICS_HISTORY` row (the config version the commit stamps + its clause) and re-pin `obs_semantics_test.py`.
   It does not bump `ARCH_SIGNATURE` and gates no resume; a reader acts on it through ONE gap policy
-  (`main.prober.arch_status.decide`: a trace replay below it is refused, a fresh probe runs badged). A
+  (`main.prober.arch_status.decide`: every use below it runs badged; a row's `replay: refuse` blocks a trace replay). A
   model-internal input the obs golden cannot see is raised by hand.
 - An optional new feature is a `ModelVersionFields` field, a `MODEL_CONFIG_VERSION` bump and one `_migrate_config`
   `setdefault` block. Every value `--arch production` writes must be a `ModelVersion` field (a restart inherits

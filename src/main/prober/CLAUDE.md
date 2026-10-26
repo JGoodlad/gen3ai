@@ -49,8 +49,9 @@ Detail lives in `designs/prober/`, always current and updated with the code:
   the message.
 - **Every model load declares its use** (`ProbeModel.load(..., use=)`, `_model_for(b, use=)`): `trace_replay` for
   stored observations, `fresh` for positions encoded now, `stored_score` for a score with no faithfulness claim.
-  One gap policy (`arch_status.decide`) refuses a trace replay across an `obs_semantics` gap and badges the
-  others; a model-running output records its `obs_semantics` block (`designs/prober/arch_drift.md`).
+  One gap policy (`arch_status.decide`) badges every use across an `obs_semantics` gap (a trace replay's badge
+  names the change list; a marker row declaring `replay: refuse` refuses it) and refuses weights that do not fit;
+  a model-running output records its `obs_semantics` block (`designs/prober/arch_drift.md`).
 - Per-battle model resolution is exact → nearest → most recent (the run's last snapshot, via
   `resolve_model_ref`); the `best_model` rung is last and is NAMED in `ModelChoice.detail`.
   Faithfulness is exact only on the `exact` tier.

@@ -2536,16 +2536,44 @@ def test_the_run_summary_marks_every_step_and_every_checkpoint(head_client, head
     assert s["checkpoints"] and all(c["model_views"] for c in s["checkpoints"])
 
 
-def test_the_model_views_of_a_semantics_only_older_run_are_refused_though_the_shapes_fit(tmp_path):
+def test_the_model_views_of_a_semantics_only_older_run_run_badged_under_the_gap_policy(tmp_path):
     """The silent class through the whole stack: HEAD's signature, HEAD's width, one version below the
-    obs-semantics marker. The page says why; nothing is loaded."""
+    obs-semantics marker. Marker rows declare `replay: warn`, so the trace-replay views are NOT blocked on first
+    paint (no unavailable card) and the analyze result renders the change-list banner from its `obs_semantics`
+    block, as a fresh probe does."""
     from agents.model.model_version import OBS_SEMANTICS_VERSION
+    from main.prober import arch_status as A
     run = fixture_run.build(str(tmp_path),
                             identity=dict(fixture_run.head_identity(), config_version=OBS_SEMANTICS_VERSION - 1))
+    app = create_app(run, open_access=True)
+    with TestClient(app) as c:
+        c.app_state = app.state
+        b = c.get("/api/battles").json()[0]["short_id"]
+        html = c.get("/game", params={"battle": b}).text
+        assert 'data-model-state="arch_drift"' not in html and "no longer reproduces" not in html
+        assert "model views: badged" in c.get("/", params={"battle": b}).text
+        sem = A.decide(A.verdict_from_record(OBS_SEMANTICS_VERSION - 1, fixture_run.head_identity()["arch_signature"]),
+                       A.USE_TRACE_REPLAY).as_dict()
+        _stub_analyze(c, dict(_BARE_ANALYSIS, obs_semantics=sem))
+        frag = _fragment(c, battle=_ANALYZE_BATTLE)
+        assert 'data-obs-semantics="obs_semantics"' in frag and 'data-obs-semantics-use="trace_replay"' in frag
+        assert f"replayed at v{OBS_SEMANTICS_VERSION}" in frag and "may differ from what the model computed" in frag
+
+
+def test_a_marker_row_declaring_refuse_blocks_the_model_views_of_a_semantics_only_older_run(tmp_path, monkeypatch):
+    """The same stack with a FUTURE marker row declaring `replay: refuse` (stored observations that genuinely mismatch
+    the network): the page says why on first paint, the JSON route answers 400 {kind}, nothing is loaded."""
+    from agents.model.model_version import OBS_SEMANTICS_VERSION
+    from main.prober import arch_status as A
+    run = fixture_run.build(str(tmp_path),
+                            identity=dict(fixture_run.head_identity(), config_version=OBS_SEMANTICS_VERSION - 1))
+    monkeypatch.setattr(A, "OBS_SEMANTICS_HISTORY",
+                        tuple(A.OBS_SEMANTICS_HISTORY) + ((OBS_SEMANTICS_VERSION + 1, "layout moved", "refuse"),))
+    monkeypatch.setattr(A, "OBS_SEMANTICS_VERSION", OBS_SEMANTICS_VERSION + 1)
     with TestClient(create_app(run, open_access=True)) as c:
         b = c.get("/api/battles").json()[0]["short_id"]
         html = c.get("/game", params={"battle": b}).text
-        assert 'data-model-reason="obs_semantics"' in html and "no longer reproduces what it saw" in html
+        assert 'data-model-reason="obs_semantics"' in html and "cannot be read under" in html
         assert "Fresh probes" in html and 'data-fresh-probes="allowed"' in html   # the gap policy: what still runs
         r = c.get("/api/analyze", params={"battle": b})
         assert r.status_code == 400 and r.json()["kind"] == "obs_semantics"

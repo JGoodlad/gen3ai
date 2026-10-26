@@ -52,8 +52,8 @@ def test_the_first_version_with_the_new_observation_meaning_is_current_and_the_o
     below = A.verdict_from_record(OBS_SEMANTICS_VERSION - 1, ARCH_SIGNATURE, A.current_obs_dim())
     assert at.status == A.CURRENT
     assert below.status == A.INCOMPATIBLE and below.kind == A.KIND_OBS_SEMANTICS
-    assert not below.model_views
-    assert f"v{OBS_SEMANTICS_VERSION}" in below.plain and "no longer reproduces what it saw" in below.plain
+    assert below.model_views, "the gap policy lets a trace replay run across it (badged); only `replay: refuse` blocks"
+    assert f"v{OBS_SEMANTICS_VERSION}" in below.plain and "may differ from what the model computed" in below.plain
 
 
 @pytest.mark.parametrize("version,signature,obs_dim,kind", [
@@ -99,8 +99,10 @@ def test_every_kind_has_a_plain_sentence_and_the_drift_ones_share_the_opening():
         s = A.plain_sentence(kind, config_version=143, arch_signature="gen3_event_record_v2", obs_dim=2761,
                              cause="x")
         assert s.endswith("."), (kind, s)
-        if kind in (A.KIND_ARCH_SIGNATURE, A.KIND_OBS_DIM, A.KIND_OBS_SEMANTICS, A.KIND_STATE_DICT,
-                    A.KIND_CONFIG_VALUE, A.KIND_LOAD_FAILED):
+        # (`obs_semantics` is the one drift kind whose views RUN, so its sentence says so instead; a marker row that
+        # declares `replay: refuse` restores the shared opening — `gap_policy_test`.)
+        if kind in (A.KIND_ARCH_SIGNATURE, A.KIND_OBS_DIM, A.KIND_STATE_DICT, A.KIND_CONFIG_VALUE,
+                    A.KIND_LOAD_FAILED):
             assert "model views need a current-architecture checkpoint" in s, kind
     assert "no loadable checkpoint" in A.plain_sentence(A.KIND_NO_CHECKPOINT)
     assert "NEWER" in A.plain_sentence(A.KIND_NEWER, config_version=MODEL_CONFIG_VERSION + 1)

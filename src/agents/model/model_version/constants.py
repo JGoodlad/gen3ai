@@ -652,20 +652,27 @@ MODEL_CONFIG_VERSION = 162
 # change the golden cannot see (a model-INTERNAL input such as an op edge cell) must be raised here by hand.
 #
 # WHAT A READER DOES WITH IT is one policy, not a refusal: `main.prober.arch_status.decide(verdict, use)` — a TRACE
-# REPLAY of a checkpoint recorded below the marker is refused, a FRESH probe (positions encoded now) or a STORED-obs
-# score runs with the badge "trained on obs_semantics vN, probed at vM" (`designs/prober/arch_drift.md`).
+# REPLAY, a FRESH probe (positions encoded now) or a STORED-obs score of a checkpoint recorded below the marker runs
+# with the badge "trained on obs_semantics vN, probed at vM" (`designs/prober/arch_drift.md`).
 #
-# The history: (config version, what changed at it, in one clause — rendered in the prober's drift diagnosis and in
-# every gap badge). Strictly increasing; the last row is the marker in force.
+# The history: (config version, what changed at it in one clause — rendered in the prober's drift diagnosis and in
+# every gap badge —, REPLAY). Strictly increasing; the last row is the marker in force.
+#
+# REPLAY is what a TRACE REPLAY (a checkpoint recorded below this row, re-run on a trace's STORED observations) does
+# across the row: "warn" runs it with the badge naming this row's change; "refuse" is for a change under which the
+# stored observations genuinely MISMATCH the network (an encoder-layout / cell re-definition the stored rows cannot
+# be read under). Choose "warn" only when a model's replay of its OWN traces still feeds the exact observations it
+# saw, so only a model-INTERNAL input (an op read) can differ. The gap policy refuses a replay when ANY row newer than
+# the checkpoint's marker says "refuse" (`main.prober.arch_status.decide`).
 OBS_SEMANTICS_HISTORY = (
     (151, "the Toxic counter cell is now stage/15 where it was stage/8, and the Wish flag now means "
-          "'lands at the next end-of-turn residual'"),
+          "'lands at the next end-of-turn residual'", "warn"),
     # d8d674b9 (gen3_op_held_item_v1 + gen3_volatile_silent_ends_v1) and f9978586 (gen3_lockin_cancelled_repeat_v1,
     # gen3_recharge_expiry_v1), the 2026-10-26 GIGO audit; raised once the gap policy landed (TECH_DEBT P1 closed).
     (162, "the damage operator reads a consumed item as no item (a Knocked-Off or stolen Choice Band no longer reads "
           "as held), the Destiny Bond / Grudge / Rage / Endure / Snatch / Helping Hand cells and Mean Look's "
           "trapped flag now clear when their effect ends, and the lock-in and recharge counters end when "
-          "Showdown's do"),
+          "Showdown's do", "warn"),
 )
 OBS_SEMANTICS_VERSION = OBS_SEMANTICS_HISTORY[-1][0]
 

@@ -516,10 +516,11 @@ class ProbeModel:
         # is never loaded to answer about inputs it did not train on. A checkpoint with NO record is tried, and
         # its failure classified below.
         #
-        # THE GAP POLICY decides it, by the caller's declared `use` (`arch_status.decide`): a TRACE REPLAY across an
-        # `obs_semantics` gap is refused; a FRESH probe or a STORED-obs score across one loads, and the decision —
-        # with its badge, "trained on obs_semantics vN, probed at vM" — rides the model as `obs_semantics` for the
-        # caller to record. Weights that do not fit refuse every use.
+        # THE GAP POLICY decides it, by the caller's declared `use` (`arch_status.decide`): every use across an
+        # `obs_semantics` gap loads, and the decision — with its badge ("trained at vN, replayed at vM: results on
+        # rows involving <the change list> may differ…" for a trace replay) — rides the model as `obs_semantics` for
+        # the caller to record; only a marker row declaring `replay: refuse` refuses a TRACE REPLAY. Weights that do
+        # not fit refuse every use.
         from main.prober import arch_status as A
         peek = peek_checkpoint(ckpt_path)
         verdict = A.checkpoint_verdict(ckpt_path, peek_obs_dim=peek.get("obs_dim"))

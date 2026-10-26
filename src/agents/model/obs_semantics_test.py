@@ -54,12 +54,13 @@ def test_the_marker_sits_between_the_floor_and_the_code():
 
 
 def test_the_history_is_strictly_increasing_and_its_last_row_is_the_marker():
-    """Each row is (config version, the clause a badge and the drift diagnosis quote); the reader's "trained on
+    """Each row is (config version, the clause a badge and the drift diagnosis quote, REPLAY: warn | refuse); the reader's "trained on
     obs_semantics vN" is the newest row at or below a checkpoint's recorded version."""
-    versions = [v for v, _ in OBS_SEMANTICS_HISTORY]
+    versions = [v for v, _, _ in OBS_SEMANTICS_HISTORY]
     assert versions == sorted(set(versions)), "strictly increasing, no repeats"
-    assert (OBS_SEMANTICS_VERSION, OBS_SEMANTICS_REASON) == OBS_SEMANTICS_HISTORY[-1]
-    assert all(r.strip() for _, r in OBS_SEMANTICS_HISTORY)
+    assert (OBS_SEMANTICS_VERSION, OBS_SEMANTICS_REASON) == OBS_SEMANTICS_HISTORY[-1][:2]
+    assert all(r.strip() for _, r, _ in OBS_SEMANTICS_HISTORY)
+    assert {a for _, _, a in OBS_SEMANTICS_HISTORY} <= {"warn", "refuse"}, "a row's REPLAY is warn | refuse"
 
 
 def test_the_golden_cannot_move_without_the_marker_being_considered():
