@@ -92,3 +92,15 @@ ops_python() {
     [ -x "$py" ] || py="$(command -v python3)"
     printf '%s\n' "$py"
 }
+
+# ---- liveness helpers (same as launch_x35.sh; tested by src/main/ops/watch_run_liveness_test.py) ----------------------
+# Liveness is read from /proc, NEVER `kill -0`: in a sandboxed shell kill -0 reads a live pid as dead (acf2193f).
+# A zombie (Z) / dead (X) state counts as gone; pid + START TICKS (stat field 22) is the identity.
+pid_start() {   # print <pid>'s start ticks; fail if it is gone, a zombie, or unreadable
+    local st; st=$(cat "/proc/$1/stat" 2>/dev/null) || return 1
+    st=${st##*) }; set -- $st      # $1 is the state (field 3), $20 the start ticks (field 22)
+    case "$1" in Z|X|"") return 1;; esac
+    [ -n "${20:-}" ] || return 1
+    echo "${20}"
+}
+pid_alive() { pid_start "$1" > /dev/null 2>&1; }

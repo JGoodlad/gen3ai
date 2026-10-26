@@ -117,7 +117,7 @@ case "$RUN_ARG" in
         if [ "$NO_PID" -eq 0 ] && m_dir="$(ops_models_dir 2>/dev/null)" && [ ! -d "$m_dir/$RUN_ARG" ]; then
             waited=0
             while [ ! -d "$m_dir/$RUN_ARG" ] && [ "$waited" -lt "$DIR_WAIT" ]; do
-                kill -0 "$(cat "$PIDF" 2>/dev/null || echo 0)" 2>/dev/null || break
+                pid_alive "$(cat "$PIDF" 2>/dev/null || echo 0)" || break
                 sleep 5; waited=$((waited + 5))
             done
         fi
@@ -210,7 +210,7 @@ while true; do
     if [ "$TERMINAL" = FAILURE ]; then say "FAILURE: $TERMINAL_MSG"; break; fi
     if [ "$NO_PID" -eq 0 ]; then
         pid=$(cat "$PIDF" 2>/dev/null || echo 0)
-        if ! kill -0 "$pid" 2>/dev/null; then
+        if ! pid_alive "$pid"; then
             say "FAILURE: launcher pid $pid GONE (no completion line in the launcher log)"; break
         fi
     fi
