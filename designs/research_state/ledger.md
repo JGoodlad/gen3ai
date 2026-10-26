@@ -28709,3 +28709,28 @@ tree.
   anchors, Kakuna and resumes load and play P\*, X26c and X35 at the fixed tree (executed).
 
 **Evidence:** `research_state/measurements/gigo_audit_obs_2026-10-26/` (README, `repros/A-D`, `repros/me`).
+### 2026-10-25 · MEASUREMENT · **E1-0: THE REAL BOT AS THE REFEREE on the banked bot-stratum picks reads UNDECIDED, no relabel; DESCRIPTIVELY the self-referee's gains shrink against the bot (oracle gap G_F +0.050 → +0.010) and the two referees rank actions about half as consistently as each ranks against itself**
+
+**Question.** Every IMP in the search ledger was scored by a referee that plays the searched network on both sides.
+On the bot-stratum states, do the picks the maturity battery, world-sampler stage 1 and stage 1c already banked
+gain the same against the scripted bot that actually played the state? (`design_search_next.md` D-1; its review F8.)
+
+**Method.** Registered before any bot playout. The 160 bot-stratum LEAN states of the maturity interim bank at X26
+225M; every legal action × the banked referee's 24 seeds to the end, the state's own bot played in-core
+(`main.value_search.playout.referee`, `opp_bot`, default OFF). Each experiment's own scorer runs unchanged with only
+the referee's T substituted. Primary family of 4 cells, Bonferroni 98.75 %, battle-clustered bootstrap.
+
+**Result.**
+- Guards: the self-referee replays the banked truth rows exactly (160 / 160 states, 0 of 28,392 characters); 53 / 53
+  published bot-stratum points reproduced; picks identical; 0 bot refusals.
+- D = IMP_bot − IMP_self: oracle O +0.038 → +0.014, D −0.024 [−0.054, +0.009]; honest F −0.010 → +0.010, D +0.020
+  [−0.010, +0.054]; POOL − F_legal +0.027 → −0.006, D −0.033 [−0.068, +0.002]; stage 1c C128L piKL +0.009 → +0.006,
+  D −0.004 [−0.028, +0.030]. **UNDECIDED** (no disagreement, no interval inside ±0.015).
+- DESCRIPTIVE: G_F on bots +0.050 → +0.010, D −0.040 [−0.068, −0.015] (95 %, one of 108 secondary cells); 22 honest /
+  open-population cells move from slightly negative to slightly positive; per-state Spearman of T over actions 0.19
+  between referees vs ≈ 0.43 within either (post-hoc split halves); top action shared in 48 % of states; mean T 0.61
+  self vs 0.78 bot.
+- Size: resolving ±0.015 needs ≈ 4–5× this bank. 1.37 CPU-h.
+
+**Evidence:** `research_state/measurements/search_e1_0_2026-10-26/` (PREREGISTRATION, README, `result_e10.json`).
+View: `endstate/search_ledger.md` status line, §1, W12, §6.2.

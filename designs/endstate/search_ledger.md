@@ -13,7 +13,23 @@ the owner's goal 5. It makes four points:
 - a ranked plan: E2, the bridge and R0's known hole; E1, an opponent-exact referee; E3, human identification and the
   human judge, zero playouts; E4, a live player against Kakuna, gated.
 
-**Status (2026-10-24, latest): R-b2 READ — a HUMAN OPPONENT MODEL as the judge: HOM-NONE**
+**Status (2026-10-25, latest): E1-0 READ — the REAL BOT as the referee on banked bot-stratum picks: UNDECIDED**
+(`../research_state/measurements/search_e1_0_2026-10-26/`; registered in its `PREREGISTRATION.md` before any bot
+playout; every VOID guard passed: the self-referee replays the banked truth rows exactly, 0 of 28,392 characters
+differ; 53 / 53 published bot-stratum points reproduced). The picks the maturity battery, stage 1 and stage 1c banked
+on the 160 bot-stratum states (X26 225M) were re-scored with the state's own scripted bot playing the opponent
+in-core (`main.value_search.playout.referee`, `opp_bot`), beside the self-referee:
+- Primary (98.75 %), D = bot − self: oracle O +0.038 → +0.014, D −0.024 [−0.054, +0.009]; honest F −0.010 → +0.010,
+  D +0.020 [−0.010, +0.054]; POOL − F_legal +0.027 → −0.006, D −0.033 [−0.068, +0.002]; stage 1c's C128L piKL
+  +0.009 → +0.006. No cell disagrees, none agrees within ±0.015: **UNDECIDED, no relabel.**
+- DESCRIPTIVE: every bot-stratum IMP below is a SELF-REFEREE read. Against the real bot the gains shrink (the oracle
+  gap G_F on bots +0.050 → +0.010, D −0.040 [−0.068, −0.015] at 95 %), honest arms' slightly negative IMPs turn
+  slightly positive (22 secondary cells, D +0.02 to +0.05), and the referees' action rankings agree about half as
+  well as each agrees with itself (Spearman 0.19 vs ≈ 0.43, post hoc).
+- Consequence: D-1 (`design_search_next.md`) stands and is now measured as a direction, not a size. E1's instrument
+  term needs ≈ 4–5× this bank (≈ 650–750 bot states) to resolve ±0.015.
+
+**Status (2026-10-24): R-b2 READ — a HUMAN OPPONENT MODEL as the judge: HOM-NONE**
 (`../research_state/measurements/x50_r1b_hom_2026-10-23/`; registered in `design_x50_rung1b_human_opponent_model.md`
 §8.4, `42f1d9a7`). The HOM (X26's network fine-tuned from P\* on 1.76M human choices; held-out human NLL 0.58 nats
 below P\*'s, R-b1 LEARNED) re-scored the frozen off-pool bank as the opponent-choice judge; P\*'s re-score reproduced
@@ -45,7 +61,7 @@ worlds (C_ladder) per state, each weighted by its damage-roll weight × the oppo
     still a proposal set that holds the truth's TEAM (POOL's identification), which an open population does not give.
 
 **Status (2026-10-21): the world sampler's STAGE 1 is READ — only TEAM IDENTIFICATION pays, partly right worlds do not** (`design_world_sampler.md` §6.2; `../research_state/measurements/world_sampler_stage1_2026-10-19/`; registered, amendments A1–A3 before any outcome was read; PROVISIONAL: pool opponents, X26 225M). On all 287 maturity LEAN states:
-- **POOL** (the training pool's consistent teams) beats today's honest worlds (F) by **+0.038** [+0.022, +0.055] per decision at LEAF-K8. It recovers **0.72** [0.53, 0.92] of the oracle gap (PAYS, MATERIAL), on bots and own snapshots alike.
+- **POOL** (the training pool's consistent teams) beats today's honest worlds (F) by **+0.038** [+0.022, +0.055] per decision at LEAF-K8. It recovers **0.72** [0.53, 0.92] of the oracle gap (PAYS, MATERIAL), on bots and own snapshots alike under the self-referee; against the real bot (E1-0, DESCRIPTIVE) its bot-stratum Δ reads −0.006 [−0.034, +0.019] where the self-referee read +0.027 (UNDECIDED).
 - Every **open-population** sampler is NOT DETECTED against F, with points −0.008 … +0.002 and intervals ≈ ±0.015: joint Smogon teammates, a ladder-corpus team model, the forum corpus without near copies of the truth, and the network's species × the forum's sets.
 - The network-species arm holds the true never-seen species set in 44 % of its worlds and makes the truth's facts far likelier, yet gains −0.004. Exactness, not calibration, carries the value at this leaf (L2: EXACT-ONLY between arms with POOL, NEITHER without).
 - No arm is SEARCH-ENABLED. The best open arm's TODAY is 0.01 (upper bound 0.19), against p\* ≈ 0.2–0.3.
@@ -416,7 +432,7 @@ comparator; the current-era re-measure is named beside it). Intervals are 95 % u
 | W9 | **Partial truth in the belief is worth a lot, once it is more than a tie-breaker.** Weight p on the true world among the honest ones | MEASURED (Tier 1, M8 on F; CONCAVE, CONTENT-MATTERS, CRITIC-INFO-LIMITED), with a POST-HOC qualifier | on F: +0.002 (p = 0) → +0.021 (0.1) → +0.032 (0.2) → +0.053 (0.35) → +0.062 (0.5) → +0.072 (1.0); the true world beats a random honest world at the same weight (M5 − M5W +0.028 [+0.024, +0.032] at 0.35). POST HOC: the whole step to p = 0.1 is reached at p = 0.001 (TIE-BREAKING, §5.1), so the dose proper runs from ≈ 0.1 to 0.75. The step and the curve REPLICATE on the blind replica's own F worlds (ties 0.60, a jump of +0.024 at p = 0.001; every point's difference from the original's contains 0; post hoc, §16.9). **RED TEAM (§16.10): the "≈ 0.1–0.75 / 0.2–0.35" reading is the 8-rollout leaf's QUANTISATION** (the moving weights are 1/2, 1/3, 1/4, 1/5; at p ≤ 0.1 the truth can move an untied pick on 3 of 1,477 states). On the continuous 4-turn leaf the curve has no step: +0.002 (0) → +0.009 (0.05) → +0.014 (0.1) → +0.023 (0.2) → +0.038 (1) | `design_hidden_info_binding.md` §16.8, §16.9, §16.10; `hidden_info_tier1_2026-10-13/` README §7, `red_team.md`; the pilot's curve: `hidden_info_by_reveal_count_2026-10-12/` README §4 |
 | W10 | **An existence proof that determinised search wins here (PRE-ERA, a width meter).** Foul Play (decoupled UCT over a hand-written evaluator, Smogon-determinised sets) vs the 75M policy | MEASURED, PRE-ERA | our win rate **0.388** [0.288, 0.497], n = 80, ~1.4M visits per decision; width and opponent-set knowledge NOT SEPARABLE (width slope +0.027 per ln-visit, CI covers 0; knowledge delta +0.000 [−0.15, +0.15]). Later (PRE-ERA Kakuna, greedy vs Foul Play at 1000 ms): 0.490 [0.422, 0.559], NOT DETECTED | `UNDERSTANDING.md` §3.1; ledger 2026-09-14 L18248, 2026-09-17 L18964, 2026-09-29 L21447 |
 | W11 | **A rollout leaf out-ranks the learned critic head (PRE-ERA).** K = 1/2/4/8/16: 0.543 / 0.580 / 0.613 / 0.652 / 0.671 vs 0.574 | MEASURED, PRE-ERA | DETECTED at K ≥ 8 (+0.078 [+0.027, +0.128]); the single-rollout label itself mis-orders the top1\|top2 pair 39.7 % of the time (so any pairwise level is compressed toward 0.5) | ledger 2026-09-19 L19881, L19663 |
-| W12 | **Identifying the opponent's TEAM recovers most of the gap, on our closed pool.** Worlds drawn from the training-pool teams consistent with the observation (POOL), gated | MEASURED (Tier 1, R-RECOVER BELIEF-RECOVERABLE on this distribution) | r_POOL **0.80** [0.73, 0.87]: POOL IMP +0.063 vs oracle +0.076; the pool's per-species SETS alone (POOLSETS) recover −0.02: what pays is knowing WHICH TEAM, not the set priors. **At X26 225M (world sampler stage 1, registered): Δ over F +0.038 [+0.022, +0.055], r 0.72 [0.53, 0.92], on bots and own snapshots alike; its 4-turn leaf does not clear its own critic search (+0.016 [−0.001, +0.034]).** Not available on the ladder (an open population) | `design_hidden_info_binding.md` §16.8; `design_world_sampler.md` §6.2 |
+| W12 | **Identifying the opponent's TEAM recovers most of the gap, on our closed pool.** Worlds drawn from the training-pool teams consistent with the observation (POOL), gated | MEASURED (Tier 1, R-RECOVER BELIEF-RECOVERABLE on this distribution) | r_POOL **0.80** [0.73, 0.87]: POOL IMP +0.063 vs oracle +0.076; the pool's per-species SETS alone (POOLSETS) recover −0.02: what pays is knowing WHICH TEAM, not the set priors. **At X26 225M (world sampler stage 1, registered): Δ over F +0.038 [+0.022, +0.055], r 0.72 [0.53, 0.92], on bots and own snapshots alike (a SELF-REFEREE read; on bots, E1-0's real-bot referee gives −0.006 [−0.034, +0.019] vs +0.027, UNDECIDED); its 4-turn leaf does not clear its own critic search (+0.016 [−0.001, +0.034]).** Not available on the ladder (an open population) | `design_hidden_info_binding.md` §16.8; `design_world_sampler.md` §6.2 |
 
 ---
 
@@ -703,7 +719,10 @@ a proportional sample), all legal actions, battle-clustered bootstrap (2,000 dra
 improvement against a GREEDY continuation (not Nash, not an adaptive opponent); **a per-decision improvement is not a per-game
 win rate** (never measured: S0b has no ledger entry); the raw IMP is lowered ~10–20 % when re-weighted to the natural outcome rate; the
 winner's-curse ORACLE upper bound is +0.152 / +0.132; off-distribution states for any other checkpoint; the 15M policies
-were not plateaued.
+were not plateaued. **The referee plays the searched network on BOTH sides** (the self-referee): every bot-stratum IMP here
+is a gain against our own continuation. `main.value_search.playout.referee` (2026-10-25) reproduces it exactly and takes
+`opp_bot` (default OFF) to play the opponent as the state's in-core scripted bot; the search's leaves (`LeafEngine`) take
+no bot. E1-0 (the status line) is the first read with it: UNDECIDED at 160 states, the gains shrinking against the bot.
 
 ### 6.3 The information-lever layer (`agents.info_levers`; `design_information_levers.md`)
 
@@ -798,3 +817,4 @@ feeds one shared trunk to both heads).
 | 2026-10-23 | **The HUMAN OPPONENT MODEL designed and pre-registered** (`design_x50_rung1b_human_opponent_model.md`, X50 rung 1b) | §7 Q15 (the open item "a behaviour-cloned opponent model" replaced by the design, its decisive read R-b2 and its bar) | quoting any HOM number before its registered read; reading R-b1 (held-out humans, completed rows) as the decisive read (only R-b2 runs on true rows); counting the bot stratum as a ladder read (bots switch on 6 % of labels; L3-H, the human-replay read, is unbuilt) | the design §8; R1's README; the off-pool README |
 | 2026-10-24 | **R-b2 READ: HOM-NONE** (`../research_state/measurements/x50_r1b_hom_2026-10-23/`, registered `42f1d9a7` §8.4; G-REPRO 320 / 320 bit-exact) | Status line (new, latest); §1 (the off-pool L3 bullet: the behaviour-cloned candidate is now tested); §7 Q15 | reading HOM-NONE as "humans' choices carry no evidence" (the bank's opponents are scripted bots: F-1b-3; L3-H is the ladder's read, unbuilt); reading R-b1's −0.58 nats as a search gain (a gate on completed rows); un-pausing search | the README §R-b2, `rb2_read.json` |
 | 2026-10-25 | **The next-step DESIGN written (DRAFT, `design_search_next.md`; no measurement)** | the pointer line under the banner; no row, verdict or number here changes | adding its derived bars (the bridge, the identification target) to §4 / §5 before E2 measures the bridge (they are UNVERIFIED derivations) | `design_search_next.md` §1.2, §1.6, §3 |
+| 2026-10-25 | **E1-0 READ: UNDECIDED** (`../research_state/measurements/search_e1_0_2026-10-26/`; registered before any bot playout; every VOID guard passed) | Status line (new, latest); §1 POOL bullet and W12 (labelled SELF-REFEREE, with the real-bot number beside); §6.2 (the referee's self-play and its new `opp_bot` option) | relabelling the bot-stratum IMPs as misread (no primary cell disagrees: UNDECIDED, so §9 of the registration says no relabel); reading the 23 disagreeing SECONDARY cells or G_F's D as a verdict (95 %, uncorrected over 108 cells); re-scoring the plateau step's rows (their registered read has not been made) | `search_e1_0_2026-10-26/README.md`, `result_e10.json`; `design_search_next.md` D-1, E1; its review F8 |
