@@ -463,8 +463,8 @@ re-score is a new registration (PROPOSAL below).
    registered). STILL-MOVING NOT DETECTED on the record is not evidence of convergence.
 5. **No row manifest existed before this read.** Untouched-ness rests on mtimes (none after `QUEUE_DONE`) and on the
    content checks above. The sha256 manifest now in `gigo_audit_mat_plateau.json` binds the rows from here on.
-6. **The L1 replication** registered in `search_ledger.md` ("replicate on the maturity battery's plateau bank when
-   its queue is done") is now unblocked and NOT done here: it is a separate registered read.
+6. **The L1 replication** registered in `search_ledger.md` was NOT done here; it was read separately 2026-10-25
+   (`../search_l1_plateau_2026-10-25/`): the PAYS-SCOPED cell REPLICATES (thin), all SELF-REFEREE, and sits on the 25M anchor.
 7. No hazard hit: CPU only (`CUDA_VISIBLE_DEVICES=""`, the agent cores, `nice -n 19`, `mem_cap` short lane), nothing
    written under `models/` or `data/` or into the archive's rows (only the two new score tables). The three
    checkouts (`head`, `pin_x26`, `driver_198fa91e`) are KEPT, for the deferred step 4 and any re-score.

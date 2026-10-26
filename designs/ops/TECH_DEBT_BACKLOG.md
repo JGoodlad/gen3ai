@@ -12,8 +12,8 @@ live in `designs/endstate/obs_enrichment_backlog.md` (observation facts) or `UND
 Ranked by value to the current goals, in this order: **the strongest baseline** (the X26 continuation, `rb_x26c_s2601`,
 380M to 480M at the production pin, runs per the orchestrator's ruling `eaeb14229`), then **beat Metamon**, then
 **measurement correctness**, then hygiene; effort and agent tier are the cheapest that fit the risk. **Search is PAUSED**
-(`designs/endstate/search_ledger.md`), so no search row is ranked; the open search reads (L3's familiarity counter-test,
-stage 1c's phase A, L1's replication) are tracked there. This is a value ranking for the orchestrator's pick; the
+(`designs/endstate/search_ledger.md`), so no search row is ranked; the open search reads (L3's familiarity counter-test, stage 1c's
+phase A and L1's replication are all READ) are tracked there. This is a value ranking for the orchestrator's pick; the
 burn-down rule below still orders a quota burn (tier, then size). Items 1-3 protect the live continuation (a FATAL canary,
 a poisoned GPU filler, a blind memory guard); 4 keeps measurements and
 training inputs honest; 5 is hygiene.

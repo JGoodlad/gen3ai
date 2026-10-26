@@ -28802,3 +28802,29 @@ draws. Every IMP is scored with the anchor playing both sides (SELF-REFEREE). Sc
 **Evidence:** `research_state/measurements/hidden_info_maturity_x26_2026-10-18/` (README §7, `result_mat_plateau.json`,
 `gigo_audit_mat_plateau.py` / `.json`, `identity_mat_plateau.json`). View: `endstate/search_ledger.md` status line,
 §1, §5.1, §7 Q4; `research_state/UNDERSTANDING.md` (the maturity paragraph).
+
+### 2026-10-25 · MEASUREMENT · **L1's registered replication on the maturity battery's plateau bank: the one PAYS-SCOPED cell (piKL at the 4-turn leaf) REPLICATES, thinly (+0.0097 [+0.0025, +0.0169], 98.33 % lower +0.0010), but it is the 25M anchor's (+0.0193; P\* +0.0001) and the leaf's own signal (the anchor adds +0.0025 [−0.0039, +0.0089]); ALL SELF-REFEREE**
+
+**Question.** L1 (pre-registered `d443c098`) found one clear cell, piKL at TRUNC-4-K8 on E2, and registered a replication on
+the plateau bank once its queue was done. Does the cell replicate with the Tier-1 parameter frozen?
+
+**Method.** The plateau bank (P\*'s own newest cycles; anchors 25M and P\*; the record's 719 common states, 1,438 rows,
+464 battles; 2,000 battle-clustered draws, seed 20261011). L1's rules at the values fitted on Tier 1 (`fit_l1.json`), not
+refitted; scoring only, no playout, 1 CPU-minute (`mem_cap.sh --max-s 600`, peak 1.0 GB). The registration left the cell,
+bar and statistic implicit, so they were written from L1 §4 and committed (`1f980728a`) before the read: the cell
+PIKL | TRUNC-4-K8, REPLICATES iff its 98.33 % lower bound > +0.0005. GIGO: ARGMAX IMP equals the plateau table's per-state
+F IMP at three scorers and the O row on all 1,438 rows (0 mismatches); table and common-ids sha256 equal the plateau
+read's. Every cell is a SELF-REFEREE read (E1-0, `015f00e2`).
+
+**Result.**
+- **REPLICATES (registered cell):** +0.0097 [95 %: +0.0025, +0.0169; 98.33 %: +0.0010, +0.0191]. The anchor's own part,
+  IMP(piKL) − IMP(ARGMAX), +0.0025 [−0.0039, +0.0089]; the plain argmax at that leaf +0.0072 [−0.0025, +0.0170]. As on E2, the
+  cell is the leaf's weak positive, not an anchor gain.
+- Gumbel's TRUNC-4-K8 cell is also clear (+0.0095, lower +0.0006); THRESH's is not (lower −0.0014); no rule is clear at both
+  primaries (LEAF-K8 ≤ +0.0056). Single-bank label PAYS-SCOPED; nothing adopted.
+- **Descriptive, post hoc:** the cell is +0.0193 [+0.0089, +0.0303] at the 25M anchor and **+0.0001 [−0.0097, +0.0101] at
+  P\***; snapshot stratum +0.0138, bot stratum +0.0056 [−0.0060, +0.0178] (not clear alone).
+
+**Evidence:** `research_state/measurements/search_l1_plateau_2026-10-25/` (`PREREGISTRATION.md`, `l1_plateau.py`,
+`result_l1_plateau.json`, README). View: `endstate/search_ledger.md` status line, §1, §7 Q13;
+`research_state/UNDERSTANDING.md` (the L1 paragraph).

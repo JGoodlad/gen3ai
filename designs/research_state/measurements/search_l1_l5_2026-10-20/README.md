@@ -51,8 +51,9 @@ Fitted on Tier 1 (the grid value maximising the pooled mean IMP), with Tier 1's 
 
 **VERDICT (PREREG §4.3): PAYS-SCOPED.** The one clear cell is PIKL|E2|TRUNC-4-K8 (+0.0123, lower bound +0.0010). No rule
 pays on both banks; the NULL bound fails (several upper bounds exceed +0.0045). The registered consequence of
-PAYS-SCOPED is a replication on the next bank (the maturity battery's plateau bank, when its queue is done), not a new
-default.
+PAYS-SCOPED is a replication on the next bank (the maturity battery's plateau bank), not a new default. **The
+replication was read 2026-10-25** (`../search_l1_plateau_2026-10-25/`): the cell REPLICATES (+0.0097, 98.33 % lower
++0.0010), SELF-REFEREE, on the 25M anchor only (P\* +0.0001), the anchor's own part +0.0025 [−0.0039, +0.0089].
 
 **What the verdict means (descriptive, post hoc).**
 - **The clear cell is the leaf, not the anchor.** Its gain over the plain argmax on the same states is +0.002
