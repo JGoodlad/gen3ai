@@ -1,0 +1,212 @@
+{
+ "pool": {
+  "pool_teams": 719,
+  "panels": [
+   "heldout72",
+   "heldout72_hpfix",
+   "forum72",
+   "p72"
+  ],
+  "near": 3,
+  "full": {
+   "teams_near_any": 27,
+   "share": 0.0376,
+   "game_with_a_near_side": 0.0737,
+   "per_panel": {
+    "heldout72": 0,
+    "heldout72_hpfix": 1,
+    "forum72": 26,
+    "p72": 0
+   }
+  },
+  "two_moves": {
+   "teams_near_any": 376,
+   "share": 0.5229,
+   "game_with_a_near_side": 0.7724,
+   "per_panel": {
+    "heldout72": 141,
+    "heldout72_hpfix": 187,
+    "forum72": 270,
+    "p72": 107
+   }
+  },
+  "one_move": {
+   "teams_near_any": 665,
+   "share": 0.9249,
+   "game_with_a_near_side": 0.9944,
+   "per_panel": {
+    "heldout72": 520,
+    "heldout72_hpfix": 565,
+    "forum72": 566,
+    "p72": 496
+   }
+  }
+ },
+ "rows": {
+  "rows": 81920,
+  "labelled": 75096,
+  "shards": [
+   0,
+   20,
+   40,
+   60,
+   80
+  ],
+  "consistent": {
+   "legal_mean": 7.349,
+   "consistent_mean": 5.695,
+   "consistent_equals_legal": 0.2552,
+   "size1_share": 0.0052,
+   "legal_moves": 3.538,
+   "consistent_moves": 2.425,
+   "pstar_mass_removed_from_moves": 0.144,
+   "pstar_mass_removed_from_switches": 0.0388,
+   "pstar_top1_outside_consistent": 0.168,
+   "pstar_prob_of_human_full": 0.3637,
+   "pstar_prob_of_human_restricted": 0.4498,
+   "sp_label_equals_human": 0.4509,
+   "switch_share": {
+    "human": 0.3143,
+    "sp_label": 0.3718,
+    "pstar_full_mass": 0.3405,
+    "pstar_restricted_mass": 0.3717
+   },
+   "uniform_nll": 1.9519,
+   "pstar_nll_of_human": 1.8695
+  },
+  "tail_by_decisions_to_last_kept_row": {
+   "quitter": {
+    "0-0": {
+     "n": 573,
+     "top1": 0.2199,
+     "nll": 2.0216
+    },
+    "1-1": {
+     "n": 652,
+     "top1": 0.2607,
+     "nll": 1.9979
+    },
+    "2-3": {
+     "n": 1326,
+     "top1": 0.3032,
+     "nll": 2.0201
+    },
+    "4-7": {
+     "n": 2759,
+     "top1": 0.3161,
+     "nll": 2.0842
+    },
+    "8-15": {
+     "n": 5049,
+     "top1": 0.3476,
+     "nll": 2.033
+    },
+    "16-1000000": {
+     "n": 8656,
+     "top1": 0.3521,
+     "nll": 1.9663
+    }
+   },
+   "forfeit_winner": {
+    "0-0": {
+     "n": 785,
+     "top1": 0.5707,
+     "nll": 1.2363
+    },
+    "1-1": {
+     "n": 769,
+     "top1": 0.5007,
+     "nll": 1.3572
+    },
+    "2-3": {
+     "n": 1497,
+     "top1": 0.4309,
+     "nll": 1.6122
+    },
+    "4-7": {
+     "n": 3006,
+     "top1": 0.3849,
+     "nll": 1.812
+    },
+    "8-15": {
+     "n": 5469,
+     "top1": 0.3867,
+     "nll": 1.8124
+    },
+    "16-1000000": {
+     "n": 9250,
+     "top1": 0.3638,
+     "nll": 1.9183
+    }
+   },
+   "ko_both_seats": {
+    "0-0": {
+     "n": 728,
+     "top1": 0.4643,
+     "nll": 1.1346
+    },
+    "1-1": {
+     "n": 712,
+     "top1": 0.4256,
+     "nll": 1.2175
+    },
+    "2-3": {
+     "n": 1539,
+     "top1": 0.3593,
+     "nll": 1.4149
+    },
+    "4-7": {
+     "n": 3571,
+     "top1": 0.3372,
+     "nll": 1.6041
+    },
+    "8-15": {
+     "n": 7540,
+     "top1": 0.3451,
+     "nll": 1.7858
+    },
+    "16-1000000": {
+     "n": 19947,
+     "top1": 0.3537,
+     "nll": 1.9699
+    }
+   }
+  },
+  "quitter_rows_within_8_of_last_kept_share": 0.0754,
+  "by_rating": {
+   "1300-1399": {
+    "share": 0.4922,
+    "pstar_nll_of_human": 1.8954
+   },
+   "1400-1499": {
+    "share": 0.3088,
+    "pstar_nll_of_human": 1.8614
+   },
+   "1500-1599": {
+    "share": 0.1369,
+    "pstar_nll_of_human": 1.8225
+   },
+   "1600-9999": {
+    "share": 0.0621,
+    "pstar_nll_of_human": 1.8078
+   }
+  }
+ },
+ "ss": {
+  "rows": 2100,
+  "uniform_nll": 1.856,
+  "switch_label_share": 0.2981,
+  "seat0": {
+   "n": 1059,
+   "pstar_entropy": 1.0083,
+   "pstar_nll_of_label": 1.032,
+   "top1_equals_label": 0.6081
+  },
+  "seat1": {
+   "n": 1041,
+   "pstar_entropy": 0.996,
+   "pstar_nll_of_label": 1.0121,
+   "top1_equals_label": 0.6013
+  }
+ }
+}
