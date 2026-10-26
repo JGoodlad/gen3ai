@@ -425,7 +425,7 @@ entries naming what they supersede) → **dispatch** the next probe or build to 
 **🚨 NEVER AN UNBOUNDED WAIT ON A SUB-AGENT (owner, 2026-10-07).** A completion notification can fail to arrive (a stall, a crash, a harness restart), and a session whose only wake source is that notification can hang forever. Every session that dispatches agents keeps a bounded wake source armed for as long as any agent it dispatched is live:
 - **The orchestrator and any other main session:** the `idle-keepalive` plugin (user-scope, `~/.claude/local-plugins/idle-keepalive`, installed 2026-10-19; it replaced the `:07 / :37` health-check cron) IS the bounded wake: after 55 min with no activity it wakes the session with a role-aware health prompt, and goes dormant only after the session answers exactly "ok" (nothing live). A main session arms no timer of its own; it never answers "ok" while an agent it dispatched is live. The Training session keeps its own 55-min cron while a run is live, with the plugin as a backstop.
 - **A sub-agent:** the plugin does not wake sub-agents. A sub-agent waiting on a job or on its own sub-agents keeps ONE bounded watcher. It prefers one on the job itself (below), which wakes it only when the job ends or at 55 min; otherwise `timeout 3300 sleep 3300`. On a wake it makes ONE cheap status read (its worktree's `git log -1` / `git status | wc -l`, or its artifact) and re-arms. **Every turn a sub-agent ends notifies its caller** (2026-10-20: agents that ran overlapping monitors or short polls woke the orchestrator about once a minute with "Waiting."), so it ends a turn only with a result, a blocker or a watcher wake. It never runs two watchers, and lets the last one lapse once its work has reported. This is written into all six agent definitions (`~/.claude/agents/*.md`, 2026-10-07; the no-chatter rule 2026-10-20).
-- **Waiting on a specific job:** `timeout 3300 bash -c "while kill -0 <PID>; do sleep 30; done"`, never a self-matching `pgrep -f`.
+- **Waiting on a specific job:** `timeout 3300 bash -c "while [ -d /proc/<PID> ]; do sleep 30; done"`, never a self-matching `pgrep -f`, and never `kill -0` (inside a sandboxed agent shell it can read a live PID as dead: the D3 look-1 reader, 2026-10-26).
 - **Why 3300 s:** it is under the 1 h prompt-cache TTL, so a timer wake costs one cheap cached turn instead of a full context re-pay.
 
 **The rule behind all of it: the stream-idle timeout must be comfortably LESS than the stall
@@ -489,7 +489,7 @@ a session's wall clock more than the compute did.
 
 - **Never wait on a `pgrep` pattern that appears in the waiter's own argv.** `until ! pgrep -f
   "pytest src/"` matches the shell running that very loop and can never exit — hit three times in one
-  session, once needing a `pkill` that matched itself too. Wait on a **PID** (`until ! kill -0 <pid>`)
+  session, once needing a `pkill` that matched itself too. Wait on a **PID** (`until [ ! -d /proc/<pid> ]`)
   or on **file content**. 🚨 Inside a `Monitor` this trap fails SILENTLY: a drain watcher gated on
   `pgrep -f "chrome-linux64/chrome --headless" | wc -l` counted itself, so the all-clear was
   unreachable and the monitor ran forever emitting progress lines — indistinguishable from "not done
@@ -526,7 +526,7 @@ hourly LLM check caught them. Three layers now stand, cheapest first:
 
 1. **Prevention — the self-match hook** (`~/.claude/hooks/self_match_guard.py`, user-level
    PreToolUse on Bash): refuses `pgrep -f` / `pgrep --full` with an unbracketed pattern, any
-   `pkill -f`, and an unbracketed `ps … | grep` inside a `while`/`until`. Allowed: `while kill -0
+   `pkill -f`, and an unbracketed `ps … | grep` inside a `while`/`until`. Allowed: `while [ -d /proc/<pid> ]`, `while kill -0
    <pid>`, `[x]`-bracketed patterns. Escape hatch: a `# self-match-ok` comment saying why. Since 2026-10-20 it also refuses any SIGNAL SENT TO PIDs FOUND BY A NAME MATCH (`pkill`, `killall`, `kill $(pgrep …)`, `pgrep … | xargs kill`, a captured PID list killed later; `pgrep -P <pid>`, explicit PIDs and `kill -- -<pgid>` stay allowed; tests: `~/.claude/hooks/self_match_guard_test.py`). The GPU
    half of the class is fixed in code: every lock taker goes through `utils.gpu_lock` /
    `scripts/ops/gpu_lock.sh`, which is re-entrant for children and raises `GpuLockSelfDeadlock`
@@ -553,7 +553,7 @@ hourly LLM check caught them. Three layers now stand, cheapest first:
    `idle_waiter_watchdog.py --status`, never paged. A detector only — it never kills. A flagged line is a prompt for step 2 of the hourly check below, not a verdict.
 3. **The hourly agent health check at :07** — a cron whose prompt asks every live dispatched agent
    (SendMessage) for four points: **(1) PIDs** — every background process or waiter it owns, with
-   elapsed time and command; **(2) waiter safety** — each waiter uses `kill -0 <pid>` or a
+   elapsed time and command; **(2) waiter safety** — each waiter uses `[ -d /proc/<pid> ]` or a
    `[x]`-bracketed pattern and cannot match its own argv; kill (by explicit PID) any that is idle-
    looping on a finished target; **(3) progress** — the log advanced since the last check, and
    idle CPU means a deadlock, so `py-spy dump` it; **(4) a one-line status + revised ETA**.
