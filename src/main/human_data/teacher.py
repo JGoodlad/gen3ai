@@ -277,6 +277,22 @@ def selfplay(pstar: Path, like: Path, out: Path, threads: int = THREADS, n_envs:
             print(f"[teacher] selfplay part {i}: {r['rows']} rows in {r['seconds']} s", flush=True)
     if any(not (pdir / f"part_{i:02d}.json").exists() for i in range(parts)):
         return {"done": False}
+    # VALIDATION TOP-UP: the human rowset's account split can hold more than 2 % of its rows (hr_spec_v1.r1: 2.36 %),
+    # while a game split gives ≈ 2 %; extra parts (seeds [seed, i >= parts, ·]) are played until the validation rows
+    # suffice. Their TRAIN rows come after every regular part's, so the train shards fill from the regular parts first.
+    def _val_rows(i: int) -> int:
+        bk = np.load(pdir / f"part_{i:02d}.npz")["bkey"]
+        return int(sum(RS.is_val_key(b) for b in bk))
+
+    n_parts = parts
+    have_val = sum(_val_rows(i) for i in range(parts))
+    while have_val < want_val:
+        if not (pdir / f"part_{n_parts:02d}.json").exists():
+            need = int(np.ceil((want_val - have_val) * 50 * 1.5))
+            r = play_part(pstar, need, pdir / f"part_{n_parts:02d}.npz", seed, n_parts, threads, n_envs)
+            print(f"[teacher] selfplay validation top-up part {n_parts}: {r['rows']} rows", flush=True)
+        have_val += _val_rows(n_parts)
+        n_parts += 1
     sizes = [int(s["rows"]) for s in like_man["train_shards"]] if max_rows is None else \
         [min(RS.SHARD, want_train - i) for i in range(0, want_train, RS.SHARD)]
     # STREAMED: one part in memory at a time plus the carry (the rows of 1.3M decisions do not fit at once)
@@ -286,7 +302,7 @@ def selfplay(pstar: Path, like: Path, out: Path, threads: int = THREADS, n_envs:
     val: List[Dict[str, np.ndarray]] = []
     n_val = 0
     recs = []
-    for i in range(parts):
+    for i in range(n_parts):
         rec = json.loads((pdir / f"part_{i:02d}.json").read_text())
         if sha256_file(pdir / f"part_{i:02d}.npz") != rec["sha256"]:
             raise RS.RowsetError(f"self-play part {i}: sha256 differs from its record")
