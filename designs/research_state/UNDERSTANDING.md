@@ -812,6 +812,13 @@ Kakuna ckpt 34, greedy:
   memorisation channel stays open.
 [ledger 2026-10-21 · *X51 PLATEAU vs KAKUNA*]
 
+**Metamon's strongest deployed agent, the `PastaMittens` ensemble, is not detectably stronger than Kakuna for us
+(2026-10-26, `measurements/metamon_strongest_2026-10-25/`):** [MEASURED · registered · n = 400 per panel, every game a
+twin of X51's] PastaMittens routes over Kakuna ckpts 28, 34 and 30 plus Alakazam. P\* scores **0.484 [0.456, 0.512]** against it on the
+unfamiliar panels and **0.550 [0.501, 0.598]** on home72. Against Kakuna it scored 0.487 and 0.598.
+**Δ-U −0.25 pp [−4.23, +3.73], NOT DETECTED** (home72 −4.75 pp [−11.5, +2.1], n.d.). So Kakuna ckpt 34 stays goal
+(b)'s opponent, at a quarter of the ensemble's CPU cost. [ledger 2026-10-26 · *P\* vs PastaMittens*]
+
 **…and practising a team for 5M does not detectably fix piloting it, nor transfer (2026-10-23, X52,
 `measurements/x52_practice_ceiling_2026-10-22/read/`):** [MEASURED · UNDECIDED by its registered rule · 4,200 games,
 two seeds, reverse cells (we pilot a half, Kakuna pilots home72), production pin `f4b25238`] P\* + 5M with our side

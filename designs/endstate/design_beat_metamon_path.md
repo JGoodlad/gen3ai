@@ -138,8 +138,9 @@ measured on a Kakuna cell (**UNVERIFIED**). The registration of the goal read (X
      strongest in OUR regime.
   2. **The ensemble.** Metamon's strongest deployed agent is a TEST-TIME ENSEMBLE: `KakunaEnsemble` / the
      `PastaMittens` router (Kakuna ckpts 28 / 30 / 34 + Alakazam ckpt 8). It was "the first Metamon agent to reach #1 on the
-     Showdown leaderboard" (format not stated). `main.anchors` cannot play it. The goal names Kakuna, and this doc
-     keeps that. Beating the ensemble is a separate, later bar, costed in §5.
+     Showdown leaderboard" (format not stated). **Read 2026-10-26: it is NOT detectably stronger than Kakuna for us**
+     (P\* scores 0.484 against it on U and 0.487 against Kakuna; Δ-U −0.25 pp [−4.23, +3.73]; §6.7). The goal keeps
+     Kakuna ckpt 34.
 
 ---
 
@@ -502,9 +503,11 @@ with the interval named in the registration.
 
 - **Every X35 FINAL reports U against Kakuna** (`kakuna plan --teamsets unfamiliar`, ≈ 3.5 lane-h per arm, CPU). Each
   breaker then says what it does to goal (b), as a descriptor; no rule reads it.
-- **Beating the ensemble.** `PastaMittens` is a later bar. It needs a build (two downloads, an agent entry, a
-  router regime instrument) and costs ≈ 4× Kakuna per decision on CPU (a 5-member cost proxy, 0.23–0.28 s median);
-  the read is preregistered in [`metamon_strongest_2026-10-25/PREREG.md`](../research_state/measurements/metamon_strongest_2026-10-25/PREREG.md).
+- **The ensemble, READ (2026-10-26).** `main.anchors` plays `metamon:PastaMittens` (`d32ffcee4`), verifying each router call as
+  deterministic, at ≈ 4× Kakuna's CPU per decision. P\* vs it, as registered: **U 0.484 [0.456, 0.512]** (n.d.),
+  **home72 0.550 [0.501, 0.598]** (BETTER); against Kakuna's X51 twins **Δ-U −0.25 pp [−4.23, +3.73]** and Δ-home
+  −4.75 pp [−11.5, +2.1], both NOT DETECTED. Kakuna stays the goal's opponent. The ensemble is not a separate bar
+  until a read separates it from Kakuna ([`metamon_strongest_2026-10-25/`](../research_state/measurements/metamon_strongest_2026-10-25/)).
 
 ### 6.8 The cost of the direct path
 
@@ -541,7 +544,8 @@ with the interval named in the registration.
 1. **The goal's opponent is under-specified.**
    - Every read used Kakuna ckpt 34 (the default).
    - Metamon's ensemble presets rate ckpt 28 higher (GXE 0.78 vs 0.75, numbers the code itself calls incorrect).
-   - Metamon's strongest DEPLOYED agent is an ensemble that `main.anchors` cannot play.
+   - Metamon's strongest DEPLOYED agent is an ensemble (`PastaMittens`); read 2026-10-26, not detectably stronger
+     than Kakuna (Δ-U −0.25 pp [−4.23, +3.73]).
    - **X51's pair cell (2026-10-21): ckpt 28 vs ckpt 34 reads 0.515 [0.466, 0.564] from ckpt 28's side, NOT
      DETECTED.** §6.1's switch rule does not fire and ckpt 34 stays the opponent; the cell does not exclude a ±6 pp
      difference. The ensemble is a later bar (§6.7).
@@ -610,6 +614,7 @@ with the interval named in the registration.
 | 2026-10-26 | **X61's toy design NOT-READY (review `aed145fd`) ⇒ X61P / N1-P BUILT and REGISTERED** (training-lever builder, orchestrator brief; CPU only) | the review's recommended design: kit arm `n1p` = C0's argv + `--team-mix n1_proc_v1@ALL:0.5 --team-mix-sides both`, s3501–s3503 (+ s3504–s3505 on CONTINUE), 20M from P\*, against the shared C0; its own pin `5f8f6cfa` = `f4b25238` + the corpus's three files and its `CORPORA` line only (tag `x61p-n1p-pin-5f8f6cfa`), WITHOUT the 10-26 GIGO fixes (C0 ran without them); the primary Δ_F on F alone at 1,200 games per arm per seed by D1's rule (`d1` gains per-arm panels and a reported group); H / P72 / home72 / U / Δ_H − Δ_F reported (B1); GO ⇒ X53-N1; NULL ⇒ only "N1 at the plateau"; the M4 hazard named; `main.reads` specs; checkargs exit 0 and a dry-run FORK refused only on CUDA visibility | the toy design as registered (B1, B2, M1); the toy Option T now (the from-step-0 screen stays available by a new registration); D3's whole corpus subtree in the pin (more than the brief's "corpus files only"); the GIGO fixes in the pin (a second lever against C0); importing D1's banked P rows (no regime id) | `x61p_n1_production_2026-10-26/PREREG.md`; `x61_n1_breadth_2026-10-25/REVIEW.md` |
 | 2026-10-26 | **Goal (b)'s panels checked for Kakuna familiarity** (measurement-validity worker; CPU, no games; survey F3) | the panels STAND: H, F and P72 at equal weight, with "unfamiliar" meaning unseen by OUR training and Kakuna's exposure reported, not required to be zero. The read found that Kakuna's exposure to an H team is at most its one source replay (≲ 2 trajectories; hl's window UNVERIFIED). H's ladder near-copy rate (4.2 % at ≥ 4) matches a random hl team's, and F's is 14 %. home72 is the most Kakuna-familiar panel: 8 exact `competitive` copies. Dropping H gives P\* 0.481 [0.447, 0.516], lower. X51, X26c and D1 look 2 are unchanged on every subset. U − H is reported beside U from now on; X54 is asked for two descriptive forum216b secondaries (without its 9 hl-≥ 4 teams; the 86 teams posted in 2026) | dropping H from (b) (no evidence of familiarity; it lowers the score and costs a third of the n); downloading Metamon's Kakuna-era team sets now (no go; listed as the open question's cost) | `goal_b_panel_validity_2026-10-26/` |
 | 2026-10-26 | **D3 LOOK 1 READ: CONTINUE** (readout worker; CPU, 1,260 D3 Kakuna games + 140 guard re-plays + 10,500 in-house pairs; `main.reads` spec, D1's rule verbatim) | H +1.27 pp [−2.63, +5.16] (D3 0.491, LB 0.464; seeds +2.4 / −2.9 / +4.3), without H +0.48 [−4.29, +5.24]; P −0.24 [−1.10, +0.62] NON-INFERIOR; guards not read; C0's banked rows reused after the determinism guard re-played 7 / 7 units game for game; goal (b) not met by D3; look 2 licensed; §0 item 4 and §6.4 quote it | reading +1.27 as a set-generalisation gain (LB < 0); re-playing C0 (the guard passed; +1,260 Kakuna games + 10,500 pairs); calling the look a NULL (UB +5.2 > +3) | `x41_d3_setmut_2026-10-25/read/`; `x35_breakers_stage_2026-10-17/reads/d3_look1.json` |
+| 2026-10-26 | **PastaMittens (Metamon's ensemble) READ: NOT DETECTED vs Kakuna** (anchor worker, the owner's ask "Metamon's largest or most powerful gen3ou model"; CPU, 1,600 games, preregistered `62bb07c00`) | P\* scores U 0.484 [0.456, 0.512] and home72 0.550 [0.501, 0.598] against it; Δ-U −0.25 pp [−4.23, +3.73] and Δ-home −4.75 pp [−11.5, +2.1] against X51's Kakuna twins; Kakuna ckpt 34 stays the goal's opponent (4× cheaper); §2 item 2, §6.7 and §8 FINDING 1 quote it | switching the goal to the ensemble (no separation from Kakuna); the largest model `SyntheticRLV2` (200.9M, rank 7 on upstream's gen3 board) | `metamon_strongest_2026-10-25/` |
 | 2026-10-20 | Expected pp per lever | quoted from measured effects where they exist (X37b's 100M → 280M transfer; L1's search null; FACE_c), GUESS elsewhere, with the arithmetic that (b) needs +6–8 pp | single-number promises | §1, §5 |
 | 2026-10-25 | Status line made true (docs-health pass) | the status still said D3 / X53's trigger "is the orchestrator's call"; it now carries the 2026-10-24 ruling (neither now) and the X26c FLAT read (rows above) | the old line | this Decision record 2026-10-24, 2026-10-25 rows |
 | 2026-10-25 | **The human-replay lever row re-stated after REVIEW D** (design worker) | the first reads (FR-1 / FR-3 playing; X59-S built and registered: three matched student arms × 5 seeds, Δ_data = S-H − S-S answers the owner); H-TEAMS then H-BC; H-INIT dropped; X60 NOT-READY | X59 as the first read (withdrawn: its rule rewarded forgetting); H-BC called "the only gradient on unfamiliar states" (struck) | `human_replay_quality_2026-10-25/RESPONSE.md` §D; `x59s_matched_students_2026-10-25/PREREG.md` |

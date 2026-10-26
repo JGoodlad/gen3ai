@@ -29057,3 +29057,33 @@ P3 row, closed). Golden 552 rows / 68 boards (gen3ou rows included), 14 pins, al
 **Pre-existing, found by the B5 agent and owned by the fix batch (BF):** Uproar's wake order; an Insomnia / Vital
 Spirit Rest drawing the gen3ou clause shuffle (by reading, unverified); a Pursuit interrupt's `last_move` flag; Rage's
 removal timing. Merged-tree gates and fuzz results are in the commit body.
+
+### 2026-10-26 · EXTERNAL ANCHOR · P\* vs PastaMittens, Metamon's strongest deployed gen3ou agent: NOT detectably stronger than Kakuna (Δ-U −0.25 pp [−4.23, +3.73])
+
+**Ask** (owner, 2026-10-25): "try and run against Metamon's largest or most powerful model for Gen 3 OU". **Pick**
+(feasibility, `62bb07c00`): the largest model, `SyntheticRLV2` (200.9M), ranks 7th on upstream's own gen3 board. The
+strongest single policy, Kakuna ckpt 34, is already the goal's opponent. The most powerful deployed agent is
+`PastaMittens`, the Kakuna router over ckpts 28 / 34 / 30 + Alakazam ckpt 8, with no gen3 number upstream. Two
+weights were downloaded with the owner's OK (sha256 in the README). `main.anchors` gained a router regime instrument
+(`d32ffcee4`): it checks per call that no RNG moved, Python's `random` per thread.
+
+**Registered** (`62bb07c00`, before any game): P\* (`rb_x26_s2601` @280,000,170) vs `metamon:PastaMittens`, greedy vs
+the deterministic router; home72 + H / F / P72 at 400 games each, seeds 0–19, every game a twin of X51's P\* vs
+Kakuna game. The identity unit first (it replayed X51 20 / 20). Primary Δ-U (stratified Newcombe), regime id
+`5c1ea828e951126b`. Predictions: E-home 0.56, E-U 0.46, Δ-U −2.5 pp (n.d. most likely).
+
+**Read** (1,600 games, all 80 units counted, 80,893 router calls all RNG-clean):
+
+| | home72 | H | F | P72 | U |
+|---|---|---|---|---|---|
+| P\* vs PastaMittens | **0.550 [0.501, 0.598]** BETTER | 0.488 | 0.520 | 0.445 WORSE | **0.484 [0.456, 0.512]** n.d. |
+| P\* vs Kakuna (X51) | 0.598 | 0.497 | 0.530 | 0.433 | 0.487 |
+| Δ (Newcombe) | −4.75 pp [−11.5, +2.1] n.d. | −1.0 n.d. | −1.0 n.d. | +1.25 n.d. | **−0.25 [−4.23, +3.73] n.d.** |
+
+**Verdict:** NOT DETECTED. Kakuna ckpt 34 stays goal (b)'s opponent, at about a quarter of the ensemble's CPU. Against
+the guess: the ensemble sits closer to Kakuna than predicted (Δ-U −0.25 against −2.5 predicted). **What it cannot
+say:** a difference under ±4 pp on U, the ensemble on Metamon's own team set or Showdown pin, or any other preset.
+
+**Evidence:** `research_state/measurements/metamon_strongest_2026-10-25/` (PREREG, README, `cells.json`,
+`rows.jsonl`, scripts); state `/home/goodlad/dev/gen3ai-reads/mm_strongest_2026-10-25/`. View: `UNDERSTANDING.md`
+(after the X51 paragraph), `endstate/design_beat_metamon_path.md` §2, §6.7, §8, §9; SOP §4.

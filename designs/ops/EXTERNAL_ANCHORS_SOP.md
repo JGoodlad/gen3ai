@@ -779,6 +779,14 @@ unit counted on its first try. Full artifact: `designs/research_state/measuremen
 
 PROVISIONAL (one seed). The REVERSE cell (we pilot heldout72_hpfix, Kakuna pilots home72) was not read at P\*.
 
+### P\* vs `PastaMittens`, Metamon's ensemble (2026-10-26)
+
+1,600 games at `d32ffcee4`, every game a twin of X51's (the identity unit replayed X51 20 / 20), the router verified
+deterministic on all 80,893 calls. Full artifact: `designs/research_state/measurements/metamon_strongest_2026-10-25/`.
+P\* scores **home72 0.550 [0.501, 0.598]** (BETTER), H 0.488, F 0.520, P72 0.445 (WORSE), **U 0.484 [0.456, 0.512]**.
+Against Kakuna's cells that is **Δ-U −0.25 pp [−4.23, +3.73]** and Δ-home −4.75 pp [−11.5, +2.1], both NOT DETECTED:
+the ensemble is not detectably stronger than Kakuna, and Kakuna ckpt 34 stays the goal's opponent.
+
 ### 🚨 Numbers that must NOT be quoted without their regime
 
 `0.742` (vs `SmallRL`) and `0.583` (vs `SyntheticRLV2`) are **mixed-regime reads on home teams** —
