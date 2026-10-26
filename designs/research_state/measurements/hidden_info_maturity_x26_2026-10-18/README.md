@@ -8,11 +8,11 @@
 - **The queue** crawls detached (§3), launched 2026-10-18 04:45 PDT from `826bee89`. The read is `read_mat.py`, committed with the harness, before any output.
 - **Results:** READ 2026-10-19 (§5), after `QUEUE_DONE` (2026-10-19 04:30 PDT, nothing parked). GAP-SHRINKS NOT
   DETECTED, BELIEF-RISES NOT DETECTED, NOT CONVERGED, FRONTIER NOT READ (LEAN). PROVISIONAL: the interim bank.
-- **THE PLATEAU STEP** (§6): REGISTERED 2026-10-19 as amendment A1 (PREREGISTRATION §9), before any of its outputs.
-  - P\* = 280M is declared.
-  - The PLATEAU bank is drawn (`states_mat_x26_plateau.json`).
-  - P\* runs FULL + O−M / O−U on both banks, and 25M FULL on both.
-  - It is crawling in a detached queue (§6.3).
+- **THE PLATEAU STEP** (§6, amendment A1, PREREGISTRATION §9): `QUEUE_DONE` 2026-10-23 01:07 PDT, nothing parked.
+  **READ 2026-10-25 (§7), exactly as registered.** The record (the plateau bank, [25M, P\*], 719 states): GAP-SHRINKS
+  NOT DETECTED, BELIEF-RISES NOT DETECTED, FRONTIER-STATIC, STILL-MOVING NOT DETECTED, CONVERGED NOT READ. Its
+  replication (the interim FULL pair) reads GAP-SHRINKS. R3 at P\* is SHARED on both banks. Every IMP is a
+  SELF-REFEREE read (§7.5).
 
 **What it asks** (owner, 2026-10-17: "what does it take to enable search? Are we getting closer, not closer?"). It
 re-runs §12.13.7's stage and dose reads at X26's 25M, 100M, 175M and 225M checkpoints on ONE frozen bank, and reads the
@@ -53,6 +53,7 @@ scripts, the committed ids, the anchors' sha256 (`checkpoints_x26.json`) and, la
 | A1: the plateau bank | `trigger_mat.py traces --bank plateau --from …`, then `make_mat_bank.py --bank plateau` | `pin` | `plateau/bank/`, `plateau/census.npz`, `states_mat_x26_plateau.json` |
 | A1: every driver | `--bank interim\|plateau` (default interim); mode `full_hide` adds O−M / O−U | as above | `plateau/…` for the plateau bank |
 | A1: the read | `score_mat.py --bank <b> --tag plateau_step` (both banks), then `read_mat.py plateau` | pure | `<bank>/score/plateau_step.pkl`, `result_mat_plateau.json` |
+| A1: the GIGO audit (§9.7; written for the read, 2026-10-25) | `gigo_audit_mat_plateau.py` (both banks: coverage, provenance + driver / bank stamps, defects, CRN, the k = 6 identities, the flags, a row sha256 manifest; counts only) | pure | `gigo_audit_mat_plateau.json` |
 | A1: the tests | `read_mat_test.py` (7), `queue_mat_test.py` (5): planted, no archive | pure | — |
 
 **CPU (root rule 5b):**
@@ -274,7 +275,7 @@ at the series' pin `9c033489` (its sidecar `git_hash`; `pin_history` covers 0 �
   makes; its CLI copies only the interim cycles today): the plateau bank depends on them surviving the run's end and
   any retention pass.
 
-## 6. THE PLATEAU STEP (amendment A1, registered 2026-10-19; RUNNING)
+## 6. THE PLATEAU STEP (amendment A1, registered 2026-10-19; DONE 2026-10-23, READ §7)
 
 ### 6.1 What was decided and registered
 
@@ -320,7 +321,7 @@ $PY -I $F/read_mat.py plateau                       # -> result_mat_plateau.json
 ```
 
 
-### 6.3 The queue (LAUNCHED 2026-10-19 05:20 PDT; RUNNING)
+### 6.3 The queue (LAUNCHED 2026-10-19 05:20 PDT; DONE 2026-10-23 01:07 PDT, nothing parked)
 
 | | |
 |---|---|
@@ -342,3 +343,133 @@ $PY -I $F/read_mat.py plateau                       # -> result_mat_plateau.json
 - **The read** (once `QUEUE_DONE` exists): §6.2's last block. Before it, a GIGO audit for PREREGISTRATION §9.7 is
   written. It checks coverage per (bank, anchor, unit), provenance (`head`, `driver`, `bank`), defects and the CRN
   tooth, the identity at P\*, the k = 6 identities O−U ≡ O and F+U ≡ F, and the exclusion flags.
+
+## 7. RESULTS: THE PLATEAU STEP, READ 2026-10-25 (`result_mat_plateau.json`)
+
+**How it was read.** Exactly as registered (PREREGISTRATION §9.6 / §9.7; README §6.2's last block), after `QUEUE_DONE`
+(2026-10-23 01:07:08 PDT, `parked=[]`), in this order. No rule, threshold, arm, seed or state was changed; no row was
+re-run; no playout was added (scoring only, ≈ 3 CPU-min).
+1. `read_mat_test.py` 7 / 7 and `queue_mat_test.py` 5 / 5 (planted effects, no archive).
+2. `gigo_audit_mat_plateau.py` (§9.7's audit, written for this read before any verdict was looked at; counts,
+   provenance and file hashes only): **531 / 531 checks PASS** (`gigo_audit_mat_plateau.json`).
+3. `identity_mat.py` (`identity_mat_plateau.json`): PASS at all five anchors, P\* included (12 / 12 states each).
+4. `score_mat.py --bank interim|plateau --tag plateau_step` (tables `<archive>/score/plateau_step.pkl` sha256
+   `7d4513fa…7b0e25`, `<archive>/plateau/score/plateau_step.pkl` `cd443030…bd9f0e`; the LEAN read's `table.pkl` is
+   untouched), then `read_mat.py plateau`.
+
+### 7.1 The GIGO audit (first)
+
+| check | result |
+|---|---|
+| the banks | ids hashes = §6 (interim) and §9.2 (plateau); both content sha256 recomputed on load; 0 shared ids, 0 shared battles |
+| the anchors | every copy = `ckpts.json` = `checkpoints_x26.json` = the run's own file (read only), all five |
+| coverage | every (bank, anchor, unit) at its §9.3 mode, and every world arm: exactly one row per wanted id; 0 duplicates, 0 foreign, 0 missing, 0 torn |
+| provenance | every world row `head` 826bee89; every pin row 9c033489; `cp` / `step` / `arm` / `world_head` their own; every stamped row `driver` 198fa91e and `bank` its namespace; the only unstamped rows are the LEAN run's (before A1) |
+| defects | **0** in every world arm and playout; 0 "CRN broken" (the tooth reproduced F in every F+U, F+M, O−M, O−U and FN build) |
+| the k = 6 identities | F+U ≡ F at 25M and P\*, O−U ≡ O at P\*, on both banks: 0 outcome / trace / critic mismatches (interim 160 k = 6 states, 23 both-excluded; plateau 160, 31 both-excluded) |
+| the 10 % exclusion flag (§9.7) | **RAISED** on the plateau bank's F (10.1 %), F+U (10.1 %) and FN (10.4 % at both anchors), and on the interim LEAN F (33 / 320 = 10.3 %); every other arm ≤ 10 % (interim FULL F 9.6 %, O−M / O−U ≤ 0.6 %). All are `WorldError` (no honest draw fits), none a defect. FINDING 3 |
+| the 1 % defect flag | not raised anywhere |
+| non-finites, root ties | 0, 0 |
+| untouched since the queue | 70 row / world / root / belief files, none written after `QUEUE_DONE`; their sha256 manifest is in `gigo_audit_mat_plateau.json` (manifest sha256 `2960e0c9…`). No earlier row manifest existed, so this binds the read from now on (FINDING 5) |
+
+### 7.2 The registered reads (LEAF-K8; paired; 2,000 battle-clustered draws, seed 20261011)
+
+| anchor | read | n common | G_F | IMP_O | IMP_F | IMP_FN | TODAY |
+|---|---|---|---|---|---|---|---|
+| 25M | 1 (plateau bank) | 719 | +0.061 [+0.048, +0.073] | +0.066 | +0.005 | +0.006 | 0.001 [0, 0.029] |
+| P\* | 1 (plateau bank) | 719 | +0.058 [+0.046, +0.071] | +0.054 | −0.004 | +0.001 | 0.014 [0, 0.046] |
+| 25M | 2 (interim FULL) | 723 | +0.078 [+0.065, +0.092] | +0.071 | −0.007 | −0.003 | 0.012 [0, 0.047] |
+| P\* | 2 (interim FULL) | 723 | +0.048 [+0.037, +0.060] | +0.037 | −0.011 [−0.022, −0.001] | −0.008 | 0.014 [0, 0.163] |
+| P\* | 3 (interim LEAN, 5 anchors) | 287 | +0.050 [+0.031, +0.070] | +0.028 | −0.021 [−0.038, −0.006] | −0.013 | 0.033 [0, 0.221] |
+
+| # | read | GAP (all, PRIMARY) | BELIEF | FRONTIER | STILL-MOVING | standing |
+|---|---|---|---|---|---|---|
+| **1** | **plateau bank, [25M, P\*] FULL** | **NOT DETECTED: −0.0027 [−0.0196, +0.0152]** | **NOT DETECTED** +0.013 [−0.022, +0.042] | **FRONTIER-STATIC** (no bucket GATE-OPEN at either anchor; one GATE-WEAK at 25M, material 8–9) | NOT DETECTED (= the pair) | **THE VERDICT OF RECORD** |
+| 2 | interim bank, [25M, P\*] FULL | **GAP-SHRINKS: −0.0304 [−0.0471, −0.0120]** | NOT DETECTED +0.002 [−0.043, +0.157] | FRONTIER-STATIC (all 13 gates CLOSED at both) | STILL-SHRINKING (= the pair) | the replication |
+| 3 | interim LEAN, 25M → 100M → 175M → 225M → P\* (287 states) | NOT DETECTED: −0.025 [−0.052, +0.003] | NOT DETECTED +0.033 [−0.022, +0.219] | NOT READ (LEAN) | 225M → P\*: NOT DETECTED −0.003 [−0.026, +0.020] | the shape, quoted beside 1 |
+| 5 | BANK-DEPENDENT (record vs replication) | **not BANK-DEPENDENT** by the registered rule (NOT DETECTED vs SHRINKS is not opposite directions; FINDING 1) | no | no | — | only GAP turn 15–21 is BANK-DEPENDENT |
+| 6 | CONVERGED pooled (225M vs P\*) | NOT READ: the plateau bank holds no 225M (as registered) | | | | |
+
+**Stage buckets (13 per read).** Only a verdict that holds at the Bonferroni 99.6 % is a finding (§9.6).
+- Record: at 95 %, GAP-SHRINKS at turn 8–14 (−0.052 [−0.084, −0.020]) and material 10–11 (−0.034 [−0.067, −0.001]);
+  GAP-GROWS at turn 15–21 (+0.030 [+0.002, +0.059]). **At 99.6 % only turn 8–14 holds (−0.052 [−0.101, −0.004]):
+  the record's one bucket finding.**
+- Replication: at 95 %, GAP-SHRINKS at k 1–2, k 5, material 8–9, turn ≤ 7 and turn 15–21; at 99.6 % only k 1–2
+  (−0.061 [−0.118, −0.003]).
+- LEAN trajectory: at 95 %, k 1–2 and material 10–11 shrink; nothing at 99.6 %.
+- The two banks' bucket findings do not coincide (record turn 8–14, replication k 1–2). Turn 15–21 is
+  BANK-DEPENDENT (GROWS on the plateau bank, SHRINKS on the interim).
+
+**Per stratum (descriptive).** G_F at 25M / P\*, record: snapshot +0.056 / +0.067, bot +0.066 / +0.049. Replication:
+snapshot +0.080 / +0.055, bot +0.077 / +0.041.
+
+### 7.3 R3 at P\* (E2's rule; LEAF-K8; P\*'s own valid states, 800 per bank)
+
+| bank | stratum | Δs = F+U − F+M (reveal-only) | Δn = O−M − O−U (hide-only) | classes detected | verdict |
+|---|---|---|---|---|---|
+| **plateau (record)** | **all** | +0.0125 [+0.0003, +0.0250] (rule 8: a boundary, not clear) | +0.0084 [−0.0030, +0.0200] | M, U | **SHARED** |
+| plateau | snapshot | +0.005 [−0.012, +0.024] | +0.002 [−0.016, +0.019] | M, U | SHARED |
+| plateau | bot | **+0.020 [+0.003, +0.038] (U)** | +0.015 [−0.0005, +0.031] | M, U | SHARED |
+| interim (replication) | all | −0.004 [−0.016, +0.008] | +0.005 [−0.006, +0.015] | M, U | SHARED |
+| interim | snapshot | −0.015 [−0.032, +0.002] | −0.003 [−0.019, +0.012] | M, U | SHARED |
+| interim | bot | +0.007 [−0.009, +0.023] | +0.013 [−0.0003, +0.026] | M, U | SHARED |
+
+No qualifier is MATERIAL, CLOSE or SIDES-DISAGREE anywhere. R3 is not BANK-DEPENDENT (SHARED on both). E2's 15M
+read was U-FIRST on its competent-opponent bank; at the plateau both classes carry value and neither side names a
+first class.
+
+### 7.4 What it says ("are we getting closer?")
+
+- **Registered answer, on the record: NO DETECTABLE CHANGE.** Between 25M and the plateau, on 719 fresh plateau-drawn
+  states, the oracle − honest gap is +0.061 → +0.058 (−0.003 [−0.020, +0.015]). The network's belief does not rise
+  (TODAY 0.001 → 0.014, against p\* ≈ 0.2–0.3). No stage bucket opens a search gate at the plateau.
+- **The replication disagrees in kind but not in direction.** On the interim bank's 723 states the same pair reads
+  GAP-SHRINKS (−0.030). The registered BANK-DEPENDENT rule does not flag "NOT DETECTED vs SHRINKS", so the record
+  stands as written. Read together: the interim bank's 25M gap (+0.078) is larger than the plateau bank's (+0.061),
+  and the two banks' P\* gaps are close (+0.048 / +0.058). Descriptively, the shrink is seen on states drawn from 230M games,
+  not on states drawn from the plateau's own games.
+- **As on the LEAN read, what moves is the oracle, not honest search.** IMP_O falls on both banks (record +0.066 →
+  +0.054; replication +0.071 → +0.037), while honest one-ply search stays at or below the policy at every anchor
+  (IMP_F +0.005 / −0.004; −0.007 / −0.011).
+- **Every number above is a SELF-REFEREE read (§7.5).**
+- **What enables search is unchanged by maturity to the plateau:** a world sampler that puts ≈ 0.2–0.3 of weight on
+  the true world. Training the policy to 280M did not move the network's belief toward it.
+
+### 7.5 The referee: every cell is a SELF-REFEREE read
+
+The truth T (§3.2) is played to the end by the anchor's own greedy policy on BOTH sides, so every IMP, G_F, TODAY and
+R3 number here scores the opponent's replies as the searched network would make them, not as the actual opponent did.
+Half of each bank is bot-stratum (400 / 800 states). E1-0 (`../search_e1_0_2026-10-26/`, 015f00e2) re-scored the
+maturity interim LEAN bot-stratum picks at 225M with the state's own scripted bot as the referee. There G_F on bots
+fell +0.050 → +0.010 (descriptive, D −0.040 [−0.068, −0.015] at 95 %), and the primary cells read UNDECIDED. So the
+bot-stratum cells above (G_F on bots, R3's bot stratum) are labelled SELF-REFEREE. The snapshot stratum is closer to
+self-play, but its referee is still the anchor, not the snapshot that played. Not re-scored here: a bot-referee
+re-score is a new registration (PROPOSAL below).
+
+### 7.6 FINDINGS
+
+1. **The record and its replication disagree on the primary in kind** (NOT DETECTED vs GAP-SHRINKS). The registered
+   BANK-DEPENDENT rule covers only opposite directions, so the disagreement is not flagged and the record stands. The
+   registration does not say what a SHRINKS that fails to replicate means; the most literal reading, used here, is
+   that the verdict of record is NOT DETECTED and the interim pair's SHRINKS is a bank-specific replication result.
+2. **R3's record reveal-only side sits on rule 8's boundary** (Δs lower bound +0.0003 < +0.0005).
+   Had it cleared +0.0005, the record's reveal-only side would read U. The verdict SHARED holds either way, since
+   the hide-only side reads no direction.
+3. **The 10 % exclusion flag is raised** on the plateau bank's honest F / F+U / FN builds (10.1–10.4 %) and on the
+   interim LEAN F (10.3 %; README §5.1 reported the rate but not the flag). The common sets drop 81 (plateau) and 77
+   (interim) states for F exclusions. Exclusions are states where no honest draw fits what our side saw, so the read
+   covers the states honest worlds can represent.
+4. **CONVERGED stays unread** (pooled needs 225M on the plateau bank: §9.4's deferred step 4 plus 225M, as
+   registered). STILL-MOVING NOT DETECTED on the record is not evidence of convergence.
+5. **No row manifest existed before this read.** Untouched-ness rests on mtimes (none after `QUEUE_DONE`) and on the
+   content checks above. The sha256 manifest now in `gigo_audit_mat_plateau.json` binds the rows from here on.
+6. **The L1 replication** registered in `search_ledger.md` ("replicate on the maturity battery's plateau bank when
+   its queue is done") is now unblocked and NOT done here: it is a separate registered read.
+7. No hazard hit: CPU only (`CUDA_VISIBLE_DEVICES=""`, the agent cores, `nice -n 19`, `mem_cap` short lane), nothing
+   written under `models/` or `data/` or into the archive's rows (only the two new score tables). The three
+   checkouts (`head`, `pin_x26`, `driver_198fa91e`) are KEPT, for the deferred step 4 and any re-score.
+
+**PROPOSAL (not registered): the BOT-REFEREE re-score of the plateau step.** E1-0's instrument, `opp_bot` in-core,
+on both banks' FULL bot strata at 25M and P\* (≈ 800 bot states per anchor; E1-0 says ≈ 650–750 resolve ±0.015). It
+would read GAP and R3's bot stratum against the real bot. ≈ 7 CPU-h per anchor at E1-0's 1.37 CPU-h per 160 states.
+It needs its own PREREGISTRATION before any bot playout.

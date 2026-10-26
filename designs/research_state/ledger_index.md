@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-28,773-line file. **The ledger itself is append-only and is never edited by this**;
+28,805-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**944 headings · 889 dated · 2026-08-01 → 2026-10-26 · ledger 28,773 lines.**
+**945 headings · 890 dated · 2026-08-01 → 2026-10-26 · ledger 28,805 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -964,3 +964,4 @@ rename.
   - `L28688` · `2026-10-26` · FIX · **TRAINING-INPUT CHANGE: the obs / label GIGO audit — six confirmed defects fixed, none invalidating a past result; NO hidden-information leak. The α/β intent label had masked every opponent Explosion / Self-Destruct and 12-17 % of their attacks (all production since `0661bbec4`: a known bias in α's supervision, not a void); a knocked-off Choice Band read as held in the op (config v162); Destiny Bond / Endure / Mean Look volatiles never ended on the row (36 of 991 golden decisions); the packer played Frustration at base power 1 (13 mons)**
   - `L28712` · `2026-10-25` · MEASUREMENT · **E1-0: THE REAL BOT AS THE REFEREE on the banked bot-stratum picks reads UNDECIDED, no relabel; DESCRIPTIVELY the self-referee's gains shrink against the bot (oracle gap G_F +0.050 → +0.010) and the two referees rank actions about half as consistently as each ranks against itself**
   - `L28738` · `2026-10-26` · FIX · **TRAINING-INPUT CHANGE (the engine and the rollout rows): the GIGO audit's open items. The engine's lock-in and recharge counters now equal Showdown's, the stall-forfeit decision is no longer a training row, every categorical id is bounded by its table, the item / Hidden Power loss raises, the Species Clause is enforced. Baton Pass's `lockon` / `taunt` copies are unobservable.**
+  - `L28773` · `2026-10-25` · MEASUREMENT · **The maturity battery's PLATEAU STEP: on the plateau-drawn record, the oracle − honest gap does not move from 25M to P\* (GAP-SHRINKS NOT DETECTED), the belief does not rise, the frontier is static; the interim replication reads GAP-SHRINKS; R3 at P\* is SHARED on both banks (all SELF-REFEREE)**

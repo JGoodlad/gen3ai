@@ -28770,3 +28770,35 @@ five scripted fixtures. B-C2 by EXECUTING the `--debug` smoke at a 6-turn stall 
   the old recharge expiry; the lock-in defect never reached a training team. Live runs are pinned and unaffected.
 
 **Evidence:** `research_state/measurements/gigo_audit_obs_2026-10-26/` (README "Follow-up", `repros/followup/`).
+### 2026-10-25 · MEASUREMENT · **The maturity battery's PLATEAU STEP: on the plateau-drawn record, the oracle − honest gap does not move from 25M to P\* (GAP-SHRINKS NOT DETECTED), the belief does not rise, the frontier is static; the interim replication reads GAP-SHRINKS; R3 at P\* is SHARED on both banks (all SELF-REFEREE)**
+
+**Question.** Does X26's maturity to its declared plateau P\* (280M) bring honest one-ply search closer to the oracle,
+raise the network's belief toward the truth, or open a stage of the game to search? (Amendment A1 of the battery's
+PREREGISTRATION, §9, registered before any of its outputs; the registered read `read_mat.py plateau`.)
+
+**Method.** `QUEUE_DONE` 2026-10-23 01:07 PDT, nothing parked. Read exactly as registered: the planted tests (7 / 7,
+5 / 5); §9.7's GIGO audit, written for the read before any verdict (531 / 531 PASS: coverage, provenance, 0 defects,
+the CRN tooth, the k = 6 identities F+U ≡ F and O−U ≡ O, no file written after `QUEUE_DONE`, a sha256 manifest of
+70 row files); the per-anchor identity (PASS ×5); the two tables; the read. LEAF-K8, paired, 2,000 battle-clustered
+draws. Every IMP is scored with the anchor playing both sides (SELF-REFEREE). Scoring only, no playout added.
+
+**Result.**
+- **The record** (plateau bank, [25M, P\*], 719 common states, 464 battles): G_F +0.061 → +0.058, change −0.0027
+  [−0.0196, +0.0152], **GAP-SHRINKS NOT DETECTED**; BELIEF-RISES NOT DETECTED (TODAY 0.001 → 0.014); **FRONTIER-STATIC**;
+  STILL-MOVING NOT DETECTED; CONVERGED NOT READ (pooled needs 225M on the plateau bank). One bucket finding at the
+  Bonferroni 99.6 %: GAP-SHRINKS at turn 8–14 (−0.052 [−0.101, −0.004]).
+- **The replication** (interim bank FULL pair, 723 states): G_F +0.078 → +0.048, **GAP-SHRINKS** (−0.030 [−0.047,
+  −0.012]), STILL-SHRINKING; BELIEF NOT DETECTED; FRONTIER-STATIC; at 99.6 % only k 1–2 shrinks.
+- **BANK-DEPENDENT:** the primary is not (NOT DETECTED vs SHRINKS is not opposite directions under the registered
+  rule), so the record stands; only GAP turn 15–21 is (GROWS on the record, SHRINKS on the interim).
+- **The LEAN trajectory** (25M → 225M → P\*, 287 states): G_F +0.075 → +0.050, change −0.025 [−0.052, +0.003], NOT
+  DETECTED; 225M → P\* NOT DETECTED.
+- Honest search: IMP_F at P\* −0.004 (record) and −0.011 [−0.022, −0.001] (interim); the oracle's IMP falls on both.
+- **R3 at P\***: SHARED on both banks and every stratum (record Δs +0.0125 [+0.0003, +0.0250], a rule-8 boundary;
+  Δn +0.008 [−0.003, +0.020]); not BANK-DEPENDENT.
+- Flags: the 10 % exclusion flag is raised on the plateau bank's F / F+U / FN (10.1–10.4 %) and the interim LEAN F
+  (10.3 %); no defect anywhere.
+
+**Evidence:** `research_state/measurements/hidden_info_maturity_x26_2026-10-18/` (README §7, `result_mat_plateau.json`,
+`gigo_audit_mat_plateau.py` / `.json`, `identity_mat_plateau.json`). View: `endstate/search_ledger.md` status line,
+§1, §5.1, §7 Q4; `research_state/UNDERSTANDING.md` (the maturity paragraph).

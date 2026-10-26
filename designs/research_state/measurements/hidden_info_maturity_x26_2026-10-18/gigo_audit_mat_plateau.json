@@ -1,0 +1,6615 @@
+{
+ "banks": {
+  "interim": {
+   "flags": {
+    "[interim] worlds F": {
+     "defect_share": 0.0,
+     "exclusion_share": 0.09625,
+     "over_10pct": false,
+     "over_1pct": false
+    },
+    "[interim] worlds F+M": {
+     "defect_share": 0.0,
+     "exclusion_share": 0.085,
+     "over_10pct": false,
+     "over_1pct": false
+    },
+    "[interim] worlds F+U": {
+     "defect_share": 0.0,
+     "exclusion_share": 0.09,
+     "over_10pct": false,
+     "over_1pct": false
+    },
+    "[interim] worlds FN@x26_025M": {
+     "defect_share": 0.0,
+     "exclusion_share": 0.095,
+     "over_10pct": false,
+     "over_1pct": false
+    },
+    "[interim] worlds FN@x26_100M": {
+     "defect_share": 0.0,
+     "exclusion_share": 0.1,
+     "over_10pct": false,
+     "over_1pct": false
+    },
+    "[interim] worlds FN@x26_175M": {
+     "defect_share": 0.0,
+     "exclusion_share": 0.1,
+     "over_10pct": false,
+     "over_1pct": false
+    },
+    "[interim] worlds FN@x26_225M": {
+     "defect_share": 0.0,
+     "exclusion_share": 0.1,
+     "over_10pct": false,
+     "over_1pct": false
+    },
+    "[interim] worlds FN@x26_P280M": {
+     "defect_share": 0.0,
+     "exclusion_share": 0.0925,
+     "over_10pct": false,
+     "over_1pct": false
+    },
+    "[interim] worlds O-M": {
+     "defect_share": 0.0,
+     "exclusion_share": 0.00125,
+     "over_10pct": false,
+     "over_1pct": false
+    },
+    "[interim] worlds O-U": {
+     "defect_share": 0.0,
+     "exclusion_share": 0.00625,
+     "over_10pct": false,
+     "over_1pct": false
+    },
+    "[interim] worlds V:oracle": {
+     "defect_share": 0.0,
+     "exclusion_share": 0.0,
+     "over_10pct": false,
+     "over_1pct": false
+    },
+    "[interim] x26_025M F": {
+     "defect_share": 0.0,
+     "exclusion_share": 0.09625,
+     "over_10pct": false,
+     "over_1pct": false
+    },
+    "[interim] x26_025M F+M": {
+     "defect_share": 0.0,
+     "exclusion_share": 0.085,
+     "over_10pct": false,
+     "over_1pct": false
+    },
+    "[interim] x26_025M F+U": {
+     "defect_share": 0.0,
+     "exclusion_share": 0.09,
+     "over_10pct": false,
+     "over_1pct": false
+    },
+    "[interim] x26_025M FN": {
+     "defect_share": 0.0,
+     "exclusion_share": 0.095,
+     "over_10pct": false,
+     "over_1pct": false
+    },
+    "[interim] x26_025M O": {
+     "defect_share": 0.0,
+     "exclusion_share": 0.0,
+     "over_10pct": false,
+     "over_1pct": false
+    },
+    "[interim] x26_100M F": {
+     "defect_share": 0.0,
+     "exclusion_share": 0.103125,
+     "over_10pct": true,
+     "over_1pct": false
+    },
+    "[interim] x26_100M FN": {
+     "defect_share": 0.0,
+     "exclusion_share": 0.1,
+     "over_10pct": false,
+     "over_1pct": false
+    },
+    "[interim] x26_100M O": {
+     "defect_share": 0.0,
+     "exclusion_share": 0.0,
+     "over_10pct": false,
+     "over_1pct": false
+    },
+    "[interim] x26_175M F": {
+     "defect_share": 0.0,
+     "exclusion_share": 0.103125,
+     "over_10pct": true,
+     "over_1pct": false
+    },
+    "[interim] x26_175M FN": {
+     "defect_share": 0.0,
+     "exclusion_share": 0.1,
+     "over_10pct": false,
+     "over_1pct": false
+    },
+    "[interim] x26_175M O": {
+     "defect_share": 0.0,
+     "exclusion_share": 0.0,
+     "over_10pct": false,
+     "over_1pct": false
+    },
+    "[interim] x26_225M F": {
+     "defect_share": 0.0,
+     "exclusion_share": 0.103125,
+     "over_10pct": true,
+     "over_1pct": false
+    },
+    "[interim] x26_225M FN": {
+     "defect_share": 0.0,
+     "exclusion_share": 0.1,
+     "over_10pct": false,
+     "over_1pct": false
+    },
+    "[interim] x26_225M O": {
+     "defect_share": 0.0,
+     "exclusion_share": 0.0,
+     "over_10pct": false,
+     "over_1pct": false
+    },
+    "[interim] x26_P280M F": {
+     "defect_share": 0.0,
+     "exclusion_share": 0.09625,
+     "over_10pct": false,
+     "over_1pct": false
+    },
+    "[interim] x26_P280M F+M": {
+     "defect_share": 0.0,
+     "exclusion_share": 0.085,
+     "over_10pct": false,
+     "over_1pct": false
+    },
+    "[interim] x26_P280M F+U": {
+     "defect_share": 0.0,
+     "exclusion_share": 0.09,
+     "over_10pct": false,
+     "over_1pct": false
+    },
+    "[interim] x26_P280M FN": {
+     "defect_share": 0.0,
+     "exclusion_share": 0.0925,
+     "over_10pct": false,
+     "over_1pct": false
+    },
+    "[interim] x26_P280M O": {
+     "defect_share": 0.0,
+     "exclusion_share": 0.0,
+     "over_10pct": false,
+     "over_1pct": false
+    },
+    "[interim] x26_P280M O-M": {
+     "defect_share": 0.0,
+     "exclusion_share": 0.00125,
+     "over_10pct": false,
+     "over_1pct": false
+    },
+    "[interim] x26_P280M O-U": {
+     "defect_share": 0.0,
+     "exclusion_share": 0.00625,
+     "over_10pct": false,
+     "over_1pct": false
+    }
+   },
+   "k6": {
+    "F+U = F at k = 6 @x26_025M": {
+     "actions": 905,
+     "both_not_ok": 23,
+     "crit_mismatch": 0,
+     "examples": [],
+     "max_dq": 0.0,
+     "max_dv": 0.0,
+     "out_mismatch": 0,
+     "refused": 0,
+     "states": 160,
+     "trace_mismatch": 0,
+     "verdict": "PASS"
+    },
+    "F+U = F at k = 6 @x26_P280M": {
+     "actions": 905,
+     "both_not_ok": 23,
+     "crit_mismatch": 0,
+     "examples": [],
+     "max_dq": 0.0,
+     "max_dv": 0.0,
+     "out_mismatch": 0,
+     "refused": 0,
+     "states": 160,
+     "trace_mismatch": 0,
+     "verdict": "PASS"
+    },
+    "O-U = O at k = 6 @x26_P280M": {
+     "actions": 1048,
+     "both_not_ok": 0,
+     "crit_mismatch": 0,
+     "examples": [],
+     "max_dq": 2.000000000002e-06,
+     "max_dv": 1.0000000000065512e-05,
+     "out_mismatch": 0,
+     "refused": 0,
+     "states": 160,
+     "trace_mismatch": 0,
+     "verdict": "PASS"
+    }
+   },
+   "k6_states_in_bank": 160,
+   "modes": {
+    "x26_025M": "full",
+    "x26_100M": "lean",
+    "x26_175M": "lean",
+    "x26_225M": "lean",
+    "x26_P280M": "full_hide"
+   },
+   "per_anchor": {
+    "x26_025M": {
+     "F": {
+      "arms": [
+       "F"
+      ],
+      "bad_driver": 0,
+      "cps": [
+       "x26_025M"
+      ],
+      "defect": 0,
+      "duplicates": 0,
+      "excluded": 77,
+      "file_order_is_sorted": false,
+      "files": [
+       "rows_0_of_1.jsonl"
+      ],
+      "foreign": [],
+      "legacy_unstamped": 320,
+      "lines": 800,
+      "missing": 0,
+      "n_foreign": 0,
+      "nonfinite": 0,
+      "not_ok": 77,
+      "pins": [
+       "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+      ],
+      "stamped": 480,
+      "steps": [
+       25000027
+      ],
+      "torn": 0,
+      "unique": 800,
+      "unstamped_new": 0,
+      "world_heads": [
+       "826bee8919c0986fd3733d3d06f03803822a929a"
+      ]
+     },
+     "F+M": {
+      "arms": [
+       "F+M"
+      ],
+      "bad_driver": 0,
+      "cps": [
+       "x26_025M"
+      ],
+      "defect": 0,
+      "duplicates": 0,
+      "excluded": 68,
+      "file_order_is_sorted": true,
+      "files": [
+       "rows_0_of_1.jsonl"
+      ],
+      "foreign": [],
+      "legacy_unstamped": 0,
+      "lines": 800,
+      "missing": 0,
+      "n_foreign": 0,
+      "nonfinite": 0,
+      "not_ok": 68,
+      "pins": [
+       "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+      ],
+      "stamped": 800,
+      "steps": [
+       25000027
+      ],
+      "torn": 0,
+      "unique": 800,
+      "unstamped_new": 0,
+      "world_heads": [
+       "826bee8919c0986fd3733d3d06f03803822a929a"
+      ]
+     },
+     "F+U": {
+      "arms": [
+       "F+U"
+      ],
+      "bad_driver": 0,
+      "cps": [
+       "x26_025M"
+      ],
+      "defect": 0,
+      "duplicates": 0,
+      "excluded": 72,
+      "file_order_is_sorted": true,
+      "files": [
+       "rows_0_of_1.jsonl"
+      ],
+      "foreign": [],
+      "legacy_unstamped": 0,
+      "lines": 800,
+      "missing": 0,
+      "n_foreign": 0,
+      "nonfinite": 0,
+      "not_ok": 72,
+      "pins": [
+       "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+      ],
+      "stamped": 800,
+      "steps": [
+       25000027
+      ],
+      "torn": 0,
+      "unique": 800,
+      "unstamped_new": 0,
+      "world_heads": [
+       "826bee8919c0986fd3733d3d06f03803822a929a"
+      ]
+     },
+     "FN": {
+      "arms": [
+       "FN"
+      ],
+      "bad_driver": 0,
+      "cps": [
+       "x26_025M"
+      ],
+      "defect": 0,
+      "duplicates": 0,
+      "excluded": 76,
+      "file_order_is_sorted": false,
+      "files": [
+       "rows_0_of_1.jsonl"
+      ],
+      "foreign": [],
+      "legacy_unstamped": 320,
+      "lines": 800,
+      "missing": 0,
+      "n_foreign": 0,
+      "nonfinite": 0,
+      "not_ok": 76,
+      "pins": [
+       "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+      ],
+      "stamped": 480,
+      "steps": [
+       25000027
+      ],
+      "torn": 0,
+      "unique": 800,
+      "unstamped_new": 0,
+      "world_heads": [
+       "826bee8919c0986fd3733d3d06f03803822a929a"
+      ]
+     },
+     "O": {
+      "bad_driver": 0,
+      "cps": [
+       "x26_025M"
+      ],
+      "defect": 0,
+      "duplicates": 0,
+      "excluded": 0,
+      "file_order_is_sorted": false,
+      "files": [
+       "shard_0_of_1.jsonl"
+      ],
+      "foreign": [],
+      "legacy_unstamped": 320,
+      "lines": 800,
+      "missing": 0,
+      "n_foreign": 0,
+      "nonfinite": 0,
+      "not_ok": 0,
+      "pins": [
+       "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+      ],
+      "stamped": 480,
+      "steps": [
+       25000027
+      ],
+      "torn": 0,
+      "unique": 800,
+      "unstamped_new": 0
+     },
+     "V:oracle": {
+      "arms": [
+       "V:oracle"
+      ],
+      "bad_driver": 0,
+      "cps": [
+       "x26_025M"
+      ],
+      "defect": 0,
+      "duplicates": 0,
+      "excluded": 0,
+      "file_order_is_sorted": true,
+      "files": [
+       "rows_0_of_1.jsonl"
+      ],
+      "foreign": [],
+      "legacy_unstamped": 12,
+      "lines": 12,
+      "missing": 0,
+      "n_foreign": 0,
+      "nonfinite": 0,
+      "not_ok": 0,
+      "pins": [
+       "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+      ],
+      "stamped": 0,
+      "steps": [
+       25000027
+      ],
+      "torn": 0,
+      "unique": 12,
+      "unstamped_new": 0,
+      "world_heads": [
+       "826bee8919c0986fd3733d3d06f03803822a929a"
+      ]
+     },
+     "belief": {
+      "bad_driver": 0,
+      "cps": [
+       "x26_025M"
+      ],
+      "defect": 0,
+      "duplicates": 0,
+      "excluded": 0,
+      "file_order_is_sorted": false,
+      "files": [
+       "x26_025M.jsonl"
+      ],
+      "foreign": [],
+      "legacy_unstamped": 320,
+      "lines": 800,
+      "missing": 0,
+      "n_foreign": 0,
+      "nonfinite": 0,
+      "not_ok": 0,
+      "pins": [
+       "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+      ],
+      "stamped": 480,
+      "torn": 0,
+      "unique": 800,
+      "unstamped_new": 0
+     },
+     "roots": {
+      "bad_driver": 0,
+      "cps": [
+       "x26_025M"
+      ],
+      "defect": 0,
+      "duplicates": 0,
+      "excluded": 0,
+      "file_order_is_sorted": true,
+      "files": [
+       "x26_025M.jsonl"
+      ],
+      "foreign": [],
+      "legacy_unstamped": 800,
+      "lines": 800,
+      "missing": 0,
+      "n_foreign": 0,
+      "nonfinite": 0,
+      "not_ok": 0,
+      "pins": [
+       "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+      ],
+      "stamped": 0,
+      "ties": 0,
+      "torn": 0,
+      "unique": 800,
+      "unstamped_new": 0
+     }
+    },
+    "x26_100M": {
+     "F": {
+      "arms": [
+       "F"
+      ],
+      "bad_driver": 0,
+      "cps": [
+       "x26_100M"
+      ],
+      "defect": 0,
+      "duplicates": 0,
+      "excluded": 33,
+      "file_order_is_sorted": true,
+      "files": [
+       "rows_0_of_1.jsonl"
+      ],
+      "foreign": [],
+      "legacy_unstamped": 320,
+      "lines": 320,
+      "missing": 0,
+      "n_foreign": 0,
+      "nonfinite": 0,
+      "not_ok": 33,
+      "pins": [
+       "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+      ],
+      "stamped": 0,
+      "steps": [
+       100000037
+      ],
+      "torn": 0,
+      "unique": 320,
+      "unstamped_new": 0,
+      "world_heads": [
+       "826bee8919c0986fd3733d3d06f03803822a929a"
+      ]
+     },
+     "FN": {
+      "arms": [
+       "FN"
+      ],
+      "bad_driver": 0,
+      "cps": [
+       "x26_100M"
+      ],
+      "defect": 0,
+      "duplicates": 0,
+      "excluded": 32,
+      "file_order_is_sorted": true,
+      "files": [
+       "rows_0_of_1.jsonl"
+      ],
+      "foreign": [],
+      "legacy_unstamped": 320,
+      "lines": 320,
+      "missing": 0,
+      "n_foreign": 0,
+      "nonfinite": 0,
+      "not_ok": 32,
+      "pins": [
+       "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+      ],
+      "stamped": 0,
+      "steps": [
+       100000037
+      ],
+      "torn": 0,
+      "unique": 320,
+      "unstamped_new": 0,
+      "world_heads": [
+       "826bee8919c0986fd3733d3d06f03803822a929a"
+      ]
+     },
+     "O": {
+      "bad_driver": 0,
+      "cps": [
+       "x26_100M"
+      ],
+      "defect": 0,
+      "duplicates": 0,
+      "excluded": 0,
+      "file_order_is_sorted": true,
+      "files": [
+       "shard_0_of_1.jsonl"
+      ],
+      "foreign": [],
+      "legacy_unstamped": 320,
+      "lines": 320,
+      "missing": 0,
+      "n_foreign": 0,
+      "nonfinite": 0,
+      "not_ok": 0,
+      "pins": [
+       "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+      ],
+      "stamped": 0,
+      "steps": [
+       100000037
+      ],
+      "torn": 0,
+      "unique": 320,
+      "unstamped_new": 0
+     },
+     "V:oracle": {
+      "arms": [
+       "V:oracle"
+      ],
+      "bad_driver": 0,
+      "cps": [
+       "x26_100M"
+      ],
+      "defect": 0,
+      "duplicates": 0,
+      "excluded": 0,
+      "file_order_is_sorted": true,
+      "files": [
+       "rows_0_of_1.jsonl"
+      ],
+      "foreign": [],
+      "legacy_unstamped": 12,
+      "lines": 12,
+      "missing": 0,
+      "n_foreign": 0,
+      "nonfinite": 0,
+      "not_ok": 0,
+      "pins": [
+       "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+      ],
+      "stamped": 0,
+      "steps": [
+       100000037
+      ],
+      "torn": 0,
+      "unique": 12,
+      "unstamped_new": 0,
+      "world_heads": [
+       "826bee8919c0986fd3733d3d06f03803822a929a"
+      ]
+     },
+     "belief": {
+      "bad_driver": 0,
+      "cps": [
+       "x26_100M"
+      ],
+      "defect": 0,
+      "duplicates": 0,
+      "excluded": 0,
+      "file_order_is_sorted": true,
+      "files": [
+       "x26_100M.jsonl"
+      ],
+      "foreign": [],
+      "legacy_unstamped": 320,
+      "lines": 320,
+      "missing": 0,
+      "n_foreign": 0,
+      "nonfinite": 0,
+      "not_ok": 0,
+      "pins": [
+       "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+      ],
+      "stamped": 0,
+      "torn": 0,
+      "unique": 320,
+      "unstamped_new": 0
+     },
+     "roots": {
+      "bad_driver": 0,
+      "cps": [
+       "x26_100M"
+      ],
+      "defect": 0,
+      "duplicates": 0,
+      "excluded": 0,
+      "file_order_is_sorted": true,
+      "files": [
+       "x26_100M.jsonl"
+      ],
+      "foreign": [],
+      "legacy_unstamped": 800,
+      "lines": 800,
+      "missing": 0,
+      "n_foreign": 0,
+      "nonfinite": 0,
+      "not_ok": 0,
+      "pins": [
+       "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+      ],
+      "stamped": 0,
+      "ties": 0,
+      "torn": 0,
+      "unique": 800,
+      "unstamped_new": 0
+     }
+    },
+    "x26_175M": {
+     "F": {
+      "arms": [
+       "F"
+      ],
+      "bad_driver": 0,
+      "cps": [
+       "x26_175M"
+      ],
+      "defect": 0,
+      "duplicates": 0,
+      "excluded": 33,
+      "file_order_is_sorted": true,
+      "files": [
+       "rows_0_of_1.jsonl"
+      ],
+      "foreign": [],
+      "legacy_unstamped": 320,
+      "lines": 320,
+      "missing": 0,
+      "n_foreign": 0,
+      "nonfinite": 0,
+      "not_ok": 33,
+      "pins": [
+       "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+      ],
+      "stamped": 0,
+      "steps": [
+       175000114
+      ],
+      "torn": 0,
+      "unique": 320,
+      "unstamped_new": 0,
+      "world_heads": [
+       "826bee8919c0986fd3733d3d06f03803822a929a"
+      ]
+     },
+     "FN": {
+      "arms": [
+       "FN"
+      ],
+      "bad_driver": 0,
+      "cps": [
+       "x26_175M"
+      ],
+      "defect": 0,
+      "duplicates": 0,
+      "excluded": 32,
+      "file_order_is_sorted": true,
+      "files": [
+       "rows_0_of_1.jsonl"
+      ],
+      "foreign": [],
+      "legacy_unstamped": 320,
+      "lines": 320,
+      "missing": 0,
+      "n_foreign": 0,
+      "nonfinite": 0,
+      "not_ok": 32,
+      "pins": [
+       "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+      ],
+      "stamped": 0,
+      "steps": [
+       175000114
+      ],
+      "torn": 0,
+      "unique": 320,
+      "unstamped_new": 0,
+      "world_heads": [
+       "826bee8919c0986fd3733d3d06f03803822a929a"
+      ]
+     },
+     "O": {
+      "bad_driver": 0,
+      "cps": [
+       "x26_175M"
+      ],
+      "defect": 0,
+      "duplicates": 0,
+      "excluded": 0,
+      "file_order_is_sorted": true,
+      "files": [
+       "shard_0_of_1.jsonl"
+      ],
+      "foreign": [],
+      "legacy_unstamped": 320,
+      "lines": 320,
+      "missing": 0,
+      "n_foreign": 0,
+      "nonfinite": 0,
+      "not_ok": 0,
+      "pins": [
+       "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+      ],
+      "stamped": 0,
+      "steps": [
+       175000114
+      ],
+      "torn": 0,
+      "unique": 320,
+      "unstamped_new": 0
+     },
+     "V:oracle": {
+      "arms": [
+       "V:oracle"
+      ],
+      "bad_driver": 0,
+      "cps": [
+       "x26_175M"
+      ],
+      "defect": 0,
+      "duplicates": 0,
+      "excluded": 0,
+      "file_order_is_sorted": true,
+      "files": [
+       "rows_0_of_1.jsonl"
+      ],
+      "foreign": [],
+      "legacy_unstamped": 12,
+      "lines": 12,
+      "missing": 0,
+      "n_foreign": 0,
+      "nonfinite": 0,
+      "not_ok": 0,
+      "pins": [
+       "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+      ],
+      "stamped": 0,
+      "steps": [
+       175000114
+      ],
+      "torn": 0,
+      "unique": 12,
+      "unstamped_new": 0,
+      "world_heads": [
+       "826bee8919c0986fd3733d3d06f03803822a929a"
+      ]
+     },
+     "belief": {
+      "bad_driver": 0,
+      "cps": [
+       "x26_175M"
+      ],
+      "defect": 0,
+      "duplicates": 0,
+      "excluded": 0,
+      "file_order_is_sorted": true,
+      "files": [
+       "x26_175M.jsonl"
+      ],
+      "foreign": [],
+      "legacy_unstamped": 320,
+      "lines": 320,
+      "missing": 0,
+      "n_foreign": 0,
+      "nonfinite": 0,
+      "not_ok": 0,
+      "pins": [
+       "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+      ],
+      "stamped": 0,
+      "torn": 0,
+      "unique": 320,
+      "unstamped_new": 0
+     },
+     "roots": {
+      "bad_driver": 0,
+      "cps": [
+       "x26_175M"
+      ],
+      "defect": 0,
+      "duplicates": 0,
+      "excluded": 0,
+      "file_order_is_sorted": true,
+      "files": [
+       "x26_175M.jsonl"
+      ],
+      "foreign": [],
+      "legacy_unstamped": 800,
+      "lines": 800,
+      "missing": 0,
+      "n_foreign": 0,
+      "nonfinite": 0,
+      "not_ok": 0,
+      "pins": [
+       "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+      ],
+      "stamped": 0,
+      "ties": 0,
+      "torn": 0,
+      "unique": 800,
+      "unstamped_new": 0
+     }
+    },
+    "x26_225M": {
+     "F": {
+      "arms": [
+       "F"
+      ],
+      "bad_driver": 0,
+      "cps": [
+       "x26_225M"
+      ],
+      "defect": 0,
+      "duplicates": 0,
+      "excluded": 33,
+      "file_order_is_sorted": true,
+      "files": [
+       "rows_0_of_1.jsonl"
+      ],
+      "foreign": [],
+      "legacy_unstamped": 320,
+      "lines": 320,
+      "missing": 0,
+      "n_foreign": 0,
+      "nonfinite": 0,
+      "not_ok": 33,
+      "pins": [
+       "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+      ],
+      "stamped": 0,
+      "steps": [
+       225000152
+      ],
+      "torn": 0,
+      "unique": 320,
+      "unstamped_new": 0,
+      "world_heads": [
+       "826bee8919c0986fd3733d3d06f03803822a929a"
+      ]
+     },
+     "FN": {
+      "arms": [
+       "FN"
+      ],
+      "bad_driver": 0,
+      "cps": [
+       "x26_225M"
+      ],
+      "defect": 0,
+      "duplicates": 0,
+      "excluded": 32,
+      "file_order_is_sorted": true,
+      "files": [
+       "rows_0_of_1.jsonl"
+      ],
+      "foreign": [],
+      "legacy_unstamped": 320,
+      "lines": 320,
+      "missing": 0,
+      "n_foreign": 0,
+      "nonfinite": 0,
+      "not_ok": 32,
+      "pins": [
+       "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+      ],
+      "stamped": 0,
+      "steps": [
+       225000152
+      ],
+      "torn": 0,
+      "unique": 320,
+      "unstamped_new": 0,
+      "world_heads": [
+       "826bee8919c0986fd3733d3d06f03803822a929a"
+      ]
+     },
+     "O": {
+      "bad_driver": 0,
+      "cps": [
+       "x26_225M"
+      ],
+      "defect": 0,
+      "duplicates": 0,
+      "excluded": 0,
+      "file_order_is_sorted": true,
+      "files": [
+       "shard_0_of_1.jsonl"
+      ],
+      "foreign": [],
+      "legacy_unstamped": 320,
+      "lines": 320,
+      "missing": 0,
+      "n_foreign": 0,
+      "nonfinite": 0,
+      "not_ok": 0,
+      "pins": [
+       "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+      ],
+      "stamped": 0,
+      "steps": [
+       225000152
+      ],
+      "torn": 0,
+      "unique": 320,
+      "unstamped_new": 0
+     },
+     "V:oracle": {
+      "arms": [
+       "V:oracle"
+      ],
+      "bad_driver": 0,
+      "cps": [
+       "x26_225M"
+      ],
+      "defect": 0,
+      "duplicates": 0,
+      "excluded": 0,
+      "file_order_is_sorted": true,
+      "files": [
+       "rows_0_of_1.jsonl"
+      ],
+      "foreign": [],
+      "legacy_unstamped": 12,
+      "lines": 12,
+      "missing": 0,
+      "n_foreign": 0,
+      "nonfinite": 0,
+      "not_ok": 0,
+      "pins": [
+       "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+      ],
+      "stamped": 0,
+      "steps": [
+       225000152
+      ],
+      "torn": 0,
+      "unique": 12,
+      "unstamped_new": 0,
+      "world_heads": [
+       "826bee8919c0986fd3733d3d06f03803822a929a"
+      ]
+     },
+     "belief": {
+      "bad_driver": 0,
+      "cps": [
+       "x26_225M"
+      ],
+      "defect": 0,
+      "duplicates": 0,
+      "excluded": 0,
+      "file_order_is_sorted": true,
+      "files": [
+       "x26_225M.jsonl"
+      ],
+      "foreign": [],
+      "legacy_unstamped": 320,
+      "lines": 320,
+      "missing": 0,
+      "n_foreign": 0,
+      "nonfinite": 0,
+      "not_ok": 0,
+      "pins": [
+       "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+      ],
+      "stamped": 0,
+      "torn": 0,
+      "unique": 320,
+      "unstamped_new": 0
+     },
+     "roots": {
+      "bad_driver": 0,
+      "cps": [
+       "x26_225M"
+      ],
+      "defect": 0,
+      "duplicates": 0,
+      "excluded": 0,
+      "file_order_is_sorted": true,
+      "files": [
+       "x26_225M.jsonl"
+      ],
+      "foreign": [],
+      "legacy_unstamped": 800,
+      "lines": 800,
+      "missing": 0,
+      "n_foreign": 0,
+      "nonfinite": 0,
+      "not_ok": 0,
+      "pins": [
+       "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+      ],
+      "stamped": 0,
+      "ties": 0,
+      "torn": 0,
+      "unique": 800,
+      "unstamped_new": 0
+     }
+    },
+    "x26_P280M": {
+     "F": {
+      "arms": [
+       "F"
+      ],
+      "bad_driver": 0,
+      "cps": [
+       "x26_P280M"
+      ],
+      "defect": 0,
+      "duplicates": 0,
+      "excluded": 77,
+      "file_order_is_sorted": true,
+      "files": [
+       "rows_0_of_1.jsonl"
+      ],
+      "foreign": [],
+      "legacy_unstamped": 0,
+      "lines": 800,
+      "missing": 0,
+      "n_foreign": 0,
+      "nonfinite": 0,
+      "not_ok": 77,
+      "pins": [
+       "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+      ],
+      "stamped": 800,
+      "steps": [
+       280000170
+      ],
+      "torn": 0,
+      "unique": 800,
+      "unstamped_new": 0,
+      "world_heads": [
+       "826bee8919c0986fd3733d3d06f03803822a929a"
+      ]
+     },
+     "F+M": {
+      "arms": [
+       "F+M"
+      ],
+      "bad_driver": 0,
+      "cps": [
+       "x26_P280M"
+      ],
+      "defect": 0,
+      "duplicates": 0,
+      "excluded": 68,
+      "file_order_is_sorted": true,
+      "files": [
+       "rows_0_of_1.jsonl"
+      ],
+      "foreign": [],
+      "legacy_unstamped": 0,
+      "lines": 800,
+      "missing": 0,
+      "n_foreign": 0,
+      "nonfinite": 0,
+      "not_ok": 68,
+      "pins": [
+       "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+      ],
+      "stamped": 800,
+      "steps": [
+       280000170
+      ],
+      "torn": 0,
+      "unique": 800,
+      "unstamped_new": 0,
+      "world_heads": [
+       "826bee8919c0986fd3733d3d06f03803822a929a"
+      ]
+     },
+     "F+U": {
+      "arms": [
+       "F+U"
+      ],
+      "bad_driver": 0,
+      "cps": [
+       "x26_P280M"
+      ],
+      "defect": 0,
+      "duplicates": 0,
+      "excluded": 72,
+      "file_order_is_sorted": true,
+      "files": [
+       "rows_0_of_1.jsonl"
+      ],
+      "foreign": [],
+      "legacy_unstamped": 0,
+      "lines": 800,
+      "missing": 0,
+      "n_foreign": 0,
+      "nonfinite": 0,
+      "not_ok": 72,
+      "pins": [
+       "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+      ],
+      "stamped": 800,
+      "steps": [
+       280000170
+      ],
+      "torn": 0,
+      "unique": 800,
+      "unstamped_new": 0,
+      "world_heads": [
+       "826bee8919c0986fd3733d3d06f03803822a929a"
+      ]
+     },
+     "FN": {
+      "arms": [
+       "FN"
+      ],
+      "bad_driver": 0,
+      "cps": [
+       "x26_P280M"
+      ],
+      "defect": 0,
+      "duplicates": 0,
+      "excluded": 74,
+      "file_order_is_sorted": true,
+      "files": [
+       "rows_0_of_1.jsonl"
+      ],
+      "foreign": [],
+      "legacy_unstamped": 0,
+      "lines": 800,
+      "missing": 0,
+      "n_foreign": 0,
+      "nonfinite": 0,
+      "not_ok": 74,
+      "pins": [
+       "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+      ],
+      "stamped": 800,
+      "steps": [
+       280000170
+      ],
+      "torn": 0,
+      "unique": 800,
+      "unstamped_new": 0,
+      "world_heads": [
+       "826bee8919c0986fd3733d3d06f03803822a929a"
+      ]
+     },
+     "O": {
+      "bad_driver": 0,
+      "cps": [
+       "x26_P280M"
+      ],
+      "defect": 0,
+      "duplicates": 0,
+      "excluded": 0,
+      "file_order_is_sorted": true,
+      "files": [
+       "shard_0_of_1.jsonl"
+      ],
+      "foreign": [],
+      "legacy_unstamped": 0,
+      "lines": 800,
+      "missing": 0,
+      "n_foreign": 0,
+      "nonfinite": 0,
+      "not_ok": 0,
+      "pins": [
+       "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+      ],
+      "stamped": 800,
+      "steps": [
+       280000170
+      ],
+      "torn": 0,
+      "unique": 800,
+      "unstamped_new": 0
+     },
+     "O-M": {
+      "arms": [
+       "O-M"
+      ],
+      "bad_driver": 0,
+      "cps": [
+       "x26_P280M"
+      ],
+      "defect": 0,
+      "duplicates": 0,
+      "excluded": 1,
+      "file_order_is_sorted": true,
+      "files": [
+       "rows_0_of_1.jsonl"
+      ],
+      "foreign": [],
+      "legacy_unstamped": 0,
+      "lines": 800,
+      "missing": 0,
+      "n_foreign": 0,
+      "nonfinite": 0,
+      "not_ok": 1,
+      "pins": [
+       "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+      ],
+      "stamped": 800,
+      "steps": [
+       280000170
+      ],
+      "torn": 0,
+      "unique": 800,
+      "unstamped_new": 0,
+      "world_heads": [
+       "826bee8919c0986fd3733d3d06f03803822a929a"
+      ]
+     },
+     "O-U": {
+      "arms": [
+       "O-U"
+      ],
+      "bad_driver": 0,
+      "cps": [
+       "x26_P280M"
+      ],
+      "defect": 0,
+      "duplicates": 0,
+      "excluded": 5,
+      "file_order_is_sorted": true,
+      "files": [
+       "rows_0_of_1.jsonl"
+      ],
+      "foreign": [],
+      "legacy_unstamped": 0,
+      "lines": 800,
+      "missing": 0,
+      "n_foreign": 0,
+      "nonfinite": 0,
+      "not_ok": 5,
+      "pins": [
+       "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+      ],
+      "stamped": 800,
+      "steps": [
+       280000170
+      ],
+      "torn": 0,
+      "unique": 800,
+      "unstamped_new": 0,
+      "world_heads": [
+       "826bee8919c0986fd3733d3d06f03803822a929a"
+      ]
+     },
+     "V:oracle": {
+      "arms": [
+       "V:oracle"
+      ],
+      "bad_driver": 0,
+      "cps": [
+       "x26_P280M"
+      ],
+      "defect": 0,
+      "duplicates": 0,
+      "excluded": 0,
+      "file_order_is_sorted": true,
+      "files": [
+       "rows_0_of_1.jsonl"
+      ],
+      "foreign": [],
+      "legacy_unstamped": 0,
+      "lines": 12,
+      "missing": 0,
+      "n_foreign": 0,
+      "nonfinite": 0,
+      "not_ok": 0,
+      "pins": [
+       "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+      ],
+      "stamped": 12,
+      "steps": [
+       280000170
+      ],
+      "torn": 0,
+      "unique": 12,
+      "unstamped_new": 0,
+      "world_heads": [
+       "826bee8919c0986fd3733d3d06f03803822a929a"
+      ]
+     },
+     "belief": {
+      "bad_driver": 0,
+      "cps": [
+       "x26_P280M"
+      ],
+      "defect": 0,
+      "duplicates": 0,
+      "excluded": 0,
+      "file_order_is_sorted": true,
+      "files": [
+       "x26_P280M.jsonl"
+      ],
+      "foreign": [],
+      "legacy_unstamped": 0,
+      "lines": 800,
+      "missing": 0,
+      "n_foreign": 0,
+      "nonfinite": 0,
+      "not_ok": 0,
+      "pins": [
+       "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+      ],
+      "stamped": 800,
+      "torn": 0,
+      "unique": 800,
+      "unstamped_new": 0
+     },
+     "roots": {
+      "bad_driver": 0,
+      "cps": [
+       "x26_P280M"
+      ],
+      "defect": 0,
+      "duplicates": 0,
+      "excluded": 0,
+      "file_order_is_sorted": true,
+      "files": [
+       "x26_P280M.jsonl"
+      ],
+      "foreign": [],
+      "legacy_unstamped": 0,
+      "lines": 800,
+      "missing": 0,
+      "n_foreign": 0,
+      "nonfinite": 0,
+      "not_ok": 0,
+      "pins": [
+       "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+      ],
+      "stamped": 800,
+      "ties": 0,
+      "torn": 0,
+      "unique": 800,
+      "unstamped_new": 0
+     }
+    }
+   },
+   "worlds": {
+    "[interim] worlds F": {
+     "bad_driver": 0,
+     "crn_broken": 0,
+     "defect": 0,
+     "duplicates": 0,
+     "excluded": 77,
+     "exclusion_reasons": [
+      "WorldError: rb_x26_s2601/step_230000074/aggressive/win_s3_002#p1#29: no honest d",
+      "WorldError: rb_x26_s2601/step_230000074/aggressive_v2/win_s3_001#p1#15: no hones",
+      "WorldError: rb_x26_s2601/step_230000074/aggressive_v2/win_s3_001#p1#19: no hones",
+      "WorldError: rb_x26_s2601/step_230000074/heuristic/loss_s1_004#p1#2: no honest dr",
+      "WorldError: rb_x26_s2601/step_230000074/heuristic/loss_s1_004#p1#33: no honest d",
+      "WorldError: rb_x26_s2601/step_230000074/heuristic/win_s2_002#p1#11: no honest dr"
+     ],
+     "file_order_is_sorted": false,
+     "files": [
+      "worlds_0_of_1.jsonl"
+     ],
+     "foreign": [],
+     "heads": [
+      "826bee8919c0986fd3733d3d06f03803822a929a"
+     ],
+     "legacy_unstamped": 320,
+     "lines": 800,
+     "missing": 0,
+     "n_foreign": 0,
+     "nonfinite": 0,
+     "ok": 723,
+     "stamped": 480,
+     "torn": 0,
+     "unique": 800,
+     "unstamped_new": 0
+    },
+    "[interim] worlds F+M": {
+     "bad_driver": 0,
+     "crn_broken": 0,
+     "defect": 0,
+     "duplicates": 0,
+     "excluded": 68,
+     "exclusion_reasons": [
+      "WorldError: rb_x26_s2601/step_230000074/aggressive/win_s2_001#p1#16: no honest d",
+      "WorldError: rb_x26_s2601/step_230000074/aggressive_v2/win_s1_002#p1#10: no hones",
+      "WorldError: rb_x26_s2601/step_230000074/aggressive_v2/win_s3_001#p1#15: no hones",
+      "WorldError: rb_x26_s2601/step_230000074/aggressive_v2/win_s3_001#p1#19: no hones",
+      "WorldError: rb_x26_s2601/step_230000074/heuristic/loss_s1_004#p1#2: no honest dr",
+      "WorldError: rb_x26_s2601/step_230000074/heuristic/loss_s1_004#p1#33: no honest d"
+     ],
+     "file_order_is_sorted": true,
+     "files": [
+      "worlds_0_of_1.jsonl"
+     ],
+     "foreign": [],
+     "heads": [
+      "826bee8919c0986fd3733d3d06f03803822a929a"
+     ],
+     "legacy_unstamped": 0,
+     "lines": 800,
+     "missing": 0,
+     "n_foreign": 0,
+     "nonfinite": 0,
+     "ok": 732,
+     "stamped": 800,
+     "torn": 0,
+     "unique": 800,
+     "unstamped_new": 0
+    },
+    "[interim] worlds F+U": {
+     "bad_driver": 0,
+     "crn_broken": 0,
+     "defect": 0,
+     "duplicates": 0,
+     "excluded": 72,
+     "exclusion_reasons": [
+      "WorldError: rb_x26_s2601/step_230000074/aggressive/win_s3_002#p1#29: no honest d",
+      "WorldError: rb_x26_s2601/step_230000074/aggressive_v2/win_s3_001#p1#15: no hones",
+      "WorldError: rb_x26_s2601/step_230000074/aggressive_v2/win_s3_001#p1#19: no hones",
+      "WorldError: rb_x26_s2601/step_230000074/heuristic/loss_s1_004#p1#2: no honest dr",
+      "WorldError: rb_x26_s2601/step_230000074/heuristic/loss_s1_004#p1#33: no honest d",
+      "WorldError: rb_x26_s2601/step_230000074/heuristic/win_s2_002#p1#11: no honest dr"
+     ],
+     "file_order_is_sorted": true,
+     "files": [
+      "worlds_0_of_1.jsonl"
+     ],
+     "foreign": [],
+     "heads": [
+      "826bee8919c0986fd3733d3d06f03803822a929a"
+     ],
+     "legacy_unstamped": 0,
+     "lines": 800,
+     "missing": 0,
+     "n_foreign": 0,
+     "nonfinite": 0,
+     "ok": 728,
+     "stamped": 800,
+     "torn": 0,
+     "unique": 800,
+     "unstamped_new": 0
+    },
+    "[interim] worlds FN@x26_025M": {
+     "bad_driver": 0,
+     "crn_broken": 0,
+     "defect": 0,
+     "duplicates": 0,
+     "excluded": 76,
+     "exclusion_reasons": [
+      "WorldError: rb_x26_s2601/step_230000074/aggressive/win_s3_002#p1#29: no honest d",
+      "WorldError: rb_x26_s2601/step_230000074/aggressive_v2/win_s3_001#p1#15: no hones",
+      "WorldError: rb_x26_s2601/step_230000074/aggressive_v2/win_s3_001#p1#19: no hones",
+      "WorldError: rb_x26_s2601/step_230000074/heuristic/loss_s1_004#p1#2: no honest dr",
+      "WorldError: rb_x26_s2601/step_230000074/heuristic/loss_s1_004#p1#33: no honest d",
+      "WorldError: rb_x26_s2601/step_230000074/heuristic/win_s2_002#p1#11: no honest dr"
+     ],
+     "file_order_is_sorted": false,
+     "files": [
+      "worlds_0_of_1.jsonl"
+     ],
+     "foreign": [],
+     "heads": [
+      "826bee8919c0986fd3733d3d06f03803822a929a"
+     ],
+     "legacy_unstamped": 320,
+     "lines": 800,
+     "missing": 0,
+     "n_foreign": 0,
+     "nonfinite": 0,
+     "ok": 724,
+     "stamped": 480,
+     "torn": 0,
+     "unique": 800,
+     "unstamped_new": 0
+    },
+    "[interim] worlds FN@x26_100M": {
+     "bad_driver": 0,
+     "crn_broken": 0,
+     "defect": 0,
+     "duplicates": 0,
+     "excluded": 32,
+     "exclusion_reasons": [
+      "WorldError: rb_x26_s2601/step_230000074/aggressive_v2/win_s3_001#p1#15: no hones",
+      "WorldError: rb_x26_s2601/step_230000074/aggressive_v2/win_s3_001#p1#19: no hones",
+      "WorldError: rb_x26_s2601/step_230000074/heuristic/loss_s1_004#p1#2: no honest dr",
+      "WorldError: rb_x26_s2601/step_230000074/heuristic/win_s2_002#p1#11: no honest dr",
+      "WorldError: rb_x26_s2601/step_230000074/sentinel_0/loss_s0_004#p1#28: no honest ",
+      "WorldError: rb_x26_s2601/step_230000074/sentinel_1/win_s1_005#p1#40: 2 of 8 worl"
+     ],
+     "file_order_is_sorted": true,
+     "files": [
+      "worlds_0_of_1.jsonl"
+     ],
+     "foreign": [],
+     "heads": [
+      "826bee8919c0986fd3733d3d06f03803822a929a"
+     ],
+     "legacy_unstamped": 320,
+     "lines": 320,
+     "missing": 0,
+     "n_foreign": 0,
+     "nonfinite": 0,
+     "ok": 288,
+     "stamped": 0,
+     "torn": 0,
+     "unique": 320,
+     "unstamped_new": 0
+    },
+    "[interim] worlds FN@x26_175M": {
+     "bad_driver": 0,
+     "crn_broken": 0,
+     "defect": 0,
+     "duplicates": 0,
+     "excluded": 32,
+     "exclusion_reasons": [
+      "WorldError: rb_x26_s2601/step_230000074/aggressive_v2/win_s3_001#p1#15: no hones",
+      "WorldError: rb_x26_s2601/step_230000074/aggressive_v2/win_s3_001#p1#19: no hones",
+      "WorldError: rb_x26_s2601/step_230000074/heuristic/loss_s1_004#p1#2: no honest dr",
+      "WorldError: rb_x26_s2601/step_230000074/heuristic/win_s2_002#p1#11: no honest dr",
+      "WorldError: rb_x26_s2601/step_230000074/sentinel_0/loss_s0_004#p1#28: no honest ",
+      "WorldError: rb_x26_s2601/step_230000074/sentinel_1/win_s1_005#p1#40: 5 of 8 worl"
+     ],
+     "file_order_is_sorted": true,
+     "files": [
+      "worlds_0_of_1.jsonl"
+     ],
+     "foreign": [],
+     "heads": [
+      "826bee8919c0986fd3733d3d06f03803822a929a"
+     ],
+     "legacy_unstamped": 320,
+     "lines": 320,
+     "missing": 0,
+     "n_foreign": 0,
+     "nonfinite": 0,
+     "ok": 288,
+     "stamped": 0,
+     "torn": 0,
+     "unique": 320,
+     "unstamped_new": 0
+    },
+    "[interim] worlds FN@x26_225M": {
+     "bad_driver": 0,
+     "crn_broken": 0,
+     "defect": 0,
+     "duplicates": 0,
+     "excluded": 32,
+     "exclusion_reasons": [
+      "WorldError: rb_x26_s2601/step_230000074/aggressive_v2/win_s3_001#p1#15: no hones",
+      "WorldError: rb_x26_s2601/step_230000074/aggressive_v2/win_s3_001#p1#19: no hones",
+      "WorldError: rb_x26_s2601/step_230000074/heuristic/loss_s1_004#p1#2: no honest dr",
+      "WorldError: rb_x26_s2601/step_230000074/heuristic/win_s2_002#p1#11: no honest dr",
+      "WorldError: rb_x26_s2601/step_230000074/sentinel_0/loss_s0_004#p1#28: no honest ",
+      "WorldError: rb_x26_s2601/step_230000074/sentinel_1/win_s1_005#p1#40: 2 of 8 worl"
+     ],
+     "file_order_is_sorted": true,
+     "files": [
+      "worlds_0_of_1.jsonl"
+     ],
+     "foreign": [],
+     "heads": [
+      "826bee8919c0986fd3733d3d06f03803822a929a"
+     ],
+     "legacy_unstamped": 320,
+     "lines": 320,
+     "missing": 0,
+     "n_foreign": 0,
+     "nonfinite": 0,
+     "ok": 288,
+     "stamped": 0,
+     "torn": 0,
+     "unique": 320,
+     "unstamped_new": 0
+    },
+    "[interim] worlds FN@x26_P280M": {
+     "bad_driver": 0,
+     "crn_broken": 0,
+     "defect": 0,
+     "duplicates": 0,
+     "excluded": 74,
+     "exclusion_reasons": [
+      "WorldError: rb_x26_s2601/step_230000074/aggressive/win_s3_002#p1#29: no honest d",
+      "WorldError: rb_x26_s2601/step_230000074/aggressive_v2/win_s3_001#p1#15: no hones",
+      "WorldError: rb_x26_s2601/step_230000074/aggressive_v2/win_s3_001#p1#19: no hones",
+      "WorldError: rb_x26_s2601/step_230000074/heuristic/loss_s1_004#p1#2: no honest dr",
+      "WorldError: rb_x26_s2601/step_230000074/heuristic/loss_s1_004#p1#33: no honest d",
+      "WorldError: rb_x26_s2601/step_230000074/heuristic/win_s2_002#p1#11: no honest dr"
+     ],
+     "file_order_is_sorted": true,
+     "files": [
+      "worlds_0_of_1.jsonl"
+     ],
+     "foreign": [],
+     "heads": [
+      "826bee8919c0986fd3733d3d06f03803822a929a"
+     ],
+     "legacy_unstamped": 0,
+     "lines": 800,
+     "missing": 0,
+     "n_foreign": 0,
+     "nonfinite": 0,
+     "ok": 726,
+     "stamped": 800,
+     "torn": 0,
+     "unique": 800,
+     "unstamped_new": 0
+    },
+    "[interim] worlds O-M": {
+     "bad_driver": 0,
+     "crn_broken": 0,
+     "defect": 0,
+     "duplicates": 0,
+     "excluded": 1,
+     "exclusion_reasons": [
+      "WorldError: rb_x26_s2601/step_234000025/sentinel_2/loss_s2_003#p1#39: 2 of 8 wor"
+     ],
+     "file_order_is_sorted": true,
+     "files": [
+      "worlds_0_of_1.jsonl"
+     ],
+     "foreign": [],
+     "heads": [
+      "826bee8919c0986fd3733d3d06f03803822a929a"
+     ],
+     "legacy_unstamped": 0,
+     "lines": 800,
+     "missing": 0,
+     "n_foreign": 0,
+     "nonfinite": 0,
+     "ok": 799,
+     "stamped": 800,
+     "torn": 0,
+     "unique": 800,
+     "unstamped_new": 0
+    },
+    "[interim] worlds O-U": {
+     "bad_driver": 0,
+     "crn_broken": 0,
+     "defect": 0,
+     "duplicates": 0,
+     "excluded": 5,
+     "exclusion_reasons": [
+      "WorldError: rb_x26_s2601/step_230000074/sentinel_1/loss_s2_004#p1#34: 4 of 8 wor",
+      "WorldError: rb_x26_s2601/step_230000074/sentinel_2/win_s2_001#p1#8: 4 of 8 world",
+      "WorldError: rb_x26_s2601/step_232000091/sentinel_2/loss_s2_001#p1#14: 8 of 8 wor",
+      "WorldError: rb_x26_s2601/step_232000091/sentinel_4/draw_s0_001#p1#18: 3 of 8 wor",
+      "WorldError: rb_x26_s2601/step_234000025/sentinel_3/loss_s2_004#p1#19: 7 of 8 wor"
+     ],
+     "file_order_is_sorted": true,
+     "files": [
+      "worlds_0_of_1.jsonl"
+     ],
+     "foreign": [],
+     "heads": [
+      "826bee8919c0986fd3733d3d06f03803822a929a"
+     ],
+     "legacy_unstamped": 0,
+     "lines": 800,
+     "missing": 0,
+     "n_foreign": 0,
+     "nonfinite": 0,
+     "ok": 795,
+     "stamped": 800,
+     "torn": 0,
+     "unique": 800,
+     "unstamped_new": 0
+    },
+    "[interim] worlds V:oracle": {
+     "bad_driver": 0,
+     "crn_broken": 0,
+     "defect": 0,
+     "duplicates": 0,
+     "excluded": 0,
+     "exclusion_reasons": [],
+     "file_order_is_sorted": false,
+     "files": [
+      "worlds_0_of_1.jsonl"
+     ],
+     "foreign": [],
+     "heads": [
+      "826bee8919c0986fd3733d3d06f03803822a929a"
+     ],
+     "legacy_unstamped": 12,
+     "lines": 12,
+     "missing": 0,
+     "n_foreign": 0,
+     "nonfinite": 0,
+     "ok": 12,
+     "stamped": 0,
+     "torn": 0,
+     "unique": 12,
+     "unstamped_new": 0
+    }
+   }
+  },
+  "plateau": {
+   "flags": {
+    "[plateau] worlds F": {
+     "defect_share": 0.0,
+     "exclusion_share": 0.10125,
+     "over_10pct": true,
+     "over_1pct": false
+    },
+    "[plateau] worlds F+M": {
+     "defect_share": 0.0,
+     "exclusion_share": 0.09875,
+     "over_10pct": false,
+     "over_1pct": false
+    },
+    "[plateau] worlds F+U": {
+     "defect_share": 0.0,
+     "exclusion_share": 0.10125,
+     "over_10pct": true,
+     "over_1pct": false
+    },
+    "[plateau] worlds FN@x26_025M": {
+     "defect_share": 0.0,
+     "exclusion_share": 0.10375,
+     "over_10pct": true,
+     "over_1pct": false
+    },
+    "[plateau] worlds FN@x26_P280M": {
+     "defect_share": 0.0,
+     "exclusion_share": 0.10375,
+     "over_10pct": true,
+     "over_1pct": false
+    },
+    "[plateau] worlds O-M": {
+     "defect_share": 0.0,
+     "exclusion_share": 0.0025,
+     "over_10pct": false,
+     "over_1pct": false
+    },
+    "[plateau] worlds O-U": {
+     "defect_share": 0.0,
+     "exclusion_share": 0.00125,
+     "over_10pct": false,
+     "over_1pct": false
+    },
+    "[plateau] x26_025M F": {
+     "defect_share": 0.0,
+     "exclusion_share": 0.10125,
+     "over_10pct": true,
+     "over_1pct": false
+    },
+    "[plateau] x26_025M F+M": {
+     "defect_share": 0.0,
+     "exclusion_share": 0.09875,
+     "over_10pct": false,
+     "over_1pct": false
+    },
+    "[plateau] x26_025M F+U": {
+     "defect_share": 0.0,
+     "exclusion_share": 0.10125,
+     "over_10pct": true,
+     "over_1pct": false
+    },
+    "[plateau] x26_025M FN": {
+     "defect_share": 0.0,
+     "exclusion_share": 0.10375,
+     "over_10pct": true,
+     "over_1pct": false
+    },
+    "[plateau] x26_025M O": {
+     "defect_share": 0.0,
+     "exclusion_share": 0.0,
+     "over_10pct": false,
+     "over_1pct": false
+    },
+    "[plateau] x26_P280M F": {
+     "defect_share": 0.0,
+     "exclusion_share": 0.10125,
+     "over_10pct": true,
+     "over_1pct": false
+    },
+    "[plateau] x26_P280M F+M": {
+     "defect_share": 0.0,
+     "exclusion_share": 0.09875,
+     "over_10pct": false,
+     "over_1pct": false
+    },
+    "[plateau] x26_P280M F+U": {
+     "defect_share": 0.0,
+     "exclusion_share": 0.10125,
+     "over_10pct": true,
+     "over_1pct": false
+    },
+    "[plateau] x26_P280M FN": {
+     "defect_share": 0.0,
+     "exclusion_share": 0.10375,
+     "over_10pct": true,
+     "over_1pct": false
+    },
+    "[plateau] x26_P280M O": {
+     "defect_share": 0.0,
+     "exclusion_share": 0.0,
+     "over_10pct": false,
+     "over_1pct": false
+    },
+    "[plateau] x26_P280M O-M": {
+     "defect_share": 0.0,
+     "exclusion_share": 0.0025,
+     "over_10pct": false,
+     "over_1pct": false
+    },
+    "[plateau] x26_P280M O-U": {
+     "defect_share": 0.0,
+     "exclusion_share": 0.00125,
+     "over_10pct": false,
+     "over_1pct": false
+    }
+   },
+   "k6": {
+    "F+U = F at k = 6 @x26_025M": {
+     "actions": 830,
+     "both_not_ok": 31,
+     "crit_mismatch": 0,
+     "examples": [],
+     "max_dq": 0.0,
+     "max_dv": 0.0,
+     "out_mismatch": 0,
+     "refused": 0,
+     "states": 160,
+     "trace_mismatch": 0,
+     "verdict": "PASS"
+    },
+    "F+U = F at k = 6 @x26_P280M": {
+     "actions": 830,
+     "both_not_ok": 31,
+     "crit_mismatch": 0,
+     "examples": [],
+     "max_dq": 0.0,
+     "max_dv": 0.0,
+     "out_mismatch": 0,
+     "refused": 0,
+     "states": 160,
+     "trace_mismatch": 0,
+     "verdict": "PASS"
+    },
+    "O-U = O at k = 6 @x26_P280M": {
+     "actions": 1029,
+     "both_not_ok": 0,
+     "crit_mismatch": 0,
+     "examples": [],
+     "max_dq": 1.0000000000287557e-06,
+     "max_dv": 1.0000000000065512e-05,
+     "out_mismatch": 0,
+     "refused": 0,
+     "states": 160,
+     "trace_mismatch": 0,
+     "verdict": "PASS"
+    }
+   },
+   "k6_states_in_bank": 160,
+   "modes": {
+    "x26_025M": "full",
+    "x26_P280M": "full_hide"
+   },
+   "per_anchor": {
+    "x26_025M": {
+     "F": {
+      "arms": [
+       "F"
+      ],
+      "bad_driver": 0,
+      "cps": [
+       "x26_025M"
+      ],
+      "defect": 0,
+      "duplicates": 0,
+      "excluded": 81,
+      "file_order_is_sorted": true,
+      "files": [
+       "rows_0_of_1.jsonl"
+      ],
+      "foreign": [],
+      "legacy_unstamped": 0,
+      "lines": 800,
+      "missing": 0,
+      "n_foreign": 0,
+      "nonfinite": 0,
+      "not_ok": 81,
+      "pins": [
+       "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+      ],
+      "stamped": 800,
+      "steps": [
+       25000027
+      ],
+      "torn": 0,
+      "unique": 800,
+      "unstamped_new": 0,
+      "world_heads": [
+       "826bee8919c0986fd3733d3d06f03803822a929a"
+      ]
+     },
+     "F+M": {
+      "arms": [
+       "F+M"
+      ],
+      "bad_driver": 0,
+      "cps": [
+       "x26_025M"
+      ],
+      "defect": 0,
+      "duplicates": 0,
+      "excluded": 79,
+      "file_order_is_sorted": true,
+      "files": [
+       "rows_0_of_1.jsonl"
+      ],
+      "foreign": [],
+      "legacy_unstamped": 0,
+      "lines": 800,
+      "missing": 0,
+      "n_foreign": 0,
+      "nonfinite": 0,
+      "not_ok": 79,
+      "pins": [
+       "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+      ],
+      "stamped": 800,
+      "steps": [
+       25000027
+      ],
+      "torn": 0,
+      "unique": 800,
+      "unstamped_new": 0,
+      "world_heads": [
+       "826bee8919c0986fd3733d3d06f03803822a929a"
+      ]
+     },
+     "F+U": {
+      "arms": [
+       "F+U"
+      ],
+      "bad_driver": 0,
+      "cps": [
+       "x26_025M"
+      ],
+      "defect": 0,
+      "duplicates": 0,
+      "excluded": 81,
+      "file_order_is_sorted": true,
+      "files": [
+       "rows_0_of_1.jsonl"
+      ],
+      "foreign": [],
+      "legacy_unstamped": 0,
+      "lines": 800,
+      "missing": 0,
+      "n_foreign": 0,
+      "nonfinite": 0,
+      "not_ok": 81,
+      "pins": [
+       "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+      ],
+      "stamped": 800,
+      "steps": [
+       25000027
+      ],
+      "torn": 0,
+      "unique": 800,
+      "unstamped_new": 0,
+      "world_heads": [
+       "826bee8919c0986fd3733d3d06f03803822a929a"
+      ]
+     },
+     "FN": {
+      "arms": [
+       "FN"
+      ],
+      "bad_driver": 0,
+      "cps": [
+       "x26_025M"
+      ],
+      "defect": 0,
+      "duplicates": 0,
+      "excluded": 83,
+      "file_order_is_sorted": true,
+      "files": [
+       "rows_0_of_1.jsonl"
+      ],
+      "foreign": [],
+      "legacy_unstamped": 0,
+      "lines": 800,
+      "missing": 0,
+      "n_foreign": 0,
+      "nonfinite": 0,
+      "not_ok": 83,
+      "pins": [
+       "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+      ],
+      "stamped": 800,
+      "steps": [
+       25000027
+      ],
+      "torn": 0,
+      "unique": 800,
+      "unstamped_new": 0,
+      "world_heads": [
+       "826bee8919c0986fd3733d3d06f03803822a929a"
+      ]
+     },
+     "O": {
+      "bad_driver": 0,
+      "cps": [
+       "x26_025M"
+      ],
+      "defect": 0,
+      "duplicates": 0,
+      "excluded": 0,
+      "file_order_is_sorted": true,
+      "files": [
+       "shard_0_of_1.jsonl"
+      ],
+      "foreign": [],
+      "legacy_unstamped": 0,
+      "lines": 800,
+      "missing": 0,
+      "n_foreign": 0,
+      "nonfinite": 0,
+      "not_ok": 0,
+      "pins": [
+       "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+      ],
+      "stamped": 800,
+      "steps": [
+       25000027
+      ],
+      "torn": 0,
+      "unique": 800,
+      "unstamped_new": 0
+     },
+     "belief": {
+      "bad_driver": 0,
+      "cps": [
+       "x26_025M"
+      ],
+      "defect": 0,
+      "duplicates": 0,
+      "excluded": 0,
+      "file_order_is_sorted": true,
+      "files": [
+       "x26_025M.jsonl"
+      ],
+      "foreign": [],
+      "legacy_unstamped": 0,
+      "lines": 800,
+      "missing": 0,
+      "n_foreign": 0,
+      "nonfinite": 0,
+      "not_ok": 0,
+      "pins": [
+       "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+      ],
+      "stamped": 800,
+      "torn": 0,
+      "unique": 800,
+      "unstamped_new": 0
+     },
+     "roots": {
+      "bad_driver": 0,
+      "cps": [
+       "x26_025M"
+      ],
+      "defect": 0,
+      "duplicates": 0,
+      "excluded": 0,
+      "file_order_is_sorted": true,
+      "files": [
+       "x26_025M.jsonl"
+      ],
+      "foreign": [],
+      "legacy_unstamped": 0,
+      "lines": 800,
+      "missing": 0,
+      "n_foreign": 0,
+      "nonfinite": 0,
+      "not_ok": 0,
+      "pins": [
+       "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+      ],
+      "stamped": 800,
+      "ties": 0,
+      "torn": 0,
+      "unique": 800,
+      "unstamped_new": 0
+     }
+    },
+    "x26_P280M": {
+     "F": {
+      "arms": [
+       "F"
+      ],
+      "bad_driver": 0,
+      "cps": [
+       "x26_P280M"
+      ],
+      "defect": 0,
+      "duplicates": 0,
+      "excluded": 81,
+      "file_order_is_sorted": true,
+      "files": [
+       "rows_0_of_1.jsonl"
+      ],
+      "foreign": [],
+      "legacy_unstamped": 0,
+      "lines": 800,
+      "missing": 0,
+      "n_foreign": 0,
+      "nonfinite": 0,
+      "not_ok": 81,
+      "pins": [
+       "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+      ],
+      "stamped": 800,
+      "steps": [
+       280000170
+      ],
+      "torn": 0,
+      "unique": 800,
+      "unstamped_new": 0,
+      "world_heads": [
+       "826bee8919c0986fd3733d3d06f03803822a929a"
+      ]
+     },
+     "F+M": {
+      "arms": [
+       "F+M"
+      ],
+      "bad_driver": 0,
+      "cps": [
+       "x26_P280M"
+      ],
+      "defect": 0,
+      "duplicates": 0,
+      "excluded": 79,
+      "file_order_is_sorted": true,
+      "files": [
+       "rows_0_of_1.jsonl"
+      ],
+      "foreign": [],
+      "legacy_unstamped": 0,
+      "lines": 800,
+      "missing": 0,
+      "n_foreign": 0,
+      "nonfinite": 0,
+      "not_ok": 79,
+      "pins": [
+       "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+      ],
+      "stamped": 800,
+      "steps": [
+       280000170
+      ],
+      "torn": 0,
+      "unique": 800,
+      "unstamped_new": 0,
+      "world_heads": [
+       "826bee8919c0986fd3733d3d06f03803822a929a"
+      ]
+     },
+     "F+U": {
+      "arms": [
+       "F+U"
+      ],
+      "bad_driver": 0,
+      "cps": [
+       "x26_P280M"
+      ],
+      "defect": 0,
+      "duplicates": 0,
+      "excluded": 81,
+      "file_order_is_sorted": true,
+      "files": [
+       "rows_0_of_1.jsonl"
+      ],
+      "foreign": [],
+      "legacy_unstamped": 0,
+      "lines": 800,
+      "missing": 0,
+      "n_foreign": 0,
+      "nonfinite": 0,
+      "not_ok": 81,
+      "pins": [
+       "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+      ],
+      "stamped": 800,
+      "steps": [
+       280000170
+      ],
+      "torn": 0,
+      "unique": 800,
+      "unstamped_new": 0,
+      "world_heads": [
+       "826bee8919c0986fd3733d3d06f03803822a929a"
+      ]
+     },
+     "FN": {
+      "arms": [
+       "FN"
+      ],
+      "bad_driver": 0,
+      "cps": [
+       "x26_P280M"
+      ],
+      "defect": 0,
+      "duplicates": 0,
+      "excluded": 83,
+      "file_order_is_sorted": true,
+      "files": [
+       "rows_0_of_1.jsonl"
+      ],
+      "foreign": [],
+      "legacy_unstamped": 0,
+      "lines": 800,
+      "missing": 0,
+      "n_foreign": 0,
+      "nonfinite": 0,
+      "not_ok": 83,
+      "pins": [
+       "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+      ],
+      "stamped": 800,
+      "steps": [
+       280000170
+      ],
+      "torn": 0,
+      "unique": 800,
+      "unstamped_new": 0,
+      "world_heads": [
+       "826bee8919c0986fd3733d3d06f03803822a929a"
+      ]
+     },
+     "O": {
+      "bad_driver": 0,
+      "cps": [
+       "x26_P280M"
+      ],
+      "defect": 0,
+      "duplicates": 0,
+      "excluded": 0,
+      "file_order_is_sorted": true,
+      "files": [
+       "shard_0_of_1.jsonl"
+      ],
+      "foreign": [],
+      "legacy_unstamped": 0,
+      "lines": 800,
+      "missing": 0,
+      "n_foreign": 0,
+      "nonfinite": 0,
+      "not_ok": 0,
+      "pins": [
+       "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+      ],
+      "stamped": 800,
+      "steps": [
+       280000170
+      ],
+      "torn": 0,
+      "unique": 800,
+      "unstamped_new": 0
+     },
+     "O-M": {
+      "arms": [
+       "O-M"
+      ],
+      "bad_driver": 0,
+      "cps": [
+       "x26_P280M"
+      ],
+      "defect": 0,
+      "duplicates": 0,
+      "excluded": 2,
+      "file_order_is_sorted": true,
+      "files": [
+       "rows_0_of_1.jsonl"
+      ],
+      "foreign": [],
+      "legacy_unstamped": 0,
+      "lines": 800,
+      "missing": 0,
+      "n_foreign": 0,
+      "nonfinite": 0,
+      "not_ok": 2,
+      "pins": [
+       "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+      ],
+      "stamped": 800,
+      "steps": [
+       280000170
+      ],
+      "torn": 0,
+      "unique": 800,
+      "unstamped_new": 0,
+      "world_heads": [
+       "826bee8919c0986fd3733d3d06f03803822a929a"
+      ]
+     },
+     "O-U": {
+      "arms": [
+       "O-U"
+      ],
+      "bad_driver": 0,
+      "cps": [
+       "x26_P280M"
+      ],
+      "defect": 0,
+      "duplicates": 0,
+      "excluded": 1,
+      "file_order_is_sorted": true,
+      "files": [
+       "rows_0_of_1.jsonl"
+      ],
+      "foreign": [],
+      "legacy_unstamped": 0,
+      "lines": 800,
+      "missing": 0,
+      "n_foreign": 0,
+      "nonfinite": 0,
+      "not_ok": 1,
+      "pins": [
+       "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+      ],
+      "stamped": 800,
+      "steps": [
+       280000170
+      ],
+      "torn": 0,
+      "unique": 800,
+      "unstamped_new": 0,
+      "world_heads": [
+       "826bee8919c0986fd3733d3d06f03803822a929a"
+      ]
+     },
+     "belief": {
+      "bad_driver": 0,
+      "cps": [
+       "x26_P280M"
+      ],
+      "defect": 0,
+      "duplicates": 0,
+      "excluded": 0,
+      "file_order_is_sorted": true,
+      "files": [
+       "x26_P280M.jsonl"
+      ],
+      "foreign": [],
+      "legacy_unstamped": 0,
+      "lines": 800,
+      "missing": 0,
+      "n_foreign": 0,
+      "nonfinite": 0,
+      "not_ok": 0,
+      "pins": [
+       "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+      ],
+      "stamped": 800,
+      "torn": 0,
+      "unique": 800,
+      "unstamped_new": 0
+     },
+     "roots": {
+      "bad_driver": 0,
+      "cps": [
+       "x26_P280M"
+      ],
+      "defect": 0,
+      "duplicates": 0,
+      "excluded": 0,
+      "file_order_is_sorted": true,
+      "files": [
+       "x26_P280M.jsonl"
+      ],
+      "foreign": [],
+      "legacy_unstamped": 0,
+      "lines": 800,
+      "missing": 0,
+      "n_foreign": 0,
+      "nonfinite": 0,
+      "not_ok": 0,
+      "pins": [
+       "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+      ],
+      "stamped": 800,
+      "ties": 0,
+      "torn": 0,
+      "unique": 800,
+      "unstamped_new": 0
+     }
+    }
+   },
+   "worlds": {
+    "[plateau] worlds F": {
+     "bad_driver": 0,
+     "crn_broken": 0,
+     "defect": 0,
+     "duplicates": 0,
+     "excluded": 81,
+     "exclusion_reasons": [
+      "WorldError: rb_x26_s2601/step_276000077/aggressive_v2/loss_s2_004#p1#14: no hone",
+      "WorldError: rb_x26_s2601/step_276000077/aggressive_v2/loss_s2_004#p1#33: no hone",
+      "WorldError: rb_x26_s2601/step_276000077/aggressive_v2/loss_s2_005#p1#14: no hone",
+      "WorldError: rb_x26_s2601/step_276000077/heuristic/loss_s2_003#p1#15: no honest d",
+      "WorldError: rb_x26_s2601/step_276000077/heuristic/win_s2_001#p1#30: no honest dr",
+      "WorldError: rb_x26_s2601/step_276000077/heuristic2/loss_s1_004#p1#18: no honest "
+     ],
+     "file_order_is_sorted": true,
+     "files": [
+      "worlds_0_of_1.jsonl"
+     ],
+     "foreign": [],
+     "heads": [
+      "826bee8919c0986fd3733d3d06f03803822a929a"
+     ],
+     "legacy_unstamped": 0,
+     "lines": 800,
+     "missing": 0,
+     "n_foreign": 0,
+     "nonfinite": 0,
+     "ok": 719,
+     "stamped": 800,
+     "torn": 0,
+     "unique": 800,
+     "unstamped_new": 0
+    },
+    "[plateau] worlds F+M": {
+     "bad_driver": 0,
+     "crn_broken": 0,
+     "defect": 0,
+     "duplicates": 0,
+     "excluded": 79,
+     "exclusion_reasons": [
+      "WorldError: rb_x26_s2601/step_276000077/aggressive_v2/loss_s2_004#p1#14: no hone",
+      "WorldError: rb_x26_s2601/step_276000077/aggressive_v2/loss_s2_004#p1#33: no hone",
+      "WorldError: rb_x26_s2601/step_276000077/aggressive_v2/loss_s2_005#p1#14: no hone",
+      "WorldError: rb_x26_s2601/step_276000077/aggressive_v2/loss_s2_005#p1#16: no hone",
+      "WorldError: rb_x26_s2601/step_276000077/heuristic/loss_s2_003#p1#15: no honest d",
+      "WorldError: rb_x26_s2601/step_276000077/heuristic2/loss_s1_004#p1#18: no honest "
+     ],
+     "file_order_is_sorted": true,
+     "files": [
+      "worlds_0_of_1.jsonl"
+     ],
+     "foreign": [],
+     "heads": [
+      "826bee8919c0986fd3733d3d06f03803822a929a"
+     ],
+     "legacy_unstamped": 0,
+     "lines": 800,
+     "missing": 0,
+     "n_foreign": 0,
+     "nonfinite": 0,
+     "ok": 721,
+     "stamped": 800,
+     "torn": 0,
+     "unique": 800,
+     "unstamped_new": 0
+    },
+    "[plateau] worlds F+U": {
+     "bad_driver": 0,
+     "crn_broken": 0,
+     "defect": 0,
+     "duplicates": 0,
+     "excluded": 81,
+     "exclusion_reasons": [
+      "WorldError: rb_x26_s2601/step_276000077/aggressive_v2/loss_s2_004#p1#14: no hone",
+      "WorldError: rb_x26_s2601/step_276000077/aggressive_v2/loss_s2_004#p1#33: no hone",
+      "WorldError: rb_x26_s2601/step_276000077/aggressive_v2/loss_s2_005#p1#14: no hone",
+      "WorldError: rb_x26_s2601/step_276000077/heuristic/loss_s2_003#p1#15: no honest d",
+      "WorldError: rb_x26_s2601/step_276000077/heuristic/win_s2_001#p1#30: no honest dr",
+      "WorldError: rb_x26_s2601/step_276000077/heuristic2/loss_s1_004#p1#18: no honest "
+     ],
+     "file_order_is_sorted": true,
+     "files": [
+      "worlds_0_of_1.jsonl"
+     ],
+     "foreign": [],
+     "heads": [
+      "826bee8919c0986fd3733d3d06f03803822a929a"
+     ],
+     "legacy_unstamped": 0,
+     "lines": 800,
+     "missing": 0,
+     "n_foreign": 0,
+     "nonfinite": 0,
+     "ok": 719,
+     "stamped": 800,
+     "torn": 0,
+     "unique": 800,
+     "unstamped_new": 0
+    },
+    "[plateau] worlds FN@x26_025M": {
+     "bad_driver": 0,
+     "crn_broken": 0,
+     "defect": 0,
+     "duplicates": 0,
+     "excluded": 83,
+     "exclusion_reasons": [
+      "WorldError: rb_x26_s2601/step_276000077/aggressive_v2/loss_s2_004#p1#14: no hone",
+      "WorldError: rb_x26_s2601/step_276000077/aggressive_v2/loss_s2_004#p1#33: no hone",
+      "WorldError: rb_x26_s2601/step_276000077/aggressive_v2/loss_s2_005#p1#14: no hone",
+      "WorldError: rb_x26_s2601/step_276000077/heuristic/loss_s2_003#p1#15: no honest d",
+      "WorldError: rb_x26_s2601/step_276000077/heuristic/win_s2_001#p1#30: no honest dr",
+      "WorldError: rb_x26_s2601/step_276000077/heuristic2/loss_s1_004#p1#18: no honest "
+     ],
+     "file_order_is_sorted": true,
+     "files": [
+      "worlds_0_of_1.jsonl"
+     ],
+     "foreign": [],
+     "heads": [
+      "826bee8919c0986fd3733d3d06f03803822a929a"
+     ],
+     "legacy_unstamped": 0,
+     "lines": 800,
+     "missing": 0,
+     "n_foreign": 0,
+     "nonfinite": 0,
+     "ok": 717,
+     "stamped": 800,
+     "torn": 0,
+     "unique": 800,
+     "unstamped_new": 0
+    },
+    "[plateau] worlds FN@x26_P280M": {
+     "bad_driver": 0,
+     "crn_broken": 0,
+     "defect": 0,
+     "duplicates": 0,
+     "excluded": 83,
+     "exclusion_reasons": [
+      "WorldError: rb_x26_s2601/step_276000077/aggressive_v2/loss_s2_004#p1#14: no hone",
+      "WorldError: rb_x26_s2601/step_276000077/aggressive_v2/loss_s2_004#p1#33: no hone",
+      "WorldError: rb_x26_s2601/step_276000077/aggressive_v2/loss_s2_005#p1#14: no hone",
+      "WorldError: rb_x26_s2601/step_276000077/heuristic/loss_s2_003#p1#15: no honest d",
+      "WorldError: rb_x26_s2601/step_276000077/heuristic/win_s2_001#p1#30: no honest dr",
+      "WorldError: rb_x26_s2601/step_276000077/heuristic2/loss_s1_004#p1#18: no honest "
+     ],
+     "file_order_is_sorted": true,
+     "files": [
+      "worlds_0_of_1.jsonl"
+     ],
+     "foreign": [],
+     "heads": [
+      "826bee8919c0986fd3733d3d06f03803822a929a"
+     ],
+     "legacy_unstamped": 0,
+     "lines": 800,
+     "missing": 0,
+     "n_foreign": 0,
+     "nonfinite": 0,
+     "ok": 717,
+     "stamped": 800,
+     "torn": 0,
+     "unique": 800,
+     "unstamped_new": 0
+    },
+    "[plateau] worlds O-M": {
+     "bad_driver": 0,
+     "crn_broken": 0,
+     "defect": 0,
+     "duplicates": 0,
+     "excluded": 2,
+     "exclusion_reasons": [
+      "WorldError: rb_x26_s2601/step_280000170/staller_v2/win_s1_001#p1#10: 1 of 8 worl",
+      "WorldError: rb_x26_s2601/step_280000170/staller_v2/win_s1_001#p1#8: 1 of 8 world"
+     ],
+     "file_order_is_sorted": true,
+     "files": [
+      "worlds_0_of_1.jsonl"
+     ],
+     "foreign": [],
+     "heads": [
+      "826bee8919c0986fd3733d3d06f03803822a929a"
+     ],
+     "legacy_unstamped": 0,
+     "lines": 800,
+     "missing": 0,
+     "n_foreign": 0,
+     "nonfinite": 0,
+     "ok": 798,
+     "stamped": 800,
+     "torn": 0,
+     "unique": 800,
+     "unstamped_new": 0
+    },
+    "[plateau] worlds O-U": {
+     "bad_driver": 0,
+     "crn_broken": 0,
+     "defect": 0,
+     "duplicates": 0,
+     "excluded": 1,
+     "exclusion_reasons": [
+      "WorldError: rb_x26_s2601/step_276000077/sentinel_1/loss_s2_005#p1#25: 8 of 8 wor"
+     ],
+     "file_order_is_sorted": true,
+     "files": [
+      "worlds_0_of_1.jsonl"
+     ],
+     "foreign": [],
+     "heads": [
+      "826bee8919c0986fd3733d3d06f03803822a929a"
+     ],
+     "legacy_unstamped": 0,
+     "lines": 800,
+     "missing": 0,
+     "n_foreign": 0,
+     "nonfinite": 0,
+     "ok": 799,
+     "stamped": 800,
+     "torn": 0,
+     "unique": 800,
+     "unstamped_new": 0
+    }
+   }
+  }
+ },
+ "checks": {
+  "[interim] F+U \u2261 F at k = 6 @x26_025M": {
+   "detail": {
+    "actions": 905,
+    "both_not_ok": 23,
+    "crit_mismatch": 0,
+    "out_mismatch": 0,
+    "refused": 0,
+    "states": 160,
+    "trace_mismatch": 0
+   },
+   "pass": true
+  },
+  "[interim] F+U \u2261 F at k = 6 @x26_P280M": {
+   "detail": {
+    "actions": 905,
+    "both_not_ok": 23,
+    "crit_mismatch": 0,
+    "out_mismatch": 0,
+    "refused": 0,
+    "states": 160,
+    "trace_mismatch": 0
+   },
+   "pass": true
+  },
+  "[interim] LEAN subset of FULL, 320 / 800": {
+   "detail": null,
+   "pass": true
+  },
+  "[interim] O\u2212U \u2261 O at k = 6 @x26_P280M": {
+   "detail": {
+    "actions": 1048,
+    "crit_mismatch": 0,
+    "out_mismatch": 0,
+    "refused": 0,
+    "states": 160,
+    "trace_mismatch": 0
+   },
+   "pass": true
+  },
+  "[interim] bank content sha256 (recomputed on load)": {
+   "detail": "8da1613d1e28f412",
+   "pass": true
+  },
+  "[interim] full ids sha = the registration": {
+   "detail": 800,
+   "pass": true
+  },
+  "[interim] lean ids sha = the registration": {
+   "detail": 320,
+   "pass": true
+  },
+  "[interim] worlds F+M: 0 defects (CRN tooth included)": {
+   "detail": {
+    "crn_broken": 0,
+    "defect": 0
+   },
+   "pass": true
+  },
+  "[interim] worlds F+M: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] worlds F+M: builder head = 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "[interim] worlds F+M: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 0,
+    "stamped": 800,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[interim] worlds F+M: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 800
+   },
+   "pass": true
+  },
+  "[interim] worlds F+U: 0 defects (CRN tooth included)": {
+   "detail": {
+    "crn_broken": 0,
+    "defect": 0
+   },
+   "pass": true
+  },
+  "[interim] worlds F+U: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] worlds F+U: builder head = 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "[interim] worlds F+U: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 0,
+    "stamped": 800,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[interim] worlds F+U: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 800
+   },
+   "pass": true
+  },
+  "[interim] worlds F: 0 defects (CRN tooth included)": {
+   "detail": {
+    "crn_broken": 0,
+    "defect": 0
+   },
+   "pass": true
+  },
+  "[interim] worlds F: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] worlds F: builder head = 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "[interim] worlds F: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 320,
+    "stamped": 480,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[interim] worlds F: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 800
+   },
+   "pass": true
+  },
+  "[interim] worlds FN@x26_025M: 0 defects (CRN tooth included)": {
+   "detail": {
+    "crn_broken": 0,
+    "defect": 0
+   },
+   "pass": true
+  },
+  "[interim] worlds FN@x26_025M: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] worlds FN@x26_025M: builder head = 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "[interim] worlds FN@x26_025M: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 320,
+    "stamped": 480,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[interim] worlds FN@x26_025M: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 800
+   },
+   "pass": true
+  },
+  "[interim] worlds FN@x26_100M: 0 defects (CRN tooth included)": {
+   "detail": {
+    "crn_broken": 0,
+    "defect": 0
+   },
+   "pass": true
+  },
+  "[interim] worlds FN@x26_100M: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] worlds FN@x26_100M: builder head = 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "[interim] worlds FN@x26_100M: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 320,
+    "stamped": 0,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[interim] worlds FN@x26_100M: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 320,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 320
+   },
+   "pass": true
+  },
+  "[interim] worlds FN@x26_175M: 0 defects (CRN tooth included)": {
+   "detail": {
+    "crn_broken": 0,
+    "defect": 0
+   },
+   "pass": true
+  },
+  "[interim] worlds FN@x26_175M: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] worlds FN@x26_175M: builder head = 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "[interim] worlds FN@x26_175M: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 320,
+    "stamped": 0,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[interim] worlds FN@x26_175M: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 320,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 320
+   },
+   "pass": true
+  },
+  "[interim] worlds FN@x26_225M: 0 defects (CRN tooth included)": {
+   "detail": {
+    "crn_broken": 0,
+    "defect": 0
+   },
+   "pass": true
+  },
+  "[interim] worlds FN@x26_225M: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] worlds FN@x26_225M: builder head = 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "[interim] worlds FN@x26_225M: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 320,
+    "stamped": 0,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[interim] worlds FN@x26_225M: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 320,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 320
+   },
+   "pass": true
+  },
+  "[interim] worlds FN@x26_P280M: 0 defects (CRN tooth included)": {
+   "detail": {
+    "crn_broken": 0,
+    "defect": 0
+   },
+   "pass": true
+  },
+  "[interim] worlds FN@x26_P280M: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] worlds FN@x26_P280M: builder head = 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "[interim] worlds FN@x26_P280M: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 0,
+    "stamped": 800,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[interim] worlds FN@x26_P280M: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 800
+   },
+   "pass": true
+  },
+  "[interim] worlds O-M: 0 defects (CRN tooth included)": {
+   "detail": {
+    "crn_broken": 0,
+    "defect": 0
+   },
+   "pass": true
+  },
+  "[interim] worlds O-M: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] worlds O-M: builder head = 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "[interim] worlds O-M: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 0,
+    "stamped": 800,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[interim] worlds O-M: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 800
+   },
+   "pass": true
+  },
+  "[interim] worlds O-U: 0 defects (CRN tooth included)": {
+   "detail": {
+    "crn_broken": 0,
+    "defect": 0
+   },
+   "pass": true
+  },
+  "[interim] worlds O-U: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] worlds O-U: builder head = 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "[interim] worlds O-U: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 0,
+    "stamped": 800,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[interim] worlds O-U: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 800
+   },
+   "pass": true
+  },
+  "[interim] worlds V:oracle: 0 defects (CRN tooth included)": {
+   "detail": {
+    "crn_broken": 0,
+    "defect": 0
+   },
+   "pass": true
+  },
+  "[interim] worlds V:oracle: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] worlds V:oracle: builder head = 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "[interim] worlds V:oracle: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 12,
+    "stamped": 0,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[interim] worlds V:oracle: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 12,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 12
+   },
+   "pass": true
+  },
+  "[interim] x26_025M F+M: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_025M F+M: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_025M F+M: arm field": {
+   "detail": [
+    "F+M"
+   ],
+   "pass": true
+  },
+  "[interim] x26_025M F+M: cp field = x26_025M": {
+   "detail": [
+    "x26_025M"
+   ],
+   "pass": true
+  },
+  "[interim] x26_025M F+M: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 0,
+    "stamped": 800,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[interim] x26_025M F+M: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 800
+   },
+   "pass": true
+  },
+  "[interim] x26_025M F+M: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "[interim] x26_025M F+M: step = 25000027": {
+   "detail": [
+    25000027
+   ],
+   "pass": true
+  },
+  "[interim] x26_025M F+M: world head 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "[interim] x26_025M F+U: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_025M F+U: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_025M F+U: arm field": {
+   "detail": [
+    "F+U"
+   ],
+   "pass": true
+  },
+  "[interim] x26_025M F+U: cp field = x26_025M": {
+   "detail": [
+    "x26_025M"
+   ],
+   "pass": true
+  },
+  "[interim] x26_025M F+U: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 0,
+    "stamped": 800,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[interim] x26_025M F+U: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 800
+   },
+   "pass": true
+  },
+  "[interim] x26_025M F+U: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "[interim] x26_025M F+U: step = 25000027": {
+   "detail": [
+    25000027
+   ],
+   "pass": true
+  },
+  "[interim] x26_025M F+U: world head 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "[interim] x26_025M F: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_025M F: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_025M F: arm field": {
+   "detail": [
+    "F"
+   ],
+   "pass": true
+  },
+  "[interim] x26_025M F: cp field = x26_025M": {
+   "detail": [
+    "x26_025M"
+   ],
+   "pass": true
+  },
+  "[interim] x26_025M F: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 320,
+    "stamped": 480,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[interim] x26_025M F: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 800
+   },
+   "pass": true
+  },
+  "[interim] x26_025M F: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "[interim] x26_025M F: step = 25000027": {
+   "detail": [
+    25000027
+   ],
+   "pass": true
+  },
+  "[interim] x26_025M F: world head 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "[interim] x26_025M FN: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_025M FN: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_025M FN: arm field": {
+   "detail": [
+    "FN"
+   ],
+   "pass": true
+  },
+  "[interim] x26_025M FN: cp field = x26_025M": {
+   "detail": [
+    "x26_025M"
+   ],
+   "pass": true
+  },
+  "[interim] x26_025M FN: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 320,
+    "stamped": 480,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[interim] x26_025M FN: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 800
+   },
+   "pass": true
+  },
+  "[interim] x26_025M FN: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "[interim] x26_025M FN: step = 25000027": {
+   "detail": [
+    25000027
+   ],
+   "pass": true
+  },
+  "[interim] x26_025M FN: world head 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "[interim] x26_025M O: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_025M O: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_025M O: cp field = x26_025M": {
+   "detail": [
+    "x26_025M"
+   ],
+   "pass": true
+  },
+  "[interim] x26_025M O: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 320,
+    "stamped": 480,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[interim] x26_025M O: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 800
+   },
+   "pass": true
+  },
+  "[interim] x26_025M O: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "[interim] x26_025M O: step = 25000027": {
+   "detail": [
+    25000027
+   ],
+   "pass": true
+  },
+  "[interim] x26_025M V:oracle: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_025M V:oracle: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_025M V:oracle: arm field": {
+   "detail": [
+    "V:oracle"
+   ],
+   "pass": true
+  },
+  "[interim] x26_025M V:oracle: cp field = x26_025M": {
+   "detail": [
+    "x26_025M"
+   ],
+   "pass": true
+  },
+  "[interim] x26_025M V:oracle: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 12,
+    "stamped": 0,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[interim] x26_025M V:oracle: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 12,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 12
+   },
+   "pass": true
+  },
+  "[interim] x26_025M V:oracle: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "[interim] x26_025M V:oracle: step = 25000027": {
+   "detail": [
+    25000027
+   ],
+   "pass": true
+  },
+  "[interim] x26_025M V:oracle: world head 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "[interim] x26_025M belief: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_025M belief: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_025M belief: cp field = x26_025M": {
+   "detail": [
+    "x26_025M"
+   ],
+   "pass": true
+  },
+  "[interim] x26_025M belief: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 320,
+    "stamped": 480,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[interim] x26_025M belief: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 800
+   },
+   "pass": true
+  },
+  "[interim] x26_025M belief: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "[interim] x26_025M roots: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_025M roots: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_025M roots: cp field = x26_025M": {
+   "detail": [
+    "x26_025M"
+   ],
+   "pass": true
+  },
+  "[interim] x26_025M roots: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 800,
+    "stamped": 0,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[interim] x26_025M roots: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 800
+   },
+   "pass": true
+  },
+  "[interim] x26_025M roots: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "[interim] x26_025M: F playout ok-set = F world ok-set": {
+   "detail": {
+    "playout": 723,
+    "world": 723
+   },
+   "pass": true
+  },
+  "[interim] x26_100M F: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_100M F: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_100M F: arm field": {
+   "detail": [
+    "F"
+   ],
+   "pass": true
+  },
+  "[interim] x26_100M F: cp field = x26_100M": {
+   "detail": [
+    "x26_100M"
+   ],
+   "pass": true
+  },
+  "[interim] x26_100M F: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 320,
+    "stamped": 0,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[interim] x26_100M F: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 320,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 320
+   },
+   "pass": true
+  },
+  "[interim] x26_100M F: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "[interim] x26_100M F: step = 100000037": {
+   "detail": [
+    100000037
+   ],
+   "pass": true
+  },
+  "[interim] x26_100M F: world head 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "[interim] x26_100M FN: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_100M FN: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_100M FN: arm field": {
+   "detail": [
+    "FN"
+   ],
+   "pass": true
+  },
+  "[interim] x26_100M FN: cp field = x26_100M": {
+   "detail": [
+    "x26_100M"
+   ],
+   "pass": true
+  },
+  "[interim] x26_100M FN: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 320,
+    "stamped": 0,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[interim] x26_100M FN: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 320,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 320
+   },
+   "pass": true
+  },
+  "[interim] x26_100M FN: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "[interim] x26_100M FN: step = 100000037": {
+   "detail": [
+    100000037
+   ],
+   "pass": true
+  },
+  "[interim] x26_100M FN: world head 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "[interim] x26_100M O: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_100M O: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_100M O: cp field = x26_100M": {
+   "detail": [
+    "x26_100M"
+   ],
+   "pass": true
+  },
+  "[interim] x26_100M O: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 320,
+    "stamped": 0,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[interim] x26_100M O: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 320,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 320
+   },
+   "pass": true
+  },
+  "[interim] x26_100M O: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "[interim] x26_100M O: step = 100000037": {
+   "detail": [
+    100000037
+   ],
+   "pass": true
+  },
+  "[interim] x26_100M V:oracle: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_100M V:oracle: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_100M V:oracle: arm field": {
+   "detail": [
+    "V:oracle"
+   ],
+   "pass": true
+  },
+  "[interim] x26_100M V:oracle: cp field = x26_100M": {
+   "detail": [
+    "x26_100M"
+   ],
+   "pass": true
+  },
+  "[interim] x26_100M V:oracle: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 12,
+    "stamped": 0,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[interim] x26_100M V:oracle: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 12,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 12
+   },
+   "pass": true
+  },
+  "[interim] x26_100M V:oracle: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "[interim] x26_100M V:oracle: step = 100000037": {
+   "detail": [
+    100000037
+   ],
+   "pass": true
+  },
+  "[interim] x26_100M V:oracle: world head 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "[interim] x26_100M belief: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_100M belief: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_100M belief: cp field = x26_100M": {
+   "detail": [
+    "x26_100M"
+   ],
+   "pass": true
+  },
+  "[interim] x26_100M belief: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 320,
+    "stamped": 0,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[interim] x26_100M belief: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 320,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 320
+   },
+   "pass": true
+  },
+  "[interim] x26_100M belief: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "[interim] x26_100M roots: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_100M roots: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_100M roots: cp field = x26_100M": {
+   "detail": [
+    "x26_100M"
+   ],
+   "pass": true
+  },
+  "[interim] x26_100M roots: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 800,
+    "stamped": 0,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[interim] x26_100M roots: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 800
+   },
+   "pass": true
+  },
+  "[interim] x26_100M roots: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "[interim] x26_100M: F playout ok-set = F world ok-set": {
+   "detail": {
+    "playout": 287,
+    "world": 287
+   },
+   "pass": true
+  },
+  "[interim] x26_175M F: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_175M F: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_175M F: arm field": {
+   "detail": [
+    "F"
+   ],
+   "pass": true
+  },
+  "[interim] x26_175M F: cp field = x26_175M": {
+   "detail": [
+    "x26_175M"
+   ],
+   "pass": true
+  },
+  "[interim] x26_175M F: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 320,
+    "stamped": 0,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[interim] x26_175M F: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 320,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 320
+   },
+   "pass": true
+  },
+  "[interim] x26_175M F: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "[interim] x26_175M F: step = 175000114": {
+   "detail": [
+    175000114
+   ],
+   "pass": true
+  },
+  "[interim] x26_175M F: world head 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "[interim] x26_175M FN: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_175M FN: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_175M FN: arm field": {
+   "detail": [
+    "FN"
+   ],
+   "pass": true
+  },
+  "[interim] x26_175M FN: cp field = x26_175M": {
+   "detail": [
+    "x26_175M"
+   ],
+   "pass": true
+  },
+  "[interim] x26_175M FN: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 320,
+    "stamped": 0,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[interim] x26_175M FN: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 320,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 320
+   },
+   "pass": true
+  },
+  "[interim] x26_175M FN: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "[interim] x26_175M FN: step = 175000114": {
+   "detail": [
+    175000114
+   ],
+   "pass": true
+  },
+  "[interim] x26_175M FN: world head 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "[interim] x26_175M O: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_175M O: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_175M O: cp field = x26_175M": {
+   "detail": [
+    "x26_175M"
+   ],
+   "pass": true
+  },
+  "[interim] x26_175M O: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 320,
+    "stamped": 0,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[interim] x26_175M O: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 320,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 320
+   },
+   "pass": true
+  },
+  "[interim] x26_175M O: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "[interim] x26_175M O: step = 175000114": {
+   "detail": [
+    175000114
+   ],
+   "pass": true
+  },
+  "[interim] x26_175M V:oracle: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_175M V:oracle: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_175M V:oracle: arm field": {
+   "detail": [
+    "V:oracle"
+   ],
+   "pass": true
+  },
+  "[interim] x26_175M V:oracle: cp field = x26_175M": {
+   "detail": [
+    "x26_175M"
+   ],
+   "pass": true
+  },
+  "[interim] x26_175M V:oracle: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 12,
+    "stamped": 0,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[interim] x26_175M V:oracle: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 12,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 12
+   },
+   "pass": true
+  },
+  "[interim] x26_175M V:oracle: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "[interim] x26_175M V:oracle: step = 175000114": {
+   "detail": [
+    175000114
+   ],
+   "pass": true
+  },
+  "[interim] x26_175M V:oracle: world head 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "[interim] x26_175M belief: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_175M belief: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_175M belief: cp field = x26_175M": {
+   "detail": [
+    "x26_175M"
+   ],
+   "pass": true
+  },
+  "[interim] x26_175M belief: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 320,
+    "stamped": 0,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[interim] x26_175M belief: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 320,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 320
+   },
+   "pass": true
+  },
+  "[interim] x26_175M belief: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "[interim] x26_175M roots: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_175M roots: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_175M roots: cp field = x26_175M": {
+   "detail": [
+    "x26_175M"
+   ],
+   "pass": true
+  },
+  "[interim] x26_175M roots: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 800,
+    "stamped": 0,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[interim] x26_175M roots: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 800
+   },
+   "pass": true
+  },
+  "[interim] x26_175M roots: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "[interim] x26_175M: F playout ok-set = F world ok-set": {
+   "detail": {
+    "playout": 287,
+    "world": 287
+   },
+   "pass": true
+  },
+  "[interim] x26_225M F: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_225M F: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_225M F: arm field": {
+   "detail": [
+    "F"
+   ],
+   "pass": true
+  },
+  "[interim] x26_225M F: cp field = x26_225M": {
+   "detail": [
+    "x26_225M"
+   ],
+   "pass": true
+  },
+  "[interim] x26_225M F: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 320,
+    "stamped": 0,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[interim] x26_225M F: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 320,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 320
+   },
+   "pass": true
+  },
+  "[interim] x26_225M F: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "[interim] x26_225M F: step = 225000152": {
+   "detail": [
+    225000152
+   ],
+   "pass": true
+  },
+  "[interim] x26_225M F: world head 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "[interim] x26_225M FN: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_225M FN: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_225M FN: arm field": {
+   "detail": [
+    "FN"
+   ],
+   "pass": true
+  },
+  "[interim] x26_225M FN: cp field = x26_225M": {
+   "detail": [
+    "x26_225M"
+   ],
+   "pass": true
+  },
+  "[interim] x26_225M FN: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 320,
+    "stamped": 0,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[interim] x26_225M FN: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 320,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 320
+   },
+   "pass": true
+  },
+  "[interim] x26_225M FN: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "[interim] x26_225M FN: step = 225000152": {
+   "detail": [
+    225000152
+   ],
+   "pass": true
+  },
+  "[interim] x26_225M FN: world head 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "[interim] x26_225M O: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_225M O: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_225M O: cp field = x26_225M": {
+   "detail": [
+    "x26_225M"
+   ],
+   "pass": true
+  },
+  "[interim] x26_225M O: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 320,
+    "stamped": 0,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[interim] x26_225M O: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 320,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 320
+   },
+   "pass": true
+  },
+  "[interim] x26_225M O: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "[interim] x26_225M O: step = 225000152": {
+   "detail": [
+    225000152
+   ],
+   "pass": true
+  },
+  "[interim] x26_225M V:oracle: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_225M V:oracle: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_225M V:oracle: arm field": {
+   "detail": [
+    "V:oracle"
+   ],
+   "pass": true
+  },
+  "[interim] x26_225M V:oracle: cp field = x26_225M": {
+   "detail": [
+    "x26_225M"
+   ],
+   "pass": true
+  },
+  "[interim] x26_225M V:oracle: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 12,
+    "stamped": 0,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[interim] x26_225M V:oracle: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 12,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 12
+   },
+   "pass": true
+  },
+  "[interim] x26_225M V:oracle: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "[interim] x26_225M V:oracle: step = 225000152": {
+   "detail": [
+    225000152
+   ],
+   "pass": true
+  },
+  "[interim] x26_225M V:oracle: world head 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "[interim] x26_225M belief: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_225M belief: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_225M belief: cp field = x26_225M": {
+   "detail": [
+    "x26_225M"
+   ],
+   "pass": true
+  },
+  "[interim] x26_225M belief: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 320,
+    "stamped": 0,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[interim] x26_225M belief: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 320,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 320
+   },
+   "pass": true
+  },
+  "[interim] x26_225M belief: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "[interim] x26_225M roots: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_225M roots: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_225M roots: cp field = x26_225M": {
+   "detail": [
+    "x26_225M"
+   ],
+   "pass": true
+  },
+  "[interim] x26_225M roots: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 800,
+    "stamped": 0,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[interim] x26_225M roots: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 800
+   },
+   "pass": true
+  },
+  "[interim] x26_225M roots: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "[interim] x26_225M: F playout ok-set = F world ok-set": {
+   "detail": {
+    "playout": 287,
+    "world": 287
+   },
+   "pass": true
+  },
+  "[interim] x26_P280M F+M: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_P280M F+M: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_P280M F+M: arm field": {
+   "detail": [
+    "F+M"
+   ],
+   "pass": true
+  },
+  "[interim] x26_P280M F+M: cp field = x26_P280M": {
+   "detail": [
+    "x26_P280M"
+   ],
+   "pass": true
+  },
+  "[interim] x26_P280M F+M: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 0,
+    "stamped": 800,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[interim] x26_P280M F+M: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 800
+   },
+   "pass": true
+  },
+  "[interim] x26_P280M F+M: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "[interim] x26_P280M F+M: step = 280000170": {
+   "detail": [
+    280000170
+   ],
+   "pass": true
+  },
+  "[interim] x26_P280M F+M: world head 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "[interim] x26_P280M F+U: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_P280M F+U: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_P280M F+U: arm field": {
+   "detail": [
+    "F+U"
+   ],
+   "pass": true
+  },
+  "[interim] x26_P280M F+U: cp field = x26_P280M": {
+   "detail": [
+    "x26_P280M"
+   ],
+   "pass": true
+  },
+  "[interim] x26_P280M F+U: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 0,
+    "stamped": 800,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[interim] x26_P280M F+U: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 800
+   },
+   "pass": true
+  },
+  "[interim] x26_P280M F+U: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "[interim] x26_P280M F+U: step = 280000170": {
+   "detail": [
+    280000170
+   ],
+   "pass": true
+  },
+  "[interim] x26_P280M F+U: world head 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "[interim] x26_P280M F: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_P280M F: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_P280M F: arm field": {
+   "detail": [
+    "F"
+   ],
+   "pass": true
+  },
+  "[interim] x26_P280M F: cp field = x26_P280M": {
+   "detail": [
+    "x26_P280M"
+   ],
+   "pass": true
+  },
+  "[interim] x26_P280M F: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 0,
+    "stamped": 800,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[interim] x26_P280M F: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 800
+   },
+   "pass": true
+  },
+  "[interim] x26_P280M F: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "[interim] x26_P280M F: step = 280000170": {
+   "detail": [
+    280000170
+   ],
+   "pass": true
+  },
+  "[interim] x26_P280M F: world head 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "[interim] x26_P280M FN: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_P280M FN: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_P280M FN: arm field": {
+   "detail": [
+    "FN"
+   ],
+   "pass": true
+  },
+  "[interim] x26_P280M FN: cp field = x26_P280M": {
+   "detail": [
+    "x26_P280M"
+   ],
+   "pass": true
+  },
+  "[interim] x26_P280M FN: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 0,
+    "stamped": 800,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[interim] x26_P280M FN: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 800
+   },
+   "pass": true
+  },
+  "[interim] x26_P280M FN: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "[interim] x26_P280M FN: step = 280000170": {
+   "detail": [
+    280000170
+   ],
+   "pass": true
+  },
+  "[interim] x26_P280M FN: world head 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "[interim] x26_P280M O-M: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_P280M O-M: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_P280M O-M: arm field": {
+   "detail": [
+    "O-M"
+   ],
+   "pass": true
+  },
+  "[interim] x26_P280M O-M: cp field = x26_P280M": {
+   "detail": [
+    "x26_P280M"
+   ],
+   "pass": true
+  },
+  "[interim] x26_P280M O-M: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 0,
+    "stamped": 800,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[interim] x26_P280M O-M: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 800
+   },
+   "pass": true
+  },
+  "[interim] x26_P280M O-M: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "[interim] x26_P280M O-M: step = 280000170": {
+   "detail": [
+    280000170
+   ],
+   "pass": true
+  },
+  "[interim] x26_P280M O-M: world head 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "[interim] x26_P280M O-U: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_P280M O-U: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_P280M O-U: arm field": {
+   "detail": [
+    "O-U"
+   ],
+   "pass": true
+  },
+  "[interim] x26_P280M O-U: cp field = x26_P280M": {
+   "detail": [
+    "x26_P280M"
+   ],
+   "pass": true
+  },
+  "[interim] x26_P280M O-U: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 0,
+    "stamped": 800,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[interim] x26_P280M O-U: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 800
+   },
+   "pass": true
+  },
+  "[interim] x26_P280M O-U: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "[interim] x26_P280M O-U: step = 280000170": {
+   "detail": [
+    280000170
+   ],
+   "pass": true
+  },
+  "[interim] x26_P280M O-U: world head 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "[interim] x26_P280M O: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_P280M O: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_P280M O: cp field = x26_P280M": {
+   "detail": [
+    "x26_P280M"
+   ],
+   "pass": true
+  },
+  "[interim] x26_P280M O: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 0,
+    "stamped": 800,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[interim] x26_P280M O: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 800
+   },
+   "pass": true
+  },
+  "[interim] x26_P280M O: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "[interim] x26_P280M O: step = 280000170": {
+   "detail": [
+    280000170
+   ],
+   "pass": true
+  },
+  "[interim] x26_P280M V:oracle: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_P280M V:oracle: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_P280M V:oracle: arm field": {
+   "detail": [
+    "V:oracle"
+   ],
+   "pass": true
+  },
+  "[interim] x26_P280M V:oracle: cp field = x26_P280M": {
+   "detail": [
+    "x26_P280M"
+   ],
+   "pass": true
+  },
+  "[interim] x26_P280M V:oracle: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 0,
+    "stamped": 12,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[interim] x26_P280M V:oracle: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 12,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 12
+   },
+   "pass": true
+  },
+  "[interim] x26_P280M V:oracle: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "[interim] x26_P280M V:oracle: step = 280000170": {
+   "detail": [
+    280000170
+   ],
+   "pass": true
+  },
+  "[interim] x26_P280M V:oracle: world head 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "[interim] x26_P280M belief: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_P280M belief: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_P280M belief: cp field = x26_P280M": {
+   "detail": [
+    "x26_P280M"
+   ],
+   "pass": true
+  },
+  "[interim] x26_P280M belief: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 0,
+    "stamped": 800,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[interim] x26_P280M belief: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 800
+   },
+   "pass": true
+  },
+  "[interim] x26_P280M belief: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "[interim] x26_P280M roots: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_P280M roots: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[interim] x26_P280M roots: cp field = x26_P280M": {
+   "detail": [
+    "x26_P280M"
+   ],
+   "pass": true
+  },
+  "[interim] x26_P280M roots: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 0,
+    "stamped": 800,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[interim] x26_P280M roots: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 800
+   },
+   "pass": true
+  },
+  "[interim] x26_P280M roots: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "[interim] x26_P280M: F playout ok-set = F world ok-set": {
+   "detail": {
+    "playout": 723,
+    "world": 723
+   },
+   "pass": true
+  },
+  "[plateau] F+U \u2261 F at k = 6 @x26_025M": {
+   "detail": {
+    "actions": 830,
+    "both_not_ok": 31,
+    "crit_mismatch": 0,
+    "out_mismatch": 0,
+    "refused": 0,
+    "states": 160,
+    "trace_mismatch": 0
+   },
+   "pass": true
+  },
+  "[plateau] F+U \u2261 F at k = 6 @x26_P280M": {
+   "detail": {
+    "actions": 830,
+    "both_not_ok": 31,
+    "crit_mismatch": 0,
+    "out_mismatch": 0,
+    "refused": 0,
+    "states": 160,
+    "trace_mismatch": 0
+   },
+   "pass": true
+  },
+  "[plateau] LEAN subset of FULL, 320 / 800": {
+   "detail": null,
+   "pass": true
+  },
+  "[plateau] O\u2212U \u2261 O at k = 6 @x26_P280M": {
+   "detail": {
+    "actions": 1029,
+    "crit_mismatch": 0,
+    "out_mismatch": 0,
+    "refused": 0,
+    "states": 160,
+    "trace_mismatch": 0
+   },
+   "pass": true
+  },
+  "[plateau] bank content sha256 (recomputed on load)": {
+   "detail": "25d2e83ce0ce9a52",
+   "pass": true
+  },
+  "[plateau] full ids sha = the registration": {
+   "detail": 800,
+   "pass": true
+  },
+  "[plateau] lean ids sha = the registration": {
+   "detail": 320,
+   "pass": true
+  },
+  "[plateau] worlds F+M: 0 defects (CRN tooth included)": {
+   "detail": {
+    "crn_broken": 0,
+    "defect": 0
+   },
+   "pass": true
+  },
+  "[plateau] worlds F+M: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[plateau] worlds F+M: builder head = 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "[plateau] worlds F+M: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 0,
+    "stamped": 800,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[plateau] worlds F+M: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 800
+   },
+   "pass": true
+  },
+  "[plateau] worlds F+U: 0 defects (CRN tooth included)": {
+   "detail": {
+    "crn_broken": 0,
+    "defect": 0
+   },
+   "pass": true
+  },
+  "[plateau] worlds F+U: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[plateau] worlds F+U: builder head = 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "[plateau] worlds F+U: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 0,
+    "stamped": 800,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[plateau] worlds F+U: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 800
+   },
+   "pass": true
+  },
+  "[plateau] worlds F: 0 defects (CRN tooth included)": {
+   "detail": {
+    "crn_broken": 0,
+    "defect": 0
+   },
+   "pass": true
+  },
+  "[plateau] worlds F: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[plateau] worlds F: builder head = 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "[plateau] worlds F: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 0,
+    "stamped": 800,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[plateau] worlds F: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 800
+   },
+   "pass": true
+  },
+  "[plateau] worlds FN@x26_025M: 0 defects (CRN tooth included)": {
+   "detail": {
+    "crn_broken": 0,
+    "defect": 0
+   },
+   "pass": true
+  },
+  "[plateau] worlds FN@x26_025M: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[plateau] worlds FN@x26_025M: builder head = 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "[plateau] worlds FN@x26_025M: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 0,
+    "stamped": 800,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[plateau] worlds FN@x26_025M: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 800
+   },
+   "pass": true
+  },
+  "[plateau] worlds FN@x26_P280M: 0 defects (CRN tooth included)": {
+   "detail": {
+    "crn_broken": 0,
+    "defect": 0
+   },
+   "pass": true
+  },
+  "[plateau] worlds FN@x26_P280M: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[plateau] worlds FN@x26_P280M: builder head = 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "[plateau] worlds FN@x26_P280M: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 0,
+    "stamped": 800,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[plateau] worlds FN@x26_P280M: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 800
+   },
+   "pass": true
+  },
+  "[plateau] worlds O-M: 0 defects (CRN tooth included)": {
+   "detail": {
+    "crn_broken": 0,
+    "defect": 0
+   },
+   "pass": true
+  },
+  "[plateau] worlds O-M: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[plateau] worlds O-M: builder head = 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "[plateau] worlds O-M: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 0,
+    "stamped": 800,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[plateau] worlds O-M: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 800
+   },
+   "pass": true
+  },
+  "[plateau] worlds O-U: 0 defects (CRN tooth included)": {
+   "detail": {
+    "crn_broken": 0,
+    "defect": 0
+   },
+   "pass": true
+  },
+  "[plateau] worlds O-U: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[plateau] worlds O-U: builder head = 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "[plateau] worlds O-U: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 0,
+    "stamped": 800,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[plateau] worlds O-U: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 800
+   },
+   "pass": true
+  },
+  "[plateau] x26_025M F+M: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "[plateau] x26_025M F+M: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[plateau] x26_025M F+M: arm field": {
+   "detail": [
+    "F+M"
+   ],
+   "pass": true
+  },
+  "[plateau] x26_025M F+M: cp field = x26_025M": {
+   "detail": [
+    "x26_025M"
+   ],
+   "pass": true
+  },
+  "[plateau] x26_025M F+M: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 0,
+    "stamped": 800,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[plateau] x26_025M F+M: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 800
+   },
+   "pass": true
+  },
+  "[plateau] x26_025M F+M: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "[plateau] x26_025M F+M: step = 25000027": {
+   "detail": [
+    25000027
+   ],
+   "pass": true
+  },
+  "[plateau] x26_025M F+M: world head 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "[plateau] x26_025M F+U: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "[plateau] x26_025M F+U: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[plateau] x26_025M F+U: arm field": {
+   "detail": [
+    "F+U"
+   ],
+   "pass": true
+  },
+  "[plateau] x26_025M F+U: cp field = x26_025M": {
+   "detail": [
+    "x26_025M"
+   ],
+   "pass": true
+  },
+  "[plateau] x26_025M F+U: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 0,
+    "stamped": 800,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[plateau] x26_025M F+U: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 800
+   },
+   "pass": true
+  },
+  "[plateau] x26_025M F+U: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "[plateau] x26_025M F+U: step = 25000027": {
+   "detail": [
+    25000027
+   ],
+   "pass": true
+  },
+  "[plateau] x26_025M F+U: world head 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "[plateau] x26_025M F: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "[plateau] x26_025M F: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[plateau] x26_025M F: arm field": {
+   "detail": [
+    "F"
+   ],
+   "pass": true
+  },
+  "[plateau] x26_025M F: cp field = x26_025M": {
+   "detail": [
+    "x26_025M"
+   ],
+   "pass": true
+  },
+  "[plateau] x26_025M F: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 0,
+    "stamped": 800,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[plateau] x26_025M F: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 800
+   },
+   "pass": true
+  },
+  "[plateau] x26_025M F: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "[plateau] x26_025M F: step = 25000027": {
+   "detail": [
+    25000027
+   ],
+   "pass": true
+  },
+  "[plateau] x26_025M F: world head 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "[plateau] x26_025M FN: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "[plateau] x26_025M FN: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[plateau] x26_025M FN: arm field": {
+   "detail": [
+    "FN"
+   ],
+   "pass": true
+  },
+  "[plateau] x26_025M FN: cp field = x26_025M": {
+   "detail": [
+    "x26_025M"
+   ],
+   "pass": true
+  },
+  "[plateau] x26_025M FN: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 0,
+    "stamped": 800,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[plateau] x26_025M FN: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 800
+   },
+   "pass": true
+  },
+  "[plateau] x26_025M FN: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "[plateau] x26_025M FN: step = 25000027": {
+   "detail": [
+    25000027
+   ],
+   "pass": true
+  },
+  "[plateau] x26_025M FN: world head 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "[plateau] x26_025M O: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "[plateau] x26_025M O: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[plateau] x26_025M O: cp field = x26_025M": {
+   "detail": [
+    "x26_025M"
+   ],
+   "pass": true
+  },
+  "[plateau] x26_025M O: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 0,
+    "stamped": 800,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[plateau] x26_025M O: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 800
+   },
+   "pass": true
+  },
+  "[plateau] x26_025M O: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "[plateau] x26_025M O: step = 25000027": {
+   "detail": [
+    25000027
+   ],
+   "pass": true
+  },
+  "[plateau] x26_025M belief: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "[plateau] x26_025M belief: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[plateau] x26_025M belief: cp field = x26_025M": {
+   "detail": [
+    "x26_025M"
+   ],
+   "pass": true
+  },
+  "[plateau] x26_025M belief: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 0,
+    "stamped": 800,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[plateau] x26_025M belief: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 800
+   },
+   "pass": true
+  },
+  "[plateau] x26_025M belief: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "[plateau] x26_025M roots: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "[plateau] x26_025M roots: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[plateau] x26_025M roots: cp field = x26_025M": {
+   "detail": [
+    "x26_025M"
+   ],
+   "pass": true
+  },
+  "[plateau] x26_025M roots: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 0,
+    "stamped": 800,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[plateau] x26_025M roots: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 800
+   },
+   "pass": true
+  },
+  "[plateau] x26_025M roots: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "[plateau] x26_025M: F playout ok-set = F world ok-set": {
+   "detail": {
+    "playout": 719,
+    "world": 719
+   },
+   "pass": true
+  },
+  "[plateau] x26_P280M F+M: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "[plateau] x26_P280M F+M: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[plateau] x26_P280M F+M: arm field": {
+   "detail": [
+    "F+M"
+   ],
+   "pass": true
+  },
+  "[plateau] x26_P280M F+M: cp field = x26_P280M": {
+   "detail": [
+    "x26_P280M"
+   ],
+   "pass": true
+  },
+  "[plateau] x26_P280M F+M: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 0,
+    "stamped": 800,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[plateau] x26_P280M F+M: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 800
+   },
+   "pass": true
+  },
+  "[plateau] x26_P280M F+M: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "[plateau] x26_P280M F+M: step = 280000170": {
+   "detail": [
+    280000170
+   ],
+   "pass": true
+  },
+  "[plateau] x26_P280M F+M: world head 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "[plateau] x26_P280M F+U: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "[plateau] x26_P280M F+U: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[plateau] x26_P280M F+U: arm field": {
+   "detail": [
+    "F+U"
+   ],
+   "pass": true
+  },
+  "[plateau] x26_P280M F+U: cp field = x26_P280M": {
+   "detail": [
+    "x26_P280M"
+   ],
+   "pass": true
+  },
+  "[plateau] x26_P280M F+U: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 0,
+    "stamped": 800,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[plateau] x26_P280M F+U: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 800
+   },
+   "pass": true
+  },
+  "[plateau] x26_P280M F+U: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "[plateau] x26_P280M F+U: step = 280000170": {
+   "detail": [
+    280000170
+   ],
+   "pass": true
+  },
+  "[plateau] x26_P280M F+U: world head 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "[plateau] x26_P280M F: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "[plateau] x26_P280M F: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[plateau] x26_P280M F: arm field": {
+   "detail": [
+    "F"
+   ],
+   "pass": true
+  },
+  "[plateau] x26_P280M F: cp field = x26_P280M": {
+   "detail": [
+    "x26_P280M"
+   ],
+   "pass": true
+  },
+  "[plateau] x26_P280M F: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 0,
+    "stamped": 800,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[plateau] x26_P280M F: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 800
+   },
+   "pass": true
+  },
+  "[plateau] x26_P280M F: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "[plateau] x26_P280M F: step = 280000170": {
+   "detail": [
+    280000170
+   ],
+   "pass": true
+  },
+  "[plateau] x26_P280M F: world head 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "[plateau] x26_P280M FN: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "[plateau] x26_P280M FN: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[plateau] x26_P280M FN: arm field": {
+   "detail": [
+    "FN"
+   ],
+   "pass": true
+  },
+  "[plateau] x26_P280M FN: cp field = x26_P280M": {
+   "detail": [
+    "x26_P280M"
+   ],
+   "pass": true
+  },
+  "[plateau] x26_P280M FN: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 0,
+    "stamped": 800,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[plateau] x26_P280M FN: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 800
+   },
+   "pass": true
+  },
+  "[plateau] x26_P280M FN: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "[plateau] x26_P280M FN: step = 280000170": {
+   "detail": [
+    280000170
+   ],
+   "pass": true
+  },
+  "[plateau] x26_P280M FN: world head 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "[plateau] x26_P280M O-M: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "[plateau] x26_P280M O-M: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[plateau] x26_P280M O-M: arm field": {
+   "detail": [
+    "O-M"
+   ],
+   "pass": true
+  },
+  "[plateau] x26_P280M O-M: cp field = x26_P280M": {
+   "detail": [
+    "x26_P280M"
+   ],
+   "pass": true
+  },
+  "[plateau] x26_P280M O-M: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 0,
+    "stamped": 800,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[plateau] x26_P280M O-M: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 800
+   },
+   "pass": true
+  },
+  "[plateau] x26_P280M O-M: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "[plateau] x26_P280M O-M: step = 280000170": {
+   "detail": [
+    280000170
+   ],
+   "pass": true
+  },
+  "[plateau] x26_P280M O-M: world head 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "[plateau] x26_P280M O-U: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "[plateau] x26_P280M O-U: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[plateau] x26_P280M O-U: arm field": {
+   "detail": [
+    "O-U"
+   ],
+   "pass": true
+  },
+  "[plateau] x26_P280M O-U: cp field = x26_P280M": {
+   "detail": [
+    "x26_P280M"
+   ],
+   "pass": true
+  },
+  "[plateau] x26_P280M O-U: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 0,
+    "stamped": 800,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[plateau] x26_P280M O-U: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 800
+   },
+   "pass": true
+  },
+  "[plateau] x26_P280M O-U: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "[plateau] x26_P280M O-U: step = 280000170": {
+   "detail": [
+    280000170
+   ],
+   "pass": true
+  },
+  "[plateau] x26_P280M O-U: world head 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "[plateau] x26_P280M O: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "[plateau] x26_P280M O: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[plateau] x26_P280M O: cp field = x26_P280M": {
+   "detail": [
+    "x26_P280M"
+   ],
+   "pass": true
+  },
+  "[plateau] x26_P280M O: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 0,
+    "stamped": 800,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[plateau] x26_P280M O: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 800
+   },
+   "pass": true
+  },
+  "[plateau] x26_P280M O: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "[plateau] x26_P280M O: step = 280000170": {
+   "detail": [
+    280000170
+   ],
+   "pass": true
+  },
+  "[plateau] x26_P280M belief: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "[plateau] x26_P280M belief: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[plateau] x26_P280M belief: cp field = x26_P280M": {
+   "detail": [
+    "x26_P280M"
+   ],
+   "pass": true
+  },
+  "[plateau] x26_P280M belief: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 0,
+    "stamped": 800,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[plateau] x26_P280M belief: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 800
+   },
+   "pass": true
+  },
+  "[plateau] x26_P280M belief: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "[plateau] x26_P280M roots: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "[plateau] x26_P280M roots: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "[plateau] x26_P280M roots: cp field = x26_P280M": {
+   "detail": [
+    "x26_P280M"
+   ],
+   "pass": true
+  },
+  "[plateau] x26_P280M roots: driver / bank stamps": {
+   "detail": {
+    "bad_driver": 0,
+    "legacy_unstamped": 0,
+    "stamped": 800,
+    "unstamped_new": 0
+   },
+   "pass": true
+  },
+  "[plateau] x26_P280M roots: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 800
+   },
+   "pass": true
+  },
+  "[plateau] x26_P280M roots: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "[plateau] x26_P280M: F playout ok-set = F world ok-set": {
+   "detail": {
+    "playout": 719,
+    "world": 719
+   },
+   "pass": true
+  },
+  "checkpoints_x26.json = the archive's ckpts.json (anchors)": {
+   "detail": [
+    "x26_025M",
+    "x26_100M",
+    "x26_175M",
+    "x26_225M",
+    "x26_P280M"
+   ],
+   "pass": true
+  },
+  "no row file written after QUEUE_DONE": {
+   "detail": {
+    "QUEUE_DONE": "2026-10-23 01:07:08 parked=[]",
+    "files": 70
+   },
+   "pass": true
+  },
+  "the two banks share 0 ids and 0 battles": {
+   "detail": {
+    "battles": 0,
+    "ids": 0
+   },
+   "pass": true
+  },
+  "x26_025M: copy sha = ckpts.json = the run's file": {
+   "detail": "26fda38d0ca68f06",
+   "pass": true
+  },
+  "x26_100M: copy sha = ckpts.json = the run's file": {
+   "detail": "e1858ffe8a7d95fe",
+   "pass": true
+  },
+  "x26_175M: copy sha = ckpts.json = the run's file": {
+   "detail": "20af225e57b1cc84",
+   "pass": true
+  },
+  "x26_225M: copy sha = ckpts.json = the run's file": {
+   "detail": "bc93a321bf1d4c6a",
+   "pass": true
+  },
+  "x26_P280M: copy sha = ckpts.json = the run's file": {
+   "detail": "814823c514fb791e",
+   "pass": true
+  }
+ },
+ "fails": [],
+ "manifest": {
+  "fn_belief/x26_025M.jsonl": {
+   "bytes": 20443444,
+   "mtime_ns": 1792552266076214933,
+   "sha256": "af3e5d8a2dd5d6b5eacada3bdd76b264d15edaa423cb3a20ee476f8ad544eb62"
+  },
+  "fn_belief/x26_100M.jsonl": {
+   "bytes": 8206927,
+   "mtime_ns": 1792364049480855460,
+   "sha256": "c5d768efa3b2eee9096b5541b9ce32b96570044398c90333b7661881e81053bb"
+  },
+  "fn_belief/x26_175M.jsonl": {
+   "bytes": 8209170,
+   "mtime_ns": 1792393036249117461,
+   "sha256": "8910fc51ea4f25b1cdae1a8f41db55e52e4401e4aa977caa208e08c1f6476ad7"
+  },
+  "fn_belief/x26_225M.jsonl": {
+   "bytes": 8209633,
+   "mtime_ns": 1792346761472482743,
+   "sha256": "2995bceb2cf028479b8a36ca912206a1da9c1a1dd482582ce6868518ced7d2c3"
+  },
+  "fn_belief/x26_P280M.jsonl": {
+   "bytes": 20549523,
+   "mtime_ns": 1792461595434458079,
+   "sha256": "232348f241138f41ef6343731abb59b138c70b976727b798e05357f0da03e436"
+  },
+  "plateau/fn_belief/x26_025M.jsonl": {
+   "bytes": 20541875,
+   "mtime_ns": 1792654341775251020,
+   "sha256": "88796aa8ad17889f3a113d3ca707d3a1667af7a214fb6886353222332e7031b7"
+  },
+  "plateau/fn_belief/x26_P280M.jsonl": {
+   "bytes": 20587429,
+   "mtime_ns": 1792623596786566983,
+   "sha256": "b5b80a83225334a2104442dcb36ad6fb774a6668a4f4c0d1c4df1139e47031bc"
+  },
+  "plateau/roots/x26_025M.jsonl": {
+   "bytes": 326958,
+   "mtime_ns": 1792651906907322529,
+   "sha256": "d53280f2b071ac555f1798e5da1c61d4cb601aeee3491c4d07a6de240da21920"
+  },
+  "plateau/roots/x26_P280M.jsonl": {
+   "bytes": 327961,
+   "mtime_ns": 1792599096412107352,
+   "sha256": "832441eaa63cd245ea0bec06acc86513b111b11ae1e7962408a2ede39ffec475"
+  },
+  "plateau/rows/x26_025M/F/rows_0_of_1.jsonl": {
+   "bytes": 19521614,
+   "mtime_ns": 1792666613345540479,
+   "sha256": "b92dd360c797aab8b81d713774134efd64b420b6bce159c2da45003c92924f5e"
+  },
+  "plateau/rows/x26_025M/FN/rows_0_of_1.jsonl": {
+   "bytes": 19681931,
+   "mtime_ns": 1792689148265287260,
+   "sha256": "0af7e49dd155165ff6bb2d3abcb006d77fffc94e0658165c59be1cea32b413a4"
+  },
+  "plateau/rows/x26_025M/FpM/rows_0_of_1.jsonl": {
+   "bytes": 19683589,
+   "mtime_ns": 1792701456678022702,
+   "sha256": "a967ae9b2deb64f544287ab2b50a73d9d95d2b30694e581e1ccfda7cd4d42bbd"
+  },
+  "plateau/rows/x26_025M/FpU/rows_0_of_1.jsonl": {
+   "bytes": 19946663,
+   "mtime_ns": 1792701854202453763,
+   "sha256": "44014bc8c4faf1e9aadcd3612380e3c03dfefca51fa53790de6b5addb0f4a8ae"
+  },
+  "plateau/rows/x26_025M/O/shard_0_of_1.jsonl": {
+   "bytes": 105756815,
+   "mtime_ns": 1792689688904874942,
+   "sha256": "b8f26654f00aa22a636f6fa999d3d2dca1e9897b70858c7ebba7d39a07b751af"
+  },
+  "plateau/rows/x26_P280M/F/rows_0_of_1.jsonl": {
+   "bytes": 17348336,
+   "mtime_ns": 1792633508691081763,
+   "sha256": "aa68fd6e38cd7a4d8a0f67d82b91b09a6feb847078946edded1dbe312cb138fb"
+  },
+  "plateau/rows/x26_P280M/FN/rows_0_of_1.jsonl": {
+   "bytes": 17265970,
+   "mtime_ns": 1792645295416416864,
+   "sha256": "5f566c58587155f516d48049edcf23cc35eba4eaa93572fc98bddd68b87fd427"
+  },
+  "plateau/rows/x26_P280M/FpM/rows_0_of_1.jsonl": {
+   "bytes": 17316101,
+   "mtime_ns": 1792651847183248794,
+   "sha256": "cf5f23038ba08b169b26f98155f129b8cb937eaa8d58e0a1e1898b0cad6a913e"
+  },
+  "plateau/rows/x26_P280M/FpU/rows_0_of_1.jsonl": {
+   "bytes": 17465787,
+   "mtime_ns": 1792653879827713314,
+   "sha256": "a16bff0b04d6213aaf6d4df3c26959f13251be480220ea6e11e2c1e0a871a47b"
+  },
+  "plateau/rows/x26_P280M/O/shard_0_of_1.jsonl": {
+   "bytes": 90920395,
+   "mtime_ns": 1792633641886215688,
+   "sha256": "327d9f52539bc71088e9f43d55f3cf8d18cee8c0c3da40fd243e275cc397e34f"
+  },
+  "plateau/rows/x26_P280M/OmM/rows_0_of_1.jsonl": {
+   "bytes": 18904695,
+   "mtime_ns": 1792740386449540111,
+   "sha256": "f56d1da4b86d94cbb53c91e3557ed5d01496a1301e741b638d77a3590cd7cfeb"
+  },
+  "plateau/rows/x26_P280M/OmU/rows_0_of_1.jsonl": {
+   "bytes": 18767701,
+   "mtime_ns": 1792742814604410985,
+   "sha256": "19660c7e0c1650e5c5b393bc578caa43582a2f7b1d65f46b54476c6fa30b8c7e"
+  },
+  "plateau/worlds/shared/F/worlds_0_of_1.jsonl": {
+   "bytes": 23216722,
+   "mtime_ns": 1792623137378066107,
+   "sha256": "3efe7bf672686e73afbff44ea330d6547ccffe6cac09853cc688a8df4b5ff1d9"
+  },
+  "plateau/worlds/shared/FpM/worlds_0_of_1.jsonl": {
+   "bytes": 23076200,
+   "mtime_ns": 1792623140761069603,
+   "sha256": "a5e96dc0fbd2a73c53064ede6a246c938347c23d735b8b84beeb7272051190a4"
+  },
+  "plateau/worlds/shared/FpU/worlds_0_of_1.jsonl": {
+   "bytes": 23717236,
+   "mtime_ns": 1792623138008066758,
+   "sha256": "1973c77bffb5860f60769da350990e4e34f8b965f7233071f0e960d846831428"
+  },
+  "plateau/worlds/shared/OmM/worlds_0_of_1.jsonl": {
+   "bytes": 28146287,
+   "mtime_ns": 1792732309094740358,
+   "sha256": "9e69f5ac77f0032bd175d8c8589d3a189f64bf112df53066711a793f8339c993"
+  },
+  "plateau/worlds/shared/OmU/worlds_0_of_1.jsonl": {
+   "bytes": 27474984,
+   "mtime_ns": 1792732309381740649,
+   "sha256": "baaf40e97c71cf7ce6f903a84448ca401bdbf782ade4f31ce4817160d4fae14a"
+  },
+  "plateau/worlds/x26_025M/FN/worlds_0_of_1.jsonl": {
+   "bytes": 28452686,
+   "mtime_ns": 1792678170860979823,
+   "sha256": "7d7a8e2d03181e086354e55fd785eff3a4568fbfa98326fc45107d30cf8d5b58"
+  },
+  "plateau/worlds/x26_P280M/FN/worlds_0_of_1.jsonl": {
+   "bytes": 28460852,
+   "mtime_ns": 1792645091548015548,
+   "sha256": "8de1fec41561d776e20feef795149df3308d602ceedf8e53237e0cccfc70387a"
+  },
+  "roots/x26_025M.jsonl": {
+   "bytes": 268669,
+   "mtime_ns": 1792323994111585742,
+   "sha256": "e73773739c30afd6762da112ffccf332fb23f47ed17b0b29de44343e8d3f56bf"
+  },
+  "roots/x26_100M.jsonl": {
+   "bytes": 268718,
+   "mtime_ns": 1792362060273593329,
+   "sha256": "d9070355d01d0fcb3009e04da35e7d0e6c3412cd234732661d0fca43134c4bbe"
+  },
+  "roots/x26_175M.jsonl": {
+   "bytes": 268852,
+   "mtime_ns": 1792392604028584069,
+   "sha256": "34a98474ed71eefe639d0f3aa234f944d23ffbbb8657c1fa7f22ffb27a74e8c1"
+  },
+  "roots/x26_225M.jsonl": {
+   "bytes": 268811,
+   "mtime_ns": 1792343633420401386,
+   "sha256": "effe6e3b46b43000b669911db975e6a26986487ab1f499882759f4b01289ab0c"
+  },
+  "roots/x26_P280M.jsonl": {
+   "bytes": 328138,
+   "mtime_ns": 1792412464300821578,
+   "sha256": "344cc8e2b9b6b373cf006c1045cf83a1121f46180aca45a0130c7a6be5e75391"
+  },
+  "rows/x26_025M/F/rows_0_of_1.jsonl": {
+   "bytes": 21402214,
+   "mtime_ns": 1792562795281814907,
+   "sha256": "622516968f3e3b9da0c35e9acb8669b373a2db33ad213cba10e4639d6862d66b"
+  },
+  "rows/x26_025M/FN/rows_0_of_1.jsonl": {
+   "bytes": 21459543,
+   "mtime_ns": 1792581992655618283,
+   "sha256": "70844fbe9c62d0d4294c8e2a32f5ebccc043087bab0d351ae46d21ca6a7bd1b6"
+  },
+  "rows/x26_025M/FpM/rows_0_of_1.jsonl": {
+   "bytes": 21762393,
+   "mtime_ns": 1792598000789937409,
+   "sha256": "8ff9e63231e3f65a289c7f28b09e09a0894c54f3961800ddb7a11524c58daa8a"
+  },
+  "rows/x26_025M/FpU/rows_0_of_1.jsonl": {
+   "bytes": 21693812,
+   "mtime_ns": 1792599003435008924,
+   "sha256": "ddd4efe7508617c34a35bcd16b1c2f633def28574898c5181b61acd6429622fb"
+  },
+  "rows/x26_025M/O/shard_0_of_1.jsonl": {
+   "bytes": 113998812,
+   "mtime_ns": 1792583669964619041,
+   "sha256": "adaf644153830a574e3ac9e71caa79643561e627c76822fc5cf05cdb719e7d41"
+  },
+  "rows/x26_025M/V_oracle/rows_0_of_1.jsonl": {
+   "bytes": 466937,
+   "mtime_ns": 1792328741241170799,
+   "sha256": "4375558e4791910abb8a879038ef7c4a1b72e77404369068e9d6794254375195"
+  },
+  "rows/x26_100M/F/rows_0_of_1.jsonl": {
+   "bytes": 7329252,
+   "mtime_ns": 1792369906850400864,
+   "sha256": "6854453a20e990172b05c5e81c616b16d9c99747a4df5bfa0ea9905d065cfd7a"
+  },
+  "rows/x26_100M/FN/rows_0_of_1.jsonl": {
+   "bytes": 7286386,
+   "mtime_ns": 1792392774525793371,
+   "sha256": "7494198d1b8a3d4ebdb9ff5705d73d91b33df01398cffece5d436d2d2d130dee"
+  },
+  "rows/x26_100M/O/shard_0_of_1.jsonl": {
+   "bytes": 40457704,
+   "mtime_ns": 1792392509897468515,
+   "sha256": "2d1a794bdf597da9bc4b077f7bd2d6681ed22911ec44a32e77d0202b9e474af3"
+  },
+  "rows/x26_100M/V_oracle/rows_0_of_1.jsonl": {
+   "bytes": 336489,
+   "mtime_ns": 1792362313384881811,
+   "sha256": "81be3210aba6b275bb55226f531a688b912a818e74103db6965caf6834216f0c"
+  },
+  "rows/x26_175M/F/rows_0_of_1.jsonl": {
+   "bytes": 7792718,
+   "mtime_ns": 1792397861513925780,
+   "sha256": "cff4fdc3492b4b34dbe8874d16b3e53b8591b0139030ae02709966cb2e5fe21a"
+  },
+  "rows/x26_175M/FN/rows_0_of_1.jsonl": {
+   "bytes": 7777644,
+   "mtime_ns": 1792408451546370572,
+   "sha256": "e38313553933d283c46643f19b0121e857e05c750638d305d10df223b8706e55"
+  },
+  "rows/x26_175M/O/shard_0_of_1.jsonl": {
+   "bytes": 41426967,
+   "mtime_ns": 1792409379426385116,
+   "sha256": "00f8f0db8f6d6308bf2b4ba583dda2c523ed6591b1221c0bb6b8453dd8cf7b52"
+  },
+  "rows/x26_175M/V_oracle/rows_0_of_1.jsonl": {
+   "bytes": 385701,
+   "mtime_ns": 1792392833358865776,
+   "sha256": "48fa008934bf2553c5ade37f3c7e833d27e649b30218d321091b722bbddf3f0a"
+  },
+  "rows/x26_225M/F/rows_0_of_1.jsonl": {
+   "bytes": 7691281,
+   "mtime_ns": 1792352377236513974,
+   "sha256": "3c91bb7e3101a1c6d5fc7031a2445d69b109c776a2bba6ef7f7f87c5bf86e416"
+  },
+  "rows/x26_225M/FN/rows_0_of_1.jsonl": {
+   "bytes": 7652047,
+   "mtime_ns": 1792363842504627058,
+   "sha256": "71e9561ccb0d360d994178a73a5d5208d52b1e74d5f4f42013f907b2fc750687"
+  },
+  "rows/x26_225M/O/shard_0_of_1.jsonl": {
+   "bytes": 41323417,
+   "mtime_ns": 1792361994633518516,
+   "sha256": "8648241366027bc0dcda859614900a2b35d84d142ba5321e477437fcc46b0c0e"
+  },
+  "rows/x26_225M/V_oracle/rows_0_of_1.jsonl": {
+   "bytes": 374255,
+   "mtime_ns": 1792343996357760005,
+   "sha256": "13f482ab0e78e2a41d4b0434ae6c9019a9a056a7d8f1cf4b72e476fcf3e6e5f7"
+  },
+  "rows/x26_P280M/F/rows_0_of_1.jsonl": {
+   "bytes": 18986591,
+   "mtime_ns": 1792494920543585825,
+   "sha256": "660063fa25f06e3a2077f01cef22d9516646f189ddb512ba519dc16436b06ca4"
+  },
+  "rows/x26_P280M/FN/rows_0_of_1.jsonl": {
+   "bytes": 18709821,
+   "mtime_ns": 1792527902189712027,
+   "sha256": "9167f1dcec3d0966a38d49a419f55a815537529b84caacfe4b8b726c0fa1a380"
+  },
+  "rows/x26_P280M/FpM/rows_0_of_1.jsonl": {
+   "bytes": 19330377,
+   "mtime_ns": 1792550874691641505,
+   "sha256": "27a89a9c6dc80f8286ef940db4972d7a8d3925d7eeac02530aead2c32c6ad92f"
+  },
+  "rows/x26_P280M/FpU/rows_0_of_1.jsonl": {
+   "bytes": 19119588,
+   "mtime_ns": 1792551957001837516,
+   "sha256": "511703dfd811a88f6131589674899bfaa5c894bab4fead97d6f633c75a159b6c"
+  },
+  "rows/x26_P280M/O/shard_0_of_1.jsonl": {
+   "bytes": 100155298,
+   "mtime_ns": 1792499823265494559,
+   "sha256": "4cc99ba22246dea7ca17da16b21a9dd0f2b6ae609db92176af4abec18c1bbc70"
+  },
+  "rows/x26_P280M/OmM/rows_0_of_1.jsonl": {
+   "bytes": 20651918,
+   "mtime_ns": 1792718739422129809,
+   "sha256": "8003579501ddc5c7ae2860a24c5372709e8e00e57527abe2b10cf6b353f2cd6b"
+  },
+  "rows/x26_P280M/OmU/rows_0_of_1.jsonl": {
+   "bytes": 20624767,
+   "mtime_ns": 1792729815862205419,
+   "sha256": "cf94338e15a814787bf80efc5783cf8fb45f9b7a4b14ac1c113216baa0ce367b"
+  },
+  "rows/x26_P280M/V_oracle/rows_0_of_1.jsonl": {
+   "bytes": 362856,
+   "mtime_ns": 1792412655456039470,
+   "sha256": "38e8674a36ff684664aad6a5c6a9e2144cbe627b62e0aad94753b57764a940ff"
+  },
+  "worlds/shared/F/worlds_0_of_1.jsonl": {
+   "bytes": 23399876,
+   "mtime_ns": 1792460842388772587,
+   "sha256": "937075c5cfff50376c8d53304c8b16adcbde69577a9d83d5b4540fcd00d624a3"
+  },
+  "worlds/shared/FpM/worlds_0_of_1.jsonl": {
+   "bytes": 23491218,
+   "mtime_ns": 1792460891552817341,
+   "sha256": "f5c054a469ed5a5f5862e5962d5f42266f7260f682ae18887dc19ff7731e15ca"
+  },
+  "worlds/shared/FpU/worlds_0_of_1.jsonl": {
+   "bytes": 24088004,
+   "mtime_ns": 1792460863708791995,
+   "sha256": "9371f6a07fbf1d58c2f871813316fc7c667922175ef1a2c85ec8aeb20371e321"
+  },
+  "worlds/shared/OmM/worlds_0_of_1.jsonl": {
+   "bytes": 28202384,
+   "mtime_ns": 1792718399580774816,
+   "sha256": "a75aa781162fd6362754a46cf83d91dc444dd7b8bf1dc005138bcf9a4a8f490a"
+  },
+  "worlds/shared/OmU/worlds_0_of_1.jsonl": {
+   "bytes": 27373198,
+   "mtime_ns": 1792718399733774975,
+   "sha256": "cdfe68283cdad7a017cb31a8ec6ef6595f408b31e015358691b2d9ad1cf9a3f4"
+  },
+  "worlds/shared/V_oracle/worlds_0_of_1.jsonl": {
+   "bytes": 425893,
+   "mtime_ns": 1792328450772836528,
+   "sha256": "f77bd94e33e9e003c0b0ac8e6deadd5b5ccce2e3ee0a76b103782781378e9b33"
+  },
+  "worlds/x26_025M/FN/worlds_0_of_1.jsonl": {
+   "bytes": 28772740,
+   "mtime_ns": 1792572780625197035,
+   "sha256": "57f20af88b966f9f5c6b3bf9f0fc09eb44398cfe64c568587ed8c6b24e871ac7"
+  },
+  "worlds/x26_100M/FN/worlds_0_of_1.jsonl": {
+   "bytes": 11437563,
+   "mtime_ns": 1792383436839204066,
+   "sha256": "e210038389ed8b6793532025031285b0a0ae3dfaedebbc96189dc454bcc2d290"
+  },
+  "worlds/x26_175M/FN/worlds_0_of_1.jsonl": {
+   "bytes": 11437666,
+   "mtime_ns": 1792403397906016067,
+   "sha256": "ad4f750974fd861fabd6a6a48aa49a27706a6699c49200d5a187148a6d4f3f22"
+  },
+  "worlds/x26_225M/FN/worlds_0_of_1.jsonl": {
+   "bytes": 11442139,
+   "mtime_ns": 1792358854216897413,
+   "sha256": "c09e83ae33b81a751148decfd62a24dc2e0acc1ca220f5fd8aa952db999046ea"
+  },
+  "worlds/x26_P280M/FN/worlds_0_of_1.jsonl": {
+   "bytes": 28888414,
+   "mtime_ns": 1792524471215512582,
+   "sha256": "6ad1d8383ab674c82fea90e3dcaa836168331e85093456beaba709343fd4a682"
+  }
+ },
+ "manifest_sha256": "2960e0c98778dfaf51deb10bda20c854a95c47cc780c1b85b056075bcfa32617"
+}
