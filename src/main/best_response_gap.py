@@ -19,6 +19,9 @@ python -m main.best_response_gap \
 # since the 2026-10-09 cleanup deleted the sidecars; 1.119e-08 / 4.55x when they existed). Print it anyway:
 python -m main.best_response_gap <the six runs> --allow-unmatched
 
+# two generalists at ONE target step (treatment vs control; a name is an exploiter run or its target run)
+python -m main.best_response_gap <the exploiter runs of both> --control GEN_CTL --treatment GEN_TRT
+
 # one round alone, on the endpoint convention the banked numbers use
 python -m main.best_response_gap ai_v13_13_exploit5_offense --stat endpoint
 
@@ -76,6 +79,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--rounds", nargs="+", default=[], metavar="NAME=ROUND",
                    help="pin a round. NAME is an exploiter run name or a target run name. "
                         "Default: inferred from the target's step, ascending.")
+    p.add_argument("--control", default=None, metavar="NAME",
+                   help="SIBLING mode (with --treatment): the control generalist, named by an exploiter run or "
+                        "its target run. Reads gap(treatment) - gap(control) for two generalists at ONE target "
+                        "step instead of rounds; refused with --rounds.")
+    p.add_argument("--treatment", default=None, metavar="NAME", help="SIBLING mode: the treatment generalist.")
     p.add_argument("--teamsets", default=None, metavar="PATH",
                    help=f"archetype -> teamset map (default: {engine.DEFAULT_TEAMSETS}).")
     p.add_argument("--allow-unmatched", action="store_true",
@@ -171,6 +179,37 @@ def _rows_with_pooled(blk: Dict[str, Any]) -> List[Dict[str, Any]]:
     return out
 
 
+def _mean_line(d: Dict[str, Any]) -> str:
+    """The mean-Δ line, by the BASIS the engine read it on (paired bootstrap, one archetype, or none)."""
+    if d["mean_delta"] is None:
+        return f"    MEAN Δ: — ({d['verdict']})"
+    ci = f"[{_pct(d['lo'])}, {_pct(d['hi'])}]"
+    if d.get("basis") == engine.SINGLE_ARCHETYPE:
+        return (f"    Δ, ONE archetype: {_pct(d['mean_delta'])} pp  {ci}  "
+                "(that archetype's Newcombe interval; no spread across archetypes)")
+    return (f"    MEAN Δ over {d['n_pairs']} archetype(s): {_pct(d['mean_delta'])} pp  {ci}  "
+            f"(two-level bootstrap, {d['n_pairs']} pairing units)")
+
+
+def _sibling_text(sib: Dict[str, Any]) -> List[str]:
+    out = [f"SIBLINGS at target step {sib['target_step']:,} · CONTROL {sib['control']} "
+           f"(target {sib['control_target']}) vs TREATMENT {sib['treatment']} "
+           f"(target {sib['treatment_target']})", f"    {sib['sign']}"]
+    body = []
+    for p in sib["per_archetype"]:
+        label = p["archetype"] + (" POOLED" if p.get("per_replicate") else "")
+        body.append([label, _pct(p["gap_control"]), _pct(p["gap_treatment"]), _pct(p["delta"]),
+                     f"[{_pct(p['lo'])}, {_pct(p['hi'])}]"])
+        for q in p.get("per_replicate") or []:
+            body.append([f"  └ {q['treatment_run']} − {q['control_run']}", _pct(q["gap_control"]),
+                         _pct(q["gap_treatment"]), _pct(q["delta"]), f"[{_pct(q['lo'])}, {_pct(q['hi'])}]"])
+    out += _table(["archetype", "gap control", "gap treatment", "Δ pp", "95% CI pp (Newcombe)"], body)
+    if sib["unpaired"]:
+        out.append(f"    ⚠ UNPAIRED, excluded from the mean: {', '.join(sib['unpaired'])}")
+    out += [_mean_line(sib), f"    VERDICT: {sib['verdict']}", ""]
+    return out
+
+
 def render_text(doc: Dict[str, Any]) -> str:
     out: List[str] = []
     out.append("BEST-RESPONSE GAP — how much a fresh exploiter beats the generalist it trained on")
@@ -206,7 +245,10 @@ def render_text(doc: Dict[str, Any]) -> str:
                        "paired across rounds.")
         out.append("")
 
-    if not doc["deltas"]:
+    sib = doc.get("siblings")
+    if sib:
+        out += _sibling_text(sib)
+    elif not doc["deltas"]:
         out.append("ROUND-OVER-ROUND Δ: one round only — a gap needs two rounds to fall.")
     for d in doc["deltas"]:
         out.append(f"ROUND-OVER-ROUND Δ (round {d['later_round']} − round {d['earlier_round']}), "
@@ -224,12 +266,7 @@ def render_text(doc: Dict[str, Any]) -> str:
                        "Δ pp", "95% CI pp (Newcombe)"], body)
         if d["unpaired"]:
             out.append(f"    ⚠ UNPAIRED, excluded from the mean: {', '.join(d['unpaired'])}")
-        if d["mean_delta"] is None:
-            out.append(f"    MEAN Δ: — ({d['verdict']})")
-        else:
-            out.append(f"    MEAN Δ over {d['n_pairs']} archetype(s): {_pct(d['mean_delta'])} pp  "
-                       f"[{_pct(d['lo'])}, {_pct(d['hi'])}]  "
-                       f"(two-level bootstrap, {d['n_pairs']} pairing units)")
+        out.append(_mean_line(d))
         out.append(f"    VERDICT: {d['verdict']}")
         out.append("")
 
@@ -313,8 +350,21 @@ def render_markdown(doc: Dict[str, Any]) -> str:
         mean = ("—" if d["mean_delta"] is None else
                 f"**{_pct(d['mean_delta']).strip()} pp** [{_pct(d['lo']).strip()}, "
                 f"{_pct(d['hi']).strip()}]")
-        out += ["", f"**MEAN Δ over {d['n_pairs']} archetype(s):** {mean}", "",
-                f"**VERDICT: {d['verdict']}**", ""]
+        what = ("Δ, ONE archetype (Newcombe)" if d.get("basis") == engine.SINGLE_ARCHETYPE
+                else f"MEAN Δ over {d['n_pairs']} archetype(s)")
+        out += ["", f"**{what}:** {mean}", "", f"**VERDICT: {d['verdict']}**", ""]
+    sib = doc.get("siblings")
+    if sib:
+        out += [f"## Siblings at target step {sib['target_step']:,} — treatment `{sib['treatment']}` vs "
+                f"control `{sib['control']}`", "", f"{sib['sign']}.", "",
+                "| archetype | gap control | gap treatment | Δ pp | 95% CI pp |", "|---|---:|---:|---:|---|"]
+        for p in sib["per_archetype"]:
+            out.append(f"| {p['archetype']} | {_pct(p['gap_control']).strip()} | "
+                       f"{_pct(p['gap_treatment']).strip()} | **{_pct(p['delta']).strip()}** | "
+                       f"[{_pct(p['lo']).strip()}, {_pct(p['hi']).strip()}] |")
+        mean = ("—" if sib["mean_delta"] is None else f"**{_pct(sib['mean_delta']).strip()} pp** "
+                f"[{_pct(sib['lo']).strip()}, {_pct(sib['hi']).strip()}]")
+        out += ["", f"**Δ over {sib['n_pairs']} archetype(s):** {mean}", "", f"**VERDICT: {sib['verdict']}**", ""]
     return "\n".join(out)
 
 
@@ -333,8 +383,17 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             raise engine.MirroredPinnedTeamError(pinned_team_refusal("main.best_response_gap --play"))
         teamsets = engine.load_teamsets(args.teamsets)
         runs = [engine.read_exploiter(ref, teamsets) for ref in args.runs]
-        override = parse_rounds(args.rounds)
-        rounds = engine.assign_rounds(runs, override)
+        if bool(args.control) != bool(args.treatment):
+            raise engine.SiblingError("--control and --treatment come together.")
+        siblings = None
+        if args.control:
+            if args.rounds:
+                raise engine.SiblingError("--rounds orders ROUNDS and --control/--treatment compares SIBLINGS: "
+                                          "pass one.")
+            siblings = engine.resolve_siblings(runs, args.control, args.treatment)
+            rounds = dict(siblings.rounds)
+        else:
+            rounds = engine.assign_rounds(runs, parse_rounds(args.rounds))
         mismatches = engine.check_matched(
             runs, budget_tol=args.budget_tol, dose_tol=args.dose_tol,
             allow_unmatched=args.allow_unmatched)
@@ -371,9 +430,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                       file=sys.stderr)
                 return 2
 
-    doc = engine.build_report(runs, stat=args.stat, rounds=rounds, mismatches=mismatches,
-                              draws=args.draws, bootstrap_seed=args.bootstrap_seed,
-                              played=played or None)
+    doc = engine.build_report(runs, stat=args.stat, rounds=None if siblings else rounds,
+                              mismatches=mismatches, draws=args.draws,
+                              bootstrap_seed=args.bootstrap_seed, played=played or None,
+                              siblings=siblings)
     doc["_meta"] = {
         "tool": "main.best_response_gap",
         "argv": list(argv if argv is not None else sys.argv[1:]),

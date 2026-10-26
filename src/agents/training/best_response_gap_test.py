@@ -382,6 +382,48 @@ def test_report_not_detected_when_the_interval_straddles(tmp_path):
     assert "NOT DETECTED" in doc["deltas"][0]["verdict"]
 
 
+def _round_pair(tmp_path, r1, r2, tag=""):
+    """Round 1 (target @75M) and round 2 (@95M); ``r1`` / ``r2`` are ``{team_stem: wins}`` of n = 100."""
+    runs = []
+    for step, end, gen, cyc in ((75_000_000, 83_000_000, "gen1", r1), (95_000_000, 103_000_000, "gen2", r2)):
+        for stem, w in cyc.items():
+            runs.append(brg.read_exploiter(make_run(
+                tmp_path, f"{tag}{gen}_{stem}", target_run=gen, target_step=step, fork_step=step,
+                num_timesteps=end, cycles=[(end - 1_000_000, w, 100)], team_stems=[stem]), TEAMSETS))
+    return runs
+
+
+def test_a_one_archetype_round_pair_is_READ_as_that_archetypes_newcombe_interval(tmp_path):
+    """F1 (2026-10-26): one shared archetype used to print only UNREADABLE. Revert-proof: the verdict, the point and
+    the interval are the archetype's own Newcombe row, labelled SINGLE-ARCHETYPE, and the basis says so."""
+    runs = _round_pair(tmp_path, {"aaaa1111": 74}, {"aaaa1111": 46})
+    d = brg.build_report(runs, draws=200)["deltas"][0]
+    [row] = d["per_archetype"]
+    assert d["n_pairs"] == 1 and d["basis"] == brg.SINGLE_ARCHETYPE
+    assert (d["mean_delta"], d["lo"], d["hi"]) == (row["delta"], row["lo"], row["hi"])
+    assert d["mean_delta"] == pytest.approx(-0.28) and d["hi"] < 0
+    assert "UNREADABLE" not in d["verdict"] and "GAP FELL" in d["verdict"] and "SINGLE-ARCHETYPE READ" in d["verdict"]
+
+
+def test_a_one_archetype_round_pair_that_straddles_zero_says_so(tmp_path):
+    runs = _round_pair(tmp_path, {"aaaa1111": 52}, {"aaaa1111": 50})
+    d = brg.build_report(runs, draws=200)["deltas"][0]
+    assert d["verdict"].startswith("NOT DETECTED") and "SINGLE-ARCHETYPE" in d["verdict"]
+
+
+def test_two_rounds_with_NO_shared_archetype_are_NOT_APPLICABLE_not_unreadable(tmp_path):
+    runs = _round_pair(tmp_path, {"aaaa1111": 74}, {"bbbb1111": 46})
+    d = brg.build_report(runs, draws=200)["deltas"][0]
+    assert d["verdict"] == brg.NOT_APPLICABLE and d["mean_delta"] is None and d["basis"] is None
+    assert d["unpaired"] == ["offense", "stall"]
+
+
+def test_two_shared_archetypes_still_use_the_paired_bootstrap(tmp_path):
+    runs = _round_pair(tmp_path, {"aaaa1111": 74, "bbbb1111": 72}, {"aaaa1111": 66, "bbbb1111": 46})
+    d = brg.build_report(runs, draws=200)["deltas"][0]
+    assert d["basis"] == brg.PAIRED_BOOTSTRAP and d["n_pairs"] == 2
+
+
 def test_endpoint_stat_uses_the_last_cycle_only(tmp_path):
     d = make_run(tmp_path, "r1", target_run="gen1", target_step=10, fork_step=10,
                  num_timesteps=20, cycles=[(12, 10, 100), (15, 74, 100)],
@@ -666,3 +708,96 @@ def test_cli_exits_2_on_an_unmatched_replicate(tmp_path, capsys):
     dirs = _replicate_fixture(tmp_path, a2_lr=5.5e-5)
     assert cli.main([*dirs, "--teamsets", _teamsets_file(tmp_path), "--no-json"]) == 2
     assert "unmatched_dose" in capsys.readouterr().err
+
+
+# ------------------------------------------------------------------ siblings (F2)
+
+def _siblings(tmp_path, ctl, trt, *, trt_step=75_000_000):
+    """A CONTROL and a TREATMENT generalist at one target step; ``ctl`` / ``trt`` are ``{team_stem: wins}``."""
+    runs = []
+    for gen, step, cyc in (("ctl", 75_000_000, ctl), ("trt", trt_step, trt)):
+        for stem, w in cyc.items():
+            runs.append(brg.read_exploiter(make_run(
+                tmp_path, f"{gen}_{stem}", target_run=gen, target_step=step, fork_step=step,
+                num_timesteps=step + 8_000_000, cycles=[(step + 7_000_000, w, 100)], team_stems=[stem]),
+                TEAMSETS))
+    return runs
+
+
+def test_siblings_read_gap_treatment_minus_gap_control_whatever_the_input_order(tmp_path):
+    """Revert-proof: the sign follows the NAMES, not the alphabetical / input order of the targets. Here the
+    treatment ('trt') sorts AFTER the control, then the roles are swapped and the sign must flip."""
+    runs = _siblings(tmp_path, {"aaaa1111": 74, "bbbb1111": 72}, {"aaaa1111": 60, "bbbb1111": 52})
+    doc = brg.build_report(runs, siblings=brg.resolve_siblings(runs, "ctl", "trt"), draws=2000)
+    sib = doc["siblings"]
+    assert doc["deltas"] == [] and sib["n_pairs"] == 2 and sib["basis"] == brg.PAIRED_BOOTSTRAP
+    per = {p["archetype"]: p for p in sib["per_archetype"]}
+    assert per["offense"]["delta"] == pytest.approx(-0.14) and per["stall"]["delta"] == pytest.approx(-0.20)
+    assert per["offense"]["gap_control"] == pytest.approx(0.24) and per["offense"]["gap_treatment"] == pytest.approx(0.10)
+    assert sib["mean_delta"] == pytest.approx(-0.17) and sib["hi"] < 0 and "TREATMENT LESS EXPLOITABLE" in sib["verdict"]
+    assert sib["control_target"] == "ctl" and sib["treatment_target"] == "trt" and sib["target_step"] == 75_000_000
+    swapped = brg.build_report(runs, siblings=brg.resolve_siblings(runs, "trt", "ctl"), draws=2000)["siblings"]
+    assert swapped["mean_delta"] == pytest.approx(0.17) and "TREATMENT MORE EXPLOITABLE" in swapped["verdict"]
+
+
+def test_siblings_accept_exploiter_run_names_and_read_one_archetype_by_the_same_rule(tmp_path):
+    runs = _siblings(tmp_path, {"aaaa1111": 74}, {"aaaa1111": 50})
+    spec = brg.resolve_siblings(runs, "ctl_aaaa1111", "trt_aaaa1111")
+    sib = brg.build_report(runs, siblings=spec, draws=200)["siblings"]
+    assert sib["basis"] == brg.SINGLE_ARCHETYPE and "TREATMENT LESS EXPLOITABLE" in sib["verdict"]
+
+
+def test_siblings_refuse_a_pair_that_is_not_at_one_target_step(tmp_path):
+    runs = _siblings(tmp_path, {"aaaa1111": 74}, {"aaaa1111": 50}, trt_step=95_000_000)
+    with pytest.raises(brg.SiblingError, match="not at one target step"):
+        brg.resolve_siblings(runs, "ctl", "trt")
+
+
+def test_siblings_refuse_a_third_generalist_an_unknown_name_and_a_self_comparison(tmp_path):
+    runs = _siblings(tmp_path, {"aaaa1111": 74}, {"aaaa1111": 50})
+    third = brg.read_exploiter(make_run(tmp_path, "oth_aaaa1111", target_run="oth", target_step=75_000_000,
+                                        fork_step=75_000_000, num_timesteps=83_000_000,
+                                        cycles=[(82_000_000, 60, 100)], team_stems=["aaaa1111"]), TEAMSETS)
+    with pytest.raises(brg.SiblingError, match="neither the control nor the treatment"):
+        brg.resolve_siblings([*runs, third], "ctl", "trt")
+    with pytest.raises(brg.SiblingError, match="matches no exploiter run"):
+        brg.resolve_siblings(runs, "ctl", "nope")
+    with pytest.raises(brg.SiblingError, match="both"):
+        brg.resolve_siblings(runs, "ctl", "ctl")
+    with pytest.raises(brg.SiblingError, match="SAME target file"):
+        brg.resolve_siblings(runs, "ctl", "ctl_aaaa1111")
+
+
+def test_siblings_and_rounds_are_not_both_accepted(tmp_path):
+    runs = _siblings(tmp_path, {"aaaa1111": 74}, {"aaaa1111": 50})
+    spec = brg.resolve_siblings(runs, "ctl", "trt")
+    with pytest.raises(brg.BestResponseGapError, match="pass one"):
+        brg.build_report(runs, siblings=spec, rounds={"x": 1})
+
+
+def test_cli_siblings_prints_the_treatment_minus_control_table(tmp_path, capsys):
+    from main import best_response_gap as cli
+    runs = _siblings(tmp_path, {"aaaa1111": 74, "bbbb1111": 72}, {"aaaa1111": 60, "bbbb1111": 52})
+    paths = [r.run_dir for r in runs]
+    out = str(tmp_path / "o.json")
+    assert cli.main([*paths, "--teamsets", _teamsets_file(tmp_path), "--control", "ctl", "--treatment", "trt",
+                     "--json", out, "--draws", "500", "--md", str(tmp_path / "o.md")]) == 0
+    printed = capsys.readouterr().out
+    assert "SIBLINGS at target step 75,000,000" in printed and "TREATMENT LESS EXPLOITABLE" in printed
+    assert "ROUND-OVER-ROUND" not in printed
+    assert json.load(open(out))["siblings"]["mean_delta"] == pytest.approx(-0.17)
+    assert "Siblings at target step" in (tmp_path / "o.md").read_text()
+    # one without the other, rounds together with siblings, and a non-sibling pair all exit 2
+    for extra in (["--control", "ctl"], ["--control", "ctl", "--treatment", "trt", "--rounds", "ctl=1"],
+                  ["--control", "ctl", "--treatment", "nope"]):
+        assert cli.main([*paths, "--teamsets", _teamsets_file(tmp_path), "--no-json", "--quiet", *extra]) == 2
+    capsys.readouterr()
+
+
+def test_cli_prints_a_one_archetype_round_pair_as_a_read_not_unreadable(tmp_path, capsys):
+    from main import best_response_gap as cli
+    runs = _round_pair(tmp_path, {"aaaa1111": 74}, {"aaaa1111": 46})
+    assert cli.main([*[r.run_dir for r in runs], "--teamsets", _teamsets_file(tmp_path), "--no-json",
+                     "--draws", "200"]) == 0
+    printed = capsys.readouterr().out
+    assert "UNREADABLE" not in printed and "Δ, ONE archetype" in printed and "SINGLE-ARCHETYPE READ" in printed

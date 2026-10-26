@@ -78,6 +78,19 @@ crosses that boundary must carry the reason it should not be trusted, on the sam
 
 The gap itself is NOT refused for being small — a flat gap is the measurement.
 
+═══ SIBLINGS, AND A ONE-ARCHETYPE READ ═════════════════════════════════════════════════════════
+
+Rounds are ordered by the target's step. Two generalists at ONE step (a treatment arm and its control) are
+SIBLINGS, not rounds: ``--control NAME --treatment NAME`` (:func:`resolve_siblings`, each name an exploiter run
+or a target run) reads ``gap(treatment) - gap(control)`` per archetype with the same cells, replicate pooling,
+matched-exploiter refusals and verdict rules, and refuses (:class:`SiblingError`) a pair that is not at one
+target step, a third generalist, or a name that matches nothing — so no hand-set round order can swap the sign
+(finding F2, 2026-10-26). NEGATIVE = the treatment is LESS exploitable.
+
+A comparison with ONE shared archetype has no spread across archetypes to bootstrap: its verdict is that
+archetype's Newcombe interval, worded ``SINGLE-ARCHETYPE READ`` (basis ``single_archetype_newcombe``); with NONE
+shared it reads ``NOT-APPLICABLE`` (finding F1, 2026-10-26; both used to print only UNREADABLE).
+
 ═══ REPLICATES ═══════════════════════════════════════════════════════════════════════════════
 
 Two or more exploiters of the SAME archetype against the SAME target file (one round) are
@@ -828,13 +841,160 @@ def _cell_runs(cell: Dict[str, Any]) -> List[str]:
     return list(cell.get("replicates") or [cell["run"]])
 
 
+# --------------------------------------------------------------------------------------------
+# One comparison between two sets of cells (a round pair, or a sibling pair)
+# --------------------------------------------------------------------------------------------
+
+#: How each comparison words its verdict. ``neg`` / ``pos`` are the readings of an interval wholly
+#: below / above zero; the single-archetype and no-overlap rules are the same for both.
+_ROUND_WORDING = {
+    "neg": "THE GAP FELL — the generalist is absorbing its best responders",
+    "pos": "THE GAP ROSE — the later generalist is MORE exploitable, not less",
+    "null": "NOT DETECTED — the paired interval straddles zero",
+}
+_SIBLING_WORDING = {
+    "neg": "TREATMENT LESS EXPLOITABLE — its best responders win less than the control's",
+    "pos": "TREATMENT MORE EXPLOITABLE — its best responders win more than the control's",
+    "null": "NOT DETECTED — the interval straddles zero",
+}
+
+#: The registered answer when no archetype is present on both sides: the comparison does not apply
+#: (nothing to difference), which is a statement about the inputs, not a failed read.
+NOT_APPLICABLE = "NOT-APPLICABLE — no archetype is present on both sides, so there is nothing to difference"
+SINGLE_ARCHETYPE = "single_archetype_newcombe"
+PAIRED_BOOTSTRAP = "paired_two_level_bootstrap"
+
+
+def _compare_cells(a: Dict[str, Dict[str, Any]], b: Dict[str, Dict[str, Any]],
+                   rows_a: Sequence[Dict[str, Any]], rows_b: Sequence[Dict[str, Any]], *,
+                   draws: int, seed: int, wording: Dict[str, str]) -> Dict[str, Any]:
+    """``b - a`` per shared archetype, the mean across them, and the VERDICT.
+
+    * two or more shared archetypes: the paired two-level bootstrap (:func:`paired_delta_ci`);
+    * ONE shared archetype (finding F1): the pairing unit count is 1, so no spread across archetypes
+      exists to bootstrap — the verdict IS that archetype's Newcombe interval, labelled
+      ``single_archetype_newcombe`` and worded as that archetype's read only (it says nothing about the
+      others). Before 2026-10-26 this printed UNREADABLE and the number lived only in the per-archetype
+      row, so a one-archetype round got read by hand;
+    * none: ``NOT-APPLICABLE`` (:data:`NOT_APPLICABLE`).
+    """
+    shared = sorted(set(a) & set(b))
+    per: List[Dict[str, Any]] = []
+    pairs: List[Tuple[Tuple[int, int], Tuple[int, int]]] = []
+    for name in shared:
+        d, lo, hi = newcombe_diff_ci(b[name]["wins"], b[name]["games"],
+                                     a[name]["wins"], a[name]["games"])
+        entry: Dict[str, Any] = {"archetype": name, "gap_earlier": a[name]["gap"],
+                                 "gap_later": b[name]["gap"], "delta": d, "lo": lo, "hi": hi,
+                                 "runs_earlier": _cell_runs(a[name]),
+                                 "runs_later": _cell_runs(b[name]), "per_replicate": []}
+        if len(entry["runs_earlier"]) > 1 or len(entry["runs_later"]) > 1:
+            ra = [row for row in rows_a if row["run"] in entry["runs_earlier"]]
+            rb = [row for row in rows_b if row["run"] in entry["runs_later"]]
+            for re_ in ra:
+                for rl in rb:
+                    rd, rlo, rhi = newcombe_diff_ci(rl["wins"], rl["games"],
+                                                    re_["wins"], re_["games"])
+                    entry["per_replicate"].append({
+                        "earlier_run": re_["run"], "later_run": rl["run"],
+                        "gap_earlier": re_["gap"], "gap_later": rl["gap"],
+                        "delta": rd, "lo": rlo, "hi": rhi})
+        per.append(entry)
+        pairs.append(((b[name]["wins"], b[name]["games"]),
+                      (a[name]["wins"], a[name]["games"])))
+    changes = [(n, a[n]["membership"], b[n]["membership"]) for n in shared
+               if a[n]["membership"] != b[n]["membership"]]
+
+    basis: Optional[str] = None
+    if len(pairs) >= 2:
+        point, lo, hi = paired_delta_ci(pairs, draws=draws, seed=seed)
+        basis = PAIRED_BOOTSTRAP
+    elif len(pairs) == 1:
+        point, lo, hi = per[0]["delta"], per[0]["lo"], per[0]["hi"]
+        basis = SINGLE_ARCHETYPE
+    else:
+        point = lo = hi = None
+    if point is None:
+        verdict = NOT_APPLICABLE
+    else:
+        if hi < 0:
+            verdict = wording["neg"]
+        elif lo > 0:
+            verdict = wording["pos"]
+        else:
+            verdict = wording["null"]
+        if basis == SINGLE_ARCHETYPE:
+            verdict += (f" [SINGLE-ARCHETYPE READ: {per[0]['archetype']} only; the interval is that "
+                        "archetype's Newcombe interval, with no spread across archetypes]")
+    return {"per_archetype": per, "unpaired": sorted(set(a) ^ set(b)),
+            "mean_delta": point, "lo": lo, "hi": hi, "n_pairs": len(pairs), "basis": basis,
+            "verdict": verdict, "membership_changes": changes}
+
+
+# --------------------------------------------------------------------------------------------
+# Siblings — a treatment generalist against its control, at one target step (finding F2)
+# --------------------------------------------------------------------------------------------
+
+@dataclass(frozen=True)
+class SiblingSpec:
+    """Which exploiter runs best-responded to the CONTROL generalist and which to the TREATMENT."""
+    control: str
+    treatment: str
+    control_round: int = 1
+    treatment_round: int = 2
+    #: ``{target_key: round}`` for :func:`build_report` — a label, never a loop order.
+    rounds: Tuple[Tuple[str, int], ...] = ()
+
+
+class SiblingError(BestResponseGapError):
+    """The control / treatment pair is not two generalists at ONE target step, or a run belongs to neither
+    (a third generalist in the invocation, a name that matches no run, an arm whose runs best-responded
+    to two different target files). Refused rather than guessed: a swapped label reverses the verdict."""
+
+    cause = "siblings"
+
+
+def resolve_siblings(runs: Sequence[ExploiterRun], control: str, treatment: str) -> SiblingSpec:
+    """Bind ``control`` and ``treatment`` (each an exploiter run NAME or a TARGET run name) to the two
+    target FILES present in ``runs``. Typed :class:`SiblingError` unless every run belongs to exactly one
+    of them, the two files differ, and both sit at the SAME recorded target step."""
+    if control == treatment:
+        raise SiblingError(f"REFUSING — control and treatment are both {control!r}.")
+
+    def side(name: str) -> str:
+        keys = {target_key(r) for r in runs if name in (r.run, r.target_run)}
+        if not keys:
+            raise SiblingError(f"REFUSING — {name!r} matches no exploiter run or target run in this "
+                               f"invocation ({', '.join(r.run for r in runs)}).")
+        if len(keys) > 1:
+            raise SiblingError(f"REFUSING — {name!r} spans {len(keys)} different generalists "
+                               f"({', '.join(sorted(keys))}); a sibling arm is ONE target file.")
+        return next(iter(keys))
+
+    ck, tk = side(control), side(treatment)
+    if ck == tk:
+        raise SiblingError(f"REFUSING — control {control!r} and treatment {treatment!r} best-responded "
+                           f"to the SAME target file ({ck}); there are no siblings to compare.")
+    stray = sorted(r.run for r in runs if target_key(r) not in (ck, tk))
+    if stray:
+        raise SiblingError(f"REFUSING — {', '.join(stray)} best-responded to neither the control nor the "
+                           "treatment generalist; a sibling comparison reads exactly two.")
+    steps = {k: next(r.target_step for r in runs if target_key(r) == k) for k in (ck, tk)}
+    if steps[ck] is None or steps[tk] is None or steps[ck] != steps[tk]:
+        raise SiblingError(f"REFUSING — the siblings are not at one target step (control {steps[ck]}, "
+                           f"treatment {steps[tk]}). Two generalists at DIFFERENT depths are rounds, "
+                           "not siblings (drop --control / --treatment).")
+    return SiblingSpec(control=control, treatment=treatment, rounds=((ck, 1), (tk, 2)))
+
+
 def build_report(runs: Sequence[ExploiterRun], *, stat: str = "pooled",
                  rounds: Optional[Dict[str, int]] = None,
                  mismatches: Sequence[Mismatch] = (),
                  draws: int = DEFAULT_DRAWS,
                  bootstrap_seed: int = DEFAULT_BOOTSTRAP_SEED,
                  rate_regime: str = SERIES_REGIME,
-                 played: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+                 played: Optional[Dict[str, Any]] = None,
+                 siblings: Optional["SiblingSpec"] = None) -> Dict[str, Any]:
     """The whole report: per-round rows, and the round-over-round delta PAIRED on archetype.
 
     ``stat`` selects which rate the gap is computed from — ``pooled`` (every post-fork cycle, the
@@ -845,6 +1005,12 @@ def build_report(runs: Sequence[ExploiterRun], *, stat: str = "pooled",
     ``blk["pooled"]``, and that pooled cell is the archetype's one pairing unit; each delta entry
     also carries ``per_replicate`` (every earlier x later pair). See the module docstring.
 
+    ``siblings`` (a :class:`SiblingSpec` from :func:`resolve_siblings`) switches the comparison from ROUNDS
+    to a TREATMENT-vs-CONTROL pair of generalists at one target step (finding F2): ``rounds`` is then the
+    spec's own assignment (control 1, treatment 2, labels only, not loop order), ``deltas`` is empty and
+    ``siblings`` holds the one comparison, ``gap(treatment) - gap(control)`` per archetype with the same
+    cells, replicate pooling, Newcombe intervals, paired bootstrap and single-archetype rule.
+
     The delta is computed only between CONSECUTIVE rounds and only on archetypes present in both.
     An archetype in one round and not the other is reported as UNPAIRED rather than dropped in
     silence — dropping it would shrink the pairing unit count without saying so, and the count is
@@ -852,6 +1018,10 @@ def build_report(runs: Sequence[ExploiterRun], *, stat: str = "pooled",
     """
     if stat not in ("pooled", "endpoint"):
         raise BestResponseGapError(f"stat {stat!r}: expected 'pooled' or 'endpoint'")
+    if siblings is not None:
+        if rounds:
+            raise BestResponseGapError("siblings and rounds are two different comparisons: pass one.")
+        rounds = dict(siblings.rounds)
     rounds = dict(rounds or assign_rounds(runs))
     for r in runs:
         r.round = rounds.get(target_key(r))
@@ -898,62 +1068,48 @@ def build_report(runs: Sequence[ExploiterRun], *, stat: str = "pooled",
 
     deltas: List[Dict[str, Any]] = []
     order = sorted(by_round)
-    for earlier, later in zip(order, order[1:]):
-        a, b = cells[earlier], cells[later]
-        shared = sorted(set(a) & set(b))
-        per: List[Dict[str, Any]] = []
-        pairs: List[Tuple[Tuple[int, int], Tuple[int, int]]] = []
-        for name in shared:
-            d, lo, hi = newcombe_diff_ci(b[name]["wins"], b[name]["games"],
-                                         a[name]["wins"], a[name]["games"])
-            entry: Dict[str, Any] = {"archetype": name, "gap_earlier": a[name]["gap"],
-                                     "gap_later": b[name]["gap"], "delta": d, "lo": lo, "hi": hi,
-                                     "runs_earlier": _cell_runs(a[name]),
-                                     "runs_later": _cell_runs(b[name]), "per_replicate": []}
-            if len(entry["runs_earlier"]) > 1 or len(entry["runs_later"]) > 1:
-                rows_e = [row for row in by_round[earlier]["rows"]
-                          if row["run"] in entry["runs_earlier"]]
-                rows_l = [row for row in by_round[later]["rows"]
-                          if row["run"] in entry["runs_later"]]
-                for re_ in rows_e:
-                    for rl in rows_l:
-                        rd, rlo, rhi = newcombe_diff_ci(rl["wins"], rl["games"],
-                                                        re_["wins"], re_["games"])
-                        entry["per_replicate"].append({
-                            "earlier_run": re_["run"], "later_run": rl["run"],
-                            "gap_earlier": re_["gap"], "gap_later": rl["gap"],
-                            "delta": rd, "lo": rlo, "hi": rhi})
-            per.append(entry)
-            pairs.append(((b[name]["wins"], b[name]["games"]),
-                          (a[name]["wins"], a[name]["games"])))
-        for name in shared:
-            if a[name]["membership"] != b[name]["membership"]:
-                caveats.append(
-                    f"round {earlier} -> {later}, archetype {name}: the TEAMSET SIZE changed "
-                    f"({a[name]['membership']} -> {b[name]['membership']}). The two gaps are "
-                    "best responses inside DIFFERENT subgame restrictions, so the delta "
-                    "confounds 'the loop absorbed it' with 'the later exploiter had a harder "
-                    "job'. `main.exploitability`'s caveat 2 is the same one.")
-        point, plo, phi = paired_delta_ci(pairs, draws=draws, seed=bootstrap_seed)
-        if point is None:
-            verdict = "UNREADABLE — fewer than two archetypes are present in both rounds"
-        elif plo is not None and phi is not None and phi < 0:
-            verdict = "THE GAP FELL — the generalist is absorbing its best responders"
-        elif plo is not None and plo > 0:
-            verdict = "THE GAP ROSE — the later generalist is MORE exploitable, not less"
-        else:
-            verdict = "NOT DETECTED — the paired interval straddles zero"
-        deltas.append({
-            "earlier_round": earlier, "later_round": later, "per_archetype": per,
-            "unpaired": sorted(set(a) ^ set(b)),
-            "mean_delta": point, "lo": plo, "hi": phi, "n_pairs": len(pairs),
-            "verdict": verdict,
-        })
+    if siblings is None:
+        for earlier, later in zip(order, order[1:]):
+            comp = _compare_cells(cells[earlier], cells[later], by_round[earlier]["rows"],
+                                  by_round[later]["rows"], draws=draws, seed=bootstrap_seed,
+                                  wording=_ROUND_WORDING)
+            caveats += [f"round {earlier} -> {later}, archetype {name}: the TEAMSET SIZE changed "
+                        f"({ma} -> {mb}). The two gaps are best responses inside DIFFERENT subgame "
+                        "restrictions, so the delta confounds 'the loop absorbed it' with 'the later "
+                        "exploiter had a harder job'. `main.exploitability`'s caveat 2 is the same one."
+                        for name, ma, mb in comp.pop("membership_changes")]
+            deltas.append({"earlier_round": earlier, "later_round": later, **comp})
+
+    sibling_block: Optional[Dict[str, Any]] = None
+    if siblings is not None:
+        ctl, trt = siblings.control_round, siblings.treatment_round
+        comp = _compare_cells(cells[ctl], cells[trt], by_round[ctl]["rows"], by_round[trt]["rows"],
+                              draws=draws, seed=bootstrap_seed, wording=_SIBLING_WORDING)
+        for name, ma, mb in comp.pop("membership_changes"):
+            caveats.append(
+                f"siblings, archetype {name}: the TEAMSET SIZE differs between control ({ma}) and "
+                f"treatment ({mb}), so the two gaps are best responses inside DIFFERENT subgame "
+                "restrictions and the difference confounds 'treatment is harder to exploit' with "
+                "'its exploiter had a harder job'.")
+        for entry in comp["per_archetype"]:        # the sibling block names its sides, never "earlier"/"later"
+            entry["gap_control"], entry["gap_treatment"] = entry["gap_earlier"], entry["gap_later"]
+            entry["runs_control"], entry["runs_treatment"] = entry["runs_earlier"], entry["runs_later"]
+            for q in entry["per_replicate"]:
+                q["control_run"], q["treatment_run"] = q["earlier_run"], q["later_run"]
+        sibling_block = {
+            "control": siblings.control, "treatment": siblings.treatment,
+            "control_round": ctl, "treatment_round": trt,
+            "target_step": by_round[ctl]["target_step"],
+            "control_target": by_round[ctl]["target_run"],
+            "treatment_target": by_round[trt]["target_run"],
+            "sign": "delta = gap(treatment) - gap(control); NEGATIVE = the treatment is LESS exploitable",
+            **comp}
 
     return {
         "stat": stat, "null_rate": NULL_RATE, "rate_regime": rate_regime,
         "rounds": [by_round[k] for k in order],
         "deltas": deltas,
+        "siblings": sibling_block,
         "caveats": caveats,
         "mismatches": [m.to_json() for m in mismatches],
         "unmatched": bool(mismatches),
