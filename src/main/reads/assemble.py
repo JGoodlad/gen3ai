@@ -22,7 +22,7 @@ import hashlib
 import json
 import math
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, Optional, Sequence
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 
 from agents.training import eval_ledger as L
 
@@ -291,23 +291,45 @@ def assemble(spec: Any, state: Path) -> Dict[str, Any]:
                                       for lab, m in spec.models.items()},
                            "anchor": {}, "s": {}}
     shas = {lab: e["sha256"] for lab, e in models.items()}
+    from main.reads import imports as IM
+    from main.reads.spec import imported
+
     for g, a in spec.anchor.items():
         rows: List[Dict[str, Any]] = []
         for lab in a.models:
             st = LY.anchor_state(state, g, lab)
-            if (st / "plan.json").exists():
+            if lab not in imported(a) and (st / "plan.json").exists():
                 rows += anchor_units(st)
+        meta = None
+        if a.imports is not None:                         # the earlier read's units: sha- and regime-checked
+            got, meta = IM.anchor_rows(spec, g, shas, this_state=state)
+            rows += got
         grp = anchor_group(rows, labels=a.models, teamsets=a.teamsets, unit_seeds=a.unit_seeds, shas=shas)
         missing = [lab for lab in a.models if lab not in shas]
         if missing:
             grp["inconclusive"] = sorted(set(grp["inconclusive"]) | {f"model(s) {missing} not resolved"})
+        if meta is not None:
+            grp["imports"] = meta
         out["anchor"][g] = grp
     for g, x in spec.s.items():
         mem = members_of(spec_path(x.refpop), want_content=x.refpop_content_sha256)
-        have = {lab: shas[lab] for lab in x.models if lab in shas}
-        grp = s_group(LY.s_ledger(state, g), x.family, {lab: x.request(lab) for lab in have}, have, mem,
-                      panel=x.panel, want_regime=x.regime_id, refpop_content_sha256=x.refpop_content_sha256,
-                      min_pairs=x.pairs)
+        have = {lab: shas[lab] for lab in x.models if lab in shas and lab not in imported(x)}
+        grp = None
+        if have or x.imports is None:
+            grp = s_group(LY.s_ledger(state, g), x.family, {lab: x.request(lab) for lab in have}, have, mem,
+                          panel=x.panel, want_regime=x.regime_id, refpop_content_sha256=x.refpop_content_sha256,
+                          min_pairs=x.pairs)
+        if x.imports is not None:
+            ig, meta = IM.s_group(spec, g, shas, mem, this_state=state)
+            if grp is None:
+                grp = dict(ig)                                # every node imported: the earlier ledger's read
+            else:
+                grp["nodes"] = dict(grp["nodes"], **ig["nodes"])
+                grp["inconclusive"] = list(grp["inconclusive"]) + [f"imported: {w}" for w in ig["inconclusive"]]
+                if ig.get("regime_id") != grp.get("regime_id"):
+                    grp["inconclusive"].append(f"imported regime {ig.get('regime_id')} is not this ledger's "
+                                               f"{grp.get('regime_id')}")
+            grp["imports"] = meta
         missing = [lab for lab in x.models if lab not in shas]
         if missing:
             grp["inconclusive"] = list(grp["inconclusive"]) + [f"model(s) {missing} not resolved"]
@@ -315,19 +337,39 @@ def assemble(spec: Any, state: Path) -> Dict[str, Any]:
     return out
 
 
-def conclusive(cells: Mapping[str, Any]) -> List[str]:
-    """Every reason the assembled cells are not a complete, regime-stamped read (empty = record-ready)."""
-    why: List[str] = []
-    for lane in ("anchor", "s"):
-        for g, grp in (cells.get(lane) or {}).items():
-            why += [f"{lane}.{g}: {w}" for w in grp.get("inconclusive") or ()]
-            if not grp.get("regime_id"):
-                why.append(f"{lane}.{g}: no regime id")
-    for g, grp in (cells.get("anchor") or {}).items():
-        if grp.get("unplayed"):
-            why.append(f"anchor.{g}: {grp['unplayed']} unit(s) unplayed")
-    for g, grp in (cells.get("s") or {}).items():
+def group_reasons(lane: str, g: str, grp: Mapping[str, Any]) -> List[str]:
+    """Every reason ONE assembled group is not complete and regime-stamped (empty = it is)."""
+    why = [f"{lane}.{g}: {w}" for w in grp.get("inconclusive") or ()]
+    if not grp.get("regime_id"):
+        why.append(f"{lane}.{g}: no regime id")
+    if lane == "anchor" and grp.get("unplayed"):
+        why.append(f"anchor.{g}: {grp['unplayed']} unit(s) unplayed")
+    if lane == "s":
         for lab, n in (grp.get("nodes") or {}).items():
             if n.get("s_pp") is None or n.get("se_pp") is None or not math.isfinite(float(n["s_pp"])):
                 why.append(f"s.{g}.{lab}: no S ({'; '.join(n.get('inconclusive') or ['incomplete'])})")
     return why
+
+
+def conclusive(cells: Mapping[str, Any], *, reported: Sequence[Tuple[str, str]] = ()) -> List[str]:
+    """Every reason the assembled cells are not a complete, regime-stamped read (empty = record-ready). The groups in
+    ``reported`` (``(lane, group)``: the rule's REPORTED-only groups, which no verdict reads) are left out: they are
+    :func:`reported_incomplete`'s, and never block the record of the decided primary (N1-P FINDING 7)."""
+    skip = set(reported)
+    why: List[str] = []
+    for lane in ("anchor", "s"):
+        for g, grp in (cells.get(lane) or {}).items():
+            if (lane, g) not in skip:
+                why += group_reasons(lane, g, grp)
+    return why
+
+
+def reported_incomplete(cells: Mapping[str, Any], reported: Sequence[Tuple[str, str]]) -> Dict[str, List[str]]:
+    """``{"<lane>.<group>": [reasons]}`` of each REPORTED-only group that is not complete (recorded INCOMPLETE)."""
+    out: Dict[str, List[str]] = {}
+    for lane, g in reported:
+        grp = (cells.get(lane) or {}).get(g)
+        why = [f"{lane}.{g}: not assembled"] if grp is None else group_reasons(lane, g, grp)
+        if why:
+            out[f"{lane}.{g}"] = why
+    return out

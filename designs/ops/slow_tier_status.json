@@ -3030,10 +3030,10 @@
   },
   "src/main/anchors/registry_pins_test.py::test_the_real_peer_started_from_a_panel_config_verifies_its_weights": {
    "status": "pass",
-   "commit": "2e7b08620e082ea8e018ca9c3aaba686a6db3927",
-   "at": "2026-10-26T07:21:00Z",
-   "duration_s": 6.07,
-   "contention": 1.36,
+   "commit": "a1370436f65d312ba84bf1409abde40393b2a30e",
+   "at": "2026-10-26T14:03:58Z",
+   "duration_s": 6.18,
+   "contention": 3.16,
    "detail": ""
   },
   "src/main/anchors/weight_pins_integration_test.py::test_a_wrong_sha_a_missing_revision_and_an_unpinned_load_are_each_refused": {
@@ -4620,6 +4620,14 @@
    "contention": 1.16,
    "detail": ""
   },
+  "src/main/x35/kakuna_test.py::test_the_real_peer_started_from_a_derived_config_verifies_the_registry_weights": {
+   "status": "pass",
+   "commit": "a1370436f65d312ba84bf1409abde40393b2a30e",
+   "at": "2026-10-26T14:03:58Z",
+   "duration_s": 8.13,
+   "contention": 2.24,
+   "detail": ""
+  },
   "src/node_free_search_integration_test.py::test_search_replay_and_the_prober_run_with_node_impossible": {
    "status": "pass",
    "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
@@ -4917,5 +4925,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-26T07:25:35Z"
+ "last_written": "2026-10-26T14:03:58Z"
 }

@@ -278,3 +278,129 @@ def test_a_load_option_rides_every_unit_of_its_final_and_only_its_own():
     # a plan written before the field existed still loads (the default is the unchanged model)
     old = {k: v for k, v in by["plain"].__dict__.items() if k != "belief_prior_mix"}
     assert KA.Unit(**old).belief_prior_mix is None
+
+
+# ------------------------------------------------------------------------------- other Metamon opponents (FINDING 2)
+NEW_OPPONENTS = ("metamon:PastaMittens", "metamon:LargeRL", "metamon:LargeIL")
+
+
+@pytest.mark.parametrize("opponent", NEW_OPPONENTS)
+def test_an_opponent_a_cell_lacks_gets_a_derived_config_with_the_registry_pin(tmp_path, opponent):
+    """be60f24f FINDING 2: ``main.reads`` could only play Kakuna. An agent the committed cell config lacks is added
+    from the registry, its pin validated, and the unit carries the derived file's sha256."""
+    from main.anchors.config import load_config
+    from main.reads import assemble as AS
+
+    agent = opponent.split(":")[1]
+    finals = [{"label": "p", "arm": "pstar", "seed": 2601, "path": "/m.zip"}]
+    units = KA.plan_units(finals, hash_models=False, teamsets=("home72", "forum72"), unit_seeds=(0,),
+                          opponent=opponent, config_dir=tmp_path / "configs")
+    assert {u.opponent for u in units} == {opponent}
+    for u in units:
+        assert u.config is not None and Path(u.config).parent == tmp_path / "configs"
+        cfg = json.loads(Path(u.config).read_text())
+        base = json.loads(KA.config_of(u.teamset).read_text())
+        assert cfg["opponents"]["metamon"]["agents"][agent] == KA._registry_agent(agent)
+        del cfg["opponents"]["metamon"]["agents"][agent]
+        assert cfg == base, "the committed cell config, unchanged but for the one agent"
+        pin = load_config(Path(u.config)).metamon.pin(agent)
+        assert pin.digest == AS.LEGACY_WEIGHTS[agent], "the registry's bytes: the banked weights, the same regime"
+        assert KA.check_derived_config(u) == []
+        a = KA.unit_argv(u, Path("/o"), 9541, py="PY")
+        assert a[a.index("--opponent") + 1] == opponent
+    with pytest.raises(KA.KakunaError, match="no config dir"):
+        KA.plan_units(finals, hash_models=False, teamsets=("p72",), unit_seeds=(0,), opponent=opponent)
+
+
+def test_kakuna_and_smallrl_play_the_committed_config_unchanged_and_others_are_refused(tmp_path):
+    finals = [{"label": "p", "arm": "pstar", "seed": 2601, "path": "/m.zip"}]
+    for opp in ("metamon:Kakuna", "metamon:SmallRL"):
+        units = KA.plan_units(finals, hash_models=False, teamsets=("home72", "p72"), unit_seeds=(0,), opponent=opp,
+                              config_dir=tmp_path / "configs")
+        assert {(u.config, u.config_sha256) for u in units} == {(None, None)}
+    assert not (tmp_path / "configs").exists()
+    with pytest.raises(KA.KakunaError, match="is none of"):
+        KA.plan_units(finals, hash_models=False, teamsets=("p72",), opponent="metamon:Elsewhere")
+
+
+def test_preflight_refuses_a_derived_config_that_moved_since_the_plan(tmp_path, monkeypatch):
+    from main.live import halt
+
+    monkeypatch.setattr(halt, "read_halt", lambda: None)
+    monkeypatch.setattr(KA, "check_panel_cell", lambda ts: [])
+    finals = [{"label": "p", "arm": "pstar", "seed": 2601, "path": "/m.zip"}]
+    (u,) = KA.plan_units(finals, hash_models=False, teamsets=("forum72",), unit_seeds=(0,),
+                         opponent="metamon:LargeRL", config_dir=tmp_path)
+    KA.preflight(u)
+    p = Path(u.config)
+    good = p.read_bytes()
+    cfg = json.loads(good)
+    cfg["opponents"]["metamon"]["agents"]["LargeRL"]["weights"] = {}
+    p.write_text(json.dumps(cfg))
+    with pytest.raises(KA.KakunaError, match="derived metamon:LargeRL config does not hold.*sha256.*no weight pin"):
+        KA.preflight(u)
+    cfg = json.loads(good)
+    cfg["opponents"]["metamon"]["agents"]["Kakuna"]["checkpoint"] = 28      # the committed part edited
+    b = KA._config_bytes(cfg)
+    p.write_bytes(b)
+    import hashlib
+
+    u2 = KA.Unit(**dict(u.__dict__, config_sha256=hashlib.sha256(b).hexdigest()))
+    with pytest.raises(KA.KakunaError, match="not the committed"):
+        KA.preflight(u2)
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("opponent", NEW_OPPONENTS)
+def test_a_real_main_anchors_dry_run_accepts_each_derived_config(tmp_path, opponent):
+    """``main.anchors`` as a unit launches it (the derived config via ``$GEN3AI_ANCHORS_CONFIG``), dry-run."""
+    import subprocess
+    import sys
+
+    (u,) = KA.plan_units([{"label": "p", "arm": "pstar", "seed": 2601, "path": "/m.zip"}], hash_models=False,
+                         teamsets=("forum72",), unit_seeds=(0,), opponent=opponent, config_dir=tmp_path)
+    out = subprocess.run([sys.executable, "-m", "main.anchors", "--model", "", "--opponent", opponent, "--regime",
+                          "greedy", "--teamset", KA.config_side(u.teamset), "--games", "2", "--dry-run"],
+                         env=KA.unit_env(config=Path(u.config)), capture_output=True, text=True, timeout=300)
+    assert out.returncode == 0, out.stderr[-1500:]
+    assert "--weights-json" in out.stdout and "not pinned" not in out.stdout + out.stderr
+
+
+@pytest.mark.integration
+@pytest.mark.slow  # ship gate: starts the real Metamon peer (torch + metamon import) from a derived config, ~15 s
+def test_the_real_peer_started_from_a_derived_config_verifies_the_registry_weights(tmp_path):
+    """The peer process itself on a CLOSED local port, from a unit's DERIVED LargeRL config: it must get through the
+    pinned-weights step (offline, the registry's revision and sha256s) before it fails to connect. Stopped by its PID."""
+    import subprocess
+    import time
+
+    from main.anchors.config import load_config
+    from main.anchors.peers import MetamonPeer
+    from main.anchors.windowed_attention_integration_test import _metamon_or_skip
+
+    _metamon_or_skip()
+    (u,) = KA.plan_units([{"label": "p", "arm": "pstar", "seed": 2601, "path": "/m.zip"}], hash_models=False,
+                         teamsets=("forum72",), unit_seeds=(0,), opponent="metamon:LargeRL",
+                         config_dir=tmp_path / "configs")
+    cfg = load_config(Path(u.config))
+    plan = MetamonPeer().plan(cfg=cfg.metamon, agent="LargeRL", regime="greedy", teamset=KA.config_side(u.teamset),
+                              battle_format="gen3ou", server_uri="ws://localhost:9597/showdown/websocket",
+                              username="PinSmokeA", opponent_username="PinSmokeB", role="acceptor", n_games=1,
+                              team_seed=1, out_dir=tmp_path)
+    log = tmp_path / "peer.log"
+    with open(log, "w") as fh:
+        proc = subprocess.Popen(plan.argv, cwd=plan.cwd, env=plan.env, stdout=fh, stderr=subprocess.STDOUT)
+    try:
+        deadline = time.time() + 240
+        while time.time() < deadline and proc.poll() is None and "weights pinned" not in log.read_text():
+            time.sleep(2)
+        text = log.read_text()
+    finally:
+        proc.terminate()
+        try:
+            proc.wait(20)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            proc.wait()
+    assert "weights pinned" in text and "sha256-verified" in text, text[-2500:]
+    assert "REFUSING" not in text

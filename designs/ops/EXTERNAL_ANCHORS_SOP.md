@@ -231,7 +231,11 @@ ensemble: every member checkpoint, `PastaMittens` = Kakuna 28 / 30 / 34 + Alakaz
 plan time (`MetamonOpponent.pin`). **The pins belong to the opponent, not to a panel's config**: a config without them (every
 sha-pinned panel config that `main.x35.kakuna` passes via `$GEN3AI_ANCHORS_CONFIG`, which must never be edited) takes
 `hf_repo` / `hf_revision` and each agent's `weights` from this registry by agent name, when the registry's agent plays the same
-policy and checkpoint; pins a config carries itself win; `registry_pins_test` loads EVERY committed anchors config. The peer (`peer_scripts/metamon_side.py`, helpers in the stdlib-only
+policy and checkpoint; pins a config carries itself win; `registry_pins_test` loads EVERY committed anchors config. An agent
+a panel config does not name at all (`PastaMittens`, `LargeRL`, `LargeIL`) is played by `main.x35.kakuna` (and so
+`main.reads`) under a DERIVED config written once at plan: the committed panel config plus that one agent, exactly the
+registry's entry; each unit re-checks the derived file's sha256 and that it is the committed config plus that agent
+(`kakuna.opponent_config` / `check_derived_config`). The peer (`peer_scripts/metamon_side.py`, helpers in the stdlib-only
 `peer_scripts/weight_pins.py`, shared with `main.anchors`):
 
 1. forces `HF_HUB_OFFLINE=1` / `TRANSFORMERS_OFFLINE=1` at import, over whatever the caller exported (the plan's env sets them too),

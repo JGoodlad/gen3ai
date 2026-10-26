@@ -11,7 +11,8 @@
   the lane (exit 3), never a silent re-score.
 
 Both lanes: resumable (a counted unit / a recorded batch is never replayed), one supervisor per lane per state (a
-flock), a REGISTERED stop (``stop_epoch``: an absolute epoch, never open-ended), and the playing checkout must stay at
+flock keyed by the state's PATH outside it, a ``/proc`` scan, and the dir's identity: :mod:`main.reads.supervisors`),
+a REGISTERED stop (``stop_epoch``: an absolute epoch, never open-ended), and the playing checkout must stay at
 the commit ``plan`` recorded (``code.json``; with a spec ``pin``, that commit and a clean tree). Run them detached
 (``setsid nohup python -m main.reads run --lane anchor ...``), one process per lane.
 """
@@ -30,6 +31,7 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 from main.reads import layout as LY
 from main.reads.assemble import AssembleError
 from main.reads import models as M
+from main.reads import supervisors as SV
 from main.reads.spec import ReadSpec, load as load_spec
 
 CORES = "5-7,13-15"
@@ -134,15 +136,18 @@ def _settle(spec: ReadSpec, state: Path, *, now: Optional[float], step_of: Calla
         have[lab] = M.copy_resolved(r, LY.ckpt_dir(state, lab))
         _atomic(LY.models_file(state), have)
         _log(f"model {lab}: {r.source} step {r.step:,} sha {r.sha256[:12]} copied")
+    from main.reads.spec import imported
+
     for g, a in spec.anchor.items():
         for lab in a.models:
             st = LY.anchor_state(state, g, lab)
-            if lab not in have or (st / "plan.json").exists():
+            if lab not in have or lab in imported(a) or (st / "plan.json").exists():
                 continue
             m = spec.models[lab]
             units = KA.plan_units([{"label": lab, "arm": m.arm, "seed": m.seed, "path": have[lab]["copy"],
                                     "belief_prior_mix": m.load.get("belief_prior_mix")}],
-                                  teamsets=a.teamsets, unit_seeds=a.unit_seeds)
+                                  teamsets=a.teamsets, unit_seeds=a.unit_seeds, opponent=a.opponent,
+                                  config_dir=st / "configs")
             if any(u.model_sha256 != have[lab]["sha256"] for u in units):
                 raise RunError(f"{lab}: the copy no longer hashes to its recorded sha256")
             st.mkdir(parents=True, exist_ok=True)
@@ -156,8 +161,14 @@ def plan(spec_path: Path, state: Path, *, code: Optional[Dict[str, Any]] = None,
     """Write the read's state (``main.reads.layout``) from its spec; idempotent with the SAME spec bytes."""
     state = LY.check_state_dir(state)
     spec = load_spec(spec_path)
-    state.mkdir(parents=True, exist_ok=True)
     sf = LY.spec_file(state)
+    if not sf.exists():
+        live = SV.live_supervisors(state, exclude=SV.self_and_ancestors())
+        if live:
+            # the D3 reader's duplicate: a state renamed aside while its supervisor lived, re-planned at the same path
+            raise RunError(f"{state} holds no plan yet, but live supervisor(s) {live} name this path: they work a "
+                           "state that was moved from it. Stop them (by pid) or plan another path")
+    state.mkdir(parents=True, exist_ok=True)
     b = Path(spec_path).read_bytes()
     if sf.exists() and sf.read_bytes() != b:
         raise RunError(f"{sf} holds another spec: a state is ONE read (plan a new state for a new spec)")
@@ -169,6 +180,12 @@ def plan(spec_path: Path, state: Path, *, code: Optional[Dict[str, Any]] = None,
         _atomic(LY.code_file(state), dict(code, pin=spec.pin))
     if not sf.exists():
         sf.write_bytes(b)
+    from main.reads import imports as IM
+
+    for lane, groups in (("anchor", spec.anchor), ("s", spec.s)):
+        for g, x in groups.items():
+            if x.imports is not None:
+                IM.check(spec, lane, g, this_state=state)     # the earlier read, the same cell: before any play
     for g, x in spec.s.items():
         _s_prepare(spec, state, g)
     waiting = settle(spec, state, now=now, step_of=step_of)
@@ -314,11 +331,13 @@ def _progress(spec: ReadSpec, state: Path, g: str, engines: Sequence[str],
 
 
 def _s_pending(spec: ReadSpec, state: Path, models: Dict[str, Dict[str, Any]]) -> List[Tuple[str, str, List[str]]]:
+    from main.reads.spec import imported
+
     out = []
     for g, x in spec.s.items():
         st = json.loads((LY.s_dir(state, g) / "state.json").read_text())
         for lab in x.models:
-            if lab not in models:
+            if lab not in models or lab in imported(x):
                 continue
             have = s_pairs(state, spec, g, lab, models[lab]["sha256"])
             left = [m for m in st["members"] if have.get(m, 0) < x.pairs]
@@ -370,7 +389,13 @@ def run(state: Path, lane: str, stop_epoch: float, *, workers: int = S_WORKERS, 
     if lane == "anchor" and not spec.anchor or lane == "s" and not spec.s:
         raise RunError(f"the spec has no {lane} group")
     KA.check_stop_epoch(int(stop_epoch), now=clock())
-    hold = _lock(state, lane)
+    state = LY.check_state_dir(state)
+    sv = SV.Hold(state, lane)           # the path lock + the /proc scan + the dir's identity
+    try:
+        hold = _lock(state, lane)       # the in-state lock too: a supervisor of older code takes only this one
+    except RunError:
+        sv.close()
+        raise
     run_unit = run_unit or KA.run_unit
     run_s = run_s or (lambda argv: subprocess.run(argv, check=False, env=child_env()).returncode)
     jl = state / f"{lane}_supervisor.jsonl"
@@ -378,6 +403,7 @@ def run(state: Path, lane: str, stop_epoch: float, *, workers: int = S_WORKERS, 
     fails: Dict[str, int] = {}
     try:
         while True:
+            sv.check()                  # the path still names the dir this supervisor started on
             _code_holds(state, checkout_code())
             waiting = settle(spec, state)
             models = _load_models(state)
@@ -427,11 +453,14 @@ def run(state: Path, lane: str, stop_epoch: float, *, workers: int = S_WORKERS, 
                 return 0
             _log(f"{lane}: waiting for {sorted(waiting)} to settle (poll {POLL_S} s)")
             sleep(POLL_S)
+    except SV.SupervisorError:
+        raise                           # the path names another dir now: write nothing there, not even a log line
     except Exception as exc:
         _jl(jl, {"event": "refused", "why": f"{type(exc).__name__}: {exc}"})
         raise
     finally:
         hold.close()
+        sv.close()
 
 
 # -------------------------------------------------------------------------------------------- status
@@ -443,10 +472,17 @@ def status(state: Path) -> Dict[str, Any]:
     models = _load_models(state)
     out: Dict[str, Any] = {"read": spec.read, "models": {lab: (models[lab]["sha256"][:12] if lab in models
                                                               else "waiting") for lab in spec.models},
-                           "anchor": {}, "s": {}}
+                           "anchor": {}, "s": {},
+                           # live supervisors from /proc (never kill -0), by lane: [] = none is running
+                           "supervisors": {ln: SV.live_supervisors(state, lane=ln).get(ln, []) for ln in SV.LANES}}
+    from main.reads.spec import imported
+
     for g, a in spec.anchor.items():
         for lab in a.models:
             st = LY.anchor_state(state, g, lab)
+            if lab in imported(a):
+                out["anchor"].setdefault(g, {})[lab] = f"imported from {a.imports.state} ({a.imports.group})"
+                continue
             if not (st / "plan.json").exists():
                 out["anchor"].setdefault(g, {})[lab] = "not planned"
                 continue
@@ -455,6 +491,7 @@ def status(state: Path) -> Dict[str, Any]:
                                                     "planned": len(units)}
     for g, x in spec.s.items():
         for lab in x.models:
-            out["s"].setdefault(g, {})[lab] = (s_pairs(state, spec, g, lab, models[lab]["sha256"]) if lab in models
-                                               else "waiting")
+            out["s"].setdefault(g, {})[lab] = (
+                f"imported from {x.imports.state} ({x.imports.group})" if lab in imported(x)
+                else s_pairs(state, spec, g, lab, models[lab]["sha256"]) if lab in models else "waiting")
     return out

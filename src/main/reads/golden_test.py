@@ -76,6 +76,8 @@ def sprt_spec(shas: Dict[str, str]) -> Any:
         "decision": {"rule": "x35_r1", "params": {
             "arm": "SPRT", "look": 1, "on": "sprt", "off": "c0", "s_group": "pool", "import_off": G1_RESULTS,
             "dose": _json(STAGE / "sprt_read/read_look1_input.json")["dose"],
+            "void": {"k9b_dir": f"{MEAS}/x35_breakers_stage_2026-10-17/k9b",
+                     "runs": {f"sprt_s{s}": f"models/rb_x35_sprt_s{s}" for s in (3501, 3502, 3503)}},
             "guards_not_read": {"guards": ["G-F", "G-C", "G-K"], "why": rec["guards"]["G-F"]["reasons"][0],
                                 "absent": {"G-E": rec["guards"]["G-E"]["reasons"][0]}}}}})
 
@@ -196,7 +198,13 @@ def test_sprt_look1_reassembles_from_its_ledgers_exactly(tmp_path):
     doc = RU.inputs("x35_r1", cells, spec.params, spec)
     assert doc == _json(STAGE / "sprt_read/read_look1_input.json")
     v = RU.decide("x35_r1", doc, spec.params)
-    rec = REC.build(spec, cells, doc, v, _code("eb99ab362"))
+    from main.reads.models import spec_path
+
+    if not all(spec_path(r).is_dir() for r in spec.params["void"]["runs"].values()):
+        pytest.skip("the SPRT run dirs are absent (the VOID gate reads them; the owner's box only)")
+    gate = RU.void_gate(spec)
+    assert RU.void_failures(gate) == {}, "SPRT look 1 was read, so its registered VOID gate passed"
+    rec = REC.build(spec, cells, doc, v, _code("eb99ab362"), void=gate)
     want = _json(STAGE / "reads/sprt_look1.json")
     for k in ("arm", "look", "verdict", "r1", "r2", "reasons", "guards"):
         assert rec[k] == want[k], k

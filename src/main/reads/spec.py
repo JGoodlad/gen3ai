@@ -12,6 +12,10 @@ A spec is ONE JSON file (schema :data:`SCHEMA`), committed with the read's PRERE
 * ``decision`` -- ``{rule, params}``: a rule of :data:`main.reads.rules.RULES` and its registered parameters;
 * ``pin`` (optional) -- the commit the PLAYING checkout must be at (a run from another commit is refused).
 
+An anchor or S group may carry ``import: {state, spec_sha256, group, models}``: those models' cells are NOT played
+here but taken from group ``group`` of an EARLIER read's state (its ``spec.json`` must hash to ``spec_sha256``), sha-
+and regime-checked by :mod:`main.reads.imports` (N1-P FINDING 6: look 2 re-played look 1's finals).
+
 :func:`load` validates every field and refuses anything else (a typo is a refusal, never a default). Pure; no file
 but the spec itself is read here.
 """
@@ -24,14 +28,17 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Tuple
 
+from main.x35.kakuna import OPPONENTS as KAKUNA_OPPONENTS
+
 SCHEMA = "gen3_read_spec_v1"
 _LABEL = re.compile(r"^[a-z0-9][a-z0-9_]{0,47}$")
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _COMMIT = re.compile(r"^[0-9a-f]{7,40}$")
 #: The model-reference kinds (``main.reads.models`` owns their rules).
 REF_KINDS = ("pinned", "final")
-#: The anchor opponents a group may name: the cells :mod:`main.x35.kakuna` plays (its committed configs).
-ANCHOR_OPPONENTS = ("metamon:Kakuna",)
+#: The anchor opponents a group may name: the Metamon agents :mod:`main.x35.kakuna` plays on its committed cells, each
+#: with the registry's weight pins (an agent a cell's config lacks gets a derived config, ``kakuna.opponent_config``).
+ANCHOR_OPPONENTS = KAKUNA_OPPONENTS
 #: A model's LOAD options (``models.<label>.load``), each an inference-time option of OUR checkpoint that the anchor
 #: units pass on: ``belief_prior_mix`` = λ in (0, 1] (``main.anchors --our-belief-prior-mix``; omit it for λ = 0).
 LOAD_OPTIONS = ("belief_prior_mix",)
@@ -66,12 +73,23 @@ class Model:
 
 
 @dataclass(frozen=True)
+class Import:
+    """Cells of ``models`` taken from group ``group`` of an EARLIER read's ``state`` (never re-played here)."""
+
+    state: str
+    spec_sha256: str
+    group: str
+    models: Tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class AnchorGroup:
     name: str
     opponent: str
     teamsets: Tuple[str, ...]
     unit_seeds: Tuple[int, ...]
     models: Tuple[str, ...]
+    imports: Optional[Import] = None
 
 
 @dataclass(frozen=True)
@@ -85,6 +103,7 @@ class SGroup:
     family: str
     models: Tuple[str, ...]
     regime_id: Optional[str] = None   # the regime the read registers; assemble refuses another
+    imports: Optional[Import] = None
 
     def request(self, label: str) -> str:
         """The eval-ledger request of ``label``'s cells in this group (one request per node, the resume grain)."""
@@ -193,8 +212,32 @@ def _group_models(d: Mapping[str, Any], where: str, models: Mapping[str, Model])
     return tuple(ms)
 
 
-def parse(doc: Mapping[str, Any], *, sha256: str = "") -> ReadSpec:
-    """Validate a spec document (module docstring); every problem is a :class:`SpecError`."""
+def _import(d: Any, where: str, group_models: Tuple[str, ...]) -> Optional[Import]:
+    if d is None:
+        return None
+    if not isinstance(d, dict):
+        raise SpecError(f"{where}: an object {{state, spec_sha256, group, models}}")
+    _only(d, ("state", "spec_sha256", "group", "models"), where)
+    st = _need(d, "state", where, str)
+    if not st.strip():
+        raise SpecError(f"{where}.state: the earlier read's state dir")
+    sha = _need(d, "spec_sha256", where, str)
+    if not _SHA256.match(sha):
+        raise SpecError(f"{where}.spec_sha256: 64 lowercase hex (the earlier state's spec.json)")
+    ms = _need(d, "models", where, list)
+    if not ms or len(set(ms)) != len(ms):
+        raise SpecError(f"{where}.models: a non-empty list without repeats")
+    for m in ms:
+        if m not in group_models:
+            raise SpecError(f"{where}.models: {m!r} is not one of this group's models")
+    return Import(state=st, spec_sha256=sha, group=_label(_need(d, "group", where, str), f"{where}.group"),
+                  models=tuple(ms))
+
+
+def parse(doc: Mapping[str, Any], *, sha256: str = "", rule_params: bool = True) -> ReadSpec:
+    """Validate a spec document (module docstring); every problem is a :class:`SpecError`. ``rule_params=False``
+    skips only the rule's parameter check (an EARLIER read's spec, read for an import, was valid under the rules of
+    its own day)."""
     from main.reads.rules import RULES
 
     _only(doc, ("schema", "read", "prereg", "pin", "models", "anchor", "s", "decision", "note"), "spec")
@@ -221,7 +264,7 @@ def parse(doc: Mapping[str, Any], *, sha256: str = "") -> ReadSpec:
         w = f"anchor.{_label(g, 'anchor')}"
         if not isinstance(d, dict):
             raise SpecError(f"{w}: an object")
-        _only(d, ("opponent", "teamsets", "unit_seeds", "models"), w)
+        _only(d, ("opponent", "teamsets", "unit_seeds", "models", "import"), w)
         opp = _need(d, "opponent", w, str)
         if opp not in ANCHOR_OPPONENTS:
             raise SpecError(f"{w}.opponent: {opp!r} is none of {ANCHOR_OPPONENTS} (the kakuna runner's cells)")
@@ -231,9 +274,10 @@ def parse(doc: Mapping[str, Any], *, sha256: str = "") -> ReadSpec:
             ts = parse_teamsets(",".join(_need(d, "teamsets", w, list)))
         except KakunaError as exc:
             raise SpecError(f"{w}.teamsets: {exc}") from None
+        gm = _group_models(d, w, models)
         anchor[g] = AnchorGroup(name=g, opponent=opp, teamsets=ts,
                                 unit_seeds=parse_unit_seeds(_need(d, "unit_seeds", w, (str, list)), f"{w}.unit_seeds"),
-                                models=_group_models(d, w, models))
+                                models=gm, imports=_import(d.get("import"), f"{w}.import", gm))
     s: Dict[str, SGroup] = {}
     families: Dict[str, str] = {}
     for g, d in (doc.get("s") or {}).items():
@@ -241,7 +285,7 @@ def parse(doc: Mapping[str, Any], *, sha256: str = "") -> ReadSpec:
         if not isinstance(d, dict):
             raise SpecError(f"{w}: an object")
         _only(d, ("refpop", "refpop_content_sha256", "panel", "pairs", "batch_pairs", "family", "models",
-                  "regime_id"), w)
+                  "regime_id", "import"), w)
         rc = _need(d, "refpop_content_sha256", w, str)
         if not _SHA256.match(rc):
             raise SpecError(f"{w}.refpop_content_sha256: 64 lowercase hex (the frozen R's content_sha256)")
@@ -259,8 +303,10 @@ def parse(doc: Mapping[str, Any], *, sha256: str = "") -> ReadSpec:
         rid = d.get("regime_id")
         if rid is not None and not (isinstance(rid, str) and re.match(r"^[0-9a-f]{16}$", rid)):
             raise SpecError(f"{w}.regime_id: 16 lowercase hex (an eval-ledger regime id) or absent")
+        gm = _group_models(d, w, models)
         s[g] = SGroup(name=g, refpop=_need(d, "refpop", w, str), refpop_content_sha256=rc, panel=panel, pairs=pairs,
-                      batch_pairs=bp, family=fam, models=_group_models(d, w, models), regime_id=rid)
+                      batch_pairs=bp, family=fam, models=gm, regime_id=rid,
+                      imports=_import(d.get("import"), f"{w}.import", gm))
     if not anchor and not s:
         raise SpecError("spec: neither an anchor nor an S group: nothing to play")
     dec = _need(doc, "decision", "spec", dict)
@@ -269,7 +315,7 @@ def parse(doc: Mapping[str, Any], *, sha256: str = "") -> ReadSpec:
     if rule not in RULES:
         raise SpecError(f"decision.rule: {rule!r} is none of {sorted(RULES)}")
     params = dict(dec.get("params") or {})
-    probs = RULES[rule].check_params(params, models=models, anchor=anchor, s=s)
+    probs = RULES[rule].check_params(params, models=models, anchor=anchor, s=s) if rule_params else []
     if probs:
         raise SpecError(f"decision.params ({rule}): {probs}")
     prereg = doc.get("prereg")
@@ -279,7 +325,7 @@ def parse(doc: Mapping[str, Any], *, sha256: str = "") -> ReadSpec:
                     sha256=sha256, raw=dict(doc))
 
 
-def load(path: "str | Path") -> ReadSpec:
+def load(path: "str | Path", *, rule_params: bool = True) -> ReadSpec:
     b = Path(path).read_bytes()
     try:
         doc = json.loads(b)
@@ -287,7 +333,12 @@ def load(path: "str | Path") -> ReadSpec:
         raise SpecError(f"{path}: not JSON ({exc})") from None
     if not isinstance(doc, dict):
         raise SpecError(f"{path}: not a JSON object")
-    return parse(doc, sha256=hashlib.sha256(b).hexdigest())
+    return parse(doc, sha256=hashlib.sha256(b).hexdigest(), rule_params=rule_params)
+
+
+def imported(group: Any) -> Tuple[str, ...]:
+    """The labels of an anchor / S group whose cells are imported (never played in this state)."""
+    return group.imports.models if group.imports is not None else ()
 
 
 def model_groups(spec: ReadSpec) -> List[Tuple[str, str, str]]:

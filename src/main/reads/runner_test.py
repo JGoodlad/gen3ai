@@ -15,13 +15,6 @@ from main.reads import runner as RN
 CODE = {"commit": "e05c45eeb" + "0" * 31, "dirty": False, "root": "/tmp/pin"}
 
 
-@pytest.fixture
-def run_archive_env(tmp_path, monkeypatch):
-    monkeypatch.setenv("GEN3AI_MODELS_DIR", str(tmp_path / "models"))
-    (tmp_path / "models").mkdir()
-    return tmp_path / "models"
-
-
 def _zip(d, name="final_model.zip", data=b"zip", age=None):
     d.mkdir(parents=True, exist_ok=True)
     (d / "model_config.json").write_text("{}")
@@ -175,3 +168,18 @@ def test_the_s_unit_and_play_many_argv_are_what_the_real_parsers_accept(tmp_path
     assert (b.cmd, b.players, b.opponents, b.pairs, b.batch_pairs, b.family, b.request, b.panel, b.purpose) == (
         "play-many", ["/s/a.zip"], ["/s/m1.zip", "/s/m2.zip"], 500, 100, "fam", "pool_a_b100", "home72", "ab")
     assert (b.device, b.torch_threads) == ("cpu", 1)
+
+
+def test_a_non_kakuna_opponent_is_planned_with_its_derived_config_in_the_anchor_state(tmp_path, run_archive_env):
+    """be60f24f FINDING 2: a group may face another Metamon anchor; its units carry the opponent and, for an agent
+    the committed cell config lacks, the derived config written into the group's kakuna state."""
+    spec = _spec(tmp_path, run_archive_env)
+    doc = json.loads(spec.read_text())
+    doc["anchor"]["u"]["opponent"] = "metamon:LargeIL"
+    spec.write_text(json.dumps(doc))
+    state = tmp_path / "state"
+    RN.plan(spec, state, code=CODE, step_of=_step)
+    units = json.loads((LY.anchor_state(state, "u", "old") / "plan.json").read_text())["units"]
+    assert {u["opponent"] for u in units} == {"metamon:LargeIL"}
+    assert {u["config"] for u in units} == {str(LY.anchor_state(state, "u", "old") / "configs"
+                                                / "anchors_heldout72_hpfix__LargeIL.json")}

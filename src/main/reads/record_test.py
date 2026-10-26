@@ -9,6 +9,10 @@ import pytest
 from main.reads import record as REC
 
 
+VOID_PASS = {"sprt_s3501": {"run": "models/rb_x35_sprt_s3501", "k9b": "PASS", "batch2": {"verdict": "PASS"},
+                             "pass": True}}
+
+
 def _rec(**over):
     r = {"schema": REC.SCHEMA, "read": "demo", "rule": "anchor_trajectory", "spec_sha256": "s" * 64, "prereg": None,
          "verdict": "goal not met; FLAT", "created": "2026-10-25T00:00:00+0000",
@@ -49,7 +53,7 @@ def test_an_incomplete_record_is_refused(tmp_path, over, needle):
 
 def test_an_x35_record_must_carry_its_decisions_arm_and_look():
     dec = {"arm": "SPRT", "look": 1, "verdict": "NULL", "r1": {"class": "NULL"}}
-    r = _rec(rule="x35_r1", verdict="NULL", decision=dec, arm="SPRT", look=1)
+    r = _rec(rule="x35_r1", verdict="NULL", decision=dec, arm="SPRT", look=1, void=VOID_PASS)
     assert REC.check(r) == []
     bad = copy.deepcopy(r)
     bad["look"] = 2

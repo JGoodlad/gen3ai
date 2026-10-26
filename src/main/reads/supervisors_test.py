@@ -1,0 +1,132 @@
+"""``main.reads.supervisors``: ONE supervisor per lane per state PATH (the D3 reader's duplicate, 2026-10-26: a state
+renamed aside took its in-state lock with it, and a second supervisor started on the re-planned state at the same path
+while the first lived). Each guard here fails on revert: the path lock outside the state, the ``/proc`` scan, the
+dir-identity stop, ``plan``'s refusal of a fresh state some live supervisor names, and ``status``'s live pids."""
+from __future__ import annotations
+
+import json
+import os
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+import pytest
+
+from main.reads import layout as LY
+from main.reads import runner as RN
+from main.reads import supervisors as SV
+from main.reads.runner_test import CODE, _spec, _step, _zip
+from utils import procfs
+
+
+def _fake_supervisor(cwd: Path, argv_tail: list) -> subprocess.Popen:
+    """A REAL process whose argv is a reads supervisor's (``python -c <sleep> -m main.reads run ...``): ``-c`` takes
+    the code, the rest is only argv, so nothing runs but the sleep. Waits (bounded) until ``/proc`` shows the argv."""
+    p = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(120)", "-m", "main.reads", *argv_tail],
+                         cwd=str(cwd), stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    t_end = time.monotonic() + 20
+    while "main.reads" not in procfs.cmdline(p.pid):
+        if time.monotonic() > t_end:
+            p.kill()
+            p.wait()
+            pytest.fail("the fake supervisor's argv never appeared in /proc")
+        time.sleep(0.02)
+    return p
+
+
+def _stop(p: subprocess.Popen) -> None:
+    p.kill()                                         # our own child, by its pid
+    p.wait(timeout=30)
+
+
+def test_parse_argv_finds_only_run_and_resume_with_their_state_and_lane():
+    assert SV.parse_argv(["python", "-m", "main.reads", "run", "--state", "S", "--lane", "anchor", "--hours", "2"]) == (
+        "run", "S", "anchor")
+    assert SV.parse_argv(["py", "-u", "-m", "main.reads", "resume", "--lane=s", "--state=~/x"]) == ("resume", "~/x", "s")
+    assert SV.parse_argv(["py", "-m", "main.reads", "s-unit", "--state", "S", "--group", "g"]) is None
+    assert SV.parse_argv(["py", "-m", "main.reads", "status", "--state", "S"]) is None
+    assert SV.parse_argv(["bash", "-c", "python -m main.reads run --state S --lane anchor"]) is None
+
+
+def test_the_path_lock_survives_the_state_being_renamed_aside(tmp_path):
+    """THE INCIDENT: the in-state lock moves with the renamed dir, so a second supervisor on a new dir at the same
+    path gets it; the path lock (outside the state) refuses that second one."""
+    state = tmp_path / "state"
+    state.mkdir()
+    first = SV.Hold(state, "anchor")
+    old_lock = RN._lock(state, "anchor")
+    try:
+        state.rename(tmp_path / "state.aside")
+        state.mkdir()                                # re-planned at the same path
+        second_in_state = RN._lock(state, "anchor")  # the old guard alone lets the duplicate start ...
+        second_in_state.close()
+        with pytest.raises(SV.SupervisorError, match="path lock"):
+            SV.Hold(state, "anchor")                 # ... the path lock does not
+        SV.Hold(state, "s").close()                  # one supervisor per LANE: the other lane is free
+        assert SV.lock_path(state, "anchor").parent == Path(os.environ[SV.LOCK_DIR_ENV])
+        assert json.loads(SV.lock_path(state, "anchor").read_text())["pid"] == os.getpid()
+    finally:
+        old_lock.close()
+        first.close()
+    SV.Hold(state, "anchor").close()                 # released with the first supervisor
+
+
+def test_the_proc_scan_sees_a_supervisor_that_took_no_path_lock(tmp_path):
+    """A supervisor of OLDER code takes only the in-state lock; the /proc scan still sees it (its relative --state
+    resolved against ITS cwd), and status lists its pid."""
+    state = tmp_path / "rd" / "state"
+    state.mkdir(parents=True)
+    p = _fake_supervisor(tmp_path / "rd", ["run", "--state", "state", "--lane", "anchor", "--hours", "1"])
+    try:
+        assert SV.live_supervisors(state) == {"anchor": [p.pid]}
+        assert SV.live_supervisors(state, lane="s") == {}
+        assert SV.live_supervisors(tmp_path / "other") == {}
+        with pytest.raises(SV.SupervisorError, match=rf"pid\(s\) \[{p.pid}\]"):
+            SV.Hold(state, "anchor")
+    finally:
+        _stop(p)
+    assert SV.live_supervisors(state) == {}, "a reaped process is not live (read from /proc, never kill -0)"
+    SV.Hold(state, "anchor").close()
+
+
+def test_a_running_supervisor_stops_when_its_dir_is_moved_from_the_path(tmp_path, run_archive_env, monkeypatch):
+    spec = _spec(tmp_path, run_archive_env)
+    _zip(run_archive_env / "rb_new", age=3600)
+    state = tmp_path / "state"
+    RN.plan(spec, state, code=CODE, step_of=_step)
+    monkeypatch.setattr(RN, "checkout_code", lambda root=None: CODE)
+    played = []
+
+    def unit_then_rename(st, u):
+        played.append(u.name)
+        if len(played) == 1:
+            state.rename(tmp_path / "state.aside")
+            state.mkdir()                            # someone re-plans at the path
+        return 1
+
+    with pytest.raises(SV.SupervisorError, match="moved or replaced"):
+        RN.run(state, "anchor", time.time() + 3600, run_unit=unit_then_rename, sleep=lambda s: None)
+    assert len(played) == 1, "no unit is played into the dir that now sits at the path"
+    assert list(state.iterdir()) == [], "the stopped supervisor wrote nothing into the new dir"
+
+
+def test_plan_refuses_a_fresh_state_that_a_live_supervisor_names(tmp_path, run_archive_env):
+    spec = _spec(tmp_path, run_archive_env)
+    state = tmp_path / "state"
+    p = _fake_supervisor(tmp_path, ["run", "--state", str(state), "--lane", "anchor", "--hours", "1"])
+    try:
+        with pytest.raises(RN.RunError, match="moved from it"):
+            RN.plan(spec, state, code=CODE, step_of=_step)
+        assert not state.exists()
+    finally:
+        _stop(p)
+    RN.plan(spec, state, code=CODE, step_of=_step)
+    q = _fake_supervisor(tmp_path, ["resume", f"--state={state}", "--lane=s", "--hours", "1"])
+    try:
+        RN.plan(spec, state, code=CODE, step_of=_step)      # an existing plan re-settles alongside its own lanes
+        assert RN.status(state)["supervisors"] == {"anchor": [], "s": [q.pid]}
+    finally:
+        _stop(q)
+    assert RN.status(state)["supervisors"] == {"anchor": [], "s": []}
+    assert LY.spec_file(state).is_file()

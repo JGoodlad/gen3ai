@@ -6,6 +6,9 @@
      "ledgers": {group: {family, digest, rows}},                    the S reads' eval-ledger digests
      "code": {commit, dirty, pin},                                  the playing checkout (``code.json``)
      "cells_inconclusive": [...],                                   what assemble could not count, verbatim
+     "reported_incomplete": {"<lane>.<group>": [...]},              REPORTED-only groups not complete (never block)
+     "void": {label: {run, k9b, batch2, pass}} | null,              the registered VOID gate, every run PASS
+     "imports": {"<lane>.<group>": {state, spec_sha256, ...}},      cells imported from an earlier read's state
      "inputs": {...}, "decision": {...}}                            the rule's input and output, as decided
 
 An X35-stage rule (``Rule.x35_record``: ``x35_r1``, ``d1``) also carries its decision's keys at the TOP level (``arm``,
@@ -33,11 +36,13 @@ class RecordError(ValueError):
 
 
 def build(spec: Any, cells: Mapping[str, Any], inputs: Mapping[str, Any], decision: Mapping[str, Any],
-          code: Mapping[str, Any], *, now: Optional[str] = None) -> Dict[str, Any]:
-    from main.reads.assemble import conclusive
+          code: Mapping[str, Any], *, now: Optional[str] = None,
+          void: Optional[Mapping[str, Any]] = None) -> Dict[str, Any]:
+    from main.reads.assemble import conclusive, reported_incomplete
     from main.reads.rules import RULES
 
     rule = RULES[spec.rule]
+    reported = rule.reported(spec.params)
     models = {lab: {k: e.get(k) for k in ("arm", "seed", "sha256", "step", "source")}
               for lab, e in (cells.get("models") or {}).items()}
     rec: Dict[str, Any] = {
@@ -48,8 +53,12 @@ def build(spec: Any, cells: Mapping[str, Any], inputs: Mapping[str, Any], decisi
                     for lane in ("anchor", "s")},
         "ledgers": {g: {"family": grp.get("family"), "digest": grp.get("ledger_digest"), "rows": grp.get("rows")}
                     for g, grp in (cells.get("s") or {}).items()},
-        "code": dict(code), "cells_inconclusive": conclusive(cells), "inputs": dict(inputs),
-        "decision": dict(decision)}
+        "code": dict(code), "cells_inconclusive": conclusive(cells, reported=reported),
+        "reported_incomplete": reported_incomplete(cells, reported),
+        "void": None if void is None else dict(void),
+        "imports": {f"{lane}.{g}": grp["imports"] for lane in ("anchor", "s")
+                    for g, grp in (cells.get(lane) or {}).items() if grp.get("imports")},
+        "inputs": dict(inputs), "decision": dict(decision)}
     if rule.x35_record:
         for k, v in decision.items():
             if k != "verdict":
@@ -85,7 +94,10 @@ def check(rec: Mapping[str, Any]) -> List[str]:
     groups = [(lane, g, rid) for lane in ("anchor", "s") for g, rid in (rec["regimes"].get(lane) or {}).items()]
     if not groups:
         probs.append("no cell group")
+    incomplete = rec.get("reported_incomplete") or {}
     for lane, g, rid in groups:
+        if f"{lane}.{g}" in incomplete and rid is None:
+            continue                     # a REPORTED-only group recorded INCOMPLETE (its reasons say why)
         if not (isinstance(rid, str) and _RID.match(rid)):
             probs.append(f"{lane} group {g}: regime id {rid!r} (the regime is ALWAYS recorded)")
     for g, led in rec["ledgers"].items():
@@ -94,6 +106,12 @@ def check(rec: Mapping[str, Any]) -> List[str]:
     if rec["cells_inconclusive"]:
         # a verdict decided on cells assemble could not count is not a verdict (a wrong regime, unplayed units)
         probs.append(f"cells not conclusive: {list(rec['cells_inconclusive'])[:5]}")
+    from main.reads.rules import BATCH2_VOID_ARM, void_failures
+
+    if rec.get("void") is not None and void_failures(rec["void"]):
+        probs.append(f"the registered VOID gate fails: {void_failures(rec['void'])}")
+    if rule.x35_record and rec.get("arm") in BATCH2_VOID_ARM and not rec.get("void"):
+        probs.append(f"arm {rec.get('arm')}: no VOID gate recorded (V-S1 / V-S2 / LR-F and K9(b) gate this read)")
     if not (isinstance(rec["code"], dict) and rec["code"].get("commit")):
         probs.append("code: no playing commit")
     if rule.x35_record:

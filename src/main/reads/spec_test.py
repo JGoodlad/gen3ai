@@ -56,7 +56,7 @@ def _with(path, value):
     (("models", "arm", "ref", "fallback"), "checkpoint", "unknown field"),   # x26c FINDING 2: no checkpoint fallback
     (("models", "Bad-Label"), {"arm": "a", "seed": 1, "ref": {"kind": "pinned", "path": "p", "sha256": SHA}}, "label"),
     (("models", "ctl", "seed"), True, "not int"),
-    (("anchor", "u", "opponent"), "metamon:PastaMittens", "kakuna runner"),
+    (("anchor", "u", "opponent"), "metamon:Elsewhere", "kakuna runner"),
     (("anchor", "u", "teamsets"), ["nowhere"], "team set"),
     (("anchor", "u", "unit_seeds"), "3-1", "bad range"),
     (("anchor", "u", "models"), ["ghost"], "not a declared model"),

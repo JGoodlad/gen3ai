@@ -20,9 +20,9 @@ python -m main.reads status   --state DIR                          # resume = ru
 python -m main.reads record   --state DIR [--out <stage>/reads/<arm>_look<k>.json]
 ```
 
-`record` runs `assemble` (writes `cells.json`) and then `decide` (writes `inputs.json` and `decision.json`). Both
-are also verbs on their own. Exit 0 means success. Exit 2 is a typed refusal, named on stderr. Exit 3 means R moved
-under an S lane. In Python, `main.reads.api` exposes the same verbs as functions.
+`record` runs `assemble` (writes `cells.json`) and then `decide` (runs the registered VOID gate, §5, then writes
+`inputs.json` and `decision.json`). Both are also verbs on their own. Exit 0 means success. Exit 2 is a typed refusal,
+named on stderr. Exit 3 means R moved under an S lane. In Python, `main.reads.api` exposes the same verbs as functions.
 
 **The spec** (`main.reads.spec`, schema `gen3_read_spec_v1`). Every field is validated, and an unknown field is a
 refusal.
@@ -30,8 +30,9 @@ refusal.
 | field | holds |
 |---|---|
 | `models` | `{label: {arm, seed, ref, load?}}`. `ref` is `{"kind": "pinned", path, sha256}` (a frozen file) or `{"kind": "final", run, min_step, quiet_s, done_marker?}` (§2). `load` holds model-LOAD options every unit of the label passes (`spec.LOAD_OPTIONS`: `belief_prior_mix` λ ∈ (0, 1], `main.anchors --our-belief-prior-mix`), so two labels may play one file two ways |
-| `anchor` | `{group: {opponent, teamsets, unit_seeds, models}}`: the Kakuna cells (§3) |
-| `s` | `{group: {refpop, refpop_content_sha256, panel, pairs, batch_pairs, family, models, regime_id?}}`: S against a frozen R. **One eval-ledger family per group**, because a family holds one regime |
+| `anchor` | `{group: {opponent, teamsets, unit_seeds, models, import?}}`: the external-anchor cells (§3). `opponent` is one of `metamon:Kakuna`, `SmallRL`, `PastaMittens`, `LargeRL`, `LargeIL` (`kakuna.OPPONENTS`) |
+| `s` | `{group: {refpop, refpop_content_sha256, panel, pairs, batch_pairs, family, models, regime_id?, import?}}`: S against a frozen R. **One eval-ledger family per group**, because a family holds one regime |
+| `…import` | `{state, spec_sha256, group, models}`: these models' cells come from group `group` of an EARLIER read's state, never re-played here (§3) |
 | `decision` | `{rule, params}`: a rule from `main.reads.rules.RULES`, with its registered parameters checked at load |
 | `pin` | optional. The commit the playing checkout must be at, with a clean tracked tree |
 
@@ -74,8 +75,13 @@ How paths resolve: an absolute path is used as written; `models/…` resolves un
 
 ## 3. Lanes, state, resume (`main.reads.runner`, `main.reads.layout`)
 
-**The anchor lane** plays `main.x35.kakuna` units unchanged, through its own functions (`plan_units`,
-`run_unit`, `is_done`, `MAX_ATTEMPTS`):
+**The anchor lane** plays `main.x35.kakuna` units, through its own functions (`plan_units`, `run_unit`, `is_done`,
+`MAX_ATTEMPTS`). A group's `opponent` rides every unit (`--opponent`). Kakuna and SmallRL play the cell's committed
+config, their pins filled from the registry (ff54265e). An agent the committed config does not name (PastaMittens,
+LargeRL, LargeIL) gets a DERIVED config, written once at plan into `<kakuna state>/configs/`: the committed config plus
+that one agent, exactly the registry's entry. Each unit re-checks the derived file's sha256 and that it is still the
+committed config plus that agent (`kakuna.check_derived_config`). The peer is offline on the pinned revision
+(`HF_HUB_OFFLINE`, a260e9c3), and the registry's weights are the banked ones, so the regime id is unchanged by them.
 
 - 20-game units on the heavy slots' short lane (`mem_cap.sh --max-s 600`);
 - 95xx ports claimed with a held flock;
@@ -99,7 +105,15 @@ settles. Unit seeds are the outer loop, so a stopped queue stays balanced by see
 
 **Both lanes:**
 
-- one flock supervisor per lane per state;
+- ONE supervisor per lane per state PATH (`main.reads.supervisors`; the D3 reader's duplicate, 2026-10-26: a state
+  renamed aside took its in-state lock with it, and a second supervisor started on the state re-planned at the same
+  path). A supervisor is refused when another holds the path lock (a flock on
+  `~/.cache/gen3ai/reads_locks/<sha256(canonical path, lane)>.lock`, OUTSIDE the state; `$GEN3AI_READS_LOCK_DIR`
+  overrides) or when a `/proc` scan finds a live `main.reads run|resume` whose `--state`, resolved against its own
+  cwd, names the same path (this also sees a supervisor of older code, which took only the in-state lock, still
+  taken too). A running supervisor stops, writing nothing, when its path no longer names the dir it started on (device
+  and inode). `plan` refuses a FRESH state (no `spec.json`) that a live supervisor names. `status` lists the live
+  supervisor pids per lane;
 - a registered stop (`--hours` or `--stop-at-epoch`, never open-ended);
 - a counted unit or a recorded batch is never replayed;
 - every child gets THIS checkout's `src` on `PYTHONPATH`;
@@ -107,11 +121,25 @@ settles. Unit seeds are the outer loop, so a stopped queue stays balanced by see
   `git diff HEAD` digest. This addresses "the playing code is not
   the pin" (d1_read 5, sprt 1, g1 2, x47 F-X47L1-4), which before was only ever checked by hand.
 
-Run each lane detached, one process per lane:
+Run each lane detached, one process per lane, and wait on it through `/proc/<pid>` only, never `kill -0` (inside a
+sandboxed agent shell `kill -0` read a live supervisor as dead, acf2193f):
 
 ```bash
 setsid nohup python -m main.reads run --state DIR --lane s --hours 20 > DIR/s.log 2>&1 &
+PID=$!; timeout 3300 bash -c "while [ -d /proc/$PID ]; do sleep 30; done"   # one bounded watcher; re-arm on wake
+python -m main.reads status --state DIR                                      # .supervisors: the live pids
 ```
+
+**Cross-state import** (`main.reads.imports`; N1-P FINDING 6: look 2's spec re-played every look-1 final, about 60 %
+of its CPU). A group's `import` names an earlier state, the sha256 of its `spec.json` (registered in this spec), its
+group and the labels taken from it. Those labels are never planned or played here. `plan` refuses (exit 2) unless the
+earlier spec hashes to the registered sha256 and its group is the same cell: the same opponent, with team sets and unit
+seeds that include this group's (anchor); the same R content, panel, `pairs`, `batch_pairs` and registered regime (S);
+each label with the same arm, seed and load options. `assemble` refuses unless the earlier state PLAYED the bytes this
+state resolved (both `models.json` sha256s). Imported anchor units then pool with this state's own only under one
+regime id per team set (else the group is INCONCLUSIVE, as within one state); an imported S node is read from the
+earlier ledger and family and must carry the group's regime. The record's `imports` names each import (state, spec
+sha256, rows and their digest, the earlier playing commit; for S the family and ledger digest).
 
 ## 4. Assemble: the regime id is ALWAYS recorded (`main.reads.assemble`)
 
@@ -175,6 +203,18 @@ Migrated here from the scripts, which had no home in `src/`:
 
 A new rule is a new `Rule` entry with a test. It never replaces an existing rule's numbers.
 
+**The VOID gate** (`rules.void_gate`; be60f24f FINDING 3). An X35-stage rule (`x35_r1`, `d1`) may register
+`params.void = {k9b_dir, runs: {label: run dir}}`, every ON model named; `x35_r1` on a batch-2 arm (SPRT, LRF) MUST
+(the spec is refused without it). `decide`, and so `record`, runs it FIRST and writes `void.json`: each run's AM-6
+K9(b) record (`<k9b_dir>/<run>.json`) must read PASS, and on a batch-2 arm its V-S1 / V-S2 (SPRT) or LR-F KL guard
+(`main.x35.batch2_void.read_void`) too. Any other verdict refuses the decision and names the seed: a VOID seed enters no
+read (SPRT's `assemble.py` STOP). The record carries the gate, and a record of a batch-2 arm without one is refused.
+
+**Reported-only groups** (`Rule.reported`; N1-P FINDING 7). A group a rule carries for description and no verdict
+reads (`d1`'s `reported_group`) never blocks the record of the decided primary. When it is short (unplayed units, no
+regime id yet), the decision's `reported.reported_panels` carries `status: INCOMPLETE` and its reasons, and the record
+lists it under `reported_incomplete`. A short PRIMARY group still refuses the record.
+
 ## 6. The record (`main.reads.record`, schema `gen3_read_record_v1`)
 
 The record holds:
@@ -184,12 +224,16 @@ The record holds:
 - `regimes` (`{anchor: {group: id}, s: {group: id}}`);
 - `ledgers` (each S group's family, digest and row count);
 - `code` (the playing commit);
-- `cells_inconclusive`;
+- `cells_inconclusive` (the decided groups only);
+- `reported_incomplete` (`{"<lane>.<group>": [reasons]}`: reported-only groups that are short, §5);
+- `void` (the VOID gate as run, §5, or null);
+- `imports` (each group's cross-state import, §3);
 - the rule's `inputs` and `decision`.
 
-The record is refused if any regime id is missing, a model was never resolved, a ledger digest or the playing
-commit is missing, `cells_inconclusive` is not empty (a verdict decided on cells assemble could not count: a wrong
-regime or panel, unplayed units, a cell short of the spec's `pairs`), or the verdict is not the decision's. An X35-stage rule (`x35_r1`, `d1`) also carries the
+The record is refused if any regime id is missing (a reported-only group listed INCOMPLETE excepted), a model was
+never resolved, a ledger digest or the playing commit is missing, `cells_inconclusive` is not empty (a verdict decided
+on cells assemble could not count: a wrong regime or panel, unplayed units, a cell short of the spec's `pairs`), the
+VOID gate holds a non-PASS run (or a batch-2 arm's record carries none), or the verdict is not the decision's. An X35-stage rule (`x35_r1`, `d1`) also carries the
 decision's keys at the top level. When written to `<stage>/reads/<arm>_look<k>.json`, the file therefore loads in
 `main.x35.batch.read_record` and `final_class` unchanged. A ledger entry cites the record by its path and
 `record.summary_line`.
@@ -235,6 +279,10 @@ skips and names why.
 | heavy-slot starvation (d1_read F2; drift 2-3; x51 F5) | yes | short lane for Kakuna units; time-boxed S units in one slot each |
 | rule-8 and statistic copies (≈10 scripts' `EPS`; x26c's `clears`, hand-copied baselines) | yes | one `clears`; baselines in the spec with their source |
 | a missing panel argument to `strat_score` (x26c `verdict.py`, correct only because its panels were d1's default) | latent | panels always passed (rules_test caught it) |
+| two supervisors on one read (D3 reader 10-26: the state renamed aside took its in-state lock) | first live use | the path lock outside the state, the `/proc` scan, the dir-identity stop, `plan`'s refusal (§3) |
+| a later look re-plays the earlier look's finals (N1-P F6) | every multi-look read | the sha-checked, regime-matched cross-state import (§3) |
+| a short reported-only group blocks the primary's record (N1-P F7) | X61P's spec | reported groups recorded INCOMPLETE (§5) |
+| a VOID seed read (SPRT's STOP, absent from `x35_r1`; be60f24f F3) | latent | the registered VOID gate before `decide` (§5) |
 
 ## 9. What was migrated, wrapped, left
 
@@ -257,16 +305,16 @@ skips and names why.
 
 ## 10. Not built (each a FINDING of the build)
 
-- **Anchor opponents other than Kakuna.** `mmq.py` / `hrrq.py` play PastaMittens, SmallRL, LargeRL and LargeIL with
-  their own configs. Adding them is an `ANCHOR_OPPONENTS` entry plus a config-and-manifest check in the kakuna unit
-  path (`HF_HUB_OFFLINE`, per-opponent configs).
 - **Reported-only extras** (SPRT's mechanism block, dose from launcher summaries) stay per-read. A rule's `params`
-  can carry them, but no assembler reads run dirs.
-- **No VOID gate in `x35_r1`.** SPRT's assembly stopped on a seed whose K9(b) or V-S1 / V-S2 was not PASS
-  (`batch2_void.read_void`); the rule does not read run dirs, so a read that registers such a gate checks it
-  before `record` until a `void` parameter is built.
+  can carry them, but only the VOID gate reads run dirs.
+- **No long-lane fallback for an anchor unit.** A unit runs on the short lane only (`--max-s 600`); FR-3's queue
+  re-ran an overrun (exit 88) once as a long job. Its feasibility smoke put LargeRL / LargeIL units inside 600 s, but a
+  unit that overruns twice is never counted here.
+- **The committed X61P specs register no VOID gate** (`d1`'s is optional, being K9(b) only). A read that registers
+  K9(b) as VOID adds `params.void` before its look.
 - **The always-run D1 golden re-decides only.** `rules.h_input` / `p_input` are compared with the shipped
   input only in the archive half (D1's per-unit rows are not committed); off the owner's box that half skips.
-- **Never run end to end on real play.** The verbs are tested with a stubbed unit runner and stubbed heavy slots
-  (`runner_test`, `pipeline_test`). The play-many and anchor argv are checked against the real parsers. The first
-  new read is the module's first live run.
+- **The tests stub play.** The verbs are tested with a stubbed unit runner and stubbed heavy slots (`runner_test`,
+  `pipeline_test`, `imports_test`); the play-many and anchor argv are checked against the real parsers, and each
+  derived opponent config against a real `main.anchors --dry-run`. The live reads (D3 look 1, N1-P, from 2026-10-26)
+  are the end-to-end runs; their first uses found the classes in §8's last four rows.

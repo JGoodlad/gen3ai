@@ -154,7 +154,8 @@ def test_the_d1_rule_forms_x61ps_reported_panels_from_its_second_group_and_refus
     cells = {"anchor": {"primary": {"cells": {"c0_s3501": {"forum72": cell(540, 1200)},
                                               "n1p_s3501": {"forum72": cell(600, 1200)}}},
                         "reported": {"cells": {"c0_s3501": {"heldout72_hpfix": cell(70, 140)},
-                                               "n1p_s3501": {"heldout72_hpfix": cell(80, 140)}}}},
+                                               "n1p_s3501": {"heldout72_hpfix": cell(80, 140)}},
+                                     "regime_id": "0123456789abcdef", "unplayed": 0, "inconclusive": []}},
              "s": {"p": {"nodes": {lab: {"s_pp": 50.0, "population_score": {}} for lab in labels},
                          "inconclusive": [], "panel": "home72", "team_set": "ts"}}}
     doc = RU.inputs("d1", cells, sp.params, sp)
@@ -163,3 +164,56 @@ def test_the_d1_rule_forms_x61ps_reported_panels_from_its_second_group_and_refus
                                       "off": {"3501": {"heldout72_hpfix": [70, 140]}}}
     with pytest.raises(Exception, match="repeats a primary panel"):
         spec(["forum72", "p72"])
+
+
+def test_a_short_reported_group_is_recorded_incomplete_and_never_blocks_the_primary():
+    """N1-P FINDING 7: a REPORTED-only group no verdict reads (d1's ``reported_group``) that is short (unplayed units,
+    no regime id yet) blocked the record of the decided primary. Now it is recorded INCOMPLETE with its reasons; a
+    short PRIMARY still refuses."""
+    from main.reads import record as REC
+    from main.reads.spec import parse
+
+    seeds = (3501, 3502, 3503)
+    labels = [f"{a}_s{s}" for a in ("c0", "n1p") for s in seeds]
+    sp = parse({
+        "schema": "gen3_read_spec_v1", "read": "x61p_reported_test",
+        "models": {lab: {"arm": lab.split("_")[0], "seed": int(lab[-4:]),
+                         "ref": {"kind": "pinned", "path": f"/x/{lab}.zip", "sha256": "0" * 64}} for lab in labels},
+        "anchor": {"primary": {"opponent": "metamon:Kakuna", "teamsets": ["forum72"], "unit_seeds": "0-59",
+                               "models": labels},
+                   "reported": {"opponent": "metamon:Kakuna", "teamsets": ["heldout72_hpfix", "p72", "home72"],
+                                "unit_seeds": "0-6", "models": labels}},
+        "s": {"p": {"refpop": "/x/r.json", "refpop_content_sha256": "0" * 64, "panel": "home72", "pairs": 500,
+                    "batch_pairs": 100, "family": "f", "models": labels}},
+        "decision": {"rule": "d1", "params": {"arm": "X61P", "look": 1, "on": "n1p", "off": "c0",
+                                              "anchor_group": "primary", "s_group": "p",
+                                              "reported_group": "reported"}}})
+    assert RU.RULES["d1"].reported(sp.params) == [("anchor", "reported")]
+
+    def cell(w, n):
+        return {"wins": w, "n": n, "ties": 0, "units": n // 20, "skipped": []}
+
+    rid = "0123456789abcdef"
+    primary = {"cells": {lab: {"forum72": cell(600 if lab.startswith("n1p") else 560, 1200)} for lab in labels},
+               "regime_id": rid, "unplayed": 0, "inconclusive": []}
+    reported = {"cells": {lab: {"heldout72_hpfix": cell(70, 140)} for lab in labels}, "regime_id": None,
+                "unplayed": 2 * 6 * 7 + 6 * 2, "inconclusive": ["p72: no counted unit carries a regime id"]}
+    s = {"nodes": {lab: {"s_pp": 50.0 + (0.5 if lab.startswith("n1p") else 0.0), "se_pp": 0.5,
+                         "population_score": {}, "inconclusive": []} for lab in labels},
+         "inconclusive": [], "panel": "home72", "team_set": "ts", "regime_id": "d4de0fd7c16a2658",
+         "ledger_digest": "d" * 16, "rows": 30, "family": "f"}
+    cells = {"models": {lab: {"arm": lab.split("_")[0], "seed": int(lab[-4:]), "sha256": "a" * 64, "step": 1,
+                              "source": "/x"} for lab in labels},
+             "anchor": {"primary": primary, "reported": reported}, "s": {"p": s}}
+    doc = RU.inputs("d1", cells, sp.params, sp)
+    assert any("unplayed" in w for w in doc["reported_panels"]["incomplete"])
+    dec = RU.decide("d1", doc, sp.params)
+    assert dec["reported"]["reported_panels"]["status"] == "INCOMPLETE"
+    rec = REC.build(sp, cells, doc, dec, {"commit": "c" * 40, "dirty": False})
+    assert rec["cells_inconclusive"] == [] and rec["verdict"] == dec["verdict"]
+    assert set(rec["reported_incomplete"]) == {"anchor.reported"} and rec["regimes"]["anchor"]["reported"] is None
+    assert REC.check(rec) == []
+    # the PRIMARY short: refused, as before
+    cells["anchor"]["primary"] = dict(primary, unplayed=3)
+    with pytest.raises(REC.RecordError, match="anchor.primary: 3 unit"):
+        REC.build(sp, cells, RU.inputs("d1", cells, sp.params, sp), dec, {"commit": "c" * 40, "dirty": False})

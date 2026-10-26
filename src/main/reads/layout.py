@@ -8,9 +8,11 @@
     <state>/anchor/<group>/<label>/     a main.x35.kakuna state per (group, model): plan.json, cells/, units.jsonl
     <state>/s/<group>/                  members/ (R's copies), ledger/ (the eval ledger), units.jsonl, logs/
     <state>/cells.json                  assemble's output
+    <state>/void.json                   the registered VOID gate, run before decide (main.reads.rules.void_gate)
     <state>/inputs.json, decision.json  decide's input and output
     <state>/record.json                 the record (main.reads.record)
-    <state>/<lane>.lock                 the lane's supervisor flock; settle.lock serialises model copies
+    <state>/<lane>.lock                 the lane's in-state supervisor flock (with the PATH lock outside the state,
+                                        main.reads.supervisors); settle.lock serialises model copies
 """
 from __future__ import annotations
 
@@ -70,6 +72,10 @@ def cells_file(state: Path) -> Path:
 
 def inputs_file(state: Path) -> Path:
     return state / "inputs.json"
+
+
+def void_file(state: Path) -> Path:
+    return state / "void.json"
 
 
 def decision_file(state: Path) -> Path:

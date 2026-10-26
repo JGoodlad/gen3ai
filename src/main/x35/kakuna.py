@@ -35,6 +35,15 @@ CONTENT digest (``gen3_team_set_digest_v1``) and count of BOTH sides' team dirs 
 Metamon's cache set) against the registry -- a moved team is a refusal, never a different read. ``home72`` / ``away``
 units are exactly as before (the home72 manifest; :data:`CONFIG`), and G-K reads only them. A panel unit also passes
 ``--capture-dir <unit>/capture`` (both packed teams of every game, F-DV-17), which changes no stamp and no play.
+
+OTHER METAMON OPPONENTS (``plan_units(opponent=...)``; :data:`OPPONENTS`). A unit may face ``metamon:SmallRL``,
+``PastaMittens``, ``LargeRL`` or ``LargeIL`` on the same committed cells. An agent the cell's config already names plays
+under that config (its pins filled from the registry, ff54265e). An agent it lacks gets a DERIVED config, written once
+at plan (:func:`opponent_config`): the committed config with ONE agent added, exactly the registry's entry
+(``designs/ops/anchors.json``, its hub revision and weight sha256s), as the FR reads' ``make_configs.py`` did. The unit
+records the derived file's sha256, and before every unit :func:`check_derived_config` re-checks it: the file's bytes,
+the committed config it extends (unchanged but for that agent), and the pin. The peer runs offline on the pinned
+revision (``HF_HUB_OFFLINE``, a260e9c3); the weights enter the regime id only when they differ from the banked ones.
 """
 from __future__ import annotations
 
@@ -60,6 +69,9 @@ CONFIG_SHA256 = "e8a064db845b058dee5ab2512e7f8d0ba636f10df58510e30b8cac9b30422fa
 OUR_TEAMS = repo_path("designs/research_state/measurements/n0_endofrun_2026-09-27/teams_home72")
 OPPONENT = "metamon:Kakuna"
 SMOKE_OPPONENT = "metamon:SmallRL"
+#: Every Metamon opponent a unit may face on the committed cells (each pinned in the registry, :data:`REGISTRY`).
+OPPONENTS = ("metamon:Kakuna", "metamon:SmallRL", "metamon:PastaMittens", "metamon:LargeRL", "metamon:LargeIL")
+REGISTRY = repo_path("designs/ops/anchors.json")
 TEAMSETS = {"home72": "home", "away": "away"}
 #: The plan's default team sets (X35's G-K cell: home72 and away, through :data:`CONFIG`).
 DEFAULT_TEAMSETS = ("home72", "away")
@@ -173,6 +185,9 @@ class Unit:
     games: int = UNIT_GAMES
     #: a model-LOAD option: ``main.anchors --our-belief-prior-mix`` (``agents.model.belief_prior_mix``); None = none
     belief_prior_mix: Optional[float] = None
+    #: a DERIVED config (:func:`opponent_config`) and its sha256 at plan; None = the cell's committed config
+    config: Optional[str] = None
+    config_sha256: Optional[str] = None
 
 
 def parse_teamsets(spec: str) -> Tuple[str, ...]:
@@ -210,13 +225,88 @@ def parse_unit_seeds(spec: str) -> Tuple[int, ...]:
     return tuple(sorted(out))
 
 
+def _agent(opponent: str) -> str:
+    if opponent not in OPPONENTS:
+        raise KakunaError(f"opponent {opponent!r} is none of {OPPONENTS}")
+    return opponent.partition("metamon:")[2]
+
+
+def _registry_agent(agent: str) -> Dict[str, Any]:
+    ent = json.loads(REGISTRY.read_text())["opponents"]["metamon"]["agents"].get(agent)
+    if not isinstance(ent, dict) or not ent.get("weights"):
+        raise KakunaError(f"metamon agent {agent!r} carries no weight pin in {REGISTRY} (EXTERNAL_ANCHORS_SOP)")
+    return ent
+
+
+def derive_config(base: Mapping[str, Any], agent: str, entry: Mapping[str, Any]) -> Dict[str, Any]:
+    """The committed config ``base`` with ONE agent, ``entry``, added (the FR reads' ``make_configs.py``)."""
+    cfg = json.loads(json.dumps(base))
+    cfg["opponents"]["metamon"]["agents"][agent] = dict(entry)
+    return cfg
+
+
+def _config_bytes(cfg: Mapping[str, Any]) -> bytes:
+    return (json.dumps(cfg, indent=1, sort_keys=True) + "\n").encode()
+
+
+def opponent_config(teamset: str, opponent: str, out_dir: Optional[Path]) -> Tuple[Optional[Path], Optional[str]]:
+    """``(config, sha256)`` a unit on ``teamset`` against ``opponent`` runs under: ``(None, None)`` when the cell's
+    committed config names the agent (it runs there unchanged), else a DERIVED config written to ``out_dir``
+    (module docstring), its pin validated through ``main.anchors.config``."""
+    from main.anchors.config import AnchorConfigError, load_config
+
+    agent = _agent(opponent)
+    base = json.loads(config_of(teamset).read_text())
+    if agent in base["opponents"]["metamon"]["agents"]:
+        return None, None
+    if out_dir is None:
+        raise KakunaError(f"{opponent} on {teamset}: its config is derived, and no config dir was given")
+    out_dir.mkdir(parents=True, exist_ok=True)
+    p = out_dir / f"anchors_{teamset}__{agent}.json"
+    b = _config_bytes(derive_config(base, agent, _registry_agent(agent)))
+    if p.exists() and p.read_bytes() != b:
+        raise KakunaError(f"{p} exists with other bytes: a derived config is written once per plan")
+    p.write_bytes(b)
+    try:
+        load_config(p).metamon.pin(agent)
+    except AnchorConfigError as exc:
+        raise KakunaError(f"{p}: {opponent}'s pin does not validate: {exc}") from None
+    return p, hashlib.sha256(b).hexdigest()
+
+
+def check_derived_config(u: "Unit") -> List[str]:
+    """Every way a unit's DERIVED config differs from its plan (empty = it holds): the file's sha256, the committed
+    config it extends (equal but for the one added agent), the agent's entry carrying a weight pin."""
+    if u.config is None:
+        return []
+    p = Path(u.config)
+    try:
+        b = p.read_bytes()
+    except OSError as exc:
+        return [f"{p}: unreadable ({exc})"]
+    probs: List[str] = []
+    if hashlib.sha256(b).hexdigest() != u.config_sha256:
+        probs.append(f"{p}: sha256 is not the plan's {str(u.config_sha256)[:12]}")
+    agent = _agent(u.opponent)
+    cfg = json.loads(b)
+    entry = cfg["opponents"]["metamon"]["agents"].get(agent) or {}
+    if not entry.get("weights"):
+        probs.append(f"{p}: {agent} carries no weight pin")
+    if _config_bytes(derive_config(json.loads(config_of(u.teamset).read_text()), agent, entry)) != b:
+        probs.append(f"{p}: not the committed {config_of(u.teamset).name} plus the one agent {agent}")
+    return probs
+
+
 def plan_units(finals: Sequence[Mapping[str, Any]], *, hash_models: bool = True,
-               teamsets: Sequence[str] = DEFAULT_TEAMSETS, unit_seeds: Sequence[int] = UNIT_SEEDS) -> List[Unit]:
+               teamsets: Sequence[str] = DEFAULT_TEAMSETS, unit_seeds: Sequence[int] = UNIT_SEEDS,
+               opponent: str = OPPONENT, config_dir: Optional[Path] = None) -> List[Unit]:
     """Every (final × team set × unit seed) unit, unit seeds outermost so a stopped queue is role- and seed-balanced
     across finals. ``teamsets`` defaults to X35's G-K cell (home72, away); D1's PRIMARY H names the unfamiliar
     panels (:data:`UNFAMILIAR`). ``unit_seeds`` defaults to the registered 0-6 (:data:`UNIT_SEEDS`). A final may
-    carry ``belief_prior_mix`` (a model-load option every one of its units passes)."""
+    carry ``belief_prior_mix`` (a model-load option every one of its units passes). ``opponent`` is one of
+    :data:`OPPONENTS`; one its cell's committed config lacks gets a derived config in ``config_dir``."""
     teamsets = parse_teamsets(",".join(teamsets))
+    cfgs = {ts: opponent_config(ts, opponent, config_dir) for ts in teamsets}
     seen = set()
     for f in finals:
         if f["label"] in seen:
@@ -224,8 +314,9 @@ def plan_units(finals: Sequence[Mapping[str, Any]], *, hash_models: bool = True,
         seen.add(f["label"])
     shas = {f["label"]: (_sha(f["path"]) if hash_models else "") for f in finals}
     return [Unit(name=f"{f['label']}__{ts}__{s:02d}", label=str(f["label"]), arm=str(f["arm"]), seed=int(f["seed"]),
-                 teamset=ts, unit_seed=s, model=str(f["path"]), model_sha256=shas[f["label"]],
-                 belief_prior_mix=(None if f.get("belief_prior_mix") is None else float(f["belief_prior_mix"])))
+                 teamset=ts, unit_seed=s, model=str(f["path"]), model_sha256=shas[f["label"]], opponent=opponent,
+                 belief_prior_mix=(None if f.get("belief_prior_mix") is None else float(f["belief_prior_mix"])),
+                 config=None if cfgs[ts][0] is None else str(cfgs[ts][0]), config_sha256=cfgs[ts][1])
             for s in unit_seeds for ts in teamsets for f in finals]
 
 
@@ -373,6 +464,9 @@ def preflight(u: Unit) -> None:
         probs = check_manifest()
         if probs:
             raise KakunaError(f"the home72 manifest does not hold: {probs}")
+    probs = check_derived_config(u)
+    if probs:
+        raise KakunaError(f"the derived {u.opponent} config does not hold: {probs}")
     if u.model_sha256 and _sha(u.model) != u.model_sha256:
         raise KakunaError(f"{u.model}: sha256 changed since the plan")
 
@@ -394,7 +488,8 @@ def run_unit(state: Path, u: Unit) -> int:
         (state / "logs").mkdir(parents=True, exist_ok=True)
         t0 = time.time()
         with open(state / "logs" / f"{u.name}.log", "ab") as log:
-            proc = subprocess.Popen(argv, cwd=str(repo_root()), env=unit_env(config=config_of(u.teamset)),
+            cfg = Path(u.config) if u.config is not None else config_of(u.teamset)
+            proc = subprocess.Popen(argv, cwd=str(repo_root()), env=unit_env(config=cfg),
                                     stdout=log, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
                                     start_new_session=True)
             _jl(state, {"event": "pid", "unit": u.name, "pid": proc.pid})

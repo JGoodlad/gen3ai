@@ -23,6 +23,16 @@ THE RULES (:data:`RULES`):
   Δ_H − Δ_F (``d1.reported_panels``), which no rule reads;
 * ``anchor_trajectory`` -- x26c PREREG §5: the goal-(b) bar on an anchor score, CLIMBING / FLAT on its Newcombe
   difference against a comparator, and the in-house S "rising" read against a banked node;
+THE VOID GATE (:func:`void_gate`): an X35-stage rule (``x35_r1``, ``d1``) may register ``params.void = {k9b_dir, runs:
+{label: run dir}}``; ``x35_r1`` on a batch-2 arm (SPRT, LRF) MUST. ``decide`` runs it BEFORE the rule: each named run's
+AM-6 K9(b) record (``<k9b_dir>/<run>.json``) must read PASS, and a batch-2 arm's V-S1 / V-S2 (SPRT) or LR-F KL guard
+(``main.x35.batch2_void.read_void``) too; anything else refuses the decision (a VOID seed enters no read; SPRT's
+``assemble.py`` STOP, be60f24f FINDING 3).
+
+REPORTED-ONLY GROUPS (``Rule.reported``): the groups a rule carries for description and no verdict reads (``d1``'s
+``reported_group``). An incomplete one never blocks the record of the decided primary: the record names it INCOMPLETE
+with its reasons (N1-P FINDING 7).
+
 * ``prior_mix_ab`` -- the belief-prior-mix read (``belief_prior_mix_2026-10-26`` PREREG): each λ arm against a
   BANKED λ = 0 control (another read's committed per-game rows, sha-checked, never re-played), unit-paired on the
   same seeds, with a game-for-game determinism guard that re-plays a few banked units at λ = 0.
@@ -42,7 +52,7 @@ from main.x35.readout import RULE8_EPS, classify, welch_interval
 
 __all__ = ["RULES", "RULE8_EPS", "Rule", "RuleInputError", "Z95", "cell_se", "classify", "clears", "decide",
            "guards_not_read", "inputs", "newcombe", "newcombe_diff_ci", "newcombe_strat", "overdispersion",
-           "paired_unit_diff", "s_se", "strat_score", "welch_interval", "widen", "wilson", "wilson_pn"]
+           "paired_unit_diff", "s_se", "strat_score", "void_gate", "welch_interval", "widen", "wilson", "wilson_pn"]
 
 
 class RuleInputError(ValueError):
@@ -167,8 +177,61 @@ def _check_keys(params: Mapping[str, Any], need: Sequence[str], allowed: Sequenc
     return probs
 
 
+# ------------------------------------------------------------------------------------------------ the VOID gate
+#: The batch-2 arms whose registered VOID guard reads the run dir (``main.x35.batch2_void.read_void``'s arm names).
+BATCH2_VOID_ARM = {"SPRT": "sprt", "LRF": "lrfloor"}
+
+
+def _void_check(p: Mapping[str, Any], models: Any, *, required: bool) -> List[str]:
+    v = p.get("void")
+    if v is None:
+        return [f"void: required for arm {p.get('arm')!r} (its V-S1 / V-S2 / LR-F and K9(b) gate the read)"] if required \
+            else []
+    if not (isinstance(v, dict) and set(v) == {"k9b_dir", "runs"} and isinstance(v["k9b_dir"], str)
+            and isinstance(v["runs"], dict) and v["runs"]):
+        return ["void: {k9b_dir: <dir of AM-6 K9(b) records>, runs: {label: run dir}}"]
+    probs = [f"void.runs: {lab!r} is not a model label" for lab in v["runs"] if lab not in models]
+    probs += [f"void.runs.{lab}: a run dir path" for lab, r in v["runs"].items() if not (isinstance(r, str) and r)]
+    on = [lab for lab, m in models.items() if m.arm == p.get("on")]
+    probs += [f"void.runs: the ON model {lab!r} has no run (every ON seed is gated)" for lab in on
+              if lab not in v["runs"]]
+    return probs
+
+
+def void_gate(spec: Any) -> Optional[Dict[str, Dict[str, Any]]]:
+    """The registered VOID gate of ``spec`` (module docstring), or ``None`` when it registers none: ``{label: {run,
+    k9b, k9b_file, batch2, pass}}``. Reads the K9(b) records and the run dirs (read-only)."""
+    from pathlib import Path
+
+    from main.reads.models import spec_path
+    from main.x35 import batch2_void as V
+
+    v = (spec.params or {}).get("void")
+    if not v:
+        return None
+    b2 = BATCH2_VOID_ARM.get(str(spec.params.get("arm")))
+    out: Dict[str, Dict[str, Any]] = {}
+    for lab, run in sorted(v["runs"].items()):
+        rd = spec_path(run)
+        kf = spec_path(v["k9b_dir"]) / f"{Path(run).name}.json"
+        try:
+            k9b = str(json.loads(kf.read_text())["verdict"])
+        except (OSError, ValueError, KeyError):
+            k9b = "MISSING"
+        b = V.read_void(b2, str(rd)).as_dict() if b2 else None
+        out[lab] = {"run": str(run), "k9b": k9b, "k9b_file": str(kf), "batch2": b,
+                    "pass": k9b == V.PASS and (b is None or b["verdict"] == V.PASS)}
+    return out
+
+
+def void_failures(gate: Optional[Mapping[str, Any]]) -> Dict[str, str]:
+    """``{label: why}`` of every gated run that is not PASS (empty = the gate passes or none is registered)."""
+    return {lab: f"K9(b) {g['k9b']}" + (f", {g['batch2']['guard']} {g['batch2']['verdict']}" if g.get("batch2") else "")
+            for lab, g in (gate or {}).items() if not g.get("pass")}
+
+
 # ------------------------------------------------------------------------------------------------ x35_r1
-_R1_KEYS = ("arm", "look", "on", "off", "s_group", "import_off", "dose", "guards_not_read")
+_R1_KEYS = ("arm", "look", "on", "off", "s_group", "import_off", "dose", "guards_not_read", "void")
 
 
 def _r1_check(p: Mapping[str, Any], *, models: Any, anchor: Any, s: Any) -> List[str]:
@@ -181,7 +244,7 @@ def _r1_check(p: Mapping[str, Any], *, models: Any, anchor: Any, s: Any) -> List
         probs.append(f"look {p.get('look')!r} is none of {sorted(R.LOOK_SEEDS)}")
     if p.get("s_group") not in s:
         probs.append(f"s_group {p.get('s_group')!r} is not an S group")
-    return probs
+    return probs + _void_check(p, models, required=p.get("arm") in BATCH2_VOID_ARM)
 
 
 def _r1_inputs(cells: Mapping[str, Any], p: Mapping[str, Any], spec: Any) -> Dict[str, Any]:
@@ -206,7 +269,7 @@ def _r1_decide(doc: Mapping[str, Any], p: Mapping[str, Any]) -> Dict[str, Any]:
 
 
 # ------------------------------------------------------------------------------------------------ d1
-_D1_KEYS = ("arm", "look", "on", "off", "anchor_group", "s_group", "reported_group", "guards_not_read")
+_D1_KEYS = ("arm", "look", "on", "off", "anchor_group", "s_group", "reported_group", "guards_not_read", "void")
 
 
 def _d1_check(p: Mapping[str, Any], *, models: Any, anchor: Any, s: Any) -> List[str]:
@@ -231,13 +294,15 @@ def _d1_check(p: Mapping[str, Any], *, models: Any, anchor: Any, s: Any) -> List
         r = anchor.get(rg)
         if r is None:
             probs.append(f"reported_group {rg!r} is not an anchor group")
+        elif rg == p.get("anchor_group"):
+            probs.append(f"reported_group {rg!r} is the primary anchor_group")
         elif a is not None and set(r.teamsets) & set(a.teamsets):
             probs.append(f"reported_group {rg!r} repeats a primary panel {sorted(set(r.teamsets) & set(a.teamsets))}")
         elif a is not None and set(r.models) != set(a.models):
             probs.append(f"reported_group {rg!r} plays models {sorted(r.models)}, the primary {sorted(a.models)}")
     if p.get("s_group") not in s:
         probs.append(f"s_group {p.get('s_group')!r} is not an S group")
-    return probs
+    return probs + _void_check(p, models, required=False)
 
 
 def h_input(group: Mapping[str, Any], spec: Any, on: str, off: str) -> Dict[str, Any]:
@@ -275,13 +340,27 @@ def _d1_inputs(cells: Mapping[str, Any], p: Mapping[str, Any], spec: Any) -> Dic
            "h": h_input(_group(cells, "anchor", p["anchor_group"]), spec, p["on"], p["off"]),
            "p": p_input(_group(cells, "s", p["s_group"]), spec, p["on"], p["off"])}
     if p.get("reported_group") is not None:                  # REPORTED panels (``d1.reported_panels``), no rule
-        r = h_input(_group(cells, "anchor", p["reported_group"]), spec, p["on"], p["off"])
+        from main.reads.assemble import group_reasons
+
+        rg = _group(cells, "anchor", p["reported_group"])
+        r = h_input(rg, spec, p["on"], p["off"])
         doc["reported_panels"] = {"on": r["on"], "off": r["off"]}
+        why = group_reasons("anchor", p["reported_group"], rg)
+        if why:                                              # INCOMPLETE: reported as such, never blocking (F7)
+            doc["reported_panels"]["incomplete"] = why
     return doc
 
 
 def _d1_decide(doc: Mapping[str, Any], p: Mapping[str, Any]) -> Dict[str, Any]:
-    return guards_not_read(_jsonable(D.read_d1(doc).as_dict()), p.get("guards_not_read"))
+    v = guards_not_read(_jsonable(D.read_d1(doc).as_dict()), p.get("guards_not_read"))
+    why = (doc.get("reported_panels") or {}).get("incomplete")
+    if why:
+        v["reported"]["reported_panels"].update(status="INCOMPLETE", incomplete=list(why))
+    return v
+
+
+def _d1_reported(p: Mapping[str, Any]) -> List[Tuple[str, str]]:
+    return [("anchor", str(p["reported_group"]))] if p.get("reported_group") is not None else []
 
 
 # --------------------------------------------------------------------------------------- anchor_trajectory
@@ -625,6 +704,9 @@ class Rule:
     decide: Callable[[Mapping[str, Any], Mapping[str, Any]], Dict[str, Any]]
     #: an X35 stage record (top-level arm / look / verdict / primary; ``batch.read_record`` loads it)
     x35_record: bool
+    #: the REPORTED-only ``(lane, group)``s of these params: no verdict reads them, so an incomplete one never blocks
+    #: the record (it is recorded INCOMPLETE with its reasons)
+    reported: Callable[[Mapping[str, Any]], List[Tuple[str, str]]] = lambda p: []
 
     def verdict_of(self, decision: Mapping[str, Any]) -> str:
         v = decision.get("verdict") if self.x35_record else (decision.get("decision") or {}).get("verdict")
@@ -636,7 +718,7 @@ class Rule:
 RULES: Dict[str, Rule] = {
     "x35_r1": Rule("x35_r1", "X35 R1 / R2 / guards (main.x35.readout.read)", _r1_check, _r1_inputs, _r1_decide, True),
     "d1": Rule("d1", "D1 H (unfamiliar Kakuna panels, φ̂-widened) + P (main.x35.d1.read_d1)", _d1_check, _d1_inputs,
-               _d1_decide, True),
+               _d1_decide, True, _d1_reported),
     "anchor_trajectory": Rule("anchor_trajectory", "x26c PREREG §5: goal bar, CLIMBING / FLAT, S1 rising",
                               _at_check, _at_inputs, _at_decide, False),
     "prior_mix_ab": Rule("prior_mix_ab", "belief prior mix: λ arms vs a banked λ = 0, unit-paired; a determinism guard",
