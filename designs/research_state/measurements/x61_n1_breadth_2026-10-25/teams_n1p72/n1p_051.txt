@@ -1,0 +1,56 @@
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 44 Def / 8 SpA / 112 SpD / 96 Spe
+Timid Nature
+- Focus Punch
+- Explosion
+- Thunderbolt
+- Will-O-Wisp
+
+Glalie @ Lum Berry
+Ability: Inner Focus
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Taunt
+- Explosion
+- Ice Beam
+- Spikes
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 120 SpD / 136 Spe
+Modest Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Substitute
+- Hidden Power [Grass]
+- Thunderbolt
+- Drill Peck
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Roar
+- Protect
+- Taunt
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 76 SpA / 180 Spe
+Timid Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 30 Spe
+- Hidden Power [Fire]
+- Swords Dance
+- Baton Pass
+- Giga Drain
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 31 Spe
+- Hidden Power [Flying]
+- Thunder Wave
+- Earthquake
+- Dragon Dance

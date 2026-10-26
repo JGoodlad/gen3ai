@@ -1,0 +1,55 @@
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+- Spikes
+- Roar
+- Taunt
+- Drill Peck
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Thunderbolt
+- Sludge Bomb
+- Ice Punch
+- Explosion
+
+Weezing @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 252 Def / 4 Spe
+Bold Nature
+- Will-O-Wisp
+- Fire Blast
+- Sludge Bomb
+- Pain Split
+
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+- Spore
+- Leech Seed
+- Swords Dance
+- Mach Punch
+
+Metagross @ Lum Berry
+Ability: Clear Body
+EVs: 252 HP / 252 SpA / 4 Spe
+Quiet Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 30 Spe
+- Meteor Mash
+- Agility
+- Explosion
+- Hidden Power [Fire]
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Fire Blast
+- Hidden Power [Grass]
+- Focus Punch
+- Beat Up

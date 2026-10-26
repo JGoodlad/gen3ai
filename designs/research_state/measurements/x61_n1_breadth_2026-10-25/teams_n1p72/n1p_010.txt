@@ -1,0 +1,55 @@
+Starmie @ Leftovers
+Ability: Illuminate
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Rapid Spin
+- Recover
+- Hydro Pump
+- Surf
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Drill Peck
+- Toxic
+- Spikes
+- Protect
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 252 Def / 16 Spe
+Bold Nature
+- Surf
+- Rest
+- Substitute
+- Calm Mind
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 112 HP / 144 SpA / 252 Spe
+Timid Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 31 SpD / 31 Spe
+- Toxic
+- Substitute
+- Thunderbolt
+- Hidden Power [Ice]
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Hidden Power [Bug]
+- Double-Edge
+- Earthquake
+- Rock Slide
+
+Clamperl @ Deep Sea Tooth
+Ability: Shell Armor
+EVs: 252 HP / 252 SpA / 4 SpD
+Modest Nature
+- Surf
+- Substitute
+- Toxic
+- Ice Beam

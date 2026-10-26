@@ -1,0 +1,54 @@
+Tyranitar @ Salac Berry
+Ability: Sand Stream
+EVs: 248 HP / 252 Atk / 8 SpD
+Adamant Nature
+- Fire Blast
+- Earthquake
+- Rock Slide
+- Pursuit
+
+Umbreon @ Leftovers
+Ability: Synchronize
+EVs: 252 HP / 196 SpA / 52 SpD / 8 Spe
+Calm Nature
+- Wish
+- Pursuit
+- Protect
+- Toxic
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 100 HP / 252 SpA / 156 Spe
+Modest Nature
+- Surf
+- Ice Beam
+- Calm Mind
+- Roar
+
+Houndoom @ Leftovers
+Ability: Flash Fire
+EVs: 192 SpA / 120 SpD / 196 Spe
+Modest Nature
+- Fire Blast
+- Will-O-Wisp
+- Pursuit
+- Crunch
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 31 Spe
+- Brick Break
+- Dragon Dance
+- Hidden Power [Flying]
+- Dragon Claw
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 60 SpA / 196 Spe
+Modest Nature
+- Sleep Talk
+- Baton Pass
+- Rain Dance
+- Thunderbolt

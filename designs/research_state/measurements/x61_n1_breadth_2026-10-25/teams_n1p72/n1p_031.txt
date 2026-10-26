@@ -1,0 +1,55 @@
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 92 HP / 116 Atk / 144 Def / 144 SpD / 12 Spe
+Adamant Nature
+- Rest
+- Focus Punch
+- Self-Destruct
+- Shadow Ball
+
+Gardevoir @ Leftovers
+Ability: Synchronize
+EVs: 252 HP / 4 SpA / 252 Spe
+Timid Nature
+- Memento
+- Ice Punch
+- Hypnosis
+- Psychic
+
+Linoone @ Leftovers
+Ability: Pickup
+EVs: 112 HP / 252 Atk / 144 Spe
+Adamant Nature
+IVs: 31 HP / 31 Atk / 31 Def / 30 SpA / 30 SpD / 31 Spe
+- Hidden Power [Ground]
+- Shadow Ball
+- Rest
+- Extreme Speed
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 40 Def / 80 SpA / 136 Spe
+Modest Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Body Slam
+- Doom Desire
+- Ice Punch
+- Hidden Power [Grass]
+
+Dragonite @ Leftovers
+Ability: Inner Focus
+EVs: 52 HP / 204 Atk / 68 SpA / 184 Spe
+Lonely Nature
+- Focus Punch
+- Earthquake
+- Fire Blast
+- Flamethrower
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Thunder Wave
+- Psychic
+- Rapid Spin
+- Surf

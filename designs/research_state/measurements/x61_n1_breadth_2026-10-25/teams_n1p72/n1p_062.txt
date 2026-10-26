@@ -1,0 +1,56 @@
+Snorlax @ Leftovers
+Ability: Thick Fat
+EVs: 252 HP / 252 Atk / 4 SpD
+Adamant Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 30 SpD / 31 Spe
+- Body Slam
+- Hidden Power [Steel]
+- Shadow Ball
+- Focus Punch
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 72 HP / 252 Atk / 184 Spe
+Adamant Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Hidden Power [Bug]
+- Earthquake
+- Rock Slide
+- Explosion
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 40 SpA / 48 SpD / 44 Spe
+Relaxed Nature
+- Ice Beam
+- Focus Punch
+- Earthquake
+- Refresh
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 52 HP / 252 SpA / 204 Spe
+Timid Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 30 Spe
+- Toxic
+- Hidden Power [Fire]
+- Thunder Wave
+- Reflect
+
+Heracross @ Liechi Berry
+Ability: Swarm
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+- Focus Punch
+- Swords Dance
+- Megahorn
+- Brick Break
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+- Focus Punch
+- Rock Slide
+- Dragon Dance
+- Fire Blast

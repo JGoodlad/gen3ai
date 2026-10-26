@@ -1,0 +1,55 @@
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 248 HP / 128 Def / 84 SpA / 48 Spe
+Relaxed Nature
+- Ice Beam
+- Earthquake
+- Substitute
+- Hydro Pump
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Hidden Power [Bug]
+- Double-Edge
+- Crunch
+- Earthquake
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Roar
+- Protect
+- Drill Peck
+
+Claydol @ Choice Band
+Ability: Levitate
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
+- Rapid Spin
+- Psychic
+- Refresh
+- Earthquake
+
+Camerupt @ Leftovers
+Ability: Magma Armor
+EVs: 252 HP / 4 Atk / 252 SpA
+Quiet Nature
+- Earthquake
+- Flamethrower
+- Explosion
+- Fire Blast
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 52 HP / 252 SpA / 204 Spe
+Timid Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Thunder Wave
+- Hidden Power [Grass]
+- Toxic
+- Thunderbolt

@@ -1,0 +1,55 @@
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Sunny Day
+- Aerial Ace
+- Earthquake
+- Hidden Power [Bug]
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 44 Def / 8 SpA / 112 SpD / 96 Spe
+Timid Nature
+- Will-O-Wisp
+- Focus Punch
+- Ice Punch
+- Thunderbolt
+
+Steelix @ Leftovers
+Ability: Rock Head
+EVs: 252 HP / 4 Atk / 252 Def
+Impish Nature
+- Roar
+- Protect
+- Iron Tail
+- Earthquake
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Bold Nature
+- Soft-Boiled
+- Calm Mind
+- Thunderbolt
+- Thunder Wave
+
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 31 Spe
+- Mach Punch
+- Spore
+- Swords Dance
+- Hidden Power [Flying]
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 40 SpA / 216 Spe
+Timid Nature
+- Thunderbolt
+- Rapid Spin
+- Ice Beam
+- Thunder Wave

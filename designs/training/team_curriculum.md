@@ -52,10 +52,13 @@ conflates pilot competence with team strength (see the tracking section).
   PREFIX (`A` ⊂ `AB` ⊂ `ABC`); no `@tier` = the manifest's `default_tier`. The parser checks the SYNTAX (registered
   corpus, share in (0, 1]); startup loads and VERIFIES it (the sha256s; every mon at level 100, the
   only level the env's labels encode, AM-D1-FIX — `CorpusError` → FATAL_CONFIG). Registered corpora
-  (`utils.team_corpora.CORPORA`): `w_forum_v1` (D1: 1,981 human-built forum teams, tiers A ⊂ AB ⊂ ABC) and
+  (`utils.team_corpora.CORPORA`): `w_forum_v1` (D1: 1,981 human-built forum teams, tiers A ⊂ AB ⊂ ABC),
   `d3_setmut_v1` (D3: 2,876 pool teams with 1–2 mons' sets redrawn from Smogon usage, one tier `ALL`;
-  `utils.team_corpora.build_d3_setmut`). A corpus reaches only a pin that holds it, so each arm that names a new one
-  launches at its own corpus-only pin (`main.x35.batch.ARM_PINS`).
+  `utils.team_corpora.build_d3_setmut`) and `n1_proc_v1` (X61 / N1: 12,000 whole procedural teams drawn from Smogon
+  usage alone, prefix tiers K1 ⊂ K3 ⊂ K10 ⊂ ALL; `utils.team_corpora.build_n1_proc`; the arm is a FRESH toy run,
+  `main.x61.arms`). A corpus reaches only a pin that holds it, so each arm that names a new one
+  launches at a pin that carries it (`main.x35.batch.ARM_PINS`; X61's `main.x61.arms.PIN`). A large corpus soaks in
+  chunks of rounds (`soak --first-round`, then `soak merge`).
 - **The startup guard** (`main.train.matchup_setup.team_mix_guard`, FATAL_CONFIG on any failure): the held-out
   panel registry verifies; `main.heldout_panels.contamination` finds NO corpus team that is an exact copy or near
   neighbour (≥ 4 shared mon sets) of a HELD-OUT panel; the validator dropped NO corpus team (corpus teams go through

@@ -1,0 +1,55 @@
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 168 Def / 88 SpD
+Bold Nature
+- Ice Beam
+- Surf
+- Refresh
+- Endeavor
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Bold Nature
+- Ice Beam
+- Seismic Toss
+- Counter
+- Toxic
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 31 SpD / 31 Spe
+- Thunderbolt
+- Hidden Power [Ice]
+- Baton Pass
+- Thunder Wave
+
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 24 SpD / 232 Spe
+Modest Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Hidden Power [Grass]
+- Flamethrower
+- Substitute
+- Morning Sun
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+- Earthquake
+- Rock Slide
+- Pursuit
+- Double-Edge
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 68 HP / 252 SpA / 188 Spe
+Timid Nature
+- Endure
+- Rain Dance
+- Thunder Wave
+- Substitute

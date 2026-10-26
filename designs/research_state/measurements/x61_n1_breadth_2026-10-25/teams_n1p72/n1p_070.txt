@@ -1,0 +1,55 @@
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Ice Punch
+- Will-O-Wisp
+- Substitute
+- Hidden Power [Grass]
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 216 Def / 44 SpD
+Relaxed Nature
+- Earthquake
+- Hydro Pump
+- Ice Beam
+- Curse
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+- Thunder Wave
+- Ice Beam
+- Aromatherapy
+- Calm Mind
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Drill Peck
+- Taunt
+- Roar
+- Spikes
+
+Jolteon @ Lum Berry
+Ability: Volt Absorb
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 31 SpD / 31 Spe
+- Hidden Power [Ice]
+- Thunderbolt
+- Thunder Wave
+- Roar
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 244 HP / 124 Def / 140 Spe
+Impish Nature
+- Recover
+- Calm Mind
+- Giga Drain
+- Leech Seed

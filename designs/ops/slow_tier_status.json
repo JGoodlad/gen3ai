@@ -4836,6 +4836,14 @@
    "contention": 1.23,
    "detail": ""
   },
+  "src/utils/team_corpora/n1_proc_test.py::test_the_committed_corpus_and_panel_reproduce_from_the_priors": {
+   "status": "pass",
+   "commit": "0bc5ea0fc3133776d4845988e777451a987cd2ea",
+   "at": "2026-10-26T00:34:49Z",
+   "duration_s": 69.36,
+   "contention": 1.09,
+   "detail": ""
+  },
   "src/utils/team_corpora/team_corpora_test.py::test_the_committed_corpus_reproduces_from_its_source": {
    "status": "pass",
    "commit": "9ff6cafb753164486553a32c33d119be861d333a",
@@ -4845,5 +4853,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-26T00:01:47Z"
+ "last_written": "2026-10-26T00:34:49Z"
 }

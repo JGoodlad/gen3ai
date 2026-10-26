@@ -1,0 +1,54 @@
+Moltres @ Choice Band
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Flamethrower
+- Roar
+- Will-O-Wisp
+- Sunny Day
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 68 HP / 252 SpA / 188 Spe
+Timid Nature
+- Will-O-Wisp
+- Destiny Bond
+- Ice Punch
+- Thunderbolt
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Calm Nature
+- Spikes
+- Protect
+- Drill Peck
+- Taunt
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 56 Atk / 64 Def / 140 SpA
+Quiet Nature
+- Ice Beam
+- Earthquake
+- Refresh
+- Protect
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 252 HP / 176 Atk / 80 Def
+Adamant Nature
+- Explosion
+- Agility
+- Rock Slide
+- Meteor Mash
+
+Articuno @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 4 Def / 252 SpD
+Calm Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Rest
+- Heal Bell
+- Ice Beam
+- Hidden Power [Grass]

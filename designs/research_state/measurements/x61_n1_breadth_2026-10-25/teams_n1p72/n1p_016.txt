@@ -1,0 +1,53 @@
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 252 HP / 252 Atk / 4 SpD
+Adamant Nature
+- Dragon Dance
+- Focus Punch
+- Brick Break
+- Rock Slide
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+- Ice Beam
+- Wish
+- Seismic Toss
+- Soft-Boiled
+
+Smeargle @ Salac Berry
+Ability: Own Tempo
+EVs: 4 HP / 252 SpD / 252 Spe
+Timid Nature
+- Spikes
+- Spore
+- Dragon Dance
+- Substitute
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 168 HP / 164 SpD / 176 Spe
+Hasty Nature
+- Ice Punch
+- Fire Punch
+- Explosion
+- Will-O-Wisp
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 216 Def / 44 SpD
+Relaxed Nature
+- Protect
+- Substitute
+- Ice Beam
+- Toxic
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 72 HP / 8 SpA / 244 SpD / 184 Spe
+Timid Nature
+- Rapid Spin
+- Spikes
+- Double-Edge
+- Ice Beam

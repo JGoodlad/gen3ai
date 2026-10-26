@@ -1,0 +1,55 @@
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 92 HP / 116 Atk / 144 Def / 144 SpD / 12 Spe
+Adamant Nature
+- Self-Destruct
+- Earthquake
+- Focus Punch
+- Curse
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+- Rest
+- Substitute
+- Thunderbolt
+- Drill Peck
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 224 Def / 32 Spe
+Impish Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Rock Slide
+- Flamethrower
+- Hidden Power [Bug]
+- Fire Blast
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
+- Explosion
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+- Roar
+- Dragon Dance
+- Rock Slide
+- Focus Punch
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Dragon Claw
+- Hidden Power [Grass]
+- Fire Blast
+- Toxic

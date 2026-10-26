@@ -1,0 +1,55 @@
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Dragon Dance
+- Hidden Power [Bug]
+- Fire Blast
+- Double-Edge
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+- Earthquake
+- Rock Slide
+- Beat Up
+- Aerial Ace
+
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+- Focus Punch
+- Mach Punch
+- Leech Seed
+- Spore
+
+Zapdos @ White Herb
+Ability: Pressure
+EVs: 252 SpA / 120 SpD / 136 Spe
+Modest Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Thunderbolt
+- Toxic
+- Hidden Power [Grass]
+- Baton Pass
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 252 SpA / 4 SpD
+Modest Nature
+- Roar
+- Rest
+- Calm Mind
+- Ice Beam
+
+Umbreon @ Leftovers
+Ability: Synchronize
+EVs: 252 HP / 120 Def / 136 SpD
+Careful Nature
+- Pursuit
+- Wish
+- Baton Pass
+- Protect

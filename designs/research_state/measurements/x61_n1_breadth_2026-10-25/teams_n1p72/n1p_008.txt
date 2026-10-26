@@ -1,0 +1,58 @@
+Shiftry @ Leftovers
+Ability: Early Bird
+EVs: 160 HP / 8 Atk / 4 Def / 144 SpA / 92 SpD / 100 Spe
+Mild Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 30 Spe
+- Hidden Power [Fire]
+- Endure
+- Sunny Day
+- Explosion
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 68 HP / 252 Atk / 188 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 31 Spe
+- Double-Edge
+- Earthquake
+- Thunder Wave
+- Hidden Power [Flying]
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 76 HP / 252 SpA / 180 Spe
+Timid Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Baton Pass
+- Leech Seed
+- Recover
+- Hidden Power [Grass]
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 76 HP / 252 SpA / 180 Spe
+Modest Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 30 Spe
+- Hidden Power [Fire]
+- Thunderbolt
+- Protect
+- Toxic
+
+Venusaur @ Leftovers
+Ability: Overgrow
+EVs: 136 HP / 168 SpA / 204 Spe
+Timid Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 30 Spe
+- Sleep Powder
+- Hidden Power [Fire]
+- Leech Seed
+- Giga Drain
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 196 SpD / 60 Spe
+Careful Nature
+- Explosion
+- Counter
+- Toxic
+- Curse

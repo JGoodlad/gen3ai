@@ -1,0 +1,55 @@
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 80 Atk / 180 Spe
+Adamant Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Rock Slide
+- Hidden Power [Bug]
+- Focus Punch
+- Pursuit
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 88 Def / 164 SpA / 16 Spe
+Quiet Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Ice Beam
+- Earthquake
+- Substitute
+- Hidden Power [Grass]
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 92 HP / 116 Atk / 144 Def / 144 SpD / 12 Spe
+Adamant Nature
+- Focus Punch
+- Rest
+- Curse
+- Shadow Ball
+
+Marowak @ Thick Club
+Ability: Rock Head
+EVs: 252 HP / 252 Atk / 4 Def
+Adamant Nature
+- Substitute
+- Earthquake
+- Double-Edge
+- Focus Punch
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Recover
+- Psychic
+- Ice Beam
+- Thunder Wave
+
+Heracross @ Choice Band
+Ability: Swarm
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Megahorn
+- Reversal
+- Earthquake
+- Swords Dance

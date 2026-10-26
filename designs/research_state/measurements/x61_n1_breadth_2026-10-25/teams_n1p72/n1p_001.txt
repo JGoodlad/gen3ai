@@ -1,0 +1,56 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 112 HP / 252 SpA / 144 Spe
+Modest Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Hidden Power [Grass]
+- Protect
+- Thunderbolt
+- Baton Pass
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Toxic
+- Protect
+- Drill Peck
+- Spikes
+
+Metagross @ Liechi Berry
+Ability: Clear Body
+EVs: 252 HP / 252 Atk / 4 SpD
+Adamant Nature
+IVs: 31 HP / 31 Atk / 30 Def / 31 SpA / 30 SpD / 30 Spe
+- Rock Slide
+- Hidden Power [Rock]
+- Earthquake
+- Meteor Mash
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 216 Def / 44 SpD
+Relaxed Nature
+- Curse
+- Earthquake
+- Substitute
+- Endeavor
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 252 SpA / 252 Spe
+Timid Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Protect
+- Toxic
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 252 SpA / 4 Spe
+Modest Nature
+- Flamethrower
+- Substitute
+- Rock Slide
+- Roar

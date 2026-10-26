@@ -1,0 +1,55 @@
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 252 Def / 16 Spe
+Bold Nature
+- Calm Mind
+- Rest
+- Surf
+- Ice Beam
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 252 HP / 176 Atk / 80 Def
+Adamant Nature
+- Earthquake
+- Agility
+- Rock Slide
+- Double-Edge
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 60 SpA / 196 Spe
+Modest Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 31 SpD / 31 Spe
+- Thunderbolt
+- Hidden Power [Ice]
+- Baton Pass
+- Rest
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+- Ice Beam
+- Protect
+- Toxic
+- Surf
+
+Tyranitar @ Choice Band
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+- Earthquake
+- Crunch
+- Dragon Dance
+- Focus Punch
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Thunder Wave
+- Baton Pass
+- Thunderbolt
+- Hidden Power [Grass]

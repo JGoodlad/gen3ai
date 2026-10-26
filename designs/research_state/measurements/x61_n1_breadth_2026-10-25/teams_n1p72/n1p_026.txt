@@ -1,0 +1,55 @@
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 252 HP / 252 Atk / 4 Def
+Adamant Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Earthquake
+- Crunch
+- Focus Punch
+- Hidden Power [Bug]
+
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Spore
+- Mach Punch
+- Focus Punch
+- Sky Uppercut
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 120 Atk / 252 SpA / 136 Spe
+Mild Nature
+- Rest
+- Substitute
+- Baton Pass
+- Thunderbolt
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 4 Atk / 252 SpA / 252 Spe
+Rash Nature
+- Curse
+- Hydro Pump
+- Focus Punch
+- Ice Beam
+
+Charizard @ Petaya Berry
+Ability: Blaze
+EVs: 24 Atk / 240 SpA / 244 Spe
+Rash Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Fire Blast
+- Hidden Power [Grass]
+- Focus Punch
+- Dragon Claw
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+- Meteor Mash
+- Explosion
+- Earthquake
+- Rock Slide

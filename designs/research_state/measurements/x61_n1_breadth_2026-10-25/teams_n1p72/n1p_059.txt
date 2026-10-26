@@ -1,0 +1,57 @@
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 80 HP / 16 SpA / 236 SpD / 176 Spe
+Modest Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Will-O-Wisp
+- Thunderbolt
+- Hidden Power [Grass]
+- Ice Punch
+
+Skarmory @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Protect
+- Roar
+- Whirlwind
+
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 244 SpA / 32 SpD / 232 Spe
+Modest Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Will-O-Wisp
+- Hidden Power [Grass]
+- Rest
+- Flamethrower
+
+Flygon @ Choice Band
+Ability: Levitate
+EVs: 248 HP / 216 Def / 8 SpA / 36 Spe
+Lax Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+- Quick Attack
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Hidden Power [Bug]
+- Rock Slide
+- Earthquake
+- Brick Break
+
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 252 HP / 168 Def / 88 SpD
+Bold Nature
+- Ice Beam
+- Earthquake
+- Substitute
+- Hydro Pump

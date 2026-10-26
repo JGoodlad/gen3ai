@@ -1,0 +1,54 @@
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 124 Def / 40 SpA / 60 SpD / 32 Spe
+Bold Nature
+- Calm Mind
+- Baton Pass
+- Substitute
+- Recover
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 68 HP / 252 Atk / 188 Spe
+Adamant Nature
+- Dragon Dance
+- Thunder Wave
+- Double-Edge
+- Taunt
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 24 HP / 176 Atk / 108 Def / 184 SpD / 16 Spe
+Adamant Nature
+- Self-Destruct
+- Focus Punch
+- Curse
+- Sleep Talk
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 144 HP / 112 SpA / 252 Spe
+Timid Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Thunder Wave
+- Toxic
+- Hidden Power [Grass]
+- Thunderbolt
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Roar
+- Hydro Pump
+- Endeavor
+- Surf
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA
+Modest Nature
+- Thunder Wave
+- Wish
+- Seismic Toss
+- Soft-Boiled

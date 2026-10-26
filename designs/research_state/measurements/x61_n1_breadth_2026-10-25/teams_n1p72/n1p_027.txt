@@ -1,0 +1,55 @@
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Spikes
+- Hidden Power [Bug]
+- Explosion
+- Earthquake
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 31 Spe
+- Dragon Claw
+- Earthquake
+- Dragon Dance
+- Hidden Power [Flying]
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Calm Nature
+- Thief
+- Toxic
+- Roar
+- Drill Peck
+
+Camerupt @ Leftovers
+Ability: Magma Armor
+EVs: 252 HP / 20 Atk / 124 SpA / 112 SpD
+Quiet Nature
+- Earthquake
+- Explosion
+- Overheat
+- Toxic
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Recover
+- Ice Beam
+- Rapid Spin
+- Hydro Pump
+
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 252 HP / 228 Def / 28 SpD
+Bold Nature
+- Baton Pass
+- Wish
+- Surf
+- Hydro Pump

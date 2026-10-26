@@ -1,0 +1,56 @@
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
+- Rapid Spin
+- Psychic
+- Earthquake
+- Ice Beam
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 252 SpA / 4 SpD
+Modest Nature
+- Surf
+- Rest
+- Roar
+- Ice Beam
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Baton Pass
+- Substitute
+- Thunderbolt
+- Hidden Power [Grass]
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 76 HP / 180 SpA / 252 Spe
+Timid Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 31 SpD / 31 Spe
+- Baton Pass
+- Roar
+- Protect
+- Hidden Power [Ice]
+
+Houndoom @ Leftovers
+Ability: Early Bird
+EVs: 56 HP / 252 SpA / 12 SpD / 188 Spe
+Timid Nature
+- Pursuit
+- Beat Up
+- Flamethrower
+- Crunch
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 84 HP / 252 Atk / 172 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 31 Spe
+- Earthquake
+- Thunder Wave
+- Taunt
+- Hidden Power [Flying]

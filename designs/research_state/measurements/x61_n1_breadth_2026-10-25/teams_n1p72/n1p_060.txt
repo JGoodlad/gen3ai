@@ -1,0 +1,53 @@
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 12 Def / 244 SpD
+Sassy Nature
+- Counter
+- Spikes
+- Explosion
+- Zap Cannon
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 252 SpA / 4 Spe
+Modest Nature
+- Dragon Dance
+- Crunch
+- Rock Slide
+- Focus Punch
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 232 Atk / 24 SpD
+Adamant Nature
+- Explosion
+- Seismic Toss
+- Thunder Wave
+- Toxic
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 40 SpA / 216 Spe
+Timid Nature
+- Rapid Spin
+- Thunderbolt
+- Surf
+- Hydro Pump
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 168 Def / 88 SpD
+Bold Nature
+- Protect
+- Surf
+- Toxic
+- Hydro Pump
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 204 HP / 128 SpA / 176 Spe
+Timid Nature
+- Substitute
+- Thunder
+- Toxic
+- Thunderbolt

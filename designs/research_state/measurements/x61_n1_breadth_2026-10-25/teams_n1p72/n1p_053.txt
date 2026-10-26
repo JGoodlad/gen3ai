@@ -1,0 +1,53 @@
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 252 Def / 16 Spe
+Bold Nature
+- Surf
+- Calm Mind
+- Sleep Talk
+- Hydro Pump
+
+Breloom @ Black Belt
+Ability: Effect Spore
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Mach Punch
+- Sky Uppercut
+- Spore
+- Brick Break
+
+Regice @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 72 Def / 188 SpA
+Quiet Nature
+- Thunder Wave
+- Thunderbolt
+- Ice Beam
+- Explosion
+
+Heracross @ Salac Berry
+Ability: Guts
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+- Rock Slide
+- Focus Punch
+- Swords Dance
+- Substitute
+
+Salamence @ Lum Berry
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+- Dragon Claw
+- Rock Slide
+- Earthquake
+- Flamethrower
+
+Glalie @ Salac Berry
+Ability: Inner Focus
+EVs: 252 HP / 36 Def / 220 Spe
+Timid Nature
+- Taunt
+- Spikes
+- Ice Beam
+- Explosion

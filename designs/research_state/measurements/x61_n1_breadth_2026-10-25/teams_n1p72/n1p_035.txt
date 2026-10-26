@@ -1,0 +1,55 @@
+Armaldo @ Choice Band
+Ability: Battle Armor
+EVs: 170 HP / 252 Atk / 86 SpD
+Adamant Nature
+- Rock Slide
+- Rock Blast
+- Knock Off
+- Earthquake
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Hidden Power [Grass]
+- Aromatherapy
+- Soft-Boiled
+- Seismic Toss
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+- Aerial Ace
+- Rock Slide
+- Earthquake
+- Beat Up
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 252 Atk / 4 SpD
+Adamant Nature
+- Rapid Spin
+- Earthquake
+- Explosion
+- Spikes
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Thunderbolt
+- Baton Pass
+- Roar
+- Hidden Power [Grass]
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 128 HP / 252 Atk / 128 Spe
+Adamant Nature
+- Meteor Mash
+- Explosion
+- Psychic
+- Earthquake

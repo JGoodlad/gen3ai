@@ -1,0 +1,56 @@
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Rapid Spin
+- Spikes
+- Hidden Power [Bug]
+- Explosion
+
+Electrode @ Magnet
+Ability: Static
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 31 SpD / 31 Spe
+- Hidden Power [Ice]
+- Thunderbolt
+- Taunt
+- Thunder Wave
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Modest Nature
+- Rapid Spin
+- Thunderbolt
+- Psychic
+- Ice Beam
+
+Kingdra @ Lum Berry
+Ability: Swift Swim
+EVs: 104 HP / 252 SpA / 152 Spe
+Modest Nature
+- Rain Dance
+- Surf
+- Ice Beam
+- Hydro Pump
+
+Zapdos @ Choice Band
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Hidden Power [Grass]
+- Thunderbolt
+- Toxic
+- Thunder Wave
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Explosion
+- Meteor Mash
+- Earthquake
+- Rock Slide

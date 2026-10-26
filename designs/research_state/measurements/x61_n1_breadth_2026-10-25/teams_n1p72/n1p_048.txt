@@ -1,0 +1,55 @@
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 92 HP / 128 Atk / 124 Def / 164 SpD
+Adamant Nature
+- Body Slam
+- Earthquake
+- Shadow Ball
+- Self-Destruct
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 31 SpD / 31 Spe
+- Hidden Power [Ice]
+- Baton Pass
+- Roar
+- Thunderbolt
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 208 HP / 252 Def / 48 Spe
+Bold Nature
+- Thunderbolt
+- Ice Beam
+- Seismic Toss
+- Toxic
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
+- Explosion
+- Psychic
+- Rapid Spin
+- Earthquake
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Drill Peck
+- Taunt
+- Spikes
+- Counter
+
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Hidden Power [Grass]
+- Will-O-Wisp
+- Flamethrower
+- Rest

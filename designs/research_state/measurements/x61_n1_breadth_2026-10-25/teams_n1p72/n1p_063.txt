@@ -1,0 +1,56 @@
+Aerodactyl @ Liechi Berry
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Hidden Power [Bug]
+- Rock Slide
+- Earthquake
+- Double-Edge
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 112 HP / 252 SpA / 144 Spe
+Modest Nature
+- Thunderbolt
+- Baton Pass
+- Thunder Wave
+- Roar
+
+Smeargle @ Salac Berry
+Ability: Own Tempo
+EVs: 96 HP / 120 Def / 40 SpD / 252 Spe
+Jolly Nature
+- Transform
+- Belly Drum
+- Explosion
+- Super Fang
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Hidden Power [Bug]
+- Pursuit
+- Ice Beam
+- Focus Punch
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Meteor Mash
+- Explosion
+- Agility
+- Hidden Power [Bug]
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Protect
+- Spikes
+- Roar
+- Toxic

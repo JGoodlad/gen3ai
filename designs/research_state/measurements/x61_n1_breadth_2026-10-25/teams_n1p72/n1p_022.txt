@@ -1,0 +1,58 @@
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Hidden Power [Grass]
+- Ice Punch
+- Thunderbolt
+- Perish Song
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 252 SpA / 4 Spe
+Modest Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Dragon Dance
+- Brick Break
+- Roar
+- Hidden Power [Grass]
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 136 HP / 252 Atk / 24 SpD / 96 Spe
+Jolly Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Double-Edge
+- Hidden Power [Bug]
+- Earthquake
+- Aerial Ace
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 8 Def / 248 SpD
+Careful Nature
+- Roar
+- Toxic
+- Protect
+- Spikes
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 252 Atk / 4 Def
+Impish Nature
+IVs: 31 HP / 31 Atk / 30 Def / 31 SpA / 30 SpD / 30 Spe
+- Earthquake
+- Rapid Spin
+- Psychic
+- Hidden Power [Rock]
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 31 Spe
+- Earthquake
+- Hidden Power [Flying]
+- Double-Edge
+- Rock Slide

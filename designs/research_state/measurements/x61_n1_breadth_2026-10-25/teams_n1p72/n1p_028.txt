@@ -1,0 +1,53 @@
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+- Ice Beam
+- Aromatherapy
+- Toxic
+- Thunderbolt
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Protect
+- Drill Peck
+- Roar
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 52 Def / 112 SpD / 96 Spe
+Timid Nature
+- Giga Drain
+- Explosion
+- Ice Punch
+- Taunt
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
+- Rapid Spin
+- Psychic
+- Earthquake
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 4 Def / 252 SpD
+Calm Nature
+- Rest
+- Surf
+- Roar
+- Calm Mind
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 48 HP / 252 SpA / 208 Spe
+Modest Nature
+- Rain Dance
+- Thunderbolt
+- Thunder Wave
+- Endure

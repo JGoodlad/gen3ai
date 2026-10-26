@@ -1,0 +1,57 @@
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 8 HP / 244 Atk / 72 SpD / 184 Spe
+Adamant Nature
+IVs: 31 HP / 31 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Spore
+- Sky Uppercut
+- Mach Punch
+- Hidden Power [Ghost]
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Ice Punch
+- Calm Mind
+- Psychic
+- Wish
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 252 Def / 4 SpA
+Bold Nature
+- Seismic Toss
+- Heal Bell
+- Soft-Boiled
+- Protect
+
+Arcanine @ Leftovers
+Ability: Intimidate
+EVs: 252 HP / 252 Atk / 4 Spe
+Adamant Nature
+IVs: 31 HP / 31 Atk / 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Hidden Power [Fighting]
+- Crunch
+- Toxic
+- Fire Blast
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Dragon Dance
+- Focus Punch
+- Rock Slide
+- Hidden Power [Bug]
+
+Salamence @ Choice Band
+Ability: Intimidate
+EVs: 196 Atk / 200 SpD / 112 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 31 Spe
+- Fire Blast
+- Hidden Power [Flying]
+- Dragon Claw
+- Dragon Dance

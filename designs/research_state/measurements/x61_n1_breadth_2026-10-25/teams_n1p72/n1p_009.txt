@@ -1,0 +1,57 @@
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 30 Spe
+- Hidden Power [Fire]
+- Rain Dance
+- Thunder Wave
+- Thunderbolt
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 252 SpA / 4 Spe
+Modest Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Rock Slide
+- Hidden Power [Grass]
+- Ice Beam
+- Dragon Dance
+
+Heracross @ Choice Band
+Ability: Swarm
+EVs: 40 HP / 252 Atk / 216 Spe
+Jolly Nature
+IVs: 31 HP / 31 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Megahorn
+- Swords Dance
+- Rock Slide
+- Hidden Power [Ghost]
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 128 HP / 252 Atk / 128 Spe
+Adamant Nature
+- Explosion
+- Agility
+- Meteor Mash
+- Earthquake
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+- Surf
+- Toxic
+- Ice Beam
+- Protect
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 31 Spe
+- Hidden Power [Flying]
+- Rock Slide
+- Dragon Claw
+- Earthquake

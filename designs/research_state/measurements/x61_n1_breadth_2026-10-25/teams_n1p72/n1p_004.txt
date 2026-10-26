@@ -1,0 +1,55 @@
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Protect
+- Toxic
+- Roar
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Rock Slide
+- Earthquake
+- Aerial Ace
+- Hidden Power [Bug]
+
+Gyarados @ Lum Berry
+Ability: Intimidate
+EVs: 68 HP / 252 Atk / 188 Spe
+Adamant Nature
+- Earthquake
+- Taunt
+- Dragon Dance
+- Substitute
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 196 Atk / 60 Spe
+Adamant Nature
+- Psychic
+- Earthquake
+- Rapid Spin
+- Rock Slide
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 176 Atk / 80 Def
+Adamant Nature
+- Agility
+- Earthquake
+- Explosion
+- Rock Slide
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 252 Atk / 252 Spe
+Jolly Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Earthquake
+- Hidden Power [Bug]
+- Rock Slide
+- Double-Edge

@@ -1,0 +1,55 @@
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 160 SpD / 96 Spe
+Careful Nature
+- Roar
+- Protect
+- Drill Peck
+- Spikes
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Thunder Wave
+- Protect
+- Hidden Power [Grass]
+- Reflect
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Roar
+- Thunderbolt
+- Wish
+- Thunder Wave
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 252 HP / 144 Atk / 24 Def / 88 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Agility
+- Explosion
+
+Umbreon @ Leftovers
+Ability: Synchronize
+EVs: 252 HP / 4 SpA / 252 SpD
+Calm Nature
+- Pursuit
+- Toxic
+- Curse
+- Wish
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 31 Spe
+- Hidden Power [Flying]
+- Rock Slide
+- Earthquake
+- Double-Edge

@@ -1,0 +1,55 @@
+Aerodactyl @ Liechi Berry
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Rock Slide
+- Double-Edge
+- Earthquake
+- Hidden Power [Bug]
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Baton Pass
+- Thunder Wave
+- Hidden Power [Grass]
+- Thunderbolt
+
+Suicune @ Salac Berry
+Ability: Pressure
+EVs: 252 HP / 228 Def / 28 Spe
+Bold Nature
+- Calm Mind
+- Substitute
+- Rest
+- Ice Beam
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
+- Earthquake
+- Explosion
+- Psychic
+- Rapid Spin
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 144 HP / 96 Atk / 132 Def / 136 SpD
+Careful Nature
+- Focus Punch
+- Self-Destruct
+- Body Slam
+- Shadow Ball
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 216 SpD / 40 Spe
+Careful Nature
+- Counter
+- Amnesia
+- Superpower
+- Seismic Toss

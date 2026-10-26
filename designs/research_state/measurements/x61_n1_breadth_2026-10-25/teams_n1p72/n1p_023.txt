@@ -1,0 +1,54 @@
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+- Dragon Dance
+- Ice Beam
+- Crunch
+- Double-Edge
+
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 252 HP / 4 Atk / 252 SpD
+Sassy Nature
+- Protect
+- Substitute
+- Toxic
+- Earthquake
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 192 HP / 8 Def / 224 SpA / 84 Spe
+Modest Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 30 Spe
+- Hidden Power [Fire]
+- Giga Drain
+- Leech Seed
+- Perish Song
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Surf
+- Thunderbolt
+- Rapid Spin
+- Thunder Wave
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 176 Atk / 80 Def
+Adamant Nature
+- Explosion
+- Psychic
+- Earthquake
+- Rock Slide
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 232 Def / 24 Spe
+Impish Nature
+- Protect
+- Roar
+- Spikes
+- Toxic

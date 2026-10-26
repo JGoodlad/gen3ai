@@ -1,0 +1,55 @@
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 248 HP / 252 Atk / 8 SpD
+Adamant Nature
+- Rock Slide
+- Dragon Dance
+- Earthquake
+- Substitute
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 40 SpA / 216 Spe
+Timid Nature
+- Thunderbolt
+- Ice Beam
+- Recover
+- Surf
+
+Arcanine
+Ability: Intimidate
+EVs: 252 Atk / 4 SpA / 252 Spe
+Hasty Nature
+IVs: 31 HP / 31 Atk / 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Thief
+- Extreme Speed
+- Fire Blast
+- Hidden Power [Fighting]
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Protect
+- Roar
+- Baton Pass
+- Thunderbolt
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 156 Def / 100 SpA
+Sassy Nature
+- Ice Beam
+- Explosion
+- Rapid Spin
+- Refresh
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 220 SpD / 36 Spe
+Calm Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Perish Song
+- Calm Mind
+- Hidden Power [Grass]
+- Heal Bell

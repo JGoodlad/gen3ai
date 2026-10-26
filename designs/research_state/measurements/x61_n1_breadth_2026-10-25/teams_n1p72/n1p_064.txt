@@ -1,0 +1,58 @@
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Aerial Ace
+- Rock Slide
+- Hidden Power [Bug]
+- Earthquake
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+- Seismic Toss
+- Ice Beam
+- Soft-Boiled
+- Aromatherapy
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 252 HP / 4 Atk / 252 SpA
+Quiet Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Fire Blast
+- Crunch
+- Hidden Power [Grass]
+- Earthquake
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 31 Spe
+- Hidden Power [Flying]
+- Rock Slide
+- Double-Edge
+- Earthquake
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 120 Atk / 252 SpA / 136 Spe
+Mild Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Hidden Power [Grass]
+- Baton Pass
+- Toxic
+- Sleep Talk
+
+Camerupt @ Choice Band
+Ability: Magma Armor
+EVs: 28 HP / 188 Atk / 136 SpA / 156 SpD
+Brave Nature
+IVs: 31 HP / 31 Atk / 30 Def / 31 SpA / 30 SpD / 30 Spe
+- Explosion
+- Sunny Day
+- Roar
+- Hidden Power [Rock]
