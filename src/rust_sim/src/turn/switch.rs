@@ -320,6 +320,7 @@ impl crate::state::BattleState {
                 // replacement enters fully unlocked; the corpse never gathers a residual
                 // duration handler either way).
                 mon.must_recharge = false;
+                mon.must_recharge_duration = 0; // gen3_recharge_expiry_v1
                 mon.two_turn = None;
                 // ...and the COUNTER/MIRROR COAT reactive volatile (`gen3_move_coverage_
                 // batch5_v1`) — a fainted counter user's corpse must not gather a residual
@@ -1067,6 +1068,7 @@ impl crate::state::BattleState {
             // dragged-out mon re-enters fully unlocked (a fresh Hyper Beam / charge starts
             // over). Same stale-flag hazard class as `beat_up` above.
             m.must_recharge = false;
+            m.must_recharge_duration = 0; // gen3_recharge_expiry_v1
             m.two_turn = None;
             // The COUNTER / MIRROR COAT reactive volatile clears on switch-out
             // (`clearVolatile`, `gen3_move_coverage_batch5_v1`) — a phazed-out counter

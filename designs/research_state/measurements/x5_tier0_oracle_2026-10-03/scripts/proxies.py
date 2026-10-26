@@ -19,7 +19,7 @@ import torch
 from agents import gen3_data
 from agents.model.belief_tables import build_species_cooccur_prior
 from agents.model.t0_species import species_team_prior_logits
-from agents.observation.constants import MAX_SPECIES_ID
+MAX_SPECIES_ID = 387  # was agents.observation.constants.MAX_SPECIES_ID, deleted by gen3_vocab_bounds_v1 (the layout's table is 400 rows)
 from utils.paths import repo_path
 
 S = MAX_SPECIES_ID + 1

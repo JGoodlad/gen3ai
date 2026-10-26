@@ -20,9 +20,13 @@ stays at the FIFO head for the next update — **no row is ever dropped or down-
 (owner, 2026-09-29). (The n_steps-per-env WINDOW fill — the rollout-level parity schedule — was deleted
 with ``--rollout-trigger``, deletion pass P11c.)
 
-The one thing that removes rows is a CUT game (a quarantine, a core respawn): it has no outcome and no
-next state, so its in-progress rows are released and COUNTED (``rows_cut``), never fabricated into a
-loss.
+Two things remove rows. A CUT game (a quarantine, a core respawn) has no outcome and no next state, so its
+in-progress rows are released and COUNTED (``rows_cut``), never fabricated into a loss. And a STALL-FORFEITED
+game loses its LAST row (``gen3_stall_forfeit_row_v1``, GIGO audit B-C2): the core presents the decision at the
+turn limit, the trainee samples an action for it, and the core then forfeits INSTEAD of playing it — that row's
+action never ran, yet PPO would credit it with the loss (``0 - V(s)``) and train the policy toward a choice the
+battle never saw. The row is released (``forfeit_rows_dropped``) and the game's terminal reward lands on its
+last PLAYED decision.
 """
 from __future__ import annotations
 
@@ -88,6 +92,7 @@ class FillReport:
     in_progress_rows: int = 0     # rows of games still being played
     labelled_rows: int = 0        # win_mask == 1
     cut_rows_total: int = 0       # rows released by a cut game (run total)
+    forfeit_rows_total: int = 0   # stall-forfeit decisions released unplayed (run total; ``gen3_stall_forfeit_row_v1``)
     #: Each buffer row's COLLECTION PROVENANCE, ``[n_steps, n_envs]``-aligned (``row_provenance``): the
     #: K9(b) violation dump reads it so a mismatched row names where it came from and is replayable.
     provenance: Dict[str, np.ndarray] = field(default_factory=dict, repr=False, compare=False)
@@ -282,6 +287,7 @@ class GameLog:
         self.rows_cut = 0
         self.games_cut = 0
         self.games_without_rows = 0
+        self.forfeit_rows_dropped = 0       # gen3_stall_forfeit_row_v1: the unplayed decision of a stall-forfeited game
 
     # ---- rows in
     def add(self, envs: np.ndarray, slots: np.ndarray) -> None:
@@ -301,6 +307,13 @@ class GameLog:
             terminated: bool, truncated: bool, episode: int, opp_class: int) -> Optional[EndedGame]:
         rows = self.cur[env]
         self.cur[env] = []
+        if forfeit and rows:
+            # `gen3_stall_forfeit_row_v1`: the core presented p1's decision at the turn limit (the host sampled an
+            # action and wrote its row) and then FORFEITED instead of feeding it, so that row's action never ran.
+            # Drop it: the terminal lands on the last decision p1 actually PLAYED.
+            self.store.release(np.asarray(rows[-1:], dtype=np.int64))
+            rows = rows[:-1]
+            self.forfeit_rows_dropped += 1
         if not rows:
             self.games_without_rows += 1
             return None
@@ -427,7 +440,7 @@ def fill_complete(buf: Any, log: GameLog, d: int, *, current_version: int) -> Tu
                      age_hist=_age_hist(st.version[idx], current_version), games_whole=whole,
                      games_split=split, carry_rows=log.completed_rows,
                      in_progress_rows=log.in_progress_rows(), labelled_rows=int(d),
-                     cut_rows_total=log.rows_cut)
+                     cut_rows_total=log.rows_cut, forfeit_rows_total=log.forfeit_rows_dropped)
     rep.provenance = row_provenance(st, idx)
     versions = st.version[idx].copy()
     st.release(flat)

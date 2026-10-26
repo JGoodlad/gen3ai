@@ -143,8 +143,8 @@ def hp_type_belief_loss(logits, hp_type_label, hp_type_mask):
     if not bool(mask.any()):
         return None
     sel_logits = logits[mask]                                          # [N,16]
-    sel_label = label[mask].clamp(min=0)                               # [N] (PAD -1 masked out)
-    loss = F.cross_entropy(sel_logits, sel_label)
+    sel_label = label[mask]                                            # [N] (PAD -1 is for UNSCORED slots only)
+    loss = F.cross_entropy(sel_logits, sel_label)                      # raises on a label outside [0, 16)
     with th.no_grad():
         acc = (sel_logits.argmax(dim=-1) == sel_label).float().mean()
     return loss, {"acc": float(acc.item()), "n_slots": int(mask.sum().item()),
@@ -350,8 +350,8 @@ def item_belief_loss(logits, item_label, item_mask):
     if not bool(mask.any()):
         return None
     sel_logits = logits[mask]                                          # [N,n_items]
-    sel_label = label[mask].clamp(min=0)                               # [N] (PAD -1 masked out)
-    loss = F.cross_entropy(sel_logits, sel_label)
+    sel_label = label[mask]                                            # [N] (PAD -1 is for UNSCORED slots only)
+    loss = F.cross_entropy(sel_logits, sel_label)                      # raises on a label outside [0, n_items)
     with th.no_grad():
         acc = (sel_logits.argmax(dim=-1) == sel_label).float().mean()
     return loss, {"acc": float(acc.item()), "n_slots": int(mask.sum().item()),

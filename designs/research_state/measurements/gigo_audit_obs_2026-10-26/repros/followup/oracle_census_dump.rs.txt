@@ -1,0 +1,50 @@
+//! SCRATCH (never committed): dump every column the oracle_reveal digests hash, per op, for seeds 11 / 12 / 13 at the OFF level.
+mod common;
+
+use pokesim::encoder::oracle::OracleSpec;
+use pokesim_env::core::columns::col;
+use pokesim_env::core::{Core, OwnedCols};
+use std::io::Write;
+
+const FAMILIES: [&str; 6] = ["belief", "spread", "hp_type", "item", "intent", "margin"];
+
+#[test]
+fn census_dump() {
+    let out = std::env::var("CENSUS_OUT").expect("CENSUS_OUT");
+    std::fs::create_dir_all(&out).unwrap();
+    let list: [(&str, usize); 25] = [
+        ("OBS", col::OBS), ("MASK", col::MASK), ("NEED", col::NEED), ("DONE", col::DONE), ("EPISODE", col::EPISODE),
+        ("DEC_N", col::DEC_N), ("TURN", col::TURN), ("BELIEF_SPECIES", col::BELIEF_SPECIES), ("BELIEF_MOVES", col::BELIEF_MOVES),
+        ("KNOWN_MOVES", col::KNOWN_MOVES), ("BELIEF_SPREAD", col::BELIEF_SPREAD), ("BELIEF_SPREAD_MASK", col::BELIEF_SPREAD_MASK),
+        ("BELIEF_NATURE", col::BELIEF_NATURE), ("BELIEF_NATURE_MASK", col::BELIEF_NATURE_MASK), ("BELIEF_EV", col::BELIEF_EV),
+        ("BELIEF_EV_MASK", col::BELIEF_EV_MASK), ("HP_TYPE_LABEL", col::HP_TYPE_LABEL), ("HP_TYPE_MASK", col::HP_TYPE_MASK),
+        ("ITEM_LABEL", col::ITEM_LABEL), ("ITEM_MASK", col::ITEM_MASK), ("WIN_MARGIN", col::WIN_MARGIN),
+        ("OPP_ACTION_KIND", col::OPP_ACTION_KIND), ("OPP_ACTION_NUM", col::OPP_ACTION_NUM),
+        ("OPP_SWITCH_SLOT", col::OPP_SWITCH_SLOT), ("OPP_SWITCH_SPECIES", col::OPP_SWITCH_SPECIES),
+    ];
+    let (n, threads, steps) = (8usize, 2usize, 600usize);
+    for seed in [11u64, 12, 13] {
+        let teams = common::corpus_teams();
+        let nt = teams.len();
+        let mut spec = common::spec(n, threads, teams);
+        spec.labels = pokesim_env::labels::declare(&FAMILIES.map(String::from)).expect("labels");
+        spec.oracle_reveal = pokesim_env::core::spec::Reveal::both(OracleSpec::OFF);
+        let mut core = Core::new(spec).expect("core");
+        let mut cols = OwnedCols::new(n);
+        let mut stage_rng = common::Rng(seed ^ 0x5157_A6E5);
+        let mut act_rng = common::Rng(seed);
+        for i in 0..n { common::stage(&mut cols, i, &mut stage_rng, nt); }
+        let a = cols.addrs();
+        core.freeze(a).expect("freeze");
+        let mut files: Vec<std::fs::File> = list.iter()
+            .map(|(name, _)| std::fs::File::create(format!("{out}/s{seed}.{name}")).unwrap()).collect();
+        assert_eq!(core.dispatch(b'R', a), 0);
+        for (k, (_, c)) in list.iter().enumerate() { files[k].write_all(cols.bytes(*c)).unwrap(); }
+        for _ in 0..steps {
+            for i in 0..n { common::stage(&mut cols, i, &mut stage_rng, nt); }
+            common::random_actions(&mut cols, &mut act_rng);
+            assert_eq!(core.dispatch(b'S', a), 0);
+            for (k, (_, c)) in list.iter().enumerate() { files[k].write_all(cols.bytes(*c)).unwrap(); }
+        }
+    }
+}

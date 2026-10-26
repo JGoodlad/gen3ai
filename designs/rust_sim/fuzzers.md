@@ -398,6 +398,21 @@ that). Inner layers buy detection SPEED and LOCALIZATION, not correctness.
   otherwise respawns a Node child that reloads the whole Showdown dist), and ~96% of wall time is the
   per-write quiescence settle rather than CPU.
 
+**`--mode lockin` (`gen3_lockin_cancelled_repeat_v1`).** Every other mode almost never reaches the Outrage / Thrash /
+Petal Dance lock (no pool, ladder or random team carries the moves often enough), which is how the GIGO audit's B-C1 stayed
+invisible while 80 of 80 pool games were identical. This mode pairs LOCKERS (a lock-in move beside a filler) with
+DISRUPTORS that cancel or refresh a locked repeat in every way the sim distinguishes (full paralysis, sleep, a confusion
+self-hit, a flinch, a miss, a Ghost's immunity, Protect / Detect, Substitute, a drag out, Encore / Taunt / Disable /
+Torment), seats the locker as p1 or p2 at random, and byte-diffs both sides' streams and requests like every other mode
+(`makeLockinProvider` in `gen_sim_bridge_diff.js`). Measured on the fixed engine: 60 of 60 battles identical on each of four seeds (101, 202, 606, 707;
+645-661 `trapped:true` frames per seed, i.e. locks reached); on the pre-fix binary seed 101 fails 26 of 40 battles
+(`POKESIM_SIMBRIDGE_PREBUILT=1` runs a prebuilt binary as it is, the way to prove a harness catches an OLD bug). An Uproar
+locker rides in the mode; it carries NO Rest (a Rest under a live Uproar forks for its own reason, a TECH_DEBT row). The
+Python twin, scripts replayed against the live sim, is `src/utils/rust_env/lockin_parity_integration_test.py`.
+**A bulk replay of a recorded script through the Node bridge (`repros/B/showdown_replay.py`) trips Node's reject-streak guard
+on a script that carries refused hidden-trap switches — a replay-tool artifact, not an engine divergence**: re-feed the script
+one command at a time before calling it a divergence.
+
 **HONEST SCOPE:** cross-side p1/p2 interleaving is not asserted (a Node scheduler artifact the Python
 demux does not depend on); `__RECON__` is excluded (a real rust deferral — `resumeReseed` works,
 `gen3_bridge_resume_reseed_v1`, so reconstruction + search paths still require node); unmodeled moves

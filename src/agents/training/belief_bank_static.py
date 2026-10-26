@@ -142,9 +142,25 @@ def nature_ev_terms(nat_logits: Optional[th.Tensor], ev_pred: Optional[th.Tensor
                                       "mask_rate": (nmask.float().mean(), w)})
 
 
+def scored_label_nan(per: th.Tensor, lab: th.Tensor, mask: th.Tensor, n_cls: int) -> th.Tensor:
+    """``per`` with NaN at every SCORED slot whose label is outside ``[0, n_cls)`` (``gen3_label_vocab_raise_v1``): the
+    fail-closed floor beneath the raise, static-shaped (no data-dependent branch), bit-identical on valid labels."""
+    bad = mask & ((lab < 0) | (lab >= n_cls))
+    return th.where(bad, per.new_full((), float("nan")), per)
+
+
 def _masked_ce_terms(logits: Optional[th.Tensor], label: Optional[th.Tensor],
                      mask_in: Optional[th.Tensor]) -> StaticTerm:
-    """The hp-type / item shape: a CE over the masked slots, label PAD (-1) clamped to 0."""
+    """The hp-type / item shape: a CE over the masked slots. A label outside ``[0, n_cls)`` at a SCORED slot
+    RAISES (``gen3_label_vocab_raise_v1``): the targets are NOT clamped (this used to ``clamp(min=0)`` a
+    scored PAD ``-1`` onto class 0 and ``clamp(max=n_cls - 1)`` a too-large id onto the last class, silently
+    training toward the wrong item where the eager path raises). An UNSCORED slot is zeroed by the mask
+    before the CE, so its PAD / stale label is never read. Three doors, in the order a bad label meets
+    them: :func:`check_label_vocab` refuses it once per update on the host before any forward;
+    ``F.cross_entropy`` raises on an out-of-bounds target in the eager and aot paths (an ``IndexError``;
+    a device-side assert on CUDA; inductor on CPU raised for ``>= n_cls`` but NOT for ``-1``, measured);
+    and :func:`scored_label_nan` poisons the slot's CE with NaN, so even a program that does not raise
+    gives a non-finite loss that K9(c) (``check_loss_finite``) turns into a typed FATAL naming the term."""
     if logits is None or label is None or mask_in is None:
         return _absent(logits if logits is not None else th.zeros(()))
     dev = logits.device
@@ -154,9 +170,10 @@ def _masked_ce_terms(logits: Optional[th.Tensor], label: Optional[th.Tensor],
     present = n > 0
     d = n.clamp(min=1)
     n_cls = logits.shape[-1]
-    safe = th.where(mask, lab.clamp(min=0), th.zeros_like(lab)).clamp(max=n_cls - 1)
+    safe = th.where(mask, lab, th.zeros_like(lab))
     per = F.cross_entropy(logits.reshape(-1, n_cls), safe.reshape(-1),
                           reduction="none").reshape(mask.shape)
+    per = scored_label_nan(per, lab, mask, n_cls)
     loss = th.where(mask, per, per.new_zeros(())).sum() / d
     with th.no_grad():
         hit = (logits.argmax(dim=-1) == safe).to(logits.dtype)
@@ -417,26 +434,54 @@ def compute_static(extractor: Any, observations: Dict[str, Any], coefs: Dict[str
 
 # ------------------------------------------------------------------------------- vocab, on host
 def check_label_vocab(observations: Dict[str, Any], *, n_species: Optional[int],
-                      n_moves: Optional[int]) -> None:
+                      n_moves: Optional[int], n_items: Optional[int] = None,
+                      n_hp_types: Optional[int] = None) -> None:
     """The legacy loss functions' FAIL-LOUD vocab checks, once per update on the BUFFER (host
     numpy, no device sync): a believed species / move label id at or above the head's vocabulary
     means the label↔embedding num space is corrupt (real Gen-3 nums are all < 400). Raises
-    ValueError with the legacy messages' substance."""
+    ValueError with the legacy messages' substance. ``gen3_label_vocab_raise_v1``: it also covers
+    the ITEM and HIDDEN-POWER-TYPE labels (``item_label`` / ``hp_type_label``), whose static twin used to
+    clamp instead of raising, and it is CALLED (``learner_gates.check_label_vocab_buffer``, from
+    ``train()``): before, nothing called it. A species / move / item / type id below the PAD ``-1`` is
+    corrupt too; for the item and hp-type families a SCORED slot (mask set) must hold a real class
+    in ``[0, n)`` — ``-1`` is the PAD of an unscored slot only."""
     def _bad(key: str, n: Optional[int]) -> Optional[int]:
         a = observations.get(key) if isinstance(observations, dict) else None
         if a is None or n is None:
             return None
         arr = np.asarray(a)
         hi = int(arr.max()) if arr.size else -1
-        return hi if hi >= int(n) else None
+        lo = int(arr.min()) if arr.size else -1
+        return hi if hi >= int(n) else (lo if lo < -1 else None)
+
+    def _bad_scored(key: str, mask_key: str, n: Optional[int]) -> Optional[int]:
+        a = observations.get(key) if isinstance(observations, dict) else None
+        m = observations.get(mask_key) if isinstance(observations, dict) else None
+        if a is None or m is None or n is None:
+            return None
+        arr, sel = np.asarray(a), np.asarray(m) > 0.5
+        if arr.shape != sel.shape:
+            sel = sel.reshape(arr.shape)
+        scored = arr[sel]
+        if not scored.size:
+            return None
+        bad = scored[(scored < 0) | (scored >= int(n))]
+        return int(bad[0]) if bad.size else None
 
     sp = _bad("belief_species", n_species)
     if sp is not None:
-        raise ValueError(f"belief label out of vocab: species max {sp} (n_species {n_species}) — "
+        raise ValueError(f"belief label out of vocab: species {'max' if sp >= 0 else 'min'} {sp} (n_species {n_species}) — "
                          "the embedding-num pipeline is corrupt (real Gen-3 nums are all < 400).")
+    for key, mask_key, n, what in (("item_label", "item_mask", n_items, "item"),
+                                   ("hp_type_label", "hp_type_mask", n_hp_types, "hidden-power type")):
+        bad = _bad_scored(key, mask_key, n)
+        if bad is not None:
+            raise ValueError(f"{what} belief label out of vocab: a SCORED slot of {key} holds {bad} "
+                             f"(classes [0, {n})) — the label↔embedding num pipeline is corrupt; the loss "
+                             "would train toward a clamped class (PAD -1 is for UNSCORED slots only).")
     for key in ("belief_moves", "known_moves"):
         mv = _bad(key, n_moves)
         if mv is not None:
-            raise ValueError(f"move-belief label out of vocab: {key} max {mv} (n_moves {n_moves}) — "
+            raise ValueError(f"move-belief label out of vocab: {key} {'max' if mv >= 0 else 'min'} {mv} (n_moves {n_moves}) — "
                              "the embedding-num pipeline is corrupt (real Gen-3 move nums are all "
                              "< 400).")

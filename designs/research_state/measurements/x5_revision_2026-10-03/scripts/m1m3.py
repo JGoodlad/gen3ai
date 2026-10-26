@@ -5,7 +5,7 @@ banked head's 2.55 (belief_calibration_2026-09-24, pool arm, all k)."""
 import json, random, torch
 from agents.model.belief_tables import build_species_cooccur_prior
 from agents.model.t0_species import species_team_prior_logits
-from agents.observation.constants import MAX_SPECIES_ID
+MAX_SPECIES_ID = 387  # was agents.observation.constants.MAX_SPECIES_ID, deleted by gen3_vocab_bounds_v1 (the layout's table is 400 rows)
 from agents import gen3_data
 from utils.paths import repo_path
 torch.set_num_threads(4)

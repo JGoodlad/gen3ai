@@ -1027,35 +1027,43 @@ impl crate::state::BattleState {
                         continue; // duration-END → skip faintMessages (D4 order fix)
                     }
                 }
-                // The LOCK-IN tick (`gen3_lockin_family_v1`). On the tick that runs the
-                // counter out the user is CONFUSED — its own `random(2,6)`, routed through
-                // `add_confusion` so Own Tempo / already-confused gate it as they do any other
-                // confusion source; Safeguard does NOT (a self-sourced add). SLEEP breaks the lock
-                // FIRST and cleanly: the sim's `onResidual` deletes the volatile before the
-                // duration is consulted, so an asleep user is never confused by it.
+                // The LOCK-IN tick (`gen3_lockin_family_v1`, `gen3_lockin_cancelled_repeat_v1`),
+                // in the sim's `fieldEvent('Residual')` order: the handler's `duration--` FIRST,
+                // and on 0 the volatile ends (`onEnd`) and `onResidual` never runs; otherwise
+                // `onResidual` deletes the volatile of a SLEEPING user (no confusion) and ticks
+                // `trueDuration`. `onEnd` confuses the user — its own `random(2,6)`, routed
+                // through `add_confusion` so Own Tempo / already-confused gate it as they do any
+                // other confusion source; Safeguard does NOT (a self-sourced add) — only when
+                // `trueDuration <= 1`: a repeat CANCELLED on a 3-turn roll's second turn leaves
+                // `duration` unrefreshed and `trueDuration` at 2, so the lock ends QUIETLY there.
+                // An asleep user whose duration runs out on this same residual IS confused (the
+                // end runs before the sleep check).
                 ResidualAction::LockedMoveDuration { side, slot } => {
-                    let Some((turns, k)) = self.sides[side].pokemon[slot].locked_move else {
+                    let Some(mut lock) = self.sides[side].pokemon[slot].locked_move else {
                         continue;
                     };
                     if self.sides[side].pokemon[slot].fainted {
                         continue;
                     }
-                    if matches!(self.sides[side].pokemon[slot].status, Some(Status::Sleep(_))) {
+                    lock.duration = lock.duration.saturating_sub(1);
+                    if lock.duration == 0 {
                         self.sides[side].pokemon[slot].locked_move = None;
-                        continue;
-                    }
-                    if turns <= 1 {
-                        self.sides[side].pokemon[slot].locked_move = None;
-                        // The end-of-lock confusion: SELF-sourced, so the user's own Safeguard
-                        // does NOT block it, and it announces `|-start|…|confusion|[fatigue]`
-                        // (`gen3_lockin_fatigue_v1`).
-                        self.add_confusion(side, slot, super::secondaries::ConfusionSource::LockEnd, dex);
+                        if lock.true_duration <= 1 {
+                            // The end-of-lock confusion: SELF-sourced, so the user's own Safeguard
+                            // does NOT block it, and it announces `|-start|…|confusion|[fatigue]`
+                            // (`gen3_lockin_fatigue_v1`).
+                            self.add_confusion(side, slot, super::secondaries::ConfusionSource::LockEnd, dex);
+                        }
                         continue; // duration-END → skip faintMessages
                     }
-                    self.sides[side].pokemon[slot].locked_move = Some((turns - 1, k));
-                    // NON-ending: the sim's `lockedmove` is `duration: 2` refreshed by `onRestart`,
-                    // so a live lock's residual is the 2 → 1 decrement, NOT the `duration-- == 0`
-                    // branch — `fieldEvent` runs `onResidual` and then the per-handler
+                    if matches!(self.sides[side].pokemon[slot].status, Some(Status::Sleep(_))) {
+                        // `onResidual`: `delete target.volatiles['lockedmove']` — silent.
+                        self.sides[side].pokemon[slot].locked_move = None;
+                    } else {
+                        lock.true_duration = lock.true_duration.saturating_sub(1);
+                        self.sides[side].pokemon[slot].locked_move = Some(lock);
+                    }
+                    // NON-ending: `fieldEvent` ran `onResidual` and then the per-handler
                     // `faintMessages()` (`gen3_duration_nonend_faint_drain_v1`). Fall through.
                 }
                 // FURY CUTTER's duration tick (`gen3_bp_modifier_cluster_v1`): 2 -> 1 -> gone.
@@ -1130,6 +1138,17 @@ impl crate::state::BattleState {
                 ResidualAction::MustRechargeDuration { side, slot } => {
                     if self.sides[side].pokemon[slot].fainted {
                         continue;
+                    }
+                    // `fieldEvent('Residual')`'s `duration--`: the cast turn's tick is 2 → 1 (non-ending,
+                    // falls through); a SECOND tick means the recharge turn never consumed the
+                    // volatile (`gen3_recharge_expiry_v1`: a gen-3 faint skips the turn's remaining
+                    // moves), so it reaches 0 and is removed — silently, `mustrecharge` has no
+                    // `onEnd` — and the duration-END `continue` skips the faint drain.
+                    let mon = &mut self.sides[side].pokemon[slot];
+                    mon.must_recharge_duration = mon.must_recharge_duration.saturating_sub(1);
+                    if mon.must_recharge_duration == 0 {
+                        mon.must_recharge = false;
+                        continue; // duration-END → skip faintMessages
                     }
                     // no `continue` — fall through to the per-handler faintMessages below
                 }

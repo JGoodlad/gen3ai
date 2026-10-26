@@ -57,6 +57,7 @@ from agents.training.instrumented_ppo.learner_gates import (   # K9(b) dispatch 
     check_buffer_finite,
     check_full_micro_batches,
     check_kl_finite,
+    check_label_vocab_buffer,
     check_loss_finite,
     check_loss_finite_read,
     clip_grad_norm_checked,
@@ -287,6 +288,9 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         # +FULL MICRO-BATCHES (gen3_learner_full_micro_v1): every micro-batch holds `batch_size` rows — a
         # short last one would be weighted as if full by the accumulation below (`learner_gates`).
         check_full_micro_batches(self.rollout_buffer, self.batch_size)
+        # +LABEL VOCAB (gen3_label_vocab_raise_v1): every categorical label is inside its head's vocabulary, once
+        # per update before any forward (the compiled micro-step cannot raise on data — `learner_gates`).
+        check_label_vocab_buffer(self.rollout_buffer, self.policy.features_extractor)
         # +K9(b) / STALENESS (M5 Lane G): before any optimizer step; a no-op unless --behaviour-check.
         # Lane G's pre-loop probe (its own forward, age-bucketed by the rows' policy versions; a buffer
         # with no version record is judged as every row current) — the ONE implementation

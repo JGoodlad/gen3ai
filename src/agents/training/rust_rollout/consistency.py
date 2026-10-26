@@ -949,6 +949,7 @@ def behaviour_probe(model: Any, *, ages: Optional[np.ndarray] = None, prefix: st
         out["staleness/carry_rows"] = float(fill.carry_rows)
         out["staleness/in_progress_rows"] = float(fill.in_progress_rows)
         out["staleness/rows_cut_total"] = float(fill.cut_rows_total)
+        out["staleness/forfeit_rows_dropped_total"] = float(fill.forfeit_rows_total)
     if cur.any():
         out["behaviour/p99_abs_dlogp_current"] = behaviour_statistic(np.abs(d[cur]), "p99")
     logger = getattr(model, "logger", None)

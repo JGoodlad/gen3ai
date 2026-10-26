@@ -223,3 +223,54 @@ def test_write_rows_records_the_full_distribution_and_the_serving_slot():
                  logp_all=full, served_by=np.array([3, 4]))
     assert np.array_equal(st.logp_all[slots], full) and st.slot[slots].tolist() == [3, 4]
     assert st.episode[slots].tolist() == [5, 7]
+
+
+# ---- gen3_stall_forfeit_row_v1: the decision the core forfeited INSTEAD of playing is not a training row -------------
+def test_a_stall_forfeited_game_loses_its_unplayed_last_row_and_the_terminal_lands_on_the_last_played_one():
+    rng = np.random.default_rng(5)
+    st = _store()
+    log = S.GameLog(st, 2, gamma=GAMMA, gae_lambda=LAM, max_game_rows=100)
+    s = _play(log, 0, 6, rng)                         # the 6th row is the decision at the turn limit
+    live = st.live_count
+    g = log.end(0, reward=0.0, outcome=0.0, draw=False, forfeit=True, terminated=False, truncated=True,
+                episode=3, opp_class=1)
+    assert g.length == 5 and g.slots.tolist() == s[:5].tolist() and g.forfeit
+    assert log.forfeit_rows_dropped == 1 and log.completed_rows == 5
+    assert st.live_count == live - 1 and int(s[5]) not in set(g.slots.tolist()), "the unplayed row is released"
+    # the terminal is the last PLAYED row's; GAE is the 5-row game's (`game_gae` over the played rows only)
+    assert bool(st.terminal[s[4]]) and not bool(st.terminal[s[3]])
+    adv, ret = S.game_gae(st.reward[s[:5]], st.value[s[:5]], GAMMA, LAM)
+    assert np.array_equal(st.adv[s[:5]], adv) and np.array_equal(st.ret[s[:5]], ret)
+    # a forfeit LOSS is a loss: every kept row is labelled with outcome 0
+    assert (st.outcome[s[:5]] == 0.0).all()
+    # CONTROL: the same game ended any other way keeps every row (a tie, a win, a plain loss)
+    s2 = _play(log, 1, 6, rng)
+    g2 = log.end(1, reward=1.0, outcome=1.0, draw=False, forfeit=False, terminated=True, truncated=False,
+                 episode=4, opp_class=1)
+    assert g2.length == 6 and g2.slots.tolist() == s2.tolist() and log.forfeit_rows_dropped == 1
+
+
+def test_a_stall_forfeit_with_only_its_unplayed_row_leaves_no_game_and_releases_the_row():
+    rng = np.random.default_rng(6)
+    st = _store()
+    log = S.GameLog(st, 1, gamma=GAMMA, gae_lambda=LAM, max_game_rows=100)
+    before = st.live_count
+    _play(log, 0, 1, rng)
+    assert log.end(0, reward=0.0, outcome=0.0, draw=False, forfeit=True, terminated=False, truncated=True,
+                   episode=0, opp_class=0) is None
+    assert st.live_count == before and log.games_without_rows == 1 and log.forfeit_rows_dropped == 1
+
+
+def test_the_fill_report_carries_the_dropped_forfeit_rows():
+    rng = np.random.default_rng(7)
+    st = _store()
+    log = S.GameLog(st, 1, gamma=GAMMA, gae_lambda=LAM, max_game_rows=100)
+    _play(log, 0, 5, rng)
+    log.end(0, reward=0.0, outcome=0.0, draw=False, forfeit=True, terminated=False, truncated=True,
+            episode=0, opp_class=0)
+    _play(log, 0, 4, rng)
+    log.end(0, reward=1.0, outcome=1.0, draw=False, forfeit=False, terminated=True, truncated=False,
+            episode=1, opp_class=0)
+    buf = _buf(8, 1)
+    rep, _ = S.fill_complete(buf, log, 8, current_version=0)
+    assert rep.rows == 8 and rep.forfeit_rows_total == 1

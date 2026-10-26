@@ -17,8 +17,13 @@ use pokesim::dex::Dex;
 use pokesim::emission_check as ec;
 
 fn team() -> String {
-    let mon = "Snorlax|||thickfat|watergun|Brave|252,,252,,4,|||||";
-    std::iter::repeat(mon).take(6).collect::<Vec<_>>().join("]")
+    // SIX DISTINCT bulky species (nobody faints in six Water Guns): `gen3ou` carries the Species Clause, which the
+    // engine now enforces (`gen3_species_clause_v1`) — six Snorlax is not a team the format allows.
+    ["Snorlax", "Blissey", "Chansey", "Regirock", "Registeel", "Regice"]
+        .iter()
+        .map(|sp| format!("{sp}|||thickfat|watergun|Brave|252,,252,,4,|||||"))
+        .collect::<Vec<_>>()
+        .join("]")
 }
 
 #[test]

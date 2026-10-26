@@ -14,6 +14,8 @@ training row comes from. `sim_bridge` (in-process) is the only training / eval t
   formula tells you are pinned and listed in `differential_gates.md`.
 - **Protocol lines are byte-identical**, because the side reader and every outside client parse them;
   the one exception is the `|t:|` wall-clock line.
+- **Model a condition's counters as the sim holds them, never a fused "turns left"** (`lockedmove`: `duration` AND
+  `trueDuration`; `mustrecharge`: `duration: 2`): a cancelled action is where the two part ways. `--mode lockin`.
 
 ## The move census is RECOUNTED, never quoted
 

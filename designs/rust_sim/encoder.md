@@ -69,7 +69,10 @@ reads 0, not NaN — that class is caught by the byte gate against the Python va
 `src/rust_sim/src/encoder/layout.rs` holds every offset and dim, `EventCol`, the event-type and item-transition ids,
 the volatile slot table (`VOLATILE_SLOTS`, `VOLATILE_TO_SLOT`, `NOT_A_VOLATILE`, `CANT_REASONS_LIVE`), the faint-cause
 vocabulary, `TYPE_TO_IDX`, the status / weather / screen maps, the saturation LUT, the sleep-wake tables, the protect
-floor and the pre-split category map. It was RENDERED from the Python encoder's constants and internals until T27 P6
+floor, the pre-split category map and the five categorical VOCABULARIES (`VOCAB_SPECIES` / `_MOVES` / `_ITEMS` / `_ABILITIES` /
+`_TYPES`, the rows of the model's embedding tables; `data::tables()` REFUSES to load a dex num at or past its bound, and every
+categorical id the encoder writes is read out of those tables, so no id can reach a row out of range:
+`gen3_vocab_bounds_v1`). It was RENDERED from the Python encoder's constants and internals until T27 P6
 slice 6d-2 (2026-10-08) deleted the Python encoder's encode path (the generator module is gone); it is now edited DIRECTLY (the P1 precedent for `core_events/schema.rs` and `present/tables.rs`), and its
 header says so.
 

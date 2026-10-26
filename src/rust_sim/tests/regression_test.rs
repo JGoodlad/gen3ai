@@ -12667,7 +12667,9 @@ fn yawn_resolve_is_blocked_by_the_sleep_clause_in_gen3ou() {
     let d = dex();
     let smeargle = "Smeargle|||Own Tempo|spore,yawn,splash,earthquake|Jolly|4,,,,,252|N||||";
     let bliss_a = "A|Blissey||Serene Grace|splash|Careful|252,,,252,,|N||||";
-    let bliss_b = "B|Blissey||Serene Grace|splash|Careful|252,,,252,,|N||||";
+    // B is a Chansey, not a second Blissey: the gen3ou Species Clause refuses a duplicate species
+    // (`gen3_species_clause_v1`); the draws are identical (probe_batch89_yawn_regression_rng.js, re-run).
+    let bliss_b = "B|Chansey||Serene Grace|splash|Careful|252,,,252,,|N||||";
     let p2 = format!("{bliss_a}]{bliss_b}");
     let opts = BattleOptions {
         format_id: "gen3ou".to_string(),
@@ -14061,13 +14063,17 @@ fn the_lock_in_family_locks_for_its_rolled_duration_then_confuses() {
 
         // Turn 1: the cast arms the lock with a rolled duration of 2 or 3.
         st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
-        let rolled = st.sides[0].pokemon[0]
+        let lock = st.sides[0].pokemon[0]
             .locked_move
-            .map(|(n, _)| n)
             .unwrap_or_else(|| panic!("LI1 [{mv}]: the cast must arm the lock"));
+        assert_eq!(
+            lock.duration, 1,
+            "LI1 [{mv}]: the cast turn's residual ticked the volatile's `duration: 2` to 1"
+        );
         assert!(
-            (1..=3).contains(&rolled),
-            "LI1 [{mv}]: the duration is a random(2,4) → 2 or 3 (one already ticked), got {rolled}"
+            (1..=2).contains(&lock.true_duration),
+            "LI1 [{mv}]: trueDuration is a random(2,4) → 2 or 3 (one already ticked), got {}",
+            lock.true_duration
         );
         // The user is LOCKED: a switch must be refused.
         assert!(
@@ -16974,4 +16980,231 @@ fn a_faint_clears_the_color_change_type() {
     let k = &st.sides[0].pokemon[0];
     assert!(k.fainted);
     assert_eq!(k.types_override, None, "the corpse is a Normal type again (the sim's getTypes())");
+}
+
+// ============================================================================
+// LI3 — a CANCELLED repeat of the Outrage / Thrash / Petal Dance lock ends the lock
+//        (`gen3_lockin_cancelled_repeat_v1`, GIGO audit 2026-10-26 B-C1).
+//
+// The sim's `lockedmove` has TWO counters (`duration: 2`, put back to 2 only by a LANDED repeat's
+// `onRestart` or gen 4's Protect block, while `trueDuration >= 2`; and the `random(2,4)` `trueDuration`
+// ticked by `onResidual`). The port kept ONE countdown, so a repeat that never landed (an immune
+// target here; a full paralysis / confusion self-hit / flinch / miss alike) left the lock alive a turn
+// longer: the request stayed `trapped`, the mask forbade every other move and switch, and the user was
+// confused at the end where the sim confuses no one. Only a 3-turn roll cancelled on its SECOND turn
+// differs (a 2-turn roll's second turn is its last: confusion either way).
+//
+// Ground truth: `harness/probe_lockin_cancelled_repeat.js` (the real sim, seed `[k,k,k,k]`, Tauros
+// Thrash vs Snorlax [splash, protect] / Gengar; turn 1 both use move 1, turn 2 per case, turn 3 the
+// user's move 1 again). The Rust side starts from turn-0 construction like the sim.
+// ============================================================================
+
+const LI3_USER: &str = "Tauros||none|intimidate|thrash,splash|Hardy|85,85,85,85,85,85|M||||";
+const LI3_FOE: &str = "Snorlax||none|sturdy|splash,protect|Hardy|85,85,85,85,85,85|M||||]Gengar||none|levitate|splash|Hardy|85,85,85,85,85,85|M||||";
+
+/// Run the three turns; returns (lines, the battle).
+fn li3_run(seed: &str, turn2_p2: Choice) -> (Vec<String>, Battle) {
+    let d = dex();
+    let opts = opts_cg(LI3_USER, LI3_FOE, seed);
+    let mut battle = Battle::start_with_turn0_construction(&opts, &d).expect("turn-0 construction");
+    let st = battle.state_mut().expect("state");
+    let (_o, lines) = st.run_full_battle_logged(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)),
+            ScriptDecision::both(Choice::Move(0), turn2_p2),
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)),
+        ],
+        &d,
+    );
+    (lines.into_iter().map(|l| l.0).collect(), battle)
+}
+
+fn li3_turn_lines(raw: &[String], turn: usize) -> Vec<&str> {
+    // the lines emitted between `|turn|<turn>` and `|turn|<turn+1>` (turn 1's start at the top)
+    let from = if turn == 1 { 0 } else { raw.iter().position(|l| *l == format!("|turn|{turn}")).expect("turn marker") };
+    let to = raw.iter().position(|l| *l == format!("|turn|{}", turn + 1)).unwrap_or(raw.len());
+    raw[from..to].iter().map(|s| s.as_str()).collect()
+}
+
+#[test]
+fn a_cancelled_repeat_on_a_three_turn_roll_ends_the_lock_with_no_confusion() {
+    // seed [2,2,2,2] rolls random(2,4) -> 3: turn 2's Thrash into the switched-in Gengar is IMMUNE (cancelled).
+    let (raw, mut battle) = li3_run("[2,2,2,2]", Choice::Switch(1));
+    let st = battle.state_mut().expect("state");
+    let t2 = li3_turn_lines(&raw, 2).join("\n");
+    assert!(t2.contains("[from]lockedmove") || t2.contains("[from] lockedmove"), "fixture: turn 2 is the LOCKED repeat:\n{t2}");
+    assert!(t2.contains("|-immune|p2a: Gengar"), "fixture: the repeat was cancelled by the Ghost's immunity:\n{t2}");
+    assert!(
+        !raw.iter().any(|l| l.starts_with("|-start|p1a: Tauros|confusion")),
+        "LI3: a 3-turn roll cancelled on turn 2 ends QUIETLY — no fatigue confusion; lines:\n{}",
+        raw.join("\n")
+    );
+    // Turn 3 is a FRESH cast (the lock is gone), not a `[from]lockedmove` continuation.
+    let t3 = li3_turn_lines(&raw, 3).join("\n");
+    assert!(t3.contains("|move|p1a: Tauros|Thrash|p2a: Gengar"), "fixture: turn 3 Thrash:\n{t3}");
+    assert!(!t3.contains("lockedmove"), "LI3: the lock ended at turn 2's residual, turn 3 is not locked:\n{t3}");
+    assert!(st.sides[0].pokemon[0].locked_move.is_none(), "LI3: no live lock");
+    assert!(st.sides[0].pokemon[0].confusion.is_none(), "LI3: not confused");
+    assert_eq!(seed_str(&st.prng_seed()), "65055,62472,21579,31430", "LI3: seed after turn 3 == the sim's");
+}
+
+#[test]
+fn a_cancelled_repeat_on_the_last_turn_of_the_roll_still_confuses() {
+    // seed [1,1,1,1] rolls 2: turn 2 is the roll's LAST turn, so the cancelled repeat's end is the fatigue confusion.
+    let (raw, mut battle) = li3_run("[1,1,1,1]", Choice::Switch(1));
+    let st = battle.state_mut().expect("state");
+    let t2 = li3_turn_lines(&raw, 2).join("\n");
+    assert!(t2.contains("|-immune|p2a: Gengar"), "fixture: turn 2 was cancelled:\n{t2}");
+    assert!(t2.contains("|-start|p1a: Tauros|confusion|[fatigue]"), "LI3: the 2-turn roll's end confuses:\n{t2}");
+    assert!(st.sides[0].pokemon[0].locked_move.is_none());
+    assert_eq!(seed_str(&st.prng_seed()), "56990,45175,15394,10879", "LI3: seed after turn 3 == the sim's");
+}
+
+#[test]
+fn a_protect_blocked_repeat_refreshes_the_lock_instead_of_ending_it() {
+    // seed [2,2,2,2] (3-turn roll): turn 2's Thrash is blocked by Protect — gen 4's `protect.onTryHit` puts the
+    // lock's duration back to 2 — so turn 3 is still LOCKED and the fatigue confusion comes at ITS end.
+    let (raw, mut battle) = li3_run("[2,2,2,2]", Choice::Move(1));
+    let st = battle.state_mut().expect("state");
+    let t2 = li3_turn_lines(&raw, 2).join("\n");
+    assert!(t2.contains("|-activate|p2a: Snorlax|Protect"), "fixture: turn 2 was Protect-blocked:\n{t2}");
+    assert!(!t2.contains("|-start|p1a: Tauros|confusion"), "LI3: the blocked turn 2 does not end the lock:\n{t2}");
+    let t3 = li3_turn_lines(&raw, 3).join("\n");
+    assert!(t3.contains("lockedmove"), "LI3: turn 3 is still the locked repeat:\n{t3}");
+    assert!(t3.contains("|-start|p1a: Tauros|confusion|[fatigue]"), "LI3: the roll's last turn confuses:\n{t3}");
+    assert!(st.sides[0].pokemon[0].locked_move.is_none());
+    assert_eq!(seed_str(&st.prng_seed()), "40485,59919,12759,13984", "LI3: seed after turn 3 == the sim's");
+}
+
+#[test]
+fn a_user_put_to_sleep_on_the_last_lock_turn_is_still_confused() {
+    // The residual's `duration--` runs BEFORE `onResidual` (which deletes the volatile of a SLEEPER): a 2-turn roll
+    // (seed [1,1,1,1]) whose slower foe Spores the user AFTER its turn-2 repeat reaches duration 0 on that same
+    // residual, so `onEnd` confuses the sleeping user. The port checked sleep first and confused no one.
+    // Ground truth: the probe's S4 and the sim's lines `|-status|…|slp|[from] move: Spore` then
+    // `|-start|…|confusion|[fatigue]`.
+    let d = dex();
+    let foe = "Parasect||none|effectspore|splash,spore|Hardy|85,85,85,85,85,85|M||||";
+    let mut battle = Battle::start_with_turn0_construction(&opts_cg(LI3_USER, foe, "[1,1,1,1]"), &d).expect("turn-0 construction");
+    let st = battle.state_mut().expect("state");
+    let (_o, lines) = st.run_full_battle_logged(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)),
+            ScriptDecision::both(Choice::Move(0), Choice::Move(1)), // Spore after the user's locked Thrash
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)),
+        ],
+        &d,
+    );
+    let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+    let i_slp = raw.iter().position(|l| l == "|-status|p1a: Tauros|slp|[from] move: Spore").expect("fixture: the Spore landed");
+    let i_conf = raw.iter().position(|l| l == "|-start|p1a: Tauros|confusion|[fatigue]");
+    assert!(i_conf.is_some_and(|c| c > i_slp), "LI3: the asleep user is confused when its duration runs out:\n{}", raw.join("\n"));
+    assert!(raw.iter().any(|l| l == "|cant|p1a: Tauros|slp"), "fixture: turn 3 the user is asleep");
+    assert!(st.sides[0].pokemon[0].locked_move.is_none());
+    assert_eq!(seed_str(&st.prng_seed()), "21784,57023,23968,40081", "LI3: seed after turn 3 == the sim's");
+}
+
+// ============================================================================
+// RC1 — a recharge turn the user never acts in lets MUSTRECHARGE EXPIRE
+//        (`gen3_recharge_expiry_v1`, found by the B-C1 re-run of the targeted games).
+//
+// `mustrecharge` is `duration: 2`. The recharge turn's `onBeforeMove` removes it before that turn's residual, so
+// normally only the cast turn's residual ticks it; but a gen-3 faint skips the rest of the turn's moves and
+// switches (`Battle.faintMessages`), so when the faster foe Explodes first the Snorlax never recharges, the
+// second residual ticks the volatile to 0 and turn 3 is FREE. The port's flag never expired: it printed
+// `|cant|…|recharge` on turn 3. Ground truth: `harness/probe_recharge_expiry.js` (seed [2,2,2,2]).
+// ============================================================================
+
+#[test]
+fn a_recharge_the_user_never_got_to_act_in_expires_with_the_turn() {
+    let d = dex();
+    let user = "Snorlax||none|sturdy|hyperbeam,splash|Hardy|85,85,85,85,85,85|M||||";
+    let foe = "Blissey||none|naturalcure|splash,explosion|Hardy|85,85,85,85,85,85|F||||]Chansey||none|naturalcure|splash|Hardy|85,85,85,85,85,85|F||||";
+    let mut battle = Battle::start_with_turn0_construction(&opts_cg(user, foe, "[2,2,2,2]"), &d).expect("turn-0 construction");
+    let st = battle.state_mut().expect("state");
+    let (_o, lines) = st.run_full_battle_logged(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // Hyper Beam lands
+            ScriptDecision::both(Choice::Move(0), Choice::Move(1)), // the faster Blissey Explodes: its faint cancels the recharge action
+            ScriptDecision::one(1, Choice::Switch(1)),               // Chansey replaces
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // turn 3: FREE
+        ],
+        &d,
+    );
+    let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+    let text = raw.join("\n");
+    assert!(text.contains("|-mustrecharge|p1a: Snorlax"), "fixture: Hyper Beam set the recharge:\n{text}");
+    assert!(text.contains("|faint|p2a: Blissey"), "fixture: the Explosion fainted Blissey before Snorlax acted:\n{text}");
+    assert!(
+        !text.contains("|cant|p1a: Snorlax|recharge"),
+        "RC1: the second residual expired the volatile — turn 3 is not a recharge turn:\n{text}"
+    );
+    assert!(text.contains("|move|p1a: Snorlax|Hyper Beam|p2a: Chansey"), "RC1: Snorlax fired again on turn 3:\n{text}");
+    assert!(!st.sides[0].pokemon[0].must_recharge || text.contains("|-mustrecharge|p1a: Snorlax"));
+    assert_eq!(seed_str(&st.prng_seed()), "28579,40430,60199,6207", "RC1: seed after turn 3 == the sim's");
+}
+
+#[test]
+fn a_recharge_the_user_acts_in_is_unchanged() {
+    // The control: the recharge turn consumes the volatile in its own beforeMove, so the second residual never
+    // gathers it and turn 3 is free either way (seed [2,2,2,2], the probe's S2).
+    let d = dex();
+    let user = "Snorlax||none|sturdy|hyperbeam,splash|Hardy|85,85,85,85,85,85|M||||";
+    let foe = "Blissey||none|naturalcure|splash,explosion|Hardy|85,85,85,85,85,85|F||||]Chansey||none|naturalcure|splash|Hardy|85,85,85,85,85,85|F||||";
+    let mut battle = Battle::start_with_turn0_construction(&opts_cg(user, foe, "[2,2,2,2]"), &d).expect("turn-0 construction");
+    let st = battle.state_mut().expect("state");
+    let (_o, lines) = st.run_full_battle_logged(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)),
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)),
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)),
+        ],
+        &d,
+    );
+    let text = lines.into_iter().map(|l| l.0).collect::<Vec<_>>().join("\n");
+    assert!(text.contains("|cant|p1a: Snorlax|recharge"), "the recharge turn is spent:\n{text}");
+    assert_eq!(seed_str(&st.prng_seed()), "50424,16769,12183,725", "seed after turn 3 == the sim's");
+}
+
+// ============================================================================
+// SC1 — the SPECIES CLAUSE (`gen3_species_clause_v1`, GIGO audit D-F2).
+//
+// `gen3ou`'s `Standard` ruleset carries Species Clause (`speciesclause.onValidateTeam`, keyed on `species.num`,
+// so formes of one species collide); `gen3customgame` carries no rule. The engine runs no validator, so it used
+// to ACCEPT a duplicate — and everything downstream is species-keyed.
+// ============================================================================
+
+#[test]
+fn a_clause_format_refuses_a_team_with_two_of_one_species_but_customgame_does_not() {
+    let d = dex();
+    let dup = "Snorlax||none|thickfat|splash|Hardy|85,85,85,85,85,85|M||||]Tauros||none|intimidate|splash|Hardy|85,85,85,85,85,85|M||||]Fatty|Snorlax|none|immunity|splash|Hardy|85,85,85,85,85,85|M||||";
+    let ok = "Snorlax||none|thickfat|splash|Hardy|85,85,85,85,85,85|M||||]Tauros||none|intimidate|splash|Hardy|85,85,85,85,85,85|M||||";
+    let foe = "Gengar||none|levitate|splash|Hardy|85,85,85,85,85,85|M||||";
+    let mut o = opts_cg(dup, foe, "1,2,3,4");
+    // customgame: no Species Clause (Showdown's customgame has no ruleset) — accepted
+    assert!(Battle::start(&o, &d).is_ok(), "customgame allows duplicates");
+    // gen3ou: refused, naming the side and the species
+    o.format_id = "gen3ou".to_string();
+    let e = Battle::start(&o, &d).err().expect("gen3ou refuses a duplicate species");
+    assert!(e.contains("Species Clause") && e.contains("P1") && e.contains("Snorlax"), "{e}");
+    // either side
+    let o2 = BattleOptions { format_id: "gen3ou".to_string(), ..opts_cg(foe, dup, "1,2,3,4") };
+    assert!(Battle::start(&o2, &d).err().expect("p2 too").contains("P2"));
+    // NON-VACUITY: the same team without the duplicate starts in gen3ou
+    let o3 = BattleOptions { format_id: "gen3ou".to_string(), ..opts_cg(ok, foe, "1,2,3,4") };
+    assert!(Battle::start(&o3, &d).is_ok());
+}
+
+#[test]
+fn the_species_clause_keys_on_the_dex_num_so_a_nickname_or_a_forme_does_not_hide_a_duplicate() {
+    let d = dex();
+    // a NICKNAMED second Deoxys-Attack and a Deoxys-Speed share num 386 with Deoxys; a nickname is not a new species
+    let dup_forme = "Deoxys||none|pressure|splash|Hardy|85,85,85,85,85,85|N||||]Deoxysspeed||none|pressure|splash|Hardy|85,85,85,85,85,85|N||||";
+    let foe = "Gengar||none|levitate|splash|Hardy|85,85,85,85,85,85|M||||";
+    let o = BattleOptions { format_id: "gen3ou".to_string(), ..opts_cg(dup_forme, foe, "1,2,3,4") };
+    let e = Battle::start(&o, &d).err().expect("two formes of one species num collide");
+    assert!(e.contains("species num 386"), "{e}");
+    let nick = "Snorlax||none|thickfat|splash|Hardy|85,85,85,85,85,85|M||||]Fatty|Snorlax|none|immunity|splash|Hardy|85,85,85,85,85,85|M||||";
+    let o = BattleOptions { format_id: "gen3ou".to_string(), ..opts_cg(nick, foe, "1,2,3,4") };
+    assert!(Battle::start(&o, &d).is_err(), "a nickname does not make a second species");
 }

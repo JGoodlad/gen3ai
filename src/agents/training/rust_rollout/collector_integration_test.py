@@ -98,9 +98,12 @@ def _run(front: str, spaces) -> Dict[str, Any]:
 def test_the_complete_game_collector_keeps_every_row_and_labels_it(spaces, front):
     r = _run(front, spaces)
     log, rec = r["log"], r["rec"]
-    # accounting: played = consumed + carried (completed, not yet consumed) + in play + cut
-    assert rec.played == r["consumed"] + log.completed_rows + log.in_progress_rows() + log.rows_cut, (
-        rec.played, r["consumed"], log.completed_rows, log.in_progress_rows(), log.rows_cut)
+    # accounting: played = consumed + carried (completed, not yet consumed) + in play + cut + the stall-forfeit
+    # decisions the core never played (`gen3_stall_forfeit_row_v1`; none at the production turn limit)
+    assert rec.played == (r["consumed"] + log.completed_rows + log.in_progress_rows() + log.rows_cut
+                          + log.forfeit_rows_dropped), (
+        rec.played, r["consumed"], log.completed_rows, log.in_progress_rows(), log.rows_cut,
+        log.forfeit_rows_dropped)
     assert log.rows_cut == 0 and r["stats"].quarantines == 0
     # the updates: version 0 only in the first buffer; after an update a buffer's head is the rows
     # completed BEFORE it (carried, now one version old) and games straddling it — the later buffers

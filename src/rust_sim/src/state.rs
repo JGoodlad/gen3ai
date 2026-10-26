@@ -57,6 +57,47 @@ pub enum Status {
     Toxic(u8),
 }
 
+/// The `lockedmove` volatile OUTRAGE / PETAL DANCE / THRASH share (`gen3_lockin_family_v1`,
+/// `gen3_lockin_cancelled_repeat_v1`), with Showdown's TWO counters kept separate
+/// (`data/conditions.ts` `lockedmove`, inherited unchanged by gen 3 through gen 4):
+///
+/// * `duration` is the volatile's generic `duration: 2`. The residual's `fieldEvent` ticks it
+///   (`duration-- == 0` ends the volatile and runs `onEnd`) and only a LANDED repeat
+///   (`onRestart`) or a gen-4 Protect block of the repeat (`protect.onTryHit`) puts it back to 2,
+///   and then only while `true_duration >= 2`.
+/// * `true_duration` is the `random(2,4)` rolled ONCE on the cast (`onStart`), ticked by
+///   `onResidual` on every residual the volatile survives. `onEnd` confuses the user only when
+///   it is `<= 1` — so a repeat that is CANCELLED (full paralysis, a confusion self-hit, a flinch,
+///   a miss, a type-immune target) leaves `duration` unrefreshed and the lock ends at that
+///   residual; with `true_duration` still 2 (a 3-turn roll cancelled on turn 2) it ends QUIETLY,
+///   with no confusion. One fused countdown cannot say that, and kept the lock alive a turn
+///   longer than Showdown (GIGO audit B-C1).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct LockedMove {
+    /// Showdown's `effectState.duration`.
+    pub duration: u8,
+    /// Showdown's `effectState.trueDuration`.
+    pub true_duration: u8,
+    /// The move slot the lock holds the user to.
+    pub move_index: usize,
+}
+
+impl LockedMove {
+    /// The cast (`onStart`): `duration: 2`, `trueDuration` = the `random(2,4)` the caller drew.
+    pub fn start(true_duration: u8, move_index: usize) -> Self {
+        LockedMove { duration: 2, true_duration, move_index }
+    }
+
+    /// `onRestart` — a landed repeat, and gen 4's Protect block of one
+    /// (`data/mods/gen4/moves.ts` `protect.condition.onTryHit`): refresh `duration` to 2 while
+    /// `trueDuration >= 2`; the last turn of the roll is not refreshed, so the residual ends it.
+    pub fn restart(&mut self) {
+        if self.true_duration >= 2 {
+            self.duration = 2;
+        }
+    }
+}
+
 /// Gen-3 field weather. `None` = clear (the construction-time value; Sand Stream
 /// / Drizzle / Drought / the Hail move set it via a switch-in or move EVENT, not
 /// built here).
@@ -512,15 +553,16 @@ pub struct MonState {
     /// lapses it (probe-confirmed: miss, other move, then back to bp 10).
     pub fury_cutter: Option<(u8, u8)>,
     /// The shared `lockedmove` volatile for OUTRAGE / PETAL DANCE / THRASH
-    /// (`gen3_lockin_family_v1`): `Some((remaining_turns, move_index))`. All three carry the
-    /// SAME condition, so one field serves them all. The duration is a `random(2,4)` (→ 2 or
-    /// 3) drawn ONCE on the CAST turn, after the damage — measured, not derived: the sim's
-    /// condition has two interacting counters (`duration: 2` refreshed by `onRestart`, plus a
-    /// `trueDuration` ticked at the residual) whose NET observable is simply "the user uses
-    /// the move `trueDuration` times". When the lock runs out at the residual the user is
-    /// CONFUSED (its own `random(2,6)`) — unlike Uproar, which ends cleanly. Folds into
-    /// `move_locked()`. Sleep BREAKS the lock at the residual with NO confusion.
-    pub locked_move: Option<(u8, usize)>,
+    /// (`gen3_lockin_family_v1`, `gen3_lockin_cancelled_repeat_v1`). All three carry the SAME
+    /// condition, so one field serves them all. The sim's condition has TWO counters
+    /// (`duration: 2` and a `random(2,4)` `trueDuration` drawn ONCE on the CAST, after the
+    /// damage) — see [`LockedMove`]; with every repeat landing the net observable is "the user
+    /// uses the move `trueDuration` times", but a CANCELLED repeat ends the lock early. When the
+    /// lock runs out at the residual the user is CONFUSED (its own `random(2,6)`) iff
+    /// `trueDuration <= 1` — unlike Uproar, which ends cleanly. Folds into `move_locked()`.
+    /// Sleep BREAKS the lock at the residual with NO confusion (unless the duration ran out on
+    /// that same residual: the sim ticks the duration first).
+    pub locked_move: Option<LockedMove>,
     /// ROLLOUT / ICE BALL's lock (`gen3_rollout_defensecurl_v1`): `Some((hits_so_far, slot))`.
     /// UNLIKE the outrage family there is NO duration draw — the lock is a fixed **5
     /// EXECUTIONS**, and the base power doubles per execution (30/60/120/240/480), doubled
@@ -653,6 +695,14 @@ pub struct MonState {
     /// across the opponent's force-switch (a target-KO'd HB is still locked next turn).
     /// Cleared at the recharge cant + on switch-out/faint. `false` at construction.
     pub must_recharge: bool,
+    /// Showdown's `mustrecharge` `effectState.duration` (`duration: 2`, `data/conditions.ts`), the
+    /// counter `must_recharge` rides on (`gen3_recharge_expiry_v1`): 2 when Hyper Beam sets it, ticked by
+    /// the residual's `duration--`. The recharge turn normally consumes the volatile before that
+    /// turn's residual, so only the cast turn's residual gathers it — but a recharge turn the mon
+    /// never acts in (a gen-3 faint SKIPS the rest of the turn's moves and switches, e.g. the foe's
+    /// switch-in dies to Spikes) lets the second residual tick it to 0 and the volatile EXPIRES:
+    /// the next turn is free. 0 when `must_recharge` is false.
+    pub must_recharge_duration: u8,
 
     /// The **TWOTURNMOVE** charge volatile (`gen3_move_coverage_batch4c_v1`, Solar Beam) —
     /// `Some` from the CHARGE turn's `onTryMove` (`addVolatile('twoturnmove')`, whose
@@ -1384,6 +1434,7 @@ impl MonState {
             beat_up: false,
             pursuit: None,
             must_recharge: false,
+            must_recharge_duration: 0,
             two_turn: None,
             reactive: None,
             sleep_skipped: 0,
@@ -1512,7 +1563,7 @@ impl MonState {
         self.two_turn
             .filter(|t| t.charging)
             .map(|t| t.move_index)
-            .or(self.locked_move.map(|(_, s)| s))
+            .or(self.locked_move.map(|l| l.move_index))
             .or(self.rollout.map(|(_, s)| s))
             .or(self.uproar.map(|(_, s)| s))
     }
@@ -1942,6 +1993,10 @@ impl BattleState {
         let gen = dex.generation();
         let p1 = build_side(&opts.p1.name, &opts.p1.team, dex)?;
         let p2 = build_side(&opts.p2.name, &opts.p2.team, dex)?;
+        if format_has_species_clause(&opts.format_id) {
+            check_species_clause(&p1, dex)?;
+            check_species_clause(&p2, dex)?;
+        }
 
         // PRNG: the start seed is `Option<PrngSeed>` (a string). A `None` seed
         // means "generate one" upstream; here we have no event that draws, so a
@@ -2098,6 +2153,38 @@ pub fn format_has_obtainable_abilities(format_id: &str) -> bool {
 pub fn format_has_sleep_clause(format_id: &str) -> bool {
     let id: String = format_id.chars().filter(|c| c.is_ascii_alphanumeric()).map(|c| c.to_ascii_lowercase()).collect();
     !id.ends_with("customgame")
+}
+
+/// Whether the format carries Showdown's **Species Clause** (`gen3_species_clause_v1`): `gen3ou`'s `Standard`
+/// ruleset includes it (`data/mods/gen3/rulesets.ts`, `config/formats.ts`), `gen3customgame` carries no
+/// rule. The same customgame-vs-ladder split as [`format_has_sleep_clause`].
+pub fn format_has_species_clause(format_id: &str) -> bool {
+    format_has_sleep_clause(format_id)
+}
+
+/// **Species Clause** (`gen3_species_clause_v1`): refuse a side whose team holds two mons of one
+/// dex NUM — Showdown's `speciesclause.onValidateTeam` keys a `Set<number>` on `species.num`, so
+/// formes share a num (Deoxys's four formes are one species) and a nickname does not hide a
+/// duplicate. The engine does not run Showdown's validator, so a duplicate would otherwise be
+/// ACCEPTED; every reading downstream is species-keyed (the encoder's slot order, the oracle's
+/// `tail` match by num, the belief labels `slot == species`), so two same-species mons would be
+/// confused for each other silently. Crash-don't-drop.
+fn check_species_clause(side: &SideState, dex: &Dex) -> Result<(), String> {
+    let mut seen: Vec<(u16, &str)> = Vec::with_capacity(side.pokemon.len());
+    for mon in &side.pokemon {
+        let Some(sp) = dex.species(&mon.set.species) else {
+            return Err(format!("side {:?}: unknown species {:?}", side.name, mon.set.species));
+        };
+        if let Some((_, first)) = seen.iter().find(|(n, _)| *n == sp.num) {
+            return Err(format!(
+                "side {:?}: Species Clause: more than one Pokémon of species num {} ({:?} and {:?}); \
+                 the format limits a team to one of each Pokémon",
+                side.name, sp.num, first, mon.set.species
+            ));
+        }
+        seen.push((sp.num, mon.set.species.as_str()));
+    }
+    Ok(())
 }
 
 /// Unpack one packed team and build its [`SideState`] (per-mon construction

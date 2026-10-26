@@ -524,9 +524,19 @@ OFFSET_OBS_FACTS = OFFSET_EVENT_WINDOW + EVENT_WINDOW_DIM     # gen3_obs_facts_v
 MAX_TURNS = 250
 MAX_SPIKES = 3
 MAX_STATS = 255
-MAX_SPECIES_ID = 387
-MAX_MOVE_ID = 371
-MAX_ITEM_ID = 600
-MAX_ABILITY_ID = 100
+# The categorical-id VOCABULARIES: the ROWS of the model's embedding tables, so the exclusive bound of every id the
+# row carries (`get_layout()`'s `max_species` ... `max_types` read these). One declaration, four guards
+# (`gen3_vocab_bounds_v1`): `layout.rs` holds the same five (`rust_core_obs_layout_test`); the Rust encoder's
+# tables REFUSE to load a dex num at or above its bound (`encoder/data.rs`), and every row id comes from them;
+# `Gen3ObservationEncoder` refuses a mapping that breaks one (`vocab_bounds.check_vocab_bounds`); and
+# `vocab_bounds_test.py` pins the shipped dex under them. The old `MAX_SPECIES_ID` ... `MAX_ABILITY_ID` were
+# unused and disagreed with the layout (387 / 371 / 600 / 100 against 400 / 400 / 600 / 100).
+VOCAB_SPECIES = 400
+VOCAB_MOVES = 400
+VOCAB_ITEMS = 600
+VOCAB_ABILITIES = 100
+# `max_types`: the type embedding's rows. The ids IN USE are `damage_tables.N_TYPE_IDX` = 19 (0 unset, 17 types,
+# 18 `???`): the op's type axes are 19 wide, so a type id of 19 passes the embedding and raises in the op.
+VOCAB_TYPES = 20
 MAX_PP = 64  # Splash (40 base) * 8//5 = 64; covers all Gen 3 moves with full PP Ups
 TRACE_INTERVAL = 15

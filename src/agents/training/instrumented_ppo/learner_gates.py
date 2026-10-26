@@ -80,6 +80,35 @@ def check_full_micro_batches(buf: Any, batch_size: int) -> None:
             "collector's trigger quantum guarantees it).")
 
 
+class LabelVocabError(FatalConfigError):
+    """`check_label_vocab_buffer`: a rollout label id outside its head's vocabulary — the label↔embedding num
+    pipeline is corrupt (deterministic: ``TrainExitCode.FATAL_CONFIG``, no restart loop)."""
+
+
+#: The Hidden Power type head's class count (``HIDDEN_POWER_TYPE_ORDER``, the [B, 6, 16] logits).
+_N_HP_TYPES = 16
+
+
+def check_label_vocab_buffer(buf: Any, extractor: Any) -> None:
+    """``gen3_label_vocab_raise_v1``: once per update, before any forward, every categorical LABEL the rollout
+    buffer carries lies in its head's vocabulary — the believed species / moves (``max_species`` /
+    ``max_moves``), the item belief (``max_items``) and the Hidden Power type (16), the latter two at their
+    SCORED slots (``belief_bank_static.check_label_vocab``). The compiled micro-step cannot raise on data (a
+    static-shape program), so this host check on the buffer's numpy arrays is the gate; it used to exist only as
+    a function nothing called, and the item / hp-type twin clamped. Cost: a max / min over a few int arrays."""
+    obs = getattr(buf, "observations", None)
+    layout = getattr(extractor, "layout", None)
+    if not isinstance(obs, dict) or not isinstance(layout, dict):
+        return
+    from agents.training.belief_bank_static import check_label_vocab
+
+    try:
+        check_label_vocab(obs, n_species=layout.get("max_species"), n_moves=layout.get("max_moves"),
+                          n_items=layout.get("max_items"), n_hp_types=_N_HP_TYPES)
+    except ValueError as exc:
+        raise LabelVocabError(f"{LEARNER_FATAL_TAG} [labels] {exc}") from exc
+
+
 def nonfinite(message: str) -> NonFiniteLearnerError:
     """The K9(c) error for ``message``, tagged `LEARNER_FATAL_TAG` once: ``raise nonfinite("...")``."""
     message = str(message)

@@ -28734,3 +28734,39 @@ the referee's T substituted. Primary family of 4 cells, Bonferroni 98.75 %, batt
 
 **Evidence:** `research_state/measurements/search_e1_0_2026-10-26/` (PREREGISTRATION, README, `result_e10.json`).
 View: `endstate/search_ledger.md` status line, §1, W12, §6.2.
+
+### 2026-10-26 · FIX · **TRAINING-INPUT CHANGE (the engine and the rollout rows): the GIGO audit's open items. The engine's lock-in and recharge counters now equal Showdown's, the stall-forfeit decision is no longer a training row, every categorical id is bounded by its table, the item / Hidden Power loss raises, the Species Clause is enforced. Baton Pass's `lockon` / `taunt` copies are unobservable.**
+
+**Question.** The 2026-10-26 obs / label audit left three engine-fidelity or training-row defects unfixed (B-C1 the Outrage /
+Thrash / Petal Dance lock kept after a cancelled repeat, B-C2 the stall-forfeit decision becoming a training row) and a set
+of missing guards (C-F1 no pin on dex num vs embedding table, C-F2 the static item / Hidden Power loss clamping, D-F2 no
+Species Clause). Are they real, and what do they cost?
+
+**Design.** Each item verified against `deps/pokemon-showdown` (gen3 mod chain) AND its running sim, then fixed with a test that
+fails on revert and a throwing guard for its class. B-C1 by the audit's own targeted games, replayed against Showdown (paced,
+not bulk), then regenerated with the fixed engine on four seeds, a new standing `gen_sim_bridge_diff.js --mode lockin` and
+five scripted fixtures. B-C2 by EXECUTING the `--debug` smoke at a 6-turn stall limit, before and after.
+
+**Result.**
+- B-C1 was TWO engine defects, not one: `lockedmove` has two counters (`duration`, refreshed only by a landed repeat or a
+  Protect block; `trueDuration`, the roll), so a cancelled repeat on a 3-turn roll's second turn ends the lock QUIETLY, and a
+  user Spored after its last repeat is confused although asleep; and `mustrecharge` is `duration: 2`, so a recharge turn a gen-3
+  faint cancelled frees the next turn. 10 of the audit's 11 divergent games were real, 1 a bulk-replay artifact. Fixed
+  (`state::LockedMove`, `must_recharge_duration`): 200 of 200 regenerated targeted games identical, `--mode lockin` clean on 4 seeds
+  (240 battles) and divergent on the old binary, 3 of 5 scripted fixtures fail on the old engine. Zero training reach for the lock; the
+  recharge expiry is reachable in training (unmeasured).
+- B-C2 confirmed by execution: 297 of 297 ended games wrote one row for an action the core never fed. Fixed: the row is
+  released and the terminal lands on the last played decision (347 of 347 clean after).
+- C-F1 / C-F2 / D-F2 fixed (`constants.VOCAB_*`, `check_label_vocab_buffer`, `check_species_clause`); 17,670 corpus and pool teams
+  hold no Species Clause breach.
+- Cleared: Baton Pass copies `lockon` and `taunt` in gen 3 but a taunted mon cannot Baton Pass and the copied `lockon` expires
+  at that turn's residual before the entrant acts. Open (TECH_DEBT rows): the reading never ends `lockon`; the final window of
+  every game is never intent-labelled (about 1 window in 41).
+- No model-config version moves; the obs golden reproduces all 991 hashes; the learner golden is bit-identical.
+- FINDING: `oracle_reveal_test`'s three pinned digests had been stale on main since the audit commit (its unit skipped the slow
+  tier). Re-recorded with a census (297 of 28,848 side-rows moved, only the `endure` / `snatch` / `trapped` cells and the four
+  intent-label columns); this unit's engine changes leave that corpus byte-identical.
+- **Which runs:** every run on the Rust collector before this commit trained on one stall-forfeit row per stall game and on
+  the old recharge expiry; the lock-in defect never reached a training team. Live runs are pinned and unaffected.
+
+**Evidence:** `research_state/measurements/gigo_audit_obs_2026-10-26/` (README "Follow-up", `repros/followup/`).

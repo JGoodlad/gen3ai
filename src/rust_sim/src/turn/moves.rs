@@ -231,6 +231,7 @@ impl crate::state::BattleState {
         //     a recharge turn (review finding, batch-4c Lens 2). ---
         if !pursuit_strike && !sleep_talk_call && self.sides[side].pokemon[slot].must_recharge {
             self.sides[side].pokemon[slot].must_recharge = false;
+            self.sides[side].pokemon[slot].must_recharge_duration = 0;
             // DESTINY BOND's `onMoveAborted` (`gen3_move_coverage_batch6_v1`): a cant
             // CLOSES the window — the recharge cant is a BeforeMove abort, so a DB
             // volatile still up from a prior cast is removed here (draw-free).
@@ -947,6 +948,13 @@ impl crate::state::BattleState {
                 let target = self.mon_ref(foe, foe_slot, dex);
                 self.log.activate(&target, "Protect", None);
             }
+            // A blocked repeat of a lock-in move REFRESHES the lock (`gen3_lockin_cancelled_repeat_v1`):
+            // gen 4's `protect.condition.onTryHit` ("Outrage counter is NOT reset") puts the
+            // attacker's `lockedmove` duration back to 2 while its `trueDuration >= 2` — the same
+            // effect as a landed repeat, which is why a Protected turn does not end the lock.
+            if let Some(lock) = self.sides[side].pokemon[slot].locked_move.as_mut() {
+                lock.restart();
+            }
             // JUMP KICK / HIGH JUMP KICK crash through Protect (`gen3_jump_kick_crash_v1`):
             // the sim's `onMoveFail` fires on the Protect block too — the crash draws its
             // crit + damage roll and hurts the user (probe D: a JK into Protect is
@@ -1610,6 +1618,7 @@ impl crate::state::BattleState {
         //     line (the probed position). ---
         if move_id == "hyperbeam" {
             self.sides[side].pokemon[slot].must_recharge = true;
+            self.sides[side].pokemon[slot].must_recharge_duration = 2; // gen3_recharge_expiry_v1
             if self.logging() {
                 let user = self.mon_ref(side, slot, dex);
                 self.log.must_recharge(&user);
@@ -1788,11 +1797,20 @@ impl crate::state::BattleState {
             }
         }
 
-        if matches!(move_id.as_str(), "outrage" | "petaldance" | "thrash")
-            && self.sides[side].pokemon[slot].locked_move.is_none()
-        {
-            let n = self.prng.random_range(2, 4) as u8;
-            self.sides[side].pokemon[slot].locked_move = Some((n, move_index));
+        // The self effect `volatileStatus: 'lockedmove'` is `addVolatile` on a LANDED hit: the
+        // first one starts the lock (`onStart`: the `random(2,4)` roll, after the damage), every
+        // later landed repeat RESTARTS it (`onRestart`, draw-free). A repeat that did not land
+        // never reaches here, so its `duration` stays unrefreshed and the residual ends the lock
+        // (`gen3_lockin_cancelled_repeat_v1`).
+        if matches!(move_id.as_str(), "outrage" | "petaldance" | "thrash") {
+            match self.sides[side].pokemon[slot].locked_move.as_mut() {
+                Some(lock) => lock.restart(),
+                None => {
+                    let n = self.prng.random_range(2, 4) as u8;
+                    self.sides[side].pokemon[slot].locked_move =
+                        Some(crate::state::LockedMove::start(n, move_index));
+                }
+            }
         }
 
         if move_id == "uproar" && self.sides[side].pokemon[slot].uproar.is_none() {

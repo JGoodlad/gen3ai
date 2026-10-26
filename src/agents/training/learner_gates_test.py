@@ -11,6 +11,8 @@ through the REAL ``train()``:
   was deleted, U4); the gate's table and its enforcement (``consistency.enforce_behaviour``) are pinned
   directly;
 * a NaN win-prob LABEL / an Inf return is refused at the BUFFER, before PopArt's advance or any forward;
+* a categorical LABEL outside its head's vocabulary (an item num past the table, a scored PAD, a Hidden Power type of
+  16) is refused at the BUFFER the same way (`gen3_label_vocab_raise_v1`; the compiled micro-step cannot raise on data);
 * a non-finite TERM (a poisoned win-prob head) → a typed FATAL before its backward, naming it;
 * a NaN input row is refused by the action distribution's own validation, before any step;
 * a one-row final micro-batch (NaN advantage std) trains finite (SB3 PPO's ``len > 1`` guard);
@@ -107,6 +109,48 @@ def test_a_nan_label_is_refused_at_the_buffer_before_popart_or_any_forward():
     model.rollout_buffer.returns[0, 0] = np.inf
     with pytest.raises(G.NonFiniteLearnerError, match=r"returns \(1 rows\)"):
         _train(model)
+
+
+def test_a_label_outside_its_vocabulary_is_refused_at_the_buffer_before_any_forward():
+    """`check_label_vocab_buffer` is CALLED by `train()` (it was a function nothing called): an item belief label past
+    `max_items`, a SCORED slot holding PAD, a Hidden Power type of 16 and a believed species past `max_species` each
+    FATAL before a forward, parameters untouched; an UNSCORED slot's stale label is never read."""
+    model = _learner("off")
+    obs = model.rollout_buffer.observations
+    n_items = model.policy.features_extractor.layout["max_items"]
+    scored = np.argwhere(obs["item_mask"] > 0.5)
+    assert len(scored) > 0, "fixture: the golden buffer scores some item slots"
+    t, e, s_ = (int(x) for x in scored[0])
+    before = _params(model)
+    saved = obs["item_label"][t, e, s_]
+    for bad in (n_items, -1):
+        obs["item_label"][t, e, s_] = bad
+        with pytest.raises(G.LabelVocabError, match=r"item belief label out of vocab"):
+            _train(model)
+        assert th.equal(before, _params(model)), "the gate must fire before any forward"
+    obs["item_label"][t, e, s_] = saved
+    # an UNSCORED slot holding garbage passes the gate (and trains: the mask zeroes it)
+    unscored = np.argwhere(obs["item_mask"] < 0.5)
+    ut, ue, us = (int(x) for x in unscored[0])
+    obs["item_label"][ut, ue, us] = 10_000
+    G.check_label_vocab_buffer(model.rollout_buffer, model.policy.features_extractor)
+    obs["item_label"][ut, ue, us] = -1
+    hp = np.argwhere(obs["hp_type_mask"] > 0.5)
+    ht, he, hs = (int(x) for x in hp[0])
+    saved = obs["hp_type_label"][ht, he, hs]
+    obs["hp_type_label"][ht, he, hs] = 16
+    with pytest.raises(G.LabelVocabError, match=r"hidden-power type belief label out of vocab"):
+        _train(model)
+    obs["hp_type_label"][ht, he, hs] = saved
+    sp = np.argwhere(obs["belief_species"] >= 0)
+    st_, se, ss = (int(x) for x in sp[0])
+    obs["belief_species"][st_, se, ss] = model.policy.features_extractor.layout["max_species"]
+    with pytest.raises(G.LabelVocabError, match=r"species max 400"):
+        _train(model)
+    assert th.equal(before, _params(model))
+    # the error is a deterministic config defect: FATAL_CONFIG, never restarted
+    from main.exit_codes import FatalConfigError
+    assert issubclass(G.LabelVocabError, FatalConfigError)
 
 
 def test_a_nan_input_row_is_refused_before_any_step():

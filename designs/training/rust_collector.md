@@ -49,9 +49,15 @@ stays at the FIFO head for the next update. The rows are laid column-major into 
 `[D / N, N]` buffer (`rollout_buffer.RolloutBuffer` — owned since deletion pass U4, the layout of sb3-contrib's `MaskableDictRolloutBuffer`), so `train()` and every buffer reader are unchanged.
 
 **No row is ever dropped or down-weighted for AGE, and there is no truncation by default** (owner):
-PPO's per-row ratio π/μ corrects a stale row. The only rows that leave without being trained on are a
+PPO's per-row ratio π/μ corrects a stale row. The rows that leave without being trained on are a
 CUT game's (a quarantine, a core respawn): it has no outcome and no next state, so its rows are
-released and COUNTED (`staleness/rows_cut_total`), never fabricated into a loss.
+released and COUNTED (`staleness/rows_cut_total`), never fabricated into a loss; and a STALL-FORFEITED game's
+LAST row (`gen3_stall_forfeit_row_v1`, GIGO audit B-C2): at a p1 decision at the turn limit the core presents the
+decision, the host samples an action and writes the row, and the core then forfeits instead of feeding it, so that
+action never ran. `GameLog.end` releases that row (`staleness/forfeit_rows_dropped_total`) and the terminal reward
+lands on the game's last PLAYED decision. (Executed: the `--debug` smoke at a 6-turn limit wrote one row more than the
+core fed in all 297 ended games; `rust_rollout/stall_forfeit_row_integration_test.py` pins it on the real collector.
+`num_timesteps` still counts the presented decision.)
 
 **The target** is a declared parameter — default `n_steps × n_envs` (today's rollout size, so the switch
 changes WHEN rows are trained on, not how many) — and a multiple of lcm(micro-batch, N): no ragged
