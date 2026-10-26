@@ -186,8 +186,11 @@ MOD-CHAIN LAW, the drift gate and the audit's invocation.
      `leek` is the gen8 rename — NOT gen3-legal. 0 team-carry (Farfetch'd/Chansey aren't gen3 OU),
      so admitting `scopelens`/`luckypunch`/`stick` to `MODELED_ITEMS` is byte-neutral on the e2e
      sample; proven by the CI1/CI2 pins (Stick crits vs a no-item control at the same seed → same
-     seedAfter, the draw-free proof). Still UNMAPPED: DRAIN_ITEM (Shell Bell), BOOST_RESTORE (White
-     Herb), CURE_ITEM (Mental Herb), SPEED_MOD (Macho Brace), TAKE_ITEM_GUARD (Mail).
+     seedAfter, the draw-free proof). The last four gen-3 item handlers are hand-placed, one member
+     each (gen3 full parity B3, `gen3_items_b3_v1`, not data classes): Shell Bell (`moves.rs::shell_bell`
+     off `BattleState::move_total_damage`), Macho Brace (`speed.rs::effective_speed` and
+     `BattleState::turn0_speed`), Mail (Trick's gate), Mental Herb (`items.rs::mental_herb_on_update`).
+     Spec `harness/probe_items_b3.js`; gates `tests/items_b3_test.rs`, `tests/items_b3_golden_test.rs`.
   6. **Ability classes beyond DMG_MOD** — **SWITCH_OUT (Natural Cure) ✅ DONE** (`gen3_natural_cure_v1`,
      2026-07-06 — the BIGGEST admission lever, 151 → 449) + **STATUS_IMMUNE ✅ DONE** (`gen3_status_immune_v1`,
      2026-07-06, below — the #2 gap, immunity=97) + **BATCH-1 ✅ DONE** (`gen3_ability_batch1_v1`, 2026-07-07,

@@ -310,6 +310,10 @@ add([cond('toxic', 'duration'), cond('toxic', 'onSourceAccuracy'), cond('toxic',
 add([it('choiceband', 'onAfterMove')], IMPL('state.rs::choice_locked_move', 'the post-move choicelock arm'));
 add([it('quickclaw', 'onFractionalPriorityPriority')], IMPL('turn.rs::quick_claw',
   'the gen3 item entry is a bare priority number — the randomChance(1,5) lives in the gen3 action scripts, modeled as the per-turn QC draw'));
+add([it('shellbell', 'onAfterMoveSecondarySelf'), it('shellbell', 'onAfterMoveSecondarySelfPriority')], IMPL('moves.rs::shell_bell', 'gen3_items_b3_v1: heal max(1, totalDamage/8) at the end of each useMove (BattleState::move_total_damage, Substitute strikes add 0); the only gen-3 AfterMoveSecondarySelf handler, so its priority orders against nothing'));
+add([it('machobrace', 'onModifySpe')], IMPL('speed.rs::effective_speed', 'gen3_items_b3_v1: chainModify(0.5) in the ModifySpe chain (and BattleState::turn0_speed for the draw-free lead order)'));
+add([it('mail', 'onTakeItem')], IMPL('status_moves.rs::mail', 'gen3_items_b3_v1: Trick fails on a Mail holder either side; Knock Off / Thief / Covet are the exempt moves and take it'));
+add([it('mentalherb', 'onUpdate')], IMPL('items.rs::mental_herb_on_update', 'gen3_items_b3_v1: useItem + remove attract at the Update sites (run_update_items)'));
 add([it('leftovers', 'onResidual')], IMPL('turn.rs::run_residuals', 'the maxhp/16 heal at order 10 subOrder 4'));
 add([it('lumberry', 'onAfterSetStatus')], IMPL('turn.rs::try_set_status', 'LUM\'s IMMEDIATE eat (priority -1, AFTER Synchronize) at the setStatus tail'));
 add([it('focusband', 'onDamage')], IMPL('turn.rs::focus_band_damage', 'the randomChance(1,10) on EVERY Damage event + survive-at-1 on a lethal MOVE hit'));

@@ -229,6 +229,37 @@ impl crate::state::BattleState {
             // ability-then-item), so it runs ahead of the berry check per mon.
             self.status_immune_on_update(side, dex);
             self.berry_on_update(side, dex);
+            self.mental_herb_on_update(side, dex);
+        }
+    }
+
+    /// MENTAL HERB (`gen3_items_b3_v1`): `mentalherb.onUpdate` (`data/items.ts`, unchanged by the
+    /// gen-3/4 mods) — `if (pokemon.volatiles['attract'] && pokemon.useItem())
+    /// { pokemon.removeVolatile('attract'); this.add('-end', pokemon, 'move: Attract',
+    /// '[from] item: Mental Herb'); }`. `useItem` emits `|-enditem|<mon>|Mental Herb` and sets
+    /// `lastItem` (Recycle brings it back); `removeVolatile` runs the attract condition's
+    /// `onEnd` (`|-end|<mon>|Attract|[silent]`); then the item's own `-end`. DRAW-FREE. Probe
+    /// `harness/probe_items_b3.js`: a Cute Charm infatuation is cured at the Update right after
+    /// the contact hit, in that line order.
+    fn mental_herb_on_update(&mut self, side: usize, dex: &Dex) {
+        let slot = self.sides[side].active;
+        {
+            let mon = &self.sides[side].pokemon[slot];
+            if mon.fainted || mon.hp == 0 || mon.attract.is_none() || to_id(&mon.item) != "mentalherb" {
+                return;
+            }
+        }
+        {
+            let mon = &mut self.sides[side].pokemon[slot];
+            mon.last_item = mon.item.clone();
+            mon.item = String::new();
+            mon.attract = None;
+        }
+        if self.logging() {
+            let m = self.mon_ref(side, slot, dex);
+            self.log.enditem(&m, "Mental Herb");
+            self.log.volatile_end_silent(&m, "Attract");
+            self.log.volatile_end_from_item(&m, "move: Attract", "Mental Herb");
         }
     }
 

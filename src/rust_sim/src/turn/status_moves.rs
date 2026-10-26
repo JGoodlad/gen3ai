@@ -3109,8 +3109,15 @@ impl crate::state::BattleState {
             // + `-fail|<user>`, no swap. DRAW-FREE past the accuracy roll.
             let user_item = self.sides[_side].pokemon[_slot].item.clone();
             let foe_item = self.sides[foe].pokemon[foe_slot].item.clone();
+            // MAIL (`gen3_items_b3_v1`): `mail.onTakeItem` returns false unless the active move
+            // is Knock Off / Thief / Covet (`data/items.ts` mail), so Trick's `takeItem` fails on
+            // a Mail holder on EITHER side and the move fails the same `[still]` + `-fail` way
+            // (probe `harness/probe_items_b3.js`: both orientations, draws = accuracy only).
+            let mail = to_id(&self.sides[_side].pokemon[_slot].item) == "mail"
+                || to_id(&self.sides[foe].pokemon[foe_slot].item) == "mail";
             let knocked = self.sides[_side].pokemon[_slot].item_knocked_off
-                || self.sides[foe].pokemon[foe_slot].item_knocked_off;
+                || self.sides[foe].pokemon[foe_slot].item_knocked_off
+                || mail;
             let subbed = self.sides[foe].pokemon[foe_slot].substitute.is_some();
             let both_itemless = user_item.is_empty() && foe_item.is_empty();
             if subbed || knocked || both_itemless {

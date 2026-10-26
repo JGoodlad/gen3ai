@@ -1295,14 +1295,13 @@ impl MonState {
         // are unreferenced by this engine. Twenty-seven of those 32 are inert here — gen-2
         // carry-overs (goldberry / mintberry / iceberry / bitterberry / burntberry /
         // psncureberry / miracleberry / mysteryberry) and Pokéblock berries whose ONLY handler
-        // is `onEat`. The FIVE below are the ones with a genuine gen-3 battle effect:
-        //   * `shellbell`   — `onAfterMoveSecondarySelf`, drains 1/8 of the damage dealt
-        //   * `berryjuice`  — `onUpdate` + `onResidual`, restores 20 HP at <= 50%
-        //   * `mentalherb`  — `onUpdate`, cures attraction
-        //   * `machobrace`  — `onModifySpe`, HALVES Speed (so it is turn-ORDER and therefore
-        //                     DRAW relevant — a silent miss desyncs the speed-tie shuffle)
-        //   * `mail`        — `onTakeItem`, blocks item theft (Knock Off / Thief / Trick would
-        //                     otherwise wrongly take it)
+        // is `onEat`. FIVE had a genuine gen-3 battle effect; FOUR are MODELED since gen3 full
+        // parity B3 (`gen3_items_b3_v1`: Shell Bell `onAfterMoveSecondarySelf` in `moves.rs`,
+        // Macho Brace `onModifySpe` in `speed.rs`, Mail `onTakeItem` in Trick's gate, Mental Herb
+        // `onUpdate` in `items.rs`). The one left:
+        //   * `berryjuice`  — `onUpdate` + `onResidual`, restores 20 HP at <= 50%. It is
+        //                     `isNonstandard: 'Unobtainable'` in gen 3, so outside the gen-3 universe;
+        //                     it stays refused.
         //
         // EXPOSURE IS ZERO ON BOTH SURFACES WE ACTUALLY USE: 0 hits across 4722 training-pool
         // team-blocks in `data/teams/`, and 0 across 3000 generated `gen3randombattle` teams.
@@ -1310,8 +1309,7 @@ impl MonState {
         // day one of these reaches the engine (a hand-built team, a format change, a new pool)
         // it CRASHES instead of lying. An earlier audit's "~2.7% of ladder battles" figure was
         // inferred from Smogon usage weights and does not describe either surface.
-        const UNMODELED_FAILLOUD_ITEMS: [&str; 5] =
-            ["shellbell", "berryjuice", "mentalherb", "machobrace", "mail"];
+        const UNMODELED_FAILLOUD_ITEMS: [&str; 1] = ["berryjuice"];
         let item_id = crate::dex::to_id(&item);
         if UNMODELED_FAILLOUD_ITEMS.contains(&item_id.as_str()) {
             panic!(
@@ -1991,6 +1989,12 @@ pub struct BattleState {
     /// The DAMAGE-ROLL CONTROL (`crate::rolls`, F1 tier A of the world sampler): `None` (always,
     /// outside an offline world replay) runs every damage roll exactly as drawn.
     pub rolls: Option<Box<crate::rolls::RollCtl>>,
+    /// The running move's `move.totalDamage` (`gen3_items_b3_v1`): the HP its strikes took off
+    /// the target MON (a Substitute strike adds nothing: gen-3 `moveHit` returns `undefined`
+    /// for a `HIT_SUBSTITUTE`, `data/mods/gen3/scripts.ts` tryMoveHit), with the target it was
+    /// dealt to. [`BattleState::run_move`] scopes it to one `useMove` (a Sleep Talk's called
+    /// move is its own), and SHELL BELL reads it at the move's `AfterMoveSecondarySelf`.
+    pub move_total_damage: (u32, Option<(usize, usize)>),
 }
 
 impl BattleState {
@@ -2050,6 +2054,7 @@ impl BattleState {
             pursuit_first_mover: None,
             quick_claw_roll: false,
             rolls: None,
+            move_total_damage: (0, None),
         })
     }
 
@@ -2096,8 +2101,8 @@ impl BattleState {
             let slot = state.sides[side].active;
             let foe = 1 - side;
             let foe_slot = state.sides[foe].active;
-            let holder_spe = state.sides[side].pokemon[slot].stats[5];
-            let foe_spe = state.sides[foe].pokemon[foe_slot].stats[5];
+            let holder_spe = state.turn0_speed(side, slot);
+            let foe_spe = state.turn0_speed(foe, foe_slot);
             // The holder's runSwitch resolves AFTER the foe's iff it is SLOWER (faster-first; a
             // raw-Speed tie keeps side order → side 0 before side 1). `white_herb_restore` no-ops
             // unless the holder actually has a negative boost (i.e. was Intimidate-dropped).
@@ -2179,6 +2184,20 @@ fn check_species_clause(side: &SideState, dex: &Dex) -> Result<(), String> {
         seen.push((sp.num, mon.set.species.as_str()));
     }
     Ok(())
+}
+
+impl BattleState {
+    /// A lead's turn-0 ACTION Speed (`getActionSpeed` when the `start` action inserts the two
+    /// `runSwitch`es, before either fires): the stored Speed through the ModifySpe chain as it
+    /// stands at construction — no boosts, status or weather yet, so the only gen-3 modifier is
+    /// MACHO BRACE ×0.5 (`gen3_items_b3_v1`). The draw-free `start_with_switchins` path orders
+    /// the leads (and the reconstructed framing) by it; the raw-seed bridge path reads the same
+    /// value through `effective_speed` at its `insert_runswitch`.
+    pub(crate) fn turn0_speed(&self, side: usize, slot: usize) -> u32 {
+        let m = &self.sides[side].pokemon[slot];
+        let mods: &[(u64, u64)] = if crate::dex::to_id(&m.item) == "machobrace" { &[(1, 2)] } else { &[] };
+        crate::damage::chain_modify(m.stats[5] as u64, mods) as u32
+    }
 }
 
 /// Unpack one packed team and build its [`SideState`] (per-mon construction

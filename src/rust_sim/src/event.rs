@@ -498,11 +498,12 @@ impl BattleState {
     /// Net: `state.prng` after this call is NOT yet a full `>start` RNG-state
     /// oracle — the validated output is the boosts/weather.
     pub fn run_start_switchins(&mut self) {
-        // The two active leads, with their raw Speed (stats[5]).
-        let mut leads: Vec<(usize, usize, u16)> = (0..self.sides.len())
+        // The two active leads, with their turn-0 action Speed (`turn0_speed`: the raw stat
+        // through the construction-time ModifySpe chain — Macho Brace).
+        let mut leads: Vec<(usize, usize, u32)> = (0..self.sides.len())
             .map(|side| {
                 let slot = self.sides[side].active;
-                (side, slot, self.sides[side].pokemon[slot].stats[5])
+                (side, slot, self.turn0_speed(side, slot))
             })
             .collect();
 

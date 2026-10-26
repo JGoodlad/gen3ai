@@ -444,6 +444,15 @@ impl crate::state::BattleState {
         if mon.status == Some(Status::Paralysis) {
             mods.push((1, 4));
         }
+        // MACHO BRACE ×0.5 (`gen3_items_b3_v1`, `machobrace.onModifySpe` → `chainModify(0.5)`,
+        // `data/items.ts` machobrace, unchanged by the gen-3/4 mods). An item handler, so a
+        // FAINTED holder's is not gathered (the same `isActive` gate as the weather speed above).
+        // Every factor in this chain is a power of two, so the 4096 fixed-point product is exact
+        // in any order. Probe `harness/probe_items_b3.js`: a Macho Brace Jolteon moves after a
+        // max-Speed Snorlax it outspeeds without it.
+        if !mon.fainted && to_id(&mon.item) == "machobrace" {
+            mods.push((1, 2));
+        }
         let modified = crate::damage::chain_modify(boosted as u64, &mods) as u32;
         modified.min(10000)
     }

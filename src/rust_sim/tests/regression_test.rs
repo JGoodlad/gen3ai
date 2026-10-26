@@ -16465,14 +16465,15 @@ fn a_ditto_without_transform_builds_fine() {
     assert!(b.is_ok(), "a Ditto with no Transform must construct normally");
 }
 
-/// `gen3_unmodeled_item_failloud_v1` — each of the FIVE items with a genuine gen-3 battle
-/// effect the engine models NOTHING for must FAIL LOUD at construction rather than silently
-/// no-op. Verified per-item (not once for the set) so a partial revert cannot pass.
+/// `gen3_unmodeled_item_failloud_v1` — an item with a genuine gen-3 battle effect the engine
+/// models NOTHING for must FAIL LOUD at construction rather than silently no-op. Of the five this
+/// guarded, four are modeled since gen3 full parity B3 (`gen3_items_b3_v1`; the negative control
+/// below now builds them); `berryjuice` (gen-3 `Unobtainable`) is the one left.
 #[test]
 fn unmodeled_items_fail_loud_at_construction() {
     let d = dex();
     let foe = "Snorlax|||immunity|bodyslam|Adamant|252,252,,,,|||||";
-    for item in ["shellbell", "berryjuice", "mentalherb", "machobrace", "mail"] {
+    for item in ["berryjuice"] {
         let carrier = format!("Snorlax||{item}|immunity|bodyslam|Adamant|252,252,,,,|||||");
         let caught = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             Battle::start_with_switchins(&opts_cg(&carrier, foe, "1,2,3,4"), &d)
@@ -16493,7 +16494,7 @@ fn unmodeled_items_fail_loud_at_construction() {
 fn modeled_and_inert_items_still_build_fine() {
     let d = dex();
     let foe = "Snorlax|||immunity|bodyslam|Adamant|252,252,,,,|||||";
-    for item in ["leftovers", "choiceband", "lumberry", "brightpowder", "pokeball", ""] {
+    for item in ["leftovers", "choiceband", "lumberry", "brightpowder", "pokeball", "", "shellbell", "machobrace", "mail", "mentalherb"] {
         let carrier = format!("Snorlax||{item}|immunity|bodyslam|Adamant|252,252,,,,|||||");
         let b = Battle::start_with_switchins(&opts_cg(&carrier, foe, "1,2,3,4"), &d);
         assert!(b.is_ok(), "item {item:?} must construct normally");

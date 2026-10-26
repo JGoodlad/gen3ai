@@ -1234,6 +1234,11 @@ impl ProtocolBuilder {
     pub fn hitcount(&mut self, mon: &MonRef, n: u32) {
         self.emit(|| Line::new(Kw::Hitcount, vec![Field::mon(mon), Field::text(n.to_string())]));
     }
+    /// `|-end|<mon>|<Effect>|[from] item: <Item>` — a volatile removed BY an item (Mental Herb's
+    /// attraction cure, `gen3_items_b3_v1`: `|-end|<mon>|move: Attract|[from] item: Mental Herb`).
+    pub fn volatile_end_from_item(&mut self, mon: &MonRef, effect: &str, item: &str) {
+        self.emit(|| Line::new(Kw::End, vec![Field::mon(mon), text_or_empty(effect), Field::From(LineCause::Item(item.into()))]));
+    }
     /// `|-end|<mon>|<Effect>|[from] move: <Move>|[of] <of>` — a volatile removed BY a move
     /// (`gen3_move_coverage_batch1_v1`, Rapid Spin clearing the USER's own Leech Seed:
     /// `|-end|<user>|Leech Seed|[from] move: Rapid Spin|[of] <user>`).

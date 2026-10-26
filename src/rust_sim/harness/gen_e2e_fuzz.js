@@ -1272,6 +1272,11 @@ const MODELED_ITEMS = new Set([
   'lansatberry', 'starfberry',
   //   PP (leppa: +10 on the depleted slot at the Update site):
   'leppaberry',
+  // gen3 full parity B3 (`gen3_items_b3_v1`): Shell Bell (heal 1/8 of the move's totalDamage at
+  // AfterMoveSecondarySelf), Macho Brace (Speed ×0.5, DRAW-relevant: it reorders actions),
+  // Mail (Trick fails on it), Mental Herb (cures attraction at the Update). Golden
+  // `gen_items_b3_golden.js` → `tests/items_b3_golden_test.rs`.
+  'shellbell', 'machobrace', 'mail', 'mentalherb',
 ]);
 function itemAllowed(id) { return MODELED_ITEMS.has(toId(id)); }
 

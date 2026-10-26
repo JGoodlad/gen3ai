@@ -37,6 +37,48 @@ impl crate::state::BattleState {
     /// fires only when the move actually hits — a miss/immune returns from
     /// `tryMoveHit` before it).
     pub(crate) fn run_move(&mut self, action: MoveAction, will_act: bool, foe_will_move: bool, dex: &Dex) -> MoveResolution {
+        // `move.totalDamage` is per `useMove`: a nested call (Sleep Talk's chosen move, a
+        // Pursuit run inside a switch) gets its own, and the caller's resumes after it.
+        let outer = std::mem::replace(&mut self.move_total_damage, (0, None));
+        let res = self.run_move_body(action, will_act, foe_will_move, dex);
+        let total = std::mem::replace(&mut self.move_total_damage, outer);
+        self.shell_bell(action.side, action.slot, total, dex);
+        res
+    }
+
+    /// The move's damage, recorded for `move.totalDamage` (SHELL BELL's basis): the HP the
+    /// strike actually took off the target mon. Called right after each foe `apply_damage` of a
+    /// move strike (the main hit, a multi-hit strike, a Beat Up strike, a fixed-damage hit).
+    fn record_move_damage(&mut self, foe: usize, foe_slot: usize, hp_before: u16) {
+        let lost = hp_before.saturating_sub(self.sides[foe].pokemon[foe_slot].hp) as u32;
+        self.move_total_damage = (self.move_total_damage.0 + lost, Some((foe, foe_slot)));
+    }
+
+    /// SHELL BELL (`gen3_items_b3_v1`): `shellbell.onAfterMoveSecondarySelf` (`data/items.ts`,
+    /// unchanged by the gen-3/4 mods) — `if (move.totalDamage && !pokemon.forceSwitchFlag)
+    /// this.heal(move.totalDamage / 8, pokemon)`, run by gen-3 `useMove` after the move
+    /// (`data/mods/gen3/scripts.ts` useMove: after `tryMoveHit`, after the user's own faint is
+    /// queued, before the action's faint messages). `battle.heal` bumps a positive sub-1 amount
+    /// to 1 and truncates, so the heal is `max(1, floor(total / 8))`; it fails on a 0-HP or
+    /// full-HP holder. The line is `|-heal|<user>|<HP>|[from] item: Shell Bell|[of] <target>`
+    /// (the event's source is the move's target). DRAW-FREE. Probe `harness/probe_items_b3.js`:
+    /// a Spike Cannon heals off the SUM of its strikes, a Double-Edge after its recoil, a hit
+    /// on a Substitute not at all.
+    fn shell_bell(&mut self, side: usize, slot: usize, total: (u32, Option<(usize, usize)>), dex: &Dex) {
+        let (dealt, Some((foe, foe_slot))) = total else { return };
+        if dealt == 0 || to_id(&self.sides[side].pokemon[slot].item) != "shellbell" {
+            return;
+        }
+        let amount = (dealt / 8).max(1).min(u16::MAX as u32) as u16;
+        if self.apply_heal(side, slot, amount) && self.logging() {
+            let user = self.mon_ref(side, slot, dex);
+            let hp = self.hp_status(side, slot);
+            let of = self.mon_ref(foe, foe_slot, dex);
+            self.log.heal_of(&user, &hp, &Cause::Item("Shell Bell".to_string()), &of);
+        }
+    }
+
+    fn run_move_body(&mut self, action: MoveAction, will_act: bool, foe_will_move: bool, dex: &Dex) -> MoveResolution {
         let MoveAction { side, slot, move_index, struggle } = action;
         let foe = 1 - side;
         let foe_slot = self.sides[foe].active;
@@ -1533,7 +1575,9 @@ impl crate::state::BattleState {
             let realized = self.focus_band_damage(foe, foe_slot, realized, true, true, dex);
             // Refresh `dealt` to the POST-Focus-Band applied amount (the recoil/drain basis).
             dealt = realized.min(target_hp_before);
+            let hp_before = self.sides[foe].pokemon[foe_slot].hp;
             self.apply_damage(foe, foe_slot, realized);
+            self.record_move_damage(foe, foe_slot, hp_before);
             // DESTINY BOND trigger record (`gen3_move_coverage_batch6_v1`, the
             // `onFaint` gate: a FOE-side **Move**-effect hit — this path — that zeroed
             // a DB-volatile holder's HP marks the pending mutual faint; the chain
@@ -2213,7 +2257,9 @@ impl crate::state::BattleState {
                 // = true` mirrors the `realized > 0` `-damage` gate below (self-emits the 1/max
                 // line when a survive nets 0 at 1 HP).
                 let realized = self.focus_band_damage(foe, foe_slot, realized, true, true, dex);
+                let hp_before = self.sides[foe].pokemon[foe_slot].hp;
                 self.apply_damage(foe, foe_slot, realized);
+                self.record_move_damage(foe, foe_slot, hp_before);
                 // DESTINY BOND trigger record (`gen3_move_coverage_batch6_v1`): a Beat Up
                 // strike is a FOE Move hit — a KO strike with the DB volatile up marks the
                 // pending mutual faint (the chain runs in process_faints). DRAW-FREE.
@@ -2465,7 +2511,9 @@ impl crate::state::BattleState {
                 let realized = self.endure_clamp(foe, foe_slot, realized, dex);
                 let realized = self.focus_band_damage(foe, foe_slot, realized, true, true, dex);
                 dealt = realized.min(target_hp_before);
+                let hp_before = self.sides[foe].pokemon[foe_slot].hp;
                 self.apply_damage(foe, foe_slot, realized);
+                self.record_move_damage(foe, foe_slot, hp_before);
                 // DESTINY BOND + FOCUS PUNCH lostFocus + COUNTER/MIRROR COAT recorder — each a
                 // DIRECT foe Move hit, per strike (the recorder OVERWRITES → 2× the LAST strike).
                 if self.sides[foe].pokemon[foe_slot].hp == 0
@@ -2783,6 +2831,7 @@ impl crate::state::BattleState {
             let pre_hp = self.sides[foe].pokemon[foe_slot].hp;
             let amount = self.focus_band_damage(foe, foe_slot, amount, true, true, dex);
             self.apply_damage(foe, foe_slot, amount);
+            self.record_move_damage(foe, foe_slot, pre_hp);
             // DESTINY BOND trigger record (`gen3_move_coverage_batch6_v1`): a
             // fixed-damage foe Move KO — incl. a Counter/Mirror-Coat RETURN (a foe
             // Move) — with the DB volatile up marks the pending mutual faint. DRAW-FREE.

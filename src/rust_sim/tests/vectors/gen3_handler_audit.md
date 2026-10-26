@@ -6,13 +6,13 @@ the GATE is `node src/rust_sim/harness/dump_gen3_handlers.js --audit` (wired int
 `cargo test` via `tests/handler_audit_test.rs`). It fails on: a NEW un-dispositioned
 handler, a STALE manifest row, a body-FINGERPRINT drift, a dead `implemented` anchor.
 
-Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
+Surface: 77 abilities (MODELED ∪ NOOP), 67 items,
 59 conditions (engine state space + attached), 308 modeled moves
-→ **1097 (effect, hook) rows**.
+→ **1102 (effect, hook) rows**.
 
 | disposition | rows |
 |---|---|
-| implemented | 1044 |
+| implemented | 1049 |
 | noop_justified | 36 |
 | unreachable_justified | 17 |
 
@@ -155,7 +155,7 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | whitesmoke | onTryBoost | implemented | `event.rs::intimidate_on_start` |
 | wonderguard | onTryHit | implemented | `turn.rs::run_move` |
 
-## item (187 rows: implemented=178, noop_justified=8, unreachable_justified=1)
+## item (192 rows: implemented=183, noop_justified=8, unreachable_justified=1)
 
 | effect | hook | disposition | anchor / reason |
 |---|---|---|---|
@@ -239,6 +239,7 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | lumberry | onAfterSetStatusPriority | implemented | `turn.rs::try_set_status` |
 | lumberry | onEat | implemented | `turn.rs::berry_cure` |
 | lumberry | onUpdate | implemented | `turn.rs::berry_on_update` |
+| machobrace | onModifySpe | implemented | `speed.rs::effective_speed` |
 | magnet | onBasePowerPriority | implemented | `turn.rs::resolve_bp_mods` |
 | magnet | onModifySpA | implemented | `turn.rs::resolve_atk_stat_mods` |
 | magnet | onModifySpAPriority | implemented | `turn.rs::resolve_atk_stat_mods` |
@@ -247,6 +248,8 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | magoberry | onResidualOrder | implemented | `turn.rs::apply_berry_residual` |
 | magoberry | onResidualSubOrder | implemented | `turn.rs::apply_berry_residual` |
 | magoberry | onTryEatItem | noop_justified | the runEvent(TryHeal) guard before a heal-berry eat — NO TryHeal handler exists in the gen3 modeled universe, so the guard is vacuous (the eat always proceeds) |
+| mail | onTakeItem | implemented | `status_moves.rs::mail` |
+| mentalherb | onUpdate | implemented | `items.rs::mental_herb_on_update` |
 | metalcoat | onBasePowerPriority | implemented | `turn.rs::resolve_bp_mods` |
 | metalcoat | onModifyAtk | implemented | `turn.rs::resolve_atk_stat_mods` |
 | metalcoat | onModifyAtkPriority | implemented | `turn.rs::resolve_atk_stat_mods` |
@@ -299,6 +302,8 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | sharpbeak | onBasePowerPriority | implemented | `turn.rs::resolve_bp_mods` |
 | sharpbeak | onModifyAtk | implemented | `turn.rs::resolve_atk_stat_mods` |
 | sharpbeak | onModifyAtkPriority | implemented | `turn.rs::resolve_atk_stat_mods` |
+| shellbell | onAfterMoveSecondarySelf | implemented | `moves.rs::shell_bell` |
+| shellbell | onAfterMoveSecondarySelfPriority | implemented | `moves.rs::shell_bell` |
 | silkscarf | onBasePowerPriority | implemented | `turn.rs::resolve_bp_mods` |
 | silkscarf | onModifyAtk | implemented | `turn.rs::resolve_atk_stat_mods` |
 | silkscarf | onModifyAtkPriority | implemented | `turn.rs::resolve_atk_stat_mods` |

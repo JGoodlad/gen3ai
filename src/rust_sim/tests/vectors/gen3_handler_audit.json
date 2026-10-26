@@ -4,10 +4,10 @@
   "gate": "node harness/dump_gen3_handlers.js --audit (cargo: tests/handler_audit_test.rs)",
   "surface": {
    "abilities": 77,
-   "items": 63,
+   "items": 67,
    "conditions": 59,
    "moves": 308,
-   "rows": 1097
+   "rows": 1102
   },
   "excluded_deferred": {
    "forecast": "Castform forme+TYPE change under weather — deferred (probe_forecast_rng.js settled the map; the reporting surface is unprobed); the port FAIL-LOUDs in state::MonState::from_set (GIGO guard: an unmodeled ability would silently no-op then desync under weather); NOT in MODELED/NOOP + REJECT_ABILITIES/REJECT_SPECIES so the e2e filter + randbats adapter exclude its teams",
@@ -2837,6 +2837,12 @@
    "anchor": "turn.rs::berry_on_update",
    "reason": "the Update-site eat (cure/PP berries)"
   },
+  "item:machobrace:onModifySpe": {
+   "disposition": "implemented",
+   "fp": "fn:d6fe1621:onModifySpe(spe) { return this.chainModify(0.5); }",
+   "anchor": "speed.rs::effective_speed",
+   "reason": "gen3_items_b3_v1: chainModify(0.5) in the ModifySpe chain (and BattleState::turn0_speed for the draw-free lead order)"
+  },
   "item:magnet:onBasePowerPriority": {
    "disposition": "implemented",
    "fp": "val:15",
@@ -2883,6 +2889,18 @@
    "disposition": "noop_justified",
    "fp": "fn:74d8d82a:onTryEatItem(item, pokemon) { if (!this.runEvent(\"TryHeal\", pokemon, null, this.effect, pokemon.baseMaxhp / 3)) return f",
    "reason": "the runEvent(TryHeal) guard before a heal-berry eat — NO TryHeal handler exists in the gen3 modeled universe, so the guard is vacuous (the eat always proceeds)"
+  },
+  "item:mail:onTakeItem": {
+   "disposition": "implemented",
+   "fp": "fn:0164adc8:onTakeItem(item, source) { if (!this.activeMove) return false; if (this.activeMove.id !== \"knockoff\" && this.activeMove.",
+   "anchor": "status_moves.rs::mail",
+   "reason": "gen3_items_b3_v1: Trick fails on a Mail holder either side; Knock Off / Thief / Covet are the exempt moves and take it"
+  },
+  "item:mentalherb:onUpdate": {
+   "disposition": "implemented",
+   "fp": "fn:52f3e1a9:onUpdate(pokemon) { if (pokemon.volatiles[\"attract\"] && pokemon.useItem()) { pokemon.removeVolatile(\"attract\"); this.add",
+   "anchor": "items.rs::mental_herb_on_update",
+   "reason": "gen3_items_b3_v1: useItem + remove attract at the Update sites (run_update_items)"
   },
   "item:metalcoat:onBasePowerPriority": {
    "disposition": "implemented",
@@ -3194,6 +3212,18 @@
    "fp": "val:1",
    "anchor": "turn.rs::resolve_atk_stat_mods",
    "reason": "the type-gated offensive stat chain (gen3_item_mechanics_v1)"
+  },
+  "item:shellbell:onAfterMoveSecondarySelf": {
+   "disposition": "implemented",
+   "fp": "fn:b708a36e:onAfterMoveSecondarySelf(pokemon, target, move) { if (move.totalDamage && !pokemon.forceSwitchFlag) { this.heal(move.tot",
+   "anchor": "moves.rs::shell_bell",
+   "reason": "gen3_items_b3_v1: heal max(1, totalDamage/8) at the end of each useMove (BattleState::move_total_damage, Substitute strikes add 0); the only gen-3 AfterMoveSecondarySelf handler, so its priority orders against nothing"
+  },
+  "item:shellbell:onAfterMoveSecondarySelfPriority": {
+   "disposition": "implemented",
+   "fp": "val:-1",
+   "anchor": "moves.rs::shell_bell",
+   "reason": "gen3_items_b3_v1: heal max(1, totalDamage/8) at the end of each useMove (BattleState::move_total_damage, Substitute strikes add 0); the only gen-3 AfterMoveSecondarySelf handler, so its priority orders against nothing"
   },
   "item:silkscarf:onBasePowerPriority": {
    "disposition": "implemented",
