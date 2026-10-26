@@ -6,26 +6,56 @@ Replaces ``canary_log_v*.sh`` + ``live_runs.py`` + ``aw_files.sh``. Its class bu
   trainer children) plus every run already in the seen file — never a pattern.
 * **The seen file was keyed by run NAME and a row count**: a run dir re-created under the same name with fewer
   rows was skipped until it overtook the old count. The key here is the canary file's ``(path, inode)``.
-* **Bars by run-name prefix** (``rb_x35t_x47`` or else C0's) silently applied C0's bars to every new family: this
-  logger applies NO family bar. It logs each record's raw readings (compiled / eager, their ratio, the
-  same-precision gap) and alerts only on a NON-PASS record whose worst reading exceeds ``alert_above`` (one rule, no
-  family); the bars belong to the reader that decides.
+* **A non-PASS below a value bar paged nobody** (10-27: N1-P s3501's u200 UNCONFIRMED read compiled 0.1675, under
+  the old 0.54 bar, and no alert fired): EVERY non-PASS record (UNCONFIRMED, FATAL, anything not ``pass``) alerts,
+  whatever its readings. The family ratio bar (``main.ops.canary_decide.FAMILY_BARS``) is only a DESCRIPTIVE tag on
+  the log line (``[descriptive: ratio>2.64 (c0 bar)]``); it never alerts (the resume decision is canary_decide's).
+* **A dump the near-margin rotation deletes** (``canary_u*_near_policy.pt`` keeps the newest 3 per run) or a run dir
+  thinned / moved later loses the weights a verdict was read on: :func:`archive_dumps` copies every
+  ``canary_u<u>_s<steps>[_r<n>]_<unconfirmed|fatal|near>_policy.pt`` to ``<archive>/<run>_canary_u<u>/`` with a
+  ``.sha256`` beside it, never over an existing copy.
 * **A bounded loop lapsed silently** (v9, after its 24 h): :func:`watch` writes an ``expiring`` line on its last
   pass and a heartbeat file every pass.
 * Alerts: a live launcher whose run is UNRESOLVED; a run with NO canary record ``first_record_min`` after its
   launcher started (default 60: a production cold start reached its first record at ~34 min, 40 was too close); a
   newest record older than ``stale_h``. Each alert fires once per case.
+
+The launcher-log alerts (:data:`LAUNCHER_ALERT_ERE`) are not this loop's: the alert watch follows
+:func:`watch_files` (the status file, each live launcher's stdout log and its run's ``launcher_child.full.log``)
+through :func:`monitor_filter`.
 """
 from __future__ import annotations
 
 import datetime as dt
+import hashlib
 import json
 import os
+import re
+import shutil
 import time
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
 from main.ops.arm_chain import live
+from main.ops.arm_chain.fsguard import UnsafeRemove, remove_under
+from main.ops.canary_decide import FAMILY_BARS, family_of
+
+#: The launcher-log lines that page (operator review 10-27): a crash, a wedge, an update that cannot fit, a
+#: behaviour-policy mismatch, a Rust stamp mismatch, and a compiled-vs-eager disagreement.
+LAUNCHER_ALERT_ERE = r"Traceback|Child crashed|WEDGE|UpdateWontFit|BEHAVIOUR-POLICY MISMATCH|StampMismatch|DISAGREES"
+
+#: An unconfirmed / FATAL / near-margin canary weight dump (``agents.model.compile_canary._save_new``).
+DUMP_RE = re.compile(r"canary_u(\d+)_s(\d+)(?:_r\d+)?_(unconfirmed|fatal|near)_policy\.pt")
+
+
+def monitor_filter(chain: str) -> str:
+    """The ONE ERE the alert Monitor greps over :func:`watch_files`: the chain's HOLD / SHIP-HOLD / COMPLETE lines,
+    the canary logger's HOLD lines, and the launcher-log alerts. ``chain`` is a slug (``spec``), so it needs no
+    escaping (GNU grep >= 3.8 warns on a stray ``\\-``); ``<name>`` is the doc's placeholder."""
+    if chain != "<name>" and not re.fullmatch(r"[a-z0-9][a-z0-9_-]*", chain):
+        raise ValueError(f"chain name {chain!r} is not a slug")
+    return (r"ARMCHAIN\[" + chain + r"\]: (HOLD|SHIP-HOLD|chain COMPLETE)|CANARYLOG: HOLD|AWFILES: HOLD|"
+            + LAUNCHER_ALERT_ERE)
 
 
 def _now_iso() -> str:
@@ -40,19 +70,20 @@ def _get(d: Any, *ks: str) -> Any:
     return d
 
 
-def format_row(run: str, r: Dict[str, Any], alert_above: float) -> Tuple[str, bool]:
-    """(the log line, whether it alerts)."""
+def format_row(run: str, r: Dict[str, Any]) -> Tuple[str, bool]:
+    """(the log line, whether it alerts). EVERY non-PASS alerts, whatever its readings; a ratio above the run
+    family's registered bar is a DESCRIPTIVE tag only."""
     m = _get(r, "watch", "scheduled", "clip_margin", "max_abs_dlogp") or {}
     sp = _get(r, "watch", "scheduled", "clip_margin", "same_precision", "max_abs_dlogp")
     c, e = m.get("compiled"), m.get("eager")
-    vals = [v for v in (c, e) if isinstance(v, (int, float))]
     ratio = round(c / e, 3) if isinstance(c, (int, float)) and isinstance(e, (int, float)) and e else None
     verdict = str(r.get("verdict"))
     line = (f"{run} u{r.get('update')} @{r.get('num_timesteps')} {verdict} compiled {c} eager {e} ratio {ratio} "
             f"same-precision {sp}")
-    hi = max(vals) if vals else None
-    alerts = verdict.lower() != "pass" and (hi is None or hi > alert_above)
-    return line, alerts
+    fam = family_of(run)
+    if fam is not None and ratio is not None and ratio > FAMILY_BARS[fam]:
+        line += f" [descriptive: ratio>{FAMILY_BARS[fam]:g} ({fam} bar)]"
+    return line, verdict.lower() != "pass"
 
 
 @dataclass
@@ -76,8 +107,7 @@ def _key(f: str) -> str:
     return f"{os.path.realpath(f)}#{os.stat(f).st_ino}"
 
 
-def scan(run_dirs: Iterable[str], seen: Seen, write: Callable[[str], None], alert: Callable[[str, str], None],
-         alert_above: float = 0.54) -> int:
+def scan(run_dirs: Iterable[str], seen: Seen, write: Callable[[str], None], alert: Callable[[str, str], None]) -> int:
     """Log every new canary row of ``run_dirs``; the number of rows logged."""
     s = seen.load()
     n = 0
@@ -93,15 +123,69 @@ def scan(run_dirs: Iterable[str], seen: Seen, write: Callable[[str], None], aler
         for i in range(s.get(k, 0), len(rows)):
             run = os.path.basename(rd)
             try:
-                line, hot = format_row(run, json.loads(rows[i]), alert_above)
+                line, hot = format_row(run, json.loads(rows[i]))
             except ValueError:
                 line, hot = f"{run} row {i + 1}: UNPARSABLE canary record", True
             write(line)
             if hot:
-                alert(f"canary {k} {i}", f"CANARY non-PASS above {alert_above}: {line}")
+                alert(f"canary {k} {i}", f"CANARY non-PASS: {line}")
             n += 1
         s[k] = len(rows)
     seen.save(s)
+    return n
+
+
+def _sha256(path: str) -> str:
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for b in iter(lambda: f.read(1 << 20), b""):
+            h.update(b)
+    return h.hexdigest()
+
+
+def archive_dumps(run_dirs: Iterable[str], archive_root: str, write: Callable[[str], None],
+                  alert: Callable[[str, str], None]) -> int:
+    """Copy each canary weight dump of ``run_dirs`` to ``<archive_root>/<run>_canary_u<u>/<name>`` + ``<name>.sha256``
+    (``sha256sum`` format), verified after the copy. Never over an existing copy (one with other bytes alerts); a
+    copy already there with its sha file is skipped unhashed. The number copied."""
+    n = 0
+    for rd in sorted(set(run_dirs)):
+        try:
+            names = sorted(os.listdir(rd))
+        except OSError:
+            continue
+        run = os.path.basename(rd.rstrip("/"))
+        for name in names:
+            m = DUMP_RE.fullmatch(name)
+            if not m:
+                continue
+            src = os.path.join(rd, name)
+            dest_dir = os.path.join(archive_root, f"{run}_canary_u{m.group(1)}")
+            dest, sha_file = os.path.join(dest_dir, name), os.path.join(dest_dir, name + ".sha256")
+            if os.path.exists(dest) and os.path.exists(sha_file):
+                continue
+            try:
+                digest = _sha256(src)
+                os.makedirs(dest_dir, exist_ok=True)
+                if os.path.exists(dest):
+                    if _sha256(dest) != digest:
+                        alert(f"dumpclash {dest}", f"canary dump {src} differs from the archived {dest}: NOT copied")
+                        continue
+                else:
+                    tmp = os.path.join(dest_dir, f".{name}.{os.getpid()}.tmp")
+                    shutil.copyfile(src, tmp)
+                    if _sha256(tmp) != digest:
+                        raise OSError(f"the copy of {src} does not hash to its source")
+                    os.link(tmp, dest)            # never over an existing file
+                    remove_under(tmp, dest_dir)
+                with open(sha_file + ".tmp", "w") as f:
+                    f.write(f"{digest}  {name}\n")
+                os.replace(sha_file + ".tmp", sha_file)
+            except (OSError, UnsafeRemove) as e:
+                alert(f"dumpfail {src}", f"canary dump {src} NOT archived to {dest_dir}: {e}")
+                continue
+            write(f"{run} canary dump {name} archived to {dest_dir} (sha256 {digest[:16]}…)")
+            n += 1
     return n
 
 
@@ -130,7 +214,10 @@ def liveness_alerts(runs: List[live.LiveRun], alert: Callable[[str, str], None],
 
 
 def watch_files(runs: List[live.LiveRun], alert: Callable[[str, str], None]) -> List[str]:
-    """Each live launcher's stdout log (what an alert watch should follow); a non-file stdout alerts once."""
+    """What the alert watch follows (with :func:`monitor_filter`): each live launcher's stdout log, and its run's
+    ``launcher_child.full.log`` (the trainer's own lines — a child Traceback, BEHAVIOUR-POLICY MISMATCH — land there;
+    it ROTATES by rename, which ``tail -F`` follows, where the ring ``launcher_child.log`` is rewritten in place and
+    would re-page old lines). A non-file stdout alerts once."""
     out = []
     for r in runs:
         if r.source == "orphan-trainer":
@@ -140,6 +227,8 @@ def watch_files(runs: List[live.LiveRun], alert: Callable[[str, str], None]) -> 
         else:
             alert(f"stdout {r.pid}:{r.start_ticks}", f"live launcher {r.pid} logs to {r.stdout or '?'!r}, not a "
                                                      "regular file — the alert watch cannot follow it")
+        if r.run_dir:
+            out.append(os.path.join(r.run_dir, "launcher_child.full.log"))
     return out
 
 
@@ -161,8 +250,8 @@ class Alerter:
             f.write(key + "\n")
 
 
-def watch(models_dir: str, out_dir: str, emit: Callable[[str], None], interval_s: float = 300.0,
-          max_hours: float = 168.0, alert_above: float = 0.54, first_record_min: float = 60.0,
+def watch(models_dir: str, out_dir: str, emit: Callable[[str], None], archive_root: str, interval_s: float = 300.0,
+          max_hours: float = 168.0, first_record_min: float = 60.0,
           proc: str = "/proc", sleep: Callable[[float], None] = time.sleep,
           passes: Optional[int] = None) -> int:
     os.makedirs(out_dir, exist_ok=True)
@@ -179,7 +268,8 @@ def watch(models_dir: str, out_dir: str, emit: Callable[[str], None], interval_s
         runs = live.discover(models_dir, proc)
         liveness_alerts(runs, alert, time.time(), first_record_min=first_record_min)
         dirs = [r.run_dir for r in runs if r.run_dir] + seen_dirs(seen)
-        scan(dirs, seen, write, alert, alert_above=alert_above)
+        scan(dirs, seen, write, alert)
+        archive_dumps(dirs, archive_root, write, alert)
         with open(os.path.join(out_dir, "canary_heartbeat"), "w") as f:
             f.write(f"{_now_iso()} pass {i + 1}/{total}\n")
         if i + 1 == total:

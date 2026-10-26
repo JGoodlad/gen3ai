@@ -91,6 +91,7 @@ class Env:
         def probe():
             return seq.pop(0) if len(seq) > 1 else seq[0]
         c = clock or FakeClock()
+        kw.setdefault("token_valid", lambda: (True, "token valid: fake"))
         return window.run_window(self.spec, self.w, runner, {"HOME": "/h", "CUDA_VISIBLE_DEVICES": ""}, probe,
                                  lambda: lease, self.said.append, monotonic=c, sleep=c.sleep, idle_wait_s=0, **kw)
 
@@ -241,3 +242,51 @@ def test_gpu_not_idle_after_last_step_fails_window(tmp_path):
     res = e.run(r, idle=[(True, "idle"), (False, "compute process(es) 777")])
     assert len(r.calls) == 2 and res.ok is False
     assert any("not idle after the window" in ln and "777" in ln for ln in res.lines)
+
+
+# -- the lease TOKEN validates before every gpu_lock step (operator review 10-27) ----------------------------
+
+def test_an_invalid_lease_token_holds_before_any_gpu_step(tmp_path):
+    """The owner NAME matched while the token had expired: gpu_lock would refuse the step, and the next GO too."""
+    from main.ops.arm_chain.launch import Hold
+    e = Env(tmp_path)
+    r = FakeRunner()
+    with pytest.raises(Hold, match="lease token does not validate before step gpu1"):
+        e.run(r, token_valid=lambda: (False, "there is no valid GPU lease"))
+    assert r.calls == []
+
+
+def test_the_token_is_checked_again_before_each_gpu_step(tmp_path):
+    from main.ops.arm_chain.launch import Hold
+    e = Env(tmp_path)
+    r = FakeRunner()
+    answers = [(True, "ok"), (False, "expired mid-window")]
+    with pytest.raises(Hold, match="before step gpu2: expired mid-window"):
+        e.run(r, token_valid=lambda: answers.pop(0))
+    assert len(r.calls) == 1
+
+
+def test_a_cpu_only_window_needs_no_token(tmp_path):
+    e = Env(tmp_path, steps=[{"name": "cpu1", "argv": ["echo", "x"], "mem_gb": 1, "timeout_s": 5, "gpu": False}])
+    res = e.run(FakeRunner(), token_valid=lambda: (False, "never asked"))
+    assert res.ok is True
+
+
+def test_lease_token_valid_reads_the_lease_without_changing_it(tmp_path, monkeypatch):
+    from utils import gpu_lease
+    monkeypatch.setenv("GEN3AI_GPU_LOCK", str(tmp_path / "gpu.lock"))
+    tok = tmp_path / "token"
+    assert window.lease_token_valid(str(tok))[0] is False                       # unreadable
+    tok.write_text("\n")
+    assert "empty" in window.lease_token_valid(str(tok))[1]
+    tok.write_text("secret-token\n")
+    ok, why = window.lease_token_valid(str(tok))
+    assert ok is False and "no valid GPU lease" in why
+    lease = gpu_lease.Lease(owner="Training Oct", note="", pid=1, start_ticks=1,
+                            token_sha256=gpu_lease.token_hash("secret-token"), started_epoch=0.0, expires_epoch=0.0,
+                            watch_pid=0, acquirer_cmd="x")
+    monkeypatch.setattr(gpu_lease, "read_lease", lambda lock: lease)
+    assert window.lease_token_valid(str(tok))[0] is True
+    tok.write_text("another-token\n")
+    ok, why = window.lease_token_valid(str(tok))
+    assert ok is False and "not the valid lease's" in why

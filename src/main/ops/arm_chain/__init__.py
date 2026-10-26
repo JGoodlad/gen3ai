@@ -18,6 +18,7 @@ temp dirs, a fake ``/proc`` and fake launchers):
 * ``armend``    — completeness, K9(b) into a SCRATCH stage, the thin, the dose record;
 * ``ship``      — record shipping from a source copy through a fresh worktree (main is never dirty);
 * ``window``    — a GPU window inserted between two arms;
-* ``chain``     — the persistent state machine that drives all of the above;
+* ``fsguard``   — the one guarded remove (a path strictly inside a root); nothing else deletes;
+* ``chain``     — the persistent state machine that drives all of the above (and the async record-ship worker);
 * ``cli``       — the verbs.
 """

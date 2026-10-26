@@ -9,6 +9,10 @@ the gap between runs, which the launcher cannot see.) The window scripts' rules,
   window's worktree clean and at or after its required commit.
 * **One process per step**, each under ``scripts/ops/gpu_lock.sh`` + ``mem_cap.sh`` with its own wall timeout (one
   pytest for 33 GPU ids let one device-side assert poison 23 verdicts, 10-24).
+* **The lease TOKEN validates before every step that uses ``gpu_lock``** (:func:`lease_token_valid`: the chain's
+  token file holds the token of the VALID lease, ``utils.gpu_lease.holds_lease``), else a HOLD whatever ``on_fail``
+  says: ``gpu_lock.sh`` would refuse the step at once, and the next arm's GO would be refused too (operator review
+  10-27). The owner-name check alone passed with an expired token.
 * **The preempt marker is read before every step**; a step not STARTED inside ``budget_min`` is NOT RUN.
 * **The GPU must be idle again after the last step** (a guest left behind would OOM the next arm's first update).
 * What a failure MEANS is the chain file's, not this module's: ``on_fail`` ``hold`` stops the chain; ``continue``
@@ -22,6 +26,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Callable, List, Mapping, Optional, Tuple
 
+from main.ops.arm_chain.launch import Hold
 from main.ops.arm_chain.runner import Runner, cpu_env, tail
 from main.ops.arm_chain.spec import ChainSpec, WindowItem
 
@@ -44,6 +49,23 @@ def lease_status(repo: str) -> str:
     p = subprocess.run([os.path.join(repo, "scripts", "ops", "gpu_lease.sh"), "status"], capture_output=True, text=True,
                        timeout=60)
     return (p.stdout or p.stderr).splitlines()[0] if (p.stdout or p.stderr) else f"(gpu_lease.sh status rc {p.returncode})"
+
+
+def lease_token_valid(token_file: str) -> Tuple[bool, str]:
+    """``(ok, why)``: does ``token_file`` hold the token of the VALID GPU lease (holder alive, holding the lock)?"""
+    from utils import gpu_lease
+    from utils.gpu_lock import lock_path
+    try:
+        if not open(token_file).read().strip():
+            return False, f"the token file {token_file} is empty"
+    except OSError as e:
+        return False, f"the token file {token_file} is unreadable ({type(e).__name__})"
+    lease = gpu_lease.read_lease(lock_path())   # read-only (``status`` would also clear a stale record)
+    if lease is None:
+        return False, "there is no valid GPU lease (expired, released, or its holder died)"
+    if not gpu_lease.token_matches(lease, {gpu_lease.TOKEN_FILE_ENV: token_file}):
+        return False, f"the token in {token_file} is not the valid lease's ({lease.describe()[:120]})"
+    return True, f"token valid: {lease.describe()[:120]}"
 
 
 @dataclass
@@ -90,7 +112,7 @@ def _marker(spec: ChainSpec, w: WindowItem) -> str:
 def run_window(spec: ChainSpec, w: WindowItem, runner: Runner, base_env: Mapping[str, str], gpu_idle: Probe,
                lease: Callable[[], str], say: Callable[[str], None],
                monotonic: Callable[[], float] = time.monotonic, sleep: Callable[[float], None] = time.sleep,
-               idle_wait_s: float = 300.0) -> WindowResult:
+               idle_wait_s: float = 300.0, token_valid: Optional[Callable[[], Tuple[bool, str]]] = None) -> WindowResult:
     why = preconditions(spec, w, gpu_idle, lease, idle_wait_s=idle_wait_s, sleep=sleep, monotonic=monotonic)
     if why:
         say(f"window {w.name}: precondition failed: {why}")
@@ -114,6 +136,11 @@ def run_window(spec: ChainSpec, w: WindowItem, runner: Runner, base_env: Mapping
         cwd = w.worktree if st.cwd == "worktree" else spec.repo
         env = cpu_env(base_env, cwd)
         if st.gpu:
+            ok, why_tok = (token_valid or (lambda: lease_token_valid(spec.backend.lease_token_file)))()
+            if not ok:
+                say(f"window {w.name}: step {st.name} NOT RUN: the GPU lease token does not validate ({why_tok})")
+                raise Hold(f"window {w.name}: the GPU lease token does not validate before step {st.name}: {why_tok} "
+                           "(re-acquire or renew the lease, then clear-hold)")
             env.pop("CUDA_VISIBLE_DEVICES", None)
             env["GEN3AI_GPU_LEASE_TOKEN_FILE"] = spec.backend.lease_token_file
             env["GEN3AI_TEST_ALLOW_GPU"] = "1"

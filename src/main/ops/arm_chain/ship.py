@@ -13,11 +13,16 @@ commits code: every destination must be a ``.json`` under the chain's records st
   every ship of every chain on the box.
 
 Any failure is a :class:`~main.ops.arm_chain.launch.Hold` naming the step; a worktree left behind is named in it.
+
+:func:`kit_k9b_out_of_main` decides whether the chain may ship ASYNCHRONOUSLY: only once the kit's ``k9b-batch``
+pre-check can no longer write a missing record into main's stage (F1), because the next arm's dry run runs it while
+the previous arm's records are still in flight.
 """
 from __future__ import annotations
 
 import fcntl
 import os
+import re
 import shutil
 import subprocess
 import time
@@ -25,7 +30,8 @@ from dataclasses import dataclass
 from typing import Callable, Dict, List, Mapping, Optional, Sequence, Tuple
 
 from main.ops.arm_chain.launch import Hold
-from main.ops.arm_chain.runner import Runner, agent_prefix
+from main.ops.arm_chain.runner import Runner, agent_prefix, cpu_env
+from main.ops.arm_chain.spec import ChainSpec
 
 #: A ship worktree is removed only after this guard finds no run data in it.
 StaticTier = Callable[[str], Tuple[int, str]]
@@ -228,3 +234,64 @@ def static_tier_runner(runner: Runner, python: str, agent_cores: str, base_env: 
                          "-p", "no:cacheprovider"], cwd=wt, env=env, timeout_s=1800, out_path=out)
         return rc, out
     return run
+
+
+def main_dirty(repo: str) -> str:
+    """``git status --porcelain`` of the main checkout (untracked included): empty = clean. A failing git is dirt
+    (it cannot be shown clean)."""
+    p = subprocess.run(["git", "-C", repo, "status", "--porcelain", "--untracked-files=all"], capture_output=True,
+                       text=True)
+    if p.returncode != 0:
+        return f"(git status failed rc {p.returncode}: {(p.stderr or '').strip()[:160]})"
+    return p.stdout.strip()
+
+
+#: The probe run in MAIN's code (the kit runs main's ``src``): ``k9b_batch`` takes ``out_dir``, and a write into the
+#: records stage inside the main checkout is REFUSED. Exit 0 = fixed.
+_K9B_PROBE = """
+import inspect, os, sys
+from main.x35 import batch as b
+if "out_dir" not in inspect.signature(b.k9b_batch).parameters:
+    sys.exit("k9b_batch takes no out_dir")
+refuse = getattr(b, "refuse_inside_main_checkout", None)
+if refuse is None:
+    sys.exit("no refuse_inside_main_checkout")
+try:
+    refuse(sys.argv[1], roots=[os.path.realpath(sys.argv[2])])
+except Exception as e:
+    print("refused:", type(e).__name__)
+    sys.exit(0)
+sys.exit("a write into main's stage is NOT refused")
+"""
+
+_K9B_BATCH_CALL = re.compile(r"\bkit\s+k9b-batch\b")
+
+
+def kit_k9b_out_of_main(spec: ChainSpec, python: Optional[str] = None,
+                        base_env: Optional[Mapping[str, str]] = None) -> Tuple[bool, str]:
+    """``(ok, why)``: may the record ship be ASYNCHRONOUS? Only when BOTH hold in the MAIN checkout the kit runs:
+
+    1. every ``kit k9b-batch`` call in the backend's launch script passes ``--out-dir`` (a scratch dir), and
+    2. main's ``main.x35.batch`` takes ``k9b_batch(out_dir=…)`` and REFUSES a record write inside the main checkout.
+
+    Anything else (an unreadable script, a probe that fails or times out) is ``False``: the ship stays synchronous,
+    which is always safe."""
+    script = os.path.join(spec.repo, spec.backend.launch_script)
+    try:
+        text = open(script, errors="replace").read()
+    except OSError as e:
+        return False, f"the launch script is unreadable ({e})"
+    calls = [ln.strip() for ln in text.splitlines() if _K9B_BATCH_CALL.search(ln) and not ln.lstrip().startswith("#")]
+    bare = [c for c in calls if "--out-dir" not in c]
+    if bare:
+        return False, f"the kit's k9b-batch pre-check still writes into the stage it reads (no --out-dir): {bare[0][:120]}"
+    env = cpu_env(base_env if base_env is not None else os.environ, spec.repo)
+    try:
+        p = subprocess.run([python or spec.python, "-c", _K9B_PROBE, os.path.join(spec.repo, spec.backend.stage),
+                            spec.repo], cwd=spec.repo, env=env, capture_output=True, text=True, timeout=120)
+    except (OSError, subprocess.TimeoutExpired) as e:
+        return False, f"the k9b-batch probe did not run ({type(e).__name__})"
+    if p.returncode != 0:
+        return False, f"main's kit still writes k9b-batch records into the stage: {(p.stderr or p.stdout).strip()[-160:]}"
+    return True, f"the kit's k9b-batch writes outside main ({len(calls)} call(s) pass --out-dir; {p.stdout.strip()})"
+

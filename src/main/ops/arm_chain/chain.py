@@ -24,6 +24,13 @@ Invariants the tests pin:
 * **A started item cannot change under the chain**: the state keeps each started item's spec snapshot; a chain
   file edited under a started item is refused (append new items freely).
 * **The hand-off is the NEXT ITEM's own pin**, by construction: there is no chain-wide pin to inherit.
+* **A registered action, never a script's choice**: a VOID banner / a failed throughput gate applies the arm's
+  ``on_void`` / ``on_throughput_fail`` (``stop``: SIGTERM the launcher through ``signal_if``, so it saves at its
+  interrupt, record it, HOLD; ``page``: HOLD only).
+* **The record ship is ASYNCHRONOUS once the kit's ``k9b-batch`` writes outside main** (``ship.kit_k9b_out_of_main``):
+  a detached ``ship-records`` worker ships while the next item starts, so a ship HOLD pages (``SHIP-HOLD:``) instead
+  of idling the GPU. Until that check passes, the ship stays synchronous. Either way main must be clean before and
+  after every dry run, and before every GO.
 """
 from __future__ import annotations
 
@@ -32,17 +39,18 @@ import fcntl
 import json
 import os
 import re
+import signal
 import time
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Mapping, Optional
+from typing import Any, Callable, Dict, List, Mapping, NoReturn, Optional
 
 from utils import procfs
 
 from main.ops.arm_chain import armend, postspawn, window
 from main.ops.arm_chain.launch import Describe, Hold, X35Launcher
-from main.ops.arm_chain.procwatch import ProcRef, alive, ref_from_pidfile
-from main.ops.arm_chain.runner import Runner, SubprocessRunner
-from main.ops.arm_chain.ship import Shipper, static_tier_runner
+from main.ops.arm_chain.procwatch import ProcRef, alive, ref_from_pidfile, signal_if, wait_gone
+from main.ops.arm_chain.runner import Runner, SubprocessRunner, agent_prefix, cpu_env
+from main.ops.arm_chain.ship import Shipper, kit_k9b_out_of_main, main_dirty, static_tier_runner
 from main.ops.arm_chain.spec import ArmItem, ChainSpec, Item, WindowItem, as_dict
 from main.ops.arm_chain.statuslog import StatusLog, Trigger, end_body, launch_tag
 
@@ -78,11 +86,24 @@ class Deps:
     shipper: Optional[Callable[[ChainSpec], Shipper]] = None
     gpu_idle: window.Probe = window.nvidia_idle
     lease: Optional[Callable[[], str]] = None
+    #: does the chain's lease token validate? ``(ok, why)``; default ``window.lease_token_valid``
+    lease_token: Optional[Callable[[], "tuple[bool, str]"]] = None
     # the kit's GO re-runs its pre-checks (checkargs <= 10 min, the dry run <= 15 min), then waits 180 s, then the
     # pool-seed check (<= 30 min): a shorter bound HOLDs a healthy launch
     wrapper_spawn_timeout_s: float = 75 * 60
     end_timeout_s: float = 7 * 24 * 3600
     poll_s: float = 30.0
+    #: the signal seam of the registered ``stop`` action (always behind ``signal_if``'s identity gate)
+    kill: Callable[[int, int], None] = os.kill
+    #: how long ``stop`` waits for the SIGTERM'd launcher (it saves at its next safe point; it SIGKILLs its child at
+    #: 150 s, TRAINING_RUN_SOP §4)
+    stop_wait_s: float = 300.0
+    #: may the record ship go asynchronous? ``(ok, why)``; default :func:`ship.kit_k9b_out_of_main`
+    kit_k9b_fixed: Optional[Callable[[ChainSpec], "tuple[bool, str]"]] = None
+    #: starts the detached ``ship-records`` worker; default the CLI verb under nice 19 on the agent cores
+    ship_spawner: Optional[Callable[[ChainSpec, ArmItem], ProcRef]] = None
+    #: the chain's end waits this long for in-flight ships before COMPLETE / SHIP-HOLD
+    ship_wait_s: float = 45 * 60
 
 
 def _iso(t: float) -> str:
@@ -106,6 +127,7 @@ class Chain:
                 raise ChainError(f"{p} is not this chain's state")
         else:
             st = {"schema": STATE_SCHEMA, "chain": self.spec.name, "items": {}, "history": []}
+        st.setdefault("ships", {})
         for it in self.spec.items:
             rec = st["items"].setdefault(it.key, {"phase": "PENDING", "hold": None, "data": {}})
             if rec["phase"] != "PENDING" and rec.get("snapshot") is not None and rec["snapshot"] != as_dict(it):
@@ -215,6 +237,7 @@ class Chain:
             r = self.state["items"][it.key]
             if r["phase"] in TERMINAL:
                 continue
+            self._reconcile_ships()
             if r.get("hold"):
                 self.log.append(f"{it.key} is HELD at {r['phase']} ({r['hold']['reason'][:120]}); nothing runs until "
                                 "clear-hold")
@@ -234,8 +257,7 @@ class Chain:
             done_items += 1
             if max_items is not None and done_items >= max_items:
                 return EXIT_OK
-        self.log.append("chain COMPLETE: every item is DONE")
-        return EXIT_OK
+        return self._finish_ships()
 
     # -- arm steps ---------------------------------------------------------------------------------------------------
     def _triggers(self, it: ArmItem) -> Dict[str, Trigger]:
@@ -245,9 +267,25 @@ class Chain:
         phase = self.rec(it)["phase"]
         getattr(self, f"_arm_{phase.lower()}")(it)
 
+    def _guard_main_clean(self, when: str) -> None:
+        """Main is never dirty under a dry run or a GO: the kit's ``k9b-batch`` used to write a missing record into
+        main's stage (F1), and an async ship lands records on main while the next arm pre-checks. Re-read a few
+        times so a ship's own fast-forward (milliseconds) is never read as dirt; dirt that stays is a HOLD."""
+        dirt = ""
+        for i in range(3):
+            dirt = main_dirty(self.spec.repo)
+            if not dirt:
+                return
+            if i < 2:
+                self.d.sleep(5)
+        raise Hold(f"main is DIRTY {when} (never dry-run or GO on a dirty main; who wrote it? the kit's k9b-batch "
+                   f"into main's stage is F1): {dirt[:200]}")
+
     def _arm_pending(self, it: ArmItem) -> None:
         disk = armend.disk_ok(self.spec.models_dir, it.disk_need_gib, self.spec.disk_headroom_gib)
+        self._guard_main_clean("before the dry run")
         d = self.launcher.prelaunch(it)
+        self._guard_main_clean("after the dry run")
         m = re.search(r"checkpoint_(\d+)_steps\.zip$", d.argv[d.argv.index("--model") + 1]) if "--model" in d.argv else None
         if not m:
             raise Hold(f"{it.run}: the describe's --model is not a checkpoint (a chain arm is a FORK)")
@@ -263,6 +301,7 @@ class Chain:
             self._set(it, "PENDING", f"the dry run is {age / 60:.0f} min old (a supervisor restart): re-checking, never "
                                      "a GO on a stale dry run")
             return
+        self._guard_main_clean("before the GO")
         ok, why = self.d.gpu_idle()
         t0 = self.d.monotonic()
         while not ok:
@@ -318,13 +357,45 @@ class Chain:
                                       clock=postspawn.Clock(self.d.sleep, self.d.monotonic))
         self._set(it, "SPAWNED", line.split("] ", 1)[-1][:200])
 
+    def _note(self, it: Item, msg: str, **data: Any) -> None:
+        """Persist ``data`` on the item and write one status line, without a phase change."""
+        self.state["items"][it.key]["data"].update(data)
+        self._save()
+        self.log.append(f"{it.key}: {msg}")
+
+    def _act(self, it: ArmItem, field_name: str, action: str, why: str) -> NoReturn:
+        """Apply the arm's REGISTERED action, then HOLD. ``page``: HOLD only. ``stop``: the SOP stop path — SIGTERM
+        the launcher through the identity gate (its pid file's process, and only if its cmdline is THIS run's
+        ``main.launcher``), so it saves at its interrupt; wait (bounded) for it to go; record it; HOLD."""
+        if action == "page":
+            raise Hold(f"{why} — {field_name} page: the run keeps training until the orchestrator decides")
+        lref = ref_from_pidfile(self.launcher.launcher_pidfile(it), self.d.proc)
+        if lref is None:
+            raise Hold(f"{why} — {field_name} stop: no live launcher in {self.launcher.launcher_pidfile(it)}; NOT "
+                       "signalled (verify by hand)")
+        ok, msg = signal_if(lref, launcher_ere(it.run), signal.SIGTERM, proc=self.d.proc, kill=self.d.kill)
+        gone = wait_gone(lref, self.d.stop_wait_s, poll_s=min(self.d.poll_s, 10.0), proc=self.d.proc,
+                         sleep=self.d.sleep, monotonic=self.d.monotonic) if ok else False
+        interrupted = os.path.isfile(os.path.join(self.spec.models_dir, it.run, "final_model_interrupted.zip"))
+        rec = {"by": field_name, "at": _iso(self.d.now()), "signalled": ok, "identity": msg[:200],
+               "launcher": lref.to_json(), "gone": gone, "interrupted_save": interrupted}
+        self._note(it, f"STOP ({field_name} stop): {msg}; launcher {'GONE' if gone else 'STILL ALIVE'} after "
+                       f"{self.d.stop_wait_s:.0f} s; final_model_interrupted.zip {'present' if interrupted else 'absent'}",
+                   stopped=rec)
+        raise Hold(f"{why} — STOPPED by the registered {field_name} stop ({'SIGTERM sent' if ok else 'NOT signalled'}: "
+                   f"{msg[:120]}; launcher {'gone' if gone else 'STILL ALIVE'}); the orchestrator decides: abandon, or "
+                   "a relaunch")
+
     def _arm_spawned(self, it: ArmItem) -> None:
         if it.banner is None:
             self._set(it, "BANNER_OK", "no banner registered for this arm")
             return
         run_dir = os.path.join(self.spec.models_dir, it.run)
         logs = [self.launcher.launcher_log(it), os.path.join(run_dir, "launcher_child.log")]
-        line = postspawn.banner_guard(logs, it.banner, clock=postspawn.Clock(self.d.sleep, self.d.monotonic))
+        try:
+            line = postspawn.banner_guard(logs, it.banner, clock=postspawn.Clock(self.d.sleep, self.d.monotonic))
+        except postspawn.Void as v:
+            self._act(it, "on_void", it.on_void, str(v))
         self._set(it, "BANNER_OK", f"banner OK: {line}")
 
     def _arm_banner_ok(self, it: ArmItem) -> None:
@@ -332,9 +403,21 @@ class Chain:
             self._set(it, "RUNNING", "no throughput gate registered for this arm")
             return
         data = self.rec(it)["data"]
-        line = postspawn.throughput_gate(os.path.join(self.spec.models_dir, it.run), int(data["fork_step"]),
-                                         it.throughput, clock=postspawn.Clock(self.d.sleep, self.d.monotonic),
-                                         already_s=self.d.now() - data["go_epoch"])
+        run_dir = os.path.join(self.spec.models_dir, it.run)
+        clock = postspawn.Clock(self.d.sleep, self.d.monotonic)
+        try:
+            if data.get("first_trainer_epoch") is None:
+                left = it.throughput.first_line_within_min * 60 - (self.d.now() - data["go_epoch"])
+                epoch, what = postspawn.wait_first_trainer_line(os.path.join(run_dir, "launcher_child.log"), run_dir,
+                                                                int(data["fork_step"]), max(left, 0.0), now=self.d.now,
+                                                                poll_s=min(self.d.poll_s, 30.0), clock=clock)
+                self._note(it, f"the throughput gate counts from {what}, {(epoch - data['go_epoch']) / 60:.0f} min "
+                               f"after the GO", first_trainer_epoch=epoch)
+                data = self.rec(it)["data"]
+            line = postspawn.throughput_gate(run_dir, int(data["fork_step"]), it.throughput, clock=clock,
+                                             already_s=self.d.now() - data["first_trainer_epoch"])
+        except postspawn.ThroughputFail as f:
+            self._act(it, "on_throughput_fail", it.on_throughput_fail, str(f))
         self._set(it, "RUNNING", line)
 
     def _arm_running(self, it: ArmItem) -> None:
@@ -384,11 +467,82 @@ class Chain:
         stage = self.spec.records_stage
         files = {os.path.join(stage, "k9b", f"{it.run}.json"): data["k9b_record"],
                  os.path.join(stage, "dose", f"{it.run}.json"): dose_src}
+        message = (f"measure(arm chain): arm-end records for {it.run} — K9(b) PASS (AM-6) + dose "
+                   f"({dose['wall_min']} min, {dose['steps_per_s']} steps/s)")
+        req = ship_request_path(self.spec, it)
+        _write_json(req, {"item": it.key, "run": it.run, "files": files, "message": message})
+        ok, why = (self.d.kit_k9b_fixed or kit_k9b_out_of_main)(self.spec)
+        if ok and (self.d.ship_spawner is not None or self.spec.source):
+            res_path = ship_result_path(self.spec, it)
+            if os.path.exists(res_path):
+                os.replace(res_path, res_path + f".prev{int(self.d.now())}")
+            ref = (self.d.ship_spawner or self._spawn_ship_worker)(self.spec, it)
+            self.state["ships"][it.key] = {"worker": ref.to_json(), "request": req, "result": res_path,
+                                           "spawned": _iso(self.d.now()), "outcome": None}
+            self._set(it, "RECORDED", f"records ship ASYNC (worker pid {ref.pid}; {why}): the chain hands off now, a "
+                                      "failed ship pages SHIP-HOLD", records_ship="async")
+            return
+        if ok:
+            why = "the chain file has no source path for a ship worker"
+        self.log.append(f"{it.key}: the records ship is SYNCHRONOUS ({why})")
         shipper = (self.d.shipper or self._default_shipper)(self.spec)
-        res = shipper.ship(files, f"measure(arm chain): arm-end records for {it.run} — K9(b) PASS (AM-6) + dose "
-                                  f"({dose['wall_min']} min, {dose['steps_per_s']} steps/s)",
-                           tag=f"{it.run}-{int(self.d.now())}")
-        self._set(it, "RECORDED", f"shipped {len(res.files)} record(s) as {res.commit}", records_commit=res.commit)
+        res = shipper.ship(files, message, tag=f"{it.run}-{int(self.d.now())}")
+        self._set(it, "RECORDED", f"shipped {len(res.files)} record(s) as {res.commit}", records_commit=res.commit,
+                  records_ship="sync")
+
+    def _spawn_ship_worker(self, spec: ChainSpec, it: ArmItem) -> ProcRef:
+        argv = [*agent_prefix(spec.agent_cores, 19), spec.python, "-m", "main.ops.arm_chain", "ship-records",
+                spec.source, "--item", it.key]
+        return self.d.runner.spawn(argv, cwd=spec.repo, env=cpu_env(self.d.base_env, spec.repo),
+                                   out_path=os.path.join(spec.work_dir, "ships", f"{it.run}.worker.txt"))
+
+    # -- async ships -------------------------------------------------------------------------------------------------
+    def _ship_outcome(self, key: str) -> Optional[Dict[str, Any]]:
+        """The worker's result, a synthetic failure for a worker that died without one, or None (in flight)."""
+        sh = self.state["ships"][key]
+        try:
+            return dict(json.loads(open(sh["result"]).read()))
+        except (OSError, ValueError):
+            pass
+        if alive(ProcRef.from_json(sh["worker"]), self.d.proc):
+            return None
+        try:   # it may have written the result between the two reads
+            return dict(json.loads(open(sh["result"]).read()))
+        except (OSError, ValueError):
+            return {"ok": False, "reason": "the ship worker died without a result (see its worker.txt)", "synthetic": True}
+
+    def _reconcile_ships(self) -> None:
+        """Record each ship's outcome; a FAILED one is re-read every time, so a by-hand ``ship-records`` retry that
+        succeeded is taken (the next ``run`` then completes the chain)."""
+        for key, sh in self.state["ships"].items():
+            old = sh.get("outcome")
+            if old is not None and old.get("ok"):
+                continue
+            out = self._ship_outcome(key)
+            if out is None or out == old:
+                continue
+            sh["outcome"] = out
+            self._save()
+            if out.get("synthetic") and old is None:   # the worker wrote no line of its own
+                self.log.append(f"SHIP-HOLD: {key}: {out['reason']}; retry: {retry_hint(self.spec, key)}")
+
+    def _finish_ships(self) -> int:
+        """The chain's end: wait (bounded) for in-flight ships; COMPLETE only when every record landed."""
+        t0 = self.d.monotonic()
+        while True:
+            self._reconcile_ships()
+            pending = [k for k, sh in self.state["ships"].items() if sh.get("outcome") is None]
+            if not pending or self.d.monotonic() - t0 > self.d.ship_wait_s:
+                break
+            self.d.sleep(min(self.d.poll_s, 15.0))
+        failed = [k for k, sh in self.state["ships"].items()
+                  if sh.get("outcome") is not None and not sh["outcome"].get("ok")]
+        if pending or failed:
+            self.log.append(f"SHIP-HOLD: every item is DONE but records are NOT all shipped (in flight {pending}, "
+                            f"failed {failed}); retry each: {retry_hint(self.spec, '<item>')}")
+            return EXIT_HOLD
+        self.log.append("chain COMPLETE: every item is DONE")
+        return EXIT_OK
 
     def _default_shipper(self, spec: ChainSpec) -> Shipper:
         return Shipper(spec.repo, spec.records_stage, spec.submodules, spec.work_dir,
@@ -415,7 +569,8 @@ class Chain:
         self._set(w, "STARTED", "the window starts")
         lease = self.d.lease or (lambda: window.lease_status(self.spec.repo))
         res = window.run_window(self.spec, w, self.d.runner, self.d.base_env, self.d.gpu_idle, lease,
-                                say=lambda m: self.log.append(m), monotonic=self.d.monotonic, sleep=self.d.sleep)
+                                say=lambda m: self.log.append(m), monotonic=self.d.monotonic, sleep=self.d.sleep,
+                                token_valid=self.d.lease_token)
         if res.ok:
             self._set(w, "DONE", f"window PASS; hand-off to {self._next(w)}")
         elif w.on_fail == "continue":
@@ -430,5 +585,62 @@ class Chain:
         for it in self.spec.items:
             r = self.state["items"][it.key]
             h = f"  HOLD: {r['hold']['reason'][:160]}" if r.get("hold") else ""
-            out.append(f"{it.key:<40} {r['phase']:<12}{h}")
+            sh = ""
+            if it.key in self.state["ships"]:
+                o = self._ship_outcome(it.key)
+                sh = ("  ship: IN FLIGHT" if o is None else f"  ship: {o.get('commit')}" if o.get("ok")
+                      else f"  ship: FAILED ({str(o.get('reason'))[:100]})")
+            out.append(f"{it.key:<40} {r['phase']:<12}{h}{sh}")
         return out
+
+
+def launcher_ere(run: str) -> str:
+    """The identity a ``stop`` signals: THIS run's ``main.launcher`` (``--run-name <run>``, the name terminated)."""
+    return r"main\.launcher .*--run-name[ =]" + re.escape(run) + r"( |$)"
+
+
+def ship_request_path(spec: ChainSpec, it: ArmItem) -> str:
+    return os.path.join(spec.work_dir, "ships", f"{it.run}.request.json")
+
+
+def ship_result_path(spec: ChainSpec, it: ArmItem) -> str:
+    return os.path.join(spec.work_dir, "ships", f"{it.run}.result.json")
+
+
+def retry_hint(spec: ChainSpec, key: str) -> str:
+    return f"python -m main.ops.arm_chain ship-records {spec.source or '<chain.json>'} --item {key}"
+
+
+def _write_json(path: str, d: Mapping[str, Any]) -> None:
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    tmp = f"{path}.{os.getpid()}.tmp"
+    with open(tmp, "w") as f:
+        json.dump(d, f, indent=1, sort_keys=True)
+        f.write("\n")
+    os.replace(tmp, path)
+
+
+def ship_worker(spec: ChainSpec, key: str, shipper: Shipper, now: Callable[[], float] = time.time) -> int:
+    """The detached ``ship-records`` worker (and the by-hand retry): ship one arm's records from its request file,
+    write the result file, and write ONE status line itself (the supervisor may be deep in the next arm's wait).
+    Idempotent: a re-ship of records already on the remote is a success (``Shipper._already_shipped``)."""
+    it = next((i for i in spec.arms() if i.key == key), None)
+    if it is None:
+        raise ChainError(f"{key} is not an arm of chain {spec.name}")
+    log = StatusLog(spec.status_file, own_tag(spec))
+    try:
+        req = json.loads(open(ship_request_path(spec, it)).read())
+    except (OSError, ValueError) as e:
+        raise ChainError(f"{key}: no readable ship request at {ship_request_path(spec, it)} ({e}): the arm has not "
+                         "reached THINNED") from e
+    try:
+        res = shipper.ship(dict(req["files"]), str(req["message"]), tag=f"{it.run}-{int(now())}")
+    except Exception as h:   # a Hold, or anything else: never die without a result and a page
+        why = str(h) if isinstance(h, Hold) else f"UNEXPECTED {type(h).__name__}: {h}"
+        _write_json(ship_result_path(spec, it), {"ok": False, "reason": why[:600], "at": _iso(now())})
+        log.append(f"SHIP-HOLD: {key}: {why[:300]}; retry: {retry_hint(spec, key)}")
+        return EXIT_HOLD
+    _write_json(ship_result_path(spec, it), {"ok": True, "commit": res.commit, "files": res.files,
+                                             "already": res.already, "at": _iso(now())})
+    log.append(f"{key}: records shipped as {res.commit}{' (already on the remote)' if res.already else ''} (async)")
+    return EXIT_OK

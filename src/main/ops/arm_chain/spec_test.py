@@ -13,7 +13,7 @@ TRAINER = "train_rl_agent" + ".py"  # concatenated: root rule 3, this file never
 
 def minimal_arm(**over):
     d = {"kind": "arm", "arm": "n1p", "seed": 3501, "pin": PIN_A, "run": "rb_x35_n1p_s3501", "go_by": "orchestrator",
-         "thin": "planner", "disk_need_gib": 50}
+         "thin": "planner", "disk_need_gib": 50, "on_void": "page", "on_throughput_fail": "stop"}
     d.update(over)
     return d
 
@@ -154,3 +154,25 @@ def test_a_status_file_the_kit_does_not_write_is_refused():
     d["status_file"] = "/elsewhere/status.txt"
     with pytest.raises(spec.SpecError, match="status_file"):
         spec.parse(d)
+
+
+@pytest.mark.parametrize("field", ["on_void", "on_throughput_fail"])
+def test_each_arm_must_register_its_action_with_no_default(field):
+    """Operator review 10-27: what a VOID / a failed throughput gate DOES is the arm's registered field (stop | page),
+    never a default the chain picks."""
+    d = minimal_chain()
+    del d["items"][0][field]
+    with pytest.raises(spec.SpecError, match=f"{field} is required"):
+        spec.parse(d)
+    with pytest.raises(spec.SpecError, match=field):
+        spec.parse(with_arm(**{field: "kill"}))
+    a = spec.parse(minimal_chain()).arms()[0]
+    assert (a.on_void, a.on_throughput_fail) == ("page", "stop")
+
+
+def test_throughput_first_line_bound_parses_with_its_default():
+    """The gate counts from the first trainer line; the bound on REACHING that line is its own field (default 90)."""
+    a = spec.parse(with_arm(throughput={"min_steps_per_s": 1000})).arms()[0]
+    assert (a.throughput.within_min, a.throughput.first_line_within_min) == (60, 90)
+    a = spec.parse(with_arm(throughput={"min_steps_per_s": 1000, "within_min": 45, "first_line_within_min": 40})).arms()[0]
+    assert (a.throughput.within_min, a.throughput.first_line_within_min) == (45, 40)

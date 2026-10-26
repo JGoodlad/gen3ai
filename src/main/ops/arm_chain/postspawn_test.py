@@ -190,3 +190,76 @@ def test_dead_wrapper_without_a_line_raises_hold(tmp_path):
     with pytest.raises(Hold, match="is gone without"):
         ps.wait_spawned(log, passed, held, ProcRef(999999999, 1), 3600, clock=clock)
     assert clock.now == 0
+
+
+# -- the registered-action exception types and the first-trainer-line clock (operator review 10-27) ----------
+
+def test_a_void_line_and_a_missing_banner_raise_void_for_the_registered_action(tmp_path):
+    """The chain applies ``on_void`` only to a VOID: both VOID shapes raise :class:`Void` (a Hold)."""
+    log = tmp_path / "launcher.log"
+    log.write_text("[TEAM-MIX] FATAL: no lever\n")
+    with pytest.raises(ps.Void):
+        ps.banner_guard([str(log)], BANNER, clock=FakeClock())
+    log.write_text("nothing yet\n")
+    with pytest.raises(ps.Void, match="no '\\[TEAM-MIX\\] d3_setmut_v1@ALL' banner"):
+        ps.banner_guard([str(log)], BANNER, poll_s=60, clock=FakeClock())
+
+
+def test_a_failed_gate_raises_throughput_fail(tmp_path):
+    mk_ckpts(str(tmp_path), [(2000, T0), (3000, T0 + 2)])
+    with pytest.raises(ps.ThroughputFail):
+        ps.throughput_gate(str(tmp_path), 1000, Throughput(1000, 1), poll_s=10, clock=FakeClock())
+
+
+def test_the_launchers_child_attached_header_is_not_a_trainer_line(tmp_path):
+    p = tmp_path / "launcher_child.log"
+    assert ps.first_trainer_line(str(p)) is None
+    p.write_text("\n===== child attached 2026-10-27 01:00:00 (pid 42) =====\n\n")
+    assert ps.first_trainer_line(str(p)) is None
+    p.write_text(p.read_text() + "[rust_rollout] building 256 envs\n")
+    assert ps.first_trainer_line(str(p)) == "[rust_rollout] building 256 envs"
+
+
+def test_the_gate_counts_from_the_first_trainer_line_not_the_go(tmp_path):
+    """The 10-27 cold start: the first trainer line came 23 min after the GO and the bar was reached 48 min after
+    THAT line (71 min after the GO). Counted from the first line (60 min) it PASSES; counted from the GO it failed."""
+    run = str(tmp_path / "run")
+    child = os.path.join(run, "launcher_child.log")
+    os.makedirs(run)
+    open(child, "w").write("===== child attached 2026-10-27 01:00:00 (pid 42) =====\n")
+    clock = FakeClock()
+    wall = {"go": 1_000_000.0}
+    now = lambda: wall["go"] + clock.now  # noqa: E731
+
+    def tick(s):
+        clock._sleep(s)
+        if clock.now >= 23 * 60 and "trainer" not in open(child).read():
+            open(child, "a").write("trainer: starting\n")
+        if clock.now >= 71 * 60 and not ps.new_checkpoints(run, 1000):
+            mk_ckpts(run, [(2000, now() - 2), (5000, now())])
+    clock.sleep = tick
+    epoch, what = ps.wait_first_trainer_line(child, run, 1000, deadline_s=90 * 60, now=now, poll_s=30, clock=clock)
+    assert "first trainer line" in what and 23 * 60 <= epoch - wall["go"] <= 23 * 60 + 30
+    out = ps.throughput_gate(run, 1000, Throughput(1000, 60), poll_s=60, clock=clock, already_s=now() - epoch)
+    assert "1,500 steps/s" in out
+    # the reverted rule (the deadline from the GO) fails the same healthy cold start
+    clock.now, wall["go"] = 23 * 60, wall["go"] + 10_000
+    for f in os.listdir(os.path.join(run, "checkpoints")):
+        os.unlink(os.path.join(run, "checkpoints", f))
+    with pytest.raises(ps.ThroughputFail):
+        ps.throughput_gate(run, 1000, Throughput(1000, 60), poll_s=60, clock=clock, already_s=23 * 60)
+
+
+def test_no_trainer_line_by_its_bound_is_a_throughput_fail(tmp_path):
+    run = str(tmp_path / "run")
+    os.makedirs(run)
+    with pytest.raises(ps.ThroughputFail, match="never started"):
+        ps.wait_first_trainer_line(os.path.join(run, "launcher_child.log"), run, 1000, deadline_s=600, poll_s=30,
+                                   clock=FakeClock())
+
+
+def test_a_first_own_checkpoint_starts_the_clock_at_its_mtime(tmp_path):
+    mk_ckpts(str(tmp_path), [(1000, T0 - 50), (2000, T0)])
+    epoch, what = ps.wait_first_trainer_line(str(tmp_path / "none.log"), str(tmp_path), 1000, deadline_s=1,
+                                             clock=FakeClock())
+    assert epoch == T0 and "first own checkpoint" in what

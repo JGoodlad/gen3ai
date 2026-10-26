@@ -32,6 +32,10 @@ _SLUG = re.compile(r"[a-z0-9][a-z0-9_-]*")
 _TRAINER_SCRIPT = "train_rl_agent" + ".py"
 THIN_POLICIES = ("planner", "none")
 ON_FAIL = ("hold", "continue")
+#: The REGISTERED action on a VOID banner / a failed first-hour throughput gate (required per arm, no default):
+#: ``stop`` = the SOP stop path (SIGTERM the launcher through the identity gate, so it saves at its interrupt; record
+#: it; HOLD); ``page`` = HOLD and page only (the run keeps training until the orchestrator decides).
+ACTIONS = ("stop", "page")
 
 
 class SpecError(ValueError):
@@ -49,10 +53,14 @@ class Banner:
 
 @dataclass(frozen=True)
 class Throughput:
-    """The first-hour gate: a marginal steps/s (checkpoint mtimes) of at least ``min_steps_per_s`` by ``within_min``."""
+    """The first-hour gate: a marginal steps/s (checkpoint mtimes) of at least ``min_steps_per_s`` within
+    ``within_min`` of the FIRST TRAINER LINE (or the first own checkpoint), never of the GO: a cold start took
+    ~22-23 min from the GO to its first line (10-27). No trainer line ``first_line_within_min`` after the GO fails
+    the gate too."""
 
     min_steps_per_s: float
     within_min: float
+    first_line_within_min: float = 90.0
 
 
 @dataclass(frozen=True)
@@ -69,6 +77,8 @@ class ArmItem:
     banner: Optional[Banner]
     throughput: Optional[Throughput]
     disk_need_gib: float
+    on_void: str = ""
+    on_throughput_fail: str = ""
     kind: str = "arm"
 
     @property
@@ -192,13 +202,21 @@ def _arm(d: Mapping[str, Any], where: str) -> ArmItem:
     if d.get("throughput"):
         t = d["throughput"]
         tp = Throughput(min_steps_per_s=float(_req(t, "min_steps_per_s", f"{where}.throughput")),
-                        within_min=float(t.get("within_min", 60)))
+                        within_min=float(t.get("within_min", 60)),
+                        first_line_within_min=float(t.get("first_line_within_min", 90)))
     seed = d.get("seed")
     if not isinstance(seed, int):
         raise SpecError(f"{where}: seed must be an integer")
+    acts = {}
+    for k in ("on_void", "on_throughput_fail"):
+        v = d.get(k)
+        if v not in ACTIONS:
+            raise SpecError(f"{where}: {k} is required, one of {ACTIONS} (no default: say whether the chain STOPS the "
+                            f"run or only pages), not {v!r}")
+        acts[k] = str(v)
     return ArmItem(arm=str(_req(d, "arm", where)), seed=seed, pin=pin, run=run, go_by=str(_req(d, "go_by", where)),
                    thin=thin, thin_reason=reason, flags=flags, verify=verify, banner=banner, throughput=tp,
-                   disk_need_gib=float(_req(d, "disk_need_gib", where)))
+                   disk_need_gib=float(_req(d, "disk_need_gib", where)), **acts)
 
 
 def _window(d: Mapping[str, Any], where: str) -> WindowItem:
@@ -308,7 +326,8 @@ def describe_item(it: Item) -> str:
         thin = it.thin if it.thin == "planner" else f"none ({it.thin_reason})"
         return (f"ARM {it.arm} s{it.seed} -> {it.run} at pin {it.pin[:12]} (GO by {it.go_by}); thin {thin}; "
                 f"flags {' '.join(it.flags) or '-'}; verify x{len(it.verify)}; "
-                f"banner {'yes' if it.banner else 'no'}; throughput {it.throughput.min_steps_per_s if it.throughput else '-'}")
+                f"banner {'yes' if it.banner else 'no'}; throughput {it.throughput.min_steps_per_s if it.throughput else '-'}; "
+                f"on VOID {it.on_void.upper()}, on a throughput fail {it.on_throughput_fail.upper()}")
     return (f"WINDOW {it.name}: {len(it.steps)} step(s) in {it.worktree} (>= {it.require_commit[:12]}), budget "
             f"{it.budget_min:g} min, on failure {it.on_fail.upper()}, preempt marker {it.preempt_marker}")
 

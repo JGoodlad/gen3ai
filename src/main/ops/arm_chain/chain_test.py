@@ -50,7 +50,11 @@ def deps(w: World, runner: FakeRunner, shipper: FakeShipper) -> C.Deps:
                   launcher=lambda s: X35Launcher(s, runner, env, gate=gate, niceness=lambda: 0),
                   shipper=lambda s: shipper,  # type: ignore[arg-type, return-value]
                   gpu_idle=lambda: (True, "idle"),
-                  lease=lambda: "LEASED: lease owner 'Training Oct', token …")
+                  lease=lambda: "LEASED: lease owner 'Training Oct', token …",
+                  lease_token=lambda: (True, "token valid: fake"),
+                  # the unfixed kit (F1) unless a test says otherwise: the ship stays synchronous
+                  kit_k9b_fixed=lambda s: (False, "test: the kit's k9b-batch still writes into main's stage"),
+                  sleep=lambda x: __import__("time").sleep(min(x, 0.05)), stop_wait_s=10)
 
 
 def runner_for(w: World, **planner: Any) -> FakeRunner:
@@ -378,3 +382,295 @@ def test_clearing_a_mid_go_hold_takes_the_orchestrators_edit(w):
     ch3 = C.Chain(w.spec([w.arm("a1", 1, w.pin_b)]), d)
     assert ch3.run() == C.EXIT_OK, status(w)
     assert [c for c in w.calls() if c.startswith("GO")] == [f"GO a1 1 {w.pin_b} CVD=unset"]
+
+
+# -- registered actions (operator review 10-27) -------------------------------------------------------------
+
+def _recording_kill(killed: List[Any]):
+    from utils import procfs
+
+    def kill(pid: int, sig: int) -> None:
+        cmd = procfs.cmdline(pid)
+        assert "rb_a1_s1" in cmd, f"a test signals only its own fake launcher, not {cmd!r}"
+        killed.append((pid, sig, cmd))
+        os.kill(pid, sig)
+    return kill
+
+
+def _void_arm(w: World, on_void: str) -> Dict[str, Any]:
+    return w.arm("a1", 1, w.pin_a, on_void=on_void,
+                 banner={"expect": "[TEAM-MIX] ok", "void": ["TEAM-MIX] FATAL"], "within_min": 1})
+
+
+def test_a_void_arm_registered_stop_is_sigtermed_through_the_identity_gate_recorded_and_held(w):
+    import signal as S
+    w.knobs("rb_a1_s1", FAKE_RUN_S=30, FAKE_BANNER="[TEAM-MIX] FATAL: the lever did not load")
+    killed: List[Any] = []
+    d = deps(w, runner_for(w), FakeShipper(w.repo))
+    d.kill = _recording_kill(killed)
+    ch = C.Chain(w.spec([_void_arm(w, "stop"), w.arm("a2", 2, w.pin_b)]), d)
+    assert ch.run() == C.EXIT_HOLD
+    assert [(k[1], "main.launcher --run-name rb_a1_s1" in k[2]) for k in killed] == [(S.SIGTERM, True)]
+    r = ch.state["items"]["arm:rb_a1_s1"]
+    assert r["hold"]["reason"].startswith("VOID") and "STOPPED by the registered on_void stop" in r["hold"]["reason"]
+    assert r["data"]["stopped"]["signalled"] is True and r["data"]["stopped"]["gone"] is True
+    assert "arm:rb_a1_s1: STOP (on_void stop)" in status(w)
+    assert [c for c in w.calls() if c.startswith("GO a2")] == []
+
+
+def test_a_void_arm_registered_page_is_held_and_never_signalled(w):
+    w.knobs("rb_a1_s1", FAKE_RUN_S=3, FAKE_BANNER="[TEAM-MIX] FATAL: the lever did not load")
+    killed: List[Any] = []
+    d = deps(w, runner_for(w), FakeShipper(w.repo))
+    d.kill = _recording_kill(killed)
+    ch = C.Chain(w.spec([_void_arm(w, "page")]), d)
+    assert ch.run() == C.EXIT_HOLD
+    assert killed == [] and "on_void page" in ch.state["items"]["arm:rb_a1_s1"]["hold"]["reason"]
+    assert "stopped" not in ch.state["items"]["arm:rb_a1_s1"]["data"]
+
+
+@pytest.mark.parametrize("pidfile", ["absent", "not-the-launcher"])
+def test_a_stop_signals_nothing_without_this_runs_live_launcher(w, pidfile):
+    """The identity gate: no live process in the pid file, or one whose cmdline is not THIS run's launcher (here the
+    test process itself), is never signalled; the HOLD says so."""
+    w.knobs("rb_a1_s1", FAKE_RUN_S=3, FAKE_BANNER="[TEAM-MIX] FATAL: the lever did not load")
+    killed: List[Any] = []
+    d = deps(w, runner_for(w), FakeShipper(w.repo))
+    d.kill = _recording_kill(killed)
+    ch = C.Chain(w.spec([_void_arm(w, "stop")]), d)
+    fake_pidfile = os.path.join(w.root, "other.pid")
+    if pidfile == "not-the-launcher":
+        with open(fake_pidfile, "w") as f:
+            f.write(f"{os.getpid()}\n")
+    ch.launcher.launcher_pidfile = lambda it: fake_pidfile  # type: ignore[method-assign]
+    assert ch.run() == C.EXIT_HOLD
+    reason = ch.state["items"]["arm:rb_a1_s1"]["hold"]["reason"]
+    assert killed == [] and "NOT signalled" in reason
+    if pidfile == "not-the-launcher":
+        assert "identity MISMATCH" in reason and ch.state["items"]["arm:rb_a1_s1"]["data"]["stopped"]["signalled"] is False
+
+
+def test_a_failed_throughput_gate_registered_stop_is_sigtermed(w):
+    """The fake run writes 10 steps/s checkpoints: a 1,000 steps/s bar fails, and the registered stop applies."""
+    import signal as S
+    w.knobs("rb_a1_s1", FAKE_RUN_S=30)
+    killed: List[Any] = []
+    d = deps(w, runner_for(w), FakeShipper(w.repo))
+    d.kill = _recording_kill(killed)
+    arm = w.arm("a1", 1, w.pin_a, on_throughput_fail="stop", throughput={"min_steps_per_s": 1000, "within_min": 1})
+    ch = C.Chain(w.spec([arm]), d)
+    assert ch.run() == C.EXIT_HOLD
+    assert [k[1] for k in killed] == [S.SIGTERM]
+    assert "STOPPED by the registered on_throughput_fail stop" in ch.state["items"]["arm:rb_a1_s1"]["hold"]["reason"]
+
+
+def test_the_stop_identity_never_matches_another_run():
+    import re
+    ere = re.compile(C.launcher_ere("rb_x35_c0_s350"))
+    assert ere.search("python -m main.launcher --pin-commit abc --run-name rb_x35_c0_s350 --device cuda")
+    assert ere.search("python -m main.launcher --run-name=rb_x35_c0_s350")
+    assert not ere.search("python -m main.launcher --run-name rb_x35_c0_s3501 --device cuda")
+    assert not ere.search("bash launch_x35.sh c0 350 --run-name rb_x35_c0_s350")
+
+
+def test_the_throughput_gate_counts_from_the_first_trainer_line_not_the_go(w):
+    """Operator review 10-27: a healthy cold start's first trainer line came ~23 min after the GO. GO 50 min ago, the
+    first line seen now, the bar reached 30 min later: PASS (counted from the GO it would have failed at 60)."""
+    clock = {"t": 0.0}
+    wall0 = 2_000_000_000.0
+    d = deps(w, runner_for(w), FakeShipper(w.repo))
+    d.now, d.monotonic = (lambda: wall0 + clock["t"]), (lambda: clock["t"])
+    run_dir = os.path.join(w.models, "rb_a1_s1")
+    os.makedirs(run_dir)
+    with open(os.path.join(run_dir, "launcher_child.log"), "w") as f:
+        f.write("===== child attached 2026-10-27 01:00:00 (pid 1) =====\ntrainer: building envs\n")
+
+    def sleep(s: float) -> None:
+        clock["t"] += s
+        if clock["t"] >= 30 * 60 and not os.path.isdir(os.path.join(run_dir, "checkpoints")):
+            os.makedirs(os.path.join(run_dir, "checkpoints"))
+            for step, dt_s in ((2000, -2.0), (5000, 0.0)):
+                p = os.path.join(run_dir, "checkpoints", f"checkpoint_{step}_steps.zip")
+                open(p, "w").close()
+                os.utime(p, (wall0 + clock["t"] + dt_s, wall0 + clock["t"] + dt_s))
+    d.sleep = sleep
+    arm = w.arm("a1", 1, w.pin_a, throughput={"min_steps_per_s": 1000, "within_min": 60})
+    spec = w.spec([arm])
+    ch = C.Chain(spec, d)
+    r = ch.state["items"]["arm:rb_a1_s1"]
+    r["phase"] = "BANNER_OK"
+    r["data"].update(go_epoch=wall0 - 50 * 60, fork_step=1000)
+    ch._arm_step(spec.arms()[0])
+    r = ch.state["items"]["arm:rb_a1_s1"]
+    assert r["phase"] == "RUNNING" and r["data"]["first_trainer_epoch"] == wall0
+    assert "counts from the first trainer line" in status(w) and "50 min after the GO" in status(w)
+
+
+# -- the record ship: asynchronous once the kit's k9b-batch writes outside main (operator review 10-27) ------
+
+def _git_status(w: World) -> str:
+    return subprocess.run(["git", "-C", w.repo, "status", "--porcelain"], capture_output=True, text=True).stdout
+
+
+def _async_spawner(w: World, ok: bool, spawned: List[str]):
+    """A real detached worker that writes its result only once the NEXT arm's GO is in calls.log (bounded 30 s): a
+    chain that waited on the ship would never GO a2, and the worker would write a timeout instead."""
+    from main.ops.arm_chain.runner import SubprocessRunner
+
+    def spawn(spec: ChainSpec, it: Any) -> ProcRef:
+        spawned.append(it.key)
+        res = C.ship_result_path(spec, it)
+        calls = os.path.join(w.job, "fake", "calls.log")
+        body = '{"ok": true, "commit": "c0ffee123"}' if ok else '{"ok": false, "reason": "push failed twice"}'
+        script = (f"for i in $(seq 600); do grep -q '^GO a2' {calls} 2>/dev/null && break; sleep 0.05; done; "
+                  f"grep -q '^GO a2' {calls} && echo '{body}' > {res}.tmp || echo '{{\"ok\": false, \"reason\": "
+                  f"\"the chain waited on the ship\"}}' > {res}.tmp; mv {res}.tmp {res}")
+        os.makedirs(os.path.dirname(res), exist_ok=True)
+        return SubprocessRunner().spawn(["bash", "-c", script], cwd=w.root, env=dict(os.environ),
+                                        out_path=res + ".worker.txt")
+    return spawn
+
+
+def test_an_async_ship_lets_the_next_arm_go_while_the_records_are_in_flight(w):
+    sh, spawned = FakeShipper(w.repo), []
+    d = deps(w, runner_for(w), sh)
+    d.kit_k9b_fixed = lambda s: (True, "test: the kit writes outside main")
+    d.ship_spawner = _async_spawner(w, True, spawned)
+    ch = C.Chain(w.spec([w.arm("a1", 1, w.pin_a), w.arm("a2", 2, w.pin_b)]), d)
+    assert ch.run() == C.EXIT_OK, status(w)
+    assert spawned == ["arm:rb_a1_s1", "arm:rb_a2_s2"] and sh.shipped == []
+    assert [o["outcome"]["ok"] for o in ch.state["ships"].values()] == [True, True]
+    assert "records ship ASYNC" in status(w) and "chain COMPLETE" in status(w)
+    req = json.loads(open(C.ship_request_path(ch.spec, ch.spec.arms()[0])).read())
+    assert sorted(req["files"]) == [os.path.join(w.stage_rel, "dose", "rb_a1_s1.json"),
+                                    os.path.join(w.stage_rel, "k9b", "rb_a1_s1.json")]
+
+
+def test_a_failed_async_ship_pages_ship_hold_without_idling_the_gpu(w):
+    """The point of the async ship: a ship HOLD no longer stops the next GO; it pages, and the chain's end says so."""
+    spawned: List[str] = []
+    d = deps(w, runner_for(w), FakeShipper(w.repo))
+    d.kit_k9b_fixed = lambda s: (True, "test")
+    d.ship_spawner = _async_spawner(w, False, spawned)
+    ch = C.Chain(w.spec([w.arm("a1", 1, w.pin_a), w.arm("a2", 2, w.pin_b)]), d)
+    assert ch.run() == C.EXIT_HOLD
+    assert f"GO a2 2 {w.pin_b} CVD=unset" in w.calls()
+    assert set(phases(ch).values()) == {"DONE"}
+    assert "SHIP-HOLD: every item is DONE but records are NOT all shipped" in status(w)
+    assert "chain COMPLETE" not in status(w)
+    # the by-hand retry (``ship-records``) lands them; the next ``run`` takes it and completes the chain
+    for it in ch.spec.arms():
+        assert C.ship_worker(ch.spec, it.key, FakeShipper(w.repo)) == C.EXIT_OK
+    assert C.Chain(ch.spec, d).run() == C.EXIT_OK and "chain COMPLETE" in status(w)
+
+
+def test_a_ship_worker_that_dies_without_a_result_pages(w):
+    from main.ops.arm_chain.runner import SubprocessRunner
+    d = deps(w, runner_for(w), FakeShipper(w.repo))
+    d.kit_k9b_fixed = lambda s: (True, "test")
+    d.ship_spawner = lambda spec, it: SubprocessRunner().spawn(["true"], cwd=w.root, env=dict(os.environ),
+                                                               out_path=os.path.join(w.root, "worker.txt"))
+    ch = C.Chain(w.spec([w.arm("a1", 1, w.pin_a)]), d)
+    assert ch.run() == C.EXIT_HOLD
+    assert "SHIP-HOLD: arm:rb_a1_s1: the ship worker died without a result" in status(w)
+
+
+def test_an_unfixed_kit_keeps_the_ship_synchronous(w):
+    """Until the kit's k9b-batch writes outside main (F1), the async path refuses: the records land before the next
+    dry run can run k9b-batch."""
+    sh, spawned = FakeShipper(w.repo), []
+    d = deps(w, runner_for(w), sh)
+    d.ship_spawner = _async_spawner(w, True, spawned)
+    ch = C.Chain(w.spec([w.arm("a1", 1, w.pin_a)]), d)
+    assert ch.run() == C.EXIT_OK
+    assert spawned == [] and len(sh.shipped) == 1
+    assert "the records ship is SYNCHRONOUS (test: the kit's k9b-batch still writes into main's stage)" in status(w)
+
+
+def test_a_dirty_main_holds_before_the_dry_run(w):
+    with open(os.path.join(w.repo, "stray.txt"), "w") as f:
+        f.write("x")
+    ch = C.Chain(w.spec([w.arm("a1", 1, w.pin_a)]), deps(w, runner_for(w), FakeShipper(w.repo)))
+    assert ch.run() == C.EXIT_HOLD
+    assert "main is DIRTY before the dry run" in ch.state["items"]["arm:rb_a1_s1"]["hold"]["reason"]
+    assert w.calls() == []
+
+
+def test_a_dry_run_that_dirties_main_holds_and_never_goes(w):
+    """F1's shape: the unfixed kit's k9b-batch wrote a missing record into main's stage during the dry run."""
+    w.knobs("rb_a1_s1", FAKE_DIRTY_MAIN=1)
+    ch = C.Chain(w.spec([w.arm("a1", 1, w.pin_a)]), deps(w, runner_for(w), FakeShipper(w.repo)))
+    assert ch.run() == C.EXIT_HOLD
+    assert "main is DIRTY after the dry run" in ch.state["items"]["arm:rb_a1_s1"]["hold"]["reason"]
+    assert [c for c in w.calls() if c.startswith("GO")] == [] and "written_by_k9b_batch" in _git_status(w)
+
+
+class _FailingShipper(FakeShipper):
+    def ship(self, files: Mapping[str, str], message: str, tag: str) -> ShipResult:
+        from main.ops.arm_chain.launch import Hold
+        raise Hold("static tier failed (rc 1) — not shipped")
+
+
+def test_the_ship_worker_writes_its_result_and_one_line_and_is_the_retry(w):
+    sh = FakeShipper(w.repo)
+    d = deps(w, runner_for(w), sh)
+    spec = w.spec([w.arm("a1", 1, w.pin_a)])
+    C.Chain(spec, d).run()                                   # a synchronous chain leaves the request file behind
+    it = spec.arms()[0]
+    assert C.ship_worker(spec, it.key, _FailingShipper(w.repo)) == C.EXIT_HOLD
+    assert json.loads(open(C.ship_result_path(spec, it)).read())["ok"] is False
+    assert "SHIP-HOLD: arm:rb_a1_s1: static tier failed" in status(w) and "ship-records" in status(w)
+    assert C.ship_worker(spec, it.key, sh) == C.EXIT_OK
+    assert json.loads(open(C.ship_result_path(spec, it)).read())["commit"] == "feedface1"
+    assert "arm:rb_a1_s1: records shipped as feedface1 (async)" in status(w)
+
+
+def test_the_kit_check_refuses_until_the_launch_script_and_main_code_write_outside_main(w):
+    """``ship.kit_k9b_out_of_main``: the launch script's k9b-batch must pass --out-dir AND main's batch module must
+    refuse a write inside main; either missing keeps the ship synchronous."""
+    import sys
+    from main.ops.arm_chain.ship import kit_k9b_out_of_main
+    spec = w.spec([w.arm("a1", 1, w.pin_a)])
+    sh = os.path.join(w.repo, "kit", "launch_x35.sh")
+    body = open(sh).read()
+    with open(sh, "a") as f:
+        f.write('\n  kit k9b-batch --stage "$STAGE" --models-dir "$MODELS" > "$out.k9b.txt" 2>&1\n')
+    ok, why = kit_k9b_out_of_main(spec, python=sys.executable)
+    assert ok is False and "no --out-dir" in why
+    with open(sh, "w") as f:
+        f.write(body + '\n  kit k9b-batch --stage "$STAGE" --models-dir "$MODELS" --out-dir "$K9B_OUT" > x 2>&1\n')
+    pkg = os.path.join(w.repo, "src", "main", "x35")
+    os.makedirs(pkg)
+    for p in (os.path.join(w.repo, "src", "main", "__init__.py"), os.path.join(pkg, "__init__.py")):
+        open(p, "w").close()
+    with open(os.path.join(pkg, "batch.py"), "w") as f:
+        f.write("def k9b_batch(stage, models_dir, *, reader=None):\n    pass\n")
+    ok, why = kit_k9b_out_of_main(spec, python=sys.executable)
+    assert ok is False and "takes no out_dir" in why
+    with open(os.path.join(pkg, "batch.py"), "w") as f:
+        f.write("import os\nclass BatchError(Exception): pass\n"
+                "def k9b_batch(stage, models_dir, *, out_dir=None, reader=None):\n    pass\n"
+                "def refuse_inside_main_checkout(path, *, roots=None):\n"
+                "    if any(os.path.realpath(path).startswith(r + os.sep) for r in roots):\n"
+                "        raise BatchError(path)\n")
+    ok, why = kit_k9b_out_of_main(spec, python=sys.executable)
+    assert ok is True, why
+
+
+def test_the_kit_check_passes_on_this_checkouts_real_kit(tmp_path):
+    """F12: the check keys on the kit fix's names as landed (7f9ff6236); a rename in the kit fails HERE, not by a
+    silent fall-back to the synchronous ship in production."""
+    import sys
+    from main.ops.arm_chain.ship import kit_k9b_out_of_main
+    from main.ops.arm_chain.spec import parse
+    from utils.paths import repo_path
+    stage = "designs/research_state/measurements/x35_breakers_stage_2026-10-17"
+    d = {"schema": "arm_chain_v1", "name": "probe", "job_dir": str(tmp_path), "repo": str(repo_path()),
+         "python": sys.executable,
+         "backend": {"kind": "x35", "launch_script": f"{stage}/launch_x35.sh", "stage": stage, "lease_owner": "x",
+                     "lease_token_file": str(tmp_path / "token")},
+         "records": {"stage": stage},
+         "items": [{"kind": "arm", "arm": "n1p", "seed": 1, "pin": "a" * 40, "run": "r", "go_by": "x", "thin": "planner",
+                    "disk_need_gib": 1, "on_void": "page", "on_throughput_fail": "page"}]}
+    ok, why = kit_k9b_out_of_main(parse(d))
+    assert ok is True, why

@@ -1,7 +1,7 @@
 # The arm chain: one tested module that operates production arms end to end
 
 > Always-current (`designs/CLAUDE.md`). Code: [`src/main/ops/arm_chain/`](../../src/main/ops/arm_chain/), entry point
-> `python -m main.ops.arm_chain`. Tests: `src/main/ops/arm_chain/*_test.py` (180; fake `/proc`, a fake
+> `python -m main.ops.arm_chain`. Tests: `src/main/ops/arm_chain/*_test.py` (222; fake `/proc`, a fake
 > launcher, temp git repos; nothing touches the GPU). **Status: BUILT; CUT-OVER PENDING.** The training session
 > still runs its job-directory scripts until the checklist in §7 is done.
 
@@ -44,13 +44,15 @@ environment variable or a run-name glob is a required field here, checked when t
   {"kind": "arm", "arm": "d3", "seed": 3501, "pin": "<40-hex>", "run": "rb_x35_d3mut_s3501", "go_by": "orchestrator 10-25 13:00",
    "thin": "planner", "flags": ["--thinning"], "disk_need_gib": 12.49,
    "banner": {"expect": "[TEAM-MIX] d3_setmut_v1@ALL", "void": ["[TEAM-MIX] FATAL", "does NOT inherit"], "within_min": 20},
-   "throughput": {"min_steps_per_s": 1000, "within_min": 60}},
+   "throughput": {"min_steps_per_s": 1000, "within_min": 60, "first_line_within_min": 90},
+   "on_void": "stop", "on_throughput_fail": "page"},
   {"kind": "window", "name": "x59s", "worktree": "/home/goodlad/dev/gen3ai-wt-x59s", "require_commit": "a1370436",
    "budget_min": 480, "on_fail": "continue", "preempt_marker": "NO_GO_X59",
    "steps": [{"name": "preflight", "argv": ["python3", "-m", "main.human_data.cuda_preflight", "…"],
               "gpu": true, "mem_gb": 16, "timeout_s": 3600}]},
   {"kind": "arm", "arm": "r0", "seed": 3531, "pin": "<40-hex>", "run": "rb_x35_r0_s3531", "go_by": "…",
-   "thin": "none", "thin_reason": "AM-R0: main.x35.r0 reads every 2M point", "disk_need_gib": 15.11}]}
+   "thin": "none", "thin_reason": "AM-R0: main.x35.r0 reads every 2M point", "disk_need_gib": 15.11,
+   "on_void": "page", "on_throughput_fail": "page"}]}
 ```
 
 The field rules:
@@ -64,7 +66,15 @@ The field rules:
   chain and its tools never read two different archives.
 - **`verify` is an optional list of commands.** They run before the dry run and again just before the GO. The X52
   arms used this for `python -m main.x35.x52 verify`.
-- **`banner` and `throughput` are the post-spawn guards.**
+- **`banner` and `throughput` are the post-spawn guards.** The throughput gate counts `within_min` (default 60) from
+  the FIRST TRAINER LINE in `launcher_child.log` (the launcher's `child attached` header is not one), or from the
+  first own checkpoint if that comes first, never from the GO: a cold start took ~22-23 min from the GO to its first
+  line. No trainer line `first_line_within_min` (default 90) after the GO fails the gate too.
+- **`on_void` and `on_throughput_fail` are REQUIRED on every arm, `stop` or `page`, with no default.** `stop` is the
+  SOP stop path: SIGTERM the launcher through `signal_if` (its pid file's process, and only if its cmdline is THIS
+  run's `main.launcher … --run-name <run>`), so it saves `final_model_interrupted.zip` at its next safe point; wait
+  up to 300 s for it to go; record the stop in the state (`data.stopped`) and a status line; HOLD. `page` HOLDs
+  only, and the run keeps training until the orchestrator decides.
 - **A window's `on_fail` says what a failed window means.** `hold` stops the chain. `continue` hands off to the
   next arm.
 
@@ -79,9 +89,11 @@ The field rules:
 | `status CHAIN` | each item's phase and hold |
 | `clear-hold CHAIN --item KEY --by WHO --why WHY` | the orchestrator's decision to RETRY the held step |
 | `abandon CHAIN --item KEY --by WHO --why WHY` | the orchestrator's decision that a held item will not finish: it becomes `DONE_FAILED` and the chain hands off past it. Refused while the item's launch wrapper or launcher is alive (stop it first) |
+| `ship-records CHAIN --item KEY` | ships one arm's K9(b) + dose records from its request file: the async worker the supervisor spawns, and the by-hand retry after a `SHIP-HOLD` (idempotent: records already on the remote are a success) |
 | `live [--models-dir D]` | live runs, read from launcher argv (§4) |
-| `watch-files --status-file F` | the alert watch's file list: `F` plus each live launcher's stdout log |
-| `canary --out-dir D --status-file F` | the canary logger loop. It is bounded, writes a heartbeat file and an `EXPIRING` line |
+| `watch-files --status-file F` | the alert watch's file list: `F`, each live launcher's stdout log, and its run's `launcher_child.full.log` (the trainer's own lines; it rotates by rename, which `tail -F` follows) |
+| `monitor-filter --chain NAME` | the one ERE the alert Monitor greps over the watch-files (below) |
+| `canary --out-dir D --status-file F [--archive-root R]` | the canary logger loop. It is bounded, writes a heartbeat file and an `EXPIRING` line, alerts on EVERY non-PASS record, and archives each canary weight dump to `R/<run>_canary_u<u>/` (default `~/gen3ai_archive`) |
 | `cpu-gate` | one GO CPU-gate sample |
 | `wait-pid PID --timeout-s N` | a `/proc` wait on `(pid, start ticks)` |
 | `signal-if PID ERE [--signal S]` | the identity-gated signal (`kill_if.sh`'s replacement) |
@@ -90,9 +102,13 @@ The field rules:
 - **State:** `<job_dir>/arm_chain/<name>.state.json`, rewritten atomically.
 - **Lock:** `<name>.state.json.lock`, held for the supervisor's whole life.
 - **Status lines:** `[ts] ARMCHAIN[<name>]: …`, appended to the job's `status.txt`.
-- **Transcripts, scratch stages and record sources:** `<job_dir>/arm_chain/<name>/`.
+- **Transcripts, scratch stages and record sources:** `<job_dir>/arm_chain/<name>/`; each async ship's request,
+  result and worker output under its `ships/`.
 
-**The Monitor filter:** `ARMCHAIN\[<name>\]: (HOLD|chain COMPLETE)|CANARYLOG: HOLD`.
+**The Monitor filter** (`python -m main.ops.arm_chain monitor-filter --chain <name>` prints it; a test pins this
+line to the code): `ARMCHAIN\[<name>\]: (HOLD|SHIP-HOLD|chain COMPLETE)|CANARYLOG: HOLD|AWFILES: HOLD|Traceback|Child crashed|WEDGE|UpdateWontFit|BEHAVIOUR-POLICY MISMATCH|StampMismatch|DISAGREES`.
+The part after `AWFILES: HOLD` is the launcher-log alert set (`canary.LAUNCHER_ALERT_ERE`): a crash, a wedge, an
+update that cannot fit, a behaviour-policy mismatch, a Rust stamp mismatch, a compiled-vs-eager disagreement.
 
 ## 3. The state machine
 
@@ -104,26 +120,34 @@ WINDOW  PENDING ─▶ STARTED ─▶ DONE | DONE_FAILED (on_fail continue)   an
 
 | from | the step | a HOLD when |
 |---|---|---|
-| PENDING | disk ≥ the arm's need + headroom; the `verify` commands; the CPU gate (≤ 13 polls, 4 min apart); the kit's dry run at the arm's pin with the card visible; the describe re-read at its fixed path; the launcher transcript re-verified | any check fails, a file is stale, the describe names another run, or the transcript is not `FORK of <parent>` / `pin : <the pin>` / the step delta / `cuda devices : ✓` / `would launch` |
-| PRECHECKED | a dry run older than 10 min (only a supervisor restart can age one) goes back to PENDING; the GPU must be idle (≤ 5 min wait); the END / START / pool-seed / HOLD triggers are armed and persisted, `GOING` is saved, then the kit's GO is spawned detached | the GPU stays busy; `verify` fails at the GO; `models/<run>` exists; the supervisor runs at a nice other than 0 (the trainer would inherit it for life) |
+| PENDING | disk ≥ the arm's need + headroom; main clean; the `verify` commands; the CPU gate (≤ 13 polls, 4 min apart); the kit's dry run at the arm's pin with the card visible; the describe re-read at its fixed path; the launcher transcript re-verified; main clean again | any check fails, a file is stale, the describe names another run, the transcript is not `FORK of <parent>` / `pin : <the pin>` / the step delta / `cuda devices : ✓` / `would launch`, or main is dirty before or after the dry run (re-read 3 times, 5 s apart, so an async ship's own fast-forward is never read as dirt) |
+| PRECHECKED | a dry run older than 10 min (only a supervisor restart can age one) goes back to PENDING; main clean; the GPU must be idle (≤ 5 min wait); the END / START / pool-seed / HOLD triggers are armed and persisted, `GOING` is saved, then the kit's GO is spawned detached | main is dirty; the GPU stays busy; `verify` fails at the GO; `models/<run>` exists; the supervisor runs at a nice other than 0 (the trainer would inherit it for life) |
 | GOING | (only after a supervisor died mid-GO) ADOPT the launch if there is evidence: a live `launch_x35.sh <arm> <seed> … GO`, a START line, or the run dir | no evidence. Clearing that hold resets the arm to PENDING; there is **never a blind second GO** |
 | LAUNCHED | the wrapper's `post-spawn pool-seed check PASS` for this run (≤ 75 min after the SPAWN: the kit's GO re-runs its pre-checks, then the pool-seed check takes up to 30 min) | the wrapper wrote `HOLD:`, or it is gone without a PASS |
-| SPAWNED | the banner guard, run over the launcher's stdout log AND `launcher_child.log` | a VOID line; or no expected banner by `within_min` |
-| BANNER_OK | the first-hour throughput gate: marginal steps/s from the mtimes of the run's OWN checkpoints | no consecutive pair reaches the bar by `within_min` after the GO |
+| SPAWNED | the banner guard, run over the launcher's stdout log AND `launcher_child.log` | a VOID line; or no expected banner by `within_min`: the arm's `on_void` (`stop`: SIGTERM + record, then HOLD; `page`: HOLD) |
+| BANNER_OK | the throughput gate: the first trainer line (or first own checkpoint) is found and its time persisted, then marginal steps/s from the mtimes of the run's OWN checkpoints | no trainer line by `first_line_within_min` after the GO, or no consecutive pair reaches the bar by `within_min` after the first trainer line: the arm's `on_throughput_fail` |
 | RUNNING | the wrapper's `END <run> launcher_rc=N`. If the wrapper is gone but its launcher (pid file, `main.launcher` cmdline) lives, keep waiting | wrapper and launcher both gone without END |
 | ENDED | completeness: rc 0, launcher `Last step` ≥ `--steps`, `final_model.zip`, newest checkpoint ≥ `--steps − 98,304` | any of the four fails: "stopped, not finished" |
 | COMPLETE | `kit k9b --stage <scratch copy>`; main's records stage checked clean before AND after; the verdict read from the record's JSON | not PASS, or main's stage changed |
 | K9B_PASS | the thin (repo planner `--thin-run`). It retries ONLY the "run dir open" refusal (10 × 30 s). The plan must keep the end-step checkpoint and every checkpoint a later item names; `final_model.zip` must survive | any other refusal; the plan drops a kept file; exit 4 (a hash mismatch) |
-| THINNED | the dose record (the START→END segments of THIS GO only, summed) is written beside the K9(b) record. BOTH ship in one records-only commit (`ship.py`) | the dose cannot be sourced, the launcher log names another pin, or the ship HOLDs |
+| THINNED | the dose record (the START→END segments of THIS GO only, summed) is written beside the K9(b) record. BOTH ship in one records-only commit (`ship.py`): ASYNCHRONOUSLY (a detached `ship-records` worker) once `ship.kit_k9b_out_of_main` passes, else inline | the dose cannot be sourced, the launcher log names another pin, or (inline only) the ship HOLDs |
 | RECORDED | DONE; the next item starts | — |
+| (chain end) | wait ≤ 45 min for in-flight ships; `chain COMPLETE` only when every record landed | a ship failed or is still in flight: `SHIP-HOLD:` and exit 3 |
 
 A window saves `STARTED` before its first step; a supervisor that restarts in `STARTED` HOLDs (a step may still hold the GPU) instead of re-running the window. Any exception other than a HOLD is turned into a HOLD line (`UNEXPECTED <type>`), so the Monitor sees it. A HOLD stops the supervisor at once. Nothing after the held step runs: no thin, no record, no next GO. Exactly one
 status line says why.
 
-**The ship is synchronous, on purpose.** The next arm's dry run runs `kit k9b-batch --stage <main's stage> --out-dir
-<scratch>`: the stage is only READ, and a MISSING arm-end record is read and written to the scratch dir
-(`$X35_K9B_OUT`, default `<job dir>/k9b_scratch`), never into a checkout. A next GO started before the previous record
-landed therefore re-reads the arm and cannot dirty main; the synchronous ship keeps the record in the stage.
+**The ship is asynchronous.** A synchronous ship idled the GPU for the whole ship, and a ship HOLD idled it until a
+human came. The worker writes its own status line (`… records shipped as <sha> (async)`, or `SHIP-HOLD: <item>:
+<why>; retry: python -m main.ops.arm_chain ship-records <chain> --item <item>`), because the supervisor may be deep in
+the next arm's wait. A worker that dies without a result is a `SHIP-HOLD` the supervisor writes. The next arm's dry
+run runs `kit k9b-batch --stage <main's stage> --out-dir <scratch>` while the previous records may still be in flight:
+the stage is only READ, and a MISSING record is read and written to the scratch dir (`$X35_K9B_OUT`, default
+`<job dir>/k9b_scratch`), never into a checkout (F1, fixed at `7f9ff6236`). The async path is taken only while
+`ship.kit_k9b_out_of_main` reads BOTH halves of that fix in MAIN (every `kit k9b-batch` in the launch script passes
+`--out-dir`; `main.x35.batch.k9b_batch` takes `out_dir` and `refuse_inside_main_checkout` refuses a write inside the
+main checkout); otherwise the ship goes inline and says `SYNCHRONOUS (<why>)`. The main-clean checks around every
+dry run and GO stand either way.
 
 ## 4. Who owns what
 
@@ -134,6 +158,10 @@ landed therefore re-reads the arm and cannot dirty main; the synchronous ship ke
 | live-run discovery | `arm_chain.live`: each live `python -m main.launcher` (not `--dry-run`). The source is its trainer child's `--run-dir` (authoritative), else its own `--run-dir` / `--run-name` / a checkpoint-shaped `--model` (labelled: a fork with no `--run-name` would resolve to its PARENT), else UNRESOLVED with the reason. A trainer with no launcher is reported as an orphan |
 | waits and signals | `arm_chain.procwatch`: identity is `(pid, start ticks)`, read from `/proc/<pid>/stat`; never `kill -0`; every wait is bounded; every signal checks the cmdline |
 | the GO's environment | an ALLOW-list of the supervisor's environment (`runner.GO_ENV_KEEP`) plus `PYTHONPATH=<repo>/src` and the lease token file. A CPU step's `CUDA_VISIBLE_DEVICES=""`, `GEN3AI_TEST_ALLOW_GPU` or a worktree `PYTHONPATH` cannot reach a launch |
+| what a VOID / a failed throughput gate does | the chain file (`on_void`, `on_throughput_fail`, per arm, required); the chain only executes it |
+| the GPU lease token inside a window | `window.lease_token_valid` before every `gpu_lock` step (read-only: `utils.gpu_lease.read_lease` + `token_matches`); an invalid token HOLDs whatever `on_fail` says |
+| deleting anything | `fsguard.remove_under` only: a path strictly inside the caller's root, never through a symlink (CB-28) |
+| the daily K9(b) hand read of a live arm, and LR-F's VOID-KL read | **the training session**, by hand, as today. The chain reads K9(b) only at an arm's END (AM-6) and reads no KL |
 
 ## 5. The class bugs, where each is closed, and its test
 
@@ -147,7 +175,7 @@ landed therefore re-reads the arm and cannot dirty main; the synchronous ship ke
 | CB-08 | a stopped run read as finished (d1wide_s3501) | `armend.completeness` | `armend_test::test_the_d1wide_s3501_shape_is_stopped_not_finished`, `chain_test::test_a_stopped_run_is_never_k9b_read_thinned_or_chained` |
 | CB-09 | thin HELD while the run's own exiting processes held the dir | retry only that refusal | `armend_test::test_the_open_run_dir_refusal_is_retried_and_others_are_not` |
 | CB-10 | end-step checkpoint at risk; keep-all arms thinned by a name `case` | the plan must keep the newest checkpoint; `thin: none` is a field | `armend_test::test_a_plan_that_drops_the_end_step_checkpoint_holds`, `test_a_keep_all_arm_is_never_thinned`, `spec_test::test_thin_none_without_reason_refused` |
-| CB-11 | K9(b) record written into main's tree (arm_end v3-v12) | `armend.k9b_scratch` + the ship from a copy | `armend_test::test_k9b_writes_only_the_scratch_stage_and_main_stays_clean`, `test_a_k9b_read_that_writes_into_mains_stage_holds`, `ship_test::test_a_source_inside_main_is_refused` |
+| CB-11 | K9(b) record written into main's tree (arm_end v3-v12; and by the kit's `k9b-batch`, F1, fixed at `7f9ff6236`) | `armend.k9b_scratch` + the ship from a copy; main clean before and after every dry run and before every GO; async ship only while `kit_k9b_out_of_main` passes | `armend_test::test_k9b_writes_only_the_scratch_stage_and_main_stays_clean`, `test_a_k9b_read_that_writes_into_mains_stage_holds`, `ship_test::test_a_source_inside_main_is_refused`, `chain_test::test_a_dry_run_that_dirties_main_holds_and_never_goes`, `test_a_dirty_main_holds_before_the_dry_run`, `test_an_unfixed_kit_keeps_the_ship_synchronous`, `test_the_kit_check_refuses_until_the_launch_script_and_main_code_write_outside_main` |
 | CB-13 | a bounded logger lapsed silently (canary v9) | `canary.watch` heartbeat + `EXPIRING` | `canary_test::test_watch_emits_expiring_on_last_pass_and_writes_heartbeat` |
 | CB-14 / 15 | ship worktree lacked `deps/pokemon-showdown`; submodule blocked the remove; remove unchecked | `ship.Shipper`: submodules are checked out, the remove is guarded with `--force`, and main must be clean after | `ship_test::test_a_ship_lands_byte_identical_records_and_leaves_main_clean` |
 | CB-16 | an END written while the chain was swapped was missed | triggers and their offsets are persisted at GO | `statuslog_test::test_persisted_trigger_fires_on_line_written_between_supervisors`, `chain_test::test_a_resumed_supervisor_sees_an_end_written_while_nobody_watched` |
@@ -163,10 +191,18 @@ landed therefore re-reads the arm and cannot dirty main; the synchronous ship ke
 | H-03 / 04 | unterminated run names (`…_s350` matched `…_s3501`; `|X35END: HOLD` matched any chain's HOLD) | every pattern escapes the name and ends it with a fixed delimiter | `statuslog_test::test_run_name_prefix_does_not_fire_longer_run*` |
 | H-06 / 07 | describe found by `grep -l … \| head -1`; K9(b) judged by `grep -q PASS` | a fixed describe path, checked fresh; the verdict read from the JSON | `launch_test::test_a_describe_naming_another_run_holds`, `armend_test::test_k9b_reads_the_verdict_from_the_record_not_from_grep` |
 | H-08 | a failing `nvidia-smi` read as an idle GPU | `window.nvidia_idle` | `window_test::test_nvidia_smi_failing_is_not_an_idle_gpu` |
-| H-10 / 11 | canary seen-file keyed by run name; family bars by name prefix | keyed by `(path, inode)`; no family bar (§6 F8) | `canary_test::test_recreated_run_dir_with_fewer_rows_is_logged_from_row_one` |
+| H-10 / 11 | canary seen-file keyed by run name; family bars by name prefix silently applied C0's bar to new families | keyed by `(path, inode)`; the family bar is `canary_decide`'s registered one, a DESCRIPTIVE tag only, never an alert (§6 F8) | `canary_test::test_recreated_run_dir_with_fewer_rows_is_logged_from_row_one`, `test_a_ratio_above_the_family_bar_is_a_descriptive_tag_that_never_alerts` |
 | H-15 | a held ship left its worktree and branch, so the retry died | `Shipper._discard` before the push | `ship_test::test_a_failed_static_tier_pushes_nothing_and_removes_its_worktree` |
 | H-17 / dup | one shared `arm_end.pid`; a duplicate supervisor (10-26) | per-chain state + an exclusive lock | `chain_test::test_one_supervisor_per_chain` |
 | new | a supervisor dying mid-GO could re-GO | the `GOING` phase + adoption | `chain_test::test_a_supervisor_that_died_mid_go_never_issues_a_second_go`, `test_mid_go_death_without_evidence_holds_and_clearing_resets_to_pending` |
+| CB-28 | an `rm` / `shutil.rmtree` on a variable path (one bad join from a run dir) | `fsguard.remove_under`, the module's only delete | `fsguard_test::test_the_module_never_removes_a_variable_path_outside_the_guarded_helper` (an AST scan of every module), `test_remove_under_removes_only_strictly_inside_its_root`, `…never_follows_a_symlink_out_of_its_root` |
+| CB-29 | a non-PASS canary below a value bar paged nobody (N1-P s3501 u200 UNCONFIRMED, compiled 0.1675 < 0.54; 10-27) | every non-PASS verdict alerts, whatever its value | `canary_test::test_format_row_readings_and_every_non_pass_alerts`, `test_scan_alerts_on_every_non_pass_row_only` |
+| CB-30 | the canary weight dumps lived only in the run dir (near-margin dumps rotate to the newest 3; a thin or move loses the rest) | `canary.archive_dumps`: a sha256-verified copy to `~/gen3ai_archive/<run>_canary_u<u>/`, never over a copy | `canary_test::test_every_unconfirmed_fatal_and_near_dump_is_archived_with_its_sha256`, `test_the_watch_loop_archives_a_live_runs_dump` |
+| CB-31 | launcher-log failures (a Traceback, `Child crashed`, a WEDGE, `UpdateWontFit`, a BEHAVIOUR-POLICY MISMATCH, a `StampMismatch`, `DISAGREES`) paged nobody | `canary.LAUNCHER_ALERT_ERE` in `monitor_filter`; `watch-files` adds each run's `launcher_child.full.log` | `canary_test::test_the_monitor_filter_pages_every_launcher_alert_and_the_chain_and_canary_holds`, `test_the_design_doc_carries_the_monitor_filter_the_code_prints` |
+| CB-32 | what a VOID / a slow start DOES was a script's choice (the chain only paged) | `on_void` / `on_throughput_fail` required per arm; `stop` through `signal_if` | `spec_test::test_each_arm_must_register_its_action_with_no_default`, `chain_test::test_a_void_arm_registered_stop_is_sigtermed_through_the_identity_gate_recorded_and_held`, `…registered_page_is_held_and_never_signalled`, `test_a_failed_throughput_gate_registered_stop_is_sigtermed`, `test_a_stop_signals_nothing_without_this_runs_live_launcher`, `test_the_stop_identity_never_matches_another_run` |
+| CB-33 | the throughput gate counted from the GO, so a healthy cold start (~22-23 min to its first line) failed it | the gate counts from the first trainer line (or first own checkpoint) | `chain_test::test_the_throughput_gate_counts_from_the_first_trainer_line_not_the_go`, `postspawn_test::test_the_gate_counts_from_the_first_trainer_line_not_the_go`, `test_the_launchers_child_attached_header_is_not_a_trainer_line` |
+| CB-34 | a window checked the lease OWNER's name; an expired token passed it and `gpu_lock` refused the step | `window.lease_token_valid` before every `gpu_lock` step; HOLD | `window_test::test_an_invalid_lease_token_holds_before_any_gpu_step`, `test_the_token_is_checked_again_before_each_gpu_step`, `test_lease_token_valid_reads_the_lease_without_changing_it` |
+| CB-35 | a ship HOLD idled the GPU until a human came | the async ship (`ship-records` worker, `SHIP-HOLD:`), gated on the kit fix | `chain_test::test_an_async_ship_lets_the_next_arm_go_while_the_records_are_in_flight`, `test_a_failed_async_ship_pages_ship_hold_without_idling_the_gpu`, `test_a_ship_worker_that_dies_without_a_result_pages`, `test_the_ship_worker_writes_its_result_and_one_line_and_is_the_retry` |
 
 Two classes stay with their owners:
 - **CB-04** (the launcher log reused on re-launch) is fixed in `launch_x35.sh`, which rotates the log at GO. The
@@ -187,6 +223,15 @@ Two classes stay with their owners:
 - **F2 (fixed in `launch_x35.sh`). It used `kill -0` on the launcher it spawned** (3 sites there, not 5). It now reads
   `/proc` (pid + start ticks, a zombie is gone) and SIGTERMs only a launcher that is still the same process
   (`launch_x35_test.py`). **Open:** `scripts/ops/watch_run.sh` (the launch script's watcher) has two `kill -0` sites.
+- **F12. The async-ship check keys on the kit fix's interface** as it landed at `7f9ff6236`: `k9b_batch(…, out_dir=…)`,
+  `refuse_inside_main_checkout(path, roots=…)` and `--out-dir` on the launch script's `k9b-batch` line. A later rename
+  fails the check closed (the ship goes synchronous, and says so) until the check is updated; the test
+  `chain_test::test_the_kit_check_passes_on_this_checkouts_real_kit` fails first.
+- **F13. An async ship moves main while the next arm pre-checks.** Its `merge --ff-only` lands records (and anyone
+  else's commits) under a running dry run, exactly as any other ship to main does. The launcher runs at the arm's
+  pin; the kit (`launch_x35.sh`, `main.x35.kit`) runs main's code, so a kit change landing mid-pre-check is seen.
+- **F14. The first trainer line's time is when the gate SAW it** (≤ 30 s late), persisted once. A supervisor that
+  restarts in `BANNER_OK` before persisting it starts the clock at its own first read (later, so more lenient).
 - **F3. The supervisor's niceness is inherited by the GO.** A `nice -n 19` supervisor (rule 5b's default while a
   run is live) would start the trainer at nice 19 for life (RLIMIT_NICE). The GO now HOLDs at any nice but 0, so
   **start the supervisor at nice 0**; its own CPU is negligible, and its CPU children set their own `nice` /
@@ -201,17 +246,21 @@ Two classes stay with their owners:
 - **F7. The CPU gate cannot see a process that exits inside its 60 s sample.** Its time moves to the parent's
   `cutime`.
 - **F8. The canary logger is a behaviour change.**
-  - It applies NO family bars, so the old `[descriptive: ratio>2.64]` tags are gone.
-  - It alerts only on a non-PASS record above 0.54, and on liveness.
+  - It alerts on EVERY non-PASS record (UNCONFIRMED, FATAL, an unparsable row), whatever its value, and on
+    liveness. A PASS never alerts.
+  - A ratio above the run family's REGISTERED bar (`main.ops.canary_decide.FAMILY_BARS`: C0 2.64, X47 2.40, family
+    read from the run name) is a descriptive tag on the log line, `[descriptive: ratio>2.64 (c0 bar)]`; a run of no
+    registered family gets no tag.
   - The no-first-record alert is at 60 min, not 40: a production cold start reached its first record at ~34 min.
-  - Its log, seen file and alert keys are NEW files under `--out-dir`.
+  - Its log, seen file and alert keys are NEW files under `--out-dir`; its dump copies go to `--archive-root`.
 - **F9. Window GPU steps run with `GEN3AI_TEST_ALLOW_GPU=1` under the chain's lease.** This is correct only because
   the supervisor runs in the lease holder's session (root rule 5).
 - **F10. A HOLD idles the GPU until a human decides.** That is by design: SOP §3 rule 3 says a window or chain that
   cannot finish cleanly is the orchestrator's decision. `abandon` is the way past an item that will never finish.
-- **F11. The chain never signals a run.** A VOID banner or a failed throughput gate HOLDs and pages, and the run
-  keeps training until the orchestrator stops it. The old `d3_redirect.sh` behaved the same way. `launch_x35.sh`'s
-  own pool-seed SIGTERM is unchanged.
+- **F11. The chain signals a run in ONE case: the arm's registered `stop`** (`on_void` / `on_throughput_fail`),
+  SIGTERM only, through `signal_if` on this run's launcher identity. Only the fakes have exercised it (F4); the
+  first real `stop` is watched by hand. `page` behaves as the old `d3_redirect.sh` did. `launch_x35.sh`'s own
+  pool-seed SIGTERM is unchanged.
 
 ## 7. Cut-over checklist (the training session, at a quiet hand-off; NOT done yet)
 
@@ -227,7 +276,8 @@ Two classes stay with their owners:
    - its canonical arm name and its run;
    - `thin: none` with the AM reason for R0, X47 and X52;
    - its `banner` (D3 and N1-P carry `--team-mix`);
-   - a `throughput` bar (C0's 1,384-1,424 steps/s means about 1,000 as a floor);
+   - a `throughput` bar (C0's 1,384-1,424 steps/s means about 1,000 as a floor), counted from the first trainer line;
+   - `on_void` and `on_throughput_fail`, each `stop` or `page`: the orchestrator's call per arm, written down;
    - `disk_need_gib`, taken from the last dry run's REQUIRED GiB.
 
    For each window: its steps, `on_fail` and its preempt marker.
@@ -235,12 +285,14 @@ Two classes stay with their owners:
 5. **Retire the old chain without signalling it mid-step.** Let the last old arm-end finish with next `none -`, or
    do not arm one. Confirm that no old chain script is alive.
 6. **Start the canary logger.** Run `python -m main.ops.arm_chain canary --out-dir ~/.claude/jobs/x35/canary
-   --status-file ~/.claude/jobs/x35/status.txt` under `nohup setsid`. After its first pass writes the heartbeat,
+   --status-file ~/.claude/jobs/x35/status.txt` under `nohup setsid` (its dumps go to `~/gen3ai_archive/`). After its first pass writes the heartbeat,
    stop `canary_log_v12.sh` by PID through the identity gate (`signal-if <pid> 'canary_log_v12'`).
 7. **Start the supervisor** from the MAIN checkout at nice 0 (F3), with the env's interpreter and
    `PYTHONPATH=$PWD/src`:
    `nohup setsid python -m main.ops.arm_chain run <file> >> ~/.claude/jobs/x35/arm_chain/<name>.out 2>&1 < /dev/null &`
-   - Point the Monitor at the filter in §2.
+   - Point the Monitor at the watch-files through the filter in §2, re-armed at each GO (a new run's logs):
+     `tail -F -n0 $(python -m main.ops.arm_chain watch-files --status-file ~/.claude/jobs/x35/status.txt) | grep
+     --line-buffered -E "$(python -m main.ops.arm_chain monitor-filter --chain <name>)"`.
    - Keep the 55-min fallback cron. Its repair commands are `status`, then `clear-hold` or `abandon` on the
      orchestrator's word, then `run`.
 8. **Watch the first GO by hand** (F4). Check:
@@ -251,7 +303,7 @@ Two classes stay with their owners:
    At the first arm end, check:
    - the scratch K9(b) record;
    - that `git status` on main is clean;
-   - the combined records commit.
+   - the combined records commit, and which way it shipped (`records ship ASYNC` or `SYNCHRONOUS (<why>)`).
 9. **Rollback.** Nothing in the job directory was changed, so the old scripts still work. After a module HOLD:
    - `abandon` the item;
    - stop the supervisor (it holds nothing but its lock);
@@ -275,3 +327,12 @@ Two classes stay with their owners:
     becomes a HOLD line; the ship is idempotent after a death past the push and retries a beaten push once; the GO
     environment pins `GEN3AI_PYTHON` and drops `GEN3AI_BLOCKING`; the canary logger never reads a half-written row.
   - A window's failure semantics are a field (`on_fail`), never a script's choice.
+- **2026-10-27: the operator's review (Training Oct).**
+  - The canary logger alerts on every non-PASS; the family bar is back as a non-alerting tag from `canary_decide`;
+    canary weight dumps are archived with a sha256; the launcher-log alerts joined the Monitor filter (CB-29-31).
+  - `on_void` / `on_throughput_fail` (`stop` | `page`) are required per arm; the throughput gate counts from the
+    first trainer line (CB-32, CB-33).
+  - A window validates the lease TOKEN before every `gpu_lock` step (CB-34).
+  - The record ship is asynchronous while the kit's `k9b-batch` writes outside main (`7f9ff6236`), inline otherwise
+    (CB-35, F1, F12); main is checked clean around every dry run and before every GO.
+  - The module deletes only through `fsguard.remove_under` (CB-28).

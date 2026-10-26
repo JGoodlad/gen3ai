@@ -26,6 +26,7 @@ import time
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Mapping, Optional
 
+from main.ops.arm_chain.fsguard import remove_under
 from main.ops.arm_chain.launch import Describe, Hold
 from main.ops.arm_chain.procwatch import ProcRef, alive, ref_from_pidfile
 from main.ops.arm_chain.runner import Runner, agent_prefix, cpu_env, tail
@@ -121,8 +122,8 @@ def k9b_scratch(spec: ChainSpec, it: ArmItem, runner: Runner, base_env: Mapping[
     if before:
         raise Hold(f"main's records stage is dirty BEFORE the K9(b) read (main is never dirty): {before.strip()[:200]}")
     scratch = os.path.join(spec.work_dir, "k9b_stage", it.run)
-    if os.path.exists(scratch):
-        shutil.rmtree(scratch)
+    os.makedirs(spec.work_dir, exist_ok=True)
+    remove_under(scratch, spec.work_dir, tree=True)   # a previous read's scratch copy, strictly inside the work dir
     shutil.copytree(main_stage, scratch, symlinks=True)
     out = os.path.join(spec.work_dir, f"{it.run}.k9b.txt")
     argv = [*agent_prefix(spec.agent_cores, 0), spec.python, "-m", "main.x35.kit", "k9b",
