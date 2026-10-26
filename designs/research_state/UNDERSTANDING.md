@@ -1849,7 +1849,7 @@ The whole is PROVISIONAL at 15M: [`../endstate/design_hidden_info_binding.md`](.
 
 ---
 
-### 4.8 Human data: the intent head's GAP (X50 R1, R0); a human opponent model, LEARNED but no search judge (R-b1, R-b2); the data card (2026-10-25)
+### 4.8 Human data: the intent head's GAP (X50 R1, R0); a human opponent model, LEARNED but no search judge (R-b1, R-b2); the data card; P\* beats human-only SmallRL (2026-10-25)
 
 X26's flat intent head (380M) predicts human ladder opponents (rated ≥ 1500) worse than its own pool snapshots.
 Both were read through the same spectator pipeline, under the registered rule: **Δ NLL +0.188 nats [+0.164, +0.213]**
@@ -1895,6 +1895,8 @@ The ladder's species mix drifts slowly: beyond an account-disjoint floor, consec
 0.005–0.011 TVD, and its distance to our pool and panels stays flat. [MEASURED · DESCRIPTIVE, post hoc on R-b1's
 forwards · `measurements/human_replay_quality_2026-10-25/` (+ `RESPONSE.md`); the architecture
 `../endstate/human_data_architecture.md`, the plan `../endstate/design_human_replay_lever.md`, both REVISED DRAFT]
+
+**Does a model trained only on human data beat ours? Not SmallRL (FR-1, 2026-10-25).** P\* plays Metamon's human-only `SmallRL` (14M, offline RL on human replays) in 1,600 greedy games that twin X51's Kakuna games team for team: it wins **0.666 [0.639, 0.692] on the unfamiliar panels** (OURS-BEATS by the registered rule) and 0.785 [0.742, 0.822] on home72, ≈ 18 pp more than against Kakuna on every panel (U +0.179 [+0.140, +0.218]). The three unfamiliar panels are level against SmallRL (0.66–0.68), so P\*'s P72 deficit against Kakuna is something Kakuna exploits. This compares upstream's recipe with ours, not human data with ours inside one architecture (X59-S), and the 200M human-only models (FR-3) are still playing. [MEASURED · registered · one checkpoint · `measurements/human_only_vs_pstar_2026-10-25/`]
 
 ### 4.9 Toy depth 2 → 4 at the plateau: UNDECIDED, Δ̂ ≤ 0, ended at look 1 (X47, 2026-10-21)
 

@@ -1,0 +1,1337 @@
+{
+ "cells": {
+  "sr_home72": {
+   "n": 400,
+   "wins": 314,
+   "losses": 85,
+   "ties": 1,
+   "win_rate": 0.785,
+   "wilson95": [
+    0.7421294764563524,
+    0.8224485157705781
+   ],
+   "by_half": {
+    "ours_challenge": 0.805,
+    "peer_challenge": 0.765
+   },
+   "hit_forfeit_limit": 1,
+   "median_turns": 29,
+   "distinct_our_teams": 68,
+   "distinct_their_teams": 67,
+   "regime_stamps": {
+    "{\"battle_format\": \"gen3ou\", \"forfeit_turn_limit\": 250, \"mirrored_pairs\": false, \"model_loader\": \"bare\", \"model_step\": 280000170, \"model_zip\": \"/home/goodlad/dev/gen3ai-reads/x51_2026-10-20/model/checkpoint_280000170_steps.zip\", \"opponent\": \"metamon:SmallRL\", \"opponent_commit\": \"0a00a759\", \"opponent_version\": \"SmallRL@ckpt40\", \"our_regime\": \"greedy\", \"our_side\": \"model\", \"our_team_count\": 72, \"our_transport\": \"rust_core_slot\", \"regime_matched\": true, \"server_impl\": \"rust\", \"server_version\": \"ws_frontend[in-process]@d32ffcee4+rust:cargo:src/rust_sim\", \"showdown_pin\": \"e0551883f\", \"teamset\": \"home\", \"their_regime\": \"greedy\", \"their_team_count\": 72}": 400
+   },
+   "units": [
+    "sr_home72_00",
+    "sr_home72_01",
+    "sr_home72_02",
+    "sr_home72_03",
+    "sr_home72_04",
+    "sr_home72_05",
+    "sr_home72_06",
+    "sr_home72_07",
+    "sr_home72_08",
+    "sr_home72_09",
+    "sr_home72_10",
+    "sr_home72_11",
+    "sr_home72_12",
+    "sr_home72_13",
+    "sr_home72_14",
+    "sr_home72_15",
+    "sr_home72_16",
+    "sr_home72_17",
+    "sr_home72_18",
+    "sr_home72_19"
+   ]
+  },
+  "sr_hpfix": {
+   "n": 400,
+   "wins": 271,
+   "losses": 128,
+   "ties": 1,
+   "win_rate": 0.6775,
+   "wilson95": [
+    0.6301910935725901,
+    0.7214320419371649
+   ],
+   "by_half": {
+    "ours_challenge": 0.665,
+    "peer_challenge": 0.69
+   },
+   "hit_forfeit_limit": 2,
+   "median_turns": 36,
+   "distinct_our_teams": 69,
+   "distinct_their_teams": 68,
+   "regime_stamps": {
+    "{\"battle_format\": \"gen3ou\", \"forfeit_turn_limit\": 250, \"mirrored_pairs\": false, \"model_loader\": \"bare\", \"model_step\": 280000170, \"model_zip\": \"/home/goodlad/dev/gen3ai-reads/x51_2026-10-20/model/checkpoint_280000170_steps.zip\", \"opponent\": \"metamon:SmallRL\", \"opponent_commit\": \"0a00a759\", \"opponent_version\": \"SmallRL@ckpt40\", \"our_regime\": \"greedy\", \"our_side\": \"model\", \"our_team_count\": 72, \"our_transport\": \"rust_core_slot\", \"regime_matched\": true, \"server_impl\": \"rust\", \"server_version\": \"ws_frontend[in-process]@d32ffcee4+rust:cargo:src/rust_sim\", \"showdown_pin\": \"e0551883f\", \"teamset\": \"home\", \"their_regime\": \"greedy\", \"their_team_count\": 72}": 400
+   },
+   "units": [
+    "sr_hpfix_00",
+    "sr_hpfix_01",
+    "sr_hpfix_02",
+    "sr_hpfix_03",
+    "sr_hpfix_04",
+    "sr_hpfix_05",
+    "sr_hpfix_06",
+    "sr_hpfix_07",
+    "sr_hpfix_08",
+    "sr_hpfix_09",
+    "sr_hpfix_10",
+    "sr_hpfix_11",
+    "sr_hpfix_12",
+    "sr_hpfix_13",
+    "sr_hpfix_14",
+    "sr_hpfix_15",
+    "sr_hpfix_16",
+    "sr_hpfix_17",
+    "sr_hpfix_18",
+    "sr_hpfix_19"
+   ]
+  },
+  "sr_forum72": {
+   "n": 400,
+   "wins": 265,
+   "losses": 135,
+   "ties": 0,
+   "win_rate": 0.6625,
+   "wilson95": [
+    0.6148101420512017,
+    0.7070983622887147
+   ],
+   "by_half": {
+    "ours_challenge": 0.665,
+    "peer_challenge": 0.66
+   },
+   "hit_forfeit_limit": 0,
+   "median_turns": 36,
+   "distinct_our_teams": 69,
+   "distinct_their_teams": 68,
+   "regime_stamps": {
+    "{\"battle_format\": \"gen3ou\", \"forfeit_turn_limit\": 250, \"mirrored_pairs\": false, \"model_loader\": \"bare\", \"model_step\": 280000170, \"model_zip\": \"/home/goodlad/dev/gen3ai-reads/x51_2026-10-20/model/checkpoint_280000170_steps.zip\", \"opponent\": \"metamon:SmallRL\", \"opponent_commit\": \"0a00a759\", \"opponent_version\": \"SmallRL@ckpt40\", \"our_regime\": \"greedy\", \"our_side\": \"model\", \"our_team_count\": 72, \"our_transport\": \"rust_core_slot\", \"regime_matched\": true, \"server_impl\": \"rust\", \"server_version\": \"ws_frontend[in-process]@d32ffcee4+rust:cargo:src/rust_sim\", \"showdown_pin\": \"e0551883f\", \"teamset\": \"home\", \"their_regime\": \"greedy\", \"their_team_count\": 72}": 400
+   },
+   "units": [
+    "sr_forum72_00",
+    "sr_forum72_01",
+    "sr_forum72_02",
+    "sr_forum72_03",
+    "sr_forum72_04",
+    "sr_forum72_05",
+    "sr_forum72_06",
+    "sr_forum72_07",
+    "sr_forum72_08",
+    "sr_forum72_09",
+    "sr_forum72_10",
+    "sr_forum72_11",
+    "sr_forum72_12",
+    "sr_forum72_13",
+    "sr_forum72_14",
+    "sr_forum72_15",
+    "sr_forum72_16",
+    "sr_forum72_17",
+    "sr_forum72_18",
+    "sr_forum72_19"
+   ]
+  },
+  "sr_p72": {
+   "n": 400,
+   "wins": 263,
+   "losses": 136,
+   "ties": 1,
+   "win_rate": 0.6575,
+   "wilson95": [
+    0.6096946457774416,
+    0.702308981505862
+   ],
+   "by_half": {
+    "ours_challenge": 0.65,
+    "peer_challenge": 0.665
+   },
+   "hit_forfeit_limit": 5,
+   "median_turns": 35,
+   "distinct_our_teams": 69,
+   "distinct_their_teams": 68,
+   "regime_stamps": {
+    "{\"battle_format\": \"gen3ou\", \"forfeit_turn_limit\": 250, \"mirrored_pairs\": false, \"model_loader\": \"bare\", \"model_step\": 280000170, \"model_zip\": \"/home/goodlad/dev/gen3ai-reads/x51_2026-10-20/model/checkpoint_280000170_steps.zip\", \"opponent\": \"metamon:SmallRL\", \"opponent_commit\": \"0a00a759\", \"opponent_version\": \"SmallRL@ckpt40\", \"our_regime\": \"greedy\", \"our_side\": \"model\", \"our_team_count\": 72, \"our_transport\": \"rust_core_slot\", \"regime_matched\": true, \"server_impl\": \"rust\", \"server_version\": \"ws_frontend[in-process]@d32ffcee4+rust:cargo:src/rust_sim\", \"showdown_pin\": \"e0551883f\", \"teamset\": \"home\", \"their_regime\": \"greedy\", \"their_team_count\": 72}": 400
+   },
+   "units": [
+    "sr_p72_00",
+    "sr_p72_01",
+    "sr_p72_02",
+    "sr_p72_03",
+    "sr_p72_04",
+    "sr_p72_05",
+    "sr_p72_06",
+    "sr_p72_07",
+    "sr_p72_08",
+    "sr_p72_09",
+    "sr_p72_10",
+    "sr_p72_11",
+    "sr_p72_12",
+    "sr_p72_13",
+    "sr_p72_14",
+    "sr_p72_15",
+    "sr_p72_16",
+    "sr_p72_17",
+    "sr_p72_18",
+    "sr_p72_19"
+   ]
+  }
+ },
+ "analysis": {
+  "kakuna_x51": {
+   "home72": {
+    "n": 400,
+    "wins": 239,
+    "losses": 160,
+    "ties": 1,
+    "win_rate": 0.5975,
+    "wilson95": [
+     0.5487342037373939,
+     0.644410898866556
+    ],
+    "by_half": {
+     "ours_challenge": 0.605,
+     "peer_challenge": 0.59
+    },
+    "hit_forfeit_limit": 1,
+    "median_turns": 32,
+    "distinct_our_teams": 68,
+    "distinct_their_teams": 67
+   },
+   "hpfix": {
+    "n": 400,
+    "wins": 199,
+    "losses": 201,
+    "ties": 0,
+    "win_rate": 0.4975,
+    "wilson95": [
+     0.44875888866825975,
+     0.546288672803434
+    ],
+    "by_half": {
+     "ours_challenge": 0.495,
+     "peer_challenge": 0.5
+    },
+    "hit_forfeit_limit": 1,
+    "median_turns": 38,
+    "distinct_our_teams": 69,
+    "distinct_their_teams": 68
+   },
+   "forum72": {
+    "n": 400,
+    "wins": 212,
+    "losses": 188,
+    "ties": 0,
+    "win_rate": 0.53,
+    "wilson95": [
+     0.48103615589437393,
+     0.5783931064453032
+    ],
+    "by_half": {
+     "ours_challenge": 0.535,
+     "peer_challenge": 0.525
+    },
+    "hit_forfeit_limit": 3,
+    "median_turns": 37,
+    "distinct_our_teams": 69,
+    "distinct_their_teams": 68
+   },
+   "p72": {
+    "n": 400,
+    "wins": 173,
+    "losses": 227,
+    "ties": 0,
+    "win_rate": 0.4325,
+    "wilson95": [
+     0.38481873705969716,
+     0.48146542267603
+    ],
+    "by_half": {
+     "ours_challenge": 0.4,
+     "peer_challenge": 0.465
+    },
+    "hit_forfeit_limit": 2,
+    "median_turns": 38,
+    "distinct_our_teams": 69,
+    "distinct_their_teams": 68
+   }
+  },
+  "SmallRL": {
+   "per_panel": {
+    "home72": {
+     "win_rate": 0.785,
+     "wilson95": [
+      0.7421294764563524,
+      0.8224485157705781
+     ],
+     "n": 400,
+     "vs_0.50": "BETTER",
+     "delta_vs_kakuna": {
+      "newcombe95": [
+       0.1875,
+       0.12395069456418358,
+       0.24898572369701152
+      ],
+      "class": "SmallRL WEAKER THAN KAKUNA",
+      "paired": {
+       "pairs": 400,
+       "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19
+       ],
+       "diff": 0.1875,
+       "normal95": [
+        0.1280289027887599,
+        0.2469710972112401
+       ],
+       "seed_bootstrap95": [
+        0.135,
+        0.24
+       ],
+       "a_only_wins": 118,
+       "b_only_wins": 43
+      }
+     }
+    },
+    "hpfix": {
+     "win_rate": 0.6775,
+     "wilson95": [
+      0.6301910935725901,
+      0.7214320419371649
+     ],
+     "n": 400,
+     "vs_0.50": "BETTER",
+     "delta_vs_kakuna": {
+      "newcombe95": [
+       0.18,
+       0.1120406943731915,
+       0.24561798718813246
+      ],
+      "class": "SmallRL WEAKER THAN KAKUNA",
+      "paired": {
+       "pairs": 400,
+       "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19
+       ],
+       "diff": 0.18,
+       "normal95": [
+        0.11697189710624348,
+        0.2430281028937565
+       ],
+       "seed_bootstrap95": [
+        0.11,
+        0.2475
+       ],
+       "a_only_wins": 125,
+       "b_only_wins": 53
+      }
+     }
+    },
+    "forum72": {
+     "win_rate": 0.6625,
+     "wilson95": [
+      0.6148101420512017,
+      0.7070983622887147
+     ],
+     "n": 400,
+     "vs_0.50": "BETTER",
+     "delta_vs_kakuna": {
+      "newcombe95": [
+       0.13249999999999995,
+       0.06455726453399885,
+       0.19873044578164561
+      ],
+      "class": "SmallRL WEAKER THAN KAKUNA",
+      "paired": {
+       "pairs": 400,
+       "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19
+       ],
+       "diff": 0.1325,
+       "normal95": [
+        0.07044610011265955,
+        0.19455389988734045
+       ],
+       "seed_bootstrap95": [
+        0.0775,
+        0.1875
+       ],
+       "a_only_wins": 110,
+       "b_only_wins": 57
+      }
+     }
+    },
+    "p72": {
+     "win_rate": 0.6575,
+     "wilson95": [
+      0.6096946457774416,
+      0.702308981505862
+     ],
+     "n": 400,
+     "vs_0.50": "BETTER",
+     "delta_vs_kakuna": {
+      "newcombe95": [
+       0.22499999999999998,
+       0.1565678108622371,
+       0.2904320079103108
+      ],
+      "class": "SmallRL WEAKER THAN KAKUNA",
+      "paired": {
+       "pairs": 400,
+       "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19
+       ],
+       "diff": 0.225,
+       "normal95": [
+        0.1649624386577052,
+        0.2850375613422948
+       ],
+       "seed_bootstrap95": [
+        0.155,
+        0.2975
+       ],
+       "a_only_wins": 130,
+       "b_only_wins": 40
+      }
+     }
+    }
+   },
+   "W_U": {
+    "score": {
+     "per_panel": {
+      "hpfix": [
+       271,
+       400
+      ],
+      "forum72": [
+       265,
+       400
+      ],
+      "p72": [
+       263,
+       400
+      ]
+     },
+     "mean": 0.6658333333333334,
+     "var": 0.00018535590277777778,
+     "n_eff": 1200.3896407998875,
+     "wilson95": [
+      0.6386576506297785,
+      0.6919510099422155
+     ]
+    },
+    "verdict": "OURS-BEATS",
+    "complete": true,
+    "delta_vs_kakuna": {
+     "newcombe_strat95": [
+      0.17916666666666675,
+      0.14001495187086857,
+      0.2175295930361635
+     ],
+     "class": "SmallRL WEAKER THAN KAKUNA",
+     "kakuna_x51": {
+      "per_panel": {
+       "hpfix": [
+        199,
+        400
+       ],
+       "forum72": [
+        212,
+        400
+       ],
+       "p72": [
+        173,
+        400
+       ]
+      },
+      "mean": 0.48666666666666664,
+      "var": 0.0002068159722222222,
+      "n_eff": 1207.9445293218948,
+      "wilson95": [
+       0.4585671811164776,
+       0.5148506876900627
+      ]
+     }
+    }
+   }
+  }
+ },
+ "units": [
+  {
+   "unit": "sr_home72_00",
+   "cell": "sr_home72",
+   "seed": 0,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_hpfix_00",
+   "cell": "sr_hpfix",
+   "seed": 0,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_forum72_00",
+   "cell": "sr_forum72",
+   "seed": 0,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_p72_00",
+   "cell": "sr_p72",
+   "seed": 0,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_home72_01",
+   "cell": "sr_home72",
+   "seed": 1,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_hpfix_01",
+   "cell": "sr_hpfix",
+   "seed": 1,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_forum72_01",
+   "cell": "sr_forum72",
+   "seed": 1,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_p72_01",
+   "cell": "sr_p72",
+   "seed": 1,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_home72_02",
+   "cell": "sr_home72",
+   "seed": 2,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_hpfix_02",
+   "cell": "sr_hpfix",
+   "seed": 2,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_forum72_02",
+   "cell": "sr_forum72",
+   "seed": 2,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_p72_02",
+   "cell": "sr_p72",
+   "seed": 2,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_home72_03",
+   "cell": "sr_home72",
+   "seed": 3,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_hpfix_03",
+   "cell": "sr_hpfix",
+   "seed": 3,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_forum72_03",
+   "cell": "sr_forum72",
+   "seed": 3,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_p72_03",
+   "cell": "sr_p72",
+   "seed": 3,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_home72_04",
+   "cell": "sr_home72",
+   "seed": 4,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_hpfix_04",
+   "cell": "sr_hpfix",
+   "seed": 4,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_forum72_04",
+   "cell": "sr_forum72",
+   "seed": 4,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_p72_04",
+   "cell": "sr_p72",
+   "seed": 4,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_home72_05",
+   "cell": "sr_home72",
+   "seed": 5,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_hpfix_05",
+   "cell": "sr_hpfix",
+   "seed": 5,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_forum72_05",
+   "cell": "sr_forum72",
+   "seed": 5,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_p72_05",
+   "cell": "sr_p72",
+   "seed": 5,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_home72_06",
+   "cell": "sr_home72",
+   "seed": 6,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_hpfix_06",
+   "cell": "sr_hpfix",
+   "seed": 6,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_forum72_06",
+   "cell": "sr_forum72",
+   "seed": 6,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_p72_06",
+   "cell": "sr_p72",
+   "seed": 6,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_home72_07",
+   "cell": "sr_home72",
+   "seed": 7,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_hpfix_07",
+   "cell": "sr_hpfix",
+   "seed": 7,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_forum72_07",
+   "cell": "sr_forum72",
+   "seed": 7,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_p72_07",
+   "cell": "sr_p72",
+   "seed": 7,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_home72_08",
+   "cell": "sr_home72",
+   "seed": 8,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_hpfix_08",
+   "cell": "sr_hpfix",
+   "seed": 8,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_forum72_08",
+   "cell": "sr_forum72",
+   "seed": 8,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_p72_08",
+   "cell": "sr_p72",
+   "seed": 8,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_home72_09",
+   "cell": "sr_home72",
+   "seed": 9,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_hpfix_09",
+   "cell": "sr_hpfix",
+   "seed": 9,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_forum72_09",
+   "cell": "sr_forum72",
+   "seed": 9,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_p72_09",
+   "cell": "sr_p72",
+   "seed": 9,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_home72_10",
+   "cell": "sr_home72",
+   "seed": 10,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_hpfix_10",
+   "cell": "sr_hpfix",
+   "seed": 10,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_forum72_10",
+   "cell": "sr_forum72",
+   "seed": 10,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_p72_10",
+   "cell": "sr_p72",
+   "seed": 10,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_home72_11",
+   "cell": "sr_home72",
+   "seed": 11,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_hpfix_11",
+   "cell": "sr_hpfix",
+   "seed": 11,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_forum72_11",
+   "cell": "sr_forum72",
+   "seed": 11,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_p72_11",
+   "cell": "sr_p72",
+   "seed": 11,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_home72_12",
+   "cell": "sr_home72",
+   "seed": 12,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_hpfix_12",
+   "cell": "sr_hpfix",
+   "seed": 12,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_forum72_12",
+   "cell": "sr_forum72",
+   "seed": 12,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_p72_12",
+   "cell": "sr_p72",
+   "seed": 12,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_home72_13",
+   "cell": "sr_home72",
+   "seed": 13,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_hpfix_13",
+   "cell": "sr_hpfix",
+   "seed": 13,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_forum72_13",
+   "cell": "sr_forum72",
+   "seed": 13,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_p72_13",
+   "cell": "sr_p72",
+   "seed": 13,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_home72_14",
+   "cell": "sr_home72",
+   "seed": 14,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_hpfix_14",
+   "cell": "sr_hpfix",
+   "seed": 14,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_forum72_14",
+   "cell": "sr_forum72",
+   "seed": 14,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_p72_14",
+   "cell": "sr_p72",
+   "seed": 14,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_home72_15",
+   "cell": "sr_home72",
+   "seed": 15,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_hpfix_15",
+   "cell": "sr_hpfix",
+   "seed": 15,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_forum72_15",
+   "cell": "sr_forum72",
+   "seed": 15,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_p72_15",
+   "cell": "sr_p72",
+   "seed": 15,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_home72_16",
+   "cell": "sr_home72",
+   "seed": 16,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_hpfix_16",
+   "cell": "sr_hpfix",
+   "seed": 16,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_forum72_16",
+   "cell": "sr_forum72",
+   "seed": 16,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_p72_16",
+   "cell": "sr_p72",
+   "seed": 16,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_home72_17",
+   "cell": "sr_home72",
+   "seed": 17,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_hpfix_17",
+   "cell": "sr_hpfix",
+   "seed": 17,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_forum72_17",
+   "cell": "sr_forum72",
+   "seed": 17,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_p72_17",
+   "cell": "sr_p72",
+   "seed": 17,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_home72_18",
+   "cell": "sr_home72",
+   "seed": 18,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_hpfix_18",
+   "cell": "sr_hpfix",
+   "seed": 18,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_forum72_18",
+   "cell": "sr_forum72",
+   "seed": 18,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_p72_18",
+   "cell": "sr_p72",
+   "seed": 18,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_home72_19",
+   "cell": "sr_home72",
+   "seed": 19,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_hpfix_19",
+   "cell": "sr_hpfix",
+   "seed": 19,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_forum72_19",
+   "cell": "sr_forum72",
+   "seed": 19,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "sr_p72_19",
+   "cell": "sr_p72",
+   "seed": 19,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  }
+ ],
+ "skipped_units": []
+}

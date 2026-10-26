@@ -28828,3 +28828,32 @@ read's. Every cell is a SELF-REFEREE read (E1-0, `015f00e2`).
 **Evidence:** `research_state/measurements/search_l1_plateau_2026-10-25/` (`PREREGISTRATION.md`, `l1_plateau.py`,
 `result_l1_plateau.json`, README). View: `endstate/search_ledger.md` status line, §1, §7 Q13;
 `research_state/UNDERSTANDING.md` (the L1 paragraph).
+
+### 2026-10-25 · MEASUREMENT · **FR-1: P\* BEATS METAMON'S HUMAN-ONLY `SmallRL` (OURS-BEATS): 0.666 [0.639, 0.692] on the unfamiliar panels, 0.785 [0.742, 0.822] on home72; ≈ 18 pp easier than Kakuna on every panel**
+
+**Question.** The owner's "does a model using only human data outperform ours?", first read (Q-H10, FR-1 of
+`endstate/design_human_replay_lever.md` §2.1): does P\* (`rb_x26_s2601` @280,000,170) beat Metamon's `SmallRL` (14M,
+offline RL on human replays only, ckpt 40, hub `ac8e88e7`) on unfamiliar teams?
+
+**Design.** Pre-registered at `57fd657b` before any game (`PREREG.md`). Greedy vs greedy, X51's symmetric configs, H,
+F, P72 and home72 at 400 games each (20 units × 20, seeds 0–19), so every game twins X51's P\* vs Kakuna game (same
+teams, same seed, half and index). Play tree `d32ffcee` (the metamon_strongest read's, which replayed X51 20 / 20),
+`HF_HUB_OFFLINE=1`, CPU, the short lane. Rule: OURS-BEATS iff W-U's LB > 0.50 (`main.x35.d1.strat_score`). Regime
+`f0828cc22aa53b41`.
+
+**Result.**
+- **U 0.666 [0.639, 0.692] ⇒ OURS-BEATS.** H 0.678 [0.630, 0.721], F 0.663 [0.615, 0.707], P72 0.658 [0.610, 0.702],
+  home72 0.785 [0.742, 0.822]; all BETTER than 0.50.
+- Against the same twins vs Kakuna: U +0.179 [+0.140, +0.218], home72 +0.188 [+0.124, +0.249], P72 the largest
+  (+0.225): SmallRL WEAKER THAN KAKUNA on every panel. The panels are level against SmallRL, so P\*'s P72 deficit
+  against Kakuna (0.433) is Kakuna's exploitation, not a general weakness.
+- 80 / 80 units counted; `sr_hpfix_10` re-run once with its seed after its first try's peer hit Metamon's recursive
+  "long-tail error" reset loop (985 resets, `peer_clean = False`).
+- Prediction (GUESS U 0.72, home72 0.80): U a little lower; the predicted panel order did not hold.
+
+**What it cannot say.** Upstream's recipe vs ours (architecture, scale and data all differ), not human data vs ours
+in one network (X59-S); one checkpoint each; H18 favours P\*. FR-3 (LargeRL / LargeIL, 200M) is playing.
+
+**Evidence:** `research_state/measurements/human_only_vs_pstar_2026-10-25/` (`PREREG.md`, `README.md`, `cells.json`,
+`rows.jsonl`, `scripts/`); raw units in `~/dev/gen3ai-reads/hr_reads_2026-10-25/`. View: `UNDERSTANDING.md` §4.8,
+`endstate/human_data_architecture.md` §7.1.

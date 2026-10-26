@@ -119,8 +119,32 @@ def _interleave(opps):
 
 def units(lane="A"):
     """Lane A: FR-1 (four panels interleaved by progress), then FR-3. Lane B: FR-3 only (LargeRL and LargeIL
-    interleaved, so a stop leaves every cell with whole units in proportion)."""
-    return (_interleave(FR1) if lane == "A" else []) + _interleave(FR3)
+    interleaved, so a stop leaves every cell with whole units in proportion). While ``STATE/hold_fr3`` exists, FR-3
+    is HELD: no lane starts an FR-3 unit (the orchestrator's priority, 2026-10-25: FR-1 first, CPU-bound)."""
+    fr3 = [] if (STATE / "hold_fr3").exists() else _interleave(FR3)
+    return (_interleave(FR1) if lane == "A" else []) + fr3
+
+
+def busy():
+    """Units whose last started child is still alive (a supervisor restarted mid-unit must not re-run them)."""
+    last = {}
+    try:
+        for line in open(STATE / "units.jsonl"):
+            e = json.loads(line)
+            if e.get("event") == "pid":
+                last[e["unit"]] = e["pid"]
+            elif e.get("event") == "end":
+                last.pop(e["unit"], None)
+    except OSError:
+        return set()
+    out = set()
+    for u, pid in last.items():
+        try:
+            os.kill(pid, 0)
+            out.add(u)
+        except OSError:
+            pass
+    return out
 
 
 def _fails():
@@ -252,7 +276,11 @@ def cmd_run(args):
     jl({"event": "supervisor_start", "lane": lane, "pid": os.getpid(), "tree": str(TREE)})
     while True:
         fails = _fails()
-        pending = [u for u in units(lane) if not is_done(u[0]) and fails.get(u[0], 0) < 2]
+        live = busy()
+        pending = [u for u in units(lane) if not is_done(u[0]) and fails.get(u[0], 0) < 2 and u[0] not in live]
+        if not pending and live:
+            time.sleep(60)
+            continue
         if not pending:
             jl({"event": "supervisor_done", "lane": lane, "fails": fails})
             (STATE / f"queue_{lane}.done").write_text(json.dumps({"done": True, "fails": fails}) + "\n")

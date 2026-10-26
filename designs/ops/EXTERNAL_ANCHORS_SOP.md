@@ -726,6 +726,7 @@ unit counted on its first try. Full artifact: `designs/research_state/measuremen
 | the three unfamiliar panels, equal weight (Kish) | n_eff 1,208 | **0.487 [0.459, 0.515]** | NOT DETECTED | +0.030 [−0.010, +0.070] n.d. |
 | Kakuna ckpt 28 (`metamon:Kakuna28`, the agent `policy` alias) vs ckpt 34, home72, a pair cell at `b9c75884` | 400 | 0.515 [0.466, 0.564] (ckpt 28's side) | NOT DETECTED | — |
 | the toy T\* (`rb_toy_ent_s4002_deep` @290,000,087) · home72 / forum72 | 400 / 400 | 0.493 [0.444, 0.541] / 0.458 [0.409, 0.506] | NOT DETECTED | T\* − P\*: −0.105 / −0.073, both WORSE |
+| P\* vs **`metamon:SmallRL`** (human-only, ckpt 40), the same twins, at `d32ffcee` (FR-1, 2026-10-25, `measurements/human_only_vs_pstar_2026-10-25/`) · home72 / H / F / P72 / U | 400 each; U n_eff 1,200 | 0.785 [0.742, 0.822] / 0.678 / 0.663 / 0.658 / **0.666 [0.639, 0.692]** | all BETTER | vs Kakuna on the twins: U +0.179 [+0.140, +0.218] (SmallRL WEAKER) |
 
 PROVISIONAL (one seed). The REVERSE cell (we pilot heldout72_hpfix, Kakuna pilots home72) was not read at P\*.
 
