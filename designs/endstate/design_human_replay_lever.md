@@ -1,11 +1,13 @@
 # Human replays as a TOGGLEABLE training lever: the first reads, the levers, and the pre-registered plan (X59-S, X60)
 
-**Status: REVISED DRAFT — pending re-review (2026-10-25). EXPLICIT-ONLY** (the plan and its pre-registrations; what is
-current lives in the always-current [`human_data_architecture.md`](human_data_architecture.md)). This revises the draft
-of `14ae4203` after REVIEW A (data / bias / leakage), REVIEW B (experiments / causal) and REVIEW C (reasoning); every
-finding's disposition is in
-[`RESPONSE.md`](../research_state/measurements/human_replay_quality_2026-10-25/RESPONSE.md). **Nothing is built,
-trained or launched; no GPU was used.** The power numbers are
+**Status: REVISED (2026-10-25, second revision, after REVIEW D). EXPLICIT-ONLY** (the plan and its
+pre-registrations; what is current lives in the always-current [`human_data_architecture.md`](human_data_architecture.md)).
+The first revision answered REVIEW A (data / bias / leakage), B (experiments / causal) and C (reasoning); this one
+answers REVIEW D, the re-review (READY-WITH-FIXES). Every disposition is in
+[`RESPONSE.md`](../research_state/measurements/human_replay_quality_2026-10-25/RESPONSE.md) (§D for REVIEW D).
+**FR-1 and FR-3 are registered and playing; X59-S is BUILT and PRE-REGISTERED
+([`PREREG.md`](../research_state/measurements/x59s_matched_students_2026-10-25/PREREG.md)), nothing trained; X60 is
+NOT-READY (§6).** No GPU was used. The power numbers are
 [`plan_power.py`](../research_state/measurements/human_replay_quality_2026-10-25/plan_power.py)'s (seeded, CPU;
 output `results/plan_power.json`) unless they cite REVIEW B's `review_b_power.py`.
 
@@ -26,16 +28,22 @@ draws); BC = behaviour cloning; pp = percentage points; lane-h = one CPU lane fo
   revised exclusions; the revised panel exclusion (§3.1) keeps ≈ 29 % of ≥ 1500 battles (REVIEW A's measure).
 - **There is no offline evidence either way** that human labels carry unfamiliar-team skill: the familiarity proxy is
   uninformative (REVIEW A M1). So nothing is built before a read says what to build.
-- **First reads, in order (§2):** (1) P\* vs Metamon's human-only `SmallRL` (≈ 1.3 lane-h, zero build); (2) the HOM's
-  trace twin, the instrument check (≈ 1 lane-h); (3) P\* vs `LargeRL` / `LargeIL` (two downloads for the owner's
-  approval); (4) **X59-S**, the matched-student contest: two students on the SAME human states, human labels vs P\*'s
-  sampled labels (≈ 25–35 lane-h, or ≈ 2 GPU-h + 20 lane-h).
+- **No evidence yet, either way, that human data helps goal (b).** Human teams reach the unfamiliar region and human
+  choices are learnable; neither says that learning them improves play.
+- **What the panel exclusion KEEPS is a different population (REVIEW D M7).** Of the candidate battles (a ≥ 1300
+  non-bot seat, ≥ 11 turns, every held-out panel incl. `forum216b`) it keeps 16.8 %; the kept battles are 64 %
+  forfeits or timer losses (49 % among the excluded) and 52 % of their sides were seen whole (75 %). Every rowset's
+  manifest records this profile, and a result trained on one is about that slice.
+- **First reads, in order (§2):** (1) P\* vs Metamon's human-only `SmallRL` and (3) `LargeRL` / `LargeIL`: registered
+  and playing; (2) the HOM's trace twin, now OFF X59-S's critical path; (4) **X59-S**: three matched student arms
+  × 5 seeds, our architecture from one init per seed — S-H (human states, human labels), S-P (the same states, P\*'s
+  labels restricted to what the log allows), S-S (P\*'s own self-play states and labels). **Δ_data = S-H − S-S answers
+  the owner's "is human data better than our self-play data?"**; Δ_labels = S-H − S-P routes H-BC.
 - **The levers, re-ranked by the stated criterion (§4):** the reads first; then H-TEAMS with the D1 contrast; then H-BC
-  or H-INIT, whichever X59-S favours; H-KL last. X59 (the HOM vs Kakuna) is WITHDRAWN as a decision rule (its SUPPORTS
-  fired more under forgetting than under skill) and kept only as a descriptive Δ_U read.
-- **X60 (§6)** keeps D1's frame with REVIEW B's fixes: the primary moves to F + P72 at 630 games per (seed final,
-  panel), so NULL is reachable (0.58 at Δ = 0) and GAIN has 0.77 power at +2.5 pp; H becomes a positive control
-  (practised / unpractised halves); the human-data contrasts are H-TEAMS − D1 and H-BC − P-BC.
+  if X59-S favours human labels; H-KL last. H-INIT is DROPPED (it forked a HOM fitted on rows the exclusion now
+  forbids; REVIEW D M5). The existing HOM routes nothing.
+- **X60 (§6) is NOT-READY** (REVIEW D B1: its estimator and its power did not match). It is not on the path: it runs
+  only after X59-S routes a lever, and needs the four fixes in §6 before it is registered.
 
 ---
 
@@ -69,64 +77,55 @@ This doc does not restate them.
 
 - **What:** R1's traces read from the opponent's seat, two rows per decision (C-GAME-completed; the TRUE team); the NLL
   of the HOM and of P\* on both; the twin gap = completed − true; report HOM's gap − P\*'s gap.
-- **Bar:** if the HOM's gap exceeds P\*'s by > 0.05 nats, every HOM-based Kakuna score is a lower bound and C-GAME rows
-  carry a learnable artefact; X59-S's contrast survives (both students see identical completed states), its absolute
-  levels do not.
+- **Bar (an interval, REVIEW D m4):** the gap difference (HOM's − P\*'s) with a battle-cluster bootstrap 95 % CI.
+  ARTEFACT iff its LB > 0.05 nats: every HOM-based Kakuna score is a lower bound and C-GAME rows carry a learnable
+  artefact. NO-ARTEFACT iff its UB < 0.05. Else UNCLEAR. A bound within 1e-9 of 0.05 takes UNCLEAR.
+- **Not on X59-S's path** (REVIEW D §7): S-P's labels never name a drawn move or a drawn bench mon (§2.4), so the
+  drawn-move signature is the same in both label arms; an ARTEFACT read qualifies X59-S's absolute levels only.
 - **Cost:** forwards only, ≈ 1 lane-h; ≈ 0.2 agent-day to point `main.x50_r1.read_r0`'s trace path at the policy NLL.
 
 ### 2.3 FR-3: P\* vs `LargeRL` / `LargeIL` (Q-H10 at Metamon's largest human-only scale)
 
-- **Needs two downloads** (Metamon's `LargeRL` and `LargeIL`, 200M each, from its public model hub) and their pins in
-  `designs/ops/anchors.json`. Not done: the owner's approval is required.
+- **Downloaded and pinned** in `designs/ops/anchors.json` (hub `ac8e88e7`, checkpoint 40, sha256 recorded), and
+  REGISTERED with FR-1 ([`human_only_vs_pstar_2026-10-25/PREREG.md`](../research_state/measurements/human_only_vs_pstar_2026-10-25/PREREG.md)).
 - **Cells, rule:** as FR-1. **Cost:** ≈ 4.5 lane-h each (ESTIMATE).
 
 ### 2.4 FR-4: X59-S, the matched-student contest (Q-H9 and Q-H10 in our architecture)
 
-**The question.** On the SAME human states, does a policy taught by human labels play unfamiliar teams better than one
-taught by our own policy's labels? And does a model trained only on humans beat P\*?
+**The binding text is the PREREG** ([`x59s_matched_students_2026-10-25/PREREG.md`](../research_state/measurements/x59s_matched_students_2026-10-25/PREREG.md),
+committed before any student trains). Its shape, after REVIEW D:
 
-- **Rows:** one registered rowset of `hr_spec_v1`'s TRAIN dates: actor ≥ 1300 (volume for a from-scratch student), the
-  card's DROP filters (bots, walk-overs, duplicates), §3.1's exclusion over EVERY held-out panel including
-  `forum216b`, §3.3's account-disjoint validation, ≥ 2 legal actions, hidden turns with set labels (§3.2), the
-  quitter's last 2 decisions dropped (§3.5). Its rows manifest sha256 is registered before training.
-- **Two students, ONE difference:** S-H's labels are the human's action; S-P's labels are one action SAMPLED from
-  frozen P\*'s masked policy at T = 1 on the same row, keyed by the row id (the matched-noise rule). On a hidden turn
-  S-H carries the set label and S-P its sample (a declared asymmetry on ≈ 12 % of rows; the secondary drops those rows
-  in both arms).
-- **Matched:** our architecture (`--arch production`'s network), one random init, one keyed batch order, the HOM's
-  optimiser, a FIXED step budget (no early stopping, which would de-match the arms); one epoch on CPU or three under a
-  GPU lease, the same for both.
-- **Optional third arm S-S:** P\* labels on P\*'s own SELF-PLAY states, the same row count; S-P − S-S is the value of
-  human STATE coverage at a matched teacher (the breadth mechanism of H-TEAMS and D1).
-- **Reads:** each student vs Kakuna ckpt 34 (greedy, harness `63f97a57`), home72 400 and H, F, P72 at 800 each
-  (2,400 U games per student, ≈ 16 lane-h for both); in-house S-H vs S-P head to head on each U panel and home72,
-  4,000 games a panel (half-width 1.55 pp); each student vs P\*.
-- **Primary:** Δ_S = S-H − S-P on pooled U vs Kakuna (equal-weight panels; normal interval; one seed per arm).
-- **Power** (`plan_power.py`, students at ≈ 0.30 on U): half-width 2.6 pp; P(HUMAN-LABELS-BETTER) = 0.61 / 0.84 / 0.96
-  at Δ = +3 / +4 / +5 pp; 0.025 at Δ = 0; MDE80 4.0 pp (worst case p = 0.5). At 3,600 U games per student: 0.78 /
-  0.95 at +3 / +4 pp (+8 lane-h).
-- **Rule** (a bound within 1e-9 of 0 takes UNCLEAR):
-  - **HUMAN-LABELS-BETTER** iff Δ_S's LB > 0 → build H-BC first, the P-BC placebo conditional (§6).
-  - **OWN-LABELS-BETTER** iff Δ_S's UB < 0 → drop H-BC; H-INIT remains only if the HOM's descriptive Δ_U ≥ 0.
-  - **else UNCLEAR** → H-TEAMS first, with the D1 contrast.
-  - **Floor fallback (registered now):** if both students score < 0.15 vs Kakuna on U, the in-house head-to-head on U
-    decides with the same rule.
-  - **Replication (the strong-claims rule):** a decisive class that steers a GPU build is re-run with a second seed
-    pair first; it stands only if the second pair clears the same bound in the same direction (joint power at +4 pp:
-    0.71; +50 % cost).
-- **Q-H10, reported:** S-H − P\* on U and home72 vs Kakuna, with intervals; "a human-only model beats ours" iff the LB is
-  > 0 on U.
-- **VOID:** the two label columns differ anywhere but the label (assert row bytes equal); a student fails to load in the
-  anchors harness; a 20-game smoke is not reproduced by a seeded repeat; > 1 uncounted unit per cell.
-- **What it cannot say:** from-scratch students are not a plateau fork; HUMAN-LABELS-BETTER does not show that H-BC
-  inside PPO helps (X60 does).
-- **Cost:** P\*'s labels ≈ 2–4 lane-h; two students ≈ 5–10 lane-h each at one epoch (ESTIMATE from the HOM's 373
-  rows / s) or ≈ 1 GPU-h each under a lease; reads ≈ 16 lane-h; build ≈ 0.5–1 agent-day (the HOM trainer with a label
-  switch and a from-scratch init).
+- **The question (the owner's, D-M4):** is human DATA (human states, human labels) better than our self-play DATA (P\*'s
+  states, P\*'s labels) for a policy of our architecture, at matched volume and recipe, on unfamiliar teams?
+- **Rows:** the registered rowset `hr_spec_v1.r1` (`src/main/human_data/rowset.py`): `hr_spec_v1`'s TRAIN dates
+  through the manifest check; rated, a result, ≥ 11 turns (D-M7's information floor), duplicates and bot-flagged
+  accounts out, §3.1's exclusion over every held-out panel incl. `forum216b`, actor ≥ 1300, ≥ 2 legal actions, hidden
+  turns with set labels (§3.2), the quitter's last 2 decisions dropped, account-disjoint validation (§3.3).
+- **Three arms, five seeds each (5901–5905), one difference per contrast:**
+  - **S-H**: the rowset, the human's action as the label;
+  - **S-P**: the SAME rows, one action from frozen P\* at T = 1 RESTRICTED to the row's CONSISTENT set (D-M2: the
+    legal actions the log leaves possible for the human; no drawn move, no drawn bench mon), matched noise keyed by
+    the rowset digest and row id. On a hidden-move row both arms train the SAME set label;
+  - **S-S**: P\*'s own self-play rows on the pool, both seats, P\*'s sampled action as the label, the same row count.
+- **Matched:** `--arch production`'s network (P\*'s architecture) from one init per seed in every arm, one recipe, a
+  fixed step budget (no early stopping), the seed-keyed batch order (S-H and S-P see the same batches).
+- **Contrasts:** **Δ_data = S-H − S-S** (the owner's read); **Δ_labels = S-H − S-P** (routes H-BC); the states part
+  S-P − S-S is reported. Each on pooled U vs Kakuna (H, F, P72 at 400 games each per student), averaged over seeds.
+- **The interval carries the seed variance (D-M3):** the binomial part plus 2 × max(1.5 pp, the measured seed SD)² / 5;
+  a Welch t across seeds replaces it when the measured seed SD's one-sided 95 % lower bound exceeds 1.5 pp. Sized at
+  p = 0.5, so no guessed base rate enters: P(LB > 0) at +4 pp is 0.94 / 0.89 / 0.81 at a seed SD of 0 / 1 / 1.5 pp
+  (false positives ≤ 0.02 there, ≤ 0.028 at 2–3 pp; `power.py`).
+- **Floor pilot first:** 200 U games per student; if every arm's mean is < 0.15, the in-house head-to-heads decide.
+- **Cost:** training ≈ 3 GPU-h under a lease (15 students × 3 epochs, ESTIMATE; ≈ 10 lane-h a student on the CPU, so
+  not on the CPU); P\* labels and self-play rows on the CPU; games ≈ 60 lane-h (ESTIMATE at ≈ 10 s a Kakuna game).
+- **What it cannot say:** from-scratch students are not a plateau fork; a verdict is about the ≥ 1300 forfeit-heavy
+  kept slice (mostly 1300–1499 actors); HUMAN-LABELS-BETTER does not show that H-BC inside PPO helps (X60 does).
 
-### 2.5 Descriptive, optional: the HOM's Δ_U (REVIEW B B1 fix 2)
+### 2.5 Descriptive, optional: the HOM's Δ_U (REVIEW B B1 fix 2) — CONTAMINATED, routes nothing (REVIEW D M5)
 
-The HOM vs Kakuna is kept as a DESCRIPTIVE read, never a decision rule: Δ_U = HOM_U − P\*_U, one-sided (LB > 0 is weak
+The existing HOM was fitted on rows that kept 3-set cores of H, F and P72 (its exclusion was heldout72 ≥ 4-fit), so a
+Δ_U on F + P72 may read panel memory as skill. It is barred, by name, from every lever and every routing rule. If read
+at all, the HOM vs Kakuna is a DESCRIPTIVE read labelled CONTAMINATED: Δ_U = HOM_U − P\*_U, one-sided (LB > 0 is weak
 support; a negative Δ_U refutes nothing, since the HOM may have lost general skill), at 1,600 games per cell per model
 with P\* re-played on NEW unit seeds (half-width 2.0 pp, power 0.84 at +3 pp; ≈ 18 lane-h).
 
@@ -142,7 +141,20 @@ with P\* re-played on NEW unit seeds (half-width 2.0 pp, power 0.84 at +3 pp; �
 - **Why ≥ 3:** the panels are "unfamiliar" because no pool team holds ≥ 3 of their sets; a training rowset with a 3-set
   core of a panel team makes that team familiar by the same yardstick. ≥ 4 left 3-set cores in ≈ 48 % of ≥ 1500 battles.
 - **Its dose, stated:** it removes 70.7 % of ≥ 1500 TRAIN battles (REVIEW A's `E_panel_exclusion`, without
-  `forum216b`); the rowset manifest records the realised share. ≈ 0.5M ≥ 1500 rows remain (ESTIMATE).
+  `forum216b`) and **83.2 % of `hr_spec_v1.r1`'s candidate battles** (a ≥ 1300 non-bot seat, ≥ 11 turns) with
+  `forum216b` (216 teams) included; the rowset manifest records the realised share.
+- **What it keeps (REVIEW D M7), measured on the same candidates:**
+
+  | | KEPT (27,586 battles) | EXCLUDED (136,852) |
+  |---|---:|---:|
+  | forfeit or timer loss | 64.1 % | 49.3 % |
+  | mean turns | 28.4 | 30.4 |
+  | mons seen per side | 5.14 | 5.66 |
+  | sides seen whole (six mons) | 51.9 % | 74.6 % |
+
+  REVIEW D's ≥ 1500 read (before the ≥ 11-turn floor, `forum216b` not read) found the kept sides ENRICHED in
+  pool-unfamiliar teams (31.5 % vs 11.6 %): the exclusion removes the mainstream. Every rowset manifest records this
+  profile (`scan.json`, `rows_manifest.json`); a result trained on a rowset is about that slice.
 - **Second net:** the exact-set guard (`main.heldout_panels.contamination`) still runs on completed teams.
 - **Regression test (with the build):** a log in which a side pilots a panel team verbatim is excluded; it fails on
   revert to the post-fill guard.
@@ -165,7 +177,8 @@ reads report the unseen-account stratum separately (§2.0).
 - **Why:** Metamon's public agents can ladder under any name, and every lever read scores against Kakuna; imitating
   Kakuna's own decisions would read as skill. A name / volume rule cannot see a fleet at 40 games a day.
 - **Score:** for every ≥ 1500 account with ≥ 50 TRAIN games, the mean log-likelihood of its labelled actions under
-  Kakuna (Metamon's own replay parser and observation, CPU) minus that under the HOM.
+  Kakuna (Metamon's own replay parser and observation, CPU) minus that under P\* (REVIEW D m7: the HOM trained on these
+  accounts, so it would flag a high-volume fleet LESS often).
 - **Flag:** accounts above the p99 of that score's distribution over accounts with ≥ 1 chat line a game (a human
   reference); report the flagged share of rows.
 - **Use:** a registered SENSITIVITY in X59-S and X60: the primary re-read without the flagged accounts; a sign change
@@ -179,8 +192,13 @@ reads report the unseen-account stratum separately (§2.0).
 - **Circular calibration (A m5):** X60 reports the belief / intent heads' calibration on the Kakuna cells, ON vs OFF.
 - **Choice Band (A m6):** report the share of rows whose active used one move all stay with no item revealed; mark
   their masks uncertain.
-- **The drawn-move signature (B M6):** a drawn move is never the label and a drawn bench mon is never a switch target;
-  X59-S matches it across arms; FR-2 measures whether a model learns it.
+- **The drawn-move signature (B M6, REVIEW D M2):** a drawn move is never the human's label and a drawn bench mon is
+  never a switch target. X59-S matches it across the label arms by construction: S-P's label is drawn from the row's
+  CONSISTENT set (the legal actions the log leaves possible), so no S-P label names a drawn option either. FR-2
+  measures whether a model learns the signature.
+- **Forfeits and short games (REVIEW D M7), registered for X59-S:** battles of ≤ 10 turns are FILTERED (the
+  information floor; it also removes every walk-over); forfeits beyond that are KEPT, the quitter's last 2 decisions
+  dropped; the row share by ending is in the rowset manifest.
 
 ---
 
@@ -193,9 +211,10 @@ The criterion: expected pp on U vs Kakuna per GPU-hour, at an acceptable risk to
 |---|---|---|---|---|---|---|
 | 0 | **the first reads** (§2) | nothing | they decide which lever is worth a build | n/a | 0–2 h | none |
 | 1 | **H-TEAMS** `teams:<rowset>@<share>` | the POOL: completed ≥ 1500 human ladder teams join the self-play draw on both sides | the only lever with a measured sibling (D1); breadth on the ladder population | +0 to +4 | ≈ 13 per 3-seed arm | panel memory (§3.1); Smogon-drawn fills (Q-H13) |
-| 2 | **H-BC** `bc:<rowset>@<coef>` **or H-INIT** (a fork of the HOM itself, plain PPO) | the LOSS (an auxiliary BC term) / the INIT | human LABELS on states P\* never trained; H-INIT is Metamon's recipe class (human pretraining, then self-play) at no extra build | +0 to +4 | ≈ 16 per 3-seed arm | a pull toward 1500-level play; forgetting (H-INIT's value head refits) |
-| 3 | H-KL `kl:<model>@<coef>` | the LOSS: KL to a registered HOM on self-play states | piKL-style; acts where we are already strong | +0 to +1 | ≈ +15 % | in-pool play pulled toward the HOM |
-| — | HB0 | none: X59-S's S-H IS the human-only comparator in our architecture | answers Q-H10 | n/a | ≈ 1 h | none |
+| 2 | **H-BC** `bc:<rowset>@<coef>` | the LOSS (an auxiliary BC term) | human LABELS on states P\* never trained; built first only if X59-S reads HUMAN-LABELS-BETTER | +0 to +4 | ≈ 16 per 3-seed arm | a pull toward 1500-level play |
+| 3 | H-KL `kl:<model>@<coef>` | the LOSS: KL to a registered `hom_<rowset>` on self-play states | piKL-style; acts where we are already strong | +0 to +1 | ≈ +15 % | in-pool play pulled toward the HOM |
+| — | HB0 | none: X59-S's S-H IS the human-only comparator in our architecture | answers Q-H10 | n/a | in X59-S | none |
+| — | ~~H-INIT~~ (a fork of the HOM, plain PPO) | DROPPED (REVIEW D M5) | the HOM it forks kept 3-set panel cores in its rows; it returns only as a new registration on a `hom_<rowset>` re-fit on a §3 rowset with account-disjoint early stopping (compute is small; what it loses is VOLUME: the compliant ≥ 1500 rows are `hr_spec_v1.r1`'s `rating_ge1500_rows`, against the HOM's 1.76M) | — | — | — |
 | — | BC warm start of a FRESH run | the INIT of a new run | AlphaStar's supervised init | unknown | ≥ 42 for a pair to 100M | cost |
 
 - **Struck:** "H-BC is the only lever whose gradient lands on unfamiliar-team states" (false: H-TEAMS, D1 and X52 all
@@ -203,6 +222,8 @@ The criterion: expected pp on U vs Kakuna per GPU-hour, at an acceptable risk to
   init-plus-KL family, not an auxiliary BC term added at a plateau (UNVERIFIED readings, from memory).
 - **Rejected:** human game OUTCOMES as critic labels (off-policy); the HOM as a self-play opponent (FACE_c +0.017); an
   advantage-weighted BC variant now (one lever at a time).
+- **Barred (REVIEW D M5):** the existing HOM (`~/gen3ai_archive/x50_r1b/hom/`) from every lever, every `kl:<model>`
+  and every routing rule; any lever model is a `hom_<rowset>` fitted on a registered §3 rowset.
 
 ---
 
@@ -213,7 +234,21 @@ pre-registration; one lever per A/B; one shared control. The grammar and its rul
 
 ---
 
-## 6. X60: a lever A/B (GPU; D1's frame with REVIEW B's fixes)
+## 6. X60: a lever A/B (GPU; D1's frame with REVIEW B's fixes) — NOT-READY (REVIEW D B1)
+
+> **NOT-READY, and not on the path.** REVIEW D B1: the table registers AM-5's widened Newcombe with an UPPER-QUANTILE
+> φ, but the quoted power (NULL 0.58, GAIN 0.77) is for the POINT φ̂ that `plan_power.py` and `main.x35.d1` use; under
+> the registered rule NULL is 0.16–0.30 and GAIN 0.39–0.63. The seed rule below fires 67 % of the time at a TRUE seed
+> SD of 0, so its unpowered, uncosted 8-seed fallback is the expected path. Before X60 is registered:
+> 1. register ONE AM-5 multiplier and implement it in `main.x35.d1` (t at df is the milder choice);
+> 2. re-run `plan_power` with it and size the cells from it (t needs ≈ 1,000 games per (seed final, panel) for NULL
+>    0.59 / GAIN 0.84);
+> 3. set a seed bar 10 finals can resolve (the point estimate > 1.5 pp, or the one-sided 80 % bound > 2.5 pp),
+>    simulate its firing rate at seed SD 0 and 1.5 pp, and register and cost the 8-seed classifier;
+> 4. widen the H-TEAMS − D1 and H-BC − P-BC contrasts by the same multiplier.
+>
+> X60 runs only after X59-S routes a lever. The rows below are the draft, kept for those fixes, with REVIEW D's other
+> X60 findings applied (the in-house U guard, D-M6; the H-p exception, D-m6).
 
 | item | registration |
 |---|---|
@@ -223,9 +258,10 @@ pre-registration; one lever per A/B; one shared control. The grammar and its rul
 | **PRIMARY** | Δ = ON − OFF vs Kakuna, pooled equal-weight over **F + P72**, AM-5's widened Newcombe (`main.x35.d1`, with an upper-quantile φ, REVIEW B m6), **630 games per (seed final, panel)** |
 | power (seed SD 0) | NULL 0.58 at Δ = 0; GAIN 0.58 / 0.77 at +2.0 / +2.5 pp; half-width 1.74 pp at look 2. At a seed SD of 2.7 pp NULL falls to 0.05: the seed rule below |
 | heterogeneity guard | GAIN also needs both F's and P72's pooled point estimates > 0 |
+| **in-house U guard** (REVIEW D M6: a meter not trained on human data) | ON − OFF on F + P72 against the frozen reference population (or P\*) through `main.h2h`, CPU, thousands of games (half-width ≈ 1.5 pp); GAIN also needs its point estimate > 0, and a GAIN only Kakuna sees is reported "Kakuna-specific" |
 | **CO-PRIMARY P** | Δ_P = ON − OFF on home72 in-house (`main.h2h`), Welch 97.5 %, non-inferiority bar −2.0 pp |
 | **goal (a) guard** | ON's Kakuna home72 at the final (400 games pooled over seeds) keeps its Wilson LB > 0.50 |
-| **positive control** | H split in two halves stratified by `ladder_weights_v1`; ON's rows INCLUDE the ≥ 3-fit battles near H-p and EXCLUDE those near H-u (a named exception to §3.1); 420 games per half per seed final. H-p's Δ is the lever's ceiling at this dose (power 0.90 at +5 pp); H-u's is transfer |
+| **positive control** | H split in two halves stratified by `ladder_weights_v1`; ON's rows INCLUDE a ≥ 3-fit battle near H-p only if EVERY one of its ≥ 3-fit matches is to an H-p team (REVIEW D m6: a battle that also fits an F or P72 team stays out), and EXCLUDE those near H-u (a named exception to §3.1); 420 games per half per seed final. H-p's Δ is the lever's ceiling at this dose (power 0.90 at +5 pp); H-u's is transfer |
 | **human-data contrasts** | H-TEAMS − D1 on F + P72 (D1's five finals topped up to 630); H-BC − P-BC, the placebo run only after an H-BC GAIN (the same rows, coefficient and schedule, labels sampled from frozen P\*). Half-width 1.74 pp; P(LB > 0) 0.61 / 0.92 at +2 / +3 pp |
 | controls topped up | C0 and D1's ten finals to 630 a panel on F and P72, and C0's five to 420 on each H half (≈ 37 lane-h at ≈ 10 s a Kakuna game, ESTIMATE); the D1 re-read is a new descriptive read |
 | seed rule (before look 1) | if the topped-up φ̂'s one-sided upper bound implies a seed SD > 1.5 pp, add 3 seeds per arm, or declare NULL unreachable before launch |
@@ -247,7 +283,7 @@ useless lever. `forum216b` (sealed, X54) carries the clean claim, with the same 
 | FR-1 (SmallRL) | 0 | ≈ 1.3 | ≈ 0.1 |
 | FR-2 (trace twin) | 0 | ≈ 1 | ≈ 0.2 |
 | FR-3 (LargeRL, LargeIL; downloads) | 0 | ≈ 9 | ≈ 0.3 |
-| FR-4 X59-S | 0 (or ≈ 2) | ≈ 25–35 (or ≈ 20) | ≈ 0.5–1 |
+| FR-4 X59-S (15 students; labels and self-play rows on the CPU) | ≈ 3 (ESTIMATE) | ≈ 60 games + ≈ 5 rows / labels (ESTIMATE) | built |
 | the Kakuna-family audit | 0 | ≈ 6 | ≈ 1 |
 | the switch + consumer snapshot check | 0 | — | ≈ 1 |
 | H-TEAMS build (export on revealed facts, corpus, guards) | 0 | ≈ 5 | ≈ 1.5 |
@@ -274,30 +310,37 @@ useless lever. `forum216b` (sealed, X54) carries the clean claim, with the same 
 
 | id | assumption | falsified by |
 |---|---|---|
-| A-1 | Human labels carry unfamiliar-team skill P\* lacks | X59-S OWN-LABELS-BETTER (Δ_S's UB < 0, 2,400 U games per student, power 0.84 at a true −4 pp) |
-| A-2 | C-GAME rows teach nothing false | FR-2: the HOM's twin gap exceeds P\*'s by > 0.05 nats |
+| A-1 | Human labels carry unfamiliar-team skill P\* lacks | X59-S OWN-LABELS-BETTER: Δ_labels's registered 95 % interval (seed term included) lies wholly below 0 (5 seeds × 1,200 U games per arm; power 0.81 at a true −4 pp and a 1.5 pp seed SD) |
+| A-2 | C-GAME rows teach nothing false | FR-2 ARTEFACT: the 95 % CI of (HOM's twin gap − P\*'s) lies wholly above 0.05 nats |
 | A-3 | ≥ 1500 humans are good enough teachers that a small dose does not cost home72 | X60's Δ_P 97.5 % UB < −2 pp |
-| A-4 | The spectator stream is representative of finished ladder games | the coverage read (Q-H4; needs approval) finds P(spectated) varying by > 20 pp across length or rating terciles |
-| A-5 | A BC gradient ≈ 10 % of the policy's moves the trunk without dominating | the pre-launch smoke's BC loss does not fall ≥ 10 % (VOID before GPU), or A-3's falsifier |
-| A-6 | The bot rule plus the Kakuna-family audit catch the bots that matter | §3.4's sensitivity flips the sign of a primary |
-| A-7 | §3.1's exclusion removes team memory of the panels | the positive control: H-u's Δ CI excludes 0 in the same direction as H-p's while F + P72 is flat (descriptive; per-team MDE 7.5 pp) |
+| A-4 | The spectator stream is representative of finished ladder games | the coverage read (Q-H4; needs approval): the 95 % CI of the largest between-tercile difference in P(spectated), by length or by rating, lies wholly above 20 pp |
+| A-5 | A BC gradient ≈ 10 % of the policy's moves the trunk without dominating | the pre-launch smoke: the 95 % CI of the BC loss's relative fall (first vs last 10 % of the smoke's steps, by batch) lies wholly below 10 % (VOID before GPU), or A-3's falsifier |
+| A-6 | The bot rule plus the Kakuna-family audit catch the bots that matter | §3.4's sensitivity: the primary re-read without the flagged accounts has a 95 % interval wholly on the other side of 0 from the original's point estimate |
+| A-7 | §3.1's exclusion removes team memory of the panels | the positive control: H-u's Δ CI excludes 0 in the same direction as H-p's while F + P72's CI contains 0 (descriptive; per-team MDE 7.5 pp) |
 | A-8 | 20M steps from a plateau is enough plasticity | X60's H-p half reads flat (UB < +2 pp) |
+
+Every falsifier is an interval statement (REVIEW B m7, REVIEW D m4): a bound within 1e-9 of its bar falsifies nothing
+(the undecided class).
 
 ---
 
 ## 9. FINDINGS (standing rule 7)
 
-1. **The familiarity proxy is uninformative,** not negative (REVIEW A M1); no offline evidence exists either way for A-1.
-2. **The ≥ 3-fit exclusion costs ≈ 71 % of ≥ 1500 battles** (REVIEW A, `forum216b` not included): the near-panel
-   region where human coverage is best is exactly what must go.
+1. **No offline evidence exists either way for A-1** (the familiarity proxy is uninformative, REVIEW A M1).
+2. **The ≥ 3-fit exclusion costs 83.2 % of the candidate battles with `forum216b`** (≈ 71 % of ≥ 1500 battles
+   without it), and what it keeps is forfeit-heavy and less fully seen (§3.1).
 3. **No unfamiliar panel is clean for a human lever** (Q-H13): H is replay-derived, P72 is drawn from the fill's own
    tables, F has human cores near most teams. `forum216b` carries the clean claim.
-4. **The HOM was fitted with a battle-id validation split** and its rowset is unregistered (it predates the registry).
-5. **Metamon `LargeRL` / `LargeIL` need two downloads** (FR-3), and the spectator coverage read needs proxy pulls and a
-   Smogon fetch (Q-H4): all await the owner's approval.
-6. **Experiment ids X59-S / X60 are named here only**, not in `EXPERIMENT_BACKLOG.md`; the orchestrator assigns them.
-7. **Reviews pending:** this REVISED DRAFT is re-reviewed before any build.
-8. **Process:** CPU only; no GPU, launch or download; `models/`, `data/` and the original corpus were only read.
+4. **The existing HOM is barred** from levers and routing (REVIEW D M5); its rowset is unregistered.
+5. **X59-S's teacher is mostly 1300–1499 actors** (the ≥ 1300 floor buys volume for a from-scratch student); the
+   card ranks that stratum "the human-only comparator only". The realised share is in the rowset manifest.
+6. **X59-S's training needs a GPU lease** (≈ 10 lane-h a student on the CPU); no CPU pilot was trained, and the base
+   rate vs Kakuna is measured by the registered floor pilot.
+7. **X60 is NOT-READY** (§6). Experiment ids X59-S / X60 are named here and in the PREREG only, not in
+   `EXPERIMENT_BACKLOG.md`; the orchestrator assigns them.
+8. **The Kakuna-family audit is not run**: X59-S's primary is read without it, and its sensitivity re-read follows
+   the audit.
+9. **Process:** CPU only; no GPU, launch or download; `models/`, `data/` and the corpus were only read.
 
 ---
 
@@ -307,3 +350,4 @@ useless lever. `forum216b` (sealed, X54) carries the clean claim, with the same 
 |---|---|---|---|---|
 | 2026-10-25 | **CREATED (DRAFT; explicit-only)** on the owner's grant | the data card; H-BC > H-TEAMS > HB0 > H-KL > warm start; X59 (the HOM vs Kakuna) first; X60 in D1's frame | building H-BC before A-1 is tested; a factorial; pooling the archive | the card; R-b1, R-b2; D1 look 2; X52 |
 | 2026-10-25 | **REVISED after REVIEW A / B / C** (REVISED DRAFT, pending re-review) | the owner's two questions as FIRST reads (SmallRL, the trace twin, LargeRL / LargeIL, X59-S); X59 withdrawn as a rule (descriptive Δ_U only); X60's primary on F + P72 at 630 games a panel, H as a positive control, the H-TEAMS − D1 and H-BC − P-BC contrasts, a goal (a) guard, a seed rule, an action for every class; ONE panel-exclusion rule on revealed facts at ≥ 3 fits before the fill; set labels on hidden turns; account-disjoint splits; a Kakuna-family audit; H-TEAMS re-ranked above H-BC, H-INIT added; the consent flag and `judge` dropped | keeping X59's premium rule (it rewarded forgetting); 140 games a cell (NULL unreachable); the ≥ 4-fit exclusion with a dose-response read (unpowered at ≈ 10 games a team) | `RESPONSE.md`; `plan_power.py` |
+| 2026-10-25 | **REVISED after REVIEW D** (READY-WITH-FIXES; X60 NOT-READY) | X59-S rebuilt and pre-registered: THREE arms (S-S mandatory; Δ_data = S-H − S-S answers the owner, Δ_labels = S-H − S-P routes H-BC), FIVE seeds each with a seed term in the interval, sized at p = 0.5 with a floor pilot, S-P's labels restricted to the log-consistent set, ≤ 10-turn games filtered; H-INIT dropped and the existing HOM barred; X60 marked NOT-READY with the four fixes it needs and an in-house U guard; the kept population's profile on page one; every falsifier an interval | one seed per arm (a 2 pp seed SD made a false HUMAN-LABELS-BETTER 0.20 likely); S-S optional (the owner's question unread); re-fitting the HOM now (its compliant ≥ 1500 volume is small, and X59-S answers the question first); fixing X60 now (not on the path) | `RESPONSE.md` §D; `x59s_matched_students_2026-10-25/power.py`; `hr_spec_v1.r1`'s scan |

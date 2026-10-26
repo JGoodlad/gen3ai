@@ -50,8 +50,8 @@ loses to the doc.
 | 32 | [`design_alphastar_league_path.md`](design_alphastar_league_path.md) | The AlphaStar-style path at our compute: four league mechanisms and a ranked roadmap. | DESIGN; LG-0 read; A1 NULL drops LG-2; no league arm run |
 | 33 | [`design_x50_rung1_intent_labels.md`](design_x50_rung1_intent_labels.md) | X50 rung 1: human opponent-action labels for the intent head. | R1 READ: GAP; extractor built |
 | 34 | [`design_x50_rung1b_human_opponent_model.md`](design_x50_rung1b_human_opponent_model.md) | X50 rung 1b: what to do with the human labels (a human opponent model as search's judge). | R-b2 READ 2026-10-24: HOM-NONE; R-a1 unread |
-| 35 | [`human_data_architecture.md`](human_data_architecture.md) | Human data in the system: the inventory, the sources, the snapshot-to-model chain, the `--human-data` switch (pinned by `src/human_data_doc_gate_test.py`). | REVISED DRAFT (its status block holds the review state); `--human-data` PROPOSED, not built |
-| 36 | [`design_human_replay_lever.md`](design_human_replay_lever.md) | Human replays as a toggleable training lever: the plan, first reads, X59-S, X60 (explicit-only). | REVISED DRAFT (its status block holds the review state); nothing built |
+| 35 | [`human_data_architecture.md`](human_data_architecture.md) | Human data in the system: the inventory, the sources, the snapshot-to-model chain, the `--human-data` switch (pinned by `src/human_data_doc_gate_test.py`). | ALWAYS-CURRENT after four reviews; `--human-data` PROPOSED, not built |
+| 36 | [`design_human_replay_lever.md`](design_human_replay_lever.md) | Human replays as a toggleable training lever: the plan, first reads, X59-S, X60 (explicit-only). | revised after REVIEW D; X59-S built and pre-registered (nothing trained); X60 NOT-READY |
 | 37 | [`design_search_next.md`](design_search_next.md) | What search needs next (the owner's goal 5): a diagnosis of the off-self failure, what human data and Metamon make answerable, and a ranked plan E1-E4 (explicit-only). | DRAFT 2026-10-25; nothing built or registered; search PAUSED |
 
 Ranked work lives outside this directory: experiments in

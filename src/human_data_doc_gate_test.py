@@ -64,17 +64,22 @@ _UNSEEN = "acting account UNSEEN on the train dates"
 
 
 # ------------------------------------------------------------------------------------------ parsing
-def status_box(doc: str) -> Dict[str, str]:
-    """The ``  key : value`` lines of the §0 STATUS code block."""
+def status_lines(doc: str) -> List[Tuple[str, str]]:
+    """The ``  key : value`` lines of the §0 STATUS code block, in order (duplicates kept)."""
     m = re.search(r"^## 0\. STATUS.*?\n```\n(.*?)\n```", doc, re.S | re.M)
     if not m:
-        return {}
-    out: Dict[str, str] = {}
+        return []
+    out: List[Tuple[str, str]] = []
     for ln in m.group(1).splitlines():
         if " : " in ln:
             k, v = ln.split(" : ", 1)
-            out[k.strip()] = v.strip()
+            out.append((k.strip(), v.strip()))
     return out
+
+
+def status_box(doc: str) -> Dict[str, str]:
+    """The STATUS block as a map (a duplicated key keeps its LAST value; :func:`check_numbers` refuses duplicates)."""
+    return dict(status_lines(doc))
 
 
 def snapshot_rows(doc: str) -> Dict[str, Dict[str, str]]:
@@ -162,7 +167,7 @@ def check_switch(doc: str, deleted: str, built: bool, levers: Optional[Set[str]]
 PINNED: Dict[str, Callable[[Dict[str, Any], Dict[str, Any]], str]] = {
     "informative rows, actor >= 1500": lambda reg, res: "{:.2f}M".format(
         sum(res["labels_x50_train"]["by_stratum"][s]["informative"] for s in _STRATA_GE1500) / 1e6),
-    "human sides in the panels' region (>= 1500)": lambda reg, res: "{:.1f} %".format(
+    ">= 1500 full-six sides unfamiliar to the pool (<= 2 fits; a lower bound)": lambda reg, res: "{:.1f} %".format(
         100 * sum(res["team_distance"]["humans_ge1500_vs_pool"]["set_fits"][str(k)] for k in (0, 1, 2))),
     "HOM - P* NLL on accounts unseen in training": lambda reg, res: "{:+.3f} nats".format(
         res["hom_join"]["strata"][_UNSEEN]["d"]["mean"]),
@@ -176,6 +181,10 @@ def check_numbers(doc: str, reg: Dict[str, Any], res: Dict[str, Any]) -> List[st
     box = status_box(doc)
     if not box:
         return [f"{DOC}: the §0 STATUS code block is missing"]
+    keys = [k for k, _ in status_lines(doc)]
+    for k in sorted({k for k in keys if keys.count(k) > 1}):
+        out.append(f"{DOC} §0 STATUS repeats the key '{k}' (REVIEW D m1: a stale duplicate must not shadow the "
+                   "real line)")
     for key, fn in PINNED.items():
         want = fn(reg, res)
         if box.get(key) != want:
@@ -254,7 +263,8 @@ _REG = {"snapshots": {"hr_x_v1": {"files": 10, "manifest_sha256": _SHA, "status"
         "rowsets": {}, "models": {}}
 _DOC = (
     "## 0. STATUS (pinned)\n\n```\nSTATUS\n  switch --human-data   : NOT BUILT\n  snapshot hr_x_v1  : 10 logs; durable "
-    "copy yes\n  informative rows, actor >= 1500 : 1.80M\n  human sides in the panels' region (>= 1500) : 15.9 %\n"
+    "copy yes\n  informative rows, actor >= 1500 : 1.80M\n  >= 1500 full-six sides unfamiliar to the pool (<= 2 fits; a "
+    "lower bound) : 15.9 %\n"
     "  HOM - P* NLL on accounts unseen in training : -0.580 nats\n  rowsets / models registered : 0 / 0\n```\n\n"
     "## 5. Snapshots\n\n| id | p | files | dates | sha | durable | status | use |\n|---|---|---|---|---|---|---|---|\n"
     f"| `hr_x_v1` | spectator | 10 | a → b | `{_SHA}` | yes | reference | x |\n\n"
@@ -314,6 +324,9 @@ def test_meta_t3_catches_a_moved_number():
     reg = {**_REG, "rowsets": {"hr_x_v1.r1": {}}}
     assert check_numbers(_DOC, reg, _RES)
     assert check_numbers("no status block", _REG, _RES)
+    stale = _DOC.replace("  informative rows, actor >= 1500 : 1.80M\n",
+                         "  informative rows, actor >= 1500 : 9.99M\n  informative rows, actor >= 1500 : 1.80M\n")
+    assert any("repeats the key" in p for p in check_numbers(stale, _REG, _RES))
 
 
 def test_meta_t5_catches_a_rowset_built_before_a_panel_was_registered():

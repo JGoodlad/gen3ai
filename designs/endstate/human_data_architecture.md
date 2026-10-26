@@ -1,8 +1,8 @@
 # HUMAN DATA in the system: what is in use, the sources, the snapshots, the switch, and what we know
 
-**Status: REVISED DRAFT — pending re-review (2026-10-25).** This revises the draft of `14ae4203` after three adversarial
-reviews: A (data / bias / leakage), B (experiments / causal) and C (reasoning). Every finding's disposition is in
-[`RESPONSE.md`](../research_state/measurements/human_replay_quality_2026-10-25/RESPONSE.md). Once re-reviewed the doc is
+**Status: ALWAYS-CURRENT (2026-10-25).** Four adversarial reviews shaped it: A (data / bias / leakage), B (experiments /
+causal), C (reasoning) and D, the re-review (READY-WITH-FIXES, its fixes applied). Every finding's disposition is in
+[`RESPONSE.md`](../research_state/measurements/human_replay_quality_2026-10-25/RESPONSE.md). The doc is
 **ALWAYS-CURRENT**: every change that touches human data updates it and its Decision record in the same commit, and
 [`src/human_data_doc_gate_test.py`](../../src/human_data_doc_gate_test.py) pins its status box, snapshot table and
 switch state to the registry, the card and the code. The plan and its pre-registrations are the explicit-only
@@ -24,24 +24,28 @@ STATUS
   switch --human-data                           : NOT BUILT
   snapshot hr_spec_v1                           : 376,410 logs; durable copy yes
   snapshot hr_arch_2026-10-24                   : 16,490 logs; durable copy yes
-  rowsets / models registered                   : 0 / 0
+  rowsets / models registered                   : 1 / 0
   informative rows, actor >= 1500               : 1.80M
-  human sides in the panels' region (>= 1500)   : 15.9 %
+  >= 1500 full-six sides unfamiliar to the pool (<= 2 fits; a lower bound) : 15.9 %
   HOM - P* NLL on accounts unseen in training   : -0.503 nats
-  open                                          : Q-H10 first read (P* vs SmallRL); the trace twin; X59-S
+  evidence that human data helps goal (b)       : none yet, either way (the one offline proxy is uninformative)
+  switch values (PROPOSED)                      : bc = an extra loss term | teams = more teams in the pool | kl = a pull toward a human model
+  open                                          : does a human-only model beat ours (FR-1, FR-3: playing); is human data better than our self-play data (X59-S: registered); does a model learn the fill (FR-2)
 ```
 
 **What the box says, in words.** No human DECISION reaches training, evaluation or play today. Human data is
 nevertheless already in the system in four other forms (§2): the teams we train on were built by people, one
 evaluation panel was extracted from ladder replays, our external meters were trained on human replays, and every prior
-is Smogon's aggregate of human ladder games. The switch that would let human decisions train the policy is not built.
+is Smogon's aggregate of human ladder games. The switch that would let human decisions train the policy is not built. **There is no evidence yet, either way, that human data would help on unfamiliar teams:** the 15.9 % line says
+human teams REACH that region (coverage), and the −0.503 line says human choices are LEARNABLE; neither says that
+learning them improves play. X59-S is the first read that can.
 
 ## 1. Which result read which data
 
 | result | data | id it cites | where |
 |---|---|---|---|
 | X50 R1, R0, R-b1, R-b2 | spectator logs | `hr_spec_v1` (retroactively: the reads ran on exactly its paths; train ≤ 09-20, held out 09-21..23) | `design_x50_rung1b_human_opponent_model.md` |
-| the HOM (human opponent model) | spectator, actor ≥ 1500, heldout72 ≥ 4-fit exclusion | `hr_spec_v1`; its rowset predates the rowset registry (unregistered) | `~/gen3ai_archive/x50_r1b/hom/` |
+| the HOM (human opponent model) | spectator, actor ≥ 1500, heldout72 ≥ 4-fit exclusion | `hr_spec_v1`; its rowset predates the rowset registry (unregistered); **barred from every lever and routing rule** (its rows kept 3-set cores of the panels; REVIEW D M5) | `~/gen3ai_archive/x50_r1b/hom/` |
 | this data card | spectator + archive | `hr_spec_v1`, `hr_arch_2026-10-24`, stamped in `results.json` | the card |
 | the archive-skew read | archive pulls before the registry | `none` (predates; cite the folder) | [`replay_archive_bias_2026-10-21`](../research_state/measurements/replay_archive_bias_2026-10-21/README.md) |
 | every self-play, Kakuna and panel result | no human decisions | `none` (read §2 for what IS human in them) | — |
@@ -117,7 +121,7 @@ the account is stored only as a salted hash; a per-account cap applies; it is ne
      │  + the filter spec (rating floor, bot rule, walk-over bar, per-account cap, the panel-exclusion RULE and SET,
      │    the hidden-turn label rule, the account split) + C-GAME commit and seed + extraction commit + layout hash
      ▼
-  ROWSET    training rows or teams          <snapshot>.r<n>  (rows manifest sha256)   registry "rowsets" (empty)
+  ROWSET    training rows or teams          <snapshot>.r<n>  (rows manifest sha256)   registry "rowsets" (hr_spec_v1.r1)
      │  a fine-tune or a from-scratch fit on the rowset
      ▼
   MODEL     e.g. a HOM                      hom_<rowset>  (checkpoint sha256)         registry "models" (empty)
@@ -137,10 +141,22 @@ checks it against `designs/research_state/heldout_panels.json`).
 | `hr_arch_2026-10-24` | archive | 16,490 | 2026-06-16 → 2026-10-24 | `ad940108978dd6a52a72cf2d637cc108c652d3eaa5c673346e8351c0f1f2f7a2` | yes | measurement | drift and collection reads only |
 
 - **The manifest IS the definition.** Late uploads land in old date folders, so "as on disk" is not reproducible.
-- **Verification exists for the card's code.** `hrq.py extract --snapshot <id>` reads the manifest, checks its digest
-  against the registry, re-hashes every log and checks the population's header, and REFUSES on any mismatch; the cache
-  and `results.json` carry `{snapshot_id, manifest_sha256, extraction_commit, hrq_sha256}`. **PROPOSED:** the same
-  check inside `agents.info_levers.human_data`, refusing any consumer whose stamp the registry does not hold.
+- **Verification is one reader**, `src/main/human_data/snapshots.py`: it reads the manifest, checks its digest and row
+  count against the registry, re-hashes every log and checks the population's header, and REFUSES on any mismatch
+  with an ordinary exception, so a refusal inside a worker pool ends the job with a non-zero exit instead of hanging
+  (REVIEW D M1). The card's `hrq.py extract` (whose cache and `results.json` carry `{snapshot_id, manifest_sha256,
+  extraction_commit, hrq_dirty, hrq_sha256}`; a reused cached day is re-hashed) and the rowset builder both use it.
+  **PROPOSED:** the same check inside `agents.info_levers.human_data`, refusing any consumer whose stamp the registry
+  does not hold.
+- **The rowset builder** (`python -m main.human_data.rowset scan | extract | compact`) applies the plan's §3 rules in
+  order, every battle-level one on the log before C-GAME fills anything, and writes a rows manifest (every shard's
+  sha256, the counts of every rule, the kept / excluded population profile, the account and rating profile of the
+  rows, and a `source_sha256` over every file that makes a row); compact refuses parts of different code. **The
+  rowsets:**
+
+  | id | snapshot | rule | rows (train / validation) | rows manifest sha256 | status | use |
+  |---|---|---|---:|---|---|---|
+  | `hr_spec_v1.r1` | `hr_spec_v1` | TRAIN dates, rated, ≥ 11 turns, no duplicate, no bot, the ≥ 3-fit exclusion over all five held-out panels, actor ≥ 1300, ≥ 2 legal, hidden moves as set labels, the consistent set per row, quitter tail dropped, account-disjoint validation | 1,330,809 / 32,102 (8.2 % hidden-move rows; 78 % from 1300–1499 actors) | `e9e0df4224b589798dc507d005c60bcaa8ede9744e1e7403901664899e8fe492` | measurement | X59-S: the S-H and S-P rows; S-S's row counts |
 - **The durable copy.** Each snapshot's bytes lived once, in the main checkout's gitignored `replays/`. Each has a copy,
   `~/gen3ai_archive/human_snapshots/<id>/logs.tar.zst` beside its manifest (`hrq.py archive`), every member re-hashed
   after writing; both locations and the archive's sha256 are in the registry row. The originals were only read.
@@ -186,7 +202,7 @@ checks it against `designs/research_state/heldout_panels.json`).
 | 1 | **Q-H10 HUMAN-ONLY MODEL:** does a model trained only on human data beat ours? | P\* vs `metamon:SmallRL` (human-only offline RL, pinned) on H, F, P72, home72, 400 games each | ≈ 1.3 CPU lane-h, no build | REGISTERED and playing ([`human_only_vs_pstar_2026-10-25`](../research_state/measurements/human_only_vs_pstar_2026-10-25/PREREG.md)); Metamon's own table puts its human-only models far below its self-play-trained ones (README, UNVERIFIED for our cells) |
 | 2 | instrument check | the HOM's TRACE TWIN: NLL on C-GAME-completed vs true rows of the same decisions, minus P\*'s | ≈ 1 lane-h + ≈ 0.2 agent-day | unread (registered in rung 1b, never run) |
 | 3 | Q-H10 at scale | P\* vs `LargeRL` and `LargeIL` (200M, human-only) | ≈ 4.5 lane-h each | pinned (hub `ac8e88e7`, ckpt 40, sha256 in the registration); REGISTERED and playing ([`human_only_vs_pstar_2026-10-25`](../research_state/measurements/human_only_vs_pstar_2026-10-25/PREREG.md)) |
-| 4 | **Q-H9 HUMAN vs SELF-PLAY DATA:** on the same states, do human labels teach better than ours? | X59-S, the matched-student contest (S-H human labels vs S-P P\*'s sampled labels); S-H vs P\* is also Q-H10 in our architecture | ≈ 0.5–1 agent-day + 25–35 CPU lane-h (or ≈ 2 GPU-h + 20 lane-h) | unmeasured |
+| 4 | **Q-H9 HUMAN vs SELF-PLAY DATA:** is human data (human states, human labels) better than our self-play data (P\*'s states, P\*'s labels) at matched volume and recipe? | X59-S, three matched student arms × 5 seeds, our architecture from one init per seed: S-H (human states, human labels), S-P (the same states, P\*'s labels restricted to what the log allows), S-S (P\*'s self-play states and labels). **Δ_data = S-H − S-S answers the question**; Δ_labels = S-H − S-P is its labels part (routes H-BC), S-P − S-S its states part. S-H vs P\* is Q-H10 in our architecture | ≈ 3 GPU-h (training) + ≈ 60 CPU lane-h (games), ESTIMATE; built | REGISTERED, not trained ([`x59s_matched_students_2026-10-25`](../research_state/measurements/x59s_matched_students_2026-10-25/PREREG.md)) |
 
 ### 7.2 The rest
 
@@ -197,7 +213,7 @@ checks it against `designs/research_state/heldout_panels.json`).
 | **Q-H3 QUALITY** | Parse, duplicates, bots, walk-overs? | 0 text-pass errors; one rule set; C-GAME completes 99.39 % of seats; 4 duplicate bodies; 61 rule-flagged accounts ≈ 6 % of sides (heavy human grinders among them); walk-overs 1.0–5.1 % of sides; half of all games end in a forfeit | `hr_spec_v1` |
 | **Q-H4 SELECTION** | Is the sample the ladder? | unanswerable from data we hold: the archive is SKEWED; the spectator stream's coverage is ≈ 50 % (ESTIMATE) and unmeasured by length, rating and month. What would answer it: `search.json` uploaded ids on ~30 spectator dates, P(spectated) by turns / rating / hour (needs the owner's approval for the pulls) | both |
 | **Q-H5 LABELS / FILL** | How often is the chosen action known; how much is invented? | known for 90.3 % of completed decisions; the hidden 12 % are missing NOT at random (a sleeping mon's labelled switch rate doubles), so the plan keeps them with a set label; ≈ 52 % of own move slots and every spread are Smogon draws, from a prior 1–17 months older than the games; a drawn move is never the label (a structural signature) | `hr_spec_v1` |
-| **Q-H6 COVERAGE** | Do human teams reach the unfamiliar region? | partly: ≥ 15.9 % of FULL-SIX ≥ 1500 human sides; humans pilot 3-set cores of most H and F teams, so the panel exclusion (≥ 3 move-revealed fits, before the fill) removes ≈ 71 % of ≥ 1500 battles (`forum216b` not counted) | `hr_spec_v1` |
+| **Q-H6 COVERAGE** | Do human teams reach the unfamiliar region? | partly: ≥ 15.9 % of FULL-SIX ≥ 1500 human sides; humans pilot 3-set cores of most H and F teams, so the panel exclusion (≥ 3 move-revealed fits, before the fill) removes ≈ 71 % of ≥ 1500 battles without `forum216b` and 83.2 % of the candidate battles with it (a ≥ 1300 seat, ≥ 11 turns; `hr_spec_v1.r1`'s scan). What it KEEPS is a different population: 64 % forfeits or timer losses (49 % among the excluded), 52 % full-six sides (75 %); it keeps the pool-unfamiliar region better than proportionally (REVIEW D M7) | `hr_spec_v1` |
 | **Q-H7 LEARNABILITY** | Can a model learn human choices? | yes: the HOM beats P\* by ≈ 0.6 nats in every cut, and by 0.503 nats [0.467, 0.542] on accounts it never played on the train dates (0.605 on seen accounts: ≈ 17 % of the gain is account memory); the familiarity proxy is uninformative (fact 4) | `hr_spec_v1` |
 | **Q-H8 DRIFT** | Has the meta / population / rating moved? | slow and small: consecutive months' species mix differs by 0.038–0.049 TVD, most of which two account-disjoint halves of ONE month also show (0.047–0.064); the EXCESS beyond that floor is 0.005–0.011 a month, positive in 19–20 of 20 splits; the distance to the pool and panels is flat (0.19–0.20 to the pool); the mean side rating stays 1,258–1,287; the archive swings 0.09–0.23 (uploaders, not meta) | `hr_spec_v1` |
 | **Q-H11 DOES A LEVER HELP?** | Does a lever raise U vs Kakuna without costing home72? | unmeasured; X60 (fixed per REVIEW B) | — |
@@ -223,9 +239,10 @@ checks it against `designs/research_state/heldout_panels.json`).
 
 ## 9. Where this is heading (all PROPOSED)
 
-1. The first reads of §7.1, in order (CPU): FR-1 and FR-3 are playing; the trace twin and X59-S follow.
+1. The first reads of §7.1: FR-1 and FR-3 are playing; X59-S is built and registered and trains under a GPU lease
+   after its PREREG's adversarial review; the trace twin runs in parallel (off X59-S's path).
 2. The switch and the consumer-side snapshot check (≈ 1 agent-day), only once a first read routes a lever to a build.
-3. H-TEAMS (with the D1 contrast) or H-BC / H-INIT, per X59-S, read in X60 as REVIEW B fixed it.
+3. H-TEAMS (with the D1 contrast) or H-BC, per X59-S, read in X60 once X60's four fixes land (it is NOT-READY).
 4. A live spectator collector on the Rust live reader: read-only spectating needs the owner's word; not designed here.
 5. The (c1) intake, the one full-information human source within reach.
 
@@ -238,3 +255,4 @@ checks it against `designs/research_state/heldout_panels.json`).
 | 2026-10-25 | **This doc CREATED (DRAFT)**: the owner's requirement of an always-current architecture for human data, split from the lever design (explicit-only) | the four-source taxonomy; snapshots frozen by manifest sha256; one flag registered in `agents.info_levers`; Q-H1..Q-H12; a split-half-floored drift policy | one doc for architecture and experiment; pooling (a) and (b); per-lever flags | the card; X50 R-b1 / R-b2 |
 | 2026-10-25 | **REVISED after REVIEW A / B / C** (REVISED DRAFT, pending re-review) | a status box pinned by a new static gate; the INVENTORY of human data already in use (the old headline "no human data enters" was false); the taxonomy on two axes with the (c1) intake; the snapshot → rowset → model chain; ONE grammar here (judge and the consent flag dropped); fork / resume refuse without a typed clause; the owner's two questions as first reads; the account-clustered drift floor; snapshot extraction from the manifest, a durable copy, salted account ids; future things PROPOSED | keeping "no human data enters" with a footnote (it answers the contamination question wrongly); a rowset id hidden behind the snapshot id (two runs citing one snapshot could train on different rows); `judge` kept "closed" inside the grammar (replace, don't append) | `RESPONSE.md`; `REVIEW_A_data.md`, `REVIEW_B_experiments.md`, `REVIEW_C_reasoning.md` |
 | 2026-10-25 | **FR-1 and FR-3 REGISTERED; `hr_arch_2026-10-24` copied** | P\* vs SmallRL, LargeRL, LargeIL on H, F, P72, home72 (400 each, X51's twins, greedy); LargeRL / LargeIL pinned at hub `ac8e88e7` ckpt 40; the archive snapshot's durable copy (16,490 members re-hashed) | re-running an identity unit (the strongest read showed it at the same commit); a sampling regime (SOP rule 2) | `human_only_vs_pstar_2026-10-25/PREREG.md`; the registry row |
+| 2026-10-25 | **REVIEW D answered; ALWAYS-CURRENT** | page one says there is no evidence yet either way, spells out the `open` line and the switch values, relabels the coverage line (a lower bound against the pool); Q-H9 is the owner's question as asked (Δ_data = S-H − S-S, the self-play arm mandatory) and X59-S is built and registered; the existing HOM is barred from levers and routing; Q-H6 states what the exclusion keeps; a snapshot is read through `src/main/human_data/snapshots.py` (a refusal never hangs); the first rowset `hr_spec_v1.r1` is registered | keeping H-INIT on the existing HOM (its rows kept panel cores); reading Q-H9 as labels only (it holds the states fixed) | `RESPONSE.md` §D; `REVIEW_D_rereview.md` |

@@ -114,3 +114,56 @@ Parts of four fixes were declined, each with its reason: A-M2's HOM re-fit, B-B1
    battle counts for 2026-05..09.
 5. **The ≥ 3-fit exclusion's dose leaves out `forum216b`.** It is sealed, and this unit did not read it. The realised
    share is recorded when a rowset is built.
+
+---
+
+# D. RESPONSE to REVIEW D, the adversarial re-review (2026-10-25)
+
+**What this is.** The disposition of every finding of [`REVIEW_D_rereview.md`](REVIEW_D_rereview.md) (verdict
+READY-WITH-FIXES; X60 NOT-READY). Each is FIXED (with where), FIXED BY DECLARATION (the plan states the limit and
+routes nothing through it), or DEFERRED (with the reason). X59-S is rebuilt on these fixes and pre-registered in
+[`../x59s_matched_students_2026-10-25/PREREG.md`](../x59s_matched_students_2026-10-25/PREREG.md); its code is
+`src/main/human_data/` (snapshot reader, rowset builder, P\* labels and self-play rows, the student trainer).
+
+| finding | disposition | where |
+|---|---|---|
+| **D-B1** X60's estimator / power mismatch; the seed rule fires at a true seed SD of 0 | **X60 marked NOT-READY**, with the reason and the four fixes it needs before registration (one AM-5 multiplier implemented in `main.x35.d1`; `plan_power` re-run with it, ≈ 1,000 games per cell under t; a seed bar 10 finals can resolve, simulated at SD 0 and 1.5 pp; the 8-seed classifier costed; the contrasts widened alike). X60 is not on the path: it runs only after X59-S routes a lever | the plan §6 (the NOT-READY box) |
+| **D-M1** `hrq.py extract` HUNG on a tampered log or a header mismatch | **FIXED (code).** `SnapshotError` is now an ordinary `Exception` in the new shared reader `src/main/human_data/snapshots.py` (hrq.py imports it), so a worker's refusal is re-raised in the parent; `hrq.py main` prints `REFUSED: …` and exits 1; a reused cached day is re-hashed too (D-M1 fix 3). Tests (`src/main/human_data/snapshots_test.py`, review D's tamper harness on synthetic logs, run in the gate): the pool propagates within a bounded `get`, and the real CLI refuses a one-byte change (fresh and reused cache) and a wrong header, under a subprocess timeout. Reverting the class to `SystemExit` fails 3 of the 4 tests (the CLI test reports the 90-s hang) | `snapshots.py`, `hrq.py`, the test |
+| **D-M2** X59-S is not label-matched (P\* can name a drawn move, a drawn bench mon, or a switch on a turn the log proves was a move) | **FIXED (built).** Every rowset row carries its CONSISTENT set: the legal actions the log leaves possible for the human (a move this mon was seen to use, a switch to a mon that was seen). S-P's label is one P\* sample from that set, renormalised, with matched noise keyed by the rowset digest and row id. A hidden-move row gets the SAME set label in S-H and S-P (no P\* sample). A row whose human label falls outside its consistent set (a Transform / Mimic slot) is dropped in every arm. VOID guards: the label writer refuses a P\* label outside the set, and the trainer re-checks it (tests). FR-2 leaves X59-S's critical path | `rowset.consistent_mask`, `teacher.label`, `student.targets`; the PREREG §2 |
+| **D-M3** one seed per arm; an unsourced 0.30 base; a pre-exclusion volume | **FIXED.** Five training seeds per arm (5901–5905, the same initial bytes for a seed in every arm). The registered interval adds a seed term: the binomial part plus 2 × max(1.5 pp, the measured seed SD)² / 5, falling back to a Welch t across seeds when the measured seed SD's one-sided 95 % lower bound exceeds 1.5 pp. Power is simulated over seed SD 0–3 pp and base 0.15 / 0.30 / 0.50, and the games are sized at the binomial worst case p = 0.5, so no guessed base enters a decision (`../x59s_matched_students_2026-10-25/power.py`): P(LB > 0) at +4 pp is 0.94 / 0.89 / 0.81 / 0.67 at a seed SD of 0 / 1 / 1.5 / 2 pp, with false positives ≤ 0.028 at Δ = 0. The base is MEASURED by the registered floor pilot (200 games per student) before the full read. The volume is the real post-exclusion rowset (`hr_spec_v1.r1`), not 6.9M: its count is in the PREREG | the PREREG §4; `power.py` |
+| **D-M4** the owner asked "human DATA vs self-play DATA"; S-S was optional | **FIXED.** S-S (our architecture trained the same way on P\*'s own self-play states and sampled labels, the same row count) is MANDATORY. **Δ_data = S-H − S-S answers the owner (Q-H9)**, registered with its own rule beside Δ_labels = S-H − S-P (routes H-BC); the states part S-P − S-S is reported | the PREREG §3, §5; the plan §2.4; the arch doc §7.1 |
+| **D-M5** H-INIT forks a HOM fitted on rows the new rule forbids | **FIXED by dropping H-INIT** from the ranked plan. The existing HOM is barred by name from every lever and every routing rule: it stays a measurement artefact, and its descriptive Δ_U is labelled CONTAMINATED and routes nothing. H-INIT, or an H-KL `kl:<model>`, may return only on a `hom_<rowset>` re-fit on a §3 rowset with account-disjoint early stopping, as a new registration. Its compute is small; its cost is VOLUME: the compliant ≥ 1500 rows are `hr_spec_v1.r1`'s `rating_ge1500_rows` (its manifest), against the HOM's 1.76M | the plan §2.5, §4 |
+| **D-M6** no non-human-trained meter on the unfamiliar panels | **FIXED.** X60 (when registered) carries an in-house U read (ON − OFF on F + P72 against the frozen reference population through `main.h2h`) as a GAIN guard; a GAIN only Kakuna sees is reported "Kakuna-specific". In X59-S the in-house head-to-heads (S-H vs S-S, S-H vs S-P on H, F, P72) are always reported, and decide under the floor fallback | the plan §6; the PREREG §5 |
+| **D-M7** what the exclusion keeps is a different population | **FIXED.** The kept / excluded profile is on page one of the plan (§0) and in §3.1, and every rowset's manifest records it (`rowset scan`, `rows_manifest.json` `panel_exclusion_profile`, `row_profile`). **Registered choice:** X59-S's rows FILTER battles of ≤ 10 turns (the information floor; it also removes every walk-over) and KEEP forfeits beyond that with the quitter's last 2 decisions dropped; the row share by ending is recorded. X59-S's absolute levels are read as this slice's | `rowset.py`; the plan §0, §3.1; the PREREG §2 |
+| **D-M8** page one still misleads on "is there evidence it helps?" | **FIXED.** The status box says `evidence that human data helps goal (b) : none yet, either way`, the `open` line is in words, the switch values are spelled out, and the 15.9 % line is relabelled as D-m10 asks | the arch doc §0; the gate's key |
+| **B-m7 / D-m4** four falsifiers were point statements | **FIXED.** Every falsifier in the plan §8 is an interval statement with a boundary rule (a bound within 1e-9 of its bar takes the undecided class), FR-2's included | the plan §2.2, §8 |
+
+**MINORs.**
+
+| finding | disposition |
+|---|---|
+| D-m1 the gate's blind spots | FIXED in part: `status_box` now REFUSES a duplicate key (a stale line before the real one), with a planted-duplicate meta test. DEFERRED: pinning the qualitative lines and the numbers repeated outside the box (each needs a source the gate can read; listed for the next gate change) |
+| D-m2 `extraction_commit` misleads | FIXED: `hrq.py`'s stamp records `hrq_dirty`; the rowset records a `source_sha256` over every file that makes a row, and refuses to compact parts of different code |
+| D-m3 the durable copy's threat model | DEFERRED (owner's call): the copy and the salt sit on the same disk; `extract --from-durable` is not built. Stated as a FINDING |
+| D-m5 X59-S's volume and cost | FIXED with D-M3 (the real rowset's count; the measured CPU cost per step) |
+| D-m6 the H-p exception | FIXED: a battle joins ON's rows only if EVERY one of its ≥ 3-fit matches is to an H-p team |
+| D-m7 the audit's HOM bias | FIXED (design): the Kakuna-family audit scores against P\*, not the HOM |
+| D-m8 the contrasts' seed term | FIXED with D-B1 (X60 NOT-READY until the contrasts carry it) |
+| D-m9 RESPONSE wording | FIXED here: B-B2's "630" is the same 1,260 games per final as B's frame on two panels; A-B2's 70.7 % is for H, F and P72 |
+| D-m10 the 15.9 % box line | FIXED: relabelled `>= 1500 full-six sides unfamiliar to the pool (<= 2 fits; a lower bound)` |
+
+**FINDINGS (standing rule 7).**
+1. **The exclusion with `forum216b` included removes 83.2 %** of the candidate battles (a ≥ 1300 non-bot seat, ≥ 11
+   turns), against REVIEW A's 70.7 % without it (`forum216b` is 216 teams). Its content was read for the exclusion
+   only (`heldout_panels.panel_team_texts`, which the seal allows); it was not played.
+2. **The rowset's teacher is mostly 1300–1499.** On the smoke date 93 % of ≥ 1300 rows came from 1300–1499 actors;
+   the realised share is in the rowset manifest. The card ranks that stratum "the human-only comparator only".
+3. **The extraction at HEAD reproduces the HOM's.** On the overlapping battles of a 300-log smoke, 1,196 / 1,196 rows
+   are byte-equal to the rung-1b extraction (`2bbdffa7`) with equal labels, though the live reader binary differs;
+   on the built rowset, 8,878 / 8,878 rows of 200 seeded battles (X59-S's VOID 8, PASS).
+4. **No CPU pilot student was trained.** The registered recipe costs ≈ 2.5 s a step at 2 threads on the shared agent
+   cores (≈ 10 lane-h a student at 3 epochs), above the brief's 6 lane-h; the floor pilot in the GPU window measures
+   the base instead.
+5. **Torch at 6 threads on the agent cores ran 60× slower** than at 2 (160 vs 2.6 ms a row) under the live run's
+   contention; the new tools default to 2 threads.
+6. **The durable copy and the salt** share one disk (D-m3), unchanged.

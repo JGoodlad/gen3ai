@@ -202,41 +202,25 @@ def manifest_set() -> set:
     return set((CORPUS / MANIFEST).read_text().split())
 
 
-class SnapshotError(SystemExit):
-    """A snapshot whose manifest, file hash, size or header disagrees with the registry: every consumer refuses."""
+from main.human_data import snapshots as _S  # noqa: E402  (the one manifest reader; REVIEW D M1)
+
+#: an ordinary Exception since REVIEW D M1 (it was a SystemExit, which HUNG a Pool when a worker raised it)
+SnapshotError = _S.SnapshotError
 
 
 def registry_row(snap: str, registry: Path = REGISTRY) -> Dict[str, Any]:
-    reg = json.loads(Path(registry).read_text())
-    if snap not in reg["snapshots"]:
-        raise SnapshotError(f"snapshot {snap!r} is not in the registry {registry}")
-    return reg["snapshots"][snap]
+    return _S.registry_row(snap, registry)
 
 
 def read_manifest(snap: str, store: Path = STORE, registry: Path = REGISTRY) -> List[Tuple[str, str, int]]:
     """The snapshot's (relative path, sha256, bytes) rows, after checking the manifest's digest against the registry
     (REVIEW A M5: extraction reads THE MANIFEST, never a date folder)."""
-    row = registry_row(snap, registry)
-    with gzip.open(Path(store) / f"{snap}.tsv.gz", "rb") as fh:
-        body = fh.read()
-    digest = hashlib.sha256(body).hexdigest()
-    if digest != row["manifest_sha256"]:
-        raise SnapshotError(f"{snap}: manifest sha256 {digest} != registry {row['manifest_sha256']}")
-    out = []
-    for ln in body.decode().splitlines():
-        rel, sha, n = ln.split("\t")
-        out.append((rel, sha, int(n)))
-    if len(out) != row["files"]:
-        raise SnapshotError(f"{snap}: manifest rows {len(out)} != registry files {row['files']}")
-    return out
+    return _S.read_manifest(snap, store, registry)
 
 
 def verify_bytes(snap: str, population: str, rel: str, sha: str, n: int, b: bytes) -> None:
     """Refuse a log whose bytes, size or population header differ from the manifest."""
-    if len(b) != n or hashlib.sha256(b).hexdigest() != sha:
-        raise SnapshotError(f"{snap}: {rel} differs from its manifest row (size {len(b)} vs {n}, or sha256)")
-    if (population == "spectator") != b.startswith(HEADER):
-        raise SnapshotError(f"{snap}: {rel} has the wrong header signature for population {population!r}")
+    _S.verify_bytes(snap, population, rel, sha, n, b)
 
 
 def stamp(snap: str, registry: Path = REGISTRY) -> Dict[str, Any]:
@@ -247,10 +231,15 @@ def stamp(snap: str, registry: Path = REGISTRY) -> Dict[str, Any]:
     try:
         commit = subprocess.run(["git", "-C", str(REPO), "rev-parse", "HEAD"], capture_output=True, text=True,
                                 check=True).stdout.strip()
+        dirty = bool(subprocess.run(["git", "-C", str(Path(__file__).parent), "status", "--porcelain", "--",
+                                     Path(__file__).name], capture_output=True, text=True, check=True).stdout.strip())
     except (OSError, subprocess.CalledProcessError):
-        commit = None
+        commit, dirty = None, None
+    # REVIEW D m2: ``extraction_commit`` names HEAD; ``hrq_dirty`` says whether this file differed from it (then only
+    # ``hrq_sha256`` pins the code that ran)
     return {"snapshot_id": snap, "manifest_sha256": row["manifest_sha256"], "files": row["files"],
-            "extraction_commit": commit, "hrq_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest()}
+            "extraction_commit": commit, "hrq_dirty": dirty,
+            "hrq_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest()}
 
 
 POP = {"spectator": "spec", "archive": "arch"}
@@ -260,8 +249,10 @@ def extract_day(args) -> str:
     """One date's logs OF THE SNAPSHOT, each re-hashed against its manifest row before it is parsed."""
     snap, population, date, items, cache = args
     out = Path(cache) / f"{date}.jsonl.gz"
-    if out.exists():
-        return f"{date} cached"
+    if out.exists():                                                # REVIEW D M1 fix 3: a reused day is re-hashed
+        for rel, sha, n in items:
+            verify_bytes(snap, population, rel, sha, n, (CORPUS / rel).read_bytes())
+        return f"{date} cached (re-verified)"
     rows, errs = [], 0
     for rel, sha, n in items:
         b = (CORPUS / rel).read_bytes()
@@ -943,7 +934,11 @@ def main(argv: Optional[List[str]] = None) -> int:
     z.add_argument("--snapshots", nargs="+", default=["hr_spec_v1", "hr_arch_2026-10-24"])
     z.add_argument("--out", required=True)
     a = ap.parse_args(argv)
-    {"extract": cmd_extract, "snapshot": cmd_snapshot, "analyze": cmd_analyze, "archive": cmd_archive}[a.cmd](a)
+    try:
+        {"extract": cmd_extract, "snapshot": cmd_snapshot, "analyze": cmd_analyze, "archive": cmd_archive}[a.cmd](a)
+    except SnapshotError as exc:                                    # a refusal: the message and a non-zero exit
+        print(f"hrq: REFUSED: {exc}", file=sys.stderr, flush=True)
+        return 1
     return 0
 
 

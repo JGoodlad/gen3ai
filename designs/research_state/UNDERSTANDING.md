@@ -1852,7 +1852,10 @@ most ≥ 1500 battles, so keeping the panels unfamiliar removes ≈ 71 % of them
 only by account memory:** on held-out accounts that never played on the train dates the HOM beats P\* by 0.503 nats
 [0.467, 0.542] (0.605 on seen accounts). **Whether human labels carry the unfamiliar-team skill goal (b) lacks is
 UNKNOWN:** the familiarity proxy (P\*'s NLL by team familiarity; full-six sides +0.064 [−0.016, +0.149] nats) has no
-prediction under that hypothesis, so it is uninformative, and the matched-student contest X59-S is the planned test.
+prediction under that hypothesis, so it is uninformative: there is no evidence yet either way. The test is X59-S,
+built and pre-registered (not trained): three matched student arms of our architecture, five seeds each, on human
+states with human labels, on the same states with P\*'s labels, and on P\*'s own self-play states and labels, so
+S-H − S-S answers "is human data better than our self-play data?".
 The ladder's species mix drifts slowly: beyond an account-disjoint floor, consecutive months differ by an excess of
 0.005–0.011 TVD, and its distance to our pool and panels stays flat. [MEASURED · DESCRIPTIVE, post hoc on R-b1's
 forwards · `measurements/human_replay_quality_2026-10-25/` (+ `RESPONSE.md`); the architecture

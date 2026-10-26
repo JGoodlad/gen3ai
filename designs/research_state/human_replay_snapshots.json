@@ -88,7 +88,46 @@
    "opp_side": "public"
   }
  },
- "rowsets": {},
+ "rowsets": {
+  "hr_spec_v1.r1": {
+   "snapshot": "hr_spec_v1",
+   "builder": "src/main/human_data/rowset.py (scan | extract | compact)",
+   "filter_spec": {
+    "train_last": "2026-09-20",
+    "rated": true,
+    "result": true,
+    "min_turns": 11,
+    "duplicates": "first body kept",
+    "bots": "the card's rule (textpass.bot_flags)",
+    "rating_min_actor": 1300,
+    "panel_exclusion": ">= 3 move-revealed fits, either side, every held-out panel, before C-GAME",
+    "legal_actions": ">= 2",
+    "labels": "own action, or a hidden move's set (cant / confusion / faint, no foe Pursuit)",
+    "consistent": "legal AND the log showed the move / the mon",
+    "quitter_tail_dropped": 2,
+    "split": "key64(salted account id) mod 50 == 0 validates"
+   },
+   "panel_exclusion_set": [
+    "forum216b",
+    "forum72",
+    "heldout72",
+    "heldout72_hpfix",
+    "p72"
+   ],
+   "rows_manifest_sha256": "e9e0df4224b589798dc507d005c60bcaa8ede9744e1e7403901664899e8fe492",
+   "train_rows": 1330809,
+   "val_rows": 32102,
+   "train_hidden": 108573,
+   "c_game_commit": "da36173c9f21f980b714e93fd4529cff84fc815e",
+   "extraction_commit": "da36173c9f21f980b714e93fd4529cff84fc815e",
+   "source_sha256": "40f8a5d22e3a32e1a593a2a5e6e8e957909de834d5de2e58d47dfc6c35c09176",
+   "live_reader_sha256": "1a91cbeb419ecd3c7a1aa37a7019bf8274430e17442f3da3197748950480593a",
+   "layout_hash": "fbc5c674056d762df1d7abdbb04b3a53dbcbd8ba739e053bb9afce6fb90323ec",
+   "location": "~/gen3ai_archive/x59s/hr_spec_v1.r1/rows/",
+   "status": "measurement",
+   "use": "X59-S: the S-H and S-P rows; S-S's row counts (designs/research_state/measurements/x59s_matched_students_2026-10-25/PREREG.md)"
+  }
+ },
  "models": {},
  "rowsets_schema": "<snapshot>.r<n>: {snapshot, filter_spec, panel_exclusion_set (the held-out panels it excluded), rows_manifest_sha256, c_game_commit, extraction_commit, layout_hash, status}; a new held-out panel retires it",
  "models_schema": "hom_<rowset>: {rowset, checkpoint_sha256, recipe, status}"
