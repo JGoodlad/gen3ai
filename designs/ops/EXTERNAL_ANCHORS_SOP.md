@@ -228,7 +228,10 @@ anchor under a regime id that claimed the same policy.
 in the box's cache: `ac8e88e7…`; a branch or short sha is refused) and, per agent, `weights`: `{path in the repo:
 sha256}` for EVERY file it may load (a single policy: its one `policy_epoch_<ckpt>.pt`, checked against `checkpoint`; an
 ensemble: every member checkpoint, `PastaMittens` = Kakuna 28 / 30 / 34 + Alakazam 8). An agent with no pin is refused at
-plan time (`MetamonOpponent.pin`). The peer (`peer_scripts/metamon_side.py`, helpers in the stdlib-only
+plan time (`MetamonOpponent.pin`). **The pins belong to the opponent, not to a panel's config**: a config without them (every
+sha-pinned panel config that `main.x35.kakuna` passes via `$GEN3AI_ANCHORS_CONFIG`, which must never be edited) takes
+`hf_repo` / `hf_revision` and each agent's `weights` from this registry by agent name, when the registry's agent plays the same
+policy and checkpoint; pins a config carries itself win; `registry_pins_test` loads EVERY committed anchors config. The peer (`peer_scripts/metamon_side.py`, helpers in the stdlib-only
 `peer_scripts/weight_pins.py`, shared with `main.anchors`):
 
 1. forces `HF_HUB_OFFLINE=1` / `TRANSFORMERS_OFFLINE=1` at import, over whatever the caller exported (the plan's env sets them too),

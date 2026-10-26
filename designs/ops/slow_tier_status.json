@@ -3004,6 +3004,14 @@
    "contention": 1.49,
    "detail": ""
   },
+  "src/main/anchors/registry_pins_test.py::test_the_real_peer_started_from_a_panel_config_verifies_its_weights": {
+   "status": "pass",
+   "commit": "2e7b08620e082ea8e018ca9c3aaba686a6db3927",
+   "at": "2026-10-26T07:21:00Z",
+   "duration_s": 6.07,
+   "contention": 1.36,
+   "detail": ""
+  },
   "src/main/anchors/weight_pins_integration_test.py::test_a_wrong_sha_a_missing_revision_and_an_unpinned_load_are_each_refused": {
    "status": "pass",
    "commit": "4d8d9eef82cfbc50256826c0616f60ec2bcc7113",
@@ -4885,5 +4893,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-26T06:38:28Z"
+ "last_written": "2026-10-26T07:21:00Z"
 }

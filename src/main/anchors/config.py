@@ -135,7 +135,9 @@ class MetamonOpponent:
         except wp.WeightPinError as exc:
             raise AnchorConfigError(
                 f"{exc}. Every Metamon agent carries a pinned hub revision and the sha256 of each weight file in "
-                "designs/ops/anchors.json (EXTERNAL_ANCHORS_SOP.md, 'Weight pins').") from None
+                "designs/ops/anchors.json (EXTERNAL_ANCHORS_SOP.md, 'Weight pins'). A config that carries no pins resolves "
+                "them from that registry by agent name (same policy and checkpoint); this agent is not pinned there."
+            ) from None
         checkpoint = entry.get("checkpoint")
         if checkpoint is not None and [Path(w).name for w in weights] != [f"policy_epoch_{int(checkpoint)}.pt"]:
             raise AnchorConfigError(
@@ -279,6 +281,33 @@ def config_path() -> Path:
     return repo_path(*DEFAULT_CONFIG_RELPATH)
 
 
+def _fill_pins_from_registry(meta: Dict[str, Any], src: Path) -> None:
+    """The weight pins belong to the OPPONENT, not to a panel's config. A config that does not carry them (every
+    committed, sha-pinned panel config under ``designs/research_state/measurements/``, which ``main.x35.kakuna`` passes
+    through ``$GEN3AI_ANCHORS_CONFIG``) resolves them from the canonical registry, ``designs/ops/anchors.json``
+    ``opponents.metamon``, keyed by agent name. Filled: ``hf_repo`` / ``hf_revision`` when absent, and an agent's
+    ``weights`` when absent AND the registry's agent of that name plays the same policy and checkpoint (a panel config
+    naming Kakuna at another checkpoint gets no borrowed pin and is refused by :meth:`MetamonOpponent.pin`). A pin the
+    config carries itself always wins. The panel file is never edited (its sha256 is pinned elsewhere)."""
+    canonical = repo_path(*DEFAULT_CONFIG_RELPATH)
+    if src.resolve() == canonical.resolve() or not canonical.is_file():
+        return
+    reg = (_dig(json.loads(canonical.read_text()), "opponents.metamon") or {})
+    for key in ("hf_repo", "hf_revision"):
+        if not meta.get(key) and reg.get(key):
+            meta[key] = reg[key]
+    reg_agents = reg.get("agents", {})
+    for name, entry in (meta.get("agents") or {}).items():
+        canon = reg_agents.get(name)
+        if not isinstance(entry, dict) or canon is None or entry.get("weights"):
+            continue
+        same = all(entry.get(k) == canon.get(k) for k in ("policy", "checkpoint", "preset", "preset_sha256"))
+        if same and canon.get("weights"):
+            entry["weights"] = dict(canon["weights"])
+            if canon.get("hf_revision") and not entry.get("hf_revision"):
+                entry["hf_revision"] = canon["hf_revision"]
+
+
 def load_config(path: Optional[Path] = None) -> AnchorsConfig:
     """Read the config, apply every env override, and return it. Paths are NOT checked here —
     :meth:`Opponent.require` does that at the point a run actually needs one, so ``--dry-run`` and
@@ -295,6 +324,7 @@ def load_config(path: Optional[Path] = None) -> AnchorsConfig:
             _plant(blob, dotted, value)
 
     meta = _dig(blob, "opponents.metamon") or {}
+    _fill_pins_from_registry(meta, src)
     fp = _dig(blob, "opponents.foulplay") or {}
     return AnchorsConfig(
         source=src,
