@@ -318,3 +318,7 @@ skips and names why.
   `pipeline_test`, `imports_test`); the play-many and anchor argv are checked against the real parsers, and each
   derived opponent config against a real `main.anchors --dry-run`. The live reads (D3 look 1, N1-P, from 2026-10-26)
   are the end-to-end runs; their first uses found the classes in §8's last four rows.
+- **The belief-prior-mix read** (2026-10-26, `measurements/belief_prior_mix_2026-10-26/README.md` FINDINGS) adds:
+  holding a read means killing its supervisor by PID (the in-flight unit finishes in its own session and counts on
+  resume; there is no `hold` verb); `record` needs every planned unit played even when the rule's `min_unit_frac`
+  would decide; a spec's `pin` must exist before the spec, so a PREREG and its specs land in two commits.

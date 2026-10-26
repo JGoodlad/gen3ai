@@ -28857,3 +28857,31 @@ in one network (X59-S); one checkpoint each; H18 favours P\*. FR-3 (LargeRL / La
 **Evidence:** `research_state/measurements/human_only_vs_pstar_2026-10-25/` (`PREREG.md`, `README.md`, `cells.json`,
 `rows.jsonl`, `scripts/`); raw units in `~/dev/gen3ai-reads/hr_reads_2026-10-25/`. View: `UNDERSTANDING.md` §4.8,
 `endstate/human_data_architecture.md` §7.1.
+
+### 2026-10-26 · MEASUREMENT · **THE BELIEF PRIOR MIX at λ = 0.25 against Kakuna, read under its registration (`4ee655648`): NOT DETECTED. Unfamiliar U +1.50 pp [−2.74, +5.74] against X51's banked P\* (0.502 vs 0.487), home72 −0.50 pp [−5.32, +4.32]; the determinism guard replays X51 game for game; D0f (λ = 1) pending**
+
+**Question** (`model/generalisation_review_2026-10-26.md` lever 1 (a)). Does anchoring P\*'s opponent belief a quarter of
+the way to its Smogon prior at inference, `b ← 0.75·b + 0.25·prior` on the species / move / item legs, win games against
+Kakuna on unfamiliar teams without costing home72?
+
+**Design** (`research_state/measurements/belief_prior_mix_2026-10-26/PREREG.md`, spec `read_spec_l025.json`).
+`main.reads`, rule `prior_mix_ab`: P\* at λ = 0.25 vs Kakuna ckpt 34 greedy, H / F / P72 / home72, unit seeds 0–19 (400
+games per panel), against X51's banked P\* rows on the same seeds (never re-played), unit-paired; VOID unless a guard
+(P\* unchanged, seed 0, all four sets) replays X51 game for game. PRIOR-HELPS iff Δ_U's LB > 0 and home72 not HARMED
+(UB < 0 or Δ̂ < −3 pp).
+
+**Result** (`record`: `lambda=0.25: NOT DETECTED`).
+- **Δ_U +1.50 pp [−2.74, +5.74]** (Newcombe +1.50 [−2.49, +5.48]); U 0.502 [0.473, 0.530] vs 0.487.
+- Per panel (paired): H −1.00 [−7.58, +5.58], F +1.25 [−6.57, +9.07], P72 +4.25 [−3.35, +11.85].
+- **home72 −0.50 pp [−5.32, +4.32]**, not HARMED.
+- Guard: 4 / 4 units identical to X51 game for game; 80 / 80 arm units counted. Prediction (+1.5, NOT DETECTED) right.
+
+**Reading.** The offline calibration repair (P10) does not buy a detectable number of games through a policy trained on
+the unmixed belief; an effect below ≈ 6 pp (80 % power) is not excluded. Lever 1 (a) is not shown to pay; (b) / (c)
+(anchoring in training) remain to be judged on their own offline guard.
+
+**FINDINGS.** Pairing did not tighten the interval (paired half-width 4.24 pp vs 3.99 unpaired; the PREREG assumed
+ρ 0.25–0.5). The read was the first live use of `main.reads`: its rough edges are the README's FINDINGS 2–8.
+
+**Evidence:** `research_state/measurements/belief_prior_mix_2026-10-26/` (README, `PREREG.md`, `read_spec_l025.json`,
+`read_l025/`); raw units in `~/gen3ai_archive/belief_prior_mix_2026-10-26/l025/`. See `UNDERSTANDING.md` §3.1.

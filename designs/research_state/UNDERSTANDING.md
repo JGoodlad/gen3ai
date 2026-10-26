@@ -885,10 +885,12 @@ panel, one checkpoint] H3's mechanism, read on calibration:
 - Our OWN unseen sets are not the problem: the encoder places them where their parts put them, and the team is
   permutation-equivariant (F-AG-2).
 - Offline, a fixed quarter-weight mix with the prior keeps every familiar ranking and repairs most of the unfamiliar
-  calibration (−7.06 → −2.99). Whether it wins GAMES is the registered belief-prior-mix read (λ = 0.25 and D0f's
-  λ = 1, `measurements/belief_prior_mix_2026-10-26/PREREG.md`). This channel is FACING, the smaller part of the Kakuna
-  gap by X37a.
-[ledger 2026-10-26 · *H3 (BELIEF-HEAD MEMORISATION) BANKED ON CALIBRATION*]
+  calibration (−7.06 → −2.99).
+- **In GAMES that mix does not detectably help (λ = 0.25, preregistered, 1,600 Kakuna games against X51's banked P\*
+  on the same seeds): unfamiliar +1.5 pp [−2.7, +5.7], home72 −0.5 pp [−5.3, +4.3], NOT DETECTED.** An effect under
+  ≈ 6 pp is not excluded. This channel is FACING, the smaller part of the Kakuna gap by X37a. D0f (λ = 1, prior only)
+  is pending (`measurements/belief_prior_mix_2026-10-26/`).
+[ledger 2026-10-26 · *H3 (BELIEF-HEAD MEMORISATION) BANKED ON CALIBRATION* · *THE BELIEF PRIOR MIX at λ = 0.25*]
 
 **…and X26's plateau sits beside a small, REAL cyclic component (2026-10-19, the cycle monitor's retro read,
 `measurements/cycle_monitor_retro_2026-10-19/`):** [MEASURED · DESCRIPTIVE · the in-run snapshot ladder, not the
