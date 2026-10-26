@@ -13,6 +13,7 @@ from main.prober.engine.flags import self_cure_options, summary_flags
 from main.prober.engine.intent import build_opp_intent
 from main.prober.engine.spread import build_spread_belief
 from main.prober.engine.switch_in import build_switch_in_outgoing
+from main.prober.engine.protocol import trainee_side_of
 from main.prober.engine.timeline import _timeline_for, opp_voluntary_switch
 from main.prober.engine.util import _has_state, _npz_value, _npz_win_prob
 from main.prober.engine.views import (InvocationAnalysis, TraceMeta, ValueView,
@@ -84,7 +85,8 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
     # re-computed read): the intent heads are supervised against what the opponent then did, so the
     # honest question is what THIS decision's model expected, not what a later checkpoint would.
     opp_intent = build_opp_intent(inv)
-    outcome = {**outcome, "timeline": _timeline_for(inv, next_board, outcome, protocol=protocol)}
+    outcome = {**outcome, "timeline": _timeline_for(inv, next_board, outcome, protocol=protocol,
+                                                  our_side=trainee_side_of(summary))}
     opp_full_team = build_opp_full_team(opp_team_details, board)   # model-free; available without state
     # Forced-switch panel: what each ALIVE candidate would DO to the opp active (the op's outgoing is
     # all-zero here). Model-free / privileged — available even without captured state.
@@ -130,7 +132,8 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
                 outcome = {**outcome, **to}
     # Rebuild the RESULT timeline now that crit / move_order / cant are merged in (the no-state path
     # above already built a model-free one without them).
-    outcome = {**outcome, "timeline": _timeline_for(inv, next_board, outcome, protocol=protocol)}
+    outcome = {**outcome, "timeline": _timeline_for(inv, next_board, outcome, protocol=protocol,
+                                                  our_side=trainee_side_of(summary))}
     acts = inv["actions"]
     # The recorded `actions` dict is ALREADY in ACTION-INDEX order: `trace_labels.all_action_labels`
     # (what the core recorder, `main.prober.core_recorder`, writes the summary with; the deleted

@@ -42,6 +42,17 @@ missing baseline), plus the `/analyze` template case in `web/app_test.py` (no `t
 fixtures are shaped like TODAY's runs: the earlier suites' synthetic layout still carried the deleted blocks,
 which is why none of these was ever seen.
 
+**Stat stages and statuses on the timeline (2026-10-26):** `engine_stages_test.py` (pure; fixtures are protocol
+slices copied VERBATIM from current runs, with the decision's recorded outcome and the trace's recorded seat:
+the stage reader's vocabulary pinned EQUAL to `SIM-PROTOCOL.md`'s `*boost*` messages and to the Rust port's
+emitter doc lines in `protocol.rs`; a self boost, an Intimidate on arrival, a secondary drop said on its move,
+a berry, Belly Drum's set, Curse, a zero-amount limit, a Salamence / Suicune MIRROR read by seat and unread
+without one; Haze / Psych Up / a herb / the later-gen messages as synthetic cases; a secondary status said beside
+the damage, a Synchronize relay, a Rest not billed to the other side's attack, a mojibake nickname found by seat;
+the throwing guard; and both surfaces, `battle_turns` / the CLI `turns` on a tmp replay.html and
+`analyze_invocation`). A mutation of each fix (status clause, stage hints, window precedence, the seat, `caused`,
+`also`, the guard, the forced-switch rule, netting, nickname-only actor) was run and each failed a test.
+
 `engine_test.py` (pure, FakeProbeModel + offset regression, + the loss-attribution
 taxonomy and the `fit_probe` stats as pure cases — decodable-vs-noise,
 regression, too-few-graceful), `session_test.py` (tmp_path traces for the agent

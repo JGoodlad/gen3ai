@@ -44,13 +44,17 @@ that cannot settle it. **This is the common path, not an edge case:** `move_orde
 the OBS, so it exists only on the model-loading route — measured over five runs, ZERO decisions
 carry one in a model-free `battle_turns` read, and the note fired on **56.3%** of decisions with a
 timeline (389 decisions, ai_v9_17_tdaux_lam3). With the protocol read it is **3.6%**. Sides are
-identified by matching the actor's nickname to the two active species, never by assuming we are
-`p1`; a mirror match, a real nickname, or a switch-only turn all return `None` and keep the honest
-"not recorded" rather than a coin-flip. A RECORDED `move_order` still wins — it folds from the event
+identified by the trace's RECORDED seat (`meta.trace_source.trainee_side`), which reads a mirror, a localized
+or mojibake nickname and a switch-only turn like any other; a trace that records none matches the actor's
+nickname to the two active species instead, and there a mirror, a real nickname or a switch-only turn all return
+`None` and keep the honest "not recorded" rather than a coin-flip (`result_timeline.md`). A RECORDED `move_order` still wins — it folds from the event
 log the analysis was built on — and a voluntary switch outranks both, because that is mechanics. One line per move / switch / forced replacement /
-standalone faint, each carrying a **`⚡CRIT`** tag, a **`→ atk+1`** boost (Meteor Mash / Intimidate),
-an applied **status** (`opp thunderwave → milotic PAR`), or a **"couldn't move (asleep/…)"** note
-(crit + boost + cant + move_order + **effectiveness** decoded from the NEXT decision's TurnDelta via
+standalone faint, each carrying a **`⚡CRIT`** tag, the side's net **stat-stage change** (`we dragondance  ·  atk+1 spe+1`,
+an Intimidate's `·  atk-1`, Belly Drum's `·  atk=+6`; read off the PROTOCOL, the TurnDelta boost block being
+gone from every current run) or the stage change the move PUT on the other mon (`we psychic did 25% (…)  +
+skarmory spd-1`), an applied **status** (`opp thunderwave → milotic PAR`, beside the damage as `…  +  skarmory
+PAR`, a Synchronize relay as `…  +  gengar PAR (Synchronize)`), or a **"couldn't move (asleep/…)"** note
+(crit + cant + move_order + **effectiveness** decoded from the NEXT decision's TurnDelta via
 `describe_turn_outcome`; Hidden Power's BP-0 placeholder is special-cased so its hits aren't dropped).
 **A move that did NOTHING visible is explained, never left blank** (`engine._no_effect_reason`): an
 attack/status move blocked by a type immunity reads `— no effect (immune)` (Seismic Toss vs Ghost), a

@@ -64,9 +64,10 @@ from main.prober.engine.flags import (   # noqa: F401 — re-export hub
     self_cure_options, summary_flags,
 )
 from main.prober.engine.protocol import (   # noqa: F401 — re-export hub
-    _LOG_BLOCK_RE, _PROTOCOL_STATUS_DISPLAY, _VISIBLE_EFFECT_TAGS, move_order_from_protocol,
-    parse_protocol_log, protocol_action_fate, protocol_for_turn, protocol_move_effects,
-    protocol_move_result,
+    BOOST_TAGS_GEN3, BOOST_TAGS_LATER_GEN, _LOG_BLOCK_RE, _PROTOCOL_STATUS_DISPLAY,
+    _VISIBLE_EFFECT_TAGS, move_order_from_protocol, parse_protocol_log, protocol_action_fate,
+    protocol_boost_changes, protocol_for_turn, protocol_move_effects, protocol_move_result,
+    trainee_side_of,
 )
 from main.prober.engine.board import (   # noqa: F401 — re-export hub
     _BENCH_RE, _MOVE_PLACEHOLDER_RE, _merge_team, _our_items, _parse_bench, _retype_hp,

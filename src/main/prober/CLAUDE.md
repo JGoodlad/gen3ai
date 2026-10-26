@@ -60,6 +60,10 @@ Detail lives in `designs/prober/`, always current and updated with the code:
 - **"— no effect" is a claim** (`engine._no_effect_supported`): only a decoded fate, a sim tag
   (`|-fail|` / `|-immune|` / `|-miss|`) or a located empty window supports it; otherwise render
   `— outcome unrecorded`.
+- **Find a side in the protocol by the trace's RECORDED seat** (`engine.trainee_side_of(summary)`, passed as
+  `our_side=`), never by nickname: this pool ships localized (`Staross`), mojibake (`MagnÃ©ton`) and mirrored
+  mons, and the nickname reader called 389 sides that moved `absent`. A located move window decides a status,
+  not the recorded `events` (`designs/prober/result_timeline.md`).
 - A detector (e.g. `loops.py`) reads the raw protocol, never the rendered timeline.
 - The model's belief is `a.belief`, the raw marginals; `a.exclusive_belief` is a reading aid. Render
   both.

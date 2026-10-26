@@ -13,7 +13,7 @@ import re
 from agents import gen3_data
 
 from main.prober.engine.protocol import (move_order_from_protocol, protocol_action_fate,
-    protocol_move_effects, protocol_move_result)
+    protocol_boost_changes, protocol_move_effects, protocol_move_result)
 from main.prober.engine.util import _loss_pct, _multiplier_meaningful, _norm_species, _pct
 from main.prober.engine.views import BoardView
 
@@ -156,13 +156,24 @@ def build_result_timeline(outcome: dict, our_species: str, opp_species: str, pha
                           our_result_hint: "str | None" = None,
                           opp_result_hint: "str | None" = None,
                           our_effects_hint: "dict | None" = None,
-                          opp_effects_hint: "dict | None" = None) -> "list[dict]":
+                          opp_effects_hint: "dict | None" = None,
+                          our_boost_hint: "str | None" = None,
+                          opp_boost_hint: "str | None" = None,
+                          our_boost_on_hint: "str | None" = None,
+                          opp_boost_on_hint: "str | None" = None) -> "list[dict]":
     """Ordered, one-line-per-action model of what HAPPENED after a decision (the RESULT panel). Pure.
 
     Re-attributes each side's HP loss to the OPPONENT's move that dealt it, and pairs it with the
     target's before→after HP (``before = after + damage``), so each line reads like a battle log:
-    ``{side, kind, move, damage, target, hp_before, hp_after, crit, boost, cant, status, resulting,
-    no_effect, never_moved, switch_to, sent_in}``. ``resulting`` marks a hit on a switch-IN where only the after-HP
+    ``{side, kind, move, damage, target, hp_before, hp_after, crit, boost, cant, status, also,
+    resulting, no_effect, never_moved, switch_to, sent_in}``. ``status`` is the first status the
+    move applied and ``also`` any others its window shows (``[{target, status, via}]``: Synchronize
+    relaying it back). ``boost`` is the side's NET stat-stage change this turn (``atk+2 spe-1``): the
+    recorded TurnDelta's when it has one, else the protocol's (``*_boost_hint``, see
+    :func:`protocol_boost_changes`), on the side's move / switch line, or on a ``kind="boost"`` line of
+    its own when that side has none. ``boost_on`` (``{target, boost}``) is the stage change a move
+    PUT on the other side's mon (Psychic's Sp. Def drop; ``*_boost_on_hint``), said on the move that
+    did it. ``resulting`` marks a hit on a switch-IN where only the after-HP
     is known (the recorded delta can't price it across the switch); ``no_effect`` (``immune`` /
     ``missed`` / ``failed``) explains a move that did NOTHING visible. Ordered by execution: a voluntary
     switch resolves before a move; otherwise
@@ -192,7 +203,8 @@ def build_result_timeline(outcome: dict, our_species: str, opp_species: str, pha
                     fate, actor="", fate_hint=None, result_hint=None, effects_hint=None):
         e = {"side": side, "kind": "move", "move": pa.get("move", ""), "crit": bool(crit),
              "boost": boost or "", "cant": cant, "target": "", "damage": "", "hp_before": "",
-             "hp_after": "", "status": "", "resulting": False, "no_effect": "",
+             "hp_after": "", "status": "", "status_target": "", "also": [],
+             "resulting": False, "no_effect": "",
              "never_moved": False, "switch_to": "", "sent_in": ""}
         # WHAT THE LOG SAYS HAPPENED beats what the recorder says was CHOSEN. Without it a move
         # that never executed is explained as one that executed and achieved nothing — a claim
@@ -242,31 +254,44 @@ def build_result_timeline(outcome: dict, our_species: str, opp_species: str, pha
         res = result_hint or (effects_hint or {}).get("result")
         landed = (eff != "immune" and fate != "miss" and res not in ("immune", "missed")
                   and _can_apply_status(pa.get("move")))
-        if landed and key in statuses:
-            # A status this move applied (own line, or alongside its damage). The recorded event
-            # names the SIDE and the SPECIES, not the CAUSE — so it is credited only to a move that
-            # could have caused it. Without that guard a self-inflicted status was billed to the
-            # other side's move on the same turn: `we substitute → zapdos SLP(5)` where the Zapdos
-            # had used Rest, and `opp thunderbolt → quagsire SLP(1)` on a turn whose log reads
-            # `|-immune|p1a: Quagsire` then our own Rest (both measured in one run's traces).
-            e["target"], e["status"] = target, statuses[key]
-        elif res not in ("immune", "missed") and effects_hint and effects_hint.get("status"):
-            # 🚨 THE RECORDED `events` LIST HAS A HOLE, and this is where it shows. Until
-            # 2026-09-07 `battle_recorder._append_status_events` diffed the status of the mon that
-            # was ACTIVE WHEN THE DECISION WAS MADE — so a status inflicted on a mon that SWITCHED
-            # IN before the move resolved was never written to the trace at all, and the line fell
-            # through to "— no effect". The log names the status AND the side it landed on, which is
-            # the fact rather than an inference from it; it fills in because there is nothing
-            # recorded to overrule. Fixing the recorder does nothing for the traces already on disk.
-            # No `_can_apply_status` gate here: the window IS the causal link (it spans this move
-            # and stops at the next), which is what the recorded event never had. That is also how
-            # a self-status the move tables do not carry — Rest's own sleep — gets named.
-            st_name, st_code, st_self = effects_hint["status"]
-            # WHICH SIDE, from the protocol's own player tag — then this module's OWN species
-            # spelling for that side. The log's name is a NICKNAME (this pool ships localized ones:
-            # `Leuphorie` = Blissey), so printing it would rename the mon mid-timeline.
-            side_species = (actor if st_self else target)
-            e["target"], e["status"] = (side_species or st_name), st_code
+        window_status = (effects_hint or {}).get("status")
+        if effects_hint is not None:
+            # 🚨 A LOCATED WINDOW IS THE CAUSAL LINK, so it decides — and the recorded `events` list
+            # does not. The recorded event names the SIDE and the SPECIES, never the CAUSE, and
+            # crediting it to "a move that could have caused it" (the `_can_apply_status` gate below)
+            # billed a Rest to the OTHER side's Thunderbolt on every turn they shared:
+            # `opp thunderbolt → zapdos SLP` over `|-status|p1a: Zapdos|slp|[from] move: Rest`, and
+            # `we bodyslam → suicune SLP` likewise (3 of 18 status turns sampled, 2026-10-26). The
+            # window spans this move and stops at the next, so a status that is not in it is not this
+            # move's. The log names the status AND the side it landed on, which also fills the hole in
+            # the recorded list (until 2026-09-07 `battle_recorder._append_status_events` diffed only
+            # the mon ACTIVE WHEN THE DECISION WAS MADE, so a status on a SWITCH-IN was never written;
+            # fixing the recorder does nothing for the traces already on disk). No
+            # `_can_apply_status` gate: that is how a self-status the move tables do not carry —
+            # Rest's own sleep — gets named.
+            if window_status and res not in ("immune", "missed"):
+                st_name, st_code, st_self = window_status
+                # WHICH SIDE, from the protocol's own player tag — then this module's OWN species
+                # spelling for that side. The log's name is a NICKNAME (this pool ships localized
+                # ones: `Leuphorie` = Blissey), so printing it would rename the mon mid-timeline.
+                side_species = (actor if st_self else target) or st_name
+                # The recorder's richer spelling (`TOX(1)`, `SLP(5)`: the counter the log does not
+                # carry) when it recorded the SAME status on that mon.
+                rec = statuses.get(("our" if (side == "we") == st_self else "opp", _norm_species(side_species)))
+                e["target"] = side_species
+                e["status"] = rec if rec and rec[:3] == st_code[:3] else st_code
+                e["status_target"] = side_species
+        elif landed and key in statuses:
+            # No window (an older trace, or a nickname that could not be placed): the recorded event
+            # is all there is, credited only to a move that could have caused it. Without that guard a
+            # self-inflicted status was billed to the other side's move on the same turn.
+            e["target"], e["status"], e["status_target"] = target, statuses[key], target
+        if e["status"] and res not in ("immune", "missed"):
+            # EVERY other status the move's window shows, after the first: a Synchronize mon relays
+            # a paralysis back to the attacker (`[from] ability: Synchronize|[of] p2a: Umbreon`).
+            for st_name, st_code, st_self, via in ((effects_hint or {}).get("statuses") or ())[1:]:
+                e["also"].append({"target": (actor if st_self else target) or st_name,
+                                  "status": st_code, "via": via})
         # A move that produced NOTHING visible: say WHY (missed / no effect / immune) so a blank line
         # never reads as "data missing". Silent for utility moves (hazards/heal/boost — reason None).
         if not (e["damage"] or e["status"] or e["hp_after"]):
@@ -373,38 +398,78 @@ def build_result_timeline(outcome: dict, our_species: str, opp_species: str, pha
     for sd, sp in faints:
         if (sd, sp) not in consumed:
             entries.append({"side": ("we" if sd == "our" else "opp"), "kind": "faint", "actor": sp})
+    # STAT STAGES. The recorder's boost (already on a move entry, `out["our_boost"]`) wins; the
+    # protocol's fills what it did not decode — on every current run that is every line. A forced
+    # replacement's decision shares its turn's slice with the move decision before it, which already
+    # carries the whole turn's stages, so it says none of them again.
+    if phase != "forced_switch":
+        side_hint = {"we": our_boost_hint, "opp": opp_boost_hint}
+        # A stage change a side's MOVE put on the other mon is said on that move, like a secondary
+        # status. A side with no executed move line to carry it hands it to the mon's own side.
+        for side, hint, tgt in (("we", our_boost_on_hint, our_target), ("opp", opp_boost_on_hint, opp_target)):
+            if not hint:
+                continue
+            mover = next((e for e in entries if e["side"] == side and e["kind"] == "move"
+                          and not e.get("cant") and not e.get("never_moved")), None)
+            if mover is not None:
+                mover["boost_on"] = {"target": tgt, "boost": hint}
+            else:
+                other = "opp" if side == "we" else "we"
+                side_hint[other] = f"{side_hint[other]}; {hint}" if side_hint[other] else hint
+        for side, hint in side_hint.items():
+            if not hint:
+                continue
+            mine = [e for e in entries if e["side"] == side and e["kind"] in ("move", "switch")]
+            if not mine:
+                entries.append({"side": side, "kind": "boost", "boost": hint})
+            elif not mine[0].get("boost"):
+                mine[0]["boost"] = hint
     return entries
 
 
 def _timeline_for(inv: dict, next_board: "BoardView | None", outcome: dict,
-                  protocol: "tuple[str, ...] | None" = None) -> "list[dict]":
+                  protocol: "tuple[str, ...] | None" = None,
+                  our_side: "str | None" = None) -> "list[dict]":
     """`build_result_timeline` wired to a decision: the actives' HP this turn (before) + the resolved
     HP at the next decision (after, from ``next_board``).
 
     `protocol` is this turn's raw Showdown slice, and it answers two questions the recorded
     outcome cannot: the execution ORDER when no `move_order` was recorded, and whether each side's
     chosen move EXECUTED AT ALL (`protocol_action_fate`) — a mon KO'd before acting, or blocked by
-    a `|cant|`, used to render as a move that ran and did nothing."""
+    a `|cant|`, used to render as a move that ran and did nothing.
+
+    `our_side` is the trainee's RECORDED seat (`protocol.trainee_side_of(summary)`). With it every
+    reader below finds a side by PLAYER TAG, not by nickname: a localized or mojibake nickname no
+    longer reads as a mon that never moved (MEASURED: 389 false `absent`s over 12.5k side-turns),
+    and a mirror (both actives the same species) reads like any other match. `None` (an older
+    trace) keeps the nickname matching."""
     our_sp = inv.get("our", {}).get("species", "")
     opp_sp = inv.get("opp", {}).get("species", "")
+    opp_side = {"p1": "p2", "p2": "p1"}.get(our_side or "")    # the recorded seats; None on an older trace
+    boosts = protocol_boost_changes(protocol, our_sp, opp_sp, our_side=our_side) or {}
+    stages, caused = boosts.get("side", {}), boosts.get("caused", {})
     return build_result_timeline(
         outcome, our_sp, opp_sp,
         inv.get("phase", ""),
         our_hp_before=inv.get("our", {}).get("hp"), opp_hp_before=inv.get("opp", {}).get("hp"),
         our_hp_after=(next_board.ours.active_hp if next_board else None),
         opp_hp_after=(next_board.opp.active_hp if next_board else None),
-        move_order_hint=move_order_from_protocol(protocol, our_sp, opp_sp),
+        move_order_hint=move_order_from_protocol(protocol, our_sp, opp_sp, our_side=our_side),
         # Whether each side's chosen move actually EXECUTED. Same slice, same species matching as
         # the order hint — a recorded action says what was chosen, only the log says what happened.
-        our_fate_hint=protocol_action_fate(protocol, our_sp, opp_sp),
-        opp_fate_hint=protocol_action_fate(protocol, opp_sp, our_sp),
-        our_result_hint=protocol_move_result(protocol, our_sp, opp_sp),
-        opp_result_hint=protocol_move_result(protocol, opp_sp, our_sp),
+        our_fate_hint=protocol_action_fate(protocol, our_sp, opp_sp, actor_side=our_side),
+        opp_fate_hint=protocol_action_fate(protocol, opp_sp, our_sp, actor_side=opp_side),
+        our_result_hint=protocol_move_result(protocol, our_sp, opp_sp, actor_side=our_side),
+        opp_result_hint=protocol_move_result(protocol, opp_sp, our_sp, actor_side=opp_side),
         # ...and WHAT CAME OF IT beyond immune/missed: the status it applied (to whichever mon was
         # standing there when it resolved, switch-in included) and whether the log shows ANY effect
         # at all. Without this a status the recorder never wrote read as "— no effect".
-        our_effects_hint=protocol_move_effects(protocol, our_sp, opp_sp),
-        opp_effects_hint=protocol_move_effects(protocol, opp_sp, our_sp),
+        our_effects_hint=protocol_move_effects(protocol, our_sp, opp_sp, actor_side=our_side),
+        opp_effects_hint=protocol_move_effects(protocol, opp_sp, our_sp, actor_side=opp_side),
+        # ...and the stat stages the turn moved (Swords Dance, Intimidate, Belly Drum, a secondary
+        # drop) — the recorder's boost block is gone from every current run.
+        our_boost_hint=stages.get("we"), opp_boost_hint=stages.get("opp"),
+        our_boost_on_hint=caused.get("we"), opp_boost_on_hint=caused.get("opp"),
     )
 
 
@@ -477,13 +542,16 @@ def timeline_entry_text(e: dict) -> str:
     how it reads)."""
     side = str(e.get("side", ""))
     kind = e.get("kind")
+    boost = f"  ·  {e['boost']}" if e.get("boost") else ""      # the side's stat-stage change this turn
     if kind == "switch":
-        return f"{side} switch {e.get('actor', '')} → {e.get('switch_to', '')}".strip()
+        return f"{side} switch {e.get('actor', '')} → {e.get('switch_to', '')}".strip() + boost
     if kind == "send_in":
         verb = "send in" if side == "we" else "sends in"
-        return f"{side} {verb} {e.get('sent_in', '')}".strip()
+        return f"{side} {verb} {e.get('sent_in', '')}".strip() + boost
     if kind == "faint":
         return f"{side} {e.get('actor', '')} fainted".strip()
+    if kind == "boost":      # a side whose stages moved but that has no move / switch line to carry it
+        return f"{side} stat stages  ·  {e.get('boost', '')}"
 
     parts = [side, str(e.get("move") or "?")]
     text = " ".join(p for p in parts if p)
@@ -491,21 +559,32 @@ def timeline_entry_text(e: dict) -> str:
         # It chose the move and was KO'd before it could make it. The old rendering said
         # "— no effect", which describes a move that executed and achieved nothing — a claim about
         # the MOVE, on a turn where the move never happened at all.
-        text += " — never moved (fainted first)"
+        text += " — never moved (fainted first)" + boost
         return text
     if e.get("cant"):
         text += f" — couldn't move ({cant_phrase(e['cant'])})"
-    elif e.get("damage"):
-        text += (f" did {e['damage']}  ({e.get('target', '')} "
-                 f"{e.get('hp_before', '')} → {e.get('hp_after', '')})")
-    elif e.get("resulting"):        # hit a switch-IN; only the resulting HP is known
-        text += f" → {e.get('target', '')} (now {e.get('hp_after', '')})"
-    elif e.get("status"):
-        text += f" → {e.get('target', '')} {e['status']}"
-    elif e.get("no_effect"):        # nothing happened — say WHY, never leave it blank
-        text += f" — {NO_EFFECT_TEXT.get(e['no_effect'], 'no effect')}"
-    if e.get("boost"):
-        text += f"  ·  {e['boost']}"
+    else:
+        hit = bool(e.get("damage") or e.get("resulting"))
+        if e.get("damage"):
+            text += (f" did {e['damage']}  ({e.get('target', '')} "
+                     f"{e.get('hp_before', '')} → {e.get('hp_after', '')})")
+        elif e.get("resulting"):    # hit a switch-IN; only the resulting HP is known
+            text += f" → {e.get('target', '')} (now {e.get('hp_after', '')})"
+        # A status the move applied is said BESIDE its damage, not instead of it: a Body Slam that
+        # paralyzed read `did 10% (skarmory 40% → 30%)` and the PAR was dropped (MEASURED 2026-10-26:
+        # 71 of 162 statuses a damaging move applied, over 40 battles of two runs).
+        status_to = e.get("status_target") or e.get("target", "")
+        if e.get("status"):
+            text += (f"  +  {status_to} {e['status']}" if hit
+                     else f" → {status_to} {e['status']}")
+        for a in e.get("also") or ():
+            text += (f"  +  {a.get('target', '')} {a.get('status', '')}"
+                     + (f" ({a['via']})" if a.get("via") else ""))
+        if e.get("boost_on"):       # the stage change this move put on the other mon
+            text += f"  +  {e['boost_on'].get('target', '')} {e['boost_on'].get('boost', '')}".rstrip()
+        if not (hit or e.get("status")) and e.get("no_effect"):   # nothing happened — say WHY, never blank
+            text += f" — {NO_EFFECT_TEXT.get(e['no_effect'], 'no effect')}"
+    text += boost
     if e.get("crit"):
         text += "  ⚡CRIT"
     return text
@@ -520,10 +599,13 @@ class TimelineContradiction(AssertionError):
 
 
 def verify_timeline_against_protocol(entries: "list[dict]", protocol: "tuple[str, ...] | None",
-                                     our_species: str, opp_species: str) -> None:
+                                     our_species: str, opp_species: str,
+                                     our_side: "str | None" = None) -> None:
     """RAISE :class:`TimelineContradiction` when a move line says nothing happened while that move's
     own protocol window says otherwise — a bare ``no effect`` over a window carrying effect tags, or
-    a ``|-status|`` the line failed to name.
+    a ``|-status|`` the line failed to name — or when the turn's log moved a side's stat stages and
+    no line of that side says so (checked on a move-selection timeline only: a forced replacement's
+    decision shares the slice but says none of its turn's stages).
 
     Deliberately NOT called from :func:`build_result_timeline`: a forensic view must render even a
     trace it cannot fully explain, and `_no_effect_supported` already downgrades an unsupported claim
@@ -539,7 +621,8 @@ def verify_timeline_against_protocol(entries: "list[dict]", protocol: "tuple[str
         ours, opps = ((e.get("actor") or our_species), opp_species) if e.get("side") == "we" \
             else (our_species, (e.get("actor") or opp_species))
         actor, other = (ours, opps) if e.get("side") == "we" else (opps, ours)
-        hint = protocol_move_effects(protocol, actor, other)
+        seat = {"we": our_side, "opp": {"p1": "p2", "p2": "p1"}.get(our_side or "")}.get(e.get("side"))
+        hint = protocol_move_effects(protocol, actor, other, actor_side=seat)
         if not hint:
             continue
         st = hint.get("status")
@@ -547,7 +630,26 @@ def verify_timeline_against_protocol(entries: "list[dict]", protocol: "tuple[str
             raise TimelineContradiction(
                 f"{e.get('side')} {e.get('move')}: the log says it applied {st[1]} to {st[0]}, "
                 f"the timeline says {timeline_entry_text(e)!r}")
+        if len(hint.get("statuses") or ()) > 1 + len(e.get("also") or ()):
+            raise TimelineContradiction(
+                f"{e.get('side')} {e.get('move')}: the log says it applied "
+                f"{[(n, c) for n, c, *_ in hint['statuses']]}, "
+                f"the timeline says {timeline_entry_text(e)!r}")
         if e.get("no_effect") == "failed" and hint.get("effects") and not hint.get("result"):
             raise TimelineContradiction(
                 f"{e.get('side')} {e.get('move')}: 'no effect' claimed over a log window carrying "
                 f"{list(hint['effects'])}")
+    if not any(e.get("kind") == "move" for e in entries or ()):
+        return
+    boosts = protocol_boost_changes(protocol, our_species, opp_species, our_side=our_side) or {}
+    for side, text in (boosts.get("side") or {}).items():
+        if not any(e.get("side") == side and e.get("boost") for e in entries):
+            raise TimelineContradiction(
+                f"{side}: the log moved its stat stages ({text}), the timeline says none of it")
+    for side, text in (boosts.get("caused") or {}).items():
+        other = "opp" if side == "we" else "we"
+        if not (any(e.get("side") == side and e.get("boost_on") for e in entries)
+                or any(e.get("side") == other and e.get("boost") for e in entries)):
+            raise TimelineContradiction(
+                f"{side}: its move put a stat-stage change on the other mon ({text}), "
+                "the timeline says none of it")

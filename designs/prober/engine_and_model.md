@@ -30,7 +30,8 @@ those two modules hold.
   moves the moment they appear** (unrevealed item → `ITM-UNKN`, skipped); and `describe_turn_outcome`
   — decodes the **most-recent TurnDelta** (the history block's LAST slot) for each side's **crit**
   (`OFFSET_*_CRIT`), **couldn't-move reason** (`*_cant`), **boost change** (`*_boost_delta` →
-  `atk+1`), and **move order** (`move_order` → who went first), via
+  `atk+1`; empty on every current run, whose obs has no turn-history block: the timeline reads the stages off
+  the protocol, `result_timeline.md`), and **move order** (`move_order` → who went first), via
   `turn_delta_encoder.describe_vector`. The engine overlays `describe_team` on the summary's
   our-only teams block, and reads `describe_turn_outcome` from the NEXT decision's obs (turn T's
   events land in decision T+1). (Hidden Power's specific TYPE — all 16 share move-num 237 — is

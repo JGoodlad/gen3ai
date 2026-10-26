@@ -10,7 +10,7 @@ from __future__ import annotations
 from agents.training.trace_result import OUTCOMES, era_note, result_era, result_of
 from main.prober.discovery import list_checkpoints, resolve_model_for_step
 from main.prober.engine import (_npz_win_prob, _timeline_for, build_board, parse_pct,
-    protocol_for_turn, summary_flags, timeline_entry_text)
+    protocol_for_turn, summary_flags, timeline_entry_text, trainee_side_of)
 from main.prober.session.serialize import (_active_str, _choice_dict, _chosen_prob,
     _opp_intent_dict, _r, _short_id, _side_dict)
 
@@ -268,7 +268,8 @@ class _ReadingMixin:
             # `protocol` field below, so the parse is not repeated per decision.
             proto_slice = (tuple(protocol_for_turn(protocol, int(inv.get("turn") or 0)))
                            if protocol else ())
-            entries = _timeline_for(inv, next_board, outcome, protocol=proto_slice)
+            entries = _timeline_for(inv, next_board, outcome, protocol=proto_slice,
+                                    our_side=trainee_side_of(summary))
             row = {
                 "inv": i,
                 "turn": inv.get("turn"),
