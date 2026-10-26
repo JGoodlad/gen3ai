@@ -1,0 +1,5 @@
+panel | mon sets in corpus (>=5 copies) / in pool | full sets in corpus / in pool | max shared with one corpus team | with one pool team
+heldout72_hpfix 432 0.949 0.824 0.38 | 0.623 0.104 | {1: 14, 2: 58} {0: 3, 1: 40, 2: 28, 3: 1}
+forum72 432 0.831 0.701 0.701 | 0.194 0.231 | {1: 15, 2: 57} {1: 14, 2: 42, 3: 16}
+p72 432 0.856 0.704 0.308 | 0.565 0.081 | {1: 17, 2: 55} {0: 7, 1: 42, 2: 23}
+home72 432 0.919 0.824 1.0 | 0.424 1.0 | {1: 13, 2: 49, 3: 10} {6: 72}

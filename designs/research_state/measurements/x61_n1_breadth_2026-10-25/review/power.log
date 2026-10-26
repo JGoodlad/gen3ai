@@ -1,0 +1,18 @@
+sigma=2 delta=+0 final {'GO': 0.027, 'KILL': 0.062, 'BELOW': 0.124, 'UND': 0.788} | {'look1 GO': 0.018, 'look1 KILL': 0.061, 'look1 BELOW': 0.096, 'cont': 0.478}
+sigma=2 delta=+2 final {'GO': 0.107, 'KILL': 0.018, 'BELOW': 0.054, 'UND': 0.821} | {'look1 GO': 0.06, 'look1 KILL': 0.018, 'look1 BELOW': 0.042, 'cont': 0.654}
+sigma=2 delta=+4 final {'GO': 0.288, 'KILL': 0.004, 'BELOW': 0.016, 'UND': 0.692} | {'look1 GO': 0.156, 'look1 KILL': 0.004, 'look1 BELOW': 0.014, 'cont': 0.718}
+sigma=2 delta=+5 final {'GO': 0.412, 'KILL': 0.002, 'BELOW': 0.008, 'UND': 0.579} | {'look1 GO': 0.228, 'look1 KILL': 0.002, 'look1 BELOW': 0.007, 'cont': 0.695}
+sigma=2 delta=+8 final {'GO': 0.763, 'KILL': 0.0, 'BELOW': 0.001, 'UND': 0.237} | {'look1 GO': 0.507, 'look1 KILL': 0.0, 'look1 BELOW': 0.001, 'cont': 0.481}
+sigma=3 delta=+0 final {'GO': 0.061, 'KILL': 0.097, 'BELOW': 0.101, 'UND': 0.741} | {'look1 GO': 0.045, 'look1 KILL': 0.096, 'look1 BELOW': 0.083, 'cont': 0.451}
+sigma=3 delta=+2 final {'GO': 0.14, 'KILL': 0.045, 'BELOW': 0.062, 'UND': 0.754} | {'look1 GO': 0.096, 'look1 KILL': 0.045, 'look1 BELOW': 0.052, 'cont': 0.566}
+sigma=3 delta=+4 final {'GO': 0.271, 'KILL': 0.018, 'BELOW': 0.031, 'UND': 0.68} | {'look1 GO': 0.18, 'look1 KILL': 0.018, 'look1 BELOW': 0.026, 'cont': 0.621}
+sigma=3 delta=+5 final {'GO': 0.35, 'KILL': 0.011, 'BELOW': 0.02, 'UND': 0.618} | {'look1 GO': 0.231, 'look1 KILL': 0.011, 'look1 BELOW': 0.018, 'cont': 0.625}
+sigma=3 delta=+8 final {'GO': 0.61, 'KILL': 0.002, 'BELOW': 0.005, 'UND': 0.384} | {'look1 GO': 0.424, 'look1 KILL': 0.002, 'look1 BELOW': 0.004, 'cont': 0.531}
+sigma=4 delta=+0 final {'GO': 0.086, 'KILL': 0.114, 'BELOW': 0.076, 'UND': 0.725} | {'look1 GO': 0.067, 'look1 KILL': 0.113, 'look1 BELOW': 0.065, 'cont': 0.433}
+sigma=4 delta=+2 final {'GO': 0.152, 'KILL': 0.067, 'BELOW': 0.054, 'UND': 0.726} | {'look1 GO': 0.114, 'look1 KILL': 0.067, 'look1 BELOW': 0.047, 'cont': 0.516}
+sigma=4 delta=+4 final {'GO': 0.244, 'KILL': 0.036, 'BELOW': 0.036, 'UND': 0.684} | {'look1 GO': 0.18, 'look1 KILL': 0.036, 'look1 BELOW': 0.032, 'cont': 0.565}
+sigma=4 delta=+5 final {'GO': 0.3, 'KILL': 0.025, 'BELOW': 0.027, 'UND': 0.647} | {'look1 GO': 0.218, 'look1 KILL': 0.025, 'look1 BELOW': 0.025, 'cont': 0.575}
+sigma=4 delta=+8 final {'GO': 0.496, 'KILL': 0.008, 'BELOW': 0.01, 'UND': 0.485} | {'look1 GO': 0.363, 'look1 KILL': 0.008, 'look1 BELOW': 0.01, 'cont': 0.547}
+--- validation: K0 off (sigma_s = floor exactly)
+5 ({'GO': 0.522, 'KILL': 0.003, 'BELOW': 0.012, 'UND': 0.464}, {'look1 GO': 0.303, 'look1 KILL': 0.003, 'look1 BELOW': 0.01, 'cont': 0.621})
+8 ({'GO': 0.872, 'KILL': 0.0, 'BELOW': 0.001, 'UND': 0.127}, {'look1 GO': 0.634, 'look1 KILL': 0.0, 'look1 BELOW': 0.001, 'cont': 0.355})
