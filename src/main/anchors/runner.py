@@ -127,6 +127,10 @@ class SeriesPlan:
     #: instead of the regime's own setting. None = the regime decides. A cell
     #: with it set is stamped our_regime='sample:T=<T>' (X22 f).
     our_temperature: Optional[float] = None
+    #: `--our-belief-prior-mix`: OUR checkpoint's opponent belief is anchored to its Smogon prior at λ
+    #: (`agents.model.belief_prior_mix`, INFERENCE ONLY). None = the unchanged model (λ = 0 is None: bit-identical).
+    #: A cell with it set is stamped our_regime='<regime>+belief_prior_mix=<λ>', so it never pools with λ = 0.
+    our_belief_prior_mix: Optional[float] = None
     #: T17 `--mirrored-pairs`: every half plays MIRRORED TEAM PAIRS (`main.anchors.mirrored`) on a
     #: front end that keys each battle's seed by its unordered team pair and logs it to `pair_log`.
     mirrored_pairs: bool = False
@@ -406,7 +410,8 @@ async def _play_core_half(plan: SeriesPlan, half: str, n_games: int, pplan: Any,
             front, username=our_name, model_zip=plan.model_zip, device=plan.device,
             model_loader=plan.model_loader, stochastic=stochastic, temperature=temperature,
             team_spec=team_spec, team_seed=plan.team_seed,
-            forfeit_limit=plan.forfeit_turn_limit, state=state, battle_format=plan.battle_format)
+            forfeit_limit=plan.forfeit_turn_limit, state=state, battle_format=plan.battle_format,
+            belief_prior_mix=plan.our_belief_prior_mix)
         await slot.login()
         if role == "acceptor":
             proc = start_peer(pplan, nice=plan.nice)
@@ -478,6 +483,11 @@ def _half_report(plan: SeriesPlan, half: str, n_games: int, pplan: Any, proc: An
     if plan.our_temperature is not None and state.stochastic_kwargs != [True]:
         report["regime_verified_decisions"] = False
         report["our_regime_mismatch"] = list(state.stochastic_kwargs)
+    # `--our-belief-prior-mix`: the λ the loaded policy READS BACK must be the one the cell names.
+    report["our_belief_prior_mix"] = state.belief_prior_mix
+    if not plan.our_side_is_bot and not plan.our_side_is_peer and state.belief_prior_mix != plan.our_belief_prior_mix:
+        report["regime_verified_decisions"] = False
+        report["our_belief_prior_mix_mismatch"] = [plan.our_belief_prior_mix, state.belief_prior_mix]
     finalize_regime_fields(report, peer_rcs=[proc.returncode if proc is not None else None])
     if mirror is not None:
         report["mirrored_half"] = mirrored_mod.score_half(
@@ -511,7 +521,9 @@ def cell_spec(plan: SeriesPlan, report: Dict[str, Any], our_team_count: int) -> 
         our_regime=(plan.our_side if plan.our_side_is_bot
                     else (f"{plan.regime} ({plan.our_side})" if plan.our_side_is_peer
                           else (f"sample:T={float(plan.our_temperature):g}"
-                                if plan.our_temperature is not None else plan.regime))),
+                                if plan.our_temperature is not None else plan.regime)
+                          + (f"+belief_prior_mix={float(plan.our_belief_prior_mix):g}"
+                             if plan.our_belief_prior_mix is not None else ""))),
         their_regime=str(report.get("their_regime") or plan.regime),
         regime_matched=plan.regime_matched and not plan.our_side_is_bot,
         teamset=plan.teamset,

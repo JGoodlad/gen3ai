@@ -29,7 +29,7 @@ refusal.
 
 | field | holds |
 |---|---|
-| `models` | `{label: {arm, seed, ref}}`. `ref` is `{"kind": "pinned", path, sha256}` (a frozen file) or `{"kind": "final", run, min_step, quiet_s, done_marker?}` (§2) |
+| `models` | `{label: {arm, seed, ref, load?}}`. `ref` is `{"kind": "pinned", path, sha256}` (a frozen file) or `{"kind": "final", run, min_step, quiet_s, done_marker?}` (§2). `load` holds model-LOAD options every unit of the label passes (`spec.LOAD_OPTIONS`: `belief_prior_mix` λ ∈ (0, 1], `main.anchors --our-belief-prior-mix`), so two labels may play one file two ways |
 | `anchor` | `{group: {opponent, teamsets, unit_seeds, models}}`: the Kakuna cells (§3) |
 | `s` | `{group: {refpop, refpop_content_sha256, panel, pairs, batch_pairs, family, models, regime_id?}}`: S against a frozen R. **One eval-ledger family per group**, because a family holds one regime |
 | `decision` | `{rule, params}`: a rule from `main.reads.rules.RULES`, with its registered parameters checked at load |
@@ -138,7 +138,10 @@ is INCONCLUSIVE if any of these holds:
 
 Each (group, team set) must share ONE id. The group's id is `group_regime_id` over its team sets. The playing commit
 and file paths are recorded per unit but are not part of the id. A unit played on bytes other than the resolved
-model's is a refusal, never a pooled row.
+model's is a refusal, never a pooled row. A model-load option changes the id through `our_regime` (a
+`belief_prior_mix` unit is stamped `greedy+belief_prior_mix=<λ>`), so each option needs its own group. Every unit
+row also carries its `games` (`[half, index, our_team, result, turns]` from `games.jsonl`), which is what a
+game-for-game determinism guard compares.
 
 ## 5. Decide: the registered rules (`main.reads.rules`)
 
@@ -150,6 +153,7 @@ params)` produces the verdict as recorded. A decision can therefore be re-checke
 | `x35_r1` | X35 R1 / R2 / guards / verdict on S per seed final (SPRT, LRF, A1 …); `import_off` takes a banked control from another read's committed `results.json`, sha-checked | `main.x35.readout.read` |
 | `d1` | D1's H (the unfamiliar Kakuna panels, widened by AM-5's φ̂) and P (S on home72) | `main.x35.d1.read_d1` |
 | `anchor_trajectory` | x26c PREREG §5: the goal bar on the ON score's Wilson LB; CLIMBING / FLAT on the Newcombe-of-strata Δ; S1 RISING against a banked node; VOID on K9(b) or under-counted units | ported from x26c `verdict.py` |
+| `prior_mix_ab` | the belief-prior-mix read (`measurements/belief_prior_mix_2026-10-26/PREREG.md` §5): each λ arm (its own anchor group, one regime) against a BANKED λ = 0 control (another read's committed per-game rows, sha-checked, never re-played; `banked_units`), unit-paired on the same seeds; VOID unless a guard group re-playing banked units at λ = 0 reproduces them GAME FOR GAME; PRIOR-HELPS / -AT-A-COST / -HURTS / NOT DETECTED; D0f's DiD and H3 kill rule on a λ = 1 arm | new (2026-10-26) |
 
 **The estimators are not re-derived.** Each is the one function a read already used, re-exported under a name:
 

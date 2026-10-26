@@ -140,7 +140,8 @@ def _settle(spec: ReadSpec, state: Path, *, now: Optional[float], step_of: Calla
             if lab not in have or (st / "plan.json").exists():
                 continue
             m = spec.models[lab]
-            units = KA.plan_units([{"label": lab, "arm": m.arm, "seed": m.seed, "path": have[lab]["copy"]}],
+            units = KA.plan_units([{"label": lab, "arm": m.arm, "seed": m.seed, "path": have[lab]["copy"],
+                                    "belief_prior_mix": m.load.get("belief_prior_mix")}],
                                   teamsets=a.teamsets, unit_seeds=a.unit_seeds)
             if any(u.model_sha256 != have[lab]["sha256"] for u in units):
                 raise RunError(f"{lab}: the copy no longer hashes to its recorded sha256")

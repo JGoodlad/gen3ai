@@ -84,3 +84,15 @@ def test_a_spec_with_nothing_to_play_refuses():
     d["anchor"], d["s"] = {}, {}
     with pytest.raises(SpecError, match="nothing to play"):
         parse(d)
+
+
+def test_a_model_load_option_parses_and_a_bad_one_refuses():
+    d = copy.deepcopy(base())
+    d["models"]["arm"]["load"] = {"belief_prior_mix": 0.25}
+    s = parse(d)
+    assert s.models["arm"].load == {"belief_prior_mix": 0.25} and s.models["ctl"].load == {}
+    for bad in ({"belief_prior_mix": 0}, {"belief_prior_mix": 1.5}, {"belief_prior_mix": True},
+                {"belief_prior_mix": "x"}, {"temperature": 1.0}, []):
+        d["models"]["arm"]["load"] = bad
+        with pytest.raises(SpecError):
+            parse(d)

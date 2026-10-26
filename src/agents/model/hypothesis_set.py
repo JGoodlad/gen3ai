@@ -540,6 +540,9 @@ class HypothesisBuilder(torch.nn.Module):
             # state_dict). Drawn LAST in this private stream, so no earlier X5 init byte moves.
             self.hypothesis_marker = torch.nn.Parameter(torch.randn(D_MODEL) * 0.02)
         self.detach_read = False      # stamped by `_stamp_belief_grad_flags` (belief_grad_mode)
+        # INFERENCE-ONLY anchor of the species presence to its prior (`belief_prior_mix`): a plain attribute, never
+        # state; 0.0 = the unchanged forward.
+        self.belief_prior_mix = 0.0
 
     # ------------------------------------------------------------------ δ_θ
     def delta(self, opp_role_tokens: torch.Tensor, revealed: torch.Tensor,
@@ -590,6 +593,15 @@ class HypothesisBuilder(torch.nn.Module):
         revealed_slots = (opp_species_ids > 0) & ~believed
         scores = t0_log_prior + self.delta(opp_role_tokens, revealed_slots, global_input)
         pres = fixed_mass_presence(scores, cand, k, solve=self.tau_solve)
+        lam = self.belief_prior_mix
+        if lam > 0.0:
+            # `belief_prior_mix`: π ← (1 − λ)·π + λ·π_prior (the delta zeroed), before anything reads the set;
+            # λ = 1 IS the prior-only presence (D0f), not a float approximation of it.
+            from agents.model.belief_prior_mix import mix_presence, refuse_with_grad
+
+            refuse_with_grad(lam, "HypothesisBuilder.species_set")
+            prior = fixed_mass_presence(t0_log_prior, cand, k, solve=self.tau_solve)
+            pres = prior if lam >= 1.0 else mix_presence(pres, prior, lam)
         pi = pres.pi                                                                 # detached
         # ranks >= k are OTHER's tail, read only as a set (`in_tail`, index-order sums): k positions are
         # consumed in order (gen3_behaviour_tie_consumed_v1)

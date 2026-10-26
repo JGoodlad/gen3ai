@@ -20,7 +20,10 @@ THE RULES (:data:`RULES`):
 * ``x35_r1`` -- X35's R1 / R2 / guards / verdict (``readout.read``), on S per seed final (SPRT, LRF, A1 ...);
 * ``d1`` -- D1's (X38 / X41) H on the unfamiliar Kakuna panels widened by φ̂, and P (``d1.read_d1``);
 * ``anchor_trajectory`` -- x26c PREREG §5: the goal-(b) bar on an anchor score, CLIMBING / FLAT on its Newcombe
-  difference against a comparator, and the in-house S "rising" read against a banked node.
+  difference against a comparator, and the in-house S "rising" read against a banked node;
+* ``prior_mix_ab`` -- the belief-prior-mix read (``belief_prior_mix_2026-10-26`` PREREG): each λ arm against a
+  BANKED λ = 0 control (another read's committed per-game rows, sha-checked, never re-played), unit-paired on the
+  same seeds, with a game-for-game determinism guard that re-plays a few banked units at λ = 0.
 """
 from __future__ import annotations
 
@@ -394,6 +397,205 @@ def _at_decide(doc: Mapping[str, Any], p: Mapping[str, Any]) -> Dict[str, Any]:
     return {"kakuna": k, "decision": dec}
 
 
+# ------------------------------------------------------------------------------------------------ prior_mix_ab
+_PM_KEYS = ("arms", "primary", "banked", "guard", "unfamiliar", "familiar", "heldout",
+            "min_unit_frac", "home_margin_pp", "did_ub_pp")
+PM_HELPS, PM_HELPS_COST, PM_HURTS, PM_ND = "PRIOR-HELPS", "PRIOR-HELPS-AT-A-COST", "PRIOR-HURTS", "NOT DETECTED"
+
+
+def _pm_check(p: Mapping[str, Any], *, models: Any, anchor: Any, s: Any) -> List[str]:
+    probs = _check_keys(p, _PM_KEYS, _PM_KEYS)
+    arms = p.get("arms") or {}
+    if not isinstance(arms, dict) or not arms:
+        return probs + ["arms: {name: {group, label}}"]
+    for name, a in arms.items():
+        if not isinstance(a, dict) or a.get("group") not in anchor or a.get("label") not in models:
+            probs.append(f"arms.{name}: {{group: <anchor group>, label: <model>}}")
+            continue
+        if a["label"] not in anchor[a["group"]].models or len(anchor[a["group"]].models) != 1:
+            probs.append(f"arms.{name}: group {a['group']!r} must play exactly its label {a['label']!r} (one "
+                         "regime per group)")
+        if "belief_prior_mix" not in models[a["label"]].load:
+            probs.append(f"arms.{name}: model {a['label']!r} carries no load.belief_prior_mix")
+    if p.get("primary") not in arms:
+        probs.append(f"primary {p.get('primary')!r} is not an arm")
+    g = p.get("guard") or {}
+    if g.get("group") not in anchor or g.get("label") not in models or models[g["label"]].load:
+        probs.append("guard: {group, label}: an anchor group playing the UNCHANGED model (no load options)")
+    b = p.get("banked") or {}
+    if not (isinstance(b, dict) and isinstance(b.get("path"), str) and isinstance(b.get("sha256"), str)
+            and isinstance(b.get("cells"), dict)):
+        probs.append("banked: {path, sha256, cells: {teamset: read_cell}}")
+    panels = list(p.get("unfamiliar") or []) + [p.get("familiar")]
+    for name, a in arms.items():
+        if isinstance(a, dict) and a.get("group") in anchor:
+            ts = set(anchor[a["group"]].teamsets)
+            if not set(panels) <= ts:
+                probs.append(f"arms.{name}: group {a['group']!r} lacks team set(s) {sorted(set(panels) - ts)}")
+    if p.get("heldout") not in (p.get("unfamiliar") or []):
+        probs.append("heldout: one of the unfamiliar panels (D0f's 'prior-only − full on heldout72')")
+    return probs
+
+
+def banked_units(entry: Mapping[str, Any]) -> Dict[str, Dict[int, Dict[str, Any]]]:
+    """``{teamset: {unit_seed: {wins, ties, n, games}}}`` from ANOTHER read's committed per-game rows
+    (``entry = {path, sha256, cells: {teamset: read_cell}}``), the file's sha256 checked: the banked control."""
+    from main.reads.assemble import GAME_KEYS
+    from main.reads.models import sha256_file, spec_path
+
+    p = spec_path(str(entry["path"]))
+    got = sha256_file(p)
+    if got != entry["sha256"]:
+        raise RuleInputError(f"banked rows {p}: sha256 {got[:12]} != the spec's {str(entry['sha256'])[:12]}")
+    cell_of = {v: k for k, v in dict(entry["cells"]).items()}
+    out: Dict[str, Dict[int, Dict[str, Any]]] = {k: {} for k in entry["cells"]}
+    for ln in p.read_text().splitlines():
+        if not ln.strip():
+            continue
+        r = json.loads(ln)
+        ts = cell_of.get(r.get("read_cell"))
+        if ts is None:
+            continue
+        u = out[ts].setdefault(int(r["unit_seed"]), {"wins": 0, "ties": 0, "n": 0, "games": []})
+        u["n"] += 1
+        u["wins"] += int(r["result"] == "win")
+        u["ties"] += int(r["result"] == "tie")
+        u["games"].append([r.get(k) for k in GAME_KEYS])
+    for ts in out:
+        for u in out[ts].values():
+            u["games"].sort(key=lambda g: (str(g[0]), int(g[1])))
+    return out
+
+
+def _pm_inputs(cells: Mapping[str, Any], p: Mapping[str, Any], spec: Any) -> Dict[str, Any]:
+    bank = banked_units(p["banked"])
+    doc: Dict[str, Any] = {"banked": {ts: {str(s): {k: v for k, v in u.items() if k != "games"}
+                                           for s, u in sorted(by.items())} for ts, by in bank.items()},
+                           "banked_source": {"path": p["banked"]["path"], "sha256": p["banked"]["sha256"]},
+                           "arms": {}, "guard": None}
+    for name, a in p["arms"].items():
+        g = _group(cells, "anchor", a["group"])
+        lam = spec.models[a["label"]].load["belief_prior_mix"]
+        doc["arms"][name] = {"label": a["label"], "lambda": lam, "regime_id": g.get("regime_id"),
+                             "units_planned": {ts: len(g["unit_seeds"]) for ts in g["teamsets"]},
+                             "units": [{k: u.get(k) for k in ("unit", "panel", "unit_seed", "counted", "wins", "ties",
+                                                              "n", "our_regime", "belief_prior_mix")}
+                                       for u in g["units"] if u["label"] == a["label"]]}
+    gg = _group(cells, "anchor", p["guard"]["group"])
+    checks = []
+    for u in gg["units"]:
+        want = bank.get(u["panel"], {}).get(int(u["unit_seed"]))
+        checks.append({"unit": u["unit"], "panel": u["panel"], "unit_seed": int(u["unit_seed"]),
+                       "counted": bool(u["counted"]), "n": u.get("n"), "wins": u.get("wins"),
+                       "banked": None if want is None else {"n": want["n"], "wins": want["wins"]},
+                       "games_equal": (want is not None and u.get("games") is not None
+                                       and [list(x) for x in u["games"]] == want["games"]),
+                       "our_regime": u.get("our_regime")})
+    doc["guard"] = {"label": p["guard"]["label"], "units": checks, "regime_ids": gg.get("regime_ids")}
+    return doc
+
+
+def _pm_paired(arm: Mapping[str, Any], bank: Mapping[str, Mapping[str, Any]], panels: Sequence[str]
+               ) -> Optional[Dict[str, Any]]:
+    """The unit-paired Δ (arm − banked λ = 0) over ``panels``, equal weight (:func:`paired_unit_diff`)."""
+    per: Dict[Tuple[str, str, int], float] = {}
+    seeds = set()
+    for u in arm["units"]:
+        if u["counted"] and u["panel"] in panels:
+            per[("on", u["panel"], int(u["unit_seed"]))] = int(u["wins"]) / int(u["n"])
+            seeds.add(int(u["unit_seed"]))
+    for ts in panels:
+        for s, b in bank.get(ts, {}).items():
+            per[("off", ts, int(s))] = int(b["wins"]) / int(b["n"])
+            seeds.add(int(s))
+    return paired_unit_diff(per, "on", "off", list(panels), sorted(seeds))
+
+
+def _pm_class(d: Optional[Mapping[str, Any]]) -> str:
+    if d is None:
+        return "UNREAD"
+    if clears(d["lo"], 0.0)[0]:
+        return "GAIN"
+    if clears(d["hi"], 0.0, above=False)[0]:
+        return "LOSS"
+    return PM_ND
+
+
+def _pm_decide(doc: Mapping[str, Any], p: Mapping[str, Any]) -> Dict[str, Any]:
+    """The PREREG's rule (``belief_prior_mix_2026-10-26/PREREG.md`` §5): VOID on a failed determinism guard or an
+    under-counted arm; per arm Δ_U (unfamiliar, unit-paired, equal weight) and Δ_home against the banked λ = 0 and
+    its class; for an arm at λ = 1 (prior only) D0f's read too (the DiD and H3's kill rule). The verdict line names
+    the primary arm first."""
+    bank = {ts: {int(s): u for s, u in by.items()} for ts, by in doc["banked"].items()}
+    unf, fam, held = list(p["unfamiliar"]), str(p["familiar"]), str(p["heldout"])
+    reasons: List[str] = []
+    g = doc["guard"]["units"]
+    if not g:
+        reasons.append("guard: no unit played")
+    for c in g:
+        if not c["counted"]:
+            reasons.append(f"guard {c['unit']}: not counted")
+        elif not c["games_equal"]:
+            reasons.append(f"guard {c['unit']}: its games differ from the banked unit's (determinism broken)")
+        if c.get("our_regime") != "greedy":
+            reasons.append(f"guard {c['unit']}: our_regime {c.get('our_regime')!r} is not the banked 'greedy'")
+    out: Dict[str, Any] = {"arms": {}}
+    for name, a in doc["arms"].items():
+        want = f"greedy+belief_prior_mix={float(a['lambda']):g}"
+        bad = sorted({str(u["our_regime"]) for u in a["units"] if u["counted"] and u["our_regime"] != want})
+        if bad:
+            reasons.append(f"{name}: counted units stamped {bad}, not {want!r}")
+        counted = {ts: sum(1 for u in a["units"] if u["counted"] and u["panel"] == ts) for ts in unf + [fam]}
+        for ts, n in counted.items():
+            planned = int(a["units_planned"][ts])
+            if n < float(p["min_unit_frac"]) * planned - RULE8_EPS:
+                reasons.append(f"{name} {ts}: {n} / {planned} units counted (< {float(p['min_unit_frac']):.0%})")
+        cells = {}
+        for ts in unf + [fam]:
+            w = sum(int(u["wins"]) for u in a["units"] if u["counted"] and u["panel"] == ts)
+            n = sum(int(u["n"]) for u in a["units"] if u["counted"] and u["panel"] == ts)
+            bw = sum(int(b["wins"]) for b in bank[ts].values())
+            bn = sum(int(b["n"]) for b in bank[ts].values())
+            _p, lo, hi = wilson(w, n) if n else (None, None, None)
+            cells[ts] = {"wins": w, "n": n, "score": w / n if n else None, "wilson95": [lo, hi],
+                         "banked_wins": bw, "banked_n": bn, "paired": _pm_paired(a, bank, [ts])}
+        ss_on = strat_score({k: (cells[k]["wins"], cells[k]["n"]) for k in unf}, unf) if all(
+            cells[k]["n"] for k in unf) else None
+        ss_off = strat_score({k: (cells[k]["banked_wins"], cells[k]["banked_n"]) for k in unf}, unf)
+        nc = newcombe_strat(ss_on, ss_off) if ss_on is not None else None
+        out["arms"][name] = {"lambda": a["lambda"], "cells": cells,
+                             "u_score": None if ss_on is None else ss_on.as_dict(), "u_banked": ss_off.as_dict(),
+                             "delta_u": _pm_paired(a, bank, unf), "delta_home": cells[fam]["paired"],
+                             "newcombe_u": None if nc is None else {"d": nc[0], "lo": nc[1], "hi": nc[2]}}
+    if reasons:
+        return {"arms": out["arms"], "decision": {"verdict": VOID, "reasons": reasons}}
+    margin = float(p["home_margin_pp"]) / 100.0
+    dec: Dict[str, Any] = {"primary": p["primary"], "arms": {}}
+    for name, r in out["arms"].items():
+        du, dh = r["delta_u"], r["delta_home"]
+        cu, ch = _pm_class(du), _pm_class(dh)
+        harmed = dh is not None and (ch == "LOSS" or clears(dh["d"], -margin, above=False)[0])
+        verdict = (PM_HELPS if cu == "GAIN" and not harmed else PM_HELPS_COST if cu == "GAIN"
+                   else PM_HURTS if cu == "LOSS" else PM_ND)
+        a: Dict[str, Any] = {"lambda": r["lambda"], "u_class": cu, "home_class": ch, "home_harmed": harmed,
+                             "verdict": verdict, "d0f": None}
+        if float(r["lambda"]) == 1.0 and du is not None and dh is not None:
+            # D0f (prior only): the DiD (U − home72) and H3's kill rule (design_diversity_teams_opponents §3.3)
+            d = du["d"] - dh["d"]
+            se = math.sqrt(((du["hi"] - du["lo"]) / (2 * Z95)) ** 2 + ((dh["hi"] - dh["lo"]) / (2 * Z95)) ** 2)
+            held_d = r["cells"][held]["paired"]
+            killed = (clears(d + Z95 * se, float(p["did_ub_pp"]) / 100.0, above=False)[0]
+                      and held_d is not None and not clears(held_d["lo"], 0.0)[0])
+            a["d0f"] = {"did": d, "lo": d - Z95 * se, "hi": d + Z95 * se, "heldout": held_d, "h3_killed": killed}
+        dec["arms"][name] = a
+    order = [p["primary"]] + sorted(n for n in dec["arms"] if n != p["primary"])
+    dec["verdict"] = " | ".join(
+        f"lambda={dec['arms'][n]['lambda']:g}: {dec['arms'][n]['verdict']}"
+        + (f", D0f H3 {'KILLED' if dec['arms'][n]['d0f']['h3_killed'] else 'NOT KILLED'}"
+           if dec["arms"][n]["d0f"] else "") for n in order)
+    return {"arms": out["arms"], "decision": dec}
+
+
 # ------------------------------------------------------------------------------------------------ registry
 @dataclass(frozen=True)
 class Rule:
@@ -418,6 +620,8 @@ RULES: Dict[str, Rule] = {
                _d1_decide, True),
     "anchor_trajectory": Rule("anchor_trajectory", "x26c PREREG §5: goal bar, CLIMBING / FLAT, S1 rising",
                               _at_check, _at_inputs, _at_decide, False),
+    "prior_mix_ab": Rule("prior_mix_ab", "belief prior mix: λ arms vs a banked λ = 0, unit-paired; a determinism guard",
+                         _pm_check, _pm_inputs, _pm_decide, False),
 }
 
 

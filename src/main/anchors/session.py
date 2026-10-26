@@ -261,6 +261,9 @@ class OurSideState:
     error: Optional[str] = None
     #: Which loader actually built our policy — "bare" / "foreign" / "" (our side is a bot).
     model_loader: str = ""
+    #: `--our-belief-prior-mix`: the λ READ BACK from the loaded policy (`agents.model.belief_prior_mix`), or None
+    #: when none was asked for (the unchanged model).
+    belief_prior_mix: Optional[float] = None
 
 
 def foreign_loader(zip_path: str, device: str):

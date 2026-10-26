@@ -63,7 +63,7 @@ def test_a_checkpoints_decisions_are_verified_and_booked_per_game(monkeypatch) -
     from main.live.client import BattleResult, Decision
     from main.live.reader import Frame
 
-    monkeypatch.setattr(core_side, "load_policy", lambda path, device, loader, state: "model")
+    monkeypatch.setattr(core_side, "load_policy", lambda path, device, loader, state, **kw: "model")
     monkeypatch.setattr(core_side, "CorePolicy",
                         lambda model, stochastic, temperature: _Core([(2, 2), (1, 3), (0, 0)]))
     state = OurSideState()
@@ -113,6 +113,32 @@ def test_a_successful_bare_load_is_recorded_as_bare(monkeypatch, mode, expected)
     state = OurSideState()
     assert core_side.load_policy("/s.zip", "cpu", mode, state) == ("model", "/s.zip", "cpu")
     assert state.model_loader == expected
+
+
+def test_a_belief_prior_mix_is_set_on_the_loaded_policy_and_read_back(monkeypatch) -> None:
+    """``--our-belief-prior-mix``: the loader sets λ on the policy's three belief legs and records what the model
+    READS BACK (the runner's verification compares it with the cell's λ); None leaves the model untouched."""
+    import types
+
+    import agents.model.oracle_reveal as oracle_reveal
+    import agents.model.snapshot as snapshot
+
+    def model():
+        legs = {n: types.SimpleNamespace() for n in ("hypothesis_builder", "move_belief", "item_belief_head")}
+        legs["move_belief"].prior_fusion = True
+        return types.SimpleNamespace(policy=types.SimpleNamespace(features_extractor=types.SimpleNamespace(**legs)))
+
+    monkeypatch.setattr(oracle_reveal, "refuse_if_revealed", lambda *a, **k: None)
+    monkeypatch.setattr(snapshot, "historical_load_kwargs", lambda path: {})
+    monkeypatch.setattr(snapshot, "load_checkpoint_strict", lambda path, device, **k: model())
+    state = OurSideState()
+    m = core_side.load_policy("/s.zip", "cpu", "bare", state, belief_prior_mix=0.25)
+    assert state.belief_prior_mix == 0.25
+    assert {getattr(m.policy.features_extractor, n).belief_prior_mix
+            for n in ("hypothesis_builder", "move_belief", "item_belief_head")} == {0.25}
+    plain = core_side.load_policy("/s.zip", "cpu", "bare", state)
+    assert state.belief_prior_mix is None and not hasattr(plain.policy.features_extractor.move_belief,
+                                                          "belief_prior_mix")
 
 
 def test_auto_falls_back_to_the_foreign_loader_and_says_which_one_ran(monkeypatch, capsys) -> None:

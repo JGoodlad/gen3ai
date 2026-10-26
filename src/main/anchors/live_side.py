@@ -145,7 +145,8 @@ def build_client(plan: Any, half: str, *, username: str, team_spec: Dict[str, An
     from main.anchors import core_side
 
     stochastic, temperature = core_side.our_stochastic(plan)
-    model = core_side.load_policy(plan.model_zip, plan.device, plan.model_loader, state)
+    model = core_side.load_policy(plan.model_zip, plan.device, plan.model_loader, state,
+                                  belief_prior_mix=getattr(plan, "our_belief_prior_mix", None))
     policy = FramePolicy(core_side.CorePolicy(model, stochastic=stochastic, temperature=temperature), state)
     argmax: Dict[str, List[int]] = {}
 

@@ -296,6 +296,13 @@ def build_parser() -> argparse.ArgumentParser:
                         "Every row is stamped our_regime='sample:T=<T>', regime_matched=true "
                         "only when --opponent-temperature equals T, and carries our per-decision "
                         "argmax counts (our_argmax_matches / our_argmax_decisions) (X22 f).")
+    p.add_argument("--our-belief-prior-mix", dest="our_belief_prior_mix", type=float, default=None,
+                   metavar="LAMBDA",
+                   help="a checkpoint our-side ONLY: OUR policy's opponent belief (X5 species presences, "
+                        "move and item posteriors) is mixed with its Smogon prior, b <- (1-L)*b + L*prior, "
+                        "before the hypothesis tokens, the policy and the critic read it (INFERENCE ONLY, "
+                        "agents.model.belief_prior_mix; L = 1 is D0f's prior-only model). 0 is the unchanged "
+                        "model and stamps nothing; L > 0 stamps our_regime='<regime>+belief_prior_mix=<L>'.")
     p.add_argument("--allow-unmatched-regime", action="store_true",
                    help="permit a cell where the two sides are NOT at the same regime. Every row "
                         "is then stamped regime_matched=false. Foul Play has no sampling knob at "
@@ -507,6 +514,19 @@ def build_plan(args: argparse.Namespace, cfg: config_mod.AnchorsConfig,
             raise SystemExit("--our-temperature must be > 0 (our greedy is --regime greedy)")
         matched = opp_t is not None and float(opp_t) == float(our_t)
 
+    # `--our-belief-prior-mix`: a model-load option of OUR checkpoint (no bot or peer has a belief to anchor).
+    our_bpm = getattr(args, "our_belief_prior_mix", None)
+    if our_bpm is not None:
+        from agents.model.belief_prior_mix import BeliefPriorMixError, check_lambda
+
+        if our_side != "model":
+            raise SystemExit("--our-belief-prior-mix needs a checkpoint our-side (it anchors OUR model's belief)")
+        try:
+            our_bpm = check_lambda(our_bpm)
+        except BeliefPriorMixError as exc:
+            raise SystemExit(f"--our-belief-prior-mix: {exc}") from None
+        our_bpm = our_bpm if our_bpm > 0.0 else None      # λ = 0 IS the unchanged model: nothing to stamp
+
     # The reproducibility pair is the FRONT END's, and there is no Node counterpart — a
     # `--seed-base` silently ignored on the Node path would make an unrepeatable series look
     # seeded, which is the one failure a seed exists to prevent.
@@ -648,6 +668,7 @@ def build_plan(args: argparse.Namespace, cfg: config_mod.AnchorsConfig,
         model_loader=args.model_load,
         opponent_temperature=opp_t,
         our_temperature=our_t,
+        our_belief_prior_mix=our_bpm,
         our_transport=("peer" if is_peer else our_transport),
         our_transport_note=transport_note,
         bot_seed=((args.bot_seed if args.bot_seed is not None else int(args.team_seed))
@@ -664,7 +685,9 @@ def render_plan(plan: runner_mod.SeriesPlan, cfg: config_mod.AnchorsConfig) -> s
         + (f"  OPPONENT samples at T={plan.opponent_temperature}"
            if plan.opponent_temperature is not None else "")
         + (f"  OUR side samples at T={plan.our_temperature}"
-           if plan.our_temperature is not None else ""),
+           if plan.our_temperature is not None else "")
+        + (f"  OUR belief prior mix λ={plan.our_belief_prior_mix:g}"
+           if plan.our_belief_prior_mix is not None else ""),
         f"  team set          {plan.teamset}  ours={plan.our_team_spec}"
         + (f"  🚨 OUR peer draws {plan.our_set} (ASYMMETRIC pair cell, --our-teamset)"
            if plan.our_set != plan.teamset else ""),

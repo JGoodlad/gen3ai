@@ -171,6 +171,8 @@ class Unit:
     model_sha256: str
     opponent: str = OPPONENT
     games: int = UNIT_GAMES
+    #: a model-LOAD option: ``main.anchors --our-belief-prior-mix`` (``agents.model.belief_prior_mix``); None = none
+    belief_prior_mix: Optional[float] = None
 
 
 def parse_teamsets(spec: str) -> Tuple[str, ...]:
@@ -212,7 +214,8 @@ def plan_units(finals: Sequence[Mapping[str, Any]], *, hash_models: bool = True,
                teamsets: Sequence[str] = DEFAULT_TEAMSETS, unit_seeds: Sequence[int] = UNIT_SEEDS) -> List[Unit]:
     """Every (final × team set × unit seed) unit, unit seeds outermost so a stopped queue is role- and seed-balanced
     across finals. ``teamsets`` defaults to X35's G-K cell (home72, away); D1's PRIMARY H names the unfamiliar
-    panels (:data:`UNFAMILIAR`). ``unit_seeds`` defaults to the registered 0-6 (:data:`UNIT_SEEDS`)."""
+    panels (:data:`UNFAMILIAR`). ``unit_seeds`` defaults to the registered 0-6 (:data:`UNIT_SEEDS`). A final may
+    carry ``belief_prior_mix`` (a model-load option every one of its units passes)."""
     teamsets = parse_teamsets(",".join(teamsets))
     seen = set()
     for f in finals:
@@ -221,7 +224,8 @@ def plan_units(finals: Sequence[Mapping[str, Any]], *, hash_models: bool = True,
         seen.add(f["label"])
     shas = {f["label"]: (_sha(f["path"]) if hash_models else "") for f in finals}
     return [Unit(name=f"{f['label']}__{ts}__{s:02d}", label=str(f["label"]), arm=str(f["arm"]), seed=int(f["seed"]),
-                 teamset=ts, unit_seed=s, model=str(f["path"]), model_sha256=shas[f["label"]])
+                 teamset=ts, unit_seed=s, model=str(f["path"]), model_sha256=shas[f["label"]],
+                 belief_prior_mix=(None if f.get("belief_prior_mix") is None else float(f["belief_prior_mix"])))
             for s in unit_seeds for ts in teamsets for f in finals]
 
 
@@ -295,6 +299,8 @@ def unit_argv(u: Unit, out: Path, port: int, py: str = sys.executable) -> List[s
     a = [py, "-m", "main.anchors", "--model", u.model, "--opponent", u.opponent, "--regime", "greedy",
          "--teamset", config_side(u.teamset), "--games", str(u.games), "--team-seed", str(u.unit_seed),
          "--seed-base", str(u.unit_seed), "--device", "cpu", "--port", str(port), "--nice", "19", "--out", str(out)]
+    if u.belief_prior_mix is not None:
+        a += ["--our-belief-prior-mix", repr(float(u.belief_prior_mix))]
     if u.teamset in PANEL_CELLS:
         # the front end's per-battle repro record (its START command carries BOTH packed teams): which team each side
         # piloted in each game (F-DV-6 / F-DV-17), so a matchup-clustered sensitivity read stays possible (F-DV-18).

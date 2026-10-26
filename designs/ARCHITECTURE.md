@@ -690,6 +690,10 @@ The concrete steps:
    unrevealed branch consumes P(Choice Band) from the publication instead of the static
    `SPECIES_CB_PRIOR` scalar — the revealed 0/1 exactness gate is unchanged. Supervised as the
    BeliefBank's seventh row.)*
+   **The belief prior mix (inference only, a load option; `designs/model/phase_pipeline.md`).** At load time
+   λ ∈ [0, 1] can replace the species presences, the move posterior and the item posterior with
+   `(1 − λ)·b + λ·prior` before anything reads them; λ = 1 is exactly the deltas zeroed (D0f), λ = 0 the model
+   unchanged. It never trains (a gradient-recording forward refuses).
    **Every prior gives a FORMAT-BANNED entity nothing** (`gen3_format_spec_priors_v1`, the gen3ou format spec
    `agents.gen3_data.format_spec`; `designs/endstate/design_format_spec.md` §5.1): the Smogon ability / item /
    move / teammate priors carry no banned mass (Quick Claw, Sand Veil, Soundproof, Swagger, …; checked at load),

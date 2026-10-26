@@ -66,13 +66,31 @@ def group_regime_id(by_teamset: Mapping[str, Optional[str]]) -> str:
     return hashlib.sha256(json.dumps(dict(by_teamset), sort_keys=True).encode()).hexdigest()[:16]
 
 
-def unit_row(u: Any, summary: Mapping[str, Any]) -> Dict[str, Any]:
-    """One played unit's row (x26c's ``kakuna_units.jsonl`` fields, plus its regime and reasons)."""
+#: A unit's per-game identity (``games.jsonl``): what a determinism guard compares game for game.
+GAME_KEYS = ("half", "index", "our_team", "result", "turns")
+
+
+def unit_games(kakuna_state: Path, name: str) -> Optional[List[List[Any]]]:
+    """``[[half, index, our_team, result, turns], ...]`` of one played unit, in ``(half, index)`` order; ``None`` when
+    the unit wrote no ``games.jsonl``."""
+    p = kakuna_state / "cells" / name / "games.jsonl"
+    try:
+        rows = [json.loads(ln) for ln in p.read_text().splitlines() if ln.strip()]
+    except (OSError, ValueError):
+        return None
+    return sorted(([r.get(k) for k in GAME_KEYS] for r in rows), key=lambda g: (str(g[0]), int(g[1])))
+
+
+def unit_row(u: Any, summary: Mapping[str, Any], games: Optional[List[List[Any]]] = None) -> Dict[str, Any]:
+    """One played unit's row (x26c's ``kakuna_units.jsonl`` fields, plus its regime, reasons, model-load options and,
+    when given, its per-game identities :data:`GAME_KEYS`)."""
     from main.anchors.results import unit_counts
 
     uc = unit_counts(summary, games=int(u.games))
     cell = summary.get("cell") or {}
     return {"unit": u.name, "label": u.label, "panel": u.teamset, "unit_seed": int(u.unit_seed),
+            "belief_prior_mix": getattr(u, "belief_prior_mix", None), "our_regime": cell.get("our_regime"),
+            "games": games,
             "model_sha256": u.model_sha256, "status": summary.get("status"), "n": summary.get("n"),
             "wins": summary.get("wins"), "losses": summary.get("losses"), "ties": summary.get("ties", 0),
             "regime_verified_decisions": summary.get("regime_verified_decisions"),
@@ -89,7 +107,7 @@ def anchor_units(kakuna_state: Path) -> List[Dict[str, Any]]:
     for u in KA.load_plan(kakuna_state):
         s = KA.read_summary(kakuna_state, u.name)
         if s is not None:
-            rows.append(unit_row(u, s))
+            rows.append(unit_row(u, s, unit_games(kakuna_state, u.name)))
     return rows
 
 

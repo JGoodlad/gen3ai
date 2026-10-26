@@ -90,6 +90,19 @@ than merely unlikely, because a collapsed floor silently turns the legality gate
 
 prune that previously crippled surprise-move anticipation.
 
+**The belief PRIOR MIX is an inference-only load option, not a flag** (`agents.model.belief_prior_mix`; lever 1 (a)
+of `generalisation_review_2026-10-26.md`). It replaces each of the three LEARNED legs' distribution b with
+`(1 − λ)·b + λ·prior` where the leg computes it, so every consumer downstream reads the mixed belief: X5's species
+presences inside `HypothesisBuilder.species_set` (mixed with the delta-zeroed presences, so Σ = k holds and the
+hypothesis order, the hidden slots' species and OTHER follow), `MoveBelief.move_logits` (each Bernoulli marginal,
+in log space, before the revealed pin) and `ItemBelief.forward` (the categorical). The spread and HP-type heads are
+not mixed (D0f's definition). λ = 0 runs the unchanged branch and λ = 1 returns the prior itself, so both
+endpoints are bit-exact (λ = 1 equals D0f's zeroed deltas on the policy, the critic and every leg:
+`belief_prior_mix_test.py`, on a real `MaskablePPO` with live deltas; reverting any one leg fails it). λ is a plain
+attribute on the three modules (no `state_dict` key, no config field, no version bump) set by
+`main.anchors --our-belief-prior-mix` / a `main.reads` model's `load`; a forward that records autograd with λ > 0
+RAISES, so it can never train. A new learned belief leg that should be anchored joins `mixed_modules` and the test.
+
 ## `--belief-grad-mode` — what each mode actually cuts
 
 `detached` stop-grads the head's trunk **read** (`detach_read`), so the belief cannot reshape the

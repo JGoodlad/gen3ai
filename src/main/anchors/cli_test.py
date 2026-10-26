@@ -887,3 +887,25 @@ def test_our_peer_side_counts_and_digests_the_set_it_DRAWS_from(cfg) -> None:
     plan = build_plan(_pair(*_KK, "--our-teamset", "away", "--dry-run"), cfg)
     count, source, digest = runner_mod.our_team_facts(plan, cfg)
     assert (count, source, digest) == (len(load_team_texts(away)), str(away), team_set_digest(away))
+
+
+def test_our_belief_prior_mix_is_a_model_load_option_stamped_on_the_cell(cfg) -> None:
+    """`--our-belief-prior-mix L` (agents.model.belief_prior_mix): our_regime names L, so the cell never pools with
+    the unchanged model's; L = 0 IS the unchanged model and stamps nothing."""
+    mixed = build_plan(_args("--opponent", "metamon:Kakuna", "--our-belief-prior-mix", "0.25", "--dry-run"), cfg)
+    assert mixed.our_belief_prior_mix == 0.25 and mixed.regime_matched is True
+    assert runner_mod.cell_spec(mixed, {"their_regime": "greedy"}, 72).our_regime == "greedy+belief_prior_mix=0.25"
+    assert "belief prior mix λ=0.25" in render_plan(mixed, cfg)
+    zero = build_plan(_args("--opponent", "metamon:Kakuna", "--our-belief-prior-mix", "0", "--dry-run"), cfg)
+    assert zero.our_belief_prior_mix is None
+    assert runner_mod.cell_spec(zero, {}, 72).our_regime == "greedy"
+
+
+@pytest.mark.parametrize("argv", [
+    ("--opponent", "metamon:Kakuna", "--our-belief-prior-mix", "1.5"),
+    ("--opponent", "metamon:Kakuna", "--our-belief-prior-mix", "-0.1"),
+    ("--opponent", "metamon:Kakuna", "--our-side", "bot:random", "--our-belief-prior-mix", "0.25"),
+])
+def test_our_belief_prior_mix_is_refused_outside_its_shape(cfg, argv) -> None:
+    with pytest.raises(SystemExit):
+        build_plan(_args(*argv, "--dry-run"), cfg)

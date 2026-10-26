@@ -263,3 +263,18 @@ def test_d1h_pools_counted_units_per_seed_final_and_panel(tmp_path):
     pooled["x38_dup"] = pooled["x38_s3501"]
     with pytest.raises(KA.KakunaError, match="share seed 3501"):
         KA.d1h_input(pooled, "X38", "C0")
+
+
+def test_a_load_option_rides_every_unit_of_its_final_and_only_its_own():
+    finals = [{"label": "mix", "arm": "pstar", "seed": 2601, "path": "/m.zip", "belief_prior_mix": 0.25},
+              {"label": "plain", "arm": "pstar", "seed": 2601, "path": "/m.zip"}]
+    units = KA.plan_units(finals, hash_models=False, teamsets=("home72",), unit_seeds=(0, 1))
+    by = {u.label: u for u in units}
+    assert {u.belief_prior_mix for u in units if u.label == "mix"} == {0.25}
+    assert {u.belief_prior_mix for u in units if u.label == "plain"} == {None}
+    a = KA.unit_argv(by["mix"], Path("/o"), 9541, py="PY")
+    assert a[a.index("--our-belief-prior-mix") + 1] == "0.25"
+    assert "--our-belief-prior-mix" not in KA.unit_argv(by["plain"], Path("/o"), 9541, py="PY")
+    # a plan written before the field existed still loads (the default is the unchanged model)
+    old = {k: v for k, v in by["plain"].__dict__.items() if k != "belief_prior_mix"}
+    assert KA.Unit(**old).belief_prior_mix is None

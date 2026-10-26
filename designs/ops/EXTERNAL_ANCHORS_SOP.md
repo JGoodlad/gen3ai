@@ -297,6 +297,16 @@ argmax of that same decision's masked logits — pooled to the summary's `our_ar
 (OUR side of the §0 argmax table). Seed our sampling with `$GEN3AI_POLICY_SEED` for a repeatable
 series. Refused with any other opponent, our-side or `--regime`, and for T ≤ 0.
 
+### `--our-belief-prior-mix L` — OUR opponent belief anchored to its Smogon prior
+
+Added 2026-10-26 (`agents.model.belief_prior_mix`, D0f at L = 1). A MODEL-LOAD option of a checkpoint our-side: the
+loaded policy's species presences, move posterior and item posterior become `(1 − L)·b + L·prior` before anything
+reads them (inference only). The loader reads L back from the policy into the half's report
+(`our_belief_prior_mix`); a mismatch with the cell's L sets `regime_verified_decisions = false`. Every row is stamped
+`our_regime = <regime>+belief_prior_mix=<L>` (so it never pools with the unchanged model); L = 0 is the unchanged
+model and stamps nothing. Refused for a bot or peer our-side and outside [0, 1]. `main.x35.kakuna` units pass it
+from a final's `belief_prior_mix`, `main.reads` from a model's `load`.
+
 ### `--mirrored-pairs` — MIRRORED TEAM PAIRS (T17, `gen3_mirrored_pairs_v1`)
 
 Within each half, battle `2k` pits our team `A_k` (drawn from OUR team source) against the peer's

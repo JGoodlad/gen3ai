@@ -83,10 +83,24 @@ def _fail(detail: str) -> SeriesFailure:
 
 
 # ------------------------------------------------------------------------------- the policy
-def load_policy(path: str, device: str, model_loader: str, state: OurSideState) -> Any:
+def load_policy(path: str, device: str, model_loader: str, state: OurSideState,
+                belief_prior_mix: Optional[float] = None) -> Any:
     """Load our checkpoint — ``main.play.load_policy``'s body (``play`` imports poke-env, this must
     not), with ``main.anchors``' ``auto``/``bare``/``foreign`` rule. Which loader ran is recorded in
-    ``state.model_loader`` and stamped on every row."""
+    ``state.model_loader`` and stamped on every row. ``belief_prior_mix`` (``--our-belief-prior-mix``): the
+    INFERENCE-ONLY anchor of the opponent belief to its Smogon prior, set on the loaded policy and READ BACK into
+    ``state.belief_prior_mix`` (``agents.model.belief_prior_mix``); None leaves the model unchanged."""
+    model = _load_policy(path, device, model_loader, state)
+    state.belief_prior_mix = None
+    if belief_prior_mix is not None:
+        from agents.model.belief_prior_mix import belief_prior_mix_of, set_belief_prior_mix
+
+        set_belief_prior_mix(model, belief_prior_mix)
+        state.belief_prior_mix = belief_prior_mix_of(model)
+    return model
+
+
+def _load_policy(path: str, device: str, model_loader: str, state: OurSideState) -> Any:
     from agents.model.oracle_reveal import refuse_if_revealed
     from agents.model.snapshot import historical_load_kwargs, load_checkpoint_strict
     from main.anchors.session import foreign_loader
@@ -431,10 +445,10 @@ def make_slot(front: Any, *, username: str, policy: CorePolicy, team_source: Any
 def build_slot(front: Any, *, username: str, model_zip: str, device: str, model_loader: str,
                stochastic: bool, temperature: float, team_spec: Dict[str, Any],
                team_seed: Optional[int], forfeit_limit: int, state: OurSideState,
-               battle_format: str = "gen3ou") -> Any:
+               battle_format: str = "gen3ou", belief_prior_mix: Optional[float] = None) -> Any:
     """Everything one half's slot needs: the policy (loaded once per half, as ``play.main`` did),
     the seeded team source (its draws logged into ``state.draws``) and the connection."""
-    model = load_policy(model_zip, device, model_loader, state)
+    model = load_policy(model_zip, device, model_loader, state, belief_prior_mix=belief_prior_mix)
     policy = CorePolicy(model, stochastic=stochastic, temperature=temperature)
     teams = build_team_source(team_spec, team_seed, state.draws)
     return make_slot(front, username=username, policy=policy, team_source=teams, state=state,

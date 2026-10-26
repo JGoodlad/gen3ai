@@ -2,8 +2,9 @@
 
 A spec is ONE JSON file (schema :data:`SCHEMA`), committed with the read's PREREG. It names:
 
-* ``models`` -- ``{label: {arm, seed, ref}}``; ``ref`` is a :class:`ModelRef` (``pinned``: a frozen file and its
-  sha256; ``final``: a run's ``final_model.zip`` under the SETTLED rule of :mod:`main.reads.models`);
+* ``models`` -- ``{label: {arm, seed, ref, load?}}``; ``ref`` is a :class:`ModelRef` (``pinned``: a frozen file and its
+  sha256; ``final``: a run's ``final_model.zip`` under the SETTLED rule of :mod:`main.reads.models`); ``load`` is
+  the model-LOAD options its units pass (:data:`LOAD_OPTIONS`; two labels may play one file under different ones);
 * ``anchor`` -- ``{group: {opponent, teamsets, unit_seeds, models}}``: the external-anchor cells, played as
   :mod:`main.x35.kakuna` units on the short lane;
 * ``s`` -- ``{group: {refpop, refpop_content_sha256, panel, pairs, batch_pairs, family, models, regime_id}}``: S
@@ -31,6 +32,9 @@ _COMMIT = re.compile(r"^[0-9a-f]{7,40}$")
 REF_KINDS = ("pinned", "final")
 #: The anchor opponents a group may name: the cells :mod:`main.x35.kakuna` plays (its committed configs).
 ANCHOR_OPPONENTS = ("metamon:Kakuna",)
+#: A model's LOAD options (``models.<label>.load``), each an inference-time option of OUR checkpoint that the anchor
+#: units pass on: ``belief_prior_mix`` = λ in (0, 1] (``main.anchors --our-belief-prior-mix``; omit it for λ = 0).
+LOAD_OPTIONS = ("belief_prior_mix",)
 
 
 class SpecError(ValueError):
@@ -58,6 +62,7 @@ class Model:
     arm: str
     seed: int
     ref: ModelRef
+    load: Dict[str, Any] = field(default_factory=dict)    # model-load options (:data:`LOAD_OPTIONS`)
 
 
 @dataclass(frozen=True)
@@ -157,6 +162,27 @@ def _ref(d: Any, where: str) -> ModelRef:
     raise SpecError(f"{where}.kind: {kind!r} is none of {REF_KINDS}")
 
 
+def _load_opts(d: Any, where: str) -> Dict[str, Any]:
+    if d is None:
+        return {}
+    if not isinstance(d, dict):
+        raise SpecError(f"{where}: an object")
+    _only(d, LOAD_OPTIONS, where)
+    out: Dict[str, Any] = {}
+    if "belief_prior_mix" in d:
+        from agents.model.belief_prior_mix import BeliefPriorMixError, check_lambda
+
+        v = d["belief_prior_mix"]
+        try:
+            lam = check_lambda(v) if not isinstance(v, bool) else None
+        except BeliefPriorMixError as exc:
+            raise SpecError(f"{where}.belief_prior_mix: {exc}") from None
+        if lam is None or lam <= 0.0:
+            raise SpecError(f"{where}.belief_prior_mix: {v!r} must be in (0, 1] (omit it for the unchanged model)")
+        out["belief_prior_mix"] = lam
+    return out
+
+
 def _group_models(d: Mapping[str, Any], where: str, models: Mapping[str, Model]) -> Tuple[str, ...]:
     ms = _need(d, "models", where, list)
     if not ms or len(set(ms)) != len(ms):
@@ -185,9 +211,9 @@ def parse(doc: Mapping[str, Any], *, sha256: str = "") -> ReadSpec:
         w = f"models.{_label(lab, 'models')}"
         if not isinstance(m, dict):
             raise SpecError(f"{w}: an object")
-        _only(m, ("arm", "seed", "ref"), w)
+        _only(m, ("arm", "seed", "ref", "load"), w)
         models[lab] = Model(label=lab, arm=_need(m, "arm", w, str), seed=_need(m, "seed", w, int),
-                            ref=_ref(m.get("ref"), f"{w}.ref"))
+                            ref=_ref(m.get("ref"), f"{w}.ref"), load=_load_opts(m.get("load"), f"{w}.load"))
     if not models:
         raise SpecError("spec.models: none declared")
     anchor: Dict[str, AnchorGroup] = {}
