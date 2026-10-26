@@ -100,7 +100,8 @@ def test_lr_warms_up_then_decays():
     assert ST.lr_at(10000, 10000) == pytest.approx(ST.LR_MIN)
 
 
-def _tiny_rowset(d: Path, n: int, seed: int) -> None:
+def _tiny_rowset(d: Path, n: int, seed: int, obs: "np.ndarray | None" = None) -> None:
+    """A rowset of ``n`` train rows and 64 validation rows; the observations are zeros, or drawn from ``obs``."""
     from agents.battle.core_obs import obs_dim
 
     rng = np.random.default_rng(seed)
@@ -109,7 +110,8 @@ def _tiny_rowset(d: Path, n: int, seed: int) -> None:
 
     def arr(k):
         idx = rng.integers(0, 6, k)
-        return {"rows": np.zeros((k, obs_dim()), np.float32), "mask": z["mask"][idx],
+        x = np.zeros((k, obs_dim()), np.float32) if obs is None else obs[rng.integers(0, len(obs), k)]
+        return {"rows": x, "mask": z["mask"][idx],
                 "act": z["act"][idx], "hidden": z["hidden"][idx], "cons": z["cons"][idx], "moveset": z["moveset"][idx],
                 "rid": rng.integers(0, 2 ** 62, k), "bkey": np.zeros(k, np.int64), "acct": np.zeros(k, np.int64),
                 "seat": np.zeros(k, np.int8), "k": np.zeros(k, np.int16), "turn": np.zeros(k, np.int16),
@@ -192,6 +194,50 @@ def test_train_export_reload_on_synthetic_rows(tmp_path, restore_torch_globals):
     assert a["init_sha256"] == b["init_sha256"]        # one seed, one initial network, in every arm
     with pytest.raises(ST.StudentError, match="another arm"):
         ST.train("human", rows, None, 5901, other, epochs=1, budget_min=0, threads=1)
+
+
+@pytest.mark.slow  # ship gate (2026-10-26): 23 s beside a live run
+@pytest.mark.sim
+@pytest.mark.integration
+def test_the_anchors_bare_load_reads_the_students_function_on_real_rows(tmp_path, restore_torch_globals):
+    """X59-S's CUDA pre-flight check 5 FAILED (2026-10-26) on real rows while the zero rows above passed: the anchors
+    harness's bare load (``load_checkpoint_strict``) left the policy in TRAINING mode, where ``nn.MultiheadAttention``
+    skips its eval-mode fused fast path, a different kernel (~5e-7 apart) from the student's eval-mode logits. Every
+    reader now reads in eval mode; on these rows the two modes differ (asserted: the test's teeth), so ``export``'s
+    bit-equal bare-load check fails if the loader's eval is reverted."""
+    import torch as th
+
+    from main.fresh_checkpoint import build_fresh_model
+    from main.policy_spectrum.reader import inference_globals, policy_logits
+    from utils.rust_env.fixture_battles import spread_rows
+
+    obs, _ = spread_rows(48, n_battles=2, seed=5901)
+    rows = tmp_path / "rows"
+    _tiny_rowset(rows, 300, 1, obs=obs)
+    out = tmp_path / "s_h"
+    out.mkdir()
+    (out / "rows_path.txt").write_text(str(rows) + "\n")
+    assert ST.train("human", rows, None, 5901, out, epochs=1, budget_min=0, threads=1) == 0
+    st = th.load(out / "state.pt", weights_only=False, map_location="cpu")
+    # One step at the warm-up's lr leaves the zero-initialised paths at zero, where the two modes agree (measured on
+    # the fresh init); a seeded perturbation stands in for a trained student's weights.
+    g = th.Generator().manual_seed(5901)
+    st["model"] = {k: v + 0.02 * th.randn(v.shape, generator=g) if th.is_floating_point(v) else v
+                   for k, v in st["model"].items()}
+    th.save(st, out / "state.pt")
+    man, _ = RS.load_manifest(rows)
+    probe = RS.load_shard(rows, man["val"], ("rows", "mask"))
+    with inference_globals(ST.THREADS):
+        model = build_fresh_model(5901)[0]
+        model.policy.load_state_dict(st["model"])
+        model.policy.eval()
+        a = policy_logits(model, probe["rows"][:256], probe["mask"][:256].astype(np.uint8))
+        model.policy.train()
+        b = policy_logits(model, probe["rows"][:256], probe["mask"][:256].astype(np.uint8))
+    assert not np.array_equal(a.view(np.uint32), b.view(np.uint32)), \
+        "precondition: on these rows the training-mode forward must differ from the eval-mode one (the test's teeth)"
+    side = ST.export(out)
+    assert side["anchors_bare_load_bit_equal"] and side["reload_logits_bit_equal"]
 
 
 def test_the_unrestricted_arm_needs_legal_labels_only():

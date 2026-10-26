@@ -1351,12 +1351,21 @@ def load_checkpoint_strict(path: str, *, device: str = "cpu",
     ``custom_objects`` is the caller's sanitizer's output (``historical_load_kwargs`` for a ladder
     session, the prober's ``sanitized_load_custom_objects`` for a forensic read). No module outside
     the strict classes calls ``MaskablePPO.load`` / ``PPO.load``: ``strict_checkpoint_load_gate_test``
-    fails one, with an empty allowlist."""
+    fails one, with an empty allowlist.
+
+    The policy comes back in EVAL mode: a reader reads the function the rollout, the opponent pool and
+    every other reader read. Only in eval mode does ``nn.MultiheadAttention`` take its fused fast path
+    (first at ``hidden_opp_belief.decoder.self_attn``), a different kernel: the logits moved by up to
+    4.8e-7 on 18 of 256 real rows (X59-S's CUDA pre-flight, 2026-10-26, where the anchors bare
+    load failed the student's bit-equal export check). A caller that trains sets the mode itself (sb3's
+    ``train`` does)."""
     refuse_deleted_pickled_kwargs(path)
     kwargs: Dict[str, Any] = {"env": None, "device": device}
     if custom_objects:
         kwargs["custom_objects"] = custom_objects
-    return StrictMaskablePPO.load(path, **kwargs)
+    model = StrictMaskablePPO.load(path, **kwargs)
+    model.policy.set_training_mode(False)
+    return model
 
 
 def refuse_deleted_pickled_kwargs(zip_path: str) -> None:

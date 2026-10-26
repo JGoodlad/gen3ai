@@ -296,6 +296,7 @@ def foreign_loader(zip_path: str, device: str):
     model, _foreign = load_foreign_opponent(
         zip_path, current_version=current_model_version(load_mappings()),
         device=device, config_path=cfg)
+    model.policy.set_training_mode(False)       # a reader reads in eval mode (load_checkpoint_strict's docstring)
     return model
 
 

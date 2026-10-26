@@ -125,8 +125,9 @@ committed before any student trains). Its shape, after REVIEW D:
   learned its teacher; a descriptive unrestricted arm S-P0; floor references (random-legal, max-damage) and an
   UNINFORMATIVE class; NO-DIFFERENCE-AT-4PP; KAKUNA-SPECIFIC when the in-house contrast is ≤ 0; a CUDA pre-flight;
   a conditional ≥ 1500 follow-up; the closure scoped to "1300+ ladder data at this mix and volume".
-- **Cost:** training ≈ 3.7 GPU-h under a lease (15 primary + 5 S-P0 students × 3 epochs, ESTIMATE; ≈ 10 lane-h a
-  student on the CPU, so not on the CPU); P\* labels and self-play rows on the CPU; games ≈ 80 lane-h (ESTIMATE at
+- **Cost:** training 8.16 GPU-h of step time under a lease (15 primary + 5 S-P0 students × 3 epochs at the MEASURED
+  208.6 ms a step, PREREG Amendment 3; ≈ 3–4.5 h wall at 3 students at once, ESTIMATE; ≈ 3.6 h a student on the CPU, so
+  not on the CPU); P\* labels and self-play rows on the CPU; games ≈ 80 lane-h (ESTIMATE at
   ≈ 10 s a Kakuna game, S-P0 included).
 - **What it cannot say:** from-scratch students are not a plateau fork; a verdict is about the ≥ 1300 forfeit-heavy
   kept slice (mostly 1300–1499 actors); HUMAN-LABELS-BETTER does not show that H-BC inside PPO helps (X60 does).

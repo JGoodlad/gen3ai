@@ -535,3 +535,67 @@ inputs is VOID.
 first, then `window.py` (15 primary students, then 5 S-P0). **≈ 3.6 GPU-h** (ESTIMATE: Amendment 1's unmeasured
 ≈ 3 GPU-h for 15 students × 7,041 / 7,800, plus 5 S-P0; the pre-flight measures ms a step). Before any read: FR-2
 (A2.5) and the floor references (A2.6), both CPU.
+
+## Amendment 3 (2026-10-26, before any counted student trained): the pre-flight's export FAIL, its fix, the measured cost
+
+No counted student has trained and no game has been played; the scratch students of the pre-flight below are not
+students of this read. **No decision rule, VOID guard, pass criterion, recipe or registered input changes.**
+
+### A3.1 The CUDA pre-flight (A2.9) HELD the window: check 5 `export` FAILED
+
+Run at 07:00–07:13 on 2026-10-26 under the lease (RTX 3080 Ti, torch 2.8.0+cu126; result and log in
+`~/gen3ai_archive/x59s/results/cuda_preflight.{json,log}`). PASS: `init` (equal digests), `parity` (step-0 NLL and the
+losses at 100 and 200 equal, parameters 4.9e-7 apart), `precision` (TF32 off, `highest`), `resume`, `learns` (loss
+1.454 at step 1,000 against the uniform 1.847), `cost`. **FAIL: `export`**, "VOID: the anchors harness's bare load
+does not reproduce the student's logits". The rule worked as registered: nothing trained.
+
+**Root cause (reproduced on the CPU from the pre-flight's own exported zip):** the anchors harness's `bare` load
+(`agents.model.snapshot.load_checkpoint_strict`) returned the policy in TRAINING mode. The weights, the
+architecture, the config and the dtype were identical (every tensor equal; the reload through
+`main.policy_spectrum.reader` was bit-equal). Only in eval mode does `nn.MultiheadAttention` take its fused fast
+path (the first module whose output moved: the opponent-belief pool's `hidden_opp_belief.decoder.self_attn`), a
+different kernel: the logits differed on 18 of 256 validation rows by at most 4.8e-7 (|logit| ≤ 2.8),
+with no argmax change; after `.eval()` they were bit-equal. The CPU test of `export` passed because its synthetic rows
+were all zeros, on which the two kernels agree.
+
+**The fix (the class, not the check):** `load_checkpoint_strict` returns the policy in eval mode, and so does the
+anchors harness's `foreign` loader, so every reader (the anchors harness, `play.py`, the prober, the meters) reads
+the function the rollout's opponents and every other reader already read. `export`'s check is unchanged: the bare
+load must still give the student's logits BIT FOR BIT. Tests that fail on revert:
+`src/main/anchors/reader_eval_mode_test.py` (both anchors loaders return an eval-mode policy) and
+`student_test.py::test_the_anchors_bare_load_reads_the_students_function_on_real_rows` (real fixture-battle rows and
+seeded perturbed weights; it asserts its precondition that the two modes' logits differ there; on revert it fails
+with the pre-flight's exact error). On the FRESH init the two modes agree on every real row tried (952 rows,
+archive and fixture), so the fault shows only once the weights have moved. The window re-runs the WHOLE pre-flight
+(all 8 checks) at the commit that carries this amendment; any FAIL holds it again.
+
+### A3.2 The measured cost replaces §9's and Amendment 2b's estimate
+
+| quantity | measured (pre-flight, 2026-10-26) | was |
+|---|---|---|
+| ms a step on the GPU (batch 512, fp32, 2 threads) | **208.6** (`train_s` / steps over 1,000 steps; step time only, shard loads and evaluations excluded) | unmeasured |
+| steps a student (3 epochs of r2) | 7,041 | 7,041 |
+| GPU time a student | 7,041 × 0.2086 s = **24.5 min** | ≈ 11 min |
+| 20 students, one at a time | **8.16 GPU-h** (15 primary 6.12, 5 S-P0 2.04) | ≈ 3.6 GPU-h (ESTIMATE) |
+| device memory a student (peak allocated) | 1.30 GiB | — |
+| host memory (peak RSS of the pre-flight process) | 7.27 GiB | under the 8 GiB cap |
+| CPU, for comparison | 1,841 ms a step (the pre-flight's CPU arm) | ≈ 2.5 s (§9) |
+
+### A3.3 The window plan
+
+- **Concurrency 3** (A2.9's ceiling, `window.py`'s default): 3 × 1.30 GiB of device memory plus three CUDA contexts
+  fits the 12 GiB card. Host memory ≈ 3 × 7.3 = 22 GiB; **each chunk's `mem_cap.sh` cap rises from 8 to 10 GiB**
+  (`window.MEM_GB`): 7.27 GiB peak sat 0.73 GiB under the old cap, and an OOM kill (exit 86) stops the window by
+  A2.9's rule. 3 × 10 GiB leaves 34 GiB of the heavy slice's 64 GiB to the box's other capped jobs; a slice-wide
+  OOM would stop the window the same way (resumable).
+- **Expected wall time (ESTIMATE):** the slow-down factor *f* of a step at 3 at once is unmeasured (208.6 ms for a
+  2.6M-parameter network at batch 512 reads as launch- or host-bound, so *f* near 1 is plausible, UNVERIFIED). The 20
+  students stream through 3 lanes in 7 rounds of 24.5 min × *f*: **≈ 2.9 h at *f* = 1, ≈ 4.3 h at *f* = 1.5, ≈ 8.6 h at
+  *f* = 3** (the card serialises; no better than one at a time), plus ≈ 13 min for the pre-flight re-run and the
+  shard loads and evaluations the step time excludes. The primaries finish after 5 rounds (≈ 2.0 h at *f* = 1). The
+  first round's `ms/step` lines (every student logs it every 100 steps) measure *f*; it is reported, and decides
+  nothing.
+- **The lease asked for: ≤ 9 GPU-h** (the *f* = 3 bound with the pre-flight), expected ≈ 3–4.5 h.
+- **S-P0 still runs in the same window**, after the 15 primaries (the registered order, so it never delays a primary
+  student). If the lease must end first, the window stops between chunks and S-P0 resumes in a later lease from its
+  `state.pt` (`window.py --dir` with the same directory); S-P0 is descriptive and no rule reads it.
