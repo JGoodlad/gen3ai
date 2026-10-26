@@ -1,0 +1,18 @@
+{
+ "rowset": "hr_spec_v1.r2",
+ "rows_manifest_sha256": "2a413c85e2109553b4f930d85f369625a5daf77a7e1103afeb01e962ec0332b8",
+ "train_rows": 1201538,
+ "val_rows": 29904,
+ "train_hidden": 92435,
+ "labels_manifest_sha256": "2512c8a72281920fa4a38dd94570186b5220b113e19c579848de822133aeb012",
+ "pstar_sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed",
+ "selfplay_manifest_sha256": "3f81f71c5ece664e1983294343d8013e0cb8b8eaaa9e80305067166e41d26ff4",
+ "selfplay_rows": [
+  1201538,
+  29904
+ ],
+ "labels0_manifest_sha256": "8f511ca5f2912a366e2e2733699cef3297e47bf259cffd80577f6464550b9d66",
+ "selfplay_panel_rule_profile_sha256": "1529f5acff20f18d40943f95fb8fe7231c013eaa2814056a039f96ac7297dc3d",
+ "problems": [],
+ "pass": true
+}

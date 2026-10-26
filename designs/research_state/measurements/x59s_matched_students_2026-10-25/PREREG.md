@@ -458,3 +458,80 @@ reported beside every read. m7: S-S's turn-length and legal-action profile is re
 All of A2's read rules are code before any data: `x59s_read.classify` (A2.8), `x59s_read.verdict` (A2.4–A2.7, A2.10).
 **Cost now:** ≈ 3.7 GPU-h for 20 students (ESTIMATE: Amendment 1's ≈ 3 GPU-h scaled by r2's rows, plus S-P0), and the
 conditional ≈ 0.7 GPU-h.
+
+---
+
+## Amendment 2b (2026-10-26, before any student trained): the inputs as built under Amendment 2
+
+Built under Amendment 2's rules (on main at `2e7b0862` before any flag was read or any S-S row was regenerated), on
+the CPU at nice 19 on the agent cores under `mem_cap.sh`. No student has trained; no game has been played.
+
+### The Kakuna-family audit (A2.2): the drop rule FIRES; no account plays like Kakuna
+
+[`results/kakuna_audit.json`](results/kakuna_audit.json) (the full per-account table is in the archive, its sha256 in
+the file); Kakuna checkpoint 34 at hub revision `ac8e88e7`, weights sha256 `7e7474d5…`, the hub offline.
+
+| quantity | value |
+|---|---:|
+| audited accounts (≥ 10 kept seat-games) / their sampled seat-games / scored | 1,073 (1,051 TRAIN, 22 VAL) / 10,730 / 10,723 (7 Metamon parse failures) |
+| unaudited TRAIN rows (accounts with < 10 games) / unscored accounts | 16.9 % / 0 |
+| reference | every scored account (1,073): 97 accounts met the chat rule, < 100 |
+| account score S = LL_Kakuna − LL_P\*: median / p99 (the flag bar) / max | −0.878 / **−0.2275** / +0.094 |
+| flagged accounts / their r1 TRAIN rows | **11** (all TRAIN) / **23,046 = 1.73 %** of 1,330,809 |
+| **the drop rule (> 1.0 %)** | **FIRES**: the 11 accounts leave the rowset |
+| POWER control: Kakuna's own seats (158 pseudo-accounts of 10 games) above the human p99 of LL_Kakuna (−2.03) | **158 / 158 (median −0.80): POWER** |
+| other Metamon seats above that p99 (descriptive): PastaMittens / LargeRL / SmallRL / LargeIL | 90 / 90 / 13 / 47 / 28 / 158 / 0 / 45 |
+
+**What the flag found (read with the rule, not instead of it).** No audited account plays like Kakuna: the most
+Kakuna-like human scores LL_Kakuna −1.81, below every Kakuna pseudo-account (lowest −1.46) and every PastaMittens one.
+The 11 flagged accounts score high on S because P\* fits them badly, not because Kakuna fits them well (their
+LL_Kakuna −1.81 to −2.75, inside the human range); one of them (549 games, 15,215 rows) carries the rule alone
+(0.59 % without it). By construction of the all-accounts reference, `S > p99` flags ≈ 1 % of accounts with or
+without a fleet, so the 1.0 % test reads their volume. The rule was registered, so it is applied: dropping 1.7 % of
+rows costs little before training, and deviating after reading the scores would be the worse error. The audit has
+power against Kakuna and PastaMittens; it would not separate a SmallRL- or LargeIL-like bot from a human.
+
+### `hr_spec_v1.r2` (A2.3), registered in the rowset registry
+
+Rows manifest **sha256 `2a413c85e2109553b4f930d85f369625a5daf77a7e1103afeb01e962ec0332b8`**
+(`~/gen3ai_archive/x59s/hr_spec_v1.r2/`; parent r1 `e9e0df42…`; drop list sha256 `4d53e2e3…`).
+
+| quantity | value |
+|---|---:|
+| **TRAIN rows / VALIDATION rows** | **1,201,538 / 29,904** (74 + 1 shards) |
+| dropped from r1 TRAIN: the quitter's tail (`0 ≤ quit_dist ≤ 9`) / the flagged accounts (beyond the tail) | 108,740 / 20,531 |
+| dropped from r1 VALIDATION: the quitter's tail / flagged | 2,198 / 0 |
+| hidden-move rows (set labels) | 92,435 (7.7 %) |
+| accounts TRAIN / VALIDATION / in both | 3,419 / 70 / 0 |
+| actor 1300–1499 share / **≥ 1500 TRAIN rows (A2.7's N)** | 77.5 % / **270,260** |
+| endings (rows): KO / forfeit / timer / tie | 45.9 / 50.6 / 2.9 / 0.6 % |
+| switch labels among labelled rows | 30.7 % |
+| **the step budget a student** (`3 × Σ ceil(buffer rows / 512)`) | **7,041** (r1: 7,800) |
+
+- **S-P labels** (`labels_pstar`, manifest sha256 `2512c8a7…`): r1's, carried unchanged (a check of 5 shards:
+  81,920 / 81,920 rows equal r1's label by row id).
+- **S-P0 labels** (`labels_pstar0`, manifest sha256 `8f511ca5…`): on 5 shards, equal to the human's action on 36.6 %
+  of labelled rows; outside the consistent set on 18.0 %; switch share human 30.0 %, S-P 36.6 %, S-P0 33.9 %.
+
+### S-S regenerated under the panel rule (A2.1)
+
+Manifest **sha256 `3f81f71c5ece664e1983294343d8013e0cb8b8eaaa9e80305067166e41d26ff4`** (`~/gen3ai_archive/x59s/ss_rows_v2/`):
+seed 5910; parts 0–7 (each 180,6xx rows, sized on r1's counts so either rowset fits) and the validation top-up part 8;
+merged to r2's exact counts and 74 shard sizes. 111,488 team-pair draws, 92,750 redrawn: **16.8 % of pairs passed**
+(the human rule kept 16.8 % of candidate battles); 12 games of < 11 turns dropped; 15,069 games used, every one of
+the 719 pool teams used at least once, effective number 558.4; the pairs in `games.npz` (sha256 `2087b483…`). A merge
+to r1's counts, made as a side effect of part 7's job before r2 existed, was set aside unregistered
+(`ss_rows_v2/superseded_r1_merge/`).
+
+### Registration and readiness
+
+[`results/registration_a2.json`](results/registration_a2.json) (`checks register --labels0 --require-panel-rule`):
+**PASS**, no problems: rows `2a413c85…`, S-P labels `2512c8a7…`, S-P0 labels `8f511ca5…`, S-S `3f81f71c…`, reveal
+profile `1529f5ac…`, P\* `814823c5…91ed`. It REPLACES Amendment 1's `registration.json` for every student: the trainer
+refuses any other input given `--registration results/registration_a2.json`, and a student trained on Amendment 1's
+inputs is VOID.
+
+**S-H, S-P, S-S and S-P0 are READY to train** under a GPU lease, in this order: the CUDA pre-flight (A2.9) must PASS
+first, then `window.py` (15 primary students, then 5 S-P0). **≈ 3.6 GPU-h** (ESTIMATE: Amendment 1's unmeasured
+≈ 3 GPU-h for 15 students × 7,041 / 7,800, plus 5 S-P0; the pre-flight measures ms a step). Before any read: FR-2
+(A2.5) and the floor references (A2.6), both CPU.

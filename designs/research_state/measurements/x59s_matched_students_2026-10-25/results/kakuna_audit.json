@@ -1,0 +1,557 @@
+{
+ "accounts": {
+  "full_table": "~/gen3ai_archive/x59s/kakuna_audit_v1/kakuna_audit_full.json",
+  "full_table_sha256": "9ac97024a462a1b1e771a0aa16bc0f5251e6250fef7a93f21e53a0aaf7645f16",
+  "n": 1073,
+  "flagged": [
+   {
+    "S": 0.09392647184677783,
+    "S_HOM": -1.0921992437692156,
+    "acct": "165889998481155745",
+    "chat_per_game": 0.1,
+    "flagged": true,
+    "games": 13,
+    "kakuna_argmax": 0.5869565217391305,
+    "kakuna_decisions": 184,
+    "ll_hom": -0.8977632053335836,
+    "ll_kakuna": -1.9899624491027992,
+    "ll_pstar": -2.083888920949577,
+    "pstar_rows": 180,
+    "rows": 259,
+    "sampled": 10,
+    "scored": true,
+    "scored_games": 10,
+    "split": "train"
+   },
+   {
+    "S": 0.06221271299952691,
+    "S_HOM": -0.8413421139780655,
+    "acct": "430288782664702939",
+    "chat_per_game": 0.0,
+    "flagged": true,
+    "games": 21,
+    "kakuna_argmax": 0.5650224215246636,
+    "kakuna_decisions": 223,
+    "ll_hom": -1.0165027453220434,
+    "ll_kakuna": -1.857844859300109,
+    "ll_pstar": -1.9200575722996358,
+    "pstar_rows": 220,
+    "rows": 492,
+    "sampled": 10,
+    "scored": true,
+    "scored_games": 10,
+    "split": "train"
+   },
+   {
+    "S": 0.037646775072952554,
+    "S_HOM": -1.004448431707435,
+    "acct": "1078391349602155686",
+    "chat_per_game": 0.0,
+    "flagged": true,
+    "games": 13,
+    "kakuna_argmax": 0.5384615384615384,
+    "kakuna_decisions": 234,
+    "ll_hom": -1.3923605859544688,
+    "ll_kakuna": -2.3968090176619037,
+    "ll_pstar": -2.4344557927348562,
+    "pstar_rows": 231,
+    "rows": 361,
+    "sampled": 10,
+    "scored": true,
+    "scored_games": 10,
+    "split": "train"
+   },
+   {
+    "S": 0.01956746991282099,
+    "S_HOM": -0.9761366243283913,
+    "acct": "874952277021425716",
+    "chat_per_game": 0.0,
+    "flagged": true,
+    "games": 18,
+    "kakuna_argmax": 0.5752212389380531,
+    "kakuna_decisions": 226,
+    "ll_hom": -1.1414272245089523,
+    "ll_kakuna": -2.1175638488373436,
+    "ll_pstar": -2.1371313187501646,
+    "pstar_rows": 222,
+    "rows": 467,
+    "sampled": 10,
+    "scored": true,
+    "scored_games": 10,
+    "split": "train"
+   },
+   {
+    "S": -0.020016621384573163,
+    "S_HOM": -1.0243210814318382,
+    "acct": "1079174059676396488",
+    "chat_per_game": 0.3,
+    "flagged": true,
+    "games": 19,
+    "kakuna_argmax": 0.4982078853046595,
+    "kakuna_decisions": 279,
+    "ll_hom": -1.287753857688398,
+    "ll_kakuna": -2.312074939120236,
+    "ll_pstar": -2.292058317735663,
+    "pstar_rows": 327,
+    "rows": 546,
+    "sampled": 10,
+    "scored": true,
+    "scored_games": 10,
+    "split": "train"
+   },
+   {
+    "S": -0.06926674903906793,
+    "S_HOM": -1.3621786873399253,
+    "acct": "169174032405809763",
+    "chat_per_game": 0.0,
+    "flagged": true,
+    "games": 14,
+    "kakuna_argmax": 0.48346055979643765,
+    "kakuna_decisions": 393,
+    "ll_hom": -1.1660974314667303,
+    "ll_kakuna": -2.5282761188066556,
+    "ll_pstar": -2.4590093697675877,
+    "pstar_rows": 388,
+    "rows": 543,
+    "sampled": 10,
+    "scored": true,
+    "scored_games": 10,
+    "split": "train"
+   },
+   {
+    "S": -0.11450473858113308,
+    "S_HOM": -0.8778161884733229,
+    "acct": "504626807292284474",
+    "chat_per_game": 0.0,
+    "flagged": true,
+    "games": 66,
+    "kakuna_argmax": 0.6096774193548387,
+    "kakuna_decisions": 310,
+    "ll_hom": -0.9324895650710681,
+    "ll_kakuna": -1.810305753544391,
+    "ll_pstar": -1.6958010149632579,
+    "pstar_rows": 307,
+    "rows": 1744,
+    "sampled": 10,
+    "scored": true,
+    "scored_games": 10,
+    "split": "train"
+   },
+   {
+    "S": -0.12952109161944003,
+    "S_HOM": -1.2887038501083965,
+    "acct": "311771266404854501",
+    "chat_per_game": 2.6,
+    "flagged": true,
+    "games": 23,
+    "kakuna_argmax": 0.4782608695652174,
+    "kakuna_decisions": 276,
+    "ll_hom": -1.288838548356599,
+    "ll_kakuna": -2.5775423984649954,
+    "ll_pstar": -2.4480213068455554,
+    "pstar_rows": 271,
+    "rows": 789,
+    "sampled": 10,
+    "scored": true,
+    "scored_games": 10,
+    "split": "train"
+   },
+   {
+    "S": -0.1466916537536762,
+    "S_HOM": -1.247369266417799,
+    "acct": "952737457028253272",
+    "chat_per_game": 0.3,
+    "flagged": true,
+    "games": 549,
+    "kakuna_argmax": 0.43462897526501765,
+    "kakuna_decisions": 283,
+    "ll_hom": -1.4995736229004402,
+    "ll_kakuna": -2.7469428893182393,
+    "ll_pstar": -2.600251235564563,
+    "pstar_rows": 279,
+    "rows": 15215,
+    "sampled": 10,
+    "scored": true,
+    "scored_games": 10,
+    "split": "train"
+   },
+   {
+    "S": -0.22285500435345762,
+    "S_HOM": -1.0311336873711259,
+    "acct": "732762436636099749",
+    "chat_per_game": 0.0,
+    "flagged": true,
+    "games": 95,
+    "kakuna_argmax": 0.5544041450777202,
+    "kakuna_decisions": 193,
+    "ll_hom": -1.2746489210246548,
+    "ll_kakuna": -2.3057826083957806,
+    "ll_pstar": -2.082927604042323,
+    "pstar_rows": 182,
+    "rows": 2191,
+    "sampled": 10,
+    "scored": true,
+    "scored_games": 10,
+    "split": "train"
+   },
+   {
+    "S": -0.2237876868294828,
+    "S_HOM": -1.073830086530191,
+    "acct": "564774473014842216",
+    "chat_per_game": 0.0,
+    "flagged": true,
+    "games": 12,
+    "kakuna_argmax": 0.5142857142857142,
+    "kakuna_decisions": 350,
+    "ll_hom": -1.1732867826549591,
+    "ll_kakuna": -2.24711686918515,
+    "ll_pstar": -2.0233291823556674,
+    "pstar_rows": 344,
+    "rows": 439,
+    "sampled": 10,
+    "scored": true,
+    "scored_games": 10,
+    "split": "train"
+   }
+  ]
+ },
+ "controls": {
+  "Kakuna": {
+   "failures": {},
+   "games": 1580,
+   "power": {
+    "pseudo_above_p99": 158,
+    "pseudo_accounts": 158,
+    "pseudo_median_ll_kakuna": -0.7978806412992441,
+    "reference_p99_ll_kakuna": -2.026662133806522,
+    "verdict": "POWER"
+   },
+   "pseudo_argmax": {
+    "max": 0.8934169278996865,
+    "mean": 0.7876296443069294,
+    "min": 0.6492985971943888,
+    "n": 158,
+    "p01": 0.6722088701388723,
+    "p50": 0.7939886480908153,
+    "p99": 0.8670183772192301
+   },
+   "pseudo_ll_kakuna": {
+    "max": -0.47113504276549323,
+    "mean": -0.8152448592073929,
+    "min": -1.4605017763806463,
+    "n": 158,
+    "p01": -1.1965648692658726,
+    "p50": -0.7978806412992441,
+    "p99": -0.5100981671517789
+   },
+   "scored_games": 1580,
+   "pseudo_median_argmax": 0.7939886480908153
+  },
+  "LargeIL": {
+   "failures": {},
+   "games": 451,
+   "power": {
+    "pseudo_above_p99": 0,
+    "pseudo_accounts": 45,
+    "pseudo_median_ll_kakuna": -2.8296865105420412,
+    "reference_p99_ll_kakuna": -2.026662133806522,
+    "verdict": "NO-POWER"
+   },
+   "pseudo_argmax": {
+    "max": 0.5297619047619048,
+    "mean": 0.4539973147198172,
+    "min": 0.3813953488372093,
+    "n": 45,
+    "p01": 0.3839472490073738,
+    "p50": 0.45011600928074247,
+    "p99": 0.5261056105610561
+   },
+   "pseudo_ll_kakuna": {
+    "max": -2.384850054931475,
+    "mean": -2.8326031620117806,
+    "min": -3.237204747067312,
+    "n": 45,
+    "p01": -3.2291824460618255,
+    "p50": -2.8296865105420412,
+    "p99": -2.4098885294947547
+   },
+   "scored_games": 451,
+   "pseudo_median_argmax": 0.45011600928074247
+  },
+  "LargeRL": {
+   "failures": {
+    "parse:UnfinishedReplayException": 1
+   },
+   "games": 477,
+   "power": {
+    "pseudo_above_p99": 13,
+    "pseudo_accounts": 47,
+    "pseudo_median_ll_kakuna": -2.1300376576488063,
+    "reference_p99_ll_kakuna": -2.026662133806522,
+    "verdict": "NO-POWER"
+   },
+   "pseudo_argmax": {
+    "max": 0.6195965417867435,
+    "mean": 0.5324068804107956,
+    "min": 0.4058679706601467,
+    "n": 47,
+    "p01": 0.41041870415647924,
+    "p50": 0.5376106194690266,
+    "p99": 0.6194445178859423
+   },
+   "pseudo_ll_kakuna": {
+    "max": -1.6926261352682903,
+    "mean": -2.174764870979778,
+    "min": -3.0856572719957094,
+    "n": 47,
+    "p01": -2.9914076635001825,
+    "p50": -2.1300376576488063,
+    "p99": -1.6927960048085477
+   },
+   "scored_games": 476,
+   "pseudo_median_argmax": 0.5376106194690266
+  },
+  "PastaMittens": {
+   "failures": {},
+   "games": 909,
+   "power": {
+    "pseudo_above_p99": 90,
+    "pseudo_accounts": 90,
+    "pseudo_median_ll_kakuna": -1.0994457479395447,
+    "reference_p99_ll_kakuna": -2.026662133806522,
+    "verdict": "POWER"
+   },
+   "pseudo_argmax": {
+    "max": 0.7783018867924528,
+    "mean": 0.7102230308307085,
+    "min": 0.5837004405286343,
+    "n": 90,
+    "p01": 0.6179442147825851,
+    "p50": 0.7168143324515129,
+    "p99": 0.7741728783290628
+   },
+   "pseudo_ll_kakuna": {
+    "max": -0.7794939124759017,
+    "mean": -1.1114135137932901,
+    "min": -1.7360360322081076,
+    "n": 90,
+    "p01": -1.52309646583736,
+    "p50": -1.0994457479395447,
+    "p99": -0.829275223667656
+   },
+   "scored_games": 909,
+   "pseudo_median_argmax": 0.7168143324515129
+  },
+  "SmallRL": {
+   "failures": {},
+   "games": 1583,
+   "power": {
+    "pseudo_above_p99": 28,
+    "pseudo_accounts": 158,
+    "pseudo_median_ll_kakuna": -2.2290847998315133,
+    "reference_p99_ll_kakuna": -2.026662133806522,
+    "verdict": "NO-POWER"
+   },
+   "pseudo_argmax": {
+    "max": 0.6112759643916914,
+    "mean": 0.5197317903579073,
+    "min": 0.40636042402826855,
+    "n": 158,
+    "p01": 0.4274208522401294,
+    "p50": 0.5268643759781084,
+    "p99": 0.6009892804196603
+   },
+   "pseudo_ll_kakuna": {
+    "max": -1.7502005771788298,
+    "mean": -2.2401064280278806,
+    "min": -2.8885787406337435,
+    "n": 158,
+    "p01": -2.7805256782725465,
+    "p50": -2.2290847998315133,
+    "p99": -1.8228679065351567
+   },
+   "scored_games": 1583,
+   "pseudo_median_argmax": 0.5268643759781084
+  },
+  "export_counts": {
+   "capture_unpaired:Kakuna": 20,
+   "capture_unpaired:LargeIL": 9,
+   "capture_unpaired:LargeRL": 3,
+   "capture_unpaired:PastaMittens": 11,
+   "capture_unpaired:SmallRL": 17,
+   "captures:Kakuna": 1580,
+   "captures:LargeIL": 451,
+   "captures:LargeRL": 477,
+   "captures:PastaMittens": 909,
+   "captures:SmallRL": 1583,
+   "cell_skipped_incomplete:LargeIL": 1,
+   "cell_skipped_incomplete:PastaMittens": 1
+  }
+ },
+ "distributions": {
+  "S": {
+   "max": 0.09392647184677783,
+   "mean": -0.8674206416298363,
+   "min": -1.724893554059602,
+   "n": 1073,
+   "p01": -1.4200396321010842,
+   "p50": -0.8779245161227673,
+   "p99": -0.22747153690641794
+  },
+  "S_HOM": {
+   "max": -0.8202370885298256,
+   "mean": -1.4934002911509883,
+   "min": -2.843328858176197,
+   "n": 1073,
+   "p01": -2.071549499745745,
+   "p50": -1.4938385586241252,
+   "p99": -0.9730137161799294
+  },
+  "kakuna_argmax": {
+   "max": 0.6096774193548387,
+   "mean": 0.465487058514393,
+   "min": 0.2811594202898551,
+   "n": 1073,
+   "p01": 0.3568461212378126,
+   "p50": 0.46438746438746437,
+   "p99": 0.5856072675812011
+  },
+  "ll_hom": {
+   "max": -0.8977632053335836,
+   "mean": -1.226581705695625,
+   "min": -1.6965150463141876,
+   "n": 1073,
+   "p01": -1.4976379882536477,
+   "p50": -1.2246398271935641,
+   "p99": -0.9797154626576527
+  },
+  "ll_kakuna": {
+   "max": -1.810305753544391,
+   "mean": -2.719981996846613,
+   "min": -4.138051215182929,
+   "n": 1073,
+   "p01": -3.390934411827246,
+   "p50": -2.7231983640661146,
+   "p99": -2.026662133806522
+  },
+  "ll_pstar": {
+   "max": -1.3437130518709355,
+   "mean": -1.8525613552167768,
+   "min": -2.600251235564563,
+   "n": 1073,
+   "p01": -2.4094111637196116,
+   "p50": -1.8489474449934487,
+   "p99": -1.4547370703429896
+  }
+ },
+ "flag": {
+  "boundary_accounts": 0,
+  "drop_fires": true,
+  "drop_list": "/home/goodlad/gen3ai_archive/x59s/kakuna_audit_v1/drop_list.json",
+  "drop_list_sha256": "4d53e2e37a1e99b11f3f54f366d6de506ceae972f9fc46000d84ae81d42c6741",
+  "drop_rule": "flagged TRAIN rows > 1 % of r1 TRAIN rows",
+  "flagged_accounts": 11,
+  "flagged_train_row_share": 0.01731728595162792,
+  "flagged_train_rows": 23046,
+  "flagged_val_rows": 0,
+  "reference_p99_S": -0.22747153690641794
+ },
+ "idents": {
+  "controls_kakuna_ident.json": {
+   "agent": "Kakuna",
+   "attention": "WindowedVanillaAttention",
+   "attention_window": [
+    96,
+    0
+   ],
+   "checkpoint": 34,
+   "ckpt_path": "/home/goodlad/dev/metamon/cache/pretrained_models/models--jakegrigsby--metamon/snapshots/ac8e88e7da8dc2a2b85176d88f81fd8854b1445b/kakuna/ckpts/policy_weights/policy_epoch_34.pt",
+   "ckpt_sha256": "7e7474d5b2ec6624afdeb29a7cf1dc5c84817d5aee8ec39c1d35a153b18df26c",
+   "hf_hub_offline": true,
+   "hf_revision": "ac8e88e7da8dc2a2b85176d88f81fd8854b1445b",
+   "max_steps": 128,
+   "metamon_side": "/home/goodlad/dev/gen3ai/.claude/worktrees/x59s-review-e/src/main/anchors/peer_scripts/metamon_side.py",
+   "metamon_side_sha256": "f784aae45fdc0054d3aabb8a42dfad6d91b88531df17661d8b484cefd0b7f913",
+   "schema": "gen3_kakuna_audit_metamon_v1",
+   "script_sha256": "01ea0940301f3189b83316bffeca016c109633e9689374b66f43bceba429650d",
+   "threads": 2
+  },
+  "kakuna_ident.json": {
+   "agent": "Kakuna",
+   "attention": "WindowedVanillaAttention",
+   "attention_window": [
+    96,
+    0
+   ],
+   "checkpoint": 34,
+   "ckpt_path": "/home/goodlad/dev/metamon/cache/pretrained_models/models--jakegrigsby--metamon/snapshots/ac8e88e7da8dc2a2b85176d88f81fd8854b1445b/kakuna/ckpts/policy_weights/policy_epoch_34.pt",
+   "ckpt_sha256": "7e7474d5b2ec6624afdeb29a7cf1dc5c84817d5aee8ec39c1d35a153b18df26c",
+   "hf_hub_offline": true,
+   "hf_revision": "ac8e88e7da8dc2a2b85176d88f81fd8854b1445b",
+   "max_steps": 128,
+   "metamon_side": "/home/goodlad/dev/gen3ai/.claude/worktrees/x59s-review-e/src/main/anchors/peer_scripts/metamon_side.py",
+   "metamon_side_sha256": "f784aae45fdc0054d3aabb8a42dfad6d91b88531df17661d8b484cefd0b7f913",
+   "schema": "gen3_kakuna_audit_metamon_v1",
+   "script_sha256": "01ea0940301f3189b83316bffeca016c109633e9689374b66f43bceba429650d",
+   "threads": 2
+  }
+ },
+ "reference": {
+  "mode": "all_scored",
+  "qualifying_accounts": 97,
+  "size": 1073
+ },
+ "reference_distributions": {
+  "S": {
+   "max": 0.09392647184677783,
+   "mean": -0.8674206416298363,
+   "min": -1.724893554059602,
+   "n": 1073,
+   "p01": -1.4200396321010842,
+   "p50": -0.8779245161227673,
+   "p99": -0.22747153690641794
+  },
+  "ll_kakuna": {
+   "max": -1.810305753544391,
+   "mean": -2.719981996846613,
+   "min": -4.138051215182929,
+   "n": 1073,
+   "p01": -3.390934411827246,
+   "p50": -2.7231983640661146,
+   "p99": -2.026662133806522
+  }
+ },
+ "rows_manifest_sha256": "e9e0df4224b589798dc507d005c60bcaa8ede9744e1e7403901664899e8fe492",
+ "rowset": "hr_spec_v1.r1",
+ "rule": "PREREG Amendment 2 (X59-S REVIEW E B2)",
+ "schema": "gen3_kakuna_audit_v1",
+ "scoring": {
+  "accounts_scored": 1073,
+  "accounts_unscored": 0,
+  "kakuna_decisions_cut_past_max_steps": 2217,
+  "scored_seat_games": 10723,
+  "seat_games": 10730,
+  "unscored_by_reason": {
+   "kakuna_parse:ForwardVerify": 1,
+   "kakuna_parse:UnimplementedMessage": 1,
+   "kakuna_parse:UnusualTeamSize": 5
+  },
+  "unscored_train_row_share": 0.0
+ },
+ "universe": {
+  "accounts_audited": 1073,
+  "accounts_total": 3500,
+  "audited_by_split": {
+   "train": 1051,
+   "val": 22
+  },
+  "sampled_seat_games": 10730,
+  "train_rows": 1330809,
+  "unaudited_rows": {
+   "train": 224658,
+   "val": 4875
+  },
+  "unaudited_train_row_share": 0.16881310541182093,
+  "val_rows": 32102
+ }
+}

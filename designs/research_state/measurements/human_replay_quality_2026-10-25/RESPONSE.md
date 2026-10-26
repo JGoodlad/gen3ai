@@ -190,4 +190,9 @@ regenerated S-S rows or any training) and **Amendment 2b** (the inputs as built)
 | **E-M8** no rule when Kakuna and the in-house meter disagree | **FIXED:** KAKUNA-SPECIFIC (in code, `x59s_read.verdict`); the in-house head-to-heads play for every read |
 | E-m1 … E-m7 | **FIXED as reporting rules** (Amendment 2 A2.11); E-m4 (the trainer refuses unregistered inputs) is enforced in code (`student --registration`); E-m7 also changes S-S (the < 11-turn drop) |
 
-The audit's result, the derived rowset's counts and the regenerated S-S registration are in Amendment 2b.
+**Amendment 2b (the inputs as built).** The audit has POWER (Kakuna's own seats: 158 / 158 pseudo-accounts above
+the human p99) and found no Kakuna-like account; its registered rule still fired (11 accounts, 1.73 % of r1's TRAIN
+rows, flagged because P\* fits them badly) and they were dropped as registered. `hr_spec_v1.r2`: 1,201,538 / 29,904
+rows (−108,740 quitter-tail and −20,531 flagged TRAIN rows); 7,041 steps a student. S-S regenerated: 16.8 % of pool
+pairs passed, matching the human rule's 16.8 %. `registration_a2.json` PASS. S-H, S-P, S-S and S-P0 are READY to
+train (≈ 3.6 GPU-h, the CUDA pre-flight first).
