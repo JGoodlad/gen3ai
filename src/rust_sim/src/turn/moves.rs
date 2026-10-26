@@ -238,6 +238,14 @@ impl crate::state::BattleState {
         if !pursuit_strike && !sleep_talk_call {
             self.sides[side].pokemon[slot].active_move_actions =
                 self.sides[side].pokemon[slot].active_move_actions.saturating_add(1);
+            // RAGE's volatile is removed by the holder's own next move ATTEMPT: `rage.condition.
+            // onBeforeMove` at PRIORITY 100 (data/moves.ts:14575-14579) runs before every cant
+            // gate (mustrecharge 11, slp/frz 10, truant 9, flinch 8, disable 7, confusion 3,
+            // par 1), so a sleeping / paralysed / flinched Rage user loses it too
+            // (`gen3_bf_rage_v1`, probe `harness/probe_bf_classes.js` BF1b). The Pursuit strike
+            // and a Sleep-Talk-called move are `useMove` (no BeforeMove), so they keep it. The
+            // Rage arm in the landed tail re-sets it for a fresh cast.
+            self.sides[side].pokemon[slot].rage = false;
         }
         let (never_miss, base_power) = if pursuit_strike {
             (true, base_power.saturating_mul(2))
@@ -353,21 +361,14 @@ impl crate::state::BattleState {
                 base_power
             }
         } else if move_id == "furycutter" {
-            // The sim ADDS the volatile from INSIDE `basePowerCallback` and then reads it, so
-            // the FIRST use is bp 10 × 1 and each CONSECUTIVE use doubles (multiplier `<< 1`
-            // while `< 16`), clamped to 160. `duration: 2` refreshed on every restart, so one
-            // non-Fury-Cutter turn lapses it.
-            let mult = match self.sides[side].pokemon[slot].fury_cutter {
-                None => 1u8,
-                Some((m, _)) => {
-                    if m < 16 {
-                        m * 2
-                    } else {
-                        m
-                    }
-                }
-            };
-            self.sides[side].pokemon[slot].fury_cutter = Some((mult, 2));
+            // The BP READS the volatile's multiplier (1 when absent: the `basePowerCallback`'s
+            // `addVolatile` → `onStart` sets 1), clamped to 160. NOTHING is mutated here: this
+            // runs before BeforeMove and accuracy, while the sim's callback runs inside
+            // `getDamage`. The volatile is ADDED where getDamage starts (before the crit roll)
+            // and its multiplier DOUBLES in the gen-3 move `onHit` (`source.addVolatile` →
+            // `onRestart`, data/mods/gen3/moves.ts:325-330), both in `run_move`
+            // (`gen3_bf_furycutter_v1`, probe `harness/probe_bf_classes.js` BF2).
+            let mult = self.sides[side].pokemon[slot].fury_cutter.map_or(1u8, |(m, _)| m);
             (base_power as u32 * mult as u32).clamp(1, 160) as u16
         } else if matches!(move_id.as_str(), "waterspout" | "eruption") {
             let mon = &self.sides[side].pokemon[slot];
@@ -597,6 +598,25 @@ impl crate::state::BattleState {
             return MoveResolution::aborted();
         }
 
+        // --- THE DEFROST THAW (`gen3_defrost_v1`, re-placed by `gen3_bf_defrost_after_beforemove_v1`):
+        //     a user still frozen here passed BeforeMove only because its move is a `flags.defrost`
+        //     move (Flame Wheel / Sacred Fire) whose thaw roll failed. The resolved gen3
+        //     `frz.onModifyMove` thaws it in `useMoveInner` (`|-curestatus|<mon>|frz|[from] move:
+        //     <Move>` before the `|move|` line), so AFTER the confusion `-activate` and every other
+        //     BeforeMove handler, and NOT at all when one of them cancels the move (a confusion
+        //     self-hit, a full paralysis, a flinch: the user stays frozen). DRAW-FREE. ---
+        if self.sides[side].pokemon[slot].status == Some(Status::Freeze) {
+            self.sides[side].pokemon[slot].status = None;
+            if self.logging() {
+                let mv_name = dex
+                    .moves(&move_id)
+                    .map(|m| m.display_name().to_string())
+                    .unwrap_or_else(|| move_name.clone());
+                let mon_ref = self.mon_ref(side, slot, dex);
+                self.log.curestatus_from_move(&mon_ref, "frz", &mv_name);
+            }
+        }
+
         // --- DESTINY BOND's `onBeforeMove` (priority −1, `gen3_move_coverage_batch6_v1`):
         //     the LOWEST-priority BeforeMove handler — it runs only after every cant gate
         //     PASSED (an abort was handled above via onMoveAborted) and removes a still-up
@@ -701,10 +721,6 @@ impl crate::state::BattleState {
         // `gen3_mimic_disable_self_overwrite_v1`: reset the self-overwrite flag for EVERY move;
         // the Mimic success block re-sets it TRUE after it overlays its own slot.
         self.sides[side].pokemon[slot].last_move_was_self_overwrite = false;
-        // RAGE's volatile is removed by the HOLDER's OWN next move (`onBeforeMove` at
-        // priority 100) — so the boost window is exactly "from casting Rage until I act
-        // again". Cleared AFTER the Rage arm below re-sets it for a fresh cast.
-        self.sides[side].pokemon[slot].rage = false;
         } // end `if !pursuit_strike && !sleep_talk_call` (on_before_move + PP + lastMove)
 
         // --- FOCUS PUNCH onTry cancel (`gen3_move_coverage_batch4_v1`,
@@ -1525,6 +1541,36 @@ impl crate::state::BattleState {
                     }
                 }
             }
+        }
+
+        // --- UPROAR's WAKE (`gen3_uproar_v1`, re-placed by `gen3_bf_uproar_wake_order_v1`): the
+        //     MOVE's own `onTryHit` (data/moves.ts:20230-20238) cures `slp` on BOTH ACTIVES at
+        //     `singleEvent('TryHit')`, the top of `spreadMoveHit` (sim/battle-actions.ts:1065) —
+        //     after the accuracy roll, Protect, the type immunity and the move line, BEFORE the
+        //     substitute check, the effectiveness / crit lines and `-damage` (so the `-damage` HP
+        //     field carries no `slp`). A miss, an immune target or a Protect returned above; a
+        //     benched sleeper is never cured. DRAW-FREE. [EMIT] the bare
+        //     `|-curestatus|<mon>|slp|[msg]` (`cureStatus()`, no `[from]`). Probe BF3. ---
+        if move_id == "uproar" {
+            for s2 in 0..2 {
+                let sl2 = self.sides[s2].active;
+                if matches!(self.sides[s2].pokemon[sl2].status, Some(Status::Sleep(_)))
+                    && self.sides[s2].pokemon[sl2].hp > 0
+                {
+                    self.sides[s2].pokemon[sl2].status = None;
+                    self.sides[s2].pokemon[sl2].sleep_from_rest = false;
+                    if self.logging() {
+                        let m = self.mon_ref(s2, sl2, dex);
+                        self.log.curestatus(&m, "slp", true);
+                    }
+                    // `uproar.onTryHit` → `cureStatus()` ends a NIGHTMARE (gen3_b5_moves_v1).
+                    self.end_nightmare_on_cure(s2, sl2, dex);
+                }
+            }
+        }
+
+        if self.logging() {
+            let target = self.mon_ref(foe, foe_slot, dex);
             // Effectiveness (the DEFENDER's ident) — the type-chart product of the
             // move type vs the defender's species types. `-supereffective` (>1) /
             // `-resisted` (<1, non-zero); a 0× is the immune path above. Emitted
@@ -1537,6 +1583,16 @@ impl crate::state::BattleState {
                     self.log.resisted(&target);
                 }
             }
+        }
+
+        // --- FURY CUTTER's volatile is ADDED here, where `getDamage` runs its
+        //     `basePowerCallback` (`if (!pokemon.volatiles['furycutter'] ...) addVolatile`,
+        //     data/moves.ts:6309-6312): only a use that reaches the damage step — not a cant, a
+        //     miss, a Protect or an immune target — and a hit a SUBSTITUTE takes still adds it
+        //     (the sub's `onTryPrimaryHit` calls `getDamage`). `onStart`: multiplier 1, duration
+        //     2. DRAW-FREE (`gen3_bf_furycutter_v1`, probe BF2). ---
+        if move_id == "furycutter" && self.sides[side].pokemon[slot].fury_cutter.is_none() {
+            self.sides[side].pokemon[slot].fury_cutter = Some((1, 2));
         }
 
         // --- 2. CRIT: randomChance(1, critMult[critRatio]) — UNCONDITIONAL for a
@@ -1636,19 +1692,26 @@ impl crate::state::BattleState {
             // a MOVE hit that would KO an endure-volatile holder is clamped to `hp − 1`,
             // `|-activate|…|move: Endure` emitted BEFORE the `|-damage|` (probe ED1).
             // DRAW-FREE. Fixed damage + each multihit strike have their own sites.
+            let realized = self.endure_clamp(foe, foe_slot, realized, dex);
             // FALSE SWIPE (`gen3_bp_modifier_cluster_v1`): an `onDamage` at priority -20 —
             // `if (damage >= target.hp) return target.hp - 1` — so a would-be KO is clamped to
             // leave exactly 1 HP. It is NOT a BP change: the probe shows the move computing
             // 839 damage into a 17-HP target and the target ending at 1. Priority -20 puts it
-            // AFTER Endure, which is why it sits here rather than inside the damage calc.
-            // DRAW-FREE, and skipped for a sub-absorbed hit (the sub is not `target`).
-            let realized = if move_id == "falseswipe" && !absorbed {
+            // AFTER Endure's -10 (`gen3_bf_false_swipe_zero_v1`: it used to run first, so a lethal
+            // swipe into an Endure user never printed Endure's `-activate`), and a 0 from Endure
+            // (a 1-HP endurer) ends the Damage relay before it (`runEvent` stops on a falsy relay),
+            // so it runs only on a non-zero amount. DRAW-FREE, and skipped for a sub-absorbed hit
+            // (the sub is not `target`). Probe BF5c / BF5d.
+            let pre_swipe = realized;
+            let realized = if move_id == "falseswipe" && realized > 0 {
                 let hp = self.sides[foe].pokemon[foe_slot].hp;
                 if realized >= hp && hp > 0 { hp - 1 } else { realized }
             } else {
                 realized
             };
-            let realized = self.endure_clamp(foe, foe_slot, realized, dex);
+            // A 1-HP target: False Swipe's OWN 0 (not Endure's, which printed its line itself),
+            // whose `-damage` line the gate below must print.
+            let false_swipe_zero = move_id == "falseswipe" && pre_swipe > 0 && realized == 0;
             // FOCUS BAND (`gen3_ability_batch4_v1`): the onDamage roll draws AFTER the
             // damage rolls, BEFORE the apply; a lethal MOVE hit that passes survives at
             // 1 HP (probe seed 8: crit path included). A sub-absorbed hit never draws.
@@ -1691,29 +1754,14 @@ impl crate::state::BattleState {
             // gen3 category (Struggle passes Physical explicitly; a variable-BP move was
             // re-categorized Physical at its BP override). DRAW-FREE.
             self.record_reactive_hit(foe, foe_slot, category, &move_id, dealt);
-            // RAGE (`gen3_rage_secretpower_v1`): a non-Status FOE move that HITS a mon holding
-            // the `rage` volatile raises THAT mon's Atk by one stage. DRAW-FREE, ±6 clamped.
-            if dealt > 0
-                && category != MoveCategory::Status
-                && self.sides[foe].pokemon[foe_slot].rage
-                && !self.sides[foe].pokemon[foe_slot].fainted
-            {
-                // `boosts` is in `STAT_TOKENS` order — Atk is index 0 (`gen3_boost_index_fixes_v1`:
-                // this read 1 = Def, so Rage raised Def and announced `|-boost|<u>|def|1`).
-                let cur = self.sides[foe].pokemon[foe_slot].boosts[0] as i32;
-                let next = (cur + 1).clamp(-6, 6);
-                self.sides[foe].pokemon[foe_slot].boosts[0] = next as i8;
-                if self.logging() && next != cur {
-                    let m = self.mon_ref(foe, foe_slot, dex);
-                    self.log.boost_applied(&m, 0, 1, (next - cur) as i8, next as i8);
-                }
-            }
             // [EMIT] `|-damage|<foe>|<HP>` with the POST-damage HP (`x/y`, `x/y
-            // <status>`, or `0 fnt` when the hit KO'd). Observation-only. A 0-damage
-            // move that reaches here (none modeled) would still emit — matching the
-            // sim's `-damage` on a 0 hit — but the modeled damaging moves always deal
-            // >=1 when not absorbed.
-            if realized > 0 && self.logging() {
+            // <status>`, or `0 fnt` when the hit KO'd). Observation-only. A FALSE SWIPE into a
+            // 1-HP target deals 0 and STILL prints it: `spreadDamage` keeps a 0 from the
+            // `onDamage` relay (`if (targetDamage !== 0) clampIntRange(…, 1)`) and reports the
+            // unchanged HP (`gen3_bf_false_swipe_zero_v1`, probe BF5a). The other 0-damage
+            // clamps (Endure / Focus Band at 1 HP) emit their own line (their helpers), and a
+            // 0 never reaches them from here (False Swipe's 0 ends the Damage relay).
+            if (realized > 0 || false_swipe_zero) && self.logging() {
                 let target = self.mon_ref(foe, foe_slot, dex);
                 let hp = self.hp_status(foe, foe_slot);
                 self.log.damage(&target, &hp, None);
@@ -1729,25 +1777,6 @@ impl crate::state::BattleState {
                 SubAbsorb::Held => self.log.activate(&target, "Substitute", Some("[damage]")),
                 SubAbsorb::Broke => self.log.volatile_end(&target, "Substitute"),
                 SubAbsorb::NoSub => unreachable!(),
-            }
-        }
-
-        // --- THE RECHARGE FAMILY's MUSTRECHARGE (`gen3_move_coverage_batch4c_v1`, widened by
-        //     `gen3_recharge_family_v1` to [`RECHARGE_MOVES`]: `self = {volatileStatus:
-        //     'mustrecharge'}` on all four in the resolved gen3 dex): applied on a SUCCESSFUL
-        //     damaging hit — plain hit, sub-absorb AND sub-break, AND a target-KO (the
-        //     `|-mustrecharge|` prints BEFORE `|faint|`, which `process_faints` emits
-        //     later; the lock persists across the opponent's force-switch). NOT on a miss
-        //     / immune / Protect-block (those returned above). DRAW-FREE (probed — the
-        //     self.volatileStatus apply consumes no PRNG, unlike the selfDrops boost
-        //     random(100)). Emitted `|-mustrecharge|<user>` right after the damage/sub
-        //     line (the probed position). ---
-        if RECHARGE_MOVES.contains(&move_id.as_str()) {
-            self.sides[side].pokemon[slot].must_recharge = true;
-            self.sides[side].pokemon[slot].must_recharge_duration = 2; // gen3_recharge_expiry_v1
-            if self.logging() {
-                let user = self.mon_ref(side, slot, dex);
-                self.log.must_recharge(&user);
             }
         }
 
@@ -1824,6 +1853,64 @@ impl crate::state::BattleState {
             self.apply_drain(side, slot, foe, foe_slot, drain_fraction, dealt, absorbed, dex);
         }
 
+        // --- THE `runMoveEffects` HIT EVENTS (`gen3_bf_onhit_order_v1`): after `spreadDamage`
+        //     (the `-damage` line and a drain heal) and the move's `volatileStatus` (a partial
+        //     trap), `runMoveEffects` runs the MOVE's `onHit` (`singleEvent('Hit')`) and then
+        //     `runEvent('Hit', target)` — the target's volatiles' `onHit` (sim/battle-actions.ts:
+        //     1298-1305) — BEFORE selfDrops (`-mustrecharge`, the self boosts) and secondaries.
+        //     Neither runs for a hit a SUBSTITUTE took (`HIT_SUBSTITUTE` nulls the target before
+        //     `runMoveEffects`, :1083-1086). All DRAW-FREE. ---
+        if !absorbed {
+            // SMELLING SALTS' `onHit` (`gen3_bp_modifier_cluster_v1`): `if (target.status ===
+            // 'par') target.cureStatus()`, and `cureStatus` returns at once on `!this.hp`
+            // (sim/pokemon.ts:1676): a KO'd paralysed target is NOT cured (probe BF4). The BP
+            // doubling above read the status first (`basePowerCallback` runs inside getDamage).
+            // [EMIT] `|-curestatus|<target>|par|[msg]`.
+            if move_id == "smellingsalts"
+                && self.sides[foe].pokemon[foe_slot].status == Some(Status::Paralysis)
+                && self.sides[foe].pokemon[foe_slot].hp > 0
+            {
+                self.sides[foe].pokemon[foe_slot].status = None;
+                if self.logging() {
+                    let t = self.mon_ref(foe, foe_slot, dex);
+                    self.log.curestatus(&t, "par", true);
+                }
+            }
+            // FURY CUTTER's gen-3 `onHit` (data/mods/gen3/moves.ts:325-330): `source.addVolatile(
+            // 'furycutter')` on a volatile the damage step just added → `onRestart`: the
+            // multiplier doubles while `< 16` and the duration goes back to 2 (probe BF2).
+            if move_id == "furycutter" {
+                if let Some((m, _)) = self.sides[side].pokemon[slot].fury_cutter {
+                    let m = if m < 16 { m * 2 } else { m };
+                    self.sides[side].pokemon[slot].fury_cutter = Some((m, 2));
+                }
+            }
+            // RAGE's reaction (the target's `rage` volatile `onHit`, probe BF1).
+            if category != MoveCategory::Status {
+                self.rage_on_hit(foe, foe_slot, dex);
+            }
+        }
+
+        // --- THE RECHARGE FAMILY's MUSTRECHARGE (`gen3_move_coverage_batch4c_v1`, widened by
+        //     `gen3_recharge_family_v1` to [`RECHARGE_MOVES`]: `self = {volatileStatus:
+        //     'mustrecharge'}` on all four in the resolved gen3 dex): applied on a SUCCESSFUL
+        //     damaging hit — plain hit, sub-absorb AND sub-break, AND a target-KO (the
+        //     `|-mustrecharge|` prints BEFORE `|faint|`, which `process_faints` emits
+        //     later; the lock persists across the opponent's force-switch). NOT on a miss
+        //     / immune / Protect-block (those returned above). DRAW-FREE (probed — the
+        //     self.volatileStatus apply consumes no PRNG, unlike the selfDrops boost
+        //     random(100)). Emitted `|-mustrecharge|<user>` right after the damage/sub
+        //     line (the probed position). ---
+        if RECHARGE_MOVES.contains(&move_id.as_str()) {
+            self.sides[side].pokemon[slot].must_recharge = true;
+            self.sides[side].pokemon[slot].must_recharge_duration = 2; // gen3_recharge_expiry_v1
+            if self.logging() {
+                let user = self.mon_ref(side, slot, dex);
+                self.log.must_recharge(&user);
+            }
+        }
+
+
         // --- BATCH-1 SELF STAT-DROP (`gen3_move_coverage_batch1_v1`, `move.self.boosts`) —
         //     the sim's `selfDrops` (battle-actions.ts:1338), AFTER runMoveEffects/drain +
         //     BEFORE secondaries. Fires on ANY landed hit INCLUDING behind a sub (it targets
@@ -1856,44 +1943,6 @@ impl crate::state::BattleState {
         //     continuing turn just re-runs the locked slot. A CAST that did not LAND (miss /
         //     type-IMMUNE Ghost / Protect-blocked) returned before this point, so it applies
         //     NO volatile and draws no duration, though its PP is already spent — probed. ---
-        // --- SMELLING SALTS' onHit CURE (`gen3_bp_modifier_cluster_v1`): after a landed hit,
-        //     a PARALYZED target is cured. The BP doubling above read the status BEFORE this,
-        //     which is the sim's order (basePowerCallback runs inside getDamage, onHit after).
-        //     DRAW-FREE. [EMIT] `|-curestatus|<target>|par|[msg]`. ---
-        if move_id == "smellingsalts"
-            && self.sides[foe].pokemon[foe_slot].status == Some(Status::Paralysis)
-            && !self.sides[foe].pokemon[foe_slot].fainted
-        {
-            self.sides[foe].pokemon[foe_slot].status = None;
-            if self.logging() {
-                let t = self.mon_ref(foe, foe_slot, dex);
-                self.log.curestatus(&t, "par", true);
-            }
-        }
-
-        // --- UPROAR's WAKE (`gen3_uproar_v1`): a LANDED uproar cures `slp` on BOTH ACTIVES
-        //     (the MOVE's own `onTryHit`, DRAW-FREE) — NOT on a miss, NOT on a type-IMMUNE
-        //     target, and NEVER for a BENCHED sleeper. Emitted as a BARE
-        //     `|-curestatus|<mon>|slp|[msg]` with no `[from]` clause. Both of those returned
-        //     before this point, so simply reaching here means the hit landed. ---
-        if move_id == "uproar" {
-            for s2 in 0..2 {
-                let sl2 = self.sides[s2].active;
-                if matches!(self.sides[s2].pokemon[sl2].status, Some(Status::Sleep(_)))
-                    && !self.sides[s2].pokemon[sl2].fainted
-                {
-                    self.sides[s2].pokemon[sl2].status = None;
-                    self.sides[s2].pokemon[sl2].sleep_from_rest = false;
-                    if self.logging() {
-                        let m = self.mon_ref(s2, sl2, dex);
-                        self.log.curestatus(&m, "slp", true);
-                    }
-                    // `uproar.onTryHit` → `cureStatus()` ends a NIGHTMARE (gen3_b5_moves_v1).
-                    self.end_nightmare_on_cure(s2, sl2, dex);
-                }
-            }
-        }
-
         // --- THE LOCK-IN FAMILY (`gen3_lockin_family_v1`): OUTRAGE / PETAL DANCE / THRASH
         //     share ONE `lockedmove` condition. The duration is a `random(2,4)` (→ 2 or 3)
         //     drawn ONCE on the CAST turn, after the damage. Unlike Uproar the condition emits
@@ -2391,6 +2440,8 @@ impl crate::state::BattleState {
                     let hp = self.hp_status(foe, foe_slot);
                     self.log.damage(&target, &hp, None);
                 }
+                // RAGE reacts to each strike (`runEvent('Hit')` per `moveHit`, `gen3_bf_rage_v1`).
+                self.rage_on_hit(foe, foe_slot, dex);
             } else if self.logging() {
                 let target = self.mon_ref(foe, foe_slot, dex);
                 match sub {
@@ -2522,11 +2573,27 @@ impl crate::state::BattleState {
         // Punch / Stick), read once (constant across the multi-strike).
         let eff_crit_ratio = self.effective_crit_ratio(side, slot, crit_ratio, dex);
 
+        // A user asleep BEFORE the first strike was called by Sleep Talk (the only way to run a
+        // move while asleep; no gen-3 multi-hit move is itself `sleepUsable`), so the sim's
+        // `isSleepUsable` (`move.sleepUsable || dex.moves.get(move.sourceEffect).sleepUsable`) is
+        // true and its sleep guard never fires.
+        let sleep_usable = matches!(self.sides[side].pokemon[slot].status, Some(Status::Sleep(_)));
         let mut hits = 0u32;
         for _ in 0..count {
             // STOP if the target already fainted (a prior strike KO'd it, OR the target entered
             // at 0 HP) — the sim's `targets.every(!hp)` guard at the top of each iteration.
             if self.sides[foe].pokemon[foe_slot].hp == 0 {
+                break;
+            }
+            // STOP if the USER fainted (a Rough Skin recoil between strikes) or fell asleep (an
+            // Effect Spore sleep) — gen 3's loop (data/mods/gen3/scripts.ts:409-410): `for (i = 0;
+            // i < hits && target.hp && pokemon.hp; i++) { if (pokemon.status === 'slp' &&
+            // !isSleepUsable) break; ...}` (`gen3_bf_multihit_user_stops_v1`, found by the B8
+            // agent; probe `harness/probe_bf_classes.js` BF16). DRAW-FREE: the guard runs before
+            // the strike's rolls.
+            if self.sides[side].pokemon[slot].hp == 0
+                || (!sleep_usable && matches!(self.sides[side].pokemon[slot].status, Some(Status::Sleep(_))))
+            {
                 break;
             }
 
@@ -2629,6 +2696,8 @@ impl crate::state::BattleState {
                     let hp = self.hp_status(foe, foe_slot);
                     self.log.damage(&target, &hp, None);
                 }
+                // RAGE reacts to each strike (`runEvent('Hit')` per `moveHit`, `gen3_bf_rage_v1`).
+                self.rage_on_hit(foe, foe_slot, dex);
             } else if self.logging() {
                 let target = self.mon_ref(foe, foe_slot, dex);
                 match sub {
@@ -3036,6 +3105,9 @@ impl crate::state::BattleState {
                 let hp = self.hp_status(foe, foe_slot);
                 self.log.damage(&target, &hp, None);
             }
+            // RAGE reacts to a fixed-damage hit too: Seismic Toss / Night Shade / Counter … are
+            // Physical / Special, so `runEvent('Hit')` boosts the holder (`gen3_bf_rage_v1`).
+            self.rage_on_hit(foe, foe_slot, dex);
         } else if self.logging() {
             // [EMIT] the SUBSTITUTE result (INSTEAD of `-damage`): a survived absorb shows
             // `|-activate|<foe>|Substitute|[damage]`, a broken sub `|-end|<foe>|Substitute`.
@@ -3174,6 +3246,28 @@ impl crate::state::BattleState {
     /// Priorities: SLEEP 10 (draw-free counter), FREEZE 10 (`randomChance(1,5)` thaw),
     /// FLINCH 8 (draw-free), CONFUSION 3 (`randomChance(1,2)` + a self-hit
     /// `random(16)`), PARALYSIS 1 (`randomChance(1,4)` full-para).
+    /// RAGE's hit reaction (`gen3_rage_secretpower_v1`, `gen3_bf_rage_v1`): the `rage` volatile's
+    /// `onHit` (data/moves.ts:14570-14574, `if (target !== source && move.category !== 'Status')
+    /// this.boost({atk: 1})`), run by `runEvent('Hit', target)` inside `runMoveEffects` for EVERY
+    /// non-substitute hit of a damaging move — a 0-damage one too (False Swipe into 1 HP, probe
+    /// BF5b), and once per strike of a multi-hit or Beat Up. The caller has checked the category.
+    /// `boost()` (sim/battle.ts:2017-2076) returns on `!target.hp` (a KO'd holder: nothing, BF1d)
+    /// and at the +6 cap still prints the zero delta `|-boost|<mon>|atk|0` (BF1c). DRAW-FREE.
+    pub(crate) fn rage_on_hit(&mut self, foe: usize, foe_slot: usize, dex: &Dex) {
+        let mon = &self.sides[foe].pokemon[foe_slot];
+        if !mon.rage || mon.hp == 0 {
+            return;
+        }
+        // `boosts` is in `STAT_TOKENS` order — Atk is index 0 (`gen3_boost_index_fixes_v1`).
+        let cur = mon.boosts[0] as i32;
+        let next = (cur + 1).clamp(-6, 6);
+        self.sides[foe].pokemon[foe_slot].boosts[0] = next as i8;
+        if self.logging() {
+            let m = self.mon_ref(foe, foe_slot, dex);
+            self.log.boost_applied(&m, 0, 1, (next - cur) as i8, next as i8);
+        }
+    }
+
     fn on_before_move(
         &mut self,
         side: usize,
@@ -3284,15 +3378,11 @@ impl crate::state::BattleState {
                         .and_then(|mid| dex.moves(mid))
                         .map(|m| m.display_name().to_string())
                 };
-                if let Some(mv_name) = defrost_move {
-                    // DEFROST: the move proceeds while frozen; `frz.onModifyMove`
-                    // clears the status draw-free before the `|move|` line.
-                    self.sides[side].pokemon[slot].status = None;
-                    // [EMIT] `|-curestatus|<mon>|frz|[from] move: <Move>`.
-                    if self.logging() {
-                        let mon_ref = self.mon_ref(side, slot, dex);
-                        self.log.curestatus_from_move(&mon_ref, "frz", &mv_name);
-                    }
+                if defrost_move.is_some() {
+                    // DEFROST: the move proceeds while STILL FROZEN; the thaw is `frz.onModifyMove`,
+                    // in `useMoveInner`, i.e. only after EVERY lower BeforeMove handler passed
+                    // (truant, flinch, disable, confusion, attract, paralysis) — `run_move` applies
+                    // it right after this returns true (`gen3_bf_defrost_after_beforemove_v1`).
                 } else {
                     // [EMIT] `|cant|<mon>|frz` — stays frozen, the move is cancelled.
                     if self.logging() {

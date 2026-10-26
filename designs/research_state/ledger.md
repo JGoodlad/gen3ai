@@ -29107,3 +29107,35 @@ sim's retro-edit; the e2e capstone regenerates byte for byte and the obs golden 
 carries the pair. The effectiveness refactor changes nothing without the `foresight` volatile. **Left:** a Snatch steal
 does not set the snatcher's last-used move (a later Conversion 2 diverges); the Hidden Power belief tracker ignores
 Foresight; Bitter Berry (gen-2 `Past`) is inert in the port but cures confusion in an unvalidated Custom Game.
+
+## 2026-10-26 · RUST SIM · gen3 full parity BF: sixteen pre-existing divergence classes in already-modeled moves, fixed (OU-visible, disclosed per class)
+
+**BF** (`gen3_bf_*_v1`, spec `harness/probe_bf_classes.js`; built by a subagent, merged onto B6 and gated here). The
+random-universe A/B fuzz kept finding the same classes in moves the engine already ran; every one is now fixed with a
+named, revert-verified pin in `tests/regression_test.rs` (`bf1`-`bf11`): RAGE (the boost comes from `runEvent('Hit')`
+after `-damage`, once per multi-hit strike and on fixed-damage hits, and the volatile is removed at ANY move attempt,
+`onBeforeMovePriority` 100); FURY CUTTER (the gen-3 `onHit` doubles the multiplier, so a miss or a cancelled use no
+longer advances it); UPROAR's wake (the move's `onTryHit`, before `-damage`); SMELLING SALTS (`cureStatus` returns on a
+0-HP target); FALSE SWIPE (the 0-delta `-damage` line at 1 HP; Endure's −10 before its −20); REST by an Insomnia /
+Vital Spirit user (fails in `rest.onTry`, so no gen3ou clause shuffle: the port drew one too many in gen3ou / UUBL /
+Draft); the PURSUIT interrupt's last move (it sets `lastMoveUsed`: a later Disable / Encore after a Mimic, and
+Conversion 2, read it); the DEFROST thaw (after BeforeMove; none on a confusion self-hit); a FAINTED caster's ident
+(slot-less, `isActive` cleared); LANSAT on an already-focused holder (no `-start`); a MIMIC'd Curse's request target
+(`"target":"self"` for a non-Ghost user). Five more from the merged-tree fuzz and the B8 agent (`bf12`-`bf16`):
+OWN TEMPO / OBLIVIOUS gained through Skill Swap cure the confusion / infatuation at the next Update; a LOAFING Truant
+user's Pursuit lays no volatile (gen 3's `beforeTurnCallback` gate: no interrupt, no residual tie handler); SYNCHRONIZE
+into a Safeguard announces `-activate` (the reflect's effect is the ability, `effect.id === 'synchronize'`); a
+MULTI-HIT move stops when its user falls asleep (Effect Spore) or faints (Rough Skin) between strikes. Fuzz: 23
+divergences before, 0 after apart from Rest under Uproar (fixed in B5, now merged under it). Two existing pins had
+certified bugs (Fury Cutter's BP ladder; the Insomnia-Rest shuffle claim) and now assert the sim's values.
+
+**OU-VISIBLE (FINDING, per class; carry = share of fielded gen3ou mons, `gen3_smogon_stats.json`):** dice and damage:
+Fury Cutter 0.0013 %, an Insomnia / Vital Spirit Rest in gen3ou ~0.0004 %; state and bytes: Rage 0.0001 %, the defrost
+thaw (Flame Wheel 0.0001 %, Sacred Fire 0.0056 %); bytes only: Uproar 0.0001 %, Smelling Salts 0.0002 %, False Swipe
+0.0001 %, a fainted Doom Desire caster's ident (0.089 %, 2 pool mons), Lansat after Focus Energy, the Mimic'd Curse
+request; the Pursuit interrupt (Pursuit 2.59 %, but read only by Disable / Encore after a Mimic, 0.025 %, and
+Conversion 2, 0.0074 %); the multi-hit stop (dice: Effect Spore 0.99 % of mons × contact multi-hit moves, Double Kick
+0.0044 %, Fury Swipes 0.0052 %, Arm Thrust 0.0003 %; Rough Skin 0.014 %); Synchronize into Safeguard (bytes: Synchronize
+0.81 %, Safeguard 0.054 %); Skill Swap 0.0085 % for Own Tempo / Oblivious; Slaking with Pursuit 0.0006 %. The e2e
+capstone regenerates byte for byte and the obs golden reproduces 991 / 991: no committed OU battle carries any of
+them. A training-data change only for runs on pins after this commit.

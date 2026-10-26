@@ -486,7 +486,11 @@ impl crate::state::BattleState {
     pub(crate) fn mon_toref(&self, side: usize, slot: usize, dex: &Dex) -> String {
         let name = self.display_name(side, slot, dex);
         let tag = Player::from_side(side).tag();
-        if slot == self.sides[side].active {
+        // `Pokemon.toString()` reads `isActive`, which `faintMessages` clears on a faint
+        // (sim/battle.ts): a FAINTED caster still in the active slot prints slot-less too
+        // (`|-miss|p2: Barboach|…`, a Future Sight landing after its caster fainted to Hail;
+        // `gen3_bf_toref_fainted_v1`).
+        if slot == self.sides[side].active && !self.sides[side].pokemon[slot].fainted {
             format!("{tag}a: {name}")
         } else {
             format!("{tag}: {name}")

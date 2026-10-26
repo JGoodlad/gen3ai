@@ -102,11 +102,10 @@ surface:
 |---|---|---|
 | Rest under a live Uproar succeeded in the port and failed in Showdown | `gen_sim_bridge_diff.js --mode lockin`, seed 303 battle 15 | fixed in B5 |
 | Custom Game's EV-balance `\|bigerror\|` (one side over 510 EVs) was not emitted | the B9 golden's 677-EV boards; `tests/ev_balance_test.rs` | fixed in B9 |
-| the random-universe fuzz, RECOUNTED on the B2 + B3 + B9 + B4 tree (`ab_fuzz.js --mode random`, seeds 5501 / 91337 protocol and 7701 state, 450 battles, plus `bridge_ab_fuzz.js --mode random` 100): 14 + 3 divergences, every one a class below or Rest under Uproar; the 09-23 count was 95 in 300 | `designs/research_state/measurements/rust_core_m1_2026-09-23/README.md` (the old count) | — |
-| RAGE prints `\|-boost\|<t>\|atk\|1` BEFORE the `-damage` line (the sim after), inside a multi-hit too; the volatile is removed after the pre-move checks, where Showdown removes it first | the recounts (12 of 17) | BF |
-| FURY CUTTER's counter advances on a missed or cancelled use (the port updates it at base-power time, before BeforeMove and accuracy) | the recounts (3 of 17) | BF |
-| UPROAR's wake prints the sleeper's `-curestatus` after the `-damage` line (the sim at TryHit, before it) | the recounts | BF |
-| SMELLING SALTS cures paralysis on a fainted target; FALSE SWIPE at 1 HP drops its `-damage` line; an Insomnia / Vital Spirit Rest may draw the gen3ou clause shuffle | the recounts, the B5 agent's reading | BF |
+| the random-universe fuzz (the 09-23 count was 95 divergences in 300 battles) | recounted after every batch; after BF only Rest under Uproar remained on BF's own branch, which B5 fixes | — |
+| RAGE (boost after `-damage`, per multi-hit strike and on fixed-damage hits; removed at any move attempt), FURY CUTTER (the multiplier doubles only on a hit), UPROAR's wake (at TryHit, before `-damage`), SMELLING SALTS (no cure on a KO'd target), FALSE SWIPE (the 0-delta `-damage` at 1 HP; Endure first), REST by an Insomnia / Vital Spirit user (fails in `onTry`, no gen3ou clause shuffle), the PURSUIT interrupt's last move, the DEFROST thaw (after BeforeMove), a FAINTED caster's ident (slot-less), LANSAT on a focused holder (no `-start`), a MIMIC'd Curse's request target | `tests/regression_test.rs` `bf1`-`bf11`, `harness/probe_bf_classes.js` | fixed in BF |
+| found by the merged-tree fuzz and the B8 agent: OWN TEMPO / OBLIVIOUS gained through Skill Swap cure the confusion / infatuation at the next Update; a LOAFING Truant user's Pursuit lays no volatile (no interrupt, no residual handler); SYNCHRONIZE into a Safeguard announces `-activate`; a MULTI-HIT move stops when its user falls asleep (Effect Spore) or faints (Rough Skin) | `tests/regression_test.rs` `bf12`-`bf16`, `harness/probe_bf_classes.js` | fixed in BF |
+| a Snatch steal does not set the snatcher's last-used move (a later Conversion 2 reads it); the Hidden Power belief tracker ignores Foresight; Bitter Berry (gen-2 `Past`) cures confusion in an unvalidated Custom Game but is inert in the port | the B6 agent | open |
 
 ## Usage: how the ranking is measured
 
@@ -189,3 +188,4 @@ commit.
 | B9 | Attract (M6 resolved by design: harnesses pin genders); the Custom Game EV-balance warning | shipped |
 | B10 | Teleport, Follow Me, Helping Hand, Role Play, Camouflage, Endless Battle Clause staleness (M7) | open |
 | B11 | Metronome, Mirror Move, Assist, Nature Power, Sketch | open |
+| BF | the fix batch: Rage, Fury Cutter, Uproar's wake, Smelling Salts, False Swipe, Rest by an Insomnia user, the Pursuit interrupt's last move, the defrost thaw, a fainted future-move caster's ident, Lansat on a focused holder, a Mimic'd Curse's request target | WIP (`gen3-bfix`) |

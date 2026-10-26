@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-29,090-line file. **The ledger itself is append-only and is never edited by this**;
+29,142-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**955 headings · 900 dated · 2026-08-01 → 2026-10-26 · ledger 29,090 lines.**
+**957 headings · 902 dated · 2026-08-01 → 2026-10-26 · ledger 29,142 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -975,3 +975,5 @@ rename.
   - `L29009` · `2026-10-26` · MEASUREMENT · **X41 D3 LOOK 1, read under its registration (`9938d7b6`): CONTINUE. Set mutation scores H +1.27 pp [−2.63, +5.16] on Kakuna's three unfamiliar panels (D3 0.491 vs C0 0.479; +0.48 [−4.29, +5.24] without H) at no in-pool cost (P −0.24 pp [−1.10, +0.62], NON-INFERIOR); look 2 decides**
 - `L29041` · `2026-10-26` · RUST SIM · gen3 full parity B5: Spite, Grudge, Snore, Nightmare, Ingrain, and Rest under Uproar (moves 332 → 337 of 369)
   - `L29061` · `2026-10-26` · EXTERNAL ANCHOR · P\* vs PastaMittens, Metamon's strongest deployed gen3ou agent: NOT detectably stronger than Kakuna (Δ-U −0.25 pp [−4.23, +3.73])
+- `L29090` · `2026-10-26` · RUST SIM · gen3 full parity B6: Swagger, Flatter, Foresight, Odor Sleuth, Magic Coat (moves 337 → 342 of 369)
+- `L29111` · `2026-10-26` · RUST SIM · gen3 full parity BF: sixteen pre-existing divergence classes in already-modeled moves, fixed (OU-visible, disclosed per class)

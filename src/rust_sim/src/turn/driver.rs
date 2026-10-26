@@ -274,8 +274,16 @@ impl crate::state::BattleState {
                         // the pursuer (this actor) is frozen or asleep (then NO volatile → no
                         // interrupt). No `-singleturn`/`-start` line (the pursuit condition has
                         // no onStart). Draw-free.
+                        //
+                        // gen 3 adds a LOAFING Truant user to the skip (`gen3_bf_truant_pursuit_v1`,
+                        // data/mods/gen3/moves.ts:480-482: `pokemon.hasAbility('truant') &&
+                        // pokemon.truantTurn`): no interrupt, and no `pursuit` duration handler in
+                        // the residual sort (fuzz `rmvprol00_ab_0_6`: beside a Rollout lock at the
+                        // same speed it cost a tie-shuffle draw). Probe BF14.
                         let st = self.sides[side].pokemon[slot].status;
-                        let skip = matches!(st, Some(Status::Freeze) | Some(Status::Sleep(_)));
+                        let loafing = to_id(&self.sides[side].pokemon[slot].ability) == "truant"
+                            && self.sides[side].pokemon[slot].truant_turn;
+                        let skip = matches!(st, Some(Status::Freeze) | Some(Status::Sleep(_))) || loafing;
                         if !skip {
                             let foe = 1 - side;
                             let foe_slot = self.sides[foe].active;

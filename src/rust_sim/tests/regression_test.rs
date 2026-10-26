@@ -14248,23 +14248,30 @@ fn fury_cutter_doubles_each_consecutive_use_and_lapses_after_one_gap() {
         );
         ladder.push(st.sides[0].pokemon[0].fury_cutter.map(|(m, _)| m));
     }
+    // The stored multiplier is the sim's `effectState.multiplier` AFTER the use: the gen-3 `onHit`
+    // doubles it for the NEXT use, so it reads 2 / 4 / 8 / 16 / 16 after hits of 10 / 20 / 40 / 80 /
+    // 160 BP (`gen3_bf_furycutter_v1`). The sim at this pin's seed convention (a fresh `PRNG([3,3,3,3])`
+    // at `|turn|1`): `volatiles.furycutter.multiplier` = [2, 4, 8, 16, 16], BP 10/20/40/80/160. This pin
+    // used to read [1, 2, 4, 8, 16]: the port doubled at base-power time, not in `onHit`.
     assert_eq!(
         ladder,
-        vec![Some(1), Some(2), Some(4), Some(8), Some(16)],
-        "BP3: the multiplier doubles per consecutive use and caps at 16 (bp 160)"
+        vec![Some(2), Some(4), Some(8), Some(16), Some(16)],
+        "BP3: the multiplier doubles per consecutive landed use and caps at 16 (bp 160)"
     );
 
-    // ONE non-Fury-Cutter turn lapses the duration-2 volatile → back to multiplier 1.
+    // ONE non-Fury-Cutter turn lapses the duration-2 volatile.
     let mut b2 = Battle::start_with_switchins(&opts_cg(user, foe, "3,3,3,3"), &d).expect("start");
     let st2 = b2.state_mut().expect("state");
+    // Cut (BP 10, then 2), Splash (the residual lapses it), cut (BP 10 again, then 2): the sim, [2, null, 2].
     st2.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
-    assert_eq!(st2.sides[0].pokemon[0].fury_cutter.map(|(m, _)| m), Some(1));
+    assert_eq!(st2.sides[0].pokemon[0].fury_cutter.map(|(m, _)| m), Some(2));
     st2.run_full_battle(&[ScriptDecision::both(Choice::Move(1), Choice::Move(0))], &d);
+    assert_eq!(st2.sides[0].pokemon[0].fury_cutter.map(|(m, _)| m), None, "BP3: one gap lapses it");
     st2.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
     assert_eq!(
         st2.sides[0].pokemon[0].fury_cutter.map(|(m, _)| m),
-        Some(1),
-        "BP3: one skipped turn lapses the duration-2 volatile, so the ladder RESTARTS at 1"
+        Some(2),
+        "BP3: the ladder RESTARTS: the cut after the gap is BP 10 again, then doubles to 2"
     );
 }
 
@@ -17247,4 +17254,1149 @@ fn rest_under_a_live_uproar_fails_without_the_sleep_roll() {
         assert_eq!(st.sides[0].pokemon[0].hp.to_string() + "/482", hp, "{format}: HP unhealed");
         assert_eq!(st.prng_seed(), seed_after, "{format}: the sim's seed (no sleep roll)");
     }
+}
+
+// ============================================================================
+// THE FIX BATCH (BF) of the gen-3 full-parity program — seven divergence classes the
+// random-universe A/B fuzz kept finding in moves the engine already ran. Each pin replays a
+// `harness/probe_bf_classes.js` scenario (the sim's teams, seed and choices) and asserts the
+// sim's lines from turn 1 on (blank `|` lines dropped) and its seed after every decision.
+// ============================================================================
+
+/// Run one probe scenario and assert the sim's lines and per-decision seeds.
+#[allow(clippy::too_many_arguments)]
+fn bf_check(
+    label: &str,
+    format: &str,
+    seed: &str,
+    p1: &str,
+    p2: &str,
+    script: &[ScriptDecision],
+    want_lines: &[&str],
+    want_seeds: &[&str],
+) {
+    let d = dex();
+    let opts = BattleOptions { format_id: format.to_string(), ..opts_cg(p1, p2, seed) };
+    // The RAW `>start` seed, as the probe's `new Battle({seed})` (the full turn-0 construction).
+    let mut battle = Battle::start_with_turn0_construction(&opts, &d).expect("turn-0 construction");
+    let st = battle.state_mut().expect("state");
+    let (out, lines) = st.run_full_battle_logged(script, &d);
+    let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+    let got: Vec<&str> = raw
+        .iter()
+        .map(|l| l.as_str())
+        .skip_while(|l| *l != "|turn|1")
+        .skip(1)
+        .filter(|l| *l != "|" && !l.starts_with("|t:|"))
+        .collect();
+    assert_eq!(
+        got,
+        want_lines,
+        "{label}: the port's lines differ from the sim's.\n got:\n{}\nwant:\n{}",
+        got.join("\n"),
+        want_lines.join("\n")
+    );
+    let seeds: Vec<String> = out.decisions.iter().map(|r| seed_str(&r.seed_after)).collect();
+    assert_eq!(seeds, want_seeds, "{label}: the per-decision seeds differ from the sim's");
+}
+
+/// BF1 RAGE (`gen3_bf_rage_v1`). The target's `rage` volatile reacts in `runEvent('Hit')` inside
+/// `runMoveEffects` (sim/battle-actions.ts:1304): AFTER the `-damage` line, before `-mustrecharge`, once per
+/// strike, for fixed-damage hits too, not for a KO'd holder, and with `|-boost|…|atk|0` at +6. Its
+/// `onBeforeMove` at priority 100 (data/moves.ts:14575) drops it at ANY attempt, a sleeping one included.
+/// WRONG (pre-fix): `-boost` before `-damage`; a sleeping Rage user kept the volatile and boosted (BF1b);
+/// no line at +6; a KO'd holder boosted; Seismic Toss / Double Kick did not boost.
+/// Ground truth: `harness/probe_bf_classes.js` (BF1a, BF1b, BF1c, BF1d, BF1e, BF1f, BF1g).
+#[test]
+fn bf1_rage_reacts_after_the_damage_line_and_is_dropped_at_any_move_attempt() {
+    // BF1a rage: -damage before -boost
+    bf_check(
+        "BF1a",
+        "gen3customgame",
+        "1,2,3,4",
+        "Tauros||none|intimidate|rage,splash,bellydrum|Hardy|85,85,85,85,85,85|M||||",
+        "Snorlax||none|thickfat|tackle,splash,spore|Hardy|85,85,85,85,85,85|M||||",
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0))],
+        &[
+            "|move|p1a: Tauros|Rage|p2a: Snorlax",
+            "|-damage|p2a: Snorlax|446/482",
+            "|-singlemove|p1a: Tauros|Rage",
+            "|move|p2a: Snorlax|Tackle|p1a: Tauros",
+            "|-damage|p1a: Tauros|284/312",
+            "|-boost|p1a: Tauros|atk|1",
+            "|upkeep",
+            "|turn|2",
+        ],
+        &["25495,32001,50713,50540"],
+    );
+    // BF1b rage: removed by a sleeping attempt
+    bf_check(
+        "BF1b",
+        "gen3customgame",
+        "1,2,3,4",
+        "Tauros||none|intimidate|rage,splash,bellydrum|Hardy|85,85,85,85,85,85|M||||",
+        "Snorlax||none|thickfat|tackle,splash,spore|Hardy|85,85,85,85,85,85|M||||",
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(2)), ScriptDecision::both(Choice::Move(0), Choice::Move(0))],
+        &[
+            "|move|p1a: Tauros|Rage|p2a: Snorlax",
+            "|-damage|p2a: Snorlax|446/482",
+            "|-singlemove|p1a: Tauros|Rage",
+            "|move|p2a: Snorlax|Spore|p1a: Tauros",
+            "|-status|p1a: Tauros|slp|[from] move: Spore",
+            "|upkeep",
+            "|turn|2",
+            "|cant|p1a: Tauros|slp",
+            "|move|p2a: Snorlax|Tackle|p1a: Tauros",
+            "|-damage|p1a: Tauros|283/312 slp",
+            "|upkeep",
+            "|turn|3",
+        ],
+        &["62891,40560,22227,62965", "7104,42574,9152,10809"],
+    );
+    // BF1c rage: at +6 the hit prints atk|0
+    bf_check(
+        "BF1c",
+        "gen3customgame",
+        "1,2,3,4",
+        "Tauros||none|intimidate|rage,splash,bellydrum|Hardy|85,85,85,85,85,85|M||||",
+        "Snorlax||none|thickfat|tackle,splash,spore|Hardy|85,85,85,85,85,85|M||||",
+        &[ScriptDecision::both(Choice::Move(2), Choice::Move(1)), ScriptDecision::both(Choice::Move(0), Choice::Move(0))],
+        &[
+            "|move|p1a: Tauros|Belly Drum|p1a: Tauros",
+            "|-damage|p1a: Tauros|156/312",
+            "|-setboost|p1a: Tauros|atk|6|[from] move: Belly Drum",
+            "|move|p2a: Snorlax|Splash|p2a: Snorlax",
+            "|-nothing",
+            "|upkeep",
+            "|turn|2",
+            "|move|p1a: Tauros|Rage|p2a: Snorlax",
+            "|-damage|p2a: Snorlax|360/482",
+            "|-singlemove|p1a: Tauros|Rage",
+            "|move|p2a: Snorlax|Tackle|p1a: Tauros",
+            "|-damage|p1a: Tauros|125/312",
+            "|-boost|p1a: Tauros|atk|0",
+            "|upkeep",
+            "|turn|3",
+        ],
+        &["57890,13032,12358,42006", "50886,5712,59628,20063"],
+    );
+    // BF1d rage: a KO-d holder gets no boost
+    bf_check(
+        "BF1d",
+        "gen3customgame",
+        "1,2,3,4",
+        "Tauros||none|intimidate|rage,splash|Hardy|85,85,85,85,85,85|M|||5|]Tauros||none|intimidate|splash|Hardy|85,85,85,85,85,85|M||||",
+        "Snorlax||none|thickfat|bodyslam,splash|Hardy|85,85,85,85,85,85|M||||",
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(1)), ScriptDecision::both(Choice::Move(0), Choice::Move(0))],
+        &[
+            "|move|p2a: Snorlax|Splash|p2a: Snorlax",
+            "|-nothing",
+            "|move|p1a: Tauros|Rage|p2a: Snorlax",
+            "|-damage|p2a: Snorlax|479/482",
+            "|-singlemove|p1a: Tauros|Rage",
+            "|upkeep",
+            "|turn|2",
+            "|move|p2a: Snorlax|Body Slam|p1a: Tauros",
+            "|-damage|p1a: Tauros|0 fnt",
+            "|faint|p1a: Tauros",
+        ],
+        &["55250,62519,52978,42619", "50886,5712,59628,20063"],
+    );
+    // BF1e rage: a Seismic Toss boosts
+    bf_check(
+        "BF1e",
+        "gen3customgame",
+        "1,2,3,4",
+        "Tauros||none|intimidate|rage,splash,bellydrum|Hardy|85,85,85,85,85,85|M||||",
+        "Snorlax||none|thickfat|seismictoss,splash|Hardy|85,85,85,85,85,85|M||||",
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0))],
+        &[
+            "|move|p1a: Tauros|Rage|p2a: Snorlax",
+            "|-damage|p2a: Snorlax|446/482",
+            "|-singlemove|p1a: Tauros|Rage",
+            "|move|p2a: Snorlax|Seismic Toss|p1a: Tauros",
+            "|-damage|p1a: Tauros|212/312",
+            "|-boost|p1a: Tauros|atk|1",
+            "|upkeep",
+            "|turn|2",
+        ],
+        &["37673,46633,62039,8266"],
+    );
+    // BF1f rage: each Double Kick strike boosts
+    bf_check(
+        "BF1f",
+        "gen3customgame",
+        "1,2,3,4",
+        "Tauros||none|intimidate|rage,splash,bellydrum|Hardy|85,85,85,85,85,85|M||||",
+        "Snorlax||none|thickfat|doublekick,splash|Hardy|85,85,85,85,85,85|M||||",
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0))],
+        &[
+            "|move|p1a: Tauros|Rage|p2a: Snorlax",
+            "|-damage|p2a: Snorlax|446/482",
+            "|-singlemove|p1a: Tauros|Rage",
+            "|move|p2a: Snorlax|Double Kick|p1a: Tauros",
+            "|-supereffective|p1a: Tauros",
+            "|-damage|p1a: Tauros|278/312",
+            "|-boost|p1a: Tauros|atk|1",
+            "|-supereffective|p1a: Tauros",
+            "|-damage|p1a: Tauros|243/312",
+            "|-boost|p1a: Tauros|atk|1",
+            "|-hitcount|p1a: Tauros|2",
+            "|upkeep",
+            "|turn|2",
+        ],
+        &["54274,43667,37867,24894"],
+    );
+    // BF1g rage: before -mustrecharge
+    bf_check(
+        "BF1g",
+        "gen3customgame",
+        "1,2,3,4",
+        "Tauros||none|intimidate|rage,splash,bellydrum|Hardy|85,85,85,85,85,85|M||||",
+        "Snorlax||none|thickfat|hyperbeam,splash|Hardy|85,85,85,85,85,85|M||||",
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0))],
+        &[
+            "|move|p1a: Tauros|Rage|p2a: Snorlax",
+            "|-damage|p2a: Snorlax|446/482",
+            "|-singlemove|p1a: Tauros|Rage",
+            "|move|p2a: Snorlax|Hyper Beam|p1a: Tauros",
+            "|-damage|p1a: Tauros|192/312",
+            "|-boost|p1a: Tauros|atk|1",
+            "|-mustrecharge|p2a: Snorlax",
+            "|upkeep",
+            "|turn|2",
+        ],
+        &["25495,32001,50713,50540"],
+    );
+}
+
+/// BF2 FURY CUTTER (`gen3_bf_furycutter_v1`). The volatile is added when the damage step runs and its
+/// multiplier doubles in the gen-3 move `onHit` (data/mods/gen3/moves.ts:325). WRONG (pre-fix): the port
+/// doubled when it computed the base power, BEFORE BeforeMove and accuracy, so a Protect-blocked or a
+/// sleeping use advanced the ladder (BF2a / BF2c: 20 BP for the sim's 10) and a sub-absorbed hit did too
+/// (BF2b: the sim stays at 10 because `onHit` never runs behind a substitute).
+/// Ground truth: `harness/probe_bf_classes.js` (BF2a, BF2b, BF2c).
+#[test]
+fn bf2_fury_cutter_doubles_in_its_on_hit_not_at_the_base_power() {
+    // BF2a furycutter: a Protect-blocked use leaves no counter
+    bf_check(
+        "BF2a",
+        "gen3customgame",
+        "1,2,3,4",
+        "Scizor||none|swarm|furycutter,splash|Hardy|85,85,85,85,85,85|M||||",
+        "Jolteon||none|voltabsorb|protect,splash|Hardy|85,85,85,85,85,85|M||||",
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0)), ScriptDecision::both(Choice::Move(0), Choice::Move(1)), ScriptDecision::both(Choice::Move(0), Choice::Move(1))],
+        &[
+            "|move|p2a: Jolteon|Protect|p2a: Jolteon",
+            "|-singleturn|p2a: Jolteon|Protect",
+            "|move|p1a: Scizor|Fury Cutter|p2a: Jolteon",
+            "|-activate|p2a: Jolteon|Protect",
+            "|upkeep",
+            "|turn|2",
+            "|move|p2a: Jolteon|Splash|p2a: Jolteon",
+            "|-nothing",
+            "|move|p1a: Scizor|Fury Cutter|p2a: Jolteon",
+            "|-damage|p2a: Jolteon|271/292",
+            "|upkeep",
+            "|turn|3",
+            "|move|p2a: Jolteon|Splash|p2a: Jolteon",
+            "|-nothing",
+            "|move|p1a: Scizor|Fury Cutter|p2a: Jolteon",
+            "|-damage|p2a: Jolteon|224/292",
+            "|upkeep",
+            "|turn|4",
+        ],
+        &["8769,17248,37115,18776", "25495,32001,50713,50540", "14735,5508,9502,51264"],
+    );
+    // BF2b furycutter: into a substitute the counter does not double
+    bf_check(
+        "BF2b",
+        "gen3customgame",
+        "1,2,3,4",
+        "Scizor||none|swarm|furycutter,splash|Hardy|85,85,85,85,85,85|M||||",
+        "Jolteon||none|voltabsorb|substitute,splash|Hardy|85,85,85,85,85,85|M||||",
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0)), ScriptDecision::both(Choice::Move(0), Choice::Move(1)), ScriptDecision::both(Choice::Move(0), Choice::Move(1))],
+        &[
+            "|move|p2a: Jolteon|Substitute|p2a: Jolteon",
+            "|-start|p2a: Jolteon|Substitute",
+            "|-damage|p2a: Jolteon|219/292",
+            "|move|p1a: Scizor|Fury Cutter|p2a: Jolteon",
+            "|-activate|p2a: Jolteon|Substitute|[damage]",
+            "|upkeep",
+            "|turn|2",
+            "|move|p2a: Jolteon|Splash|p2a: Jolteon",
+            "|-nothing",
+            "|move|p1a: Scizor|Fury Cutter|p2a: Jolteon",
+            "|-activate|p2a: Jolteon|Substitute|[damage]",
+            "|upkeep",
+            "|turn|3",
+            "|move|p2a: Jolteon|Splash|p2a: Jolteon",
+            "|-nothing",
+            "|move|p1a: Scizor|Fury Cutter|p2a: Jolteon",
+            "|-activate|p2a: Jolteon|Substitute|[damage]",
+            "|upkeep",
+            "|turn|4",
+        ],
+        &["55250,62519,52978,42619", "50886,5712,59628,20063", "4124,63122,38965,57347"],
+    );
+    // BF2c furycutter: a sleeping attempt leaves no counter
+    bf_check(
+        "BF2c",
+        "gen3customgame",
+        "1,2,3,4",
+        "Scizor||none|swarm|furycutter,splash|Hardy|85,85,85,85,85,85|M||||",
+        "Breloom||none|effectspore|spore,splash|Hardy|85,85,85,85,85,85|M||||",
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0)), ScriptDecision::both(Choice::Move(0), Choice::Move(1)), ScriptDecision::both(Choice::Move(0), Choice::Move(1)), ScriptDecision::both(Choice::Move(0), Choice::Move(1)), ScriptDecision::both(Choice::Move(0), Choice::Move(1))],
+        &[
+            "|move|p2a: Breloom|Spore|p1a: Scizor",
+            "|-status|p1a: Scizor|slp|[from] move: Spore",
+            "|cant|p1a: Scizor|slp",
+            "|upkeep",
+            "|turn|2",
+            "|move|p2a: Breloom|Splash|p2a: Breloom",
+            "|-nothing",
+            "|cant|p1a: Scizor|slp",
+            "|upkeep",
+            "|turn|3",
+            "|move|p2a: Breloom|Splash|p2a: Breloom",
+            "|-nothing",
+            "|cant|p1a: Scizor|slp",
+            "|upkeep",
+            "|turn|4",
+            "|move|p2a: Breloom|Splash|p2a: Breloom",
+            "|-nothing",
+            "|-curestatus|p1a: Scizor|slp|[msg]",
+            "|move|p1a: Scizor|Fury Cutter|p2a: Breloom|[miss]",
+            "|-miss|p1a: Scizor|p2a: Breloom",
+            "|upkeep",
+            "|turn|5",
+            "|move|p2a: Breloom|Splash|p2a: Breloom",
+            "|-nothing",
+            "|move|p1a: Scizor|Fury Cutter|p2a: Breloom",
+            "|-damage|p2a: Breloom|262/282",
+            "|upkeep",
+            "|turn|6",
+        ],
+        &["8769,17248,37115,18776", "55250,62519,52978,42619", "37673,46633,62039,8266", "25495,32001,50713,50540", "4124,63122,38965,57347"],
+    );
+}
+
+/// BF3 UPROAR (`gen3_bf_uproar_wake_order_v1`). The move's `onTryHit` (data/moves.ts:20230) cures
+/// sleepers at `singleEvent('TryHit')`, before the damage. WRONG (pre-fix): `-damage …|slp` then
+/// `-curestatus`.
+/// Ground truth: `harness/probe_bf_classes.js` (BF3).
+#[test]
+fn bf3_uproar_wakes_the_sleeper_before_the_damage_line() {
+    // BF3 uproar: -curestatus before -damage
+    bf_check(
+        "BF3",
+        "gen3customgame",
+        "1,2,3,4",
+        "Exploud||none|soundproof|spore,uproar|Hardy|85,85,85,85,85,85|M||||",
+        "Snorlax||none|thickfat|splash|Hardy|85,85,85,85,85,85|M||||",
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0)), ScriptDecision::both(Choice::Move(1), Choice::Move(0))],
+        &[
+            "|move|p1a: Exploud|Spore|p2a: Snorlax",
+            "|-status|p2a: Snorlax|slp|[from] move: Spore",
+            "|cant|p2a: Snorlax|slp",
+            "|upkeep",
+            "|turn|2",
+            "|move|p1a: Exploud|Uproar|p2a: Snorlax",
+            "|-curestatus|p2a: Snorlax|slp|[msg]",
+            "|-damage|p2a: Snorlax|413/482",
+            "|-start|p1a: Exploud|Uproar",
+            "|move|p2a: Snorlax|Splash|p2a: Snorlax",
+            "|-nothing",
+            "|-start|p1a: Exploud|Uproar|[upkeep]",
+            "|upkeep",
+            "|turn|3",
+        ],
+        &["8769,17248,37115,18776", "50886,5712,59628,20063"],
+    );
+}
+
+/// BF4 SMELLING SALTS (`gen3_bf_onhit_order_v1`). `cureStatus()` returns on `!this.hp`
+/// (sim/pokemon.ts:1676). WRONG (pre-fix): the KO'd paralysed Magikarp got `|-curestatus|…|par|[msg]`.
+/// Ground truth: `harness/probe_bf_classes.js` (BF4).
+#[test]
+fn bf4_smelling_salts_does_not_cure_a_fainted_target() {
+    // BF4 smellingsalts: a KO-d par target is not cured
+    bf_check(
+        "BF4",
+        "gen3customgame",
+        "1,2,3,4",
+        "Hariyama||none|thickfat|thunderwave,smellingsalts|Hardy|85,85,85,85,85,85|M||||",
+        "Magikarp||none|swiftswim|splash|Hardy|85,85,85,85,85,85|M|||5|]Snorlax||none|thickfat|splash|Hardy|85,85,85,85,85,85|M||||",
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0)), ScriptDecision::both(Choice::Move(1), Choice::Move(0))],
+        &[
+            "|move|p1a: Hariyama|Thunder Wave|p2a: Magikarp",
+            "|-status|p2a: Magikarp|par",
+            "|move|p2a: Magikarp|Splash|p2a: Magikarp",
+            "|-nothing",
+            "|upkeep",
+            "|turn|2",
+            "|move|p1a: Hariyama|Smelling Salts|p2a: Magikarp",
+            "|-damage|p2a: Magikarp|0 fnt",
+            "|faint|p2a: Magikarp",
+        ],
+        &["8769,17248,37115,18776", "62891,40560,22227,62965"],
+    );
+}
+
+/// BF5 FALSE SWIPE (`gen3_bf_false_swipe_zero_v1`). Into 1 HP the clamp deals 0 and `spreadDamage`
+/// still prints `|-damage|<foe>|1/<max>`; the 0-damage hit still runs `runEvent('Hit')`, so a Rage holder
+/// boosts (BF5b). Its `onDamage` (priority -20) runs AFTER Endure's (-10): a lethal swipe into an Endure
+/// user prints Endure's `-activate` (BF5c, the fuzz repro `rmvplhnbn_ab_5_15`), and a 1-HP endurer's 0
+/// ends the relay (BF5d). WRONG (pre-fix): no `-damage` line, no Rage boost (the `dealt > 0` gate), and
+/// the swipe clamped first so Endure never activated.
+/// Ground truth: `harness/probe_bf_classes.js` (BF5a, BF5b, BF5c, BF5d).
+#[test]
+fn bf5_false_swipe_on_a_one_hp_target_still_prints_the_damage_line() {
+    // BF5a falseswipe: a 1-HP target still prints -damage
+    bf_check(
+        "BF5a",
+        "gen3customgame",
+        "1,2,3,4",
+        "Scizor||none|swarm|falseswipe|Hardy|85,85,85,85,85,85|M||||",
+        "Magikarp||none|swiftswim|splash|Hardy|85,85,85,85,85,85|M|||5|",
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0)), ScriptDecision::both(Choice::Move(0), Choice::Move(0))],
+        &[
+            "|move|p1a: Scizor|False Swipe|p2a: Magikarp",
+            "|-damage|p2a: Magikarp|1/19",
+            "|move|p2a: Magikarp|Splash|p2a: Magikarp",
+            "|-nothing",
+            "|upkeep",
+            "|turn|2",
+            "|move|p1a: Scizor|False Swipe|p2a: Magikarp",
+            "|-damage|p2a: Magikarp|1/19",
+            "|move|p2a: Magikarp|Splash|p2a: Magikarp",
+            "|-nothing",
+            "|upkeep",
+            "|turn|3",
+        ],
+        &["55250,62519,52978,42619", "50886,5712,59628,20063"],
+    );
+    // BF5b falseswipe: a 0-damage hit still triggers Rage
+    bf_check(
+        "BF5b",
+        "gen3customgame",
+        "1,2,3,4",
+        "Scizor||none|swarm|falseswipe|Hardy|85,85,85,85,85,85|M||||",
+        "Magikarp||none|swiftswim|rage|Hardy|85,85,85,85,85,85|M|||5|",
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0)), ScriptDecision::both(Choice::Move(0), Choice::Move(0))],
+        &[
+            "|move|p1a: Scizor|False Swipe|p2a: Magikarp",
+            "|-damage|p2a: Magikarp|1/19",
+            "|move|p2a: Magikarp|Rage|p1a: Scizor",
+            "|-resisted|p1a: Scizor",
+            "|-damage|p1a: Scizor|301/302",
+            "|-singlemove|p2a: Magikarp|Rage",
+            "|upkeep",
+            "|turn|2",
+            "|move|p1a: Scizor|False Swipe|p2a: Magikarp",
+            "|-damage|p2a: Magikarp|1/19",
+            "|-boost|p2a: Magikarp|atk|1",
+            "|move|p2a: Magikarp|Rage|p1a: Scizor",
+            "|-resisted|p1a: Scizor",
+            "|-damage|p1a: Scizor|300/302",
+            "|-singlemove|p2a: Magikarp|Rage",
+            "|upkeep",
+            "|turn|3",
+        ],
+        &["25495,32001,50713,50540", "20898,18934,47363,16957"],
+    );
+    // BF5c falseswipe: Endure activates first
+    bf_check(
+        "BF5c",
+        "gen3customgame",
+        "1,2,3,4",
+        "Scizor||none|swarm|falseswipe|Hardy|85,85,85,85,85,85|M||||",
+        "Magikarp||none|swiftswim|endure|Hardy|85,85,85,85,85,85|M|||5|",
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0))],
+        &[
+            "|move|p2a: Magikarp|Endure|p2a: Magikarp",
+            "|-singleturn|p2a: Magikarp|move: Endure",
+            "|move|p1a: Scizor|False Swipe|p2a: Magikarp",
+            "|-activate|p2a: Magikarp|move: Endure",
+            "|-damage|p2a: Magikarp|1/19",
+            "|upkeep",
+            "|turn|2",
+        ],
+        &["37673,46633,62039,8266"],
+    );
+    // BF5d falseswipe: a 1-HP Endure user
+    bf_check(
+        "BF5d",
+        "gen3customgame",
+        "1,2,3,4",
+        "Scizor||none|swarm|falseswipe,splash|Hardy|85,85,85,85,85,85|M||||",
+        "Magikarp||none|swiftswim|splash,endure|Hardy|85,85,85,85,85,85|M|||5|",
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0)), ScriptDecision::both(Choice::Move(0), Choice::Move(1))],
+        &[
+            "|move|p1a: Scizor|False Swipe|p2a: Magikarp",
+            "|-damage|p2a: Magikarp|1/19",
+            "|move|p2a: Magikarp|Splash|p2a: Magikarp",
+            "|-nothing",
+            "|upkeep",
+            "|turn|2",
+            "|move|p2a: Magikarp|Endure|p2a: Magikarp",
+            "|-singleturn|p2a: Magikarp|move: Endure",
+            "|move|p1a: Scizor|False Swipe|p2a: Magikarp",
+            "|-activate|p2a: Magikarp|move: Endure",
+            "|-damage|p2a: Magikarp|1/19",
+            "|upkeep",
+            "|turn|3",
+        ],
+        &["55250,62519,52978,42619", "54274,43667,37867,24894"],
+    );
+}
+
+/// BF8 (fuzz-found, `rmvplhnbn_ab_3_9`) the DEFROST thaw (`gen3_bf_defrost_after_beforemove_v1`): the resolved
+/// gen3 `frz.onModifyMove` thaws a Flame Wheel / Sacred Fire user in `useMoveInner`, after every BeforeMove
+/// handler. WRONG (pre-fix): the port thawed inside the freeze handler, so `-curestatus` printed BEFORE the
+/// confusion `-activate` (BF8a) and a confusion self-hit still thawed the user (BF8b: it stays frozen).
+/// Ground truth: `harness/probe_bf_classes.js` (BF8a, BF8b).
+#[test]
+fn bf8_the_defrost_thaw_follows_every_before_move_handler() {
+    // BF8a defrost: the confusion -activate precedes the thaw
+    bf_check(
+        "BF8a",
+        "gen3customgame",
+        "14,14,14,14",
+        "Ponyta||none|flashfire|flamewheel,splash|Hardy|85,85,85,85,85,85|M||||",
+        "Lapras||none|waterabsorb|icebeam,confuseray,splash|Hardy|85,85,85,85,85,85|M||||",
+        &[ScriptDecision::both(Choice::Move(1), Choice::Move(1)), ScriptDecision::both(Choice::Move(1), Choice::Move(0)), ScriptDecision::both(Choice::Move(0), Choice::Move(2))],
+        &[
+            "|move|p1a: Ponyta|Splash|p1a: Ponyta",
+            "|-nothing",
+            "|move|p2a: Lapras|Confuse Ray|p1a: Ponyta",
+            "|-start|p1a: Ponyta|confusion",
+            "|upkeep",
+            "|turn|2",
+            "|-activate|p1a: Ponyta|confusion",
+            "|move|p1a: Ponyta|Splash|p1a: Ponyta",
+            "|-nothing",
+            "|move|p2a: Lapras|Ice Beam|p1a: Ponyta",
+            "|-resisted|p1a: Ponyta",
+            "|-damage|p1a: Ponyta|196/262",
+            "|-status|p1a: Ponyta|frz",
+            "|upkeep",
+            "|turn|3",
+            "|-activate|p1a: Ponyta|confusion",
+            "|-curestatus|p1a: Ponyta|frz|[from] move: Flame Wheel",
+            "|move|p1a: Ponyta|Flame Wheel|p2a: Lapras",
+            "|-damage|p2a: Lapras|371/422",
+            "|move|p2a: Lapras|Splash|p2a: Lapras",
+            "|-nothing",
+            "|upkeep",
+            "|turn|4",
+        ],
+        &["48661,5817,46993,27842", "28612,20105,51841,42616", "7379,33807,52236,7385"],
+    );
+    // BF8b defrost: a confusion self-hit leaves the user frozen
+    bf_check(
+        "BF8b",
+        "gen3customgame",
+        "16,16,16,16",
+        "Ponyta||none|flashfire|flamewheel,splash|Hardy|85,85,85,85,85,85|M||||",
+        "Lapras||none|waterabsorb|icebeam,confuseray,splash|Hardy|85,85,85,85,85,85|M||||",
+        &[ScriptDecision::both(Choice::Move(1), Choice::Move(1)), ScriptDecision::both(Choice::Move(1), Choice::Move(0)), ScriptDecision::both(Choice::Move(0), Choice::Move(2))],
+        &[
+            "|move|p1a: Ponyta|Splash|p1a: Ponyta",
+            "|-nothing",
+            "|move|p2a: Lapras|Confuse Ray|p1a: Ponyta",
+            "|-start|p1a: Ponyta|confusion",
+            "|upkeep",
+            "|turn|2",
+            "|-activate|p1a: Ponyta|confusion",
+            "|-damage|p1a: Ponyta|222/262|[from] confusion",
+            "|move|p2a: Lapras|Ice Beam|p1a: Ponyta",
+            "|-resisted|p1a: Ponyta",
+            "|-damage|p1a: Ponyta|156/262",
+            "|-status|p1a: Ponyta|frz",
+            "|upkeep",
+            "|turn|3",
+            "|-activate|p1a: Ponyta|confusion",
+            "|-damage|p1a: Ponyta|115/262 frz|[from] confusion",
+            "|move|p2a: Lapras|Splash|p2a: Lapras",
+            "|-nothing",
+            "|upkeep",
+            "|turn|4",
+        ],
+        &["36502,31875,36991,16548", "14448,32001,46657,38421", "16449,31224,12625,2137"],
+    );
+}
+
+/// BF10 (bridge-fuzz-found, `rmvpofecf_bab_2_6`, reported by the B5 agent) LANSAT BERRY on a holder that
+/// already has Focus Energy (`gen3_bf_lansat_focused_v1`): `addVolatile('focusenergy')` fails silently (no
+/// `onRestart`), so the eat prints `-enditem` alone (BF10a); the unfocused control prints the `-start`
+/// (BF10b). WRONG (pre-fix): the port printed `|-start|…|move: Focus Energy` every time.
+/// Ground truth: `harness/probe_bf_classes.js` (BF10a, BF10b).
+#[test]
+fn bf10_a_lansat_berry_on_a_focused_holder_prints_no_start() {
+    // BF10a lansat: already focused, no -start
+    bf_check(
+        "BF10a",
+        "gen3customgame",
+        "1,2,3,4",
+        "Tauros||lansatberry|intimidate|focusenergy,bellydrum,substitute|Hardy|85,85,85,85,85,85|M||||",
+        "Snorlax||none|thickfat|splash|Hardy|85,85,85,85,85,85|M||||",
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0)), ScriptDecision::both(Choice::Move(1), Choice::Move(0)), ScriptDecision::both(Choice::Move(2), Choice::Move(0))],
+        &[
+            "|move|p1a: Tauros|Focus Energy|p1a: Tauros",
+            "|-start|p1a: Tauros|move: Focus Energy",
+            "|move|p2a: Snorlax|Splash|p2a: Snorlax",
+            "|-nothing",
+            "|upkeep",
+            "|turn|2",
+            "|move|p1a: Tauros|Belly Drum|p1a: Tauros",
+            "|-damage|p1a: Tauros|156/312",
+            "|-setboost|p1a: Tauros|atk|6|[from] move: Belly Drum",
+            "|move|p2a: Snorlax|Splash|p2a: Snorlax",
+            "|-nothing",
+            "|upkeep",
+            "|turn|3",
+            "|move|p1a: Tauros|Substitute|p1a: Tauros",
+            "|-start|p1a: Tauros|Substitute",
+            "|-damage|p1a: Tauros|78/312",
+            "|move|p2a: Snorlax|Splash|p2a: Snorlax",
+            "|-nothing",
+            "|-enditem|p1a: Tauros|Lansat Berry|[eat]",
+            "|upkeep",
+            "|turn|4",
+        ],
+        &["57890,13032,12358,42006", "43514,9542,40559,8561", "8769,17248,37115,18776"],
+    );
+    // BF10b lansat: control, not focused
+    bf_check(
+        "BF10b",
+        "gen3customgame",
+        "1,2,3,4",
+        "Tauros||lansatberry|intimidate|splash,bellydrum,substitute|Hardy|85,85,85,85,85,85|M||||",
+        "Snorlax||none|thickfat|splash|Hardy|85,85,85,85,85,85|M||||",
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0)), ScriptDecision::both(Choice::Move(1), Choice::Move(0)), ScriptDecision::both(Choice::Move(2), Choice::Move(0))],
+        &[
+            "|move|p1a: Tauros|Splash|p1a: Tauros",
+            "|-nothing",
+            "|move|p2a: Snorlax|Splash|p2a: Snorlax",
+            "|-nothing",
+            "|upkeep",
+            "|turn|2",
+            "|move|p1a: Tauros|Belly Drum|p1a: Tauros",
+            "|-damage|p1a: Tauros|156/312",
+            "|-setboost|p1a: Tauros|atk|6|[from] move: Belly Drum",
+            "|move|p2a: Snorlax|Splash|p2a: Snorlax",
+            "|-nothing",
+            "|upkeep",
+            "|turn|3",
+            "|move|p1a: Tauros|Substitute|p1a: Tauros",
+            "|-start|p1a: Tauros|Substitute",
+            "|-damage|p1a: Tauros|78/312",
+            "|move|p2a: Snorlax|Splash|p2a: Snorlax",
+            "|-nothing",
+            "|-enditem|p1a: Tauros|Lansat Berry|[eat]",
+            "|-start|p1a: Tauros|move: Focus Energy",
+            "|upkeep",
+            "|turn|4",
+        ],
+        &["57890,13032,12358,42006", "43514,9542,40559,8561", "8769,17248,37115,18776"],
+    );
+}
+
+/// BF9 (fuzz-found, `rmvplf4lc_ab_1_17`) `Pokemon.toString()` reads `isActive`, which `faintMessages` clears
+/// (`gen3_bf_toref_fainted_v1`). WRONG (pre-fix): `|-miss|p2a: Natu|…` for a caster that fainted in the same
+/// residual, before the strike.
+/// Ground truth: `harness/probe_bf_classes.js` (BF9).
+#[test]
+fn bf9_a_fainted_future_sight_caster_misses_slot_less() {
+    // BF9 toref: a fainted caster misses slot-less
+    bf_check(
+        "BF9",
+        "gen3customgame",
+        "2,2,2,2",
+        "Tyranitar||none|sandstream|falseswipe,splash|Hardy|85,85,85,85,85,85|M||||",
+        "Natu||none|synchronize|futuresight,splash|Hardy|85,85,85,85,85,85|M|||5|]Snorlax||none|thickfat|splash|Hardy|85,85,85,85,85,85|M||||",
+        &[ScriptDecision::both(Choice::Move(1), Choice::Move(0)), ScriptDecision::both(Choice::Move(1), Choice::Move(1)), ScriptDecision::both(Choice::Move(0), Choice::Move(1))],
+        &[
+            "|move|p1a: Tyranitar|Splash|p1a: Tyranitar",
+            "|-nothing",
+            "|move|p2a: Natu|Future Sight|p1a: Tyranitar",
+            "|-start|p2a: Natu|Future Sight",
+            "|-weather|Sandstorm|[upkeep]",
+            "|-damage|p2a: Natu|20/21|[from] Sandstorm",
+            "|upkeep",
+            "|turn|2",
+            "|move|p1a: Tyranitar|Splash|p1a: Tyranitar",
+            "|-nothing",
+            "|move|p2a: Natu|Splash|p2a: Natu",
+            "|-nothing",
+            "|-weather|Sandstorm|[upkeep]",
+            "|-damage|p2a: Natu|19/21|[from] Sandstorm",
+            "|upkeep",
+            "|turn|3",
+            "|move|p1a: Tyranitar|False Swipe|p2a: Natu",
+            "|-damage|p2a: Natu|1/21",
+            "|move|p2a: Natu|Splash|p2a: Natu|[miss]",
+            "|-nothing",
+            "|-weather|Sandstorm|[upkeep]",
+            "|-damage|p2a: Natu|0 fnt|[from] Sandstorm",
+            "|faint|p2a: Natu",
+            "|-end|p1a: Tyranitar|move: Future Sight",
+            "|-miss|p2: Natu|p1a: Tyranitar",
+            "|upkeep",
+        ],
+        &["48955,30724,44391,59959", "56076,46078,41470,30070", "60163,25901,54483,39850"],
+    );
+}
+
+/// BF6 REST by an INSOMNIA user in gen3ou (`gen3_bf_rest_insomnia_no_shuffle_v1`). `rest.onTry`
+/// (data/moves.ts:14976) fails it before `setStatus`, so the two-clause SetStatus shuffle never draws: the
+/// failed Rest ends at the SAME seed as a Splash turn. WRONG (pre-fix): the port drew the shuffle first, one
+/// draw more. Ground truth: `harness/probe_bf_classes.js` (BF6a, BF6b).
+#[test]
+fn bf6_rest_by_an_insomnia_user_in_gen3ou_draws_no_clause_shuffle() {
+    // BF6a rest: insomnia rest in gen3ou
+    bf_check(
+        "BF6a",
+        "gen3ou",
+        "1,2,3,4",
+        "Hypno||none|insomnia|rest,splash|Hardy|85,85,85,85,85,85|M||||",
+        "Snorlax||none|thickfat|bodyslam,splash|Hardy|85,85,85,85,85,85|M||||",
+        &[ScriptDecision::both(Choice::Move(1), Choice::Move(0)), ScriptDecision::both(Choice::Move(0), Choice::Move(1))],
+        &[
+            "|move|p1a: Hypno|Splash|p1a: Hypno",
+            "|-nothing",
+            "|move|p2a: Snorlax|Body Slam|p1a: Hypno",
+            "|-damage|p1a: Hypno|183/332",
+            "|upkeep",
+            "|turn|2",
+            "|move|p1a: Hypno|Rest|p1a: Hypno",
+            "|-fail|p1a: Hypno|[from] ability: Insomnia|[of] p1a: Hypno",
+            "|move|p2a: Snorlax|Splash|p2a: Snorlax",
+            "|-nothing",
+            "|upkeep",
+            "|turn|3",
+        ],
+        &["37673,46633,62039,8266", "62891,40560,22227,62965"],
+    );
+    // BF6b rest: control, a splash instead
+    bf_check(
+        "BF6b",
+        "gen3ou",
+        "1,2,3,4",
+        "Hypno||none|insomnia|rest,splash|Hardy|85,85,85,85,85,85|M||||",
+        "Snorlax||none|thickfat|bodyslam,splash|Hardy|85,85,85,85,85,85|M||||",
+        &[ScriptDecision::both(Choice::Move(1), Choice::Move(0)), ScriptDecision::both(Choice::Move(1), Choice::Move(1))],
+        &[
+            "|move|p1a: Hypno|Splash|p1a: Hypno",
+            "|-nothing",
+            "|move|p2a: Snorlax|Body Slam|p1a: Hypno",
+            "|-damage|p1a: Hypno|183/332",
+            "|upkeep",
+            "|turn|2",
+            "|move|p1a: Hypno|Splash|p1a: Hypno",
+            "|-nothing",
+            "|move|p2a: Snorlax|Splash|p2a: Snorlax",
+            "|-nothing",
+            "|upkeep",
+            "|turn|3",
+        ],
+        &["37673,46633,62039,8266", "62891,40560,22227,62965"],
+    );
+    assert_eq!("62891,40560,22227,62965", "62891,40560,22227,62965", "BF6: the sim's failed Rest == a Splash turn");
+}
+
+/// BF7 the PURSUIT interrupt's `moveUsed` / `useMoveInner` bookkeeping (`gen3_bf_pursuit_last_move_v1`).
+/// After a self-overwriting MIMIC, the strike makes `lastMove` Pursuit, so a faster foe's DISABLE disables
+/// it (BF7a), and `lastMoveUsed` Pursuit, so CONVERSION 2 picks a type resisting Dark (BF7b: Fighting).
+/// WRONG (pre-fix): the strike left `last_move_was_self_overwrite` set (Disable failed) and `last_move_used`
+/// at the previous move (Conversion 2 sampled from the types resisting Normal). Ground truth:
+/// `harness/probe_bf_classes.js` (BF7a, BF7b).
+#[test]
+fn bf7_a_pursuit_strike_is_the_last_move_disable_and_conversion2_read() {
+    // BF7a pursuit: Disable after Mimic-then-Pursuit
+    bf_check(
+        "BF7a",
+        "gen3customgame",
+        "1,1,1,1",
+        "Tyranitar||none|sandstream|mimic,pursuit,bodyslam|Hardy|85,85,85,85,85,85|M||||",
+        "Jolteon||none|voltabsorb|splash|Hardy|85,85,85,85,85,85|M||||]Electrode||none|soundproof|disable,splash|Hardy|85,85,85,85,85,85|M||||",
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0)), ScriptDecision::both(Choice::Move(1), Choice::Switch(1)), ScriptDecision::both(Choice::Move(1), Choice::Move(0))],
+        &[
+            "|move|p2a: Jolteon|Splash|p2a: Jolteon",
+            "|-nothing",
+            "|move|p1a: Tyranitar|Mimic|p2a: Jolteon",
+            "|-activate|p1a: Tyranitar|move: Mimic|Splash",
+            "|-weather|Sandstorm|[upkeep]",
+            "|-damage|p2a: Jolteon|274/292|[from] Sandstorm",
+            "|upkeep",
+            "|turn|2",
+            "|-activate|p2a: Jolteon|move: Pursuit",
+            "|move|p1a: Tyranitar|Pursuit|p2a: Jolteon|[from] Pursuit",
+            "|-damage|p2a: Jolteon|187/292",
+            "|switch|p2a: Electrode|Electrode, M|282/282",
+            "|-weather|Sandstorm|[upkeep]",
+            "|-damage|p2a: Electrode|265/282|[from] Sandstorm",
+            "|upkeep",
+            "|turn|3",
+            "|move|p2a: Electrode|Disable|p1a: Tyranitar",
+            "|-start|p1a: Tyranitar|Disable|Pursuit",
+            "|cant|p1a: Tyranitar|Disable|Pursuit",
+            "|-weather|Sandstorm|[upkeep]",
+            "|-damage|p2a: Electrode|248/282|[from] Sandstorm",
+            "|upkeep",
+            "|turn|4",
+        ],
+        &["40617,35584,40138,56971", "21839,39252,5357,55100", "1740,60745,37312,1737"],
+    );
+    // BF7b pursuit: Conversion 2 reads the strike
+    bf_check(
+        "BF7b",
+        "gen3customgame",
+        "1,2,3,4",
+        "Tyranitar||none|sandstream|mimic,pursuit,bodyslam|Hardy|85,85,85,85,85,85|M||||",
+        "Jolteon||none|voltabsorb|splash|Hardy|85,85,85,85,85,85|M||||]Electrode||none|soundproof|conversion2,splash|Hardy|85,85,85,85,85,85|M||||",
+        &[ScriptDecision::both(Choice::Move(2), Choice::Move(0)), ScriptDecision::both(Choice::Move(1), Choice::Switch(1)), ScriptDecision::both(Choice::Move(2), Choice::Move(0))],
+        &[
+            "|move|p2a: Jolteon|Splash|p2a: Jolteon",
+            "|-nothing",
+            "|move|p1a: Tyranitar|Body Slam|p2a: Jolteon",
+            "|-damage|p2a: Jolteon|162/292",
+            "|-weather|Sandstorm|[upkeep]",
+            "|-damage|p2a: Jolteon|144/292|[from] Sandstorm",
+            "|upkeep",
+            "|turn|2",
+            "|-activate|p2a: Jolteon|move: Pursuit",
+            "|move|p1a: Tyranitar|Pursuit|p2a: Jolteon|[from] Pursuit",
+            "|-damage|p2a: Jolteon|48/292",
+            "|switch|p2a: Electrode|Electrode, M|282/282",
+            "|-weather|Sandstorm|[upkeep]",
+            "|-damage|p2a: Electrode|265/282|[from] Sandstorm",
+            "|upkeep",
+            "|turn|3",
+            "|move|p2a: Electrode|Conversion 2|p1a: Tyranitar",
+            "|-start|p2a: Electrode|typechange|Fighting",
+            "|move|p1a: Tyranitar|Body Slam|p2a: Electrode",
+            "|-damage|p2a: Electrode|148/282",
+            "|-weather|Sandstorm|[upkeep]",
+            "|-damage|p2a: Electrode|131/282|[from] Sandstorm",
+            "|upkeep",
+            "|turn|4",
+        ],
+        &["37673,46633,62039,8266", "50886,5712,59628,20063", "20898,18934,47363,16957"],
+    );
+}
+
+/// BF11 (bridge-fuzz-found, `rmvpofecf_bab_2_21`, reported by the B5 agent) a MIMIC'd CURSE in the request
+/// (`gen3_bf_mimic_curse_request_target_v1`): gen4's Mimic slot has no `target`, but `getMoveRequestData`
+/// (sim/pokemon.ts:998-1004) gives a NON-GHOST user's Curse `nonGhostTarget` ("self"), so that slot shows
+/// `"target":"self"`; a Ghost mimicker's Curse keeps the key dropped. WRONG (pre-fix): the key was dropped for
+/// both. Ground truth: `harness/probe_bf_classes.js` (BF11a, BF11b: the sim's `getMoveRequestData().moves`).
+#[test]
+fn bf11_a_mimicked_curse_shows_the_non_ghost_target_in_the_request() {
+    let d = dex();
+    let foe = "Jolteon||none|voltabsorb|curse,splash|Hardy|85,85,85,85,85,85|M||||";
+    for (label, user, want) in [
+        ("BF11a", "Snorlax||none|thickfat|mimic,splash|Hardy|85,85,85,85,85,85|M||||", "[{\"move\":\"Curse\",\"id\":\"curse\",\"pp\":5,\"maxpp\":16,\"target\":\"self\",\"disabled\":false},{\"move\":\"Splash\",\"id\":\"splash\",\"pp\":64,\"maxpp\":64,\"target\":\"self\",\"disabled\":false}]"),
+        ("BF11b", "Gengar||none|levitate|mimic,splash|Hardy|85,85,85,85,85,85|M||||", "[{\"move\":\"Curse\",\"id\":\"curse\",\"pp\":5,\"maxpp\":16,\"disabled\":false},{\"move\":\"Splash\",\"id\":\"splash\",\"pp\":64,\"maxpp\":64,\"target\":\"self\",\"disabled\":false}]"),
+    ] {
+        // Jolteon (faster) Curses, the user Mimics it (Mimic and Curse never miss: seed-independent).
+        let cmds = vec![
+            pokesim::bridge::Cmd { side: 0, choice: pokesim::bridge::parse_choice("move 1").unwrap() },
+            pokesim::bridge::Cmd { side: 1, choice: pokesim::bridge::parse_choice("move 1").unwrap() },
+        ];
+        let streams = pokesim::bridge::run_full_battle_bridge(&opts_cg(user, foe, "1,2,3,4"), &cmds, &d)
+            .expect("bridge run");
+        let reqs: Vec<&String> = streams.p1.iter().filter(|l| l.starts_with("|request|")).collect();
+        assert!(reqs.len() >= 2, "{label}: expected the post-Mimic request, got {}", reqs.len());
+        let needle = format!("\"active\":[{{\"moves\":{want}");
+        assert!(reqs[1].contains(&needle), "{label}: the request's moves differ from the sim's.\n got: {}\nwant: {needle}", reqs[1]);
+    }
+}
+
+/// BF12 / BF13 (fuzz-found on the B6 + BF tree, `rmvprol00_ab_4_12`; `gen3_bf_volatile_immune_onupdate_v1`):
+/// the VOLATILE-curing abilities' `onUpdate`. OWN TEMPO (`owntempo.onUpdate`, data/abilities.ts:3100) cures a
+/// confused holder (`-activate|…|ability: Own Tempo`, `-end|…|confusion`); OBLIVIOUS (gen 5's override,
+/// inherited by gen 3: data/mods/gen5/abilities.ts:50) ends an infatuation (`-end|…|Attract|[silent]`, then
+/// `-end|…|move: Attract|[from] ability: Oblivious`). Reached when a Skill Swap hands the ability to a mon that
+/// already carries the volatile, on either side of the swap; the cure lands at the Update after the move.
+/// WRONG (pre-fix): the port kept the volatile, so the holder rolled confusion / infatuation on its next move.
+/// Ground truth: `harness/probe_bf_classes.js` (BF12a, BF12b, BF13a).
+#[test]
+fn bf12_a_own_tempo_gained_by_skill_swap_cures_the_targets_confusion() {
+    bf_check(
+        "BF12a",
+        "gen3customgame",
+        "1,2,3,4",
+        "Smeargle||none|owntempo|confuseray,skillswap|Hardy|85,85,85,85,85,85|M||||",
+        "Snorlax||none|thickfat|splash|Hardy|85,85,85,85,85,85|M||||",
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0)), ScriptDecision::both(Choice::Move(1), Choice::Move(0))],
+        &[
+            "|move|p1a: Smeargle|Confuse Ray|p2a: Snorlax",
+            "|-start|p2a: Snorlax|confusion",
+            "|-activate|p2a: Snorlax|confusion",
+            "|move|p2a: Snorlax|Splash|p2a: Snorlax",
+            "|-nothing",
+            "|upkeep",
+            "|turn|2",
+            "|move|p1a: Smeargle|Skill Swap|p2a: Snorlax",
+            "|-activate|p1a: Smeargle|Skill Swap|||[of] p2a: Snorlax",
+            "|-activate|p2a: Snorlax|ability: Own Tempo",
+            "|-end|p2a: Snorlax|confusion",
+            "|move|p2a: Snorlax|Splash|p2a: Snorlax",
+            "|-nothing",
+            "|upkeep",
+            "|turn|3",
+        ],
+        &["55250,62519,52978,42619", "37673,46633,62039,8266"],
+    );
+}
+
+#[test]
+fn bf12_b_own_tempo_gained_by_skill_swap_cures_the_confused_swapper() {
+    bf_check(
+        "BF12b",
+        "gen3customgame",
+        "5,6,7,8",
+        "Alakazam||none|synchronize|splash,skillswap|Hardy|85,85,85,85,85,85|M||||",
+        "Slowbro||none|owntempo|confuseray,splash|Hardy|85,85,85,85,85,85|M||||",
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0)), ScriptDecision::both(Choice::Move(1), Choice::Move(1))],
+        &[
+            "|move|p1a: Alakazam|Splash|p1a: Alakazam",
+            "|-nothing",
+            "|move|p2a: Slowbro|Confuse Ray|p1a: Alakazam",
+            "|-start|p1a: Alakazam|confusion",
+            "|upkeep",
+            "|turn|2",
+            "|-activate|p1a: Alakazam|confusion",
+            "|move|p1a: Alakazam|Skill Swap|p2a: Slowbro",
+            "|-activate|p1a: Alakazam|Skill Swap|||[of] p2a: Slowbro",
+            "|-activate|p1a: Alakazam|ability: Own Tempo",
+            "|-end|p1a: Alakazam|confusion",
+            "|move|p2a: Slowbro|Splash|p2a: Slowbro",
+            "|-nothing",
+            "|upkeep",
+            "|turn|3",
+        ],
+        &["49988,3828,17110,61724", "51644,13992,14189,6510"],
+    );
+}
+
+#[test]
+fn bf13_a_oblivious_gained_by_skill_swap_ends_the_targets_attract() {
+    bf_check(
+        "BF13a",
+        "gen3customgame",
+        "1,2,3,4",
+        "Jynx||none|oblivious|attract,skillswap|Hardy|85,85,85,85,85,85|F||||",
+        "Snorlax||none|thickfat|splash|Hardy|85,85,85,85,85,85|M||||",
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0)), ScriptDecision::both(Choice::Move(1), Choice::Move(0))],
+        &[
+            "|move|p1a: Jynx|Attract|p2a: Snorlax",
+            "|-start|p2a: Snorlax|Attract",
+            "|-activate|p2a: Snorlax|move: Attract|[of] p1a: Jynx",
+            "|move|p2a: Snorlax|Splash|p2a: Snorlax",
+            "|-nothing",
+            "|upkeep",
+            "|turn|2",
+            "|move|p1a: Jynx|Skill Swap|p2a: Snorlax",
+            "|-activate|p1a: Jynx|Skill Swap|||[of] p2a: Snorlax",
+            "|-end|p2a: Snorlax|Attract|[silent]",
+            "|-end|p2a: Snorlax|move: Attract|[from] ability: Oblivious",
+            "|move|p2a: Snorlax|Splash|p2a: Snorlax",
+            "|-nothing",
+            "|upkeep",
+            "|turn|3",
+        ],
+        &["8769,17248,37115,18776", "55250,62519,52978,42619"],
+    );
+}
+
+/// BF14 (fuzz-found on the B6 + BF tree, `rmvprol00_ab_0_6`; `gen3_bf_truant_pursuit_v1`): gen 3's
+/// `pursuit.beforeTurnCallback` (data/mods/gen3/moves.ts:480-482) returns before `addVolatile('pursuit')` when the
+/// user `hasAbility('truant') && truantTurn`: a loafing Slaking does not interrupt a switching foe (BF14a), and
+/// lays no `pursuit` duration handler for the residual sort (BF14b, beside a Rollout lock at the same speed).
+/// WRONG (pre-fix): the port laid the volatile, so the loafing turn's residual sort drew an extra tie-shuffle.
+/// Ground truth: `harness/probe_bf_classes.js` (BF14a, BF14b).
+#[test]
+fn bf14_a_a_loafing_truant_pursuer_does_not_interrupt_a_switch() {
+    bf_check(
+        "BF14a",
+        "gen3customgame",
+        "1,2,3,4",
+        "Slaking||none|truant|pursuit,splash|Hardy|85,85,85,85,85,85|M||||",
+        "Snorlax||none|thickfat|splash|Hardy|85,85,85,85,85,85|M||||]Swampert||none|torrent|splash|Hardy|85,85,85,85,85,85|M||||",
+        &[ScriptDecision::both(Choice::Move(1), Choice::Move(0)), ScriptDecision::both(Choice::Move(0), Choice::Switch(1)), ScriptDecision::both(Choice::Move(0), Choice::Move(0))],
+        &[
+            "|move|p1a: Slaking|Splash|p1a: Slaking",
+            "|-nothing",
+            "|move|p2a: Snorlax|Splash|p2a: Snorlax",
+            "|-nothing",
+            "|upkeep",
+            "|turn|2",
+            "|switch|p2a: Swampert|Swampert, M|362/362",
+            "|cant|p1a: Slaking|ability: Truant",
+            "|upkeep",
+            "|turn|3",
+            "|move|p1a: Slaking|Pursuit|p2a: Swampert",
+            "|-damage|p2a: Swampert|329/362",
+            "|move|p2a: Swampert|Splash|p2a: Swampert",
+            "|-nothing",
+            "|upkeep",
+            "|turn|4",
+        ],
+        &["57890,13032,12358,42006", "43514,9542,40559,8561", "62891,40560,22227,62965"],
+    );
+}
+
+#[test]
+fn bf14_b_a_loafing_truant_pursuer_adds_no_residual_handler() {
+    bf_check(
+        "BF14b",
+        "gen3customgame",
+        "1,2,3,4",
+        "Slaking||none|truant|pursuit,splash|Hardy|85,85,85,85,85,85|M||||",
+        "Snorlax||none|thickfat|rollout,splash|Hardy|85,85,85,85,85,85|M||||",
+        &[ScriptDecision::both(Choice::Move(1), Choice::Move(0)), ScriptDecision::both(Choice::Move(0), Choice::Move(0)), ScriptDecision::both(Choice::Move(0), Choice::Move(0))],
+        &[
+            "|move|p1a: Slaking|Splash|p1a: Slaking",
+            "|-nothing",
+            "|move|p2a: Snorlax|Rollout|p1a: Slaking",
+            "|-damage|p1a: Slaking|434/462",
+            "|upkeep",
+            "|turn|2",
+            "|cant|p1a: Slaking|ability: Truant",
+            "|move|p2a: Snorlax|Rollout|p1a: Slaking|[from] lockedmove",
+            "|-damage|p1a: Slaking|382/462",
+            "|upkeep",
+            "|turn|3",
+            "|move|p1a: Slaking|Pursuit|p2a: Snorlax",
+            "|-damage|p2a: Snorlax|452/482",
+            "|move|p2a: Snorlax|Rollout|p1a: Slaking|[from] lockedmove",
+            "|-damage|p1a: Slaking|278/462",
+            "|upkeep",
+            "|turn|4",
+        ],
+        &["55250,62519,52978,42619", "50886,5712,59628,20063", "9229,60870,33850,16231"],
+    );
+}
+
+/// BF15 (fuzz-found on the B6 + BF tree, `rmvprol00_ab_2_5`; `gen3_bf_synchronize_safeguard_v1`): gen 3 / 4's
+/// Synchronize (data/mods/gen4/abilities.ts:469-478) reflects through `source.trySetStatus(id, target)` with no
+/// effect, so `setStatus` takes `this.battle.effect` = the Synchronize ability and Safeguard's `onSetStatus`
+/// (data/moves.ts:15602) prints `-activate|<source>|move: Safeguard` for `effect.id === 'synchronize'`.
+/// WRONG (pre-fix): the port blocked the reflect silently. BF15b pins the gen3ou seeds around the block.
+/// Ground truth: `harness/probe_bf_classes.js` (BF15a, BF15b).
+#[test]
+fn bf15_a_synchronize_into_a_safeguard_announces_it() {
+    bf_check(
+        "BF15a",
+        "gen3customgame",
+        "1,2,3,4",
+        "Alakazam||none|synchronize|splash|Hardy|85,85,85,85,85,85|M||||",
+        "Bayleef||none|overgrow|safeguard,poisonpowder|Hardy|85,85,85,85,85,85|M||||",
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0)), ScriptDecision::both(Choice::Move(0), Choice::Move(1))],
+        &[
+            "|move|p1a: Alakazam|Splash|p1a: Alakazam",
+            "|-nothing",
+            "|move|p2a: Bayleef|Safeguard|p2a: Bayleef",
+            "|-sidestart|p2: P2|Safeguard",
+            "|upkeep",
+            "|turn|2",
+            "|move|p1a: Alakazam|Splash|p1a: Alakazam",
+            "|-nothing",
+            "|move|p2a: Bayleef|Poison Powder|p1a: Alakazam",
+            "|-status|p1a: Alakazam|psn",
+            "|-activate|p2a: Bayleef|move: Safeguard",
+            "|-damage|p1a: Alakazam|238/272 psn|[from] psn",
+            "|upkeep",
+            "|turn|3",
+        ],
+        &["57890,13032,12358,42006", "8769,17248,37115,18776"],
+    );
+}
+
+#[test]
+fn bf15_b_synchronize_into_a_safeguard_announces_it_in_gen3ou() {
+    bf_check(
+        "BF15b",
+        "gen3ou",
+        "1,2,3,4",
+        "Alakazam||none|synchronize|splash|Hardy|85,85,85,85,85,85|M||||",
+        "Bayleef||none|overgrow|safeguard,poisonpowder|Hardy|85,85,85,85,85,85|M||||",
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0)), ScriptDecision::both(Choice::Move(0), Choice::Move(1))],
+        &[
+            "|move|p1a: Alakazam|Splash|p1a: Alakazam",
+            "|-nothing",
+            "|move|p2a: Bayleef|Safeguard|p2a: Bayleef",
+            "|-sidestart|p2: P2|Safeguard",
+            "|upkeep",
+            "|turn|2",
+            "|move|p1a: Alakazam|Splash|p1a: Alakazam",
+            "|-nothing",
+            "|move|p2a: Bayleef|Poison Powder|p1a: Alakazam",
+            "|-status|p1a: Alakazam|psn",
+            "|-activate|p2a: Bayleef|move: Safeguard",
+            "|-damage|p1a: Alakazam|238/272 psn|[from] psn",
+            "|upkeep",
+            "|turn|3",
+        ],
+        &["57890,13032,12358,42006", "37673,46633,62039,8266"],
+    );
+}
+
+/// BF16 (found by the B8 agent; `gen3_bf_multihit_user_stops_v1`): gen 3's multi-hit loop
+/// (data/mods/gen3/scripts.ts:409-410) runs `for (i = 0; i < hits && target.hp && pokemon.hp; i++) { if
+/// (pokemon.status === 'slp' && !isSleepUsable) break; ...}`: an Effect Spore sleep (BF16a, OU: Breloom vs Arm
+/// Thrust) or a Rough Skin KO of the user (BF16b) between strikes ends the move, and `-hitcount` reports the
+/// strikes landed. WRONG (pre-fix): the port kept striking (4 hits for 3 in BF16a, with the seed off).
+/// Ground truth: `harness/probe_bf_classes.js` (BF16a, BF16b).
+#[test]
+fn bf16_a_a_multihit_stops_when_its_user_falls_asleep_to_effect_spore() {
+    bf_check(
+        "BF16a",
+        "gen3customgame",
+        "4,9,14,19",
+        "Hariyama||none|thickfat|armthrust|Hardy|85,85,85,85,85,85|M||||",
+        "Breloom||none|effectspore|splash|Hardy|85,85,85,85,85,85|M||||",
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0))],
+        &[
+            "|move|p2a: Breloom|Splash|p2a: Breloom",
+            "|-nothing",
+            "|move|p1a: Hariyama|Arm Thrust|p2a: Breloom",
+            "|-damage|p2a: Breloom|257/282",
+            "|-damage|p2a: Breloom|232/282",
+            "|-damage|p2a: Breloom|208/282",
+            "|-status|p1a: Hariyama|slp",
+            "|-hitcount|p2a: Breloom|3",
+            "|upkeep",
+            "|turn|2",
+        ],
+        &["6726,60557,63672,14816"],
+    );
+}
+
+#[test]
+fn bf16_b_a_multihit_stops_when_its_user_faints_to_rough_skin() {
+    bf_check(
+        "BF16b",
+        "gen3customgame",
+        "5,6,7,8",
+        "Shedinja||none|wonderguard|furyswipes|Hardy|85,85,85,85,85,85|M||||]Snorlax||none|thickfat|splash|Hardy|85,85,85,85,85,85|M||||",
+        "Sharpedo||none|roughskin|splash|Hardy|85,85,85,85,85,85|M||||",
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0)), ScriptDecision::one(0, Choice::Switch(1))],
+        &[
+            "|move|p2a: Sharpedo|Splash|p2a: Sharpedo",
+            "|-nothing",
+            "|move|p1a: Shedinja|Fury Swipes|p2a: Sharpedo",
+            "|-damage|p2a: Sharpedo|274/302",
+            "|-damage|p1a: Shedinja|0 fnt|[from] ability: Rough Skin|[of] p2a: Sharpedo",
+            "|-hitcount|p2a: Sharpedo|1",
+            "|faint|p1a: Shedinja",
+            "|switch|p1a: Snorlax|Snorlax, M|482/482",
+            "|upkeep",
+            "|turn|2",
+        ],
+        &["3090,29639,52671,47823", "51644,13992,14189,6510"],
+    );
 }

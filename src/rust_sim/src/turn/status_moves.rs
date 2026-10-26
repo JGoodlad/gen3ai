@@ -4205,28 +4205,15 @@ impl crate::state::BattleState {
             return MoveResolution::done(false, false, false);
         }
 
-        // (6) The gen3ou SetStatus handler-sort shuffle (the self-`setStatus('slp')`
-        //     reaches `runEvent('SetStatus')`). Only a format with BOTH clause handlers
-        //     draws it (`FormatRules::set_status_shuffle`); gen3customgame and the
-        //     Sleep-Clause-only tiers draw nothing. A self-Rest is EXEMPT from the Sleep-Clause CAP, so we draw
-        //     the shuffle (the 2 clause handlers always tie) but never run the sleeper
-        //     block.
-        if self.rules.set_status_shuffle() {
-            self.set_status_event_shuffle();
-        }
-
-        // (2c) SLEEP-IMMUNE ABILITY GUARD (`gen3_rest_sleep_immune_v1`) — gen3
-        //      `setStatus('slp')` is BLOCKED by the user's OWN sleep-immunity ability
-        //      (INSOMNIA / VITAL SPIRIT, `AbilityData.status_immune.blocks("slp")`) at
-        //      `runEvent('SetStatus')`, BEFORE `singleEvent('Start', slp)` — so the sleep
-        //      `random(2,6)` is NEVER drawn and Rest FAILS (`onHit` returns false: no sleep,
-        //      no heal). The port used to draw the `random(2,6)` + sleep + heal
-        //      unconditionally → +1 draw + wrong state (the A/B repro rmry3vbgm_ab_1_1
-        //      seed@15 = a damaged Insomnia Hypno Resting). It sits AFTER the gen3ou clause
-        //      shuffle above (the ability sorts into its own speed group → the 2 clauses stay
-        //      a size-2 tie → the shuffle STILL draws — `gen3_status_immune_v1`) and emits the
-        //      sim's `|-fail|<user>|[from] ability: <A>|[of] <user>` (probe-verified,
-        //      `harness/probe_rest_sleep_immune_rng.js`).
+        // (2c) SLEEP-IMMUNE ABILITY GUARD (`gen3_rest_sleep_immune_v1`, corrected by
+        //      `gen3_bf_rest_insomnia_no_shuffle_v1`) — `rest.onTry` (data/moves.ts:14975-14983,
+        //      resolved unchanged in gen 3) fails a Rest by an INSOMNIA / VITAL SPIRIT user with
+        //      `|-fail|<user>|[from] ability: <A>|[of] <user>` and `return null`, right after the
+        //      full-HP check and BEFORE `onHit`'s `setStatus('slp')`. So no `SetStatus` event
+        //      runs: no sleep `random(2,6)`, AND no gen3ou two-clause handler-sort shuffle (the
+        //      port drew that shuffle first, one draw too many in gen3ou / gen3uubl / gen3draft;
+        //      probe `harness/probe_bf_classes.js` BF6: the failed Rest's seed == a Splash
+        //      turn's). Draw-free in every format.
         {
             let ability_id = to_id(&self.sides[side].pokemon[slot].ability);
             let blocks_slp = dex
@@ -4245,6 +4232,16 @@ impl crate::state::BattleState {
             }
         }
 
+        // (6) The gen3ou SetStatus handler-sort shuffle (the self-`setStatus('slp')`
+        //     reaches `runEvent('SetStatus')`). Only a format with BOTH clause handlers
+        //     draws it (`FormatRules::set_status_shuffle`); gen3customgame and the
+        //     Sleep-Clause-only tiers draw nothing. A self-Rest is EXEMPT from the Sleep-Clause CAP, so we draw
+        //     the shuffle (the 2 clause handlers always tie) but never run the sleeper
+        //     block.
+        if self.rules.set_status_shuffle() {
+            self.set_status_event_shuffle();
+        }
+
         // (2d) UPROAR blocks Rest's own sleep (`gen3_b5_moves_v1`, the TECH_DEBT (c) row found by
         //      `gen_sim_bridge_diff.js --mode lockin` seed 303 battle 15). Rest's `onHit` runs
         //      `target.setStatus('slp', source, move)` (`data/moves.ts` rest), whose
@@ -4253,7 +4250,7 @@ impl crate::state::BattleState {
         //      Uproar` (`|[msg]` when the mon is the uproarer itself) and returns null, so
         //      `setStatus` is false and Rest's `onHit` returns before the `random(2,6)` sleep
         //      roll and the heal. Inside the SetStatus event, so AFTER the gen3ou clause shuffle
-        //      above (uproar's handler has a defined speed and sorts alone — the shuffle count
+        //      above (and after the Insomnia / Vital Spirit `onTry` fail, BF6) (uproar's handler has a defined speed and sorts alone — the shuffle count
         //      is unchanged, as in `try_set_status`). PP is already spent; no `[still]`. ---
         if let Some((uside, uslot)) = self.any_uproarer() {
             if self.logging() {

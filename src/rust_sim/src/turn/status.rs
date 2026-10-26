@@ -583,11 +583,19 @@ impl crate::state::BattleState {
         //       [EMIT] `|-activate|<target>|move: Safeguard` on the TARGET MON, for a
         //       status-MOVE source only; a blocked SECONDARY is SILENT (its `random(100)`
         //       still drew — the suppression is of the effect, not the roll).
+        //       A SYNCHRONIZE reflect announces too (`gen3_bf_synchronize_safeguard_v1`, fuzz
+        //       `rmvprol00_ab_2_5`): gen 3 / 4's Synchronize (data/mods/gen4/abilities.ts:469-478)
+        //       calls `source.trySetStatus(id, target)` with no effect, so `setStatus` takes
+        //       `this.battle.effect` = the Synchronize ability, and Safeguard's `onSetStatus`
+        //       (data/moves.ts:15602) adds the line for `effect.id === 'synchronize'`. A contact
+        //       ability's status (Static, Poison Point, Effect Spore, Flame Body) stays silent.
+        //       Probe `harness/probe_bf_classes.js` BF15.
+        let synchronize_reflect = matches!(&ability_reveal, Some((_, _, a)) if a == "Synchronize");
         if self.sides[foe].safeguard > 0
             && !self.yawn_resolving
             && source != Some((foe, foe_slot))
         {
-            if announce_immune_block && self.logging() {
+            if (announce_immune_block || synchronize_reflect) && self.logging() {
                 let target = self.mon_ref(foe, foe_slot, dex);
                 self.log.activate(&target, "move: Safeguard", None);
             }

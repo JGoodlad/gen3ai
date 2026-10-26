@@ -974,7 +974,15 @@ fn serialize_active_with_disabled_source(
                 // `{"move":"Curse","id":"curse","pp":5,"maxpp":10,"target":"self",...}`. The
                 // Mimic record survives underneath the copy (it is restored after it), so this
                 // must be gated or a transformed Mimic-carrier would drop one slot's key.
+                // ...and NOT for a non-Ghost user's CURSE: `getMoveRequestData` (sim/pokemon.ts:998-1004)
+                // overrides a Curse slot's `undefined` target with `nonGhostTarget` ("self") before it
+                // serializes, so a Mimicked Curse shows `"target":"self"`; a Ghost mimicker's keeps the
+                // key dropped (`gen3_bf_mimic_curse_request_target_v1`, bridge fuzz `rmvpofecf_bab_2_21`,
+                // probe `harness/probe_bf_classes.js` BF11).
+                let nonghost_curse = crate::dex::to_id(mv) == "curse"
+                    && !crate::turn::mon_types(mon, dex).contains(&crate::dex::Type::Ghost);
                 let mimicked = mon.transform.is_none()
+                    && !nonghost_curse
                     && mon.mimic_overlay.as_ref().is_some_and(|ov| ov.slot == k);
                 // The post-reject mutation: this slot is the one the client was refused, so
                 // it renders `disabled:true` + the trailing `disabledSource` key.

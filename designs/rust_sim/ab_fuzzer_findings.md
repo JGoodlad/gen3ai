@@ -837,6 +837,31 @@ saved non-allowlisted `ab_fuzz --protocol` repros (four by the end of this pass)
 Hidden Power the way `ab_fuzz.js` does (pool / ourandom / ladder); before this, it replayed every
 repro as `gen3customgame` and reproduced a different battle for any gen3ou repro.
 
+## The full-parity FIX batch (BF, 2026-10-26) — the random-universe tail in moves the engine ran
+
+The `--mode random --protocol` fuzz on seeds 5501 / 91337 (150 battles each) and `bridge_ab_fuzz.js
+--mode random` kept finding classes in moves that were MODELED (not fail-loud). Each is settled in
+`harness/probe_bf_classes.js` (its header carries the rule, with the Showdown file and line) and
+pinned BF1-BF11 (`regression_pins.md`):
+
+- **Rage** — the reaction is `runEvent('Hit')` in `runMoveEffects`, after `-damage`, per strike,
+  for fixed-damage hits, never for a KO'd holder, `atk|0` at +6; the volatile drops at ANY move
+  attempt (`onBeforeMove` priority 100), a sleeping one too. The largest class (10 of the 23 baseline repros).
+- **Fury Cutter** — the multiplier doubles in the gen-3 move `onHit`, not at base-power time (a
+  blocked, sleeping, missed or sub-absorbed use advanced the port's ladder: most `seed` repros).
+- **Uproar** wakes sleepers in its `onTryHit`, before the damage line.
+- **Smelling Salts** does not cure a KO'd target; **False Swipe** into 1 HP still prints `-damage`
+  and runs AFTER Endure; **Rest** by an Insomnia user draws no gen3ou clause shuffle; the **Pursuit**
+  interrupt makes Pursuit the last move (Disable after a self-overwriting Mimic, Conversion 2).
+- Found by the fuzz in other modeled moves: the **defrost** thaw follows every BeforeMove handler;
+  a **fainted** future-move caster prints slot-less (`p2: <name>`); and (the bridge fuzz on the B5
+  tree) **Lansat Berry** on a holder already under Focus Energy prints no `-start`, and a
+  **Mimic'd Curse** carries `"target":"self"` in the request for a non-Ghost user.
+
+What remains in the random modes is **Rest under a live Uproar** (B5, fixed on its own branch):
+`rmvpmasx0_ab_5_19`, bridge `rmvpmkys2_bab_0_6`. The OU controls (`--mode pool` / `ladder`
+`--format gen3ou`) were clean before and after (one allowlisted turn-0 construction tie each).
+
 ## `ab_fuzz.js` — the driver, the three team modes, the replayer and the repro format
 
 - **The driver** `harness/ab_fuzz.js` — per chunk (default 25 battles): generate/pick team

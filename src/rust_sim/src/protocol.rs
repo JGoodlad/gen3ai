@@ -1257,6 +1257,11 @@ impl ProtocolBuilder {
     pub fn volatile_end_from_item(&mut self, mon: &MonRef, effect: &str, item: &str) {
         self.emit(|| Line::new(Kw::End, vec![Field::mon(mon), text_or_empty(effect), Field::From(LineCause::Item(item.into()))]));
     }
+    /// `|-end|<mon>|<Effect>|[from] ability: <Ability>` — a volatile removed by the holder's own
+    /// ability (`gen3_bf_volatile_immune_onupdate_v1`, Oblivious ending an Attract).
+    pub fn volatile_end_from_ability(&mut self, mon: &MonRef, effect: &str, ability: &str) {
+        self.emit(|| Line::new(Kw::End, vec![Field::mon(mon), text_or_empty(effect), Field::From(LineCause::Ability(ability.into()))]));
+    }
     /// `|-end|<mon>|<Effect>|[from] move: <Move>|[of] <of>` — a volatile removed BY a move
     /// (`gen3_move_coverage_batch1_v1`, Rapid Spin clearing the USER's own Leech Seed:
     /// `|-end|<user>|Leech Seed|[from] move: Rapid Spin|[of] <user>`).

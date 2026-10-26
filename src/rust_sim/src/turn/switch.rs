@@ -803,6 +803,13 @@ impl crate::state::BattleState {
                     self.sides[pside].pokemon[pslot]
                         .deduct_pp(pmi, if pressure_extra { 2 } else { 1 });
                     self.sides[pside].pokemon[pslot].last_move = Some(pmi);
+                    // `moveUsed(pursuit)` makes `lastMove` PURSUIT, a move in a real slot, so a
+                    // self-overwriting Mimic used before it no longer hides the last move from
+                    // Disable / Encore / Mimic; and `useMove` → `useMoveInner` sets `lastMoveUsed`
+                    // (data/mods/gen3/scripts.ts:127), which Conversion 2 reads
+                    // (`gen3_bf_pursuit_last_move_v1`, probe `harness/probe_bf_classes.js` BF7).
+                    self.sides[pside].pokemon[pslot].last_move_was_self_overwrite = false;
+                    self.sides[pside].pokemon[pslot].last_move_used = Some("pursuit".to_string());
                     // (d) `useMove(pursuit, source, {target: switcher})` — the strike at ×2 BP +
                     //     never-miss (the transient `pursuit_strike` flag, read+cleared inside
                     //     run_move). The switcher is still at `self.sides[side].active`, so

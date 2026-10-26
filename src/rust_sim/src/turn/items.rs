@@ -154,11 +154,17 @@ impl crate::state::BattleState {
                     let _ = self.eat_item(side, slot, dex);
                     // `addVolatile('focusenergy')` — draw-free; the crit roll reads it
                     // (`onModifyCritRatio critRatio + 2`). Emits the sim's
-                    // `|-start|<mon>|move: Focus Energy`.
-                    self.sides[side].pokemon[slot].focus_energy = true;
-                    if self.logging() {
-                        let m = self.mon_ref(side, slot, dex);
-                        self.log.volatile_start(&m, "move: Focus Energy");
+                    // `|-start|<mon>|move: Focus Energy` — but only when the volatile is NEW: the
+                    // condition has no `onRestart`, so on a holder that already used Focus Energy
+                    // `addVolatile` returns false SILENTLY (`-enditem` alone;
+                    // `gen3_bf_lansat_focused_v1`, bridge fuzz `rmvpofecf_bab_2_6`, probe
+                    // `harness/probe_bf_classes.js` BF10).
+                    if !self.sides[side].pokemon[slot].focus_energy {
+                        self.sides[side].pokemon[slot].focus_energy = true;
+                        if self.logging() {
+                            let m = self.mon_ref(side, slot, dex);
+                            self.log.volatile_start(&m, "move: Focus Energy");
+                        }
                     }
                 }
             }
@@ -228,6 +234,7 @@ impl crate::state::BattleState {
             // ability handler is gathered BEFORE the item's (`findPokemonEventHandlers`
             // ability-then-item), so it runs ahead of the berry check per mon.
             self.status_immune_on_update(side, dex);
+            self.volatile_immune_on_update(side, dex);
             self.berry_on_update(side, dex);
             self.mental_herb_on_update(side, dex);
         }
@@ -299,6 +306,43 @@ impl crate::state::BattleState {
             if tok == "slp" {
                 self.end_nightmare_on_cure(side, slot, dex);
             }
+        }
+    }
+
+    /// One active's Update-site VOLATILE-curing ability (`gen3_bf_volatile_immune_onupdate_v1`,
+    /// fuzz-found on the B6 + BF tree, `rmvprol00_ab_4_12`). Like the STATUS_IMMUNE cure above,
+    /// unreachable with the mon's OWN ability (it blocks the volatile), but a Skill Swap hands it to
+    /// a mon that already carries the volatile (either side of the swap), which is cured at the
+    /// next `Update`. DRAW-FREE. Probe `harness/probe_bf_classes.js` BF12 / BF13:
+    ///   - OWN TEMPO (`owntempo.onUpdate`, data/abilities.ts:3100; gen 7 drops only onTryBoost):
+    ///     `|-activate|<mon>|ability: Own Tempo`, then `removeVolatile('confusion')` → confusion's
+    ///     `onEnd` `|-end|<mon>|confusion`.
+    ///   - OBLIVIOUS (gen 5's override, inherited by gen 3: data/mods/gen5/abilities.ts:50): no
+    ///     `-activate`; `removeVolatile('attract')` → attract's `onEnd` `|-end|<mon>|Attract|[silent]`,
+    ///     then `|-end|<mon>|move: Attract|[from] ability: Oblivious`.
+    fn volatile_immune_on_update(&mut self, side: usize, dex: &Dex) {
+        let slot = self.sides[side].active;
+        let (ability, confused, attracted) = {
+            let mon = &self.sides[side].pokemon[slot];
+            if mon.fainted || mon.hp == 0 {
+                return;
+            }
+            (to_id(&mon.ability), mon.confusion.is_some(), mon.attract.is_some())
+        };
+        if ability == "owntempo" && confused {
+            if self.logging() {
+                let m = self.mon_ref(side, slot, dex);
+                self.log.activate(&m, "ability: Own Tempo", None);
+                self.log.volatile_end(&m, "confusion");
+            }
+            self.sides[side].pokemon[slot].confusion = None;
+        } else if ability == "oblivious" && attracted {
+            if self.logging() {
+                let m = self.mon_ref(side, slot, dex);
+                self.log.volatile_end_silent(&m, "Attract");
+                self.log.volatile_end_from_ability(&m, "move: Attract", "Oblivious");
+            }
+            self.sides[side].pokemon[slot].attract = None;
         }
     }
 
