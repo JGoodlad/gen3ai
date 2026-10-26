@@ -73,6 +73,17 @@ def read_stat(pid: int, proc: str = _PROC) -> Optional[Proc]:
         return None
 
 
+def pid_alive(pid: int, proc: str = _PROC) -> bool:
+    """Is ``pid`` a RUNNING process? One ``/proc/<pid>/stat`` read, no prior ``kill(pid, 0)``, so there is no
+    window between a liveness check and a second read for the process to die in.
+
+    Not alive: gone (``FileNotFoundError`` / ``ProcessLookupError`` -- ``ESRCH`` can come from the read of a
+    process that exits mid-read -- or any other ``OSError``), unparseable, or a zombie / dead state (``Z`` / ``X``:
+    an exited child nobody has reaped yet). Test helpers and ``gpu_lease`` use this one definition."""
+    st = read_stat(pid, proc)
+    return st is not None and st.state not in ("Z", "X")
+
+
 def all_pids(proc: str = _PROC) -> List[int]:
     return [int(n) for n in os.listdir(proc) if n.isdigit()]
 

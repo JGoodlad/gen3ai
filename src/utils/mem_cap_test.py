@@ -44,6 +44,7 @@ import pytest
 
 from utils import heavy_slots as HS
 from utils import mem_cap as M
+from utils import procfs
 from utils.contention import scale_timeout
 from utils.paths import repo_path, src_root
 
@@ -98,13 +99,7 @@ def _run(args, env, timeout=60.0, **kw):
     return subprocess.run([_SH, *args], env=env, capture_output=True, text=True, timeout=scale_timeout(timeout), **kw)
 
 
-def _alive(pid: int) -> bool:
-    try:
-        os.kill(pid, 0)
-    except ProcessLookupError:
-        return False
-    st = Path(f"/proc/{pid}/stat").read_text()
-    return st[st.rfind(")") + 2] != "Z"
+_alive = procfs.pid_alive          # one atomic /proc read; a zombie or a vanished pid is not alive (utils.procfs)
 
 
 def test_an_overrun_is_killed_and_the_caller_and_its_session_sibling_survive(env):

@@ -193,9 +193,7 @@ def test_the_cli_returns_the_commands_status_and_refuses_no_command(tmp_path):
 
 # ───────────────────────────────── the command's own PROCESS GROUP (2026-10-25) ─────────────────────────────────
 
-def _alive(pid: int) -> bool:
-    p = P.read_stat(pid)
-    return p is not None and p.state not in ("Z", "X")
+_alive = P.pid_alive            # one atomic /proc read; a zombie or a vanished pid is not alive
 
 
 def _killpg(pgid: int) -> None:

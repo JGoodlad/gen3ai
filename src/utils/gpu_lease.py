@@ -361,9 +361,7 @@ class Acquired:
     already_held: bool
 
 
-def _pid_alive(pid: int) -> bool:
-    st = procfs.read_stat(pid)
-    return st is not None and st.state not in ("Z", "X")       # an unreaped exited child is not alive
+_pid_alive = procfs.pid_alive      # an unreaped exited child is not alive
 
 
 def _check_watch_pid(watch_pid: int) -> None:

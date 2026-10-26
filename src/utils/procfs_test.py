@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import os
+import subprocess
+import time
 
 from utils import procfs as P
 
@@ -57,3 +59,30 @@ def test_this_process_reads_back():
     assert me is not None and me.ppid == os.getppid() and me.key == f"{os.getpid()}:{me.starttime}"
     assert os.getppid() in P.ancestors(os.getpid())
     assert me.pgrp == os.getpgrp() and me.session == os.getsid(0), "the group and session ids are parsed"
+
+
+def test_pid_alive_is_one_atomic_read_and_every_failure_mode_is_not_alive(tmp_path, monkeypatch):
+    assert P.pid_alive(os.getpid()) is True
+    assert P.pid_alive(2 ** 22 + 12345) is False, "an absent pid (FileNotFoundError) is not alive"
+    child = subprocess.Popen(["true"])
+    try:
+        end = time.monotonic() + 30
+        while P.pid_alive(child.pid) and time.monotonic() < end:     # exited, NOT reaped: a zombie
+            time.sleep(0.01)
+        st = P.read_stat(child.pid)
+        assert st is not None and st.state == "Z", "precondition: the unreaped exited child is a zombie"
+        assert P.pid_alive(child.pid) is False, "a zombie is not alive"
+    finally:
+        child.wait()
+    assert P.pid_alive(child.pid) is False, "reaped: gone"
+
+    def _vanishes_mid_read(*a, **k):                                  # the process exits between open and read
+        raise ProcessLookupError(3, "No such process")
+    monkeypatch.setattr("builtins.open", _vanishes_mid_read)
+    assert P.pid_alive(os.getpid()) is False
+    monkeypatch.undo()
+    (tmp_path / "7").mkdir()
+    (tmp_path / "7" / "stat").write_text("7 (junk")                   # unparseable
+    assert P.pid_alive(7, proc=str(tmp_path)) is False
+    (tmp_path / "7" / "stat").write_text("7 (a) X 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 5 0")
+    assert P.pid_alive(7, proc=str(tmp_path)) is False, "state X (dead) is not alive"

@@ -21,9 +21,7 @@ from utils.procgroup import group_members, run_in_own_group
 pytestmark = pytest.mark.integration
 
 
-def _alive(pid: int) -> bool:
-    p = procfs.read_stat(pid)
-    return p is not None and p.state not in ("Z", "X")
+_alive = procfs.pid_alive      # one atomic /proc read; a zombie or a vanished pid is not alive
 
 
 def _wait_for(pred, what: str, timeout: float = 15.0):
