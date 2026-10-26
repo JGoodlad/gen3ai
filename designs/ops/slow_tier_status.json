@@ -4164,6 +4164,14 @@
    "contention": 1.56,
    "detail": ""
   },
+  "src/main/human_data/student_test.py::test_train_export_reload_on_synthetic_rows": {
+   "status": "pass",
+   "commit": "a1370436f65d312ba84bf1409abde40393b2a30e",
+   "at": "2026-10-26T13:55:53Z",
+   "duration_s": 11.87,
+   "contention": 1.09,
+   "detail": ""
+  },
   "src/main/info_audit/info_audit_integration_test.py::test_every_check_passes_on_the_real_builder": {
    "status": "pass",
    "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",

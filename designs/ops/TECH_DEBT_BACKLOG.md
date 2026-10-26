@@ -7,7 +7,7 @@ The one list of tech-debt work. Research and measurement work is NOT tracked her
 live in `designs/endstate/obs_enrichment_backlog.md` (observation facts) or `UNDERSTANDING.md` §6
 (everything else).
 
-## Next 5 (ranked 2026-10-24, after grooming; 4 rows closed 2026-10-25, ranks renumbered)
+## Next 5 (ranked 2026-10-24, after grooming; 5 rows closed by 2026-10-26, ranks renumbered)
 
 Ranked by value to the current goals, in this order: **the strongest baseline** (the X26 continuation, `rb_x26c_s2601`,
 380M to 480M at the production pin, runs per the orchestrator's ruling `eaeb14229`), then **beat Metamon**, then
@@ -15,19 +15,16 @@ Ranked by value to the current goals, in this order: **the strongest baseline** 
 (`designs/endstate/search_ledger.md`), so no search row is ranked; the open search reads (L3's familiarity counter-test, stage 1c's
 phase A and L1's replication are all READ) are tracked there. This is a value ranking for the orchestrator's pick; the
 burn-down rule below still orders a quota burn (tier, then size). Items 1-3 protect the live continuation (a FATAL canary,
-a poisoned GPU filler, a blind memory guard); 4 keeps measurements and
-training inputs honest; 5 is hygiene.
+a poisoned GPU filler, a blind memory guard); 4 is hygiene.
 
 | # | row (bold phrase) | effort / tier | why now / blocks |
 |---|---|---|---|
 | 1 | **The canary's bf16 per-parameter rule divides by ONE eager draw, and its compiled arm is held to ONE global clip margin ...** (b, P2; near-margin dump BUILT, the per-row margin DESIGNED and its null RECORDED as a shadow at every canary 10-25; the CUDA census accrues per production canary from the next pin) | M, ~1 agent-day + ~60 min leased GPU; opus-high | a fixture tail can FATAL a production arm, and the continuation runs the production recipe |
 | 2 | **The AOT inference test `service_cuda_test.py::test_aot_backend_one_package_per_bucket_serves_every_slot` device-asserts ...** (b, P1; the assert and the next startup raise FIXED, the card proof PASSED 2026-10-25; one-process-per-node open) | S; the card re-run is ~2 min of a leased window, the filler change sonnet-high | a device assert poisons every GPU test after it in one process, so the GPU filler's slow-tier verdicts are noise |
 | 3 | **T2's `InferenceService._frozen_guard` ... BLIND under `expandable_segments`** (b, P1) | S; the code is done (memory by stream, graphs and precision by thread), the arming decision is the orchestrator's | the guard that watches every long run's memory stays OFF until armed; the memory card proof is in (4 of 4 PASS, 2026-10-21); the thread-attribution card test is written, not run |
-| 4 | **The `canary_decide` family names ...** (d, P2) | S; sonnet-medium | a production arm's canary read needs the bar typed by hand from a job directory outside the repo |
-| 5 | **1 stale `.claude/worktrees/agent-*` worktree left (21 of 22 gone) ...** (g, P3) | XS; the orchestrator approves it | `agent-ae2b6a9ea3a600d20`: clean, an ancestor of `main`, files last touched 2026-10-12 |
+| 4 | **1 stale `.claude/worktrees/agent-*` worktree left (21 of 22 gone) ...** (g, P3) | XS; the orchestrator approves it | `agent-ae2b6a9ea3a600d20`: clean, an ancestor of `main`, files last touched 2026-10-12 |
 
-Next after these (unranked): `best_response_gap`'s one-archetype verdict and sibling comparison (d, P2, S each; X35 routes
-around both), the matched-COUNT cross-run ELO read
+Next after these (unranked): the matched-COUNT cross-run ELO read
 (d, P2, S-M), the display nits (g, S).
 Search builds gated on the 1c read: L4's calibrated
 bank (1-2 agent-days), F1 tier B's remaining dice, a behaviour-cloned opponent model for the ladder.
@@ -120,9 +117,6 @@ gate — they matter only if search reopens — and reading them as one block sa
 
 | tier | item | why | size |
 |---|---|---|---|
-| P2 | **`main.best_response_gap` issues NO verdict on a one-archetype round (F1, population loop r1 2026-09-23)**: `agents/training/best_response_gap.py:939` prints `UNREADABLE — fewer than two archetypes are present in both rounds`; the number lives only in the per-archetype Newcombe row. Make a single-archetype round readable (verdict = that row, labelled as such). X35's R2 / G-E compute the interval themselves in `main.x35.readout` / `main.x35.d1`, so no X35 verdict waits on it. | a meter that refuses its own primary use case gets bypassed by hand | S |
-| P2 | **The `canary_decide` family names**: a production arm's canary read needs the bar (K, the floor, the arm's row) handed to it as an argument, and the version that carries it, Training Oct's `canary_decide_v2`, lives in its JOB directory, outside the repo and outside the gates. Fold it into the repo tool (one name, the bar taken from the recorded recipe or a typed, logged argument, a test that fails on revert) and delete the job-directory copy's use. UNVERIFIED here: the repo has no `canary_decide` module today (a grep of `*.py`, `*.md`, `*.sh` finds none), so the family's exact members are to be read from the job directory first. | a bar typed by hand into an untested script is where a canary verdict goes wrong | S |
-| P2 | **`main.best_response_gap` knows ROUNDS, not SIBLINGS (F2)**: `assign_rounds` / `--rounds` (`agents/training/best_response_gap.py:613`) orders two generalists at one target step by hand. Add a first-class treatment-vs-control comparison (gap(treatment) - gap(control), same matching refusals). Overlaps `TASK_BACKLOG.md` T58 (X35-5, full-pool reader); X35's R2 routes around both with pinned offense readers. | a hand-set round order is exactly where a swapped label reverses a verdict | S-M |
 | P3 | **third-party clients on our 250-turn forfeit — HALF CLOSED**: Metamon recurses without bound on a forfeit-desynchronised stream (upstream `RecursionError`). DETECTION landed: `main.anchors` names `peer_exited` (`anchors/session.py`) and exits non-zero. Still open: no automatic RE-ISSUE of the affected half-series (the operator re-runs it, `EXTERNAL_ANCHORS_SOP.md` §5); only `main.x35.kakuna` retries whole units (`MAX_ATTEMPTS`). | a manual re-run step in every affected anchor read | S |
 
 ### (e) Search and the search teacher — wound down 2026-09-12; these matter only if search reopens
@@ -164,6 +158,7 @@ compacted 2026-10-19 (58 KB of narrative to one line each). A new closure adds O
 
 | closed | row | evidence |
 |---|---|---|
+| 2026-10-26 | **The `canary_decide` family names; `main.best_response_gap` issued no verdict on a one-archetype round (F1) and knew rounds, not siblings (F2)** - FIXED: `main.ops.canary_decide` (the resume rule, the registered C0 2.64 / X47 2.40 bars, a typed logged `--bar`, an empty judgement HOLDs; the job-directory `canary_decide_v2.py` is retired); `best_response_gap` reads ONE shared archetype as its Newcombe interval (SINGLE-ARCHETYPE READ), none as NOT-APPLICABLE, and `--control` / `--treatment` compare two generalists at one target step (`SiblingError` refusals) | `src/main/ops/canary_decide.py`, `src/agents/training/best_response_gap.py` (`resolve_siblings`, `_compare_cells`), their `_test.py` |
 | 2026-10-26 | **The ENGINE kept an Outrage / Thrash / Petal Dance lock that Showdown ends after a cancelled repeat** (GIGO audit B-C1) - FIXED: `state::LockedMove` holds the sim's TWO counters (`duration: 2` ticked by the residual and put back only by a landed repeat's `onRestart` or gen 4's Protect block, `trueDuration` rolled once), the residual ticks `duration` BEFORE the sleep branch, and a cancelled repeat ends the lock (quietly on a 3-turn roll's second turn). The re-run of the audit's targeted games found a SECOND engine defect in the same set, a `mustrecharge` that never expired when a faint skipped the recharge turn (`gen3_recharge_expiry_v1`). Targeted games: 100 of 100 identical after the fix (seeds 1 and 2; two more fresh seeds in the audit README), `--mode lockin` 4 seeds x 60 battles clean on the fixed build and failing on the old one; an Uproar locker rides in the same mode (its own finding: Rest under Uproar, a row in (c)) | `gen3_lockin_cancelled_repeat_v1`, `gen3_recharge_expiry_v1`; `regression_test.rs` LI3 / RC1 (3 of 5 fixtures FAIL on the old engine), `utils/rust_env/lockin_parity_integration_test.py`, `gen_sim_bridge_diff.js --mode lockin` |
 | 2026-10-26 | **No guard pinned every dex num under its embedding table; the static item / Hidden Power label loss clamped instead of raising; the engine accepted a Species Clause breach** (GIGO audit C-F1, C-F2, D-F2) - FIXED: `constants.VOCAB_*` (the unused `MAX_*_ID` deleted) read by the layout and mirrored in `layout.rs`; a dex num at or past its table raises at `Gen3ObservationEncoder` construction and at the Rust tables' load, and `vocab_bounds_test.py` pins the shipped dex; `check_label_vocab` (which NOTHING called) now covers the item and hp-type labels and runs once per update from `train()` (`LabelVocabError`), and the static twin's CE no longer clamps its targets; `BattleState::start` refuses a clause-format team with two of one species num (customgame is unchanged) | `gen3_vocab_bounds_v1`, `gen3_label_vocab_raise_v1`, `gen3_species_clause_v1`; `vocab_bounds_test.py`, `encoder::data::num_tests`, `learner_gates_test.py`, `belief_bank_static_test.py`, `regression_test.rs` SC1 |
 | 2026-10-26 | **The decision at the stall-forfeit turn limit was a training row for an action that never ran** (GIGO audit B-C2) - FIXED: `GameLog.end` releases the forfeited game's last row, so the terminal lands on the last PLAYED decision (`staleness/forfeit_rows_dropped_total`). Executed first: the `--debug` smoke at a 6-turn limit wrote one row more than the core fed in all 297 ended games, and 347 of 347 after the fix | `gen3_stall_forfeit_row_v1`; `store_test.py`, `rust_rollout/stall_forfeit_row_integration_test.py` (fails on revert), `repros/followup/` |

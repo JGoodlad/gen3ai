@@ -1,5 +1,10 @@
 """X59-S's label sources and students (``teacher.py``, ``student.py``): matched noise, restricted sampling, the set
-loss, the arms' targets and their VOID guards, and one tiny train → export → reload on synthetic rows."""
+loss, the arms' targets and their VOID guards, and one tiny train → export → reload on synthetic rows.
+
+TIERS (2026-10-26; the end-to-end test measured 14.4 s niced, over the routine tier's 8 s bar: seven production-policy
+builds and ten extractor forwards dominate it): the full train → export → reload → second arm → refusal chain is
+`slow`; the routine tier keeps three cheap, separately failing checks of what it proves (one chunk trains and
+checkpoints, the SAME seed is the SAME initial network, a state trained under another arm is refused)."""
 from __future__ import annotations
 
 import json
@@ -116,6 +121,57 @@ def _tiny_rowset(d: Path, n: int, seed: int) -> None:
                                                       "train_rows": n, "val_rows": 64}))
 
 
+def _rows_dir(tmp_path, n=300):
+    rows = tmp_path / "rows"
+    _tiny_rowset(rows, n, 1)
+    return rows
+
+
+def _arm_dir(tmp_path, name, rows):
+    out = tmp_path / name
+    out.mkdir()
+    (out / "rows_path.txt").write_text(str(rows) + "\n")
+    return out
+
+
+def test_a_tiny_train_finishes_and_saves_the_state_a_resume_is_checked_against(tmp_path, restore_torch_globals):
+    """ROUTINE half of the end-to-end test below: a row set under one batch is one step, so the chunk finishes (0), the saved state
+    is `done` at step 1 with the arm / seed / init identity a resume compares, and a finite validation NLL."""
+    import torch as th
+
+    rows = _rows_dir(tmp_path, n=32)               # one step of 32 rows: the forward / backward is the cost
+    out = _arm_dir(tmp_path, "s_h", rows)
+    assert ST.train("human", rows, None, 5901, out, epochs=1, budget_min=0, threads=1) == 0
+    st = th.load(out / "state.pt", weights_only=False)
+    assert st["done"] and st["step"] == 1 and st["arm"] == "human" and st["seed"] == 5901
+    assert len(st["init_sha256"]) == 64 and st["hist"] and np.isfinite(st["hist"][-1])
+
+
+def test_one_seed_is_one_initial_network_in_every_arm(restore_torch_globals):
+    """ROUTINE half: the init digest `train` records is a function of the seed alone (the end-to-end test compares
+    the human and selfplay arms' recorded digests)."""
+    from main.fresh_checkpoint import build_fresh_model
+    from main.policy_spectrum.reader import inference_globals
+
+    with inference_globals(1, "cpu"):
+        a = ST._state_digest(build_fresh_model(5901)[0].policy.state_dict())
+        b = ST._state_digest(build_fresh_model(5901)[0].policy.state_dict())
+        c = ST._state_digest(build_fresh_model(5902)[0].policy.state_dict())
+    assert a == b and a != c
+
+
+def test_a_state_trained_under_another_arm_is_refused(tmp_path, restore_torch_globals):
+    """ROUTINE half: the resume identity check refuses a `state.pt` whose arm differs, without training anything."""
+    import torch as th
+
+    rows = _rows_dir(tmp_path)
+    other = _arm_dir(tmp_path, "s_s", rows)
+    th.save({"arm": "selfplay", "seed": 5901, "epochs": 1}, other / "state.pt")
+    with pytest.raises(ST.StudentError, match="another arm"):
+        ST.train("human", rows, None, 5901, other, epochs=1, budget_min=0, threads=1)
+
+
+@pytest.mark.slow
 def test_train_export_reload_on_synthetic_rows(tmp_path, restore_torch_globals):
     rows = tmp_path / "rows"
     _tiny_rowset(rows, 300, 1)

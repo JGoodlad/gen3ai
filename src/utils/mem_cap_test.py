@@ -445,10 +445,15 @@ def test_a_SIGKILLed_wrappers_heavy_slot_lives_as_long_as_its_job_tree(env, tmp_
     the wrapper freed it while the capped job (its own systemd scope) still ran. The supervisor now stops the job
     when its wrapper dies (gen3_mem_cap_stop_v1) - but a job that DEFERS SIGTERM runs on for the grace, and the
     slot must stay held through it. A REAL wrapper, a REAL tree, a REAL SIGKILL of the wrapper; only processes
-    this test started. Fails on a revert of the fd hand-down (`slot_fd` / the supervisor's pass_fds)."""
+    this test started. Fails on a revert of the fd hand-down (`slot_fd` / the supervisor's pass_fds).
+
+    TIMING (8.3 s niced before, 2026-10-26; the routine tier's bar is 8 s): the grace is long (30 s) and the test ENDS
+    the tree itself, by the pids it recorded, once the slot has been seen held through the wrapper's death. It used
+    to wait out an 8 s grace, which was both the whole cost and a race (the checks inside it had to finish first). That
+    the supervisor ends a SIGTERM-deferring tree after the grace is held by the two tests above (3 s grace)."""
     e = {**env, HS.SLOTS_ENV: "1"}
     cmd, pidfile = _tree_cmd(tmp_path, "root")
-    p = subprocess.Popen([sys.executable, "-m", "utils.mem_cap", "--slot", "--term-grace", "8", "0.5", *cmd],
+    p = subprocess.Popen([sys.executable, "-m", "utils.mem_cap", "--slot", "--term-grace", "30", "0.5", *cmd],
                          env=e, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     try:
         pids = _tree_pids(pidfile, 3)
@@ -459,7 +464,8 @@ def test_a_SIGKILLed_wrappers_heavy_slot_lives_as_long_as_its_job_tree(env, tmp_
         row = HS.collect(Path(e[HS.DIR_ENV]), 1)["slots"][0]
         assert row["pids"] and "owner gone" in row["why"], row                 # --status says so, not "free"
         assert _slot_taker_result(e) == "FULL", "the wrapper's death freed the slot while its job still runs (D-2)"
-        assert not _all_gone(pids.values(), 40), "the grace never ended the tree"
+        _kill_tree(pidfile)                                     # the job tree ends (by the pids this test recorded)
+        assert not _all_gone(pids.values(), 20), "the tree outlived its SIGKILL"
         deadline = time.monotonic() + scale_timeout(30)
         got = _slot_taker_result(e)
         while got != "TOOK" and time.monotonic() < deadline:
