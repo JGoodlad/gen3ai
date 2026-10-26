@@ -312,8 +312,9 @@ def selfplay(pstar: Path, like: Path, out: Path, threads: int = THREADS, n_envs:
         if n_val < want_val:
             val.append({f: z[f][v] for f in RS.FIELDS})
             n_val += int(v.sum())
-        carry.append({f: z[f][~v] for f in RS.FIELDS})
-        n_carry += int((~v).sum())
+        if len(shards) < len(sizes):                  # once every train shard is cut, only validation rows matter
+            carry.append({f: z[f][~v] for f in RS.FIELDS})
+            n_carry += int((~v).sum())
         del z
         while len(shards) < len(sizes) and n_carry >= sizes[len(shards)]:
             cat = {f: np.concatenate([t[f] for t in carry]) for f in RS.FIELDS}
