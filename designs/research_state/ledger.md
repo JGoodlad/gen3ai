@@ -28885,3 +28885,32 @@ the unmixed belief; an effect below ≈ 6 pp (80 % power) is not excluded. Lever
 
 **Evidence:** `research_state/measurements/belief_prior_mix_2026-10-26/` (README, `PREREG.md`, `read_spec_l025.json`,
 `read_l025/`); raw units in `~/gen3ai_archive/belief_prior_mix_2026-10-26/l025/`. See `UNDERSTANDING.md` §3.1.
+
+### 2026-10-26 · MEASUREMENT · **FR-3: P\* BEATS METAMON'S 200M HUMAN-ONLY MODELS TOO (OURS-BEATS ×2): U 0.631 [0.603, 0.658] vs `LargeRL`, 0.790 [0.766, 0.812] vs `LargeIL`; offline RL beats imitation on the same human data by ≈ 16 pp; no human-only Metamon model outperforms P\***
+
+**Question.** The owner's "does a model using only human data outperform ours?" at Metamon's largest human-only scale
+(Q-H10, FR-3 of `endstate/design_human_replay_lever.md` §2.3): P\* (`rb_x26_s2601` @280,000,170) vs `LargeRL` (195M,
+offline RL) and `LargeIL` (194M, imitation), both trained on human replays only (ckpt 40, hub `ac8e88e7`, downloaded
+2026-10-25 with the orchestrator's approval; sha256 in `PREREG.md`).
+
+**Design.** Registered at `57fd657b` with FR-1, before any game: FR-1's cells, harness, twins and rule (OURS-BEATS iff
+W-U's LB > 0.50). Held behind FR-1 (CPU-bound) and resumed after `4d8d9eef`. Regimes `1664a6b4a5c16de4` (LargeRL),
+`541710e5b509e8b7` (LargeIL).
+
+**Result.**
+- **LargeRL: U 0.631 [0.603, 0.658] ⇒ OURS-BEATS**; H 0.640, F 0.613, P72 0.640, home72 0.700 [0.653, 0.743].
+- **LargeIL: U 0.790 [0.766, 0.812] ⇒ OURS-BEATS**; H 0.810, F 0.770, P72 0.790, home72 0.785 [0.742, 0.822].
+- Against the same twins vs Kakuna: U +0.144 [+0.105, +0.183] (LargeRL) and +0.303 [+0.266, +0.339] (LargeIL); both
+  WEAKER THAN KAKUNA on every panel. IL − RL on U +0.159 [+0.123, +0.195]: offline RL is the stronger recipe.
+- With FR-1 (SmallRL U 0.666): every human-only model Metamon publishes loses to P\*, and the unfamiliar panels are
+  level against all three, so P\*'s P72 deficit against Kakuna (0.433) is Kakuna-specific.
+- 160 / 160 units counted after same-seed re-runs of `lrl_p72_08` and `lrl_home72_02` (the latter failed twice at the
+  identical log line: Metamon's peer recursing to `RecursionError` after its last battle; SOP hazard H21).
+- Predictions (GUESS): LargeRL U 0.64 (close); LargeIL U 0.68 (it is much weaker).
+
+**What it cannot say.** Upstream's recipes vs ours (architecture, scale and data all differ), not human data vs ours
+in one network: X59-S remains the read for Q-H9 and for Q-H10 in our architecture. One checkpoint each; H18 favours P\*.
+
+**Evidence:** `research_state/measurements/human_only_vs_pstar_2026-10-25/` (`PREREG.md`, `README.md`, `cells.json`,
+`rows.jsonl.gz`, `scripts/`). View: `UNDERSTANDING.md` §4.8, `endstate/human_data_architecture.md` §7,
+`ops/EXTERNAL_ANCHORS_SOP.md` §3 (H21) and §4.

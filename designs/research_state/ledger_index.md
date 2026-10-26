@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-28,888-line file. **The ledger itself is append-only and is never edited by this**;
+28,917-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**948 headings · 893 dated · 2026-08-01 → 2026-10-26 · ledger 28,888 lines.**
+**949 headings · 894 dated · 2026-08-01 → 2026-10-26 · ledger 28,917 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -968,3 +968,4 @@ rename.
   - `L28806` · `2026-10-25` · MEASUREMENT · **L1's registered replication on the maturity battery's plateau bank: the one PAYS-SCOPED cell (piKL at the 4-turn leaf) REPLICATES, thinly (+0.0097 [+0.0025, +0.0169], 98.33 % lower +0.0010), but it is the 25M anchor's (+0.0193; P\* +0.0001) and the leaf's own signal (the anchor adds +0.0025 [−0.0039, +0.0089]); ALL SELF-REFEREE**
   - `L28832` · `2026-10-25` · MEASUREMENT · **FR-1: P\* BEATS METAMON'S HUMAN-ONLY `SmallRL` (OURS-BEATS): 0.666 [0.639, 0.692] on the unfamiliar panels, 0.785 [0.742, 0.822] on home72; ≈ 18 pp easier than Kakuna on every panel**
   - `L28861` · `2026-10-26` · MEASUREMENT · **THE BELIEF PRIOR MIX at λ = 0.25 against Kakuna, read under its registration (`4ee655648`): NOT DETECTED. Unfamiliar U +1.50 pp [−2.74, +5.74] against X51's banked P\* (0.502 vs 0.487), home72 −0.50 pp [−5.32, +4.32]; the determinism guard replays X51 game for game; D0f (λ = 1) pending**
+  - `L28889` · `2026-10-26` · MEASUREMENT · **FR-3: P\* BEATS METAMON'S 200M HUMAN-ONLY MODELS TOO (OURS-BEATS ×2): U 0.631 [0.603, 0.658] vs `LargeRL`, 0.790 [0.766, 0.812] vs `LargeIL`; offline RL beats imitation on the same human data by ≈ 16 pp; no human-only Metamon model outperforms P\***
