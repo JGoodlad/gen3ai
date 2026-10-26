@@ -1,0 +1,23 @@
+{
+ "anchor": "x26_225M",
+ "bootstrap": {
+  "draws": 2000,
+  "seed": 20261026
+ },
+ "files_sha256": {
+  "designs/research_state/measurements/search_e1_0_2026-10-26/play_e10.py": "c2d7ce9c27e409c3070a7f8d301e9044423e537caab1cde229496e583ece0f30",
+  "designs/research_state/measurements/search_e1_0_2026-10-26/run_e10.sh": "02cfb6e77ed120a2c3813c2fb1088b14f41abb61c34963e3812cb5f8b719a170",
+  "designs/research_state/measurements/search_e1_0_2026-10-26/score_e10.py": "5364c30d9d7ed51de5183f63b075490207984ca6e464e4b6c3cf017a08ccf51c",
+  "src/main/value_search/playout.py": "0b005cbe08a1d416c4b4a31bc9fc1971039d5279ecec490cfa18d2e75fdfd1f1"
+ },
+ "pin": "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b",
+ "primary": [
+  "MAT:F:LEAF-K8",
+  "MAT:O:LEAF-K8",
+  "S1:C_pool-F_legal:LEAF-K8",
+  "1C:PIKL:C128L:LEAF-K8"
+ ],
+ "registered": "2026-10-25",
+ "salt": "search_e1_0_v1:",
+ "unit": "E1-0"
+}

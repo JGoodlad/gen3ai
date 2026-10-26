@@ -11,6 +11,13 @@ A leaf's value, on the WIN scale [0, 1]: the terminal outcome (1 win, 0 loss inc
 tie / truncated at ``max_turns``), or, at ``depth`` d, the forward's V at the searched side's first
 decision whose turn ≥ root turn + d (the turn decoded from the obs clock). A branch captured at depth
 is abandoned (the next open resets the handle).
+
+THE REFEREE (:func:`referee`): the IMP metric's disjoint judge (``search_ledger.md`` §6.2), every legal action x
+the referee's seeds played to the END in the TRUE world, the forward greedy on the searched side. The other side
+is the forward too (the SELF-referee, the default, which every banked IMP used) or, with ``opp_bot``, the
+state's real scripted bot played INSIDE the core (the ``bot`` key of ``rust_env_playout_open``; never pending).
+The bot is a referee option ONLY: :class:`LeafEngine` (the search's own leaves) never takes one (E1-0,
+``designs/research_state/measurements/search_e1_0_2026-10-26/``).
 """
 from __future__ import annotations
 
@@ -167,3 +174,118 @@ class LeafEngine:
                 for i, rq in zip(s["idx"], s["reqs"]):
                     if rq.action == int(br["action"]):
                         out[i] = v
+
+
+@dataclass(frozen=True)
+class OppBot:
+    """The REFEREE's opponent as an in-core scripted bot: ``name`` a ``crate::bots::Kind`` name (``random``,
+    ``heuristic``, ``heuristic2``, ``staller``, ``staller_v2``, ``aggressive``, ``aggressive_v2``, ``setup_sweep``,
+    ``setup_sweep_v2``) and ``seed`` the route seed of its dice streams."""
+
+    name: str
+    seed: int
+
+
+@dataclass
+class RefereeResult:
+    """``out[a]``: one outcome character per seed, in seed order (``+`` win, ``-`` loss incl. a stall forfeit,
+    ``0`` tie or truncated at ``max_turns``), the banked truth rows' encoding. ``fwd_rows[side]``: the rows the
+    forward answered per side (0 = p1, 1 = p2); with ``opp_bot`` the bot's side is never forwarded."""
+
+    out: Dict[int, str]
+    tokens: Dict[int, str]
+    other_open: bool
+    fwd_rows: List[int]
+
+
+def referee(forward: Forward, log: dict, at: int, side: str, seeds: Sequence[str], *,
+            actions: Optional[Sequence[int]] = None, opp_bot: Optional[OppBot] = None, lib=None,
+            max_turns: int = 999) -> RefereeResult:
+    """Play ``actions`` (default: every legal action) x ``seeds`` to the end from command ``at`` of ``log``, the
+    forward greedy on ``side`` and, unless ``opp_bot`` is given (default OFF), on the other side too.
+
+    ONE playout open PER ACTION, all stepped in lockstep through one forward per step (identical rows
+    deduplicated). A branch's outcome is a function of (log, at, action, seed, policy), so the self-referee
+    reproduces the single-open play of every action (the banked truth rows). With ``opp_bot`` the per-action open
+    makes branch ``b`` = the seed's index, so the bot's dice streams (``stream_seed(seed, b, k)``) are COMMON
+    across actions, as the battle's dice are. Production's stall forfeit applies to ``side``."""
+    from utils.rust_env import ffi as F
+    from utils.rust_env.successors import SearchCore, SuccessorsError, _raise, production_stall
+
+    lib = lib if lib is not None else F.load(F.default_path("release"))
+    fwd = dedup_forward(forward)
+    me = 0 if side == "p1" else 1
+    bot = None if opp_bot is None else {"side": "p2" if me == 0 else "p1", "name": str(opp_bot.name),
+                                        "seed": int(opp_bot.seed)}
+    probe = SearchCore(lib=lib)
+    try:
+        req = {"log": log, "at": int(at), "side": side, "actions": None, "seeds": [None], "stall": None,
+               "max_turns": int(max_turns), "keep_cmds": False}
+        root = probe._cstr(probe.lib.rust_env_playout_open, json.dumps(req).encode())
+    finally:
+        probe.close()
+    tokens = {int(k): v for k, v in root["tokens"].items()}
+    acts = sorted(tokens) if actions is None else [int(a) for a in actions]
+    seeds = list(seeds)
+    st = []
+    fwd_rows = [0, 0]
+    try:
+        for a in acts:
+            core = SearchCore(lib=lib)
+            st.append({"core": core, "a": a, "live": True, "n": 0})
+            req = {"log": log, "at": int(at), "side": side, "actions": [a], "seeds": seeds,
+                   "stall": production_stall(side), "max_turns": int(max_turns), "keep_cmds": False}
+            if bot is not None:
+                req["bot"] = bot
+            r = core._cstr(core.lib.rust_env_playout_open, json.dumps(req).encode())
+            cap = 2 * int(r["branches"])
+            st[-1].update({"cap": cap, "rows": np.empty((cap, core.obs_dim), dtype=np.float32),
+                           "masks": np.empty((cap, ACT), dtype=np.uint8), "who": np.empty(cap, dtype=np.uint32),
+                           "acts": np.zeros(cap, dtype=np.int32)})
+        while True:
+            pend = []
+            for s in st:
+                if not s["live"]:
+                    continue
+                core = s["core"]
+                with core._lock:
+                    k = core.lib.rust_env_playout_step(core._h, s["acts"].ctypes.data, s["n"], s["rows"].ctypes.data,
+                                                       s["masks"].ctypes.data, s["who"].ctypes.data, s["cap"])
+                    if k == ctypes.c_size_t(-1).value:
+                        _raise(core.lib)
+                if k == 0:
+                    s["live"] = False
+                    continue
+                pend.append((s, int(k)))
+            if not pend:
+                break
+            res = fwd(np.concatenate([s["rows"][:k] for s, k in pend]),
+                      np.concatenate([s["masks"][:k] for s, k in pend]))
+            o = 0
+            for s, k in pend:
+                r = res[o:o + k]
+                o += k
+                for q in (0, 1):
+                    fwd_rows[q] += int(np.count_nonzero((s["who"][:k] % 2) == q))
+                lg = np.where(s["masks"][:k].astype(bool), r[:, :ACT].astype(np.float64), -np.inf)
+                s["acts"][:k] = lg.argmax(axis=1).astype(np.int32)
+                s["n"] = k
+        out: Dict[int, str] = {}
+        for s in st:
+            res = s["core"]._cstr(s["core"].lib.rust_env_playout_results)
+            ch = [None] * len(seeds)
+            for br in res["branches"]:
+                if int(br["action"]) != s["a"]:
+                    raise SuccessorsError(f"a branch of action {br['action']} in action {s['a']}'s open")
+                e = br["end"]
+                if e is None:
+                    raise SuccessorsError("a referee branch did not end")
+                ch[int(br["seed"])] = ("0" if (e["truncated"] or e["winner"] is None)
+                                       else "+" if int(e["winner"]) == me else "-")
+            if any(c is None for c in ch):
+                raise SuccessorsError(f"action {s['a']} is missing a seed")
+            out[s["a"]] = "".join(ch)
+    finally:
+        for s in st:
+            s["core"].close()
+    return RefereeResult(out=out, tokens=tokens, other_open=bool(root.get("other_open")), fwd_rows=fwd_rows)
