@@ -21,6 +21,7 @@ import subprocess
 import sys
 import threading
 import time
+from types import SimpleNamespace
 
 import pytest
 
@@ -225,7 +226,10 @@ def test_a_gate_waiting_for_a_heavy_slot_does_not_hold_the_gate_lock(slots, tmp_
         _wait_for(lambda: any(w["pid"] == gate.pid for w in HS.collect()["waiting"]), "the gate to queue for a slot")
         time.sleep(1.0)                                       # past the gate's first (failed) slot attempt
         assert gate.poll() is None and not (tmp_path / "ran").exists(), "the gate ran with both slots held"
-        assert _gate_lock_is_free(gate_dir), "a gate WAITING for a heavy slot is holding the gate lock (the convoy)"
+        # The correct gate takes the gate lock only for each brief non-blocking attempt (one every poll), so one
+        # probe can land inside an attempt; the CONVOY holds it for the whole wait, so it is never free. Probe until
+        # a free moment (bounded, scaled): a revert never finds one and fails at the bound.
+        _wait_for(lambda: _gate_lock_is_free(gate_dir), "the waiting gate to leave the gate lock free (the convoy)")
         # a second gate, with the heavy slots bypassed (the orchestrator's BLOCKING mark), gets through at once
         g2 = _gate_proc(tmp_path / "ran2", env={**env, HS.BLOCKING_ENV: "convoy test"})
         _wait_for((tmp_path / "ran2").exists, "a gate behind the waiting one to run", timeout=30.0)
@@ -363,44 +367,99 @@ def test_a_job_behind_a_held_lease_queues_for_a_slot_but_the_lease_owners_gpu_jo
 
 # ── the chunk policy (orchestrator 2026-10-20): a slot per bounded chunk, never per run ───────────────────────
 
+class _FakeTimer:
+    """Stands in for ``threading.Timer``: records the interval and callback, fires only when the test says so."""
+
+    made: list = []
+
+    def __init__(self, interval, fn):
+        self.interval, self.fn, self.daemon, self.started, self.cancelled = interval, fn, False, False, False
+        _FakeTimer.made.append(self)
+
+    def start(self):
+        self.started = True
+
+    def cancel(self):
+        self.cancelled = True
+
+    def fire(self):
+        if self.started and not self.cancelled:
+            self.fn()
+
+
 def test_a_holder_past_the_long_hold_bar_is_flagged_in_status_and_warned_once(slots, monkeypatch):
     """Two research jobs each held a slot for a multi-hour run and froze every other agent. Nothing is killed;
-    `--status` flags the holder and the holder gets ONE stderr line. Fails on a revert of the flag / timer."""
-    monkeypatch.setattr(HS, "LONG_HOLD_S", 0.3)
+    `--status` flags the holder and the holder gets ONE stderr line. Fails on a revert of the flag / timer.
+
+    DETERMINISTIC: the warning timer is a controllable fake (started with the bar as its interval, fired by the
+    test) and `collect` is asked at explicit ``now`` values far on either side of the bar, so neither depends on
+    how long the scheduler lets the test sleep."""
+    monkeypatch.setattr(HS, "LONG_HOLD_S", 1000.0)
+    monkeypatch.setattr(HS, "threading", SimpleNamespace(Timer=_FakeTimer))
+    _FakeTimer.made.clear()
     lines: list[str] = []
     with HS.heavy_slot(["a", "long", "job"], force=True, log=lines.append):
-        st = HS.collect(now=time.time() + 0.1)
+        (timer,) = _FakeTimer.made
+        assert timer.started and timer.interval == 1000.0 and timer.daemon
+        st = HS.collect(now=time.time() + 500.0)                       # half the bar (the test itself takes ms)
         assert st["slots"][0].get("long_hold") is False and HS.LONG_HOLD_TAG not in HS.format_human(st)
-        time.sleep(0.9)
+        assert not [ln for ln in lines if HS.LONG_HOLD_TAG in ln]
+        timer.fire()                                                   # the bar passes
         warns = [ln for ln in lines if HS.LONG_HOLD_TAG in ln]
         assert len(warns) == 1, lines                                  # ONE warning, to the holder
-        st = HS.collect(now=time.time() + 1.0)
+        st = HS.collect(now=time.time() + 2000.0)
         row = st["slots"][0]
         assert row["long_hold"] is True
         assert HS.LONG_HOLD_TAG in HS.format_human(st) and "LONG HOLD (policy: <= 45 min per chunk)" in HS.format_human(st)
-    assert not any(HS.LONG_HOLD_TAG in ln for ln in lines[len(warns) + 1:])      # released: the timer is gone
+    assert timer.cancelled, "the long-hold timer outlived the slot"
+    timer.fire()
+    assert len([ln for ln in lines if HS.LONG_HOLD_TAG in ln]) == 1, "a released slot's timer warned again"
+
+
+class _FakeClock:
+    """A controllable ``time`` for ``heavy_slots``: ``monotonic`` / ``sleep`` run on a virtual clock that only a
+    ``sleep`` advances (so no scheduler stall can change what a poll loop sees); ``time`` stays real (ticket and
+    record mtimes are filesystem facts). A loop that never ends hits ``limit_s`` and fails, instead of hanging."""
+
+    def __init__(self, limit_s: float = 600.0) -> None:
+        self.now, self.limit_s, self.sleeps = 0.0, limit_s, 0
+
+    def monotonic(self) -> float:
+        return self.now
+
+    def sleep(self, s: float) -> None:
+        self.sleeps += 1
+        self.now += s
+        assert self.now < self.limit_s, f"the poll loop is still waiting at virtual t={self.now:.0f} s"
+
+    time = staticmethod(time.time)
 
 
 def test_a_waiter_proceeds_when_the_run_it_waited_behind_ends(slots, tmp_path, monkeypatch):
     """`await_free_slot` re-checks the policy while it waits: a gate queued behind a run that then ended must not
-    sit out the other holders (tonight a gate waited ~90 min after the run it queued for was gone)."""
+    sit out the other holders (tonight a gate waited ~90 min after the run it queued for was gone).
+
+    DETERMINISTIC (no wall clock, no real holder): every slot is full by construction (``free_count`` is 0) and the
+    loop runs on a virtual clock, so the policy is re-checked at virtual t = 0 s and t = 5 s and the verdict cannot
+    depend on the scheduler. (The earlier version let a real holder subprocess and ~5 s of real polling decide, and
+    failed once in a loaded ship gate with ``assert 2 >= 3``: the only exit with two checks is the slot-free path, so a
+    holder had been lost or unseen under load.)
+    Fails on a revert of the in-loop re-check: the virtual clock then runs out at ``limit_s``."""
     monkeypatch.setenv(HS.SLOTS_ENV, "1")
-    pa = _taker(tmp_path / "a", hold=60.0)
-    try:
-        _wait_for((tmp_path / "a").exists, "the only slot's holder")
-        runs = {"/m/rb_x": 1}
-        calls = {"n": 0}
+    clock = _FakeClock()
+    monkeypatch.setattr(HS, "time", clock)
+    monkeypatch.setattr(HS, "free_count", lambda _d, _n: 0)          # the house is full, whatever the box is doing
+    calls = {"n": 0}
 
-        def wanted_then_over(**_kw):
-            calls["n"] += 1
-            return "a run is live" if calls["n"] < 3 else None
+    def wanted_then_over(**_kw):
+        calls["n"] += 1
+        return "a run is live" if calls["n"] < 3 else None
 
-        monkeypatch.setattr(HS, "wanted", wanted_then_over)
-        t0 = time.monotonic()
-        HS.await_free_slot(["gate"], poll_s=0.02, log=lambda _m: None, runs=runs)
-        assert calls["n"] >= 3 and time.monotonic() - t0 < scale_timeout(20)
-    finally:
-        _kill(pa)
+    monkeypatch.setattr(HS, "wanted", wanted_then_over)
+    HS.await_free_slot(["gate"], poll_s=0.02, log=lambda _m: None)
+    assert calls["n"] == 3, "entry check, the first loop check, then the re-check one 5 s interval later"
+    assert 5.0 <= clock.now < 5.0 + 0.03, f"re-checked at virtual t={clock.now:.3f} s, not on the 5 s interval"
+    assert not HS.has_ticket(slots), "a waiter that no longer needs a slot kept its queue ticket"
 
 
 # ── the queue is FIFO (2026-10-20: a gate starved 3.4 h behind later arrivals; waiters used to poll at random) ──

@@ -29,6 +29,7 @@ reason) where there is none. ~15 s.
 from __future__ import annotations
 
 import json
+import math
 import os
 import selectors
 import shutil
@@ -514,11 +515,16 @@ _SLEEPER_PY = ("import os, signal, sys, time\n"
 
 @pytest.mark.parametrize("how", ["exit", "defer"])
 def test_a_declared_short_job_that_overruns_is_killed_and_labelled_for_a_long_requeue(env, tmp_path, how):
-    """The short lane's price: ``--max-s 1`` + the 1 s margin = a 2 s hard timeout. A job that sleeps 120 s is stopped, the
+    """The short lane's price: ``--max-s 1`` + a (contention-scaled, >= 5 s) margin = a hard timeout of a few seconds. A job that sleeps 120 s is stopped, the
     wrapper says SHORT-LANE OVERRUN / re-queue as a LONG job and exits 88 - and the process is really gone, also when it
     DEFERS SIGTERM (SIGKILL after the ``--term-grace``). The control, the SAME job inside a wider bound, finishes with its
     own exit status. Fails on a revert of the supervisor's deadline (the 120 s job would run to its end) or of the label."""
-    e = {**env, HS.SHORT_MARGIN_ENV: "1"}
+    # The hard timeout (declared + margin) runs from the job's spawn, and the job records its pid only once its interpreter is
+    # up: a margin of 1 s let a starved box kill it BEFORE it wrote the pidfile (a read error, not a verdict). The margin
+    # scales with the measured contention (a floor of 5 s) so the job always gets to start, and it only ever stretches
+    # the test's wait for a deadline the 120 s sleeper can never beat.
+    margin = min(int(HS.SHORT_MARGIN_S), max(5, math.ceil(scale_timeout(5.0))))   # the env may only narrow the 30 s cap
+    e = {**env, HS.SHORT_MARGIN_ENV: str(margin)}
     pidfile = tmp_path / "pid"
     t0 = time.monotonic()
     r = _run(["--slot", "--max-s", "1", "--term-grace", "3", "0.5", sys.executable, "-c", _SLEEPER_PY, str(pidfile), "120",
@@ -532,11 +538,11 @@ def test_a_declared_short_job_that_overruns_is_killed_and_labelled_for_a_long_re
     rows = [json.loads(ln) for ln in (Path(env[HS.DIR_ENV]) / HS.EVENTS_FILE).read_text().splitlines()]
     assert [(x["kind"], x.get("lane")) for x in rows] == [("overrun", None), ("slot", "short")], rows   # logged, then released
     # control: the same job, finishing inside declared + margin, passes untouched (and is not labelled)
-    ok = _run(["--slot", "--max-s", "20", "--term-grace", "3", "0.5", sys.executable, "-c", _SLEEPER_PY,
+    ok = _run(["--slot", "--max-s", "200", "--term-grace", "3", "0.5", sys.executable, "-c", _SLEEPER_PY,
                str(tmp_path / "pid2"), "1", how], e, timeout=90.0)
     assert ok.returncode == 0 and "OVERRUN" not in ok.stderr, (ok.returncode, ok.stderr)
     assert (tmp_path / "pid2.done").read_text() == "finished"
-    assert "SHORT lane: declared <= 20 s, hard timeout 21 s" in ok.stderr, ok.stderr
+    assert f"SHORT lane: declared <= 200 s, hard timeout {200 + margin} s" in ok.stderr, ok.stderr
 
 
 def test_a_long_job_is_not_given_a_deadline_by_the_short_lane(env, tmp_path):
