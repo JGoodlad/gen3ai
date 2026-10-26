@@ -4742,10 +4742,10 @@
   },
   "src/poke_env_free_entry_points_test.py::test_every_prober_command_and_the_web_app_run_with_poke_env_blocked": {
    "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T18:47:24Z",
-   "duration_s": 124.66,
-   "contention": 1.39,
+   "commit": "d0dd58939eab2091ca01ef99238e549acb639d75",
+   "at": "2026-10-26T20:53:53Z",
+   "duration_s": 36.24,
+   "contention": 1.0,
    "detail": ""
   },
   "src/rust_sim/e2e_fuzz_golden_test.py::test_a_full_regeneration_equals_the_golden_and_the_taxonomy_byte_for_byte": {
@@ -5005,5 +5005,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-26T20:07:36Z"
+ "last_written": "2026-10-26T20:53:53Z"
 }
