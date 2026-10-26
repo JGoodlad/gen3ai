@@ -190,7 +190,12 @@ half explicit ("set fallback cron (make this standard sop)"):
    not restart, its pid gone with no completion line, `--sync-to-main`, wedged). Point the layer-3
    Monitor at `CRASH|RESUMED|DONE|FAILURE|WATCHER EXIT`; a `CRASH:` is information, not a page.
    Never hand-build a variant that counts child-log errors.
-2. **OS-level chain** for multi-stage work, so stage N+1 starts without a session. Survives too.
+2. **OS-level chain** for multi-stage work, so stage N+1 starts without a session. Survives too. Between production
+   arms this is the ARM CHAIN, `python -m main.ops.arm_chain run <chain.json>` ([`arm_chain.md`](arm_chain.md)): one
+   tested supervisor for pre-launch, GO, the post-spawn guards, the arm end (completeness, K9(b) into a scratch stage,
+   the thin, the dose), the records-only ship, the hand-off at the next arm's OWN pin, GPU windows between arms, and
+   the canary logger. **Cut-over pending** (its §7 checklist): until the training session switches at a quiet
+   hand-off, its job-directory scripts still run the chain.
 3. **`Monitor`** on the status file, filtered to terminal + failure lines only — owned by the
    Training Run session. The orchestrator does NOT watch the run **(owner, 2026-09-02)**; it is
    messaged.
@@ -257,6 +262,7 @@ with what it measures.
 | this layer / read | the command |
 |---|---|
 | layer 1, the OS watcher | `scripts/ops/watch_run.sh <run> --pid-file … --launcher-log …` |
+| layer 2 between arms, the chain (cut-over pending) | `python -m main.ops.arm_chain plan / run / status / clear-hold / abandon <chain.json>`; `live`, `canary`, `wait-pid`, `signal-if` ([`arm_chain.md`](arm_chain.md)) |
 | MARGINAL fps, from checkpoint mtimes | `scripts/ops/marginal_fps.sh <run> [--target N:label]` |
 | the registered first-restart read | `scripts/ops/restart_read.sh <run> [--baseline …]` |
 | the registered scalars, at the SOURCE | `python -m main.ops.tb_read <run> --last 20` — 🚨 on a FORK every live-tier TB reader reads the ARM's steps only (> the lineage `fork_step`; the parent's inherited prefix is cut and the first line says where; `--include-inherited` shows it) |
@@ -433,8 +439,9 @@ Each rule is a thing that went wrong once; follow the pointer when you build the
 **A GPU window INSIDE a live run is the launcher's `--gpu-window`** (`python -m main.launcher.gpu_window arm … --precheck …`,
 then a bounded `guest`; [`../launcher/gpu_window.md`](../launcher/gpu_window.md)): it carries rules 1, 3, 4 and 6 in
 code (an epoch trigger, HOLD on any unclean step, a precheck before arming, a request honoured only by the launcher it
-names), and the lease stays with its holder. A hand-made script is only for what it does not do: ending a run, or
-chaining across runs. A run must be LAUNCHED with `--gpu-window` to take one.
+names), and the lease stays with its holder. Ending a run and chaining across runs (a window BETWEEN arms included) is
+the arm chain's ([`arm_chain.md`](arm_chain.md), cut-over pending); a hand-made script only for what neither does. A
+run must be LAUNCHED with `--gpu-window` to take one.
 
 1. **A time trigger uses an ABSOLUTE epoch with a sanity bound, never an `HH:MM` string comparison.** Compare `date +%s` against an epoch computed once at arming, and refuse a trigger whose epoch is in the past or more than the expected horizon ahead (a clock-string compare fires at the wrong day boundary, or never).
 2. **A log watcher matches only lines written AFTER it was armed** (per-file line offsets that persist across re-arms): already in §2 above (`98cd814b`, `alert_watch.sh`; two watchers on 2026-10-15 matched stale lines). VERIFIED present 2026-10-17; build every new watcher on that pattern.
