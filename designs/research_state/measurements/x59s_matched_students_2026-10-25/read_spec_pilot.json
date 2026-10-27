@@ -2,7 +2,7 @@
  "schema": "gen3_read_spec_v1",
  "read": "x59s_pilot_2026-10-26",
  "prereg": "designs/research_state/measurements/x59s_matched_students_2026-10-25/PREREG.md",
- "pin": "fca58b24d",
+ "pin": "0534e90a6",
  "note": "X59-S floor pilot (PREREG A4.5 step 2): 15 primary students x H/F/P72 x unit seeds 0-3 vs Kakuna; VOID 6 repeat of s_h_5901 on forum72 seed 0",
  "models": {
   "s_h_5901": {

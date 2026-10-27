@@ -2,7 +2,7 @@
  "schema": "gen3_read_spec_v1",
  "read": "x59s_full_2026-10-26",
  "prereg": "designs/research_state/measurements/x59s_matched_students_2026-10-25/PREREG.md",
- "pin": "fca58b24d",
+ "pin": "0534e90a6",
  "note": "X59-S full read (PREREG A4.5 step 4): the pilot imported + unit seeds 4-19; rule x59s = the registered verdict",
  "models": {
   "s_h_5901": {
@@ -169,7 +169,7 @@
    ],
    "import": {
     "state": "/home/goodlad/gen3ai_archive/x59s/read/pilot",
-    "spec_sha256": "74e2a01bbb96b767996f062271c1e90087b78fcfcffe71c37f9d6803d1f5c59b",
+    "spec_sha256": "dc860ae36e590ad699e487e6d58c60dee252a746df1956ee4ccc805f1e849288",
     "group": "pilot",
     "models": [
      "s_h_5901",

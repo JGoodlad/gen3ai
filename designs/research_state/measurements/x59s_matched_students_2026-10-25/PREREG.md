@@ -726,3 +726,14 @@ actor (steps ≥ 360M), which changes what its twin gap means; if computed, it i
   none. **m3, m5, m6** come from the record (`descriptive`), **m7** from the rows.
 - **CPU:** the floor pilot measures units a lane-hour on this box; the projected finish is reported then, and any cut
   the budget forces is a further amendment before the affected units' data is read.
+
+## Amendment 4b (2026-10-27 03:00, before any student game): the pin moves to the commit that lands the rules
+
+`main.reads` loads a spec's rule at `plan` in the PLAYING checkout, and `fca58b24d` (A4.1) predates the `x59s_floor` /
+`x59s` rules, so it cannot play these specs. Per the registration flow (`designs/tools/reads.md` §1: the pin is the
+commit that lands the code the read plays), **the pin is `0534e90a6`** (Amendment 4's own commit on main), and the
+specs are re-registered there. **The read's ONE engine is therefore `port=bdc5d2be3af5e1fb/94;env=95b45f104119bdb2/129`**
+(`engine_at(0534e90a6)`; main's Rust moved after `fca58b24d`), still not X51's E0, so Q-H10 stays SECONDARY. The
+identity unit (A4.3, VOID 5) is re-played on this tree before any student game; the earlier PASSes (`b712c46d1` and
+`fca58b24d`, engine `67a272e7…/93`) are recorded and certify nothing about this engine. The floor references, FR-2's
+opponent-seat extraction and every student game run from the tree at `0534e90a6`. Nothing else changes.
