@@ -1,0 +1,55 @@
+Metagross @ Leftovers  
+Ability: Clear Body  
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe  
+Rash Nature  
+- Earthquake  
+- Thunder Punch  
+- Hidden Power [Grass]  
+- Explosion  
+
+PtÃ©ra (Aerodactyl) @ Choice Band  
+Ability: Pressure  
+EVs: 252 Atk / 4 SpA / 252 Spe  
+Hasty Nature  
+- Rock Slide  
+- Hidden Power [Bug]  
+- Pursuit  
+- Earthquake
+
+Tyranitar @ Choice Band  
+Ability: Sand Stream  
+EVs: 80 HP / 184 Atk / 80 Def / 164 Spe  
+Adamant Nature  
+- Earthquake  
+- Rock Slide  
+- Return  
+- Brick Break  
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 204 SpD / 56 Spe
+Careful Nature
+- Spikes
+- Roar
+- Toxic
+- Drill Peck
+
+Zapdos @ Leftovers  
+Ability: Pressure  
+EVs: 248 HP / 228 SpD / 32 Spe  
+Calm Nature  
+IVs: 2 Atk / 30 Def  
+- Thunderbolt  
+- Hidden Power [Ice]  
+- Thunder Wave  
+- Roar  
+
+Staross (Starmie) @ Leftovers  
+Ability: Natural Cure  
+EVs: 252 HP / 40 Def / 8 SpA / 32 SpD / 176 Spe  
+Timid Nature  
+IVs: 0 Atk  
+- Thunder Wave  
+- Surf  
+- Rapid Spin  
+- Recover  

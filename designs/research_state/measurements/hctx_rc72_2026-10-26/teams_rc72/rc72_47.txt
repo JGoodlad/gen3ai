@@ -1,0 +1,56 @@
+Zapdos @ Leftovers  
+Ability: Pressure  
+EVs: 252 SpA / 80 SpD / 176 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 SpA  
+- Thunderbolt  
+- Hidden Power [Grass]  
+- Baton Pass  
+- Roar  
+
+Tyranitar @ Leftovers  
+Ability: Sand Stream  
+EVs: 252 HP / 80 Atk / 176 Spe  
+Adamant Nature  
+IVs: 30 SpD / 30 Spe  
+- Substitute  
+- Rock Slide  
+- Hidden Power [Bug]  
+- Focus Punch  
+
+Metagross @ Leftovers  
+Ability: Clear Body  
+EVs: 252 HP / 56 Atk / 140 Def / 60 Spe  
+Adamant Nature  
+- Explosion  
+- Protect  
+- Meteor Mash  
+- Earthquake  
+
+Medicham @ Lum Berry  
+Ability: Pure Power  
+EVs: 252 Atk / 4 SpD / 252 Spe  
+Jolly Nature  
+- Brick Break  
+- Rock Slide  
+- Shadow Ball  
+- Focus Punch  
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 30 Spe
+- Thunderbolt
+- Hidden Power Fire
+- Toxic
+- Protect
+
+Skarmory @ Leftovers  
+Ability: Keen Eye  
+EVs: 120 HP / 252 SpD / 136 Spe  
+Careful Nature  
+- Spikes  
+- Taunt  
+- Roar  
+- Drill Peck

@@ -1,0 +1,56 @@
+Magneton @ Magnet  
+Ability: Magnet Pull  
+EVs: 4 HP / 252 SpA / 252 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 SpA / 30 Spe  
+- Thunder Wave  
+- Toxic  
+- Thunderbolt  
+- Hidden Power [Fire]  
+
+Suicune @ Leftovers  
+Ability: Pressure  
+EVs: 252 HP / 228 SpA / 28 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Substitute  
+- Calm Mind  
+- Surf  
+- Ice Beam  
+
+Blissey (F) @ Leftovers  
+Ability: Natural Cure  
+EVs: 248 HP / 252 Def / 8 Spe  
+Impish Nature  
+- Soft-Boiled  
+- Wish  
+- Thunder Wave  
+- Seismic Toss  
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 31 HP / 31 Atk / 31 Def / 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power Flying
+- Earthquake
+- Double-Edge
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 252 Atk / 8 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Protect
+- Explosion
+
+Salamence @ Leftovers  
+Ability: Intimidate  
+EVs: 252 HP / 112 Atk / 80 SpD / 64 Spe  
+Adamant Nature  
+- Refresh  
+- Dragon Dance  
+- Hidden Power [Flying]  
+- Brick Break  

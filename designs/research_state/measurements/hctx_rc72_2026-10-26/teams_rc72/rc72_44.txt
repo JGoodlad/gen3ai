@@ -1,0 +1,58 @@
+Armaldo @ Leftovers  
+Ability: Battle Armor  
+EVs: 248 HP / 232 Atk / 28 Def  
+Adamant Nature  
+IVs: 30 SpD / 30 Spe  
+- Rock Slide  
+- Hidden Power [Bug]  
+- Earthquake  
+- Rapid Spin
+
+Salamence @ Leftovers  
+Ability: Intimidate  
+EVs: 4 Atk / 252 SpA / 252 Spe  
+Mild Nature  
+IVs: 30 HP / 30 SpA  
+- Dragon Claw  
+- Brick Break  
+- Hidden Power [Grass]  
+- Flamethrower  
+
+Heracross @ Salac Berry
+Ability: Swarm
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Substitute
+- Megahorn
+- Swords Dance
+- Rock Slide
+
+Jirachi @ Leftovers  
+Ability: Serene Grace  
+EVs: 68 Atk / 252 SpA / 188 Spe  
+Rash Nature  
+- Body Slam  
+- Fire Punch  
+- Ice Punch  
+- Hidden Power [Fighting]  
+
+Milobellus (Milotic) @ Leftovers  
+Ability: Marvel Scale  
+EVs: 248 HP / 212 Def / 48 Spe  
+Bold Nature  
+IVs: 0 Atk  
+- Surf  
+- Toxic  
+- Refresh  
+- Recover  
+
+Charizard @ Leftovers  
+Ability: Blaze  
+EVs: 252 SpA / 4 SpD / 252 Spe  
+Timid Nature  
+IVs: 2 Atk / 30 SpA  
+- Fire Blast  
+- Hidden Power [Grass]  
+- Beat Up  
+- Dragon Claw  

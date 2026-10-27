@@ -1,0 +1,55 @@
+Forretress @ Leftovers  
+Ability: Sturdy  
+EVs: 252 HP / 4 Atk / 252 SpD  
+Careful Nature  
+- Spikes  
+- Explosion  
+- Hidden Power [Ghost]  
+- Rapid Spin  
+
+Jirachi @ Leftovers  
+Ability: Serene Grace  
+EVs: 252 HP / 76 SpA / 180 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 SpA  
+- Substitute  
+- Thunderbolt  
+- Hidden Power [Grass]  
+- Calm Mind  
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 240 HP / 36 Def / 88 SpA / 76 SpD / 68 Spe
+Calm Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Hidden Power Grass
+- Perish Song
+- Leech Seed
+- Recover
+
+Skarmory @ Leftovers  
+Ability: Keen Eye  
+EVs: 240 HP / 240 SpD / 28 Spe  
+Careful Nature  
+- Spikes  
+- Taunt  
+- Drill Peck  
+- Roar  
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 196 Def / 24 SpD / 40 Spe
+Sassy Nature
+- Earthquake
+- Psychic
+- Rapid Spin
+- Explosion
+
+Flygon @ Leftovers  
+Ability: Levitate  
+EVs: 248 HP / 200 Def / 24 SpD / 36 Spe  
+Impish Nature  
+- Earthquake  
+- Hidden Power [Rock]  
+- Toxic  
+- Protect  

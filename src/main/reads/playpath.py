@@ -41,12 +41,15 @@ PREFIXES: Tuple[str, ...] = (
     "src/agents/observation/", "src/agents/gen3_data/", "src/rust_sim/src/", "src/rust_env/src/", "data/", "deps/",
     "designs/research_state/measurements/n0_endofrun_2026-09-27/teams_home72/",
     "designs/research_state/measurements/x37a_eval_matrix_2026-10-18/configs/",
+    "designs/research_state/measurements/hctx_rc72_2026-10-26/teams_rc72/",
 )
 EXACT: Tuple[str, ...] = (
     "src/main/x35/kakuna.py", "scripts/ops/mem_cap.sh", "scripts/ops/_common.sh", "environment_torch28.yml",
     ".gitmodules", "src/rust_sim/Cargo.toml", "src/rust_sim/Cargo.lock", "src/rust_sim/build.rs",
     "src/rust_sim/build_support.rs", "src/rust_env/Cargo.toml", "src/rust_env/build.rs", "designs/ops/anchors.json",
-    "designs/research_state/heldout_panels.json",
+    "designs/research_state/heldout_panels.json", "designs/research_state/diagnostic_panels.json",
+    "designs/research_state/measurements/hctx_rc72_2026-10-26/anchors_rc72_kakuna.json",
+    "designs/research_state/measurements/hctx_rc72_2026-10-26/rc72_manifest.json",
     "designs/research_state/measurements/x35_breakers_stage_2026-10-17/anchors_home72_kakuna.json",
     "designs/research_state/measurements/x35_breakers_stage_2026-10-17/home72_manifest.json",
     "designs/research_state/measurements/heldout72_hpfix_kakuna_2026-10-18/anchors_heldout72_hpfix_kakuna.json",

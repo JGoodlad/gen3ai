@@ -154,8 +154,11 @@ def test_the_committed_panel_configs_are_the_pinned_ones_and_pilot_their_panel_o
     from main import heldout_panels as HP
 
     # every held-out panel but the retired heldout72 and the SEALED ones (forum216b: X54's, never read before X54)
-    assert set(KA.PANEL_CELLS) == set(KA.UNFAMILIAR) == \
+    assert set(KA.PANEL_CELLS) - set(KA.DIAGNOSTIC_CELLS) == set(KA.UNFAMILIAR) == \
         set(HP.panel_names(held_out_only=True)) - {"heldout72"} - set(HP.SEALED)
+    # a diagnostic cell is a DIAGNOSTIC panel (its own registry), never one the exclusion rule names
+    assert set(KA.DIAGNOSTIC_CELLS) == set(HP.diagnostic_panel_names()) and \
+        not set(KA.DIAGNOSTIC_CELLS) & set(HP.panel_names())
     assert not set(KA.PANEL_CELLS) & set(HP.SEALED)
     for ts, cell in KA.PANEL_CELLS.items():
         assert KA.sha256_file(cell.path) == cell.sha256, ts

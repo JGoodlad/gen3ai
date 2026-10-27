@@ -1,0 +1,57 @@
+Heracross @ Leftovers
+Ability: Guts
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 31 Spe
+- Hidden Power Flying
+- Rock Slide
+- Megahorn
+- Brick Break
+
+Starmie @ Leftovers  
+Ability: Natural Cure  
+EVs: 252 SpA / 4 SpD / 252 Spe  
+Timid Nature  
+IVs: 0 Atk  
+- Rapid Spin  
+- Hydro Pump  
+- Ice Beam  
+- Thunderbolt  
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 16 HP / 176 Atk / 120 Def / 160 SpD / 36 Spe
+Adamant Nature
+- Body Slam
+- Focus Punch
+- Shadow Ball
+- Self-Destruct
+
+Suicune @ Leftovers  
+Ability: Pressure  
+EVs: 248 HP / 176 SpA / 56 SpD / 28 Spe  
+Calm Nature  
+IVs: 0 Atk  
+- Surf  
+- Ice Beam  
+- Calm Mind  
+- Rest  
+
+Weezing @ Leftovers  
+Ability: Levitate  
+EVs: 24 HP / 4 Def / 252 SpA / 228 Spe  
+Modest Nature  
+- Will-O-Wisp  
+- Explosion  
+- Hidden Power [Grass]  
+- Thunderbolt
+
+Zapdos @ Leftovers  
+Ability: Pressure  
+EVs: 216 HP / 136 SpA / 156 Spe  
+Modest Nature  
+IVs: 30 Spe  
+- Thunder Wave  
+- Toxic  
+- Thunderbolt  
+- Hidden Power [Ice]  

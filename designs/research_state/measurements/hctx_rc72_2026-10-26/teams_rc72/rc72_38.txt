@@ -1,0 +1,57 @@
+Celebi @ Leftovers  
+Ability: Natural Cure  
+EVs: 252 HP / 192 Def / 64 SpD  
+Bold Nature  
+- Leech Seed  
+- Hidden Power [Grass]  
+- Perish Song  
+- Recover  
+
+Claydol @ Leftovers  
+Ability: Levitate  
+EVs: 252 HP / 128 Atk / 112 Def / 16 SpD  
+Careful Nature  
+- Rapid Spin  
+- Earthquake  
+- Shadow Ball  
+- Explosion  
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 200 HP / 252 SpA / 56 Spe
+Modest Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Crunch
+- Pursuit
+- Roar
+- Hidden Power Grass
+
+Blissey (F) @ Leftovers  
+Ability: Natural Cure  
+EVs: 252 Def / 212 SpA / 44 Spe  
+Bold Nature  
+IVs: 0 Atk  
+- Ice Beam  
+- Seismic Toss  
+- Soft-Boiled  
+- Aromatherapy  
+
+Skarmory @ Leftovers  
+Ability: Keen Eye  
+EVs: 240 HP / 240 SpD / 28 Spe  
+Careful Nature  
+IVs: 0 Atk  
+- Spikes  
+- Taunt  
+- Toxic  
+- Roar  
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Calm Mind
+- Psychic
+- Fire Punch
+- Hidden Power Grass

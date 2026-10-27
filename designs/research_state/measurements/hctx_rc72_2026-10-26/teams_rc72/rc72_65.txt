@@ -1,0 +1,57 @@
+Jolteon @ Leftovers  
+Ability: Volt Absorb  
+EVs: 8 HP / 248 SpA / 252 Spe  
+Timid Nature  
+IVs: 2 Atk / 30 SpA  
+- Substitute  
+- Thunderbolt  
+- Hidden Power [Grass]  
+- Baton Pass  
+
+Tyranitar @ Leftovers  
+Ability: Sand Stream  
+EVs: 248 HP / 56 Def / 188 SpA / 16 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 SpA  
+- Crunch  
+- Pursuit  
+- Flamethrower  
+- Hidden Power [Grass]  
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 104 HP / 252 SpA / 152 Spe
+Modest Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Hydro Pump
+- Ice Beam
+- Focus Punch
+- Hidden Power Grass
+
+Metagross @ Choice Band  
+Ability: Clear Body  
+EVs: 128 HP / 252 Atk / 128 Spe  
+Adamant Nature  
+- Meteor Mash  
+- Explosion  
+- Earthquake  
+- Rock Slide  
+
+Zapdos @ Leftovers  
+Ability: Pressure  
+EVs: 216 HP / 140 SpA / 152 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 Def  
+- Thunder Wave  
+- Toxic  
+- Thunderbolt  
+- Hidden Power [Ice]  
+
+Claydol @ Leftovers  
+Ability: Levitate  
+EVs: 252 HP / 88 Atk / 112 Def / 56 SpD  
+Sassy Nature  
+- Rest  
+- Psychic  
+- Explosion  
+- Rapid Spin

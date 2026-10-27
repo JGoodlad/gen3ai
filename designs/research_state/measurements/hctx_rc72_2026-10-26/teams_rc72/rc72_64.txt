@@ -1,0 +1,54 @@
+Regirock @ Leftovers  
+Ability: Clear Body  
+EVs: 252 HP / 192 Atk / 64 SpD  
+Adamant Nature  
+- Thunder Wave  
+- Hidden Power [Rock]  
+- Explosion  
+- Earthquake  
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 80 HP / 252 Atk / 120 Def / 28 SpD / 28 Spe
+Adamant Nature
+- Body Slam
+- Shadow Ball
+- Curse
+- Self-Destruct
+
+Gengar @ Leftovers  
+Ability: Levitate  
+EVs: 168 HP / 164 SpD / 176 Spe  
+Timid Nature  
+- Mean Look  
+- Ice Punch  
+- Thunderbolt  
+- Explosion  
+
+Metagross @ Leftovers  
+Ability: Clear Body  
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe  
+Rash Nature  
+- Earthquake  
+- Thunder Punch  
+- Hidden Power [Grass]  
+- Explosion  
+
+Salamence @ Leftovers  
+Ability: Intimidate  
+EVs: 24 HP / 244 SpA / 64 SpD / 176 Spe  
+Mild Nature  
+- Dragon Claw  
+- Rock Slide  
+- Flamethrower  
+- Brick Break
+
+Blissey (F) @ Leftovers  
+Ability: Natural Cure  
+EVs: 252 Def / 248 SpA / 8 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Soft-Boiled  
+- Calm Mind  
+- Ice Beam  
+- Thunderbolt  

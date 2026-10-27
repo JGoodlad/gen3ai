@@ -1,0 +1,55 @@
+Suicune @ Leftovers  
+Ability: Pressure  
+EVs: 248 HP / 232 SpA / 28 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Surf  
+- Ice Beam  
+- Calm Mind  
+- Rest  
+
+Snorlax @ Leftovers  
+Ability: Immunity  
+EVs: 32 HP / 164 Atk / 140 Def / 172 SpD  
+Adamant Nature  
+- Curse  
+- Return  
+- Earthquake  
+- Self-Destruct  
+
+Metagross @ Leftovers  
+Ability: Clear Body  
+EVs: 104 HP / 252 Atk / 152 Spe  
+Adamant Nature  
+- Meteor Mash  
+- Earthquake  
+- Explosion  
+- Agility
+
+Gyarados @ Choice Band  
+Ability: Intimidate  
+EVs: 48 HP / 252 Atk / 208 Spe  
+Jolly Nature  
+- Thunder Wave  
+- Earthquake  
+- Hidden Power [Flying]  
+- Return
+
+Celebi @ Leftovers  
+Ability: Natural Cure  
+EVs: 192 HP / 4 Def / 136 SpA / 176 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Leech Seed  
+- Calm Mind  
+- Giga Drain  
+- Psychic  
+
+Cloyster @ Leftovers  
+Ability: Shell Armor  
+EVs: 64 HP / 248 SpD / 196 Spe  
+Hasty Nature  
+- Surf  
+- Spikes  
+- Explosion  
+- Rapid Spin  

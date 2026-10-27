@@ -1,0 +1,55 @@
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Aerial Ace
+- Earthquake
+- Hidden Power Bug
+- Sunny Day
+
+Metagross @ Leftovers  
+Ability: Clear Body  
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe  
+Rash Nature  
+- Earthquake  
+- Thunder Punch  
+- Hidden Power [Grass]  
+- Explosion  
+
+Tyranitar @ Leftovers  
+Ability: Sand Stream  
+EVs: 240 HP / 224 Atk / 44 Spe  
+Adamant Nature  
+- Rock Slide  
+- Earthquake  
+- Focus Punch  
+- Hidden Power [Bug]  
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 224 HP / 252 Def / 32 Spe
+Impish Nature
+- Seismic Toss
+- Thunder Wave
+- Counter
+- Soft-Boiled
+
+Skarmory @ Leftovers  
+Ability: Keen Eye  
+EVs: 240 HP / 240 SpD / 28 Spe  
+Careful Nature  
+- Spikes  
+- Taunt  
+- Drill Peck  
+- Roar  
+
+Armaldo @ Leftovers  
+Ability: Battle Armor  
+EVs: 248 HP / 232 Atk / 28 Def  
+Adamant Nature  
+IVs: 30 SpD / 30 Spe  
+- Rock Slide  
+- Hidden Power [Bug]  
+- Earthquake  
+- Rapid Spin

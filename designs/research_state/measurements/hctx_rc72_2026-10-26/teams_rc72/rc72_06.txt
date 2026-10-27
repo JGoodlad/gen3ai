@@ -1,0 +1,57 @@
+Blissey (F) @ Leftovers  
+Ability: Natural Cure  
+EVs: 4 HP / 252 Def / 252 SpA  
+Modest Nature  
+IVs: 0 Atk  
+- Soft-Boiled  
+- Toxic  
+- Fire Blast  
+- Ice Beam  
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 28 Atk / 252 SpA / 228 Spe
+Rash Nature
+- Hydro Pump
+- Ice Beam
+- Earthquake
+- Focus Punch
+
+Starmie @ Leftovers  
+Ability: Natural Cure  
+EVs: 252 SpA / 4 SpD / 252 Spe  
+Timid Nature  
+IVs: 0 Atk  
+- Rapid Spin  
+- Surf  
+- Ice Beam  
+- Thunderbolt  
+
+Milobellus (Milotic) @ Leftovers  
+Ability: Marvel Scale  
+EVs: 248 HP / 212 Def / 48 Spe  
+Bold Nature  
+IVs: 0 Atk  
+- Surf  
+- Ice Beam  
+- Refresh  
+- Recover  
+
+Claydol @ Leftovers  
+Ability: Levitate  
+EVs: 240 HP / 220 Atk / 32 SpD / 16 Spe  
+Sassy Nature  
+- Earthquake  
+- Psychic  
+- Rapid Spin  
+- Explosion
+
+Suicune @ Leftovers  
+Ability: Pressure  
+EVs: 224 HP / 216 SpA / 68 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Toxic  
+- Calm Mind  
+- Surf  
+- Ice Beam  

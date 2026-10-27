@@ -1,0 +1,56 @@
+Celebi @ Leftovers  
+Ability: Natural Cure  
+EVs: 240 HP / 64 Def / 36 SpA / 136 SpD / 32 Spe  
+Calm Nature  
+IVs: 2 Atk / 30 SpA  
+- Psychic  
+- Hidden Power [Grass]  
+- Leech Seed  
+- Recover  
+
+Aerodactyl @ Choice Band  
+Ability: Rock Head  
+EVs: 252 Atk / 4 SpD / 252 Spe  
+Jolly Nature  
+- Rock Slide  
+- Earthquake  
+- Hidden Power [Bug]  
+- Double-Edge
+
+Skarmory @ Leftovers  
+Ability: Keen Eye  
+EVs: 240 HP / 240 SpD / 28 Spe  
+Careful Nature  
+- Spikes  
+- Taunt  
+- Drill Peck  
+- Roar  
+
+Snorlax @ Leftovers  
+Ability: Immunity  
+EVs: 184 HP / 24 Atk / 204 Def / 96 SpD  
+Careful Nature  
+- Curse  
+- Rest  
+- Return  
+- Shadow Ball
+
+Swampert @ Leftovers  
+Ability: Torrent  
+EVs: 252 HP / 200 Def / 44 SpD / 12 Spe  
+Bold Nature  
+IVs: 0 Atk  
+- Surf  
+- Counter  
+- Roar  
+- Protect  
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 40 HP / 252 SpA / 216 Spe
+Hasty Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Ice Punch
+- Fire Punch
+- Hidden Power Grass
+- Explosion

@@ -36,6 +36,10 @@ with its reasons (N1-P FINDING 7).
 * ``prior_mix_ab`` -- the belief-prior-mix read (``belief_prior_mix_2026-10-26`` PREREG): each λ arm against a
   BANKED λ = 0 control (another read's committed per-game rows, sha-checked, never re-played), unit-paired on the
   same seeds, with a game-for-game determinism guard that re-plays a few banked units at λ = 0.
+* ``score_bands`` -- the H-CTX read (``hctx_rc72_2026-10-26`` PREREG): ONE model's pooled score on ONE panel placed in
+  registered bands (``>= kill_at`` KILL, ``<= support_at`` SUPPORT, else UNDECIDED; exact fractions), VOID unless a
+  guard group replays banked units game for game (``prior_mix_ab``'s guard); its comparisons with the banked familiar
+  and unfamiliar cells are descriptive.
 """
 from __future__ import annotations
 
@@ -827,6 +831,146 @@ def _pm_decide(doc: Mapping[str, Any], p: Mapping[str, Any]) -> Dict[str, Any]:
     return {"arms": out["arms"], "decision": dec}
 
 
+# ------------------------------------------------------------------------------------------------ score_bands
+_SB_KEYS = ("group", "label", "panel", "kill_at", "support_at", "min_unit_frac", "banked", "guard", "familiar",
+            "unfamiliar", "verdict_text")
+SB_KILL, SB_SUPPORT, SB_UNDECIDED = "KILL", "SUPPORT", "UNDECIDED"
+
+
+def _sb_check(p: Mapping[str, Any], *, models: Any, anchor: Any, s: Any) -> List[str]:
+    probs = _check_keys(p, ("group", "label", "panel", "kill_at", "support_at", "min_unit_frac", "banked", "guard",
+                            "familiar", "unfamiliar"), _SB_KEYS)
+    a = anchor.get(p.get("group"))
+    if a is None or p.get("label") not in models:
+        probs.append("group / label: an anchor group and the model it plays")
+    elif list(a.models) != [p["label"]] or list(a.teamsets) != [p.get("panel")]:
+        probs.append(f"group {p.get('group')!r} must play exactly {p.get('label')!r} on exactly {p.get('panel')!r}")
+    try:
+        lo, hi = float(p["support_at"]), float(p["kill_at"])
+        if not 0.0 < lo < hi < 1.0:
+            probs.append("0 < support_at < kill_at < 1")
+    except (KeyError, TypeError, ValueError):
+        probs.append("support_at / kill_at: numbers")
+    g = p.get("guard") or {}
+    if g.get("group") not in anchor or g.get("label") not in models or models[g["label"]].load:
+        probs.append("guard: {group, label}: an anchor group playing the UNCHANGED model (no load options)")
+    b = p.get("banked") or {}
+    if not (isinstance(b, dict) and isinstance(b.get("path"), str) and isinstance(b.get("sha256"), str)
+            and isinstance(b.get("cells"), dict)):
+        probs.append("banked: {path, sha256, cells: {teamset: read_cell}}")
+    else:
+        need = set(p.get("unfamiliar") or []) | {p.get("familiar")}
+        if not need <= set(b["cells"]):
+            probs.append(f"banked.cells lacks {sorted(need - set(b['cells']))}")
+        if g.get("group") in anchor and not set(anchor[g["group"]].teamsets) <= set(b["cells"]):
+            probs.append("guard: every team set it plays must be a banked cell (its games are compared with them)")
+    return probs
+
+
+def _sb_inputs(cells: Mapping[str, Any], p: Mapping[str, Any], spec: Any) -> Dict[str, Any]:
+    bank = banked_units(p["banked"])
+    g = _group(cells, "anchor", p["group"])
+    doc: Dict[str, Any] = {
+        "label": p["label"], "panel": p["panel"], "regime_id": g.get("regime_id"),
+        "units_planned": len(g["unit_seeds"]),
+        "units": [{k: u.get(k) for k in ("unit", "panel", "unit_seed", "counted", "wins", "ties", "n", "our_regime")}
+                  for u in g["units"] if u["label"] == p["label"]],
+        "banked": {ts: {str(s): {k: v for k, v in u.items() if k != "games"} for s, u in sorted(by.items())}
+                   for ts, by in bank.items()},
+        "banked_source": {"path": p["banked"]["path"], "sha256": p["banked"]["sha256"]}}
+    gg = _group(cells, "anchor", p["guard"]["group"])
+    checks = []
+    for u in gg["units"]:
+        want = bank.get(u["panel"], {}).get(int(u["unit_seed"]))
+        checks.append({"unit": u["unit"], "panel": u["panel"], "unit_seed": int(u["unit_seed"]),
+                       "counted": bool(u["counted"]), "n": u.get("n"), "wins": u.get("wins"),
+                       "banked": None if want is None else {"n": want["n"], "wins": want["wins"]},
+                       "games_equal": (want is not None and u.get("games") is not None
+                                       and [list(x) for x in u["games"]] == want["games"]),
+                       "our_regime": u.get("our_regime")})
+    doc["guard"] = {"label": p["guard"]["label"], "units": checks, "regime_ids": gg.get("regime_ids")}
+    return doc
+
+
+def _sb_band(w: int, n: int, p: Mapping[str, Any]) -> str:
+    """The registered band of the score ``w / n``, compared EXACTLY (fractions: no rounding error can sit on a
+    boundary, rule 8): ``>= kill_at`` KILL, ``<= support_at`` SUPPORT, else UNDECIDED."""
+    from fractions import Fraction
+
+    x = Fraction(int(w), int(n))
+    if x >= Fraction(str(p["kill_at"])):
+        return SB_KILL
+    if x <= Fraction(str(p["support_at"])):
+        return SB_SUPPORT
+    return SB_UNDECIDED
+
+
+def _sb_decide(doc: Mapping[str, Any], p: Mapping[str, Any]) -> Dict[str, Any]:
+    """A score against two registered bands (``hctx_rc72_2026-10-26`` PREREG §5): VOID on a failed determinism guard
+    (a guard unit not counted, not greedy, or whose games differ from the banked unit's) or fewer than
+    ``min_unit_frac`` units counted; otherwise the band of the pooled score (:func:`_sb_band`). Descriptive, read by no
+    verdict: Wilson 95 %, the unit-level dispersion ratio and the interval widened by it, Newcombe against the banked
+    familiar cell and against the banked unfamiliar panels' equal-weight mean, and where the score sits between them."""
+    reasons: List[str] = []
+    g = doc["guard"]["units"]
+    if not g:
+        reasons.append("guard: no unit played")
+    for c in g:
+        if not c["counted"]:
+            reasons.append(f"guard {c['unit']}: not counted")
+        elif not c["games_equal"]:
+            reasons.append(f"guard {c['unit']}: its games differ from the banked unit's (determinism broken)")
+        if c.get("our_regime") != "greedy":
+            reasons.append(f"guard {c['unit']}: our_regime {c.get('our_regime')!r} is not the banked 'greedy'")
+    units = [u for u in doc["units"] if u["counted"]]
+    bad = sorted({str(u["our_regime"]) for u in units if u["our_regime"] != "greedy"})
+    if bad:
+        reasons.append(f"counted units stamped {bad}, not 'greedy'")
+    if len(units) < float(p["min_unit_frac"]) * int(doc["units_planned"]) - RULE8_EPS:
+        reasons.append(f"{len(units)} / {doc['units_planned']} units counted (< {float(p['min_unit_frac']):.0%})")
+    w, n = sum(int(u["wins"]) for u in units), sum(int(u["n"]) for u in units)
+    t = sum(int(u.get("ties") or 0) for u in units)
+    if not n:
+        reasons.append("no game counted")
+        return {"score": None, "decision": {"verdict": VOID, "reasons": reasons}}
+    sc, lo, hi = wilson(w, n)
+    fr = [int(u["wins"]) / int(u["n"]) for u in units]
+    disp = None
+    if len(fr) >= 2:
+        m = sum(fr) / len(fr)
+        obs = sum((x - m) ** 2 for x in fr) / (len(fr) - 1)
+        exp = sc * (1.0 - sc) / (n / len(fr))
+        phi = obs / exp if exp > 0 else None
+        disp = {"phi": phi, "units": len(fr),
+                "widened95": list(widen(sc, lo, hi, math.sqrt(max(1.0, phi)))) if phi is not None else None}
+    bank = doc["banked"]
+
+    def _cell(ts: str) -> Tuple[int, int]:
+        return (sum(int(u["wins"]) for u in bank[ts].values()), sum(int(u["n"]) for u in bank[ts].values()))
+
+    fw, fn = _cell(str(p["familiar"]))
+    unf = list(p["unfamiliar"])
+    ss_u = strat_score({k: _cell(k) for k in unf}, unf)
+    on = strat_score({"x": (w, n)}, ["x"])
+    d_u = newcombe_strat(on, ss_u)
+    d_f = newcombe(w, n, fw, fn)
+    fam = fw / fn
+    score = {"wins": w, "ties": t, "n": n, "score": sc, "wilson95": [lo, hi], "dispersion": disp,
+             "units_counted": len(units), "units_planned": doc["units_planned"],
+             "banked_familiar": {"panel": p["familiar"], "wins": fw, "n": fn, "score": fam},
+             "banked_unfamiliar": ss_u.as_dict(),
+             "minus_familiar": {"d": d_f[0], "lo": d_f[1], "hi": d_f[2]},
+             "minus_unfamiliar": {"d": d_u[0], "lo": d_u[1], "hi": d_u[2]},
+             "premium_kept": (sc - ss_u.mean) / (fam - ss_u.mean) if fam != ss_u.mean else None}
+    if reasons:
+        return {"score": score, "decision": {"verdict": VOID, "reasons": reasons}}
+    band = _sb_band(w, n, p)
+    words = dict({SB_KILL: SB_KILL, SB_SUPPORT: SB_SUPPORT, SB_UNDECIDED: SB_UNDECIDED}, **(p.get("verdict_text") or {}))
+    return {"score": score, "decision": {
+        "band": band, "kill_at": p["kill_at"], "support_at": p["support_at"],
+        "verdict": f"{words[band]}: {p['panel']} {w}/{n} = {sc:.3f} [{lo:.3f}, {hi:.3f}]"}}
+
+
 # ------------------------------------------------------------------------------------------------ registry
 @dataclass(frozen=True)
 class Rule:
@@ -856,6 +1000,8 @@ RULES: Dict[str, Rule] = {
                               _at_check, _at_inputs, _at_decide, False),
     "prior_mix_ab": Rule("prior_mix_ab", "belief prior mix: λ arms vs a banked λ = 0, unit-paired; a determinism guard",
                          _pm_check, _pm_inputs, _pm_decide, False),
+    "score_bands": Rule("score_bands", "one model's score on one panel against two registered bands; a determinism "
+                        "guard against banked rows (the H-CTX rc72 read)", _sb_check, _sb_inputs, _sb_decide, False),
 }
 
 

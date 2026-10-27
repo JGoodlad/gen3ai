@@ -1,0 +1,55 @@
+Blissey (F) @ Leftovers  
+Ability: Natural Cure  
+EVs: 252 Def / 248 SpA / 8 Spe  
+Bold Nature  
+IVs: 0 Atk  
+- Soft-Boiled  
+- Wish  
+- Seismic Toss  
+- Ice Beam  
+
+Swampert @ Leftovers  
+Ability: Torrent  
+EVs: 240 HP / 252 SpA / 16 Spe  
+Quiet Nature  
+- Curse  
+- Earthquake  
+- Hydro Pump  
+- Ice Beam  
+
+Airmure (Skarmory)  
+Ability: Keen Eye  
+EVs: 248 HP / 248 SpD / 12 Spe  
+Careful Nature  
+IVs: 0 Atk  
+- Protect  
+- Spikes  
+- Roar  
+- Thief  
+
+Medicham @ Lum Berry  
+Ability: Pure Power  
+EVs: 252 Atk / 4 SpD / 252 Spe  
+Jolly Nature  
+- Brick Break  
+- Rock Slide  
+- Shadow Ball  
+- Focus Punch  
+
+Salamence @ Leftovers  
+Ability: Intimidate  
+EVs: 252 Atk / 48 SpA / 208 Spe  
+Lonely Nature  
+- Dragon Dance  
+- Fire Blast  
+- Hidden Power [Flying]  
+- Brick Break
+
+Jirachi @ Leftovers  
+Ability: Serene Grace  
+EVs: 252 HP / 120 Def / 136 SpD  
+Sassy Nature  
+- Wish  
+- Body Slam  
+- Fire Punch  
+- Hidden Power [Grass]  

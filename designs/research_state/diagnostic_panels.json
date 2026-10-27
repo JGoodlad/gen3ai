@@ -1,0 +1,22 @@
+{
+ "schema": "gen3_diagnostic_panels_v1",
+ "reader": "src/main/heldout_panels.py (load_diagnostic; python -m main.heldout_panels verify checks these too)",
+ "what": "DIAGNOSTIC panels: played and verified by name like a registered panel, but OUTSIDE the near-neighbour exclusion rule of heldout_panels.json (panel_names() never names them, so no corpus, training guard or registry_sha256 moves). Neither held out nor a sample ground.",
+ "panels": {
+  "rc72": {
+   "role": "DIAGNOSTIC (PRACTISED sets, new teams): the H-CTX read's recombined panel. Every mon set is one our 719-team pool holds, verbatim; no team shares more than 2 sets with any single pool or training-corpus team",
+   "source": "our pool's mon sets (main.anchors.session.pool_team_texts), recombined; species drawn by home72's profile with Smogon teammate lift",
+   "team_dir": "designs/research_state/measurements/hctx_rc72_2026-10-26/teams_rc72",
+   "n": 72,
+   "content_digest": "fceb2ea108fe76b58d354a4ed5d326a41d3b27bcfc2c5375b2308f8a2819f5e3",
+   "draw_rule": "hctx_rc72_2026-10-26/scripts/build_rc72.py (PREREG.md §2): <= 2 shared mon sets with ONE team of the pool, d3_setmut_v1, n1_proc_v1 or w_forum_v1; < 3 with ONE team of every held-out panel and n1p72 (REVIEW A's revealed-fit rule); < 4 within the panel; validator, level 100 by the pack, Hidden Power named type once validated, engine-playable",
+   "seed": 7272,
+   "manifest": {
+    "path": "designs/research_state/measurements/hctx_rc72_2026-10-26/rc72_manifest.json",
+    "sha256": "18acaa38d5ebd38e8bcb5ffc8c0abb6ac24a0ae6ad34ea2a1c9e7bdc3e5463ec"
+   },
+   "frozen_since": "2026-10-26 (the H-CTX PREREG)",
+   "held_out_from": []
+  }
+ }
+}

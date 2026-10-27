@@ -1,0 +1,55 @@
+Drattak (Salamence) @ Leftovers  
+Ability: Intimidate  
+EVs: 252 Atk / 72 SpD / 184 Spe  
+Adamant Nature  
+IVs: 30 SpA / 30 SpD / 30 Spe  
+- Hidden Power [Flying]  
+- Earthquake  
+- Rock Slide  
+- Dragon Dance
+
+Metagross @ Salac Berry
+Ability: Clear Body
+EVs: 168 HP / 128 Atk / 8 Def / 204 Spe
+Naive Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Meteor Mash
+- Earthquake
+- Hidden Power Grass
+- Explosion
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 12 Atk / 224 SpA / 88 Spe
+Quiet Nature
+- Brick Break
+- Ice Beam
+- Pursuit
+- Fire Blast
+
+Charizard @ Leftovers  
+Ability: Blaze  
+EVs: 4 Atk / 252 SpA / 252 Spe  
+Mild Nature  
+- Dragon Claw  
+- Flamethrower  
+- Hidden Power [Grass]  
+- Brick Break
+
+Gengar @ Leftovers  
+Ability: Levitate  
+EVs: 76 HP / 252 SpA / 180 Spe  
+Modest Nature  
+- Rain Dance  
+- Explosion  
+- Thunderbolt  
+- Giga Drain  
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 4 Atk / 252 SpA / 252 Spe
+Rash Nature
+- Hydro Pump
+- Ice Beam
+- Earthquake
+- Focus Punch

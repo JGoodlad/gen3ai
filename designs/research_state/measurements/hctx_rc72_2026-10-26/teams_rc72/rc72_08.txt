@@ -1,0 +1,54 @@
+Tyranitar @ Silk Scarf  
+Ability: Sand Stream  
+EVs: 88 HP / 252 Atk / 168 Spe  
+Adamant Nature  
+- Dragon Dance  
+- Rock Slide  
+- Earthquake  
+- Hyper Beam  
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 168 SpA / 88 Spe
+Modest Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Fire Blast
+- Ice Beam
+- Soft-Boiled
+- Toxic
+
+Skarmory @ Leftovers  
+Ability: Keen Eye  
+EVs: 252 HP / 252 SpD / 4 Spe  
+Careful Nature  
+- Drill Peck  
+- Spikes  
+- Protect  
+- Roar  
+
+Claydol @ Leftovers  
+Ability: Levitate  
+EVs: 252 HP / 116 Def / 44 SpA / 96 SpD  
+Sassy Nature  
+- Earthquake  
+- Psychic  
+- Rapid Spin  
+- Rest  
+
+Metagross @ Leftovers  
+Ability: Clear Body  
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe  
+Rash Nature  
+- Meteor Mash  
+- Hidden Power [Fire]  
+- Psychic  
+- Explosion  
+
+Snorlax @ Leftovers  
+Ability: Immunity  
+EVs: 32 HP / 188 Atk / 116 Def / 172 SpD  
+Adamant Nature  
+- Curse  
+- Return  
+- Focus Punch  
+- Self-Destruct  

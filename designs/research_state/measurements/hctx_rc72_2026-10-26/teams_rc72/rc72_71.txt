@@ -1,0 +1,57 @@
+Aerodactyl @ Choice Band  
+Ability: Rock Head  
+EVs: 252 Atk / 4 SpD / 252 Spe  
+Jolly Nature  
+- Earthquake  
+- Rock Slide  
+- Hidden Power [Bug]  
+- Double-Edge
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 31 HP / 31 Atk / 31 Def / 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power Flying
+- Earthquake
+- Double-Edge
+
+Metagross @ Leftovers  
+Ability: Clear Body  
+EVs: 168 HP / 232 Atk / 16 Def / 92 Spe  
+Adamant Nature  
+- Agility  
+- Meteor Mash  
+- Earthquake  
+- Explosion  
+
+Leuphorie (Blissey) (F) @ Leftovers  
+Ability: Natural Cure  
+EVs: 252 Def / 240 SpA / 16 Spe  
+Bold Nature  
+IVs: 0 Atk  
+- Soft-Boiled  
+- Ice Beam  
+- Seismic Toss  
+- Aromatherapy  
+
+Celebi @ Leftovers  
+Ability: Natural Cure  
+EVs: 192 HP / 4 Def / 136 SpA / 176 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Leech Seed  
+- Calm Mind  
+- Giga Drain  
+- Psychic  
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 28 Def / 208 SpD / 32 Spe
+Calm Nature
+IVs: 31 HP / 2 Atk / 30 Def / 31 SpA / 31 SpD / 31 Spe
+- Thunderbolt
+- Hidden Power Ice
+- Thunder Wave
+- Baton Pass

@@ -1,0 +1,54 @@
+Snorlax @ Leftovers  
+Ability: Immunity  
+EVs: 32 HP / 164 Atk / 140 Def / 172 SpD  
+Adamant Nature  
+- Curse  
+- Return  
+- Earthquake  
+- Self-Destruct  
+
+Staross (Starmie) @ Leftovers  
+Ability: Natural Cure  
+EVs: 252 HP / 40 Def / 8 SpA / 32 SpD / 176 Spe  
+Timid Nature  
+- Thunder Wave  
+- Surf  
+- Rapid Spin  
+- Recover  
+
+Swampert (M) @ Leftovers  
+Ability: Torrent  
+EVs: 248 HP / 128 Def / 84 SpA / 48 Spe  
+Relaxed Nature  
+- Earthquake  
+- Ice Beam  
+- Protect  
+- Refresh  
+
+Salamence @ Leftovers  
+Ability: Intimidate  
+EVs: 24 HP / 244 SpA / 64 SpD / 176 Spe  
+Mild Nature  
+- Dragon Claw  
+- Flamethrower  
+- Hidden Power [Grass]  
+- Brick Break  
+
+Camerupt @ Leftovers
+Ability: Magma Armor
+EVs: 224 HP / 176 Atk / 108 SpA
+Brave Nature
+- Substitute
+- Earthquake
+- Explosion
+- Overheat
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 20 HP / 236 Atk / 252 Spe
+Naive Nature
+IVs: 31 HP / 31 Atk / 30 Def / 30 SpA / 31 SpD / 31 Spe
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Hidden Power Grass

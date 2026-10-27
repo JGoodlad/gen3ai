@@ -1,0 +1,5167 @@
+{
+ "attempts_to_accept": {
+  "0": 71,
+  "1": 1
+ },
+ "built_by": "designs/research_state/measurements/hctx_rc72_2026-10-26/scripts/build_rc72.py",
+ "content_digest": "fceb2ea108fe76b58d354a4ed5d326a41d3b27bcfc2c5375b2308f8a2819f5e3",
+ "describe": {
+  "distinct_mon_sets": 208,
+  "max_shared_hist": {
+   "d3_setmut_v1": {
+    "2": 72
+   },
+   "forum216b": {
+    "1": 28,
+    "2": 44
+   },
+   "forum72": {
+    "0": 1,
+    "1": 58,
+    "2": 13
+   },
+   "heldout72": {
+    "0": 17,
+    "1": 51,
+    "2": 4
+   },
+   "heldout72_hpfix": {
+    "0": 7,
+    "1": 57,
+    "2": 8
+   },
+   "n1_proc_v1": {
+    "1": 6,
+    "2": 66
+   },
+   "n1p72": {
+    "0": 8,
+    "1": 58,
+    "2": 6
+   },
+   "p72": {
+    "0": 6,
+    "1": 64,
+    "2": 2
+   },
+   "pool": {
+    "1": 1,
+    "2": 71
+   },
+   "w_forum_v1": {
+    "1": 3,
+    "2": 69
+   }
+  },
+  "overlap": {
+   "d3_setmut_v1": {
+    "exact_examples": [],
+    "exact_team": 0,
+    "exact_team_strict": 0,
+    "max_shared_mons_hist": {
+     "0": 0,
+     "1": 0,
+     "2": 72,
+     "3": 0,
+     "4": 0,
+     "5": 0,
+     "6": 0
+    },
+    "mons_seen": 432,
+    "mons_seen_strict": 432,
+    "n_read_mons": 432,
+    "n_read_teams": 72,
+    "n_reference_teams": 2876,
+    "same_species6": 2,
+    "teams_sharing_ge4": 0
+   },
+   "forum216b": {
+    "exact_examples": [],
+    "exact_team": 0,
+    "exact_team_strict": 0,
+    "max_shared_mons_hist": {
+     "0": 0,
+     "1": 28,
+     "2": 44,
+     "3": 0,
+     "4": 0,
+     "5": 0,
+     "6": 0
+    },
+    "mons_seen": 319,
+    "mons_seen_strict": 81,
+    "n_read_mons": 432,
+    "n_read_teams": 72,
+    "n_reference_teams": 216,
+    "same_species6": 0,
+    "teams_sharing_ge4": 0
+   },
+   "forum72": {
+    "exact_examples": [],
+    "exact_team": 0,
+    "exact_team_strict": 0,
+    "max_shared_mons_hist": {
+     "0": 1,
+     "1": 58,
+     "2": 13,
+     "3": 0,
+     "4": 0,
+     "5": 0,
+     "6": 0
+    },
+    "mons_seen": 205,
+    "mons_seen_strict": 33,
+    "n_read_mons": 432,
+    "n_read_teams": 72,
+    "n_reference_teams": 72,
+    "same_species6": 0,
+    "teams_sharing_ge4": 0
+   },
+   "heldout72": {
+    "exact_examples": [],
+    "exact_team": 0,
+    "exact_team_strict": 0,
+    "max_shared_mons_hist": {
+     "0": 17,
+     "1": 51,
+     "2": 4,
+     "3": 0,
+     "4": 0,
+     "5": 0,
+     "6": 0
+    },
+    "mons_seen": 103,
+    "mons_seen_strict": 8,
+    "n_read_mons": 432,
+    "n_read_teams": 72,
+    "n_reference_teams": 72,
+    "same_species6": 0,
+    "teams_sharing_ge4": 0
+   },
+   "heldout72_hpfix": {
+    "exact_examples": [],
+    "exact_team": 0,
+    "exact_team_strict": 0,
+    "max_shared_mons_hist": {
+     "0": 7,
+     "1": 57,
+     "2": 8,
+     "3": 0,
+     "4": 0,
+     "5": 0,
+     "6": 0
+    },
+    "mons_seen": 152,
+    "mons_seen_strict": 20,
+    "n_read_mons": 432,
+    "n_read_teams": 72,
+    "n_reference_teams": 72,
+    "same_species6": 0,
+    "teams_sharing_ge4": 0
+   },
+   "n1_proc_v1": {
+    "exact_examples": [],
+    "exact_team": 0,
+    "exact_team_strict": 0,
+    "max_shared_mons_hist": {
+     "0": 0,
+     "1": 6,
+     "2": 66,
+     "3": 0,
+     "4": 0,
+     "5": 0,
+     "6": 0
+    },
+    "mons_seen": 383,
+    "mons_seen_strict": 116,
+    "n_read_mons": 432,
+    "n_read_teams": 72,
+    "n_reference_teams": 12000,
+    "same_species6": 10,
+    "teams_sharing_ge4": 0
+   },
+   "n1p72": {
+    "exact_examples": [],
+    "exact_team": 0,
+    "exact_team_strict": 0,
+    "max_shared_mons_hist": {
+     "0": 8,
+     "1": 58,
+     "2": 6,
+     "3": 0,
+     "4": 0,
+     "5": 0,
+     "6": 0
+    },
+    "mons_seen": 123,
+    "mons_seen_strict": 25,
+    "n_read_mons": 432,
+    "n_read_teams": 72,
+    "n_reference_teams": 72,
+    "same_species6": 0,
+    "teams_sharing_ge4": 0
+   },
+   "p72": {
+    "exact_examples": [],
+    "exact_team": 0,
+    "exact_team_strict": 0,
+    "max_shared_mons_hist": {
+     "0": 6,
+     "1": 64,
+     "2": 2,
+     "3": 0,
+     "4": 0,
+     "5": 0,
+     "6": 0
+    },
+    "mons_seen": 113,
+    "mons_seen_strict": 22,
+    "n_read_mons": 432,
+    "n_read_teams": 72,
+    "n_reference_teams": 72,
+    "same_species6": 0,
+    "teams_sharing_ge4": 0
+   },
+   "pool": {
+    "exact_examples": [],
+    "exact_team": 0,
+    "exact_team_strict": 0,
+    "max_shared_mons_hist": {
+     "0": 0,
+     "1": 1,
+     "2": 71,
+     "3": 0,
+     "4": 0,
+     "5": 0,
+     "6": 0
+    },
+    "mons_seen": 432,
+    "mons_seen_strict": 432,
+    "n_read_mons": 432,
+    "n_read_teams": 72,
+    "n_reference_teams": 719,
+    "same_species6": 2,
+    "teams_sharing_ge4": 0
+   },
+   "w_forum_v1": {
+    "exact_examples": [],
+    "exact_team": 0,
+    "exact_team_strict": 0,
+    "max_shared_mons_hist": {
+     "0": 0,
+     "1": 3,
+     "2": 69,
+     "3": 0,
+     "4": 0,
+     "5": 0,
+     "6": 0
+    },
+    "mons_seen": 403,
+    "mons_seen_strict": 223,
+    "n_read_mons": 432,
+    "n_read_teams": 72,
+    "n_reference_teams": 1981,
+    "same_species6": 3,
+    "teams_sharing_ge4": 0
+   }
+  },
+  "pool_repeats_of_each_set": {
+   "home72_mean": 34.326388888888886,
+   "home72_median": 21,
+   "rc72_mean": 29.949074074074073,
+   "rc72_median": 19
+  },
+  "species": {
+   "l1_vs_home72": 0.1087962962962963,
+   "n_distinct": 35,
+   "rc72": {
+    "aerodactyl": 13,
+    "armaldo": 3,
+    "blissey": 30,
+    "camerupt": 1,
+    "celebi": 23,
+    "charizard": 11,
+    "claydol": 12,
+    "cloyster": 3,
+    "dugtrio": 4,
+    "flygon": 6,
+    "forretress": 8,
+    "gengar": 21,
+    "gyarados": 7,
+    "heracross": 3,
+    "jirachi": 21,
+    "jolteon": 6,
+    "magneton": 16,
+    "medicham": 2,
+    "metagross": 28,
+    "milotic": 3,
+    "raikou": 5,
+    "regice": 1,
+    "regirock": 1,
+    "registeel": 2,
+    "salamence": 29,
+    "skarmory": 25,
+    "slaking": 1,
+    "snorlax": 19,
+    "starmie": 15,
+    "suicune": 19,
+    "swampert": 31,
+    "tyranitar": 42,
+    "venusaur": 2,
+    "weezing": 2,
+    "zapdos": 17
+   }
+  },
+  "within_panel_max_shared": {
+   "1": 29,
+   "2": 41,
+   "3": 2
+  }
+ },
+ "inputs": {
+  "heldout_references": {
+   "forum216b": 216,
+   "forum72": 72,
+   "heldout72": 72,
+   "heldout72_hpfix": 72,
+   "n1p72": 72,
+   "p72": 72
+  },
+  "home72_profile": {
+   "aerodactyl": 10,
+   "armaldo": 1,
+   "blissey": 21,
+   "camerupt": 1,
+   "celebi": 19,
+   "charizard": 11,
+   "claydol": 17,
+   "cloyster": 3,
+   "donphan": 1,
+   "dugtrio": 11,
+   "flygon": 5,
+   "forretress": 6,
+   "gengar": 19,
+   "gyarados": 4,
+   "hariyama": 1,
+   "heracross": 4,
+   "jirachi": 22,
+   "jolteon": 8,
+   "jynx": 1,
+   "magneton": 14,
+   "medicham": 1,
+   "metagross": 35,
+   "milotic": 2,
+   "misdreavus": 1,
+   "moltres": 2,
+   "raikou": 2,
+   "regice": 1,
+   "regirock": 1,
+   "registeel": 1,
+   "salamence": 26,
+   "skarmory": 26,
+   "slaking": 1,
+   "smeargle": 1,
+   "snorlax": 15,
+   "starmie": 11,
+   "suicune": 26,
+   "swampert": 36,
+   "tyranitar": 44,
+   "venusaur": 1,
+   "weezing": 1,
+   "zapdos": 19
+  },
+  "panel_registry_sha256": "ea3917c2f1e61c8a6e9d74cd38f20888eccb2cf9f8d7d4d4ff90fe224391784f",
+  "pool": {
+   "content_sha256": "53b6e7e222bf6d8095f42e39c13d6b39be79f3d20b12843940762ce44cea2b38",
+   "n": 719
+  },
+  "priors": {
+   "gen3_smogon_stats.json": "03c8233a0268e5704b568f263da23d48e53aaa5de0143bc994e1cad22e7c713e",
+   "gen3_teammate_priors.json": "e1dc77a442fce9493e8c34cd462929caa9065ef87eda45c5cd10b0105c7d22d2"
+  },
+  "train_references": {
+   "d3_setmut_v1": 2876,
+   "n1_proc_v1": 12000,
+   "pool": 719,
+   "w_forum_v1": 1981
+  }
+ },
+ "params": {
+  "heldout_refuse": 3,
+  "lift_clip": [
+   0.25,
+   4.0
+  ],
+  "max_attempts": 60,
+  "max_shared_train": 2,
+  "n": 72,
+  "slot_tries": 80,
+  "within_refuse": 4
+ },
+ "rule_failures": {
+  "heldout_fit": 2,
+  "hidden_power": 1,
+  "train_overlap": 116
+ },
+ "rules": "PREREG.md \u00a72 and this script's docstring",
+ "schema": "hctx_rc72_manifest_v1",
+ "seeds": {
+  "build": 7272,
+  "stream": "random.Random(int(sha256('BUILD_SEED|i|a')[:16], 16)) per (team index i, attempt a)"
+ },
+ "teams": {
+  "rc72_00": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "brickbreak",
+      "hiddenpowerflying",
+      "megahorn",
+      "rockslide"
+     ],
+     "source": "pool_03eafe8b4531",
+     "species": "heracross"
+    },
+    {
+     "moves": [
+      "hydropump",
+      "icebeam",
+      "rapidspin",
+      "thunderbolt"
+     ],
+     "source": "pool_2d5e211246cc",
+     "species": "starmie"
+    },
+    {
+     "moves": [
+      "bodyslam",
+      "focuspunch",
+      "selfdestruct",
+      "shadowball"
+     ],
+     "source": "pool_d396e7b441d0",
+     "species": "snorlax"
+    },
+    {
+     "moves": [
+      "calmmind",
+      "icebeam",
+      "rest",
+      "surf"
+     ],
+     "source": "pool_68789bed7f78",
+     "species": "suicune"
+    },
+    {
+     "moves": [
+      "explosion",
+      "hiddenpowergrass",
+      "thunderbolt",
+      "willowisp"
+     ],
+     "source": "pool_5d5d09140ce1",
+     "species": "weezing"
+    },
+    {
+     "moves": [
+      "hiddenpowerice",
+      "thunderbolt",
+      "thunderwave",
+      "toxic"
+     ],
+     "source": "pool_c19c4135313e",
+     "species": "zapdos"
+    }
+   ],
+   "sha256": "557d9838bd9c8957db1fd593436cb479f6004fc80a022edd715fe429a7a73cdd"
+  },
+  "rc72_01": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "bodyslam",
+      "firepunch",
+      "hiddenpowergrass",
+      "wish"
+     ],
+     "source": "pool_f25423431535",
+     "species": "jirachi"
+    },
+    {
+     "moves": [
+      "dragondance",
+      "focuspunch",
+      "hiddenpowerbug",
+      "rockslide"
+     ],
+     "source": "pool_01f1341e63de",
+     "species": "tyranitar"
+    },
+    {
+     "moves": [
+      "icebeam",
+      "seismictoss",
+      "softboiled",
+      "wish"
+     ],
+     "source": "pool_6d251851df89",
+     "species": "blissey"
+    },
+    {
+     "moves": [
+      "calmmind",
+      "hiddenpowergrass",
+      "substitute",
+      "thunderbolt"
+     ],
+     "source": "pool_9e4f1364f3b9",
+     "species": "raikou"
+    },
+    {
+     "moves": [
+      "rapidspin",
+      "recover",
+      "surf",
+      "thunderwave"
+     ],
+     "source": "pool_5df730cfda3f",
+     "species": "starmie"
+    },
+    {
+     "moves": [
+      "explosion",
+      "hiddenpowerfire",
+      "meteormash",
+      "psychic"
+     ],
+     "source": "pool_8cce87045405",
+     "species": "metagross"
+    }
+   ],
+   "sha256": "1a3d6bead95626f76ce87db2466ffedcbfde25ff375e0b1ec8170f8bf7de7dc7"
+  },
+  "rc72_02": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "hiddenpowerfire",
+      "thunderbolt",
+      "thunderwave",
+      "toxic"
+     ],
+     "source": "pool_77db4e4b16c7",
+     "species": "magneton"
+    },
+    {
+     "moves": [
+      "drillpeck",
+      "roar",
+      "spikes",
+      "taunt"
+     ],
+     "source": "pool_3418d640f8ba",
+     "species": "skarmory"
+    },
+    {
+     "moves": [
+      "icebeam",
+      "seismictoss",
+      "softboiled",
+      "thunderwave"
+     ],
+     "source": "pool_e5ea341f451f",
+     "species": "blissey"
+    },
+    {
+     "moves": [
+      "calmmind",
+      "hydropump",
+      "icebeam",
+      "roar"
+     ],
+     "source": "pool_4ac097fb9bdc",
+     "species": "suicune"
+    },
+    {
+     "moves": [
+      "bodyslam",
+      "focuspunch",
+      "selfdestruct",
+      "shadowball"
+     ],
+     "source": "pool_0acd4a56520d",
+     "species": "snorlax"
+    },
+    {
+     "moves": [
+      "doubleedge",
+      "earthquake",
+      "focuspunch",
+      "rockslide"
+     ],
+     "source": "pool_7cb8877fd22f",
+     "species": "tyranitar"
+    }
+   ],
+   "sha256": "6e0960815cfb04f66143f27061e743685eaafc111011f914dfc1ca6a59955fdb"
+  },
+  "rc72_03": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "doubleedge",
+      "dragondance",
+      "earthquake",
+      "rockslide"
+     ],
+     "source": "pool_3dcb40d521a7",
+     "species": "tyranitar"
+    },
+    {
+     "moves": [
+      "batonpass",
+      "hiddenpowergrass",
+      "thunderbolt",
+      "thunderwave"
+     ],
+     "source": "pool_3199a08606c4",
+     "species": "jolteon"
+    },
+    {
+     "moves": [
+      "batonpass",
+      "leechseed",
+      "psychic",
+      "substitute"
+     ],
+     "source": "pool_fdf8e320b1af",
+     "species": "celebi"
+    },
+    {
+     "moves": [
+      "hiddenpowersteel",
+      "protect",
+      "roar",
+      "spikes"
+     ],
+     "source": "pool_5489ac435a5e",
+     "species": "skarmory"
+    },
+    {
+     "moves": [
+      "aromatherapy",
+      "icebeam",
+      "softboiled",
+      "thunderbolt"
+     ],
+     "source": "pool_8325ff134a50",
+     "species": "blissey"
+    },
+    {
+     "moves": [
+      "counter",
+      "explosion",
+      "seismictoss",
+      "thunderwave"
+     ],
+     "source": "pool_dfa6026ce7d3",
+     "species": "registeel"
+    }
+   ],
+   "sha256": "441454fb16191aaf643356703a46ba3f88d5b51ef495349defe8c006ffabaaa8"
+  },
+  "rc72_04": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "batonpass",
+      "hiddenpowerice",
+      "thunderbolt",
+      "toxic"
+     ],
+     "source": "pool_c8fbec15c280",
+     "species": "jolteon"
+    },
+    {
+     "moves": [
+      "doubleedge",
+      "dragondance",
+      "earthquake",
+      "rockslide"
+     ],
+     "source": "pool_31188730e307",
+     "species": "tyranitar"
+    },
+    {
+     "moves": [
+      "bodyslam",
+      "dynamicpunch",
+      "firepunch",
+      "hiddenpowergrass"
+     ],
+     "source": "pool_e4f5284f2e1a",
+     "species": "jirachi"
+    },
+    {
+     "moves": [
+      "earthquake",
+      "explosion",
+      "psychic",
+      "rapidspin"
+     ],
+     "source": "pool_466e4cfb63f9",
+     "species": "claydol"
+    },
+    {
+     "moves": [
+      "bodyslam",
+      "earthquake",
+      "selfdestruct",
+      "shadowball"
+     ],
+     "source": "pool_2d2131fb8630",
+     "species": "snorlax"
+    },
+    {
+     "moves": [
+      "brickbreak",
+      "dragonclaw",
+      "fireblast",
+      "refresh"
+     ],
+     "source": "pool_e2f9cf310fee",
+     "species": "salamence"
+    }
+   ],
+   "sha256": "f9a56b95977eedbeccb5803937f1200a3892f4ad7b211656b0a40209de2f5437"
+  },
+  "rc72_05": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "bodyslam",
+      "firepunch",
+      "hiddenpowergrass",
+      "wish"
+     ],
+     "source": "pool_01f1341e63de",
+     "species": "jirachi"
+    },
+    {
+     "moves": [
+      "earthquake",
+      "focuspunch",
+      "hydropump",
+      "icebeam"
+     ],
+     "source": "pool_aca43909537f",
+     "species": "swampert"
+    },
+    {
+     "moves": [
+      "dragondance",
+      "earthquake",
+      "hiddenpowergrass",
+      "rockslide"
+     ],
+     "source": "pool_cf00424a16f1",
+     "species": "tyranitar"
+    },
+    {
+     "moves": [
+      "gigadrain",
+      "hiddenpowerice",
+      "leechseed",
+      "psychic"
+     ],
+     "source": "pool_5549c9c85f6d",
+     "species": "celebi"
+    },
+    {
+     "moves": [
+      "hiddenpowergrass",
+      "thunder",
+      "thunderbolt",
+      "thunderwave"
+     ],
+     "source": "pool_bc8fab0e28db",
+     "species": "magneton"
+    },
+    {
+     "moves": [
+      "brickbreak",
+      "dragondance",
+      "hiddenpowerflying",
+      "rockslide"
+     ],
+     "source": "pool_1857408e06e8",
+     "species": "salamence"
+    }
+   ],
+   "sha256": "a51e5cf915e231c1d89f464e59448f3719cd2f3caed61c6ebbc810709c4bcd77"
+  },
+  "rc72_06": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "fireblast",
+      "icebeam",
+      "softboiled",
+      "toxic"
+     ],
+     "source": "pool_4a6190718c0c",
+     "species": "blissey"
+    },
+    {
+     "moves": [
+      "earthquake",
+      "focuspunch",
+      "hydropump",
+      "icebeam"
+     ],
+     "source": "pool_f68020ca8ba1",
+     "species": "swampert"
+    },
+    {
+     "moves": [
+      "icebeam",
+      "rapidspin",
+      "surf",
+      "thunderbolt"
+     ],
+     "source": "pool_954ed4c13c3d",
+     "species": "starmie"
+    },
+    {
+     "moves": [
+      "icebeam",
+      "recover",
+      "refresh",
+      "surf"
+     ],
+     "source": "pool_bc1093303033",
+     "species": "milotic"
+    },
+    {
+     "moves": [
+      "earthquake",
+      "explosion",
+      "psychic",
+      "rapidspin"
+     ],
+     "source": "pool_f9f5c501a664",
+     "species": "claydol"
+    },
+    {
+     "moves": [
+      "calmmind",
+      "icebeam",
+      "surf",
+      "toxic"
+     ],
+     "source": "pool_3dcb40d521a7",
+     "species": "suicune"
+    }
+   ],
+   "sha256": "b3accf75c194d25a4915817074987bbaae3047a1d47b8e5d6c87cc202e28d9be"
+  },
+  "rc72_07": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "batonpass",
+      "calmmind",
+      "gigadrain",
+      "hiddenpowerelectric"
+     ],
+     "source": "pool_61325848045c",
+     "species": "celebi"
+    },
+    {
+     "moves": [
+      "hydropump",
+      "icebeam",
+      "rapidspin",
+      "thunderbolt"
+     ],
+     "source": "pool_67fdf5dfbdbc",
+     "species": "starmie"
+    },
+    {
+     "moves": [
+      "doubleedge",
+      "earthquake",
+      "hiddenpowerbug",
+      "rockslide"
+     ],
+     "source": "pool_d00c52bbddff",
+     "species": "aerodactyl"
+    },
+    {
+     "moves": [
+      "dragondance",
+      "earthquake",
+      "hyperbeam",
+      "rockslide"
+     ],
+     "source": "pool_a7d45b1afa3a",
+     "species": "tyranitar"
+    },
+    {
+     "moves": [
+      "calmmind",
+      "rest",
+      "roar",
+      "surf"
+     ],
+     "source": "pool_44c1b685b484",
+     "species": "suicune"
+    },
+    {
+     "moves": [
+      "hiddenpowerfire",
+      "raindance",
+      "thunderbolt",
+      "thunderwave"
+     ],
+     "source": "pool_446c987ed5dc",
+     "species": "magneton"
+    }
+   ],
+   "sha256": "07246e0be637e51f14d08a2c207f83b8a89f5d05312949f2e850709bc977d726"
+  },
+  "rc72_08": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "dragondance",
+      "earthquake",
+      "hyperbeam",
+      "rockslide"
+     ],
+     "source": "pool_fa44f32820b5",
+     "species": "tyranitar"
+    },
+    {
+     "moves": [
+      "fireblast",
+      "icebeam",
+      "softboiled",
+      "toxic"
+     ],
+     "source": "pool_9d253e36a007",
+     "species": "blissey"
+    },
+    {
+     "moves": [
+      "drillpeck",
+      "protect",
+      "roar",
+      "spikes"
+     ],
+     "source": "pool_768fe6ec1d3d",
+     "species": "skarmory"
+    },
+    {
+     "moves": [
+      "earthquake",
+      "psychic",
+      "rapidspin",
+      "rest"
+     ],
+     "source": "pool_24ba70e3d93f",
+     "species": "claydol"
+    },
+    {
+     "moves": [
+      "explosion",
+      "hiddenpowerfire",
+      "meteormash",
+      "psychic"
+     ],
+     "source": "pool_76b9dc5e47fc",
+     "species": "metagross"
+    },
+    {
+     "moves": [
+      "curse",
+      "focuspunch",
+      "return",
+      "selfdestruct"
+     ],
+     "source": "pool_2b14b3be8472",
+     "species": "snorlax"
+    }
+   ],
+   "sha256": "116b1e18b3ca381103ec4de10df0221af0ae6d61df34cdb130cd93f49b362129"
+  },
+  "rc72_09": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "calmmind",
+      "gigadrain",
+      "hiddenpowerfire",
+      "psychic"
+     ],
+     "source": "pool_4b48308f2c33",
+     "species": "celebi"
+    },
+    {
+     "moves": [
+      "protect",
+      "roar",
+      "spikes",
+      "toxic"
+     ],
+     "source": "pool_2e59fea5f015",
+     "species": "skarmory"
+    },
+    {
+     "moves": [
+      "doubleedge",
+      "earthquake",
+      "hiddenpowerbug",
+      "rockslide"
+     ],
+     "source": "pool_bd8d67634727",
+     "species": "aerodactyl"
+    },
+    {
+     "moves": [
+      "rest",
+      "roar",
+      "thunderbolt",
+      "toxic"
+     ],
+     "source": "pool_0f784a6da30f",
+     "species": "zapdos"
+    },
+    {
+     "moves": [
+      "aerialace",
+      "beatup",
+      "earthquake",
+      "hiddenpowerbug"
+     ],
+     "source": "pool_109e93aabaf3",
+     "species": "dugtrio"
+    },
+    {
+     "moves": [
+      "hiddenpowerfire",
+      "substitute",
+      "thunderbolt",
+      "toxic"
+     ],
+     "source": "pool_b1375f6ca240",
+     "species": "magneton"
+    }
+   ],
+   "sha256": "96ac8bf34900f78c812dd09cfdc54dd4b0088721bd10f0551725f816929c8b3f"
+  },
+  "rc72_10": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "flamethrower",
+      "focuspunch",
+      "hiddenpowergrass",
+      "substitute"
+     ],
+     "source": "pool_fc14cab5df16",
+     "species": "charizard"
+    },
+    {
+     "moves": [
+      "earthquake",
+      "explosion",
+      "meteormash",
+      "protect"
+     ],
+     "source": "pool_1804ae1172b8",
+     "species": "metagross"
+    },
+    {
+     "moves": [
+      "calmmind",
+      "gigadrain",
+      "hiddenpowerfire",
+      "psychic"
+     ],
+     "source": "pool_f83bd5881da4",
+     "species": "celebi"
+    },
+    {
+     "moves": [
+      "rapidspin",
+      "recover",
+      "surf",
+      "thunderwave"
+     ],
+     "source": "pool_24698b945c75",
+     "species": "starmie"
+    },
+    {
+     "moves": [
+      "calmmind",
+      "hiddenpowergrass",
+      "substitute",
+      "thunderbolt"
+     ],
+     "source": "pool_1d279e093fc1",
+     "species": "raikou"
+    },
+    {
+     "moves": [
+      "batonpass",
+      "hiddenpowergrass",
+      "substitute",
+      "thunderbolt"
+     ],
+     "source": "pool_2acc879f0bfe",
+     "species": "jolteon"
+    }
+   ],
+   "sha256": "c898879bf2eda23d51609f495792b0f7146148526f1d9881157d4571491ec68c"
+  },
+  "rc72_11": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "crunch",
+      "fireblast",
+      "focuspunch",
+      "pursuit"
+     ],
+     "source": "pool_fa37b07849f7",
+     "species": "tyranitar"
+    },
+    {
+     "moves": [
+      "curse",
+      "earthquake",
+      "hydropump",
+      "icebeam"
+     ],
+     "source": "pool_8b372835bacd",
+     "species": "swampert"
+    },
+    {
+     "moves": [
+      "explosion",
+      "meteormash",
+      "psychic",
+      "pursuit"
+     ],
+     "source": "pool_1981b9576753",
+     "species": "metagross"
+    },
+    {
+     "moves": [
+      "bodyslam",
+      "earthquake",
+      "selfdestruct",
+      "shadowball"
+     ],
+     "source": "pool_962fa0fe7115",
+     "species": "snorlax"
+    },
+    {
+     "moves": [
+      "icebeam",
+      "seismictoss",
+      "softboiled",
+      "thunder"
+     ],
+     "source": "pool_91bb3ca65012",
+     "species": "blissey"
+    },
+    {
+     "moves": [
+      "calmmind",
+      "hiddenpowergrass",
+      "hydropump",
+      "icebeam"
+     ],
+     "source": "pool_b82dff95786a",
+     "species": "suicune"
+    }
+   ],
+   "sha256": "2f82d522896cfcf4e2070fba710668e0f22258da9a0ef92504d2a673bbedb0b0"
+  },
+  "rc72_12": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "gigadrain",
+      "taunt",
+      "thunderbolt",
+      "willowisp"
+     ],
+     "source": "pool_ea88181d8892",
+     "species": "gengar"
+    },
+    {
+     "moves": [
+      "earthquake",
+      "hiddenpowerbug",
+      "rockslide",
+      "substitute"
+     ],
+     "source": "pool_96049837e470",
+     "species": "flygon"
+    },
+    {
+     "moves": [
+      "doubleedge",
+      "earthquake",
+      "hiddenpowerbug",
+      "rockslide"
+     ],
+     "source": "pool_ba4000a154fc",
+     "species": "aerodactyl"
+    },
+    {
+     "moves": [
+      "bodyslam",
+      "firepunch",
+      "protect",
+      "wish"
+     ],
+     "source": "pool_0f164458ac75",
+     "species": "jirachi"
+    },
+    {
+     "moves": [
+      "icebeam",
+      "seismictoss",
+      "softboiled",
+      "wish"
+     ],
+     "source": "pool_e309f0db2d1b",
+     "species": "blissey"
+    },
+    {
+     "moves": [
+      "brickbreak",
+      "crunch",
+      "fireblast",
+      "pursuit"
+     ],
+     "source": "pool_88a18ab52e53",
+     "species": "tyranitar"
+    }
+   ],
+   "sha256": "08a178f8eb2aec99d28c8489ff03f5cd8daab8b6d29402552c4a215dcbc46d8e"
+  },
+  "rc72_13": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "calmmind",
+      "icebeam",
+      "rest",
+      "surf"
+     ],
+     "source": "pool_e419ee242bdf",
+     "species": "suicune"
+    },
+    {
+     "moves": [
+      "calmmind",
+      "hiddenpowergrass",
+      "substitute",
+      "thunderbolt"
+     ],
+     "source": "pool_fc89ddae3491",
+     "species": "raikou"
+    },
+    {
+     "moves": [
+      "bodyslam",
+      "dynamicpunch",
+      "firepunch",
+      "hiddenpowergrass"
+     ],
+     "source": "pool_aba2d8269767",
+     "species": "jirachi"
+    },
+    {
+     "moves": [
+      "earthquake",
+      "explosion",
+      "rapidspin",
+      "spikes"
+     ],
+     "source": "pool_e3881ab6da3a",
+     "species": "forretress"
+    },
+    {
+     "moves": [
+      "brickbreak",
+      "dragondance",
+      "hiddenpowerflying",
+      "rockslide"
+     ],
+     "source": "pool_e9edcacf0691",
+     "species": "salamence"
+    },
+    {
+     "moves": [
+      "gigadrain",
+      "taunt",
+      "thunderbolt",
+      "willowisp"
+     ],
+     "source": "pool_ea88181d8892",
+     "species": "gengar"
+    }
+   ],
+   "sha256": "825966abe040fef7db51e4a67c0797c88bf3affa8dae00ba5b865a54ffb03465"
+  },
+  "rc72_14": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "crunch",
+      "flamethrower",
+      "pursuit",
+      "roar"
+     ],
+     "source": "pool_191788ad2b24",
+     "species": "tyranitar"
+    },
+    {
+     "moves": [
+      "brickbreak",
+      "dragondance",
+      "hiddenpowerflying",
+      "rockslide"
+     ],
+     "source": "pool_c2c21268dfbe",
+     "species": "salamence"
+    },
+    {
+     "moves": [
+      "calmmind",
+      "hiddenpowergrass",
+      "substitute",
+      "thunderbolt"
+     ],
+     "source": "pool_111eec47131d",
+     "species": "raikou"
+    },
+    {
+     "moves": [
+      "explosion",
+      "firepunch",
+      "hiddenpowergrass",
+      "icepunch"
+     ],
+     "source": "pool_897d82584707",
+     "species": "gengar"
+    },
+    {
+     "moves": [
+      "earthquake",
+      "explosion",
+      "hiddenpowergrass",
+      "meteormash"
+     ],
+     "source": "pool_5a37703a77a2",
+     "species": "metagross"
+    },
+    {
+     "moves": [
+      "icebeam",
+      "seismictoss",
+      "softboiled",
+      "wish"
+     ],
+     "source": "pool_98f0236407e3",
+     "species": "blissey"
+    }
+   ],
+   "sha256": "47eb078fe668efe667b69f030123d0b6d464513ba2dbda9d8a89469e10cc307d"
+  },
+  "rc72_15": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "calmmind",
+      "rest",
+      "roar",
+      "surf"
+     ],
+     "source": "pool_fc1c8b358ac4",
+     "species": "suicune"
+    },
+    {
+     "moves": [
+      "explosion",
+      "firepunch",
+      "hiddenpowergrass",
+      "icepunch"
+     ],
+     "source": "pool_e8f35b24e17a",
+     "species": "gengar"
+    },
+    {
+     "moves": [
+      "explosion",
+      "hiddenpowerfire",
+      "meteormash",
+      "psychic"
+     ],
+     "source": "pool_0cbf6365251c",
+     "species": "metagross"
+    },
+    {
+     "moves": [
+      "hiddenpowerice",
+      "roar",
+      "thunderbolt",
+      "thunderwave"
+     ],
+     "source": "pool_c16c9abebe24",
+     "species": "zapdos"
+    },
+    {
+     "moves": [
+      "drillpeck",
+      "roar",
+      "spikes",
+      "taunt"
+     ],
+     "source": "pool_8033d57f356f",
+     "species": "skarmory"
+    },
+    {
+     "moves": [
+      "earthquake",
+      "fireblast",
+      "protect",
+      "toxic"
+     ],
+     "source": "pool_90cb99857ed3",
+     "species": "flygon"
+    }
+   ],
+   "sha256": "69eec74fc66b7e4f34c23487769b0eb20bc964ab0cfe9a0f923621357dda2dba"
+  },
+  "rc72_16": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "curse",
+      "earthquake",
+      "icebeam",
+      "rest"
+     ],
+     "source": "pool_fec0a586b29d",
+     "species": "swampert"
+    },
+    {
+     "moves": [
+      "doubleedge",
+      "earthquake",
+      "hiddenpowerflying",
+      "rockslide"
+     ],
+     "source": "pool_c8fbec15c280",
+     "species": "aerodactyl"
+    },
+    {
+     "moves": [
+      "dragondance",
+      "earthquake",
+      "endure",
+      "rockslide"
+     ],
+     "source": "pool_235f75134a4e",
+     "species": "tyranitar"
+    },
+    {
+     "moves": [
+      "bodyslam",
+      "dynamicpunch",
+      "firepunch",
+      "hiddenpowergrass"
+     ],
+     "source": "pool_ad6a8b08e0d3",
+     "species": "jirachi"
+    },
+    {
+     "moves": [
+      "protect",
+      "roar",
+      "spikes",
+      "thief"
+     ],
+     "source": "pool_99ec10438ac0",
+     "species": "skarmory"
+    },
+    {
+     "moves": [
+      "calmmind",
+      "hydropump",
+      "icebeam",
+      "roar"
+     ],
+     "source": "pool_4ac097fb9bdc",
+     "species": "suicune"
+    }
+   ],
+   "sha256": "573dc864b7779ebb324da4e4a534b14c0debcba0a5273b7110aee41cf2afaf64"
+  },
+  "rc72_17": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "hiddenpowergrass",
+      "leechseed",
+      "psychic",
+      "recover"
+     ],
+     "source": "pool_e8ffdb125acf",
+     "species": "celebi"
+    },
+    {
+     "moves": [
+      "doubleedge",
+      "earthquake",
+      "hiddenpowerbug",
+      "rockslide"
+     ],
+     "source": "pool_7152278120fa",
+     "species": "aerodactyl"
+    },
+    {
+     "moves": [
+      "drillpeck",
+      "roar",
+      "spikes",
+      "taunt"
+     ],
+     "source": "pool_8cce87045405",
+     "species": "skarmory"
+    },
+    {
+     "moves": [
+      "curse",
+      "rest",
+      "return",
+      "shadowball"
+     ],
+     "source": "pool_0716a0e1244e",
+     "species": "snorlax"
+    },
+    {
+     "moves": [
+      "counter",
+      "protect",
+      "roar",
+      "surf"
+     ],
+     "source": "pool_138f5fb85c35",
+     "species": "swampert"
+    },
+    {
+     "moves": [
+      "explosion",
+      "firepunch",
+      "hiddenpowergrass",
+      "icepunch"
+     ],
+     "source": "pool_b95227b73826",
+     "species": "gengar"
+    }
+   ],
+   "sha256": "2c193292adeb40aefd999706be7075b6e39fb5cf63736de91af6160e5107eb1c"
+  },
+  "rc72_18": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "doubleedge",
+      "dragondance",
+      "earthquake",
+      "hiddenpowerrock"
+     ],
+     "source": "pool_2b1fb50cc3bc",
+     "species": "gyarados"
+    },
+    {
+     "moves": [
+      "dragondance",
+      "earthquake",
+      "hiddenpowerflying",
+      "rockslide"
+     ],
+     "source": "pool_23ab5629985a",
+     "species": "salamence"
+    },
+    {
+     "moves": [
+      "earthquake",
+      "focuspunch",
+      "hiddenpowerghost",
+      "rockslide"
+     ],
+     "source": "pool_467be8eb9a74",
+     "species": "tyranitar"
+    },
+    {
+     "moves": [
+      "calmmind",
+      "gigadrain",
+      "leechseed",
+      "psychic"
+     ],
+     "source": "pool_c1f8ca6344bd",
+     "species": "celebi"
+    },
+    {
+     "moves": [
+      "hiddenpowerfire",
+      "substitute",
+      "thunderbolt",
+      "toxic"
+     ],
+     "source": "pool_ed97136f3102",
+     "species": "magneton"
+    },
+    {
+     "moves": [
+      "icepunch",
+      "taunt",
+      "thunderbolt",
+      "willowisp"
+     ],
+     "source": "pool_e61ec4aac83b",
+     "species": "gengar"
+    }
+   ],
+   "sha256": "05080db0ce495ce5ebfa8187034eb7ffcdd89ffb7967d82b7c3931e5a4ef48ce"
+  },
+  "rc72_19": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "earthquake",
+      "rockslide",
+      "taunt",
+      "toxic"
+     ],
+     "source": "pool_f0142d339325",
+     "species": "tyranitar"
+    },
+    {
+     "moves": [
+      "dragondance",
+      "earthquake",
+      "hiddenpowerflying",
+      "rockslide"
+     ],
+     "source": "pool_df9172990906",
+     "species": "salamence"
+    },
+    {
+     "moves": [
+      "bodyslam",
+      "focuspunch",
+      "selfdestruct",
+      "shadowball"
+     ],
+     "source": "pool_f8e882673cdf",
+     "species": "snorlax"
+    },
+    {
+     "moves": [
+      "icepunch",
+      "taunt",
+      "thunderbolt",
+      "willowisp"
+     ],
+     "source": "pool_d41976515a2d",
+     "species": "gengar"
+    },
+    {
+     "moves": [
+      "curse",
+      "earthquake",
+      "hiddenpowerrock",
+      "rest"
+     ],
+     "source": "pool_56cc1be4661b",
+     "species": "swampert"
+    },
+    {
+     "moves": [
+      "calmmind",
+      "gigadrain",
+      "leechseed",
+      "psychic"
+     ],
+     "source": "pool_b1d36e6b1c08",
+     "species": "celebi"
+    }
+   ],
+   "sha256": "7ea55e2a273f9adc15f8b3a57759821c911e0b0aa81fddf5ba4400c7b55f3095"
+  },
+  "rc72_20": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "earthquake",
+      "focuspunch",
+      "hiddenpowerbug",
+      "rockslide"
+     ],
+     "source": "pool_eeb29354b1ed",
+     "species": "tyranitar"
+    },
+    {
+     "moves": [
+      "protect",
+      "refresh",
+      "surf",
+      "toxic"
+     ],
+     "source": "pool_109e93aabaf3",
+     "species": "swampert"
+    },
+    {
+     "moves": [
+      "hiddenpowersteel",
+      "protect",
+      "rapidspin",
+      "spikes"
+     ],
+     "source": "pool_fe24deed63a7",
+     "species": "forretress"
+    },
+    {
+     "moves": [
+      "beatup",
+      "dragonclaw",
+      "flamethrower",
+      "hiddenpowergrass"
+     ],
+     "source": "pool_7c97cb142384",
+     "species": "charizard"
+    },
+    {
+     "moves": [
+      "explosion",
+      "hiddenpowerfire",
+      "meteormash",
+      "psychic"
+     ],
+     "source": "pool_bac993519aef",
+     "species": "metagross"
+    },
+    {
+     "moves": [
+      "hiddenpowerice",
+      "rest",
+      "thunderbolt",
+      "toxic"
+     ],
+     "source": "pool_1610536dbe06",
+     "species": "magneton"
+    }
+   ],
+   "sha256": "3c31bce042691282fb136f00c54ce58fae2e6d8aa9aff6e44f15bf94d803c802"
+  },
+  "rc72_21": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "earthquake",
+      "icebeam",
+      "protect",
+      "refresh"
+     ],
+     "source": "pool_7c2da415818d",
+     "species": "swampert"
+    },
+    {
+     "moves": [
+      "explosion",
+      "hiddenpowerfire",
+      "meteormash",
+      "psychic"
+     ],
+     "source": "pool_db6067b59cdf",
+     "species": "metagross"
+    },
+    {
+     "moves": [
+      "beatup",
+      "dragonclaw",
+      "flamethrower",
+      "hiddenpowergrass"
+     ],
+     "source": "pool_78c1ffe11dc7",
+     "species": "charizard"
+    },
+    {
+     "moves": [
+      "fireblast",
+      "seismictoss",
+      "softboiled",
+      "toxic"
+     ],
+     "source": "pool_7596382d9342",
+     "species": "blissey"
+    },
+    {
+     "moves": [
+      "spikes",
+      "taunt",
+      "toxic",
+      "whirlwind"
+     ],
+     "source": "pool_2d390e3950d8",
+     "species": "skarmory"
+    },
+    {
+     "moves": [
+      "doubleedge",
+      "earthquake",
+      "hiddenpowerflying",
+      "rockslide"
+     ],
+     "source": "pool_3bfa1e00a530",
+     "species": "aerodactyl"
+    }
+   ],
+   "sha256": "f7ac4623d98dd7e04a6d3c371265e3cd540474753dcea6075c5dddf11e0c3c2a"
+  },
+  "rc72_22": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "earthquake",
+      "explosion",
+      "rapidspin",
+      "spikes"
+     ],
+     "source": "pool_45a5faa43bf2",
+     "species": "forretress"
+    },
+    {
+     "moves": [
+      "earthquake",
+      "explosion",
+      "meteormash",
+      "rockslide"
+     ],
+     "source": "pool_77889074a38e",
+     "species": "metagross"
+    },
+    {
+     "moves": [
+      "bodyslam",
+      "focuspunch",
+      "selfdestruct",
+      "shadowball"
+     ],
+     "source": "pool_72a92d4ce967",
+     "species": "snorlax"
+    },
+    {
+     "moves": [
+      "earthquake",
+      "hydropump",
+      "icebeam",
+      "protect"
+     ],
+     "source": "pool_7ba2eaf9dca8",
+     "species": "swampert"
+    },
+    {
+     "moves": [
+      "brickbreak",
+      "dragonclaw",
+      "flamethrower",
+      "roar"
+     ],
+     "source": "pool_88a18ab52e53",
+     "species": "salamence"
+    },
+    {
+     "moves": [
+      "doubleedge",
+      "earthquake",
+      "focuspunch",
+      "raindance"
+     ],
+     "source": "pool_0a8d7c00c4ae",
+     "species": "slaking"
+    }
+   ],
+   "sha256": "ffad06f03f6cf2cb299c1d095cc105c117ab00a481baa9c6678e5cf32e4a704e"
+  },
+  "rc72_23": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "earthquake",
+      "explosion",
+      "rapidspin",
+      "rockslide"
+     ],
+     "source": "pool_03586e3ad845",
+     "species": "claydol"
+    },
+    {
+     "moves": [
+      "earthquake",
+      "hydropump",
+      "icebeam",
+      "protect"
+     ],
+     "source": "pool_e7fe344718ca",
+     "species": "swampert"
+    },
+    {
+     "moves": [
+      "brickbreak",
+      "earthquake",
+      "hiddenpowerflying",
+      "rockslide"
+     ],
+     "source": "pool_4fa57879d6c0",
+     "species": "salamence"
+    },
+    {
+     "moves": [
+      "icebeam",
+      "rapidspin",
+      "surf",
+      "thunderbolt"
+     ],
+     "source": "pool_eb39be62390b",
+     "species": "starmie"
+    },
+    {
+     "moves": [
+      "flamethrower",
+      "icebeam",
+      "softboiled",
+      "toxic"
+     ],
+     "source": "pool_191788ad2b24",
+     "species": "blissey"
+    },
+    {
+     "moves": [
+      "gigadrain",
+      "hiddenpowerfire",
+      "leechseed",
+      "sleeppowder"
+     ],
+     "source": "pool_5b918d90d5fc",
+     "species": "venusaur"
+    }
+   ],
+   "sha256": "e700dd6e45b318873f231962b57aa461d07d613e3617d0c248b35e2fa8dc1d06"
+  },
+  "rc72_24": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "earthquake",
+      "hiddenpowerflying",
+      "rockslide",
+      "wish"
+     ],
+     "source": "pool_44084e6a7514",
+     "species": "salamence"
+    },
+    {
+     "moves": [
+      "icebeam",
+      "seismictoss",
+      "softboiled",
+      "thunderwave"
+     ],
+     "source": "pool_9c607e464c04",
+     "species": "blissey"
+    },
+    {
+     "moves": [
+      "crunch",
+      "flamethrower",
+      "pursuit",
+      "roar"
+     ],
+     "source": "pool_a580241add8c",
+     "species": "tyranitar"
+    },
+    {
+     "moves": [
+      "calmmind",
+      "rest",
+      "roar",
+      "surf"
+     ],
+     "source": "pool_ae12b7df5a73",
+     "species": "suicune"
+    },
+    {
+     "moves": [
+      "aerialace",
+      "earthquake",
+      "hiddenpowerbug",
+      "rockslide"
+     ],
+     "source": "pool_596a4a6b365c",
+     "species": "dugtrio"
+    },
+    {
+     "moves": [
+      "hiddenpowergrass",
+      "thunderbolt",
+      "thunderwave",
+      "toxic"
+     ],
+     "source": "pool_381165f37a49",
+     "species": "magneton"
+    }
+   ],
+   "sha256": "4dee8379adb462672874c7da30f7b04b8d8c06059f27993e5c1ad426e9a5c142"
+  },
+  "rc72_25": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "hiddenpowergrass",
+      "leechseed",
+      "psychic",
+      "recover"
+     ],
+     "source": "pool_6028c2d255a9",
+     "species": "celebi"
+    },
+    {
+     "moves": [
+      "brickbreak",
+      "dragonclaw",
+      "fireblast",
+      "wish"
+     ],
+     "source": "pool_18768dadd39f",
+     "species": "salamence"
+    },
+    {
+     "moves": [
+      "protect",
+      "roar",
+      "spikes",
+      "thief"
+     ],
+     "source": "pool_8a05c25c1b39",
+     "species": "skarmory"
+    },
+    {
+     "moves": [
+      "agility",
+      "earthquake",
+      "meteormash",
+      "rockslide"
+     ],
+     "source": "pool_e588d5d97327",
+     "species": "metagross"
+    },
+    {
+     "moves": [
+      "explosion",
+      "firepunch",
+      "hiddenpowergrass",
+      "icepunch"
+     ],
+     "source": "pool_ae14a5bc50e9",
+     "species": "gengar"
+    },
+    {
+     "moves": [
+      "earthquake",
+      "focuspunch",
+      "hydropump",
+      "icebeam"
+     ],
+     "source": "pool_72b0e77c4055",
+     "species": "swampert"
+    }
+   ],
+   "sha256": "35fdfad3d84820d4d566fdeb1c2cc64ef99ec759c8970f4f42f91dafd6f5d9b8"
+  },
+  "rc72_26": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "calmmind",
+      "icebeam",
+      "rest",
+      "surf"
+     ],
+     "source": "pool_48b28ea17779",
+     "species": "suicune"
+    },
+    {
+     "moves": [
+      "curse",
+      "earthquake",
+      "return",
+      "selfdestruct"
+     ],
+     "source": "pool_9742a4db3054",
+     "species": "snorlax"
+    },
+    {
+     "moves": [
+      "agility",
+      "earthquake",
+      "explosion",
+      "meteormash"
+     ],
+     "source": "pool_e419ee242bdf",
+     "species": "metagross"
+    },
+    {
+     "moves": [
+      "earthquake",
+      "hiddenpowerflying",
+      "return",
+      "thunderwave"
+     ],
+     "source": "pool_ea77ed837814",
+     "species": "gyarados"
+    },
+    {
+     "moves": [
+      "calmmind",
+      "gigadrain",
+      "leechseed",
+      "psychic"
+     ],
+     "source": "pool_fa930509fb1b",
+     "species": "celebi"
+    },
+    {
+     "moves": [
+      "explosion",
+      "rapidspin",
+      "spikes",
+      "surf"
+     ],
+     "source": "pool_3388819f90d4",
+     "species": "cloyster"
+    }
+   ],
+   "sha256": "4318e451de5ad9936f9178ab9ea9d64ba156113be6f1e6090708eca9ff18bd4f"
+  },
+  "rc72_27": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "brickbreak",
+      "dragonclaw",
+      "flamethrower",
+      "hiddenpowergrass"
+     ],
+     "source": "pool_528776effd0e",
+     "species": "salamence"
+    },
+    {
+     "moves": [
+      "doubleedge",
+      "earthquake",
+      "hiddenpowerflying",
+      "rockslide"
+     ],
+     "source": "pool_3bab8cd1c010",
+     "species": "aerodactyl"
+    },
+    {
+     "moves": [
+      "calmmind",
+      "gigadrain",
+      "leechseed",
+      "psychic"
+     ],
+     "source": "pool_5d485111a2cf",
+     "species": "celebi"
+    },
+    {
+     "moves": [
+      "counter",
+      "explosion",
+      "seismictoss",
+      "thunderwave"
+     ],
+     "source": "pool_0e29bbc60b03",
+     "species": "registeel"
+    },
+    {
+     "moves": [
+      "earthquake",
+      "explosion",
+      "meteormash",
+      "toxic"
+     ],
+     "source": "pool_d4cd5994656a",
+     "species": "metagross"
+    },
+    {
+     "moves": [
+      "calmmind",
+      "hiddenpowerice",
+      "substitute",
+      "thunderbolt"
+     ],
+     "source": "pool_f43140a285d3",
+     "species": "raikou"
+    }
+   ],
+   "sha256": "fee425437cadb52833c77b1cacccf7db3c0813c4d18fb5fa8f5810dc7e517888"
+  },
+  "rc72_28": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "earthquake",
+      "focuspunch",
+      "hydropump",
+      "icebeam"
+     ],
+     "source": "pool_fbd0a1524659",
+     "species": "swampert"
+    },
+    {
+     "moves": [
+      "rest",
+      "roar",
+      "thunderbolt",
+      "toxic"
+     ],
+     "source": "pool_85ef373f15ae",
+     "species": "zapdos"
+    },
+    {
+     "moves": [
+      "explosion",
+      "icepunch",
+      "thunderbolt",
+      "willowisp"
+     ],
+     "source": "pool_fa37b07849f7",
+     "species": "gengar"
+    },
+    {
+     "moves": [
+      "calmmind",
+      "rest",
+      "roar",
+      "surf"
+     ],
+     "source": "pool_24ba70e3d93f",
+     "species": "suicune"
+    },
+    {
+     "moves": [
+      "batonpass",
+      "hiddenpowergrass",
+      "substitute",
+      "thunderbolt"
+     ],
+     "source": "pool_e82c7826b922",
+     "species": "jolteon"
+    },
+    {
+     "moves": [
+      "bodyslam",
+      "firepunch",
+      "hiddenpowergrass",
+      "wish"
+     ],
+     "source": "pool_2602fae5dd1e",
+     "species": "jirachi"
+    }
+   ],
+   "sha256": "add7c371a52b55bb2d11679e288d2a5f125ca05cd38d894663473bca17003c6b"
+  },
+  "rc72_29": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "hydropump",
+      "icebeam",
+      "rapidspin",
+      "thunderbolt"
+     ],
+     "source": "pool_a8db406709e5",
+     "species": "starmie"
+    },
+    {
+     "moves": [
+      "calmmind",
+      "icebeam",
+      "rest",
+      "surf"
+     ],
+     "source": "pool_a52a784d21f1",
+     "species": "suicune"
+    },
+    {
+     "moves": [
+      "brickbreak",
+      "crunch",
+      "flamethrower",
+      "pursuit"
+     ],
+     "source": "pool_076b8abd6f19",
+     "species": "tyranitar"
+    },
+    {
+     "moves": [
+      "explosion",
+      "hypnosis",
+      "icepunch",
+      "thunderbolt"
+     ],
+     "source": "pool_05f322153cef",
+     "species": "gengar"
+    },
+    {
+     "moves": [
+      "agility",
+      "drillpeck",
+      "hiddenpowergrass",
+      "thunderbolt"
+     ],
+     "source": "pool_23c94c75b542",
+     "species": "zapdos"
+    },
+    {
+     "moves": [
+      "protect",
+      "refresh",
+      "surf",
+      "toxic"
+     ],
+     "source": "pool_b158a854e42b",
+     "species": "swampert"
+    }
+   ],
+   "sha256": "910f10875858372b36a0a94e35cffc393a48dbe0e48c65a84d3fba4a97b26dbd"
+  },
+  "rc72_30": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "aerialace",
+      "earthquake",
+      "hiddenpowerbug",
+      "screech"
+     ],
+     "source": "pool_0b2d7acd56bd",
+     "species": "dugtrio"
+    },
+    {
+     "moves": [
+      "curse",
+      "earthquake",
+      "hydropump",
+      "icebeam"
+     ],
+     "source": "pool_392198b07083",
+     "species": "swampert"
+    },
+    {
+     "moves": [
+      "doubleedge",
+      "dragondance",
+      "earthquake",
+      "rockslide"
+     ],
+     "source": "pool_cf95113aad16",
+     "species": "tyranitar"
+    },
+    {
+     "moves": [
+      "brickbreak",
+      "earthquake",
+      "hiddenpowerflying",
+      "rockslide"
+     ],
+     "source": "pool_3acb5e0e5f00",
+     "species": "salamence"
+    },
+    {
+     "moves": [
+      "icebeam",
+      "seismictoss",
+      "softboiled",
+      "thunderwave"
+     ],
+     "source": "pool_b382a4622dfb",
+     "species": "blissey"
+    },
+    {
+     "moves": [
+      "dragondance",
+      "earthquake",
+      "hiddenpowerrock",
+      "return"
+     ],
+     "source": "pool_67e16f94c55a",
+     "species": "gyarados"
+    }
+   ],
+   "sha256": "83c8e5f236e470f7a9cac8b3fe4e8abd2b8753a328daf562aac2ca283a7cb389"
+  },
+  "rc72_31": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "aromatherapy",
+      "seismictoss",
+      "softboiled",
+      "thunderwave"
+     ],
+     "source": "pool_652a9f6a7034",
+     "species": "blissey"
+    },
+    {
+     "moves": [
+      "drillpeck",
+      "protect",
+      "roar",
+      "spikes"
+     ],
+     "source": "pool_5f64a54e1dc1",
+     "species": "skarmory"
+    },
+    {
+     "moves": [
+      "explosion",
+      "gigadrain",
+      "icepunch",
+      "thunderbolt"
+     ],
+     "source": "pool_5a40bee20683",
+     "species": "gengar"
+    },
+    {
+     "moves": [
+      "brickbreak",
+      "crunch",
+      "flamethrower",
+      "pursuit"
+     ],
+     "source": "pool_1fb75d87efbb",
+     "species": "tyranitar"
+    },
+    {
+     "moves": [
+      "earthquake",
+      "explosion",
+      "meteormash",
+      "protect"
+     ],
+     "source": "pool_469c3b42d93a",
+     "species": "metagross"
+    },
+    {
+     "moves": [
+      "calmmind",
+      "gigadrain",
+      "leechseed",
+      "psychic"
+     ],
+     "source": "pool_68150840356e",
+     "species": "celebi"
+    }
+   ],
+   "sha256": "5b652d7743c14f0f6197e7c7d959d0f68935a7c1e5b1c3ddb5e935506290c6a3"
+  },
+  "rc72_32": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "earthquake",
+      "explosion",
+      "hiddenpowergrass",
+      "thunderpunch"
+     ],
+     "source": "pool_abe9cad6c24d",
+     "species": "metagross"
+    },
+    {
+     "moves": [
+      "earthquake",
+      "explosion",
+      "rapidspin",
+      "spikes"
+     ],
+     "source": "pool_05ef9be33faf",
+     "species": "forretress"
+    },
+    {
+     "moves": [
+      "earthquake",
+      "hiddenpowerghost",
+      "return",
+      "rockslide"
+     ],
+     "source": "pool_6f880012bcc9",
+     "species": "tyranitar"
+    },
+    {
+     "moves": [
+      "earthquake",
+      "hydropump",
+      "icebeam",
+      "protect"
+     ],
+     "source": "pool_082ddda09b0f",
+     "species": "swampert"
+    },
+    {
+     "moves": [
+      "dragondance",
+      "earthquake",
+      "hiddenpowerflying",
+      "rockslide"
+     ],
+     "source": "pool_cf95113aad16",
+     "species": "salamence"
+    },
+    {
+     "moves": [
+      "explosion",
+      "psychic",
+      "rapidspin",
+      "rest"
+     ],
+     "source": "pool_6fde3134dde0",
+     "species": "claydol"
+    }
+   ],
+   "sha256": "fffebc7fddbd3dcf29b22b8ca2afc77ae2a0e4c41d2c0d0c967e5dc56f397981"
+  },
+  "rc72_33": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "doubleedge",
+      "dragondance",
+      "earthquake",
+      "rockslide"
+     ],
+     "source": "pool_787aab16351a",
+     "species": "tyranitar"
+    },
+    {
+     "moves": [
+      "explosion",
+      "icepunch",
+      "thunderbolt",
+      "willowisp"
+     ],
+     "source": "pool_b43031ea461f",
+     "species": "gengar"
+    },
+    {
+     "moves": [
+      "rest",
+      "thunderbolt",
+      "thunderwave",
+      "toxic"
+     ],
+     "source": "pool_0571de6bd315",
+     "species": "zapdos"
+    },
+    {
+     "moves": [
+      "hydropump",
+      "icebeam",
+      "rapidspin",
+      "thunderbolt"
+     ],
+     "source": "pool_eeba3546c9e4",
+     "species": "starmie"
+    },
+    {
+     "moves": [
+      "doubleedge",
+      "earthquake",
+      "hiddenpowerflying",
+      "rockslide"
+     ],
+     "source": "pool_f5402c8c3788",
+     "species": "aerodactyl"
+    },
+    {
+     "moves": [
+      "calmmind",
+      "icebeam",
+      "softboiled",
+      "thunderbolt"
+     ],
+     "source": "pool_0da3a8201b25",
+     "species": "blissey"
+    }
+   ],
+   "sha256": "2e62ada16782df45d2e432158ce3b4d10e5f68d627d70618b5d1268d3472786d"
+  },
+  "rc72_34": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "earthquake",
+      "icebeam",
+      "protect",
+      "surf"
+     ],
+     "source": "pool_d221eb3ff7e6",
+     "species": "swampert"
+    },
+    {
+     "moves": [
+      "bodyslam",
+      "earthquake",
+      "selfdestruct",
+      "shadowball"
+     ],
+     "source": "pool_4e490a31b21a",
+     "species": "snorlax"
+    },
+    {
+     "moves": [
+      "earthquake",
+      "rockslide",
+      "taunt",
+      "toxic"
+     ],
+     "source": "pool_07cd119fb2c4",
+     "species": "tyranitar"
+    },
+    {
+     "moves": [
+      "icebeam",
+      "seismictoss",
+      "softboiled",
+      "toxic"
+     ],
+     "source": "pool_e8f35b24e17a",
+     "species": "blissey"
+    },
+    {
+     "moves": [
+      "earthquake",
+      "gust",
+      "hiddenpowerbug",
+      "rockslide"
+     ],
+     "source": "pool_03eafe8b4531",
+     "species": "flygon"
+    },
+    {
+     "moves": [
+      "brickbreak",
+      "dragonclaw",
+      "fireblast",
+      "hiddenpowergrass"
+     ],
+     "source": "pool_d4907ed1e8a6",
+     "species": "salamence"
+    }
+   ],
+   "sha256": "55f0de9c67a05dd6182635677a103d767dd24c5d83b6f7fa4c2584b1cf48d53f"
+  },
+  "rc72_35": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "earthquake",
+      "icebeam",
+      "refresh",
+      "surf"
+     ],
+     "source": "pool_f8d97887f4e5",
+     "species": "swampert"
+    },
+    {
+     "moves": [
+      "seismictoss",
+      "sing",
+      "softboiled",
+      "toxic"
+     ],
+     "source": "pool_85d0cc29e2c9",
+     "species": "blissey"
+    },
+    {
+     "moves": [
+      "drillpeck",
+      "roar",
+      "spikes",
+      "taunt"
+     ],
+     "source": "pool_e780b2c4f91e",
+     "species": "skarmory"
+    },
+    {
+     "moves": [
+      "icebeam",
+      "rapidspin",
+      "surf",
+      "thunderbolt"
+     ],
+     "source": "pool_c62e49d40b9c",
+     "species": "starmie"
+    },
+    {
+     "moves": [
+      "recover",
+      "refresh",
+      "surf",
+      "toxic"
+     ],
+     "source": "pool_ed58bb384489",
+     "species": "milotic"
+    },
+    {
+     "moves": [
+      "hiddenpowerice",
+      "thunderbolt",
+      "thunderwave",
+      "toxic"
+     ],
+     "source": "pool_c7b7707032ee",
+     "species": "zapdos"
+    }
+   ],
+   "sha256": "60d6575d80b35bf47f94b05293b13662b5ea76b54cde85b00a310f7863618641"
+  },
+  "rc72_36": {
+   "attempt": 1,
+   "mons": [
+    {
+     "moves": [
+      "doubleedge",
+      "earthquake",
+      "hiddenpowerflying",
+      "rockslide"
+     ],
+     "source": "pool_e2ae95e9b288",
+     "species": "aerodactyl"
+    },
+    {
+     "moves": [
+      "bodyslam",
+      "firepunch",
+      "hiddenpowergrass",
+      "wish"
+     ],
+     "source": "pool_e586a00f094b",
+     "species": "jirachi"
+    },
+    {
+     "moves": [
+      "explosion",
+      "hiddenpowergrass",
+      "spikes",
+      "surf"
+     ],
+     "source": "pool_b0a2928aa0bd",
+     "species": "cloyster"
+    },
+    {
+     "moves": [
+      "explosion",
+      "firepunch",
+      "hiddenpowergrass",
+      "hypnosis"
+     ],
+     "source": "pool_39bff1c8f53e",
+     "species": "gengar"
+    },
+    {
+     "moves": [
+      "explosion",
+      "hiddenpowerfire",
+      "meteormash",
+      "psychic"
+     ],
+     "source": "pool_2b0888f1228d",
+     "species": "metagross"
+    },
+    {
+     "moves": [
+      "aromatherapy",
+      "icebeam",
+      "seismictoss",
+      "softboiled"
+     ],
+     "source": "pool_24ba70e3d93f",
+     "species": "blissey"
+    }
+   ],
+   "sha256": "9e1ba8481dfc4d05fde53d28c36e413f6867b633f50eb8c6b6919a4d0ab95d7c"
+  },
+  "rc72_37": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "drillpeck",
+      "roar",
+      "spikes",
+      "taunt"
+     ],
+     "source": "pool_9812d495c658",
+     "species": "skarmory"
+    },
+    {
+     "moves": [
+      "curse",
+      "earthquake",
+      "hydropump",
+      "icebeam"
+     ],
+     "source": "pool_49ec34617462",
+     "species": "swampert"
+    },
+    {
+     "moves": [
+      "calmmind",
+      "icebeam",
+      "substitute",
+      "surf"
+     ],
+     "source": "pool_fc89ddae3491",
+     "species": "suicune"
+    },
+    {
+     "moves": [
+      "earthquake",
+      "hiddenpowerbug",
+      "rapidspin",
+      "rockslide"
+     ],
+     "source": "pool_488906063d89",
+     "species": "armaldo"
+    },
+    {
+     "moves": [
+      "icebeam",
+      "seismictoss",
+      "softboiled",
+      "toxic"
+     ],
+     "source": "pool_f9dc657b9d96",
+     "species": "blissey"
+    },
+    {
+     "moves": [
+      "batonpass",
+      "hiddenpowergrass",
+      "leechseed",
+      "recover"
+     ],
+     "source": "pool_cb8d26617425",
+     "species": "celebi"
+    }
+   ],
+   "sha256": "0976cfd9355c2edebd0add15ba57ecf60324d3ab3c47a649c5ca78c08a7743ff"
+  },
+  "rc72_38": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "hiddenpowergrass",
+      "leechseed",
+      "perishsong",
+      "recover"
+     ],
+     "source": "pool_bd8d67634727",
+     "species": "celebi"
+    },
+    {
+     "moves": [
+      "earthquake",
+      "explosion",
+      "rapidspin",
+      "shadowball"
+     ],
+     "source": "pool_ddad68360bdd",
+     "species": "claydol"
+    },
+    {
+     "moves": [
+      "crunch",
+      "hiddenpowergrass",
+      "pursuit",
+      "roar"
+     ],
+     "source": "pool_cb8d26617425",
+     "species": "tyranitar"
+    },
+    {
+     "moves": [
+      "aromatherapy",
+      "icebeam",
+      "seismictoss",
+      "softboiled"
+     ],
+     "source": "pool_1804ae1172b8",
+     "species": "blissey"
+    },
+    {
+     "moves": [
+      "roar",
+      "spikes",
+      "taunt",
+      "toxic"
+     ],
+     "source": "pool_df41e484e211",
+     "species": "skarmory"
+    },
+    {
+     "moves": [
+      "calmmind",
+      "firepunch",
+      "hiddenpowergrass",
+      "psychic"
+     ],
+     "source": "pool_5c56b32615e3",
+     "species": "jirachi"
+    }
+   ],
+   "sha256": "a3ca9630d7e3d8eaafef347b18ced2343294c9f3d6af5f2029ce40bef9f2578d"
+  },
+  "rc72_39": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "earthquake",
+      "hydropump",
+      "icebeam",
+      "protect"
+     ],
+     "source": "pool_7f7472b99fe6",
+     "species": "swampert"
+    },
+    {
+     "moves": [
+      "drillpeck",
+      "protect",
+      "spikes",
+      "toxic"
+     ],
+     "source": "pool_4fa57879d6c0",
+     "species": "skarmory"
+    },
+    {
+     "moves": [
+      "dragondance",
+      "focuspunch",
+      "hiddenpowerbug",
+      "rockslide"
+     ],
+     "source": "pool_cc25ffb7960b",
+     "species": "tyranitar"
+    },
+    {
+     "moves": [
+      "calmmind",
+      "gigadrain",
+      "leechseed",
+      "psychic"
+     ],
+     "source": "pool_9d55b86a6f05",
+     "species": "celebi"
+    },
+    {
+     "moves": [
+      "curse",
+      "focuspunch",
+      "return",
+      "selfdestruct"
+     ],
+     "source": "pool_3fe3fb1e8085",
+     "species": "snorlax"
+    },
+    {
+     "moves": [
+      "calmmind",
+      "firepunch",
+      "hiddenpowergrass",
+      "psychic"
+     ],
+     "source": "pool_77889074a38e",
+     "species": "jirachi"
+    }
+   ],
+   "sha256": "9cf0413578d6bb1a642cc4e6e7b696367db007001c79d46043c188659e82bc05"
+  },
+  "rc72_40": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "icebeam",
+      "seismictoss",
+      "softboiled",
+      "wish"
+     ],
+     "source": "pool_528776effd0e",
+     "species": "blissey"
+    },
+    {
+     "moves": [
+      "curse",
+      "earthquake",
+      "hydropump",
+      "icebeam"
+     ],
+     "source": "pool_c8bd1b4d291c",
+     "species": "swampert"
+    },
+    {
+     "moves": [
+      "protect",
+      "roar",
+      "spikes",
+      "thief"
+     ],
+     "source": "pool_0b2d7acd56bd",
+     "species": "skarmory"
+    },
+    {
+     "moves": [
+      "brickbreak",
+      "focuspunch",
+      "rockslide",
+      "shadowball"
+     ],
+     "source": "pool_3fe885e0a8ff",
+     "species": "medicham"
+    },
+    {
+     "moves": [
+      "brickbreak",
+      "dragondance",
+      "fireblast",
+      "hiddenpowerflying"
+     ],
+     "source": "pool_dfa6026ce7d3",
+     "species": "salamence"
+    },
+    {
+     "moves": [
+      "bodyslam",
+      "firepunch",
+      "hiddenpowergrass",
+      "wish"
+     ],
+     "source": "pool_49ec34617462",
+     "species": "jirachi"
+    }
+   ],
+   "sha256": "bfc1a319ff9f1432e78853538636851068861178770ef4a3369693d72c9b4949"
+  },
+  "rc72_41": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "calmmind",
+      "icebeam",
+      "substitute",
+      "surf"
+     ],
+     "source": "pool_fa930509fb1b",
+     "species": "suicune"
+    },
+    {
+     "moves": [
+      "bodyslam",
+      "curse",
+      "rest",
+      "shadowball"
+     ],
+     "source": "pool_18af7091d308",
+     "species": "snorlax"
+    },
+    {
+     "moves": [
+      "explosion",
+      "icebeam",
+      "rapidspin",
+      "spikes"
+     ],
+     "source": "pool_c8fbec15c280",
+     "species": "cloyster"
+    },
+    {
+     "moves": [
+      "brickbreak",
+      "megahorn",
+      "rockslide",
+      "swordsdance"
+     ],
+     "source": "pool_4c2b430dc209",
+     "species": "heracross"
+    },
+    {
+     "moves": [
+      "earthquake",
+      "explosion",
+      "psychic",
+      "rapidspin"
+     ],
+     "source": "pool_b7711a27f7dc",
+     "species": "claydol"
+    },
+    {
+     "moves": [
+      "brickbreak",
+      "dragondance",
+      "hiddenpowerflying",
+      "rockslide"
+     ],
+     "source": "pool_9e62c97c1e0b",
+     "species": "salamence"
+    }
+   ],
+   "sha256": "83bf771afd807723acca0184ab583f9f435b6ff438a5683c12250526ee9a3b77"
+  },
+  "rc72_42": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "dragondance",
+      "earthquake",
+      "hiddenpowerflying",
+      "rockslide"
+     ],
+     "source": "pool_ab201c227500",
+     "species": "salamence"
+    },
+    {
+     "moves": [
+      "crunch",
+      "earthquake",
+      "pursuit",
+      "thunderbolt"
+     ],
+     "source": "pool_dfa6026ce7d3",
+     "species": "tyranitar"
+    },
+    {
+     "moves": [
+      "curse",
+      "earthquake",
+      "hydropump",
+      "icebeam"
+     ],
+     "source": "pool_ad6a8b08e0d3",
+     "species": "swampert"
+    },
+    {
+     "moves": [
+      "gigadrain",
+      "hiddenpowerfire",
+      "leechseed",
+      "sleeppowder"
+     ],
+     "source": "pool_e61ec4aac83b",
+     "species": "venusaur"
+    },
+    {
+     "moves": [
+      "doubleedge",
+      "dragondance",
+      "earthquake",
+      "hiddenpowerrock"
+     ],
+     "source": "pool_9db20b53451a",
+     "species": "gyarados"
+    },
+    {
+     "moves": [
+      "hiddenpowerfire",
+      "psychic",
+      "rapidspin",
+      "refresh"
+     ],
+     "source": "pool_09072a2e5d4e",
+     "species": "claydol"
+    }
+   ],
+   "sha256": "0ce7fa5537d7da88f1e4cf885321e3312ace51882bacdc46b4b7687befddfd73"
+  },
+  "rc72_43": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "earthquake",
+      "explosion",
+      "hiddenpowergrass",
+      "thunderpunch"
+     ],
+     "source": "pool_1d279e093fc1",
+     "species": "metagross"
+    },
+    {
+     "moves": [
+      "earthquake",
+      "hiddenpowerbug",
+      "pursuit",
+      "rockslide"
+     ],
+     "source": "pool_bc1093303033",
+     "species": "aerodactyl"
+    },
+    {
+     "moves": [
+      "brickbreak",
+      "earthquake",
+      "return",
+      "rockslide"
+     ],
+     "source": "pool_5191c0d5c350",
+     "species": "tyranitar"
+    },
+    {
+     "moves": [
+      "drillpeck",
+      "roar",
+      "spikes",
+      "toxic"
+     ],
+     "source": "pool_d27930e0eab5",
+     "species": "skarmory"
+    },
+    {
+     "moves": [
+      "hiddenpowerice",
+      "roar",
+      "thunderbolt",
+      "thunderwave"
+     ],
+     "source": "pool_2e3f31e3ae7e",
+     "species": "zapdos"
+    },
+    {
+     "moves": [
+      "rapidspin",
+      "recover",
+      "surf",
+      "thunderwave"
+     ],
+     "source": "pool_0b2d7acd56bd",
+     "species": "starmie"
+    }
+   ],
+   "sha256": "14bfe3f1af47735389619e81283600e60a0735c62f821eb088a4d6de78a8b7e5"
+  },
+  "rc72_44": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "earthquake",
+      "hiddenpowerbug",
+      "rapidspin",
+      "rockslide"
+     ],
+     "source": "pool_488906063d89",
+     "species": "armaldo"
+    },
+    {
+     "moves": [
+      "brickbreak",
+      "dragonclaw",
+      "flamethrower",
+      "hiddenpowergrass"
+     ],
+     "source": "pool_4e88cd3ca2f1",
+     "species": "salamence"
+    },
+    {
+     "moves": [
+      "megahorn",
+      "rockslide",
+      "substitute",
+      "swordsdance"
+     ],
+     "source": "pool_8ccaef920956",
+     "species": "heracross"
+    },
+    {
+     "moves": [
+      "bodyslam",
+      "firepunch",
+      "hiddenpowerfighting",
+      "icepunch"
+     ],
+     "source": "pool_c418b27fce51",
+     "species": "jirachi"
+    },
+    {
+     "moves": [
+      "recover",
+      "refresh",
+      "surf",
+      "toxic"
+     ],
+     "source": "pool_3a47aea870ae",
+     "species": "milotic"
+    },
+    {
+     "moves": [
+      "beatup",
+      "dragonclaw",
+      "fireblast",
+      "hiddenpowergrass"
+     ],
+     "source": "pool_5d5d09140ce1",
+     "species": "charizard"
+    }
+   ],
+   "sha256": "06c5806898b6ea396776d1f2f03a0f03357a9ff04d007d43e5eb3be7465f4482"
+  },
+  "rc72_45": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "calmmind",
+      "icepunch",
+      "thunder",
+      "wish"
+     ],
+     "source": "pool_c3bcf3b3a2d6",
+     "species": "jirachi"
+    },
+    {
+     "moves": [
+      "brickbreak",
+      "earthquake",
+      "hiddenpowerflying",
+      "rockslide"
+     ],
+     "source": "pool_4fa57879d6c0",
+     "species": "salamence"
+    },
+    {
+     "moves": [
+      "crunch",
+      "flamethrower",
+      "pursuit",
+      "roar"
+     ],
+     "source": "pool_0f164458ac75",
+     "species": "tyranitar"
+    },
+    {
+     "moves": [
+      "counter",
+      "seismictoss",
+      "softboiled",
+      "thunderwave"
+     ],
+     "source": "pool_c4be4af746ff",
+     "species": "blissey"
+    },
+    {
+     "moves": [
+      "drillpeck",
+      "protect",
+      "roar",
+      "spikes"
+     ],
+     "source": "pool_658a80c106bc",
+     "species": "skarmory"
+    },
+    {
+     "moves": [
+      "earthquake",
+      "hydropump",
+      "icebeam",
+      "protect"
+     ],
+     "source": "pool_7c97cb142384",
+     "species": "swampert"
+    }
+   ],
+   "sha256": "45582cad136a51e80d2f46bb84b0fab661342d53fe7bdcc0c4dd6ab41a7e4c16"
+  },
+  "rc72_46": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "explosion",
+      "icepunch",
+      "thunderbolt",
+      "willowisp"
+     ],
+     "source": "pool_d6985a685c61",
+     "species": "gengar"
+    },
+    {
+     "moves": [
+      "bodyslam",
+      "firepunch",
+      "protect",
+      "wish"
+     ],
+     "source": "pool_ea77ed837814",
+     "species": "jirachi"
+    },
+    {
+     "moves": [
+      "calmmind",
+      "gigadrain",
+      "leechseed",
+      "psychic"
+     ],
+     "source": "pool_22b0dfa6ee29",
+     "species": "celebi"
+    },
+    {
+     "moves": [
+      "hydropump",
+      "icebeam",
+      "psychic",
+      "thunderbolt"
+     ],
+     "source": "pool_b95227b73826",
+     "species": "starmie"
+    },
+    {
+     "moves": [
+      "dragondance",
+      "earthquake",
+      "return",
+      "rockslide"
+     ],
+     "source": "pool_bc9bf434bb81",
+     "species": "tyranitar"
+    },
+    {
+     "moves": [
+      "icebeam",
+      "softboiled",
+      "thunderbolt",
+      "toxic"
+     ],
+     "source": "pool_2b1fb50cc3bc",
+     "species": "blissey"
+    }
+   ],
+   "sha256": "ab1a5af41c0becda30d66095ef3346229a6d084d06e57faa7a03ef07c7c7a36e"
+  },
+  "rc72_47": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "batonpass",
+      "hiddenpowergrass",
+      "roar",
+      "thunderbolt"
+     ],
+     "source": "pool_61325848045c",
+     "species": "zapdos"
+    },
+    {
+     "moves": [
+      "focuspunch",
+      "hiddenpowerbug",
+      "rockslide",
+      "substitute"
+     ],
+     "source": "pool_fcb6568c023f",
+     "species": "tyranitar"
+    },
+    {
+     "moves": [
+      "earthquake",
+      "explosion",
+      "meteormash",
+      "protect"
+     ],
+     "source": "pool_8a05c25c1b39",
+     "species": "metagross"
+    },
+    {
+     "moves": [
+      "brickbreak",
+      "focuspunch",
+      "rockslide",
+      "shadowball"
+     ],
+     "source": "pool_3fe885e0a8ff",
+     "species": "medicham"
+    },
+    {
+     "moves": [
+      "hiddenpowerfire",
+      "protect",
+      "thunderbolt",
+      "toxic"
+     ],
+     "source": "pool_91029c5f9b4d",
+     "species": "magneton"
+    },
+    {
+     "moves": [
+      "drillpeck",
+      "roar",
+      "spikes",
+      "taunt"
+     ],
+     "source": "pool_e83851a370f0",
+     "species": "skarmory"
+    }
+   ],
+   "sha256": "2177b88d4ffa38c220838badfbd1370d82963c7ac2eac6bdfd91faab7fc715b3"
+  },
+  "rc72_48": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "doubleedge",
+      "dragondance",
+      "earthquake",
+      "rockslide"
+     ],
+     "source": "pool_0fbf244097d5",
+     "species": "tyranitar"
+    },
+    {
+     "moves": [
+      "explosion",
+      "psychic",
+      "rapidspin",
+      "rest"
+     ],
+     "source": "pool_2f7183b3448f",
+     "species": "claydol"
+    },
+    {
+     "moves": [
+      "calmmind",
+      "psychic",
+      "substitute",
+      "waterpulse"
+     ],
+     "source": "pool_92f8d8e1da52",
+     "species": "jirachi"
+    },
+    {
+     "moves": [
+      "drillpeck",
+      "protect",
+      "roar",
+      "spikes"
+     ],
+     "source": "pool_ff1eb83aeba4",
+     "species": "skarmory"
+    },
+    {
+     "moves": [
+      "doubleedge",
+      "earthquake",
+      "hiddenpowerflying",
+      "rockslide"
+     ],
+     "source": "pool_109e93aabaf3",
+     "species": "aerodactyl"
+    },
+    {
+     "moves": [
+      "flamethrower",
+      "focuspunch",
+      "hiddenpowergrass",
+      "substitute"
+     ],
+     "source": "pool_bac993519aef",
+     "species": "charizard"
+    }
+   ],
+   "sha256": "fd813bd1acf873b90ad6dd99a33510fea9dc766e377908a64dc99c691a1c565b"
+  },
+  "rc72_49": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "hiddenpowerfire",
+      "thunderbolt",
+      "thunderwave",
+      "toxic"
+     ],
+     "source": "pool_51ca6fbaea61",
+     "species": "magneton"
+    },
+    {
+     "moves": [
+      "calmmind",
+      "icebeam",
+      "substitute",
+      "surf"
+     ],
+     "source": "pool_b8405f42b3f7",
+     "species": "suicune"
+    },
+    {
+     "moves": [
+      "seismictoss",
+      "softboiled",
+      "thunderwave",
+      "wish"
+     ],
+     "source": "pool_de7a2f5960f5",
+     "species": "blissey"
+    },
+    {
+     "moves": [
+      "doubleedge",
+      "dragondance",
+      "earthquake",
+      "hiddenpowerflying"
+     ],
+     "source": "pool_44e218aa1051",
+     "species": "gyarados"
+    },
+    {
+     "moves": [
+      "earthquake",
+      "explosion",
+      "meteormash",
+      "protect"
+     ],
+     "source": "pool_f6ddc64ad32e",
+     "species": "metagross"
+    },
+    {
+     "moves": [
+      "brickbreak",
+      "dragondance",
+      "hiddenpowerflying",
+      "refresh"
+     ],
+     "source": "pool_12205940fb99",
+     "species": "salamence"
+    }
+   ],
+   "sha256": "813d1f01dfac66863090adadfee5fb2bc6f191a7599f8661d8806a47cd19dcc1"
+  },
+  "rc72_50": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "explosion",
+      "hiddenpowergrass",
+      "thunderbolt",
+      "willowisp"
+     ],
+     "source": "pool_5d5d09140ce1",
+     "species": "weezing"
+    },
+    {
+     "moves": [
+      "hiddenpowerice",
+      "thunderbolt",
+      "thunderwave",
+      "toxic"
+     ],
+     "source": "pool_a2be836ff539",
+     "species": "zapdos"
+    },
+    {
+     "moves": [
+      "flamethrower",
+      "focuspunch",
+      "hiddenpowergrass",
+      "substitute"
+     ],
+     "source": "pool_2caabcd601d2",
+     "species": "charizard"
+    },
+    {
+     "moves": [
+      "brickbreak",
+      "dragonclaw",
+      "dragondance",
+      "flamethrower"
+     ],
+     "source": "pool_878325ea2f21",
+     "species": "salamence"
+    },
+    {
+     "moves": [
+      "earthquake",
+      "explosion",
+      "rapidspin",
+      "spikes"
+     ],
+     "source": "pool_a44476236a3d",
+     "species": "forretress"
+    },
+    {
+     "moves": [
+      "explosion",
+      "icebeam",
+      "thunderbolt",
+      "thunderwave"
+     ],
+     "source": "pool_b43031ea461f",
+     "species": "regice"
+    }
+   ],
+   "sha256": "32653811b9fbca7afba5fd965087ba66a2b7699dac379ccaa051387c47ac81a0"
+  },
+  "rc72_51": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "hydropump",
+      "icebeam",
+      "psychic",
+      "recover"
+     ],
+     "source": "pool_488906063d89",
+     "species": "starmie"
+    },
+    {
+     "moves": [
+      "earthquake",
+      "explosion",
+      "meteormash",
+      "rockslide"
+     ],
+     "source": "pool_b95227b73826",
+     "species": "metagross"
+    },
+    {
+     "moves": [
+      "explosion",
+      "icepunch",
+      "thunderbolt",
+      "willowisp"
+     ],
+     "source": "pool_5697cf1fac66",
+     "species": "gengar"
+    },
+    {
+     "moves": [
+      "earthquake",
+      "hydropump",
+      "icebeam",
+      "protect"
+     ],
+     "source": "pool_b07e9a1179a3",
+     "species": "swampert"
+    },
+    {
+     "moves": [
+      "bodyslam",
+      "earthquake",
+      "selfdestruct",
+      "shadowball"
+     ],
+     "source": "pool_a29edca393d0",
+     "species": "snorlax"
+    },
+    {
+     "moves": [
+      "hiddenpowerice",
+      "protect",
+      "thunderbolt",
+      "toxic"
+     ],
+     "source": "pool_556e1d89cc32",
+     "species": "zapdos"
+    }
+   ],
+   "sha256": "47a95ff7ef7e76486bd2879d6f07a07579da0c187560a5d99759e720d482cd03"
+  },
+  "rc72_52": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "explosion",
+      "hiddenpowerfire",
+      "meteormash",
+      "psychic"
+     ],
+     "source": "pool_c38c0535002a",
+     "species": "metagross"
+    },
+    {
+     "moves": [
+      "explosion",
+      "icepunch",
+      "thunderbolt",
+      "willowisp"
+     ],
+     "source": "pool_596a4a6b365c",
+     "species": "gengar"
+    },
+    {
+     "moves": [
+      "beatup",
+      "dragonclaw",
+      "flamethrower",
+      "hiddenpowergrass"
+     ],
+     "source": "pool_a09baf7f7576",
+     "species": "charizard"
+    },
+    {
+     "moves": [
+      "explosion",
+      "hiddenpowerghost",
+      "rapidspin",
+      "spikes"
+     ],
+     "source": "pool_9fba07043f2d",
+     "species": "forretress"
+    },
+    {
+     "moves": [
+      "icebeam",
+      "seismictoss",
+      "softboiled",
+      "toxic"
+     ],
+     "source": "pool_a2f53093447b",
+     "species": "blissey"
+    },
+    {
+     "moves": [
+      "crunch",
+      "fireblast",
+      "pursuit",
+      "roar"
+     ],
+     "source": "pool_45a5faa43bf2",
+     "species": "tyranitar"
+    }
+   ],
+   "sha256": "1295a2ccc3235accae7e104dbfce3468106efbebe36ec32e0a8d0805ba56c2ad"
+  },
+  "rc72_53": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "calmmind",
+      "rest",
+      "roar",
+      "surf"
+     ],
+     "source": "pool_0e60ac994533",
+     "species": "suicune"
+    },
+    {
+     "moves": [
+      "hiddenpowerfire",
+      "thunderbolt",
+      "thunderwave",
+      "toxic"
+     ],
+     "source": "pool_1456d3af659a",
+     "species": "magneton"
+    },
+    {
+     "moves": [
+      "brickbreak",
+      "dragonclaw",
+      "flamethrower",
+      "hiddenpowergrass"
+     ],
+     "source": "pool_4b48308f2c33",
+     "species": "salamence"
+    },
+    {
+     "moves": [
+      "earthquake",
+      "explosion",
+      "hiddenpowergrass",
+      "meteormash"
+     ],
+     "source": "pool_a6749857a4cb",
+     "species": "metagross"
+    },
+    {
+     "moves": [
+      "hiddenpowerflying",
+      "rest",
+      "roar",
+      "thunderwave"
+     ],
+     "source": "pool_e55da6f52ba9",
+     "species": "gyarados"
+    },
+    {
+     "moves": [
+      "earthquake",
+      "fireblast",
+      "rockslide",
+      "toxic"
+     ],
+     "source": "pool_2fd06b6fad34",
+     "species": "flygon"
+    }
+   ],
+   "sha256": "ae543b37a88e368439ddf343c86c1c0e2e6d8f9faa30d42e281140957cd51068"
+  },
+  "rc72_54": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "crunch",
+      "focuspunch",
+      "pursuit",
+      "rockslide"
+     ],
+     "source": "pool_725114ec075b",
+     "species": "tyranitar"
+    },
+    {
+     "moves": [
+      "hiddenpowerfighting",
+      "recover",
+      "shadowball",
+      "swordsdance"
+     ],
+     "source": "pool_d7a029b7499f",
+     "species": "celebi"
+    },
+    {
+     "moves": [
+      "hiddenpowerfire",
+      "thunderbolt",
+      "thunderwave",
+      "toxic"
+     ],
+     "source": "pool_061c22bbde45",
+     "species": "magneton"
+    },
+    {
+     "moves": [
+      "drillpeck",
+      "protect",
+      "roar",
+      "spikes"
+     ],
+     "source": "pool_5f64a54e1dc1",
+     "species": "skarmory"
+    },
+    {
+     "moves": [
+      "bodyslam",
+      "firepunch",
+      "protect",
+      "wish"
+     ],
+     "source": "pool_b9cd5072e9d4",
+     "species": "jirachi"
+    },
+    {
+     "moves": [
+      "curse",
+      "earthquake",
+      "hydropump",
+      "icebeam"
+     ],
+     "source": "pool_ef45c71ef4db",
+     "species": "swampert"
+    }
+   ],
+   "sha256": "be3add90ce6a115c3c1eea4afd5417231b448d4657ad19c49942a1997d9c8648"
+  },
+  "rc72_55": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "icebeam",
+      "sing",
+      "softboiled",
+      "thunderbolt"
+     ],
+     "source": "pool_ec609e47c36f",
+     "species": "blissey"
+    },
+    {
+     "moves": [
+      "doubleedge",
+      "dragondance",
+      "earthquake",
+      "rockslide"
+     ],
+     "source": "pool_34f0afe463ef",
+     "species": "tyranitar"
+    },
+    {
+     "moves": [
+      "counter",
+      "protect",
+      "roar",
+      "surf"
+     ],
+     "source": "pool_fe8bad7a45a7",
+     "species": "swampert"
+    },
+    {
+     "moves": [
+      "explosion",
+      "hiddenpowerbug",
+      "rapidspin",
+      "spikes"
+     ],
+     "source": "pool_1fb75d87efbb",
+     "species": "forretress"
+    },
+    {
+     "moves": [
+      "bodyslam",
+      "firepunch",
+      "protect",
+      "wish"
+     ],
+     "source": "pool_958e31a634f4",
+     "species": "jirachi"
+    },
+    {
+     "moves": [
+      "explosion",
+      "hiddenpowerfire",
+      "meteormash",
+      "psychic"
+     ],
+     "source": "pool_4ec4e4987891",
+     "species": "metagross"
+    }
+   ],
+   "sha256": "83499d6006d449c07690abe7b0625ba822baad56388dc9780bc34faf6bb042f7"
+  },
+  "rc72_56": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "aerialace",
+      "earthquake",
+      "hiddenpowerbug",
+      "sunnyday"
+     ],
+     "source": "pool_18af7091d308",
+     "species": "dugtrio"
+    },
+    {
+     "moves": [
+      "earthquake",
+      "explosion",
+      "hiddenpowergrass",
+      "thunderpunch"
+     ],
+     "source": "pool_df9172990906",
+     "species": "metagross"
+    },
+    {
+     "moves": [
+      "earthquake",
+      "focuspunch",
+      "hiddenpowerbug",
+      "rockslide"
+     ],
+     "source": "pool_0ce7a009c4cf",
+     "species": "tyranitar"
+    },
+    {
+     "moves": [
+      "counter",
+      "seismictoss",
+      "softboiled",
+      "thunderwave"
+     ],
+     "source": "pool_310a05df5496",
+     "species": "blissey"
+    },
+    {
+     "moves": [
+      "drillpeck",
+      "roar",
+      "spikes",
+      "taunt"
+     ],
+     "source": "pool_a210bea62063",
+     "species": "skarmory"
+    },
+    {
+     "moves": [
+      "earthquake",
+      "hiddenpowerbug",
+      "rapidspin",
+      "rockslide"
+     ],
+     "source": "pool_488906063d89",
+     "species": "armaldo"
+    }
+   ],
+   "sha256": "927a2d59a8343e0c5dbd1ca8f69ce110dd9fcb481d294fb6ce74f1f5b2e43227"
+  },
+  "rc72_57": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "calmmind",
+      "hydropump",
+      "icebeam",
+      "roar"
+     ],
+     "source": "pool_9e4f1364f3b9",
+     "species": "suicune"
+    },
+    {
+     "moves": [
+      "brickbreak",
+      "dragondance",
+      "hiddenpowerflying",
+      "rockslide"
+     ],
+     "source": "pool_f25423431535",
+     "species": "salamence"
+    },
+    {
+     "moves": [
+      "hiddenpowerfire",
+      "protect",
+      "thunderbolt",
+      "toxic"
+     ],
+     "source": "pool_51d3b2ff7640",
+     "species": "magneton"
+    },
+    {
+     "moves": [
+      "bodyslam",
+      "focuspunch",
+      "selfdestruct",
+      "shadowball"
+     ],
+     "source": "pool_d9fe824b9805",
+     "species": "snorlax"
+    },
+    {
+     "moves": [
+      "seismictoss",
+      "softboiled",
+      "thunderwave",
+      "wish"
+     ],
+     "source": "pool_f38d2689f6ec",
+     "species": "blissey"
+    },
+    {
+     "moves": [
+      "batonpass",
+      "calmmind",
+      "gigadrain",
+      "hiddenpowerice"
+     ],
+     "source": "pool_1c6c93d77d7e",
+     "species": "celebi"
+    }
+   ],
+   "sha256": "b534b3941d45690ad96a356557d0787d2905fefa47f9f8f0fd854b8b856ca646"
+  },
+  "rc72_58": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "beatup",
+      "dragonclaw",
+      "flamethrower",
+      "hiddenpowergrass"
+     ],
+     "source": "pool_2ab999db0c7d",
+     "species": "charizard"
+    },
+    {
+     "moves": [
+      "protect",
+      "refresh",
+      "surf",
+      "toxic"
+     ],
+     "source": "pool_91029c5f9b4d",
+     "species": "swampert"
+    },
+    {
+     "moves": [
+      "drillpeck",
+      "roar",
+      "spikes",
+      "taunt"
+     ],
+     "source": "pool_9918c74e595f",
+     "species": "skarmory"
+    },
+    {
+     "moves": [
+      "gigadrain",
+      "hiddenpowerfire",
+      "leechseed",
+      "psychic"
+     ],
+     "source": "pool_a7d45b1afa3a",
+     "species": "celebi"
+    },
+    {
+     "moves": [
+      "hydropump",
+      "icebeam",
+      "rapidspin",
+      "recover"
+     ],
+     "source": "pool_f6ddc64ad32e",
+     "species": "starmie"
+    },
+    {
+     "moves": [
+      "explosion",
+      "firepunch",
+      "hiddenpowergrass",
+      "icepunch"
+     ],
+     "source": "pool_562aa4b0f8c0",
+     "species": "gengar"
+    }
+   ],
+   "sha256": "f575e2038dc2506172defc17f5de089a3c16d37816c9aa35b4413d88475e8ad4"
+  },
+  "rc72_59": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "hiddenpowerfire",
+      "thunderbolt",
+      "thunderwave",
+      "toxic"
+     ],
+     "source": "pool_0ddc03c2d8b0",
+     "species": "magneton"
+    },
+    {
+     "moves": [
+      "doubleedge",
+      "dragondance",
+      "earthquake",
+      "rockslide"
+     ],
+     "source": "pool_78ce8ef570f1",
+     "species": "tyranitar"
+    },
+    {
+     "moves": [
+      "calmmind",
+      "icebeam",
+      "substitute",
+      "surf"
+     ],
+     "source": "pool_fc14cab5df16",
+     "species": "suicune"
+    },
+    {
+     "moves": [
+      "brickbreak",
+      "dragonclaw",
+      "flamethrower",
+      "wish"
+     ],
+     "source": "pool_7318c97e463b",
+     "species": "salamence"
+    },
+    {
+     "moves": [
+      "bodyslam",
+      "earthquake",
+      "focuspunch",
+      "selfdestruct"
+     ],
+     "source": "pool_7aa44fc9683a",
+     "species": "snorlax"
+    },
+    {
+     "moves": [
+      "earthquake",
+      "focuspunch",
+      "hydropump",
+      "icebeam"
+     ],
+     "source": "pool_2fa02eee5e1c",
+     "species": "swampert"
+    }
+   ],
+   "sha256": "bee699cb394c874ed4d32ace6377a0ec74459972ded3a5bfeafcdde3de85407b"
+  },
+  "rc72_60": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "hiddenpowerice",
+      "rest",
+      "roar",
+      "thunderbolt"
+     ],
+     "source": "pool_18bee03dd17e",
+     "species": "zapdos"
+    },
+    {
+     "moves": [
+      "crunch",
+      "flamethrower",
+      "icebeam",
+      "pursuit"
+     ],
+     "source": "pool_7ba2eaf9dca8",
+     "species": "tyranitar"
+    },
+    {
+     "moves": [
+      "doubleedge",
+      "earthquake",
+      "hiddenpowerbug",
+      "rockslide"
+     ],
+     "source": "pool_20e5edda6fd6",
+     "species": "aerodactyl"
+    },
+    {
+     "moves": [
+      "bodyslam",
+      "firepunch",
+      "hiddenpowergrass",
+      "wish"
+     ],
+     "source": "pool_e586a00f094b",
+     "species": "jirachi"
+    },
+    {
+     "moves": [
+      "brickbreak",
+      "destinybond",
+      "explosion",
+      "hypnosis"
+     ],
+     "source": "pool_fa44f32820b5",
+     "species": "gengar"
+    },
+    {
+     "moves": [
+      "brickbreak",
+      "dragonclaw",
+      "fireblast",
+      "hiddenpowergrass"
+     ],
+     "source": "pool_0bdda869f64e",
+     "species": "salamence"
+    }
+   ],
+   "sha256": "e12a45154eb34af8923b7d71c7537b94bb657098fb3edb5868acfcdb718df6b7"
+  },
+  "rc72_61": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "curse",
+      "earthquake",
+      "return",
+      "selfdestruct"
+     ],
+     "source": "pool_9742a4db3054",
+     "species": "snorlax"
+    },
+    {
+     "moves": [
+      "rapidspin",
+      "recover",
+      "surf",
+      "thunderwave"
+     ],
+     "source": "pool_99ec10438ac0",
+     "species": "starmie"
+    },
+    {
+     "moves": [
+      "earthquake",
+      "icebeam",
+      "protect",
+      "refresh"
+     ],
+     "source": "pool_1e334291dc6e",
+     "species": "swampert"
+    },
+    {
+     "moves": [
+      "brickbreak",
+      "dragonclaw",
+      "flamethrower",
+      "hiddenpowergrass"
+     ],
+     "source": "pool_8033d57f356f",
+     "species": "salamence"
+    },
+    {
+     "moves": [
+      "earthquake",
+      "explosion",
+      "overheat",
+      "substitute"
+     ],
+     "source": "pool_b9cd5072e9d4",
+     "species": "camerupt"
+    },
+    {
+     "moves": [
+      "dragondance",
+      "earthquake",
+      "hiddenpowergrass",
+      "rockslide"
+     ],
+     "source": "pool_d4907ed1e8a6",
+     "species": "tyranitar"
+    }
+   ],
+   "sha256": "1eb726ba7b6e23de6eff6eb7d00ffe072c4b009bb9f10a93752f27fafc8f8a92"
+  },
+  "rc72_62": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "dragondance",
+      "earthquake",
+      "hiddenpowerflying",
+      "rockslide"
+     ],
+     "source": "pool_ed58bb384489",
+     "species": "salamence"
+    },
+    {
+     "moves": [
+      "earthquake",
+      "explosion",
+      "hiddenpowergrass",
+      "meteormash"
+     ],
+     "source": "pool_9fd90e267b01",
+     "species": "metagross"
+    },
+    {
+     "moves": [
+      "brickbreak",
+      "fireblast",
+      "icebeam",
+      "pursuit"
+     ],
+     "source": "pool_a2f53093447b",
+     "species": "tyranitar"
+    },
+    {
+     "moves": [
+      "brickbreak",
+      "dragonclaw",
+      "flamethrower",
+      "hiddenpowergrass"
+     ],
+     "source": "pool_c1f8ca6344bd",
+     "species": "charizard"
+    },
+    {
+     "moves": [
+      "explosion",
+      "gigadrain",
+      "raindance",
+      "thunderbolt"
+     ],
+     "source": "pool_eecf038ef938",
+     "species": "gengar"
+    },
+    {
+     "moves": [
+      "earthquake",
+      "focuspunch",
+      "hydropump",
+      "icebeam"
+     ],
+     "source": "pool_94e6109feea4",
+     "species": "swampert"
+    }
+   ],
+   "sha256": "ad58ff5c11420de04d0287b1a3ee8761de5982707581c4cce52d856993d2eb99"
+  },
+  "rc72_63": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "fireblast",
+      "focuspunch",
+      "hiddenpowergrass",
+      "substitute"
+     ],
+     "source": "pool_cf00424a16f1",
+     "species": "charizard"
+    },
+    {
+     "moves": [
+      "protect",
+      "spikes",
+      "toxic",
+      "whirlwind"
+     ],
+     "source": "pool_a8db406709e5",
+     "species": "skarmory"
+    },
+    {
+     "moves": [
+      "calmmind",
+      "gigadrain",
+      "leechseed",
+      "psychic"
+     ],
+     "source": "pool_bac993519aef",
+     "species": "celebi"
+    },
+    {
+     "moves": [
+      "hiddenpowerice",
+      "thunderbolt",
+      "thunderwave",
+      "toxic"
+     ],
+     "source": "pool_511f783c4ef5",
+     "species": "zapdos"
+    },
+    {
+     "moves": [
+      "brickbreak",
+      "crunch",
+      "fireblast",
+      "pursuit"
+     ],
+     "source": "pool_be804c8db573",
+     "species": "tyranitar"
+    },
+    {
+     "moves": [
+      "hiddenpowerfire",
+      "rest",
+      "thunderbolt",
+      "toxic"
+     ],
+     "source": "pool_b9c7075cc29e",
+     "species": "magneton"
+    }
+   ],
+   "sha256": "45ec36294b646fe41e50336da610163eb292a2c7a9eb44aa1e54becbb0269a6f"
+  },
+  "rc72_64": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "earthquake",
+      "explosion",
+      "hiddenpowerrock",
+      "thunderwave"
+     ],
+     "source": "pool_efc2b6b906d3",
+     "species": "regirock"
+    },
+    {
+     "moves": [
+      "bodyslam",
+      "curse",
+      "selfdestruct",
+      "shadowball"
+     ],
+     "source": "pool_b14274241137",
+     "species": "snorlax"
+    },
+    {
+     "moves": [
+      "explosion",
+      "icepunch",
+      "meanlook",
+      "thunderbolt"
+     ],
+     "source": "pool_6b44ea7de5e0",
+     "species": "gengar"
+    },
+    {
+     "moves": [
+      "earthquake",
+      "explosion",
+      "hiddenpowergrass",
+      "thunderpunch"
+     ],
+     "source": "pool_b724bcebf55e",
+     "species": "metagross"
+    },
+    {
+     "moves": [
+      "brickbreak",
+      "dragonclaw",
+      "flamethrower",
+      "rockslide"
+     ],
+     "source": "pool_6cb5eb333ce6",
+     "species": "salamence"
+    },
+    {
+     "moves": [
+      "calmmind",
+      "icebeam",
+      "softboiled",
+      "thunderbolt"
+     ],
+     "source": "pool_0f39c1d86a23",
+     "species": "blissey"
+    }
+   ],
+   "sha256": "216212a2e6c85bca3d430e3d621886ba5fe13ad6c0e6cc8341e5c1fa56f47ed7"
+  },
+  "rc72_65": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "batonpass",
+      "hiddenpowergrass",
+      "substitute",
+      "thunderbolt"
+     ],
+     "source": "pool_27c43af88a7d",
+     "species": "jolteon"
+    },
+    {
+     "moves": [
+      "crunch",
+      "flamethrower",
+      "hiddenpowergrass",
+      "pursuit"
+     ],
+     "source": "pool_c2c21268dfbe",
+     "species": "tyranitar"
+    },
+    {
+     "moves": [
+      "focuspunch",
+      "hiddenpowergrass",
+      "hydropump",
+      "icebeam"
+     ],
+     "source": "pool_3bf1fc4839f5",
+     "species": "swampert"
+    },
+    {
+     "moves": [
+      "earthquake",
+      "explosion",
+      "meteormash",
+      "rockslide"
+     ],
+     "source": "pool_ff82a34a500d",
+     "species": "metagross"
+    },
+    {
+     "moves": [
+      "hiddenpowerice",
+      "thunderbolt",
+      "thunderwave",
+      "toxic"
+     ],
+     "source": "pool_f5b89d003403",
+     "species": "zapdos"
+    },
+    {
+     "moves": [
+      "explosion",
+      "psychic",
+      "rapidspin",
+      "rest"
+     ],
+     "source": "pool_6fde3134dde0",
+     "species": "claydol"
+    }
+   ],
+   "sha256": "2747c9ced0d5a99932866a12916e5a8bb4b61810d39f9802805fce5e81e5f327"
+  },
+  "rc72_66": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "explosion",
+      "hiddenpowerghost",
+      "rapidspin",
+      "spikes"
+     ],
+     "source": "pool_ae14a5bc50e9",
+     "species": "forretress"
+    },
+    {
+     "moves": [
+      "calmmind",
+      "hiddenpowergrass",
+      "substitute",
+      "thunderbolt"
+     ],
+     "source": "pool_2e3f31e3ae7e",
+     "species": "jirachi"
+    },
+    {
+     "moves": [
+      "hiddenpowergrass",
+      "leechseed",
+      "perishsong",
+      "recover"
+     ],
+     "source": "pool_bd7c2e920f94",
+     "species": "celebi"
+    },
+    {
+     "moves": [
+      "drillpeck",
+      "roar",
+      "spikes",
+      "taunt"
+     ],
+     "source": "pool_dd4d6bd12b26",
+     "species": "skarmory"
+    },
+    {
+     "moves": [
+      "earthquake",
+      "explosion",
+      "psychic",
+      "rapidspin"
+     ],
+     "source": "pool_f52dec2ebd99",
+     "species": "claydol"
+    },
+    {
+     "moves": [
+      "earthquake",
+      "hiddenpowerrock",
+      "protect",
+      "toxic"
+     ],
+     "source": "pool_e55da6f52ba9",
+     "species": "flygon"
+    }
+   ],
+   "sha256": "561926b33d50422a320d9d7541e17ba78ca3bd8bd31babf3c7b526cd4dee263e"
+  },
+  "rc72_67": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "doubleedge",
+      "dragondance",
+      "earthquake",
+      "rockslide"
+     ],
+     "source": "pool_204cc09fdf24",
+     "species": "tyranitar"
+    },
+    {
+     "moves": [
+      "bodyslam",
+      "earthquake",
+      "selfdestruct",
+      "shadowball"
+     ],
+     "source": "pool_6e6b714e5480",
+     "species": "snorlax"
+    },
+    {
+     "moves": [
+      "explosion",
+      "hiddenpowerfire",
+      "meteormash",
+      "psychic"
+     ],
+     "source": "pool_511f783c4ef5",
+     "species": "metagross"
+    },
+    {
+     "moves": [
+      "explosion",
+      "icepunch",
+      "thunderbolt",
+      "willowisp"
+     ],
+     "source": "pool_b8405f42b3f7",
+     "species": "gengar"
+    },
+    {
+     "moves": [
+      "earthquake",
+      "fireblast",
+      "hiddenpowerbug",
+      "rockslide"
+     ],
+     "source": "pool_725114ec075b",
+     "species": "flygon"
+    },
+    {
+     "moves": [
+      "protect",
+      "roar",
+      "thunderbolt",
+      "toxic"
+     ],
+     "source": "pool_d00c52bbddff",
+     "species": "zapdos"
+    }
+   ],
+   "sha256": "bfc70fb66fe48e55ac27e8be1b8a3da3ee13f39545d6c0dad130c40f4eb95406"
+  },
+  "rc72_68": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "hiddenpowerice",
+      "thunderbolt",
+      "thunderwave",
+      "toxic"
+     ],
+     "source": "pool_3c0f9b23fac6",
+     "species": "zapdos"
+    },
+    {
+     "moves": [
+      "doubleedge",
+      "dragondance",
+      "earthquake",
+      "rockslide"
+     ],
+     "source": "pool_8cce87045405",
+     "species": "tyranitar"
+    },
+    {
+     "moves": [
+      "batonpass",
+      "substitute",
+      "thunderbolt",
+      "toxic"
+     ],
+     "source": "pool_a3f9f2e73a0b",
+     "species": "jolteon"
+    },
+    {
+     "moves": [
+      "hydropump",
+      "icebeam",
+      "rapidspin",
+      "thunderbolt"
+     ],
+     "source": "pool_5aec1f22657a",
+     "species": "starmie"
+    },
+    {
+     "moves": [
+      "earthquake",
+      "explosion",
+      "psychic",
+      "rapidspin"
+     ],
+     "source": "pool_0ed506496487",
+     "species": "claydol"
+    },
+    {
+     "moves": [
+      "hiddenpowerfire",
+      "substitute",
+      "thunderbolt",
+      "toxic"
+     ],
+     "source": "pool_b4d10179df33",
+     "species": "magneton"
+    }
+   ],
+   "sha256": "6f7f18caf429d95b404dd1b56c43eef0eef0bd41c19a553dd0aa1a18e8910bbc"
+  },
+  "rc72_69": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "batonpass",
+      "hiddenpowergrass",
+      "leechseed",
+      "recover"
+     ],
+     "source": "pool_77db4e4b16c7",
+     "species": "celebi"
+    },
+    {
+     "moves": [
+      "doubleedge",
+      "dragondance",
+      "earthquake",
+      "rockslide"
+     ],
+     "source": "pool_463fc7bbee57",
+     "species": "tyranitar"
+    },
+    {
+     "moves": [
+      "calmmind",
+      "icepunch",
+      "substitute",
+      "thunderbolt"
+     ],
+     "source": "pool_b2b3bdff4bf9",
+     "species": "jirachi"
+    },
+    {
+     "moves": [
+      "beatup",
+      "dragonclaw",
+      "flamethrower",
+      "hiddenpowergrass"
+     ],
+     "source": "pool_d9fe824b9805",
+     "species": "charizard"
+    },
+    {
+     "moves": [
+      "brickbreak",
+      "earthquake",
+      "hiddenpowerflying",
+      "rockslide"
+     ],
+     "source": "pool_39acde9d4d76",
+     "species": "salamence"
+    },
+    {
+     "moves": [
+      "hiddenpowerfire",
+      "substitute",
+      "thunderbolt",
+      "toxic"
+     ],
+     "source": "pool_b1375f6ca240",
+     "species": "magneton"
+    }
+   ],
+   "sha256": "366e5741241509cfaf85f94600dc85e8ad0e665a2bd9c51314003ccc58c0a0c8"
+  },
+  "rc72_70": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "seismictoss",
+      "sing",
+      "softboiled",
+      "toxic"
+     ],
+     "source": "pool_c525ebc28b69",
+     "species": "blissey"
+    },
+    {
+     "moves": [
+      "earthquake",
+      "hydropump",
+      "icebeam",
+      "protect"
+     ],
+     "source": "pool_77af5acae7b1",
+     "species": "swampert"
+    },
+    {
+     "moves": [
+      "bodyslam",
+      "firepunch",
+      "hiddenpowergrass",
+      "wish"
+     ],
+     "source": "pool_2e14afe020aa",
+     "species": "jirachi"
+    },
+    {
+     "moves": [
+      "hiddenpowersteel",
+      "protect",
+      "roar",
+      "spikes"
+     ],
+     "source": "pool_5489ac435a5e",
+     "species": "skarmory"
+    },
+    {
+     "moves": [
+      "bodyslam",
+      "focuspunch",
+      "selfdestruct",
+      "shadowball"
+     ],
+     "source": "pool_4a1bb0867acb",
+     "species": "snorlax"
+    },
+    {
+     "moves": [
+      "calmmind",
+      "icebeam",
+      "rest",
+      "surf"
+     ],
+     "source": "pool_201598e419d4",
+     "species": "suicune"
+    }
+   ],
+   "sha256": "93ad7801f595d078b240bacf0454477968608e753ff8ee1eacbc293cee17582d"
+  },
+  "rc72_71": {
+   "attempt": 0,
+   "mons": [
+    {
+     "moves": [
+      "doubleedge",
+      "earthquake",
+      "hiddenpowerbug",
+      "rockslide"
+     ],
+     "source": "pool_8314aea9789b",
+     "species": "aerodactyl"
+    },
+    {
+     "moves": [
+      "doubleedge",
+      "dragondance",
+      "earthquake",
+      "hiddenpowerflying"
+     ],
+     "source": "pool_5a37703a77a2",
+     "species": "gyarados"
+    },
+    {
+     "moves": [
+      "agility",
+      "earthquake",
+      "explosion",
+      "meteormash"
+     ],
+     "source": "pool_204cc09fdf24",
+     "species": "metagross"
+    },
+    {
+     "moves": [
+      "aromatherapy",
+      "icebeam",
+      "seismictoss",
+      "softboiled"
+     ],
+     "source": "pool_0b2d7acd56bd",
+     "species": "blissey"
+    },
+    {
+     "moves": [
+      "calmmind",
+      "gigadrain",
+      "leechseed",
+      "psychic"
+     ],
+     "source": "pool_938c62851c3e",
+     "species": "celebi"
+    },
+    {
+     "moves": [
+      "batonpass",
+      "hiddenpowerice",
+      "thunderbolt",
+      "thunderwave"
+     ],
+     "source": "pool_92413d37fb05",
+     "species": "zapdos"
+    }
+   ],
+   "sha256": "d1f0e0cbfec561fb20ed9bbfcccfa93cac0be9b4db8450b0c89a84ceb0bc56c4"
+  }
+ },
+ "validator": "TeamValidator('gen3ou') via src/rust_sim/harness/ladder_corpus_filter.js, pinned deps/pokemon-showdown; level 100 by Showdown's pack; hp_set_check.js"
+}

@@ -1,0 +1,54 @@
+Celebi @ Leftovers  
+Ability: Natural Cure  
+EVs: 252 HP / 36 Def / 12 SpA / 176 SpD / 32 Spe  
+Calm Nature  
+IVs: 2 Atk / 30 SpA  
+- Recover  
+- Leech Seed  
+- Hidden Power [Grass]  
+- Psychic  
+
+Salamence @ Leftovers  
+Ability: Intimidate  
+EVs: 4 Atk / 252 SpA / 252 Spe  
+Rash Nature  
+- Dragon Claw  
+- Brick Break  
+- Wish  
+- Fire Blast
+
+Skarmory  
+Ability: Keen Eye  
+EVs: 248 HP / 248 SpD / 12 Spe  
+Careful Nature  
+- Spikes  
+- Roar  
+- Thief  
+- Protect  
+
+Metagross @ Leftovers  
+Ability: Clear Body  
+EVs: 168 HP / 232 Atk / 16 Def / 92 Spe  
+Adamant Nature  
+- Agility  
+- Meteor Mash  
+- Earthquake  
+- Rock Slide  
+
+Gengar @ Leftovers  
+Ability: Levitate  
+EVs: 64 HP / 192 SpA / 252 Spe  
+Timid Nature  
+- Ice Punch  
+- Fire Punch  
+- Hidden Power [Grass]  
+- Explosion
+
+Swampert @ Leftovers  
+Ability: Torrent  
+EVs: 176 HP / 136 Atk / 156 SpA / 4 SpD / 36 Spe  
+Brave Nature  
+- Hydro Pump  
+- Earthquake  
+- Ice Beam  
+- Focus Punch  

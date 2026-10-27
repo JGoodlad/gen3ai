@@ -9,7 +9,9 @@ widening corpus (``main.team_corpora``) and the ``--team-mix`` startup guard rea
 that drew it, its seed, its manifest's sha256, and ``held_out_from``: the list of things that must never train on it.
 A SEALED panel (:data:`SEALED`) is registered and excluded like any held-out panel but played by no meter until its
 read (``forum216b``: X54). ``home72`` and ``away`` are IN-POOL reference panels (``held_out_from == []``: our pool already holds them); the others
-are held out from every training team source.
+are held out from every training team source. A DIAGNOSTIC panel (``rc72``, the H-CTX read's recombined pool sets)
+lives in its own registry, ``designs/research_state/diagnostic_panels.json`` (:func:`load_diagnostic`): played and
+verified by name like any panel, but outside the exclusion rule below (:func:`panel_names` never names it).
 
 **The near-neighbour rule** (``NEAR_NEIGHBOUR_MIN_SHARED = 4``, matcher ``gen3_team_overlap_v1``): a team is a near
 neighbour of a panel iff it shares at least 4 of its 6 MON SETS (species + sorted moves, Hidden Power typed) with ONE
@@ -38,6 +40,9 @@ from utils.paths import repo_path
 
 SCHEMA = "gen3_heldout_panels_v1"
 REGISTRY_REL = "designs/research_state/heldout_panels.json"
+#: The DIAGNOSTIC panels' own registry (:func:`load_diagnostic`): played by name, outside the exclusion rule.
+DIAGNOSTIC_REL = "designs/research_state/diagnostic_panels.json"
+DIAGNOSTIC_SCHEMA = "gen3_diagnostic_panels_v1"
 NEAR_NEIGHBOUR_MIN_SHARED = 4
 MATCHER = "gen3_team_overlap_v1"
 #: ``held_out_from`` tokens. ``training`` = no training team source (pool, corpus, pin) may hold the panel's teams or
@@ -166,10 +171,37 @@ def panel_names(*, held_out_only: bool = False) -> List[str]:
 
 
 def panel_entry(name: str) -> Dict[str, Any]:
+    """The registry entry of ``name``: a held-out / in-pool panel, else a DIAGNOSTIC one (:func:`load_diagnostic`)."""
     panels = load_registry()["panels"]
-    if name not in panels:
-        raise KeyError(f"{name!r} is not a registered panel ({', '.join(panels)}); register it in {REGISTRY_REL}")
-    return panels[name]
+    if name in panels:
+        return panels[name]
+    diag = load_diagnostic()["panels"]
+    if name in diag:
+        return diag[name]
+    raise KeyError(f"{name!r} is not a registered panel ({', '.join(list(panels) + list(diag))}); register it in "
+                   f"{REGISTRY_REL} (or, for a diagnostic panel, {DIAGNOSTIC_REL})")
+
+
+@functools.lru_cache(maxsize=1)
+def load_diagnostic() -> Dict[str, Any]:
+    """THE DIAGNOSTIC PANEL REGISTRY (``gen3_diagnostic_panels_v1``, :data:`DIAGNOSTIC_REL`): panels a meter plays by
+    name (``main.x35.kakuna``'s cells, ``main.h2h.panel``) that are NOT part of the exclusion rule. A diagnostic panel
+    is neither held out nor a sample ground: :func:`panel_names` (the list every widening corpus and the training
+    guard read) never names it, so registering one moves no corpus, no guard and no ``registry_sha256``. Its teams
+    and their count / content digest / manifest are verified exactly like a registered panel's (:func:`verify`). A
+    name in both registries is refused."""
+    reg = json.loads(repo_path(DIAGNOSTIC_REL).read_text())
+    if reg.get("schema") != DIAGNOSTIC_SCHEMA:
+        raise PanelRegistryError(f"{DIAGNOSTIC_REL}: schema {reg.get('schema')!r} != {DIAGNOSTIC_SCHEMA!r}")
+    both = sorted(set(reg["panels"]) & set(load_registry()["panels"]))
+    if both:
+        raise PanelRegistryError(f"{DIAGNOSTIC_REL}: {both} are also in {REGISTRY_REL}; a panel has one registry")
+    return reg
+
+
+def diagnostic_panel_names() -> List[str]:
+    """The DIAGNOSTIC panels (:func:`load_diagnostic`); never part of :func:`panel_names`."""
+    return list(load_diagnostic()["panels"])
 
 
 def panel_dir(name: str) -> Path:
@@ -195,9 +227,10 @@ def panel_team_texts(name: str) -> Tuple[Tuple[str, str], ...]:
 
 
 def verify() -> Dict[str, int]:
-    """Every panel's count, content digest and manifest sha256; returns ``{panel: n}`` or raises."""
+    """Every panel's count, content digest and manifest sha256, the DIAGNOSTIC ones included; returns ``{panel: n}`` or
+    raises."""
     out = {}
-    for name, ent in load_registry()["panels"].items():
+    for name, ent in list(load_registry()["panels"].items()) + list(load_diagnostic()["panels"].items()):
         out[name] = len(panel_team_texts(name))
         man = ent.get("manifest")
         if man:

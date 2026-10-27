@@ -1,0 +1,54 @@
+Jolteon @ Leftovers  
+Ability: Volt Absorb  
+EVs: 252 SpA / 4 SpD / 252 Spe  
+Timid Nature  
+IVs: 2 Atk / 30 Def  
+- Toxic  
+- Thunderbolt  
+- Hidden Power [Ice]  
+- Baton Pass  
+
+Tyranitar @ Leftovers  
+Ability: Sand Stream  
+EVs: 184 HP / 104 Atk / 220 Spe  
+Adamant Nature  
+- Dragon Dance  
+- Earthquake  
+- Rock Slide  
+- Double-Edge  
+
+Jirachi @ Leftovers  
+Ability: Serene Grace  
+EVs: 80 Atk / 252 SpA / 176 Spe  
+Rash Nature  
+- Body Slam  
+- Fire Punch  
+- Hidden Power [Grass]  
+- Dynamic Punch  
+
+Claydol @ Leftovers  
+Ability: Levitate  
+EVs: 252 HP / 124 Atk / 96 Def / 20 SpA / 16 SpD  
+Sassy Nature  
+- Rapid Spin  
+- Earthquake  
+- Psychic  
+- Explosion  
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 76 HP / 176 Atk / 80 Def / 140 SpD / 36 Spe
+Adamant Nature
+- Body Slam
+- Earthquake
+- Shadow Ball
+- Self-Destruct
+
+Salamence @ Leftovers  
+Ability: Intimidate  
+EVs: 24 HP / 24 Atk / 252 SpA / 208 Spe  
+Mild Nature  
+- Refresh  
+- Dragon Claw  
+- Fire Blast  
+- Brick Break  

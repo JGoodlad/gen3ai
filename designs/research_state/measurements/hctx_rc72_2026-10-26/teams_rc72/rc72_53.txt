@@ -1,0 +1,55 @@
+Suicune @ Leftovers  
+Ability: Pressure  
+EVs: 248 HP / 176 Def / 84 Spe  
+Bold Nature  
+IVs: 0 Atk  
+- Surf  
+- Roar  
+- Calm Mind  
+- Rest  
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 240 HP / 212 SpA / 56 Spe
+Modest Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 30 Spe
+- Thunderbolt
+- Hidden Power Fire
+- Toxic
+- Thunder Wave
+
+Salamence @ Leftovers  
+Ability: Intimidate  
+EVs: 4 HP / 252 SpA / 252 Spe  
+Rash Nature  
+- Dragon Claw  
+- Flamethrower  
+- Hidden Power [Grass]  
+- Brick Break
+
+Metagross @ Leftovers  
+Ability: Clear Body  
+EVs: 252 HP / 180 Atk / 32 SpA / 44 Spe  
+Brave Nature  
+- Hidden Power [Grass]  
+- Meteor Mash  
+- Earthquake  
+- Explosion
+
+Gyarados @ Leftovers  
+Ability: Intimidate  
+EVs: 252 HP / 168 Def / 88 SpD  
+Impish Nature  
+- Hidden Power [Flying]  
+- Thunder Wave  
+- Roar  
+- Rest  
+
+Flygon @ Leftovers  
+Ability: Levitate  
+EVs: 248 HP / 72 Atk / 112 Def / 36 SpA / 40 Spe  
+Naive Nature  
+- Toxic  
+- Earthquake  
+- Rock Slide  
+- Fire Blast  

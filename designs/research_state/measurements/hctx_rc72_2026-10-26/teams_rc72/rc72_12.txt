@@ -1,0 +1,54 @@
+Gengar @ Leftovers  
+Ability: Levitate  
+EVs: 80 HP / 16 SpA / 236 SpD / 176 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Taunt  
+- Will-O-Wisp  
+- Giga Drain  
+- Thunderbolt  
+
+Flygon @ Leftovers  
+Ability: Levitate  
+EVs: 16 HP / 240 Atk / 252 Spe  
+Jolly Nature  
+- Earthquake  
+- Rock Slide  
+- Hidden Power [Bug]  
+- Substitute  
+
+Aerodactyl @ Choice Band  
+Ability: Rock Head  
+EVs: 4 HP / 252 Atk / 252 Spe  
+Jolly Nature  
+- Earthquake  
+- Rock Slide  
+- Hidden Power [Bug]  
+- Double-Edge
+
+Jirachi @ Leftovers  
+Ability: Serene Grace  
+EVs: 252 HP / 76 Def / 180 SpD  
+Sassy Nature  
+- Wish  
+- Protect  
+- Fire Punch  
+- Body Slam  
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 252 Def / 4 SpD
+Bold Nature
+- Seismic Toss
+- Ice Beam
+- Wish
+- Soft-Boiled
+
+Tyranocif (Tyranitar) @ Leftovers  
+Ability: Sand Stream  
+EVs: 136 HP / 244 SpA / 128 Spe  
+Modest Nature  
+- Crunch  
+- Pursuit  
+- Fire Blast  
+- Brick Break  

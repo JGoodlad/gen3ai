@@ -1,0 +1,56 @@
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 31 Spe
+- Dragon Dance
+- Hidden Power Flying
+- Earthquake
+- Rock Slide
+
+Tyranitar @ Leftovers  
+Ability: Sand Stream  
+EVs: 252 HP / 28 Def / 188 SpA / 40 Spe  
+Modest Nature  
+- Crunch  
+- Pursuit  
+- Thunderbolt  
+- Earthquake  
+
+Swampert @ Leftovers  
+Ability: Torrent  
+EVs: 240 HP / 252 SpA / 16 Spe  
+Quiet Nature  
+- Curse  
+- Earthquake  
+- Hydro Pump  
+- Ice Beam  
+
+Venusaur @ Leftovers
+Ability: Overgrow
+EVs: 8 HP / 192 SpA / 56 SpD / 252 Spe
+Timid Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 30 Spe
+- Giga Drain
+- Leech Seed
+- Sleep Powder
+- Hidden Power Fire
+
+Gyarados @ Leftovers  
+Ability: Intimidate  
+EVs: 4 HP / 252 Atk / 252 Spe  
+Jolly Nature  
+- Dragon Dance  
+- Earthquake  
+- Hidden Power [Rock]  
+- Double-Edge
+
+Kaorine (Claydol) @ Leftovers  
+Ability: Levitate  
+EVs: 252 HP / 176 Def / 52 SpA / 28 SpD  
+Bold Nature  
+IVs: 2 Atk / 30 SpA / 30 Spe  
+- Hidden Power [Fire]  
+- Psychic  
+- Rapid Spin  
+- Refresh  

@@ -755,7 +755,10 @@ panel unit runs on that panel's COMMITTED symmetric config (`anchors_heldout72_h
 unit the runner checks the config's sha256, the panel's registry entry and committed copy, and BOTH sides' team dirs
 (our byte copy outside the repo and Metamon's cache set) by count and `gen3_team_set_digest_v1` content digest against
 `heldout_panels.json`; `python -m main.x35.kakuna panels` runs that check alone (all three OK on 2026-10-19). A panel unit
-also passes `--capture-dir <unit>/capture`, so each game's two teams are on record (F-DV-17). `python -m main.x35.kakuna
+also passes `--capture-dir <unit>/capture`, so each game's two teams are on record (F-DV-17). A DIAGNOSTIC cell
+(`kakuna.DIAGNOSTIC_CELLS`: `rc72`, the H-CTX read's recombined pool sets, config
+`measurements/hctx_rc72_2026-10-26/anchors_rc72_kakuna.json`) runs the same way; its panel is registered in
+`diagnostic_panels.json`, which the exclusion rule never reads. `python -m main.x35.kakuna
 d1h --on <arm> --off C0` writes D1's H input (per seed final and panel, wins / n, ties beside); `python -m
 main.x35.readout decide-d1` reads it (module `main.x35.d1`: the equal-weight panel mean, its stratified variance, the
 effective-size Newcombe interval and the registered classes).

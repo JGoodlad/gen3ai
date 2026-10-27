@@ -1,0 +1,57 @@
+Tyranitar @ Leftovers  
+Ability: Sand Stream  
+EVs: 252 HP / 252 SpA / 4 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Crunch  
+- Pursuit  
+- Flamethrower  
+- Roar  
+
+Salamence @ Leftovers  
+Ability: Intimidate  
+EVs: 144 Atk / 212 SpD / 152 Spe  
+Adamant Nature  
+- Dragon Dance  
+- Hidden Power [Flying]  
+- Brick Break  
+- Rock Slide  
+
+Raikou @ Leftovers  
+Ability: Pressure  
+EVs: 252 SpA / 4 SpD / 252 Spe  
+Timid Nature  
+IVs: 2 Atk / 30 SpA  
+- Substitute  
+- Calm Mind  
+- Thunderbolt  
+- Hidden Power [Grass]  
+
+Gengar @ Leftovers  
+Ability: Levitate  
+EVs: 4 HP / 252 SpA / 252 Spe  
+Timid Nature  
+- Ice Punch  
+- Fire Punch  
+- Hidden Power [Grass]  
+- Explosion  
+
+Metagross @ Lum Berry
+Ability: Clear Body
+EVs: 112 HP / 244 Atk / 16 SpA / 136 Spe
+Adamant Nature
+IVs: 31 HP / 31 Atk / 30 Def / 30 SpA / 31 SpD / 31 Spe
+- Meteor Mash
+- Earthquake
+- Explosion
+- Hidden Power Grass
+
+Blissey (F) @ Leftovers  
+Ability: Natural Cure  
+EVs: 252 Def / 200 SpA / 56 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Ice Beam  
+- Seismic Toss  
+- Wish  
+- Soft-Boiled  
