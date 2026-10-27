@@ -180,6 +180,10 @@ BESPOKE_COUPLINGS: Dict[FrozenSet[str], str] = {
     frozenset({"opp_belief_slots", "opp_intent", "damage_op"}):
         "per-VALUE: X5 needs damage_candidate_k == 0 (the full candidate axis); a value of the op's "
         "truncation knob, not whether the op is on.",
+    # gen3_trunk_ffn_width_v1 (B-FFNW, T69): an EXCLUSION, which `requires` cannot state (it says only "must be enabled").
+    frozenset({"trunk_ffn_by_kind", "trunk_ffn_dim"}):
+        "an EXCLUSION: a width branch (trunk_ffn_dim > 256) is refused beside the per-kind experts; neither flag needs "
+        "the other enabled.",
 }
 
 

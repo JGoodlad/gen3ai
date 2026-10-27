@@ -642,7 +642,14 @@ from typing import Any, Dict
 #   Gengar zeroed the true Fighting). The reading's fire-time target snapshot now carries the volatile. An
 #   OBSERVATION-VALUE fix of the opponent HP-type cells: OBS_SEMANTICS_VERSION raised to 163 (`warn`). Every past
 #   config stamps through. No ARCH_SIGNATURE bump, no MIGRATION_FLOOR change.
-MODEL_CONFIG_VERSION = 163
+# v164 (gen3_trunk_ffn_width_v1, B-FFNW, T69): one STRUCTURAL field, `trunk_ffn_dim` (int, default 256;
+#   `--trunk-ffn-dim N`, or a fork's `--grow trunk_ffn_dim=N`): N > 256 gives every trunk round a zero-output width branch
+#   (`trunk_ffn_width.py`, `round.ffn_extra`: D_MODEL -> N - 256 -> D_MODEL), so its FFN is one N-wide FFN over a split
+#   hidden layer. Gated in check_compatible (its text names --grow). A pre-v164 config migrates to 256 (the only width
+#   ever built). No ARCH_SIGNATURE bump (256 builds nothing: every existing state dict and forward is unchanged; a wider
+#   build is gated by the field — the trunk_layers / trunk_ffn_by_kind precedent), no OBS_SEMANTICS or MIGRATION_FLOOR
+#   change.
+MODEL_CONFIG_VERSION = 164
 
 # THE OBS-SEMANTICS MARKER (declared 2026-10-09, with v151): the FIRST config version whose OBSERVATION VALUES
 # (the vector the encoder writes, and the model-input cells derived from it) MEAN something different from every

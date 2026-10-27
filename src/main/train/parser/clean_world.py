@@ -36,6 +36,16 @@ def _canary_shift_max_arg(value: str) -> float:
         raise argparse.ArgumentTypeError(str(e)) from e
 
 
+def _trunk_ffn_dim(value: str) -> int:
+    """argparse ``type`` for --trunk-ffn-dim: an integer >= 256 (`trunk_ffn_width.check_ffn_dim`)."""
+    from agents.model.trunk_ffn_width import check_ffn_dim
+
+    try:
+        return check_ffn_dim(str(value).strip())
+    except ValueError as e:
+        raise argparse.ArgumentTypeError(str(e)) from e
+
+
 def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
     """Add this family's flags to `parser`, in their original order."""
     # --- gen3_winprob_critic_mode_v1 (ai_v12, designs/ai_v12/design_winprob_only_critic.md): WHICH readout is
@@ -238,6 +248,14 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                              "round, no extra FLOPs. STRUCTURAL, version-checked. Needs --token-encoding static, E4 + E5 "
                              "seats, --history-events and X5's hypothesis set. A FORK splits a parent's FFN with "
                              "--grow trunk_ffn_by_kind=on (copies: the parent's function bit for bit), never this flag.")
+    # gen3_trunk_ffn_width_v1 (v164, B-FFNW; design_n4_capacity_screen.md §2, the lever of N4).
+    parser.add_argument("--trunk-ffn-dim", "--trunk_ffn_dim", dest="trunk_ffn_dim", type=_trunk_ffn_dim,
+                        default=None,
+                        help="The hidden width of every trunk round's FFN (gen3_trunk_ffn_width_v1, v164, B-FFNW). 256 "
+                             "(default; production) builds nothing; N > 256 adds a zero-output width branch of N - 256 "
+                             "units per round (+197,376 parameters per round at 1024). STRUCTURAL, version-checked. "
+                             "Refused beside --trunk-ffn-by-kind on. A FORK widens a parent's FFN with "
+                             "--grow trunk_ffn_dim=N (the parent's function bit for bit), never this flag.")
     parser.add_argument("--trunk-layers", "--trunk_layers", dest="trunk_layers", type=int,
                         choices=TRUNK_LAYERS_CHOICES, default=None,
                         help="The number of trunk self-attention rounds (gen3_static_recovery_v1, v150). 2 (the bare default, "

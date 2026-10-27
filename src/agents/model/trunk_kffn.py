@@ -37,11 +37,14 @@ round's ``linear1`` / ``linear2`` into every expert (the parent's function, bit 
 from __future__ import annotations
 
 import math
-from typing import Any, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, List, Optional, Tuple
 
 import torch
 
 from agents.model.arch_constants import D_MODEL, KFFN_INIT_SEED, TRANSFORMER_FFN_DIM
+
+if TYPE_CHECKING:
+    from agents.model.trunk_ffn_width import FfnWidthBranch
 
 #: The flag's values: ``off`` (production, nothing built) and ``on``.
 KFFN_MODES: Tuple[str, ...] = ("off", "on")
@@ -93,12 +96,18 @@ class TrunkRound(torch.nn.Module):
         super().__init__()
         self.kind_ffn: Optional[torch.nn.ModuleDict] = None
         self.ffn_segments: Optional[Segments] = None
+        #: B-FFNW (`trunk_ffn_width`, `--trunk-ffn-dim N > 256`): the round's width branch, or None (nothing built).
+        self.ffn_extra: Optional["FfnWidthBranch"] = None
 
     def ffn(self, h: torch.Tensor) -> torch.Tensor:
         """``h`` [B, n, d_model] → the FFN's output [B, n, d_model]: the shared FFN (off), or each segment through
-        its kind's expert (on)."""
+        its kind's expert (on). A WIDTH branch (``ffn_extra``, `trunk_ffn_width`; never beside the experts) adds its
+        half of the split hidden layer: one FFN of width ``trunk_ffn_dim``."""
         if self.kind_ffn is None:
             out: torch.Tensor = self.linear2(torch.nn.functional.relu(self.linear1(h)))
+            x = self.ffn_extra
+            if x is not None:
+                out = out + x.linear2(torch.nn.functional.relu(x.linear1(h)))
             return out
         segs = self.ffn_segments
         assert segs is not None, "a round with kind_ffn experts holds no ffn_segments table"

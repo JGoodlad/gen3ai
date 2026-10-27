@@ -750,6 +750,15 @@ The concrete steps:
    trunk_ffn_by_kind=on`, which copies every round's shared FFN, and its AdamW state, into each expert (gate measured
    max |Δ| 0.0 on a production parent after one AdamW step; the bar holds at the gate's 64-row batch, not at batch
    1–2). Detail: [`endstate/design_growth_builds_kffn_int.md`](endstate/design_growth_builds_kffn_int.md) §1.
+   **FFN width** (`--trunk-ffn-dim N`, B-FFNW, `trunk_ffn_width.py`, `gen3_trunk_ffn_width_v1`, config v164; 256 in
+   production, which builds nothing; the lever of N4): `N > 256` gives every round a WIDTH BRANCH `ffn_extra` beside
+   its own `linear1` / `linear2` (`linear1` 128 → N − 256 with a bias, `linear2` back with none, ZERO at init), so the
+   round's FFN is one N-wide FFN over a split hidden layer; +197,376 parameters per round at N = 1024 (the toy's
+   extractor 848,897 → 1,243,649, counted). It lives inside the round (`round.ffn`), so the bf16 region covers it;
+   refused beside per-kind experts. A FORK reaches it only through `--grow trunk_ffn_dim=N` (from a 256-wide parent):
+   the zero output adds an exact 0.0, the new parameters start with fresh AdamW state (gate measured on the toy after
+   one AdamW step, 256 → 1024: max |Δ| 0.0, 6 new tensors, 394,752 parameters). Detail:
+   [`endstate/design_n4_capacity_screen.md`](endstate/design_n4_capacity_screen.md) §2.
 10. **`CLSPool`** — three learned queries: `our_cls` over our 6 refined tokens, `their_cls` over
     theirs, `value_cls` over **all 12**. Also extracts `our_active_refined`.
 11. **`ProjectionAssembler`** → `pre_proj_norm`/`projection`/ReLU (policy), emitting `PROJECTION_DIM` =
@@ -767,7 +776,7 @@ The concrete steps:
 | `ROLE_ENCODER_HIDDEN` | `[256, 128]` | " |
 | `ACTIVE_CTX_HIDDEN` | `[64, 32]` | " |
 | `POINTER_HIDDEN` | 64 | " |
-| `TRANSFORMER_N_LAYERS` / `N_HEADS` / `FFN_DIM` | 2 / 4 / 256 (the base depth; production's `--trunk-layers 3` appends one identity-init round) | " |
+| `TRANSFORMER_N_LAYERS` / `N_HEADS` / `FFN_DIM` | 2 / 4 / 256 (the base depth and width; production's `--trunk-layers 3` appends one identity-init round; `--trunk-ffn-dim N > 256` adds a width branch per round) | " |
 | `NET_ARCH` (the ACTOR-only mlp_extractor; no critic branch) | `[512, 512]` | " |
 
 Embedding tables (`Embeddings`, registered exactly once, passed as a forward argument):
@@ -1806,6 +1815,7 @@ does nothing given another setting.
 | `t0_species_prior` | `true` | ACTIVE |
 | `token_encoding` | `"static"` | ACTIVE |
 | `trunk_ffn_by_kind` | `"off"` | OFF |
+| `trunk_ffn_dim` | `256` | ACTIVE |
 | `trunk_layers` | `3` | ACTIVE |
 | `value_entity_pool` | `true` | ACTIVE |
 | `value_entity_pool_full` | `true` | ACTIVE |

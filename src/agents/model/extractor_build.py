@@ -23,7 +23,7 @@ import torch
 from gymnasium import spaces
 
 from agents.model.arch_constants import (
-    D_MODEL, PROJECTION_DIM, ROLE_TOKEN_SIZE, TRANSFORMER_N_LAYERS,
+    D_MODEL, PROJECTION_DIM, ROLE_TOKEN_SIZE, TRANSFORMER_FFN_DIM, TRANSFORMER_N_LAYERS,
 )
 from agents.model.aux_value_heads import WinProbHead
 from agents.model.belief_heads import (
@@ -106,6 +106,7 @@ class ExtractorBuild(torch.nn.Module):
                  move_set_closure: str = "off",
                  tau_solve: str = TAU_SOLVE_DEFAULT,
                  trunk_ffn_by_kind: str = "off",
+                 trunk_ffn_dim: int = TRANSFORMER_FFN_DIM,
                  ):
         super().__init__()
         # gen3_extractor_stashes_v1 (4b): `layout` is Optional in the SIGNATURE only because SB3
@@ -241,9 +242,18 @@ class ExtractorBuild(torch.nn.Module):
         if trunk_ffn_by_kind == "on" and not opp_intent:
             raise ValueError("trunk_ffn_by_kind='on' requires opp_intent: the MON kind's second segment is X5's "
                              "OTHER_species seat (the hypothesis set)")
+        # gen3_trunk_ffn_width_v1 (B-FFNW, `trunk_ffn_width.py`, config v164): every trunk FFN `trunk_ffn_dim` wide, the
+        # width above 256 as a zero-output branch per round built from a PRIVATE seed (no global RNG draw); 256 builds
+        # nothing. Refused beside the per-kind experts.
+        from agents.model.trunk_ffn_width import check_ffn_dim as _check_ffn_dim
+        self.trunk_ffn_dim = _check_ffn_dim(trunk_ffn_dim)
+        if self.trunk_ffn_dim != TRANSFORMER_FFN_DIM and self.trunk_ffn_by_kind == "on":
+            raise ValueError("trunk_ffn_dim > 256 is refused beside trunk_ffn_by_kind='on' (the per-kind experts would "
+                             "have to decide whether to copy the width branch)")
         self.team_transformer = TeamTransformer(layout, token_encoding=token_encoding,
                                                 trunk_layers=self.trunk_layers,
-                                                trunk_ffn_by_kind=self.trunk_ffn_by_kind)
+                                                trunk_ffn_by_kind=self.trunk_ffn_by_kind,
+                                                trunk_ffn_dim=self.trunk_ffn_dim)
         # (The critic's token-content threat projection `CLSPool.value_threat_proj` is DELETED, legacy deletion U3,
         # lane VTI: it was constructed and retired under the adopted surface, so it no longer draws from the stream.)
         self.cls_pool = CLSPool(layout)

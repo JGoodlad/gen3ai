@@ -170,3 +170,10 @@ TRUNK_EXTRA_INIT_SEED = 20261009
 # SB3's orthogonal re-init skips, so the experts draw nothing from the global stream (every other parameter's initial bytes
 # equal the off build's) and a round's experts are the same bytes whether it was built fresh or appended by a growth.
 KFFN_INIT_SEED = 20261020
+
+# gen3_trunk_ffn_width_v1 (B-FFNW, `--trunk-ffn-dim N`, `trunk_ffn_width.py`; T69, the N4 lever): the PRIVATE init seed of
+# the trunk FFN's WIDTH BRANCH. Round i's branch (`linear1` D_MODEL -> N - TRANSFORMER_FFN_DIM, `linear2` back, zero) is
+# built inside `torch.random.fork_rng` from TRUNK_FFNW_INIT_SEED + i, out of `IsolatedLinear`s SB3's orthogonal re-init
+# skips, so a wider trunk draws nothing from the global stream and a round's branch is the same bytes whether it was built
+# fresh or added by a growth. The base width TRANSFORMER_FFN_DIM above is unchanged (N = it builds nothing).
+TRUNK_FFNW_INIT_SEED = 20261027

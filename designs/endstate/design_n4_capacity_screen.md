@@ -2,7 +2,7 @@
 
 **Status: DRAFT (2026-10-27). REGISTERED as
 [`../research_state/measurements/n4_capacity_screen_2026-10-27/PREREG.md`](../research_state/measurements/n4_capacity_screen_2026-10-27/PREREG.md).
-Nothing is built or launched.** This doc makes runnable the capacity branch of
+T69's MODEL SIDE is built (2026-10-27, `--grow trunk_ffn_dim`); nothing is launched.** This doc makes runnable the capacity branch of
 [`strategy_if_levers_null_2026-10-26.md`](strategy_if_levers_null_2026-10-26.md) §4 (T3). The plasticity check
 (`8bebdfe3`) read NO-LOSS, so T3 takes this branch
 ([`../research_state/measurements/plasticity_check_2026-10-26/README.md`](../research_state/measurements/plasticity_check_2026-10-26/README.md)).
@@ -116,6 +116,11 @@ All three were checked on T\*'s checkpoint `checkpoint_290000087_steps.zip`, at 
 
 So the growth machinery works on the toy at HEAD, and the width field is the build (§2).
 
+**After T69's model side (2026-10-27, `gen3_trunk_ffn_width_v1`, config v164):** `main.checkargs` on T\* with
+`--grow trunk_ffn_dim=1024` prints "declared growth (--grow) : trunk_ffn_dim 256 -> 1024" and "✓ fork arch :
+compatible". A bare `checkargs` on T\* judges the argv against T\*'s OWN recorded commit `ae2d0901`, which predates
+`--grow` (for `trunk_layers=3` too), so the kit must name the pin (`--pin-commit N4_PIN`).
+
 ---
 
 ## 2. The lever and its build (T69, B-FFNW)
@@ -162,6 +167,11 @@ So the growth machinery works on the toy at HEAD, and the width field is the bui
 - X47's two extra rounds added ≈ 262k trunk MACs per token and measured ρ = 1.136 (`toy_x47_look1.json`).
 - N4 adds ≈ 393k, so a linear extrapolation gives ρ ≈ 1.2.
 - The rollout's CPU side does not grow, so this is an upper-side GUESS. Measure it in the build's GPU smoke.
+- **A CPU hint (T69's smoke, 2026-10-27; not a GPU number).** Two `--debug` forks of a 4,096-step toy parent per arm,
+  +16,384 steps each, interleaved (C0, grown, grown, C0), on 3 shared agent cores beside a live run and other agents'
+  reads. Updates 2–7 of each: the grown arm's update took 1.19× (train) and its collection 1.24× the control's, 1.23×
+  per update pooled; but the two seed pairs read 1.05× and 1.36× per update, so contention dominates. It does not
+  contradict ρ ≈ 1.2, and it does not measure it.
 
 **Build list (T69, ≈ 1–1.5 agent-days, opus-high: a model-version change with a bit-identity gate):**
 1. The field, the branch, the migration and the `GROWABLE` row, with tests that fail on revert:
@@ -439,15 +449,22 @@ eval traces; the PREREG's `battery_baseline.log`):
    a GO only.
 4. **X48 is a ready production capacity read, unranked against N4** (out of scope, rule 9). It needs no build and no
    new control, at ≈ 15 GPU-h.
-5. **ρ for N4 is a GUESS (≈ 1.2)**, extrapolated from X47's trunk MACs. The GPU smoke (§7 item 3) measures it, and
+5. **ρ for N4 is a GUESS (≈ 1.2)**, extrapolated from X47's trunk MACs; T69's CPU smoke read 1.23× pooled (pairs 1.05× and
+   1.36×, a contended box: a hint only, §2). The GPU smoke (§7 item 3) measures it, and
    the FP32_ALT solve at `N4_PIN` may also make C0′ faster than the banked toy C0's 4,607 steps/s (UNVERIFIED).
 6. **The battery baseline is one seed per row** (T\*, toy C0 s3601, X47 s3601 on one state set). It describes the
    frame and decides nothing.
-7. **Grown-toy loading in `main.anchors` is UNVERIFIED.** T\* has played Kakuna (`3010c81ba`), but a toy with a new
-   field has not. T69's smoke covers it.
+7. **Grown-toy LOADING in `main.anchors` is VERIFIED; PLAYING is not.** A grown toy (T69's CPU smoke) loads through
+   the bare loader (`load_checkpoint_strict`) and the foreign loader at width 1024 with the same logits, and
+   `arch_status` reads it CURRENT (2026-10-27). No grown toy has played a game yet: the 2-pair `main.h2h` +
+   `main.anchors` smoke is still open (T69's remaining items).
 8. **The K meter is weak at screen scale**: 6,000 games give GO-K 0.61–0.69 at +3 pp. It is registered as a
    large-effect detector only, and a NO-GO says so (§4.2).
 9. **This unit launched nothing and used no GPU** (`CUDA_VISIBLE_DEVICES=""`).
+10. **The battery's depth worker REFUSES a wide trunk** (T69, 2026-10-27). `pin_worker.trunk_rounds` raises
+    `UnsupportedTrunk` on a round with a width branch, because its layer replica, FFN statistics, truncation and spectra
+    read only the base FFN (the B-KFFN precedent). The §5 battery on the N4 arms needs that worker taught the branch
+    first; it is not in T69's model side.
    - Its CPU work ran under `nice -n 19 taskset -c 5-7,13-15`, the battery under `mem_cap.sh --max-s 600`:
      `main.checkargs` × 3, `main.launcher --dry-run` × 1, `main.capacity` and `power.py`.
    - `models/` was only read. The battery's output went to `/tmp`.

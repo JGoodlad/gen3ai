@@ -348,3 +348,20 @@ def test_the_depth_worker_refuses_a_trunk_with_per_kind_ffn_experts():
     fe.rounds[1].kind_ffn = build_kind_ffn(1, identity=True)
     with pytest.raises(W.UnsupportedTrunk, match="per-kind FFN experts"):
         W.trunk_rounds(fe)
+
+
+def test_the_depth_worker_refuses_a_trunk_with_an_ffn_width_branch():
+    """B-FFNW (T69): on a `--trunk-ffn-dim N > 256` network the replica would skip the width branch — refused, typed."""
+    import torch
+
+    from agents.model.team_transformer import BiasedEncoderLayer
+    from agents.model.trunk_depth import IdentityInitRound
+    from agents.model.trunk_ffn_width import build_ffn_extra
+    from main.probe_battery import pin_worker as W
+
+    fe = torch.nn.Module()
+    fe.rounds = torch.nn.ModuleList([BiasedEncoderLayer(), IdentityInitRound()])
+    assert len(W.trunk_rounds(fe)) == 2
+    fe.rounds[0].ffn_extra = build_ffn_extra(0, 512)
+    with pytest.raises(W.UnsupportedTrunk, match="width branch"):
+        W.trunk_rounds(fe)

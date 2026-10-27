@@ -249,6 +249,11 @@ of the shared FFN carrying its AdamW state; the same gate, the same pool growth,
 tensors (791,040 parameters) … COPIED for 48`. Never type `--trunk-ffn-by-kind on` on a fork: it is refused, naming
 `--grow`.
 
+The third, **`--grow trunk_ffn_dim=N`** (B-FFNW, N4's lever; toy and production alike, from a 256-wide parent), widens
+every trunk round's FFN with a zero-output width branch: the parent's function bit for bit, the new parameters with
+fresh AdamW state, the same pool growth; on the toy at 1024 the line reads `🌱 [GrowFork] grown: 6 new tensors (394,752
+parameters)`. Never type `--trunk-ffn-dim` on a fork: it is refused, naming `--grow`.
+
 ---
 
 ## Training

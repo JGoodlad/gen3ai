@@ -487,6 +487,16 @@ class ModelVersionCompatibility(ModelVersionFields):
                 "training run. A FORK that means to SPLIT the trunk's FFN declares it: --grow trunk_ffn_by_kind=on "
                 "(B-KFFN, `agents.model.growth`: every expert a copy of the shared FFN, the parent's function bit for "
                 "bit). Removing trained experts (on -> off) is not offered.")
+        # gen3_trunk_ffn_width_v1 (v164, B-FFNW): the width branch is parameters and, once trained, a different forward;
+        # a frozen opponent's gate must name the cause rather than fail a strict load on key names or shapes.
+        if self.trunk_ffn_dim != saved.trunk_ffn_dim:
+            raise ModelVersionError(
+                f"trunk_ffn_dim mismatch: saved={saved.trunk_ffn_dim!r}, current={self.trunk_ffn_dim!r}.\n"
+                "The trunk's FFN width is fixed for a run's lifetime (the width branch is its own parameters).\n"
+                "Resume with the matching --trunk-ffn-dim setting (a flagless resume inherits it), or start a fresh "
+                "training run. A FORK that means to WIDEN the trunk's FFN declares it: --grow trunk_ffn_dim=N (B-FFNW, "
+                "`agents.model.growth`: a zero-output width branch, the parent's function bit for bit). Narrowing a "
+                "trained FFN is not offered.")
         # gen3_probe_facts_v1 (v153): it builds a projection and adds a fact to every forward.
         if self.move_target_state != saved.move_target_state:
             raise ModelVersionError(

@@ -464,6 +464,13 @@ def trunk_rounds(fe) -> List[Any]:
             "this checkpoint's trunk carries per-kind FFN experts (trunk_ffn_by_kind='on', B-KFFN): the depth "
             "diagnostics' layer replica, FFN statistics, truncation and spectra read only the shared FFN and would be "
             "silently wrong — refused (design_growth_builds_kffn_int.md F-GB-6)")
+    # B-FFNW (`--trunk-ffn-dim N > 256`, T69): the round's FFN adds a width branch (`round.ffn_extra`) that the replica,
+    # the FFN-unit statistics, the truncation and the spectra do not read — the same silent error. Refused until they do.
+    if any(getattr(r, "ffn_extra", None) is not None for r in rounds):
+        raise UnsupportedTrunk(
+            "this checkpoint's trunk FFN carries a width branch (trunk_ffn_dim > 256, B-FFNW): the depth diagnostics' "
+            "layer replica, FFN statistics, truncation and spectra read only the base FFN and would be silently wrong "
+            "— refused (design_n4_capacity_screen.md §2)")
     return rounds
 
 

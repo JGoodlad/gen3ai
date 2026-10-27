@@ -487,6 +487,19 @@ REGISTRY: Tuple[ModelFlag, ...] = (
                    "fork reaches 'on' only through `--grow trunk_ffn_by_kind=on`, which COPIES the shared FFN (and its "
                    "AdamW state) into each expert. +65,920 parameters per kind per round, no extra FLOPs.",
               requires=("token_encoding", "entity_topk_seats", "entity_tail_seats", "history_events", "opp_intent")),
+    # gen3_trunk_ffn_width_v1 (config v164, B-FFNW, T69; design_n4_capacity_screen.md §2): CLI, not config_only, for
+    # the same reason as trunk_ffn_by_kind (F-GB-1: a config_only field would build its frozen default under --grow).
+    ModelFlag("trunk_ffn_dim", 256, Tier.CLI, Klass.STRUCTURAL, 164,
+              "the hidden width of every trunk round's feed-forward block (256 = production, nothing built; N > 256 "
+              "adds a zero-output width branch of N - 256 units per round, so the FFN is one N-wide FFN over a split "
+              "hidden layer)",
+              note="`trunk_ffn_width.py`, the lever of N4. The branch (`round.ffn_extra`: linear1 D_MODEL -> N - 256 "
+                   "with a bias, linear2 back with none, ZERO) lives inside the round, called from `round.ffn`, so the "
+                   "bf16 trunk region covers it; its IsolatedLinears are built from a PRIVATE seed "
+                   "(TRUNK_FFNW_INIT_SEED + round), so no other initial byte moves. A fork reaches N only through "
+                   "`--grow trunk_ffn_dim=N` (the zero output makes the child its parent's function bit for bit; the "
+                   "new parameters start with fresh AdamW state). Refused beside trunk_ffn_by_kind on. +197,376 "
+                   "parameters per round at N = 1024."),
     # gen3_endstate_facts_v1 (config v152; design_hand_computed_features.md §1's FACT / JUDGMENT test, §4 ranks 3-5,
     # §5 rank 1, finding 7): the FACT-COMPLETION levers. (`status_facts`, `ko_ramp` and `g_ledger` were DELETED by the
     # legacy deletion's U1 with `speed_physics`, `op_reduction`, `switch_hazard_cost`, `eot_residual` and

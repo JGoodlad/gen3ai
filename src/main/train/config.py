@@ -617,6 +617,7 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     _resolve("move_actor_state", "off")            # v147 structural str (static's E3 actor HP + status; fresh-only)
     _resolve("trunk_layers", 2)                    # v150 structural int (the trunk's depth; identity-init extra rounds)
     _resolve("trunk_ffn_by_kind", "off")           # v161 structural str (B-KFFN: per-token-kind FFN experts per round)
+    _resolve("trunk_ffn_dim", 256)                 # v164 structural int (B-FFNW: the trunk FFN's width; a branch > 256)
     _resolve("drop_progress_clock", "off")         # v152 structural str (the model reads turns_since_progress as 0)
     _resolve("move_target_state", "off")           # v153 structural str (their active's HP + status on our E3 seats)
     _resolve("move_set_closure", "off")            # v154 structural str (the four-move fact in the belief reinjection)

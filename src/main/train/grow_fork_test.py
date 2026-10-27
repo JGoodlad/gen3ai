@@ -302,7 +302,7 @@ def test_the_fork_arch_verdict_passes_a_declared_growth_and_judges_it_with_the_t
     from main.train import fork_arch
 
     parent = request.getfixturevalue("toy_parent")
-    assert fork_arch.DECLARED_GROWTH == {"grow": ("trunk_ffn_by_kind", "trunk_layers")}
+    assert fork_arch.DECLARED_GROWTH == {"grow": ("trunk_ffn_by_kind", "trunk_ffn_dim", "trunk_layers")}
     ok = check(["--model", parent, "--grow", "trunk_layers=4", *X34_FORK])["fork_arch"]
     assert ok.checked and not ok.refused, ok
     typed = check(["--model", parent, "--trunk-layers", "4", *X34_FORK])["fork_arch"]
@@ -438,3 +438,113 @@ def test_kffn_the_seeded_pool_grows_its_experts_and_a_relaunch_mid_pool_is_idemp
         opp = load_opponent_snapshot(str(pool / names[1]), child_version)
         opp.policy.set_training_mode(False)
         assert np.array_equal(G.forward_record(opp.policy, obs, mask)["logits"], ref["logits"])
+
+
+# ── B-FFNW: `--grow trunk_ffn_dim=N` (T69, design_n4_capacity_screen.md §2; the model side is trunk_ffn_width_test) ──
+def test_ffnw_the_parser_resolve_and_the_stamp(tmp_path, capsys):
+    """The parser takes ``trunk_ffn_dim=N`` (an int >= 256); the fork resolves, builds and records the child's width
+    (the CLI tier: a config_only field would build its frozen default, F-GB-1); the stamp carries the shared optimizer
+    rule only (no copies); refused: the typed flag beside ``--grow``, a narrowing, ``--grow`` on a fresh run."""
+    p = build_parser()
+    assert p.parse_args(["--grow", "trunk_ffn_dim=1024"]).grow == [("trunk_ffn_dim", 1024)]
+    assert p.parse_args(["--trunk-ffn-dim", "512"]).trunk_ffn_dim == 512
+    for argv in (["--grow", "trunk_ffn_dim=128"], ["--trunk-ffn-dim", "100"], ["--grow", "trunk_ffn_dim=wide"]):
+        with pytest.raises(SystemExit):
+            p.parse_args(argv)
+        err = capsys.readouterr().err
+        assert ">= 256" in err or "integer" in err, err
+    _d, ckpt = _run(tmp_path, _version(2), name="parent")
+    plain = _resolve(["--model", ckpt, "--run-name", "child_plain", "--steps", "2000"])
+    assert plain.trunk_ffn_dim == 256
+    grown = _resolve(["--model", ckpt, "--run-name", "child", "--steps", "2000", "--grow", "trunk_ffn_dim=1024"])
+    assert grown.trunk_ffn_dim == 1024 and grown._grow_declared == {"trunk_ffn_dim": (256, 1024)}
+    assert _saved_version(grown).trunk_ffn_dim == 1024
+    assert "[GrowFork] declared growth: trunk_ffn_dim 256 -> 1024" in capsys.readouterr().out
+    stamp = GF.decide(grown={"trunk_ffn_dim": (256, 1024)}, model_path=ckpt, model_dir=str(tmp_path / "child"))
+    assert stamp["fields"] == {"trunk_ffn_dim": {"parent": 256, "child": 1024}}
+    assert "trunk_ffn_dim:" not in stamp["optimizer"]                       # fresh state: the shared rule alone
+    with pytest.raises(SystemExit):
+        _resolve(["--model", ckpt, "--run-name", "c3", "--steps", "2000", "--grow", "trunk_ffn_dim=1024",
+                  "--trunk-ffn-dim", "1024"])
+    assert "both typed" in capsys.readouterr().err
+    _dw, wide = _run(tmp_path, dataclasses.replace(_version(2), trunk_ffn_dim=1024), name="wide")
+    with pytest.raises(SystemExit):
+        _resolve(["--model", wide, "--run-name", "c4", "--steps", "2000", "--grow", "trunk_ffn_dim=512"])
+    assert "only WIDENS" in capsys.readouterr().err
+    again = _resolve(["--model", wide, "--steps", "3000"])                  # a flagless restart inherits the width
+    assert again.trunk_ffn_dim == 1024
+
+
+def test_ffnw_checkargs_prints_the_declared_growth(tmp_path, capsys):
+    from main.checkargs import main as checkargs_main
+
+    _p, ckpt = _run(tmp_path, _version(2), name="parent")
+    argv = ["--model", ckpt, "--run-name", "child_w", "--steps", "2000", "--grow", "trunk_ffn_dim=1024"]
+    assert checkargs_main(["--argv", " ".join(argv)]) == 0
+    assert "declared growth (--grow)       : trunk_ffn_dim 256 -> 1024" in capsys.readouterr().out
+
+
+def test_ffnw_the_fork_arch_verdict_on_the_toy(request):
+    """N4's own argv shape on a TOY parent (T*'s architecture): the F-BI-2 fork-arch verdict passes the declared growth;
+    the typed flag on a fork is refused naming --grow."""
+    from main.checkargs import check
+
+    parent = request.getfixturevalue("toy_parent")
+    res = check(["--model", parent, "--grow", "trunk_ffn_dim=1024", *X34_FORK])
+    assert res["ns"].trunk_ffn_dim == 1024 and res["fork_arch"].checked and not res["fork_arch"].refused, res["fork_arch"]
+    typed = check(["--model", parent, "--trunk-ffn-dim", "1024", *X34_FORK])["fork_arch"]
+    assert typed.refused and "trunk_ffn_dim mismatch" in typed.reason and "--grow trunk_ffn_dim=N" in typed.reason
+
+
+def test_ffnw_the_launcher_dry_run_prints_the_declared_growth(request, monkeypatch, capsys):
+    from main.launcher.dry_run_test import _dry_run, _make_run
+
+    _root, (first, _second), work = request.getfixturevalue("isolated")
+    _parent_dir, ckpt = _make_run(work, first, name="parent")
+    (work / "models" / "parent" / "model_config.json").write_text(json.dumps(dataclasses.asdict(_version(2))))
+    _dry_run(["--model", ckpt, "--run-name", "w_grow", "--steps", "1000", "--grow", "trunk_ffn_dim=1024"], monkeypatch)
+    out = capsys.readouterr().out
+    assert "grow        : DECLARED trunk_ffn_dim 256 -> 1024" in out
+    assert not (work / "models" / "w_grow").exists()
+
+
+def test_ffnw_the_trainee_loader_and_the_seeded_pool_grow_a_saved_toy(tmp_path, _rows):
+    """End to end on a saved toy parent: `load_model_snapshot(grow=…)` + the by-name optimizer realignment +
+    `apply_growth` (the model_build sequence), then `grow_seeded_pool`: every grown file is the parent's function bit
+    for bit and reloads strictly at the child's version."""
+    import shutil
+
+    from agents.model import growth as G
+    from agents.model.snapshot import load_model_snapshot, load_opponent_snapshot
+    from agents.training.pool_seed import write_seed_record
+    from main.train.checkpoint_state import _validate_or_reset_optimizer_state
+    from utils.torch_state_guard import torch_globals
+
+    obs, mask = _rows
+    fields = {"trunk_ffn_dim": {"parent": 256, "child": 1024}}
+    with torch_globals(num_threads=1):
+        parent, version, zp = _toy_checkpoint(tmp_path / "parent")
+        parent.policy.set_training_mode(False)
+        ref = G.forward_record(parent.policy, obs, mask)
+        child_version = dataclasses.replace(version, trunk_ffn_dim=1024)
+        with pytest.raises(ModelVersionError, match="trunk_ffn_dim mismatch"):          # undeclared: refused
+            load_model_snapshot(str(zp), env=None, current_version=child_version, device="cpu")
+        model = load_model_snapshot(str(zp), env=None, current_version=child_version, device="cpu", grow=fields)
+        assert G.trunk_ffn_dim_of(model.policy) == 256
+        _validate_or_reset_optimizer_state(model, str(zp))
+        report = G.apply_growth(model, fields, rows=(obs, mask))
+        assert report["function_check"]["bit_identical"] and report["optimizer_state"]["fresh"] == 6
+        model.policy.set_training_mode(False)
+        assert np.array_equal(G.forward_record(model.policy, obs, mask)["logits"], ref["logits"])
+        pool = tmp_path / "child" / "snapshots"
+        pool.mkdir(parents=True)
+        shutil.copy2(zp, pool / "snapshot_000000001000.zip")
+        (pool / "model_config.json").write_text(version.to_json())
+        write_seed_record(str(pool), {"schema": 2, "n_snapshots": 1})
+        out = GF.grow_seeded_pool(str(pool), fields, child_version)
+        assert out["snapshots"] == ["snapshot_000000001000.zip"]
+        opp = load_opponent_snapshot(str(pool / "snapshot_000000001000.zip"), child_version)
+        assert G.trunk_ffn_dim_of(opp.policy) == 1024
+        opp.policy.set_training_mode(False)
+        got = G.forward_record(opp.policy, obs, mask)
+    assert np.array_equal(got["logits"], ref["logits"]) and np.array_equal(got["values"], ref["values"])

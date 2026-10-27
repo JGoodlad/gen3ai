@@ -15511,3 +15511,31 @@ was downloaded or written under `data/`.
   `tests/tracker_semantics_test.rs` (each FAILS on revert) and an `hp_belief` unit test.
 - **Measured.** Obs golden 991 / 991 unchanged (no golden battle reaches it); `obs_semantics_test` re-pinned at 163 with
   the same hash. Encoder benchmark 11.1 → 11.1 µs encode, 16.8 → 16.7 µs present + encode (median, same contended box).
+## 2026-10-27 — B-FFNW: the trunk FFN's width as a declared growth, `--grow trunk_ffn_dim=N` (`gen3_trunk_ffn_width_v1`; config v164, one STRUCTURAL field `trunk_ffn_dim` / `--trunk-ffn-dim N`, 256 in production; no `ARCH_SIGNATURE` / obs / floor change; production byte-identical)
+
+- **Why.** N4's lever (`endstate/design_n4_capacity_screen.md` §2; TASK_BACKLOG T69, its model side): is the toy too
+  small to escape the plateau? A growth fork at T\* widens every trunk FFN 256 → 1,024.
+- **The network.** `agents/model/trunk_ffn_width.py`: `N > 256` gives every trunk round a WIDTH BRANCH `ffn_extra`
+  (`linear1` 128 → N − 256 with a bias, `linear2` back with NO bias, ZERO), called from `TrunkRound.ffn` beside the
+  round's own `linear1` / `linear2`: one N-wide FFN over a split hidden layer, inside the round (the bf16 region covers
+  it). Built from `IsolatedLinear`s inside `fork_rng` from `TRUNK_FFNW_INIT_SEED + round`, so no other initial byte moves.
+  A branch, not a resized `linear1` / `linear2`, because a longer GEMM reduction is not guaranteed bit-identical
+  (F-GB-5). Refused beside `--trunk-ffn-by-kind on`.
+- **The growth.** A `growth.GROWABLE` row, `256 → N` only (a narrowing, a wide parent and a per-kind-expert parent are
+  typed refusals): the same modules and seeds a fresh child builds, so the grown state dict is a fresh child's (keys,
+  order, shapes, the branches' bytes); the new parameters start with no AdamW state (the B-GROW rule). A depth growth on
+  a wide parent gives its new rounds their own zero branch; depth + width at one fork apply depth first.
+- **Recorded.** Config v164: `trunk_ffn_dim` (CLI tier, F-GB-1), a `check_compatible` clause naming `--grow
+  trunk_ffn_dim=N`, a pre-v164 config migrates to 256. `production_config.json` records 256. The probe battery's depth
+  worker (`pin_worker.trunk_rounds`) REFUSES a wide trunk (its replica reads only the base FFN), typed.
+- **Evidence** (CPU, fp32 eager, one thread). The grow fork on the toy after one AdamW step, 256 → 1024: max |Δ logits|
+  0.0, max |Δ value| 0.0 on the 64 gate rows, 6 new tensors, 394,752 parameters (the extractor 848,897 → 1,243,649),
+  all fresh. 256 builds nothing: the delivery graph, the architecture viewer and the K9 learner golden are unchanged.
+  A CPU `--debug` fork smoke of a toy parent (2 control + 2 grown forks, +16,384 steps each, a contended box): the
+  `🌱 [GrowFork] grown` line bit-identical in both grown forks, the branch trained (its `linear2` left zero), the child
+  loads through `main.anchors`' bare and foreign loaders and reads CURRENT in `arch_status`; per update the grown arm
+  took 1.23× the control's pooled (seed pairs 1.05× and 1.36×): a hint at N4's ρ ≈ 1.2 GUESS, not a measurement.
+- **Tests.** `agents/model/trunk_ffn_width_test.py` (W-1…W-6: identity, a non-identity branch refused, the optimizer
+  state, no other initial byte moved, the save / load round trip through the bare and snapshot loaders, depth + width,
+  the refusals); `main/train/grow_fork_test.py` (the parser, resolve, the stamp, `checkargs`, the fork-arch verdict on
+  a toy parent, the dry run, the trainee loader and the seeded pool); `probe_battery_test.py` (the refusal).
