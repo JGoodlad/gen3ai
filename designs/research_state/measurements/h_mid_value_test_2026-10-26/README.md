@@ -1,5 +1,7 @@
 # H-MID: P\*'s critic does not see its unfamiliar-team conversion deficit (2026-10-26)
 
+**Adversarial review (2026-10-27): [`REVIEW.md`](REVIEW.md).** The verdict's direction is robust; its reading is not: a self-play critic cannot learn this premium (M1), and V's set gap is a turn-1 team prior, mostly P72's (M2).
+
 **Verdict (registered rule, [`PREREG.md`](PREREG.md), `2dd52278`): CRITIC-MISCALIBRATED-ON-U.** From materially
 level positions at turn 10, P\* wins 10.8 pp more often on home72 than on U, and its own critic sees about a third of
 that. Δbias = **+0.076 [+0.016, +0.139]**, against the bar of ≥ +0.05 with LB > 0. The PastaMittens replication

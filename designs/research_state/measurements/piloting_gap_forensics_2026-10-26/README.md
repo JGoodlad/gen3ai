@@ -1,5 +1,7 @@
 # Piloting-gap forensics: where P\* loses the extra unfamiliar-team games against Kakuna (2026-10-26)
 
+**Adversarial review (2026-10-27): [`../h_mid_value_test_2026-10-26/REVIEW.md`](../h_mid_value_test_2026-10-26/REVIEW.md).** Answer 3 ("it comes with the TEAM, not the set") is not evidenced: KOs per entry restate the result, and the within-team comparison cannot separate team from set (B1). The phase picture is corroborated by V (m3).
+
 **Question.** P\* (`rb_x26_s2601` @280,000,170) beats Kakuna ckpt 34 **0.598** on home72 and **0.487** on the
 unfamiliar panels (X51). Where in the game do the extra losses come from, and what kind of decision carries them?
 Banked games only: no new play, no model run, CPU, post hoc and DESCRIPTIVE (nothing here was registered).
