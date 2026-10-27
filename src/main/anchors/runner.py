@@ -336,6 +336,7 @@ async def run_peer_pair_half(plan: SeriesPlan, cfg: Any, half: str, n_games: int
     report["our_weights_sha256"] = our_report.get("weights_sha256")
     # ...and OUR peer's team pack (gen3_peer_showdown_pack_v1, SOP H22): its own regime-id input.
     report["our_peer_pack_changed"] = our_report.get("peer_pack_changed")
+    report["our_frontend_pack_changed"] = our_report.get("frontend_pack_changed")
     report["model_loader"] = ""
     # BOTH peers are peers here, so the regime question is an AND over the two and the process
     # question is an AND over BOTH return codes.
@@ -625,11 +626,14 @@ def cell_spec(plan: SeriesPlan, report: Dict[str, Any], our_team_count: int) -> 
         our_weights_sha256=report.get("our_weights_sha256"),
         peer_pack_changed=report.get("peer_pack_changed"),
         our_peer_pack_changed=report.get("our_peer_pack_changed"),
+        frontend_pack_changed=report.get("frontend_pack_changed"),
+        our_frontend_pack_changed=report.get("our_frontend_pack_changed"),
     )
 
 
-#: The cell's team-pack facts (gen3_peer_showdown_pack_v1): THEIR Metamon peer's and OUR Metamon peer's.
-PEER_PACK_KEYS = ("peer_pack_changed", "our_peer_pack_changed")
+#: The cell's team-pack facts: THEIR Metamon peer's and OUR Metamon peer's (gen3_peer_showdown_pack_v1), THEIR Foul Play's
+#: and OUR Foul Play's (gen3_frontend_validated_pack_v1).
+PEER_PACK_KEYS = ("peer_pack_changed", "our_peer_pack_changed", "frontend_pack_changed", "our_frontend_pack_changed")
 
 
 def any_half(values: Any) -> Optional[bool]:

@@ -162,6 +162,11 @@ class CellSpec:
     #: never pool with their banked reads; False and None (not a Metamon peer, or a row before the pack) leave it alone.
     peer_pack_changed: Optional[bool] = None
     our_peer_pack_changed: Optional[bool] = None
+    #: gen3_frontend_validated_pack_v1 (SOP H22): does the front end's playing the validator's re-pack change any team file
+    #: FOUL PLAY may draw (``main.anchors.frontend_pack``)? THEIRS = the opponent when it is Foul Play; ``our_*`` = our side
+    #: when it is. Same rule as ``peer_pack_changed``: True enters the regime id, False / None leave it alone.
+    frontend_pack_changed: Optional[bool] = None
+    our_frontend_pack_changed: Optional[bool] = None
 
     def stamp(self) -> Dict[str, Any]:
         return asdict(self)

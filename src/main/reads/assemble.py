@@ -103,22 +103,33 @@ def anchor_regime_id(summary: Mapping[str, Any], *, strip_load: str = "") -> Opt
 
 
 def peer_pack_identity(cell: Mapping[str, Any]) -> Dict[str, Any]:
-    """The team-pack inputs of a regime id (gen3_peer_showdown_pack_v1, ``EXTERNAL_ANCHORS_SOP.md`` H22): ``{"peer_pack":
-    PEER_PACK_SCHEMA}`` (and/or ``our_peer_pack``) when a Metamon peer's team set holds a file that plays differently
-    from the legacy poke-env pack; ``{}`` otherwise, so a team set the old packer played identically keeps its banked
-    id, and forum72 / away / the pool (whose Kakuna side changed) never share an id with their banked reads."""
+    """The team-pack inputs of a regime id, each only when True (``EXTERNAL_ANCHORS_SOP.md`` H22):
+    ``peer_pack`` / ``our_peer_pack`` = ``PEER_PACK_SCHEMA`` when a Metamon peer's team set holds a file that plays
+    differently from the legacy poke-env pack (gen3_peer_showdown_pack_v1); ``frontend_pack`` / ``our_frontend_pack`` =
+    ``FRONTEND_PACK_SCHEMA`` when a Foul Play side's team set holds a file the front end now plays differently, because it
+    plays the validator's re-pack (gen3_frontend_validated_pack_v1). ``{}`` otherwise, so a team set played identically
+    keeps its banked id, and a changed one (forum72 / away / the pool for Kakuna; Foul Play's ``gen3ai_pool`` and ``away``)
+    never shares an id with its banked reads."""
+    from main.anchors.frontend_pack import FRONTEND_PACK_SCHEMA
     from main.anchors.peer_scripts.team_pack import PEER_PACK_SCHEMA
 
-    return {key: PEER_PACK_SCHEMA for key, field in (("peer_pack", "peer_pack_changed"),
-                                                     ("our_peer_pack", "our_peer_pack_changed"))
-            if cell.get(field) is True}
+    fields = (("peer_pack", "peer_pack_changed", PEER_PACK_SCHEMA),
+              ("our_peer_pack", "our_peer_pack_changed", PEER_PACK_SCHEMA),
+              ("frontend_pack", "frontend_pack_changed", FRONTEND_PACK_SCHEMA),
+              ("our_frontend_pack", "our_frontend_pack_changed", FRONTEND_PACK_SCHEMA))
+    return {key: schema for key, field, schema in fields if cell.get(field) is True}
 
 
 def peer_pack_state(cell: Mapping[str, Any]) -> str:
-    """A unit's team-pack regime, for the import check (``main.reads.imports``): ``"changed"`` when its peer stamps a
-    team set the legacy pack played differently, else ``"legacy"`` (the same play as every banked unit; a unit before
-    the pack, or one whose files are unchanged)."""
-    return "changed" if peer_pack_identity(cell) else "legacy"
+    """A unit's team-pack regime, for the import check (``main.reads.imports``): ``"changed"`` when its Metamon peer stamps
+    a team set the legacy pack played differently, ``"frontend_changed"`` when its Foul Play side does (both, joined by
+    ``+``), else ``"legacy"`` (the same play as every banked unit; a unit before the pack, or one whose files are
+    unchanged)."""
+    keys = peer_pack_identity(cell)
+    parts = [name for name, hit in (("changed", any(k in keys for k in ("peer_pack", "our_peer_pack"))),
+                                    ("frontend_changed", any(k in keys for k in ("frontend_pack", "our_frontend_pack"))))
+             if hit]
+    return "+".join(parts) if parts else "legacy"
 
 
 def _weights_identity(cell: Mapping[str, Any]) -> Dict[str, Any]:

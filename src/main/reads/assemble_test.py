@@ -371,5 +371,21 @@ def test_a_team_set_whose_kakuna_side_changed_is_a_new_regime() -> None:
     assert AS.unit_row(_Unit(), _wsummary(peer_pack_changed=True))["peer_pack"] == "changed"
 
 
+def test_a_foul_play_team_set_the_front_ends_repack_plays_differently_is_a_new_regime() -> None:
+    """gen3_frontend_validated_pack_v1: the front end plays the validator's re-pack, and Foul Play's own pack drops a
+    named Hidden Power's IVs (11 of 72 of its pool files). A changed cell is a new id and import state; an unchanged one
+    (False, or a banked row) keeps the banked id. Fails on revert: without the keys in the id these equal the banked id."""
+    assert AS.anchor_regime_id(_wsummary(frontend_pack_changed=False)) == _BANKED_ID
+    assert AS.anchor_regime_id(_wsummary(frontend_pack_changed=None, our_frontend_pack_changed=False)) == _BANKED_ID
+    theirs = AS.anchor_regime_id(_wsummary(frontend_pack_changed=True))
+    ours = AS.anchor_regime_id(_wsummary(our_side="foulplay", our_frontend_pack_changed=True))
+    assert theirs != _BANKED_ID and ours != AS.anchor_regime_id(_wsummary(our_side="foulplay"))
+    assert theirs != AS.anchor_regime_id(_wsummary(peer_pack_changed=True)), "Kakuna's pack and Foul Play's are different changes"
+    assert AS.unit_row(_Unit(), _wsummary(frontend_pack_changed=True))["peer_pack"] == "frontend_changed"
+    assert AS.unit_row(_Unit(), _wsummary(frontend_pack_changed=False))["peer_pack"] == "legacy"
+    assert AS.unit_row(_Unit(), _wsummary(peer_pack_changed=True, our_frontend_pack_changed=True))["peer_pack"] \
+        == "changed+frontend_changed"
+
+
 class _Unit:
     name, label, teamset, unit_seed, games, model_sha256, belief_prior_mix = "u0", "pstar", "forum72", 0, 20, None, None

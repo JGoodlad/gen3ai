@@ -158,7 +158,7 @@ def test_an_import_of_banked_units_across_the_kakuna_team_pack_refuses(tmp_path,
     RN.plan(_anchor_spec(tmp_path, "look2_read", imp), st2, code=CODE, step_of=lambda _p: 1)
     RN.run(st2, "anchor", time.time() + 3600, run_unit=_played({"on": 13}, dict(_cell(), peer_pack_changed=True)),
            sleep=lambda s: None)
-    with pytest.raises(ReadImportError, match="never crosses the Kakuna team-pack regime"):
+    with pytest.raises(ReadImportError, match="never crosses a team-pack regime"):
         api.assemble(st2)
 
     st3, sha3 = _look1(tmp_path / "b", monkeypatch, cell=dict(_cell(), peer_pack_changed=True))   # the other way round
@@ -166,7 +166,7 @@ def test_an_import_of_banked_units_across_the_kakuna_team_pack_refuses(tmp_path,
     RN.plan(_anchor_spec(tmp_path, "look4_read", {"state": str(st3), "spec_sha256": sha3, "group": "u",
                                                   "models": ["off"]}), st4, code=CODE, step_of=lambda _p: 1)
     RN.run(st4, "anchor", time.time() + 3600, run_unit=_played({"on": 13}, _cell()), sleep=lambda s: None)
-    with pytest.raises(ReadImportError, match="never crosses the Kakuna team-pack regime"):
+    with pytest.raises(ReadImportError, match="never crosses a team-pack regime"):
         api.assemble(st4)
 
     st5 = tmp_path / "look5"                                                  # unchanged set: imports as before
@@ -231,3 +231,31 @@ def test_an_earlier_spec_is_imported_even_if_todays_rule_would_refuse_its_params
     sha1 = hashlib.sha256(LY.spec_file(st1).read_bytes()).hexdigest()
     imp = {"state": str(st1), "spec_sha256": sha1, "group": "u", "models": ["off"]}
     RN.plan(_anchor_spec(tmp_path, "look2_read", imp), tmp_path / "look2", code=CODE, step_of=lambda _p: 1)
+
+
+def test_an_import_of_banked_units_across_the_foul_play_played_team_change_refuses(tmp_path, monkeypatch):
+    """SOP H22 (gen3_frontend_validated_pack_v1): banked Foul Play units played its own pack's sets (a named Hidden Power at
+    the all-31 IV type); a unit after the front end plays the validator's re-pack, on a team set where that differs
+    (``frontend_pack_changed``), never pools with them, either way round. Fails on revert."""
+    st1, sha1 = _look1(tmp_path, monkeypatch)                                  # banked: no stamp (legacy)
+    imp = {"state": str(st1), "spec_sha256": sha1, "group": "u", "models": ["off"]}
+    st2 = tmp_path / "look2"
+    RN.plan(_anchor_spec(tmp_path, "look2_read", imp), st2, code=CODE, step_of=lambda _p: 1)
+    RN.run(st2, "anchor", time.time() + 3600, run_unit=_played({"on": 13}, dict(_cell(), frontend_pack_changed=True)),
+           sleep=lambda s: None)
+    with pytest.raises(ReadImportError, match="frontend_changed"):
+        api.assemble(st2)
+
+    st3, sha3 = _look1(tmp_path / "b", monkeypatch, cell=dict(_cell(), frontend_pack_changed=True))
+    st4 = tmp_path / "look4"
+    RN.plan(_anchor_spec(tmp_path, "look4_read", {"state": str(st3), "spec_sha256": sha3, "group": "u",
+                                                  "models": ["off"]}), st4, code=CODE, step_of=lambda _p: 1)
+    RN.run(st4, "anchor", time.time() + 3600, run_unit=_played({"on": 13}, _cell()), sleep=lambda s: None)
+    with pytest.raises(ReadImportError, match="team pack"):
+        api.assemble(st4)
+
+    st5 = tmp_path / "look5"                                                  # a set Foul Play played identically
+    RN.plan(_anchor_spec(tmp_path, "look5_read", imp), st5, code=CODE, step_of=lambda _p: 1)
+    RN.run(st5, "anchor", time.time() + 3600, run_unit=_played({"on": 13}, dict(_cell(), frontend_pack_changed=False)),
+           sleep=lambda s: None)
+    assert api.assemble(st5)["anchor"]["u"]["inconclusive"] == []

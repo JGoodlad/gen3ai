@@ -415,6 +415,15 @@ A read that imports banked forum72 / away / pool Kakuna rows (D3 look 2's C0) mu
 - **X59-S games / X60 / X61P look 2:** one engine per read, named at registration. An import from N1-P look 1 needs E3.
 - **The human-only / PastaMittens reads:** each was played on one commit, all on E1.
 
+### Foul Play's played team (`gen3_frontend_validated_pack_v1`; the SOP's H22)
+
+The front end plays the validator's re-pack, as a real server does. Our side and Kakuna play the same sets; Foul Play does not
+(its packer writes no Hidden Power IVs: 11 of 72 pool files and `away`'s `team_23`; the SOP's H22 has the numbers).
+`FoulPlayPeer.read_report` stamps `frontend_pack_changed` (`main.anchors.frontend_pack`), `assemble.peer_pack_identity` adds it
+to the id only when True, `unit_row` carries it as `peer_pack = "frontend_changed"` and `imports.check_peer_pack` refuses an
+import across it. A record that cannot be computed voids the regime verification. `frontend_pack_integration_test.py` pins the
+rule and, on a box with Foul Play, the measurement.
+
 ## 5. Decide: the registered rules (`main.reads.rules`)
 
 A rule is two pure halves: `inputs(cells, params, spec)` produces the rule's input document, and `decide(doc,

@@ -381,7 +381,8 @@ class FoulPlayPeer(Peer):
             version=f"poke-engine gen3 @ {search_time_ms}ms x{search_parallelism}",
             commit=git_head(cfg.checkout),
             team_dir=cfg.team_dir(teamset),
-            extra={"search_time_ms": search_time_ms, "search_parallelism": search_parallelism},
+            extra={"search_time_ms": search_time_ms, "search_parallelism": search_parallelism,
+                   "battle_format": battle_format},
         )
 
     #: Foul Play's own line. ``total_visits`` is the engine's realized MCTS width for that decision.
@@ -418,8 +419,27 @@ class FoulPlayPeer(Peer):
                            "reproducible opponent (UNDERSTANDING rule 23)")
         out["errors"] = text.count("ERROR") + text.count("CRITICAL")
         out["peer_error_free"] = out["errors"] == 0
+        FoulPlayPeer._check_frontend_pack(plan, out)
         out["regime_verified"] = bool(out["regime_verified_decisions"] and out["peer_error_free"])
         return out
+
+    @staticmethod
+    def _check_frontend_pack(plan: PeerPlan, out: Dict[str, Any]) -> None:
+        """FAIL CLOSED on the played-team rule (gen3_frontend_validated_pack_v1, SOP H22): does the front end's playing the
+        validator's re-pack change any team file Foul Play may draw? ``frontend_pack_changed`` (a bool) enters the regime
+        id (``main.anchors.frontend_pack``); a record that cannot be computed voids the regime verification."""
+        from main.anchors import frontend_pack as fp_mod
+
+        try:
+            record = fp_mod.cell_record(str(plan.argv[0]), plan.cwd, plan.team_dir,
+                                        str(plan.extra.get("battle_format") or "gen3ou"))
+        except (fp_mod.FrontendPackError, OSError, TypeError) as exc:
+            out.update({"frontend_pack_changed": None, "regime_verified_decisions": False,
+                        "frontend_pack_note": f"the Foul Play team pack could not be checked: {exc}"})
+            return
+        out.update({"frontend_pack_changed": record["frontend_pack_changed"],
+                    "frontend_pack_changed_files": [c["file"] for c in record["changed"]],
+                    "frontend_pack_refused_files": list(record["refused"])})
 
 
 #: 🚨 DEPRECATED, one release (``gen3_anchor_regime_split_v1``, 2026-09-21). ``regime_verified`` is

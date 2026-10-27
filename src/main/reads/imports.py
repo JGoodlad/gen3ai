@@ -49,7 +49,9 @@ def check_engine(what: str, here: Optional[str], there: Optional[str]) -> None:
 def check_peer_pack(what: str, mine: Sequence[Mapping[str, Any]], theirs: Sequence[Mapping[str, Any]]) -> None:
     """Refuse an import whose counted units, on a team set this state also played, ran another TEAM-PACK regime
     (gen3_peer_showdown_pack_v1, ``EXTERNAL_ANCHORS_SOP.md`` H22): banked forum72 / away / pool units had Kakuna play
-    poke-env's pack (forum72's sft431 Gyarados at Frustration base power 1); a unit after the fix plays Showdown's. The
+    poke-env's pack (forum72's sft431 Gyarados at Frustration base power 1); a unit after the fix plays Showdown's. Foul Play's
+    banked units played its own pack's sets (Hidden Power at the all-31 IV type), a unit after the front end plays the
+    validator's re-pack (``frontend_changed``; ``gen3_frontend_validated_pack_v1``). The
     regime ids already differ, which alone would only make the group INCONCLUSIVE; an import never crosses them."""
     here: Dict[str, set] = {}
     for r in mine:
@@ -61,7 +63,7 @@ def check_peer_pack(what: str, mine: Sequence[Mapping[str, Any]], theirs: Sequen
         if here[str(r.get("panel"))] != {state}:
             raise ReadImportError(f"{what}: team set {r.get('panel')} imported unit {r.get('unit')} played the "
                                   f"{state!r} team pack, this read's units {sorted(here[str(r.get('panel'))])}: an "
-                                  f"import never crosses the Kakuna team-pack regime (SOP H22)")
+                                  f"import never crosses a team-pack regime (SOP H22: Kakuna's pack, Foul Play's played team)")
 
 
 def earlier_state(imp: Any) -> Path:

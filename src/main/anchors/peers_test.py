@@ -39,6 +39,21 @@ def cfg():
     return load_config()
 
 
+def _fp_record(changed: bool = False) -> dict:
+    files = [{"file": "422a4745c5.txt", "diffs": ["mon 1 (tyranitar) hiddenpower: legacy Dark:70, now Grass:70"]}] if changed else []
+    return {"schema": "gen3_frontend_validated_pack_v1", "n_files": 72, "n_accepted": 72, "refused": [],
+            "packs_sha256": "0" * 64, "changed": files, "frontend_pack_changed": changed}
+
+
+@pytest.fixture(autouse=True)
+def _foul_play_pack_record(monkeypatch):
+    """Foul Play's team-pack record needs its interpreter, its checkout and Node: the unit tests stub it (the record
+    itself is `frontend_pack_integration_test.py`'s)."""
+    from main.anchors import frontend_pack
+
+    monkeypatch.setattr(frontend_pack, "cell_record", lambda *a, **k: _fp_record())
+
+
 def _metamon_plan(cfg, tmp_path: Path, role: str = "acceptor", regime: str = "greedy",
                   teamset: str = "away") -> PeerPlan:
     return MetamonPeer().plan(
@@ -374,3 +389,43 @@ def test_the_cell_stamps_the_peer_pack_change_and_a_cell_changed_if_any_half_did
     assert runner_mod.cell_spec(plan, {}, 20).stamp()["peer_pack_changed"] is None, "no report, no claim"
     assert runner_mod.any_half([False, True]) is True and runner_mod.any_half([False, None]) is False
     assert runner_mod.any_half([None, None]) is None
+
+
+# ---------------------------------------------------- Foul Play: the front end plays the validator's re-pack (H22)
+def test_the_foulplay_report_carries_the_frontend_pack_change(cfg, tmp_path, monkeypatch) -> None:
+    from main.anchors import frontend_pack
+
+    plan = _foulplay_plan(cfg, tmp_path)
+    plan.log_path.write_text("Iterations 1: 1400000\n")
+    r = FoulPlayPeer.read_report(plan)
+    assert r["frontend_pack_changed"] is False and r["regime_verified_decisions"] is True
+    monkeypatch.setattr(frontend_pack, "cell_record", lambda *a, **k: _fp_record(changed=True))
+    r = FoulPlayPeer.read_report(plan)
+    assert r["frontend_pack_changed"] is True and r["frontend_pack_changed_files"] == ["422a4745c5.txt"]
+    assert r["regime_verified_decisions"] is True, "a changed pack is a regime, not a defect"
+
+
+def test_a_foulplay_pack_record_that_cannot_be_computed_voids_the_regime_verification(cfg, tmp_path, monkeypatch) -> None:
+    """FAIL CLOSED: no record must never read as 'unchanged' (the cell would pool with its banked reads)."""
+    from main.anchors import frontend_pack
+
+    def boom(*a, **k):
+        raise frontend_pack.FrontendPackError("Foul Play's packer could not run")
+
+    monkeypatch.setattr(frontend_pack, "cell_record", boom)
+    plan = _foulplay_plan(cfg, tmp_path)
+    plan.log_path.write_text("Iterations 1: 1400000\n")
+    r = FoulPlayPeer.read_report(plan)
+    assert r["frontend_pack_changed"] is None and r["regime_verified_decisions"] is False
+    assert "could not be checked" in r["frontend_pack_note"]
+
+
+def test_the_cell_stamps_the_frontend_pack_change_and_a_cell_changed_if_any_half_did(cfg) -> None:
+    from main.anchors import runner as runner_mod
+    from main.anchors.cli import build_parser, build_plan
+
+    plan = build_plan(build_parser().parse_args(["--model", "", "--opponent", "foulplay", "--dry-run"]), cfg)
+    stamp = runner_mod.cell_spec(plan, {"frontend_pack_changed": True, "our_frontend_pack_changed": False}, 20).stamp()
+    assert stamp["frontend_pack_changed"] is True and stamp["our_frontend_pack_changed"] is False
+    assert runner_mod.cell_spec(plan, {}, 20).stamp()["frontend_pack_changed"] is None, "no report, no claim"
+    assert "frontend_pack_changed" in runner_mod.PEER_PACK_KEYS and "our_frontend_pack_changed" in runner_mod.PEER_PACK_KEYS
