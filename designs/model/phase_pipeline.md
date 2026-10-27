@@ -161,11 +161,11 @@ ADDITIVELY into `value_pooled`, and the intent cells widen the pointer stash, no
 
 ## Phase by phase
 
-1. **`Embeddings`** — shared tables: species (32), move (16), item (16), ability (16), type (16,
-   shared for Pokémon types, move types, and TurnDelta move/type IDs). Owns the Hidden Power
-   soft-type blend (`hp_soft_type`) and the per-slot TurnDelta embedder (`embed_delta_slot`).
-2. **`ObsUnpack`** (stateless) — peels the flat observation (2667 dims under
-   `gen3_entity_rehome_v1`) into the named tensors of `ExtractorContext` via the declarative
+1. **`Embeddings`** — shared tables: species 400 × 32, move 400 × 16, item 600 × 16, ability 100 × 16, type 20 × 16
+   (shared for Pokémon types and move types). Owns the Hidden Power soft-type blend (`hp_soft_type`). (The per-slot
+   TurnDelta embedder `embed_delta_slot` is deleted with the lag frames; the event seats own their small embeddings.)
+2. **`ObsUnpack`** (stateless) — peels the flat observation (2845 dims at HEAD, 2026-10-27; read
+   `Gen3ObservationEncoder.get_layout()`, never this number) into the named tensors of `ExtractorContext` via the declarative
    schema's validated slice map (`build_schema(layout).slices()` — the tiling proof runs at
    construction): per-Pokémon block + categorical IDs, the global/board feature slices, and
    (hoisted here) the active-slot indices + fainted key-masks used downstream.

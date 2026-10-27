@@ -91,7 +91,8 @@ optimizer is still caught by the step hook, and memory by the leak detector. Ten
   amsgrad Adam (parameters AND every moment after three steps), and on the PRODUCTION SURFACE: the K9
   learner golden's production-surface learner, declared and frozen, runs one real update whose
   fingerprint equals the recorded golden (`test_a_production_surface_update_acquires_nothing_and_leaves_the_golden_unchanged`).
-  Cost: the production optimizer's 254 state entries (2 × 3.07M floats ≈ 25 MB) exist from startup
+  Cost: the production optimizer's 280 state entries (2 × 2,609,183 floats ≈ 21 MB; the AdamW over the policy's 280
+  tensors, counted on CPU 2026-10-27 at `6cd72a09`) exist from startup
   instead of from the first step.
 - **The capacity telemetry's canary** (`--capacity-telemetry`, off in production): its head + Adam
   were built on the first minibatch; `CapacityTerms._capacity_declare` builds them at startup

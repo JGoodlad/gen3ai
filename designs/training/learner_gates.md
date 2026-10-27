@@ -21,7 +21,7 @@ from fp32 is the bf16 parity rule's, `compile_flags.md`):
 
 | input | pinned as |
 |---|---|
-| the "checkpoint" | NOT committed (3.07M params = 12 MB) — rebuilt from the seeds; its bytes are hashed (`init_params_sha256`) so a construction/seeding change is told apart from an update change |
+| the "checkpoint" | NOT committed (the production learner's 2,609,183 parameters ≈ 10.4 MB in fp32, `ARCHITECTURE.md` §2) — rebuilt from the seeds; its bytes are hashed (`init_params_sha256`) so a construction/seeding change is told apart from an update change |
 | the rollout buffer | `learner_golden_buffer.npz` (65 KB): 16 steps x 4 envs = 64 REAL rows of a complete-game rollout on the Rust collector at the production surface — every observation key and label (win targets, belief / item / spread / HP-type labels, intent labels), actions, masks, rewards, episode starts, values, the behaviour log-probs, advantages, returns. Its sha256 is in the golden |
 | the recipe | `learner_golden.RECIPE`: the SB3 knobs the production mirror does not carry yet, from `design_learner_recipe.md` §2's live column (clip 0.15, entropy 0.05, lr 2.8e-5, grad clip 0.5, per-micro-batch advantage normalisation), at a scaled-down shape that keeps the live shape's structure: micro 16 x K 3 over 64 rows = one full accumulation group + a RAGGED short group per epoch, 2 epochs |
 

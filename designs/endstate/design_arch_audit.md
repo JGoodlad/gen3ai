@@ -42,11 +42,15 @@ picks. The *critic* is a small head that outputs P(win).
    3,065,882 parameters, MEASURED here) is computed on every forward pass and is in no loss: one training update
    leaves every one of its weights bit-identical. Deleting it changes nothing the model does. (F1; EXACT
    REFACTOR, HIGH. **DONE 2026-10-07** at the version break's part 2: production then held 2,519,046 parameters;
-   2,519,007 after part 4's slot-tied `out_gain`; 2,518,937 after v145's team-slot tie.)
+   2,519,007 after part 4's slot-tied `out_gain`; 2,518,937 after v145's team-slot tie. The adopted END STATE holds
+   2,609,183, MEASURED, CPU, 2026-10-27 at `6cd72a09`: `ARCHITECTURE.md` §2.)
 3. **The capacity is in the wrong place.** The attention trunk, where the reasoning happens, has 284k parameters
    and does 63% of the arithmetic. A flat policy tower inherited from the library default (`net_arch [512,512]`
    with a `tanh` nonlinearity nobody chose) has 1.13M parameters and produces only a "general mood" vector the
-   action scorer adds in. (F2, F5; BEHAVIOUR CHANGE, HIGH.)
+   action scorer adds in. (F2, F5; BEHAVIOUR CHANGE, HIGH. Both figures are the audit's, on the legacy encoding. In
+   HEAD's production the trunk holds 401,536 — a third round, F5's partial answer — and the tower 1,117,952, still
+   built (`--policy-readout tower`; F2's `trunk` readout is built, not adopted): MEASURED, CPU, 2026-10-27 at
+   `6cd72a09`.)
 4. **Board facts are copied into every Pokémon's token.** Clock, weather, hazards, screens and faint counts are
    fed into each of the 12 Pokémon encoders (and each of their 48 move encoders), plus a board token, plus the
    policy's input, plus the physics: four routes for one fact. Your 2026-10-05 direction (Pokémon tokens static,
@@ -131,7 +135,8 @@ through data (Metamon) or search (Foul Play), not architecture.
 ### 3.2 What is appropriate at OUR size
 
 Budget: one RTX 3080 Ti; ~2,000 environment steps/s (owner's figure); 15M-step runs (order 10^5 games); a
-3.07M-parameter model (`D_MODEL` 128, 2 trunk layers).
+3.07M-parameter model (`D_MODEL` 128, 2 trunk layers) at the audit; the adopted end state is 2.61M with 3 trunk
+rounds (`ARCHITECTURE.md` §2).
 
 - **Sample efficiency dominates.** With ~10^5 games per run, anything the model must learn from scratch is
   expensive. Giving it exact, cheap physics (the damage operator) and good priors (Smogon) is the right trade

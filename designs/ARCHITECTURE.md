@@ -10,7 +10,7 @@ stale twice:
 
 | | |
 |---|---|
-| Production run | **THE END STATE** — adopted 2026-10-12 on the end-state closing test's PASS (ledger 2026-10-12 "THE END-STATE CLOSING TEST: PASS"; [`endstate/design_endstate_closing_test.md`](endstate/design_endstate_closing_test.md) §9: 8 × 8 mirrored cross, Δ̂ +0.596 pp, two-sided 90 % interval [−0.723, +1.915] against the legacy production). "Production" is what `--arch production` resolves: the mirror `designs/production_config.json` (`config_version` **157**, `arch_signature` **`gen3_mon_tied_gain_v1`**) plus its `recipe` block. Its surface: the STATIC per-mon tokens with three board tokens, trunk depth 3, the static-recovery facts (each mon's Spikes cost, our active's and their active's state on our move seats, the switch cell's hazard, the end-of-turn residual), MOVE RESOLUTION (derived from its prerequisites; the seven per-action α blocks it replaced are deleted), the speed PHYSICS, the PRINCIPLED op reductions, the OBS-FACTS block read, NO critic threat injection (deleted), the exact status facts and cure flags, the exact (closed-form) P(KO), the progress clock NOT read, ONE end-of-turn rule, the active mons' effective stats, and the four-move closure in the move belief — on gen-17's substrate (all 17 edge families, the entity seats, the event window, the belief stack, X5's hypothesis tokens) and the win-prob critic. **No Rustboro-era run is the mirror's sync source yet:** the mirror is CONSTRUCTED — the pre-adoption mirror (gen-17's surface with the critic swapped, last synced from `ai_v12_02_winprob_critic`, 2026-09-06, pre-era history, then FOLLOWING THE CODE — the row below) ⊕ the `--arch endstate` overlay's 19 keys (eight of which — the op levers — have since LEFT the mirror with their fields, legacy deletion U1, 2026-10-15: their adopted behaviour is unconditional wherever the op is built) — and VERIFIED against the eight closing-test end-state runs' `model_config.json` (`rb_es_end2_s2001`–`s2008`, trained at `62085750`): equal except the five `ridealong_*` readout keys (and `config_version`: the mirror kept 145 until 2026-10-14, a stamp the static port's migration REFUSES beside `token_encoding` `static`, so it was moved to the runs' 154; since legacy deletion U1 (2026-10-15) it is stamped 156; the runs still record 154 and load, because each recorded the ADOPTED value of every field U1 deleted — `model_version/adopted_levers.py` refuses only a non-adopted value in a network that built the op) ([`production_config.README.md`](production_config.README.md) "The end-state adoption"). The registry's `production` baseline names `rb_es_end2_s2005/final_model.zip` (`designs/baselines.json`). HEAD's end state differs from the TESTED build `62085750` by one math-equal change, the closed-form exact KO (max ≈ 1e-6 relative on the same weights, greedy agreement 136 / 136); every other file is behaviour-identical under the production argv. The pre-adoption (LEGACY) production is reproducible pinned (`--pin-commit 95d014fa --arch production`). Every §4 / §5 measurement below was taken on gen-17 `models/ai_v9_21_gen17_pfspoff_0820/` (v97) or earlier — the LEGACY surface, not this one |
+| Production run | **THE END STATE** — adopted 2026-10-12 on the end-state closing test's PASS (ledger 2026-10-12 "THE END-STATE CLOSING TEST: PASS"; [`endstate/design_endstate_closing_test.md`](endstate/design_endstate_closing_test.md) §9: 8 × 8 mirrored cross, Δ̂ +0.596 pp, two-sided 90 % interval [−0.723, +1.915] against the legacy production). "Production" is what `--arch production` resolves: the mirror `designs/production_config.json` (`config_version` **157**, `arch_signature` **`gen3_mon_tied_gain_v1`**) plus its `recipe` block. Its surface: the STATIC per-mon tokens with three board tokens, trunk depth 3, the static-recovery facts (each mon's Spikes cost, our active's and their active's state on our move seats, the switch cell's hazard, the end-of-turn residual), MOVE RESOLUTION (derived from its prerequisites; the seven per-action α blocks it replaced are deleted), the speed PHYSICS, the PRINCIPLED op reductions, the OBS-FACTS block read, NO critic threat injection (deleted), the exact status facts and cure flags, the exact (closed-form) P(KO), the progress clock NOT read, ONE end-of-turn rule, the active mons' effective stats, and the four-move closure in the move belief — on gen-17's substrate (all 17 edge families, the entity seats, the event window, the belief stack, X5's hypothesis tokens) and the win-prob critic. **No Rustboro-era run is the mirror's sync source yet:** the mirror is CONSTRUCTED — the pre-adoption mirror (gen-17's surface with the critic swapped, last synced from `ai_v12_02_winprob_critic`, 2026-09-06, pre-era history, then FOLLOWING THE CODE — the row below) ⊕ the `--arch endstate` overlay's 19 keys (eight of which — the op levers — have since LEFT the mirror with their fields, legacy deletion U1, 2026-10-15: their adopted behaviour is unconditional wherever the op is built) — and VERIFIED against the eight closing-test end-state runs' `model_config.json` (`rb_es_end2_s2001`–`s2008`, trained at `62085750`): equal except the five `ridealong_*` readout keys (and `config_version`: the mirror kept 145 until 2026-10-14, a stamp the static port's migration REFUSES beside `token_encoding` `static`, so it was moved to the runs' 154; legacy deletion U1 (2026-10-15) stamped it 156 and U3 the same day 157; the runs still record 154 and load, because each recorded the ADOPTED value of every field U1 and U3 deleted — `model_version/adopted_levers.py` refuses only a non-adopted value in a network that built the op) ([`production_config.README.md`](production_config.README.md) "The end-state adoption"). The registry's `production` baseline names `rb_es_end2_s2005/final_model.zip` (`designs/baselines.json`). HEAD's end state differs from the TESTED build `62085750` (a commit on the side branch `pend-b132b099-recorded-version`, not an ancestor of `main`) in: the closed-form exact KO (math-equal: max ≈ 1e-6 relative on the same weights, greedy agreement 136 / 136); legacy deletions U1 / U3 (the adopted behaviour made unconditional; U3 moved the FRESH-INIT stream, §2); the bf16 trunk RECIPE (2026-10-14, its own strength A/B, §6.4); the species-presence τ solved by the split residual in fp32 (`--tau-solve fp32_alt`, §2.1; τ to ~1e-6 where the naive fp32 sum the end-state runs trained on fixed it only to 7e-3 – 2.8e-2 on a saturated row); and the 2026-10-26 GIGO fixes, which change what the network READS — the op reads a consumed item as no item (§4), silent volatile ends clear their cells (§1.5), and the α / β intent label keeps a move made before a switch-in (§1.6) (`research_state/measurements/gigo_audit_obs_2026-10-26/`); and the opponent Hidden-Power type belief's Foresight / Odor Sleuth fix (2026-10-27, §1.2) — `OBS_SEMANTICS_VERSION` raised for each, `model_version/constants.py`. The pre-adoption (LEGACY) production is reproducible pinned (`--pin-commit 95d014fa --arch production`). Every §4 / §5 measurement below was taken on gen-17 `models/ai_v9_21_gen17_pfspoff_0820/` (v97) or earlier — the LEGACY surface, not this one |
 | Code on HEAD | `MODEL_CONFIG_VERSION` / `ARCH_SIGNATURE` — **read them from `agents/model/model_version/constants.py`**, never from prose |
 | `designs/production_config.json` | the production config **carried forward to HEAD's schema** — written by `python -m agents.model.delivery_graph --sync-config <run>/model_config.json`, never hand-edited (bar the `recipe` block), its provenance in the sibling [`production_config.README.md`](production_config.README.md) (JSON has no comment syntax). A **signature-bump window is OPEN** (opened 2026-09-26 by the observation-architecture batch; moved forward by the X5 version break, 2026-10-07, and v145's tied `out_gain`): the last synced run records `gen3_critic_route_wave_v1`, so the mirror follows the CODE until it is re-synced from a run at the new signature — then the window closes and the mirror tracks that run. Such runs now exist (the closing test's end-state runs record `gen3_mon_tied_gain_v1` at config v154), but the adopted mirror was CONSTRUCTED from the overlay rather than synced (row above), so the window stays open until a `--sync-config`; the mirror's `config_version` is 157 (the runs record 154; the mirror took the runs' 154 on 2026-10-14 — at 145 it was no loadable config, `baselines_loadability_test` — HEAD's 156 with legacy deletion U1 on 2026-10-15, when eight op fields left it, and 157 with legacy deletion U3 the same day, when the ten move-resolution / per-action-block / threat-injection fields left it). (Inside such a window the compile gate needs the mirror to match live code and the drift gate needs it to mirror the newest run, so `arch_tables_test` DETECTS the window from the run's recorded signature and lets the mirror follow the code.) It exists so this file, the compile gate, the delivery graph and the viewer all derive from ONE real feature set |
 
@@ -152,6 +152,9 @@ active flag → 122. The active flag stays the **last** dim of the slot on purpo
 Move slot (11, `moves.py`): `[id, power/200, has_secondary, has_recoil, type_id, category, known,
 current_pp, max_pp, accuracy, never_miss]`.
 
+An item that is GONE (eaten, Knocked Off, stolen, Tricked away) keeps its id with `consumed` = 1: the embeddings read
+both, and the damage op reads it as NO item (§4, `gen3_op_held_item_v1`).
+
 The two counters are read off the vendored poke-env's `status_counter`: sleep `min(n, 4)/4` (the
 `|cant|`/`|move|` lines since the sleep began), toxic `min(stage, 15)/15` where `stage` is the SIM's
 `tox` stage (Showdown's `tox.onResidual` ramps it to 15; `TOXIC_STAGE_MAX`) — the residual `[from] psn` chips since the
@@ -163,7 +166,9 @@ An OPPONENT's Hidden-Power block is `HiddenPowerTracker`'s per-species vector (o
 `hp_revealed` 1, probs all zero): all-zero until an HP hit with
 an effectiveness EMISSION is observed (a neutral hit prints none and is never observed); then the
 species' Smogon usage row (flat 1/16 without one), each type zeroed that could not produce an
-observed bucket against the resolved target. A usage zero is not an impossibility
+observed bucket against the resolved target (a target under Foresight / Odor Sleuth loses its Ghost immunity to
+Fighting there, and its Ghost type adds nothing to the type mod: `gen3_hp_foresight_v1`, 2026-10-27; it read every
+Ghost as immune before). A usage zero is not an impossibility
 (`gen3_hp_prior_support_v1`): a species whose own observations refute its row — every type the row
 gives mass eliminated while some type explains them all, e.g. an IV-less set's HP Dark — restarts
 from the flat prior and replays its log; only a log NO type explains raises. `hp_revealed` is 1
@@ -273,6 +278,15 @@ the core's reading rule V4 both reconstruct the silent copy); while the holder i
 own included. The `DamageOperator` honours both (§4). The Rust SIM does not implement either move
 (its census lists them fail-loud), so they reach the core only through a parsed stream (the
 ladder).
+
+**Silent ends clear their cells** (`gen3_volatile_silent_ends_v1`, the 2026-10-26 GIGO audit A-C1 / A-C2): the sim
+ends some volatiles with no protocol line, and the reading used to keep them set for the whole stint. Endure / Snatch /
+Helping Hand end at `|turn|` like Protect; Destiny Bond, Grudge and Rage at the holder's next `|move|` or `|cant|` (a
+re-used Destiny Bond keeps it); Mean Look's `trapped` ends when its trapper leaves the field, and Baton Pass copies
+`trapped`. The engine's lock-in (Outrage / Thrash) and recharge counters end when Showdown's do
+(`gen3_lockin_cancelled_repeat_v1`, `gen3_recharge_expiry_v1`). Detail: `designs/observation/volatile_vocabulary.md`;
+pinned by `src/rust_sim/tests/silent_volatile_end_test.rs`. MEASURED at the fix: 36 of the 991 obs-golden decisions
+moved, all Destiny Bond 1 → 0.
 
 ### 1.6 What happened last turn
 
@@ -413,8 +427,16 @@ SB3's order), the retire hook (`retire_policy_tower`, a no-op under `tower`), th
 stubs (`_NoFlatActionNet`, `_NoValueNet`). The policy's `critic` kwarg defaults to `winprob` and any other
 value is refused before anything is built. The inference tier's T2 `DecisionModule` reads the actor only and calls no
 critic; there is no value tower left for it to compute. Production learner: **2,609,183 parameters** (MEASURED, CPU,
-2026-10-12, the adoption working tree: `learner_golden.build_learner()` on `production_args()` — the extractor
-2,028,828, the actor `mlp_extractor` 525,312, the pointer head 55,043). **Production's CPU identity BEFORE legacy deletion U3**
+2026-10-12 on the adoption working tree and again 2026-10-27 at `6cd72a09`: `learner_golden.build_learner()` on
+`production_args()`, 280 tensors — the extractor 2,028,828, the actor `mlp_extractor` 525,312, the pointer head 55,043).
+**Which figure for which scope:** "our model" — the network that plays and is trained, the figure to set beside another
+agent's size — is the whole policy, **2.61M**; **2.03M** is the feature extractor alone (it holds the trunk, the beliefs,
+the op and the win-prob head, but not the actor tower or the pointer head). The extractor's largest parts (same
+measurement): the policy `projection` 590,336, `team_transformer` 401,536 (the two base rounds 264,960, the third round
+132,480, the token-type table and the two board projections 4,096), `hidden_opp_belief` 199,808, `cls_pool` 199,296,
+`pokemon_encoder` (the static encoder) 131,424, `belief_head` 103,456. **Precision:** the learner's trunk rounds run under
+bf16 autocast (the production recipe); every weight, the op, every head, every decision (logits, softmax, value) and
+every loss is fp32, and the rollout, eval and snapshots run the whole network in fp32 (§6.4). **Production's CPU identity BEFORE legacy deletion U3**
 (`research_state/measurements/static_recovery_2026-10-09/graph_sha.py`, the bare extractor, which then still
 CONSTRUCTED the seven per-action blocks (840 parameters) and the critic's threat projection (1,792) that the policy
 retired, hence 2,632 more than the learner's extractor): one dynamo graph of 31,480 lines, graph `a1e771af47523746`,
@@ -546,7 +568,8 @@ A pre-break checkpoint (blob or fixed_mass) is refused at the migration floor an
 RETIRES that tower — the extractor's `pre_proj_norm` / `projection` and SB3's `mlp_extractor.policy_net`,
 1,117,952 parameters at production widths (DERIVED: LayerNorm 2 × 1152 + `Linear(1152, 512)` + the measured
 `mlp_extractor` 525,312; the production learner holds 2,609,183 under `tower` and 1,547,039 under `trunk` — both
-MEASURED, CPU, 2026-10-12, `learner_golden.build_learner()` on `production_args()` with `policy_readout` set) — and
+MEASURED, CPU, 2026-10-12 and again 2026-10-27 at `6cd72a09`, `learner_golden.build_learner()` on `production_args()`
+with `policy_readout` set) — and
 reads the context off the trunk instead:
 `PolicyStateQuery` (`agents/model/pools.py`, T3) is ONE learned query, 4 heads, attending over every
 refined trunk token (our 6, their 6, the three board tokens — the one global token under the legacy encoding — the
@@ -739,8 +762,11 @@ The concrete steps:
    appended in place (the same modules a fresh depth-N build constructs at those positions), its AdamW state carries
    and the new parameters start with none, and the fork refuses to start unless the grown network's logits and values
    are BIT-IDENTICAL to the parent's on 64 real rows (fresh CPU builds, fp32 eager; measured on the toy 2 → 4: max
-   |Δ| 0.0, +264,960 parameters). The seeded self-play pool is grown the same way. Detail:
-   [`model/versioning.md`](model/versioning.md) "Declared growth at a fork".
+   |Δ| 0.0, +264,960 parameters; a fresh production build at `--trunk-layers 4` holds 2,741,663 = 2,609,183 + 132,480,
+   MEASURED, CPU, 2026-10-27 at `6cd72a09`). The seeded self-play pool is grown the same way. The growable fields are
+   `growth.GROWABLE`'s rows: `trunk_layers`, `trunk_ffn_by_kind` and `trunk_ffn_dim` (both below) are BUILT;
+   `opp_intent_grad_mode` is DECLARED but not built (naming it is a typed refusal). Detail: [`model/versioning.md`](model/versioning.md) "Declared growth at
+   a fork".
    **Per-kind FFN experts** (`--trunk-ffn-by-kind on`, B-KFFN, `trunk_kffn.py`, `gen3_trunk_ffn_by_kind_v1`, config
    v161; OFF in production, the lever of X48): each round's FFN position applies one FFN per token KIND, routed by a
    build-time table of six seat-role segments — Pokémon (the round's own `linear1` / `linear2`: positions 0–11 and
@@ -773,11 +799,13 @@ The concrete steps:
 | `PROJECTION_DIM` | 512 | " |
 | `MOVE_NET_HIDDEN` | `[96, 32]` | " |
 | `MOVE_LATENT_DIM` / `MOVE_LATENT_HIDDEN` | 32 / 64 | " |
-| `ROLE_ENCODER_HIDDEN` | `[256, 128]` | " |
-| `ACTIVE_CTX_HIDDEN` | `[64, 32]` | " |
+| `ROLE_ENCODER_HIDDEN` | `[256, 128]` (the static encoder's S path and the legacy role encoder) | " |
+| `STATIC_DYN_HIDDEN` / `STATIC_MOVE_POOL_DIM` / `STATIC_OPC_OUT_HIDDEN` | 128 / 32 / 32 (the static encoder's D MLP, its per-move PP / legality pool, the op content's per-move set function) | " |
+| `HYPOTHESIS_DELTA_HIDDEN` / `FLAT_INTENT_HIDDEN` | 96 / 64 (X5's species delta, the flat opponent pointer's scorer) | " |
+| `UVR_DIM` / `UVR_K` | 64 / 4 (`value_entity_pool`) | " |
 | `POINTER_HIDDEN` | 64 | " |
 | `TRANSFORMER_N_LAYERS` / `N_HEADS` / `FFN_DIM` | 2 / 4 / 256 (the base depth and width; production's `--trunk-layers 3` appends one identity-init round; `--trunk-ffn-dim N > 256` adds a width branch per round) | " |
-| `NET_ARCH` (the ACTOR-only mlp_extractor; no critic branch) | `[512, 512]` | " |
+| `NET_ARCH` (the ACTOR-only mlp_extractor; no critic branch) | `[512, 512]`, Tanh (`policy.POLICY_ACTIVATION_FN`, SB3's signature default made explicit) | " |
 
 Embedding tables (`Embeddings`, registered exactly once, passed as a forward argument):
 species 400×32, move 400×16, item 600×16, ability 100×16, type 20×16.
@@ -818,8 +846,9 @@ the table changes every model's state_dict).
 
 ## 3. Heads — exactly what each consumes
 
-This section is the canonical answer to "what does head X read". Widths verified by forward pass,
-2026-08-08.
+This section is the canonical answer to "what does head X read". Widths re-read off the built production policy,
+2026-10-27 at `6cd72a09` (CPU): `projection` `Linear(1152, 512)`, the extractor's `vf_features_dim` 128, the op's
+`out_dim` 138, `pointer_head.move_proj` 179 inputs, `switch_proj` 161, `switch_extra_proj` 2, `ctx_proj` 512 → 64.
 
 ### 3.1 / 3.2 The head inputs — GENERATED
 
@@ -1430,6 +1459,14 @@ species' Smogon-prior marginal (`build_species_ability_marginal`: `SPECIES_ABILI
 ability. `ability_known_gate_test.py` fails any forward module that indexes `ability1_ids` outside our side.
 Until 2026-10-07 the op read `id > 0` as revealed — the top-1 guess as CERTAIN (Toxic "never landed" on an
 unrevealed Snorlax whose prior is Immunity 0.86 / Thick Fat 0.14).
+
+**An item's identity in the physics is the item HELD NOW (`gen3_op_held_item_v1`).** After Knock Off / Thief / Covet /
+Trick or an eaten berry the per-mon slot keeps the GONE item's id with `consumed` = 1 (§1.2). Every op comparison
+against an item num and every item-table lookup reads `extractor_ctx.held_item_ids` (the id, or 0 where consumed); the
+"nothing known, take the Smogon prior" branch reads `item_unrevealed` (id 0 only — a consumed item is known to be
+gone, not unrevealed); the embeddings keep the raw id beside its `consumed` bit. Until 2026-10-26 a knocked-off Choice
+Band read as held (P(CB) 1.0 on the opponent, our ×1.5 on our own outgoing damage; GIGO audit C-1,
+`research_state/measurements/gigo_audit_obs_2026-10-26/`). Pinned by `held_item_gate_test.py`.
 
 **Status landing — the rules (`gen3_op_status_rules_v1`, `_outgoing_status_land` / `_incoming_status_mask`).**
 OUTGOING (our status move → their slot): accuracy × type immunity × their ability (known or prior) ×
@@ -2069,7 +2106,7 @@ not re-derive them.
 
 | Question | File |
 |---|---|
-| **This document as a clickable digraph** — the **120 nodes / 1103 edges** above (counted 2026-08-23 from `delivery_graph_snapshot.json`, which the viewer is built from — read it there rather than trusting this cell), hue-coded by what each channel physically carries, with a per-checkpoint measured-dependence overlay and a path filter (pick `value_pooled` to see exactly what the critic reads) | **https://model.g5d.io** (served live from the workstation checkout, so it is never a stale copy), or `designs/architecture_viewer.html` via `file://`. **Generated — never hand-edit it**: rebuild with `python -m agents.model.build_arch_viewer`, and `--check` fails if the committed artifact has drifted from the graph. |
+| **This document as a clickable digraph** — the **125 nodes / 1205 edges** above (counted 2026-10-27 from `delivery_graph_snapshot.json`, which `--check` then held equal to the live code; the viewer is built from it — read it there rather than trusting this cell), hue-coded by what each channel physically carries, with a per-checkpoint measured-dependence overlay and a path filter (pick `value_pooled` to see exactly what the critic reads) | **https://model.g5d.io** (served live from the workstation checkout, so it is never a stale copy), or `designs/architecture_viewer.html` via `file://`. **Generated — never hand-edit it**: rebuild with `python -m agents.model.build_arch_viewer`, and `--check` fails if the committed artifact has drifted from the graph. |
 | Obs-build performance gate (mandatory benchmark) + per-slot detail | root `CLAUDE.md` § Running Tests (the rule) · `designs/rust_sim/encoder.md` §8 (the benchmark) · `designs/observation/per_block_reference.md` (the detail) |
 | Phase contract, `ExtractorContext`, versioning playbook | `designs/model/phase_pipeline.md` · `designs/model/versioning.md` (hazards: `src/agents/model/CLAUDE.md`) |
 | How it got here — every version entry, verbatim | `designs/CHANGELOG.md` |
