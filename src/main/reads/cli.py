@@ -5,6 +5,7 @@
     python -m main.reads plan    --spec read_spec.json --state DIR     # write the state; copy settled models
     python -m main.reads run     --state DIR --lane anchor|s --hours H # work one lane (detached; resumable)
                                  [--concurrency K]                     #   anchor: K units at once (default 1)
+                                 [--max-units N]                       #   anchor: start N units, finish, stop (stage 0)
     python -m main.reads resume  --state DIR --lane anchor|s --hours H # = run, after printing what is left; a HELD lane
                                  [--by WHO] [--why TEXT]               #   is released first (--by required then)
     python -m main.reads hold    --state DIR --lane anchor|s --by WHO --why TEXT   # no new unit; the units in flight
@@ -18,6 +19,7 @@
     python -m main.reads record  --state DIR [--out PATH]              # -> record.json (schema-checked; INCOMPLETE_BY_STOP
                                                                        #    only for a spec that registered a reduced read)
     python -m main.reads check-record PATH
+    python -m main.reads search-cost --state DIR | --cells DIR...      # S-U stage 0: the searched games' cost, G-PREFIX
 
 Exit 0 on success, 2 on a refusal (named on stderr), 3 when R moved under an S lane.
 """
@@ -54,6 +56,9 @@ def _parser() -> argparse.ArgumentParser:
         r.add_argument("--concurrency", type=int, default=1,
                        help="ANCHOR lane only: units at once, each its own short-lane job and port (default 1; "
                             "capped at the box's heavy-slot count)")
+        r.add_argument("--max-units", type=int, default=None,
+                       help="ANCHOR lane only: start at most N units in this supervisor's life, let them finish, stop "
+                            "(S-U's stage 0 = the queue's first units; not a registered stop)")
         if n == "resume":
             r.add_argument("--by", default=None, help="who releases a HELD lane (required only when it is held)")
             r.add_argument("--why", default=None, help="the reason, recorded with the release (default: resume)")
@@ -78,6 +83,10 @@ def _parser() -> argparse.ArgumentParser:
     rec.add_argument("--out", default=None, help="also write the record here (e.g. <stage>/reads/<arm>_look<k>.json)")
     ck = sub.add_parser("check-record")
     ck.add_argument("path")
+    sc = sub.add_parser("search-cost", help="S-U stage 0: the searched games' per-decision cost and G-PREFIX")
+    where = sc.add_mutually_exclusive_group(required=True)
+    where.add_argument("--state", help="a read's state: every searched unit, + G-PREFIX per searched group")
+    where.add_argument("--cells", nargs="+", help="main.anchors --out dirs holding search_decisions.jsonl")
     u = sub.add_parser("s-unit", help="(internal) one S unit inside its heavy slot")
     u.add_argument("--state", required=True)
     u.add_argument("--group", required=True)
@@ -113,7 +122,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                     st["released_hold"] = rel
                 _dump(st)
             return api.run(Path(a.state), a.lane, stop, workers=a.workers, threads=a.threads, unit_s=a.unit_s,
-                           concurrency=a.concurrency)
+                           concurrency=a.concurrency, max_units=a.max_units)
         if a.cmd == "hold":
             doc = api.hold(Path(a.state), a.lane, by=a.by, why=a.why)
             for w in doc["warnings"]:
@@ -144,6 +153,11 @@ def main(argv: Optional[List[str]] = None) -> int:
         if a.cmd == "check-record":
             api.load_record(Path(a.path))
             print("OK")
+            return 0
+        if a.cmd == "search-cost":
+            from main.reads import search_cost as SC
+
+            _dump(SC.state_report(Path(a.state)) if a.state else SC.report([Path(c) for c in a.cells]))
             return 0
         from main.reads import runner
 

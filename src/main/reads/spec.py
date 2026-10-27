@@ -5,8 +5,11 @@ A spec is ONE JSON file (schema :data:`SCHEMA`), committed with the read's PRERE
 * ``models`` -- ``{label: {arm, seed, ref, load?}}``; ``ref`` is a :class:`ModelRef` (``pinned``: a frozen file and its
   sha256; ``final``: a run's ``final_model.zip`` under the SETTLED rule of :mod:`main.reads.models`); ``load`` is
   the model-LOAD options its units pass (:data:`LOAD_OPTIONS`; two labels may play one file under different ones);
-* ``anchor`` -- ``{group: {opponent, teamsets, unit_seeds, models}}``: the external-anchor cells, played as
-  :mod:`main.x35.kakuna` units on the short lane;
+* ``anchor`` -- ``{group: {opponent, teamsets, unit_seeds, models, per_game?}}``: the external-anchor cells, played as
+  :mod:`main.x35.kakuna` units on the short lane; ``per_game: true`` plans each seed's 20-game series as 20 ONE-GAME
+  units (S-U: a searched game is 25-75 min, so no 20-game searched unit fits a lane), and a group holding a SEARCHED
+  model (``load.search``) must be ``per_game`` and name its RAW TWIN (the same ``ref``, the same other load options),
+  whose unit of the same deal is G-PREFIX's other half (:mod:`main.reads.prefix`);
 * ``s`` -- ``{group: {refpop, refpop_content_sha256, panel, pairs, batch_pairs, family, models, regime_id}}``: S
   against a frozen reference population R, played on the heavy slots;
 * ``decision`` -- ``{rule, params, allow_partial_at_stop?}``: a rule of :data:`main.reads.rules.RULES` and its registered
@@ -42,17 +45,21 @@ REF_KINDS = ("pinned", "final")
 #: with the registry's weight pins (an agent a cell's config lacks gets a derived config, ``kakuna.opponent_config``).
 ANCHOR_OPPONENTS = KAKUNA_OPPONENTS
 #: A model's LOAD options (``models.<label>.load``), each an inference-time option of OUR checkpoint that the anchor
-#: units pass on: ``belief_prior_mix`` = λ in (0, 1] (``main.anchors --our-belief-prior-mix``; omit it for λ = 0).
-LOAD_OPTIONS = ("belief_prior_mix",)
+#: units pass on: ``belief_prior_mix`` = λ in (0, 1] (``main.anchors --our-belief-prior-mix``; omit it for λ = 0);
+#: ``search`` = a registered search ``<preset>@<turn>`` (``main.anchors --our-search``, :mod:`main.anchors.search_presets`;
+#: S-U's ``r0s4@10``), allowed only in a ``per_game`` anchor group.
+LOAD_OPTIONS = ("belief_prior_mix", "search")
 
 
 def load_stamp(load: Mapping[str, Any]) -> str:
     """The suffix a model's load options add to the ``our_regime`` its units stamp (``""`` for none): exactly what
-    ``main.anchors`` writes (``greedy+belief_prior_mix=0.25``; ``runner.py``'s ``our_regime``). It is what lets one anchor
-    group hold models with DIFFERENT load options and still carry a correct regime id per (model, load)
-    (``main.reads.assemble.anchor_group``)."""
+    ``main.anchors`` writes (``greedy+belief_prior_mix=0.25``, ``greedy+search=r0s4@10``; ``runner.py``'s ``our_regime``).
+    It is what lets one anchor group hold models with DIFFERENT load options and still carry a correct regime id per
+    (model, load) (``main.reads.assemble.anchor_group``)."""
+    from main.anchors.search_presets import stamp as search_stamp
+
     lam = load.get("belief_prior_mix")
-    return "" if lam is None else f"+belief_prior_mix={float(lam):g}"
+    return ("" if lam is None else f"+belief_prior_mix={float(lam):g}") + search_stamp(load.get("search"))
 
 
 class SpecError(ValueError):
@@ -101,6 +108,8 @@ class AnchorGroup:
     unit_seeds: Tuple[int, ...]
     models: Tuple[str, ...]
     imports: Optional[Import] = None
+    #: one-game units (``main.x35.kakuna.plan_units(per_game=True)``); a searched model's group must be one
+    per_game: bool = False
 
 
 @dataclass(frozen=True)
@@ -211,6 +220,31 @@ def _load_opts(d: Any, where: str) -> Dict[str, Any]:
         if lam is None or lam <= 0.0:
             raise SpecError(f"{where}.belief_prior_mix: {v!r} must be in (0, 1] (omit it for the unchanged model)")
         out["belief_prior_mix"] = lam
+    if "search" in d:
+        from main.anchors.search_presets import SearchSpecError, canonical
+
+        try:
+            out["search"] = canonical(d["search"])
+        except SearchSpecError as exc:
+            raise SpecError(f"{where}.search: {exc}") from None
+    return out
+
+
+def search_twins(models: Mapping[str, Model], labels: Tuple[str, ...], where: str) -> Dict[str, str]:
+    """``{searched label: its RAW TWIN}`` in one anchor group: the twin is THE label of the group with the same ``ref``
+    and the same load options but ``search`` (the raw arm on the same bytes, whose game of each deal G-PREFIX compares).
+    None or two such labels is a :class:`SpecError`."""
+    out: Dict[str, str] = {}
+    for lab in labels:
+        m = models[lab]
+        if "search" not in m.load:
+            continue
+        rest = {k: v for k, v in m.load.items() if k != "search"}
+        twins = [o for o in labels if o != lab and models[o].ref == m.ref and models[o].load == rest]
+        if len(twins) != 1:
+            raise SpecError(f"{where}: searched model {lab!r} needs exactly ONE raw twin in the group (the same ref, its "
+                            f"load without 'search'), found {twins}")
+        out[lab] = twins[0]
     return out
 
 
@@ -276,7 +310,7 @@ def parse(doc: Mapping[str, Any], *, sha256: str = "", rule_params: bool = True)
         w = f"anchor.{_label(g, 'anchor')}"
         if not isinstance(d, dict):
             raise SpecError(f"{w}: an object")
-        _only(d, ("opponent", "teamsets", "unit_seeds", "models", "import"), w)
+        _only(d, ("opponent", "teamsets", "unit_seeds", "models", "import", "per_game"), w)
         opp = _need(d, "opponent", w, str)
         if opp not in ANCHOR_OPPONENTS:
             raise SpecError(f"{w}.opponent: {opp!r} is none of {ANCHOR_OPPONENTS} (the kakuna runner's cells)")
@@ -287,9 +321,19 @@ def parse(doc: Mapping[str, Any], *, sha256: str = "", rule_params: bool = True)
         except KakunaError as exc:
             raise SpecError(f"{w}.teamsets: {exc}") from None
         gm = _group_models(d, w, models)
+        per_game = d.get("per_game", False)
+        if not isinstance(per_game, bool):
+            raise SpecError(f"{w}.per_game: {per_game!r} is not true / false")
+        searched = [m for m in gm if "search" in models[m].load]
+        if searched and not per_game:
+            raise SpecError(f"{w}: searched model(s) {searched} need per_game: true (a 20-game searched unit fits no "
+                            "lane; S-U plays one game a unit)")
+        if searched and d.get("import") is not None:
+            raise SpecError(f"{w}: a group with a searched model imports nothing (G-PREFIX pairs games of THIS state)")
+        search_twins(models, gm, w)
         anchor[g] = AnchorGroup(name=g, opponent=opp, teamsets=ts,
                                 unit_seeds=parse_unit_seeds(_need(d, "unit_seeds", w, (str, list)), f"{w}.unit_seeds"),
-                                models=gm, imports=_import(d.get("import"), f"{w}.import", gm))
+                                models=gm, imports=_import(d.get("import"), f"{w}.import", gm), per_game=per_game)
     s: Dict[str, SGroup] = {}
     families: Dict[str, str] = {}
     for g, d in (doc.get("s") or {}).items():

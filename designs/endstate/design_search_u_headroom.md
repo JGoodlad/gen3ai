@@ -1,8 +1,8 @@
 # S-U — search headroom on unfamiliar teams: does one-ply search on P\* gain MORE on U than on home72?
 
-**Status: DRAFT (2026-10-27), explicit-only, for adversarial review. Nothing is built, registered or played.** A
-proposed registered read. It needs one build first (the live search player, §6), and its PREREG is written only after
-that build lands (the registration flow, `../tools/reads.md` §1). It is the read that H-MID's FINDING 1 names
+**Status: DRAFT (2026-10-27), for adversarial review; nothing registered. The live searched player, the per-game
+lane, G-PREFIX and the stage-0 harness are BUILT (B1–B3, §6); the rule (B4) is not.** A proposed registered read. Its
+PREREG is written now that the build has landed (the registration flow, `../tools/reads.md` §1), and the rule `search_headroom` lands with it. It is the read that H-MID's FINDING 1 names
 ([`h_mid_value_test_2026-10-26/README.md`](../research_state/measurements/h_mid_value_test_2026-10-26/README.md),
 `f200258f`). Search stays PAUSED ([`search_ledger.md`](search_ledger.md)) until a read like this one says otherwise. This
 unit read committed artefacts only; it ran one arithmetic script (the power table, §4.3) and no game.
@@ -38,8 +38,8 @@ unit read committed artefacts only; it ran one arithmetic script (the power tabl
    S-U is a GAME-level read against a real non-self opponent. It is E4 of
    [`design_search_next.md`](design_search_next.md), re-cut around H-MID's interaction and carrying its review's
    fixes; if S-U registers, E4 is not registered separately.
-5. **The cost** (ESTIMATE). About 30–37 searched decisions a game at 29–60 CPU-s each gives **≈ 15–37 CPU-min per
-   searched game, central ≈ 25**. A raw game costs 11.8 s. The recommended size is 1,200 deals per set (§4.4): ≈ 2,400
+5. **The cost** (ESTIMATE; the build's smoke measured ≈ 4–8× less on 12 decisions, S-1, and stage 0 decides). About
+   30–37 searched decisions a game at 29–60 CPU-s each gives **≈ 15–37 CPU-min per searched game, central ≈ 25**. A raw game costs 11.8 s. The recommended size is 1,200 deals per set (§4.4): ≈ 2,400
    searched games, **≈ 1,000 CPU-h (600–1,500)**. Phase 1, which reads G_U finally, is ≈ 1,600 of them
    (≈ 667 CPU-h).
 6. **Its power** (d = 0.4; §4.3).
@@ -305,14 +305,17 @@ both arms, because the engine rule does not let a cross-host import stand in for
 
 ## 6. Builds (PROPOSED, each default OFF)
 
-| # | build | why | size |
-|---|---|---|---|
-| **B1** | **The live one-ply search player** in the anchors core slot (`src/main/anchors/core_side.py`). At each eligible decision it calls `main.value_search.search` on the in-process TRUE log (the honest builder needs it; D-8), with seeds keyed by (deal, turn, slot), and it writes a per-decision record: S's pick, π's argmax, Q̂ per action, the world-quality stats, CPU-s | No live search player exists. R0 §4 F-R0-8 and S0b's were never built | ≈ 1–1.5 agent-days (`design_search_next.md` E4; R0 says ≈ 1) |
-| B2 | **piKL as an acting rule** in `main.value_search.rules`. Today it exists only in L1's measurement scripts (`../research_state/measurements/search_l1_l5_2026-10-20/`), which re-score banked rows. The rule ports L1's frozen formula, and a golden test re-scores L1's banked rows bit for bit | `SearchConfig.rule` knows only `gumbel` and `argmax` | ≈ 0.25 day |
-| B3 | **A searched label in `main.reads`**: a `search` model-load option beside `belief_prior_mix` (`spec.LOAD_OPTIONS`), stamped into `our_regime`; units that may be split per deal into heavy-slot jobs of ≈ 1 game; a G-REPRO test that a searched label with the switch OFF reproduces raw P\* game for game | A 20-game searched unit is 5–25 wall-h | ≈ 0.5 day |
-| B4 | **The rule `search_headroom`** (§3), with G-PREFIX as its VOID gate, and a test | the registered rule as code | ≈ 0.25 day |
+| # | build | status (2026-10-27) |
+|---|---|---|
+| **B1** | **The live one-ply search player** in the anchors core slot | **BUILT**: `main.anchors --our-search r0s4@10` (`src/main/anchors/search_side.py`, presets in `search_presets.py`). Each eligible decision runs `main.value_search.search_decision` on the battle's TRUE input log, read in process from the front end (`ws_frontend._Battle.choice_log`) and cut honestly: every command of the earlier request updates, ordered (update, p1 before p2), never the opponent's choice of OUR update (so its root decision is open in every world and π answers it), and `root_choice_in_log=False`. Two guards before any world: the log's replay opens our decision with the live tokens, turn and decision index, and its replayed observation row is the live core frame's, byte for byte. The worlds are `WorldSampler(reveal="off", max_tries=60)`, `dice="seed"` (the maturity battery's F builder). Each search is keyed by the DEAL (a digest of the battle's `START`: both teams, names, seed) and the decision (turn, our decision index), so a searched game replays exactly. It runs in a worker thread (§8 A9). A `WorldError` (no consistent world) is an EXCLUSION, played as π's choice and recorded; any other exception fails the game. One record per decision in `<out>/search_decisions.jsonl`: searched or why not, π's argmax, the pick, Q̂ and log π per legal action, the root V, the playouts, CPU-s (the worker thread plus the replay children) and wall-s, the worlds' tries, leak block and species hit rate against the truth (the world-quality covariate, at species level). Tests: `search_side_test.py`, `search_side_integration_test.py` (a live in-process battle: every decision's root replays byte for byte; the search on that live log is deterministic and blind to the order of an update's two choices) |
+| B2 | **piKL as an acting rule** | **BUILT**: `SearchConfig(rule="pikl", pikl_lambda=0.015)` (`main.value_search.rules.pikl_scores`, L1's arithmetic). `rules_pikl_test.py` re-scores L1's banked rows with it: E2's and X26's held-out TRUNC-4-K8 IMP and deviation share and the Tier-1 fit point reproduce `result_l1.json` / `fit_l1.json` to their rounding |
+| B3 | **A searched label in `main.reads`** | **BUILT**: `models.<label>.load.search` (stamped `our_regime = greedy+search=r0s4@10`) in an `anchor` group with `per_game: true`: each seed's 20-game series is 20 ONE-GAME units (`main.anchors --games 20 --deal-game G`: game G's role, both sides' team draws, its seed), queued DEAL by deal (raw before searched), so a stopped read resumes at game granularity. A searched unit is a long heavy-slot job with its watchdog at 3 h. **G-PREFIX** (`main.reads.prefix`): each pair's protocol through `\|turn\|10` must be byte-identical; a mismatch HOLDS the lane and keeps the group inconclusive. `run --max-units N` and `search-cost` (`../tools/reads.md` §3). The design's G-REPRO (a searched label with the switch OFF reproduces raw P\* game for game) is G-PREFIX's own condition: before turn 10 the searched arm IS the raw arm |
+| B4 | **The rule `search_headroom`** (§3), with G-PREFIX as its VOID gate, and a test | **NOT BUILT**: it lands with the PREREG |
 
-The PREREG pins the commit that lands B1–B4 (`../tools/reads.md` §1's flow). Stage 0 plays at that pin.
+The PREREG pins the commit that lands B1–B4 (`../tools/reads.md` §1's flow). Stage 0 plays at that pin: `python -m
+main.reads run --state DIR --lane anchor --hours H --max-units 40` (with the four panels in ONE `per_game` group, the
+queue's first 40 units are the first 5 deals of unit seed 0 on each panel, raw and searched), then `python -m main.reads
+search-cost --state DIR`.
 
 ---
 
@@ -388,9 +391,13 @@ survive the fresh-dice replay before anything is built on it.
 - **Answer.** The evidence is X51's argmax rate 1.0000 and the game-for-game guards (H-MID 1,600 / 1,600; prior-mix
   80 / 80). Stage 0 tests it on 20 pairs before any outcome.
 
-**A9. The peer's patience.** Kakuna waits 30–90 s per searched decision. Whether the in-process `ws_frontend` or the
-Metamon peer has an inactivity timer is UNVERIFIED (FINDING S-3). Stage 0 checks it. A timer firing is a defect of the
-harness, never an outcome (root: "a timeout is never a semantic outcome").
+**A9. The peer's patience.** Kakuna waits while we search. Read and tested at the build (S-3, CLOSED): our front end
+has no battle timer and the Metamon peer waits on its observation queue with no timeout; its ONE clock is poke-env's
+websocket keepalive (a ping every 20 s, the connection closed when a pong is 20 s late). The search therefore runs off
+the event loop: a 70-s off-loop decision kept Kakuna connected (`src/main/anchors/peer_patience_integration_test.py`),
+and the negative control, 70 s ON the loop, dropped the peer and the front end booked a forfeit WIN for us. Our own
+watchdog is sized for a searched game (`main.x35.kakuna.UNIT_SEARCH_S`). A timer firing is a defect of the harness,
+never an outcome (root: "a timeout is never a semantic outcome").
 
 **A10. Pooled U carries P72.** P72 is weak and procedural. X51 FINDING 2: it sits below 0.50 and did not move at the
 plateau. A G_U carried by P72 alone would be a weak-team effect. The per-panel G is REPORTED, and F's I is a
@@ -406,17 +413,37 @@ secondary.
 
 ## 9. FINDINGS (standing rule 7)
 
-- **S-1.** Every cost here is an ESTIMATE from other reads' measured per-decision costs on contended pool-team states.
-  No search has run on a Kakuna game. Stage 0 measures it before the read sizes.
-- **S-2.** The anchor lane cannot run a searched 20-game unit as built: the short lane is 600 s and the long fallback
-  2,700 s. B3 is required.
-- **S-3.** It is UNVERIFIED whether the Metamon peer or the in-process server times out a 30–90-s decision.
+- **S-1.** Every cost in §4–§5 is an ESTIMATE from other reads' measured per-decision costs on contended pool-team
+  states. **The build's smoke (2026-10-27, `~/gen3ai_archive/su_build_smoke_2026-10-27/`) measured far less**, on only 12
+  searched decisions of 2 deals (home72 seed 0 game 0 and forum72 seed 0 game 13, turns 10–19, our forfeit lowered to
+  turn 12 / 20): **6.4 CPU-s a searched decision, median** (5.1–8.2; the worker thread plus its replay children), 6.7 s
+  of wall, every world at its first try; the whole process spent ≈ 10.3 CPU-s more per searched decision than the
+  identical raw game. At 30–37 searched decisions that is ≈ 3–6 CPU-min a searched game, 4–8× below the central 25,
+  and the whole read would be ≈ 150–250 CPU-h, not ≈ 1,000 (MY JUDGEMENT; UNVERIFIED: later turns, P72 and H were not
+  played). Stage 0 measures it on 20 searched games before the read sizes; the re-size rule (§4.4) is unchanged.
+- **S-2.** CLOSED by B3: one-game units (`per_game`), a searched unit a long heavy-slot job with a 3-h watchdog.
+  Residual: a searched unit never takes the short lane, so it queues behind the slots' 40–45-min chunks; if stage 0
+  confirms ≈ 5 min of wall a searched game, the short lane with its exit-88 long fallback would fit (a one-line change
+  in `main.x35.kakuna`, not made). A game that does run past 45 min holds its slot past the chunk policy: it cannot be
+  split.
+- **S-3.** CLOSED (A9): the keepalive is the one clock, and the search runs off the event loop.
 - **S-4.** The leak-cancellation argument for I is first-order and UNVERIFIED (A4).
 - **S-5.** The X51 twins' discordance (0.36–0.41) is between two DIFFERENT policies from turn 1. S-U's d is
   extrapolated from it.
-- **S-6.** The ≥ 2-legal share of decisions from turn 10 is unmeasured (the 30–37 range).
-- **S-7.** The rented box's memory per search game, its parallelism and its price are UNVERIFIED.
-- **S-8.** This doc ran no game and no search. Its only computation is the power arithmetic of §4.3.
+- **S-6.** The ≥ 2-legal share of decisions from turn 10: 12 / 12 in the smoke (too few to size on; stage 0 reports it).
+- **S-7.** The rented box's memory per search game, its parallelism and its price are UNVERIFIED. The smoke's searched
+  unit peaked at 2.4 GB.
+- **S-8.** This doc ran no game and no search before the build; the build ran the smoke above, nothing else.
+- **S-9.** One deal is one game of a seed's 20-game series played alone (`main.anchors --deal-game`). The smoke's lone
+  forum72 game 13 got exactly the seed, both packed teams and the names that game 13 of a banked whole series got (D1's
+  `c0_s3505__forum72__00`), so the deal matches X51's. That its PLAY matches game for game is UNVERIFIED: a peer that
+  carries state across battles would play a lone game otherwise (the REPORTED cross-engine guard against X51 reads it).
+- **S-10.** The searched log is the battle's TRUE input log cut honestly (§6 B1). Its within-update order is canonical
+  (p1 before p2) and a peer's switch is re-spelled to the core's token; the root guard (the replayed row equal to the
+  live one) and the integration test's order-swap check hold it, and the smoke replayed all 12 roots byte for byte.
+- **S-11.** The builds changed `main.reads`' play path (`ws_frontend`, `main.anchors`, `main.x35.kakuna`): a running read
+  can no longer `repin` to a commit after them. N1-P, H-CTX and X59-S play their own pinned commits and need no repin.
+- **S-12.** The rule `search_headroom` (B4) is not built: no read can be recorded yet.
 
 ## 10. Alternatives considered
 
@@ -436,3 +463,4 @@ secondary.
 | date | decision | chosen | rejected / alternatives | evidence |
 |---|---|---|---|---|
 | 2026-10-27 | **This doc CREATED (DRAFT, explicit-only)** (search-research design worker, orchestrator brief; docs only, one arithmetic script) | S-U: P\* vs P\* + L1's piKL search (8 honest worlds, TRUNC-4-K8, λ 0.015) from turn 10, against Kakuna on home72 and pooled U, ONE engine, deal-interleaved and paired with a byte-identical nine-turn prefix. The co-primaries are I = G_U − G_home72 (U-HEADROOM / U-LESS / NO-U-PREMIUM) and G_U (DOES-NOT-CLOSE-B creditable; positives leak-inclusive). 1,200 deals a set: a cost-only stage 0; phase 1 (U complete, home72 400) reads G_U finally and I futility-only; phase 2 tops home72 up only if I is UNDECIDED. ≈ 1,000 CPU-h central: a rented-box read, not a local one. It supersedes E4's registration if registered | a decision-level self-referee screen (too coarse, wrong referee); an oracle ceiling arm (saturates, doubles); F alone; search every turn; E4 as written; buying a third-of-gap interaction (≈ 4× the CPU) | H-MID README (`f200258f`) FINDING 1, reading 2–3; the forensics (`c758fcb8`); X51 README (twins, costs); maturity README "Costs"; R0 §4; `search_ledger.md` §6.1, §6.2; `design_search_next.md` E4 and its review (`9738296f`) F11, F12; `../tools/reads.md` §3, §4 (`20875e96`) |
+| 2026-10-27 | **B1–B3 BUILT and smoke-tested** (search engineer, orchestrator brief; no read registered or played) | the live searched player (`main.anchors --our-search r0s4@10`), piKL in `main.value_search.rules`, per-game units with G-PREFIX and the stage-0 harness (`run --max-units`, `search-cost`) in `main.reads`; §6's table, A9, §9 (S-1 measured on the smoke, S-2 and S-3 closed, S-9–S-12 new) | searching ON the event loop (the peer's keepalive drops it, and the forfeit reads as our win); a mid-game checkpoint to split a long searched game into chunks (one game per unit fits once the smoke's cost holds); re-sizing §4 on the smoke's 12 decisions (stage 0 does it, by §4.4's rule) | `src/main/anchors/search_side.py`, `search_presets.py`, `peer_patience_integration_test.py`; `src/main/reads/prefix.py`, `search_cost.py`; `~/gen3ai_archive/su_build_smoke_2026-10-27/` |

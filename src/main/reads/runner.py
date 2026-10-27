@@ -162,9 +162,10 @@ def _settle(spec: ReadSpec, state: Path, *, now: Optional[float], step_of: Calla
                 continue
             m = spec.models[lab]
             units = KA.plan_units([{"label": lab, "arm": m.arm, "seed": m.seed, "path": have[lab]["copy"],
-                                    "belief_prior_mix": m.load.get("belief_prior_mix")}],
+                                    "belief_prior_mix": m.load.get("belief_prior_mix"),
+                                    "search": m.load.get("search")}],
                                   teamsets=a.teamsets, unit_seeds=a.unit_seeds, opponent=a.opponent,
-                                  config_dir=st / "configs")
+                                  config_dir=st / "configs", per_game=a.per_game)
             if any(u.model_sha256 != have[lab]["sha256"] for u in units):
                 raise RunError(f"{lab}: the copy no longer hashes to its recorded sha256")
             st.mkdir(parents=True, exist_ok=True)
@@ -372,6 +373,9 @@ def _lock(state: Path, lane: str) -> Any:
 
 
 def _anchor_todo(spec: ReadSpec, state: Path, fails: Dict[str, int]) -> List[Tuple[Path, Any]]:
+    """The anchor lane's queue: unit seeds outermost, then the groups in spec order. Within a seed a group plays its
+    models in spec order, each model's units in plan order; a ``per_game`` group (S-U) plays DEAL by deal instead: game
+    ``g`` on every team set by every model (so a searched game follows its raw twin's) before game ``g + 1``."""
     from main.x35 import kakuna as KA
 
     out = []
@@ -379,15 +383,40 @@ def _anchor_todo(spec: ReadSpec, state: Path, fails: Dict[str, int]) -> List[Tup
         for g, a in spec.anchor.items():
             if s >= len(a.unit_seeds):
                 continue
-            for lab in a.models:
+            todo = []
+            for li, lab in enumerate(a.models):
                 st = LY.anchor_state(state, g, lab)
                 if not (st / "plan.json").exists():
                     continue
-                for u in KA.load_plan(st):
+                for ui, u in enumerate(KA.load_plan(st)):
                     if (u.unit_seed == a.unit_seeds[s] and not KA.is_done(st, u)
                             and fails.get(u.name, 0) < KA.MAX_ATTEMPTS):
-                        out.append((st, u))
+                        order = ((u.game, a.teamsets.index(u.teamset), li) if a.per_game and u.game is not None
+                                 else (li, ui))
+                        todo.append((order, st, u))
+            out += [(st, u) for _o, st, u in sorted(todo, key=lambda t: t[0])]
     return out
+
+
+def _check_prefix(spec: ReadSpec, state: Path, st: Path, u: Any, jl: Path) -> None:
+    """G-PREFIX after a per-game unit of a searched group ends (:mod:`main.reads.prefix`): once both units of its deal
+    are counted, their protocol through the search's first turn must be byte-identical; a mismatch HOLDS the lane (no
+    new unit starts) for a root cause, and the group stays inconclusive (``assemble``) until it is resolved."""
+    from main.reads import prefix as PX
+
+    if getattr(u, "game", None) is None:
+        return
+    pair = PX.pair_of_unit(spec, state, st, u.name)
+    if pair is None:
+        return
+    res = PX.check_pair(pair)
+    if res is None:
+        return
+    _jl(jl, {"event": "g_prefix", "deal": res["deal"], "ok": res["ok"], "why": res["why"],
+             "searched": res["searched"], "raw": res["raw"]})
+    if not res["ok"]:
+        _log(f"anchor: G-PREFIX MISMATCH on deal {res['deal']} ({res['why']}): holding the lane")
+        LC.hold(state, "anchor", by="G-PREFIX", why=f"deal {res['deal']}: {res['why']}"[:600])
 
 
 def anchor_concurrency(requested: int, lane: str) -> int:
@@ -409,13 +438,18 @@ def anchor_concurrency(requested: int, lane: str) -> int:
 def run(state: Path, lane: str, stop_epoch: float, *, workers: int = S_WORKERS, threads: int = S_THREADS,
         unit_s: int = S_UNIT_S, run_unit: Optional[Callable[..., int]] = None,
         run_s: Optional[Callable[[List[str]], int]] = None, sleep: Callable[[float], None] = time.sleep,
-        clock: Callable[[], float] = time.time, concurrency: int = 1) -> int:
+        clock: Callable[[], float] = time.time, concurrency: int = 1, max_units: Optional[int] = None) -> int:
     """Work ``lane`` (``anchor`` | ``s``) until done or ``stop_epoch``; resumable (module docstring). ``concurrency``:
-    the anchor lane's units at once (:func:`anchor_concurrency`; 1 = one at a time, the default)."""
+    the anchor lane's units at once (:func:`anchor_concurrency`; 1 = one at a time, the default). ``max_units`` (anchor
+    lane): start at most that many units in THIS supervisor's life, then let them finish and stop (event ``max_units``;
+    S-U's stage 0 is the queue's first units). It is not a registered stop."""
     from main.x35 import kakuna as KA
 
     if lane not in ("anchor", "s"):
         raise RunError(f"lane {lane!r} is none of anchor, s")
+    if max_units is not None and (lane != "anchor" or isinstance(max_units, bool) or not isinstance(max_units, int)
+                                  or max_units < 1):
+        raise RunError(f"--max-units {max_units!r}: an integer >= 1, on the anchor lane only")
     spec = load_state(state)
     if lane == "anchor" and not spec.anchor or lane == "s" and not spec.s:
         raise RunError(f"the spec has no {lane} group")
@@ -441,10 +475,13 @@ def run(state: Path, lane: str, stop_epoch: float, *, workers: int = S_WORKERS, 
     _jl(jl, {"event": "start", "pid": os.getpid(), "stop_epoch": stop_epoch,
              **({"concurrency": k, "concurrency_requested": concurrency} if lane == "anchor" else {})})
     fails: Dict[str, int] = {}
+    started = [0]
 
     def ended(st: Path, u: Any) -> None:
         if not KA.is_done(st, u):
             fails[u.name] = fails.get(u.name, 0) + 1
+            return
+        _check_prefix(spec, state, st, u, jl)
 
     pool = AP.UnitPool(k, run_unit, ended, log=_log)
     try:
@@ -463,14 +500,21 @@ def run(state: Path, lane: str, stop_epoch: float, *, workers: int = S_WORKERS, 
             models = _load_models(state)
             if lane == "anchor":
                 todo = [(st, u) for st, u in _anchor_todo(spec, state, fails) if not pool.busy(st, u)]
+                if todo and max_units is not None and started[0] >= max_units:
+                    pool.drain()                # the units this supervisor may start are started: finish, then stop
+                    _jl(jl, {"event": "max_units", "started": started[0],
+                             "left": len(_anchor_todo(spec, state, fails))})
+                    return 0
                 if todo and pool.free():
                     if clock() >= stop_epoch:
                         pool.drain()            # a lane never stops with a unit of its own in flight
                         _jl(jl, {"event": "stop_at", "left": len(_anchor_todo(spec, state, fails))})
                         return 0
-                    for st, u in todo[:pool.free()]:
+                    n_new = pool.free() if max_units is None else min(pool.free(), max_units - started[0])
+                    for st, u in todo[:n_new]:
                         if k > 1:
                             _log(f"anchor: start {u.name} ({len(pool) + 1}/{k} in flight)")
+                        started[0] += 1
                         pool.submit(st, u)      # k == 1: played right here, to its end
                     continue
                 if len(pool):                   # the pool is full, or nothing new to start: wait for a unit to end

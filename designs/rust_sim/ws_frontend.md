@@ -117,6 +117,17 @@ chain and encoder training runs) and answers with the frame's own choice TOKEN f
 index. Pinned by `src/utils/bridge/ws_frontend_test.py` (the START gating, the routing) and
 `src/main/anchors/core_side_test.py` (the slot's protocol rules).
 
+**The battle's input log, for an in-process searcher (S-U, 2026-10-27).** Each battle keeps, always and in memory
+only, its `START` document (`_Battle.start_doc`) and every `CHOOSE` / `FORCELOSE` it wrote to the child as `(update,
+slot, command)` (`_Battle.choice_log`). `update` is the request update the command answers: every sim update sends
+ONE `|request|` to EACH side (a wait request included), so a side's update index is the count of its requests, and a
+request after that side's `[Unavailable choice]` re-asks the same update. The two sides' choices of one update reach
+the child in either order (the sim holds them until both are in). `main.anchors.search_side.honest_log` cuts the log a
+searched decision replays from it (`designs/endstate/design_search_u_headroom.md`). Nothing a client receives
+changes. **`battle_index_base`** (constructor; `main.anchors --deal-game G` passes G) starts the battle count at G, so
+one game of a seeded series gets the seed `derive_seed_from_base(seed_base, G)` that game G of the whole series gets;
+refused with `pair_seeds` (a mirrored pair's seed is keyed by its teams).
+
 ### The two things the front end ADDS to the sim's stream
 
 1. **The room framing** — `>battle-…`, `|init|battle`, `|title|`. The same fabrication

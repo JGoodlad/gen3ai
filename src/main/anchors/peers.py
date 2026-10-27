@@ -146,7 +146,7 @@ class MetamonPeer(Peer):
     def plan(self, *, cfg: Any, agent: str, regime: str, teamset: str, battle_format: str,
              server_uri: str, username: str, opponent_username: str, role: str, n_games: int,
              team_seed: int, out_dir: Path, temperature: Optional[float] = None,
-             team_sequence: Optional[Path] = None, **_: Any) -> PeerPlan:
+             team_sequence: Optional[Path] = None, team_skip: int = 0, **_: Any) -> PeerPlan:
         cfg.require(agent)
         pin = cfg.pin(agent)                      # FR-1 FINDING 3: the weights, by revision and sha256
         # An alias (``"Kakuna28": {"policy": "Kakuna", "checkpoint": 28}``) plays its POLICY at its own pinned
@@ -181,6 +181,11 @@ class MetamonPeer(Peer):
         if team_sequence is not None:
             # MIRRORED TEAM PAIRS (T17): the peer plays exactly this team list, in order.
             argv += ["--team-sequence", str(team_sequence)]
+        if team_skip:
+            # `--deal-game`: the peer's seeded draw skips the half's earlier draws (its play is unchanged)
+            if team_sequence is not None:
+                raise PeerError("a team skip with a team sequence: a mirrored pair plays its own list")
+            argv += ["--team-skip", str(int(team_skip))]
         preset = cfg.preset(agent)
         if preset is not None:
             # An ENSEMBLE (a router over a member preset): the peer checks the preset it builds is this one.

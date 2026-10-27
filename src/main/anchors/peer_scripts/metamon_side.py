@@ -150,7 +150,7 @@ def rebind_server(server_uri):
     print(f"[peer] server rebound to {cfg.websocket_url}", flush=True)
 
 
-def install_seeded_team_draw(seed, draw_log):
+def install_seeded_team_draw(seed, draw_log, skip=0):
     """Give ``TeamSet.yield_team`` a PRIVATE seeded RNG over a SORTED file list.
 
     Metamon's shipped ``yield_team`` calls ``random.choice(self.team_files)`` on the process-global
@@ -158,25 +158,36 @@ def install_seeded_team_draw(seed, draw_log):
     reproducible across processes, so a "seeded" series would not in fact repeat. Patched at CLASS
     level (``PokeEnvWrapper`` deep-copies a team set on one of its paths) and preserving
     ``_most_recent_team_file``, which is what Metamon's own per-battle CSV records.
+
+    ``skip`` (``--team-skip``, S-U's per-game units): the stream's first ``skip`` draws are made and DISCARDED (unlogged)
+    the first time the set draws, so its first battle gets the team the same seed's draw ``skip`` gave game ``skip`` of
+    a whole series. The draw itself, and the play, are unchanged.
     """
     import metamon.env.wrappers as wrappers
+
+    def draw(self, log):
+        for _ in range(100):
+            path = self._draw_rng.choice(self._sorted_files)
+            self._most_recent_team_file = path
+            candidate = TP.pack_of(_PACKS, path)
+            if not self.block_team(candidate):
+                if log:
+                    draw_log.append(os.path.basename(path))
+                return candidate
+        raise RuntimeError("Could not find valid team after 100 attempts")
 
     def seeded_yield_team(self):
         files = getattr(self, "_sorted_files", None)
         if files is None:
-            files = self._sorted_files = sorted(self.team_files)
+            self._sorted_files = sorted(self.team_files)
             self._draw_rng = random.Random(seed)
-        for _ in range(100):
-            path = self._draw_rng.choice(files)
-            self._most_recent_team_file = path
-            candidate = TP.pack_of(_PACKS, path)
-            if not self.block_team(candidate):
-                draw_log.append(os.path.basename(path))
-                return candidate
-        raise RuntimeError("Could not find valid team after 100 attempts")
+            for _ in range(int(skip)):
+                draw(self, log=False)
+        return draw(self, log=True)
 
     wrappers.TeamSet.yield_team = seeded_yield_team
-    print(f"[peer] team draw seeded with {seed} over a SORTED file list", flush=True)
+    print(f"[peer] team draw seeded with {seed} over a SORTED file list"
+          + (f", its first {int(skip)} draw(s) skipped" if skip else ""), flush=True)
 
 
 def install_sequence_team_draw(sequence_path, draw_log):
@@ -621,6 +632,9 @@ def build_parser():
     ap.add_argument("--battle-format", default="gen3ou")
     ap.add_argument("--team-set", default="gen3ai_pool")
     ap.add_argument("--team-seed", type=int, default=None)
+    ap.add_argument("--team-skip", type=int, default=0,
+                    help="with --team-seed: make and discard the seeded stream's first N draws, so the first battle "
+                         "pilots the team game N of a whole seeded series drew (main.anchors --deal-game)")
     ap.add_argument("--team-sequence", default=None,
                     help="MIRRORED TEAM PAIRS: a JSON list of team files, one per battle, in order "
                          "(overrides --team-seed)")
@@ -661,10 +675,12 @@ def main(argv=None):
     install_regime(sample)
 
     draw_log = []
+    if args.team_skip and (args.team_seed is None or args.team_sequence is not None or args.team_skip < 0):
+        raise SystemExit("--team-skip N needs --team-seed (and no --team-sequence), N >= 0")
     if args.team_sequence is not None:
         install_sequence_team_draw(args.team_sequence, draw_log)
     elif args.team_seed is not None:
-        install_seeded_team_draw(args.team_seed, draw_log)
+        install_seeded_team_draw(args.team_seed, draw_log, skip=args.team_skip)
     else:
         install_default_team_draw()
     # Every team file packed through Showdown and verified BEFORE the weights and the model (minutes for Kakuna):
@@ -724,7 +740,7 @@ def main(argv=None):
     timing.update({
         "wall_s": elapsed, "agent": args.agent, "checkpoint": args.checkpoint,
         "backend": backend, "regime": args.regime, "role": args.role,
-        "team_set": args.team_set, "team_seed": args.team_seed,
+        "team_set": args.team_set, "team_seed": args.team_seed, "team_skip": args.team_skip,
         "action_temperature": args.temperature if sample else None,
         "n_team_draws": len(draw_log), "team_draws": draw_log,
         "error": error,

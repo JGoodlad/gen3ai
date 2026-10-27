@@ -11,6 +11,7 @@ from main.reads import layout as LY
 from main.reads.assemble import AssembleError, assemble as _assemble, unplayed_groups
 from main.reads.models import ModelError
 from main.reads.playpath import PlayPathError
+from main.reads.prefix import PrefixError
 from main.reads.record import RecordError, build as build_record, load as load_record, summary_line, write
 from main.reads.repin import RepinError, load_repins, repin
 from main.reads.rules import RULES, RuleInputError, void_failures, void_gate as rules_void_gate
@@ -26,7 +27,7 @@ __all__ = ["REFUSALS", "assemble", "check_spec", "decide", "hold", "load_record"
 
 #: Every typed refusal a verb raises (the CLI's exit 2).
 REFUSALS = (SpecError, ModelError, RunError, AssembleError, RuleInputError, RecordError, LY.StateError, KakunaError,
-            SupervisorError, ReadImportError, RepinError, PlayPathError, LC.LaneError)
+            SupervisorError, ReadImportError, RepinError, PlayPathError, LC.LaneError, PrefixError)
 hold, release = LC.hold, LC.release
 
 

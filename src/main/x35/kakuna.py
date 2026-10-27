@@ -140,6 +140,12 @@ SHORT_LANE_OVERRUN = 88
 UNIT_LONG_S = 2700
 MANIFEST_SCHEMA = "x35_home72_manifest_v1"
 MAX_ATTEMPTS = 2
+#: A SEARCHED unit (S-U, ``--our-search``): one game of 15-37 CPU-min, 25-75 min of wall at nice 19 (the design's
+#: ESTIMATE, ``design_search_u_headroom.md`` §4.2). It never takes the short lane: it plays as a long heavy-slot job
+#: bounded by ``timeout`` this long, and its own watchdog (``--first-game-timeout`` / ``--progress-timeout``) is the
+#: same bound, so a slow searched game is never failed as a hang. It holds its slot past the slots' 45-min chunk
+#: policy whenever a game runs long (a game cannot be split; FINDING of the S-U build).
+UNIT_SEARCH_S = 3 * 3600
 
 
 class KakunaError(RuntimeError):
@@ -204,6 +210,11 @@ class Unit:
     #: a DERIVED config (:func:`opponent_config`) and its sha256 at plan; None = the cell's committed config
     config: Optional[str] = None
     config_sha256: Optional[str] = None
+    #: a PER-GAME unit (S-U): game ``game`` of the unit seed's :data:`UNIT_GAMES`-game series, alone
+    #: (``main.anchors --games 20 --deal-game <game>``; ``games`` is then 1); None = the whole series
+    game: Optional[int] = None
+    #: our side's registered search (``main.anchors --our-search``, ``<preset>@<turn>``); None = the checkpoint alone
+    search: Optional[str] = None
 
 
 def parse_teamsets(spec: str) -> Tuple[str, ...]:
@@ -315,13 +326,21 @@ def check_derived_config(u: "Unit") -> List[str]:
 
 def plan_units(finals: Sequence[Mapping[str, Any]], *, hash_models: bool = True,
                teamsets: Sequence[str] = DEFAULT_TEAMSETS, unit_seeds: Sequence[int] = UNIT_SEEDS,
-               opponent: str = OPPONENT, config_dir: Optional[Path] = None) -> List[Unit]:
+               opponent: str = OPPONENT, config_dir: Optional[Path] = None, per_game: bool = False) -> List[Unit]:
     """Every (final × team set × unit seed) unit, unit seeds outermost so a stopped queue is role- and seed-balanced
     across finals. ``teamsets`` defaults to X35's G-K cell (home72, away); D1's PRIMARY H names the unfamiliar
     panels (:data:`UNFAMILIAR`). ``unit_seeds`` defaults to the registered 0-6 (:data:`UNIT_SEEDS`). A final may
-    carry ``belief_prior_mix`` (a model-load option every one of its units passes). ``opponent`` is one of
-    :data:`OPPONENTS`; one its cell's committed config lacks gets a derived config in ``config_dir``."""
+    carry ``belief_prior_mix`` and ``search`` (load options every one of its units passes). ``opponent`` is one of
+    :data:`OPPONENTS`; one its cell's committed config lacks gets a derived config in ``config_dir``.
+
+    ``per_game`` (S-U): each (final × team set × unit seed) series is planned as :data:`UNIT_GAMES` ONE-GAME units
+    (``<label>__<set>__<seed>__g<game>``), each the game the whole series would play at that index (its role, both
+    sides' team draws, its seed), so a searched game fits a lane and a stopped read resumes at game granularity. A
+    searched final needs ``per_game`` (a 20-game searched unit is 5-25 wall-hours)."""
     teamsets = parse_teamsets(",".join(teamsets))
+    if not per_game and any(f.get("search") for f in finals):
+        raise KakunaError("a searched final plays per-game units only (per_game=True): a 20-game searched unit fits "
+                          "no lane")
     cfgs = {ts: opponent_config(ts, opponent, config_dir) for ts in teamsets}
     seen = set()
     for f in finals:
@@ -329,11 +348,28 @@ def plan_units(finals: Sequence[Mapping[str, Any]], *, hash_models: bool = True,
             raise KakunaError(f"final label {f['label']!r} appears twice")
         seen.add(f["label"])
     shas = {f["label"]: (sha256_file(f["path"]) if hash_models else "") for f in finals}
-    return [Unit(name=f"{f['label']}__{ts}__{s:02d}", label=str(f["label"]), arm=str(f["arm"]), seed=int(f["seed"]),
-                 teamset=ts, unit_seed=s, model=str(f["path"]), model_sha256=shas[f["label"]], opponent=opponent,
-                 belief_prior_mix=(None if f.get("belief_prior_mix") is None else float(f["belief_prior_mix"])),
-                 config=None if cfgs[ts][0] is None else str(cfgs[ts][0]), config_sha256=cfgs[ts][1])
-            for s in unit_seeds for ts in teamsets for f in finals]
+
+    def unit(f: Mapping[str, Any], ts: str, s: int, g: Optional[int]) -> Unit:
+        search = f.get("search")
+        if search is not None:
+            from main.anchors.search_presets import SearchSpecError, canonical
+
+            try:
+                search = canonical(search)
+            except SearchSpecError as exc:
+                raise KakunaError(f"final {f['label']!r}: {exc}") from None
+        return Unit(name=f"{f['label']}__{ts}__{s:02d}" + ("" if g is None else f"__g{g:02d}"), label=str(f["label"]),
+                    arm=str(f["arm"]), seed=int(f["seed"]), teamset=ts, unit_seed=s, model=str(f["path"]),
+                    model_sha256=shas[f["label"]], opponent=opponent,
+                    belief_prior_mix=(None if f.get("belief_prior_mix") is None else float(f["belief_prior_mix"])),
+                    config=None if cfgs[ts][0] is None else str(cfgs[ts][0]), config_sha256=cfgs[ts][1],
+                    games=1 if g is not None else UNIT_GAMES, game=g, search=search)
+
+    if not per_game:
+        return [unit(f, ts, s, None) for s in unit_seeds for ts in teamsets for f in finals]
+    # per game: unit seeds outermost, then the game, then the set, then the final: the first deals of a seed are
+    # played on every set, by every final, before its later deals (S-U's stage 0 = the queue's first units)
+    return [unit(f, ts, s, g) for s in unit_seeds for g in range(UNIT_GAMES) for ts in teamsets for f in finals]
 
 
 def counts(summary: Mapping[str, Any], games: int) -> bool:
@@ -389,17 +425,27 @@ def config_side(teamset: str) -> str:
 def unit_argv(u: Unit, out: Path, port: int, py: str = sys.executable, *, short: bool = True) -> List[str]:
     """One unit's command. ``short``: the heavy slots' short lane (``--max-s``, hard-killed past it, exit
     :data:`SHORT_LANE_OVERRUN`); otherwise a normal heavy-slot job bounded by ``timeout`` :data:`UNIT_LONG_S`."""
+    series = UNIT_GAMES if u.game is not None else u.games
     a = [py, "-m", "main.anchors", "--model", u.model, "--opponent", u.opponent, "--regime", "greedy",
-         "--teamset", config_side(u.teamset), "--games", str(u.games), "--team-seed", str(u.unit_seed),
+         "--teamset", config_side(u.teamset), "--games", str(series), "--team-seed", str(u.unit_seed),
          "--seed-base", str(u.unit_seed), "--device", "cpu", "--port", str(port), "--nice", "19", "--out", str(out)]
     if u.belief_prior_mix is not None:
         a += ["--our-belief-prior-mix", repr(float(u.belief_prior_mix))]
-    if u.teamset in PANEL_CELLS:
+    if u.game is not None:
+        # S-U: game `game` of the seed's series, alone; its capture is G-PREFIX's input (main.reads.prefix)
+        a += ["--deal-game", str(int(u.game))]
+    if u.search is not None:
+        a += ["--our-search", u.search, "--first-game-timeout", str(UNIT_SEARCH_S),
+              "--progress-timeout", str(UNIT_SEARCH_S)]
+    if u.teamset in PANEL_CELLS or u.game is not None:
         # the front end's per-battle repro record (its START command carries BOTH packed teams): which team each side
         # piloted in each game (F-DV-6 / F-DV-17), so a matchup-clustered sensitivity read stays possible (F-DV-18).
         # It changes no stamp and no play (the seed comes from --seed-base); home72 / away units are unchanged.
         a += ["--capture-dir", str(out / "capture")]
-    cap = ["--max-s", str(UNIT_MAX_S), MEM_GB] if short else [MEM_GB, "timeout", str(UNIT_LONG_S)]
+    if u.search is not None and short:
+        raise KakunaError(f"{u.name}: a searched unit never takes the short lane (one game is 25-75 min of wall)")
+    long_s = UNIT_SEARCH_S + 600 if u.search is not None else UNIT_LONG_S
+    cap = ["--max-s", str(UNIT_MAX_S), MEM_GB] if short else [MEM_GB, "timeout", str(long_s)]
     return ["nice", "-n", "19", "taskset", "-c", CORES, str(repo_path("scripts/ops/mem_cap.sh")), "--name",
             "x35kakuna", *cap, *a]
 
@@ -516,12 +562,24 @@ def _play(state: Path, u: Unit, *, short: bool) -> int:
                                     stdout=log, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
                                     start_new_session=True)
             _jl(state, {"event": "pid", "unit": u.name, "pid": proc.pid})
-            rc = proc.wait()
+            rc, cpu_s = _wait_cpu(proc)
     finally:
         claim.close()
     _jl(state, {"event": "end", "unit": u.name, "rc": rc, "counted": is_done(state, u), "short": short,
-                "wall_s": round(time.time() - t0, 1)})
+                "wall_s": round(time.time() - t0, 1), **({} if cpu_s is None else {"cpu_s": round(cpu_s, 1)})})
     return rc
+
+
+def _wait_cpu(proc: Any) -> Tuple[int, Optional[float]]:
+    """``(exit code, CPU-s)``: the unit's child reaped with ITS OWN resource usage (``os.wait4``: the child and every
+    descendant it reaped — the model, the Metamon peer, the replay and validator children), so a concurrent lane's
+    units never mix. A child this process cannot reap that way (a test's stand-in) reports no CPU."""
+    try:
+        _pid, status, ru = os.wait4(proc.pid, 0)
+    except ChildProcessError:
+        return proc.wait(), None
+    proc.returncode = os.waitstatus_to_exitcode(status)
+    return proc.returncode, ru.ru_utime + ru.ru_stime
 
 
 def run_unit(state: Path, u: Unit) -> int:
@@ -529,7 +587,7 @@ def run_unit(state: Path, u: Unit) -> int:
     unit is not counted, it is played ONCE more as a normal heavy-slot job (``short_lane_overrun`` is logged), as FR-3's
     queue did, so an overrun is never left uncounted for want of a second chance. A unit that has overrun before goes
     straight to the long job on every later attempt. Returns the last child's exit code."""
-    short = not _overran(state, u)
+    short = u.search is None and not _overran(state, u)      # a searched unit is a long job from the start
     rc = _play(state, u, short=short)
     if short and rc == SHORT_LANE_OVERRUN and not is_done(state, u):
         _jl(state, {"event": "short_lane_overrun", "unit": u.name, "rc": rc})

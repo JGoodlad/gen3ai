@@ -17,6 +17,7 @@ python -m main.reads check-spec --spec read_spec.json --pin-pending   # review a
 python -m main.reads plan     --spec read_spec.json --state DIR    # copy settled models; plan units
 python -m main.reads run      --state DIR --lane anchor --hours 20 # detached, resumable; one per lane
 python -m main.reads run      --state DIR --lane anchor --hours 20 --concurrency 2   # K units at once (§3)
+python -m main.reads run      --state DIR --lane anchor --hours 20 --max-units 40   # start 40 units, finish, stop (§3)
 python -m main.reads run      --state DIR --lane s      --hours 20
 python -m main.reads pid      --state DIR --lane s [--wait 180]    # the lane's LIVE supervisor pid, as it recorded itself (§3)
 python -m main.reads status   --state DIR                          # .supervisor_pids (the pid to watch), .holds, progress
@@ -24,6 +25,7 @@ python -m main.reads hold     --state DIR --lane s --by WHO --why TEXT      # no
 python -m main.reads resume   --state DIR --lane s --hours 20 [--by WHO]    # = run (after printing what is left); a HELD lane is released first
 python -m main.reads repin    --state DIR --to COMMIT --by WHO --why TEXT   # another playing commit, if the play path is identical (§3)
 python -m main.reads record   --state DIR [--out <stage>/reads/<arm>_look<k>.json]
+python -m main.reads search-cost --state DIR | --cells DIR...     # a searched read's cost and G-PREFIX (§3)
 ```
 
 `record` runs `assemble` (writes `cells.json`) and then `decide` (runs the registered VOID gate, §5, then writes
@@ -35,8 +37,8 @@ refusal.
 
 | field | holds |
 |---|---|
-| `models` | `{label: {arm, seed, ref, load?}}`. `ref` is `{"kind": "pinned", path, sha256}` (a frozen file) or `{"kind": "final", run, min_step, quiet_s, done_marker?}` (§2). `load` holds model-LOAD options every unit of the label passes (`spec.LOAD_OPTIONS`: `belief_prior_mix` λ ∈ (0, 1], `main.anchors --our-belief-prior-mix`), so two labels may play one file two ways |
-| `anchor` | `{group: {opponent, teamsets, unit_seeds, models, import?}}`: the external-anchor cells (§3). `opponent` is one of `metamon:Kakuna`, `SmallRL`, `PastaMittens`, `LargeRL`, `LargeIL` (`kakuna.OPPONENTS`) |
+| `models` | `{label: {arm, seed, ref, load?}}`. `ref` is `{"kind": "pinned", path, sha256}` (a frozen file) or `{"kind": "final", run, min_step, quiet_s, done_marker?}` (§2). `load` holds model-LOAD options every unit of the label passes (`spec.LOAD_OPTIONS`: `belief_prior_mix` λ ∈ (0, 1], `main.anchors --our-belief-prior-mix`; `search` = a registered search `<preset>@<turn>`, `main.anchors --our-search`, e.g. S-U's `r0s4@10`), so two labels may play one file two ways |
+| `anchor` | `{group: {opponent, teamsets, unit_seeds, models, per_game?, import?}}`: the external-anchor cells (§3). `opponent` is one of `metamon:Kakuna`, `SmallRL`, `PastaMittens`, `LargeRL`, `LargeIL` (`kakuna.OPPONENTS`). `per_game: true` plays each seed's 20-game series as 20 ONE-GAME units (§3, "Per-game units"); a group holding a `search` model must be `per_game`, import nothing, and hold exactly one RAW TWIN per searched label (the same `ref`, the same other load options: `spec.search_twins`) |
 | `s` | `{group: {refpop, refpop_content_sha256, panel, pairs, batch_pairs, family, models, regime_id?, import?}}`: S against a frozen R. **One eval-ledger family per group**, because a family holds one regime |
 | `…import` | `{state, spec_sha256, group, models}`: these models' cells come from group `group` of an EARLIER read's state, never re-played here (§3) |
 | `decision` | `{rule, params, allow_partial_at_stop?}`: a rule from `main.reads.rules.RULES`, with its registered parameters checked at load. `allow_partial_at_stop: true` registers that the PREREG accepts a reduced read at the registered stop (§6); it is refused for `x35_r1` and `d1` (their records are consumed by `main.x35.batch`, which does not read the class) and for a spec with no anchor group |
@@ -117,6 +119,36 @@ committed config plus that agent (`kakuna.check_derived_config`). The peer is of
 
 There is one kakuna state per (group, model), `<state>/anchor/<group>/<label>/`, planned when that model
 settles. Unit seeds are the outer loop, so a stopped queue stays balanced by seed.
+
+**Per-game units and searched models** (`anchor.<group>.per_game`; S-U, `designs/endstate/design_search_u_headroom.md`
+§6 B3). A searched game is 25-75 min of wall (an ESTIMATE until stage 0), so no 20-game searched unit fits a lane.
+- **The unit.** A `per_game` group plans each (model, team set, seed) series as 20 units
+  `<label>__<set>__<seed>__g<game>`, each `main.anchors --games 20 --deal-game <game>` with `--capture-dir`: the one
+  game the whole series plays at that index (its role, both sides' team draws, its seed). It counts 1 game
+  (`results.unit_counts(games=1)`); a stopped read resumes at game granularity.
+- **The queue.** Within a seed a `per_game` group plays DEAL by deal: game g on every team set by every model (a
+  searched game right after its raw twin's) before game g + 1. So S-U's stage 0, "the first 5 deals of unit seed 0 on
+  each panel", is the queue's first 40 units: `run --max-units 40`, then `search-cost`.
+- **A searched unit** (`models.<label>.load.search`) is never a short-lane job: it plays as a long heavy-slot job
+  bounded by `timeout` (`kakuna.UNIT_SEARCH_S` + 600 s), with its own watchdog at `UNIT_SEARCH_S` (3 h). One that
+  runs past 45 min holds its slot past the slots' chunk policy: a game cannot be split (FINDING of the build). Raw
+  per-game units keep the short lane.
+- **G-PREFIX** (`main.reads.prefix`). The raw and searched games of one deal must be byte-identical (both sides'
+  protocol, `|t:|` removed, and the `START` document) through the search's first turn (`|turn|10` inclusive). The
+  supervisor compares each pair as soon as both units count; a mismatch HOLDS the lane (`by: G-PREFIX`, the deal and the
+  first differing line in `why`) for a root cause, and `assemble` keeps the group inconclusive while any pair diverges,
+  so no record is written (the read is VOID unless it is resolved).
+- **`--max-units N`** (anchor lane): the supervisor starts at most N units in its life, lets them finish, logs
+  `max_units` and exits 0. It is not a registered stop (`INCOMPLETE_BY_STOP` needs one).
+- **`search-cost`** (`main.reads.search_cost`): per searched game and pooled, the CPU-s and wall-s of a searched decision
+  (median, mean, p10, p90), the share of our decisions from the search's first turn with >= 2 legal actions, the
+  exclusions (no consistent world), the deviation rate, each game's search CPU-min and wall-min, each searched unit's
+  WHOLE-process CPU (the `end` event's `cpu_s` in the kakuna state's `units.jsonl`: the unit's child reaped by
+  `os.wait4` with every descendant, so concurrent units never mix; the conservative figure), G-PREFIX per group, and
+  S-U's re-size input (the median searched game against 50 CPU-min), REPORTED. Its `--cells` form reads `main.anchors
+  --out` dirs (a smoke).
+
+No registered rule reads a searched group yet: S-U's `search_headroom` rule (its §3, build B4) is not built (§10).
 
 **Concurrency** (`--concurrency K`, anchor lane only, default 1; `main.reads.anchor_pool`; N1-P look 1 projected about
 60 h for 486 units one at a time). SCHEDULING ONLY: the lane keeps up to K units in flight, and each is
@@ -539,6 +571,10 @@ skips and names why.
     arm-end). They finish on their own scripts.
 
 ## 10. Not built (each a FINDING of the build)
+
+- **The searched read's rule** (S-U's `search_headroom`, `design_search_u_headroom.md` §3, B4): no rule reads a
+  `per_game` group's deal-paired difference yet. `assemble` carries the per-game cells and G-PREFIX; the rule, with
+  G-PREFIX as its VOID gate, lands with S-U's PREREG.
 
 - **Reported-only extras** (SPRT's mechanism block, dose from launcher summaries) stay per-read. A rule's `params`
   can carry them, but only the VOID gate reads run dirs.

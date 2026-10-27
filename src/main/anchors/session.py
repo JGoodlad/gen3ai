@@ -264,6 +264,9 @@ class OurSideState:
     #: `--our-belief-prior-mix`: the λ READ BACK from the loaded policy (`agents.model.belief_prior_mix`), or None
     #: when none was asked for (the unchanged model).
     belief_prior_mix: Optional[float] = None
+    #: `--our-search`: the live searcher's counters for this half (`main.anchors.search_side.LiveSearcher.summary`), or
+    #: None when our side does not search.
+    search_stats: Optional[Dict[str, Any]] = None
 
 
 def foreign_loader(zip_path: str, device: str):

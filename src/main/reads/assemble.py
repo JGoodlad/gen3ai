@@ -180,8 +180,10 @@ def unit_row(u: Any, summary: Mapping[str, Any], games: Optional[List[List[Any]]
 
     uc = unit_counts(summary, games=int(u.games))
     cell = summary.get("cell") or {}
-    stamp = load_stamp({"belief_prior_mix": getattr(u, "belief_prior_mix", None)})
+    stamp = load_stamp({k: v for k, v in (("belief_prior_mix", getattr(u, "belief_prior_mix", None)),
+                                          ("search", getattr(u, "search", None))) if v is not None})
     return {"unit": u.name, "label": u.label, "panel": u.teamset, "unit_seed": int(u.unit_seed),
+            "game": getattr(u, "game", None), "search": getattr(u, "search", None),
             "belief_prior_mix": getattr(u, "belief_prior_mix", None), "our_regime": cell.get("our_regime"),
             "games": games,
             "model_sha256": u.model_sha256, "status": summary.get("status"), "n": summary.get("n"),
@@ -208,7 +210,7 @@ def anchor_units(kakuna_state: Path) -> List[Dict[str, Any]]:
 
 def anchor_group(rows: Sequence[Mapping[str, Any]], *, labels: Sequence[str], teamsets: Sequence[str],
                  unit_seeds: Sequence[int], shas: Optional[Mapping[str, str]] = None,
-                 loads: Optional[Mapping[str, Mapping[str, Any]]] = None) -> Dict[str, Any]:
+                 loads: Optional[Mapping[str, Mapping[str, Any]]] = None, per_game: bool = False) -> Dict[str, Any]:
     """One anchor group's cells ``{label: {teamset: {wins, ties, n, units, planned, skipped}}}`` over COUNTED units,
     its ONE regime id and every reason it is not conclusive. ``shas``: the resolved models' sha256 (a unit played
     on other bytes refuses).
@@ -219,23 +221,32 @@ def anchor_group(rows: Sequence[Mapping[str, Any]], *, labels: Sequence[str], te
     instead: (1) the counted units of one (load, team set) share one regime id; (2) across ALL models a team set shares one
     BASE id (the id without the load's stamp, so the opponent, the teams, the transport and the rest are the same for every
     model); (3) a unit whose model declares a load but did not stamp it is not conclusive. The group's id is then
-    :func:`mixed_group_regime_id`, and the group carries ``regime_ids_by_load`` and ``loads``."""
+    :func:`mixed_group_regime_id`, and the group carries ``regime_ids_by_load`` and ``loads``.
+
+    ``per_game`` (S-U): each unit is ONE game of its seed's series (its row's ``game``), so a cell plans
+    ``len(unit_seeds) × UNIT_GAMES`` units and a unit is keyed by (label, set, seed, game)."""
     from main.reads.spec import load_stamp
+    from main.x35.kakuna import UNIT_GAMES
+
+    per_seed = UNIT_GAMES if per_game else 1
 
     stamps = {lab: load_stamp((loads or {}).get(lab) or {}) for lab in labels}
     mixed = len(set(stamps.values())) > 1
     why: List[str] = []
     cells: Dict[str, Dict[str, Dict[str, Any]]] = {
-        lab: {ts: {"wins": 0, "ties": 0, "n": 0, "units": 0, "planned": len(unit_seeds), "skipped": []}
+        lab: {ts: {"wins": 0, "ties": 0, "n": 0, "units": 0, "planned": len(unit_seeds) * per_seed, "skipped": []}
               for ts in teamsets} for lab in labels}
     regimes: Dict[str, set] = {ts: set() for ts in teamsets}
     by_load: Dict[Tuple[str, str], set] = {}
     bases: Dict[str, set] = {ts: set() for ts in teamsets}
     seen = set()
     for r in rows:
-        key = (r["label"], r["panel"], int(r["unit_seed"]))
+        key = (r["label"], r["panel"], int(r["unit_seed"]), r.get("game"))
         if r["label"] not in cells or r["panel"] not in cells[r["label"]] or int(r["unit_seed"]) not in unit_seeds:
             raise AssembleError(f"unit {r['unit']} is not a unit of this group")
+        if per_game != (r.get("game") is not None) or per_game and not 0 <= int(r["game"]) < UNIT_GAMES:
+            raise AssembleError(f"unit {r['unit']} (game {r.get('game')!r}) is not a "
+                                f"{'per-game' if per_game else 'whole-series'} unit of this group")
         if key in seen:
             raise AssembleError(f"unit {key} appears twice")
         seen.add(key)
@@ -289,7 +300,7 @@ def anchor_group(rows: Sequence[Mapping[str, Any]], *, labels: Sequence[str], te
     engine, engine_why = EN.one(r.get("engine") for r in rows if r["counted"])
     if engine_why:
         why.append(f"counted units {engine_why}")
-    unplayed = len(labels) * len(teamsets) * len(unit_seeds) - len(seen)
+    unplayed = len(labels) * len(teamsets) * len(unit_seeds) * per_seed - len(seen)
     return {"regime_id": rid, "regime_ids": by_ts, "engine": engine, "teamsets": list(teamsets),
             "unit_seeds": list(unit_seeds),
             "cells": cells, "units": sorted((dict(r) for r in rows), key=lambda r: r["unit"]),
@@ -411,7 +422,17 @@ def assemble(spec: Any, state: Path) -> Dict[str, Any]:
             got, meta = IM.anchor_rows(spec, g, shas, this_state=state, own=rows)
             rows += got
         grp = anchor_group(rows, labels=a.models, teamsets=a.teamsets, unit_seeds=a.unit_seeds, shas=shas,
-                           loads={lab: spec.models[lab].load for lab in a.models})
+                           loads={lab: spec.models[lab].load for lab in a.models}, per_game=a.per_game)
+        if a.per_game and any("search" in spec.models[lab].load for lab in a.models):
+            # G-PREFIX (main.reads.prefix): a pair whose protocol diverged before the search's first turn is a
+            # nondeterminism that corrupts the pairing; the group is not conclusive (the read VOID) until it is resolved
+            from main.reads import prefix as PX
+
+            grp["g_prefix"] = PX.check_group(spec, state, g)
+            if grp["g_prefix"]["mismatches"]:
+                grp["inconclusive"] = sorted(set(grp["inconclusive"]) | {
+                    f"G-PREFIX: deal {m['deal']} diverged before the search's first turn ({m['why']})"
+                    for m in grp["g_prefix"]["mismatches"]})
         missing = [lab for lab in a.models if lab not in shas]
         if missing:
             grp["inconclusive"] = sorted(set(grp["inconclusive"]) | {f"model(s) {missing} not resolved"})

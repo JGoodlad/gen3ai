@@ -378,10 +378,12 @@ class InProcessFrontEnd:
 
     def __init__(self, port: int, battle_format: str = "gen3ou", seed_base: Optional[int] = None,
                  capture_dir: Optional[Path] = None, log_path: Optional[Path] = None,
-                 pair_log: Optional[Path] = None, host: str = "127.0.0.1") -> None:
+                 pair_log: Optional[Path] = None, host: str = "127.0.0.1", battle_index_base: int = 0) -> None:
         refuse_reserved(port)
         self.port = port
         self.host = host
+        #: `--deal-game G`: the front end counts battles from G, so the one battle gets the series' seed for game G
+        self.battle_index_base = int(battle_index_base)
         self.battle_format = battle_format
         self.seed_base = seed_base
         self.capture_dir = Path(capture_dir) if capture_dir is not None else None
@@ -423,7 +425,8 @@ class InProcessFrontEnd:
             impl="rust", battle_format=self.battle_format, seed_base=self.seed_base,
             capture_dir=str(self.capture_dir) if self.capture_dir is not None else None,
             pair_seeds=self.pair_log is not None,
-            pair_log=str(self.pair_log) if self.pair_log is not None else None)
+            pair_log=str(self.pair_log) if self.pair_log is not None else None,
+            battle_index_base=self.battle_index_base)
         self._server = await serve(self.front.handler, self.host, self.port, max_size=None,
                                    ping_interval=None)
         log.info("ws_frontend listening IN-PROCESS — %s (seed_base=%s)", self.uri, self.seed_base)

@@ -154,6 +154,14 @@ class SeriesPlan:
     #: B-D6 `--declare-asymmetric-teams`: "asymmetric" or "symmetric". Changes no play; stamped on
     #: the summary so a registration reads the unit under `results.unit_counts`' declared branch.
     declared_team_cell: str = "symmetric"
+    #: `--our-search`: OUR checkpoint plus a registered one-ply search (`main.anchors.search_presets`, canonical
+    #: `<preset>@<from turn>`; `main.anchors.search_side`). None = the checkpoint alone. Stamped
+    #: our_regime='<regime>+search=<preset>@<turn>', so a searched cell never pools with the raw one.
+    our_search: Optional[str] = None
+    #: `--deal-game G`: play ONLY game G of the `games`-game series this plan names (S-U's per-game units): its half
+    #: (the role), its team draws (both sides skip the half's earlier draws) and its battle seed (the front end counts
+    #: battles from G) are the ones game G of the whole series gets. None = the whole series.
+    deal_game: Optional[int] = None
 
     @property
     def our_set(self) -> str:
@@ -170,11 +178,37 @@ class SeriesPlan:
         in the process at all."""
         return self.our_side.startswith("metamon:") or self.our_side == "foulplay"
 
-    def half_sizes(self) -> Dict[str, int]:
+    def series_half_sizes(self) -> Dict[str, int]:
         """``games`` split across the two roles; an odd game goes to the first half and is
         recorded there rather than silently dropped."""
         half = self.games // 2
         return {"ours_challenge": self.games - half, "peer_challenge": half}
+
+    def half_sizes(self) -> Dict[str, int]:
+        """The games each half PLAYS: the series' split, or, with ``deal_game`` G, one game in G's half."""
+        sizes = self.series_half_sizes()
+        if self.deal_game is None:
+            return sizes
+        half, _k = self.deal_position()
+        return {h: (1 if h == half else 0) for h in sizes}
+
+    def deal_position(self) -> "tuple[str, int]":
+        """``(half, k)``: the half game ``deal_game`` of the series falls in, and its index inside that half (the
+        team draws each side skips first)."""
+        if self.deal_game is None:
+            raise ValueError("deal_position: the plan plays the whole series")
+        g = int(self.deal_game)
+        first = self.series_half_sizes()["ours_challenge"]
+        if not 0 <= g < self.games:
+            raise ValueError(f"--deal-game {g} is not a game of a {self.games}-game series")
+        return ("ours_challenge", g) if g < first else ("peer_challenge", g - first)
+
+    def deal_skip(self, half: str) -> int:
+        """The team draws both sides skip in ``half`` (0 unless ``deal_game`` falls in it)."""
+        if self.deal_game is None:
+            return 0
+        h, k = self.deal_position()
+        return k if h == half else 0
 
 
 def peer_plan(plan: SeriesPlan, cfg: Any, role: str, n_games: int, half: str,
@@ -198,6 +232,7 @@ def peer_plan(plan: SeriesPlan, cfg: Any, role: str, n_games: int, half: str,
         role=role,
         n_games=n_games,
         team_seed=plan.team_seed + 1,
+        team_skip=plan.deal_skip(half),
         search_time_ms=plan.search_time_ms,
         search_parallelism=plan.search_parallelism,
         out_dir=plan.out_dir / half,
@@ -418,7 +453,8 @@ async def _play_core_half(plan: SeriesPlan, half: str, n_games: int, pplan: Any,
             model_loader=plan.model_loader, stochastic=stochastic, temperature=temperature,
             team_spec=team_spec, team_seed=plan.team_seed,
             forfeit_limit=plan.forfeit_turn_limit, state=state, battle_format=plan.battle_format,
-            belief_prior_mix=plan.our_belief_prior_mix)
+            belief_prior_mix=plan.our_belief_prior_mix, team_skip=plan.deal_skip(half),
+            search=plan.our_search, search_out=plan.out_dir / "search_decisions.jsonl")
         await slot.login()
         if role == "acceptor":
             proc = start_peer(pplan, nice=plan.nice)
@@ -461,6 +497,9 @@ async def _play_core_half(plan: SeriesPlan, half: str, n_games: int, pplan: Any,
         await await_peer_exit(proc, timeout_s=180.0 if failure is None else 15.0)
         if slot is not None:
             await slot.leave()
+            if getattr(slot, "searcher", None) is not None:
+                state.search_stats = slot.searcher.summary()
+                slot.searcher.close()
         stop_peer(proc)
     return proc, failure
 
@@ -490,6 +529,14 @@ def _half_report(plan: SeriesPlan, half: str, n_games: int, pplan: Any, proc: An
     if plan.our_temperature is not None and state.stochastic_kwargs != [True]:
         report["regime_verified_decisions"] = False
         report["our_regime_mismatch"] = list(state.stochastic_kwargs)
+    # `--our-search`: a searched cell must have had its searcher (its counters are the half's search record). A raw
+    # cell's report is unchanged.
+    if plan.our_search is not None:
+        report["our_search"] = plan.our_search
+        report["search"] = state.search_stats
+        if state.search_stats is None or state.search_stats.get("search") != plan.our_search:
+            report["regime_verified_decisions"] = False
+            report["our_search_mismatch"] = [plan.our_search, (state.search_stats or {}).get("search")]
     # `--our-belief-prior-mix`: the λ the loaded policy READS BACK must be the one the cell names.
     report["our_belief_prior_mix"] = state.belief_prior_mix
     if not plan.our_side_is_bot and not plan.our_side_is_peer and state.belief_prior_mix != plan.our_belief_prior_mix:
@@ -530,7 +577,8 @@ def cell_spec(plan: SeriesPlan, report: Dict[str, Any], our_team_count: int) -> 
                           else (f"sample:T={float(plan.our_temperature):g}"
                                 if plan.our_temperature is not None else plan.regime)
                           + (f"+belief_prior_mix={float(plan.our_belief_prior_mix):g}"
-                             if plan.our_belief_prior_mix is not None else ""))),
+                             if plan.our_belief_prior_mix is not None else "")
+                          + (f"+search={plan.our_search}" if plan.our_search is not None else ""))),
         their_regime=str(report.get("their_regime") or plan.regime),
         regime_matched=plan.regime_matched and not plan.our_side_is_bot,
         teamset=plan.teamset,
@@ -715,7 +763,8 @@ async def run_series(plan: SeriesPlan, cfg: Any) -> Tuple[List[GameRow], Dict[st
         in_process = InProcessFrontEnd(
             plan.server_port, battle_format=plan.battle_format, seed_base=plan.seed_base,
             capture_dir=plan.capture_dir, pair_log=plan.pair_log,
-            log_path=plan.out_dir / InProcessFrontEnd.log_name)
+            log_path=plan.out_dir / InProcessFrontEnd.log_name,
+            battle_index_base=plan.deal_game or 0)
         await in_process.__aenter__()
         print(f"[anchors] {in_process.label} serving {in_process.uri} inside pid={in_process.pid} "
               f"({plan.server_version})", flush=True)

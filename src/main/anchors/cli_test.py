@@ -914,3 +914,61 @@ def test_our_belief_prior_mix_is_a_model_load_option_stamped_on_the_cell(cfg) ->
 def test_our_belief_prior_mix_is_refused_outside_its_shape(cfg, argv) -> None:
     with pytest.raises(SystemExit):
         build_plan(_args(*argv, "--dry-run"), cfg)
+
+
+# ------------------------------------------------------------------ S-U: --our-search, --deal-game
+def test_our_search_is_canonical_and_stamped_on_the_cell(cfg) -> None:
+    """`--our-search r0s4` (main.anchors.search_presets): our_regime names the preset and its first turn, so a searched
+    cell never pools with the raw checkpoint's."""
+    plan = build_plan(_args("--opponent", "metamon:Kakuna", "--our-search", "r0s4", "--seed-base", "3", "--dry-run"),
+                      cfg)
+    assert plan.our_search == "r0s4@10" and plan.our_transport == "core"
+    assert runner_mod.cell_spec(plan, {"their_regime": "greedy"}, 72).our_regime == "greedy+search=r0s4@10"
+    assert "OUR side SEARCHES (r0s4@10" in render_plan(plan, cfg)
+    raw = build_plan(_args("--opponent", "metamon:Kakuna", "--seed-base", "3", "--dry-run"), cfg)
+    assert raw.our_search is None and runner_mod.cell_spec(raw, {"their_regime": "greedy"}, 72).our_regime == "greedy"
+
+
+@pytest.mark.parametrize("argv", [
+    ("--our-search", "r0s4"),                                                      # no --seed-base
+    ("--our-search", "r9@10", "--seed-base", "3"),                                 # no such preset
+    ("--our-search", "r0s4", "--seed-base", "3", "--regime", "t1"),
+    ("--our-search", "r0s4", "--seed-base", "3", "--our-temperature", "1.0"),
+    ("--our-search", "r0s4", "--seed-base", "3", "--our-transport", "live"),
+])
+def test_our_search_is_refused_outside_its_shape(cfg, argv) -> None:
+    with pytest.raises(SystemExit):
+        build_plan(_args("--opponent", "metamon:Kakuna", *argv, "--dry-run"), cfg)
+
+
+@pytest.mark.parametrize("g, half, k", [(0, "ours_challenge", 0), (9, "ours_challenge", 9), (10, "peer_challenge", 0),
+                                        (19, "peer_challenge", 9)])
+def test_a_deal_game_plays_one_game_of_the_series_in_its_own_half_with_its_own_draws(cfg, g, half, k) -> None:
+    plan = build_plan(_args("--opponent", "metamon:Kakuna", "--games", "20", "--deal-game", str(g), "--seed-base",
+                            "4", "--team-seed", "4", "--dry-run"), cfg)
+    assert plan.deal_position() == (half, k)
+    assert plan.half_sizes() == {h: (1 if h == half else 0) for h in ("ours_challenge", "peer_challenge")}
+    assert plan.series_half_sizes() == {"ours_challenge": 10, "peer_challenge": 10}
+    assert plan.deal_skip(half) == k and plan.deal_skip("ours_challenge" if half != "ours_challenge"
+                                                         else "peer_challenge") == 0
+    role = runner_mod.HALVES[half][1]
+    argv = runner_mod.peer_plan(plan, cfg, role, 1, half).argv
+    if k:
+        assert argv[argv.index("--team-skip") + 1] == str(k)
+        assert argv[argv.index("--team-seed") + 1] == "5"           # the peer's stream: team seed + 1, as always
+    else:
+        assert "--team-skip" not in argv
+    assert f"--deal-game {g}" in render_plan(plan, cfg)
+
+
+@pytest.mark.parametrize("argv", [
+    ("--opponent", "metamon:Kakuna", "--games", "20", "--deal-game", "3"),                      # no --seed-base
+    ("--opponent", "metamon:Kakuna", "--games", "20", "--deal-game", "20", "--seed-base", "1"),
+    ("--opponent", "metamon:Kakuna", "--games", "20", "--deal-game", "-1", "--seed-base", "1"),
+    ("--opponent", "foulplay", "--games", "20", "--deal-game", "3", "--seed-base", "1"),
+    ("--opponent", "metamon:Kakuna", "--games", "20", "--deal-game", "3", "--seed-base", "1",
+     "--our-transport", "live"),
+])
+def test_a_deal_game_is_refused_outside_its_shape(cfg, argv) -> None:
+    with pytest.raises(SystemExit):
+        build_plan(_args(*argv, "--dry-run"), cfg)

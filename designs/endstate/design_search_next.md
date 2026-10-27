@@ -433,12 +433,13 @@ index. CPU ≈ 10–15 h (the honest builds dominate).
 bridge predicts ≥ +4.6 pp.
 
 **The player.** The anchors core slot (`src/main/anchors/core_side.py`) searches each decision with that arm: TRUNC-4-K8,
-piKL, 8 worlds.
+piKL, 8 worlds. BUILT 2026-10-27 for S-U (`main.anchors --our-search r0s4@<turn>`, `src/main/anchors/search_side.py`;
+`design_search_u_headroom.md` §6), which re-cuts E4.
 
 **The read.** Against Kakuna ckpt 34 on U and home72, paired with raw P\* on the same deals (X51's twins), greedy. The
 rule is S0b's (`design_value_discrimination.md` §13.4): PAYS iff the paired lower bound > +4.57 pp.
 
-**Cost** (UNVERIFIED). The player is ≈ 1–1.5 agent-days. A game costs ≈ 32 CPU-min (R0 §4). For 80 % power at
+**Cost** (UNVERIFIED). A game costs ≈ 32 CPU-min (R0 §4; S-U's stage 0 measures it). For 80 % power at
 4.6 pp, with a paired discordance of 0.2–0.3, it needs ≈ 600–900 pairs, ≈ 300–470 CPU-h (≈ 4–7 days on the 3 agent
 cores). An R0-sized 11 pp needs ≈ 100–150 pairs, ≈ 55–80 CPU-h.
 

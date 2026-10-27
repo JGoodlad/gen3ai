@@ -13,6 +13,8 @@ Gumbel noise (`designs/endstate/design_value_discrimination.md` §7):
   ⌈log₂ m⌉ rounds among the policy's top-m, halving by the GUMBEL score after each round.
 * the COMPLETED-Q policy target: softmax(logits + sigma(completed q)), unvisited actions completed by
   the prior-weighted mixed value (``mctx.qtransform_completed_by_mix_value``).
+* PIKL(λ), L1's anchored acting rule (``search_l1_l5_2026-10-20/PREREG.md`` §3): argmax Q(a) + λ·log π(a), ported from
+  L1's frozen read script with its arithmetic; ``rules_pikl_test`` re-scores L1's banked rows with it bit for bit.
 
 Ties break toward the policy's own order (top-1 first), deterministically (rule 8: ``TIE`` = 1e-6).
 """
@@ -59,6 +61,32 @@ def pick(score: Dict[int, float], order: Sequence[int]) -> int:
     cand = [a for a in order if a in score]
     m = max(score[a] for a in cand)
     return next(a for a in cand if score[a] >= m - TIE)
+
+
+def log_softmax_ordered(logits: np.ndarray, order: Sequence[int]) -> Dict[int, float]:
+    """The masked log-softmax of the policy over ``order`` (the legal actions IN THE POLICY'S ORDER), computed with L1's
+    arithmetic (``search_l1_l5_2026-10-20/scripts/l1_read.py``'s ``log_softmax`` over its policy-ordered arrays), so the
+    piKL pick below re-scores L1's banked rows bit for bit (``rules_pikl_test``)."""
+    lg = np.array([float(logits[a]) for a in order], dtype=np.float64)
+    z = lg - lg.max()
+    z = z - math.log(float(np.exp(z).sum()))
+    return {int(a): float(v) for a, v in zip(order, z)}
+
+
+#: L1's registered piKL anchor, FITTED on Tier 1 at the TRUNC-4-K8 scorer and frozen (``search_l1_l5_2026-10-20/
+#: fit_l1.json``: ``PIKL.TRUNC-4-K8.fitted``); R0 §4's search plays it unchanged.
+PIKL_LAMBDA_L1 = 0.015
+
+
+def pikl_scores(logits: np.ndarray, q: Dict[int, float], lam: float, order: Sequence[int]) -> Dict[int, float]:
+    """L1's PIKL(λ) score of every action in ``q``: Q(a) + λ·log π(a), the MODE of π′ ∝ π·exp(Q/λ) (piKL; the
+    reverse-KL step toward the policy). λ = 0 is ARGMAX of Q. ``order``: the legal actions in the policy's order (the
+    log-softmax runs over all of them, as L1's did); the pick is :func:`pick` over the same order (ties within
+    :data:`TIE` to the policy's earlier action, L1's registered tie rule)."""
+    if not (lam >= 0.0) or math.isinf(lam):
+        raise ValueError(f"piKL λ = {lam!r}: a finite λ >= 0 (λ = ∞ is the policy itself, no search)")
+    lsm = log_softmax_ordered(logits, order)
+    return {int(a): float(q[a]) + lam * lsm[int(a)] for a in order if a in q}
 
 
 def world_weights(log_w: Sequence[float], k: int) -> np.ndarray:

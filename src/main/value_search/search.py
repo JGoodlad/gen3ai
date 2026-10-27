@@ -36,7 +36,10 @@ class SearchConfig:
     #: B = n·1…n·2 and WORSE at B ≥ n·4 (design doc §7.11, R-SH)
     allocation: str = "uniform"
     m: Optional[int] = 4
-    rule: str = "gumbel"                   # uniform allocation only: "gumbel" (c_scale 1.0) | "argmax"
+    #: uniform allocation only: "gumbel" (c_scale 1.0) | "argmax" | "pikl" (L1's argmax Q + λ·log π at ``pikl_lambda``)
+    rule: str = "gumbel"
+    #: the piKL anchor λ (``rule="pikl"`` only): L1's fitted value by default (``rules.PIKL_LAMBDA_L1``)
+    pikl_lambda: float = rules.PIKL_LAMBDA_L1
     #: 4 turns then the critic: half the full leaf's value at a seventh of its cost (§7.11); None = to the end
     depth: Optional[int] = 4
     n_worlds: int = 16
@@ -68,6 +71,9 @@ class SearchResult:
     wall_s: float
     world_tries: List[int] = field(default_factory=list)
     leak: dict = field(default_factory=dict)
+    #: the OPPONENT's team in each searched world, in world order (empty for the oracle): what a caller measures the
+    #: worlds' quality against the truth with (S-U's REPORTED world-quality covariate)
+    world_teams: List[str] = field(default_factory=list)
 
 
 def seeds_for(key: str, n: int) -> List[str]:
@@ -83,10 +89,14 @@ def _cpu() -> float:
 
 
 def search_decision(engine: LeafEngine, log: dict, at: int, side: str, root_row: np.ndarray,
-                    root_mask: np.ndarray, cfg: SearchConfig, key: str, sampler=None) -> SearchResult:
+                    root_mask: np.ndarray, cfg: SearchConfig, key: str, sampler=None,
+                    root_choice_in_log: Optional[bool] = None) -> SearchResult:
     """Search the decision ``side`` takes at command index ``at`` of ``log`` (``root_row`` /
     ``root_mask``: that decision's obs row and mask). ``key`` seeds the worlds and the dice
-    (deterministic). ``sampler``: a ``worlds.WorldSampler`` (required unless ``cfg.oracle``)."""
+    (deterministic). ``sampler``: a ``worlds.WorldSampler`` (required unless ``cfg.oracle``).
+    ``root_choice_in_log``: whether the log's last opponent command is the opponent's choice AT THE ROOT (the sampler
+    then keeps it); None reads it off the root (a banked log at a decision the opponent answered first holds it), and a
+    LIVE log that never holds the opponent's pending choice passes False (``main.anchors.search_side``)."""
     if cfg.weights not in ("uniform", "likelihood"):
         raise ValueError(f"unknown world weighting {cfg.weights!r}")
     if cfg.weights == "likelihood" and cfg.allocation != "uniform":
@@ -95,6 +105,7 @@ def search_decision(engine: LeafEngine, log: dict, at: int, side: str, root_row:
         raise ValueError(f"proposals={cfg.proposals}: an honest search resamples n_worlds={cfg.n_worlds} of at least "
                          "as many proposals (never the oracle)")
     c0, w0 = _cpu(), time.monotonic()
+    teams_w: List[str] = []
     out = engine.forward(root_row[None].astype(np.float32), root_mask[None].astype(np.uint8))[0]
     logits = np.where(root_mask.astype(bool), out[:ACT].astype(np.float64), -np.inf)
     v_root = float(out[ACT])
@@ -108,7 +119,7 @@ def search_decision(engine: LeafEngine, log: dict, at: int, side: str, root_row:
         if sampler is None:
             raise ValueError("an honest search needs a world sampler (or cfg.oracle=True)")
         root = engine.root(log, at, side)
-        in_log = not bool(root["other_open"])
+        in_log = (not bool(root["other_open"])) if root_choice_in_log is None else bool(root_choice_in_log)
         w = sampler.sample(log, at, side, cfg.n_worlds if cfg.proposals is None else cfg.proposals, key,
                            root_choice_in_log=in_log)
         if cfg.proposals is not None:
@@ -119,6 +130,7 @@ def search_decision(engine: LeafEngine, log: dict, at: int, side: str, root_row:
                                            cfg.n_worlds, key)
         logs, tries, leak = w.logs, w.tries, w.leak
         log_w = list(getattr(w, "log_w", None) or [])
+        teams_w = list(getattr(w, "teams", None) or [])
     seeds = seeds_for(key, cfg.n_worlds)
     budget = cfg.budget if cfg.budget is not None else cfg.per_action * len(legal)
 
@@ -154,7 +166,14 @@ def search_decision(engine: LeafEngine, log: dict, at: int, side: str, root_row:
             q = {a: float(np.mean(v)) for a, v in got.items()}
         visits = {a: k for a in legal}
         order = rules.policy_order(logits, legal)
-        score = rules.gumbel_scores(logits, q, k) if cfg.rule == "gumbel" else q
+        if cfg.rule == "gumbel":
+            score = rules.gumbel_scores(logits, q, k)
+        elif cfg.rule == "pikl":
+            score = rules.pikl_scores(logits, q, cfg.pikl_lambda, order)
+        elif cfg.rule == "argmax":
+            score = q
+        else:
+            raise ValueError(f"unknown acting rule {cfg.rule!r}")
         action, spent = rules.pick(score, order), k * len(legal)
     else:
         raise ValueError(f"unknown allocation {cfg.allocation!r}")
@@ -163,4 +182,5 @@ def search_decision(engine: LeafEngine, log: dict, at: int, side: str, root_row:
     return SearchResult(action=int(action), policy_target=pi_t, q=q, visits=visits, completed_q=cq,
                         root_value=v_root, value_target=float(sum(pi_t[a] * cq[a] for a in legal)),
                         prior=rules.softmax_masked(logits, legal), spent=int(spent),
-                        cpu_s=_cpu() - c0, wall_s=time.monotonic() - w0, world_tries=tries, leak=leak)
+                        cpu_s=_cpu() - c0, wall_s=time.monotonic() - w0, world_tries=tries, leak=leak,
+                        world_teams=teams_w)

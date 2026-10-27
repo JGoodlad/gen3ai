@@ -369,6 +369,37 @@ reads them (inference only). The loader reads L back from the policy into the ha
 model and stamps nothing. Refused for a bot or peer our-side and outside [0, 1]. `main.x35.kakuna` units pass it
 from a final's `belief_prior_mix`, `main.reads` from a model's `load`.
 
+### `--our-search PRESET[@TURN]` — OUR checkpoint plus a registered one-ply search (S-U, 2026-10-27)
+
+`main.anchors.search_side`, for S-U (`designs/endstate/design_search_u_headroom.md`). At each of our decisions from
+turn TURN (default 10) with ≥ 2 legal actions, the checkpoint plus the registered search (`main.anchors.search_presets`;
+`r0s4` is R0 §4's: 8 honest worlds `dice="seed"`, every legal action played once in each world 4 turns deep then the
+critic, piKL λ 0.015) picks the action; every other decision is the checkpoint's greedy choice, exactly the raw
+cell's. The search replays the battle's TRUE input log in process, cut honestly (the opponent's choice of our own
+update is never in it) and guarded: the log's replay must reproduce the live decision's tokens and row byte for byte,
+else the game fails by name. A searched gain is LEAK-INCLUSIVE (the worlds replay the true seed, `search_ledger.md`
+§6.1). Every decision is logged to `<out>/search_decisions.jsonl` (`python -m main.reads search-cost` reads it). Needs a
+checkpoint our-side on the core slot, `--regime greedy` with no `--our-temperature`, and a `--seed-base`. Stamps
+`our_regime = <regime>+search=<preset>@<turn>`.
+
+**The peer's patience (S-U FINDING S-3, read and tested 2026-10-27).** Our front end has no battle timer, and the
+Metamon peer waits on its observation queue with no timeout; its ONE clock is poke-env's websocket keepalive (a ping
+every 20 s, the connection closed when a pong is 20 s late). A searched decision (30-90 s) therefore runs OFF the event
+loop, in a worker thread, so the front end keeps answering pings: a 70-s off-loop decision kept Kakuna connected
+(`src/main/anchors/peer_patience_integration_test.py`, slow tier). A decision that BLOCKS the loop that long drops the
+peer, and the front end then forfeits it, booking OUR win: never decide on the loop. Our own watchdog is the other
+clock: size `--first-game-timeout` / `--progress-timeout` for a searched game (`main.x35.kakuna` does).
+
+### `--deal-game G` — ONE game of a seeded series (S-U's per-game units)
+
+Plays only game G (0-based) of the `--games` series: its half (the role), both sides' team draws (our team source and
+the Metamon peer's seeded draw, `metamon_side.py --team-skip`, each skip the half's earlier draws) and its battle seed
+(the front end counts battles from G, so game G gets `derive_seed_from_base(--seed-base, G)`). The summary counts 1
+game and records the deal under `provenance.deal`. Needs a metamon `--opponent`, the core slot, a `--seed-base` and no
+`--mirrored-pairs`. `main.x35.kakuna` plans a `per_game` read as 20 such units per seed (`designs/tools/reads.md`).
+**UNVERIFIED:** that a lone game G replays game G of a whole 20-game unit game for game (it does when neither side
+carries state across battles; a Kakuna process plays one battle here, 20 there).
+
 ### `--mirrored-pairs` — MIRRORED TEAM PAIRS (T17, `gen3_mirrored_pairs_v1`)
 
 Within each half, battle `2k` pits our team `A_k` (drawn from OUR team source) against the peer's

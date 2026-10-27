@@ -497,3 +497,64 @@ async def test_an_OBS_frame_reaches_its_slot_and_never_a_websocket():
     assert p1.frames == [("battle-gen3ou-9", "p1", '{"n":0}')]
     assert not any("__OBS__" in t for t in p1.ws.sent + p2.ws.sent)
     assert p1.ws.sent == [">battle-gen3ou-9\n|turn|1"]
+
+
+# --------------------------------------------------------------------------------------------
+# the input log (S-U's live searched player reads it in process: main.anchors.search_side)
+# --------------------------------------------------------------------------------------------
+_WAIT = '|request|{"wait":true,"side":{"name":"Beta","id":"p2","pokemon":[]}}'
+
+
+async def test_every_command_carries_the_request_update_it_answers_whatever_order_the_sides_choose_in():
+    front = _front()
+    alpha, beta = await _named(front, "Alpha"), await _named(front, "Beta")
+    battle = _fake_battle(front, alpha, beta)
+    # update 1: both sides asked; p1 first
+    front._note_side_line(battle, "p1", _SIM_REQUEST)
+    front._note_side_line(battle, "p2", _SIM_REQUEST)
+    await front._cmd_choose(alpha, battle.tag, "move rockslide", "")
+    await front._cmd_choose(beta, battle.tag, "move surf", "")
+    # update 2: p2 answers BEFORE p1 this time
+    front._note_side_line(battle, "p1", _SIM_REQUEST)
+    front._note_side_line(battle, "p2", _SIM_REQUEST)
+    await front._cmd_choose(beta, battle.tag, "move icebeam", "")
+    await front._cmd_choose(alpha, battle.tag, "switch 2", "")
+    # p1's switch is refused (trapped): a re-request of the SAME update, to p1 only
+    front._note_side_line(battle, "p1", "|error|[Unavailable choice] Can't switch: The active Pokémon is trapped")
+    front._note_side_line(battle, "p1", _SIM_REQUEST)
+    await front._cmd_choose(alpha, battle.tag, "move earthquake", "")
+    # update 3: p1 must switch, p2 waits
+    front._note_side_line(battle, "p1", _SIM_REQUEST)
+    front._note_side_line(battle, "p2", _WAIT)
+    await front._cmd_choose(alpha, battle.tag, "switch 3", "")
+    assert battle.choice_log == [(1, "p1", "CHOOSE p1 move rockslide"), (1, "p2", "CHOOSE p2 move surf"),
+                                 (2, "p2", "CHOOSE p2 move icebeam"), (2, "p1", "CHOOSE p1 switch 2"),
+                                 (2, "p1", "CHOOSE p1 move earthquake"), (3, "p1", "CHOOSE p1 switch 3")]
+    assert battle.req_n == {"p1": 3, "p2": 3}
+    await front._cmd_forfeit(beta, battle.tag)
+    assert battle.choice_log[-1] == (3, "p2", "FORCELOSE p2")
+
+
+def test_a_series_may_start_its_battle_count_at_one_game_of_it():
+    front = ShowdownFrontEnd(impl="node", validate_teams=False, seed_base=5, battle_index_base=7)
+    assert front.battle_index_base == 7 and next(front._battle_index) == 7
+    for bad in (-1, True, 1.5):
+        with pytest.raises(ValueError):
+            ShowdownFrontEnd(impl="node", validate_teams=False, seed_base=5, battle_index_base=bad)
+    with pytest.raises(ValueError, match="pair_seeds"):
+        ShowdownFrontEnd(impl="node", validate_teams=False, seed_base=5, pair_seeds=True, battle_index_base=3)
+
+
+async def test_a_choice_the_sim_drops_as_invalid_leaves_the_input_log_and_an_unavailable_one_stays():
+    front = _front()
+    alpha, beta = await _named(front, "Alpha"), await _named(front, "Beta")
+    battle = _fake_battle(front, alpha, beta)
+    front._note_side_line(battle, "p1", _SIM_REQUEST)
+    front._note_side_line(battle, "p2", _SIM_REQUEST)
+    await front._cmd_choose(beta, battle.tag, "move outrage", "")
+    front._note_side_line(battle, "p2", "|error|[Invalid choice] Can't move: Salamence doesn't have a move matching outrage")
+    await front._cmd_choose(beta, battle.tag, "move dragonclaw", "")
+    await front._cmd_choose(alpha, battle.tag, "switch 2", "")
+    front._note_side_line(battle, "p1", "|error|[Unavailable choice] Can't switch: The active Pokémon is trapped")
+    assert battle.choice_log == [(1, "p2", "CHOOSE p2 move dragonclaw"), (1, "p1", "CHOOSE p1 switch 2")]
+    assert battle.commands == ["CHOOSE p2 move outrage", "CHOOSE p2 move dragonclaw", "CHOOSE p1 switch 2"]

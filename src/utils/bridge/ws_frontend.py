@@ -96,6 +96,7 @@ _ID_RE = re.compile(r"[^a-z0-9]+")
 # "the choice was dropped, you may choose again" and leaves `[Unavailable choice]` alone (the sim
 # follows that one with a fresh `|request|`); mirrored in `_note_side_line`.
 _INVALID_CHOICE_PREFIX = "|error|[Invalid choice]"
+_UNAVAILABLE_CHOICE_PREFIX = "|error|[Unavailable choice]"
 
 
 def to_id(text: str) -> str:
@@ -163,6 +164,8 @@ class _Battle:
     names: Dict[str, str]
     seed: Optional[List[int]]
     rqid: int = 0
+    #: the battle's index in this front end's series (``battle_index_base`` + the count): its seed's index
+    index: int = -1
     req: Dict[str, _SideRequest] = field(default_factory=lambda: {"p1": _SideRequest(),
                                                                  "p2": _SideRequest()})
     finished: bool = False
@@ -175,6 +178,19 @@ class _Battle:
     # `capture=True`, because a long series would otherwise grow without bound.
     capture: Optional[List[Tuple[str, str]]] = None
     commands: Optional[List[str]] = None
+    #: THE INPUT LOG, always on and small (S-U's live searched player reads it in process,
+    #: ``main.anchors.search_side``): the ``START`` document, then every ``CHOOSE`` / ``FORCELOSE`` written to the child
+    #: as ``(update, slot, command)``. ``update`` is the REQUEST UPDATE the command answers: every sim update sends ONE
+    #: ``|request|`` to EACH side (a wait request included), so a side's update index is the count of its requests, a
+    #: request after that side's ``[Unavailable choice]`` re-asking the same update (``req_n`` / ``req_err``). Two sides'
+    #: commands of one update may reach the child in either order; the sim holds them until both are in, so the
+    #: (update, side) order replays the same battle. A choice the SIM refuses with ``[Invalid choice]`` (dropped, never
+    #: applied) leaves the log; an ``[Unavailable choice]`` (applied and refused, then re-asked) stays. Nothing a
+    #: client receives depends on it.
+    start_doc: Optional[dict] = None
+    choice_log: List[Tuple[int, str, str]] = field(default_factory=list)
+    req_n: Dict[str, int] = field(default_factory=lambda: {"p1": 0, "p2": 0})
+    req_err: Dict[str, bool] = field(default_factory=lambda: {"p1": False, "p2": False})
 
     def slot_of(self, conn: _Conn) -> Optional[str]:
         for slot, c in self.conns.items():
@@ -222,9 +238,14 @@ class ShowdownFrontEnd:
     def __init__(self, *, impl: str = "rust", battle_format: str = "gen3ou",
                  seed_base: Optional[int] = None, validate_teams: bool = True,
                  capture: bool = False, capture_dir: Optional[str] = None,
-                 pair_seeds: bool = False, pair_log: Optional[str] = None):
+                 pair_seeds: bool = False, pair_log: Optional[str] = None,
+                 battle_index_base: int = 0):
         if pair_seeds and seed_base is None:
             raise ValueError("pair_seeds needs a seed_base: a mirrored pair shares ONE derived seed")
+        if isinstance(battle_index_base, bool) or not isinstance(battle_index_base, int) or battle_index_base < 0:
+            raise ValueError(f"battle_index_base {battle_index_base!r}: an int >= 0")
+        if battle_index_base and pair_seeds:
+            raise ValueError("battle_index_base with pair_seeds: a mirrored pair's seed is keyed by its teams, not its index")
         self._spawn_argv = bridge_spawn_argv(impl)
         # MIRRORED TEAM PAIRS (T17, `gen3_mirrored_pairs_v1`): the seed is keyed by the battle's
         # UNORDERED TEAM PAIR (canonicalized — the two clients pack the same team differently) and
@@ -249,7 +270,10 @@ class ShowdownFrontEnd:
         # the acceptor's is read at `/accept`.
         self.challenges: Dict[Tuple[str, str], Tuple[str, Optional[str]]] = {}
         self._guests = itertools.count(1)
-        self._battle_index = itertools.count(0)
+        # A battle's seed is derived from (seed_base, its index). ONE GAME of a seeded series (S-U's per-game units,
+        # ``main.anchors --deal-game G``) starts the count at G, so it plays the seed game G of the whole series plays.
+        self.battle_index_base = battle_index_base
+        self._battle_index = itertools.count(battle_index_base)
         self._team_cache: Dict[Tuple[str, str], Tuple[bool, List[str]]] = {}
         # Every battle that has FINISHED, in order — but only while `capture` is on, because a
         # long series would otherwise hold every chunk of every battle forever. `self.battles`
@@ -551,7 +575,7 @@ class ShowdownFrontEnd:
             stderr=asyncio.subprocess.PIPE, limit=BRIDGE_STREAM_LIMIT,
         )
         battle = _Battle(tag=tag, fmt=fmt, proc=proc, conns={"p1": p1, "p2": p2},
-                         names={"p1": p1.name, "p2": p2.name}, seed=seed,
+                         names={"p1": p1.name, "p2": p2.name}, seed=seed, index=index,
                          capture=[] if self._capture else None,
                          commands=[] if self._capture else None)
         self.battles[tag] = battle
@@ -574,6 +598,7 @@ class ShowdownFrontEnd:
         obs_sides = [slot for slot, c in (("p1", p1), ("p2", p2)) if c.core_obs]
         if obs_sides:
             start["core_obs"] = {"sides": obs_sides}
+        battle.start_doc = start
         await self._write_child(battle, "START " + json.dumps(start))
         self._live[tag] = battle
         battle.reader = asyncio.ensure_future(self._pump(battle))
@@ -584,6 +609,9 @@ class ShowdownFrontEnd:
     async def _write_child(self, battle: _Battle, command: str) -> None:
         if battle.commands is not None:
             battle.commands.append(command)
+        if command.startswith(("CHOOSE ", "FORCELOSE ")):
+            slot = command.split(" ", 2)[1]
+            battle.choice_log.append((battle.req_n.get(slot, 0), slot, command))
         proc = battle.proc
         if proc.stdin is None or proc.returncode is not None or proc.stdin.is_closing():
             return
@@ -706,6 +734,12 @@ class ShowdownFrontEnd:
         state = battle.req[slot]
         if ln.startswith("|request|") and len(ln) > len("|request|"):
             payload = ln[len("|request|"):]
+            # the input log's update index (``_Battle.choice_log``): a re-request after an [Unavailable choice] asks
+            # the SAME update again
+            if battle.req_err[slot]:
+                battle.req_err[slot] = False
+            else:
+                battle.req_n[slot] += 1
             battle.rqid += 1
             state.rqid = battle.rqid
             try:
@@ -723,6 +757,14 @@ class ShowdownFrontEnd:
         if ln.startswith(_INVALID_CHOICE_PREFIX):
             state.is_wait = "cantUndo" if "Can't undo" in ln else False
             state.choice = ""
+            # the sim DROPPED that side's last choice (it never reached the battle): it leaves the input log, so a
+            # replay feeds only what the battle took. An [Unavailable choice] stays: the sim saw it and re-asked.
+            for i in range(len(battle.choice_log) - 1, -1, -1):
+                if battle.choice_log[i][1] == slot:
+                    del battle.choice_log[i]
+                    break
+        if ln.startswith(_UNAVAILABLE_CHOICE_PREFIX):
+            battle.req_err[slot] = True
         return ln
 
     async def _cmd_choose(self, conn: _Conn, room: str, choice: str, rqid: str) -> None:

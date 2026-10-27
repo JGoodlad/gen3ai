@@ -303,6 +303,19 @@ def build_parser() -> argparse.ArgumentParser:
                         "before the hypothesis tokens, the policy and the critic read it (INFERENCE ONLY, "
                         "agents.model.belief_prior_mix; L = 1 is D0f's prior-only model). 0 is the unchanged "
                         "model and stamps nothing; L > 0 stamps our_regime='<regime>+belief_prior_mix=<L>'.")
+    p.add_argument("--our-search", dest="our_search", default=None, metavar="PRESET[@TURN]",
+                   help="a checkpoint our-side on the in-process core slot, --regime greedy, a --seed-base ONLY: OUR "
+                        "checkpoint plus a REGISTERED one-ply search (main.anchors.search_presets; 'r0s4' is R0 §4's: "
+                        "8 honest worlds, TRUNC-4-K8, piKL λ 0.015) at every decision of ours from turn TURN (default "
+                        "10) with >= 2 legal actions; every other decision is the checkpoint's greedy choice. Each "
+                        "decision is logged to <out>/search_decisions.jsonl. Stamps our_regime='<regime>+search="
+                        "<preset>@<turn>'. A searched game costs 15-37 CPU-min: size --first-game-timeout / "
+                        "--progress-timeout for it (S-U, design_search_u_headroom.md).")
+    p.add_argument("--deal-game", dest="deal_game", type=int, default=None, metavar="G",
+                   help="play ONLY game G (0-based) of the --games series: its role (half), both sides' team draws "
+                        "(each skips the half's earlier draws) and its battle seed (--seed-base's index G). Needs a "
+                        "metamon --opponent, the core slot and a --seed-base. S-U's per-game units; the summary "
+                        "counts 1 game and records the deal under provenance.deal.")
     p.add_argument("--allow-unmatched-regime", action="store_true",
                    help="permit a cell where the two sides are NOT at the same regime. Every row "
                         "is then stamped regime_matched=false. Foul Play has no sampling knob at "
@@ -527,6 +540,34 @@ def build_plan(args: argparse.Namespace, cfg: config_mod.AnchorsConfig,
             raise SystemExit(f"--our-belief-prior-mix: {exc}") from None
         our_bpm = our_bpm if our_bpm > 0.0 else None      # λ = 0 IS the unchanged model: nothing to stamp
 
+    # `--our-search` (S-U): our checkpoint plus a registered search, on the core slot (the search reads the battle's
+    # true input log in process) of a SEEDED front end (the honest builder replays the battle's own seed).
+    our_search = getattr(args, "our_search", None)
+    if our_search is not None:
+        from main.anchors.search_presets import SearchSpecError, canonical
+
+        try:
+            our_search = canonical(our_search)
+        except SearchSpecError as exc:
+            raise SystemExit(f"--our-search: {exc}") from None
+        why = ("a checkpoint our-side" if our_side != "model" else
+               "the in-process core slot (--our-transport core)" if our_transport != "core" else
+               "--regime greedy with no --our-temperature (the search decides; π is greedy elsewhere)"
+               if args.regime != "greedy" or our_t is not None else
+               "a --seed-base (the honest world builder replays the battle's own seed)"
+               if args.seed_base is None else None)
+        if why:
+            raise SystemExit(f"--our-search needs {why}.")
+    deal_game = getattr(args, "deal_game", None)
+    if deal_game is not None:
+        why = ("a metamon --opponent (its peer skips its own seeded draws)" if kind != "metamon" else
+               "our side = a checkpoint on the core slot" if our_side != "model" or our_transport != "core" else
+               "a --seed-base (game G's seed is the base's index G)" if args.seed_base is None else
+               "no --mirrored-pairs (a mirrored pair is two games)" if getattr(args, "mirrored_pairs", False) else
+               f"0 <= G < --games {args.games}" if not 0 <= deal_game < args.games else None)
+        if why:
+            raise SystemExit(f"--deal-game needs {why}.")
+
     # The reproducibility pair is the FRONT END's, and there is no Node counterpart — a
     # `--seed-base` silently ignored on the Node path would make an unrepeatable series look
     # seeded, which is the one failure a seed exists to prevent.
@@ -672,6 +713,8 @@ def build_plan(args: argparse.Namespace, cfg: config_mod.AnchorsConfig,
         opponent_temperature=opp_t,
         our_temperature=our_t,
         our_belief_prior_mix=our_bpm,
+        our_search=our_search,
+        deal_game=deal_game,
         our_transport=("peer" if is_peer else our_transport),
         our_transport_note=transport_note,
         bot_seed=((args.bot_seed if args.bot_seed is not None else int(args.team_seed))
@@ -690,14 +733,19 @@ def render_plan(plan: runner_mod.SeriesPlan, cfg: config_mod.AnchorsConfig) -> s
         + (f"  OUR side samples at T={plan.our_temperature}"
            if plan.our_temperature is not None else "")
         + (f"  OUR belief prior mix λ={plan.our_belief_prior_mix:g}"
-           if plan.our_belief_prior_mix is not None else ""),
+           if plan.our_belief_prior_mix is not None else "")
+        + (f"  OUR side SEARCHES ({plan.our_search}: main.anchors.search_presets)"
+           if plan.our_search is not None else ""),
         f"  team set          {plan.teamset}  ours={plan.our_team_spec}"
         + (f"  🚨 OUR peer draws {plan.our_set} (ASYMMETRIC pair cell, --our-teamset)"
            if plan.our_set != plan.teamset else ""),
         f"  declared cell     {plan.declared_team_cell}"
         + ("  (--declare-asymmetric-teams: counted by results.unit_counts' DECLARED branch)"
            if plan.declared_team_cell == "asymmetric" else ""),
-        f"  games             {plan.games}  ->  {plan.half_sizes()}",
+        f"  games             {plan.games}  ->  {plan.half_sizes()}"
+        + (f"  ONE GAME of the series: --deal-game {plan.deal_game} = {plan.deal_position()} "
+           "(half, the team draws each side skips), seed index " + str(plan.deal_game)
+           if plan.deal_game is not None else ""),
         "  pairing           "
         + ("MIRRORED TEAM PAIRS (T17): battle 2k+1 hands battle 2k's teams over, one seed per pair "
            f"(front end --pair-seeds, log {plan.pair_log}); the PAIR is the unit"
@@ -857,11 +905,12 @@ def main(argv: Optional[List[str]] = None) -> int:
     if rows:
         cell = rows[0].cell
     status = "FAILED" if failure is not None else "OK"
-    if failure is None and len(rows) < plan.games:
+    n_planned = sum(plan.half_sizes().values())      # the series, or the ONE game a --deal-game plays
+    if failure is None and len(rows) < n_planned:
         status = "FAILED"
         failure = runner_mod.SeriesFailure(
             "short_series",
-            f"{len(rows)}/{plan.games} games completed with no named failure — a partial n is "
+            f"{len(rows)}/{n_planned} games completed with no named failure — a partial n is "
             "only honest when it is labelled partial")
 
     games_path = plan.out_dir / "games.jsonl"
@@ -878,6 +927,9 @@ def main(argv: Optional[List[str]] = None) -> int:
             "anchors_config": str(cfg.source),
             "peer_report": {k: v for k, v in report.items() if k != "team_draws"},
             "games_path": str(games_path),
+            **({"deal": {"game": plan.deal_game, "of": plan.games, "half": plan.deal_position()[0],
+                         "skip": plan.deal_position()[1], "seed_base": plan.seed_base, "team_seed": plan.team_seed}}
+               if plan.deal_game is not None else {}),
         })
     results_mod.write_summary(summary_path, summary)
 

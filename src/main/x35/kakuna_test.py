@@ -427,7 +427,10 @@ class FakePopen:
         if counted:
             out = Path(self.argv[self.argv.index("--out") + 1])
             out.mkdir(parents=True, exist_ok=True)
-            (out / "summary.json").write_text(json.dumps(GOOD))
+            one = "--deal-game" in self.argv                    # a per-game unit plays (and counts) one game
+            (out / "summary.json").write_text(json.dumps(dict(GOOD, n=1, wins=1, ties=0) if one else GOOD))
+            for hook in FakePopen.on_play:
+                hook(self.argv, out)
         return rc
 
 
@@ -439,7 +442,7 @@ class _Claim:
 def install_fake_play(monkeypatch):
     """No game: preflight passes, the port claim is a no-op, ``Popen`` is :class:`FakePopen` (script it via
     ``FakePopen.script``). Shared with ``main.reads.runner_test``."""
-    FakePopen.script, FakePopen.argvs = [], []
+    FakePopen.script, FakePopen.argvs, FakePopen.on_play = [], [], []
     monkeypatch.setattr(KA, "preflight", lambda u: None)
     monkeypatch.setattr(KA, "claim_port", lambda *a, **k: (9555, _Claim()))
     monkeypatch.setattr(KA.subprocess, "Popen", FakePopen)
@@ -507,3 +510,83 @@ def test_a_unit_that_overran_goes_straight_to_the_long_job_on_its_next_attempt(t
     fake_play.script = [(0, True)]
     KA.run_unit(tmp_path, other)
     assert "--max-s" in fake_play.argvs[3], "another unit still starts on the short lane"
+
+
+# --------------------------------------------------------------- S-U: per-game units and searched units
+def _finals(search=None):
+    return [{"label": "p", "arm": "pstar", "seed": 2601, "path": "/m.zip", **({"search": search} if search else {})}]
+
+
+def test_a_per_game_plan_is_every_game_of_every_seeds_series_deal_by_deal():
+    units = KA.plan_units(_finals(), hash_models=False, teamsets=("home72", "forum72"), unit_seeds=(0, 1),
+                          per_game=True)
+    assert len(units) == 2 * 2 * KA.UNIT_GAMES
+    assert [(u.unit_seed, u.game, u.teamset) for u in units[:4]] == [(0, 0, "home72"), (0, 0, "forum72"),
+                                                                      (0, 1, "home72"), (0, 1, "forum72")]
+    assert all(u.games == 1 and u.search is None for u in units)
+    assert units[0].name == "p__home72__00__g00" and units[-1].name == "p__forum72__01__g19"
+    whole = KA.plan_units(_finals(), hash_models=False, teamsets=("home72",), unit_seeds=(0,))
+    assert [(u.name, u.games, u.game) for u in whole] == [("p__home72__00", KA.UNIT_GAMES, None)]
+
+
+def test_a_searched_final_plans_per_game_only_and_canonicalises_its_search():
+    with pytest.raises(KA.KakunaError, match="per_game"):
+        KA.plan_units(_finals("r0s4"), hash_models=False, teamsets=("home72",), unit_seeds=(0,))
+    with pytest.raises(KA.KakunaError, match="preset"):
+        KA.plan_units(_finals("nope@10"), hash_models=False, teamsets=("home72",), unit_seeds=(0,), per_game=True)
+    (u, *_rest) = KA.plan_units(_finals("r0s4"), hash_models=False, teamsets=("home72",), unit_seeds=(0,),
+                                per_game=True)
+    assert u.search == "r0s4@10"
+
+
+def test_a_per_game_unit_plays_its_game_of_the_series_with_a_capture():
+    u = KA.plan_units(_finals(), hash_models=False, teamsets=("home72",), unit_seeds=(3,), per_game=True)[13]
+    a = KA.unit_argv(u, Path("/o"), 9541, py="PY")
+    tail = a[a.index("PY"):]
+    for flag, val in (("--games", str(KA.UNIT_GAMES)), ("--deal-game", "13"), ("--team-seed", "3"),
+                      ("--seed-base", "3"), ("--capture-dir", "/o/capture")):
+        assert tail[tail.index(flag) + 1] == val
+    assert "--max-s" in a and "--our-search" not in tail          # a raw game takes the short lane
+
+
+def test_a_searched_unit_is_a_long_job_whose_watchdog_is_sized_for_a_searched_game(tmp_path, fake_play):
+    u = KA.plan_units(_finals("r0s4@10"), hash_models=False, teamsets=("home72",), unit_seeds=(0,), per_game=True)[0]
+    with pytest.raises(KA.KakunaError, match="short lane"):
+        KA.unit_argv(u, Path("/o"), 9541, py="PY")
+    a = KA.unit_argv(u, Path("/o"), 9541, py="PY", short=False)
+    i = a.index("PY")
+    assert "--max-s" not in a and a[i - 3:i] == [KA.MEM_GB, "timeout", str(KA.UNIT_SEARCH_S + 600)]
+    tail = a[i:]
+    for flag, val in (("--our-search", "r0s4@10"), ("--first-game-timeout", str(KA.UNIT_SEARCH_S)),
+                      ("--progress-timeout", str(KA.UNIT_SEARCH_S)), ("--deal-game", "0")):
+        assert tail[tail.index(flag) + 1] == val
+    fake_play.script = [(0, True)]
+    assert KA.run_unit(tmp_path, u) == 0 and KA.is_done(tmp_path, u)
+    assert "--max-s" not in fake_play.argvs[0], "a searched unit never starts on the short lane"
+
+
+def test_every_per_game_and_searched_argv_parses_with_the_real_main_anchors_parser():
+    from main.anchors.cli import build_parser
+
+    for search in (None, "r0s4@10"):
+        u = KA.plan_units(_finals(search), hash_models=False, teamsets=("forum72",), unit_seeds=(1,), per_game=True)[7]
+        a = KA.unit_argv(u, Path("/o"), 9541, py="PY", short=search is None)
+        args = build_parser().parse_args(a[a.index("PY") + 3:])
+        assert args.deal_game == 7 and args.games == KA.UNIT_GAMES and args.our_search == search
+
+
+def test_a_units_cpu_is_its_own_childs_with_every_descendant_it_reaped():
+    import subprocess
+    import sys
+
+    burn = "import subprocess, sys; subprocess.run([sys.executable, '-c', 'x = 0\\nfor i in range(3_000_000): x += i'])"
+    proc = subprocess.Popen([sys.executable, "-c", burn + "; sys.exit(3)"])
+    rc, cpu = KA._wait_cpu(proc)
+    assert rc == 3 and proc.returncode == 3
+    assert cpu is not None and cpu > 0.05, cpu        # the grandchild's loop is in it
+
+    class Stand:
+        pid = 1                                          # not this process's child: no CPU, the stand-in's own wait
+        def wait(self):
+            return 0
+    assert KA._wait_cpu(Stand()) == (0, None)

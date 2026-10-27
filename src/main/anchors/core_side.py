@@ -191,9 +191,12 @@ class _BattleState:
 
 
 def make_slot(front: Any, *, username: str, policy: CorePolicy, team_source: Any,
-              state: OurSideState, forfeit_limit: int, battle_format: str = "gen3ou") -> Any:
+              state: OurSideState, forfeit_limit: int, battle_format: str = "gen3ou",
+              searcher: Any = None) -> Any:
     """Build the slot as a subclass of the front end's own connection record (imported lazily so
-    importing this module stays cheap)."""
+    importing this module stays cheap). ``searcher`` (``--our-search``, :class:`main.anchors.search_side.LiveSearcher`):
+    each decision is the searcher's (it plays ``policy``'s greedy choice wherever it does not search); None = the
+    policy decides every decision, unchanged."""
     base = _conn_base()
 
     class CoreSlot(base):  # type: ignore[misc,valid-type]
@@ -205,6 +208,7 @@ def make_slot(front: Any, *, username: str, policy: CorePolicy, team_source: Any
             self.front = front
             self.username = username
             self.policy = policy
+            self.searcher = searcher
             self.teams = team_source
             self.state = state
             self.forfeit_limit = int(forfeit_limit)
@@ -394,7 +398,12 @@ def make_slot(front: Any, *, username: str, policy: CorePolicy, team_source: Any
             if not isinstance(mask, list) or len(mask) != 11 or sum(mask) == 0:
                 raise _fail(f"{b.tag}: core mask {mask!r} is not a live 11-bit mask")
             t0 = time.perf_counter()
-            idx, argmax = self.policy.decide(row, np.asarray(mask, dtype=np.int8))
+            if self.searcher is None:
+                idx, argmax = self.policy.decide(row, np.asarray(mask, dtype=np.int8))
+            else:
+                # S-U's searched player: off the event loop (the peer's keepalive pings keep being answered)
+                idx, argmax = await self.searcher.decide(self.front, b.tag, d, row, np.asarray(mask, dtype=np.int8),
+                                                         self)
             self.state.decision_times.append(time.perf_counter() - t0)
             if mask[idx] != 1:
                 raise _fail(f"{b.tag}: chose action {idx}, which the core mask {mask} forbids")
@@ -445,14 +454,37 @@ def make_slot(front: Any, *, username: str, policy: CorePolicy, team_source: Any
 def build_slot(front: Any, *, username: str, model_zip: str, device: str, model_loader: str,
                stochastic: bool, temperature: float, team_spec: Dict[str, Any],
                team_seed: Optional[int], forfeit_limit: int, state: OurSideState,
-               battle_format: str = "gen3ou", belief_prior_mix: Optional[float] = None) -> Any:
+               battle_format: str = "gen3ou", belief_prior_mix: Optional[float] = None,
+               team_skip: int = 0, search: Optional[str] = None, search_out: Any = None) -> Any:
     """Everything one half's slot needs: the policy (loaded once per half, as ``play.main`` did),
-    the seeded team source (its draws logged into ``state.draws``) and the connection."""
+    the seeded team source (its draws logged into ``state.draws``) and the connection.
+
+    ``team_skip`` (``--deal-game``): draw and DISCARD that many teams first, so the half's first battle pilots the
+    team the whole series' battle ``team_skip`` of this half drew (the discarded draws are not logged). ``search``
+    (``--our-search``): the registered search (:mod:`main.anchors.search_presets`), its per-decision log at
+    ``search_out``; returns a slot whose ``searcher`` the caller closes."""
     model = load_policy(model_zip, device, model_loader, state, belief_prior_mix=belief_prior_mix)
     policy = CorePolicy(model, stochastic=stochastic, temperature=temperature)
     teams = build_team_source(team_spec, team_seed, state.draws)
+    skip_draws(teams, int(team_skip), state.draws)
+    searcher = None
+    if search is not None:
+        from main.anchors.search_side import LiveSearcher
+
+        searcher = LiveSearcher(model, policy, search, search_out)
     return make_slot(front, username=username, policy=policy, team_source=teams, state=state,
-                     forfeit_limit=forfeit_limit, battle_format=battle_format)
+                     forfeit_limit=forfeit_limit, battle_format=battle_format, searcher=searcher)
+
+
+def skip_draws(teams: Any, k: int, draw_log: list) -> None:
+    """Draw ``k`` teams from ``teams`` and forget them: the source then yields what its (k+1)-th draw would have been.
+    The draw log keeps only the teams actually played."""
+    if k < 0:
+        raise ValueError(f"team skip {k}: >= 0")
+    n0 = len(draw_log)
+    for _ in range(k):
+        teams.yield_team()
+    del draw_log[n0:]
 
 
 def our_stochastic(plan: Any) -> "tuple[bool, float]":
