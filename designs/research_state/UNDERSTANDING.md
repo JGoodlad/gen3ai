@@ -76,8 +76,10 @@ under `measurements/`. A number with no pointer is not a measurement.
    within-team comparison cannot separate the two (±0.08). [DESCRIPTIVE · banked X51 games, replicated on the
    PastaMittens twins · `c758fcb82`; review: `measurements/h_mid_value_test_2026-10-26/REVIEW.md` B1] P\*'s own
    critic does not see that deficit: its 3.5 pp set gap is a turn-1 team prior that it never revises, and at equal V
-   P\* wins 8.6 pp less on U (H-MID: CRITIC-MISCALIBRATED-ON-U, below). H-CTX (rc72b) is the one test of team
-   against set (§6). The policy keys on our sets' exact identity only weakly: a Smogon re-draw of one familiar
+   P\* wins 8.6 pp less on U (H-MID: CRITIC-MISCALIBRATED-ON-U, below). **The premium goes with the TEAM (H-CTX
+   SUPPORTED):** on 72 new sixes made only of familiar pool sets (rc72b), P\* scores 0.514 against Kakuna, below F's
+   0.540 and far below home72's 0.615 on the same engine; it recovers −0.34 [−2.05, +0.20] of the home premium.
+   [MEASURED · registered, one checkpoint, symmetric cells · `hctx_rc72_2026-10-26`, record `read_am2/record.json`] The policy keys on our sets' exact identity only weakly: a Smogon re-draw of one familiar
    bench set moves it 1.19× [1.07, 1.33] as much as re-drawing an unfamiliar one, a small real premium under the
    registered 1.5× bar (bench mons only; plan memorisation keyed on the battle's course is not ruled out). Erasing
    all six mons' identity embeddings costs familiar and unfamiliar teams alike (1.07 [0.91, 1.25]). Lever N2 is
@@ -87,8 +89,8 @@ under `measurements/`. A number with no pointer is not a measurement.
    ±3–4 pp wide: practice on 36 teams (X52) +1.3 pp on the unpractised half, UNDECIDED; a wider pool (D1) +2.10
    [−0.92, +5.11], UNDECIDED (final), at −1.61 pp in-pool; set mutation (D3, look 1) +1.27 [−2.63, +5.16], CONTINUE,
    with an engine-mix caveat; the belief prior mix ±1.50, NOT DETECTED; plain training FLAT. [Kakuna · `42bb0858d`,
-   `eb99ab362`, `58287c525`, `f299a7243`, `71c76dfbb`, `204204bbf`] Breadth at 10⁴ teams (N1-P), team context
-   (H-CTX) and human data (X59-S) are being read; the plan after them is §6.
+   `eb99ab362`, `58287c525`, `f299a7243`, `71c76dfbb`, `204204bbf`] Breadth at 10⁴ teams (N1-P) and human data (X59-S) are being
+   read; H-CTX says the breadth that matters is breadth of TEAMS (item 4). The plan after them is §6.
 6. **The belief stack memorises the pool, but that is not where games are lost.** On unfamiliar opponents 63–85 %
    of the hidden slots hold the wrong species guess, yet mixing in the Smogon prior (λ = 0.25: U +1.50 pp [−2.74,
    +5.74]) or using the prior alone (λ = 1: −1.50 [−5.47, +2.47]) moves Kakuna games by nothing detectable at ±5 pp.
@@ -235,6 +237,15 @@ replicated on the 1,600 PastaMittens twins · `c758fcb82`; `measurements/pilotin
   holds the result fixed (seen against unseen sets on the same U team, Kakuna-controlled) reads −0.007 [−0.093,
   +0.070], which neither account is excluded by. So neither "the team, not the set" nor "set novelty is a third"
   is measured, and nothing here bounds D3. [review `measurements/h_mid_value_test_2026-10-26/REVIEW.md` B1, M3]
+- **Team against set: separated by intervention (H-CTX, registered, 2026-10-27): the TEAM.** P\* vs Kakuna on rc72b
+  (72 new sixes of verbatim pool sets, ≤ 2 shared with any pool or corpus team), home72 and F, interleaved on ONE
+  engine: home72 **0.615 [0.581, 0.648]**, F **0.540 [0.505, 0.574]**, rc72b **0.514 [0.486, 0.542]** (800 / 800 /
+  1,200 games). Premium +7.5 pp [+2.9, +12.1]; rc72b − F −2.6 pp [−7.2, +2.0]; rc72b − home72 **−10.1 pp [−14.2,
+  −6.0]** (unit bootstrap). Familiar sets in unfamiliar combinations play like unfamiliar teams, so the premium
+  belongs to the particular pool teams (their plans), and set-level breadth (D3) works the smaller channel.
+  Caveats: Kakuna pilots rc72b too (A-K), and a recombined six may lack any plan to learn.
+  [MEASURED · one checkpoint, one draw · PREREG `b044d214b` + Amendments `aaf7ced86`, `905c29f5b`; record
+  `measurements/hctx_rc72_2026-10-26/read_am2/record.json`]
 - Facing stays minor: Kakuna's unseen-set and rare-species mons do not out-kill its familiar ones.
 - **The critic does not see the deficit (H-MID, registered, 2026-10-26).** [MEASURED · forward passes on the same
   1,600 X51 games, replayed exactly (79,799 / 79,799 greedy choices reproduced) · PREREG `2dd522785`, `f200258f6`;
@@ -531,7 +542,6 @@ retired for the fold-gift question only; they live in the last full text (§0) a
 | question | the read that answers it |
 |---|---|
 | Does breadth at 10⁴ procedural teams lift unfamiliar-team piloting at the plateau? | **N1-P look 1** (X61P, D1's rule on F; [`PREREG.md`](measurements/x61p_n1_production_2026-10-26/PREREG.md), `5b84bca62`). ADOPT-CANDIDATE (F GAIN, in-house non-inferior) funds **X53-N1**, a fresh production run on 10⁴ teams (`../endstate/design_x53_n1_fresh_breadth.md`); NULL rules out only "N1 at the plateau" |
-| Is the familiarity premium TEAM context or set knowledge (H-CTX)? | **H-CTX on rc72b**: P\* vs Kakuna on 72 new sixes of verbatim pool sets (≤ 2 shared with any pool team, Hidden Power of the strict class), against home72 and F on one engine. Premium P = home72 − F, recovery R = rc72b − F: KILLED if R ≥ 0.75 P, SUPPORTED if R ≤ 0.25 P, INCONCLUSIVE unless P's LB > 0 ([`PREREG.md`](measurements/hctx_rc72_2026-10-26/PREREG.md) Amendments 1–2, `caec2bb2c`, `6f126c4af`; rc72 retired before any game counted). It is X62's first gate |
 | Is human data better than our own self-play data? | **X59-S**: three matched student arms, five seeds each; S-H − S-S answers it, S-H − S-P picks the lever ([`PREREG.md`](measurements/x59s_matched_students_2026-10-25/PREREG.md), `5cbf46dc0`). Its floor pilot plays first and releases one UNINFORMATIVE flag per contrast (Amendment 5, `aaeabbd46`). It decides whether the human-data switch and X60 get built |
 | Is the plateau the learning-rate controller's halving (§4.4)? | **LR-F look 1**: P\* + 20M with the rate floored two controller rungs above P\*'s, seeds 3501–3503 against C0 (X35 `measurements/x35_breakers_stage_2026-10-17/STAGED_PLAN.md` §4.1.2); s3502 trained (`c4e463b0f`), s3503 training, s3501 queued |
 
@@ -539,12 +549,12 @@ retired for the fold-gift question only; they live in the last full text (§0) a
 
 | question | the read that answers it |
 |---|---|
-| Is set mutation a goal-(b) lever? | **D3 look 2**, final: all five seeds trained; every game on engine E1 at the play pin `c4a5c37b6` (E1's game code under the pre-`b0441623e` read harness; PREREG AM-D3-L2 and its addendum `0e32c5002`: TERMINAL, P(GAIN) ≈ 3–7 %, NULL unreachable at this size), its S lane queued behind H-CTX and its Kakuna lane behind N1-P look 1 (`measurements/x41_d3_setmut_2026-10-25/PREREG.md`) |
+| Is set mutation a goal-(b) lever? | **D3 look 2**, final: all five seeds trained; every game on engine E1 at the play pin `c4a5c37b6` (E1's game code under the pre-`b0441623e` read harness; PREREG AM-D3-L2 and its addendum `0e32c5002`: TERMINAL, P(GAIN) ≈ 3–7 %, NULL unreachable at this size), its S lane free since H-CTX ended (2026-10-27) and its Kakuna lane behind N1-P look 1 (`measurements/x41_d3_setmut_2026-10-25/PREREG.md`) |
 | Is the shared trunk FFN a capacity bottleneck between token kinds at the plateau? | **X48**: per-token-kind FFN experts grown at P\*, s3501–s3503 against C0 (its finals re-played on the read's one engine), under N4's one-look screen (S at 2,000 pairs and Kakuna F; [`PREREG.md`](measurements/x48_kffn_production_2026-10-27/PREREG.md), `fc888c18f`). GPU next after LR-F |
 | Does a wider trunk buy strength at the plateau (on the toy)? | **N4**: T\* with every trunk FFN grown 256 → 1,024 against a same-pin C0′, 3 + 3 seeds × 70M (PREREG `8ed8164ea`); the model build landed (`c35ffab9e`), its kit arms have not |
-| Does breadth pay at DOSE rather than at 20M? | **X63**: X26 @380M + 100M on a union of the recombined, procedural and set-mutated corpora, no forum teams, against X26c (DRAFT, `../endstate/design_x63_long_breadth_continuation.md`, `49fbf75a7`); gated on its review, H-CTX, N1-P look 1 and D3 look 2 |
+| Does breadth pay at DOSE rather than at 20M? | **X63**: X26 @380M + 100M on a union of the recombined, procedural and set-mutated corpora, no forum teams, against X26c (DRAFT, `../endstate/design_x63_long_breadth_continuation.md`, `49fbf75a7`); gated on its review, N1-P look 1 and D3 look 2 (H-CTX, its other gate, read SUPPORTED) |
 | Do the breadth levers help by +1–2 pp each, below what one read can see? | **PR-1′**, the zero-GPU precision read re-scoped by [`REVIEW_2.md`](measurements/strategy_review_2026-10-26/REVIEW_2.md): D3 and N1-P against C0 on F (D1 reported only: its F is its own population), 30,000–38,000 new Kakuna games at one post-`b0441623e` pin. Information only; it runs after X48's read, or on a rented CPU box |
-| Does training on new sixes of familiar sets close the piloting gap? | **X62** (REVISED DRAFT, `../endstate/design_x62_team_recombination.md`, `58cb02dc6`): rc72b KILLED shelves it; PR-1′ KILL retires the 20M fork; N1-P GAIN makes it redundant. Its in-pool cost is a registered price (net = Δ_home72 + r · Δ_U, r = 1 pending the owner). Below X63 per resource-day |
+| Does training on new sixes of familiar sets close the piloting gap? | **X62** (REVISED DRAFT, `../endstate/design_x62_team_recombination.md`, `58cb02dc6`): its first gate, H-CTX, read SUPPORTED (2026-10-27), which builds its corpus; PR-1′ KILL retires the 20M fork; N1-P GAIN makes it redundant. Its in-pool cost is a registered price (net = Δ_home72 + r · Δ_U, r = 1 pending the owner). Below X63 per resource-day |
 | Does one-ply search on V have headroom on unfamiliar teams (H-MID's open question)? | **S-U** registered (`ffd9a443a`, `../endstate/design_search_u_headroom.md`), stage 0 HELD. Its review (`7aafa527f`, `measurements/su_headroom_2026-10-27/REVIEW.md`): 2 BLOCKERs; where the registered search rule departs from the policy at P\* it picks the better move 0.513 [0.447, 0.580] of the time (0.580 at 25M), so a 10–15 CPU-h sign-accuracy gate comes first. V-RANK (`../endstate/design_v_rank_on_u.md`, DRAFT) is the filter that can turn S-U OFF |
 
 **Dropped.** **X64**, the toy context-count curve: DROPPED by its review (`c0fd72bd8`,

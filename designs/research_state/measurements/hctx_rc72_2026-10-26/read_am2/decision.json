@@ -1,0 +1,98 @@
+{
+ "arms": {
+  "familiar": {
+   "n": 800,
+   "panel": "home72",
+   "score": 0.615,
+   "ties": 3,
+   "units_counted": 40,
+   "units_planned": 40,
+   "wilson95": [
+    0.5808078900609328,
+    0.6480929684112482
+   ],
+   "wins": 492,
+   "x51_units_replayed": {
+    "compared": 20,
+    "equal": 19
+   }
+  },
+  "rc": {
+   "n": 1200,
+   "panel": "rc72b",
+   "score": 0.5141666666666667,
+   "ties": 2,
+   "units_counted": 60,
+   "units_planned": 60,
+   "wilson95": [
+    0.48588829276783,
+    0.5423546288817167
+   ],
+   "wins": 617,
+   "x51_units_replayed": {
+    "compared": 0,
+    "equal": 0
+   }
+  },
+  "unfamiliar": {
+   "n": 800,
+   "panel": "forum72",
+   "score": 0.54,
+   "ties": 0,
+   "units_counted": 40,
+   "units_planned": 40,
+   "wilson95": [
+    0.505354391098852,
+    0.5742632988045153
+   ],
+   "wins": 432,
+   "x51_units_replayed": {
+    "compared": 20,
+    "equal": 17
+   }
+  }
+ },
+ "decision": {
+  "band": "SUPPORT",
+  "kill_frac": 0.75,
+  "support_frac": 0.25,
+  "verdict": "H-CTX SUPPORTED: rc72 recovers -0.34 [-2.05, 0.20] of the home premium (rc72b 0.514, home72 0.615, forum72 0.540; premium +0.075 [+0.029, +0.121]); secondary, cross-engine: H-CTX SUPPORTED"
+ },
+ "engine": "port=bdc5d2be3af5e1fb/94;env=95b45f104119bdb2/129",
+ "estimates": {
+  "boot95": {
+   "fraction": [
+    -2.0454545454545485,
+    0.19806763285024048
+   ],
+   "premium": [
+    0.028749999999999942,
+    0.12124999999999997
+   ],
+   "rc_minus_familiar": [
+    -0.14249999999999996,
+    -0.05958333333333332
+   ],
+   "recovery": [
+    -0.07208333333333333,
+    0.020000000000000018
+   ]
+  },
+  "bootstrap": {
+   "B": 10000,
+   "seed": 7273
+  },
+  "fraction": -0.34444444444444444,
+  "premium": 0.075,
+  "rc_minus_familiar": -0.10083333333333333,
+  "recovery": -0.025833333333333333
+ },
+ "secondary_cross_engine": {
+  "band": "SUPPORT",
+  "kill_at": 0.57,
+  "note": "cross-engine: X51 played on engine E0; read by no verdict",
+  "support_at": 0.52,
+  "x51_familiar": 0.5975,
+  "x51_unfamiliar_mean": 0.48666666666666664
+ }
+}

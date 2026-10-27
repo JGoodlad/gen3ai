@@ -29728,3 +29728,53 @@ s · corpus + (1 − s) · pool. Our side's `sft431` games were counted over eve
 
 **Evidence:** `research_state/measurements/x35_pack_regime_2026-10-27/`: the README, `pack_regime_audit.py`,
 `result_f4b2.json`, `result_9c03.json`, `sft431_tally.out`, and `first_pass/`.
+
+### 2026-10-27 · MEASURE · H-CTX SUPPORTED: P\*'s home-team edge against Kakuna goes with the TEAM, not the set (rc72b recovers −0.34 [−2.05, +0.20] of the home premium)
+
+**Question.** P\* beats Kakuna 0.598 on home72 (its pool's own teams) and 0.487 on unfamiliar teams (X51). Is that
+premium portable SET knowledge, or memorised play of its particular six-mon pool TEAMS (H-CTX, the piloting-gap
+forensics, `c758fcb82`)?
+
+**Design** (PREREG `b044d214b`, Amendment 1 `aaf7ced86` for the engine-identity rule, Amendment 2 `905c29f5b` for the
+panel redraw; spec `read_spec_am2.json` sha256 `84901059…`; each written before any rc72 / rc72b game counted).
+- **Panel rc72b:** 72 new sixes, every mon block a verbatim pool set. It shares ≤ 2 sets with ONE team of the pool
+  or of any training corpus, and ≤ 2 with ONE team of any held-out panel or n1p72. Its species follow home72's
+  profile with Smogon teammate lift, and every Hidden Power plays its named type as written. It is a DIAGNOSTIC
+  panel (`diagnostic_panels.json`).
+- **Play:** P\* vs Kakuna ckpt 34, symmetric, greedy, 20-game units. rc72b got 60 units; home72 and F (`forum72`)
+  got 40 each, interleaved, all on ONE engine (`port=bdc5d2be3af5e1fb/94;env=95b45f104119bdb2/129`, pin
+  `905c29f5b`).
+- **Rule (`premium_recovery`):** premium P = home72 − F, recovery R = rc72b − F. KILL if R ≥ 0.75 P, SUPPORT if
+  R ≤ 0.25 P, INCONCLUSIVE unless P's unit-bootstrap LB > 0.
+
+**Result.** 140 / 140 units counted, 2,800 games.
+
+| panel | W / n | score [Wilson 95 %] |
+|---|---|---|
+| home72 | 492 / 800 | 0.615 [0.581, 0.648] |
+| F | 432 / 800 | 0.540 [0.505, 0.574] |
+| rc72b | 617 / 1,200 | 0.514 [0.486, 0.542] |
+
+- P **+7.5 pp [+2.9, +12.1]** (resolved).
+- R **−2.6 pp [−7.2, +2.0]**.
+- R / P **−0.34 [−2.05, +0.20]** → **H-CTX SUPPORTED**.
+- rc72b − home72 **−10.1 pp [−14.2, −6.0]**.
+- Secondary, cross-engine: rc72b ≤ 0.52, SUPPORTED by the original absolute bars too.
+- Of the control units at X51's seeds, 19 / 20 (home72) and 17 / 20 (F) replay X51 game for game.
+
+**Reading.** Familiar sets in new combinations play like unfamiliar teams. The premium belongs to the particular pool
+teams (their plans), so goal (b)'s levers must add TEAM contexts (X62 recombination, N1-P procedural, X63 union),
+and set-level breadth (D3) works the smaller channel. X62's first gate passes. Caveats:
+- Kakuna pilots rc72b too, and no cell rates rc72b's strength (A-K).
+- A recombined six may lack any plan to learn.
+- One checkpoint, one draw.
+
+**FINDINGs.**
+1. 737 of the pool's 1,912 Hidden Power sets name a type with no IV line. The live server rejects them, which
+   retired rc72 before any game counted. Whether training plays them as named is UNVERIFIED.
+2. Two earlier lane states were superseded and never recorded: the engine ruling, and the rc72 rejection.
+3. Kakuna's pack is the LEGACY regime here (pin before `b0441623e`): F's one Frustration team on Kakuna's side.
+4. `w_forum_v1` does not reproduce from its source on main.
+
+**Evidence:** `research_state/measurements/hctx_rc72_2026-10-26/` (README, PREREG, `read_am2/record.json`);
+state `~/gen3ai_archive/hctx_rc72_am2_read/`.

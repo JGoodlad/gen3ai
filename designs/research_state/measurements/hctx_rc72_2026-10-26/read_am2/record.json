@@ -1,0 +1,2299 @@
+{
+ "cells_inconclusive": [],
+ "code": {
+  "commit": "905c29f5b99e48fb581b44512abed640c99cc227",
+  "diff_sha": "e3b0c44298fc1c14",
+  "dirty": false,
+  "pin": "905c29f5b",
+  "root": "/home/goodlad/dev/gen3ai-reads/hctx_play_am2"
+ },
+ "completeness": {
+  "class": "COMPLETE"
+ },
+ "created": "2026-10-27T14:56:18-0700",
+ "decision": {
+  "arms": {
+   "familiar": {
+    "n": 800,
+    "panel": "home72",
+    "score": 0.615,
+    "ties": 3,
+    "units_counted": 40,
+    "units_planned": 40,
+    "wilson95": [
+     0.5808078900609328,
+     0.6480929684112482
+    ],
+    "wins": 492,
+    "x51_units_replayed": {
+     "compared": 20,
+     "equal": 19
+    }
+   },
+   "rc": {
+    "n": 1200,
+    "panel": "rc72b",
+    "score": 0.5141666666666667,
+    "ties": 2,
+    "units_counted": 60,
+    "units_planned": 60,
+    "wilson95": [
+     0.48588829276783,
+     0.5423546288817167
+    ],
+    "wins": 617,
+    "x51_units_replayed": {
+     "compared": 0,
+     "equal": 0
+    }
+   },
+   "unfamiliar": {
+    "n": 800,
+    "panel": "forum72",
+    "score": 0.54,
+    "ties": 0,
+    "units_counted": 40,
+    "units_planned": 40,
+    "wilson95": [
+     0.505354391098852,
+     0.5742632988045153
+    ],
+    "wins": 432,
+    "x51_units_replayed": {
+     "compared": 20,
+     "equal": 17
+    }
+   }
+  },
+  "decision": {
+   "band": "SUPPORT",
+   "kill_frac": 0.75,
+   "support_frac": 0.25,
+   "verdict": "H-CTX SUPPORTED: rc72 recovers -0.34 [-2.05, 0.20] of the home premium (rc72b 0.514, home72 0.615, forum72 0.540; premium +0.075 [+0.029, +0.121]); secondary, cross-engine: H-CTX SUPPORTED"
+  },
+  "engine": "port=bdc5d2be3af5e1fb/94;env=95b45f104119bdb2/129",
+  "estimates": {
+   "boot95": {
+    "fraction": [
+     -2.0454545454545485,
+     0.19806763285024048
+    ],
+    "premium": [
+     0.028749999999999942,
+     0.12124999999999997
+    ],
+    "rc_minus_familiar": [
+     -0.14249999999999996,
+     -0.05958333333333332
+    ],
+    "recovery": [
+     -0.07208333333333333,
+     0.020000000000000018
+    ]
+   },
+   "bootstrap": {
+    "B": 10000,
+    "seed": 7273
+   },
+   "fraction": -0.34444444444444444,
+   "premium": 0.075,
+   "rc_minus_familiar": -0.10083333333333333,
+   "recovery": -0.025833333333333333
+  },
+  "secondary_cross_engine": {
+   "band": "SUPPORT",
+   "kill_at": 0.57,
+   "note": "cross-engine: X51 played on engine E0; read by no verdict",
+   "support_at": 0.52,
+   "x51_familiar": 0.5975,
+   "x51_unfamiliar_mean": 0.48666666666666664
+  }
+ },
+ "imports": {},
+ "inputs": {
+  "arms": {
+   "familiar": {
+    "groups": {
+     "home72_a": {
+      "engine": "port=bdc5d2be3af5e1fb/94;env=95b45f104119bdb2/129",
+      "regime_id": "29824e98d4ea54ab",
+      "units_planned": 20
+     },
+     "home72_b": {
+      "engine": "port=bdc5d2be3af5e1fb/94;env=95b45f104119bdb2/129",
+      "regime_id": "29824e98d4ea54ab",
+      "units_planned": 20
+     }
+    },
+    "panel": "home72",
+    "units": [
+     {
+      "counted": true,
+      "group": "home72_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "home72",
+      "ties": 0,
+      "unit": "pstar__home72__00",
+      "unit_seed": 0,
+      "wins": 13,
+      "x51_games_equal": true
+     },
+     {
+      "counted": true,
+      "group": "home72_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "home72",
+      "ties": 0,
+      "unit": "pstar__home72__01",
+      "unit_seed": 1,
+      "wins": 12,
+      "x51_games_equal": true
+     },
+     {
+      "counted": true,
+      "group": "home72_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "home72",
+      "ties": 0,
+      "unit": "pstar__home72__02",
+      "unit_seed": 2,
+      "wins": 10,
+      "x51_games_equal": true
+     },
+     {
+      "counted": true,
+      "group": "home72_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "home72",
+      "ties": 0,
+      "unit": "pstar__home72__03",
+      "unit_seed": 3,
+      "wins": 11,
+      "x51_games_equal": true
+     },
+     {
+      "counted": true,
+      "group": "home72_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "home72",
+      "ties": 0,
+      "unit": "pstar__home72__04",
+      "unit_seed": 4,
+      "wins": 12,
+      "x51_games_equal": true
+     },
+     {
+      "counted": true,
+      "group": "home72_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "home72",
+      "ties": 0,
+      "unit": "pstar__home72__05",
+      "unit_seed": 5,
+      "wins": 16,
+      "x51_games_equal": true
+     },
+     {
+      "counted": true,
+      "group": "home72_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "home72",
+      "ties": 0,
+      "unit": "pstar__home72__06",
+      "unit_seed": 6,
+      "wins": 7,
+      "x51_games_equal": true
+     },
+     {
+      "counted": true,
+      "group": "home72_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "home72",
+      "ties": 0,
+      "unit": "pstar__home72__07",
+      "unit_seed": 7,
+      "wins": 11,
+      "x51_games_equal": true
+     },
+     {
+      "counted": true,
+      "group": "home72_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "home72",
+      "ties": 0,
+      "unit": "pstar__home72__08",
+      "unit_seed": 8,
+      "wins": 12,
+      "x51_games_equal": true
+     },
+     {
+      "counted": true,
+      "group": "home72_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "home72",
+      "ties": 0,
+      "unit": "pstar__home72__09",
+      "unit_seed": 9,
+      "wins": 15,
+      "x51_games_equal": true
+     },
+     {
+      "counted": true,
+      "group": "home72_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "home72",
+      "ties": 0,
+      "unit": "pstar__home72__10",
+      "unit_seed": 10,
+      "wins": 13,
+      "x51_games_equal": true
+     },
+     {
+      "counted": true,
+      "group": "home72_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "home72",
+      "ties": 0,
+      "unit": "pstar__home72__11",
+      "unit_seed": 11,
+      "wins": 12,
+      "x51_games_equal": true
+     },
+     {
+      "counted": true,
+      "group": "home72_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "home72",
+      "ties": 0,
+      "unit": "pstar__home72__12",
+      "unit_seed": 12,
+      "wins": 12,
+      "x51_games_equal": true
+     },
+     {
+      "counted": true,
+      "group": "home72_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "home72",
+      "ties": 1,
+      "unit": "pstar__home72__13",
+      "unit_seed": 13,
+      "wins": 11,
+      "x51_games_equal": true
+     },
+     {
+      "counted": true,
+      "group": "home72_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "home72",
+      "ties": 0,
+      "unit": "pstar__home72__14",
+      "unit_seed": 14,
+      "wins": 11,
+      "x51_games_equal": true
+     },
+     {
+      "counted": true,
+      "group": "home72_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "home72",
+      "ties": 0,
+      "unit": "pstar__home72__15",
+      "unit_seed": 15,
+      "wins": 14,
+      "x51_games_equal": true
+     },
+     {
+      "counted": true,
+      "group": "home72_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "home72",
+      "ties": 0,
+      "unit": "pstar__home72__16",
+      "unit_seed": 16,
+      "wins": 13,
+      "x51_games_equal": true
+     },
+     {
+      "counted": true,
+      "group": "home72_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "home72",
+      "ties": 0,
+      "unit": "pstar__home72__17",
+      "unit_seed": 17,
+      "wins": 9,
+      "x51_games_equal": false
+     },
+     {
+      "counted": true,
+      "group": "home72_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "home72",
+      "ties": 0,
+      "unit": "pstar__home72__18",
+      "unit_seed": 18,
+      "wins": 15,
+      "x51_games_equal": true
+     },
+     {
+      "counted": true,
+      "group": "home72_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "home72",
+      "ties": 0,
+      "unit": "pstar__home72__19",
+      "unit_seed": 19,
+      "wins": 11,
+      "x51_games_equal": true
+     },
+     {
+      "counted": true,
+      "group": "home72_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "home72",
+      "ties": 0,
+      "unit": "pstar__home72__20",
+      "unit_seed": 20,
+      "wins": 11,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "home72_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "home72",
+      "ties": 0,
+      "unit": "pstar__home72__21",
+      "unit_seed": 21,
+      "wins": 10,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "home72_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "home72",
+      "ties": 0,
+      "unit": "pstar__home72__22",
+      "unit_seed": 22,
+      "wins": 10,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "home72_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "home72",
+      "ties": 0,
+      "unit": "pstar__home72__23",
+      "unit_seed": 23,
+      "wins": 13,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "home72_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "home72",
+      "ties": 1,
+      "unit": "pstar__home72__24",
+      "unit_seed": 24,
+      "wins": 12,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "home72_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "home72",
+      "ties": 0,
+      "unit": "pstar__home72__25",
+      "unit_seed": 25,
+      "wins": 12,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "home72_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "home72",
+      "ties": 0,
+      "unit": "pstar__home72__26",
+      "unit_seed": 26,
+      "wins": 13,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "home72_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "home72",
+      "ties": 1,
+      "unit": "pstar__home72__27",
+      "unit_seed": 27,
+      "wins": 12,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "home72_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "home72",
+      "ties": 0,
+      "unit": "pstar__home72__28",
+      "unit_seed": 28,
+      "wins": 16,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "home72_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "home72",
+      "ties": 0,
+      "unit": "pstar__home72__29",
+      "unit_seed": 29,
+      "wins": 13,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "home72_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "home72",
+      "ties": 0,
+      "unit": "pstar__home72__30",
+      "unit_seed": 30,
+      "wins": 13,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "home72_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "home72",
+      "ties": 0,
+      "unit": "pstar__home72__31",
+      "unit_seed": 31,
+      "wins": 12,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "home72_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "home72",
+      "ties": 0,
+      "unit": "pstar__home72__32",
+      "unit_seed": 32,
+      "wins": 15,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "home72_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "home72",
+      "ties": 0,
+      "unit": "pstar__home72__33",
+      "unit_seed": 33,
+      "wins": 10,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "home72_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "home72",
+      "ties": 0,
+      "unit": "pstar__home72__34",
+      "unit_seed": 34,
+      "wins": 11,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "home72_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "home72",
+      "ties": 0,
+      "unit": "pstar__home72__35",
+      "unit_seed": 35,
+      "wins": 11,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "home72_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "home72",
+      "ties": 0,
+      "unit": "pstar__home72__36",
+      "unit_seed": 36,
+      "wins": 15,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "home72_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "home72",
+      "ties": 0,
+      "unit": "pstar__home72__37",
+      "unit_seed": 37,
+      "wins": 15,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "home72_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "home72",
+      "ties": 0,
+      "unit": "pstar__home72__38",
+      "unit_seed": 38,
+      "wins": 14,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "home72_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "home72",
+      "ties": 0,
+      "unit": "pstar__home72__39",
+      "unit_seed": 39,
+      "wins": 14,
+      "x51_games_equal": null
+     }
+    ]
+   },
+   "rc": {
+    "groups": {
+     "rc72b_a": {
+      "engine": "port=bdc5d2be3af5e1fb/94;env=95b45f104119bdb2/129",
+      "regime_id": "b431991058792e78",
+      "units_planned": 20
+     },
+     "rc72b_b": {
+      "engine": "port=bdc5d2be3af5e1fb/94;env=95b45f104119bdb2/129",
+      "regime_id": "b431991058792e78",
+      "units_planned": 20
+     },
+     "rc72b_c": {
+      "engine": "port=bdc5d2be3af5e1fb/94;env=95b45f104119bdb2/129",
+      "regime_id": "b431991058792e78",
+      "units_planned": 20
+     }
+    },
+    "panel": "rc72b",
+    "units": [
+     {
+      "counted": true,
+      "group": "rc72b_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__00",
+      "unit_seed": 0,
+      "wins": 12,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__01",
+      "unit_seed": 1,
+      "wins": 8,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__02",
+      "unit_seed": 2,
+      "wins": 8,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__03",
+      "unit_seed": 3,
+      "wins": 9,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__04",
+      "unit_seed": 4,
+      "wins": 13,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__05",
+      "unit_seed": 5,
+      "wins": 15,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__06",
+      "unit_seed": 6,
+      "wins": 10,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__07",
+      "unit_seed": 7,
+      "wins": 9,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__08",
+      "unit_seed": 8,
+      "wins": 10,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__09",
+      "unit_seed": 9,
+      "wins": 9,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__10",
+      "unit_seed": 10,
+      "wins": 15,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__11",
+      "unit_seed": 11,
+      "wins": 10,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__12",
+      "unit_seed": 12,
+      "wins": 5,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__13",
+      "unit_seed": 13,
+      "wins": 11,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__14",
+      "unit_seed": 14,
+      "wins": 10,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__15",
+      "unit_seed": 15,
+      "wins": 10,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__16",
+      "unit_seed": 16,
+      "wins": 11,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__17",
+      "unit_seed": 17,
+      "wins": 8,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__18",
+      "unit_seed": 18,
+      "wins": 11,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__19",
+      "unit_seed": 19,
+      "wins": 8,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__20",
+      "unit_seed": 20,
+      "wins": 9,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__21",
+      "unit_seed": 21,
+      "wins": 9,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__22",
+      "unit_seed": 22,
+      "wins": 8,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__23",
+      "unit_seed": 23,
+      "wins": 10,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__24",
+      "unit_seed": 24,
+      "wins": 16,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__25",
+      "unit_seed": 25,
+      "wins": 4,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 1,
+      "unit": "pstar__rc72b__26",
+      "unit_seed": 26,
+      "wins": 10,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__27",
+      "unit_seed": 27,
+      "wins": 11,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__28",
+      "unit_seed": 28,
+      "wins": 9,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__29",
+      "unit_seed": 29,
+      "wins": 11,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__30",
+      "unit_seed": 30,
+      "wins": 8,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__31",
+      "unit_seed": 31,
+      "wins": 11,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__32",
+      "unit_seed": 32,
+      "wins": 8,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__33",
+      "unit_seed": 33,
+      "wins": 6,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__34",
+      "unit_seed": 34,
+      "wins": 13,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__35",
+      "unit_seed": 35,
+      "wins": 8,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__36",
+      "unit_seed": 36,
+      "wins": 11,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__37",
+      "unit_seed": 37,
+      "wins": 9,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__38",
+      "unit_seed": 38,
+      "wins": 13,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__39",
+      "unit_seed": 39,
+      "wins": 13,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_c",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__40",
+      "unit_seed": 40,
+      "wins": 14,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_c",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__41",
+      "unit_seed": 41,
+      "wins": 10,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_c",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__42",
+      "unit_seed": 42,
+      "wins": 11,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_c",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__43",
+      "unit_seed": 43,
+      "wins": 9,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_c",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__44",
+      "unit_seed": 44,
+      "wins": 11,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_c",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__45",
+      "unit_seed": 45,
+      "wins": 11,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_c",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__46",
+      "unit_seed": 46,
+      "wins": 11,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_c",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 1,
+      "unit": "pstar__rc72b__47",
+      "unit_seed": 47,
+      "wins": 13,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_c",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__48",
+      "unit_seed": 48,
+      "wins": 12,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_c",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__49",
+      "unit_seed": 49,
+      "wins": 10,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_c",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__50",
+      "unit_seed": 50,
+      "wins": 10,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_c",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__51",
+      "unit_seed": 51,
+      "wins": 9,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_c",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__52",
+      "unit_seed": 52,
+      "wins": 9,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_c",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__53",
+      "unit_seed": 53,
+      "wins": 10,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_c",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__54",
+      "unit_seed": 54,
+      "wins": 12,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_c",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__55",
+      "unit_seed": 55,
+      "wins": 12,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_c",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__56",
+      "unit_seed": 56,
+      "wins": 9,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_c",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__57",
+      "unit_seed": 57,
+      "wins": 10,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_c",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__58",
+      "unit_seed": 58,
+      "wins": 14,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "rc72b_c",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "rc72b",
+      "ties": 0,
+      "unit": "pstar__rc72b__59",
+      "unit_seed": 59,
+      "wins": 11,
+      "x51_games_equal": null
+     }
+    ]
+   },
+   "unfamiliar": {
+    "groups": {
+     "forum72_a": {
+      "engine": "port=bdc5d2be3af5e1fb/94;env=95b45f104119bdb2/129",
+      "regime_id": "24595652b00bc543",
+      "units_planned": 20
+     },
+     "forum72_b": {
+      "engine": "port=bdc5d2be3af5e1fb/94;env=95b45f104119bdb2/129",
+      "regime_id": "24595652b00bc543",
+      "units_planned": 20
+     }
+    },
+    "panel": "forum72",
+    "units": [
+     {
+      "counted": true,
+      "group": "forum72_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "forum72",
+      "ties": 0,
+      "unit": "pstar__forum72__00",
+      "unit_seed": 0,
+      "wins": 11,
+      "x51_games_equal": true
+     },
+     {
+      "counted": true,
+      "group": "forum72_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "forum72",
+      "ties": 0,
+      "unit": "pstar__forum72__01",
+      "unit_seed": 1,
+      "wins": 6,
+      "x51_games_equal": true
+     },
+     {
+      "counted": true,
+      "group": "forum72_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "forum72",
+      "ties": 0,
+      "unit": "pstar__forum72__02",
+      "unit_seed": 2,
+      "wins": 11,
+      "x51_games_equal": false
+     },
+     {
+      "counted": true,
+      "group": "forum72_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "forum72",
+      "ties": 0,
+      "unit": "pstar__forum72__03",
+      "unit_seed": 3,
+      "wins": 13,
+      "x51_games_equal": true
+     },
+     {
+      "counted": true,
+      "group": "forum72_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "forum72",
+      "ties": 0,
+      "unit": "pstar__forum72__04",
+      "unit_seed": 4,
+      "wins": 8,
+      "x51_games_equal": true
+     },
+     {
+      "counted": true,
+      "group": "forum72_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "forum72",
+      "ties": 0,
+      "unit": "pstar__forum72__05",
+      "unit_seed": 5,
+      "wins": 13,
+      "x51_games_equal": true
+     },
+     {
+      "counted": true,
+      "group": "forum72_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "forum72",
+      "ties": 0,
+      "unit": "pstar__forum72__06",
+      "unit_seed": 6,
+      "wins": 11,
+      "x51_games_equal": true
+     },
+     {
+      "counted": true,
+      "group": "forum72_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "forum72",
+      "ties": 0,
+      "unit": "pstar__forum72__07",
+      "unit_seed": 7,
+      "wins": 13,
+      "x51_games_equal": true
+     },
+     {
+      "counted": true,
+      "group": "forum72_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "forum72",
+      "ties": 0,
+      "unit": "pstar__forum72__08",
+      "unit_seed": 8,
+      "wins": 12,
+      "x51_games_equal": true
+     },
+     {
+      "counted": true,
+      "group": "forum72_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "forum72",
+      "ties": 0,
+      "unit": "pstar__forum72__09",
+      "unit_seed": 9,
+      "wins": 9,
+      "x51_games_equal": true
+     },
+     {
+      "counted": true,
+      "group": "forum72_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "forum72",
+      "ties": 0,
+      "unit": "pstar__forum72__10",
+      "unit_seed": 10,
+      "wins": 11,
+      "x51_games_equal": true
+     },
+     {
+      "counted": true,
+      "group": "forum72_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "forum72",
+      "ties": 0,
+      "unit": "pstar__forum72__11",
+      "unit_seed": 11,
+      "wins": 7,
+      "x51_games_equal": true
+     },
+     {
+      "counted": true,
+      "group": "forum72_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "forum72",
+      "ties": 0,
+      "unit": "pstar__forum72__12",
+      "unit_seed": 12,
+      "wins": 11,
+      "x51_games_equal": true
+     },
+     {
+      "counted": true,
+      "group": "forum72_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "forum72",
+      "ties": 0,
+      "unit": "pstar__forum72__13",
+      "unit_seed": 13,
+      "wins": 9,
+      "x51_games_equal": true
+     },
+     {
+      "counted": true,
+      "group": "forum72_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "forum72",
+      "ties": 0,
+      "unit": "pstar__forum72__14",
+      "unit_seed": 14,
+      "wins": 15,
+      "x51_games_equal": true
+     },
+     {
+      "counted": true,
+      "group": "forum72_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "forum72",
+      "ties": 0,
+      "unit": "pstar__forum72__15",
+      "unit_seed": 15,
+      "wins": 11,
+      "x51_games_equal": false
+     },
+     {
+      "counted": true,
+      "group": "forum72_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "forum72",
+      "ties": 0,
+      "unit": "pstar__forum72__16",
+      "unit_seed": 16,
+      "wins": 12,
+      "x51_games_equal": true
+     },
+     {
+      "counted": true,
+      "group": "forum72_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "forum72",
+      "ties": 0,
+      "unit": "pstar__forum72__17",
+      "unit_seed": 17,
+      "wins": 10,
+      "x51_games_equal": false
+     },
+     {
+      "counted": true,
+      "group": "forum72_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "forum72",
+      "ties": 0,
+      "unit": "pstar__forum72__18",
+      "unit_seed": 18,
+      "wins": 7,
+      "x51_games_equal": true
+     },
+     {
+      "counted": true,
+      "group": "forum72_a",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "forum72",
+      "ties": 0,
+      "unit": "pstar__forum72__19",
+      "unit_seed": 19,
+      "wins": 12,
+      "x51_games_equal": true
+     },
+     {
+      "counted": true,
+      "group": "forum72_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "forum72",
+      "ties": 0,
+      "unit": "pstar__forum72__20",
+      "unit_seed": 20,
+      "wins": 13,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "forum72_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "forum72",
+      "ties": 0,
+      "unit": "pstar__forum72__21",
+      "unit_seed": 21,
+      "wins": 10,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "forum72_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "forum72",
+      "ties": 0,
+      "unit": "pstar__forum72__22",
+      "unit_seed": 22,
+      "wins": 11,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "forum72_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "forum72",
+      "ties": 0,
+      "unit": "pstar__forum72__23",
+      "unit_seed": 23,
+      "wins": 12,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "forum72_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "forum72",
+      "ties": 0,
+      "unit": "pstar__forum72__24",
+      "unit_seed": 24,
+      "wins": 13,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "forum72_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "forum72",
+      "ties": 0,
+      "unit": "pstar__forum72__25",
+      "unit_seed": 25,
+      "wins": 14,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "forum72_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "forum72",
+      "ties": 0,
+      "unit": "pstar__forum72__26",
+      "unit_seed": 26,
+      "wins": 10,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "forum72_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "forum72",
+      "ties": 0,
+      "unit": "pstar__forum72__27",
+      "unit_seed": 27,
+      "wins": 6,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "forum72_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "forum72",
+      "ties": 0,
+      "unit": "pstar__forum72__28",
+      "unit_seed": 28,
+      "wins": 11,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "forum72_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "forum72",
+      "ties": 0,
+      "unit": "pstar__forum72__29",
+      "unit_seed": 29,
+      "wins": 13,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "forum72_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "forum72",
+      "ties": 0,
+      "unit": "pstar__forum72__30",
+      "unit_seed": 30,
+      "wins": 11,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "forum72_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "forum72",
+      "ties": 0,
+      "unit": "pstar__forum72__31",
+      "unit_seed": 31,
+      "wins": 9,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "forum72_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "forum72",
+      "ties": 0,
+      "unit": "pstar__forum72__32",
+      "unit_seed": 32,
+      "wins": 9,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "forum72_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "forum72",
+      "ties": 0,
+      "unit": "pstar__forum72__33",
+      "unit_seed": 33,
+      "wins": 14,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "forum72_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "forum72",
+      "ties": 0,
+      "unit": "pstar__forum72__34",
+      "unit_seed": 34,
+      "wins": 11,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "forum72_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "forum72",
+      "ties": 0,
+      "unit": "pstar__forum72__35",
+      "unit_seed": 35,
+      "wins": 13,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "forum72_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "forum72",
+      "ties": 0,
+      "unit": "pstar__forum72__36",
+      "unit_seed": 36,
+      "wins": 12,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "forum72_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "forum72",
+      "ties": 0,
+      "unit": "pstar__forum72__37",
+      "unit_seed": 37,
+      "wins": 13,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "forum72_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "forum72",
+      "ties": 0,
+      "unit": "pstar__forum72__38",
+      "unit_seed": 38,
+      "wins": 6,
+      "x51_games_equal": null
+     },
+     {
+      "counted": true,
+      "group": "forum72_b",
+      "n": 20,
+      "our_regime": "greedy",
+      "panel": "forum72",
+      "ties": 0,
+      "unit": "pstar__forum72__39",
+      "unit_seed": 39,
+      "wins": 9,
+      "x51_games_equal": null
+     }
+    ]
+   }
+  },
+  "label": "pstar",
+  "secondary_bank": {
+   "forum72": {
+    "0": {
+     "n": 20,
+     "ties": 0,
+     "wins": 11
+    },
+    "1": {
+     "n": 20,
+     "ties": 0,
+     "wins": 6
+    },
+    "10": {
+     "n": 20,
+     "ties": 0,
+     "wins": 11
+    },
+    "11": {
+     "n": 20,
+     "ties": 0,
+     "wins": 7
+    },
+    "12": {
+     "n": 20,
+     "ties": 0,
+     "wins": 11
+    },
+    "13": {
+     "n": 20,
+     "ties": 0,
+     "wins": 9
+    },
+    "14": {
+     "n": 20,
+     "ties": 0,
+     "wins": 15
+    },
+    "15": {
+     "n": 20,
+     "ties": 0,
+     "wins": 11
+    },
+    "16": {
+     "n": 20,
+     "ties": 0,
+     "wins": 12
+    },
+    "17": {
+     "n": 20,
+     "ties": 0,
+     "wins": 10
+    },
+    "18": {
+     "n": 20,
+     "ties": 0,
+     "wins": 7
+    },
+    "19": {
+     "n": 20,
+     "ties": 0,
+     "wins": 12
+    },
+    "2": {
+     "n": 20,
+     "ties": 0,
+     "wins": 11
+    },
+    "3": {
+     "n": 20,
+     "ties": 0,
+     "wins": 13
+    },
+    "4": {
+     "n": 20,
+     "ties": 0,
+     "wins": 8
+    },
+    "5": {
+     "n": 20,
+     "ties": 0,
+     "wins": 13
+    },
+    "6": {
+     "n": 20,
+     "ties": 0,
+     "wins": 11
+    },
+    "7": {
+     "n": 20,
+     "ties": 0,
+     "wins": 13
+    },
+    "8": {
+     "n": 20,
+     "ties": 0,
+     "wins": 12
+    },
+    "9": {
+     "n": 20,
+     "ties": 0,
+     "wins": 9
+    }
+   },
+   "heldout72_hpfix": {
+    "0": {
+     "n": 20,
+     "ties": 0,
+     "wins": 12
+    },
+    "1": {
+     "n": 20,
+     "ties": 0,
+     "wins": 5
+    },
+    "10": {
+     "n": 20,
+     "ties": 0,
+     "wins": 11
+    },
+    "11": {
+     "n": 20,
+     "ties": 0,
+     "wins": 7
+    },
+    "12": {
+     "n": 20,
+     "ties": 0,
+     "wins": 8
+    },
+    "13": {
+     "n": 20,
+     "ties": 0,
+     "wins": 8
+    },
+    "14": {
+     "n": 20,
+     "ties": 0,
+     "wins": 9
+    },
+    "15": {
+     "n": 20,
+     "ties": 0,
+     "wins": 12
+    },
+    "16": {
+     "n": 20,
+     "ties": 0,
+     "wins": 10
+    },
+    "17": {
+     "n": 20,
+     "ties": 0,
+     "wins": 6
+    },
+    "18": {
+     "n": 20,
+     "ties": 0,
+     "wins": 11
+    },
+    "19": {
+     "n": 20,
+     "ties": 0,
+     "wins": 12
+    },
+    "2": {
+     "n": 20,
+     "ties": 0,
+     "wins": 12
+    },
+    "3": {
+     "n": 20,
+     "ties": 0,
+     "wins": 13
+    },
+    "4": {
+     "n": 20,
+     "ties": 0,
+     "wins": 10
+    },
+    "5": {
+     "n": 20,
+     "ties": 0,
+     "wins": 8
+    },
+    "6": {
+     "n": 20,
+     "ties": 0,
+     "wins": 10
+    },
+    "7": {
+     "n": 20,
+     "ties": 0,
+     "wins": 12
+    },
+    "8": {
+     "n": 20,
+     "ties": 0,
+     "wins": 13
+    },
+    "9": {
+     "n": 20,
+     "ties": 0,
+     "wins": 10
+    }
+   },
+   "home72": {
+    "0": {
+     "n": 20,
+     "ties": 0,
+     "wins": 13
+    },
+    "1": {
+     "n": 20,
+     "ties": 0,
+     "wins": 12
+    },
+    "10": {
+     "n": 20,
+     "ties": 0,
+     "wins": 13
+    },
+    "11": {
+     "n": 20,
+     "ties": 0,
+     "wins": 12
+    },
+    "12": {
+     "n": 20,
+     "ties": 0,
+     "wins": 12
+    },
+    "13": {
+     "n": 20,
+     "ties": 1,
+     "wins": 11
+    },
+    "14": {
+     "n": 20,
+     "ties": 0,
+     "wins": 11
+    },
+    "15": {
+     "n": 20,
+     "ties": 0,
+     "wins": 14
+    },
+    "16": {
+     "n": 20,
+     "ties": 0,
+     "wins": 13
+    },
+    "17": {
+     "n": 20,
+     "ties": 0,
+     "wins": 8
+    },
+    "18": {
+     "n": 20,
+     "ties": 0,
+     "wins": 15
+    },
+    "19": {
+     "n": 20,
+     "ties": 0,
+     "wins": 11
+    },
+    "2": {
+     "n": 20,
+     "ties": 0,
+     "wins": 10
+    },
+    "3": {
+     "n": 20,
+     "ties": 0,
+     "wins": 11
+    },
+    "4": {
+     "n": 20,
+     "ties": 0,
+     "wins": 12
+    },
+    "5": {
+     "n": 20,
+     "ties": 0,
+     "wins": 16
+    },
+    "6": {
+     "n": 20,
+     "ties": 0,
+     "wins": 7
+    },
+    "7": {
+     "n": 20,
+     "ties": 0,
+     "wins": 11
+    },
+    "8": {
+     "n": 20,
+     "ties": 0,
+     "wins": 12
+    },
+    "9": {
+     "n": 20,
+     "ties": 0,
+     "wins": 15
+    }
+   },
+   "p72": {
+    "0": {
+     "n": 20,
+     "ties": 0,
+     "wins": 6
+    },
+    "1": {
+     "n": 20,
+     "ties": 0,
+     "wins": 5
+    },
+    "10": {
+     "n": 20,
+     "ties": 0,
+     "wins": 10
+    },
+    "11": {
+     "n": 20,
+     "ties": 0,
+     "wins": 11
+    },
+    "12": {
+     "n": 20,
+     "ties": 0,
+     "wins": 12
+    },
+    "13": {
+     "n": 20,
+     "ties": 0,
+     "wins": 11
+    },
+    "14": {
+     "n": 20,
+     "ties": 0,
+     "wins": 5
+    },
+    "15": {
+     "n": 20,
+     "ties": 0,
+     "wins": 10
+    },
+    "16": {
+     "n": 20,
+     "ties": 0,
+     "wins": 9
+    },
+    "17": {
+     "n": 20,
+     "ties": 0,
+     "wins": 8
+    },
+    "18": {
+     "n": 20,
+     "ties": 0,
+     "wins": 11
+    },
+    "19": {
+     "n": 20,
+     "ties": 0,
+     "wins": 9
+    },
+    "2": {
+     "n": 20,
+     "ties": 0,
+     "wins": 11
+    },
+    "3": {
+     "n": 20,
+     "ties": 0,
+     "wins": 5
+    },
+    "4": {
+     "n": 20,
+     "ties": 0,
+     "wins": 10
+    },
+    "5": {
+     "n": 20,
+     "ties": 0,
+     "wins": 5
+    },
+    "6": {
+     "n": 20,
+     "ties": 0,
+     "wins": 7
+    },
+    "7": {
+     "n": 20,
+     "ties": 0,
+     "wins": 3
+    },
+    "8": {
+     "n": 20,
+     "ties": 0,
+     "wins": 9
+    },
+    "9": {
+     "n": 20,
+     "ties": 0,
+     "wins": 16
+    }
+   }
+  },
+  "secondary_source": {
+   "path": "designs/research_state/measurements/x51_plateau_vs_kakuna_2026-10-20/rows.jsonl",
+   "sha256": "27a8d7edad0365746579135bfa2a84850d266a9aceec083f509469fa791b6e28"
+  }
+ },
+ "ledgers": {},
+ "models": {
+  "pstar": {
+   "arm": "pstar",
+   "seed": 2601,
+   "sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed",
+   "source": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip",
+   "step": 280000170
+  }
+ },
+ "prereg": "designs/research_state/measurements/hctx_rc72_2026-10-26/PREREG.md",
+ "read": "hctx_rc72_am2_2026-10-26",
+ "regimes": {
+  "anchor": {
+   "forum72_a": "24595652b00bc543",
+   "forum72_b": "24595652b00bc543",
+   "home72_a": "29824e98d4ea54ab",
+   "home72_b": "29824e98d4ea54ab",
+   "rc72b_a": "b431991058792e78",
+   "rc72b_b": "b431991058792e78",
+   "rc72b_c": "b431991058792e78"
+  },
+  "s": {}
+ },
+ "repins": [],
+ "reported_incomplete": {},
+ "rule": "premium_recovery",
+ "schema": "gen3_read_record_v1",
+ "spec_sha256": "84901059df89a23793e75b52fd846eb0395c49ebb2696f50274453c1b3f90666",
+ "verdict": "H-CTX SUPPORTED: rc72 recovers -0.34 [-2.05, 0.20] of the home premium (rc72b 0.514, home72 0.615, forum72 0.540; premium +0.075 [+0.029, +0.121]); secondary, cross-engine: H-CTX SUPPORTED",
+ "void": null
+}

@@ -5,7 +5,8 @@
 UNDECIDED (§6.2); D1 FINAL UNDECIDED, U +2.10 pp [−0.92, +5.11] at an in-pool cost (§6.3); X26c, 100M more training,
 FLAT (+0.08 pp [−3.90, +4.06]); D3 look 1 CONTINUE, +1.27 pp [−2.63, +5.16], look 2 queued (§6.4); the belief prior
 mix NOT DETECTED at λ = 0.25 and λ = 1 (§5); Metamon's ensemble no stronger than Kakuna (§6.7). X61P / N1-P (12,000
-procedural teams, a fork of P\* against the shared C0) TRAINED 2026-10-26, look 1 being read (§6.5b); X61's toy
+procedural teams, a fork of P\* against the shared C0) TRAINED 2026-10-26, look 1 being read (§6.5b); H-CTX
+SUPPORTED: the home premium goes with the TEAM, not the set (§4, 2026-10-27); X61's toy
 design is NOT-READY and not run. X53-N1 and the all-null fallback are REVISED DRAFTs after their review (`6fca2c06`): X53-N1
 gated on a zero-GPU seed-spread read, the fallback opening with PR-1, a zero-GPU pooled precision read (§6.5, §7).** ALWAYS-CURRENT
 (owner, 2026-09-27): a later read, decision or build that differs updates this doc in the same commit, and the
@@ -225,11 +226,16 @@ The reads point at one mechanism: X26 plays a team well in proportion to how muc
   Nobody has re-measured it on the end state.
 - **Where it is lost (2026-10-26, DESCRIPTIVE, `measurements/piloting_gap_forensics_2026-10-26/`).** In X51's games
   the premium is not lost in the opening: the material state at turn 10 carries none of it. It is lost converting
-  level mid-game positions (0.609 vs 0.501 from level at turn 10). Whether it goes with the TEAM context or the set is OPEN until rc72b (H-CTX; review `90708bff` B1):
-  the per-mon KO drop (+0.093 [+0.004, +0.176]) restates the game result, and the comparison that holds the result
-  fixed reads −0.007 [−0.093, +0.070] (review `measurements/h_mid_value_test_2026-10-26/REVIEW.md` B1). The per-team
-  win-condition account above is a hypothesis (H-CTX), not a finding, and nothing here bounds D3. The kill test is a
-  recombined-pool panel (rc72b, README H-CTX).
+  level mid-game positions (0.609 vs 0.501 from level at turn 10). The per-mon KO evidence could not say whether it
+  goes with the team or the set (review `measurements/h_mid_value_test_2026-10-26/REVIEW.md` B1).
+- **It goes with the TEAM (H-CTX SUPPORTED, registered, 2026-10-27,
+  `measurements/hctx_rc72_2026-10-26/`).** P\* vs Kakuna on rc72b, 72 new sixes made only of verbatim pool sets (≤ 2
+  shared with any pool or corpus team), beside home72 and F on one engine: home72 0.615 [0.581, 0.648], F 0.540
+  [0.505, 0.574], rc72b 0.514 [0.486, 0.542]. rc72b recovers −0.34 [−2.05, +0.20] of the home premium (KILL needed ≥
+  0.75); rc72b − home72 −10.1 pp [−14.2, −6.0]. Familiar sets in new combinations play like unfamiliar teams, so the
+  per-team win-condition account stands, set-level breadth (D3) works the smaller channel, and the levers that
+  reach goal (b) must add TEAM contexts: recombined teams (X62, whose first gate this was), procedural teams (N1-P)
+  and their union (X63). Caveats: Kakuna also pilots rc72b, and no cell rates rc72b's strength (A-K).
 
 ---
 
@@ -644,3 +650,4 @@ with the interval named in the registration.
 | 2026-10-26 | **Two DRAFT design docs added: X53-N1 and the all-null contingency** (research-strategy worker, orchestrator brief; docs only) | [`design_x53_n1_fresh_breadth.md`](design_x53_n1_fresh_breadth.md): the from-scratch pair N1-P's GO funds, N1F (`n1_proc_v1` at 0.5) vs a fresh same-pin control CF, F primary, staged (≈ 39 GPU-h to a one-seed screen at 100M, ≈ 114 if every stage runs), the human-team corpus as a separate local-only arm, the cloud as its natural home once an approval covers it; §6.5 and §6.8 point to it. [`strategy_if_levers_null_2026-10-26.md`](strategy_if_levers_null_2026-10-26.md): if D3, N1-P and X59-S all miss a GAIN (≈ 0.58 by their own priors), a zero-GPU week (the N2 / N3 / plasticity probes, search's E2) and then, by expected pp per GPU-h, N5 (an offline breadth student), N2 (set-channel noise) and a breadth stack fork, with an owner escalation at ≈ 90 GPU-h | X53 as written (X26 @100M as its control: cross-pin, one seed); reading another +1–2 pp lever alone (a ±4 pp read cannot see it) | the two docs; N1-P PREREG §6, §8; `sota_survey_2026-10-26.md` §5 |
 | 2026-10-26 | **X53-N1 and the all-null contingency REVISED after their review** (`6fca2c06`; research-strategy worker, orchestrator brief; docs + CPU Monte Carlos) | X53-N1: a zero-GPU σ gate (Stage 0), power at +2 / +3 pp, no L50 futility stop, the unselected Stage-B estimate, a RETIRE outcome; §6.5 and §6.8 re-stated. The contingency: PR-1, a zero-GPU precision read of D1 + D3 + N1-P vs C0 pooled on F (38,000 games, one engine; 0.76 at +1.5 pp), as its first branch; rank by P(GAIN) per resource-day; the owner asked at the end of its zero-GPU stage | the drafts' L50 futility stop, 1.5 pp fixed floor and ≈ 90 GPU-h exit | [`strategy_revision_2026-10-26/`](../research_state/measurements/strategy_revision_2026-10-26/) |
 | 2026-10-27 | **"The premium goes with the TEAM context" softened to OPEN** (doc editor, orchestrator brief; docs only) | the "Where it is lost" bullet: the per-mon KO drop restates the result, the result-fixed comparison reads −0.007 [−0.093, +0.070]; the "bounds D3 at a quarter" claim removed. No measured number changed | keeping the team-context reading | `../research_state/measurements/h_mid_value_test_2026-10-26/REVIEW.md` B1, M3 |
+| 2026-10-27 | **H-CTX read: SUPPORTED** (H-CTX worker, orchestrator brief; 2,800 Kakuna games) | §4's "Where it is lost": the premium goes with the TEAM context (rc72b recovers −0.34 [−2.05, +0.20] of it, on one engine with home72 and F controls); the per-team win-condition account is now measured, not a hypothesis; the status line names it | "OPEN until rc72b" (10-27 softening, now resolved); the absolute ≥ 0.57 / ≤ 0.52 bars against X51 (kept only as a cross-engine line, Amendment 1) | `measurements/hctx_rc72_2026-10-26/README.md`, record `read_am2/record.json`; PREREG `b044d214b` + `aaf7ced86`, `905c29f5b` |
