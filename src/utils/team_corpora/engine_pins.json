@@ -1,0 +1,138 @@
+{
+ "pins": {
+  "d3_setmut_v1": {
+   "built_at": "06f28a2d2",
+   "recorded_in": "src/utils/team_corpora/d3_setmut_v1/manifest.json :: engine.prefilter_unplayable",
+   "unplayable": {
+    "ability": [],
+    "item": [
+     "machobrace",
+     "mail",
+     "mentalherb",
+     "shellbell"
+    ],
+    "move": [
+     "attract",
+     "bide",
+     "blastburn",
+     "camouflage",
+     "dig",
+     "dive",
+     "flatter",
+     "fly",
+     "followme",
+     "foresight",
+     "frenzyplant",
+     "grudge",
+     "helpinghand",
+     "hydrocannon",
+     "ingrain",
+     "lockon",
+     "magnitude",
+     "metronome",
+     "mindreader",
+     "mirrormove",
+     "mist",
+     "mudsport",
+     "naturepower",
+     "nightmare",
+     "odorsleuth",
+     "present",
+     "psywave",
+     "razorwind",
+     "roleplay",
+     "sketch",
+     "skullbash",
+     "skyattack",
+     "snore",
+     "spite",
+     "spitup",
+     "stockpile",
+     "swallow",
+     "teleport",
+     "watersport"
+    ],
+    "species": []
+   }
+  },
+  "n1_proc_v1": {
+   "built_at": "de2694804",
+   "recorded_in": "src/utils/team_corpora/n1_proc_v1/manifest.json :: engine.prefilter_unplayable",
+   "unplayable": {
+    "ability": [],
+    "item": [
+     "machobrace",
+     "mail",
+     "mentalherb",
+     "shellbell"
+    ],
+    "move": [
+     "attract",
+     "bide",
+     "blastburn",
+     "bounce",
+     "camouflage",
+     "dig",
+     "dive",
+     "flatter",
+     "fly",
+     "followme",
+     "foresight",
+     "frenzyplant",
+     "grudge",
+     "helpinghand",
+     "hydrocannon",
+     "ingrain",
+     "lockon",
+     "magiccoat",
+     "magnitude",
+     "metronome",
+     "mindreader",
+     "mirrormove",
+     "mist",
+     "mudsport",
+     "naturepower",
+     "nightmare",
+     "odorsleuth",
+     "present",
+     "psywave",
+     "razorwind",
+     "roleplay",
+     "sketch",
+     "skullbash",
+     "skyattack",
+     "snore",
+     "spite",
+     "spitup",
+     "stockpile",
+     "swallow",
+     "teleport",
+     "triplekick",
+     "watersport"
+    ],
+    "species": []
+   }
+  },
+  "w_forum_v1": {
+   "built_at": "c6497e66e",
+   "recorded_in": "src/utils/team_corpora/w_forum_v1/manifest.json :: engine.unplayable_ids",
+   "unplayable": {
+    "ability": [],
+    "item": [
+     "shellbell"
+    ],
+    "move": [
+     "blastburn",
+     "mudsport",
+     "nightmare",
+     "psywave",
+     "skyattack",
+     "spite"
+    ],
+    "species": []
+   }
+  }
+ },
+ "schema": "gen3_corpus_engine_pin_v1",
+ "what": "each frozen corpus's engine-coverage verdict (scan_move_probe) AT ITS BUILD: the ids the engine could not run, per kind, among the ids that build asked about; copied from the manifest field named in recorded_in. Read by utils.team_corpora.engine_pin; never edit a pin, a new corpus version gets a new one"
+}

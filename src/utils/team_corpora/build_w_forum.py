@@ -24,7 +24,9 @@ manifest counts each rule per tier:
 6. ``format``: the source row names a format other than ``gen3ou`` (``sub_format``; an empty one is the thread's own).
 7. ``validator``: the pinned ``TeamValidator('gen3ou')`` rejects the REPAIRED text, or Showdown cannot import it as six
    Pokemon (``src/rust_sim/harness/ladder_corpus_filter.js``, the ladder corpus's own filter).
-8. ``engine_unplayable``: a species / move / item / ability the Rust ENGINE does not run (``scan_move_probe``).
+8. ``engine_unplayable``: a species / move / item / ability the Rust ENGINE did not run AT THIS CORPUS'S BUILD
+   (``scan_move_probe``'s answer then, pinned in ``engine_pins.json``; :mod:`utils.team_corpora.engine_pin`). The live
+   oracle is still asked: an engine that lost coverage throws, one that gained it changes nothing.
 9. ``duplicate``: the same six mon sets as a team already kept (the source deduped before repair).
 10. ``strength``: the lenient TSR cut. A team is dropped iff it carries a Kakuna-pilot rating below ``STRENGTH_CUT_ELO``
    in ``measurements/team_strength_2026-10-18/teams.tsv`` (joined by ``main.team_strength.panel.team_id``). An X26-only
@@ -45,7 +47,7 @@ manifest counts each rule per tier:
 
 The kept teams are ordered tier A, then B, then C; inside each tier, ids sorted then shuffled once with
 ``random.Random(ORDER_SEED)``. The tiers are prefixes: ``A`` ⊂ ``AB`` ⊂ ``ABC`` (the default). The build is
-deterministic: the same source, pool, registry, engine and seeds give the same bytes (``--check``).
+deterministic: the same source, pool, registry, engine pin and seeds give the same bytes (``--check``).
 """
 from __future__ import annotations
 
@@ -179,12 +181,21 @@ def curator_cap(counts: Dict[str, int], share: float) -> int:
     return best
 
 
+def engine_unplayable(sd_rows: List[Dict[str, Any]]) -> Dict[str, List[str]]:
+    """Rule ``engine_unplayable``'s ids by kind over Showdown filter rows: this corpus's ENGINE PIN (the oracle's answer
+    at its build), the live oracle still asked (:func:`utils.team_corpora.engine_pin.unplayable`)."""
+    from utils.ladder_corpus.build import engine_verdicts
+    from utils.team_corpora import engine_pin
+
+    return engine_pin.unplayable(NAME, engine_verdicts(sd_rows))
+
+
 def build() -> Tuple[bytes, Dict[str, Any]]:
     from agents.gen3_data.hp_repair import REPAIR_VERSION, repair_team, team_seed
     from main import heldout_panels as HP
     from main.anchors.team_overlap import OVERLAP_VERSION, Reference, parse_items, parse_team
     from main.team_strength.panel import team_id as tsr_team_id
-    from utils.ladder_corpus.build import engine_verdicts, KINDS
+    from utils.ladder_corpus.build import KINDS
     from utils.team_loader import TeamLoader
 
     HP.verify()
@@ -236,8 +247,7 @@ def build() -> Tuple[bytes, Dict[str, Any]]:
         else:
             ok.append(r)
     # 7. engine coverage
-    verdicts = engine_verdicts([sd[r["id"]] for r in ok])
-    unplayable = {kind: sorted(i for i, v in verdicts[kind].items() if v != "ran") for kind, _ in KINDS}
+    unplayable = engine_unplayable([sd[r["id"]] for r in ok])
     why_engine: collections.Counter = collections.Counter()
     playable = []
     for r in ok:

@@ -44,11 +44,12 @@ THE RULES, in order (a failing candidate is dropped and the next index drawn; th
 * ``duplicate``: the same six mon sets as a team already accepted (in candidate order; the panel and the corpus share
   one key set).
 
-The ENGINE is a PREFILTER, as in D3: a species, move, item or ability the Rust engine cannot run (``scan_move_probe``)
-is never drawn (the move mass renormalised; the dropped mass is in the manifest), and the build re-asks the engine
+The ENGINE is a PREFILTER, as in D3: a species, move, item or ability the Rust engine could not run at this corpus's
+build (``scan_move_probe``'s answer then, pinned in ``engine_pins.json``, :mod:`utils.team_corpora.engine_pin`) is never
+drawn (the move mass renormalised; the dropped mass is in the manifest), and the build re-asks the engine
 about every id the output carries and THROWS on any unplayable one.
 
-THE TWO OUTPUTS, both deterministic (the same priors, pool, registry, engine, validator and seeds give the same bytes;
+THE TWO OUTPUTS, both deterministic (the same priors, pool, registry, engine pin, validator and seeds give the same bytes;
 ``--check``):
 
 * ``n1p72``, the HELD-OUT PROCEDURAL PANEL: the first :data:`N_PANEL` accepted candidates of stream ``panel``, written as
@@ -349,10 +350,10 @@ def build() -> Tuple[bytes, Dict[str, Any], Dict[str, str], Dict[str, Any]]:
     all_moves = sorted({m for s in usage for m in priors.moves(s) if m})
     all_items = sorted({i for s in usage for i in priors.items(s) if i != "nothing"})
     all_abil = sorted({a for s in usage for a in priors.ability(s)})
-    bad = {"species": frozenset(_engine_unplayable("species", sorted(usage))),
-           "move": frozenset(_engine_unplayable("move", all_moves)),
-           "item": frozenset(_engine_unplayable("item", all_items)),
-           "ability": frozenset(_engine_unplayable("ability", all_abil))}
+    bad = {"species": frozenset(_engine_unplayable(NAME, "species", sorted(usage))),
+           "move": frozenset(_engine_unplayable(NAME, "move", all_moves)),
+           "item": frozenset(_engine_unplayable(NAME, "item", all_items)),
+           "ability": frozenset(_engine_unplayable(NAME, "ability", all_abil))}
     u = build_universe(bad)
     dropped_mass = {s: round(sum(p for m, p in priors.moves(s).items() if m in bad["move"]) / float(MOVE_SLOTS), 6)
                     for s in u.species}

@@ -495,7 +495,7 @@ neighbours (the panel stays clean; v2 is ~70× its size).
 W_hl moves to a later dose / population step. The owner's rules hold: teams used as training DATA are fine, priors stay
 Smogon-only; widen OUR side (X37a: the gap is PILOTING unfamiliar teams); no owner or friend teams.
 - **Where:** `src/utils/team_corpora/w_forum_v1/` (`gen3_team_corpus_v1`; loader `utils.team_corpora.load_corpus`,
-  build `python -m utils.team_corpora.build_w_forum [--check]`, deterministic). Pin-safe by construction (F-DV-2).
+  build `python -m utils.team_corpora.build_w_forum [--check]`, deterministic; its engine verdict is pinned at the build, `utils.team_corpora.engine_pin`). Pin-safe by construction (F-DV-2).
 - **The build, rule by rule** (each drop counted per tier in its manifest): forum v2's 5,221 VERBATIM kept teams (the
   109 transcriptions are not used, v2 F2) → the HP repair only where HP is untyped (`gen3_hp_repair_v1`, the
   heldout72_hpfix function: **0 teams needed it**; v2 had dropped the 8 typeless-HP pastes with no IVs line) → minus

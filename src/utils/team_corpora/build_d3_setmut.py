@@ -46,13 +46,14 @@ THE RULES a candidate must pass, in order (a failure sends the (source, v) pair 
   (``ladder_corpus_filter.js``, the corpora's own filter);
 * ``duplicate``: the same six mon sets as a variant already accepted (accepted in (round, source, v) order).
 
-The ENGINE is not a rule but a PREFILTER: a move or item the Rust engine cannot run (``scan_move_probe``) is never drawn
+The ENGINE is not a rule but a PREFILTER: a move or item the Rust engine could not run at this corpus's build
+(``scan_move_probe``'s answer then, pinned in ``engine_pins.json``, :mod:`utils.team_corpora.engine_pin`) is never drawn
 (the drawn mass is renormalised, as the procedural generator does; the dropped mass is in the manifest), and the build
 re-asks the engine about every id the corpus carries and THROWS on any unplayable one.
 
 A (source, v) pair still failing after :data:`MAX_ATTEMPTS` is ``exhausted``. The kept variants are ordered by
 (source id, v) and shuffled once with ``random.Random(ORDER_SEED)``; one tier, ``ALL``. The build is deterministic: the
-same pool, priors, registry, engine, validator and seeds give the same bytes (``--check``).
+same pool, priors, registry, engine pin, validator and seeds give the same bytes (``--check``).
 """
 from __future__ import annotations
 
@@ -239,12 +240,14 @@ def _sha(b: bytes) -> str:
     return hashlib.sha256(b).hexdigest()
 
 
-def _engine_unplayable(kind: str, ids: Sequence[str]) -> List[str]:
-    """The ids of ``kind`` the engine cannot run (``scan_move_probe``, the only coverage oracle; the ladder corpus's
-    call, :func:`utils.ladder_corpus.build.engine_verdicts`, for one kind)."""
+def _engine_unplayable(name: str, kind: str, ids: Sequence[str]) -> List[str]:
+    """The ids of ``kind`` the engine could not run AT corpus ``name``'s BUILD (its pin, :mod:`utils.team_corpora.
+    engine_pin`); the live oracle (``scan_move_probe``, the ladder corpus's call :func:`utils.ladder_corpus.build.
+    engine_verdicts` for one kind) is still asked, and an engine that LOST coverage throws."""
     import subprocess
 
     from utils.ladder_corpus.build import scan_probe_bin
+    from utils.team_corpora import engine_pin
 
     want = sorted(set(ids))
     if not want:
@@ -257,7 +260,7 @@ def _engine_unplayable(kind: str, ids: Sequence[str]) -> List[str]:
         got[d.get("id", d.get("move"))] = d["verdict"]
     if set(got) != set(want):
         raise BuildError(f"scan_move_probe answered {len(got)} of {len(want)} {kind} ids")
-    return sorted(i for i, x in got.items() if x != "ran")
+    return engine_pin.unplayable(name, {kind: got})[kind]
 
 
 def build() -> Tuple[bytes, Dict[str, Any]]:
@@ -289,8 +292,8 @@ def build() -> Tuple[bytes, Dict[str, Any]]:
     species = sorted({block_species(b) for _, bl in sources for b in bl})
     all_moves = sorted({m for s in species for m in priors.moves(s) if m})
     all_items = sorted({i for s in species for i in priors.items(s) if i != "nothing"})
-    bad_moves = frozenset(_engine_unplayable("move", all_moves))
-    bad_items = frozenset(_engine_unplayable("item", all_items))
+    bad_moves = frozenset(_engine_unplayable(NAME, "move", all_moves))
+    bad_items = frozenset(_engine_unplayable(NAME, "item", all_items))
     table = {s: species_prior(s, bad_moves, bad_items) for s in species}
     dropped_mass = {s: round(sum(p for m, p in priors.moves(s).items() if m in bad_moves) / 4.0, 6) for s in species}
 
