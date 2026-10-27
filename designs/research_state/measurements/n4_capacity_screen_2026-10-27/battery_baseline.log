@@ -1,0 +1,16 @@
+# N4 battery baseline (2026-10-27). Reported, never deciding (PREREG section 10; the battery's validity rule 1).
+# python -m main.capacity <ckpt> --states '<models>/rb_x35t_c0_s3601/eval_traces/**/*_states.npz' --max-states 2000
+#   --seed 0 --out /tmp/... ; battery v3; CPU (CUDA_VISIBLE_DEVICES=""), nice 19, taskset 5-7,13-15, mem_cap --max-s 600.
+# ONE state set for all three: 2,000 states from 163 traces (35 step dirs x 6 opponents) of toy C0 s3601.
+# "fresh" = the same config at random init; a grown network's new parts are identity / zero at init, so its fresh
+# reference equals the toy's (PR_fresh team_tokens 11.32, srank99_fresh 94 on every row).
+
+checkpoint                                 | params (extractor) | role_tokens PR/sr99 | team_tokens PR/sr99 | value_pooled PR/sr99 | pi_features PR/sr99 | trainability ratio role/team/vpool | tanh l1 sat acts / sat units | tanh l2 sat acts / sat units
+T* (rb_toy_ent_s4002_deep @290,000,087)    |   848,897          | 17.04 / 80          | 16.68 / 111         | 2.41 / 13            | 23.72 / 366         | 1.177 / 1.295 / 1.065              | 0.868 / 0.066                | 0.353 / 0.008
+toy C0 s3601 final (360,098,229; +70M)     |   848,897          | 16.94 / 79          | 15.15 / 109         | 2.29 / 13            | 22.06 / 358         | 1.174 / 1.274 / 1.144              | 0.881 / 0.092                | 0.375 / 0.010
+X47 s3601 final (depth 2 -> 4; +70M)       | 1,113,857          | 17.04 / 80          | 16.65 / 109         | 2.54 / 12            | 23.19 / 362         | 1.151 / 1.286 / 1.049              | 0.886 / 0.104                | 0.382 / 0.008
+
+# Read (descriptive): the plain +70M continuation saturates the policy MLP's layer 1 further (units saturated on
+# >= 99 % of rows 6.6 % -> 9.2 %), as X26 did across its plateau (plasticity check F3). The depth-grown X47 final
+# does not relieve it (10.4 %), and keeps team_tokens' PR at T*'s level where C0 drifts down (16.65 vs 15.15; one
+# seed each, no interval). N4 reads the same lines on all six finals (PREREG section 6 item 7).
