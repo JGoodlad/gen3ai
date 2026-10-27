@@ -95,7 +95,8 @@ magnitude below a usage re-draw's, so it is a noise floor, not a channel.
   or revealed (the probe sees only never-seen bench mons, so early-game rows dominate). The review's F-AG-5
   structural point (the flat policy tower as the cheapest store of per-team plans) stands untested.
 - **It agrees with the piloting-gap forensics** (`piloting_gap_forensics_2026-10-26/`, same day, descriptive): P\*'s
-  per-mon edge drops with the TEAM, not the set, and its reading is "team-context play, not set knowledge". This
+  per-mon edge was read as dropping with the TEAM, not the set ("team-context play, not set knowledge"); that is
+  now OPEN (2026-10-27 note below). This
   probe is the policy-side check of the "not set knowledge" half. The team-context half is H-CTX's to read (the
   recombined-pool panel).
 
@@ -136,3 +137,5 @@ magnitude below a usage re-draw's, so it is a noise floor, not a channel.
   `/home/goodlad/gen3ai_archive/n2_identity_test_2026-10-26/`.
 - The input rows are the review's (`arch_generalisation_2026-10-26/rows_sha256.txt`; the load refuses on a mismatch).
 - `scripts/run_all.sh` regenerates everything in about 10 CPU-minutes of compute, plus queueing for the heavy slots.
+
+2026-10-27 note: "the edge drops with the TEAM, not the set" is not established; team vs set is OPEN until rc72b (H-CTX), per review `90708bff` B1. The result above (COMPOSITIONAL, N2 dropped) is unchanged.

@@ -1,6 +1,6 @@
 # X64: the toy context-count curve. Does the familiarity gap shrink as the number of training teams grows?
 
-**Status: DRAFT (2026-10-27), explicit-only. Nothing is built, registered or launched.** It makes runnable
+**Status: DROPPED (2026-10-27, orchestrator ruling on review `c0fd72bd`; re-entry only under that review's three conditions). Was DRAFT, explicit-only; nothing was built, registered or launched.** It makes runnable
 recommendation 5 of the context-generalisation survey
 ([`../research_state/literature/context_generalisation_2026-10-27.md`](../research_state/literature/context_generalisation_2026-10-27.md)
 §7, `5d554c23`): measure our own context-count curve on the toy at 719, ≈ 3k and ≈ 12k teams, each trained fresh.

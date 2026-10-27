@@ -253,3 +253,5 @@ cannot serve a cloud arm. A faster GPU queue doubles this load on the three agen
 > replay data or any credential) to those rented hosts; and (c) the first workload: a rehearsal, then one cloud C0
 > seed as the card gate, then, if it passes and D3 has its GO, C0 s3502–3503 and D3's three look-1 seeds on the
 > cloud? Yes, no, or change which part?**
+
+**STALE (2026-10-27):** the D3 look-1 workload in (c) is void; those seeds trained locally. Current candidates: `gpu_plan_2026-10-27.md`.

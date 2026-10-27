@@ -225,7 +225,7 @@ The reads point at one mechanism: X26 plays a team well in proportion to how muc
   Nobody has re-measured it on the end state.
 - **Where it is lost (2026-10-26, DESCRIPTIVE, `measurements/piloting_gap_forensics_2026-10-26/`).** In X51's games
   the premium is not lost in the opening: the material state at turn 10 carries none of it. It is lost converting
-  level mid-game positions (0.609 vs 0.501 from level at turn 10). Whether it goes with the TEAM context or the set is OPEN:
+  level mid-game positions (0.609 vs 0.501 from level at turn 10). Whether it goes with the TEAM context or the set is OPEN until rc72b (H-CTX; review `90708bff` B1):
   the per-mon KO drop (+0.093 [+0.004, +0.176]) restates the game result, and the comparison that holds the result
   fixed reads −0.007 [−0.093, +0.070] (review `measurements/h_mid_value_test_2026-10-26/REVIEW.md` B1). The per-team
   win-condition account above is a hypothesis (H-CTX), not a finding, and nothing here bounds D3. The kill test is a
