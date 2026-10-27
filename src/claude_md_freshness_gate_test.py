@@ -105,6 +105,7 @@ def claude_md_files() -> List[pathlib.Path]:
 # and name deleted things on purpose (`designs/CLAUDE.md` lists which trees are which).
 _ALWAYS_CURRENT_GLOBS = (
     "designs/ARCHITECTURE.md",
+    "designs/STATUS.md",              # the one-page dashboard (its SHAs and date: `status_doc_gate_test.py`)
     "designs/endstate/*.md",
     "designs/ops/*_SOP.md",
     "designs/ops/training_runbook.md",

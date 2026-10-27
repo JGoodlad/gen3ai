@@ -7,7 +7,8 @@ and is never edited; the `learning/` notes explain concepts rather than holding 
 currently believe about the research** had no home. This file is it — the research twin of
 `ARCHITECTURE.md`, **always-current, present tense only.** It carries no narrative of how a belief
 changed; that is the ledger's job, and when the two disagree **the later ledger entry wins and this
-file is a bug — fix it in the same pass.**
+file is a bug — fix it in the same pass.** The one-page dashboard of the same beliefs (each goal's number, what is
+running, what waits on the owner) is [`../STATUS.md`](../STATUS.md): STATUS is the dashboard, this file the reasoning.
 
 Every claim carries two things:
 

@@ -130,7 +130,7 @@ Two orthogonal marker axes: capability (*what a test needs* — `integration`, `
 | **The routine gate** (before any commit) | `pytest src/ -m "not slow and not e2e" -q -n 6` | ~4.3 min (`-n 4` beside a training run) |
 | Everything (before a release/ship) | `pytest src/ -q` | ~47 min |
 
-Eighteen static gates run inside the suite, all declaring the `static` tier so they run in every tier:
+Nineteen static gates run inside the suite, all declaring the `static` tier so they run in every tier:
 mypy, ruff, file size, `CLAUDE.md` freshness, stub vacuity, slow-tier status, the `ARCHITECTURE.md`
 mode-flag mirror, the training-recipe mirror, the human-data architecture mirror, the ledger index, the eval-trace summary readers, the
 enum-string comparison, the learner lifecycle, the global-RNG seeding, the strict checkpoint load, the

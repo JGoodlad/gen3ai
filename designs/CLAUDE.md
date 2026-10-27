@@ -2,7 +2,7 @@
 
 A map, not a reference. What the model IS: [`ARCHITECTURE.md`](ARCHITECTURE.md). How it got there:
 [`CHANGELOG.md`](CHANGELOG.md) (history; never quote it as current). What we believe about the research:
-[`research_state/UNDERSTANDING.md`](research_state/UNDERSTANDING.md) (it owns the claim-tag vocabulary). Where the system is heading, and all
+[`research_state/UNDERSTANDING.md`](research_state/UNDERSTANDING.md) (it owns the claim-tag vocabulary). Where we stand right now, on one page: [`STATUS.md`](STATUS.md) (`src/status_doc_gate_test.py`). Where the system is heading, and all
 current design work: [`endstate/README.md`](endstate/README.md) (the index and reading order).
 
 ## Always-current docs: the rules a reader would miss

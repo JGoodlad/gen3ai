@@ -10,6 +10,9 @@ and why each fork was taken.
 
 ## Reading order for someone new
 
+Start with [`../STATUS.md`](../STATUS.md): one page with every goal's number, what is running and what waits on the
+owner. These docs hold the plans behind it.
+
 Each doc owns its detail and its own status block; the status here is the one-line truth as of 2026-10-25 and
 loses to the doc.
 

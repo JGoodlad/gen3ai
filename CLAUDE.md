@@ -24,7 +24,7 @@ Follow the pointer when you touch the subject.
 | run a registered read (S vs R, Kakuna cells, a PREREG'd verdict) | `designs/tools/reads.md` (`python -m main.reads`); a `measurements/<read>/` script is a frozen record, never a tool |
 | play over a websocket, or read an external anchor | § Playing below, then `designs/ops/EXTERNAL_ANCHORS_SOP.md` |
 | edit anything under `designs/` | `designs/CLAUDE.md` |
-| see where the system is heading | `designs/endstate/README.md` |
+| see where we stand, or where the system is heading | `designs/STATUS.md` (one page), then `designs/endstate/README.md` |
 
 **Rapid iteration:** breaking changes to the observation, network or action space are fine; add no compatibility
 shims. Architecture constants live only in `src/agents/model/arch_constants.py`.
@@ -88,7 +88,7 @@ always-current doc names, and caps the bytes of each `CLAUDE.md`, slash command 
 - **Always current:** every `CLAUDE.md` and `README.md` (except the frozen `designs/ai_v3/README.md`);
   `designs/ARCHITECTURE.md` (the model as it is now, the first thing an architecture change updates; no version
   numbers in prose, every figure with its provenance, `**UNVERIFIED:**` where it cannot be checked); every doc in
-  `designs/endstate/`; `designs/research_state/UNDERSTANDING.md`; the SOPs; and the eight trees that own a leaf's
+  `designs/endstate/`; `designs/research_state/UNDERSTANDING.md`; `designs/STATUS.md` (gated for its SHAs and a ≤ 3-day "Running now"); the SOPs; and the eight trees that own a leaf's
   detail: `designs/ops/`, `designs/training/`, `designs/model/`, `designs/rust_sim/`, `designs/prober/`,
   `designs/launcher/`, `designs/observation/`, `designs/tools/`.
 - **Append-only:** `designs/CHANGELOG.md` (a new entry per version), the research ledger (never edit it; fix the
@@ -141,7 +141,7 @@ Full chapter: [`designs/ops/testing.md`](designs/ops/testing.md). Prefix each co
 
 - **Cut tiers on `slow`, never `-m "not integration and not e2e"`.** A tier is declared by marker, never inferred
   from a filename.
-- **Eighteen static gates** run in every tier (`python -m utils.static_gates` lists them; the table with every
+- **Nineteen static gates** run in every tier (`python -m utils.static_gates` lists them; the table with every
   opt-out is `docs/DEVELOPING.md`); a missing tool FAILS. Their allowlists are empty: fix the code (decompose a file
   over 2,000 lines, fix a vacuous stub at the source), never add an entry.
 - **A timeout is never a semantic outcome**: bounds scale by measured contention; > 25 % timeouts ⇒ INCONCLUSIVE.
