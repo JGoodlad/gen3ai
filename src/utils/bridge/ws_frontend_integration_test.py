@@ -133,7 +133,7 @@ async def test_a_rejected_team_never_becomes_a_battle(pool_teams):
     error, and burned a 120-game attempt at game 8."""
     front = ShowdownFrontEnd(impl="node", validate_teams=True)
     front._team_cache[("gen3ou", "Airmure (Skarmory)  |||keeneye|protect|Calm|||||")] = (
-        False, ['The Pokemon "airmureskarmory" does not exist.'])
+        False, ['The Pokemon "airmureskarmory" does not exist.'], "")
     server, _uri = await _serve(front)
     from utils.bridge.ws_frontend import _Conn
 
