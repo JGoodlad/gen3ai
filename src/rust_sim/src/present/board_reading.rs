@@ -153,10 +153,6 @@ pub struct DamagingMoveRead {
     /// computed against (a transformed mon KO'd by Hidden Power read back as its base species).
     pub target_types: Vec<String>,
     pub target_ability: Option<String>,
-    /// The target held the `foresight` volatile WHEN THE MOVE FIRED (`gen3_hp_foresight_v1`; Foresight or Odor
-    /// Sleuth, which share it): its Ghost type's Normal / Fighting immunity is negated (`data/moves.ts`
-    /// `foresight.condition.onNegateImmunity`, run by `sim/pokemon.ts` `runImmunity`).
-    pub target_foresight: bool,
     /// The user was TRANSFORMED when it fired: in gen 3 Transform copies `hpType`
     /// (`sim/pokemon.ts` `transformInto`: `this.hpType = gen >= 5 ? this.hpType : pokemon.hpType`),
     /// so its Hidden Power's type is the COPIED mon's, not its own species' (`gen3_hp_fire_time_target_v1`).
@@ -595,9 +591,6 @@ impl BoardReading {
         };
         if let Some(o) = outgoing {
             self.mon_at((own, o)).switch_out();
-            if !from_baton_pass {
-                self.release_foe_trap(own);
-            }
         }
         let at = self.get_pokemon(pokemon_str, false, details, None)?;
         let m = self.mon_at(at);
@@ -610,21 +603,6 @@ impl BoardReading {
             m.apply_baton_pass(s);
         }
         Ok(())
-    }
-
-    /// `gen3_volatile_silent_ends_v1` (2026-10-26 GIGO audit A-C2): side `own`'s active LEFT the field (switched
-    /// out, dragged out or fainted — not a Baton Pass, which hands the `trapper` link on: `copyVolatileFrom`). Mean
-    /// Look / Spider Web / Block link the foe's `trapped` to its trapper (`addVolatile('trapped', source, move,
-    /// 'trapper')`), and the trapper's `clearVolatile` -> `removeLinkedVolatiles` ends it with NO protocol line
-    /// (`sim/pokemon.ts`). In singles the only possible trapper is the opposing active, so the foe's active is
-    /// released. It read trapped for the rest of its stint.
-    fn release_foe_trap(&mut self, own: bool) {
-        if let Some(i) = self.active_index(!own) {
-            let foe = self.mon_at((!own, i));
-            if foe.has_effect(super::dex::effect_by_name("TRAPPED").expect("TRAPPED")) {
-                foe.end_effect("TRAPPED");
-            }
-        }
     }
 
     /// `AbstractBattle.end_turn(turn)`: the new turn, then `end_turn()` on both actives.
@@ -823,12 +801,7 @@ impl BoardReading {
             "-weather" => self.weather(&sm)?,
             "faint" => {
                 let p = f(2)?.to_string();
-                let m = self.mon(&p)?;
-                let was_active = m.active;
-                m.faint();
-                if was_active {
-                    self.release_foe_trap(ident_side(&p) == Some(self.role));
-                }
+                self.mon(&p)?.faint();
             }
             "-ability" => {
                 let (p, cause) = (f(2)?.to_string(), f(3)?.to_string());
@@ -1233,19 +1206,17 @@ impl BoardReading {
         if dex::move_row(&dex::to_id(&mv)).is_some_and(|r| r.damaging) {
             let um = self.mon(&pokemon)?;
             let (user_species, user_transformed) = (um.species.clone(), um.transformed());
-            let snap = |m: &super::mon::PMon| -> (Vec<String>, Option<String>, bool) {
-                let foresight = m.has_effect(super::dex::effect_by_name("FORESIGHT").expect("FORESIGHT"));
-                (m.types().iter().map(|t| t.to_ascii_lowercase()).collect(), m.ability().map(str::to_string), foresight)
+            let snap = |m: &super::mon::PMon| -> (Vec<String>, Option<String>) {
+                (m.types().iter().map(|t| t.to_ascii_lowercase()).collect(), m.ability().map(str::to_string))
             };
             let user_snap = snap(um);
-            let (target_species, target_status, (target_types, target_ability, target_foresight)) =
-                match presumed.as_deref() {
-                    Some(t) => {
-                        let tm = self.mon(t)?;
-                        (tm.species.clone(), tm.status, snap(tm))
-                    }
-                    None => (user_species.clone(), None, user_snap),
-                };
+            let (target_species, target_status, (target_types, target_ability)) = match presumed.as_deref() {
+                Some(t) => {
+                    let tm = self.mon(t)?;
+                    (tm.species.clone(), tm.status, snap(tm))
+                }
+                None => (user_species.clone(), None, user_snap),
+            };
             let mover = usize::from(ident_side(&pokemon) != Some(self.role));
             self.pending_damaging[mover] = Some((
                 self.turn,
@@ -1257,7 +1228,6 @@ impl BoardReading {
                     effectiveness: 1.0,
                     target_types,
                     target_ability,
-                    target_foresight,
                     user_transformed,
                 },
             ));

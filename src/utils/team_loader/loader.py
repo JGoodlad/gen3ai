@@ -1,9 +1,8 @@
 import os
 import json
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
 from utils.paths import repo_path
-from utils.team_corpora import check_label_encodable
 
 
 class EmptyTeamPoolError(RuntimeError):
@@ -28,22 +27,12 @@ class TeamLoader:
 
     ``base_dir`` defaults to :func:`default_base_dir` (this checkout's ``data/teams``, CWD-independent). A pool
     that loads no team raises :class:`EmptyTeamPoolError`.
-
-    🚨 **The LABEL-PATH GUARD** (the corpora's, ``c6497e66e``; TECH_DEBT (f) P2). The env's spread labels recompute
-    every truth mon's stats at LEVEL 100 and FAULT otherwise, so a pool team with a ``Level:`` line other than 100
-    (the gen3ou validator accepts one) would kill every run that draws it, as ``sfv2_5051`` did D1. Construction
-    REFUSES such a pool with :class:`utils.team_corpora.CorpusError` (the SAME function, ``check_label_encodable``,
-    the corpus readers run), naming each team's file. This is the pool's single entry: every team in ``sample_teams``
-    / ``other_teams`` has passed it.
     """
     def __init__(self, base_dir: Optional[str] = None):
         self.base_dir = base_dir if base_dir is not None else default_base_dir()
         self.sample_teams: List[str] = []
         self.other_teams: List[str] = []
-        self._loaded: List[Tuple[str, str]] = []  # (file, text) of every loaded team, for the label-path guard
         self._load_teams()
-        check_label_encodable([f for f, _ in self._loaded], [t for _, t in self._loaded],
-                              f"the team pool {os.path.abspath(self.base_dir)}")
         if not self.sample_teams and not self.other_teams:
             state = "does not exist" if not os.path.isdir(self.base_dir) else "holds no loadable team"
             raise EmptyTeamPoolError(f"the team pool {os.path.abspath(self.base_dir)} {state}")
@@ -104,8 +93,6 @@ class TeamLoader:
 
                             with open(full_path, "r") as f:
                                 team_text = f.read().strip()
-
-                            self._loaded.append((rel_file_path, team_text))
 
                             # Categorize by the folder structure UNDER the base (an absolute base's
                             # own path, e.g. a worktree named "resample-x", must not decide it)

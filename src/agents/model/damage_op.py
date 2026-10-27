@@ -141,7 +141,6 @@ from agents.model.damage_kinds import (beatup_base_def, beatup_party_opp, gather
                                        gather_nonformula, nonformula_rolls, override_rolls)
 from agents.model.damage_op_pairwise import DamageOperatorPairwise
 from agents.model.damage_op_speed import DamageOperatorSpeed
-from agents.model.extractor_ctx import held_item_ids, item_unrevealed
 # gen3_fm_index_max_v1 / audit F6a: THE hard-max spelling (a leaf module, re-exported here as
 # `damage_op.max_by_index`, the name this module's own maxima resolve at call time).
 from agents.model.index_max import max_by_index
@@ -1047,9 +1046,7 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
         # gen3_unified_choice_band_v1: P(opp active holds Choice Band), collapsed to 0/1 once its item is
         # revealed (item_id==CB → 1; any OTHER revealed item → 0; unrevealed id==0 → the species usage prior).
         # The op's outgoing block applies CB ×1.5 deterministically for OUR known item; here it's a belief.
-        # gen3_op_held_item_v1: identity from the HELD id (0 once Knocked Off / stolen / used), the prior branch from
-        # "nothing known" — a knocked-off Band is known gone (p_cb 0), never a held Band (it read p_cb 1).
-        opp_held = held_item_ids(ctx)[ar, opp_act]                                                # [B]
+        opp_item = ctx.item_ids[ar, opp_act]                                                     # [B]
         # gen3_item_belief_v1: when the ITEM BELIEF runs, its published P(item==CB) at the ACTIVE
         # slot replaces the static usage scalar in the UNREVEALED branch — the exactness gating
         # (revealed → 0/1) stays HERE either way, so the belief only ever moves the prior factor.
@@ -1058,8 +1055,8 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
             cb_prior = item_cb_prob[ar, ctx.opp_active_local]                                    # [B]
         else:
             cb_prior = self.SPECIES_CB_PRIOR[ctx.species_ids[ar, opp_act]]                       # [B]
-        revealed_cb = (opp_held == self.cb_item_num).float()                                     # [B]
-        unrevealed = item_unrevealed(ctx)[ar, opp_act]                                           # [B] all-zero id
+        revealed_cb = (opp_item == self.cb_item_num).float()                                     # [B]
+        unrevealed = (opp_item == 0).float()                                                     # [B] all-zero id
         p_cb = (revealed_cb + (1.0 - revealed_cb) * unrevealed * cb_prior) * has_opp             # [B]
         # CB-conditional physical tail, gated like the modal per-mon feats (alive defender + opp present).
         cb_gate = defender_alive * has_opp[:, None]                                              # [B,6]

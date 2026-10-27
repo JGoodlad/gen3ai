@@ -274,16 +274,8 @@ impl crate::state::BattleState {
                         // the pursuer (this actor) is frozen or asleep (then NO volatile → no
                         // interrupt). No `-singleturn`/`-start` line (the pursuit condition has
                         // no onStart). Draw-free.
-                        //
-                        // gen 3 adds a LOAFING Truant user to the skip (`gen3_bf_truant_pursuit_v1`,
-                        // data/mods/gen3/moves.ts:480-482: `pokemon.hasAbility('truant') &&
-                        // pokemon.truantTurn`): no interrupt, and no `pursuit` duration handler in
-                        // the residual sort (fuzz `rmvprol00_ab_0_6`: beside a Rollout lock at the
-                        // same speed it cost a tie-shuffle draw). Probe BF14.
                         let st = self.sides[side].pokemon[slot].status;
-                        let loafing = to_id(&self.sides[side].pokemon[slot].ability) == "truant"
-                            && self.sides[side].pokemon[slot].truant_turn;
-                        let skip = matches!(st, Some(Status::Freeze) | Some(Status::Sleep(_))) || loafing;
+                        let skip = matches!(st, Some(Status::Freeze) | Some(Status::Sleep(_)));
                         if !skip {
                             let foe = 1 - side;
                             let foe_slot = self.sides[foe].active;
@@ -358,12 +350,10 @@ impl crate::state::BattleState {
                         _ => false,
                     });
                     let res = self.run_move(MoveAction { side, slot, move_index, struggle }, will_act, foe_will_move, dex);
-                    // The in-tryMoveHit Update of a landed move ran inside `run_move`, before Shell Bell
-                    // (`gen3_bf_update_before_shell_bell_v1`).
-                    debug_assert!(!res.landed || res.update_done);
-                    // SPIT UP's `onAfterMove` (`gen3_b7_moves_v1`) — the move's own singleEvent,
-                    // ahead of the runEvent('AfterMove') handlers below.
-                    self.spit_up_after_move(side, slot, &res, dex);
+                    if res.landed {
+                        let upd = self.each_event_shuffle(); // in-tryMoveHit Update (landed)
+                        self.run_update_items(&upd, dex); // cure-berry/Leppa onUpdate (draw-free)
+                    }
                     // --- CHARGE consumption (`gen3_move_coverage_batch6_v1` —
                     //     `charge.onAfterMove` + `onMoveAborted`, both `if (move.id !==
                     //     'charge') removeVolatile('charge')`): the volatile lasts until
@@ -371,10 +361,9 @@ impl crate::state::BattleState {
                     //     consumes it, a cant (onMoveAborted — full-para / slp / recharge
                     //     / …) consumes it, only an Electric move first gets the ×2 BP
                     //     fold (already applied inside run_move). The AfterMove event
-                    //     fires from `runMove` with `battle.activeMove` — the CALLEE after a
-                    //     Sleep Talk / Metronome turn, which is why a called Charge survives its
-                    //     own turn (`gen3_b11_moves_v1`; the port keyed it on the outer move
-                    //     until B11); the pursuit-interrupt strike
+                    //     fires from `runMove` with the OUTER (queued, post-encore-
+                    //     override) move — so a Sleep-Talk turn consumes it keyed on
+                    //     `sleeptalk`, not the called move; the pursuit-interrupt strike
                     //     is a bare `useMove` (NO runMove → NO AfterMove → NOT consumed
                     //     there, faithful to the source). DRAW-FREE; the removal emits
                     //     `|-end|<user>|Charge|[silent]` (`charge.onEnd`).
@@ -389,12 +378,12 @@ impl crate::state::BattleState {
                     //     Gate on hp > 0 (the `removeVolatile` false-on-0-HP rule). ---
                     if self.sides[side].pokemon[slot].charge
                         && self.sides[side].pokemon[slot].hp > 0
-                        && !res.nopp
                     {
-                        // Keyed on `battle.activeMove` (`gen3_b11_moves_v1`): after a caller's turn
-                        // that is the CALLEE, so a Metronome / Sleep Talk that called Charge keeps
-                        // the volatile it just set (probe_b11_moves.js "metronome charge").
-                        let executed_is_charge = !struggle && self.active_move_id == "charge";
+                        let executed_is_charge = !struggle
+                            && self
+                                .move_at(side, slot, move_index, dex)
+                                .map(|m| m.id == "charge")
+                                .unwrap_or(false);
                         if !executed_is_charge {
                             self.sides[side].pokemon[slot].charge = false;
                             if self.logging() {
@@ -485,18 +474,10 @@ impl crate::state::BattleState {
                             .item(&crate::dex::to_id(&m.item))
                             .map(|i| i.choice)
                             .unwrap_or(false);
-                        // `addVolatile('choicelock')` on a mon that ALREADY holds the volatile is a no-op
-                        // (the condition has no `onRestart`), so an existing lock keeps its move
-                        // (`gen3_b11_moves_v1`: a Choice-Band Metronome user locked to Metronome stays
-                        // locked to it through the Outrage that Metronome called — whose repeat sets
-                        // `lastMove = outrage` — probe_b11_moves.js "cb metronome"). A CALLED move's
-                        // virtual slot is never a lock (`hasMove` fails on it at the next DisableMove).
-                        if let (true, false, Some(lm), None) =
-                            (holds_choice, m.last_move_was_self_overwrite, m.last_move, m.choice_locked_move)
+                        if let (true, false, Some(lm)) =
+                            (holds_choice, m.last_move_was_self_overwrite, m.last_move)
                         {
-                            if lm != crate::state::CALLED_MOVE_SLOT {
-                                self.sides[side].pokemon[slot].choice_locked_move = Some(lm);
-                            }
+                            self.sides[side].pokemon[slot].choice_locked_move = Some(lm);
                         }
                     }
                     // --- forceSwitchFlag consumption (battle.ts:2348-2353): at the END of
@@ -895,10 +876,8 @@ impl FullBattleDriver {
                         // `move 1` maps back to the LOCKED Uproar slot, not slot 0.
                         .or_else(|| bs.sides[side].pokemon[active].uproar.map(|(_, k)| k))
                         // …and so does the outrage/petaldance/thrash lock.
-                        .or_else(|| bs.sides[side].pokemon[active].locked_move.map(|l| l.move_index))
+                        .or_else(|| bs.sides[side].pokemon[active].locked_move.map(|(_, k)| k))
                         .or_else(|| bs.sides[side].pokemon[active].rollout.map(|(_, k)| k))
-                        // …and Bide's `onLockMove` (`gen3_b8_moves_v1`).
-                        .or_else(|| bs.sides[side].pokemon[active].bide.map(|b| b.move_index))
                         .unwrap_or(mi);
                     // A mon with NO usable move (all slots at 0 PP) has `moveid:'struggle'`
                     // substituted by `side.choose` — regardless of the scripted slot `mi`.
@@ -1038,49 +1017,6 @@ impl FullBattleDriver {
                     }
                     self.decisions.push(bs.boundary_record(request, first_mover, dex));
                     self.phase = DrivePhase::Ended(None);
-                    return;
-                }
-                // [endTurn -> maybeTriggerEndlessBattleClause] the ENDLESS BATTLE CLAUSE
-                // (`gen3_b10_endless_battle_v1`, `turn/endless.rs`): past turn 100, after the countdown
-                // `|bigerror|` (sim/battle.ts:1835-1849 precede the clause's rule check at 1851), it may end the
-                // battle with an optional `-message` and a win or a tie — returning before the Quick
-                // Claw roll and the `|turn|` line, so draw-free.
-                if let Some(outcome) = bs.endless_battle_clause_outcome(next_turn, dex) {
-                    use super::endless::EndlessOutcome;
-                    bs.turn = next_turn;
-                    let winner = match outcome {
-                        EndlessOutcome::Loses { loser } => Some(1 - loser),
-                        EndlessOutcome::BothCycled | EndlessOutcome::Tie => None,
-                    };
-                    if bs.logging() {
-                        if let Some(text) = turn_limit_warning(next_turn) {
-                            bs.log.bigerror(&text);
-                        }
-                        match outcome {
-                            EndlessOutcome::Loses { loser } => {
-                                let name = bs.sides[loser].name.clone();
-                                bs.log.clause_message(&format!(
-                                    "{name}'s team started with the rudimentary means to perform restorative \
-                                     berry-cycling and thus loses."
-                                ));
-                            }
-                            EndlessOutcome::BothCycled => bs.log.clause_message(
-                                "Each side's team started with the rudimentary means to perform restorative \
-                                 berry-cycling.",
-                            ),
-                            EndlessOutcome::Tie => {}
-                        }
-                        bs.log.separator();
-                        match winner {
-                            Some(side) => {
-                                let name = bs.sides[side].name.clone();
-                                bs.log.win(&name);
-                            }
-                            None => bs.log.tie(),
-                        }
-                    }
-                    self.decisions.push(bs.boundary_record(request, first_mover, dex));
-                    self.phase = DrivePhase::Ended(winner);
                     return;
                 }
                 // PERSIST the endTurn Quick Claw roll — read NEXT turn by

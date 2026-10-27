@@ -50,11 +50,6 @@ const MODELED_STATUS = new Set([
   'thunderwave', 'stunspore', 'glare', 'toxic', 'poisonpowder', 'poisongas',
   'willowisp', 'spore', 'sleeppowder', 'hypnosis', 'sing', 'lovelykiss', 'grasswhistle',
   'confuseray', 'supersonic', 'sweetkiss', 'teeterdance',
-  // ATTRACT (`gen3_attract_move_v1`, gen3 full parity B9): its own arm in `status_moves.rs`.
-  'attract',
-  // B6 (`gen3_b6_moves_v1`): Swagger / Flatter (target boost + confusion), Foresight / Odor Sleuth
-  // (the `foresight` volatile) and Magic Coat (the bounce) — each its own arm in `status_moves.rs`.
-  'swagger', 'flatter', 'foresight', 'odorsleuth', 'magiccoat',
 ]);
 // Self-boost SETUP moves — DATA-DRIVEN from gen3_moves.json `selfBoosts` (== engine's
 // `self_boost_spec`, which reads `MoveData::self_boosts`).
@@ -136,11 +131,9 @@ const MODELED_FIXED_DAMAGE = new Set([
   'seismictoss', 'nightshade', 'sonicboom', 'dragonrage', 'superfang',
   'counter', 'mirrorcoat', 'endeavor',
 ]);
-// GEN3 FULL PARITY B8 (`gen3_b8_moves_v1`, `src/turn/variable_moves.rs`) — the last of the
-// fixed-damage family (Psywave's draw at the hit, the four OHKO moves, Bide's cast + release),
-// the onModifyMove-BP pair (Magnitude, Present) and Triple Kick (multiaccuracy).
-const MODELED_B8 = new Set([
-  'psywave', 'fissure', 'horndrill', 'guillotine', 'sheercold', 'bide', 'magnitude', 'present', 'triplekick',
+// DEFERRED fixed-damage (`is_fixed_damage_move` true but no amount → fail-loud panic).
+const DEFERRED_FIXED_DAMAGE = new Set([
+  'psywave', 'fissure', 'horndrill', 'guillotine', 'bide',
 ]);
 // MOVE-COVERAGE BATCH 4 / 4b / 4c / 5 damaging-side modeled sets (mirrored from the
 // src/turn.rs id-gates — the pre-batch-5 scan STALELY classified these MISMODELED):
@@ -153,24 +146,11 @@ const MODELED_B8 = new Set([
 //              Flail / Reversal / Low Kick.
 const MODELED_BATCH4 = new Set(['focuspunch', 'pursuit']);
 const MODELED_BATCH4B = new Set(['beatup', 'thunder', 'waterspout', 'eruption']);  // gen3_eruption_v1
-// gen3_twoturn_family_v1 (gen3 full parity B4) admits the seven other charge moves.
-const MODELED_BATCH4C = new Set(['hyperbeam', 'blastburn', 'frenzyplant', 'hydrocannon', 'solarbeam', 'doomdesire', 'futuresight',
-  'razorwind', 'skyattack', 'skullbash', 'fly', 'bounce', 'dig', 'dive']);
-// SPIT UP joins the family in GEN3 FULL PARITY B7 (`gen3_b7_moves_v1`): 100 × stockpile layers.
-const MODELED_VARBP = new Set(['return', 'frustration', 'flail', 'reversal', 'lowkick', 'spitup']);
-// GEN3 FULL PARITY B5 (`gen3_b5_moves_v1`) — the category-Status members (Snore is damaging,
-// classified in classifyDamaging).
-const MODELED_B5 = new Set(['spite', 'grudge', 'nightmare', 'ingrain']);
-// GEN3 FULL PARITY B7 (`gen3_b7_moves_v1`) — the category-Status members (Spit Up is damaging,
-// in MODELED_VARBP).
-const MODELED_B7 = new Set(['stockpile', 'swallow', 'mudsport', 'watersport', 'mist', 'lockon', 'mindreader']);
-// GEN3 FULL PARITY B10 (`gen3_b10_moves_v1`) — Teleport, Follow Me, Helping Hand, Role Play, Camouflage.
-const MODELED_B10 = new Set(['teleport', 'followme', 'helpinghand', 'roleplay', 'camouflage']);
-// GEN3 FULL PARITY B11 (`gen3_b11_moves_v1`, `src/turn/callers.rs`) — the move-callers and Sketch.
-const MODELED_B11 = new Set(['metronome', 'mirrormove', 'assist', 'naturepower', 'sketch']);
+const MODELED_BATCH4C = new Set(['hyperbeam', 'solarbeam', 'doomdesire', 'futuresight']);
+const MODELED_VARBP = new Set(['return', 'frustration', 'flail', 'reversal', 'lowkick']);
 // MOVE-COVERAGE BATCH 7 (`gen3_move_coverage_batch7_v1`) — the generic MULTI-STRIKE family
-// (`run_multihit`): the FIXED-2 trio + the variable [2,5] family.
-// (`triplekick`, the sole `multiaccuracy` carrier, is MODELED since B8 — `MODELED_B8`.)
+// (`run_multihit`): the FIXED-2 trio + the variable [2,5] family. `triplekick` (the sole
+// `multiaccuracy` carrier) stays an ENGINE fail-loud and is deliberately NOT here.
 const MODELED_BATCH7_MULTIHIT = new Set([
   'doublekick', 'twineedle', 'bonemerang',
   'pinmissile', 'bulletseed', 'iciclespear', 'rockblast', 'barrage', 'cometpunch',
@@ -211,12 +191,12 @@ function classifyDamaging(m, id) {
   }
   // A move whose damage bypasses getDamage → fixed-damage routing.
   if (MODELED_FIXED_DAMAGE.has(id)) return { cov: 'MODELED', mech: 'fixed-damage' };
-  if (MODELED_B8.has(id)) return { cov: 'MODELED', mech: `b8 (${id})` };
+  if (DEFERRED_FIXED_DAMAGE.has(id)) return { cov: 'UNMODELED', mech: 'reactive-or-ohko-fixed' };
   if (m.ohko) return { cov: 'UNMODELED', mech: 'ohko' };
 
-  // SNORE (`gen3_b5_moves_v1`): the other sleepUsable move — the asleep proceed + the awake
-  // `onTry` fail are modeled (its 30 % flinch rides the plain secondary path).
-  if (id === 'snore') return { cov: 'MODELED', mech: 'sleep-usable damaging (gen3_b5_moves_v1)' };
+  // SNORE (`gen3_move_coverage_batch5_v1`): the other sleepUsable move — fail-loud in
+  // the engine (its awake-use onTry fail + the asleep proceed are unbuilt).
+  if (id === 'snore') return { cov: 'UNMODELED', mech: 'sleep-usable damaging (fail-loud)' };
 
   // The batch-4/4b/4c/5 modeled sets — checked BEFORE the generic MISMODELED buckets
   // (each carries a callback/flag shape the generic checks would stale-classify):
@@ -233,13 +213,14 @@ function classifyDamaging(m, id) {
   // guard PANICS → UNMODELED (honest fail-loud). A remaining variable-BP move with a
   // NON-ZERO placeholder bp reaches the damaging path and runs at the wrong flat BP →
   // MISMODELED (silent desync).
-  // BATCH 7: the generic multi-strike family is MODELED (`run_multihit`; Triple Kick, the sole
-  // multiaccuracy carrier, is `MODELED_B8` above).
+  // BATCH 7: the generic multi-strike family is MODELED (`run_multihit`); `triplekick`
+  // (the sole multiaccuracy carrier, ALSO a basePowerCallback holder — checked BEFORE the
+  // variable-BP buckets) is an explicit engine fail-loud, NOT a silent run.
   if (MODELED_BATCH7_MULTIHIT.has(id)) return { cov: 'MODELED', mech: 'multi-strike (batch 7)' };
-  if (m.multiaccuracy) return { cov: 'UNMODELED', mech: 'multiaccuracy (fail-loud)' };
-  // ANY remaining bp-0 damaging move (basePowerCallback OR onModifyMove-derived BP) fail-louds:
-  // the engine's gen-3 `derive_category` classifies bp 0 as Status → `run_status_move`'s guard
-  // PANICS. (Magnitude / Present are MODELED since B8.)
+  if (id === 'triplekick') return { cov: 'UNMODELED', mech: 'multiaccuracy (fail-loud)' };
+  // ANY remaining bp-0 damaging move (basePowerCallback OR onModifyMove-derived BP —
+  // Magnitude / Present) fail-louds: the engine's gen-3 `derive_category` classifies bp 0 as
+  // Status → `run_status_move`'s guard PANICS (probe-verified for magnitude/present).
   if (!(m.basePower > 0) && !m.damage && !m.damageCallback) {
     return { cov: 'UNMODELED', mech: 'bp0 → status fail-loud' };
   }
@@ -329,15 +310,6 @@ function classifyStatus(m, id) {
   // sleep-talker whose POOL carries an unmodeled move is blocked by THAT move's own
   // row (the called move bypasses no gate the pool member itself doesn't).
   if (id === 'sleeptalk') return { cov: 'MODELED', mech: 'sleep-talk (batch 5)' };
-  // GEN3 FULL PARITY B5 (`gen3_b5_moves_v1`) — Spite, Grudge, Nightmare, Ingrain.
-  if (MODELED_B5.has(id)) return { cov: 'MODELED', mech: `b5 (${id})` };
-  // GEN3 FULL PARITY B7 (`gen3_b7_moves_v1`) — Stockpile, Swallow, the sports, Mist, Lock-On,
-  // Mind Reader.
-  if (MODELED_B7.has(id)) return { cov: 'MODELED', mech: `b7 (${id})` };
-  // GEN3 FULL PARITY B10 (`gen3_b10_moves_v1`).
-  if (MODELED_B10.has(id)) return { cov: 'MODELED', mech: `b10 (${id})` };
-  // GEN3 FULL PARITY B11 (`gen3_b11_moves_v1`) — Metronome, Mirror Move, Assist, Nature Power, Sketch.
-  if (MODELED_B11.has(id)) return { cov: 'MODELED', mech: `b11 (${id})` };
   // MOVE-COVERAGE BATCH 6 (`gen3_move_coverage_batch6_v1`) — the final tail.
   if (MODELED_BATCH6.has(id)) return { cov: 'MODELED', mech: `batch-6 (${id})` };
   // MOVE-COVERAGE BATCH 3 (`gen3_move_coverage_batch3_v1`) — Curse / Wish / Baton Pass.

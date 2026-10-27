@@ -138,8 +138,7 @@ const MOVE_ID_BLOCKLIST = new Set([
   // NOTE: return/frustration/flail/reversal/lowkick are NO LONGER blocklisted — they are
   // MODELED bit-for-bit AND e2e-ADMITTED (`gen3_move_coverage_batch5_v1`) via
   // MODELED_BATCH5_VARBP_MOVES in `isModeledMove`.
-  // magnitude / present are NO LONGER blocklisted (`gen3_b8_moves_v1`, MODELED_B8_MOVES).
-  'grassknot',
+  'grassknot', 'magnitude', 'present',
   'gyroball', 'fling', 'punishment', 'trumpcard', 'wringout', 'crushgrip',
   // hidden power: gated in `isModeledMove` by the `allowHiddenPower` param (the
   // byte fuzzer's `pool` mode admits it — engine models typed HP at fixed BP 70,
@@ -152,9 +151,9 @@ const MOVE_ID_BLOCKLIST = new Set([
   // early-admit; they are modeled bit-for-bit (fixeddamage_test.rs + FD1-FD4).
   // counter/mirrorcoat/endeavor are likewise NO LONGER blocklisted — MODELED
   // (`gen3_move_coverage_batch5_v1`) via MODELED_BATCH5_REACTIVE_MOVES.
-  // psywave / bide and the four OHKO moves are NO LONGER blocklisted (`gen3_b8_moves_v1`,
-  // MODELED_B8_MOVES).
-  'finalgambit',
+  'psywave', 'bide', 'finalgambit',
+  // OHKO
+  'fissure', 'horndrill', 'guillotine', 'sheercold',
   // switch-trap / item-swap / leaves-1 / fakeout / future / sleeptalk. NOTE:
   // knockoff/thief/covet (item REMOVAL) + rapidspin are NO LONGER blocklisted — they are
   // MODELED bit-for-bit (`gen3_move_coverage_batch1_v1`) and ADMITTED via
@@ -173,10 +172,12 @@ const MOVE_ID_BLOCKLIST = new Set([
   // NOTE: `sleeptalk` is NO LONGER blocklisted — MODELED (`gen3_move_coverage_batch5_v1`);
   // its pickability is CARRIER-conditional (see `sleepTalkPoolModeled` in pickMove: the
   // sampled pool must be all-modeled, since the CALLED move bypasses the picker). `snore`
-  // (the other gen-3 sleepUsable move) is NO LONGER blocklisted (`gen3_b5_moves_v1`): a plain
-  // damaging move to these gates (its `onTry` is draw-free), modeled in run_move.
+  // (the other gen-3 sleepUsable move) stays out: its while-asleep execution + awake
+  // onTry fail are unmodeled.
   // NOTE: `fakeout` is NO LONGER blocklisted — MODELED (`gen3_fakeout_v1`) and ADMITTED via
-  // MODELED_FAKEOUT_MOVES.
+  // MODELED_FAKEOUT_MOVES. `snore` stays out (its while-asleep execution + awake onTry fail are
+  // unmodeled, and run_move fail-louds on it).
+  'snore',
   // NOTE: `destinybond` is NO LONGER blocklisted — MODELED bit-for-bit
   // (`gen3_move_coverage_batch6_v1`) and ADMITTED via MODELED_BATCH6_MOVES in the
   // Status branch of `isModeledMove`. `snatch` (the LAST gen-3 status move) is likewise
@@ -201,15 +202,10 @@ const MODELED_STATUS_MOVES = new Set([
   // inflicts MAJOR statuses). Confuse Ray was admitted at ROUND 44; its three siblings differ
   // only in accuracy and join it here. The shared `add_confusion` path supplies the random(2,6)
   // duration draw and the `-start|confusion`; the arm supplies the accuracy roll and the TryHit
-  // gates. SWAGGER and FLATTER are NOT in this family — their TARGET `boosts` half succeeds
-  // independently of the confusion half — and have their own B6 arm (below).
+  // gates. 🚨 SWAGGER and FLATTER are deliberately ABSENT — they carry a TARGET `boosts` map
+  // whose half succeeds independently of the confusion half, so they are a different move shape
+  // and still fail loud.
   'confuseray', 'supersonic', 'sweetkiss', 'teeterdance',
-  // ATTRACT (`gen3_attract_move_v1`, gen3 full parity B9): its own arm. A team that can reach it
-  // needs explicit genders on the post-construction-seed path (the generators pin them).
-  'attract',
-  // B6 (`gen3_b6_moves_v1`): Swagger / Flatter, Foresight / Odor Sleuth, Magic Coat — each its
-  // own arm in `status_moves.rs` (spec `harness/probe_b6_moves.js`).
-  'swagger', 'flatter', 'foresight', 'odorsleuth', 'magiccoat',
   'thunderwave', 'stunspore', 'glare',
   'poisonpowder', 'poisongas',
   'toxic',
@@ -367,9 +363,9 @@ const BATCH4B_E2E_EXCLUDED = false;
 // Bullet Seed / Icicle Spear / Rock Blast / Barrage / Comet Punch / Double Slap / Spike Cannon /
 // Arm Thrust / Fury Attack / Fury Swipes / Bone Rush). All carry `m.multihit` (which is rejected
 // below), so `isModeledMove` ADMITS them by an EARLY special-case (before the `m.multihit` reject),
-// kept in lockstep with `run_multihit` in src/turn.rs. TRIPLE KICK (`triplekick`, multiaccuracy) is
-// admitted by MODELED_B8_MOVES (`gen3_b8_moves_v1`). Twineedle's 20% psn is the ordinary per-strike
-// secondary.
+// kept in lockstep with `run_multihit` in src/turn.rs. TRIPLE KICK (`triplekick`) is EXCLUDED — it
+// is `multiaccuracy` (a per-strike accuracy re-roll + escalating BP), which the engine FAIL-LOUDS
+// on, so the picker must never pick it. Twineedle's 20% psn is the ordinary per-strike secondary.
 const MODELED_BATCH7_MULTIHIT_MOVES = new Set([
   'doublekick', 'twineedle', 'bonemerang',
   'pinmissile', 'bulletseed', 'iciclespear', 'rockblast', 'barrage', 'cometpunch', 'doubleslap',
@@ -383,11 +379,11 @@ const BATCH7_E2E_EXCLUDED = false;
 // SIGHT (the slot-keyed order-11 future strike). All bit-for-bit modeled
 // (movecoverage_batch4c_test.rs + the MC49+ pins). `recharge` is the locked-turn
 // pseudo-move id the sim's request offers — admitted so the picker submits `move 1` on a
-// locked request instead of stalling. The recharge family (`gen3_recharge_family_v1`) and the
-// two-turn family (Razor Wind / Sky Attack / Skull Bash / Fly / Bounce / Dig / Dive,
-// `gen3_twoturn_family_v1`) are modeled; no other gen3 `futuremove` exists.
-const MODELED_BATCH4C_MOVES = new Set(['hyperbeam', 'blastburn', 'frenzyplant', 'hydrocannon', 'solarbeam', 'doomdesire', 'futuresight', 'recharge',
-  'razorwind', 'skyattack', 'skullbash', 'fly', 'bounce', 'dig', 'dive']);
+// locked request instead of stalling. The UNMODELED siblings stay fail-loud + rejected
+// (Blast Burn / Frenzy Plant / Hydro Cannon via `self.volatileStatus`+`flags.recharge`;
+// Razor Wind / Sky Attack / Skull Bash / Fly / Dig / Dive / Bounce via `flags.charge`;
+// no other gen3 `futuremove` exists).
+const MODELED_BATCH4C_MOVES = new Set(['hyperbeam', 'solarbeam', 'doomdesire', 'futuresight', 'recharge']);
 const BATCH4C_E2E_EXCLUDED = false;
 
 // MOVE-COVERAGE BATCH 5 (`gen3_move_coverage_batch5_v1`): the REACTIVE fixed-damage family
@@ -399,8 +395,7 @@ const BATCH4C_E2E_EXCLUDED = false;
 // MC61+ pins), kept in lockstep with the src/turn.rs id-gates (`is_fixed_damage_move` /
 // `variable_bp` / the sleeptalk arm).
 const MODELED_BATCH5_REACTIVE_MOVES = new Set(['counter', 'mirrorcoat', 'endeavor']);
-// SPIT UP joins in GEN3 FULL PARITY B7 (`gen3_b7_moves_v1`; `variable_bp` / `is_variable_bp`).
-const MODELED_BATCH5_VARBP_MOVES = new Set(['return', 'frustration', 'flail', 'reversal', 'lowkick', 'spitup']);
+const MODELED_BATCH5_VARBP_MOVES = new Set(['return', 'frustration', 'flail', 'reversal', 'lowkick']);
 const BATCH5_E2E_EXCLUDED = false;
 
 // MOVE-COVERAGE BATCH 6 (`gen3_move_coverage_batch6_v1`) — the FINAL UNMODELED tail,
@@ -428,25 +423,6 @@ const BATCH6_E2E_EXCLUDED = false;
 // it closes 722/722 (the last team-blocking move). The port no longer FAIL-LOUDs on snatch.
 const MODELED_SNATCH_MOVES = new Set(['snatch']);
 const SNATCH_E2E_EXCLUDED = false;
-
-// GEN3 FULL PARITY B5 (`gen3_b5_moves_v1`) — the category-Status members (Snore is damaging and
-// passes the damaging gates once off the blocklist). Kept in lockstep with the src/turn
-// status_moves.rs B5 arms; golden `gen_b5_moves_golden.js` → `tests/b5_moves_golden_test.rs`.
-const MODELED_B5_MOVES = new Set(['spite', 'grudge', 'nightmare', 'ingrain']);
-// GEN3 FULL PARITY B7 (`gen3_b7_moves_v1`) — the category-Status members (Spit Up is damaging and
-// rides MODELED_BATCH5_VARBP_MOVES). Kept in lockstep with the status_moves.rs B7 arms; golden
-// `gen_b7_moves_golden.js` → `tests/b7_moves_golden_test.rs`.
-const MODELED_B7_MOVES = new Set(['stockpile', 'swallow', 'mudsport', 'watersport', 'mist', 'lockon', 'mindreader']);
-// GEN3 FULL PARITY B11 (`gen3_b11_moves_v1`, `src/turn/callers.rs`) — the move-callers Metronome,
-// Mirror Move, Assist and Nature Power (one shared `useMove` path with Sleep Talk) and Sketch, all
-// category Status; every callee they can reach is a modeled move (B10 closed the last five). Golden
-// `gen_b11_moves_golden.js` → `tests/b11_moves_golden_test.rs`.
-const MODELED_B11_MOVES = new Set(['metronome', 'mirrormove', 'assist', 'naturepower', 'sketch']);
-
-// GEN3 FULL PARITY B10 (`gen3_b10_moves_v1`) — Teleport, Follow Me, Helping Hand, Role Play,
-// Camouflage (all category Status). Kept in lockstep with the src/turn/status_moves.rs B10 arms;
-// golden `gen_b10_moves_golden.js` → `tests/b10_moves_golden_test.rs`.
-const MODELED_B10_MOVES = new Set(['teleport', 'followme', 'helpinghand', 'roleplay', 'camouflage']);
 
 // FOCUS ENERGY (`gen3_focus_energy_move_v1`, ROUND 59) — a `target: self`, NEVER-MISS,
 // **DRAW-FREE** status move that sets the `focusenergy` volatile (+2 crit stages). The volatile
@@ -540,16 +516,6 @@ const PARTIALTRAP_E2E_EXCLUDED = false;
 // `damageCallback` rejects + the blocklist keep it off the pickable path.
 const MODELED_FIXED_DAMAGE_MOVES = new Set([
   'seismictoss', 'nightshade', 'sonicboom', 'dragonrage', 'superfang',
-]);
-
-// GEN3 FULL PARITY B8 (`gen3_b8_moves_v1`, `src/turn/variable_moves.rs`): Bide, Magnitude, Psywave,
-// Present, Triple Kick and the four OHKO moves. Each carries a shape a damaging-move reject below
-// would drop (bp 0, `damageCallback`, `ohko`, `multihit`, `onModifyMove`), so `isModeledMove`
-// ADMITS them by an EARLY special-case. Golden `gen_b8_moves_golden.js` → `tests/b8_moves_golden_test.rs`.
-// (Psywave from a user below level 100 into a Substitute FAILS LOUD in the engine — the sub keeps a
-// float HP; every mode that picks it plays level 100.)
-const MODELED_B8_MOVES = new Set([
-  'bide', 'magnitude', 'psywave', 'present', 'triplekick', 'fissure', 'horndrill', 'guillotine', 'sheercold',
 ]);
 
 // MOVE-COVERAGE BATCH 1 (`gen3_move_coverage_batch1_v1`): the DRAW-FREE post-hit effects a
@@ -787,7 +753,6 @@ function isModeledMove(id, allowHiddenPower = false) {
   // The port models them bit-for-bit (`gen_fixeddamage_golden.js` / `fixeddamage_test.rs` +
   // the FD1-FD4 regression pins); the DEFERRED fixed-damage family stays out (fail-loud).
   if (MODELED_FIXED_DAMAGE_MOVES.has(id)) return true;
-  if (MODELED_B8_MOVES.has(id)) return true;
   // MOVE-COVERAGE BATCH 4 (`gen3_move_coverage_batch4_v1`) — FOCUS PUNCH + PURSUIT, ADMITTED
   // HERE (before the damaging-move `beforeTurnCallback` / `basePowerCallback` / `onModifyMove`
   // rejects below, which would else drop them). Both are damaging (bp>0) with no secondary, so
@@ -861,10 +826,6 @@ function isModeledMove(id, allowHiddenPower = false) {
       // moves the picker also picks (all `isModeledMove`), so the steal always re-dispatches
       // a modeled arm (never a fail-loud). Closes 722/722.
       (SNATCH_E2E_EXCLUDED ? false : MODELED_SNATCH_MOVES.has(id)) ||
-      MODELED_B5_MOVES.has(id) ||
-      MODELED_B7_MOVES.has(id) ||
-      MODELED_B10_MOVES.has(id) ||
-      MODELED_B11_MOVES.has(id) ||
       MODELED_FOCUS_ENERGY_MOVES.has(id) ||
       // HAZE (`gen3_haze_v1`) — the boost-reset FIELD move, category Status + bit-for-bit modeled.
       (HAZE_E2E_EXCLUDED ? false : MODELED_HAZE_MOVES.has(id)) ||
@@ -885,7 +846,7 @@ function isModeledMove(id, allowHiddenPower = false) {
   if (m.ohko) return false;
   // MOVE-COVERAGE BATCH 7 (`gen3_move_coverage_batch7_v1`) — the GENERIC MULTI-STRIKE family,
   // ADMITTED HERE (before the `m.multihit` reject), the port runs the per-strike loop bit-for-bit
-  // (`run_multihit`). Triple Kick (multiaccuracy) was admitted above (MODELED_B8_MOVES).
+  // (`run_multihit`). Triple Kick (multiaccuracy) is NOT in the set → still rejected by `m.multihit`.
   if (!BATCH7_E2E_EXCLUDED && MODELED_BATCH7_MULTIHIT_MOVES.has(id)) return true;
   if (m.multihit) return false;
   // RECOIL / DRAIN (`gen3_move_coverage_batch1_v1`) — a recoil/drain damaging move is admitted
@@ -1311,11 +1272,6 @@ const MODELED_ITEMS = new Set([
   'lansatberry', 'starfberry',
   //   PP (leppa: +10 on the depleted slot at the Update site):
   'leppaberry',
-  // gen3 full parity B3 (`gen3_items_b3_v1`): Shell Bell (heal 1/8 of the move's totalDamage at
-  // AfterMoveSecondarySelf), Macho Brace (Speed ×0.5, DRAW-relevant: it reorders actions),
-  // Mail (Trick fails on it), Mental Herb (cures attraction at the Update). Golden
-  // `gen_items_b3_golden.js` → `tests/items_b3_golden_test.rs`.
-  'shellbell', 'machobrace', 'mail', 'mentalherb',
 ]);
 function itemAllowed(id) { return MODELED_ITEMS.has(toId(id)); }
 
@@ -1479,12 +1435,9 @@ function firstMoverSince(log, fromIdx) {
   for (let i = fromIdx; i < log.length; i++) {
     const parts = log[i].split('|');
     const tag = parts[1];
-    // BIDE's locked turns (`gen3_b8_moves_v1`) print no `|move|`: the wait turn's
-    // `|-activate|<u>|move: Bide` and the release's bare `|-end|<u>|move: Bide` ARE the user's action.
     const isAction =
       tag === 'move' || tag === 'switch' || tag === 'cant' ||
-      (tag === '-activate' && ((parts[3] || '') === 'confusion' || (parts[3] || '') === 'move: Bide')) ||
-      (tag === '-end' && parts.length === 4 && parts[3] === 'move: Bide');
+      (tag === '-activate' && (parts[3] || '') === 'confusion');
     if (isAction && parts.length >= 3) {
       const actor = parts[2].trim();
       if (actor.startsWith('p1a:')) return 'p1';

@@ -26,9 +26,6 @@ THE PHASES (one `CompileControl` per process — `control()`):
                      restart it).
   4. `stats()`     — graphs total, per-code cache entries, hits, post-lock compiles -> TB scalars.
 
-Beside the phases, `thread_graph_marks()` is the per-thread ledger of dynamo graph compiles that T2's frozen guard
-reads (gen3_t2_guard_attribution_v1, below `dynamo_graphs_total`): a compile on ANOTHER thread is not T2's.
-
 The startup parity gate (`compile_regions.gate_regions`) runs AFTER the reset and the region's
 install, and compiles R1 freely — its graph is the one the prewarm then hits; the cache-limit
 detector is already listening, so a limit hit there is fatal too. (A `CompileControl.gate()` context
@@ -65,15 +62,13 @@ zeroes the gradients it made. `compile_control_test` pins identical outputs + gr
 """
 from __future__ import annotations
 
-import collections
 import contextlib
 import logging
 import os
 import re
 import statistics
 import sys
-import threading
-from typing import Any, Callable, Dict, Iterator, List, NamedTuple, Optional, Sequence, Tuple
+from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence, Tuple
 
 import torch
 
@@ -344,70 +339,6 @@ def dynamo_graphs_total() -> int:
         return int(counters["stats"]["unique_graphs"])
     except Exception:
         return -1
-
-
-# --------------------------------------------------------------------------- per-thread graph ledger
-# gen3_t2_guard_attribution_v1. `unique_graphs` is PROCESS-WIDE, so T2's frozen guard (which diffs it around a flush)
-# booked a learner compile on another thread (X14's overlap: T2 flushing on the collector's worker while the learner
-# recompiles) as T2's own: a FATAL on a healthy run. Dynamo bumps the counter ON THE COMPILING THREAD
-# (`OutputGraph.compile_and_call_fx_graph`: `counters["stats"]["unique_graphs"] += 1`, under
-# `convert_frame.compile_lock`; the function is in `_SOURCE_HASHES`), so a `Counter` that tallies the writer's thread
-# ident per increment attributes every graph exactly — no callback (the start callback is skipped while another
-# compile is pending, and `torch._dynamo.reset()` drops it). `counters` is cleared only by torch's own test harness and
-# `main.compile_inventory.capture`; a cleared dict is re-instrumented at the next read and the window that straddled
-# it reports a new GENERATION (the caller then books it process-wide, the old rule).
-_GRAPHS_KEY = "unique_graphs"
-_GRAPH_LOCK = threading.Lock()
-#: Thread ident -> `unique_graphs` increments made on that thread since this module was imported.
-_GRAPHS_BY_THREAD: Dict[int, int] = {}
-_GRAPH_GENERATION = 0
-
-
-class GraphMarks(NamedTuple):
-    """One read of the ledger: ``generation`` (bumped at every (re)instrumentation of ``counters["stats"]``),
-    ``total`` (the REAL ``unique_graphs`` value: increments that bypass the ledger show as total > sum(by_thread))
-    and ``by_thread`` (a copy of the per-thread tally)."""
-
-    generation: int
-    total: int
-    by_thread: Dict[int, int]
-
-
-class _ThreadGraphStats(collections.Counter):
-    """``counters["stats"]`` plus a tally of ``unique_graphs`` increments by the WRITING thread."""
-
-    def __setitem__(self, key: Any, value: Any) -> None:
-        if key != _GRAPHS_KEY:
-            super().__setitem__(key, value)
-            return
-        with _GRAPH_LOCK:               # the tally and the counter move TOGETHER: a reader never sees one without the other
-            delta = int(value) - int(dict.get(self, key, 0))
-            if delta > 0:
-                tid = threading.get_ident()
-                _GRAPHS_BY_THREAD[tid] = _GRAPHS_BY_THREAD.get(tid, 0) + delta
-            super().__setitem__(key, value)
-
-
-def thread_graph_marks() -> Optional[GraphMarks]:
-    """The per-thread ledger of dynamo graph compiles, instrumenting ``counters["stats"]`` first when it is not yet
-    (idempotent; thread-safe). ``None`` when torch's counter is not the shape this expects: the caller books the
-    window process-wide (`dynamo_graphs_total`), never silently as zero."""
-    global _GRAPH_GENERATION
-    try:
-        from torch._dynamo.utils import counters
-        with _GRAPH_LOCK:
-            stats = counters["stats"]
-            if not isinstance(stats, _ThreadGraphStats):
-                if not isinstance(stats, collections.Counter):
-                    return None
-                ledger = _ThreadGraphStats()
-                dict.update(ledger, stats)              # the C-level update: does not tally the existing count
-                counters["stats"] = ledger
-                _GRAPH_GENERATION += 1
-                stats = ledger
-            return GraphMarks(_GRAPH_GENERATION, int(dict.get(stats, _GRAPHS_KEY, 0)), dict(_GRAPHS_BY_THREAD))
-    except Exception:
-        return None
 
 
 def cudagraph_skips() -> int:

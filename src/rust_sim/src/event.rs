@@ -433,14 +433,6 @@ fn intimidate_on_start(state: &mut BattleState, side: usize, slot: usize) {
     if matches!(foe_ability.as_str(), "clearbody" | "whitesmoke" | "hypercutter") {
         return;
     }
-    // MIST (`gen3_b7_moves_v1`): the foe side's `mist` condition `onTryBoost` deletes the
-    // (cap-adjusted) negative Atk delta of a boost whose source is not the target — Intimidate's
-    // included (`data/moves.ts` mist.condition). It runs after the ability handler above (the
-    // side condition sorts at speed 0, behind the mon). At the −6 floor the capped delta is 0 and
-    // Mist leaves it alone (state-identical either way). DRAW-FREE.
-    if state.sides[foe].mist > 0 {
-        return;
-    }
     let boosts = &mut state.sides[foe].pokemon[foe_active].boosts;
     // boosts index 0 == atk (`[atk, def, spa, spd, spe, accuracy, evasion]`).
     boosts[0] = (boosts[0] - 1).max(-6);
@@ -506,12 +498,11 @@ impl BattleState {
     /// Net: `state.prng` after this call is NOT yet a full `>start` RNG-state
     /// oracle — the validated output is the boosts/weather.
     pub fn run_start_switchins(&mut self) {
-        // The two active leads, with their turn-0 action Speed (`turn0_speed`: the raw stat
-        // through the construction-time ModifySpe chain — Macho Brace).
-        let mut leads: Vec<(usize, usize, u32)> = (0..self.sides.len())
+        // The two active leads, with their raw Speed (stats[5]).
+        let mut leads: Vec<(usize, usize, u16)> = (0..self.sides.len())
             .map(|side| {
                 let slot = self.sides[side].active;
-                (side, slot, self.turn0_speed(side, slot))
+                (side, slot, self.sides[side].pokemon[slot].stats[5])
             })
             .collect();
 

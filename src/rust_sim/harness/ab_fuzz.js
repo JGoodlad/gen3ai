@@ -25,7 +25,7 @@
 //                        gen3 learnset ∩ the modeled move universe has >=4 moves
 //                        (>=1 modeled DAMAGING move forced per mon), a modeled/
 //                        no-op ability, a modeled item, random nature/EVs/IVs,
-//                        an explicit gender, level 100 — packed with the real Teams.pack.
+//                        level 100 — packed with the real Teams.pack.
 //   pool               — the e2e capstone's 22 filter-clean data/teams/ teams.
 //   ourandom           — gen3ou-RANDBATS (harness/ou_random_teams.js): Smogon-derived, validated.
 //   ladder             — the LADDER-USAGE corpus (harness/ladder_corpus.js): real public-ladder
@@ -68,7 +68,6 @@ const { execFileSync, spawnSync } = require('child_process');
 const e2e = require('./gen_e2e_fuzz.js');
 const ouRandom = require('./ou_random_teams.js');
 const ladderCorpus = require('./ladder_corpus.js');
-const { requireFreshBinary } = require('./stamp_guard.js');
 const {
   runBattle, emitBattle, isModeledMove, abilityAllowed, itemAllowed,
   teamFilterClean, loadTeams, mulberry32, randInt, seedFrom, toId, dex3,
@@ -127,18 +126,8 @@ function parseFlags(argv) {
     else if (a === '--ladder-tier') f.ladderTier = next();
     else { console.error(`unknown flag ${a}`); process.exit(2); }
   }
-  // Every gen-3 singles format the engine runs (`gen3_format_rules_v1`; the table the engine's
-  // `src/format.rs` is checked against).
-  const FORMATS = JSON.parse(fs.readFileSync(path.join(__dirname, '../tests/vectors/gen3_formats.json'), 'utf8'))
-    .supported.map((r) => r.id);
-  if (!FORMATS.includes(f.format)) {
-    console.error(`--format must be one of ${FORMATS.join('|')}, got ${f.format}`);
-    process.exit(2);
-  }
-  // Only a `--protocol` chunk carries the FMT row; without it `ab_replay` replays as
-  // gen3customgame, so any other format would be a different battle on the port's side.
-  if (f.format !== 'gen3customgame' && !f.protocol) {
-    console.error(`--format ${f.format} needs --protocol (only a protocol chunk records the format for ab_replay)`);
+  if (!['gen3customgame', 'gen3ou'].includes(f.format)) {
+    console.error(`--format must be gen3customgame|gen3ou, got ${f.format}`);
     process.exit(2);
   }
   if (!['randbats', 'random', 'pool', 'ourandom', 'ladder'].includes(f.mode)) {
@@ -325,13 +314,7 @@ function genRandomSet(entry, rng) {
   }
   const ivs = {};
   for (const k of keys) ivs[k] = randInt(rng, 32);
-  // An EXPLICIT gender (`gen3_attract_move_v1`): an unset one makes the sim sample it at
-  // construction, before the init seed the port replays from, so Attract / Cute Charm would
-  // fail loud on the port. A ratio species draws M or F here; a fixed one keeps its own.
-  const fixed = dex3.species.get(entry.sid).gender;
-  const gender = fixed || (randInt(rng, 2) ? 'F' : 'M');
   return {
-    gender,
     name: entry.name,
     species: entry.name,
     moves,
@@ -484,8 +467,6 @@ async function main() {
   } else {
     console.error(`[ab_fuzz] using replayer ${REPLAYER} (no rebuild)`);
   }
-  // A stale replayer (an override, or a build the cargo step above did not touch) is refused by its BUILD STAMP.
-  requireFreshBinary(REPLAYER, 'ab_replay');
 
   // Deterministic streams, all derived from the master seed.
   const teamRng = mulberry32(flags.masterSeed);

@@ -261,8 +261,6 @@ impl MoveData {
         self.category == MoveCategory::Status
             && !self.is_fixed_damage()
             && !self.is_variable_bp()
-            // Magnitude / Present (`gen3_b8_moves_v1`): BP drawn in `onModifyMove`, Physical.
-            && !matches!(self.id.as_str(), "magnitude" | "present")
             && !self.id.starts_with("hiddenpower")
     }
 
@@ -273,7 +271,7 @@ impl MoveData {
         matches!(
             self.id.as_str(),
             "seismictoss" | "nightshade" | "sonicboom" | "dragonrage" | "superfang"
-                | "psywave" | "fissure" | "horndrill" | "guillotine" | "sheercold"
+                | "psywave" | "fissure" | "horndrill" | "guillotine"
                 | "counter" | "mirrorcoat" | "bide" | "endeavor"
         )
     }
@@ -290,9 +288,7 @@ impl MoveData {
     pub fn is_variable_bp(&self) -> bool {
         matches!(
             self.id.as_str(),
-            // SPIT UP (`gen3_b7_moves_v1`): `basePowerCallback` = 100 × the user's stockpile
-            // layers over a bp-0 row; gen-3 Normal → Physical, so Taunt does not block it.
-            "return" | "frustration" | "flail" | "reversal" | "lowkick" | "spitup"
+            "return" | "frustration" | "flail" | "reversal" | "lowkick"
         )
     }
 }

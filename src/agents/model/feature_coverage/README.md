@@ -1,35 +1,59 @@
-# feature_coverage: does every battle edge case reach the network?
+# feature_coverage — does every battle edge case reach the network?
 
-A deterministic, server-free suite that answers two questions for each major Gen 3 battle edge case:
+A deterministic, server-free suite that answers one question for each major
+Gen 3 battle edge case:
 
-1. **Capture**: is it encoded into the observation vector at the expected offset (right one-hot bit / scalar /
-   embedded id)?
-2. **Network**: does that encoded signal flow through the *real* `Gen3FeaturesExtractor` and move its policy / value
-   output, rather than being silently dropped (by a key-padding mask, an event-seat encoder that never reads the
-   block, or a layout gap)?
+1. **Capture** — is it encoded into the observation vector at the expected
+   offset (right one-hot bit / scalar / embedded id)?
+2. **Network** — does that encoded signal flow through the *real*
+   `Gen3FeaturesExtractor` and move its policy/value output, rather than being
+   silently dropped (by a key-padding mask, an event-seat encoder that never reads
+   the block, or a layout gap)?
 
-If a signal does **not** reach the network, the failing assertion stays: a dead obs dim is the most valuable thing
-this suite can find.
+This closes the last hop the bridge-backed fuzz tests under
+`training/poke_env_gaps/` leave unchecked: those validate
+`protocol → poke-env → TurnDelta → encoded vector` on real battles, but stop at
+the encoded vector. Here we drive the encoded vector through the network.
 
 ## Layout
 
-- `_support.py`: the shared harness (model / encoder built once; `make_delta`, `anchor_delta`, `encode_delta`,
-  `obs_with_delta`, `obs_with_event`, `set_region`, `assert_reaches_network`, `assert_delta_reaches_network`,
-  `assert_event_reaches_network`). A fact a probe expresses as a `TurnDelta` reaches the network as an **event-window
-  row**: `delta_to_event_cols` routes it, and the asserters check the two rows differ before comparing the forwards
-  (a translation that collapsed both sides to one row would pass while testing nothing). The fixture is built
-  `history_events=True` and both asserters refuse to run without it, because the event window's raw ids are read ONLY
-  by the flag-gated event-seat encoder. **Not a test module.**
-- `failed_protect_feature_test.py`: the EXEMPLAR every file follows.
-- `move_resolution_feature_test.py`: miss / crit / the cant reasons / effectiveness buckets / attempted-move-id /
-  `opp_move_known`.
-- `faint_cause_feature_test.py`: faint flags / faint causes / multi-KO / Explosion self-KO / KO-before-acting.
-- `status_item_feature_test.py`: status applied and cured / item-consumed bits.
-- `switch_trap_boost_feature_test.py`: switch vs move / boost deltas / forced-switch phase / move order / species
-  block / attempted-switch-rejected (trapped pivot).
-- `static_blocks_feature_test.py`: reachability sweep of the NON-history obs blocks (per-Pokémon, global env,
-  reactive, active-context volatiles). Capture correctness for these is owned by each encoder's own unit test; here
-  we only prove they are not dead obs regions.
+- `_support.py` — shared harness (model/encoder built once; `make_delta` /
+  `anchor_delta` / `encode_delta` / `obs_with_delta` / `set_region` /
+  `assert_reaches_network` / inspection helpers). A fact a probe expresses as a
+  `TurnDelta` reaches the network as an **H-B event row**: `delta_to_event_cols`
+  routes it, `obs_with_event` places it, and `assert_delta_reaches_network` /
+  `assert_event_reaches_network` assert the two rows differ before comparing the
+  forwards — a translation that collapsed both sides to one row would pass while
+  testing nothing. The fixture is built `history_events=True`, and both asserters
+  refuse to run without it: the event window's raw ids are read ONLY by the
+  flag-gated event-seat encoder. **Not a test module.**
+- `failed_protect_feature_test.py` — the EXEMPLAR every file follows.
+- `move_resolution_feature_test.py` — miss / crit / all 12 cant reasons /
+  4 effectiveness buckets / attempted-move-id / `opp_move_known`.
+- `faint_cause_feature_test.py` — faint flags / all 8 faint causes (identity
+  distinguishable) / multi-KO / Explosion self-KO / KO-before-acting.
+- `status_item_feature_test.py` — status applied & cured (all 6, direction
+  distinguishable) / item-consumed bits.
+- `switch_trap_boost_feature_test.py` — switch vs move / boost deltas (every
+  stat ±) / forced-switch phase / move order / species block /
+  attempted-switch-rejected (trapped pivot).
+- `substitute_confusion_feature_test.py` — the 2026-08-17 follow-up audit. **The one
+  file here that probes the FOLD (`EventWindowTracker`) rather than the network hop**,
+  because its questions are "does this fact produce a row at all" and "does the row say
+  something TRUE" — a row that reaches the network carrying a false number is worse than
+  one that never arrives, and `assert_delta_reaches_network` cannot see the difference.
+  Substitute absorption / confusion self-hit / the full `|cant|` vocabulary; every verdict
+  confirmed against real bridge-battle protocol. 23 passing + 4 strict-xfail (see
+  `designs/ai_v9/design_frame_deletion_coverage_gaps.md` §3.4-3.7).
+- `static_blocks_feature_test.py` — reachability sweep of the NON-history obs
+  blocks: per-Pokémon (item-consumed, status, sleep/toxic counters, spread,
+  PP/never-miss, HP-candidate, species_known), global env (weather one-hot +
+  permanence + turns, Spikes, all four per-side screens), reactive
+  (`forced_struggle`, fainted counts, active-move power/mult, **trapped /
+  maybe_trapped**, matchup cells), and active-context volatiles. Capture-
+  correctness for these is owned by each encoder's own unit test
+  (`global_env_test.py`, `reactive_test.py`, pokemon/moves tests); here we only
+  prove they are not dead obs regions.
 
 ## Pattern
 
@@ -41,28 +65,63 @@ enc = encode_delta(variant)                              # CAPTURE: assert offse
 assert_delta_reaches_network(model, layout, base, variant, "msg")  # NETWORK
 ```
 
-## The strict xfails
+If a signal does **not** reach the network, the failing assertion stays —
+a dead obs dim is the most valuable thing this suite can find.
 
-Each carries its reason and the gap it points at in `designs/ai_v9/design_frame_deletion_coverage_gaps.md`; strict
-means closing a gap turns the probe RED instead of letting it pass in silence.
+## Findings (as of writing)
 
-- **The translator, not the obs**: `delta_to_event_cols` emits ONE row while a `TurnDelta` is a per-turn AGGREGATE, so
-  a two-sided turn, a multi-KO or an ordering fact needs several rows (gaps §4).
-- **Real gaps that ship open by owner decision**: the rejected switch's TARGET has no event-window column (gaps §3).
-
-## Reading the vocabularies
-
-- KO-before-acting is encoded via `we_fainted` plus an empty move block, NOT a `|cant|` reason (`"fainted"` is not in
-  `CANT_REASONS`); `frz` IS in it (a prose abbreviation of the list is not coverage).
-- `ability: Damp` rides `CANT_REASONS_LIVE`, not `CANT_REASONS`: the frozen tuple sizes `TURN_DELTA_DIM`, the lag-frame
-  width that archived runs recorded, so growing it would mis-slice history (`src/agents/observation/gen3_effects.py`).
-  `cant_reason_id` reads the LIVE tuple; `encode_cant_reason` one-hots into the frozen one.
-- Index orders are the code's: `_STATUS_ORDER` in `agents/observation/turn_delta_encoder.py`, `BOOST_STATS` in
-  `agents/gen3_mechanics.py`.
+- **No dead obs regions.** Every TurnDelta edge case and every static obs block
+  swept here moves both the policy and value heads. The suite is **285 passing +
+  16 strict-xfail**, and the xfails split two ways:
+  - **10 are the TRANSLATOR, not the obs** — `delta_to_event_cols` emits ONE row
+    while a TurnDelta is a per-turn AGGREGATE, so a two-sided turn, a multi-KO or
+    an ordering fact needs SEVERAL rows. Gaps §4 (`delta_to_event_rows`).
+  - **6 are real gaps that ship OPEN by owner decision** — the rejected switch's
+    TARGET has no event-window column at all (§3), and the four fold items below
+    (§3.4–§3.6).
+  Strict in both cases: closing a gap turns the probe RED rather than letting it
+  pass in silence.
+- **KO-before-acting** is encoded via `we_fainted` + an empty move block, NOT a
+  `|cant|` reason (`"fainted"` is not in `CANT_REASONS`).
+- **`frz` IS in `CANT_REASONS`.** `constants.py` abbreviates the list as "(full
+  paralysis / sleep / flinch / recharge)"; that is prose, not coverage.
+- **`ability: Damp` rides `CANT_REASONS_LIVE`, not `CANT_REASONS`** — it is a
+  gen3-reachable `|cant|` reason (a Damp mon blocking Explosion), and
+  `normalize_cant_reason` is crash-don't-drop, so the vocabulary has to carry it.
+  The split is deliberate: `CANT_REASONS` sizes `CANT_DIM` → `TURN_DELTA_DIM`
+  (159), the lag-frame width 79 archived runs recorded, and `TurnDeltaEncoder`
+  survives as that archive's decoder — growing it would silently mis-slice
+  history. `cant_reason_id` (the live event window's `cant_id` column) reads the
+  LIVE tuple; `encode_cant_reason` one-hots into the frozen one. See gaps §3.7.
+- **The event-window MOVE magnitude excludes residual damage that CARRIES a
+  `[from]` clause** (sandstorm/burn/confusion/recoil): the tracker's guard reads
+  `BattleEvent.from_clause`, which resolves `value["reason"]` on
+  DAMAGE/HEAL/SETHP/STATUS and `value["from"]` on the ITEM/ENDITEM/WEATHER/effect
+  kinds — neither raw accessor alone covers both.
+- **FIXED — a Substitute's own 25% HP cost is no longer credited to the OPPONENT'S
+  move.** It is a `|-damage|` with NO `[from]` clause on the recorded move target
+  (live: `machamp seismictoss hp_delta=-0.2493` on a turn its Seismic Toss dealt
+  ZERO), so no clause guard could see it; `gen3_event_window_semantics_fixes_v1`
+  attaches a bare `-damage` only while the open move's user is the side MOVING
+  (gaps §3.5; `substitute_confusion_feature_test` is now a plain pin).
+- **A Substitute BREAKING or ABSORBING emits no event row at all.**
+  `|-end|…|Substitute` folds to a volatile-end and `|-activate|…|Substitute|[damage]`
+  to `EventKind.ACTIVATE`; `EventWindowTracker.update` has a branch for neither,
+  so the most decision-relevant moment of a sub turn produces nothing. Live
+  defect, see gaps §3.4.
+- **A confusion self-hit produces no event row** — strategically the twin of a
+  full-paralysis CANT, and gen3 emits no `|cant|` for it (so its absence from
+  `CANT_REASONS` is CORRECT): `|-activate|…|confusion` is `EventKind.ACTIVATE`
+  with no tracker branch, and the self-damage carries a `[from]` clause. Live
+  defect, see gaps §3.6.
+- **Status index order** (`_STATUS_ORDER`, `observation/turn_delta_encoder.py`):
+  BRN, FNT, FRZ, PAR, PSN, SLP, TOX.
+- **Boost stat order** (`BOOST_STATS`, `agents/gen3_mechanics.py`): atk, def,
+  spa, spd, spe, accuracy, evasion.
 
 ## Run
 
 ```bash
-# in a linked worktree, first: export PYTHONPATH=$PWD/src
+# in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src
 python -m pytest src/agents/model/feature_coverage/ -q
 ```

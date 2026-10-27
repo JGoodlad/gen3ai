@@ -98,46 +98,6 @@ pub fn type_idx(name: &str) -> usize {
     TYPE_TO_IDX.iter().find(|(k, _)| *k == name).map_or(0, |(_, v)| *v)
 }
 
-/// `gen3_vocab_bounds_v1`: every dex num the encoder can write lies in `[0, rows)` of its embedding table
-/// (`layout::VOCAB_*`). Every categorical id in a row — a mon's species / item / ability / move, the event
-/// window's actor / target / rel species and move columns, the last-action move, the obs-facts choice move —
-/// is read out of these tables, so refusing a table that breaks a bound at LOAD time guards every write
-/// (crash-don't-drop: `tables()` panics with the offending row, never a clamped or out-of-range id in a row).
-pub fn check_vocab_bounds(t: &Tables) -> Result<(), String> {
-    use super::layout::{VOCAB_ABILITIES, VOCAB_ITEMS, VOCAB_MOVES, VOCAB_SPECIES, VOCAB_TYPES};
-    fn within(what: &str, id: &str, num: f64, rows: usize) -> Result<(), String> {
-        if num.fract() == 0.0 && num >= 0.0 && num < rows as f64 {
-            Ok(())
-        } else {
-            Err(format!(
-                "{what} {id:?} has dex num {num}, outside [0, {rows}) — the model's {what} embedding table cannot hold it \
-                 (widen the vocabulary in layout.rs AND agents/observation/constants.py; never clamp)"
-            ))
-        }
-    }
-    for (id, r) in &t.species {
-        within("species", id, r.num, VOCAB_SPECIES)?;
-    }
-    for (id, n) in &t.items {
-        within("item", id, *n, VOCAB_ITEMS)?;
-    }
-    for (id, n) in &t.abilities {
-        within("ability", id, *n, VOCAB_ABILITIES)?;
-    }
-    for (id, m) in &t.moves {
-        within("move", id, m.num as f64, VOCAB_MOVES)?;
-        if m.type_idx >= VOCAB_TYPES {
-            return Err(format!("move {id:?} has type id {}, outside [0, {VOCAB_TYPES})", m.type_idx));
-        }
-    }
-    for (name, idx) in TYPE_TO_IDX.iter() {
-        if *idx >= VOCAB_TYPES {
-            return Err(format!("type {name:?} has id {idx}, outside [0, {VOCAB_TYPES})"));
-        }
-    }
-    Ok(())
-}
-
 fn build() -> Result<Tables, String> {
     const STATS: [&str; 6] = ["hp", "atk", "def", "spa", "spd", "spe"];
     let mut species = HashMap::default();
@@ -207,9 +167,7 @@ fn build() -> Result<Tables, String> {
         }
         natures.insert(name.clone(), mults);
     }
-    let tables = Tables { species, items, abilities, moves, ability_rank, ability_priors, natures };
-    check_vocab_bounds(&tables)?;
-    Ok(tables)
+    Ok(Tables { species, items, abilities, moves, ability_rank, ability_priors, natures })
 }
 
 /// The process-wide tables (crash-don't-drop: a missing / unparsable data file panics with its
@@ -234,47 +192,6 @@ mod num_tests {
         for bad in [r#"{"name": "x"}"#, r#"{"num": null}"#, r#"{"num": true}"#, r#"{"num": "7"}"#, r#""not a row""#] {
             let e = num_of(&row(bad), "f.json", "bad").unwrap_err();
             assert!(e.contains("row \"bad\" has no numeric `num`"), "{bad}: {e}");
-        }
-    }
-
-    fn tables_with(species_num: f64, item_num: f64, ability_num: f64, move_num: i64) -> Tables {
-        let mut t = Tables {
-            species: HashMap::default(),
-            items: HashMap::default(),
-            abilities: HashMap::default(),
-            moves: HashMap::default(),
-            ability_rank: HashMap::default(),
-            ability_priors: HashMap::default(),
-            natures: HashMap::default(),
-        };
-        t.species.insert("s".into(), SpeciesRec { num: species_num, base_stats: None });
-        t.items.insert("i".into(), item_num);
-        t.abilities.insert("a".into(), ability_num);
-        t.moves.insert(
-            "m".into(),
-            MoveRec { num: move_num, base_power: 0, type_idx: 1, accuracy: 100, never_miss: false, has_secondary: false, has_recoil: false },
-        );
-        t
-    }
-
-    #[test]
-    fn a_dex_num_at_or_past_its_embedding_table_is_refused_not_clamped() {
-        use super::super::layout::{VOCAB_ABILITIES, VOCAB_ITEMS, VOCAB_MOVES, VOCAB_SPECIES};
-        // The last legal row of each table passes (NON-VACUITY: the guard is not refusing everything).
-        let top = tables_with((VOCAB_SPECIES - 1) as f64, (VOCAB_ITEMS - 1) as f64, (VOCAB_ABILITIES - 1) as f64, (VOCAB_MOVES - 1) as i64);
-        assert_eq!(check_vocab_bounds(&top), Ok(()));
-        // One past the end of each table, and a negative / fractional num, are each refused, naming the row.
-        let cases = [
-            (tables_with(VOCAB_SPECIES as f64, 1.0, 1.0, 1), "species \"s\""),
-            (tables_with(1.0, VOCAB_ITEMS as f64, 1.0, 1), "item \"i\""),
-            (tables_with(1.0, 1.0, VOCAB_ABILITIES as f64, 1), "ability \"a\""),
-            (tables_with(1.0, 1.0, 1.0, VOCAB_MOVES as i64), "move \"m\""),
-            (tables_with(-1.0, 1.0, 1.0, 1), "species \"s\""),
-            (tables_with(1.5, 1.0, 1.0, 1), "species \"s\""),
-        ];
-        for (t, want) in cases {
-            let e = check_vocab_bounds(&t).expect_err("an out-of-table dex num must be refused");
-            assert!(e.contains(want), "{want}: {e}");
         }
     }
 

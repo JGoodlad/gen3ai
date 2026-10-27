@@ -94,9 +94,7 @@
 use crate::prng::PrngSeed;
 use crate::state::{Status, Weather, BOOST_LEN};
 
-mod callers;
 mod driver;
-mod endless;
 mod forecast;
 // `pub(crate)` for ONE item — `helpers::happiness_bp`, which `bridge.rs`'s request emitter
 // needs so the Return/Frustration moveid alias cannot drift from the damage calc's own BP.
@@ -109,23 +107,11 @@ mod speed;
 mod status;
 mod status_moves;
 mod switch;
-mod variable_moves;
 
 /// Re-export the live per-mon TYPE read (species types ⊕ Color Change `types_override`)
 /// so the bridge's `|request|` serializer can price Curse's `nonGhostTarget` off the SAME
 /// runtime types the engine uses (`gen3_bridge_curse_request_target_v1`).
 pub(crate) use helpers::mon_types;
-/// The recharge family (`gen3_recharge_family_v1`), public so its pin can check it against the dex.
-pub use moves::{RECHARGE_MOVES, SLEEP_USABLE_MOVES};
-pub use callers::{
-    metronome_pool, METRONOME_EXCLUDED, MIRROR_MOVE_EXCLUDED, NATURE_POWER_CALLS, NOASSIST_MOVES, NOSKETCH_MOVES,
-};
-/// The B6 tables (`gen3_b6_moves_v1`), public so their pins can check them against the dex.
-pub use status_moves::{REFLECTABLE_MOVES, TARGET_BOOST_MOVES};
-/// The B8 move families (`gen3_b8_moves_v1`), public so their pins can check them against the dex.
-pub use variable_moves::{MAGNITUDE_TABLE, OHKO_MOVES, PRESENT_TABLE, RANDOM_BP_MOVES};
-pub use status_moves::ROLE_PLAY_FAIL_ABILITIES;
-pub use endless::{BERRY_CYCLE_ABILITIES, RESTORATIVE_BERRIES};
 
 /// The denominators `critMult[critRatio]` for gen ≤ 5 (`battle-actions.ts:1631`):
 /// index by the (clamped 0..5) crit ratio. A normal damaging move resolves to
@@ -288,15 +274,6 @@ const WISH_DURATION: u8 = 2;
 /// with the VOLATILES (after leech, before the item / the NO_ORDER duration volatiles),
 /// mirroring `findPokemonEventHandlers`'s status→volatiles→item order.
 const CURSE_RESIDUAL_SUBORDER: i32 = 8;
-/// INGRAIN's residual heal (`gen3_b5_moves_v1`; base `data/moves.ts` ingrain condition
-/// `onResidualOrder: 10, onResidualSubOrder: 1`): the FIRST order-10 handler, before the
-/// residual abilities (3) and Leftovers (4). Unique, so it only ties the OTHER mon's Ingrain at
-/// equal cached speed.
-const INGRAIN_RESIDUAL_SUBORDER: i32 = 1;
-/// NIGHTMARE's residual chip (`gen3_b5_moves_v1`; `data/mods/gen4/moves.ts` nightmare
-/// condition `onResidualOrder: 10, onResidualSubOrder: 7`): after the status DoT (6), before
-/// Curse (8). Unique, so it only ties the OTHER mon's Nightmare at equal cached speed.
-const NIGHTMARE_RESIDUAL_SUBORDER: i32 = 7;
 /// The **PARTIAL-TRAP** volatile's `onResidualSubOrder` **9** (`gen3_partial_trap_v1` — the
 /// gen4-mod `partiallytrapped` override `onResidualOrder: 10, onResidualSubOrder: 9`,
 /// SOURCE-read at `data/mods/gen4/conditions.ts:110` and confirmed by the probe traces).
@@ -369,11 +346,6 @@ const LIGHT_SCREEN_RESIDUAL_ORDER: u64 = 2;
 /// SAME condition on the OTHER side ties, and BOTH sides carrying Safeguard is exactly that
 /// tie: it draws ONE extra `random(0,2)` per residual (measured 8 → 9 draws on a mirror).
 const SAFEGUARD_RESIDUAL_ORDER: u64 = 4;
-/// MIST's `onSideResidualOrder` (`gen3_b7_moves_v1`; `data/mods/gen4/moves.ts` mist.condition
-/// `onSideResidualOrder: 3`, subOrder undefined → the side-condition 4). Only the other side's
-/// Mist ties it: both sides misted draw one `random(0,2)` per residual (probe
-/// `harness/probe_b7_moves.js`, the both-sides Mist board).
-const MIST_RESIDUAL_ORDER: u64 = 3;
 
 /// UPROAR's residual tick (`gen3_uproar_v1`): order 10, subOrder **11** — probe-captured,
 /// sitting between the status DoT (10/6) and Taunt (10/15). A live tick emits
@@ -461,42 +433,22 @@ pub(crate) struct MoveResolution {
     /// A move that PASSED BeforeMove then missed / was immune / Damp-blocked / applied a
     /// status STILL reaches `AfterMove` → NOT aborted (those return via `done()`).
     aborted: bool,
-    /// The move hit `runMove`'s `cant … nopp` (`gen3_b5_moves_v1`): its slot was emptied between
-    /// the choice and the execution (Spite), so `deductPP` failed after BeforeMove passed. The sim
-    /// returns there (`sim/battle-actions.ts` runMove) — no `MoveAborted` and no `AfterMove`, so
-    /// the caller must neither consume Charge nor run the AfterMove hooks. Implies `aborted`.
-    /// Bide's wait turn returns the same way (`beforeMoveCallback`, `gen3_b8_moves_v1`).
-    nopp: bool,
-    /// The in-`tryMoveHit` `eachEvent('Update')` of a LANDED move already ran, inside the
-    /// `run_move` that executed it (`gen3_bf_update_before_shell_bell_v1`): a called move (Sleep
-    /// Talk's pick) propagates `landed` to its caller, which must not run the Update twice.
-    update_done: bool,
 }
 
 impl MoveResolution {
     /// An out-of-scope (unknown / status / 0-BP) move: no draws, never landed.
     fn no_op() -> MoveResolution {
-        MoveResolution { missed: false, crit: false, landed: false, force_switch_foe: None, aborted: false, nopp: false, update_done: false }
+        MoveResolution { missed: false, crit: false, landed: false, force_switch_foe: None, aborted: false }
     }
     /// The common terminal: a resolved move that drew its taxes but is not landed and
     /// triggers no forced switch (a miss / immune / status-applied / boost / heal).
     fn done(missed: bool, crit: bool, landed: bool) -> MoveResolution {
-        MoveResolution { missed, crit, landed, force_switch_foe: None, aborted: false, nopp: false, update_done: false }
+        MoveResolution { missed, crit, landed, force_switch_foe: None, aborted: false }
     }
     /// A move ABORTED at `onBeforeMove` (a cant) — like [`Self::done`] but flags that the
     /// sim's `AfterMove` event never fired (so the `onAnyAfterMove` White Herb hook is skipped).
     fn aborted() -> MoveResolution {
-        MoveResolution { missed: false, crit: false, landed: false, force_switch_foe: None, aborted: true, nopp: false, update_done: false }
-    }
-    /// `runMove`'s `cant … nopp` return (see [`Self::nopp`]).
-    fn nopp() -> MoveResolution {
-        MoveResolution { missed: false, crit: false, landed: false, force_switch_foe: None, aborted: true, nopp: true, update_done: false }
-    }
-    /// BIDE's WAIT turn (`gen3_b8_moves_v1`): `beforeMoveCallback` returned true, so `runMove`
-    /// returned with neither `MoveAborted` nor `AfterMove` — the same caller-side shape as
-    /// [`Self::nopp`] (no Charge consumption, no AfterMove hooks).
-    fn bide_wait() -> MoveResolution {
-        MoveResolution { missed: false, crit: false, landed: false, force_switch_foe: None, aborted: true, nopp: true, update_done: false }
+        MoveResolution { missed: false, crit: false, landed: false, force_switch_foe: None, aborted: true }
     }
 }
 
@@ -601,12 +553,6 @@ enum ResidualAction {
     /// volatiles (after leech, before Taunt). The `source_side` is stored for parity with
     /// leech but the chip has no source-heal (unlike leech).
     Curse { side: usize, slot: usize },
-    /// INGRAIN's heal (`gen3_b5_moves_v1`, order 10 subOrder 1): `this.heal(baseMaxhp / 16)`,
-    /// `|-heal|<mon>|<hp>|[from] Ingrain`; nothing at full HP. DRAW-FREE.
-    Ingrain { side: usize, slot: usize },
-    /// NIGHTMARE's chip (`gen3_b5_moves_v1`, order 10 subOrder 7): `this.damage(baseMaxhp /
-    /// 4)`, `|-damage|<mon>|<hp>|[from] Nightmare`; Focus Band's onDamage roll draws.
-    Nightmare { side: usize, slot: usize },
     /// The **PARTIAL-TRAP** residual (`gen3_partial_trap_v1`, order 10 subOrder **9** — the
     /// gen4-mod `partiallytrapped.onResidualOrder/SubOrder`), so at order 10 it sorts after
     /// Leftovers (4) / Leech Seed (5) / status DoT (6) / Curse (8) and before Encore (14) /
@@ -673,10 +619,6 @@ enum ResidualAction {
     /// a same-cached-speed foe duration handler would tie it). After a fire-turn KO the
     /// lingering volatile is cleaned by the RESUMED tail's residual via this handler.
     TwoTurnDuration { side: usize, slot: usize },
-    /// The Fly / Bounce / Dig / Dive sub-volatile's own `duration: 2` handler
-    /// (`gen3_twoturn_family_v1`): a second NO_ORDER tie-group member while the user is
-    /// semi-invulnerable. `ends` = this tick takes it to 0 (the user lands).
-    SemiInvulnerableDuration { side: usize, slot: usize, ends: bool },
     /// The pending **FUTUREMOVE** slot condition's residual handler (`gen3_move_coverage_
     /// batch4c_v1`, Doom Desire / Future Sight — order **11**, after every order-10 mon
     /// handler): decrement the side's `future_move` duration; on reaching 0 RESOLVE the
@@ -715,21 +657,10 @@ enum ResidualAction {
     /// SAFEGUARD's side-condition duration tick (`gen3_safeguard_v1`), order 4 / subOrder 4 /
     /// speed 0 — the reflect/lightscreen sibling. Decrement, `|-sideend|<side>|Safeguard` at 0.
     SafeguardDuration { side: usize },
-    /// MIST's side-condition duration tick (`gen3_b7_moves_v1`), order 3 / subOrder 4 / speed 0.
-    /// Decrement, `|-sideend|<side>|Mist` at 0.
-    MistDuration { side: usize },
-    /// LOCK-ON's `duration: 2` volatile tick (`gen3_b7_moves_v1`), NO_ORDER / subOrder 2 at the
-    /// holder's speed; ends silently (the condition has no `onEnd`).
-    LockOnDuration { side: usize, slot: usize },
     /// UPROAR's lock tick (`gen3_uproar_v1`), order 10 / subOrder 11.
     UproarDuration { side: usize, slot: usize },
     /// FURY CUTTER's `duration: 2` lapse (`gen3_bp_modifier_cluster_v1`), NO_ORDER/sub 2.
     FuryCutterDuration { side: usize, slot: usize },
-    /// BIDE's `duration: 3` volatile tick (`gen3_b8_moves_v1`): a NO_ORDER / subOrder-2 duration
-    /// handler with no `onResidual`; 3 → 2 → 1, and the release at the user's turn-3 BeforeMove
-    /// removes it first. Reaching 0 (the turn-3 action never ran — gen 3 cancels every queued
-    /// action after a faint) ends it with `|-end|<mon>|move: Bide|[silent]` (`onEnd`).
-    BideDuration { side: usize, slot: usize },
     /// The `rollout` volatile's duration tick (`gen3_rollout_lock_duration_v1`).
     RolloutDuration { side: usize, slot: usize },
     /// The OUTRAGE / PETAL DANCE / THRASH lock tick (`gen3_lockin_family_v1`), NO_ORDER/sub 2.
@@ -2196,7 +2127,7 @@ mod tests {
         let breloom = "Breloom||leftovers||spore,skyuppercut|Adamant|,252,,,,252|||||";
         let noctowl = "Noctowl||leftovers|insomnia|hypnosis,psychic|Modest|252,,,,252,|||||";
         let mut state = BattleState::start(&opts(breloom, noctowl, "1,2,3,4"), &d).expect("start");
-        assert!(state.rules.sleep_clause, "gen3ou must carry the sleep clause");
+        assert!(state.sleep_clause, "gen3ou must carry the sleep clause");
         let before = state.prng_seed();
         // Reference: a normal status apply's SetStatus event draws exactly one random(0,2).
         // Reconstruct a fresh PRNG at `before` and draw once (the PRNG is deterministic on its
@@ -2219,7 +2150,7 @@ mod tests {
         let breloom = "Breloom||leftovers||spore,skyuppercut|Adamant|,252,,,,252|||||";
         let noctowl = "Noctowl||leftovers|insomnia|hypnosis,psychic|Modest|252,,,,252,|||||";
         let mut state = BattleState::start(&opts_cg(breloom, noctowl, "1,2,3,4"), &d).expect("start");
-        assert!(!state.rules.sleep_clause, "gen3customgame carries no sleep clause");
+        assert!(!state.sleep_clause, "gen3customgame carries no sleep clause");
         let before = state.prng_seed();
         state.try_set_status(1, 0, "slp", None, &d);
         assert_eq!(state.sides[1].pokemon[0].status, None, "Insomnia blocks the sleep");
@@ -2747,24 +2678,40 @@ mod tests {
         assert_eq!(state.prng_seed(), seed_before, "a first Endure draws NOTHING (no stall roll at counter 0)");
     }
 
-    // BIDE's CAST (`gen3_b8_moves_v1`; it failed loud here until B8): ONE accuracy roll (accuracy
-    // 100, not `true` — the user's own stages and holders fold in), the `bide` volatile at
-    // `duration: 3` with nothing stored, PP paid, and never `landed`.
+    // FAIL-LOUD: a DEFERRED fixed-damage move (Counter — a reactive damageCallback) is in
+    // `is_fixed_damage_move` (so it can never silently no-op via the bp==0 fall-through) but
+    // has NO `fixed_damage_amount` entry, so it PANICS in `run_fixed_damage_move` rather than
+    // desync. Mirrors `endure_panics_fail_loud`; pins the deferred-set guarantee so a future
+    // change that drops a deferred id from `is_fixed_damage_move` (or adds a wrong amount)
+    // can't silently regress it. (Psywave / the OHKO moves / Bide share this path;
+    // Counter / Mirror Coat / Endeavor are MODELED since `gen3_move_coverage_batch5_v1`,
+    // so the pin is keyed on Bide now.)
     #[test]
-    fn bide_cast_draws_one_accuracy_roll_and_starts_the_volatile() {
+    #[should_panic(expected = "unmodeled FIXED-DAMAGE move")]
+    fn deferred_fixed_damage_move_panics_fail_loud() {
         let d = dex();
-        let shuckle = "Shuckle||leftovers||bide,toxic|Careful|252,,,,252,|||||";
+        let snorlax = "Snorlax||leftovers||bide,bodyslam|Careful|252,,,,252,|||||";
         let tauros = "Tauros||leftovers||bodyslam,earthquake|Adamant|,252,,,,252|||||";
-        let mut state = BattleState::start(&opts_cg(shuckle, tauros, "1,2,3,4"), &d).expect("start");
-        let mut probe = state.clone();
-        let _ = probe.prng.random_below(100);
-        let res = state.run_move(MoveAction { side: 0, slot: 0, move_index: 0, struggle: false }, true, true, &d);
-        assert!(!res.landed && !res.missed, "a Bide cast never lands");
-        assert_eq!(state.prng_seed(), probe.prng_seed(), "the cast draws exactly one roll");
-        let b = state.sides[0].pokemon[0].bide.expect("the bide volatile is up");
-        assert_eq!((b.duration, b.total_damage, b.move_index), (3, 0, 0));
-        assert_eq!(state.sides[0].pokemon[0].move_pp[0], state.sides[0].pokemon[0].move_maxpp[0] - 1);
-        assert!(state.sides[0].pokemon[0].move_locked(), "the lock holds the user to Bide");
+        let mut state = BattleState::start(&opts_cg(snorlax, tauros, "1,2,3,4"), &d).expect("start");
+        // Bide is is_fixed_damage_move=true but fixed_damage_amount=None → fail-loud.
+        let _ = state.run_move(MoveAction { side: 0, slot: 0, move_index: 0, struggle: false }, true, true, &d);
+    }
+
+    // FAIL-LOUD: SNORE (`gen3_move_coverage_batch5_v1` scope edge) — a bp-40 damaging
+    // move with `sleepUsable` + an asleep-only `onTry`, NEITHER modeled (Sleep Talk is
+    // the only modeled sleepUsable move). Without the guard it runs as a plain damaging
+    // move: a silent mismodel both awake (sim: silent onTry fail) and asleep (sim:
+    // cant-then-PROCEEDS; port: cant + blocked). The e2e picker blocklists it, but the
+    // engine itself must fail loud for any future team source (the review's Lens-1
+    // finding: the "Snore is fail-loud" claim was picker-only before this guard).
+    #[test]
+    #[should_panic(expected = "unmodeled sleepUsable move 'snore'")]
+    fn snore_panics_fail_loud() {
+        let d = dex();
+        let snorlax = "Snorlax||leftovers||snore,bodyslam|Careful|252,,,,252,|||||";
+        let tauros = "Tauros||leftovers||bodyslam,earthquake|Adamant|,252,,,,252|||||";
+        let mut state = BattleState::start(&opts_cg(snorlax, tauros, "1,2,3,4"), &d).expect("start");
+        let _ = state.run_move(MoveAction { side: 0, slot: 0, move_index: 0, struggle: false }, true, true, &d);
     }
 
     // SPIKES (the entry hazard): the Spikes MOVE is never-miss + DRAW-FREE — it increments

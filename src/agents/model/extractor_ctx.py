@@ -12,7 +12,6 @@ from agents.observation.constants import (
     POKEMON_HP_PROBS_OFFSET,
     POKEMON_SPECIES_KNOWN_OFFSET,
     POKEMON_ABILITIES_OFFSET,
-    POKEMON_ITEMS_OFFSET,
     ABILITY_SLOT_DIM,
     ABILITY_DOMINANCE_DIM,
 )
@@ -84,32 +83,6 @@ def revealed_ability1_ids(ctx: 'ExtractorContext') -> torch.Tensor:
     EMBEDDINGS keep reading the raw ``ability1_ids`` (the top-1 prior id beside its `known` bit is a
     legitimate input); only the physics must not mistake it for a reveal."""
     return ctx.ability1_ids * (ctx.pokemon_part[..., POKEMON_ABILITY_KNOWN_OFFSET] > 0.5).long()
-
-
-#: The item block's `consumed` flag inside a per-mon row (`[id, known, consumed]`, `encoder/slot.rs::item`): 1.0
-#: once the item is GONE — eaten, used, Knocked Off, stolen or swapped away — while `id` keeps naming the item that WAS
-#: held (the embedding legitimately reads "it had a Choice Band").
-POKEMON_ITEM_CONSUMED_OFFSET = POKEMON_ITEMS_OFFSET + 2
-
-
-def held_item_ids(ctx: 'ExtractorContext') -> torch.Tensor:
-    """``[B, 12]`` long: the item each mon HOLDS NOW — ``item_ids`` where the item is not consumed, else 0.
-
-    gen3_op_held_item_v1 — THE one rule for an item's IDENTITY in the physics. ``item_ids`` alone is NOT it: after
-    Knock Off / Thief / Covet / Trick (``-enditem``) or a berry eaten, the row keeps the GONE item's id with
-    ``consumed = 1``, so ``item_ids == CHOICE_BAND`` read a knocked-off Band as held (P(CB) = 1 on the opponent, our
-    ×1.5 on our own outgoing damage; 2026-10-26 GIGO audit C-1). Every op comparison against an item num and every
-    item-table lookup reads THIS (row 0 of every item table is the no-item row); the EMBEDDINGS keep the raw id beside
-    its `consumed` bit. Pinned by ``held_item_gate_test.py``."""
-    gone = ctx.pokemon_part[..., POKEMON_ITEM_CONSUMED_OFFSET] > 0.5
-    return torch.where(gone, torch.zeros_like(ctx.item_ids), ctx.item_ids)
-
-
-def item_unrevealed(ctx: 'ExtractorContext') -> torch.Tensor:
-    """``[B, 12]`` float: 1.0 where nothing is known of the mon's item (the all-zero item id: an opponent's item not
-    yet revealed) — the branch that takes the species' Smogon prior. A consumed item is NOT unrevealed (its id stays):
-    it is known to be gone, and `held_item_ids` reads it as no item."""
-    return (ctx.item_ids == 0).to(ctx.pokemon_part.dtype)
 
 
 def active_request_sorted_match(ctx: 'ExtractorContext') -> torch.Tensor:

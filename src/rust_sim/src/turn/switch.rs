@@ -50,13 +50,6 @@ impl crate::state::BattleState {
         if me.trapped_by.is_some() {
             return true;
         }
-        // INGRAIN (`gen3_b5_moves_v1`): `ingrain.onTrapPokemon` → bare `pokemon.tryTrap()`, a
-        // FIRM trap with no type gate and no source (the holder roots ITSELF). Probe "ingrain
-        // switch attempt": `"trapped":true` from the first request after the cast, and the
-        // Baton Pass entrant inherits it.
-        if me.ingrain {
-            return true;
-        }
         // The PARTIAL-TRAP volatile (`gen3_partial_trap_v1`, Wrap / Bind / Fire Spin / Clamp
         // / Whirlpool / Sand Tomb): `partiallytrapped.onTrapPokemon` is
         // `if (this.effectState.source?.isActive) pokemon.tryTrap()` — a bare `tryTrap()`,
@@ -145,12 +138,10 @@ impl crate::state::BattleState {
         if held == "magnetpull" && (!known || mon_types(me, dex).contains(&Type::Steel)) {
             return true;
         }
-        if self.rules.ability_leak {
+        if crate::state::format_has_obtainable_abilities(&self.format_id) {
             let species = to_id(&foe.species_id);
             if let Some((_, abilities)) = LEAK_SPECIES_TRAP_ABILITIES.iter().find(|(s, _)| *s == species) {
-                // A banned ability is skipped (`ruleTable.has('-ability:' + id)`): UU / RU ban
-                // Arena Trap, so a Dugtrio raises no leak there (`gen3_format_rules_v1`).
-                if abilities.iter().any(|a| !self.rules.leak_banned_abilities.contains(a) && fires(a)) {
+                if abilities.iter().any(|a| fires(a)) {
                     return true;
                 }
             }
@@ -179,10 +170,6 @@ impl crate::state::BattleState {
         // `maybeTrapped` phase) + an `[Invalid choice]` reject with NO re-request —
         // byte-identical to the Shadow-Tag shape (`gen3_shadowtag_firm_trap_v1`).
         if self.sides[side].pokemon[self.sides[side].active].trapped_by.is_some() {
-            return true;
-        }
-        // INGRAIN is FIRM too (`onTrapPokemon` → bare `tryTrap()`, gen3_b5_moves_v1).
-        if self.sides[side].pokemon[self.sides[side].active].ingrain {
             return true;
         }
         let foe = &self.sides[1 - side].pokemon[self.sides[1 - side].active];
@@ -308,12 +295,7 @@ impl crate::state::BattleState {
                 mon.disable = None;
                 mon.last_move = None;
                 mon.last_move_used = None; // gen3_conversion_v1
-                // `clearVolatile(false)` at the faint empties `attackedBy` (`sim/pokemon.ts` clearVolatile);
-                // the called-move virtual slot is only read through a lock, cleared too (`gen3_b11_moves_v1`).
-                mon.attacked_by.clear();
-                mon.called_move = None;
                 mon.uproar = None; // gen3_uproar_v1 — silent on faint too
-                mon.bide = None; // gen3_b8_moves_v1 — clearVolatile, no onEnd
                 mon.fury_cutter = None; // gen3_bp_modifier_cluster_v1
                 mon.locked_move = None; // gen3_lockin_family_v1
                 mon.rollout = None;
@@ -338,7 +320,6 @@ impl crate::state::BattleState {
                 // replacement enters fully unlocked; the corpse never gathers a residual
                 // duration handler either way).
                 mon.must_recharge = false;
-                mon.must_recharge_duration = 0; // gen3_recharge_expiry_v1
                 mon.two_turn = None;
                 // ...and the COUNTER/MIRROR COAT reactive volatile (`gen3_move_coverage_
                 // batch5_v1`) — a fainted counter user's corpse must not gather a residual
@@ -358,9 +339,6 @@ impl crate::state::BattleState {
                 // (the `beat_up` stale-flag hazard class — a fainted snatcher must not
                 // gather a residual duration handler on re-entry).
                 mon.snatch = false;
-                // MAGIC COAT + FORESIGHT (`gen3_b6_moves_v1`): clearVolatile drops both with the corpse.
-                mon.magic_coat = false;
-                mon.foresight = false;
                 mon.trapped_by = None;
                 // PARTIAL TRAP (`gen3_partial_trap_v1`): `clearVolatile` drops the
                 // `partiallytrapped` volatile with the corpse — a fainted victim is no longer
@@ -401,21 +379,6 @@ impl crate::state::BattleState {
                 // the volatile with the corpse.
                 let db_killer = mon.destiny_bond_ko_by.take();
                 mon.destiny_bond = false;
-                // GRUDGE (`gen3_b5_moves_v1`, `grudge.onFaint`): consume the pending trigger
-                // (set at the same foe-Move damage sites as Destiny Bond's) and drop the B5
-                // volatiles with the corpse (`clearVolatile`).
-                let grudge_killer = mon.grudge_ko_by.take();
-                mon.grudge = false;
-                mon.nightmare = false;
-                mon.ingrain = false;
-                // The B7 volatiles (`gen3_b7_moves_v1`) die with the corpse (`clearVolatile`),
-                // silently: no `onEnd` runs (stockpile's `-end` is only its removeVolatile path).
-                mon.stockpile = 0;
-                mon.spit_up_after_move = false;
-                mon.mud_sport = false;
-                mon.water_sport = false;
-                mon.lock_on = None;
-                mon.volatile_staleness = false; // `clearVolatile` at faint (gen3_b10_endless_battle_v1)
                 // `faintMessages` decrements the side's live-mon count — the count `check_win`
                 // reads to END the battle (a side at `pokemon_left == 0` has lost). The `mon`
                 // borrow above ends before this disjoint-field write.
@@ -474,36 +437,6 @@ impl crate::state::BattleState {
                         // both-sides fallback; only push when it does not).
                         if !ordered[i..].contains(&killer_side) {
                             ordered.push(killer_side);
-                        }
-                    }
-                }
-                // --- GRUDGE (`gen3_b5_moves_v1`, `grudge.onFaint`, `data/moves.ts`, unchanged
-                //     by the gen-3/4 mods): `if (!source || source.fainted || !effect) return;
-                //     if (effect.effectType === 'Move' && !effect.flags['futuremove'] &&
-                //     source.lastMove) { for each moveSlot with id lastMove.id: pp = 0;
-                //     add('-activate', source, 'move: Grudge', move.name) }`. The Move /
-                //     !futuremove gate was encoded at the damage sites (`grudge_ko_by`). It
-                //     runs inside `faintMessages`' `runEvent('Faint')`, right after the
-                //     corpse's `|faint|`; `source.fainted` is the killer's FLAG, which is set
-                //     only when the drain reaches it, so a killer KO'd by its own recoil
-                //     (queued after the corpse) still loses the PP, while an Explosion user
-                //     (queued, and drained, first) does not. DRAW-FREE. ---
-                if let Some(killer_side) = grudge_killer {
-                    let kslot = self.sides[killer_side].active;
-                    if !self.sides[killer_side].pokemon[kslot].fainted {
-                        if let Some(id) = self.last_move_id(killer_side, kslot) {
-                            for k in self.slots_with_move_id(killer_side, kslot, &id) {
-                                self.sides[killer_side].pokemon[kslot].move_pp[k] = 0;
-                                // [EMIT] `|-activate|<killer>|move: Grudge|<Move name>`.
-                                if self.logging() {
-                                    let name = dex
-                                        .moves(&id)
-                                        .map(|m| m.display_name().to_string())
-                                        .unwrap_or_else(|| id.clone());
-                                    let killer_ref = self.mon_ref(killer_side, kslot, dex);
-                                    self.log.activate(&killer_ref, "move: Grudge", Some(&name));
-                                }
-                            }
                         }
                     }
                 }
@@ -816,13 +749,6 @@ impl crate::state::BattleState {
                     self.sides[pside].pokemon[pslot]
                         .deduct_pp(pmi, if pressure_extra { 2 } else { 1 });
                     self.sides[pside].pokemon[pslot].last_move = Some(pmi);
-                    // `moveUsed(pursuit)` makes `lastMove` PURSUIT, a move in a real slot, so a
-                    // self-overwriting Mimic used before it no longer hides the last move from
-                    // Disable / Encore / Mimic; and `useMove` → `useMoveInner` sets `lastMoveUsed`
-                    // (data/mods/gen3/scripts.ts:127), which Conversion 2 reads
-                    // (`gen3_bf_pursuit_last_move_v1`, probe `harness/probe_bf_classes.js` BF7).
-                    self.sides[pside].pokemon[pslot].last_move_was_self_overwrite = false;
-                    self.sides[pside].pokemon[pslot].last_move_used = Some("pursuit".to_string());
                     // (d) `useMove(pursuit, source, {target: switcher})` — the strike at ×2 BP +
                     //     never-miss (the transient `pursuit_strike` flag, read+cleared inside
                     //     run_move). The switcher is still at `self.sides[side].active`, so
@@ -846,11 +772,13 @@ impl crate::state::BattleState {
                         )
                     });
                     self.pursuit_strike = false; // belt-and-braces (run_move already cleared it)
-                    // The strike's in-`tryMoveHit` `eachEvent('Update')` (draws on a pursuer↔switcher
-                    // speed tie; the switcher is hp-0-but-not-yet-fainted here, so it is still in
-                    // getAllActive — process_faints runs below) ran inside `run_move`
-                    // (`gen3_bf_update_before_shell_bell_v1`).
-                    debug_assert!(!res.landed || res.update_done);
+                    if res.landed {
+                        // The strike's in-`tryMoveHit` `eachEvent('Update')` (draws on a
+                        // pursuer↔switcher speed tie; the switcher is hp-0-but-not-yet-fainted
+                        // here, so it is still in getAllActive — process_faints runs below).
+                        let upd = self.each_event_shuffle();
+                        self.run_update_items(&upd, dex);
+                    }
                     // (e) `if (useMove(...) && source.getItem().isChoice) addVolatile('choicelock')`
                     //     — a Choice-item pursuer (gen-3: Choice Band) locks to Pursuit.
                     if to_id(&self.sides[pside].pokemon[pslot].item) == "choiceband" {
@@ -956,7 +884,7 @@ impl crate::state::BattleState {
             Some((
                 m.boosts, m.substitute, m.leech_seed, m.confusion, m.curse, m.perish,
                 m.trapped_by, m.charge, m.protect_counter, m.stall_duration, m.pursuit,
-                m.partial_trap.clone(), m.ingrain, m.mud_sport, m.water_sport, m.lock_on,
+                m.partial_trap.clone(),
             ))
         } else {
             None
@@ -1003,7 +931,6 @@ impl crate::state::BattleState {
         // status is cleared there) and emitted as `-curestatus` AFTER the block but
         // BEFORE the array swap, so the line still refers to the OUTGOING mon at `active`.
         let mut nc_cure_token: Option<&'static str> = None;
-        let mut nc_nightmare_end = false;
         // The outgoing (active) mon: if alive (voluntary pivot), clearVolatile resets
         // its stat stages AND volatiles (confusion / flinch) — reset them so a later
         // re-entry is pristine (no seed effect). A fainted mon's clearVolatile already
@@ -1086,10 +1013,6 @@ impl crate::state::BattleState {
                 // Capture the status TOKEN before clearing — the `-curestatus` line
                 // (FORM 4, emitted after this block, pre-swap) needs it.
                 nc_cure_token = status_token(m.status);
-                // `naturalcure.onSwitchOut` → `clearStatus()`, which ends a NIGHTMARE with
-                // `|-end|<mon>|Nightmare|[silent]` right after the cure line
-                // (`sim/pokemon.ts:1757`, gen3_b5_moves_v1).
-                nc_nightmare_end = m.nightmare;
                 m.status = None;
             }
             // TRACE revert (`gen3_berry_trace_shedskin_v1`): switch-out restores the BASE
@@ -1109,14 +1032,9 @@ impl crate::state::BattleState {
             // `lastMoveUsed` resets on switch-out (`gen3_conversion_v1`, probe C8), so a
             // Conversion 2 into a freshly-entered mon FAILS draw-free.
             m.last_move_used = None;
-            m.attacked_by.clear(); // switch-out `clearVolatile` (`gen3_b11_moves_v1`)
-            m.called_move = None;
             // UPROAR's lock clears SILENTLY on switch-out — a phazed-out uproarer emits no
             // `-end` line (`gen3_uproar_v1`, clearVolatile).
             m.uproar = None;
-            // BIDE clears SILENTLY on switch-out (`gen3_b8_moves_v1`, probed: a Roar on a biding
-            // mon prints only the `|drag|`; `clearVolatile` fires no `onEnd`). Not Baton-Passed.
-            m.bide = None;
             // FURY CUTTER's counter + REVENGE's this-turn record clear on switch-out.
             m.fury_cutter = None;
             m.locked_move = None; // gen3_lockin_family_v1 — silent on switch-out
@@ -1149,7 +1067,6 @@ impl crate::state::BattleState {
             // dragged-out mon re-enters fully unlocked (a fresh Hyper Beam / charge starts
             // over). Same stale-flag hazard class as `beat_up` above.
             m.must_recharge = false;
-            m.must_recharge_duration = 0; // gen3_recharge_expiry_v1
             m.two_turn = None;
             // The COUNTER / MIRROR COAT reactive volatile clears on switch-out
             // (`clearVolatile`, `gen3_move_coverage_batch5_v1`) — a phazed-out counter
@@ -1179,11 +1096,6 @@ impl crate::state::BattleState {
             // handler on re-entry). A snatch is +4, so a voluntary switch same-turn is
             // impossible; the drag-out path is the reachable one.
             m.snatch = false;
-            // MAGIC COAT + FORESIGHT (`gen3_b6_moves_v1`): clearVolatile on switch-out. Foresight
-            // is `noCopy` (the condition, `data/moves.ts` foresight), so the Baton Pass snapshot
-            // above never carries it; the coat holder can only leave by a drag (+4 priority).
-            m.magic_coat = false;
-            m.foresight = false;
             m.destiny_bond = false;
             m.destiny_bond_ko_by = None;
             m.trapped_by = None;
@@ -1192,25 +1104,6 @@ impl crate::state::BattleState {
             // free and its entrant is untrapped. It is `noCopy`-FALSE though, so the BP
             // snapshot above DOES pass it to a Baton-Pass entrant (probe J).
             m.partial_trap = None;
-            // The B5 volatiles (`gen3_b5_moves_v1`) clear on switch-out (`clearVolatile`):
-            // GRUDGE (+ its pending trigger), NIGHTMARE (noCopy; a Natural Cure holder's
-            // `clearStatus()` already ended it with its `-end` line above) and INGRAIN (the
-            // Baton-Pass snapshot above passes it on).
-            m.grudge = false;
-            m.grudge_ko_by = None;
-            m.nightmare = false;
-            m.ingrain = false;
-            // The B7 volatiles (`gen3_b7_moves_v1`) clear on switch-out (`clearVolatile`, no
-            // `onEnd`, so no line): STOCKPILE (noCopy, never passed), MUD / WATER SPORT and
-            // LOCK-ON (noCopy false from the gen-4 mod: the Baton-Pass snapshot above passes them).
-            m.stockpile = 0;
-            m.spit_up_after_move = false;
-            m.mud_sport = false;
-            m.water_sport = false;
-            m.lock_on = None;
-            // ENDLESS BATTLE CLAUSE (`gen3_b10_endless_battle_v1`): `clearVolatile` drops the Skill
-            // Swap `volatileStaleness` (`sim/pokemon.ts:1555`); the permanent item staleness stays.
-            m.volatile_staleness = false;
             // YAWN (`gen3_yawn_v1`): the pending delayed-sleep volatile clears on switch-out
             // (`clearVolatile`) — a mon that pivots out before the Yawn resolves comes back with no
             // pending sleep (a fresh Yawn is needed); noCopy so it is never Baton-Passed.
@@ -1244,9 +1137,6 @@ impl crate::state::BattleState {
             if self.logging() {
                 let mon = self.mon_ref(side, active, dex);
                 self.log.curestatus_from_ability_silent(&mon, tok, "Natural Cure");
-                if nc_nightmare_end {
-                    self.log.volatile_end_silent(&mon, "Nightmare");
-                }
             }
         }
         // --- TRAP-LINK source-left clear (`gen3_move_coverage_batch6_v1`, the linked
@@ -1373,7 +1263,7 @@ impl crate::state::BattleState {
         //     the pending marker. ---
         if let Some((
             boosts, sub, leech, conf, curse, perish, trapped_by, charge, protect_counter,
-            stall_duration, pursuit, partial_trap, ingrain, mud_sport, water_sport, lock_on,
+            stall_duration, pursuit, partial_trap,
         )) = bp_snapshot.clone()
         {
             let m = &mut self.sides[side].pokemon[active];
@@ -1401,18 +1291,6 @@ impl crate::state::BattleState {
             m.protect_counter = protect_counter;
             m.stall_duration = stall_duration;
             m.pursuit = pursuit;
-            // INGRAIN (`gen3_b5_moves_v1`): the condition has no `noCopy`, so `copyVolatileFrom`
-            // passes it — the entrant heals `[from] Ingrain` off ITS OWN maxhp and is itself
-            // firm-trapped (probe `harness/probe_b5_moves.js`, its Ingrain Baton Pass board).
-            m.ingrain = ingrain;
-            // MUD SPORT / WATER SPORT / LOCK-ON (`gen3_b7_moves_v1`): the gen-4 mod sets each
-            // condition's `noCopy: false`, so `copyVolatileFrom` passes them — the sports keep
-            // halving from the entrant, and the lock keeps its target (`effectState.source`) and
-            // remaining duration, so its residual duration handler now sits on the entrant
-            // (probe `harness/probe_b7_moves.js`, the Lock-On Baton Pass tie board).
-            m.mud_sport = mud_sport;
-            m.water_sport = water_sport;
-            m.lock_on = lock_on;
         }
         // TOXIC STAGE — the reset does NOT live here (`gen3_tox_stage_persists_v1`):
         // the resolved gen3 `tox.onSwitchIn(){ stage = 0 }` fires via the RUNSWITCH-time

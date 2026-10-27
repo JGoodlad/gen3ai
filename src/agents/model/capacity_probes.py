@@ -16,9 +16,6 @@ at matched step and DIFFERENCED.
   (c) `decodability_probe`  — linear-probe r²/AUC to ground-truth facts read straight out of the
                               obs vector. Deliberately easy; the metric is the DRIFT.
   (d) `parameter_utilization` — per-phase weight-norm census from the `state_dict` alone.
-  (e) `tanh_saturation_probe` — the policy MLP's tanh units (`mlp_extractor`): the share of
-                              activations with |a| > 0.99 and the share of units saturated on
-                              >= 99 % of rows, per tanh layer (the plasticity check's finding F3).
 
 🚨 **THE VALIDITY RULE, and it comes from a retraction in this repo.** A "conditioning headroom"
 claim was once derived from a low participation ratio (`PR(K_ū)=17`); the reading was a noise
@@ -44,15 +41,7 @@ from agents.training.rank_metrics import effective_rank
 # reader must be able to refuse to difference two artifacts that measured different things.
 # 2: the `vf_features` tap is gone — since the version break (config v144, audit F1) the extractor's value
 # half IS `value_pooled` (no value projection), so the tap duplicated `value_pooled`.
-# 3: the `tanh_saturation` block (probe (e)) joins the artifact.
-CAPACITY_BATTERY_VERSION = 3
-
-#: Probe (e)'s two thresholds, the plasticity check's own (`designs/research_state/measurements/
-#: plasticity_check_2026-10-26/plasticity_probe.py`, `structure_one`: `y.abs() > 0.99`, then
-#: `frac >= 0.99`): an activation is SATURATED when |a| exceeds the first; a unit is saturated when its
-#: per-row saturated fraction reaches the second.
-TANH_SAT_ABS = 0.99
-TANH_SAT_UNIT_ROWS = 0.99
+CAPACITY_BATTERY_VERSION = 2
 
 #: The four taps, in pipeline order. Token taps are captured as [N, T, D]; the rest as [N, D].
 FEATURE_TAPS: Tuple[str, ...] = (
@@ -490,72 +479,14 @@ def parameter_utilization(fe: Any) -> Dict[str, Any]:
     }
 
 
-# --------------------------------------------------------------------------- (e) tanh saturation
-
-def tanh_saturation_stats(sat_rows: np.ndarray, n_rows: int) -> Dict[str, float]:
-    """One tanh layer's two statistics from per-unit COUNTS of rows with |a| > `TANH_SAT_ABS`.
-
-    ``mean_sat_frac`` is the fraction of ALL the layer's activations that are saturated (the mean of
-    the per-unit fractions); ``saturated_units`` is the share of units saturated on at least
-    `TANH_SAT_UNIT_ROWS` of the rows. The definition of `plasticity_probe.structure_one`, rounded
-    the same way.
-    """
-    frac = np.asarray(sat_rows, dtype=np.float64) / max(int(n_rows), 1)
-    return {"units": int(frac.size),
-            "saturated_units": round(float((frac >= TANH_SAT_UNIT_ROWS).mean()), 5),
-            "mean_sat_frac": round(float(frac.mean()), 5)}
-
-
-def tanh_saturation_probe(policy: Any, obs: np.ndarray, masks: np.ndarray, batch: int = 256,
-                          device: str = "cpu") -> Dict[str, Any]:
-    """(e) Per tanh layer of the policy MLP (`policy.mlp_extractor`): both saturation statistics.
-
-    Forward hooks on every `nn.Tanh` under `mlp_extractor` count, per unit, the rows with
-    |a| > `TANH_SAT_ABS`; the forward is the actor's own (`features_extractor`, then
-    `mlp_extractor.forward_actor`). The critic half has no MLP (`mlp_extractor.value_net` is empty).
-    A policy with no tanh layer (the flat tower folded into the extractor) returns ``{"layers": {}}``.
-    Hooks are always removed. Offline only: nothing here runs in the training loop.
-    """
-    import torch
-    from agents.model.extra_obs_keys import zero_extra_obs
-
-    sat: Dict[str, Any] = {}
-    hooks = []
-
-    def _count(name: str, y: Any) -> None:
-        s = (y.detach().float().abs() > TANH_SAT_ABS).reshape(-1, y.shape[-1]).sum(0).cpu().numpy()
-        sat[name] = sat.get(name, 0) + s.astype(np.int64)
-
-    for name, mod in policy.mlp_extractor.named_modules():
-        if isinstance(mod, torch.nn.Tanh):
-            hooks.append(mod.register_forward_hook(lambda _m, _i, o, n=name: _count(n, o)))
-    try:
-        with torch.no_grad():
-            for i in range(0, len(obs), batch):
-                ob = {"observation": torch.as_tensor(obs[i:i + batch], device=device),
-                      "action_mask": torch.as_tensor(masks[i:i + batch], device=device).float()}
-                ob.update(zero_extra_obs(policy.features_extractor, batch=len(ob["observation"]),
-                                         device=device))
-                pi, _vf = policy.features_extractor(ob)
-                policy.mlp_extractor.forward_actor(pi)
-    finally:
-        for h in hooks:
-            h.remove()
-    return {"abs_threshold": TANH_SAT_ABS, "unit_row_share": TANH_SAT_UNIT_ROWS, "n_rows": int(len(obs)),
-            "layers": {f"mlp_extractor.{n}": tanh_saturation_stats(c, len(obs)) for n, c in sat.items()}}
-
-
 # --------------------------------------------------------------------------- orchestration
 
 def run_battery(fe_trained: Any, fe_fresh: Any, obs: np.ndarray, masks: np.ndarray,
-                layout: Dict[str, Any], *, policy: Any = None, n_targets: int = DEFAULT_N_TARGETS,
+                layout: Dict[str, Any], *, n_targets: int = DEFAULT_N_TARGETS,
                 folds: int = DEFAULT_FOLDS, seed: int = 0, batch: int = 256,
                 device: str = "cpu",
                 progress: Optional[Callable[[str], None]] = None) -> Dict[str, Any]:
-    """Run (a)-(e) and return the JSON-shaped result body (no `meta` — the CLI owns provenance).
-
-    (e) needs the whole ``policy`` (the MLP sits outside the extractor); without it the block is omitted.
-    """
+    """Run (a)-(d) and return the JSON-shaped result body (no `meta` — the CLI owns provenance)."""
     say = progress or (lambda _m: None)
 
     say("capturing features (trained)")
@@ -589,6 +520,4 @@ def run_battery(fe_trained: Any, fe_fresh: Any, obs: np.ndarray, masks: np.ndarr
         },
         "decodability": decodability_probe(fits_t, fits_f, facts, fact_cols, skipped),
         "params": parameter_utilization(fe_trained),
-        **({"tanh_saturation": tanh_saturation_probe(policy, obs, masks, batch=batch, device=device)}
-           if policy is not None else {}),
     }

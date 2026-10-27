@@ -8,7 +8,7 @@
 //     port  |move|p2a: Swalot|Yawn|p1a: Primeape   + |-immune|p1a: Primeape|[from] ability: …
 // i.e. the sim reports the SUBSTITUTE block, the port reports the ABILITY immunity.
 //
-// The port's documented order (designs/research_state/claude_md_archive/rust_sim_port_build_log.md "YAWN: the delayed-sleep move") is
+// The port's documented order (designs/rust_sim/port_build_log.md "YAWN: the delayed-sleep move") is
 //     Protect > already-statused > sleep-immune(-immune) > Substitute([still]+-fail) > ADD
 // A source read supports that order (yawn's own `onTryHit` — `target.status ||
 // !target.runStatusImmunity('slp')` — runs in `runEvent('TryHit')`, while the Substitute

@@ -36,20 +36,12 @@ fn priors() -> &'static Priors {
     })
 }
 
-/// `ABILITY_TYPE_MULTIPLIER` + Wonder Guard + frozen Flash Fire (`gen3_mechanics._eff_cached`), and Foresight
-/// (`gen3_hp_foresight_v1`): a target under the `foresight` volatile loses its Ghost type's Normal / Fighting
-/// immunity (`data/moves.ts` `foresight.condition.onNegateImmunity`, run by `sim/pokemon.ts` `runImmunity`), and a
-/// Ghost type then adds 0 to the type mod (`sim/dex.ts` `getEffectiveness`: an immunity is "handled elsewhere") — the
-/// hit lands at the OTHER type's multiplier (2x on Sableye, 0.5x on Gengar, 1x on Banette). Hidden Power is never
-/// Normal, so Fighting is the one type it moves.
-fn effective_multiplier(dex: &Dex, move_type: Type, t: &Target) -> f64 {
+/// `ABILITY_TYPE_MULTIPLIER` + Wonder Guard + frozen Flash Fire (`gen3_mechanics._eff_cached`).
+fn effective_multiplier(dex: &Dex, move_type: Type, t1: Option<Type>, t2: Option<Type>, ability: &str, frozen: bool) -> f64 {
     let chart = dex.type_chart();
-    let negated = |d: Type| t.foresight && d == Type::Ghost && matches!(move_type, Type::Normal | Type::Fighting);
-    let one = |d: Type| if negated(d) { 1.0 } else { chart.multiplier(d, move_type) };
-    let (ability, frozen) = (t.ability.as_str(), t.frozen);
-    let base = match t.t1 {
+    let base = match t1 {
         None => 1.0,
-        Some(a) => one(a) * t.t2.map_or(1.0, one),
+        Some(a) => chart.multiplier(a, move_type) * t2.map_or(1.0, |b| chart.multiplier(b, move_type)),
     };
     if ability == "wonderguard" {
         return if base > 1.0 { base } else { 0.0 };
@@ -85,8 +77,6 @@ struct Target {
     t2: Option<Type>,
     ability: String,
     frozen: bool,
-    /// Under the `foresight` volatile when hit (`gen3_hp_foresight_v1`).
-    foresight: bool,
 }
 
 /// `HiddenPowerTracker`.
@@ -110,7 +100,7 @@ impl HpBelief {
     fn feasible(dex: &Dex, eff: f64, t: &Target) -> bool {
         HP_TYPES.iter().any(|n| {
             let ty = Type::from_name(n).expect("HP type");
-            bucket(effective_multiplier(dex, ty, t)) == eff
+            bucket(effective_multiplier(dex, ty, t.t1, t.t2, &t.ability, t.frozen)) == eff
         })
     }
 
@@ -119,7 +109,7 @@ impl HpBelief {
         for (i, n) in HP_TYPES.iter().enumerate() {
             if v[i] != 0.0 {
                 let ty = Type::from_name(n).expect("HP type");
-                if bucket(effective_multiplier(dex, ty, t)) != eff {
+                if bucket(effective_multiplier(dex, ty, t.t1, t.t2, &t.ability, t.frozen)) != eff {
                     v[i] = 0.0;
                 }
             }
@@ -206,7 +196,6 @@ impl HpBelief {
             t2: types.get(1).and_then(|x| Type::from_name(x)),
             ability: dm.target_ability.clone().unwrap_or_default().to_lowercase(),
             frozen: dm.target_status.as_deref() == Some("FRZ"),
-            foresight: dm.target_foresight,
         };
         let eff = dm.effectiveness.unwrap_or(1.0);
         if !Self::feasible(dex, eff, &t) {
@@ -271,8 +260,7 @@ mod tests {
     use super::*;
 
     fn tgt(t1: &str, t2: Option<&str>, ability: &str) -> Target {
-        Target { t1: Type::from_name(t1), t2: t2.and_then(Type::from_name), ability: ability.into(), frozen: false,
-                 foresight: false }
+        Target { t1: Type::from_name(t1), t2: t2.and_then(Type::from_name), ability: ability.into(), frozen: false }
     }
 
     fn survivors(b: &HpBelief, sp: &str) -> Vec<&'static str> {
@@ -298,25 +286,6 @@ mod tests {
         assert!(b.state["lunatone"].iter().all(|p| *p == 0.0 || *p == 1.0 / 16.0), "flat mass");
         assert_eq!(b.prior_discarded.iter().collect::<Vec<_>>(), vec!["lunatone"]);
         assert_eq!(b.revision, 2);
-    }
-
-    /// `gen3_hp_foresight_v1`: Foresight negates ONLY the Ghost type's Normal / Fighting immunity, and only while the
-    /// volatile is up; Wonder Guard still blocks the hit that is then not super-effective (Shedinja: Bug resists).
-    #[test]
-    fn foresight_lifts_only_the_ghost_immunity_to_fighting() {
-        let dex = Dex::for_gen(3);
-        let fighting = Type::Fighting;
-        let sees = |t1: &str, t2: Option<&str>, ability: &str, foresight: bool| {
-            effective_multiplier(&dex, fighting, &Target { foresight, ..tgt(t1, t2, ability) })
-        };
-        assert_eq!(sees("ghost", Some("dark"), "keeneye", false), 0.0);
-        assert_eq!(sees("ghost", Some("dark"), "keeneye", true), 2.0);
-        assert_eq!(sees("ghost", Some("poison"), "levitate", true), 0.5);
-        assert_eq!(sees("ghost", None, "insomnia", true), 1.0);
-        assert_eq!(sees("bug", Some("ghost"), "wonderguard", true), 0.0, "Wonder Guard: 0.5x is blocked");
-        assert_eq!(sees("normal", None, "naturalcure", true), 2.0, "no Ghost: unchanged");
-        let ghost_hp = effective_multiplier(&dex, Type::Ghost, &Target { foresight: true, ..tgt("ghost", None, "insomnia") });
-        assert_eq!(ghost_hp, 2.0, "a Ghost Hidden Power on a Ghost: unchanged");
     }
 
     /// The loud half stays: a log NO Hidden Power type explains is refused, even under the flat prior.

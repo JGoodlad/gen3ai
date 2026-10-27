@@ -69,13 +69,7 @@ def fix_gen3_hp_ivs(pokemon_list):
         # Check if mon has a Hidden Power move
         hp_move = next((m for m in mon.moves if "hiddenpower" in m.lower().replace(" ", "")), None)
         if not hp_move:
-            # Showdown's validator (team-validator.ts, gen 3: `set.hpType && maxedIVs` -> fillStats(HPivs, 31)) fills
-            # the IVs from a `Hidden Power: <Type>` line EVEN WITHOUT a Hidden Power move; the authored team plays
-            # those IVs (gen3_team_pack_hptype_ivs_v1, 2026-10-26 GIGO audit C-3).
-            hp_type_line = getattr(mon, "hiddenpowertype", None)
-            if not hp_type_line:
-                continue
-            hp_move = f"Hidden Power [{hp_type_line.strip()}]"
+            continue
             
         # Only fix if current IVs are default (all 31)
         if mon.ivs and any(iv != 31 for iv in mon.ivs):

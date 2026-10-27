@@ -24,8 +24,6 @@ pub struct DamagingMove {
     /// only by the reading's PROMOTED move ([`DamagingMove::from_read`]); `None` on this fold.
     pub target_types: Option<Vec<String>>,
     pub target_ability: Option<String>,
-    /// The target held the `foresight` volatile when the move fired (`gen3_hp_foresight_v1`).
-    pub target_foresight: bool,
     /// The user was transformed when it fired (its Hidden Power is the copied mon's type).
     pub user_transformed: bool,
 }
@@ -42,7 +40,6 @@ impl DamagingMove {
             effectiveness: Some(d.effectiveness),
             target_types: Some(d.target_types.clone()),
             target_ability: d.target_ability.clone(),
-            target_foresight: d.target_foresight,
             user_transformed: d.user_transformed,
         }
     }
@@ -78,11 +75,6 @@ pub struct SideTurn {
     pub hit_dealt: f64,
     /// An Encore landed on this side's mon before it moved this turn (L5).
     pub choice_overridden: bool,
-    /// This side's (last) MOVE preceded its first switch-in of the window — the move-then-faint-then-replacement,
-    /// the move-then-phazed and the Baton Pass shapes, where the move was the CHOICE and the switch its consequence
-    /// (`gen3_intent_label_move_then_switch_v1`). False with no move, and when a switch came first (a window holding
-    /// two choices).
-    pub move_before_switch: bool,
 }
 
 impl SideTurn {
@@ -226,13 +218,6 @@ impl<'a> TurnView<'a> {
         let mut st = SideTurn::default();
         let side_events: Vec<&Reading> = self.events.iter().copied().filter(|e| e.side == Some(side)).collect();
         let primary = side_events.iter().copied().filter(|e| e.kind == K::Move).last();
-        let primary_at = side_events.iter().rposition(|e| e.kind == K::Move);
-        let first_switch_at = side_events.iter().position(|e| matches!(e.kind, K::Switch | K::Drag));
-        st.move_before_switch = match (primary_at, first_switch_at) {
-            (Some(m), Some(s)) => m < s,
-            (Some(_), None) => true,
-            _ => false,
-        };
         if let Some(p) = primary {
             st.moved = true;
             st.move_id = ev::move_id(p).map(str::to_string);
@@ -286,7 +271,6 @@ impl<'a> TurnView<'a> {
                     effectiveness: st.effectiveness.or(if dealt < 0.0 { Some(1.0) } else { None }),
                     target_types: None,
                     target_ability: None,
-                    target_foresight: false,
                     user_transformed: false,
                 });
             }

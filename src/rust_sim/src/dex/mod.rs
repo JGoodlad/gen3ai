@@ -144,11 +144,6 @@ impl Dex {
     pub fn moves_mut(&mut self) -> &mut std::collections::HashMap<String, MoveData> {
         &mut self.moves
     }
-    /// Every move row of the data file, unordered (`gen3_b11_moves_v1`: METRONOME's pool is the
-    /// dex sorted by `num`, `data/mods/gen4/moves.ts` metronome.onHit).
-    pub fn all_moves(&self) -> impl Iterator<Item = &MoveData> {
-        self.moves.values()
-    }
     pub fn item(&self, id: &str) -> Option<&ItemData> {
         self.items.get(&to_id(id))
     }

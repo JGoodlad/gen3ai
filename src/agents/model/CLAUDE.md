@@ -27,49 +27,51 @@ The live `MODEL_CONFIG_VERSION`, `ARCH_SIGNATURE` and `OBS_SEMANTICS_VERSION` ar
 
 - 🚨 **A change to the phase structure or the forward math bumps `ARCH_SIGNATURE`**, even a pure decomposition
   (state_dict keys move). A forward-math change with unchanged widths is caught by nothing else.
-- **A change in what an observation cell MEANS, with no shape change, raises `OBS_SEMANTICS_VERSION`**: append an
-  `OBS_SEMANTICS_HISTORY` row (the config version the commit stamps + its clause) and re-pin `obs_semantics_test.py`.
-  It does not bump `ARCH_SIGNATURE` and gates no resume; a reader acts on it through ONE gap policy
-  (`main.prober.arch_status.decide`: every use below it runs badged; a row's `replay: refuse` blocks a trace replay). A
-  model-internal input the obs golden cannot see is raised by hand.
-- An optional new feature is a `ModelVersionFields` field, a `MODEL_CONFIG_VERSION` bump and one `_migrate_config`
-  `setdefault` block. Every value `--arch production` writes must be a `ModelVersion` field (a restart inherits
-  only what `model_config.json` records).
-- Deleting an extractor kwarg breaks every load of an old zip, and no gate catches it: follow `versioning.md`. A
-  lever the legacy deletion removes is judged by `model_version/adopted_levers.py`; code that builds the LEGACY
-  network on purpose reads `main.train.arch_arms.legacy_production_config`, never typed flags.
+- **A change in what an observation cell MEANS, with no shape change, sets `OBS_SEMANTICS_VERSION`** to the
+  config version the commit stamps (plus its `OBS_SEMANTICS_REASON` clause and a re-pinned
+  `obs_semantics_test.py`). It does not bump `ARCH_SIGNATURE` and gates no resume; readers such as the prober
+  refuse a checkpoint recorded below it. A model-internal input the obs golden cannot see is raised by hand.
+- An optional new feature is a `ModelVersionFields` field, a `MODEL_CONFIG_VERSION` bump and one
+  `_migrate_config` `setdefault` block. Every value `--arch production` writes must be a `ModelVersion` field
+  (a restart inherits only what `model_config.json` records).
+- Deleting an extractor kwarg breaks every load of an old zip, and no gate catches it: follow
+  `versioning.md`. A lever the legacy deletion removes is judged by `model_version/adopted_levers.py`; code that
+  builds the LEGACY network on purpose reads `main.train.arch_arms.legacy_production_config`, never typed flags.
 - A `resume_immutable` flag the extractor carries is re-applied after every `--model` load
   (`resume_reapply.SETTERS`).
-- 🚨 **A FORK grows the network only DECLARED** (`--grow FIELD=VALUE`, `growth.py`): a growable field is one
-  `growth.GROWABLE` row with its own hooks, and the fork-time gate refuses anything not bit-identical to the parent
-  (`versioning.md` "Declared growth at a fork").
+- 🚨 **A FORK grows the network only DECLARED** (`--grow FIELD=VALUE`, `growth.py`): the parent loads strictly, the
+  grown network must be the parent's function (the gate refuses anything not bit-identical on 64 rows as ONE batch),
+  and a growable field is one `growth.GROWABLE` row with its own hooks
+  (`designs/model/versioning.md` "Declared growth at a fork").
 
 ## Hazards in the forward
 
 - 🚨 **Whatever a trunk round computes lives INSIDE its class** (`trunk_kffn.TrunkRound`): the bf16 region is a
   class swap of the rounds, so a sibling module beside them silently runs fp32.
-- A new width-contributing part extends `compute_projection_widths` and its sweep (`projection_width_test.py`).
-- `Embeddings` alone owns the embedding tables; `ExtractorContext` is the inter-phase contract (add a field, do not
-  widen a signature). The table modules import only downward (`damage_tables` → `belief_tables` → `dex_ids`).
+- **Architecture constants live only in `arch_constants.py`**; a new width-contributing part extends
+  `compute_projection_widths` and its sweep (`projection_width_test.py`).
+- **The tier order is asserted** (`tier_contract.py`); `Embeddings` alone owns the embedding tables;
+  `ExtractorContext` is the inter-phase contract (add a field, do not widen a signature). The table modules
+  import only downward (`damage_tables` → `belief_tables` → `dex_ids`).
 - **Never hand-build an obs dict** (`{"observation": zeros(1, D)}`) on a reachable path: use `zero_extra_obs` /
   `synthetic_obs` (`extra_obs_keys_test.py`).
-- **`forward` stays on `Gen3FeaturesExtractor`** (compile patches the bound method), and it is not re-entrant: a
-  thread-sharing caller gives each thread its own extractor or serializes forward plus its `last_*` reads.
+- **`forward` stays on `Gen3FeaturesExtractor`** (compile patches the bound method), and it is not re-entrant:
+  a thread-sharing caller gives each thread its own extractor or serializes forward plus its `last_*` reads.
 - The op's flat block has one slicer (`DamageOperator.tensors_from_block()`). `last_tensors` is post-gain, for
   projections only; a consumer reading an op value as a probability reads `last_raw_tensors`.
-- 🚨 **Our active's moves live in two orders**: per-mon slots sorted by `Move.id`, the request block and actions 6–9
-  in request order. Cross them by identity only (`extractor_ctx.active_request_sorted_match`); a positional crossing
-  is silent whenever every move is legal (`move_legality_alignment_test.py`).
+- 🚨 **Our active's moves live in two orders**: per-mon slots sorted by `Move.id`, the request block and actions
+  6–9 in request order. Cross them by identity only (`extractor_ctx.active_request_sorted_match`); a positional
+  crossing is silent whenever every move is legal (`move_legality_alignment_test.py`).
 - An opponent's ability is revealed only by its `known` flag: read `extractor_ctx.ability_known`.
 - **Every discrete op in the forward** (`topk`, `argmax`, a comparison, a float→int cast, a step function) is
   declared in `selection_sites.py` (`selection_sites_test.py`).
 - **Every reduction over opponent tokens declares its presence semantics** (a hidden slot is a hypothesis at
-  presence π < 1); π is detached wherever it weights policy or critic. A change to `PokemonEncoder`'s input stitch
-  is mirrored in `hypothesis_encode.species_table`.
-- A new per-mon input goes to S (a pure function of the set fields) or D (the mon's own state), and no board fact
-  goes to either (`static_tokens_test.py` and its siblings).
-- Detach belief LOGITS, never the product (`sigmoid(logits) @ emb.weight` detached kills the table's gradient). A
-  belief loss reads `belief_supervision`: `src/agents/training/CLAUDE.md`.
+  presence π < 1); π is detached wherever it weights policy or critic. A change to `PokemonEncoder`'s input
+  stitch is mirrored in `hypothesis_encode.species_table`.
+- A new per-mon input goes to S (a pure function of the set fields) or D (the mon's own state), and no board
+  fact goes to either (`static_tokens_test.py` and its siblings).
+- Detach belief LOGITS, never the product (`sigmoid(logits) @ emb.weight` detached kills the table's gradient).
+  A belief loss reads `belief_supervision`: `src/agents/training/CLAUDE.md`.
 - **Compile spellings are load-bearing**: `log_softmax(...).exp()` not `softmax` in `species_posterior`;
   `index_max.max_by_index`, never `amax`, on a gradient path; `op_reduction.believed_reduce` verbatim; float
   attention biases through `dense_attn_bias`; a forward reads plain ints precomputed in `__init__`. Bisect a
@@ -80,16 +82,17 @@ The live `MODEL_CONFIG_VERSION`, `ARCH_SIGNATURE` and `OBS_SEMANTICS_VERSION` ar
 
 ## Heads
 
-- The extractor returns `(pi_features, vf_features)` and pairs only with `Gen3DualHeadMaskablePolicy`; `vf_features`
-  is `value_pooled`, vf-only by construction (add a value route only in `_value_pooled_routes`).
+- The extractor returns `(pi_features, vf_features)` and pairs only with `Gen3DualHeadMaskablePolicy`;
+  `vf_features` is `value_pooled`, vf-only by construction (add a value route only in
+  `_value_pooled_routes`). Actions come from `PointerNativeActionHead`.
 - The win-prob critic is the only critic; read the recorded `critic` through `is_winprob`, never a string compare.
 - The ride-along heads live on the policy: built inside `fork_rng` from `RIDEALONG_INIT_SEED`, never in
   `policy.optimizer`, every input through `RideAlongBatch.detached`.
-- 🚨 **SB3's `_build()` re-inits every Linear; `restore_identity_init()` re-zeros them.** Assert any identity-at-init
-  or byte-identical claim on a real `MaskablePPO`-built policy, never a bare module.
+- 🚨 **SB3's `_build()` re-inits every Linear; `restore_identity_init()` re-zeros them.** Assert any
+  identity-at-init or byte-identical claim on a real `MaskablePPO`-built policy, never a bare module.
 
 ## mypy
 
-`src/agents/model`, `src/agents/observation` and `src/main/reads` share `mypy.ini` at zero errors (`mypy_gate_test.py`).
-Never loosen `mypy.ini` to clear an error, since that de-tiers them all; use a targeted `# type: ignore[code]` with a
-reason. Detail: `designs/model/typing.md`.
+`src/agents/model` and `src/agents/observation` share `mypy.ini` at zero errors (`mypy_gate_test.py`). Never
+loosen `mypy.ini` to clear an error, since that de-tiers both packages; use a targeted
+`# type: ignore[code]` with a reason. Detail: `designs/model/typing.md`.

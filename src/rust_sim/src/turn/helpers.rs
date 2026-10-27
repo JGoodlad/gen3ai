@@ -180,11 +180,10 @@ impl crate::state::BattleState {
             // is at 0 HP but NOT yet `fainted` (faintMessages hasn't run), so it is
             // still counted by getAllActive() → the 2-active speed-tie shuffle FIRES
             // on a KO turn (verified: the faint turn draws 7, incl. this shuffle).
-            // The landed move's in-tryMoveHit Update ([7]/[12]) ran inside `run_move`, before
-            // Shell Bell (`gen3_bf_update_before_shell_bell_v1`).
-            debug_assert!(!outcome.landed || outcome.update_done);
-            // SPIT UP's `onAfterMove` (`gen3_b7_moves_v1`), as in the queue driver.
-            self.spit_up_after_move(action.side, action.slot, &outcome, dex);
+            if outcome.landed {
+                let upd = self.each_event_shuffle(); // [7]/[12] in-tryMoveHit Update
+                self.run_update_items(&upd, dex); // cure-berry/Leppa onUpdate (draw-free)
+            }
 
             // faintMessages() at the END of runAction sets the `fainted` flag (now the
             // 0-HP mon is excluded from getAllActive). A faint then reaches
@@ -274,9 +273,6 @@ impl crate::state::BattleState {
                 mon.active_turns = mon.active_turns.saturating_add(1);
             }
         }
-        // The same endTurn per-active loop drops every `attackedBy` entry whose source left the
-        // field (`sim/battle.ts` endTurn; `gen3_b11_moves_v1`, Mirror Move's read). DRAW-FREE.
-        self.prune_attacked_by();
     }
 
     /// Play a SCRIPTED sequence of `(p1_move_slot, p2_move_slot)` turns through the
@@ -377,9 +373,6 @@ impl crate::state::BattleState {
             //     is cleared here at the FOLLOWING turn-top (probe SN1: t2 vols=(none)).
             //     DRAW-FREE. ---
             self.sides[side].pokemon[a].snatch = false;
-            // MAGIC COAT's `duration: 1` volatile (`gen3_b6_moves_v1`) — the same turn-top
-            // clear as Snatch. DRAW-FREE (the condition has no onEnd).
-            self.sides[side].pokemon[a].magic_coat = false;
         }
     }
 
@@ -490,11 +483,7 @@ impl crate::state::BattleState {
     pub(crate) fn mon_toref(&self, side: usize, slot: usize, dex: &Dex) -> String {
         let name = self.display_name(side, slot, dex);
         let tag = Player::from_side(side).tag();
-        // `Pokemon.toString()` reads `isActive`, which `faintMessages` clears on a faint
-        // (sim/battle.ts): a FAINTED caster still in the active slot prints slot-less too
-        // (`|-miss|p2: Barboach|…`, a Future Sight landing after its caster fainted to Hail;
-        // `gen3_bf_toref_fainted_v1`).
-        if slot == self.sides[side].active && !self.sides[side].pokemon[slot].fainted {
+        if slot == self.sides[side].active {
             format!("{tag}a: {name}")
         } else {
             format!("{tag}: {name}")
@@ -566,19 +555,6 @@ impl crate::state::BattleState {
         self.log.gen(self.gen);
         self.log.tier("[Gen 3] Custom Game");
         self.log.rule("HP Percentage Mod: HP is shown in percentages");
-        // The EV-BALANCE warning (`gen3_ev_balance_bigerror_v1`): a `debug` format (Custom Game)
-        // runs `checkEVBalance()` at the end of `Battle.start()`'s rule `onBegin`s
-        // (`sim/battle.ts` start / checkEVBalance): when exactly one side holds a mon whose EVs
-        // sum past 510, `|bigerror|Warning: One player isn't adhering to a 510 EV limit, and
-        // the other player is.` Protocol only, draw-free. Found by the B9 golden's 677-EV boards.
-        if self.rules.exact_hp {
-            let unlimited = |side: usize| {
-                self.sides[side].pokemon.iter().any(|m| m.set.evs.iter().map(|&e| e as u32).sum::<u32>() > 510)
-            };
-            if unlimited(0) != unlimited(1) {
-                self.log.bigerror("Warning: One player isn't adhering to a 510 EV limit, and the other player is.");
-            }
-        }
         self.log.separator();
         self.log.timestamp();
         self.log.teamsize(0, self.sides[0].pokemon.len());
@@ -627,23 +603,23 @@ impl crate::state::BattleState {
         if !self.logging() {
             return;
         }
-        let leads: Vec<(usize, usize, u32)> = match self.turn0_switchin_order.clone() {
+        let leads: Vec<(usize, usize, u16)> = match self.turn0_switchin_order.clone() {
             // The construction window RESOLVED the order (a tie broken by its real draw).
             Some(order) => order
                 .iter()
                 .map(|&side| {
                     let slot = self.sides[side].active;
-                    (side, slot, self.turn0_speed(side, slot))
+                    (side, slot, self.sides[side].pokemon[slot].stats[5])
                 })
                 .collect(),
             // The draw-free `start_with_switchins` path: faster raw Speed (stats[5]) first,
             // tie = side order (mirrors `run_start_switchins`'s stable
             // `sort_by(|a,b| b.spe.cmp(&a.spe))`).
             None => {
-                let mut leads: Vec<(usize, usize, u32)> = (0..self.sides.len())
+                let mut leads: Vec<(usize, usize, u16)> = (0..self.sides.len())
                     .map(|side| {
                         let slot = self.sides[side].active;
-                        (side, slot, self.turn0_speed(side, slot))
+                        (side, slot, self.sides[side].pokemon[slot].stats[5])
                     })
                     .collect();
                 leads.sort_by(|a, b| b.2.cmp(&a.2));
@@ -813,12 +789,6 @@ impl crate::state::BattleState {
                         .map(|a| a.name.clone())
                         .unwrap_or(foe_ability);
                     self.log.fail_unboost_from_ability(&foe_ref, &display, stat);
-                } else if !at_floor && self.sides[foe].mist > 0 {
-                    // MIST (`gen3_b7_moves_v1`): the foe side's Mist deleted the drop; the
-                    // effect is the ability (no `secondaries`), so `|-activate|<foe>|move: Mist`
-                    // (probe `harness/probe_b7_moves.js`, Mist vs Intimidate). At the floor the
-                    // capped 0 survives Mist and prints the `-unboost|…|atk|0` below.
-                    self.log.activate(&foe_ref, "move: Mist", None);
                 } else {
                     // The CLAMPED-APPLIED delta `new_atk − pre_atk` ∈ {−1, 0}: a foe already
                     // at the −6 floor drops by 0 → `|-unboost|…|atk|0` (the sim STILL emits
@@ -1069,7 +1039,7 @@ pub(crate) fn move_is_immune(ctx: &DamageContext, dex: &Dex) -> bool {
         return true;
     }
     match ctx.mv.move_type {
-        Some(t) => crate::damage::type_effectiveness(dex, t, &ctx.defender.types, ctx.defender.identified) == 0.0,
+        Some(t) => dex.type_chart().effectiveness(t, &ctx.defender.types) == 0.0,
         None => false,
     }
 }
@@ -1145,19 +1115,6 @@ pub(crate) fn status_move_announce_renders_user(target: &str) -> bool {
     )
 }
 
-/// Whether gen-3 `tryMoveHit` runs `runEvent('Invulnerability')` for a move of this target kind
-/// (`gen3_twoturn_family_v1`, data/mods/gen3/scripts.ts:285-305): the `all` / `foeSide` /
-/// `allySide` / `allyTeam` moves return through `TryHitField` / `TryHitSide` before it (Spikes,
-/// Haze, weather — probed to bypass a semi-invulnerable foe), and a self / ally-targeted move's
-/// event target is never a mid-charge foe. Perish Song (`all`) checks it per mon in its own
-/// `onHitField`.
-pub(crate) fn invulnerability_applies(target: &str) -> bool {
-    !matches!(
-        target,
-        "self" | "all" | "foeSide" | "allySide" | "allyTeam" | "allies" | "adjacentAlly" | "adjacentAllyOrSelf"
-    )
-}
-
 pub(crate) fn pressure_targets_foe(target: &str) -> bool {
     // `foeSide` (the only gen-3 `foeSide` move is Spikes) DOES put the Pressure foe in the
     // move's `pressureTargets` → the −2 deduction (SIM-PROBE-CONFIRMED, `gen3_pressure_foeside_v1`:
@@ -1219,11 +1176,10 @@ pub(crate) fn modeled_phaze_move(move_id: &str) -> bool {
 /// rendering the FOE).
 ///
 /// 🚨 **SWAGGER and FLATTER are NOT members**, even though they also inflict confusion. They
-/// carry a TARGET `boosts` map, and probe measurement (`harness/probe_confusion_family.js`,
-/// `harness/probe_b6_moves.js`) shows the two halves succeed and fail **independently**: a
-/// Swagger into an already-confused target still lands its +2 Atk and emits NO `-fail`, where
-/// every move here fails as a unit. They have their own arm (`status_moves.rs`,
-/// `TARGET_BOOST_MOVES`, `gen3_b6_moves_v1`).
+/// carry a TARGET `boosts` map, and probe measurement (`harness/probe_confusion_family.js`)
+/// shows the two halves succeed and fail **independently**: a Swagger into an already-confused
+/// target still lands its +2 Atk and emits NO `-fail`, where every move here fails as a unit.
+/// A "confusion move" predicate that swept them in would emit the wrong bytes.
 pub(crate) fn is_pure_confusion_move(move_id: &str) -> bool {
     matches!(move_id, "confuseray" | "supersonic" | "sweetkiss" | "teeterdance")
 }
@@ -1355,9 +1311,11 @@ pub(crate) fn recovery_heal_amount(move_id: &str, mon: &crate::state::MonState, 
 /// zero-draw-failed when un-armed) and **Endeavor** (`target.hp − pokemon.hp`, the
 /// caller's onTry gate already failed `hp >= target.hp`).
 ///
-/// NOT here (`gen3_b8_moves_v1`): **Psywave** (its draw runs at the hit) and the **OHKO**
-/// moves (the target's HP at the hit), computed by the caller after the TryHit gates, and
-/// **Bide** (`turn/variable_moves.rs`).
+/// DEFERRED (fail-loud — these need extra RNG or accumulator/OHKO machinery the caller
+/// PANICS on, never silently no-ops): **Psywave** (variable — draws RNG), the OHKO
+/// moves **Fissure / Horn Drill / Guillotine** (accuracy-gated instakill + the level
+/// gate), **Bide** (a 2-turn accumulator). They are NOT in this set → the caller's
+/// fixed-damage fail-loud guard fires.
 pub(crate) fn fixed_damage_amount(
     move_id: &str,
     attacker: &crate::state::MonState,
@@ -1393,23 +1351,26 @@ pub(crate) fn fixed_damage_amount(
 
 /// Whether `move_id` (already `to_id`-normalized) is a FIXED-DAMAGE / FIXED-FORMULA
 /// move — one whose damage BYPASSES `getDamage` (a `damage:` / `damageCallback` move).
-/// This set is the ROUTING gate in `run_move` (and keeps Taunt off these bp-0 rows): a
-/// `true` sends the move to `run_fixed_damage_move`, which PANICS fail-loud on a member it has
-/// no formula for (never a silent `base_power == 0` no-op / desync).
+/// This set is the ROUTING gate in `run_move`: a `true` sends the move to
+/// `run_fixed_damage_move`, which handles the MODELED ones bit-for-bit and PANICS
+/// fail-loud on the DEFERRED ones (never a silent `base_power == 0` no-op / desync).
 ///
-/// The members: `fixed_damage_amount`'s set (Seismic Toss / Night Shade / Sonic Boom / Dragon
-/// Rage / Super Fang, plus the `gen3_move_coverage_batch5_v1` reactive family Counter / Mirror
-/// Coat / Endeavor), and since `gen3_b8_moves_v1` Psywave (its `random(50, 151)` at the hit),
-/// the four OHKO moves (the level-gated accuracy, the target's HP) and Bide (its cast and
-/// release are routed before this gate, `turn/variable_moves.rs`).
+/// It is the UNION of the modeled set (`fixed_damage_amount` — Seismic Toss / Night
+/// Shade / Sonic Boom / Dragon Rage / Super Fang, plus the `gen3_move_coverage_batch5_v1`
+/// reactive family Counter / Mirror Coat / Endeavor) AND the DEFERRED fixed-damage family
+/// (Psywave — variable, draws RNG; the OHKO moves Fissure / Horn Drill / Guillotine —
+/// accuracy-gated instakill + a level gate; Bide — a 2-turn accumulator). Listing the
+/// deferred ones here (not relying on the `base_power == 0` fall-through) makes their
+/// exclusion EXPLICIT + FAIL-LOUD: a real team that carries one PANICS in
+/// `run_fixed_damage_move` instead of quietly desyncing.
 pub(crate) fn is_fixed_damage_move(move_id: &str) -> bool {
     matches!(
         move_id,
+        // Modeled (bit-for-bit):
         "seismictoss" | "nightshade" | "sonicboom" | "dragonrage" | "superfang"
         | "counter" | "mirrorcoat" | "endeavor"
-        // `gen3_b8_moves_v1`: Psywave and the four OHKO moves run in `run_fixed_damage_move`;
-        // Bide's cast and release are routed before it (`turn/variable_moves.rs`).
-        | "psywave" | "fissure" | "horndrill" | "guillotine" | "sheercold" | "bide"
+        // Deferred (fail-loud in run_fixed_damage_move):
+        | "psywave" | "fissure" | "horndrill" | "guillotine" | "bide"
     )
 }
 
@@ -1521,13 +1482,6 @@ pub(crate) fn variable_bp(
                 _ => 120,
             }
         }
-        // SPIT UP (`gen3_b7_moves_v1`; `data/moves.ts` spitup `basePowerCallback`: `layers *
-        // 100`, and `false` with no stockpile). The move's `onTry` (`!!source.volatiles
-        // ['stockpile']`) fails BEFORE BasePower ever reads this — at gen-3 `tryMoveHit`'s
-        // `singleEvent('Try')`, `run_move`'s Snore-site gate — so the 0-layer value is never used
-        // for damage; it returns 100 only so the bp-0 routing (category Status / the bp-0 no-op)
-        // keeps the move on the damaging path where that gate sits.
-        "spitup" => 100 * (user.stockpile.max(1) as u16),
         _ => return None,
     })
 }
@@ -1680,68 +1634,6 @@ impl crate::state::BattleState {
             }
         }
         None
-    }
-
-    /// The ID of the mon's `pokemon.lastMove` as Showdown holds it (`gen3_b5_moves_v1`), for
-    /// SPITE (`target.deductPP(target.lastMove.id, roll)`) and GRUDGE (`source.lastMove`).
-    /// `None` = no lastMove OR a Struggle (the port stores Struggle as `last_move == None`;
-    /// Struggle is in no moveslot, so both readers fail on it exactly as on no lastMove). A
-    /// self-overwriting Mimic / Transform recorded its OWN id (`last_move_used`), which is no
-    /// longer the id in that slot. A typed Hidden Power slot reads as the bare `hiddenpower`
-    /// (Showdown's moveslot id).
-    pub(crate) fn last_move_id(&self, side: usize, slot: usize) -> Option<String> {
-        let m = &self.sides[side].pokemon[slot];
-        let k = m.last_move?;
-        // A lock a CALLED move started (`gen3_b11_moves_v1`) repeats from the virtual slot, and its
-        // repeat's `moveUsed` sets `lastMove` to the called id, which no moveslot holds.
-        let id = if m.last_move_was_self_overwrite {
-            m.last_move_used.clone()?
-        } else {
-            to_id(m.slot_move_id(k)?)
-        };
-        Some(if id.starts_with("hiddenpower") { "hiddenpower".to_string() } else { id })
-    }
-
-    /// The moveslot indices whose (bare) id is `id` — `pokemon.getMoveData(id)` /
-    /// `for (const moveSlot of source.moveSlots) if (moveSlot.id === move.id)`.
-    pub(crate) fn slots_with_move_id(&self, side: usize, slot: usize, id: &str) -> Vec<usize> {
-        self.sides[side].pokemon[slot]
-            .set
-            .moves
-            .iter()
-            .enumerate()
-            .filter(|(_, mv)| {
-                let mid = to_id(mv);
-                let mid = if mid.starts_with("hiddenpower") { "hiddenpower".to_string() } else { mid };
-                mid == id
-            })
-            .map(|(k, _)| k)
-            .collect()
-    }
-
-    /// NIGHTMARE ends with the sleep (`gen3_b5_moves_v1`): every gen-3 sleep cure runs
-    /// `pokemon.cureStatus()` / `clearStatus()` (`sim/pokemon.ts:1678` / `:1757`), which do
-    /// `if (this.status === 'slp' && this.removeVolatile('nightmare')) add('-end', this,
-    /// 'Nightmare', '[silent]')` — RIGHT AFTER the `-curestatus` line. Call this at every site
-    /// that cures a sleep, after its cure line. DRAW-FREE; a no-op without the volatile.
-    pub(crate) fn end_nightmare_on_cure(&mut self, side: usize, slot: usize, dex: &Dex) {
-        if !self.sides[side].pokemon[slot].nightmare {
-            return;
-        }
-        self.sides[side].pokemon[slot].nightmare = false;
-        if self.logging() {
-            let m = self.mon_ref(side, slot, dex);
-            self.log.volatile_end_silent(&m, "Nightmare");
-        }
-    }
-
-    /// The type effectiveness of `attacking` into the battle mon at `(side, slot)`, through its
-    /// CURRENT types (`mon_types`) and the FORESIGHT exception (`gen3_b6_moves_v1`,
-    /// `crate::damage::type_effectiveness`). Every site that reads a live defender's
-    /// effectiveness outside a `DamageContext` goes through here.
-    pub(crate) fn defender_effectiveness(&self, attacking: Type, side: usize, slot: usize, dex: &Dex) -> f64 {
-        let mon = &self.sides[side].pokemon[slot];
-        crate::damage::type_effectiveness(dex, attacking, &mon_types(mon, dex), mon.foresight)
     }
 }
 

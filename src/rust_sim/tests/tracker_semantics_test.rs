@@ -20,8 +20,6 @@
 //! * `gen3_hp_fire_time_target_v1` — the Hidden-Power belief under TRANSFORM (F-M5-1): the target is
 //!   read as it was when the move fired, a transformed user's (copied) Hidden Power is not filed under
 //!   its species, and a transformed opponent's copied moveset rules nothing out.
-//! * `gen3_hp_foresight_v1` — the Hidden-Power belief reads a FORESIGHTED (or Odor-Sleuthed) Ghost
-//!   target without its Normal / Fighting immunity, as the sim resolves the hit.
 
 use std::sync::Arc;
 
@@ -228,14 +226,7 @@ fn a_dragged_mon_is_never_labelled_a_chosen_switch() {
             d[0].iter().filter(|s| s.delta.as_ref().is_some_and(|x| x.opp_dragged)).collect();
         assert!(!dragged.is_empty(), "{name}: the fixture must drag the opponent");
         for s in dragged {
-            // a drag is never their choice; a move they made BEFORE the drag is (D-1,
-            // gen3_intent_label_move_then_switch_v1), and is labelled as that move
-            let (l, x) = (s.label.as_ref().unwrap(), s.delta.as_ref().unwrap());
-            if x.opp_move_before_switch && x.opp_resolved_move_id().is_some() {
-                assert_eq!((l.kind, l.move_id.as_deref()), (KIND_MOVE, x.opp_resolved_move_id()), "{name}");
-            } else {
-                assert_eq!(l.kind, KIND_UNKNOWN, "{name}: a drag is not their choice");
-            }
+            assert_eq!(s.label.as_ref().unwrap().kind, KIND_UNKNOWN, "{name}: a drag is not their choice");
         }
     }
 }
@@ -285,37 +276,6 @@ fn an_encore_override_is_masked() {
     assert_eq!(over[0].label.as_ref().unwrap().kind, KIND_UNKNOWN, "the executed Curse was not their pick");
     // the Encore user's own view: its choice (Encore) was not overridden, and is labelled on p2's side
     assert!(d[1].iter().all(|s| s.delta.as_ref().is_none_or(|x| !x.opp_choice_overridden)));
-}
-
-#[test]
-fn the_move_that_forces_our_switch_is_labelled() {
-    // gen3_intent_label_move_then_switch_v1 (2026-10-26 GIGO audit D-1): Tyranitar's Crunch KOs our Magikarp; the
-    // window that closes on OUR forced switch holds that genuine choice. The old `phase_is_forced_switch` mask
-    // dropped it (every KO turn's attack).
-    let p1 = team(&[set("magikarp", "", "swiftswim", "splash", 5), set("snorlax", "", "immunity", "rest", 100)]);
-    let p2 = team(&[set("tyranitar", "", "sandstream", "crunch", 100), set("snorlax", "", "immunity", "rest", 100)]);
-    let d = play(&p1, &p2, "1,2,3,4", &[(0, "move 1"), (1, "move 1"), (0, "switch 2"), (1, "move 1"), (0, "move 1")]);
-    let forced: Vec<&Arc<SideTrackers>> =
-        d[0].iter().filter(|s| s.delta.as_ref().is_some_and(|x| x.phase_is_forced_switch && x.we_fainted)).collect();
-    assert_eq!(forced.len(), 1, "the fixture must KO our lead and force our switch");
-    let l = forced[0].label.as_ref().unwrap();
-    assert_eq!((l.kind, l.move_id.as_deref()), (KIND_MOVE, Some("crunch")), "the KO move was their choice");
-}
-
-#[test]
-fn a_move_then_their_faint_and_replacement_is_labelled_the_move() {
-    // D-1 (B): Golem's Explosion (Gengar is immune, Golem faints anyway) -> their free replacement, all in one of
-    // our windows. The old rule masked the whole window, so no opponent Explosion was ever a positive example.
-    let p1 = team(&[set("gengar", "", "levitate", "splash", 100), set("snorlax", "", "immunity", "rest", 100)]);
-    let p2 = team(&[set("golem", "", "sturdy", "explosion", 100), set("snorlax", "", "immunity", "rest", 100)]);
-    let d = play(&p1, &p2, "1,2,3,4", &[(0, "move 1"), (1, "move 1"), (1, "switch 2"), (0, "move 1"), (1, "move 1")]);
-    let ex: Vec<&Arc<SideTrackers>> = d[0].iter()
-        .filter(|s| s.delta.as_ref().is_some_and(|x| x.opp_fainted && x.opp_switch_to.is_some()
-                                                    && x.opp_resolved_move_id() == Some("explosion")))
-        .collect();
-    assert_eq!(ex.len(), 1, "the fixture must explode, faint and replace inside one window");
-    let l = ex[0].label.as_ref().unwrap();
-    assert_eq!((l.kind, l.move_id.as_deref(), l.attacker.as_deref()), (KIND_MOVE, Some("explosion"), Some("golem")));
 }
 
 // ------------------------------------------------------------------ the progress clock
@@ -419,50 +379,6 @@ fn a_transformed_opponents_copied_moveset_does_not_rule_out_hidden_power() {
     let d = swampert_vs_smeargle("splash,tackle,growl,leer", &[(0, "move 1"), (1, "move 1"), (0, "move 1"), (1, "move 1")]);
     let last = d[0].last().expect("a p1 decision while Smeargle is transformed");
     assert!(!last.hp.ruled_out.contains("smeargle"), "{:?}", last.hp);
-}
-
-/// p2's level-50 Raticate carries `lead` and Hidden Power FIGHTING (HP IV 31, the rest 30: `getHiddenPower`'s
-/// type sum is 1, `hpTypes[0]`); it uses `lead` on turn 1 and Hidden Power on turn 2 into p1's `target`, which
-/// Splashes. `gen3_hp_foresight_v1`.
-fn foresight_then_hidden_power(lead: &str, target: &str, ability: &str) -> Decisions {
-    let p1 = team(&[set(target, "", ability, "splash", 100), set("snorlax", "", "immunity", "rest", 100)]);
-    let p2 = team(&[set_ivs("raticate", &format!("{lead},hiddenpower"), ",30,30,30,30,30", 50),
-                    set("snorlax", "", "immunity", "rest", 100)]);
-    play(&p1, &p2, "1,2,3,4", &[(0, "move 1"), (1, "move 1"), (0, "move 1"), (1, "move 2"), (0, "move 1"), (1, "move 1")])
-}
-
-fn hp_survivors(v: &[f32; 16]) -> Vec<&'static str> {
-    pokesim::trackers::hp_belief::HP_TYPES.iter().zip(v).filter(|(_, p)| **p != 0.0).map(|(n, _)| *n).collect()
-}
-
-/// `gen3_hp_foresight_v1`: Foresight's volatile lifts a Ghost's Normal / Fighting IMMUNITY (`data/moves.ts`
-/// `foresight.condition.onNegateImmunity`, run by `sim/pokemon.ts` `runImmunity`); the Ghost type then adds 0 to the
-/// type mod (`sim/dex.ts` `getEffectiveness`: an immunity is "handled elsewhere"). So Hidden Power Fighting on a
-/// foresighted Sableye (Ghost / Dark) is 2x, the Dark weakness alone. WRONG on revert: the belief read the Ghost as
-/// immune, so NO type explains a 2x on Ghost / Dark — the observation was dropped as infeasible and Raticate's belief
-/// never formed.
-#[test]
-fn a_hidden_power_into_a_foresighted_ghost_is_read_without_the_ghost_immunity() {
-    let d = foresight_then_hidden_power("foresight", "sableye", "keeneye");
-    let hp = &d[0].last().expect("a p1 decision after the hit").hp;
-    assert_eq!(hp.infeasible, 0, "{hp:?}");
-    let v = hp.state.get("raticate").expect("p1 observed Raticate's Hidden Power");
-    assert_eq!(hp_survivors(v), vec!["fighting"], "the only type 2x on a foresighted Ghost / Dark: {v:?}");
-}
-
-/// The same through ODOR SLEUTH (gen 3: the same `foresight` volatile), into Gengar (Ghost / Poison): the hit is
-/// RESISTED, the Poison resistance alone. (A neutral hit is no evidence at all: the reading promotes a damaging move
-/// only on a `-supereffective` / `-resisted` / `-immune` line.) WRONG on revert: the belief read the Ghost as immune,
-/// so a 0.5x zeroed Fighting, the TRUE type and the leading type of Raticate's usage row, and kept only the Bug / Grass
-/// a 0.5x on an un-sleuthed Gengar allows (Poison too, which Raticate's row has no mass for).
-#[test]
-fn odor_sleuth_lifts_the_ghost_immunity_for_the_hidden_power_belief_too() {
-    let d = foresight_then_hidden_power("odorsleuth", "gengar", "levitate");
-    let hp = &d[0].last().expect("a p1 decision after the hit").hp;
-    assert_eq!(hp.infeasible, 0, "{hp:?}");
-    let v = hp.state.get("raticate").expect("p1 observed Raticate's Hidden Power");
-    assert_eq!(hp_survivors(v), vec!["bug", "fighting", "grass"],
-               "the prior-supported types 0.5x on a sleuthed Ghost / Poison: {v:?}");
 }
 
 /// `gen3_event_record_v2` (E12) on the Rust fold: a faster KO leaves a DENIED(fainted first) row

@@ -13,7 +13,6 @@ from pathlib import Path
 import pytest
 
 from agents.model import compile_cache as CC
-from utils import liveness_fakes as LF
 from utils.paths import src_path
 
 _KEYS = (CC.ENV_ROOT, CC.ENV_INDUCTOR, CC.ENV_TRITON)
@@ -273,10 +272,8 @@ def test_THIS_pytest_process_compiles_into_a_fresh_private_dir():
     assert not os.environ.get("GEN3AI_K3_PROBE_FAIL"), "deliberate failure (the teardown probe)"
     from utils.paths import repo_path
     conf = Path(repo_path("conftest.py")).read_text()
-    # ONE scratch helper: the conftest LOADS src/utils/scratch.py (by path, `_util_module("scratch")`) and has no
-    # copy of its own
-    assert '"src", "utils", f"{name}.py"' in conf and '_util_module("scratch")' in conf
-    assert "def _fs_type" not in conf
+    # ONE scratch helper: the conftest LOADS src/utils/scratch.py (by path) and has no copy of its own
+    assert '"src", "utils", "scratch.py"' in conf and "def _fs_type" not in conf
     assert '".cache", "gen3ai", "tmp"' not in conf, "a second copy of the scratch-root rule"
     assert ('_COMPILE_CACHE_ENV = ("GEN3AI_COMPILE_CACHE_DIR", "TORCHINDUCTOR_CACHE_DIR", '
             '"TRITON_CACHE_DIR")') in conf
@@ -410,18 +407,3 @@ def test_the_benchmark_writes_only_the_explicit_json_path(tmp_path, monkeypatch)
     assert B.main(["run", "--device", "cpu", "--parts", "opponent", "--json", str(out)]) == 0
     assert json.loads(out.read_text())["parts"] == ["opponent"]
     assert sorted(p.name for p in tmp_path.rglob("*") if p.is_file()) == ["r.json"]
-
-
-def test_the_temp_cache_sweep_reads_liveness_from_proc_not_from_kill(tmp_path, monkeypatch):
-    """A zombie creator's cache is swept (``kill`` says alive); a live creator's is spared even when ``kill`` says
-    ESRCH (the sandbox). Each cell fails on a revert to ``os.kill``."""
-    LF.assert_pid_liveness(CC._pid_alive, monkeypatch)
-    live = tmp_path / f"{CC.PRIVATE_PREFIX}{os.getpid()}_x"
-    live.mkdir()
-    with LF.zombie() as z:
-        dead = tmp_path / f"{CC.PYTEST_PREFIX}{z}_x"
-        dead.mkdir()
-        with monkeypatch.context() as m:
-            LF.rig_kill(m, "esrch")
-            removed = CC.sweep_stale_temp_caches(str(tmp_path))
-    assert removed == [str(dead)] and live.is_dir() and not dead.exists(), removed

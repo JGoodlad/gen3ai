@@ -231,7 +231,7 @@ class PointerNativeActionHead(torch.nn.Module):
         FiLM/z_arch modulation) conditions every pointer score (closes G4/G5). Under
         `--policy-readout trunk` (audit F2) the tower is retired and `ctx_vec` is the trunk state
         query's D_MODEL-wide read (`pools.PolicyStateQuery`), with `hidden` = `TRUNK_POINTER_HIDDEN`.
-      * move k: its REQUEST-slot token ⊕ its own op cells `[low,high,crit,pko,p_land,known,sec×7]`
+      * move k: its REQUEST-slot token ⊕ its own op cells `[low,high,crit,pko,p_land,known,sec×10]`
         — the lossless per-action physics route (closes G2).
       * switch j: our-team token j (post-transformer — board-aware) ⊕ its incoming row + CB tail
         ⊕ its OAX attacker row — per-candidate defense AND offense (closes G3).

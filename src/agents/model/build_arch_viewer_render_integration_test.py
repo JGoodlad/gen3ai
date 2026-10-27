@@ -277,7 +277,7 @@ def test_desktop_keeps_the_side_panel_in_flow(page):
     assert p["ctlBtn"] == "none", "the phone controls button leaked onto the desktop"
 
 
-def test_serve_answers_every_route(claimed_port):
+def test_serve_answers_every_route():
     """`--serve` must actually serve — all three routes, not just the cheap one.
 
     This exists because splitting the server out of the generator moved
@@ -289,12 +289,15 @@ def test_serve_answers_every_route(claimed_port):
     this. The generator is a pure function; the server is a separate program that happens to call
     it. Only opening the socket tests the socket.
     """
+    import socket
     import sys
     import time
     import urllib.error
     import urllib.request
 
-    port = claimed_port()                               # CLAIMED for this test, not borrowed and let go
+    with socket.socket() as probe:                      # borrow a free port, then let it go
+        probe.bind(("127.0.0.1", 0))
+        port = probe.getsockname()[1]
 
     env = dict(os.environ, PYTHONPATH=os.path.join(B._REPO, "src"))
     proc = subprocess.Popen(

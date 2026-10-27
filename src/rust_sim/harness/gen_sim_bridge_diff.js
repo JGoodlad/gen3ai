@@ -25,7 +25,7 @@
 //
 // USAGE
 //   node src/rust_sim/harness/gen_sim_bridge_diff.js
-//        [--mode trapping|lockin|randbats|random|pool|ladder]   (default randbats)
+//        [--mode trapping|randbats|random|pool|ladder]   (default randbats)
 //        [--ladder-tier commit|milestone|full]   (`--mode ladder`: the LADDER-USAGE corpus tier)
 //        [--format gen3customgame|gen3ou]         (default gen3customgame)
 //        [--battles N]                            (default 150)
@@ -112,8 +112,8 @@ function parseFlags(argv) {
     else if (a === '--ladder-tier') f.ladderTier = next(); // `--mode ladder`: the corpus tier
     else { console.error(`unknown flag ${a}`); process.exit(2); }
   }
-  if (!['trapping', 'lockin', 'randbats', 'random', 'pool', 'ladder'].includes(f.mode)) {
-    console.error(`--mode must be trapping|lockin|randbats|random|pool|ladder`); process.exit(2);
+  if (!['trapping', 'randbats', 'random', 'pool', 'ladder'].includes(f.mode)) {
+    console.error(`--mode must be trapping|randbats|random|pool|ladder`); process.exit(2);
   }
   if (!ladderCorpus.TIERS.includes(f.ladderTier)) {
     console.error(`--ladder-tier must be ${ladderCorpus.TIERS.join('|')}`); process.exit(2);
@@ -828,71 +828,12 @@ function makeTrappingProvider(rng, trappers) {
   };
 }
 
-// ── The lock-in team provider (`--mode lockin`, `gen3_lockin_cancelled_repeat_v1`) ──────────────
-// Every other mode almost never reaches the OUTRAGE / THRASH / PETAL DANCE lock (no pool, ladder
-// or random team carries the moves often enough), so a lock bug stayed invisible to the byte-diff:
-// the GIGO audit's B-C1 found Rust keeping a lock Showdown ends after a CANCELLED repeat in 11 of
-// 100 targeted games while 80 of 80 pool games were identical. This mode pairs LOCKERS (a lock-in
-// move beside a filler, so a repeat is sometimes the picker's only legal move and sometimes a
-// choice) with DISRUPTORS that cancel or refresh a locked repeat in every way the sim distinguishes:
-//   * full paralysis (Thunder Wave, Stun Spore), sleep (Spore / Sleep Powder / Hypnosis), a
-//     confusion self-hit (Confuse Ray), a flinch (Rock Slide from a faster mon);
-//   * a MISS (Sand Attack / Smokescreen / Flash), a type IMMUNITY (a Ghost vs Thrash), a Protect /
-//     Detect block (gen 4's Protect REFRESHES the lock, `data/mods/gen4/moves.ts` protect.onTryHit),
-//     a Substitute, a drag out (Roar / Whirlwind), Encore / Taunt / Disable / Torment on the locker.
-// Both seatings are played (the locker is p1 or p2), so the request, the error line and the lock's
-// residual are each byte-diffed from both sides.
-const LOCKERS = [
-  { species: 'Tauros', ability: 'Intimidate', moves: ['thrash', 'splash'], gender: 'M' },
-  { species: 'Salamence', ability: 'Intimidate', moves: ['outrage', 'splash'], gender: 'M' },
-  { species: 'Dragonite', ability: 'Inner Focus', moves: ['outrage', 'splash'], gender: 'M' },
-  { species: 'Vileplume', ability: 'Chlorophyll', moves: ['petaldance', 'splash'], gender: 'M' },
-  { species: 'Meganium', ability: 'Overgrow', moves: ['petaldance', 'splash'], gender: 'M' },
-  { species: 'Exploud', ability: 'Soundproof', moves: ['thrash', 'splash'], gender: 'M' },
-  // UPROAR is not the `lockedmove` condition (its own `uproar` volatile, a different duration and no end confusion) but the
-  // same cancelled-repeat surface, so it rides in this mode too, with REST beside it: a Rest under a live Uproar (its own,
-  // once a Disable / Encore frees the choice, or the foe's) fails `[from] Uproar` (`gen3_b5_moves_v1`; this mode's first
-  // Uproar run found the port resting through it).
-  { species: 'Exploud', ability: 'Soundproof', moves: ['uproar', 'rest'], gender: 'M' },
-  { species: 'Snorlax', ability: 'Immunity', moves: ['thrash', 'curse'], gender: 'M' },
-  { species: 'Salamence', ability: 'Intimidate', moves: ['outrage', 'earthquake', 'dragonclaw', 'rockslide'], gender: 'M' },
-];
-const LOCK_DISRUPTORS = [
-  { species: 'Gengar', ability: 'Levitate', moves: ['confuseray', 'thunderwave', 'sandattack', 'protect'], gender: 'M' },
-  { species: 'Breloom', ability: 'Effect Spore', moves: ['spore', 'stunspore', 'protect', 'substitute'], gender: 'M' },
-  { species: 'Skarmory', ability: 'Keen Eye', moves: ['whirlwind', 'sandattack', 'protect', 'drillpeck'], gender: 'M' },
-  { species: 'Aerodactyl', ability: 'Rock Head', moves: ['rockslide', 'headbutt', 'smokescreen', 'detect'], gender: 'M' },
-  { species: 'Misdreavus', ability: 'Levitate', moves: ['confuseray', 'protect', 'thunderwave', 'flash'], gender: 'F' },
-  { species: 'Hypno', ability: 'Insomnia', moves: ['hypnosis', 'protect', 'substitute', 'headbutt'], gender: 'M' },
-  { species: 'Smeargle', ability: 'Own Tempo', moves: ['encore', 'taunt', 'disable', 'torment'], gender: 'M' },
-  { species: 'Vileplume', ability: 'Chlorophyll', moves: ['sleeppowder', 'stunspore', 'protect', 'sludgebomb'], gender: 'M' },
-  { species: 'Blissey', ability: 'Natural Cure', moves: ['thunderwave', 'seismictoss', 'softboiled', 'protect'], gender: 'F' },
-  { species: 'Zapdos', ability: 'Pressure', moves: ['thunderwave', 'thunderbolt', 'protect', 'substitute'], gender: 'N' },
-  { species: 'Snorlax', ability: 'Immunity', moves: ['bodyslam', 'curse', 'splash', 'protect'], gender: 'M' },
-  { species: 'Wobbuffet', ability: 'Shadow Tag', moves: ['counter', 'mirrorcoat', 'encore', 'safeguard'], gender: 'M' },
-];
-function makeLockinProvider(rng) {
-  return function nextPair() {
-    const nLock = 1 + randInt(rng, 3);
-    const nDisr = 2 + randInt(rng, 3);
-    const lockers = ab.sampleDistinct(rng, LOCKERS, nLock).map(mkSet);
-    const disr = ab.sampleDistinct(rng, LOCK_DISRUPTORS, nDisr).map(mkSet);
-    const dedup = (team) => {
-      const seen = new Set();
-      return team.filter((s) => { const id = toId(s.species); if (seen.has(id)) return false; seen.add(id); return true; });
-    };
-    const a = Teams.pack(dedup(lockers)), b = Teams.pack(dedup(disr));
-    return rng() < 0.5 ? { p1: a, p2: b } : { p1: b, p2: a };
-  };
-}
-
 // ── Team pair provider (reuse ab_fuzz.js) ───────────────────────────────────────
 function buildPairProvider(flags, teamRng, genStats) {
   if (flags.mode === 'trapping') {
     const trappers = flags.extraTrappers ? TRAPPERS_CORE.concat(TRAPPERS_EXTRA) : TRAPPERS_CORE;
     return makeTrappingProvider(teamRng, trappers);
   }
-  if (flags.mode === 'lockin') return makeLockinProvider(teamRng);
   let single;
   if (flags.mode === 'randbats') single = ab.makeRandbatsProvider(teamRng, genStats);
   else if (flags.mode === 'pool') single = ab.makePoolProvider(teamRng, genStats);
@@ -1037,10 +978,8 @@ async function main() {
     'the Python side degrades gracefully). Cross-side p1/p2 interleaving is not asserted (scheduler ' +
     'artifact; the diff compares PER-SIDE chunk sequences).');
 
-  // Build the Rust binary ONCE into the isolated target dir. `POKESIM_SIMBRIDGE_PREBUILT=1` skips the build and runs the
-  // binary already at `$POKESIM_SIMBRIDGE_TARGET/selfcheck/sim_bridge` as it is (a regression proof against an OLD build:
-  // copy the old binary there, never rebuild it from the current sources).
-  if (!process.env.POKESIM_SIMBRIDGE_PREBUILT) {
+  // Build the Rust binary ONCE into the isolated target dir.
+  {
     const { spawnSync } = require('child_process');
     const env = { ...process.env, PATH: `${process.env.HOME}/.cargo/bin:${process.env.PATH}`, CARGO_TARGET_DIR: SIMBRIDGE_TARGET };
     const r = spawnSync('cargo', ['build', '--profile', 'selfcheck', '--features', 'emission-selfcheck', '--bin', 'sim_bridge'], { cwd: CRATE, env, stdio: 'inherit' });

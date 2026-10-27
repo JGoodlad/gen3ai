@@ -323,8 +323,7 @@ class TeamTransformer(torch.nn.Module):
     refined extra seats."""
 
     def __init__(self, layout: Dict[str, Any], token_encoding: str = "legacy",
-                 trunk_layers: int = TRANSFORMER_N_LAYERS, trunk_ffn_by_kind: str = "off",
-                 trunk_ffn_dim: int = TRANSFORMER_FFN_DIM):
+                 trunk_layers: int = TRANSFORMER_N_LAYERS, trunk_ffn_by_kind: str = "off"):
         super().__init__()
         # Runtime-only memory/compute knob (NOT a weight or arch param — never enters
         # model_config.json / the version check). When True, the encoder layers are run
@@ -387,17 +386,6 @@ class TeamTransformer(torch.nn.Module):
         if self.trunk_ffn_by_kind == "on":
             for i, layer in enumerate(self.transformer_layers):
                 layer.kind_ffn = build_kind_ffn(i, identity=False)
-        # gen3_trunk_ffn_width_v1 (B-FFNW, `trunk_ffn_width.py`): `trunk_ffn_dim > 256` gives every round (the extra rounds
-        # included) a zero-output WIDTH branch, round i's from its own PRIVATE seed (no global RNG draw), built LAST. 256
-        # builds nothing (byte-identical). Never beside the per-kind experts.
-        from agents.model.trunk_ffn_width import FFN_DIM_BASE, check_ffn_dim, install_branches
-        self.trunk_ffn_dim = check_ffn_dim(trunk_ffn_dim)
-        if self.trunk_ffn_dim != FFN_DIM_BASE:
-            if self.trunk_ffn_by_kind == "on":
-                raise ValueError("trunk_ffn_dim > 256 is refused beside trunk_ffn_by_kind='on' (the per-kind experts "
-                                 "would have to decide whether to copy the width branch; design_n4_capacity_screen.md "
-                                 "§2)")
-            install_branches(self, self.trunk_ffn_dim)
 
     def board_tokens(self, ctx: ExtractorContext, side_extra: Optional[torch.Tensor] = None) -> torch.Tensor:
         """[B, 3, D_MODEL] the static board tokens BEFORE the trunk (OUR SIDE, THEIR SIDE, FIELD), type

@@ -120,7 +120,6 @@ pub mod engine;
 /// build, compiled OUT of `cargo build --release`.
 pub mod emission_check;
 pub mod event;
-pub mod format;
 /// The Rust core's typed event layer (`gen3_core_events_v1`, Rust Core Program M1): typed lines,
 /// the per-side reading projection, `parse`, and the persisted record.
 pub mod core_events;

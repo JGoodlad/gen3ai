@@ -4,12 +4,6 @@ use crate::state::Status;
 use super::*;
 use super::helpers::*;
 
-/// ROLE PLAY's gen-3 fail list (`gen3_b10_moves_v1`): the abilities whose RESOLVED `flags.failroleplay` is
-/// set (`data/mods/gen6/abilities.ts:125`, inherited down to gen 3) — Wonder Guard alone. No gen-3
-/// ability carries `cantsuppress` (the user-side check). Checked against `Dex.mod('gen3')` by
-/// `tests/b10_moves_test.rs` B10-0.
-pub const ROLE_PLAY_FAIL_ABILITIES: [&str; 1] = ["wonderguard"];
-
 impl crate::state::BattleState {
 
     /// Resolve + APPLY a STANDALONE STATUS MOVE (category Status, bp 0, whose PURPOSE
@@ -71,24 +65,6 @@ impl crate::state::BattleState {
         was_choice_locked: bool,
         dex: &Dex,
     ) -> MoveResolution {
-        // --- HELPING HAND (`gen3_b10_moves_v1`, gen3 full parity B10): `target: adjacentAlly`, and a
-        //     singles battle has no ally. The gen-3 `useMoveInner` (data/mods/gen3/scripts.ts:120-172)
-        //     resolves the target with `getRandomTarget`, which returns `null` for `adjacentAlly` in
-        //     singles (sim/battle.ts:2517-2518); `addMove('move', pokemon, movename, `${target}${attrs}`)`
-        //     prints the literal `null`, then `if (!target) { attrLastMove('[notarget]'); add('-notarget',
-        //     pokemon); return false; }`. So: `|move|<u>|Helping Hand|null[|[from] Sleep Talk]|[notarget]`
-        //     + `|-notarget|<u>`, ZERO draws, no `helpinghand` volatile (so no residual duration handler),
-        //     PP spent (1: `pressureTargets` is empty) and `lastMove` recorded (Encore / Disable / Spite /
-        //     Mimic all see Helping Hand — probe `harness/probe_b10_moves.js`). Priority 5 is the dex row's.
-        //     It returns before TryMove, so no snatch / Protect / accuracy step runs. ---
-        if move_id == "helpinghand" {
-            if self.logging() {
-                let user = self.mon_ref(_side, _slot, dex);
-                self.log.move_used_notarget(&user, move_name);
-                self.log.notarget(&user);
-            }
-            return MoveResolution::done(false, false, false);
-        }
         // [EMIT] `|move|<user>|<Name>|<target>` — the status-move ANNOUNCE, emitted for
         // EVERY status move that routes here (setup / recovery / Rest / Spikes / Roar /
         // Thunder Wave / Substitute / Leech Seed / …), at the very top of the status path
@@ -155,22 +131,15 @@ impl crate::state::BattleState {
         //     `[still]`). The fuzz_r25 repro `rms9nh02e_ab_707_4`: a Primeape (Vital Spirit) that
         //     had just Substituted. ---
         let yawn_protect = move_id == "yawn" && self.protect_blocks(foe, foe_slot, false);
-        // MAGIC COAT (`gen3_b6_moves_v1`) bounces a Yawn at TryHit, after Protect and BEFORE
-        // yawn's own `onTryHit` (a `singleEvent` in `spreadMoveHit`, `sim/battle-actions.ts`), so
-        // a coated target's status / sub / immunity never decide the CAST's announce form.
-        let yawn_coat = move_id == "yawn" && !yawn_protect && self.magic_coat_will_bounce(foe, foe_slot, move_id);
         let yawn_statused = move_id == "yawn"
             && !yawn_protect
-            && !yawn_coat
             && self.sides[foe].pokemon[foe_slot].status.is_some();
         let yawn_subbed = move_id == "yawn"
             && !yawn_protect
-            && !yawn_coat
             && !yawn_statused
             && self.sides[foe].pokemon[foe_slot].substitute.is_some();
         let yawn_immune = move_id == "yawn"
             && !yawn_protect
-            && !yawn_coat
             && !yawn_statused
             && !yawn_subbed
             && dex
@@ -186,23 +155,11 @@ impl crate::state::BattleState {
         // settle it. The CAST block and the RESOLVE exemption are opposite by design.
         let yawn_safeguarded = move_id == "yawn"
             && !yawn_protect
-            && !yawn_coat
             && !yawn_statused
             && !yawn_subbed
             && !yawn_immune
             && self.sides[foe].safeguard > 0;
         let yawn_still = yawn_statused || yawn_subbed;
-        // --- SEMI-INVULNERABILITY (`gen3_twoturn_family_v1`): a foe-targeted status move into a
-        //     target mid-Fly / Bounce / Dig / Dive MISSES at gen-3 `tryMoveHit`'s Invulnerability
-        //     event (data/mods/gen3/scripts.ts:300-305), BEFORE every TryHit / onTryHit / accuracy
-        //     check: zero draws, the TARGET-form announce + `[miss]` + `|-miss|` (probed: Thunder
-        //     Wave, Roar, Whirlwind, Taunt, Encore, Disable, Leech Seed, Toxic, Yawn, Mean Look,
-        //     ghost Curse, Memento, Transform, Pain Split, Teeter Dance). Status moves are NOT
-        //     exempt; the field / side / self moves are (`invulnerability_applies`), a non-Ghost
-        //     Curse re-targets to self, and Perish Song checks each mon in its own arm. ---
-        let invuln_miss = !(move_id == "curse" && !curse_ghost)
-            && dex.moves(move_id).map_or(false, |m| invulnerability_applies(&m.target))
-            && self.semi_invulnerable_miss(_side, _slot, foe, foe_slot, move_id);
         if self.logging() {
             let user = self.mon_ref(_side, _slot, dex);
             // Spikes at the cap is a top-level `[still]` (did-nothing) case; a
@@ -217,8 +174,8 @@ impl crate::state::BattleState {
             // A ghost-Curse-into-a-sub is the SAME did-nothing `[still]` case; a Yawn cast into
             // an already-statused OR substituted (non-protected, non-immune) foe is likewise
             // (`yawn_still`, `gen3_yawn_v1`).
-            let still_form = !invuln_miss
-                && ((move_id == "spikes" && self.sides[foe].spikes >= 3) || curse_still || yawn_still);
+            let still_form =
+                (move_id == "spikes" && self.sides[foe].spikes >= 3) || curse_still || yawn_still;
             if still_form {
                 self.log.move_used(&user, move_name, None, false, true);
             } else {
@@ -265,7 +222,7 @@ impl crate::state::BattleState {
         //           port used to model (3) as a pure no-op → under-deducted → `pp:15`);
         //       (4) `this.actions.useMove(stolenId, snatcher)` — the snatcher executes the
         //           stolen move in ITS OWN context (a bare useMove: no accuracy/on_before_move/
-        //           PP/lastMove — but `lastMoveUsed` IS set, by `useMoveInner` — just the effect + the stolen move's NATIVE draws — SwordsDance/
+        //           PP/lastMove, just the effect + the stolen move's NATIVE draws — SwordsDance/
         //           Recover/Substitute draw 0 extra, Rest draws its sleep `random(2,6)`). Its
         //           announce carries the `|[from] Snatch` fold (set below);
         //       (5) `return null` → the FOE's move aborts (does nothing).
@@ -315,10 +272,6 @@ impl crate::state::BattleState {
             //     carry the snatcher's source scope (`gen3_core_nested_move_scope_v1`); the
             //     `-activate` above stays in the victim's (the sim prints it from the victim's
             //     `PrepareHit`, before the nested `useMove`).
-            // The nested `useMove(stolen, snatcher)` sets the SNATCHER's `lastMoveUsed` (gen 3's
-            // `useMoveInner`, data/mods/gen3/scripts.ts:127), as the Magic Coat bounce does: a later
-            // Conversion 2 reads the stolen move (`gen3_bf_called_move_last_used_v1`, pin `bf21b`).
-            self.sides[foe].pokemon[foe_slot].last_move_used = Some(move_id.to_string());
             self.log.set_next_move_from("Snatch");
             self.in_nested_move_scope(foe, |s| {
                 s.run_status_move(
@@ -328,29 +281,6 @@ impl crate::state::BattleState {
                 )
             });
             // (5) return null — the FOE's move does nothing (not landed, not missed).
-            return MoveResolution::done(false, false, false);
-        }
-        if invuln_miss {
-            if self.logging() {
-                let user = self.mon_ref(_side, _slot, dex);
-                let target = self.mon_ref(foe, foe_slot, dex);
-                self.log.attr_last_move_miss();
-                self.log.miss(&user, Some(&target));
-            }
-            return MoveResolution::done(true, false, false);
-        }
-        // --- TELEPORT and FOLLOW ME (`gen3_b10_moves_v1`): both FAIL at gen-3 `tryMoveHit`'s
-        //     `singleEvent('Try')` (data/mods/gen3/scripts.ts:280-282, `return false` with NO line):
-        //       * TELEPORT resolves (gen 7 mod, inherited down to gen 3: data/mods/gen7/moves.ts:1025-1030)
-        //         to `priority: 0, selfSwitch: false, onTry: false` — a trainer battle cannot flee, and
-        //         `singleEvent` returns a non-function handler as its value.
-        //       * FOLLOW ME's `onTry(source) { return this.activePerHalf > 1; }` (data/moves.ts:6049-6051)
-        //         is false in singles, so the gen-3 `followme` slot condition (data/mods/gen3/moves.ts:
-        //         303-319) is never added: no `-singleturn`, no condition, no residual duration handler.
-        //     The self-target announce above is the whole protocol (no `[still]`, no `-fail`), ZERO
-        //     draws, PP and `lastMove` spent (Encore repeats a Follow Me). Neither is snatchable. ---
-        if move_id == "teleport" || move_id == "followme" {
-            debug_assert!(never_miss, "{move_id}: expected the never-miss dex row");
             return MoveResolution::done(false, false, false);
         }
         // --- SLEEP TALK (`gen3_move_coverage_batch5_v1`, the gen-3 `sleeptalk` — probe
@@ -438,7 +368,7 @@ impl crate::state::BattleState {
                 return MoveResolution::done(false, false, false);
             }
             // EXECUTE the picked move — the sim's bare `actions.useMove(picked)`: the
-            // recursive `run_move` under the `use_move_call` transient (skips
+            // recursive `run_move` under the `sleep_talk_call` transient (skips
             // on_before_move / PP / lastMove; the picked move's PP is NEVER consumed;
             // the FULL normal draw chain otherwise — acc/crit/damage/secondary for a
             // damaging pick, the status arms for a status pick — probed: Body Slam ran
@@ -447,188 +377,14 @@ impl crate::state::BattleState {
             // byte-exact `|[from] Sleep Talk` fold. The called resolution PROPAGATES
             // (a landed pick fires the caller's in-tryMoveHit Update; a called Roar's
             // drag rides `force_switch_foe`).
-            //
-            // THE SHARED CALLING PATH (`gen3_b11_moves_v1`, `turn/callers.rs`): Sleep Talk's callee
-            // runs from its own slot `k`. `call_move` also sets `lastMoveUsed` to the callee
-            // (`useMoveInner`, `data/mods/gen3/scripts.ts:132`), which Conversion 2 reads.
-            return self.call_move(_side, _slot, k, "Sleep Talk", will_act, foe_will_move, dex);
-        }
-
-        // --- THE B11 MOVE-CALLERS AND SKETCH (`gen3_b11_moves_v1`, `turn/callers.rs`): Metronome,
-        //     Mirror Move, Assist, Nature Power and Sketch, after the announce, the Snatch
-        //     interception (none is snatchable) and Sketch's Invulnerability miss. ---
-        if let Some(res) = self.run_b11_move(_side, _slot, foe, foe_slot, move_id, will_act, foe_will_move, dex) {
-            return res;
-        }
-
-        // ═══════════════════ GEN3 FULL PARITY B7 (`gen3_b7_moves_v1`) ═══════════════════
-        // Stockpile, Swallow, Mud Sport, Water Sport, Mist, Lock-On, Mind Reader (Spit Up is a
-        // damaging move: `run_move`). The settled spec, every draw and line, is
-        // `harness/probe_b7_moves.js`'s header; the live differential is
-        // `tests/b7_moves_golden_test.rs`. All seven reach here after the generic announce, the
-        // Snatch interception (Stockpile / Swallow / Mist are `snatch`-flagged) and, for the two
-        // foe-targeted ones, the Invulnerability miss (`invuln_miss`, Lock-On-aware).
-
-        // --- STOCKPILE (`data/moves.ts` stockpile + the gen-3 condition `data/mods/gen3/moves.ts`:
-        //     no Def / SpD boosts): ZERO draws. `onTry` fails at 3 layers — gen-3 `tryMoveHit`'s
-        //     `singleEvent('Try')` false adds NO line (the bare announce). Else `addVolatile`:
-        //     `onStart` layers = 1 / `onRestart` layers++, `|-start|<user>|stockpile<n>`. ---
-        if move_id == "stockpile" {
-            let n = self.sides[_side].pokemon[_slot].stockpile;
-            if n >= 3 {
-                return MoveResolution::done(false, false, false);
-            }
-            self.sides[_side].pokemon[_slot].stockpile = n + 1;
-            if self.logging() {
-                let user = self.mon_ref(_side, _slot, dex);
-                self.log.volatile_start(&user, &format!("stockpile{}", n + 1));
-            }
-            return MoveResolution::done(false, false, false);
-        }
-
-        // --- SWALLOW (the resolved gen-3 move: `onTry` from `data/mods/gen4/moves.ts` —
-        //     `return !!source.volatiles['stockpile']`, with no Snatch exemption, so a snatcher
-        //     needs its OWN stockpile — and `onHit` from `data/mods/gen7/moves.ts`): ZERO draws.
-        //     No stockpile → the bare announce. Else `this.heal(this.modify(maxhp, [0.25, 0.5,
-        //     1][layers - 1]))` → `|-heal|<user>|<HP>` (no `[from]`), or at full HP `this.heal`
-        //     is false → `|-fail|<user>|heal`; either way then `removeVolatile('stockpile')` →
-        //     `|-end|<user>|Stockpile`. ---
-        if move_id == "swallow" {
-            let layers = self.sides[_side].pokemon[_slot].stockpile;
-            if layers == 0 {
-                return MoveResolution::done(false, false, false);
-            }
-            let maxhp = self.sides[_side].pokemon[_slot].maxhp as u64;
-            // `battle.modify(maxhp, 0.25 | 0.5 | 1)`: modifier tr(x·4096), +2047 rounding.
-            let modifier: u64 = [1024, 2048, 4096][(layers.min(3) - 1) as usize];
-            let amount = ((maxhp * modifier + 2047) / 4096) as u16;
-            let healed = self.apply_heal(_side, _slot, amount);
-            if self.logging() {
-                let user = self.mon_ref(_side, _slot, dex);
-                if healed {
-                    let hp = self.hp_status(_side, _slot);
-                    self.log.heal(&user, &hp, None);
-                } else {
-                    self.log.fail(&user, Some("heal"), false);
-                }
-            }
-            self.sides[_side].pokemon[_slot].stockpile = 0;
-            if self.logging() {
-                let user = self.mon_ref(_side, _slot, dex);
-                self.log.volatile_end(&user, "Stockpile");
-            }
-            return MoveResolution::done(false, false, false);
-        }
-
-        // --- MUD SPORT / WATER SPORT (`target: all`; the gen-5 mod's `volatileStatus` form on the
-        //     USER, `data/mods/gen5/moves.ts`, under the gen-4 mod's condition): ZERO draws. Already
-        //     held → `addVolatile` false (no `onRestart`) → the `[still]` retro-edit + `|-fail|
-        //     <user>`. Else `|-start|<user>|Mud Sport` / `|-start|<user>|move: Water Sport` (the two
-        //     `onStart` strings differ). The halving is `sport_bp_fold`, the tie draw
-        //     `base_power_sport_shuffle`. ---
-        if move_id == "mudsport" || move_id == "watersport" {
-            let mud = move_id == "mudsport";
-            let held = if mud {
-                self.sides[_side].pokemon[_slot].mud_sport
-            } else {
-                self.sides[_side].pokemon[_slot].water_sport
-            };
-            if held {
-                if self.logging() {
-                    self.log.attr_last_move_still();
-                    let user = self.mon_ref(_side, _slot, dex);
-                    self.log.fail(&user, None, false);
-                }
-                return MoveResolution::done(false, false, false);
-            }
-            if mud {
-                self.sides[_side].pokemon[_slot].mud_sport = true;
-            } else {
-                self.sides[_side].pokemon[_slot].water_sport = true;
-            }
-            if self.logging() {
-                let user = self.mon_ref(_side, _slot, dex);
-                self.log.volatile_start(&user, if mud { "Mud Sport" } else { "move: Water Sport" });
-            }
-            return MoveResolution::done(false, false, false);
-        }
-
-        // --- MIST (`data/moves.ts` mist, `target: allySide`, `snatch`): ZERO draws. Already up →
-        //     `addSideCondition` false → the `[still]` retro-edit + `|-fail|<user>`. Else 5 turns,
-        //     `|-sidestart|<side>|Mist`. The block is `apply_secondary_boost` / Intimidate, the
-        //     expiry the order-3 side residual. ---
-        if move_id == "mist" {
-            if self.sides[_side].mist > 0 {
-                if self.logging() {
-                    self.log.attr_last_move_still();
-                    let user = self.mon_ref(_side, _slot, dex);
-                    self.log.fail(&user, None, false);
-                }
-                return MoveResolution::done(false, false, false);
-            }
-            self.sides[_side].mist = 5;
-            self.sides[_side].stamp_side_cond(crate::state::SIDE_COND_MIST);
-            if self.logging() {
-                let side_ref = crate::protocol::ProtocolBuilder::side_ref(_side, &self.sides[_side].name);
-                self.log.sidestart(&side_ref, "Mist");
-            }
-            return MoveResolution::done(false, false, false);
-        }
-
-        // --- LOCK-ON / MIND READER (`data/moves.ts` lockon / mindreader with the gen-3 mod's
-        //     `accuracy: 100` and the gen-4 mod's `noCopy: false` condition; `flags: protect,
-        //     mirror`, no `bypasssub`). In gen-3 `tryMoveHit` order: the Invulnerability miss (the
-        //     generic `invuln_miss` above: a mid-Fly / Dig target is missed with zero draws), the
-        //     accuracy roll (drawn — unless the user already holds a lock on this mon, whose
-        //     `onSourceAccuracy` returns true), then TryHit: Protect (`-activate|<t>|Protect`,
-        //     priority 3) before the move's own `onTryHit` (`source.volatiles['lockon']` → fail),
-        //     then the Substitute's `onTryPrimaryHit` (a status move: `-fail`); each failure is the
-        //     `[still]` retro-edit + `|-fail|<user>`. Success: `source.addVolatile('lockon',
-        //     target)` (duration 2) and `|-activate|<user>|move: Lock-On|[of] <target>` (`move:
-        //     Mind Reader` for Mind Reader). ---
-        if move_id == "lockon" || move_id == "mindreader" {
-            let acc_hit = self.roll_accuracy(_side, _slot, foe, foe_slot, accuracy, never_miss, move_type, dex);
-            if !acc_hit {
-                if self.logging() {
-                    let user = self.mon_ref(_side, _slot, dex);
-                    let target = self.mon_ref(foe, foe_slot, dex);
-                    self.log.attr_last_move_miss();
-                    self.log.miss(&user, Some(&target));
-                }
-                return MoveResolution::done(true, false, false);
-            }
-            if self.protect_blocks(foe, foe_slot, false) {
-                if self.logging() {
-                    let target = self.mon_ref(foe, foe_slot, dex);
-                    self.log.activate(&target, "Protect", None);
-                }
-                return MoveResolution::done(false, false, false);
-            }
-            // `gotAttacked` (`gen3_b11_moves_v1`): the move's own `onTryHit` (an existing lock) fails
-            // at TryHit, before `moveHit`; the Substitute fails inside it.
-            if self.sides[_side].pokemon[_slot].lock_on.is_none() {
-                self.note_attacked((foe, foe_slot), (_side, _slot), move_id);
-            }
-            if self.sides[_side].pokemon[_slot].lock_on.is_some()
-                || self.sides[foe].pokemon[foe_slot].substitute.is_some()
-            {
-                if self.logging() {
-                    self.log.attr_last_move_still();
-                    let user = self.mon_ref(_side, _slot, dex);
-                    self.log.fail(&user, None, false);
-                }
-                return MoveResolution::done(false, false, false);
-            }
-            let target_uid = self.sides[foe].pokemon[foe_slot].uid;
-            self.sides[_side].pokemon[_slot].lock_on =
-                Some(crate::state::LockOn { target_side: foe, target_uid, duration: 2 });
-            if self.logging() {
-                let user = self.mon_ref(_side, _slot, dex);
-                let target = self.mon_ref(foe, foe_slot, dex);
-                let effect = if move_id == "lockon" { "move: Lock-On" } else { "move: Mind Reader" };
-                self.log.activate(&user, effect, Some(&format!("[of] {target}")));
-            }
-            return MoveResolution::done(false, false, false);
+            self.log.set_next_move_from("Sleep Talk");
+            self.sleep_talk_call = true;
+            return self.run_move(
+                MoveAction { side: _side, slot: _slot, move_index: k, struggle: false },
+                will_act,
+                foe_will_move,
+                dex,
+            );
         }
 
         // --- PURE SELF-BOOST SETUP MOVE (Swords Dance / Dragon Dance / Calm Mind /
@@ -854,7 +610,6 @@ impl crate::state::BattleState {
                 }
                 return MoveResolution::done(false, false, false);
             }
-            self.note_attacked((foe, foe_slot), (_side, _slot), move_id); // `gotAttacked` (`gen3_b11_moves_v1`)
             // (3) ALREADY-ENCORED — addVolatile returns false BEFORE the durationCallback:
             //     the accuracy draw was the ONLY draw; `[still]` + `-fail|<user>`; the
             //     existing volatile continues UNCHANGED (EN6).
@@ -930,143 +685,6 @@ impl crate::state::BattleState {
             return MoveResolution::done(false, false, false);
         }
 
-        // ═══════════════════ GEN3 FULL PARITY B5 (`gen3_b5_moves_v1`) ═══════════════════
-        // Spite, Grudge, Nightmare, Ingrain (Snore is a damaging move: `run_move`). The settled
-        // spec, with every draw and line, is `harness/probe_b5_moves.js`'s header; the live
-        // differential is `tests/b5_moves_golden_test.rs`.
-
-        // --- SPITE (`data/mods/gen3/moves.ts` spite; accuracy 100, `flags: protect, mirror,
-        //     bypasssub`): [1] the accuracy `randomChance(100,100)` (drawn, a miss is
-        //     reachable through evasion), [2] Protect blocks at TryHit (no further draw), the
-        //     Substitute does NOT (bypasssub), [3] `onHit`: `const roll = this.random(2, 6)`
-        //     — DRAWN BEFORE the checks, so a Spite that then fails still consumed it — then
-        //     `if (target.lastMove && target.deductPP(target.lastMove.id, roll))` →
-        //     `|-activate|<target>|move: Spite|<lastMove id>|<roll>`, else `return false` →
-        //     the `[still]` retro-edit + `|-fail|<user>`. `deductPP` (`sim/pokemon.ts:895`)
-        //     returns 0 — so Spite fails — when the target has no lastMove, when it was
-        //     Struggle (in no slot), when the id is in no slot (a self-overwriting Mimic), or
-        //     when that slot is ALREADY at 0 PP; otherwise it removes `min(roll, pp)` and the
-        //     line still prints the ROLL. No Pressure on this deduction (Pressure is a
-        //     `DeductPP` on the MOVE USER's own PP). The lastMove is the move the target
-        //     last ran through `runMove` (Sleep Talk, not the move it called; an Encored or
-        //     Choice-locked move like any other). ---
-        if move_id == "spite" {
-            if !never_miss {
-                let acc_hit = self.roll_accuracy(_side, _slot, foe, foe_slot, accuracy, never_miss, move_type, dex);
-                if !acc_hit {
-                    if self.logging() {
-                        let user = self.mon_ref(_side, _slot, dex);
-                        let target = self.mon_ref(foe, foe_slot, dex);
-                        self.log.attr_last_move_miss();
-                        self.log.miss(&user, Some(&target));
-                    }
-                    return MoveResolution::done(true, false, false);
-                }
-            }
-            if self.protect_blocks(foe, foe_slot, false) {
-                if self.logging() {
-                    let target = self.mon_ref(foe, foe_slot, dex);
-                    self.log.activate(&target, "Protect", None);
-                }
-                return MoveResolution::done(false, false, false);
-            }
-            self.note_attacked((foe, foe_slot), (_side, _slot), move_id); // `gotAttacked` (`gen3_b11_moves_v1`)
-            let roll = self.prng.random_range(2, 6);
-            let hit = self.last_move_id(foe, foe_slot).and_then(|id| {
-                let k = *self.slots_with_move_id(foe, foe_slot, &id).first()?;
-                (self.sides[foe].pokemon[foe_slot].move_pp[k] > 0).then_some((id, k))
-            });
-            match hit {
-                Some((id, k)) => {
-                    self.sides[foe].pokemon[foe_slot].deduct_pp(k, roll as u16);
-                    if self.logging() {
-                        let target = self.mon_ref(foe, foe_slot, dex);
-                        self.log.activate_spite(&target, &id, roll);
-                    }
-                }
-                None => {
-                    if self.logging() {
-                        self.log.attr_last_move_still();
-                        let user = self.mon_ref(_side, _slot, dex);
-                        self.log.fail(&user, None, false);
-                    }
-                }
-            }
-            return MoveResolution::done(false, false, false);
-        }
-
-        // --- GRUDGE (`data/moves.ts` grudge, untouched by the gen-3/4 mods; `accuracy: true`,
-        //     `target: self`): ZERO draws. `volatileStatus: 'grudge'` → `|-singlemove|<user>|
-        //     Grudge`. A re-cast always succeeds: the holder's own `onBeforeMove` (priority
-        //     100, in `run_move`) removed the old volatile first. The `onFaint` PP wipe runs in
-        //     `process_faints`. ---
-        if move_id == "grudge" {
-            self.sides[_side].pokemon[_slot].grudge = true;
-            if self.logging() {
-                let user = self.mon_ref(_side, _slot, dex);
-                self.log.singlemove(&user, "Grudge");
-            }
-            return MoveResolution::done(false, false, false);
-        }
-
-        // --- NIGHTMARE (`data/mods/gen3/moves.ts` nightmare: `accuracy: true`; the condition
-        //     from `data/mods/gen4/moves.ts`): ZERO draws. TryHit order: Protect
-        //     (`-activate|<t>|Protect`) > the Substitute (no `bypasssub`: `onTryPrimaryHit` →
-        //     `[still]` + `-fail|<user>`) > `addVolatile` (already nightmared → false) >
-        //     `onStart` (`if (pokemon.status !== 'slp') return false`) — each failure the
-        //     `[still]` retro-edit + `|-fail|<user>`. Success: `|-start|<target>|Nightmare`.
-        //     The residual chip is `run_residuals` (order 10 subOrder 7); every sleep cure
-        //     ends it (`end_nightmare_on_cure`). ---
-        if move_id == "nightmare" {
-            if self.protect_blocks(foe, foe_slot, false) {
-                if self.logging() {
-                    let target = self.mon_ref(foe, foe_slot, dex);
-                    self.log.activate(&target, "Protect", None);
-                }
-                return MoveResolution::done(false, false, false);
-            }
-            self.note_attacked((foe, foe_slot), (_side, _slot), move_id); // `gotAttacked` (`gen3_b11_moves_v1`)
-            let t = &self.sides[foe].pokemon[foe_slot];
-            let fails = t.substitute.is_some() || t.nightmare || !matches!(t.status, Some(Status::Sleep(_)));
-            if fails {
-                if self.logging() {
-                    self.log.attr_last_move_still();
-                    let user = self.mon_ref(_side, _slot, dex);
-                    self.log.fail(&user, None, false);
-                }
-                return MoveResolution::done(false, false, false);
-            }
-            self.sides[foe].pokemon[foe_slot].nightmare = true;
-            if self.logging() {
-                let target = self.mon_ref(foe, foe_slot, dex);
-                self.log.volatile_start(&target, "Nightmare");
-            }
-            return MoveResolution::done(false, false, false);
-        }
-
-        // --- INGRAIN (base `data/moves.ts` ingrain, the gen-4 mod changes nothing gen 3 reads;
-        //     `accuracy: true`, `target: self`, `flags: snatch`): ZERO draws. Already rooted →
-        //     `addVolatile` false → the `[still]` retro-edit + `|-fail|<user>`; else
-        //     `|-start|<user>|move: Ingrain`. Snatch steals it through the generic interception
-        //     above. The heal is the order-10 subOrder-1 residual; the trap is `is_trapped`;
-        //     the Roar / Whirlwind block is the phaze arm's DragOut gate. ---
-        if move_id == "ingrain" {
-            if self.sides[_side].pokemon[_slot].ingrain {
-                if self.logging() {
-                    self.log.attr_last_move_still();
-                    let user = self.mon_ref(_side, _slot, dex);
-                    self.log.fail(&user, None, false);
-                }
-                return MoveResolution::done(false, false, false);
-            }
-            self.sides[_side].pokemon[_slot].ingrain = true;
-            if self.logging() {
-                let user = self.mon_ref(_side, _slot, dex);
-                self.log.volatile_start(&user, "move: Ingrain");
-            }
-            return MoveResolution::done(false, false, false);
-        }
-
         // --- PERISH SONG — a field-wide (`target: all`) never-miss sound move; the
         //     cast is COMPLETELY DRAW-FREE in every branch (P1-P5: cast / all-counted
         //     re-cast / immune re-cast all match the splash-control seed trajectory).
@@ -1089,19 +707,6 @@ impl crate::state::BattleState {
                 let a = self.sides[s].active;
                 if self.sides[s].pokemon[a].fainted {
                     continue; // getAllActive excludes a fainted mon
-                }
-                // SEMI-INVULNERABLE (`gen3_twoturn_family_v1`): the resolved gen-3
-                // `perishsong.onHitField` runs `runEvent('Invulnerability', pokemon)` per active
-                // FIRST — a mon mid-Fly / Bounce / Dig / Dive gets `|-miss|<user>|<mon>` (no
-                // `[miss]` on the announce), counts as a `result`, and is NOT counted (probed).
-                if self.semi_invulnerable_miss(_side, _slot, s, a, "perishsong") {
-                    any_result = true;
-                    if self.logging() {
-                        let u = self.mon_ref(_side, _slot, dex);
-                        let m = self.mon_ref(s, a, dex);
-                        self.log.miss(&u, Some(&m));
-                    }
-                    continue;
                 }
                 let blocks_sound = dex
                     .ability(&to_id(&self.sides[s].pokemon[a].ability))
@@ -1172,14 +777,6 @@ impl crate::state::BattleState {
                 }
                 return MoveResolution::done(false, false, false);
             }
-            // (TryHit) MAGIC COAT (`gen3_b6_moves_v1`): priority 2, after Protect's 3.
-            if self.magic_coat_bounce(
-                _side, _slot, foe, foe_slot, accuracy, never_miss, move_type, move_id, move_name,
-                targets_self, status_inflicted, will_act, dex,
-            ) {
-                return MoveResolution::done(false, false, false);
-            }
-            self.note_attacked((foe, foe_slot), (_side, _slot), move_id); // `gotAttacked` (`gen3_b11_moves_v1`)
             // (2) SUBSTITUTE blocks (no bypasssub): `[still]` + `-fail|<user>`, draw-free.
             if self.sides[foe].pokemon[foe_slot].substitute.is_some() {
                 if self.logging() {
@@ -1288,7 +885,6 @@ impl crate::state::BattleState {
                 }
                 return MoveResolution::done(false, false, false);
             }
-            self.note_attacked((foe, foe_slot), (_side, _slot), move_id); // `gotAttacked` (`gen3_b11_moves_v1`)
             if self.sides[foe].pokemon[foe_slot].substitute.is_some() {
                 if self.logging() {
                     self.log.attr_last_move_still();
@@ -1337,7 +933,6 @@ impl crate::state::BattleState {
                 }
                 return MoveResolution::done(false, false, false);
             }
-            self.note_attacked((foe, foe_slot), (_side, _slot), move_id); // `gotAttacked` (`gen3_b11_moves_v1`)
             let fail = {
                 // `source.transformed` (gen4 `mimic.onHit`'s FIRST clause, `gen3_transform_v1`):
                 // a TRANSFORMED mimicker fails draw-free. Reachable now that Transform is
@@ -1517,8 +1112,6 @@ impl crate::state::BattleState {
         //     revert always goes back to the mon's ORIGINAL identity. ---
         if move_id == "transform" {
             debug_assert!(never_miss, "transform expected gen-3 accuracy true (never-miss)");
-            // No `protect` flag, `bypasssub`: every fail is `transformInto`'s, inside `moveHit`.
-            self.note_attacked((foe, foe_slot), (_side, _slot), move_id); // `gotAttacked` (`gen3_b11_moves_v1`)
             let target_fainted = self.sides[foe].pokemon[foe_slot].fainted
                 || self.sides[foe].pokemon[foe_slot].hp == 0;
             if target_fainted || self.sides[foe].pokemon[foe_slot].transformed() {
@@ -1707,7 +1300,6 @@ impl crate::state::BattleState {
                 }
                 return MoveResolution::done(false, false, false);
             }
-            self.note_attacked((foe, foe_slot), (_side, _slot), move_id); // `gotAttacked` (`gen3_b11_moves_v1`)
             if self.sides[foe].pokemon[foe_slot].substitute.is_some() {
                 if self.logging() {
                     self.log.attr_last_move_still();
@@ -1750,7 +1342,6 @@ impl crate::state::BattleState {
         //     Dance convention). An all-zero copy is a SUCCESS, not a fail. ---
         if move_id == "psychup" {
             debug_assert!(never_miss, "psychup expected gen-3 accuracy true (never-miss)");
-            self.note_attacked((foe, foe_slot), (_side, _slot), move_id); // `gotAttacked` (`gen3_b11_moves_v1`)
             let copied = self.sides[foe].pokemon[foe_slot].boosts;
             self.sides[_side].pokemon[_slot].boosts = copied;
             // [EMIT] `|-copyboost|<user>|<target>|[from] move: Psych Up`.
@@ -1900,7 +1491,6 @@ impl crate::state::BattleState {
                 }
                 return MoveResolution::done(false, false, false);
             }
-            self.note_attacked((foe, foe_slot), (_side, _slot), move_id); // `gotAttacked` (`gen3_b11_moves_v1`)
             // (2c) `canSwitch(foe.side)` — THE GATE THAT PRECEDES EVERYTHING BELOW
             //      (`gen3_phaze_canswitch_before_dragout_v1`). The sim checks the foe's bench
             //      FIRST, in TWO places, and BOTH precede `runEvent('DragOut')`:
@@ -1934,7 +1524,7 @@ impl crate::state::BattleState {
                     self.log.fail(&caster, None, false);
                 }
                 return MoveResolution {
-                    missed: false, crit: false, landed: false, force_switch_foe: None, aborted: false, nopp: false, update_done: false,
+                    missed: false, crit: false, landed: false, force_switch_foe: None, aborted: false,
                 };
             }
             // (2d) SUCTION CUPS (`gen3_ability_batch2_v1`, `suctioncups.onDragOut`) — reached
@@ -1957,25 +1547,12 @@ impl crate::state::BattleState {
                 }
                 return MoveResolution::done(false, false, false);
             }
-            // (2e) INGRAIN (`gen3_b5_moves_v1`, the `ingrain` condition's `onDragOut`:
-            //      `this.add('-activate', pokemon, 'move: Ingrain'); return null;`) — the same
-            //      DragOut event, so the same shape as Suction Cups: no `forceSwitchFlag`, NO
-            //      `sample` draw, no `-fail`. Suction Cups (`onDragOutPriority: 1`) runs FIRST
-            //      and stops the event, so a rooted Suction Cups holder shows only the ability
-            //      line (probe `harness/probe_b5_moves.js`, its Ingrain + Suction Cups board).
-            if self.sides[foe].pokemon[foe_slot].ingrain {
-                if self.logging() {
-                    let target = self.mon_ref(foe, foe_slot, dex);
-                    self.log.activate(&target, "move: Ingrain", None);
-                }
-                return MoveResolution::done(false, false, false);
-            }
             // (3) The foe has an eligible bench mon (2c) and was not DragOut-blocked (2d) →
             //     signal the pending drag. The `|drag|` line is emitted later at the runAction
             //     tail (Phase 1's `drag_in`), which also draws the `sample`. The no-bench FAIL
             //     is handled at (2c) above — it must precede the DragOut gate.
             return MoveResolution {
-                missed: false, crit: false, landed: false, force_switch_foe: Some(foe), aborted: false, nopp: false, update_done: false,
+                missed: false, crit: false, landed: false, force_switch_foe: Some(foe), aborted: false,
             };
         }
 
@@ -2029,7 +1606,6 @@ impl crate::state::BattleState {
                 }
                 return MoveResolution::done(false, false, false);
             }
-            self.note_attacked((foe, foe_slot), (_side, _slot), move_id); // `gotAttacked` (`gen3_b11_moves_v1`)
             // (3) APPLY the taunt volatile (duration 2), OR fail if already taunted (DRAW-FREE).
             if self.sides[foe].pokemon[foe_slot].taunt.is_none() {
                 self.sides[foe].pokemon[foe_slot].taunt = Some(TAUNT_DURATION);
@@ -2048,85 +1624,6 @@ impl crate::state::BattleState {
                 let user = self.mon_ref(_side, _slot, dex);
                 self.log.attr_last_move_still();
                 self.log.fail(&user, None, false);
-            }
-            return MoveResolution::done(false, false, false);
-        }
-
-        // --- ROLE PLAY (`gen3_b10_moves_v1`, gen3 full parity B10): the USER copies the target's
-        //     ability. Base `data/moves.ts:15325-15346` (no gen-3/4 override): accuracy `true` (never
-        //     misses, ZERO draws on every path), flags `bypasssub` and NO `protect` (Protect does NOT
-        //     block it, a Substitute does not either — probed). A semi-invulnerable target already
-        //     missed above (gen-3 `tryMoveHit`'s Invulnerability, the generic `invuln_miss`).
-        //       * `onTryHit`: fails if the two ability IDS are equal or the TARGET's ability has
-        //         `failroleplay` (gen 3: Wonder Guard alone, [`ROLE_PLAY_FAIL_ABILITIES`]) or the
-        //         user's has `cantsuppress` (none in gen 3): the `[still]` retro-edit +
-        //         `|-fail|<user>` (data/mods/gen3/scripts.ts tryMoveHit's TryHit branch).
-        //       * `onHit` → `source.setAbility(target.ability, target)` (sim/pokemon.ts:1908-1947):
-        //         `singleEvent('End', oldAbility)` FIRST — the same outgoing-ability End Skill Swap runs
-        //         ([`Self::run_outgoing_ability_end`]: an armed Flash Fire prints its silent `-end`, a
-        //         Cloud Nine / Air Lock runs `eachEvent('WeatherChange')`) — THEN
-        //         `|-ability|<user>|<New>|<Old>|[from] move: Role Play|[of] <target>`; and NO `Start`
-        //         (`this.battle.gen > 3` gate, sim/pokemon.ts:1941), so a copied Intimidate / Drizzle /
-        //         Trace does nothing at once. The new ability is live at once (Truant's `truantTurn` is
-        //         the user's own field, toggled by the copied ability's residual; a copied Air Lock
-        //         suppresses weather immediately; a copied STATUS-IMMUNE ability cures the user's
-        //         status at the next Update, `status_immune_on_update`).
-        //       * A copied OWN TEMPO on a confused user / OBLIVIOUS on an infatuated user cures it at
-        //         the next Update (`-activate|<u>|ability: Own Tempo` + `-end|<u>|confusion`, probed):
-        //         `volatile_immune_on_update` (`gen3_bf_volatile_immune_onupdate_v1`, pins bf12c / bf13b).
-        //     The copy is reverted at switch-out like Skill Swap's (`execute_switch` restores
-        //     `set.ability`). Probe `harness/probe_b10_moves.js`. ---
-        if move_id == "roleplay" {
-            debug_assert!(never_miss, "roleplay: expected the never-miss dex row");
-            let user_ab = to_id(&self.sides[_side].pokemon[_slot].ability);
-            let foe_ab = to_id(&self.sides[foe].pokemon[foe_slot].ability);
-            if user_ab == foe_ab || ROLE_PLAY_FAIL_ABILITIES.contains(&foe_ab.as_str()) {
-                if self.logging() {
-                    let user = self.mon_ref(_side, _slot, dex);
-                    self.log.attr_last_move_still();
-                    self.log.fail(&user, None, false);
-                }
-                return MoveResolution::done(false, false, false);
-            }
-            let name_of = |id: &str, raw: &str| dex.ability(id).map(|a| a.name.clone()).unwrap_or_else(|| raw.to_string());
-            let old_name = name_of(&user_ab, &self.sides[_side].pokemon[_slot].ability);
-            let new_name = name_of(&foe_ab, &self.sides[foe].pokemon[foe_slot].ability);
-            // `singleEvent('End', oldAbility)` precedes the `-ability` line.
-            self.run_outgoing_ability_end(_side, _slot, dex);
-            if self.logging() {
-                let user = self.mon_ref(_side, _slot, dex);
-                let target = self.mon_ref(foe, foe_slot, dex);
-                self.log.ability_from_move_of(&user, &new_name, &old_name, move_name, &target);
-            }
-            self.sides[_side].pokemon[_slot].ability = self.sides[foe].pokemon[foe_slot].ability.clone();
-            return MoveResolution::done(false, false, false);
-        }
-
-        // --- CAMOUFLAGE (`gen3_b10_moves_v1`): the resolved gen-3 `onHit` is the gen-4 mod's
-        //     (data/mods/gen4/moves.ts:168-174, the link-battle terrain): `if (target.hasType('Normal')
-        //     || !target.setType('Normal')) return false; this.add('-start', target, 'typechange',
-        //     'Normal');`. `setType` cannot fail in gen 3 (sim/pokemon.ts:2109-2128), REPLACES the
-        //     type array and sets `knownType = true` — Conversion's `types_override` shape, reverted at
-        //     switch-out (and to the base copy under Transform). `hasType` reads the CURRENT types, so
-        //     a Color-Changed or Conversion-ed Normal regains Normal and a Normal / Flying fails. Never
-        //     misses: ZERO draws. Fail: the `[still]` retro-edit + `|-fail|<user>` (after a Sleep-Talk
-        //     or Snatch `[from]` fold: `|move|<u>|Camouflage||[from] Snatch|[still]`). Snatchable
-        //     through the generic interception above (the snatcher retypes). ---
-        if move_id == "camouflage" {
-            debug_assert!(never_miss, "camouflage: expected the never-miss dex row");
-            if mon_types(&self.sides[_side].pokemon[_slot], dex).contains(&Type::Normal) {
-                if self.logging() {
-                    let user = self.mon_ref(_side, _slot, dex);
-                    self.log.attr_last_move_still();
-                    self.log.fail(&user, None, false);
-                }
-                return MoveResolution::done(false, false, false);
-            }
-            self.sides[_side].pokemon[_slot].types_override = Some(vec![Type::Normal]);
-            self.sides[_side].pokemon[_slot].mark_type_known();
-            if self.logging() {
-                let user = self.mon_ref(_side, _slot, dex);
-                self.log.typechange(&user, Type::Normal.display_name(), None);
             }
             return MoveResolution::done(false, false, false);
         }
@@ -2167,7 +1664,6 @@ impl crate::state::BattleState {
                 }
                 return MoveResolution::done(false, false, false);
             }
-            self.note_attacked((foe, foe_slot), (_side, _slot), move_id); // `gotAttacked` (`gen3_b11_moves_v1`)
             let user_ab = to_id(&self.sides[_side].pokemon[_slot].ability);
             let foe_ab = to_id(&self.sides[foe].pokemon[foe_slot].ability);
             let wg = |a: &str| dex.ability(a).map(|x| x.wonder_guard).unwrap_or(false);
@@ -2189,7 +1685,22 @@ impl crate::state::BattleState {
             // order; unobservable because only flashfire emits and a two-emitter board is
             // unreachable through the same-id gate).
             for (s_i, sl) in [(_side, _slot), (foe, foe_slot)] {
-                self.run_outgoing_ability_end(s_i, sl, dex);
+                let negates = {
+                    let m = &self.sides[s_i].pokemon[sl];
+                    dex.ability(&to_id(&m.ability)).map(|a| a.weather_negate).unwrap_or(false)
+                };
+                if negates {
+                    let order = self.each_event_shuffle();
+                    let eff = self.effective_weather_excluding(Some(s_i), dex);
+                    self.forecast_each_event(&order, eff, dex);
+                }
+                if self.sides[s_i].pokemon[sl].flash_fire {
+                    if self.logging() {
+                        let r = self.mon_ref(s_i, sl, dex);
+                        self.log.volatile_end_silent(&r, "ability: Flash Fire");
+                    }
+                    self.sides[s_i].pokemon[sl].flash_fire = false;
+                }
             }
             // The swap itself — `ability` ONLY. `execute_switch` already restores `set.ability`
             // on re-entry, so the switch-out revert is free and no new field is needed.
@@ -2197,11 +1708,6 @@ impl crate::state::BattleState {
             let b = self.sides[foe].pokemon[foe_slot].ability.clone();
             self.sides[_side].pokemon[_slot].ability = b;
             self.sides[foe].pokemon[foe_slot].ability = a;
-            // ENDLESS BATTLE CLAUSE staleness (`gen3_b10_endless_battle_v1`, sim/battle.ts:1336-1337):
-            // `source.volatileStaleness = undefined; if (!source.isAlly(target)) target.volatileStaleness
-            // = 'external'` — the only gen-3 source of EXTERNAL staleness. Cleared at switch-out.
-            self.sides[_side].pokemon[_slot].volatile_staleness = false;
-            self.sides[foe].pokemon[foe_slot].volatile_staleness = true;
             return MoveResolution::done(false, false, false);
         }
 
@@ -2241,10 +1747,6 @@ impl crate::state::BattleState {
                 let m = &mut self.sides[_side].pokemon[_slot];
                 m.last_item = String::new(); // CLEAR BEFORE the restore, mirroring the sim
                 m.item = restored.clone();
-                // `pokemon.setItem(item, source, move)` sets the pending staleness, `'internal'`
-                // (Recycle is not Trick / Switcheroo; `sim/pokemon.ts:1873-1876`,
-                // `gen3_b10_endless_battle_v1`).
-                m.pending_staleness = true;
             }
             // [EMIT] `|-item|<user>|<Item>|[from] move: Recycle` — no `[of]` clause.
             if self.logging() {
@@ -2284,11 +1786,6 @@ impl crate::state::BattleState {
         // Ground truth `harness/probe_conversion.js`.
         if move_id == "conversion" || move_id == "conversion2" {
             debug_assert!(never_miss, "conversion: expected the never-miss dex row");
-            // CONVERSION 2 targets the foe (no `protect` flag): its fail is in `onHit`, inside
-            // `moveHit`, so it always reaches `gotAttacked` (`gen3_b11_moves_v1`).
-            if move_id == "conversion2" {
-                self.note_attacked((foe, foe_slot), (_side, _slot), move_id);
-            }
             let list: Vec<Type> = if move_id == "conversion" {
                 // The USER's LIVE move slots, IN SLOT ORDER, keeping `move.type` for every
                 // slot whose id != "curse" and whose type the user does NOT currently have.
@@ -2455,7 +1952,6 @@ impl crate::state::BattleState {
                 self.log.fail(&user, None, false);
             } else {
                 self.sides[_side].safeguard = SAFEGUARD_DURATION;
-                self.sides[_side].stamp_side_cond(crate::state::SIDE_COND_SAFEGUARD);
                 // [EMIT] `|-sidestart|<side>|Safeguard` — the BARE effect name (Light Screen
                 // uses the `move: ` prefix; Safeguard and Reflect do not).
                 if self.logging() {
@@ -2495,7 +1991,6 @@ impl crate::state::BattleState {
                 }
                 return MoveResolution::done(false, false, false);
             }
-            self.note_attacked((foe, foe_slot), (_side, _slot), move_id); // `gotAttacked` (`gen3_b11_moves_v1`)
             // (3) APPLY (DRAW-FREE), or the already-tormented `[still]`+`-fail|<USER>` form.
             if !self.sides[foe].pokemon[foe_slot].torment {
                 self.sides[foe].pokemon[foe_slot].torment = true;
@@ -2583,9 +2078,6 @@ impl crate::state::BattleState {
             let last = self.sides[foe].pokemon[foe_slot].last_move;
             let last_slot = match last {
                 Some(k) if k < self.sides[foe].pokemon[foe_slot].move_pp.len() => k,
-                // A lock a CALLED move started (`gen3_b11_moves_v1`): `lastMove` is the called id,
-                // so `onTryHit` passes and the in-no-slot fail comes at onStart, after the draw (4a).
-                Some(crate::state::CALLED_MOVE_SLOT) => crate::state::CALLED_MOVE_SLOT,
                 _ => {
                     // -fail, draw-free (no random(2,6)). The announce is retro-edited to
                     // the `[still]` did-nothing form (`|move|<user>|Disable||[still]` +
@@ -2600,7 +2092,6 @@ impl crate::state::BattleState {
                     return MoveResolution::done(false, false, false);
                 }
             };
-            self.note_attacked((foe, foe_slot), (_side, _slot), move_id); // `gotAttacked` (`gen3_b11_moves_v1`)
             // (5) ALREADY-DISABLED — addVolatile returns false → NO durationCallback draw.
             //     Same `[still]` retro-edit + `-fail` on the USER as the no-lastMove fail
             //     (byte-verified, Phase 3).
@@ -2625,11 +2116,7 @@ impl crate::state::BattleState {
             //     emits the `[still]` did-nothing form + `-fail`, NO volatile / `-start` /
             //     residual handler. The A/B repro rmry3vbgm_ab_6_16: a Mimic-copied Dynamic
             //     Punch the port wrongly disabled by SLOT where the sim leaves it usable.
-            //     A CALLED move's locked repeat (`gen3_b11_moves_v1`) is the same in-no-slot fail:
-            //     `onStart` finds no moveSlot with the called id.
-            if self.sides[foe].pokemon[foe_slot].last_move_was_self_overwrite
-                || last_slot == crate::state::CALLED_MOVE_SLOT
-            {
+            if self.sides[foe].pokemon[foe_slot].last_move_was_self_overwrite {
                 if self.logging() {
                     let user = self.mon_ref(_side, _slot, dex);
                     self.log.attr_last_move_still();
@@ -2754,17 +2241,6 @@ impl crate::state::BattleState {
                 }
                 return MoveResolution::done(false, false, false);
             }
-            // (TryHit) MAGIC COAT (`gen3_b6_moves_v1`): on the accPass branch, after Protect and
-            // BEFORE the Grass natural-immunity report (probe MC6: a Venusaur's seed bounces back
-            // and only THEN reports `-immune` on the Venusaur).
-            if acc_hit
-                && self.magic_coat_bounce(
-                    _side, _slot, foe, foe_slot, accuracy, never_miss, move_type, move_id, move_name,
-                    targets_self, status_inflicted, will_act, dex,
-                )
-            {
-                return MoveResolution::done(false, false, false);
-            }
             // (3) GRASS IMMUNITY — resolved AFTER the accuracy draw (same draw count), and
             //     reported after the TryHit handlers above (hit) or instead of `-miss` (miss).
             let target_is_grass = mon_types(&self.sides[foe].pokemon[foe_slot], dex)
@@ -2790,7 +2266,6 @@ impl crate::state::BattleState {
                 }
                 return MoveResolution::done(true, false, false);
             }
-            self.note_attacked((foe, foe_slot), (_side, _slot), move_id); // `gotAttacked` (`gen3_b11_moves_v1`)
             // (4b) SUBSTITUTE BLOCK — a Leech Seed into a substituted foe is BLOCKED by the
             //      sub (the `volatileStatus` is a foe-targeting effect → the sub's
             //      `onTryPrimaryHit` returns before `addVolatile`): accuracy drawn, then the
@@ -3006,12 +2481,6 @@ impl crate::state::BattleState {
             // then `[still]` retro-edit + `-fail`. Both emit `-fail` on the USER.
             let subbed = self.sides[foe].pokemon[foe_slot].substitute.is_some();
             let already_cursed = self.sides[foe].pokemon[foe_slot].curse.is_some();
-            // `gotAttacked` (`gen3_b11_moves_v1`): `curse.onTryHit` fails a re-curse at TryHit; a
-            // subbed target's Curse lost its `volatileStatus` in `onModifyMove`, so it passes
-            // TryHit and does nothing inside `moveHit`.
-            if subbed || !already_cursed {
-                self.note_attacked((foe, foe_slot), (_side, _slot), move_id);
-            }
             if subbed || already_cursed {
                 if self.logging() {
                     // The sub case already announced `[still]`; the already-cursed case
@@ -3219,12 +2688,6 @@ impl crate::state::BattleState {
                     };
                     self.log.curestatus_silent(&ident, tok);
                 }
-                // Heal Bell's `cureStatus(true)` / Aromatherapy's `clearStatus()` both end a
-                // NIGHTMARE (`sim/pokemon.ts:1678` / `:1757`) — reachable when the nightmared
-                // sleeper calls either through Sleep Talk (gen3_b5_moves_v1).
-                if tok == "slp" {
-                    self.end_nightmare_on_cure(_side, i, dex);
-                }
             }
             return MoveResolution::done(false, false, false);
         }
@@ -3316,10 +2779,8 @@ impl crate::state::BattleState {
             }
             if is_reflect {
                 self.sides[_side].reflect = SCREEN_DURATION;
-                self.sides[_side].stamp_side_cond(crate::state::SIDE_COND_REFLECT);
             } else {
                 self.sides[_side].light_screen = SCREEN_DURATION;
-                self.sides[_side].stamp_side_cond(crate::state::SIDE_COND_LIGHT_SCREEN);
             }
             if self.logging() {
                 let side_ref = crate::protocol::ProtocolBuilder::side_ref(_side, &self.sides[_side].name);
@@ -3379,13 +2840,6 @@ impl crate::state::BattleState {
                 }
                 return MoveResolution::done(false, false, false);
             }
-            // (TryHit) MAGIC COAT (`gen3_b6_moves_v1`): priority 2, after Protect's 3.
-            if self.magic_coat_bounce(
-                _side, _slot, foe, foe_slot, accuracy, never_miss, move_type, move_id, move_name,
-                targets_self, status_inflicted, will_act, dex,
-            ) {
-                return MoveResolution::done(false, false, false);
-            }
             // (3) SOUNDPROOF (sound stat-drops only): immune after the accuracy roll + AFTER
             //     the Protect check (a Protecting foe already returned above).
             if self.move_is_sound(move_id, dex)
@@ -3397,7 +2851,6 @@ impl crate::state::BattleState {
                 }
                 return MoveResolution::done(false, false, false);
             }
-            self.note_attacked((foe, foe_slot), (_side, _slot), move_id); // `gotAttacked` (`gen3_b11_moves_v1`)
             // (3b) SUBSTITUTE BLOCK — a non-`bypasssub` stat-drop into a substituted foe is
             //      blocked by the sub (accuracy drawn, no drop). Tickle carries `bypasssub`,
             //      so it is EXEMPT (it drops a subbed foe). Draw-free past accuracy. The sim
@@ -3496,15 +2949,6 @@ impl crate::state::BattleState {
                 }
                 return MoveResolution::done(false, false, false);
             }
-            // (1b) (TryHit) MAGIC COAT (`gen3_b6_moves_v1`) — `yawn_coat` above.
-            if yawn_coat {
-                let bounced = self.magic_coat_bounce(
-                    _side, _slot, foe, foe_slot, accuracy, never_miss, move_type, move_id, move_name,
-                    targets_self, status_inflicted, will_act, dex,
-                );
-                debug_assert!(bounced, "yawn_coat was computed from magic_coat_will_bounce");
-                return MoveResolution::done(false, false, false);
-            }
             // (2) onTryHit: the target ALREADY has a major status → `[still]` + `-fail|<user>`, no
             //     volatile. The announce ALREADY emitted the `[still]` form up-front via
             //     `yawn_still` (the Spikes-at-cap / ghost-Curse-into-sub precedent), so DO NOT
@@ -3519,7 +2963,6 @@ impl crate::state::BattleState {
                 }
                 return MoveResolution::done(false, false, false);
             }
-            self.note_attacked((foe, foe_slot), (_side, _slot), move_id); // `gotAttacked` (`gen3_b11_moves_v1`)
             // (3) A SUBSTITUTE (no `bypasssub`) blocks the volatile → `[still]` + `-fail|<user>`,
             //     no volatile. Like (2), the announce ALREADY carried `[still]` via `yawn_still`
             //     up-front — emit only the `|-fail|<user>` (no double `[still]`).
@@ -3661,43 +3104,16 @@ impl crate::state::BattleState {
                 }
                 return MoveResolution::done(false, false, false);
             }
-            self.note_attacked((foe, foe_slot), (_side, _slot), move_id); // `gotAttacked` (`gen3_b11_moves_v1`)
             // The takeItem-false gate (either side Knocked-Off), the Substitute block (no
             // `bypasssub`), and the both-itemless case all FAIL the same: `[still]` (retro-edit)
             // + `-fail|<user>`, no swap. DRAW-FREE past the accuracy roll.
             let user_item = self.sides[_side].pokemon[_slot].item.clone();
             let foe_item = self.sides[foe].pokemon[foe_slot].item.clone();
-            // MAIL (`gen3_items_b3_v1`): `mail.onTakeItem` returns false unless the active move
-            // is Knock Off / Thief / Covet (`data/items.ts` mail), so Trick's `takeItem` fails on
-            // a Mail holder on EITHER side and the move fails the same `[still]` + `-fail` way
-            // (probe `harness/probe_items_b3.js`: both orientations, draws = accuracy only).
-            let mail = to_id(&self.sides[_side].pokemon[_slot].item) == "mail"
-                || to_id(&self.sides[foe].pokemon[foe_slot].item) == "mail";
             let knocked = self.sides[_side].pokemon[_slot].item_knocked_off
-                || self.sides[foe].pokemon[foe_slot].item_knocked_off
-                || mail;
+                || self.sides[foe].pokemon[foe_slot].item_knocked_off;
             let subbed = self.sides[foe].pokemon[foe_slot].substitute.is_some();
             let both_itemless = user_item.is_empty() && foe_item.is_empty();
             if subbed || knocked || both_itemless {
-                // ENDLESS BATTLE CLAUSE (`gen3_b10_endless_battle_v1`): past the Substitute (a TryHit
-                // block, before `onHit`), Trick's `onHit` runs BOTH `takeItem`s before it checks for
-                // failure (data/moves.ts trick: `const yourItem = target.takeItem(source); const myItem
-                // = source.takeItem();`), so a take that succeeded cleared that mon's pending staleness
-                // (`sim/pokemon.ts:1851-1866`) even though the item is then handed back. A take
-                // succeeds when the holder has an item, neither mon is Knocked Off (the target's take
-                // checks the target and the user; the user's checks the user), and the item is not
-                // Mail (`mail.onTakeItem`).
-                if !subbed {
-                    let u_knocked = self.sides[_side].pokemon[_slot].item_knocked_off;
-                    let f_knocked = self.sides[foe].pokemon[foe_slot].item_knocked_off;
-                    let is_mail = |id: &str| to_id(id) == "mail";
-                    if !foe_item.is_empty() && !f_knocked && !u_knocked && !is_mail(&foe_item) {
-                        self.sides[foe].pokemon[foe_slot].pending_staleness = false;
-                    }
-                    if !user_item.is_empty() && !u_knocked && !is_mail(&user_item) {
-                        self.sides[_side].pokemon[_slot].pending_staleness = false;
-                    }
-                }
                 if self.logging() {
                     self.log.attr_last_move_still();
                     let user = self.mon_ref(_side, _slot, dex);
@@ -3722,12 +3138,6 @@ impl crate::state::BattleState {
             // The swap: the user GAINS the foe's item, the foe GAINS the user's item.
             self.sides[_side].pokemon[_slot].item = foe_item.clone();
             self.sides[foe].pokemon[foe_slot].item = user_item.clone();
-            // ENDLESS BATTLE CLAUSE (`gen3_b10_endless_battle_v1`): each holder's successful
-            // `takeItem` cleared its pending staleness, and each `setItem` (only for a side that
-            // RECEIVES an item) sets it — `'internal'`, since gen-3 Trick passes no `source`
-            // (`sim/pokemon.ts:1873-1876`). So a receiver is pending, a mon that only gave is not.
-            self.sides[foe].pokemon[foe_slot].pending_staleness = user_had;
-            self.sides[_side].pokemon[_slot].pending_staleness = foe_had;
             // Both Choice locks are released LAZILY (`gen3_choicelock_lazy_release_v1` — the
             // `apply_item_removal` twin): the lock-enforcing item changed on each side, so
             // `MonState::choice_lock_enforced` (a CURRENT-item read) stops enforcing it
@@ -3817,8 +3227,8 @@ impl crate::state::BattleState {
         //     accuracy is the ONLY thing that differs between them, so they are one arm.
         //     ⚠️ SWAGGER and FLATTER are deliberately NOT here: they carry a TARGET `boosts` map
         //     as well, which makes them a structurally different move (the two halves succeed and
-        //     fail INDEPENDENTLY — see `harness/probe_confusion_family.js` case 2); they have
-        //     their own `TARGET_BOOST_MOVES` arm (`gen3_b6_moves_v1`).
+        //     fail INDEPENDENTLY — see `harness/probe_confusion_family.js` case 2), and the boost
+        //     map is not in `gen3_moves.json` yet.
         //
         //     PROBE-SETTLED (`harness/probe_confusion_family.js` + `harness/probe_confuseray.js`,
         //     both re-runnable — do NOT re-derive from source):
@@ -3893,13 +3303,6 @@ impl crate::state::BattleState {
                 }
                 return MoveResolution::done(false, false, false);
             }
-            // (TryHit) MAGIC COAT (`gen3_b6_moves_v1`): priority 2, after Protect's 3.
-            if self.magic_coat_bounce(
-                _side, _slot, foe, foe_slot, accuracy, never_miss, move_type, move_id, move_name,
-                targets_self, status_inflicted, will_act, dex,
-            ) {
-                return MoveResolution::done(false, false, false);
-            }
             // (3) (TryHit) SOUNDPROOF — Supersonic is the family's only `sound` move.
             if self.move_is_sound(move_id, dex)
                 && dex
@@ -3913,7 +3316,6 @@ impl crate::state::BattleState {
                 }
                 return MoveResolution::done(false, false, false);
             }
-            self.note_attacked((foe, foe_slot), (_side, _slot), move_id); // `gotAttacked` (`gen3_b11_moves_v1`)
             // (4) (onTryPrimaryHit) SUBSTITUTE — no `bypasssub` anywhere in the family.
             if self.sides[foe].pokemon[foe_slot].substitute.is_some() {
                 if self.logging() {
@@ -3949,254 +3351,6 @@ impl crate::state::BattleState {
             return MoveResolution::done(false, false, false);
         }
 
-        // --- ATTRACT (`gen3_attract_move_v1`, gen3 full parity B9). The volatile itself is
-        //     modelled (`MonState::attract`, its onBeforeMove immobilize and its clears); this is
-        //     the MOVE's entry, in gen-3 `tryMoveHit`'s order (`data/mods/gen3/scripts.ts`
-        //     tryMoveHit): the move's `onTryImmunity` (`data/moves.ts` attract: an M<->F pair
-        //     only) sets `naturalImmunity`; the accuracy roll is drawn ANYWAY; a miss on an immune
-        //     target shows `-immune`, not `-miss`; Protect (TryHit) shows before the immunity;
-        //     then `addVolatile('attract')` fails `[still]` + `-fail|<user>` when the target is
-        //     already attracted or Oblivious (`runEvent('Attract')` in the condition's
-        //     `onStart`), else `|-start|<t>|Attract` (bare: no `[from]`). `bypasssub`: a
-        //     Substitute does not block it, and Safeguard does not cover it. A mon with an
-        //     UNSPECIFIED gender panics in the compare (the sim sampled one at construction,
-        //     which the post-construction-seed path cannot know). Spec: `harness/probe_attract_move.js`.
-        if move_id == "attract" {
-            let gender = |s: &Self, side: usize, slot: usize, who: &str| -> char {
-                s.sides[side].pokemon[slot].gender.unwrap_or_else(|| {
-                    panic!(
-                        "Attract reached a mon with an UNSPECIFIED gender ({who}) — the sim samples one \
-                         at construction, which the post-construction-seed path does not model; pin \
-                         genders explicitly (the raw-seed bridge path draws them)"
-                    )
-                })
-            };
-            let (gt, gs) = (gender(self, foe, foe_slot, "target"), gender(self, _side, _slot, "user"));
-            let immune = !((gt == 'M' && gs == 'F') || (gt == 'F' && gs == 'M'));
-            let acc_hit = if never_miss {
-                true
-            } else {
-                self.roll_accuracy(_side, _slot, foe, foe_slot, accuracy, never_miss, move_type, dex)
-            };
-            if !acc_hit {
-                if self.logging() {
-                    let target = self.mon_ref(foe, foe_slot, dex);
-                    if immune {
-                        self.log.immune(&target);
-                    } else {
-                        self.log.attr_last_move_miss();
-                        let user = self.mon_ref(_side, _slot, dex);
-                        self.log.miss(&user, Some(&target));
-                    }
-                }
-                return MoveResolution::done(false, false, false);
-            }
-            if self.protect_blocks(foe, foe_slot, false) {
-                if self.logging() {
-                    let target = self.mon_ref(foe, foe_slot, dex);
-                    self.log.activate(&target, "Protect", None);
-                }
-                return MoveResolution::done(false, false, false);
-            }
-            // (TryHit) MAGIC COAT (`gen3_b6_moves_v1`): priority 2, after Protect's 3.
-            if self.magic_coat_bounce(
-                _side, _slot, foe, foe_slot, accuracy, never_miss, move_type, move_id, move_name,
-                targets_self, status_inflicted, will_act, dex,
-            ) {
-                return MoveResolution::done(false, false, false);
-            }
-            if immune {
-                if self.logging() {
-                    let target = self.mon_ref(foe, foe_slot, dex);
-                    self.log.immune(&target);
-                }
-                return MoveResolution::done(false, false, false);
-            }
-            self.note_attacked((foe, foe_slot), (_side, _slot), move_id); // `gotAttacked` (`gen3_b11_moves_v1`)
-            let target = &self.sides[foe].pokemon[foe_slot];
-            if target.attract.is_some() || target.fainted || target.hp == 0 || to_id(&target.ability) == "oblivious" {
-                if self.logging() {
-                    self.log.attr_last_move_still();
-                    let user = self.mon_ref(_side, _slot, dex);
-                    self.log.fail(&user, None, false);
-                }
-                return MoveResolution::done(false, false, false);
-            }
-            let src_uid = self.sides[_side].pokemon[_slot].uid;
-            self.sides[foe].pokemon[foe_slot].attract = Some((_side, src_uid));
-            if self.logging() {
-                let t = self.mon_ref(foe, foe_slot, dex);
-                self.log.volatile_start(&t, "Attract");
-            }
-            return MoveResolution::done(false, false, false);
-        }
-
-        // --- SWAGGER / FLATTER (`gen3_b6_moves_v1`, gen3 full parity B6). A TARGET `boosts` map
-        //     (`data/moves.ts` swagger `boosts: {atk: 2}`, flatter `boosts: {spa: 1}`) PLUS
-        //     `volatileStatus: 'confusion'`, run in gen-3 `tryMoveHit`'s order
-        //     (`data/mods/gen3/scripts.ts` tryMoveHit) and then `spreadMoveHit` /
-        //     `runMoveEffects` (`sim/battle-actions.ts`, the `moveData.boosts` block BEFORE the
-        //     `moveData.volatileStatus` block). Both carry `ignoreImmunity` (Status) and no
-        //     `bypasssub`; both are `reflectable`. The boost maps are HARDCODED
-        //     ([`TARGET_BOOST_MOVES`], checked against the resolved dex by
-        //     `tests/b6_moves_test.rs` B6M1) because `gen3_moves.json` carries no foe-directed
-        //     positive boost field and `data/` does not change in this batch.
-        //     PROBE-SETTLED (`harness/probe_b6_moves.js` SW1-SW17):
-        //       miss        : accuracy only -> `[miss]` + `-miss`
-        //       Protect     : accuracy only -> `-activate|<t>|Protect`
-        //       Magic Coat  : bounced at TryHit (below)
-        //       Substitute  : accuracy only -> `[still]` + `-fail|<USER>` (`onTryPrimaryHit`)
-        //       the BOOST   : `battle.boost` (`sim/battle.ts` boost) emits `-boost|<t>|<stat>|<n>`
-        //                     with the CAPPED delta, INCLUDING `0` at +6 (the `!isSecondary &&
-        //                     !isSelf` branch); positive, so Clear Body / Hyper Cutter never gate it
-        //       CONFUSION   : `addVolatile` after the boost — Own Tempo `-immune|<t>|confusion|[from]
-        //                     ability: Own Tempo`, already confused SILENT, Safeguard
-        //                     `-activate|<t>|move: Safeguard`, else `random(2,6)` + `-start|<t>|confusion`
-        //       the -fail   : `combineResults(boost, addVolatile)` is `false` only for a delta-0
-        //                     boost (`null`) AND an already-confused target (`false`): then
-        //                     `[still]` + `-fail|<USER>` AFTER the `-boost|…|0` line (SW4). Own
-        //                     Tempo / Safeguard return `null`, so a capped boost into either does
-        //                     NOT fail (SW6). ---
-        if let Some((stat, stages)) = target_boost_of(move_id) {
-            let acc_hit = if never_miss {
-                true
-            } else {
-                self.roll_accuracy(_side, _slot, foe, foe_slot, accuracy, never_miss, move_type, dex)
-            };
-            if !acc_hit {
-                if self.logging() {
-                    self.log.attr_last_move_miss();
-                    let user = self.mon_ref(_side, _slot, dex);
-                    let target = self.mon_ref(foe, foe_slot, dex);
-                    self.log.miss(&user, Some(&target));
-                }
-                return MoveResolution::done(true, false, false);
-            }
-            // (TryHit) PROTECT, then MAGIC COAT (priority 3 > 2).
-            if self.protect_blocks(foe, foe_slot, false) {
-                if self.logging() {
-                    let target = self.mon_ref(foe, foe_slot, dex);
-                    self.log.activate(&target, "Protect", None);
-                }
-                return MoveResolution::done(false, false, false);
-            }
-            if self.magic_coat_bounce(
-                _side, _slot, foe, foe_slot, accuracy, never_miss, move_type, move_id, move_name,
-                targets_self, status_inflicted, will_act, dex,
-            ) {
-                return MoveResolution::done(false, false, false);
-            }
-            self.note_attacked((foe, foe_slot), (_side, _slot), move_id); // `gotAttacked` (`gen3_b11_moves_v1`)
-            // (onTryPrimaryHit) SUBSTITUTE.
-            if self.sides[foe].pokemon[foe_slot].substitute.is_some() {
-                if self.logging() {
-                    self.log.attr_last_move_still();
-                    let user = self.mon_ref(_side, _slot, dex);
-                    self.log.fail(&user, None, false);
-                }
-                return MoveResolution::done(false, false, false);
-            }
-            // (boosts) the capped delta, emitted even at 0.
-            let cur = self.sides[foe].pokemon[foe_slot].boosts[stat] as i32;
-            let next = (cur + stages as i32).clamp(-6, 6);
-            self.sides[foe].pokemon[foe_slot].boosts[stat] = next as i8;
-            let boosted = next != cur;
-            if self.logging() {
-                let t = self.mon_ref(foe, foe_slot, dex);
-                self.log.boost_applied(&t, stat, stages, (next - cur) as i8, next as i8);
-            }
-            // (volatileStatus) confusion: Own Tempo -> null, already confused -> false,
-            // Safeguard -> null (emitted by `add_confusion`), else the add.
-            let target = &self.sides[foe].pokemon[foe_slot];
-            let already = target.confusion.is_some();
-            if to_id(&target.ability) == "owntempo" {
-                if self.logging() {
-                    let t = self.mon_ref(foe, foe_slot, dex);
-                    self.log.immune_effect_from_ability(&t, "confusion", "Own Tempo");
-                }
-            } else if already {
-                if !boosted && self.logging() {
-                    self.log.attr_last_move_still();
-                    let user = self.mon_ref(_side, _slot, dex);
-                    self.log.fail(&user, None, false);
-                }
-            } else {
-                self.add_confusion(foe, foe_slot, super::secondaries::ConfusionSource::Foe { announce: true }, dex);
-            }
-            return MoveResolution::done(false, false, false);
-        }
-
-        // --- FORESIGHT / ODOR SLEUTH (`gen3_b6_moves_v1`). Both are `volatileStatus: 'foresight'`
-        //     (`data/moves.ts` foresight / odorsleuth; the gen-3 mod sets `accuracy: 100`,
-        //     `data/mods/gen3/moves.ts` foresight / odorsleuth, and the gen-4 mod drops
-        //     `reflectable` from their flags, `data/mods/gen4/moves.ts` foresight / odorsleuth, so
-        //     Magic Coat does NOT bounce them — probe MC31). PROBE-SETTLED
-        //     (`harness/probe_b6_moves.js` FS1-FS13):
-        //       accuracy     : `randomChance(100)` against the target's evasion — a target ALREADY
-        //                      identified has its positive evasion zeroed (FS13: 100 into +6)
-        //       miss         : `[miss]` + `-miss`
-        //       Protect      : `-activate|<t>|Protect` (flags.protect)
-        //       Substitute   : does NOT block (gen-4 flags carry `bypasssub`; FS4)
-        //       identified   : `addVolatile` false -> `[still]` + `-fail|<USER>` (FS2; Odor Sleuth
-        //                      after Foresight is the same volatile, FS3)
-        //       success      : `-start|<t>|Foresight` for BOTH moves (the condition's onStart, FS6)
-        //     The move's `onTryHit` (Miracle Eye) never fires in gen 3. The volatile's two reads live
-        //     in `effective_accuracy` (evasion) and `crate::damage::type_effectiveness` (Ghost). ---
-        if move_id == "foresight" || move_id == "odorsleuth" {
-            let acc_hit = if never_miss {
-                true
-            } else {
-                self.roll_accuracy(_side, _slot, foe, foe_slot, accuracy, never_miss, move_type, dex)
-            };
-            if !acc_hit {
-                if self.logging() {
-                    self.log.attr_last_move_miss();
-                    let user = self.mon_ref(_side, _slot, dex);
-                    let target = self.mon_ref(foe, foe_slot, dex);
-                    self.log.miss(&user, Some(&target));
-                }
-                return MoveResolution::done(true, false, false);
-            }
-            if self.protect_blocks(foe, foe_slot, false) {
-                if self.logging() {
-                    let target = self.mon_ref(foe, foe_slot, dex);
-                    self.log.activate(&target, "Protect", None);
-                }
-                return MoveResolution::done(false, false, false);
-            }
-            self.note_attacked((foe, foe_slot), (_side, _slot), move_id); // `gotAttacked` (`gen3_b11_moves_v1`)
-            if self.sides[foe].pokemon[foe_slot].foresight {
-                if self.logging() {
-                    self.log.attr_last_move_still();
-                    let user = self.mon_ref(_side, _slot, dex);
-                    self.log.fail(&user, None, false);
-                }
-                return MoveResolution::done(false, false, false);
-            }
-            self.sides[foe].pokemon[foe_slot].foresight = true;
-            if self.logging() {
-                let t = self.mon_ref(foe, foe_slot, dex);
-                self.log.volatile_start(&t, "Foresight");
-            }
-            return MoveResolution::done(false, false, false);
-        }
-
-        // --- MAGIC COAT CAST (`gen3_b6_moves_v1`). `target: self`, `accuracy: true`, priority +4,
-        //     flags `{metronome}` only (not snatchable, `data/moves.ts` magiccoat). DRAW-FREE: the
-        //     condition's onStart emits `|-singleturn|<user>|move: Magic Coat` (probe MC1). The
-        //     volatile lives through this turn (so it bounces the foe's reflectable move — see
-        //     [`Self::magic_coat_bounce`] — or registers the residual duration handler) and clears
-        //     at the next turn-top (`clear_flinch`). ---
-        if move_id == "magiccoat" {
-            debug_assert!(never_miss, "magiccoat: expected the gen3 never-miss dex row");
-            self.sides[_side].pokemon[_slot].magic_coat = true;
-            if self.logging() {
-                let user = self.mon_ref(_side, _slot, dex);
-                self.log.singleturn(&user, "move: Magic Coat");
-            }
-            return MoveResolution::done(false, false, false);
-        }
-
         // FAIL-LOUD GUARD: only the explicitly-modeled foe-targeting major-status
         // moves are allowed. Any other status move (recovery/boost/phaze/hazard/field)
         // would draw an UNMODELED number/order of PRNG calls → a silent desync. PANIC
@@ -4224,8 +3378,10 @@ impl crate::state::BattleState {
         //     other modeled status moves IGNORE type immunity. ---
         let natural_immunity = if status_move_checks_type_immunity(move_id) {
             match move_type {
-                // FORESIGHT negates Glare's Ghost immunity (`gen3_b6_moves_v1`, probe FS8).
-                Some(t) => self.defender_effectiveness(t, foe, foe_slot, dex) == 0.0,
+                Some(t) => {
+                    let def_types = mon_types(&self.sides[foe].pokemon[foe_slot], dex);
+                    dex.type_chart().effectiveness(t, &def_types) == 0.0
+                }
                 None => false,
             }
         } else {
@@ -4259,13 +3415,6 @@ impl crate::state::BattleState {
                     let target = self.mon_ref(foe, foe_slot, dex);
                     self.log.activate(&target, "Protect", None);
                 }
-                return MoveResolution::done(false, false, false);
-            }
-            // (TryHit) MAGIC COAT (`gen3_b6_moves_v1`): priority 2, after Protect's 3.
-            if self.magic_coat_bounce(
-                _side, _slot, foe, foe_slot, accuracy, never_miss, move_type, move_id, move_name,
-                targets_self, status_inflicted, will_act, dex,
-            ) {
                 return MoveResolution::done(false, false, false);
             }
             // (TryHit) SOUNDPROOF — a SOUND status move (Sing / Grass Whistle) into a
@@ -4331,8 +3480,6 @@ impl crate::state::BattleState {
                 let user = self.mon_ref(_side, _slot, dex);
                 self.log.fail(&user, None, false);
             }
-            // The sub's `onTryPrimaryHit` is inside `moveHit`: `gotAttacked` (`gen3_b11_moves_v1`).
-            self.note_attacked((foe, foe_slot), (_side, _slot), move_id);
             return MoveResolution::done(false, false, false);
         }
 
@@ -4381,10 +3528,6 @@ impl crate::state::BattleState {
                 return MoveResolution::done(false, false, false);
             }
         }
-
-        // Past every TryHit (Flash Fire's absorb above is one): the move reached `moveHit`, so
-        // `target.gotAttacked` (`data/mods/gen3/scripts.ts:464`, `gen3_b11_moves_v1`).
-        self.note_attacked((foe, foe_slot), (_side, _slot), move_id);
 
         // --- 3a. ALREADY-STATUSED FAIL — a foe already carrying a major status can't take
         //     another. gen-3 `trySetStatus` re-passes the foe's OWN status to `setStatus`,
@@ -4441,72 +3584,6 @@ impl crate::state::BattleState {
         // A status move never fires the in-tryMoveHit Update shuffle (moveHit returns
         // undefined): not missed, NOT landed.
         MoveResolution::done(false, false, false)
-    }
-
-    /// Would MAGIC COAT bounce `move_id` off the mon at `(foe, foe_slot)` right now? The coat is
-    /// up and the move is `flags.reflectable` ([`REFLECTABLE_MOVES`]). The gen-4 mod's
-    /// `onTryHit` (`data/mods/gen4/moves.ts` magiccoat) also skips `target === source` and
-    /// `move.hasBounced`: in gen-3 singles the bounced move's NEW target is the original user,
-    /// which spent its action on that move and so holds no coat, and the holder's coat is
-    /// removed before the bounce, so neither guard can fire here. Draw-free read.
-    pub(crate) fn magic_coat_will_bounce(&self, foe: usize, foe_slot: usize, move_id: &str) -> bool {
-        let m = &self.sides[foe].pokemon[foe_slot];
-        m.magic_coat && !m.fainted && m.hp > 0 && is_reflectable(move_id)
-    }
-
-    /// MAGIC COAT's BOUNCE (`gen3_b6_moves_v1`): called by every reflectable move's arm right
-    /// after its (TryHit) Protect check — the coat is `onTryHitPriority: 2`, Protect's is 3, and
-    /// `runEvent('TryHit')` sorts left-to-right by priority with NO speed tie-shuffle
-    /// (`sim/battle.ts` runEvent: `compareLeftToRightOrder` for TryHit), so the bounce costs no
-    /// draw. It runs AFTER the original move's accuracy roll (gen-3 `tryMoveHit` rolls accuracy
-    /// before `runEvent('TryHit')`, `data/mods/gen3/scripts.ts` tryMoveHit) and BEFORE every
-    /// later gate: Soundproof's TryHit (priority 0), the natural-immunity report (a Thunder Wave
-    /// into a GROUND coat holder still bounces, probe MC15), the move's own `onTryHit` (Yawn's
-    /// already-statused check) and the Substitute's `onTryPrimaryHit`.
-    ///
-    /// The bounce (`data/mods/gen4/moves.ts` magiccoat condition `onTryHit`): `removeVolatile(
-    /// 'magiccoat')` (silent, no onEnd), then `actions.useMove(newMove, holder, {target:
-    /// source})` — gen-3 `useMoveInner` with `sourceEffect` = the coat, so the holder announces
-    /// `|move|<holder>|<Move>|<user>|[from] Magic Coat` (probe MC2; the `conditions.get` name,
-    /// no `move:` prefix), deducts NO PP (the `!sourceEffect` Pressure branch is skipped), runs
-    /// no BeforeMove (no paralysis / confusion roll), sets the holder's `lastMoveUsed` to the
-    /// bounced move (but not `lastMove`), and then runs the move's full `tryMoveHit` against
-    /// the original user: its own accuracy roll (the bounce's ONLY draws are that move's own),
-    /// that user's Substitute / immunity / ability. The original move then returns `null` from
-    /// TryHit: no further line, no `-fail`. Returns whether the move was bounced.
-    #[allow(clippy::too_many_arguments)]
-    pub(crate) fn magic_coat_bounce(
-        &mut self,
-        side: usize,
-        slot: usize,
-        foe: usize,
-        foe_slot: usize,
-        accuracy: u16,
-        never_miss: bool,
-        move_type: Option<Type>,
-        move_id: &str,
-        move_name: &str,
-        targets_self: bool,
-        status_inflicted: Option<&str>,
-        will_act: bool,
-        dex: &Dex,
-    ) -> bool {
-        if !self.magic_coat_will_bounce(foe, foe_slot, move_id) {
-            return false;
-        }
-        self.sides[foe].pokemon[foe_slot].magic_coat = false;
-        self.sides[foe].pokemon[foe_slot].last_move_used = Some(move_id.to_string());
-        self.log.set_next_move_from("Magic Coat");
-        // The bounced move is the HOLDER's, nested inside the user's action (the Snatch shape):
-        // its lines carry the holder's source scope (`gen3_core_nested_move_scope_v1`).
-        self.in_nested_move_scope(foe, |s| {
-            s.run_status_move(
-                foe, foe_slot, side, slot, accuracy, never_miss, move_type, move_id, move_name,
-                targets_self, status_inflicted, /*foe_will_move*/ false, will_act,
-                /*was_choice_locked*/ false, dex,
-            )
-        });
-        true
     }
 
     /// REST (`data/moves.ts::rest`, gen-3 — the `onTry` + `onHit` path), verified
@@ -4569,15 +3646,27 @@ impl crate::state::BattleState {
             return MoveResolution::done(false, false, false);
         }
 
-        // (2c) SLEEP-IMMUNE ABILITY GUARD (`gen3_rest_sleep_immune_v1`, corrected by
-        //      `gen3_bf_rest_insomnia_no_shuffle_v1`) — `rest.onTry` (data/moves.ts:14975-14983,
-        //      resolved unchanged in gen 3) fails a Rest by an INSOMNIA / VITAL SPIRIT user with
-        //      `|-fail|<user>|[from] ability: <A>|[of] <user>` and `return null`, right after the
-        //      full-HP check and BEFORE `onHit`'s `setStatus('slp')`. So no `SetStatus` event
-        //      runs: no sleep `random(2,6)`, AND no gen3ou two-clause handler-sort shuffle (the
-        //      port drew that shuffle first, one draw too many in gen3ou / gen3uubl / gen3draft;
-        //      probe `harness/probe_bf_classes.js` BF6: the failed Rest's seed == a Splash
-        //      turn's). Draw-free in every format.
+        // (6) The gen3ou SetStatus handler-sort shuffle (the self-`setStatus('slp')`
+        //     reaches `runEvent('SetStatus')`). Gated by `sleep_clause`; gen3customgame
+        //     draws nothing. A self-Rest is EXEMPT from the Sleep-Clause CAP, so we draw
+        //     the shuffle (the 2 clause handlers always tie) but never run the sleeper
+        //     block.
+        if self.sleep_clause {
+            self.set_status_event_shuffle();
+        }
+
+        // (2c) SLEEP-IMMUNE ABILITY GUARD (`gen3_rest_sleep_immune_v1`) — gen3
+        //      `setStatus('slp')` is BLOCKED by the user's OWN sleep-immunity ability
+        //      (INSOMNIA / VITAL SPIRIT, `AbilityData.status_immune.blocks("slp")`) at
+        //      `runEvent('SetStatus')`, BEFORE `singleEvent('Start', slp)` — so the sleep
+        //      `random(2,6)` is NEVER drawn and Rest FAILS (`onHit` returns false: no sleep,
+        //      no heal). The port used to draw the `random(2,6)` + sleep + heal
+        //      unconditionally → +1 draw + wrong state (the A/B repro rmry3vbgm_ab_1_1
+        //      seed@15 = a damaged Insomnia Hypno Resting). It sits AFTER the gen3ou clause
+        //      shuffle above (the ability sorts into its own speed group → the 2 clauses stay
+        //      a size-2 tie → the shuffle STILL draws — `gen3_status_immune_v1`) and emits the
+        //      sim's `|-fail|<user>|[from] ability: <A>|[of] <user>` (probe-verified,
+        //      `harness/probe_rest_sleep_immune_rng.js`).
         {
             let ability_id = to_id(&self.sides[side].pokemon[slot].ability);
             let blocks_slp = dex
@@ -4594,34 +3683,6 @@ impl crate::state::BattleState {
                 }
                 return MoveResolution::done(false, false, false);
             }
-        }
-
-        // (6) The gen3ou SetStatus handler-sort shuffle (the self-`setStatus('slp')`
-        //     reaches `runEvent('SetStatus')`). Only a format with BOTH clause handlers
-        //     draws it (`FormatRules::set_status_shuffle`); gen3customgame and the
-        //     Sleep-Clause-only tiers draw nothing. A self-Rest is EXEMPT from the Sleep-Clause CAP, so we draw
-        //     the shuffle (the 2 clause handlers always tie) but never run the sleeper
-        //     block.
-        if self.rules.set_status_shuffle() {
-            self.set_status_event_shuffle();
-        }
-
-        // (2d) UPROAR blocks Rest's own sleep (`gen3_b5_moves_v1`, the TECH_DEBT (c) row found by
-        //      `gen_sim_bridge_diff.js --mode lockin` seed 303 battle 15). Rest's `onHit` runs
-        //      `target.setStatus('slp', source, move)` (`data/moves.ts` rest), whose
-        //      `runEvent('SetStatus')` reaches the `uproar` condition's `onAnySetStatus`
-        //      (`data/mods/gen3/moves.ts` uproar): for `slp` it adds `|-fail|<mon>|slp|[from]
-        //      Uproar` (`|[msg]` when the mon is the uproarer itself) and returns null, so
-        //      `setStatus` is false and Rest's `onHit` returns before the `random(2,6)` sleep
-        //      roll and the heal. Inside the SetStatus event, so AFTER the gen3ou clause shuffle
-        //      above (and after the Insomnia / Vital Spirit `onTry` fail, BF6) (uproar's handler has a defined speed and sorts alone — the shuffle count
-        //      is unchanged, as in `try_set_status`). PP is already spent; no `[still]`. ---
-        if let Some((uside, uslot)) = self.any_uproarer() {
-            if self.logging() {
-                let user = self.mon_ref(side, slot, dex);
-                self.log.fail_slp_from_uproar(&user, uside == side && uslot == slot);
-            }
-            return MoveResolution::done(false, false, false);
         }
 
         // (3)+(4) SELF-SLEEP + status CURE (setStatus overrides any prior major status).
@@ -4904,7 +3965,8 @@ impl crate::state::BattleState {
         // check). Mirror the standalone arm's `natural_immunity` gate.
         if status_move_checks_type_immunity(move_id) {
             if let Some(t) = self.move_type_of(move_id, dex) {
-                if self.defender_effectiveness(t, foe, foe_slot, dex) == 0.0 {
+                let def_types = mon_types(&self.sides[foe].pokemon[foe_slot], dex);
+                if dex.type_chart().effectiveness(t, &def_types) == 0.0 {
                     return None; // `-immune` path, not an already-statused fail
                 }
             }
@@ -4916,58 +3978,4 @@ impl crate::state::BattleState {
             Some(StatusMoveFail::Different)
         }
     }
-
-    /// The OUTGOING ability's `singleEvent('End', ...)` (`sim/pokemon.ts` setAbility / `sim/battle.ts`
-    /// skillSwap), shared by SKILL SWAP (both mons) and ROLE PLAY (the user): a `weather_negate`
-    /// holder (Cloud Nine / Air Lock `onEnd`: `abilityState.ending = true; eachEvent('WeatherChange')`)
-    /// fires an `each_event_shuffle` + `forecast_each_event` with its own suppression excluded (worth a
-    /// draw at a cached-speed TIE), and an ARMED Flash Fire (`flashfire.onEnd` →
-    /// `removeVolatile('flashfire')`) emits `|-end|<mon>|ability: Flash Fire|[silent]` and is cleared.
-    /// Every other gen-3 ability has no `onEnd`. Called BEFORE the ability field changes.
-    pub(crate) fn run_outgoing_ability_end(&mut self, s_i: usize, sl: usize, dex: &Dex) {
-        let negates = {
-            let m = &self.sides[s_i].pokemon[sl];
-            dex.ability(&to_id(&m.ability)).map(|a| a.weather_negate).unwrap_or(false)
-        };
-        if negates {
-            let order = self.each_event_shuffle();
-            let eff = self.effective_weather_excluding(Some(s_i), dex);
-            self.forecast_each_event(&order, eff, dex);
-        }
-        if self.sides[s_i].pokemon[sl].flash_fire {
-            if self.logging() {
-                let r = self.mon_ref(s_i, sl, dex);
-                self.log.volatile_end_silent(&r, "ability: Flash Fire");
-            }
-            self.sides[s_i].pokemon[sl].flash_fire = false;
-        }
-    }
-}
-
-/// The gen-3 status moves with a TARGET `boosts` map (`gen3_b6_moves_v1`): `(id, (stat index
-/// into [`crate::protocol::STAT_TOKENS`], stages))`, from the RESOLVED `Dex.mod('gen3')`
-/// (`data/moves.ts` swagger `boosts: {atk: 2}`, flatter `boosts: {spa: 1}`; no mod overrides
-/// them). Hardcoded because `data/` carries no positive foe-boost field; `tests/b6_moves_test.rs`
-/// B6M1 checks this table against node.
-pub const TARGET_BOOST_MOVES: [(&str, (usize, i8)); 2] = [("flatter", (2, 1)), ("swagger", (0, 2))];
-
-pub(crate) fn target_boost_of(move_id: &str) -> Option<(usize, i8)> {
-    TARGET_BOOST_MOVES.iter().find(|(id, _)| *id == move_id).map(|(_, b)| *b)
-}
-
-/// Every gen-3 move with `flags.reflectable` in the RESOLVED `Dex.mod('gen3')` (`gen3_b6_moves_v1`)
-/// — the moves Magic Coat bounces. Sorted. Each one's arm in `run_status_move` calls
-/// `magic_coat_bounce` after its Protect check; `tests/b6_moves_test.rs` B6M2 checks this list
-/// against node, and B6M3 that every member's arm bounces.
-pub const REFLECTABLE_MOVES: [&str; 41] = [
-    "attract", "block", "charm", "confuseray", "cottonspore", "faketears", "featherdance", "flash",
-    "flatter", "glare", "grasswhistle", "growl", "hypnosis", "kinesis", "leechseed", "leer",
-    "lovelykiss", "meanlook", "metalsound", "poisongas", "poisonpowder", "sandattack", "scaryface",
-    "screech", "sing", "sleeppowder", "smokescreen", "spiderweb", "spore", "stringshot", "stunspore",
-    "supersonic", "swagger", "sweetkiss", "sweetscent", "tailwhip", "thunderwave", "tickle",
-    "toxic", "willowisp", "yawn",
-];
-
-pub(crate) fn is_reflectable(move_id: &str) -> bool {
-    REFLECTABLE_MOVES.binary_search(&move_id).is_ok()
 }

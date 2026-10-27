@@ -22,7 +22,6 @@ import pytest
 
 from agents.model import compile_cache as CC
 from agents.model import compile_cache_shared as SH
-from utils import liveness_fakes as LF
 from utils.paths import src_path
 
 _ENV = (CC.ENV_ROOT, CC.ENV_INDUCTOR, CC.ENV_TRITON, SH.ENV_T2_AOT)
@@ -661,20 +660,3 @@ def test_two_real_processes_share_one_compile(tmp_path):
     assert a["action"] == "shared-new" and a["miss"] >= 1, a
     assert b["action"] == "shared-hit" and b["root"] == a["root"], b
     assert b["hit"] >= 1 and b["miss"] == 0, b
-
-
-def test_the_orphan_sweep_reads_liveness_from_proc_not_from_kill(tmp_path, monkeypatch):
-    """A half-built entry whose creator is a ZOMBIE is swept (``kill`` says alive); a live creator's is spared even
-    when ``kill`` says ESRCH (the sandbox). Each cell fails on a revert to ``os.kill``."""
-    LF.assert_pid_liveness(SH._pid_alive, monkeypatch)
-    root = tmp_path / "shared"
-    root.mkdir()
-    live = root / f"{SH.NEW_PREFIX}{'a' * 32}-{os.getpid()}-x"
-    live.mkdir()
-    with LF.zombie() as z:
-        dead = root / f"{SH.NEW_PREFIX}{'b' * 32}-{z}-x"
-        dead.mkdir()
-        with monkeypatch.context() as m:
-            LF.rig_kill(m, "esrch")
-            SH._sweep_orphans(str(root))
-    assert live.is_dir() and not dead.exists()

@@ -1,6 +1,5 @@
 """STATIC Pokémon tokens (`gen3_static_tokens_v1`, `--token-encoding static`;
-`designs/endstate/design_static_tokens.md`): PRODUCTION's encoding (`designs/production_config.json`
-``token_encoding`` ``static``). `legacy`, the OFF state and still the flag's default, never builds anything here.
+`designs/endstate/design_static_tokens.md`). `legacy` (the default, production) never builds anything here.
 
 A Pokémon's token is the SUM of two parts, and NO board fact enters either:
 
@@ -16,8 +15,7 @@ A Pokémon's token is the SUM of two parts, and NO board fact enters either:
   ``Σ_k ReLU(W [m_k ; pp_k ; legal_k])`` (``m_k`` the move's STATIC token).
 
 The clock, weather, faint counts, Spikes and screens (legacy's per-mon context, audit F4) are read by
-NEITHER: they reach a token through the trunk's attention over the three BOARD tokens
-(`board_tokens.N_BOARD_TOKENS_STATIC`; the legacy encoding's one global token) and the damage operator.
+NEITHER: they reach a token through the trunk's attention (the global token) and the damage operator.
 
 Because a hidden opponent slot's X5 hypothesis row is its species' DEX ROW (never the active), its whole
 token is a function of the species: `static_hypothesis_tokens` encodes the dex table ONCE per forward and

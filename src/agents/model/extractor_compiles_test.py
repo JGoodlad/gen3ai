@@ -31,15 +31,15 @@ Two separate obligations live here, and they are easy to conflate:
    forward, or as a compile lever that turns out to be unavailable when someone reaches for it a
    month from now.
 
-**A supported CUDA compile needs the card.** With `CUDA_VISIBLE_DEVICES=""` an Inductor cuda compile
-dies with `RuntimeError: No CUDA GPUs are available` (the backend queries live device properties;
-measured 2026-08-14, torch 2.5.1). Two narrower things DO run on the CPU (measured 2026-10-25, torch
-2.8 + triton 3.4): Triton's own compile of a kernel for sm_86 (`triton.compile` with a `GPUTarget`,
-which is how `triton_xblock16_remat_test.py` pins the bug behind the B = 8 choice below), and, through
-a harness of fakes that is a diagnostic and not a gate, Inductor's whole Triton codegen of this
-extractor (`designs/research_state/measurements/triton_xblock16_2026-10-25/`). So the CUDA cells still
-need the real card — and because this box normally carries a training run, they SKIP THEMSELVES when
-the GPU is busy rather than risk an OOM in it. See `_cuda_skip_reason`.
+**You cannot compile FOR cuda ON the cpu.** Measured, not assumed (2026-08-14, torch 2.5.1 +
+triton 3.1.0): with `CUDA_VISIBLE_DEVICES=""` an Inductor cuda compile dies with
+`RuntimeError: No CUDA GPUs are available` — the backend queries live device properties, so
+codegen is not a pure AOT source->PTX step it could do blind. Tracing under `FakeTensorMode`
+against a cuda device does not substitute either: it exercises **dynamo**, which is device-
+agnostic anyway (a graph break is a Python-level event), and never reaches the backend where the
+device-specific bugs live. So the CUDA cells need the real card — and because this box normally
+carries a training run, they SKIP THEMSELVES when the GPU is busy rather than risk an OOM in it.
+See `_cuda_skip_reason`.
 
 Costs, measured on an idle RTX 3080 Ti at the batch these tests use: cuda forward ~5 s / 552 MiB
 of process VRAM, cuda forward+backward ~57 s / ~1.1 GiB. The CPU cells are ~10 s each on a warm
@@ -329,9 +329,9 @@ def test_h_tier_arch_compiles_to_one_graph():
 # ----------------------------------------------------------------- the other three matrix cells
 
 
-def _obs(layout, device, seed=7, batch=_BATCH):
+def _obs(layout, device, seed=7):
     g = torch.Generator().manual_seed(seed)
-    return {"observation": torch.rand(batch, layout["total_dim"], generator=g).to(device)}
+    return {"observation": torch.rand(_BATCH, layout["total_dim"], generator=g).to(device)}
 
 
 def _backward_through(fe, out):
@@ -452,16 +452,11 @@ def test_production_arch_compiles_on_cuda():
     """CUDA cell 1. Inductor emits TRITON here, not C++ — a different backend with different bugs,
     so the green CPU cell above is not evidence for this one. Numerics are checked against eager on
     the same device, which is what makes a silently-wrong kernel a failure rather than a speedup."""
-    from agents.training.rust_rollout.build import MIN_BUCKET
     torch._dynamo.reset()
     torch._dynamo.config.suppress_errors = False
     fe, layout = _build_production_extractor()
     fe = fe.cuda().eval()
-    # At T2's smallest default bucket, not at _BATCH: this cell is the INFERENCE compile, and T2 compiles no
-    # default shape below MIN_BUCKET. At B = 2 Triton 3.4.0 fails one fused kernel (the [B,6] Beat-Up /
-    # max-HP epilogue fused into the speed mixture's fp64 cumsum, autotuned at XBLOCK 16, which only
-    # 6B in (8, 16] asks for), the 2026-10-25 red; `triton_xblock16_remat_test.py` pins that bug on the CPU.
-    obs = _obs(layout, "cuda", batch=MIN_BUCKET)
+    obs = _obs(layout, "cuda")
     with torch.no_grad():
         ref = fe(obs)
         got = compile_on(fe.forward, device="cuda")(obs)

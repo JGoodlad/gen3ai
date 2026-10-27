@@ -228,13 +228,6 @@ pub struct ProtocolBuilder {
     /// just before the recursive called-move run; consumed (cleared) by the next
     /// `move_used`. PRNG-free like everything here.
     pending_move_from: Option<String>,
-    /// A ONE-SHOT `onUseMoveMessage` line the NEXT `|move|` announce is followed by
-    /// (`gen3_b8_moves_v1`, Magnitude: `|-activate|<user>|move: Magnitude|<n>`, printed by
-    /// `data/mods/gen3/scripts.ts:195` right after the announce and before the hit pipeline, so it
-    /// precedes a `-miss` / `-immune` / Protect line and a later `attrLastMove('[miss]')` still
-    /// edits the `|move|` line above it). Set just before the move resolves; consumed by the next
-    /// `move_used`; cleared by `run_move` when the move ends. PRNG-free like everything here.
-    pending_use_move: Option<(MonRef, u8)>,
     /// The index (into `lines`) just past the most recent `|turn|N` marker — the
     /// sim's "SEND boundary" (`gen3_omniscient_byte_fuzz_v1`, class A: the spurious
     /// `[miss]` retro-tag). Showdown STREAMS each turn's lines at `makeRequest`, so an
@@ -281,20 +274,6 @@ impl ProtocolBuilder {
             return;
         }
         self.pending_move_from = Some(effect.to_string());
-    }
-
-    /// Queue Magnitude's `onUseMoveMessage` for the next `|move|` announce (see
-    /// `pending_use_move`).
-    pub fn set_magnitude_message(&mut self, user: &MonRef, magnitude: u8) {
-        if !self.enabled {
-            return;
-        }
-        self.pending_use_move = Some((user.clone(), magnitude));
-    }
-
-    /// Drop a queued `onUseMoveMessage` the move never announced (`run_move`'s end).
-    pub fn clear_use_move_message(&mut self) {
-        self.pending_use_move = None;
     }
 
     /// Enable emission (the logged battle path calls this). The seed suite never
@@ -473,16 +452,12 @@ impl ProtocolBuilder {
         self.emit(|| {
             let mut f = vec![Field::mon(user), text_or_empty(move_name)];
             if still {
-                // Empty target field + [still] (e.g. Protect: `|move|…|Protect||[still]`). A
-                // `[from]` fold comes FIRST: the sim prints the announce with its `[from]` and
-                // `attrLastMove('[still]')` then blanks the target and APPENDS `[still]`
-                // (`gen3_b6_moves_v1`, probe_b6_moves.js MC11:
-                // `|move|…|Screech||[from] Magic Coat|[still]`).
+                // Empty target field + [still] (e.g. Protect: `|move|…|Protect||[still]`).
                 f.push(Field::Empty);
+                f.push(Field::tag("[still]"));
                 if let Some(e) = &from {
                     f.push(Field::from_text(e));
                 }
-                f.push(Field::tag("[still]"));
             } else if let Some(t) = target {
                 f.push(Field::mon(t));
                 // The `[from]` fold precedes a `[miss]` (the announce carries the from-attr;
@@ -498,36 +473,6 @@ impl ProtocolBuilder {
             }
             Line::new(Kw::Move, f)
         });
-        if let Some((m, n)) = self.pending_use_move.take() {
-            self.activate_magnitude(&m, n);
-        }
-    }
-
-    /// `|move|<user>|<MoveName>|null[|[from] <Effect>]|[notarget]` — the gen-3 `useMoveInner`
-    /// announce of a move whose target resolved to NOTHING (`gen3_b10_moves_v1`): HELPING HAND
-    /// (`target: adjacentAlly`) in singles, where `getRandomTarget` returns `null`
-    /// (`sim/battle.ts:2517-2518`). `addMove('move', pokemon, movename, `${target}${attrs}`)`
-    /// (`data/mods/gen3/scripts.ts:166`) stringifies the null target as the literal `null`, then
-    /// `attrLastMove('[notarget]')` appends the tag AFTER a Sleep-Talk `[from]` fold. Pair with
-    /// [`Self::notarget`]. Probe `harness/probe_b10_moves.js`.
-    pub fn move_used_notarget(&mut self, user: &MonRef, move_name: &str) {
-        if !self.enabled {
-            return;
-        }
-        let from = self.pending_move_from.take();
-        self.emit(|| {
-            let mut f = vec![Field::mon(user), text_or_empty(move_name), Field::text("null")];
-            if let Some(e) = &from {
-                f.push(Field::from_text(e));
-            }
-            f.push(Field::tag("[notarget]"));
-            Line::new(Kw::Move, f)
-        });
-    }
-    /// `|-notarget|<user>` — the gen&lt;=4 no-target outcome line (`data/mods/gen3/scripts.ts:170`;
-    /// gen 5+ prints `-fail` instead). `gen3_b10_moves_v1`.
-    pub fn notarget(&mut self, user: &MonRef) {
-        self.emit(|| Line::new(Kw::Notarget, vec![Field::mon(user)]));
     }
 
     /// Retro-edit the MOST RECENT `|move|` line into the `[still]` did-nothing form —
@@ -1011,22 +956,6 @@ impl ProtocolBuilder {
             ])
         });
     }
-    /// `|-ability|<mon>|<New>|<Old>|[from] move: <Move>|[of] <source>` — a MOVE that set the
-    /// mon's ability (`gen3_b10_moves_v1`, ROLE PLAY): `Pokemon.setAbility`'s default reveal
-    /// (`sim/pokemon.ts` setAbility: `add('-ability', this, ability.name, oldAbility.name,
-    /// '[from] ' + sourceEffect.fullname, '[of] ' + source)`), the display names of the new and
-    /// the OLD ability. Probe `harness/probe_b10_moves.js`.
-    pub fn ability_from_move_of(&mut self, mon: &MonRef, new: &str, old: &str, move_name: &str, of: &MonRef) {
-        self.emit(|| {
-            Line::new(Kw::Ability, vec![
-                Field::mon(mon),
-                text_or_empty(new),
-                text_or_empty(old),
-                Field::From(LineCause::Move(move_name.into())),
-                Field::of(of),
-            ])
-        });
-    }
     /// `|-fail|<mon>|unboost|[<Stat>|][from] ability: <Blocker>|[of] <mon>` — a stat-drop
     /// blocked by the target's own ability. The `[of]` is the BLOCKER itself (its own ability
     /// saved it). The `stat` token MIRRORS the sim's per-ability `onTryBoost` `this.add`:
@@ -1242,41 +1171,6 @@ impl ProtocolBuilder {
             ])
         });
     }
-    /// `|-activate|<user>|move: Magnitude|<n>` — Magnitude's `onUseMoveMessage`
-    /// (`data/moves.ts` magnitude; `gen3_b8_moves_v1`).
-    pub fn activate_magnitude(&mut self, user: &MonRef, magnitude: u8) {
-        self.emit(|| {
-            Line::new(Kw::Activate, vec![
-                Field::mon(user),
-                Field::text("move: Magnitude"),
-                typed_or_text(Kw::Activate, 2, &magnitude.to_string()),
-            ])
-        });
-    }
-    /// `|-ohko|` — an OHKO move knocked its target out (`data/mods/gen3/scripts.ts:466`) or hit
-    /// a Substitute (`data/mods/gen4/moves.ts:1309`). `gen3_b8_moves_v1`.
-    pub fn ohko(&mut self) {
-        self.emit(|| Line::new(Kw::Ohko, vec![]));
-    }
-    /// `|-immune|<target>|[ohko]` — an OHKO move whose user is below the target's level
-    /// (`data/mods/gen3/scripts.ts:352`). `gen3_b8_moves_v1`.
-    pub fn immune_ohko(&mut self, target: &MonRef) {
-        self.emit(|| Line::new(Kw::Immune, vec![Field::mon(target), Field::tag("[ohko]")]));
-    }
-    /// `|-activate|<target>|move: Spite|<moveid>|<n>` — SPITE cut `n` PP (`gen3_b5_moves_v1`,
-    /// `data/mods/gen3/moves.ts` spite `onHit`: `this.add("-activate", target, 'move: Spite',
-    /// target.lastMove.id, roll)`). The move is the raw ID, and `n` is the ROLL, not the PP
-    /// actually removed (a 2-PP move Spited for 5 prints 5).
-    pub fn activate_spite(&mut self, target: &MonRef, move_id: &str, roll: u32) {
-        self.emit(|| {
-            Line::new(Kw::Activate, vec![
-                Field::mon(target),
-                Field::text("move: Spite"),
-                typed_or_text(Kw::Activate, 2, move_id),
-                typed_or_text(Kw::Activate, 3, &roll.to_string()),
-            ])
-        });
-    }
     /// `|-transform|<user>|<target>` — the TRANSFORM copy landed (`gen3_transform_v1`,
     /// `pokemon.transformInto`'s `this.battle.add('-transform', this, pokemon)`). A plain
     /// Transform passes no `effect`, so gen3 never emits the `|[from] <effect>` variant
@@ -1339,16 +1233,6 @@ impl ProtocolBuilder {
     /// N = the strikes that actually fired).
     pub fn hitcount(&mut self, mon: &MonRef, n: u32) {
         self.emit(|| Line::new(Kw::Hitcount, vec![Field::mon(mon), Field::text(n.to_string())]));
-    }
-    /// `|-end|<mon>|<Effect>|[from] item: <Item>` — a volatile removed BY an item (Mental Herb's
-    /// attraction cure, `gen3_items_b3_v1`: `|-end|<mon>|move: Attract|[from] item: Mental Herb`).
-    pub fn volatile_end_from_item(&mut self, mon: &MonRef, effect: &str, item: &str) {
-        self.emit(|| Line::new(Kw::End, vec![Field::mon(mon), text_or_empty(effect), Field::From(LineCause::Item(item.into()))]));
-    }
-    /// `|-end|<mon>|<Effect>|[from] ability: <Ability>` — a volatile removed by the holder's own
-    /// ability (`gen3_bf_volatile_immune_onupdate_v1`, Oblivious ending an Attract).
-    pub fn volatile_end_from_ability(&mut self, mon: &MonRef, effect: &str, ability: &str) {
-        self.emit(|| Line::new(Kw::End, vec![Field::mon(mon), text_or_empty(effect), Field::From(LineCause::Ability(ability.into()))]));
     }
     /// `|-end|<mon>|<Effect>|[from] move: <Move>|[of] <of>` — a volatile removed BY a move
     /// (`gen3_move_coverage_batch1_v1`, Rapid Spin clearing the USER's own Leech Seed:

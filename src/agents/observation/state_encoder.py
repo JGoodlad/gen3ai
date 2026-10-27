@@ -15,13 +15,7 @@ from .types import TypeEncoder
 from .abilities import AbilitiesEncoder
 from .moves import MovesEncoder
 from .reactive import ReactiveEncoder
-from .vocab_bounds import check_vocab_bounds
 from .constants import (
-    VOCAB_SPECIES,
-    VOCAB_MOVES,
-    VOCAB_ITEMS,
-    VOCAB_ABILITIES,
-    VOCAB_TYPES,
     POKEMON_VECTOR_DIM,
     POKEMON_FULL_DIM,
     POKEMON_ACTIVE_OFFSET,
@@ -57,38 +51,6 @@ from .constants import (
 from .obs_facts import describe as _describe_obs_facts
 from typing import Dict, Any, List, Optional, Tuple
 from agents.observation.reactive import ReactiveEncoder as _ReactiveEncoder
-
-
-def validate_layout(layout: Dict[str, Any]) -> None:
-    """THROWING guard on the row's block spans. `layout["parts"]` (in declaration order) plus the two
-    blocks the layout declares as top-level offsets (`event_window_*`, `obs_facts_*`) must be
-    contiguous, non-overlapping, cover exactly [0, total_dim) in order, and each `parts` span's width
-    must equal its declared dims (`dim`, or the product of `reshape`). A wrong `end` once read
-    `total_dim` for `reactive` and nothing sliced on it; a future reader would have sliced garbage."""
-    spans: List[Tuple[str, int, int, Optional[int]]] = []
-    for name, p in layout["parts"].items():
-        if "reshape" in p:
-            declared: Optional[int] = int(np.prod(p["reshape"]))
-        else:
-            declared = p.get("dim")
-        spans.append((name, int(p["start"]), int(p["end"]), None if declared is None else int(declared)))
-    ew_off = layout["event_window_offset"]
-    spans.append(("event_window", ew_off, ew_off + layout["event_window_dim"], layout["event_window_dim"]))
-    of_off = layout["obs_facts_offset"]
-    spans.append(("obs_facts", of_off, of_off + layout["obs_facts_dim"], layout["obs_facts_dim"]))
-    cursor = 0
-    for name, start, end, declared in spans:
-        if start != cursor:
-            raise ValueError(f"obs layout: block {name!r} starts at {start}, expected {cursor} "
-                             f"(blocks must be contiguous, non-overlapping, in order)")
-        if end <= start:
-            raise ValueError(f"obs layout: block {name!r} has an empty or reversed span [{start}, {end})")
-        if declared is not None and end - start != declared:
-            raise ValueError(f"obs layout: block {name!r} spans [{start}, {end}) = {end - start} wide "
-                             f"but declares {declared}")
-        cursor = end
-    if cursor != layout["total_dim"]:
-        raise ValueError(f"obs layout: blocks end at {cursor} but total_dim is {layout['total_dim']}")
 
 
 def load_mappings() -> Dict[str, Any]:
@@ -156,7 +118,6 @@ class Gen3ObservationEncoder(ObservationEncoder):
     def __init__(self, mappings: Optional[Dict[str, Any]] = None) -> None:
         self.mappings = mappings or {}
         mappings = self.mappings
-        check_vocab_bounds(mappings)   # gen3_vocab_bounds_v1: a dex num past its embedding table raises HERE
         
         # Sub-encoders
         rev = self.mappings.get("reverse", {})
@@ -191,7 +152,6 @@ class Gen3ObservationEncoder(ObservationEncoder):
         self.reactive_encoder = ReactiveEncoder(
             ability_priors=mappings.get("ability_priors", {}),
         )
-        self.get_layout()   # construction-time guard: a mis-declared block span raises (`validate_layout`)
 
     @property
     def base_dimension(self) -> int:
@@ -207,11 +167,6 @@ class Gen3ObservationEncoder(ObservationEncoder):
         return self.base_dimension
 
     def get_layout(self) -> Dict[str, Any]:
-        layout = self._build_layout()
-        validate_layout(layout)   # a mis-declared span RAISES here, never reaches a slicing reader
-        return layout
-
-    def _build_layout(self) -> Dict[str, Any]:
         pokemon_layout = self.pokemon_encoder.get_layout()
         return {
             "parts": {
@@ -237,7 +192,7 @@ class Gen3ObservationEncoder(ObservationEncoder):
                 },
                 "reactive": {
                     "start": OFFSET_REACTIVE, 
-                    "end": OFFSET_REACTIVE + REACTIVE_DIM,
+                    "end": self.dimension, 
                     "dim": self.reactive_encoder.dimension
                 },
                 "pair_history": {
@@ -277,15 +232,15 @@ class Gen3ObservationEncoder(ObservationEncoder):
             },
             "reactive_layout": _ReactiveEncoder().get_layout(),
             "global_layout": self.global_env_encoder.get_layout(),
-            "max_species": VOCAB_SPECIES,
+            "max_species": 400,
             "species_embedding_dim": 32,
-            "max_moves": VOCAB_MOVES,
+            "max_moves": 400,
             "move_embedding_dim": 16,
-            "max_items": VOCAB_ITEMS,
+            "max_items": 600,
             "item_embedding_dim": 16,
-            "max_abilities": VOCAB_ABILITIES,
+            "max_abilities": 100,
             "ability_embedding_dim": 16,
-            "max_types": VOCAB_TYPES,  # 19 ids in use (`damage_tables.N_TYPE_IDX`)
+            "max_types": 20, # 18 types + placeholders
             "type_embedding_dim": 16
         }
 

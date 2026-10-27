@@ -248,8 +248,6 @@ class MoveBelief(torch.nn.Module):
 
     move_prior_logits: torch.Tensor
     move_prior_probs: torch.Tensor
-    #: INFERENCE-ONLY anchor of the posterior to its prior (`agents.model.belief_prior_mix`); 0.0 = off.
-    belief_prior_mix: float = 0.0
 
     def __init__(self, n_moves: int, move_emb_dim: int,
                  prior_fusion: bool = False, n_species: int = 0,
@@ -320,16 +318,7 @@ class MoveBelief(torch.nn.Module):
                 # not the unknown-sentinel's flat row (which made its posterior state-independent).
                 hid = self.hidden_slot_prior_logits(hidden_species_probs)        # [B, M]
                 prior = torch.where(opp_believed_mask.bool().unsqueeze(-1), hid.unsqueeze(1), prior)
-            lam = self.belief_prior_mix
-            if lam > 0.0:
-                # `belief_prior_mix` (INFERENCE ONLY): σ ← (1 − λ)·σ(prior ⊕ δ) + λ·σ(prior), before the revealed
-                # pin; λ = 1 IS the prior (the delta zeroed, D0f).
-                from agents.model.belief_prior_mix import mix_bernoulli_logits, refuse_with_grad
-
-                refuse_with_grad(lam, "MoveBelief.move_logits")
-                logits = prior if lam >= 1.0 else mix_bernoulli_logits(logits + prior, prior, lam)
-            else:
-                logits = logits + prior                                          # posterior = prior ⊕ delta
+            logits = logits + prior                                              # posterior = prior ⊕ delta
             if opp_move_ids is not None:
                 # REVEALED moves are certain → pin to a high logit (sigmoid ≈ 1). id 0 = unknown sentinel.
                 # BRANCHLESS + SYNC-FREE: the old form did `if bool(valid.any())` then `valid.nonzero()`
@@ -504,8 +493,6 @@ class ItemBelief(torch.nn.Module):
     at the active slot, gated by the SAME exactness logic it already had (revealed → 0/1)."""
 
     item_prior: torch.Tensor
-    #: INFERENCE-ONLY anchor of the posterior to its prior (`agents.model.belief_prior_mix`); 0.0 = off.
-    belief_prior_mix: float = 0.0
 
     def __init__(self, n_species: int, n_items: int):
         super().__init__()
@@ -526,14 +513,6 @@ class ItemBelief(torch.nn.Module):
         delta = self.item_head(self.norm(read))
         prior = self.item_prior[opp_species_ids].clamp_min(1e-6)
         logits = delta + torch.log(prior)
-        lam = self.belief_prior_mix
-        if lam > 0.0:
-            # `belief_prior_mix` (INFERENCE ONLY): p ← (1 − λ)·p + λ·softmax(log prior); λ = 1 IS the prior (D0f).
-            from agents.model.belief_prior_mix import mix_categorical_logits, refuse_with_grad
-
-            refuse_with_grad(lam, "ItemBelief.forward")
-            lp = torch.log(prior)
-            logits = lp if lam >= 1.0 else mix_categorical_logits(logits, lp, lam)
         return logits, torch.softmax(logits, dim=-1)
 
 

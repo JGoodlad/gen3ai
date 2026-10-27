@@ -19,7 +19,6 @@ from __future__ import annotations
 
 import json
 import math
-import os
 from types import SimpleNamespace
 from typing import Any, Dict, List, Optional
 
@@ -222,7 +221,7 @@ def test_a_COMPILED_breach_still_CONFIRMS_and_is_FATAL_with_the_rows_and_weights
         can.after_update()
     assert any("compiled DISAGREES with eager" in s for s in said), said
     (rec,) = _records(tmp)
-    assert rec["verdict"] == "fatal" and rec["policy_pt"] == "canary_u1_s267205580_fatal_policy.pt"
+    assert rec["verdict"] == "fatal" and rec["policy_pt"] == "canary_u1_fatal_policy.pt"
     sd = torch.load(tmp / rec["policy_pt"])
     assert set(sd) == {"weight", "bias"}
     for name in ("scheduled", "confirm_slice2", "confirm_slice1"):
@@ -241,39 +240,16 @@ def test_an_UNCONFIRMED_dumps_the_weights_and_a_YARDSTICK_refusal_is_never_worde
     assert any("the canary's YARDSTICK refused" in s for s in said), said
     assert not any("DISAGREES" in s for s in said), said
     (rec,) = _records(tmp)
-    assert rec["verdict"] == "unconfirmed" and rec["policy_pt"] == "canary_u1_s267205580_unconfirmed_policy.pt"
+    assert rec["verdict"] == "unconfirmed" and rec["policy_pt"] == "canary_u1_unconfirmed_policy.pt"
     assert (tmp / rec["policy_pt"]).exists()
 
 
 def test_the_weight_dump_is_CAPPED_per_process(canary_world, tmp_path):
     can, *_ = canary_world
-    got = [CC._dump_weights(can.model, str(tmp_path), u, "unconfirmed", 5) for u in range(CC.DUMP_WEIGHTS_MAX + 1)]
-    assert got[:-1] == [f"canary_u{u}_s5_unconfirmed_policy.pt" for u in range(CC.DUMP_WEIGHTS_MAX)]
+    got = [CC._dump_weights(can.model, str(tmp_path), u, "unconfirmed") for u in range(CC.DUMP_WEIGHTS_MAX + 1)]
+    assert got[:-1] == [f"canary_u{u}_unconfirmed_policy.pt" for u in range(CC.DUMP_WEIGHTS_MAX)]
     assert got[-1] == "cap" and CC.DUMP_WEIGHTS_MAX == 3
     assert CC._dump_weights(can.model, None, 9, "fatal") is None
-
-
-def test_a_post_restart_dump_never_overwrites_an_earlier_one(canary_world, tmp_path, monkeypatch):
-    """0dcf0ea4 FINDING 3 (`gen3_canary_dump_no_clobber_v1`). Fails on revert: the dump was named by the update number
-    alone, which restarts at 0 per process, so the second process's u1 dump overwrote the first's."""
-    can, *_ = canary_world
-    w = can.model.policy.weight
-    with torch.no_grad():
-        w.fill_(1.0)
-    first = CC._dump_weights(can.model, str(tmp_path), 1, "unconfirmed", 100)
-    monkeypatch.setattr(CC, "_WEIGHT_DUMPS", 0)                   # a new process: the per-process cap starts again
-    with torch.no_grad():
-        w.fill_(2.0)
-    later = CC._dump_weights(can.model, str(tmp_path), 1, "unconfirmed", 200)       # a restart, a later step
-    with torch.no_grad():
-        w.fill_(3.0)
-    again = CC._dump_weights(can.model, str(tmp_path), 1, "unconfirmed", 200)       # a resume from the SAME step
-    assert (first, later, again) == ("canary_u1_s100_unconfirmed_policy.pt", "canary_u1_s200_unconfirmed_policy.pt",
-                                     "canary_u1_s200_r2_unconfirmed_policy.pt")
-    assert [float(torch.load(tmp_path / n)["weight"][0, 0]) for n in (first, later, again)] == [1.0, 2.0, 3.0]
-    near = [CC._dump_near_margin(can.model, str(tmp_path), 1, 200) for _ in range(2)]
-    assert near == ["canary_u1_s200_near_policy.pt", "canary_u1_s200_r2_near_policy.pt"]
-    assert not [f for f in os.listdir(tmp_path) if f.endswith(".tmp")]
 
 
 def test_the_headroom_is_its_declaration():

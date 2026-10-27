@@ -95,38 +95,6 @@ def test_sample_is_decided_UNDER_the_base_not_by_its_absolute_path(tmp_path):
     loader = TeamLoader(base_dir=str(base))
     assert loader.get_other_teams() == ["OTHER TEAM"] and loader.get_sample_teams() == []
 
-def _pool_with(tmp_path, texts):
-    """A tiny pool whose files hold ``texts`` (name -> paste)."""
-    base = tmp_path / "data" / "teams"
-    d = base / "others" / "a"
-    d.mkdir(parents=True)
-    for name, text in texts.items():
-        (d / name).write_text(text)
-    (d / "teams.json").write_text(json.dumps([{"file": f"teams/others/a/{n}"} for n in texts]))
-    return str(base)
-
-
-def test_a_pool_team_the_label_path_cannot_encode_is_REFUSED_naming_its_file(tmp_path):
-    """The corpora's guard (``c6497e66e``), one reader over: a non-100 ``Level:`` in the TRAINING pool would fault the
-    env's L100 spread labels (D1 s3501, ``sfv2_5051``). Fails on revert of the guard in ``TeamLoader.__init__``."""
-    from utils.team_corpora import CorpusError
-    ok = "Mew @ Leftovers\nLevel: 100\n- Psychic"
-    bad = "Krabby @ Salac Berry\nLevel: 5\n- Endure"
-    base = _pool_with(tmp_path, {"ok.txt": ok, "bad.txt": bad})
-    with pytest.raises(CorpusError, match=r"bad\.txt.*Level: 5"):
-        TeamLoader(base_dir=base)
-    # the same pool without the violator loads, and a team with no Level line is Showdown's 100
-    clean = _pool_with(tmp_path / "c", {"ok.txt": ok, "nolevel.txt": "Mew\n- Psychic"})
-    assert len(TeamLoader(base_dir=clean).get_all_teams()) == 2
-
-
-def test_the_committed_pool_holds_no_non_100_team():
-    """The CURRENT ``data/teams`` passes the guard (checked 2026-10-25: 719 teams, 0 violators)."""
-    from utils.team_corpora import label_path_defects
-    teams = TeamLoader().get_all_teams()
-    assert teams and not [t for t in teams if label_path_defects(t)]
-
-
 def test_loader_handles_invalid_json(mock_teams_structure):
     # Add an invalid JSON file
     invalid_json_dir = os.path.join(mock_teams_structure, "invalid")

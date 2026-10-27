@@ -622,34 +622,7 @@ from typing import Any, Dict
 #   expert. Gated in check_compatible (its text names --grow). A pre-v161 config migrates to off (the only possible
 #   past). No ARCH_SIGNATURE bump (off builds nothing: every existing state dict and forward is unchanged; the on path is
 #   gated by the field — the trunk_layers precedent), no OBS_SEMANTICS or MIGRATION_FLOOR change.
-# v162 (gen3_op_held_item_v1; GIGO fix 2026-10-26, audit C-1): no field, no weight shape. Every item IDENTITY read in the
-#   op (the opponent's P(Choice Band), our Choice Band x1.5 on the outgoing blocks, both Quick Claw reads) and the
-#   Leftovers / Lum / Chesto tables read `extractor_ctx.held_item_ids` — 0 once the item is consumed — where they
-#   compared the RAW id: a Knocked-Off / stolen Choice Band read as HELD (P(CB) = 1 on their active, x1.5 on ours).
-#   Production's op block changes on a row whose active's item is consumed and was a Choice Band (the two tables
-#   already multiplied by `1 - consumed`: bit-identical). The state_dict is unchanged and every past config stamps
-#   through. No ARCH_SIGNATURE bump, no MIGRATION_FLOOR change. OBS_SEMANTICS_VERSION was first kept at 151 (a hard
-#   refusal in `ProbeModel.load` would have blinded every reader of current models) and raised to 162 once the gap
-#   policy landed (`arch_status.decide`, 2026-10-26). The SAME version carries the observation-value fix
-#   gen3_volatile_silent_ends_v1 (the Rust reading: Destiny Bond / Grudge / Rage end at the holder's next move,
-#   Endure / Snatch / Helping Hand at the turn, Mean Look's `trapped` when its trapper leaves and through Baton Pass;
-#   the obs golden moved on 36 of 991 decisions, all a stale Destiny Bond cell 1 -> 0).
-# v163 (gen3_hp_foresight_v1, 2026-10-27; TECH_DEBT P3, `designs/rust_sim/gen3_full_parity.md` "Known divergences"):
-#   no field, no weight shape. The Rust core's Hidden-Power type belief (`trackers/hp_belief.rs`; its Python twin was
-#   deleted in T27 P6 6d-2) read every Ghost target as immune to Fighting; a target under the `foresight` volatile
-#   (Foresight or Odor Sleuth: `data/moves.ts` `onNegateImmunity`) is not, and its Ghost type adds 0 to the type mod.
-#   A Hidden Power Fighting into a foresighted Ghost was misread (a 2x on Sableye dropped as infeasible, a 0.5x on
-#   Gengar zeroed the true Fighting). The reading's fire-time target snapshot now carries the volatile. An
-#   OBSERVATION-VALUE fix of the opponent HP-type cells: OBS_SEMANTICS_VERSION raised to 163 (`warn`). Every past
-#   config stamps through. No ARCH_SIGNATURE bump, no MIGRATION_FLOOR change.
-# v164 (gen3_trunk_ffn_width_v1, B-FFNW, T69): one STRUCTURAL field, `trunk_ffn_dim` (int, default 256;
-#   `--trunk-ffn-dim N`, or a fork's `--grow trunk_ffn_dim=N`): N > 256 gives every trunk round a zero-output width branch
-#   (`trunk_ffn_width.py`, `round.ffn_extra`: D_MODEL -> N - 256 -> D_MODEL), so its FFN is one N-wide FFN over a split
-#   hidden layer. Gated in check_compatible (its text names --grow). A pre-v164 config migrates to 256 (the only width
-#   ever built). No ARCH_SIGNATURE bump (256 builds nothing: every existing state dict and forward is unchanged; a wider
-#   build is gated by the field — the trunk_layers / trunk_ffn_by_kind precedent), no OBS_SEMANTICS or MIGRATION_FLOOR
-#   change.
-MODEL_CONFIG_VERSION = 164
+MODEL_CONFIG_VERSION = 161
 
 # THE OBS-SEMANTICS MARKER (declared 2026-10-09, with v151): the FIRST config version whose OBSERVATION VALUES
 # (the vector the encoder writes, and the model-input cells derived from it) MEAN something different from every
@@ -661,41 +634,15 @@ MODEL_CONFIG_VERSION = 164
 # input semantics = NOT current, even when the state_dict loads. Nothing here gates a resume or an opponent load
 # (a resumed run is meant to continue on the new inputs; `check_compatible` is unchanged).
 #
-# THE RULE: a commit that changes what an observation cell MEANS without changing a shape appends a row to
-# `OBS_SEMANTICS_HISTORY` for the config version it stamps, and re-pins `src/agents/model/obs_semantics_test.py`'s
-# golden hash. That test fails when the obs golden (`agents/training/golden_obs_fixture.json`) moves without it. A
-# change the golden cannot see (a model-INTERNAL input such as an op edge cell) must be raised here by hand.
-#
-# WHAT A READER DOES WITH IT is one policy, not a refusal: `main.prober.arch_status.decide(verdict, use)` — a TRACE
-# REPLAY, a FRESH probe (positions encoded now) or a STORED-obs score of a checkpoint recorded below the marker runs
-# with the badge "trained on obs_semantics vN, probed at vM" (`designs/prober/arch_drift.md`).
-#
-# The history: (config version, what changed at it in one clause — rendered in the prober's drift diagnosis and in
-# every gap badge —, REPLAY). Strictly increasing; the last row is the marker in force.
-#
-# REPLAY is what a TRACE REPLAY (a checkpoint recorded below this row, re-run on a trace's STORED observations) does
-# across the row: "warn" runs it with the badge naming this row's change; "refuse" is for a change under which the
-# stored observations genuinely MISMATCH the network (an encoder-layout / cell re-definition the stored rows cannot
-# be read under). Choose "warn" only when a model's replay of its OWN traces still feeds the exact observations it
-# saw, so only a model-INTERNAL input (an op read) can differ. The gap policy refuses a replay when ANY row newer than
-# the checkpoint's marker says "refuse" (`main.prober.arch_status.decide`).
-OBS_SEMANTICS_HISTORY = (
-    (151, "the Toxic counter cell is now stage/15 where it was stage/8, and the Wish flag now means "
-          "'lands at the next end-of-turn residual'", "warn"),
-    # d8d674b9 (gen3_op_held_item_v1 + gen3_volatile_silent_ends_v1) and f9978586 (gen3_lockin_cancelled_repeat_v1,
-    # gen3_recharge_expiry_v1), the 2026-10-26 GIGO audit; raised once the gap policy landed (TECH_DEBT P1 closed).
-    (162, "the damage operator reads a consumed item as no item (a Knocked-Off or stolen Choice Band no longer reads "
-          "as held), the Destiny Bond / Grudge / Rage / Endure / Snatch / Helping Hand cells and Mean Look's "
-          "trapped flag now clear when their effect ends, and the lock-in and recharge counters end when "
-          "Showdown's do", "warn"),
-    # gen3_hp_foresight_v1 (TECH_DEBT P3 closed): an encode-time fix of the Rust HP-type belief.
-    (163, "the opponent's Hidden Power type belief reads a Ghost under Foresight or Odor Sleuth as hit by Fighting "
-          "(no immunity), where it read every Ghost as immune", "warn"),
-)
-OBS_SEMANTICS_VERSION = OBS_SEMANTICS_HISTORY[-1][0]
+# THE RULE: a commit that changes what an observation cell MEANS without changing a shape sets this to the config
+# version it stamps, and re-pins `src/agents/model/obs_semantics_test.py`'s golden hash. That test fails when the obs
+# golden (`agents/training/golden_obs_fixture.json`) moves without it. A change the golden cannot see (a
+# model-INTERNAL input such as an op edge cell) must be raised here by hand.
+OBS_SEMANTICS_VERSION = 151
 
 # What changed at `OBS_SEMANTICS_VERSION`, in one clause — rendered in the prober's drift diagnosis.
-OBS_SEMANTICS_REASON = OBS_SEMANTICS_HISTORY[-1][1]
+OBS_SEMANTICS_REASON = ("the Toxic counter cell is now stage/15 where it was stage/8, and the Wish flag now means "
+                        "'lands at the next end-of-turn residual'")
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are

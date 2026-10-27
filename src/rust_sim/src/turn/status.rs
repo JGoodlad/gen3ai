@@ -488,7 +488,7 @@ impl crate::state::BattleState {
         //     a genuinely UNMODELED `onSetStatus` ability (one not in the `status_immune`
         //     table AND without a known size-2-preserving sort) could desync — FAIL-LOUD on
         //     that (a future scenario can never silently break). ---
-        if self.rules.sleep_clause || self.rules.freeze_clause {
+        if self.sleep_clause {
             if self.ability_unmodeled_on_set_status(&ability, dex) {
                 panic!(
                     "status target ability {ability:?} has an UNMODELED onSetStatus handler \
@@ -501,12 +501,8 @@ impl crate::state::BattleState {
             // The size-2 clause-handler tie shuffle: exactly one `random(0,2)`
             // (bit-identical to a 2-active eachEvent shuffle on a tie). A `setStatus`-phase
             // STATUS_IMMUNE ability adds a distinctly-sorted 3rd handler that does NOT change
-            // this count (the crux above). ONLY when BOTH clause handlers are gathered
-            // (`gen3_format_rules_v1`): Ubers / UU / … carry Sleep Clause Mod alone, whose one
-            // handler sorts alone and draws nothing (measured, `harness/dump_gen3_formats.js`).
-            if self.rules.set_status_shuffle() {
-                self.set_status_event_shuffle();
-            }
+            // this count (the crux above).
+            self.set_status_event_shuffle();
         }
 
         // (2b) STATUS_IMMUNE ability, `setStatus` PHASE (`gen3_status_immune_v1`, data-driven)
@@ -583,19 +579,11 @@ impl crate::state::BattleState {
         //       [EMIT] `|-activate|<target>|move: Safeguard` on the TARGET MON, for a
         //       status-MOVE source only; a blocked SECONDARY is SILENT (its `random(100)`
         //       still drew — the suppression is of the effect, not the roll).
-        //       A SYNCHRONIZE reflect announces too (`gen3_bf_synchronize_safeguard_v1`, fuzz
-        //       `rmvprol00_ab_2_5`): gen 3 / 4's Synchronize (data/mods/gen4/abilities.ts:469-478)
-        //       calls `source.trySetStatus(id, target)` with no effect, so `setStatus` takes
-        //       `this.battle.effect` = the Synchronize ability, and Safeguard's `onSetStatus`
-        //       (data/moves.ts:15602) adds the line for `effect.id === 'synchronize'`. A contact
-        //       ability's status (Static, Poison Point, Effect Spore, Flame Body) stays silent.
-        //       Probe `harness/probe_bf_classes.js` BF15.
-        let synchronize_reflect = matches!(&ability_reveal, Some((_, _, a)) if a == "Synchronize");
         if self.sides[foe].safeguard > 0
             && !self.yawn_resolving
             && source != Some((foe, foe_slot))
         {
-            if (announce_immune_block || synchronize_reflect) && self.logging() {
+            if announce_immune_block && self.logging() {
                 let target = self.mon_ref(foe, foe_slot, dex);
                 self.log.activate(&target, "move: Safeguard", None);
             }
@@ -608,7 +596,7 @@ impl crate::state::BattleState {
         //      All sleep in this engine is foe-inflicted (Rest is out of scope), so
         //      simply: fail if any living slot is asleep. The block is BEFORE the
         //      onStart → NO random(2,6) on a clause block (the shuffle still drew).
-        if effect == "slp" && self.rules.sleep_clause && self.side_has_sleeper(foe) {
+        if effect == "slp" && self.sleep_clause && self.side_has_sleeper(foe) {
             // [EMIT] the Sleep Clause Mod block lines (`gen3_omniscient_byte_fuzz_v1`,
             // gen3ou): `|-message|Sleep Clause Mod activated.` + a per-battle-deduped
             // `|-hint|…` (rulesets.js:6028-6029). Draw-free / observation-only.
@@ -623,15 +611,14 @@ impl crate::state::BattleState {
         //      INSIDE the SetStatus event, so the handler-sort shuffle above already
         //      drew — the block itself is DRAW-FREE, probe
         //      `harness/probe_freeze_clause_rng.js`: a blocked second freeze's turn draw
-        //      count == a landed freeze's). ONLY where the format carries Freeze Clause Mod
-        //      (gen3ou / gen3uubl / gen3draft: the gen-3 Standard ruleset does NOT,
-        //      `gen3_format_rules_v1`).
+        //      count == a landed freeze's). ONLY in clause formats (gen3ou etc. — the
+        //      same `sleep_clause` flag; gen3's Standard ruleset carries BOTH clauses).
         //      A freeze FAILS if any LIVING mon on the TARGET's side is already frozen.
         //      A FAINTED mon never counts — the sim sets `status = 'fnt'` on faint, so
         //      the rule's `pokemon.status === "frz"` scan can only match living mons
         //      (probe B). The rule's `source?.isAlly(target)` self-exemption is moot:
         //      gen3 has no self-inflicted freeze.
-        if effect == "frz" && self.rules.freeze_clause && self.side_has_frozen(foe) {
+        if effect == "frz" && self.sleep_clause && self.side_has_frozen(foe) {
             // [EMIT] the Freeze Clause Mod block line (gen3ou): `|-message|Freeze Clause
             // activated.` (rulesets.js:6099 — NO hint, unlike Sleep Clause). Draw-free.
             if self.logging() {

@@ -17,13 +17,8 @@ encoder (`src/rust_sim/src/encoder/`, `designs/rust_sim/encoder.md`) is the only
   `ARCH_SIGNATURE`: `src/agents/model/CLAUDE.md` "Versioning — what to bump". The value gates are the obs golden
   (`python -m agents.training.golden_obs_core --check`) and `designs/rust_sim/encoder.md` §6a. The benchmark
   every obs change runs is in the root `CLAUDE.md`.
-- **`get_layout()` validates itself** (`state_encoder.validate_layout`, also run at encoder construction): `parts` + the event
-  window + obs-facts must tile `[0, total_dim)` contiguously and each span's width must equal its declared dims, else it
-  RAISES. Every `parts[x]["end"]` is x's own end, and the parts stop short of the row (the event window and OBS-FACTS follow):
-  the row's width is `total_dim`, never a part `end` (checkpoints of pins before 5c80fca2a save `reactive.end` = the width, newer ones
-  its own end, so a saved layout is read by `total_dim` and `start`). Add a block to the row ⇒ it must appear in that tiling.
-- The archived `TurnDelta` slot and the incoming-damage obs block stay deleted; `turn_delta_encoder.py` and
-  `incoming_damage.py` survive only as decoders and pure math (the prober, `damage_tables`), written into no row.
+- The archived `TurnDelta` slot and the incoming-damage obs encoder stay deleted; `turn_delta_encoder.py` and
+  `incoming_damage.py` survive only as the prober's decoder and pure math.
 
 ## Hazards
 
@@ -42,10 +37,5 @@ encoder (`src/rust_sim/src/encoder/`, `designs/rust_sim/encoder.md`) is the only
   `clock` group.
 - Move, species and type ids in the row are embedding ids: a new embedded column is declared, never fed to a
   Linear raw.
-- **Every id is bounded by `constants.VOCAB_SPECIES` / `_MOVES` / `_ITEMS` / `_ABILITIES` / `_TYPES`** (the embedding
-  tables' rows; `layout.rs` holds the same five). A dex num at or past its bound RAISES at three doors, never clamps:
-  `Gen3ObservationEncoder` construction (`vocab_bounds.check_vocab_bounds`), the Rust encoder's table load
-  (`encoder/data.rs`, which every id the Rust encoder writes is read out of) and `vocab_bounds_test.py` over the shipped
-  dex. Widening a vocabulary is a retrain-class weight-shape change: edit `constants.py` and `layout.rs` together.
 - The two move orders and the mypy rule (this package shares the model's `mypy.ini`) are in
   `src/agents/model/CLAUDE.md`.

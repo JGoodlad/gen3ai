@@ -285,11 +285,6 @@ impl crate::state::BattleState {
         if me.partial_trap.is_some() {
             conditions.push(me.cached_speed as f64);
         }
-        // INGRAIN (`gen3_b5_moves_v1`) carries `onTrapPokemon` too: a third Condition handler at
-        // subOrder 2, so rooted + trapped / wrapped ties and draws (no `onMaybeTrapPokemon`).
-        if me.ingrain {
-            conditions.push(me.cached_speed as f64);
-        }
 
         const ABILITY_SUBORDER: i32 = 7;
         const CONDITION_SUBORDER: i32 = 2;
@@ -449,15 +444,6 @@ impl crate::state::BattleState {
         if mon.status == Some(Status::Paralysis) {
             mods.push((1, 4));
         }
-        // MACHO BRACE ×0.5 (`gen3_items_b3_v1`, `machobrace.onModifySpe` → `chainModify(0.5)`,
-        // `data/items.ts` machobrace, unchanged by the gen-3/4 mods). An item handler, so a
-        // FAINTED holder's is not gathered (the same `isActive` gate as the weather speed above).
-        // Every factor in this chain is a power of two, so the 4096 fixed-point product is exact
-        // in any order. Probe `harness/probe_items_b3.js`: a Macho Brace Jolteon moves after a
-        // max-Speed Snorlax it outspeeds without it.
-        if !mon.fainted && to_id(&mon.item) == "machobrace" {
-            mods.push((1, 2));
-        }
         let modified = crate::damage::chain_modify(boosted as u64, &mods) as u32;
         modified.min(10000)
     }
@@ -560,15 +546,8 @@ impl crate::state::BattleState {
             // s==0 divides by table[0]=1 (a no-op float divide, matching the sim's `else`).
             acc /= BOOST_TABLE[(-acc_stage) as usize];
         }
-        // Defender evasion stage. FORESIGHT (`gen3_b6_moves_v1`): the identified mon's
-        // `onModifyBoost` (`data/moves.ts` foresight condition) zeroes a POSITIVE evasion stage
-        // in the `runEvent('ModifyBoost', target)` copy gen-3 `tryMoveHit` reads
-        // (`data/mods/gen3/scripts.ts` tryMoveHit, the `!move.ignoreEvasion` block); a negative
-        // stage is kept (probe_b6_moves.js FS7 / FS13: 80 and 100 rolled into +3 / +6 evasion).
-        let mut eva_stage = self.sides[foe].pokemon[foe_slot].boosts[6].clamp(-6, 6);
-        if self.sides[foe].pokemon[foe_slot].foresight && eva_stage > 0 {
-            eva_stage = 0;
-        }
+        // Defender evasion stage.
+        let eva_stage = self.sides[foe].pokemon[foe_slot].boosts[6].clamp(-6, 6);
         if eva_stage > 0 {
             acc /= BOOST_TABLE[eva_stage as usize];
         } else if eva_stage < 0 {
@@ -636,11 +615,7 @@ impl crate::state::BattleState {
         move_type: Option<Type>,
         dex: &Dex,
     ) -> bool {
-        // LOCK-ON (`gen3_b7_moves_v1`): the attacker's `lockon` volatile `onSourceAccuracy`
-        // returns `true` against its locked mon (`data/moves.ts` lockon.condition), and the gen-3
-        // `tryMoveHit` only draws `randomChance` for a non-`true` accuracy — so no draw. Every
-        // caller passes (attacker, target); a Future Sight strike passes its caster.
-        if never_miss || self.lock_on_holds(side, slot, foe, foe_slot) {
+        if never_miss {
             return true;
         }
         let eff = self.effective_accuracy(side, slot, foe, foe_slot, accuracy, move_type, dex);

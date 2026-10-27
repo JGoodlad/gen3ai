@@ -18,12 +18,6 @@ THE GROWABLE FIELDS (one table, `GROWABLE`):
   the parent's keys load unchanged), each a COPY of the round's shared FFN, and sets the seat-role segment table. The
   split equals the shared FFN bit for bit at the gate's 64-row batch (NOT at batch 1-2: F-GB-5). ``on -> off`` is
   refused (trained experts cannot be removed as an identity).
-* ``trunk_ffn_dim`` — BUILT (B-FFNW, `agents.model.trunk_ffn_width`; T69, the N4 lever). ``256 -> N`` (any wider ``N``,
-  e.g. 1024) gives every trunk round a WIDTH BRANCH ``round.ffn_extra`` (``linear1`` D_MODEL -> N - 256, ``linear2`` back,
-  ZERO, no bias) beside its own ``linear1`` / ``linear2``, so the round's FFN is one N-wide FFN and the branch adds an exact
-  0.0 at the fork. The branches are the SAME modules a fresh child at ``N`` builds (round i's private seed), so the
-  grown state dict is a fresh child's. A parent ALREADY wider than 256 is refused (its trained branch would have to be
-  widened: not built), as is a narrowing, and a parent with ``trunk_ffn_by_kind on``. The new parameters start fresh.
 * ``opp_intent_grad_mode`` — DECLARED, NOT BUILT (B-INT). Naming it is a typed refusal that names the build that adds it.
 
 FIELD-GENERIC (`design_growth_builds_kffn_int.md` §3). Each BUILT row carries its own hooks — ``parse``, ``validate``,
@@ -210,7 +204,6 @@ def grow_trunk_layers(policy: Any, trunk_layers: int) -> List[Tuple[str, torch.n
     positions, moved to the trunk's device. Returns the new ``(name, parameter)`` pairs in module order."""
     from agents.model.arch_constants import TRANSFORMER_N_LAYERS
     from agents.model.trunk_depth import build_extra_rounds
-    from agents.model.trunk_ffn_width import FFN_DIM_BASE, install_branches
 
     fe = policy.features_extractor
     tt = _transformer(policy)
@@ -220,7 +213,6 @@ def grow_trunk_layers(policy: Any, trunk_layers: int) -> List[Tuple[str, torch.n
         raise GrowthError(f"grow_trunk_layers: the trunk already has {old} rounds")
     kffn = _kffn_of(policy)
     fresh = build_extra_rounds(int(trunk_layers), ffn_by_kind=kffn)
-    width = trunk_ffn_dim_of(policy)
     assert fresh is not None
     existing = list(tt.extra_rounds) if tt.extra_rounds is not None else []
     if len(existing) != old - TRANSFORMER_N_LAYERS:
@@ -233,10 +225,6 @@ def grow_trunk_layers(policy: Any, trunk_layers: int) -> List[Tuple[str, torch.n
         for m in added:
             m.ffn_segments = tt.transformer_layers[0].ffn_segments
     tt.extra_rounds = torch.nn.ModuleList(existing + added)
-    if width != FFN_DIM_BASE:
-        # B-FFNW: a WIDE parent's new rounds carry their own width branch (zero output; round i's private seed, as a
-        # fresh child at this depth and width builds it). The parent's trained branches stay.
-        install_branches(tt, width, only_missing=True)
     tt.trunk_layers = int(trunk_layers)
     fe.trunk_layers = int(trunk_layers)
     for kw in (getattr(policy, "features_extractor_kwargs", None),):
@@ -270,7 +258,6 @@ def grow_trunk_ffn_by_kind(policy: Any, child: Any) -> Grown:
     constructor a fresh child uses, so keys and order match a fresh build), each expert a copy of the round's
     ``linear1`` / ``linear2``, and the seat-role segment table. Returns the experts' parameters in module order and the
     copy map (each expert parameter -> the shared parameter it copies: Q-K3's optimizer rule)."""
-    from agents.model.arch_constants import TRANSFORMER_FFN_DIM
     from agents.model.trunk_depth import IdentityInitRound
     from agents.model.trunk_kffn import (build_kind_ffn, copy_shared_into_experts, ffn_kind_segments,
                                          trunk_rounds)
@@ -279,9 +266,6 @@ def grow_trunk_ffn_by_kind(policy: Any, child: Any) -> Grown:
     tt = _transformer(policy)
     if _kffn_of(policy) != "off" or str(child) != "on":
         raise GrowthError(f"grow_trunk_ffn_by_kind: {_kffn_of(policy)!r} -> {child!r} is not the off -> on growth")
-    if trunk_ffn_dim_of(policy) != TRANSFORMER_FFN_DIM:
-        raise GrowthError(f"--grow trunk_ffn_by_kind=on: the parent's trunk FFN is {trunk_ffn_dim_of(policy)} wide "
-                          "(B-FFNW); per-kind experts beside a width branch are refused")
     try:
         segments = ffn_kind_segments(fe)
     except ValueError as e:
@@ -303,64 +287,6 @@ def grow_trunk_ffn_by_kind(policy: Any, child: Any) -> Grown:
         kw["trunk_ffn_by_kind"] = "on"
     added_ids = {id(p) for m in added for p in m.parameters()}
     return Grown([(n, p) for n, p in policy.named_parameters() if id(p) in added_ids], copies)
-
-
-def trunk_ffn_dim_of(policy: Any) -> int:
-    """The trunk FFN width the loaded network is BUILT at (B-FFNW): read off the rounds themselves, and refused unless
-    every round and the extractor's recorded value agree."""
-    from agents.model.trunk_ffn_width import ffn_dim_of_round
-    from agents.model.trunk_kffn import trunk_rounds
-
-    widths = {ffn_dim_of_round(r) for r in trunk_rounds(_transformer(policy))}
-    recorded = int(getattr(policy.features_extractor, "trunk_ffn_dim", 256))
-    if widths != {recorded}:
-        raise GrowthError(f"the trunk's rounds are {sorted(widths)} wide but the extractor records "
-                          f"trunk_ffn_dim={recorded}")
-    return recorded
-
-
-def _parse_ffn_dim(text: str) -> int:
-    from agents.model.trunk_ffn_width import check_ffn_dim
-    try:
-        return check_ffn_dim(str(text).strip())
-    except ValueError as e:
-        raise GrowthError(f"--grow trunk_ffn_dim={text!r}: {e}") from None
-
-
-def _validate_ffn_dim(parent: Any, child: Any) -> None:
-    from agents.model.trunk_ffn_width import FFN_DIM_BASE
-    if int(child) < int(parent):
-        raise GrowthError(
-            f"--grow trunk_ffn_dim={child}: the parent's trunk FFN is {parent} wide — growth only WIDENS it (trained "
-            "hidden units cannot be removed as an identity). Start a fresh run to train a narrower FFN.")
-    if int(child) > int(parent) and int(parent) != FFN_DIM_BASE:
-        raise GrowthError(
-            f"--grow trunk_ffn_dim={child}: the parent's trunk FFN is already {parent} wide; widening a TRAINED width "
-            f"branch is not built (only {FFN_DIM_BASE} -> N). Start the growth from a {FFN_DIM_BASE}-wide parent.")
-
-
-def grow_trunk_ffn_dim(policy: Any, child: Any) -> Grown:
-    """``256 -> N`` IN PLACE (module docstring): every round gets `trunk_ffn_width.build_ffn_extra`'s branch (the SAME
-    constructor and private seed a fresh child at ``N`` uses, so keys, order and bytes match a fresh build), whose zero
-    ``linear2`` adds an exact 0.0. Returns the branches' parameters in module order; no copies (fresh AdamW state)."""
-    from agents.model.trunk_ffn_width import FFN_DIM_BASE, check_ffn_dim, install_branches
-
-    fe = policy.features_extractor
-    tt = _transformer(policy)
-    have, want = trunk_ffn_dim_of(policy), check_ffn_dim(child)
-    if have != FFN_DIM_BASE or want <= have:
-        raise GrowthError(f"grow_trunk_ffn_dim: {have} -> {want} is not a {FFN_DIM_BASE} -> N widening")
-    if _kffn_of(policy) != "off":
-        raise GrowthError("--grow trunk_ffn_dim: the parent carries per-kind FFN experts (trunk_ffn_by_kind on); a "
-                          "width branch beside them is refused")
-    added = install_branches(tt, want)
-    tt.trunk_ffn_dim = want
-    fe.trunk_ffn_dim = want
-    kw = getattr(policy, "features_extractor_kwargs", None)
-    if isinstance(kw, dict):
-        kw["trunk_ffn_dim"] = want
-    added_ids = {id(p) for m in added for p in m.parameters()}
-    return Grown([(n, p) for n, p in policy.named_parameters() if id(p) in added_ids], {})
 
 
 def regrow_optimizer(policy: Any, new_params: Sequence[torch.nn.Parameter],
@@ -523,11 +449,6 @@ GROWABLE: Dict[str, Growable] = {
         parse=_parse_kffn, validate=_validate_kffn, current=_kffn_of, grow=grow_trunk_ffn_by_kind,
         optimizer_rule="each new expert parameter is a COPY of its round's shared FFN parameter and gets an "
                        "independent clone of that parameter's AdamW state (exp_avg, exp_avg_sq, step; Q-K3)"),
-    "trunk_ffn_dim": Growable(
-        "trunk_ffn_dim", True, "B-FFNW",
-        "widens every trunk round's FFN with a zero-output width branch (trunk_ffn_width: linear1 D_MODEL -> N - 256, "
-        "linear2 back, zero; design_n4_capacity_screen.md §2)",
-        parse=_parse_ffn_dim, validate=_validate_ffn_dim, current=trunk_ffn_dim_of, grow=grow_trunk_ffn_dim),
     "opp_intent_grad_mode": Growable(
         "opp_intent_grad_mode", False, "B-INT",
         "the opponent-intent objective's trunk gradient switch (design_bot_ideas_screen.md §2.3)"),

@@ -61,14 +61,13 @@ THE FIXED-SIZE CONSTRUCTION (`fixed_size_tau`).
     every term is ``±σ(−|x|) ∈ [−½, ½]``, computed to a few ulp RELATIVE, and ``k − |H|`` is an exact
     integer — the near-1 term ``σ(x) ≈ 1`` is never formed, so nothing cancels. CONDITIONING (the
     proof): with ``R + D = Σ σ(−|x_s|)`` the terms' absolute sum, any summation order errs by at most
-    ``c·(R + D)``, ``c ≈ (L + 2)·u`` (u = 2^-24; L = the longest serial accumulation chain, ≤ n − 1: ≈ the depth, ≤ 9, of a tree
-    reduction, but the CPU Inductor kernel is one serial chain of n = 400;
+    ``c·(R + D)``, ``c ≈ (depth + 2)·u`` (u = 2^-24; depth = the reduction's, ≤ 9 for a 400-wide tree;
     the rounding of ``x = a + τ`` itself moves ``τ`` only as a one-ulp change of the scores would);
     and ``S' = Σ π(1 − π) ≥ ½ Σ min(π, 1 − π) = ½(R + D)``, with ``R + D`` Lipschitz-1 in log over τ.
     So the direction test is right whenever ``|τ − τ*| > −ln(1 − 2c) ≈ 2c``: the root is fixed to
-    ~2c absolute (worst case ≈ 5e-5, MEASURED ≤ 4e-6; plus ``τ``'s own fp32 rounding, ~1 ulp) WHATEVER the slope — on the τ-class
+    ~2c ≈ 1e-6 absolute (plus ``τ``'s own fp32 rounding, ~1 ulp) WHATEVER the slope — on the τ-class
     rows the naive band was 1e-2. The bound fails only where every ``σ(−|x_s|)`` underflows (all
-    ``|x_s|`` > ~87 at the root: the top candidate ~165 nats clear of the next), where float64's own
+    ``|x_s|`` > ~87 at the root: the top candidate ~175 nats clear of the next), where float64's own
     naive sum failed long before (its band reaches 1e-2 at a ~64-nat lead).
   - ``"fp64"`` (T62, ``gen3_tau_fp64_solve_v1``): the naive sum on a float64 copy of the scores, ``τ``
     cast back once. Exact to ~1e-11 on the τ-class rows, but float64 runs at ~1/64 rate on consumer GPUs
@@ -540,9 +539,6 @@ class HypothesisBuilder(torch.nn.Module):
             # state_dict). Drawn LAST in this private stream, so no earlier X5 init byte moves.
             self.hypothesis_marker = torch.nn.Parameter(torch.randn(D_MODEL) * 0.02)
         self.detach_read = False      # stamped by `_stamp_belief_grad_flags` (belief_grad_mode)
-        # INFERENCE-ONLY anchor of the species presence to its prior (`belief_prior_mix`): a plain attribute, never
-        # state; 0.0 = the unchanged forward.
-        self.belief_prior_mix = 0.0
 
     # ------------------------------------------------------------------ δ_θ
     def delta(self, opp_role_tokens: torch.Tensor, revealed: torch.Tensor,
@@ -593,15 +589,6 @@ class HypothesisBuilder(torch.nn.Module):
         revealed_slots = (opp_species_ids > 0) & ~believed
         scores = t0_log_prior + self.delta(opp_role_tokens, revealed_slots, global_input)
         pres = fixed_mass_presence(scores, cand, k, solve=self.tau_solve)
-        lam = self.belief_prior_mix
-        if lam > 0.0:
-            # `belief_prior_mix`: π ← (1 − λ)·π + λ·π_prior (the delta zeroed), before anything reads the set;
-            # λ = 1 IS the prior-only presence (D0f), not a float approximation of it.
-            from agents.model.belief_prior_mix import mix_presence, refuse_with_grad
-
-            refuse_with_grad(lam, "HypothesisBuilder.species_set")
-            prior = fixed_mass_presence(t0_log_prior, cand, k, solve=self.tau_solve)
-            pres = prior if lam >= 1.0 else mix_presence(pres, prior, lam)
         pi = pres.pi                                                                 # detached
         # ranks >= k are OTHER's tail, read only as a set (`in_tail`, index-order sums): k positions are
         # consumed in order (gen3_behaviour_tie_consumed_v1)

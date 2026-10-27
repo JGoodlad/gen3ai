@@ -49,11 +49,11 @@
 //!
 //! * **`pseudoWeather`** — the port has no pseudo-weather MAP. gen-3 has no
 //!   pseudo-weather MOVE (Trick Room / Gravity are gen-4+), so the only entries a
-//!   real gen-3 battle carries are the format's clause rules, which the port models in
-//!   its format table ([`crate::format::FormatRules::pseudo_weather`]):
-//!   `["freezeclausemod","sleepclausemod"]` in gen3ou, `["sleepclausemod"]` in a
-//!   Sleep-Clause-only tier, `[]` in `gen3customgame`. **VERIFIED** against the golden
-//!   (6/6 cases, gen3ou).
+//!   real gen-3 battle carries are the format's two clause rules, which the port
+//!   DOES model behind one flag ([`BattleState::sleep_clause`], which gates both the
+//!   Sleep Clause Mod and the Freeze Clause Mod). So the list is derived from that
+//!   flag: `["freezeclausemod","sleepclausemod"]` in a clause format, `[]` in
+//!   `gen3customgame`. **VERIFIED** against the golden (6/6 cases, gen3ou).
 //! * **`volatiles`** — the port models volatiles as individual typed fields on
 //!   [`MonState`], not as a keyed map, so the NAME list is RECONSTRUCTED by
 //!   [`volatile_names`] from those fields using Showdown's condition ids. The golden
@@ -1051,10 +1051,6 @@ pub fn volatile_names(mon: &MonState) -> Vec<&'static str> {
     if mon.attract.is_some() {
         v.push("attract");
     }
-    // BIDE (`gen3_b8_moves_v1`) lives across the cast and wait turns' boundaries.
-    if mon.bide.is_some() {
-        v.push("bide");
-    }
     if mon.charge {
         v.push("charge");
     }
@@ -1079,22 +1075,8 @@ pub fn volatile_names(mon: &MonState) -> Vec<&'static str> {
     if mon.flash_fire {
         v.push("flashfire");
     }
-    // The B5 volatiles (`gen3_b5_moves_v1`): all three live across a turn boundary.
-    if mon.grudge {
-        v.push("grudge");
-    }
-    if mon.ingrain {
-        v.push("ingrain");
-    }
-    if mon.nightmare {
-        v.push("nightmare");
-    }
     if mon.focus_energy {
         v.push("focusenergy");
-    }
-    if mon.foresight {
-        // `gen3_b6_moves_v1`: Foresight / Odor Sleuth's volatile (no duration — live at the boundary).
-        v.push("foresight");
     }
     if mon.leech_seed.is_some() {
         v.push("leechseed");
@@ -1130,34 +1112,11 @@ pub fn volatile_names(mon: &MonState) -> Vec<&'static str> {
     if mon.trapped_by.is_some() {
         v.push("trapped");
     }
-    if let Some(t) = mon.two_turn {
+    if mon.two_turn.is_some() {
         v.push("twoturnmove");
-        // The MOVE-ID sub-volatile twoturnmove's onStart adds (`gen3_twoturn_family_v1`, probed:
-        // a charging Razor Wind holds `["twoturnmove","razorwind"]`), up until the strike lands it.
-        if t.charging {
-            if let Some(id) = mon
-                .slot_move_id(t.move_index) // a CALLED charge too (`gen3_b11_moves_v1`)
-                .and_then(|m| crate::state::TWO_TURN_MOVES.iter().find(|x| **x == crate::dex::to_id(m)))
-            {
-                v.push(id);
-            }
-        }
     }
     if mon.yawn.is_some() {
         v.push("yawn");
-    }
-    // The B7 volatiles (`gen3_b7_moves_v1`), by their condition ids.
-    if mon.stockpile > 0 {
-        v.push("stockpile");
-    }
-    if mon.mud_sport {
-        v.push("mudsport");
-    }
-    if mon.water_sport {
-        v.push("watersport");
-    }
-    if mon.lock_on.is_some() {
-        v.push("lockon");
     }
     v.sort_unstable();
     v
@@ -1187,22 +1146,16 @@ fn move_slots_json(mon: &MonState) -> String {
 }
 
 /// The side conditions the port models, SORTED — `Object.keys(side.sideConditions)`.
-/// The modeled set: Light Screen, Mist, Reflect, Safeguard, Spikes (Spikes is the only entry hazard; Wish
-/// and the future moves are SLOT conditions, which `preState` does not report).
+/// gen-3 has exactly these three (Spikes is the only entry hazard; Wish and the future
+/// moves are SLOT conditions, which `preState` does not report).
 fn side_conditions(st: &BattleState, side: usize) -> Vec<&'static str> {
     let s = &st.sides[side];
     let mut v: Vec<&'static str> = Vec::new();
     if s.light_screen > 0 {
         v.push("lightscreen");
     }
-    if s.mist > 0 {
-        v.push("mist"); // gen3_b7_moves_v1
-    }
     if s.reflect > 0 {
         v.push("reflect");
-    }
-    if s.safeguard > 0 {
-        v.push("safeguard"); // review P1 (`gen3_bf_search_safeguard_v1`): a key of `side.sideConditions` too
     }
     if s.spikes > 0 {
         v.push("spikes");
@@ -1270,11 +1223,12 @@ pub fn pre_state(sess: &BridgeSession) -> String {
         return "null".to_string();
     };
     // See the module header: the port has no pseudo-weather map, and gen-3's only
-    // pseudo-weathers are the format's clause rules (`FormatRules::pseudo_weather`).
-    let pseudo = format!(
-        "[{}]",
-        st.rules.pseudo_weather().iter().map(|p| format!("\"{p}\"")).collect::<Vec<_>>().join(",")
-    );
+    // pseudo-weathers are the format's clause rules, which ride one flag.
+    let pseudo = if st.sleep_clause {
+        "[\"freezeclausemod\",\"sleepclausemod\"]"
+    } else {
+        "[]"
+    };
     format!(
         "{{\"turn\":{},\"weather\":{},\"pseudoWeather\":{},\"p1\":{},\"p2\":{}}}",
         // The BOUNDARY's turn, not the raw committed count — `pre_state` is only ever taken at
