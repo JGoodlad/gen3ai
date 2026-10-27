@@ -1,0 +1,353 @@
+{
+"halves": {
+"ours_challenge": {
+"captures": [
+{
+"n": 1,
+"our_slot": "p1",
+"start": {
+"formatid": "gen3ou",
+"p1": {
+"name": "MetaKakunaAway1",
+"team": "Tyranitar||leftovers|sandstream|crunch,pursuit,icebeam,brickbreak|Quiet|252,,16,240,,|||||]Celebi||leftovers|naturalcure|leechseed,recover,swordsdance,batonpass|Bold|252,,76,,144,36||,0,,,,|||]Magneton||magnet|magnetpull|thunderbolt,hiddenpowergrass,thunderwave,substitute|Timid|,,,252,40,216||,2,,30,,|||]Swampert||leftovers|torrent|hydropump,icebeam,earthquake,focuspunch|Rash|,4,,252,,252|F||||]Metagross||lumberry|clearbody|meteormash,earthquake,explosion,agility|Adamant|72,252,,,,184|||||]Aerodactyl||liechiberry|rockhead|rockslide,doubleedge,earthquake,substitute|Jolly|12,244,,,,252|||||"
+},
+"p2": {
+"name": "MetaKakunaHome1",
+"team": ""
+}
+}
+},
+{
+"n": 2,
+"our_slot": "p1",
+"start": {
+"formatid": "gen3ou",
+"p1": {
+"name": "MetaKakunaAway1",
+"team": "Metagross||leftovers|clearbody|meteormash,earthquake,agility,explosion|Adamant|152,252,,,,104|||||]Milotic||leftovers|marvelscale|hypnosis,surf,icebeam,recover|Bold|248,,212,,,48||,0,,,,|||]Celebi||leftovers|naturalcure|swordsdance,hiddenpowerrock,batonpass,recover|Jolly|240,,44,,4,220||,,30,,30,30|||]Magneton||leftovers|magnetpull|thunderbolt,hiddenpowerfire,thunderwave,toxic|Timid|144,,,112,,252||,2,,30,,30|||]Heracross||leftovers|guts|megahorn,rockslide,hiddenpowerghost,brickbreak|Adamant|144,16,,,184,164||,,30,,30,|||]Gyarados||leftovers|intimidate|hiddenpowerflying,doubleedge,earthquake,dragondance|Jolly|,252,4,,,252||30,30,30,30,30,|||"
+},
+"p2": {
+"name": "MetaKakunaHome1",
+"team": ""
+}
+}
+},
+{
+"n": 3,
+"our_slot": "p1",
+"start": {
+"formatid": "gen3ou",
+"p1": {
+"name": "MetaKakunaAway1",
+"team": "Tyranitar||leftovers|sandstream|rockslide,earthquake,hiddenpowerbug,roar|Adamant|184,196,120,,,8||,30,30,,30,|||]Milotic||leftovers|marvelscale|surf,toxic,recover,refresh|Bold|248,,212,,,48||,0,,,,|||]Blissey||leftovers|naturalcure|seismictoss,icebeam,thunderwave,softboiled|Bold|40,,244,208,,16|F||||]Skarmory||leftovers|keeneye|drillpeck,toxic,spikes,roar|Careful|248,,,,236,24|||||]Claydol||leftovers|levitate|earthquake,psychic,refresh,rapidspin|Adamant|224,228,,36,,20|||||]Dugtrio||choiceband|arenatrap|earthquake,aerialace,hiddenpowerbug,screech|Jolly|,252,,,4,252||,30,30,,30,|||"
+},
+"p2": {
+"name": "MetaKakunaHome1",
+"team": ""
+}
+}
+},
+{
+"n": 4,
+"our_slot": "p1",
+"start": {
+"formatid": "gen3ou",
+"p1": {
+"name": "MetaKakunaAway1",
+"team": "Zapdos||leftovers|pressure|thunderbolt,hiddenpowergrass,thunderwave,batonpass|Timid|4,,,252,,252||,2,,30,,|||]Dugtrio||choiceband|arenatrap|earthquake,beatup,hiddenpowerbug,aerialace|Jolly|136,252,,,24,96||,30,30,,30,|||]Swampert||leftovers|torrent|hydropump,icebeam,earthquake,protect|Relaxed|252,,212,,44,|||||]Celebi||leftovers|naturalcure|leechseed,batonpass,recover,psychic|Calm|252,,64,,192,||,0,,,,30|||]Tyranitar||leftovers|sandstream|rockslide,earthquake,hiddenpowerbug,focuspunch|Adamant|248,252,,,8,||,,,,30,30|||]Starmie||leftovers|naturalcure|hydropump,thunderbolt,icebeam,rapidspin|Timid|4,,,252,,252||,0,,,,|||"
+},
+"p2": {
+"name": "MetaKakunaHome1",
+"team": ""
+}
+}
+},
+{
+"n": 5,
+"our_slot": "p1",
+"start": {
+"formatid": "gen3ou",
+"p1": {
+"name": "MetaKakunaAway1",
+"team": "Salamence||leftovers|intimidate|dragonclaw,fireblast,brickbreak,roar|Rash|16,,104,252,,136|||||]Tyranitar||leftovers|sandstream|crunch,pursuit,fireblast,counter|Modest|232,,60,216,,||,0,,,,|||]Forretress||leftovers|sturdy|spikes,earthquake,explosion,rapidspin|Careful|252,,,,252,4|||||]Blissey||leftovers|naturalcure|seismictoss,counter,thunderwave,softboiled|Bold|252,,252,,4,|F||||]Jirachi||leftovers|serenegrace|firepunch,toxic,wish,protect|Bold|252,,224,,,32||,0,,,,|||]Aerodactyl||choiceband|rockhead|rockslide,earthquake,doubleedge,hiddenpowerfighting|Jolly|4,252,,,72,180||,,30,30,30,30|||"
+},
+"p2": {
+"name": "MetaKakunaHome1",
+"team": ""
+}
+}
+},
+{
+"n": 6,
+"our_slot": "p1",
+"start": {
+"formatid": "gen3ou",
+"p1": {
+"name": "MetaKakunaAway1",
+"team": "Tyranitar||leftovers|sandstream|rockslide,earthquake,taunt,toxic|Adamant|252,108,36,,,112|F||||]Skarmory||leftovers|keeneye|toxic,taunt,spikes,whirlwind|Calm|252,,,,212,44|M|,0,,,,|||]Swampert||leftovers|torrent|earthquake,hydropump,icebeam,protect|Relaxed|248,,148,64,4,44|||||]Blissey||leftovers|naturalcure|toxic,seismictoss,icebeam,softboiled|Bold|,,252,236,,20||,0,,,,|||]Gengar||leftovers|levitate|thunderbolt,icepunch,taunt,willowisp|Timid|252,,48,,112,96||,0,,,,|||]Moltres||leftovers|pressure|flamethrower,hiddenpowergrass,willowisp,roar|Modest|,,4,252,,252||,2,,30,,|||"
+},
+"p2": {
+"name": "MetaKakunaHome1",
+"team": ""
+}
+}
+},
+{
+"n": 7,
+"our_slot": "p1",
+"start": {
+"formatid": "gen3ou",
+"p1": {
+"name": "MetaKakunaAway1",
+"team": "Suicune||leftovers|pressure|hydropump,calmmind,icebeam,roar|Modest|100,,,252,,156||,0,,,,|||]Snorlax||leftovers|immunity|bodyslam,earthquake,shadowball,selfdestruct|Adamant|16,244,116,,116,16|||||]Magneton||magnet|magnetpull|thunderbolt,hiddenpowerfire,raindance,thunderwave|Timid|68,,,252,,188||,2,,30,,30|||]Salamence||leftovers|intimidate|dragonclaw,fireblast,hiddenpowergrass,brickbreak|Rash|,4,,252,,252||,30,,30,,|||]Metagross||choiceband|clearbody|meteormash,earthquake,rockslide,explosion|Adamant|68,252,,,,188|||||]Heracross||salacberry|swarm|substitute,swordsdance,megahorn,rockslide|Adamant|,252,,,4,252||30,,,,,|||"
+},
+"p2": {
+"name": "MetaKakunaHome1",
+"team": ""
+}
+}
+},
+{
+"n": 8,
+"our_slot": "p1",
+"start": {
+"formatid": "gen3ou",
+"p1": {
+"name": "MetaKakunaAway1",
+"team": "Tyranitar||leftovers|sandstream|rockslide,earthquake,taunt,toxic|Adamant|252,108,36,,,112|F||||]Skarmory||leftovers|keeneye|toxic,taunt,spikes,whirlwind|Calm|252,,,,212,44|M|,0,,,,|||]Swampert||leftovers|torrent|earthquake,hydropump,icebeam,protect|Relaxed|248,,148,64,4,44|||||]Blissey||leftovers|naturalcure|toxic,seismictoss,icebeam,softboiled|Bold|,,252,236,,20||,0,,,,|||]Gengar||leftovers|levitate|thunderbolt,icepunch,taunt,willowisp|Timid|252,,48,,112,96||,0,,,,|||]Moltres||leftovers|pressure|flamethrower,hiddenpowergrass,willowisp,roar|Modest|,,4,252,,252||,2,,30,,|||"
+},
+"p2": {
+"name": "MetaKakunaHome1",
+"team": ""
+}
+}
+},
+{
+"n": 9,
+"our_slot": "p1",
+"start": {
+"formatid": "gen3ou",
+"p1": {
+"name": "MetaKakunaAway1",
+"team": "Tyranitar||leftovers|sandstream|rockslide,earthquake,taunt,toxic|Adamant|252,108,36,,,112|F||||]Skarmory||leftovers|keeneye|toxic,taunt,spikes,whirlwind|Calm|252,,,,212,44|M|,0,,,,|||]Swampert||leftovers|torrent|earthquake,hydropump,icebeam,protect|Relaxed|248,,148,64,4,44|||||]Blissey||leftovers|naturalcure|toxic,seismictoss,icebeam,softboiled|Bold|,,252,236,,20||,0,,,,|||]Gengar||leftovers|levitate|thunderbolt,icepunch,taunt,willowisp|Timid|252,,48,,112,96||,0,,,,|||]Moltres||leftovers|pressure|flamethrower,hiddenpowergrass,willowisp,roar|Modest|,,4,252,,252||,2,,30,,|||"
+},
+"p2": {
+"name": "MetaKakunaHome1",
+"team": ""
+}
+}
+},
+{
+"n": 10,
+"our_slot": "p1",
+"start": {
+"formatid": "gen3ou",
+"p1": {
+"name": "MetaKakunaAway1",
+"team": "Skarmory||leftovers|keeneye|spikes,protect,whirlwind,toxic|Careful|252,,8,,248,|F||||]Blissey||leftovers|naturalcure|softboiled,icebeam,toxic,fireblast|Modest|,,252,112,,144||,0,,,,|||]Tyranitar||leftovers|sandstream|earthquake,rockslide,hiddenpowerbug,roar|Adamant|248,196,12,,52,|F|,30,30,,30,|||]Swampert||leftovers|torrent|earthquake,icebeam,hydropump,protect|Relaxed|240,,136,40,48,44|F||||]Gengar||leftovers|levitate|firepunch,thunderbolt,explosion,willowisp|Timid|248,,52,12,100,96|F||||]Starmie||leftovers|naturalcure|hydropump,icebeam,thunderbolt,rapidspin|Timid|4,,,252,,252||,0,,,,|||"
+},
+"p2": {
+"name": "MetaKakunaHome1",
+"team": ""
+}
+}
+}
+],
+"csv": "Player Username, Team File, Opponent Username, Result, Turn Count, Battle ID\nMetaKakunaAway1,/home/goodlad/dev/metamon/cache/teams/gen3ai_tsr_k_away/gen3ou/away__team_22.gen3ou_team,metakakunahome1,LOSS,33,3918543172\nMetaKakunaAway1,/home/goodlad/dev/metamon/cache/teams/gen3ai_tsr_k_away/gen3ou/away__team_8.gen3ou_team,metakakunahome1,LOSS,105,5354265272\nMetaKakunaAway1,/home/goodlad/dev/metamon/cache/teams/gen3ai_tsr_k_away/gen3ou/away__team_8.gen3ou_team,metakakunahome1,LOSS,47,5619855639\nMetaKakunaAway1,/home/goodlad/dev/metamon/cache/teams/gen3ai_tsr_k_away/gen3ou/away__team_4.gen3ou_team,metakakunahome1,LOSS,37,8199177602\nMetaKakunaAway1,/home/goodlad/dev/metamon/cache/teams/gen3ai_tsr_k_away/gen3ou/away__team_3.gen3ou_team,metakakunahome1,WIN,35,3445849624\nMetaKakunaAway1,/home/goodlad/dev/metamon/cache/teams/gen3ai_tsr_k_away/gen3ou/away__team_12.gen3ou_team,metakakunahome1,LOSS,22,7186379585\nMetaKakunaAway1,/home/goodlad/dev/metamon/cache/teams/gen3ai_tsr_k_away/gen3ou/away__team_3.gen3ou_team,metakakunahome1,WIN,30,0443157140\nMetaKakunaAway1,/home/goodlad/dev/metamon/cache/teams/gen3ai_tsr_k_away/gen3ou/away__team_3.gen3ou_team,metakakunahome1,LOSS,32,6407939712\nMetaKakunaAway1,/home/goodlad/dev/metamon/cache/teams/gen3ai_tsr_k_away/gen3ou/away__team_0.gen3ou_team,metakakunahome1,WIN,43,3068235705\nMetaKakunaAway1,/home/goodlad/dev/metamon/cache/teams/gen3ai_tsr_k_away/gen3ou/away__team_0.gen3ou_team,metakakunahome1,LOSS,70,3883243532\n",
+"our_name": "MetaKakunaAway1",
+"peer_name": "MetaKakunaHome1",
+"team_draws": [
+"away__team_21.gen3ou_team",
+"away__team_22.gen3ou_team",
+"away__team_8.gen3ou_team",
+"away__team_14.gen3ou_team",
+"away__team_4.gen3ou_team",
+"away__team_3.gen3ou_team",
+"away__team_12.gen3ou_team",
+"away__team_3.gen3ou_team",
+"away__team_3.gen3ou_team",
+"away__team_0.gen3ou_team"
+]
+},
+"peer_challenge": {
+"captures": [
+{
+"n": 11,
+"our_slot": "p2",
+"start": {
+"formatid": "gen3ou",
+"p1": {
+"name": "MetaKakunaHome2",
+"team": ""
+},
+"p2": {
+"name": "MetaKakunaAway2",
+"team": "Tyranitar||leftovers|sandstream|crunch,pursuit,icebeam,brickbreak|Quiet|252,,16,240,,|||||]Celebi||leftovers|naturalcure|leechseed,recover,swordsdance,batonpass|Bold|252,,76,,144,36||,0,,,,|||]Magneton||magnet|magnetpull|thunderbolt,hiddenpowergrass,thunderwave,substitute|Timid|,,,252,40,216||,2,,30,,|||]Swampert||leftovers|torrent|hydropump,icebeam,earthquake,focuspunch|Rash|,4,,252,,252|F||||]Metagross||lumberry|clearbody|meteormash,earthquake,explosion,agility|Adamant|72,252,,,,184|||||]Aerodactyl||liechiberry|rockhead|rockslide,doubleedge,earthquake,substitute|Jolly|12,244,,,,252|||||"
+}
+}
+},
+{
+"n": 12,
+"our_slot": "p2",
+"start": {
+"formatid": "gen3ou",
+"p1": {
+"name": "MetaKakunaHome2",
+"team": ""
+},
+"p2": {
+"name": "MetaKakunaAway2",
+"team": "Metagross||leftovers|clearbody|meteormash,earthquake,agility,explosion|Adamant|152,252,,,,104|||||]Milotic||leftovers|marvelscale|hypnosis,surf,icebeam,recover|Bold|248,,212,,,48||,0,,,,|||]Celebi||leftovers|naturalcure|swordsdance,hiddenpowerrock,batonpass,recover|Jolly|240,,44,,4,220||,,30,,30,30|||]Magneton||leftovers|magnetpull|thunderbolt,hiddenpowerfire,thunderwave,toxic|Timid|144,,,112,,252||,2,,30,,30|||]Heracross||leftovers|guts|megahorn,rockslide,hiddenpowerghost,brickbreak|Adamant|144,16,,,184,164||,,30,,30,|||]Gyarados||leftovers|intimidate|hiddenpowerflying,doubleedge,earthquake,dragondance|Jolly|,252,4,,,252||30,30,30,30,30,|||"
+}
+}
+},
+{
+"n": 13,
+"our_slot": "p2",
+"start": {
+"formatid": "gen3ou",
+"p1": {
+"name": "MetaKakunaHome2",
+"team": ""
+},
+"p2": {
+"name": "MetaKakunaAway2",
+"team": "Tyranitar||leftovers|sandstream|rockslide,earthquake,hiddenpowerbug,roar|Adamant|184,196,120,,,8||,30,30,,30,|||]Milotic||leftovers|marvelscale|surf,toxic,recover,refresh|Bold|248,,212,,,48||,0,,,,|||]Blissey||leftovers|naturalcure|seismictoss,icebeam,thunderwave,softboiled|Bold|40,,244,208,,16|F||||]Skarmory||leftovers|keeneye|drillpeck,toxic,spikes,roar|Careful|248,,,,236,24|||||]Claydol||leftovers|levitate|earthquake,psychic,refresh,rapidspin|Adamant|224,228,,36,,20|||||]Dugtrio||choiceband|arenatrap|earthquake,aerialace,hiddenpowerbug,screech|Jolly|,252,,,4,252||,30,30,,30,|||"
+}
+}
+},
+{
+"n": 14,
+"our_slot": "p2",
+"start": {
+"formatid": "gen3ou",
+"p1": {
+"name": "MetaKakunaHome2",
+"team": ""
+},
+"p2": {
+"name": "MetaKakunaAway2",
+"team": "Zapdos||leftovers|pressure|thunderbolt,hiddenpowergrass,thunderwave,batonpass|Timid|4,,,252,,252||,2,,30,,|||]Dugtrio||choiceband|arenatrap|earthquake,beatup,hiddenpowerbug,aerialace|Jolly|136,252,,,24,96||,30,30,,30,|||]Swampert||leftovers|torrent|hydropump,icebeam,earthquake,protect|Relaxed|252,,212,,44,|||||]Celebi||leftovers|naturalcure|leechseed,batonpass,recover,psychic|Calm|252,,64,,192,||,0,,,,30|||]Tyranitar||leftovers|sandstream|rockslide,earthquake,hiddenpowerbug,focuspunch|Adamant|248,252,,,8,||,,,,30,30|||]Starmie||leftovers|naturalcure|hydropump,thunderbolt,icebeam,rapidspin|Timid|4,,,252,,252||,0,,,,|||"
+}
+}
+},
+{
+"n": 15,
+"our_slot": "p2",
+"start": {
+"formatid": "gen3ou",
+"p1": {
+"name": "MetaKakunaHome2",
+"team": ""
+},
+"p2": {
+"name": "MetaKakunaAway2",
+"team": "Salamence||leftovers|intimidate|dragonclaw,fireblast,brickbreak,roar|Rash|16,,104,252,,136|||||]Tyranitar||leftovers|sandstream|crunch,pursuit,fireblast,counter|Modest|232,,60,216,,||,0,,,,|||]Forretress||leftovers|sturdy|spikes,earthquake,explosion,rapidspin|Careful|252,,,,252,4|||||]Blissey||leftovers|naturalcure|seismictoss,counter,thunderwave,softboiled|Bold|252,,252,,4,|F||||]Jirachi||leftovers|serenegrace|firepunch,toxic,wish,protect|Bold|252,,224,,,32||,0,,,,|||]Aerodactyl||choiceband|rockhead|rockslide,earthquake,doubleedge,hiddenpowerfighting|Jolly|4,252,,,72,180||,,30,30,30,30|||"
+}
+}
+},
+{
+"n": 16,
+"our_slot": "p2",
+"start": {
+"formatid": "gen3ou",
+"p1": {
+"name": "MetaKakunaHome2",
+"team": ""
+},
+"p2": {
+"name": "MetaKakunaAway2",
+"team": "Tyranitar||leftovers|sandstream|rockslide,earthquake,taunt,toxic|Adamant|252,108,36,,,112|F||||]Skarmory||leftovers|keeneye|toxic,taunt,spikes,whirlwind|Calm|252,,,,212,44|M|,0,,,,|||]Swampert||leftovers|torrent|earthquake,hydropump,icebeam,protect|Relaxed|248,,148,64,4,44|||||]Blissey||leftovers|naturalcure|toxic,seismictoss,icebeam,softboiled|Bold|,,252,236,,20||,0,,,,|||]Gengar||leftovers|levitate|thunderbolt,icepunch,taunt,willowisp|Timid|252,,48,,112,96||,0,,,,|||]Moltres||leftovers|pressure|flamethrower,hiddenpowergrass,willowisp,roar|Modest|,,4,252,,252||,2,,30,,|||"
+}
+}
+},
+{
+"n": 17,
+"our_slot": "p2",
+"start": {
+"formatid": "gen3ou",
+"p1": {
+"name": "MetaKakunaHome2",
+"team": ""
+},
+"p2": {
+"name": "MetaKakunaAway2",
+"team": "Suicune||leftovers|pressure|hydropump,calmmind,icebeam,roar|Modest|100,,,252,,156||,0,,,,|||]Snorlax||leftovers|immunity|bodyslam,earthquake,shadowball,selfdestruct|Adamant|16,244,116,,116,16|||||]Magneton||magnet|magnetpull|thunderbolt,hiddenpowerfire,raindance,thunderwave|Timid|68,,,252,,188||,2,,30,,30|||]Salamence||leftovers|intimidate|dragonclaw,fireblast,hiddenpowergrass,brickbreak|Rash|,4,,252,,252||,30,,30,,|||]Metagross||choiceband|clearbody|meteormash,earthquake,rockslide,explosion|Adamant|68,252,,,,188|||||]Heracross||salacberry|swarm|substitute,swordsdance,megahorn,rockslide|Adamant|,252,,,4,252||30,,,,,|||"
+}
+}
+},
+{
+"n": 18,
+"our_slot": "p2",
+"start": {
+"formatid": "gen3ou",
+"p1": {
+"name": "MetaKakunaHome2",
+"team": ""
+},
+"p2": {
+"name": "MetaKakunaAway2",
+"team": "Tyranitar||leftovers|sandstream|rockslide,earthquake,taunt,toxic|Adamant|252,108,36,,,112|F||||]Skarmory||leftovers|keeneye|toxic,taunt,spikes,whirlwind|Calm|252,,,,212,44|M|,0,,,,|||]Swampert||leftovers|torrent|earthquake,hydropump,icebeam,protect|Relaxed|248,,148,64,4,44|||||]Blissey||leftovers|naturalcure|toxic,seismictoss,icebeam,softboiled|Bold|,,252,236,,20||,0,,,,|||]Gengar||leftovers|levitate|thunderbolt,icepunch,taunt,willowisp|Timid|252,,48,,112,96||,0,,,,|||]Moltres||leftovers|pressure|flamethrower,hiddenpowergrass,willowisp,roar|Modest|,,4,252,,252||,2,,30,,|||"
+}
+}
+},
+{
+"n": 19,
+"our_slot": "p2",
+"start": {
+"formatid": "gen3ou",
+"p1": {
+"name": "MetaKakunaHome2",
+"team": ""
+},
+"p2": {
+"name": "MetaKakunaAway2",
+"team": "Tyranitar||leftovers|sandstream|rockslide,earthquake,taunt,toxic|Adamant|252,108,36,,,112|F||||]Skarmory||leftovers|keeneye|toxic,taunt,spikes,whirlwind|Calm|252,,,,212,44|M|,0,,,,|||]Swampert||leftovers|torrent|earthquake,hydropump,icebeam,protect|Relaxed|248,,148,64,4,44|||||]Blissey||leftovers|naturalcure|toxic,seismictoss,icebeam,softboiled|Bold|,,252,236,,20||,0,,,,|||]Gengar||leftovers|levitate|thunderbolt,icepunch,taunt,willowisp|Timid|252,,48,,112,96||,0,,,,|||]Moltres||leftovers|pressure|flamethrower,hiddenpowergrass,willowisp,roar|Modest|,,4,252,,252||,2,,30,,|||"
+}
+}
+},
+{
+"n": 20,
+"our_slot": "p2",
+"start": {
+"formatid": "gen3ou",
+"p1": {
+"name": "MetaKakunaHome2",
+"team": ""
+},
+"p2": {
+"name": "MetaKakunaAway2",
+"team": "Skarmory||leftovers|keeneye|spikes,protect,whirlwind,toxic|Careful|252,,8,,248,|F||||]Blissey||leftovers|naturalcure|softboiled,icebeam,toxic,fireblast|Modest|,,252,112,,144||,0,,,,|||]Tyranitar||leftovers|sandstream|earthquake,rockslide,hiddenpowerbug,roar|Adamant|248,196,12,,52,|F|,30,30,,30,|||]Swampert||leftovers|torrent|earthquake,icebeam,hydropump,protect|Relaxed|240,,136,40,48,44|F||||]Gengar||leftovers|levitate|firepunch,thunderbolt,explosion,willowisp|Timid|248,,52,12,100,96|F||||]Starmie||leftovers|naturalcure|hydropump,icebeam,thunderbolt,rapidspin|Timid|4,,,252,,252||,0,,,,|||"
+}
+}
+}
+],
+"csv": "Player Username, Team File, Opponent Username, Result, Turn Count, Battle ID\nMetaKakunaAway2,/home/goodlad/dev/metamon/cache/teams/gen3ai_tsr_k_away/gen3ou/away__team_21.gen3ou_team,metakakunahome2,LOSS,43,9315779851\nMetaKakunaAway2,/home/goodlad/dev/metamon/cache/teams/gen3ai_tsr_k_away/gen3ou/away__team_8.gen3ou_team,metakakunahome2,LOSS,70,0659065572\nMetaKakunaAway2,/home/goodlad/dev/metamon/cache/teams/gen3ai_tsr_k_away/gen3ou/away__team_14.gen3ou_team,metakakunahome2,WIN,57,3783428490\nMetaKakunaAway2,/home/goodlad/dev/metamon/cache/teams/gen3ai_tsr_k_away/gen3ou/away__team_4.gen3ou_team,metakakunahome2,LOSS,36,0975746888\nMetaKakunaAway2,/home/goodlad/dev/metamon/cache/teams/gen3ai_tsr_k_away/gen3ou/away__team_3.gen3ou_team,metakakunahome2,WIN,51,0774546912\nMetaKakunaAway2,/home/goodlad/dev/metamon/cache/teams/gen3ai_tsr_k_away/gen3ou/away__team_12.gen3ou_team,metakakunahome2,LOSS,29,1417640982\nMetaKakunaAway2,/home/goodlad/dev/metamon/cache/teams/gen3ai_tsr_k_away/gen3ou/away__team_12.gen3ou_team,metakakunahome2,WIN,27,4928442402\nMetaKakunaAway2,/home/goodlad/dev/metamon/cache/teams/gen3ai_tsr_k_away/gen3ou/away__team_3.gen3ou_team,metakakunahome2,WIN,58,2897774365\nMetaKakunaAway2,/home/goodlad/dev/metamon/cache/teams/gen3ai_tsr_k_away/gen3ou/away__team_0.gen3ou_team,metakakunahome2,WIN,29,8046892171\nMetaKakunaAway2,/home/goodlad/dev/metamon/cache/teams/gen3ai_tsr_k_away/gen3ou/away__team_0.gen3ou_team,metakakunahome2,WIN,71,8844629149\n",
+"our_name": "MetaKakunaAway2",
+"peer_name": "MetaKakunaHome2",
+"team_draws": [
+"away__team_21.gen3ou_team",
+"away__team_22.gen3ou_team",
+"away__team_8.gen3ou_team",
+"away__team_14.gen3ou_team",
+"away__team_4.gen3ou_team",
+"away__team_3.gen3ou_team",
+"away__team_12.gen3ou_team",
+"away__team_3.gen3ou_team",
+"away__team_3.gen3ou_team",
+"away__team_0.gen3ou_team"
+]
+}
+},
+"source": "banked read state ~/dev/gen3ai-reads/tsr_2026-10-18/kakuna/cells/kak_away_000 -- a banked Kakuna-vs-Kakuna PAIR cell (team-strength lane, --our-teamset away, captures on). Our peer = MetaKakunaAway{1,2}; CSV and draw log verbatim, START commands verbatim for our peer's side only (the other side keeps its name, an empty team).",
+"team_files": {
+"away__team_0.gen3ou_team": "\n\nSkarmory (F) @ Leftovers  \nAbility: Keen Eye  \nEVs: 252 HP / 8 Def / 248 SpD  \nCareful Nature  \n- Spikes  \n- Protect  \n- Whirlwind  \n- Toxic  \n\nBlissey @ Leftovers  \nAbility: Natural Cure  \nEVs: 252 Def / 112 SpA / 144 Spe  \nModest Nature  \nIVs: 0 Atk  \n- Soft-Boiled  \n- Ice Beam  \n- Toxic  \n- Fire Blast  \n\nTyranitar (F) @ Leftovers  \nAbility: Sand Stream  \nEVs: 248 HP / 196 Atk / 12 Def / 52 SpD  \nAdamant Nature  \nIVs: 30 Atk / 30 Def / 30 SpD  \n- Earthquake  \n- Rock Slide  \n- Hidden Power [Bug]  \n- Roar  \n\nSwampert (F) @ Leftovers  \nAbility: Torrent  \nEVs: 240 HP / 136 Def / 40 SpA / 48 SpD / 44 Spe  \nRelaxed Nature  \n- Earthquake  \n- Ice Beam  \n- Hydro Pump  \n- Protect  \n\nGengar (F) @ Leftovers  \nAbility: Levitate  \nEVs: 248 HP / 52 Def / 12 SpA / 100 SpD / 96 Spe  \nTimid Nature  \n- Fire Punch  \n- Thunderbolt  \n- Explosion  \n- Will-O-Wisp  \n\nStarmie @ Leftovers  \nAbility: Natural Cure  \nEVs: 4 HP / 252 SpA / 252 Spe  \nTimid Nature  \nIVs: 0 Atk  \n- Hydro Pump  \n- Ice Beam  \n- Thunderbolt  \n- Rapid Spin  \n\n\n",
+"away__team_12.gen3ou_team": "\n\nSuicune @ Leftovers  \nAbility: Pressure  \nEVs: 100 HP / 252 SpA / 156 Spe  \nModest Nature  \nIVs: 0 Atk  \n- Hydro Pump  \n- Calm Mind  \n- Ice Beam  \n- Roar  \n\nSnorlax @ Leftovers  \nAbility: Immunity  \nEVs: 16 HP / 244 Atk / 116 Def / 116 SpD / 16 Spe  \nAdamant Nature  \n- Body Slam  \n- Earthquake  \n- Shadow Ball  \n- Self-Destruct  \n\nMagneton @ Magnet  \nAbility: Magnet Pull  \nEVs: 68 HP / 252 SpA / 188 Spe  \nTimid Nature  \nIVs: 2 Atk / 30 SpA / 30 Spe  \n- Thunderbolt  \n- Hidden Power [Fire]  \n- Rain Dance  \n- Thunder Wave  \n\nSalamence @ Leftovers  \nAbility: Intimidate  \nEVs: 4 Atk / 252 SpA / 252 Spe  \nRash Nature  \nIVs: 30 Atk / 30 SpA  \n- Dragon Claw  \n- Fire Blast  \n- Hidden Power [Grass]  \n- Brick Break  \n\nMetagross @ Choice Band  \nAbility: Clear Body  \nEVs: 68 HP / 252 Atk / 188 Spe  \nAdamant Nature  \n- Meteor Mash  \n- Earthquake  \n- Rock Slide  \n- Explosion  \n\nHeracross @ Salac Berry  \nAbility: Swarm  \nEVs: 252 Atk / 4 SpD / 252 Spe  \nAdamant Nature  \nIVs: 30 HP  \n- Substitute  \n- Swords Dance  \n- Megahorn  \n- Rock Slide  \n\n\n",
+"away__team_14.gen3ou_team": "\n\nZapdos @ Leftovers  \nAbility: Pressure  \nEVs: 4 HP / 252 SpA / 252 Spe  \nTimid Nature  \nIVs: 2 Atk / 30 SpA  \n- Thunderbolt  \n- Hidden Power [Grass]  \n- Thunder Wave  \n- Baton Pass  \n\nDugtrio @ Choice Band  \nAbility: Arena Trap  \nEVs: 136 HP / 252 Atk / 24 SpD / 96 Spe  \nJolly Nature  \nIVs: 30 Atk / 30 Def / 30 SpD  \n- Earthquake  \n- Beat Up  \n- Hidden Power [Bug]  \n- Aerial Ace  \n\nSwampert @ Leftovers  \nAbility: Torrent  \nEVs: 252 HP / 212 Def / 44 SpD  \nRelaxed Nature  \n- Hydro Pump  \n- Ice Beam  \n- Earthquake  \n- Protect  \n\nCelebi @ Leftovers  \nAbility: Natural Cure  \nEVs: 252 HP / 64 Def / 192 SpD  \nCalm Nature  \nIVs: 0 Atk / 30 Spe  \n- Leech Seed  \n- Baton Pass  \n- Recover  \n- Psychic  \n\nTyranitar @ Leftovers  \nAbility: Sand Stream  \nEVs: 248 HP / 252 Atk / 8 SpD  \nAdamant Nature  \nIVs: 30 SpD / 30 Spe  \n- Rock Slide  \n- Earthquake  \n- Hidden Power [Bug]  \n- Focus Punch  \n\nStarmie @ Leftovers  \nAbility: Natural Cure  \nEVs: 4 HP / 252 SpA / 252 Spe  \nTimid Nature  \nIVs: 0 Atk  \n- Hydro Pump  \n- Thunderbolt  \n- Ice Beam  \n- Rapid Spin  \n\n\n",
+"away__team_21.gen3ou_team": "\n\nTyranitar @ Leftovers  \nAbility: Sand Stream  \nEVs: 252 HP / 16 Def / 240 SpA  \nQuiet Nature  \n- Crunch  \n- Pursuit  \n- Ice Beam  \n- Brick Break  \n\nCelebi @ Leftovers  \nAbility: Natural Cure  \nEVs: 252 HP / 76 Def / 144 SpD / 36 Spe  \nBold Nature  \nIVs: 0 Atk  \n- Leech Seed  \n- Recover  \n- Swords Dance  \n- Baton Pass  \n\nMagneton @ Magnet  \nAbility: Magnet Pull  \nEVs: 252 SpA / 40 SpD / 216 Spe  \nTimid Nature  \nIVs: 2 Atk / 30 SpA  \n- Thunderbolt  \n- Hidden Power [Grass]  \n- Thunder Wave  \n- Substitute  \n\nSwampert (F) @ Leftovers  \nAbility: Torrent  \nEVs: 4 Atk / 252 SpA / 252 Spe  \nRash Nature  \n- Hydro Pump  \n- Ice Beam  \n- Earthquake  \n- Focus Punch  \n\nMetagross @ Lum Berry  \nAbility: Clear Body  \nEVs: 72 HP / 252 Atk / 184 Spe  \nAdamant Nature  \n- Meteor Mash  \n- Earthquake  \n- Explosion  \n- Agility  \n\nAerodactyl @ Liechi Berry  \nAbility: Rock Head  \nEVs: 12 HP / 244 Atk / 252 Spe  \nJolly Nature  \n- Rock Slide  \n- Double-Edge  \n- Earthquake  \n- Substitute  \n\n\n",
+"away__team_22.gen3ou_team": "\n\nMetagross @ Leftovers  \nAbility: Clear Body  \nEVs: 152 HP / 252 Atk / 104 Spe  \nAdamant Nature  \n- Meteor Mash  \n- Earthquake  \n- Agility  \n- Explosion  \n\nMilotic @ Leftovers  \nAbility: Marvel Scale  \nEVs: 248 HP / 212 Def / 48 Spe  \nBold Nature  \nIVs: 0 Atk  \n- Hypnosis  \n- Surf  \n- Ice Beam  \n- Recover  \n\nCelebi @ Leftovers  \nAbility: Natural Cure  \nEVs: 240 HP / 44 Def / 4 SpD / 220 Spe  \nJolly Nature  \nIVs: 30 Def / 30 SpD / 30 Spe  \n- Swords Dance  \n- Hidden Power [Rock]  \n- Baton Pass  \n- Recover  \n\nMagneton @ Leftovers  \nAbility: Magnet Pull  \nEVs: 144 HP / 112 SpA / 252 Spe  \nTimid Nature  \nIVs: 2 Atk / 30 SpA / 30 Spe  \n- Thunderbolt  \n- Hidden Power [Fire]  \n- Thunder Wave  \n- Toxic  \n\nHeracross @ Leftovers  \nAbility: Guts  \nEVs: 144 HP / 16 Atk / 184 SpD / 164 Spe  \nAdamant Nature  \nIVs: 30 Def / 30 SpD  \n- Megahorn  \n- Rock Slide  \n- Hidden Power [Ghost]  \n- Brick Break  \n\nGyarados @ Leftovers  \nAbility: Intimidate  \nEVs: 252 Atk / 4 Def / 252 Spe  \nJolly Nature  \nIVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD  \n- Hidden Power [Flying]  \n- Double-Edge  \n- Earthquake  \n- Dragon Dance  \n\n\n\n",
+"away__team_3.gen3ou_team": "\n\nTyranitar (F) @ Leftovers  \nAbility: Sand Stream  \nEVs: 252 HP / 108 Atk / 36 Def / 112 Spe  \nAdamant Nature  \n- Rock Slide  \n- Earthquake  \n- Taunt  \n- Toxic  \n\nSkarmory (M) @ Leftovers  \nAbility: Keen Eye  \nEVs: 252 HP / 212 SpD / 44 Spe  \nCalm Nature  \nIVs: 0 Atk  \n- Toxic  \n- Taunt  \n- Spikes  \n- Whirlwind  \n\nSwampert @ Leftovers  \nAbility: Torrent  \nEVs: 248 HP / 148 Def / 64 SpA / 4 SpD / 44 Spe  \nRelaxed Nature  \n- Earthquake  \n- Hydro Pump  \n- Ice Beam  \n- Protect  \n\nBlissey @ Leftovers  \nAbility: Natural Cure  \nEVs: 252 Def / 236 SpA / 20 Spe  \nBold Nature  \nIVs: 0 Atk  \n- Toxic  \n- Seismic Toss  \n- Ice Beam  \n- Soft-Boiled  \n\nGengar @ Leftovers  \nAbility: Levitate  \nEVs: 252 HP / 48 Def / 112 SpD / 96 Spe  \nTimid Nature  \nIVs: 0 Atk  \n- Thunderbolt  \n- Ice Punch  \n- Taunt  \n- Will-O-Wisp  \n\nMoltres @ Leftovers  \nAbility: Pressure  \nEVs: 4 Def / 252 SpA / 252 Spe  \nModest Nature  \nIVs: 2 Atk / 30 SpA  \n- Flamethrower  \n- Hidden Power [Grass]  \n- Will-O-Wisp  \n- Roar  \n\n\n",
+"away__team_4.gen3ou_team": "\n\nSalamence @ Leftovers  \nAbility: Intimidate  \nEVs: 16 HP / 104 Def / 252 SpA / 136 Spe  \nRash Nature  \n- Dragon Claw  \n- Fire Blast  \n- Brick Break  \n- Roar  \n\nTyranitar @ Leftovers  \nAbility: Sand Stream  \nEVs: 232 HP / 60 Def / 216 SpA  \nModest Nature  \nIVs: 0 Atk  \n- Crunch  \n- Pursuit  \n- Fire Blast  \n- Counter  \n\nForretress @ Leftovers  \nAbility: Sturdy  \nEVs: 252 HP / 252 SpD / 4 Spe  \nCareful Nature  \n- Spikes  \n- Earthquake  \n- Explosion  \n- Rapid Spin  \n\nBlissey (F) @ Leftovers  \nAbility: Natural Cure  \nEVs: 252 HP / 252 Def / 4 SpD  \nBold Nature  \n- Seismic Toss  \n- Counter  \n- Thunder Wave  \n- Soft-Boiled  \n\nJirachi @ Leftovers  \nAbility: Serene Grace  \nEVs: 252 HP / 224 Def / 32 Spe  \nBold Nature  \nIVs: 0 Atk  \n- Fire Punch  \n- Toxic  \n- Wish  \n- Protect  \n\nAerodactyl @ Choice Band  \nAbility: Rock Head  \nEVs: 4 HP / 252 Atk / 72 SpD / 180 Spe  \nJolly Nature  \n- Rock Slide  \n- Earthquake  \n- Double-Edge  \n- Hidden Power [Fighting]  \n\n\n",
+"away__team_8.gen3ou_team": "\n\nTyranitar @ Leftovers  \nAbility: Sand Stream  \nEVs: 184 HP / 196 Atk / 120 Def / 8 Spe  \nAdamant Nature  \nIVs: 30 Atk / 30 Def / 30 SpD  \n- Rock Slide  \n- Earthquake  \n- Hidden Power [Bug]  \n- Roar  \n\nMilotic @ Leftovers  \nAbility: Marvel Scale  \nEVs: 248 HP / 212 Def / 48 Spe  \nBold Nature  \nIVs: 0 Atk  \n- Surf  \n- Toxic  \n- Recover  \n- Refresh  \n\nBlissey (F) @ Leftovers  \nAbility: Natural Cure  \nEVs: 40 HP / 244 Def / 208 SpA / 16 Spe  \nBold Nature  \n- Seismic Toss  \n- Ice Beam  \n- Thunder Wave  \n- Soft-Boiled  \n\nSkarmory @ Leftovers  \nAbility: Keen Eye  \nEVs: 248 HP / 236 SpD / 24 Spe  \nCareful Nature  \n- Drill Peck  \n- Toxic  \n- Spikes  \n- Roar  \n\nClaydol @ Leftovers  \nAbility: Levitate  \nEVs: 224 HP / 228 Atk / 36 SpA / 20 Spe  \nAdamant Nature  \n- Earthquake  \n- Psychic  \n- Refresh  \n- Rapid Spin  \n\nDugtrio @ Choice Band  \nAbility: Arena Trap  \nEVs: 252 Atk / 4 SpD / 252 Spe  \nJolly Nature  \nIVs: 30 Atk / 30 Def / 30 SpD  \n- Earthquake  \n- Aerial Ace  \n- Hidden Power [Bug]  \n- Screech  \n\n\n"
+}
+}

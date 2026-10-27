@@ -29778,3 +29778,59 @@ and set-level breadth (D3) works the smaller channel. X62's first gate passes. C
 
 **Evidence:** `research_state/measurements/hctx_rc72_2026-10-26/` (README, PREREG, `read_am2/record.json`);
 state `~/gen3ai_archive/hctx_rc72_am2_read/`.
+
+### 2026-10-27 · GIGO FIX · **An anchor-vs-anchor cell's per-game `our_team` is the team the peer PLAYED, from its draw log; Metamon's CSV `Team File` column names the NEXT draw in 82 % of games. No banked read, claim or number rested on the old label (SOP, `main.anchors.peer_teams`)**
+
+**What was wrong.** `main.anchors.session.read_peer_battles` stored the `Team File` column of Metamon's per-battle CSV as
+the row's `our_team` in every cell whose two sides are external peers (Kakuna against Kakuna, against PastaMittens or
+Kakuna28: the `kcal` kind). Metamon writes that row after poke-env's challenge loop has drawn the NEXT battle's team, so
+the column is a race between the draw made for the next battle and the draw for the one just played. The H-CTX
+review (F1, `b399520b5`) found it on 692 of 800 model-vs-Kakuna CSVs.
+
+**Measured** (banked cells, read-only; the captured six of our peer's side in each START command is the ground truth):
+- **All 2,302 captured games of the three banked pair families** (the team-strength Kakuna lane 1,500, X37a's `kcal`
+  400, X51's `k28v34` 402): the peer's draw log (`team_draws[i]`) equals the captured six in 2,302 of 2,302.
+- The CSV label equals it in 416 (games whose played and next draws coincide, and each half's last game, which has no
+  next draw) and names the next draw's team in the other 1,886 (82 %).
+- It is never a fixed offset: row `i` is draw `i` or draw `i + 1`, race by race. Across every banked report / CSV pair
+  (model-vs-peer halves too, copies of one cell included) 5,384 of 5,503 pairs have every row so; the other 119 (2 %)
+  differ in length from the draw log or hold appended rows, which the new guard refuses.
+
+**The fix** (`main.anchors.peer_teams`; the play path is unchanged, so no regime id moves and pinned reads are
+unaffected).
+- `our_team` comes from the peer's draw log; `read_peer_battles` keeps the CSV column as `csv_team` and sets no team.
+  The row carries `our_team_from: peer_draw_log`.
+- **Two throwing guards** (`SeriesFailure`, cause `peer_team_attribution`, the half fails by name and attributes
+  nothing): a CSV row that is neither draw `i` nor draw `i + 1`, or fewer draws than games (a previous attempt's rows
+  appended, a draw that never became a battle); and, when the front end captured every battle of the half, a START
+  command whose six species differ from the team file the log names. An incomplete capture set is skipped and the report
+  says so (a capture missing is not a disagreement).
+- **Tests** (`peer_teams_test.py`, the fixture is one real banked pair cell, `kak_away_000`): five mutants of the fix
+  (CSV label stored again, the call site dropped, no CSV check, no capture check, the CSV label attributed) each turn it red.
+
+**Audit** (every banked read or analysis that attributed per team from a both-peer cell's `games.jsonl`; 151 such cells
+exist, in 6 families). **None depends on it.**
+- **Team strength (TSR) Kakuna lane** (75 cells): teams come from the captures by strict identity; `games.jsonl` is read
+  for results only.
+- **X37a `kcal`** (20) and **X51 `k28v34`** (21): the cell's win rate only (Δ̂, the ckpt-28-vs-34 rule); both check the
+  captured teams against the declared sets. X37a's clustering by our team uses the model-side cells.
+- **`kakuna_goal_read_2026-09-28`** (24), **`n0_endofrun_2026-09-27`** (10 + smoke), the 09-14 Elo calibration and the
+  09-22 obs-faithfulness cell: cell-level edges only.
+- **Piloting-gap forensics** (`kcal` group): parsed from captures; its `our_team_file` is copied and never used.
+- **D0a** and **the H-CTX review** already avoided the CSV (F-DV-6; the review used `team_draws`).
+- **Model-vs-peer cells** (all other reads) take `our_team` from OUR side's own draws, checked against the captures in
+  X37a, X51 and H-CTX (all 2,000 H-CTX games match their panel files). The `distinct_our_teams` counter of a banked pair
+  cell is the CSV's: descriptive, read by no rule.
+
+**FINDINGs.**
+1. A pair cell played before this carries the CSV label, unstamped (no `our_team_from`); take its per-game teams from the
+   captures. A read that plays one at a pin before this commit keeps that label.
+2. `GAME_KEYS` (the determinism 5-tuple) holds `our_team`. No registered rule banks a pair cell today (the guard banks
+   are model-side rows), but a new pin that re-plays a banked PAIR cell and compares it with a bank from before this will
+   see changed labels: compare it on the 4 other keys, or at the bank's own vintage.
+3. The Kakuna-vs-Kakuna rc72b read plays at current main and must run a checkout that contains this fix, or its
+   `games.jsonl` carries the CSV's label.
+
+**Evidence:** `src/main/anchors/peer_teams.py`, `peer_teams_test.py`, `testdata/peer_pair_cell_tsr_kak_away_000.json`;
+SOP §"anchor-vs-anchor"; `designs/endstate/design_diversity_teams_opponents.md` F-DV-6; REVIEW F1 of
+`research_state/measurements/hctx_rc72_2026-10-26/`.

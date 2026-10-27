@@ -27,6 +27,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from main.anchors import mirrored as mirrored_mod
 from main.anchors import peers as peers_mod
+from main.anchors.peer_teams import attribute_pair_half
 from main.anchors.results import CellSpec, GameRow
 from main.anchors.session import (
     OurSideState,
@@ -326,6 +327,17 @@ async def run_peer_pair_half(plan: SeriesPlan, cfg: Any, half: str, n_games: int
     their_adapter, our_adapter = pair_adapters(plan)
     report = their_adapter.read_report(theirs)
     our_report = our_adapter.read_report(ours)
+    # 🚨 `our_team` is the team our peer PLAYED, from its draw log (Metamon's CSV column names the NEXT draw), guarded
+    # against that CSV and the captures; a disagreement fails the half by name and leaves every game unattributed.
+    try:
+        state.records, attribution = attribute_pair_half(
+            state.records, draws=our_report.get("team_draws"), our_name=our_name, peer_name=peer_name,
+            capture_dir=getattr(plan, "capture_dir", None), team_dir=ours.team_dir)
+    except SeriesFailure as exc:
+        failure = failure or exc
+        attribution = {"our_team_attribution": f"FAILED: {exc.detail}", "our_team_capture_check": "not run"}
+        print(f"[anchors] 🚨 {half} FAILED — {exc.cause}: {exc.detail}", flush=True)
+    report.update(attribution)
     report["peer_rc"] = procs[-1].returncode if procs else None
     report["team_count"] = peers_mod.team_source_count(theirs)
     report["team_digest"] = team_set_digest_or_none(theirs.team_dir)
@@ -800,6 +812,7 @@ def rows_from(records: List[Any], half: str, cell: CellSpec, report: Dict[str, A
             won=rec.won,
             hit_forfeit_limit=rec.hit_forfeit_limit,
             our_team=rec.our_team,
+            our_team_from=rec.team_from,
             n_decisions=rec.n_decisions,
             n_defaults=rec.n_defaults,
             n_redecides=rec.n_redecides,

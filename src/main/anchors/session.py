@@ -239,6 +239,12 @@ class BattleRecord:
     #: logits, never assumed from the temperature. Greedy ⇒ equal by construction.
     our_argmax_matches: Optional[int] = None
     our_argmax_decisions: Optional[int] = None
+    #: A pair cell's raw Metamon CSV "Team File" column (basename). 🚨 NOT the team played: the CSV is written after the
+    #: peer drew the NEXT team (:mod:`main.anchors.peer_teams`). Kept only so the draw log can be cross-checked.
+    csv_team: Optional[str] = None
+    #: HOW ``our_team`` was obtained: ``"peer_draw_log"`` (a pair cell: the peer's own draw log, cross-checked against
+    #: its CSV and the captures) or ``""`` (our side's own draw log, or unattributed). On the row as ``our_team_from``.
+    team_from: str = ""
 
     @property
     def result(self) -> str:
@@ -330,6 +336,10 @@ def read_peer_battles(results_dir: Path) -> "list[BattleRecord]":
     🚨 The file is APPENDED to across runs of the same ``--results-dir``. A retry must write to a
     fresh directory or it inherits the previous attempt's games; the campaign driver retires a
     failed cell directory rather than reusing it, which is what makes that true here.
+
+    🚨 **``our_team`` is NOT read from the CSV.** Its "Team File" column names the draw the peer made for the NEXT
+    battle in most games (it is written after that draw), so it is kept as ``csv_team`` for a cross-check only and
+    ``our_team`` is None until :func:`main.anchors.peer_teams.attribute_played_teams` sets it from the peer's draw log.
     """
     import csv
 
@@ -349,9 +359,10 @@ def read_peer_battles(results_dir: Path) -> "list[BattleRecord]":
                     won=True if result == "WIN" else (False if result == "LOSS" else None),
                     finished=True,
                     hit_forfeit_limit=False,
-                    our_team=team,
+                    our_team=None,
                     n_decisions=None, n_defaults=None, n_redecides=None,
                     t_finished=time.time(),
+                    csv_team=team,
                 ))
     return out
 
@@ -382,8 +393,7 @@ async def watch_peer_pair(procs: "list[subprocess.Popen]", plans: "list[PeerPlan
             # nobody watching the log does.
             rec = state.records[seen]
             seen += 1
-            print(f"[anchors] game {seen}: {rec.result} in {rec.turns} turns "
-                  f"(team={rec.our_team})", flush=True)
+            print(f"[anchors] game {seen}: {rec.result} in {rec.turns} turns", flush=True)
             state.last_progress = time.time()
         if done >= expected:
             return

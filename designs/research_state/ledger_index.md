@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-29,781-line file. **The ledger itself is append-only and is never edited by this**;
+29,837-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**977 headings · 922 dated · 2026-08-01 → 2026-10-27 · ledger 29,781 lines.**
+**978 headings · 923 dated · 2026-08-01 → 2026-10-27 · ledger 29,837 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -997,3 +997,4 @@ rename.
   - `L29630` · `2026-10-27` · AUDIT · **Foul Play's `away` set cannot start 19 of its 21 draws, and no banked Foul Play cell, claim or number rests on it (SOP H23)**
   - `L29662` · `2026-10-27` · AUDIT · **The pre-`d8d674b9` packer in X35 training: P\*, X26c and every X35-frame arm played Frustration at base power 1 on 0.13–0.38 % of team draws (C0 0.125 %, D1 0.164 %, D3 0.171 %, N1-P 0.375 %, trainee side). The arm-vs-C0 bias is ≤ 0.2 pp; no stated conclusion moves. Future forks against a banked `f4b25238` control stay on that family, with a corpus precondition**
   - `L29732` · `2026-10-27` · MEASURE · H-CTX SUPPORTED: P\*'s home-team edge against Kakuna goes with the TEAM, not the set (rc72b recovers −0.34 [−2.05, +0.20] of the home premium)
+  - `L29782` · `2026-10-27` · GIGO FIX · **An anchor-vs-anchor cell's per-game `our_team` is the team the peer PLAYED, from its draw log; Metamon's CSV `Team File` column names the NEXT draw in 82 % of games. No banked read, claim or number rested on the old label (SOP, `main.anchors.peer_teams`)**

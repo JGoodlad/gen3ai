@@ -253,6 +253,16 @@ record, because there is no player of ours in the process. That instrument books
 (its `won` field is a boolean), so the rows say so; ties ran 0–1 per 100 games in the 2026-09-14
 batteries.
 
+🚨 **The CSV's `Team File` column is NOT the team played** (H-CTX review F1, fixed 2026-10-27, `main.anchors.peer_teams`).
+Metamon writes the row after the peer has drawn the NEXT battle's team, so the column names the next draw in 82 % of games
+(1,886 of 2,302 captured pair games) and the played one in the rest. A pair cell's per-game `our_team` is therefore the
+team OUR peer played, read from its own draw log (`team_draws`), and the row says so (`our_team_from: peer_draw_log`).
+Two guards fail the half by name (`peer_team_attribution`): a CSV row that is neither draw `i` nor draw `i + 1`
+(a previous attempt's rows appended, a draw that never became a battle), and, when `--capture-dir` caught every battle
+of the half, a START command whose six species differ from the team file the log names (an incomplete capture set is
+skipped, and the half's report says so). **A pair cell played before this carries the CSV's label, unstamped:** take its
+per-game teams from the captures (the team-strength lane and the forensics already do); its win rates are unaffected.
+
 ### `--opponent-a X --opponent-b Y` — OPPONENT-vs-OPPONENT (a pair cell)
 
 Two external anchors head to head — e.g. `--opponent-a foulplay --opponent-b
@@ -991,7 +1001,8 @@ at the end, regime first.
 1. `status == "OK"`. A `FAILED` read still carries its games, deliberately, so a partial n is never mistaken for a full
    one, but it is not a measurement. The named causes are `peer_never_ready`, `peer_exited`, `no_first_game`,
    `no_progress`, `short_series`, `peer_long_tail_fault` (H5 · H17 · H21), `non_battle_termination` and
-   `forced_end_guard_blind` (G6), `core_slot_error`, `live_parse_halt`, `live_client_error` and `our_side_error`.
+   `forced_end_guard_blind` (G6), `peer_team_attribution` (a pair cell), `core_slot_error`, `live_parse_halt`,
+   `live_client_error` and `our_side_error`.
 2. 🚨 **`regime_verified_decisions == true`** — the field the verification reads (`gen3_anchor_regime_split_v1`, G1). It
    is true when BOTH halves' `sample` kwarg matched the regime AND the per-decision `argmax_match_rate` was
    regime-appropriate over at least one decision: exactly `1.0` in a greedy cell, materially **below** 1.0 in a t1 cell.

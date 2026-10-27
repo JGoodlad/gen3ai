@@ -1120,8 +1120,10 @@ No number leaves without its row of the matrix (§5.1), its regime (SOP RULE 1) 
 - **Declared ASYMMETRIC cells** (the deployment, reverse and calibration cells) count under their DECLARATION. Today
   `team_source_asymmetry` compares file counts only (F-DV-5), and the anchors counting rule DROPS an asymmetric
   unit, so these cells need the per-side content digest instead (B-D6).
-- 🚨 Anchor rows carry `our_team` but NOT the peer's team. The peer CSV's `Team File` column does not align
-  one-to-one with `team_draws`, so per-game opponent-team splits on banked reads are unsafe (F-DV-6, B-D6).
+- 🚨 Anchor rows carry `our_team` but NOT the peer's team. The peer CSV's `Team File` column is a race between the
+  team played and the NEXT draw (the next, in 82 % of games), so a per-game peer-team split takes the peer's
+  `team_draws` or the captures, never the CSV (F-DV-6, B-D6). Since 2026-10-27 a pair cell's own `our_team` is its
+  peer's draw log, guarded (`main.anchors.peer_teams`); an earlier pair cell's is the CSV's.
 
 **Then WIDEN, and read every widening arm (D1, D2, D3, D4) on the matrix:**
 
@@ -1399,9 +1401,11 @@ held-out gain and in-pool cost, is the right design. Three amendments:
   (`gen3_team_set_digest_v1`) and `team_content_asymmetry`; `main.anchors.results.unit_counts` refuses an undeclared
   cell whose contents differ.
 - **F-DV-6.** Anchor rows carry no per-game peer team (still true of the rows; worked around by the capture, F-DV-17;
-  since 2026-10-19 the X35 runner's PANEL units pass `--capture-dir`, so D1's unfamiliar-panel reads record per-game teams). The peer CSV's `Team File` does not align one-to-one with
-  `team_draws` (one unit checked: draws[0] never logged, the last repeated). Per-game facing analysis on banked
-  reads is UNSAFE (GIGO).
+  since 2026-10-19 the X35 runner's PANEL units pass `--capture-dir`, so D1's unfamiliar-panel reads record per-game teams). The peer CSV's `Team File` is written after the peer
+  drew the NEXT battle's team, so it names the next draw in 82 % of games (1,886 of 2,302 captured pair games), the
+  played one in the rest. Per-game facing analysis from the CSV on banked reads is UNSAFE (GIGO); the peer's
+  `team_draws` equal the captured six on all 2,302. A pair cell's `our_team` was that CSV label until 2026-10-27 and is
+  now the draw log, guarded (`main.anchors.peer_teams`); no banked conclusion rested on the old label.
 - **F-DV-7.** The "untaught 8" are POOL teams the generalist pilots. Only teacher pins are guarded. A read that
   calls them unseen for X26-era models is wrong.
 - **F-DV-8.** Off-pool crash classes were open and reachable from W_hl (TECH_DEBT (a) P1, Transform + Hidden

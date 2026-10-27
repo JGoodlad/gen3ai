@@ -240,7 +240,9 @@ def test_a_peer_pair_cell_reads_its_games_from_metamons_own_battle_log(tmp_path:
     recs = read_peer_battles(tmp_path)
     assert [r.result for r in recs] == ["win", "loss", "win"]
     assert [r.turns for r in recs] == [20, 30, 24]
-    assert recs[0].our_team == "aaa.gen3ou_team"
+    # 🚨 Metamon's "Team File" column names the draw made for the NEXT battle (main.anchors.peer_teams), so it is kept as
+    # `csv_team` for a cross-check and is NOT the team played: `our_team` stays None until the draw log sets it.
+    assert recs[0].our_team is None and recs[0].csv_team == "aaa.gen3ou_team"
     assert recs[0].battle_tag == "battle-1969304393"
 
 

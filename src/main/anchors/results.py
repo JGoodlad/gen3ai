@@ -221,6 +221,10 @@ class GameRow:
     # decisions observed. Counted from each decision's masked logits, never assumed.
     our_argmax_matches: Optional[int] = None
     our_argmax_decisions: Optional[int] = None
+    #: HOW ``our_team`` was obtained: ``"peer_draw_log"`` for an anchor-vs-anchor cell (the peer's own draw log, checked
+    #: against Metamon's CSV and the captures: :mod:`main.anchors.peer_teams`; the CSV's own column names the NEXT draw),
+    #: else "" (our side's own draw log). A pair cell played before the field existed carries the CSV's label, unstamped.
+    our_team_from: str = ""
 
     def to_json(self) -> Dict[str, Any]:
         row = self.cell.stamp()
@@ -233,6 +237,7 @@ class GameRow:
             "won": self.won,
             "hit_forfeit_limit": self.hit_forfeit_limit,
             "our_team": self.our_team,
+            "our_team_from": self.our_team_from,
             "n_decisions": self.n_decisions,
             "n_defaults": self.n_defaults,
             "n_redecides": self.n_redecides,
