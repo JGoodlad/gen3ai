@@ -4,7 +4,6 @@ stdin: ``{"checkout": "<foul-play checkout>", "files": ["<abs path>", ...]}``; s
 ``null`` is a file Foul Play's ``export_to_packed`` raises on (it would crash at that draw). STDLIB + Foul Play only:
 the script imports ``fp.teams.team_converter`` from the checkout, so what it prints is the string Foul Play sends in
 ``/utm`` for that file, never a re-implementation of it."""
-import importlib
 import json
 import os
 import sys
@@ -14,9 +13,7 @@ def main() -> int:
     req = json.loads(sys.stdin.read())
     sys.path.insert(0, req["checkout"])
     os.chdir(req["checkout"])
-    # Loaded by name, not an `import` statement: `fp` is FOUL PLAY's package, in Foul Play's interpreter, and is no
-    # dependency of gen3ai's env files (`env_files_test` scans import statements and must not be asked to declare it).
-    export_to_packed = importlib.import_module("fp.teams.team_converter").export_to_packed
+    from fp.teams.team_converter import export_to_packed
 
     out = {}
     for path in req["files"]:

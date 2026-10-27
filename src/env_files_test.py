@@ -42,6 +42,8 @@ _NOT_OURS_TO_DECLARE = {
     "huggingface_hub": "main/anchors/peer_scripts/metamon_side.py: Metamon's interpreter (the weight pins patch its download)",
     "metamon": "main/anchors/peer_scripts/metamon_side.py: Metamon's interpreter",
     "poke_env": "main/anchors/peer_scripts/metamon_side.py: upstream poke-env, in Metamon's interpreter",
+    # The Foul Play pack dump runs in FOUL PLAY's own interpreter (`foulplay.python` in anchors.json); `fp` is its package.
+    "fp": "main/anchors/peer_scripts/fp_pack_dump.py: Foul Play's interpreter",
     # `main/visualize_arch.py` imports netron lazily inside one function: an optional dev tool, installed in the
     # shared env by hand (the twin pins it as a dev extra).
     "netron": "main/visualize_arch.py: optional, lazy",
