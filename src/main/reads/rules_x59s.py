@@ -16,6 +16,11 @@ their inputs from the assembled Kakuna cells and the read's sha-recorded artefac
   Descriptive, read by no rule: each panel's contrasts with intervals, the paired per-seed contrasts, the MDE at the
   measured interval, the student-to-P\* gap (secondary, cross-engine), the arms' SDs, the yardsticks, m5's flags.
 
+* ``x59s_restriction`` -- Amendment 6 A6.1: Δ_restriction = S-P0 − S-P on U with A5.2's interval, the closure's guard
+  (its LB > 0 blocks it). The full read takes its record as an OPTIONAL artefact: until it exists a
+  SELF-PLAY-DATA-BETTER's closure is pending and the full record is re-decided once it does. The full read also
+  reports A6.2's game-length terciles (descriptive).
+
 A student's rate is the equal-weight mean of its three panels' (wins / games); a tie is a non-win (X51's rule).
 """
 from __future__ import annotations
@@ -23,13 +28,17 @@ from __future__ import annotations
 import json
 import math
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, Sequence, Tuple
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 
 FLOOR_FIRES = "FLOOR FIRES"
 FLOOR_HOLDS = "FLOOR DOES NOT FIRE"
 VOID = "VOID"
 ARMS = ("S-H", "S-P", "S-S")
-ARTEFACTS = ("students", "floor_refs", "inhouse", "fr2", "identity", "gate_record", "m3_reencode")
+ARTEFACTS = ("students", "floor_refs", "inhouse", "fr2", "identity", "gate_record", "m3_reencode", "restriction_record")
+#: artefacts that may not exist yet when the full read is decided (A6.1: until Δ_restriction is read the closure is
+#: pending; the record is re-decided once it exists)
+OPTIONAL_ARTEFACTS = ("restriction_record",)
+_RESTR_KEYS = ("sp", "sp0", "panels")
 _FLOOR_KEYS = ("group", "panels", "arms", "floor_bar", "repeat")
 _GATE_KEYS = ("group", "panels", "arms", "floor_refs", "band", "repeat")
 _FULL_KEYS = ("groups", "panels", "arms", "artefacts", "x51")
@@ -299,9 +308,17 @@ def _full_inputs(cells: Mapping[str, Any], p: Mapping[str, Any], spec: Any) -> D
                            "students": counts(cells, p["groups"], labs, p["panels"]), "artefacts": {}}
     doc["artefact"] = {}
     for k, path in p["artefacts"].items():
+        if k in OPTIONAL_ARTEFACTS:
+            from main.reads.models import spec_path
+
+            if not spec_path(path).is_file():
+                doc["artefacts"][k] = {"path": path, "sha256": None}
+                doc["artefact"][k] = None
+                continue
         body, sha = _artefact(path)
         doc["artefacts"][k] = {"path": path, "sha256": sha}
         doc["artefact"][k] = body
+    doc["games"] = _games_by_label(cells, p["groups"], labs)
     from main.reads.rules import _group
 
     doc["engines"] = {g: _group(cells, "anchor", g).get("engine") for g in p["groups"]}
@@ -311,6 +328,54 @@ def _full_inputs(cells: Mapping[str, Any], p: Mapping[str, Any], spec: Any) -> D
     doc["x51_units"] = {ts: {str(s): int(u["wins"]) / int(u["n"]) for s, u in by.items() if u["n"]}
                         for ts, by in bank.items()}
     return doc
+
+
+def _games_by_label(cells: Mapping[str, Any], groups: Sequence[str], labels: Sequence[str]
+                    ) -> Dict[str, List[Tuple[int, str]]]:
+    """``{label: [(turns, result), ...]}`` over every COUNTED unit's games (A6.2's length split)."""
+    from main.reads.rules import _group
+
+    out: Dict[str, List[Tuple[int, str]]] = {lab: [] for lab in labels}
+    for g in groups:
+        for u in _group(cells, "anchor", g)["units"]:
+            if u["label"] in out and u["counted"]:
+                out[u["label"]] += [(int(x[4]), str(x[3])) for x in (u.get("games") or [])]
+    return out
+
+
+def length_terciles(doc: Mapping[str, Any]) -> Dict[str, Any]:
+    """A6.2 (descriptive, routes nothing): cut points = the turn-count terciles of ALL counted U games of the primary
+    students pooled; per arm, the pooled win rate in each tercile; Δ_data per tercile with a binomial (Wald) interval."""
+    import numpy as np
+
+    games = doc["games"]
+    turns = [t for lab in games for t, _ in games[lab]]
+    if not turns:
+        return {}
+    cuts = [float(x) for x in np.percentile(turns, [100 / 3, 200 / 3])]
+
+    def bin_of(t: int) -> int:
+        return 0 if t <= cuts[0] else 1 if t <= cuts[1] else 2
+
+    out: Dict[str, Any] = {"cuts_turns": cuts, "stamp": "descriptive, no claim (length is post-treatment)", "arms": {}}
+    for a, labs in doc["arms"].items():
+        cell = [[0, 0] for _ in range(3)]
+        for lab in labs:
+            for t, r in games[lab]:
+                cell[bin_of(t)][0] += int(r == "win")
+                cell[bin_of(t)][1] += 1
+        out["arms"][a] = [{"wins": w, "n": n, "rate": w / n if n else None} for w, n in cell]
+    dd: List[Optional[Dict[str, float]]] = []
+    for k in range(3):
+        h, s_ = out["arms"]["S-H"][k], out["arms"]["S-S"][k]
+        if h["n"] and s_["n"]:
+            d = h["rate"] - s_["rate"]
+            se = math.sqrt(h["rate"] * (1 - h["rate"]) / h["n"] + s_["rate"] * (1 - s_["rate"]) / s_["n"])
+            dd.append({"delta": d, "lo": d - 1.959963985 * se, "hi": d + 1.959963985 * se})
+        else:
+            dd.append(None)
+    out["delta_data"] = dd
+    return out
 
 
 def qh10(doc: Mapping[str, Any], arm: str) -> Dict[str, Any]:
@@ -423,7 +488,15 @@ def _full_decide(doc: Mapping[str, Any], p: Mapping[str, Any]) -> Dict[str, Any]
     f_delta = {c: panels["forum72"][c]["delta"] for c in names}
     fit = _fit_drop(sdoc, doc["arms"]["S-H"])
     uninf: Dict[str, bool] = dict((gate or {})["uninformative"])
-    v = X.verdict(read_, inh, uninf, f_delta, yard, fr2, fit, float(m3))
+    rrec = body.get("restriction_record")
+    rlb = None
+    if rrec is not None:
+        rr = (rrec.get("decision") or {}).get("restriction") or {}
+        if not isinstance(rr.get("lo"), (int, float)):
+            out["decision"] = {"verdict": VOID, "reasons": ["the restriction record carries no Delta_restriction"]}
+            return out
+        rlb = float(rr["lo"])
+    v = X.verdict(read_, inh, uninf, f_delta, yard, fr2, fit, float(m3), rlb)
     rate = {a: [X.student_rate(s) for s in arms[a]] for a in ARMS}
     mde = {name: (1.959963985 + 0.841621234) * read_[name]["halfwidth"] / 1.959963985 for name in X.CONTRASTS}
     out.update({
@@ -434,6 +507,7 @@ def _full_decide(doc: Mapping[str, Any], p: Mapping[str, Any]) -> Dict[str, Any]
             "arm_rates": {a: {"mean": sum(r) / len(r), "sd": math.sqrt(X._var(r)), "students": r}
                           for a, r in rate.items()},
             "per_panel": panels, "paired_per_seed": _paired(arms), "mde80_at_measured": mde,
+            "length_terciles": length_terciles(doc), "restriction_lb": rlb,
             "student_to_pstar_gap_secondary_cross_engine": {a: qh10(doc, a) for a in ARMS},
             "yardsticks": {lab: {"arm": lab_of[lab], **y} for lab, y in yard_all.items()},
             "val_rose_last_epoch": sorted(lab for lab, s in sdoc["students"].items()
@@ -457,7 +531,72 @@ def _full_decide(doc: Mapping[str, Any], p: Mapping[str, Any]) -> Dict[str, Any]
     return out
 
 
+# ------------------------------------------------------------------------- Δ_restriction (Amendment 6 A6.1)
+def _restr_check(p: Mapping[str, Any], *, models: Any, anchor: Any, s: Any) -> List[str]:
+    from main.reads.rules import _check_keys
+
+    probs = _check_keys(p, _RESTR_KEYS, _RESTR_KEYS)
+    labs = {}
+    for side in ("sp", "sp0"):
+        d = p.get(side) or {}
+        gs, ls = d.get("groups") or [], d.get("labels") or []
+        if not gs or any(g not in anchor for g in gs) or not ls or any(lab not in models for lab in ls):
+            probs.append(f"{side}: {{groups, labels}} of this spec")
+            continue
+        for g in gs:
+            probs += [f"{side}: {lab!r} is not played by {g!r}" for lab in ls if lab not in anchor[g].models]
+            if set(anchor[g].teamsets) != set(p.get("panels") or []):
+                probs.append(f"{side}: group {g!r} is not the panels {p.get('panels')}")
+        labs[side] = ls
+    if len(labs) == 2:
+        if len(labs["sp"]) != len(labs["sp0"]) or len(labs["sp"]) < 2:
+            probs.append("sp / sp0: the same number (>= 2) of students")
+        if sorted(models[x].seed for x in labs["sp"]) != sorted(models[x].seed for x in labs["sp0"]):
+            probs.append("sp / sp0: the same training seeds")
+    return probs
+
+
+def _restr_inputs(cells: Mapping[str, Any], p: Mapping[str, Any], spec: Any) -> Dict[str, Any]:
+    from main.reads.rules import _group
+
+    groups = list(dict.fromkeys(list(p["sp"]["groups"]) + list(p["sp0"]["groups"])))
+    return {"panels": list(p["panels"]),
+            "sp": counts(cells, p["sp"]["groups"], p["sp"]["labels"], p["panels"]),
+            "sp0": counts(cells, p["sp0"]["groups"], p["sp0"]["labels"], p["panels"]),
+            "labels": {"sp": list(p["sp"]["labels"]), "sp0": list(p["sp0"]["labels"])},
+            "engines": {g: _group(cells, "anchor", g).get("engine") for g in groups}}
+
+
+def _restr_decide(doc: Mapping[str, Any], p: Mapping[str, Any]) -> Dict[str, Any]:
+    """A6.1: Δ_restriction = S-P0 − S-P on U, A5.2's interval (z with σ̂ pooled over these two arms, widened to their
+    own Welch). Its lower bound guards the closure: LB > 0 (a bound within 1e-9 of 0 counts) blocks it."""
+    from main.human_data import x59s_read as X
+
+    reasons: List[str] = []
+    engines = set(doc["engines"].values())
+    if len(engines) != 1 or None in engines:
+        reasons.append(f"one engine per read (A4.1): {sorted(map(str, engines))}")
+    for side in ("sp", "sp0"):
+        sub = {"students": doc[side]}
+        if _no_games(sub):
+            reasons.append(f"{side}: cells with no counted game: {_no_games(sub)}")
+        if len(_short_cells(sub)) >= 2:
+            reasons.append(f"{side}: VOID 7: {_short_cells(sub)}")
+    if reasons:
+        return {"restriction": None, "decision": {"verdict": VOID, "reasons": reasons}}
+    arms = {side: [{ts: (int(doc[side][lab][ts]["wins"]), int(doc[side][lab][ts]["n"])) for ts in doc["panels"]}
+                   for lab in doc["labels"][side]] for side in ("sp", "sp0")}
+    sd = X.seed_sd({"S-P0": arms["sp0"], "S-P": arms["sp"]})
+    c = X.contrast(arms["sp0"], arms["sp"], sd, ("RESTRICTION-COSTS", "RESTRICTION-HELPS", "UNCLEAR"))
+    blocks = c["lo"] > -X.TIE
+    return {"restriction": c, "seed_sd": sd, "engine": next(iter(engines)), "blocks_closure": blocks,
+            "decision": {"verdict": f"Delta_restriction (S-P0 - S-P) {100 * c['delta']:+.2f} pp "
+                                    f"[{100 * c['lo']:+.2f}, {100 * c['hi']:+.2f}]: "
+                                    f"{'BLOCKS' if blocks else 'does not block'} the closure (A6.1)"}}
+
+
 RULE_DOCS = {
+    "x59s_restriction": "X59-S's Delta_restriction = S-P0 - S-P (Amendment 6 A6.1), the closure's guard",
     "x59s_gate": "X59-S's per-contrast floor gate (Amendment 5 A5.1) on the imported pilot; VOID 6 repeat; booleans only",
     "x59s_floor": "X59-S's floor pilot: every arm's U mean < floor_bar fires the in-house fallback; VOID 6 repeat",
     "x59s": "X59-S's full read: x59s_read.read / inhouse / verdict on the Kakuna cells and the read's artefacts",

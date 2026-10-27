@@ -24,10 +24,10 @@ The overrides :func:`verdict` applies after the contrasts (Amendment 2, REVIEW E
 * **POPULATION-SPECIFIC** (A5.4): a "better" class whose forum72-only point estimate is <= 0 opens no lever.
 * **The H-BC gate** (A5.8): HUMAN-LABELS-BETTER routes H-BC only if the S-P students' mean yardstick on the S-S
   validation rows' P\* labels is closer to the S-S students' mean than to the S-H students' (:func:`midpoint`).
-* **The closure** (A2.5, A5.6, A5.7): SELF-PLAY-DATA-BETTER closes "1300+ ladder data, at this mix and volume, as a
-  behaviour-cloning target for a fresh network at 3 epochs" only if FR-2 is not ARTEFACT, Δ_labels is not
-  HUMAN-LABELS-BETTER, Δ_states' LB <= 0, S-H is fitted (:data:`FIT_DROP`) and the re-encode share is <=
-  :data:`REENCODE_SHARE`.
+* **The closure** (A5.6, A5.7, A6.1, A6.2): SELF-PLAY-DATA-BETTER closes :data:`CLOSURE_TEXT` only if Δ_restriction
+  (S-P0 − S-P) has been read and its LB <= 0 (a bound within 1e-9 of 0 blocks), Δ_labels is not HUMAN-LABELS-BETTER,
+  Δ_states' LB <= 0, S-H is fitted (:data:`FIT_DROP`) and the re-encode share is <= :data:`REENCODE_SHARE`. FR-2 is
+  reported (its class must exist) and gates nothing (A6.1).
 
 ``python -m main.human_data.x59s_read <counts.json>`` prints the three contrasts. The in-house fallback
 (:func:`inhouse`) is a t interval across the k pairings' S-H win rates minus 0.50.
@@ -169,14 +169,21 @@ def _inside(lo: float, hi: float) -> bool:
     return lo > -EQUIV + TIE and hi < EQUIV - TIE
 
 
+CLOSURE_TEXT = ("closes 1300+ ladder data in the panel-distant, forfeit-heavy slice (50.6 % of its rows from forfeits; "
+                "median turn 15 against S-S's 19), at this mix and volume, as a behaviour-cloning target for a fresh "
+                "network at 3 epochs (7,041 steps)")
+
+
 def verdict(read_: Dict, inhouse_: Dict[str, Dict], uninf: Dict[str, bool], f_delta: Dict[str, float],
-            yard: Dict[str, Sequence[float]], fr2: str, sh_fit_drop: float, reencode_share: float) -> Dict:
+            yard: Dict[str, Sequence[float]], fr2: str, sh_fit_drop: float, reencode_share: float,
+            restriction_lb: Optional[float]) -> Dict:
     r"""Amendment 5's final classes and actions (A5.1–A5.8 over A2's). ``inhouse_``: :func:`inhouse` reads keyed
     ``delta_data`` / ``delta_labels``; ``uninf``: :func:`gate`'s per-contrast booleans (from the pilot); ``f_delta``:
     each contrast's forum72-only point estimate; ``yard``: ``{"S-H", "S-P", "S-S"}`` -> the students' NLL on the S-S
     validation rows' P\* labels; ``fr2``: FR-2's class (read BEFORE Δ_data is reported); ``sh_fit_drop``: the S-H
     students' mean last-quarter-epoch drop in validation NLL; ``reencode_share``: A5.7's share of re-encoded rows that
-    differ."""
+    differ; ``restriction_lb``: Δ_restriction's (S-P0 − S-P) lower bound, None until it is read (A6.1: the closure's
+    guard; FR-2 is reported and gates nothing)."""
     if fr2 not in FR2_CLASSES:
         raise ValueError(f"FR-2 must be read before Delta_data is reported (got {fr2!r}; one of {FR2_CLASSES})")
     out: Dict = {"classes": {}, "kakuna_classes": {}, "actions": [], "uninformative": dict(uninf)}
@@ -210,14 +217,18 @@ def verdict(read_: Dict, inhouse_: Dict[str, Dict], uninf: Dict[str, bool], f_de
     else:
         out["actions"].append(f"{lab}: H-TEAMS first, with the D1 contrast")
     if d == "SELF-PLAY-DATA-BETTER":
-        why = [w for w, bad in (("FR-2 ARTEFACT", fr2 == "ARTEFACT"),
+        pending = restriction_lb is None
+        why = [w for w, bad in (("Delta_restriction LB > 0 (A6.1)", not pending and restriction_lb > -TIE),
                                 ("Delta_labels HUMAN-LABELS-BETTER", lab == "HUMAN-LABELS-BETTER"),
                                 ("Delta_states' LB > 0", read_["delta_states"]["lo"] > TIE),
                                 ("S-H not fitted (at this budget)", not fitted),
                                 ("the re-encode check blocks it (A5.7)", out["reencode_blocks"])) if bad]
-        out["actions"].append(
-            "closes 1300+ ladder data, at this mix and volume, as a behaviour-cloning target for a fresh network at 3 "
-            "epochs (7,041 steps)" if not why else f"SELF-PLAY-DATA-BETTER reported; closes nothing ({'; '.join(why)})")
+        if why:
+            out["actions"].append(f"SELF-PLAY-DATA-BETTER reported; closes nothing ({'; '.join(why)})")
+        elif pending:
+            out["actions"].append("SELF-PLAY-DATA-BETTER reported; closure pending Delta_restriction (A6.1)")
+        else:
+            out["actions"].append(CLOSURE_TEXT)
     if d not in ("HUMAN-DATA-BETTER", UNINF):
         out["actions"].append("the conditional >= 1500 follow-up fires (S-H>=1500 vs S-H-mix vs S-S at matched rows)")
     return out

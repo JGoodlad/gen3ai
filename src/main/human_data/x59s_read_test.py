@@ -111,9 +111,9 @@ def _ih(d, lo=None, hi=None):
     return {"delta": d, "lo": d - 0.05 if lo is None else lo, "hi": d + 0.05 if hi is None else hi, "class": "x"}
 
 
-def _v(r, ih, *, uninf=None, f=None, yard=YARD_LEARNED, fr2="NO-ARTEFACT", fit=0.001, share=0.0):
+def _v(r, ih, *, uninf=None, f=None, yard=YARD_LEARNED, fr2="NO-ARTEFACT", fit=0.001, share=0.0, rlb=-0.02):
     return X.verdict(r, ih, uninf or {"delta_data": False, "delta_labels": False},
-                     f or {"delta_data": 0.05, "delta_labels": 0.05}, yard, fr2, fit, share)
+                     f or {"delta_data": 0.05, "delta_labels": 0.05}, yard, fr2, fit, share, rlb)
 
 
 def test_the_gate_is_per_contrast_on_the_measured_references():
@@ -170,8 +170,10 @@ def test_hbc_needs_the_midpoint_and_the_closure_needs_every_gate():
     r = _read(0.20, 0.30, 0.30)
     ih = {k: _ih(-0.05) for k in ("delta_data", "delta_labels")}
     assert any(a.startswith("closes 1300+") for a in _v(r, ih)["actions"])
-    for kw in ({"fr2": "ARTEFACT"}, {"fit": 0.01}, {"share": 0.0101}):
+    for kw in ({"rlb": 0.001}, {"rlb": 5e-10}, {"fit": 0.01}, {"share": 0.0101}):
         assert not any(a.startswith("closes 1300+") for a in _v(r, ih, **kw)["actions"]), kw
+    assert any("pending Delta_restriction" in a for a in _v(r, ih, rlb=None)["actions"])
+    assert any(a.startswith("closes 1300+") for a in _v(r, ih, fr2="ARTEFACT")["actions"])   # FR-2 gates nothing
     assert any(a.startswith("closes 1300+") for a in _v(r, ih, share=0.01)["actions"])   # exactly 1.0 %: not more
     assert any(">= 1500 follow-up" in a for a in _v(r, ih)["actions"])
 

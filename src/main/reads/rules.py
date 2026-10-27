@@ -1267,6 +1267,8 @@ RULES.update({
     "x59s_gate": Rule("x59s_gate", _X59S.RULE_DOCS["x59s_gate"], _X59S._gate_check, _X59S._gate_inputs,
                       _X59S._gate_decide, False),
     "x59s": Rule("x59s", _X59S.RULE_DOCS["x59s"], _X59S._full_check, _X59S._full_inputs, _X59S._full_decide, False),
+    "x59s_restriction": Rule("x59s_restriction", _X59S.RULE_DOCS["x59s_restriction"], _X59S._restr_check,
+                             _X59S._restr_inputs, _X59S._restr_decide, False),
 })
 
 from main.reads import rules_search_headroom as _SH  # noqa: E402  (it imports this module lazily: no cycle at import)
