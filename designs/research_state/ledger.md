@@ -29286,3 +29286,11 @@ forfeit-limit games end with one unanswered request. No multiplicity correction 
 **Evidence:** `research_state/measurements/piloting_gap_forensics_2026-10-26/` (README, `results.json`, scripts);
 per-game rows `~/gen3ai_archive/piloting_gap_forensics_2026-10-26/games.jsonl.gz` (sha256 in the folder). See
 `UNDERSTANDING.md` §3.1.
+### 2026-10-26 · BASELINES · P\* registered as the named baseline `pstar_plateau` (X26 `rb_x26_s2601` @ 280,000,170, frozen as the reference by `d172c10ed`)
+
+P\* was cited everywhere by path (STATUS, UNDERSTANDING, the X35 launch sheet). It is now a NAME: read it through
+`agents.training.baselines` / `python -m main.baselines path pstar_plateau`. The target is unchanged from the frozen
+call: the sha256 the tool recomputed equals BATCH1_LAUNCH_SHEET's P\* definition (`814823c5…5ab91ed`); it loads at HEAD
+(not era-only). The line as the tool printed it:
+
+- **baseline `pstar_plateau` registered** on 2026-10-26: `rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip` @280000170 steps, commit `9c033489`, config v158 `gen3_mon_tied_gain_v1`, sha256 `814823c514fb…`. Was: *(new baseline)*. Reason: 2026-10-19 · X35 R FROZEN at P* = X26 @ 280M (d172c10ed); the parent of every X35 production fork (C0 / A1 / D1).

@@ -229,6 +229,20 @@
    "sha256": "b9896df4899b4889444aba7cbfa306733f4534d244d6b324b36cf5f62ad1061f",
    "num_timesteps": 15045685,
    "notes": "Closing test (design_endstate_closing_test.md section 9) end-state seed 2007; its 8x8 cross row mean is in section 9. Registered 2026-10-20 as an outside-panel member; its band against X26 P* and X34 T* is in the Decision record. The closing test's PRODUCTION-arm seeds (rb_es_prod_*) were tried and REFUSED by the strict loader (deleted levers, legacy deletion U1/U3), though arch_status reads them 'current'."
+  },
+  "pstar_plateau": {
+   "kind": "checkpoint",
+   "run": "rb_x26_s2601",
+   "checkpoint": "checkpoints/checkpoint_280000170_steps.zip",
+   "purpose": "P*: the PLATEAU checkpoint, X26 (rb_x26_s2601) at 280M steps, frozen as the reference by d172c10ed. Our strongest checkpoint: the one every Metamon / Kakuna read, the X35 reference population R and the X35 production forks (C0 and its siblings) are read against or fork from.",
+   "set_on": "2026-10-26",
+   "set_by": "2026-10-19 \u00b7 X35 R FROZEN at P* = X26 @ 280M (d172c10ed); the parent of every X35 production fork (C0 / A1 / D1)",
+   "commit": "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b",
+   "config_version": 158,
+   "arch_signature": "gen3_mon_tied_gain_v1",
+   "sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed",
+   "num_timesteps": 280000170,
+   "notes": "Frozen by d172c10ed (measurements/x35_refpop_freeze_2026-10-19/): band vs production 0.6935 [0.666, 0.721]. The 480M continuation vs P* against Kakuna was FLAT (+0.08 pp [-3.90, +4.06], 204204bbf), so it stays the plateau. sha256 matches BATCH1_LAUNCH_SHEET's P* definition (814823c5...)."
   }
  },
  "lists": {

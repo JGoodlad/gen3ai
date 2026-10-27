@@ -191,8 +191,9 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--token-encoding", "--token_encoding", dest="token_encoding",
                         choices=TOKEN_ENCODING_MODES, default=None,
                         help="The per-Pokemon token (gen3_static_tokens_v1, v139; "
-                             "designs/endstate/design_static_tokens.md). 'legacy' (default; production): "
-                             "today's PokemonEncoder, byte-identical. 'static': each token is S (the static "
+                             "designs/endstate/design_static_tokens.md). 'legacy' (the bare default, NOT production): "
+                             "the PokemonEncoder, byte-identical. 'static' (production; --arch production supplies "
+                             "it): each token is S (the static "
                              "identity: species, item, ability, the four moves pooled as a set, the actual "
                              "stats; for the opponent the Smogon stat prior until revealed) + D (the mon's own "
                              "battle state: HP, status, boosts, volatiles, PP, ...); the clock, weather, faint "

@@ -785,7 +785,7 @@ piloting deficit seen from inside. Self-play may under-measure that deficit (hyp
 human-built teams first, screened for strength but not by X26's own rating. [ledger 2026-10-19 · *TEAM STRENGTH*]
 
 **…while IN-HOUSE most of X26's progress transfers to unseen teams (2026-10-19, X37b, `measurements/x37b_transfer_2026-10-19/`):**
-[MEASURED · PROVISIONAL · preregistered, 10,752 games, no external opponent] P\* (X26 @ 280M) against X26 @ 25M:
+[MEASURED · PROVISIONAL · preregistered, 10,752 games, no external opponent] P\* (X26 @ 280M, baseline `pstar_plateau`) against X26 @ 25M:
 P\*'s edge is **+18.8 pp on home72 and +14.8 pp [+11.6, +17.9] on unseen teams** (heldout72_hpfix + forum72), so
 about four fifths of the progress transfers.
 - The shortfall (+4.0 pp [−0.7, +8.4] in total) is NOT DETECTED once teams are resampled.

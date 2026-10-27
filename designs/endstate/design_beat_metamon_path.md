@@ -18,7 +18,7 @@ Decision record (§9) says what changed and why. Every number below is quoted fr
 every effect size that is not measured is marked **GUESS** or **ESTIMATE**.
 
 Abbreviations: pp = percentage points; CI = 95 % interval; LB = the interval's lower bound; P\* = X26's plateau
-checkpoint (`rb_x26_s2601` @ 280,000,170); T\* = the toy's plateau checkpoint (`rb_toy_ent_s4002_deep` @ 290,000,087);
+checkpoint (`rb_x26_s2601` @ 280,000,170, the named baseline `pstar_plateau`); T\* = the toy's plateau checkpoint (`rb_toy_ent_s4002_deep` @ 290,000,087);
 home72 = our 72 sample teams (all in the training pool); H = `heldout72_hpfix`; F = `forum72`; P72 = 72 procedural
 Smogon-usage teams; U = the three UNFAMILIAR panels H, F and P72; "pilot" = play a team, "face" = play against it.
 

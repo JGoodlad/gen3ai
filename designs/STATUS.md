@@ -12,7 +12,7 @@ is a commit on `main` (`git show <sha>`).
 status digests in chat. It does not replace the status block each design doc keeps for itself.
 
 **Terms used below.** **P\*** is our strongest checkpoint: the X26 run at 280M steps, frozen as the reference at
-`d172c10ed`. **Kakuna** is Metamon's strongest public model (142.8M parameters; ours has 2.03M). **home72** is our 72
+`d172c10ed`; the named baseline `pstar_plateau`. **Kakuna** is Metamon's strongest public model (142.8M parameters; ours has 2.03M). **home72** is our 72
 training teams. **Unfamiliar teams** (pooled as "U" or "H") are teams our model never trained on. "pp" means
 percentage points of win rate. **NOT DETECTED / UNDECIDED** means the interval spans zero, so we cannot tell the
 lever from noise.

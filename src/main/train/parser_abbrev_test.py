@@ -35,3 +35,15 @@ def test_the_launcher_parser_leaves_a_prefix_of_its_flag_for_the_child_to_refuse
     known, rest = build_launcher_parser().parse_known_args(["--nic", "5", "--dry-run"])
     assert known.nice == 10 and known.dry_run is True      # `--nic` did NOT become `--nice`
     assert rest == ["--nic", "5"]
+
+
+def test_the_token_encoding_help_names_production_s_encoder_as_production():
+    """`--help` is what a person reads when typing a launch: it once called `legacy` "default; production"."""
+    import json
+
+    from utils.paths import repo_path
+
+    prod = json.loads(repo_path("designs", "production_config.json").read_text())["token_encoding"]
+    (act,) = [a for a in build_parser()._actions if "--token-encoding" in a.option_strings]
+    assert f"'{prod}' (production" in act.help
+    assert "(default; production)" not in act.help
