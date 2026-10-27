@@ -36,7 +36,7 @@ rate. **NOT DETECTED / UNDECIDED** means the interval spans zero, so we cannot t
 | where | job | what decision it drives |
 |---|---|---|
 | **GPU** (lease: Training session) | **X59-S students**: 15 primary + 5 S-P0 networks trained on fixed data, at most 3 at a time. | **Is human data better than our own self-play data?** The answer is S-H − S-S. It decides whether the `--human-data` switch (PROPOSED, not built) and the X60 arm get built ([`endstate/design_human_replay_lever.md`](endstate/design_human_replay_lever.md)). |
-| **GPU queue, next** | **D3 look 2** (seeds 3504 and 3505, about 8.1 GPU-h). Look 1 read CONTINUE. | Whether **set mutation** is adopted as a goal-(b) lever: 2,876 pool teams with 1–2 sets redrawn from Smogon. |
+| **GPU queue, next** | **D3 look 2** (seeds 3504 and 3505, about 8.1 GPU-h). Look 1 read CONTINUE. Every look-2 game is played on ONE Rust engine, E1 (the arms' training engine): look 1's D3 units are re-played on it, and C0's banked rows import (PREREG AM-D3-ENG). | Whether **set mutation** is adopted as a goal-(b) lever: 2,876 pool teams with 1–2 sets redrawn from Smogon. |
 | GPU queue, then | **LR-F** (seeds 3502 and 3503): the plateau checkpoint continued with a floor on the learning rate. | Whether the plateau comes from the learning-rate controller, not from capacity or data. |
 | **CPU** (Kakuna lanes) | **N1-P look 1** (X61P): the three 12,000-procedural-team arms (finished training 2026-10-26), read against Kakuna and in-house. | **GO** funds **X53-N1**, a fresh production run on 10⁴ teams, the survey's top-ranked lever. **NULL** rules out only "N1 at the plateau". |
 
@@ -50,7 +50,7 @@ rate. **NOT DETECTED / UNDECIDED** means the interval spans zero, so we cannot t
 | X52: practise 36 teams for 5M (ceiling of practice) | UNDECIDED | practised +3.2 pp [−0.2, +6.8]; unpractised +1.3 [−3.5, +6.1] | `42bb0858d` |
 | D1: widen the team pool | UNDECIDED, final | Kakuna, unfamiliar teams: +2.10 pp [−0.92, +5.11]; in-pool −1.61 [−2.90, −0.32] | `eb99ab362` |
 | X26c: train on 380M → 480M | FLAT; goal (b) not met | +0.08 pp [−3.90, +4.06] | `204204bbf` |
-| D3 look 1: set mutation | CONTINUE (look 2 decides) | Kakuna, unfamiliar teams: +1.27 pp [−2.63, +5.16]; in-pool −0.24 [−1.10, +0.62], non-inferior. C0's side reuses D1's games, played before the 10-25 obs and engine fixes; a 140-game replay guard passed | `58287c525` |
+| D3 look 1: set mutation | CONTINUE (look 2 decides). Read ACROSS two engines: D3 on E2, banked C0 on E1. The guard's 140 / 140 identical games bound the divergence below about 2.1 % of games | Kakuna, unfamiliar teams: +1.27 pp [−2.63, +5.16]; in-pool −0.24 [−1.10, +0.62], non-inferior | `58287c525` |
 | Belief prior mix, λ = 0.25 | NOT DETECTED | +1.50 pp [−2.74, +5.74] | `f299a7243` |
 | Belief prior mix, λ = 1 (prior only) | NOT DETECTED; H3 not killed | −1.50 pp [−5.47, +2.47] | `71c76dfbb` |
 | Human-only Metamon models (FR-1, FR-3) | P\* BEATS all three | SmallRL 0.666 [0.639, 0.692]; LargeRL 0.631 [0.603, 0.658]; LargeIL 0.790 [0.766, 0.812] | `4d8d9eef8`, `df35d1bb0` |

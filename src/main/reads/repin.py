@@ -5,7 +5,9 @@ pin guard, ``runner._code_holds``). That is right for play code, and wrong for a
 (``--concurrency``): a long read could never take one. ``python -m main.reads repin --state S --to <commit> --by WHO --why
 TEXT`` accepts ``<commit>`` as a second playing commit of the read IF AND ONLY IF the tracked play path
 (:mod:`main.reads.playpath`) is byte-identical between ``code.json``'s commit and ``<commit>``. Otherwise it REFUSES and
-names the files that differ; nothing is written.
+names the files that differ; nothing is written. The play path holds every Rust source the engine's build stamp hashes
+(``playpath_test`` pins that), so an identical path is an identical ENGINE; the repin also names that engine
+(:func:`main.reads.engine.engine_at` at both commits, refused if they differ) and records it.
 
 What it writes is ``<state>/repins.jsonl``, APPEND-ONLY (one JSON line per repin; never rewritten). ``code.json`` is left
 exactly as ``plan`` wrote it, on purpose: a supervisor of older code, still running from the old checkout, reads only
@@ -106,10 +108,18 @@ def repin(state: Path, to: str, *, by: str, why: str, repo: Optional[Path] = Non
                                                       else "")
             raise RepinError(f"the play path differs between {old[:12]} (code.json) and {new[:12]}: {len(diffs)} "
                              f"file(s): {shown}. A repin is only for a change that cannot alter a game")
+        from main.reads import engine as EN                   # the engine, named (REVIEW F F-M2): the play path
+
+        try:                                                  # holds its sources, so equal paths mean equal engines
+            engines = {c: EN.engine_at(c, repo or PP.default_repo()) for c in (old, new)}
+        except EN.EngineError as exc:
+            raise RepinError(str(exc)) from None
+        if engines[old] != engines[new]:
+            raise RepinError(f"the engine differs between {old[:12]} ({engines[old]}) and {new[:12]} ({engines[new]})")
         t = time.time() if now is None else now
         rec: Dict[str, Any] = {
             "schema": SCHEMA, "from_commit": old, "to_commit": new, "playpath_digest": dig, "playpath_files": n,
-            "playpath_schema": PP.SCHEMA, "by": by.strip(), "why": why.strip(),
+            "playpath_schema": PP.SCHEMA, "engine": engines[new], "by": by.strip(), "why": why.strip(),
             "time": time.strftime("%Y-%m-%dT%H:%M:%S%z", time.localtime(t)), "t": t,
             "root": str(repo or PP.default_repo())}
         fd = os.open(repins_file(state), os.O_WRONLY | os.O_APPEND | os.O_CREAT, 0o644)

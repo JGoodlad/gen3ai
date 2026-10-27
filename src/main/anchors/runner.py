@@ -111,6 +111,8 @@ class SeriesPlan:
     #: `showdown:<pin>`. A win rate that did not say which transport produced it could not be
     #: compared with one that did.
     server_version: str = ""
+    #: The Rust engine the battles play on (``server.engine_stamp``; empty when none of ours serves them).
+    engine_stamp: str = ""
     #: `--server rust` only: the reproducibility pair. There is no Node counterpart.
     seed_base: Optional[int] = None
     capture_dir: Optional[Path] = None
@@ -548,6 +550,7 @@ def cell_spec(plan: SeriesPlan, report: Dict[str, Any], our_team_count: int) -> 
         showdown_pin=plan.showdown_pin,
         server_impl=plan.server_impl,
         server_version=plan.server_version,
+        engine_stamp=plan.engine_stamp,
         our_side=plan.our_side,
         model_loader=str(report.get("model_loader") or ""),
         mirrored_pairs=bool(plan.mirrored_pairs),

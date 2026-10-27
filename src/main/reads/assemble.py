@@ -9,14 +9,21 @@ checked by hand on the raw rows. Here:
   ledger that holds another, or a panel whose team set is not the rows', makes the group INCONCLUSIVE;
 * an anchor unit's regime is :func:`anchor_regime_id` over the cell identity its ``summary.json`` stamps (opponent
   and version, both regimes, transport, server, format, forfeit limit, both team-content digests, the declared team
-  cell): every counted unit of a (group, team set) must share ONE, else the group is INCONCLUSIVE, and the group's
-  id is :func:`group_regime_id` over its team sets' ids. The playing commit
-  (``server_version``) and file paths are recorded per unit, not part of the id (x26c FINDING 1: the play is the
-  same across commits; ``code.json`` pins the commit separately);
+  cell, and the ENGINE, :mod:`main.reads.engine`): every counted unit of a (group, team set) must share ONE, else the
+  group is INCONCLUSIVE, and the group's id is :func:`group_regime_id` over its team sets' ids. The playing commit
+  (``server_version``) and file paths are recorded per unit, not part of the id; the engine the commit played on is;
 * a group may hold models with DIFFERENT load options (``spec.models.<label>.load``, e.g. a belief prior mix λ): each load
   stamps its own ``our_regime`` (``greedy+belief_prior_mix=0.25``), so the group's id is then taken per (load, team set)
   AND over the BASE id (``our_regime`` without the load's stamp) that every model of a team set must share (see
   :func:`anchor_group`). A group whose models share one load keeps the id it always had.
+
+THE ENGINE (REVIEW F F-M2, 2026-10-26). Every unit row and group carries its ``engine`` (the Rust build-stamp
+identity it played on) and a group whose counted units span two engines is INCONCLUSIVE, as an S group whose rows'
+core stamps span two is. A summary that stamps its engine (``cell.engine_stamp``) carries it in the regime id unless
+it is an engine a banked read played on (:data:`main.reads.engine.LEGACY_ENGINE`), so every banked id is unchanged
+(the LEGACY rule, as the weights pins did in ff54265e) and a new read on a banked engine keeps that engine's id. Ids
+alone cannot tell two banked engines apart (they were computed without one), so every import compares the engines
+themselves (:func:`main.reads.engine.require_same`).
 
 A cell or node with no regime id is never conclusive.
 """
@@ -29,6 +36,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 
 from agents.training import eval_ledger as L
+from main.reads import engine as EN
 
 ANCHOR_REGIME_SCHEMA = "gen3_read_anchor_regime_v1"
 #: The cell fields of an anchor summary that ARE the regime (everything else is recorded, not identity).
@@ -85,6 +93,9 @@ def anchor_regime_id(summary: Mapping[str, Any], *, strip_load: str = "") -> Opt
             return None
         ident["our_regime"] = ours[:-len(strip_load)]
     ident.update(_weights_identity(cell))
+    stamped = cell.get("engine_stamp")
+    if stamped and not EN.is_legacy(str(stamped)):
+        ident["engine"] = str(stamped)                     # a banked engine keeps its id (the LEGACY rule)
     ident.update(schema=ANCHOR_REGIME_SCHEMA, declared_team_cell=summary.get("declared_team_cell"),
                  team_digest_schema=summary.get("team_digest_schema"))
     return hashlib.sha256(json.dumps(ident, sort_keys=True).encode()).hexdigest()[:16]
@@ -158,7 +169,7 @@ def unit_row(u: Any, summary: Mapping[str, Any], games: Optional[List[List[Any]]
             "regime_verified_decisions": summary.get("regime_verified_decisions"),
             "peer_clean": summary.get("peer_clean"), "team_source_asymmetry": summary.get("team_source_asymmetry"),
             "counted": uc.counts, "reasons": list(uc.reasons), "regime_id": anchor_regime_id(summary),
-            "base_regime_id": anchor_regime_id(summary, strip_load=stamp),
+            "base_regime_id": anchor_regime_id(summary, strip_load=stamp), "engine": EN.unit_engine(cell),
             "server_version": cell.get("server_version"), "model_step": cell.get("model_step")}
 
 
@@ -254,8 +265,12 @@ def anchor_group(rows: Sequence[Mapping[str, Any]], *, labels: Sequence[str], te
         out_extra = {"regime_ids_by_load": full, "loads": stamps}
     else:
         rid = group_regime_id(by_ts) if all(by_ts.values()) else None
+    engine, engine_why = EN.one(r.get("engine") for r in rows if r["counted"])
+    if engine_why:
+        why.append(f"counted units {engine_why}")
     unplayed = len(labels) * len(teamsets) * len(unit_seeds) - len(seen)
-    return {"regime_id": rid, "regime_ids": by_ts, "teamsets": list(teamsets), "unit_seeds": list(unit_seeds),
+    return {"regime_id": rid, "regime_ids": by_ts, "engine": engine, "teamsets": list(teamsets),
+            "unit_seeds": list(unit_seeds),
             "cells": cells, "units": sorted((dict(r) for r in rows), key=lambda r: r["unit"]),
             "unplayed": unplayed, "inconclusive": sorted(set(why)), **out_extra}
 
@@ -312,7 +327,8 @@ def s_group(root: Path, family: str, requests: Mapping[str, str], shas: Mapping[
     except L.ReaderDeclError as exc:
         raise AssembleError(f"family {family} at {root}: {exc}") from None
     except L.MixedRegimeError as exc:
-        return {"family": family, "regime_id": None, "ledger_digest": None, "panel": panel, "team_set": None,
+        return {"family": family, "regime_id": None, "engine": None, "ledger_digest": None, "panel": panel,
+                "team_set": None,
                 "rows": 0, "nodes": {lab: {"sha256": sha, "s_pp": None, "se_pp": None,
                                            "inconclusive": [f"mixed regimes: {exc}"]} for lab, sha in shas.items()},
                 "inconclusive": [f"family {family}: mixed regimes ({exc})"], "refpop_content_sha256":
@@ -332,12 +348,15 @@ def s_group(root: Path, family: str, requests: Mapping[str, str], shas: Mapping[
         why.append(f"family {family}: the read carries no regime id")
     if want_regime is not None and got.regime_id is not None and got.regime_id != want_regime:
         why.append(f"regime {got.regime_id} is not the registered {want_regime}")
+    engine, mixed = EN.one(EN.row_engine(r) for r in got.rows)
+    if mixed:
+        why.append(f"family {family}: rows {mixed}")
     looks = dict(L.looks(got))
     for req in sorted(set(requests.values())):
         if req not in looks:
             why.append(f"request {req} of family {family}: no row")
     nodes = {lab: s_node(looks.get(requests[lab], []), sha, members, min_pairs=min_pairs) for lab, sha in shas.items()}
-    return {"family": family, "regime_id": got.regime_id, "ledger_digest": got.digest, "panel": panel,
+    return {"family": family, "regime_id": got.regime_id, "engine": engine, "ledger_digest": got.digest, "panel": panel,
             "team_set": want_ts if panel is not None else (team_sets[0] if len(team_sets) == 1 else team_sets),
             "rows": len(got.rows), "nodes": nodes, "inconclusive": why,
             "refpop_content_sha256": refpop_content_sha256}
@@ -367,8 +386,8 @@ def assemble(spec: Any, state: Path) -> Dict[str, Any]:
             if lab not in imported(a) and (st / "plan.json").exists():
                 rows += anchor_units(st)
         meta = None
-        if a.imports is not None:                         # the earlier read's units: sha- and regime-checked
-            got, meta = IM.anchor_rows(spec, g, shas, this_state=state)
+        if a.imports is not None:                         # the earlier read's units: sha-, regime- and engine-checked
+            got, meta = IM.anchor_rows(spec, g, shas, this_state=state, own=rows)
             rows += got
         grp = anchor_group(rows, labels=a.models, teamsets=a.teamsets, unit_seeds=a.unit_seeds, shas=shas,
                            loads={lab: spec.models[lab].load for lab in a.models})
@@ -393,6 +412,8 @@ def assemble(spec: Any, state: Path) -> Dict[str, Any]:
             else:
                 grp["nodes"] = dict(grp["nodes"], **ig["nodes"])
                 grp["inconclusive"] = list(grp["inconclusive"]) + [f"imported: {w}" for w in ig["inconclusive"]]
+                if grp.get("rows"):                           # this ledger played too: one engine for both
+                    IM.check_engine(f"s.{g} import", grp.get("engine"), ig.get("engine"))
                 if ig.get("regime_id") != grp.get("regime_id"):
                     grp["inconclusive"].append(f"imported regime {ig.get('regime_id')} is not this ledger's "
                                                f"{grp.get('regime_id')}")

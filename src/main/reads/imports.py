@@ -12,6 +12,11 @@ labels are never planned or played here. The import is refused (:class:`ReadImpo
 * each imported label is a model of the earlier group with the same arm, seed and load options, and the bytes the
   earlier state PLAYED (its ``models.json`` sha256) are the bytes this state resolved (its ``models.json``).
 
+Engine-matched (REVIEW F F-M2): the imported units or S rows must have played on THIS read's engine
+(:mod:`main.reads.engine`): an import across engines, or of rows whose engine nobody can name beside this read's
+own, refuses (:func:`check_engine`). A regime id cannot tell two banked engines apart, so the engines are compared
+themselves.
+
 Regime-matched: imported anchor units enter :func:`main.reads.assemble.anchor_group` with this state's own, so a
 (group, team set) whose units span two regime ids is INCONCLUSIVE, exactly as within one state; an imported S node
 must carry the group's regime id. The record names every import (state, spec sha256, row digest, the earlier
@@ -22,13 +27,23 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, Optional, Tuple
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 
 from main.reads import layout as LY
 
 
 class ReadImportError(RuntimeError):
-    """An import that is not the same cell, the same bytes, or the registered earlier read (named)."""
+    """An import that is not the same cell, the same bytes, the same engine, or the registered earlier read (named)."""
+
+
+def check_engine(what: str, here: Optional[str], there: Optional[str]) -> None:
+    """Refuse an import whose rows played on another engine than this read's own (or on one nobody can name)."""
+    from main.reads import engine as EN
+
+    try:
+        EN.require_same(what, here, there)
+    except EN.EngineError as exc:
+        raise ReadImportError(str(exc)) from None
 
 
 def earlier_state(imp: Any) -> Path:
@@ -125,9 +140,13 @@ def _meta(imp: Any, old: Any, rows_digest: str, n: int) -> Dict[str, Any]:
             "code": json.loads(cf.read_text()) if cf.exists() else None, "repins": RP.load_repins(st)}
 
 
-def anchor_rows(spec: Any, g: str, shas: Mapping[str, str], *, this_state: Optional[Path] = None
-                ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
-    """The imported labels' PLAYED unit rows on this group's team sets and unit seeds, and the import's record."""
+def anchor_rows(spec: Any, g: str, shas: Mapping[str, str], *, this_state: Optional[Path] = None,
+                own: Sequence[Mapping[str, Any]] = ()) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
+    """The imported labels' PLAYED unit rows on this group's team sets and unit seeds, and the import's record.
+    ``own``: this state's own rows of the group; when any counted, the imported counted rows must share their ONE
+    engine (:func:`check_engine`)."""
+    from main.reads import engine as EN
+
     from main.reads.assemble import anchor_units
 
     grp = spec.anchor[g]
@@ -146,6 +165,14 @@ def anchor_rows(spec: Any, g: str, shas: Mapping[str, str], *, this_state: Optio
     meta = _meta(imp, old, digest, len(rows))
     meta["regime_ids"] = {ts: sorted({str(r.get("regime_id")) for r in rows if r["panel"] == ts and r["counted"]})
                           for ts in grp.teamsets}
+    theirs, why = EN.one(r.get("engine") for r in rows if r["counted"])
+    meta["engine"] = theirs
+    mine = [r for r in own if r.get("counted")]
+    if mine and any(r["counted"] for r in rows):
+        here, why_here = EN.one(r.get("engine") for r in mine)
+        if why or why_here:
+            raise ReadImportError(f"anchor.{g} import from {old.read}: {why or why_here}")
+        check_engine(f"anchor.{g} import from {old.read} ({imp.group})", here, theirs)
     return rows, meta
 
 
@@ -163,5 +190,6 @@ def s_group(spec: Any, g: str, shas: Mapping[str, str], members: Mapping[str, st
                    have, members, panel=x.panel, want_regime=x.regime_id or ox.regime_id,
                    refpop_content_sha256=x.refpop_content_sha256, min_pairs=x.pairs)
     meta = _meta(imp, old, str(grp.get("ledger_digest")), int(grp.get("rows") or 0))
-    meta.update(family=ox.family, ledger_digest=grp.get("ledger_digest"), regime_id=grp.get("regime_id"))
+    meta.update(family=ox.family, ledger_digest=grp.get("ledger_digest"), regime_id=grp.get("regime_id"),
+                engine=grp.get("engine"))
     return grp, meta

@@ -250,6 +250,11 @@ def _assert_the_pieces_fit(summary: dict, rows: list, out: Path, server: str, n_
     assert summary["cell"]["server_impl"] == server
     assert all(row["server_impl"] == server for row in rows)
     assert summary["cell"]["server_version"]
+    # ... and the ENGINE (REVIEW F F-M2): a Rust-served cell names the build it played on, a Node one none
+    from main.anchors.server import engine_stamp
+
+    assert summary["cell"]["engine_stamp"] == (engine_stamp() if server == "rust" else "")
+    assert summary["cell"]["engine_stamp"] != "" or server != "rust"
 
     # The server we started is gone, its log is named after it, and nothing else was touched.
     log = "ws_frontend.log" if server == "rust" else "showdown.log"

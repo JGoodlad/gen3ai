@@ -565,6 +565,7 @@ def build_plan(args: argparse.Namespace, cfg: config_mod.AnchorsConfig,
         # alternative — copying --server onto a row about a process this tool never saw — is how
         # a number ends up attributed to a transport it never touched.
         server_impl, server_version = "external", ""
+        engine = ""
     else:
         port = args.port if args.port is not None else server_mod.pick_port(cfg.port_range)
         server_mod.refuse_reserved(port)
@@ -579,6 +580,7 @@ def build_plan(args: argparse.Namespace, cfg: config_mod.AnchorsConfig,
                 args.server_kind, port, node=cfg.node, battle_format=args.battle_format,
                 seed_base=args.seed_base,
                 capture_dir=Path(args.capture_dir) if args.capture_dir else None).version()
+        engine = server_mod.engine_stamp() if server_impl == "rust" else ""
 
     if args.model and our_side == "model":  # noqa: SIM108 - a peer/bot our-side has no zip
         zip_path, step, rung = resolve_model(args.model)
@@ -640,6 +642,7 @@ def build_plan(args: argparse.Namespace, cfg: config_mod.AnchorsConfig,
         started_server=started,
         server_impl=server_impl,
         server_version=server_version,
+        engine_stamp=engine,
         seed_base=args.seed_base,
         capture_dir=Path(args.capture_dir) if args.capture_dir else None,
         challenge_mode=args.challenge_mode,
@@ -717,6 +720,7 @@ def render_plan(plan: runner_mod.SeriesPlan, cfg: config_mod.AnchorsConfig) -> s
            if plan.started_server else "  (EXISTING — nothing started; stamped external)"),
         f"  server version    {plan.server_version or '(unknown — not started by this tool)'}"
         + ("  🚨 NO NODE SERVER IS STARTED" if plan.server_impl == "rust" else ""),
+        f"  engine            {plan.engine_stamp or '(none of ours named: not part of the regime id)'}",
         f"  showdown pin      {plan.showdown_pin}",
         f"  usernames         ours={plan.our_username}<N> peer={plan.peer_username}<N>  "
         "(a per-half suffix; a name still held by the previous half logs in as a GUEST)",

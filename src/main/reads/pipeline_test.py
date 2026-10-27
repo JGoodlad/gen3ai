@@ -82,8 +82,11 @@ class FakeSlot:
     """Stands in for ``mem_cap.sh --slot ... python -m main.reads s-unit``: appends 100-pair batches for every cell
     the engines name, as ``main.h2h play-many`` would (one row per batch)."""
 
-    def __init__(self, state, refpop_doc):
-        self.state, self.calls = state, []
+    #: The env core every fake row stamps (``compute.core_stamp``; its ``src`` is the S group's engine).
+    CORE_STAMP = "stamp=v2;kind=env;commit=" + "b" * 40 + ";src=1111111111111111;nfiles=125;nan_poison=0"
+
+    def __init__(self, state, refpop_doc, core_stamp=CORE_STAMP):
+        self.state, self.calls, self.core_stamp = state, [], core_stamp
         self.members = {m["label"]: m["sha256"] for m in refpop_doc["members"]}
 
     def __call__(self, argv):
@@ -111,9 +114,10 @@ class FakeSlot:
                     c = w.claim(req["request_id"], batch=b, player=sh, opponent=self.members[m],
                                 regime_id=reg["regime_id"], expected_wall_s=60)
                     pc = (15 + seed, 20, 25 - seed, 20, 20) if spec.models[label].arm == "sprt" else (20,) * 5
-                    w.append_row(K.make_row(w.next_row_id(), request=req, batch=b, p=sh, o=self.members[m], reg=reg,
-                                            pc=pc, ts=clock.iso(), purpose="ab",
-                                            cycle_seed=hash((label, m, b)) % 10 ** 9), c)
+                    row = K.make_row(w.next_row_id(), request=req, batch=b, p=sh, o=self.members[m], reg=reg,
+                                     pc=pc, ts=clock.iso(), purpose="ab", cycle_seed=hash((label, m, b)) % 10 ** 9)
+                    row["compute"]["core_stamp"] = self.core_stamp
+                    w.append_row(row, c)
         return 0
 
 

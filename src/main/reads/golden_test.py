@@ -34,6 +34,8 @@ G1_RESULTS = {"path": f"{MEAS}/x35_breakers_stage_2026-10-17/g1/results.json",
               "sha256": "393b7d572bb03c25afc089e3c7f9ca121c79aab9e1d436380fbbac96d9cf6786", "arm": "c0"}
 K9B = f"{MEAS}/x26c_continuation_2026-10-25/read/k9b_at_end.json"
 POOL_REGIME, HOME72_REGIME = "adfdbee824c9eb0a", "d4de0fd7c16a2658"
+#: The env core SPRT look 1's pool rows stamp (``compute.core_stamp`` at eb99ab362; E1, G1's too).
+SPRT_S_ENGINE = "env=7c53280566d666ae/125"
 #: the Kakuna unfamiliar-panel group's id (main.reads.assemble.group_regime_id): the SAME for D1's and x26c's units,
 #: played at different commits on the same committed configs (x26c FINDING 1)
 KAKUNA_UNFAMILIAR_REGIME = "09f297883701a35a"
@@ -136,7 +138,8 @@ def test_sprt_look1_redecides_exactly_from_its_committed_input():
     inp = _json(STAGE / "sprt_read/read_look1_input.json")
     rec = _json(STAGE / "reads/sprt_look1.json")
     spec = sprt_spec({s: "0" * 64 for s in ("3501", "3502", "3503")})
-    cells = {"s": {"pool": {"nodes": {f"sprt_s{s}": {"s_pp": v} for s, v in inp["r1"]["on"].items()}}}}
+    cells = {"s": {"pool": {"nodes": {f"sprt_s{s}": {"s_pp": v} for s, v in inp["r1"]["on"].items()},
+                            "engine": SPRT_S_ENGINE}}}
     doc = RU.inputs("x35_r1", cells, spec.params, spec)
     assert doc == inp, "the rule's input from the cells (C0 imported from G1's committed results) is the read's"
     v = RU.decide("x35_r1", doc, spec.params)
@@ -185,7 +188,7 @@ def test_sprt_look1_reassembles_from_its_ledgers_exactly(tmp_path):
     grp = AS.s_group(_need("x35_sprt_read", "ledger"), "x35_sprt_read_2026-10-24",
                      {lab: f"sprt_{lab}_b100" for lab in shas}, shas, _members(), want_regime=POOL_REGIME,
                      refpop_content_sha256=_refpop_content())
-    assert grp["regime_id"] == POOL_REGIME and not grp["inconclusive"]
+    assert grp["regime_id"] == POOL_REGIME and not grp["inconclusive"] and grp["engine"] == SPRT_S_ENGINE
     # the imported control IS G1's ledger, re-assembled
     g1 = _json(_need("x35_g1", "state.json"))
     g1shas = {lab: v["sha256"] for lab, v in g1["nodes"].items() if lab.startswith("c0_")}

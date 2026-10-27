@@ -9,6 +9,7 @@ import pytest
 from agents.training import eval_ledger as L
 from agents.training.eval_ledger import testkit as K
 from main.reads import assemble as AS
+from main.reads import engine as EN
 
 PANELS = ("heldout72_hpfix", "forum72")
 
@@ -29,6 +30,51 @@ def test_the_anchor_regime_id_ignores_the_commit_and_paths_but_not_the_regime():
     assert AS.anchor_regime_id(_summary(their_regime="t1")) != a
     assert AS.anchor_regime_id(_summary(our_team_digest="d2")) != a
     assert AS.anchor_regime_id({"status": "OK"}) is None, "a summary that stamps no cell has no regime"
+
+
+#: ``_summary()``'s regime id as the code BEFORE the engine entered it computed it (main at e41beafe1): pinned.
+BANKED_ID = "9daaa9bd73aaa2f0"
+
+
+def test_a_banked_id_is_unchanged_under_the_legacy_engine_rule():
+    """REVIEW F F-M2's LEGACY rule: a summary that stamps no engine (every banked read) keeps its id, whatever commit
+    played it, and so does a new summary on an engine a banked read played on; any other engine enters the id."""
+    for sv in ("ws_frontend@aaa", "ws_frontend[in-process]@2cc864f2f+rust:cargo:src/rust_sim"):
+        assert AS.anchor_regime_id(_summary(server_version=sv)) == BANKED_ID
+    for legacy in (EN.E0, EN.E1, EN.E2, EN.E3):
+        assert AS.anchor_regime_id(_summary(engine_stamp=legacy)) == BANKED_ID
+    new = AS.anchor_regime_id(_summary(engine_stamp="port=0d72f9fa0c359ee5/93;env=d79c3a74b241a75b/128"))
+    assert new != BANKED_ID and new == AS.anchor_regime_id(
+        _summary(engine_stamp="port=0d72f9fa0c359ee5/93;env=d79c3a74b241a75b/128", server_version="ws_frontend@x"))
+    assert new != AS.anchor_regime_id(_summary(engine_stamp="port=1111111111111111/93;env=d79c3a74b241a75b/128"))
+
+
+def test_a_unit_row_names_its_engine_stamped_or_from_the_legacy_table():
+    class U:
+        name, label, teamset, unit_seed, games, model_sha256 = "u", "a", "forum72", 0, 20, None
+
+    def row(**cell):
+        return AS.unit_row(U(), dict(_summary(**cell), status="OK", n=20, wins=10, losses=10))
+
+    assert row(server_version="ws_frontend[in-process]@2cc864f2f+rust:cargo:src/rust_sim")["engine"] == EN.E2
+    assert row(server_version="ws_frontend[in-process]@f4b25238d+rust:cargo:src/rust_sim")["engine"] == EN.E1
+    assert row(server_version="ws_frontend[in-process]@f4b25238d+rust:cargo:src/rust_sim",
+               engine_stamp="port=9/1;env=9/1")["engine"] == "port=9/1;env=9/1", "the stamp wins over the table"
+    assert row(server_version="ws_frontend[in-process]@0123456789+rust:cargo:src/rust_sim")["engine"] is None
+
+
+def test_counted_units_on_two_engines_are_never_conclusive():
+    rows = _grid()
+    for r in rows:
+        r["engine"] = EN.E1
+    g = AS.anchor_group(rows, labels=["a", "b"], teamsets=PANELS, unit_seeds=(0, 1))
+    assert g["engine"] == EN.E1 and not g["inconclusive"]
+    rows[3] = dict(rows[3], engine=EN.E2)                 # one unit on D3 look 1's engine, the same regime id
+    g = AS.anchor_group(rows, labels=["a", "b"], teamsets=PANELS, unit_seeds=(0, 1))
+    assert g["engine"] is None and any("span 2 engines" in w for w in g["inconclusive"])
+    rows[3] = dict(rows[3], engine=None)
+    g = AS.anchor_group(rows, labels=["a", "b"], teamsets=PANELS, unit_seeds=(0, 1))
+    assert any("unknown engine" in w for w in g["inconclusive"])
 
 
 def _row(label, panel, seed, *, wins=10, n=20, counted=True, regime="r" * 16, sha=None):

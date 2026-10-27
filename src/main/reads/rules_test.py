@@ -6,6 +6,7 @@ import math
 
 import pytest
 
+from main.reads import engine as EN
 from main.reads import rules as RU
 from main.x35 import readout as R
 
@@ -312,7 +313,11 @@ def _d3_spec(tmp_path, banked_rows, **over):
         "decision": {"rule": "d1", "params": params}})
 
 
-def _d3_cells(guard_games, *, anchor_regime="aaaa", s_regime="bbbb"):
+E1_S = "env=7c53280566d666ae/125"                      # D1's P rows' env core (E1): the bank's S engine
+
+
+def _d3_cells(guard_games, *, anchor_regime="aaaa", s_regime="bbbb", engine=EN.E1, s_engine=E1_S,
+              guard_engine=EN.E1):
     def cell(w):
         return {"wins": w, "n": 140, "ties": 0, "units": 7, "skipped": []}
 
@@ -320,10 +325,11 @@ def _d3_cells(guard_games, *, anchor_regime="aaaa", s_regime="bbbb"):
     units = [{"unit": f"c0_s3501__heldout72_hpfix__{s:02d}", "label": "c0_s3501", "panel": "heldout72_hpfix",
               "unit_seed": s, "counted": True, "n": len(g), "wins": sum(x[3] == "win" for x in g), "games": g}
              for s, g in guard_games.items()]
-    return {"anchor": {"h": {"cells": on, "regime_id": anchor_regime},
-                       "guard": {"cells": {}, "units": units, "regime_id": "cccc"}},
+    return {"anchor": {"h": {"cells": on, "regime_id": anchor_regime, "engine": engine},
+                       "guard": {"cells": {}, "units": units, "regime_id": "cccc", "engine": guard_engine}},
             "s": {"p": {"nodes": {lab: {"s_pp": 56.0, "population_score": {}} for lab in on}, "inconclusive": [],
-                        "panel": "home72", "team_set": "ts:08142ee8b0c18e8a", "regime_id": s_regime}}}
+                        "panel": "home72", "team_set": "ts:08142ee8b0c18e8a", "regime_id": s_regime,
+                        "engine": s_engine}}}
 
 
 GAMES = {0: [["ours_challenge", 1, "t1.txt", "win", 30], ["peer_challenge", 1, "t2.txt", "loss", 40]],
@@ -332,7 +338,7 @@ GAMES = {0: [["ours_challenge", 1, "t1.txt", "win", 30], ["peer_challenge", 1, "
 
 def _banked(games):
     return [{"read_cell": "heldout72_hpfix", "unit_seed": s, "half": g[0], "index": g[1], "our_team": g[2],
-             "result": g[3], "turns": g[4]} for s, gs in games.items() for g in gs]
+             "result": g[3], "turns": g[4], "engine_stamp": EN.E1} for s, gs in games.items() for g in gs]
 
 
 def test_d3_pools_the_banked_c0_side_only_when_the_guard_replays_it_game_for_game(tmp_path):
@@ -367,3 +373,22 @@ def test_d3_refuses_the_banked_side_on_another_regime_or_without_a_guard(tmp_pat
         _d3_spec(tmp_path, _banked(GAMES), determinism_guard=None)
     with pytest.raises(Exception, match="reported_without"):
         _d3_spec(tmp_path, _banked(GAMES), reported_without=list(D3_PANELS))
+
+
+def test_d3_refuses_a_banked_side_played_on_another_engine(tmp_path):
+    """REVIEW F F-M2: D3 look 1 played ON on E2 (2cc864f2) while C0's banked rows are D1's, on E1. The same regime
+    ids, the guard replaying game for game: an import across engines still refuses, lane by lane, and so does a guard
+    group that played on another engine than its bank, or a read whose engine is unknown."""
+    sp = _d3_spec(tmp_path, _banked(GAMES))
+    RU.inputs("d1", _d3_cells(GAMES), sp.params, sp)                      # one engine (E1) everywhere: pooled
+    for kw, why in (({"engine": EN.E2}, "import_off \\(anchor\\).*never crosses engines"),
+                    ({"s_engine": "env=9ecb4249afb76504/125"}, "import_off \\(S\\).*never crosses engines"),
+                    ({"guard_engine": EN.E2}, "determinism_guard.*never crosses engines"),
+                    ({"engine": None}, "engine unknown")):
+        with pytest.raises(RU.RuleInputError, match=why):
+            RU.inputs("d1", _d3_cells(GAMES, **kw), sp.params, sp)
+    # an import_off that registers the bank's engines is read by them, not by the frozen table
+    reg = dict(sp.params["import_off"], engines={"anchor": EN.E2, "s": "env=9ecb4249afb76504/125"})
+    sp2 = _d3_spec(tmp_path, _banked(GAMES), import_off=reg)
+    with pytest.raises(RU.RuleInputError, match="never crosses engines"):
+        RU.inputs("d1", _d3_cells(GAMES), sp2.params, sp2)

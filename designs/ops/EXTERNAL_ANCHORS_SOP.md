@@ -265,6 +265,21 @@ equals `assemble.LEGACY_WEIGHTS[agent]` (the frozen digests of that commit) also
 is comparable with the banked reads. Any other revision or digest enters the id. `LEGACY_WEIGHTS` is never edited by a repin.
 Reads already running (FR-3, PastaMittens, D0f) use their own pinned checkouts and are unaffected.
 
+**The engine is part of the regime** (REVIEW F F-M2, 2026-10-26). Kakuna games run on OUR in-process Rust engine, and the
+commit in `server_version` does not say which engine that was: the 10-26 parity batches changed OU-visible mechanics. Each
+Rust-served cell therefore stamps `engine_stamp` = `port=<src>/<n>;env=<src>/<n>`: the build-stamp keys of `sim_bridge`
+and of the env core (`main.anchors.server.engine_stamp`). The stamp is empty for a Node or external server, and under
+`POKESIM_ALLOW_STALE_BUILD=1`. The dry-run plan prints it.
+
+The engine enters `anchor_regime_id` by the same LEGACY rule as the weights:
+- **A banked summary stamps no engine**, so its id is unchanged. Its engine is `main.reads.engine.LEGACY_ENGINE` of
+  its playing commit, a frozen table reconstructed from git. A new read on one of those engines keeps the id.
+- **Ids cannot tell two banked engines apart.** So every import also compares the engines themselves: the
+  cross-state import, `import_off`, `prior_mix_ab`'s bank and the determinism guard. An import across engines REFUSES,
+  and so does one from an engine nobody can name.
+
+The per-read engine table is `designs/tools/reads.md` §4.
+
 ### `--our-teamset {home,away}` — an ASYMMETRIC pair cell (B-D9, 2026-10-18)
 
 PAIR CELLS ONLY (a `metamon:` our-side, or `--opponent-a/-b`): our peer draws from the Metamon

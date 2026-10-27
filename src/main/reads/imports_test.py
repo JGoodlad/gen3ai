@@ -1,6 +1,7 @@
 """``main.reads.imports``: a group imports an EARLIER read's counted cells instead of re-playing them (N1-P FINDING 6:
 look 2's spec re-played every look-1 final). The import is sha-checked (the earlier ``spec.json``, the bytes it played)
-and regime-matched (its units pool with this state's own only under one regime id); the imported labels are never
+regime-matched (its units pool with this state's own only under one regime id) and engine-matched (an import across
+Rust engines refuses); the imported labels are never
 planned or played here; the record names the import. Anchor units through an injected unit runner, S rows through the
 pipeline's fake heavy slot: no game is played."""
 from __future__ import annotations
@@ -20,9 +21,13 @@ from main.reads.pipeline_test import CODE as S_CODE, FakeSlot, _refpop, _spec as
 CODE = {"commit": "b" * 40, "dirty": False, "root": "/tmp/pin"}
 
 
-def _cell(opponent_version="kakuna-ckpt34"):
+#: The engine every fake unit plays on (``cell.engine_stamp``, ``main.reads.engine``).
+ENGINE = "port=aaaaaaaaaaaaaaaa/90;env=bbbbbbbbbbbbbbbb/125"
+
+
+def _cell(opponent_version="kakuna-ckpt34", engine=ENGINE):
     return {"opponent": "metamon:Kakuna", "opponent_version": opponent_version, "our_regime": "greedy",
-            "their_regime": "greedy", "battle_format": "gen3ou", "teamset": "home"}
+            "their_regime": "greedy", "battle_format": "gen3ou", "teamset": "home", "engine_stamp": engine}
 
 
 def _played(wins, cell):
@@ -125,6 +130,23 @@ def test_imported_units_of_another_regime_make_the_group_inconclusive(tmp_path, 
         api.record(st2)
 
 
+def test_an_anchor_import_across_engines_refuses(tmp_path, monkeypatch):
+    """REVIEW F F-M2: the same cell on ANOTHER engine (the same regime keys, a different Rust build stamp) is never
+    pooled; nor is one whose engine nobody can name (a legacy commit outside ``LEGACY_ENGINE``)."""
+    st1, sha1 = _look1(tmp_path, monkeypatch)
+    imp = {"state": str(st1), "spec_sha256": sha1, "group": "u", "models": ["off"]}
+    for name, engine, why in (("x", "port=cccccccccccccccc/90;env=bbbbbbbbbbbbbbbb/125", "an import never crosses"),
+                              ("y", None, "engine unknown")):
+        st2 = tmp_path / f"look2{name}"
+        RN.plan(_anchor_spec(tmp_path, f"look2{name}_read", imp), st2, code=CODE, step_of=lambda _p: 1)
+        cell = _cell(engine=engine)
+        if engine is None:
+            cell["server_version"] = "ws_frontend[in-process]@" + "e" * 9 + "+rust:cargo:src/rust_sim"
+        RN.run(st2, "anchor", time.time() + 3600, run_unit=_played({"on": 13}, cell), sleep=lambda s: None)
+        with pytest.raises(ReadImportError, match=why):
+            api.assemble(st2)
+
+
 def test_an_s_group_imports_the_earlier_reads_nodes_and_plays_only_its_own(tmp_path, no_git):
     refpop, rdoc = _refpop(tmp_path)
     spec1 = _s_spec(tmp_path, refpop, rdoc["content_sha256"])
@@ -157,6 +179,17 @@ def test_an_s_group_imports_the_earlier_reads_nodes_and_plays_only_its_own(tmp_p
     spec3.write_text(json.dumps(doc))
     with pytest.raises(ReadImportError, match="panel None is not 'home72'"):
         RN.plan(spec3, tmp_path / "look3", code=S_CODE, step_of=lambda _p: 300_000_000)
+    # the same cell, its own nodes played on ANOTHER env core: the import refuses (REVIEW F F-M2)
+    doc["s"]["pool"]["panel"] = None
+    doc["read"] = doc["s"]["pool"]["family"] = "demo_s_look4_2026-10-26"
+    spec4 = tmp_path / "look4_spec.json"
+    spec4.write_text(json.dumps(doc))
+    st4 = tmp_path / "look4"
+    RN.plan(spec4, st4, code=S_CODE, step_of=lambda _p: 300_000_000)
+    other = FakeSlot.CORE_STAMP.replace("src=1111111111111111", "src=2222222222222222")
+    assert RN.run(st4, "s", time.time() + 7200, run_s=FakeSlot(st4, rdoc, other), sleep=lambda s: None) == 0
+    with pytest.raises(ReadImportError, match="an import never crosses engines"):
+        api.assemble(st4)
 
 
 def test_an_earlier_spec_is_imported_even_if_todays_rule_would_refuse_its_params(tmp_path, monkeypatch):

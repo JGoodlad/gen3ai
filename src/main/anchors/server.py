@@ -455,6 +455,21 @@ def in_process_version() -> str:
     return FrontEndServer(9500).version().replace("ws_frontend@", "ws_frontend[in-process]@", 1)
 
 
+def engine_stamp() -> str:
+    """The ENGINE a Rust-served cell plays on, ``port=<src>/<n>;env=<src>/<n>``: this checkout's build-stamp keys of
+    the ``sim_bridge`` (scope ``port``) and of the env core our ``rust_core_slot`` side loads (scope ``env``). Every
+    Rust artifact is refused at resolve / load unless it was built from exactly these sources
+    (``utils.rust_env.stamp``), so the tree's keys ARE the binaries'. Under ``POKESIM_ALLOW_STALE_BUILD=1`` they are
+    not, and the stamp is empty: a stale run names no engine and no read imports it (``main.reads.engine``)."""
+    from utils.rust_env import stamp as ST
+
+    if ST.stale_allowed():
+        return ""
+    port, n_port = ST.source_hash(scope="port")
+    env, n_env = ST.source_hash(scope="env")
+    return f"port={port}/{n_port};env={env}/{n_env}"
+
+
 def showdown_pin() -> str:
     """The pinned submodule commit. Recorded on BOTH transports: the Rust port was ported from
     this tree, and the front end still validates a ``/utm`` team through its ``validate_team.js``.

@@ -296,6 +296,11 @@ def test_the_transport_is_stamped_on_every_row_not_once_per_file(cfg) -> None:
     assert cell.server_impl == "rust"
     assert cell.server_version == plan.server_version
     assert "server_impl" in REQUIRED_ROW_FIELDS and "server_version" in REQUIRED_ROW_FIELDS
+    # ... and the ENGINE it played on (REVIEW F F-M2): a Rust-served cell names it, the others stamp none
+    assert cell.engine_stamp == plan.engine_stamp == server_mod.engine_stamp() != ""
+    assert cell.stamp()["engine_stamp"] == plan.engine_stamp
+    assert build_plan(_args("--server", "node"), cfg).engine_stamp == ""
+    assert build_plan(_args("--server-uri", "ws://127.0.0.1:9543/showdown/websocket"), cfg).engine_stamp == ""
 
 
 @pytest.mark.parametrize("extra", [

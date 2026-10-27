@@ -156,3 +156,33 @@ GPU queue; `launch_x35.sh d3 <seed> --pin <D3_PIN> --lease-owner <owner>` runs e
    same builder with D3's final as target.
 7. **X26c's registered D3-revisit trigger did not fire** (in-house S did not rise); this build was the orchestrator's
    standing queue item, and the GO is a separate ruling.
+
+## AMENDMENT AM-D3-ENG (2026-10-26): look 2 is played on ONE engine, E1. No decision-rule change
+
+**Why.** A Kakuna or S game runs on our in-process Rust engine, and the regime id did not name it (REVIEW F F-M2;
+`designs/tools/reads.md` §4, "The engine"). Look 1 was played across two engines:
+- D3 ON on **E2** (port `806f97bd…`, env `9ecb4249…`): anchor at `2cc864f2`, S at `1ed71c9dd`;
+- C0's banked H and P rows on **E1** (port `7d932165…`, env `7c532805…`): D1's read, at `6c428453` / `5e389ddac`.
+
+The determinism guard reproduced 140 / 140 games. That bounds divergence below about 2.1 % of games (95 %), against
+look 1's Δ̂ = +1.27 pp. Look 1's CONTINUE stands as recorded. Re-decided by `main.reads` at or after the engine change,
+its `import_off` refuses (an import never crosses engines).
+
+**The ruling (orchestrator, 2026-10-26).** Look 2's read plays EVERY game on **E1**, the engine both arms trained on
+(`f4b25238`, D3_PIN `9e289ba4`):
+1. D3 ON's look-1 units (s3501–s3503, both lanes) are RE-PLAYED on E1.
+2. The look-2 units are played on E1.
+3. C0's banked rows (E1, `d1_read/read_look2_input.json`) then import cleanly through `import_off`. Its anchor and S
+   engines are checked against the read's own groups, and so is the guard group's.
+
+The rule of §3–§6 (D1's, verbatim), the panels, the unit seeds and the look schedule are unchanged.
+
+**What the look-2 reader must do.**
+- Play from a pin whose engine is E1: `python -c "from main.reads.engine import engine_at, E1; assert
+  engine_at('<pin>') == E1"`.
+- No existing commit carries both E1's Rust and `import_off`, which landed at `2cc864f2`, already on E2. So the pin is
+  a commit made for this read: `main.reads` at or after the engine change, with `src/rust_sim` and `src/rust_env`
+  equal to `f4b25238`'s. It also needs whatever Python column table that core expects (the env core's stamp check
+  refuses a mismatched `schema`).
+- Register the pin in the look-2 spec.
+- Leave look 1's state untouched: its re-played ON units are a new group of the look-2 state, not a repin.

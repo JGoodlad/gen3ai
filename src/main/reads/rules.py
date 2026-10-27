@@ -49,6 +49,7 @@ from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple
 
 from main.anchors.results import Z95, newcombe, wilson
+from main.reads import engine as EN
 from main.x35 import d1 as D
 from main.x35 import readout as R
 from main.x35.d1 import newcombe_strat, overdispersion, strat_score, widen, wilson_pn
@@ -261,6 +262,7 @@ def _r1_inputs(cells: Mapping[str, Any], p: Mapping[str, Any], spec: Any) -> Dic
         if r1["off"]:
             raise RuleInputError("import_off with OFF finals also played in the S group")
         r1["off"] = imported_s(p["import_off"], want_refpop=spec.s[p["s_group"]].refpop_content_sha256)
+        _same_engine("x35_r1 import_off (S)", g.get("engine"), EN.bank_engine(p["import_off"], "s"))
     if g.get("inconclusive"):
         r1["inconclusive"] = list(g["inconclusive"])          # readout: an INCONCLUSIVE reason, never a score
     doc: Dict[str, Any] = {"arm": p["arm"], "look": p["look"], "r1": r1}
@@ -326,9 +328,11 @@ def _d1_import_check(p: Mapping[str, Any], *, models: Any, anchor: Any) -> List[
     imp, dg = p.get("import_off"), p.get("determinism_guard")
     if imp is None and dg is None:
         return probs
-    if not isinstance(imp, dict) or sorted(imp) != sorted(_IMPORT_KEYS) or not isinstance(imp.get("labels"), dict) \
+    if not isinstance(imp, dict) or sorted(set(imp) - {"engines"}) != sorted(_IMPORT_KEYS) \
+            or not isinstance(imp.get("engines", {}), dict) or not isinstance(imp.get("labels"), dict) \
             or not isinstance(imp.get("regimes"), dict) or sorted(imp["regimes"]) != ["anchor", "s"]:
-        probs.append(f"import_off: {{{', '.join(_IMPORT_KEYS)}}} with labels {{seed: label}} and regimes {{anchor, s}}")
+        probs.append(f"import_off: {{{', '.join(_IMPORT_KEYS)}}} with labels {{seed: label}} and regimes {{anchor, s}} "
+                     "(and optionally engines {anchor, s}: the bank's engines, main.reads.engine)")
     if not isinstance(dg, dict) or dg.get("group") not in anchor or dg.get("group") == p.get("anchor_group") \
             or dg.get("label") not in models or models[dg["label"]].load:
         probs.append("determinism_guard: {group, label, banked}: an anchor group other than the primary playing the "
@@ -374,6 +378,7 @@ def _d1_guard(cells: Mapping[str, Any], dg: Mapping[str, Any]) -> Dict[str, Any]
     """The game-for-game determinism guard: each re-played unit of ``dg``'s group against its banked unit."""
     bank = banked_units(dg["banked"])
     g = _group(cells, "anchor", dg["group"])
+    _same_engine("determinism_guard", g.get("engine"), EN.bank_engine(dg["banked"], "anchor", _bank_rows(dg["banked"])))
     checks = []
     for u in g["units"]:
         want = bank.get(u["panel"], {}).get(int(u["unit_seed"]))
@@ -455,6 +460,9 @@ def _d1_import(doc: Dict[str, Any], cells: Mapping[str, Any], p: Mapping[str, An
             raise RuleInputError(f"import_off: this read's {lane} regime {got[lane]} is not the banked rows' "
                                  f"{imp['regimes'][lane]} (re-play the control)")
     bank = imported_d1(imp)
+    _same_engine("import_off (anchor)", _group(cells, "anchor", p["anchor_group"]).get("engine"),
+                 EN.bank_engine(imp, "anchor"))
+    _same_engine("import_off (S)", _group(cells, "s", p["s_group"]).get("engine"), EN.bank_engine(imp, "s"))
     if (bank["p"]["panel"], bank["p"]["team_set"]) != (doc["p"]["panel"], doc["p"]["team_set"]):
         raise RuleInputError(f"import_off: the banked P panel / team set {bank['p']['panel']} / "
                              f"{bank['p']['team_set']} is not this read's {doc['p']['panel']} / {doc['p']['team_set']}")
@@ -671,6 +679,23 @@ def _pm_check(p: Mapping[str, Any], *, models: Any, anchor: Any, s: Any) -> List
     return probs
 
 
+def _same_engine(what: str, here: Optional[str], there: Optional[str]) -> None:
+    """A banked control pools only on THIS read's engine (REVIEW F F-M2; :func:`main.reads.engine.require_same`)."""
+    try:
+        EN.require_same(what, here, there)
+    except EN.EngineError as exc:
+        raise RuleInputError(str(exc)) from None
+
+
+def _bank_rows(entry: Mapping[str, Any]) -> List[Dict[str, Any]]:
+    """The banked per-game rows of ``entry``'s registered cells (what :func:`main.reads.engine.bank_engine` reads)."""
+    from main.reads.models import spec_path
+
+    cells = set(dict(entry["cells"]).values())
+    rows = [json.loads(ln) for ln in spec_path(str(entry["path"])).read_text().splitlines() if ln.strip()]
+    return [r for r in rows if r.get("read_cell") in cells]
+
+
 def banked_units(entry: Mapping[str, Any]) -> Dict[str, Dict[int, Dict[str, Any]]]:
     """``{teamset: {unit_seed: {wins, ties, n, games}}}`` from ANOTHER read's committed per-game rows
     (``entry = {path, sha256, cells: {teamset: read_cell}}``), the file's sha256 checked: the banked control."""
@@ -704,6 +729,10 @@ def banked_units(entry: Mapping[str, Any]) -> Dict[str, Dict[int, Dict[str, Any]
 
 def _pm_inputs(cells: Mapping[str, Any], p: Mapping[str, Any], spec: Any) -> Dict[str, Any]:
     bank = banked_units(p["banked"])
+    there = EN.bank_engine(p["banked"], "anchor", _bank_rows(p["banked"]))
+    for name, a in p["arms"].items():
+        _same_engine(f"prior_mix_ab arm {name}", _group(cells, "anchor", a["group"]).get("engine"), there)
+    _same_engine("prior_mix_ab guard", _group(cells, "anchor", p["guard"]["group"]).get("engine"), there)
     doc: Dict[str, Any] = {"banked": {ts: {str(s): {k: v for k, v in u.items() if k != "games"}
                                            for s, u in sorted(by.items())} for ts, by in bank.items()},
                            "banked_source": {"path": p["banked"]["path"], "sha256": p["banked"]["sha256"]},

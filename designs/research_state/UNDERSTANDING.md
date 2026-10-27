@@ -879,9 +879,11 @@ arm · 1,260 D3 Kakuna games; C0's rows banked from D1's read and reused after a
   shows no such cost.
 - Read against the registered guess (H +1.5): on track, and not yet distinguishable from zero. Goal (b) is not met by
   D3 (LB 0.464).
-- **Engine mix:** C0's banked games predate the 10-25 obs / label and engine fixes (`d8d674b99`, `f9978586b`); D3's ran
-  at `2cc864f2f`, which carries them. The guard re-played one cell (140 games), so the mix is bounded, not excluded
-  (`human_replay_quality_2026-10-25/REVIEW_F_x60.md` F-M2).
+- **Read across two Rust engines** (found 2026-10-26, REVIEW F F-M2; `designs/tools/reads.md` §4). D3's games ran
+  on E2 (`2cc864f2`) and C0's banked rows on E1 (D1's commits). E1 → E2 changed the lock-in and recharge counters
+  and the encoder's input fixes. The guard's 140 / 140 identical games bound the divergence below about 2.1 % of
+  games (95 %), so a bias of Δ̂'s size is unlikely but not excluded. Look 2 plays every game on E1 (PREREG
+  AM-D3-ENG). [MEASURED (the engines) · INFERRED (the bound)]
 [ledger 2026-10-26 · *X41 D3 LOOK 1*]
 
 **Behind it, the literature's common factor is built and pre-registered at the plateau: breadth at 10⁴ teams (N1-P /

@@ -245,7 +245,7 @@ group and the labels taken from it. Those labels are never planned or played her
 earlier spec hashes to the registered sha256 and its group is the same cell: the same opponent, with team sets and unit
 seeds that include this group's (anchor); the same R content, panel, `pairs`, `batch_pairs` and registered regime (S);
 each label with the same arm, seed and load options. `assemble` refuses unless the earlier state PLAYED the bytes this
-state resolved (both `models.json` sha256s). Imported anchor units then pool with this state's own only under one
+state resolved (both `models.json` sha256s), on the ENGINE this state played on (§4). Imported anchor units then pool with this state's own only under one
 regime id per team set (else the group is INCONCLUSIVE, as within one state); an imported S node is read from the
 earlier ledger and family and must carry the group's regime. The record's `imports` names each import (state, spec
 sha256, rows and their digest, the earlier playing commit; for S the family and ledger digest). `spec_sha256` is the
@@ -278,10 +278,11 @@ is INCONCLUSIVE if any of these holds:
 - the declared team cell;
 - a Metamon peer's verified weights (`their_weights` / `our_weights`: hub revision + `weights_sha256`), included only when they
   differ from `assemble.LEGACY_WEIGHTS` (the one commit every pre-pin read played), so banked ids are unchanged and a
-  re-read of the same weights keeps the id (`EXTERNAL_ANCHORS_SOP.md` § Weight pins).
+  re-read of the same weights keeps the id (`EXTERNAL_ANCHORS_SOP.md` § Weight pins);
+- the ENGINE (`cell.engine_stamp`), included only when it is none of the banked engines (below).
 
 Each (group, team set) must share ONE id. The group's id is `group_regime_id` over its team sets. The playing commit
-and file paths are recorded per unit but are not part of the id. A unit played on bytes other than the resolved
+and file paths are recorded per unit but are not part of the id; the engine the commit played on is. A unit played on bytes other than the resolved
 model's is a refusal, never a pooled row. A model-load option changes the id through `our_regime` (a
 `belief_prior_mix` unit is stamped `greedy+belief_prior_mix=<λ>`), so it never pools with the unchanged model. **One group
 may hold models with DIFFERENT loads** (`anchor_group(..., loads=)`, from each `models.<label>.load`); the id stays
@@ -293,6 +294,62 @@ the group also carries `regime_ids_by_load` and `loads`. A group whose models sh
 with the id it always had. `prior_mix_ab` still wants one group per arm (its control is banked). Every unit
 row also carries its `games` (`[half, index, our_team, result, turns]` from `games.jsonl`), which is what a
 game-for-game determinism guard compares.
+
+### The engine (`main.reads.engine`; REVIEW F F-M2, 2026-10-26)
+
+Kakuna units and S cells play on our in-process Rust engine. An ENGINE is the build-stamp refusal key
+(`utils.rust_env.stamp`):
+- **A unit's:** `port=<src>/<n>;env=<src>/<n>`, for `sim_bridge` and the env core that our `rust_core_slot` side loads.
+  A summary of this code stamps it at play.
+- **An S row's:** `env=<src>/<n>`, from `compute.core_stamp`.
+
+Every unit row and group carries `engine`. A group whose counted units, or an S family whose rows, span two engines is
+INCONCLUSIVE.
+
+**The LEGACY rule.** A banked summary stamps no engine, so its id is unchanged, re-checked for every unit of D3 look 1
+and the belief-prior-mix read. Its engine is `LEGACY_ENGINE` of its playing commit, a FROZEN table reconstructed from
+git (`engine_at`: the stamp's listing at that commit, plus the untracked `Cargo.lock` blob `LEGACY_LOCK_BLOBS` names).
+- The reconstruction reproduces the core stamps the ledger RECORDED at 6c428453, 1ed71c9dd and 46b9e572
+  (`engine_test`).
+- A new read on a banked engine keeps that engine's id; any other engine enters the id.
+- Ids cannot tell two banked engines apart, so every import compares the engines themselves: the cross-state import,
+  `import_off` (anchor and S), `prior_mix_ab`'s bank, the determinism guard (it must play on the bank's engine) and
+  `x35_r1`'s imported S.
+- An import across engines REFUSES, and so does one from an unknown engine. A bank that names no engine per row is
+  read by its registered `engines` or `LEGACY_BANK_ENGINE` (by sha256).
+- `repin` names the engine at both commits and refuses if they differ. The play path holds every tracked file the
+  stamp hashes (`playpath_test`).
+
+| engine | port / env | banked reads (playing commit) |
+|---|---|---|
+| E0 | `05b106e2…/84` / `dfd24aec…/119` | X51 and x37a (`63f97a575`), `cb0f1769c`, `acb99527`. X51's `k28v34_home72` rows: `b9c758841`, E0B `e64b127b…` / `b92ea7ad…` |
+| **E1** | `7d932165…/90` / `7c532805…/125` | x26c (`e05c45eeb`); D1 H (`6c428453a`, `5e389ddac`) and P; X52 (`f4b25238d`); SPRT (`eb99ab362`) and G1 (`3f3a2ed41`) S; human-only vs P\* and metamon-strongest (`d32ffcee4`, `4b0ab220e`); PastaMittens (`62bb07c00`); belief prior mix (`4ee655648`; smoke `033fcbcd2`). **The X35 stage's training engine** (`f4b25238`, D3_PIN `9e289ba4`) |
+| E2 | `806f97bd…/90` / `9ecb4249…/125` | D3 look 1 (anchor `2cc864f2f`, S `1ed71c9dd`) |
+| E3 | `0d3d7629…/91` / `393631b8…/126` | N1-P look 1 (`46b9e572c`; repin `de15dfc7b`): one engine throughout |
+| main | `67a272e7…/93` / `d79c3a74…/128` | 2026-10-26 HEAD, after the full-parity batches; no banked read |
+
+**Mixed-engine comparisons in shipped records.** Each was guarded game for game. No verdict is shown to be affected.
+1. **D3 look 1** (CONTINUE): ON was played on E2 against C0 banked from D1 on E1 (H, and P). The E1 → E2 Rust diff is
+   `f9978586b` (lock-in and recharge counters) and `d8d674b99` (encoder input fixes). The guard reproduced 140 / 140
+   games, which bounds divergence at < 2.1 % of games (95 %, three over 140) against Δ̂ = +1.27 pp.
+2. **Belief prior mix** (NOT DETECTED, both arms): the arms were played on E1 against X51's banked λ = 0 on E0. The
+   guard reproduced 80 / 80 games, and x26c FINDING 1 re-played P\* on E1 with X51's wins on all 60 units.
+
+3. **Metamon strongest** (PastaMittens; Δ-U −0.25 pp, NOT DETECTED) and **human-only vs P\*** (FR-1 / FR-3; Δ-K
+   +0.14 to +0.30): both were played on E1 and read Δ against X51's Kakuna rows on E0. The identity unit reproduced
+   20 / 20 games. The human-only Δs are far beyond any engine bias.
+
+Re-decided by this code, items 1 and 2 refuse at `inputs`; item 3's scripts predate `main.reads`. The recorded
+verdicts stand as recorded.
+
+**Reads in flight or planned:**
+- **D3 look 2** (the orchestrator's ruling, 2026-10-26): EVERY game on **E1**, the engine both arms trained on.
+  - D3 ON's look-1 units are re-played on E1, and the look-2 units are played on E1.
+  - C0's banked rows (E1) then import cleanly.
+  - No commit carries both E1's Rust and `import_off` (it landed at `2cc864f2`, already on E2). So the read needs a
+    pin whose engine is E1 (`engine_at(<pin>) == E1`, checked before the spec registers it).
+- **X59-S games / X60 / X61P look 2:** one engine per read, named at registration. An import from N1-P look 1 needs E3.
+- **The human-only / PastaMittens reads:** each was played on one commit, all on E1.
 
 ## 5. Decide: the registered rules (`main.reads.rules`)
 
@@ -386,8 +443,8 @@ equality.
 | D1 look 2 | UNDECIDED, H +2.10 pp [−0.92, +5.11] | the input → `d1`: `h`, `p`, `guards` and verdict equal `reads/d1_look2.json` | H from the five kakuna states `h_a`…`h_e`, P from `p/ledger`, both equal the committed input; regimes: Kakuna `09f297883701a35a`, home72 `d4de0fd7c16a2658` |
 | x26c | goal (b) not met; FLAT; Δ +0.08 pp [−3.90, +4.06]; S1 −0.01 [−1.54, +1.52] | the committed unit rows + S1 → `anchor_trajectory`: the `kakuna` block and every decision value equal `verdict.json` | the two kakuna states reproduce the committed `kakuna_units.jsonl` row for row; the three S nodes equal `s_results.json` (S, se, CI, per-member); regimes recorded: Kakuna `09f297883701a35a`, pool `adfdbee824c9eb0a`, home72 `d4de0fd7c16a2658` |
 
-D1's and x26c's Kakuna units, played at different commits on the same committed configs, carry the SAME group regime
-id. This matches x26c FINDING 1.
+D1's and x26c's Kakuna units carry the SAME group regime id. They were played at different commits on the same
+committed configs, on the SAME engine (E1, §4). This matches x26c FINDING 1.
 
 The archive half reads `~/gen3ai_archive` read-only (`$GEN3AI_READS_ARCHIVE` overrides). Where it is absent, it
 skips and names why.

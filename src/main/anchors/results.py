@@ -107,6 +107,11 @@ class CellSpec:
     #: The transport's identity — `ws_frontend@<gen3ai head>+rust:<bridge binary>` or
     #: `showdown:<submodule pin>`. Empty only for an external server.
     server_version: str = ""
+    #: The ENGINE the battles played on: ``port=<src>/<n>;env=<src>/<n>``, the Rust build-stamp keys of the
+    #: ``sim_bridge`` and the env core (``server.engine_stamp``). It enters the read's regime id
+    #: (``main.reads.engine``; REVIEW F F-M2): ``server_version``'s commit alone does not say which engine played.
+    #: Empty when no Rust engine of ours served the cell, or under ``POKESIM_ALLOW_STALE_BUILD=1``.
+    engine_stamp: str = ""
     #: WHO our side is — "model" (a checkpoint) or "bot:<name>" (one of the nine pinned eval bots;
     #: since P6 its Rust port). A bot has no sampling knob at all, exactly like Foul Play, so a
     #: bot cell is stamped `regime_matched = False` and `our_regime = "bot:<name>"`; that is the

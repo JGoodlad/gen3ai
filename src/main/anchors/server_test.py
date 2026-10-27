@@ -240,3 +240,17 @@ async def test_the_in_process_front_end_serves_a_real_websocket_logs_and_closes(
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         assert s.connect_ex(("127.0.0.1", port)) != 0, "still listening after the context closed"
     assert in_process_version().startswith("ws_frontend[in-process]@")
+
+
+def test_the_engine_stamp_is_the_trees_build_stamp_keys_and_empty_when_stale_builds_are_allowed(monkeypatch):
+    """REVIEW F F-M2: a Rust-served cell names the engine it played on (``main.reads.engine``): this tree's port and
+    env stamp keys, which every Rust artifact's stamp check proved it was built from; never under the stale opt-out."""
+    from main.anchors import server as SV
+    from utils.rust_env import stamp as ST
+
+    monkeypatch.delenv(ST.ALLOW_STALE_ENV, raising=False)
+    port, n_port = ST.source_hash(scope="port")
+    env, n_env = ST.source_hash(scope="env")
+    assert SV.engine_stamp() == f"port={port}/{n_port};env={env}/{n_env}"
+    monkeypatch.setenv(ST.ALLOW_STALE_ENV, "1")
+    assert SV.engine_stamp() == ""

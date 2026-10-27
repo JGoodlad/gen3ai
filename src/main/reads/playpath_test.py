@@ -170,3 +170,24 @@ def test_the_real_play_path_holds_the_named_files_and_no_scheduling_code():
     on = sorted(p for p in got if p.startswith("src/main/reads/"))
     assert on == ["src/main/reads/__init__.py", "src/main/reads/supervisors.py"], on
     assert not any(p.endswith(("_test.py", ".md")) or p.endswith("conftest.py") for p in got)
+
+
+def test_the_real_play_path_holds_every_rust_source_the_engine_stamp_hashes():
+    """REVIEW F F-M2: a repin is sound only if an identical play path is an identical ENGINE. Every tracked file the
+    build stamp hashes for the ``sim_bridge`` (scope ``port``) or the env core (scope ``env``) is on the path; the
+    untracked ``Cargo.lock`` git cannot hold (``main.reads.engine.LEGACY_LOCK_BLOBS``)."""
+    from utils.rust_env import stamp as ST
+
+    try:
+        head = PP.resolve("HEAD")
+    except PP.PlayPathError:
+        pytest.skip("not a git checkout")
+    got = PP.play_files(head)
+    tracked = set(PP.tree(head))
+    for scope in ("port", "env"):
+        for tag, path in ST.source_listing(scope=scope):
+            rel = str(path.relative_to(ST.src_path().parent))
+            if rel not in tracked:
+                assert rel.endswith("Cargo.lock"), f"{rel}: untracked yet in the {scope} stamp"
+                continue
+            assert rel in got, f"{rel} ({tag}) is hashed by the {scope} engine stamp but is off the play path"

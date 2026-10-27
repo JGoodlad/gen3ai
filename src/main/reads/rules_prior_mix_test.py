@@ -10,6 +10,7 @@ from typing import Any, Dict, List
 
 import pytest
 
+from main.reads import engine as EN
 from main.reads import rules as RU
 
 UNF = ["heldout72_hpfix", "forum72", "p72"]
@@ -39,7 +40,8 @@ def _bank(tmp_path: Path, wins_off: int) -> "tuple[str, str]":
             for s in SEEDS:
                 for g in _games(s, wins_off):
                     f.write(json.dumps({"read_cell": cell, "unit_seed": s, "half": g[0], "index": g[1],
-                                        "our_team": g[2], "result": g[3], "turns": g[4]}) + "\n")
+                                        "our_team": g[2], "result": g[3], "turns": g[4],
+                                        "server_version": X51_SERVER}) + "\n")
         f.write(json.dumps({"read_cell": "toy_home72", "unit_seed": 0, "half": "x", "index": 1, "our_team": "t",
                             "result": "win", "turns": 1}) + "\n")      # another cell: ignored
     return str(p), hashlib.sha256(p.read_bytes()).hexdigest()
@@ -51,9 +53,13 @@ def _unit(label: str, ts: str, s: int, wins: int, regime: str, lam: Any, counted
             "wins": wins, "ties": 0, "n": GAMES, "our_regime": regime, "belief_prior_mix": lam, "games": games}
 
 
-def _group(units: List[Dict[str, Any]], teamsets: List[str]) -> Dict[str, Any]:
+#: X51's rows stamp this playing commit; its engine is E0 (``main.reads.engine.LEGACY_ENGINE``).
+X51_SERVER = "ws_frontend[in-process]@63f97a575+rust:cargo:src/rust_sim"
+
+
+def _group(units: List[Dict[str, Any]], teamsets: List[str], engine: Any = EN.E0) -> Dict[str, Any]:
     return {"units": units, "teamsets": teamsets, "unit_seeds": list(SEEDS), "regime_id": "r" * 16,
-            "regime_ids": {ts: "r" * 16 for ts in teamsets}}
+            "regime_ids": {ts: "r" * 16 for ts in teamsets}, "engine": engine}
 
 
 class _Spec:
@@ -143,3 +149,16 @@ def test_a_clear_unfamiliar_loss_is_prior_hurts_and_a_null_d0f_kills_h3(tmp_path
     d = dec["decision"]["arms"]
     assert d["l025"]["verdict"] == RU.PM_HURTS
     assert d["l100"]["d0f"]["did"] == pytest.approx(0.0) and d["l100"]["d0f"]["h3_killed"] is True
+
+
+def test_a_banked_control_on_another_engine_refuses(tmp_path):
+    """REVIEW F F-M2: the belief-prior-mix arms played at 4ee655648 (E1) against X51's banked rows at 63f97a575 (E0).
+    Under the engine rule the arms, or the guard, on another engine than the bank's refuse before any number."""
+    path, sha = _bank(tmp_path, 5)
+    p = _params(path, sha)
+    for group in ("g025", "guard"):
+        same = {ts: 5 for ts in UNF + [FAM]}
+        cells = _cells(same, same, 5)
+        cells["anchor"][group]["engine"] = EN.E1
+        with pytest.raises(RU.RuleInputError, match="never crosses engines"):
+            RU.inputs("prior_mix_ab", cells, p, _Spec())
