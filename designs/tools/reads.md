@@ -289,8 +289,8 @@ editing the earlier spec moves it.
 
 ## 4. Assemble: the regime id is ALWAYS recorded (`main.reads.assemble`)
 
-Five S drivers wrote `regime_ids: [""]` (x26c FINDING 4, g1 FINDING 3), and the regime was then checked by hand.
-Here every group carries an id, or it is not conclusive.
+Five S drivers wrote `regime_ids: [""]` (x26c FINDING 4, g1 FINDING 3), and the regime was then checked by hand. Here
+every group carries an id, or it is not conclusive.
 
 **An S group's id** is the eval-ledger read's own (`LedgerRead.regime_id`), recorded with the read's digest. A group
 is INCONCLUSIVE if any of these holds:
@@ -301,67 +301,55 @@ is INCONCLUSIVE if any of these holds:
 
 `s_node` is `readout.population_score` plus the per-member SE and se(S) = √Σse²/K.
 
-**An anchor unit's id** is `anchor_regime_id`: a digest over the cell identity that `summary.json` stamps:
+**An anchor unit's id** is `anchor_regime_id`, a digest over the cell identity that `summary.json` stamps. What enters
+it, what does not, and the guards that police the rest are `EXTERNAL_ANCHORS_SOP.md` § 0, the one home. What the module
+does with it:
 
-- the opponent and its version;
-- both regimes;
-- the transport and the server;
-- the format and the forfeit limit;
-- both team-content digests;
-- the declared team cell;
-- a Metamon peer's verified weights (`their_weights` / `our_weights`: hub revision + `weights_sha256`), included only when they
-  differ from `assemble.LEGACY_WEIGHTS` (the one commit every pre-pin read played), so banked ids are unchanged and a
-  re-read of the same weights keeps the id (`EXTERNAL_ANCHORS_SOP.md` § Weight pins);
-- the ENGINE (`cell.engine_stamp`), included only when it is none of the banked engines (below);
-- a Metamon peer's TEAM PACK (`peer_pack_changed` / `our_peer_pack_changed`), included only when True: the team set
-  plays differently than under the legacy poke-env pack (below, "The Kakuna team pack").
-
-Each (group, team set) must share ONE id. The group's id is `group_regime_id` over its team sets. The playing commit
-and file paths are recorded per unit but are not part of the id; the engine the commit played on is. A unit played on bytes other than the resolved
-model's is a refusal, never a pooled row. A model-load option changes the id through `our_regime` (a
-`belief_prior_mix` unit is stamped `greedy+belief_prior_mix=<λ>`), so it never pools with the unchanged model. **One group
-may hold models with DIFFERENT loads** (`anchor_group(..., loads=)`, from each `models.<label>.load`); the id stays
-correct per (model, load) because a mixed group is read three ways: the counted units of one (load, team set) share one id;
-across ALL its models a team set shares one BASE id (`base_regime_id` of each unit row: the id with the load's stamp
-stripped, so the opponent, teams, transport and the rest are the same for every model); and a unit whose model declares a
-load it did not stamp is not conclusive. The group id is then `mixed_group_regime_id` over the base ids and each load's ids;
-the group also carries `regime_ids_by_load` and `loads`. A group whose models share one load (or none) is read as always,
-with the id it always had. `prior_mix_ab` still wants one group per arm (its control is banked). Every unit
-row also carries its `games` (`[half, index, our_team, result, turns]` from `games.jsonl`) and its `cell_dir`.
+- Each (group, team set) must share ONE id, else the group is INCONCLUSIVE. The group's id is `group_regime_id` over its
+  team sets.
+- The playing commit and file paths are recorded per unit and are not part of the id; the engine the commit played on is.
+  A unit played on bytes other than the resolved model's is a refusal, never a pooled row.
+- Every unit row carries its `games` (`[half, index, our_team, result, turns]` from `games.jsonl`), its `cell_dir`, its
+  `engine` and its team-pack state (`peer_pack`).
+- **One group may hold models with DIFFERENT loads** (`anchor_group(..., loads=)`, from each `models.<label>.load`). A
+  load option changes the id through `our_regime` (a `belief_prior_mix` unit is stamped `greedy+belief_prior_mix=<λ>`),
+  so it never pools with the unchanged model, and a mixed group is read three ways: the counted units of one (load, team
+  set) share one id; across ALL its models a team set shares one BASE id (`base_regime_id` of each unit row: the id with
+  the load's stamp stripped, so the opponent, teams, transport and the rest are the same for every model); and a unit
+  whose model declares a load it did not stamp is not conclusive. The group id is then `mixed_group_regime_id` over the
+  base ids and each load's ids, and the group also carries `regime_ids_by_load` and `loads`. A group whose models share
+  one load (or none) is read as always, with the id it always had. `prior_mix_ab` still wants one group per arm (its
+  control is banked).
 
 **The game-for-game guard** (`rules.guard_games`: `determinism_guard`, `prior_mix_ab`'s and `score_bands`' guards, and
 X59-S's repeat unit) compares each game's 5-tuple AND its choices: `assemble.game_choices` is a digest of each player's
-`CHOOSE` sequence in the unit's capture, the two players kept apart so an order-only game (the same choices racing
-to the server) stays equal. A guard unit passes only if both are equal (`games_equal`; the row also carries
-`tuple_equal`, `choices` and `choices_differing`). The banked side's capture is its rows' one `source_unit`, read
-under `$GEN3AI_ARCHIVE_DIR` (default `~/gen3ai_archive`) as `<read state>/cells/<unit>`, and only when that cell holds
-exactly the banked games. With no capture on either side, `choices` is `unavailable` with its reason and the 5-tuple
-decides alone. X51's rows name no capture source, so the X59-S identity unit records `unavailable`.
+`CHOOSE` sequence in the unit's capture, the two players kept apart so an order-only game (the same choices racing to the
+server) stays equal. A guard unit passes only if both are equal (`games_equal`; the row also carries `tuple_equal`,
+`choices` and `choices_differing`). The banked side's capture is its rows' one `source_unit`, read under
+`$GEN3AI_ARCHIVE_DIR` (default `~/gen3ai_archive`) as `<read state>/cells/<unit>`, and only when that cell holds exactly
+the banked games. With no capture on either side, `choices` is `unavailable` with its reason and the 5-tuple decides
+alone (X51's rows name no capture source, so the X59-S identity unit records `unavailable`). The 5-tuple alone misses
+about a quarter of the divergences (11 vs 15 below), those that change neither the result nor the turn count.
 
 ### The engine (`main.reads.engine`; REVIEW F F-M2, 2026-10-26)
 
 Kakuna units and S cells play on our in-process Rust engine. An ENGINE is the build-stamp refusal key
-(`utils.rust_env.stamp`):
-- **A unit's:** `port=<src>/<n>;env=<src>/<n>`, for `sim_bridge` and the env core that our `rust_core_slot` side loads.
-  A summary of this code stamps it at play.
-- **An S row's:** `env=<src>/<n>`, from `compute.core_stamp`.
+(`utils.rust_env.stamp`): a unit's is `port=<src>/<n>;env=<src>/<n>` (`sim_bridge`, and the env core that our
+`rust_core_slot` side loads; a summary of this code stamps it at play), an S row's is `env=<src>/<n>` (from
+`compute.core_stamp`). Every unit row and group carries `engine`. A group whose counted units, or an S family whose rows,
+span two engines is INCONCLUSIVE.
 
-Every unit row and group carries `engine`. A group whose counted units, or an S family whose rows, span two engines is
-INCONCLUSIVE.
-
-**The LEGACY rule.** A banked summary stamps no engine, so its id is unchanged, re-checked for every unit of D3 look 1
-and the belief-prior-mix read. Its engine is `LEGACY_ENGINE` of its playing commit, a FROZEN table reconstructed from
-git (`engine_at`: the stamp's listing at that commit, plus the untracked `Cargo.lock` blob `LEGACY_LOCK_BLOBS` names).
-- The reconstruction reproduces the core stamps the ledger RECORDED at 6c428453, 1ed71c9dd and 46b9e572
-  (`engine_test`).
-- A new read on a banked engine keeps that engine's id; any other engine enters the id.
+**The LEGACY rule, in code** (the SOP's § 0.1). A banked summary stamps no engine, so its id is unchanged, re-checked for
+every unit of D3 look 1 and the belief-prior-mix read. Its engine is `LEGACY_ENGINE` of its playing commit, a FROZEN
+table reconstructed from git (`engine_at`: the stamp's listing at that commit, plus the untracked `Cargo.lock` blob
+`LEGACY_LOCK_BLOBS` names); the reconstruction reproduces the core stamps the ledger RECORDED at 6c428453, 1ed71c9dd and
+46b9e572 (`engine_test`). A bank that names no engine per row is read by its registered `engines` or `LEGACY_BANK_ENGINE`
+(by sha256).
 - Ids cannot tell two banked engines apart, so every import compares the engines themselves: the cross-state import,
   `import_off` (anchor and S), `prior_mix_ab`'s bank, the determinism guard (it must play on the bank's engine) and
-  `x35_r1`'s imported S.
-- An import across engines REFUSES, and so does one from an unknown engine. A bank that names no engine per row is
-  read by its registered `engines` or `LEGACY_BANK_ENGINE` (by sha256).
-- `repin` names the engine at both commits and refuses if they differ. The play path holds every tracked file the
-  stamp hashes (`playpath_test`).
+  `x35_r1`'s imported S. An import across engines REFUSES, and so does one from an unknown engine.
+- `repin` names the engine at both commits and refuses if they differ. The play path holds every tracked file the stamp
+  hashes (`playpath_test`).
 
 | engine | port / env | banked reads (playing commit) |
 |---|---|---|
@@ -369,82 +357,60 @@ git (`engine_at`: the stamp's listing at that commit, plus the untracked `Cargo.
 | **E1** | `7d932165…/90` / `7c532805…/125` | x26c (`e05c45eeb`); D1 H (`6c428453a`, `5e389ddac`) and P; X52 (`f4b25238d`); SPRT (`eb99ab362`) and G1 (`3f3a2ed41`) S; human-only vs P\* and metamon-strongest (`d32ffcee4`, `4b0ab220e`); PastaMittens (`62bb07c00`); belief prior mix (`4ee655648`; smoke `033fcbcd2`). **The X35 stage's training engine** (`f4b25238`, D3_PIN `9e289ba4`) |
 | E2 | `806f97bd…/90` / `9ecb4249…/125` | D3 look 1 (anchor `2cc864f2f`, S `1ed71c9dd`) |
 | E3 | `0d3d7629…/91` / `393631b8…/126` | N1-P look 1 (`46b9e572c`; repin `de15dfc7b`): one engine throughout |
-| main | `67a272e7…/93` / `d79c3a74…/128` | 2026-10-26 HEAD, after the full-parity batches; no banked read |
+| unbanked | `67a272e7…/93` / `d79c3a74…/128` | main after the 2026-10-26 full-parity batches (BF4, `2a877361a`), X59-S's registered engine. Any engine not listed is unbanked and enters the id; `main.anchors --dry-run` prints a checkout's |
 
-**Mixed-engine comparisons in shipped records.** Each was guarded game for game. No verdict is shown to be affected.
-1. **D3 look 1** (CONTINUE): ON was played on E2 against C0 banked from D1 on E1 (H, and P). The E1 → E2 Rust diff is
-   `f9978586b` (lock-in and recharge counters) and `d8d674b99` (encoder input fixes). The guard reproduced 140 / 140
-   games, which bounds divergence at < 2.1 % of games (95 %, three over 140) against Δ̂ = +1.27 pp. The rate measured
-   later is 1 / 420 on that panel and 11 / 1,260 across three panels (below), so P(140 / 140) ≈ 0.72: low exposure,
-   not luck. On forum72 the shift was +4 wins in 420 (+0.95 pp) for the newer engine.
-2. **Belief prior mix** (NOT DETECTED, both arms): the arms were played on E1 against X51's banked λ = 0 on E0. The
-   guard reproduced 80 / 80 games per arm. x26c FINDING 1 re-played P\* on E1, and all 1,200 of its games equal
-   X51's (measured game for game, 2026-10-27).
-3. **Metamon strongest** (PastaMittens; Δ-U −0.25 pp, NOT DETECTED) and **human-only vs P\*** (FR-1 / FR-3; Δ-K
-   +0.14 to +0.30): both were played on E1 and read Δ against X51's Kakuna rows on E0. The identity unit reproduced
-   20 / 20 games. The human-only Δs are far beyond any engine bias.
-
-Re-decided by this code, items 1 and 2 refuse at `inputs`; item 3's scripts predate `main.reads`. The recorded
-verdicts stand as recorded.
+**Mixed-engine comparisons in shipped records.** Each was guarded game for game, and no verdict is shown to be affected.
+Re-decided by this code, items 1 and 2 refuse at `inputs`; item 3's scripts predate `main.reads`. The recorded verdicts
+stand as recorded.
+1. **D3 look 1** (CONTINUE): ON on E2 against C0 banked from D1 on E1 (H, and P); the E1 → E2 Rust diff is `f9978586b`
+   (lock-in and recharge counters) and `d8d674b99` (encoder input fixes). The guard reproduced 140 / 140 games
+   (divergence < 2.1 % at 95 %, against Δ̂ = +1.27 pp); the rate measured later (1 / 420 on that panel, 11 / 1,260 across
+   three) makes 140 / 140 likely (P ≈ 0.72): low exposure, not luck. On forum72 the newer engine shifted +4 wins in 420
+   (+0.95 pp).
+2. **Belief prior mix** (NOT DETECTED, both arms): the arms were played on E1 against X51's banked λ = 0 on E0. The guard
+   reproduced 80 / 80 games per arm. x26c FINDING 1 re-played P\* on E1, and all 1,200 of its games equal X51's
+   (measured game for game, 2026-10-27).
+3. **Metamon strongest** (PastaMittens; Δ-U −0.25 pp, NOT DETECTED) and **human-only vs P\*** (FR-1 / FR-3; Δ-K +0.14 to
+   +0.30): both were played on E1 and read Δ against X51's Kakuna rows on E0. The identity unit reproduced 20 / 20 games.
+   The human-only Δs are far beyond any engine bias.
 
 **Replay determinism, measured** (`measurements/kakuna_determinism_2026-10-27/`):
-- **On one engine, a counted Kakuna unit replays exactly.** Across every replayed unit in the archive whose two plays
-  sit on the same side of an observation change, 0 of 2,100 games differ (95 % upper bound 0.14 %). Kakuna's choices
-  never differ first; threads are pinned to 1.
-- **Across `d8d674b99`** (`gen3_volatile_silent_ends_v1`, inside E1 → E2), our own greedy policy sees a different
-  input after a Destiny Bond or an Endure (11 of the 12 protocol-changing divergences):
-  - **E1 vs E3:** 11 of 1,260 games differ by 5-tuple (forum72 6 / 420, p72 4 / 420, heldout72_hpfix 1 / 420), and
-    15 by choice. Each one is OUR choice, made from a byte-identical protocol.
-  - **E0 → E1** crosses no such change: 1,360 of 1,360 games are equal.
+- **On one engine, a counted Kakuna unit replays exactly.** Across every replayed unit in the archive whose two plays sit
+  on the same side of an observation change, 0 of 2,100 games differ (95 % upper bound 0.14 %). Kakuna's choices never
+  differ first; threads are pinned to 1. E0 → E1 crosses no observation change: 1,360 of 1,360 games are equal.
+- **Across `d8d674b99`** (`gen3_volatile_silent_ends_v1`, inside E1 → E2), our own greedy policy sees a different input
+  after a Destiny Bond or an Endure (11 of the 12 protocol-changing divergences). E1 vs E3: 11 of 1,260 games differ by
+  5-tuple (forum72 6 / 420, p72 4 / 420, heldout72_hpfix 1 / 420) and 15 by choice. Each one is OUR choice, made from a
+  byte-identical protocol.
 - **So the rate belongs to the engine pair and the panel, not to Kakuna**, and a guard proves exactness only on one
-  engine. The one same-engine divergence is H5 (`EXTERNAL_ANCHORS_SOP.md`): its unit is `peer_clean = False` and is
-  dropped whole, because the fault also corrupts the game after the peer's forfeit.
-- **The guard compares choices as well as the 5-tuple (2026-10-27).** The 5-tuple alone misses about a quarter of
-  the divergences (11 vs 15), those that change neither the result nor the turn count.
-- **The engine key is the Rust build.** A Python-only change to the play path between two commits on one engine is
-  invisible to it. Only `repin`'s play-path identity (§3) or a game-for-game guard catches one.
+  engine. The one same-engine divergence is the long-tail fault (SOP H5 · H17 · H21): its unit is `peer_clean = False`
+  and is dropped whole, because the fault also corrupts the game after the peer's forfeit.
 
-### The Kakuna team pack (`gen3_peer_showdown_pack_v1`; `EXTERNAL_ANCHORS_SOP.md` H22, 2026-10-27)
+### The Kakuna team pack (`gen3_peer_showdown_pack_v1`; the SOP's H22)
 
-🚨 **A regime split beside the engine's, on forum72 (goal (b)'s primary panel), away and the pool.** Before it the
-Metamon peer packed its team files with upstream poke-env, which is not Showdown's reading of a paste. On these sets
-Kakuna played other sets than the files say:
-
-| team set | the file | Kakuna played (legacy pack) | Kakuna plays now |
-|---|---|---|---|
-| **forum72** (and `tsr_k_forum72`) | `sft431` Gyarados, `Happiness: 0`, Frustration | Frustration at base power **1** (happiness dropped to 255) | base power 102 |
-| away (`competitive`, `tsr_k_away`) | `team_23` Gyarados, Hidden Power Flying, no IV line | IVs 31/31/31/30/30/30 | the validator's 30/30/30/30/30/31 |
-| the pool (`gen3ai_pool`) | 4 teams: 2 Frustration sets (an explicit `Happiness: 0`, or none, which Showdown's import reads as 0 for Frustration) and 2 `Hidden Power: <Type>` lines on mons without the move | Frustration at 1; all-31 IVs | 102; the type's IVs |
-
-Unchanged (the legacy pack played every file as Showdown does): home72, p72, heldout72_hpfix, rc72b, the x37a and
-`tsr_k_*` sets except the two above, `tsr_ref24`.
-
-The peer now packs every file through Showdown at startup and refuses a file the pack oracle disputes. Its report's
-`peer_pack_changed` is True iff any file of the set it may draw plays differently from the legacy pack, and
-`anchor_regime_id` adds it to the id only then (`assemble.peer_pack_identity`). So an unchanged set keeps its banked id
-and pools as before. A changed set gets a new id: old forum72 / away / pool Kakuna reads stay valid as their own regime
-and are never pooled with new ones. Machine-checked:
+A regime split beside the engine's, on forum72 (goal (b)'s primary panel), away and the pool. Which sets changed and how
+Kakuna's play changed is `EXTERNAL_ANCHORS_SOP.md` H22 (§ 3); here, what the module does with it. The peer's `peer_pack_changed` enters
+the id only when True (`assemble.peer_pack_identity`), so an unchanged set keeps its banked id and pools as before, while
+old forum72 / away / pool Kakuna reads stay valid as their own regime and are never pooled with new ones. Machine-checked:
 - within one state, two ids on a (group, team set) are INCONCLUSIVE, as always;
 - a cross-state import whose counted units differ from this state's in `peer_pack` on a shared team set REFUSES
   (`imports.check_peer_pack`, `imports_test`);
 - `import_off` refuses on the regime id it registers.
 
-**D3 look 2** imports C0's banked rows, so its pin must predate this change, as its E1 requirement already implies;
-a pin carrying it refuses that import on forum72. The live reads at the change (N1-P look 1 at `de15dfc7b`, H-CTX
-rc72b at `905c29f5b`, X59-S at `fca58b24d`) run from their own pinned worktrees and are untouched.
+A read that imports banked forum72 / away / pool Kakuna rows (D3 look 2's C0) must play at a pin that predates
+`b0441623e`; a pin carrying the change refuses that import on forum72. The reads live at the change (N1-P look 1 at
+`de15dfc7b`, H-CTX rc72b at `905c29f5b`, X59-S at `fca58b24d`) run from their own pinned worktrees and are untouched.
 
-**Reads in flight or planned:**
-- **D3 look 2** (the orchestrator's ruling, 2026-10-26): EVERY game on **E1**, the engine both arms trained on.
-  D3 ON's look-1 units are re-played on E1, the look-2 units are played on E1, and C0's banked rows (E1) import.
-  - **A HYBRID PIN, because no commit carried both E1's Rust and `import_off`:** `c4a5c37b6` (tag
-    `x41-d3-look2-play-c4a5c37b`; PREREG AM-D3-L2). It is `b0441623e^`'s read harness with every GAME path at the
-    training pin `f4b25238`'s bytes: `src/rust_sim/`, `src/rust_env/`, `src/agents/{model,observation,inference}/`,
-    `src/utils/bridge/`, the team packer and loader.
-  - **Restoring only the Rust is not enough.** Between those commits the Python play path also changed what our side
-    plays (the op's consumed-item rule, the eval-mode load, the packer), and the engine key cannot see it.
-  - **Checked:** `engine_at` and the built artifacts' stamps equal E1. The play path differs from the bank's
-    commits only in harness files. Four banked E1 units re-played identically, 80 / 80 games choice by choice. Three
-    of them are units where E3 diverges from E1, so they would have caught a post-E1 observation.
+**Reads that cross a regime on purpose:**
+- **D3 look 2** (orchestrator ruling, 2026-10-26): EVERY game on **E1**: D3 ON's look-1 units are re-played on E1, the
+  look-2 units are played on E1, and C0's banked rows (E1) import. No commit carried both E1's Rust and `import_off`, so
+  the play pin is a HYBRID, `c4a5c37b6` (tag `x41-d3-look2-play-c4a5c37b`; PREREG AM-D3-L2): `b0441623e^`'s read harness
+  with every GAME path (`src/rust_sim/`, `src/rust_env/`, `src/agents/{model,observation,inference}/`,
+  `src/utils/bridge/`, the team packer and loader) at the training pin `f4b25238`'s bytes. Restoring only the Rust is not
+  enough: the Python play path also changed what our side plays between those commits (the op's consumed-item rule, the
+  eval-mode load, the packer), and the engine key cannot see it (SOP § 0.1). Checked: `engine_at` and the built
+  artifacts' stamps equal E1; the play path differs from the bank's commits only in harness files; four banked E1 units,
+  three of them where E3 diverges from E1, re-played identically, 80 / 80 games choice by choice.
 - **X59-S games / X60 / X61P look 2:** one engine per read, named at registration. An import from N1-P look 1 needs E3.
 - **The human-only / PastaMittens reads:** each was played on one commit, all on E1.
 

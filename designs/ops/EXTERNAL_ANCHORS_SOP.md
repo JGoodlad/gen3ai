@@ -13,12 +13,15 @@ numbers have been so far.
 
 ---
 
-## 0. The two rules that govern everything below
+## 0. Is this comparison valid? The two rules, the regime, the guards
 
-### 🚨 RULE 1 — A NUMBER NEVER LEAVES WITHOUT ITS REGIME
+Two numbers are comparable only when their REGIMES match. `main.anchors` stamps the regime on every row, the guards in
+§ 0.2 police it, and this section is the one place that says what each covers. How a registered read records the id, and
+which banked read sat on which engine, is `designs/tools/reads.md` §4.
 
-*"Temperature 1.0" is not one setting across models.* Measured 2026-09-14 over 14,085 sampled
-decisions:
+### 🚨 RULE 1 — A number never leaves without its regime
+
+*"Temperature 1.0" is not one setting across models.* Measured 2026-09-14 over 14,085 sampled decisions:
 
 | at T = 1.0 | plays its own argmax | so the perturbation is |
 |---|---:|---:|
@@ -27,48 +30,111 @@ decisions:
 | `Kakuna` (142.8M, ckpt 34) | **85–93%** per half | 7–15% of decisions (2026-09-28, X22 (c)/(f1), home72) |
 | **OUR N0** (`ai_v14_01_base` final) | **62.8%** (5,287 / 8,418, vs Kakuna T = 1.0); 63.4% (2,605 / 4,108, vs Kakuna greedy) | **~37%** of decisions (2026-09-28, X22 (f3), `--our-temperature 1.0`, counted per decision) |
 
-The same nominal knob is a large behavioural change for one policy and a small one for the other,
-and the two models' temperature effects come out with **opposite signs** because of it. The
-consequence is not academic: the de-risk's mixed-regime headline of **0.742** against `SmallRL`
-became **0.520** on the like-for-like matched cell — **−22.2 pp [−34.1, −9.4]**, CI clear of zero.
+The same nominal knob is a large behavioural change for one policy and a small one for the other, and the two models'
+temperature effects come out with **opposite signs** because of it. The de-risk's mixed-regime headline of **0.742**
+against `SmallRL` became **0.520** on the like-for-like matched cell: **−22.2 pp [−34.1, −9.4]**, CI clear of zero.
 
-So: a win rate is reported with its regime, its team set, the opponent's version and commit, our
-checkpoint's step, and (for a search opponent) the realized search width. `main.anchors` stamps all
-of that on **every row of `games.jsonl`**, not once per file, and `src/main/anchors/results_test.py`
-reads the written file back to prove it.
+So a win rate is reported with its regime, its team set and that set's overlap with our pool (§ 2 "The team-set
+overlap"), the opponent's version and commit, our checkpoint's step, and (for a search opponent) the realized search
+width. `main.anchors` stamps all of that on **every row of `games.jsonl`**, not once per file, and
+`src/main/anchors/results_test.py` reads the written file back to prove it.
 
-### 🚨 RULE 2 — THE RECURRING READ IS GREEDY-VS-GREEDY
+### 🚨 RULE 2 — The recurring read is greedy-vs-greedy
 
-Both sides move together, and both sides are **verified per decision**, never assumed. Three
-arguments, in order of weight:
+Both sides move together, and both sides are **verified per decision**, never assumed. In order of weight:
 
-1. **It is the protocol every other strength number here is taken under.** `ladder.json` is
-   greedy-vs-greedy with symmetric builders; `--temperature 0` is `play.py`'s documented
-   measurement setting; the eval-sentinel regime went greedy on 2026-09-07. A number taken at
-   T = 1.0 cannot be read beside any of them.
-2. **T = 1.0 is not a fixed yardstick across opponents** (the table above). A "temperature 1.0
-   baseline" silently changes difficulty when the opponent model changes, and if Metamon ships a
-   new policy the regime moves under us with no flag to read. Greedy is the same operation for
-   every policy.
-3. **Determinism narrows a fixed-n read**, which matters when the whole point is to detect
-   movement in our own model between milestones.
+1. It is the protocol every other strength number here is taken under: `ladder.json` is greedy-vs-greedy with
+   symmetric builders, `--temperature 0` is `play.py`'s documented measurement setting, and the eval sentinels went
+   greedy on 2026-09-07. A number taken at T = 1.0 cannot be read beside any of them.
+2. T = 1.0 is not a fixed yardstick across opponents (the table above), and if Metamon ships a new policy the regime
+   moves under us with no flag to read. Greedy is the same operation for every policy.
+3. Determinism narrows a fixed-n read, which matters when the point is to detect movement in our own model between
+   milestones.
 
-**The cost was measured, not assumed:** greedy cost 2 forfeits in 400 greedy games (0.5%), T = 1.0
-cost 2 in 400 (0.5%), and neither regime collapsed the effective sample (87–100 distinct team pairs
-per 100-game cell in both).
+The cost was measured: greedy cost 2 forfeits in 400 greedy games (0.5%), T = 1.0 cost 2 in 400, and neither regime
+collapsed the effective sample (87–100 distinct team pairs per 100-game cell in both).
 
-**The standing caveat, stated rather than buried.** A deterministic policy is exploitable *in
-principle* — but only by an opponent that ADAPTS, and neither side here does. Metamon's hidden
-state gives it memory *within* a battle; `amago`'s rollout loop resets it on `done`, so it carries
-nothing across battles and cannot mine a fixed opponent over 100 games. The one exception is H5's
-force-reset: the game after the peer's forfeit is played on carried state, and that unit is dropped. Our model conditions only
-on the observation. Greedy-vs-greedy is safe **for this pair**, and the property that makes it safe
-is an implementation fact about Metamon that could change in a release.
+**The standing caveat.** A deterministic policy is exploitable in principle, but only by an opponent that ADAPTS, and
+neither side here does: Metamon's hidden state gives it memory *within* a battle, `amago`'s rollout loop resets it on
+`done`, so it carries nothing across battles and cannot mine a fixed opponent over 100 games. Our model conditions only
+on the observation. Greedy-vs-greedy is safe **for this pair**, and the property that makes it safe is an
+implementation fact about Metamon that could change in a release. The one carry-over is the long-tail fault
+(H5 · H17 · H21): the game after it is played on carried state, so that unit is VOID.
 
-**Replay is exact on one engine** (`measurements/kakuna_determinism_2026-10-27/`): 0 of 2,100 re-played games
-differ in counted units, and Kakuna never diverges first. Across an engine that changed our observation,
-our OWN policy diverges: 11 / 1,260 games E1 vs E3, nearly all after a Destiny Bond or an Endure (`gen3_volatile_silent_ends_v1`).
-So an identity unit or a determinism guard is evidence only on one engine (`designs/tools/reads.md` §4).
+### 0.1 The regime: what the id covers, and what it does not
+
+A registered read's id is `main.reads.assemble.anchor_regime_id`: a digest of the cell identity `summary.json` stamps
+(`ANCHOR_REGIME_KEYS` plus the three conditional rows). A difference in any row is a different regime: never pooled
+(inside one read the group is INCONCLUSIVE); an import refuses outright on a different engine or team pack (G7, G9),
+and `import_off` on the regime id it registers.
+
+| component | enters the id | stamped as | note |
+|---|---|---|---|
+| the opponent, its version and checkpoint | always | `opponent`, `opponent_kind`, `opponent_version` (`Kakuna@ckpt28`, `PastaMittens@preset:<name>`) | |
+| both sampling regimes, with our load options | always | `our_regime`, `their_regime`, `regime_matched`; suffixes `sample:T=<T>`, `bot:<name>`, `+belief_prior_mix=<L>`, `+search=<preset>@<turn>` | a load option never pools with the unchanged model; verified per decision (G1) |
+| our side and how it is served | always | `our_side`, `our_transport`, `server_impl`, `model_loader` | the two transports play the same games (§ 2 "`--our-transport`"), yet a registered read gives them different ids |
+| the team cell | always | `teamset`, `our_teamset`, both file counts, both content digests (`gen3_team_set_digest_v1`), `declared_team_cell` | |
+| the protocol | always | `battle_format`, `forfeit_turn_limit`, `mirrored_pairs`, `search_time_ms` / `search_parallelism` (Foul Play), `showdown_pin` | |
+| the Metamon weights | only when NOT `assemble.LEGACY_WEIGHTS` | `hf_revision`, `weights_sha256` (`our_…` for a Metamon our-side) | another hub revision or any other digest is a new regime (§ "Weight pins") |
+| the engine | only when NOT a banked engine | `engine_stamp` = `port=<src>/<n>;env=<src>/<n>`: the build stamps of `sim_bridge` and the env core (`main.anchors.server.engine_stamp`; empty on Node, on an external server and under `POKESIM_ALLOW_STALE_BUILD=1`; the dry-run plan prints it) | the per-read engine table is `designs/tools/reads.md` §4 |
+| the Metamon peer's team pack | only when True | `peer_pack_changed` (`our_peer_pack_changed`) | H22 |
+
+**The LEGACY rule.** A conditional row enters the id only when it differs from what EVERY banked read played, so every
+banked id is unchanged (`assemble_test._BANKED_ID`) and a new read on the banked weights, engine or pack keeps the same
+id and is comparable with them. The price: ids cannot tell two banked engines apart, so every import compares the
+engines themselves (G7). `assemble.LEGACY_WEIGHTS` and `engine.LEGACY_ENGINE` are FROZEN: a repin never edits them.
+
+**Not in the id, so "the same id" is necessary and not sufficient:**
+- The playing commit and the harness files (`server_version` is recorded per row). A Python-only change to the play
+  path between two commits on one engine (the observation encoder, the front end, the packer) moves no id; only
+  `repin`'s play-path identity (G8) or a game-for-game guard (G10) sees one.
+- Our checkpoint: its sha256 is checked per unit by `main.reads` and its step is stamped, but neither is in the id.
+- What git does not hold: the Metamon cache, panel team dirs outside the repo, the toolchain. Each unit verifies those
+  at play (weight pins, team digests).
+- Foul Play's team pack. `peer_pack_changed` is the Metamon peer's alone; the local front end re-packs a third-party
+  client's team through the validator (`ws_frontend._cmd_utm`, since `ce50227a5`), and no field stamps whether that
+  moved what Foul Play played. **UNVERIFIED** for every banked Foul Play row.
+- Seeds, n, wall time.
+
+### 0.2 The guards, and what each proves
+
+A guard turns a silent difference into a named refusal or a VOID unit. "Proves" is what a pass licenses; "not" is what
+it leaves open.
+
+| # | guard (code) | fires on | proves | not |
+|---|---|---|---|---|
+| G1 | per-decision regime check, `regime_verified_decisions` (`peers.py`, `runner.py`) | greedy: the peer's `argmax_match_rate` is not exactly 1.0; t1: not materially below 1.0 (the positive control); no decision at all (the vacuous pass); an ensemble router that drew a random number; our `stochastic` kwarg off the cell's; the load option read back wrong (λ, search stats) | the regime took effect on every decision of both sides | that the peer's process was healthy (G2) or its weights the pinned ones (G3) |
+| G2 | peer cleanliness, `peer_clean` (`session.PEER_FAULT_LINE`, `session.watch`, `runner.apply_peer_fault`) | a peer rc ≠ 0, a recorded peer error, or ANY `Force resetting due to long-tail error` line in its log (H5 · H17 · H21): the half fails at the FIRST line (`peer_long_tail_fault`), the unit is VOID and re-run with the same seed | no counted game was played after a peer fault | that the peer's decisions were good |
+| G3 | weight pins (`peers.MetamonPeer._check_weight_pin`, `registry_pins_test`) | the peer is online, runs another hub revision, hashes a pinned file differently or loads an unpinned one (`weights_pin_mismatch`); an agent with no pin is refused at plan; a derived config is re-hashed per unit | the opponent's bytes are the registry's | that the registry's revision is what upstream serves today |
+| G4 | team pack (the peer: `peer_scripts/team_pack.py`; our side: `utils.teambuilder` → `utils.bridge.team_validator.check_pack_identity`, `gen3_team_pack_oracle_v1`) | a file whose Showdown pack the oracle disputes (the peer exits naming it; our teambuilder raises); a report without a verified pack | each file was played as Showdown reads it | that the file is the team intended (H3, H19) |
+| G5 | unit counting, `results.unit_counts` | status ≠ OK, n ≠ games, G1 / G2 / G6 failing, the team condition (§ "Counting a unit") | the unit may enter a pooled read | anything across units: that is the id |
+| G6 | forfeit-win guard, `runner.forced_end_verdict` | a forced end other than OUR turn-limit forfeit (a peer's drop or `/forfeit`, our disconnect): the row is dropped (`non_battle_termination`); `blind` (no record) fails the unit | no peer drop was booked as our win | anything on `--server node` / `--server-uri` (`unavailable`: the older judgment) |
+| G7 | engine identity (`main.reads.engine`) | a group or family spanning two engines is INCONCLUSIVE; an import across engines, or from one nobody can name, refuses; `repin` refuses commits on different engines | one Rust build played the cell | that the Python play path matched (G8) |
+| G8 | pin guard and `repin` (`main.reads.runner`, `repin`, `playpath`) | the playing checkout is not `code.json`'s commit (or a repinned one) or its tree is dirty; `repin` accepts another commit only if the tracked play path is byte-identical | the code that played is the registered code | the untracked inputs above |
+| G9 | peer-pack import check (`imports.check_peer_pack`) | an import whose counted units on a shared team set ran another pack regime | no import crosses the Kakuna pack split | |
+| G10 | game-for-game guard (`rules.guard_games`, `assemble.game_choices`) | a banked unit re-played: any game's 5-tuple, or either player's `CHOOSE`-sequence digest, differs | the cell replays exactly on ONE engine | across engines (§ 0.3): our own policy diverges |
+| G11 | G-PREFIX (`main.reads.prefix`) | a searched game and its raw twin differ before the search starts (through `\|turn\|10`): the lane HOLDS and the group stays inconclusive | the pair is a valid pairing | |
+| G12 | search replay guard (`main.anchors.search_side`) | the replay of the true input log fails to reproduce the live decision's tokens and row byte for byte: the game fails by name | the searcher saw the state we played | a gain without the leak: searched gains are leak-inclusive |
+| G13 | mirrored-pair check (`main.anchors.mirrored`) | a pair whose sides did not play the planned teams in order, or whose two battles did not share a seed: VOIDed with its reason | team-draw luck cancelled inside the pair | |
+
+Read-level gates (the VOID gate, `guards_not_read`, the reduced read at a registered stop) are `designs/tools/reads.md`
+§5 and §6.
+
+### 0.3 Is A comparable with B? In this order
+
+1. Both carry a regime (RULE 1)? A number without one is not comparable with anything.
+2. Same id? If not, the differing row of § 0.1 is the regime difference: quote each number beside its own regime and
+   never pool them (an import of the other regime's rows is INCONCLUSIVE, or refuses on an engine or pack difference).
+3. Same id: walk the "not in the id" list. Same engine by value, same pin (or a `repin` that proved the play path
+   identical)? Two commits on one engine with different Python harnesses need a guard unit (G10) on the cells that
+   matter. A difference measured through two pins (K2 by its own pin `a5b2fdba`, X26 by `63f97a57`) crosses two
+   harnesses; say so beside it.
+4. Two engines are comparable only as a recorded, guarded exception (`designs/tools/reads.md` §4's shipped records),
+   never as a new read's design: a registered read plays on ONE engine, named at registration.
+5. Replay exactness is evidence on one engine only. On one engine a counted Kakuna unit replays exactly; across an
+   engine that changed our observation our OWN greedy policy diverges, on a rate that belongs to the engine pair and
+   the panel, not to Kakuna (`designs/tools/reads.md` §4 "Replay determinism, measured"). An identity unit or a
+   determinism guard (G10) is therefore evidence on one engine and nowhere else.
 
 ---
 
@@ -79,7 +145,7 @@ So an identity unit or a determinism guard is evidence only on one engine (`desi
 | **A — per promotion** | every time a snapshot is promoted | the **dense ladder** (`<run>/snapshot_ladder/ladder.json`), greedy-vs-greedy, compared at **matched snapshot COUNT** | already paid by the run |
 | **B — per milestone** | each eval milestone | `metamon:SmallRL` **greedy, BOTH team sets, 100 games each** + **ONE t1 cell** as the distribution check | ~15 min |
 | **C — era gate** | opening or closing an era | `metamon:SyntheticRLV2` **greedy, away** — bar: **Wilson lower bound > 0.50**; and **Foul Play** at a fixed `--search-time-ms` with its realized visit count | ~2 h |
-| **goal read** | the near-term goal (X22) | `metamon:Kakuna` — Metamon's best public policy (142.8M, ckpt 34, upstream's stated gen3ou GXE ~63%). 🏁 **At the PLATEAU (X51, 2026-10-21, `measurements/x51_plateau_vs_kakuna_2026-10-20/`): P\* (X26 @280,000,170) reads 0.598 [0.549, 0.644] on home72 (goal (a) MET), 0.487 [0.459, 0.515] pooled on the unfamiliar panels (goal (b) NOT met); Kakuna ckpt 28 is not detectably stronger than ckpt 34 (0.515 [0.466, 0.564]), so ckpt 34 stays the goal's opponent; § 4's P\* table.** 🏁 **Standing (2026-10-17, `measurements/x26_metamon_anchor_2026-10-17/`): the goal is MET by X26 `rb_x26_s2601` @161,000,169 on home72 — **0.575 [0.526, 0.623] vs Kakuna greedy (n = 400, seeds 0–19; 0.600 at the first 240)** AND 0.600 [0.537, 0.660] vs Kakuna T = 1.0 (n = 240, paired seeds 0–11); away (Metamon's `competitive` set — 🚨 **19 of its 20 teams are EXACT copies of training-pool teams**, so it is NOT a set our models never saw; §2 "The team sets") **0.497 [0.449, 0.546] n = 400, NOT DETECTED** (the n = 100 read's 0.570 was a lucky first draw). K2 (G0′, `ai_v14_07_g0p_k2` @91,127,808, read 2026-10-17 through its own pin `a5b2fdba` on torch 2.5.1, `measurements/k2_x26_kakuna_both_teamsets_2026-10-17/`) reads 0.487 [0.439, 0.536] on home72 (n = 400) and **0.355 [0.310, 0.403] away (n = 400, WORSE)**; X26 − K2 = **+0.087 [+0.018, +0.155] home72** and **+0.143 [+0.074, +0.209] away**, X26 BETTER on both. 🚨 **Both of those sets are training data. On the HELD-OUT `heldout72` (2026-10-18, `measurements/heldout_teams_kakuna_2026-10-18/`, 0 / 72 teams in our pool) X26 LOSES to Kakuna: 0.395 [0.348, 0.444] (n = 400, WORSE); K2 0.357 [0.312, 0.406] (WORSE); X26 − K2 +0.038 [−0.030, +0.104] NOT DETECTED. On the set of record `heldout72_hpfix` (the same teams, Hidden Power repaired; `measurements/heldout72_hpfix_kakuna_2026-10-18/`): X26 **0.448 [0.400, 0.496]** WORSE, K2 0.367 [0.322, 0.416] WORSE, X26 − K2 **+0.080 [+0.012, +0.147]** BETTER. The goal is met only on teams we trained on.** PROVISIONAL: one checkpoint of a live, unplateaued run (§4).** Previous (2026-09-28, `measurements/kakuna_goal_read_2026-09-28/`, home72, N0 final greedy): Kakuna's strongest temperature by point estimate is **T = 1.0** (N0 **0.380** [0.316, 0.449], n = 200 — goal NOT met); at greedy N0 **0.460** [0.392, 0.529]; the temperature differences are NOT DETECTED, so the goal read is taken at BOTH (`--opponent-temperature 1.0` and greedy). Our side stays GREEDY: N0 sampling at T = 1.0 (`--our-temperature 1.0`) reads 0.310 vs Kakuna T = 1.0 and 0.280 vs Kakuna greedy (X22 (f)) | **~2 min / 20 games** on CPU (6 s/game, load ~25) |
+| **goal read** | the near-term goal (X22) | `metamon:Kakuna`, Metamon's best public policy (142.8M, ckpt 34, upstream's stated gen3ou GXE ~63%). 🏁 **At the plateau (X51, 2026-10-21, `measurements/x51_plateau_vs_kakuna_2026-10-20/`): P\* (X26 @280,000,170) reads 0.598 [0.549, 0.644] on home72 (goal (a) MET) and 0.487 [0.459, 0.515] pooled on the unfamiliar panels (goal (b) NOT met); Kakuna ckpt 28 is not detectably stronger than ckpt 34 (0.515 [0.466, 0.564]), so ckpt 34 stays the goal's opponent.** home72 and `away` are training data, so quote the goal as "met on our training teams", never as "met"; every cell, comparison and the held-out reads are in § 4. The 2026-09-28 read of N0 (`measurements/kakuna_goal_read_2026-09-28/`, home72) took both Kakuna temperatures (`--opponent-temperature 1.0` and greedy) because the difference was NOT DETECTED: greedy 0.460 [0.392, 0.529], T = 1.0 0.380 [0.316, 0.449] (n = 200 each, goal NOT met); our side stays GREEDY (N0 sampling at T = 1.0 reads 0.310 and 0.280, X22 (f)) | **~2 min / 20 games** on CPU (6 s/game, load ~25) |
 
 ### Tier A — per promotion: the dense ladder
 
@@ -263,28 +329,13 @@ absent from the cache now fails offline instead of downloading.
 `hf_hub_download(repo_id, filename, revision=<full sha>, cache_dir=<cache>/pretrained_models)`, `sha256sum` the blob
 (the blob's file name is its sha256), put revision and sha in `anchors.json`, and play a smoke. A new revision is a NEW regime.
 
-**Regime ids.** The weights enter `main.reads.assemble.anchor_regime_id` as `their_weights` / `our_weights`
-(`hf_revision`, `weights_sha256`) so different weights are a different regime. **Banked ids do not move**: every read banked
-before the pins played the one cached commit `ac8e88e7…`, and its summary stamps no weights, so the id is computed
-without them (byte-identical to before; pinned by `assemble_test._BANKED_ID`); a NEW read whose verified (revision, digest)
-equals `assemble.LEGACY_WEIGHTS[agent]` (the frozen digests of that commit) also omits them, so it carries the SAME id and
-is comparable with the banked reads. Any other revision or digest enters the id. `LEGACY_WEIGHTS` is never edited by a repin.
-Reads already running (FR-3, PastaMittens, D0f) use their own pinned checkouts and are unaffected.
+**Regime ids.** The weights enter the id only when they are not the legacy ones (§ 0.1): a new revision or digest is a
+new regime, while a read of the banked commit `ac8e88e7…` keeps the banked id and is comparable with the banked reads.
 
-**The engine is part of the regime** (REVIEW F F-M2, 2026-10-26). Kakuna games run on OUR in-process Rust engine, and the
-commit in `server_version` does not say which engine that was: the 10-26 parity batches changed OU-visible mechanics. Each
-Rust-served cell therefore stamps `engine_stamp` = `port=<src>/<n>;env=<src>/<n>`: the build-stamp keys of `sim_bridge`
-and of the env core (`main.anchors.server.engine_stamp`). The stamp is empty for a Node or external server, and under
-`POKESIM_ALLOW_STALE_BUILD=1`. The dry-run plan prints it.
-
-The engine enters `anchor_regime_id` by the same LEGACY rule as the weights:
-- **A banked summary stamps no engine**, so its id is unchanged. Its engine is `main.reads.engine.LEGACY_ENGINE` of
-  its playing commit, a frozen table reconstructed from git. A new read on one of those engines keeps the id.
-- **Ids cannot tell two banked engines apart.** So every import also compares the engines themselves: the
-  cross-state import, `import_off`, `prior_mix_ab`'s bank and the determinism guard. An import across engines REFUSES,
-  and so does one from an engine nobody can name.
-
-The per-read engine table is `designs/tools/reads.md` §4.
+**The engine stamp** (REVIEW F F-M2, 2026-10-26). Kakuna games run on OUR in-process Rust engine, and the commit in
+`server_version` does not say which engine that was (the 10-26 parity batches changed OU-visible mechanics), so each
+Rust-served cell stamps `engine_stamp` (`main.anchors.server.engine_stamp`). Its place in the id and the import rule are
+§ 0.1 and G7; the per-read engine table is `designs/tools/reads.md` §4.
 
 ### `--our-teamset {home,away}` — an ASYMMETRIC pair cell (B-D9, 2026-10-18)
 
@@ -364,7 +415,7 @@ side is greedy exactly as in a greedy cell. Every row is stamped
 our-side or `--regime`, and for T ≤ 0 (greedy is `--regime greedy` alone — H7). It is **not** the
 recurring protocol (RULE 2) and it does NOT reopen `--allow-unmatched-regime` against metamon,
 which stays refused; hazard **H17** (the Metamon-challenges post-game `RecursionError`) is expected
-in this shape and is named, not excused, by the usual complete-half rule.
+in this shape, and a unit that hits it is VOID and re-run like any long-tail fault (§ 3.1).
 
 ### `--our-temperature T` — OUR checkpoint SAMPLES (the mirror)
 
@@ -525,25 +576,19 @@ Every row stamps **`our_transport`**: `rust_core_slot` · `rust_live_reader` · 
 row written before 2026-10-07 has no field and was `poke_env_rlplayer` (or a bot / peer by its `our_side`); rows
 from 2026-10-07 until P6 also wrote `poke_env_rlplayer` / `poke_env_bot` for the legacy client.
 
-**They play the SAME games.**
+**They play the SAME games** (byte-identical protocol and choices on both paths):
 
-* **P3 (the core slot vs the legacy client):** 100 seeded battle pairs, one current-architecture checkpoint vs
-  `metamon:SmallRL` (greedy away 40, greedy home 40, our side sampling at T = 1.0 under one `GEN3AI_POLICY_SEED`
-  20): **100 / 100 battles byte-identical** — both sides' 11,108 choices and every per-side chunk — 47/53 on both
-  paths, shift **0.000**, **0** protocol / parse failures (`measurements/pokeenv_p3_anchors_2026-10-07/`).
-* **P6 (the live client and the Rust bots vs the legacy client)** (`measurements/pokeenv_p6_anchors_2026-10-07/`):
-  every one of the nine roster bots as our side, 12 seeded games each on the front end, the old path's Python bot
-  seeded exactly as the Rust bot is: **108 / 108 battles byte-identical** (7,569 choices, 3,880 of them the bot's,
-  every per-side chunk), 16/92 on both paths, shift **0.000** (Newcombe [−0.096, +0.096]); a seed-mismatched TEETH
-  cell differs on 12 / 12. The checkpoint on the live client vs the legacy client, 20 seeded games: **19 / 20
-  byte-identical**; the 20th diverged when METAMON forfeited at its first decision on the old path only — H5's
-  desync after our stall forfeit in the previous battle, timing-dependent inside the peer (our side's first choice
-  equal on both paths). On a NODE Showdown (no seed): the legacy client with the live reader as a SHADOW, 20 games,
-  **1,347 compared decisions + 2 stall forfeits, 0 row / mask / action / token differences**; then the new path
-  with 0 protocol failures on Node (checkpoint 20 games, a Rust bot 10) and on a master-built Node via
-  `--server-uri` (10).
+* **P3, the core slot vs the legacy client:** 100 / 100 seeded battles of one checkpoint vs `metamon:SmallRL` (11,108
+  choices, shift 0.000, 0 protocol failures; `measurements/pokeenv_p3_anchors_2026-10-07/`).
+* **P6, the live client and the Rust bots vs the legacy client** (`measurements/pokeenv_p6_anchors_2026-10-07/`): all
+  nine roster bots, 12 seeded games each, the old path's Python bot seeded as the Rust bot is: 108 / 108 byte-identical
+  (a seed-mismatched TEETH cell differs on 12 / 12). The checkpoint on the live client: 19 / 20 byte-identical; the 20th
+  diverged when METAMON forfeited at its first decision on the old path only (H5's desync after our stall forfeit,
+  timing-dependent inside the peer). On a NODE Showdown (no seed), with the live reader as a SHADOW: 1,347 compared
+  decisions + 2 stall forfeits, 0 row / mask / action / token differences, and 0 protocol failures on Node and on a
+  master-built Node via `--server-uri`.
 
-So `our_transport` is PROVENANCE, not a regime boundary: no reader refuses a mix. ⚠️ Two fields changed meaning:
+So the transports are one behaviour and `main.anchors` refuses no mix, but `our_transport` IS part of `main.reads`' regime id (§ 0.1), so a registered read never pools two transports in one cell. ⚠️ Two fields changed meaning:
 a legacy row's `n_decisions` is CUMULATIVE over its half (a pre-existing `RLPlayer` counter; `RLPlayer` is deleted, T27 P6) where every Rust-stack
 row's is that game's; and a legacy `poke_env_bot` row's bot drew from the process-wide, UNSEEDED `random` where a
 `rust_live_bot` row's draws are the declared `--bot-seed` streams (`our_bot_seed`).
@@ -567,16 +612,14 @@ login that never completes, a rejected team, a dropped socket).
 | in Metamon's `competitive` | home72: 8 / 72 exact | all of it | 0 / 72 exact |
 | how to run it | `--teamset home` | `--teamset away` | `--teamset home` with `$GEN3AI_ANCHORS_CONFIG` = `measurements/heldout72_hpfix_kakuna_2026-10-18/anchors_heldout72_hpfix_kakuna.json` (Metamon's cache set `gen3ai_heldout72_hpfix`) |
 
-🚨 **CORRECTED 2026-10-18: `away` is NOT a set our models never trained on.** It was described for a month as
-"Metamon's own teams", "their ground", "a 20-team set we have never trained on". 19 of its 20 teams are exact copies of
-teams in our 719-team training pool (23 pool entries; the pool holds four duplicates). `away` is Metamon's choice of
-teams, and Metamon's README says it has overfit to them; it is not held out from US. Every `away` number in this
-SOP and the ledger stands as a measurement; only its description changes. X26 − K2 comparisons on it stay valid,
-because both models trained on the same pool. `home72` is 72 pool teams, so it is training data too, by design.
-The held-out read is `heldout72_hpfix` (`measurements/heldout72_hpfix_kakuna_2026-10-18/`). 🚨 **A held-out read uses the
-HP-REPAIRED set** (2026-10-18): `heldout72` (`measurements/heldout_teams_kakuna_2026-10-18/`) is the same 72 teams with
-the archive's Hidden Power Dark fill on 164 / 432 mons, a known-wrong move on 71 of them (the wrong side of the set); it
-stays as a record, not a read target. A NEW held-out set from replay-derived teams is repaired the same way
+🚨 **`away` is NOT held out from us.** 19 of its 20 teams are exact copies of teams in our 719-team training pool (23 pool
+entries; the pool holds four duplicates): it is Metamon's choice of teams, which Metamon's README says it has overfit
+to. `home72` is 72 pool teams, so it is training data too, by design. Every `away` number stands as a measurement (only
+its description was corrected, 2026-10-18), and X26 − K2 comparisons on it stay valid because both models trained on
+the same pool. The held-out read is `heldout72_hpfix` (`measurements/heldout72_hpfix_kakuna_2026-10-18/`).
+🚨 **A held-out read uses the HP-REPAIRED set:** `heldout72` (`measurements/heldout_teams_kakuna_2026-10-18/`) is the same
+72 teams with the archive's Hidden Power Dark fill on 164 / 432 mons, a known-wrong move on 71 of them; it stays as a
+record, not a read target. A NEW held-out set from replay-derived teams is repaired the same way
 (`hp_repair.repair_team`, a seed per team id, recorded) before any game. Kakuna's own exposure to those teams is in the
 heldout72 README's caveat.
 
@@ -664,39 +707,85 @@ the pin on the env the plan actually carries.
 
 ## 3. The known hazards — every one has cost a session
 
-| # | hazard | symptom | where it is handled now |
+The ids are stable (code and measurement records cite them). **Standing** hazards are still true of the world: a reader
+accounts for them. **Closed** ones are fixed or refused in code and kept as one line.
+
+### 3.1 The Metamon peer's long-tail fault — H5 · H17 · H21 (guarded; upstream unfixed)
+
+One upstream defect, met three ways. `MetamonAMAGOWrapper.step` (`metamon_to_amago.py:323`) answers ANY exception with
+`self.reset(); return self.step(action)`, with no depth bound: an error `reset()` cannot clear prints `Force resetting
+due to long-tail error` about 985 times and ends in a `RecursionError` that kills the process.
+
+| id | trigger | what it costs |
+|---|---|---|
+| **H5** | our side forfeits at turn 250, ending the battle mid-step ("Battle is already finished, call reset"). A RACE: it fired on 3 of the 105 turn-250 forfeits in 1,117 archived Kakuna units (`measurements/kakuna_determinism_2026-10-27/` §4), and the same unit re-run forfeited cleanly | when it fires mid-half the process lives on and spoils the NEXT TWO games: game n+1 is a 1-turn Kakuna `FORCELOSE` (a "win" for us), and game n+2 is played on carried state (its first differing choice comes from an identical protocol). Once triggered it is deterministic: two faulted plays of one unit on two engines are byte-identical. Forfeits ran 4 in 800 games (0.5 %); the watchdog's named `peer_exited` (rc and log tail, finished games attached) replaced a silent hang |
+| **H17** | the half where METAMON challenges. Metamon serialises the acceptor role (its own `_accept_challenge_loop`) but drives the challenger role through poke-env's pipelined `start_challenging`: the same defect class as H14, on their side of the wire. The env's `current_battle` and the agent's then disagree | four recorded post-game occurrences. Three were `mixed`-regime, so the `mixed` cell is refused outright (`--allow-unmatched-regime` against metamon); the fourth was matched greedy, so that refusal is not the fix. The minimal upstream patch is in `measurements/anchors_p2_batch_2026-09-22/README.md` |
+| **H21** | the peer's LAST battle: the crash comes after every game is recorded | 3 of 240 units of `measurements/human_only_vs_pstar_2026-10-25/`, one of them twice at the identical log line for the same seed |
+
+**The rule (G2): a long-tail line anywhere in a unit voids the unit.** The watchdog (`session.watch`, and
+`watch_peer_pair` for a pair cell) reads the peer's log on every poll and fails the half at the FIRST line
+(`session.PEER_FAULT_LINE`) as `peer_long_tail_fault`, so a contaminated game is never played out (at most the game
+already running when the line lands). After the half, `runner.apply_peer_fault` reads the whole log again and sets
+`peer_clean` False on any line, so the verdict depends neither on the peer also recording an `error` or a nonzero rc nor
+on whether a poll saw the line before the last record. `unit_counts` drops the unit and the lane's retry re-runs it with
+the same seed. Never salvage a game played after a mid-unit fault. The rule costs nothing already banked: of 1,249
+archived anchor units, none of the 950 counted has the line, and the 28 that have it were already uncounted.
+
+`peer_recursion_upstream` (`summary.json["peer_exit_notes"]`) names a COMPLETE `peer_challenge` half whose peer died of
+the `RecursionError`. It is a diagnosis, not a rescue: the long-tail lines have already voided that unit, so it never
+counts. Cells banked under the older rule (H16's 31 sub-cells, where the fault fired after the last game) stand as recorded;
+today's tool would have re-run them.
+
+### 3.2 Teams: the played set must be the file's set
+
+| id | status | hazard and handling |
+|---|---|---|
+| **H22** | fixed; a regime split | The Metamon peer packed its teams with upstream poke-env's `Teambuilder`, not as Showdown reads them (found 2026-10-27 by the H-CTX Hidden Power FINDING's sweep). It (1) filled a named Hidden Power with all-31 IVs from `HP_TO_IVS`, a table in the formula's bit order (hp, atk, def, spe, spa, spd) packed as (hp, atk, def, spa, spd, spe): 12 of the 16 types read as another type, Flying keeps its type with other IVs; (2) packed `Happiness: 0` as the default 255 and lacks Showdown's "Frustration ⇒ happiness 0" import rule, so Frustration hit at base power 1, not 102; (3) ignored a `Hidden Power: <Type>` line on a mon without the move. Silent except (1)'s refusals by the server (rc72: "Aerodactyl has Hidden Power Bug, but its IVs are for Hidden Power Water"). **Fix, `gen3_peer_showdown_pack_v1`:** the peer packs every file it may draw through `utils/bridge/showdown_pack.js` (import → validator → `Teams.pack`, what a real server plays), and `pack_oracle.js` must agree at startup or it exits naming the file and the set (`peer_scripts/team_pack.py`). The report's `peer_pack_changed` (True iff a file plays differently from the legacy pack) enters the id (§ 0.1); a report without the pack never counts. The local front end likewise PLAYS the validator's re-packed team now (`validate_team.js` returns it, `ws_frontend._cmd_utm` stores it, as `server/ladders.ts` plays `valResult.slice(1)`): our side's packs play the same sets (`main/anchors/our_side_played_team_integration_test.py`), and a third-party client whose own pack the validator rewrites (Foul Play) plays the validated set, as on a real server |
+| **H3** | standing | Our pool pastes omit the `IVs:` line and `Gen3Teambuilder` patches it in from `GEN3_HP_IVS` at pack time; Foul Play packs the paste verbatim, so `Hidden Power [Grass]` with no IV line becomes Hidden Power Dark: a DIFFERENT team, silently. The export WRITES the IV line into the paste; our pastes are only complete under our own teambuilder |
+| **H19** | worked around, not fixed | Foul Play's stock `home` directory is NOT the pool, and 11 of its 72 files are incomplete. `designs/ops/anchors.json`'s `foulplay.team_dirs.home` holds the 72 `data/teams/sample` teams while our `home` source is the 719-team pool, so every stock Foul Play `home` cell is `team_source_asymmetry = true` by construction; the files keep nicknames (H2) and 23 bracketless `- Hidden Power Grass`-style moves on 11 teams with no `IVs:` line (the 2026-09-14 exporter matched only `Hidden Power [Grass]`), so Foul Play plays a different Hidden Power from the one our teambuilder patches in (H3). Found 2026-09-27. `measurements/n0_endofrun_2026-09-27/scripts/make_home72.py` writes a sanitized, validator-checked copy of the 72 that all three clients read in that campaign; the stock directory is unchanged |
+| H2 | closed | A nickname (`Airmure (Skarmory)`) packs an EMPTY species in upstream poke-env 0.8.3.3 and hangs the read. Every team file handed to a third-party poke-env is nickname-free; the pool export strips them |
+| H4 | closed | A trailing blank line became an empty 7th Pokemon in the (since deleted) vendored fork's parser and hung the read; `validate_teams_locally` passes it, the pack does not. The parser is `utils.team_packing`, the pack carries a throwing guard (> 6 mons raises) and the tool `.strip()`s (every Metamon `competitive` file ends `\n\n\n`); pinned by `src/poke_env_teambuilder_gate_test.py` |
+
+**Which sets H22 moved.** Unchanged (the legacy pack played every file as Showdown does): home72, p72,
+heldout72_hpfix, rc72b, the x37a and `tsr_k_*` sets except the two below, `tsr_ref24`. Changed, so a NEW regime, never
+pooled with a banked read of the same set:
+
+| team set | the file | Kakuna played before | Kakuna plays now |
 |---|---|---|---|
-| **H1** | **a 19-character username**. Both clients guest-login through Smogon's `action.php` *even against a `--no-security` LOCAL server*; 19+ returns `;;Your username must be less than 19 characters long.` — a REFUSAL. Foul Play's guest path accepts it verbatim, logs "Successfully logged in", and blocks forever | **a HANG** (cost one session, ~18 min) | `main.anchors.peers.check_username`, both names, before anything starts |
-| **H2** | **nicknames**. Upstream poke-env 0.8.3.3 fails to split `Airmure (Skarmory)` (nickname, no item) and packs an EMPTY species; Showdown rejects `airmureskarmory` | **a HANG** (killed a 120-game run at game 8) | any team file handed to a third-party poke-env is **nickname-free**; the pool export strips them |
-| **H3** | **Hidden Power IVs**. Our pool pastes omit the `IVs:` line and `Gen3Teambuilder` patches it in from `GEN3_HP_IVS` at pack time. Foul Play packs the paste verbatim, so `Hidden Power [Grass]` with no IV line becomes Hidden Power **Dark** | a DIFFERENT team, silently | the export WRITES the IV line into the paste; **our pastes are only complete under our own teambuilder** |
-| **H4** | **a trailing blank line**. Our vendored fork used to skip a split chunk only when it was exactly `""`, so a file ending `"\n\n\n"` (every Metamon `competitive` file) became an empty 7th Pokemon. `validate_teams_locally` passes it — the paste is fine, the PACK is not | **a HANG** (killed a pilot at game 2) | **FIXED in the fork** (`if not ps_mon.strip(): continue`; the fork is deleted since T27 P6 and the parser is `utils.team_packing`), plus a **throwing guard on the pack** in `Gen3Teambuilder` (>6 mons raises), plus `.strip()` in the tool. Pinned by `src/poke_env_teambuilder_gate_test.py` |
-| **H5** | **Metamon's recursion on a forfeit desync**. When our side forfeits at turn 250 the battle ends mid-step; Metamon's long-tail handler catches "Battle is already finished", force-resets (sending a fresh challenge) and then **calls itself** — ~985 levels, then `RecursionError`, killing the process | the peer dies and the harness reports **nothing** | the **watchdog**: `peer_exited` with the rc and the log tail, as a named failure with the games that did finish attached. 4 forfeits in 800 games (0.5%). **Measured 2026-10-27** (`measurements/kakuna_determinism_2026-10-27/` §4): the fault is a RACE. It fired on 3 of the 105 turn-250 forfeits in 1,117 archived Kakuna units, and the same unit re-run forfeited cleanly. When it fires mid-half, the process lives on and costs the NEXT TWO games: game n+1 is a 1-turn Kakuna `FORCELOSE` (a "win" for us), and in game n+2 Kakuna plays on CARRIED state (its first differing choice comes from an identical protocol). Once triggered it is deterministic: two faulted plays of one unit, on two engines, are byte-identical. **Fail-fast (2026-10-27):** the watchdog (`session.watch`, and `watch_peer_pair` for a pair cell) reads the peer's log on every poll and fails the half at the FIRST "Force resetting due to long-tail error" line (`session.PEER_FAULT_LINE`), as `peer_long_tail_fault`: the unit is VOID, loud, and re-run with the same seed by the lane's retry, so its contaminated games are never played out (at most the game already running when the line lands). A unit whose peer never prints the line is untouched: across the 1,249 archived anchor units under `~/gen3ai_archive`, none of the 950 counted ones has the line, and all 28 that have it were already uncounted. Never salvage a game played after a mid-unit fault |
-| **H6** | **Metamon's hardcoded `:8000`**. `PokeEnvWrapper.server_configuration` returns poke-env's module-level `LocalhostServerConfiguration` = `ws://localhost:8000` — our shared dev server, **one port from the live training run**. No flag, no env var, no constructor argument | it binds the wrong server | the driver rebinds the module global before any env is built, and refuses 8000/8001 in its own code |
-| **H7** | **no temperature can express Metamon's greedy**. `MetamonDiscrete` clips probabilities to [0.001, 0.99] *after* the temperature division, so the argmax tops out at ~0.992 however cold | a random non-argmax move ~1 in 125, silently | greedy is `Agent.get_actions(sample=False)` and **nothing else**; verified by `argmax_match_rate == 1.0000` |
-| **H8** | **Foul Play's budget is WALL CLOCK**, with no iteration/visit/depth budget anywhere | the opponent is a **width meter**, not a setting | the realized visit count is scraped from its own `Iterations N: <visits>` lines and recorded per cell; a log with none reads UNVERIFIED |
-| **H9** | **unflushed prints** (Metamon) | the readiness banner never lands and the peer looks dead | `PYTHONUNBUFFERED=1` in the peer env |
-| **H10** | **a lingering websocket between halves**. Our half-1 client still holds the name when half 2 logs in; Showdown answers `|nametaken|` and the fork **continues as a guest**, so the peer's `/challenge` is addressed to a user that no longer exists | **a HANG** until the peer's own timeout (~8 min) | the socket is closed between halves AND each half plays under its own username suffix |
-| **H11** | **two `poke_env` packages**. Metamon subclasses UPSTREAM poke-env; our `BattleStreamClient` used to subclass the vendored fork (the fork and that client are deleted, T27 P6). One process resolved `import poke_env` to exactly one of them and the other half broke **silently** | wrong behaviour, no error | the peers are SUBPROCESSES with `PYTHONPATH=""`; nothing in this repo imports Metamon. Since P6 (2026-10-07) NO side of ours imports poke-env (the core slot since P3; the live client and the Rust bots since P6), so the upstream copy in the peer's env is the only poke-env in any read |
-| **H13** | **thread oversubscription**. Torch's default pool on B = 1 inference; 210% CPU per peer, ~20× slower than necessary on a shared box | a campaign that projects at 18 h instead of 1 h | `OMP_NUM_THREADS=1` (+ MKL/OpenBLAS/numexpr/torch) in the peer env and in `metamon_side.py` before torch |
-| **H12** | **the Showdown pin**. Ours is `e0551883f`, 13 commits behind Metamon's bundled submodule | — | irrelevant while BOTH clients play on ours, which the tool guarantees; it becomes relevant the moment anyone compares against numbers a third party produced on its own server. The pin is recorded on every row |
-| **H14** | ✅ **CLOSED 2026-09-22 (`gen3_anchor_serial_challenge_v1`). `--opponent foulplay` could not run a MULTI-GAME `ours_challenge` half.** poke-env's `Player._send_challenges` releases its battle semaphore when a battle *starts*, so it emitted challenge *k+1* ~0.4 s INTO battle *k*; Foul Play reads its PMs only between battles, dropped it, and then waited forever for a challenge already consumed. 🚨 **The defect was OURS, not Foul Play's** | `no_progress` after 1 game (1/10 on the front end, 3/3 on Node) | `--challenge-mode serial` (the DEFAULT) waits for the previous battle to END before the next `/challenge` — one extra `_battle_count_queue.join()`, patched onto poke-env's **base** `Player` so `Gen3Player`'s connect-or-raise wrapper survives. **Gate: 10/10 games, `status: OK`, both halves, 0 ERRORs, challenges 11–37 s apart** (`anchors_p2_batch_2026-09-22`). Since P6 both of our transports challenge serially by construction (the core slot and `main.live.client` await the battle's END), and `--challenge-mode pipelined` — poke-env's own loop — is REFUSED with its reason |
-| **H15** | ⚠️ **A bare TCP readiness probe FABRICATES an ERROR in the front end's log.** `websockets` answers a connect-then-close with `opening handshake failed` and a three-deep traceback; "0 ERRORs in the server log" is the criterion the transport's validation reads | a clean read looks like a protocol failure | fixed 2026-09-20: a server that PRINTS a readiness line (`[ws_frontend] READY`) is never TCP-probed; the Node server, which prints none we parse, still is |
+| **forum72** (and `tsr_k_forum72`) | `sft431` Gyarados, `Happiness: 0`, Frustration | Frustration at base power **1** (a small constant handicap on Kakuna's side, about 1 team in 72) | base power 102 |
+| away (`competitive`, `tsr_k_away`) | `team_23` Gyarados, Hidden Power Flying, no IV line | IVs 31/31/31/30/30/30 | the validator's 30/30/30/30/30/31 |
+| the pool (`gen3ai_pool`) | 4 teams: 2 Frustration sets (an explicit `Happiness: 0`, or none, which Showdown's import reads as 0 for Frustration) and 2 `Hidden Power: <Type>` lines on mons without the move | Frustration at 1; all-31 IVs | 102; the type's IVs |
 
-| **H16** | 🚨 **A COMPOSITE VERIFICATION FLAG HIDES WHICH HALF FAILED.** `regime_verified` ANDed *"did the regime take effect?"* with *"did the peer exit cleanly?"*. Metamon raises a `RecursionError` in its post-game teardown when our side forfeits at turn 250 — **after** its last decision and after every game is played and recorded — so the peer exits 1 and the composite read FALSE. On the 2026-09-20 continuation campaign that was **31 of 84 sub-cells** (3,100 of 8,400 games; arms C 6 / F 14 / W 11), every one of which had `argmax_match_rate` = **1.0000** on both halves | a third of a campaign flagged "not a measurement" with nothing wrong with it — and a flag a reader then learns to ignore | **fixed 2026-09-21** (`gen3_anchor_regime_split_v1`): `regime_verified_decisions` and `peer_clean` are separate fields on every row and in every summary, `render` prints them on separate lines, and `regime_verified` survives ONE release as their AND with a deprecation note. The 84 sub-cells are re-derived in `designs/research_state/measurements/anchor_ab_continuation_2026-09-20/regime_split_rederived.json` — **all 31 flip to verified, 0 remain unverified**, and no win rate, CI or verdict changes |
+### 3.3 The opponents are not what their authors publish
 
-| **H17** | 🚨 **Metamon's post-game `RecursionError` is about WHO CHALLENGES, not about sampling — and it is the SAME defect class as H14, on their side of the wire.** Metamon drives the ACCEPTOR role through its own `_accept_challenge_loop`, whose docstring says it "accepts one challenge at a time and **fully awaits the battle** before accepting the next … ensuring terminated/truncated signals propagate correctly" — and drives the CHALLENGER role through poke-env's **pipelined** `start_challenging(n_challenges=num_battles)`. The env's `current_battle` and the agent's then disagree, `openai_api.step` raises `Battle is already finished, call reset`, and `MetamonAMAGOWrapper.step`'s handler answers **any** exception with `self.reset(); return self.step(action)` — unbounded, no re-raise — so an error `reset()` cannot clear becomes ~988 frames and a `RecursionError`. Four recorded occurrences, all in the half where **Metamon challenges**; three were `mixed`-regime and the fourth (2026-09-18) was MATCHED greedy, which is what retired "it is the mixed regime" | the peer exits nonzero AFTER its last game; `peer_clean` false, every `argmax_match_rate` 1.0000 | **upstream, and it costs no games.** `main.anchors` NAMES it: a COMPLETE `peer_challenge` half whose peer died of a `RecursionError` is stamped `peer_recursion_upstream` in `summary.json` and printed with its cause, instead of leaving an rc for a reader to diagnose. An INCOMPLETE half, the other half, or any other error is **not** given the excuse. The **`mixed` cell is refused outright** (`--allow-unmatched-regime` against metamon), being the one shape with three crashes and no recorded success — but 🚨 **that refusal is not the fix and must not be read as one**: the fourth occurrence was matched, so refusing on the regime axis is refusing on the axis F-D retired. The minimal upstream patch is in `designs/research_state/measurements/anchors_p2_batch_2026-09-22/README.md` |
-| **H18** | 🚨 **METAMON READS A BATON PASS WRONG — it loses every passed stat stage.** Upstream poke-env 0.8.3.3 (the package Metamon runs) clears the entrant's boosts on `\|switch\|…\|[from] Baton Pass`, and the protocol emits nothing else about the pass (`sim/pokemon.ts:1249` — `this.boosts = pokemon.boosts`). **Our fork fixed this 2026-08-23** (its `baton_pass_carryover_test.py`; the fork and its test are deleted, T27 P6); theirs is unfixed. Measured 2026-09-22 over 871 decision points in 20 greedy `SmallRL` battles: **13 mismatches, 3 of 20 battles**, Metamon reading `atk 0` where the sim held `−1` and `+2`. 🚨 **It is NOT something our server does** — the same battles replayed through Metamon's OWN bundled Showdown (`d62d3a398`) are **byte-identical on 20/20**, so this fires wherever Metamon plays, its published numbers included | our anchor win rate is **OPTIMISTIC** on Baton Pass teams (Metamon under-reads passed setup on BOTH sides) — and nothing warns: 0 log warnings, 0 `UNKNOWN_TOKEN`s, `Average Valid Actions` 1.0000 | **unfixed, deliberately** — patching a third-party checkout would make the anchor a different opponent from the one its authors publish. Exposure is recorded (**8 of 21 `competitive` teams and 157 of 719 pool teams carry Baton Pass**); the SIZE of the bias is **NOT measured**. **Backlog**: the patched-vs-unpatched 2×400 cell in `designs/research_state/measurements/metamon_obs_faithfulness_2026-09-22/` §8 |
-| **H19** | 🚨 **Foul Play's stock `home` directory is NOT the pool, and 11 of its 72 files are incomplete.** `designs/ops/anchors.json`'s `foulplay.team_dirs.home` holds the **72 `data/teams/sample` teams** while our `home` source is the **719-team pool**, so every stock Foul Play `home` cell is `team_source_asymmetry = true` by construction. Worse, those files still carry **nicknames** (H2) and **23 bracketless `- Hidden Power Grass`-style moves on 11 teams with NO `IVs:` line** — the 2026-09-14 exporter matched only `Hidden Power [Grass]` — so Foul Play plays those mons with a different Hidden Power from the one our teambuilder patches in (H3) | a "shared" team set that is neither shared nor the same teams | found 2026-09-27; **worked around, not fixed**: `designs/research_state/measurements/n0_endofrun_2026-09-27/scripts/make_home72.py` writes a sanitized, validator-checked copy of the 72 that ALL THREE clients read in that campaign. The stock directory is unchanged |
-| **H20** | 🚨 **A GIN FILE BEATS THE `gin_overrides` DICT, and the newer Metamon models SLIDE A WINDOW.** `amago.cli_utils.use_config` binds the dict FIRST and then parses the model's `.gin` files; `superkazam.gin` (Kakuna, Superkazam), `alakazam*.gin` and `smaller_multitaskagent*.gin` bind `attention_type = @FlashAttention` THEMSELVES, so the CPU swap silently lost. The same files set `FlashAttention.window_size = (96, 0)` (or `(32, 0)`): each query sees only the last 96 keys, where plain `VanillaAttention` would see the whole 128-step cache — a different function from the trained one, on exactly the long games | the first Kakuna smoke died at build: `Missing flash attention 2 install` (2026-09-28). Had only the ORDER been fixed, it would have played a quietly different policy | **fixed 2026-09-28**: `metamon_side.install_cpu_attention` re-binds AFTER the files parse and reads the file's window — no window → `VanillaAttention` (`SmallRL`/`SyntheticRLV2` unchanged), a window → `WindowedVanillaAttention` (flash-attn's mask: key `j` visible to query `i` iff `i − left ≤ j ≤ i`). The class and window go into every peer report (`attention`, `attention_window`). Pinned by `src/main/anchors/windowed_attention_integration_test.py` (equality with a naive sliding-window reference, full and cached; Kakuna → window 96; SyntheticRLV2 → plain). ⚠️ Upstream's GPU path runs flash attention in **bf16**; ours is fp32 — the same small numeric gap SyntheticRLV2 always had |
-| **H21** | 🚨 **A METAMON PEER CAN CRASH AFTER ITS LAST BATTLE.** Upstream poke-env raises "Battle is already finished, call reset"; Metamon's `metamon_to_amago.py:323` handler retries by RECURSION until Python's recursion limit (985 "Force resetting due to long-tail error" lines, then `RecursionError`) | `peer_clean = False` (the peer reports "the games stand, the process does not"); 3 of 240 units in `measurements/human_only_vs_pstar_2026-10-25/`, one of them TWICE at the identical log line for the same seed | **unfixed upstream, deliberately.** A peer fault ANYWHERE in a unit means it never counts: `runner.apply_peer_fault` reads each half's peer log after the half, and any long-tail line makes `peer_clean` False and the unit FAILED (`peer_long_tail_fault`), so the verdict no longer depends on the peer also recording an `error` or a nonzero rc, nor on whether the watchdog saw the line before the last record. `unit_counts` drops it and it is re-run with the same seed. H5 shows why a fault before the last game never may count |
-| **H22** | 🚨 **THE METAMON PEER PACKED ITS TEAMS WITH POKE-ENV, NOT AS SHOWDOWN READS THEM** (found 2026-10-27 by the H-CTX Hidden Power FINDING's sweep). Upstream poke-env's `Teambuilder` (1) fills a named Hidden Power with all-31 IVs from `HP_TO_IVS`, a table in the formula's bit order (hp, atk, def, spe, spa, spd) packed as (hp, atk, def, spa, spd, spe): 12 of the 16 types read as another type (the server refused rc72: "Aerodactyl has Hidden Power Bug, but its IVs are for Hidden Power Water"), Flying keeps its type with other IVs; (2) packs `Happiness: 0` as the default 255 (`happiness or ""`) and lacks Showdown's "Frustration ⇒ happiness 0" import rule, so Frustration hits at base power 1, not 102; (3) ignores a `Hidden Power: <Type>` line on a mon without the move | Kakuna plays OTHER sets than the files: forum72 `sft431`'s Gyarados at Frustration 1 in every forum72 read before the fix (a small constant handicap on Kakuna's side, about 1 team in 72); away `team_23`'s Gyarados with other IVs; 4 pool teams. Silent except (1)'s refusals | **FIXED, `gen3_peer_showdown_pack_v1`:** the peer packs every file it may draw through `utils/bridge/showdown_pack.js` (import → validator → `Teams.pack`, what a real server plays) and `pack_oracle.js` must agree, at startup, or it exits naming the file and the set (`peer_scripts/team_pack.py`). Its report's `peer_pack_changed` (True iff a file plays differently from the legacy pack) enters the regime id, so forum72 / away / pool Kakuna reads after the fix are a NEW regime, never pooled with the banked ones (an import refuses), while home72 / p72 / heldout72_hpfix / rc72b keep their ids (`designs/tools/reads.md` §4). A report without the pack never counts. The local front end likewise PLAYS the validator's re-packed team now (`validate_team.js` returns it; `ws_frontend._cmd_utm` stores it, as `server/ladders.ts` plays `valResult.slice(1)`): our side's packs play the same sets (`main/anchors/our_side_played_team_integration_test.py`), and a third-party client whose own pack the validator rewrites (Foul Play) plays the validated set, as on a real server |
+| id | status | hazard and handling |
+|---|---|---|
+| **H7** | standing | No temperature can express Metamon's greedy: `MetamonDiscrete` clips probabilities to [0.001, 0.99] AFTER the temperature division, so the argmax tops out near 0.992 however cold and a random non-argmax move comes about 1 decision in 125, silently. Greedy is `Agent.get_actions(sample=False)` and nothing else, verified by `argmax_match_rate == 1.0000` (G1) |
+| **H8** | standing | Foul Play's only budget is WALL CLOCK (no iteration, visit or depth budget anywhere), so the opponent is a width meter, not a setting. The realized visit count is scraped from its own `Iterations N: <visits>` lines and recorded per cell; a log with none reads UNVERIFIED (§ 4 "Foul Play") |
+| **H12** | standing | The Showdown pin. Ours is `e0551883f`, 13 commits behind Metamon's bundled submodule. Irrelevant while BOTH clients play on ours, which the tool guarantees; relevant the moment anyone compares against numbers a third party produced on its own server. `showdown_pin` is on every row (§ 6 for the 20 / 20 byte-identical replay across the two pins) |
+| **H18** | standing, sized | Metamon reads a Baton Pass wrong: upstream poke-env 0.8.3.3 clears the entrant's boosts on `\|switch\|…\|[from] Baton Pass`, and the protocol emits nothing else about the pass (`sim/pokemon.ts:1249`). Measured 2026-09-22 over 871 decision points in 20 greedy `SmallRL` battles: 13 mismatches in 3 battles (Metamon read `atk 0` where the sim held −1 and +2). It is NOT our server: the same battles through Metamon's own bundled Showdown (`d62d3a398`) are byte-identical on 20 / 20, so it fires wherever Metamon plays, its published numbers included. Our anchor win rate is OPTIMISTIC on Baton Pass teams (Metamon under-reads passed setup on both sides), and nothing warns (0 log warnings, 0 `UNKNOWN_TOKEN`s). **Unfixed, deliberately:** patching a third-party checkout would make the anchor a different opponent from the one its authors publish. Exposure: 8 of 21 `competitive` teams and 157 of 719 pool teams carry Baton Pass. **Sized 2026-09-22** (`measurements/h18_baton_pass_bias_2026-09-22/`): \|bias\| < 0.02 on both team sets, NOT DETECTED (paired, 2×2×400); the volatile half of the carry-over (Substitute etc.) is the larger half on a Baton-Pass-enriched set, per-exposure bound ±0.14–0.22. Anchor numbers stand with this bound attached |
+| **H20** | fixed; one caveat | A gin file beats the `gin_overrides` dict, and the newer Metamon models SLIDE A WINDOW. `amago.cli_utils.use_config` binds the dict first and then parses the model's `.gin` files; `superkazam.gin` (Kakuna, Superkazam), `alakazam*.gin` and `smaller_multitaskagent*.gin` bind `attention_type = @FlashAttention` themselves, so the CPU swap silently lost, and the same files set `FlashAttention.window_size = (96, 0)` (or `(32, 0)`), which plain `VanillaAttention` would not honour: a different function from the trained one, on exactly the long games. Fixed 2026-09-28: `metamon_side.install_cpu_attention` re-binds AFTER the files parse and reads the file's window (none → `VanillaAttention`, so `SmallRL` / `SyntheticRLV2` are unchanged; a window → `WindowedVanillaAttention`, key `j` visible to query `i` iff `i − left ≤ j ≤ i`); class and window go into every peer report (`attention`, `attention_window`); pinned by `src/main/anchors/windowed_attention_integration_test.py` (equality with a naive sliding-window reference; Kakuna → window 96, SyntheticRLV2 → plain). Caveat: upstream's GPU path runs flash attention in bf16, ours is fp32 (the same small numeric gap SyntheticRLV2 always had) |
 
-> **H18 SIZED 2026-09-22** (`measurements/h18_baton_pass_bias_2026-09-22/`): |bias| < 0.02 on both team sets, NOT DETECTED (paired, 2×2×400). The VOLATILE half of the carry-over (Substitute etc.) is the larger half on a Baton-Pass-enriched set; per-exposure bound ±0.14–0.22. Anchor numbers stand with this bound attached.
+### 3.4 The harness, the transport and the clock
 
-**One more, and it is about US, not them:** ⚠️ a long campaign that imports the MAIN checkout is not
-pinned, and `main` is a moving target on a multi-session box. The parallel Metamon de-risk landed
-`--forfeit-turn-limit` mid-run on 2026-09-14 and an `AttributeError` killed a Foul Play session
-silently after 40 games. Run a campaign **from its own worktree**, or pin the commit it imports.
+| id | status | hazard and handling |
+|---|---|---|
+| H1 | closed | A 19-character username hangs both clients (Smogon's guest login refuses it even against a `--no-security` local server; Foul Play logs "Successfully logged in" and blocks): `main.anchors.peers.check_username`, both names, before anything starts |
+| H6 | closed | Metamon hardcodes `ws://localhost:8000` (`PokeEnvWrapper.server_configuration`), our shared dev port. No flag, env var or constructor argument exists, so the driver rebinds the module global before any env is built and refuses 8000 / 8001 in its own code |
+| H9 | closed | Metamon's unflushed prints hid its readiness banner and the peer looked dead: `PYTHONUNBUFFERED=1` in the peer env |
+| H10 | closed | A lingering websocket between halves: half 1's client still held the name, Showdown answered `\|nametaken\|`, the fork continued as a guest and the peer challenged a user that no longer existed (a ~8 min hang). The socket closes between halves AND each half plays under its own username suffix |
+| H11 | closed | Two `poke_env` packages in one process broke silently. The peers are SUBPROCESSES with `PYTHONPATH=""`, nothing in this repo imports Metamon, and since P6 no side of ours imports poke-env, so the peer's upstream copy is the only one in any read |
+| H13 | closed | Torch's default thread pool on B = 1 inference burned 210 % CPU per peer, about 20× slower than necessary. `OMP_NUM_THREADS=1` (+ MKL / OpenBLAS / numexpr / torch) in the peer env and in `metamon_side.py` before torch imports, pinned by `src/main/anchors/peers_test.py`; parallelise ACROSS cells, never inside one forward pass |
+| H14 | closed | `--opponent foulplay` could not run a multi-game `ours_challenge` half: our poke-env sent challenge k+1 about 0.4 s into battle k and Foul Play, which reads its PMs only between battles, dropped it and waited forever (`no_progress` after 1 game). The defect was OURS. `--challenge-mode serial` is the default (`gen3_anchor_serial_challenge_v1`), both transports challenge serially by construction, and `--challenge-mode pipelined` is refused with its reason |
+| H15 | closed | A bare TCP readiness probe fabricates an ERROR in the front end's log (`websockets` answers connect-then-close with a three-deep traceback), and "0 ERRORs in the server log" is the validation criterion: a server that PRINTS a readiness line (`[ws_frontend] READY`) is never TCP-probed (the Node server, which prints none we parse, still is) |
+| H16 | closed | A composite verification flag hid which half failed: `regime_verified` ANDed "did the regime take effect?" with "did the peer exit cleanly?", and read false on 31 of 84 sub-cells of the 2026-09-20 continuation campaign whose every `argmax_match_rate` was 1.0000. `regime_verified_decisions` and `peer_clean` are separate fields on every row and summary (`gen3_anchor_regime_split_v1`); `regime_verified` survives as their AND, deprecated. The 84 sub-cells re-derive as verified with no win rate or verdict changed (`measurements/anchor_ab_continuation_2026-09-20/regime_split_rederived.json`) |
+
+### 3.5 About us
+
+A long campaign that imports the MAIN checkout is not pinned, and `main` moves on a multi-session box: the parallel
+Metamon de-risk landed `--forfeit-turn-limit` mid-run on 2026-09-14 and an `AttributeError` killed a Foul Play session
+silently after 40 games. Run a campaign from its own worktree, or pin the commit it imports (a registered read does:
+G8).
 
 ---
 
@@ -762,7 +851,7 @@ parity.** ⚠️ The team distribution in that campaign was ASYMMETRIC (we pinne
 and flags any residual asymmetry, so a rerun through the tool is not directly comparable to the
 0.388.
 
-### X26 — `rb_x26_s2601` @ 161,000,169 (2026-10-17, the production baseline, LIVE run)
+### X26 — `rb_x26_s2601` @ 161,000,169 (2026-10-17; the run was still live)
 
 1,080 games, our side greedy on the in-process Rust core slot, Metamon @ `0a00a759` on CPU, 20-game
 role-balanced units, every counted unit `status OK`, `regime_verified_decisions` true,
@@ -785,30 +874,28 @@ role-balanced units, every counted unit `status OK`, `regime_verified_decisions`
 | SmallRL greedy · home (pool) | 200 | 0.785 [0.723, 0.836] | BETTER | K2: 0.755 → +0.030 [−0.040, +0.093] NOT DETECTED |
 | SmallRL t1 · away | 100 | 0.730 [0.636, 0.807] | BETTER | `ai_v12_02`: 0.560 → +0.170 [+0.037, +0.295] |
 
-**The near-term goal (Kakuna on our teams at its strongest temperature, lower bound > 0.50) is MET at
-this checkpoint, on our TRAINING teams** (on held-out teams X26 loses, below), at both Kakuna settings; greedy and T = 1.0 read identically here (Δ 0.000
-[−0.087, +0.087]), so "Kakuna is strongest at T = 1.0" is not reproduced. **On `away` (Metamon's `competitive`
-set, 19 of whose 20 teams are in our pool) it is NOT DETECTED** (0.497 at n = 400), and against SmallRL X26 is level with K2, the previous lineage's plateau.
-**K2 against Kakuna (2026-10-17, `measurements/k2_x26_kakuna_both_teamsets_2026-10-17/`):** K2 is played by its own
-training pin `a5b2fdba` on `gen3ai_stable` (torch 2.5.1, the pin's poke-env client; it does not load at HEAD), X26 by
-the X26 read's `63f97a57`, so the difference crosses two harnesses (that read's § Comparability). On `away`
-K2 loses to Kakuna (0.355 [0.310, 0.403], WORSE) and X26 is **+0.143 [+0.074, +0.209]** ahead of it, DETECTED. On
-home72 at n = 400 (both cells topped up on paired seeds 12–19), K2 reads 0.487 [0.439, 0.536] and X26 reads 0.575
-[0.526, 0.623]. That puts X26 **+0.087 [+0.018, +0.155]** ahead of K2, DETECTED. K2 − N0 is +0.027 (NOT DETECTED),
-so the gain over N0 on our teams belongs to the K2 → X26 step. The goal bar still holds at n = 400 (lower bound 0.526).
-🚨 **On held-out teams it does not (2026-10-18, `measurements/heldout_teams_kakuna_2026-10-18/`).** `heldout72` is 72
-replay-derived `hl_05_26` teams with 0 exact matches and 0 sharing ≥ 4 mon sets with our pool or `competitive`. There X26
-reads **0.395 [0.348, 0.444]** and K2 **0.357 [0.312, 0.406]**, both WORSE than even, and X26 − K2 is +0.038 [−0.030,
-+0.104], NOT DETECTED. X26 loses 18 pp from home72. The set is both unseen by us and a different population (high-ladder
-replays, usage-sampled fills, Hidden Power Dark on 164 / 432 mons), possibly of the kind Kakuna's replay data covers;
-this read does not separate the two. **With Hidden Power repaired (`heldout72_hpfix`, `measurements/heldout72_hpfix_kakuna_2026-10-18/`)**
-X26 reads **0.448 [0.400, 0.496]** and K2 **0.367 [0.322, 0.416]**, both still WORSE; the repair moves neither detectably
-(X26 +0.052, K2 +0.010), X26 stays −0.127 below home72, and X26 − K2 is **+0.080 [+0.012, +0.147]**, DETECTED (its change
-from heldout72's +0.038 is not). Repairing the HP Dark fill does not close the held-out gap (its own effect is neither
-detected nor excluded). **Quote the goal as "met on our training teams", never as "met".**
-PROVISIONAL (one checkpoint, one seed, a run 161M into a 500M cap). 🚨 **Run `main.anchors` from the
-checkout ROOT**: the pool (`home`) source resolves `data/teams` against the CWD and, from `src/`,
-finds 0 teams and dies as `our_side_error: IndexError` (the read's FINDING 1).
+**Reading the table.** The near-term goal (Kakuna at its strongest temperature, lower bound > 0.50) is MET at this
+checkpoint on our TRAINING teams (home72, at both Kakuna settings: greedy and T = 1.0 read identically, Δ 0.000
+[−0.087, +0.087], so "Kakuna is strongest at T = 1.0" is not reproduced). On `away` (19 of 20 teams in our pool) it is
+NOT DETECTED, and on held-out teams it is not met: X26 loses 18 pp from home72 on `heldout72`. **Quote the goal as "met
+on our training teams", never as "met".** Against SmallRL X26 is level with K2, the previous lineage's plateau.
+
+* **K2 vs X26 crosses two harnesses** (`measurements/k2_x26_kakuna_both_teamsets_2026-10-17/`): K2 is played by its own
+  training pin `a5b2fdba` on `gen3ai_stable` (torch 2.5.1, the pin's poke-env client; it does not load at HEAD), X26 by
+  the X26 read's `63f97a57` (that read's § Comparability). K2 loses to Kakuna on `away` (0.355, WORSE) and X26 is ahead of it on away (+0.143), home72 (+0.087) and
+  `heldout72_hpfix` (+0.080), DETECTED; on `heldout72` (+0.038) NOT DETECTED, and the change between those two held-out
+  deltas is not detected either. K2 − N0 is +0.027 (NOT DETECTED), so the
+  gain over N0 on our teams belongs to the K2 → X26 step.
+* **`heldout72`** (`measurements/heldout_teams_kakuna_2026-10-18/`) is 72 replay-derived `hl_05_26` teams with 0 exact
+  matches and 0 sharing ≥ 4 mon sets with our pool or `competitive`. It is both unseen by us and a different population
+  (high-ladder replays, usage-sampled fills, Hidden Power Dark on 164 / 432 mons), possibly of the kind Kakuna's replay
+  data covers; this read does not separate the two. The Hidden Power repair (`heldout72_hpfix`,
+  `measurements/heldout72_hpfix_kakuna_2026-10-18/`) moves neither model detectably (X26 +0.052, K2 +0.010) and does not
+  close the held-out gap (its own effect is neither detected nor excluded).
+
+PROVISIONAL (one checkpoint, one seed, a run 161M into a 500M cap). 🚨 **Run `main.anchors` from the checkout ROOT**: the
+pool (`home`) source resolves `data/teams` against the CWD and, from `src/`, finds 0 teams and dies as `our_side_error:
+IndexError` (the read's FINDING 1).
 
 **The home72 config is COMMITTED** (2026-10-17, T55, F21): `measurements/x35_breakers_stage_2026-10-17/anchors_home72_kakuna.json`
 is byte-identical to the one this read used (sha256 `e8a064db…`), and `home72_manifest.json` beside it pins all 72
@@ -877,35 +964,35 @@ integrity counters (`hit_forfeit_limit`, `n_defaults`, `n_redecides`, `distinct_
 realized visit count and `their_argmax_match_rates`. `python -m main.anchors` prints the same block
 at the end, regime first.
 
-**Before believing a number, check three things:**
+**Before believing a number, check four things:**
 
-1. `status == "OK"`. A `FAILED` read still carries its games — that is deliberate, so a partial n is
-   never mistaken for a full one — but it is not a measurement. The named causes are
-   `peer_never_ready`, `peer_exited`, `no_first_game`, `no_progress`, `short_series`,
-   `our_side_error`.
-2. 🚨 **`regime_verified_decisions == true`** — the field the verification reads
-   (`gen3_anchor_regime_split_v1`). It is true when BOTH halves' `sample` kwarg matched the regime
-   AND the per-decision `argmax_match_rate` was regime-appropriate over at least one decision:
-   exactly `1.0` in a greedy cell, materially **below** 1.0 in a t1 cell. The sampling cell is the
-   POSITIVE CONTROL — an instrument reading 1.000 in both regimes would have no power — and the
-   "at least one decision" clause closes the vacuous pass, because a check that never ran reads
-   exactly like one that passed. `their_argmax_match_rates` is still printed beside it; read the
-   flag, then look at the rates.
-   ⚠️ **`peer_clean` is a SEPARATE line and is not part of this check.** It says every peer
-   process exited 0. A false `peer_clean` is a reason to read a peer log, **never** a reason to
-   discard a win rate whose regime verified on every decision — see hazard **H16**.
-   ✅ **A `peer_exit_notes` entry means the tool RECOGNISED the dirty exit.** `peer_recursion_
-   upstream` is Metamon's post-game recursion in the half where Metamon challenges (hazard
-   **H17**), stamped only when every game of that half is present: the games stand and the read
-   is a measurement. A dirty exit with NO note is one nobody has diagnosed — read the log.
-   ⚠️ **`regime_verified` is DEPRECATED (one release)**: it is the AND of the two, and reading it
-   is how 31 of 84 sub-cells got flagged as unverified when nothing was wrong with them.
-3. The TEAM condition, and for Foul Play a non-null `realized_visits_per_decision_mean`.
-   `team_source_asymmetry` compares only the two sides' file COUNTS; `team_content_asymmetry`
-   compares their CONTENT digests (`our_team_digest` / `their_team_digest`, null = unknown). An
-   UNDECLARED cell needs `team_source_asymmetry == false` and `team_content_asymmetry` not true; a
-   cell with `declared_team_cell == "asymmetric"` needs instead its two digests to equal the ones
-   its registration declared. Decide it with `main.anchors.results.unit_counts` (§2), never by eye.
+1. `status == "OK"`. A `FAILED` read still carries its games, deliberately, so a partial n is never mistaken for a full
+   one, but it is not a measurement. The named causes are `peer_never_ready`, `peer_exited`, `no_first_game`,
+   `no_progress`, `short_series`, `peer_long_tail_fault` (H5 · H17 · H21), `non_battle_termination` and
+   `forced_end_guard_blind` (G6), `core_slot_error`, `live_parse_halt`, `live_client_error` and `our_side_error`.
+2. 🚨 **`regime_verified_decisions == true`** — the field the verification reads (`gen3_anchor_regime_split_v1`, G1). It
+   is true when BOTH halves' `sample` kwarg matched the regime AND the per-decision `argmax_match_rate` was
+   regime-appropriate over at least one decision: exactly `1.0` in a greedy cell, materially **below** 1.0 in a t1 cell.
+   The sampling cell is the POSITIVE CONTROL (an instrument reading 1.000 in both regimes would have no power) and the
+   "at least one decision" clause closes the vacuous pass, because a check that never ran reads exactly like one that
+   passed. `their_argmax_match_rates` is printed beside it; read the flag, then look at the rates.
+   - **`peer_clean` is a SEPARATE line** (H16, G2): every peer process exited 0, recorded no error and printed no
+     long-tail line. A false `peer_clean` does not say the regime failed, so read the peer log for the cause. But
+     `unit_counts` counts a unit only when it is true, so such a unit is no measurement for a read, and a long-tail line
+     (H5 · H17 · H21) also fails the half (`peer_long_tail_fault`, VOID). For a one-off cell with `status OK` and no
+     long-tail line, a nonzero rc alone does not invalidate a verified regime: quote the number with the flag stated,
+     never pool it.
+   - **A `peer_exit_notes` entry means the tool RECOGNISED the dirty exit.** `peer_recursion_upstream` is Metamon's
+     recursion in the half where Metamon challenges (H17), stamped only when every game of that half is present. It is a
+     diagnosis: its long-tail lines have already voided the unit. A dirty exit with NO note is one nobody has diagnosed;
+     read the log.
+   - `regime_verified` is DEPRECATED (one release): it is the AND of the two, and reading it is how 31 of 84 sub-cells
+     got flagged unverified when nothing was wrong with them.
+3. The TEAM condition, and for Foul Play a non-null `realized_visits_per_decision_mean`. `team_source_asymmetry`
+   compares only the two sides' file COUNTS; `team_content_asymmetry` compares their CONTENT digests
+   (`our_team_digest` / `their_team_digest`, null = unknown). An UNDECLARED cell needs `team_source_asymmetry == false`
+   and `team_content_asymmetry` not true; a cell with `declared_team_cell == "asymmetric"` needs instead its two digests
+   to equal the ones its registration declared. Decide it with `main.anchors.results.unit_counts` (§ 2), never by eye.
 4. 🚨 **`team_overlap`** (2026-10-18): how much of the team set our training pool holds. A read on teams the pool
    already contains is a read on training data, whatever the set is called. A summary without the block predates
    `gen3_team_overlap_v1`; compute it with the module for any number you quote.
@@ -935,7 +1022,9 @@ and its Wilson interval — and for a search opponent the realized visit count.
 
 ## Amendment 2026-09-16 — the per-promotion read is BUDGET-CONDITIONAL, and the anchor `--model` spelling
 
-**Standing per-promotion read (from `ai_v13_03_fork` on):** `python -m main.anchors --model models/<run>/snapshots/snapshot_<12-digit step>.zip --opponent metamon:SmallRL --regime greedy --teamset away --games 100 --device cpu` with `OMP_NUM_THREADS=1`, ONE cell at a time in the foreground (batched anchor runs were killed by a session harness's memory accounting with 67 GB free). 🚨 `--model <run>@<promoted step>` FAILS — `resolve_model_ref` does not search `snapshots/`, and checkpoint steps are on a different cadence from promotions (backlog row).
+**Scope today:** Tier A stands. No code or schedule runs an external anchor per promotion; an anchor is read at milestones (§ 1). What below still holds is the cell's measured noise floors, the fire rule if someone does read this cell per promotion, and the `--model` spelling warning.
+
+**The per-promotion read, if you take it (from `ai_v13_03_fork` on):** `python -m main.anchors --model models/<run>/snapshots/snapshot_<12-digit step>.zip --opponent metamon:SmallRL --regime greedy --teamset away --games 100 --device cpu` with `OMP_NUM_THREADS=1`, ONE cell at a time in the foreground (batched anchor runs were killed by a session harness's memory accounting with 67 GB free). 🚨 `--model <run>@<promoted step>` FAILS — `resolve_model_ref` does not search `snapshots/`, and checkpoint steps are on a different cadence from promotions (backlog row).
 
 **Floors, measured 2026-09-16 on this cell:** three-seed RUN-level floor **0.110** (`ctrl10M` / `_b` / `_c` read 0.440 / 0.380 / 0.330, each ±0.095); **eval-draw floor 0.020** (four team-seed draws of the same `fork@10M` snapshot: 0.530 / 0.510 / 0.530 / 0.510). The run-level variance on this cell belongs to the RUN, not the draw.
 

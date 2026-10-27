@@ -48,8 +48,9 @@ The freshness gate scans the seven topic trees for dead paths, flags and `python
 
 **`ops/`:** `TRAINING_RUN_SOP.md` and `ORCHESTRATOR_SOP.md` are the procedures of record for the two
 long-lived sessions; an owner ruling on how a session operates goes into the owning section there, not
-into a memory file. `EXTERNAL_ANCHORS_SOP.md` (strength against agents we did not train; box paths in
-`anchors.json`), `testing.md` and `training_runbook.md` (the root's testing and training chapters),
+into a memory file. `EXTERNAL_ANCHORS_SOP.md` (strength against agents we did not train; its § 0 is the
+regime-and-guards table that decides whether two numbers compare; box paths in `anchors.json`), `testing.md` and
+`training_runbook.md` (the root's testing and training chapters),
 `cloud_gpu_benchmark.md` (the vast.ai rental runbook), `cloud_gpu_plan.md` (training on a rented card: the card rule, the mechanics, the cost), `deletion_pass_manifest.md` (the post-M5 deletion
 pass), `history_rewrite.md` (the one-shot account-name purge of git history: runbook; `python -m utils.git_sha`
 resolves an OLD sha an immutable record cites), and `instruction_docs_principles.md` (how every `CLAUDE.md`,
