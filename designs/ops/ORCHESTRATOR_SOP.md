@@ -368,8 +368,8 @@ entries naming what they supersede) → **dispatch** the next probe or build to 
   than committing to a fixed batch — as long as an answer is ready whenever the GPU frees or the
   Training Run session needs one.
 - **The one hard rule: if the orchestrator does not hold a ~1-WEEK goal from the owner, it ASKS.**
-  The current goal is stated in `designs/research_state/UNDERSTANDING.md` §1 ("the goal for the
-  coming week"); when it is exhausted or superseded, ask for the next.
+  The current goals are stated in `designs/research_state/UNDERSTANDING.md` §1 ("The current
+  goals"); when they are exhausted or superseded, ask for the next.
 - **A blocked Training Run session never idles the GPU, at any hour.** (Originally a night rule —
   20:00–08:00, where an idle GPU costs ~12 GPU-hours — generalized by the no-cap grant above to any
   hour.) Pick, in order: the REGISTERED successor arm (launched under `TRAINING_RUN_SOP.md` §1's

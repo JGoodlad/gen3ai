@@ -2,2228 +2,582 @@
 
 ## 0. What this file is, and how to read a claim
 
-`ARCHITECTURE.md` states what the MODEL is now; `ledger.md` records what was believed at each moment
-and is never edited; the `learning/` notes explain concepts rather than holding a position. **What we
-currently believe about the research** had no home. This file is it — the research twin of
-`ARCHITECTURE.md`, **always-current, present tense only.** It carries no narrative of how a belief
-changed; that is the ledger's job, and when the two disagree **the later ledger entry wins and this
-file is a bug — fix it in the same pass.** The one-page dashboard of the same beliefs (each goal's number, what is
-running, what waits on the owner) is [`../STATUS.md`](../STATUS.md): STATUS is the dashboard, this file the reasoning.
+`ARCHITECTURE.md` states what the MODEL is now; `ledger.md` records what was believed at each moment and is never
+edited; the `learning/` notes explain concepts. **This file is what we currently believe about the research**:
+always-current, present tense, no story of how a belief changed (that is the ledger's job). When the two disagree,
+**the later ledger entry wins and this file is a bug: fix it in the same pass.** The one-page dashboard of the same
+beliefs (each goal's number, what is running, what waits on the owner) is [`../STATUS.md`](../STATUS.md): STATUS is
+the dashboard, this file the reasoning.
 
-Every claim carries two things:
+**Scope: the Rustboro era** (runs named `rb_…`, from 2026-10-03; `utils/era.py`). Pre-era work appears only as the
+few lessons in §2, or with an era caveat where it still steers a decision. The last full text before this rewrite
+is `git show cdca64227:designs/research_state/UNDERSTANDING.md`; an older pointer to a section cut on 2026-10-26
+(the flywheel §2.x, the pre-era meters §3.3–§3.6, the win-prob critic era §4.1–§4.3 and §4.2b, the search dividend
+§4.x) resolves there.
 
-**(a) An evidence tag**, in the project's own vocabulary. The floor referred to is always an
-**operational replicate floor**: what two same-recipe arms differ by, measured as the MAX pairwise
-|Δ| over the replicates in hand.
+**Words used throughout.** "pp" is percentage points of win rate. A bracket is a 95 % interval unless it says
+90 %; LB / UB are its lower / upper bound, and Δ̂ is a point estimate. "Greedy" play takes the top action. A "nat" is
+the unit of log loss (lower predicts better).
+
+Every claim carries three things.
+
+**(a) An evidence tag.** A floor is an **operational replicate floor**: what two same-recipe arms differ by, the MAX
+pairwise |Δ| over the replicates in hand.
 
 | tag | means |
 |---|---|
-| **SIGNIFICANT** | magnitude above the replicate floor AND the CI excludes zero |
-| **WITHIN FLOOR** | the CI excludes zero but the magnitude is under the floor — the games are consistent, the instrument cannot separate the arm from a re-run of the same recipe |
-| **NOT DETECTED** | magnitude above the floor but the CI spans zero |
-| **EQUIVALENCE SUPPORTED** | the DELTA's own CI lies inside the floor band — the strong form, never "the intervals overlap" |
-| **INDETERMINATE** | outside the floor AND straddling zero — the instrument answered nothing |
-| **REFUTED** | a pre-registered prediction contradicted, often with the sign reversed |
+| **SIGNIFICANT** | magnitude above the replicate floor AND the 95 % interval excludes zero |
+| **WITHIN FLOOR** | the interval excludes zero but the magnitude is under the floor |
+| **NOT DETECTED** | the interval spans zero |
+| **EQUIVALENCE SUPPORTED** | the DELTA's own interval lies inside the floor band (never "the intervals overlap") |
+| **INDETERMINATE** | outside the floor AND straddling zero: the instrument answered nothing |
+| **REFUTED** | a pre-registered prediction contradicted |
 | **UNVERIFIED** | asserted, not checked against code or a measurement |
 
-"No effect" is retired as a label for any of these.
+A registered read uses its own rule's words: **GAIN** (lower bound > 0), **LOSS** (upper bound < 0), **NULL** (the
+interval inside the registered band: ±2 pp in-house, ±3 pp against Kakuna), **UNDECIDED** (anything else; at look 1
+with a positive point it CONTINUEs to look 2), **NON-INFERIOR** (lower bound above the registered loss bar). Also:
+**DESCRIPTIVE** (post hoc, no registered verdict), **PROVISIONAL** (one seed or one checkpoint), **SELF-REFEREE**
+(scored by our own network playing both sides). "No effect" is never a label.
 
-**(b) A pointer** — a ledger entry by DATE + TITLE, or a path under `measurements/`. A number with
-no pointer is not a measurement.
+**(b) A pointer**: a ledger entry by DATE + *TITLE*, a landing commit (backticked hex, `git show <sha>`), or a path
+under `measurements/`. A number with no pointer is not a measurement.
 
----
+**(c) A regime**: what the number was measured against. The Rustboro regimes:
 
-## TL;DR — the headline bullets
-
-0. **Where we stand (the Rustboro era; the dashboard is [`../STATUS.md`](../STATUS.md)).** The strongest checkpoint is
-   **P\* = X26 (`rb_x26_s2601`) @ 280M, at its plateau**: 100M more plain training is FLAT against Kakuna
-   (+0.08 pp [−3.90, +4.06]) and in-house. Against Metamon's Kakuna, P\* wins on our teams (home72 **0.598
-   [0.549, 0.644]**, goal (a) MET) and is level on unfamiliar teams (**0.487 [0.459, 0.515]**, goal (b) ≈ 4 pp short).
-   The deficit is PILOTING an unfamiliar team, which only Kakuna games see. No lever read since (X52, D1, D3 look 1,
-   the belief prior mix) is detected; breadth at 10⁴ teams (N1-P) is trained and being read. [§3.1; ledger 2026-10-21
-   · *X51 PLATEAU vs KAKUNA*; 2026-10-25 · *X26c CONTINUATION vs KAKUNA*]
-
-   Bullets 1–18 are the PRE-ERA findings (ai_v8 – ai_v14): measured on inputs that carried since-fixed GIGO, they are
-   directions to re-test, not levels (§1, the era close-out). Bullets 19–22 are Rustboro-era.
-
-1. **The goal is a gen3 OU generalist that keeps improving.** The intended engine is the
-   **flywheel**: train narrow exploiters (best responses on a few pinned teams), distil them back
-   into the generalist (the *fold*), repeat. It has delivered once — v8_14, **+69 anchored ELO** —
-   and has not gifted since. [SIGNIFICANT · `learning/distillation_flywheel_lessons.md`]
-2. **v8's celebrated gift REPLICATES**: three fresh arms of its exact recipe give **+4.56pp
-   [+1.14, +7.81]** untaught at +1.09M against v8's own +4.64. [SIGNIFICANT · ledger 2026-09-05 ·
-   *P1 — v8's gift REPLICATES*]
-3. **But a plain continuation of the same parent gains the same** — no teacher, no distillation
-   term, no stable opponents: **+3.45pp [+0.46, +6.48]**, and the full recipe minus the
-   continuation is **−1.11pp [−3.12, +0.91]**, inside the ±3.22 floor. **v8's recipe ≡ training its
-   parent on.** The gift was the parent still learning, measured against a frozen copy of itself.
-   [EQUIVALENCE SUPPORTED · ledger 2026-09-06 · *CELL 2*]
-4. **Our parents gain NOTHING from a plain continuation ON THE UNTAUGHT SLICE** — G5 **−1.92pp
-   [−3.98, +0.46]**, three draws across two gen-era parents, none gains. **The frozen-parent
-   baseline stands on our side for the untaught meter**, and the cell-2 alarm ("every untaught delta
-   is against the wrong baseline") does NOT generalise there.
-   [NOT DETECTED · ledger 2026-09-06 · *G5 RESULT*]
-4b. **But the SAME continuation DOES gain on the TAUGHT slice: +2.09pp [+0.47, +3.79], clearing
-   zero.** The slices answer differently, so "the frozen parent is a fair baseline" is a claim about
-   the untaught meter only. Re-based on the continuation, the folds' on-slice gift is **+2.6 to
-   +3.4pp** (four of six arms clear zero) against ~+4.2 to +5.5pp read against the frozen parent —
-   **the gift survives the correction**. ⚠️ That re-based column is an **UPPER BOUND**: G5's taught
-   reading is at fork+1.18M against the fold readings' ~fork+4.45M, so it subtracts too small a
-   continuation, and a fuller correction pushes the numbers down, possibly below zero. **The
-   asymmetry is the carrying finding** — ordinary continued training improves taught teams while
-   doing nothing measurable for the untaught 8, so part of what was credited to a fold on-slice was
-   available from training alone. [SIGNIFICANT, with the depth caveat · ledger 2026-09-06 ·
-   *G5 slice (iii)*]
-5. **⇒ The cross-era difference is the PARENT, not the fold and not the meter.** *Maturity* is the
-   SHAPE of that result, one CONFOUNDED candidate cause — the two parents differ in step count
-   (277M vs 28M) **and** in architecture, obs dim, reward composition and ecology. [UNVERIFIED as a
-   cause · ledger 2026-09-06 · *G5 RESULT*]
-6. **What our folds do**: teach **~+5pp on the taught slice** (SIGNIFICANT), dig a **~3–4pp
-   off-slice hole by +1M** regardless of teacher content, and recover only when the teachers are the
-   parent's own near exploiters. Funded (further-travelled) teachers ROB **−2.41pp [−4.37, −0.63]**
-   and buy nothing on-slice. **DOSE is null** across a 4× range and at two frozen doses.
-   [ledger 2026-09-05 · *RETRACTION + full 2×2 series* and *K=6 CELL*]
-7. **On the gen side the distillation LOSS and its team-sampling bias carry both the gift and the
-   leak** — with the loss off (C1) the fold moves the untaught meter by nothing, with it on it robs
-   6–9pp. On v8's side the SAME cell gifts +4.92pp. Same cell, opposite verdicts.
-   [ledger 2026-09-03 · *C1 vs B2 COMPLETE*; ledger 2026-09-06 · *CELL 1*]
-8. **A fold's Δθ is a dose-scaled RANDOM WALK of the trunk** — `|Δθ| ∝ t^0.48`, replicate cosine
-   0.56, the same magnitude with the loss on or off and the same for robbing and neutral teachers.
-   The off-slice KL is carried by encoders + transformer (**51–74%**); the pointer head carries
-   **0.5–5.6%**. **Robbery is a DIRECTION, not a size**, and no scalar we own measures it.
-   [meas: `arch_transfer_2026-09-05/fold_displacement/`]
-9. **Teacher facts that survive.** v8's teachers are **LOCAL** (sibling-control R **1.83
-   [1.53, 2.17]**) and DESCEND from their fold parent; ours are **GLOBAL-from-origin SIBLINGS** of
-   theirs (0.53 nats from the parent before any exploiter training), and the fork origin explains
-   only **~24% / 12%** of the gap. [SIGNIFICANT cross-era · meas:
-   `arch_transfer_2026-09-05/content_locality_v2/`]
-10. **Exploiter drift is FORGETTING, not specialisation.** Every exploiter set pilots the untaught 8
-    WORSE than its origin; the funded teachers by **−7.81pp [−15.23, −0.39]**, at roughly **3pp of
-    on-slice edge per 1pp of untaught win rate lost**. [SIGNIFICANT · meas:
-    `arch_transfer_2026-09-05/exploiter_competence/`]
-11. **The ARCHITECTURE account of the era gap is CLOSED on every leg** — head gradient kernel, trunk
-    sharing kernel, v8's FiLM team code (3.8% of on-slice KL), and search depth (re-ranks +0.19% of
-    changed decisions) are each NOT DETECTED or REFUTED. [meas: `arch_transfer_2026-09-05/`]
-12. **v8_14 is genuinely the stronger policy**: it beats v9_59 **63.3% [59.3, 67.2]** over 559
-    decisive games, and the anchored-ELO extrapolation is corroborated (+91.7 predicted, +94.9
-    measured). 560 direct games resolve the gap to ±30 where 720 bot games leave ±86.
-    [SIGNIFICANT · meas: `arch_transfer_2026-09-05/cross_era_head_to_head/`]
-13. **The eval-trace quota is LOSS-ENRICHED and raw calibration reads are artifacts** — the same
-    traces read ECE 0.237 raw and **0.025 reweighted**, skill −0.080 raw and **+0.265** reweighted.
-    [SIGNIFICANT · meas: `winprob_critic_baseline_2026-09-06/`]
-14. **The critic's disease is RESOLUTION (blur), not level** — population-mean gaps are small and
-    sign-flip by ecology; ~39% of conviction-region blur is the IRREDUCIBLE hidden-information
-    floor. The win-prob gate's primary endpoint is therefore a resolution gate.
-    [`critic_calibration_plan.md` §0]
-15. **The critic is the win-prob head:** `V(s) = σ(win logit) ∈ [0,1]`, its loss the BCE against the terminal WIN
-    INDICATOR, γ = 1, no PopArt, no shaping, and no separate value tower (`ARCHITECTURE.md`). Its adoption read on
-    `ai_v12_02_winprob_critic` (arm 1 `ai_v12_01` ran a stripped architecture and is not evidence): the famine pre-test
-    against `ai_v9_29_rev1_0823`, floor **38 Elo**, read **NO KILL at 10M (−30 at n = 4) and WITHIN FLOOR at n = 12
-    (−34 at 26M)**. [§4.2; ledger 2026-09-07 · *10M DECIDING READ* and *THE n = 12 STRENGTH READ*]
-
-16. **An exploiter's gain is TARGET-SPECIFIC, not piloting skill.** Three matched five-team
-    teachers are all LEVEL with their parent on their own teams against a fixed third party
-    (−1.00 / +0.58 / −1.12 pp vs floors 4.75/8.50, 24,000 battles) — and the one that beat that
-    parent 0.657 head-to-head is the most negative of the three. A head-to-head number and a
-    third-party number are different measurements. [§2.6; ledger `be03bd74`]
-17. **There is a PLATEAU PARENT.** The 75M win-prob parent's +15.5 pp continuation gain is
-    exhausted by +20M: another +8.06M moved it −1.50 pp [−3.75, +0.62] against a 3.69 floor. Every
-    era-2 fold reads against `ai_v13_12_plateau` @95,158,272, which removes the §2.2 confound by
-    construction. [§2.2; ledger `3459ecce`]
-18. **The ai_v14 lineage's sharpening is mostly STARVATION.** From N0@75M to K3 the share of
-    decisive turns where a near-best action gets < 1 % rises ~0.33 → ~0.50 (3/3 continuations),
-    while the mass on dominated moves falls only ~0.018; worst on switches, almost all at the
-    N0 → C_fix step (confounded with +8M steps). It supports X23 and X25.
-    [MEASURED · DETECTED · §4.4; ledger 2026-09-29 · *M5 LANE S GATE ④ AT SCALE*]
-19. **The END STATE passed its closing test and is adopted.** Static per-mon tokens + every recovery and
-    fact lever (8 seeds × 15M) vs the legacy production encoder (8 seeds): Δ̂ **+0.60 pp**, 90 % **[−0.72, +1.92]**
-    — not detectably worse AND precise to 2 pp (the owner's rule), not shown better. [PASS · §4.6b; ledger
-    2026-10-12 MEASUREMENT (MAJOR) *THE END-STATE CLOSING TEST: PASS*]
-20. **The bf16 trunk is NOT detectably worse than fp32 and is adopted.** The end state trained with the trunk rounds under
-    bf16 autocast (decisions, heads, losses fp32) vs fp32, 8 seeds × 15M each, the registered 8 × 8 mirrored cross:
-    Δ̂ **+1.06 pp**, 90 % **[−1.19, +3.31]** — the closing test's rule holds (upper > 0, lower > −2.0); NOT a
-    superiority read (the interval includes 0). It buys **−22.5 % `train_ms`** (54.3 s → 42.1 s per update), the GPU being
-    the bottleneck. [PASS · §4.6c; ledger 2026-10-14 MEASUREMENT (MAJOR) *THE bf16 STRENGTH A/B: PASS*] The 2026-10-15
-    canary FATAL of a bf16 toy at 72.66M is, on CPU evidence, the canary's own fixture (a PPO clip-boundary row, so two
-    healthy arms disagree 30×), not a defect of the bf16 compiled learner. The fixture is now FIXED (T36: boundary rows
-    relocated by the fp32 reference's own ratio, the confirmation on two disjoint halves); on CPU at the FATAL's weights
-    healthy pairs above the bar fall 212 / 992 → 0 / 992. [UNVERIFIED on CUDA until the GPU window at the T36 commit ·
-    ledger 2026-10-15 FINDING *the bf16 canary FATAL* + GIGO FIX *T36*]
-21. **Telling the policy the opponent's hidden facts does not make it stronger; it makes it dependent.** The end state forked
-    for 3M steps with the true moves / items / never-seen species in its observation is no stronger than its control (moves
-    **−0.38 pp [−1.86, +1.10]**, all three NULL; spreads NOT DETECTED), and withheld at play the moves and species forks are
-    ≈ 2.4–2.6 pp worse (descriptive). Hidden information is a SEARCH lever (G +0.07 per decision), not a policy lever, at this
-    maturity. [NULL · PROVISIONAL (+3M, one 15M parent, no placebo) · §4.5; ledger 2026-10-15 MEASUREMENT (MAJOR) *THE
-    KNOCK-IN FORKS*]
-22. **At production's 15M budget, a toy with only entity tokens and attention, trained for the SAME GPU wall clock,
-    is STRONGER than production.**
-    - The toy is T-ENT: 1.42M parameters, ≈ 3.3× production's steps per second. At the wall clock production needs for
-      15M steps, it reaches ≈ 46–48M steps.
-    - Against the 8 EB 15M finals it scores **+6.5 pp, 90 % [+4.5, +8.4]**. At matched steps the same toy is
-      −14.1 pp (15M) and −25.5 pp (5M). At its 100M cap it scores +10.2 pp against EB 15M.
-    - This holds at ONE budget. At the two plateaus the ordering reverses: against Kakuna the toy's plateau T\*
-      (290M) scores −10.5 pp (home72) and −7.3 pp (forum72) below P\*, both detected (ledger 2026-10-21 · *X51*).
-      R-T2's registered head-to-head (toy cap vs X26 plateau) is unread.
-    - [MEASURED · DESCRIPTIVE (seeds-as-units interval, not T40) · ledger 2026-10-16 MEASUREMENT *THE T-ENT TOY AT
-      EQUAL COMPUTE BEATS production at 15M*; `design_x26_readiness.md` §3.5]
+| regime | what it measures |
+|---|---|
+| **Kakuna** | our model against Metamon's strongest public model, Kakuna (checkpoint 34, 142.8M parameters; ours has 2.61M), both sides greedy, on CPU: 400 games a panel in 20-game units with paired seeds (`main.anchors`, `main.reads`). The goal reads |
+| **the panels** | **home72**: 72 of the 719 teams we train on. Three UNFAMILIAR panels, teams our model never trained on: **H** (`heldout72_hpfix`, 72 ladder-replay teams with Hidden Power repaired), **F** (`forum72`, human-built Smogon-forum teams), **P72** (procedural teams built from Smogon usage). **U** is H, F and P72 at equal weight. Registered in `heldout_panels.json` and `diagnostic_panels.json` |
+| **in-house S** | the population score: mirrored-pair games against a frozen 7-member reference population R, 500 pairs a member, greedy, CPU (X35's readout). Every plateau lever's in-pool guard |
+| **the fork frame** | an X35 plateau lever is P\* + 20M steps with ONE change, at the production pin, seeds 3501–3503 (3504–3505 at look 2), read against **C0** = P\* + 20M of plain training on the same seeds. Its primary statistic R1 is the lever's S minus C0's |
+| **search banks** | banked decision states, every legal action played to the end under shared dice ("common random numbers", CRN), in win probability per decision. **Oracle** worlds know both real teams; **honest** worlds are drawn to agree with everything our side saw |
 
 ---
 
-## 1. The mission and the era map
+## TL;DR — what we know now
 
-**The goal.** A gen3 OU generalist that keeps improving — not a specialist, not a search agent. The
-owner's permanent side constraint is that it must be able to play the public ladder; the external
-milestone is Metamon's published gen3ou result, ~Elo 1511 / GXE 64 (`ladder_readiness.md`).
+1. **P\* is our strongest model, and it has plateaued.** P\* is X26 (`rb_x26_s2601`) at 280M steps, the named baseline
+   `pstar_plateau`. It beats the production baseline 0.694 [0.666, 0.721] in-house. Training it 100M further (380M → 480M,
+   X26c) moves neither Kakuna U (+0.08 pp [−3.90, +4.06]) nor in-house S (−0.01 [−1.54, +1.52]). [FLAT · Kakuna and
+   in-house S · one seed · `d172c10ed`, `204204bbf`; ledger 2026-10-25 · *X26c CONTINUATION vs KAKUNA*]
+2. **Goal (a) is met: P\* beats Kakuna on our own teams**, home72 **0.598 [0.549, 0.644]**. **Goal (b) is not: it is
+   level on unfamiliar teams**, U **0.487 [0.459, 0.515]**, about 4 pp short of the ≈ 0.53 a lower bound above 0.50
+   needs. The familiarity premium (home72 − U, ≈ 11 pp) has not moved from 161M to the plateau. No panel is shown
+   Kakuna-familiar. [MEASURED · Kakuna · `3010c81ba`, `4f555e577`; ledger 2026-10-21 · *X51 PLATEAU vs KAKUNA*]
+3. **The deficit is PILOTING an unfamiliar team, not facing one.** Corrected for team strength, piloting costs
+   +0.123 [+0.039, +0.206] and facing +0.017 [−0.062, +0.095]. It is about teams unseen BY US (forum and procedural
+   teams drop as far as replay teams), and not about the teams being weak. In-house it is invisible: against its own
+   25M checkpoint P\* keeps about four fifths of its progress on unseen teams. [MEASURED · Kakuna (X26 @161M) and
+   in-house · PROVISIONAL · `8b43eb44a`, `71270538b`, `82858f433`, `fd005a6a4`]
+4. **It is lost from level mid-game positions, and it goes with the TEAM, not the set.** From level material at
+   turn 10 P\* wins 0.609 on home72 and 0.501 on U; the opening carries none of the gap. Sets we trained on lose
+   their edge inside an unfamiliar six (+0.093 [+0.004, +0.176]). [DESCRIPTIVE · banked X51 games, replicated on the
+   PastaMittens twins · `c758fcb82`] H-CTX, H-MID and N2 test it (§6).
+5. **No lever measured so far closes goal (b).** Against its own control each reads +1 to +3 pp with intervals
+   ±3–4 pp wide: practice on 36 teams (X52) +1.3 pp on the unpractised half, UNDECIDED; a wider pool (D1) +2.10
+   [−0.92, +5.11], UNDECIDED (final), at −1.61 pp in-pool; set mutation (D3, look 1) +1.27 [−2.63, +5.16], CONTINUE,
+   with an engine-mix caveat; the belief prior mix ±1.50, NOT DETECTED; plain training FLAT. [Kakuna · `42bb0858d`,
+   `eb99ab362`, `58287c525`, `f299a7243`, `71c76dfbb`, `204204bbf`] Breadth at 10⁴ teams (N1-P) and human data
+   (X59-S) are being read.
+6. **The belief stack memorises the pool, but that is not where games are lost.** On unfamiliar opponents 63–85 %
+   of the hidden slots hold the wrong species guess, yet mixing in the Smogon prior (λ = 0.25: U +1.50 pp [−2.74,
+   +5.74]) or using the prior alone (λ = 1: −1.50 [−5.47, +2.47]) moves Kakuna games by nothing detectable at ±5 pp.
+   [MEASURED · calibration DESCRIPTIVE, games registered · ledger 2026-10-26 · *H3 … BANKED ON CALIBRATION*, *THE
+   BELIEF PRIOR MIX* (both λ)]
+7. **Kakuna is the right opponent.** Metamon's ensemble PastaMittens is not stronger for us (U −0.25 pp [−4.23,
+   +3.73]), and P\* beats all three of Metamon's human-only models (0.666 / 0.631 / 0.790 on U). Foul Play has never
+   played P\*. [MEASURED · Kakuna harness · `82f273eff`, `4d8d9eef8`, `df35d1bb0`]
+8. **Population levers: the headroom is there, the cheap levers do not reach it.** A fresh best responder beats
+   P\* by +11.1 pp [+8.3, +13.8], saturated by 8M steps; an archive opponent pool (A1, +0.19 pp) and promotion by a sequential
+   test (SPRT, −0.25 pp) are NULL in-house. [MEASURED · in-house · `c456b6a09`, `806e50931`, `4290d652a`]
+9. **The plateau is a treadmill, not a collapse.** About 30 % of greedy choices change per 20M steps without
+   improvement, the self-play pool goes stale and the learning rate halves; no coverage, rank or dormant-unit
+   collapse, and no repeat of the pre-era lineage's starvation. [DESCRIPTIVE · one seed · `3e8a41249`]
+10. **Search does not pay at P\*, and is not getting closer.** In honest worlds the rollout leaf's edge is gone (it
+    was hidden information about the opponent's team); training to the plateau leaves the oracle − honest gap flat
+    (−0.003 [−0.020, +0.015]); only identifying the opponent's EXACT team pays; the one cell that replicates (a
+    policy-anchored rule at a 4-turn leaf) is nil at P\* (+0.0001). With a real bot as referee the one registered
+    read is UNDECIDED (E1-0, −0.024 [−0.054, +0.009]). Search is paused. [SELF-REFEREE banks · `e7048bb1d`,
+    `537670f7a`, `f756019d7`, `015f00e20`]
+11. **Hidden information is a search lever, not a policy lever.** Telling the network the opponent's hidden facts
+    for 3M steps buys nothing (moves −0.38 pp [−1.86, +1.10]) and makes it depend on them; perfect species knowledge
+    buys ≈ +2.4 pp, within floor. [NULL · PROVISIONAL at 15M · `ffd2280ee`, `c344ccd1a`]
+12. **The architecture is settled for now.** The end state (static per-mon tokens with the recovery and fact
+    levers) passed its closing test (+0.60 pp, 90 % [−0.72, +1.92]); the bf16 (16-bit "bfloat") trunk passed its A/B (+1.06 pp, 90 %
+    [−1.19, +3.31]) and trains 22.5 % faster. A small entity-and-attention toy beats production at equal wall clock
+    at 15M (+6.5 pp), but at the plateaus P\* is ahead of the toy's T\* against Kakuna. [PASS ×2 · `748f90e6f`,
+    `89d258af6`, `38d767462`, `3010c81ba`]
+13. **Human data carries signal; whether it carries goal (b)'s is open.** Our intent head predicts human opponents
+    0.253 nats worse than our own snapshots; a human opponent model learns humans (0.582 nats better than P\*) but
+    does not help search. X59-S asks whether human data beats our self-play data. [MEASURED · `f8d58205c`,
+    `92af1f121`, `73428c077`]
 
-**The intended engine is the flywheel.** Self-play stalls because the generalist plays every team
-adequately and none expertly (the amortization gap). So: fork narrow **exploiters** against a few
-pinned teams, then **fold** them back into the generalist with a distillation loss on top of PPO,
-then repeat against the improved generalist. The value of the wheel is entirely in the **untaught**
-teams — taught teams are a rounding error of the 719-team pool.
-[`learning/distillation_flywheel_lessons.md`, `learning/population_game_theory.md`]
+---
 
-**The 2026-09-06 pivot.** With the flywheel's gift dissolved into "the parent was still learning"
-(§2), the owner-ordered next move is a **cleaner value function** as the starting point for long
-(multi-day, 75M-step) runs and for search: the win-probability head promoted to BE the critic.
-That is the `ai_v12` chapter (§4); its win-prob head is production's critic today.
+## 1. The mission, the goals and the era
 
-**The goal for the coming week, in the owner's words (2026-09-06):** *"understand the value network
-as win prob — do we need PBRS, do we need to bootstrap with a frozen win-prob value head. Right now
-we are working on running a model further and validating the win-prob head."* **The long-term goal
-(same statement):** *"a mature model, free of tech debt, that is understood to both benefit from
-search and teacher distillation, to see if we can repro v8's gift."* Consequences that are now
-standing (owner rulings, same day): **the recipe of record is SPARSE** — the owner's strong bias, because
-it has fewer moving parts and an A/B needs no parent. The FROZEN-φ bootstrap (actor-only potential,
-`--win-prob-pbrs-frozen`) is a CHECK on that bias (**the frozen-φ route was DELETED, deletion pass L1 2026-10-02 — owner-approved, ledger L18659**), and its potential is **the SPARSE arm's OWN mature
-win-prob head**, not the gen-era fold parent the design §5.4 command names — the registered gen-era
-source survives only on the famine-KILL branch, where no mature self head exists. Its read is
-**wall time to roughly equivalent strength** at matched snapshot count, read early: unless the
-bootstrap is *massively* faster, SPARSE stays the recipe and the bootstrap arm is stopped. Under this
-critic the SELF-φ rung does not exist (design §3.7), so "do we need PBRS" IS that comparison. After it,
-the mature checkpoint is read for a SEARCH dividend and for a teacher FOLD (untaught meter with
-continuation control) before any v8-gift replication attempt. The era-boundary flip (win-prob critic as
-the default, `MIGRATION_FLOOR` 109) is licensed once the SPARSE arm proves out; retiring HEAD-loadability
-of the gen-era archive is accepted. Decisions are taken arm by arm from the data, not from a fixed batch.
-[owner rulings · ledger 2026-09-06 · *OWNER RULINGS — the win-prob ladder's shape*]
+**The mission.** A Generation 3 OverUsed (gen3 OU) generalist that keeps improving: not a specialist, not a search agent. The owner's
+permanent side constraint is that it must be able to play the public ladder; no ladder campaign runs without the
+owner's approval (`designs/endstate/design_ladder_campaign.md`).
 
-### The eras
+**The current goals (owner, 2026-10-17), in order**, each with its status in STATUS §1:
+1. the strongest baseline (P\*, at its plateau);
+2. beat Metamon: (a) on our teams (MET), (b) on unfamiliar teams (NOT MET, the programme's focus);
+3. know where we are (mapped: the piloting deficit, §3.1);
+4. AlphaStar-style improvement: league, prioritised fictitious self-play (PFSP), exploiters (§4.10–§4.11);
+5. what search needs, read as a trajectory across checkpoints (§4.7);
+6. which collapse we see, and a source of counterfactuals (§4.4).
 
-| era | what it is | status |
+The plan for goal (b) is `designs/endstate/design_beat_metamon_path.md`; if D3, N1-P and X59-S all miss, the
+fallback is `designs/endstate/strategy_if_levers_null_2026-10-26.md`.
+
+**The Rustboro era.** It starts with the X5 belief A/B and X26 (2026-10-03): the fixed bots and the Rustboro anchor
+base, the Rust environment core, the END STATE architecture (adopted 2026-10-12, §4.6b) and the bf16 trunk (§4.6c).
+Pre-era runs are history and never comparators: their inputs carried garbage-in-garbage-out (GIGO) defects fixed
+since, and their environment, opponent regime and team curriculum differ (§2).
+
+**The runs that matter.** Cite each by its NAMED BASELINE (`designs/baselines.json`, resolved through
+`agents.training.baselines`; change one only with `python -m main.baselines set … --reason`).
+
+| run | baseline name | what it is |
 |---|---|---|
-| **ai_v5 – ai_v7** | self-play / league, then specialisation + ladder. The chapters that ESTABLISHED the pattern — snapshot pool, win-rate gating, exploiters, the fold | closed; their mechanisms are live |
-| **ai_v8** | the conditioning epoch on the flat-positional action head with a two-round physics `damage_refine_rounds` loop. **The one line that ever gifted** | closed; its code still runs from a pinned era checkout at `b13b30b2` |
-| **ai_v9** | the entity-graph FRESH generation: pointer-NATIVE action head, no refine loop, physics as attention edge biases. Every generation gen-1…gen-17 | the incumbent line |
-| **ai_v10 / ai_v11** | exploiter-SCALING and human-ladder-replay. **Nothing built**; ai_v11 is owner-PUNTED | open, unrun |
-| **ai_v12 / ai_v13** | clean-world / win-prob (`design_winprob_only_critic.md`), then the flywheel / teacher / population-loop reads on its 75M root `ai_v13_02_flywheel_winprob` | **CLOSED 2026-09-26** at the clean-input boundary (below); its checkpoints load only on trees ≤ `56837827` |
-| **ai_v14** | the NEW LINEAGE: fresh from scratch on the clean-input boundary `b0a28b5b` (obs 2761, v121), Rust-core observation, pool-only opponents, the population loop with a pooled read registered up front | **CLOSED** at the Rustboro boundary (2026-10-03): pre-era history. N0 `ai_v14_01_base` finished at 75M. Learner battery (buggy learner, arm-vs-arm): E5 ADOPT for generalists (5 PPO epochs at the same dose, S +13.6 %), λ 0.95 NOT ADOPTED (untaught −10.1 pp, OUTSIDE BELOW), TF32 futile. The miscompile cost C_fix − C ≈ +3.1 pp untaught / +4.8 pp SmallRL over one 8M block (CIs clear 0, WITHIN FLOOR). **G0′ = K2 `ai_v14_07_g0p_k2` @91,127,808** (plateau at block 2 on the fixed learner). [RESULT · WITHIN FLOOR · ledger 2026-09-29 *LEARNER BATTERY VERDICT*; *THE MISCOMPILE'S FIRST MEASURED COST*; *G0′ IS K2*] — [`new_lineage_2026-09-26.md`](new_lineage_2026-09-26.md) |
-| **Rustboro** (`rb_`, from 2026-10-03; `utils/era.py`) | the current era: the END STATE architecture (adopted 2026-10-12), the bf16 trunk, the Rust env core; X26 trained to its plateau P\* (`rb_x26_s2601` @ 280M); the X35 plateau levers, each a 20M fork of P\* read against C0 (P\* + 20M of plain training); the Kakuna goal reads (§3.1) | **LIVE.** Standing: [`../STATUS.md`](../STATUS.md) |
+| `rb_x26_s2601` @ 280,000,170 (**P\***) | `pstar_plateau` | the strongest checkpoint; every X35 lever forks from it and every goal read quotes it |
+| `rb_es_end2_s2005` | `production` | the production ARCHITECTURE surface: the end state, 15M |
+| `rb_es_end2_s200{1,2,3,6,7}` | `outside_es_end2_s…` | the Tier-2 outside panel's members (`designs/endstate/design_evaluation.md` §8.2) |
+| X26 @ 380M → `rb_x26c_s2601` @ 480M | — | the continuation that read FLAT (TL;DR 1) |
+| X34 @ 290M (**T\***) | — | the entity toy's plateau (§4.9) |
 
-### The era close-out (2026-09-26): what the old-input lineage established, and what it did not
+---
 
-Every number below was measured on the PRE-`b0a28b5b` inputs, which carried GIGO since fixed (three poke-env
-reading bugs, the event-window / intent-label / progress-clock semantics, the phantom-decision steps). None is a
-level the new lineage can be compared against; each is a DIRECTION to re-test, not a baseline.
+## 2. Pre-era lessons that still guide us
 
-**Established.**
-- **The 75M win-prob root still learned under continuation:** +15.50 pp untaught over 12M at a frozen dose,
-  replicated at +12.94 [+10.25, +15.44] on seed 1002, then exhausted: the next 8M block read −1.50 [−3.75,
-  +0.62], WITHIN the 3.69 floor → the plateau parent G0 (`ai_v13_12_plateau`). [SIGNIFICANT (two-seed family) ·
-  ledger 2026-09-23 *THE WIN-PROB CONTINUATION'S UNTAUGHT GAIN REPLICATES*; WITHIN FLOOR · 2026-09-20 *THE
-  PLATEAU IS REACHED AT BLOCK 1*]
-- **Exploiters are counterplay, not skill:** no 5-team teacher was admitted (five built, five refused), and
-  4.55× more dose bought no more exploitation while costing ~7 pp on-slice and ~15 pp off-slice. [REFUTED (the
-  dose account) · ledger 2026-09-21 *NONE OF THE THREE 5-TEAM TEACHERS IS ADMITTED*; 2026-09-22 *THE DOSE
-  ACCOUNT IS DEAD*]
-- **Wider distillation targets cost MORE off-slice and on-slice, not less** (K = 1 / 3 / 11, and the
-  share-matched arm). [SIGNIFICANT · ledger 2026-09-22 *THE K LADDER REVERSES ITS OWN PREDICTION*; 2026-09-23
-  *THE SHARE-MATCHED ARM CLOSES THE CONFOUND*]
-- **The population loop ENGAGES without a measurable cost:** both rounds absorbed their specialists, measured
-  over ALL five of each specialist's teams: M1 = +9.33 pp [+3.77, +14.81] and M2 = +6.67 [+2.09, +11.20]. The banked
-  +8.50 / +8.67 were team-0-only (F-LH-13). The absorption is concentrated on arm A (+16.0 / +12.7), with `ai_v13_13`
-  at ≈ +2 in both rounds. Round 2's "+17.0 against the new specialist RB" does NOT survive the all-teams read
-  (+5.33 [−2.58, +13.16], NOT DETECTED). Neither KILL guard fired.
-  [SIGNIFICANT (manipulation) · ledger 2026-09-24 *POPULATION LOOP ROUND 1*; 2026-09-25 *POPULATION LOOP ROUND 2:
-  BRANCH N+ IS FINAL*; 2026-09-30 *F-LH-13 AUDIT* (`measurements/ext_first_team_audit/`)]
-- **Every banked absolute "generalist vs multi-team specialist" `ext_` eval level from 2026-07-24 until the F-LH-13
-  fix is a TEAM-0-ONLY number**, and team 0 read 4–11 pp harder than the specialist's other teams where measured.
-  Within-run trends and matched-arm contrasts on it are bounded, not void. The population loop's gap reads never used
-  it. [MEASURED · ledger 2026-09-30 *F-LH-13 AUDIT*]
-- **The learned belief heads memorise the pool:** ~+5 pp against the pool, nothing detectable against Metamon
-  ladder teams, and worse than the Smogon prior off-pool. [SIGNIFICANT · ledger 2026-09-24 *BELIEF-HEAD
-  CALIBRATION OFF THE POOL*; *BELIEF WIN-RATE A/B READ*]
-- **The Rust core reproduces training's observation byte-for-byte** and is now its source. [MEASURED · ledger
-  2026-09-24 *RUST CORE M4 CLOSED*; 2026-09-25 *THE RUST CORE CUTOVER*]
-- **The Rust ENV core (M5) is the PRODUCTION env core from the M5 switch (2026-10-02, `gen3_env_core_switch_v1`), at N\* = 256 since the SIZING verdict (2026-10-02).**
-  Every lane passes its parity gate at the milestone tier, with E, T2 and H's GPU parts too. On the production
-  95 / 5 self-play mix at 48 envs it runs 5.11× [4.72, 5.63] the trainee decisions/s of the Python path
-  (3,780 vs 743) at 0.038× the CPU per decision. An eval cycle takes ≈ 16.5 s vs ≈ 117 s, but it blocks the
-  trainer. Fresh `--arch production` launches run on it (`recipe.sizing.env_core`); a `--model` launch inherits
-  its checkpoint's core, and `--env-core python` opts out until the deletion pass. **ERA BOUNDARY:** the switch
-  changes the data stream (the keyed trainee draw, per-game eval seeds, complete-game updates), so every run
-  BEFORE it is on the Python env path and throughput or any core-dependent reading never compares across it.
-  [MEASURED · ledger 2026-09-30 *M5 GATE MET*; `measurements/m5_laneJ/results/verdict.json`; ledger 2026-10-02
-  *THE M5 SWITCH*; `measurements/m5_switch/`]
-- **The SIZING study (2026-10-02) put production at N\* = 256 and kept fresh-run epochs at 10.**
-  - **What 256 buys.** The update dominates: at 10 epochs, 256 envs buy only ~7 % end to end. Learning
-    per sample shows NO LOSS beyond the 3.69 pp bar: untaught −2.71 pp [−4.50, −0.94] against N = 48.
-    That is not equivalence.
-  - **Five epochs on a FRESH launch lose:** −10.56 pp [−13.12, −7.94] of untaught at matched samples,
-    even though the update is 2× faster. E5 stays a fork-only recipe.
-  - **The run-to-run floor of a fresh 8M arm is ABOVE the bar:**
-    - a seed replicate differs by 4.90 pp;
-    - a same-seed cross-pin pair differs by 11.35 pp. That pair also differs by a controller detail
-      (C-1) and by CUDA nondeterminism.
-    - So single fresh 8M arms are not decisive at a 3.69 pp bar.
+Measured before Rustboro on inputs with since-fixed GIGO: directions, never levels. Detail in the cited ledger
+entries.
 
-  [MEASURED, n = 1 per arm · ledger 2026-10-02 *THE M5 SIZING VERDICT*; `measurements/m5_sizing/`]
-
-**Not established.**
-- **Whether the loop lowers exploitability.** A fresh best responder found a smaller gap on the loop than on the
-  control twice, −10.00 [−16.60, −3.27] and −8.25 [−15.01, −1.38], both NOT DETECTED at the 5.0 pp bar with 400
-  games per reader (pooled after the fact: −9.13 [−13.91, −4.34], still NOT DETECTED, and not a registered test).
-  The instrument was underpowered, which is why the new lineage registers a pooled read at 800 games per reader.
-  [NOT DETECTED · ledger 2026-09-24 *ROUND 1*; 2026-09-25 *ROUND 2*]
-- **Whether the continuation's untaught gain is real strength:** 8,400 anchor games put it at +0.039 [−0.000,
-  +0.079] over the arm without it. [NOT DETECTED · ledger 2026-09-20 *THE CONTINUATION'S +15.50 pp DOES NOT
+- **A plain continuation is the control.** The pre-era flywheel's one "gift" (v8, +69 anchored Elo) was its parent
+  still learning: a plain continuation gained +3.45 pp against the full fold recipe's +4.56 (difference −1.11
+  [−3.12, +0.91], EQUIVALENCE SUPPORTED). Hence C0 in every fork read. [ledger 2026-09-06 · *CELL 2*]
+- **Exploiters learn counterplay to one target, not skill.** A teacher that beat its parent 0.657 head-to-head was
+  level with it on its own teams against a third party, and distilling exploiters robbed off-slice. A head-to-head
+  number and a third-party number are different measurements. [ledger 2026-09-21 · *NONE OF THE THREE 5-TEAM
+  TEACHERS IS ADMITTED*]
+- **In-house meters rank arms, but their pp are not external pp**: a +15.5 pp in-house gain was ≈ +3 pp against an
+  outside model. Rustboro shows the same split (TL;DR 3). [ledger 2026-09-20 · *THE CONTINUATION'S +15.50 pp DOES NOT
   APPEAR EXTERNALLY*]
-- **Whether any of it survives clean inputs.** No old-lineage result was re-measured after the GIGO fixes.
-  [UNVERIFIED]
-
-### The runs that matter
-
-🚨 **Every run below is a NAMED BASELINE** — `designs/baselines.json`
-(`gen3_baselines_registry_v1`, 2026-09-06). Cite it by NAME and resolve it through
-`agents.training.baselines`; never copy a path, and never re-point one by editing a module
-(`python -m main.baselines set <name> <run>/<file>.zip --reason "<ledger title>"`, which
-prints the ledger line to append). Each entry pins an EXPLICIT checkpoint, so the
-last-snapshot rule cannot silently move what a name means.
-
-| run | baseline NAME | what it is |
-|---|---|---|
-| `rb_x26_s2601` @ 280,000,170 (**P\***) | `pstar_plateau` | **the strongest checkpoint**: X26 at its plateau, the reference every X35 lever forks from and every goal read quotes |
-| `rb_es_end2_s2005` | `production` | **the production ARCHITECTURE SURFACE**: the END STATE, adopted 2026-10-12 |
-| `ai_v9_21_gen17_pfspoff_0820` | `production_pre_endstate` | **the PRE-END-STATE architecture surface**: gen-17's config with the critic block swapped, what `production` named from 2026-09-06 to 2026-10-12; era checkout only |
-| `ai_v9_29_rev1_0823` (**rev-1**) | `v9_long_baseline` · `famine_comparator` · `untaught_meter_opponent` | the gen-era fresh from-zero run, final @25,067,760. The ORIGIN all eight R5F exploiters fork from, and the famine pre-test's comparator |
-| `ai_v9_59_R2ACTION_0827` (**R2ACTION**) | `v9_fold_parent` | **the gen-era fold parent** — itself a `role=fold` fork of rev-1 at the same step, ending 28,115,184. Every rev-4 / 2×2 / K=6 / G1 / G5 arm forks from it |
-| `ai_v8_04_distill_4teacher_0722` (**v8_04**) | `v8_parent` | v8's fold parent, 277,583,267 steps |
-| `ai_v8_14` | `v8_line` | **v8's fold** — the one that gifted, +69 anchored ELO, ended `final_model_INTERRUPTED.zip` because it was stopped from outside |
+- **One arm is not a result**: of three replicates of a real effect, one cleared zero alone. [ledger 2026-09-05 ·
+  *P1*]
+- **Learned value heads hit a ceiling as search leaves** (twelve heads at 0.567–0.578 pairwise accuracy; a few
+  rollouts beat them). The leaf is bound by information and representation, not by the learner (§4.7). [ledger
+  2026-09-19 · *THE LEAF CEILING*]
+- **A V-bootstrapped one-ply Q̂ is used only as a lookahead or a diagnostic**, never as a training target (owner
+  ruling 2026-09-30, `designs/endstate/design_q_head.md` §5.0, `006156b7`): the critic is blind to the moves the
+  policy starves.
+- **Learned belief heads memorise a closed pool** (first seen 2026-09-24; re-measured on P\*, §3.1).
 
 ---
 
-## 2. What we know about the flywheel
+## 3. Strength against outside opponents
 
-The week of 2026-09-01 → 09-06 is the densest evidence in the programme. What follows is the
-current position, not its history.
+### 3.1 The head-to-head: P\* against Kakuna and Metamon
 
-### 2.1 v8's gift was the parent, not the fold
+**Goal (a), and the plateau read (X51).** P\* vs Kakuna, 400 games a panel, the X26 reads' own harness `63f97a57`,
+paired seeds: **home72 0.598 [0.549, 0.644]**, MET. Unfamiliar: H 0.497, F 0.530, P72 0.433; **U 0.487 [0.459,
+0.515]**, NOT MET, ≈ 4.3 pp short. P\* − X26 @161M on U is +3.0 pp [−1.0, +7.0], not detected; the familiarity
+premium stays ≈ 11 pp. Kakuna's checkpoint 28 is not stronger than 34 (0.515 against it), so 34 stays the
+opponent. [MEASURED · PROVISIONAL · `3010c81ba`; ledger 2026-10-21 · *X51 PLATEAU vs KAKUNA*;
+`measurements/x51_plateau_vs_kakuna_2026-10-20/`]
 
-| cell (v8's line, era code + era meter, 3 arms each, ~1.08M steps) | untaught vs FROZEN parent |
-|---|---|
-| phase 1 — the full recipe (loss ON, 40% team bias, 3 stable opponents) | **+4.56pp [+1.14, +7.81]**, floor 3.22 |
-| cell 1 — loss OFF, bias off, stable opponents ON | **+4.92pp [+1.63, +8.04]**, floor 3.71 |
-| cell 2 — loss OFF, bias off, **no stable opponents** (plain continuation) | **+3.45pp [+0.46, +6.48]**, floor 2.54 |
+**The panels are honest.** H can be in Kakuna's data only as its one source replay. Ladder near-copies (≥ 4
+shared sets): H 4.2 %, a random ladder team 8.9 %, F 14 %, P72 0 %, home72 47 %. Without H, P\* reads 0.481
+[0.447, 0.516], and X51, X26c and D1 keep their verdicts on every subset. Open: whether Kakuna's self-play saw near
+copies of H (assumption A-K). [DESCRIPTIVE · `4f555e577`; ledger 2026-10-26 · *GOAL (b)'S PANELS ARE NOT SHOWN
+KAKUNA-FAMILIAR*] Metamon's `competitive` set is NOT unfamiliar: 19 of its 20 teams are copies of pool teams;
+every read reports its panel's overlap with the pool (`gen3_team_overlap_v1`). [ledger 2026-10-18 · *THE AWAY SET
+IS NOT HELD OUT*]
 
-- cell 2 − phase 1 = **−1.11pp [−3.12, +0.91]** ⇒ **EQUIVALENCE SUPPORTED** against the ±3.22 floor.
-  Adding the whole fold machinery to a plain continuation is not detectably better than the
-  continuation. [ledger 2026-09-06 · *CELL 2*]
-- cell 2 − cell 1 = −1.46pp [−4.10, +1.01] ⇒ **INDETERMINATE**.
-- Re-based on the continuation, v8's celebrated **+4.64pp becomes ≈ +1.2pp and is not significant**.
-- ⚠️ At the era pin, `--distill-coef 0` disables the teacher-team BIAS as well as the loss, so cell
-  1's reading is *"the loss AND its sampling bias, together, are not the carrier"* — those arms do
-  not isolate the loss channel on v8's side.
+**What the deficit is (X26 @161M, 2026-10-18 / 19; PROVISIONAL, preregistered).**
+- **Piloting, not facing (X37a stage 1).** When X26 brings home72 and Kakuna brings H teams, X26 wins in every
+  species stratum (the ladder-weighted headline L = 0.630 [0.573, 0.686]); when X26 PILOTS the H teams it reads
+  0.380 [0.334, 0.428]. Corrected by a Kakuna-vs-Kakuna cell for team strength, piloting costs **+0.123 [+0.039,
+  +0.206]** and facing +0.017 [−0.062, +0.095]; X26 pilots off-meta (FAR-core) teams 0.199 [0.017, 0.385] worse
+  than sample-core ones. The correction rests on assumption A-K (Kakuna's own familiarity is symmetric),
+  UNVERIFIED. [`8b43eb44a`; ledger 2026-10-18 · *X37a STAGE 1*]
+- **Unseen by us, not a different population (X37a stage 2).** Forum72 0.470 and P72 0.453 drop as far as H
+  (0.448, Hidden Power repaired) from home72's 0.575. [`71270538b`; ledger 2026-10-18 · *X37a STAGE 2*]
+- **Not weak teams (TSR).** Rated by one pilot on both sides, replay teams are ≈ 70 Elo below forum teams, but
+  matched on strength the piloting gap stays (+0.28 [+0.12, +0.44] per team). [`82858f433`; ledger 2026-10-19 ·
+  *TEAM STRENGTH*]
+- **Invisible in-house (X37b).** Against X26 @25M, P\*'s edge is +18.8 pp on home72 and +14.8 pp [+11.6, +17.9]
+  on unseen teams; the shortfall (+4.0 [−0.7, +8.4]) is not detected. So in-house meters cannot steer goal (b);
+  only Kakuna games can. [`fd005a6a4`; ledger 2026-10-19 · *X37b TRANSFER*]
 
-**One arm would have been wrong two times in three.** Only one of phase 1's three arms clears zero
-alone — the exact position v8's original +5.42 occupied for months. [ledger 2026-09-05 · *P1*]
-
-### 2.2 Gen-era parents do not gain from a continuation; the 75M win-prob parent DOES (+15.5 pp / 12M) — AND THAT GAIN IS NOW EXHAUSTED
-
-**G5** (`ai_v9_195/196/197_G5PLAIN{A,B,C}_0906`) is the same cell on R2ACTION: **−1.92pp
-[−3.98, +0.46]**, own replicate floor **1.00pp** ⇒ **NOT DETECTED**, point estimate NEGATIVE.
-Beside it sit M9's two draws on rev-1 (−0.37 `R2PLAIN`; −4.56 `R2CTRL`, which started POOLLESS —
-~31% of its leg bot-only, then a 1–2-snapshot own pool vs the siblings' inherited 11 — so it is not
-"ordinary" continuation [ledger 2026-09-30 · *AUDIT · BOTS-ONLY CONTROLS + POOLLESS FORKS*]; the
-sentence below rests on the two pool-matched draws, −0.37 and −1.92). Three draws, two gen-era
-parents, two depths — **no gen-era parent has been observed to gain from ordinary continued training.**
-[ledger 2026-09-06 · *G5 RESULT*]
-
-🚨 **ERA QUALIFIER (2026-09-20, `wcont_control_read_2026-09-20/`): the 75M WIN-PROB parent (arm W) DOES gain from ordinary
-continued training — +12.31 / +14.25 / +15.50 pp [+12.00, +18.88] on the untaught 8 at +3M/+6M/+12M, 8 of 8 teams at every
-depth, OUTSIDE the 3.69 floor by both clauses, at the same frozen dose 4.272e-9 (0.20× v8) the folds run at; +8.62…+11.81
-against W_b, so it is not the seed. Both per-slice cells clear too (Big-5 +0.11 vs a 0.0475 floor, DDTar +0.18 vs 0.085),
-and the continuation ends LEVEL with teacher t1 on t1's own pinned team having never seen it (−0.029, n.d.). It promoted
-five snapshots where the fold path promoted none. Front-loaded: +12.3 of the +15.5 is there by +3M. **REPLICATED on a
-second seed (2026-09-23, `wcont_b_seed1002_read_2026-09-23/`): seed 1002 reads +13.25 / +12.56 / +12.94 pp [+10.25, +15.44],
-OUTSIDE ×3 depths, 8/8 teams, on the identical games (arm W reproduced exactly); seed spread at +12M −2.56 pp, under the floor.** **Consequence: on the win-prob side the frozen-parent baseline
-does NOT stand; every delta-against-a-frozen-parent on such an arm is inflated by something of order +15 pp on this meter
-over 12M steps, and the comparator for any fold is the CONTINUATION, not the parent.** Bots and G7 were BLIND across
-exactly this span (both paths "indistinguishable" at ~0.92 while the untaught meter separated them by 9–10 pp) — a
-saturated bot row is not a competence meter at this depth. [ledger 2026-09-20 · *THE CONTINUATION CONTROL*; 2026-09-23 · *REPLICATES ON A SECOND SEED*]
-**Externally (`anchor_ab_continuation_2026-09-20/`, 8,400 greedy-vs-greedy games vs Metamon `SmallRL`, n = 1,200 per arm per
-team set): the continuation is +0.039 [−0.000, +0.079] over arm W on Metamon's `competitive` set (19 of its 20 teams are in our pool) and +0.020 [−0.019, +0.058] on ours —
-NOT DETECTED on both (a post-hoc three-cell pool reads +0.032 [+0.007, +0.058]) — while the SAME games put the era-1 fold
-path 0.08 BELOW arm W on both sets, DETECTED. So the ORDER continuation > parent > fold reproduces outside; the SIZE does
-not: the untaught meter's +15.5 pp is ~3 pp on an external opponent, a ~5× scale difference. The untaught meter RANKS arms
-(every ordering it has given, the anchor has confirmed) but its pp are not external pp — a strength claim carries the
-anchor's number at ≥1,200 games or is not made. The n = 100 anchor's +0.140 was seed spread (one arm's 100-game sub-cells
-ranged 0.34–0.59 across twelve seeds). [ledger 2026-09-20 · *THE CONTINUATION'S +15.50 pp DOES NOT APPEAR EXTERNALLY*]
-**The anchor's own faithfulness (`metamon_obs_faithfulness_2026-09-22/`):** our server does not corrupt Metamon's view (871
-decision points, 0 silent substitutions, byte-identical across Showdown pins), but Metamon's upstream poke-env clears boosts
-on a Baton Pass switch (our fork fixed it 2026-08-23), so it under-reads passed setup on both sides — 13/871 decisions here,
-8/21 of its teams and 157/719 of ours carry the move. Every Metamon win rate is OPTIMISTIC for us by an amount not yet
-measured — **SIZED the same day (`h18_baton_pass_bias_2026-09-22/`, 2×2×400 patched vs unpatched, paired): |bias| < 0.02 on both Metamon's teams and a Baton-Pass-enriched set, NOT DETECTED; the era's anchor numbers stand with that bound attached.** [ledger 2026-09-22 · *METAMON OBSERVATION FAITHFULNESS*; *H18 SIZED*]
-
-Two consequences:
-
-- **The frozen-parent baseline STANDS on our side.** The meter-level alarm cell 2 raised is a true
-  statement about `ai_v8_04` and a false one about `ai_v9_59`. On the strength of cell 2 alone the
-  re-basing would have been propagated across the ledger and been wrong for our era.
-- The re-based TC column moves folds the OPPOSITE way (every fold looks *better*), but the
-  correction is not significant, **so the re-based column is NOT the reported number** — it is a
-  sensitivity check that happens to be favourable.
-
-**⇒ The cross-era difference is the PARENT.** *Maturity* is the shape of that result and one
-**CONFOUNDED** candidate: 277M vs 28M steps, but also different architecture, obs dim, reward
-composition and opponent ecology. Step counts are not commensurable across architectures with
-different sample efficiency. [UNVERIFIED as a cause]
-
-**A second confounded candidate — the OPTIMIZER REGIME (2026-09-12, `entropy_forensics_v8_vs_ours_2026-09-12`):**
-[MEASURED as a descriptor · NOT ISOLATED] v8's line ran `--ent-coef 0.05` (58 runs, all v6–v8 signatures);
-every run since v9 runs 0.02 (147 runs) — perfectly collinear with architecture, obs, reward composition,
-clip-range (0.10 vs 0.15) and ecology, never varied in any arm. Policy entropy (`train/entropy_loss`, nats,
-action space unchanged since 2026-05-22) ends at 0.71–0.83 on our fresh arms against v8's plateau 1.07–1.11:
-a 0.24–0.40 nat gap, 3.3–5.4× the three-seed replicate floor (0.074), no overlap; our arms halve their initial
-entropy by 4–9M steps and the 75M run is still FALLING at its end (−0.0011 ± 0.0003 nats/M) where
-`ai_v8_03` was RISING at 268M. **The dose premise was wrong:** with `grad_accum_steps` included (`main.dose`)
-our fresh arms sit INSIDE v8's dose range (3.2–6.0e-8 vs 2.1–7.4e-8); only the gen-era fold `ai_v9_59`
-(grad-accum 2) is the 6.6× outlier. **Self-play staleness is NOT supported, sign reversed:** we promote every
-~2.1M steps and trail the pool by 1–4 %; v8's parent promoted every ~10M and trailed by 17 %. And the
-"still learning" asymmetry of §2.1/§2.2 is an UNTAUGHT-METER fact — on the dense ladder the 75M win-prob run
-rose twice as fast as `ai_v8_03` and neither decelerates detectably. **Isolating arm (registered before launch):**
-one 10M fresh arm = `ctrl10M`'s argv with only `--ent-coef 0.05`, endpoint H_end against the 0.074 floor
-(≥1.00 reproduces v8's regime; 0.71–0.83 refutes, and the clip-range leg inherits); strength at 10M is NOT an
-endpoint. **RAN (2026-09-12, `ai_v12_28_ladder_ent05`): PASS — H_end 1.086, inside v8's 1.07–1.11 plateau,
-+0.29 nats above the widest control (3.9× the floor), and the entropy is still RISING at 10M (+0.025 nats/M,
-~3 se) where every 0.02 control falls; crossing, G7 and bot win rate all in family. One flag reproduces the
-cross-era entropy regime on this architecture, so the collinearity is broken on that axis. Strength,
-conditioning (read running) and the "still learning" property are NOT claimed. The flywheel pair runs at 0.05 in
-both arms. [ledger 2026-09-12 · *VERDICT · ent05 PASSES*] `--ent-coef` is live on a resume (`model_build.py:543`), unlike `--lr`. Hazards: a fork's TB dir and
-`ladder.json` carry the parent's whole history (read the own span only); `main.lineage` `role=fresh` means
-"records no parent", not "trained from init". [ledger 2026-09-12 · *MEASUREMENT · ENTROPY FORENSICS*]
-
-🚨 **THE GAIN IS EXHAUSTED, AND THERE IS NOW A PLATEAU PARENT (2026-09-21, ledger `3459ecce`).**
-Continuing the continuation another **+8.06M** at the same frozen dose moved the untaught 8 by
-**−1.50 pp [−3.75, +0.62]** against the 3.69 floor — WITHIN at both clauses, six of eight per-team
-rows down and two up, largest single move −0.065. The CI straddles zero, so the honest reading is
-**FLAT, not declining**, and "within floor at n = 2" is NOT DETECTED at the registered standard,
-never "proven flat" (the floor's replicate level is the RUN). The stop rule was registered before the
-block launched and its prior — most of the +15.5 arriving by +3M — called it on the first block.
-**`models/ai_v13_12_plateau/final_model.zip` @95,158,272 is THE PLATEAU PARENT**, and every era-2
-fold reads against it directly, which removes the §2.2 confound BY CONSTRUCTION: a continuation of a
-plateaued parent gains nothing, so a fold's delta can no longer be inflated by what doing nothing
-would have done. The same invocation reproduced the campaign twice over — **arm W returned 46.19 pp
-(739/1600) EXACTLY**, and `wcont − armW` = **+15.50 pp**, matching the banked control read to the
-decimal on freshly played battles. **Scope:** this says the parent stopped gaining ON THE UNTAUGHT 8.
-It does not say it stopped learning; bots and G7 are BLIND at this depth (§2.2 above), and no taught
-slice was measured.
-
-### 2.3 What a gen-era fold actually does
-
-**The era's FIRST fold does not reproduce this shape (2026-09-19, `fold1_read_2026-09-19/`, n = 1):** `ai_v13_07_fold1`
-(a fork of the 75M win-prob arm W taught by two of its own exploiter forks, action-form top-1 at coef 0.1761, frozen
-dose 0.20× v8, +6M, teacher agreement still climbing at the end — converged at ≈0.82 at +7.7M in its continuation)
-reads NOT DETECTED on every registered row: untaught +1.4 / +5.4 / +5.1 pp at +1/3/6M against a 3.69 floor (CI never
-excluding the floor point; the bar needs ≳7.5 pp at this n), per-slice Big-5 **−0.061** and DDTar +0.068 within their
-measured cell floors, SmallRL +0.040 within 0.090, ladder unreadable (zero promotions against a frozen pool). **No
-off-slice hole at any depth, off-slice its best row, on-slice negative on one taught team** — the inverse of every
-gen-era cell above; the teachers' gated share anti-predicts the slice gain; agreement and piloting came apart (agreement
-rose while both slices peaked at +3M). Accounts not separable at n = 1: the teachers had little to teach (DDTar is
-+0.0075 over the parent on its own pin against a third party), or the low frozen dose prevents the hole at the cost of
-extraction. The continuation control (arm W +12M, no teachers) is the era's G5 cell and the next arm.
-**At convergence (+12.09M, `fold1_cont_read_2026-09-19/`; the stop rule fired at +7.67M):** no registered branch is
-met. DDTar per-slice piloting is **+0.154 [+0.105, +0.201] against a 0.085 cell floor — OUTSIDE, the first registered
-row this programme has cleared** — while Big-5 stays negative (−0.053) and untaught reads +5.75 [+1.19, +11.06] (inside
-clause (b)). The clearing slice's teacher was not detectably better than the parent (+0.0075, n.d.) and the student ends
-+0.146 above it, so teacher-skill transfer is not the account; team-blocked extra training on that team is the
-candidate mechanism. A scalar seniority term cannot produce the sign split. The +6M read had landed on a local minimum
-of the DDTar row (sixth vindicated short-window refusal). **The control decided both (`wcont_control_read_2026-09-20/`),
-and against the fold: the plain continuation reads +15.50 pp untaught, +0.11 Big-5 and +0.18 DDTar over the parent, so the
-EXTRACTION row (fold − control) is −6.94 / −9.12 / −9.75 pp off-slice (OUTSIDE at +6M/+12M), −0.139 / −0.164 / −0.165
-on Big-5 (OUTSIDE at all three) and −0.038 / −0.101 / −0.024 on DDTar (WITHIN) — the "first cleared row" re-bases to
-−0.024, the fold's off-slice lean was a FRACTION of continuation, and the gap was already −6.94 pp at +3M before either
-path crossed a fork. The era-1 fold recipe trained worse than doing nothing.** What carried it is NOT identified: the
-distill loss, `--distill-team-bias 0.4` and the two-specialist opponent pool moved together (one contrast, three levers),
-so "distillation hurts" was not claimed until the split ran. **The split (`split_lossoff_read_2026-09-20/`) — fold-1's argv
-with the loss off and every ecology lever kept, including a FOURTH lever no registration had named (`--team-block-episodes 64`
-vs 1 everywhere else) — sits ON the continuation on 9 of 9 cells (Δ_ecology within floor everywhere, +0.0000 exactly on the
-Big-5 endpoint) and ABOVE the fold on 9 of 9 (+6.69 pp untaught, +0.165 Big-5 OUTSIDE at every depth); entropy 0.959 vs the
-control's 0.941 vs the fold's 0.737. So the top-1 action-target distillation LOSS carried the fold's whole cost and the
-ecology bundle is inert at this dose. Registered verdict UNCOVERED (clause (b) arithmetic on untaught; the DDTar row is one
-every continuation gains ~0.16 on and separates nothing), pattern unambiguous.** Stage 3 of the plateau plan therefore varies
-only K (`--distill-topk 1 / 3 / 11`, the D-F dial, K = 11 being the full renormalized distribution AWR-weighted) on fold-1's
-full ecology from the plateaued parent; the second fold does not launch on the era-1 recipe. [ledger 2026-09-20 · *THE
-CONTINUATION CONTROL*; *THE SPLIT ARM*]
-**The teachers are counterplay, not skill (2026-09-21):** all three 5-team exploiters (offense 0.657 / balance 0.525 / stall
-0.455 head-to-head vs the plateau parent, greedy eval regime) and a fourth trained against a DISTRIBUTION instead of the frozen
-parent are LEVEL with the plateau parent on their own five teams against the third party (Δ within ±1.4 pp vs a 4.75 floor,
-24,000 + 8,000 games). A best response to G is a function of G, not a strategy; distilling it installs the attack, not the
-defence. Exploiters are valid as OPPONENTS (the population loop), not as teachers unless they clear that gate. The loop's
-meter is `main.best_response_gap` (gap = P(fresh exploiter beats G_t) − 0.5, per round × archetype, matched budget/dose/regime);
-on the archive the gap fell era-1 → era-2 but with dose 4.55×, teamset 1 → 5 and a different target, so it is not a reading.
-Open: whether a teacher can exist at all at era-1's 1.78× dose (`ai_v13_18_teach5_offense_hidose`, prepared) and whether the
-K = 1/3/11 ladder can make the loss cheap (live). [ledger 2026-09-21 · *NONE of the three 5-team teachers is admitted*; *the
-REDESIGN fails the same way*; 2026-09-22 · *THE BEST-RESPONSE-GAP METER*]
-
-Measured over the 2×2 teacher-content batch (4 arms) and the K=6 dose cell (2 arms), all frozen-dose
-(`--fork-lr 2.8e-5 --fork-lr-freeze`), parent R2ACTION, 8 untaught teams, cluster-bootstrapped:
-
-| | taught (on-slice, endpoint) | untaught (off-slice, endpoint) |
-|---|---|---|
-| FUNDED teachers | **+5.11 [+2.66, +7.42]** | **−2.41 [−4.37, −0.63]** ROBS |
-| UNFUNDED teachers | **+4.86 [+3.16, +6.64]** | +1.97 [−0.13, +4.09] NOT DETECTED |
-| funded − unfunded | +0.25 [−2.03, +2.67] WITHIN FLOOR | **−4.37 [−5.78, −2.78]** SIGNIFICANT |
-
-- **The fold TEACHES.** ~+5pp on-slice against the FROZEN parent, both halves equally, all four arms
-  clearing zero individually. Re-based on a plain CONTINUATION — which itself gains +2.09pp
-  [+0.47, +3.79] on this slice — it is **+2.6 to +3.4pp**, four of six arms clearing zero, and that
-  column is an UPPER BOUND (the continuation is measured at fork+1.18M against the folds' ~+4.45M).
-  The fold teaches; part of the headline number did not need it. [SIGNIFICANT, with the depth caveat
-  · ledger 2026-09-06 · *G5 slice (iii)*]
-- **Every fold digs an early off-slice HOLE**, ~3–4pp by +1M, regardless of teacher content (funded
-  −3.12, unfunded −3.28, K=6 −4.19 — indistinguishable). Near-parent teachers let the student climb
-  out (UNFUNDED − FUNDED recovery **+6.28 [+3.16, +9.81]** at p1M→mid); funded teachers show **no
-  consistent recovery** (their two arms disagree with each other). [SIGNIFICANT]
-- **Teacher funding is a pure LOSS**: the extra 1.0M/team buys nothing on-slice and costs 4.4pp
-  off-slice.
-- **DOSE is NULL.** Flat across a 4× range in the dose cell (K=12/6/3) and again between two frozen
-  doses at fixed teachers (K=6 − K=3 spans zero or WITHIN FLOOR at all three depths). At v8's own
-  dose (K=6, 1.06×) the fold is parent-neutral at the end, **−0.22 [−2.03, +1.81]** — **no gift.**
-  [ledger 2026-09-05 · *K=6 CELL*]
-- **The hole-then-recovery shape is a property of FOLDING**, replicated in two independent dose
-  cells — the sign-flipped mirror of v8's transient hump.
-- **Teacher budget/homogeneity is INVISIBLE at p1M and REAL at the end.** G1 (eight teachers pinned
-  at exactly fork+1.20M, spread 0) − TCUNF pooled reads **+0.22 [−2.47, +2.34]** at p1M against a
-  4.00 floor (EQUIVALENCE) and **−2.16 [−4.44, −0.25]** at END against a 1.19 floor (SIGNIFICANT).
-  ⚠️ Confounded: G1's partner is a MIXTURE (six teachers at fork+2.93M, two at fork+0.93M), so this
-  is *uniform-1.2M vs that mixture*, not "budget is irrelevant". [ledger 2026-09-06 · *G1 QUALIFIED*]
-
-### 2.4 The channel: the loss, on our side
-
-**C1** (the fold with `--distill-coef 0` and the 40% team bias still ON — the sampling axis isolated
-for the first time) never robs and never gifts: +1.25 / +0.00 / +2.50 vs the parent at three depths,
-every interval covering zero. B2, the same argv with the loss ON, robs −8.88 / −5.87 / −2.75.
-**C1 − B2 = +10.12pp [+6.00, +14.31] at +1M** — decisive at any bar in the floor's interval;
-supported but bar-uncertain at mid and end. ⇒ **the robbery travels through the distillation LOSS,
-not through the data distribution.** [SIGNIFICANT at +1M · ledger 2026-09-03 ·
-*C1 vs B2 COMPLETE*]
-
-**And C1 shows NO GIFT either** — the loss carries BOTH directions: under gen-era conditions leak
-only, under v8's parent gift − leak. ⚠️ B2 and C1 are **not dose-matched** (live KL controllers,
-1.20× apart); every B2-vs-C1 claim carries that.
-
-The **offline displacement** meter separates the dose axis (+0.1203 [+0.0663, +0.1795]) but **does
-NOT** separate C1 from B2 (−0.0245 [−0.0841, +0.0267]) — an instrument limit, never a contradiction
-of the win-rate result. [NOT DETECTED · meas: `reuse_batch_2026-09-03/offline_collateral_kl/`]
-
-### 2.5 What a fold does to the weights
-
-- **Displacement magnitude is set by DOSE, not by the distillation term** — C1 (loss OFF) has the
-  second-largest |Δθ| of all 17 models scored.
-- **`|Δθ| ∝ t^0.48`, replicate cosine 0.56** ⇒ a fold's Δθ is substantially a **RANDOM WALK**.
-- **The off-slice KL is carried by the TRUNK**: encoders + team_transformer **51–74%** (≈90% with
-  `projection_mlp`); pointer head **0.5–5.6%**; critic exactly 0.
-- **Funded − unfunded off-slice KL: +0.0382 [−0.0067, +0.0928] NOT DETECTED** — the robbing half is
-  not measurably farther from the parent off-slice than the neutral half.
-
-⇒ **the robbery is not "more movement"; it is WHERE the movement points**, and a scalar KL is a norm,
-not a direction. [meas: `arch_transfer_2026-09-05/fold_displacement/`]
-
-### 2.6 The teachers
-
-- **v8's teachers are LOCAL and DESCEND from their parent** (forked FROM v8_04). Sibling-control
-  locality **R = 1.83 [1.53, 2.17]** on the files the fold actually loads. [SIGNIFICANT]
-- **Ours are GLOBAL-from-origin SIBLINGS**: all eight R5F exploiters fork from rev-1's final, and
-  R2ACTION is their `--exploiter` TARGET, not their origin — two 3.047M-step walks from one θ₀, with
-  **KL(θ₀ ‖ parent) = 0.534 before any exploiter training**. Against the TRUE origin our R rises only
-  to 1.25 / 1.20, so **the fork origin explains ~24% / 12% of the locality gap** — a quarter of the
-  story, not the story. [meas: `content_locality_v2/`, `exploiter_drift/`]
-- **Within the gen era, locality does NOT separate robbing from neutral teachers** (+0.0345
-  [−0.0795, +0.1636]). What separates them is **MAGNITUDE** — funded teachers are farther from the
-  parent everywhere. [NOT DETECTED / SIGNIFICANT respectively]
-- **Teacher DISTANCE orders teacher SETS** (ρ −0.90, CI excludes zero) but is **NOT ESTABLISHED as a
-  slope** (point-level slope [−35.5, +0.4] pp/nat spans zero) and is **CONFOUNDED with teacher
-  budget** (ρ(budget, Δ) = −0.949 ≥ ρ(D_off, Δ)). "Distance causes the leak" and "longer-trained
-  teachers cause the leak" are the same claim on this evidence. [meas: `teacher_distance/`]
-- **The drift is FORGETTING.** Every exploiter set pilots the untaught 8 worse than its origin; the
-  funded set by **−7.81pp [−15.23, −0.39]** (1.67× the floor), at an exchange rate of **−0.343pp
-  untaught per pp of on-slice edge** ≈ 3pp of on-slice edge per 1pp of untaught win rate.
-  The exploiter is **global from its FIRST checkpoint**, and its distance to the PARENT is flat for
-  1.2M steps (0.534 → 0.522) before rising into the robbing bracket (0.660 unfunded → 0.755 funded).
-  [SIGNIFICANT · meas: `exploiter_competence/`, `exploiter_drift/`]
-- **A homogeneous short-budget teacher set folds NEUTRAL** where the long mixture ends ~+2pp above
-  the parent (§2.3, G1 at END).
-
-🚨 **AN EXPLOITER'S GAIN IS TARGET-SPECIFIC, NOT PILOTING SKILL (2026-09-21, ledger `be03bd74`).**
-Three five-team teachers — offense, balance and stall archetypes, each forked from THE PLATEAU
-PARENT, each matched to the digit (one parent, dose 8.392e-9, +8M, one mechanism, one seed) — were
-put through the admission gate on **their OWN five teams against a fixed third party**, 800 games per
-team, **24,000 battles, 0 timeouts**. **All three are LEVEL with the parent**: offense **−1.00 pp**
-[−4.80, +2.13], balance **+0.58** [−0.32, +1.28], stall **−1.12** [−3.37, +0.88], against floors of
-4.75 / 8.50. **NONE ADMITTED.** It is decisive rather than marginal — every Δ inside ±1.2 pp,
-mixed per-team signs in every cell, and both sides at 56–60 pp so the measurement has headroom and is
-not saturated.
-- **The offense teacher beat that exact parent 0.657 [0.610, 0.702] HEAD-TO-HEAD and reads −1.00 pp
-  on the same five teams against anyone else.** What +8M bought was counterplay to one opponent's
-  policy, not skill at piloting those teams. Across the three cells the two measurements lean
-  OPPOSITE — the only positive Δ belongs to the teacher that FAILED head-to-head — which at n = 3 is
-  an observation, not a correlation. 🚨 **A HEAD-TO-HEAD NUMBER AND A THIRD-PARTY NUMBER ARE
-  DIFFERENT MEASUREMENTS.** [SIGNIFICANT for the null; the anti-correlation is an OBSERVATION]
-- This **replicates the era-1 shape** — the control read already found era-1 teachers level with or
-  below the continuation on their own team — on a far cleaner design: 3 archetypes × 5 teams × 800
-  games against a parent that provably stopped gaining (§2.2). Same answer, much more room to have
-  been wrong. **It is the likeliest single account of why the era-1 fold lost**: the teachers may
-  never have had transferable skill to teach.
-- **Head-to-head, only offense cleared** its 0.500 null (0.657 [0.610, 0.702]); balance 0.525
-  [0.476, 0.573] and stall 0.455 [0.407, 0.504] did not, stall's point estimate sitting BELOW its
-  own null. The era-1 → era-2 LEVEL drop (every one-team teacher reached 0.740, no five-team teacher
-  did) is **CONFOUNDED** — teamset size 1→5 and dose 1.78×→0.39× moved together on a changed parent.
-  The WITHIN-era-2 SPREAD is **CLEAN**: offense − stall = **+0.245 [0.118, 0.382]** endpoint,
-  **+0.2025 [0.135, 0.270]** pooled. Both hold at once. [ledger `fd06fd33`]
-- ⚠️ **The era-2 teacher dose is 0.39×, against era-1's 1.78×** — a 4.5× gap from an UNSET
-  `--fork-lr` inheriting the plateau parent's frozen 2.80e-05 *without* its freeze and then annealing
-  up to 8.36e-05. Ruled "run as built"; it must be stated beside every teacher-vs-era-1 number.
-  [ledger `7afa2b34`]
-- **What is NOT claimed:** not that the teachers are weak (all beat bots at 0.95–0.99), and not that
-  distillation fails (the K ladder is untested). The claim is narrower — **this RECIPE for
-  manufacturing a teacher (fork the parent, pin a team set, train against the parent with bots mixed
-  in) yields target-specific counterplay rather than transferable team skill, at this dose and
-  budget.** The redesign that follows — the same team set against a DISTRIBUTION of opponents rather
-  than one frozen target — is live as `ai_v13_16_teach5_offense_dist`. [ledger `bbb1f228`]
-
-### 2.7 Ecology
-
-On our side, **teachers-as-opponents is safe but is not a gift**: the loss × ecology 2×2 already
-existed as the `fd` factorial — three gen-era folds ran in v8's exact shape (teachers == stable
-opponents at 0.35), and `fdC` (coef 0 with teachers in the pool) returned **−1.2pp [−3.4, +1.0]**,
-an EQUIVALENCE within the taught floor. On v8's parent the same cell returns **+4.92pp**.
-[ledger 2026-09-06 · *CELL 1*, retraction paragraph]
-
-`--stable-opponent-selfplay-share` is a share **of the self-play slice**, not of all episodes:
-`p_stable = sf·s`. v8 ran 0.35 of self-play, the gen era runs 0.20 — neither is an absolute until
-`sf` is named, and `sf` ramps. A mastered stable opponent silently leaves the challenge bucket.
-
-**The opponent TEAM distribution is also the belief heads' label distribution, and it is narrow
-enough to be memorised.** [MEASURED, `measurements/belief_calibration_2026-09-24/`, 395 paired battles
-per arm, `ai_v13_22_popr1_loop`] Off the pool, the learned belief heads are WORSE than the Smogon
-prior they fuse with: species −1.28 nats [−1.47, −1.10] on Metamon ladder teams (+0.33 on the uniform
-pool, +1.59 on the 5 stable-opponent teams that supply ~36% of that run's labels). The REINJECTED
-revealed-slot move posterior, which reaches decisions, loses −7.8 pp hidden-move recall to the prior
-on ladder teams and does not beat it even on the pool. 15.8% of hidden ladder slots are >0.8-confident
-in a species the opponent does not have. The effect on WIN RATE is unmeasured. [ledger 2026-09-24 ·
-*BELIEF-HEAD CALIBRATION OFF THE POOL*]
-
-**ON the pool, the shaping-mode heads are mostly honest. The exception is BLOB's move head, whose
-error leans toward the action taken ("motivated cognition").** This was read on the 16 X5 finals at
-their training pin, Lane S bank, against the Smogon prior each head fuses with.
-
-- **Item, nature, HP-type and EV heads:** far better than their priors in both arms and near-calibrated.
-  Item top-1 accuracy is 0.86 vs 0.76; HP type 0.85 vs 0.64, calibrated; nature is mildly over-confident.
-- **Choice Band:** the item head removes most of the prior's selection gap, the opposite of
-  self-serving.
-- **The revealed-slot MOVE head over-predicts hidden moves in both arms.** Blob's is WORSE than its
-  prior (Brier 0.0330 vs 0.0292); fixed_mass's ties it.
-- **Blob's move head is self-serving.** It over-states the opponent active's hidden super-effective
-  threats by +0.30 expected moves where policies leave, vs +0.18 where they stay. That is a registered
-  BITING, Δ_delta −0.136 [−0.159, −0.113]; fixed_mass shows −0.014, NOT DETECTED.
-- **What it is not:** the policy acting on its own head's noise. The gap survives a split made by a
-  different seed's, or the other arm's, policy.
-- **What it may be:** route C (PPO into the head) and a label loss too weak (coef 0.05) to hold
-  calibration remain UNSEPARATED. The move head is `shaping` in both arms, yet only blob's bends. The
-  causal test is a training contrast: `label_only` on the move head, a belief-head extension of X20.
-
-[SIGNIFICANT (registered rule: t95 and battle-bootstrap CIs exclude 0, |Δ_delta| ≥ 0.02) for T1-blob /
-NOT DETECTED for species presence and Choice Band, and for T1 in fixed_mass · ledger 2026-10-07 ·
-*MOTIVATED COGNITION in the shaping-mode belief heads* · meas:
-[`measurements/motivated_cognition_2026-10-07/`](measurements/motivated_cognition_2026-10-07/README.md)]
-
-### 2.8 The architecture account is CLOSED
-
-Every leg, all NOT DETECTED or REFUTED [meas: `arch_transfer_2026-09-05/`]:
-
-| leg | result |
-|---|---|
-| **H2 sharing kernel** — "the pointer head shares more" | **NOT DETECTED**, and the registered norm-share check fails for the story: the pointer head carries **0.66%** of the policy-gradient norm vs the flat head's 6.2%, 9.4× the wrong way |
-| **H2b displacement** — where off-slice movement lives | the TRUNK, in both eras; the head 0.5–5.6% |
-| **H1/H1b content locality** — "closed-form physics leaves teachers only team-specific content" | **REFUTED with the sign REVERSED**: the teachers that GIFTED are the LOCAL ones |
-| **H7 FiLM z-swap** — v8's per-team code carries the specialisation | **REFUTED**: swapping the code removes **3.8%** of a v8 teacher's on-slice KL (rail 20%) and leaves locality untouched ⇒ "add a per-team FiLM code to the gen era" is not to be funded on this |
-| **H4 search depth** | depth fired on 76% of searched decisions and re-ranked **+0.19%** of them (rail 20%) ⇒ **NOT DETECTED**; the binding constraint is the LEAF |
-| **H9 continuation drift** — "young updates are noise, mature updates are drift" | **DEAD**: both parents walk as t^≈0.48 (perm p 0.70). Only the CRITIC group separates (0.29 vs 0.42 after removing PopArt's gradient-free rescale) ⇒ *the mature critic has largely stopped moving*, never "directed" |
-
----
-
-## 3. Strength and meters
-
-### 3.1 The head-to-head
-
-**v8_14 beats v9_59 63.3% [59.3, 67.2]** over 559 decisive games (paired team draws from the
-sha256-verified 32-team pool intersection, both orientations, both sides greedy, 0 timeouts) ⇒
-implied ELO **+94.9 [+65.1, +124.7]** against a pre-registered +91.7. **SIGNIFICANT**, and the
-anchored Bradley-Terry extrapolation is **CORROBORATED** — one successful out-of-sample test of the
-ladder, not a validation of it as an instrument.
-
-**Power, not disagreement**: the same-day bot calibration gives +57 [−29, +143] — an interval
-containing the ladder's +91.7, the head-to-head's +94.9 **and zero**. 560 direct games pin the gap
-to ±30; 720 bot games cannot establish which model is better.
-[meas: `cross_era_head_to_head/`]
-
-**An EXTERNAL anchor exists (2026-09-14, `metamon_matched_regime_2026-09-14/`, superseding the de-risk's
-unmatched numbers):** [MEASURED · pre-registered 2×2, 800 games] at GREEDY-vs-GREEDY on Metamon's 20-team `competitive`
-gen3ou set (the away game, the primary row) the 75M win-prob run (`ai_v12_02_winprob_critic`) reads **0.650
-[0.553, 0.736] vs `SmallRL` (15M) — BETTER**, and **0.420 [0.328, 0.518] vs `SyntheticRLV2` (200M, the paper's best
-Gens 1–4 model, top 10 % of humans in Gen1) — NOT DETECTED as better, point on the losing side**; at home on our
-pool the 200M cell is 0.500. The de-risk's 0.742 / 0.583 were greedy-vs-sampling and do not survive (−22 / −8 pp
-like-for-like). "Temperature 1.0" is not one regime across models (SmallRL plays its argmax 65 % of the time at
-T = 1, SyntheticRLV2 88 %), so greedy-vs-greedy is the only comparable protocol and is the recurring baseline. Our
-719-team pool bought NO detectable home advantage over Metamon's twenty teams (team-set effect n.d. for both
-models) — 🚨 **CORRECTED 2026-10-18: those twenty are NOT never-trained teams; 19 of them are exact copies of pool
-teams** (`gen3_team_overlap_v1`, below), so the n.d. says nothing about unseen teams. In the matched read 4 forfeits desynchronised Metamon's stream (`RecursionError`; the result stands) and a pack defect
-can hang a series on an empty 7th mon; 3 / 6 s per game on CPU. Both models live outside our lineage and do not move with it; Kakuna ckpt 34 has replaced them as the goal's
-opponent since 2026-10-17. The websocket harness is the integration (our poke-env client is deleted, P6). Three hazards, as of 2026-09-14:
-upstream poke-env mis-parses nicknamed team entries into an empty species and the match STALLS rather than
-erroring; Metamon's transformers need `VanillaAttention` on CPU; its client hardcodes `ws://localhost:8000`. [ledger 2026-09-14 · *MEASUREMENT · METAMON DE-RISKED*; *THE METAMON BASELINE AT A MATCHED REGIME*]
-
-**The near-term goal — beat Metamon's BEST (`Kakuna`) on OUR teams — is MET, PROVISIONALLY, on our TRAINING teams only (unfamiliar teams: not met; LOST at 161M, level at the plateau, below) (2026-10-17,
-`x26_metamon_anchor_2026-10-17/`):** [MEASURED · one checkpoint, 161M; re-read at the plateau by X51, below] X26 `rb_x26_s2601` @161,000,169,
-greedy, on the home72 teams: **0.600 [0.537, 0.660] vs Kakuna greedy and 0.600 [0.537, 0.660] vs Kakuna at T = 1.0**
-(n = 240 each; the greedy cell reads 0.575 [0.526, 0.623] at n = 400, below), both lower bounds above 0.50; N0 read 0.460 / 0.380 on the same cells (X26 − N0 **+0.140
-[+0.046, +0.230]** / **+0.220 [+0.127, +0.308]**). It does NOT hold on `away`, Metamon's `competitive` set (0.497 [0.449,
-0.546] at n = 400, NOT DETECTED; the first 100 games' 0.570 was a lucky draw), and against `SmallRL` X26 is level
-with the previous lineage's plateau K2 (away +0.020 [−0.058, +0.094], home +0.030 [−0.040, +0.093]).
-**Against Kakuna, X26 IS a step over K2 on BOTH team sets (2026-10-17,
-`k2_x26_kakuna_both_teamsets_2026-10-17/`):** [MEASURED · PROVISIONAL · two harnesses] K2 (G0′, read through its own
-pin `a5b2fdba` on torch 2.5.1) loses to Kakuna away, 0.355 [0.310, 0.403] (n = 400, WORSE), and reads 0.487 [0.439,
-0.536] on home72 (n = 400). X26 − K2 = **+0.143 [+0.074, +0.209] away** and **+0.087 [+0.018, +0.155] home72**, both
-DETECTED. At n = 400, X26 itself reads 0.575 [0.526, 0.623] on home72 (0.600 at the first 240): the goal still
-holds. K2 − N0 on home72 is +0.027, NOT DETECTED. So the gain against Kakuna came from the end-state lineage, not
-from K2's continuation of N0. [ledger 2026-10-17 · *K2 vs KAKUNA, BOTH TEAM SETS* + its *home72 n = 400*
-follow-up] Kakuna's strongest temperature stays
-unresolved (greedy and T = 1.0 identical here). One checkpoint, one seed, at 161M; X51 re-read goal (a) at the plateau P\* (0.598, below). [ledger 2026-10-17 ·
-*X26 vs METAMON*]
-
-**🚨 Every Kakuna read so far ran on teams our models TRAINED on (2026-10-18, `heldout_teams_kakuna_2026-10-18/`):**
-[MEASURED · `gen3_team_overlap_v1`] `away` (Metamon's 20-team `competitive` set), described for a month as "Metamon's
-own teams" and "never trained on", is **19 / 20 teams EXACT copies of training-pool teams**; `home72` is 72 pool teams.
-So "X26 beats Kakuna on our teams, level on theirs" is two reads on training data that differ in WHICH teams are drawn
-(Metamon's 20 sample teams, which Metamon says it overfit to, vs 72 of ours), not in whether we saw them. X26 − K2
-stays valid (same pool). Every read now reports its team set's overlap with our pool (`summary.json["team_overlap"]`).
-The held-out set is `heldout72`: 72 replay-derived `hl_05_26` teams with 0 exact matches and 0 sharing ≥ 4 mon sets
-with any pool or `competitive` team. [ledger 2026-10-18 · *THE AWAY SET IS NOT HELD OUT*]
-**On heldout72 BOTH models LOSE to Kakuna (2026-10-18):** [MEASURED · PROVISIONAL · n = 400 each, paired seeds] X26
-**0.395 [0.348, 0.444]**, K2 **0.357 [0.312, 0.406]**, both WORSE; X26 − K2 = +0.038 [−0.030, +0.104], NOT DETECTED
-(+0.087 / +0.143 on the two training-team sets). X26 drops −0.180 [−0.247, −0.111] from home72. So **the near-term goal
-is met only on our training teams**, and the K2 → X26 gain against Kakuna is at least partly a gain on the pool's own
-teams. Unseen-by-us and a different (replay-derived, Kakuna-kind) team population are confounded in this read.
-[ledger 2026-10-18 · *X26 / K2 vs KAKUNA ON HELD-OUT TEAMS*]
-**What heldout72 is, read with zero games (2026-10-18, D0a, descriptive, post hoc):**
-- It is NOT stall-heavy: 4 of its 72 teams are stall, against 90 of the pool's 719.
-- Its games run longer: median 40–41 turns against 30–37.
-- Only 9 of its 72 teams carry a species, move, item or ability the pool never had. 160 of its 203 species-move
-  pairs absent from the pool are Hidden Power.
-
-So the drop is not explained by unknown entities or by stall. The leading hypotheses are memorisation of the CLOSED
-pool (policy, team identification, belief heads), the replay population, Kakuna's home turf and the Hidden Power
-artifact. Each has a kill test, and the cheapest discriminator, a THIRD-SOURCE set (X37a, CPU), is
-`endstate/design_diversity_teams_opponents.md` §3. [ledger 2026-10-18 · *DIVERSITY OF TEAMS AND OPPONENTS*]
-**How ladder-like heldout72 is (2026-10-18, zero games):** [MEASURED · descriptive]
-- The ladder is sample-CORE-heavy: 85 % of 22,862 `hl_05_26` teams share ≥ 4 species with one sample team and 18 %
-  share all six.
-- Only 0.2 % share ≥ 4 full sets, an understatement caused by usage fills.
-- heldout72's strata (22 / 61 / 17 % CORE / NEAR / FAR) match the ladder's (18 / 67 / 15 %). It is not off-meta by
-  species; it differs from the sample teams in its SETS and its Hidden Power artifact.
-- X26 piloting held-out teams scores 0.43 on sample-like cores and 0.25 on FAR cores (descriptive, confounded with
-  team strength).
-- No team set is neutral. THE external headline is now L, a ladder-weighted deployment estimate, read with a
-  familiarity matrix (`endstate/design_diversity_teams_opponents.md` §5).
-
-[ledger 2026-10-18 · *THE EVALUATION MATRIX*]
-**Repairing the HP Dark artifact does NOT close the gap (2026-10-18, `heldout72_hpfix_kakuna_2026-10-18/`):** [MEASURED · PROVISIONAL · n = 400
-each, paired seeds] heldout72 carried the replay archive's Hidden Power Dark fill on 164 / 432 mons (71 on the wrong side
-of their set). With it repaired from Smogon's species usage (`heldout72_hpfix`, now the held-out set of record) X26 reads
-**0.448 [0.400, 0.496]** and K2 **0.367 [0.322, 0.416]**, both still WORSE than even; the repair moves neither detectably
-(X26 +0.052 [−0.016, +0.120], K2 +0.010), and X26 stays **−0.127 [−0.195, −0.058]** below home72. X26 − K2 there is
-**+0.080 [+0.012, +0.147]**, DETECTED, but its change from heldout72's +0.038 is not (+0.043, paired [−0.040, +0.125]):
-X26's lead over K2 on held-out teams is probably real and smaller than on training teams. The held-out drop stands;
-unseen-vs-population remains confounded. This is the kill test of the Hidden Power hypothesis (H6) in the D0a list above:
-NOT supported, and NOT killed (its rule needs an upper bound < +5 pp; this one is +12 pp). [ledger 2026-10-18 · *HELD-OUT, HIDDEN POWER REPAIRED*]
-
-**The held-out drop is in PILOTING, and the deployment headline is ahead (2026-10-18, X37a stage 1,
-`measurements/x37a_eval_matrix_2026-10-18/`):** [MEASURED · PROVISIONAL · preregistered, 1,400 games] When X26 brings
-home72 and Kakuna brings `heldout72_hpfix` teams, X26 wins in every species stratum, and THE ladder-weighted headline
-reads **L (ladder_weights_v1) = 0.630 [0.573, 0.686]** (L_c1 0.624). When X26 PILOTS the held-out teams against Kakuna
-on home72 it reads **0.380 [0.334, 0.428]**. A Kakuna-vs-Kakuna cell says the held-out teams are weaker for whoever
-pilots them (K = 0.573, Δ̂ = +0.073). With that correction, piloting costs **+0.123 [+0.039, +0.206]** and facing
-costs +0.017 [−0.062, +0.095], which is not detected. The two add up (interaction −0.012, not detected). The
-preregistered H-PILOT is formally UNDECIDED: the piloting-minus-facing interval's lower bound is −0.009, 0.9 pp short
-of SUPPORTED. The off-meta form is SUPPORTED: X26 pilots held-out FAR teams 0.199 [0.017, 0.385] below CORE ones.
-So "we lose on unseen teams" means "we pilot unseen teams badly", and worse the further they sit from the sample
-cores. The UNVERIFIED assumption A-K (Kakuna's own piloting and facing familiarity equal) carries the correction.
-L is not a ladder win rate: Kakuna's deployment teams are usage-filled reconstructions. [ledger 2026-10-18 · *X37a STAGE 1*]
-
-**…and it is about teams UNSEEN BY US, not the replay population (2026-10-18, X37a stage 2):** [MEASURED · PROVISIONAL ·
-preregistered, n = 400 each] On two third sources, neither our pool's teams nor Kakuna's replay population, X26 drops as
-far as on heldout72_hpfix: **forum72** (human-built Smogon-forum teams) **0.470 [0.422, 0.519]**, **P72** (procedural
-teams from Smogon usage) **0.453 [0.404, 0.501]**, against home72 0.575 and heldout72_hpfix 0.448. Both read
-UNSEEN-DRIVEN under the preregistered third-source rule. The population-shift hypothesis (H4) is killed by its own test,
-and Kakuna's home turf is not needed to explain the drop. With stage 1: our models pilot teams they never trained on
-about 10–12 pp worse, and worse still on off-meta cores. That is a memorisation-family result (H1–H3), and widening the
-pool (D1) is the lever it points at. [ledger 2026-10-18 · *X37a STAGE 2*]
-
-**…and not because the unfamiliar teams are weak (2026-10-19, TSR, `measurements/team_strength_2026-10-18/`):**
-[MEASURED · PROVISIONAL · preregistered, 7,494 games] Rated with ONE pilot on both sides, the held-out replay-reconstructed
-teams ARE weaker: about 70 Elo (≈ 10 pp a game) below human-built forum teams, whether X26 or Kakuna pilots them, and
-procedural P72 teams weaker still (−146). Forum teams rate about as strong as our sample teams. But matching X26's
-reverse-cell games on each team's (Kakuna-rated) strength leaves the piloting gap in place: **+0.28 [+0.12, +0.44]**
-per team, +0.11 with a set-level correction. So the drop on unseen teams is X26 piloting them badly, not the teams.
-X26's own ratings also put off-meta (FAR) held-out teams far lower than Kakuna does (−236 vs −52 Elo), the off-meta
-piloting deficit seen from inside. Self-play may under-measure that deficit (hypothesis). A widening pool should draw
-human-built teams first, screened for strength but not by X26's own rating. [ledger 2026-10-19 · *TEAM STRENGTH*]
-
-**…while IN-HOUSE most of X26's progress transfers to unseen teams (2026-10-19, X37b, `measurements/x37b_transfer_2026-10-19/`):**
-[MEASURED · PROVISIONAL · preregistered, 10,752 games, no external opponent] P\* (X26 @ 280M, baseline `pstar_plateau`) against X26 @ 25M:
-P\*'s edge is **+18.8 pp on home72 and +14.8 pp [+11.6, +17.9] on unseen teams** (heldout72_hpfix + forum72), so
-about four fifths of the progress transfers.
-- The shortfall (+4.0 pp [−0.7, +8.4] in total) is NOT DETECTED once teams are resampled.
-- In the piloting-specific shape (the ref pilots the unseen team against P\* on a familiar team) it is +0.4 pp
-  [−5.8, +6.5].
-- H1 (piloting memorisation) is UNDECIDED by its rule: neither killed nor supported.
-- In-house, P\* pilots unseen teams about as well as their strength predicts. So the 11–28 pp piloting deficit seen
-  against Kakuna is either Kakuna-specific or invisible to a same-family opponent (F-DV-19). These reads cannot say
-  which.
-- Nearly all of the in-house gain came before 100M (P\*'s edge over 100M is +3.5 / +3.6 pp, descriptive).
-- The plateau is not a memorisation plateau in-house; whether it is one against outside opponents stays open.
-[ledger 2026-10-19 · *X37b TRANSFER*]
-
-**At the plateau, goal (a) holds and goal (b) is ≈ 4 pp away (2026-10-21, X51, `measurements/x51_plateau_vs_kakuna_2026-10-20/`):**
-[MEASURED · PROVISIONAL · n = 400 per cell, the X26 reads' own harness `63f97a57`, paired seeds] P\* (X26 @ 280M) vs
-Kakuna ckpt 34, greedy:
-- **home72 0.598 [0.549, 0.644]**: goal (a) MET at the plateau. Kakuna's ckpt 28 is not detectably stronger than ckpt
-  34 (0.515 [0.466, 0.564] against it), so 34 stays the opponent.
-- **Unfamiliar teams: H 0.497, F 0.530, P72 0.433; pooled 0.487 [0.459, 0.515]**: goal (b) NOT met, ≈ 4.3 pp short of
-  ≈ 0.53.
-- P\* − X26 @161M: pooled unfamiliar +3.0 pp [−1.0, +7.0], home72 +2.3 pp; each panel not detected (P72 −2.0).
-  The familiarity premium (home72 − unfamiliar) stays ≈ 11 pp from 161M to the plateau.
-- The toy T\* (no belief stack) is weaker than P\* on home72 (−10.5 pp) and forum72 (−7.3 pp), both detected; its
-  drop between them is about half P\*'s on the logit scale, not detected. Whether the belief stack is the
-  memorisation channel stays open.
-[ledger 2026-10-21 · *X51 PLATEAU vs KAKUNA*]
-
-**Goal (b)'s panels are not shown Kakuna-familiar; home72 is, and there we win (2026-10-26,
-`measurements/goal_b_panel_validity_2026-10-26/`):** [MEASURED · DESCRIPTIVE · no games] H can be in Kakuna's data
-only as its one source replay (≲ 2 trajectories). Ladder near-copies (≥ 4 shared sets): H 4.2 %, a random ladder team
-8.9 %, F 14 %, P72 0 %, home72 47 % plus 8 exact copies in Metamon's `competitive` set. On F + P72 alone P\* reads
-0.481 [0.447, 0.516], and X51, X26c and D1 keep their verdicts on every subset. Open: whether Kakuna's self-play saw
-near copies of H teams. [ledger 2026-10-26 · *GOAL (b)'S PANELS ARE NOT SHOWN KAKUNA-FAMILIAR*]
-
-**Metamon's strongest deployed agent, the `PastaMittens` ensemble, is not detectably stronger than Kakuna for us
-(2026-10-26, `measurements/metamon_strongest_2026-10-25/`):** [MEASURED · registered · n = 400 per panel, every game a
-twin of X51's] PastaMittens routes over Kakuna ckpts 28, 34 and 30 plus Alakazam. P\* scores **0.484 [0.456, 0.512]** against it on the
-unfamiliar panels and **0.550 [0.501, 0.598]** on home72. Against Kakuna it scored 0.487 and 0.598.
-**Δ-U −0.25 pp [−4.23, +3.73], NOT DETECTED** (home72 −4.75 pp [−11.5, +2.1], n.d.). So Kakuna ckpt 34 stays goal
-(b)'s opponent, at a quarter of the ensemble's CPU cost. [ledger 2026-10-26 · *P\* vs PastaMittens*]
-
-**…and practising a team for 5M does not detectably fix piloting it, nor transfer (2026-10-23, X52,
-`measurements/x52_practice_ceiling_2026-10-22/read/`):** [MEASURED · UNDECIDED by its registered rule · 4,200 games,
-two seeds, reverse cells (we pilot a half, Kakuna pilots home72), production pin `f4b25238`] P\* + 5M with our side
-piloting ONLY 36 practised forum teams (≈ 3,300 pilots a team), against P\*:
-- **practised half +3.2 pp [−0.2, +6.8]; unpractised half +1.3 pp [−3.5, +6.1]** (pooled seeds, team-clustered).
-  So familiarity is neither shown nor ruled out, and transfer is unresolved.
-- Plain continuation (C0's final) moves the unpractised half by −2.3 pp [−7.9, +3.6]. So exposure is worth at most a few
-  pp per team at this dose, and the ≈ 4 pp gap to goal (b) has no lever shown to close it.
-[ledger 2026-10-23 · *X52 PRACTICE CEILING*]
-
-**…and widening the pool with 1,981 forum teams (D1) leaves goal (b)'s statistic +2.1 pp up, UNRESOLVED at the final
-look, and costs in-pool strength (2026-10-24, X35 D1 look 2, `measurements/x35_breakers_stage_2026-10-17/d1_read/`):**
-[MEASURED · UNDECIDED (final) by its registered rule · 5 seeds per arm, 4,200 Kakuna games + 10 × 3,500 in-house pairs]
-P\* + 20M with half of each side's teams from `w_forum_v1`, against C0 (plain continuation):
-- **H (Kakuna, unseen panels H / F / P72): +2.10 pp [−0.92, +5.11]**; D1 0.492 [0.471, 0.513] vs C0 0.471. Per seed
-  +4.3 / 0.0 / +4.0 / 0.0 / +2.1. Per panel forum72 +4.0, H +2.1, P72 +0.1: what gain there is sits on the forum
-  population D1 trains on; transfer to the other two populations is not shown.
-- **P (in-house S on home72): −1.61 pp [−2.90, −0.32]**: the whole interval is below 0, so the widening COSTS in-pool
-  strength (≈ 1.6 pp), though the −2.0 bar is not excluded.
-- Goal (b) stays unmet (D1's LB 0.471 < 0.50). Breadth at this dose is not the lever that closes the ≈ 4 pp gap.
-[ledger 2026-10-24 · *X35 D1 LOOK 2*]
-
-**…and 100M more plain training (X26 380M → 480M) moves neither goal (b) nor in-house S (2026-10-25, X26c,
-`measurements/x26c_continuation_2026-10-25/`):** [MEASURED · preregistered (`e05c45eeb`) · one seed · 1,200 Kakuna
-games per model, P\* re-played in the same harness, seeds 0–19] `rb_x26c_s2601` (the fork of X26 @380M at the
-production pin, to 480,081,209):
-- **Kakuna, unfamiliar panels: U 0.4875 [0.459, 0.516] vs P\* 0.4867; Δ +0.08 pp [−3.90, +4.06]**: goal (b) NOT met,
-  trajectory FLAT (predicted ≈ 0.515, Δ ≈ +3). Per panel H −4.3, F +1.3, P72 +3.3 pp, none detected.
-- **In-house S (the X26 drift read's regime): 58.22 at 480M vs 58.23 at 380M, −0.01 [−1.54, +1.52]**: the drift
-  read's +2.05 ± 0.51 pp / 100M over 290–380M did NOT continue. On the home72 panel S moved +1.2 pp, not detected.
-- So the D3-revisit trigger ("the gap persisting with in-house strength rising") does not fire; D3 ran on a separate
-  orchestrator GO. Plain continuation past
-  380M is not shown to be a lever for either meter; the interval still allows ≈ +4 pp per 100M against Kakuna.
-- P\* re-played at the current code reproduces X51's 60 units game-for-game in wins: Kakuna-cell play is
-  deterministic per (model, unit seed), so banked P\* cells stay comparable.
-[ledger 2026-10-25 · *X26c CONTINUATION vs KAKUNA*]
-
-**Set mutation (D3 / X41) reads CONTINUE at look 1: a small, undetected gain on unfamiliar teams at no in-pool cost
-(2026-10-26, `measurements/x41_d3_setmut_2026-10-25/read/`):** [MEASURED · preregistered (`9938d7b6`) · 3 seeds per
-arm · 1,260 D3 Kakuna games; C0's rows banked from D1's read and reused after a game-for-game replay guard (7 / 7)]
-- **What it is:** P\* + 20M with 30 % of each side's teams drawn from 2,876 set-mutated variants of our 719 pool teams (4 each), each with 1–2 mons'
-  sets redrawn from Smogon usage. The species cores stay; the exact sets change. It tests whether the CORE-stratum
-  piloting deficit (familiar species, unfamiliar sets, ≈ 11 pp) is exact-set memorisation.
-- **H (Kakuna, the three unfamiliar panels): +1.27 pp [−2.63, +5.16]**, D3 0.491 vs C0 0.479; per seed +2.4 / −2.9 /
-  +4.3; per panel H +2.9, P72 +1.0, F +0.0. Without H: +0.48 [−4.29, +5.24]. UNDECIDED, Δ̂ > 0 ⇒ look 2 decides.
-- **P (in-house S on home72): −0.24 pp [−1.10, +0.62], NON-INFERIOR.** D1's breadth cost −1.61 pp; set mutation
-  shows no such cost.
-- Read against the registered guess (H +1.5): on track, and not yet distinguishable from zero. Goal (b) is not met by
-  D3 (LB 0.464).
-- **Read across two Rust engines** (found 2026-10-26, REVIEW F F-M2; `designs/tools/reads.md` §4). D3's games ran
-  on E2 (`2cc864f2`) and C0's banked rows on E1 (D1's commits). E1 → E2 changed the lock-in and recharge counters
-  and the encoder's input fixes. The guard's 140 / 140 identical games bound the divergence below about 2.1 % of
-  games (95 %), so a bias of Δ̂'s size is unlikely but not excluded. Look 2 plays every game on E1 (PREREG
-  AM-D3-ENG). [MEASURED (the engines) · INFERRED (the bound)]
-[ledger 2026-10-26 · *X41 D3 LOOK 1*]
-
-**Behind it, the literature's common factor is built and pre-registered at the plateau: breadth at 10⁴ teams (N1-P /
-X61P, 2026-10-26, `measurements/x61p_n1_production_2026-10-26/PREREG.md`):** [TRAINED 2026-10-26, three seeds · look 1
-being read · no measurement yet]
-- **Why:** every system that generalises across teams trained on 10⁴–10⁵ of them (Metamon, the random-battle bots),
-  and Procgen's held-out gap closes at ≈ 10⁴ levels (`literature/sota_survey_2026-10-26.md` §5). Every breadth test
-  here ran at 10³ teams.
-- **The toy design (X61) was reviewed NOT-READY** (`measurements/x61_n1_breadth_2026-10-25/REVIEW.md`): H shares 62 %
-  of its full sets with the procedural corpus, and the toy's familiarity premium sits below its GO bar.
-- **What it is:** a production fork of P\* with half of each side's teams drawn from 12,000 procedural teams
-  (`n1_proc_v1`, Smogon usage only), against the shared C0, 3 seeds (+2 on CONTINUE), at C0's pin + the corpus only.
-- **How it is read:** Kakuna on F alone (1,200 games per arm per seed), D1's rule; H, P72 and U are reported only,
-  because the corpus covers their sets. GAIN funds a from-scratch production run with this corpus; NULL rules out only
-  "N1 at the plateau".
-- **The registered guess:** Δ_F +1.5 pp, 80 % [−1.5, +4.5]. Any N1-trained model's U is inflated on H and P72.
-
-**…and the BELIEF STACK memorises the pool: off-pool it is confidently wrong (2026-10-26, the architecture-generalisation
-review, `model/generalisation_review_2026-10-26.md` P5 / P10):** [MEASURED · DESCRIPTIVE · 48 P\*-vs-P\* games per
-panel, one checkpoint] H3's mechanism, read on calibration:
-- Against FAMILIAR opponents the learned deltas roughly halve the species error (hidden-species hit@k 0.71–0.76
-  against the Smogon prior's 0.34–0.49).
-- Against UNFAMILIAR ones they rank no better than the prior (0.26 / 0.37 / 0.15 on F / H / P72 against 0.30 / 0.39 /
-  0.16) and are far worse calibrated: the true hidden species' log-presence is **−6.2 / −4.6 / −10.0 against the
-  prior's −2.4 / −2.0 / −3.2**, and the moves delta is worse than its prior.
-- So **63–85 % of an unfamiliar team's hidden slots hold the wrong species hypothesis** (24–29 % on a familiar one),
-  and the damage operator prices those species.
-- Our OWN unseen sets are not the problem: the encoder places them where their parts put them, and the team is
-  permutation-equivariant (F-AG-2).
-- Offline, a fixed quarter-weight mix with the prior keeps every familiar ranking and repairs most of the unfamiliar
-  calibration (−7.06 → −2.99).
-- **In GAMES that mix does not detectably help (λ = 0.25, preregistered, 1,600 Kakuna games against X51's banked P\*
-  on the same seeds): unfamiliar +1.5 pp [−2.7, +5.7], home72 −0.5 pp [−5.3, +4.3], NOT DETECTED.** An effect under
-  ≈ 6 pp is not excluded.
-- **Nor does removing the deltas (D0f, λ = 1, prior only): unfamiliar −1.5 pp [−5.5, +2.5], home72 −1.25 pp
-  [−6.7, +4.2], DiD −0.25 pp [−7.0, +6.5]: H3 NOT KILLED by its rule (too wide), and no H3 effect in games.** So the
-  memorisation is real on calibration and invisible in Kakuna games at ±5 pp; this channel is FACING, the smaller
-  part of the gap by X37a, and the belief-anchoring levers (D7, lever 1 (b) / (c)) have no game-level case.
-  (`measurements/belief_prior_mix_2026-10-26/`)
-[ledger 2026-10-26 · *H3 (BELIEF-HEAD MEMORISATION) BANKED ON CALIBRATION* · *THE BELIEF PRIOR MIX at λ = 0.25* · *at λ = 1 (D0f)*]
-
-**WHERE the familiarity premium is lost: from level mid-game positions, and with the TEAM rather than the set
-(2026-10-26, `measurements/piloting_gap_forensics_2026-10-26/`):** [MEASURED · DESCRIPTIVE, post hoc · X51's 1,600
-banked P\* vs Kakuna games; replicated on the 1,600 PastaMittens twins, which share teams and seeds]
-- **Not the opening.** Through turn 10 the material state carries none of the 11.2 pp gap (−0.4 pp [−2.6, +1.3]),
-  and P\* loses the first mon equally often on both sets. From LEVEL material at turn 10 (≈ 3 in 4 games) P\* wins
-  0.609 on home72 against 0.501 on U (+10.8 pp [+4.8, +17.0]). The state carries 2 pp of the gap by turn 20 and 8 by
-  turn 40.
-- **Not the kind of decision.** The mix of attacks, switches, setup, status, hazards and Explosions shifts between
-  the sets alike for P\* and Kakuna (every pilot-specific shift ≤ ±1 pp). What moves is targeting (switch-in
-  punishment, super-effective share), and it holds only against PastaMittens.
+**Where it is lost (the piloting-gap forensics, 2026-10-26).** [DESCRIPTIVE, post hoc · X51's 1,600 banked games,
+replicated on the 1,600 PastaMittens twins · `c758fcb82`; `measurements/piloting_gap_forensics_2026-10-26/`]
+- **Not the opening.** Through turn 10 the material state carries none of the 11.2 pp gap (−0.4 pp [−2.6, +1.3]).
+  From LEVEL material at turn 10 (≈ 3 games in 4) P\* wins 0.609 on home72 and 0.501 on U (+10.8 pp [+4.8, +17.0]);
+  the state carries 2 pp of the gap by turn 20 and 8 by turn 40.
+- **Not the kind of decision.** The mix of attacks, switches, setup, status, hazards and Explosions shifts alike
+  for both pilots (each pilot-specific shift ≤ ±1 pp).
 - **The team, not the set.** P\*'s mons out-kill Kakuna's by +0.081 per entry on home72 and −0.028 on U. Restricted
-  to sets in our pool on both sides, U still reads −0.012, so the home-to-U drop is **+0.093 [+0.004, +0.176]** for
-  familiar sets (PastaMittens +0.072, not detected). Set novelty costs about a third as much again. The premium sits
-  on common species, so it is a team-context account: how to play a familiar six, not knowledge of sets. This
-  bounds D3 (new sets in old teams) at ≈ a quarter of the premium. P\* also pilots species on ≤ 2 % of pool teams
-  badly on any team (−0.14 KOs per entry against Kakuna's), but that is ≤ 15 % of the gap.
-- Its kill test is a recombined-pool panel (familiar sets in new sixes) read against Kakuna: H-CTX predicts it
-  scores like U. Facing stays the minor channel: Kakuna's unseen-set and rare-species mons do not out-kill its
-  familiar ones.
+  to sets in our pool on both sides the drop is **+0.093 [+0.004, +0.176]**: a familiar set loses its edge inside an
+  unfamiliar six. Set novelty costs about a third as much again. This bounds what new sets in old teams (D3) can buy
+  at ≈ a quarter of the premium.
+- Facing stays minor: Kakuna's unseen-set and rare-species mons do not out-kill its familiar ones.
 
-**…and X26's plateau sits beside a small, REAL cyclic component (2026-10-19, the cycle monitor's retro read,
-`measurements/cycle_monitor_retro_2026-10-19/`):** [MEASURED · DESCRIPTIVE · the in-run snapshot ladder, not the
-registered instrument] Read by the cycle monitor's four signals, X26's ladder (72 snapshots, 1,150 mirrored lines) is
-non-transitive at every 10M check from 10M to 370M: the Hodge residual is at its bootstrap floor (p = 0.0005), with an
-excess cyclic RMS of about 4 pp of score over the whole archive and about 3 pp inside the last 80M around P\* (280M).
-The null is calibrated on that very graph (1 / 30 false flags). So under the two-tier rule P\* is a TIER-1 plateau with
-cycling SUSPECTED (never confirmed), not a declared one. Hypothesis: the cyclic part is small next to the run's
-progress but comparable to Tier 1's 2 pp bar, so at the plateau it may be what "flat" is made of. **It is MATERIAL,
-not merely persistent:** under the size bar ruled the same day (a flag counts only when the per-edge cyclic SD on
-the last 80M is above 1.7 pp at one-sided 95 %), X26's window reads ≈ 3–5 pp, MATERIAL at 28 of 37 checks
-(270M: 3.3 pp [1.9, 4.6]) and too wide to call at the other 9, NEVER negligible — so P\* still reads CONTINUE
-(`design_evaluation.md` §8.2 "The size bar"). [ledger 2026-10-19 · *THE CYCLE MONITOR* · *THE SIZE BAR*]
+**The levers, each against its own control (Kakuna, U unless stated).**
+- **Practice (X52, 2026-10-23).** P\* + 5M piloting only 36 forum teams: practised half +3.2 pp [−0.2, +6.8],
+  unpractised half +1.3 pp [−3.5, +6.1]; UNDECIDED. Exposure is worth at most a few pp per team at this dose.
+  [`42bb0858d`; ledger 2026-10-23 · *X52 PRACTICE CEILING*]
+- **A wider pool (D1, final, 2026-10-24).** Half of each side's teams from 1,981 forum teams: **+2.10 pp [−0.92,
+  +5.11]**, UNDECIDED; the gain sits on the forum panel (F +4.0, H +2.1, P72 +0.1); in-house S **−1.61 pp [−2.90,
+  −0.32]**, a real in-pool cost. [`eb99ab362`; ledger 2026-10-24 · *X35 D1 LOOK 2*]
+- **Plain training (X26c, 2026-10-25).** 380M → 480M: U 0.4875 vs P\* 0.4867, **+0.08 pp [−3.90, +4.06]**, FLAT;
+  in-house S −0.01; the 290–380M drift (+2.05 pp / 100M) did not continue. Kakuna-cell play is deterministic per
+  (model, seed): P\* re-played at current code reproduced X51 game for game. [`204204bbf`; ledger 2026-10-25 · *X26c
+  CONTINUATION vs KAKUNA*]
+- **Set mutation (D3 / X41, look 1, 2026-10-26).** 30 % of each side's teams from 2,876 variants of our 719 pool
+  teams with 1–2 mons' sets redrawn from Smogon: **+1.27 pp [−2.63, +5.16]** (per seed +2.4 / −2.9 / +4.3),
+  CONTINUE to look 2; in-house **−0.24 pp [−1.10, +0.62], NON-INFERIOR**. **Read across two Rust engines** (REVIEW F F-M2; `designs/tools/reads.md` §4): D3's games ran on engine E2,
+  C0's banked rows (D1's games) on E1, before the 10-25 observation / label and engine fixes (`d8d674b99`,
+  `f9978586b`). The guard's 140 / 140 identical replayed games bound the divergence below about 2.1 % of games
+  (95 %), so a bias of Δ̂'s size is unlikely but not excluded [INFERRED]. Look 2 plays every game on E1
+  (PREREG AM-D3-ENG). [`58287c525`; ledger 2026-10-26 ·
+  *X41 D3 LOOK 1* and its CORRECTION]
+- **The belief prior mix (2026-10-26).** P\*'s learned belief deltas are confidently wrong off the pool: 63–85 % of
+  an unfamiliar team's hidden slots hold the wrong species (24–29 % on a familiar one), and the true species'
+  log-presence is −4.6 to −10.0 against the prior's −2.0 to −3.2 (calibration, 48 games a panel). Our own unseen
+  sets are encoded compositionally and are not the problem. In games: **λ = 0.25 (a quarter-weight prior mix) +1.50
+  pp [−2.74, +5.74]; λ = 1 (prior only) −1.50 pp [−5.47, +2.47]**, both NOT DETECTED; H3 (the belief-memorisation
+  hypothesis) is not killed: its interval is too wide. The memorisation is real and invisible in Kakuna games at ±5 pp; the belief-anchoring levers have no
+  game-level case. [`f299a7243`, `71c76dfbb`; ledger 2026-10-26 · *H3 … BANKED ON CALIBRATION*, *THE BELIEF PRIOR
+  MIX* ×2; `measurements/belief_prior_mix_2026-10-26/`; `../model/generalisation_review_2026-10-26.md`]
+- **Breadth at 10⁴ teams (N1-P / X61P), trained, being read.** Every system that generalises across teams trained on
+  10⁴–10⁵ of them; every breadth test here ran at 10³. A fork of P\* with half its teams from 12,000 procedural teams
+  (`n1_proc_v1`), 3 seeds, read on F alone by D1's rule (H and P72 overlap the corpus and are reported only). The
+  registered guess: Δ_F +1.5 pp, 80 % [−1.5, +4.5]. [`5b84bca62`; `measurements/x61p_n1_production_2026-10-26/PREREG.md`]
 
-**…but the ARCHIVE gives a league almost nothing to work with (2026-10-20, X55 / LG-0,
-`measurements/x55_league_headroom_2026-10-20/`):** [MEASURED · P\*'s row 18 cells / 5,000 games on `main.h2h`; the
-Nash from the in-run ladder · DESCRIPTIVE] The archive's posterior Nash sits in C0's own recent pool (0.90 of the mass
-on the 14 snapshots 164–268M); P\* scores 0.56–0.61 against X26's 30–100M nodes and 0.45–0.59 against every node from
-130M to 270M (none below 0.5 at 95 %), 0.514 ± 0.014 against the Nash mixture; PFSP's hardness weights over A1's
-archive span only 1.3× (max / min). So the flat top is WIDE (≈ 130M–270M, and the whole archive is within ≈ 11 pp), P\*
-sits inside it, and no archive node is a hole to repair. Hypothesis: archive / PFSP levers (X35 A1 / A2, LG-2) can move
-the population score only through generalisation, ≈ 0–2 pp, below R1's GAIN bar; the population lever still open is
-exploitability against a fresh best responder (LG-1). Both since read: A1 NULL, +0.19 pp (§4.10), and R0-prod's
-headroom +11.1 pp, SATURATED (§6). Predictions registered before any X35 read (`798c4f2a`).
-[ledger 2026-10-20 · *X55 LG-0*]
+**The opponents.**
+- **PastaMittens** (Metamon's deployed ensemble over Kakuna checkpoints 28, 34, 30 and Alakazam): P\* 0.484 [0.456,
+  0.512] on U and 0.550 [0.501, 0.598] on home72; **Δ-U −0.25 pp [−4.23, +3.73]**, NOT DETECTED, so Kakuna stays the
+  opponent at a quarter of the CPU. [`82f273eff`; ledger 2026-10-26 · *P\* vs PastaMittens*]
+- **Metamon's human-only models** (trained only on human replays), 1,600 games each, twins of X51's: P\* wins
+  **0.666 [0.639, 0.692] vs `SmallRL`** (14M, offline reinforcement learning, RL), **0.631 [0.603, 0.658] vs `LargeRL`** (195M, offline RL),
+  **0.790 [0.766, 0.812] vs `LargeIL`** (194M, imitation). Each is weaker than Kakuna on every panel; offline RL beats
+  imitation on the same data by ≈ 16 pp. Against all three the unfamiliar panels are level, so P\*'s P72 deficit is
+  something Kakuna exploits. These compare recipes, not data (X59-S compares data). [OURS-BEATS ×3 · `4d8d9eef8`,
+  `df35d1bb0`; `measurements/human_only_vs_pstar_2026-10-25/`]
+- **Foul Play** (Monte Carlo tree search over a hand-written evaluator; a Gen 9 OU champion) has NEVER played P\*.
+  By proxy: Kakuna draws it, 0.490 [0.422, 0.559], and P\* beats Kakuna on home72. A pre-era 75M policy lost to it
+  0.388 [0.288, 0.497]. [`8cba100f8`, `e00e78da0`; ledger 2026-09-14 · *FOUL PLAY DE-RISKED*]
 
-**And a second anchor ABOVE us (2026-09-14, `foul_play_derisk_2026-09-14/`):** [MEASURED] Foul Play — MCTS with
-decoupled UCT over a hand-written evaluator on the Rust poke-engine, determinising the opponent's sets from Smogon
-usage — beats the same 75M policy: our win rate **0.388 [0.288, 0.497]** over 80 games, at ~1.4M visits and 2.1 s
-per decision (17× our compute per game), zero protocol failures either way. Its budget is wall-clock only, so it
-is a WIDTH METER (rule 23) and every read carries its realized visit count. Foul Play sits above the
-policy; the 200M search-free `SyntheticRLV2` does NOT sit below it at a matched regime (0.420 [0.328, 0.518], point on
-the losing side, above), so the two anchors do not bracket it. That is the end state's stage-three
-existence proof on our own simulator and teams, with the caveat that Foul Play's edge may be its opponent-set
-knowledge as much as its search — the two axes were read 2026-09-16 (`foulplay_axes_and_frontend_validation_2026-09-16/`) and are NOT SEPARABLE at n = 80: the width slope is +0.027 per ln-visit with a CI covering zero across a 9.4× visit range on one checkpoint (retiring the "inverse width ordering" as a law — rule 23 still binds), and the knowledge delta at matched width is +0.000 [−0.15, +0.15] with the sets source forced from full team datasets to Smogon sets only ("no prediction" is unreachable in gen3ou). The remaining candidates for the edge are the hand-written evaluator and the search's shape. [ledger 2026-09-14 · *FOUL PLAY DE-RISKED*; 2026-09-17 · *THE FOUL PLAY AXES*]
+### 3.2 Reading a rating
 
-### 3.2 Reading an ELO — six rules
-
-1. The headline is `<run>/snapshot_ladder/ladder.json` (dense, ±10), never `eval/elo` (±29).
-2. A rating is only final once the run is — BT re-solves every node on every add and the newest is
-   **systematically inflated** (gen-10's 12M fell 2089 → 2021 over 12 refits).
-3. A cross-run comparison must be at **matched snapshot COUNT**, not matched step.
-4. **New clause**: a bot-anchored gap between two models far ABOVE the anchors needs a direct match
-   before it is quoted as a difference.
-5. 🚨 **`win_rate_vs_pool` and `eval/elo` carry an OPPONENT-REGIME BOUNDARY at 2026-09-07** and are
-   not comparable across it. From that date eval pool sentinels play GREEDY and draw the trainee's
-   own teams by default (`gen3_eval_sentinel_greedy_default_v1`); before it the trainee played a
-   temperature-1.0 sentinel drawing from a different team distribution, worth **+8.9 pp
-   [+7.0, +10.7]** to the trainee on the SAME frozen pair the dense ladder plays symmetrically
-   (60 paired pairs on `ai_v12_02_winprob_critic`). Equal skill therefore reads ~9 pp LOWER on the
-   new regime, and the promotion gate moves 0.65 → 0.55 with it. The same flag was ON for 49 runs
-   (v5.5–v8) and dropped UNRECORDED at the v9 launch, which is the boundary nobody marked the first
-   time. **The regime is now RECORDED per run (`model_config.json` config v112) and per eval row
-   (`sentinel_regime`), and is INHERITED on a flagless resume** — read it, never assume it.
-   **`ladder.json` and every bot edge are UNAFFECTED**: the ladder always played greedy-vs-greedy
-   with symmetric builders, and since `3e6875a5` it drops the eval sentinel edges from its fit
-   entirely. Evidence: VERIFIED (ledger 2026-09-07 · *dense_reuse*, and the RECIPE CHANGE entry of
-   the same date). Under the new regime the ladder also REUSES the pairs a cycle already measured
-   (≈500 battles/promotion) — provenance rides in `games.jsonl` as `source: "eval_cycle"`.
-6. **The bot frame is PRECISE and WRONG near the frontier.** [MEASURED, `elo_calibration_external_anchors_2026-09-14`, 4,000 games] The nine pinned bots' individual edges to one external opponent imply ratings from 1775 to 2049 — 274 Elo of disagreement against a fitted se of 9.5 — and the bot frame alone orders Metamon's 15M model ABOVE its 200M model while 200 direct games say the opposite by +96. External anchors on the scale (`SmallRL` 1940 ± 9.5, `SyntheticRLV2` 1983 ± 9.7, level with the 75M win-prob run's refit 1984.6 and below arm S's 2034.6) buy no precision (se −8.6 %; newest-node inflation unchanged — it is a property of BT re-solving as nodes are added) but buy ACCURACY where the frame lies: the least-connected node, a 10M control with 6 dense pairs, moved −42 Elo. Consequence: `metamon:SmallRL` (100 games, ~2.5 min, one torch thread per peer) is a standing per-promotion FALSIFICATION read beside the ladder headline; `SyntheticRLV2` at era gates; a bot-anchored number on a SHORT run is the least trustworthy number the scale produces. The 2026-06-06 bot calibration itself is corroborated (largest move 15.4 Elo).
-
-### 3.3 The untaught meter
-
-`python -m main.untaught_meter` — the win rate of a checkpoint **piloting** a fixed team slice
-against ONE fixed opponent, cluster-bootstrapped over TEAMS. It is the number every fold verdict
-rests on, and it lives in the tree rather than in per-batch copies.
-
-- **A continuation control is REQUIRED**, not optional: `--control <arms…>` supplies it at matched
-  depth, pooled with its own max-pairwise floor, and a run without it says in print what it is
-  leaving out. (On our side the correction is currently NOT significant — §2.2 — so the
-  frozen-parent column is what we report; the control is what proves that.)
-- **Refs resolve as a launch resolves them** (§5, `gen3_last_snapshot_resolution_v1`) and the
-  resolved file + rung are stamped in the JSON.
-- **Reproducibility takes BOTH halves**: all five `$GEN3AI_*_SEED` seams AND `concurrency = 1`
-  (seeded at concurrency 3, two runs of the same measurement differed by up to +0.043 in level).
-  Concurrency > 1 is REFUSED.
-- **Floors are OPERATIONAL, not pure-draw floors.** Every arm self-plays, so from its first
-  promotion two "identical" arms have diverging opponent pools; the floor is the right bar for two
-  arms as this programme actually runs them, and "pure draw floor" is withdrawn.
-- **A floor is a property of the DEPTH, not of the meter.** End-depth replicate pairs agree to
-  0.06/0.19/1.19pp; p1M pairs scatter by 2.56/1.13/4.00pp. Quoting one floor across depths makes a
-  result either invisible or spurious.
-
-Floors currently in evidence — always quoted with the regime they were measured in:
-
-| floor | regime | source |
-|---|---|---|
-| 4.19pp | no-fold, one pair — 🚨 NOT pool-matched (`R2CTRL` started poolless, `R2PLAIN` seeded) | the original bar; likely OVERSTATES same-recipe variance, so verdicts within it were conservative; superseded by the pool-matched floors below [ledger 2026-09-30 · *AUDIT · BOTS-ONLY CONTROLS + POOLLESS FORKS*] |
-| 4.27pp [+1.23, +6.92] | **controller-live** folds, pooled over 3 depths of ONE pair | N1/N2 |
-| 1.66pp | **frozen-dose** folds, six draws | 2×2 |
-| 2.46pp | K=6 cell's own three draws | K=6 |
-| 4.00 (p1M) / 1.19 (END) | the TC replicate pairs, by depth | G1's bars |
-| 3.22 / 3.71 / 2.54 | v8-era phase 1 / cell 1 / cell 2, max pairwise of 3 arms | the v8 line |
-| 1.00pp | G5's three continuation arms | G5 |
-
-### 3.4 The eval-trace quota is loss-enriched
-
-The recorder PREFERS losses. The captured slice's outcome rate is 0.456/0.463 where the same
-cycles' own `eval_results.jsonl` records 0.901 vs bots and 0.702 vs the pool. Read raw and you
-conclude the win-prob head is grossly optimistic and, at 28M, worse than a base-rate coin — **both
-readings are artifacts of the quota**:
-
-| | raw quota | selection-reweighted |
-|---|---|---|
-| ECE (26M / 28M) | 0.237 / 0.281 | **0.025 / 0.035** |
-| skill (26M / 28M) | 0.071 / −0.080 | **+0.336 / +0.265** |
-
-Since `gen3_trace_selection_manifest_v1` each cycle's `eval_manifest.json` RECORDS the selection, and
-`main.scaffolding_gauge --reliability-reweight`, `calibration` and `falsify-scan` read it off the
-tree; a tree recording none is labelled SELECTION UNKNOWN rather than read as uniform.
-[meas: `winprob_critic_baseline_2026-09-06/`]
-
-### 3.5 The critic case file
-
-- **RESOLUTION, not level.** Population-mean gaps are small and **sign-flip by ecology** (−0.065 vs
-  bots, +0.058 vs pool); the disease is BLUR — within-decile true spread 0.11–0.36. Meter:
-  `sd_true_excess`, floor-subtracted.
-- **~39% of conviction-region blur is the IRREDUCIBLE hidden-information floor**, concentrated in
-  ~10–20% of states. No value head removes it; quote effects on the EXCESS.
-- **Bias, not variance** — 32× averaging is flat, so search amplifies a SYSTEMATIC leaf error.
-- **Room exists**: critic rank re-expands under richer targets; residuals are sub-Gaussian, so the
-  distributional lever is dead and the parameterization is already adequate.
-- The head's **ecology split reproduces**: the pool class carries 2.4×/8.4× the bot class's
-  reliability error. A pooled number describes neither.
-- ⚠️ **On the raw slice an affine map of the SHAPED critic out-predicts the win-prob head**
-  (Brier 0.1835 vs 0.2304 at 26M). **UNVERIFIED whether this survives reweighting** — the affine
-  gauge has no weighted form.
-  [`critic_calibration_plan.md` §0; `winprob_critic_baseline_2026-09-06/`]
-
-### 3.6 The truncation defect
-
-**This env never truncates in SB3's sense** — both `terminated` and `truncated` require
-`battle.finished`, so "truncated" here has always meant *finished, not by a wipe*: the 250-turn cap,
-a forfeit, or a tie. `gen3_env` forfeits at the cap, Showdown answers `|win|<opp>`, poke-env's
-`calc_term_trunc` tests "was exactly one side wiped", a forfeit leaves six alive a side, so
-`TimeLimit.truncated` reaches `ppo_mask` and `r += γ·V(s_last)`.
-
-⇒ **under the shaped critic a cap forfeit and a tie bootstrap `0.9999·V(s_last)` on top of a
-terminal reward that already paid the penalty — on every run to date.** That behaviour is kept
-byte-identical and is now STATED rather than silent; only `--critic winprob` relabels them terminal
-(`gen3_winprob_truncation_v1`, `e798c13a`; measured live with the cap lowered to 6).
-
-**This is a CANDIDATE mechanism for the optimistic-V-at-the-cap pathology (a positive V on the final
-decision in 13 of 14 timeout losses, the defect the deadline clock was built for), NOT a proof.**
-No arm has isolated it. [UNVERIFIED as the cause]
+1. The in-run headline is `<run>/snapshot_ladder/ladder.json` (dense, ±10), never `eval/elo` (±29).
+2. A rating is final only once the run is: Bradley-Terry re-solves every node on every add, and the newest node is
+   systematically inflated.
+3. Compare runs at matched snapshot COUNT, not matched step.
+4. A bot-anchored gap between two models far above the bots needs a direct match before it is quoted.
+5. A windowed rating never crosses an opponent-regime boundary; the regime is recorded per run and per eval row.
+6. The bot frame is precise and wrong near the frontier (274 Elo of disagreement against a fitted se of 9.5), so a
+   strength claim carries an outside opponent's number. [ledger 2026-09-14 · `elo_calibration_external_anchors`]
 
 ---
 
-## 4. The win-prob critic era — what is true now
+## 4. What the Rustboro era has measured in-house
 
-### 4.1 The design's end state
+### 4.4 Collapse: no starvation on X26; a treadmill at the plateau
 
-`--critic winprob` (default is `shaped`, and a flagless run is byte-identical). Promoted, the mode is:
+**The pre-era baseline.** Along the ai_v14 lineage the share of decisive turns where a near-best action got < 1 %
+of the policy rose ≈ 0.33 → 0.50 ("starvation"), and the critic was as blind to those moves as the policy.
+[ledger 2026-09-29 · *M5 LANE S GATE ④ AT SCALE*; 2026-09-30 · *X4 PRE-READ*]
 
-- **`V(s) = σ(win logit) ∈ [0,1]`**, and the value loss IS that head's BCE against the terminal
-  outcome, weighted by `--vf-coef` (one critic, one coefficient).
-- **The reward stream is the terminal WIN INDICATOR alone**: `+victory_value` on a win, `0.0` on a
-  loss, a tie AND a 250-turn timeout alike. At `--victory-value 1.0` and `--gamma 1.0` the
-  undiscounted return is exactly `1{win}`, so **`V(s) = P(win | s)` with no approximation term** —
-  the identity the mode rests on.
-- **PopArt is REFUSED** (a bounded stationary Bernoulli payoff has no scale to track; since L1 it is DELETED outright), the
-  distributional head leaves, and the shaped-return currency is deleted. The BCE joins the `value`
-  noise-scale group.
-- **The critic's target stops being bootstrapped** — an MC outcome label, not `returns = advantages
-  + values`. GAE still bootstraps for the ADVANTAGE. **This is the single biggest open risk in the
-  design and it is argued, not measured.** [UNVERIFIED]
+**X26 does not repeat it (collapse pilot, 2026-10-17).** Starvation is FLAT from 10M to 160M (−0.011 [−0.090,
++0.061] on its own truth) while dominated mass and greedy regret FALL: healthy sharpening, at ≈ 0.3 of decisive
+turns. About 3/4 of what starvation there is is MISRANK, not ties; the starved moves are worth +0.35 to +0.39 per
+turn in the TRUE world, but an honest one-ply read cannot find them. [DESCRIPTIVE · `393fe716f`;
+`measurements/collapse_pilot_2026-10-17/`]
 
-Corrections that landed with it, and are what is true now rather than what the design first said:
+**A cleaner value label does not help (2026-10-06).** Refitting the win-prob readout on 8-rollout CRN labels moves
+held-out sibling accuracy −0.014 [−0.032, +0.002] (a gain excluded); an 8-rollout leaf reads +0.077. The bound is
+representation or coverage, not the label. [ledger 2026-10-06 · *CRN LABEL REFIT*]
 
-1. **The label is the WIN INDICATOR, not ±1.** A draw is a not-win (`y = 0`) by explicit decision.
-2. **Timeouts, forfeits and ties are TERMINAL** under this mode (§3.6) — the fix that lets the
-   critic SEE a timeout at all. Registered expectation: timeouts FALL.
-3. **Frozen-φ was declared but HELD, and is now DELETED** (L1, 2026-10-02; `--win-prob-pbrs-frozen` and every `--win-prob-pbrs-*` flag are gone, `designs/deleted_flags.md`); it is the SELF-φ / FROZEN-φ ladder's later rung.
+**The plateau (180M–380M) is a TREADMILL (2026-10-20).** ≈ 30 % greedy churn per 20M whose distance barely grows
+with lag; the pool goes stale (promotions per 50M 9 → 3, median member age 63M → 135M); the learning rate halves (1.74e-4 →
+8.4e-5) under its adaptive controller, which holds the policy change per update (the KL divergence) at
+0.017–0.019. Starvation creeps up +0.03 to +0.06. No coverage, rank, dormant-unit or opponent-model collapse. The toy shows the same halving and staleness, but its
+rate held for 80M before its plateau, so the step size covaries with the plateau without coinciding. Every X35 fork
+starts at P\*'s halved rate, so a NULL there reads "NULL at the halved rate". The learning-rate floor (LR-F) tests
+it (§6). [DESCRIPTIVE · PROVISIONAL, one seed · `3e8a41249`; ledger 2026-10-20 · *X26 COLLAPSE BATTERY*]
 
-🚨 **A critic bounded in [0,1] cannot represent "a timeout is worse than a loss."** The −35 < −30
-ordering is *unrepresentable*, so `--draw-penalty` is REFUSED. Anti-stall pressure comes from the obs
-deadline clock plus `--arm-no-progress-tax`. **Stall rate and mean episode length are PRIMARY
-endpoints, not monitored ones.**
+### 4.5 Beliefs: hypothesis tokens adopted; hidden facts are not a policy lever
 
-### 4.2 The first arm and its pre-registered read
+**X5 (look 3, final, 2026-10-07).** Hypothesis tokens ("fixed_mass": concrete weighted guesses of the opponent's
+hidden mons) against the older belief "blob", 8 seeds a side: matched steps −0.99 pp [−2.92, +0.94], **NON-INFERIOR**;
+matched wall time −5.91 pp, INFERIOR (a cost-now finding); opponent-intent log loss −0.151 nats, better. Adopted
+under the owner's pre-committed rule; the blob path is deleted. [`c344ccd1a`; ledger 2026-10-07 · *X5 A/B LOOK 3*]
 
-`ai_v12_02_winprob_critic`, fresh, pinned `f971caf2`, `--steps 75000000` (~33 h: **601 fps** once the
-self-play pool is non-empty, 919 fps pool-empty before the first promotion at 4M — a 1.53× step, the
-cost of a neural opponent, not a per-promotion tax; ~312 s per 3 h restart; 75M ETA Tue 08 Sep
-08:00–09:00 [ledger 2026-09-06 · *6M read* and *RESTART READ RULINGS*]), relaunched 2026-09-06 20:27 on the PRODUCTION architecture
-surface — 49 derived toggles diffed against `production_config.json`, 0 differing. Its predecessor
-`ai_v12_01_winprob_critic` ran ~7 GPU-hours with 31 architecture flags at their OFF defaults and is
-DEAD and not evidence [ledger 2026-09-06 · *INCIDENT — ai_v12_01 ran ~7h on a stripped
-architecture*]; the first `ai_v12_02` launch at `--batch-size 4096 --grad-accum-steps 16` OOMed at
-iteration 1 inside the gradient-balance probe [ledger 2026-09-06 · *OOM — the win-prob batch
-correction is 2048x32*]. The shape that fits the full surface on the 12 GB card is
-**`--batch-size 2048 --grad-accum-steps 32`** — the same 65,536 effective batch and the exactly
-identical gradient; the micro-batch sets the activation peak and the peak is a function of the
-architecture surface, so a fit measured on the stripped arm was evidence about a different model.
-In flight: ~7.3 GB at 87% utilisation, 0 OOM.
+**Perfect information buys little strength.** A network trained TOLD the opponent's species beats blob by +2.44 pp
+[+0.31, +4.57], told the whole set +2.18 [+0.53, +3.84]; both under the 4.57 pp floor, and the set adds nothing over
+the species. Handing an untrained network the truth costs it 8.1 pp. [WITHIN FLOOR · same entry]
 
-**The read was one command** (the critic gate, retired 2026-10-25): the anchored ladder at **matched SNAPSHOT COUNT** against the parent
-CONTINUED, the §4.3 calibration gate with **RESOLUTION primary** and `bot`/`pool` never pooled, the
-G7 stall kill condition, and `main.untaught_meter` with its continuation control. Every bar is READ
-from `measurements/winprob_critic_baseline_2026-09-06/`, never hardcoded.
+**The knock-in forks (2026-10-15).** The end state forked for 3M steps with the truth in 95 % of rows: told moves
+**−0.38 pp [−1.86, +1.10]**, items +0.13, species −0.59, all NULL; spreads NOT DETECTED. Withheld at play, the moves
+and species forks lose ≈ 2.4–2.6 pp: the network swaps its own inference for the told facts. Privileged information,
+if ever used, belongs in the critic. [NULL · PROVISIONAL (+3M from one 15M parent, no placebo) · `ffd2280ee`;
+`designs/endstate/design_hidden_info_binding.md` §8.7]
 
-**The gate, as it now stands** (owner ruling 2026-09-06): **G1 resolution** is the primary endpoint
-and must strictly beat the matched-stratum baseline. **G2 reliability / G3 ECE are PER-STRATUM
-NON-INFERIORITY bars against the baseline's same-stratum value at the MATCHED checkpoint** — the
-absolute numbers (≤0.005, ≤0.05) stay printed as ASPIRATIONAL and gate nothing, because **the
-baseline itself breaches them on the `pool` stratum** (reliability 0.0064/0.0103, ECE 0.0667/0.0875),
-so as first written the arm had to clear a bar its own predecessor never cleared. **G4 skill > 0**.
-**G7 stall rate + episode length** is the KILL condition. **G5 / G6 / G8 are gaps and print as NOT
-RUNNABLE on every report** — a gate with unrunnable criteria quietly becomes the runnable ones.
+### 4.6 The static-token screen (closed 2026-10-09)
 
-**The FAMINE PRE-TEST** (registered before any read): this arm is the SPARSE rung of the
-SPARSE / SELF-φ / FROZEN-φ ladder and went out at generation scale without the runbook's 5M
-starvation pre-test, so the pre-test runs INSIDE it. Comparator **`ai_v9_29_rev1_0823`**;
-**floor 38 Elo** — the max |Δ| between two same-class fresh runs at matched steps, **NOT** the
-adjacent-node spread (172/186 Elo, which is steep early LEARNING and would pass an arm that learned
-nothing). **At ~10M (amended 2026-09-06 — at 5M the full-surface arm has ONE snapshot, and a one-node
-ladder is not a rating): trailing rev-1 by more than 38 Elo at matched snapshot count AND
-`win_rate_vs_bots` not rising over ≥3 cycles ⇒ kill and launch FROZEN-φ. ~5M is a SMOKE of the read
-(inputs resolve, comparator prints, composition guard 0, draw-rate bar ≥ 0.03 with rising episode length).**
-[ledger 2026-09-06 · *READ AMENDMENT — the famine read moves to ~10M*] Pre-registered confound: the incumbent
-had PBRS *and* PopArt *and* the shaped critic, so this is a rate comparison ACROSS RECIPES — a trail
-inside 38 Elo is **not** evidence of equivalence, only that starvation was not demonstrated.
+Static per-mon tokens alone were slightly weaker than the legacy encoder: look 3, 8 seeds a side, **−2.32 pp
+[−3.68, −0.95]**, NOT DETECTED as non-inferior at the 3.5 pp margin (t 1.623 against 1.874). Not slow learning: the
+deficit is flat over training; it is expressiveness for board facts that arrive only through attention (own-side
+Spikes R² 0.33 vs 0.46), worst on stall teams (−10.7 pp). A probe battery found five decision facts poorly decodable
+in both encodings (the end-of-turn race, boost size, the opponent's HP at our move seats, the speed margin, their
+Spikes). The fix was the end-state bundle (§4.6b); the isolated value of its third trunk round is unknown. [NOT
+DETECTED · `6956cccf8`; ledger 2026-10-09 · *STATIC-TOKEN SCREEN LOOK 3*, *WHERE IS STATIC WORSE?*, *THE
+REPRESENTATION PROBE BATTERY*]
 
-**THE n = 12 STRENGTH READ (2026-09-07 ~09:05, the strength half of D2):** at matched snapshot
-count AND matched fit size (both 12-node fits, no refit) the arm **TRAILS rev-1 by 34 Elo against the
-38 floor — WITHIN FLOOR**, margin 4, with 2M extra steps in the arm's favour; sparse is not
-demonstrated inferior at this depth and not demonstrated equivalent [ledger 2026-09-07 · *THE n = 12
-STRENGTH READ*; `measurements/winprob_critic_26M_n12_read_2026-09-07/`]. 26M is a new ladder peak
-(2064.1; rev-1's 12th node 2098.4). Calibration G1 fails on every stratum and the BOT stratum's
-resolution has decayed 0.030 → 0.014 since 14M while pool holds ~0.05; G2/G3 pass at 26M; G4 fails
-on bots. Two dissociations between the fixed-bot axis and the self-play-lineage axis in five
-snapshots, opposite signs, no account. **Reframed at 26M: the axis is FIXED-BOT vs POOL, not
-strength vs calibration** — three instruments (eval episode length, G1 resolution, G4 skill) show
-the arm's relationship to the fixed bots degrading or flat while its relationship to its own pool
-holds or improves; the bot win-rate "decline" was noise (per-bot rows rebounded at 26M); the bot-side
-calibration decay survives base-rate normalisation at ÷2.2 (skill) against the pool's ÷1.2 [ledger
-2026-09-07 · *REFRAMING — FIXED-BOT vs POOL*]. UNVERIFIED account; the per-bot calibration rows at
-28M are the registered discriminator.
+### 4.6b The end-state closing test: PASS (2026-10-12)
 
-**THE 10M READ (2026-09-07 ~00:40): NO KILL — the arm continues to 75M.** [ledger 2026-09-07 ·
-*10M DECIDING READ*; artifacts `measurements/winprob_critic_10M_read_2026-09-07/`] At matched
-snapshot count AND matched fit size the arm **TRAILS rev-1 by 30 Elo against the 38 floor** (WITHIN
-FLOOR; the arm holds 2M more steps at its 4th node), and `win_rate_vs_bots` rose over all five
-cycles 0.556 → 0.894 (SIGNIFICANT, safe direction). Neither half of the famine AND is met.
-🚨 As shipped, `critic_gate` printed **"+64 lead"** — it compared the arm's 4-node fit against rev-1's
-final 12-node fit, and rev-1's 8M node deflates 94 Elo between the two (rule 3 of *Reading an ELO*
-in `src/agents/training/CLAUDE.md`); fixed in `462e9cdb`, which refits the longer ladder on its
-first n. The Δ vs the fold parent (+159) is at UNMATCHED fit size (the fork's early nodes are rated
-only through edges to its late selves) and is not a lead claim. **G1 resolution is BELOW its bar at
-10M on every stratum** (`all` 0.0375 [0.0267, 0.0544] vs 0.0618; G2 also fails, G3 passes; the
-falsification clause is not triggered because G2 fails too) — the bar is a 28M model's and the arm
-is at 10M, a maturity asymmetry STATED and NOT used to re-base the bar; G1's registered read is the
-75M gate. **The open finding, cause UNVERIFIED: strength and critic calibration are moving in
-OPPOSITE directions on this arm** — it is winning at the shaped incumbent's pace without the
-calibration the design predicted would carry it. **Candidate mechanism, from the run's own gradient
-scalars [ledger 2026-09-07 · *RESTART 2 RULING*]: the POLICY gradient on the shared trunk tripled
-after self-play began (0.56 → ~1.05) while the value gradient stayed flat (0.36 → 0.21–0.28), so the
-value head's share of the trunk update fell 0.44 → 0.13, and the train value loss and Brier have been
-FLAT since ~6M — the critic is riding a trunk the policy increasingly owns.** The vf_coef flag
-(`grad/value_policy_logratio` −0.298 → −0.5006 → −0.638 across the three restarts) is CONFIRMED and
-closed as a loop; arm B's `--vf-coef` (keep 0.5, or raise to restore the value share) is decided at
-D2 on this evidence. G7 clean (stall 0.0000 except 4M 0.0062). The
-registered ep_len clause 2 read MET (+4.12 turns) on a competence SAWTOOTH locked to the 2M pool
-promotions with draw rate at a third of its bar — the AND with clause 1 is what kept a met clause
-from reading as famine, and the +3.0 bar is banked as too tight for the next registration.
+The full end state (static tokens + the recovery levers incl. a third trunk round + the fact levers), 8 seeds × 15M
+against production's legacy encoder, the registered 8 × 8 mirrored cross: **Δ̂ +0.596 pp, 90 % [−0.723, +1.915]**.
+Both clauses of the owner's rule hold (upper > 0, lower > −2.0): **PASS**, adopted; not a superiority read. Which
+levers carry the recovery is unknown (no bisection). [PASS · `748f90e6f`; ledger 2026-10-12 · *THE END-STATE
+CLOSING TEST: PASS*]
 
-### 4.2b The 75M read (2026-09-08) — VERDICT [ledger 2026-09-08 · *D2 VERDICT*]
+### 4.6c The bf16 trunk: PASS (2026-10-14)
 
-**The win-prob-only critic FAILED its primary bar.** [MEASURED, `23164e03` + `cbad491d`] At run end
-(75,005,952 steps; last trace cycle 74.0M) the head's resolution sits BELOW the matched-stratum
-gen-era baseline on 60 of 60 rows (all 0.0452 [0.0331, 0.0615] vs 0.0618), reliability and ECE
-fail on the unhandicapped bot stratum, skill stays positive (+0.240 [+0.175, +0.294]). The identity
-test explains the failure: V over-values positions against its own Monte-Carlo continuation by
-+0.0965 [+0.0671, +0.1268], and the offset is late-game (late − early +0.167 [+0.086, +0.251]);
-per-state error 0.255 is 2.6× the offset. The design's own falsification clause (§5.5) is exceeded.
-**Sparse is WITHIN FLOOR on strength** on the one clean read (26M, −34 vs floor 38). The run-end
-strength read is NOT COMPARABLE: pool grooming deleted the early snapshots and the tool slices the
-survivors — a P1 tool defect (refit from `games.jsonl` over all rated steps). **Every committed A
-ladder number is ~+73 high** (pre-fix updater folds sentinel edges; fixed-fit final node 1984.2,
-peak 2000.2). **Open:** is the late optimism the γ = 1 terminal-label target or a moving-policy
-target? Test 3 (bootstrap consistency) separates them. **Next arm per D2:** the frozen GEN-ERA head
-as an actor-only potential on a fresh run (the D3 upper-bound arm), sequenced after arm C's first
-read. Arm C (`ai_v12_04_pfsp_fork25M`, PFSP 2.5 one-sided, greedy sentinels) is LIVE on the GPU
-since 2026-09-08 10:12, pinned at `ef981a89` [MEASURED, pin_history].
+The trunk rounds under bf16 autocast (heads, losses, decisions and rollouts in fp32), 8 seeds × 15M a side, the same
+rule: **Δ̂ +1.06 pp, 90 % [−1.19, +3.31]**, PASS; `train_ms` 54.3 s → 42.1 s (−22.5 %). It covers fresh runs, not an
+fp32 lineage switched midway: a fork inherits its parent's precision. [PASS · `89d258af6`; ledger 2026-10-14 · *THE
+bf16 STRENGTH A/B: PASS*]
 
-**The resolution failure has a named component: the head does not condition on the opponent.**
-[MEASURED, `winprob_mixture_diagnostic_2026-09-09`] Over the last four trace cycles the
-between-opponent spread of `V` on turn-1–3 states is 0.334× [0.318, 0.451] the between-opponent
-spread of the outcome, where a calibrated critic's must be 1.0; over all states, 0.573
-[0.509, 0.689]. Bias `V` − true win rate rises with opponent Elo at +0.0171 [+0.0131, +0.0209]
-per 100 Elo (14 opponents; +0.0094, +0.0300 with opponents resampled), running −0.092 against
-`random` to +0.106 against the strongest sentinel. The loss-preferring capture rate and the
-greedy-sentinel handicap both work AGAINST the finding, and the effect is largest on early
-states and reverses late. **A second conditioning failure, larger, was found in passing: the
-trainee's OWN team explains ~9× more of the critic's residual than the opponent does**
-(+0.0246 [+0.0202, +0.0385] vs +0.0027 [+0.0013, +0.0074], both in excess of a permutation
-null). **Open:** whether feeding the value path an opponent-strength scalar closes any of it —
-the D-ladder's conditioning arm, sketched in the measurement dir §12. **Caveat:** the bot-only
-slope is NOT DETECTED once the nine pinned bots are themselves resampled; the detection rests
-on the 14-opponent set and, more strongly, on the spread identity, which needs no strength axis.
+### 4.7 What search needs: the information, not the acting rule
 
-**The conditioning failure is a HEAD failure, not a representation failure.**
-[MEASURED, `winprob_probe_read_2026-09-09`] On turn-1 states of `ai_v12_02_winprob_critic` @74M,
-`stash.value_pooled` — the tensor the win head reads, with `V = sigmoid(head(value_pooled))` —
-linearly decodes the opponent's class at AUC 0.846 [0.811, 0.877], the trainee's team identity at
-macro AUC 0.974 [0.966, 0.981], the team's leave-one-out win rate at R² 0.671 [0.527, 0.790] and the
-opponent's Elo at R² 0.177 [0.112, 0.234], each clear of a permutation null run through the identical
-pipeline. `V` itself reads 0.532 (inside its null), 0.631, 0.010 and 0.006 on the same four; every
-paired V−pooled delta CI excludes zero. The raw-obs → value-path loss exists but is 4.3–8.7× smaller
-than the value-path → V loss at that decision point. The ladder's own control substrate
-(`ai_v12_11_ladder_ctrl10M` @10M) agrees, with `V` inside its null on opponent class at every bucket
-past turn 1. A 64-unit MLP probe recovers MORE from `value_pooled` than the linear probe (own-team
-win rate R² 0.746 vs 0.585), so non-linear coding is not the escape. **Consequence:** the
-value-side opponent-CONDITIONING arm sketched in the mixture diagnostic's §12 targets a gap that is
-not binding; the binding one is between `value_pooled` and the head's output, i.e. the TARGET the head
-is trained on. Where `V` does clear its own null (opponent class and Elo from turn 3 on, team identity
-throughout) it still sits far below the tensor it reads, every V−pooled delta CI excluding zero. **Open:** whether refitting the win head alone on a frozen `value_pooled` against a
-conditional target (per-(opponent, team) empirical win rate, or an MC continuation) recovers the
-between-opponent spread — an offline CPU test, not a GPU arm. **Caveat:** a proper scoring rule with
-one 0/1 label per episode makes shrinking toward the marginal the variance-minimising response, so
-"has it and does not use it" is a statement about what the head is PAID to do, not about what it can
-represent.
+The consolidated search view is [`../endstate/search_ledger.md`](../endstate/search_ledger.md) (always-current;
+every search result updates it). The findings that steer it, all on search banks:
+
+- **Oracle rollouts carry value the critic lacks** (2026-10-11): an 8-rollout leaf's pick beats the policy's by
+  +0.081 / +0.071 per decision on the end-state and production seeds, the critic by +0.055 / +0.059 (SIGNIFICANT,
+  oracle world). Trusting the policy prior hurts. [ledger 2026-10-11 · *VALUE-DISCRIMINATION PILOT PHASE 1*]
+- **In honest worlds that edge is gone**: +0.007 / +0.004, not clear of zero; oracle − honest ≈ +0.07. The value was
+  hidden information about the opponent's team. Oracle playouts as value labels for a frozen body do not help.
+  [SIGNIFICANT (the information cost) · NOT DETECTED (honest gain) · ledger 2026-10-11 / 12 · *PHASE 2 / 2b*, *PHASE
+  2c + the v2 RE-READ*, *PHASE 3*]
+- **Which hidden facts bind (Tier 1 of the hidden-information study, 2026-10-15, and its replications).** The gap is ≈ 7 points per decision;
+  "the opponent's hidden moves are THE binding constraint" is REFUTED. At 15M the never-seen mons carry more
+  (replicated by a blind build at the 8-rollout leaf; U-FIRST on the competent-opponent bank E2); at P\* the two
+  classes are SHARED. The gap falls with the turn (+0.095 early → +0.033 late), and no stage has honest search
+  clearly above the critic. [ledger 2026-10-15 · *HIDDEN-INFO STUDY TIER 1*, *THE RED TEAM*; 2026-10-16 · *THE BLIND
+  U-ARM BUILD*; 2026-10-18 · *E2*]
+- **Maturity does not bring honest search closer (2026-10-25).** X26 25M → P\* on 719 plateau-drawn states: the gap
+  +0.061 → +0.058, change **−0.003 [−0.020, +0.015]**, NOT DETECTED; the network's belief is worth p ≈ 0.014 of
+  weight on the true world against the ≈ 0.2–0.5 a search needs; no stage opens. [SELF-REFEREE · `e7048bb1d`;
+  `measurements/hidden_info_maturity_x26_2026-10-18/`]
+- **The acting rule is not what binds (L1, 2026-10-20; replication 2026-10-25).** A policy-anchored rule (piKL)
+  lifts honest search from below the policy to about the policy, never above it on X26. Its one paying cell (the
+  4-turn leaf) replicates thinly, **+0.0097 [+0.0025, +0.0169]**, all of it at the 25M anchor (+0.0193) and nil at P\*
+  (**+0.0001 [−0.0097, +0.0101]**). [PAYS-SCOPED · REPLICATES thinly · `f756019d7`; `measurements/search_l1_plateau_2026-10-25/`]
+- **Only identifying the opponent's whole team pays (world sampler stage 1, 2026-10-21).** The training pool's
+  consistent teams beat today's honest worlds by +0.038 [+0.022, +0.055] (0.72 of the oracle gap); every
+  open-population sampler (Smogon teammates, a ladder-corpus model, the forum corpus, the network's own species) is
+  NOT DETECTED, and calibration buys nothing. [`537670f7a`; `measurements/world_sampler_stage1_2026-10-19/`]
+- **The opponent's own choices identify the truth only when the opponent plays like our network (L3, off-pool,
+  stage 1c, 2026-10-20 / 21).** At P\* against our snapshots the truth outranks honest worlds 79 % of the time;
+  against scripted bots not at all (0.472). Worlds resampled by that likelihood are slightly nearer and do not pay
+  (best arm +0.007 [−0.003, +0.017]). A human opponent model as the judge does no better (R-b2, §4.8). [`0d0058408`;
+  ledger 2026-10-20 · *L3*, *L3 OFF-POOL*; 2026-10-21 · *stage 1c phase B*]
+- **The referee (E1-0, 2026-10-25).** With a real bot scoring the banked bot-stratum picks, oracle-bot − self is
+  −0.024 [−0.054, +0.009]: UNDECIDED, no relabel; descriptively the self-referee's gains shrink against the bot
+  (oracle gap +0.050 → +0.010 at 225M). Every figure above is a self-referee size. [`015f00e20`;
+  `measurements/search_e1_0_2026-10-26/`]
+
+**The view.** Search is paused. Enabling it needs a world sampler that holds the opponent's actual team; policy
+training absorbs some of what perfect information would buy, but not enough to make honest search useful.
+
+### 4.8 Human data: signal in the labels; a human opponent model that learns but does not judge
+
+- **The intent head's gap (X50 R1 / R0).** X26's intent head predicts human ladder opponents (rated ≥ 1500) worse
+  than its own pool snapshots: through the fixed spectator pipeline **+0.253 nats [+0.232, +0.276]**, most on
+  switches (+0.411; on a human switch it is worse than uniform). Human labels carry signal self-play labels lack.
+  [SIGNIFICANT · `6888a5ec4`, `f8d58205c`; ledger 2026-10-20 · *X50 R1*, 2026-10-23 · *X50 R0*]
+- **The human opponent model (HOM; R-b1 / R-b2).** P\* fine-tuned on 1.76M completed human choices predicts held-out
+  humans **0.582 nats [0.565, 0.599] better than P\*** (top-1 57 % vs 46 %); on accounts never seen in training
+  0.503 [0.467, 0.542], so mostly not account memory. As search's judge it does not help: the truth's rank against
+  scripted bots 0.459 [0.406, 0.510] (P\* 0.472), HOM-NONE. Whether a human's choices identify a human's team
+  (L3-H) is unread. [SIGNIFICANT · `92af1f121`, `73428c077`; ledger 2026-10-24 · *X50 R-b1*, *X50 R-b2*]
+- **The data card (2026-10-25).** The frozen spectator snapshot `hr_spec_v1`: 376,410 ladder logs, 0 parse errors;
+  actors rated ≥ 1500 give 1.80M informative rows; ≈ 6 % of sides are rule-flagged bots; keeping our panels
+  unfamiliar removes ≈ 71 % of ≥ 1500 battles. Whether human labels carry the unfamiliar-team skill goal (b) lacks
+  has no evidence either way. Human replays may train the policy only as a toggleable lever, off by default (owner).
+  [DESCRIPTIVE · `14ae42035`; `measurements/human_replay_quality_2026-10-25/`;
+  `../endstate/human_data_architecture.md`, `../endstate/design_human_replay_lever.md`]
+- The X50 reads and the HOM's rows used the pre-fix intent masks (opponent Explosion / Self-Destruct and 12–17 % of
+  attacks unlabelled); no result is invalidated, but an extraction at HEAD is a different population. [ledger
+  2026-10-26 · FIX · *the obs / label GIGO audit*]
+
+### 4.9 The entity toy: ahead at equal compute, behind at the plateau; depth 2 → 4 UNDECIDED
+
+- **At production's 15M budget, equal GPU wall clock** (T-ENT: 1.42M parameters, ≈ 3.3× production's steps per
+  second, so ≈ 46–48M steps): **+6.5 pp, 90 % [+4.5, +8.4]** against the 8 bf16 end-state finals; −14.1 pp at matched
+  steps. [DESCRIPTIVE (seeds-as-units interval) · `38d767462`; ledger 2026-10-16 · *THE T-ENT TOY AT EQUAL COMPUTE*]
+- **At the plateaus the order reverses**: against Kakuna the toy's T\* (290M) is −10.5 pp (home72) and −7.3 pp
+  (forum72) below P\*, both detected. [`3010c81ba`] The registered toy-cap vs X26-plateau head-to-head (R-T2) is
+  unread.
+- **Depth (X47, 2026-10-21).** T\* grown from 2 to 4 attention rounds, +70M, against toy C0 at equal learn time: **Δ
+  −0.88 pp [−3.20, +1.44]**, UNDECIDED with Δ̂ ≤ 0, FINAL at look 1. The new rounds did change the policy (zeroing
+  them moves the argmax on 25–29 % of decisions) without raising S. X47b (production 3 → 4) is not run. Never "depth
+  does not help": one growth recipe, on the toy. [`d6e57f2e9`; ledger 2026-10-21 · *X47 LOOK 1*]
+
+### 4.10 The population at the plateau: no archive hole, a real best-responder gap
+
+- **The archive (X55 / LG-0, 2026-10-20).** X26's archive Nash sits in C0's own recent pool (0.90 of the mass on
+  164–268M); P\* scores 0.45–0.61 against every node and 0.514 ± 0.014 against the Nash mixture: a wide flat top with
+  no hole to repair. [DESCRIPTIVE · `bb962c132`; ledger 2026-10-20 · *X55 LG-0*]
+- **The cycle monitor (2026-10-19).** X26's snapshot ladder is non-transitive at every 10M check, with ≈ 3–5 pp of
+  per-edge cyclic spread around P\*: MATERIAL at 28 of 37 checks under the size bar, so P\* is a plateau by the in-run
+  meter, with cycling suspected, not confirmed. [DESCRIPTIVE · `6730430b9`; ledger 2026-10-19 · *THE CYCLE MONITOR*, *THE SIZE BAR*]
+- **The archive pool (X35 A1, 2026-10-22).** Half the self-play games against 8 frozen X26 nodes, 3 seeds a side:
+  **R1 +0.19 pp [−1.07, +1.46]**, NULL (final). The variance gate passed (seed σ̂ 0.41 pp against a 1.2 pp bar), so
+  the X35 frame resolves ±2 pp. [`806e50931`; ledger 2026-10-22 · *X35 A1 LOOK 1*]
+- **The best responder (R0, 2026-10-21 / 22).** A fresh exploiter trained against the frozen target finds **+11.1 pp
+  [+8.3, +13.8]** against P\* (SATURATED, 90 % of it by 8M) and +11.8 pp against the toy's T\*; its edge transfers to
+  C0 (+14.5 [+7.6, +21.2]). Both plateau policies leave ≈ 11–12 pp on the table; whether one-ply search defends it is
+  deferred with search. [`92f1aa93e`, `c456b6a09`, `1459416fb`]
+
+### 4.11 A fresher pool via SPRT promotion: the lever acts, S does not move (2026-10-24)
+
+SPRT (a sequential probability ratio test) admits each 2M snapshot to the pool only on a fresh test (H0 0.50 vs H1
+0.55). It acted as predicted: 10 of 30 accepted, 10 promotions against C0's 3, median pool age 60–68M against 72M.
+**R1 −0.25 pp [−1.65, +1.16]**, NULL (final). With A1, neither a fresher pool nor an older one moves S at P\*: pool
+freshness is not the binding constraint. It costs 15 % of throughput. [`4290d652a`; ledger 2026-10-24 · *X35 SPRT
+LOOK 1*]
 
 ---
-
-**The head's failure is a TARGET failure, and the target's defect is the SHARE of the objective
-the opponent holds.** [MEASURED, `winprob_head_refit_2026-09-09`] Refitting the win head alone on
-a frozen `value_pooled`, out of fold under battle-grouped CV and HT-reweighted, against the
-TERMINAL 0/1 outcome the online head actually trains on reproduces the online failure exactly on
-both `ai_v12_02_winprob_critic` @74M and the ladder control `ai_v12_11_ladder_ctrl10M` @10M: the
-turn-1–3 between-opponent spread ratio moves 0.149 → 0.000 (Δ [−0.055, +0.234]) and 0.066 → 0.068
-(Δ [−0.044, +0.042]), and the prediction's turn-1 opponent-class decode moves 0.532 → 0.546
-(Δ [−0.049, +0.081]). Swapping ONLY the target for the per-(cycle, opponent) × own-team
-leave-one-battle-out win rate recovers a DETECTED part: 0.149 → 0.323 (Δ [+0.063, +0.296]) and
-0.066 → 0.259 (Δ [+0.051, +0.192]), class AUC 0.532 → 0.646 (Δ [+0.059, +0.170]), own-team
-win-rate R² 0.010 → 0.569 and 0.028 → 0.467 against `value_pooled`'s 0.671 / 0.628 — while
-forecasting the real outcome BETTER on turns 1–3 (Brier 0.1608 → 0.1190, Δ [−0.0495, −0.0344]).
-The mechanism is that only 10.2 % / 14.4 % of the terminal label's variance lies between (cycle,
-opponent) cells, so a head minimising a proper scoring rule buys its resolution from the board and
-its own team instead; the conditional target raises that share to 24.0 % / 58.8 %. **A head
-initialised from the online weights lands where a scratch head lands, under both targets and on
-both substrates**, so the online head is NOT in a basin and the head-side-optimisation treatment
-class (value replay, periodic head refit, head-specific lr) is RULED OUT. Capacity is a real
-second-order term: the MLP beats a linear head only under the conditional target. **The online
-win-prob critic's turn-1–3 Brier skill against the base rate is −0.129 on arm A** — in the window
-where the mixture defect lives it forecasts worse than a constant. **Consequence:** the treatment
-is target-side (counterfactual / MC labels, search leaves, and above all opponent-stratified
-weighting of the value loss, which raises the between-cell share with no new labels). **Open:**
-whether an online arm with a lower-variance target moves the same two meters, and whether a head
-that conditions plays better — the identity test against an MC continuation remains the arbiter.
-**Caveat:** the recovery is PARTIAL (46 % / 29 % of the conditional target's own ceiling; 31 % / 23 % of the gap to it), and
-the offline head saw ~2,500× fewer distinct episodes than the online one, so the size of the
-recovery does not transfer even though the variance-share mechanism, being scale-free, does.
-
-**More stationary data does not buy the win head opponent conditioning, and the probe read's
-turn-1 opponent decode was an own-team confound.** [MEASURED,
-`winprob_refit_ncurve_2026-09-10`] The win head was refit on frozen `value_pooled` at N =
-1k → ~21.5k battles drawn from ONE checkpoint (`step_10000032`, three md5-identical eval trees,
-~24,000 battles / ~720,000 states per substrate, full capture so every HT weight is 1.0), on an
-identical gradient-STEP budget at every N, scored on one fixed held-out set of 2,400 battles.
-Under the TERMINAL 0/1 label the head converges to a substrate-independent level — turns-11–24
-between-opponent spread ratio **0.693 / 0.665**, all-states **0.609 / 0.557** — and reaches it by
-**N ≈ 4,000 battles ≈ 1.25 PPO rollouts** (48 × 2,048 = 98,304 states ≈ 3,170 episodes). On
-`ai_v12_11_ladder_ctrl10M`, whose ONLINE head already reads 0.759 / 0.652, the curve is FLAT
-(Δ at turns 11–24 −0.000 [−0.020, +0.021]) and its last segment is detected NEGATIVE; on
-`ai_v12_15_ladder_ctrl10M_b` (online 0.464 / 0.388) it rises +0.182 [+0.158, +0.209] and
-saturates by 8k. **Removing non-stationarity is therefore worth at most the gap between two
-identically-configured control runs' own heads, and an online head already receives that much
-data inside one policy iteration: a slower policy, a value replay or a stationary window is NOT a
-lever.** 🚨 **On a matched-team frame the opponent is UNOBSERVABLE at turn 1** — `value_pooled` →
-opponent class reads AUC **0.502 / 0.508** against the probe read's 0.846 / 0.861, because in the
-probe read's frames the TRAINEE'S OWN TEAM alone predicts the class at **0.856 / 0.877** (only
-37 of 180 and 47 of 216 teams ever faced a sentinel there, against 602 of 602 here). The opponent
-becomes observable as it plays (0.50 → 0.67 → 0.82 by turns 4–10), **so a turn-1 spread ratio of 0
-is Bayes-optimal, not a defect**, and the probe read's headline "the head is handed the answer and
-does not use it" does not hold at turn 1. In the window where the question has an answer the
-online head DOES condition (class AUC 0.723 / 0.700, null 0.52). The CONDITIONAL target wins the
-opponent ORDERING (0.830 / 0.854, above `value_pooled`'s own 0.812 / 0.848) and loses the
-AMPLITUDE (ratio 0.465 / 0.439, Brier 0.1275 / 0.1258 against the terminal refit's 0.0972 /
-0.0988) — so the cf-label arm must be read on turns-4–10 class AUC and Brier/resolution, not on
-the turn-1–3 spread ratio. **Closed (2026-09-11):** a TRAINING rollout assigns the trainee's team independently of the opponent — by construction (two draws off separate RNGs, `wrappers.py:495` / `teambuilder.py:208`) and measured at |AUC − 0.5| ≤ 0.0042 over ~1.5M episodes, 717/717 teams facing both classes [MEASURED, `team_assignment_independence_2026-09-10`]; the live-frame confound was the CAPTURE QUOTA (few sentinel traces ⇒ ~58 distinct teams), not the pairing rule. The turn-1 registered rows carry no mediation term. The conditioning row with a usable floor is `cond.opp_class_auc.t4_10` (two-draw floor 0.022, tool v6); the late-window spread rows carry run-level floors of 0.19–0.22; and the "optimal spread" reference (a conditional mean of the outcome on V — fitted from the head's OUTPUT, not from `value_pooled`; corrected 2026-09-11) is a LOWER BOUND on the opponent-decodable part of V's spread (a fitted posterior attenuates by an unmeasured factor), not a ceiling — V's early spread exceeds it 4–8×, and the residual is either non-opponent board variation or opponent information the decoder missed; at t1–3 the board is the channel the class is read through, so the split is defensible only at t4–10 [ledger 2026-09-11 · *MEASUREMENT ×2* + *CORRECTION to the v6 read*].
-
----
-
-**Ladder arm 1 read (2026-09-08, `--vf-coef 1.5` vs the fresh 10M control):** [MEASURED · NOT DETECTED,
-`measurements/critic_ladder_reads/vf15_vs_ctrl10M_2026-09-08/`] resolution Δ bot +0.0140 [−0.0080,
-+0.0389], late identity bias Δ +0.0486 [−0.0305, +0.1311], turn-contrast Δ +0.1634 [−0.0807, +0.3733] —
-none detected; the registered identity bias on ALL states reads +0.048 [+0.014, +0.082] MORE optimistic
-than the control (no replicate floor yet). The fresh control reproduces A's 10M G1 failure on every
-stratum (bot 0.0187 vs 0.0337). Tripling the critic's gradient share is not the large effect the
-starvation reading predicts; the separate-value-trunk build is HELD pending the replicate floor.
-Arm 3 (cf labels) refused itself at launch — duty cycle 6.2 % vs a 25 % floor at 48 envs — and is
-amended to `--checkpoint-every-steps 500000` [ledger 2026-09-08 · *READ · critic ladder arm 1*].
-
-**Ladder arm `tdaux` read (2026-09-09, `--td-aux-coef 1.0` vs the control, no span):** [MEASURED · NOT
-DETECTED, `measurements/critic_ladder_reads/tdaux_vs_ctrl10M_2026-09-09/`] resolution Δ bot +0.0149
-[−0.0045, +0.0343], late bias Δ −0.0151 [−0.0977, +0.0654], turn-contrast Δ +0.0092 [−0.2117, +0.2030];
-calibration on points worse (G2/G3 fail on `all` and `bot`, n.d.). **The clock inversion (L4) is ABSENT at
-10M** — control −0.094, arm −0.085 against arm A's +0.309 at 74M — so it is a late-training phenomenon
-(formed by 50M) and no 10M read can see a lever's effect on it; the ladder's 10M reads stay valid for
-resolution and for the head/mixture defect, both present at 10M. Two 10M lever arms now lean +0.014 /
-+0.015 on bot resolution with CIs over zero; the replicate floor (`ctrl10M_b`, next) says whether that is
-the control's shortfall.
-
-**Ladder arm `cflabels` read (2026-09-09, cf continuation labels vs the control, pinned 10M):** 🚨 **SUPERSEDED
-(2026-09-30): the arm received ZERO cf labels** — no producer ran; `cf/labels_ingested_total` 0 and no `train/cf_loss`
-for all 10M steps — so everything below measures a control run (+ `--cf-records`, the 40/40/10 quota, the 377a5aa1
-pin), NOT the lever; the cf continuation-label lever is UNTESTED [ledger 2026-09-30 · *BOUNDARY · CfLabelBuffer INODE
-REUSE*, `measurements/cf_label_inode_audit/`]. As originally read: [MEASURED · NOT
-DETECTED, `measurements/critic_ladder_reads/cflabels_vs_ctrl10M_2026-09-09/` + `matched_quota/`] the own-team
-decode delta +0.084 [+0.032, +0.183] first read as DETECTED was a DECODER-POWER ARTEFACT of the arm's 4× trace
-quota (arm R² −0.025 on the battle-matched frame; a monotone frame-size curve) and is WITHDRAWN; every
-conditioning row is NOT DETECTED, like `vf15` and `tdaux`; resolution nothing. The head reads unbiased against
-its own continuation where the control is pessimistic (Δ +0.040 [+0.007, +0.071], a mean, not a fit — stands
-vs zero, floor pending). The label is a state-conditional CONTINUATION label, so a null here is evidence about
-the class only at 10M and at this power. Instrument consequence: the decoder-based rows must be read on
-quota-matched frames — fix in flight before the `strata` and `truevalue` reads.
-
-**THE REPLICATE FLOOR (2026-09-09, `ctrl10M_b` vs `ctrl10M`, pinned 10M, quota-matched):** [MEASURED,
-`measurements/critic_ladder_reads/ctrl10M_b_vs_ctrl10M_2026-09-09_FLOOR/`, `replicate_floor_10M.json`] two
-identical configurations differ by 0.070 [+0.036, +0.101] on the registered identity bias on the FIRST draw and
-by 0.015 [−0.020, +0.049] on the second — a single draw's CI position is not a property of the quantity (the SIGN
-of the 10M head's bias vs its own continuation is a draw; the 0.070 is one outlier head), 0.010 on bot resolution, 0.028 on the turn-1–3 spread
-ratio, 0.39 on the all-states spread ratio, and **45 Elo** at matched count; the floor narrows with step
-(bots 0.12 apart at 2M, 0.02 at 10M). Relabelled: every DETECTED-vs-zero on `vf15` and `cflabels` is WITHIN
-FLOOR. **Standing: five runs, three levers, ZERO detected registered rows.** The floor is one draw — the
-meters' CIs remain the inference; it can only demote.
-
-**THE FLOOR AT 400 GAMES (2026-09-09, offline-generated cycles, 4,800 battles a side):** [MEASURED · MAJOR]
-the replicate difference on bot resolution collapses to **+0.0004 [−0.007, +0.007]** (its 100-game floor was
-battle noise — the row is now instrument-grade), while identity bias (+0.074 [+0.051, +0.096] on the `ctrl10M_b` draw; the `ctrl10M_c` draw reads +0.015 live —
-the first draw is an outlier head) and the turn-1–3 spread ratio (−0.066 [−0.107, −0.031]) do not collapse with
-more battles — run noise that more eval cannot remove, sized by the wider draw and typified by the narrower. Consequence: levers are read on bot resolution / own-team R² / class AUC from an
-offline 400-game cycle (no retraining), and on identity bias / spread ratio only with replicates per condition.
-
-**Ladder arm 7 `strata` read (2026-09-09, class-stratified win-prob BCE, realized bot share 0.473 vs 0.5):**
-[MEASURED · NOT DETECTED, `measurements/critic_ladder_reads/strata_vs_ctrl10M_2026-09-09/`] nothing on any
-registered row at 10M (bot resolution +0.005 [−0.012, +0.016], spread ratio t1–3 −0.049 n.d., own-team R²
-−0.054 n.d.); six runs, four levers, zero detected registered rows; the 400-game read decides the slot.
-
-**THE ARMS AT 400 GAMES (2026-09-09):** [MEASURED · NOT DETECTED at ±0.01] on offline 4,800-battle cycles both
-sides, `vf15` / `tdaux` / `cflabels` move bot resolution by +0.003 / −0.002 / +0.001 with intervals inside about
-±0.010 against a replicate pair agreeing to ±0.007, and the turn-1–3 spread ratio by less than the replicate
-difference. The four 10M levers are dead at this length and power, not unresolved. No replicate is spent; the
-next arm is a target-side lever with literature behind it — λ-return targets (`--win-prob-lambda 0.9`, arm 8,
-in build), then KataGo-style dense auxiliary targets.
-
-**`strata` on the decision row, and its replicate (2026-09-11/12):** [MEASURED · NOT CONFIRMED,
-`critic_ladder_reads/strata_b_vs_ctrl10M_2026-09-12/`] on `cond.opp_class_auc.t4_10` (declared the decision row
-before the read) `ai_v12_17_ladder_strata` read +0.050 / +0.033 / +0.044 on three eval draws against `ctrl10M`
-(0.760 vs 0.710; floor 0.022) — the campaign's first detection on a decision row. Its seed replicate
-`ai_v12_24_ladder_strata_b` (same pin `f871e79f`, argv identical but `--seed 1002`) read **−0.029 / −0.034 /
-−0.008** against the three controls at 800 games and 0.679 on both draws — BELOW every control. One run of the
-lever read +0.05, its replicate −0.03: the lever's mean effect is inside the floor and the WITHIN-LEVER spread
-(0.08) is 3.6× the control-replicate floor, which bounds the CONTROL's variance only (rule 19, amended). Whether
-class-balanced BCE inflates run-to-run variance on the row or one of the two runs is atypical is not separable at
-n = 2. At the representation (`repr_class_decode_strata_b_2026-09-12`, both draws) `strata_b`'s
-`value_pooled → class` decode sits AT the controls (+0.007 / +0.016, inside the floor) while `strata`'s sat
-0.048 / 0.064 above — so the lever is NOT CONFIRMED at the representation either, and `strata_b`'s
-control-relative deficit is HEAD-side (its trunk is control-grade, its V is below). Seed-to-seed the split is ~half
-trunk, ~half head (Δpooled/ΔV 0.51 / 0.57) against the lever's one-for-one arm-vs-control ratio — run-to-run
-variance concentrates at the head, one more reason the V row stays the decision row. What the replicate adds: its `gate.resolution.all` is +0.009–0.010 above every control (CIs clear zero)
-while its class decode is below every control — **resolution and opponent-class discrimination dissociate within
-one run**, as calibration and discrimination dissociate across steps on the 75M run (below). The
-representation-level finding (`repr_class_decode_2026-09-11`, branch A: `strata` raises and `vf15` lowers the
-`value_pooled → class` decode past the floor on both draws, Δpooled/ΔV 0.97–1.27 for `strata`, 0.50–0.59 for
-`vf15` with NOTHING at turns 1–3) stands for the runs it measured — `ai_v12_17` and `ai_v12_10` — and licenses no
-family claim. **Ladder standing (2026-09-12): fourteen 10M runs, seven levers + the privileged critic, ZERO
-confirmed detections on a decision row;** **`vf15` is CONFIRMED (2026-09-12, `critic_ladder_reads/vf15_b_vs_ctrl10M_2026-09-12/`): its seed
-replicate `vf15_b` reads −0.053 to −0.087 against the three controls on both draws, six of six CIs clear of the
-floor — the campaign's first confirmed detection on the decision row, and its direction is DOWN: 1.5× the
-value coefficient strips opponent-class information from V while `gate.resolution` stays within floor on every
-pair.** A LOWER coefficient does NOT raise it: `vf025` reads −0.034 to +0.003 against the three controls on both
-draws, five of six within floor — the lever is non-monotone, flat from 0.25 to 0.5 and falling at 1.5, so the
-control's 0.5 sits on a plateau and the confirmed effect is one-sided damage above it [ledger 2026-09-13 ·
-*VERDICT · vf025 NOT DETECTED*]. Nothing here moves strength at 10M. A sixteenth arm, `ctrl10M_shaped` (scalar-MSE critic on the same terminal-only signal), never crossed into
-self-play (0.77 vs bots at 10M; ~102-turn early episodes) and is VOID for the conditioning row, and its dense sibling
-`ctrl10M_shaped_dense` never crossed either (0.53 vs bots at 10M) and breached G7. (Never crossing
-means it trained against the 8 bots for all 10M — the 0.55 gate is endogenous, so that regime is a
-consequence of slow learning, and the dynamics gap is already present at 2M where every arm was
-bot-only: 0.148 vs 0.37–0.61. Since `gen3_supply_guard_v2` such a run stops `FATAL_SUPPLY` at its
-third eval cycle [ledger 2026-09-30 · *AUDIT · BOTS-ONLY CONTROLS + POOLLESS FORKS*].) **Neither is a verdict on the
-shaped head: the era's own shaped fresh run `ai_v9_29_rev1` crossed at 2,000,016.** The failure belongs to the
-ladder's argv with the critic mode flipped — SIX resolved settings differ from the era's shaped critic (PopArt OFF,
-no distributional readout, a 20× heavier auxiliary head, gamma 0.9999, the head's role, the critic itself), and an
-unnormalised scalar regression onto raw shaped returns is a badly conditioned target in its own right — so the
-two controls license NO statement about the shaped objective; which setting carries the failure is not identified. **Arm S of the flywheel pair
-(`ai_v13_01_flywheel_shaped`, the era's shaped configuration at ent 0.05, 75M) crossed at 4,128,768 like every
-win-prob arm, held episode length for 75M, ended at 2036.6 Elo on 20 nodes with a late slope of +1.14 ± 0.44 Elo/M,
-entropy FLAT for 71M steps at 1.03 nats, its decision row read both ways (shaped critic 0.768 / auxiliary head
-0.767 — the 0.05-coefficient auxiliary ranks opponent class as well as the critic), untaught meter 54.5 pp against
-the 75M win-prob run's 58.25 (−3.75 [−6.4, −1.1], a descriptor), and on the anchors 0.630 vs SmallRL greedy and
-0.450 vs Foul Play at 1.25M visits (both n.d. vs the win-prob run's 0.520 / 0.388). [ledger 2026-09-14 · *MEASUREMENT · ARM S's RUN-END READS*]
-
-**THE FLYWHEEL-ERA PAIR READ (2026-09-16, `flywheel_pair_read_2026-09-15/`):** [MEASURED (MAJOR) · NOT DETECTED on every
-endpoint] arm W (`ai_v13_02_flywheel_winprob`, the win-prob critic) against arm S (the era's shaped configuration),
-75M each, one pin, one declared dose, one seed slot, one eval regime, operationally matched (same crossing step
-4,128,768, 20 snapshots each, G7 clean on both). Strength: 2036.6 vs 2019.1 at 20 refit nodes, Δ +17.5 [−6.9, +41.9]
-against a claimable ~69 — NOT DETECTED, never "equivalent" (n = 1 per arm). Anchors: SmallRL greedy home 0.630 vs
-0.650, away 0.520 vs 0.500, Foul Play 0.450 vs 0.475 at unmatched widths — all NOT DETECTED. Critic guard
-`cond.opp_class_auc.t4_10`: +0.025 to the shaped arm's auxiliary head, inside the imported floor; critic-vs-critic
-splits across draws (NOT CONFIRMED). **Three pre-designated FINDINGS, not endpoints, all leaning shaped:** entropy FLAT
-for 71M on arm S vs DECAYING on arm W (−0.097 nats, t −23.6); untaught meter 54.5 vs 46.2 pp (+8.3, 8 of 8 teams,
-run-level CANDIDATE); arm W's critic ~4× worse calibrated (ECE 0.069 vs 0.018) at indistinguishable resolution — and
-the REALIZED dose ran 1.44× in arm S's favour (its KL controller annealed to lr 4.3e-4 vs 3.0e-4, forced by the
-objective), so none of the three is read as if the optimiser were held fixed. **The premise the era rests on holds at
-the standard it could be tested at: the win-prob critic costs nothing detectable on strength or on any external
-anchor.** **Against the 75M run-level floor (`flywheel_wb_floor_read_2026-09-18/`, W vs its seed replicate W_b):** strength WITHIN floor on every frame (+17.5 vs 25.2; W_b leads W at 15/15 shared steps); ECE RETIRED (within floor both draws — win-prob calibration is a run-level draw with a ≈0.05 ECE floor at 75M, while resolution reproduces to 1e-5); entropy refuted as worded (all three arms decay); the untaught +8.31 pp is OUTSIDE its 3.69 pp floor and remains the one CANDIDATE, confounded by the 1.44× realized dose. The 30M episode-length excursion is a property of all three 75M arms. Era proceeds on win-prob; arm S's levels are the standing comparators for the first revolution. Tool defect
-H-L: `critic_read --v-column` silently reads `win_probs` on every quota-matched row (backlog). [ledger 2026-09-16 ·
-*MEASUREMENT (MAJOR) · THE FLYWHEEL-ERA PAIR READ*] The flywheel pair's shaped arm therefore runs the
-era's shaped configuration, not a one-flag flip. [ledger 2026-09-12 · *READ · the shaped-critic family at the
-LADDER argv*] [ledger 2026-09-12 · *VERDICT · strata_b FAILS*, *READ · the
-REPRESENTATION-level opponent-class decode*]
-
-**THE LADDER READ ON STRENGTH (2026-09-12, `ladder_strength_table_2026-09-12`):** [MEASURED · NOT DETECTED] the
-fifteen 10M arms placed on one table at matched snapshot count (four nodes over the common step set 4/6/8/10M —
-three arms rate an extra 2M node, so a naive first-four read would have compared their 8M node to everyone's
-10M). **No arm is outside the 45.0-Elo control floor** (the 2026-09-09 figure reproduced by an independent
-refit). Two downward CANDIDATES: `vf15_b` (−102 / −57 / −67 vs the controls, node-robust at 8M) and `strata_b`
-(−91 / −46 / −55, collapsing at 8M ⇒ inconclusive); no Δ CI clears the floor. **The four-node ladder cannot
-resolve its own floor** — se(Δ) 21–24 gives CI95 ±43–48 against a floor of 45 — so a strength question on 10M
-arms needs more promotions, not more arms. **Rule 22 reproduced on strength:** same-pin seed replicates differ by
-+82.6 [+39.5, +125.7] (`vf15`−`vf15_b`) and +58.1 [+16.2, +100.0] (`strata`−`strata_b`) against the control
-pair's 9.7 [−53, +34] — the control triple understates a lever arm's run-to-run variance by 6–8×. `win_rate_vs_bots`
-is an INPUT to the headline (the bot edges anchor the fit), not an independent descriptor. The shaped control is
-the sixteenth arm and the table is re-read, not patched, when it lands. [ledger 2026-09-12 · *MEASUREMENT · THE
-CRITIC LADDER READ ON STRENGTH*]
-
-**THE STEP CURVE (2026-09-12, `winprob_step_curve_2026-09-11`):** [MEASURED · (i) REFUTED directionally] the
-75M run read at 10M / 20M / 40M / 73M against its own 10M, two offline draws per checkpoint, an identical
-sentinel panel at all four (`--include-current-snapshot`; the registered `--sentinels 3` was impossible, the pool
-retains only ≥36M). Not one registered decision row rises: `gate.resolution.bot` FLAT (−0.0004 / −0.0010, max W
-0.0069); `cond.opp_class_auc.t4_10` and `gate.resolution.all` FALL, confounded by the trainee's strength closing
-the bot−pool outcome gap (0.426 → 0.299); the strength-robust `value_pooled → class` decode at turns 4–10 reads
-0.898/0.886 → 0.896/0.892 → 0.857/0.867 → 0.862/0.855 — the one gap clearing its bar is 20M→40M, DOWN on both
-draws (marginal on draw 2 against the peer-measured run-level floor), a step change and not a slope. **What
-seven-fold more steps buy is CALIBRATION:** `gate.ece.all` 0.1023 → 0.0170, monotone past its bar at every step
-on both draws; reliability ~6× better, resolution unmoved. A curriculum account of the 20–40M step was sought and
-not found (bot share a constant 0.100 across the intervals). **Consequence: the ladder's 10M nulls are not a
-statement about 10M — "train longer" is not the missing lever.** The cross-run read against `ctrl10M` is REFUSED
-(the pins straddle the 2026-09-07 eval-regime boundary on exactly the differing key). [ledger 2026-09-12 ·
-*MEASUREMENT · THE STEP CURVE*]
-
-**THE FLOOR, SECOND DRAW (2026-09-09, `ctrl10M_c` vs `ctrl10M`):** [MEASURED] the replicate floor is a RANGE per row —
-identity bias 0.015–0.070 (the first draw clear of zero, the second not; the three heads read −0.042 / +0.028 /
-−0.027 against their own continuation, so the sign at 10M is a draw), bot resolution 0.001–0.010, spread ratio
-t1–3 0.026–0.028, own-team R² 0.012–0.039; the bar is the wider draw, demote-only. Three draws of one
-configuration span 45 Elo, 0.12 in early bot win rate, 0.21 in the first self-play jump and 0.93–1.07 on the G7
-worst-ratio itself — none of those is a lever signal. Arm 8 (λ = 0.9) is live with `lambda_target_shift` 0.59 as
-its dose meter.
-
-**Arm 8 `lambda09` (2026-09-10, λ-return targets at 0.9), on the offline frames vs ALL THREE controls with two-draw
-floors:** [MEASURED, `measurements/critic_ladder_reads/lambda09_vs_ctrl10M_2026-09-10/`] the live-frame own-team
-+0.15 did not replicate (rule 18). ONE row clears the two-draw bound against every control at both eval draws:
-overall calibration-gate resolution **+0.009 to +0.011** (arm 0.047–0.050 vs 0.038–0.040; two identical controls
-agree to 0.001) — small, DETECTED. The between-opponent spread is the lowest of any run (0.05 vs 0.09–0.18) but
-sits AT the replicate bound against the replicate controls (−0.045 to −0.057 vs bars 0.053–0.066); the base
-control is the roster's outlier on the amplitude rows. Slope the highest of any run, inside the run-level floor;
-calibration vs its own continuation the best. (C) shrinkage is dropped; `lambda09_b` is the run-level replicate.
-
-**The CALIBRATION SLOPE is BUILT and read on the LIVE frames (2026-09-10, tool v5):** [MEASURED · LEVEL says
-OVERSHOOT, DELTA UNREADABLE, `measurements/critic_ladder_reads/lambda09_vs_ctrl10M_2026-09-10/vs_*/critic_read_v5.md`;
-ledger 2026-09-10 *INSTRUMENT + READ · the CALIBRATION SLOPE is BUILT*] The row the restated (C) turns on — the
-outcome regressed on `logit(V)`, the Cox recalibration pair; **>1 = UNDER-dispersed (shrunk)**, and the registered
-rule is *slope ≈ 1 with lower spread ⇒ the critic simply got BETTER; slope > 1 ⇒ the shrinkage OVERSHOT*. Two halves,
-kept apart. **LEVEL:** arm 8 reads **1.579** pooled and **1.426** at turn 1–3 — not ≈ 1 — where the three controls sit
-at 0.76 / 0.80 / 0.98 early; that is the OVERSHOOT branch on its face. Pooled, *every* head reads above 1 (1.12–1.58),
-so the pooled level describes an era-wide defect and only the turn-1–3 contrast carries a level reading.
-**DELTA: UNREADABLE at 100 games.** Arm 8 has the highest slope of all eight 10M runs on both rows and is the only
-arm with a positive pooled delta (12/12 positive), but the other seven span 1.12–1.44 and 0.76–1.27, and the
-replicate floor (0.20 / 0.22) is the size of the effect — no row's CI clears its floor on any pair. **NOT SUPPORTED
-is not written**, per the registered rule: at turn 1–3 the arm's lever arm IS the smallest (`sd(logit V)` 0.442 vs
-0.573–0.693) and the slope's SE scales as `1/sd(logit V)`, so it may be underpowered by its own effect — though the
-COMMON-SUPPORT companion keeps the sign and magnitude on the pooled row, so that difference is not the support.
-**The offline 400/800-game read then settled it — (C) is NOT SUPPORTED and DROPPED:** [MEASURED · (C) NOT
-SUPPORTED, `…/critic_read_hp{400,800}_v5.md`; ledger 2026-09-10 *READ · the calibration slope on the OFFLINE
-frames*] the three slope levels at 800 games are `ctrl10M` **1.070**, `ctrl10M_b` **1.324**, arm 8 **1.343** —
-**arm 8 sits on top of the λ = 1.0 replicate control**, and arm − `ctrl10M_b` is +0.117 at 400 and +0.019 at 800,
-inside one control-to-control draw. The apparent +0.27/+0.31 against `ctrl10M` is that control being the roster's
-outlier at ≈ 1. The guards do not rescue it — the lever-arm-neutral COMMON-SUPPORT row agrees (+0.031 at 800) and
-against `ctrl10M_b` arm 8 is the LESS compressed side — so NOT SUPPORTED is written rather than UNREADABLE, and (C)
-is dropped per its own registration. **What survives is what survived before: amplitude DOWN** (between-opponent
-spread Δ −0.124 / −0.098 past the floor at both sizes) — real and replicated, but not explained by shrinkage that
-overshot. 🚨 **The slope's replicate floor is RUN-LEVEL and GROWS with eval** (+0.191 at 400 games, +0.254 at 800,
-both CIs clear of zero), so this row cannot be read as an arm-vs-one-control delta at any eval size; the λ dose
-curve's slope component is dead on those grounds unless `lambda09_b` runs first to price it. 🚨 **Slope LEVELS are
-not comparable across the live/offline boundary** — the two controls' order FLIPS (`ctrl10M` 1.441 live / 1.070
-offline; `ctrl10M_b` 1.313 / 1.324).
-
-**Arm 5 `truevalue` read (2026-09-10, the PRIVILEGED critic vs all three controls at 10M):** [MEASURED · NOT
-DETECTED, `measurements/critic_ladder_reads/truevalue_vs_ctrl10M_2026-09-10/`] giving the value path the opponent's
-TRUE team does not make V separate opponents (turn-1–3 spread ratio 0.00 vs the controls' 0.09–0.12; class decode
-+0.10 lean) — hidden information is not the limit, as the probe read predicted; the privileged head is OPTIMISTIC
-against its own continuation (+0.040 all, +0.088 late vs ≈0 on every control — clear of zero, not of the floor)
-and resolves the pool stratum worse. **Offline 400/800-game frames (2026-09-10, `critic_read_hp400/hp800.md`):** the same on three eval draws — bot resolution +0.000 / +0.003 inside the floor (the live lean is gone), spread ratio and own-team decode both DOWN inside the floor, the privileged head +0.08–0.09 MORE OPTIMISTIC on every draw (run-level, unpromotable) and WORSE calibrated (ECE all +0.04 on both draws, pool ECE +0.11 — a POST-HOC lean, never registered, and with no second truevalue draw queued or proposed it stays a lean). **The information family is CLOSED for this era.** Hypothesis only: a critic conditioned on information the policy never sees is confidently wrong about what the policy will do (the asymmetric-critic failure); one run, no replicate.
-
-**An ERA-LEVEL defect the slope exposed, not an arm's:** [MEASURED · LEVEL, not a delta] on the offline frames
-every 10M run except `ctrl10M` reads a pooled calibration slope of **1.26–1.38** — the critics are UNDER-dispersed
-by 25–40% on the logit scale whatever λ is, i.e. where the head says 0.7 the realized rate is materially above 0.7.
-`ctrl10M` at 1.07 is the exception. This is a statement about the era's critics rather than about any lever, it has
-no floor (a level, not a delta), and no arm on the ladder has moved it.
-
-**Arm 9 `denseaux` read (2026-09-10, dense auxiliary targets vs all three controls at 10M, live frames):** [MEASURED ·
-NOT DETECTED, `measurements/critic_ladder_reads/denseaux_vs_ctrl10M_2026-09-10/`] nothing on any row — bot resolution
-inside the 0.010 floor against all three, calibration unchanged, the opponent spread leaning UP (0.15 vs 0.09–0.12,
-n.d.) rather than compressing as under λ. Twenty-five terminal facts per game beside the win bit did not move what the
-critic is read on at 10M; offline reads pending. Eleven runs, six levers, no lever past a two-draw floor.
-
-### 4.3 What is UNVERIFIED in this era
-
-- **`--vf-coef` was NOT retuned.** 0.5 multiplied an MSE/CE over 51 atoms; it now multiplies a BCE.
-  The first-rollout scale banner is a **DEFECTIVE INSTRUMENT** — at epoch 1 of rollout 1 the clipped
-  surrogate has ratio ≡ 1 and sits at its stationary point, so `|policy loss| ≈ 0` BY CONSTRUCTION
-  and any ratio against it is inflated. **The decisive instrument is `grad/value_policy_logratio` at
-  the first restart boundary.**
-- **The SELF-φ deletion is by ARGUMENT, not by measurement.** Deleting PBRS costs speed, not
-  correctness (invariance cuts both ways: if PBRS cannot change the optimum it cannot be why a run
-  succeeds) — but **nothing in this tree has measured the dynamics cost**, and a 75M-step run is an
-  expensive place to find out.
-- **Maturity** as the cause of the era gap (§2.2) — the shape of a result, not a demonstrated cause.
-- **Whether `win_head`'s architecture is right for a critic** — it was sized as a side readout
-  (`LayerNorm → 128 → ReLU → 1`) and has never carried a gradient into `pi`.
-- **Whether the MC-only target loses more to variance than it gains in correctness.**
-- **The label is still self-referential** (outcomes under the current policy); promotion makes the
-  loop tighter, not looser.
-- ⚠️ **A provenance hazard, live**: `model_config.json` records `all_shaping_pbrs=True` while the
-  child announces `1 TERMINAL + 0 PBRS + 0 BIAS`. Those flags are INERT under
-  `--terminal-indicator`. **The announcer is the authority.**
-
-### 4.4 The ai_v14 lineage's sharpening is mostly STARVATION
-
-**Along N0@75M → C_fix → K2 (G0′) → K3 the policy grows sharper (rank-1 mass +0.057 at the fix
-step, CI clear of 0), and most of what it gives up is NOT bad moves: it pushes near-best
-alternatives below 1 %.** The meters, all on ground truth from branching every legal action to the
-end of the game under shared dice (CRN — common random numbers — 64 seeds per turn, 1,600 turns of
-the Lane S bank, three greedy continuations; M5 Lane S's policy-spectrum instrument
-`src/main/policy_spectrum/`):
-
-- **near-best** — an action whose paired value gap to the best is ≤ 0.1 on the ±1 scale;
-- **starved** — the policy puts < 1 % of its probability on a near-best action;
-- **dominated** — separably worse than the best by more than 0.1 (gap − 1.96·SE > 0.1);
-- **decisive turn** — a turn with at least one dominated action (~950 of the 1,600).
-
-| claim | tag |
-|---|---|
-| The starved share of decisive turns rises from **~0.33 (0.31–0.35) to ~0.50 (0.48–0.49)** from N0@75M to K3 (+0.14 to +0.16), while the mass on dominated actions falls only **~0.018 (−0.017 to −0.019)**. The healthy part of the sharpening is real but small; most of it is starvation | MEASURED · DETECTED under all three continuations (K2 final, N0 final, C_fix final), and in the strict form (near-best even at its upper bound, +0.12 to +0.13) |
-| **Most of the rise is at the N0 → C_fix step** (+0.12 to +0.16); C_fix → K2 adds +0.03, K2 → K3 gives back −0.02 to −0.03. That step is the miscompile fix **confounded with +8M training steps**, so it is an ASSOCIATION with the fix, not a cause | MEASURED · DETECTED 3/3 per step · cause UNVERIFIED |
-| **By category** (N0@75M → K3): **switches are worst** (+0.15 to +0.18); attacks and status moves starve too (3/3); **setup moves are real at 2 of 3 continuations** (+0.09 to +0.13; the K2 continuation straddles 0); **recovery is not established** (1 of 3); **hazards are unchanged** (0 of 3) | MEASURED · per-category rows condition on a subset that over-samples non-attacking categories |
-| **The verdict is not a noise or continuation artifact.** At 16 of the 64 seeds (nested) the N0 → K3 delta is +0.13 to +0.14 against +0.14 to +0.16 at 64 — fewer seeds find FEWER near-best actions and LOWER starvation, so noise does not drive it; of 84 (step × category × measure) verdicts across the three continuations, 60 are unanimous and **none flips sign** | MEASURED |
-
-**Caveats.** Every value is under a GREEDY continuation playing both sides — not Nash, and not the
-recorded opponent. The best action's value carries the winner's curse (a max of noisy means is
-biased upward), which widens the gaps to it. Every N0 checkpoint was trained under the CUDA compile
-miscompile. The bank's battles are eval traces recorded before the F-LF-1 bot fix (four scripted
-bots' setup step never fired), so its bot-opponent states come from the broken bots; what that does
-to this read is **UNVERIFIED**.
-
-**What it implies.** Whether the lineage's entropy is too low is now a measured question, not a
-hunch: it supports **X23** (the entropy / self-play-temperature arm, DEFERRED until the architecture
-is stable; row 5c) and **X25** (epistemic confidence for V and Q, validated on these same
-ground-truth turns; row 5e) in [`EXPERIMENT_BACKLOG.md`](EXPERIMENT_BACKLOG.md). This read is not
-a verdict on strength: it measures where the policy's mass goes, not what that costs in games.
-
-[ledger 2026-09-29 · *M5 LANE S GATE ④ AT SCALE — THE LINEAGE STARVES NEAR-BEST MOVES* (`a41dcfca`);
-meas: [`measurements/m5_laneS/truth_v2/READOUT.md`](measurements/m5_laneS/truth_v2/READOUT.md),
-`truth_v2/readout_S64.json`, `m5_laneS/PROGRESS.md` §"Gate ④ AT SCALE"; the sharpening baseline:
-ledger 2026-09-29 · *M5 LANE S — THE POLICY-SPECTRUM BASELINE*, `m5_laneS/baseline_2026-09-29/REPORT.md`; the bot
-fix: ledger 2026-09-29 · *GIGO FIX · F-LF-1*]
-
-**The critic is blind to the same moves (X4 pre-read, 2026-09-30).** One-ply counterfactual Q from
-each checkpoint's own win-prob critic was read on the same 1,600 ground-truth turns, the truth held
-out on seeds the Q̂ did not use.
-- The starved near-best moves land in Q̂'s top-2 at **0.20–0.25**, against **~0.27 by chance**. The
-  near-best moves the policy feeds land there at 0.44–0.48. V shares the policy's blind spot, in
-  every category, setup included.
-- A Q̂ target feeds the starved moves no more than a UNIFORM floor does.
-- Q̂'s ARGMAX still beats the policy's argmax by **+0.04 to +0.06** truth value on decisive turns
-  (3/3 checkpoints, with the opponent modelled as the truth models it; not detected with the
-  opponent held at its recorded action).
-- S = 1 dice seed reads like 32: V's error, not the dice, is the limit.
-
-**A cleaner value LABEL does not fix it (CRN label refit, 2026-10-06).** The X5 blob arm's
-(`rb_x5ab_blob_s1001`, 15M) win-prob readout was refit, trunk frozen, on the mean of K = 1 / 4 / 8
-shared-dice rollouts to the end. Scored on held-out battles against 24 independent truth seeds:
-- held-out contested sibling pairs: BASE 0.593; REFIT-K8 0.579, **−0.014 [−0.032, +0.002]**
-  (a gain is excluded); the 8-rollout LEAF 0.670, **+0.077 [+0.035, +0.115]**;
-- K8 vs K1 label: no difference (−0.007, not detected);
-- the refit buys calibration (ECE 0.065 → 0.032), not resolution;
-- starved near-best pairs: BASE 0.450, refit +0.018 (detected, negligible), leaf 0.685.
-
-The information that orders siblings is in the playouts, not in the one-ply successor's
-`value_pooled`: the bound is the representation or coverage, not the label.
-[MEASURED · NOT DETECTED (gain excluded by the interval) · one checkpoint, greedy continuation,
-off-distribution bank states; ledger 2026-10-06 · *CRN LABEL REFIT*;
-[`measurements/crn_label_refit_2026-10-06/result.md`](measurements/crn_label_refit_2026-10-06/result.md)]
-
-**Novelty does not see them either (RND state-level read, 2026-09-30).** An RND novelty predictor on
-the raw observation (the X26 ride-along head's shapes) was trained offline on bank states. It
-tracks visitation (Spearman −0.34 vs a coarse state key's count) and flags off-distribution classes
-(AUROC ~0.75). But the successors of the starved near-best moves are no more novel than the successors
-of the policy's other unplayed moves: starved near-best minus starved far is +0.001 [−0.037, +0.040],
-on 95 held-out-battle turns of N0 final. Novelty can steer effort across STATES, not toward the right
-unplayed ACTION. [MEASURED · NOT DETECTED at the action level · one checkpoint, S = 1;
-`measurements/ridealong_baseline/rnd_states_2026-09-30/`]
-
-| claim | tag |
-|---|---|
-| One-ply labels from this V cannot fix starvation: as a target, softmax(Q̂/τ) feeds the starved moves no more than a plain entropy floor does, and V is blind to them. Their one measured positive is the ARGMAX, as a one-ply lookahead. **Implication (owner ruling, 2026-09-30, `design_q_head.md` §5.0, `006156b7`): a V-bootstrapped one-ply Q̂ is used ONLY as an inference-time one-ply lookahead and as a diagnostic. It is never a distillation target, an anti-starvation target or a Q-head training label.** The pre-read's finding that sharp softmax targets (τ ≤ 0.03 on the ±1 scale) would copy the argmax does not license them as a use. The cheap starvation lever is X23 (zero ply). Anything that needs playouts to terminal (MC-outcome labels, depth, a better V through X6) is DEFERRED | MEASURED · 3/3 checkpoints · the truth is a greedy continuation (not Nash); the use rule is an owner DECISION, not a measurement |
-
-[ledger 2026-09-30 · *X4 PRE-READ — THE CRITIC IS BLIND TO THE MOVES THE POLICY STARVES*; meas:
-[`measurements/x4_preread/READOUT.md`](measurements/x4_preread/READOUT.md); the use rule:
-[`../endstate/design_q_head.md`](../endstate/design_q_head.md) §5.0 (`006156b7`)]
-
-
-**X26 does NOT repeat the lineage's starvation (collapse pilot, 2026-10-17; DESCRIPTIVE, pre-plateau).** On X26's own
-eval-trace states, with every legal action × 32 seeds played to the end under X26@150M greedy (306 turns, 179
-decisive), and on the pre-era `truth_v2` above:
-- **Starvation is FLAT from 10M to 160M:** −0.011 [−0.090, +0.061] on its own truth, +0.013 to +0.023 (not detected,
-  3/3 continuations) on the pre-era one. Dominated mass and greedy regret FALL at the same time (pre-era: −0.027 to
-  −0.030 and −0.019 to −0.029, 3/3). That is healthy sharpening.
-- **Level:** ~0.3 of decisive turns, the level of N0@75M; X26@160M is 0.13–0.14 below K3 (3/3).
-- **Entropy is flat** at 1.05–1.16 nats on X26's own states.
-- **About 3/4 of the starvation is MISRANK** (the policy's top choice is not near-best). TIE-COLLAPSE between equally
-  good moves is 0.05–0.09 of decisive turns.
-- **What the starved moves are worth:** +0.35 to +0.39 (±1 scale, held out) per starved decisive turn, but only in the
-  TRUE world. An honest-world 8-world one-ply read flags them at 1.35× chance, and acting on its flag loses −0.068 (the
-  oracle leaf: 2.6×, +0.137).
-
-| claim | tag |
-|---|---|
-| X26's starvation is flat over 10M → 160M while its dominated mass and greedy regret fall; it is ~0.13 below K3's | MEASURED · DESCRIPTIVE · two referees (X26@150M continuation, 179 decisive turns, ±0.08; the pre-era truth, 3/3 continuations) · X26 still CLIMBING, so PROVISIONAL |
-| Most starvation is misrank, not tie-collapse; its value is hidden information that honest one-ply cannot see | MEASURED (X26 truth) · DESCRIPTIVE, POST HOC (honest vs oracle, on the 15M end-state / production checkpoints, transfer to X26 ASSUMED) |
-
-[design: [`../endstate/design_collapse_and_counterfactuals.md`](../endstate/design_collapse_and_counterfactuals.md) §0, §3;
-meas: [`measurements/collapse_pilot_2026-10-17/`](measurements/collapse_pilot_2026-10-17/README.md); ledger 2026-10-17 ·
-*COLLAPSE PILOT*]
-
-**On the plateau (180M–380M) the battery reads a TREADMILL, not a collapse (2026-10-20; DESCRIPTIVE · PROVISIONAL,
-one seed).** Steady ≈ 30 % greedy churn per 20M whose distance from 380M barely grows with lag; a self-play pool gone
-stale (promotions per 50M 9 → 3, median member age 63M → 135M); the adaptive-KL learning rate halved (1.74e-4 →
-8.4e-5). Entropy gave back its post-30M broadening (−0.04 to −0.07 nats from 160M, flat from 280M) and starvation crept
-UP +0.03 to +0.06 on both referees while dominated mass and regret stopped falling (the ai_v14 direction at ~⅓ its
-size; on X26's own truth it waits on a refreshed truth, B4). No coverage, rank, dormant-unit or opponent-model
-collapse.
-- **The toy shows the same pattern, but not the same timing.** X34's rate halved too (3.0e-4 → 1.45e-4) and its pool went
-  as stale (promotions per 50M 20 → 3, median age 29M → 128M). But its rate held for 80M before T\*, and Tier 1 kept
-  reading GAIN for 60M of that. So the step size COVARIES with the plateau and does not coincide with it on the toy.
-- **The halving is in weight space only.** The approx KL per update held at 0.017–0.019 on both lineages: the
-  controller kept the per-update POLICY step constant while the KL per unit rate rose.
-- **What it means for X35.** Neither A1 nor A2 changes the pool's REFRESH rule, so neither tests staleness as a cause.
-  Every production fork starts at P\*'s rate, 0.69× the climbing one, so a batch-1 NULL reads "NULL at the halved rate".
-  Both points are registered before any production read (launch sheet §0, note TM).
-- **The intervention, the LR FLOOR (LR-F),** `--min-lr` two controller rungs above the start's rate, is REGISTERED for
-  the toy (AM-RP-f) and for production (X35 `STAGED_PLAN.md` §4.1.2); production is queued on the GPU. The prior is
-  two-sided.
-
-[meas: [`measurements/x26_collapse_battery_2026-10-20/`](measurements/x26_collapse_battery_2026-10-20/README.md),
-[`measurements/x35_breakers_stage_2026-10-17/batch2_lr_floor/`](measurements/x35_breakers_stage_2026-10-17/batch2_lr_floor/lr_pool_series.md);
-design: `measurements/x35_breakers_stage_2026-10-17/STAGED_PLAN.md` §4.1; ledger 2026-10-20 · *X26 COLLAPSE BATTERY*,
-*X34 TOY: SAME HALVING AND STALENESS*]
-
-### 4.5 The X5 belief A/B at look 3 (final), and the value of perfect information (2026-10-07)
-
-**Hypothesis tokens (concrete guesses of the opponent's hidden Pokémon, "fixed_mass") are NON-INFERIOR to the blob belief at matched steps, INFERIOR per GPU-hour, and BETTER at predicting the opponent's next action.** Eight seeds per arm (look 3, the last registered look), mirrored head-to-head cross, δ = 3.5 pp, played and read at the seeds' training pin `706fa536`:
-
-| read | Δ̂ [95 %] | outcome |
-|---|---|---|
-| matched steps (15M vs 15M) | −0.99 pp [−2.92, +0.94] (look 2: −0.97 [−3.36, +1.41]) | **NON-INFERIOR** (t 2.788 ≥ 1.874, 14 df) |
-| matched wall-time, end-to-end (fixed_mass at 12M, s = +16.7 %) | −5.91 pp [−7.54, −4.28] (look 2: −6.89) | NOT DETECTED, INFERIOR |
-| sensitivity: steady-state wall (fixed_mass at 13M), never a verdict | −4.12 pp [−5.46, −2.77] | reported only (would read NOT DETECTED, not INFERIOR: upper bound −3.01) |
-| purpose metric (1): opponent-intent log loss over blob's named set | fixed_mass 1.753 vs blob 1.904 nats (−0.151) | **CROSSED** (t 10.05 ≥ 1.874) |
-
-The wall-time deficit is a cost-now finding (Amendment 5), not a verdict on the representation. Under the owner's PRE-COMMITTED rule (adopt unless matched steps is INFERIOR, `079dee3e`) these reads imply ADOPT, and X5 WAS ADOPTED (2026-10-07, design_x5_belief_tokens.md Decision record): production is hypothesis tokens since the X5 version break (config v144, `gen3_x5_version_break_v1`), the blob path is deleted, and every pre-break checkpoint (both arms) runs pinned [BUILD, ledger 2026-10-07 "THE X5 VERSION BREAK"]. Coverage, reported: fixed_mass reserves ~10.8 % of its intent mass for actions blob cannot name while 5.15 % happen (under-confident); blob reserves 0.15 % (over-confident).
-
-[steps: registered NON-INFERIOR, its CI inside the ±4.57 pp replicate-floor band (EQUIVALENCE SUPPORTED by §0's definition) / wall-time: SIGNIFICANT, INFERIOR (|Δ̂| above the floor, CI excludes 0) / purpose metric (1): SIGNIFICANT (registered across-seed t; −0.151 nats exceeds blob's max pairwise seed spread 0.096) · ledger 2026-10-07 *X5 A/B LOOK 3 read* (supersedes the LOOK 1 and LOOK 2 reads) · meas: [`measurements/x5ab_look3_2026-10-07/`](measurements/x5ab_look3_2026-10-07/), [`measurements/x5ab_look2_2026-10-06/`](measurements/x5ab_look2_2026-10-06/), [`measurements/x5ab_look1_2026-10-06/`](measurements/x5ab_look1_2026-10-06/)]
-
-**Perfect information about the opponent's team buys little strength at this budget.** A network TOLD the opponent's species beats blob by **+2.44 pp [+0.31, +4.57]**; told the whole set, **+2.18 pp [+0.53, +3.84]**; the set adds nothing measurable over the species (−0.26 [−1.92, +1.40]). Both C's are real (the intervals exclude 0) but sit below the 4.57 pp replicate floor. So the registered reading applies: belief representation has little strength leverage at 15M / this recipe. It bounds what ANY belief improvement (X5 included) can buy in strength here. The tokens' case therefore rests on observability and search enablement, not on strength.
-
-[DETECTED but WITHIN FLOOR · same entry; reference arms, never gated (§7.6–§7.7); caveat: a trained oracle can fall short of the true value of information (shortcut learning)]
-
-**Handing an untrained network a revealed team hurts it** (the both-sided cells, descriptive): blob told the opponent's full set fell −8.1 pp. This confirms the registered out-of-distribution caveat; information a network never trained with is not free.
-
-[DESCRIPTIVE · same entry]
-
-**Training the end state WITH the opponent's hidden facts for 3M more steps buys no strength; it buys a dependence (2026-10-15, the hidden-information study's knock-in forks).** Fifteen forks of the adopted end state's seed-2001 final (15M) trained to 18M with the truth in 95 % of rows of their observation. The arms told the seen mons' unseen moves, their items, their spreads, or the never-seen mons' species, plus a no-change control, 3 seeds each. In the registered one-sided cross against the control (1,000 mirrored pairs per cell), told moves read **−0.38 pp [−1.86, +1.10]**, items +0.13 [−1.61, +1.86] and species −0.59 [−1.77, +0.58], all NULL (inside ±2 pp). Spreads read +0.34 [−2.51, +3.18], NOT DETECTED. Moves do not out-rank items or spreads. With the reveal WITHHELD at play, the moves and species forks are ≈ 2.4–2.6 pp below the control on all three seeds, and items and spreads ≈ 0. So the network learns to READ the told moves and species (removing them costs ≈ 1.9 pp) but not to GAIN from them: it swaps its own inference for the told facts. Which mechanism carries the cost is open: distribution shift, learned reliance (the belief heads lose their training signal when their targets are visible) or capacity. With the frozen-network read (§4.7) and the X5 oracle arms above, the view is that **better beliefs are not a strength lever for the amortized policy at this maturity; hidden information matters to SEARCH** (§4.7, the Tier-1 paragraph). Privileged information, if ever used in training, belongs in the critic only. Limits: +3M steps, one 15M parent that has not plateaued, no wrong-moves placebo, the truth at 95 % rather than a realistic belief, the whole-network observation route. The control itself gained **+4.4 pp** over its parent in those 3M steps (all three cells ≥ 52.6), confounded by the learnset data fix, an fp32 → bf16 trunk switch and a pin change: the 15M policy is still improving fast. Detail: [`../endstate/design_hidden_info_binding.md`](../endstate/design_hidden_info_binding.md) §8.7.
-
-[NULL (registered K-MOVES, K-ITEMS; species by the same coded rule, an arm added before any cell was played) · NOT DETECTED (K-SPREADS) · K-L-WORTH NOT DECLARABLE (no placebo) · DESCRIPTIVE (the honest dependence cost; v8 +4.375 pp, CONFOUNDED) · PROVISIONAL (+3M from 15M, one parent) · ledger 2026-10-15 MEASUREMENT (MAJOR) "THE KNOCK-IN FORKS"; `measurements/hidden_info_forks_2026-10-14/`]
-
-### 4.6 The static-token screen, closed at look 3 (2026-10-09)
-
-**Static Pokémon tokens (`--token-encoding static`: a mon's fixed identity as one token, with the battle's dynamic state added to it) are slightly WEAKER than the legacy encoder: inside the 3.5 pp margin, but not provably within it. Per training cycle they are slightly faster.** The screen's final look, eight 15M seeds per arm in a mirrored head-to-head cross of 64 cells × 2,000 games, reads Δ̂ **−2.32 pp** (look 1 at three seeds −1.26; look 2 at five −2.70); 56 of 64 cells sit below 50. Non-inferiority needed t_NI ≥ 1.874; it reads **1.623** (Δ̂ would have had to be ≥ −2.14). The look-3 interval [−3.68, −0.95] straddles −3.5, so the registered outcome is **NOT DETECTED**: `static` is not adopted and legacy stays. Static is also detectably worse than legacy: t_SUP −3.184, with every interval below 0. The worst static seed (s1005, row mean 44.05) carries part of the gap; without it Δ̂ would be −1.80 (descriptive). Per training cycle `static` is about 2.1 % FASTER on quiet cycles (−2.1 to −2.7 % across readings), and the bot panel shows no harm (−0.59 pp). **The owner kept legacy (no deletion) until a CLOSING test** — READ 2026-10-12: **PASS** (§4.6b), so the end state is adopted and legacy goes. The test was REGISTERED (2026-10-09, before any seed) as the full END STATE (`--arch endstate`: static + the recovery levers + the bundle + the fact-completion levers) against PRODUCTION, 8 seeds per arm, under the owner's rule: PASS iff the 90 % interval includes 0 or lies above it AND its lower end > −2.0 pp; FAIL ⇒ a registered bisection ([`design_endstate_closing_test.md`](../endstate/design_endstate_closing_test.md); ledger 2026-10-09 REGISTRATION "THE END-STATE CLOSING TEST"). DESCRIPTIVE ONLY: under that rule (90 % interval includes 0 or lies above it, lower end > −2.0) this cross would fail: its 90 % interval is [−3.60, −1.04].
-
-[NOT DETECTED (final look; registered non-inferiority not reached, not INFERIOR) · ledger 2026-10-09 READ "STATIC-TOKEN SCREEN LOOK 3" (supersedes the LOOK 1 and LOOK 2 reads); `measurements/static_screen_look3_2026-10-09/`, `measurements/static_screen_look2_2026-10-09/`, `measurements/static_screen_look1_2026-10-08/`]
-
-**Where static is worse: a descriptive diagnostic beside the screen, not part of it.** Attention is NOT slow to learn in a way that explains the gap. Static's paired-seed deficit is flat over training (−2.6 / −3.2 / −2.1 pp at 5M / 10M / 15M), and its first attention layer starts sharper than legacy's, not more diffuse. Static IS less expressive for board facts that now arrive only through attention, mostly at the last of the two trunk layers. The clearest is Spikes on our own side: after the trunk a linear probe reads it at R² 0.33 vs 0.46, the one gap that grows with training. Our active's HP is also weaker in its move tokens (0.59 vs 0.80). The game deficit concentrates on slow, hazard-heavy teams: holding stall teams static is 10.7 pp worse than legacy, holding hyper-offense 1.2 pp. The lever this pointed at, a third trunk round under static, was never screened alone: it was adopted INSIDE the end-state bundle (the closing test's PASS, §4.6b). Its isolated value is UNKNOWN, while its cost is the largest measured GPU delta of the end state over legacy (+6.9 s, +15.5 % of an fp32 update; `../endstate/design_compute_efficiency.md` §1.4, F8).
-
-[DESCRIPTIVE (seed means, no registered test) · ledger 2026-10-09 DESCRIPTIVE "WHERE IS STATIC WORSE?"; `measurements/static_diag_2026-10-09/`]
-
-**What the network represents (the probe battery's first read, both arms).** On a fresh 25,000-decision bank from the screen arms' own games, with both sides' true state, a linear read finds five decision-relevant facts poorly represented where decisions are made, in BOTH encodings: the end-of-turn race (each active's net residual HP change, R² 0.18–0.22), the SIZE of a stat boost (Atk / Def / Spe stage R² ≤ 0.10, though "boosted" reads at AUC 0.97 and the policy uses boosts), the opponent's HP at our decision tokens (R² 0.26–0.34 in the policy state), the speed margin (0.41) and Spikes on THEIR side at our move seats (0.35 / 0.25). Static's Spikes and move-seat HP gaps reproduce on current-era games. Phazing: the model knows who can phaze, and USES the boost half of the phazing value (erasing a foe's boosts cuts the phaze mass by 6–9 pp); legacy uses the Spikes half a little and static not at all (+1.6 pp gap), though both critics value their Spikes; a boosted mon does not boost less into a known phazer. The second trunk round changes the action on ~40 % of states (depth saturated); tokens use ~20 effective dimensions of 128 with every head and FFN unit active (width not shown under-used).
-
-[DESCRIPTIVE (seed means over 8 + 7 finals, no registered test; linear decodability is not use) · ledger 2026-10-09 DESCRIPTIVE "THE REPRESENTATION PROBE BATTERY"; `measurements/probe_battery_2026-10-09/`]
-
-### 4.6b The END-STATE closing test: PASS (2026-10-12)
-
-**The full end state is NOT detectably worse than production, and is precise enough to say so: it is adopted.** The
-end state (`--arch endstate`: static per-mon tokens + the static-recovery levers incl. a third trunk round + move
-resolution, speed physics, the principled op reductions, the OBS-FACTS block, no critic threat injection + the
-fact-completion levers + the probe battery's two facts + the four-move closure), 8 seeds × 15M at P_end2 `62085750`,
-against production (legacy encoding), 8 seeds × 15M at `95d014fa`, in the registered 8 × 8 mirrored cross (64 cells ×
-1,000 pairs): Δ̂ **+0.596 pp**, √V̂ 0.749, two-sided 90 % interval **[−0.723, +1.915]**. Both clauses of the owner's
-rule hold (upper end > 0; lower end > −2.0 pp), so the outcome is **PASS**. It is NOT a superiority read (t_SUP 0.80;
-the interval includes 0). The end state's seeds spread more than production's (row means 47.68–52.36, s²_R 2.67 vs
-s²_C 1.82). Bot panel +1.21 pp (no harm). Where the static screen's look 3 left static −2.32 pp behind legacy, the full
-bundle of recovery and fact levers closes that gap to a point estimate of +0.6. Which levers carry the recovery is NOT
-known (no bisection was run; the PASS made it unnecessary). Note that what was TESTED is P_end2's build; HEAD's
-adopted end state differs by changes classified at adoption (ledger, the adoption entry).
-
-[PASS (registered non-detectably-worse rule; NOT superiority) · ledger 2026-10-12 MEASUREMENT (MAJOR) "THE END-STATE
-CLOSING TEST: PASS"; `measurements/endstate_closing_test_2026-10-09/cross/`; design
-[`design_endstate_closing_test.md`](../endstate/design_endstate_closing_test.md) §9]
-
-### 4.6c The bf16 trunk A/B: PASS (2026-10-14)
-
-**A bf16 trunk costs no detectable strength, and it is adopted into the production recipe.** `--trunk-precision bf16` puts
-the trunk rounds (the post-LN encoder layers and the identity-init extra rounds) under bf16 autocast inside the learner's
-compiled micro-step; the damage op, every head, the pointer head's log-softmax, the value, every loss and the optimizer
-state stay fp32, and the rollout, the eval core, every snapshot and the K9(b) probe stay fp32 by construction. Because it
-moves the micro-batch gradient 1–18 % from fp32's (window D), speed alone never adopted it: the registered A/B
-(`design_bf16_strength_ab.md`) trained the end state with it (EB) and without it (E), 8 seeds × 15M each, at ONE pin
-(`f45d0c27`). **Stage 1** (a futility screen, 4 × 4 at 5M) read CONTINUE (Δ̂ −0.12 pp, 90 % [−3.55, +3.31]). **Stage 2**
-(the 8 × 8 mirrored cross of the 15M finals, 64 cells × 1,000 pairs, the closing test's coded rule): Δ̂ **+1.06 pp**, SE
-1.28, df 14, two-sided 90 % interval **[−1.19, +3.31]**; upper > 0 and lower > −2.0, so **PASS**. It is NOT a superiority read
-(t_SUP 0.83; the interval includes 0), and the bf16 arm's seeds spread more (row-mean variance 8.5 vs 4.5). The speed is the
-reason to take it: `train_ms` 54.3 s (fp32) → 42.1 s (bf16), −22.5 %, from the 16 runs' own TensorBoard files. **Scope of the
-evidence:** fresh runs (and bf16 seeds resumed from their own bf16 5M final). It does NOT cover switching an fp32 lineage to
-bf16 mid-way, so a fork inherits its parent's recorded precision rather than defaulting to the new recipe.
-
-[PASS (registered non-detectably-worse rule; NOT superiority) · ledger 2026-10-14 MEASUREMENT (MAJOR) "THE bf16 STRENGTH A/B:
-PASS"; `measurements/bf16_strength_ab_2026-10-12/`; design [`design_bf16_strength_ab.md`](../endstate/design_bf16_strength_ab.md)
-§7–§8]
-
-### 4.7 Value discrimination for search: DECISIONS, not resolved pairs (2026-10-11)
-
-> **The consolidated view of everything below, and of the older search history (what works, what does not, the frontier by stage of the game, how far we are, the instruments' limits, the open questions): [`../endstate/search_ledger.md`](../endstate/search_ledger.md)** (always-current; any search result updates it in the same commit).
-
-**For a one-ply search DECISION, oracle rollouts carry value the critic lacks, and the first few rollouts carry most of it.** On banked rb-blob rows (563 Lane S turns, every legal action on 32 shared seeds), picking the action an 8-rollout leaf likes best beats the policy's own pick by **+0.062 win probability per decision [+0.045, +0.079]**, one rollout by +0.025 [+0.012, +0.037], the critic by +0.008 [−0.005, +0.021], all scored on 24 truth seeds no scorer saw. The deleted 2·SE acting rule resolved 5–7 % of pairs at 4 rollouts, which is why the old playout arm bought nothing. Shared-seed pairing in today's dice mode is worth VRF 1.057 [1.045, 1.072] (1.28 on move-move pairs). The value is not concentrated on the policy's torn states (+0.049 torn vs +0.082 most decided). The design and the pilot that re-measures this on the end-state and production seeds' own states: [`../endstate/design_value_discrimination.md`](../endstate/design_value_discrimination.md) §7.
-
-[DESCRIPTIVE (POST-HOC on banked rows, no registered verdict) · ORACLE world (the playouts know both real teams; an honest leaf needs determinization) · one pre-end-state checkpoint, off-distribution states · ledger 2026-10-11 DESCRIPTIVE "VALUE DISCRIMINATION FOR SEARCH, the review's reads"; `measurements/value_disc_review_2026-10-11/`]
-
-**The registered pilot REPLICATES it on the closing test's end-state and production seeds, own states (2026-10-11, oracle world).** LEAF-K8's argmax beats the policy's pick by **+0.081 (end2) / +0.071 (prod)** per decision, the critic by +0.055 / +0.059 (R-LEAF LEAF-AHEAD on both); 16 rollouts add +0.010–0.017 more (R-K STILL CLIMBING); a 4-turn-then-critic leaf keeps about half at a seventh of the cost (R-TRUNC NONE: not within 1 point); the end-state critic alone +0.026 vs production's +0.012. **Trusting the policy prior HURTS** (Gumbel's rule at the `mctx` defaults −0.013 / −0.022; top-4 sequential halving worse at larger budgets): where the leaf disagrees with the policy, the leaf is right, and the value sits as much in the policy's confident states as its torn ones. Shared dice align for one turn (ρ 0.44–0.53) and not after (0.06), which indicates the per-turn reseed (S1). 
-
-[SIGNIFICANT (registered R-LEAF, both seeds, CI excludes 0) · ORACLE world · 2 × 600 states · ledger 2026-10-11 MEASUREMENT "VALUE-DISCRIMINATION PILOT PHASE 1"; `measurements/value_disc_pilot_2026-10-11/`]
-
-**In HONEST worlds the rollout leaf's gain is GONE: it was hidden information about the opponent's team (2026-10-11).** With 8 determinized worlds per decision that replay our side's observations byte-equal (Smogon-prior or network-belief species), LEAF-K8 improves the policy's pick by +0.007 (end2) / +0.004 (prod), not clear of 0 or of the critic (R-HONEST NOT DETECTED); oracle minus honest is +0.072 / +0.067 (R-INFO INFO-COSTS); the network's own species belief does not help (R-BELIEF NOT DETECTED). Split by unseen opponent slots, the honest leaf keeps about HALF the oracle's edge when all six opponent mons have been seen (+0.035 vs +0.066, pooled over both seeds) and NOTHING when exactly one is still unseen (−0.002 vs +0.068): the never-seen mons and the seen mons' hidden moves both carry the gap (the pilot's "keeps ~¼ with 0–1 unseen, so the MOVES" pooled the two groups), and the pilot's fair worlds never hid a seen mon's item, ability or spread. Which hidden fact binds is the registered study [`../endstate/design_hidden_info_binding.md`](../endstate/design_hidden_info_binding.md) [DESCRIPTIVE, registered read D1, `measurements/hidden_info_binding_2026-10-11/descriptive_reads.json`]. The only honest signal is on the end-state seed: a one-ply critic search +0.013 [+0.001, +0.026] and a 4-turn leaf +0.017–0.020, not clear of each other and unproven in games. So "search over our value beats our value" is NOT yet shown in fair worlds; the routes are a sharper BELIEF about the opponent's team (moves and the unseen mons) and oracle playouts used as per-action VALUE labels (`../endstate/design_value_discrimination.md` §13).
-
-[SIGNIFICANT (R-INFO, both seeds) · NOT DETECTED (R-HONEST, R-BELIEF, both seeds) · RE-READ on the FIXED world builder (v2, after the hidden-info study's R-GIGO FAIL): every verdict holds, numbers within 0.011 (A′ LEAF-K8 +0.011 / +0.007, critic +0.014 / +0.005, R-INFO +0.070 / +0.065) · ledger 2026-10-11 MEASUREMENT "VALUE-DISCRIMINATION PILOT PHASE 2 / 2b" and 2026-10-12 "PHASE 2c + the v2 RE-READ"; `measurements/value_disc_pilot_2026-10-11/` README §7, §14]
-
-**Oracle playouts as VALUE labels do not help a frozen body at a cheap budget (2026-10-11).** Regressing oracle playout outcomes on what we observe is an unbiased target for the honest information-set value (the playout continuation was verified to act on its own observations), but a per-action head on the frozen end-state body, fit on 2 oracle playouts per action of 9,629 states from disjoint battles, does not beat the policy's pick (−0.004 [−0.016, +0.009]) and is worse than the honest one-ply critic search (−0.018 [−0.032, −0.004]); its validation R² is +0.002 because 83 % of the labels' sibling spread is dice noise and most of the rest is hidden information. It agrees with the 2026-10-06 CRN refit null; a trained body and a much larger label budget stay untested. By-product: the network's own ride-along A head, used as a scorer with no rollout, gains +0.010 [+0.001, +0.020] (descriptive, one checkpoint).
-
-[NOT DETECTED (R-QHEAD) · SIGNIFICANT BEHIND (R-QHEAD-CRITIC), confirmed on the fixed v2 builder (−0.018 [−0.032, −0.004]) · DESCRIPTIVE (the A head) · end2 s2001 only · ledger 2026-10-11 MEASUREMENT "VALUE-DISCRIMINATION PILOT PHASE 3", 2026-10-12 "PHASE 2c + the v2 RE-READ"; `measurements/value_disc_pilot_2026-10-11/` README §12, §14]
-
-**Worlds drawn from the network's OWN move belief barely help honest search; the TRUE moves of the seen mons would (2026-10-12).** On the fixed world builder, rollouts in worlds whose hidden moves come from the network's per-mon move belief improve the policy's pick by +0.018 (end2) / +0.009 (prod), still not clear of the critic (R-HONEST-C NOT DETECTED, both), and beat the species-belief worlds only on end2 (+0.017 [+0.001, +0.031], not reproduced by the old builder's rows, not on prod): they close ~⅕ / ~1⁄20 of the oracle gap, because the network's move belief is barely sharper than Smogon usage (51 % / 48 % of a world's hidden move set right vs 45 %). Worlds that know the seen mons' TRUE sets reach +0.042 / +0.018 (½ / ⅕ of the gap) and beat their critic on end2 (+0.025, descriptive): the moves of the revealed mons are a real lever for search, but the network does not hold them; the never-seen mons carry the remaining +0.04–0.05. The bootstrap's honest-search go / no-go still fails.
-
-[SIGNIFICANT (R-MOVES, R-MOVES-CEILING, end2 only; builder-sensitive) · NOT DETECTED (R-HONEST-C both; R-MOVES and R-MOVES-CEILING on prod) · ledger 2026-10-12 MEASUREMENT "PHASE 2c + the v2 RE-READ"; `measurements/value_disc_pilot_2026-10-11/` README §14]
-
-**Telling the NETWORK the opponent's true moves does not make its decisions better, and the move-guessing difficulty is intrinsic (2026-10-11).** With the true unseen moves of every SEEN opponent mon injected into the network's one published move posterior at 95 % mass (frozen end2 / prod checkpoints, the pilot's 1,200 states), the policy changes its pick on 13 % of decisions but gains +0.001 [−0.003, +0.005] win probability per decision (pooled; at most ≈ +0.5 points against the oracle search's +7), and the one-ply critic search gains nothing (−0.002 [−0.007, +0.003]); an equally confident WRONG-moves placebo changes more picks and costs the critic search ≈ 0.8 points, so the critic reads move content but the true content does not help it. This matches the X5 oracle arms (a network trained with the whole set gained nothing over species). Separately, the Smogon prior predicts our pool's sets as well as real human sets (a 40,000-log sample of 376,410 public gen-3 OU replays), and sets drawn from the prior itself are no more guessable: a pool artefact does not explain the pilot's low move hit rate. And at 15M both closing-test policies still move ≈ 0.1 nats and flip 15–22 % of their top actions per 1M, their beliefs still improving: none of this is a plateau reading. The adversarial study's full standing is [`../endstate/design_hidden_info_binding.md`](../endstate/design_hidden_info_binding.md) §16; its factorial has since apportioned the gap (Tier 1, below: the moves are REFUTED as THE binding constraint).
-
-[NOT DETECTED (registered R-NET and CRITIC-USES, end2 / prod / pooled / a replication network) · DESCRIPTIVE (D9, maturity meters) · PROVISIONAL at 15M · ledger 2026-10-11 MEASUREMENT "HIDDEN-INFO STUDY: the model-input axis, the audits, D9 and maturity"; `measurements/hidden_info_binding_2026-10-11/`]
-
-**The value of perfect information is concentrated EARLY and in material-rich positions, because the truth would change the decision far more often there, not because more is at stake (2026-10-12).** Split by how many opponent Pokémon our side has seen (k), the oracle search's edge over the policy is about +0.07 at every stage (+0.065…+0.099), but the honest search recovers more as k rises (−0.004 at k = 1–2 → +0.031 at k = 6), so the value of perfect information G falls +0.086 / +0.081 / +0.076 / +0.056 / +0.035 (k = 1–2 / 3 / 4 / 5 / 6; n 192–325 pooled over end2 and prod, ± 0.02–0.03). G = (how often the oracle's pick differs from the honest pick) × (the true gain when it does): the first factor falls 0.78 → 0.30, the second is ≈ 0.11 at every stage. The stage that carries it is the MATERIAL left (+0.087 with 12 mons alive, +0.031 with ≤ 7; given material, k adds nothing). Early the missing facts are the never-seen Pokémon (the seen mons' moves explain ≈ 0 of the headroom at k ≤ 3), in the middle the seen mons' moves (0.55 [0.27, 0.81] at k = 4 on the pilot's leakier builder; NOT replicated by the registered Tier-1 read below, which finds the never-seen mons leading at k = 4 too), late little is left. Honest search beats the one-ply critic only with all six seen (pooled, not per checkpoint). Giving the TRUE world a weight p in a K-world search average, the leaf's gain is concave (half of the rise by p ≈ 0.22) and our best honest belief is worth p ≈ 0.01 in those units, so the early stages need ≈ 0.2–0.35 and the late ≈ 0.05 to beat the critic search with confidence (the red team, 2026-10-15: those thresholds are largely the 8-rollout leaf's 1/8 resolution, see the Tier-1 paragraph below). Registered for the fully honest base, per stage, with a maturity re-run on the X26 plateau run: [`../endstate/design_hidden_info_binding.md`](../endstate/design_hidden_info_binding.md) §6.9, §12.13, §16.7; the stage-gated bootstrap proposal: [`../endstate/design_value_discrimination.md`](../endstate/design_value_discrimination.md) §13.10.
-
-[DESCRIPTIVE (POST HOC, on the original study's rows; no verdict) · PROVISIONAL at 15M · ledger 2026-10-12 REGISTRATION + DESCRIPTIVE "THE VALUE OF INFORMATION BY STAGE OF THE GAME and the BELIEF-QUALITY DOSE-RESPONSE"; `measurements/hidden_info_by_reveal_count_2026-10-12/`]
-
-**The opponent's hidden MOVES are NOT the binding constraint on honest search; the NEVER-SEEN Pokémon carry more (2026-10-15, the registered Tier 1 of the hidden-information study).** On the FULLY honest world builder (every hidden fact, a seen mon's item, ability and spread included, drawn from Smogon usage and kept only if it replays everything our side saw), the value of perfect information is the same 7 points per decision (G = oracle − honest +0.070 [+0.060, +0.081], pooled over the end-state and production seeds at 15M; items, abilities and spreads add ≈ 0.003). Revealing only the never-seen Pokémon closes 0.31 of it and hiding only them opens 0.82; for the seen mons' unseen moves 0.13 and 0.42, so by the registered rule the never-seen class dominates on both sides and "the moves are THE binding constraint" is REFUTED. The moves are a real minority share: the move dose helps a little (+0.011 at 90 % mass), a confidently WRONG move set hurts (−0.013), the prior's own top moves do nothing. The network's own belief, used to draw the worlds, buys nothing (+0.006, the same as Smogon usage); the Bayes posterior of our closed 719-team pool recovers 0.80 of the gap because it nearly identifies the team, which an open ladder does not allow; Foul Play's hand-written evaluator is no better than our critic as a leaf in honest worlds (the information, not the evaluator, binds). By stage the gap falls with the turn (+0.095 at turn ≤ 7 → +0.033 at ≥ 22), the never-seen mons lead early, and no stage has an honest search clearly beating the critic on both seeds (the frontier is empty; all six seen is weak, pooled only). A post-hoc finding qualifies the belief dose-response: an 8-world honest leaf ties in 60 % of states, so ANY small weight on the true world breaks those ties (the curve's first step, p 0 → 0.001), and beyond that step a search needs ≈ 0.2–0.35 of weight on the true world; today's belief does not reach the step. **A third party's comparison with the blind re-implementation (2026-10-15)** checked the same 978 states. The size of the gap REPLICATES (+0.070 vs +0.072), as do the moves' minority shares (reveal-only 0.11 vs 0.12, hide-only 0.39 vs 0.47) and the tie-break step. The never-seen class's dominance does NOT replicate yet, because the re-implementation built no never-seen arm. Nor do the stage, recovery, evaluator and dose / placebo reads, and on the same states the re-implementation's gap falls only half as steeply with the number of opponent Pokémon seen. That re-implementation also drew moves from a learnset table missing pre-evolution moves, which inflates its move shares, so its agreement that the moves are a minority is conservative. The comparison also found that the states an honest builder cannot fit are ones where hiding the moves costs more than average. **The red team (2026-10-15, post hoc; no registered verdict changed) confirms the first half and weakens the second.**
-- **What holds.** No reading makes the moves THE binding constraint.
-- **What does not.** "The never-seen Pokémon dominate" holds on the registered mix and survives tie-free scoring, the exclusions (the hide-only side needs no honest base, and the original's own rows show those states are not where moves cost more), the world builder's mis-keyed records and a never-seen leak check. But it is not detected on the 42 % of states from games against the network's own snapshots. There the moves' hide-only share is 0.58 and their reveal-only share leads in point. It is also not met on the end-state checkpoint alone, and per hidden fact the two classes are worth the same.
-- **What breaks.** The "0.2–0.35 of weight on the true world" is the 8-rollout leaf's 1/8 resolution; a continuous 4-turn leaf rises from 0.05 with no step. The network's species belief holds the true never-seen species 2.3× more often than Smogon usage (0.41 vs 0.18), for at most ≈ +0.017 of value.
-- **What remained open (the red team's list).** An independent never-seen arm (since built and compared, below), a
-  competent-opponent state bank (since read, below) and a second referee.
-
-**The independent never-seen arm has now been built and compared (2026-10-16; the THIRD PARTY's read, §16.11).** A second
-agent built the never-seen arms blind to the original, with the learnset table fixed. A third party compared the two under
-a pre-registration written before any arm ran.
-
-**It AGREES on the 978 common states at the 8-rollout leaf.**
-- Revealing only the never-seen Pokémon closes 0.32 vs 0.31 of the gap. Hiding only them opens 0.83 vs 0.92.
-- R3's two contrasts are positive and clear in both builds.
-- The absolute reveal-only and hide-only values differ by 0.002 and 0.001.
-
-**So "the never-seen Pokémon carry more than the moves" is REPLICATED, as a scoped claim.** Its scope:
-- It holds at the 8-rollout leaf. At 4 or 1 rollouts the rule flips, in opposite directions in the two builds.
-- It holds on the registered, bot-heavy mix of states. In BOTH builds it fails on the states from games against our own
-  snapshots, and on the end-state checkpoint alone.
-
-**What the comparison settled on the side.**
-- The blind build's one formal identity failure was ruled a guard false positive that excluded two states: a single true
-  set spells Hidden Power untyped. No outcome differs anywhere, and the original reproduces the truth on those states.
-- With the learnset fixed, the moves' hide-only share differs between the builds (0.38 vs 0.54). So "the moves are a
-  minority by necessity" is implementation-dependent.
-- "The moves are not THE binding constraint" stands in both builds.
-
-The third party's confidence that the never-seen class is the largest was ≈ 85 % on the registered mix at that leaf and
-≈ 30 % where play is competent. That made the competent-opponent bank the decisive open read.
-
-**The competent-opponent bank E2 says the never-seen Pokémon lead there too, by the registered rule, on a thin second half
-(2026-10-18; pre-registered before any game existed; §16.12).** The bank is 1,200 fresh states, 600 per checkpoint, from
-games against the network's own snapshots only.
-- **Revealing.** Revealing only the never-seen Pokémon helps honest search more than revealing only the moves:
-  +0.0169 [+0.0065, +0.0268] per decision (material).
-- **Hiding.** Hiding only them costs more: +0.0114 [+0.0010, +0.0220].
-- **The registered verdict is U-FIRST** at the 8-rollout leaf, pooled.
-
-**Its qualifiers (both registered):**
-- It is scorer-dependent: with ties broken at random the hide-only side is not clear.
-- Each checkpoint alone reads SHARED.
-
-**The red team's population attack splits.**
-- Its reveal-only half does not replicate on fresh states: E2 sits clearly above Tier 1's post-hoc snapshot subset.
-- Its hide-only half does: on competent play, hiding only the moves opens 0.58 of the gap, close to the never-seen
-  Pokémon's 0.73.
-
-**So the moves are a NECESSARY share on competent play,** but still not a sufficient one (0.16) and not THE binding
-constraint.
-
-**Other facts from the read.**
-- The gap itself reproduces on fresh states: +0.072.
-- The GIGO audit is clean: one row per state in every arm, no duplicates, no guard defects, the identities exact, and
-  the pin re-gate 45,768 / 45,768.
-- Confidence that the never-seen class is the largest where play is competent rises to ≈ 65 %.
-
-**What it changes:** no roadmap line. There is still no move-inference programme. The never-seen class is the first
-belief target for search, if one is ever opened, but the moves cannot be ignored. The plateau replication (the maturity battery,
-2026-10-25, below) reads SHARED on both its banks, not U-FIRST: at P\* neither class comes first.
-
-**Maturity to the plateau does not bring honest search closer (2026-10-25; the maturity battery's plateau step on X26; pre-registered, amendment A1; read of record on a plateau-drawn bank; SELF-REFEREE).** The oracle − honest gap G_F was read at X26's 25M and its declared plateau P\* (280M) on 719 fresh states drawn from P\*'s own eval games, with a replication on the 723-state interim bank and the five-anchor LEAN trajectory beside it.
-- **The gap, on the record:** +0.061 → +0.058 per decision; the change, −0.003 [−0.020, +0.015], is NOT DETECTED. The replication reads GAP-SHRINKS (+0.078 → +0.048, −0.030 [−0.047, −0.012]); the registered BANK-DEPENDENT rule flags only opposite directions, so the record stands. Descriptively, the shrink shows on states from 230M games, not on states from the plateau's own games.
-- **What moves is the oracle, not honest search.** The oracle's edge over the policy falls on both banks; honest one-ply search stays at or below the policy at every anchor (IMP_F ≈ −0.01 to +0.005).
-- **The belief.** The network's belief is worth p ≈ 0.001 (25M) and 0.014 (P\*) of weight on the true world on the 8-rollout leaf's dose curve, against its p\* ≈ 0.2–0.3 (that step is the leaf's 1/8 resolution; on the continuous 4-turn leaf p\* is 0.35–0.50) (BELIEF-RISES NOT DETECTED on every read).
-- **The frontier.** FRONTIER-STATIC: no stage bucket opens a search gate at either anchor on either bank. One bucket's gap shrinks at the Bonferroni level on each bank (turn 8–14 on the record, k 1–2 on the interim), not the same one.
-- **Which hidden class matters (R3 at the plateau):** SHARED on both banks; both the seen mons' moves and the never-seen mons carry value, and neither names itself first (E2's 15M read was U-FIRST).
-- **The referee.** Every number is scored by the anchor playing BOTH sides. E1-0 showed the bot-stratum gap shrinks against the real bot (+0.050 → +0.010 at 225M, descriptive), so these are self-referee sizes; a bot-referee re-score is proposed, not registered.
-- **The view.** Policy training absorbs some of what perfect information would buy, but up to the plateau it does not make honest search useful. Enabling search still needs a world sampler far closer to the truth.
-Detail: [`measurements/hidden_info_maturity_x26_2026-10-18/`](measurements/hidden_info_maturity_x26_2026-10-18/README.md) §5, §7; [`../endstate/search_ledger.md`](../endstate/search_ledger.md) §1, §7 Q4. [GAP-SHRINKS NOT DETECTED (record) · GAP-SHRINKS on the interim replication, not BANK-DEPENDENT · BELIEF-RISES NOT DETECTED · FRONTIER-STATIC · STILL-MOVING NOT DETECTED · CONVERGED NOT READ · R3 SHARED (both banks) · SELF-REFEREE · ledger 2026-10-19 MEASUREMENT (LEAN) and 2026-10-25 MEASUREMENT "the maturity battery's PLATEAU STEP"]
-
-**The acting rule is not what binds honest search; the worlds are (2026-10-20; L1 of the hidden-information search review; pre-registered, zero playouts, PROVISIONAL).** The literature's closest precedent (Ataraxos, Stratego) played 362 Elo below its own policy without a KL anchor to it and well above it with one, so the plain argmax over 8 honest worlds was a suspect. Three anchored rules (piKL, Gumbel's prior-aware scale, a deviation threshold) were fitted on Tier 1 and read on data they never saw. On X26 an anchor lifts honest search from clearly below the policy (−0.012 per decision) to about the policy, and no anchor strength, even one chosen on X26 itself, puts it above (≤ +0.004). On E2 the 4-turn leaf is weakly positive with or without an anchor (+0.010 → +0.012); the registered verdict, PAYS-SCOPED, rests on that cell alone. In the oracle world the best anchor is none. So an anchor is a GUARD against the argmax's harm, not a source of gain: the honest leaf carries almost no decision information the policy lacks, and what would enable search is still a sampler closer to the truth. Long et al.'s PIMC properties, measured on the same banks (descriptive), put Gen 3 OU near Skat (leaf correlation 0.97 near the end, disambiguation 0.41, 0.70 early), the region where PIMC works, so the classic PIMC failures do not explain the null either. The registered replication on the maturity battery's plateau bank (2026-10-25, SELF-REFEREE, Tier-1 fit frozen) re-reads the one paying cell as clear (piKL at the 4-turn leaf, +0.0097, 98.33 % lower +0.0010; the anchor's own part +0.0025 [−0.0039, +0.0089], not clear), but it sits wholly on the 25M anchor (+0.0193) and is nil at P\* (+0.0001): the leaf's weak positive belongs to a less mature policy. Detail: [`measurements/search_l1_plateau_2026-10-25/`](measurements/search_l1_plateau_2026-10-25/README.md); [`measurements/search_l1_l5_2026-10-20/`](measurements/search_l1_l5_2026-10-20/README.md); [`../endstate/search_ledger.md`](../endstate/search_ledger.md) §1. [PAYS-SCOPED (registered; the anchor's own gain not clear on the paying cell) · replication REPLICATES (thin; 25M anchor only; SELF-REFEREE) · on X26 no cell above the policy (descriptive) · DESCRIPTIVE (L5, proxies) · ledger 2026-10-20 MEASUREMENT "L1 + L5", 2026-10-25 MEASUREMENT "L1 replication"]
-
-**The opponent's own choices identify the true world, but only when the opponent plays like our network; the honest proposals hold nothing near it (2026-10-20; L3 of the review and its off-pool replication; pre-registered, forward passes only).** With X26's 225M network seated as the opponent, the likelihood of the opponent's observed past choices ranks the true world above today's honest worlds 69 % of the time (AUC 0.692; 0.80 against our own snapshots, 0.59 against scripted bots). A control that ignores the chosen action is at chance (0.48), so the network is not simply surer on the true team. That does not rule out that it predicts better on a pool team it trained against; every opponent in the bank plays one. The pooled figure is carried by the snapshot opponents, greedy earlier copies of the same network. Against scripted bots it is WEAK alone, and by L3's own rule the bots alone would not have built stage 1c. So the read is PROVISIONAL-POOL: one pre-plateau anchor, pool opponents only. A pre-registered counter-test then put a pool DECOY in the truth's place (another pool team, consistent with every reveal, not a near copy). On the 82 states where one exists, decoys beat the honest worlds clearly (AUC 0.575 [0.517, 0.631]), and the truth beats its decoys only inconclusively (0.578 [0.489, 0.664], NOT-DETECTED). About half of L3's separation there is pool-ness or real-team coherence. Only against our own snapshots is the truth clearly above its decoys. **The off-pool replication settles the pool question.** At X26's plateau checkpoint P\* (280M), on 318 states of games against opponents piloting ladder teams X26 never trained on, the truth still beats the honest worlds 79 % of the time against our own snapshots (0.794, as on the pool bank), and not at all against scripted bots (0.472, NO-EVIDENCE; 0.588 on the pool bank). A ladder decoy that is not the truth gets no lift over the honest worlds there (0.503, against the pool decoy's 0.575), and the truth beats it (0.611). So the pool decoys' lift was memory of pool teams, not recognition of coherent real teams. What survives off-pool is evidence about the true team, but only where the opponent model nearly is the opponent. With our network seated as a non-self opponent it shows nothing, and a behaviour-cloned HUMAN opponent model as the judge shows nothing either (R-b2, 2026-10-24: bots 0.459, ΔAUC vs P\* −0.013 [−0.068, +0.045], HOM-NONE; §4.8). The bots are not humans, so the ladder's own read (L3-H) is still unbuilt. (The off-pool bot states are 96 % P\* wins, so bots in P\*'s losses are not measured.) Put among the eight honest worlds, the truth would take a quarter of the likelihood weight. That is a COUNTERFACTUAL, not the dose curve's p: p is the true world's weight inside the worlds a search actually plays, and no honest set holds the truth. Re-weighting today's eight honest worlds by it moves the share of correct unrevealed moves by only +0.005, because no honest world is near the truth. Against our own network the likelihood is a good judge; what binds is a proposal set that can hold near-true worlds. Stage 1c's phase A (the next paragraph) found its weighted worlds only slightly nearer, again only against our own network; by A4 a pool-bank 1c result steers nothing until it replicates on the off-pool bank, and there it can pay only on the snapshot stratum. Detail: [`measurements/search_l3_2026-10-20/`](measurements/search_l3_2026-10-20/README.md); [`measurements/search_offpool_bank_2026-10-20/`](measurements/search_offpool_bank_2026-10-20/README.md); [`../endstate/search_ledger.md`](../endstate/search_ledger.md) §1. [WORKS (registered) · off-pool at P\* REPLICATED-SELF-PLAY-ONLY (snapshots 0.794, bots 0.472 NO-EVIDENCE) · off-pool decoy NO-LIFT, TRUTH-SPECIFIC: the pool lift was memory · bots WEAK alone on the pool bank · the re-weighting lift NOT DETECTED pooled · the 0.249 "dose-curve range" reading WITHDRAWN (review F3) · familiarity counter-test NOT-DETECTED, POOL-LIFT (decoys beat honest worlds; `measurements/search_l3_2026-10-20/counter_test/`) · ledger 2026-10-20 MEASUREMENT "L3" and "L3 OFF-POOL"; the adversarial review `measurements/search_l3_2026-10-20/REVIEW.md`]
-
-**Weighting more or team-level proposals by the opponent's choices finds only slightly nearer worlds, only against our own network, and honest search over them does not pay (2026-10-20/21; stage 1c; pre-registered with an amendment, PROVISIONAL-POOL).** L3's consequence was tested end to end. Per state of the same 287, 128 honest worlds and 128 real-team corpus worlds were weighted by the damage-roll weight times the likelihood of the opponent's past choices. They were compared with today's 8 honest worlds on the share of the truth's binding hidden facts they hold (each never-seen species, each seen mon's unrevealed move). All three weighted sets are clearly nearer (+0.007 honest, +0.019 corpus, +0.013 both; the honest share goes from 0.44 to 0.45), none by the registered material margin, and all only against our own snapshots; against scripted bots nothing is detected. The corpus brings the never-seen species by itself. The likelihood's own selection adds +0.008 among honest worlds and nothing detectable among corpus worlds; against bots it pulls corpus worlds away from the truth. 128 proposals are no better than 64, and the mass on exact worlds stays ≈ 0 everywhere. Played out with L1's anchored acting rule on the true world's referee, honest search over the resampled worlds is within ±0.01 of the policy on every arm (the best, the corpus arm, +0.007 [−0.003, +0.017]; Holm: none pays), no better than today's 8 honest worlds. Read with stage 1 (only exact team identification pays; partly right worlds do not) and L3's off-pool replication (the likelihood carries evidence only against our own network), the opponent-choice route, with our network as the opponent model, is not a search lever. The binding piece is still a proposal set that holds the opponent's actual team. Detail: [`measurements/search_1c_2026-10-20/`](measurements/search_1c_2026-10-20/README.md); [`../endstate/search_ledger.md`](../endstate/search_ledger.md) §1. [NEARER ×3 (registered) · none MATERIAL · PROVISIONAL-POOL · SELF-PLAY-ONLY · phase B NOT-DETECTED on every arm (no search-sized gain; Holm: none) · placebo NULL · ledger 2026-10-20 MEASUREMENT "stage 1c phase A", 2026-10-21 MEASUREMENT "stage 1c phase B"]
-
-**With playouts, only identifying the opponent's whole team pays; partly right worlds do not (2026-10-21; the world sampler's stage 1; pre-registered, amendments A1–A3 before any outcome was read; PROVISIONAL: pool opponents, X26 225M).** On the 287 maturity LEAN states, five candidate world samplers were played against today's honest worlds (F, with the legality rule).
-- **Team identification pays.** The training pool's consistent teams (POOL, a closed-population ceiling) beat F by **+0.038** [+0.022, +0.055] per decision at the 8-rollout leaf, recovering 0.72 of the oracle gap, against bots and own snapshots alike (SELF-REFEREE; with the real bot as the referee E1-0 reads POOL − F +0.027 → −0.006, UNDECIDED).
-- **Every open-population sampler reads NOT DETECTED**, with points −0.008 … +0.002 and intervals near ±0.015: joint Smogon teammates, a ladder-corpus team model, the forum corpus without near copies of the truth, and the network's own species with real sets.
-- **Calibration bought nothing.** The network-species arm holds the true never-seen species set in 44 % of its worlds and makes the truth's facts far likelier, yet gains nothing. At this leaf the value is in EXACT worlds, and no open source in hand makes them.
-- **The day's builds are not value levers.** F2's legality rule and F1's dice-marginalised damage rolls, uniform or likelihood-weighted, move decision quality undetectably.
-- **The view:** an honest sampler that does not identify the team will not make one-ply search pay here. The levers left are evidence that narrows the team (the opponent's own choices, §6.3 of the sampler design) or a population whose teams are public. Detail: [`../endstate/design_world_sampler.md`](../endstate/design_world_sampler.md) §6.2; [`measurements/world_sampler_stage1_2026-10-19/`](measurements/world_sampler_stage1_2026-10-19/README.md). [PAYS / MATERIAL (POOL) · NOT DETECTED (four open samplers; F2's rule; tier A) · NOT CALIBRATED (exact-world mass vs value) · L2 EXACT-ONLY between arms · PROVISIONAL · ledger 2026-10-21 MEASUREMENT "the world sampler's STAGE 1"]
-
-The whole is PROVISIONAL at 15M: [`../endstate/design_hidden_info_binding.md`](../endstate/design_hidden_info_binding.md) §12.13.7, §16.8, §16.9, §16.10, §16.11, §16.12; [`../endstate/search_ledger.md`](../endstate/search_ledger.md) §1–§5.
-
-[REFUTED (R-MOVES, rule R3) · SHARED (R-RIVALS U) · BELIEF-RECOVERABLE on this distribution (R-RECOVER, POOL) · not EVALUATOR-BOUND, INFORMATION-BOUND support (R-EVAL) · GATE-CLOSED / FRONTIER EMPTY (R-STAGE-SEARCH) · DESCRIPTIVE (the tie-break finding) · PROVISIONAL at 15M · R-GIGO PASS on the Tier-1 worlds · REPLICATED by the blind re-implementation: G and the moves' shares; NOT REPLICATED by it: R3's never-seen half (since REPLICATED by the blind U-arm build, below), stage, recover, eval, dose / placebo; R-REPLICATE NOT MET as registered · RED TEAM (post hoc): moves-not-binding SURVIVES; U's dominance WEAKENED (population-dependent: not detected on snapshot-opponent states; not met on end2 alone); "0.2–0.35" and "FN ≈ Smogon" for species BROKEN; R-EVAL and the empty frontier WEAKENED; POOL = identification SURVIVES · BLIND U-ARM BUILD (third party, pre-registered, 2026-10-16): R3's never-seen half REPLICATED at LEAF-K8 on the registered mix (AGREE); the population split and the end2 failure REPLICATE; R3 flips at LEAF-K4 / K1; the M side (n_M, ν_M) still differs; R-REPLICATE §12.2 as a whole NOT MET · E2 (the competent-opponent bank, pre-registered, 2026-10-18): R3 U-FIRST at pooled LEAF-K8, SCORER-DEPENDENT (tie-free SHARED), SHARED per checkpoint; the red team's population attack fails on the reveal side and replicates on the hide side; B4 HOLDS on competent play (n_M 0.58); GIGO audit clean; single implementation · ledger 2026-10-15 MEASUREMENT "HIDDEN-INFO STUDY TIER 1", MEASUREMENT "the THIRD-PARTY REPLICA COMPARISON" and MEASUREMENT "the RED TEAM"; ledger 2026-10-16 MEASUREMENT (MAJOR) "THE BLIND U-ARM BUILD, compared"; ledger 2026-10-18 MEASUREMENT (MAJOR) "E2"; MATURITY BATTERY, first LEAN trajectory (X26 25M–225M): GAP-SHRINKS / BELIEF-RISES NOT DETECTED, NOT CONVERGED, FRONTIER NOT READ, PROVISIONAL (interim bank), ledger 2026-10-19 MEASUREMENT "the MATURITY BATTERY's first LEAN trajectory"; `measurements/hidden_info_tier1_2026-10-13/` (`replica_comparison.md`, `red_team.md`); `measurements/hidden_info_u_replica_2026-10-15/third_party_comparison.md`; `measurements/hidden_info_e2_competent_2026-10-16/`]
-
----
-
-### 4.8 Human data: the intent head's GAP (X50 R1, R0); a human opponent model, LEARNED but no search judge (R-b1, R-b2); the data card; P\* beats every human-only Metamon model (2026-10-25 / 26)
-
-X26's flat intent head (380M) predicts human ladder opponents (rated ≥ 1500) worse than its own pool snapshots.
-Both were read through the same spectator pipeline, under the registered rule: **Δ NLL +0.188 nats [+0.164, +0.213]**
-(1.937 vs 1.748); top-1 33.8 % vs 38.9 %. The gap is in SWITCHES:
-- on a move label, +0.07 nats;
-- on a switch label, +0.39 nats. On a human switch the head is worse than a uniform guess over its candidates.
-- Humans switch on 30 % of labels, the snapshots on 26 % and the bots on 6 %.
-
-R1's spectator pipeline (public-only own side, fabricated own spread) cost the head 0.23 nats on its own battles.
-**Fixed (R0, 2026-10-23):** with the own side completed from the log's reveals plus Smogon draws (C-GAME), the
-penalty is **+0.012 nats [+0.005, +0.020]** (registered bar: upper < +0.08). Through the fixed pipeline **the gap
-is LARGER: +0.253 [+0.232, +0.276]** (1.785 vs 1.531); switches +0.411, and moves now +0.160. The old penalty hid
-part of it. The completion's own cost is +0.019 on our teams; on human teams it is UNVERIFIED (no truth).
-⇒ Human opponent-action labels carry signal the self-play labels lack (rung 1 of the human-replay ladder).
-
-**The human opponent model (use (b), owner-approved 2026-10-23; R-b1 2026-10-24).** X26's network fine-tuned from P\*
-on 1.76M completed human choices (actor ≥ 1500), a search-only likelihood judge the policy never reads. On held-out
-humans it predicts the human's own choice **0.582 nats [0.565, 0.599] better than P\*** (1.148 vs 1.730; top-1 57 %
-vs 46 %), most on voluntary switches (−0.87). LEARNED, but only a gate: both read completed rows and only the HOM
-trained on them. **As search's judge it does not help (R-b2, HOM-NONE):** on the off-pool bank the truth's rank among
-honest worlds against the scripted bots is 0.459 [0.406, 0.510] (P\* 0.472), paired ΔAUC −0.013 [−0.068, +0.045];
-against our snapshots it is worse than P\* (0.706 vs 0.794). The lever is closed for search at P\*. The bots are not
-humans (F-1b-3), so whether a human's choices identify a human's team (L3-H) stays unread. The head refit (R-a1) is
-not read. [SIGNIFICANT on the registered contrasts · one checkpoint · ledger 2026-10-20 *X50 R1*, 2026-10-23
-*X50 R0*, 2026-10-24 *X50 R-b1*, *X50 R-b2* · `measurements/x50_r1_intent_read_2026-10-20/`, `measurements/x50_r1b_r0_2026-10-23/`,
-`measurements/x50_r1b_hom_2026-10-23/`]
-
-**The data card (2026-10-25; revised after three adversarial reviews; the owner's grant lets human replays train the
-policy as a toggleable lever, off by default).** On the frozen spectator snapshot `hr_spec_v1` (376,410 ladder logs,
-05-18 → 09-23; 0 parse errors, one rule set, 99.39 % of seats completed; now re-hashed against its manifest at every
-extraction and copied durably): the actors rated ≥ 1500 give 1.80M informative rows; about 6 % of sides belong to
-rule-flagged bot accounts; about half of all games end in a forfeit at every rating. At least 15.9 % of full-six
-≥ 1500 human sides sit in the region our unfamiliar panels occupy, but a 3-set core of a held-out panel team sits in
-most ≥ 1500 battles, so keeping the panels unfamiliar removes ≈ 71 % of them. **Human choices are learnable, and not
-only by account memory:** on held-out accounts that never played on the train dates the HOM beats P\* by 0.503 nats
-[0.467, 0.542] (0.605 on seen accounts). **Whether human labels carry the unfamiliar-team skill goal (b) lacks is
-UNKNOWN:** the familiarity proxy (P\*'s NLL by team familiarity; full-six sides +0.064 [−0.016, +0.149] nats) has no
-prediction under that hypothesis, so it is uninformative: there is no evidence yet either way. The test is X59-S,
-built, pre-registered and TRAINING (2026-10-26; 15 primary + 5 S-P0 students): three matched student arms of our architecture, five seeds each, on human
-states with human labels, on the same states with P\*'s labels, and on P\*'s own self-play states and labels, so
-S-H − S-S answers "is human data better than our self-play data?".
-The ladder's species mix drifts slowly: beyond an account-disjoint floor, consecutive months differ by an excess of
-0.005–0.011 TVD, and its distance to our pool and panels stays flat. [MEASURED · DESCRIPTIVE, post hoc on R-b1's
-forwards · `measurements/human_replay_quality_2026-10-25/` (+ `RESPONSE.md`); the architecture
-`../endstate/human_data_architecture.md`, the plan `../endstate/design_human_replay_lever.md`, both REVISED DRAFT]
-Every X50 read and the HOM's training rows used the pre-fix intent masks (every opponent Explosion / Self-Destruct and
-12–17 % of attacks unlabelled); no result is invalidated, but an extraction at HEAD is a different population (ledger
-2026-10-26 · FIX · *TRAINING-INPUT CHANGE: the obs / label GIGO audit*).
-
-**Does a model trained only on human data beat ours? No, at any scale Metamon publishes (FR-1, FR-3, 2026-10-25 / 26).** P\* plays Metamon's three human-only models in 1,600 greedy games each, every game a twin of X51's Kakuna game: on the unfamiliar panels P\* wins **0.666 [0.639, 0.692] vs `SmallRL`** (14M, offline RL), **0.631 [0.603, 0.658] vs `LargeRL`** (195M, offline RL) and **0.790 [0.766, 0.812] vs `LargeIL`** (194M, imitation): OURS-BEATS ×3 by the registered rule. Each is weaker than Kakuna on every panel (U +0.144 to +0.303). On the same human data offline RL beats imitation by ≈ 16 pp. Against all three the unfamiliar panels are level, so P\*'s P72 deficit against Kakuna is something Kakuna exploits. These compare upstream's recipes with ours, not human data with ours inside one architecture (X59-S). [MEASURED · registered · one checkpoint each · `measurements/human_only_vs_pstar_2026-10-25/`]
-
-### 4.9 Toy depth 2 → 4 at the plateau: UNDECIDED, Δ̂ ≤ 0, ended at look 1 (X47, 2026-10-21)
-
-The test: T\* (the X34 toy at 290M) was grown from 2 to 4 identity-init attention rounds, then trained 70M steps on
-seeds 3601–3603. It was read against toy C0 (the same fork without the growth) at equal effective learn time
-(ρ 1.136, so s_eq ≈ 351–352M).
-- **Primary R1: Δ −0.88 pp [−3.20, +1.44]**, so UNDECIDED. With Δ̂ ≤ 0 the read is FINAL at look 1, and the look-2
-  seeds (T1b) do not run.
-- **Secondary (matched steps):** −0.41 [−2.34, +1.51].
-- **Guards:** G-F PASS, G-C PASS.
-- **Out-of-lineage member P\*:** −1.13 [−4.76, +2.49].
-- **What it licenses:**
-  - no effect ≥ 6.8 pp is detected at look 1, and the point estimate is ≤ 0;
-  - X47b (production 3 → 4) leaves its conditional slot (AM-X47b-4);
-  - it is never "depth does not help": the read is on THIS growth recipe, on the toy, before transfer calibration.
-- **Both new rounds did move off the identity**, both in their weights and in the policy (reported only):
-  - their weight norms are ≈ 0.1 of the base rounds';
-  - zeroing them moves the argmax on 25–29 % of the bank's decisions (mean KL 0.16–0.19 nats).
-
-  So depth changed what the policy does without raising S.
-
-[UNDECIDED · 3 + 3 seeds · ledger 2026-10-21 *X47 LOOK 1* · `measurements/x35_breakers_stage_2026-10-17/x47_look1/`]
-
-### 4.10 The archive pool at the production plateau: NULL at look 1; the seed spread is meter noise (X35 A1 and G1, 2026-10-22)
-
-The test: P\* (X26 at 280M) was continued for 20M on seeds 3501–3503. A1 put half the self-play games against 8 frozen
-X26 nodes (the archive pool); C0 is the plain continuation. S is the population score against the frozen 7-member R:
-500 mirrored pairs per member, greedy, CPU.
-- **G1 (the variance gate): PASS.** σ̂ = 0.41 pp (4 df) against the 1.2 pp bar; it is 0.43 pp without A1 s3503
-  (descriptive). One S's measurement se is 0.55 pp, so no seed-to-seed spread beyond the meter is visible. D1 may run.
-- **A1's R1: Δ +0.19 pp [−1.07, +1.46]** (Welch 97.5 %, 3.4 df), wholly inside ±2 pp, so **NULL, FINAL at look 1**.
-  Mean S: A1 57.17, C0 56.98.
-- **Guards not read.** A NULL R1 cannot qualify, so no guard can change the class (orchestrator ruling (a)). P3 (A1's
-  look 2) is moot.
-- **What it licenses:**
-  - a uniform archive over X26's past moves S by less than ±2 pp at P\*'s halved rate. Its point is inside the X55 LG-0
-    prediction (+0.5 pp, 80 % [−1.0, +2.0]), though LG-0's modal class (UNDECIDED) was wrong: it read NULL; and note
-    TM's "NULL at the halved rate";
-  - it is never "the archive cannot help": it covers one pool, at share 0.5, over 20M;
-  - A5 (Nash weighting) stays conditional on A1 not LOSS, which holds.
-
-[NULL · 3 + 3 seeds · ledger 2026-10-22 *X35 A1 LOOK 1* · `measurements/x35_breakers_stage_2026-10-17/reads/a1_look1.json`, `g1/`]
-
-### 4.11 A fresher pool via SPRT promotion: the lever acts, S does not move (X35 SPRT, 2026-10-24)
-
-The same frame as §4.10. SPRT admits each 2M-step snapshot to the pool only if it wins its own sequential test
-(H0 0.50 vs H1 0.55 on fresh mirrored pairs), replacing today's one-crossing-of-0.55 rule. C0's S values are G1's.
-- **The mechanism acted as predicted.** 10 of 30 candidates were accepted (0.33, inside the registered [0.10, 0.90]).
-  Promotions after the fork were 10 against C0's 3 (≥ 2×), and the final median pool age was 60 / 68 / 60M against
-  C0's 72M. The plateaued trainee's edge over its own pool is real but small (test scores 0.48–0.56). That falsifies
-  TM-1's "edge ≈ 0.50, so the pool stopped refreshing".
-- **R1: Δ −0.25 pp [−1.65, +1.16]** (Welch 97.5 %, 2.6 df), inside ±2 pp, so **NULL, FINAL at look 1**. Mean S:
-  SPRT 56.73, C0 56.98. The guards were not read (R1 does not qualify, ruling (a)).
-- **What it licenses.** It is the registered "high fraction, no S gain" branch: at P\* over 20M, **pool freshness
-  is not the binding constraint** on S. Together with A1 (§4.10), neither a fresher pool nor an older one moves S.
-- **Its cost.** The tests block collection: 1,199 vs 1,409 steps/s (×0.85), +14 % GPU-h. The memo estimated ≈ 11 s per
-  cycle; the measured cost was 205–263 s.
-
-[NULL · 3 + 3 seeds · ledger 2026-10-24 *X35 SPRT LOOK 1* · `measurements/x35_breakers_stage_2026-10-17/reads/sprt_look1.json`, `sprt_read/`]
 
 ## 5. Retired hypotheses
 
-Each is retired for the flywheel's gift question. None is retired as a general claim about RL.
-
 | hypothesis | retired by |
 |---|---|
-| **DOSE** — a gentler/heavier fold explains the sign | flat across K=12/6/3 (dose cell), and again K=6 vs K=3 at fixed teachers; **no gift at v8's own dose** [ledger 2026-09-05 · *K=6 CELL*] |
-| **LENGTH** — v8's fold was 3.26× longer | interpolated at OUR fold length v8 was ~+8.5pp and it was +4.64 at +1.09M where every fold of ours digs a hole. Whatever differs, differs EARLY [ledger 2026-09-05 · *THE V8 LINE, pulled up*] |
-| **TEAM COUNT / breadth-for-differentiation** | slope +0.0003 ± 0.0013 (z=0.23) across a 2/3/4/9-team ladder (probe A) |
-| **BUDGET (per-team steps)** | +0.0019 z=0.16 between 1.5M and 2.5M per team; the budget law is dissolved on meter teams, not merely unconfirmed (rev-3 admission); it does NOT hold on coverage teams (−0.1217 `ordered`, rev-3 → rev-4; ledger 2026-08-31 · *EXPLOITABILITY DECOMPOSED*) |
-| **TEACHER QUALITY** | teachers converge to a set-mean **~0.6881 [0.672, 0.704]** ceiling on meter teams (0.5742 on rev-4's coverage teams: NOT team-invariant; ledger 2026-08-31); extraction is HEADROOM, not a teacher property |
-| **ARCHITECTURE** (head kernel, trunk sharing, FiLM code, depth) | every leg NOT DETECTED or REFUTED — §2.8 [meas: `arch_transfer_2026-09-05/`] |
-| **"Young updates are noise, mature updates are drift"** | both parents walk as t^≈0.48 under plain continuation, perm p 0.70 [meas: `continuation_drift/`] |
-| **"Ecology carries a gift on our side"** | the `fd` factorial already answered it: `fdC` (coef 0, teachers as opponents) = −1.2pp, an EQUIVALENCE within the taught floor. The cell was promoted on a false census before the census corrected it [ledger 2026-09-06 · *CELL 1*, retraction] |
-| **"Every untaught delta needs re-basing on a continuation"** | true of `ai_v8_04`, FALSE of `ai_v9_59`: G5 −1.92pp [−3.98, +0.46] [ledger 2026-09-06 · *G5 RESULT*] |
-| **"Best-against-target" teacher selection** | `best_model/best_model.zip` is BOT-win-rate-selected and is not always the run's last checkpoint (2 of 8 R5F teachers were ~0.93M, not ~2.93M). **Owner ruling 2026-09-06: a bare run dir means the run's LAST SNAPSHOT** (`gen3_last_snapshot_resolution_v1`); `<run>@<step>` and an explicit `.zip` are used verbatim [ledger 2026-09-06 · *H8* and its G1 correction] |
+| The unseen-team drop is the replay POPULATION (H4) | forum and procedural teams drop as far (X37a stage 2) |
+| Unseen teams are simply WEAKER | matched on team strength the piloting gap stays (TSR) |
+| The opponent's hidden MOVES are THE binding constraint on honest search | REFUTED by Tier 1, in both builds (§4.7) |
+| An archive of past selves holds holes a league would repair | X55's flat top; A1 NULL (§4.10) |
+| Pool FRESHNESS binds S at the plateau | SPRT: 3× the promotions, S −0.25 pp (§4.11) |
+| The opponent's choices, judged by our network or a human model, make search pay | stage 1c NOT DETECTED on every arm; HOM-NONE (§4.7) |
+| Plain training past 380M keeps lifting goal (b) | X26c FLAT (§3.1) |
+| Better policy-side beliefs are a strength lever at this maturity | the knock-in forks NULL; the prior mix NOT DETECTED (§4.5, §3.1) |
 
-**A retired hypothesis stays retired at the power it was retired with.** "F6-CURR curriculum: NULL
-z=−1.40" rules out >4.5pp, not >0.
+The flywheel-era retirements (fold dose, length, team count, budget, teacher quality, the architecture account) are
+retired for the fold-gift question only; they live in the last full text (§0) and the ledger (2026-09-05 / 06).
+
+**A retired hypothesis stays retired at the power it was retired with**: a NULL at ±2 pp rules out effects above
+±2 pp, not above zero.
 
 ---
 
 ## 6. Open questions
 
-> The RANKED queue of experiments that answer these questions is [`EXPERIMENT_BACKLOG.md`](EXPERIMENT_BACKLOG.md) (owner, 2026-09-27); build tasks are in [`../ops/TASK_BACKLOG.md`](../ops/TASK_BACKLOG.md).
-> The rows from *Is MATURITY the cause* through the ANCHORED exploiter are PRE-ERA questions (ai_v8 – ai_v14): dormant,
-> not in the backlog, kept as directions. Whether the belief deltas' off-pool overconfidence costs win rate is answered
-> in §3.1 (the belief prior mix: no detectable effect at ±5 pp).
+> The ranked queue is [`EXPERIMENT_BACKLOG.md`](EXPERIMENT_BACKLOG.md); builds are in
+> [`../ops/TASK_BACKLOG.md`](../ops/TASK_BACKLOG.md). Each question below names the read that answers it.
 
-| question | the test that would settle it | cost |
-|---|---|---|
-| **How much headroom does a fresh best responder find against our plateau policies (T\*, P\*), how fast does it saturate, and does one-ply search add to the exploiter or defend the target?** The owner's question (2026-10-20). The only anchor is pre-era: offense exploiters of a 95M plateau parent read +12 to +16 pp pooled over 8M, flat by 8M | **R0** ([`R0_REGISTRATION.md`](measurements/x35_breakers_stage_2026-10-17/R0_REGISTRATION.md), launch sheet AM-R0): one best responder per side, +20M, the gap read every 2M (the headroom H, t90, SATURATED / RISING), predicted H +18 pp production / +22 toy. **R0-toy READ 2026-10-21:** H +11.8 pp [+9.1, +14.5] (learned part +14.6 over gap(0) −2.8), most of it by 4M (t90 4M), class RISING (D +4.4 [+0.5, +8.3]) only through a 10–12M dip. **R0-prod READ 2026-10-22:** H +11.1 pp [+8.3, +13.8] against P\* (learned part +13.6 over gap(0) −2.5), SATURATED (D −0.3 [−4.2, +3.6]), t90 8M; its first 5M (LG-1's statistic) +6.0 pp, so A6 is not triggered; the toy and production holes are the same size (+0.8 [−3.1, +4.6]). Both plateau policies give a best responder ≈ 11–12 pp on the offense archetype: ANSWERED for the policy. The search cells (the BR + search vs its target, the target + search vs the BR) are DEFERRED while search is paused | ≈ 1.4 + 4.4 GPU-h; ≈ 2.5 CPU-h of curve reads; the search cells ≈ 213 CPU-h after the build |
-| **Is MATURITY the cause of the era gap, or is it era?** | a gen-era parent trained to a comparable step count, then the same continuation cell. There is no cheap version — step counts are not commensurable across architectures | a multi-week generation; **not scheduled** |
-| **Does a FOLD ON v8's PARENT with OUR teachers gift?** | the origin factorial's unrun half — 8 exploiters forked FROM R2ACTION in v8's recipe (`TC_ORIGIN`), then the fold ×3. A gift here makes the fork origin the whole story | 8 exploiter runs + 3 folds, ~30+ GPU-h |
-| **Does a SHORT-budget teacher set (stopped at ~1.2M, before the drift rises) fold neutral or better?** | `TC_SHORT` ×3 — the TC_UNF recipe with the eight R5F exploiters at their existing ~1.2M checkpoints. No exploiter training needed. G1 is a partial, confounded answer (§2.3) | ~18 GPU-h for 3 arms |
-| **Does the MC-only critic target cost more variance than it buys correctness?** | offline: compare the MC label against the bootstrapped return on existing traces and measure each one's variance | ~hours of CPU; **not done** |
-| **What does `--no-hand-shaping` cost in SPEED?** | a short paired A/B at ~2M steps | ~2 GPU-h; would have priced the 75M run |
-| **Does the affine-shaped-critic-beats-the-head result survive reweighting?** | give the affine gauge a weighted form and re-run on the committed baseline | ~a day of build; first item on the design's gap list |
-| **Does an ANCHORED exploiter (KL-to-parent trust region on the teacher) hand the fold a local teacher?** | an anchored arm's untaught win rate should return toward the origin's 0.578 while its on-slice edge holds (~500 battles/teacher set). It is currently indistinguishable from "train exploiters less", which is FREE — so `TC_SHORT` is the honest first test | the meter is cheap; the arm is a build |
-| **Does the value pool need an explicit SIDE embedding on the 12 entity tokens?** Today the one query over all 12 tokens separates ours from theirs only through CONTENT asymmetry (own-view encoding vs belief-path opponent tokens, per-side active context, threat rows on our copies, side-gated edge biases). A probe read shows it works (own-team identity 0.97 from `value_pooled`) — **UNVERIFIED** here: the pointer is the owner question of 2026-09-10 as filed in the tech-debt backlog, not a ledger entry. It is incidental, not structural, and belief machinery that makes opponent tokens look like ours would erode it; a critic must know which side is ours by construction | first a test that swapping the two sides' tokens flips the value pool's "who is winning"; then, if it does not hold by construction, a learned side embedding (2 × `D_MODEL`) at token assembly behind a flag, in a fresh arm | S build — model (ARCH surface); moved from `designs/ops/TECH_DEBT_BACKLOG.md` 2026-09-24 |
+**In flight**
+
+| question | the read that answers it |
+|---|---|
+| Does breadth at 10⁴ procedural teams lift unfamiliar-team piloting at the plateau? | **N1-P look 1** (X61P, D1's rule on F; [`PREREG.md`](measurements/x61p_n1_production_2026-10-26/PREREG.md), `5b84bca62`). GAIN funds **X53-N1**, a fresh production run on 10⁴ teams (`../endstate/design_x53_n1_fresh_breadth.md`); NULL rules out only "N1 at the plateau" |
+| Is human data better than our own self-play data? | **X59-S**: three matched student arms, five seeds each; S-H − S-S answers it, S-H − S-P picks the lever ([`PREREG.md`](measurements/x59s_matched_students_2026-10-25/PREREG.md), `5cbf46dc0`). It decides whether the human-data switch and X60 get built |
+| Is the familiarity premium TEAM context or set knowledge (H-CTX)? | **H-CTX on rc72**: P\* vs Kakuna on 72 new teams of verbatim pool sets, ≤ 2 shared with any pool team; ≥ 0.57 kills H-CTX, ≤ 0.52 supports it ([`PREREG.md`](measurements/hctx_rc72_2026-10-26/PREREG.md), `b712c46d1`) |
+| In the level mid-game positions, does P\*'s critic mis-value unfamiliar teams, or does its policy fail to act? | **H-MID**: critic calibration at level turn-10 states, home72 vs U, on banked X51 games; CRITIC-MISCALIBRATED-ON-U vs POLICY-CANNOT-ACT ([`PREREG.md`](measurements/h_mid_value_test_2026-10-26/PREREG.md), `2dd522785`) |
+| Does P\* key on the EXACT identity of its own sets (a memorised team → plan)? | **the N2 identity test**: pool-team KL ≥ 1.5 × unfamiliar-team KL under a same-species Smogon redraw; KILL lever N2 if the ratio's interval covers 1.0 and excludes 1.5 ([`PREREG.md`](measurements/n2_identity_test_2026-10-26/PREREG.md), `98bcb1146`) |
+| Does the plateau resist new data a young network would absorb (plasticity)? | **the plasticity probe** on X26 @25M / @100M / P\*; its bars (LOSS / NO-LOSS / UNCLEAR) are drafted in `../endstate/strategy_if_levers_null_2026-10-26.md` §2 and fixed in its own registration before any number |
+
+**Queued and planned**
+
+| question | the read that answers it |
+|---|---|
+| Is set mutation a goal-(b) lever? | **D3 look 2**: seeds 3504–3505 (≈ 8.1 GPU-h), every game on engine E1, final (`measurements/x41_d3_setmut_2026-10-25/PREREG.md`) |
+| Is the plateau the learning-rate controller's halving (§4.4)? | **LR-F**: P\* continued with a floor on the learning rate, seeds 3502–3503 (X35 `measurements/x35_breakers_stage_2026-10-17/STAGED_PLAN.md` §4.1.2) |
+| Do the breadth levers help by +1–2 pp each, below what one read can see? | **PR-1**, the zero-GPU precision read: D1, D3 and N1-P against C0 pooled on F, 38,000 new Kakuna games at one engine (`../endstate/strategy_if_levers_null_2026-10-26.md` §3.1); the fallback's first branch |
+
+**Open, no read scheduled**
+
+| question | what would settle it |
+|---|---|
+| Did Kakuna's self-play see near copies of our unfamiliar panels (assumption A-K)? | the sealed `forum216b` panel and the reverse cell; the open part needs downloads not made |
+| Does Foul Play beat P\*? | a direct read; only the Kakuna proxy exists (§3.1) |
+| Do a human's choices identify a human's team (L3-H)? | the L3 read on ladder states with a human opponent model |
+| Does one-ply search add to a best responder, or defend its target? | R0's search cells, DEFERRED while search is paused |
+| Does the value pool need an explicit SIDE embedding on the 12 entity tokens? Today it separates ours from theirs only through content asymmetry (a probe reads own-team identity at 0.97 from `value_pooled`); belief machinery that makes opponent tokens look like ours would erode that. UNVERIFIED as a defect | first a test that swapping the two sides' tokens flips the value pool's "who is winning"; then, if it fails, a learned side embedding behind a flag in a fresh arm (an ARCH-surface build) |
 
 ---
 
 ## 7. Standing rules of evidence
 
-1. **PRE-REGISTER, before any number exists.** Both branches, the bar, and the comparator. The rule
-   that catches fitting: state the PRIOR the result reads against, in the same entry.
-2. **Three arms per cell.** One of P1's three arms cleared zero alone — **a single-arm study of that
-   real effect had a two-in-three chance of reporting "no gift"**. Attach this to every one-arm
-   reading.
-3. **A floor is the MAX pairwise |Δ| over the replicates in hand, never the mean and never the
-   smaller single-pair bar**, and it belongs to the REGIME (frozen vs controller-live) and to the
-   DEPTH. A floor from few draws at one depth is close to uninformative — three separate readings in
-   this programme were retracted for it.
-4. **A continuation control at matched depth**, wherever a delta is taken against a frozen parent.
-   Whether it bites is a measurement, not an assumption (it bites on v8's parent, not on ours).
-5. **Matched SNAPSHOT COUNT** for any cross-run rating comparison, never matched step; and a
-   bot-anchored gap between two models far above the anchors needs a direct match.
-6. **Equivalence needs the DELTA's own CI inside the bar.** A bar against a POINT estimate is
-   vacuous. Same for "the intervals overlap".
-7. **VALIDATE BY EXECUTING, not by clause-checking.** `checkargs` has now been wrong in both
-   directions; the launch path is `resolve_config`, and `python -m main.launcher --dry-run` is its
-   executing complement (and the one that is safe on a same-run restart).
-8. **Check the banked factorials before promoting a cell.** The `fd` 2×2 had already answered
-   ecology on the gen side; a cell was promoted on a general claim made after checking ONE run.
-9. **Quote a teacher, a parent or a target from the RESOLVED file, never from the argv** — a bare run
-   dir is a directory, and a directory is not a file (§5).
-10. **The team is the unit.** Cluster-bootstrap over TEAMS; state-weighted and team-weighted
-    statistics have disagreed in SIGN on the same data (the Simpson class).
-11. **Human-readable arm names.** Every code — `G1`, `C1`, `cell 2`, `H8`, `TC_UNF_A` — gets a
-    description in the same sentence, every time it is used.
-12. **A timeout is never a semantic outcome**, and neither is a draw. Separate buckets; a run above
-    25% timeouts is INCONCLUSIVE.
-13. **A result is not a result until every registered depth has landed.**
-14. **Write the kills.** A finding that is not written here or in the ledger evaporates and gets
-    re-believed.
-15. **A windowed statistic never crosses an OPPONENT-REGIME boundary.** A regime is a constant 🚨 **Amended 2026-09-10: the self-play crossing (the `selfplay_fraction` 0 → 0.9 step) is PER ARM and a draw-level coin flip** — the seed constant `SELF_PLAY_START = 0.55` (`--self-play-start-wr`, read against `win_rate_vs_bots` at each eval cycle — NOT `--promote-threshold`, which governs later promotions only) sits inside the 2M-bots replicate floor (roster 0.37–0.58), so an arm crosses at ~2.16M or ~4.13M by lottery (six of eight 10M arms at 4M; `lambda09` and `lambda095` at 2M; the λ-0.9 pair is MISMATCHED across it). Read each arm's crossing from its TensorBoard (first `*_pool` scalar step); never assume a common step; any statistic struck in 2M–4M is crossing-conditional. [ledger 2026-09-10 · *FINDING (MAJOR) · THE SELF-PLAY CROSSING STEP*]
-    `train/selfplay_fraction` (and by extension any step change in the opponent distribution). The
-    tooling restricts the window to the current regime or reads NOT EVALUABLE, and prints the regime
-    marker (current value, the step it changed at) beside every windowed number; a regime marker is
-    reported as its current value plus change history, never as a central tendency. Four instruments
-    on `ai_v12_02` were corrupted by the one 4.00M boundary in a single evening — the ep_len kill
-    clause (amendments 3→4), the `selfplay_fraction` median (0.45, a value never occupied), the
-    throughput diagnosis (a compile pause blamed for a regime change), and the vf_coef window (a
-    "drift" that was the window sliding regimes). Ledger 2026-09-06 · STANDING RULE 15.
-16. **An instrument that reads an artifact ANOTHER PROCESS IS STILL WRITING asks first whether it
-    is complete, and refuses naming what is missing.** Five instances on the night of 2026-09-06/07:
-    the ring-buffered child log, the events file mid-restart ("+2 s startup" = no restart in the
-    data), the ladder mid-update (a correctly formatted verdict about the previous node), the
-    compile lines mid-promotion, and the anchor pass under a policy that did not play the trace.
-    Ledger 2026-09-07 · *THE n = 12 STRENGTH READ*.
+Numbered as first written, so ledger citations still resolve; rules 18, 20, 27 and 28 retired with the pre-era
+instruments and boundaries they governed.
+
+1. **PRE-REGISTER before any number exists**: both branches, the bar, the comparator, and the PRIOR the result reads
+   against.
+2. **One arm is not a result**: replicate seeds, and attach the single-arm caveat to any one-arm reading.
+3. **A floor is the MAX pairwise |Δ| over the replicates in hand**, and belongs to its regime and depth.
+4. **A continuation control at matched depth** wherever a delta is taken against a frozen parent (C0 in the fork
+   frame).
+5. **Matched SNAPSHOT COUNT** for any cross-run rating comparison (§3.2).
+6. **Equivalence needs the DELTA's own interval inside the bar.** A bar against a point estimate, or "the intervals
+   overlap", is vacuous.
+7. **Validate by executing**: `python -m main.launcher --dry-run`, not clause-checking.
+8. **Check the banked reads before promoting a cell**: the answer may already exist.
+9. **Quote a model from the RESOLVED file**, never from an argv: a bare run dir means its last snapshot.
+10. **The team is the unit**: cluster-bootstrap over teams; state- and team-weighted statistics have disagreed in
+    sign.
+11. **Human-readable names**: every code (C0, D3, H-CTX) gets a description where it is used.
+12. **A timeout is never a semantic outcome**, nor a draw; above 25 % timeouts a read is INCONCLUSIVE.
+13. **A result is not a result until every registered look has landed.**
+14. **Write the kills**, here or in the ledger.
+15. **A windowed statistic never crosses an OPPONENT-REGIME boundary** (a step in the opponent distribution);
+    read each arm's own boundary, never assume a common step. [ledger 2026-09-06 · STANDING RULE 15]
+16. **An instrument that reads an artifact another process is still writing asks first whether it is complete.**
+17. **A statistic on the eval-trace tree is reweighted by each cycle's recorded capture rate** (the tree is
+    loss-enriched by design); a tree without a manifest is SELECTION UNKNOWN.
+19. **Find which variance component dominates, then replicate at THAT level**: eval-draw variance needs more draws,
+    run-level variance needs more runs.
+21. **A post-hoc candidate that replicates at about half its size with intervals covering zero is SELECTION
+    INFLATION**: NOT CONFIRMED, and a reason to stop.
+22. **A control's replicate floor bounds the control, not the lever**: a single-arm detection is a candidate until
+    its own seed replicate agrees.
+23. **A meter whose value depends on box throughput needs a contemporaneous control or width matching.**
+24. **A committed `ladder.json` carries the recipe it was fitted with**; quote it only if its recipe stamp matches
+    the current fitter.
+25. **Measure the label ceiling before reading a bar against it**, and read pairwise accuracy on contested siblings
+    before any battle.
+26. **A mirror battery's null is its contemporaneous unsearched cell**, not 0.500, and its width is set by the arm's
+    own spread.
+29. **Every outside read reports its panel's overlap with our training pool** (`summary.json["team_overlap"]`): a
+    panel described as "theirs" was 19 of 20 our own teams. [ledger 2026-10-18 · *THE AWAY SET IS NOT HELD OUT*]
+30. **A banked cell is reused only at the same engine, or after a game-for-game replay guard, and the mix is
+    stated** (the D3 engine-mix caveat). [ledger 2026-10-26 · CORRECTION · *THE VIEWS AUDIT*]
+31. **A search number names its referee**: a self-referee size is not a gain against a real opponent (E1-0).
 
 ---
-
-17. **A statistic on the eval-trace tree is reweighted by each cycle's recorded capture rate, or it is not a measurement.** The tree is loss-enriched by design; selecting on the outcome breaks every outcome-conditional property (the martingale test, bias by V-level, overdispersion). Read raw, the 75M bootstrap-consistency test returned the opposite answer with a confident interval; reweighted by `eval_manifest.json`'s per-opponent `capture_rate_win/loss` it inverted and the calibration CLI's raw bias of +0.31 collapsed to ~0. A tree without a manifest is SELECTION UNKNOWN. [MEASURED, 73c929e1; ledger 2026-09-08 *test 3*]
-
-18. **Own-team R² of V is NEVER read on live frames** — a leave-one-battle-out decode target over 719 teams is unstable on any frame with few battles per team, and a genuinely-zero row and a too-noisy-to-estimate row look identical (the controls reading ≈ 0 is the tell). It produced three spurious detections in the critic ladder (2026-09-09/10). It needs ≥ 2 offline full-capture draws per checkpoint, or it is not a measurement. [ledger 2026-09-10 · *RE-SPECIFICATION + RULE 18*]
-
-19. **Identify which variance component dominates a row, then replicate at THAT level.** Two components are nested above sampling noise: eval-draw variance WITHIN a run (two offline draws of the same checkpoint moved two levers' bot-resolution points by 69–93 % of their new half-widths) and run-to-run variance (the calibration slope's control-vs-control difference grew from 0.19 to 0.25 as games doubled). They share one abstract fact — a component above sampling noise dominates, so adding games to a single draw is the wrong lever — and they differ in the remedy, which is the part that costs GPU: eval-draw variance is fixed by more DRAWS of the same checkpoint (cheap, offline, no training); run-level variance only by RUN replicates (a full arm each). Rows whose floor grows with eval size are run-level (identity bias, the spread ratios, the calibration slope); the gauge resolution rows are eval-draw-level (their run floor collapsed with eval; their instability is between draws) and get re-draws, never an arm. Two draws BOUND a floor at either level; they never give it a CI. [ledger 2026-09-10 · *RULE 19*, scoped by the Training Run session's correction]
-20. **A LIVE-frame lean is not evidence about the OFFLINE population, in either direction, and neither frame type's controls may bar the other.** The live cycle is loss-enriched, ~200 battles, three sentinels of the run's own snapshots; the offline cycle is full-capture, 4,800–9,600 battles. Two live leans vanished on the offline frames the same day (arm 8's own-team +0.15; arm 5's bot-resolution +0.014), and an offline test's bar was nearly set from a live control number (`lambda095`). A claim is registered on one frame type, read on it, and floored by its controls. [ledger 2026-09-10 · *CORRECTION to arm 5's offline read · RULE 20*]
-21. **A post-hoc candidate that replicates at about half its magnitude with CIs covering zero has the shape of SELECTION INFLATION, not of a real-but-small effect.** A row picked post hoc from ~60 per read is selected partly on its estimate, so a fresh draw regresses; the λ-0.9 overall-resolution candidate went +0.009–0.011 (six CIs clear) → +0.004–0.006 (six CIs covering zero) on its pre-registered replicate. The verdict on such a test is NOT CONFIRMED at the registered standard — never "refuted" (a small true effect both draws are underpowered for also fits) — and the shape is a reason to stop, not to buy a third draw on the same row. [ledger 2026-09-11 · *ADDENDUM to the λ-0.9 replicate's read · RULE 21*]
-22. **A control-replicate floor bounds the CONTROL's run-to-run variance, not the lever's; a single-arm detection is a CANDIDATE until its own seed replicate agrees.** `strata` read +0.050 on the decision row (three eval draws agreeing, 2.3× the floor) and its same-pin seed replicate read −0.03; the within-lever spread was 3.6× the floor measured on three control replicates. A lever may change the variance it is read against, so the replicate that promotes a detection to a family claim is a replicate OF THE ARM, and the eval-draw component (rule 19) never substitutes for it. Reproduced on STRENGTH the same day: the two same-pin seed-replicate pairs differ by 83 and 58 Elo (CIs clear of zero) against a control-pair difference of 10 — a lever arm's variance is not the control's. [ledger 2026-09-12 · *VERDICT · strata_b FAILS*; *THE CRITIC LADDER READ ON STRENGTH*]
-23. **A meter whose value depends on the box's throughput needs a CONTEMPORANEOUS control or width matching, never a fixed bar.** The mirror battery's L1 (separation-of-raced) read 0.058 / 0.128 / 0.365 on the SAME checkpoint, cell, flags and battles at realized search widths K = 3.6 / 5.1 / 8.9 — a 6.3× range set by wall-clock contention — while heads inside one width band differ by ≤1.7×; a head that "cleared" the 18.1 % bar at K = 10 sat below its own same-window control. The `grid` cell (unguarded) is the leaf row that separates heads. [ledger 2026-09-12 · *MEASUREMENT (MAJOR) · THE LEAF BATTERY, PHASE 2/3*]
-24. **A committed `ladder.json` carries the RECIPE it was fitted with, and a recipe change silently moves every rating.** `ai_v12_02_winprob_critic`'s committed file (2026-09-08, 494 pairs, eval-sentinel edges folded in) reads 2057 at its newest node; the current recipe (`3e6875a5`, sentinel edges dropped) refits the same 20 nodes to 1984 — a +73 difference that flips the sign of a cross-run delta. Quote a committed file only if its `recipe` block (fitter version, drop POLICY, commit — `0f230405`) matches the current fitter; the readers now REFUSE or refit on a missing or differing stamp, and the old `eval_sentinel_edges_dropped` COUNT was never a stamp (0 is what a run with no sentinel pair writes). Every `ladder.json` fitted before the stamp reads `absent` until refit. Arm S's own file and refit agree to 0.0. [ledger 2026-09-14 · *MEASUREMENT · ARM S's RUN-END READS*]
-25. **A leaf read needs ≥400 paired mirror games; a 100-pair cell cannot resolve a 4-point effect, and the direct metric is PAIRWISE ACCURACY on contested sibling forks under shared dice — read it BEFORE any battle, and check its INDEXING against a hand-scored pair.** The identical control cell read 0.495 and 0.535 in two windows (paired +0.040 [−0.001, +0.081]); the second mechanically prints a lower bound above 0.50. Pairwise accuracy: chance 0.50; the promoted head **0.587** (the first published 0.517 was an indexing artifact that produced an exact null on a rank statistic — mis-indexing a monotone V against nearby rows looks like chance, not garbage); the instrument's width at ~4,000 pairs is ±0.015. [ledger 2026-09-14 · *SIBLING DISCRIMINATION*; 2026-09-16 · *VERDICT + CORRECTION (MAJOR) · THE FORK ARM*] **Amended 2026-09-19: MEASURE THE LABEL CEILING before reading a bar against it** — on single-rollout labels the top1|top2 ceiling is ≈0.61 (39.7 % of pairs mis-ordered by the label), so a bar at 0.60 was near-unreachable by construction; report every pairwise level beside its label ceiling, and prefer K-rollout labels for the leaf column. [ledger 2026-09-19 · *THE LEAF CEILING IS THE LABEL*]
-26. **A mirror battery's NULL is the contemporaneous unsearched `base` cell, not 0.500, and its resolvable width is set by the ARM's OWN sd, not by a standing bar.** The first n = 200 read of `base` is 0.5150 [0.4967, 0.5333]; a bar within ±0.02 of 0.50 is set against it. An arm that ACTS is expected to read at a wider interval than one that does not — `base` sd 0.132, the default cell 0.243, and a playoff cell that changed 12 % of decisions 0.318, though that last figure was measured on the broken playoff instrument (tag collision, same day) and is a HYPOTHESIS until a clean playoff cell exists — so rule 25's 400-pair bar (calibrated on sd ≈ 0.2) may need ~2.5× the pairs there; quote the arm's own sd with every "this battery can resolve X" claim, and register a NEGATIVE point estimate as a possible branch. Per-decision gains on selected contested forks are NOT additive across a game (11.9 % overruled × +0.066 would be +0.33/game), so an offline operating curve predicts the SIGN of a live read and nothing about its size. [ledger 2026-09-20 · *WHERE IS THE PLAYOFF GATE'S OPERATING POINT?*]
-27. **A live-KL-controller LR / dose trajectory never crosses the 2026-10-01 EVAL-DUMP boundary
-    (`gen3_eval_dump_isolation_v1`).** Before it, every eval cycle's mid-rollout logger dump cleared the
-    previous update's `train/*`, so the KL→LR controller lost 1 reading in 20 (37 / 739 N0 updates).
-    RankTripwire, DistillStop and the anchor dual lost the same readings. After it, every update is
-    read. Arms on ONE side that share an eval cadence stay comparable; frozen-LR forks are unaffected
-    on the LR axis. [FINDING + FIX · ledger 2026-10-01 · *THE EVAL DUMP DROPPED A KL READING*]
-28. **A python-core self-play run's TEAM CURRICULUM was not uniform, and its skew is fixed by the
-    snapshot SEED** (until 2026-10-02, `gen3_no_global_reseed_v1`). Every pool load re-seeded each env
-    worker's global `random`, and the teambuilders drew from it. Per-team game counts read var/mean
-    20–1,264 (python core, runs with pool loads) against 1.7–2.0 (Rust core); N0 spans 166–5,676 games per team. Seed-1001 runs
-    share ONE skew (Spearman 0.89–0.997 vs N0); seed-42 / 1002 runs have different ones. So a comparison
-    ACROSS seeds (or across a fork whose pool carries another seed) also compares team curricula, and a
-    per-team or per-archetype read on a python run carries the skew. A same-seed arm-vs-arm DIFFERENCE is
-    matched. The Rust core (the M5 sizing arms onward) is clean. [FINDING · ledger 2026-10-02 · *EVERY
-    OPPONENT LOAD RE-SEEDED THE GLOBAL RNG*]
-
-### 4.x · The search dividend at the win-prob milestone (2026-09-11)
-
-[MEASURED, `search_dividend_winprob_heads_2026-09-11`, 5,556 mirror battles, zero timeouts] **No head pays as a leaf**: at the registered 3 s defensive operating point the paired mirror win rate is 0.506 / 0.503 / 0.495 (ladder control @10M / λ-0.9 @10M / the 75M run @73M), none clear of 0.50; naive search loses 74–80 % of games to its own unsearched self. The promoted win-prob head is a WORSE leaf than the shaped critic it replaced (separation-of-raced 12–15 % vs 45 %, overrules 1–1.6 % vs 5.8 %). Steps do not buy leaf quality (the 73M head is the worst leaf) and calibration does not (the best-calibrated head is not the best leaf). **Leaf quality is within-game successor discrimination, a different property from the between-game opponent conditioning the ladder's decision row measures; the ladder has no row for it yet.** The search-and-distill path is blocked at this leaf; the binding constraint is the critic objective. Follow-up: the same battery on `strata` and `denseaux` (dense within-game targets) to test whether the two axes separate. [ledger 2026-09-11 · *MEASUREMENT (MAJOR) · THE MIRROR METER*]
-
-[MEASURED, phase 2/3, 6,000 more battles, zero timeouts] **The follow-up ran: `strata`, `denseaux` and `cflabels` (⚠️ an arm that received zero cf labels — ledger 2026-09-30) @10M — L2 is 0.507 / 0.494 / 0.485, none clear of 0.50, each at or slightly below its own CONTEMPORANEOUS `ctrl10M` anchor (all NOT DETECTED). Six win-prob heads sit on the structural null.** The registered branch is "neither pays": a lever that moved the conditioning row (`strata`, before its replicate failed) leaves leaf quality where it was, and two levers null on conditioning leave it too — so the ladder's decision row is not yet shown to be the row the search path should be steered by, and the axes question is not settled. **L1 is CONVICTED as a width meter** (rule 23) and its 18.1 % bar is withdrawn as a fixed bar.
-
-[MEASURED (MAJOR), `paired_refit_discrimination_2026-09-14` as CORRECTED by `fork_arm_read_2026-09-16`] **The promoted
-win-prob head ranks successor states one move apart at 0.587 [0.553, 0.623] on 562 held-out non-tied contested pairs
-under shared dice — a real but modest discrimination, NOT chance.** (The 2026-09-14 record's 0.517 was an indexing
-artifact: the original head was scored with successor-indexed V read at branch-row positions; corrected on the identical
-split, its refit gain is +0.016 [+0.000, +0.031] NOT DETECTED, and the ranking-term null stands.) The direct metric,
-pairwise accuracy on contested sibling forks under CRN, is a forward pass per pair and is read before any battle. **The
-fork arm** (`ai_v13_03_fork`: contested-state forks into the PPO buffer, top-2 + random, CRN dice and draws, ~1,060
-forks/rollout delivered) read **0.5754 vs the control's 0.5757 on 10,080 fresh forks, Δ −0.0003 [−0.0148, +0.0136] —
-NOT DETECTED**; the guard within floor; the 400-pair battery no dividend (`grid` harms on both heads). Forks moved
-the STATE DISTRIBUTION (+31 % non-tied pairs, blind spot 5.5 % vs 4.6 %) without moving the head. **The gap the arm was
-built to close was ~0.016, inside the ±0.015 instrument.** Nine win-prob heads plus the fork arm: no usable leaf; the
-fork line is CLOSED at this depth; the leaf question returns to the offline fit on branched self-play with a frozen
-policy. **Narrowing does not raise the ceiling either (`exploiter_discrimination_2026-09-18/`):** the era's first
-exploiter (a fork of arm W on one pinned team against arm W as the fixed target, vs-target 0.74 at +7M) ranks siblings
-at 0.575 on its own slice and on the generalist's states alike, while the parent's head falls to 0.545 on the slice
-(+0.030 paired, DETECTED — the parent is OOD there, not the specialist better). **The 0.575 ceiling is now four heads
-deep** (0.568–0.578 across two 10M and two 75M+ runs on one fixed state set): coverage, width, loss form, data and
-distribution have each been varied and none moved it. **And the frozen-policy fit does not raise it either (`offline_leaf_fit_2026-09-18/`, branch (c)):** seven fits on
-17,904 AlphaGo-style branched positions from arm W's frozen self-play — warm and fresh heads, paired and single labels,
-a 6× wider head, the pre-pool tap, a ranking term — all read 0.567–0.576 on fresh contested forks; a head fitted from
-scratch in 1.1 s matches the head trained for 75M steps. The fit buys calibration (ECE 0.072 → 0.013; the frozen
-critic is over-confident by 7 points on its own forks) and no resolution. **Twelve heads on 0.567–0.578; the leaf
-question is CLOSED for learned win-prob heads at this depth — the bound is not in the learner.** The pooled metric
-is a MIXTURE: top1|random 0.594, top2|random 0.575, **top1|top2 0.545** — the column a re-ranking leaf consumes is the
-worst, which is why no battery ever read a dividend. **Separated (`leaf_ceiling_controls_2026-09-19/`): it is the METRIC's label.** A de-noised TRAINING label does not
-lift the head (REFIT-K8 − BASE −0.014 [−0.032, +0.002]): the bound is the representation / coverage (ledger 2026-10-06
-· *CRN LABEL REFIT*). The single-rollout outcome mis-orders the
-top1|top2 pair 39.7 % of the time, so the metric's ceiling is ≈0.61 and every published level is compressed toward
-0.5 (a head at 0.575 is near the ceiling, not near chance). No hand evaluator beats the head (nine tried; the PBRS
-potential matches a 75M critic pooled). The game is NOT near-tied case by case — E|gap| between the top-2 successors'
-true values is 0.177 while the policy's top-1 edge is +0.008 on average — so there is much to re-rank. **A 4-rollout
-leaf out-ranks the critic on a matched-noise read (+0.057 [+0.028, +0.083] pooled, DETECTED; top1|top2 +0.028 n.d.)**
-— AlphaGo's fast-rollout leaf, the first scorer to beat the critic here; its open question is K, not objective. **The K-curve (`rollout_leaf_kcurve_2026-09-19/`, 31,992 fresh rollouts on 665 banked forks, label independent):**
-on the leaf column a rollout leaf reads 0.543 / 0.580 / 0.613 / **0.652** / **0.671** at K = 1/2/4/8/16 against the
-75M critic's 0.574 — DETECTED at K ≥ 8 (+0.078 [+0.027, +0.128]); pooled, DETECTED at K = 4 (+0.068). Knee K = 4;
-cost 26 sim turns per rollout. **A rollout leaf out-ranks the critic. The battery still reads no dividend (branch b),
-and the mechanism is the playoff's ACTING RULE**: its gate (|mean d| ≥ 2·SE, MIN_PAIRS 4) resolves 4.5 % of decisions
-at R = 4 (1 of 250 changed live) and agrees with the label 0.83–0.92 when it does — the gate is far tighter than
-registered. **Re-tuned for free on the banked dice (`playoff_gate_operating_point_2026-09-20/`) and then bought live — and the
-sign went the wrong way.** The operating curve, in win-prob per decision against an oracle ceiling of +0.0625 (47.2 % of pairs
-are label-tied): the shipped 2·SE bar takes +0.0025 (0.041× oracle, NOT DETECTED); 0.5·SE takes +0.0157 (0.251×, DETECTED,
-6.2× more for the same rollouts); and the NO-GATE rule (always take the higher R-rollout mean) ties the best gated point to five
-decimals at R = 4 and beats every gated cell at R = 8 — the bar buys nothing over plain re-ranking, and `MIN_PAIRS` is inert
-at R ≥ 4 and an off switch below it. Live at 0.5·SE the arm ACTED — 11.88 % of 6,886 decisions changed, 30× the shipped
-gate — and the mirror win rate read **0.4719 [0.402, 0.542] over 80 pairs, NOT DETECTED and below the unsearched base
-(0.515 [0.497, 0.533], its own first n = 200 read)**; 36.9 s per adjudicated decision, 950 s per battle. 🚨 **BUT THAT LIVE
-READ IS VOID — and so is the 2026-09-19 live playoff cell (`gen3_recon_tag_collision_v1`, the same evening): every offline
-replay of a live search ran in the LIVE battle's room and wrote fabricated `/choose default`s into the live record; node's
-bridge re-requests where rust fails loud, so every live `playoff` rollout began from a prefix nobody asked for and the
-cell reported a clean number.** The offline half stands — the gate's constants ARE closed (no-gate ties the best gated
-point; `MIN_PAIRS` inert/off-switch) — but the live playoff has NEVER been measured for strength. The 72-of-73 prefix-gate P1 is withdrawn: at HEAD the
-repro gives zero prefix-gate failures and zero `root_failed`, and the arm acts (n = 1 swap pair, no strength claim;
-ledger 2026-09-22 · *THE PLAYOFF ARM ACTS*). Survivors on this line, in order: the ESTIMAND (a stochastic-mirror self-rollout is
-not the banked tree's greedy-sentinel rollout that priced the gain), and the CANDIDATE PAIR (live the playoff adjudicates
-the critic SCREEN's top-2, decisive in the policy's favour on only 15.6 % of decisions — free to test on the banked dice). The one-sided-view materializer is the default (`823d2341`) but buys **1.35× at B = 33
-and 0.98× at B = 1 at the SEARCH level** — the 47× was a tracker-less leaf encode with no prefix replay — so the 400-pair
-rollout-leaf battery (1,222 CPU-h) stays unaffordable. [ledger 2026-09-20 · *WHERE IS THE PLAYOFF GATE'S OPERATING
-POINT?*; *THE MATERIALIZER FLIP LANDED — AND THE P1 UNDER IT WAS NEVER A RUST DEFECT*] [ledger 2026-09-14 · *SIBLING DISCRIMINATION*; 2026-09-16 · *VERDICT + CORRECTION (MAJOR) · THE FORK ARM*] **The `grid` cell is the sensitive leaf row instead:** `strata` 0.315 and `denseaux` 0.303 are the best of six, `cflabels` 0.188 the worst (strata − cflabels +0.128 [+0.057, +0.198] DETECTED) — the successor-discrimination head is the most confident re-ranker (68 % of actions changed) and the most wrong, a null reported DOSE-UNREAD (`cf_head_only`, 150k-step label lag, realized duty cycle never read), not a verdict on counterfactual labels as a class. [ledger 2026-09-12 · *MEASUREMENT (MAJOR) · THE LEAF BATTERY, PHASE 2/3*]
 
 ## 8. Pointers
 
 | what | where |
 |---|---|
-| the append-only record | [`ledger.md`](ledger.md) — cite an entry by its DATE + TITLE, or by its landing sha |
-| FINDING an entry in it | [`ledger_index.md`](ledger_index.md) — generated, one line per heading (date · line · title). `python -m main.ledger_index --write` after any append; never hand-edit it |
-| every number behind a claim | [`measurements/`](measurements/) — each artifact carries its checkpoint, step, state count and date |
-| the week's campaign | [`measurements/arch_transfer_2026-09-05/`](measurements/arch_transfer_2026-09-05/) (H1–H9, the head-to-head), [`measurements/teacher_content_2x2_2026-09-04/`](measurements/teacher_content_2x2_2026-09-04/), [`measurements/reuse_batch_2026-09-03/`](measurements/reuse_batch_2026-09-03/) |
-| the win-prob baseline the gate reads | [`measurements/winprob_critic_baseline_2026-09-06/`](measurements/winprob_critic_baseline_2026-09-06/) |
-| the orientation, the frontier, the defect genres | [`README.md`](README.md) |
-| the critic plan this era deviates from, on purpose · the ladder gap list | [`critic_calibration_plan.md`](critic_calibration_plan.md) · [`ladder_readiness.md`](ladder_readiness.md) |
-| the design of record for the live era | [`../ai_v12/design_winprob_only_critic.md`](../ai_v12/design_winprob_only_critic.md) |
-| why a fold on eight teams moves the other 711 · what the v8 campaign taught | [`../learning/negative_transfer_and_shared_functions.md`](../learning/negative_transfer_and_shared_functions.md) · [`../learning/distillation_flywheel_lessons.md`](../learning/distillation_flywheel_lessons.md) |
-| the five-axis "the critic was wrong" taxonomy · bootstrap error propagation and the four critic-failure causes | [`../learning/win_prob_decomposition.md`](../learning/win_prob_decomposition.md) · [`../learning/credit_assignment_and_value_errors.md`](../learning/credit_assignment_and_value_errors.md) |
-| population game theory, exploitability, PSRO | [`../learning/population_game_theory.md`](../learning/population_game_theory.md) |
-| the tests-that-pass-without-asserting taxonomy | [`../learning/vacuous_tests_and_guards.md`](../learning/vacuous_tests_and_guards.md) |
+| the append-only record | [`ledger.md`](ledger.md): cite an entry by DATE + TITLE, or by its landing commit |
+| finding an entry in it | [`ledger_index.md`](ledger_index.md), generated (`python -m main.ledger_index --write`); never hand-edit it |
+| every number behind a claim | [`measurements/`](measurements/): each record carries its checkpoint, step, state count and date |
+| the dashboard · the plans | [`../STATUS.md`](../STATUS.md) · [`../endstate/README.md`](../endstate/README.md) |
+| goal (b)'s plan · the fallback if the levers miss | [`../endstate/design_beat_metamon_path.md`](../endstate/design_beat_metamon_path.md) · [`../endstate/strategy_if_levers_null_2026-10-26.md`](../endstate/strategy_if_levers_null_2026-10-26.md) |
+| the search view | [`../endstate/search_ledger.md`](../endstate/search_ledger.md) |
+| the literature survey | [`literature/sota_survey_2026-10-26.md`](literature/sota_survey_2026-10-26.md) |
+| outside opponents | [`../ops/EXTERNAL_ANCHORS_SOP.md`](../ops/EXTERNAL_ANCHORS_SOP.md) |
 | what the MODEL is now · how it got here | [`../ARCHITECTURE.md`](../ARCHITECTURE.md) · [`../CHANGELOG.md`](../CHANGELOG.md) |
+| the orientation, the defect genres | [`README.md`](README.md) |
 
-**Instruments** (all offline, none needs a GPU): `python -m main.untaught_meter` ·
-`python -m main.elo` · `python -m main.exploitability` ·
-`python -m main.scaffolding_gauge` · `python -m main.dose` · `python -m main.lineage` ·
-`python -m main.capacity` · `python -m main.prober.query` · `python -m main.ledger_index`.
+**Instruments** (offline; none needs a GPU): `python -m main.reads` (registered reads) · `python -m main.anchors`
+(outside opponents) · `python -m main.h2h` · `python -m main.elo` · `python -m main.best_response_gap` ·
+`python -m main.dose` · `python -m main.lineage` · `python -m main.capacity` · `python -m main.prober.query` ·
+`python -m main.ledger_index`.
