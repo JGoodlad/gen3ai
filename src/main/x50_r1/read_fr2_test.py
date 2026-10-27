@@ -262,3 +262,13 @@ def test_the_cli_records_the_exclusion_and_keys_its_cache_by_the_list(tmp_path, 
     (tmp_path / "bad.json").write_text(json.dumps({"schema": "other", "count": 0, "battles": []}))
     assert F.main(["--traces", str(tr), "--hom", "h", "--pstar", "p", "--out", str(tmp_path / "o2"),
                    "--exclude", str(tmp_path / "bad.json")]) == 2
+
+
+def test_only_the_amendment_4c_exclusion_reads_as_registered():
+    from main.x50_r1 import read_fr2 as F
+
+    ok = {"sha256": F.REGISTERED_EXCLUDE_SHA256}
+    assert F.is_registered("opponent", "full", ok)
+    assert not F.is_registered("opponent", "full", None)
+    assert not F.is_registered("opponent", "full", {"sha256": "0" * 64})
+    assert not F.is_registered("trainee", "full", ok) and not F.is_registered("opponent", "own_true", ok)

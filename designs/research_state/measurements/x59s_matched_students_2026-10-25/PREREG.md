@@ -756,3 +756,12 @@ kept traces reads no DIFF (`short_by_one` stays tolerated, as R1's). The exclusi
 states); `d8d674b99` also changed the in-model damage operator's held-item read (`gen3_op_held_item_v1`), which both
 models meet alike in both modes (unmeasured, expected to cancel in D); FR-2 reads both models at obs semantics 162,
 newer than either trained on.
+
+**Built (same day, still before FR-2 is run):** `main.x50_r1.fr2_exclude` writes the list
+(`~/gen3ai_archive/x50_r1b/fr2_exclude.json`, sha256 `1c6f1ef8a14f27d08dfbbdc3df355f8d12d5114d48f31a11d1fc721e45dd79f7`:
+33 of 2,306 battles, 22 Destiny Bond, 6 trapped, 3 Snatch, 2 Endure); `genc --exclude` and `read_fr2 --exclude` apply
+it, and `read_fr2` records a `class` (not `class_unregistered`) only with that exact list. **G-ENC with the exclusion
+PASSES:** equal 2,077, short_by_one 9, skipped_refused_choice 187, excluded 33, no DIFF
+(`~/gen3ai_archive/x50_r1b/traces_oppseat_genc_excluded.json`). FR-2 runs from a checkout of the commit that lands
+this code; its reader, encoder and Rust sources equal the pin's (`src/rust_sim`, `src/main/live`, `src/main/x50_r1`
+before this change and `src/agents/observation` are unchanged between `0534e90a6` and it).

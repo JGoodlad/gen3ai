@@ -57,6 +57,8 @@ MODE_C = MODES["completed"]
 #: the true rows: the true team with the seat's REAL requests (registered) or with synthesised ones (descriptive)
 TRUE_ROWS = {"full": MODES["full"], "own_true": MODES["own_true"]}
 REGISTERED_TRUE_ROWS = "full"
+#: X59-S PREREG Amendment 4c: the registered battle exclusion (d8d674b99's silent volatile ends), by its sha256
+REGISTERED_EXCLUDE_SHA256 = "1c6f1ef8a14f27d08dfbbdc3df355f8d12d5114d48f31a11d1fc721e45dd79f7"
 CHUNK = 4096
 VIEWERS = ("opponent", "trainee")
 REGISTERED_VIEWER = "opponent"
@@ -69,6 +71,12 @@ Forward = Callable[[np.ndarray, np.ndarray, np.ndarray], np.ndarray]
 
 class Fr2Error(RuntimeError):
     """An input that is not what the registration names (a sha, a seat, a pairing, a cache): no read."""
+
+
+def is_registered(viewer: str, true_rows: str, exclusion: Optional[Dict[str, Any]]) -> bool:
+    """The registered FR-2: the opponent's seat, real-request true rows and Amendment 4c's exclusion list (by sha256)."""
+    return (viewer == REGISTERED_VIEWER and true_rows == REGISTERED_TRUE_ROWS and exclusion is not None
+            and exclusion.get("sha256") == REGISTERED_EXCLUDE_SHA256)
 
 
 def fr2_class(lo: float, hi: float) -> str:
@@ -308,7 +316,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         return 2
     from utils.git import get_git_hash
 
-    registered = a.viewer == REGISTERED_VIEWER and a.true_rows == REGISTERED_TRUE_ROWS
+    registered = is_registered(a.viewer, a.true_rows, exclusion)
     cls = fr2_class(*res["D"]["ci95"])
     out = {"schema": "x59s_fr2_trace_twin_v1",
            "registration": "designs/endstate/design_human_replay_lever.md §2.2; "
