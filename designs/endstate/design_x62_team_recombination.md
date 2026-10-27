@@ -68,9 +68,12 @@ states.
 
 ### 1.1 The evidence that points here
 
-- **The premium goes with the TEAM.** P\*'s mons out-kill Kakuna's by +0.081 KOs per entry on home72 and −0.028 on U.
-  Restricted to sets in our pool on both sides, the drop is **+0.093 [+0.004, +0.176]**: a familiar set loses its edge
-  inside an unfamiliar six. Set novelty costs about a third as much again (forensics §4; DESCRIPTIVE, post hoc).
+- **Whether the premium goes with the TEAM or the set is OPEN (until rc72b).** P\*'s mons out-kill Kakuna's by +0.081
+  KOs per entry on home72 and −0.028 on U. Restricted to sets in our pool on both sides, the drop is **+0.093
+  [+0.004, +0.176]**. That measure restates the result (the winner KOs all six): within won games the drop is −0.011,
+  within lost games −0.027, and the comparison that holds the result fixed (seen against unseen sets on the same U
+  team) is −0.007 [−0.093, +0.070], which H-CTX and the set-level account both survive. This is context for H-CTX, not
+  support (forensics §4; DESCRIPTIVE, post hoc; review `../research_state/measurements/h_mid_value_test_2026-10-26/REVIEW.md` B1, M3).
 - **The gap forms in the mid-game, from level positions.** From level material at turn 10, P\* wins 0.609 on home72
   and 0.501 on U (forensics §1). That is where a team plan matters (which mon to preserve, the win condition).
 - **The policy is compositional at the set level.** Re-drawing one familiar bench set moves P\* only 1.19×
@@ -332,8 +335,10 @@ G2  H-MID (registered 2dd522785) routes the MECHANISM, never the go
  │                         V has headroom on U (design_search_next.md), a separate CPU-lane lever that competes with
  │                         X62's read for the anchor lane: the orchestrator orders them.
  ├─ CRITIC-MISCALIBRATED-ON-U ◄ READ 2026-10-26 (f200258f): Δbias +0.076 [+0.016, +0.139]; V's ordering intact
- │                         (AUC 0.667 U vs 0.663 home72). The critic shares the memorisation; breadth trains both
- │                         heads, so X62 still applies. M3 (Δbias on X62 vs C0 captures) IS a registered SECONDARY:
+ │                         (AUC 0.667 U vs 0.663 home72). This does NOT show the critic shares the memorisation:
+ │                         a self-play critic had no signal to learn an opponent-relative premium (review M1). Breadth
+ │                         training is not shown to reach the critic; X62 stands on its gate, rc72b.
+ │                         M3 (Δbias on X62 vs C0 captures) IS a registered SECONDARY:
  │                         does X62 shrink Δbias, the part of the U deficit V does not see? (Not "V's optimism":
  │                         V is about calibrated on U and under-confident on home72, H-MID FINDING 2.) Search: V's
  │                         error is a between-set LEVEL shift, which a one-ply comparison within a node cancels, so
@@ -447,3 +452,4 @@ H-CTX read itself (35–70 h), N1-P's look 1 (≈ 60 h), D3 look 2's read and PR
 |---|---|---|---|---|
 | 2026-10-26 | **This doc CREATED (DRAFT, gated on H-CTX)** (research-design worker, orchestrator brief; docs + two CPU scripts) | X62: a P\*-fork at the X35 production shape (+20M, the `f4b25238` pin + a corpus-only commit), with `--team-mix x62_recomb_v1@ALL:0.5 --team-mix-sides both`: 12,000 teams of verbatim pool blocks, ≤ 2 shared with any pool team, a pool-matched species profile with Smogon teammate lift, static; read on F vs Kakuna against C0 on one engine (the PR rule if PR-1's C0 is banked, else D1's); the gate tree keyed on H-CTX, then N1-P, with H-MID routing the mechanism reads | treating N1-P as this lever (28 % pool-set slots, 0.6 % recombined-like); an in-loop re-draw (≈ 24 pilots a team makes it a no-op); share 1.0 (a second lever); the then-current recipe (a new C0 for no information); a standalone fork on UNDECIDED H-CTX with N1-P GAIN | `piloting_gap_forensics_2026-10-26/` (`c758fcb82`); `hctx_rc72_2026-10-26/PREREG.md` (`caec2bb2c`); `n2_identity_test_2026-10-26/` (`fd4160d76`); `x61p_n1_production_2026-10-26/PREREG.md`; [`x62_design_2026-10-26/`](../research_state/measurements/x62_design_2026-10-26/) (`set_familiarity.log`, `power_pgain.log`) |
 | 2026-10-27 | **G2 resolved: H-MID read CRITIC-MISCALIBRATED-ON-U** (search-research design worker, orchestrator brief; docs only) | G2's branch marked READ; M3 is a registered SECONDARY, its question re-worded to Δbias (H-MID FINDING 2: "optimism" depends on an absolute baseline); "search stays paused until some arm fixes V on U" replaced by H-MID FINDING 1 (a between-set level error cancels within a node; V's ordering is intact) and a pointer to S-U | keeping "search stays paused" as an X62 consequence (it is the search ledger's call, and S-U is its test) | [`h_mid_value_test_2026-10-26/README.md`](../research_state/measurements/h_mid_value_test_2026-10-26/README.md) (`f200258f`); [`design_search_u_headroom.md`](design_search_u_headroom.md) |
+| 2026-10-27 | **Two overstatements softened after the H-MID adversarial review** (doc editor, orchestrator brief; docs only) | §1.1 bullet 1 ("the premium goes with the TEAM" becomes OPEN until rc72b: the per-mon KO measure restates the result, B1) and the G2 CRITIC-MISCALIBRATED-ON-U line ("the critic shares the memorisation" becomes not shown: a self-play critic had no signal for the premium, M1). No measured number changed | keeping both as the rationale | `../research_state/measurements/h_mid_value_test_2026-10-26/REVIEW.md` B1, M1, M3 |
