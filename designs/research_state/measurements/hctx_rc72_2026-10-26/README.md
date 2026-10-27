@@ -3,7 +3,9 @@
 Registered in [`PREREG.md`](PREREG.md) (§1–7, then Amendment 1, the engine-identity ruling, and Amendment 2, the
 rc72b redraw; each written before any rc72 / rc72b game counted). Spec [`read_spec_am2.json`](read_spec_am2.json)
 (pin `905c29f5b`, sha256 `84901059…`), rule `premium_recovery`. Record: [`read_am2/record.json`](read_am2/record.json)
-(with `cells.json`, `inputs.json`, `decision.json`).
+(with `cells.json`, `inputs.json`, `decision.json`). Adversarial review: [`REVIEW.md`](REVIEW.md) (the verdict stands;
+0 BLOCKERs, 3 MAJORs: rc72b's sixes are less coherent than both controls, the docs overstated "not the set", A-K
+unplayed).
 
 Abbreviations: pp = percentage points; P\* = `rb_x26_s2601` @280,000,170 (X26's plateau); Kakuna = Metamon's
 Kakuna, checkpoint 34; F = `forum72` (human-built forum teams, unfamiliar); a SET = one mon's species plus its sorted
@@ -30,14 +32,18 @@ moves; the POOL = the 719 teams P\* trained on; premium = home72 − F; recovery
 
 **Reading.** Give P\* six sets it has trained on hundreds of times, in combinations it never trained on, and it plays
 them like unfamiliar human teams. The point estimate is even slightly worse than F; the interval does not exclude
-"the same as F". Its edge over Kakuna on home72 (+11.5 pp over 0.50 here) belongs to the particular pool TEAMS, not to
-the sets they are made of. This is the forensics' per-mon result ("a familiar set on an unfamiliar team plays like
-Kakuna's", `c758fcb82`) confirmed by a registered intervention, with the team context removed and set familiarity
-kept.
+"the same as F". Its edge over Kakuna on home72 (+11.5 pp over 0.50 here) does not carry over to new combinations of
+its familiar sets: the sets keep at most about a fifth of it (upper bound +0.20 against F; 0.25 against X51's U,
+read across engines). WHY the six matters is not measured (REVIEW M1). Three accounts remain:
+- P\* memorised its 719 sixes;
+- P\* plays common cores well, which F's human teams keep and rc72b breaks (pool pair PMI −0.22 against F's +0.05);
+- a recombined six has no plan to play.
 
-**What it implies for the levers.** The team-context account (H-CTX) stands: breadth must be breadth of TEAMS
-(contexts), not of sets.
-- **X62**, recombined-team training, is no longer shelved; its gate reads SUPPORTED, which builds its corpus.
+**What it implies for the levers.** Set breadth alone (D3) can reach at most about a quarter of the premium; the
+rest needs breadth of TEAMS, or of cores (REVIEW M1, M2).
+- **X62**, recombined-team training, is no longer shelved; its gate reads SUPPORTED, which builds its corpus. Its
+  corpus uses rc72b's ≤ 2 rule, so its sixes break cores as rc72b's do: an X62 gain on rc72b is in-distribution,
+  and only F reads it (REVIEW M1).
 - D3 (new sets inside old teams) targets the smaller channel.
 - N1-P's procedural teams and X63's union corpus supply new contexts. Whether contexts learnt from recombined or
   procedural sixes transfer to human-built ones is the open question they test.
@@ -81,12 +87,14 @@ kept.
 
 1. **Symmetric cells.** Kakuna pilots rc72b too. If Kakuna pilots recombined sixes unusually WELL, rc72b's score would
    fall for a reason that is not P\*'s. No Kakuna-vs-Kakuna cell rates rc72b's strength (the open assumption A-K).
-   Against this: rc72b is drawn by home72's species profile from the pool's most repeated sets, so its teams are
-   not weak or strange in the way P72's are.
+   Its likely direction is conservative: rc72b's pairings are non-human and Kakuna learned from human replays. That
+   is unverified (REVIEW M3).
 2. **One checkpoint, one draw** (P\*, seed 7272).
 3. **rc72b excludes the pool's no-IV-line Hidden Power sets** (737 of 1,912), as home72 and F do (FINDING 1).
-4. **Recombination breaks the sixes' synergy.** A recombined team is coherent by Smogon teammate lift, not built by a
-   player. A team plan P\* could play well may simply not exist on some rc72b teams. The rule cannot separate "P\*
+4. **Recombination breaks the sixes' synergy.** Measured after play (REVIEW M1):
+   - **Smogon teammate lift** (log; 0 = a random pairing): rc72b −0.005, home72 +0.20, F +0.14. The ≤ 2-shared
+     refusal undoes the builder's lift weighting.
+   - **Pool species-pair co-occurrence** (PMI): rc72b −0.22, home72 +0.08, F +0.05. A team plan P\* could play well may simply not exist on some rc72b teams. The rule cannot separate "P\*
    memorised its teams' plans" from "P\* can only play teams that HAVE a plan it learnt". Both say team-level
    breadth.
 
@@ -103,7 +111,8 @@ kept.
 3. **The pack regime is legacy on Kakuna's side** (pin before `b0441623e`). A post-fix read of these three panels is
    its own regime and would not pool with this one.
 4. **Not registered, not done:** the forensics' secondary H-CTX prediction (the seen-set per-mon edge ≈ 0 on
-   rc72b). Every unit's capture is kept, so it can be read post hoc.
+   rc72b). The rc72b and F units keep their captures. The 40 home72 units ran without `--capture-dir` and have
+   none, so a post-hoc read pairs rc72b with X51's home72, across engines (REVIEW MINOR 6).
 5. **`w_forum_v1` does not reproduce** from its source on main (`build_w_forum --check`, seen while gating this unit;
    unrelated to this read).
 

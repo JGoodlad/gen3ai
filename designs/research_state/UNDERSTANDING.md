@@ -76,10 +76,13 @@ under `measurements/`. A number with no pointer is not a measurement.
    within-team comparison cannot separate the two (±0.08). [DESCRIPTIVE · banked X51 games, replicated on the
    PastaMittens twins · `c758fcb82`; review: `measurements/h_mid_value_test_2026-10-26/REVIEW.md` B1] P\*'s own
    critic does not see that deficit: its 3.5 pp set gap is a turn-1 team prior that it never revises, and at equal V
-   P\* wins 8.6 pp less on U (H-MID: CRITIC-MISCALIBRATED-ON-U, below). **The premium goes with the TEAM (H-CTX
-   SUPPORTED):** on 72 new sixes made only of familiar pool sets (rc72b), P\* scores 0.514 against Kakuna, below F's
-   0.540 and far below home72's 0.615 on the same engine; it recovers −0.34 [−2.05, +0.20] of the home premium.
-   [MEASURED · registered, one checkpoint, symmetric cells · `hctx_rc72_2026-10-26`, record `read_am2/record.json`] The policy keys on our sets' exact identity only weakly: a Smogon re-draw of one familiar
+   P\* wins 8.6 pp less on U (H-MID: CRITIC-MISCALIBRATED-ON-U, below). **The premium does not go with the SETS
+   (H-CTX SUPPORTED):** on 72 new sixes made only of familiar pool sets (rc72b), P\* scores 0.514 against Kakuna, below
+   F's 0.540 and far below home72's 0.615 on the same engine; it recovers −0.34 [−2.05, +0.20] of the home premium, so
+   the sets keep at most about a fifth (a quarter against X51's U, across engines). Why the six matters (memorised
+   sixes, broken cores, or no plan on a recombined six: rc72b's sixes are less coherent than both controls) is open.
+   [MEASURED · registered, one checkpoint, symmetric cells · `hctx_rc72_2026-10-26`, record `read_am2/record.json`;
+   review `REVIEW.md` M1, M2] The policy keys on our sets' exact identity only weakly: a Smogon re-draw of one familiar
    bench set moves it 1.19× [1.07, 1.33] as much as re-drawing an unfamiliar one, a small real premium under the
    registered 1.5× bar (bench mons only; plan memorisation keyed on the battle's course is not ruled out). Erasing
    all six mons' identity embeddings costs familiar and unfamiliar teams alike (1.07 [0.91, 1.25]). Lever N2 is
@@ -237,15 +240,21 @@ replicated on the 1,600 PastaMittens twins · `c758fcb82`; `measurements/pilotin
   holds the result fixed (seen against unseen sets on the same U team, Kakuna-controlled) reads −0.007 [−0.093,
   +0.070], which neither account is excluded by. So neither "the team, not the set" nor "set novelty is a third"
   is measured, and nothing here bounds D3. [review `measurements/h_mid_value_test_2026-10-26/REVIEW.md` B1, M3]
-- **Team against set: separated by intervention (H-CTX, registered, 2026-10-27): the TEAM.** P\* vs Kakuna on rc72b
+- **Team against set: separated by intervention (H-CTX, registered, 2026-10-27): not the set.** P\* vs Kakuna on rc72b
   (72 new sixes of verbatim pool sets, ≤ 2 shared with any pool or corpus team), home72 and F, interleaved on ONE
   engine: home72 **0.615 [0.581, 0.648]**, F **0.540 [0.505, 0.574]**, rc72b **0.514 [0.486, 0.542]** (800 / 800 /
   1,200 games). Premium +7.5 pp [+2.9, +12.1]; rc72b − F −2.6 pp [−7.2, +2.0]; rc72b − home72 **−10.1 pp [−14.2,
-  −6.0]** (unit bootstrap). Familiar sets in unfamiliar combinations play like unfamiliar teams, so the premium
-  belongs to the particular pool teams (their plans), and set-level breadth (D3) works the smaller channel.
-  Caveats: Kakuna pilots rc72b too (A-K), and a recombined six may lack any plan to learn.
+  −6.0]** (unit bootstrap). Familiar sets in unfamiliar combinations play like unfamiliar teams: the sets keep at
+  most about a fifth of the premium (R − 0.25 P −4.5 pp [−8.5, −0.5]; 0.25 against X51's U, across engines), so
+  set-level breadth (D3) works the smaller channel.
+  - **What the six carries is open.** rc72b's sixes are less coherent than both controls (Smogon teammate lift
+    −0.005 against home72 +0.20 and F +0.14; pool species-pair PMI −0.22 against +0.08 and +0.05). Three accounts
+    fit: memorised pool sixes, core (pair) knowledge that F keeps and rc72b breaks, or a recombined six with no plan.
+  - **P\*'s edge barely moves with coherence** across rc72b's thirds (0.50 / 0.51 / 0.53). The most coherent third
+    sits at F's level, which leans against "no plan" alone, but the read is underpowered.
+  - **Caveats:** Kakuna pilots rc72b too (A-K), and the Kakuna-vs-Kakuna strength cell was not played.
   [MEASURED · one checkpoint, one draw · PREREG `b044d214b` + Amendments `aaf7ced86`, `905c29f5b`; record
-  `measurements/hctx_rc72_2026-10-26/read_am2/record.json`]
+  `measurements/hctx_rc72_2026-10-26/read_am2/record.json`; review `measurements/hctx_rc72_2026-10-26/REVIEW.md`]
 - Facing stays minor: Kakuna's unseen-set and rare-species mons do not out-kill its familiar ones.
 - **The critic does not see the deficit (H-MID, registered, 2026-10-26).** [MEASURED · forward passes on the same
   1,600 X51 games, replayed exactly (79,799 / 79,799 greedy choices reproduced) · PREREG `2dd522785`, `f200258f6`;

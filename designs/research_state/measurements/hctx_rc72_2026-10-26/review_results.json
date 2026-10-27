@@ -1,0 +1,683 @@
+{
+ "n_games": 2800,
+ "n_games_start_checked": 2000,
+ "dup_species6": {
+  "rc72b": 0,
+  "home72": 3,
+  "forum72": 3
+ },
+ "C1": {
+  "scores": {
+   "rc72b": 0.5141666666666667,
+   "home72": 0.615,
+   "forum72": 0.54
+  },
+  "premium": 0.07499999999999996,
+  "recovery": -0.025833333333333375,
+  "ratio": -0.3444444444444452,
+  "boot_premium": [
+   0.028749999999999942,
+   0.12124999999999997
+  ],
+  "boot_recovery": [
+   -0.07208333333333328,
+   0.020000000000000018
+  ],
+  "boot_ratio_pct": [
+   -2.04446969696971,
+   0.19807089698393937
+  ],
+  "frac_draws_premium_le_0": 0.0006,
+  "R_minus_025P": -0.044583333333333364,
+  "boot_R_minus_025P": [
+   -0.08479166666666665,
+   -0.004791666666666748
+  ],
+  "R_minus_075P": -0.08208333333333334,
+  "boot_R_minus_075P": [
+   -0.11989843750000001,
+   -0.04468749999999999
+  ],
+  "P_boot_sd": 0.023701826627590857,
+  "R_boot_sd": 0.02353947275308127,
+  "fieller95": [
+   -2.0576901771581038,
+   0.20484216872046346
+  ],
+  "phi": {
+   "rc72b": 1.0387434847061088,
+   "home72": 0.8143617899715455,
+   "forum72": 1.0756018002394812
+  },
+  "cross_engine_vs_U": {
+   "x51_home72": 0.5975,
+   "x51_U_mean": 0.48666666666666664,
+   "rc72b_ratio_vs_U": 0.24812030075187977
+  }
+ },
+ "C2": {
+  "rc72b": {
+   "n": 1200,
+   "turns_mean": 42.42583333333334,
+   "turns_median": 35.0,
+   "turns_p90": 68.10000000000014,
+   "ties": 2,
+   "forfeits": 4,
+   "halves": {
+    "ours_challenge": 0.5266666666666666,
+    "peer_challenge": 0.5016666666666667
+   },
+   "score_turns_le_30": 0.5291375291375291,
+   "share_turns_le_30": 0.3575,
+   "score_turns_gt_60": 0.49056603773584906,
+   "share_turns_gt_60": 0.1325,
+   "their_team_matched": 1200
+  },
+  "home72": {
+   "n": 800,
+   "turns_mean": 42.21125,
+   "turns_median": 32.5,
+   "turns_p90": 73.10000000000002,
+   "ties": 3,
+   "forfeits": 4,
+   "halves": {
+    "ours_challenge": 0.5975,
+    "peer_challenge": 0.6325
+   },
+   "score_turns_le_30": 0.6278409090909091,
+   "share_turns_le_30": 0.44,
+   "score_turns_gt_60": 0.5625,
+   "share_turns_gt_60": 0.14,
+   "their_team_matched": 800
+  },
+  "forum72": {
+   "n": 800,
+   "turns_mean": 47.25125,
+   "turns_median": 36.0,
+   "turns_p90": 88.0,
+   "ties": 0,
+   "forfeits": 3,
+   "halves": {
+    "ours_challenge": 0.5225,
+    "peer_challenge": 0.5575
+   },
+   "score_turns_le_30": 0.5964285714285714,
+   "share_turns_le_30": 0.35,
+   "score_turns_gt_60": 0.5342465753424658,
+   "share_turns_gt_60": 0.1825,
+   "their_team_matched": 800
+  }
+ },
+ "C3": {
+  "summary": {
+   "rc72b": {
+    "set_seen_frac": 1.0,
+    "log_set_repeats": 2.8507494049964257,
+    "set_pairs_in_pool": 4.152777777777778,
+    "species_pair_cooc": 3.610262040267253,
+    "species_pair_pmi": -0.21871219476528575,
+    "smogon_lift": -0.004846184155985946,
+    "max_shared_pool": 2.0,
+    "n_spikes": 0.5555555555555556,
+    "n_spin": 0.5138888888888888,
+    "n_boom": 1.1944444444444444,
+    "n_bpass": 0.20833333333333334,
+    "n_sleep": 0.18055555555555555,
+    "n_heal": 0.8055555555555556,
+    "spikes_and_spin": 0.2361111111111111,
+    "dup_spikes": 0.05555555555555555
+   },
+   "home72": {
+    "set_seen_frac": 1.0,
+    "log_set_repeats": 3.009732338887446,
+    "set_pairs_in_pool": 15.0,
+    "species_pair_cooc": 3.828713911199885,
+    "species_pair_pmi": 0.07579300316913169,
+    "smogon_lift": 0.20398178256837485,
+    "max_shared_pool": 6.0,
+    "n_spikes": 0.5,
+    "n_spin": 0.5138888888888888,
+    "n_boom": 1.1805555555555556,
+    "n_bpass": 0.20833333333333334,
+    "n_sleep": 0.05555555555555555,
+    "n_heal": 0.6388888888888888,
+    "spikes_and_spin": 0.3333333333333333,
+    "dup_spikes": 0.0
+   },
+   "forum72": {
+    "set_seen_frac": 0.7013888888888888,
+    "log_set_repeats": 1.8436979970851748,
+    "set_pairs_in_pool": 3.0833333333333335,
+    "species_pair_cooc": 3.1838304238101793,
+    "species_pair_pmi": 0.05476465528278452,
+    "smogon_lift": 0.14156685043201162,
+    "max_shared_pool": 2.0277777777777777,
+    "n_spikes": 0.5,
+    "n_spin": 0.5277777777777778,
+    "n_boom": 0.9722222222222222,
+    "n_bpass": 0.2638888888888889,
+    "n_sleep": 0.2361111111111111,
+    "n_heal": 0.9722222222222222,
+    "spikes_and_spin": 0.3333333333333333,
+    "dup_spikes": 0.0
+   }
+  },
+  "species_tv": {
+   "rc72b_vs_home72": 0.11574074074074074,
+   "forum72_vs_home72": 0.19675925925925936,
+   "rc72b_vs_forum72": 0.2314814814814815
+  },
+  "rc_minus_home_species_most_under": [
+   [
+    -9,
+    "metagross"
+   ],
+   [
+    -9,
+    "salamence"
+   ],
+   [
+    -7,
+    "dugtrio"
+   ],
+   [
+    -4,
+    "aerodactyl"
+   ],
+   [
+    -3,
+    "gyarados"
+   ],
+   [
+    -2,
+    "claydol"
+   ],
+   [
+    -2,
+    "jirachi"
+   ],
+   [
+    -2,
+    "moltres"
+   ]
+  ],
+  "rc_minus_home_species_most_over": [
+   [
+    8,
+    "swampert"
+   ],
+   [
+    8,
+    "gengar"
+   ],
+   [
+    5,
+    "zapdos"
+   ],
+   [
+    5,
+    "snorlax"
+   ],
+   [
+    5,
+    "celebi"
+   ],
+   [
+    4,
+    "starmie"
+   ],
+   [
+    4,
+    "blissey"
+   ],
+   [
+    2,
+    "suicune"
+   ]
+  ],
+  "home72_species_absent_from_rc72b": [
+   "donphan",
+   "misdreavus",
+   "moltres",
+   "raikou",
+   "regice",
+   "regirock",
+   "weezing"
+  ]
+ },
+ "C4": {
+  "rc72b": {
+   "teams": 72,
+   "games_per_team_mean": 33.333333333333336,
+   "edge_mean": 0.5098187691937692,
+   "edge_var": 0.01295302643076165,
+   "noise_var": 0.008622699836640447,
+   "edge_excess_sd": 0.06580521707373362,
+   "holder_var": 0.014829095076053499,
+   "holder_excess_sd": 0.07878067808424254,
+   "corr_edge_holder": 0.054657340366069895,
+   "corr_with_metrics": {
+    "log_set_repeats": {
+     "corr_edge": -0.1424543116313393,
+     "corr_holder": 0.059572538119875396,
+     "x_mean": 2.8507494049964257,
+     "x_sd": 0.3204129140464964
+    },
+    "set_pairs_in_pool": {
+     "corr_edge": -0.21227197667371075,
+     "corr_holder": 0.03821315740470816,
+     "x_mean": 4.152777777777778,
+     "x_sd": 1.7611527334723938
+    },
+    "species_pair_cooc": {
+     "corr_edge": 0.04582839670866808,
+     "corr_holder": 0.15583446828465766,
+     "x_mean": 3.610262040267253,
+     "x_sd": 0.56556560855241
+    },
+    "species_pair_pmi": {
+     "corr_edge": 0.02241406647175484,
+     "corr_holder": 0.12630796875948774,
+     "x_mean": -0.21871219476528575,
+     "x_sd": 0.17160296377119325
+    },
+    "smogon_lift": {
+     "corr_edge": 0.001168690207372723,
+     "corr_holder": 0.14710929219922506,
+     "x_mean": -0.004846184155985946,
+     "x_sd": 0.15555916815565757
+    },
+    "spikes_and_spin": {
+     "corr_edge": 0.020754061743967853,
+     "corr_holder": -0.0100244178557374,
+     "x_mean": 0.2361111111111111,
+     "x_sd": 0.42469124587279594
+    },
+    "n_boom": {
+     "corr_edge": -0.09203941974731501,
+     "corr_holder": 0.17255356004745626,
+     "x_mean": 1.1944444444444444,
+     "x_sd": 0.8762116830881947
+    },
+    "n_heal": {
+     "corr_edge": -0.05122508395863073,
+     "corr_holder": 0.2621751970127408,
+     "x_mean": 0.8055555555555556,
+     "x_sd": 0.719546324832701
+    }
+   },
+   "coherence_terciles": {
+    "smogon_lift": {
+     "0": {
+      "x_range": [
+       -0.38940680030680075,
+       -0.07932066325827251
+      ],
+      "pstar_holds_score": 0.4462616822429907,
+      "n_holds": 428,
+      "kakuna_holds_score": 0.5604651162790698,
+      "n_kakuna_holds": 430
+     },
+     "1": {
+      "x_range": [
+       -0.07621823947891088,
+       0.05744279135014872
+      ],
+      "pstar_holds_score": 0.55,
+      "n_holds": 400,
+      "kakuna_holds_score": 0.47,
+      "n_kakuna_holds": 400
+     },
+     "2": {
+      "x_range": [
+       0.0587408555161086,
+       0.4687735053489696
+      ],
+      "pstar_holds_score": 0.553763440860215,
+      "n_holds": 372,
+      "kakuna_holds_score": 0.5081081081081081,
+      "n_kakuna_holds": 370
+     }
+    },
+    "species_pair_pmi": {
+     "0": {
+      "x_range": [
+       -0.6709166129007292,
+       -0.2649545526365847
+      ],
+      "pstar_holds_score": 0.4790697674418605,
+      "n_holds": 430,
+      "kakuna_holds_score": 0.5023148148148148,
+      "n_kakuna_holds": 432
+     },
+     "1": {
+      "x_range": [
+       -0.2597973978046666,
+       -0.12871961634493917
+      ],
+      "pstar_holds_score": 0.5378787878787878,
+      "n_holds": 396,
+      "kakuna_holds_score": 0.5353535353535354,
+      "n_kakuna_holds": 396
+     },
+     "2": {
+      "x_range": [
+       -0.1190779226097082,
+       0.20519456181006207
+      ],
+      "pstar_holds_score": 0.5294117647058824,
+      "n_holds": 374,
+      "kakuna_holds_score": 0.5053763440860215,
+      "n_kakuna_holds": 372
+     }
+    }
+   }
+  },
+  "home72": {
+   "teams": 71,
+   "games_per_team_mean": 22.253521126760564,
+   "edge_mean": 0.6120546511391582,
+   "edge_var": 0.014711234379955106,
+   "noise_var": 0.014510817928403755,
+   "edge_excess_sd": 0.014156851752820974,
+   "holder_var": 0.019272226009719493,
+   "holder_excess_sd": 0.06900295704762034,
+   "corr_edge_holder": -0.021729702758583356,
+   "corr_with_metrics": {
+    "log_set_repeats": {
+     "corr_edge": 0.18257644901146436,
+     "corr_holder": -0.22226579215657727,
+     "x_mean": 3.012369978770338,
+     "x_sd": 0.6352970662647749
+    },
+    "set_pairs_in_pool": null,
+    "species_pair_cooc": {
+     "corr_edge": 0.21480377153367672,
+     "corr_holder": -0.0996887893089098,
+     "x_mean": 3.8318344413959977,
+     "x_sd": 0.5117503902843918
+    },
+    "species_pair_pmi": {
+     "corr_edge": -0.26884108404172724,
+     "corr_holder": 0.10691044111068249,
+     "x_mean": 0.07330705608797344,
+     "x_sd": 0.13178377254756699
+    },
+    "smogon_lift": {
+     "corr_edge": -0.3085781473510968,
+     "corr_holder": 0.1375466070936081,
+     "x_mean": 0.19859743072773242,
+     "x_sd": 0.16179149469432702
+    },
+    "spikes_and_spin": {
+     "corr_edge": -0.24257624922390753,
+     "corr_holder": -0.0003610255851453196,
+     "x_mean": 0.3380281690140845,
+     "x_sd": 0.4730381865844131
+    },
+    "n_boom": {
+     "corr_edge": -0.07783920144127959,
+     "corr_holder": -0.02710699416993262,
+     "x_mean": 1.1690140845070423,
+     "x_sd": 0.887882676759126
+    },
+    "n_heal": {
+     "corr_edge": -0.12550639121752902,
+     "corr_holder": 0.03488628672961923,
+     "x_mean": 0.647887323943662,
+     "x_sd": 0.7524343881235539
+    }
+   },
+   "coherence_terciles": {
+    "smogon_lift": {
+     "0": {
+      "x_range": [
+       -0.08892662043165542,
+       0.12228428564095419
+      ],
+      "pstar_holds_score": 0.627906976744186,
+      "n_holds": 258,
+      "kakuna_holds_score": 0.6811023622047244,
+      "n_kakuna_holds": 254
+     },
+     "1": {
+      "x_range": [
+       0.12350050502388836,
+       0.2265657011375203
+      ],
+      "pstar_holds_score": 0.5887096774193549,
+      "n_holds": 248,
+      "kakuna_holds_score": 0.5725806451612904,
+      "n_kakuna_holds": 248
+     },
+     "2": {
+      "x_range": [
+       0.2286176147354363,
+       0.6465161167074316
+      ],
+      "pstar_holds_score": 0.6258503401360545,
+      "n_holds": 294,
+      "kakuna_holds_score": 0.5863309352517986,
+      "n_kakuna_holds": 278
+     }
+    },
+    "species_pair_pmi": {
+     "0": {
+      "x_range": [
+       -0.14313425864999357,
+       -0.0006953580007289628
+      ],
+      "pstar_holds_score": 0.625,
+      "n_holds": 272,
+      "kakuna_holds_score": 0.6666666666666666,
+      "n_kakuna_holds": 270
+     },
+     "1": {
+      "x_range": [
+       0.0019926019725152897,
+       0.11705244555988
+      ],
+      "pstar_holds_score": 0.6258741258741258,
+      "n_holds": 286,
+      "kakuna_holds_score": 0.5971223021582733,
+      "n_kakuna_holds": 278
+     },
+     "2": {
+      "x_range": [
+       0.11769288990511058,
+       0.36288151002409885
+      ],
+      "pstar_holds_score": 0.5909090909090909,
+      "n_holds": 242,
+      "kakuna_holds_score": 0.5689655172413793,
+      "n_kakuna_holds": 232
+     }
+    }
+   }
+  },
+  "forum72": {
+   "teams": 72,
+   "games_per_team_mean": 22.22222222222222,
+   "edge_mean": 0.5337440626503126,
+   "edge_var": 0.01601920911019316,
+   "noise_var": 0.015128022862554111,
+   "edge_excess_sd": 0.02985274271552027,
+   "holder_var": 0.022932309040221477,
+   "holder_excess_sd": 0.08834187103331786,
+   "corr_edge_holder": 0.24667787946752429,
+   "corr_with_metrics": {
+    "log_set_repeats": {
+     "corr_edge": 0.057642610110630974,
+     "corr_holder": 0.22506782858092272,
+     "x_mean": 1.8436979970851748,
+     "x_sd": 0.7447961499158258
+    },
+    "set_pairs_in_pool": {
+     "corr_edge": 0.08659244180776647,
+     "corr_holder": 0.2658288178302458,
+     "x_mean": 3.0833333333333335,
+     "x_sd": 2.909515041682682
+    },
+    "species_pair_cooc": {
+     "corr_edge": 0.03113850024822914,
+     "corr_holder": 0.34161707327971585,
+     "x_mean": 3.1838304238101793,
+     "x_sd": 0.8816687481097024
+    },
+    "species_pair_pmi": {
+     "corr_edge": -0.005624995201401339,
+     "corr_holder": -0.25172905037187115,
+     "x_mean": 0.05476465528278452,
+     "x_sd": 0.2723475915771521
+    },
+    "smogon_lift": {
+     "corr_edge": 0.1446946007842521,
+     "corr_holder": 0.08851705469478005,
+     "x_mean": 0.14156685043201162,
+     "x_sd": 0.16223671348610325
+    },
+    "spikes_and_spin": {
+     "corr_edge": -0.1284963028343164,
+     "corr_holder": 0.1633857700722073,
+     "x_mean": 0.3333333333333333,
+     "x_sd": 0.47140452079103173
+    },
+    "n_boom": {
+     "corr_edge": -0.23628910409912401,
+     "corr_holder": 0.017680396757035616,
+     "x_mean": 0.9722222222222222,
+     "x_sd": 1.0134131303863723
+    },
+    "n_heal": {
+     "corr_edge": 0.043019796486286156,
+     "corr_holder": -0.10690459375789532,
+     "x_mean": 0.9722222222222222,
+     "x_sd": 0.8493824917455919
+    }
+   },
+   "coherence_terciles": {
+    "smogon_lift": {
+     "0": {
+      "x_range": [
+       -0.20651348476135756,
+       0.034465808013419176
+      ],
+      "pstar_holds_score": 0.5036764705882353,
+      "n_holds": 272,
+      "kakuna_holds_score": 0.5222222222222223,
+      "n_kakuna_holds": 270
+     },
+     "1": {
+      "x_range": [
+       0.057074222157391365,
+       0.22706628112663116
+      ],
+      "pstar_holds_score": 0.5555555555555556,
+      "n_holds": 252,
+      "kakuna_holds_score": 0.57421875,
+      "n_kakuna_holds": 256
+     },
+     "2": {
+      "x_range": [
+       0.23111279011132094,
+       0.6049377731001372
+      ],
+      "pstar_holds_score": 0.5615942028985508,
+      "n_holds": 276,
+      "kakuna_holds_score": 0.5255474452554745,
+      "n_kakuna_holds": 274
+     }
+    },
+    "species_pair_pmi": {
+     "0": {
+      "x_range": [
+       -0.49520892730348925,
+       -0.027142736222618875
+      ],
+      "pstar_holds_score": 0.5215827338129496,
+      "n_holds": 278,
+      "kakuna_holds_score": 0.5107142857142857,
+      "n_kakuna_holds": 280
+     },
+     "1": {
+      "x_range": [
+       -0.0217659423349602,
+       0.04788478588637425
+      ],
+      "pstar_holds_score": 0.5826771653543307,
+      "n_holds": 254,
+      "kakuna_holds_score": 0.5775193798449613,
+      "n_kakuna_holds": 258
+     },
+     "2": {
+      "x_range": [
+       0.05920807690708681,
+       1.0033949463918477
+      ],
+      "pstar_holds_score": 0.5186567164179104,
+      "n_holds": 268,
+      "kakuna_holds_score": 0.5343511450381679,
+      "n_kakuna_holds": 262
+     }
+    }
+   }
+  }
+ },
+ "C5": {
+  "C=0.1": {
+   "rc72b": {
+    "predicted": 0.6168211256379456,
+    "observed": 0.5141666666666667
+   },
+   "home72": {
+    "predicted": 0.6149925655089461,
+    "observed": 0.615
+   },
+   "forum72": {
+    "predicted": 0.5928599445121265,
+    "observed": 0.54
+   }
+  },
+  "C=0.3": {
+   "rc72b": {
+    "predicted": 0.6117339146160113,
+    "observed": 0.5141666666666667
+   },
+   "home72": {
+    "predicted": 0.6149648504340308,
+    "observed": 0.615
+   },
+   "forum72": {
+    "predicted": 0.5727571440407585,
+    "observed": 0.54
+   }
+  },
+  "C=1.0": {
+   "rc72b": {
+    "predicted": 0.6024209501861677,
+    "observed": 0.5141666666666667
+   },
+   "home72": {
+    "predicted": 0.6150318239427816,
+    "observed": 0.615
+   },
+   "forum72": {
+    "predicted": 0.5563339393834812,
+    "observed": 0.54
+   }
+  },
+  "mons_outside_home72_species": {
+   "rc72b": 0.0,
+   "home72": 0.0,
+   "forum72": 0.575
+  }
+ },
+ "C6": {
+  "kakuna_held_sft431": 6,
+  "pstar_score_when_kakuna_held": 0.8333333333333334,
+  "pstar_held_sft431": 6,
+  "pstar_score_when_pstar_held": 0.3333333333333333,
+  "forum72_score_without_kakuna_sft431": 0.5377833753148614,
+  "max_bias_pp_if_all_those_games_flipped": 0.625
+ }
+}
