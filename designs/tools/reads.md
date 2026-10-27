@@ -15,6 +15,7 @@ lives outside the repo and outside `models/`, for example `~/gen3ai_archive/<rea
 python -m main.reads check-spec --spec read_spec.json
 python -m main.reads plan     --spec read_spec.json --state DIR    # copy settled models; plan units
 python -m main.reads run      --state DIR --lane anchor --hours 20 # detached, resumable; one per lane
+python -m main.reads run      --state DIR --lane anchor --hours 20 --concurrency 2   # K units at once (§3)
 python -m main.reads run      --state DIR --lane s      --hours 20
 python -m main.reads status   --state DIR                          # resume = run again (or `resume`)
 python -m main.reads record   --state DIR [--out <stage>/reads/<arm>_look<k>.json]
@@ -93,6 +94,28 @@ committed config plus that agent (`kakuna.check_derived_config`). The peer is of
 
 There is one kakuna state per (group, model), `<state>/anchor/<group>/<label>/`, planned when that model
 settles. Unit seeds are the outer loop, so a stopped queue stays balanced by seed.
+
+**Concurrency** (`--concurrency K`, anchor lane only, default 1; `main.reads.anchor_pool`; N1-P look 1 projected about
+60 h for 486 units one at a time). SCHEDULING ONLY: the lane keeps up to K units in flight, and each is
+`kakuna.run_unit` unchanged (its own short-lane `mem_cap` job, its own 95xx port from the held-flock claim, its own cell
+dir and log), started on a thread that only waits on the child. Nothing on the play path (`main.x35.kakuna`,
+`main.anchors`, the peers, model loading) knows about K.
+
+- **The cap.** K is clamped to the box's heavy-slot count (`utils.heavy_slots.slot_count()`; `$GEN3AI_HEAVY_SLOTS`;
+  2 by default, read at the supervisor's start) with a logged line. The supervisor log's `start` event records
+  `concurrency` (effective) and `concurrency_requested`. `--lane s` with K above 1 is refused.
+- **Order and results.** The queue order is unchanged (unit seeds outermost); the first K of it start together, and a
+  unit is never in flight twice. Counting, the `MAX_ATTEMPTS` retry and the exit-88 long-lane fallback are the unit's
+  own attempt and the supervisor loop's, as at K = 1. Results do not depend on K: the same units, seeds and per-unit
+  records, only the order of completion differs (`anchor_pool_test` pins a byte-identical `cells.json` and unit
+  records between K = 1 and K = 3).
+- **Stops.** The registered stop starts no unit past it and waits for those in flight. A unit that raises (a preflight
+  refusal, say) lets its siblings finish, then ends the lane with that refusal; the lane's claims are held until its last
+  unit ended. SIGINT leaves the units running in their own sessions, as at K = 1.
+- **Cost.** All K units share the agent cores (`5-7,13-15`, rule 5b), and each takes a heavy slot while a training run is
+  live or the GPU is leased, so beside the S lane's slot a K above the free slots only queues FIFO. **UNVERIFIED:** the
+  throughput gain over K = 1 is not measured; read units/h from `units.jsonl` (`start` to `end` `wall_s`) at K = 1 and
+  K = 2 before relying on it.
 
 **The S lane** plays `main.h2h play-many` cells:
 
@@ -299,6 +322,7 @@ skips and names why.
 | a VOID seed read (SPRT's STOP, absent from `x35_r1`; be60f24f F3) | latent | the registered VOID gate before `decide` (§5) |
 | a short-lane overrun (exit 88) left uncounted (FR-3's queue re-ran it once by hand; the module did not) | yes | the once-only long retry (§3) |
 | two standalone `kakuna run` queues on one state | latent (the same lock-inside-the-state flaw) | the path lock and `/proc` scan, shared with the lanes (§3) |
+| the anchor lane plays one unit at a time (N1-P look 1: 486 units, about 60 h projected) | any long Kakuna read | bounded `--concurrency K`, scheduling only (§3) |
 
 ## 9. What was migrated, wrapped, left
 
@@ -323,6 +347,10 @@ skips and names why.
 
 - **Reported-only extras** (SPRT's mechanism block, dose from launcher summaries) stay per-read. A rule's `params`
   can carry them, but only the VOID gate reads run dirs.
+- **Re-pinning a running read.** The pin guard compares the playing checkout's commit and diff digest with `code.json`
+  (§3), so a supervisor restarted from a NEWER checkout refuses (`the playing code changed under the read`) even when
+  the play path is byte-identical between the two commits. No verb re-pins `code.json` after checking that; scheduling
+  code (this module's `--concurrency`) therefore reaches a running read only by that deliberate step.
 - **Nested supervisors.** A `kakuna run` on `<state>/anchor/<group>/<label>/` and a `main.reads run --lane anchor` on
   `<state>` can both play that kakuna state: the lanes call `run_unit` without taking the sub-state's
   `supervisor.lock`, and neither path scan looks at a parent or child path.
