@@ -5,9 +5,9 @@
   "surface": {
    "abilities": 77,
    "items": 67,
-   "conditions": 74,
-   "moves": 343,
-   "rows": 1243
+   "conditions": 76,
+   "moves": 348,
+   "rows": 1272
   },
   "excluded_deferred": {
    "forecast": "Castform forme+TYPE change under weather — deferred (probe_forecast_rng.js settled the map; the reporting surface is unprobed); the port FAIL-LOUDs in state::MonState::from_set (GIGO guard: an unmodeled ability would silently no-op then desync under weather); NOT in MODELED/NOOP + REJECT_ABILITIES/REJECT_SPECIES so the e2e filter + randbats adapter exclude its teams",
@@ -366,9 +366,10 @@
    "reason": "gates CAPTIVATE only — a gen4 move, not in the gen3 universe"
   },
   "ability:oblivious:onUpdate": {
-   "disposition": "unreachable_justified",
+   "disposition": "implemented",
    "fp": "fn:ef11fbb0:onUpdate(pokemon) { if (pokemon.volatiles[\"attract\"]) { pokemon.removeVolatile(\"attract\"); this.add(\"-end\", pokemon, \"mo",
-   "reason": "removes an attract the holder already has — unreachable: attract clears when the holder switches out, so a TRACE copy can never find a pre-existing attract, and a direct add is blocked at the onImmunity gate"
+   "anchor": "items.rs::volatile_immune_on_update",
+   "reason": "ends an attract the holder already has, reached by GAINING Oblivious while infatuated through Skill Swap or Role Play: -end|<mon>|Attract|[silent], -end|<mon>|move: Attract|[from] ability: Oblivious at the next Update (gen3_bf_volatile_immune_onupdate_v1, pins bf13a-b)"
   },
   "ability:overgrow:onBasePower": {
    "disposition": "implemented",
@@ -404,9 +405,10 @@
    "reason": "the confusion add block"
   },
   "ability:owntempo:onUpdate": {
-   "disposition": "unreachable_justified",
+   "disposition": "implemented",
    "fp": "fn:c39e4fc5:onUpdate(pokemon) { if (pokemon.volatiles[\"confusion\"]) { this.add(\"-activate\", pokemon, \"ability: Own Tempo\"); pokemon.",
-   "reason": "cures a confusion the holder already has — unreachable: volatiles clear on switch-out, so a TRACE copy (the only ability-gain route) can never find a pre-existing confusion, and a direct add is blocked at onTryAddVolatile"
+   "anchor": "items.rs::volatile_immune_on_update",
+   "reason": "cures a confusion the holder already has, reached by GAINING Own Tempo while confused through Skill Swap or Role Play: -activate|<mon>|ability: Own Tempo, -end|<mon>|confusion at the next Update (gen3_bf_volatile_immune_onupdate_v1, pins bf12a-c)"
   },
   "ability:pickup:onResidualOrder": {
    "disposition": "noop_justified",
@@ -1376,6 +1378,26 @@
    "anchor": "turn.rs::apply_secondaries",
    "reason": "the focuspunch volatile BLOCKS a flinch (the flinch-secondary random(100) still draws; draw-then-block)"
   },
+  "condition:followme:duration": {
+   "disposition": "unreachable_justified",
+   "fp": "val:1",
+   "reason": "the followme slot condition is added only after onTry passes, which needs activePerHalf > 1 — a doubles battle; in singles it never starts (no -singleturn, no residual duration handler; probe_b10_moves.js followme vs a Splash control)"
+  },
+  "condition:followme:onFoeRedirectTarget": {
+   "disposition": "unreachable_justified",
+   "fp": "fn:18091566:onFoeRedirectTarget(target, source, source2, move) { const userSlot = this.getAtSlot(this.effectState.slot); if (this.va",
+   "reason": "the followme slot condition is added only after onTry passes, which needs activePerHalf > 1 — a doubles battle; in singles it never starts (no -singleturn, no residual duration handler; probe_b10_moves.js followme vs a Splash control)"
+  },
+  "condition:followme:onFoeRedirectTargetPriority": {
+   "disposition": "unreachable_justified",
+   "fp": "val:1",
+   "reason": "the followme slot condition is added only after onTry passes, which needs activePerHalf > 1 — a doubles battle; in singles it never starts (no -singleturn, no residual duration handler; probe_b10_moves.js followme vs a Splash control)"
+  },
+  "condition:followme:onStart": {
+   "disposition": "unreachable_justified",
+   "fp": "fn:0db8513e:onStart(target, source, effect) { this.add(\"-singleturn\", target, \"move: Follow Me\"); this.effectState.slot = target.get",
+   "reason": "the followme slot condition is added only after onTry passes, which needs activePerHalf > 1 — a doubles battle; in singles it never starts (no -singleturn, no residual duration handler; probe_b10_moves.js followme vs a Splash control)"
+  },
   "condition:foresight:onModifyBoost": {
    "disposition": "implemented",
    "fp": "fn:92df05ad:onModifyBoost(boosts) { if (boosts.evasion && boosts.evasion > 0) { boosts.evasion = 0; } }",
@@ -1547,6 +1569,31 @@
    "fp": "fn:257afca3:onWeather(target) { this.damage(target.baseMaxhp / 16); }",
    "anchor": "turn.rs::weather_immune",
    "reason": "the maxhp/16 weather chip (typed + Sand Veil immunities folded)"
+  },
+  "condition:helpinghand:duration": {
+   "disposition": "unreachable_justified",
+   "fp": "val:1",
+   "reason": "gen-3 useMoveInner returns at the null target before TryMove / tryMoveHit, so onTryHit never runs and the helpinghand volatile (the ally BP boost) is never added in singles"
+  },
+  "condition:helpinghand:onBasePower": {
+   "disposition": "unreachable_justified",
+   "fp": "fn:a3ffb67f:onBasePower(basePower) { this.debug(\"Boosting from Helping Hand: \" + this.effectState.multiplier); return this.chainModi",
+   "reason": "gen-3 useMoveInner returns at the null target before TryMove / tryMoveHit, so onTryHit never runs and the helpinghand volatile (the ally BP boost) is never added in singles"
+  },
+  "condition:helpinghand:onBasePowerPriority": {
+   "disposition": "unreachable_justified",
+   "fp": "val:10",
+   "reason": "gen-3 useMoveInner returns at the null target before TryMove / tryMoveHit, so onTryHit never runs and the helpinghand volatile (the ally BP boost) is never added in singles"
+  },
+  "condition:helpinghand:onRestart": {
+   "disposition": "unreachable_justified",
+   "fp": "fn:9e50fd09:onRestart(target, source) { this.effectState.multiplier *= 1.5; this.add(\"-singleturn\", target, \"Helping Hand\", `[of] ${",
+   "reason": "gen-3 useMoveInner returns at the null target before TryMove / tryMoveHit, so onTryHit never runs and the helpinghand volatile (the ally BP boost) is never added in singles"
+  },
+  "condition:helpinghand:onStart": {
+   "disposition": "unreachable_justified",
+   "fp": "fn:da663584:onStart(target, source) { this.effectState.multiplier = 1.5; this.add(\"-singleturn\", target, \"Helping Hand\", `[of] ${sou",
+   "reason": "gen-3 useMoveInner returns at the null target before TryMove / tryMoveHit, so onTryHit never runs and the helpinghand volatile (the ally BP boost) is never added in singles"
   },
   "condition:iceball:duration": {
    "disposition": "implemented",
@@ -4252,6 +4299,24 @@
    "anchor": "turn.rs::never_miss",
    "reason": "accuracy === true — NO accuracy draw at all"
   },
+  "move:camouflage:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the camouflage arm: hasType(Normal) fails [still] + -fail; else types_override [Normal] + mark_type_known + |-start|<u>|typechange|Normal; snatchable through the generic interception"
+  },
+  "move:camouflage:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the camouflage arm: hasType(Normal) fails [still] + -fail; else types_override [Normal] + mark_type_known + |-start|<u>|typechange|Normal; snatchable through the generic interception"
+  },
+  "move:camouflage:onHit": {
+   "disposition": "implemented",
+   "fp": "fn:b2856ed6:onHit(target) { if (target.hasType(\"Normal\") || !target.setType(\"Normal\")) return false; this.add(\"-start\", target, \"typ",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the camouflage arm: hasType(Normal) fails [still] + -fail; else types_override [Normal] + mark_type_known + |-start|<u>|typechange|Normal; snatchable through the generic interception"
+  },
   "move:charge:ignoreImmunity": {
    "disposition": "implemented",
    "fp": "val:true",
@@ -4941,6 +5006,35 @@
    "anchor": "turn.rs::move_priority",
    "reason": "the action-order priority sort (draws only on a priority+speed tie)"
   },
+  "move:followme:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the followme arm: onTry activePerHalf > 1 is false in singles — the bare announce, ZERO draws; priority 3 rides the dex row"
+  },
+  "move:followme:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the followme arm: onTry activePerHalf > 1 is false in singles — the bare announce, ZERO draws; priority 3 rides the dex row"
+  },
+  "move:followme:onTry": {
+   "disposition": "implemented",
+   "fp": "fn:82a53d19:onTry(source) { return this.activePerHalf > 1; }",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the followme arm: onTry activePerHalf > 1 is false in singles — the bare announce, ZERO draws; priority 3 rides the dex row"
+  },
+  "move:followme:priority": {
+   "disposition": "implemented",
+   "fp": "val:3",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the followme arm: onTry activePerHalf > 1 is false in singles — the bare announce, ZERO draws; priority 3 rides the dex row"
+  },
+  "move:followme:slotCondition": {
+   "disposition": "unreachable_justified",
+   "fp": "val:\"followme\"",
+   "reason": "the followme slot condition is added only after onTry passes, which needs activePerHalf > 1 — a doubles battle; in singles it never starts (no -singleturn, no residual duration handler; probe_b10_moves.js followme vs a Splash control)"
+  },
   "move:foresight:ignoreImmunity": {
    "disposition": "implemented",
    "fp": "val:true",
@@ -5156,6 +5250,34 @@
    "fp": "val:[{\"chance\":10,\"status\":\"brn\"}]",
    "anchor": "turn.rs::apply_secondaries",
    "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
+  },
+  "move:helpinghand:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the helpinghand arm: adjacentAlly resolves to no target in singles (getRandomTarget null) — |move|<u>|Helping Hand|null|[notarget]| + |-notarget|<u>, ZERO draws; priority 5 rides the dex row"
+  },
+  "move:helpinghand:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the helpinghand arm: adjacentAlly resolves to no target in singles (getRandomTarget null) — |move|<u>|Helping Hand|null|[notarget]| + |-notarget|<u>, ZERO draws; priority 5 rides the dex row"
+  },
+  "move:helpinghand:onTryHit": {
+   "disposition": "unreachable_justified",
+   "fp": "fn:8d762a67:onTryHit(target) { if (!target.newlySwitched && !this.queue.willMove(target)) return false; }",
+   "reason": "gen-3 useMoveInner returns at the null target before TryMove / tryMoveHit, so onTryHit never runs and the helpinghand volatile (the ally BP boost) is never added in singles"
+  },
+  "move:helpinghand:priority": {
+   "disposition": "implemented",
+   "fp": "val:5",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the helpinghand arm: adjacentAlly resolves to no target in singles (getRandomTarget null) — |move|<u>|Helping Hand|null|[notarget]| + |-notarget|<u>, ZERO draws; priority 5 rides the dex row"
+  },
+  "move:helpinghand:volatileStatus": {
+   "disposition": "unreachable_justified",
+   "fp": "val:\"helpinghand\"",
+   "reason": "gen-3 useMoveInner returns at the null target before TryMove / tryMoveHit, so onTryHit never runs and the helpinghand volatile (the ally BP boost) is never added in singles"
   },
   "move:highjumpkick:onMoveFail": {
    "disposition": "implemented",
@@ -6246,6 +6368,30 @@
    "anchor": "turn.rs::apply_secondaries",
    "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
   },
+  "move:roleplay:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the roleplay arm: same-id / ROLE_PLAY_FAIL_ABILITIES (Wonder Guard) fail [still] + -fail; else run_outgoing_ability_end, |-ability|<u>|<New>|<Old>|[from] move: Role Play|[of] <t>, no gen-3 Start; Own Tempo while confused / Oblivious while attracted PANIC (their Update cure is unmodeled)"
+  },
+  "move:roleplay:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the roleplay arm: same-id / ROLE_PLAY_FAIL_ABILITIES (Wonder Guard) fail [still] + -fail; else run_outgoing_ability_end, |-ability|<u>|<New>|<Old>|[from] move: Role Play|[of] <t>, no gen-3 Start; Own Tempo while confused / Oblivious while attracted PANIC (their Update cure is unmodeled)"
+  },
+  "move:roleplay:onHit": {
+   "disposition": "implemented",
+   "fp": "fn:4c901e96:onHit(target, source) { const oldAbility = source.setAbility(target.ability, target); if (!oldAbility) return oldAbility",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the roleplay arm: same-id / ROLE_PLAY_FAIL_ABILITIES (Wonder Guard) fail [still] + -fail; else run_outgoing_ability_end, |-ability|<u>|<New>|<Old>|[from] move: Role Play|[of] <t>, no gen-3 Start; Own Tempo while confused / Oblivious while attracted PANIC (their Update cure is unmodeled)"
+  },
+  "move:roleplay:onTryHit": {
+   "disposition": "implemented",
+   "fp": "fn:583880fd:onTryHit(target, source) { if (target.ability === source.ability) return false; if (target.getAbility().flags[\"failrolep",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the roleplay arm: same-id / ROLE_PLAY_FAIL_ABILITIES (Wonder Guard) fail [still] + -fail; else run_outgoing_ability_end, |-ability|<u>|<New>|<Old>|[from] move: Role Play|[of] <t>, no gen-3 Start; Own Tempo while confused / Oblivious while attracted PANIC (their Update cure is unmodeled)"
+  },
   "move:rollingkick:secondaries": {
    "disposition": "implemented",
    "fp": "val:[{\"chance\":30,\"volatileStatus\":\"flinch\"}]",
@@ -7090,6 +7236,24 @@
    "fp": "val:\"confusion\"",
    "anchor": "secondaries.rs::add_confusion",
    "reason": "the confusion volatile via the shared add_confusion — the same path Water Pulse & co use, owning the KO / already-confused / Own-Tempo gates and the random(2,6) duration draw (gen3_confuse_ray_v1)"
+  },
+  "move:teleport:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the teleport arm: the resolved gen-7-mod onTry: false fails at tryMoveHit Try with no line — the bare announce, ZERO draws (a trainer battle cannot flee)"
+  },
+  "move:teleport:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the teleport arm: the resolved gen-7-mod onTry: false fails at tryMoveHit Try with no line — the bare announce, ZERO draws (a trainer battle cannot flee)"
+  },
+  "move:teleport:onTry": {
+   "disposition": "implemented",
+   "fp": "val:false",
+   "anchor": "status_moves.rs::run_status_move",
+   "reason": "the teleport arm: the resolved gen-7-mod onTry: false fails at tryMoveHit Try with no line — the bare announce, ZERO draws (a trainer battle cannot flee)"
   },
   "move:thief:onAfterHit": {
    "disposition": "implemented",

@@ -4,6 +4,12 @@ use crate::state::Status;
 use super::*;
 use super::helpers::*;
 
+/// ROLE PLAY's gen-3 fail list (`gen3_b10_moves_v1`): the abilities whose RESOLVED `flags.failroleplay` is
+/// set (`data/mods/gen6/abilities.ts:125`, inherited down to gen 3) — Wonder Guard alone. No gen-3
+/// ability carries `cantsuppress` (the user-side check). Checked against `Dex.mod('gen3')` by
+/// `tests/b10_moves_test.rs` B10-0.
+pub const ROLE_PLAY_FAIL_ABILITIES: [&str; 1] = ["wonderguard"];
+
 impl crate::state::BattleState {
 
     /// Resolve + APPLY a STANDALONE STATUS MOVE (category Status, bp 0, whose PURPOSE
@@ -65,6 +71,24 @@ impl crate::state::BattleState {
         was_choice_locked: bool,
         dex: &Dex,
     ) -> MoveResolution {
+        // --- HELPING HAND (`gen3_b10_moves_v1`, gen3 full parity B10): `target: adjacentAlly`, and a
+        //     singles battle has no ally. The gen-3 `useMoveInner` (data/mods/gen3/scripts.ts:120-172)
+        //     resolves the target with `getRandomTarget`, which returns `null` for `adjacentAlly` in
+        //     singles (sim/battle.ts:2517-2518); `addMove('move', pokemon, movename, `${target}${attrs}`)`
+        //     prints the literal `null`, then `if (!target) { attrLastMove('[notarget]'); add('-notarget',
+        //     pokemon); return false; }`. So: `|move|<u>|Helping Hand|null[|[from] Sleep Talk]|[notarget]`
+        //     + `|-notarget|<u>`, ZERO draws, no `helpinghand` volatile (so no residual duration handler),
+        //     PP spent (1: `pressureTargets` is empty) and `lastMove` recorded (Encore / Disable / Spite /
+        //     Mimic all see Helping Hand — probe `harness/probe_b10_moves.js`). Priority 5 is the dex row's.
+        //     It returns before TryMove, so no snatch / Protect / accuracy step runs. ---
+        if move_id == "helpinghand" {
+            if self.logging() {
+                let user = self.mon_ref(_side, _slot, dex);
+                self.log.move_used_notarget(&user, move_name);
+                self.log.notarget(&user);
+            }
+            return MoveResolution::done(false, false, false);
+        }
         // [EMIT] `|move|<user>|<Name>|<target>` — the status-move ANNOUNCE, emitted for
         // EVERY status move that routes here (setup / recovery / Rest / Spikes / Roar /
         // Thunder Wave / Substitute / Leech Seed / …), at the very top of the status path
@@ -310,6 +334,20 @@ impl crate::state::BattleState {
                 self.log.miss(&user, Some(&target));
             }
             return MoveResolution::done(true, false, false);
+        }
+        // --- TELEPORT and FOLLOW ME (`gen3_b10_moves_v1`): both FAIL at gen-3 `tryMoveHit`'s
+        //     `singleEvent('Try')` (data/mods/gen3/scripts.ts:280-282, `return false` with NO line):
+        //       * TELEPORT resolves (gen 7 mod, inherited down to gen 3: data/mods/gen7/moves.ts:1025-1030)
+        //         to `priority: 0, selfSwitch: false, onTry: false` — a trainer battle cannot flee, and
+        //         `singleEvent` returns a non-function handler as its value.
+        //       * FOLLOW ME's `onTry(source) { return this.activePerHalf > 1; }` (data/moves.ts:6049-6051)
+        //         is false in singles, so the gen-3 `followme` slot condition (data/mods/gen3/moves.ts:
+        //         303-319) is never added: no `-singleturn`, no condition, no residual duration handler.
+        //     The self-target announce above is the whole protocol (no `[still]`, no `-fail`), ZERO
+        //     draws, PP and `lastMove` spent (Encore repeats a Follow Me). Neither is snatchable. ---
+        if move_id == "teleport" || move_id == "followme" {
+            debug_assert!(never_miss, "{move_id}: expected the never-miss dex row");
+            return MoveResolution::done(false, false, false);
         }
         // --- SLEEP TALK (`gen3_move_coverage_batch5_v1`, the gen-3 `sleeptalk` — probe
         //     `harness/probe_batch5_sleeptalk.js`, the resolved source dumped there):
@@ -1989,6 +2027,85 @@ impl crate::state::BattleState {
             return MoveResolution::done(false, false, false);
         }
 
+        // --- ROLE PLAY (`gen3_b10_moves_v1`, gen3 full parity B10): the USER copies the target's
+        //     ability. Base `data/moves.ts:15325-15346` (no gen-3/4 override): accuracy `true` (never
+        //     misses, ZERO draws on every path), flags `bypasssub` and NO `protect` (Protect does NOT
+        //     block it, a Substitute does not either — probed). A semi-invulnerable target already
+        //     missed above (gen-3 `tryMoveHit`'s Invulnerability, the generic `invuln_miss`).
+        //       * `onTryHit`: fails if the two ability IDS are equal or the TARGET's ability has
+        //         `failroleplay` (gen 3: Wonder Guard alone, [`ROLE_PLAY_FAIL_ABILITIES`]) or the
+        //         user's has `cantsuppress` (none in gen 3): the `[still]` retro-edit +
+        //         `|-fail|<user>` (data/mods/gen3/scripts.ts tryMoveHit's TryHit branch).
+        //       * `onHit` → `source.setAbility(target.ability, target)` (sim/pokemon.ts:1908-1947):
+        //         `singleEvent('End', oldAbility)` FIRST — the same outgoing-ability End Skill Swap runs
+        //         ([`Self::run_outgoing_ability_end`]: an armed Flash Fire prints its silent `-end`, a
+        //         Cloud Nine / Air Lock runs `eachEvent('WeatherChange')`) — THEN
+        //         `|-ability|<user>|<New>|<Old>|[from] move: Role Play|[of] <target>`; and NO `Start`
+        //         (`this.battle.gen > 3` gate, sim/pokemon.ts:1941), so a copied Intimidate / Drizzle /
+        //         Trace does nothing at once. The new ability is live at once (Truant's `truantTurn` is
+        //         the user's own field, toggled by the copied ability's residual; a copied Air Lock
+        //         suppresses weather immediately; a copied STATUS-IMMUNE ability cures the user's
+        //         status at the next Update, `status_immune_on_update`).
+        //       * A copied OWN TEMPO on a confused user / OBLIVIOUS on an infatuated user cures it at
+        //         the next Update (`-activate|<u>|ability: Own Tempo` + `-end|<u>|confusion`, probed):
+        //         `volatile_immune_on_update` (`gen3_bf_volatile_immune_onupdate_v1`, pins bf12c / bf13b).
+        //     The copy is reverted at switch-out like Skill Swap's (`execute_switch` restores
+        //     `set.ability`). Probe `harness/probe_b10_moves.js`. ---
+        if move_id == "roleplay" {
+            debug_assert!(never_miss, "roleplay: expected the never-miss dex row");
+            let user_ab = to_id(&self.sides[_side].pokemon[_slot].ability);
+            let foe_ab = to_id(&self.sides[foe].pokemon[foe_slot].ability);
+            if user_ab == foe_ab || ROLE_PLAY_FAIL_ABILITIES.contains(&foe_ab.as_str()) {
+                if self.logging() {
+                    let user = self.mon_ref(_side, _slot, dex);
+                    self.log.attr_last_move_still();
+                    self.log.fail(&user, None, false);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            let name_of = |id: &str, raw: &str| dex.ability(id).map(|a| a.name.clone()).unwrap_or_else(|| raw.to_string());
+            let old_name = name_of(&user_ab, &self.sides[_side].pokemon[_slot].ability);
+            let new_name = name_of(&foe_ab, &self.sides[foe].pokemon[foe_slot].ability);
+            // `singleEvent('End', oldAbility)` precedes the `-ability` line.
+            self.run_outgoing_ability_end(_side, _slot, dex);
+            if self.logging() {
+                let user = self.mon_ref(_side, _slot, dex);
+                let target = self.mon_ref(foe, foe_slot, dex);
+                self.log.ability_from_move_of(&user, &new_name, &old_name, move_name, &target);
+            }
+            self.sides[_side].pokemon[_slot].ability = self.sides[foe].pokemon[foe_slot].ability.clone();
+            return MoveResolution::done(false, false, false);
+        }
+
+        // --- CAMOUFLAGE (`gen3_b10_moves_v1`): the resolved gen-3 `onHit` is the gen-4 mod's
+        //     (data/mods/gen4/moves.ts:168-174, the link-battle terrain): `if (target.hasType('Normal')
+        //     || !target.setType('Normal')) return false; this.add('-start', target, 'typechange',
+        //     'Normal');`. `setType` cannot fail in gen 3 (sim/pokemon.ts:2109-2128), REPLACES the
+        //     type array and sets `knownType = true` — Conversion's `types_override` shape, reverted at
+        //     switch-out (and to the base copy under Transform). `hasType` reads the CURRENT types, so
+        //     a Color-Changed or Conversion-ed Normal regains Normal and a Normal / Flying fails. Never
+        //     misses: ZERO draws. Fail: the `[still]` retro-edit + `|-fail|<user>` (after a Sleep-Talk
+        //     or Snatch `[from]` fold: `|move|<u>|Camouflage||[from] Snatch|[still]`). Snatchable
+        //     through the generic interception above (the snatcher retypes). ---
+        if move_id == "camouflage" {
+            debug_assert!(never_miss, "camouflage: expected the never-miss dex row");
+            if mon_types(&self.sides[_side].pokemon[_slot], dex).contains(&Type::Normal) {
+                if self.logging() {
+                    let user = self.mon_ref(_side, _slot, dex);
+                    self.log.attr_last_move_still();
+                    self.log.fail(&user, None, false);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            self.sides[_side].pokemon[_slot].types_override = Some(vec![Type::Normal]);
+            self.sides[_side].pokemon[_slot].mark_type_known();
+            if self.logging() {
+                let user = self.mon_ref(_side, _slot, dex);
+                self.log.typechange(&user, Type::Normal.display_name(), None);
+            }
+            return MoveResolution::done(false, false, false);
+        }
+
         // --- SKILL SWAP (`gen3_skill_swap_v1`) — EXCHANGE the two actives' abilities.
         //     PROBE-SETTLED (`harness/probe_skillswap.js`): never-miss, so the MOVE draws NOTHING;
         //     `landed = false`; ONE emission, the gen<=4 `|-activate|<u>|Skill Swap|||[of] <t>`
@@ -2046,22 +2163,7 @@ impl crate::state::BattleState {
             // order; unobservable because only flashfire emits and a two-emitter board is
             // unreachable through the same-id gate).
             for (s_i, sl) in [(_side, _slot), (foe, foe_slot)] {
-                let negates = {
-                    let m = &self.sides[s_i].pokemon[sl];
-                    dex.ability(&to_id(&m.ability)).map(|a| a.weather_negate).unwrap_or(false)
-                };
-                if negates {
-                    let order = self.each_event_shuffle();
-                    let eff = self.effective_weather_excluding(Some(s_i), dex);
-                    self.forecast_each_event(&order, eff, dex);
-                }
-                if self.sides[s_i].pokemon[sl].flash_fire {
-                    if self.logging() {
-                        let r = self.mon_ref(s_i, sl, dex);
-                        self.log.volatile_end_silent(&r, "ability: Flash Fire");
-                    }
-                    self.sides[s_i].pokemon[sl].flash_fire = false;
-                }
+                self.run_outgoing_ability_end(s_i, sl, dex);
             }
             // The swap itself — `ability` ONLY. `execute_switch` already restores `set.ability`
             // on re-entry, so the switch-out revert is free and no new field is needed.
@@ -2069,6 +2171,11 @@ impl crate::state::BattleState {
             let b = self.sides[foe].pokemon[foe_slot].ability.clone();
             self.sides[_side].pokemon[_slot].ability = b;
             self.sides[foe].pokemon[foe_slot].ability = a;
+            // ENDLESS BATTLE CLAUSE staleness (`gen3_b10_endless_battle_v1`, sim/battle.ts:1336-1337):
+            // `source.volatileStaleness = undefined; if (!source.isAlly(target)) target.volatileStaleness
+            // = 'external'` — the only gen-3 source of EXTERNAL staleness. Cleared at switch-out.
+            self.sides[_side].pokemon[_slot].volatile_staleness = false;
+            self.sides[foe].pokemon[foe_slot].volatile_staleness = true;
             return MoveResolution::done(false, false, false);
         }
 
@@ -2108,6 +2215,10 @@ impl crate::state::BattleState {
                 let m = &mut self.sides[_side].pokemon[_slot];
                 m.last_item = String::new(); // CLEAR BEFORE the restore, mirroring the sim
                 m.item = restored.clone();
+                // `pokemon.setItem(item, source, move)` sets the pending staleness, `'internal'`
+                // (Recycle is not Trick / Switcheroo; `sim/pokemon.ts:1873-1876`,
+                // `gen3_b10_endless_battle_v1`).
+                m.pending_staleness = true;
             }
             // [EMIT] `|-item|<user>|<Item>|[from] move: Recycle` — no `[of]` clause.
             if self.logging() {
@@ -3518,6 +3629,25 @@ impl crate::state::BattleState {
             let subbed = self.sides[foe].pokemon[foe_slot].substitute.is_some();
             let both_itemless = user_item.is_empty() && foe_item.is_empty();
             if subbed || knocked || both_itemless {
+                // ENDLESS BATTLE CLAUSE (`gen3_b10_endless_battle_v1`): past the Substitute (a TryHit
+                // block, before `onHit`), Trick's `onHit` runs BOTH `takeItem`s before it checks for
+                // failure (data/moves.ts trick: `const yourItem = target.takeItem(source); const myItem
+                // = source.takeItem();`), so a take that succeeded cleared that mon's pending staleness
+                // (`sim/pokemon.ts:1851-1866`) even though the item is then handed back. A take
+                // succeeds when the holder has an item, neither mon is Knocked Off (the target's take
+                // checks the target and the user; the user's checks the user), and the item is not
+                // Mail (`mail.onTakeItem`).
+                if !subbed {
+                    let u_knocked = self.sides[_side].pokemon[_slot].item_knocked_off;
+                    let f_knocked = self.sides[foe].pokemon[foe_slot].item_knocked_off;
+                    let is_mail = |id: &str| to_id(id) == "mail";
+                    if !foe_item.is_empty() && !f_knocked && !u_knocked && !is_mail(&foe_item) {
+                        self.sides[foe].pokemon[foe_slot].pending_staleness = false;
+                    }
+                    if !user_item.is_empty() && !u_knocked && !is_mail(&user_item) {
+                        self.sides[_side].pokemon[_slot].pending_staleness = false;
+                    }
+                }
                 if self.logging() {
                     self.log.attr_last_move_still();
                     let user = self.mon_ref(_side, _slot, dex);
@@ -3542,6 +3672,12 @@ impl crate::state::BattleState {
             // The swap: the user GAINS the foe's item, the foe GAINS the user's item.
             self.sides[_side].pokemon[_slot].item = foe_item.clone();
             self.sides[foe].pokemon[foe_slot].item = user_item.clone();
+            // ENDLESS BATTLE CLAUSE (`gen3_b10_endless_battle_v1`): each holder's successful
+            // `takeItem` cleared its pending staleness, and each `setItem` (only for a side that
+            // RECEIVES an item) sets it — `'internal'`, since gen-3 Trick passes no `source`
+            // (`sim/pokemon.ts:1873-1876`). So a receiver is pending, a mon that only gave is not.
+            self.sides[foe].pokemon[foe_slot].pending_staleness = user_had;
+            self.sides[_side].pokemon[_slot].pending_staleness = foe_had;
             // Both Choice locks are released LAZILY (`gen3_choicelock_lazy_release_v1` — the
             // `apply_item_removal` twin): the lock-enforcing item changed on each side, so
             // `MonState::choice_lock_enforced` (a CURRENT-item read) stops enforcing it
@@ -4718,6 +4854,32 @@ impl crate::state::BattleState {
             Some(StatusMoveFail::Same)
         } else {
             Some(StatusMoveFail::Different)
+        }
+    }
+
+    /// The OUTGOING ability's `singleEvent('End', ...)` (`sim/pokemon.ts` setAbility / `sim/battle.ts`
+    /// skillSwap), shared by SKILL SWAP (both mons) and ROLE PLAY (the user): a `weather_negate`
+    /// holder (Cloud Nine / Air Lock `onEnd`: `abilityState.ending = true; eachEvent('WeatherChange')`)
+    /// fires an `each_event_shuffle` + `forecast_each_event` with its own suppression excluded (worth a
+    /// draw at a cached-speed TIE), and an ARMED Flash Fire (`flashfire.onEnd` →
+    /// `removeVolatile('flashfire')`) emits `|-end|<mon>|ability: Flash Fire|[silent]` and is cleared.
+    /// Every other gen-3 ability has no `onEnd`. Called BEFORE the ability field changes.
+    pub(crate) fn run_outgoing_ability_end(&mut self, s_i: usize, sl: usize, dex: &Dex) {
+        let negates = {
+            let m = &self.sides[s_i].pokemon[sl];
+            dex.ability(&to_id(&m.ability)).map(|a| a.weather_negate).unwrap_or(false)
+        };
+        if negates {
+            let order = self.each_event_shuffle();
+            let eff = self.effective_weather_excluding(Some(s_i), dex);
+            self.forecast_each_event(&order, eff, dex);
+        }
+        if self.sides[s_i].pokemon[sl].flash_fire {
+            if self.logging() {
+                let r = self.mon_ref(s_i, sl, dex);
+                self.log.volatile_end_silent(&r, "ability: Flash Fire");
+            }
+            self.sides[s_i].pokemon[sl].flash_fire = false;
         }
     }
 }

@@ -438,6 +438,11 @@ const MODELED_B5_MOVES = new Set(['spite', 'grudge', 'nightmare', 'ingrain']);
 // `gen_b7_moves_golden.js` → `tests/b7_moves_golden_test.rs`.
 const MODELED_B7_MOVES = new Set(['stockpile', 'swallow', 'mudsport', 'watersport', 'mist', 'lockon', 'mindreader']);
 
+// GEN3 FULL PARITY B10 (`gen3_b10_moves_v1`) — Teleport, Follow Me, Helping Hand, Role Play,
+// Camouflage (all category Status). Kept in lockstep with the src/turn/status_moves.rs B10 arms;
+// golden `gen_b10_moves_golden.js` → `tests/b10_moves_golden_test.rs`.
+const MODELED_B10_MOVES = new Set(['teleport', 'followme', 'helpinghand', 'roleplay', 'camouflage']);
+
 // FOCUS ENERGY (`gen3_focus_energy_move_v1`, ROUND 59) — a `target: self`, NEVER-MISS,
 // **DRAW-FREE** status move that sets the `focusenergy` volatile (+2 crit stages). The volatile
 // itself has been modelled since `gen3_ability_batch4_v1`; before this round the only way to reach
@@ -853,6 +858,7 @@ function isModeledMove(id, allowHiddenPower = false) {
       (SNATCH_E2E_EXCLUDED ? false : MODELED_SNATCH_MOVES.has(id)) ||
       MODELED_B5_MOVES.has(id) ||
       MODELED_B7_MOVES.has(id) ||
+      MODELED_B10_MOVES.has(id) ||
       MODELED_FOCUS_ENERGY_MOVES.has(id) ||
       // HAZE (`gen3_haze_v1`) — the boost-reset FIELD move, category Status + bit-for-bit modeled.
       (HAZE_E2E_EXCLUDED ? false : MODELED_HAZE_MOVES.has(id)) ||

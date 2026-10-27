@@ -503,6 +503,33 @@ impl ProtocolBuilder {
         }
     }
 
+    /// `|move|<user>|<MoveName>|null[|[from] <Effect>]|[notarget]` — the gen-3 `useMoveInner`
+    /// announce of a move whose target resolved to NOTHING (`gen3_b10_moves_v1`): HELPING HAND
+    /// (`target: adjacentAlly`) in singles, where `getRandomTarget` returns `null`
+    /// (`sim/battle.ts:2517-2518`). `addMove('move', pokemon, movename, `${target}${attrs}`)`
+    /// (`data/mods/gen3/scripts.ts:166`) stringifies the null target as the literal `null`, then
+    /// `attrLastMove('[notarget]')` appends the tag AFTER a Sleep-Talk `[from]` fold. Pair with
+    /// [`Self::notarget`]. Probe `harness/probe_b10_moves.js`.
+    pub fn move_used_notarget(&mut self, user: &MonRef, move_name: &str) {
+        if !self.enabled {
+            return;
+        }
+        let from = self.pending_move_from.take();
+        self.emit(|| {
+            let mut f = vec![Field::mon(user), text_or_empty(move_name), Field::text("null")];
+            if let Some(e) = &from {
+                f.push(Field::from_text(e));
+            }
+            f.push(Field::tag("[notarget]"));
+            Line::new(Kw::Move, f)
+        });
+    }
+    /// `|-notarget|<user>` — the gen&lt;=4 no-target outcome line (`data/mods/gen3/scripts.ts:170`;
+    /// gen 5+ prints `-fail` instead). `gen3_b10_moves_v1`.
+    pub fn notarget(&mut self, user: &MonRef) {
+        self.emit(|| Line::new(Kw::Notarget, vec![Field::mon(user)]));
+    }
+
     /// Retro-edit the MOST RECENT `|move|` line into the `[still]` did-nothing form —
     /// the port of `Battle.attrLastMove('[still]')` (battle.js: blank the TARGET field,
     /// `parts[4] = ''`, then append `|[still]`), turning
@@ -981,6 +1008,22 @@ impl ProtocolBuilder {
                 Field::text("Trace"),
                 Field::From(LineCause::Ability("Trace".into())),
                 Field::of(foe),
+            ])
+        });
+    }
+    /// `|-ability|<mon>|<New>|<Old>|[from] move: <Move>|[of] <source>` — a MOVE that set the
+    /// mon's ability (`gen3_b10_moves_v1`, ROLE PLAY): `Pokemon.setAbility`'s default reveal
+    /// (`sim/pokemon.ts` setAbility: `add('-ability', this, ability.name, oldAbility.name,
+    /// '[from] ' + sourceEffect.fullname, '[of] ' + source)`), the display names of the new and
+    /// the OLD ability. Probe `harness/probe_b10_moves.js`.
+    pub fn ability_from_move_of(&mut self, mon: &MonRef, new: &str, old: &str, move_name: &str, of: &MonRef) {
+        self.emit(|| {
+            Line::new(Kw::Ability, vec![
+                Field::mon(mon),
+                text_or_empty(new),
+                text_or_empty(old),
+                Field::From(LineCause::Move(move_name.into())),
+                Field::of(of),
             ])
         });
     }

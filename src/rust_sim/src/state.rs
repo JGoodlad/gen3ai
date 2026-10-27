@@ -1066,6 +1066,28 @@ pub struct MonState {
     /// While it is up, this mon's moves against THAT mon skip the Invulnerability miss and the
     /// accuracy roll. `duration: 2`, ticked by a NO_ORDER residual duration handler, ended silently.
     pub lock_on: Option<LockOn>,
+    /// ENDLESS BATTLE CLAUSE (`gen3_b10_endless_battle_v1`): the sim's `pokemon.volatileStaleness`
+    /// (`sim/pokemon.ts:291-292`), always `'external'` when set. SKILL SWAP sets it on its TARGET and
+    /// clears it on its user (`sim/battle.ts:1336-1337`); `clearVolatile` drops it at switch-out
+    /// (`sim/pokemon.ts:1555`). The only gen-3 source of EXTERNAL staleness.
+    pub volatile_staleness: bool,
+    /// The sim's permanent `pokemon.staleness` (`sim/pokemon.ts:287-288`). Always `'internal'` in
+    /// gen 3: `eatItem` of a RESTORATIVE berry (`RESTORATIVE_BERRIES`) promotes a pending staleness
+    /// (`sim/pokemon.ts:1788-1797`), and the only pending value gen 3 can produce is `'internal'` —
+    /// `setItem`'s `'external'` needs a Trick / Switcheroo that PASSES its `source`
+    /// (`sim/pokemon.ts:1873-1876`), and gen-3 Trick calls `target.setItem(myItem)` without one.
+    pub staleness: bool,
+    /// The sim's `pokemon.pendingStaleness` (`sim/pokemon.ts:289-290`), `'internal'` when set: EVERY
+    /// `setItem` (Trick, Thief, Covet, Recycle) sets it, every successful `takeItem` clears it
+    /// (`sim/pokemon.ts:1860`), and a restorative-berry `eatItem` consumes it.
+    pub pending_staleness: bool,
+    /// The SET's (never the live) item is a restorative berry — `RESTORATIVE_BERRIES.has(toID(pokemon.set.item))`
+    /// in the clause's loser test (`sim/battle.ts:1880`). Captured at construction: the port's
+    /// `set` is rewritten by Transform.
+    pub set_restorative_berry: bool,
+    /// The SET carries a berry-cycling means: its ability is Harvest / Pickup or its moves include
+    /// Recycle (`sim/battle.ts:1881-1883`). Captured at construction, like `set_restorative_berry`.
+    pub set_berry_cycle: bool,
 }
 
 /// The `lockon` volatile's state (`gen3_b7_moves_v1`): `effectState.source` (the locked mon,
@@ -1580,6 +1602,10 @@ impl MonState {
             );
         }
         let hp_bp = hidden_power_bp(&set.ivs); // read before `set` is moved into the struct
+        // The Endless Battle Clause's loser test reads the ORIGINAL set (`gen3_b10_endless_battle_v1`).
+        let set_restorative_berry = crate::turn::RESTORATIVE_BERRIES.contains(&crate::dex::to_id(&set.item).as_str());
+        let set_berry_cycle = crate::turn::BERRY_CYCLE_ABILITIES.contains(&crate::dex::to_id(&set.ability).as_str())
+            || set.moves.iter().any(|m| crate::dex::to_id(m) == "recycle");
         let set_gender = set.gender; // read before `set` is moved into the struct
         Ok(MonState {
             set,
@@ -1679,6 +1705,11 @@ impl MonState {
             mud_sport: false,
             water_sport: false,
             lock_on: None,
+            volatile_staleness: false,
+            staleness: false,
+            pending_staleness: false,
+            set_restorative_berry,
+            set_berry_cycle,
         })
     }
 

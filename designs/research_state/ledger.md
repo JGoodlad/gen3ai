@@ -29181,3 +29181,22 @@ OU goldens unchanged.
 **Found:** a multi-hit move kept striking after its user fell asleep (Effect Spore) or fainted (Rough Skin) mid-
 sequence; fixed in BF (`bf16`), which Triple Kick now shares. **Left:** the ladder corpus still drops teams carrying
 Psywave / Triple Kick (built before B8).
+
+## 2026-10-26 · RUST SIM · gen3 full parity B10: Teleport, Follow Me, Helping Hand, Role Play, Camouflage, and the Endless Battle Clause (moves 359 → 364 of 369)
+
+**B10** (`gen3_b10_moves_v1`, `gen3_b10_endless_battle_v1`, spec `harness/probe_b10_moves.js`; built by a subagent,
+merged onto B8 and gated here). In a trainer singles battle TELEPORT and FOLLOW ME fail at `Try` with no line beyond
+the announce and no draw; HELPING HAND has no ally (`|move|…|null|[notarget]` + `-notarget`), still counts as the last
+move. ROLE PLAY never misses (a mid-Bounce target excepted), fails `[still]` + `-fail` on the same ability or Wonder
+Guard, ends the old ability first, then `|-ability|…|[from] move: Role Play|[of] <t>`, and runs no Start in gen 3 (a
+copied Intimidate does nothing); a copied Own Tempo / Oblivious cures at the next Update through BF's cure (pins
+`bf12c`, `bf13b`, replacing B10's fail-loud). CAMOUFLAGE turns the user Normal through `types_override` and fails on a
+Normal mon. The ENDLESS BATTLE CLAUSE (every gen-3 singles format but Custom Game; `turn/endless.rs`): Skill Swap's
+external staleness on its target (cleared at switch-out), item staleness from Trick / Thief / Covet / Recycle made
+permanent by eating a restorative berry, and the endTurn trigger past turn 100 when every active is stale, one
+externally, and no side can switch to a fresh mon; the loser test reads the original sets. Golden 462 rows / 64
+boards (nine gen3ou clause boards past turn 100), 16 pins revert-verified.
+
+**OU-visible (FINDING):** the clause can now END a gen3ou battle (past turn 100, after a Skill Swap, 0.0081 % of OU
+mons, plus a Trick / Thief / Covet / Recycle berry cycle); the staleness hooks are hidden state otherwise. e2e capstone
+and obs golden unchanged. **Left:** the search world builder does not reconstruct staleness (offline only).

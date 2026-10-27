@@ -12,7 +12,18 @@ impl crate::state::BattleState {
     /// Figy family's confusion). Returns the eaten item's display name.
     fn eat_item(&mut self, side: usize, slot: usize, dex: &Dex) -> String {
         let item_id = to_id(&self.sides[side].pokemon[slot].item);
+        let restorative = super::RESTORATIVE_BERRIES.contains(&item_id.as_str());
         let display = dex.item(&item_id).map(|i| i.name.clone()).unwrap_or(item_id);
+        // ENDLESS BATTLE CLAUSE (`gen3_b10_endless_battle_v1`, `sim/pokemon.ts:1788-1797`): eating a
+        // RESTORATIVE berry promotes a pending (always internal in gen 3) staleness to the permanent
+        // one and consumes it; any other berry leaves the pending value alone.
+        if restorative {
+            let m = &mut self.sides[side].pokemon[slot];
+            if m.pending_staleness {
+                m.staleness = true;
+            }
+            m.pending_staleness = false;
+        }
         // RECYCLE (`gen3_recycle_v1`): `eatItem` sets `lastItem`. Every berry eat funnels here.
         self.sides[side].pokemon[slot].last_item = self.sides[side].pokemon[slot].item.clone();
         self.sides[side].pokemon[slot].item = String::new();
@@ -550,6 +561,12 @@ impl crate::state::BattleState {
             .unwrap_or_else(|| item_id.clone());
         // Remove from the target.
         self.sides[target_side].pokemon[target_slot].item = String::new();
+        // Thief / Covet's `target.takeItem(source)` succeeded: it clears the target's pending
+        // staleness (`sim/pokemon.ts:1860`, `gen3_b10_endless_battle_v1`). Knock Off does not call
+        // `takeItem` (it `runEvent('TakeItem')`s directly), so it leaves the pending value alone.
+        if is_steal {
+            self.sides[target_side].pokemon[target_slot].pending_staleness = false;
+        }
         // CHOICE-LOCK RELEASE (`gen3_move_coverage_batch4_v1` e2e_126, refined by
         // `gen3_choicelock_lazy_release_v1`): with the Choice Band GONE (Thief steals it /
         // Knock Off removes it) the mon can freely pick any move again — but the RELEASE is
@@ -572,6 +589,9 @@ impl crate::state::BattleState {
             // `to_id`, so the exact stored form is cosmetic — but keep it uniform).
             let move_name = if move_id == "thief" { "Thief" } else { "Covet" };
             self.sides[side].pokemon[slot].item = item_id.clone();
+            // `source.setItem(yourItem)`: every `setItem` sets the pending staleness, `'internal'`
+            // here (`sim/pokemon.ts:1873-1876`; `gen3_b10_endless_battle_v1`).
+            self.sides[side].pokemon[slot].pending_staleness = true;
             if self.logging() {
                 let target = self.mon_ref(target_side, target_slot, dex);
                 let user = self.mon_ref(side, slot, dex);

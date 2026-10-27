@@ -44,6 +44,7 @@ fn the_format_table_is_showdowns() {
         assert_eq!(r.beatup_nicknames, flag(row, "beatup_nicknames"), "{id}: beatup_nicknames");
         assert_eq!(r.ability_leak, flag(row, "ability_leak"), "{id}: ability_leak");
         assert_eq!(r.exact_hp, flag(row, "exact_hp"), "{id}: exact_hp");
+        assert_eq!(r.endless_battle_clause, flag(row, "endless_battle_clause"), "{id}: endless_battle_clause");
         let banned: Vec<String> = r.leak_banned_abilities.iter().map(|s| s.to_string()).collect();
         assert_eq!(banned, strs(row.get("leak_banned_abilities").unwrap()), "{id}: leak_banned_abilities");
         // The SetStatus shuffle is a tie of exactly two clause handlers.

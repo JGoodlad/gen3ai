@@ -44,6 +44,10 @@ pub struct FormatRules {
     pub leak_banned_abilities: &'static [&'static str],
     /// `debug: true` (Custom Game): every stream shows exact HP.
     pub exact_hp: bool,
+    /// Endless Battle Clause (`ruleTable.has('endlessbattleclause')`): past turn 100 the endTurn
+    /// staleness check may end the battle (`sim/battle.ts` maybeTriggerEndlessBattleClause;
+    /// `gen3_b10_endless_battle_v1`). Every gen-3 singles format but Custom Game carries it.
+    pub endless_battle_clause: bool,
 }
 
 impl FormatRules {
@@ -100,6 +104,7 @@ const fn standard_tier(id: &'static str, tier: &'static str, rules: &'static [&'
         ability_leak: true,
         leak_banned_abilities: &[],
         exact_hp: false,
+        endless_battle_clause: true,
     }
 }
 
@@ -117,6 +122,7 @@ pub static FORMATS: &[FormatRules] = &[
         ability_leak: false,
         leak_banned_abilities: &[],
         exact_hp: true,
+        endless_battle_clause: false,
     },
     FormatRules {
         id: "gen3draft",
@@ -142,6 +148,7 @@ pub static FORMATS: &[FormatRules] = &[
         ability_leak: true,
         leak_banned_abilities: &[],
         exact_hp: false,
+        endless_battle_clause: true,
     },
     standard_tier(
         "gen3lc",

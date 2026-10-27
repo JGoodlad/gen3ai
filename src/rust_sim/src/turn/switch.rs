@@ -411,6 +411,7 @@ impl crate::state::BattleState {
                 mon.mud_sport = false;
                 mon.water_sport = false;
                 mon.lock_on = None;
+                mon.volatile_staleness = false; // `clearVolatile` at faint (gen3_b10_endless_battle_v1)
                 // `faintMessages` decrements the side's live-mon count — the count `check_win`
                 // reads to END the battle (a side at `pokemon_left == 0` has lost). The `mon`
                 // borrow above ends before this disjoint-field write.
@@ -1203,6 +1204,9 @@ impl crate::state::BattleState {
             m.mud_sport = false;
             m.water_sport = false;
             m.lock_on = None;
+            // ENDLESS BATTLE CLAUSE (`gen3_b10_endless_battle_v1`): `clearVolatile` drops the Skill
+            // Swap `volatileStaleness` (`sim/pokemon.ts:1555`); the permanent item staleness stays.
+            m.volatile_staleness = false;
             // YAWN (`gen3_yawn_v1`): the pending delayed-sleep volatile clears on switch-out
             // (`clearVolatile`) — a mon that pivots out before the Yawn resolves comes back with no
             // pending sleep (a fresh Yawn is needed); noCopy so it is never Baton-Passed.

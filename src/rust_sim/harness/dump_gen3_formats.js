@@ -68,6 +68,8 @@ function rowFor(format) {
     ability_leak: !((rt.has('+hackmons') || !rt.has('obtainableabilities')) && !format.team),
     leak_banned_abilities: TRAP_ABILITIES.filter((a) => rt.has('-ability:' + a)),
     exact_hp: !!format.debug,
+    // sim/battle.ts maybeTriggerEndlessBattleClause: the staleness check past turn 100 (gen3_b10_endless_battle_v1).
+    endless_battle_clause: rt.has('endlessbattleclause'),
     max_level: rt.maxLevel,
     default_level: rt.defaultLevel,
     max_team_size: rt.maxTeamSize,

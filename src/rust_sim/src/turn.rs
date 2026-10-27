@@ -95,6 +95,7 @@ use crate::prng::PrngSeed;
 use crate::state::{Status, Weather, BOOST_LEN};
 
 mod driver;
+mod endless;
 mod forecast;
 // `pub(crate)` for ONE item — `helpers::happiness_bp`, which `bridge.rs`'s request emitter
 // needs so the Return/Frustration moveid alias cannot drift from the damage calc's own BP.
@@ -119,6 +120,8 @@ pub use moves::{RECHARGE_MOVES, SLEEP_USABLE_MOVES};
 pub use status_moves::{REFLECTABLE_MOVES, TARGET_BOOST_MOVES};
 /// The B8 move families (`gen3_b8_moves_v1`), public so their pins can check them against the dex.
 pub use variable_moves::{MAGNITUDE_TABLE, OHKO_MOVES, PRESENT_TABLE, RANDOM_BP_MOVES};
+pub use status_moves::ROLE_PLAY_FAIL_ABILITIES;
+pub use endless::{BERRY_CYCLE_ABILITIES, RESTORATIVE_BERRIES};
 
 /// The denominators `critMult[critRatio]` for gen ≤ 5 (`battle-actions.ts:1631`):
 /// index by the (clamped 0..5) crit ratio. A normal damaging move resolves to

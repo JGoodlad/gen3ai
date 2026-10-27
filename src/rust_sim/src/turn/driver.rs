@@ -1033,6 +1033,49 @@ impl FullBattleDriver {
                     self.phase = DrivePhase::Ended(None);
                     return;
                 }
+                // [endTurn -> maybeTriggerEndlessBattleClause] the ENDLESS BATTLE CLAUSE
+                // (`gen3_b10_endless_battle_v1`, `turn/endless.rs`): past turn 100, after the countdown
+                // `|bigerror|` (sim/battle.ts:1835-1849 precede the clause's rule check at 1851), it may end the
+                // battle with an optional `-message` and a win or a tie — returning before the Quick
+                // Claw roll and the `|turn|` line, so draw-free.
+                if let Some(outcome) = bs.endless_battle_clause_outcome(next_turn, dex) {
+                    use super::endless::EndlessOutcome;
+                    bs.turn = next_turn;
+                    let winner = match outcome {
+                        EndlessOutcome::Loses { loser } => Some(1 - loser),
+                        EndlessOutcome::BothCycled | EndlessOutcome::Tie => None,
+                    };
+                    if bs.logging() {
+                        if let Some(text) = turn_limit_warning(next_turn) {
+                            bs.log.bigerror(&text);
+                        }
+                        match outcome {
+                            EndlessOutcome::Loses { loser } => {
+                                let name = bs.sides[loser].name.clone();
+                                bs.log.clause_message(&format!(
+                                    "{name}'s team started with the rudimentary means to perform restorative \
+                                     berry-cycling and thus loses."
+                                ));
+                            }
+                            EndlessOutcome::BothCycled => bs.log.clause_message(
+                                "Each side's team started with the rudimentary means to perform restorative \
+                                 berry-cycling.",
+                            ),
+                            EndlessOutcome::Tie => {}
+                        }
+                        bs.log.separator();
+                        match winner {
+                            Some(side) => {
+                                let name = bs.sides[side].name.clone();
+                                bs.log.win(&name);
+                            }
+                            None => bs.log.tie(),
+                        }
+                    }
+                    self.decisions.push(bs.boundary_record(request, first_mover, dex));
+                    self.phase = DrivePhase::Ended(winner);
+                    return;
+                }
                 // PERSIST the endTurn Quick Claw roll — read NEXT turn by
                 // `effective_speed`/`update_speed` for the gen3 speed=65535 override.
                 bs.quick_claw_roll = bs.prng.random_chance(1, 5);

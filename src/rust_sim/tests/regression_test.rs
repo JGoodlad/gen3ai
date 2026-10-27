@@ -18487,3 +18487,67 @@ fn bf17_c_a_locked_ohko_into_a_digging_target_skips_the_level_check() {
         &["43514,9542,40559,8561", "43514,9542,40559,8561"],
     );
 }
+
+/// BF12c / BF13b (the B10 x BF merge; `gen3_bf_volatile_immune_onupdate_v1`): the same Update cures reached through
+/// ROLE PLAY (data/moves.ts:15325-15346; no Start in gen 3): a copied Own Tempo cures the confused user, a copied
+/// Oblivious ends the infatuated user's attract. Replaces B10's fail-loud B10-8.
+/// Ground truth: `harness/probe_bf_classes.js` (BF12c, BF13b).
+#[test]
+fn bf12_c_own_tempo_copied_by_role_play_cures_the_confused_user() {
+    bf_check(
+        "BF12c",
+        "gen3customgame",
+        "5,6,7,8",
+        "Alakazam||none|synchronize|roleplay,splash|Hardy|85,85,85,85,85,85|M||||",
+        "Slowbro||none|owntempo|confuseray,splash|Hardy|85,85,85,85,85,85|M||||",
+        &[ScriptDecision::both(Choice::Move(1), Choice::Move(0)), ScriptDecision::both(Choice::Move(0), Choice::Move(1))],
+        &[
+            "|move|p1a: Alakazam|Splash|p1a: Alakazam",
+            "|-nothing",
+            "|move|p2a: Slowbro|Confuse Ray|p1a: Alakazam",
+            "|-start|p1a: Alakazam|confusion",
+            "|upkeep",
+            "|turn|2",
+            "|-activate|p1a: Alakazam|confusion",
+            "|move|p1a: Alakazam|Role Play|p2a: Slowbro",
+            "|-ability|p1a: Alakazam|Own Tempo|Synchronize|[from] move: Role Play|[of] p2a: Slowbro",
+            "|-activate|p1a: Alakazam|ability: Own Tempo",
+            "|-end|p1a: Alakazam|confusion",
+            "|move|p2a: Slowbro|Splash|p2a: Slowbro",
+            "|-nothing",
+            "|upkeep",
+            "|turn|3",
+        ],
+        &["49988,3828,17110,61724", "51644,13992,14189,6510"],
+    );
+}
+
+#[test]
+fn bf13_b_oblivious_copied_by_role_play_ends_the_users_attract() {
+    bf_check(
+        "BF13b",
+        "gen3customgame",
+        "5,6,7,8",
+        "Alakazam||none|synchronize|roleplay,splash|Hardy|85,85,85,85,85,85|M||||",
+        "Jynx||none|oblivious|attract,splash|Hardy|85,85,85,85,85,85|F||||",
+        &[ScriptDecision::both(Choice::Move(1), Choice::Move(0)), ScriptDecision::both(Choice::Move(0), Choice::Move(1))],
+        &[
+            "|move|p1a: Alakazam|Splash|p1a: Alakazam",
+            "|-nothing",
+            "|move|p2a: Jynx|Attract|p1a: Alakazam",
+            "|-start|p1a: Alakazam|Attract",
+            "|upkeep",
+            "|turn|2",
+            "|-activate|p1a: Alakazam|move: Attract|[of] p2a: Jynx",
+            "|move|p1a: Alakazam|Role Play|p2a: Jynx",
+            "|-ability|p1a: Alakazam|Oblivious|Synchronize|[from] move: Role Play|[of] p2a: Jynx",
+            "|-end|p1a: Alakazam|Attract|[silent]",
+            "|-end|p1a: Alakazam|move: Attract|[from] ability: Oblivious",
+            "|move|p2a: Jynx|Splash|p2a: Jynx",
+            "|-nothing",
+            "|upkeep",
+            "|turn|3",
+        ],
+        &["4742,50088,47031,36837", "3090,29639,52671,47823"],
+    );
+}

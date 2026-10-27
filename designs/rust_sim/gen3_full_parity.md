@@ -31,16 +31,16 @@ cd harness && SCAN_UNIVERSE=1 node scan_move_coverage.js            # the 0-MISM
 `scan_move_probe` is the engine running, so its count cannot drift; the JS scan's universe verdict is a
 hand-mirrored copy of `turn.rs` and keeps only the invariant gate (`move_census.md`).
 
-## Summary (recounted 2026-10-26 after B8)
+## Summary (recounted 2026-10-26 after B10)
 
 | universe | gen3 ids | engine runs it | fails loud | how |
 |---|---:|---:|---:|---|
-| moves | 369 | **359** | **10** | `PROBE_KIND=move`; JS gate: 359 / 10 / **0 MISMODELED** |
+| moves | 369 | **364** | **5** | `PROBE_KIND=move`; JS gate: 364 / 5 / **0 MISMODELED** |
 | items | 106 | **106** | 0 | `PROBE_KIND=item` (B3 closed the last four) |
 | abilities | 76 | **76** | 0 | `PROBE_KIND=ability`; the handler audit dispositions every hook |
 | species | 392 | **392** | 0 | `PROBE_KIND=species` |
 | gen3-mod singles formats | 13 | **12** exact | **1** refused (`gen31v1`) | the format table below (B1) |
-| engine mechanics | — | — | — | the mechanics table below |
+| engine mechanics | — | — | — | the mechanics table below (M7, the Endless Battle Clause, B10) |
 
 The item universe was cross-checked against the resolved handlers: every gen3 item outside the modeled
 set has no battle handler (the fossils, evolution items, balls, the Pokéblock and EV berries, whose
@@ -68,7 +68,7 @@ bytes, framing, `maybeTrapped`).
 | `gen3nu` / `gen3pu` / `gen3zu` | 4,636 / 2,001 / 53,593 | 10 / 10 / 11 | 1 | | exact (B1) |
 | `gen3lc` | 18,514 | 12 | 1 | level 5 by the validator | exact (B1) |
 | `gen3randombattle` | — | 9 | 1 | | exact (B1) |
-| `gen3customgame` | — | 1 | 0 | exact HP, no clauses, Beat Up shows its allies | exact |
+| `gen3customgame` | — | 1 | 0 | exact HP, no clauses (no Endless Battle Clause either), Beat Up shows its allies | exact |
 | `gen31v1` | 20,656 | — | — | Team Preview, picked team size 1 | **refused** (no team-preview phase) |
 
 "Battles (sample)" is the Smogon chaos `number of battles` summed over the months in § Usage. **Before
@@ -91,7 +91,7 @@ mod) are other mods with their own data. Every one of them is an `Err` at constr
 | M4 | team size > 6, more than 4 moves (`gen3customgame`: up to 24 each) | more than 6 mons **refused** (B1, ungated); up to 24 moves run (a 6-move set is pinned, `regression_test.rs` WB1), a 25th refused | — | B1 |
 | M5 | Team Preview + picked team size (`gen31v1`) | not modeled, **refused** (B1) | — | a construction-phase extension, not scheduled |
 | M6 | the construction-time gender draw (`sample(['M','F'])`) | drawn on the raw-seed bridge path (`run_turn0_construction`); the post-construction-seed path (`start_with_switchins`, the goldens and fuzzers) cannot know a sampled gender, so Attract and Cute Charm PANIC on an unspecified one (fail-loud) and every harness pins genders | — | B9: resolved by design |
-| M7 | Endless Battle Clause staleness (Skill Swap's external `volatileStaleness`, restorative-berry cycling through Trick / Recycle) | **not modeled, silent** | the clause can never end a battle in the port; reaching it needs both actives stale past turn 100. Affects `gen3ou` too (rare) | B10 |
+| M7 | Endless Battle Clause staleness (`FormatRules::endless_battle_clause`, every format but Custom Game) | **done** (B10, `gen3_b10_endless_battle_v1`, `turn/endless.rs`): Skill Swap's external `volatileStaleness`, the internal staleness of a restorative berry eaten after a `setItem` (Trick / Thief / Covet / Recycle; gen 3 has no external item staleness and no PP staleness), the past-turn-100 trigger, the trapped / can-switch test and the set-based loser test with its `-message` / win / tie | before B10 the clause could never end a battle in the port. Pinned by targeted boards (`tests/b10_moves_test.rs` B10-11..15, the `ebc_*` golden rows), not by random battles | B10 |
 | M8 | Psywave from a user below level 100 into a Substitute | **refused** at the hit (B8): Showdown takes the RAW `random(50, 151) * level / 100` float off the sub's HP (`data/mods/gen4/moves.ts` substitute), leaving a fractional sub HP the port does not hold; every fuzz mode that picks Psywave plays level 100 | — | B8: fail-loud by design |
 
 ## Implemented, and known to diverge
@@ -130,7 +130,7 @@ The downloads and scripts were a one-off measurement in a scratch directory, not
 by fetching `https://www.smogon.com/stats/<YYYY-MM>/chaos/<tier>-0.json` for the months listed per tier
 in the index pages and applying the formula above.
 
-## The ranked gap: 10 moves
+## The ranked gap: 5 moves
 
 Usage columns are percentages of fielded mons (ladder) or of battles (replays). Risk: **S** reuses
 existing machinery; **M** adds a self-contained volatile or mechanic; **L** crosses many mechanics (a
@@ -142,12 +142,7 @@ calls arbitrary moves).
 | metronome | move-caller | 0.062 | 0.054 | 0.055 | 1v1 0.22 | 0.224 | 55 | L | B11 |
 | assist | move-caller | 0.015 | 0.000 | 0.022 | ru 0.07 | 0.010 | 10 | L | B11 |
 | mirrormove | move-caller | 0.006 | 0.001 | 0.006 | lc 0.01 | 0.013 | 19 | L | B11 |
-| camouflage | type change | 0.003 | 0.000 | 0.003 | 1v1 0.03 | 0.000 | 3 | S | B10 |
-| followme | redirect | 0.001 | 0.000 | 0.001 | uu 0.01 | 0.000 | 13 | S | B10 |
-| teleport | escape | 0.001 | 0.000 | 0.001 | lc 0.00 | 0.000 | 11 | S | B10 |
-| roleplay | ability copy | 0.001 | 0.000 | 0.001 | uu 0.01 | 0.000 | 8 | M | B10 |
 | sketch | move-caller | 0.000 | 0.001 | 0.000 | 1v1 0.00 | 0.003 | 1 | L | B11 |
-| helpinghand | ally boost | 0.000 | 0.000 | 0.000 | uu 0.00 | 0.000 | 56 | S | B10 |
 | naturepower | move-caller | 0.000 | 0.000 | 0.000 | uubl 0.00 | 0.003 | 14 | L | B11 |
 
 A batch's moves leave this table once modeled (B8's nine included the four OHKO moves, which the OHKO Clause bans
@@ -174,6 +169,6 @@ commit.
 | B7 | Stockpile, Spit Up, Swallow, Mud Sport, Water Sport, Mist, Lock-On, Mind Reader | shipped |
 | B8 | Bide, Magnitude, Psywave, Present, Triple Kick, the four OHKO moves | shipped |
 | B9 | Attract (M6 resolved by design: harnesses pin genders); the Custom Game EV-balance warning | shipped |
-| B10 | Teleport, Follow Me, Helping Hand, Role Play, Camouflage, Endless Battle Clause staleness (M7) | open |
+| B10 | Teleport, Follow Me, Helping Hand, Role Play, Camouflage, Endless Battle Clause staleness (M7) | shipped |
 | B11 | Metronome, Mirror Move, Assist, Nature Power, Sketch | open |
 | BF | the fix batch: Rage, Fury Cutter, Uproar's wake, Smelling Salts, False Swipe, Rest by an Insomnia user, the Pursuit interrupt's last move, the defrost thaw, a fainted future-move caster's ident, Lansat on a focused holder, a Mimic'd Curse's request target | WIP (`gen3-bfix`) |

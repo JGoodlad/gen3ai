@@ -324,3 +324,12 @@ run('BF17b lockon ohko: a lower-level user is still immune', 'gen3customgame', [
   LV('Snorlax', 'thickfat', 'splash', 100), [M(1, 1), M(2, 1)]);
 run('BF17c lockon ohko: a locked digging target skips the level check', 'gen3customgame', [1, 2, 3, 4], SMEARGLE_LO(50),
   LV('Dugtrio', 'arenatrap', 'dig,splash', 100), [M(1, 2), M(2, 1)]);
+// ---- BF12c / BF13b (the B10 x BF merge) the same Update cures through ROLE PLAY ----
+// Role Play (data/moves.ts:15325-15346) sets the copied ability without a Start (gen 3); a copied Own Tempo on a
+// confused user / Oblivious on an infatuated user is cured at the Update after the move, as through Skill Swap.
+run('BF12c own tempo: copied by role play cures the confused user', 'gen3customgame', [5, 6, 7, 8],
+  SET('Alakazam', 'synchronize', 'roleplay,splash'), SET('Slowbro', 'owntempo', 'confuseray,splash'),
+  [M(2, 1), M(1, 2)]);
+run('BF13b oblivious: copied by role play ends the attract on the user', 'gen3customgame', [5, 6, 7, 8],
+  SET('Alakazam', 'synchronize', 'roleplay,splash'),
+  'Jynx||none|oblivious|attract,splash|Hardy|85,85,85,85,85,85|F||||', [M(2, 1), M(1, 2)]);

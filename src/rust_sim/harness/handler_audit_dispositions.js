@@ -162,12 +162,10 @@ for (const id of ['clearbody', 'whitesmoke', 'hypercutter', 'keeneye']) {
 // Own Tempo / Oblivious.
 add([ab('owntempo', 'onTryAddVolatile')], IMPL('turn.rs::add_confusion', 'the confusion add block'));
 add([ab('owntempo', 'onHit')], NOOP('display-only: the `-immune` line for a confusion-VOLATILE move (Confuse Ray etc. — no such move is modeled anyway); the block itself is onTryAddVolatile'));
-add([ab('owntempo', 'onUpdate')], UNREACH(
-  'cures a confusion the holder already has — unreachable: volatiles clear on switch-out, so a TRACE copy (the only ability-gain route) can never find a pre-existing confusion, and a direct add is blocked at onTryAddVolatile'));
+add([ab('owntempo', 'onUpdate')], IMPL('items.rs::volatile_immune_on_update', 'cures a confusion the holder already has, reached by GAINING Own Tempo while confused through Skill Swap or Role Play: -activate|<mon>|ability: Own Tempo, -end|<mon>|confusion at the next Update (gen3_bf_volatile_immune_onupdate_v1, pins bf12a-c)'));
 add([ab('oblivious', 'onImmunity')], IMPL('turn.rs::try_add_attract', 'the attract immunity gate (batch-4 attract via Cute Charm)'));
 add([ab('oblivious', 'onTryHit')], UNREACH('gates CAPTIVATE only — a gen4 move, not in the gen3 universe'));
-add([ab('oblivious', 'onUpdate')], UNREACH(
-  'removes an attract the holder already has — unreachable: attract clears when the holder switches out, so a TRACE copy can never find a pre-existing attract, and a direct add is blocked at the onImmunity gate'));
+add([ab('oblivious', 'onUpdate')], IMPL('items.rs::volatile_immune_on_update', 'ends an attract the holder already has, reached by GAINING Oblivious while infatuated through Skill Swap or Role Play: -end|<mon>|Attract|[silent], -end|<mon>|move: Attract|[from] ability: Oblivious at the next Update (gen3_bf_volatile_immune_onupdate_v1, pins bf13a-b)'));
 
 // NOOP_ABILITIES residues + guards.
 add([ab('pressure', 'onDeductPP')], IMPL('turn.rs::pressure_extra', 'the foe-Pressure +1 PP deduction (gen3_pp_tracking_v1, VERIFIED −2 total)'));
@@ -753,6 +751,22 @@ add([cond('lockon', 'onSourceInvulnerability'), cond('lockon', 'onSourceInvulner
   IMPL('moves.rs::semi_invulnerable_miss', 'priority 1, ahead of the Fly / Dig / Dive / Bounce handlers: the locked target is not missed (damaging, status, fixed-damage, Future Sight, Perish Song)'));
 add([cond('lockon', 'duration')],
   IMPL('residuals.rs::run_residuals', 'a NO_ORDER / subOrder-2 duration handler at the holder speed, ended silently at 0; Baton-Passed with its target and duration'));
+// GEN3 FULL PARITY B10 (`gen3_b10_moves_v1`) — Teleport, Follow Me, Helping Hand, Role Play, Camouflage. The
+// settled spec is harness/probe_b10_moves.js; the differential is tests/b10_moves_golden_test.rs.
+add([mv('teleport', 'onTry'), mv('teleport', 'ignoreImmunity'), mv('teleport', 'neverMiss')],
+  IMPL('status_moves.rs::run_status_move', 'the teleport arm: the resolved gen-7-mod onTry: false fails at tryMoveHit Try with no line — the bare announce, ZERO draws (a trainer battle cannot flee)'));
+add([mv('followme', 'onTry'), mv('followme', 'ignoreImmunity'), mv('followme', 'neverMiss'), mv('followme', 'priority')],
+  IMPL('status_moves.rs::run_status_move', 'the followme arm: onTry activePerHalf > 1 is false in singles — the bare announce, ZERO draws; priority 3 rides the dex row'));
+add([mv('followme', 'slotCondition'), cond('followme', 'duration'), cond('followme', 'onStart'), cond('followme', 'onFoeRedirectTarget'), cond('followme', 'onFoeRedirectTargetPriority')],
+  UNREACH('the followme slot condition is added only after onTry passes, which needs activePerHalf > 1 — a doubles battle; in singles it never starts (no -singleturn, no residual duration handler; probe_b10_moves.js followme vs a Splash control)'));
+add([mv('helpinghand', 'ignoreImmunity'), mv('helpinghand', 'neverMiss'), mv('helpinghand', 'priority')],
+  IMPL('status_moves.rs::run_status_move', 'the helpinghand arm: adjacentAlly resolves to no target in singles (getRandomTarget null) — |move|<u>|Helping Hand|null|[notarget]| + |-notarget|<u>, ZERO draws; priority 5 rides the dex row'));
+add([mv('helpinghand', 'onTryHit'), mv('helpinghand', 'volatileStatus'), cond('helpinghand', 'duration'), cond('helpinghand', 'onStart'), cond('helpinghand', 'onRestart'), cond('helpinghand', 'onBasePower'), cond('helpinghand', 'onBasePowerPriority')],
+  UNREACH('gen-3 useMoveInner returns at the null target before TryMove / tryMoveHit, so onTryHit never runs and the helpinghand volatile (the ally BP boost) is never added in singles'));
+add([mv('roleplay', 'onTryHit'), mv('roleplay', 'onHit'), mv('roleplay', 'ignoreImmunity'), mv('roleplay', 'neverMiss')],
+  IMPL('status_moves.rs::run_status_move', 'the roleplay arm: same-id / ROLE_PLAY_FAIL_ABILITIES (Wonder Guard) fail [still] + -fail; else run_outgoing_ability_end, |-ability|<u>|<New>|<Old>|[from] move: Role Play|[of] <t>, no gen-3 Start; Own Tempo while confused / Oblivious while attracted PANIC (their Update cure is unmodeled)'));
+add([mv('camouflage', 'onHit'), mv('camouflage', 'ignoreImmunity'), mv('camouflage', 'neverMiss')],
+  IMPL('status_moves.rs::run_status_move', 'the camouflage arm: hasType(Normal) fails [still] + -fail; else types_override [Normal] + mark_type_known + |-start|<u>|typechange|Normal; snatchable through the generic interception'));
 add([mv('endure', 'onPrepareHit'), mv('endure', 'stallingMove'), mv('endure', 'priority'), mv('endure', 'onHit'), mv('endure', 'volatileStatus'), cond('endure', 'onStart')],
   IMPL('turn.rs::run_protect', 'the endure arm rides the SHARED protect stallingMove machinery (willAct gate + randomChance(1,counter) 2→4→8 no-delete-on-fail; priority 4); success sets MonState::endure'));
 add([cond('endure', 'onDamage'), cond('endure', 'onDamagePriority')],
