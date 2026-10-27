@@ -252,14 +252,18 @@ replicated on the 1,600 PastaMittens twins · `c758fcb82`; `measurements/pilotin
   −0.32]**, a real in-pool cost. [`eb99ab362`; ledger 2026-10-24 · *X35 D1 LOOK 2*]
 - **Plain training (X26c, 2026-10-25).** 380M → 480M: U 0.4875 vs P\* 0.4867, **+0.08 pp [−3.90, +4.06]**, FLAT;
   in-house S −0.01; the 290–380M drift (+2.05 pp / 100M) did not continue. Kakuna-cell play is deterministic per
-  (model, seed): P\* re-played at current code reproduced X51 game for game. [`204204bbf`; ledger 2026-10-25 · *X26c
+  (model, seed, ENGINE): P\* re-played on E1 reproduced X51 (E0) on 1,200 / 1,200 games. Across an engine that changed
+  what our side observes, OUR policy diverges in about 1 % of games, Kakuna never first
+  (`measurements/kakuna_determinism_2026-10-27/`). [`204204bbf`; ledger 2026-10-25 · *X26c
   CONTINUATION vs KAKUNA*]
 - **Set mutation (D3 / X41, look 1, 2026-10-26).** 30 % of each side's teams from 2,876 variants of our 719 pool
   teams with 1–2 mons' sets redrawn from Smogon: **+1.27 pp [−2.63, +5.16]** (per seed +2.4 / −2.9 / +4.3),
   CONTINUE to look 2; in-house **−0.24 pp [−1.10, +0.62], NON-INFERIOR**. **Read across two Rust engines** (REVIEW F F-M2; `designs/tools/reads.md` §4): D3's games ran on engine E2,
   C0's banked rows (D1's games) on E1, before the 10-25 observation / label and engine fixes (`d8d674b99`,
   `f9978586b`). The guard's 140 / 140 identical replayed games bound the divergence below about 2.1 % of games
-  (95 %), so a bias of Δ̂'s size is unlikely but not excluded [INFERRED]. Look 2 plays every game on E1
+  (95 %). The rate measured since is 11 / 1,260 games E1 vs E3, all our own choices, nearly all after a Destiny Bond or an Endure.
+  On forum72 it moved C0 by +4 wins in 420 (+0.95 pp), the same order as Δ̂, so a bias of Δ̂'s size is not excluded
+  [MEASURED rate; INFERRED bias] (`measurements/kakuna_determinism_2026-10-27/`). Look 2 plays every game on E1
   (PREREG AM-D3-ENG). [`58287c525`; ledger 2026-10-26 ·
   *X41 D3 LOOK 1* and its CORRECTION]
 - **The belief prior mix (2026-10-26).** P\*'s learned belief deltas are confidently wrong off the pool: 63–85 % of

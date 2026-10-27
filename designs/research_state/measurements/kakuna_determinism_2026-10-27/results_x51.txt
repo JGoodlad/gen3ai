@@ -1,0 +1,7 @@
+x26c (E1) {'units': 60, 'games': 1200, 'forum72': 400, 'x51_commit:63f97a575': 60, 'heldout72_hpfix': 400, 'p72': 400} differ: 0
+hctx am1 (E-main1026) {'units': 2, 'games': 40, 'forum72': 20, 'x51_commit:63f97a575': 2, 'home72': 20} differ: 0
+hctx am2 (E-su) {'units': 24, 'games': 480, 'forum72': 240, 'x51_commit:63f97a575': 24, 'home72': 240} differ: 1
+     ('forum72', 2, ('peer_challenge', 19, 'sft054.txt', 'loss', 23), ('peer_challenge', 19, 'sft054.txt', 'loss', 34, '63f97a575'))
+belief mix guard (E1) {'units': 8, 'games': 160, 'forum72': 40, 'x51_commit:63f97a575': 8, 'heldout72_hpfix': 40, 'home72': 40, 'p72': 40} differ: 0
+hctx guard {'units': 2, 'games': 40, 'heldout72_hpfix': 20, 'x51_commit:63f97a575': 2, 'home72': 20} differ: 0
+x59s identity {} differ: 0

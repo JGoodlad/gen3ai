@@ -366,16 +366,35 @@ git (`engine_at`: the stamp's listing at that commit, plus the untracked `Cargo.
 **Mixed-engine comparisons in shipped records.** Each was guarded game for game. No verdict is shown to be affected.
 1. **D3 look 1** (CONTINUE): ON was played on E2 against C0 banked from D1 on E1 (H, and P). The E1 → E2 Rust diff is
    `f9978586b` (lock-in and recharge counters) and `d8d674b99` (encoder input fixes). The guard reproduced 140 / 140
-   games, which bounds divergence at < 2.1 % of games (95 %, three over 140) against Δ̂ = +1.27 pp.
+   games, which bounds divergence at < 2.1 % of games (95 %, three over 140) against Δ̂ = +1.27 pp. The rate measured
+   later is 1 / 420 on that panel and 11 / 1,260 across three panels (below), so P(140 / 140) ≈ 0.72: low exposure,
+   not luck. On forum72 the shift was +4 wins in 420 (+0.95 pp) for the newer engine.
 2. **Belief prior mix** (NOT DETECTED, both arms): the arms were played on E1 against X51's banked λ = 0 on E0. The
-   guard reproduced 80 / 80 games, and x26c FINDING 1 re-played P\* on E1 with X51's wins on all 60 units.
-
+   guard reproduced 80 / 80 games per arm. x26c FINDING 1 re-played P\* on E1, and all 1,200 of its games equal
+   X51's (measured game for game, 2026-10-27).
 3. **Metamon strongest** (PastaMittens; Δ-U −0.25 pp, NOT DETECTED) and **human-only vs P\*** (FR-1 / FR-3; Δ-K
    +0.14 to +0.30): both were played on E1 and read Δ against X51's Kakuna rows on E0. The identity unit reproduced
    20 / 20 games. The human-only Δs are far beyond any engine bias.
 
 Re-decided by this code, items 1 and 2 refuse at `inputs`; item 3's scripts predate `main.reads`. The recorded
 verdicts stand as recorded.
+
+**Replay determinism, measured** (`measurements/kakuna_determinism_2026-10-27/`):
+- **On one engine, a counted Kakuna unit replays exactly.** Across every replayed unit in the archive whose two plays
+  sit on the same side of an observation change, 0 of 2,100 games differ (95 % upper bound 0.14 %). Kakuna's choices
+  never differ first; threads are pinned to 1.
+- **Across `d8d674b99`** (`gen3_volatile_silent_ends_v1`, inside E1 → E2), our own greedy policy sees a different
+  input after a Destiny Bond or an Endure (11 of the 12 protocol-changing divergences):
+  - **E1 vs E3:** 11 of 1,260 games differ by 5-tuple (forum72 6 / 420, p72 4 / 420, heldout72_hpfix 1 / 420), and
+    15 by choice. Each one is OUR choice, made from a byte-identical protocol.
+  - **E0 → E1** crosses no such change: 1,360 of 1,360 games are equal.
+- **So the rate belongs to the engine pair and the panel, not to Kakuna**, and a guard proves exactness only on one
+  engine. The one same-engine divergence is H5 (`EXTERNAL_ANCHORS_SOP.md`): its unit is `peer_clean = False` and is
+  dropped whole, because the fault also corrupts the game after the peer's forfeit.
+- **The guard compares each game's 5-tuple, not its choices.** The 5-tuple misses about a quarter of the
+  divergences (11 vs 15), those that change neither the result nor the turn count.
+- **The engine key is the Rust build.** A Python-only change to the play path between two commits on one engine is
+  invisible to it. Only `repin`'s play-path identity (§3) or a game-for-game guard catches one.
 
 ### The Kakuna team pack (`gen3_peer_showdown_pack_v1`; `EXTERNAL_ANCHORS_SOP.md` H22, 2026-10-27)
 

@@ -1,0 +1,37 @@
+### forum72 C0 E1(D1) vs E3(N1-P look1): {'games': 420, 'equal': 414, 'bytes_identical': 387, 'order_only': 26}; games with a Destiny Bond / Endure / Grudge / Rage / Snatch / Helping Hand: 48/420
+    ('c0_s3501__forum72__01', 'battle-gen3ou-9', False, ('win', 23), ('win', 22), ('protocol', ['ours', 'kakuna'], True, ({'p1': ('move', 'Flamethrower')}, {'p1': ('switch', 'Forretress, F'), 'p2': ('move', 'Reversal')})))
+    ('c0_s3501__forum72__02', 'battle-gen3ou-16', False, ('loss', 55), ('win', 93), ('protocol', ['ours'], True, ({'p1': ('cant', 'slp'), 'p2': ('move', 'Ice Beam')}, {'p1': ('cant', 'slp'), 'p2': ('move', 'Sing')})))
+    ('c0_s3501__forum72__04', 'battle-gen3ou-8', False, ('loss', 64), ('win', 105), ('protocol', ['ours'], True, ({'p1': ('move', 'Destiny Bond'), 'p2': ('move', 'Flamethrower')}, {'p1': ('move', 'Ice Punch'), 'p2': ('move', 'Flamethrower')})))
+    ('c0_s3502__forum72__04', 'battle-gen3ou-18', False, ('loss', 73), ('win', 74), ('protocol', ['ours'], True, ({'p2': ('switch', 'Tyranitar, M'), 'p1': ('move', 'Soft-Boiled')}, {'p2': ('move', 'Hypnosis'), 'p1': ('move', 'Soft-Boiled')})))
+    ('c0_s3503__forum72__02', 'battle-gen3ou-9', True, ('loss', 27), ('loss', 27), ('choice-unexecuted', 'p1'))
+    ('c0_s3503__forum72__02', 'battle-gen3ou-19', False, ('loss', 34), ('loss', 42), ('protocol', ['ours'], True, ({'p2': ('switch', 'Magneton'), 'p1': ('move', 'Thunderbolt')}, {'p2': ('move', 'Endure'), 'p1': ('move', 'Thunderbolt')})))
+    ('c0_s3503__forum72__05', 'battle-gen3ou-14', False, ('loss', 27), ('win', 32), ('protocol', ['ours'], True, ({'p2': ('move', 'Giga Drain')}, {'p2': ('move', 'Thunder')})))
+### heldout72_hpfix C0 E1(D1) vs E2(D3 guard): {'games': 140, 'equal': 140, 'bytes_identical': 136, 'order_only': 4}; games with a Destiny Bond / Endure / Grudge / Rage / Snatch / Helping Hand: 9/140
+### p72 n1p_s3503 u03 E3 vs E3: {'games': 20, 'equal': 18, 'bytes_identical': 15, 'order_only': 3}; games with a Destiny Bond / Endure / Grudge / Rage / Snatch / Helping Hand: 0/20
+    ('n1p_s3503__p72__03.partial.1793091066', 'battle-gen3ou-16', False, ('win', 1), ('loss', 152), ('forcelose', ['kakuna', 'ours']))
+    ('n1p_s3503__p72__03.partial.1793091066', 'battle-gen3ou-17', False, ('win', 30), ('win', 38), ('protocol', ['kakuna'], False, ({'p2': ('cant', 'slp'), 'p1': ('move', 'Counter')}, {'p1': ('switch', 'Heracross, M'), 'p2': ('cant', 'slp')})))
+### p72 C0 E1 vs E3: {'games': 420, 'equal': 416, 'bytes_identical': 389, 'order_only': 24}; games with a Destiny Bond / Endure / Grudge / Rage / Snatch / Helping Hand: 45/420
+    ('c0_s3501__p72__00', 'battle-gen3ou-1', True, ('win', 37), ('win', 37), ('protocol', ['ours'], True, ({'p2': ('move', 'Thunderbolt')}, {'p1': ('switch', 'Snorlax, M'), 'p2': ('move', 'Thunderbolt')})))
+    ('c0_s3501__p72__01', 'battle-gen3ou-9', True, ('loss', 44), ('loss', 44), ('choice-unexecuted', 'p1'))
+    ('c0_s3502__p72__01', 'battle-gen3ou-9', False, ('win', 83), ('win', 87), ('protocol', ['ours'], False, ({'p1': ('move', 'Thunderbolt'), 'p2': ('move', 'Roar')}, {'p1': ('move', 'Thunder Wave'), 'p2': ('move', 'Roar')})))
+    ('c0_s3503__p72__00', 'battle-gen3ou-1', False, ('loss', 49), ('loss', 20), ('protocol', ['ours'], True, ({'p2': ('move', 'Aromatherapy'), 'p1': ('move', 'Will-O-Wisp')}, {'p1': ('switch', 'Heracross, M'), 'p2': ('move', 'Aromatherapy')})))
+    ('c0_s3503__p72__00', 'battle-gen3ou-11', False, ('win', 35), ('loss', 31), ('protocol', ['ours'], True, ({'p1': ('move', 'Aromatherapy'), 'p2': ('move', 'Will-O-Wisp')}, {'p2': ('switch', 'Heracross, M'), 'p1': ('move', 'Aromatherapy')})))
+    ('c0_s3503__p72__01', 'battle-gen3ou-9', True, ('win', 97), ('win', 97), ('choice-unexecuted', 'p1'))
+    ('c0_s3503__p72__04', 'battle-gen3ou-16', False, ('win', 38), ('win', 34), ('protocol', ['ours'], True, ({'p2': ('move', 'Endure'), 'p1': ('move', 'Hidden Power')}, {'p1': ('move', 'Hidden Power')})))
+### heldout72 C0 E1 vs E3: {'games': 420, 'equal': 419, 'bytes_identical': 410, 'order_only': 9}; games with a Destiny Bond / Endure / Grudge / Rage / Snatch / Helping Hand: 26/420
+    ('c0_s3503__heldout72_hpfix__04', 'battle-gen3ou-16', False, ('loss', 63), ('loss', 36), ('protocol', ['ours'], True, ({'p2': ('move', 'Endure'), 'p1': ('move', 'Dragon Dance')}, {'p1': ('move', 'Dragon Dance'), 'p2': ('move', 'Substitute')})))
+### P* forum72 E1(x26c) vs E-su(hctx am2): {'games': 240, 'equal': 239, 'bytes_identical': 227, 'order_only': 9}; games with a Destiny Bond / Endure / Grudge / Rage / Snatch / Helping Hand: 15/240
+    ('pstar__forum72__02', 'battle-gen3ou-19', False, ('loss', 34), ('loss', 23), ('protocol', ['ours'], True, ({'p2': ('switch', 'Tyranitar, F'), 'p1': ('move', 'Rock Slide')}, {'p1': ('move', 'Rock Slide')})))
+    ('pstar__forum72__01', 'battle-gen3ou-9', True, ('loss', 23), ('loss', 23), ('protocol', ['ours'], True, ({'p2': ('move', 'Reversal')}, {'p1': ('switch', 'Tyranitar, M'), 'p2': ('move', 'Reversal')})))
+    ('pstar__forum72__05', 'battle-gen3ou-14', True, ('win', 26), ('win', 26), ('choice-unexecuted', 'p2'))
+    ('pstar__forum72__10', 'battle-gen3ou-11', True, ('loss', 42), ('loss', 42), ('protocol', ['ours'], True, ({'p2': ('move', 'Endure'), 'p1': ('move', 'Thunderbolt')}, {'p1': ('move', 'Thunderbolt')})))
+### H5 pstar forum72 u00 hctx am1 faulted vs clean: {'games': 20, 'equal': 18, 'bytes_identical': 17, 'order_only': 1}; games with a Destiny Bond / Endure / Grudge / Rage / Snatch / Helping Hand: 2/20
+    ('pstar__forum72__00.partial.1793087192', 'battle-gen3ou-17', False, ('win', 1), ('win', 71), ('forcelose', ['kakuna', 'ours']))
+    ('pstar__forum72__00.partial.1793087192', 'battle-gen3ou-18', False, ('win', 130), ('loss', 56), ('protocol', ['kakuna'], False, ({'p2': ('switch', 'Blissey, F'), 'p1': ('move', 'Hidden Power')}, {'p1': ('move', 'Pursuit'), 'p2': ('switch', 'Blissey, F')})))
+### H5 pstar forum72 u00 bpm faulted vs clean: {'games': 20, 'equal': 18, 'bytes_identical': 17, 'order_only': 1}; games with a Destiny Bond / Endure / Grudge / Rage / Snatch / Helping Hand: 2/20
+    ('pstar__forum72__00.partial.1792979603', 'battle-gen3ou-17', False, ('win', 1), ('win', 71), ('forcelose', ['kakuna', 'ours']))
+    ('pstar__forum72__00.partial.1792979603', 'battle-gen3ou-18', False, ('win', 130), ('loss', 56), ('protocol', ['kakuna'], False, ({'p2': ('switch', 'Blissey, F'), 'p1': ('move', 'Hidden Power')}, {'p1': ('move', 'Pursuit'), 'p2': ('switch', 'Blissey, F')})))
+### H5 pstar forum72 u00 faulted(hctx am1) vs faulted(bpm): {'games': 20, 'equal': 20, 'bytes_identical': 20, 'order_only': 0}; games with a Destiny Bond / Endure / Grudge / Rage / Snatch / Helping Hand: 2/20
+### H5 p72 n1p_s3503 u03 faulted vs clean (E3): {'games': 20, 'equal': 18, 'bytes_identical': 15, 'order_only': 3}; games with a Destiny Bond / Endure / Grudge / Rage / Snatch / Helping Hand: 0/20
+    ('n1p_s3503__p72__03.partial.1793091066', 'battle-gen3ou-16', False, ('win', 1), ('loss', 152), ('forcelose', ['kakuna', 'ours']))
+    ('n1p_s3503__p72__03.partial.1793091066', 'battle-gen3ou-17', False, ('win', 30), ('win', 38), ('protocol', ['kakuna'], False, ({'p2': ('cant', 'slp'), 'p1': ('move', 'Counter')}, {'p1': ('switch', 'Heracross, M'), 'p2': ('cant', 'slp')})))

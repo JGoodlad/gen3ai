@@ -1,0 +1,31 @@
+('E-main1026', 'E-su', 'forum72'): 1 unit pairs, 20 games, 0 differ
+('E-main1026', 'E-su', 'home72'): 5 unit pairs, 100 games, 0 differ
+('E-main1026', 'E1', 'forum72'): 2 unit pairs, 40 games, 0 differ
+('E-main1026', 'E1', 'heldout72_hpfix'): 1 unit pairs, 20 games, 0 differ
+('E-main1026', 'E1', 'home72'): 4 unit pairs, 80 games, 0 differ
+('E-main1026', 'same', 'home72'): 1 unit pairs, 20 games, 0 differ
+('E-su', 'E1', 'forum72'): 14 unit pairs, 280 games, 1 differ
+      ('hctx_rc72_am2_read/anchor/forum72_a/pstar/cells/pstar__forum72__02', 'x26c_read/kakuna_pstar/cells/pstar__forum72__02', [19], True, True, True)
+('E-su', 'E1', 'home72'): 5 unit pairs, 100 games, 0 differ
+('E-su', 'same', 'forum72'): 1 unit pairs, 20 games, 0 differ
+('E-su', 'same', 'home72'): 1 unit pairs, 20 games, 0 differ
+('E1', 'E2', 'heldout72_hpfix'): 14 unit pairs, 280 games, 0 differ
+('E1', 'E3', 'forum72'): 21 unit pairs, 420 games, 6 differ
+      ('x35_d1_read/h_a/cells/c0_s3501__forum72__01', 'x61p_n1p_read/look1/anchor/primary/c0_s3501/cells/c0_s3501__forum72__01', [9], True, True, True)
+      ('x35_d1_read/h_a/cells/c0_s3503__forum72__05', 'x61p_n1p_read/look1/anchor/primary/c0_s3503/cells/c0_s3503__forum72__05', [14], True, True, True)
+      ('x35_d1_read/h_a/cells/c0_s3503__forum72__02', 'x61p_n1p_read/look1/anchor/primary/c0_s3503/cells/c0_s3503__forum72__02', [19], True, True, True)
+      ('x35_d1_read/h_a/cells/c0_s3501__forum72__04', 'x61p_n1p_read/look1/anchor/primary/c0_s3501/cells/c0_s3501__forum72__04', [8], True, True, True)
+      ('x35_d1_read/h_a/cells/c0_s3502__forum72__04', 'x61p_n1p_read/look1/anchor/primary/c0_s3502/cells/c0_s3502__forum72__04', [18], True, True, True)
+      ('x35_d1_read/h_a/cells/c0_s3501__forum72__02', 'x61p_n1p_read/look1/anchor/primary/c0_s3501/cells/c0_s3501__forum72__02', [16], True, True, True)
+('E1', 'E3', 'heldout72_hpfix'): 21 unit pairs, 420 games, 1 differ
+      ('x35_d1_read/h_a/cells/c0_s3503__heldout72_hpfix__04', 'x61p_n1p_read/look1/anchor/reported/c0_s3503/cells/c0_s3503__heldout72_hpfix__04', [16], True, True, True)
+('E1', 'E3', 'p72'): 21 unit pairs, 420 games, 4 differ
+      ('x35_d1_read/h_a/cells/c0_s3503__p72__00', 'x61p_n1p_read/look1/anchor/reported/c0_s3503/cells/c0_s3503__p72__00', [1, 11], True, True, True)
+      ('x35_d1_read/h_a/cells/c0_s3502__p72__01', 'x61p_n1p_read/look1/anchor/reported/c0_s3502/cells/c0_s3502__p72__01', [9], True, True, True)
+      ('x35_d1_read/h_a/cells/c0_s3503__p72__04', 'x61p_n1p_read/look1/anchor/reported/c0_s3503/cells/c0_s3503__p72__04', [16], True, True, True)
+('E1', 'same', 'forum72'): 2 unit pairs, 40 games, 0 differ
+('E1', 'same', 'heldout72_hpfix'): 2 unit pairs, 40 games, 0 differ
+('E1', 'same', 'home72'): 1 unit pairs, 20 games, 0 differ
+('E1', 'same', 'p72'): 2 unit pairs, 40 games, 0 differ
+('E2', 'E3', 'heldout72_hpfix'): 14 unit pairs, 280 games, 0 differ
+('E2', 'same', 'heldout72_hpfix'): 7 unit pairs, 140 games, 0 differ
