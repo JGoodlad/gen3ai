@@ -104,8 +104,8 @@ def _x51(tmp: Path) -> Dict[str, Any]:
 
 
 def _artefacts(tmp: Path, *, fr2: Any = "NO-ARTEFACT", identity: bool = True, uninf: Any = None,
-               void3: List[str] = (), fit_last: float = 1.2995, share: float = 0.0, ih_env: str = "env=e/2"
-               ) -> Dict[str, str]:
+               void3: List[str] = (), fit_last: float = 1.2995, share: float = 0.0, ih_env: str = "env=e/2",
+               rlo: Any = -0.01) -> Dict[str, str]:
     labs = [lab for v in ARMS.values() for lab in v]
     yd = {"s_h": 1.4, "s_p": 1.3, "s_s": 1.25}
     stud = {"void3": list(void3), "students": {lab: {
@@ -122,7 +122,9 @@ def _artefacts(tmp: Path, *, fr2: Any = "NO-ARTEFACT", identity: bool = True, un
             "identity": _write(tmp, "identity", {"pass": identity, "unit": "pstar__home72__00"}),
             "gate_record": _write(tmp, "gate", {"decision": {"gate": gate, "engine": "port=e/1;env=e/2",
                                                              "decision": {"verdict": "x"}}}),
-            "m3_reencode": _write(tmp, "m3", {"share_differing": share})}
+            "m3_reencode": _write(tmp, "m3", {"share_differing": share}),
+            "restriction_record": (str(tmp / "absent.json") if rlo is None else
+                                   _write(tmp, "restr", {"decision": {"restriction": {"lo": rlo}}}))}
 
 
 def _full(tmp: Path, wins: Dict[str, int], *, short: Dict[str, int] = None, **art: Any) -> Dict[str, Any]:
@@ -157,6 +159,24 @@ def test_the_closure_needs_s_h_fitted(tmp_path):
     fitted = _full(tmp_path, w, fit_last=1.2995)                                # last-quarter drop 0.0005
     unfit = _full(tmp_path, w, fit_last=1.25)                                   # still falling 0.05
     assert fitted["sh_fit_drop"] < 0.01 < unfit["sh_fit_drop"]
+
+
+def test_the_closure_waits_on_delta_restriction(tmp_path):
+    w = {"s_s_1": 60, "s_s_2": 61, "s_p_1": 60, "s_p_2": 61}
+    pending = _full(tmp_path, w, rlo=None)
+    assert pending["descriptive"]["restriction_lb"] is None
+    assert all("closes 1300+" not in a for a in pending["decision"]["actions"])
+    assert set(pending["descriptive"]["length_terciles"]["arms"]) == set(ARMS)
+
+
+def test_delta_restriction_reads_s_p0_minus_s_p():
+    sp, sp0 = ["s_p_1", "s_p_2"], ["s_p0_1", "s_p0_2"]
+    cells = {"anchor": {"pilot": _group({x: 20 for x in sp}, [0, 1, 2, 3]),
+                        "sp0": _group({x: 40 for x in sp0}, [0, 1, 2, 3])}}
+    p = {"sp": {"groups": ["pilot"], "labels": sp}, "sp0": {"groups": ["sp0"], "labels": sp0}, "panels": PANELS}
+    dec = RU.decide("x59s_restriction", json.loads(json.dumps(RU.inputs("x59s_restriction", cells, p, None))), p)
+    assert dec["restriction"]["delta"] == pytest.approx(0.25) and dec["blocks_closure"]
+    assert "BLOCKS" in dec["decision"]["verdict"]
 
 
 @pytest.mark.parametrize("kw, why", [
