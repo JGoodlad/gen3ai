@@ -289,7 +289,7 @@ class ShowdownFrontEnd:
         # ``main.anchors --deal-game G``) starts the count at G, so it plays the seed game G of the whole series plays.
         self.battle_index_base = battle_index_base
         self._battle_index = itertools.count(battle_index_base)
-        self._team_cache: Dict[Tuple[str, str], Tuple[bool, List[str]]] = {}
+        self._team_cache: Dict[Tuple[str, str], Tuple[bool, List[str], str]] = {}
         # Every battle that has FINISHED, in order — but only while `capture` is on, because a
         # long series would otherwise hold every chunk of every battle forever. `self.battles`
         # cannot serve this: a client's `/leave` retires the room (which is correct hygiene), so
@@ -459,7 +459,7 @@ class ShowdownFrontEnd:
         if not packed or packed == "null":
             conn.team = None
             return
-        ok, errors = await self._validate_team(self.battle_format, packed)
+        ok, errors, played = await self._validate_team(self.battle_format, packed)
         if not ok:
             # The server's own shape (metamon de-risk hazard 1 captured it verbatim): a popup,
             # and the team does NOT take effect — so the next `/challenge` or `/accept` is
@@ -469,22 +469,31 @@ class ShowdownFrontEnd:
                             + "||".join(f"- {e}" for e in errors))
             logger.error("team from %s REJECTED: %s", conn.userid, "; ".join(errors))
             return
-        conn.team = packed
+        # A real server PLAYS the validator's re-packed team, not the pack the client sent (`server/ladders.ts`:
+        # `team: valResult.slice(1)`; the validator writes a named Hidden Power's IVs and hpType, fixes genders).
+        conn.team = played
 
-    async def _validate_team(self, fmt: str, packed: str) -> Tuple[bool, List[str]]:
-        """Validate a packed team through the bridge validator (`validate_team.js`).
+    async def _validate_team(self, fmt: str, packed: str) -> Tuple[bool, List[str], str]:
+        """Validate a packed team through the bridge validator (`validate_team.js`) -> ``(ok, errors, played)``:
+        ``played`` is the validator's re-packed team (what a real server battles with), or ``packed`` itself under
+        ``--no-validate-teams``. A valid verdict that carries no pack is refused (a validator script that stopped
+        returning it must not silently play the raw pack again).
 
         `Teams.import` accepts the PACKED form as well as an export paste, so the existing
         validator needs no change. Cached per (format, packed string) because the validator is a
         Node subprocess and a series re-registers the same handful of teams every battle.
         """
         if not self._validate:
-            return True, []
+            return True, [], packed
         key = (fmt, packed)
         cached = self._team_cache.get(key)
         if cached is None:
             result = (await asyncio.to_thread(validate_teams_locally, fmt, [packed]))[0]
-            cached = (bool(result.get("valid")), list(result.get("errors") or []))
+            valid, errors = bool(result.get("valid")), list(result.get("errors") or [])
+            played = result.get("packed")
+            if valid and not (isinstance(played, str) and played):
+                valid, errors, played = False, ["the team validator returned no re-packed team"], ""
+            cached = (valid, errors, played if valid else "")
             self._team_cache[key] = cached
         return cached
 

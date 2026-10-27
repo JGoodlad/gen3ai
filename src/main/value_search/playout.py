@@ -66,14 +66,23 @@ class Request:
     seed: str
 
 
+def release_lib():
+    """THIS checkout's RELEASE ``libpokesim_env.so``, stamp-checked (:func:`utils.rust_env.ffi.load`: a missing, foreign
+    or stale build is refused, naming the rebuild). The one place the search's engine library is chosen, so a
+    preflight (``main.anchors --our-search``) and the engines load exactly the same file.
+    Built by ``scripts/bootstrap.sh --with-rust``."""
+    from utils.rust_env import ffi as F
+
+    return F.load(F.default_path("release"))
+
+
 class LeafEngine:
     """One handle per world slot (``n_cores``); ``forward`` serves both sides' decisions."""
 
     def __init__(self, forward: Forward, n_cores: int = 16, lib=None):
-        from utils.rust_env import ffi as F
         from utils.rust_env.successors import SearchCore
 
-        self.lib = lib if lib is not None else F.load(F.default_path("release"))
+        self.lib = lib if lib is not None else release_lib()
         self.cores = [SearchCore(lib=self.lib) for _ in range(n_cores)]
         self.forward = dedup_forward(forward)
         self.off = clock_offset()
@@ -209,10 +218,9 @@ def referee(forward: Forward, log: dict, at: int, side: str, seeds: Sequence[str
     reproduces the single-open play of every action (the banked truth rows). With ``opp_bot`` the per-action open
     makes branch ``b`` = the seed's index, so the bot's dice streams (``stream_seed(seed, b, k)``) are COMMON
     across actions, as the battle's dice are. Production's stall forfeit applies to ``side``."""
-    from utils.rust_env import ffi as F
     from utils.rust_env.successors import SearchCore, SuccessorsError, _raise, production_stall
 
-    lib = lib if lib is not None else F.load(F.default_path("release"))
+    lib = lib if lib is not None else release_lib()
     fwd = dedup_forward(forward)
     me = 0 if side == "p1" else 1
     bot = None if opp_bot is None else {"side": "p2" if me == 0 else "p1", "name": str(opp_bot.name),

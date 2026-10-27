@@ -941,6 +941,43 @@ def test_our_search_is_refused_outside_its_shape(cfg, argv) -> None:
         build_plan(_args("--opponent", "metamon:Kakuna", *argv, "--dry-run"), cfg)
 
 
+def _search_argv(*extra):
+    return _args("--opponent", "metamon:Kakuna", "--our-search", "r0s4", "--seed-base", "3", *extra)
+
+
+def test_our_search_refuses_BEFORE_any_unit_when_the_release_engine_library_is_unusable(cfg, monkeypatch, capsys) -> None:
+    """S-U units died with rc 2 ~6 CPU-s in because `--with-rust` built only the selfcheck cdylib and nothing checked for
+    the RELEASE one the search loads. The plan stage now loads it (the stale-build guard included) and refuses loudly,
+    naming the build; `--dry-run` prints the same refusal and goes on; a raw (unsearched) cell never asks for it."""
+    from main.value_search import playout
+    from utils.rust_env import ffi
+
+    def missing():
+        raise ffi.FfiLoadError("/x/src/rust_env/target/release/libpokesim_env.so does not exist - build it")
+
+    monkeypatch.setattr(playout, "release_lib", missing)
+    with pytest.raises(SystemExit) as e:
+        build_plan(_search_argv(), cfg)
+    assert "RELEASE" in str(e.value) and "bootstrap.sh" in str(e.value) and "does not exist" in str(e.value)
+    plan = build_plan(_search_argv("--dry-run"), cfg)
+    assert plan.our_search == "r0s4@10" and "WOULD REFUSE" in capsys.readouterr().out
+    build_plan(_args("--opponent", "metamon:Kakuna", "--seed-base", "3"), cfg)        # raw: no library needed
+
+
+def test_our_search_refuses_a_STALE_release_library_and_goes_on_with_a_current_one(cfg, monkeypatch) -> None:
+    from main.value_search import playout
+    from utils.rust_env.stamp import StampMismatch
+
+    def stale():
+        raise StampMismatch("libpokesim_env.so: STALE RUST BUILD - src differs - rebuild it")
+
+    monkeypatch.setattr(playout, "release_lib", stale)
+    with pytest.raises(SystemExit, match="STALE RUST BUILD"):
+        build_plan(_search_argv(), cfg)
+    monkeypatch.setattr(playout, "release_lib", lambda: object())
+    assert build_plan(_search_argv(), cfg).our_search == "r0s4@10"
+
+
 @pytest.mark.parametrize("g, half, k", [(0, "ours_challenge", 0), (9, "ours_challenge", 9), (10, "peer_challenge", 0),
                                         (19, "peer_challenge", 9)])
 def test_a_deal_game_plays_one_game_of_the_series_in_its_own_half_with_its_own_draws(cfg, g, half, k) -> None:

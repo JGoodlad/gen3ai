@@ -157,7 +157,7 @@ async def test_a_valid_team_is_kept_and_the_validator_is_consulted_once_per_team
 
     def fake(fmt, teams):
         calls.append(teams[0])
-        return [{"valid": True, "errors": []}]
+        return [{"valid": True, "errors": [], "packed": teams[0]}]
 
     monkeypatch.setattr(ws_frontend, "validate_teams_locally", fake)
     front = _front(validate_teams=True)
@@ -166,6 +166,34 @@ async def test_a_valid_team_is_kept_and_the_validator_is_consulted_once_per_team
         await front._cmd_utm(conn, "Tyranitar||leftovers|H|rockslide|Adamant|252,252,0,0,4,0||||100|")
     assert conn.team is not None
     assert len(calls) == 1, "the Node validator must be cached, not respawned per battle"
+
+
+async def test_the_team_a_battle_plays_is_the_validators_repack_like_a_real_servers(monkeypatch):
+    """`server/ladders.ts` battles with `valResult.slice(1)` -- the validator's `Teams.pack` of the sets it mutated -- not
+    the pack the client sent. The front end stored the RAW pack (TECH_DEBT (d), found 2026-10-27), so a client whose pack
+    the validator rewrites (a named Hidden Power's IVs, fixed genders) played another set than on a real server."""
+    raw = "Tyranitar||leftovers|H|hiddenpowerbug,rockslide|Adamant|252,252,0,0,4,0||||100|"
+    repacked = "Tyranitar||leftovers|H|hiddenpowerbug,rockslide|Adamant|252,252,0,0,4,0||,30,30,,30|||,Bug,,,,"
+    monkeypatch.setattr(ws_frontend, "validate_teams_locally",
+                        lambda fmt, teams: [{"valid": True, "errors": [], "packed": repacked}])
+    front = _front(validate_teams=True)
+    conn = await _named(front, "Alpha")
+    await front._cmd_utm(conn, raw)
+    assert conn.team == repacked != raw
+    # the opt-out plays the raw pack (nothing validated, nothing re-packed)
+    off = _front(validate_teams=False)
+    conn2 = await _named(off, "Beta")
+    await off._cmd_utm(conn2, raw)
+    assert conn2.team == raw
+
+
+async def test_a_valid_verdict_without_a_repack_is_refused_not_played_raw(monkeypatch):
+    """A validator script that stopped returning the pack must not silently bring the raw pack back."""
+    monkeypatch.setattr(ws_frontend, "validate_teams_locally", lambda fmt, teams: [{"valid": True, "errors": []}])
+    front = _front(validate_teams=True)
+    conn = await _named(front, "Alpha")
+    await front._cmd_utm(conn, "Tyranitar||leftovers|H|rockslide|Adamant|252,252,0,0,4,0||||100|")
+    assert conn.team is None and "no re-packed team" in conn.ws.sent[-1]
 
 
 async def test_a_packed_team_is_read_off_the_raw_line_not_a_pipe_split():

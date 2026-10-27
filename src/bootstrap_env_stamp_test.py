@@ -355,3 +355,16 @@ def test_a_reader_that_stops_early_does_not_kill_the_bootstrap(clone, tmp_path):
     while time.monotonic() < deadline and "Bootstrap complete" not in (keep.read_text() if keep.exists() else ""):
         time.sleep(0.2)
     assert "Bootstrap complete" in keep.read_text(), "the log must hold the output the reader never saw"
+
+
+def test_with_rust_builds_the_RELEASE_env_library_the_searched_play_path_loads(clone):
+    """`main.anchors --our-search` loads rust_env's RELEASE `libpokesim_env.so` (`main.value_search.playout.release_lib`);
+    `--with-rust` built only the selfcheck profile of that crate, so each searched unit died with rc 2 ~6 CPU-s in.
+    A dry run (the plan) must name the release build of the env crate, into the env crate's own target/."""
+    _plant_stamp(clone["stamp_dir"], _ENV_YML)
+    rc, out, _calls = clone["run"](clone["wt"], "--with-rust", "--dry-run")
+    assert rc == 0, out
+    lines = [ln for ln in out.splitlines() if "[dry-run]" in ln and "cargo build" in ln
+             and "src/rust_env/Cargo.toml" in ln and "--release" in ln]
+    assert len(lines) == 1, "no release build of the env crate in the plan\n" + out
+    assert "--lib" in lines[0] and "src/rust_env/target" in lines[0], lines[0]

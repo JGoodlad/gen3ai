@@ -1159,7 +1159,7 @@ TIMEOUTs. Observed twice, both times misreading as a rust defect: `bridge_impl_p
 of 12 battles timed out and one transport error, and `better_line[rust]` reported a candidate
 divergence — **both passed on the warm tree with no code change.** Build the binaries first, or
 discount the first run in a new worktree — `./scripts/bootstrap.sh --skip-env --with-rust --no-check`
-builds the release AND the self-check set (2026-10-12; measured cold on the 3 agent cores at nice 19:
+builds the release (the simulator AND rust_env's cdylib, which `main.anchors --our-search` loads) AND the self-check set (2026-10-12; measured cold on the 3 agent cores at nice 19:
 ~34 s per crate x profile, ~2.5 min for the set — not the "40 min" once reported, which was builds
 contending mid-gate). **The suite runs the EMISSION SELF-CHECK build** (the root
 `conftest.py` sets `POKESIM_EMISSION_SELFCHECK=1`, so every rust child is `target/selfcheck/<bin>`:

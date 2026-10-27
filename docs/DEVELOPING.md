@@ -24,7 +24,7 @@ skipped), it fails loudly, and it announces what each step costs before spending
 | 3 | `pip install -e .`, which puts `src/` on the import path for good | ~2 s |
 | 4 | `git submodule update --init`: the Pokémon Showdown reference engine | ~30 s |
 | 5 | the Showdown build artifacts (`npm ci` + `node build`), or worktree symlinks. At run time Node only validates teams; the rest is the dev / test oracle | ~3-6 min fresh |
-| 6 | *(optional)* `cargo build --release` for the Rust simulator | ~3-10 min cold |
+| 6 | *(optional)* `--with-rust`: the Rust simulator (release), rust_env's release library (what `main.anchors --our-search` loads) and the self-check set | ~3-10 min cold |
 | 7 | verify: the ruff and mypy gates, the two import-precedence gates, a ~10 s unit smoke | ~30-60 s |
 
 Useful flags: `--dry-run` (print the plan, change nothing), `--with-rust` / `--no-rust`,

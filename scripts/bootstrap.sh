@@ -555,6 +555,11 @@ else
     run env CARGO_TARGET_DIR="$SIM_CRATE/target" cargo build --release --bin sim_bridge --bin search_driver \
         --manifest-path "$SIM_CRATE/Cargo.toml"
     did "release: sim_bridge + search_driver built"
+    # The searched-play path (`main.anchors --our-search`, S-U; `main.value_search`) loads rust_env's RELEASE cdylib
+    # (`main.value_search.playout.release_lib`), and a selfcheck build is not it; the same build as `ensure_built("release")`.
+    run env CARGO_TARGET_DIR="$ENV_CRATE/target" cargo build --release --lib --bin rust_env_proc \
+        --manifest-path "$ENV_CRATE/Cargo.toml"
+    did "release: rust_env cdylib (libpokesim_env.so, what --our-search loads) + rust_env_proc built"
     run env CARGO_TARGET_DIR="$SIM_CRATE/target" cargo build "${SELFCHECK[@]}" \
         --bin sim_bridge --bin search_driver --bin core_events --manifest-path "$SIM_CRATE/Cargo.toml"
     run env CARGO_TARGET_DIR="$ENV_CRATE/target" cargo build "${SELFCHECK[@]}" --lib --bin rust_env_proc \

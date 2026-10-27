@@ -36,7 +36,9 @@ process.stdin.on('end', () => {
                 if (errors && errors.length > 0) {
                     results.push({ valid: false, errors: errors });
                 } else {
-                    results.push({ valid: true, errors: [] });
+                    // `packed`: what a real server PLAYS (`server/team-validator-async.ts`: `Teams.pack` of the sets the
+                    // validator mutated, e.g. a named Hidden Power's IVs, which `server/ladders.ts` battles with).
+                    results.push({ valid: true, errors: [], packed: Teams.pack(teamJson) });
                 }
             } catch (err) {
                 results.push({ valid: false, errors: [err.message] });

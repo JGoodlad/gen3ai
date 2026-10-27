@@ -401,6 +401,24 @@ def resolve_model(spec: str) -> "tuple[str, Optional[int], str]":
 showdown_pin = server_mod.showdown_pin
 
 
+def _preflight_search_engine(*, dry_run: bool) -> None:
+    """A searched unit (`--our-search`) leafs on the RELEASE `libpokesim_env.so`, which only `scripts/bootstrap.sh
+    --with-rust` builds (a selfcheck build is not it). Load it (the existing stamp guard: missing / foreign / stale
+    refuses) BEFORE any unit starts: unchecked, each unit died with rc 2 ~6 CPU-s in, after the model and the peer
+    were already up. `--dry-run` prints the refusal and goes on (it creates nothing)."""
+    from main.value_search.playout import release_lib
+
+    try:
+        release_lib()
+    except ImportError as exc:        # FfiLoadError and StampMismatch are both ImportErrors
+        msg = (f"--our-search needs this checkout's RELEASE Rust env library, and it is not usable: {exc}\n"
+               "  build it: scripts/bootstrap.sh --skip-env --with-rust --no-check")
+        if dry_run:
+            print(f"[anchors] WOULD REFUSE (--dry-run goes on): {msg}", flush=True)
+            return
+        raise SystemExit(msg) from None
+
+
 def build_plan(args: argparse.Namespace, cfg: config_mod.AnchorsConfig,
                ) -> runner_mod.SeriesPlan:
     apply_opponent_pair(args)
@@ -558,6 +576,7 @@ def build_plan(args: argparse.Namespace, cfg: config_mod.AnchorsConfig,
                if args.seed_base is None else None)
         if why:
             raise SystemExit(f"--our-search needs {why}.")
+        _preflight_search_engine(dry_run=bool(getattr(args, "dry_run", False)))
     deal_game = getattr(args, "deal_game", None)
     if deal_game is not None:
         why = ("a metamon --opponent (its peer skips its own seeded draws)" if kind != "metamon" else
