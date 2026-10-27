@@ -92,6 +92,8 @@ teams (survey: [`research_state/literature/sota_survey_2026-10-26.md`](research_
    left is breadth at 10⁴ teams (N1-P, then [X53-N1](endstate/design_x53_n1_fresh_breadth.md), ≈ 39 GPU-h to a
    one-seed screen). If D3, N1-P and X59-S all miss, the DRAFT fallback is
    [`endstate/strategy_if_levers_null_2026-10-26.md`](endstate/strategy_if_levers_null_2026-10-26.md) (`cb85e54f4`).
+   Their [review](research_state/measurements/strategy_review_2026-10-26/REVIEW.md): X53-N1 NOT READY to register
+   (its seed-SD floor and F's small headroom), the fallback REVISE (its tree cannot resolve +1–1.5 pp).
 2. **The meter itself.** It is unverified whether Kakuna's self-play saw near copies of our unfamiliar-team panel
    (assumption A-K, open). Foul Play has never been read against P\*. In-house meters are blind to the deficit, so
    only slow Kakuna reads steer goal (b).

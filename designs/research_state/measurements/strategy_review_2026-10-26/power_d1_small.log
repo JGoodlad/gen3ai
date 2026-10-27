@@ -1,0 +1,5 @@
+N1-P's registered rule on F; 4000 draws a cell; classes = FINAL class shares
+sigma 0 pp, delta +1.0 pp: final {'GAIN': 0.193, 'LOSS': 0.002, 'NULL': 0.468, 'UNDECIDED': 0.338}
+sigma 0 pp, delta +1.5 pp: final {'GAIN': 0.36, 'LOSS': 0.0, 'NULL': 0.32, 'UNDECIDED': 0.32}
+sigma 1 pp, delta +1.0 pp: final {'GAIN': 0.198, 'LOSS': 0.005, 'NULL': 0.324, 'UNDECIDED': 0.474}
+sigma 1 pp, delta +1.5 pp: final {'GAIN': 0.342, 'LOSS': 0.002, 'NULL': 0.226, 'UNDECIDED': 0.43}

@@ -1,0 +1,80 @@
+300000 draws per cell; delta and sigma in pp; GAIN is the final Stage-B GAIN of the whole chain
+
+## A. The DRAFT's own assumptions (flat base 0.49, course 1/4-1/2-1, shared seed effect)
+[floor] sigma 0 delta +0: harm 0.004 fut 0.168 GO 0.067 GAIN 0.0002 E[GPU-h A+B] 38.6 bias|GO +2.68pp bias|GAIN +3.74pp min-halfwidth 3.55pp NULL-reach 0.0000
+[floor] sigma 0 delta +2: harm 0.002 fut 0.073 GO 0.458 GAIN 0.0575 E[GPU-h A+B] 55.9 bias|GO +1.16pp bias|GAIN +2.00pp min-halfwidth 3.55pp NULL-reach 0.0000
+[floor] sigma 0 delta +4: harm 0.002 fut 0.026 GO 0.890 GAIN 0.6419 E[GPU-h A+B] 73.9 bias|GO +0.24pp bias|GAIN +0.56pp min-halfwidth 3.55pp NULL-reach 0.0000
+[floor] sigma 0 delta +6: harm 0.001 fut 0.008 GO 0.989 GAIN 0.9814 E[GPU-h A+B] 78.2 bias|GO +0.01pp bias|GAIN +0.02pp min-halfwidth 3.55pp NULL-reach 0.0000
+[floor] sigma 1 delta +0: harm 0.009 fut 0.211 GO 0.148 GAIN 0.0058 E[GPU-h A+B] 40.8 bias|GO +3.10pp bias|GAIN +4.03pp min-halfwidth 3.55pp NULL-reach 0.0000
+[floor] sigma 1 delta +2: harm 0.006 fut 0.116 GO 0.468 GAIN 0.1243 E[GPU-h A+B] 55.4 bias|GO +1.66pp bias|GAIN +2.30pp min-halfwidth 3.55pp NULL-reach 0.0000
+[floor] sigma 1 delta +4: harm 0.004 fut 0.054 GO 0.803 GAIN 0.5770 E[GPU-h A+B] 69.9 bias|GO +0.64pp bias|GAIN +0.92pp min-halfwidth 3.55pp NULL-reach 0.0000
+[floor] sigma 1 delta +6: harm 0.002 fut 0.022 GO 0.954 GAIN 0.9240 E[GPU-h A+B] 76.5 bias|GO +0.16pp bias|GAIN +0.18pp min-halfwidth 3.55pp NULL-reach 0.0000
+[floor] sigma 2 delta +0: harm 0.030 fut 0.264 GO 0.255 GAIN 0.0463 E[GPU-h A+B] 43.4 bias|GO +3.97pp bias|GAIN +4.59pp min-halfwidth 3.55pp NULL-reach 0.0000
+[floor] sigma 2 delta +2: harm 0.022 fut 0.181 GO 0.481 GAIN 0.2053 E[GPU-h A+B] 54.1 bias|GO +2.60pp bias|GAIN +3.00pp min-halfwidth 3.55pp NULL-reach 0.0000
+[floor] sigma 2 delta +4: harm 0.017 fut 0.117 GO 0.702 GAIN 0.5003 E[GPU-h A+B] 64.2 bias|GO +1.51pp bias|GAIN +1.66pp min-halfwidth 3.54pp NULL-reach 0.0000
+[floor] sigma 2 delta +6: harm 0.012 fut 0.072 GO 0.856 GAIN 0.7793 E[GPU-h A+B] 71.3 bias|GO +0.78pp bias|GAIN +0.74pp min-halfwidth 3.54pp NULL-reach 0.0000
+[floor] sigma 3 delta +0: harm 0.069 fut 0.274 GO 0.320 GAIN 0.0977 E[GPU-h A+B] 44.6 bias|GO +4.99pp bias|GAIN +5.36pp min-halfwidth 3.54pp NULL-reach 0.0000
+[floor] sigma 3 delta +2: harm 0.058 fut 0.214 GO 0.486 GAIN 0.2407 E[GPU-h A+B] 52.6 bias|GO +3.66pp bias|GAIN +3.86pp min-halfwidth 3.54pp NULL-reach 0.0000
+[floor] sigma 3 delta +4: harm 0.047 fut 0.160 GO 0.646 GAIN 0.4498 E[GPU-h A+B] 60.3 bias|GO +2.53pp bias|GAIN +2.55pp min-halfwidth 3.54pp NULL-reach 0.0000
+[floor] sigma 3 delta +6: harm 0.038 fut 0.116 GO 0.774 GAIN 0.6586 E[GPU-h A+B] 66.5 bias|GO +1.68pp bias|GAIN +1.54pp min-halfwidth 3.53pp NULL-reach 0.0000
+[floor] sigma 4 delta +0: harm 0.116 fut 0.260 GO 0.361 GAIN 0.1350 E[GPU-h A+B] 45.1 bias|GO +6.04pp bias|GAIN +6.24pp min-halfwidth 3.52pp NULL-reach 0.0000
+[floor] sigma 4 delta +2: harm 0.101 fut 0.216 GO 0.489 GAIN 0.2566 E[GPU-h A+B] 51.4 bias|GO +4.76pp bias|GAIN +4.80pp min-halfwidth 3.53pp NULL-reach 0.0000
+[floor] sigma 4 delta +4: harm 0.088 fut 0.175 GO 0.612 GAIN 0.4135 E[GPU-h A+B] 57.5 bias|GO +3.61pp bias|GAIN +3.54pp min-halfwidth 3.52pp NULL-reach 0.0000
+[floor] sigma 4 delta +6: harm 0.077 fut 0.137 GO 0.718 GAIN 0.5746 E[GPU-h A+B] 62.7 bias|GO +2.69pp bias|GAIN +2.49pp min-halfwidth 3.51pp NULL-reach 0.0000
+[max] sigma 0 delta +0: harm 0.004 fut 0.168 GO 0.067 GAIN 0.0002 E[GPU-h A+B] 38.6 bias|GO +2.68pp bias|GAIN +3.79pp min-halfwidth 3.55pp NULL-reach 0.0000
+[max] sigma 0 delta +2: harm 0.003 fut 0.074 GO 0.456 GAIN 0.0555 E[GPU-h A+B] 55.8 bias|GO +1.16pp bias|GAIN +2.01pp min-halfwidth 3.55pp NULL-reach 0.0000
+[max] sigma 0 delta +4: harm 0.001 fut 0.026 GO 0.889 GAIN 0.6347 E[GPU-h A+B] 73.9 bias|GO +0.24pp bias|GAIN +0.57pp min-halfwidth 3.55pp NULL-reach 0.0000
+[max] sigma 0 delta +6: harm 0.001 fut 0.008 GO 0.989 GAIN 0.9807 E[GPU-h A+B] 78.2 bias|GO +0.01pp bias|GAIN +0.03pp min-halfwidth 3.55pp NULL-reach 0.0000
+[max] sigma 1 delta +0: harm 0.009 fut 0.212 GO 0.147 GAIN 0.0049 E[GPU-h A+B] 40.8 bias|GO +3.10pp bias|GAIN +4.04pp min-halfwidth 3.55pp NULL-reach 0.0000
+[max] sigma 1 delta +2: harm 0.006 fut 0.114 GO 0.468 GAIN 0.1127 E[GPU-h A+B] 55.4 bias|GO +1.65pp bias|GAIN +2.34pp min-halfwidth 3.55pp NULL-reach 0.0000
+[max] sigma 1 delta +4: harm 0.004 fut 0.055 GO 0.802 GAIN 0.5447 E[GPU-h A+B] 69.8 bias|GO +0.63pp bias|GAIN +0.95pp min-halfwidth 3.55pp NULL-reach 0.0000
+[max] sigma 1 delta +6: harm 0.002 fut 0.023 GO 0.954 GAIN 0.9061 E[GPU-h A+B] 76.5 bias|GO +0.15pp bias|GAIN +0.21pp min-halfwidth 3.55pp NULL-reach 0.0000
+[max] sigma 2 delta +0: harm 0.031 fut 0.263 GO 0.254 GAIN 0.0334 E[GPU-h A+B] 43.3 bias|GO +3.97pp bias|GAIN +4.70pp min-halfwidth 3.55pp NULL-reach 0.0000
+[max] sigma 2 delta +2: harm 0.023 fut 0.183 GO 0.479 GAIN 0.1572 E[GPU-h A+B] 54.0 bias|GO +2.60pp bias|GAIN +3.14pp min-halfwidth 3.55pp NULL-reach 0.0000
+[max] sigma 2 delta +4: harm 0.017 fut 0.117 GO 0.703 GAIN 0.4114 E[GPU-h A+B] 64.3 bias|GO +1.52pp bias|GAIN +1.85pp min-halfwidth 3.54pp NULL-reach 0.0000
+[max] sigma 2 delta +6: harm 0.012 fut 0.071 GO 0.857 GAIN 0.6894 E[GPU-h A+B] 71.4 bias|GO +0.77pp bias|GAIN +0.92pp min-halfwidth 3.54pp NULL-reach 0.0000
+[max] sigma 3 delta +0: harm 0.069 fut 0.274 GO 0.322 GAIN 0.0606 E[GPU-h A+B] 44.6 bias|GO +4.97pp bias|GAIN +5.65pp min-halfwidth 3.54pp NULL-reach 0.0000
+[max] sigma 3 delta +2: harm 0.058 fut 0.214 GO 0.486 GAIN 0.1595 E[GPU-h A+B] 52.6 bias|GO +3.63pp bias|GAIN +4.20pp min-halfwidth 3.54pp NULL-reach 0.0000
+[max] sigma 3 delta +4: harm 0.048 fut 0.159 GO 0.647 GAIN 0.3205 E[GPU-h A+B] 60.3 bias|GO +2.54pp bias|GAIN +2.95pp min-halfwidth 3.54pp NULL-reach 0.0000
+[max] sigma 3 delta +6: harm 0.038 fut 0.117 GO 0.773 GAIN 0.5106 E[GPU-h A+B] 66.4 bias|GO +1.68pp bias|GAIN +1.98pp min-halfwidth 3.53pp NULL-reach 0.0000
+[max] sigma 4 delta +0: harm 0.117 fut 0.262 GO 0.361 GAIN 0.0762 E[GPU-h A+B] 45.0 bias|GO +6.06pp bias|GAIN +6.76pp min-halfwidth 3.53pp NULL-reach 0.0000
+[max] sigma 4 delta +2: harm 0.101 fut 0.216 GO 0.489 GAIN 0.1530 E[GPU-h A+B] 51.4 bias|GO +4.76pp bias|GAIN +5.39pp min-halfwidth 3.53pp NULL-reach 0.0000
+[max] sigma 4 delta +4: harm 0.088 fut 0.173 GO 0.614 GAIN 0.2639 E[GPU-h A+B] 57.6 bias|GO +3.61pp bias|GAIN +4.18pp min-halfwidth 3.53pp NULL-reach 0.0000
+[max] sigma 4 delta +6: harm 0.076 fut 0.137 GO 0.718 GAIN 0.3993 E[GPU-h A+B] 62.8 bias|GO +2.70pp bias|GAIN +3.17pp min-halfwidth 3.52pp NULL-reach 0.0000
+
+## B. Sensitivity: the effect's time course and per-look seed effects ('max' interval)
+draft (1/4, 1/2, 1) | shared | sigma 1 delta +0: harm 0.008 fut 0.209 GO 0.147 GAIN 0.0050 E[GPU-h A+B] 40.8 bias|GO +3.10pp bias|GAIN +4.06pp min-halfwidth 3.54pp NULL-reach 0.0000
+draft (1/4, 1/2, 1) | shared | sigma 1 delta +4: harm 0.003 fut 0.053 GO 0.805 GAIN 0.5481 E[GPU-h A+B] 70.0 bias|GO +0.63pp bias|GAIN +0.95pp min-halfwidth 3.55pp NULL-reach 0.0000
+draft (1/4, 1/2, 1) | shared | sigma 3 delta +0: harm 0.076 fut 0.268 GO 0.321 GAIN 0.0611 E[GPU-h A+B] 44.5 bias|GO +4.98pp bias|GAIN +5.65pp min-halfwidth 3.53pp NULL-reach 0.0000
+draft (1/4, 1/2, 1) | shared | sigma 3 delta +4: harm 0.051 fut 0.156 GO 0.648 GAIN 0.3218 E[GPU-h A+B] 60.3 bias|GO +2.53pp bias|GAIN +2.96pp min-halfwidth 3.53pp NULL-reach 0.0000
+draft (1/4, 1/2, 1) | indep | sigma 1 delta +0: harm 0.008 fut 0.212 GO 0.124 GAIN 0.0041 E[GPU-h A+B] 39.9 bias|GO +3.08pp bias|GAIN +4.04pp min-halfwidth 3.54pp NULL-reach 0.0000
+draft (1/4, 1/2, 1) | indep | sigma 1 delta +4: harm 0.003 fut 0.054 GO 0.789 GAIN 0.5327 E[GPU-h A+B] 69.3 bias|GO +0.60pp bias|GAIN +0.94pp min-halfwidth 3.55pp NULL-reach 0.0000
+draft (1/4, 1/2, 1) | indep | sigma 3 delta +0: harm 0.075 fut 0.313 GO 0.200 GAIN 0.0380 E[GPU-h A+B] 38.9 bias|GO +4.96pp bias|GAIN +5.63pp min-halfwidth 3.53pp NULL-reach 0.0000
+draft (1/4, 1/2, 1) | indep | sigma 3 delta +4: harm 0.050 fut 0.190 GO 0.511 GAIN 0.2500 E[GPU-h A+B] 54.3 bias|GO +2.41pp bias|GAIN +2.92pp min-halfwidth 3.53pp NULL-reach 0.0000
+late (0, 0, 1) | shared | sigma 1 delta +0: harm 0.008 fut 0.209 GO 0.148 GAIN 0.0051 E[GPU-h A+B] 40.9 bias|GO +3.09pp bias|GAIN +4.04pp min-halfwidth 3.54pp NULL-reach 0.0000
+late (0, 0, 1) | shared | sigma 1 delta +4: harm 0.008 fut 0.208 GO 0.690 GAIN 0.4779 E[GPU-h A+B] 62.2 bias|GO +0.74pp bias|GAIN +0.99pp min-halfwidth 3.55pp NULL-reach 0.0000
+late (0, 0, 1) | shared | sigma 3 delta +0: harm 0.075 fut 0.267 GO 0.322 GAIN 0.0603 E[GPU-h A+B] 44.6 bias|GO +4.98pp bias|GAIN +5.63pp min-halfwidth 3.53pp NULL-reach 0.0000
+late (0, 0, 1) | shared | sigma 3 delta +4: harm 0.076 fut 0.268 GO 0.586 GAIN 0.2964 E[GPU-h A+B] 55.0 bias|GO +2.82pp bias|GAIN +3.05pp min-halfwidth 3.53pp NULL-reach 0.0000
+late (0, 0, 1) | indep | sigma 1 delta +0: harm 0.008 fut 0.210 GO 0.123 GAIN 0.0038 E[GPU-h A+B] 39.9 bias|GO +3.09pp bias|GAIN +4.06pp min-halfwidth 3.54pp NULL-reach 0.0000
+late (0, 0, 1) | indep | sigma 1 delta +4: harm 0.008 fut 0.210 GO 0.655 GAIN 0.4422 E[GPU-h A+B] 60.8 bias|GO +0.60pp bias|GAIN +0.94pp min-halfwidth 3.55pp NULL-reach 0.0000
+late (0, 0, 1) | indep | sigma 3 delta +0: harm 0.075 fut 0.312 GO 0.199 GAIN 0.0367 E[GPU-h A+B] 38.9 bias|GO +4.95pp bias|GAIN +5.63pp min-halfwidth 3.53pp NULL-reach 0.0000
+late (0, 0, 1) | indep | sigma 3 delta +4: harm 0.076 fut 0.312 GO 0.411 GAIN 0.2005 E[GPU-h A+B] 47.2 bias|GO +2.41pp bias|GAIN +2.93pp min-halfwidth 3.53pp NULL-reach 0.0000
+dip (-1/2, 0, 1) | shared | sigma 1 delta +0: harm 0.008 fut 0.208 GO 0.148 GAIN 0.0049 E[GPU-h A+B] 40.9 bias|GO +3.09pp bias|GAIN +4.06pp min-halfwidth 3.54pp NULL-reach 0.0000
+dip (-1/2, 0, 1) | shared | sigma 1 delta +4: harm 0.042 fut 0.196 GO 0.674 GAIN 0.4689 E[GPU-h A+B] 60.9 bias|GO +0.77pp bias|GAIN +0.99pp min-halfwidth 3.54pp NULL-reach 0.0000
+dip (-1/2, 0, 1) | shared | sigma 3 delta +0: harm 0.076 fut 0.267 GO 0.320 GAIN 0.0603 E[GPU-h A+B] 44.5 bias|GO +4.98pp bias|GAIN +5.63pp min-halfwidth 3.52pp NULL-reach 0.0000
+dip (-1/2, 0, 1) | shared | sigma 3 delta +4: harm 0.152 fut 0.207 GO 0.579 GAIN 0.2924 E[GPU-h A+B] 53.6 bias|GO +2.85pp bias|GAIN +3.06pp min-halfwidth 3.53pp NULL-reach 0.0000
+dip (-1/2, 0, 1) | indep | sigma 1 delta +0: harm 0.009 fut 0.211 GO 0.124 GAIN 0.0040 E[GPU-h A+B] 39.9 bias|GO +3.08pp bias|GAIN +4.04pp min-halfwidth 3.54pp NULL-reach 0.0000
+dip (-1/2, 0, 1) | indep | sigma 1 delta +4: harm 0.043 fut 0.203 GO 0.631 GAIN 0.4258 E[GPU-h A+B] 59.0 bias|GO +0.60pp bias|GAIN +0.94pp min-halfwidth 3.55pp NULL-reach 0.0000
+dip (-1/2, 0, 1) | indep | sigma 3 delta +0: harm 0.076 fut 0.314 GO 0.199 GAIN 0.0371 E[GPU-h A+B] 38.8 bias|GO +4.94pp bias|GAIN +5.63pp min-halfwidth 3.53pp NULL-reach 0.0000
+dip (-1/2, 0, 1) | indep | sigma 3 delta +4: harm 0.152 fut 0.287 GO 0.378 GAIN 0.1843 E[GPU-h A+B] 44.1 bias|GO +2.41pp bias|GAIN +2.90pp min-halfwidth 3.53pp NULL-reach 0.0000
+
+## C. More games do not buy power once sigma >= 2 pp (L100 at 4,800 / 9,600 per arm, draft course)
+n100 2400 sigma 0 delta +4: harm 0.001 fut 0.026 GO 0.890 GAIN 0.6352 E[GPU-h A+B] 73.9 bias|GO +0.24pp bias|GAIN +0.57pp min-halfwidth 3.55pp NULL-reach 0.0000
+n100 2400 sigma 2 delta +4: harm 0.017 fut 0.118 GO 0.701 GAIN 0.4085 E[GPU-h A+B] 64.2 bias|GO +1.50pp bias|GAIN +1.84pp min-halfwidth 3.54pp NULL-reach 0.0000
+n100 2400 sigma 3 delta +4: harm 0.047 fut 0.161 GO 0.644 GAIN 0.3209 E[GPU-h A+B] 60.2 bias|GO +2.55pp bias|GAIN +2.97pp min-halfwidth 3.53pp NULL-reach 0.0000
+n100 4800 sigma 0 delta +4: harm 0.002 fut 0.026 GO 0.948 GAIN 0.8179 E[GPU-h A+B] 76.2 bias|GO +0.06pp bias|GAIN +0.21pp min-halfwidth 3.26pp NULL-reach 0.0000
+n100 4800 sigma 2 delta +4: harm 0.017 fut 0.118 GO 0.718 GAIN 0.4495 E[GPU-h A+B] 64.9 bias|GO +1.37pp bias|GAIN +1.60pp min-halfwidth 3.26pp NULL-reach 0.0000
+n100 4800 sigma 3 delta +4: harm 0.047 fut 0.160 GO 0.655 GAIN 0.3357 E[GPU-h A+B] 60.7 bias|GO +2.43pp bias|GAIN +2.77pp min-halfwidth 3.25pp NULL-reach 0.0000
+n100 9600 sigma 0 delta +4: harm 0.002 fut 0.026 GO 0.969 GAIN 0.9324 E[GPU-h A+B] 77.0 bias|GO +0.00pp bias|GAIN +0.05pp min-halfwidth 3.10pp NULL-reach 0.0000
+n100 9600 sigma 2 delta +4: harm 0.017 fut 0.117 GO 0.728 GAIN 0.4725 E[GPU-h A+B] 65.3 bias|GO +1.31pp bias|GAIN +1.48pp min-halfwidth 3.10pp NULL-reach 0.0000
+n100 9600 sigma 3 delta +4: harm 0.047 fut 0.160 GO 0.659 GAIN 0.3441 E[GPU-h A+B] 60.8 bias|GO +2.37pp bias|GAIN +2.67pp min-halfwidth 3.10pp NULL-reach 0.0000
