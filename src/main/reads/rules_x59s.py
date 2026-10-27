@@ -417,11 +417,13 @@ def _full_decide(doc: Mapping[str, Any], p: Mapping[str, Any]) -> Dict[str, Any]
     inh = {c: X.inhouse(ih["rates"][c], names[c]) for c in names}
     lab_of = {lab: a for a, labs in doc["arms"].items() for lab in labs}
     yard_all = {lab: s["yardsticks"] for lab, s in sdoc["students"].items() if lab in lab_of}
-    yard = {a: [yard_all[lab]["selfplay_val_pstar_labels"] for lab in doc["arms"][a]] for a in ARMS}
+    yard: Dict[str, Sequence[float]] = {a: [float(yard_all[lab]["selfplay_val_pstar_labels"])
+                                            for lab in doc["arms"][a]] for a in ARMS}
     panels = _panel_contrasts(arms, doc["panels"], sd)
     f_delta = {c: panels["forum72"][c]["delta"] for c in names}
     fit = _fit_drop(sdoc, doc["arms"]["S-H"])
-    v = X.verdict(read_, inh, dict(gate["uninformative"]), f_delta, yard, fr2, fit, float(m3))
+    uninf: Dict[str, bool] = dict((gate or {})["uninformative"])
+    v = X.verdict(read_, inh, uninf, f_delta, yard, fr2, fit, float(m3))
     rate = {a: [X.student_rate(s) for s in arms[a]] for a in ARMS}
     mde = {name: (1.959963985 + 0.841621234) * read_[name]["halfwidth"] / 1.959963985 for name in X.CONTRASTS}
     out.update({
