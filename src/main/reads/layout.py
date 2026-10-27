@@ -3,6 +3,7 @@
 
     <state>/spec.json                   the spec, byte-copied at plan (its sha256 is the read's identity)
     <state>/code.json                   the playing checkout's commit at plan (a run from another commit refuses)
+    <state>/repins.jsonl                APPEND-ONLY: each repin (main.reads.repin) that accepted another playing commit
     <state>/models.json                 {label: resolved + copied model}, written as each model SETTLES
     <state>/ckpts/<label>/              the sha-checked copies (+ model_config.json, sidecar)
     <state>/anchor/<group>/<label>/     a main.x35.kakuna state per (group, model): plan.json, cells/, units.jsonl
@@ -84,6 +85,14 @@ def decision_file(state: Path) -> Path:
 
 def record_file(state: Path) -> Path:
     return state / "record.json"
+
+
+def repins_file(state: Path) -> Path:
+    return state / "repins.jsonl"
+
+
+def repin_lock(state: Path) -> Path:
+    return state / "repin.lock"
 
 
 def lane_lock(state: Path, lane: str) -> Path:

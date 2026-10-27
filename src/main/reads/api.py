@@ -9,7 +9,9 @@ from typing import Any, Dict, Optional
 from main.reads import layout as LY
 from main.reads.assemble import AssembleError, assemble as _assemble
 from main.reads.models import ModelError
+from main.reads.playpath import PlayPathError
 from main.reads.record import RecordError, build as build_record, load as load_record, summary_line, write
+from main.reads.repin import RepinError, load_repins, repin
 from main.reads.rules import RULES, RuleInputError, void_failures, void_gate as rules_void_gate
 from main.reads.runner import RunError, load_state, plan, run, status
 from main.reads.spec import SpecError, load as load_spec
@@ -17,12 +19,12 @@ from main.reads.imports import ReadImportError
 from main.reads.supervisors import SupervisorError
 from main.x35.kakuna import KakunaError
 
-__all__ = ["REFUSALS", "assemble", "decide", "load_record", "load_spec", "plan", "record", "run", "status",
-           "summary_line", "void_gate"]
+__all__ = ["REFUSALS", "assemble", "decide", "load_record", "load_repins", "load_spec", "plan", "record", "repin", "run",
+           "status", "summary_line", "void_gate"]
 
 #: Every typed refusal a verb raises (the CLI's exit 2).
 REFUSALS = (SpecError, ModelError, RunError, AssembleError, RuleInputError, RecordError, LY.StateError, KakunaError,
-            SupervisorError, ReadImportError)
+            SupervisorError, ReadImportError, RepinError, PlayPathError)
 
 
 def _write(path: Path, doc: Any) -> None:
@@ -76,7 +78,7 @@ def record(state: Path, *, out: Optional[Path] = None) -> Dict[str, Any]:
     code = json.loads(LY.code_file(state).read_text())
     vf = LY.void_file(state)
     gate = json.loads(vf.read_text()) if spec.params.get("void") else None   # decide just wrote it
-    rec = build_record(spec, cells, doc, dec, code, void=gate)
+    rec = build_record(spec, cells, doc, dec, code, void=gate, repins=load_repins(state))
     write(rec, LY.record_file(state))
     if out is not None:
         write(rec, out)

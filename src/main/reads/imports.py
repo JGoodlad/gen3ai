@@ -116,11 +116,13 @@ def check_shas(imp: Any, shas: Mapping[str, str]) -> Dict[str, str]:
 
 
 def _meta(imp: Any, old: Any, rows_digest: str, n: int) -> Dict[str, Any]:
+    from main.reads import repin as RP
+
     st = earlier_state(imp)
     cf = LY.code_file(st)
     return {"state": str(st), "read": old.read, "spec_sha256": imp.spec_sha256, "group": imp.group,
             "labels": list(imp.models), "rows": n, "rows_sha256": rows_digest,
-            "code": json.loads(cf.read_text()) if cf.exists() else None}
+            "code": json.loads(cf.read_text()) if cf.exists() else None, "repins": RP.load_repins(st)}
 
 
 def anchor_rows(spec: Any, g: str, shas: Mapping[str, str], *, this_state: Optional[Path] = None

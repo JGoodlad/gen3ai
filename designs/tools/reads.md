@@ -18,6 +18,7 @@ python -m main.reads run      --state DIR --lane anchor --hours 20 # detached, r
 python -m main.reads run      --state DIR --lane anchor --hours 20 --concurrency 2   # K units at once (§3)
 python -m main.reads run      --state DIR --lane s      --hours 20
 python -m main.reads status   --state DIR                          # resume = run again (or `resume`)
+python -m main.reads repin    --state DIR --to COMMIT --by WHO --why TEXT   # another playing commit, if the play path is identical (§3)
 python -m main.reads record   --state DIR [--out <stage>/reads/<arm>_look<k>.json]
 ```
 
@@ -147,9 +148,38 @@ dir and log), started on a thread that only waits on the child. Nothing on the p
 - a registered stop (`--hours` or `--stop-at-epoch`, never open-ended);
 - a counted unit or a recorded batch is never replayed;
 - every child gets THIS checkout's `src` on `PYTHONPATH`;
-- the playing checkout must stay at the commit `plan` wrote to `code.json`, and a dirty tree at the same
-  `git diff HEAD` digest. This addresses "the playing code is not
+- the playing checkout must stay at the commit `plan` wrote to `code.json` (or one a `repin` accepted, below), and a
+  dirty tree at the same `git diff HEAD` digest. This addresses "the playing code is not
   the pin" (d1_read 5, sprt 1, g1 2, x47 F-X47L1-4), which before was only ever checked by hand.
+
+**Repin** (`python -m main.reads repin --state S --to COMMIT --by WHO --why TEXT`; `main.reads.repin`,
+`main.reads.playpath`). The pin guard refuses every commit but `code.json`'s, which also kept a scheduling fix to the
+supervisor itself (`--concurrency`) from ever reaching a long read. `repin` accepts `COMMIT` as another playing commit of
+the read IF AND ONLY IF the tracked **play path** is byte-identical between `code.json`'s commit and `COMMIT` (read from
+git objects, not the working tree); otherwise it exits 2 naming the files that differ, and writes nothing.
+
+- **The play path** (`playpath.play_files`, a deliberate over-approximation: a false "differs" refuses, a false "same"
+  would be silent): the static import closure of `main.anchors`, `main.x35.kakuna`, `utils.bridge.ws_frontend`,
+  `utils.mem_cap` and `utils.heavy_slots` (every `import` anywhere in a module, lazy ones included), plus
+  `src/main/anchors/`, the front end, `src/agents/{model,inference,observation,gen3_data}/`, the Rust sources and build
+  inputs that make `sim_bridge` (`src/rust_sim/src/`, `Cargo.*`, `build*.rs`), `data/`, the `deps/` pointers,
+  `mem_cap.sh`, `anchors.json`, the panel registry and the committed cell configs and home72 teams. Tests and `*.md`
+  are never on it. Within `main/reads/` only `__init__.py` and `supervisors.py` are ON it (`kakuna` reaches them), so editing
+  either blocks a repin; `runner`, `api`, `cli`, `repin`, `playpath` and `anchor_pool` are OFF it (`playpath_test` pins
+  this). NOT covered, because git does not hold them: the Metamon cache and weights,
+  panel team dirs outside the repo, the model copies, the toolchain. Each unit verifies those at play (team digests,
+  weight pins, the model sha256).
+- **What it writes.** One line per repin in `<state>/repins.jsonl`, APPEND-ONLY (`from_commit`, `to_commit`,
+  `playpath_digest` and file count, `by`, `why`, `time`, the checkout `root`). `code.json` is left exactly as `plan`
+  wrote it, so a supervisor of older code, still on the old checkout, keeps working through a repin (the S lane stays up
+  while the anchor lane moves). A supervisor of this code accepts `code.json`'s commit or any repinned one, with the
+  same clean-tree and diff-digest checks; a damaged `repins.jsonl` stops it rather than being skipped. Every repin
+  compares with `code.json`'s commit, never with an earlier repin.
+- **Edges.** A spec that registers a `pin` refuses (a repin never moves a registration). A repeat of an accepted commit
+  is a no-op (`already: true`). `--by` and `--why` are required. `status` lists the repins, `record` carries
+  `repins` (§6), and an import's record carries the earlier state's.
+- **To move a lane to a newer checkout**: stop ONLY that lane's supervisor by PID (the other lane may keep running), check
+  out `COMMIT` in the lane's playing worktree, `repin` from there, restart the lane from that checkout.
 
 Run each lane detached, one process per lane, and wait on it through `/proc/<pid>` only, never `kill -0` (inside a
 sandboxed agent shell `kill -0` read a live supervisor as dead, acf2193f):
@@ -260,7 +290,7 @@ The record holds:
 - `models` (each with the sha256 played);
 - `regimes` (`{anchor: {group: id}, s: {group: id}}`);
 - `ledgers` (each S group's family, digest and row count);
-- `code` (the playing commit);
+- `code` (the playing commit) and `repins` (each other playing commit a `repin` accepted, §3; `[]` when none);
 - `cells_inconclusive` (the decided groups only);
 - `reported_incomplete` (`{"<lane>.<group>": [reasons]}`: reported-only groups that are short, §5);
 - `void` (the VOID gate as run, §5, or null);
@@ -323,6 +353,7 @@ skips and names why.
 | a short-lane overrun (exit 88) left uncounted (FR-3's queue re-ran it once by hand; the module did not) | yes | the once-only long retry (§3) |
 | two standalone `kakuna run` queues on one state | latent (the same lock-inside-the-state flaw) | the path lock and `/proc` scan, shared with the lanes (§3) |
 | the anchor lane plays one unit at a time (N1-P look 1: 486 units, about 60 h projected) | any long Kakuna read | bounded `--concurrency K`, scheduling only (§3) |
+| a scheduling fix cannot reach a running read (the pin guard refuses any other commit) | any long read | `repin`, only when the play path is byte-identical (§3) |
 
 ## 9. What was migrated, wrapped, left
 
@@ -347,10 +378,9 @@ skips and names why.
 
 - **Reported-only extras** (SPRT's mechanism block, dose from launcher summaries) stay per-read. A rule's `params`
   can carry them, but only the VOID gate reads run dirs.
-- **Re-pinning a running read.** The pin guard compares the playing checkout's commit and diff digest with `code.json`
-  (§3), so a supervisor restarted from a NEWER checkout refuses (`the playing code changed under the read`) even when
-  the play path is byte-identical between the two commits. No verb re-pins `code.json` after checking that; scheduling
-  code (this module's `--concurrency`) therefore reaches a running read only by that deliberate step.
+- **A repin's reach.** `repin` proves the TRACKED play path identical (§3). It cannot see what git does not hold (the
+  Metamon cache, panel team dirs outside the repo), and its closure is static (a module named only in a string is not
+  followed; the prefixes over-approximate for that). A change in the box's untracked inputs is the units' own preflight's.
 - **Nested supervisors.** A `kakuna run` on `<state>/anchor/<group>/<label>/` and a `main.reads run --lane anchor` on
   `<state>` can both play that kakuna state: the lanes call `run_unit` without taking the sub-state's
   `supervisor.lock`, and neither path scan looks at a parent or child path.
