@@ -116,6 +116,8 @@ def _synthetic_report():
                              "task": "regression", "note": "n", "target_std": 0.3,
                              "taps": {t: {"trained": 0.8, "fresh": None, "l2": 10.0}
                                       for t in taps}}}},
+        "tanh_saturation": {"abs_threshold": 0.99, "unit_row_share": 0.99, "n_rows": 100, "layers": {
+            "mlp_extractor.policy_net.1": {"units": 512, "saturated_units": 0.18, "mean_sat_frac": 0.92}}},
         "params": {"n_params_total": 42, "phases": {"projection": {
             "n_params": 42, "param_share": 1.0, "l2_norm": 1.0, "rms": 0.1, "zero_frac": 0.0}}},
         "validity": VALIDITY,
@@ -127,6 +129,7 @@ def test_render_covers_every_section_and_the_tripwire_line():
     for needle in ("CAPACITY BATTERY v1", "run_x", "1,234,567",
                    "(a) REPRESENTATION EFFECTIVE RANK", "(b) TRAINABILITY",
                    "(c) PROBE DECODABILITY", "(d) PARAMETER CENSUS",
+                   "(e) POLICY-MLP TANH SATURATION", "mlp_extractor.policy_net.1",
                    "TRIPWIRE, NOT VERDICT"):
         assert needle in text, needle
 
@@ -156,7 +159,7 @@ def test_report_is_strict_json_round_trippable(tmp_path):
 def test_validity_carries_all_three_clauses_for_every_metric():
     """The non-negotiable discipline: every metric ships what movement MEANS, what PAIRED
     behavioural evidence would confirm it, and the explicit no-verdict line."""
-    assert set(VALIDITY) == {"rank", "trainability", "decodability", "params"}
+    assert set(VALIDITY) == {"rank", "trainability", "decodability", "tanh_saturation", "params"}
     for name, note in VALIDITY.items():
         assert set(note) == {"movement", "confirm", "no_verdict"}, name
         assert "no kill/build decision" in note["no_verdict"].lower(), name

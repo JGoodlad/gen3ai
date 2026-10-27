@@ -51,6 +51,18 @@ Recover the code from the repository history (the last commit that has the file)
 reader it would be re-asked as a reader-level meter, not as a mutation of Python objects.
 Record: `designs/ops/deletion_pass_manifest.md` §8.
 
+## The capacity battery's tanh-saturation probe (`python -m main.capacity`, battery version 3)
+
+The offline capacity battery (`src/main/capacity.py`, engine `agents/model/capacity_probes.py`, detail
+`designs/research_state/capacity_battery.md`) watches the policy MLP's tanh saturation per layer, on a checkpoint
+and never in the training loop (no R1 or hot-path code, so no played bit or learner-golden change). Two statistics,
+the plasticity check's own (`designs/research_state/measurements/plasticity_check_2026-10-26/plasticity_probe.py`,
+`structure_one`): `mean_sat_frac`, the share of all activations with |a| > 0.99, and `saturated_units`, the share
+of units saturated on >= 99 % of rows. They land in the artifact's `tanh_saturation.layers.<module name>` and in
+the printed table's section (e). X26's plateau read layer 1 at 0.84 → 0.92 and 6 % → 18 % (100M → 480M). It is a
+tripwire: that saturation did not slow a refit (`plasticity_check_2026-10-26/README.md` F3), so pair a rise with a
+trainability read. Pinned by `tanh_saturation_*` in `capacity_probes_test.py`.
+
 ## From the training leaf (moved 2026-10-10)
 
 > These sections headed `src/agents/training/CLAUDE.md` until its 2026-10-10 cleanup; moved here as they

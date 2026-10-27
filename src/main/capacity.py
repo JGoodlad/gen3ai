@@ -10,13 +10,15 @@ built for GENERATION-OVER-GENERATION differencing at matched step.
     python -m main.capacity models/<run>/legB_final_model.zip   # or name the arm explicitly
     (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 
-Four probes, all defined in `agents.model.capacity_probes`:
+Five probes, all defined in `agents.model.capacity_probes`:
 
   (a) effective RANK at five taps (participation ratio + srank@0.99), trained vs a fresh net
   (b) TRAINABILITY — Lyle et al. capacity loss: linear fit to K fixed random targets, and the
       trained/fresh ratio that says whether capacity has been consumed
   (c) DECODABILITY — linear probes to ground-truth facts read out of the obs vector itself
   (d) per-phase PARAMETER census
+  (e) TANH SATURATION of the policy MLP, per layer: the share of activations with |a| > 0.99 and the share of
+      units saturated on >= 99 % of rows (the plasticity check's definition, 2026-10-26)
 
 🚨 **No number here licenses a kill or a build on its own, and that rule is bought with a
 retraction.** A "conditioning headroom" claim was once derived from a low participation ratio
@@ -78,6 +80,16 @@ VALIDITY: Dict[str, Dict[str, str]] = {
                    "decodability drop needs an ablation or an intervention showing the policy's "
                    "behaviour actually depends on the dropped fact.",
         "no_verdict": "No kill/build decision from this number alone.",
+    },
+    "tanh_saturation": {
+        "movement": "A RISING share of saturated activations / saturated units in a policy-MLP tanh layer at "
+                    "matched step = the layer's gradient (1 - a^2) is vanishing on those units. On X26's "
+                    "plateau layer 1 went 0.84 -> 0.92 (activations) and 6 % -> 18 % (units).",
+        "confirm": "Saturation did not show up as slower refitting there (plasticity check F3: the "
+                   "end-to-end refit of P*'s own labels was 0.986x @25M's). Pair a rise with a trainability "
+                   "read (probe (b), or a fork's learning curve on a new target) before calling it a loss.",
+        "no_verdict": "No kill/build decision from this number alone. A single generation's value is "
+                      "uncalibrated; read the DIFFERENCE at matched step.",
     },
     "params": {
         "movement": "A phase whose rms is ~unchanged from init while every sibling has grown is a "
@@ -240,6 +252,17 @@ def render(report: Dict[str, Any]) -> str:
         lines.append(f"  {name:<26}{row['n_params']:>12,}{_fmt(row['param_share'], '8.3f')}"
                      f"{_fmt(row['rms'], '9.4f')}{_fmt(100 * row['zero_frac'], '8.1f')}")
 
+    ts = report.get("tanh_saturation")
+    if ts is not None:
+        lines.append(f"\n(e) POLICY-MLP TANH SATURATION  (|a| > {ts['abs_threshold']}; unit = saturated on "
+                     f">= {ts['unit_row_share']:.0%} of {ts['n_rows']} rows)")
+        lines.append(f"  {'layer':<26}{'units':>7}{'sat acts':>10}{'sat units':>11}")
+        for name, row in ts["layers"].items():
+            lines.append(f"  {name:<26}{row['units']:>7}{_fmt(row['mean_sat_frac'], '10.4f')}"
+                         f"{_fmt(row['saturated_units'], '11.4f')}")
+        if not ts["layers"]:
+            lines.append("  (no tanh layer in this policy's mlp_extractor)")
+
     lines.append("\n" + "-" * 78)
     lines.append("TRIPWIRE, NOT VERDICT: no kill/build decision from any number above on its own.")
     lines.append("Read a metric only as a DIFFERENCE against another generation at matched step,")
@@ -300,7 +323,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
     fresh = build_fresh_extractor(policy, seed=args.seed)
     layout = Gen3ObservationEncoder(load_mappings()).get_layout()
-    body = run_battery(policy.features_extractor, fresh, obs, masks, layout,
+    body = run_battery(policy.features_extractor, fresh, obs, masks, layout, policy=policy,
                        n_targets=args.n_targets, folds=args.folds, seed=args.seed,
                        batch=args.batch, device=args.device, progress=say)
 

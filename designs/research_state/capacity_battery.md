@@ -48,7 +48,7 @@ embedding indices.
 
 ---
 
-## The four probes
+## The five probes
 
 ### (a) Representation effective rank
 
@@ -127,6 +127,23 @@ are not differenceable on it.
 |---|---|
 | **movement means** | A phase whose `rms` is ~unchanged from init while every sibling has grown is not learning; `zero_frac ≈ 1.0` on a zero-init route means it never left identity. |
 | **confirm with** | Weight norm is not usage. `critic_route_audit` / `edge_ablation_audit` and the per-edge-family liveness metrics price a route in |dV| / argmax-flip terms. This census only says where to point them. |
+| **no verdict** | — |
+
+### (e) Policy-MLP tanh saturation (battery version 3)
+
+Per tanh layer of `policy.mlp_extractor` (the 512-unit policy MLP before the pointer head), two numbers on the
+sampled states: `mean_sat_frac`, the share of ALL the layer's activations with |a| > 0.99, and `saturated_units`,
+the share of units saturated on at least 99 % of rows. They are the plasticity check's own statistics
+(`measurements/plasticity_check_2026-10-26/plasticity_probe.py`, `structure_one`), computed by
+`tanh_saturation_probe` on forward hooks over the actor's own forward. On X26 the check read layer 1 rising 0.84 →
+0.92 and 6 % → 18 % from 100M to 480M; this probe puts that reading in every artifact. It needs the whole policy
+(the MLP is outside the extractor), so `run_battery(..., policy=...)` omits the block when given none. Offline only:
+nothing here touches the training loop.
+
+| | |
+|---|---|
+| **movement means** | Rising shares at matched step: the tanh gradient `1 - a^2` is vanishing on those units. |
+| **confirm with** | A trainability read: the plasticity check found X26's saturation did NOT slow an end-to-end refit (0.986× @25M's), so a rise alone is a tripwire. |
 | **no verdict** | — |
 
 ---
@@ -240,8 +257,8 @@ findings:
 |---|---|
 | `src/agents/model/capacity_probes.py` | the engine — every estimator, pure NumPy, unit-testable without a checkpoint |
 | `src/main/capacity.py` | the CLI — checkpoint resolution, model load + drift diagnosis, the table, the artifact |
-| `src/agents/model/capacity_probes_test.py` | the math pins (30 tests, 0.6 s) |
-| `src/main/capacity_test.py` | resolution / render / strict-JSON / validity-block pins (14 tests, 0.5 s) |
+| `src/agents/model/capacity_probes_test.py` | the math pins (+ the tanh-saturation pins) |
+| `src/main/capacity_test.py` | resolution / render / strict-JSON / validity-block pins (+ the (e) render row) |
 
 Reused rather than rebuilt: `agents.training.rank_metrics.effective_rank` (one rank definition
 shared with the live `rank/*` training metric) and `agents.model.audit_states.collect_states` (the
