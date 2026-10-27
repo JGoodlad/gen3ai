@@ -11,6 +11,8 @@ import json
 from pathlib import Path
 from typing import Dict, List, Optional
 
+import pytest
+
 from main.reads import rules as RU
 from main.reads.assemble import cell_choices, compare_choices, game_choices
 from main.reads.rules_test import GAMES, _banked, _d3_cells, _d3_spec
@@ -140,3 +142,29 @@ def test_x59s_repeat_unit_fails_void6_on_a_pair_that_differs_only_in_one_choice(
     assert bad[0]["tuple_equal"] is True and bad[0]["choices"] == "differ" and bad[0]["games_equal"] is False
     good = repeat_checks(cells(None), {"group": "repeat", "of": "s_h"}, "students")
     assert good[0]["games_equal"] is True and good[0]["choices"] == "equal"
+
+
+# ------------------------------------------------------------------- REVIEW 2026-10-27 (anchor_guards_review)
+@pytest.mark.xfail(strict=True, reason=(
+    "REVIEW 2026-10-27 H2 (MAJOR, designs/ops/reviews/anchor_guards_review_2026-10-27.md): a bank that NAMES its "
+    "capture source degrades to the 5-tuple alone when that capture is not under $GEN3AI_ARCHIVE_DIR (moved, pruned, "
+    "another box), so one registered decision PASSES or VOIDs by the environment. Flips RED when a named-but-missing "
+    "capture fails the guard."))
+def test_a_bank_that_names_its_capture_never_passes_on_the_5_tuple_when_the_capture_is_gone(tmp_path, monkeypatch):
+    sp, cells = _guard_fixture(tmp_path, monkeypatch, flip=1)
+    monkeypatch.setenv("GEN3AI_ARCHIVE_DIR", str(tmp_path / "pruned"))
+    doc = RU.inputs("d1", cells, sp.params, sp)
+    assert doc["import_off"]["guard"]["passed"] is False
+
+
+@pytest.mark.xfail(strict=True, reason=(
+    "REVIEW 2026-10-27 H2 (MAJOR): the RE-PLAYED guard unit's own capture missing (capture off, a cell dir lost) "
+    "also degrades to the 5-tuple and passes. Flips RED when it fails the guard."))
+def test_a_replayed_guard_unit_without_its_capture_never_passes_on_the_5_tuple(tmp_path, monkeypatch):
+    import shutil
+
+    sp, cells = _guard_fixture(tmp_path, monkeypatch, flip=1)
+    for u in cells["anchor"]["guard"]["units"]:
+        shutil.rmtree(Path(u["cell_dir"]) / "capture")
+    doc = RU.inputs("d1", cells, sp.params, sp)
+    assert doc["import_off"]["guard"]["passed"] is False

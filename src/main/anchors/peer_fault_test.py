@@ -146,3 +146,50 @@ def test_an_earlier_failure_is_kept_and_a_clean_log_changes_nothing(tmp_path: Pa
     before = dict(report)
     assert apply_peer_fault(report, clean, 20, 20, None) is None
     assert report == dict(before, peer_fault_lines=0)
+
+
+# --------------------------------------------------------- the WIRING (REVIEW 2026-10-27, anchor_guards_review)
+async def test_the_pair_watchdog_fails_at_the_first_fault_line_of_either_peer(tmp_path: Path, monkeypatch) -> None:
+    """H5 in an anchor-vs-anchor cell: the SECOND peer faults while both live. Pins ``watch_peer_pair``'s scan (the
+    review's mutant M9, removing it, survived every fast test)."""
+    from main.anchors import session
+
+    (tmp_path / "a").mkdir()
+    (tmp_path / "b").mkdir()
+    first, second = _plan(tmp_path / "a", CLEAN_LOG), _plan(tmp_path / "b", CLEAN_LOG)
+    records = [_record(i) for i in range(1, 6)]
+    monkeypatch.setattr(session, "read_peer_battles", lambda _d: list(records))
+
+    async def fault_soon() -> None:
+        await asyncio.sleep(0.05)
+        with open(second.log_path, "a") as fh:
+            fh.write(FAULT)
+
+    asyncio.ensure_future(fault_soon())
+    with pytest.raises(SeriesFailure) as excinfo:
+        await asyncio.wait_for(session.watch_peer_pair(
+            [FakePeer(), FakePeer()], [first, second], tmp_path, OurSideState(), expected=20,
+            first_game_timeout_s=60.0, progress_timeout_s=60.0, poll_s=0.02), timeout=30.0)
+    assert excinfo.value.cause == "peer_long_tail_fault" and "5/20" in excinfo.value.detail
+
+
+def test_every_single_peer_half_report_applies_h21(tmp_path: Path, monkeypatch) -> None:
+    """``runner._half_report`` (both transports' half) must run H21: a peer that exited 0 with no recorded error but
+    printed the fault line fails the half. Pins the call itself (the review's mutant M11, deleting it, survived every
+    fast test while ``apply_peer_fault`` alone stayed green)."""
+    from types import SimpleNamespace
+
+    from main.anchors import runner
+
+    monkeypatch.setitem(runner.peers_mod.PEERS, "stub", SimpleNamespace(
+        read_report=lambda _p: {"regime_verified_decisions": True, "peer_error_free": True}))
+    monkeypatch.setattr(runner.peers_mod, "team_source_count", lambda _p: 1)
+    plan = SimpleNamespace(opponent_kind="stub", our_side_is_bot=False, our_side_is_peer=False, our_transport="core",
+                           our_temperature=None, our_search=None, our_belief_prior_mix=None)
+    state = OurSideState()
+    state.records.extend(_record(i) for i in range(1, 3))
+    _, report, failure = runner._half_report(plan, "peer_challenge", 2, _plan(tmp_path, CLEAN_LOG + FAULT),
+                                             FakePeer(0), state, None, None)
+    assert report["peer_rcs"] == [0] and report["peer_fault_lines"] == 2
+    assert report["peer_clean"] is False
+    assert failure is not None and failure.cause == "peer_long_tail_fault"

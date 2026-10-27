@@ -7,6 +7,8 @@ from __future__ import annotations
 from pathlib import Path
 from types import SimpleNamespace
 
+import pytest
+
 from main.anchors import runner
 from main.anchors.results import unit_counts
 from main.anchors.server import FORCED_ENDS_NAME, arm_forced_ends
@@ -104,3 +106,72 @@ def test_unit_counts_refuses_a_non_battle_ending_and_an_unarmed_guard():
     assert not nbe.counts and any("non_battle_endings" in r for r in nbe.reasons)
     for guard in ("blind", "unavailable", None):
         assert not unit_counts(_summary(forced_end_guard=guard, non_battle_endings=[]), games=1).counts
+
+
+# ------------------------------------------------------------------- REVIEW 2026-10-27 (anchor_guards_review)
+def test_a_peers_forfeit_at_the_cap_on_a_capped_row_is_void(tmp_path):
+    """Pins the ``user in ours`` clause on its own (the review's mutant M1 survived every fast test): a forfeit at the
+    turn limit by the PEER, on a row our side stamped ``hit_forfeit_limit``, is the peer's, never our cap."""
+    rec = _rec(slot="p2", user="metakakuna1", cause="forfeit", turn=LIMIT)
+    assert runner.forced_end_verdict(_plan(tmp_path), [_row(result="win", cap=True)], [rec])["void"]
+
+
+@pytest.mark.xfail(strict=True, reason=(
+    "REVIEW 2026-10-27 H3 (MINOR, designs/ops/reviews/anchor_guards_review_2026-10-27.md): ws_frontend._force_lose "
+    "swallows an OSError on the forced-end append, so the armed-EMPTY file reads 'armed' with no void and a peer's "
+    "drop counts as our win. Flips RED when a failed append makes the guard blind (fail closed)."))
+async def test_a_forced_end_the_record_could_not_store_never_reads_armed_and_clean(tmp_path, monkeypatch):
+    import builtins
+
+    from utils.bridge import ws_frontend
+    from utils.bridge.ws_frontend_test import _fake_battle, _front, _named
+
+    path = tmp_path / FORCED_ENDS_NAME
+    arm_forced_ends(path)
+
+    def full_disk(file, *a, **kw):
+        if str(file) == str(path) and a and a[0] == "a":
+            raise OSError(28, "No space left on device")
+        return builtins.open(file, *a, **kw)
+
+    monkeypatch.setattr(ws_frontend, "open", full_disk, raising=False)
+    front = _front(forced_ends_log=str(path))
+    alpha, beta = await _named(front, "Gen3AIAnchor1"), await _named(front, "MetaKakuna1")
+    battle = _fake_battle(front, alpha, beta)
+    front._note_side_line(battle, "p2", "|turn|3")
+    await front._drop(beta)                                    # the peer drops at turn 3: a FORCELOSE, OUR "win"
+    assert len(front.forced_ends) == 1                         # the front end KNOWS
+    v = runner.forced_end_verdict(_plan(tmp_path), [_row(battle.tag, "win")], runner.read_forced_ends(path))
+    assert v["guard"] != "armed" or v["void"], v               # ...but the guard reads armed and clean today
+
+
+@pytest.mark.xfail(strict=True, reason=(
+    "REVIEW 2026-10-27 H1 (MAJOR): a summary without forced_end_guard (any unit played by a pin before bf5f1a8e, "
+    "e.g. a registered read still playing at its old pin) is 'judged as before', even when its own capture shows "
+    "the peer's FORCELOSE at turn 3. Flips RED when assemble re-derives the guard from the captures."))
+def test_an_unguarded_summary_whose_capture_shows_a_peer_drop_does_not_count(tmp_path):
+    import json
+
+    from main.reads.assemble import anchor_units
+
+    state = tmp_path / "kakuna"
+    u = {"name": "p__home72__00", "label": "p", "arm": "p", "seed": 1, "teamset": "home72", "unit_seed": 0,
+         "model": "m.zip", "model_sha256": "0" * 64, "games": 1}
+    cell = state / "cells" / u["name"]
+    (cell / "capture").mkdir(parents=True)
+    (state / "plan.json").write_text(json.dumps({"units": [u]}))
+    (cell / "summary.json").write_text(json.dumps(_summary(
+        wins=1, losses=0, ties=0,
+        cell={"opponent_version": "Kakuna@ckpt34", "forfeit_turn_limit": LIMIT, "our_regime": "greedy",
+              "server_version": "ws_frontend[in-process]@de15dfc7b+rust:cargo:src/rust_sim"})))
+    (cell / "games.jsonl").write_text(json.dumps({"half": "peer_challenge", "index": 1, "our_team": "t1.txt",
+                                                  "result": "win", "turns": 3, "battle_tag": "battle-gen3ou-1"}) + "\n")
+    start = {"formatid": "gen3ou", "p1": {"name": "Gen3AIAnchor1"}, "p2": {"name": "MetaKakuna1"}}
+    (cell / "capture" / "battle-gen3ou-1.json").write_text(json.dumps({
+        "tag": "battle-gen3ou-1", "seed": [1, 2, 3, 4],
+        "commands": ["START " + json.dumps(start), "CHOOSE p1 move surf", "CHOOSE p2 move spikes", "FORCELOSE p2",
+                     "END"],
+        "chunks": [["p1", "|turn|1"], ["p2", "|turn|1"], ["p1", "|turn|3"], ["p2", "|turn|3"],
+                   ["p1", "|win|Gen3AIAnchor1"], ["p2", "|win|Gen3AIAnchor1"]]}))
+    (row,) = anchor_units(state)
+    assert row["counted"] is False, row["reasons"]
