@@ -12,10 +12,10 @@ is a commit on `main` (`git show <sha>`).
 status digests in chat. It does not replace the status block each design doc keeps for itself.
 
 **Terms used below.** **P\*** is our strongest checkpoint: the X26 run at 280M steps, frozen as the reference at
-`d172c10ed`; the named baseline `pstar_plateau`. **Kakuna** is Metamon's strongest public model (142.8M parameters; ours has 2.03M). **home72** is our 72
-training teams. **Unfamiliar teams** (pooled as "U" or "H") are teams our model never trained on. "pp" means
-percentage points of win rate. **NOT DETECTED / UNDECIDED** means the interval spans zero, so we cannot tell the
-lever from noise.
+`d172c10ed`; the named baseline `pstar_plateau`. **Kakuna** is Metamon's strongest public model (142.8M parameters;
+ours has 2.61M, 2.03M of them in the feature extractor: `ARCHITECTURE.md`). **home72** is our 72 training teams.
+**Unfamiliar teams** (pooled as "U" or "H") are teams our model never trained on. "pp" means percentage points of win
+rate. **NOT DETECTED / UNDECIDED** means the interval spans zero, so we cannot tell the lever from noise.
 
 ---
 
@@ -25,10 +25,10 @@ lever from noise.
 |---|---|---|---|---|
 | 1 | **The strongest baseline** | **AT ITS PLATEAU.** P\* = X26 @ 280M. Training on to 480M changed nothing. | P\* vs the production baseline: 0.694 [0.666, 0.721]. The 480M continuation vs P\* against Kakuna: +0.08 pp [−3.90, +4.06], FLAT. | `d172c10ed`, `204204bbf` |
 | 2a | **Beat Metamon on our teams** | **MET.** | P\* vs Kakuna on home72: **0.598 [0.549, 0.644]** | `3010c81ba` |
-| 2b | **Beat Metamon on unfamiliar teams** | **NOT MET**, about 4 pp short. The lower bound must clear 0.50, which needs about 0.53. | P\* 0.487 [0.459, 0.515]. Best arm so far: D3 at 0.491 (look 1). | `3010c81ba`, `58287c525` |
-| 3 | **Know where we are** | **MAPPED.** The deficit is **piloting** an unfamiliar team, not facing one. In-house meters cannot see it; only Kakuna games can. It is lost from level mid-game positions, not the opening, and it goes with the team, not the set (descriptive: `research_state/measurements/piloting_gap_forensics_2026-10-26/`). | Piloting deficit, strength-corrected: +0.123 [+0.039, +0.206]. P\* is equal to Metamon's ensemble and beats every human-only Metamon model (§4). | `82858f433`, `82f273eff`, `df35d1bb0` |
+| 2b | **Beat Metamon on unfamiliar teams** | **NOT MET**, about 4 pp short. The lower bound must clear 0.50, which needs about 0.53. | P\* 0.487 [0.459, 0.515]. No lever's interval clears 0.50. Highest point estimates, each against its own control and none detected: the belief prior mix (λ = 0.25) 0.502, D1 0.492, D3 0.491 (look 1). | `3010c81ba`, `f299a7243`, `eb99ab362`, `58287c525` |
+| 3 | **Know where we are** | **MAPPED.** The deficit is **piloting** an unfamiliar team, not facing one. In-house meters cannot see it; only Kakuna games can. It is lost from level mid-game positions, not the opening, and it goes with the team, not the set (descriptive: `research_state/measurements/piloting_gap_forensics_2026-10-26/`). | Piloting deficit, strength-corrected (X26 @161M): +0.123 [+0.039, +0.206]. P\* is level with Metamon's ensemble on unfamiliar teams, ahead of it on home72, and beats every human-only Metamon model (§4). | `8b43eb44a`, `82858f433`, `82f273eff`, `df35d1bb0` |
 | 4 | **AlphaStar-style improvement** (league, PFSP, exploiters) | **NO GAIN YET.** The archive-pool and promotion levers are NULL. An exploiter beats P\* easily, so headroom exists. No league arm has run. | Best responder vs P\*: **+11.1 pp [+8.3, +13.8]** (saturates by 8M steps) | `806e50931`, `4290d652a`, `c456b6a09` |
-| 5 | **What search needs** | **PAUSED, and not getting closer.** Every search gain we see is graded by our own model ("self-referee"). Graded by a real bot, the gains shrink. At P\* the one gain that replicates is gone. | L1 cell at P\*: +0.0001 [−0.0097, +0.0101]. At the 25M policy: +0.0193. | `f756019d7`, `015f00e20`, `0d0058408`, `73428c077` |
+| 5 | **What search needs** | **PAUSED, and not getting closer.** Every search gain we see is graded by our own model ("self-referee"). Graded by a real bot, the gains shrink (descriptive; the registered read is UNDECIDED). At P\* the one gain that replicates is gone. | L1 cell at P\*: +0.0001 [−0.0097, +0.0101]. At the 25M policy: +0.0193. | `f756019d7`, `015f00e20`, `0d0058408`, `73428c077` |
 | 6 | **Which collapse, and counterfactuals** | **READ: a treadmill, not a collapse** (one seed, provisional). The policy keeps changing without improving, the opponent pool goes stale and the learning rate halves. No coverage, rank or dormant-unit collapse. No counterfactual source is built into training. | about 30 % of greedy choices change per 20M steps | `3e8a41249` |
 
 ## 2. Running now (as of 2026-10-26)
@@ -50,7 +50,7 @@ lever from noise.
 | X52: practise 36 teams for 5M (ceiling of practice) | UNDECIDED | practised +3.2 pp [−0.2, +6.8]; unpractised +1.3 [−3.5, +6.1] | `42bb0858d` |
 | D1: widen the team pool | UNDECIDED, final | Kakuna, unfamiliar teams: +2.10 pp [−0.92, +5.11]; in-pool −1.61 [−2.90, −0.32] | `eb99ab362` |
 | X26c: train on 380M → 480M | FLAT; goal (b) not met | +0.08 pp [−3.90, +4.06] | `204204bbf` |
-| D3 look 1: set mutation | CONTINUE (look 2 decides) | Kakuna, unfamiliar teams: +1.27 pp [−2.63, +5.16]; in-pool −0.24 [−1.10, +0.62], non-inferior | `58287c525` |
+| D3 look 1: set mutation | CONTINUE (look 2 decides) | Kakuna, unfamiliar teams: +1.27 pp [−2.63, +5.16]; in-pool −0.24 [−1.10, +0.62], non-inferior. C0's side reuses D1's games, played before the 10-25 obs and engine fixes; a 140-game replay guard passed | `58287c525` |
 | Belief prior mix, λ = 0.25 | NOT DETECTED | +1.50 pp [−2.74, +5.74] | `f299a7243` |
 | Belief prior mix, λ = 1 (prior only) | NOT DETECTED; H3 not killed | −1.50 pp [−5.47, +2.47] | `71c76dfbb` |
 | Human-only Metamon models (FR-1, FR-3) | P\* BEATS all three | SmallRL 0.666 [0.639, 0.692]; LargeRL 0.631 [0.603, 0.658]; LargeIL 0.790 [0.766, 0.812] | `4d8d9eef8`, `df35d1bb0` |
@@ -58,7 +58,7 @@ lever from noise.
 | R0: exploitability of P\* | HEADROOM, saturated | best responder +11.1 pp [+8.3, +13.8]; the edge transfers (+14.5 [+7.6, +21.2] vs C0) | `c456b6a09`, `1459416fb` |
 | E1-0: a real bot as the search referee | UNDECIDED, no relabel | oracle bot − self −0.024 [−0.054, +0.009] | `015f00e20` |
 | Hidden-info maturity, plateau step | GAP-SHRINKS NOT DETECTED; frontier static | G_F change −0.003 [−0.020, +0.015] | `e7048bb1d` |
-| L1 replication (piKL, 4-turn leaf) | REPLICATES thinly, only at 25M | +0.0097 [+0.0025, +0.0169]; at P\* +0.0001 | `f756019d7` |
+| L1 replication (piKL, 4-turn leaf) | REPLICATES thinly, pooled over the 25M and P\* anchors; post hoc it is all the 25M anchor's | +0.0097 [+0.0025, +0.0169]; at P\* +0.0001 [−0.0097, +0.0101] | `f756019d7` |
 | Piloting-gap forensics (banked Kakuna games, descriptive) | the gap forms after turn 10, from level positions; it goes with the TEAM context | level at turn 10: 0.609 home72 vs 0.501 U; seen sets only, per-mon KO edge drop +0.093 [+0.004, +0.176] | `piloting_gap_forensics_2026-10-26/` (ledger 10-26) |
 
 ## 4. How we compare with the state of the art
@@ -70,7 +70,7 @@ lever from noise.
 | **Metamon human-only models** | trained only on human replays (SmallRL, LargeRL, LargeIL, 200M) | P\* beats all three (0.63–0.79). Offline RL beats imitation on the same data by about 16 pp. | `4d8d9eef8`, `df35d1bb0` |
 | **Foul Play** (search bot; Gen 9 OU champion) | MCTS over a hand-written evaluator | **By proxy only:** Kakuna draws it, 0.490 [0.422, 0.559], and P\* beats Kakuna on home72. **Never read against P\*.** Our old 75M policy lost 0.388 [0.288, 0.497]. | `8cba100f8`, `e00e78da0` |
 
-So: at the state of the art on familiar teams, with a model about 70 times smaller, and level with it on unfamiliar
+So: at the state of the art on familiar teams, with a model about 55 times smaller, and level with it on unfamiliar
 teams (survey: [`research_state/literature/sota_survey_2026-10-26.md`](research_state/literature/sota_survey_2026-10-26.md),
 `fd3a99b65`).
 

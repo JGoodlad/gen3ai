@@ -29294,3 +29294,34 @@ call: the sha256 the tool recomputed equals BATCH1_LAUNCH_SHEET's P\* definition
 (not era-only). The line as the tool printed it:
 
 - **baseline `pstar_plateau` registered** on 2026-10-26: `rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip` @280000170 steps, commit `9c033489`, config v158 `gen3_mon_tied_gain_v1`, sha256 `814823c514fb…`. Was: *(new baseline)*. Reason: 2026-10-19 · X35 R FROZEN at P* = X26 @ 280M (d172c10ed); the parent of every X35 production fork (C0 / A1 / D1).
+### 2026-10-26 · CORRECTION · **THE VIEWS AUDIT: the D3 look-1 entry omits an engine mix (C0's banked Kakuna games predate the 10-25 obs / label and engine fixes; D3's carry them); ten RUST SIM entries break the heading convention and cite no record; "H" names two things in the D1 / D3 entries. No ledger number is wrong.**
+
+**Question.** Do this week's ledger entries (2026-10-19 → 10-26) carry a record, valid ids and every caveat their
+views quote? Part of an adversarial audit of `UNDERSTANDING.md`, `STATUS.md` and the beat-Metamon design against the
+evidence (`research_state/measurements/views_audit_2026-10-26/README.md`).
+
+**Method.** Every heading from line 27205 on: its landing commit (`git blame`), every backticked hex id checked with
+`git cat-file`, every measurement path checked on disk, every registration commit checked as an ancestor of its read.
+CPU only, no games.
+
+**Result.**
+- **Ids.** Every cited commit exists. Three backticked hex strings are content hashes, not commits (`76e29a01` the
+  HOM's weights sha256, `ac8e88e7` the Metamon hub revision, `cef0960e` the frozen R's content). Every registration
+  (`9938d7b6`, `4ee655648`, `62bb07c00`, `e05c45eeb`, `b04f15b9`, `42f1d9a7`, `1f980728a`, `6888a5ec4`) is an ancestor
+  of its read: predictions came before data.
+- **Records.** Every MEASUREMENT entry names a measurement directory that exists.
+- **CORRECTION to the D3 look-1 entry (2026-10-26, `58287c525`).** It reuses C0's Kakuna and in-house rows from D1's
+  read (played at `5e389ddac` and earlier) and plays D3 at `2cc864f2f`. Between the two landed the obs / label fix
+  `d8d674b99` (the Destiny Bond / Endure / Mean Look volatile ends, the consumed-item op) and the engine fix
+  `f9978586b` (the lock-in and recharge counters). The regime id cannot see the engine (`main.reads` keys carry no
+  `server_version`), and the determinism guard re-played one cell (C0 s3501 on `heldout72_hpfix`, 140 games). So
+  the read is an ON-at-new-engine vs OFF-at-old-engine contrast, bounded by the guard but not excluded. The verdict
+  (CONTINUE) stands; look 2 and N1-P's read import the same C0 rows and carry the same caveat
+  (`human_replay_quality_2026-10-25/REVIEW_F_x60.md` F-M2).
+- **Convention.** The ten 2026-10-26 RUST SIM entries (gen3 full parity B0–B10, BF and the forced-Struggle fix) are
+  `##` headings, against the `### YYYY-MM-DD · TAG · title` rule (`research_state/README.md`), and cite no
+  measurement path; their evidence is the commit bodies and the named test files. The index lists them correctly.
+- **Naming.** In the D1 and D3 entries "H" is both D1's pooled three-panel statistic and the `heldout72_hpfix` panel
+  ("H +1.27 pp … per panel H +2.9"). Read the statistic as U, the equal-weight mean over H, F and P72.
+
+**Evidence:** `research_state/measurements/views_audit_2026-10-26/README.md`.
