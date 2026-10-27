@@ -8,7 +8,10 @@ Each pass this follower re-reads the file set (:func:`chain_files`: the status f
 paths, and every live launcher's logs from ``live.discover``), follows every file ``tail -F`` style (:class:`Follower`)
 and prints each line the chain's :func:`canary.monitor_filter` matches, prefixed ``[<file name>]``. It also probes the
 supervisor (``liveness``) and, once per case, appends ``ARMCHAIN[<name>]: SUPERVISOR DEAD|STALE: …`` to the status
-file (which the filter matches, so it prints in the same pass): a dead supervisor with an arm mid-flight pages.
+file (which the filter matches, so it prints in the same pass): a dead supervisor with an arm mid-flight pages. A
+DEAD / STALE reading pages only when it held on two passes at least ``confirm_gap_s`` (10 s) apart
+(:class:`liveness.Confirm`): one probe once read a live supervisor DEAD (10-27 12:43:42). A supervisor whose pid is gone
+from ``/proc`` is the exception: it pages on the pass that sees it.
 
 It is bounded (``--max-hours``) and prints an ``EXPIRING`` line on its last pass. It never writes anything but that
 alert line and its once-only key file (``<work_dir>/monitor_alerted.txt``).
@@ -176,10 +179,12 @@ def read_state(spec: spec_mod.ChainSpec) -> Dict[str, object]:
 def run_monitor(chain_path: str, out: Callable[[str], None] = print, interval_s: float = 10.0,
                 max_hours: float = 24.0, proc: str = "/proc", sleep: Callable[[float], None] = time.sleep,
                 now: Callable[[], float] = time.time, passes: Optional[int] = None,
-                live_runs: Optional[Callable[[str], List[live.LiveRun]]] = None) -> int:
+                live_runs: Optional[Callable[[str], List[live.LiveRun]]] = None,
+                confirm_gap_s: float = liveness.CONFIRM_GAP_S) -> int:
     spec = spec_mod.load(chain_path)
     discover = live_runs or (lambda md: live.discover(md, proc))
     fol = Follower()      # holds no file open between passes (it can never block a thin, a ship or a delete)
+    confirm = liveness.Confirm(confirm_gap_s)
 
     def emit(msg: str) -> None:
         try:
@@ -201,9 +206,11 @@ def run_monitor(chain_path: str, out: Callable[[str], None] = print, interval_s:
         os.makedirs(spec.work_dir, exist_ok=True)
         alert = canary.Alerter(os.path.join(spec.work_dir, "monitor_alerted.txt"), emit)
         state = read_state(spec)
-        lv = liveness.probe(state, spec.state_path + ".lock", now(), proc,
-                            {it.key: os.path.join(spec.job_dir, f"{it.run}.pid") for it in spec.arms()})
-        if lv.loud:
+        t = now()
+        lv = liveness.probe(state, spec.state_path + ".lock", t, proc,
+                            {it.key: os.path.join(spec.job_dir, f"{it.run}.pid") for it in spec.arms()},
+                            read_gap_s=min(liveness.LOCK_READ_GAP_S, interval_s))
+        if confirm.confirmed(lv, t):
             alert(lv.key, f"SUPERVISOR {lv.verdict}: {lv.detail}")
         files = chain_files(spec, state, discover(spec.models_dir), alert)
         for path, line in fol.poll(files):

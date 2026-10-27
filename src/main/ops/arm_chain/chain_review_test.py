@@ -15,7 +15,8 @@ import signal
 import subprocess
 import sys
 import time
-from typing import Any, Dict, Iterator, List
+from pathlib import Path
+from typing import Any, Callable, Dict, Iterator, List, Tuple
 
 import pytest
 
@@ -23,8 +24,10 @@ from main.ops.arm_chain import canary, cli, liveness, monitor
 from main.ops.arm_chain import chain as C
 from main.ops.arm_chain.chain_test import (FakeShipper, _Died, _recording_kill, _void_arm, deps, phases, runner_for,
                                            status, world_then_wait)
+from main.ops.arm_chain.live_test import FakeProc
 from main.ops.arm_chain.procwatch import ProcRef, ref_of, wait_gone
 from main.ops.arm_chain.testing_fakes import World, commit_all
+from utils import procfs
 
 pytestmark = pytest.mark.integration
 
@@ -312,19 +315,131 @@ def test_the_monitor_follows_logs_that_appear_after_it_started_with_no_rearm(w):
     assert out[-1].startswith("ARMCHAIN-MONITOR[t]: EXPIRING")
 
 
-def test_the_monitor_pages_a_dead_supervisor_once(w):
+def _running_chain(w: World) -> Tuple[str, C.Chain]:
     p = _chain_file(w, [w.arm("a1", 1, w.pin_a)])
-    spec = w.spec([w.arm("a1", 1, w.pin_a)])
-    ch = C.Chain(spec, deps(w, runner_for(w), FakeShipper(w.repo)))
+    ch = C.Chain(w.spec([w.arm("a1", 1, w.pin_a)]), deps(w, runner_for(w), FakeShipper(w.repo)))
     ch.state["items"]["arm:rb_a1_s1"]["phase"] = "RUNNING"
     ch.state["history"].append({"at": "x", "item": "arm:rb_a1_s1", "from": "BANNER_OK", "to": "RUNNING", "note": ""})
     ch._save()
+    return p, ch
+
+
+class _Clock:
+    """The monitor's wall clock and its sleep: each pass is ``step`` s after the last, with no real waiting."""
+
+    def __init__(self, step: float = 10.0):
+        self.t, self.step = time.time(), step
+        self.on_sleep: Callable[[], None] = lambda: None
+
+    def sleep(self, _s: float) -> None:
+        self.on_sleep()
+        self.t += self.step
+
+    def now(self) -> float:
+        return self.t
+
+
+def _heartbeat(ch: C.Chain, clock: _Clock, *, beat_age: float, bound: float = 600.0) -> None:
+    """A supervisor's heartbeat for pid 4242 (``_fake_proc``'s), ``beat_age`` s old and due again within ``bound`` s."""
+    ch.state["supervisor"] = {"pid": 4242, "start_ticks": 400 * procfs.HZ, "last_beat_epoch": clock.t - beat_age,
+                              "stale_after_epoch": clock.t - beat_age + bound, "doing": "arm:rb_a1_s1 RUNNING: waiting"}
+    ch._save()
+    open(ch.spec.state_path + ".lock", "a").close()
+
+
+def _fake_proc(w: World, *, supervisor_alive: bool) -> str:
+    """A fake ``/proc`` whose ``locks`` table lists NO flock at all (the transient miss), with pid 4242 in it or gone."""
+    base = Path(w.root) / "fakeproc"
+    base.mkdir()
+    fp = FakeProc(base)
+    if supervisor_alive:
+        fp.add(4242, ["python", "-m", "main.ops.arm_chain", "run", "chain.json"], start_s=400)
+    open(os.path.join(fp.root, "locks"), "w").write("1: FLOCK  ADVISORY  WRITE 99 00:58:86 0 EOF\n")
+    return fp.root
+
+
+def _run_monitor(p: str, clock: _Clock, proc: str, passes: int) -> List[str]:
     out: List[str] = []
-    monitor.run_monitor(p, out=out.append, interval_s=0.01, passes=3, sleep=lambda s: None, live_runs=lambda md: [])
+    monitor.run_monitor(p, out=out.append, interval_s=0.01, passes=passes, sleep=clock.sleep, now=clock.now,
+                        proc=proc, live_runs=lambda md: [])
+    return out
+
+
+def test_the_monitor_pages_a_dead_supervisor_once(w):
+    """No heartbeat and no lock (a supervisor that never ran, or one older than the heartbeat) with an arm mid-flight:
+    DEAD, paged on the SECOND pass (not certain, so it needs two probes), and once."""
+    p, ch = _running_chain(w)
+    clock = _Clock()
+    out: List[str] = []
+    seen: List[int] = []
+    clock.on_sleep = lambda: seen.append(len([o for o in out if "SUPERVISOR DEAD" in o]))
+    monitor.run_monitor(p, out=out.append, interval_s=0.01, passes=4, sleep=clock.sleep, now=clock.now,
+                        live_runs=lambda md: [])
     pages = [o for o in out if "SUPERVISOR DEAD" in o]
     assert len(pages) == 1 and "arm:rb_a1_s1 RUNNING is mid-flight" in pages[0]
+    assert seen == [0, 1, 1]            # nothing after the first pass, the page after the second
     assert pages[0].startswith("[status.txt] ") and re.search(canary.monitor_filter("t"), pages[0])
     assert status(w).count("SUPERVISOR DEAD") == 1
+
+
+def test_a_transient_lock_miss_with_a_fresh_heartbeat_pages_nothing(w):
+    """The 10-27 12:43:42 incident: no lock row on any read, the supervisor's pid alive and its beat 18 s old, three
+    passes. It paged ``SUPERVISOR DEAD`` before the fix."""
+    p, ch = _running_chain(w)
+    clock = _Clock()
+    _heartbeat(ch, clock, beat_age=18.0)
+    out = _run_monitor(p, clock, _fake_proc(w, supervisor_alive=True), passes=3)
+    assert not any("SUPERVISOR" in o for o in out), out
+    assert not os.path.exists(os.path.join(w.job, "status.txt")) or "SUPERVISOR" not in status(w)
+
+
+def test_a_supervisor_whose_pid_is_gone_is_paged_on_the_first_pass(w):
+    """Never suppress a real death: the beat is 5 s old (the supervisor was just killed) and its pid is not in
+    ``/proc``. One pass, no confirmation."""
+    p, ch = _running_chain(w)
+    clock = _Clock()
+    _heartbeat(ch, clock, beat_age=5.0)
+    out = _run_monitor(p, clock, _fake_proc(w, supervisor_alive=False), passes=1)
+    pages = [o for o in out if "SUPERVISOR DEAD" in o]
+    assert len(pages) == 1 and "arm:rb_a1_s1 RUNNING is mid-flight" in pages[0] and "pid 4242" in pages[0]
+
+
+def test_two_consecutive_lock_misses_with_a_stale_heartbeat_are_paged_on_the_second(w):
+    """The pid is alive, nobody holds the lock and the beat is past its declared deadline: DEAD, on the second probe
+    10 s after the first, not the first."""
+    p, ch = _running_chain(w)
+    clock = _Clock()
+    _heartbeat(ch, clock, beat_age=2000.0, bound=600.0)
+    proc = _fake_proc(w, supervisor_alive=True)
+    assert not any("SUPERVISOR" in o for o in _run_monitor(p, clock, proc, passes=1))      # one probe: nothing
+    out: List[str] = []
+    seen: List[int] = []
+    clock.on_sleep = lambda: seen.append(len([o for o in out if "SUPERVISOR DEAD" in o]))
+    monitor.run_monitor(p, out=out.append, interval_s=0.01, passes=3, sleep=clock.sleep, now=clock.now, proc=proc,
+                        live_runs=lambda md: [])
+    assert seen == [0, 1] and len([o for o in out if "SUPERVISOR DEAD" in o]) == 1, out
+
+
+def test_status_re_probes_a_dead_reading_and_reports_the_supervisor_that_is_there_now(w):
+    """``status`` (the 55-min cron reads its ``!!!`` line): a first probe that reads DEAD is probed again 10 s later, on
+    the state as it is then. Here the supervisor takes the lock in between."""
+    _, ch = _running_chain(w)
+    lock_path = ch.spec.state_path + ".lock"
+    held: List[_Lock] = []
+    slept: List[float] = []
+
+    def sleep(s: float) -> None:
+        slept.append(s)
+        if s >= liveness.CONFIRM_GAP_S and not held:
+            held.append(_Lock(lock_path, f"{os.getpid()}\n"))
+    ch.d.sleep = sleep
+    try:
+        lv = ch.liveness()
+    finally:
+        for lk in held:
+            lk.release()
+    assert liveness.CONFIRM_GAP_S in slept
+    assert (lv.verdict, lv.loud, lv.pid) == ("ALIVE", False, os.getpid()) and "a first probe read DEAD" in lv.detail
 
 
 def test_watch_files_for_a_chain_lists_each_unfinished_arms_fixed_paths(w, capsys):

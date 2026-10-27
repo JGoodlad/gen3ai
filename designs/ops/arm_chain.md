@@ -1,7 +1,7 @@
 # The arm chain: one tested module that operates production arms end to end
 
 > Always-current (`designs/CLAUDE.md`). Code: [`src/main/ops/arm_chain/`](../../src/main/ops/arm_chain/), entry point
-> `python -m main.ops.arm_chain`. Tests: `src/main/ops/arm_chain/*_test.py` (267; fake `/proc`, a fake
+> `python -m main.ops.arm_chain`. Tests: `src/main/ops/arm_chain/*_test.py` (289; fake `/proc`, a fake
 > launcher, temp git repos; nothing touches the GPU). **Status: LIVE since 2026-10-26 23:04 PDT** (chain `x35-lrf-oct26`:
 > d3 3504 and 3505 DONE, then LR-F). The job-directory scripts remain only as §7 step 9's rollback.
 
@@ -86,14 +86,14 @@ The field rules:
 |---|---|
 | `plan CHAIN [--check-pins] [--describe]` | validates the file. `--check-pins` checks that each pin is a commit. `--describe` asks the kit for each arm's describe on CPU and checks the run name. A wrong arm name or run is refused when the chain is PLANNED, not at the hand-off |
 | `run CHAIN` | the SUPERVISOR: walks the items from the saved state. Exit 0 = advanced or complete, 3 = HOLD, 4 = another supervisor holds this chain |
-| `status CHAIN` | first the supervisor's liveness, `supervisor: ALIVE pid N` / `STALE` / `DEAD` (`!!!` in front when an item is mid-flight with no supervisor, or the heartbeat is past its own deadline), then each item's phase and hold. It never takes the lock (§3, "Liveness") |
+| `status CHAIN` | first the supervisor's liveness, `supervisor: ALIVE pid N` / `STALE` / `DEAD` (`!!!` in front when an item is mid-flight with no supervisor, or the heartbeat is past its own deadline), then each item's phase and hold. It never takes the lock (§3, "Liveness"). A loud reading that is not certain is probed again 10 s later (CB-48) |
 | `clear-hold CHAIN --item KEY --by WHO --why WHY [--resolution R]` | the orchestrator's decision on a held item, recorded in the history and a status line. `retry` (default) re-runs the held step; `relaunch` and `accept` are below. Refused while a supervisor holds the lock |
 | `abandon CHAIN --item KEY --by WHO --why WHY` | the orchestrator's decision that a held item will not finish: it becomes `DONE_FAILED` and the chain hands off past it. Refused while the item's launch wrapper or launcher is alive (stop it first) |
 | `ship-records CHAIN --item KEY` | ships one arm's K9(b) + dose records from its request file: the async worker the supervisor spawns, and the by-hand retry after a `SHIP-HOLD` (idempotent: records already on the remote are a success) |
 | `live [--models-dir D]` | live runs, read from launcher argv (§4) |
 | `watch-files --status-file F` \| `--chain CHAIN` | the file list `monitor` follows, printed: the status file, each live launcher's stdout log, and its run's `launcher_child.full.log` (the trainer's own lines; it rotates by rename). `--chain` adds every unfinished arm's two fixed log paths, existing or not; from ENDED on, nothing inside the arm's run dir is listed. Never feed it to `tail -F` (§7 step 7) |
 | `monitor-filter --chain NAME` | the one ERE the alert Monitor greps over the watch-files (below) |
-| `monitor --chain CHAIN [--max-hours 24]` | the alert FOLLOWER (§7 step 7): every 10 s it re-reads the file set (`watch-files --chain`'s), follows each file `tail -F` style, prints each line the filter matches as `[<file>] <line>`, and pages a dead or stale supervisor once (`SUPERVISOR DEAD\|STALE:` in the status file). No re-arm at a GO; bounded, with an `EXPIRING` line. It holds NO file open between reads, and an arm at ENDED or later loses its run-dir files after one last read, so it can never block the thin (CB-47) |
+| `monitor --chain CHAIN [--max-hours 24]` | the alert FOLLOWER (§7 step 7): every 10 s it re-reads the file set (`watch-files --chain`'s), follows each file `tail -F` style, prints each line the filter matches as `[<file>] <line>`, and pages a dead or stale supervisor once (`SUPERVISOR DEAD\|STALE:` in the status file), only after two passes at least 10 s apart read it; a supervisor whose pid is gone from `/proc` pages on the first (CB-48). No re-arm at a GO; bounded, with an `EXPIRING` line. It holds NO file open between reads, and an arm at ENDED or later loses its run-dir files after one last read, so it can never block the thin (CB-47) |
 | `canary --out-dir D --status-file F [--archive-root R]` | the canary logger loop. It is bounded, writes a heartbeat file and an `EXPIRING` line, alerts on EVERY non-PASS record, and archives each canary weight dump to `R/<run>_canary_u<u>/` (default `~/gen3ai_archive`) |
 | `cpu-gate` | one GO CPU-gate sample |
 | `wait-pid PID --timeout-s N` | a `/proc` wait on `(pid, start ticks)` |
@@ -162,15 +162,30 @@ status line says why. A restarted supervisor on a held chain writes `HOLD: <item
 instant could make a supervisor starting at that moment exit 4.
 - The **lock holder**: the `FLOCK` entry in `/proc/locks` on the lock file's device and inode, whose pid still has
   that file open. Every supervisor version takes this lock, so this also sees a supervisor older than the heartbeat.
+  `/proc/locks` is built by the kernel while other processes take and drop locks, so one read can skip a row that was
+  there all along (CB-48): a "nobody holds it" answer is read 3 times, 0.2 s apart, before it stands.
 - The **heartbeat** (`state["supervisor"]`), written by the supervisor's main thread, so a wedged loop goes STALE where
   a liveness thread would keep beating.
 - **Mid-flight**: an item started, neither terminal nor held.
 
 The verdicts:
-- `ALIVE`: the lock is held.
+- `ALIVE`: the lock is held. Also: the lock read shows no holder, but the heartbeat's own pid is alive (same start
+  ticks), the supervisor recorded no `exit`, and now is not past the heartbeat's `stale_after_epoch`. A fresh heartbeat
+  overrides a missed lock read, and the detail says so.
 - `STALE`: the lock is held, but now is past the heartbeat's own `stale_after_epoch`.
-- `DEAD`: nobody holds the lock. It is loud with an item mid-flight, naming any live launcher of that item.
+- `DEAD`: nobody holds the lock and the heartbeat does not vouch for the supervisor. It is loud with an item
+  mid-flight, naming any live launcher of that item.
 - `UNKNOWN`: `/proc/locks` cannot be read.
+
+**A loud DEAD or STALE is a candidate until it is confirmed** (CB-48; `Liveness.final`, `Confirm`, `probe_confirmed`):
+- A **certain death** pages at once: the heartbeat's pid is gone from `/proc` (no entry, a zombie, or other start
+  ticks), or the supervisor recorded its own `exit`. "Gone" is a definite answer only: a `/proc` read that fails any
+  other way (EMFILE, ENOMEM, EACCES under load) is `unknown`, which neither vouches for the supervisor nor pronounces
+  it dead.
+- Every other loud verdict (no heartbeat, a pid alive with a stale beat, a held lock past its deadline) must read the
+  same case on two probes at least 10 s apart. `monitor` counts its own passes (a quiet or different probe between
+  them starts the count again, and so does a new beat, because the STALE key carries the deadline); `status` probes
+  again 10 s later on the state as it is then, and prints the second reading with a note when it differs.
 
 `clear-hold` and `abandon` take the lock non-blocking: a live supervisor means nothing is held, and its next save would
 overwrite theirs. Every state save goes through a per-process tmp file, fsync'd, then `os.replace`d, then the directory
@@ -254,6 +269,7 @@ dry run and GO stand either way.
 | CB-45 | a failure after the push (main's `index.lock`) left the ship's worktree and branch behind (finding 12) | main's fast-forward is retried, then the worktree is removed whatever happens; the retry lands through `_already_shipped` | `ship_test::test_a_failure_after_the_push_cleans_up_and_the_retry_lands` |
 | CB-46 | a chain file without `x_dose_comparator` silently dropped `c0_comparator` (finding 13) | `chain.dose_comparator`: the chain file's (`null` omits it), else the block every dose record in main's stage agrees on, else none; a status line says which | `chain_review_test::test_the_dose_record_takes_the_comparator_the_stages_records_agree_on` |
 | CB-47 | `monitor` held `launcher_child.full.log` open for its whole life, so the thin of every arm it followed refused "pid(s) … have the run dir open" (d3 3504, 10-27 03:14: K9(b) PASS, then a HOLD and an idle GPU); the HOLD named only the pid | the follower opens, reads and closes each file per pass (rotation found by inode beside the path), and drops an arm's run-dir log once its phase is ENDED or later (`monitor.POST_RUN`; one last read first; only a live launcher back in that dir, which the thin refuses anyway, restores it); the thin's HOLD names each holder's cmdline (`armend.open_holders`; the planner's refusal too) | `monitor_test::test_the_10_27_incident_a_running_monitor_never_blocks_the_arm_ends_thin` (a real monitor process, the real planner's dry run; reverted, it reproduces the refusal), `…the_follower_holds_no_file_open_between_polls`, `…a_rotation_by_rename_is_drained_without_a_held_handle`, `…chain_files_never_lists_an_ended_arms_run_dir`; `armend_test::test_a_thin_held_by_an_open_run_dir_names_each_holders_command_line` |
+| CB-48 | `monitor` paged "SUPERVISOR DEAD: NO supervisor while arm … RUNNING is mid-flight" about a LIVE supervisor (10-27 12:43:42: same start ticks, last beat 18 s old, the lock file unchanged, `status` ALIVE a moment later): one `/proc/locks` read skipped its row and nothing re-checked | a missed lock read is re-read 3 times; a fresh heartbeat with a live pid overrides it; a pid gone from `/proc` is DEAD at once, and every other DEAD / STALE needs two probes 10 s apart (`monitor` across passes, `status` by a second probe) | `liveness_test::test_a_lock_read_that_misses_once_is_re_read_and_finds_the_holder`, `…a_missed_lock_read_with_a_fresh_heartbeat_and_a_live_pid_reads_alive`, `…a_fresh_heartbeat_does_not_save_a_pid_that_is_gone`, `…a_dead_pid_is_dead_at_once_on_the_first_probe`, `…a_proc_read_that_fails_is_not_a_death`, `…two_consecutive_misses_with_a_stale_heartbeat_alert_and_one_does_not`, `…status_re_probes_a_loud_verdict_and_reports_the_second`; `chain_review_test::test_a_transient_lock_miss_with_a_fresh_heartbeat_pages_nothing`, `…a_supervisor_whose_pid_is_gone_is_paged_on_the_first_pass`, `…two_consecutive_lock_misses_with_a_stale_heartbeat_are_paged_on_the_second`, `…the_monitor_pages_a_dead_supervisor_once`, `…status_re_probes_a_dead_reading_and_reports_the_supervisor_that_is_there_now` |
 | restart | the 10-26 supervisor (`93a05fe91`) is replaced at a restart by this code, onto the state it wrote | the state schema stays `arm_chain_state_v1`: every addition (`supervisor`, `data.stopping` / `attempts` / `accepted`) is optional, and each version keeps the other's keys | `chain_review_test::test_a_93a05fe9_*` on `testdata/state_93a05fe9_*.json` (written by `93a05fe91`'s code on these fakes: held at LAUNCHED twice, held at SPAWNED, mid-RUNNING, an async ship) |
 
 Two classes stay with their owners:
@@ -366,7 +382,9 @@ Two classes stay with their owners:
      `python -m main.ops.arm_chain monitor --chain <file>` (bounded at 24 h; re-arm it at its `EXPIRING` line). It is
      safe beside every arm end (CB-47). **Never a `tail -F` over `watch-files`**: `tail` holds every file it follows
      open, so it blocks the thin at each arm's end (the 10-27 03:14 HOLD), and it cannot see a dead supervisor. A
-     `monitor` started before CB-47 landed must be stopped by PID and restarted on this code.
+     `monitor` started before CB-47 landed must be stopped by PID and restarted on this code, and one started before
+     CB-48 can still page a false `SUPERVISOR DEAD` on one racy `/proc/locks` read (a page whose supervisor `status`
+     reads ALIVE is that: restart the monitor on this code).
    - Keep the 55-min fallback cron. It reads `status` (a `!!!` liveness line pages). Its repair commands are
      `clear-hold --resolution …` or `abandon` on the orchestrator's word, then `run`.
 8. **Watch the first GO by hand** (F4). Check:
@@ -415,6 +433,11 @@ Two classes stay with their owners:
   the run dir refuses it): a read-only exemption would trust a `/proc` fd mode to tell a reader from a writer, and a
   reader in the dir is still something the run's owner should see. The chain's own reader lets go instead, and a
   HOLD names each holder's command line. The state file is unchanged.
+- **2026-10-27 (12:43 incident): a liveness verdict needs more than one read (CB-48).** The monitor's single
+  `/proc/locks` read paged a live supervisor DEAD. The fix puts the doubt where it arises: the racy read is repeated,
+  the supervisor's own heartbeat and pid are asked before the lock's silence is believed, and a death that is certain
+  (pid gone) is never delayed. A supervisor that is alive but has dropped its lock and stopped beating still reads DEAD,
+  once its beat passes its declared deadline (bound + 10 min) and two probes agree. The state schema is unchanged.
 - **2026-10-26 (evening): the adversarial review's findings 2-13** ([`arm_chain_review_2026-10-26.md`](arm_chain_review_2026-10-26.md);
   finding 1 was fixed at `93a05fe91`). The changes are CB-36-46.
   - The supervisor's liveness became readable: a heartbeat plus a lock probe, and `status` prints ALIVE / STALE / DEAD.

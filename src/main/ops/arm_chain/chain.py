@@ -807,8 +807,16 @@ class Chain:
 
     # -- reporting ---------------------------------------------------------------------------------------------------
     def liveness(self) -> liveness.Liveness:
-        return liveness.probe(self.state, self.spec.state_path + ".lock", self.d.now(), self.d.proc,
-                              {it.key: self.launcher.launcher_pidfile(it) for it in self.spec.arms()})
+        """What ``status`` prints. A loud verdict that is not certain is probed again ``CONFIRM_GAP_S`` later on the
+        state as it is THEN (10-27 12:43:42: one probe read a live supervisor DEAD); a death that is certain is not."""
+        def reload() -> Mapping[str, Any]:
+            try:
+                return self._load_state()
+            except (ChainError, OSError, ValueError):
+                return self.state
+        return liveness.probe_confirmed(
+            self.state, self.spec.state_path + ".lock", self.d.now, self.d.proc,
+            {it.key: self.launcher.launcher_pidfile(it) for it in self.spec.arms()}, reload=reload, sleep=self.d.sleep)
 
     def status_lines(self) -> List[str]:
         out = [self.liveness().line()]

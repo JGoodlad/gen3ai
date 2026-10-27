@@ -110,13 +110,13 @@ def test_the_10_27_incident_a_running_monitor_never_blocks_the_arm_ends_thin(w):
     log, status = os.path.join(rd, "launcher_child.full.log"), os.path.join(w.job, "status.txt")
     env = {**os.environ, "PYTHONPATH": src_path(), "CUDA_VISIBLE_DEVICES": ""}
     code = ("import sys; from main.ops.arm_chain.monitor import run_monitor; "
-            "run_monitor(sys.argv[1], interval_s=0.05, max_hours=1)")
+            "run_monitor(sys.argv[1], interval_s=0.05, max_hours=1, confirm_gap_s=0.0)")
     mon = subprocess.Popen([sys.executable, "-u", "-c", code, chain_file], cwd=w.root, env=env, text=True,
                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     out = _Lines(mon)
     got = out.got
     try:
-        out.wait("SUPERVISOR DEAD")        # its first pass ran (no supervisor holds the lock): past -n0
+        out.wait("SUPERVISOR DEAD")        # its second pass ran (no supervisor; confirm_gap_s=0 keeps two probes): past -n0
         with open(log, "a") as f:
             f.write("Traceback (most recent call last):\n")
         out.wait("[launcher_child.full.log] Traceback")      # it follows the RUNNING arm's run dir
