@@ -29,7 +29,7 @@
 //   node src/rust_sim/harness/bridge_ab_fuzz.js
 //        [--mode trapping|randbats|random|pool|ladder]   (default trapping)
 //        [--ladder-tier commit|milestone|full]   (`--mode ladder`: the LADDER-USAGE corpus tier, default milestone)
-//        [--format gen3customgame|gen3ou]         (default gen3customgame; any id in tests/vectors/gen3_formats.json)
+//        [--format gen3customgame|gen3ou]         (default gen3customgame)
 //        [--battles N | --hours H]                (default: run until killed)
 //        [--master-seed S]                        (default: from time; ALWAYS printed)
 //        [--chunk N]                              (default 25 battles per chunk)
@@ -56,7 +56,6 @@ const {
 } = e2e;
 const ab = require('./ab_fuzz.js');
 const ladderCorpus = require('./ladder_corpus.js');
-const { requireFreshBinary } = require('./stamp_guard.js');
 // `--mode ladder` widens the picker to typed Hidden Power: the corpus is gen3ou-VALIDATED and the
 // engine prices HP at its IV-true BP (R3). Every other mode keeps `isModeledMove`'s default.
 let PICK_HIDDEN_POWER = false;
@@ -120,12 +119,8 @@ function parseFlags(argv) {
     console.error(`--ladder-tier must be ${ladderCorpus.TIERS.join('|')}, got ${f.ladderTier}`);
     process.exit(2);
   }
-  // Every gen-3 singles format the engine runs (`gen3_format_rules_v1`; the table the engine's
-  // `src/format.rs` is checked against).
-  const FORMATS = JSON.parse(fs.readFileSync(path.join(__dirname, '../tests/vectors/gen3_formats.json'), 'utf8'))
-    .supported.map((r) => r.id);
-  if (!FORMATS.includes(f.format)) {
-    console.error(`--format must be one of ${FORMATS.join('|')}, got ${f.format}`);
+  if (!['gen3customgame', 'gen3ou'].includes(f.format)) {
+    console.error(`--format must be gen3customgame|gen3ou, got ${f.format}`);
     process.exit(2);
   }
   if (f.masterSeed === null) f.masterSeed = (Date.now() ^ (process.pid * 2654435761)) >>> 0;
@@ -433,7 +428,6 @@ function buildReplayer() {
   const r = spawnSync('cargo', ['build', '--profile', 'selfcheck', '--features', 'emission-selfcheck', '--bin', 'bridge_replay'], { cwd: CRATE, env, stdio: 'inherit' });
   if (r.status !== 0) { console.error('[bridge_ab_fuzz] cargo build failed'); process.exit(1); }
   if (!fs.existsSync(REPLAYER)) { console.error(`[bridge_ab_fuzz] replayer missing: ${REPLAYER}`); process.exit(1); }
-  requireFreshBinary(REPLAYER, 'bridge_replay');   // the BUILD STAMP: never fuzz against another tree's engine
 }
 
 // The GREEN-GATE accounting of ONE replayer verdict: `ok`, `allowlisted` (a documented residual

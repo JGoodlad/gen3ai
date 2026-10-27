@@ -15,13 +15,7 @@ from .types import TypeEncoder
 from .abilities import AbilitiesEncoder
 from .moves import MovesEncoder
 from .reactive import ReactiveEncoder
-from .vocab_bounds import check_vocab_bounds
 from .constants import (
-    VOCAB_SPECIES,
-    VOCAB_MOVES,
-    VOCAB_ITEMS,
-    VOCAB_ABILITIES,
-    VOCAB_TYPES,
     POKEMON_VECTOR_DIM,
     POKEMON_FULL_DIM,
     POKEMON_ACTIVE_OFFSET,
@@ -124,7 +118,6 @@ class Gen3ObservationEncoder(ObservationEncoder):
     def __init__(self, mappings: Optional[Dict[str, Any]] = None) -> None:
         self.mappings = mappings or {}
         mappings = self.mappings
-        check_vocab_bounds(mappings)   # gen3_vocab_bounds_v1: a dex num past its embedding table raises HERE
         
         # Sub-encoders
         rev = self.mappings.get("reverse", {})
@@ -239,15 +232,15 @@ class Gen3ObservationEncoder(ObservationEncoder):
             },
             "reactive_layout": _ReactiveEncoder().get_layout(),
             "global_layout": self.global_env_encoder.get_layout(),
-            "max_species": VOCAB_SPECIES,
+            "max_species": 400,
             "species_embedding_dim": 32,
-            "max_moves": VOCAB_MOVES,
+            "max_moves": 400,
             "move_embedding_dim": 16,
-            "max_items": VOCAB_ITEMS,
+            "max_items": 600,
             "item_embedding_dim": 16,
-            "max_abilities": VOCAB_ABILITIES,
+            "max_abilities": 100,
             "ability_embedding_dim": 16,
-            "max_types": VOCAB_TYPES,  # 19 ids in use (`damage_tables.N_TYPE_IDX`)
+            "max_types": 20, # 18 types + placeholders
             "type_embedding_dim": 16
         }
 

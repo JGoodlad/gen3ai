@@ -57,65 +57,6 @@ pub enum Status {
     Toxic(u8),
 }
 
-/// The `lockedmove` volatile OUTRAGE / PETAL DANCE / THRASH share (`gen3_lockin_family_v1`,
-/// `gen3_lockin_cancelled_repeat_v1`), with Showdown's TWO counters kept separate
-/// (`data/conditions.ts` `lockedmove`, inherited unchanged by gen 3 through gen 4):
-///
-/// * `duration` is the volatile's generic `duration: 2`. The residual's `fieldEvent` ticks it
-///   (`duration-- == 0` ends the volatile and runs `onEnd`) and only a LANDED repeat
-///   (`onRestart`) or a gen-4 Protect block of the repeat (`protect.onTryHit`) puts it back to 2,
-///   and then only while `true_duration >= 2`.
-/// * `true_duration` is the `random(2,4)` rolled ONCE on the cast (`onStart`), ticked by
-///   `onResidual` on every residual the volatile survives. `onEnd` confuses the user only when
-///   it is `<= 1` — so a repeat that is CANCELLED (full paralysis, a confusion self-hit, a flinch,
-///   a miss, a type-immune target) leaves `duration` unrefreshed and the lock ends at that
-///   residual; with `true_duration` still 2 (a 3-turn roll cancelled on turn 2) it ends QUIETLY,
-///   with no confusion. One fused countdown cannot say that, and kept the lock alive a turn
-///   longer than Showdown (GIGO audit B-C1).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct LockedMove {
-    /// Showdown's `effectState.duration`.
-    pub duration: u8,
-    /// Showdown's `effectState.trueDuration`.
-    pub true_duration: u8,
-    /// The move slot the lock holds the user to.
-    pub move_index: usize,
-}
-
-impl LockedMove {
-    /// The cast (`onStart`): `duration: 2`, `trueDuration` = the `random(2,4)` the caller drew.
-    pub fn start(true_duration: u8, move_index: usize) -> Self {
-        LockedMove { duration: 2, true_duration, move_index }
-    }
-
-    /// `onRestart` — a landed repeat, and gen 4's Protect block of one
-    /// (`data/mods/gen4/moves.ts` `protect.condition.onTryHit`): refresh `duration` to 2 while
-    /// `trueDuration >= 2`; the last turn of the roll is not refreshed, so the residual ends it.
-    pub fn restart(&mut self) {
-        if self.true_duration >= 2 {
-            self.duration = 2;
-        }
-    }
-}
-
-/// The `bide` volatile (`gen3_b8_moves_v1`; the resolved gen-3 condition is
-/// `data/mods/gen3/moves.ts` `bide` over `data/moves.ts`): Showdown's `effectState.duration` (3 at
-/// the cast, ticked by the residual, so the user waits one turn at 2 and releases at 1 — no
-/// duration draw) and `effectState.totalDamage` (the Move-effect damage the holder took since the
-/// cast, accumulated by `onDamage` at `onDamagePriority: -101`, i.e. after Endure / Focus Band).
-/// `lastDamageSource` is not kept: in singles every release target resolves to the current foe
-/// active (a source that is still active IS that mon; an inactive one goes through
-/// `getRandomTarget`, which in singles is `pokemon.side.foe.active[0]`, `sim/battle.ts`).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Bide {
-    /// Showdown's `effectState.duration`.
-    pub duration: u8,
-    /// Showdown's `effectState.totalDamage`.
-    pub total_damage: u32,
-    /// The move slot the lock (`onLockMove: 'bide'`) holds the user to.
-    pub move_index: usize,
-}
-
 /// Gen-3 field weather. `None` = clear (the construction-time value; Sand Stream
 /// / Drizzle / Drought / the Hail move set it via a switch-in or move EVENT, not
 /// built here).
@@ -540,12 +481,10 @@ pub struct MonState {
     /// keys off the TARGET's last-used move's TYPE. Cleared on switch-out and on faint —
     /// probe-confirmed (`harness/probe_conversion.js` C8: a switched-out mon reports NONE).
     ///
-    /// Set at the same site as `last_move` for the user's own move, AND by every CALLED move
-    /// (`BattleState::call_move`, `gen3_b11_moves_v1`): gen-3 `useMoveInner` opens with
-    /// `pokemon.lastMoveUsed = move` (`data/mods/gen3/scripts.ts:132`), so the callee overwrites
-    /// the caller. Probe-settled (`harness/probe_b11_moves.js` "conversion 2 after sleep talk":
-    /// after Snorlax Sleep-Talks into Body Slam the sim reports `lastMoveUsed = bodyslam`; the
-    /// port kept `sleeptalk` until B11).
+    /// Set at the same site as `last_move`, i.e. INSIDE the `!pursuit_strike && !sleep_talk_call`
+    /// guard. That placement is probe-settled, not assumed: a SLEEP-TALK-called move does NOT
+    /// overwrite it — after Snorlax Sleep-Talks, the sim reports `lastMoveUsed = sleeptalk`,
+    /// the OUTER move, so the inner `useMove` must leave it alone.
     pub last_move_used: Option<String>,
     /// UPROAR's multi-turn lock (`gen3_uproar_v1`): `Some((remaining_turns, move_index))`
     /// while locked, `None` otherwise. The duration is drawn ONCE — a `random(2,6)` on the
@@ -557,10 +496,6 @@ pub struct MonState {
     /// single-move `trapped:true` request shape for free. Cleared SILENTLY on switch-out and
     /// faint (a phazed-out uproarer emits no `-end`).
     pub uproar: Option<(u8, usize)>,
-    /// The BIDE volatile (`gen3_b8_moves_v1`, see [`Bide`]). Folds into `move_locked()` /
-    /// `locked_slot()` (the `onLockMove` request: the one `{move, id}` entry, `trapped:true`).
-    /// Cleared SILENTLY on switch-out and faint (`clearVolatile` runs no `onEnd`).
-    pub bide: Option<Bide>,
     /// Was this mon DAMAGED BY THE CURRENT FOE this turn? (`gen3_bp_modifier_cluster_v1`.)
     /// REVENGE's `basePowerCallback` doubles on `pokemon.attackedBy.some(p => p.source ===
     /// target && p.damage > 0 && p.thisTurn)`. Deliberately NOT reusing `reactive`: that is
@@ -577,16 +512,15 @@ pub struct MonState {
     /// lapses it (probe-confirmed: miss, other move, then back to bp 10).
     pub fury_cutter: Option<(u8, u8)>,
     /// The shared `lockedmove` volatile for OUTRAGE / PETAL DANCE / THRASH
-    /// (`gen3_lockin_family_v1`, `gen3_lockin_cancelled_repeat_v1`). All three carry the SAME
-    /// condition, so one field serves them all. The sim's condition has TWO counters
-    /// (`duration: 2` and a `random(2,4)` `trueDuration` drawn ONCE on the CAST, after the
-    /// damage) — see [`LockedMove`]; with every repeat landing the net observable is "the user
-    /// uses the move `trueDuration` times", but a CANCELLED repeat ends the lock early. When the
-    /// lock runs out at the residual the user is CONFUSED (its own `random(2,6)`) iff
-    /// `trueDuration <= 1` — unlike Uproar, which ends cleanly. Folds into `move_locked()`.
-    /// Sleep BREAKS the lock at the residual with NO confusion (unless the duration ran out on
-    /// that same residual: the sim ticks the duration first).
-    pub locked_move: Option<LockedMove>,
+    /// (`gen3_lockin_family_v1`): `Some((remaining_turns, move_index))`. All three carry the
+    /// SAME condition, so one field serves them all. The duration is a `random(2,4)` (→ 2 or
+    /// 3) drawn ONCE on the CAST turn, after the damage — measured, not derived: the sim's
+    /// condition has two interacting counters (`duration: 2` refreshed by `onRestart`, plus a
+    /// `trueDuration` ticked at the residual) whose NET observable is simply "the user uses
+    /// the move `trueDuration` times". When the lock runs out at the residual the user is
+    /// CONFUSED (its own `random(2,6)`) — unlike Uproar, which ends cleanly. Folds into
+    /// `move_locked()`. Sleep BREAKS the lock at the residual with NO confusion.
+    pub locked_move: Option<(u8, usize)>,
     /// ROLLOUT / ICE BALL's lock (`gen3_rollout_defensecurl_v1`): `Some((hits_so_far, slot))`.
     /// UNLIKE the outrage family there is NO duration draw — the lock is a fixed **5
     /// EXECUTIONS**, and the base power doubles per execution (30/60/120/240/480), doubled
@@ -719,20 +653,12 @@ pub struct MonState {
     /// across the opponent's force-switch (a target-KO'd HB is still locked next turn).
     /// Cleared at the recharge cant + on switch-out/faint. `false` at construction.
     pub must_recharge: bool,
-    /// Showdown's `mustrecharge` `effectState.duration` (`duration: 2`, `data/conditions.ts`), the
-    /// counter `must_recharge` rides on (`gen3_recharge_expiry_v1`): 2 when Hyper Beam sets it, ticked by
-    /// the residual's `duration--`. The recharge turn normally consumes the volatile before that
-    /// turn's residual, so only the cast turn's residual gathers it — but a recharge turn the mon
-    /// never acts in (a gen-3 faint SKIPS the rest of the turn's moves and switches, e.g. the foe's
-    /// switch-in dies to Spikes) lets the second residual tick it to 0 and the volatile EXPIRES:
-    /// the next turn is free. 0 when `must_recharge` is false.
-    pub must_recharge_duration: u8,
 
-    /// The **TWOTURNMOVE** charge volatile (`gen3_move_coverage_batch4c_v1`, Solar Beam;
-    /// widened to every gen-3 charge move by `gen3_twoturn_family_v1`) — `Some` from the
-    /// CHARGE turn's `onTryMove` (`addVolatile('twoturnmove')`, whose onStart adds the
-    /// MOVE-ID sub-volatile = `charging`) until the residual duration expiry / an
-    /// onMoveAborted / switch-out / faint. See [`TwoTurnMove`]. `None` at construction.
+    /// The **TWOTURNMOVE** charge volatile (`gen3_move_coverage_batch4c_v1`, Solar Beam) —
+    /// `Some` from the CHARGE turn's `onTryMove` (`addVolatile('twoturnmove')`, whose
+    /// onStart adds the `solarbeam` sub-volatile = `charging`) until the residual duration
+    /// expiry / an onMoveAborted / switch-out / faint. See [`TwoTurnMove`]. `None` at
+    /// construction.
     pub two_turn: Option<TwoTurnMove>,
 
     /// The **COUNTER / MIRROR COAT** reactive volatile (`gen3_move_coverage_batch5_v1` —
@@ -886,27 +812,6 @@ pub struct MonState {
     /// both-Splash control's 7). Cleared on switch-out + faint. `false` at construction.
     pub snatch: bool,
 
-    /// The **MAGIC COAT** singleturn volatile (`gen3_b6_moves_v1`, gen3 full parity B6): `true`
-    /// while this mon's Magic Coat (`volatileStatus:'magiccoat'`, condition `duration: 1`,
-    /// `data/moves.ts` magiccoat) is up. Set DRAW-FREE on the priority-+4 cast
-    /// (`|-singleturn|<user>|move: Magic Coat`); while up, the FIRST `flags.reflectable` move
-    /// aimed at it is bounced back at its user (the gen-4 mod's `onTryHit`,
-    /// `data/mods/gen4/moves.ts` magiccoat, which `removeVolatile`s the coat first — one bounce
-    /// per coat). Like `snatch` it clears at the NEXT turn-top (`clear_flinch`) and registers the
-    /// NO_ORDER/subOrder-2 residual DURATION handler (a MAGIC COAT MIRROR at equal speed draws
-    /// ONE residual tie-shuffle, `harness/probe_b6_moves.js` MC1b vs MC1c). Cleared on
-    /// switch-out + faint. `false` at construction.
-    pub magic_coat: bool,
-
-    /// The **FORESIGHT** volatile (`gen3_b6_moves_v1`): `true` once Foresight or Odor Sleuth
-    /// (both `volatileStatus: 'foresight'`, `data/moves.ts` foresight) landed on this mon. The
-    /// condition's `onModifyBoost` zeroes a POSITIVE evasion stage in every accuracy check
-    /// against it, and its `onNegateImmunity` lets Normal- and Fighting-type moves hit it
-    /// through a Ghost type (the Ghost factor reads NEUTRAL, Showdown's `damageTaken: 3` →
-    /// typeMod 0). No duration, no residual handler; `noCopy` (Baton Pass does NOT pass it);
-    /// cleared on switch-out + faint. `false` at construction.
-    pub foresight: bool,
-
     /// Whether this mon's CURRENT sleep was SELF-inflicted by **Rest** (vs foe-inflicted
     /// by a sleep move / Effect Spore). Mirrors `statusState.source?.isAlly(pokemon)` for
     /// the gen-3 **Sleep Clause Mod** (`rulesets.ts` `sleepclausemod.onSetStatus`): a mon
@@ -1021,120 +926,6 @@ pub struct MonState {
     /// the fifth, forever. Starts at 0 (unlike `active_turns`, which starts at 1) and resets to 0
     /// on EVERY switch-in — voluntary, drag, forced replacement and Baton Pass alike.
     pub active_move_actions: u32,
-    /// The **GRUDGE** volatile (`gen3_b5_moves_v1`, `data/moves.ts` grudge `condition`, untouched
-    /// by the gen-3/4 mods): `true` from the cast (`|-singlemove|<user>|Grudge`) until the
-    /// holder's NEXT move attempt — `onBeforeMovePriority: 100`, the FIRST BeforeMove handler,
-    /// so it is removed SILENTLY even on a turn the holder then cannot move (asleep, recharging,
-    /// fully paralysed). While up, a FOE-MOVE KO (not a futuremove) of the holder zeroes the
-    /// killer's last-used move's PP (`onFaint`). No `noCopy`, but the passer's own Baton Pass
-    /// attempt removes it first, so it never reaches a pass. Cleared on switch-out + faint.
-    pub grudge: bool,
-    /// The pending GRUDGE trigger: `Some(killer_side)` when a qualifying foe-move hit zeroed this
-    /// mon's HP while `grudge` was up (set at the same damage sites as `destiny_bond_ko_by`).
-    /// Read by `process_faints` when the corpse is drained (`grudge.onFaint`).
-    pub grudge_ko_by: Option<usize>,
-    /// The **NIGHTMARE** volatile (`gen3_b5_moves_v1`, the resolved gen-3 `nightmare` condition,
-    /// `noCopy`): `true` while this SLEEPING mon is nightmared. Residual order 10 subOrder 7
-    /// chips `floor(baseMaxhp/4)` (`[from] Nightmare`). Every sleep cure removes it with
-    /// `|-end|<mon>|Nightmare|[silent]` right after the cure line (`sim/pokemon.ts` `cureStatus`
-    /// / `clearStatus`), via `BattleState::end_nightmare_on_cure`. Cleared on switch-out + faint.
-    pub nightmare: bool,
-    /// The **INGRAIN** volatile (`gen3_b5_moves_v1`, base `data/moves.ts` ingrain `condition`):
-    /// residual order 10 subOrder 1 heals `floor(baseMaxhp/16)` (`[from] Ingrain`), FIRM-traps
-    /// the holder (`onTrapPokemon` → bare `tryTrap()`), and blocks a Roar / Whirlwind drag
-    /// (`onDragOut` → `|-activate|<mon>|move: Ingrain`). No `noCopy` → Baton-Passed.
-    pub ingrain: bool,
-    /// The **STOCKPILE** volatile's `layers` (`gen3_b7_moves_v1`; the resolved gen-3 condition is
-    /// `data/mods/gen3/moves.ts` stockpile: no Def / SpD boosts, `noCopy`). 0 = no volatile; each
-    /// Stockpile adds one (`|-start|<mon>|stockpile<n>`), and the move's `onTry` fails at 3
-    /// (`data/moves.ts` stockpile). Spit Up (`onAfterMove`) and Swallow (`onHit`) remove it with
-    /// `|-end|<mon>|Stockpile`; a switch-out or faint clears it silently, and Baton Pass does not
-    /// pass it.
-    pub stockpile: u8,
-    /// Spit Up reached `useMove` this action (`gen3_b7_moves_v1`): the driver's AfterMove point
-    /// runs `spitup.onAfterMove` (`removeVolatile('stockpile')`) for the EXECUTED move — the
-    /// activeMove, so a Sleep-Talk-called Spit Up counts (`sim/battle-actions.ts` runMove:
-    /// `if (this.battle.activeMove) move = this.battle.activeMove`). Transient: consumed there.
-    pub spit_up_after_move: bool,
-    /// The **MUD SPORT** volatile (`gen3_b7_moves_v1`; the gen-5 mod turns the move into a
-    /// `volatileStatus` on the user, the gen-4 mod sets `noCopy: false`, `onAnyBasePowerPriority:
-    /// 3` and `chainModify(0.5)`): every Electric move's base power is halved while the holder is
-    /// active. No duration; ends silently on switch-out / faint; Baton-Passed.
-    pub mud_sport: bool,
-    /// The **WATER SPORT** volatile (`gen3_b7_moves_v1`): as [`Self::mud_sport`] for Fire moves.
-    pub water_sport: bool,
-    /// The **LOCK-ON** volatile (`gen3_b7_moves_v1`; `data/moves.ts` lockon.condition, `noCopy:
-    /// false` from the gen-4 mod): set by Lock-On AND Mind Reader on the USER, naming the target.
-    /// While it is up, this mon's moves against THAT mon skip the Invulnerability miss and the
-    /// accuracy roll. `duration: 2`, ticked by a NO_ORDER residual duration handler, ended silently.
-    pub lock_on: Option<LockOn>,
-    /// ENDLESS BATTLE CLAUSE (`gen3_b10_endless_battle_v1`): the sim's `pokemon.volatileStaleness`
-    /// (`sim/pokemon.ts:291-292`), always `'external'` when set. SKILL SWAP sets it on its TARGET and
-    /// clears it on its user (`sim/battle.ts:1336-1337`); `clearVolatile` drops it at switch-out
-    /// (`sim/pokemon.ts:1555`). The only gen-3 source of EXTERNAL staleness.
-    pub volatile_staleness: bool,
-    /// The sim's permanent `pokemon.staleness` (`sim/pokemon.ts:287-288`). Always `'internal'` in
-    /// gen 3: `eatItem` of a RESTORATIVE berry (`RESTORATIVE_BERRIES`) promotes a pending staleness
-    /// (`sim/pokemon.ts:1788-1797`), and the only pending value gen 3 can produce is `'internal'` —
-    /// `setItem`'s `'external'` needs a Trick / Switcheroo that PASSES its `source`
-    /// (`sim/pokemon.ts:1873-1876`), and gen-3 Trick calls `target.setItem(myItem)` without one.
-    pub staleness: bool,
-    /// The sim's `pokemon.pendingStaleness` (`sim/pokemon.ts:289-290`), `'internal'` when set: EVERY
-    /// `setItem` (Trick, Thief, Covet, Recycle) sets it, every successful `takeItem` clears it
-    /// (`sim/pokemon.ts:1860`), and a restorative-berry `eatItem` consumes it.
-    pub pending_staleness: bool,
-    /// The SET's (never the live) item is a restorative berry — `RESTORATIVE_BERRIES.has(toID(pokemon.set.item))`
-    /// in the clause's loser test (`sim/battle.ts:1880`). Captured at construction: the port's
-    /// `set` is rewritten by Transform.
-    pub set_restorative_berry: bool,
-    /// The SET carries a berry-cycling means: its ability is Harvest / Pickup or its moves include
-    /// Recycle (`sim/battle.ts:1881-1883`). Captured at construction, like `set_restorative_berry`.
-    pub set_berry_cycle: bool,
-    /// The CALLED-MOVE virtual slot (`gen3_b11_moves_v1`): the id a move-caller (Metronome, Mirror
-    /// Move, Assist, Nature Power) last ran through `useMove` when the user carries that move in NO
-    /// moveslot. Showdown's `useMove(id)` needs no slot, but the port keys the moves it runs, and the
-    /// locks a called move can start (a two-turn charge, Outrage / Thrash / Petal Dance, Rollout,
-    /// Uproar, Bide), on a slot index: those use [`CALLED_MOVE_SLOT`], which [`Self::slot_move_id`]
-    /// resolves to this id. PP is never read or charged there (a called move and every locked
-    /// repeat skip `deductPP`, `sim/battle-actions.ts` runMove / `data/mods/gen3/scripts.ts`
-    /// useMoveInner). Overwritten by the next call; a slot-held callee uses its real slot instead.
-    pub called_move: Option<String>,
-    /// `pokemon.attackedBy` (`sim/pokemon.ts` gotAttacked / getLastAttackedBy, `gen3_b11_moves_v1`):
-    /// one entry per foe move that reached `moveHit` against this mon (gen-3 `tryMoveHit` pushes it
-    /// after the hit, `data/mods/gen3/scripts.ts:464`, so not for a miss, a Protect / TryHit block,
-    /// a natural immunity or a field / side / self move). Cleared on switch-out and faint
-    /// (`clearVolatile`); at each endTurn an entry whose source is no longer active is dropped
-    /// (`sim/battle.ts` endTurn). MIRROR MOVE reads the LAST entry.
-    pub attacked_by: Vec<AttackedBy>,
-    /// SKETCH's copied slots, one bit per slot (`gen3_b11_moves_v1`): `data/mods/gen4/moves.ts`
-    /// sketch writes a moveslot literal WITHOUT `target` into `moveSlots` AND `baseMoveSlots`, so
-    /// the request omits that key for the slot for the rest of the battle (the Mimic precedent,
-    /// `gen3_mimic_request_no_target_v1`). Never cleared.
-    pub sketched: u32,
-}
-
-/// The CALLED-MOVE virtual slot index (`gen3_b11_moves_v1`, see [`MonState::called_move`]): past
-/// every real slot (gen-3 Custom Game allows at most 24 moves, `gen3_format_rules_v1` M4).
-pub const CALLED_MOVE_SLOT: usize = 64;
-
-/// One `pokemon.attackedBy` entry (`gen3_b11_moves_v1`): the attacking mon (its side and STABLE
-/// `uid`) and the id of the move that reached `moveHit` (`move.id`: a called move's own id, a typed
-/// Hidden Power's bare `hiddenpower`).
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct AttackedBy {
-    pub side: usize,
-    pub uid: usize,
-    pub move_id: String,
-}
-
-/// The `lockon` volatile's state (`gen3_b7_moves_v1`): `effectState.source` (the locked mon,
-/// by side and uid — the sim compares the Pokemon object, so a switched-in replacement is a
-/// different target) and `duration`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct LockOn {
-    pub target_side: usize,
-    pub target_uid: usize,
-    pub duration: u8,
 }
 
 /// The TRANSFORM copy-overlay restore record (`gen3_transform_v1`).
@@ -1240,16 +1031,9 @@ pub struct PartialTrap {
 ///     `duration` 2 → 1 → 0 removes it (draw-free). After a fire-turn KO it LINGERS
 ///     through the faint pause and is cleaned by the resumed tail's residual.
 ///   * SUN (`effectiveWeather`, Cloud Nine-aware) SKIPS the charge entirely (no volatile).
-///
-/// `gen3_twoturn_family_v1` (gen3 full parity B4) runs the same state for all eight gen-3
-/// charge moves ([`TWO_TURN_MOVES`]); probe `harness/probe_twoturn_family.js`. The sub-volatile
-/// (`charging`) is the MOVE-ID volatile the twoturnmove `onStart` adds (`data/conditions.ts`
-/// twoturnmove: `attacker.addVolatile(effect.id)`); for Fly / Bounce / Dig / Dive it carries the
-/// move's own `condition` (`semi`), which makes the user SEMI-INVULNERABLE until the strike's
-/// `onTryMove` removes it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TwoTurnMove {
-    /// The user's charge-move slot index (the locked move).
+    /// The user's Solar Beam move-slot index (the locked move).
     pub move_index: usize,
     /// Remaining `twoturnmove` duration (2 at set; decremented at each residual; removed
     /// at 0).
@@ -1258,92 +1042,6 @@ pub struct TwoTurnMove {
     /// request is locked; false = the beam FIRED this turn, the volatile merely awaits its
     /// residual expiry).
     pub charging: bool,
-    /// The sub-volatile's own condition for the four semi-invulnerable moves (`None` for Solar
-    /// Beam / Razor Wind / Sky Attack / Skull Bash, whose sub-volatile has no condition). Live
-    /// only while `charging` (the sub-volatile is the semi-invulnerable state).
-    pub semi: Option<SemiInvulnerable>,
-}
-
-/// The eight gen-3 two-turn CHARGE moves (`gen3_twoturn_family_v1`): every gen-3 move whose
-/// resolved data carries `flags.charge` and the twoturnmove `onTryMove` (`Dex.mod('gen3')`;
-/// pinned against the resolved dex by `tests/twoturn_family_test.rs` TF1).
-pub const TWO_TURN_MOVES: [&str; 8] =
-    ["solarbeam", "razorwind", "skyattack", "skullbash", "fly", "bounce", "dig", "dive"];
-
-/// The four SEMI-INVULNERABLE charge kinds (`gen3_twoturn_family_v1`): the sub-volatile's
-/// resolved gen-3 `condition` (`Dex.mod('gen3').moves.get(id).condition`, `data/moves.ts` via
-/// the mod chain; every member pinned against the resolved handlers by
-/// `tests/twoturn_family_test.rs` TF2):
-///   * `onInvulnerability` — every move but the listed ones misses (`bypassed_by`);
-///   * `onSourceModifyDamage` chainModify(2) — Fly / Dig / Dive double the bypassing moves at
-///     the gen-3 `ModifyDamage` final modifier (`data/mods/gen3/scripts.ts:109`);
-///   * `onSourceBasePower` chainModify(2) — BOUNCE doubles Gust / Twister at the BasePower
-///     chain instead (a different point; Fly's own Thunder / Sky Uppercut bypass is not doubled);
-///   * `onImmunity('sandstorm' | 'hail') => false` — Dig / Dive only (the weather chip skip,
-///     `sim/battle.ts:2113`).
-///   * `duration: 2` — the sub-volatile joins the residual duration tie group.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum SemiInvulnerable {
-    Fly,
-    Bounce,
-    Dig,
-    Dive,
-}
-
-impl SemiInvulnerable {
-    /// The kind a charge move's sub-volatile carries (`None` for the non-invulnerable four).
-    pub fn of(move_id: &str) -> Option<SemiInvulnerable> {
-        match move_id {
-            "fly" => Some(SemiInvulnerable::Fly),
-            "bounce" => Some(SemiInvulnerable::Bounce),
-            "dig" => Some(SemiInvulnerable::Dig),
-            "dive" => Some(SemiInvulnerable::Dive),
-            _ => None,
-        }
-    }
-
-    /// The condition's id (the move id).
-    pub fn id(self) -> &'static str {
-        match self {
-            SemiInvulnerable::Fly => "fly",
-            SemiInvulnerable::Bounce => "bounce",
-            SemiInvulnerable::Dig => "dig",
-            SemiInvulnerable::Dive => "dive",
-        }
-    }
-
-    /// `onInvulnerability` returns undefined (the move connects) for these ids. The resolved
-    /// Fly / Bounce list also names hurricane, smackdown and thousandarrows, none of which
-    /// exists in gen 3.
-    pub fn bypassed_by(self, move_id: &str) -> bool {
-        match self {
-            SemiInvulnerable::Fly | SemiInvulnerable::Bounce => {
-                matches!(move_id, "gust" | "twister" | "skyuppercut" | "thunder")
-            }
-            SemiInvulnerable::Dig => matches!(move_id, "earthquake" | "magnitude"),
-            SemiInvulnerable::Dive => matches!(move_id, "surf" | "whirlpool"),
-        }
-    }
-
-    /// `onSourceModifyDamage` chainModify(2) (Fly / Dig / Dive).
-    pub fn doubles_damage(self, move_id: &str) -> bool {
-        match self {
-            SemiInvulnerable::Fly => matches!(move_id, "gust" | "twister"),
-            SemiInvulnerable::Bounce => false,
-            SemiInvulnerable::Dig => matches!(move_id, "earthquake" | "magnitude"),
-            SemiInvulnerable::Dive => matches!(move_id, "surf" | "whirlpool"),
-        }
-    }
-
-    /// `onSourceBasePower` chainModify(2) (Bounce only).
-    pub fn doubles_base_power(self, move_id: &str) -> bool {
-        self == SemiInvulnerable::Bounce && matches!(move_id, "gust" | "twister")
-    }
-
-    /// `onImmunity` returns false for the sandstorm / hail chip (Dig / Dive).
-    pub fn weather_immune(self) -> bool {
-        matches!(self, SemiInvulnerable::Dig | SemiInvulnerable::Dive)
-    }
 }
 
 /// A pending FUTURE-MOVE strike (`gen3_move_coverage_batch4c_v1` — the gen-3 `futuremove`
@@ -1480,28 +1178,7 @@ impl MonState {
     /// Crash-don't-drop: returns `Err` (never a silent wrong value) if the dex
     /// can't compute the stats (unknown species/nature) — that would corrupt
     /// every downstream HP/damage number.
-    pub fn from_set(mut set: PokemonSet, position: usize, dex: &Dex) -> Result<MonState, String> {
-        // The set's SHAPE, against what the engine models (`gen3_format_rules_v1`). Showdown's
-        // ctor reads `clampIntRange(set.adjustLevel || set.level || 100, 1, 9999)`, so a level of
-        // 0 is 100; gen3customgame allows levels to 9999, which no gate has run, so they are
-        // REFUSED rather than approximated. Its `Max Move Count = 24` is the move limit: the
-        // engine keeps per-slot vectors, and a 6-move Custom Game set is pinned against the sim
-        // (`regression_test.rs` WB1, Weather Ball).
-        if set.level == 0 {
-            set.level = 100;
-        }
-        if set.level > 100 {
-            return Err(format!(
-                "MonState::from_set(slot {position}): level {} is not supported (the engine runs levels 1-100)",
-                set.level
-            ));
-        }
-        if set.moves.len() > 24 {
-            return Err(format!(
-                "MonState::from_set(slot {position}): {} moves is not supported (gen3customgame's Max Move Count is 24)",
-                set.moves.len()
-            ));
-        }
+    pub fn from_set(set: PokemonSet, position: usize, dex: &Dex) -> Result<MonState, String> {
         let stats = compute_stats(&set, dex)
             .map_err(|e| format!("MonState::from_set(slot {position}): {e}"))?;
         let maxhp = stats[0];
@@ -1544,21 +1221,17 @@ impl MonState {
         // Resolving every id in `data/pokemon/gen3_items.json` through `Dex.mod('gen3')` and
         // discarding the gen7+ universal no-ops (`onDrive`/`onMemory`/`onPlate`) plus
         // `Fling`/`NaturalGift` leaves 98 of 132 items with a real battle handler, of which 32
-        // are unreferenced by this engine. The Pokéblock / EV berries among them are inert here
-        // (their ONLY handler is `onEat`, never triggered in gen 3). FIVE had a genuine gen-3 battle effect; FOUR are MODELED since gen3 full
-        // parity B3 (`gen3_items_b3_v1`: Shell Bell `onAfterMoveSecondarySelf` in `moves.rs`,
-        // Macho Brace `onModifySpe` in `speed.rs`, Mail `onTakeItem` in Trick's gate, Mental Herb
-        // `onUpdate` in `items.rs`). The one left:
-        //   * `berryjuice`  — `onUpdate` + `onResidual`, restores 20 HP at <= 50%. It is
-        //                     `isNonstandard: 'Unobtainable'` in gen 3, so outside the gen-3 universe;
-        //                     it stays refused.
-        //   * the TEN gen-2 berries with a live gen-3 handler (`gen3_bf_past_berries_failloud_v1`,
-        //     the B6 agent's Bitter Berry finding, resolved `Dex.mod('gen3')`): `berry` and
-        //     `goldberry` (`onResidual` heal), `bitterberry` / `burntberry` / `iceberry` / `mintberry`
-        //     / `miracleberry` / `mysteryberry` / `przcureberry` / `psncureberry` (`onUpdate` cure).
-        //     `isNonstandard: 'Past'`, so outside the gen-3 universe, but an unvalidated Custom Game
-        //     team can hold one and the sim then applies it: refused like Berry Juice, never inert.
-        //     (The earlier "only `onEat`" reading of these was wrong for all ten.)
+        // are unreferenced by this engine. Twenty-seven of those 32 are inert here — gen-2
+        // carry-overs (goldberry / mintberry / iceberry / bitterberry / burntberry /
+        // psncureberry / miracleberry / mysteryberry) and Pokéblock berries whose ONLY handler
+        // is `onEat`. The FIVE below are the ones with a genuine gen-3 battle effect:
+        //   * `shellbell`   — `onAfterMoveSecondarySelf`, drains 1/8 of the damage dealt
+        //   * `berryjuice`  — `onUpdate` + `onResidual`, restores 20 HP at <= 50%
+        //   * `mentalherb`  — `onUpdate`, cures attraction
+        //   * `machobrace`  — `onModifySpe`, HALVES Speed (so it is turn-ORDER and therefore
+        //                     DRAW relevant — a silent miss desyncs the speed-tie shuffle)
+        //   * `mail`        — `onTakeItem`, blocks item theft (Knock Off / Thief / Trick would
+        //                     otherwise wrongly take it)
         //
         // EXPOSURE IS ZERO ON BOTH SURFACES WE ACTUALLY USE: 0 hits across 4722 training-pool
         // team-blocks in `data/teams/`, and 0 across 3000 generated `gen3randombattle` teams.
@@ -1566,10 +1239,8 @@ impl MonState {
         // day one of these reaches the engine (a hand-built team, a format change, a new pool)
         // it CRASHES instead of lying. An earlier audit's "~2.7% of ladder battles" figure was
         // inferred from Smogon usage weights and does not describe either surface.
-        const UNMODELED_FAILLOUD_ITEMS: [&str; 11] = [
-            "berryjuice", "berry", "goldberry", "bitterberry", "burntberry", "iceberry", "mintberry",
-            "miracleberry", "mysteryberry", "przcureberry", "psncureberry",
-        ];
+        const UNMODELED_FAILLOUD_ITEMS: [&str; 5] =
+            ["shellbell", "berryjuice", "mentalherb", "machobrace", "mail"];
         let item_id = crate::dex::to_id(&item);
         if UNMODELED_FAILLOUD_ITEMS.contains(&item_id.as_str()) {
             panic!(
@@ -1647,10 +1318,6 @@ impl MonState {
             );
         }
         let hp_bp = hidden_power_bp(&set.ivs); // read before `set` is moved into the struct
-        // The Endless Battle Clause's loser test reads the ORIGINAL set (`gen3_b10_endless_battle_v1`).
-        let set_restorative_berry = crate::turn::RESTORATIVE_BERRIES.contains(&crate::dex::to_id(&set.item).as_str());
-        let set_berry_cycle = crate::turn::BERRY_CYCLE_ABILITIES.contains(&crate::dex::to_id(&set.ability).as_str())
-            || set.moves.iter().any(|m| crate::dex::to_id(m) == "recycle");
         let set_gender = set.gender; // read before `set` is moved into the struct
         Ok(MonState {
             set,
@@ -1694,7 +1361,6 @@ impl MonState {
             types_override: None,
             last_move_used: None,
             uproar: None,
-            bide: None,
             damaged_by_foe_this_turn: false,
             fury_cutter: None,
             locked_move: None,
@@ -1718,7 +1384,6 @@ impl MonState {
             beat_up: false,
             pursuit: None,
             must_recharge: false,
-            must_recharge_duration: 0,
             two_turn: None,
             reactive: None,
             sleep_skipped: 0,
@@ -1732,8 +1397,6 @@ impl MonState {
             charge: false,
             mimic_overlay: None,
             snatch: false,
-            magic_coat: false,
-            foresight: false,
             sleep_from_rest: false,
             switchin_foe_uid: None,
             yawn: None,
@@ -1741,23 +1404,6 @@ impl MonState {
             torment: false,
             last_item: String::new(),
             active_move_actions: 0,
-            grudge: false,
-            grudge_ko_by: None,
-            nightmare: false,
-            ingrain: false,
-            stockpile: 0,
-            spit_up_after_move: false,
-            mud_sport: false,
-            water_sport: false,
-            lock_on: None,
-            volatile_staleness: false,
-            staleness: false,
-            pending_staleness: false,
-            set_restorative_berry,
-            set_berry_cycle,
-            called_move: None,
-            attacked_by: Vec::new(),
-            sketched: 0,
         })
     }
 
@@ -1843,14 +1489,6 @@ impl MonState {
     /// (no pp/maxpp/target/disabled) + `trapped:true`; `move 1` is the only legal move
     /// choice and a voluntary switch is REJECTED ("Can't switch: The active Pokémon is
     /// trapped" — the FIRM-trap shape, probe-verified request JSON).
-    /// The SEMI-INVULNERABLE state (`gen3_twoturn_family_v1`, `pokemon.isSemiInvulnerable()`
-    /// for gen 3): the Fly / Bounce / Dig / Dive sub-volatile, present from the charge until the
-    /// strike's `onTryMove` removes it (or an abort / the residual expiry removes the
-    /// twoturnmove that owns it).
-    pub fn semi_invulnerable(&self) -> Option<SemiInvulnerable> {
-        self.two_turn.filter(|t| t.charging).and_then(|t| t.semi)
-    }
-
     pub fn move_locked(&self) -> bool {
         self.must_recharge
             || self.two_turn.map_or(false, |t| t.charging)
@@ -1862,12 +1500,10 @@ impl MonState {
             || self.locked_move.is_some()
             // ROLLOUT / ICE BALL lock for 5 executions (`gen3_rollout_defensecurl_v1`).
             || self.rollout.is_some()
-            // BIDE (`gen3_b8_moves_v1`): `onLockMove: 'bide'` — the same FIRM shape.
-            || self.bide.is_some()
     }
 
     /// The move SLOT a lock holds the mon to (`gen3_locked_request_move_v1`) — the two-turn
-    /// charge, the Outrage / Thrash / Petal Dance lock, Rollout / Ice Ball, Uproar or Bide, i.e.
+    /// charge, the Outrage / Thrash / Petal Dance lock, Rollout / Ice Ball, or Uproar, i.e.
     /// Showdown's `lockedMove`. `None` for Recharge (a pseudo-move with no slot) and for an
     /// unlocked mon. The ONE place both the locked `|request|` entry and the wire's
     /// `move <name>` resolution read it: each used to read the two-turn slot only, so every
@@ -1876,19 +1512,9 @@ impl MonState {
         self.two_turn
             .filter(|t| t.charging)
             .map(|t| t.move_index)
-            .or(self.locked_move.map(|l| l.move_index))
+            .or(self.locked_move.map(|(_, s)| s))
             .or(self.rollout.map(|(_, s)| s))
             .or(self.uproar.map(|(_, s)| s))
-            .or(self.bide.map(|b| b.move_index))
-    }
-
-    /// The move id held at slot `k` (`gen3_b11_moves_v1`): a real moveslot's id as packed, or, for
-    /// [`CALLED_MOVE_SLOT`], the called move ([`Self::called_move`]). `None` past the moveset.
-    pub fn slot_move_id(&self, k: usize) -> Option<&str> {
-        if k == CALLED_MOVE_SLOT {
-            return self.called_move.as_deref();
-        }
-        self.set.moves.get(k).map(String::as_str)
     }
 
     /// The current PP of move slot `k` (`gen3_pp_tracking_v1`), or `0` for an
@@ -2075,23 +1701,6 @@ pub struct SideState {
     /// are immune to FOE-sourced major status + confusion; a SELF-inflicted status
     /// (Rest) passes, and a PENDING Yawn's resolve is exempt. 0 at construction.
     pub safeguard: u8,
-    /// The **MIST** side-condition remaining-turn counter (`gen3_b7_moves_v1`; `data/moves.ts`
-    /// mist.condition `duration: 5`, the gen-4 mod's `onSideResidualOrder: 3`). While > 0, a
-    /// FOE-sourced stat drop on this side's mon is deleted at `TryBoost` (after the mon's own
-    /// Clear Body / Hyper Cutter / Keen Eye handler), with `|-activate|<mon>|move: Mist` unless
-    /// the effect is a move secondary. `|-sideend|<side>|Mist` at 0. 0 at construction.
-    pub mist: u8,
-    /// The INSERTION stamps of the four timed side conditions (`gen3_b7_moves_v1`), indexed
-    /// [`SIDE_COND_REFLECT`] / [`SIDE_COND_LIGHT_SCREEN`] / [`SIDE_COND_SAFEGUARD`] /
-    /// [`SIDE_COND_MIST`]: set from `side_cond_seq` each time the condition STARTS. The sim's
-    /// `fieldEvent('Residual')` gathers a side's condition handlers in `side.sideConditions`
-    /// insertion order (a removed and re-added key goes last), and the non-stable selection sort
-    /// hands a tie group whatever order its swaps leave, so this order is load-bearing for two
-    /// tied conditions' `-sideend` order (probe `harness/probe_b7_moves.js`, the Mist + screens
-    /// boards). Read only by the residual gather.
-    pub side_cond_stamp: [u32; 4],
-    /// The per-side counter `side_cond_stamp` draws from (`gen3_b7_moves_v1`).
-    pub side_cond_seq: u32,
     /// The **WISH** pending slot-condition (`side.slotConditions[0].wish`,
     /// `gen3_move_coverage_batch3_v1`): `Some((duration, wisher_name))` when a Wish cast on
     /// THIS side is pending. `None` = no pending Wish (the construction-time value).
@@ -2143,20 +1752,7 @@ pub struct SideState {
     pub future_move: Option<FutureMove>,
 }
 
-/// [`SideState::side_cond_stamp`] indices (`gen3_b7_moves_v1`).
-pub const SIDE_COND_REFLECT: usize = 0;
-pub const SIDE_COND_LIGHT_SCREEN: usize = 1;
-pub const SIDE_COND_SAFEGUARD: usize = 2;
-pub const SIDE_COND_MIST: usize = 3;
-
 impl SideState {
-    /// Record that the timed side condition `which` (a `SIDE_COND_*` index) just STARTED: it
-    /// takes the next insertion stamp (`gen3_b7_moves_v1`; see [`Self::side_cond_stamp`]).
-    pub fn stamp_side_cond(&mut self, which: usize) {
-        self.side_cond_seq += 1;
-        self.side_cond_stamp[which] = self.side_cond_seq;
-    }
-
     /// The active (lead) mon.
     pub fn active(&self) -> &MonState {
         &self.pokemon[self.active]
@@ -2207,12 +1803,12 @@ pub struct BattleState {
     /// Generation (3) and format id, carried from the options.
     pub gen: u8,
     pub format_id: String,
-    /// The format's battle-visible rules (`gen3_format_rules_v1`, [`crate::format`]): Sleep
-    /// Clause, Freeze Clause (gen3ou / gen3uubl / gen3draft only, so only they draw the
-    /// 2-clause SetStatus shuffle), Species Clause, Beat Up Nicknames, the trapping-ability
-    /// leak, the framing. Looked up from `format_id` at construction, which REFUSES an id the
-    /// table does not hold.
-    pub rules: &'static crate::format::FormatRules,
+    /// Whether the **Sleep Clause Mod** is active (a sleep move that would inflict a
+    /// 2nd foe sleep FAILS). True for ladder formats that carry it via the `Standard`
+    /// ruleset (e.g. `gen3ou`); FALSE for `gen3customgame` (the e2e/secondary/
+    /// fullbattle harness format, which has no clauses). Derived from `format_id` at
+    /// construction (see [`format_has_sleep_clause`]).
+    pub sleep_clause: bool,
     /// Set by `run_move` when an Explosion / Self-Destruct SELF-KO fired this turn (the user
     /// fainted as part of the move, `useMoveInner` battle-actions.ts:501-503). Read into the
     /// per-decision `DecisionRecord.explosion_self_ko` at the turn's boundary + cleared at the
@@ -2286,7 +1882,7 @@ pub struct BattleState {
     /// `if (effect.id === 'yawn') return;` — the exemption keys on the EFFECT, not the
     /// source — so a PENDING Yawn sleeps its target THROUGH an active Safeguard (drawing
     /// its `random(2,6)` normally) even though a Yawn CAST into that same ward is blocked.
-    /// The `pursuit_strike` / `use_move_call` pattern: never persisted, never observed.
+    /// The `pursuit_strike` / `sleep_talk_call` pattern: never persisted, never observed.
     pub yawn_resolving: bool,
     /// The PER-TURN **first-mover override** for a PURSUIT-INTERRUPT turn
     /// (`gen3_move_coverage_batch4_v1`). On a turn where a mon VOLUNTARILY switches out and the
@@ -2309,14 +1905,7 @@ pub struct BattleState {
     /// `last_move` stays the Sleep Talk slot) + the mustrecharge gate. The called move
     /// otherwise runs its FULL NORMAL draw chain (acc/crit/damage/secondary — probed).
     /// The `pursuit_strike` transient pattern.
-    pub use_move_call: bool,
-    /// TRANSIENT: the id of the battle's ACTIVE move when the last `run_move` returned
-    /// (`gen3_b11_moves_v1`) — `battle.activeMove`, which every `useMove` re-sets and nothing
-    /// restores, so after a caller's turn it is the CALLEE (`sim/battle-actions.ts` runMove:
-    /// `if (this.battle.activeMove) move = this.battle.activeMove;` before `AfterMove`). Read by the
-    /// driver's Charge consumption (`charge.onAfterMove`: `if (move.id !== 'charge')`): a Metronome
-    /// or Sleep Talk that called Charge keeps it (probe_b11_moves.js "metronome charge").
-    pub active_move_id: String,
+    pub sleep_talk_call: bool,
     /// The battle-global **Quick Claw roll** (`Battle.quickClawRoll`, sim battle.js:1485
     /// `gen === 3` ⇒ `randomChance(1, 5)`, drawn UNCONDITIONALLY at every completed `endTurn`).
     /// Read next turn by gen3 `getActionSpeed` (scripts.js:47-48): a Quick-Claw HOLDER whose
@@ -2330,12 +1919,6 @@ pub struct BattleState {
     /// The DAMAGE-ROLL CONTROL (`crate::rolls`, F1 tier A of the world sampler): `None` (always,
     /// outside an offline world replay) runs every damage roll exactly as drawn.
     pub rolls: Option<Box<crate::rolls::RollCtl>>,
-    /// The running move's `move.totalDamage` (`gen3_items_b3_v1`): the HP its strikes took off
-    /// the target MON (a Substitute strike adds nothing: gen-3 `moveHit` returns `undefined`
-    /// for a `HIT_SUBSTITUTE`, `data/mods/gen3/scripts.ts` tryMoveHit), with the target it was
-    /// dealt to. [`BattleState::run_move`] scopes it to one `useMove` (a Sleep Talk's called
-    /// move is its own), and SHELL BELL reads it at the move's `AfterMoveSecondarySelf`.
-    pub move_total_damage: (u32, Option<(usize, usize)>),
 }
 
 impl BattleState {
@@ -2357,13 +1940,8 @@ impl BattleState {
     /// silently mis-constructed board.
     pub fn start(opts: &BattleOptions, dex: &Dex) -> Result<BattleState, String> {
         let gen = dex.generation();
-        let rules = crate::format::rules(&opts.format_id)?;
         let p1 = build_side(&opts.p1.name, &opts.p1.team, dex)?;
         let p2 = build_side(&opts.p2.name, &opts.p2.team, dex)?;
-        if rules.species_clause {
-            check_species_clause(&p1, dex)?;
-            check_species_clause(&p2, dex)?;
-        }
 
         // PRNG: the start seed is `Option<PrngSeed>` (a string). A `None` seed
         // means "generate one" upstream; here we have no event that draws, so a
@@ -2382,7 +1960,7 @@ impl BattleState {
             sides: [p1, p2],
             field: Field::default(),
             gen,
-            rules,
+            sleep_clause: format_has_sleep_clause(&opts.format_id),
             format_id: opts.format_id.clone(),
             pending_explosion_self_ko: false,
             turn0_switchin_order: None,
@@ -2391,12 +1969,10 @@ impl BattleState {
             faint_emit_queue: Vec::new(),
             pursuit_strike: false,
             yawn_resolving: false,
-            use_move_call: false,
-            active_move_id: String::new(),
+            sleep_talk_call: false,
             pursuit_first_mover: None,
             quick_claw_roll: false,
             rolls: None,
-            move_total_damage: (0, None),
         })
     }
 
@@ -2443,8 +2019,8 @@ impl BattleState {
             let slot = state.sides[side].active;
             let foe = 1 - side;
             let foe_slot = state.sides[foe].active;
-            let holder_spe = state.turn0_speed(side, slot);
-            let foe_spe = state.turn0_speed(foe, foe_slot);
+            let holder_spe = state.sides[side].pokemon[slot].stats[5];
+            let foe_spe = state.sides[foe].pokemon[foe_slot].stats[5];
             // The holder's runSwitch resolves AFTER the foe's iff it is SLOWER (faster-first; a
             // raw-Speed tie keeps side order → side 0 before side 1). `white_herb_restore` no-ops
             // unless the holder actually has a negative boost (i.e. was Intimidate-dropped).
@@ -2503,43 +2079,25 @@ impl BattleState {
 /// constructor does, so the resolved seed is real AND recordable.
 const DEFAULT_CONSTRUCT_SEED: &str = "0,0,0,0";
 
-/// **Species Clause** (`gen3_species_clause_v1`): refuse a side whose team holds two mons of one
-/// dex NUM — Showdown's `speciesclause.onValidateTeam` keys a `Set<number>` on `species.num`, so
-/// formes share a num (Deoxys's four formes are one species) and a nickname does not hide a
-/// duplicate. The engine does not run Showdown's validator, so a duplicate would otherwise be
-/// ACCEPTED; every reading downstream is species-keyed (the encoder's slot order, the oracle's
-/// `tail` match by num, the belief labels `slot == species`), so two same-species mons would be
-/// confused for each other silently. Crash-don't-drop.
-fn check_species_clause(side: &SideState, dex: &Dex) -> Result<(), String> {
-    let mut seen: Vec<(u16, &str)> = Vec::with_capacity(side.pokemon.len());
-    for mon in &side.pokemon {
-        let Some(sp) = dex.species(&mon.set.species) else {
-            return Err(format!("side {:?}: unknown species {:?}", side.name, mon.set.species));
-        };
-        if let Some((_, first)) = seen.iter().find(|(n, _)| *n == sp.num) {
-            return Err(format!(
-                "side {:?}: Species Clause: more than one Pokémon of species num {} ({:?} and {:?}); \
-                 the format limits a team to one of each Pokémon",
-                side.name, sp.num, first, mon.set.species
-            ));
-        }
-        seen.push((sp.num, mon.set.species.as_str()));
-    }
-    Ok(())
+/// Whether the format `format_id` carries the **Sleep Clause Mod** (a sleep move that
+/// would inflict a 2nd foe sleep FAILS). Ladder tiers include it via the `Standard`
+/// ruleset (Ubers/OU/UU/…); `gen3customgame` (and other `*customgame`) carry NO
+/// clauses. We match on the format SHAPE: anything `gen3customgame` (or any
+/// `*customgame`) → no clause; everything else gen-3 (gen3ou/uu/ubers/…) → clause.
+/// Gen-generic: only `*customgame` is the clause-free family.
+/// Whether the format's rule table carries `obtainableabilities` (`gen3ou`'s `Standard` →
+/// `Obtainable`; NOT `gen3customgame`). It gates endTurn's "canceling switches would leak
+/// information" loop (`sim/battle.ts` ~1729-1754: `(+hackmons || !obtainableabilities) &&
+/// !format.team` → skip), i.e. whether a foe's UNHELD species abilities can raise the request's
+/// `maybeTrapped` (`gen3_known_type_maybe_trap_v1`; probe `harness/probe_maybe_flags.js` S1/S2).
+/// The same customgame-vs-ladder split as [`format_has_sleep_clause`].
+pub fn format_has_obtainable_abilities(format_id: &str) -> bool {
+    format_has_sleep_clause(format_id)
 }
 
-impl BattleState {
-    /// A lead's turn-0 ACTION Speed (`getActionSpeed` when the `start` action inserts the two
-    /// `runSwitch`es, before either fires): the stored Speed through the ModifySpe chain as it
-    /// stands at construction — no boosts, status or weather yet, so the only gen-3 modifier is
-    /// MACHO BRACE ×0.5 (`gen3_items_b3_v1`). The draw-free `start_with_switchins` path orders
-    /// the leads (and the reconstructed framing) by it; the raw-seed bridge path reads the same
-    /// value through `effective_speed` at its `insert_runswitch`.
-    pub(crate) fn turn0_speed(&self, side: usize, slot: usize) -> u32 {
-        let m = &self.sides[side].pokemon[slot];
-        let mods: &[(u64, u64)] = if crate::dex::to_id(&m.item) == "machobrace" { &[(1, 2)] } else { &[] };
-        crate::damage::chain_modify(m.stats[5] as u64, mods) as u32
-    }
+pub fn format_has_sleep_clause(format_id: &str) -> bool {
+    let id: String = format_id.chars().filter(|c| c.is_ascii_alphanumeric()).map(|c| c.to_ascii_lowercase()).collect();
+    !id.ends_with("customgame")
 }
 
 /// Unpack one packed team and build its [`SideState`] (per-mon construction
@@ -2548,13 +2106,6 @@ fn build_side(name: &str, team: &PackedTeam, dex: &Dex) -> Result<SideState, Str
     let sets = unpack(&team.0, dex).map_err(|e| format!("side {name:?}: team unpack failed: {e}"))?;
     if sets.is_empty() {
         return Err(format!("side {name:?}: empty team"));
-    }
-    if sets.len() > 6 {
-        return Err(format!(
-            "side {name:?}: {} Pokémon is not supported: the engine runs teams of at most 6 \
-             (gen3customgame allows 24; refused rather than run unverified, gen3_format_rules_v1)",
-            sets.len()
-        ));
     }
     let mut pokemon = Vec::with_capacity(sets.len());
     for (i, set) in sets.into_iter().enumerate() {
@@ -2571,9 +2122,6 @@ fn build_side(name: &str, team: &PackedTeam, dex: &Dex) -> Result<SideState, Str
         light_screen: 0,  // gen3_move_coverage_batch2_v1
         reflect: 0,       // gen3_move_coverage_batch2_v1
         safeguard: 0,     // gen3_safeguard_v1
-        mist: 0,          // gen3_b7_moves_v1
-        side_cond_stamp: [0; 4],
-        side_cond_seq: 0,
         wish_pending: None,         // gen3_move_coverage_batch3_v1
         baton_pass_pending: false,  // gen3_move_coverage_batch3_v1
         future_move: None,          // gen3_move_coverage_batch4c_v1

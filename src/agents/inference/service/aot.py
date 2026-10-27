@@ -33,20 +33,6 @@ from torch.func import functional_call
 
 from agents.inference.service.spec import ServiceError
 
-#: AUTOTUNE ON THE REAL EXAMPLE INPUTS (gen3_aot_real_autotune_inputs_v1). torch 2.8's cpp-wrapper default
-#: (`compile_fx.get_cpp_wrapper_config`: ``triton.autotune_at_compile_time`` = True when unset) tunes every
-#: generated Triton kernel IN ISOLATION on `generate_example_value` tensors — `torch.randn` for EVERY float
-#: buffer, the intermediates included (`codegen/wrapper.py`; `autotuning_inputs` covers user-defined kernels
-#: only). The model decodes categorical ids from float obs (`extractor_ctx`: ``.long()``); an INDEXING op
-#: wraps a negative id (``id + n`` when ``id < 0``) so randn passes it, but a SCATTER does not: the move-
-#: resolution op's ``type_rev.scatter(2, t2, 1.0)`` (gen3_move_resolution_v1, 2026-10-06) device-asserted
-#: ``0 <= tmp1 < 19`` on a randn ``-1.3 -> -1`` during the build (card, 2026-10-24 and 10-25), and every CUDA
-#: call after it in that process died. False selects torch's two-pass path: the Python-wrapper graph runs
-#: once on the export's REAL example inputs (the committed real-obs fixture rows + the slot's weights),
-#: tuning every kernel on real intermediates, then the C++ wrapper is generated from those tuned kernels.
-AOT_BUILD_CONFIG: Dict[str, Any] = {"triton.autotune_at_compile_time": False}
-
-
 def cuda_home() -> str:
     """``$CUDA_HOME`` if set, else the running env's conda CUDA target dir; refuses (typed) when
     the headers AOTInductor's C++ build includes are absent."""
@@ -96,15 +82,9 @@ def build_package(module: torch.nn.Module, static_obs: torch.Tensor, static_mask
     os.environ.setdefault("CUDA_HOME", cuda_home())
     names = weight_names(module)
     wrapped = _WeightsAsInputs(module, names).eval()
-    # NO AUTOGRAD IN THE BUILD (gen3_aot_build_no_grad_v1). The export STORES its example inputs, and the
-    # real-input tuning pass (`AOT_BUILD_CONFIG`) RUNS the Python-wrapper graph on them: a weight that is a
-    # requires-grad Parameter, run with grad mode on, made the wrapper's `extern_kernels.addmm(..., out=buf)`
-    # raise "functions with out=... arguments don't support automatic differentiation" (card, c0d0c9714).
-    # So the export takes DETACHED weights (same storage) and the compile runs under no_grad.
-    example = (static_obs.detach(), static_mask.detach(),
-               *(t.detach() for t in weight_tensors(module, names)))
     with torch.no_grad():
-        ep = torch.export.export(wrapped, example, strict=False)
+        ep = torch.export.export(wrapped, (static_obs, static_mask,
+                                           *weight_tensors(module, names)), strict=False)
     path.parent.mkdir(parents=True, exist_ok=True)
     inductor: Any = torch._inductor               # the torch 2.8 API
     # torch 2.8's AOTI codegen writes `metadata["AOTI_DEVICE_KEY"] = device_type` INTO the
@@ -116,8 +96,7 @@ def build_package(module: torch.nn.Module, static_obs: torch.Tensor, static_mask
     # + the CPU tile2d workaround on a CPU export (`inductor_compile`, gen3_cpu_compile_sites_v1): nothing on CUDA,
     # the only device this backend serves (`ServiceSpec` refuses another)
     from agents.model.inductor_compile import inductor_options
-    with inductor_config.patch({"aot_inductor.metadata": {}, **AOT_BUILD_CONFIG,
-                                **inductor_options(static_obs.device)}), torch.no_grad():
+    with inductor_config.patch({"aot_inductor.metadata": {}, **inductor_options(static_obs.device)}):
         pkg = inductor.aoti_compile_and_package(ep, package_path=str(path))
     runner = inductor.aoti_load_package(pkg)
     return runner, names

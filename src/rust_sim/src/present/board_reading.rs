@@ -591,9 +591,6 @@ impl BoardReading {
         };
         if let Some(o) = outgoing {
             self.mon_at((own, o)).switch_out();
-            if !from_baton_pass {
-                self.release_foe_trap(own);
-            }
         }
         let at = self.get_pokemon(pokemon_str, false, details, None)?;
         let m = self.mon_at(at);
@@ -606,21 +603,6 @@ impl BoardReading {
             m.apply_baton_pass(s);
         }
         Ok(())
-    }
-
-    /// `gen3_volatile_silent_ends_v1` (2026-10-26 GIGO audit A-C2): side `own`'s active LEFT the field (switched
-    /// out, dragged out or fainted — not a Baton Pass, which hands the `trapper` link on: `copyVolatileFrom`). Mean
-    /// Look / Spider Web / Block link the foe's `trapped` to its trapper (`addVolatile('trapped', source, move,
-    /// 'trapper')`), and the trapper's `clearVolatile` -> `removeLinkedVolatiles` ends it with NO protocol line
-    /// (`sim/pokemon.ts`). In singles the only possible trapper is the opposing active, so the foe's active is
-    /// released. It read trapped for the rest of its stint.
-    fn release_foe_trap(&mut self, own: bool) {
-        if let Some(i) = self.active_index(!own) {
-            let foe = self.mon_at((!own, i));
-            if foe.has_effect(super::dex::effect_by_name("TRAPPED").expect("TRAPPED")) {
-                foe.end_effect("TRAPPED");
-            }
-        }
     }
 
     /// `AbstractBattle.end_turn(turn)`: the new turn, then `end_turn()` on both actives.
@@ -819,12 +801,7 @@ impl BoardReading {
             "-weather" => self.weather(&sm)?,
             "faint" => {
                 let p = f(2)?.to_string();
-                let m = self.mon(&p)?;
-                let was_active = m.active;
-                m.faint();
-                if was_active {
-                    self.release_foe_trap(ident_side(&p) == Some(self.role));
-                }
+                self.mon(&p)?.faint();
             }
             "-ability" => {
                 let (p, cause) = (f(2)?.to_string(), f(3)?.to_string());

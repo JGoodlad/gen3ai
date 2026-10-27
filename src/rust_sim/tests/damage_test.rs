@@ -268,7 +268,6 @@ fn damage_golden_matches_showdown() {
             boosts: atk_boosts,
             burned: atk_status == "brn",
             has_guts: atk_has_guts,
-            identified: false,
         };
         let defender = Combatant {
             level: 100,
@@ -280,13 +279,11 @@ fn damage_golden_matches_showdown() {
             boosts: def_boosts,
             burned: def_status == "brn",
             has_guts: pokesim::dex::to_id(def_ability_id) == "guts",
-            identified: false,
         };
         let mv = MoveInput { minimize_doubles: false, base_power: bp, move_type, category, halves_defense: halves_def };
 
         let ctx = DamageContext {
             defender_minimized: false,
-            semi_invulnerable_doubles: false,
             attacker,
             defender,
             mv,
@@ -338,7 +335,6 @@ fn damage_smoke() {
     //   = tr(tr(1260000/200)/50) = tr(6300/50) = 126; +2 = 128 (no crit/STAB/type).
     let base_ctx = |category, move_type, crit, atk, def, boosts_def: [i8; 5]| DamageContext {
         defender_minimized: false,
-        semi_invulnerable_doubles: false,
         attacker: Combatant { level: 100, atk_stat: atk, spa_stat: atk, types: vec![Type::Normal], ..Default::default() },
         defender: Combatant { level: 100, def_stat: def, spd_stat: def, types: vec![Type::Normal], boosts: boosts_def, ..Default::default() },
         mv: MoveInput { minimize_doubles: false, base_power: 100, move_type, category, halves_defense: false },
@@ -379,7 +375,6 @@ fn damage_smoke() {
     // TYPE 0× (immunity) → 0 damage. A Ground move vs a Flying defender (chart 0×).
     let immune_ctx = DamageContext {
         defender_minimized: false,
-        semi_invulnerable_doubles: false,
         attacker: Combatant { level: 100, atk_stat: 300, types: vec![Type::Ground], ..Default::default() },
         defender: Combatant { level: 100, def_stat: 200, types: vec![Type::Flying], ..Default::default() },
         mv: MoveInput { minimize_doubles: false, base_power: 100, move_type: Some(Type::Ground), category: MoveCategory::Physical, halves_defense: false },

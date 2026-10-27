@@ -333,16 +333,9 @@ fn build_set(fields: &[&str], dex: &Dex) -> Result<PokemonSet, String> {
     // 10. shiny — any non-empty span → true.
     set.shiny = !fields[9].is_empty();
 
-    // 11. level — parseInt if present, else default 100. A level that does not fit the `u8`
-    //     is REFUSED (`gen3_format_rules_v1`): `parse::<u8>` used to fail on "300" and the
-    //     `unwrap_or(100)` silently made it a level-100 mon (gen3customgame allows up to 9999).
+    // 11. level — parseInt if present, else default 100.
     if !fields[10].is_empty() {
-        set.level = match parse_int_prefix_wide(fields[10]) {
-            None => 100,
-            Some(n) => u8::try_from(n).map_err(|_| {
-                format!("level {n} is not supported: the engine runs levels 1-100 (gen3customgame allows up to 9999)")
-            })?,
-        };
+        set.level = parse_int_prefix(fields[10]).unwrap_or(100);
     }
 
     // 12. happiness + misc tail — comma list [happiness, hpType, pokeball, gmax,
@@ -364,16 +357,6 @@ fn build_set(fields: &[&str], dex: &Dex) -> Result<PokemonSet, String> {
     }
 
     Ok(set)
-}
-
-/// [`parse_int_prefix`] without the `u8` narrowing, so an out-of-range level is SEEN (a
-/// digit run too long for `u64` is out of range too) rather than read as absent.
-fn parse_int_prefix_wide(s: &str) -> Option<u64> {
-    let digits: String = s.trim_start().chars().take_while(char::is_ascii_digit).collect();
-    if digits.is_empty() {
-        return None;
-    }
-    Some(digits.parse().unwrap_or(u64::MAX))
 }
 
 /// `parseInt`-style leading-decimal-integer parse (tolerates trailing junk),

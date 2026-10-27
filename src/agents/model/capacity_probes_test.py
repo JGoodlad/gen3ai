@@ -20,7 +20,7 @@ import numpy as np
 import pytest
 
 from agents.model.capacity_probes import (
-    CAPACITY_BATTERY_VERSION, FEATURE_TAPS, L2_GRID, tanh_saturation_probe, tanh_saturation_stats, auc_score, ground_truth_facts, jsonable,
+    CAPACITY_BATTERY_VERSION, FEATURE_TAPS, L2_GRID, auc_score, ground_truth_facts, jsonable,
     kfold_indices, parameter_utilization, r2_columns, random_targets, rank_summary, ridge_oof,
 )
 
@@ -308,69 +308,5 @@ def test_jsonable_stringifies_the_unexpected():
 
 
 def test_battery_constants_are_stable_surface():
-    assert CAPACITY_BATTERY_VERSION >= 3       # 2: the vf_features tap left with the value projection (F1)
+    assert CAPACITY_BATTERY_VERSION >= 2       # 2: the vf_features tap left with the value projection (F1)
     assert FEATURE_TAPS == ("role_tokens", "team_tokens", "value_pooled", "pi_features")
-
-
-# --------------------------------------------------------------------------- (e) tanh saturation
-
-def test_tanh_saturation_stats_pins_both_definitions():
-    """Counts of rows with |a| > 0.99 over 100 rows: units at 100, 99, 98 and 0. The saturated-UNIT
-    share counts frac >= 0.99 (so the 99 counts, the 98 does not); the activation share is the mean."""
-    st = tanh_saturation_stats(np.array([100, 99, 98, 0]), 100)
-    assert st == {"units": 4, "saturated_units": 0.5, "mean_sat_frac": round((1 + .99 + .98 + 0) / 4, 5)}
-
-
-def _fixture_policy():
-    """A 3-in, 2-layer tanh policy MLP with hand-set weights: layer 1 unit 0 always saturates, unit 1
-    never does; layer 2 is tanh(0.1 * x) so it never does."""
-    import types
-    import torch as th
-
-    class FE(th.nn.Module):
-        def forward(self, ob):
-            x = ob["observation"].float()
-            return x, x
-
-    l1, l2 = th.nn.Linear(3, 2, bias=True), th.nn.Linear(2, 2, bias=False)
-    with th.no_grad():
-        l1.weight.copy_(th.tensor([[10.0, 0.0, 0.0], [0.0, 0.0, 0.01]]))
-        l1.bias.copy_(th.tensor([5.0, 0.0]))
-        l2.weight.copy_(0.1 * th.eye(2))
-    mlp = types.SimpleNamespace()
-    mlp.policy_net = th.nn.Sequential(l1, th.nn.Tanh(), l2, th.nn.Tanh())
-    mlp.named_modules = lambda: [("policy_net." + n, m) for n, m in mlp.policy_net.named_modules() if n]
-    mlp.forward_actor = lambda pi: mlp.policy_net(pi)
-    return types.SimpleNamespace(features_extractor=FE(), mlp_extractor=mlp)
-
-
-def test_tanh_saturation_probe_on_a_fixture_network():
-    obs = np.abs(np.random.default_rng(0).normal(size=(40, 3))).astype(np.float32) + 0.5
-    obs[:10, 0] = 0.0                       # unit 0 pre-activation = 5 + 10*0 = 5: still saturated
-    masks = np.ones((40, 4), dtype=np.float32)
-    out = tanh_saturation_probe(_fixture_policy(), obs, masks, batch=16)
-    assert out["abs_threshold"] == 0.99 and out["n_rows"] == 40
-    assert set(out["layers"]) == {"mlp_extractor.policy_net.1", "mlp_extractor.policy_net.3"}
-    l1 = out["layers"]["mlp_extractor.policy_net.1"]
-    # unit 0 saturated on every row, unit 1 (tanh(0.01 * x), x < 10) on none
-    assert l1 == {"units": 2, "saturated_units": 0.5, "mean_sat_frac": 0.5}
-    l2 = out["layers"]["mlp_extractor.policy_net.3"]
-    assert l2["mean_sat_frac"] == 0.0 and l2["saturated_units"] == 0.0
-
-
-def test_tanh_saturation_probe_removes_its_hooks():
-    pol = _fixture_policy()
-    tanhs = [m for m in pol.mlp_extractor.policy_net if m.__class__.__name__ == "Tanh"]
-    tanh_saturation_probe(pol, np.ones((4, 3), dtype=np.float32), np.ones((4, 4), dtype=np.float32))
-    assert all(not m._forward_hooks for m in tanhs)
-
-
-def test_a_policy_with_no_tanh_layer_reports_no_layers():
-    import types
-    import torch as th
-
-    pol = _fixture_policy()
-    pol.mlp_extractor = types.SimpleNamespace(
-        named_modules=lambda: [], forward_actor=lambda pi: th.nn.Sequential()(pi))
-    out = tanh_saturation_probe(pol, np.ones((4, 3), dtype=np.float32), np.ones((4, 4), dtype=np.float32))
-    assert out["layers"] == {}

@@ -930,7 +930,6 @@ impl PMon {
     /// (Glaive Rush; a damaging Electric move ends Charge, a damaging Fire move ends Flash
     /// Fire — poke-env's rule, whatever the gen).
     pub fn moved(&mut self, move_id: &str, failed: bool, use_: bool, reveal: bool, pressure: bool) -> R<()> {
-        self.end_before_move_volatiles(Some(move_id));
         let mut at: Option<MoveRef> = None;
         if reveal {
             at = self.add_move(move_id)?;
@@ -980,28 +979,8 @@ impl PMon {
         Ok(())
     }
 
-    /// `gen3_volatile_silent_ends_v1` (2026-10-26 GIGO audit A-C1): the volatiles the sim removes SILENTLY at the
-    /// holder's next move ATTEMPT (`data/moves.ts`): Grudge and Rage in `onBeforeMove` (priority 100, before any
-    /// sleep / paralysis check, so a `|cant|` ends them too); Destiny Bond in `onBeforeMove` unless that move IS
-    /// Destiny Bond, and in `onMoveAborted` (a `|cant|`). A re-used Rage / Destiny Bond re-announces itself
-    /// (`-singlemove`) after this line, which starts it again. They stayed set for the rest of the stint.
-    /// `move_id` None = a `|cant|` (the move was aborted).
-    fn end_before_move_volatiles(&mut self, move_id: Option<&str>) {
-        let keep_bond = move_id.is_some_and(|m| dex::to_id(m) == "destinybond");
-        for name in ["GRUDGE", "RAGE", "DESTINY_BOND"] {
-            if name == "DESTINY_BOND" && keep_bond {
-                continue;
-            }
-            let e = dex::effect_by_name(name).expect("a before-move volatile row");
-            if self.has_effect(e) {
-                self.end_effect(name);
-            }
-        }
-    }
-
     /// `Pokemon.cant_move(reason)`: the protect streak resets; a sleeping mon counts the turn.
     pub fn cant_move(&mut self) {
-        self.end_before_move_volatiles(None);
         self.protect_counter = 0;
         if self.status == Some(Status::Slp) {
             self.status_counter += 1;

@@ -36,15 +36,6 @@ STATS_TO_IDX = {
 }
 
 
-def _packed_happiness(happiness: Optional[int]) -> str:
-    """The packed happiness field, as Showdown's ``Teams.pack`` writes it: empty for the default 255 (or none), else
-    the number — 0 INCLUDED. ``happiness or ""`` dropped an explicit 0 (Frustration's set), which the core then
-    unpacked as 255 (gen3_team_pack_happiness_v1)."""
-    if happiness is None or happiness == 255:
-        return ""
-    return str(int(happiness))
-
-
 class TeambuilderPokemon:
     evs: List[int]
     ivs: List[int]
@@ -141,7 +132,7 @@ class TeambuilderPokemon:
             self.packed_ivs or "",
             "S" if self.shiny else "",
             self.level or "",
-            _packed_happiness(self.happiness),
+            self.happiness or "",
             self.packed_endstring,
         )
 
@@ -330,11 +321,6 @@ class TeambuilderPokemon:
                             break
                 mon.nickname = " ".join(split_mon_info)
 
-        # Showdown's importer (`sim/teams.ts` parseExportedTeamLine): a set that runs Frustration and states no
-        # Happiness gets happiness 0. Without it the pack carried no happiness, the core unpacked 255 and Frustration
-        # hit at base power 1 (gen3_team_pack_happiness_v1, 2026-10-26 GIGO audit C-2).
-        if mon.happiness is None and any(m == "Frustration" for m in mon.moves):
-            mon.happiness = 0
         return mon
 
 

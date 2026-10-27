@@ -8,10 +8,8 @@ parity-gates EVERY slot x bucket (and, with lanes, every slot at once) on the co
 fixture, and FREEZES. After the freeze a ``flush()`` only packs, copies, replays and copies out —
 it compiles, captures and allocates nothing, and three ``*_after_freeze`` counters prove it on
 every call (plus a counted, warned reserved-byte growth, the one acquisition visible under
-``expandable_segments:True``) — each charged only for what T2 itself did: memory that grew on T2's OWN streams
-(``reserved_growth.StreamAttribution``, gen3_t2_stream_attribution_v1), dynamo graphs compiled and fp32 matmul-precision
-changes made on T2's OWN thread (``guard_attribution``, gen3_t2_guard_attribution_v1); what a learner does beside a
-worker-thread flush (X14's overlap) is counted FOREIGN. This module is the API, the scheduling and the lifecycle; ``engine.py`` executes.
+``expandable_segments:True``) — each charged only for what grew on T2's OWN streams
+(``reserved_growth.StreamAttribution``, gen3_t2_stream_attribution_v1). This module is the API, the scheduling and the lifecycle; ``engine.py`` executes.
 
 Not thread-safe: one caller loop drives it (the M5 env core is in-process). Results are views into
 the arenas, valid until the next ``flush()`` (a later read is a `CallerError`, never stale data).
@@ -19,7 +17,6 @@ the arenas, valid until the next ``flush()`` (a later read is a `CallerError`, n
 from __future__ import annotations
 
 import contextlib
-import threading
 import time
 from dataclasses import dataclass
 import re
@@ -29,7 +26,6 @@ import numpy as np
 import torch
 
 from agents.action.ordering_integrity import check_obs_move_order
-from agents.inference.service import guard_attribution as GA
 from agents.inference.service import reserved_growth as RG
 from agents.inference.service.engine import Engine, PlanItem
 from agents.inference.service.parity import ParityReport, fixture_rows, gate_slot, judge
@@ -144,14 +140,6 @@ def _dynamo_graphs() -> int:
     return dynamo_graphs_total()
 
 
-def _graph_marks() -> Any:
-    """`compile_control.GraphMarks` (the per-thread ledger of dynamo graph compiles, instrumented on first read) or
-    ``None`` when torch's counter is not the shape it expects (the guard then books the window process-wide)."""
-    from agents.model.compile_control import thread_graph_marks
-
-    return thread_graph_marks()
-
-
 class InferenceService:
     def __init__(self, spec: ServiceSpec):
         spec.validate()
@@ -163,7 +151,7 @@ class InferenceService:
             "compiles_after_freeze": 0, "captures_after_freeze": 0,
             "cuda_segments_after_freeze": 0, "cuda_reserved_bytes_after_freeze": 0,
             "cuda_reserved_growths_after_freeze": 0, "rows_served": 0, "rows_padded": 0, "batches": 0,
-            "loads": 0, "flushes": 0, **{k: 0 for k in RG.ATTRIBUTION_KEYS}, **{k: 0 for k in GA.GUARD_ATTRIBUTION_KEYS}}
+            "loads": 0, "flushes": 0, **{k: 0 for k in RG.ATTRIBUTION_KEYS}}
         self.batches_by_bucket: Dict[int, int] = {b: 0 for b in self.buckets}
         self.startup_reports: List[ParityReport] = []
         #: How many parity verdicts each PATH produced (``ParityReport.path``: the perturbed rung's
@@ -198,24 +186,16 @@ class InferenceService:
         service. RESERVED-byte growth (the only acquisition visible under ``expandable_segments``)
         is counted and warned — ``reserved_growth.RESERVED_GROWTH_POISONS`` says why it does not poison yet.
         Segments and reserved bytes are T2's OWN: what grew on T2's streams (`RG.StreamAttribution`,
-        gen3_t2_stream_attribution_v1) — a learner allocation on another stream in the same window is FOREIGN.
-        Dynamo graphs and the fp32 matmul precision are T2's OWN the same way, by THREAD (`GA`,
-        gen3_t2_guard_attribution_v1): the thread that entered the guard is T2's, so a learner compile or precision
-        change on another thread in the window is FOREIGN (counted, never fatal)."""
-        tid = threading.get_ident()
+        gen3_t2_stream_attribution_v1) — a learner allocation on another stream in the same window is FOREIGN."""
         g0, c0 = _dynamo_graphs(), self.engine.captures
-        gm0, pr0 = _graph_marks(), GA.PRECISION.read()
         m0 = _alloc_marks(self.device)
         self._attr.enter(m0)
         streams = _t2_streams(self.engine, self.device)
         yield
         own = self._attr.exit(m0, _alloc_marks(self.device), streams)
-        compiles = GA.attribute_compiles(gm0, _graph_marks(), tid, _dynamo_graphs() - g0)
-        dg, ds, dr = compiles.own, own.own_segments, own.own_bytes
+        dg, ds, dr = _dynamo_graphs() - g0, own.own_segments, own.own_bytes
         dc = self.engine.captures - c0
         self.counters["compiles_after_freeze"] += max(dg, 0)
-        self.counters[GA.FOREIGN_COMPILES_KEY] += compiles.foreign
-        self.counters[GA.COMPILE_FALLBACKS_KEY] += int(compiles.fallback)
         self.counters["cuda_segments_after_freeze"] += max(ds, 0)
         self.counters["captures_after_freeze"] += max(dc, 0)
         why = RG.note_growth(self.counters, where, dr)      # counted + warned; fatal only once armed
@@ -227,12 +207,9 @@ class InferenceService:
                    f"{dc} graph captures (the declared lifecycle allows none)")
             self._die(why)
             raise LifecycleViolation(why)
-        verdict = GA.PRECISION.verdict(self._precision, pr0, tid)
-        if verdict.kind == GA.FOREIGN:
-            GA.note_foreign(self.counters, GA.FOREIGN_PRECISION_KEY, f"{where}: {verdict.detail}")
-        elif verdict.kind != GA.OK:
-            self.counters[GA.PRECISION_FALLBACKS_KEY] += int(verdict.kind == GA.UNKNOWN)
-            why = f"{where}: {verdict.detail}"
+        if torch.get_float32_matmul_precision() != self._precision:
+            why = (f"{where}: fp32 matmul precision changed after the freeze "
+                   f"({self._precision!r} -> {torch.get_float32_matmul_precision()!r})")
             self._die(why)
             raise LifecycleViolation(why)
 
@@ -249,10 +226,8 @@ class InferenceService:
 
     def _startup(self) -> None:
         t0 = time.perf_counter()
-        GA.PRECISION.install()                  # gen3_t2_guard_attribution_v1: record WHO sets the matmul precision / compiles a graph
-        _graph_marks()                          # (an unavailable ledger is a counted fallback at the guard, not a startup failure)
         self._precision = torch.get_float32_matmul_precision()
-        self.groups =[SlotGroup(g, self.device) for g in self.spec.groups]
+        self.groups = [SlotGroup(g, self.device) for g in self.spec.groups]
         dims = {(int(g.policies[0].observation_space["observation"].shape[0]),
                  int(g.policies[0].action_space.n)) for g in self.groups}
         if len(dims) != 1:

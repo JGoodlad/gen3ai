@@ -17,8 +17,8 @@ encoder (`src/rust_sim/src/encoder/`, `designs/rust_sim/encoder.md`) is the only
   `ARCH_SIGNATURE`: `src/agents/model/CLAUDE.md` "Versioning — what to bump". The value gates are the obs golden
   (`python -m agents.training.golden_obs_core --check`) and `designs/rust_sim/encoder.md` §6a. The benchmark
   every obs change runs is in the root `CLAUDE.md`.
-- The archived `TurnDelta` slot and the incoming-damage obs block stay deleted; `turn_delta_encoder.py` and
-  `incoming_damage.py` survive only as decoders and pure math (the prober, `damage_tables`), written into no row.
+- The archived `TurnDelta` slot and the incoming-damage obs encoder stay deleted; `turn_delta_encoder.py` and
+  `incoming_damage.py` survive only as the prober's decoder and pure math.
 
 ## Hazards
 
@@ -37,10 +37,5 @@ encoder (`src/rust_sim/src/encoder/`, `designs/rust_sim/encoder.md`) is the only
   `clock` group.
 - Move, species and type ids in the row are embedding ids: a new embedded column is declared, never fed to a
   Linear raw.
-- **Every id is bounded by `constants.VOCAB_SPECIES` / `_MOVES` / `_ITEMS` / `_ABILITIES` / `_TYPES`** (the embedding
-  tables' rows; `layout.rs` holds the same five). A dex num at or past its bound RAISES at three doors, never clamps:
-  `Gen3ObservationEncoder` construction (`vocab_bounds.check_vocab_bounds`), the Rust encoder's table load
-  (`encoder/data.rs`, which every id the Rust encoder writes is read out of) and `vocab_bounds_test.py` over the shipped
-  dex. Widening a vocabulary is a retrain-class weight-shape change: edit `constants.py` and `layout.rs` together.
 - The two move orders and the mypy rule (this package shares the model's `mypy.ini`) are in
   `src/agents/model/CLAUDE.md`.

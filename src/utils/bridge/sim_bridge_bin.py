@@ -77,10 +77,6 @@ _BRIDGE_JS = str(Path(__file__).parent / "local_sim_bridge.js")
 _RUST_CRATE_DIR = src_path("rust_sim")
 _ENV_OVERRIDE = "POKESIM_SIM_BRIDGE_BIN"
 _SEARCH_ENV_OVERRIDE = "POKESIM_SEARCH_DRIVER_BIN"
-#: The overrides of the three OFFLINE tools (not transports): the A/B replayers and the coverage oracle.
-AB_REPLAY_ENV = "POKESIM_AB_REPLAY_BIN"
-SCAN_MOVE_PROBE_ENV = "POKESIM_SCAN_MOVE_PROBE_BIN"
-BRIDGE_REPLAY_ENV = "POKESIM_BRIDGE_REPLAY_BIN"
 
 #: The EMISSION SELF-CHECK switch (``gen3_core_emission_selfcheck_v1``, ``src/rust_sim/src/
 #: emission_check.rs``). ``"1"`` makes every resolver below build and return the SELF-CHECK binary —
@@ -351,26 +347,6 @@ def resolve_live_reader_bin() -> str:
     its siblings.
     """
     return _resolve_rust_bin("live_reader", "POKESIM_LIVE_READER_BIN", "the live reader session")
-
-
-def resolve_ab_replay_bin() -> str:
-    """Return an absolute path to the Rust ``ab_replay`` binary (the A/B fuzzers' replayer: a recorded battle in, one JSON
-    verdict per battle out), building it if needed. Never a transport. ``$POKESIM_AB_REPLAY_BIN`` overrides, exactly like
-    its siblings (the harness ``ab_fuzz.js`` reads the same variable and judges it by the same stamp:
-    ``harness/stamp_guard.js``)."""
-    return _resolve_rust_bin("ab_replay", AB_REPLAY_ENV, "the A/B fuzz replayer")
-
-
-def resolve_scan_move_probe_bin() -> str:
-    """Return an absolute path to the Rust ``scan_move_probe`` binary (the engine's coverage oracle: which species / moves
-    / items / abilities RUN), building it if needed. ``$POKESIM_SCAN_MOVE_PROBE_BIN`` overrides."""
-    return _resolve_rust_bin("scan_move_probe", SCAN_MOVE_PROBE_ENV, "the engine coverage oracle")
-
-
-def resolve_bridge_replay_bin() -> str:
-    """Return an absolute path to the Rust ``bridge_replay`` binary (the bridge A/B fuzzer's replayer), building it if
-    needed. ``$POKESIM_BRIDGE_REPLAY_BIN`` overrides."""
-    return _resolve_rust_bin("bridge_replay", BRIDGE_REPLAY_ENV, "the bridge A/B fuzz replayer")
 
 
 def resolve_and_publish_sim_bridge_bin() -> str:

@@ -38,15 +38,6 @@ pub const POKEMON_TRAPPED_OFFSET: usize = 119;
 pub const POKEMON_MAYBE_TRAPPED_OFFSET: usize = 120;
 pub const POKEMON_ACTIVE_OFFSET: usize = 121;
 pub const POKEMON_FULL_DIM: usize = 122;
-/// The categorical-id VOCABULARIES (`gen3_vocab_bounds_v1`): the rows of the model's species / move / item /
-/// ability / type embedding tables (`Gen3ObservationEncoder.get_layout()['max_species']` ...). Every id the
-/// row carries is `< ` its bound; `data::tables()` refuses to load a dex num at or above it, and
-/// `rust_core_obs_layout_test` holds these equal to `agents/observation/constants.py`.
-pub const VOCAB_SPECIES: usize = 400;
-pub const VOCAB_MOVES: usize = 400;
-pub const VOCAB_ITEMS: usize = 600;
-pub const VOCAB_ABILITIES: usize = 100;
-pub const VOCAB_TYPES: usize = 20;
 pub const SPECIES_ID_DIM: usize = 1;
 pub const ITEM_ID_DIM: usize = 1;
 pub const ITEM_KNOWN_DIM: usize = 1;

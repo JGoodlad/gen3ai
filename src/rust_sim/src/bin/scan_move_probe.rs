@@ -103,12 +103,9 @@ fn probe_pair(p1_team: &str, dex: &Dex) -> (String, Option<String>) {
 
 fn probe_move(move_id: &str, dex: &Dex) -> (String, Option<String>) {
     // Attacker: a bulky normal (Snorlax) using the move. Defender: an inert Snorlax
-    // (Immunity so no status noise) with Splash — it just sits there. Both GENDERS are pinned
-    // (M into F, `gen3_attract_move_v1`): the sim samples an unspecified gender at construction,
-    // which this post-construction-seed path cannot know, so a gender-reading move (Attract)
-    // would otherwise fail loud for the harness's sake, not the engine's.
-    let p1_team = packed("snorlax", "immunity", move_id).replacen("|||||", "|M||||", 1);
-    let p2_team = packed("snorlax", "immunity", "splash").replacen("|||||", "|F||||", 1);
+    // (Immunity so no status noise) with Splash — it just sits there.
+    let p1_team = packed("snorlax", "immunity", move_id);
+    let p2_team = packed("snorlax", "immunity", "splash");
 
     let opts = BattleOptions {
         format_id: "gen3customgame".to_string(),

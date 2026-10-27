@@ -149,31 +149,6 @@ pub struct Combatant {
     pub burned: bool,
     /// Whether the mon has Guts (burn does NOT halve a Guts mon's physical damage).
     pub has_guts: bool,
-    /// FORESIGHT / ODOR SLEUTH identified this mon (`gen3_b6_moves_v1`, `MonState::foresight`):
-    /// as a DEFENDER, a Normal- or Fighting-type move reads its Ghost type as NEUTRAL instead of
-    /// immune ([`type_effectiveness`]). Unused on the attacker side.
-    pub identified: bool,
-}
-
-/// The type-effectiveness product of `attacking` into `defending`, with the FORESIGHT exception
-/// (`gen3_b6_moves_v1`): an `identified` defender's Ghost type stops being immune to Normal and
-/// Fighting. Showdown splits immunity from effectiveness — the foresight condition's
-/// `onNegateImmunity` (`data/moves.ts` foresight) skips `runImmunity`, and `getEffectiveness`
-/// reads `damageTaken: 3` (immune) as typeMod 0 — so the Ghost factor becomes 1×, not 0×, and a
-/// Fighting move into Ghost/Poison is still `-resisted` (probe_b6_moves.js FS1). Every site that
-/// reads a battle DEFENDER's effectiveness goes through here.
-pub fn type_effectiveness(dex: &Dex, attacking: Type, defending: &[Type], identified: bool) -> f64 {
-    let chart = dex.type_chart();
-    defending
-        .iter()
-        .map(|&d| {
-            if identified && d == Type::Ghost && matches!(attacking, Type::Normal | Type::Fighting) {
-                1.0
-            } else {
-                chart.multiplier(d, attacking)
-            }
-        })
-        .product()
 }
 
 impl Default for Combatant {
@@ -188,7 +163,6 @@ impl Default for Combatant {
             boosts: [0; 5],
             burned: false,
             has_guts: false,
-            identified: false,
         }
     }
 }
@@ -361,10 +335,6 @@ pub struct DamageContext {
     /// step. Note gen-3 has no `onAccuracy` bypass, so this is the volatile's ONLY effect
     /// beyond the evasion stage the accuracy pipeline already folds.
     pub defender_minimized: bool,
-    /// The DEFENDER's semi-invulnerable sub-volatile doubles this (bypassing) move at the FINAL
-    /// ModifyDamage step (`gen3_twoturn_family_v1`: Fly vs Gust / Twister, Dig vs Earthquake /
-    /// Magnitude, Dive vs Surf / Whirlpool — `onSourceModifyDamage` chainModify(2)).
-    pub semi_invulnerable_doubles: bool,
     /// Hard immunity (an ability/Levitate immunity the caller resolved — e.g.
     /// Levitate vs Ground, Water Absorb vs Water). A type-chart `0×` is detected
     /// internally from the chart; this covers the ABILITY immunities the chart
@@ -420,67 +390,16 @@ pub fn calc_damage(ctx: &DamageContext, dex: &Dex) -> DamageResult {
     // type immunity (Electric→Ground etc.) → 0 damage, handled like runImmunity.
     let move_type = ctx.mv.move_type;
     let type_mult: f64 = match move_type {
-        Some(t) => type_effectiveness(dex, t, &ctx.defender.types, ctx.defender.identified),
+        Some(t) => dex.type_chart().effectiveness(t, &ctx.defender.types),
         None => 1.0, // typeless: neutral
     };
     if type_mult == 0.0 {
         return DamageResult::zero();
     }
 
-    // `getDamage`'s `if (!basePower) return 0;` right after `runEvent('BasePower')` (review F5): no
-    // `modifyDamage`, so no damage roll; the caller draws the crit and the BasePower shuffles only.
-    if final_base_power(ctx) == 0 {
-        return DamageResult::zero();
-    }
     let base = get_base_damage(ctx);
     let rolled = modify_damage(base, ctx, type_mult);
     rolled
-}
-
-/// The base power after gen 3's `runEvent('BasePower')` chain (the `bp_mods` Direct / Chain members and Thick
-/// Fat), BEFORE `getDamage`'s `if (!basePower) return 0;` (sim/battle-actions.ts getDamage). It CAN be 0: the
-/// event's last `modify()` floors a 1 BP move halved by Thick Fat / a sport (only Eruption below ~1/150 of max HP
-/// gets there in gen 3), and then the sim returns 0 damage before `modifyDamage` (`gen3_bf_bp_zero_v1`, review F5).
-pub fn final_base_power(ctx: &DamageContext) -> u64 {
-    let mut bp = ctx.mv.base_power.max(1) as u64; // clampIntRange(>=1)
-    let mut bp_float: Option<f64> = None;
-    let mut bp_chain: Vec<(u64, u64)> = Vec::new();
-    for m in &ctx.bp_mods {
-        match *m {
-            BpMod::Direct(n, d) => {
-                let cur = bp_float.unwrap_or(bp as f64);
-                bp_float = Some(cur * (n as f64 / d as f64));
-            }
-            BpMod::Chain(n, d) => bp_chain.push((n, d)),
-        }
-    }
-    if ctx.defender_thick_fat {
-        bp_chain.push((1, 2));
-    }
-    bp = match bp_float {
-        // Direct handler fired → relayVar is a float. The sim's runEvent tail
-        // (battle.js:709) applies the accumulated chain modifier iff relayVar is
-        // STILL a non-negative INTEGER-VALUED number
-        // (`relayVar === Math.abs(Math.floor(relayVar))`); otherwise the chain is
-        // SKIPPED and clampIntRange truncs the float. This is the EXACT guard —
-        // the old "Direct discards the chain" shortcut broke the day a Direct and a
-        // Chain member could co-fire on ONE move: `gen3_facade_v1` made Facade a
-        // Normal-type BP-CHAIN member (×2 when statused) that composes with the
-        // Normal-type ×1.1 bows, and `70 * 1.1 == 77` EXACTLY in f64 → the guard
-        // PASSES and the chain re-applies (probe `harness/probe_facade_gen3.js`:
-        // Pink Bow + poisoned Facade = BP 154 = modify(77, ×2), NOT 77). A
-        // non-integer float (e.g. 75 × 1.1 = 82.5) still skips the chain. The f64
-        // product is bit-identical to JS's (same IEEE-754 double math).
-        Some(f) => {
-            if f >= 0.0 && f == f.floor() {
-                chain_modify(f as u64, &bp_chain)
-            } else {
-                f as u64 // clampIntRange truncs the float; chain skipped
-            }
-        }
-        None => chain_modify(bp, &bp_chain),
-    };
-    bp
 }
 
 /// **Stage 1 — `get_damage`** (the shared base, `battle-actions.ts`): resolve the
@@ -556,9 +475,45 @@ fn get_base_damage(ctx: &DamageContext) -> u64 {
     // type-disjoint since `gen3_facade_v1` (Facade is a Normal-type CHAIN member, the
     // bows are Normal-type DIRECTs): a poisoned Pink-Bow Facade is BP
     // modify(77, ×2) = 154 (probe `harness/probe_facade_gen3.js` + the FA-d pin).
-    // The BasePower chain (`final_base_power`); a 0 here never reaches this formula (`calc_damage`
-    // returns zero first, review F5), so the `clampIntRange(basePower, 1)` floor is a no-op guard.
-    let bp = final_base_power(ctx).max(1);
+    let mut bp = ctx.mv.base_power.max(1) as u64; // clampIntRange(>=1)
+    let mut bp_float: Option<f64> = None;
+    let mut bp_chain: Vec<(u64, u64)> = Vec::new();
+    for m in &ctx.bp_mods {
+        match *m {
+            BpMod::Direct(n, d) => {
+                let cur = bp_float.unwrap_or(bp as f64);
+                bp_float = Some(cur * (n as f64 / d as f64));
+            }
+            BpMod::Chain(n, d) => bp_chain.push((n, d)),
+        }
+    }
+    if ctx.defender_thick_fat {
+        bp_chain.push((1, 2));
+    }
+    bp = match bp_float {
+        // Direct handler fired → relayVar is a float. The sim's runEvent tail
+        // (battle.js:709) applies the accumulated chain modifier iff relayVar is
+        // STILL a non-negative INTEGER-VALUED number
+        // (`relayVar === Math.abs(Math.floor(relayVar))`); otherwise the chain is
+        // SKIPPED and clampIntRange truncs the float. This is the EXACT guard —
+        // the old "Direct discards the chain" shortcut broke the day a Direct and a
+        // Chain member could co-fire on ONE move: `gen3_facade_v1` made Facade a
+        // Normal-type BP-CHAIN member (×2 when statused) that composes with the
+        // Normal-type ×1.1 bows, and `70 * 1.1 == 77` EXACTLY in f64 → the guard
+        // PASSES and the chain re-applies (probe `harness/probe_facade_gen3.js`:
+        // Pink Bow + poisoned Facade = BP 154 = modify(77, ×2), NOT 77). A
+        // non-integer float (e.g. 75 × 1.1 = 82.5) still skips the chain. The f64
+        // product is bit-identical to JS's (same IEEE-754 double math).
+        Some(f) => {
+            if f >= 0.0 && f == f.floor() {
+                chain_modify(f as u64, &bp_chain)
+            } else {
+                f as u64 // clampIntRange truncs the float; chain skipped
+            }
+        }
+        None => chain_modify(bp, &bp_chain),
+    };
+    bp = bp.max(1);
 
     // --- gen<=4 Explosion/Self-Destruct: defender Def halved (clampIntRange >=1) ---
     if ctx.mv.halves_defense && def_stat == Stat::Def {
@@ -688,12 +643,6 @@ fn modify_damage(base: u64, ctx: &DamageContext, type_mult: f64) -> DamageResult
     //     controlled pair (Double Team vs Minimize, same seed, byte-identical draw streams:
     //     Stomp 86 → 172, Extrasensory 31 → 62, and Tackle — no flag — 48 in both).
     if ctx.defender_minimized && ctx.mv.minimize_doubles {
-        bd = modify(bd, 2, 1);
-    }
-    // The semi-invulnerable ×2 (`gen3_twoturn_family_v1`) is a member of the same ModifyDamage
-    // chain; ×2 is exact under the chain rounding, so its position against Minimize (which can
-    // never co-occur — no Minimize-flagged move bypasses any of the four) is immaterial.
-    if ctx.semi_invulnerable_doubles {
         bd = modify(bd, 2, 1);
     }
 
@@ -828,7 +777,6 @@ mod tests {
                 bp_mods: vec![],
                 defender_thick_fat: false,
                 defender_minimized: false,
-                semi_invulnerable_doubles: false,
                 immune: false,
                 flash_fire: false,
             };

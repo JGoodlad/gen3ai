@@ -145,8 +145,8 @@ struct CaseExpect {
     decisions: Vec<DecExpect>,
     ended: bool,
     winner: WinTok,
-    /// The run format (`gen3customgame` default; any id in `format::FORMATS`, whose rules set
-    /// the clauses, the SetStatus shuffle and the framing). From the golden's `FMT` row.
+    /// The run format (`gen3customgame` default; `gen3ou` turns on the Sleep/Freeze-Clause
+    /// SetStatus handler-sort shuffle + the OU framing). From the golden's `FMT` row.
     format: String,
     /// The captured REAL OMNISCIENT `|...|` lines (verbatim, `|t:|` normalized) — the
     /// byte-diff target (`gen3_omniscient_byte_fuzz_v1`). Empty on a state-only chunk.
@@ -699,8 +699,9 @@ fn species_id(s: &str) -> String {
 
 fn replay_case(case: &CaseExpect, dex: &Dex, protocol: bool) -> Verdict {
     let opts = BattleOptions {
-        // The chunk's format (default gen3customgame — no clauses; `format::rules` sets the
-        // clauses, the SetStatus shuffle and the byte path's framing for any other).
+        // The chunk's format (default gen3customgame — no clauses → no SetStatus
+        // handler-sort shuffle; `gen3ou` turns the clause shuffle ON so the state seeds
+        // match a gen3ou-captured golden, and the byte path reframes the OU tier/rules).
         format_id: case.format.clone(),
         seed: Some(case.init_seed.clone()),
         p1: PlayerOptions { name: "P1".to_string(), team: PackedTeam(case.teams[0].clone()) },
@@ -763,10 +764,13 @@ fn replay_case(case: &CaseExpect, dex: &Dex, protocol: bool) -> Verdict {
     // then the byte-diff surfaces an emission-only divergence as `protocol`.
     let (outcome, emitted): (BattleOutcome, Vec<String>) = if byte_mode {
         let (o, lines) = battle.state_mut().unwrap().run_full_battle_logged(&script, dex);
-        // Rewrite the engine's gen3customgame framing tier/rules to the run format's before
-        // diffing (`gen3_format_rules_v1`; identity for gen3customgame). This used to test
-        // `contains("gen3ou")`, so every other format's byte fuzz failed on its `|tier|` line.
-        (o, pokesim::bridge::reframe(&lines, &case.format))
+        // gen3ou: rewrite the gen3customgame framing tier/rules to OU before diffing.
+        let raw: Vec<String> = if case.format.contains("gen3ou") {
+            pokesim::bridge::reframe(&lines, &case.format)
+        } else {
+            lines.into_iter().map(|l| l.0).collect()
+        };
+        (o, raw)
     } else {
         (battle.state_mut().unwrap().run_full_battle(&script, dex), Vec::new())
     };

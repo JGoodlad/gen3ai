@@ -241,10 +241,9 @@ pub fn resolve_choice(state: &BattleState, side: usize, choice: &WireChoice) -> 
                 let locked_id = if mon.must_recharge {
                     "recharge".to_string()
                 } else {
-                    // `slot_move_id` resolves a CALLED move's lock too (`gen3_b11_moves_v1`).
                     mon.locked_slot()
-                        .and_then(|k| mon.slot_move_id(k))
-                        .map(crate::dex::to_id)
+                        .and_then(|k| mon.set.moves.get(k))
+                        .map(|m| crate::dex::to_id(m))
                         .unwrap_or_default()
                 };
                 return if want == locked_id { Some(Choice::Move(0)) } else { None };
@@ -896,13 +895,10 @@ fn serialize_active_with_disabled_source(
             // rendered `{"move":"Solar Beam","id":"solarbeam"}` — a request poke-env's live
             // player ASSERTS on (`available_moves_from_request`), found by the Rust Core parity
             // harness's procedural-generator sweep (`gen3_locked_request_move_v1`).
-            // A lock a CALLED move started holds the CALLED-MOVE virtual slot (`gen3_b11_moves_v1`):
-            // the sim's `lockedMove` is the called id (`{"move":"Outrage","id":"outrage"}` for a
-            // Metronome-called Outrage, probe_b11_moves.js).
             let mid = mon
                 .locked_slot()
-                .and_then(|k| mon.slot_move_id(k))
-                .map(str::to_string)
+                .and_then(|k| mon.set.moves.get(k))
+                .cloned()
                 .expect("move_locked() implies a locked slot");
             // (No move in the two-turn/recharge family is a Hidden Power or a
             // Return/Frustration, so this renders the plain dex name either way — matching
@@ -978,19 +974,8 @@ fn serialize_active_with_disabled_source(
                 // `{"move":"Curse","id":"curse","pp":5,"maxpp":10,"target":"self",...}`. The
                 // Mimic record survives underneath the copy (it is restored after it), so this
                 // must be gated or a transformed Mimic-carrier would drop one slot's key.
-                // ...and NOT for a non-Ghost user's CURSE: `getMoveRequestData` (sim/pokemon.ts:998-1004)
-                // overrides a Curse slot's `undefined` target with `nonGhostTarget` ("self") before it
-                // serializes, so a Mimicked Curse shows `"target":"self"`; a Ghost mimicker's keeps the
-                // key dropped (`gen3_bf_mimic_curse_request_target_v1`, bridge fuzz `rmvpofecf_bab_2_21`,
-                // probe `harness/probe_bf_classes.js` BF11).
-                let nonghost_curse = crate::dex::to_id(mv) == "curse"
-                    && !crate::turn::mon_types(mon, dex).contains(&crate::dex::Type::Ghost);
-                // A SKETCHED slot is the same no-`target` literal, permanently (`gen3_b11_moves_v1`,
-                // `data/mods/gen4/moves.ts` sketch; the sketch-request board of probe_b11_moves.js).
                 let mimicked = mon.transform.is_none()
-                    && !nonghost_curse
-                    && (mon.mimic_overlay.as_ref().is_some_and(|ov| ov.slot == k)
-                        || (k < 32 && mon.sketched & (1u32 << k) != 0));
+                    && mon.mimic_overlay.as_ref().is_some_and(|ov| ov.slot == k);
                 // The post-reject mutation: this slot is the one the client was refused, so
                 // it renders `disabled:true` + the trailing `disabledSource` key.
                 let ds = k < 8 && ds_mask & (1u8 << k) != 0;
@@ -2207,40 +2192,53 @@ fn emit_boundary_request_chunks(
     out
 }
 
-/// Rewrite the crate's (gen3customgame) framing to the target format's tier + rule list
-/// (`gen3_format_rules_v1`, [`crate::format::FormatRules`]). The engine's `emit_framing`
-/// writes `|tier|[Gen 3] Custom Game` + the single `|rule|HP Percentage Mod…` line; for any
-/// other format this replaces the tier line with the format's and the HP-% rule line with the
-/// format's whole rule list, in Showdown's order. Everything else (players, gen, teamsize,
-/// leads, switch-in ability lines, `|turn|1`) is preserved. `gen3customgame` (and an id the
-/// table does not hold, which construction has already refused) passes through unchanged.
+/// The `|tier|` + `|rule|…` framing lines for gen3ou (the crate's `emit_framing`
+/// hard-codes the gen3customgame `[Gen 3] Custom Game` tier + single HP-% rule). The
+/// exact OU sequence is captured verbatim from the golden.
+const GEN3OU_TIER: &str = "|tier|[Gen 3] OU";
+const GEN3OU_RULES: &[&str] = &[
+    "|rule|HP Percentage Mod: HP is shown in percentages",
+    "|rule|Beat Up Nicknames Mod: Beat Up will not reveal any party members",
+    "|rule|Endless Battle Clause: Forcing endless battles is banned",
+    "|rule|Sleep Clause Mod: Limit one foe put to sleep",
+    "|rule|Switch Priority Clause Mod: Faster Pokémon switch first",
+    "|rule|Species Clause: Limit one of each Pokémon",
+    "|rule|OHKO Clause: OHKO moves are banned",
+    "|rule|Evasion Items Clause: Evasion items are banned",
+    "|rule|Evasion Moves Clause: Evasion moves are banned",
+    "|rule|One Boost Passer Clause: Limit one Baton Passer that has a way to boost its stats",
+    "|rule|Freeze Clause Mod: Limit one foe frozen",
+    "|rule|Baton Pass Stat Clause: No Baton Passer may have a way to boost its Speed",
+];
+
+/// Rewrite the crate's (gen3customgame) framing to the target format's tier + rule
+/// list. For gen3ou this replaces `|tier|[Gen 3] Custom Game` + the single
+/// `|rule|HP Percentage Mod…` line with the OU tier + 12-rule list; everything else
+/// (players, gen, teamsize, leads, switch-in ability lines, `|turn|1`) is preserved.
+/// A non-OU format is passed through unchanged.
 ///
 /// `pub` so the omniscient BYTE fuzzer (`src/bin/ab_replay.rs --protocol`) can rewrite a
-/// `run_full_battle_logged` framing before byte-diffing it against the real omniscient capture
-/// (`gen3_omniscient_byte_fuzz_v1`).
+/// `run_full_battle_logged` framing to gen3ou before byte-diffing it against the real
+/// gen3ou omniscient capture (`gen3_omniscient_byte_fuzz_v1`).
 pub fn reframe(raw: &[crate::protocol::ProtocolLine], format_id: &str) -> Vec<String> {
     reframe_indexed(raw, format_id).into_iter().map(|(l, _)| l).collect()
 }
 
-/// The engine's own framing lines, which [`reframe_indexed`] substitutes.
-const ENGINE_TIER: &str = "|tier|[Gen 3] Custom Game";
-const ENGINE_RULE: &str = "|rule|HP Percentage Mod: HP is shown in percentages";
-
 /// [`reframe`], with each output line's SOURCE index into `raw` (`None` for a line the reframe
-/// SUBSTITUTED — the format's tier and rule list, which are the format's frames, not the engine's).
+/// SUBSTITUTED — the OU tier and rule list, which are the format's frames, not the engine's).
 pub fn reframe_indexed(raw: &[crate::protocol::ProtocolLine], format_id: &str) -> Vec<(String, Option<u32>)> {
-    let rules = match crate::format::rules(format_id) {
-        Ok(r) if r.id != "gen3customgame" => r,
-        _ => return raw.iter().enumerate().map(|(i, l)| (l.0.clone(), Some(i as u32))).collect(),
-    };
-    let mut out: Vec<(String, Option<u32>)> = Vec::with_capacity(raw.len() + rules.rules.len());
+    if !format_id.contains("gen3ou") {
+        return raw.iter().enumerate().map(|(i, l)| (l.0.clone(), Some(i as u32))).collect();
+    }
+    let mut out: Vec<(String, Option<u32>)> = Vec::with_capacity(raw.len() + GEN3OU_RULES.len());
     for (i, l) in raw.iter().enumerate() {
         let s = &l.0;
-        if s == ENGINE_TIER {
-            out.push((format!("|tier|{}", rules.tier), None));
-        } else if s == ENGINE_RULE {
-            for r in rules.rules {
-                out.push((format!("|rule|{r}"), None));
+        if s == "|tier|[Gen 3] Custom Game" {
+            out.push((GEN3OU_TIER.to_string(), None));
+        } else if s == "|rule|HP Percentage Mod: HP is shown in percentages" {
+            // Replace the lone Custom-Game HP% rule with the full OU rule list.
+            for r in GEN3OU_RULES {
+                out.push(((*r).to_string(), None));
             }
         } else {
             out.push((s.clone(), Some(i as u32)));
@@ -2251,10 +2249,9 @@ pub fn reframe_indexed(raw: &[crate::protocol::ProtocolLine], format_id: &str) -
 
 /// Whether `format_id` is a `debug:true` format (the gen3 Custom Game) — such a
 /// battle sets `reportExactHP`, so both per-side streams show EXACT HP (no percent
-/// fold). Read from the format table ([`crate::format::FormatRules::exact_hp`]); an id the
-/// table does not hold is refused at construction.
+/// fold). Mirrors the ONE relevant flag from `[Gen 3] Custom Game`'s definition.
 pub(crate) fn format_is_debug(format_id: &str) -> bool {
-    crate::format::rules(format_id).map_or(false, |r| r.exact_hp)
+    format_id.contains("customgame")
 }
 
 /// Which sides are being force-switched at the paused boundary (post-faint

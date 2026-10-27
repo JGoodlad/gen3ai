@@ -125,17 +125,7 @@ fn corpus_digest(level: OracleSpec, n: usize, threads: usize, seed: u64, steps: 
 /// Hidden Power typed from its request (the active-request move num / type cells and the own move slot); the mask, need
 /// and done byte-identical; the label columns moved only on that battle (6 ops: `known_moves`, `hp_type_label` /
 /// `hp_type_mask` of the opposing view, whose TRUTH is the other side's reading, now typed as its doc says).
-/// RE-RECORDED 2026-10-26 for `gen3_volatile_silent_ends_v1` + `gen3_intent_label_move_then_switch_v1` (the GIGO audit's A-C1 /
-/// A-C2 / D-1, commit `d8d674b99`, whose unit did not run this slow-tier test: the pins had been STALE on main since it landed;
-/// was [0x5b66a796756e6d27, 0xa5187063ffdd74da, 0x10706c60a40548c2]). CENSUS, every column the digest hashes dumped per op for the
-/// three seeds at the parent `e9a7a53ea` (the pins hold there) and at `d8d674b99`: 297 of 28,848 side-rows moved (112 / 92 / 93),
-/// ONLY in the active-context volatile cells `endure`, `snatch` and `trapped` (both sides: Endure / Snatch now end at `|turn|`,
-/// `trapped` ends when its trapper leaves), and the four intent-label columns (`OPP_ACTION_KIND`, `OPP_ACTION_NUM`,
-/// `OPP_SWITCH_SLOT`, `OPP_SWITCH_SPECIES`: a move before a switch-in and the move that forced the viewer's switch are labelled now);
-/// the mask, need, done, episode, dec_n, turn and every other label column are byte-identical. The later GIGO follow-up
-/// (`gen3_lockin_cancelled_repeat_v1`, `gen3_recharge_expiry_v1`, `gen3_species_clause_v1`) leaves this corpus byte-identical: the
-/// same census, `d8d674b99` against the follow-up tree, has no moved column.
-const PRE_REVEAL_DIGEST: [u64; 3] = [0x8e08c2d8649ef742, 0x25004db50ab6cc93, 0x3c21e04c7cf6a3d1];
+const PRE_REVEAL_DIGEST: [u64; 3] = [0x5b66a796756e6d27, 0xa5187063ffdd74da, 0x10706c60a40548c2];
 
 #[test]
 fn off_is_inert() {
@@ -153,9 +143,7 @@ fn off_is_inert() {
 /// still passes, so the move is OFF's Hidden-Power-block move; was [0x71246ab6e7a116b8, 0x696f20607029b1c5, 0x18223e1ed7797e41]).
 /// RE-RECORDED 2026-10-20 with `PRE_REVEAL_DIGEST` (`gen3_live_reader_reading_v1`; was
 /// [0xb4f2cf73fd76d3b0, 0x525e3ba9366f6948, 0x03e146e2ace1db1c]).
-/// RE-RECORDED 2026-10-26 with `PRE_REVEAL_DIGEST` (`gen3_volatile_silent_ends_v1` + `gen3_intent_label_move_then_switch_v1`; the
-/// census is on `PRE_REVEAL_DIGEST`; was [0x33641b949289e2dd, 0x304bdeaee5ecbffb, 0x03e146e2ace1db1c]).
-const SPECIES_DIGEST: [u64; 3] = [0x8ac9834eb4ab87b0, 0x7cad049d5f593822, 0x17cd79c8816d0417];
+const SPECIES_DIGEST: [u64; 3] = [0x33641b949289e2dd, 0x304bdeaee5ecbffb, 0x03e146e2ace1db1c];
 
 #[test]
 fn species_bytes_are_pinned() {
@@ -169,9 +157,7 @@ fn species_bytes_are_pinned() {
 /// [0x8b2b6001c764e4da, 0x8496445448a003a3, 0x0c3727e67aa6f4c0]).
 /// RE-RECORDED 2026-10-20 with `PRE_REVEAL_DIGEST` (`gen3_live_reader_reading_v1`; was
 /// [0xcdd895a69a8a8c14, 0x363aa2e5c1b79a73, 0x2e08941ae673a4ce]).
-/// RE-RECORDED 2026-10-26 with `PRE_REVEAL_DIGEST` (`gen3_volatile_silent_ends_v1` + `gen3_intent_label_move_then_switch_v1`; the
-/// census is on `PRE_REVEAL_DIGEST`; was [0x59dde882478161a9, 0x4f6895816ddd89a6, 0x2e08941ae673a4ce]).
-const FULL_DIGEST: [u64; 3] = [0x5b28377bb8f39a28, 0x1ec20a419592185b, 0x6f2fd6fa68e6e8d1];
+const FULL_DIGEST: [u64; 3] = [0x59dde882478161a9, 0x4f6895816ddd89a6, 0x2e08941ae673a4ce];
 
 #[test]
 fn full_bytes_are_pinned() {

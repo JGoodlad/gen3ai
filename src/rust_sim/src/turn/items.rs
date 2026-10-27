@@ -12,18 +12,7 @@ impl crate::state::BattleState {
     /// Figy family's confusion). Returns the eaten item's display name.
     fn eat_item(&mut self, side: usize, slot: usize, dex: &Dex) -> String {
         let item_id = to_id(&self.sides[side].pokemon[slot].item);
-        let restorative = super::RESTORATIVE_BERRIES.contains(&item_id.as_str());
         let display = dex.item(&item_id).map(|i| i.name.clone()).unwrap_or(item_id);
-        // ENDLESS BATTLE CLAUSE (`gen3_b10_endless_battle_v1`, `sim/pokemon.ts:1788-1797`): eating a
-        // RESTORATIVE berry promotes a pending (always internal in gen 3) staleness to the permanent
-        // one and consumes it; any other berry leaves the pending value alone.
-        if restorative {
-            let m = &mut self.sides[side].pokemon[slot];
-            if m.pending_staleness {
-                m.staleness = true;
-            }
-            m.pending_staleness = false;
-        }
         // RECYCLE (`gen3_recycle_v1`): `eatItem` sets `lastItem`. Every berry eat funnels here.
         self.sides[side].pokemon[slot].last_item = self.sides[side].pokemon[slot].item.clone();
         self.sides[side].pokemon[slot].item = String::new();
@@ -165,17 +154,11 @@ impl crate::state::BattleState {
                     let _ = self.eat_item(side, slot, dex);
                     // `addVolatile('focusenergy')` — draw-free; the crit roll reads it
                     // (`onModifyCritRatio critRatio + 2`). Emits the sim's
-                    // `|-start|<mon>|move: Focus Energy` — but only when the volatile is NEW: the
-                    // condition has no `onRestart`, so on a holder that already used Focus Energy
-                    // `addVolatile` returns false SILENTLY (`-enditem` alone;
-                    // `gen3_bf_lansat_focused_v1`, bridge fuzz `rmvpofecf_bab_2_6`, probe
-                    // `harness/probe_bf_classes.js` BF10).
-                    if !self.sides[side].pokemon[slot].focus_energy {
-                        self.sides[side].pokemon[slot].focus_energy = true;
-                        if self.logging() {
-                            let m = self.mon_ref(side, slot, dex);
-                            self.log.volatile_start(&m, "move: Focus Energy");
-                        }
+                    // `|-start|<mon>|move: Focus Energy`.
+                    self.sides[side].pokemon[slot].focus_energy = true;
+                    if self.logging() {
+                        let m = self.mon_ref(side, slot, dex);
+                        self.log.volatile_start(&m, "move: Focus Energy");
                     }
                 }
             }
@@ -244,41 +227,8 @@ impl crate::state::BattleState {
             // (`cureStatus` draws nothing; the `-activate` line is protocol-only). The
             // ability handler is gathered BEFORE the item's (`findPokemonEventHandlers`
             // ability-then-item), so it runs ahead of the berry check per mon.
-            self.attract_source_left_on_update(side, dex);
             self.status_immune_on_update(side, dex);
-            self.volatile_immune_on_update(side, dex);
             self.berry_on_update(side, dex);
-            self.mental_herb_on_update(side, dex);
-        }
-    }
-
-    /// MENTAL HERB (`gen3_items_b3_v1`): `mentalherb.onUpdate` (`data/items.ts`, unchanged by the
-    /// gen-3/4 mods) — `if (pokemon.volatiles['attract'] && pokemon.useItem())
-    /// { pokemon.removeVolatile('attract'); this.add('-end', pokemon, 'move: Attract',
-    /// '[from] item: Mental Herb'); }`. `useItem` emits `|-enditem|<mon>|Mental Herb` and sets
-    /// `lastItem` (Recycle brings it back); `removeVolatile` runs the attract condition's
-    /// `onEnd` (`|-end|<mon>|Attract|[silent]`); then the item's own `-end`. DRAW-FREE. Probe
-    /// `harness/probe_items_b3.js`: a Cute Charm infatuation is cured at the Update right after
-    /// the contact hit, in that line order.
-    fn mental_herb_on_update(&mut self, side: usize, dex: &Dex) {
-        let slot = self.sides[side].active;
-        {
-            let mon = &self.sides[side].pokemon[slot];
-            if mon.fainted || mon.hp == 0 || mon.attract.is_none() || to_id(&mon.item) != "mentalherb" {
-                return;
-            }
-        }
-        {
-            let mon = &mut self.sides[side].pokemon[slot];
-            mon.last_item = mon.item.clone();
-            mon.item = String::new();
-            mon.attract = None;
-        }
-        if self.logging() {
-            let m = self.mon_ref(side, slot, dex);
-            self.log.enditem(&m, "Mental Herb");
-            self.log.volatile_end_silent(&m, "Attract");
-            self.log.volatile_end_from_item(&m, "move: Attract", "Mental Herb");
         }
     }
 
@@ -313,74 +263,6 @@ impl crate::state::BattleState {
                 self.log.curestatus(&m, tok, true);
             }
             self.sides[side].pokemon[slot].status = None;
-            // `cureStatus()` ends a NIGHTMARE on a sleep cure (gen3_b5_moves_v1, the Insomnia /
-            // Vital Spirit gained through Skill Swap / Trace).
-            if tok == "slp" {
-                self.end_nightmare_on_cure(side, slot, dex);
-            }
-        }
-    }
-
-    /// One active's Update-site VOLATILE-curing ability (`gen3_bf_volatile_immune_onupdate_v1`,
-    /// fuzz-found on the B6 + BF tree, `rmvprol00_ab_4_12`). Like the STATUS_IMMUNE cure above,
-    /// unreachable with the mon's OWN ability (it blocks the volatile), but a Skill Swap hands it to
-    /// a mon that already carries the volatile (either side of the swap), which is cured at the
-    /// next `Update`. DRAW-FREE. Probe `harness/probe_bf_classes.js` BF12 / BF13:
-    ///   - OWN TEMPO (`owntempo.onUpdate`, data/abilities.ts:3100; gen 7 drops only onTryBoost):
-    ///     `|-activate|<mon>|ability: Own Tempo`, then `removeVolatile('confusion')` → confusion's
-    ///     `onEnd` `|-end|<mon>|confusion`.
-    ///   - OBLIVIOUS (gen 5's override, inherited by gen 3: data/mods/gen5/abilities.ts:50): no
-    ///     `-activate`; `removeVolatile('attract')` → attract's `onEnd` `|-end|<mon>|Attract|[silent]`,
-    ///     then `|-end|<mon>|move: Attract|[from] ability: Oblivious`.
-    fn volatile_immune_on_update(&mut self, side: usize, dex: &Dex) {
-        let slot = self.sides[side].active;
-        let (ability, confused, attracted) = {
-            let mon = &self.sides[side].pokemon[slot];
-            if mon.fainted || mon.hp == 0 {
-                return;
-            }
-            (to_id(&mon.ability), mon.confusion.is_some(), mon.attract.is_some())
-        };
-        if ability == "owntempo" && confused {
-            if self.logging() {
-                let m = self.mon_ref(side, slot, dex);
-                self.log.activate(&m, "ability: Own Tempo", None);
-                self.log.volatile_end(&m, "confusion");
-            }
-            self.sides[side].pokemon[slot].confusion = None;
-        } else if ability == "oblivious" && attracted {
-            if self.logging() {
-                let m = self.mon_ref(side, slot, dex);
-                self.log.volatile_end_silent(&m, "Attract");
-                self.log.volatile_end_from_ability(&m, "move: Attract", "Oblivious");
-            }
-            self.sides[side].pokemon[slot].attract = None;
-        }
-    }
-
-    /// ATTRACT's `onUpdate` (`gen3_bf_attract_source_left_v1`; the B11 agent's finding, fuzz
-    /// `rmvq9o5ho_ab_2_14`): `if (this.effectState.source && !this.effectState.source.isActive &&
-    /// pokemon.volatiles['attract']) pokemon.removeVolatile('attract')` (data/moves.ts attract.condition)
-    /// → `|-end|<mon>|Attract|[silent]`. A volatile, so it runs before the ability and item handlers.
-    /// The source's switch-out already clears it right after the `|switch|` line (`switch.rs`); this
-    /// catches every OTHER Update after the source left: a source FAINTED by a Future Sight / Doom
-    /// Desire strike in the residual, whose `hitStepMoveHitLoop` runs `faintMessages` then a second
-    /// Update (`apply_future_move`). DRAW-FREE.
-    fn attract_source_left_on_update(&mut self, side: usize, dex: &Dex) {
-        let slot = self.sides[side].active;
-        let Some((src_side, src_uid)) = self.sides[side].pokemon[slot].attract else { return };
-        if self.sides[side].pokemon[slot].fainted || self.sides[side].pokemon[slot].hp == 0 {
-            return;
-        }
-        let src_active = self.sides[src_side].active;
-        let src = &self.sides[src_side].pokemon[src_active];
-        if src.uid == src_uid && !src.fainted {
-            return; // the source is still active
-        }
-        self.sides[side].pokemon[slot].attract = None;
-        if self.logging() {
-            let m = self.mon_ref(side, slot, dex);
-            self.log.volatile_end_silent(&m, "Attract");
         }
     }
 
@@ -445,10 +327,6 @@ impl crate::state::BattleState {
             if self.logging() {
                 let m = self.mon_ref(side, slot, dex);
                 self.log.curestatus(&m, tok, true);
-            }
-            // Chesto / Lum `cureStatus()` ends a NIGHTMARE (gen3_b5_moves_v1).
-            if tok == "slp" {
-                self.end_nightmare_on_cure(side, slot, dex);
             }
         }
         if cure_confusion {
@@ -588,12 +466,6 @@ impl crate::state::BattleState {
             .unwrap_or_else(|| item_id.clone());
         // Remove from the target.
         self.sides[target_side].pokemon[target_slot].item = String::new();
-        // Thief / Covet's `target.takeItem(source)` succeeded: it clears the target's pending
-        // staleness (`sim/pokemon.ts:1860`, `gen3_b10_endless_battle_v1`). Knock Off does not call
-        // `takeItem` (it `runEvent('TakeItem')`s directly), so it leaves the pending value alone.
-        if is_steal {
-            self.sides[target_side].pokemon[target_slot].pending_staleness = false;
-        }
         // CHOICE-LOCK RELEASE (`gen3_move_coverage_batch4_v1` e2e_126, refined by
         // `gen3_choicelock_lazy_release_v1`): with the Choice Band GONE (Thief steals it /
         // Knock Off removes it) the mon can freely pick any move again — but the RELEASE is
@@ -616,9 +488,6 @@ impl crate::state::BattleState {
             // `to_id`, so the exact stored form is cosmetic — but keep it uniform).
             let move_name = if move_id == "thief" { "Thief" } else { "Covet" };
             self.sides[side].pokemon[slot].item = item_id.clone();
-            // `source.setItem(yourItem)`: every `setItem` sets the pending staleness, `'internal'`
-            // here (`sim/pokemon.ts:1873-1876`; `gen3_b10_endless_battle_v1`).
-            self.sides[side].pokemon[slot].pending_staleness = true;
             if self.logging() {
                 let target = self.mon_ref(target_side, target_slot, dex);
                 let user = self.mon_ref(side, slot, dex);
@@ -706,26 +575,8 @@ impl crate::state::BattleState {
         emit_survive_zero: bool,
         dex: &Dex,
     ) -> u16 {
-        self.focus_band_damage_ev(side, slot, dmg, is_move, emit_survive_zero, false, dex)
-    }
-
-    /// [`Self::focus_band_damage`] with the BASE-POWER-0 case (`gen3_bf_bp_zero_v1`, review F5):
-    /// `spreadDamage` runs `runEvent('Damage')` from a relay of 0 (`if (targetDamage !== 0)` only
-    /// skips the clamp), so Focus Band's `randomChance(1, 10)` still draws; 0 is never lethal.
-    pub(crate) fn focus_band_damage_ev(
-        &mut self,
-        side: usize,
-        slot: usize,
-        dmg: u16,
-        is_move: bool,
-        emit_survive_zero: bool,
-        zero_damage_event: bool,
-        dex: &Dex,
-    ) -> u16 {
-        if dmg == 0 && !zero_damage_event {
-            // A 0 that ENDED the Damage relay (False Swipe at 1 HP) runs no later handler; the
-            // base-power-0 hit (`zero_damage_event`) does run the event from 0 (below).
-            return 0;
+        if dmg == 0 {
+            return 0; // no Damage event for a 0-damage apply (no modeled path reaches this)
         }
         {
             let mon = &self.sides[side].pokemon[slot];

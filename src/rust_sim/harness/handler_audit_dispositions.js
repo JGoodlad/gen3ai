@@ -162,10 +162,12 @@ for (const id of ['clearbody', 'whitesmoke', 'hypercutter', 'keeneye']) {
 // Own Tempo / Oblivious.
 add([ab('owntempo', 'onTryAddVolatile')], IMPL('turn.rs::add_confusion', 'the confusion add block'));
 add([ab('owntempo', 'onHit')], NOOP('display-only: the `-immune` line for a confusion-VOLATILE move (Confuse Ray etc. — no such move is modeled anyway); the block itself is onTryAddVolatile'));
-add([ab('owntempo', 'onUpdate')], IMPL('items.rs::volatile_immune_on_update', 'cures a confusion the holder already has, reached by GAINING Own Tempo while confused through Skill Swap or Role Play: -activate|<mon>|ability: Own Tempo, -end|<mon>|confusion at the next Update (gen3_bf_volatile_immune_onupdate_v1, pins bf12a-c)'));
+add([ab('owntempo', 'onUpdate')], UNREACH(
+  'cures a confusion the holder already has — unreachable: volatiles clear on switch-out, so a TRACE copy (the only ability-gain route) can never find a pre-existing confusion, and a direct add is blocked at onTryAddVolatile'));
 add([ab('oblivious', 'onImmunity')], IMPL('turn.rs::try_add_attract', 'the attract immunity gate (batch-4 attract via Cute Charm)'));
 add([ab('oblivious', 'onTryHit')], UNREACH('gates CAPTIVATE only — a gen4 move, not in the gen3 universe'));
-add([ab('oblivious', 'onUpdate')], IMPL('items.rs::volatile_immune_on_update', 'ends an attract the holder already has, reached by GAINING Oblivious while infatuated through Skill Swap or Role Play: -end|<mon>|Attract|[silent], -end|<mon>|move: Attract|[from] ability: Oblivious at the next Update (gen3_bf_volatile_immune_onupdate_v1, pins bf13a-b)'));
+add([ab('oblivious', 'onUpdate')], UNREACH(
+  'removes an attract the holder already has — unreachable: attract clears when the holder switches out, so a TRACE copy can never find a pre-existing attract, and a direct add is blocked at the onImmunity gate'));
 
 // NOOP_ABILITIES residues + guards.
 add([ab('pressure', 'onDeductPP')], IMPL('turn.rs::pressure_extra', 'the foe-Pressure +1 PP deduction (gen3_pp_tracking_v1, VERIFIED −2 total)'));
@@ -173,7 +175,7 @@ add([ab('pressure', 'onStart')], IMPL('turn.rs::emit_ability_start_lines', 'the 
 add([ab('pickup', 'onResidualOrder'), ab('pickup', 'onResidualSubOrder')],
   NOOP('base-data residue: an out-of-battle pickup residual ORDER with NO function handler in the gen3 resolution'));
 add([ab('stench', 'onModifyMovePriority')], NOOP('base-data residue: the gen9 stench-flinch onModifyMove is not in the gen3 resolution — only its priority number survives'));
-add([ab('sturdy', 'onTryHit')], IMPL('moves.rs::run_fixed_damage_move', 'the OHKO-move immunity (gen3_b8_moves_v1): -immune|<t>|[from] ability: Sturdy at TryHit, after the OHKO accuracy roll, before the natural-immunity report (b8_moves_test.rs B8-13c)'));
+add([ab('sturdy', 'onTryHit')], UNREACH('the OHKO-move immunity — the OHKO family is deferred (fail-loud + MOVE_ID_BLOCKLIST keeps it off the modeled path)'));
 add([ab('sturdy', 'onDamagePriority')], NOOP('base-data residue: the gen5+ survive-at-1 onDamage is not in the gen3 resolution — only its priority number survives'));
 add([ab('rockhead', 'onDamage')], NOOP(
   'negates recoil EXCEPT Struggle (the resolved handler: `if (this.activeMove.id !== "struggle") return null`) — Struggle is the ONLY recoil source in the modeled universe, so the handler never changes anything'));
@@ -308,10 +310,6 @@ add([cond('toxic', 'duration'), cond('toxic', 'onSourceAccuracy'), cond('toxic',
 add([it('choiceband', 'onAfterMove')], IMPL('state.rs::choice_locked_move', 'the post-move choicelock arm'));
 add([it('quickclaw', 'onFractionalPriorityPriority')], IMPL('turn.rs::quick_claw',
   'the gen3 item entry is a bare priority number — the randomChance(1,5) lives in the gen3 action scripts, modeled as the per-turn QC draw'));
-add([it('shellbell', 'onAfterMoveSecondarySelf'), it('shellbell', 'onAfterMoveSecondarySelfPriority')], IMPL('moves.rs::shell_bell', 'gen3_items_b3_v1: heal max(1, totalDamage/8) at the end of each useMove (BattleState::move_total_damage, Substitute strikes add 0); the only gen-3 AfterMoveSecondarySelf handler, so its priority orders against nothing'));
-add([it('machobrace', 'onModifySpe')], IMPL('speed.rs::effective_speed', 'gen3_items_b3_v1: chainModify(0.5) in the ModifySpe chain (and BattleState::turn0_speed for the draw-free lead order)'));
-add([it('mail', 'onTakeItem')], IMPL('status_moves.rs::mail', 'gen3_items_b3_v1: Trick fails on a Mail holder either side; Knock Off / Thief / Covet are the exempt moves and take it'));
-add([it('mentalherb', 'onUpdate')], IMPL('items.rs::mental_herb_on_update', 'gen3_items_b3_v1: useItem + remove attract at the Update sites (run_update_items)'));
 add([it('leftovers', 'onResidual')], IMPL('turn.rs::run_residuals', 'the maxhp/16 heal at order 10 subOrder 4'));
 add([it('lumberry', 'onAfterSetStatus')], IMPL('turn.rs::try_set_status', 'LUM\'s IMMEDIATE eat (priority -1, AFTER Synchronize) at the setStatus tail'));
 add([it('focusband', 'onDamage')], IMPL('turn.rs::focus_band_damage', 'the randomChance(1,10) on EVERY Damage event + survive-at-1 on a lethal MOVE hit'));
@@ -394,8 +392,6 @@ add([mv('thunder', 'onModifyMove')], IMPL('turn.rs::run_move', 'the id-gated wea
 // SOLAR BEAM (twoturnmove) / DOOM DESIRE + FUTURE SIGHT (futuremove). The three
 // cross-turn conditions are enumerated explicitly in dump_gen3_handlers.js's
 // ENGINE_CONDITIONS (standalone conditions, not `m.condition` sub-objects).
-add([mv('blastburn', 'self'), mv('frenzyplant', 'self'), mv('hydrocannon', 'self')], IMPL('moves.rs::RECHARGE_MOVES', 'gen3_recharge_family_v1: Hyper Beam\'s self.volatileStatus mustrecharge with another type — the same RECHARGE_MOVES site, golden tests/recharge_family_golden_test.rs'));
-add([mv('attract', 'onTryImmunity'), mv('attract', 'ignoreImmunity'), mv('attract', 'volatileStatus')], IMPL('status_moves.rs::attract', 'gen3_attract_move_v1: the move arm — onTryImmunity (M<->F only) as the natural immunity, the accuracy draw regardless, Protect first, then the attract volatile add ([still] -fail on already-attracted / Oblivious); ignoreImmunity: a Status move skips the type chart'));
 add([mv('hyperbeam', 'self')], IMPL('turn.rs::run_move', 'self.volatileStatus mustrecharge — applied DRAW-FREE on a SUCCESSFUL damaging hit (plain/sub-absorb/sub-break/target-KO; NOT miss/immune/Protect-block), |-mustrecharge| after the damage/sub line'));
 add([cond('mustrecharge', 'onStart')], IMPL('turn.rs::run_move', 'the |-mustrecharge|<user> announce at the apply site (log.must_recharge)'));
 add([cond('mustrecharge', 'onBeforeMove'), cond('mustrecharge', 'onBeforeMovePriority')], IMPL('turn.rs::run_move', 'the priority-11 recharge cant at the TOP of run_move (before every status handler — a par/slp locked user rolls/decrements NOTHING): |cant|…|recharge, clear must_recharge, ZERO draws, NO PP; removeVolatile(truant) is a no-op in the truant_turn toggle model (the order-27 toggle consumes the loaf — probed cadence)'));
@@ -408,24 +404,6 @@ add([cond('twoturnmove', 'onLockMove')], IMPL('state.rs::move_locked', 'the lock
 add([cond('twoturnmove', 'onMoveAborted')], IMPL('turn.rs::run_move', 'an onBeforeMove cant clears two_turn entirely — THE CHARGE IS LOST (a fresh charge re-pays PP)'));
 add([cond('twoturnmove', 'onEnd')], IMPL('turn.rs::run_residuals', 'the duration expiry removes the volatile (TwoTurnDuration 2→1→0); its removeVolatile(solarbeam) is a no-op when the beam fired (charging already false)'));
 add([cond('twoturnmove', 'duration')], IMPL('turn.rs::run_residuals', 'the duration:2 volatile registers a NO_ORDER/subOrder-2 residual duration handler on BOTH the charge- and fire-turn residuals (the SB-mirror tie-shuffle; after a fire-turn KO the resumed tail residual cleans the linger)'));
-// THE TWO-TURN FAMILY (`gen3_twoturn_family_v1`, gen3 full parity B4): the seven other charge
-// moves run Solar Beam's twoturnmove machinery; Fly / Bounce / Dig / Dive's sub-volatile carries
-// the semi-invulnerable condition. Probe harness/probe_twoturn_family.js; golden
-// tests/twoturn_family_golden_test.rs; pins tests/twoturn_family_test.rs.
-add([mv('razorwind', 'onTryMove'), mv('skyattack', 'onTryMove'), mv('fly', 'onTryMove'), mv('bounce', 'onTryMove'), mv('dig', 'onTryMove')],
-  IMPL('state.rs::TWO_TURN_MOVES', 'the twoturnmove gate shared with Solar Beam: CHARGE ([still]+-prepare, zero move draws, addVolatile twoturnmove + the move-id sub-volatile) / STRIKE (removeVolatile(move.id) => charging=false, [from] lockedmove, no PP)'));
-add([mv('skullbash', 'onTryMove')], IMPL('state.rs::TWO_TURN_MOVES', 'the twoturnmove gate + the charge-turn boost({def:1}) after -prepare (|-boost|…|def|1; def|0 at +6, probed)'));
-add([mv('dive', 'onTryMove')], IMPL('state.rs::TWO_TURN_MOVES', 'the twoturnmove gate; its Gulp Missile Cramorant forme change is unreachable in gen 3 (no Cramorant, no Gulp Missile)'));
-add([mv('razorwind', 'critRatio'), mv('skyattack', 'critRatio')], IMPL('turn.rs::CRIT_MULT', 'the high-crit denominator table (critRatio 2 => 1/8), on the strike turn'));
-add([mv('skyattack', 'secondaries'), mv('bounce', 'secondaries')], IMPL('turn.rs::apply_secondaries', 'the <=1-col secondary on the strike (Sky Attack 30% flinch, Bounce 30% par)'));
-add([cond('fly', 'duration'), cond('bounce', 'duration'), cond('dig', 'duration'), cond('dive', 'duration')],
-  IMPL('residuals.rs::SemiInvulnerableDuration', 'the sub-volatile duration:2 is a second NO_ORDER subOrder-2 residual duration handler while the user is up (probed: a Fly charge turn draws one more tie shuffle than Razor Wind)'));
-add([cond('fly', 'onInvulnerability'), cond('bounce', 'onInvulnerability'), cond('dig', 'onInvulnerability'), cond('dive', 'onInvulnerability')],
-  IMPL('state.rs::bypassed_by', 'gen-3 tryMoveHit Invulnerability (before immunity and accuracy, zero draws, [miss] + -miss) in run_move / run_fixed_damage_move / run_status_move, Perish Song per mon, the future-move strike'));
-add([cond('fly', 'onSourceModifyDamage'), cond('dig', 'onSourceModifyDamage'), cond('dive', 'onSourceModifyDamage')],
-  IMPL('damage.rs::semi_invulnerable_doubles', 'chainModify(2) at the gen-3 ModifyDamage final modifier for the bypassing moves (Gust/Twister, Earthquake/Magnitude, Surf/Whirlpool)'));
-add([cond('bounce', 'onSourceBasePower')], IMPL('state.rs::doubles_base_power', 'Gust / Twister x2 at the BasePower chain (a different point from Fly\'s ModifyDamage)'));
-add([cond('dig', 'onImmunity'), cond('dive', 'onImmunity')], IMPL('residuals.rs::weather_immune', 'no sandstorm / hail chip while underground / underwater'));
 add([mv('doomdesire', 'onTry'), mv('futuresight', 'onTry')], IMPL('turn.rs::run_future_move_cast', 'the cast: addSlotCondition futuremove (a double-cast fails with a bare |move|, zero draws, PP still deducted) + ONE random(16) getDamage snapshot (typeless, cast-time stats, willCrit false) + |-start|<caster>|<Name>; BEFORE the protect block (a cast-turn Protect does not block)'));
 add([mv('futuresight', 'ignoreImmunity')], IMPL('turn.rs::run_future_move_cast', 'the strike is TYPELESS ??? (move_type None — no chart row, never immune), so the declarative ignoreImmunity is subsumed'));
 add([cond('futuremove', 'onStart')], IMPL('state.rs::future_move', 'FutureMove {duration:3, damage, move_id, accuracy, source_side/uid} — the slot-keyed pending strike (the Wish precedent)'));
@@ -664,130 +642,6 @@ add([cond('destinybond', 'onBeforeMove'), cond('destinybond', 'onBeforeMovePrior
   IMPL('turn.rs::run_move', 'the window closes at the users next move ATTEMPT: priority −1 removal for any move != destinybond + the onMoveAborted removal at every cant site (MC84)'));
 add([cond('destinybond', 'onFaint')],
   IMPL('turn.rs::process_faints', 'the mutual-faint chain: |faint| victim → -activate → the killers hp zeroed + drained in the SAME faintMessages worklist (a foe-Move KO only — the damage sites record destiny_bond_ko_by; residual/futuremove/sub-absorbed never trigger; MC83/MC85)'));
-// GEN3 FULL PARITY B8 (`gen3_b8_moves_v1`) — Bide, Magnitude, Psywave, Present, Triple Kick and the
-// four OHKO moves (src/turn/variable_moves.rs). The settled spec is harness/probe_b8_moves.js; the
-// differential is tests/b8_moves_golden_test.rs; the pins tests/b8_moves_test.rs.
-add([mv('bide', 'volatileStatus'), mv('bide', 'ignoreImmunity'), cond('bide', 'onStart'), cond('bide', 'duration')],
-  IMPL('variable_moves.rs::run_bide_cast', 'the cast: one accuracy roll against the user itself (its own stages and accuracy holders), -start|<u>|move: Bide, MonState::bide {duration 3, total 0}, the King\'s Rock flinch roll against the user; no duration draw'));
-add([cond('bide', 'onLockMove')],
-  IMPL('state.rs::locked_slot', 'move_locked() / locked_slot() fold the bide lock: the one-entry trapped request, the locked choice maps to the Bide slot (driver)'));
-add([cond('bide', 'onBeforeMove')],
-  IMPL('variable_moves.rs::bide_before_move', 'priority 0, after every cant: duration 2 → -activate (beforeMoveCallback ends runMove, no PP / MoveAborted / AfterMove); duration 1 → -end, -fail on nothing stored, else the tryMoveHit release (run_bide_release: no |move| line, accuracy, Protect, Wonder Guard, Ghost -immune, 2× fixed damage, contact procs, Update) then removeVolatile'));
-add([cond('bide', 'onDamage'), cond('bide', 'onDamagePriority')],
-  IMPL('variable_moves.rs::bide_store', 'priority -101 (after Endure / Focus Band): every Move-effect hit on the holder adds the HP it took — record_move_damage (every move strike), the Future Sight / Doom Desire strike and a Bide release; a sub-absorbed hit and residual damage add nothing'));
-add([cond('bide', 'onMoveAborted'), cond('bide', 'onEnd')],
-  IMPL('variable_moves.rs::bide_end_on_abort', 'every BeforeMove cant of a locked turn (sleep, freeze, flinch, Disable, Imprison, a confusion self-hit, attraction, full paralysis) and the release end it with -end|<u>|move: Bide|[silent]; the residual BideDuration tick ends a release that never ran; switch-out / faint clear it silently'));
-add([mv('magnitude', 'onModifyMove')],
-  IMPL('variable_moves.rs::magnitude_roll', 'one random(100) at useMoveInner ModifyMove (after BeforeMove + PP, before the announce): MAGNITUDE_TABLE (pinned against the resolved handler, B8-0c) → BP, category re-derived Physical'));
-add([mv('magnitude', 'onUseMoveMessage')],
-  IMPL('protocol.rs::set_magnitude_message', 'the -activate|<u>|move: Magnitude|<n> one-shot printed right after the |move| announce in every branch (miss / immune / Protect / hit), before any outcome line'));
-add([mv('present', 'onModifyMove')],
-  IMPL('variable_moves.rs::present_roll', 'one random(10) at ModifyMove: PRESENT_TABLE → BP 40 / 80 / 120 (the ordinary hit) or the heal branch (run_present_heal: accuracy, Protect, Wonder Guard, Ghost -immune, a sub fails [still] + -fail|<u>, full HP -fail|<t>|heal, else -heal floor(maxhp/4); no crit roll)'));
-add([mv('triplekick', 'multiaccuracy'), mv('triplekick', 'multihit')],
-  IMPL('moves.rs::run_multihit', 'fixed 3 strikes; each strike after the first re-rolls accuracy first (roll_accuracy: stages, ModifyAccuracy) and a miss ends the move silently; BP 10 × move.hit (pinned against the resolved callback, B8-0b)'));
-add([mv('fissure', 'ohko'), mv('horndrill', 'ohko'), mv('guillotine', 'ohko'), mv('sheercold', 'ohko')],
-  IMPL('variable_moves.rs::ohko_accuracy', 'the gen-3 OHKO branch in run_fixed_damage_move: a lower-level user → -immune|<t>|[ohko] with no draw; else randomChance(30 + level gap, 100) ignoring stages and ModifyAccuracy; Sturdy; damage = the target\'s current HP (also against a sub); -ohko after a sub line or after a KO (apply_fixed_hit)'));
-// GEN3 FULL PARITY B11 (`gen3_b11_moves_v1`) — Metronome, Mirror Move, Assist, Nature Power, Sketch
-// (src/turn/callers.rs), on the ONE calling path Sleep Talk shares (`call_move`: the sim's bare
-// `useMove` — lastMoveUsed, the `[from] <Caller>` fold, no BeforeMove / PP / moveUsed; a callee outside
-// the user's moveslots runs from the CALLED-MOVE slot). The settled spec is harness/probe_b11_moves.js;
-// the differential is tests/b11_moves_golden_test.rs; the pins tests/b11_moves_test.rs.
-add([mv('metronome', 'onHit')],
-  IMPL('callers.rs::metronome_pool', 'the num-sorted flags.metronome pool (METRONOME_EXCLUDED pinned against the resolved dex, B11-1), ONE random(336) after the announce, then call_move'));
-add([mv('mirrormove', 'onHit')],
-  IMPL('callers.rs::run_b11_move', 'the LAST attackedBy entry (note_attacked at every path\'s reached-moveHit point, cleared on switch-out / faint, prune_attacked_by at endTurn): fails draw-free on none / a source without lastMove / MIRROR_MOVE_EXCLUDED / a move the source no longer holds; else call_move'));
-add([mv('assist', 'onHit')],
-  IMPL('callers.rs::run_b11_move', 'every OTHER party mon\'s moveslots in position order (fainted included), NOASSIST_MOVES dropped, duplicates kept; ONE random(n); an empty pool fails draw-free; a called Hidden Power typed by the user (callee_slot)'));
-add([mv('naturepower', 'onHit')],
-  IMPL('callers.rs::NATURE_POWER_CALLS', 'useMove(swift) through call_move, after Nature Power\'s own 95-accuracy roll against its user (roll_accuracy(user, user), [miss] + -miss|<u>|<u>)'));
-add([mv('sketch', 'onHit')],
-  IMPL('callers.rs::run_sketch', 'fails draw-free (transformed / no lastMove / Substitute / NOSKETCH_MOVES / already known); else the Sketch slot becomes the copied move permanently (set.moves, base PP = max PP, MonState::sketched drops the request target key) and -activate|<u>|move: Mimic|<Move>'));
-add([mv('sketch', 'noPPBoosts')],
-  IMPL('state.rs::from_set', 'Sketch\'s own slot gets 0 PP Ups (1 PP), the generic noPPBoosts rule; the copy it writes takes the base PP of the copied move'));
-add([mv('metronome', 'neverMiss'), mv('metronome', 'ignoreImmunity'), mv('mirrormove', 'neverMiss'), mv('mirrormove', 'ignoreImmunity'),
-  mv('assist', 'neverMiss'), mv('assist', 'ignoreImmunity'), mv('naturepower', 'ignoreImmunity'), mv('sketch', 'neverMiss'), mv('sketch', 'ignoreImmunity')],
-  IMPL('callers.rs::run_b11_move', 'accuracy true (no draw; Nature Power\'s 95 is the one roll) and the Status-default ignoreImmunity: no type immunity gates a caller or Sketch'));
-
-// GEN3 FULL PARITY B5 (`gen3_b5_moves_v1`) — Spite, Grudge, Snore, Nightmare, Ingrain. The settled
-// spec is harness/probe_b5_moves.js; the differential is tests/b5_moves_golden_test.rs.
-add([mv('spite', 'onHit'), mv('spite', 'ignoreImmunity')],
-  IMPL('status_moves.rs::run_status_move', 'the spite arm: accuracy, Protect, then random(2,6) DRAWN FIRST, then lastMove + deductPP (BattleState::last_move_id / slots_with_move_id): -activate prints the roll; a failure [still] + -fail; bypasssub (no sub gate); Status-default ignoreImmunity'));
-add([mv('grudge', 'volatileStatus'), cond('grudge', 'onStart'), mv('grudge', 'ignoreImmunity'), mv('grudge', 'neverMiss')],
-  IMPL('status_moves.rs::run_status_move', 'the grudge arm: a ZERO-draw cast, MonState::grudge + |-singlemove|<user>|Grudge'));
-add([cond('grudge', 'onBeforeMove'), cond('grudge', 'onBeforeMovePriority')],
-  IMPL('moves.rs::run_move', 'priority 100, the FIRST BeforeMove handler: removed silently at the top of every runMove (before the recharge / sleep / freeze / truant / flinch / paralysis cants); not for a useMove (Pursuit strike, Sleep-Talk call)'));
-add([cond('grudge', 'onFaint')],
-  IMPL('switch.rs::process_faints', 'the damage sites record grudge_ko_by (a foe Move, not futuremove); the drain zeroes every killer slot with lastMove.id and adds -activate|<killer>|move: Grudge|<Move> right after the corpse |faint|, unless the killer is already fainted (an Explosion user)'));
-add([mv('snore', 'sleepUsable')],
-  IMPL('moves.rs::SLEEP_USABLE_MOVES', 'the slp onBeforeMove cants then lets it proceed (skippedTime++); the set is pinned against the resolved dex (b5_moves_test.rs B5-0)'));
-add([mv('snore', 'onTry')],
-  IMPL('moves.rs::run_move', 'awake (incl. the wake turn) → the bare announce, no line, ZERO draws, before accuracy / Protect / immunity'));
-add([mv('snore', 'secondaries')],
-  IMPL('turn.rs::apply_secondaries', 'the 30 % flinch rides the plain single-secondary path'));
-add([mv('nightmare', 'volatileStatus'), cond('nightmare', 'onStart'), mv('nightmare', 'ignoreImmunity'), mv('nightmare', 'neverMiss')],
-  IMPL('status_moves.rs::run_status_move', 'the nightmare arm: ZERO draws; Protect > Substitute > already-on > not-asleep (the last three [still] + -fail|<user>); -start|<t>|Nightmare; comatose is gen 7+'));
-add([cond('nightmare', 'onResidual'), cond('nightmare', 'onResidualOrder'), cond('nightmare', 'onResidualSubOrder')],
-  IMPL('residuals.rs::apply_nightmare', 'order 10 subOrder 7: max(1, maxhp/4) [from] Nightmare, Focus Band roll; skipped once a cure removed the volatile; every sleep cure ends it (end_nightmare_on_cure)'));
-add([mv('ingrain', 'volatileStatus'), cond('ingrain', 'onStart'), mv('ingrain', 'ignoreImmunity'), mv('ingrain', 'neverMiss')],
-  IMPL('status_moves.rs::run_status_move', 'the ingrain arm: ZERO draws, -start|<u>|move: Ingrain, a recast [still] + -fail; snatchable through the generic interception'));
-add([cond('ingrain', 'onResidual'), cond('ingrain', 'onResidualOrder'), cond('ingrain', 'onResidualSubOrder')],
-  IMPL('residuals.rs::apply_ingrain', 'order 10 subOrder 1: max(1, maxhp/16) [from] Ingrain, nothing at full HP'));
-add([cond('ingrain', 'onTrapPokemon')],
-  IMPL('switch.rs::is_trapped', 'a FIRM trap (trap_is_firm) + a Condition handler in the endTurn TrapPokemon sort (speed.rs::trap_event_shuffles)'));
-add([cond('ingrain', 'onDragOut')],
-  IMPL('status_moves.rs::run_status_move', 'the phaze arm: after Suction Cups (priority 1), -activate|<u>|move: Ingrain and no drag, no sample draw'));
-// GEN3 FULL PARITY B7 (`gen3_b7_moves_v1`) — Stockpile, Spit Up, Swallow, Mud Sport, Water Sport,
-// Mist, Lock-On, Mind Reader. The settled spec is harness/probe_b7_moves.js; the differential is
-// tests/b7_moves_golden_test.rs.
-add([mv('stockpile', 'onTry'), mv('stockpile', 'volatileStatus'), mv('stockpile', 'ignoreImmunity'), mv('stockpile', 'neverMiss'),
-  cond('stockpile', 'onStart'), cond('stockpile', 'onRestart')],
-  IMPL('status_moves.rs::run_status_move', 'the stockpile arm: ZERO draws; at 3 layers onTry is false at singleEvent(Try) → the bare announce; else MonState::stockpile += 1 and -start|<u>|stockpile<n> (the gen-3 condition carries no Def/SpD boosts); snatchable through the generic interception'));
-add([cond('stockpile', 'onEnd')],
-  IMPL('moves.rs::spit_up_after_move', '-end|<u>|Stockpile on the removeVolatile path (Spit Up AfterMove here, Swallow in the swallow arm); switch-out / faint clear it silently (clearVolatile runs no onEnd)'));
-add([mv('spitup', 'onTry')],
-  IMPL('moves.rs::run_move', 'no stockpile → the bare announce, ZERO draws, before accuracy / Protect / immunity (the Snore-site Try gate)'));
-add([mv('spitup', 'onAfterMove')],
-  IMPL('moves.rs::spit_up_after_move', 'the first AfterMove handler, for the EXECUTED move (a Sleep-Talk call included), any outcome but a cant / nopp, not on a 0-HP user'));
-add([mv('swallow', 'onTry'), mv('swallow', 'onHit'), mv('swallow', 'ignoreImmunity'), mv('swallow', 'neverMiss')],
-  IMPL('status_moves.rs::run_status_move', 'the swallow arm: ZERO draws; no stockpile → bare (no Snatch exemption in gen 3: a snatcher needs its own); heal modify(maxhp, 0.25|0.5|1) as -heal, or -fail|<u>|heal at full HP, then -end|<u>|Stockpile'));
-add([mv('mudsport', 'volatileStatus'), mv('mudsport', 'ignoreImmunity'), mv('mudsport', 'neverMiss'), cond('mudsport', 'onStart'),
-  mv('watersport', 'volatileStatus'), mv('watersport', 'ignoreImmunity'), mv('watersport', 'neverMiss'), cond('watersport', 'onStart')],
-  IMPL('status_moves.rs::run_status_move', 'the sport arm: ZERO draws; a recast [still] + -fail; -start|<u>|Mud Sport / move: Water Sport; Baton-Passed (noCopy false), cleared silently on switch-out / faint'));
-add([cond('mudsport', 'onAnyBasePower'), cond('watersport', 'onAnyBasePower')],
-  IMPL('moves.rs::sport_bp_fold', 'every holder with HP halves an Electric (Mud) / Fire (Water) move at the BasePower chain, behind Charge and ahead of the pinch abilities / Thick Fat / the priority-0 members'));
-add([cond('mudsport', 'onAnyBasePowerPriority'), cond('watersport', 'onAnyBasePowerPriority')],
-  IMPL('moves.rs::base_power_sport_shuffle', 'priority 3, speed = the holder, subOrder 2: two sports at one speed tie on every getDamage that reaches BasePower (k-1 draws after the crit, before ModifyDamagePhase1)'));
-add([mv('mist', 'sideCondition'), mv('mist', 'ignoreImmunity'), mv('mist', 'neverMiss'), cond('mist', 'onSideStart'), cond('mist', 'duration')],
-  IMPL('status_moves.rs::run_status_move', 'the mist arm: ZERO draws; already up → [still] + -fail; SideState::mist = 5, -sidestart|<side>|Mist; snatchable'));
-add([cond('mist', 'onTryBoost')],
-  IMPL('secondaries.rs::apply_secondary_boost', 'a foe-sourced drop: after the target ability (Clear Body / Hyper Cutter / Keen Eye), every capped negative key is deleted; -activate|<t>|move: Mist unless the effect is a secondary; Intimidate in event.rs::intimidate_on_start + the helpers.rs emission'));
-add([cond('mist', 'onSideResidualOrder'), cond('mist', 'onSideEnd')],
-  IMPL('residuals.rs::run_residuals', 'order 3 / subOrder 4 / speed 0, gathered in sideConditions insertion order (side_cond_stamp); -sideend|<side>|Mist at 0; a Mist on each side ties'));
-add([mv('lockon', 'onTryHit'), mv('lockon', 'onHit'), mv('lockon', 'ignoreImmunity'),
-  mv('mindreader', 'onTryHit'), mv('mindreader', 'onHit'), mv('mindreader', 'ignoreImmunity')],
-  IMPL('status_moves.rs::run_status_move', 'the lock-on arm: Invulnerability miss, accuracy (skipped under a held lock), Protect, then a held lock / a Substitute → [still] + -fail; MonState::lock_on (duration 2) and -activate|<u>|move: Lock-On|[of] <t> (move: Mind Reader)'));
-add([cond('lockon', 'onSourceAccuracy')],
-  IMPL('speed.rs::roll_accuracy', 'lock_on_holds(attacker, target) → true with no draw: every move class, a Sleep-Talk call, a Future Sight strike by its caster'));
-add([cond('lockon', 'onSourceInvulnerability'), cond('lockon', 'onSourceInvulnerabilityPriority')],
-  IMPL('moves.rs::semi_invulnerable_miss', 'priority 1, ahead of the Fly / Dig / Dive / Bounce handlers: the locked target is not missed (damaging, status, fixed-damage, Future Sight, Perish Song)'));
-add([cond('lockon', 'duration')],
-  IMPL('residuals.rs::run_residuals', 'a NO_ORDER / subOrder-2 duration handler at the holder speed, ended silently at 0; Baton-Passed with its target and duration'));
-// GEN3 FULL PARITY B10 (`gen3_b10_moves_v1`) — Teleport, Follow Me, Helping Hand, Role Play, Camouflage. The
-// settled spec is harness/probe_b10_moves.js; the differential is tests/b10_moves_golden_test.rs.
-add([mv('teleport', 'onTry'), mv('teleport', 'ignoreImmunity'), mv('teleport', 'neverMiss')],
-  IMPL('status_moves.rs::run_status_move', 'the teleport arm: the resolved gen-7-mod onTry: false fails at tryMoveHit Try with no line — the bare announce, ZERO draws (a trainer battle cannot flee)'));
-add([mv('followme', 'onTry'), mv('followme', 'ignoreImmunity'), mv('followme', 'neverMiss'), mv('followme', 'priority')],
-  IMPL('status_moves.rs::run_status_move', 'the followme arm: onTry activePerHalf > 1 is false in singles — the bare announce, ZERO draws; priority 3 rides the dex row'));
-add([mv('followme', 'slotCondition'), cond('followme', 'duration'), cond('followme', 'onStart'), cond('followme', 'onFoeRedirectTarget'), cond('followme', 'onFoeRedirectTargetPriority')],
-  UNREACH('the followme slot condition is added only after onTry passes, which needs activePerHalf > 1 — a doubles battle; in singles it never starts (no -singleturn, no residual duration handler; probe_b10_moves.js followme vs a Splash control)'));
-add([mv('helpinghand', 'ignoreImmunity'), mv('helpinghand', 'neverMiss'), mv('helpinghand', 'priority')],
-  IMPL('status_moves.rs::run_status_move', 'the helpinghand arm: adjacentAlly resolves to no target in singles (getRandomTarget null) — |move|<u>|Helping Hand|null|[notarget]| + |-notarget|<u>, ZERO draws; priority 5 rides the dex row'));
-add([mv('helpinghand', 'onTryHit'), mv('helpinghand', 'volatileStatus'), cond('helpinghand', 'duration'), cond('helpinghand', 'onStart'), cond('helpinghand', 'onRestart'), cond('helpinghand', 'onBasePower'), cond('helpinghand', 'onBasePowerPriority')],
-  UNREACH('gen-3 useMoveInner returns at the null target before TryMove / tryMoveHit, so onTryHit never runs and the helpinghand volatile (the ally BP boost) is never added in singles'));
-add([mv('roleplay', 'onTryHit'), mv('roleplay', 'onHit'), mv('roleplay', 'ignoreImmunity'), mv('roleplay', 'neverMiss')],
-  IMPL('status_moves.rs::run_status_move', 'the roleplay arm: same-id / ROLE_PLAY_FAIL_ABILITIES (Wonder Guard) fail [still] + -fail; else run_outgoing_ability_end, |-ability|<u>|<New>|<Old>|[from] move: Role Play|[of] <t>, no gen-3 Start; Own Tempo while confused / Oblivious while attracted PANIC (their Update cure is unmodeled)'));
-add([mv('camouflage', 'onHit'), mv('camouflage', 'ignoreImmunity'), mv('camouflage', 'neverMiss')],
-  IMPL('status_moves.rs::run_status_move', 'the camouflage arm: hasType(Normal) fails [still] + -fail; else types_override [Normal] + mark_type_known + |-start|<u>|typechange|Normal; snatchable through the generic interception'));
 add([mv('endure', 'onPrepareHit'), mv('endure', 'stallingMove'), mv('endure', 'priority'), mv('endure', 'onHit'), mv('endure', 'volatileStatus'), cond('endure', 'onStart')],
   IMPL('turn.rs::run_protect', 'the endure arm rides the SHARED protect stallingMove machinery (willAct gate + randomChance(1,counter) 2→4→8 no-delete-on-fail; priority 4); success sets MonState::endure'));
 add([cond('endure', 'onDamage'), cond('endure', 'onDamagePriority')],
@@ -858,25 +712,6 @@ add([mv('painsplit', 'onHit')],
   IMPL('turn.rs::run_status_move', 'the painsplit arm: protect/sub block; avg = floor((u+t)/2), EACH side clamped at its OWN maxhp (MC96); -sethp target [silent] then user'));
 add([mv('psychup', 'onHit')],
   IMPL('turn.rs::run_status_move', 'the psychup arm: copies ALL 7 stages VERBATIM (zeros overwrite — MC97); NO protect flag (copies through a Protect); bypasssub'));
-// B6 (gen3_b6_moves_v1, gen3 full parity B6) — spec harness/probe_b6_moves.js.
-add([mv('swagger', 'boosts'), mv('swagger', 'volatileStatus'), mv('swagger', 'ignoreImmunity'),
-     mv('flatter', 'boosts'), mv('flatter', 'volatileStatus'), mv('flatter', 'ignoreImmunity')],
-  IMPL('status_moves.rs::run_status_move', 'the TARGET_BOOST_MOVES arm: accuracy, Protect, the Magic Coat bounce, the Substitute block, then the capped -boost (delta 0 printed at +6) and the confusion add (Own Tempo -immune / already-confused silent / Safeguard -activate / random(2,6)); [still] -fail only for a delta-0 boost into an already-confused target; ignoreImmunity: a Status move skips the type chart'));
-add([mv('foresight', 'volatileStatus'), mv('foresight', 'ignoreImmunity'), mv('foresight', 'onTryHit'),
-     mv('odorsleuth', 'volatileStatus'), mv('odorsleuth', 'ignoreImmunity'), mv('odorsleuth', 'onTryHit'),
-     cond('foresight', 'onStart')],
-  IMPL('status_moves.rs::run_status_move', 'the foresight arm: accuracy 100, Protect, bypasssub, MonState::foresight (|-start|<t>|Foresight for both moves; an identified target fails [still] -fail); onTryHit is the Miracle Eye gate, unreachable in gen 3'));
-add([cond('foresight', 'onModifyBoost')],
-  IMPL('speed.rs::effective_accuracy', 'an identified defender\'s POSITIVE evasion stage reads 0 in every accuracy check'));
-add([cond('foresight', 'onNegateImmunity')],
-  IMPL('damage.rs::type_effectiveness', 'an identified defender\'s Ghost type reads NEUTRAL (not immune) to Normal and Fighting at every effectiveness site'));
-add([mv('magiccoat', 'volatileStatus'), mv('magiccoat', 'priority'), mv('magiccoat', 'neverMiss'),
-     mv('magiccoat', 'ignoreImmunity'), cond('magiccoat', 'onStart')],
-  IMPL('status_moves.rs::run_status_move', 'the magiccoat cast: priority +4, sets MonState::magic_coat DRAW-FREE, |-singleturn|U|move: Magic Coat'));
-add([cond('magiccoat', 'onTryHit'), cond('magiccoat', 'onTryHitPriority')],
-  IMPL('status_moves.rs::magic_coat_bounce', 'every REFLECTABLE_MOVES arm calls it after Protect (priority 3 > 2, TryHit sorts left-to-right: no draw): removeVolatile, the holder lastMoveUsed, then a recursive run_status_move with [from] Magic Coat (no PP, no BeforeMove, the move\'s own draws only); the original move returns null'));
-add([cond('magiccoat', 'duration')],
-  IMPL('turn.rs::run_residuals', 'the duration:1 volatile registers the NO_ORDER/subOrder-2 residual duration handler (a Magic Coat mirror draws one tie-shuffle more, probe MC1b); cleared at turn-top / switch-out / faint'));
 // SNATCH (gen3_snatch_v1) — the LAST gen-3 status move, the status-steal.
 add([mv('snatch', 'volatileStatus'), mv('snatch', 'priority'), cond('snatch', 'onStart')],
   IMPL('turn.rs::run_status_move', 'the snatch-cast arm: priority +4 sets MonState::snatch DRAW-FREE + emits |move|U|Snatch|U + |-singleturn|U|Snatch (the onStart line); landed FALSE'));

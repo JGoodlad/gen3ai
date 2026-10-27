@@ -226,14 +226,7 @@ fn a_dragged_mon_is_never_labelled_a_chosen_switch() {
             d[0].iter().filter(|s| s.delta.as_ref().is_some_and(|x| x.opp_dragged)).collect();
         assert!(!dragged.is_empty(), "{name}: the fixture must drag the opponent");
         for s in dragged {
-            // a drag is never their choice; a move they made BEFORE the drag is (D-1,
-            // gen3_intent_label_move_then_switch_v1), and is labelled as that move
-            let (l, x) = (s.label.as_ref().unwrap(), s.delta.as_ref().unwrap());
-            if x.opp_move_before_switch && x.opp_resolved_move_id().is_some() {
-                assert_eq!((l.kind, l.move_id.as_deref()), (KIND_MOVE, x.opp_resolved_move_id()), "{name}");
-            } else {
-                assert_eq!(l.kind, KIND_UNKNOWN, "{name}: a drag is not their choice");
-            }
+            assert_eq!(s.label.as_ref().unwrap().kind, KIND_UNKNOWN, "{name}: a drag is not their choice");
         }
     }
 }
@@ -283,37 +276,6 @@ fn an_encore_override_is_masked() {
     assert_eq!(over[0].label.as_ref().unwrap().kind, KIND_UNKNOWN, "the executed Curse was not their pick");
     // the Encore user's own view: its choice (Encore) was not overridden, and is labelled on p2's side
     assert!(d[1].iter().all(|s| s.delta.as_ref().is_none_or(|x| !x.opp_choice_overridden)));
-}
-
-#[test]
-fn the_move_that_forces_our_switch_is_labelled() {
-    // gen3_intent_label_move_then_switch_v1 (2026-10-26 GIGO audit D-1): Tyranitar's Crunch KOs our Magikarp; the
-    // window that closes on OUR forced switch holds that genuine choice. The old `phase_is_forced_switch` mask
-    // dropped it (every KO turn's attack).
-    let p1 = team(&[set("magikarp", "", "swiftswim", "splash", 5), set("snorlax", "", "immunity", "rest", 100)]);
-    let p2 = team(&[set("tyranitar", "", "sandstream", "crunch", 100), set("snorlax", "", "immunity", "rest", 100)]);
-    let d = play(&p1, &p2, "1,2,3,4", &[(0, "move 1"), (1, "move 1"), (0, "switch 2"), (1, "move 1"), (0, "move 1")]);
-    let forced: Vec<&Arc<SideTrackers>> =
-        d[0].iter().filter(|s| s.delta.as_ref().is_some_and(|x| x.phase_is_forced_switch && x.we_fainted)).collect();
-    assert_eq!(forced.len(), 1, "the fixture must KO our lead and force our switch");
-    let l = forced[0].label.as_ref().unwrap();
-    assert_eq!((l.kind, l.move_id.as_deref()), (KIND_MOVE, Some("crunch")), "the KO move was their choice");
-}
-
-#[test]
-fn a_move_then_their_faint_and_replacement_is_labelled_the_move() {
-    // D-1 (B): Golem's Explosion (Gengar is immune, Golem faints anyway) -> their free replacement, all in one of
-    // our windows. The old rule masked the whole window, so no opponent Explosion was ever a positive example.
-    let p1 = team(&[set("gengar", "", "levitate", "splash", 100), set("snorlax", "", "immunity", "rest", 100)]);
-    let p2 = team(&[set("golem", "", "sturdy", "explosion", 100), set("snorlax", "", "immunity", "rest", 100)]);
-    let d = play(&p1, &p2, "1,2,3,4", &[(0, "move 1"), (1, "move 1"), (1, "switch 2"), (0, "move 1"), (1, "move 1")]);
-    let ex: Vec<&Arc<SideTrackers>> = d[0].iter()
-        .filter(|s| s.delta.as_ref().is_some_and(|x| x.opp_fainted && x.opp_switch_to.is_some()
-                                                    && x.opp_resolved_move_id() == Some("explosion")))
-        .collect();
-    assert_eq!(ex.len(), 1, "the fixture must explode, faint and replace inside one window");
-    let l = ex[0].label.as_ref().unwrap();
-    assert_eq!((l.kind, l.move_id.as_deref(), l.attacker.as_deref()), (KIND_MOVE, Some("explosion"), Some("golem")));
 }
 
 // ------------------------------------------------------------------ the progress clock

@@ -177,7 +177,7 @@ REASONS: Dict[str, str] = {
               "never a log pi jump. HOW FAR the root can sit from the true one is the constraint's evaluation error "
               "over its slope S'(tau) = sum pi (1 - pi). Under the default `fp32_alt` solve (gen3_tau_fp32_alt_v1) "
               "the constraint is the SPLIT residual sum(+-sigma(-|x|)) > k - |{x > 0}|: every term is relative-"
-              "accurate and k - |H| is an exact integer, so the root is fixed to ~2 (L + 2) u (L = the longest serial chain; MEASURED <= 4e-6) WHATEVER "
+              "accurate and k - |H| is an exact integer, so the root is fixed to ~2 (depth + 2) u ~ 1e-6 WHATEVER "
               "the slope (S' >= (R + D) / 2 bounds the error over the slope) — <= 2 fp32 ulp of tau across programs "
               "on X26's k = 1 tau-class rows (S' ~ 1e-5). Its membership test `x > 0` is the same class: a flip at "
               "x within a rounding of 0 swaps +sigma(x) for -sigma(-x) (both ~1/2) and moves |H| by one in the "
@@ -210,8 +210,8 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
         "TABLE": ("bp_all > 0", "phys_all > 0.5"),
         "SELECTED": ("bu_all > 0",),            # gen3_beatup_exact_v1: the 0/1 Beat Up bit at the candidate index
         "INT": ("(phys_all > 0.5).long()", "move_ty == _ELECTRIC_TIDX", "move_ty == _FIRE_TIDX",
-                "move_ty == _WATER_TIDX", "mty_all == at1[:, None]", "mty_all == at2[:, None]",
-                "opp_held == self.cb_item_num"),
+                "move_ty == _WATER_TIDX", "mty_all == at1[:, None]", "mty_all == at2[:, None]", "opp_item == 0",
+                "opp_item == self.cb_item_num"),
     },
     "damage_op_blocks": {
         "OBS": ("(opp_slp * (1.0 - opp_rest)).sum(-1) > 0.5", "ctx.hp_and_active[:, :TEAM_SIZE, 0] > 0",
@@ -225,11 +225,11 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
                 "our_burn > 0.5", "our_cb > 0.5", "our_cond.sum(-1) > 0.5", "(~ctx.opp_believed_mask).long()"),
         "TABLE": ("ident.sum(-1) > 0.5", "self.MOVE_TYPE_IDX.long()"),
         "SELECTED": ("bp_k > 0", "ded.sum(dim=-1, keepdim=True) > 0.5", "sec_tot > eps"),
-        "INT": ("ctx.all_move_ids[ar, opp_act] > 0", "held_item_ids(ctx)[:, our] == self.cb_item_num",
+        "INT": ("ctx.all_move_ids[ar, opp_act] > 0", "ctx.item_ids[:, our] == self.cb_item_num",
                 # gen3_endstate_facts_v1 (the exact status facts, `our_burn_loss`): the held-move count and our
                 # mon's Guts — integer move nums / ability ids
                 "ctx.all_move_ids[:, :TEAM_SIZE] > 0", "ctx.ability1_ids[:, :TEAM_SIZE] == self.guts_num",
-                "held_item_ids(ctx)[ar, our_act] == self.cb_item_num", "move_ids == self.hp_num",
+                "ctx.item_ids[ar, our_act] == self.cb_item_num", "move_ids == self.hp_num",
                 "move_ty == _ELECTRIC_TIDX", "move_ty == _FIRE_TIDX", "move_ty == _WATER_TIDX",
                 "move_ty == at1[:, :, None]", "move_ty == at1[:, None]", "move_ty == at2[:, :, None]",
                 "move_ty == at2[:, None]", "move_ty.long()", "mty_k == at1[:, None]", "mty_k == at2[:, None]",
@@ -270,8 +270,6 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
     },
     "extractor_ctx": {
         "OBS": ("_opp_hp > 0.0", "ctx.pokemon_part[..., POKEMON_ABILITY_KNOWN_OFFSET] > 0.5",
-                # gen3_op_held_item_v1: the item block's consumed flag, and the all-zero (unrevealed) item id
-                "ctx.pokemon_part[..., POKEMON_ITEM_CONSUMED_OFFSET] > 0.5", "ctx.item_ids == 0",
                 "(ctx.pokemon_part[..., POKEMON_ABILITY_KNOWN_OFFSET] > 0.5).long()", "hp_and_active[:, 0:TEAM_SIZE, 0] == 0",
                 "hp_and_active[:, TEAM_SIZE:2 * TEAM_SIZE, 0] == 0",
                 "pokemon_part[:, :, POKEMON_LAST_ACTION_OFFSET].long()", "pokemon_part[:, :, ability1_idx].long()",
@@ -315,7 +313,7 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
     },
     # gen3_speed_physics_v1: Quick Claw identity (integer item ids).
     "damage_op_speed": {
-        "INT": ("held_item_ids(ctx)[:, :TEAM_SIZE] == self.qc_item_num", "held == self.qc_item_num"),
+        "INT": ("ctx.item_ids[:, :TEAM_SIZE] == self.qc_item_num", "item == self.qc_item_num", "item == 0"),
     },
     "masked_categorical": {
         "INT": ("actions.long()",),
@@ -368,7 +366,7 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
     # `hypothesis_set.near_tie_rows`, including OTHER's tail-mean cutoff and the move seats); the
     # bisection's direction tests (`total > k_t`; the split residual's `resid > …` and its `x > 0` membership,
     # gen3_tau_fp32_alt_v1) are NOT discontinuities (τ converges to the same root either way, to the resolution of the
-    # solve: <= 4e-6 MEASURED for fp32_alt, ~1e-10 for fp64 — the naive fp32 sum's was up to 2.8e-2 on a saturated k = 1 row) and
+    # solve: ~1e-6 for fp32_alt, ~1e-10 for fp64 — the naive fp32 sum's was up to 2.8e-2 on a saturated k = 1 row) and
     # need a reason of their own; `denom > 0` is a structural-count gate.
     "hypothesis_set": {
         "BISECT": ("total > k_t", "x > 0", "resid > (k_safe - in_h.sum(-1)).to(dt)"),

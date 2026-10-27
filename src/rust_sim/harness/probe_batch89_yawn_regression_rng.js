@@ -90,12 +90,10 @@ async function main() {
   //   the SetStatus event: it DRAWS the 2-clause shuffle but NO random(2,6) (B stays awake). A
   //   no-prior-sleeper control (p2 never had A slept) resolves normally: the shuffle + random(2,6).
   const smeargle = "Smeargle|||Own Tempo|spore,yawn,splash,earthquake|Jolly|4,,,,,252|N||||";
-  // Two distinct species — a Blissey and a Chansey, both with SERENE GRACE (NOT Natural Cure — else the slept
-  // Blissey-A would be CURED on switch-out and the clause would never see a benched sleeper). They used to be two
-  // Blisseys (nickname|species): a team the gen3ou Species Clause refuses (`gen3_species_clause_v1`); the draws are
-  // the same (no damage rolls, no speed tie).
+  // Two distinct Blisseys (nickname|species) with SERENE GRACE (NOT Natural Cure — else the slept
+  // Blissey-A would be CURED on switch-out and the clause would never see a benched sleeper).
   const blissA = "A|Blissey||Serene Grace|splash|Careful|252,,,252,,|N||||";
-  const blissB = "B|Chansey||Serene Grace|splash|Careful|252,,,252,,|N||||";
+  const blissB = "B|Blissey||Serene Grace|splash|Careful|252,,,252,,|N||||";
   const p2two = `${blissA}]${blissB}`;
   const seed3 = [23, 37, 51, 63];
   await run('Y3 gen3ou clause-block at resolve', 'gen3ou', smeargle, p2two, seed3, [

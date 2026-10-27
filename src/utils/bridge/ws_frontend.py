@@ -58,7 +58,6 @@ from typing import Dict, List, Optional, Tuple
 from utils.bridge.seed_spec import derive_seed_from_base, validate_seed_spec
 from utils.bridge.sim_bridge_bin import bridge_spawn_argv
 from utils.bridge.team_validator import validate_teams_locally
-from utils.ports import RESERVED_PORTS
 
 logger = logging.getLogger("ws_frontend")
 
@@ -72,6 +71,9 @@ logger = logging.getLogger("ws_frontend")
 # `bridge_flush_on_exit_integration_test.py`.)
 BRIDGE_STREAM_LIMIT = 16 * 1024 * 1024
 
+# Ports this process must NEVER bind. 8000 is the shared dev server and 8001 the reserved
+# training-tools server (training itself is in-process on the Rust core and uses no server); the
+# project rule is that an agent's own server lives in the 9XXX range.
 #: Why the CLI refuses ``--impl node`` (owner 2026-10-10: "delete node" — no RUNTIME path runs Node
 #: where a Rust one does the same job). ``ShowdownFrontEnd(impl="node")`` survives in code only as
 #: the DEV / TEST ORACLE the byte-identity differential compares the Rust bridge against.
@@ -79,6 +81,10 @@ NODE_IMPL_REFUSED_REASON = (
     "the front end's battles run on the Rust sim_bridge only; the Node bridge (local_sim_bridge.js) "
     "is a dev / test oracle, reachable from code (ShowdownFrontEnd(impl='node')), not from this CLI "
     "(2026-10-10, owner: \"delete node\"). Drop the flag or pass --impl rust")
+
+
+RESERVED_PORTS = {8000: "the shared DEV server",
+                  8001: "the reserved TRAINING server (the trainer itself is in-process and connects to none)"}
 
 # Showdown refuses a userid longer than this (`server/users.ts:745`) — and the refusal is a known
 # HANG for a client that does not read `|nametaken|` (foul-play de-risk hazard 1). Reproduced here

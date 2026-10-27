@@ -154,39 +154,18 @@ impl crate::state::BattleState {
             //     the active mon being fainted (a side handler's effectHolder is the SIDE, not the
             //     active — so the gather sits above the `mon.fainted` continue below). speed 0 /
             //     priority 0; Reflect order 1, Light Screen order 2, subOrder 4. Only the SAME
-            //     screen on the OTHER side ties (order 1↔1 / 2↔2, speed 0↔0). The apply
-            //     decrements the counter and emits `|-sideend|` at 0.
-            // MIST joins the three (`gen3_b7_moves_v1`, order 3), and all four are gathered in the
-            // side's `sideConditions` INSERTION order (`side_cond_stamp`), ahead of the mon's
-            // handlers — `findSideEventHandlers` walks the object's keys. The order is load-bearing
-            // for two tied conditions' `-sideend` order: the non-stable selection sort's swaps hand
-            // a tie group whatever order the earlier groups' swaps leave (probe
-            // `harness/probe_b7_moves.js`, the Mist + screens boards; before B7 the port gathered
-            // Reflect first and Safeguard / Light Screen after the lock-in volatiles). ---
-            {
-                let sd = &self.sides[side];
-                let mut conds: Vec<(u32, EventHandler<ResidualAction>)> = Vec::new();
-                let mut add = |up: bool, stamp: usize, order: u64, handler: ResidualAction| {
-                    if up {
-                        conds.push((
-                            sd.side_cond_stamp[stamp],
-                            EventHandler {
-                                order,
-                                priority: 0,
-                                speed: 0.0,
-                                sub_order: SIDE_CONDITION_SUBORDER,
-                                effect_order: 0,
-                                handler,
-                            },
-                        ));
-                    }
-                };
-                add(sd.reflect > 0, crate::state::SIDE_COND_REFLECT, REFLECT_RESIDUAL_ORDER, ResidualAction::ScreenDuration { side, is_reflect: true });
-                add(sd.light_screen > 0, crate::state::SIDE_COND_LIGHT_SCREEN, LIGHT_SCREEN_RESIDUAL_ORDER, ResidualAction::ScreenDuration { side, is_reflect: false });
-                add(sd.safeguard > 0, crate::state::SIDE_COND_SAFEGUARD, SAFEGUARD_RESIDUAL_ORDER, ResidualAction::SafeguardDuration { side });
-                add(sd.mist > 0, crate::state::SIDE_COND_MIST, MIST_RESIDUAL_ORDER, ResidualAction::MistDuration { side });
-                conds.sort_by_key(|(stamp, _)| *stamp);
-                handlers.extend(conds.into_iter().map(|(_, h)| h));
+            //     screen on the OTHER side ties (order 1↔1 / 2↔2, speed 0↔0), so the relative
+            //     gather order of reflect vs lightscreen within a side is unobservable (distinct
+            //     orders never tie). The apply decrements the counter and emits `|-sideend|` at 0. ---
+            if self.sides[side].reflect > 0 {
+                handlers.push(EventHandler {
+                    order: REFLECT_RESIDUAL_ORDER,
+                    priority: 0,
+                    speed: 0.0,
+                    sub_order: SIDE_CONDITION_SUBORDER,
+                    effect_order: 0,
+                    handler: ResidualAction::ScreenDuration { side, is_reflect: true },
+                });
             }
             // FURY CUTTER's `duration: 2` volatile (`gen3_bp_modifier_cluster_v1`) — a
             // NO_ORDER/subOrder-2 DURATION handler like protect/flinch/stall, so it JOINS that
@@ -243,6 +222,26 @@ impl crate::state::BattleState {
                     handler: ResidualAction::UproarDuration { side, slot: sl },
                 });
             }
+            if self.sides[side].safeguard > 0 {
+                handlers.push(EventHandler {
+                    order: SAFEGUARD_RESIDUAL_ORDER,
+                    priority: 0,
+                    speed: 0.0,
+                    sub_order: SIDE_CONDITION_SUBORDER,
+                    effect_order: 0,
+                    handler: ResidualAction::SafeguardDuration { side },
+                });
+            }
+            if self.sides[side].light_screen > 0 {
+                handlers.push(EventHandler {
+                    order: LIGHT_SCREEN_RESIDUAL_ORDER,
+                    priority: 0,
+                    speed: 0.0,
+                    sub_order: SIDE_CONDITION_SUBORDER,
+                    effect_order: 0,
+                    handler: ResidualAction::ScreenDuration { side, is_reflect: false },
+                });
+            }
 
             let slot = self.sides[side].active;
             let mon = &self.sides[side].pokemon[slot];
@@ -286,36 +285,6 @@ impl crate::state::BattleState {
                     sub_order: LEECH_SEED_SUBORDER,
                     effect_order: 0,
                     handler: ResidualAction::LeechSeed { side, slot, seeder_side },
-                });
-            }
-
-            // --- INGRAIN / NIGHTMARE (`gen3_b5_moves_v1`) — VOLATILES, gathered in the volatiles
-            //     group (after the status DoT, before the item): Ingrain order 10 subOrder 1,
-            //     Nightmare order 10 subOrder 7 (the resolved gen-3 conditions). Each subOrder is
-            //     unique among the order-10 handlers, so either only ties the OTHER mon's same
-            //     volatile at equal cached speed. ⚠️ The sim gathers a mon's volatiles in
-            //     `pokemon.volatiles` INSERTION order; the port's fixed volatile-group order is
-            //     the same approximation every other volatile here makes (only Perish tracks its
-            //     insertion turn), which matters only to the selection sort's swaps when another
-            //     tied group exists on the same board. ---
-            if mon.ingrain {
-                handlers.push(EventHandler {
-                    order: STATUS_RESIDUAL_ORDER,
-                    priority: 0,
-                    speed,
-                    sub_order: INGRAIN_RESIDUAL_SUBORDER,
-                    effect_order: 0,
-                    handler: ResidualAction::Ingrain { side, slot },
-                });
-            }
-            if mon.nightmare {
-                handlers.push(EventHandler {
-                    order: STATUS_RESIDUAL_ORDER,
-                    priority: 0,
-                    speed,
-                    sub_order: NIGHTMARE_RESIDUAL_SUBORDER,
-                    effect_order: 0,
-                    handler: ResidualAction::Nightmare { side, slot },
                 });
             }
 
@@ -633,11 +602,7 @@ impl crate::state::BattleState {
             //     protect/flinch this turn (it spent its +4 action on Snatch), so the
             //     same-mon gather position is unobservable — the only tie is the OTHER
             //     mon's same volatile. ---
-            // MAGIC COAT (`gen3_b6_moves_v1`) registers the SAME duration handler as Snatch
-            // (probe MC1b: a Magic Coat mirror draws one tie-shuffle more than the Splash control
-            // MC1c). A bounce removes the coat first, so only an UNUSED coat gathers here; a mon
-            // cannot hold both (each is its +4 action).
-            if mon.snatch || mon.magic_coat {
+            if mon.snatch {
                 handlers.push(EventHandler {
                     order: NO_ORDER,
                     priority: 0,
@@ -679,56 +644,6 @@ impl crate::state::BattleState {
                     sub_order: VOLATILE_RESIDUAL_SUBORDER,
                     effect_order: 0,
                     handler: ResidualAction::TwoTurnDuration { side, slot },
-                });
-            }
-            // --- BIDE's `duration: 3` volatile (`gen3_b8_moves_v1`) — the same NO_ORDER/subOrder-2
-            //     duration group (no `onResidualOrder`, no `onResidual`): present on the cast-turn
-            //     and the wait-turn residuals (a bide + King's-Rock self-flinch mon ties itself:
-            //     one shuffle draw: the King's Rock Bide boards of the B8 probe, pinned by B8-7). ---
-            if mon.bide.is_some() {
-                handlers.push(EventHandler {
-                    order: NO_ORDER,
-                    priority: 0,
-                    speed,
-                    sub_order: VOLATILE_RESIDUAL_SUBORDER,
-                    effect_order: 0,
-                    handler: ResidualAction::BideDuration { side, slot },
-                });
-            }
-            // --- The SEMI-INVULNERABLE sub-volatile's own `duration: 2` (`gen3_twoturn_family_v1`):
-            //     Fly / Bounce / Dig / Dive's move-id volatile carries `condition.duration: 2`, so
-            //     while it is up (the charge-turn residual; the strike-turn residual only when a
-            //     gen-3 faint CANCELLED the strike) it is a SECOND NO_ORDER subOrder-2 duration
-            //     handler, gathered after twoturnmove (its insertion order — twoturnmove's onStart
-            //     adds it). Probed: a Fly charge turn draws one more tie-shuffle than Razor Wind's.
-            //     Its duration always equals twoturnmove's (both set to 2 at the charge, both
-            //     ticked each residual), so it ENDS exactly when twoturnmove's is 1 here. ---
-            if let Some(t) = mon.two_turn.filter(|t| t.charging && t.semi.is_some()) {
-                handlers.push(EventHandler {
-                    order: NO_ORDER,
-                    priority: 0,
-                    speed,
-                    sub_order: VOLATILE_RESIDUAL_SUBORDER,
-                    effect_order: 0,
-                    handler: ResidualAction::SemiInvulnerableDuration { side, slot, ends: t.duration <= 1 },
-                });
-            }
-
-            // --- LOCK-ON's `lockon` volatile (`gen3_b7_moves_v1`, `duration: 2`, no residual
-            //     callback) — a NO_ORDER/subOrder-2 DURATION handler like the rest of this group,
-            //     so it joins the tie group at the holder's speed: a Lock-On MIRROR at equal speed
-            //     draws one `random(0,2)` on each of the two residuals it lives through (probe
-            //     `harness/probe_b7_moves.js`, the mirror and Baton Pass boards). Gathered last in
-            //     the NO_ORDER block (a lock is usually the newest volatile — the insertion-order
-            //     approximation every volatile here makes). ---
-            if mon.lock_on.is_some() {
-                handlers.push(EventHandler {
-                    order: NO_ORDER,
-                    priority: 0,
-                    speed,
-                    sub_order: VOLATILE_RESIDUAL_SUBORDER,
-                    effect_order: 0,
-                    handler: ResidualAction::LockOnDuration { side, slot },
                 });
             }
 
@@ -1112,76 +1027,36 @@ impl crate::state::BattleState {
                         continue; // duration-END → skip faintMessages (D4 order fix)
                     }
                 }
-                // The LOCK-IN tick (`gen3_lockin_family_v1`, `gen3_lockin_cancelled_repeat_v1`),
-                // in the sim's `fieldEvent('Residual')` order: the handler's `duration--` FIRST,
-                // and on 0 the volatile ends (`onEnd`) and `onResidual` never runs; otherwise
-                // `onResidual` deletes the volatile of a SLEEPING user (no confusion) and ticks
-                // `trueDuration`. `onEnd` confuses the user — its own `random(2,6)`, routed
-                // through `add_confusion` so Own Tempo / already-confused gate it as they do any
-                // other confusion source; Safeguard does NOT (a self-sourced add) — only when
-                // `trueDuration <= 1`: a repeat CANCELLED on a 3-turn roll's second turn leaves
-                // `duration` unrefreshed and `trueDuration` at 2, so the lock ends QUIETLY there.
-                // An asleep user whose duration runs out on this same residual IS confused (the
-                // end runs before the sleep check).
+                // The LOCK-IN tick (`gen3_lockin_family_v1`). On the tick that runs the
+                // counter out the user is CONFUSED — its own `random(2,6)`, routed through
+                // `add_confusion` so Own Tempo / already-confused gate it as they do any other
+                // confusion source; Safeguard does NOT (a self-sourced add). SLEEP breaks the lock
+                // FIRST and cleanly: the sim's `onResidual` deletes the volatile before the
+                // duration is consulted, so an asleep user is never confused by it.
                 ResidualAction::LockedMoveDuration { side, slot } => {
-                    let Some(mut lock) = self.sides[side].pokemon[slot].locked_move else {
+                    let Some((turns, k)) = self.sides[side].pokemon[slot].locked_move else {
                         continue;
                     };
                     if self.sides[side].pokemon[slot].fainted {
                         continue;
                     }
-                    lock.duration = lock.duration.saturating_sub(1);
-                    if lock.duration == 0 {
-                        self.sides[side].pokemon[slot].locked_move = None;
-                        if lock.true_duration <= 1 {
-                            // The end-of-lock confusion: SELF-sourced, so the user's own Safeguard
-                            // does NOT block it, and it announces `|-start|…|confusion|[fatigue]`
-                            // (`gen3_lockin_fatigue_v1`).
-                            self.add_confusion(side, slot, super::secondaries::ConfusionSource::LockEnd, dex);
-                        }
-                        continue; // duration-END → skip faintMessages
-                    }
                     if matches!(self.sides[side].pokemon[slot].status, Some(Status::Sleep(_))) {
-                        // `onResidual`: `delete target.volatiles['lockedmove']` — silent.
                         self.sides[side].pokemon[slot].locked_move = None;
-                    } else {
-                        lock.true_duration = lock.true_duration.saturating_sub(1);
-                        self.sides[side].pokemon[slot].locked_move = Some(lock);
-                    }
-                    // NON-ending: `fieldEvent` ran `onResidual` and then the per-handler
-                    // `faintMessages()` (`gen3_duration_nonend_faint_drain_v1`). Fall through.
-                }
-                // MIST's duration tick (`gen3_b7_moves_v1`) — the safeguard sibling at order 3.
-                ResidualAction::MistDuration { side } => {
-                    if self.sides[side].mist == 0 {
                         continue;
                     }
-                    self.sides[side].mist -= 1;
-                    if self.sides[side].mist == 0 {
-                        // [EMIT] `|-sideend|<side>|Mist` (`mist.condition.onSideEnd`).
-                        if self.logging() {
-                            let side_ref = crate::protocol::ProtocolBuilder::side_ref(
-                                side,
-                                &self.sides[side].name,
-                            );
-                            self.log.sideend(&side_ref, "Mist");
-                        }
-                        continue; // duration-END → skip faintMessages (D4 order fix)
-                    }
-                }
-                // LOCK-ON's duration tick (`gen3_b7_moves_v1`): 2 -> 1 -> gone, silently (the
-                // lockon condition has no onEnd) — the Fury Cutter shape.
-                ResidualAction::LockOnDuration { side, slot } => {
-                    let Some(l) = self.sides[side].pokemon[slot].lock_on else {
-                        continue;
-                    };
-                    if l.duration <= 1 {
-                        self.sides[side].pokemon[slot].lock_on = None;
+                    if turns <= 1 {
+                        self.sides[side].pokemon[slot].locked_move = None;
+                        // The end-of-lock confusion: SELF-sourced, so the user's own Safeguard
+                        // does NOT block it, and it announces `|-start|…|confusion|[fatigue]`
+                        // (`gen3_lockin_fatigue_v1`).
+                        self.add_confusion(side, slot, super::secondaries::ConfusionSource::LockEnd, dex);
                         continue; // duration-END → skip faintMessages
                     }
-                    self.sides[side].pokemon[slot].lock_on = Some(crate::state::LockOn { duration: l.duration - 1, ..l });
-                    // A NON-ending decrement falls through to the per-handler faintMessages
-                    // (`gen3_duration_nonend_faint_drain_v1`), as Fury Cutter's does.
+                    self.sides[side].pokemon[slot].locked_move = Some((turns - 1, k));
+                    // NON-ending: the sim's `lockedmove` is `duration: 2` refreshed by `onRestart`,
+                    // so a live lock's residual is the 2 → 1 decrement, NOT the `duration-- == 0`
+                    // branch — `fieldEvent` runs `onResidual` and then the per-handler
+                    // `faintMessages()` (`gen3_duration_nonend_faint_drain_v1`). Fall through.
                 }
                 // FURY CUTTER's duration tick (`gen3_bp_modifier_cluster_v1`): 2 -> 1 -> gone.
                 // No emission (the sim's condition has no onEnd); the duration-END `continue`
@@ -1199,28 +1074,6 @@ impl crate::state::BattleState {
                     // so `fieldEvent` runs the per-handler `faintMessages()` — draining a faint
                     // an earlier END handler deferred (the order-12 Perish `continue`) BEFORE
                     // `|upkeep|` (`gen3_duration_nonend_faint_drain_v1`). Fall through.
-                }
-                // BIDE's duration tick (`gen3_b8_moves_v1`): `fieldEvent('Residual')`'s
-                // `duration--; if (!duration) end()` for a callback-less duration handler. The end
-                // runs `bide.onEnd` → `|-end|<mon>|move: Bide|[silent]`.
-                ResidualAction::BideDuration { side, slot } => {
-                    let Some(mut b) = self.sides[side].pokemon[slot].bide else {
-                        continue;
-                    };
-                    if self.sides[side].pokemon[slot].fainted {
-                        continue;
-                    }
-                    b.duration = b.duration.saturating_sub(1);
-                    if b.duration == 0 {
-                        self.sides[side].pokemon[slot].bide = None;
-                        if self.logging() {
-                            let u = self.mon_ref(side, slot, dex);
-                            self.log.volatile_end_silent(&u, "move: Bide");
-                        }
-                        continue; // duration-END → skip faintMessages
-                    }
-                    self.sides[side].pokemon[slot].bide = Some(b);
-                    // NON-ending: falls through to the per-handler faintMessages.
                 }
                 // ROLLOUT's duration tick (`gen3_rollout_lock_duration_v1`): 2 -> 1 after a
                 // landed hit keeps the lock; 1 -> gone ends it (a miss, a Protect, a turn the
@@ -1277,17 +1130,6 @@ impl crate::state::BattleState {
                 ResidualAction::MustRechargeDuration { side, slot } => {
                     if self.sides[side].pokemon[slot].fainted {
                         continue;
-                    }
-                    // `fieldEvent('Residual')`'s `duration--`: the cast turn's tick is 2 → 1 (non-ending,
-                    // falls through); a SECOND tick means the recharge turn never consumed the
-                    // volatile (`gen3_recharge_expiry_v1`: a gen-3 faint skips the turn's remaining
-                    // moves), so it reaches 0 and is removed — silently, `mustrecharge` has no
-                    // `onEnd` — and the duration-END `continue` skips the faint drain.
-                    let mon = &mut self.sides[side].pokemon[slot];
-                    mon.must_recharge_duration = mon.must_recharge_duration.saturating_sub(1);
-                    if mon.must_recharge_duration == 0 {
-                        mon.must_recharge = false;
-                        continue; // duration-END → skip faintMessages
                     }
                     // no `continue` — fall through to the per-handler faintMessages below
                 }
@@ -1417,23 +1259,6 @@ impl crate::state::BattleState {
                     }
                     self.apply_berry_residual(side, slot, dex);
                 }
-                // INGRAIN heal / NIGHTMARE chip (`gen3_b5_moves_v1`). The `fieldEvent` loop skips a
-                // fainted holder AND a handler whose volatile was removed by an earlier handler
-                // this phase (`expectedStateLocation !== handler.state`, `sim/battle.ts`
-                // fieldEvent) — a Shed Skin wake (subOrder 3) ends the Nightmare before its
-                // chip (7). Both fall through to the per-handler faintMessages.
-                ResidualAction::Ingrain { side, slot } => {
-                    if self.sides[side].pokemon[slot].fainted || !self.sides[side].pokemon[slot].ingrain {
-                        continue;
-                    }
-                    self.apply_ingrain(side, slot, dex);
-                }
-                ResidualAction::Nightmare { side, slot } => {
-                    if self.sides[side].pokemon[slot].fainted || !self.sides[side].pokemon[slot].nightmare {
-                        continue;
-                    }
-                    self.apply_nightmare(side, slot, dex);
-                }
                 // CURSE chip (`gen3_move_coverage_batch3_v1`, order 10 subOrder 8): the cursed
                 // holder loses floor(maxhp/4). DRAW-FREE.
                 ResidualAction::Curse { side, slot } => {
@@ -1478,20 +1303,6 @@ impl crate::state::BattleState {
                             mon.two_turn = None; // the volatile expired (onEnd)
                             continue; // duration-END → skip faintMessages (D4 order fix)
                         }
-                    }
-                }
-                // The SEMI-INVULNERABLE sub-volatile's duration tick (`gen3_twoturn_family_v1`):
-                // draw-free; at 0 the sub-volatile is removed (the user lands) and, like every
-                // duration-END handler, the per-handler faintMessages is skipped.
-                ResidualAction::SemiInvulnerableDuration { side, slot, ends } => {
-                    if self.sides[side].pokemon[slot].fainted {
-                        continue;
-                    }
-                    if ends {
-                        if let Some(t) = self.sides[side].pokemon[slot].two_turn.as_mut() {
-                            t.charging = false;
-                        }
-                        continue; // duration-END → skip faintMessages (D4 order fix)
                     }
                 }
                 // FUTUREMOVE tick / resolve (`gen3_move_coverage_batch4c_v1`): like Wish,
@@ -1736,7 +1547,7 @@ impl crate::state::BattleState {
     fn weather_immune(&self, side: usize, slot: usize, weather: Weather, dex: &Dex) -> bool {
         let mon = &self.sides[side].pokemon[slot];
         let types = mon_types(mon, dex);
-        (match weather {
+        match weather {
             Weather::Sand => {
                 // Rock/Ground/Steel types + the SAND VEIL ability (`gen3_accuracy_pipeline_v1`
                 // — its `onImmunity('sandstorm')` returns false, so a Sand Veil holder takes
@@ -1751,11 +1562,7 @@ impl crate::state::BattleState {
             Weather::Hail => types.iter().any(|t| matches!(t, Type::Ice)),
             // Rain/Sun have no chip.
             Weather::Rain | Weather::Sun => true,
-        }) || (matches!(weather, Weather::Sand | Weather::Hail)
-            // DIG / DIVE (`gen3_twoturn_family_v1`): the sub-volatile's `onImmunity` returns false
-            // for 'sandstorm' / 'hail', so `runStatusImmunity` skips the chip (sim/battle.ts:2113;
-            // probed: no chip on the charge turn, nor on a strike turn a faint cancelled).
-            && mon.semi_invulnerable().map_or(false, |si| si.weather_immune()))
+        }
     }
 
     /// Leftovers heal: `this.heal(maxhp/16)` (floor), capped at maxhp. Draw-free.
@@ -1803,12 +1610,6 @@ impl crate::state::BattleState {
             let m = self.mon_ref(side, slot, dex);
             self.log.activate(&m, "ability: Shed Skin", None);
             self.log.curestatus(&m, tok, true);
-        }
-        // Shed Skin's `cureStatus()` ends a NIGHTMARE (gen3_b5_moves_v1) — and the nightmare
-        // handler gathered for this residual then finds its volatile gone and is skipped
-        // (`fieldEvent`'s `expectedStateLocation !== handler.state` continue, `sim/battle.ts`).
-        if tok == "slp" {
-            self.end_nightmare_on_cure(side, slot, dex);
         }
     }
 
@@ -2185,34 +1986,6 @@ impl crate::state::BattleState {
         }
     }
 
-    /// INGRAIN's residual heal (`gen3_b5_moves_v1`; `ingrain.onResidual(pokemon) {
-    /// this.heal(pokemon.baseMaxhp / 16) }`). `battle.heal` bumps a sub-1 amount to 1 and
-    /// truncates (`max(1, floor(maxhp/16))`), and adds nothing when the holder is at full HP.
-    /// Line `|-heal|<mon>|<hp>|[from] Ingrain` (the condition's fullname, no `[of]`). DRAW-FREE.
-    fn apply_ingrain(&mut self, side: usize, slot: usize, dex: &Dex) {
-        let amount = (self.sides[side].pokemon[slot].maxhp / 16).max(1);
-        if self.apply_heal(side, slot, amount) && self.logging() {
-            let m = self.mon_ref(side, slot, dex);
-            let hp = self.hp_status(side, slot);
-            self.log.heal(&m, &hp, Some(&Cause::Bare("Ingrain".to_string())));
-        }
-    }
-
-    /// NIGHTMARE's residual chip (`gen3_b5_moves_v1`; `nightmare.onResidual(pokemon) {
-    /// this.damage(pokemon.baseMaxhp / 4) }`): `max(1, floor(maxhp/4))`, `|-damage|<mon>|<hp>
-    /// slp|[from] Nightmare`. A `Damage` event like Curse's, so Focus Band's `onDamage` roll
-    /// draws (no survive — not a Move effect). Probe "nightmare focus band".
-    fn apply_nightmare(&mut self, side: usize, slot: usize, dex: &Dex) {
-        let dmg = (self.sides[side].pokemon[slot].maxhp / 4).max(1);
-        let dmg = self.focus_band_damage(side, slot, dmg, false, false, dex);
-        self.apply_damage(side, slot, dmg);
-        if dmg > 0 && self.logging() {
-            let m = self.mon_ref(side, slot, dex);
-            let hp = self.hp_status(side, slot);
-            self.log.damage(&m, &hp, Some(&Cause::Bare("Nightmare".to_string())));
-        }
-    }
-
     /// The **WISH** slot-condition delayed heal (`wish.onEnd`, `gen3_move_coverage_batch3_v1`):
     /// decrement the side's `wish_pending` duration; when it reaches 0 the Wish RESOLVES —
     /// if the slot's active mon is not fainted, heal `floor(baseMaxhp/2)`. A NON-zero heal
@@ -2333,13 +2106,7 @@ impl crate::state::BattleState {
             .slot_of_uid(src_side, fm.source_uid)
             .unwrap_or(self.sides[src_side].active);
         // ONE accuracy roll (typeless → no move_type; never_miss false).
-        // SEMI-INVULNERABILITY (`gen3_twoturn_family_v1`): the strike is `trySpreadMoveHit`, whose
-        // gen-4 `hitStepInvulnerabilityEvent` (data/mods/gen4/scripts.ts:135-143) precedes the
-        // accuracy step — a target mid-Fly / Bounce / Dig / Dive is MISSED with no accuracy draw,
-        // through the same `[miss]` + `-miss` emission below (probed: Future Sight into a Fly
-        // charge turn's residual).
-        let hit = !self.semi_invulnerable_miss(src_side, src_slot, side, slot, &fm.move_id)
-            && self.roll_accuracy(src_side, src_slot, side, slot, fm.accuracy, false, None, dex);
+        let hit = self.roll_accuracy(src_side, src_slot, side, slot, fm.accuracy, false, None, dex);
         if !hit {
             // [EMIT] the `attrLastMove('[miss]')` retro-edit (the `[miss]` lands on the
             // LAST `|move|` line of the turn — the target's own move line, the observed
@@ -2356,9 +2123,6 @@ impl crate::state::BattleState {
             }
             return;
         }
-        // The strike's `hitStepMoveHitLoop` ends with `target.gotAttacked(move, …, source)`
-        // (`sim/battle-actions.ts:1013`; the caster may be benched): `gen3_b11_moves_v1`.
-        self.note_attacked((side, slot), (src_side, src_slot), &fm.move_id);
         // The STORED number lands fixed-damage-style (sub-intercept first; Focus Band on
         // a direct hit; deferred faint via the caller's per-handler faintMessages).
         let realized = fm.damage;
@@ -2378,12 +2142,7 @@ impl crate::state::BattleState {
             // live). Focus Band still rolls (its `randomChance(1,10)` draws on any Damage event).
             // DRAW-FREE (endure_clamp consumes no PRNG either way).
             let realized = self.focus_band_damage(side, slot, realized, true, true, dex);
-            let hp_before = self.sides[side].pokemon[slot].hp;
             self.apply_damage(side, slot, realized);
-            // BIDE stores the strike (a Move-effect Damage event, `gen3_b8_moves_v1`; probed: a
-            // Future Sight landing on a biding mon is released doubled).
-            let lost = hp_before.saturating_sub(self.sides[side].pokemon[slot].hp) as u32;
-            self.bide_store(side, slot, lost);
             if realized > 0 && self.logging() {
                 let t = self.mon_ref(side, slot, dex);
                 let hp = self.hp_status(side, slot);
@@ -2406,14 +2165,10 @@ impl crate::state::BattleState {
         // PROBE-verified on the fs_mirror board: a non-KO tie resolve draws acc+2 Updates;
         // the KO resolve draws acc+1 (the |faint| emits between them). The inner
         // faintMessages also ENDS a battle the KO decided (the caller's per-handler
-        // `check_win` return then aborts the remaining residual handlers). Both Updates run their
-        // handlers too (`gen3_bf_attract_source_left_v1`): after the KO's `|faint|`, the second one
-        // ends an infatuation whose source the strike just fainted (`attract.onUpdate`).
-        let upd = self.each_event_shuffle();
-        self.run_update_items(&upd, dex);
+        // `check_win` return then aborts the remaining residual handlers).
+        self.each_event_shuffle();
         self.process_faints(dex);
-        let upd = self.each_event_shuffle();
-        self.run_update_items(&upd, dex);
+        self.each_event_shuffle();
     }
 
     /// The **PARTIAL-TRAP** residual (`gen3_partial_trap_v1` — Wrap / Bind / Fire Spin /

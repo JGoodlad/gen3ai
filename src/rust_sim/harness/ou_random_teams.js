@@ -1,8 +1,7 @@
 // ou_random_teams.js — a gen3**ou** RANDOM team generator ("gen3ou-randbats").
 //
 // WHY THIS EXISTS. The fuzzers had two team sources and neither is the surface we care about:
-//   * `pool`     — the REAL gen3ou teams of `data/teams/` (the pinned set is listed in
-//                  `src/rust_sim/tests/vectors/e2e_fuzz_teams.sha256`). On-surface, but a FIXED set:
+//   * `pool`     — the 722 REAL gen3ou teams in `data/teams/`. On-surface, but a FIXED set:
 //                  human-built, from a narrow meta, and the committed e2e capstone samples only
 //                  220 battles from it. It cannot explore gen3ou's interaction space.
 //   * `randbats` — Showdown's own gen3 random-battle sets. Diverse, but a DIFFERENT
@@ -12,7 +11,7 @@
 //                  found on 2026-08-17 had literally ZERO gen3ou-pool exposure.
 //
 // This module is the missing third source: teams that are randomly generated but drawn from the
-// REAL gen3ou distribution — so the fuzz explores far beyond the fixed pool while every battle
+// REAL gen3ou distribution — so the fuzz explores far beyond 722 fixed teams while every battle
 // it produces is one that could actually occur in training or on ladder.
 //
 // EVERY INPUT IS SMOGON-DERIVED and already committed (`data/pokemon/`):
@@ -21,7 +20,7 @@
 //   `gen3_move_priors.json`   -> per-species move marginals
 //   `gen3_item_priors.json` / `gen3_ability_priors.json` / `gen3_spread_priors.json`
 // Deliberately NOT the pool's own `data/teams/gen3_species_priors.json` co-occurrence: that is
-// POOL-derived, and the point of this generator is to be independent of the pool's teams.
+// POOL-derived, and the point of this generator is to be independent of the 722 teams.
 //
 // COVERAGE, MEASURED — the honest scope statement. Move sampling is renormalized over the
 // ENGINE-MODELED moves, so a generated team ALWAYS plays to completion (no fail-loud, no

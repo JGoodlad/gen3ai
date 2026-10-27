@@ -168,9 +168,6 @@ pub struct DeltaProjection {
     pub opp_called_via: Option<String>,
     pub opp_choice_overridden: bool,
     pub our_move_hit_delta: f64,
-    /// The opponent's move came BEFORE its switch-in in this window (`SideTurn::move_before_switch`,
-    /// `gen3_intent_label_move_then_switch_v1`): the move is labelled, the switch was its consequence.
-    pub opp_move_before_switch: bool,
 }
 
 /// A float32 sum in index order — `np.float32 array .sum()` for a 6-vector.
@@ -263,7 +260,6 @@ impl DeltaProjection {
             opp_called_via: opp.called_via.clone(),
             opp_choice_overridden: opp.choice_overridden,
             our_move_hit_delta: our.hit_dealt,
-            opp_move_before_switch: opp.move_before_switch,
         }
     }
 
