@@ -69,7 +69,7 @@ The orchestrator's order after REVIEW_2 of the all-null strategy (`69c7cd34d`). 
 
 **Gated.** **X62**, P\*-forks on 12,000 recombined teams (REVISED DRAFT, `58cb02dc6`): rc72b KILLED shelves it,
 SUPPORTED or UNDECIDED builds its corpus; then PR-1′ KILL retires the fork and N1-P GAIN makes it redundant. Per
-resource-day it ranks below X63. **X53-N1** waits on N1-P's GO and a zero-GPU measurement of how far two fresh runs
+resource-day it ranks below X63, and X63 Stage A runs before X62 under both SUPPORTED and UNDECIDED (ruled 2026-10-27). **X53-N1** waits on N1-P's GO and a zero-GPU measurement of how far two fresh runs
 differ. **S-U** (one-ply search on unfamiliar teams, registered `ffd9a443a`) has two BLOCKERs from its review
 (`7aafa527f`): where its search rule departs from the policy at P\* (40 % of decisions) it picks the better move
 0.513 [0.447, 0.580] of the time, by our own playouts. A 10–15 CPU-hour gate on that sign accuracy comes first.

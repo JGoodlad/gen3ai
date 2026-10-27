@@ -330,28 +330,30 @@ listed routes by its reads' own rows, independently. "Any" means the other read 
 Each is a place where two documents disagree or neither says. The orchestrator accepts or changes each one, before
 the read it concerns lands.
 
+**The orchestrator ACCEPTED rulings 1–7 as written on 2026-10-27, before any of the concerned reads landed.** Each is propagated as one line into the document it governs (ruling 8 was already closed).
+
 1. **N1-P CONTINUE and X63's gate.** X63 §8 waits on "N1-P look 1 (+ look 2 on CONTINUE)", but only a LOSS removes
-   n1. **Proposed:** on CONTINUE, n1 is IN and X63's PREREG does not wait for look 2. A CONTINUE requires Δ̂ > 0, and
+   n1. **Ruled (accepted 2026-10-27):** on CONTINUE, n1 is IN and X63's PREREG does not wait for look 2. A CONTINUE requires Δ̂ > 0, and
    a look-2 LOSS would need the interval to move wholly below zero.
 2. **LR-F CONTINUE and N4.** The N4 review requires "LR-F look 1's class on record" and branches on GAIN. A CONTINUE
-   can still end GAIN. **Proposed:** LR-F look 2 (8.6 GPU-h) runs after X48's arms and **before N4 launches**. N4 is
+   can still end GAIN. **Ruled (accepted 2026-10-27):** LR-F look 2 (8.6 GPU-h) runs after X48's arms and **before N4 launches**. N4 is
    ≈ 30 GPU-h, and a GAIN would force its re-registration; N4 waits on T69 in any case.
 3. **LR-F GAIN while X48 is training or trained.** X48 PREREG §9 says the capacity reads are re-designed "before any
-   FURTHER width read". **Proposed:** X48 is not stopped. It finishes and is read as registered. Its record carries
+   FURTHER width read". **Ruled (accepted 2026-10-27):** X48 is not stopped. It finishes and is read as registered. Its record carries
    "read at the controller's learning rate", and N4 / N4-P re-register with the floor.
 4. **X63's d3 gate.** X63 says "F LOSS, or P INFERIOR" ⇒ d3 out. But D3's primary is H, and its rule defines only
-   "non-inferior" (LB > −2.0). **Proposed:** d3 leaves X63 iff D3's registered H class is LOSS, or Δ_P's 97.5 % UB
+   "non-inferior" (LB > −2.0). **Ruled (accepted 2026-10-27):** d3 leaves X63 iff D3's registered H class is LOSS, or Δ_P's 97.5 % UB
    < −2.0 pp (a detected in-pool loss beyond the margin). "Non-inferiority not shown" alone keeps d3 in: it is
    8.6 % of X63's draws, and X63 carries its own in-pool price.
 5. **X62 vs X63 order on SUPPORTED.** STATUS ranks X62 below X63 per resource-day; REVIEW_2 §6 says X62 "enters
-   level with" X63 when rc72b supports H-CTX. **Proposed:** X63 Stage A first in both SUPPORTED and UNDECIDED. Its
+   level with" X63 when rc72b supports H-CTX. **Ruled (accepted 2026-10-27):** X63 Stage A first in both SUPPORTED and UNDECIDED. Its
    lane cost is 66–95 lane-h against X62's 238–342, and it consumes X62's corpus, so the corpus build is shared.
    X62's fork follows by G1 / G2. A rented CPU box (owner question 2) lets them run side by side.
-6. **The S-U gate's rule.** **Proposed:** register the review's rule verbatim (GO iff LB > 0.50 on pooled U; the
+6. **The S-U gate's rule.** **Ruled (accepted 2026-10-27):** register the review's rule verbatim (GO iff LB > 0.50 on pooled U; the
    GIGO tooth first), so this memo's rows apply. Any change goes in the registration, before any gate state is
    scored.
 7. **H-CTX INCONCLUSIVE top-up.** X62's tree names "more home72 / F control units" as the cheap remedy. Adding units
-   after seeing an INCONCLUSIVE is a second look. **Proposed:** allowed only as a dated registration naming its α,
+   after seeing an INCONCLUSIVE is a second look. **Ruled (accepted 2026-10-27):** allowed only as a dated registration naming its α,
    the units, and the pooled rule, before any top-up game. Otherwise the HOLD stands and X62 waits for PR-1′ or
    N1-P.
 8. **X48's review labels: CLOSED before any ruling.** "Experts not engaged" (M1) and "LR-elevated" (M3) were

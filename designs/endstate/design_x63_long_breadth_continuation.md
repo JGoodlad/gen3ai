@@ -386,6 +386,8 @@ The PREREG is written after all three reads below land, before any X63 game; the
 | | F LOSS, or P INFERIOR | d3 out |
 | H-CTX KILLED **and** N1-P LOSS | — | X63 is not run: only the near-pool d3 remains |
 
+**Rulings of 2026-10-27** (precommit memo §4, accepted before the reads landed): (1) N1-P CONTINUE ⇒ n1 is IN and this PREREG does not wait for look 2 (only a LOSS removes n1). (4) d3 leaves X63 iff D3's registered H class is LOSS, or Δ_P's 97.5 % UB < −2.0 pp; "non-inferiority not shown" alone keeps d3 in. The "F LOSS, or P INFERIOR" row above reads as this.
+
 **Not gates.**
 - **PR-1** (§9): it reads resolution at 20M; X63 reads dose. Its engine, if registered first, is X63's engine (§6.1).
 - **X59-S / X60:** X63 carries no human-data corpus (`n1_hrep_v1` is never merged into a union; the human-data

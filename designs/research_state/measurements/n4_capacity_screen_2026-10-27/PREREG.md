@@ -166,7 +166,9 @@ NEW registration, with its own alpha and its own reason, never this one's look 2
 - **S:** GO-S 0.04 at a true 0; 0.53–0.79 at +2 pp; 0.83–0.98 at +3 pp. NO-GO-S 0.52–0.77 at 0. σ 1.07 / 0.75.
 - **K at 1,000 F games a final:** GO-K 0.04–0.06 at 0; 0.61–0.69 at +3; 0.81–0.89 at +4 pp.
 
-**NOTES** (appended before the first GO, never after any N4 number): none yet.
+**NOTES** (appended before the first GO, never after any N4 number):
+
+**NOTE 1 (2026-10-27, before the first GO; no N4 run exists).** Ruling 2 of the precommit memo `endstate/precommit_reads_2026-10-27.md` §4, accepted by the orchestrator: LR-F look 2 (8.6 GPU-h) runs after X48's arms and before N4 launches. Nothing registered above changes.
 
 ## 10. Files
 

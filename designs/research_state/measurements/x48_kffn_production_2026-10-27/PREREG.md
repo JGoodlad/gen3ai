@@ -280,6 +280,8 @@ CPU only, no lease, `CUDA_VISIBLE_DEVICES=""`, nice 19 on cores 5-7,13-15, from 
   which is LR-F's own lever. C0's mean LR is 1.02–1.05e-4 (review §7).
 - (b) and (d) are labels, not classes, like "LR-confounded": the `n4_screen` rule's params or post-rule lines.
 
+**NOTE 2 (2026-10-27, before the first GO; no X48 run exists).** Ruling 3 of the precommit memo `endstate/precommit_reads_2026-10-27.md` §4, accepted by the orchestrator: on an LR-F GAIN, X48 is not stopped. It finishes and is read as registered (§5 unchanged), and its record carries the label "read at the controller's learning rate"; N4 / N4-P re-register with the floor.
+
 ## 14. FINDINGS at registration (standing rule 7)
 
 1. **The read's rule does not exist yet.** `n4_screen` is N4's, to be built with T69, and needs M2's MIXED class. X48's
