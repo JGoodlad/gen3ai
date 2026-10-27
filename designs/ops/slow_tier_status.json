@@ -3030,42 +3030,42 @@
   },
   "src/main/anchors/anchors_integration_test.py::test_one_capped_real_game_against_metamon_smallrl": {
    "status": "pass",
-   "commit": "4d8d9eef82cfbc50256826c0616f60ec2bcc7113",
-   "at": "2026-10-26T05:34:19Z",
-   "duration_s": 31.18,
-   "contention": 1.42,
+   "commit": "acdab92195e115236f224ade922b3172a4bde66b",
+   "at": "2026-10-27T04:38:38Z",
+   "duration_s": 41.9,
+   "contention": 1.74,
    "detail": ""
   },
   "src/main/anchors/anchors_integration_test.py::test_two_real_games_against_metamon_smallrl[node-live]": {
    "status": "pass",
-   "commit": "4d8d9eef82cfbc50256826c0616f60ec2bcc7113",
-   "at": "2026-10-26T05:34:19Z",
-   "duration_s": 33.44,
-   "contention": 1.6,
+   "commit": "acdab92195e115236f224ade922b3172a4bde66b",
+   "at": "2026-10-27T05:26:22Z",
+   "duration_s": 32.19,
+   "contention": 1.4,
    "detail": ""
   },
   "src/main/anchors/anchors_integration_test.py::test_two_real_games_against_metamon_smallrl[rust-core]": {
    "status": "pass",
-   "commit": "4d8d9eef82cfbc50256826c0616f60ec2bcc7113",
-   "at": "2026-10-26T05:34:19Z",
-   "duration_s": 28.34,
-   "contention": 1.25,
+   "commit": "acdab92195e115236f224ade922b3172a4bde66b",
+   "at": "2026-10-27T05:26:22Z",
+   "duration_s": 45.28,
+   "contention": 1.44,
    "detail": ""
   },
   "src/main/anchors/anchors_integration_test.py::test_two_real_games_against_metamon_smallrl[rust-live]": {
    "status": "pass",
-   "commit": "4d8d9eef82cfbc50256826c0616f60ec2bcc7113",
-   "at": "2026-10-26T05:34:19Z",
-   "duration_s": 30.54,
-   "contention": 1.32,
+   "commit": "acdab92195e115236f224ade922b3172a4bde66b",
+   "at": "2026-10-27T05:26:22Z",
+   "duration_s": 28.91,
+   "contention": 1.38,
    "detail": ""
   },
   "src/main/anchors/anchors_integration_test.py::test_two_real_games_with_a_RUST_BOT_as_our_side": {
    "status": "pass",
-   "commit": "4d8d9eef82cfbc50256826c0616f60ec2bcc7113",
-   "at": "2026-10-26T05:34:19Z",
-   "duration_s": 25.51,
-   "contention": 1.0,
+   "commit": "acdab92195e115236f224ade922b3172a4bde66b",
+   "at": "2026-10-27T04:38:38Z",
+   "duration_s": 29.27,
+   "contention": 1.16,
    "detail": ""
   },
   "src/main/anchors/ensemble_router_regime_integration_test.py::test_install_instruments_the_real_router_class": {
@@ -3086,18 +3086,18 @@
   },
   "src/main/anchors/live_side_test.py::test_a_rust_bot_plays_our_side_on_its_own_reading_and_its_streams_are_seeded": {
    "status": "pass",
-   "commit": "0d95ac99427cb38d6381f3c2d91cb483e899c8cb",
-   "at": "2026-10-26T16:55:19Z",
-   "duration_s": 5.32,
-   "contention": 1.23,
+   "commit": "acdab92195e115236f224ade922b3172a4bde66b",
+   "at": "2026-10-27T04:38:38Z",
+   "duration_s": 10.78,
+   "contention": 2.1,
    "detail": ""
   },
   "src/main/anchors/registry_pins_test.py::test_the_real_peer_started_from_a_panel_config_verifies_its_weights": {
    "status": "pass",
-   "commit": "0d95ac99427cb38d6381f3c2d91cb483e899c8cb",
-   "at": "2026-10-26T16:55:19Z",
-   "duration_s": 6.07,
-   "contention": 1.0,
+   "commit": "acdab92195e115236f224ade922b3172a4bde66b",
+   "at": "2026-10-27T04:38:38Z",
+   "duration_s": 6.08,
+   "contention": 1.8,
    "detail": ""
   },
   "src/main/anchors/weight_pins_integration_test.py::test_a_wrong_sha_a_missing_revision_and_an_unpinned_load_are_each_refused": {
@@ -4702,10 +4702,10 @@
   },
   "src/main/x35/kakuna_test.py::test_the_real_peer_started_from_a_derived_config_verifies_the_registry_weights": {
    "status": "pass",
-   "commit": "c5c0fddb3725b7b739df3e2b0130b0c4e962704d",
-   "at": "2026-10-26T15:47:07Z",
-   "duration_s": 10.14,
-   "contention": 3.47,
+   "commit": "acdab92195e115236f224ade922b3172a4bde66b",
+   "at": "2026-10-27T04:38:38Z",
+   "duration_s": 8.09,
+   "contention": 2.25,
    "detail": ""
   },
   "src/node_free_search_integration_test.py::test_search_replay_and_the_prober_run_with_node_impossible": {
@@ -4790,18 +4790,18 @@
   },
   "src/utils/bridge/ws_frontend_integration_test.py::test_a_battle_is_backed_by_exactly_one_bridge_child_that_is_reaped": {
    "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:11:57Z",
-   "duration_s": 1.95,
-   "contention": 3.18,
+   "commit": "acdab92195e115236f224ade922b3172a4bde66b",
+   "at": "2026-10-27T04:38:38Z",
+   "duration_s": 1.73,
+   "contention": 2.66,
    "detail": ""
   },
   "src/utils/bridge/ws_frontend_integration_test.py::test_two_clients_complete_a_two_battle_series_over_the_websocket": {
    "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:11:57Z",
-   "duration_s": 4.16,
-   "contention": 3.57,
+   "commit": "acdab92195e115236f224ade922b3172a4bde66b",
+   "at": "2026-10-27T04:38:38Z",
+   "duration_s": 20.04,
+   "contention": 1.74,
    "detail": ""
   },
   "src/utils/compile_pool_teardown_test.py::test_the_compile_pool_is_gone_after_its_module_and_the_check_sees_a_live_one": {
@@ -5005,5 +5005,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-27T03:00:28Z"
+ "last_written": "2026-10-27T05:26:22Z"
 }

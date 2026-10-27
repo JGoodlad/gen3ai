@@ -155,7 +155,8 @@ def _group(cells: Mapping[str, Any], lane: str, name: Any) -> Dict[str, Any]:
 def imported_s(entry: Mapping[str, Any], *, want_refpop: Optional[str] = None) -> Dict[str, Optional[float]]:
     """``{seed: S_pp}`` of ``entry["arm"]`` from ANOTHER read's committed S results (``finals`` rows of a g1 / d1s /
     sprt ``results.json``), its sha256 checked (``entry = {path, sha256, arm}``): a banked control, never re-played."""
-    from main.reads.models import sha256_file, spec_path
+    from main.reads.models import spec_path
+    from utils.hashing import sha256_file
 
     p = spec_path(str(entry["path"]))
     got = sha256_file(p)
@@ -345,7 +346,8 @@ def imported_d1(entry: Mapping[str, Any]) -> Dict[str, Any]:
     """The OFF side ``{h: {off, ties, units}, p: {off, per_final, panel, team_set}}`` of ANOTHER read's committed
     d1 input (``d1_read/read_look2_input.json``), the file's sha256 checked, restricted to ``labels``' seeds: a
     banked control, never re-played (D3's PREREG §3 / §4)."""
-    from main.reads.models import sha256_file, spec_path
+    from main.reads.models import spec_path
+    from utils.hashing import sha256_file
 
     path = spec_path(str(entry["path"]))
     got = sha256_file(path)
@@ -669,7 +671,8 @@ def banked_units(entry: Mapping[str, Any]) -> Dict[str, Dict[int, Dict[str, Any]
     """``{teamset: {unit_seed: {wins, ties, n, games}}}`` from ANOTHER read's committed per-game rows
     (``entry = {path, sha256, cells: {teamset: read_cell}}``), the file's sha256 checked: the banked control."""
     from main.reads.assemble import GAME_KEYS
-    from main.reads.models import sha256_file, spec_path
+    from main.reads.models import spec_path
+    from utils.hashing import sha256_file
 
     p = spec_path(str(entry["path"]))
     got = sha256_file(p)

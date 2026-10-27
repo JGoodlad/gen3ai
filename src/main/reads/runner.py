@@ -40,6 +40,7 @@ from main.reads.assemble import AssembleError
 from main.reads import models as M
 from main.reads import supervisors as SV
 from main.reads.spec import ReadSpec, load as load_spec
+from utils.filelock import try_exclusive
 
 CORES = "5-7,13-15"
 S_CAP_GB = 12
@@ -364,12 +365,9 @@ def _s_pending(spec: ReadSpec, state: Path, models: Dict[str, Dict[str, Any]]) -
 
 # -------------------------------------------------------------------------------------------- run
 def _lock(state: Path, lane: str) -> Any:
-    fh = open(LY.lane_lock(state, lane), "w")  # noqa: SIM115 - held for the supervisor's life
-    try:
-        fcntl.flock(fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
-    except OSError:
-        fh.close()
-        raise RunError(f"another {lane} supervisor holds {LY.lane_lock(state, lane)}") from None
+    fh = try_exclusive(LY.lane_lock(state, lane), "w")
+    if fh is None:
+        raise RunError(f"another {lane} supervisor holds {LY.lane_lock(state, lane)}")
     return fh
 
 

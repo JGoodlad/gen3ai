@@ -37,7 +37,6 @@ it was pooled, so the readers do not accept one.
 """
 from __future__ import annotations
 
-import hashlib
 import json
 import math
 from pathlib import Path
@@ -46,6 +45,7 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 import numpy as np
 
 from main.x35.readout import ReadoutInputError
+from utils.hashing import sha256_file
 
 GC_SCHEMA = "x35_gc_pooled_v1"
 METHOD = ("crossed cluster bootstrap: seed pairs x bank battles (one battle draw shared by every pair), "
@@ -145,14 +145,6 @@ def crossed_bootstrap(pairs: Sequence[Tuple[np.ndarray, np.ndarray]], *, n_boot:
     return float(est), float(min(lo, est)), float(max(hi, est))
 
 
-def _file_sha(path: Path) -> str:
-    h = hashlib.sha256()
-    with open(path, "rb") as f:
-        for chunk in iter(lambda: f.read(1 << 20), b""):
-            h.update(chunk)
-    return h.hexdigest()
-
-
 def _side_of(seeds: Sequence[int]) -> Optional[str]:
     for side, pool in SIDE_SEEDS.items():
         if seeds and all(int(s) in pool for s in seeds):
@@ -217,7 +209,7 @@ def pool(side: str, bank_dir: Path, truth_path: Path, reads_dir: Path, pairs: Ma
             except (OSError, ValueError, KeyError):
                 shas[lab] = None
     rec = pool_arrays(side, conts[0], arrays)
-    rec["truth"].update({"path": str(truth_path), "sha256": _file_sha(Path(truth_path)), "rows": len(rows),
+    rec["truth"].update({"path": str(truth_path), "sha256": sha256_file(Path(truth_path)), "rows": len(rows),
                          "ok_rows": sum(1 for r in rows if r.get("ok"))})
     rec["bank"] = {"path": str(bank_dir), "content_sha256": bank.manifest.get("content_sha256"),
                    "decisions": len(bank.decisions)}

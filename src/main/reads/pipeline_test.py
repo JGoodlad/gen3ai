@@ -14,7 +14,7 @@ from agents.training import eval_ledger as L
 from agents.training.eval_ledger import testkit as K
 from main.reads import api, layout as LY
 from main.reads import runner as RN
-from main.reads.models import sha256_file
+from utils.hashing import sha256_file
 from main.x35 import refpop as RP
 
 CODE = {"commit": "a" * 40, "dirty": False, "root": "/tmp/pin"}

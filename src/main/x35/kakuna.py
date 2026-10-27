@@ -52,11 +52,9 @@ revision (``HF_HUB_OFFLINE``, a260e9c3); the weights enter the regime id only wh
 from __future__ import annotations
 
 import argparse
-import fcntl
 import hashlib
 import json
 import os
-import socket
 import subprocess
 import sys
 import time
@@ -64,6 +62,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 
+from utils import ports
+from utils.filelock import try_exclusive
+from utils.hashing import sha256_file
 from utils.paths import repo_path, repo_root
 
 STAGE = repo_path("designs/research_state/measurements/x35_breakers_stage_2026-10-17")
@@ -112,6 +113,8 @@ UNIT_GAMES = 20
 CORES = "5-7,13-15"
 MEM_GB = "12"
 PORT_RANGE = (9540, 9599)
+#: The address a port probe binds (this queue's rule since FR-3: every interface, no ``SO_REUSEADDR``).
+PORT_HOST = "0.0.0.0"
 #: Every supervisor's port claims (one ``<port>.lock`` flock per port, held for the unit's life): two supervisors
 #: never pick the same port, which bind-and-release alone could not promise (D1 look 1's 9540 collision).
 PORT_LOCK_DIR = Path.home() / ".claude" / "jobs" / "x35_kakuna_ports"
@@ -131,17 +134,9 @@ class KakunaError(RuntimeError):
     """A precondition of a unit does not hold (named; the unit does not run)."""
 
 
-def _sha(path: "str | os.PathLike[str]") -> str:
-    h = hashlib.sha256()
-    with open(path, "rb") as f:
-        for chunk in iter(lambda: f.read(1 << 20), b""):
-            h.update(chunk)
-    return h.hexdigest()
-
-
 # ---------------------------------------------------------------------------------------------- the manifest
 def _team_hashes(d: Path, suffix: str) -> Dict[str, str]:
-    return {p.name[: -len(suffix)]: _sha(p) for p in sorted(d.iterdir()) if p.name.endswith(suffix)}
+    return {p.name[: -len(suffix)]: sha256_file(p) for p in sorted(d.iterdir()) if p.name.endswith(suffix)}
 
 
 def build_manifest(config: Path = CONFIG) -> Dict[str, Any]:
@@ -149,7 +144,7 @@ def build_manifest(config: Path = CONFIG) -> Dict[str, Any]:
     ours = Path(cfg["our_team_sources"]["home"]["path"])
     mm = cfg["opponents"]["metamon"]
     theirs = Path(mm["cache_dir"]) / "teams" / mm["team_sets"]["home"] / "gen3ou"
-    return {"schema": MANIFEST_SCHEMA, "config": str(config.relative_to(repo_root())), "config_sha256": _sha(config),
+    return {"schema": MANIFEST_SCHEMA, "config": str(config.relative_to(repo_root())), "config_sha256": sha256_file(config),
             "our_team_dir": str(ours), "our_teams": _team_hashes(ours, ".txt"),
             "metamon_team_dir": str(theirs), "metamon_teams": _team_hashes(theirs, ".gen3ou_team")}
 
@@ -161,7 +156,7 @@ def check_manifest(manifest: Path = MANIFEST, config: Path = CONFIG, *,
     probs: List[str] = []
     if m.get("schema") != MANIFEST_SCHEMA:
         probs.append(f"manifest schema {m.get('schema')!r}")
-    if _sha(config) != m["config_sha256"] or m["config_sha256"] != CONFIG_SHA256:
+    if sha256_file(config) != m["config_sha256"] or m["config_sha256"] != CONFIG_SHA256:
         probs.append(f"{config}: sha256 is not the X26 read's {CONFIG_SHA256[:12]}")
     ours = our_dir or Path(m["our_team_dir"])
     theirs = their_dir or Path(m["metamon_team_dir"])
@@ -321,7 +316,7 @@ def plan_units(finals: Sequence[Mapping[str, Any]], *, hash_models: bool = True,
         if f["label"] in seen:
             raise KakunaError(f"final label {f['label']!r} appears twice")
         seen.add(f["label"])
-    shas = {f["label"]: (_sha(f["path"]) if hash_models else "") for f in finals}
+    shas = {f["label"]: (sha256_file(f["path"]) if hash_models else "") for f in finals}
     return [Unit(name=f"{f['label']}__{ts}__{s:02d}", label=str(f["label"]), arm=str(f["arm"]), seed=int(f["seed"]),
                  teamset=ts, unit_seed=s, model=str(f["path"]), model_sha256=shas[f["label"]], opponent=opponent,
                  belief_prior_mix=(None if f.get("belief_prior_mix") is None else float(f["belief_prior_mix"])),
@@ -353,36 +348,20 @@ def is_done(state: Path, u: Unit) -> bool:
 
 def choose_port(lo: int = PORT_RANGE[0], hi: int = PORT_RANGE[1]) -> int:
     """The first 95xx port nobody holds (bound and released at once; 8000 / 8001 are never in range)."""
-    for p in range(lo, hi + 1):
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            try:
-                s.bind(("0.0.0.0", p))
-            except OSError:
-                continue
-            return p
-    raise KakunaError(f"no free port in {lo}-{hi}")
+    p = ports.first_bindable(lo, hi, host=PORT_HOST, reuse_addr=False)
+    if p is None:
+        raise KakunaError(f"no free port in {lo}-{hi}")
+    return p
 
 
 def claim_port(lo: int = PORT_RANGE[0], hi: int = PORT_RANGE[1], lock_dir: Path = PORT_LOCK_DIR) -> Tuple[int, Any]:
     """``(port, held lock file)``: the first 95xx port no OTHER supervisor has claimed (an exclusive flock on
-    ``<lock_dir>/<port>.lock``) and nobody holds (bound and released at once). The caller keeps the file open until
-    its unit ends; closing it releases the claim."""
-    lock_dir.mkdir(parents=True, exist_ok=True)
-    for p in range(lo, hi + 1):
-        fh = open(lock_dir / f"{p}.lock", "w")  # noqa: SIM115 - held for the unit's life by the caller
-        try:
-            fcntl.flock(fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except OSError:
-            fh.close()
-            continue
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            try:
-                s.bind(("0.0.0.0", p))
-            except OSError:
-                fh.close()
-                continue
-        return p, fh
-    raise KakunaError(f"no free, unclaimed port in {lo}-{hi}")
+    ``<lock_dir>/<port>.lock``) and nobody holds (bound and released at once; :func:`utils.ports.claim`). The caller
+    keeps the file open until its unit ends; closing it releases the claim."""
+    got = ports.claim(lo, hi, lock_dir, host=PORT_HOST, reuse_addr=False)
+    if got is None:
+        raise KakunaError(f"no free, unclaimed port in {lo}-{hi}")
+    return got
 
 
 def config_of(teamset: str) -> Path:
@@ -432,7 +411,7 @@ def check_panel_cell(teamset: str, *, config: Optional[Path] = None, want_sha256
     cfg_path = config or cell.path
     probs: List[str] = []
     want = want_sha256 or cell.sha256
-    if _sha(cfg_path) != want:
+    if sha256_file(cfg_path) != want:
         probs.append(f"{cfg_path}: sha256 is not the registered {want[:12]}")
     try:
         ent = HP.panel_entry(teamset)
@@ -479,7 +458,7 @@ def preflight(u: Unit) -> None:
     probs = check_derived_config(u)
     if probs:
         raise KakunaError(f"the derived {u.opponent} config does not hold: {probs}")
-    if u.model_sha256 and _sha(u.model) != u.model_sha256:
+    if u.model_sha256 and sha256_file(u.model) != u.model_sha256:
         raise KakunaError(f"{u.model}: sha256 changed since the plan")
 
 
@@ -571,12 +550,11 @@ def cmd_run(state: Path, stop_at: Optional[int]) -> int:
         hold = SV.Hold(state, SV.KAKUNA_LANE)
     except SV.SupervisorError as exc:
         raise KakunaError(str(exc)) from None
-    lock = open(state / "supervisor.lock", "w")
+    lock = try_exclusive(state / "supervisor.lock", "w")
+    if lock is None:
+        hold.close()
+        raise KakunaError(f"another supervisor holds {state / 'supervisor.lock'}")
     try:
-        try:
-            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except OSError:
-            raise KakunaError(f"another supervisor holds {state / 'supervisor.lock'}") from None
         _jl(state, {"event": "supervisor_start", "pid": os.getpid()})
         fails: Dict[str, int] = {}
         for u in load_plan(state):
@@ -711,7 +689,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             return cmd_run(state, a.stop_at_epoch)
         if a.cmd == "smoke":
             u = Unit(name="smoke__home72__00", label="smoke", arm="smoke", seed=0, teamset="home72", unit_seed=0,
-                     model=a.model, model_sha256=_sha(a.model), opponent=SMOKE_OPPONENT, games=a.games)
+                     model=a.model, model_sha256=sha256_file(a.model), opponent=SMOKE_OPPONENT, games=a.games)
             rc = run_unit(state, u)
             s = read_summary(state, u.name) or {}
             keys = ("status", "n", "wins", "losses", "ties", "regime_verified_decisions", "team_source_asymmetry",

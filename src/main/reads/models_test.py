@@ -7,6 +7,7 @@ import pytest
 
 from main.reads import models as M
 from main.reads.spec import Model, ModelRef
+from utils.hashing import sha256_file
 
 NOW = 2_000_000_000.0
 
@@ -67,7 +68,7 @@ def test_the_done_marker_gates_a_quiet_final(tmp_path):
 def test_a_pinned_file_must_hash_to_the_spec(tmp_path):
     f = tmp_path / "a.zip"
     f.write_bytes(b"bytes")
-    good = Model("a", "arm", 1, ModelRef(kind="pinned", path=str(f), sha256=M.sha256_file(f)))
+    good = Model("a", "arm", 1, ModelRef(kind="pinned", path=str(f), sha256=sha256_file(f)))
     assert isinstance(M.resolve(good, step_of=_step(7)), M.Resolved)
     bad = Model("a", "arm", 1, ModelRef(kind="pinned", path=str(f), sha256="0" * 64))
     with pytest.raises(M.ModelError, match="sha256"):
@@ -79,7 +80,7 @@ def test_the_copy_carries_its_provenance_and_refuses_without_model_config(tmp_pa
     z = run / "final_model.zip"
     (run / "final_model.json").write_text('{"sidecar": 1}')
     dst, sha = M.copy_checked(z, tmp_path / "copy")
-    assert sha == M.sha256_file(z) and (tmp_path / "copy" / "model_config.json").is_file()
+    assert sha == sha256_file(z) and (tmp_path / "copy" / "model_config.json").is_file()
     assert (tmp_path / "copy" / "final_model.json").is_file()
     (run / "model_config.json").unlink()
     with pytest.raises(M.ModelError, match="model_config.json"):      # d1_read FINDING 4: the void h_d attempt
@@ -88,7 +89,7 @@ def test_the_copy_carries_its_provenance_and_refuses_without_model_config(tmp_pa
 
 def test_verify_refuses_a_copy_whose_bytes_changed(tmp_path):
     run = _run(tmp_path, final_age=3600)
-    r = M.Resolved("x", str(run / "final_model.zip"), M.sha256_file(run / "final_model.zip"), 1)
+    r = M.Resolved("x", str(run / "final_model.zip"), sha256_file(run / "final_model.zip"), 1)
     e = M.copy_resolved(r, tmp_path / "c")
     M.verify(e)
     with open(e["copy"], "ab") as f:

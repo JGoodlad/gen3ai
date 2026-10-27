@@ -23,7 +23,6 @@ shell ``kill -0`` read a live supervisor as dead).
 """
 from __future__ import annotations
 
-import fcntl
 import hashlib
 import json
 import os
@@ -32,6 +31,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 from utils import procfs
+from utils.filelock import try_exclusive
 
 LOCK_DIR_ENV = "GEN3AI_READS_LOCK_DIR"
 #: The verbs that ARE a lane supervisor (``s-unit`` is a child inside a heavy slot, not a supervisor).
@@ -78,13 +78,10 @@ def acquire(state: "str | os.PathLike[str]", lane: str) -> Any:
     """The path-keyed lane lock (held open for the supervisor's life; closing it releases it)."""
     p = lock_path(state, lane)
     p.parent.mkdir(parents=True, exist_ok=True)
-    fh = open(p, "a+")  # noqa: SIM115 - held for the supervisor's life by the caller
-    try:
-        fcntl.flock(fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
-    except OSError:
-        fh.close()
+    fh = try_exclusive(p, "a+")          # "a+": a refused caller reads the holder's record, so never truncate
+    if fh is None:
         raise SupervisorError(f"another {lane} supervisor holds the path lock of {canonical(state)} "
-                              f"({p}: {_holder(p)})") from None
+                              f"({p}: {_holder(p)})")
     fh.seek(0)
     fh.truncate()
     fh.write(json.dumps({"pid": os.getpid(), "state": canonical(state), "lane": lane,

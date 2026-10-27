@@ -233,3 +233,26 @@ def test_a_standalone_kakuna_queue_stops_when_its_dir_is_moved_from_the_path(tmp
         KA.cmd_run(state, None)
     assert len(played) == 1, "no unit is played into the dir that now sits at the path"
     assert list(state.iterdir()) == [], "the stopped queue wrote nothing into the new dir"
+
+
+def test_the_standalone_kakuna_queue_refused_by_its_in_state_lock_writes_nothing_and_frees_its_path_lock(tmp_path,
+                                                                                                         monkeypatch):
+    """The in-state ``supervisor.lock`` (a supervisor of older code takes only that one) still refuses a second queue
+    (``utils.filelock.try_exclusive``, 2026-10-26 convergence), and the refused queue releases the path lock it took
+    first: nothing is played or written, and a later queue on the same path runs."""
+    from main.x35 import kakuna as KA
+    from utils.filelock import try_exclusive
+
+    played = _stub_play(monkeypatch)
+    state = _kakuna_state(tmp_path)
+    old = try_exclusive(state / "supervisor.lock")
+    assert old is not None
+    try:
+        with pytest.raises(KA.KakunaError, match="another supervisor holds .*supervisor.lock"):
+            KA.cmd_run(state, None)
+        assert played == [] and not (state / "units.jsonl").exists()
+        free = SV.acquire(state, SV.KAKUNA_LANE)          # the refused queue's path lock was released
+        free.close()
+    finally:
+        old.close()
+    assert KA.cmd_run(state, None) == 0 and played == ["a__away__00"]

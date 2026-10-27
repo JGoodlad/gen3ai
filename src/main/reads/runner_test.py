@@ -28,7 +28,7 @@ def _zip(d, name="final_model.zip", data=b"zip", age=None):
 
 
 def _spec(tmp_path, models_dir, *, pin=None):
-    from main.reads.models import sha256_file
+    from utils.hashing import sha256_file
 
     pz = _zip(models_dir / "rb_old", "checkpoint_1_steps.zip", b"old")
     doc = {"schema": "gen3_read_spec_v1", "read": "demo_read_2026-10-25",

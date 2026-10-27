@@ -46,10 +46,8 @@ from pathlib import Path
 from typing import IO, Dict, List, Optional
 
 from utils.paths import repo_path, src_root
+from utils.ports import RESERVED_PORTS, bindable
 
-#: Ports this process must never touch, with the reason stated for the message it prints.
-RESERVED_PORTS = {8000: "the shared DEV server",
-                  8001: "the reserved TRAINING server (the trainer itself is in-process and connects to none)"}
 
 #: The websocket path every Showdown server serves.
 WS_PATH = "/showdown/websocket"
@@ -87,16 +85,6 @@ def refuse_reserved(port: Optional[int]) -> None:
         )
 
 
-def _free(port: int) -> bool:
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        try:
-            s.bind(("127.0.0.1", port))
-        except OSError:
-            return False
-    return True
-
-
 def pick_port(port_range: Optional[List[int]] = None) -> int:
     """The first free port in the configured range, with the two reserved ports excluded.
 
@@ -107,7 +95,7 @@ def pick_port(port_range: Optional[List[int]] = None) -> int:
     for port in range(int(lo), int(hi) + 1):
         if port in RESERVED_PORTS:
             continue
-        if _free(port):
+        if bindable(port):
             return port
     raise ServerError(f"no free port in {lo}-{hi}; another anchor read may still be running")
 

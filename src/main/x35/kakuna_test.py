@@ -12,7 +12,7 @@ from main.x35 import kakuna as KA
 
 
 def test_the_committed_config_is_the_x26_reads_and_our_side_matches_the_manifest():
-    assert KA._sha(KA.CONFIG) == KA.CONFIG_SHA256
+    assert KA.sha256_file(KA.CONFIG) == KA.CONFIG_SHA256
     m = json.loads(KA.MANIFEST.read_text())
     assert m["config_sha256"] == KA.CONFIG_SHA256
     assert KA._team_hashes(KA.OUR_TEAMS, ".txt") == m["our_teams"]
@@ -158,7 +158,7 @@ def test_the_committed_panel_configs_are_the_pinned_ones_and_pilot_their_panel_o
         set(HP.panel_names(held_out_only=True)) - {"heldout72"} - set(HP.SEALED)
     assert not set(KA.PANEL_CELLS) & set(HP.SEALED)
     for ts, cell in KA.PANEL_CELLS.items():
-        assert KA._sha(cell.path) == cell.sha256, ts
+        assert KA.sha256_file(cell.path) == cell.sha256, ts
         cfg = json.loads(cell.path.read_text())
         assert cfg["opponents"]["metamon"]["agents"]["Kakuna"]["checkpoint"] == 34
         assert cfg["opponents"]["metamon"]["team_sets"][cell.teamset] == f"gen3ai_{ts}"
@@ -186,7 +186,7 @@ def _panel_cell(tmp_path: Path, ts: str = "forum72") -> Path:
 
 def test_a_panel_cell_holds_on_byte_copies_and_refuses_a_moved_team_a_missing_one_or_another_config(tmp_path):
     cfg = _panel_cell(tmp_path)
-    sha = KA._sha(cfg)
+    sha = KA.sha256_file(cfg)
     assert KA.check_panel_cell("forum72", config=cfg, want_sha256=sha) == []
     assert any("sha256 is not the registered" in p for p in KA.check_panel_cell("forum72", config=cfg))
     theirs = tmp_path / "cache" / "teams" / "gen3ai_forum72" / "gen3ou"

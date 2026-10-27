@@ -148,7 +148,7 @@ def test_a_port_in_use_is_busy_and_a_closed_one_frees():
     srv.listen(1)
     port = srv.getsockname()[1]
     try:
-        assert not cli._port_free(port)
+        assert not cli.bindable(port)
         assert not cli.wait_port_free(port, timeout_s=0.2, poll_s=0.1)
     finally:
         srv.close()

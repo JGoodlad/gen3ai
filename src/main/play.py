@@ -47,6 +47,7 @@ from typing import Optional
 
 from agents.training.stall import StallConfig
 from main.ladder_guard import DRIFT_MAX_AGE_DAYS
+from utils import ports
 from utils.teambuilder import Gen3Teambuilder
 
 #: The public server's websocket (the official client's). Reached ONLY by the gated public acceptance.
@@ -60,8 +61,7 @@ OWN_ACCOUNTS_ENV = "PS_OWN_ACCOUNTS"
 # stops or dials either port, so a client has no business on them and the refusal is in CODE rather
 # than in a docs warning — see the root CLAUDE.md standing rule 1. Your own server goes on a 9XXX
 # port.
-RESERVED_PORTS = {8000: "the shared DEV server",
-                  8001: "the reserved TRAINING server (the trainer itself is in-process and connects to none)"}
+RESERVED_PORTS = ports.RESERVED_PORTS      # the one dict (utils.ports); named here for this module's refusal
 
 # THE FORFEIT DEADLINE, read from the TRAINER rather than restated. `StallConfig.threshold`
 # defaults to `agents.observation.constants.MAX_TURNS` (250) and is the turn at which a training

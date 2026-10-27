@@ -14,7 +14,7 @@ import pytest
 from main.reads import api, layout as LY
 from main.reads import runner as RN
 from main.reads.imports import ReadImportError
-from main.reads.models import sha256_file
+from utils.hashing import sha256_file
 from main.reads.pipeline_test import CODE as S_CODE, FakeSlot, _refpop, _spec as _s_spec
 
 CODE = {"commit": "b" * 40, "dirty": False, "root": "/tmp/pin"}

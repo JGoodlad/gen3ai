@@ -15,7 +15,6 @@ unit, d1_read FINDING 4). Every later use re-hashes the copy (:func:`verify`).
 """
 from __future__ import annotations
 
-import hashlib
 import os
 import shutil
 import time
@@ -24,6 +23,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Optional
 
 from main.reads.spec import Model, ModelRef
+from utils.hashing import sha256_file
 
 
 class ModelError(RuntimeError):
@@ -43,14 +43,6 @@ class Resolved:
     source: str
     sha256: str
     step: int
-
-
-def sha256_file(path: "str | os.PathLike[str]") -> str:
-    h = hashlib.sha256()
-    with open(path, "rb") as f:
-        for chunk in iter(lambda: f.read(1 << 20), b""):
-            h.update(chunk)
-    return h.hexdigest()
 
 
 def recorded_step(zip_path: "str | os.PathLike[str]") -> int:

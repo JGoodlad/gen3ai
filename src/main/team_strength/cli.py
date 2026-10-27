@@ -12,7 +12,6 @@ import argparse
 import datetime as dt
 import hashlib
 import json
-import socket
 import sys
 import time
 from pathlib import Path
@@ -26,6 +25,7 @@ from main.team_strength import plan as PLN
 from main.team_strength import register as RG
 from main.team_strength import report as RP
 from main.team_strength import x26_lane as XL
+from utils.ports import bindable
 
 def default_metamon_teams() -> Path:
     """Metamon's team cache, from the one anchors config (``designs/ops/anchors.json`` / ``GEN3AI_METAMON_CACHE_DIR``)."""
@@ -87,24 +87,12 @@ def cmd_install(a: argparse.Namespace) -> int:
     return 0
 
 
-def _port_free(port: int) -> bool:
-    """Can a server bind ``port``? SO_REUSEADDR, as a server sets it: the previous unit's closed connections linger in
-    TIME_WAIT for up to a minute, and a bind without it failed right after the first unit (2026-10-18)."""
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        try:
-            s.bind(("127.0.0.1", port))
-            return True
-        except OSError:
-            return False
-
-
 def wait_port_free(port: int, timeout_s: float = 120.0, poll_s: float = 5.0) -> bool:
     """True once ``port`` is bindable, False if it is still busy after ``timeout_s`` (the previous unit's server may
     take a few seconds to exit)."""
     t_end = time.monotonic() + timeout_s
     while True:
-        if _port_free(port):
+        if bindable(port):
             return True
         if time.monotonic() >= t_end:
             return False

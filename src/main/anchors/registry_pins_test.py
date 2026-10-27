@@ -54,7 +54,7 @@ def test_the_committed_panel_config_carries_no_pins_and_stays_byte_identical() -
     path = _panel_config()
     mm = json.loads(path.read_text())["opponents"]["metamon"]
     assert "hf_repo" not in mm and "hf_revision" not in mm and not any("weights" in a for a in mm["agents"].values())
-    assert KA._sha(path) == KA.PANEL_CELLS["heldout72_hpfix"].sha256
+    assert KA.sha256_file(path) == KA.PANEL_CELLS["heldout72_hpfix"].sha256
 
 
 def _write(tmp_path: Path, agents: dict, **meta) -> Path:
