@@ -1,0 +1,145 @@
+{
+ "schema": "gen3_read_spec_v1",
+ "read": "x48_kffn_look1_2026-10-27",
+ "prereg": "designs/research_state/measurements/x48_kffn_production_2026-10-27/PREREG.md",
+ "note": "DRAFT, NOT REGISTERED (no pin; check-spec --pin-pending). X48 look 1 under the n4_screen rule (PREREG §5, §10): S at 2,000 pairs vs the frozen R, K on forum72 alone (50 units = 1,000 games per final), both arms re-played on one playing commit. At registration: add the pin, and the slope group (§8.4: the six +10M nodes as pinned refs by sha256, 500 pairs) once X48's checkpoint_290000xxx files exist.",
+ "models": {
+  "c0_s3501": {
+   "arm": "c0",
+   "seed": 3501,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x35_c0_s3501/final_model.zip",
+    "sha256": "09a6a2df48509a59fd9aefe6d20d9722aad6717f1730c6dfd75274446b283303"
+   }
+  },
+  "c0_s3502": {
+   "arm": "c0",
+   "seed": 3502,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x35_c0_s3502/final_model.zip",
+    "sha256": "7e9a9890e2b397de6d8b87588c597d7f53e39b84efd3d1080305f77dbf22feec"
+   }
+  },
+  "c0_s3503": {
+   "arm": "c0",
+   "seed": 3503,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x35_c0_s3503/final_model.zip",
+    "sha256": "99096be8eccfc1cef4268ab4d6de15063a386cda475e72340212fdbf3a1b7e26"
+   }
+  },
+  "x48kffn_s3501": {
+   "arm": "x48",
+   "seed": 3501,
+   "ref": {
+    "kind": "final",
+    "run": "models/rb_x35_x48kffn_s3501",
+    "min_step": 300000170,
+    "quiet_s": 300
+   }
+  },
+  "x48kffn_s3502": {
+   "arm": "x48",
+   "seed": 3502,
+   "ref": {
+    "kind": "final",
+    "run": "models/rb_x35_x48kffn_s3502",
+    "min_step": 300000170,
+    "quiet_s": 300
+   }
+  },
+  "x48kffn_s3503": {
+   "arm": "x48",
+   "seed": 3503,
+   "ref": {
+    "kind": "final",
+    "run": "models/rb_x35_x48kffn_s3503",
+    "min_step": 300000170,
+    "quiet_s": 300
+   }
+  }
+ },
+ "anchor": {
+  "unfamiliar": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "forum72"
+   ],
+   "unit_seeds": "0-49",
+   "models": [
+    "c0_s3501",
+    "c0_s3502",
+    "c0_s3503",
+    "x48kffn_s3501",
+    "x48kffn_s3502",
+    "x48kffn_s3503"
+   ]
+  }
+ },
+ "s": {
+  "pool": {
+   "refpop": "designs/research_state/measurements/x35_breakers_stage_2026-10-17/reference_population_production.json",
+   "refpop_content_sha256": "cef0960eac605f1dc026442d1089dc23654e23df91010feaaeea7890901e4519",
+   "panel": null,
+   "pairs": 2000,
+   "batch_pairs": 100,
+   "family": "x35_x48",
+   "models": [
+    "c0_s3501",
+    "c0_s3502",
+    "c0_s3503",
+    "x48kffn_s3501",
+    "x48kffn_s3502",
+    "x48kffn_s3503"
+   ]
+  }
+ },
+ "decision": {
+  "rule": "n4_screen",
+  "params": {
+   "on": [
+    "x48kffn_s3501",
+    "x48kffn_s3502",
+    "x48kffn_s3503"
+   ],
+   "off": [
+    "c0_s3501",
+    "c0_s3502",
+    "c0_s3503"
+   ],
+   "s_group": "pool",
+   "anchor_group": "unfamiliar",
+   "s_bar": 2.0,
+   "k_bar": 0.015,
+   "confidence": 0.9,
+   "z": 1.6449,
+   "rule8_eps": 1e-09,
+   "mixed_veto": true,
+   "nogo_scope": {
+    "lever": "per-kind FFN experts",
+    "dose": "20M",
+    "start": "P*",
+    "qualifier": "with the experts' AdamW state copied from the shared FFN (Q-K3)"
+   },
+   "pin_drift": {
+    "s_pp": 56.98,
+    "source": "~/gen3ai_archive/x35_g1/results.json: G1's banked C0 mean S, 500 pairs, on E1 (descriptive: two engines, two pair counts)"
+   },
+   "void": {
+    "k9b_dir": "designs/research_state/measurements/x35_breakers_stage_2026-10-17/k9b",
+    "runs": {
+     "x48kffn_s3501": "models/rb_x35_x48kffn_s3501",
+     "x48kffn_s3502": "models/rb_x35_x48kffn_s3502",
+     "x48kffn_s3503": "models/rb_x35_x48kffn_s3503"
+    },
+    "pin": "f4b25238def57900c0305bb2a3a5a8f9edaef285",
+    "pool_seed": {
+     "fork_step": 280000170
+    }
+   }
+  }
+ }
+}

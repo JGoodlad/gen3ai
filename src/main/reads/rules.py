@@ -23,8 +23,8 @@ THE RULES (:data:`RULES`):
   Δ_H − Δ_F (``d1.reported_panels``), which no rule reads;
 * ``anchor_trajectory`` -- x26c PREREG §5: the goal-(b) bar on an anchor score, CLIMBING / FLAT on its Newcombe
   difference against a comparator, and the in-house S "rising" read against a banked node;
-THE VOID GATE (:func:`void_gate`): an X35-stage rule (``x35_r1``, ``d1``) may register ``params.void = {k9b_dir, runs:
-{label: run dir}}``; ``x35_r1`` on a batch-2 arm (SPRT, LRF) MUST. ``decide`` runs it BEFORE the rule: each named run's
+THE VOID GATE (:func:`void_gate`): an X35-stage rule (``x35_r1``, ``d1``, ``n4_screen``) may register ``params.void =
+{k9b_dir, runs: {label: run dir}}``; ``x35_r1`` on a batch-2 arm (SPRT, LRF) and ``n4_screen`` always MUST. ``decide`` runs it BEFORE the rule: each named run's
 AM-6 K9(b) record (``<k9b_dir>/<run>.json``) must read PASS, and a batch-2 arm's V-S1 / V-S2 (SPRT) or LR-F KL guard
 (``main.x35.batch2_void.read_void``) too; anything else refuses the decision (a VOID seed enters no read; SPRT's
 ``assemble.py`` STOP, be60f24f FINDING 3). Two further guards read the RUN DIR's own artefacts and are OPT-IN, each a
@@ -58,6 +58,9 @@ with its reasons (N1-P FINDING 7).
   label against its raw twin, paired by deal in ONE ``per_game`` group; I = G_U − G_home72 and G_U by a within-panel
   unit bootstrap against exact-fraction bars, I futility-only at phase 1; VOID on G-PREFIX, engines, bytes or the
   search config.
+* ``n4_screen`` -- the one-look capacity screen (N4 PREREG §5 with its review's M2 / M4 / M5; X48 PREREG §5;
+  :mod:`main.reads.rules_n4_screen`): S by Welch 90 % on the finals, K by the ``d1`` estimators on forum72;
+  INCONCLUSIVE > MIXED > GO > NO-GO > UNDECIDED, the LR-confounded label and M5's NO-GO wording; an X35-stage record.
 """
 from __future__ import annotations
 
@@ -1368,6 +1371,11 @@ from main.reads import rules_search_headroom as _SH  # noqa: E402  (it imports t
 
 RULES["search_headroom"] = Rule("search_headroom", _SH.RULE_DOCS["search_headroom"], _SH.check, _SH.inputs, _SH.decide,
                                 False)
+
+from main.reads import rules_n4_screen as _N4  # noqa: E402  (it imports this module lazily: no cycle at import)
+
+RULES["n4_screen"] = Rule("n4_screen", _N4.RULE_DOCS["n4_screen"], _N4.check, _N4.inputs, _N4.decide, True,
+                          _N4.reported)
 
 
 def inputs(rule: str, cells: Mapping[str, Any], params: Mapping[str, Any], spec: Any) -> Dict[str, Any]:

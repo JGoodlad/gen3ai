@@ -41,7 +41,7 @@ refusal.
 | `anchor` | `{group: {opponent, teamsets, unit_seeds, models, per_game?, import?}}`: the external-anchor cells (§3). `opponent` is one of `metamon:Kakuna`, `SmallRL`, `PastaMittens`, `LargeRL`, `LargeIL` (`kakuna.OPPONENTS`). `per_game: true` plays each seed's 20-game series as 20 ONE-GAME units (§3, "Per-game units"); a group holding a `search` model must be `per_game`, import nothing, and hold exactly one RAW TWIN per searched label (the same `ref`, the same other load options: `spec.search_twins`) |
 | `s` | `{group: {refpop, refpop_content_sha256, panel, pairs, batch_pairs, family, models, regime_id?, import?}}`: S against a frozen R. **One eval-ledger family per group**, because a family holds one regime |
 | `…import` | `{state, spec_sha256, group, models}`: these models' cells come from group `group` of an EARLIER read's state, never re-played here (§3) |
-| `decision` | `{rule, params, allow_partial_at_stop?}`: a rule from `main.reads.rules.RULES`, with its registered parameters checked at load. `allow_partial_at_stop: true` registers that the PREREG accepts a reduced read at the registered stop (§6); it is refused for `x35_r1` and `d1` (their records are consumed by `main.x35.batch`, which does not read the class) and for a spec with no anchor group |
+| `decision` | `{rule, params, allow_partial_at_stop?}`: a rule from `main.reads.rules.RULES`, with its registered parameters checked at load. `allow_partial_at_stop: true` registers that the PREREG accepts a reduced read at the registered stop (§6); it is refused for `x35_r1`, `d1` and `n4_screen` (their records are consumed by `main.x35.batch`, which does not read the class) and for a spec with no anchor group |
 | `pin` | optional. The commit the playing checkout must be at, with a clean tracked tree. It must EXIST before the spec (the registration flow below) |
 
 Example. This is x26c's read written as a spec; `golden_test.x26c_spec` parses it.
@@ -466,6 +466,7 @@ params)` produces the verdict as recorded. A decision can therefore be re-checke
 | `x59s_gate` | X59-S's per-contrast floor gate (Amendment 5 A5.1) on the imported pilot and repeat groups: a contrast is UNINFORMATIVE iff both arms' pilot means are <= the better floor reference + `band`; releases booleans only; VOID 6 | new (2026-10-25) |
 | `x59s` | X59-S's full read: `x59s_read.read` / `inhouse` / `verdict` on the Kakuna cells and the read's sha-recorded artefacts (three contrasts with A5.2's widened interval, the gate's booleans, yardsticks); VOID 3, 5, 6, 7 or a second engine | new (2026-10-25) |
 | `x59s_restriction` | X59-S's Delta_restriction = S-P0 - S-P on U with A5.2's interval (Amendment 6 A6.1), the closure's guard; the full read takes its record as an optional artefact | new (2026-10-26) |
+| `n4_screen` | the one-look capacity screen (N4 PREREG §5 with its review's M2 / M4 / M5; X48 PREREG §5, §8; `rules_n4_screen`): S = Welch two-sided `confidence` (90 %) on the finals' S, every cell at least the S group's `pairs` (X48 2,000, N4 500); K = the `d1` estimators on the anchor group (forum72) at `z`, φ̂-widened, φ̂ printed. In order: INCONCLUSIVE (a missing input, an S cell short, K beyond one uncounted unit per arm (`d1.min_games`), unplayed units, a meter on two or unknown engines) → MIXED (`mixed_veto`: GO-S with UB_K < 0 or GO-K with UB_S < 0; classed UNDECIDED, never GO) → GO (`GO (both)` / `(in-house)` / `(unfamiliar)`) → NO-GO (NO-GO-S and not GO-K, M5's text from `nogo_scope` (+ its `qualifier`), `LR-confounded` when the ON arm's mean `snapshot_history` LR < 0.9× the OFF arm's; a GO is `LR-elevated` above 1.1×) → UNDECIDED. Exact fractions, `rule8_eps`; `near_scope` `bound` (X48) or `meter` (N4: a near bound reads its meter UNDECIDED). `params.on` / `off` are label lists. REPORTED: R1 at look 1, per-member Δ_S, the `slope` group (reported-only), `pin_drift`, σ̂, the S power at σ̂ (seeded). An X35-stage record (top-level `arm` = `batch.READ_LABEL` of the ON arm, `look` 1; no top-level `r1`) | new (2026-10-27) |
 
 **The estimators are not re-derived.** Each is the one function a read already used, re-exported under a name:
 
@@ -484,8 +485,8 @@ Migrated here from the scripts, which had no home in `src/`:
 
 A new rule is a new `Rule` entry with a test. It never replaces an existing rule's numbers.
 
-**The VOID gate** (`rules.void_gate`; be60f24f FINDING 3). An X35-stage rule (`x35_r1`, `d1`) may register
-`params.void = {k9b_dir, runs: {label: run dir}}`, every ON model named; `x35_r1` on a batch-2 arm (SPRT, LRF) MUST
+**The VOID gate** (`rules.void_gate`; be60f24f FINDING 3). An X35-stage rule (`x35_r1`, `d1`, `n4_screen`) may register
+`params.void = {k9b_dir, runs: {label: run dir}}`, every ON model named; `x35_r1` on a batch-2 arm (SPRT, LRF) and `n4_screen` always MUST
 (the spec is refused without it). `decide`, and so `record`, runs it FIRST and writes `void.json`: each run's AM-6
 K9(b) record (`<k9b_dir>/<run>.json`) must read PASS, and on a batch-2 arm its V-S1 / V-S2 (SPRT) or LR-F KL guard
 (`main.x35.batch2_void.read_void`) too. Any other verdict refuses the decision and names the seed: a VOID seed enters no
@@ -542,7 +543,7 @@ A lane that finished (`done`) with exhausted units is not at a stop, and the ref
 The record is refused if any regime id is missing (a reported-only group listed INCOMPLETE excepted), a model was
 never resolved, a ledger digest or the playing commit is missing, `cells_inconclusive` is not empty (a verdict decided
 on cells assemble could not count: a wrong regime or panel, unplayed units unless the reduced read above, a cell short of the spec's `pairs`), the
-VOID gate holds a non-PASS run (or a batch-2 arm's record carries none), or the verdict is not the decision's. An X35-stage rule (`x35_r1`, `d1`) also carries the
+VOID gate holds a non-PASS run (or a batch-2 arm's record carries none), or the verdict is not the decision's. An X35-stage rule (`x35_r1`, `d1`, `n4_screen`) also carries the
 decision's keys at the top level. When written to `<stage>/reads/<arm>_look<k>.json`, the file therefore loads in
 `main.x35.batch.read_record` and `final_class` unchanged. A ledger entry cites the record by its path and
 `record.summary_line`.
@@ -631,7 +632,8 @@ skips and names why.
   under `not_reported`.
 
 - **Reported-only extras** (SPRT's mechanism block, dose from launcher summaries) stay per-read. A rule's `params`
-  can carry them, but only the VOID gate reads run dirs.
+  can carry them, but only the VOID gate and `n4_screen`'s mean LR (`metadata.json`) read run dirs. `n4_screen` lists
+  what it cannot compute (ρ, approx KL, G-F, the experts' divergence, home72, K's power) under `not_reported`.
 - **A repin's reach.** `repin` proves the TRACKED play path identical (§3). It cannot see what git does not hold (the
   Metamon cache, panel team dirs outside the repo), and its closure is static (a module named only in a string is not
   followed; the prefixes over-approximate for that). A change in the box's untracked inputs is the units' own preflight's.

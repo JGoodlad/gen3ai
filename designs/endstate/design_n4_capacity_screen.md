@@ -186,13 +186,13 @@ compatible". A bare `checkargs` on T\* judges the argv against T\*'s OWN recorde
    - `toy_n4ffn` is the `toy_c0n4` argv token for token + `--grow trunk_ffn_dim=1024`.
 3. **The descriptor readers**, generalising `main.x35.x47 norms` / `policy-diff` to any declared growth through a
    per-row `zero_new` hook (§5).
-4. **The read rule** `n4_screen` in `main.reads.rules` (PREREG §5):
-   - S from an `s` group;
-   - K from an `anchor` group (forum72);
-   - `welch_interval` at confidence 0.90;
-   - the `d1` estimators (`strat_score`, `overdispersion`, `widen`) at z = 1.6449;
-   - the VOID gate (K9(b) + the growth stamps).
-   - It ships with a 2-pair smoke of a grown toy against T\* and against P\*, through `main.h2h` and through
+4. **The read rule** `n4_screen` (PREREG §5) is **BUILT** (2026-10-27, ahead of T69, for X48;
+   `src/main/reads/rules_n4_screen.py`, `designs/tools/reads.md` §5): S by `welch_interval` at 0.90 from an `s` group,
+   K by the `d1` estimators at z = 1.6449 from an `anchor` group (forum72), M2's MIXED (`mixed_veto`), M4's LR label,
+   M5's NO-GO text (`nogo_scope`). N4's spec registers `near_scope` `meter` (§5.3: a near bound reads its meter
+   UNDECIDED; X48's wording is `bound`), its `pairs` (500, or 2,000 under M3) as the cell floor, and the K9(b) VOID
+   gate; the growth stamps stay operator checks (the gate reads K9(b) only).
+   - T69 still ships a 2-pair smoke of a grown toy against T\* and against P\*, through `main.h2h` and through
      `main.anchors` against Kakuna (the X47 smoke's pattern: three architectures need split engines).
 
 ---
@@ -477,3 +477,4 @@ eval traces; the PREREG's `battery_baseline.log`):
 |---|---|---|---|---|
 | 2026-10-27 | **N4 DESIGNED AND REGISTERED (DRAFT)** (N4 designer, orchestrator brief; CPU only) | A growth fork at T\*: `--grow trunk_ffn_dim=1024` (a zero-init FFN branch per round, bit-identical at the fork) vs a same-pin C0′, 3 + 3 seeds × 70M at a new pin `N4_PIN`, ≈ 30 GPU-h. A one-look SCREEN on matched-step finals: S at one-sided 95 % (GO LB > 0, NO-GO UB < +2.0 pp) and Kakuna F as a large-effect detector (GO LB > 0). The mechanism read (engagement + battery v3) is reported. The bridge: GO licenses N4-P at the PR rule; NO-GO transfers weakly; X48 is the production complement | the fresh 2× `D_MODEL` toy at matched wall clock (the T-ENT reversal); fresh to the plateau (≈ 110–160 GPU-h); KFFN on the toy (refused by `checkargs`); depth (X47 done); reusing the banked toy C0 (no clean pin); X35 R1 as the decider (+3 pp → GAIN 0.16–0.32); a look 2 (≈ +20 GPU-h, 0.4–0.5 likely under a null) | §1.2's dry runs at `90708bff`; `power.log`; UNDERSTANDING §4.9; `toy_x47_look1.json`; the plasticity check (`8bebdfe3`); the battery on T\*, toy C0 s3601 and X47 s3601 (`battery_baseline.log`) |
 | 2026-10-27 | **Ruling 2 of the precommit memo accepted** (doc editor; docs only) | LR-F look 2 runs after X48 and before N4 launches (PREREG NOTE 1) | — | `precommit_reads_2026-10-27.md` §4 |
+| 2026-10-27 | **The read rule `n4_screen` BUILT before T69** (for X48, which registered under N4's screen) | one rule for both reads, the differences as spec params (`near_scope`, `mixed_veto`, `nogo_scope`, the S group's `pairs`) | two copies of the screen | `rules_n4_screen_test.py`; X48 `read_spec.draft.json` passes `check-spec --pin-pending` |

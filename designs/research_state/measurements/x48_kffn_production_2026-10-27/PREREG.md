@@ -282,6 +282,29 @@ CPU only, no lease, `CUDA_VISIBLE_DEVICES=""`, nice 19 on cores 5-7,13-15, from 
 
 **NOTE 2 (2026-10-27, before the first GO; no X48 run exists).** Ruling 3 of the precommit memo `endstate/precommit_reads_2026-10-27.md` §4, accepted by the orchestrator: on an LR-F GAIN, X48 is not stopped. It finishes and is read as registered (§5 unchanged), and its record carries the label "read at the controller's learning rate"; N4 / N4-P re-register with the floor.
 
+**NOTE 3 (2026-10-27, before the first GO; no X48 run exists): the rule as built.** `main.reads` rule `n4_screen`
+(`src/main/reads/rules_n4_screen.py`) exists with M2's MIXED; [`read_spec.draft.json`](read_spec.draft.json) passes
+`check-spec --pin-pending`. Where it differs from §10's list, and how NOTEs 1-2 land:
+- `on` / `off` are model-label lists (N4 §7's wording). Added params: `nogo_scope` (M5's text: lever "per-kind FFN
+  experts", dose "20M", start "P\*", and NOTE 1 (c)'s `qualifier`), `pin_drift` (§8.6: 56.98 and its source) and, at
+  registration, `slope` (§8.4: the six +10M nodes as `pinned` refs by sha256, 500 pairs; X48's do not exist yet, so the
+  draft omits them). `void` also registers the run-dir guards `pin` (VOID 3) and `pool_seed` (VOID 5's schema and
+  fork step; its `grown` block is not read by the guard).
+- `near_scope` is `bound`, §5.3's "a bound within 1e-9 ... is NOT past it" (N4 §5.3's "that meter is UNDECIDED" is
+  `meter`, for N4's own spec).
+- §8.3's mean LR is each run's mean `snapshot_history` `lr` (`metadata.json`), averaged over the three finals. The rule
+  applies "LR-confounded" (NO-GO, < 0.9×) and NOTE 1 (d)'s "LR-elevated" (GO, > 1.1×); a ratio within 1e-9 of a bar is
+  not past it. NOTE 1 (b) "experts not engaged" and NOTE 2's "read at the controller's learning rate" need inputs the
+  cells do not hold (§8.7's script; LR-F look 1's class): they are post-rule lines, named in the decision's
+  `not_reported`. So are the approx KL, ρ, G-F, the experts' divergence, home72 and K's power at φ̂. The UNDECIDED
+  line's power is S's, a seeded Monte Carlo at the observed σ.
+- "A K unit short beyond the `main.reads` refusal budget" is `d1`'s floor: at most one uncounted 20-game unit per arm
+  (2,980 of 3,000 games); an unplayed unit refuses the record.
+- A VOID seed refuses the decision at the registered gate (K9(b), pin, pool seed) instead of reading INCONCLUSIVE;
+  NOTE 1 (a)'s exact growth stamp and VOID 6's KL stay the arm-end script's and the operator's.
+- The record carries R1 under `reported.r1_look1`, never at the top level, so `batch.final_class` cannot read R1 as
+  X48's class.
+
 ## 14. FINDINGS at registration (standing rule 7)
 
 1. **The read's rule does not exist yet.** `n4_screen` is N4's, to be built with T69, and needs M2's MIXED class. X48's
