@@ -1,0 +1,121 @@
+{
+ "seed": 61026,
+ "reps": 60000,
+ "primary": {
+  "sigma 0.00 pp, delta +0 pp": {
+   "GAIN": 0.007,
+   "NO-USEFUL-GAIN": 0.788,
+   "stop_at_look1": 0.506
+  },
+  "sigma 0.00 pp, delta +3 pp": {
+   "GAIN": 0.8,
+   "NO-USEFUL-GAIN": 0.011,
+   "stop_at_look1": 0.005
+  },
+  "sigma 1.00 pp, delta +0 pp": {
+   "GAIN": 0.02,
+   "NO-USEFUL-GAIN": 0.667,
+   "stop_at_look1": 0.501
+  },
+  "sigma 1.00 pp, delta +3 pp": {
+   "GAIN": 0.702,
+   "NO-USEFUL-GAIN": 0.028,
+   "stop_at_look1": 0.018
+  },
+  "sigma 2.00 pp, delta +0 pp": {
+   "GAIN": 0.034,
+   "NO-USEFUL-GAIN": 0.365,
+   "stop_at_look1": 0.503
+  },
+  "sigma 2.00 pp, delta +3 pp": {
+   "GAIN": 0.431,
+   "NO-USEFUL-GAIN": 0.05,
+   "stop_at_look1": 0.068
+  },
+  "sigma 2.75 pp, delta +0 pp": {
+   "GAIN": 0.029,
+   "NO-USEFUL-GAIN": 0.2,
+   "stop_at_look1": 0.504
+  },
+  "sigma 2.75 pp, delta +3 pp": {
+   "GAIN": 0.274,
+   "NO-USEFUL-GAIN": 0.048,
+   "stop_at_look1": 0.119
+  }
+ },
+ "contrast_path": {
+  "sigma 0.0 pp": {
+   "P(look-1 stop)": 0.502,
+   "LADDER-BETTER overall / | stop / | continue": [
+    0.007,
+    0.004,
+    0.011
+   ],
+   "FORUM-BETTER overall / | stop / | continue": [
+    0.008,
+    0.012,
+    0.005
+   ]
+  },
+  "sigma 1.0 pp": {
+   "P(look-1 stop)": 0.505,
+   "LADDER-BETTER overall / | stop / | continue": [
+    0.018,
+    0.008,
+    0.027
+   ],
+   "FORUM-BETTER overall / | stop / | continue": [
+    0.02,
+    0.03,
+    0.009
+   ]
+  },
+  "sigma 2.0 pp": {
+   "P(look-1 stop)": 0.501,
+   "LADDER-BETTER overall / | stop / | continue": [
+    0.033,
+    0.016,
+    0.049
+   ],
+   "FORUM-BETTER overall / | stop / | continue": [
+    0.041,
+    0.066,
+    0.016
+   ]
+  }
+ },
+ "kakuna_specific_guard_P(I_F point <= 0)": {
+  "per-final S SD 0.37 pp": {
+   "true in-house gain 0.0 pp": 0.5,
+   "true in-house gain 0.25 pp": 0.143,
+   "true in-house gain 0.5 pp": 0.016,
+   "true in-house gain 1.0 pp": 0.0
+  },
+  "per-final S SD 0.6 pp": {
+   "true in-house gain 0.0 pp": 0.5,
+   "true in-house gain 0.25 pp": 0.255,
+   "true in-house gain 0.5 pp": 0.094,
+   "true in-house gain 1.0 pp": 0.004
+  },
+  "per-final S SD 0.86 pp": {
+   "true in-house gain 0.0 pp": 0.5,
+   "true in-house gain 0.25 pp": 0.323,
+   "true in-house gain 0.5 pp": 0.179,
+   "true in-house gain 1.0 pp": 0.033
+  }
+ },
+ "r72_welch_mde80_pp": {
+  "per-final S SD 0.37 pp": {
+   "3 v 3": 1.12,
+   "5 v 5": 0.75
+  },
+  "per-final S SD 0.6 pp": {
+   "3 v 3": 1.82,
+   "5 v 5": 1.21
+  },
+  "per-final S SD 0.86 pp": {
+   "3 v 3": 2.61,
+   "5 v 5": 1.74
+  }
+ }
+}
