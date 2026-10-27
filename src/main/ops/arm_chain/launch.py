@@ -205,9 +205,9 @@ class X35Launcher:
             raise Hold(f"{it.key}: the kit names arm {it.arm} s{it.seed}'s run {d.run_name!r}, not {it.run!r}")
         return d
 
-    def find_go_wrapper(self, it: ArmItem, proc: str = "/proc") -> Optional[ProcRef]:
-        """A live ``launch_x35.sh <arm> <seed> … GO`` process for this arm (by argv), or None: the evidence that a
-        GO is in flight before the kit's GO-time pre-checks (minutes) let it write its START line."""
+    def _go_wrappers(self, proc: str, arm_seed: Optional[List[str]]) -> List[ProcRef]:
+        """Live ``launch_x35.sh <arm> <seed> … GO`` processes (by argv; ``arm_seed`` None = any arm), the OUTERMOST
+        of each (the wrapper's own subshells carry the same argv)."""
         from utils import procfs
         from main.ops.arm_chain.procwatch import ref_of
         procs = procfs.snapshot(proc)
@@ -217,15 +217,25 @@ class X35Launcher:
             if self.script not in argv or argv[-1:] != ["GO"]:
                 return False
             i = argv.index(self.script)
-            return argv[i + 1:i + 3] == [it.arm, str(it.seed)]
+            return arm_seed is None or argv[i + 1:i + 3] == arm_seed
         hits = [pid for pid in procs if matches(pid)]
-        # the wrapper's own subshells carry the same argv: take the OUTERMOST (its parent is not a match)
+        out = []
         for pid in sorted(hits):
             if procs[pid].ppid not in hits:
                 ref = ref_of(pid, proc)
                 if ref is not None:
-                    return ref
-        return None
+                    out.append(ref)
+        return out
+
+    def find_go_wrapper(self, it: ArmItem, proc: str = "/proc") -> Optional[ProcRef]:
+        """A live ``launch_x35.sh <arm> <seed> … GO`` process for this arm (by argv), or None: the evidence that a
+        GO is in flight before the kit's GO-time pre-checks (minutes) let it write its START line."""
+        refs = self._go_wrappers(proc, [it.arm, str(it.seed)])
+        return refs[0] if refs else None
+
+    def live_go_wrappers(self, proc: str = "/proc") -> List[ProcRef]:
+        """Every live GO wrapper of this kit, for any arm: a GO beside one is a second GO (review 10-26, finding 7)."""
+        return self._go_wrappers(proc, None)
 
     def launcher_pidfile(self, it: ArmItem) -> str:
         return os.path.join(self.spec.job_dir, f"{it.run}.pid")

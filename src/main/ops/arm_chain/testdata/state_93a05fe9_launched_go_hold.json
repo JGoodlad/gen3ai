@@ -1,0 +1,122 @@
+{
+ "lock_file": "<pid>\\n",
+ "note": "a1 HELD at LAUNCHED: the kit's GO-time pre-check HELD before START (no run dir)",
+ "state": {
+  "chain": "t",
+  "history": [
+   {
+    "at": "2026-10-26T21:25:50-07:00",
+    "from": "PENDING",
+    "item": "arm:rb_a1_s1",
+    "note": "dry run PASS at pin 2b0c66088730: FORK of @ROOT@/models/parent_run, +4,000 steps; disk 29.8 GiB free (need >= 0)",
+    "to": "PRECHECKED"
+   },
+   {
+    "at": "2026-10-26T21:25:50-07:00",
+    "from": "PRECHECKED",
+    "item": "arm:rb_a1_s1",
+    "note": "GO at pin 2b0c66088730 (GO by orchestrator test)",
+    "to": "GOING"
+   },
+   {
+    "at": "2026-10-26T21:25:50-07:00",
+    "from": "GOING",
+    "item": "arm:rb_a1_s1",
+    "note": "launch wrapper pid 2320944",
+    "to": "LAUNCHED"
+   },
+   {
+    "at": "2026-10-26T21:25:50-07:00",
+    "from": "LAUNCHED",
+    "item": "arm:rb_a1_s1",
+    "note": "the launch wrapper HELD: fake GO-time pre-check refusal (kit live)",
+    "to": "HOLD"
+   }
+  ],
+  "items": {
+   "arm:rb_a1_s1": {
+    "data": {
+     "describe": {
+      "argv": [
+       "--model",
+       "@ROOT@/models/parent_run/checkpoints/checkpoint_1000_steps.zip",
+       "--steps",
+       "5000",
+       "--run-name",
+       "rb_a1_s1"
+      ],
+      "delta_text": "+4,000 steps",
+      "parent_run_dir": "@ROOT@/models/parent_run",
+      "run_name": "rb_a1_s1",
+      "steps": 5000
+     },
+     "fork_step": 1000,
+     "go_epoch": 1793075150.7022142,
+     "prechecked_epoch": 1793075150.6963725,
+     "triggers": {
+      "end": {
+       "inode": "@INODE@",
+       "name": "END rb_a1_s1",
+       "offset": 1,
+       "pattern": "^\\[[^\\]]+\\] a1\\ s1: END rb_a1_s1 launcher_rc=(-?\\d+)$"
+      },
+      "held": {
+       "inode": "@INODE@",
+       "name": "wrapper HOLD rb_a1_s1",
+       "offset": 1,
+       "pattern": "^\\[[^\\]]+\\] a1\\ s1: HOLD: (.*)$"
+      },
+      "spawned": {
+       "inode": "@INODE@",
+       "name": "pool-seed PASS rb_a1_s1",
+       "offset": 1,
+       "pattern": "^\\[[^\\]]+\\] a1\\ s1: post-spawn pool-seed check PASS: .*$"
+      },
+      "start": {
+       "inode": "@INODE@",
+       "name": "START rb_a1_s1",
+       "offset": 1,
+       "pattern": "^\\[[^\\]]+\\] a1\\ s1: START rb_a1_s1: .*$"
+      }
+     },
+     "wrapper": {
+      "pid": 2320944,
+      "start_ticks": 194174369
+     }
+    },
+    "hold": {
+     "at": "2026-10-26T21:25:50-07:00",
+     "phase": "LAUNCHED",
+     "reason": "the launch wrapper HELD: fake GO-time pre-check refusal (kit live)"
+    },
+    "phase": "LAUNCHED",
+    "snapshot": {
+     "arm": "a1",
+     "banner": null,
+     "disk_need_gib": 0.0,
+     "flags": [],
+     "go_by": "orchestrator test",
+     "kind": "arm",
+     "on_throughput_fail": "page",
+     "on_void": "page",
+     "pin": "@PIN_A@",
+     "run": "rb_a1_s1",
+     "seed": 1,
+     "thin": "planner",
+     "thin_reason": "",
+     "throughput": null,
+     "verify": []
+    }
+   },
+   "arm:rb_a2_s2": {
+    "data": {},
+    "hold": null,
+    "phase": "PENDING"
+   }
+  },
+  "schema": "arm_chain_state_v1",
+  "ships": {}
+ },
+ "status_txt": "[2026-10-26T21:25:50-07:00] ARMCHAIN[t]: arm:rb_a1_s1: PENDING -> PRECHECKED: dry run PASS at pin 2b0c66088730: FORK of @ROOT@/models/parent_run, +4,000 steps; disk 29.8 GiB free (need >= 0)\n[2026-10-26T21:25:50-07:00] ARMCHAIN[t]: arm:rb_a1_s1: PRECHECKED -> GOING: GO at pin 2b0c66088730 (GO by orchestrator test)\n[2026-10-26T21:25:50-07:00] ARMCHAIN[t]: arm:rb_a1_s1: GOING -> LAUNCHED: launch wrapper pid 2320944\n[2026-10-26T21:25:50-07:00] a1 s1: HOLD: fake GO-time pre-check refusal (kit live)\n[2026-10-26T21:25:50-07:00] ARMCHAIN[t]: HOLD: arm:rb_a1_s1 at LAUNCHED: the launch wrapper HELD: fake GO-time pre-check refusal (kit live)\n",
+ "written_by": "main.ops.arm_chain at 93a05fe916b91190d34bfdc5cb3fbffc653e8882 (93a05fe91's code)"
+}

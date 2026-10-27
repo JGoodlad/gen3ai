@@ -12,7 +12,7 @@ import fcntl
 import json
 import os
 import subprocess
-from typing import Any, Dict, List, Mapping
+from typing import Any, Dict, Iterator, List, Mapping
 
 import pytest
 
@@ -54,7 +54,9 @@ def deps(w: World, runner: FakeRunner, shipper: FakeShipper) -> C.Deps:
                   lease_token=lambda: (True, "token valid: fake"),
                   # the unfixed kit (F1) unless a test says otherwise: the ship stays synchronous
                   kit_k9b_fixed=lambda s: (False, "test: the kit's k9b-batch still writes into main's stage"),
-                  sleep=lambda x: __import__("time").sleep(min(x, 0.05)), stop_wait_s=10)
+                  sleep=lambda x: __import__("time").sleep(min(x, 0.05)), stop_wait_s=10,
+                  # a real launcher may be live on this box (production): the GO's second-GO refusal must not see it
+                  live_runs=lambda: [])
 
 
 def runner_for(w: World, **planner: Any) -> FakeRunner:
@@ -69,9 +71,30 @@ def phases(ch: C.Chain) -> Dict[str, str]:
     return {k: v["phase"] for k, v in ch.state["items"].items()}
 
 
+def world_then_wait(tmp_path: Any) -> Iterator[World]:
+    """The ``w`` fixture's body (``chain_review_test`` shares it)."""
+    world = make_world(str(tmp_path))
+    yield world
+    # a test may leave its fake launch running (a HOLD never stops a run). pytest re-uses a passed test's temp dir
+    # name, so the NEXT test's GO would read it as a live GO wrapper of its own kit (finding 7's refusal): wait it out
+    assert _wait_world_procs_gone(world.root, 60), f"a fake launch of {world.root} outlived its test by 60 s"
+
+
 @pytest.fixture
-def w(tmp_path) -> World:
-    return make_world(str(tmp_path))
+def w(tmp_path) -> Iterator[World]:
+    yield from world_then_wait(tmp_path)
+
+
+def _wait_world_procs_gone(root: str, timeout_s: float) -> bool:
+    import time as _t
+    from utils import procfs
+    t0 = _t.monotonic()
+    while _t.monotonic() - t0 < timeout_s:
+        if not any(root in procfs.read_text(pid, "cmdline").replace("\0", " ") for pid in procfs.snapshot()
+                   if pid != os.getpid()):
+            return True
+        _t.sleep(0.1)
+    return False
 
 
 def two_arm_spec(w: World, window_step: str = "true", on_fail: str = "continue") -> ChainSpec:

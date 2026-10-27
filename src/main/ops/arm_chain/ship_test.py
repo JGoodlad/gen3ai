@@ -192,3 +192,27 @@ def test_a_push_beaten_by_another_landing_is_rebased_and_retried(world, tmp_path
     s.ship(world["files"], "measure(t): records", tag="t")
     assert git(world["origin"], "log", "--format=%s", "-2").splitlines() == ["measure(t): records", "late"]
     assert state["n"] == 2 and _worktrees(world["main"]) == 1
+
+
+def test_a_failure_after_the_push_cleans_up_and_the_retry_lands(world):
+    """Review 10-26, finding 12: main's fast-forward failed after the push (a stray ``index.lock``) and left the ship's
+    worktree and branch behind, so the by-hand retry died at ``worktree add``."""
+    m = world["main"]
+    lock = os.path.join(m, ".git", "index.lock")
+
+    def guard_then_lock(wt: str) -> int:      # runs just before the push: main is locked from here on
+        open(lock, "w").close()
+        return 0
+    s = Shipper(m, STAGE, ["deps/sub"], str(world["tmp"] / "work"), str(world["tmp"] / "ship.lock"),
+                static_tier=lambda wt: (0, "fake"), push_guard=guard_then_lock)
+    s._fast_forward_main.__func__.__defaults__ = (3, 0.1)   # type: ignore[attr-defined]
+    try:
+        with pytest.raises(Hold, match="(?s)pushed as .*fast-forward FAILED.*the ship worktree was removed — the records ARE on the remote"):
+            s.ship(world["files"], "measure(t): records", tag="t1")
+    finally:
+        s._fast_forward_main.__func__.__defaults__ = (3, 2.0)   # type: ignore[attr-defined]
+    assert _worktrees(m) == 1 and "armchain-ship" not in git(m, "branch")
+    assert git(world["origin"], "log", "-1", "--format=%s") == "measure(t): records\n"
+    os.remove(lock)
+    again = shipper(world).ship(world["files"], "measure(t): records", tag="t2")
+    assert again.already and git(m, "status", "--porcelain") == ""

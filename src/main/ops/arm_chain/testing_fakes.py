@@ -5,8 +5,8 @@
   ``post-spawn pool-seed check PASS``, ``END <run> launcher_rc=N``). Its "launcher" is a real ``sleep`` whose argv
   reads ``python -m main.launcher …`` so ``/proc`` identity checks see a launcher. Per-run knobs come from
   ``<job>/fake/<run>.env`` (``FAKE_RC``, ``FAKE_LAST``, ``FAKE_FINAL``, ``FAKE_BANNER``, ``FAKE_RUN_S``,
-  ``FAKE_DRY_FAIL``, ``FAKE_NO_PASS``, ``FAKE_DIRTY_MAIN``: the dry run writes a stray record into main's stage, as
-  the unfixed kit's ``k9b-batch`` did); every call appends ``<mode> <arm> <seed> <pin> CVD=<state>`` to
+  ``FAKE_DRY_FAIL``, ``FAKE_NO_PASS``, ``FAKE_GO_HOLD`` (the GO's own pre-checks HOLD before START), ``FAKE_DIRTY_MAIN``:
+  the dry run writes a stray record into main's stage, as the unfixed kit's ``k9b-batch`` did); every call appends ``<mode> <arm> <seed> <pin> CVD=<state>`` to
   ``<job>/fake/calls.log``.
 * :class:`FakeRunner` — scripted handlers for ``main.x35.kit k9b`` and the thin planner; anything else runs for real.
 * :func:`make_world` — a temp main checkout (git) with a records stage, the fake kit, a parent run and a job dir.
@@ -34,7 +34,7 @@ while [ $# -gt 0 ]; do case "$1" in --pin) PIN=$2; shift 2;; --lease-owner|--max
   GO) GO=1; shift;; *) shift;; esac; done
 J=$X35_JOB_DIR; ST=$J/status.txt; M=$(dirname "$J")/models; mkdir -p "$J/fake"
 RUN=rb_${ARM}_s${SEED}; [ -f "$J/fake/$ARM.$SEED.run" ] && RUN=$(cat "$J/fake/$ARM.$SEED.run")
-FAKE_RC=0; FAKE_LAST=5000; FAKE_FINAL=1; FAKE_BANNER=""; FAKE_RUN_S=1.2; FAKE_DRY_FAIL=0; FAKE_NO_PASS=0; FAKE_DIRTY_MAIN=0
+FAKE_RC=0; FAKE_LAST=5000; FAKE_FINAL=1; FAKE_BANNER=""; FAKE_RUN_S=1.2; FAKE_DRY_FAIL=0; FAKE_NO_PASS=0; FAKE_DIRTY_MAIN=0; FAKE_GO_HOLD=0
 [ -f "$J/fake/$RUN.env" ] && . "$J/fake/$RUN.env"
 log() { echo "[$(date -Is)] $ARM s$SEED: $1" >> "$ST"; }
 CVD=${CUDA_VISIBLE_DEVICES-unset}; [ -z "${CUDA_VISIBLE_DEVICES-x}" ] && CVD=EMPTY
@@ -57,6 +57,7 @@ cat > "$J/$RUN.dry.dryrun.txt" <<EOF
   ✓ DRY RUN — this command would launch. Nothing was created or modified.
 EOF
 if [ "$GO" != 1 ]; then echo "DRY RUN PASS — every pre-check passed"; exit 0; fi
+if [ "$FAKE_GO_HOLD" = 1 ]; then log "HOLD: fake GO-time pre-check refusal (kit live)"; exit 7; fi
 log "START $RUN: --model $P/checkpoints/checkpoint_1000_steps.zip (pin ${PIN:0:8}, restart 24 h)"
 R=$M/$RUN; mkdir -p "$R/checkpoints"
 bash -c "exec -a 'python -m main.launcher --run-name $RUN' sleep $FAKE_RUN_S" &

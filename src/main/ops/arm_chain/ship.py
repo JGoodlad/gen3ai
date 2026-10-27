@@ -136,8 +136,22 @@ class Shipper:
             if self.push_guard(wt) != 0:
                 raise Hold("push_guard refused after the re-rebase")
 
-    def _discard(self, wt: str, br: str) -> str:
-        """A HOLD before the push leaves nothing behind (a retry would die at ``worktree add``), guard permitting."""
+    def _fast_forward_main(self, R: str, tries: int = 3, wait_s: float = 2.0) -> None:
+        """Fetch and fast-forward main, retrying a transient failure (another git process's ``index.lock``)."""
+        last = ""
+        for i in range(tries):
+            try:
+                _git(self.repo, "fetch", "-q", self.remote, self.branch)
+                _git(self.repo, "merge", "--ff-only", "-q", R)
+                return
+            except Hold as h:
+                last = str(h)
+                if i + 1 < tries:
+                    time.sleep(wait_s)
+        raise Hold(last)
+
+    def _discard(self, wt: str, br: str, pushed: bool = False) -> str:
+        """A HOLD leaves no worktree or branch behind (a retry would die at ``worktree add``), guard permitting."""
         hazards = self.worktree_guard(self.repo, wt)
         if hazards:
             return f"worktree LEFT at {wt} (worktree_guard: {'; '.join(hazards)[:120]})"
@@ -145,7 +159,7 @@ class Shipper:
         p2 = subprocess.run(["git", "-C", self.repo, "branch", "-q", "-D", br], capture_output=True)
         if p1.returncode or p2.returncode:
             return f"worktree / branch cleanup FAILED: {wt} {br}"
-        return "nothing pushed; the ship worktree was removed"
+        return "the ship worktree was removed" if pushed else "nothing pushed; the ship worktree was removed"
 
     def _already_shipped(self, files: Dict[str, str], R: str) -> Optional[str]:
         """The commit that landed these exact records, if ``R`` already holds ALL of them byte-identical (a supervisor
@@ -174,7 +188,7 @@ class Shipper:
         _git(repo, "fetch", "-q", self.remote)
         done = self._already_shipped(files, R)
         if done is not None:
-            _git(repo, "merge", "--ff-only", "-q", R)
+            self._fast_forward_main(R)
             return ShipResult(commit=done, files=sorted(files), already=True)
         for rel in files:
             if os.path.lexists(os.path.join(repo, rel)):
@@ -188,12 +202,19 @@ class Shipper:
         except Hold as h:
             raise Hold(f"{h} — {self._discard(wt, br)}") from None
         commit = _git(wt, "rev-parse", "--short=9", "HEAD").strip()
-        _git(repo, "fetch", "-q", self.remote, self.branch)
-        _git(repo, "merge", "--ff-only", "-q", R)
+        # PUSHED: from here the records are on the remote. A failure below (a transient index.lock in main, say)
+        # must still clean up the ship's worktree and branch, or the by-hand retry dies at ``worktree add`` (review
+        # 10-26, finding 12); the retry then lands through ``_already_shipped``.
+        try:
+            self._fast_forward_main(R)
+        except Hold as h:
+            raise Hold(f"pushed as {commit}, but main's fast-forward FAILED ({h}); {self._discard(wt, br, pushed=True)} — the "
+                       "records ARE on the remote: retry ship-records (it fast-forwards main)") from None
         for rel, src in files.items():
             with open(os.path.join(repo, rel), "rb") as a, open(src, "rb") as b:
                 if a.read() != b.read():
-                    raise Hold(f"main's tracked {rel} differs from the source {src} (pushed as {commit})")
+                    raise Hold(f"main's tracked {rel} differs from the source {src} (pushed as {commit}); "
+                               f"{self._discard(wt, br, pushed=True)}")
         hazards = self.worktree_guard(repo, wt)
         if hazards:
             raise Hold(f"worktree_guard refused {wt}: {'; '.join(hazards)[:200]} (pushed as {commit})")

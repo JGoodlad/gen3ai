@@ -14,6 +14,9 @@ Three checks, each a HOLD on failure. A VOID banner raises :class:`Void` and a f
   the cumulative or integer-derived fps) of at least the arm's bar, from checkpoints this run wrote (step above the
   fork step). Counting from the GO failed healthy cold starts: ~22-23 min passed between the GO and the first
   trainer line (operator review 10-27).
+
+The banner and throughput checks also watch the wrapper's END line (``ended``; review 10-26, finding 6): a run that
+dies in its first hour is judged at once on its now-complete logs and checkpoints, never left to the gate's deadline.
 """
 from __future__ import annotations
 
@@ -75,18 +78,26 @@ def _scan_banner(text: str, b: Banner) -> Tuple[Optional[str], Optional[str]]:
     return void, ok
 
 
+Ended = Optional[Callable[[], Optional[str]]]
+
+
 def banner_guard(child_logs: List[str], b: Banner, wait_for_log_s: float = 3600.0, poll_s: float = 10.0,
-                 clock: Optional[Clock] = None) -> str:
-    """Wait (bounded) for the child log, then for the banner; a VOID line or no banner by the deadline is a HOLD."""
+                 clock: Optional[Clock] = None, ended: Ended = None) -> str:
+    """Wait (bounded) for the child log, then for the banner; a VOID line or no banner by the deadline is a HOLD. A
+    run that ENDED is judged on its complete logs at once."""
     c = clock or Clock()
     t0 = c.monotonic()
     while not any(os.path.exists(p) for p in child_logs):
+        e = ended() if ended else None
+        if e and not any(os.path.exists(p) for p in child_logs):
+            raise Void(f"VOID — the run ENDED ({e[:120]}) before it wrote a child log")
         if c.monotonic() - t0 > wait_for_log_s:
             raise Hold(f"no child log ({', '.join(os.path.basename(p) for p in child_logs)}) within "
                        f"{wait_for_log_s / 60:.0f} min of the GO — the banner cannot be checked")
         c.sleep(poll_s)
     t1 = c.monotonic()
     while True:
+        e = ended() if ended else None   # read BEFORE the logs: an END seen here means the logs below are complete
         text = ""
         for p in child_logs:
             try:
@@ -98,6 +109,8 @@ def banner_guard(child_logs: List[str], b: Banner, wait_for_log_s: float = 3600.
             raise Void(f"VOID — {void.strip()[:200]}")
         if ok:
             return ok.strip()[:200]
+        if e:
+            raise Void(f"VOID — the run ENDED ({e[:120]}) with no {b.expect!r} banner")
         if c.monotonic() - t1 > b.within_min * 60:
             raise Void(f"VOID — no {b.expect!r} banner in the child's first {b.within_min:g} min")
         c.sleep(poll_s)
@@ -138,19 +151,22 @@ def first_trainer_line(child_log: str) -> Optional[str]:
 
 def wait_first_trainer_line(child_log: str, run_dir: str, fork_step: int, deadline_s: float,
                             now: Callable[[], float] = time.time, poll_s: float = 30.0,
-                            clock: Optional[Clock] = None) -> Tuple[float, str]:
+                            clock: Optional[Clock] = None, ended: Ended = None) -> Tuple[float, str]:
     """``(epoch, what)`` of the first trainer line — the wall time it was SEEN (late by at most ``poll_s``) — or of
     the first own checkpoint's mtime when one exists first. ``deadline_s`` (from now) with neither is a
     :class:`ThroughputFail`."""
     c = clock or Clock()
     t0 = c.monotonic()
     while True:
+        e = ended() if ended else None
         cks = new_checkpoints(run_dir, fork_step)
         if cks:
             return min(t for _, t in cks), f"the first own checkpoint (step {cks[0][0]:,})"
         ln = first_trainer_line(child_log)
         if ln is not None:
             return now(), f"the first trainer line ({ln.strip()[:80]!r})"
+        if e:
+            raise ThroughputFail(f"the run ENDED ({e[:120]}) with no trainer line and no own checkpoint")
         if c.monotonic() - t0 > deadline_s:
             raise ThroughputFail(f"no trainer line in {os.path.basename(child_log)} and no own checkpoint "
                                  f"{deadline_s / 60:.0f} min on: the trainer never started")
@@ -158,17 +174,21 @@ def wait_first_trainer_line(child_log: str, run_dir: str, fork_step: int, deadli
 
 
 def throughput_gate(run_dir: str, fork_step: int, tp: Throughput, poll_s: float = 120.0,
-                    clock: Optional[Clock] = None, already_s: float = 0.0) -> str:
+                    clock: Optional[Clock] = None, already_s: float = 0.0, ended: Ended = None) -> str:
     """PASS as soon as one consecutive pair of the run's own checkpoints reaches the bar; :class:`ThroughputFail` at
     the deadline, ``tp.within_min`` after the FIRST TRAINER LINE (``already_s`` = how long ago that line was)."""
     c = clock or Clock()
     t0 = c.monotonic()
     while True:
+        e = ended() if ended else None
         rates = marginal_rates(new_checkpoints(run_dir, fork_step))
         if rates and max(rates) >= tp.min_steps_per_s:
             return f"marginal {max(rates):,.0f} steps/s >= {tp.min_steps_per_s:,.0f} (checkpoint mtimes, {len(rates)} pair(s))"
+        best = f"best {max(rates):,.0f} steps/s over {len(rates)} pair(s)" if rates else "fewer than two new checkpoints"
+        if e:
+            raise ThroughputFail(f"the run ENDED ({e[:120]}) before the throughput gate passed: {best} "
+                                 f"< {tp.min_steps_per_s:,.0f}")
         if c.monotonic() - t0 + already_s > tp.within_min * 60:
-            best = f"best {max(rates):,.0f} steps/s over {len(rates)} pair(s)" if rates else "fewer than two new checkpoints"
             raise ThroughputFail(f"the throughput gate failed {tp.within_min:g} min after the first trainer line: {best} "
                                  f"< {tp.min_steps_per_s:,.0f}")
         c.sleep(poll_s)

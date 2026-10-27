@@ -263,3 +263,25 @@ def test_a_first_own_checkpoint_starts_the_clock_at_its_mtime(tmp_path):
     epoch, what = ps.wait_first_trainer_line(str(tmp_path / "none.log"), str(tmp_path), 1000, deadline_s=1,
                                              clock=FakeClock())
     assert epoch == T0 and "first own checkpoint" in what
+
+
+# -- the END line (review 10-26, finding 6) ------------------------------------------------------------------
+
+def test_a_run_that_ended_fails_its_gates_at_once(tmp_path):
+    """A run that died in its first hour was noticed only at the gate's deadline (60-90 min later)."""
+    child = str(tmp_path / "launcher_child.log")
+    open(child, "w").write("trainer: no banner here\n")
+    ended = lambda: "a1 s1: END rb_a1_s1 launcher_rc=1"  # noqa: E731
+    clock = FakeClock()
+    with pytest.raises(ps.Void, match="the run ENDED .*launcher_rc=1.* with no"):
+        ps.banner_guard([child], BANNER, poll_s=10, clock=clock, ended=ended)
+    mk_ckpts(str(tmp_path), [(2000, T0), (3000, T0 + 2)])
+    with pytest.raises(ps.ThroughputFail, match="the run ENDED .*best 500 steps/s"):
+        ps.throughput_gate(str(tmp_path), 1000, Throughput(1000, 60), poll_s=10, clock=clock, ended=ended)
+    with pytest.raises(ps.ThroughputFail, match="the run ENDED .*no trainer line"):
+        ps.wait_first_trainer_line(str(tmp_path / "none.log"), str(tmp_path / "x"), 1000, 5400, clock=clock,
+                                   ended=ended)
+    assert clock.now == 0.0
+    # an ENDED run whose evidence passes still passes (the gate judges the complete logs)
+    open(child, "a").write("[TEAM-MIX] d3_setmut_v1@ALL\n")
+    assert "d3_setmut_v1" in ps.banner_guard([child], BANNER, clock=clock, ended=ended)

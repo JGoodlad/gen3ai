@@ -103,3 +103,19 @@ def test_spawn_is_in_its_own_session_and_identified(tmp_path):
             break
         time.sleep(0.05)
     assert not os.path.exists(f"/proc/{ref.pid}") or procwatch.ref_of(ref.pid) != ref
+
+
+@pytest.mark.integration
+def test_a_timeout_ends_the_whole_process_group_not_just_the_child(tmp_path):
+    """Review 10-26, finding 5: ``subprocess.run``'s timeout SIGKILLed bash only; the kit's python children (a
+    launcher ``--dry-run`` holding a CUDA context) survived and failed the next GO's GPU-idle check."""
+    import uuid
+    from utils import procfs
+    mark = f"armchain_orphan_{uuid.uuid4().hex[:10]}"
+    rc = runner.SubprocessRunner().run(["bash", "-c", f"(exec -a {mark} sleep 60) & wait"], cwd=str(tmp_path),
+                                       env={"PATH": os.environ["PATH"]}, timeout_s=1.0, out_path=str(tmp_path / "o"))
+    left = [pid for pid in procfs.snapshot() if procfs.read_text(pid, "cmdline").startswith(mark)]
+    for pid in left:                           # this test's own stand-in, by explicit pid, if the fix regressed
+        os.kill(pid, signal.SIGKILL)
+    assert rc == 124 and left == [], left
+    assert "process group" in (tmp_path / "o").read_text()

@@ -185,6 +185,10 @@ None of tonight's arms uses `page`.
 
 ## Verdict
 
+**Findings 2-13 are fixed** (the commit that adds `src/main/ops/arm_chain/liveness.py`; `arm_chain.md` §5 CB-36-46,
+each with a test that fails on revert). The fixed code is picked up only when the supervisor restarts. It resumes the
+`93a05fe91` supervisor's state as it is (§5, "restart").
+
 **Finding 1 is fixed at 93a05fe91, so it no longer holds the cut-over.** The `cutover()` fast-forwards main before it
 `exec`s the supervisor, so tonight's supervisor runs that fix.
 

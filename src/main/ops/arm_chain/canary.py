@@ -49,13 +49,15 @@ DUMP_RE = re.compile(r"canary_u(\d+)_s(\d+)(?:_r\d+)?_(unconfirmed|fatal|near)_p
 
 
 def monitor_filter(chain: str) -> str:
-    """The ONE ERE the alert Monitor greps over :func:`watch_files`: the chain's HOLD / SHIP-HOLD / COMPLETE lines,
-    the canary logger's HOLD lines, and the launcher-log alerts. ``chain`` is a slug (``spec``), so it needs no
-    escaping (GNU grep >= 3.8 warns on a stray ``\\-``); ``<name>`` is the doc's placeholder."""
+    """The ONE ERE the alert Monitor greps over :func:`watch_files` (``arm_chain monitor`` applies it itself): the
+    chain's HOLD / SHIP-HOLD / COMPLETE lines, its ``MONITOR-REARM`` cue at each GO (a ``tail -F`` Monitor must re-arm
+    on the new run's logs), a dead or stale supervisor (``SUPERVISOR DEAD|STALE``, written by ``monitor``), the canary
+    logger's HOLD lines, and the launcher-log alerts. ``chain`` is a slug (``spec``), so it needs no escaping (GNU
+    grep >= 3.8 warns on a stray ``\\-``); ``<name>`` is the doc's placeholder."""
     if chain != "<name>" and not re.fullmatch(r"[a-z0-9][a-z0-9_-]*", chain):
         raise ValueError(f"chain name {chain!r} is not a slug")
-    return (r"ARMCHAIN\[" + chain + r"\]: (HOLD|SHIP-HOLD|chain COMPLETE)|CANARYLOG: HOLD|AWFILES: HOLD|"
-            + LAUNCHER_ALERT_ERE)
+    return (r"ARMCHAIN\[" + chain + r"\]: (HOLD|SHIP-HOLD|chain COMPLETE|MONITOR-REARM|SUPERVISOR (DEAD|STALE))|"
+            r"CANARYLOG: HOLD|AWFILES: HOLD|" + LAUNCHER_ALERT_ERE)
 
 
 def _now_iso() -> str:

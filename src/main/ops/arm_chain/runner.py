@@ -14,8 +14,10 @@ inherited it, and the launch saw no GPU (toy_x47 3602's first GO, 2026-10-20); e
 from __future__ import annotations
 
 import os
+import signal
 import subprocess
 import threading
+import time
 from typing import Dict, List, Mapping, Optional, Protocol, Sequence
 
 from main.ops.arm_chain.procwatch import ProcRef, ref_of
@@ -74,15 +76,28 @@ class Runner(Protocol):
 
 
 class SubprocessRunner:
+    #: after a timeout's SIGTERM to the step's process group, how long before the SIGKILL
+    term_grace_s: float = 10.0
+
     def run(self, argv: Sequence[str], *, cwd: str, env: Mapping[str, str], timeout_s: float, out_path: str) -> int:
+        """The step runs in its OWN process group (``start_new_session``), so a timeout signals the whole group: a
+        ``subprocess.run`` timeout SIGKILLed only the direct child (bash) and left the kit's python children — a
+        launcher ``--dry-run`` holding a CUDA context — to fail the next GO's GPU-idle check (review 10-26, finding 5).
+        SIGTERM first (a CUDA context is released cleanly), SIGKILL after ``term_grace_s``."""
         os.makedirs(os.path.dirname(os.path.abspath(out_path)), exist_ok=True)
         with open(out_path, "wb") as out:
+            p = subprocess.Popen(list(argv), cwd=cwd, env=dict(env), stdout=out, stderr=subprocess.STDOUT,
+                                 stdin=subprocess.DEVNULL, start_new_session=True)
             try:
-                return subprocess.run(list(argv), cwd=cwd, env=dict(env), stdout=out, stderr=subprocess.STDOUT,
-                                      stdin=subprocess.DEVNULL, timeout=timeout_s).returncode
+                return p.wait(timeout=timeout_s)
             except subprocess.TimeoutExpired:
-                out.write(f"\n[arm_chain] TIMEOUT after {timeout_s:.0f} s\n".encode())
+                left = kill_group(p, self.term_grace_s)
+                out.write(f"\n[arm_chain] TIMEOUT after {timeout_s:.0f} s: process group {p.pid} signalled"
+                          f"{'' if not left else f'; STILL ALIVE after SIGKILL: {left}'}\n".encode())
                 return 124
+            except BaseException:   # the supervisor itself is dying: never leave the step's group behind
+                kill_group(p, self.term_grace_s)
+                raise
 
     def spawn(self, argv: Sequence[str], *, cwd: str, env: Mapping[str, str], out_path: str) -> ProcRef:
         os.makedirs(os.path.dirname(os.path.abspath(out_path)), exist_ok=True)
@@ -96,6 +111,46 @@ class SubprocessRunner:
         if ref is None:   # it already exited: an identity that can never read as alive
             return ProcRef(p.pid, -1)
         return ref
+
+
+def _group_pids(pgid: int, proc: str = "/proc") -> List[int]:
+    from utils import procfs
+    return sorted(pid for pid, pr in procfs.snapshot(proc).items() if pr.pgrp == pgid and pr.state not in ("Z", "X"))
+
+
+def kill_group(p: "subprocess.Popen[bytes]", grace_s: float) -> List[int]:
+    """SIGTERM the process group ``p`` leads (its own session: nothing outside it shares the pgid), wait up to
+    ``grace_s`` for it to empty, SIGKILL what is left, reap ``p``. The pids still alive after that (normally none)."""
+    pgid = p.pid
+    with_group = True
+    try:
+        os.killpg(pgid, signal.SIGTERM)
+    except ProcessLookupError:
+        with_group = False
+    t0 = time.monotonic()
+    while with_group and _group_pids(pgid) and time.monotonic() - t0 < grace_s:
+        if p.poll() is None:
+            try:
+                p.wait(timeout=0.2)
+            except subprocess.TimeoutExpired:
+                pass
+        else:
+            time.sleep(0.2)
+    if with_group and _group_pids(pgid):
+        try:
+            os.killpg(pgid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+    try:
+        p.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        pass
+    t1 = time.monotonic()
+    left = _group_pids(pgid)
+    while left and time.monotonic() - t1 < 5:
+        time.sleep(0.1)
+        left = _group_pids(pgid)
+    return left
 
 
 def tail(path: str, n: int = 2, width: int = 220) -> str:

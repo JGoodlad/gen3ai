@@ -1,7 +1,7 @@
 # The arm chain: one tested module that operates production arms end to end
 
 > Always-current (`designs/CLAUDE.md`). Code: [`src/main/ops/arm_chain/`](../../src/main/ops/arm_chain/), entry point
-> `python -m main.ops.arm_chain`. Tests: `src/main/ops/arm_chain/*_test.py` (222; fake `/proc`, a fake
+> `python -m main.ops.arm_chain`. Tests: `src/main/ops/arm_chain/*_test.py` (254; fake `/proc`, a fake
 > launcher, temp git repos; nothing touches the GPU). **Status: BUILT; CUT-OVER PENDING.** The training session
 > still runs its job-directory scripts until the checklist in §7 is done.
 
@@ -86,13 +86,14 @@ The field rules:
 |---|---|
 | `plan CHAIN [--check-pins] [--describe]` | validates the file. `--check-pins` checks that each pin is a commit. `--describe` asks the kit for each arm's describe on CPU and checks the run name. A wrong arm name or run is refused when the chain is PLANNED, not at the hand-off |
 | `run CHAIN` | the SUPERVISOR: walks the items from the saved state. Exit 0 = advanced or complete, 3 = HOLD, 4 = another supervisor holds this chain |
-| `status CHAIN` | each item's phase and hold |
-| `clear-hold CHAIN --item KEY --by WHO --why WHY` | the orchestrator's decision to RETRY the held step |
+| `status CHAIN` | first the supervisor's liveness, `supervisor: ALIVE pid N` / `STALE` / `DEAD` (`!!!` in front when an item is mid-flight with no supervisor, or the heartbeat is past its own deadline), then each item's phase and hold. It never takes the lock (§3, "Liveness") |
+| `clear-hold CHAIN --item KEY --by WHO --why WHY [--resolution R]` | the orchestrator's decision on a held item, recorded in the history and a status line. `retry` (default) re-runs the held step; `relaunch` and `accept` are below. Refused while a supervisor holds the lock |
 | `abandon CHAIN --item KEY --by WHO --why WHY` | the orchestrator's decision that a held item will not finish: it becomes `DONE_FAILED` and the chain hands off past it. Refused while the item's launch wrapper or launcher is alive (stop it first) |
 | `ship-records CHAIN --item KEY` | ships one arm's K9(b) + dose records from its request file: the async worker the supervisor spawns, and the by-hand retry after a `SHIP-HOLD` (idempotent: records already on the remote are a success) |
 | `live [--models-dir D]` | live runs, read from launcher argv (§4) |
-| `watch-files --status-file F` | the alert watch's file list: `F`, each live launcher's stdout log, and its run's `launcher_child.full.log` (the trainer's own lines; it rotates by rename, which `tail -F` follows) |
+| `watch-files --status-file F` \| `--chain CHAIN` | the alert watch's file list: the status file, each live launcher's stdout log, and its run's `launcher_child.full.log` (the trainer's own lines; it rotates by rename, which `tail -F` follows). `--chain` adds every unfinished arm's two fixed log paths, existing or not (`tail -F` waits for them) |
 | `monitor-filter --chain NAME` | the one ERE the alert Monitor greps over the watch-files (below) |
+| `monitor --chain CHAIN [--max-hours 24]` | the alert FOLLOWER (§7 step 7): every 10 s it re-reads the file set (`watch-files --chain`'s), follows each file `tail -F` style, prints each line the filter matches as `[<file>] <line>`, and pages a dead or stale supervisor once (`SUPERVISOR DEAD\|STALE:` in the status file). No re-arm at a GO; bounded, with an `EXPIRING` line |
 | `canary --out-dir D --status-file F [--archive-root R]` | the canary logger loop. It is bounded, writes a heartbeat file and an `EXPIRING` line, alerts on EVERY non-PASS record, and archives each canary weight dump to `R/<run>_canary_u<u>/` (default `~/gen3ai_archive`) |
 | `cpu-gate` | one GO CPU-gate sample |
 | `wait-pid PID --timeout-s N` | a `/proc` wait on `(pid, start ticks)` |
@@ -100,13 +101,18 @@ The field rules:
 
 **What the supervisor writes:**
 - **State:** `<job_dir>/arm_chain/<name>.state.json`, rewritten atomically.
-- **Lock:** `<name>.state.json.lock`, held for the supervisor's whole life.
+- **Lock:** `<name>.state.json.lock`, held for the supervisor's whole life (its pid is written in it).
+- **Heartbeat:** `state["supervisor"]`: pid, start ticks, the commit its code came from, `last_beat`, what it is doing,
+  and `stale_after_epoch`. The supervisor beats before every blocking step, declaring that step's bound plus 10 min,
+  and records `exit` / `exited_at` when it stops.
 - **Status lines:** `[ts] ARMCHAIN[<name>]: …`, appended to the job's `status.txt`.
 - **Transcripts, scratch stages and record sources:** `<job_dir>/arm_chain/<name>/`; each async ship's request,
   result and worker output under its `ships/`.
 
 **The Monitor filter** (`python -m main.ops.arm_chain monitor-filter --chain <name>` prints it; a test pins this
-line to the code): `ARMCHAIN\[<name>\]: (HOLD|SHIP-HOLD|chain COMPLETE)|CANARYLOG: HOLD|AWFILES: HOLD|Traceback|Child crashed|WEDGE|UpdateWontFit|BEHAVIOUR-POLICY MISMATCH|StampMismatch|DISAGREES`.
+line to the code): `ARMCHAIN\[<name>\]: (HOLD|SHIP-HOLD|chain COMPLETE|MONITOR-REARM|SUPERVISOR (DEAD|STALE))|CANARYLOG: HOLD|AWFILES: HOLD|Traceback|Child crashed|WEDGE|UpdateWontFit|BEHAVIOUR-POLICY MISMATCH|StampMismatch|DISAGREES`.
+`MONITOR-REARM <item>: <launcher log> <launcher_child.full.log>` is written at each GO: the cue for a `tail -F`
+Monitor to re-arm on the new run's logs. `SUPERVISOR DEAD|STALE` is written by `monitor`.
 The part after `AWFILES: HOLD` is the launcher-log alert set (`canary.LAUNCHER_ALERT_ERE`): a crash, a wedge, an
 update that cannot fit, a behaviour-policy mismatch, a Rust stamp mismatch, a compiled-vs-eager disagreement.
 
@@ -121,11 +127,11 @@ WINDOW  PENDING ─▶ STARTED ─▶ DONE | DONE_FAILED (on_fail continue)   an
 | from | the step | a HOLD when |
 |---|---|---|
 | PENDING | disk ≥ the arm's need + headroom; main clean; the `verify` commands; the CPU gate (≤ 13 polls, 4 min apart); the kit's dry run at the arm's pin with the card visible; the describe re-read at its fixed path; the launcher transcript re-verified; main clean again | any check fails, a file is stale, the describe names another run, the transcript is not `FORK of <parent>` / `pin : <the pin>` / the step delta / `cuda devices : ✓` / `would launch`, or main is dirty before or after the dry run (re-read 3 times, 5 s apart, so an async ship's own fast-forward is never read as dirt) |
-| PRECHECKED | a dry run older than 10 min (only a supervisor restart can age one) goes back to PENDING; main clean; the GPU must be idle (≤ 5 min wait); the END / START / pool-seed / HOLD triggers are armed and persisted, `GOING` is saved, then the kit's GO is spawned detached | main is dirty; the GPU stays busy; `verify` fails at the GO; `models/<run>` exists; the supervisor runs at a nice other than 0 (the trainer would inherit it for life) |
+| PRECHECKED | a dry run older than 10 min (only a supervisor restart can age one) goes back to PENDING; main clean; the GPU must be idle (≤ 5 min wait); no other launch is live; the END / START / pool-seed / HOLD triggers are armed and persisted, `GOING` is saved, then the kit's GO is spawned detached and `MONITOR-REARM` is written | main is dirty; the GPU stays busy; a live GO wrapper of ANY arm or a live launcher / trainer (`live.discover`) exists; `verify` fails at the GO; `models/<run>` exists; the supervisor runs at a nice other than 0 (the trainer would inherit it for life) |
 | GOING | (only after a supervisor died mid-GO) ADOPT the launch if there is evidence: a live `launch_x35.sh <arm> <seed> … GO`, a START line, or the run dir | no evidence. Clearing that hold resets the arm to PENDING; there is **never a blind second GO** |
-| LAUNCHED | the wrapper's `post-spawn pool-seed check PASS` for this run (≤ 75 min after the SPAWN: the kit's GO re-runs its pre-checks, then the pool-seed check takes up to 30 min) | the wrapper wrote `HOLD:`, or it is gone without a PASS |
-| SPAWNED | the banner guard, run over the launcher's stdout log AND `launcher_child.log` | a VOID line; or no expected banner by `within_min`: the arm's `on_void` (`stop`: SIGTERM + record, then HOLD; `page`: HOLD) |
-| BANNER_OK | the throughput gate: the first trainer line (or first own checkpoint) is found and its time persisted, then marginal steps/s from the mtimes of the run's OWN checkpoints | no trainer line by `first_line_within_min` after the GO, or no consecutive pair reaches the bar by `within_min` after the first trainer line: the arm's `on_throughput_fail` |
+| LAUNCHED | the wrapper's `post-spawn pool-seed check PASS` for this run (≤ 75 min after the SPAWN: the kit's GO re-runs its pre-checks, then the pool-seed check takes up to 30 min) | the wrapper wrote `HOLD:`, or it is gone without a PASS. A `retry` re-reads that same line: clear it with `relaunch` or `accept` |
+| SPAWNED | the banner guard, run over the launcher's stdout log AND `launcher_child.log` | a VOID line; or no expected banner by `within_min`, or by the wrapper's END line if the run ends first: the arm's `on_void` (`stop`: the stop is persisted, then SIGTERM + record, then HOLD, and a restart never sends a second SIGTERM; `page`: HOLD) |
+| BANNER_OK | the throughput gate: the first trainer line (or first own checkpoint) is found and its time persisted, then marginal steps/s from the mtimes of the run's OWN checkpoints | no trainer line by `first_line_within_min` after the GO, or no consecutive pair reaches the bar by `within_min` after the first trainer line, or by the END line if the run ends first: the arm's `on_throughput_fail` |
 | RUNNING | the wrapper's `END <run> launcher_rc=N`. If the wrapper is gone but its launcher (pid file, `main.launcher` cmdline) lives, keep waiting | wrapper and launcher both gone without END |
 | ENDED | completeness: rc 0, launcher `Last step` ≥ `--steps`, `final_model.zip`, newest checkpoint ≥ `--steps − 98,304` | any of the four fails: "stopped, not finished" |
 | COMPLETE | `kit k9b --stage <scratch copy>`; main's records stage checked clean before AND after; the verdict read from the record's JSON | not PASS, or main's stage changed |
@@ -134,8 +140,41 @@ WINDOW  PENDING ─▶ STARTED ─▶ DONE | DONE_FAILED (on_fail continue)   an
 | RECORDED | DONE; the next item starts | — |
 | (chain end) | wait ≤ 45 min for in-flight ships; `chain COMPLETE` only when every record landed | a ship failed or is still in flight: `SHIP-HOLD:` and exit 3 |
 
-A window saves `STARTED` before its first step; a supervisor that restarts in `STARTED` HOLDs (a step may still hold the GPU) instead of re-running the window. Any exception other than a HOLD is turned into a HOLD line (`UNEXPECTED <type>`), so the Monitor sees it. A HOLD stops the supervisor at once. Nothing after the held step runs: no thin, no record, no next GO. Exactly one
-status line says why.
+A window saves `STARTED` before its first step; a supervisor that restarts in `STARTED` HOLDs (a step may still hold the GPU) instead of re-running the window. Any exception other than a HOLD is turned into a HOLD line (`UNEXPECTED <type>`), so the Monitor sees it; one that escapes the supervisor itself (a full disk under its own save, a SIGTERM or SIGHUP) leaves `HOLD: supervisor died: <type>: …`. A HOLD stops the supervisor at once. Nothing after the held step runs: no thin, no record, no next GO. Exactly one
+status line says why. A restarted supervisor on a held chain writes `HOLD: <item> is still HELD …` and exits 3.
+
+**Clearing a hold** (`clear-hold --resolution`; the minimal sound set, each recorded with its resolution):
+- **`retry`** re-runs the held step. GOING and STARTED reset to PENDING. Elsewhere the step re-reads its evidence, which
+  is right for a cause outside the persisted evidence (a dirty main, a busy GPU, a ship), and useless at LAUNCHED after
+  a wrapper HOLD (review finding 3: it held again forever).
+- **`relaunch`** (LAUNCHED only) resets the arm to PENDING for a fresh dry run and GO; the triggers are re-armed past
+  the old lines, and the old attempt's data is kept under `data.attempts`. It is refused unless the kit provably never
+  launched: the GO wrapper is gone, no live GO wrapper for the arm, no live launcher in the pid file, and no
+  `models/<run>`. A run dir means the kit launched and refuses a GO onto it: a human decides (accept, abandon, or move
+  the run dir aside first). A "fresh run name" is not a resolution: the kit names the run from the arm and seed, so a
+  new name is a new item with a new seed, appended after `abandon`.
+- **`accept`** advances an arm past the post-spawn gate that held (LAUNCHED → SPAWNED, SPAWNED → BANNER_OK,
+  BANNER_OK → RUNNING; finding 9's paged arm) on the orchestrator's evidence, recorded in `data.accepted`; every
+  later gate still runs. It is refused for a run its registered `stop` signalled, and at LAUNCHED without
+  `models/<run>` (nothing launched to accept).
+
+**Liveness** (`liveness.py`). `status` reads three things and takes no lock: a `status` that took the lock even for an
+instant could make a supervisor starting at that moment exit 4.
+- The **lock holder**: the `FLOCK` entry in `/proc/locks` on the lock file's device and inode, whose pid still has
+  that file open. Every supervisor version takes this lock, so this also sees a supervisor older than the heartbeat.
+- The **heartbeat** (`state["supervisor"]`), written by the supervisor's main thread, so a wedged loop goes STALE where
+  a liveness thread would keep beating.
+- **Mid-flight**: an item started, neither terminal nor held.
+
+The verdicts:
+- `ALIVE`: the lock is held.
+- `STALE`: the lock is held, but now is past the heartbeat's own `stale_after_epoch`.
+- `DEAD`: nobody holds the lock. It is loud with an item mid-flight, naming any live launcher of that item.
+- `UNKNOWN`: `/proc/locks` cannot be read.
+
+`clear-hold` and `abandon` take the lock non-blocking: a live supervisor means nothing is held, and its next save would
+overwrite theirs. Every state save goes through a per-process tmp file, fsync'd, then `os.replace`d, then the directory
+is fsync'd.
 
 **The ship is asynchronous.** A synchronous ship idled the GPU for the whole ship, and a ship HOLD idled it until a
 human came. The worker writes its own status line (`… records shipped as <sha> (async)`, or `SHIP-HOLD: <item>:
@@ -203,6 +242,18 @@ dry run and GO stand either way.
 | CB-33 | the throughput gate counted from the GO, so a healthy cold start (~22-23 min to its first line) failed it | the gate counts from the first trainer line (or first own checkpoint) | `chain_test::test_the_throughput_gate_counts_from_the_first_trainer_line_not_the_go`, `postspawn_test::test_the_gate_counts_from_the_first_trainer_line_not_the_go`, `test_the_launchers_child_attached_header_is_not_a_trainer_line` |
 | CB-34 | a window checked the lease OWNER's name; an expired token passed it and `gpu_lock` refused the step | `window.lease_token_valid` before every `gpu_lock` step; HOLD | `window_test::test_an_invalid_lease_token_holds_before_any_gpu_step`, `test_the_token_is_checked_again_before_each_gpu_step`, `test_lease_token_valid_reads_the_lease_without_changing_it` |
 | CB-35 | a ship HOLD idled the GPU until a human came | the async ship (`ship-records` worker, `SHIP-HOLD:`), gated on the kit fix | `chain_test::test_an_async_ship_lets_the_next_arm_go_while_the_records_are_in_flight`, `test_a_failed_async_ship_pages_ship_hold_without_idling_the_gpu`, `test_a_ship_worker_that_dies_without_a_result_pages`, `test_the_ship_worker_writes_its_result_and_one_line_and_is_the_retry` |
+| CB-36 | a dead supervisor was invisible: `status` read `RUNNING` while nobody would hand off (review 10-26, finding 2) | the heartbeat, the lock-holder probe and `status`'s liveness line; `monitor` pages `SUPERVISOR DEAD\|STALE`; an exception or signal that escapes the supervisor leaves `HOLD: supervisor died` | `chain_review_test::test_a_live_supervisor_reads_alive_with_its_heartbeat_and_what_it_is_doing`, `…a_beat_before_a_blocking_step_declares_its_bound`, `…a_dead_supervisor_with_a_live_run_is_shown_loudly`, `…a_wedged_supervisor_reads_stale_and_a_held_chain_reads_dead_quietly`, `…an_exception_that_escapes_the_supervisor_leaves_one_hold_line`, `…the_supervisor_turns_a_sigterm_into_its_hold_line`, `…the_monitor_pages_a_dead_supervisor_once` |
+| CB-37 | an arm held at LAUNCHED could not be recovered: `clear-hold` re-read the same wrapper HOLD forever (finding 3); a paged arm had no path forward (finding 9) | `clear-hold --resolution relaunch \| accept` | `chain_review_test::test_a_kit_hold_at_the_go_is_relaunched_fresh_never_retried_forever`, `…relaunch_is_refused_once_the_kit_launched`, `…accept_at_launched_advances_and_every_later_gate_still_runs`, `…a_paged_banner_is_accepted_past_its_gate`, `…accept_is_refused_for_a_stopped_run` |
+| CB-38 | a Monitor armed before a GO followed none of the new run's logs (finding 4) | `monitor` (re-reads the file set each pass); `MONITOR-REARM` at each GO; `watch-files --chain` | `chain_review_test::test_the_monitor_follows_logs_that_appear_after_it_started_with_no_rearm`, `…a_go_writes_a_monitor_rearm_line_the_filter_matches`, `…watch_files_for_a_chain_lists_each_unfinished_arms_fixed_paths` |
+| CB-39 | a timed-out step's python children (a dry run holding a CUDA context) survived it (finding 5) | each step in its own process group; a timeout SIGTERMs the group, SIGKILLs it 10 s later | `runner_test::test_a_timeout_ends_the_whole_process_group_not_just_the_child` |
+| CB-40 | a run that died in its first hour was noticed only at its gate's deadline (finding 6) | the banner and throughput gates watch the END line and judge the complete logs at once | `postspawn_test::test_a_run_that_ended_fails_its_gates_at_once`, `chain_review_test::test_a_run_that_ends_during_the_banner_guard_fails_at_once` |
+| CB-41 | a GO beside another live GO wrapper or launcher was not refused (finding 7) | `_refuse_a_second_go` (`launch.live_go_wrappers`, `live.discover`) | `chain_review_test::test_a_go_beside_a_live_launch_is_refused` |
+| CB-42 | a restart between the `stop`'s SIGTERM and its record sent a second SIGTERM (finding 8) | `data.stopping` persisted before the signal | `chain_review_test::test_a_supervisor_that_died_after_its_sigterm_never_sends_a_second` |
+| CB-43 | the CLI wrote the state without the lock, through a shared tmp file, unsynced (finding 10) | `_cli_lock`; a per-process tmp file; fsync | `chain_review_test::test_clear_hold_and_abandon_refuse_under_a_live_supervisor_and_saves_are_fsynced` |
+| CB-44 | `ship-records` loaded the state, so a chain-file edit to a started item killed it with no result (finding 11) | the worker builds its shipper from the chain FILE (`default_shipper`); a missing request writes a result and pages | `chain_review_test::test_ship_records_survives_a_chain_file_edit_to_a_started_item`, `…a_ship_worker_with_no_request_writes_a_result_and_pages` |
+| CB-45 | a failure after the push (main's `index.lock`) left the ship's worktree and branch behind (finding 12) | main's fast-forward is retried, then the worktree is removed whatever happens; the retry lands through `_already_shipped` | `ship_test::test_a_failure_after_the_push_cleans_up_and_the_retry_lands` |
+| CB-46 | a chain file without `x_dose_comparator` silently dropped `c0_comparator` (finding 13) | `chain.dose_comparator`: the chain file's (`null` omits it), else the block every dose record in main's stage agrees on, else none; a status line says which | `chain_review_test::test_the_dose_record_takes_the_comparator_the_stages_records_agree_on` |
+| restart | the 10-26 supervisor (`93a05fe91`) is replaced at a restart by this code, onto the state it wrote | the state schema stays `arm_chain_state_v1`: every addition (`supervisor`, `data.stopping` / `attempts` / `accepted`) is optional, and each version keeps the other's keys | `chain_review_test::test_a_93a05fe9_*` on `testdata/state_93a05fe9_*.json` (written by `93a05fe91`'s code on these fakes: held at LAUNCHED twice, held at SPAWNED, mid-RUNNING, an async ship) |
 
 Two classes stay with their owners:
 - **CB-04** (the launcher log reused on re-launch) is fixed in `launch_x35.sh`, which rotates the log at GO. The
@@ -257,6 +308,13 @@ Two classes stay with their owners:
   the supervisor runs in the lease holder's session (root rule 5).
 - **F10. A HOLD idles the GPU until a human decides.** That is by design: SOP §3 rule 3 says a window or chain that
   cannot finish cleanly is the orchestrator's decision. `abandon` is the way past an item that will never finish.
+- **F15. The heartbeat is a DECLARED bound, not a ticker.** The supervisor beats before each runner step (its own
+  timeout) and each sleep, plus 10 min of slack. A blocking call outside the runner (git, the kit probe ≤ 120 s, a
+  60 s CPU-gate sample) relies on that slack. STALE therefore means "past its own declared deadline", not "slow".
+- **F16. `accept` skips a gate on the orchestrator's word.** It is recorded (`data.accepted`, the history, a status
+  line), and every later gate still runs.
+- **F17. `monitor` writes `SUPERVISOR DEAD|STALE` under the chain's own tag.** It is a second writer of that tag,
+  and its once-only keys live in `<work_dir>/monitor_alerted.txt`.
 - **F11. The chain signals a run in ONE case: the arm's registered `stop`** (`on_void` / `on_throughput_fail`),
   SIGTERM only, through `signal_if` on this run's launcher identity. Only the fakes have exercised it (F4); the
   first real `stop` is watched by hand. `page` behaves as the old `d3_redirect.sh` did. `launch_x35.sh`'s own
@@ -290,11 +348,14 @@ Two classes stay with their owners:
 7. **Start the supervisor** from the MAIN checkout at nice 0 (F3), with the env's interpreter and
    `PYTHONPATH=$PWD/src`:
    `nohup setsid python -m main.ops.arm_chain run <file> >> ~/.claude/jobs/x35/arm_chain/<name>.out 2>&1 < /dev/null &`
-   - Point the Monitor at the watch-files through the filter in §2, re-armed at each GO (a new run's logs):
-     `tail -F -n0 $(python -m main.ops.arm_chain watch-files --status-file ~/.claude/jobs/x35/status.txt) | grep
-     --line-buffered -E "$(python -m main.ops.arm_chain monitor-filter --chain <name>)"`.
-   - Keep the 55-min fallback cron. Its repair commands are `status`, then `clear-hold` or `abandon` on the
-     orchestrator's word, then `run`.
+   - **The alert Monitor: the operator's choice.** Prefer ONE follower that never needs a re-arm, and that also pages
+     a dead supervisor: `python -m main.ops.arm_chain monitor --chain <file>` (bounded at 24 h; re-arm it at its
+     `EXPIRING` line). The fallback is the `tail -F` pipeline, which must be RE-ARMED at every `MONITOR-REARM` line
+     the filter passes, because the new run's logs did not exist when it started:
+     `tail -F -n0 $(python -m main.ops.arm_chain watch-files --chain <file>) | grep --line-buffered -E
+     "$(python -m main.ops.arm_chain monitor-filter --chain <name>)"`. It cannot see a dead supervisor.
+   - Keep the 55-min fallback cron. It reads `status` (a `!!!` liveness line pages). Its repair commands are
+     `clear-hold --resolution …` or `abandon` on the orchestrator's word, then `run`.
 8. **Watch the first GO by hand** (F4). Check:
    - the kit's `START` line and its pin;
    - the `GOING → LAUNCHED → SPAWNED` lines;
@@ -336,3 +397,10 @@ Two classes stay with their owners:
   - The record ship is asynchronous while the kit's `k9b-batch` writes outside main (`7f9ff6236`), inline otherwise
     (CB-35, F1, F12); main is checked clean around every dry run and before every GO.
   - The module deletes only through `fsguard.remove_under` (CB-28).
+- **2026-10-26 (evening): the adversarial review's findings 2-13** ([`arm_chain_review_2026-10-26.md`](arm_chain_review_2026-10-26.md);
+  finding 1 was fixed at `93a05fe91`). The changes are CB-36-46.
+  - The supervisor's liveness became readable: a heartbeat plus a lock probe, and `status` prints ALIVE / STALE / DEAD.
+  - `clear-hold` takes a resolution: `retry`, `relaunch`, or `accept`.
+  - The `monitor` follower replaces the re-armed `tail -F`.
+  - The state schema stays v1: a supervisor restarted on this code resumes the `93a05fe91` supervisor's state as it
+    is, and the reverse also holds.

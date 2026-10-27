@@ -262,7 +262,7 @@ with what it measures.
 | this layer / read | the command |
 |---|---|
 | layer 1, the OS watcher | `scripts/ops/watch_run.sh <run> --pid-file … --launcher-log …` |
-| layer 2 between arms, the chain (cut-over pending) | `python -m main.ops.arm_chain plan / run / status / clear-hold / abandon / ship-records <chain.json>`; `live`, `canary`, `watch-files`, `monitor-filter`, `wait-pid`, `signal-if` ([`arm_chain.md`](arm_chain.md)) |
+| layer 2 between arms, the chain (cut-over pending) | `python -m main.ops.arm_chain plan / run / status / clear-hold / abandon / ship-records <chain.json>`; `live`, `canary`, `monitor` (the alert follower), `watch-files`, `monitor-filter`, `wait-pid`, `signal-if` ([`arm_chain.md`](arm_chain.md)) |
 | MARGINAL fps, from checkpoint mtimes | `scripts/ops/marginal_fps.sh <run> [--target N:label]` |
 | the registered first-restart read | `scripts/ops/restart_read.sh <run> [--baseline …]` |
 | the registered scalars, at the SOURCE | `python -m main.ops.tb_read <run> --last 20` — 🚨 on a FORK every live-tier TB reader reads the ARM's steps only (> the lineage `fork_step`; the parent's inherited prefix is cut and the first line says where; `--include-inherited` shows it) |
