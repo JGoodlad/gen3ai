@@ -47,7 +47,7 @@ under `measurements/`. A number with no pointer is not a measurement.
 
 | regime | what it measures |
 |---|---|
-| **Kakuna** | our model against Metamon's strongest public model, Kakuna (checkpoint 34, 142.8M parameters; ours has 2.61M), both sides greedy, on CPU: 400 games a panel in 20-game units with paired seeds (`main.anchors`, `main.reads`). The goal reads |
+| **Kakuna** | our model against Metamon's strongest public model, Kakuna (checkpoint 34, 142.8M parameters; ours has 2.61M), both sides greedy, on CPU: 400 games a panel in 20-game units with paired seeds (`main.anchors`, `main.reads`). The goal reads. Kakuna's peer packs teams as Showdown does since `b0441623e` (`gen3_peer_showdown_pack_v1`): before it Kakuna's forum72 Gyarados played Frustration at base power 1, so a forum72, away or pool read before it is its own regime and does not compare with a new one |
 | **the panels** | **home72**: 72 of the 719 teams we train on. Three UNFAMILIAR panels, teams our model never trained on: **H** (`heldout72_hpfix`, 72 ladder-replay teams with Hidden Power repaired), **F** (`forum72`, human-built Smogon-forum teams), **P72** (procedural teams built from Smogon usage). **U** is H, F and P72 at equal weight. Registered in `heldout_panels.json` and `diagnostic_panels.json` |
 | **in-house S** | the population score: mirrored-pair games against a frozen 7-member reference population R, 500 pairs a member, greedy, CPU (X35's readout). Every plateau lever's in-pool guard |
 | **the fork frame** | an X35 plateau lever is P\* + 20M steps with ONE change, at the production pin, seeds 3501–3503 (3504–3505 at look 2), read against **C0** = P\* + 20M of plain training on the same seeds. Its primary statistic R1 is the lever's S minus C0's |
@@ -77,17 +77,18 @@ under `measurements/`. A number with no pointer is not a measurement.
    PastaMittens twins · `c758fcb82`; review: `measurements/h_mid_value_test_2026-10-26/REVIEW.md` B1] P\*'s own
    critic does not see that deficit: its 3.5 pp set gap is a turn-1 team prior that it never revises, and at equal V
    P\* wins 8.6 pp less on U (H-MID: CRITIC-MISCALIBRATED-ON-U, below). H-CTX (rc72b) is the one test of team
-   against set (§6). The policy does NOT key on our sets' exact
-   identity. A Smogon re-draw of one familiar bench set moves it only 1.19× [1.07, 1.33] as much as re-drawing an
-   unfamiliar one (the bar was 1.5×). Erasing all six mons' identity embeddings costs familiar and unfamiliar teams
-   alike (1.07 [0.91, 1.25]). Lever N2 is dropped. [MEASURED · CPU, P\* vs P\* rows, one checkpoint · PREREG
-   `98bcb1146`, `measurements/n2_identity_test_2026-10-26/`]
+   against set (§6). The policy keys on our sets' exact identity only weakly: a Smogon re-draw of one familiar
+   bench set moves it 1.19× [1.07, 1.33] as much as re-drawing an unfamiliar one, a small real premium under the
+   registered 1.5× bar (bench mons only; plan memorisation keyed on the battle's course is not ruled out). Erasing
+   all six mons' identity embeddings costs familiar and unfamiliar teams alike (1.07 [0.91, 1.25]). Lever N2 is
+   dropped. [MEASURED · CPU, P\* vs P\* rows, one checkpoint · PREREG `98bcb1146`, `fd4160d76`;
+   `measurements/n2_identity_test_2026-10-26/`]
 5. **No lever measured so far closes goal (b).** Against its own control each reads +1 to +3 pp with intervals
    ±3–4 pp wide: practice on 36 teams (X52) +1.3 pp on the unpractised half, UNDECIDED; a wider pool (D1) +2.10
    [−0.92, +5.11], UNDECIDED (final), at −1.61 pp in-pool; set mutation (D3, look 1) +1.27 [−2.63, +5.16], CONTINUE,
    with an engine-mix caveat; the belief prior mix ±1.50, NOT DETECTED; plain training FLAT. [Kakuna · `42bb0858d`,
-   `eb99ab362`, `58287c525`, `f299a7243`, `71c76dfbb`, `204204bbf`] Breadth at 10⁴ teams (N1-P) and human data
-   (X59-S) are being read.
+   `eb99ab362`, `58287c525`, `f299a7243`, `71c76dfbb`, `204204bbf`] Breadth at 10⁴ teams (N1-P), team context
+   (H-CTX) and human data (X59-S) are being read; the plan after them is §6.
 6. **The belief stack memorises the pool, but that is not where games are lost.** On unfamiliar opponents 63–85 %
    of the hidden slots hold the wrong species guess, yet mixing in the Smogon prior (λ = 0.25: U +1.50 pp [−2.74,
    +5.74]) or using the prior alone (λ = 1: −1.50 [−5.47, +2.47]) moves Kakuna games by nothing detectable at ±5 pp.
@@ -208,7 +209,8 @@ IS NOT HELD OUT*]
 - **Piloting, not facing (X37a stage 1).** When X26 brings home72 and Kakuna brings H teams, X26 wins in every
   species stratum (the ladder-weighted headline L = 0.630 [0.573, 0.686]); when X26 PILOTS the H teams it reads
   0.380 [0.334, 0.428]. Corrected by a Kakuna-vs-Kakuna cell for team strength, piloting costs **+0.123 [+0.039,
-  +0.206]** and facing +0.017 [−0.062, +0.095]; X26 pilots off-meta (FAR-core) teams 0.199 [0.017, 0.385] worse
+  +0.206]** and facing +0.017 [−0.062, +0.095] (their difference +0.106 [−0.009, +0.221]: H-PILOT UNDECIDED, 0.9 pp
+  short of SUPPORTED); X26 pilots off-meta (FAR-core) teams 0.199 [0.017, 0.385] worse
   than sample-core ones. The correction rests on assumption A-K (Kakuna's own familiarity is symmetric),
   UNVERIFIED. [`8b43eb44a`; ledger 2026-10-18 · *X37a STAGE 1*]
 - **Unseen by us, not a different population (X37a stage 2).** Forum72 0.470 and P72 0.453 drop as far as H
@@ -235,7 +237,7 @@ replicated on the 1,600 PastaMittens twins · `c758fcb82`; `measurements/pilotin
   is measured, and nothing here bounds D3. [review `measurements/h_mid_value_test_2026-10-26/REVIEW.md` B1, M3]
 - Facing stays minor: Kakuna's unseen-set and rare-species mons do not out-kill its familiar ones.
 - **The critic does not see the deficit (H-MID, registered, 2026-10-26).** [MEASURED · forward passes on the same
-  1,600 X51 games, replayed exactly (79,799 / 79,799 greedy choices reproduced) · PREREG `2dd522785`;
+  1,600 X51 games, replayed exactly (79,799 / 79,799 greedy choices reproduced) · PREREG `2dd522785`, `f200258f6`;
   `measurements/h_mid_value_test_2026-10-26/`] From level states at turn 10, P\*'s V is 0.557 on home72 and 0.525 on
   U (G_V +0.033 [+0.010, +0.059]), against outcomes 0.609 / 0.501. Δbias **+0.076 [+0.016, +0.139]**: the verdict is
   **CRITIC-MISCALIBRATED-ON-U**. At equal V P\* wins **+0.086 [+0.023, +0.151]** more on home72; where V ≥ 0.6 it
@@ -343,12 +345,13 @@ it (§6). [DESCRIPTIVE · PROVISIONAL, one seed · `3e8a41249`; ledger 2026-10-2
 - P\*'s end-to-end refit of its own greedy labels has an area under the loss curve 0.986× @25M's (the bar is < 1.10).
 - Its near-dormant share is 0.78× @25M's; LOSS needs ≥ 2×.
 
-On a neutral target (random projections of a fresh network's features) the trunk does refit slower than @25M, 1.11×.
+On a neutral target (random projections of a fresh network's features) the trunk refits slower than @25M, 1.11×
+(UNCLEAR by the same bars, inside the seed noise of the 1.10 line; the verdict rests on the P\* target above).
 That slow-down is paid by 175M and does not grow across the plateau: 100M 0.576 → P\* 0.598 → 480M 0.602, with C0
 level with P\*. Dormancy, feature rank, weight norm and gradient interference are flat or near-flat from 100M. Only the
 policy MLP's tanh units keep saturating (layer 1: 0.84 → 0.92 of activations at |a| > 0.99). The probe measures
-supervised refitting, not PPO under a team-distribution shift. So the strategy tree takes the capacity branch.
-[MEASURED · DESCRIPTIVE · one lineage · `measurements/plasticity_check_2026-10-26/`; ledger 2026-10-27 ·
+supervised refitting, not PPO under a team-distribution shift. So the strategy tree takes the capacity branch (X48, N4: §6).
+[MEASURED · DESCRIPTIVE · one lineage · `8bebdfe31`, `measurements/plasticity_check_2026-10-26/`; ledger 2026-10-27 ·
 *PLASTICITY CHECK*]
 
 ### 4.5 Beliefs: hypothesis tokens adopted; hidden facts are not a policy lever
@@ -523,22 +526,31 @@ retired for the fold-gift question only; they live in the last full text (§0) a
 > The ranked queue is [`EXPERIMENT_BACKLOG.md`](EXPERIMENT_BACKLOG.md); builds are in
 > [`../ops/TASK_BACKLOG.md`](../ops/TASK_BACKLOG.md). Each question below names the read that answers it.
 
-**In flight**
+**In flight** (what runs now, and its progress: [`../STATUS.md`](../STATUS.md) §2)
 
 | question | the read that answers it |
 |---|---|
-| Does breadth at 10⁴ procedural teams lift unfamiliar-team piloting at the plateau? | **N1-P look 1** (X61P, D1's rule on F; [`PREREG.md`](measurements/x61p_n1_production_2026-10-26/PREREG.md), `5b84bca62`). GAIN funds **X53-N1**, a fresh production run on 10⁴ teams (`../endstate/design_x53_n1_fresh_breadth.md`); NULL rules out only "N1 at the plateau" |
-| Is human data better than our own self-play data? | **X59-S**: three matched student arms, five seeds each; S-H − S-S answers it, S-H − S-P picks the lever ([`PREREG.md`](measurements/x59s_matched_students_2026-10-25/PREREG.md), `5cbf46dc0`). It decides whether the human-data switch and X60 get built |
-| Is the familiarity premium TEAM context or set knowledge (H-CTX)? | **H-CTX on rc72**: P\* vs Kakuna on 72 new teams of verbatim pool sets, ≤ 2 shared with any pool team; ≥ 0.57 kills H-CTX, ≤ 0.52 supports it ([`PREREG.md`](measurements/hctx_rc72_2026-10-26/PREREG.md), `b712c46d1`) |
-| Does a one-ply search on V have headroom on unfamiliar teams, given that V's level misses the premium (H-MID: CRITIC-MISCALIBRATED-ON-U) but its ordering does not? | **S-U** registered (`ffd9a443a`, `endstate/design_search_u_headroom.md`): P\* vs P\* + piKL from turn 10 against Kakuna, home72 and U; stage 0 (cost) HELD. H-MID does not rule it out, nor motivate it (review M4). Its within-node premise is V-RANK's (`endstate/design_v_rank_on_u.md`, DRAFT): live Kakuna branches as the truth, a filter that can turn S-U OFF |
+| Does breadth at 10⁴ procedural teams lift unfamiliar-team piloting at the plateau? | **N1-P look 1** (X61P, D1's rule on F; [`PREREG.md`](measurements/x61p_n1_production_2026-10-26/PREREG.md), `5b84bca62`). ADOPT-CANDIDATE (F GAIN, in-house non-inferior) funds **X53-N1**, a fresh production run on 10⁴ teams (`../endstate/design_x53_n1_fresh_breadth.md`); NULL rules out only "N1 at the plateau" |
+| Is the familiarity premium TEAM context or set knowledge (H-CTX)? | **H-CTX on rc72b**: P\* vs Kakuna on 72 new sixes of verbatim pool sets (≤ 2 shared with any pool team, Hidden Power of the strict class), against home72 and F on one engine. Premium P = home72 − F, recovery R = rc72b − F: KILLED if R ≥ 0.75 P, SUPPORTED if R ≤ 0.25 P, INCONCLUSIVE unless P's LB > 0 ([`PREREG.md`](measurements/hctx_rc72_2026-10-26/PREREG.md) Amendments 1–2, `caec2bb2c`, `6f126c4af`; rc72 retired before any game counted). It is X62's first gate |
+| Is human data better than our own self-play data? | **X59-S**: three matched student arms, five seeds each; S-H − S-S answers it, S-H − S-P picks the lever ([`PREREG.md`](measurements/x59s_matched_students_2026-10-25/PREREG.md), `5cbf46dc0`). Its floor pilot plays first and releases one UNINFORMATIVE flag per contrast (Amendment 5, `aaeabbd46`). It decides whether the human-data switch and X60 get built |
+| Is the plateau the learning-rate controller's halving (§4.4)? | **LR-F look 1**: P\* + 20M with the rate floored two controller rungs above P\*'s, seeds 3501–3503 against C0 (X35 `measurements/x35_breakers_stage_2026-10-17/STAGED_PLAN.md` §4.1.2); s3502 trained (`c4e463b0f`), s3503 training, s3501 queued |
 
-**Queued and planned**
+**Queued and planned** (the ranked order: X48, X63, PR-1′, after REVIEW_2 `69c7cd34d` §6)
 
 | question | the read that answers it |
 |---|---|
-| Is set mutation a goal-(b) lever? | **D3 look 2**, final: all five seeds trained; every game on engine E1 at the play pin `c4a5c37b6` (E1's game code under the pre-`b0441623e` read harness; PREREG AM-D3-L2 and its addendum: TERMINAL, P(GAIN) ≈ 3–7 %, NULL unreachable at this size), its S lane queued behind H-CTX rc72b and its Kakuna lane behind N1-P look 1 (`measurements/x41_d3_setmut_2026-10-25/PREREG.md`) |
-| Is the plateau the learning-rate controller's halving (§4.4)? | **LR-F**: P\* continued with a floor on the learning rate, seeds 3502–3503 (X35 `measurements/x35_breakers_stage_2026-10-17/STAGED_PLAN.md` §4.1.2) |
-| Do the breadth levers help by +1–2 pp each, below what one read can see? | **PR-1**, the zero-GPU precision read: D1, D3 and N1-P against C0 pooled on F, 38,000 new Kakuna games at one engine (`../endstate/strategy_if_levers_null_2026-10-26.md` §3.1). NOT READY TO REGISTER ([`REVIEW_2.md`](measurements/strategy_review_2026-10-26/REVIEW_2.md)): D1 out of the primary (its F is its own population), one post-`b0441623` pin; an information read behind X48 and X63 |
+| Is set mutation a goal-(b) lever? | **D3 look 2**, final: all five seeds trained; every game on engine E1 at the play pin `c4a5c37b6` (E1's game code under the pre-`b0441623e` read harness; PREREG AM-D3-L2 and its addendum `0e32c5002`: TERMINAL, P(GAIN) ≈ 3–7 %, NULL unreachable at this size), its S lane queued behind H-CTX and its Kakuna lane behind N1-P look 1 (`measurements/x41_d3_setmut_2026-10-25/PREREG.md`) |
+| Is the shared trunk FFN a capacity bottleneck between token kinds at the plateau? | **X48**: per-token-kind FFN experts grown at P\*, s3501–s3503 against C0 (its finals re-played on the read's one engine), under N4's one-look screen (S at 2,000 pairs and Kakuna F; [`PREREG.md`](measurements/x48_kffn_production_2026-10-27/PREREG.md), `fc888c18f`). GPU next after LR-F |
+| Does a wider trunk buy strength at the plateau (on the toy)? | **N4**: T\* with every trunk FFN grown 256 → 1,024 against a same-pin C0′, 3 + 3 seeds × 70M (PREREG `8ed8164ea`); the model build landed (`c35ffab9e`), its kit arms have not |
+| Does breadth pay at DOSE rather than at 20M? | **X63**: X26 @380M + 100M on a union of the recombined, procedural and set-mutated corpora, no forum teams, against X26c (DRAFT, `../endstate/design_x63_long_breadth_continuation.md`, `49fbf75a7`); gated on its review, H-CTX, N1-P look 1 and D3 look 2 |
+| Do the breadth levers help by +1–2 pp each, below what one read can see? | **PR-1′**, the zero-GPU precision read re-scoped by [`REVIEW_2.md`](measurements/strategy_review_2026-10-26/REVIEW_2.md): D3 and N1-P against C0 on F (D1 reported only: its F is its own population), 30,000–38,000 new Kakuna games at one post-`b0441623e` pin. Information only; it runs after X48's read, or on a rented CPU box |
+| Does training on new sixes of familiar sets close the piloting gap? | **X62** (REVISED DRAFT, `../endstate/design_x62_team_recombination.md`, `58cb02dc6`): rc72b KILLED shelves it; PR-1′ KILL retires the 20M fork; N1-P GAIN makes it redundant. Its in-pool cost is a registered price (net = Δ_home72 + r · Δ_U, r = 1 pending the owner). Below X63 per resource-day |
+| Does one-ply search on V have headroom on unfamiliar teams (H-MID's open question)? | **S-U** registered (`ffd9a443a`, `../endstate/design_search_u_headroom.md`), stage 0 HELD. Its review (`7aafa527f`, `measurements/su_headroom_2026-10-27/REVIEW.md`): 2 BLOCKERs; where the registered search rule departs from the policy at P\* it picks the better move 0.513 [0.447, 0.580] of the time (0.580 at 25M), so a 10–15 CPU-h sign-accuracy gate comes first. V-RANK (`../endstate/design_v_rank_on_u.md`, DRAFT) is the filter that can turn S-U OFF |
+
+**Dropped.** **X64**, the toy context-count curve: DROPPED by its review (`c0fd72bd8`,
+`../endstate/reviews/x64_review_2026-10-27.md`): its statistic rewards the in-pool price it predicts, a U-side
+primary cannot be powered on the toy, and it costs more than the production reads it would gate. **N2** (TL;DR 4).
+**PR-1 as first written** (→ PR-1′). **The 20M stack fork** (superseded by X63).
 
 **Open, no read scheduled**
 
