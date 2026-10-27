@@ -1,0 +1,154 @@
+{
+ "schema": "gen3_read_spec_v1",
+ "read": "hctx_rc72_am2_2026-10-26",
+ "prereg": "designs/research_state/measurements/hctx_rc72_2026-10-26/PREREG.md",
+ "pin": "905c29f5b",
+ "note": "H-CTX, Amendment 2: rc72b (60 units; the strict Hidden Power redraw) with home72 and forum72 controls (40 units each) on ONE engine, interleaved; premium_recovery",
+ "models": {
+  "pstar": {
+   "arm": "pstar",
+   "seed": 2601,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip",
+    "sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed"
+   }
+  }
+ },
+ "anchor": {
+  "rc72b_a": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "rc72b"
+   ],
+   "unit_seeds": "0-19",
+   "models": [
+    "pstar"
+   ]
+  },
+  "home72_a": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "home72"
+   ],
+   "unit_seeds": "0-19",
+   "models": [
+    "pstar"
+   ]
+  },
+  "forum72_a": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "forum72"
+   ],
+   "unit_seeds": "0-19",
+   "models": [
+    "pstar"
+   ]
+  },
+  "rc72b_b": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "rc72b"
+   ],
+   "unit_seeds": "20-39",
+   "models": [
+    "pstar"
+   ]
+  },
+  "home72_b": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "home72"
+   ],
+   "unit_seeds": "20-39",
+   "models": [
+    "pstar"
+   ]
+  },
+  "forum72_b": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "forum72"
+   ],
+   "unit_seeds": "20-39",
+   "models": [
+    "pstar"
+   ]
+  },
+  "rc72b_c": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "rc72b"
+   ],
+   "unit_seeds": "40-59",
+   "models": [
+    "pstar"
+   ]
+  }
+ },
+ "decision": {
+  "rule": "premium_recovery",
+  "allow_partial_at_stop": true,
+  "params": {
+   "label": "pstar",
+   "arms": {
+    "rc": {
+     "panel": "rc72b",
+     "groups": [
+      "rc72b_a",
+      "rc72b_b",
+      "rc72b_c"
+     ]
+    },
+    "familiar": {
+     "panel": "home72",
+     "groups": [
+      "home72_a",
+      "home72_b"
+     ]
+    },
+    "unfamiliar": {
+     "panel": "forum72",
+     "groups": [
+      "forum72_a",
+      "forum72_b"
+     ]
+    }
+   },
+   "kill_frac": 0.75,
+   "support_frac": 0.25,
+   "min_unit_frac": 0.75,
+   "bootstrap": {
+    "B": 10000,
+    "seed": 7273
+   },
+   "secondary": {
+    "kill_at": 0.57,
+    "support_at": 0.52,
+    "familiar": "home72",
+    "unfamiliar": [
+     "heldout72_hpfix",
+     "forum72",
+     "p72"
+    ],
+    "banked": {
+     "path": "designs/research_state/measurements/x51_plateau_vs_kakuna_2026-10-20/rows.jsonl",
+     "sha256": "27a8d7edad0365746579135bfa2a84850d266a9aceec083f509469fa791b6e28",
+     "cells": {
+      "heldout72_hpfix": "pstar_hpfix",
+      "forum72": "pstar_forum72",
+      "p72": "pstar_p72",
+      "home72": "pstar_home72"
+     }
+    }
+   },
+   "verdict_text": {
+    "KILL": "H-CTX KILLED",
+    "SUPPORT": "H-CTX SUPPORTED",
+    "UNDECIDED": "H-CTX UNDECIDED",
+    "INCONCLUSIVE": "H-CTX INCONCLUSIVE"
+   }
+  }
+ }
+}

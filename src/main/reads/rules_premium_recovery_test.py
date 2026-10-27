@@ -142,7 +142,8 @@ def test_the_params_check_names_each_defect():
                                              anchor=anchor, s={}))
 
 
-def test_the_committed_amended_spec_interleaves_seven_groups_on_one_rule():
+@pytest.mark.parametrize("which, rc", [("am1", "rc72"), ("am2", "rc72b")])
+def test_the_committed_amended_spec_interleaves_seven_groups_on_one_rule(which, rc):
     """Amendment 1's committed spec: rc72 60 units, home72 and forum72 40 each, in 7 groups whose order makes every
     lane round 3 rc72 + 2 home72 + 2 forum72; the PREREG's parameters; the secondary bank hashes."""
     from main.reads.models import spec_path
@@ -150,14 +151,14 @@ def test_the_committed_amended_spec_interleaves_seven_groups_on_one_rule():
     from utils.hashing import sha256_file
     from utils.paths import repo_path
 
-    sp = load(repo_path("designs/research_state/measurements/hctx_rc72_2026-10-26/read_spec_am1.json"))
-    assert sp.rule == "premium_recovery"
-    assert list(sp.anchor) == ["rc72_a", "home72_a", "forum72_a", "rc72_b", "home72_b", "forum72_b", "rc72_c"]
+    sp = load(repo_path(f"designs/research_state/measurements/hctx_rc72_2026-10-26/read_spec_{which}.json"))
+    assert sp.rule == "premium_recovery" and sp.params["arms"]["rc"]["panel"] == rc
+    assert list(sp.anchor) == [f"{rc}_a", "home72_a", "forum72_a", f"{rc}_b", "home72_b", "forum72_b", f"{rc}_c"]
     units = {}
     for g in sp.anchor.values():
         assert len(g.unit_seeds) == 20
         units.setdefault(g.teamsets, set()).update(g.unit_seeds)
-    assert units == {("rc72",): set(range(60)), ("home72",): set(range(40)), ("forum72",): set(range(40))}
+    assert units == {(rc,): set(range(60)), ("home72",): set(range(40)), ("forum72",): set(range(40))}
     p = sp.params
     assert (p["kill_frac"], p["support_frac"], p["min_unit_frac"]) == (0.75, 0.25, 0.75)
     assert p["bootstrap"] == {"B": 10000, "seed": 7273}

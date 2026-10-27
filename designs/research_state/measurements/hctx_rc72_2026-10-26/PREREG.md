@@ -183,3 +183,6 @@ sets play differently in training than in the live server (an open question this
 **Everything else is Amendment 1's** (arms, sizes, interleave, rule `premium_recovery`, bootstrap, VOID, secondary
 line, stop), with the panel `rc72b`: spec `read_spec_am2.json`, a new state `~/gen3ai_archive/hctx_rc72_am2_read`,
 pinned at the commit that lands rc72b.
+
+**Amendment 2 registration.** Pin `905c29f5b` (lands rc72b). Spec `read_spec_am2.json`, sha256
+`84901059df89a23793e75b52fd846eb0395c49ebb2696f50274453c1b3f90666`; state `~/gen3ai_archive/hctx_rc72_am2_read`.
