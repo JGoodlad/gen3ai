@@ -473,6 +473,11 @@ at 10³ teams.
 - **A 100M look (≈ 21 GPU-h):** U vs Kakuna at 100M against X26 @100M on the same cells (X26's checkpoints exist;
   ≈ 2 × 1,200 games ≈ 7 lane-h).
 - **Continue to the plateau (≈ 60 GPU-h in all)** only if the 100M look's LB > 0.
+- **X53-N1's design (DRAFT 2026-10-26): [`design_x53_n1_fresh_breadth.md`](design_x53_n1_fresh_breadth.md).** It
+  replaces the X26 @100M control above with a fresh same-pin control CF (X26 is 160+ `src/` commits away, so it stays
+  descriptive), F as the primary (M4), and three stages: one seed per arm to 100M with a harm stop at 25M, a futility
+  stop at 50M and a screen at 100M (≈ 39 GPU-h); a second seed pair on the screen's GO (+39); N1F to its plateau on
+  GAIN (≈ +36). ≈ 114 GPU-h if every stage runs, ≈ 39–44 expected under a true null.
 
 ### 6.6 X54 — the goal read, on a fresh panel
 
@@ -518,7 +523,7 @@ with the interval named in the registration.
 | X38 / D1 (already in X35) | ≈ 13 (C0 shared) | ≈ 10 | 0 (built) |
 | X41 / D3: built (DONE 2026-10-25); run on GO | 0; ≈ 12.1 (look 1), ≈ 20.2 (final) | ≈ 10 | DONE |
 | X61P / N1-P: built (DONE 2026-10-26); run on GO (the X61 toy: NOT-READY, not run) | ≈ 12.3 (look 1); ≈ 20.5 (final) | ≈ 44 (look 1); ≈ 74 (look 2) | DONE |
-| X53 (conditional) | ≈ 21 to the look; ≈ 60 in all | ≈ 7 | ≈ 0.3 |
+| X53 (conditional); as X53-N1 (on N1-P's GO), a fresh pair (§6.5) | ≈ 21 to the look; ≈ 60 in all. X53-N1: ≈ 39 to the screen, ≈ 114 in all | ≈ 7. X53-N1: ≈ 54 to the screen, ≈ 113 in all | ≈ 0.3. X53-N1: ≈ 1.8 |
 | X54 | 0 | ≈ 5.6–7.9 per model | ≈ 0.3 (prereg; the carve is DONE) |
 | **sure path (X51, X52, D1, X54)** | **≈ 15.2** | **≈ 36–39** | **≈ 1.0** |
 | **with D3 and X53 to the plateau** | **≈ 88** | **≈ 53–56** | **≈ 2.8** |
@@ -618,3 +623,4 @@ with the interval named in the registration.
 | 2026-10-20 | Expected pp per lever | quoted from measured effects where they exist (X37b's 100M → 280M transfer; L1's search null; FACE_c), GUESS elsewhere, with the arithmetic that (b) needs +6–8 pp | single-number promises | §1, §5 |
 | 2026-10-25 | Status line made true (docs-health pass) | the status still said D3 / X53's trigger "is the orchestrator's call"; it now carries the 2026-10-24 ruling (neither now) and the X26c FLAT read (rows above) | the old line | this Decision record 2026-10-24, 2026-10-25 rows |
 | 2026-10-25 | **The human-replay lever row re-stated after REVIEW D** (design worker) | the first reads (FR-1 / FR-3 playing; X59-S built and registered: three matched student arms × 5 seeds, Δ_data = S-H − S-S answers the owner); H-TEAMS then H-BC; H-INIT dropped; X60 NOT-READY | X59 as the first read (withdrawn: its rule rewarded forgetting); H-BC called "the only gradient on unfamiliar states" (struck) | `human_replay_quality_2026-10-25/RESPONSE.md` §D; `x59s_matched_students_2026-10-25/PREREG.md` |
+| 2026-10-26 | **Two DRAFT design docs added: X53-N1 and the all-null contingency** (research-strategy worker, orchestrator brief; docs only) | [`design_x53_n1_fresh_breadth.md`](design_x53_n1_fresh_breadth.md): the from-scratch pair N1-P's GO funds, N1F (`n1_proc_v1` at 0.5) vs a fresh same-pin control CF, F primary, staged (≈ 39 GPU-h to a one-seed screen at 100M, ≈ 114 if every stage runs), the human-team corpus as a separate local-only arm, the cloud as its natural home once an approval covers it; §6.5 and §6.8 point to it. [`strategy_if_levers_null_2026-10-26.md`](strategy_if_levers_null_2026-10-26.md): if D3, N1-P and X59-S all miss a GAIN (≈ 0.58 by their own priors), a zero-GPU week (the N2 / N3 / plasticity probes, search's E2) and then, by expected pp per GPU-h, N5 (an offline breadth student), N2 (set-channel noise) and a breadth stack fork, with an owner escalation at ≈ 90 GPU-h | X53 as written (X26 @100M as its control: cross-pin, one seed); reading another +1–2 pp lever alone (a ±4 pp read cannot see it) | the two docs; N1-P PREREG §6, §8; `sota_survey_2026-10-26.md` §5 |

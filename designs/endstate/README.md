@@ -53,6 +53,8 @@ loses to the doc.
 | 35 | [`human_data_architecture.md`](human_data_architecture.md) | Human data in the system: the inventory, the sources, the snapshot-to-model chain, the `--human-data` switch (pinned by `src/human_data_doc_gate_test.py`). | ALWAYS-CURRENT after four reviews; `--human-data` PROPOSED, not built |
 | 36 | [`design_human_replay_lever.md`](design_human_replay_lever.md) | Human replays as a toggleable training lever: the plan, first reads, X59-S, X60 (explicit-only). | revised after REVIEW D; X59-S built and pre-registered (nothing trained); X60 NOT-READY |
 | 37 | [`design_search_next.md`](design_search_next.md) | What search needs next (the owner's goal 5): a diagnosis of the off-self failure, what human data and Metamon make answerable, and a ranked plan E1-E4 (explicit-only). | DRAFT 2026-10-25; nothing built or registered; search PAUSED |
+| 38 | [`design_x53_n1_fresh_breadth.md`](design_x53_n1_fresh_breadth.md) | X53-N1: the from-scratch production pair (12,000 procedural teams vs a fresh same-pin control) that N1-P's GO funds; stages, stops, the cloud question (explicit-only). | DRAFT 2026-10-26; runs only on N1-P's GO; nothing built or registered |
+| 39 | [`strategy_if_levers_null_2026-10-26.md`](strategy_if_levers_null_2026-10-26.md) | If D3, N1-P and X59-S all miss a GAIN: the four explanations, the levers ranked by expected pp per GPU-h, the decision tree (explicit-only). | DRAFT 2026-10-26; a contingency, nothing built |
 
 Ranked work lives outside this directory: experiments in
 [`../research_state/EXPERIMENT_BACKLOG.md`](../research_state/EXPERIMENT_BACKLOG.md), build tasks in
