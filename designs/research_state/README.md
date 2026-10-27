@@ -93,8 +93,10 @@ view is wrong**: fix the view.
   finding its reader (`grep` the name under `src/`).
 - **[literature/](literature/)**: dated external-literature surveys (every claim cited and marked primary,
   secondary or UNVERIFIED): showdown bots landscape (2026-10-18), the hidden-information search review
-  (2026-10-20) and the state-of-the-art survey on generalising to UNFAMILIAR teams (2026-10-26, five ranked levers
-  N1-N5). A snapshot as of its date.
+  (2026-10-20), the state-of-the-art survey on generalising to UNFAMILIAR teams (2026-10-26, five ranked levers
+  N1-N5), and the context-generalisation survey (2026-10-27: memorised training contexts, recombination, a critic
+  blind to the familiarity premium, search on a level-shifted value; five ranked recommendations). A snapshot as of
+  its date.
 - **[reviews/](reviews/)**: dated independent code reviews (each finding confirmed by a repro or marked
   plausible); currently `core_review_2026-10-20.md`. Confirmed findings become TECH_DEBT_BACKLOG rows.
 - **[learning_notes/](learning_notes/)**: concept notes a probe spun off. Several carry STATUS BANNERS marking
