@@ -132,3 +132,21 @@ def test_the_params_check_names_each_defect():
     assert any("exactly" in m for m in RU.RULES["score_bands"].check_params(ok, models=models, anchor=two, s={}))
     off = {"rc": _A(["pstar"], ["rc72"]), "guard": _A(["pstar"], ["rc72"])}
     assert any("banked cell" in m for m in RU.RULES["score_bands"].check_params(ok, models=models, anchor=off, s={}))
+
+
+def test_the_committed_hctx_spec_registers_the_guard_first_and_60_rc72_units():
+    """The H-CTX read's committed spec (``measurements/hctx_rc72_2026-10-26/read_spec.json``): the guard group is
+    planned first (its units are among the first played), rc72 has 60 units of the one model, the bands are the
+    PREREG's, and the banked X51 rows still hash to the registered sha256."""
+    from main.reads.models import sha256_file, spec_path
+    from main.reads.spec import load
+    from utils.paths import repo_path
+
+    sp = load(repo_path("designs/research_state/measurements/hctx_rc72_2026-10-26/read_spec.json"))
+    assert sp.rule == "score_bands" and list(sp.anchor) == ["guard", "rc72"]
+    assert sp.anchor["rc72"].teamsets == ("rc72",) and sp.anchor["rc72"].unit_seeds == tuple(range(60))
+    assert set(sp.anchor["guard"].teamsets) == {"home72", "heldout72_hpfix", "forum72", "p72"}
+    assert sp.anchor["guard"].unit_seeds == (15,)
+    assert (sp.params["kill_at"], sp.params["support_at"], sp.params["min_unit_frac"]) == (0.57, 0.52, 0.9)
+    b = sp.params["banked"]
+    assert sha256_file(spec_path(b["path"])) == b["sha256"]

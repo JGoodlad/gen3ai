@@ -105,3 +105,9 @@ home72 − U premium rc72 keeps, (s − U) / (home72 − U).
    could land elsewhere.
 5. The forensics' secondary H-CTX prediction (the seen-set per-mon edge ≈ 0) is NOT registered here. The captures
    (`--capture-dir`, every panel unit) allow it post hoc.
+
+## Registration
+
+Pin `b044d214b` (the commit that lands the panel, its cell, the rule and this PREREG; nothing on the play path
+differs at the registration commit). Spec `read_spec.json`, sha256 `b9b52d6e18457f98dd5247c1e05020fe2c16111784ff0d977b081514ec03c101`.
+Played from a clean detached worktree at the pin, `--concurrency 2`, `--hours 48`.
