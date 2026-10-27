@@ -103,21 +103,26 @@ def _x51(tmp: Path) -> Dict[str, Any]:
             "cells": {ts: f"pstar_{ts}" for ts in PANELS}}
 
 
-def _artefacts(tmp: Path, *, fr2: Any = "NO-ARTEFACT", identity: bool = True, floor: bool = False,
-               void3: List[str] = ()) -> Dict[str, str]:
+def _artefacts(tmp: Path, *, fr2: Any = "NO-ARTEFACT", identity: bool = True, uninf: Any = None,
+               void3: List[str] = (), fit_last: float = 1.2995, share: float = 0.0, ih_env: str = "env=e/2"
+               ) -> Dict[str, str]:
     labs = [lab for v in ARMS.values() for lab in v]
-    stud = {"void3": list(void3), "students": {lab: {"yardsticks": {"selfplay_val_pstar_labels": 1.3 if
-                                                                    lab.startswith("s_p") else 1.4,
-                                                                    "human_val_human_labels": 1.2},
-                                                     "val_rose_last_epoch": False} for lab in labs}}
+    yd = {"s_h": 1.4, "s_p": 1.3, "s_s": 1.25}
+    stud = {"void3": list(void3), "students": {lab: {
+        "yardsticks": {"selfplay_val_pstar_labels": yd[lab[:3]], "human_val_human_labels": 1.2},
+        "val_hist": [[100, 1.5], [200, 1.3], [300, fit_last]], "val_rose_last_epoch": False} for lab in labs}}
+    gate = {"uninformative": uninf or {"delta_data": False, "delta_labels": False, "delta_states": False},
+            "continue": True}
     return {"students": _write(tmp, "students", stud),
             "floor_refs": _write(tmp, "floor", {"rates": {"random": 0.02, "aggressive": 0.05}, "uncounted": [],
                                                  "engines": ["port=e/1;env=e/2"]}),
-            "inhouse": _write(tmp, "inhouse", {"short": [], "rates": {"delta_data": [0.55, 0.56],
-                                                                      "delta_labels": [0.52, 0.53]}}),
+            "inhouse": _write(tmp, "inhouse", {"short": [], "core_stamps": [ih_env],
+                                               "rates": {"delta_data": [0.55, 0.56], "delta_labels": [0.52, 0.53]}}),
             "fr2": _write(tmp, "fr2", {"class": fr2}),
             "identity": _write(tmp, "identity", {"pass": identity, "unit": "pstar__home72__00"}),
-            "pilot_record": _write(tmp, "pilot", {"decision": {"floor": floor, "decision": {"verdict": "x"}}})}
+            "gate_record": _write(tmp, "gate", {"decision": {"gate": gate, "engine": "port=e/1;env=e/2",
+                                                             "decision": {"verdict": "x"}}}),
+            "m3_reencode": _write(tmp, "m3", {"share_differing": share})}
 
 
 def _full(tmp: Path, wins: Dict[str, int], *, short: Dict[str, int] = None, **art: Any) -> Dict[str, Any]:
@@ -133,16 +138,25 @@ def _full(tmp: Path, wins: Dict[str, int], *, short: Dict[str, int] = None, **ar
 def test_the_full_read_wires_the_registered_verdict(tmp_path):
     dec = _full(tmp_path, {"s_h_1": 40, "s_h_2": 41})
     assert dec["decision"]["verdict"] != X5.VOID
-    assert dec["read"]["floor"] is False and set(dec["decision"]["classes"]) == {"delta_data", "delta_labels"}
-    assert dec["fr2"] == "NO-ARTEFACT" and "qh10_vs_pstar_x51" in dec["descriptive"]
-    # Q-H10: every student unit at 5 / 20 = 0.25 (wins 20 of 80 over 4 units) against P*'s 10 / 20
-    assert dec["descriptive"]["qh10_vs_pstar_x51"]["S-S"]["delta"] == pytest.approx(-0.25)
+    assert set(dec["decision"]["classes"]) == {"delta_data", "delta_labels"}
+    assert dec["fr2"] == "NO-ARTEFACT" and dec["verdict_detail"]["sp_learned_its_teacher"]
+    # the student-to-P* gap: every student unit at 5 / 20 = 0.25 (wins 20 of 80 over 4 units) against P*'s 10 / 20
+    gap = dec["descriptive"]["student_to_pstar_gap_secondary_cross_engine"]
+    assert gap["S-S"]["delta"] == pytest.approx(-0.25)
+    assert set(dec["descriptive"]["per_panel"]) == set(PANELS)
 
 
-def test_the_pilot_floor_overrides_the_full_reads_own(tmp_path):
-    dec = _full(tmp_path, {}, floor=True)
-    assert dec["read"]["floor"] is True and dec["read"]["floor_on_all_units"] is False
-    assert dec["decision"]["verdict"].startswith("FLOOR")
+def test_the_gates_booleans_make_a_contrast_uninformative(tmp_path):
+    dec = _full(tmp_path, {}, uninf={"delta_data": True, "delta_labels": False, "delta_states": False})
+    assert dec["decision"]["classes"]["delta_data"] == "UNINFORMATIVE"
+    assert "UNINFORMATIVE (both arms at the floor)" in dec["decision"]["verdict"]
+
+
+def test_the_closure_needs_s_h_fitted(tmp_path):
+    w = {"s_s_1": 60, "s_s_2": 61, "s_p_1": 60, "s_p_2": 61}                   # S-S far above S-H
+    fitted = _full(tmp_path, w, fit_last=1.2995)                                # last-quarter drop 0.0005
+    unfit = _full(tmp_path, w, fit_last=1.25)                                   # still falling 0.05
+    assert fitted["sh_fit_drop"] < 0.01 < unfit["sh_fit_drop"]
 
 
 @pytest.mark.parametrize("kw, why", [
@@ -150,6 +164,7 @@ def test_the_pilot_floor_overrides_the_full_reads_own(tmp_path):
     ({"identity": False}, "VOID 5"),
     ({"void3": ["s_h_1: 7000 steps"]}, "VOID 3"),
     ({"short": {"s_h_1/forum72": 2, "s_s_2/p72": 2}}, "VOID 7"),
+    ({"ih_env": "env=other/9"}, "in-house"),
 ])
 def test_each_void_refuses_a_verdict(tmp_path, kw, why):
     dec = _full(tmp_path, {}, **kw)
@@ -195,3 +210,32 @@ def test_the_full_spec_refuses_overlapping_groups(tmp_path):
         parse(d)
     d["anchor"]["rest"]["unit_seeds"] = "4-19"
     parse(d)
+
+
+# ------------------------------------------------------------------------------------------------ the gate
+def _gate(wins: Dict[str, int], *, rep_games: Any = None) -> Dict[str, Any]:
+    labs = [lab for v in ARMS.values() for lab in v]
+    pilot = _group({lab: wins.get(lab, 12) for lab in labs}, [0, 1, 2, 3])
+    same = next(u["games"] for u in pilot["units"] if u["unit"] == "s_h_1__forum72__00")
+    rep = _group({"s_h_1_rep": wins.get("s_h_1", 12)}, [0], games=rep_games or {"s_h_1_rep/forum72/0": same})
+    rep["teamsets"] = ["forum72"]
+    rep["units"] = [u for u in rep["units"] if u["panel"] == "forum72"]
+    cells = {"anchor": {"pilot": pilot, "repeat": rep}}
+    return cells
+
+
+def test_the_gate_releases_only_per_contrast_booleans(tmp_path):
+    fl = _write(tmp_path, "floor", {"rates": {"random": 0.0, "aggressive": 0.0458}, "uncounted": [],
+                                    "engines": ["port=e/1;env=e/2"]})
+    p = {"group": "pilot", "panels": PANELS, "arms": ARMS, "floor_refs": fl, "band": 0.05,
+         "repeat": {"group": "repeat", "label": "s_h_1_rep", "of": "s_h_1"}}
+    # S-H and S-P at 6 / 80 = 0.075 (<= 0.0958), S-S at 16 / 80 = 0.20
+    cells = _gate({"s_h_1": 6, "s_h_2": 6, "s_p_1": 6, "s_p_2": 6, "s_s_1": 16, "s_s_2": 16})
+    dec = RU.decide("x59s_gate", json.loads(json.dumps(RU.inputs("x59s_gate", cells, p, None))), p)
+    assert dec["gate"] == {"uninformative": {"delta_data": False, "delta_labels": True, "delta_states": False},
+                           "continue": True}
+    assert set(dec) == {"gate", "short_cells", "repeat_pass", "engine", "decision"}
+    assert dec["decision"]["verdict"].startswith("CONTINUE")
+    cells = _gate({lab: 6 for v in ARMS.values() for lab in v})
+    dec = RU.decide("x59s_gate", json.loads(json.dumps(RU.inputs("x59s_gate", cells, p, None))), p)
+    assert dec["gate"]["continue"] is False and dec["decision"]["verdict"].startswith("STOP")
