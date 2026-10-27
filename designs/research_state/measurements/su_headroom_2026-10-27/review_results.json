@@ -1,0 +1,251 @@
+{
+ "noise": {
+  "loader": {
+   "table_sha256": "cd443030fbe22baf65b6cd14f8d0ee96bb57952e3ff0249286e4ee3b91bd9f0e",
+   "n_common": 719,
+   "common_ids_sha256": "ffb3e84aea57560cba1ee25b6cd8028e678ba711041b1695c68f4f40532551ed"
+  },
+  "x26_025M": {
+   "dev8": [
+    0.4145,
+    0.3795,
+    0.4499,
+    719
+   ],
+   "devA": [
+    0.4631,
+    0.4295,
+    0.5,
+    719
+   ],
+   "agree_given_both_dev": [
+    0.4598,
+    0.3939,
+    0.5218,
+    224
+   ],
+   "same_dev": [
+    0.1433,
+    0.1193,
+    0.1669,
+    719
+   ],
+   "rel": [
+    0.38,
+    0.3466,
+    0.4124,
+    719
+   ],
+   "val": [
+    0.1678,
+    0.1323,
+    0.202,
+    719
+   ],
+   "sign": [
+    0.5798,
+    0.5184,
+    0.6447,
+    238
+   ],
+   "imp": [
+    0.0193,
+    0.0083,
+    0.0305,
+    719
+   ],
+   "chance_agree_given_both_dev": 0.1658,
+   "n_states": 719
+  },
+  "x26_P280M": {
+   "dev8": [
+    0.4019,
+    0.3651,
+    0.4372,
+    719
+   ],
+   "devA": [
+    0.4534,
+    0.4154,
+    0.4922,
+    719
+   ],
+   "agree_given_both_dev": [
+    0.4369,
+    0.3668,
+    0.5046,
+    206
+   ],
+   "same_dev": [
+    0.1252,
+    0.1011,
+    0.1503,
+    719
+   ],
+   "rel": [
+    0.3189,
+    0.2854,
+    0.351,
+    719
+   ],
+   "val": [
+    0.1393,
+    0.1052,
+    0.1735,
+    719
+   ],
+   "sign": [
+    0.5132,
+    0.4468,
+    0.5801,
+    228
+   ],
+   "imp": [
+    0.0001,
+    -0.01,
+    0.0111,
+    719
+   ],
+   "chance_agree_given_both_dev": 0.1658,
+   "n_states": 719
+  }
+ },
+ "cost": {
+  "model": "c(t)=a*t^x CPU-s/decision, 1.12 decisions/turn from turn 10; fit: stage 0 game 1 (ONE game)",
+  "builders": {
+   "reference": {
+    "a": 0.00922,
+    "x": 2.4
+   },
+   "lean": {
+    "a": 0.184,
+    "x": 1.24
+   }
+  },
+  "n_games": 1600,
+  "reference": {
+   "home72": {
+    "n": 400,
+    "median_turns": 31.5,
+    "mean_cpu_min_growth": 65.8,
+    "mean_cpu_min_flat": 28.6,
+    "median_cpu_min": 6.2,
+    "mean_cpu_min_window_10_30": 3.96,
+    "share_over_3h_flat": 0.037,
+    "share_over_3h_growth": 0.045,
+    "share_turns_gt_100": 0.028
+   },
+   "H": {
+    "n": 400,
+    "median_turns": 38.0,
+    "mean_cpu_min_growth": 99.5,
+    "mean_cpu_min_flat": 43.3,
+    "median_cpu_min": 11.8,
+    "mean_cpu_min_window_10_30": 4.6,
+    "share_over_3h_flat": 0.062,
+    "share_over_3h_growth": 0.07,
+    "share_turns_gt_100": 0.058
+   },
+   "F": {
+    "n": 400,
+    "median_turns": 37.0,
+    "mean_cpu_min_growth": 162.0,
+    "mean_cpu_min_flat": 60.2,
+    "median_cpu_min": 10.7,
+    "mean_cpu_min_window_10_30": 4.42,
+    "share_over_3h_flat": 0.113,
+    "share_over_3h_growth": 0.13,
+    "share_turns_gt_100": 0.092
+   },
+   "P72": {
+    "n": 400,
+    "median_turns": 38.0,
+    "mean_cpu_min_growth": 133.8,
+    "mean_cpu_min_flat": 49.2,
+    "median_cpu_min": 11.8,
+    "mean_cpu_min_window_10_30": 4.39,
+    "share_over_3h_flat": 0.075,
+    "share_over_3h_growth": 0.085,
+    "share_turns_gt_100": 0.055
+   },
+   "ALL": {
+    "n": 1600,
+    "median_turns": 36.0,
+    "mean_cpu_min_growth": 115.3,
+    "mean_cpu_min_flat": 45.3,
+    "median_cpu_min": 9.8,
+    "mean_cpu_min_window_10_30": 4.34,
+    "share_over_3h_flat": 0.072,
+    "share_over_3h_growth": 0.083,
+    "share_turns_gt_100": 0.058
+   },
+   "full_read_cpu_h": {
+    "flat": 1812,
+    "growth": 4612,
+    "window_10_30": 174
+   }
+  },
+  "lean": {
+   "home72": {
+    "n": 400,
+    "median_turns": 31.5,
+    "mean_cpu_min_growth": 8.8,
+    "mean_cpu_min_flat": 7.2,
+    "median_cpu_min": 3.2,
+    "mean_cpu_min_window_10_30": 2.3,
+    "share_over_3h_flat": 0.0,
+    "share_over_3h_growth": 0.005,
+    "share_turns_gt_100": 0.028
+   },
+   "H": {
+    "n": 400,
+    "median_turns": 38.0,
+    "mean_cpu_min_growth": 12.7,
+    "mean_cpu_min_flat": 10.2,
+    "median_cpu_min": 5.0,
+    "mean_cpu_min_window_10_30": 2.58,
+    "share_over_3h_flat": 0.0,
+    "share_over_3h_growth": 0.007,
+    "share_turns_gt_100": 0.058
+   },
+   "F": {
+    "n": 400,
+    "median_turns": 37.0,
+    "mean_cpu_min_growth": 17.3,
+    "mean_cpu_min_flat": 12.7,
+    "median_cpu_min": 4.7,
+    "mean_cpu_min_window_10_30": 2.5,
+    "share_over_3h_flat": 0.0,
+    "share_over_3h_growth": 0.01,
+    "share_turns_gt_100": 0.092
+   },
+   "P72": {
+    "n": 400,
+    "median_turns": 38.0,
+    "mean_cpu_min_growth": 14.6,
+    "mean_cpu_min_flat": 11.1,
+    "median_cpu_min": 5.0,
+    "mean_cpu_min_window_10_30": 2.48,
+    "share_over_3h_flat": 0.0,
+    "share_over_3h_growth": 0.013,
+    "share_turns_gt_100": 0.055
+   },
+   "ALL": {
+    "n": 1600,
+    "median_turns": 36.0,
+    "mean_cpu_min_growth": 13.3,
+    "mean_cpu_min_flat": 10.3,
+    "median_cpu_min": 4.4,
+    "mean_cpu_min_window_10_30": 2.47,
+    "share_over_3h_flat": 0.0,
+    "share_over_3h_growth": 0.009,
+    "share_turns_gt_100": 0.058
+   },
+   "full_read_cpu_h": {
+    "flat": 412,
+    "growth": 532,
+    "window_10_30": 99
+   }
+  }
+ }
+}
