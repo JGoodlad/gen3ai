@@ -467,32 +467,36 @@ pub(crate) struct MoveResolution {
     /// the caller must neither consume Charge nor run the AfterMove hooks. Implies `aborted`.
     /// Bide's wait turn returns the same way (`beforeMoveCallback`, `gen3_b8_moves_v1`).
     nopp: bool,
+    /// The in-`tryMoveHit` `eachEvent('Update')` of a LANDED move already ran, inside the
+    /// `run_move` that executed it (`gen3_bf_update_before_shell_bell_v1`): a called move (Sleep
+    /// Talk's pick) propagates `landed` to its caller, which must not run the Update twice.
+    update_done: bool,
 }
 
 impl MoveResolution {
     /// An out-of-scope (unknown / status / 0-BP) move: no draws, never landed.
     fn no_op() -> MoveResolution {
-        MoveResolution { missed: false, crit: false, landed: false, force_switch_foe: None, aborted: false, nopp: false }
+        MoveResolution { missed: false, crit: false, landed: false, force_switch_foe: None, aborted: false, nopp: false, update_done: false }
     }
     /// The common terminal: a resolved move that drew its taxes but is not landed and
     /// triggers no forced switch (a miss / immune / status-applied / boost / heal).
     fn done(missed: bool, crit: bool, landed: bool) -> MoveResolution {
-        MoveResolution { missed, crit, landed, force_switch_foe: None, aborted: false, nopp: false }
+        MoveResolution { missed, crit, landed, force_switch_foe: None, aborted: false, nopp: false, update_done: false }
     }
     /// A move ABORTED at `onBeforeMove` (a cant) — like [`Self::done`] but flags that the
     /// sim's `AfterMove` event never fired (so the `onAnyAfterMove` White Herb hook is skipped).
     fn aborted() -> MoveResolution {
-        MoveResolution { missed: false, crit: false, landed: false, force_switch_foe: None, aborted: true, nopp: false }
+        MoveResolution { missed: false, crit: false, landed: false, force_switch_foe: None, aborted: true, nopp: false, update_done: false }
     }
     /// `runMove`'s `cant … nopp` return (see [`Self::nopp`]).
     fn nopp() -> MoveResolution {
-        MoveResolution { missed: false, crit: false, landed: false, force_switch_foe: None, aborted: true, nopp: true }
+        MoveResolution { missed: false, crit: false, landed: false, force_switch_foe: None, aborted: true, nopp: true, update_done: false }
     }
     /// BIDE's WAIT turn (`gen3_b8_moves_v1`): `beforeMoveCallback` returned true, so `runMove`
     /// returned with neither `MoveAborted` nor `AfterMove` — the same caller-side shape as
     /// [`Self::nopp`] (no Charge consumption, no AfterMove hooks).
     fn bide_wait() -> MoveResolution {
-        MoveResolution { missed: false, crit: false, landed: false, force_switch_foe: None, aborted: true, nopp: true }
+        MoveResolution { missed: false, crit: false, landed: false, force_switch_foe: None, aborted: true, nopp: true, update_done: false }
     }
 }
 

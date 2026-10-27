@@ -2406,10 +2406,14 @@ impl crate::state::BattleState {
         // PROBE-verified on the fs_mirror board: a non-KO tie resolve draws acc+2 Updates;
         // the KO resolve draws acc+1 (the |faint| emits between them). The inner
         // faintMessages also ENDS a battle the KO decided (the caller's per-handler
-        // `check_win` return then aborts the remaining residual handlers).
-        self.each_event_shuffle();
+        // `check_win` return then aborts the remaining residual handlers). Both Updates run their
+        // handlers too (`gen3_bf_attract_source_left_v1`): after the KO's `|faint|`, the second one
+        // ends an infatuation whose source the strike just fainted (`attract.onUpdate`).
+        let upd = self.each_event_shuffle();
+        self.run_update_items(&upd, dex);
         self.process_faints(dex);
-        self.each_event_shuffle();
+        let upd = self.each_event_shuffle();
+        self.run_update_items(&upd, dex);
     }
 
     /// The **PARTIAL-TRAP** residual (`gen3_partial_trap_v1` — Wrap / Bind / Fire Spin /

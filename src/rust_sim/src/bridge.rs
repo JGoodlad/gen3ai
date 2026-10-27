@@ -986,7 +986,7 @@ fn serialize_active_with_disabled_source(
                 let nonghost_curse = crate::dex::to_id(mv) == "curse"
                     && !crate::turn::mon_types(mon, dex).contains(&crate::dex::Type::Ghost);
                 // A SKETCHED slot is the same no-`target` literal, permanently (`gen3_b11_moves_v1`,
-                // `data/mods/gen4/moves.ts` sketch; probe_b11_moves.js "sketch request").
+                // `data/mods/gen4/moves.ts` sketch; the sketch-request board of probe_b11_moves.js).
                 let mimicked = mon.transform.is_none()
                     && !nonghost_curse
                     && (mon.mimic_overlay.as_ref().is_some_and(|ov| ov.slot == k)

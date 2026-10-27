@@ -358,10 +358,9 @@ impl crate::state::BattleState {
                         _ => false,
                     });
                     let res = self.run_move(MoveAction { side, slot, move_index, struggle }, will_act, foe_will_move, dex);
-                    if res.landed {
-                        let upd = self.each_event_shuffle(); // in-tryMoveHit Update (landed)
-                        self.run_update_items(&upd, dex); // cure-berry/Leppa onUpdate (draw-free)
-                    }
+                    // The in-tryMoveHit Update of a landed move ran inside `run_move`, before Shell Bell
+                    // (`gen3_bf_update_before_shell_bell_v1`).
+                    debug_assert!(!res.landed || res.update_done);
                     // SPIT UP's `onAfterMove` (`gen3_b7_moves_v1`) — the move's own singleEvent,
                     // ahead of the runEvent('AfterMove') handlers below.
                     self.spit_up_after_move(side, slot, &res, dex);

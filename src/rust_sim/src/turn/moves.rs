@@ -45,9 +45,20 @@ impl crate::state::BattleState {
         // `move.totalDamage` is per `useMove`: a nested call (Sleep Talk's chosen move, a
         // Pursuit run inside a switch) gets its own, and the caller's resumes after it.
         let outer = std::mem::replace(&mut self.move_total_damage, (0, None));
-        let res = self.run_move_body(action, will_act, foe_will_move, dex);
+        let mut res = self.run_move_body(action, will_act, foe_will_move, dex);
         // A Magnitude `onUseMoveMessage` is consumed by its own announce; never let one leak.
         self.log.clear_use_move_message();
+        // The in-`tryMoveHit` `eachEvent('Update')` (gen 3 `tryMoveHit`, data/mods/gen3/scripts.ts:470)
+        // of a LANDED move runs BEFORE `useMove`'s `AfterMoveSecondarySelf` (Shell Bell): a Persim /
+        // cure berry eaten at that Update precedes the attacker's Shell Bell heal
+        // (`gen3_bf_update_before_shell_bell_v1`, the B11 agent's fuzz find `rmvq6vp32_ab_1_4`, pin
+        // `bf26`). It used to run at the CALLER, after the heal. A called move ran its own already
+        // (`update_done`), so the propagated `landed` does not run it twice.
+        if res.landed && !res.update_done {
+            let upd = self.each_event_shuffle();
+            self.run_update_items(&upd, dex);
+            res.update_done = true;
+        }
         let total = std::mem::replace(&mut self.move_total_damage, outer);
         self.shell_bell(action.side, action.slot, total, dex);
         res
@@ -589,8 +600,8 @@ impl crate::state::BattleState {
         // Encore lands on the caller and its `onOverrideAction` swaps the locked action for it
         // (the driver's override). `runMove` still finds `getLockedMove()`, so the overriding move
         // pays NO PP and announces `|[from] lockedmove` (`sim/battle-actions.ts` runMove), and the
-        // lock is not repeated (its volatile is left to expire). Probe_b11_moves.js "encore over a
-        // called outrage".
+        // lock is not repeated (its volatile is left to expire). The encore-over-a-called-outrage board
+        // of probe_b11_moves.js.
         let lock_overridden = !pursuit_strike
             && !use_move_call
             && !struggle
@@ -683,7 +694,7 @@ impl crate::state::BattleState {
         //     A CALLED Bide's wait turn whose action Encore overrode (`gen3_b11_moves_v1`, see
         //     `lock_overridden`): the condition's `onBeforeMove` prints the wait `-activate` and
         //     returns nothing, and only Bide's OWN `beforeMoveCallback` ends `runMove` — so the
-        //     overriding move then runs (probe_b11_moves.js "encore over a called bide"). The
+        //     overriding move then runs (the encore-over-a-called-bide board of probe_b11_moves.js). The
         //     release turn returns false whatever the move.
         if let Some(b) = self.sides[side].pokemon[slot].bide {
             if move_id != "bide" && b.duration != 1 {
@@ -1331,10 +1342,16 @@ impl crate::state::BattleState {
         //     to the type-chart effectiveness PRODUCT `> 1.0` (each per-type factor ∈ {0.5,1,2}; a
         //     0× factor makes the product 0 → not `> 1.0` → the WG `-immune` form). No new state (a
         //     read-only incoming-move gate; a Traced Wonder Guard reads its LIVE copied ability). ---
+        //     BEAT UP is typeless here too (review F4, `gen3_bf_beatup_wonderguard_v1`, pins `bf23a-b`):
+        //     gen 3's Beat Up `onModifyMove` sets `move.type = '???'` (data/mods/gen3/moves.ts beatup)
+        //     before TryHit, and the gen-4 Wonder Guard `onTryHit` returns early for a `???` move
+        //     (data/mods/gen4/abilities.ts wonderguard), so Beat Up strikes any Wonder Guard holder; the
+        //     dex type (Dark) hid it behind Shedinja's own Dark weakness.
         if acc_hit
             && category != MoveCategory::Status
             && !targets_self
             && move_type.is_some()
+            && move_id != "beatup"
             && dex
                 .ability(&self.sides[foe].pokemon[foe_slot].ability)
                 .map(|a| a.wonder_guard)
@@ -1718,7 +1735,12 @@ impl crate::state::BattleState {
             }
         }
 
-        if self.logging() {
+        // BASE POWER 0 (review F5, `gen3_bf_bp_zero_v1`, pins `bf24a-b`): `getDamage` returns 0 at
+        // `if (!basePower) return 0;` right after `runEvent('BasePower')` (sim/battle-actions.ts), so
+        // `modifyDamage` never runs: the crit roll and the BasePower shuffles draw, but no effectiveness
+        // or `-crit` line, no ModifyDamagePhase1 shuffle, no `random(16)`, and a 0-delta `-damage`.
+        let bp_zero = crate::damage::final_base_power(&ctx) == 0;
+        if self.logging() && !bp_zero {
             let target = self.mon_ref(foe, foe_slot, dex);
             // Effectiveness (the DEFENDER's ident) — the type-chart product of the
             // move type vs the defender's species types. `-supereffective` (>1) /
@@ -1768,7 +1790,7 @@ impl crate::state::BattleState {
         }
 
         // [EMIT] `|-crit|<foe>` (after effectiveness, before `|-damage|`).
-        if crit && self.logging() {
+        if crit && !bp_zero && self.logging() {
             let target = self.mon_ref(foe, foe_slot, dex);
             self.log.crit(&target);
         }
@@ -1796,14 +1818,17 @@ impl crate::state::BattleState {
         //     `random(16)` damage roll — the exact position in the sim's draw stream. A crit
         //     ignores screens for the DAMAGE, but the handlers still GATHER (the event runs
         //     regardless of crit), so the shuffle draws even under a crit. ---
-        self.modify_damage_phase1_shuffle();
+        if !bp_zero {
+            self.modify_damage_phase1_shuffle();
+        }
 
         // --- 3. DAMAGE: random(16) selects rolls[r] (gen-3 randomizer). The draw goes through
-        //     `damage_roll` (`crate::rolls`): unarmed, it is exactly `random_below(16)`. ---
-        let r = self.damage_roll(
+        //     `damage_roll` (`crate::rolls`): unarmed, it is exactly `random_below(16)`. A base
+        //     power of 0 returned before it (no draw, 0 damage). ---
+        let r = if bp_zero { 0 } else { self.damage_roll(
             crate::rolls::Site { kind: crate::rolls::SiteKind::Hit, att_side: side, tgt_side: foe, tgt_slot: foe_slot, move_id: &move_id, rolls: &dmg.rolls, via_sub: true, false_swipe: move_id == "falseswipe", endure_applies: true },
             dex,
-        );
+        ) };
         let realized = dmg.rolls[r];
 
         // --- SUBSTITUTE ABSORB (the gen-3 sub-intercept, `substitute.onTryPrimaryHit`):
@@ -1869,7 +1894,7 @@ impl crate::state::BattleState {
             // FOCUS BAND (`gen3_ability_batch4_v1`): the onDamage roll draws AFTER the
             // damage rolls, BEFORE the apply; a lethal MOVE hit that passes survives at
             // 1 HP (probe seed 8: crit path included). A sub-absorbed hit never draws.
-            let realized = self.focus_band_damage(foe, foe_slot, realized, true, true, dex);
+            let realized = self.focus_band_damage_ev(foe, foe_slot, realized, true, true, bp_zero, dex);
             // Refresh `dealt` to the POST-Focus-Band applied amount (the recoil/drain basis).
             dealt = realized.min(target_hp_before);
             let hp_before = self.sides[foe].pokemon[foe_slot].hp;
@@ -1915,7 +1940,7 @@ impl crate::state::BattleState {
             // unchanged HP (`gen3_bf_false_swipe_zero_v1`, probe BF5a). The other 0-damage
             // clamps (Endure / Focus Band at 1 HP) emit their own line (their helpers), and a
             // 0 never reaches them from here (False Swipe's 0 ends the Damage relay).
-            if (realized > 0 || false_swipe_zero) && self.logging() {
+            if (realized > 0 || false_swipe_zero || bp_zero) && self.logging() {
                 let target = self.mon_ref(foe, foe_slot, dex);
                 let hp = self.hp_status(foe, foe_slot);
                 self.log.damage(&target, &hp, None);

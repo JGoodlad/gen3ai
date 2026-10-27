@@ -29397,3 +29397,26 @@ refused at construction like Berry Juice. Each pin diverges on main's build befo
 0.27 %, Light Screen 0.20 %; two screens up at once in 0 of 6665 N1-P eval battles); state: Conversion 2 after a
 Sleep Talk call or a Snatch steal (Conversion 2 0.0074 %, Sleep Talk common). No validated gen3ou team can hold a
 gen-2 berry. **Left:** the Hidden Power belief tracker ignores Foresight (an observation tracker with a Python twin).
+
+## 2026-10-26 · RUST SIM · gen3 full parity BF4: the independent review's confirmed divergences (F1, F4, F5, P1)
+
+**BF4** (`gen3_bf_present_heal_hit_v1`, `gen3_bf_beatup_wonderguard_v1`, `gen3_bf_bp_zero_v1`, `gen3_bf_search_safeguard_v1`;
+pins `bf22`-`bf24`, `p1_the_search_snapshot_lists_safeguard`), from `designs/rust_sim/parity_review_b6_b10_2026-10-26.md`
+(1840ee83). F1: a PRESENT heal still reaches `runMoveEffects`' `runEvent('Hit')`, so the target's Rage boosts and a
+pending Focus Punch loses focus. F4: gen 3's Beat Up is typeless (`onModifyMove` '???'), so Wonder Guard never blocks it
+(a Traced Wonder Guard exposed the dex-type read). F5: `getDamage` returns 0 when the BasePower chain floors the base
+power to 0 (Eruption at ~1/150 HP into Thick Fat or Water Sport): the crit roll draws, then no effectiveness or crit
+line, no damage roll, a 0-delta `-damage`, and Focus Band still rolls on the 0 relay. P1: the search snapshot's
+`sideConditions` lists Safeguard. F2 (Sleep Talk's call) and F3 (Snatch) were already fixed by B11 / BF3; P2 (the
+Lock-On timer's gather order) has no observable and stays a note. Every board diverges on main's build before the fix;
+the review's unrun negative control was re-run corrected (one non-KO `-damage` HP off by one → a `protocol`
+divergence at that line; untouched → `ok`). Two more from the fuzz: gen 3 `tryMoveHit`'s in-move Update now runs
+inside `run_move`, BEFORE `useMove`'s Shell Bell heal, so a berry the hit triggers (a Persim on a Dynamic Punch's
+confusion, a Cheri on a paralysis) is eaten first (`gen3_bf_update_before_shell_bell_v1`, `bf26`); and an
+infatuation ends at the Update right after a Future Sight strike faints its source, as the generic
+`hitStepMoveHitLoop` runs Update, `faintMessages`, Update (`gen3_bf_attract_source_left_v1`, `bf25`).
+
+**OU-visible (FINDING):** protocol line order for Shell Bell (0.03 % of gen3ou mons) against any Update-eaten berry,
+and Attract after a Future Sight KO; F1 dice (a Focus Punch that no longer lands; Present 0.0007 % of gen3ou mons,
+Focus Punch common), F4 dice (Shedinja + Trace + a Beat Up user together; Beat Up 1.41 %), F5 dice (Eruption at ~1 HP into Thick
+Fat). A training-data change for runs on pins after this commit; e2e capstone and obs golden checked with B11.

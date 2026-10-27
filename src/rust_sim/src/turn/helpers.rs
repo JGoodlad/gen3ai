@@ -180,10 +180,9 @@ impl crate::state::BattleState {
             // is at 0 HP but NOT yet `fainted` (faintMessages hasn't run), so it is
             // still counted by getAllActive() → the 2-active speed-tie shuffle FIRES
             // on a KO turn (verified: the faint turn draws 7, incl. this shuffle).
-            if outcome.landed {
-                let upd = self.each_event_shuffle(); // [7]/[12] in-tryMoveHit Update
-                self.run_update_items(&upd, dex); // cure-berry/Leppa onUpdate (draw-free)
-            }
+            // The landed move's in-tryMoveHit Update ([7]/[12]) ran inside `run_move`, before
+            // Shell Bell (`gen3_bf_update_before_shell_bell_v1`).
+            debug_assert!(!outcome.landed || outcome.update_done);
             // SPIT UP's `onAfterMove` (`gen3_b7_moves_v1`), as in the queue driver.
             self.spit_up_after_move(action.side, action.slot, &outcome, dex);
 

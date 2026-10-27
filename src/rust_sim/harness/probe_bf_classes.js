@@ -370,3 +370,38 @@ run('BF21a called move: sleep talk sets lastMoveUsed', 'gen3customgame', [1, 2, 
 run('BF21b called move: a snatch steal sets lastMoveUsed', 'gen3customgame', [1, 2, 3, 4],
   SET('Snorlax', 'thickfat', 'snatch,splash'), 'Porygon2||none|trace|swordsdance,conversion2|Hardy|85,85,85,85,85,85|N||||',
   [M(1, 1), M(2, 2)]);
+// ---- BF22 (review F1) a PRESENT heal still runs the target's Hit-event reactions ----
+// `runMoveEffects` runs `runEvent('Hit', target, source, move)` after Present's heal branch (sim/battle-actions.ts);
+// Present is Physical, so Rage boosts (BF22a) and a pending Focus Punch loses focus (BF22b, `cant … Focus Punch`).
+run('BF22a present heal: rage boosts', 'gen3customgame', [17, 18, 19, 20], SET('Delibird', 'hustle', 'present,splash'),
+  SET('Snorlax', 'thickfat', 'rage,splash'), [M(1, 1), M(1, 1), M(1, 1)]);
+run('BF22b present heal: focus punch loses focus', 'gen3customgame', [5, 6, 7, 8], SET('Delibird', 'hustle', 'present,splash'),
+  SET('Snorlax', 'thickfat', 'focuspunch,splash'), [M(1, 1), M(1, 1), M(1, 1)]);
+// ---- BF23 (review F4) BEAT UP is typeless (gen 3 onModifyMove '???'), so Wonder Guard never blocks it ----
+// A Porygon2 that Traced Shedinja's Wonder Guard takes every strike (the gen-4 wonderguard onTryHit returns for '???').
+run('BF23a beat up: through a traced wonder guard', 'gen3customgame', [1, 2, 3, 4],
+  SET('Shedinja', 'wonderguard', 'splash') + ']' + SET('Houndoom', 'flashfire', 'beatup,splash'),
+  'Porygon2||none|trace|splash,tackle|Hardy|85,85,85,85,85,85|N||||', [['switch 2', 'move 1'], M(1, 1)]);
+// ---- BF24 (review F5) a base power floored to 0 by the BasePower chain: getDamage returns 0 ----
+// Endure leaves Camerupt at 1 HP; Eruption's BP is 1 after `clampIntRange`, and Thick Fat's chainModify(0.5) floors it
+// to 0 (BF24a), as does Water Sport (BF24b): the crit roll draws, then no lines, no damage roll, a 0-delta `-damage`.
+run('BF24a bp zero: eruption into thick fat', 'gen3customgame', [1, 2, 3, 4],
+  SET('Camerupt', 'magmaarmor', 'endure,eruption'),
+  SET('Swampert', 'torrent', 'earthquake,splash') + ']' + SET('Snorlax', 'thickfat', 'splash'), [M(1, 1), ['move 2', 'switch 2']]);
+run('BF24b bp zero: eruption into water sport', 'gen3customgame', [1, 2, 3, 4],
+  SET('Camerupt', 'magmaarmor', 'endure,eruption'), SET('Swampert', 'torrent', 'earthquake,watersport'), [M(1, 1), M(2, 2)]);
+// ---- BF25 (the B11 agent's finding, fuzz rmvq9o5ho_ab_2_14) an infatuation ends at the Update after its SOURCE faints ----
+// `attract.condition.onUpdate` (data/moves.ts) removes the volatile once its source is not active (`-end|…|Attract|[silent]`).
+// A Future Sight strike in the residual runs gen 3's generic `hitStepMoveHitLoop` (sim/battle-actions.ts): an Update,
+// `faintMessages`, then a second Update, so a source the strike KOs ends the infatuation right after `|faint|`, before
+// `|upkeep|` and the replacement (BF25a). (A source KO'd by a move is replaced first; the switch path handles that.)
+run('BF25a attract: a future sight ko of the source ends it at once', 'gen3customgame', [1, 2, 3, 4],
+  'Clefairy||none|cutecharm|attract,splash|Hardy|85,85,85,85,85,85|M|||5|]' + SET('Snorlax', 'thickfat', 'splash'),
+  'Duskull||none|levitate|futuresight,splash|Hardy|85,85,85,85,85,85|F||||', [M(1, 1), M(2, 2), M(2, 2), ['switch 2', '']]);
+// ---- BF26 (the B11 agent's fuzz find rmvq6vp32_ab_1_4) the in-tryMoveHit Update precedes the attacker's SHELL BELL ----
+// gen 3's `tryMoveHit` ends with `eachEvent('Update')` (data/mods/gen3/scripts.ts:470), BEFORE `useMove` runs
+// `AfterMoveSecondarySelf` (Shell Bell): a Dynamic Punch that confuses a Persim Berry holder sees the berry eaten
+// first, then the heal. The port ran that Update at the caller, after the heal.
+run('BF26a shell bell: after the update that eats a persim berry', 'gen3customgame', [2, 3, 4, 5],
+  'Machamp||shellbell|guts|dynamicpunch,splash|Hardy|85,85,85,85,85,85|M||||',
+  'Snorlax||persimberry|thickfat|bodyslam,splash|Hardy|85,85,85,85,85,85|M||||', [M(2, 1), M(1, 2)]);

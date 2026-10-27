@@ -427,9 +427,60 @@ pub fn calc_damage(ctx: &DamageContext, dex: &Dex) -> DamageResult {
         return DamageResult::zero();
     }
 
+    // `getDamage`'s `if (!basePower) return 0;` right after `runEvent('BasePower')` (review F5): no
+    // `modifyDamage`, so no damage roll; the caller draws the crit and the BasePower shuffles only.
+    if final_base_power(ctx) == 0 {
+        return DamageResult::zero();
+    }
     let base = get_base_damage(ctx);
     let rolled = modify_damage(base, ctx, type_mult);
     rolled
+}
+
+/// The base power after gen 3's `runEvent('BasePower')` chain (the `bp_mods` Direct / Chain members and Thick
+/// Fat), BEFORE `getDamage`'s `if (!basePower) return 0;` (sim/battle-actions.ts getDamage). It CAN be 0: the
+/// event's last `modify()` floors a 1 BP move halved by Thick Fat / a sport (only Eruption below ~1/150 of max HP
+/// gets there in gen 3), and then the sim returns 0 damage before `modifyDamage` (`gen3_bf_bp_zero_v1`, review F5).
+pub fn final_base_power(ctx: &DamageContext) -> u64 {
+    let mut bp = ctx.mv.base_power.max(1) as u64; // clampIntRange(>=1)
+    let mut bp_float: Option<f64> = None;
+    let mut bp_chain: Vec<(u64, u64)> = Vec::new();
+    for m in &ctx.bp_mods {
+        match *m {
+            BpMod::Direct(n, d) => {
+                let cur = bp_float.unwrap_or(bp as f64);
+                bp_float = Some(cur * (n as f64 / d as f64));
+            }
+            BpMod::Chain(n, d) => bp_chain.push((n, d)),
+        }
+    }
+    if ctx.defender_thick_fat {
+        bp_chain.push((1, 2));
+    }
+    bp = match bp_float {
+        // Direct handler fired → relayVar is a float. The sim's runEvent tail
+        // (battle.js:709) applies the accumulated chain modifier iff relayVar is
+        // STILL a non-negative INTEGER-VALUED number
+        // (`relayVar === Math.abs(Math.floor(relayVar))`); otherwise the chain is
+        // SKIPPED and clampIntRange truncs the float. This is the EXACT guard —
+        // the old "Direct discards the chain" shortcut broke the day a Direct and a
+        // Chain member could co-fire on ONE move: `gen3_facade_v1` made Facade a
+        // Normal-type BP-CHAIN member (×2 when statused) that composes with the
+        // Normal-type ×1.1 bows, and `70 * 1.1 == 77` EXACTLY in f64 → the guard
+        // PASSES and the chain re-applies (probe `harness/probe_facade_gen3.js`:
+        // Pink Bow + poisoned Facade = BP 154 = modify(77, ×2), NOT 77). A
+        // non-integer float (e.g. 75 × 1.1 = 82.5) still skips the chain. The f64
+        // product is bit-identical to JS's (same IEEE-754 double math).
+        Some(f) => {
+            if f >= 0.0 && f == f.floor() {
+                chain_modify(f as u64, &bp_chain)
+            } else {
+                f as u64 // clampIntRange truncs the float; chain skipped
+            }
+        }
+        None => chain_modify(bp, &bp_chain),
+    };
+    bp
 }
 
 /// **Stage 1 — `get_damage`** (the shared base, `battle-actions.ts`): resolve the
@@ -505,45 +556,9 @@ fn get_base_damage(ctx: &DamageContext) -> u64 {
     // type-disjoint since `gen3_facade_v1` (Facade is a Normal-type CHAIN member, the
     // bows are Normal-type DIRECTs): a poisoned Pink-Bow Facade is BP
     // modify(77, ×2) = 154 (probe `harness/probe_facade_gen3.js` + the FA-d pin).
-    let mut bp = ctx.mv.base_power.max(1) as u64; // clampIntRange(>=1)
-    let mut bp_float: Option<f64> = None;
-    let mut bp_chain: Vec<(u64, u64)> = Vec::new();
-    for m in &ctx.bp_mods {
-        match *m {
-            BpMod::Direct(n, d) => {
-                let cur = bp_float.unwrap_or(bp as f64);
-                bp_float = Some(cur * (n as f64 / d as f64));
-            }
-            BpMod::Chain(n, d) => bp_chain.push((n, d)),
-        }
-    }
-    if ctx.defender_thick_fat {
-        bp_chain.push((1, 2));
-    }
-    bp = match bp_float {
-        // Direct handler fired → relayVar is a float. The sim's runEvent tail
-        // (battle.js:709) applies the accumulated chain modifier iff relayVar is
-        // STILL a non-negative INTEGER-VALUED number
-        // (`relayVar === Math.abs(Math.floor(relayVar))`); otherwise the chain is
-        // SKIPPED and clampIntRange truncs the float. This is the EXACT guard —
-        // the old "Direct discards the chain" shortcut broke the day a Direct and a
-        // Chain member could co-fire on ONE move: `gen3_facade_v1` made Facade a
-        // Normal-type BP-CHAIN member (×2 when statused) that composes with the
-        // Normal-type ×1.1 bows, and `70 * 1.1 == 77` EXACTLY in f64 → the guard
-        // PASSES and the chain re-applies (probe `harness/probe_facade_gen3.js`:
-        // Pink Bow + poisoned Facade = BP 154 = modify(77, ×2), NOT 77). A
-        // non-integer float (e.g. 75 × 1.1 = 82.5) still skips the chain. The f64
-        // product is bit-identical to JS's (same IEEE-754 double math).
-        Some(f) => {
-            if f >= 0.0 && f == f.floor() {
-                chain_modify(f as u64, &bp_chain)
-            } else {
-                f as u64 // clampIntRange truncs the float; chain skipped
-            }
-        }
-        None => chain_modify(bp, &bp_chain),
-    };
-    bp = bp.max(1);
+    // The BasePower chain (`final_base_power`); a 0 here never reaches this formula (`calc_damage`
+    // returns zero first, review F5), so the `clampIntRange(basePower, 1)` floor is a no-op guard.
+    let bp = final_base_power(ctx).max(1);
 
     // --- gen<=4 Explosion/Self-Destruct: defender Def halved (clampIntRange >=1) ---
     if ctx.mv.halves_defense && def_stat == Stat::Def {

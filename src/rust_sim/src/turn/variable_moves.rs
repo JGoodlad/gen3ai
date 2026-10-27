@@ -356,6 +356,14 @@ impl crate::state::BattleState {
             let hp = self.hp_status(foe, foe_slot);
             self.log.heal(&tr, &hp, None);
         }
+        // The heal still reaches `runMoveEffects`' `runEvent('Hit', target, source, move)` (review F1,
+        // `gen3_bf_present_heal_hit_v1`, pins `bf22a-b`): Present is Physical, so the target's RAGE
+        // boosts (`rage.condition.onHit`) and a pending FOCUS PUNCH loses focus
+        // (`focuspunch.condition.onHit`). The full-HP and Substitute fails above never reach it.
+        self.rage_on_hit(foe, foe_slot, dex);
+        if let Some(fp) = self.sides[foe].pokemon[foe_slot].focus_punch.as_mut() {
+            *fp = true;
+        }
         MoveResolution::done(false, false, false)
     }
 

@@ -1187,7 +1187,7 @@ fn move_slots_json(mon: &MonState) -> String {
 }
 
 /// The side conditions the port models, SORTED — `Object.keys(side.sideConditions)`.
-/// The modeled set: Light Screen, Mist, Reflect, Spikes (Spikes is the only entry hazard; Wish
+/// The modeled set: Light Screen, Mist, Reflect, Safeguard, Spikes (Spikes is the only entry hazard; Wish
 /// and the future moves are SLOT conditions, which `preState` does not report).
 fn side_conditions(st: &BattleState, side: usize) -> Vec<&'static str> {
     let s = &st.sides[side];
@@ -1200,6 +1200,9 @@ fn side_conditions(st: &BattleState, side: usize) -> Vec<&'static str> {
     }
     if s.reflect > 0 {
         v.push("reflect");
+    }
+    if s.safeguard > 0 {
+        v.push("safeguard"); // review P1 (`gen3_bf_search_safeguard_v1`): a key of `side.sideConditions` too
     }
     if s.spikes > 0 {
         v.push("spikes");

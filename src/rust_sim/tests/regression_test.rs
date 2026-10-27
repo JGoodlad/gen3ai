@@ -18827,3 +18827,282 @@ fn bf21_b_a_snatch_stolen_move_sets_last_move_used() {
         &["43514,9542,40559,8561", "55250,62519,52978,42619"],
     );
 }
+
+/// BF22 (review F1, `gen3_bf_present_heal_hit_v1`): a PRESENT heal still reaches `runMoveEffects`' `runEvent('Hit')` (sim/battle-actions.ts):
+/// Present is Physical, so the target's RAGE boosts (BF22a) and a pending FOCUS PUNCH loses focus (BF22b). WRONG (pre-fix):
+/// the heal returned before either reaction. Ground truth: `harness/probe_bf_classes.js` (BF22a, BF22b).
+#[test]
+fn bf22_a_a_present_heal_still_boosts_rage() {
+    bf_check(
+        "BF22a",
+        "gen3customgame",
+        "17,18,19,20",
+        "Delibird||none|hustle|present,splash|Hardy|85,85,85,85,85,85|M||||",
+        "Snorlax||none|thickfat|rage,splash|Hardy|85,85,85,85,85,85|M||||",
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0)), ScriptDecision::both(Choice::Move(0), Choice::Move(0)), ScriptDecision::both(Choice::Move(0), Choice::Move(0))],
+        &[
+            "|move|p1a: Delibird|Present|p2a: Snorlax",
+            "|-damage|p2a: Snorlax|401/482",
+            "|move|p2a: Snorlax|Rage|p1a: Delibird",
+            "|-damage|p1a: Delibird|208/252",
+            "|-singlemove|p2a: Snorlax|Rage",
+            "|upkeep",
+            "|turn|2",
+            "|move|p1a: Delibird|Present|p2a: Snorlax",
+            "|-damage|p2a: Snorlax|357/482",
+            "|-boost|p2a: Snorlax|atk|1",
+            "|move|p2a: Snorlax|Rage|p1a: Delibird",
+            "|-damage|p1a: Delibird|139/252",
+            "|-singlemove|p2a: Snorlax|Rage",
+            "|upkeep",
+            "|turn|3",
+            "|move|p1a: Delibird|Present|p2a: Snorlax",
+            "|-heal|p2a: Snorlax|477/482",
+            "|-boost|p2a: Snorlax|atk|1",
+            "|move|p2a: Snorlax|Rage|p1a: Delibird",
+            "|-damage|p1a: Delibird|48/252",
+            "|-singlemove|p2a: Snorlax|Rage",
+            "|upkeep",
+            "|turn|4",
+        ],
+        &["10317,26463,57790,43695", "20527,43165,14875,41399", "21799,39185,25895,22101"],
+    );
+}
+#[test]
+fn bf22_b_a_present_heal_still_breaks_focus_punch() {
+    bf_check(
+        "BF22b",
+        "gen3customgame",
+        "5,6,7,8",
+        "Delibird||none|hustle|present,splash|Hardy|85,85,85,85,85,85|M||||",
+        "Snorlax||none|thickfat|focuspunch,splash|Hardy|85,85,85,85,85,85|M||||",
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0)), ScriptDecision::both(Choice::Move(0), Choice::Move(0)), ScriptDecision::both(Choice::Move(0), Choice::Move(0))],
+        &[
+            "|-singleturn|p2a: Snorlax|move: Focus Punch",
+            "|move|p1a: Delibird|Present|p2a: Snorlax",
+            "|-damage|p2a: Snorlax|436/482",
+            "|move|p2a: Snorlax|Focus Punch||[still]",
+            "|cant|p2a: Snorlax|Focus Punch|Focus Punch",
+            "|upkeep",
+            "|turn|2",
+            "|-singleturn|p2a: Snorlax|move: Focus Punch",
+            "|move|p1a: Delibird|Present|p2a: Snorlax|[miss]",
+            "|-miss|p1a: Delibird|p2a: Snorlax",
+            "|move|p2a: Snorlax|Focus Punch|p1a: Delibird",
+            "|-damage|p1a: Delibird|30/252",
+            "|upkeep",
+            "|turn|3",
+            "|-singleturn|p2a: Snorlax|move: Focus Punch",
+            "|move|p1a: Delibird|Present|p2a: Snorlax",
+            "|-heal|p2a: Snorlax|482/482",
+            "|move|p2a: Snorlax|Focus Punch||[still]",
+            "|cant|p2a: Snorlax|Focus Punch|Focus Punch",
+            "|upkeep",
+            "|turn|4",
+        ],
+        &["51644,13992,14189,6510", "3525,36180,28786,35716", "64639,54865,63502,12017"],
+    );
+}
+
+/// BF23 (review F4, `gen3_bf_beatup_wonderguard_v1`): gen 3's Beat Up `onModifyMove` makes it typeless ('???'), and the gen-4
+/// Wonder Guard `onTryHit` (data/mods/gen4/abilities.ts) returns early for a '???' move, so Beat Up strikes a Porygon2 that
+/// Traced Wonder Guard. WRONG (pre-fix): the port read the dex type (Dark) and blocked it.
+/// Ground truth: `harness/probe_bf_classes.js` (BF23a).
+#[test]
+fn bf23_a_beat_up_strikes_through_a_traced_wonder_guard() {
+    bf_check(
+        "BF23a",
+        "gen3customgame",
+        "1,2,3,4",
+        "Shedinja||none|wonderguard|splash|Hardy|85,85,85,85,85,85|M||||]Houndoom||none|flashfire|beatup,splash|Hardy|85,85,85,85,85,85|M||||",
+        "Porygon2||none|trace|splash,tackle|Hardy|85,85,85,85,85,85|N||||",
+        &[ScriptDecision::both(Choice::Switch(1), Choice::Move(0)), ScriptDecision::both(Choice::Move(0), Choice::Move(0))],
+        &[
+            "|switch|p1a: Houndoom|Houndoom, M|312/312",
+            "|move|p2a: Porygon2|Splash|p2a: Porygon2",
+            "|-nothing",
+            "|upkeep",
+            "|turn|2",
+            "|move|p1a: Houndoom|Beat Up|p2a: Porygon2",
+            "|-activate|p1a: Houndoom|move: Beat Up|[of] Houndoom",
+            "|-damage|p2a: Porygon2|323/332",
+            "|-activate|p1a: Houndoom|move: Beat Up|[of] Shedinja",
+            "|-damage|p2a: Porygon2|314/332",
+            "|-hitcount|p2a: Porygon2|2",
+            "|move|p2a: Porygon2|Splash|p2a: Porygon2",
+            "|-nothing",
+            "|upkeep",
+            "|turn|3",
+        ],
+        &["43514,9542,40559,8561", "50886,5712,59628,20063"],
+    );
+}
+
+/// BF24 (review F5, `gen3_bf_bp_zero_v1`): `getDamage` returns 0 at `if (!basePower) return 0;` right after `runEvent('BasePower')`
+/// (sim/battle-actions.ts): Eruption at 1 HP has BP 1, and Thick Fat (BF24a) or Water Sport (BF24b) floors it to 0, so the crit
+/// roll draws but no effectiveness / crit line, no damage roll, and a 0-delta `-damage`. WRONG (pre-fix): `bp.max(1)` dealt
+/// at least 1 and drew the roll. Ground truth: `harness/probe_bf_classes.js` (BF24a, BF24b).
+#[test]
+fn bf24_a_eruption_at_base_power_zero_into_thick_fat() {
+    bf_check(
+        "BF24a",
+        "gen3customgame",
+        "1,2,3,4",
+        "Camerupt||none|magmaarmor|endure,eruption|Hardy|85,85,85,85,85,85|M||||",
+        "Swampert||none|torrent|earthquake,splash|Hardy|85,85,85,85,85,85|M||||]Snorlax||none|thickfat|splash|Hardy|85,85,85,85,85,85|M||||",
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0)), ScriptDecision::both(Choice::Move(1), Choice::Switch(1))],
+        &[
+            "|move|p1a: Camerupt|Endure|p1a: Camerupt",
+            "|-singleturn|p1a: Camerupt|move: Endure",
+            "|move|p2a: Swampert|Earthquake|p1a: Camerupt",
+            "|-supereffective|p1a: Camerupt",
+            "|-activate|p1a: Camerupt|move: Endure",
+            "|-damage|p1a: Camerupt|1/302",
+            "|upkeep",
+            "|turn|2",
+            "|switch|p2a: Snorlax|Snorlax, M|482/482",
+            "|move|p1a: Camerupt|Eruption|p2a: Snorlax",
+            "|-damage|p2a: Snorlax|482/482",
+            "|upkeep",
+            "|turn|3",
+        ],
+        &["37673,46633,62039,8266", "50886,5712,59628,20063"],
+    );
+}
+#[test]
+fn bf24_b_eruption_at_base_power_zero_into_water_sport() {
+    bf_check(
+        "BF24b",
+        "gen3customgame",
+        "1,2,3,4",
+        "Camerupt||none|magmaarmor|endure,eruption|Hardy|85,85,85,85,85,85|M||||",
+        "Swampert||none|torrent|earthquake,watersport|Hardy|85,85,85,85,85,85|M||||",
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0)), ScriptDecision::both(Choice::Move(1), Choice::Move(1))],
+        &[
+            "|move|p1a: Camerupt|Endure|p1a: Camerupt",
+            "|-singleturn|p1a: Camerupt|move: Endure",
+            "|move|p2a: Swampert|Earthquake|p1a: Camerupt",
+            "|-supereffective|p1a: Camerupt",
+            "|-activate|p1a: Camerupt|move: Endure",
+            "|-damage|p1a: Camerupt|1/302",
+            "|upkeep",
+            "|turn|2",
+            "|move|p2a: Swampert|Water Sport|p2a: Swampert",
+            "|-start|p2a: Swampert|move: Water Sport",
+            "|move|p1a: Camerupt|Eruption|p2a: Swampert",
+            "|-damage|p2a: Swampert|362/362",
+            "|upkeep",
+            "|turn|3",
+        ],
+        &["37673,46633,62039,8266", "50886,5712,59628,20063"],
+    );
+}
+
+/// Review P1 (`gen3_bf_search_safeguard_v1`): the search snapshot's `sideConditions` is
+/// `Object.keys(side.sideConditions)` sorted, and Showdown keys Safeguard there (node:
+/// `['reflect','safeguard']` after a Safeguard then a Reflect on this board). WRONG (pre-fix): the port's
+/// `side_conditions` listed Light Screen / Mist / Reflect / Spikes only, so a snapshot taken while
+/// Safeguard was up dropped it.
+#[test]
+fn p1_the_search_snapshot_lists_safeguard() {
+    use pokesim::bridge::{BridgeSession, Cmd, WireChoice};
+    let d = dex();
+    let opts = opts_cg(
+        "Snorlax||none|thickfat|safeguard,reflect,splash|Hardy|85,85,85,85,85,85|M||||",
+        "Snorlax||none|thickfat|splash|Hardy|85,85,85,85,85,85|M||||",
+        "1,2,3,4",
+    );
+    let mut s = BridgeSession::new_construct_turn0(&opts, &d).expect("session");
+    for k in [0usize, 1] {
+        s.feed_cmd(Cmd { side: 0, choice: WireChoice::Move(k) }, &d); // 0-based: Safeguard, then Reflect
+        s.feed_cmd(Cmd { side: 1, choice: WireChoice::Move(0) }, &d);
+    }
+    let ps = pokesim::search::pre_state(&s);
+    assert!(
+        ps.contains("\"sideConditions\":[\"reflect\",\"safeguard\"]"),
+        "the snapshot must list Safeguard beside Reflect, sorted:\n{ps}"
+    );
+}
+
+/// BF25 (the B11 agent's finding, fuzz `rmvq9o5ho_ab_2_14`; `gen3_bf_attract_source_left_v1`): `attract.condition.onUpdate`
+/// (data/moves.ts) ends an infatuation once its source is not active. A Future Sight strike in the residual runs the
+/// generic `hitStepMoveHitLoop` (sim/battle-actions.ts): an Update, `faintMessages`, a second Update, so a source the
+/// strike KOs ends it right after `|faint|`, before `|upkeep|`. WRONG (pre-fix): the port ended it only at the
+/// replacement's switch-in. Ground truth: `harness/probe_bf_classes.js` (BF25a).
+#[test]
+fn bf25_a_a_future_sight_ko_of_the_attract_source_ends_it_at_once() {
+    bf_check(
+        "BF25a",
+        "gen3customgame",
+        "1,2,3,4",
+        "Clefairy||none|cutecharm|attract,splash|Hardy|85,85,85,85,85,85|M|||5|]Snorlax||none|thickfat|splash|Hardy|85,85,85,85,85,85|M||||",
+        "Duskull||none|levitate|futuresight,splash|Hardy|85,85,85,85,85,85|F||||",
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0)), ScriptDecision::both(Choice::Move(1), Choice::Move(1)), ScriptDecision::both(Choice::Move(1), Choice::Move(1)), ScriptDecision::one(0, Choice::Switch(1))],
+        &[
+            "|move|p2a: Duskull|Future Sight|p1a: Clefairy",
+            "|-start|p2a: Duskull|Future Sight",
+            "|move|p1a: Clefairy|Attract|p2a: Duskull",
+            "|-start|p2a: Duskull|Attract",
+            "|upkeep",
+            "|turn|2",
+            "|-activate|p2a: Duskull|move: Attract|[of] p1a: Clefairy",
+            "|move|p2a: Duskull|Splash|p2a: Duskull",
+            "|-nothing",
+            "|move|p1a: Clefairy|Splash|p1a: Clefairy",
+            "|-nothing",
+            "|upkeep",
+            "|turn|3",
+            "|-activate|p2a: Duskull|move: Attract|[of] p1a: Clefairy",
+            "|move|p2a: Duskull|Splash|p2a: Duskull",
+            "|-nothing",
+            "|move|p1a: Clefairy|Splash|p1a: Clefairy",
+            "|-nothing",
+            "|-end|p1a: Clefairy|move: Future Sight",
+            "|-damage|p1a: Clefairy|0 fnt",
+            "|faint|p1a: Clefairy",
+            "|-end|p2a: Duskull|Attract|[silent]",
+            "|upkeep",
+            "|switch|p1a: Snorlax|Snorlax, M|482/482",
+            "|turn|4",
+        ],
+        &["8769,17248,37115,18776", "37673,46633,62039,8266", "25495,32001,50713,50540", "50886,5712,59628,20063"],
+    );
+}
+
+/// BF26 (the B11 agent's fuzz find `rmvq6vp32_ab_1_4`; `gen3_bf_update_before_shell_bell_v1`): gen 3's `tryMoveHit` ends with
+/// `eachEvent('Update')` (data/mods/gen3/scripts.ts:470) BEFORE `useMove`'s `AfterMoveSecondarySelf` (Shell Bell), so a
+/// Dynamic Punch that confuses a Persim Berry holder shows the eat and the confusion's end before the attacker's heal.
+/// WRONG (pre-fix): the port ran that Update at the caller, after `run_move`'s Shell Bell.
+/// Ground truth: `harness/probe_bf_classes.js` (BF26a).
+#[test]
+fn bf26_a_the_landed_update_precedes_the_shell_bell_heal() {
+    bf_check(
+        "BF26a",
+        "gen3customgame",
+        "2,3,4,5",
+        "Machamp||shellbell|guts|dynamicpunch,splash|Hardy|85,85,85,85,85,85|M||||",
+        "Snorlax||persimberry|thickfat|bodyslam,splash|Hardy|85,85,85,85,85,85|M||||",
+        &[ScriptDecision::both(Choice::Move(1), Choice::Move(0)), ScriptDecision::both(Choice::Move(0), Choice::Move(1))],
+        &[
+            "|move|p1a: Machamp|Splash|p1a: Machamp",
+            "|-nothing",
+            "|move|p2a: Snorlax|Body Slam|p1a: Machamp",
+            "|-crit|p1a: Machamp",
+            "|-damage|p1a: Machamp|63/342",
+            "|upkeep",
+            "|turn|2",
+            "|move|p1a: Machamp|Dynamic Punch|p2a: Snorlax",
+            "|-supereffective|p2a: Snorlax",
+            "|-damage|p2a: Snorlax|85/482",
+            "|-start|p2a: Snorlax|confusion",
+            "|-enditem|p2a: Snorlax|Persim Berry|[eat]",
+            "|-end|p2a: Snorlax|confusion",
+            "|-heal|p1a: Machamp|112/342|[from] item: Shell Bell|[of] p2a: Snorlax",
+            "|move|p2a: Snorlax|Splash|p2a: Snorlax",
+            "|-nothing",
+            "|upkeep",
+            "|turn|3",
+        ],
+        &["41166,22089,33692,40595", "11932,45944,14323,47377"],
+    );
+}

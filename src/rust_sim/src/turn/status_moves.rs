@@ -1934,7 +1934,7 @@ impl crate::state::BattleState {
                     self.log.fail(&caster, None, false);
                 }
                 return MoveResolution {
-                    missed: false, crit: false, landed: false, force_switch_foe: None, aborted: false, nopp: false,
+                    missed: false, crit: false, landed: false, force_switch_foe: None, aborted: false, nopp: false, update_done: false,
                 };
             }
             // (2d) SUCTION CUPS (`gen3_ability_batch2_v1`, `suctioncups.onDragOut`) — reached
@@ -1975,7 +1975,7 @@ impl crate::state::BattleState {
             //     tail (Phase 1's `drag_in`), which also draws the `sample`. The no-bench FAIL
             //     is handled at (2c) above — it must precede the DragOut gate.
             return MoveResolution {
-                missed: false, crit: false, landed: false, force_switch_foe: Some(foe), aborted: false, nopp: false,
+                missed: false, crit: false, landed: false, force_switch_foe: Some(foe), aborted: false, nopp: false, update_done: false,
             };
         }
 

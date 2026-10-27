@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-29,364-line file. **The ledger itself is append-only and is never edited by this**;
+29,423-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**966 headings · 911 dated · 2026-08-01 → 2026-10-26 · ledger 29,364 lines.**
+**969 headings · 914 dated · 2026-08-01 → 2026-10-26 · ledger 29,423 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -986,3 +986,6 @@ rename.
   - `L29289` · `2026-10-26` · BASELINES · P\* registered as the named baseline `pstar_plateau` (X26 `rb_x26_s2601` @ 280,000,170, frozen as the reference by `d172c10ed`)
   - `L29297` · `2026-10-26` · CORRECTION · **THE VIEWS AUDIT: the D3 look-1 entry omits an engine mix (C0's banked Kakuna games predate the 10-25 obs / label and engine fixes; D3's carry them); ten RUST SIM entries break the heading convention and cite no record; "H" names two things in the D1 / D3 entries. No ledger number is wrong.**
   - `L29329` · `2026-10-26` · MEASUREMENT · **THE N2 EXACT-SET IDENTITY TEST, read under its registration (`98bcb1146`): COMPOSITIONAL, N2 DROPPED. A Smogon re-draw of one never-seen bench set moves P\*'s policy 1.19× [1.07, 1.33] as much on a pool team as on an unfamiliar one (bar 1.5×); erasing our six mons' identity embeddings costs both alike (1.07 [0.91, 1.25])**
+- `L29365` · `2026-10-26` · RUST SIM · gen3 full parity B11: Metronome, Mirror Move, Assist, Nature Power, Sketch -- every gen-3 move runs (369 of 369)
+- `L29383` · `2026-10-26` · RUST SIM · gen3 full parity BF3: the screens shuffle on Beat Up and the crash, called moves set lastMoveUsed, ten gen-2 berries refused
+- `L29401` · `2026-10-26` · RUST SIM · gen3 full parity BF4: the independent review's confirmed divergences (F1, F4, F5, P1)

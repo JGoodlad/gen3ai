@@ -4750,17 +4750,17 @@
   },
   "src/rust_sim/e2e_fuzz_golden_test.py::test_a_full_regeneration_equals_the_golden_and_the_taxonomy_byte_for_byte": {
    "status": "pass",
-   "commit": "266f5a047002a974a3054cb7c0f05672e672cb93",
-   "at": "2026-10-27T03:00:28Z",
-   "duration_s": 505.81,
-   "contention": 1.07,
+   "commit": "9e556473539b02a969eccb8bbcebe51d63a0218f",
+   "at": "2026-10-27T06:55:07Z",
+   "duration_s": 513.86,
+   "contention": 1.18,
    "detail": ""
   },
   "src/rust_sim/e2e_fuzz_golden_test.py::test_the_generators_first_battles_are_the_goldens_prefix": {
    "status": "pass",
-   "commit": "266f5a047002a974a3054cb7c0f05672e672cb93",
-   "at": "2026-10-27T03:00:28Z",
-   "duration_s": 19.6,
+   "commit": "9e556473539b02a969eccb8bbcebe51d63a0218f",
+   "at": "2026-10-27T06:55:07Z",
+   "duration_s": 19.2,
    "contention": 1.66,
    "detail": ""
   },
@@ -4774,18 +4774,18 @@
   },
   "src/utils/bridge/ws_frontend_byte_identity_integration_test.py::test_the_front_ends_protocol_is_byte_identical_to_the_node_bridges": {
    "status": "pass",
-   "commit": "266f5a047002a974a3054cb7c0f05672e672cb93",
-   "at": "2026-10-27T03:00:28Z",
-   "duration_s": 1.5,
-   "contention": 1.02,
+   "commit": "9e556473539b02a969eccb8bbcebe51d63a0218f",
+   "at": "2026-10-27T06:55:07Z",
+   "duration_s": 1.65,
+   "contention": 1.35,
    "detail": ""
   },
   "src/utils/bridge/ws_frontend_byte_identity_integration_test.py::test_the_rust_backed_front_end_is_byte_identical_to_the_node_bridge": {
    "status": "pass",
-   "commit": "266f5a047002a974a3054cb7c0f05672e672cb93",
-   "at": "2026-10-27T03:00:28Z",
-   "duration_s": 0.82,
-   "contention": 1.01,
+   "commit": "9e556473539b02a969eccb8bbcebe51d63a0218f",
+   "at": "2026-10-27T06:55:07Z",
+   "duration_s": 0.86,
+   "contention": 1.21,
    "detail": ""
   },
   "src/utils/bridge/ws_frontend_integration_test.py::test_a_battle_is_backed_by_exactly_one_bridge_child_that_is_reaped": {
@@ -4814,138 +4814,138 @@
   },
   "src/utils/rust_env/bots_gate_test.py::test_commit_tier_every_banked_decision_is_equal": {
    "status": "pass",
-   "commit": "266f5a047002a974a3054cb7c0f05672e672cb93",
-   "at": "2026-10-27T03:00:28Z",
-   "duration_s": 0.55,
-   "contention": 1.0,
+   "commit": "9e556473539b02a969eccb8bbcebe51d63a0218f",
+   "at": "2026-10-27T06:55:07Z",
+   "duration_s": 0.53,
+   "contention": 1.07,
    "detail": ""
   },
   "src/utils/rust_env/bots_gate_test.py::test_every_setup_bot_sets_up_with_curse": {
    "status": "pass",
-   "commit": "266f5a047002a974a3054cb7c0f05672e672cb93",
-   "at": "2026-10-27T03:00:28Z",
+   "commit": "9e556473539b02a969eccb8bbcebe51d63a0218f",
+   "at": "2026-10-27T06:55:07Z",
    "duration_s": 0.0,
-   "contention": 1.25,
+   "contention": 1.27,
    "detail": ""
   },
   "src/utils/rust_env/bots_gate_test.py::test_the_bank_holds_exactly_the_commit_tier_plan": {
    "status": "pass",
-   "commit": "266f5a047002a974a3054cb7c0f05672e672cb93",
-   "at": "2026-10-27T03:00:28Z",
+   "commit": "9e556473539b02a969eccb8bbcebe51d63a0218f",
+   "at": "2026-10-27T06:55:07Z",
    "duration_s": 0.0,
-   "contention": 1.0,
+   "contention": 1.76,
    "detail": ""
   },
   "src/utils/rust_env/bots_gate_test.py::test_the_gate_has_teeth[action]": {
    "status": "pass",
-   "commit": "266f5a047002a974a3054cb7c0f05672e672cb93",
-   "at": "2026-10-27T03:00:28Z",
-   "duration_s": 0.54,
-   "contention": 1.0,
+   "commit": "9e556473539b02a969eccb8bbcebe51d63a0218f",
+   "at": "2026-10-27T06:55:07Z",
+   "duration_s": 0.51,
+   "contention": 1.07,
    "detail": ""
   },
   "src/utils/rust_env/bots_gate_test.py::test_the_gate_has_teeth[relabel]": {
    "status": "pass",
-   "commit": "266f5a047002a974a3054cb7c0f05672e672cb93",
-   "at": "2026-10-27T03:00:28Z",
-   "duration_s": 0.54,
-   "contention": 1.0,
+   "commit": "9e556473539b02a969eccb8bbcebe51d63a0218f",
+   "at": "2026-10-27T06:55:07Z",
+   "duration_s": 0.5,
+   "contention": 1.05,
    "detail": ""
   },
   "src/utils/rust_env/bots_gate_test.py::test_the_gate_has_teeth[rng]": {
    "status": "pass",
-   "commit": "266f5a047002a974a3054cb7c0f05672e672cb93",
-   "at": "2026-10-27T03:00:28Z",
-   "duration_s": 0.54,
-   "contention": 1.0,
+   "commit": "9e556473539b02a969eccb8bbcebe51d63a0218f",
+   "at": "2026-10-27T06:55:07Z",
+   "duration_s": 0.5,
+   "contention": 1.04,
    "detail": ""
   },
   "src/utils/rust_env/bots_gate_test.py::test_the_gate_has_teeth[view]": {
    "status": "pass",
-   "commit": "266f5a047002a974a3054cb7c0f05672e672cb93",
-   "at": "2026-10-27T03:00:28Z",
-   "duration_s": 0.54,
-   "contention": 1.0,
+   "commit": "9e556473539b02a969eccb8bbcebe51d63a0218f",
+   "at": "2026-10-27T06:55:07Z",
+   "duration_s": 0.5,
+   "contention": 1.06,
    "detail": ""
   },
   "src/utils/rust_env/core_cargo_test.py::test_gate_1_on_procedural_teams": {
    "status": "pass",
-   "commit": "266f5a047002a974a3054cb7c0f05672e672cb93",
-   "at": "2026-10-27T03:00:28Z",
-   "duration_s": 36.09,
-   "contention": 1.0,
+   "commit": "9e556473539b02a969eccb8bbcebe51d63a0218f",
+   "at": "2026-10-27T06:55:07Z",
+   "duration_s": 38.41,
+   "contention": 1.07,
    "detail": ""
   },
   "src/utils/rust_env/core_cargo_test.py::test_gate_1_on_the_ladder_commit_tier": {
    "status": "pass",
-   "commit": "266f5a047002a974a3054cb7c0f05672e672cb93",
-   "at": "2026-10-27T03:00:28Z",
-   "duration_s": 3.73,
-   "contention": 1.09,
+   "commit": "9e556473539b02a969eccb8bbcebe51d63a0218f",
+   "at": "2026-10-27T06:55:07Z",
+   "duration_s": 3.58,
+   "contention": 1.08,
    "detail": ""
   },
   "src/utils/rust_env/core_cargo_test.py::test_gate_1_on_the_ladder_milestone_tier": {
    "status": "pass",
-   "commit": "266f5a047002a974a3054cb7c0f05672e672cb93",
-   "at": "2026-10-27T03:00:28Z",
-   "duration_s": 51.4,
-   "contention": 1.14,
+   "commit": "9e556473539b02a969eccb8bbcebe51d63a0218f",
+   "at": "2026-10-27T06:55:07Z",
+   "duration_s": 53.4,
+   "contention": 1.17,
    "detail": ""
   },
   "src/utils/rust_env/core_cargo_test.py::test_gate_1_on_the_training_pool": {
    "status": "pass",
-   "commit": "266f5a047002a974a3054cb7c0f05672e672cb93",
-   "at": "2026-10-27T03:00:28Z",
-   "duration_s": 43.12,
-   "contention": 1.17,
+   "commit": "9e556473539b02a969eccb8bbcebe51d63a0218f",
+   "at": "2026-10-27T06:55:07Z",
+   "duration_s": 42.68,
+   "contention": 1.11,
    "detail": ""
   },
   "src/utils/rust_env/core_cargo_test.py::test_the_rust_env_core_suite_passes": {
    "status": "pass",
-   "commit": "266f5a047002a974a3054cb7c0f05672e672cb93",
-   "at": "2026-10-27T03:00:28Z",
-   "duration_s": 67.66,
+   "commit": "9e556473539b02a969eccb8bbcebe51d63a0218f",
+   "at": "2026-10-27T06:55:07Z",
+   "duration_s": 64.05,
    "contention": 1.56,
    "detail": ""
   },
   "src/utils/rust_env/fixture_battles_test.py::test_every_episode_gets_its_own_teams_and_seed": {
    "status": "pass",
-   "commit": "266f5a047002a974a3054cb7c0f05672e672cb93",
-   "at": "2026-10-27T03:00:28Z",
-   "duration_s": 0.15,
-   "contention": 1.13,
+   "commit": "9e556473539b02a969eccb8bbcebe51d63a0218f",
+   "at": "2026-10-27T06:55:07Z",
+   "duration_s": 0.14,
+   "contention": 1.06,
    "detail": ""
   },
   "src/utils/rust_env/fixture_battles_test.py::test_self_play_answers_both_sides_with_the_policy": {
    "status": "pass",
-   "commit": "266f5a047002a974a3054cb7c0f05672e672cb93",
-   "at": "2026-10-27T03:00:28Z",
-   "duration_s": 0.34,
-   "contention": 1.0,
+   "commit": "9e556473539b02a969eccb8bbcebe51d63a0218f",
+   "at": "2026-10-27T06:55:07Z",
+   "duration_s": 0.32,
+   "contention": 1.04,
    "detail": ""
   },
   "src/utils/rust_env/fixture_battles_test.py::test_two_calls_play_byte_identical_rows": {
    "status": "pass",
-   "commit": "266f5a047002a974a3054cb7c0f05672e672cb93",
-   "at": "2026-10-27T03:00:28Z",
-   "duration_s": 0.39,
-   "contention": 1.05,
+   "commit": "9e556473539b02a969eccb8bbcebe51d63a0218f",
+   "at": "2026-10-27T06:55:07Z",
+   "duration_s": 0.37,
+   "contention": 1.09,
    "detail": ""
   },
   "src/utils/rust_env/proc_integration_test.py::test_gate_1_the_bridge_corpus_ffi_equals_process": {
    "status": "pass",
-   "commit": "266f5a047002a974a3054cb7c0f05672e672cb93",
-   "at": "2026-10-27T03:00:28Z",
-   "duration_s": 1.47,
-   "contention": 1.02,
+   "commit": "9e556473539b02a969eccb8bbcebe51d63a0218f",
+   "at": "2026-10-27T06:55:07Z",
+   "duration_s": 1.72,
+   "contention": 1.55,
    "detail": ""
   },
   "src/utils/rust_env/proc_integration_test.py::test_gate_1_the_ladder_commit_tier_ffi_equals_process": {
    "status": "pass",
-   "commit": "266f5a047002a974a3054cb7c0f05672e672cb93",
-   "at": "2026-10-27T03:00:28Z",
-   "duration_s": 2.79,
-   "contention": 1.01,
+   "commit": "9e556473539b02a969eccb8bbcebe51d63a0218f",
+   "at": "2026-10-27T06:55:07Z",
+   "duration_s": 3.37,
+   "contention": 1.62,
    "detail": ""
   },
   "src/utils/rust_env/successors_integration_test.py::test_gate_1_the_depth_3_successor_slice_commit": {
@@ -5005,5 +5005,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-27T06:14:41Z"
+ "last_written": "2026-10-27T06:55:07Z"
 }

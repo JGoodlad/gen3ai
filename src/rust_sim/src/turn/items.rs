@@ -244,6 +244,7 @@ impl crate::state::BattleState {
             // (`cureStatus` draws nothing; the `-activate` line is protocol-only). The
             // ability handler is gathered BEFORE the item's (`findPokemonEventHandlers`
             // ability-then-item), so it runs ahead of the berry check per mon.
+            self.attract_source_left_on_update(side, dex);
             self.status_immune_on_update(side, dex);
             self.volatile_immune_on_update(side, dex);
             self.berry_on_update(side, dex);
@@ -354,6 +355,32 @@ impl crate::state::BattleState {
                 self.log.volatile_end_from_ability(&m, "move: Attract", "Oblivious");
             }
             self.sides[side].pokemon[slot].attract = None;
+        }
+    }
+
+    /// ATTRACT's `onUpdate` (`gen3_bf_attract_source_left_v1`; the B11 agent's finding, fuzz
+    /// `rmvq9o5ho_ab_2_14`): `if (this.effectState.source && !this.effectState.source.isActive &&
+    /// pokemon.volatiles['attract']) pokemon.removeVolatile('attract')` (data/moves.ts attract.condition)
+    /// → `|-end|<mon>|Attract|[silent]`. A volatile, so it runs before the ability and item handlers.
+    /// The source's switch-out already clears it right after the `|switch|` line (`switch.rs`); this
+    /// catches every OTHER Update after the source left: a source FAINTED by a Future Sight / Doom
+    /// Desire strike in the residual, whose `hitStepMoveHitLoop` runs `faintMessages` then a second
+    /// Update (`apply_future_move`). DRAW-FREE.
+    fn attract_source_left_on_update(&mut self, side: usize, dex: &Dex) {
+        let slot = self.sides[side].active;
+        let Some((src_side, src_uid)) = self.sides[side].pokemon[slot].attract else { return };
+        if self.sides[side].pokemon[slot].fainted || self.sides[side].pokemon[slot].hp == 0 {
+            return;
+        }
+        let src_active = self.sides[src_side].active;
+        let src = &self.sides[src_side].pokemon[src_active];
+        if src.uid == src_uid && !src.fainted {
+            return; // the source is still active
+        }
+        self.sides[side].pokemon[slot].attract = None;
+        if self.logging() {
+            let m = self.mon_ref(side, slot, dex);
+            self.log.volatile_end_silent(&m, "Attract");
         }
     }
 
@@ -679,8 +706,26 @@ impl crate::state::BattleState {
         emit_survive_zero: bool,
         dex: &Dex,
     ) -> u16 {
-        if dmg == 0 {
-            return 0; // no Damage event for a 0-damage apply (no modeled path reaches this)
+        self.focus_band_damage_ev(side, slot, dmg, is_move, emit_survive_zero, false, dex)
+    }
+
+    /// [`Self::focus_band_damage`] with the BASE-POWER-0 case (`gen3_bf_bp_zero_v1`, review F5):
+    /// `spreadDamage` runs `runEvent('Damage')` from a relay of 0 (`if (targetDamage !== 0)` only
+    /// skips the clamp), so Focus Band's `randomChance(1, 10)` still draws; 0 is never lethal.
+    pub(crate) fn focus_band_damage_ev(
+        &mut self,
+        side: usize,
+        slot: usize,
+        dmg: u16,
+        is_move: bool,
+        emit_survive_zero: bool,
+        zero_damage_event: bool,
+        dex: &Dex,
+    ) -> u16 {
+        if dmg == 0 && !zero_damage_event {
+            // A 0 that ENDED the Damage relay (False Swipe at 1 HP) runs no later handler; the
+            // base-power-0 hit (`zero_damage_event`) does run the event from 0 (below).
+            return 0;
         }
         {
             let mon = &self.sides[side].pokemon[slot];

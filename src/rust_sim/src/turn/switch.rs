@@ -846,13 +846,11 @@ impl crate::state::BattleState {
                         )
                     });
                     self.pursuit_strike = false; // belt-and-braces (run_move already cleared it)
-                    if res.landed {
-                        // The strike's in-`tryMoveHit` `eachEvent('Update')` (draws on a
-                        // pursuer↔switcher speed tie; the switcher is hp-0-but-not-yet-fainted
-                        // here, so it is still in getAllActive — process_faints runs below).
-                        let upd = self.each_event_shuffle();
-                        self.run_update_items(&upd, dex);
-                    }
+                    // The strike's in-`tryMoveHit` `eachEvent('Update')` (draws on a pursuer↔switcher
+                    // speed tie; the switcher is hp-0-but-not-yet-fainted here, so it is still in
+                    // getAllActive — process_faints runs below) ran inside `run_move`
+                    // (`gen3_bf_update_before_shell_bell_v1`).
+                    debug_assert!(!res.landed || res.update_done);
                     // (e) `if (useMove(...) && source.getItem().isChoice) addVolatile('choicelock')`
                     //     — a Choice-item pursuer (gen-3: Choice Band) locks to Pursuit.
                     if to_id(&self.sides[pside].pokemon[pslot].item) == "choiceband" {
