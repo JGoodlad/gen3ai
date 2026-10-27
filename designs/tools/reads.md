@@ -375,6 +375,15 @@ stand as recorded.
    +0.30): both were played on E1 and read Δ against X51's Kakuna rows on E0. The identity unit reproduced 20 / 20 games.
    The human-only Δs are far beyond any engine bias.
 
+**OUR side's pack regime** (SOP H24; not in any id). A play commit before `d8d674b99` packs forum72's `sft431` with
+Frustration at base power 1.
+- **Pre-fix:** every E0 and E1 read in the table, and D3 look 2's hybrid `c4a5c37b6`.
+- **Post-fix:** D3 look 1's ON arm (E2), N1-P look 1 (E3), H-CTX and X59-S.
+- **Our side on `sft431`:** 0 games in D1 and D3 look 1, 2 of 1,920 F games in N1-P look 1, and 6 of 400 per model in
+  the x26c read (`measurements/x35_pack_regime_2026-10-27/`).
+
+A registered read names its play pin, and so its regime. Its arms never split across it on forum72.
+
 **Replay determinism, measured** (`measurements/kakuna_determinism_2026-10-27/`):
 - **On one engine, a counted Kakuna unit replays exactly.** Across every replayed unit in the archive whose two plays sit
   on the same side of an observation change, 0 of 2,100 games differ (95 % upper bound 0.14 %). Kakuna's choices never

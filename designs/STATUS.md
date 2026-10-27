@@ -37,6 +37,10 @@ rate. **NOT DETECTED / UNDECIDED** means the interval spans zero, so we cannot t
 refuses. The front end now plays the validator's re-pack, which changes only Foul Play's Hidden Power sets, so Foul
 Play reads of the pool are their own regime too (`gen3_frontend_validated_pack_v1`, `951508922`). Foul Play on
 `away` cannot run (19 of its 21 team files are refused; `48eeb0b70`); every Foul Play cell so far drew a `home` set.
+OUR side has its own split. Before `d8d674b99`, our packer also played Frustration at base power 1. That covers P\*'s,
+X26c's and every X35 arm's training (0.13–0.38 % of team draws), and our side's forum72 `sft431` in pre-fix reads.
+The arm-vs-C0 bias is ≤ 0.2 pp, and no verdict moves (the ledger's 10-27 pack-regime AUDIT,
+[`x35_pack_regime_2026-10-27/`](research_state/measurements/x35_pack_regime_2026-10-27/README.md)).
 
 ## 2. Running now (as of 2026-10-27)
 
@@ -138,7 +142,7 @@ Every open owner question, in one place.
    against Kakuna, with a home72 floor (lower bound above 0.50). r = 1 is the orchestrator's default, the owner's to
    change before X62 registers (`58cb02dc6`).
 
-## 7. The three biggest risks and unknowns
+## 7. The biggest risks and unknowns
 
 1. **No lever we have measured closes goal (b)'s ≈ 4 pp alone.** D1, D3, X52 and the belief mix each read +1 to
    +3 pp with intervals ±3–4 pp wide. Kakuna games run on CPU at 160–230 an hour on the shared agent cores, so each
@@ -156,3 +160,8 @@ Every open owner question, in one place.
    yet a best responder still finds +11 pp. Search does not pay at P\*, and the plateau trunk has not lost its
    plasticity. LR-F (the optimiser) and X48 and N4 (capacity) are the next tests of whether P\* is the most this
    architecture can reach.
+4. **The X35 family trains under the legacy packer.** `f4b25238` and its corpus-only pins predate `d8d674b99` and
+   launch without the pack oracle, so a new corpus can bring Frustration sets that play at base power 1, unseen.
+   Forks against a banked `f4b25238` control stay on that family, but only if the PREREG records the corpus's
+   material share. Above 2 % of its teams, the arm needs a packer-backport pin and a matched control. Fresh runs
+   train at a post-fix pin.

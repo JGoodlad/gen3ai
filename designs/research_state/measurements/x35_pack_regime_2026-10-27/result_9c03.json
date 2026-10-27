@@ -1,0 +1,2805 @@
+{
+ "old_src": "/tmp/x35pin/src_9c03/src",
+ "n_sample": 72,
+ "sets": {
+  "pool": {
+   "teams": 719,
+   "showdown_invalid": 0,
+   "legacy_pack_raised": 0,
+   "teams_differing": 38,
+   "teams_material": 1,
+   "teams_by_class": {
+    "ivs_hp_same_type": 34,
+    "frustration_bp": 1,
+    "ivs_stat_only": 2,
+    "happiness_inert": 1
+   },
+   "mons_by_class": {
+    "ivs_hp_same_type": 35,
+    "frustration_bp": 1,
+    "ivs_stat_only": 2,
+    "happiness_inert": 1
+   },
+   "samples_differing": 1,
+   "samples_material": 0,
+   "differing": {
+    "pool_17": {
+     "diffs": [
+      "mon 6 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": true
+    },
+    "pool_202": {
+     "diffs": [
+      "mon 6 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "pool_235": {
+     "diffs": [
+      "mon 5 (breloom) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "pool_245": {
+     "diffs": [
+      "mon 2 (breloom) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "pool_249": {
+     "diffs": [
+      "mon 5 (machamp) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "pool_341": {
+     "diffs": [
+      "mon 2 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "pool_343": {
+     "diffs": [
+      "mon 2 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "pool_346": {
+     "diffs": [
+      "mon 3 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "pool_349": {
+     "diffs": [
+      "mon 2 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "pool_354": {
+     "diffs": [
+      "mon 3 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "pool_358": {
+     "diffs": [
+      "mon 2 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "pool_361": {
+     "diffs": [
+      "mon 2 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31",
+      "mon 3 (swampert) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type",
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "pool_362": {
+     "diffs": [
+      "mon 2 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "pool_367": {
+     "diffs": [
+      "mon 3 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "pool_368": {
+     "diffs": [
+      "mon 3 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "pool_369": {
+     "diffs": [
+      "mon 2 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "pool_372": {
+     "diffs": [
+      "mon 3 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "pool_379": {
+     "diffs": [
+      "mon 1 (swampert) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "pool_390": {
+     "diffs": [
+      "mon 6 (gyarados) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "pool_391": {
+     "diffs": [
+      "mon 6 (gyarados) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "pool_392": {
+     "diffs": [
+      "mon 6 (gyarados) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "pool_393": {
+     "diffs": [
+      "mon 6 (gyarados) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "pool_399": {
+     "diffs": [
+      "mon 1 (swampert) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "pool_404": {
+     "diffs": [
+      "mon 6 (gyarados) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "pool_427": {
+     "diffs": [
+      "mon 2 (tyranitar) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "pool_464": {
+     "diffs": [
+      "mon 6 (salamence) ivs: legacy 31,31,31,31,31,31, now 31,30,31,30,31,31"
+     ],
+     "classes": [
+      "ivs_stat_only"
+     ],
+     "sample": false
+    },
+    "pool_492": {
+     "diffs": [
+      "mon 1 (tyranitar) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "pool_518": {
+     "diffs": [
+      "mon 1 (tyranitar) ivs: legacy 31,31,31,31,31,31, now 31,30,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_stat_only"
+     ],
+     "sample": false
+    },
+    "pool_545": {
+     "diffs": [
+      "mon 6 (gyarados) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "pool_546": {
+     "diffs": [
+      "mon 6 (gyarados) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "pool_553": {
+     "diffs": [
+      "mon 4 (tyranitar) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "pool_608": {
+     "diffs": [
+      "mon 1 (hariyama) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "pool_615": {
+     "diffs": [
+      "mon 1 (hariyama) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "pool_623": {
+     "diffs": [
+      "mon 4 (gyarados) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "happiness_inert"
+     ],
+     "sample": false
+    },
+    "pool_637": {
+     "diffs": [
+      "mon 2 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "pool_638": {
+     "diffs": [
+      "mon 2 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "pool_641": {
+     "diffs": [
+      "mon 2 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "pool_662": {
+     "diffs": [
+      "mon 2 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    }
+   },
+   "input_sha256": "2656ecba7b900c6d165013ed204ea3d15d792f7018ec185ce9cc2b4609b3fc8b"
+  },
+  "forum72": {
+   "teams": 72,
+   "showdown_invalid": 0,
+   "legacy_pack_raised": 0,
+   "teams_differing": 1,
+   "teams_material": 1,
+   "teams_by_class": {
+    "frustration_bp": 1
+   },
+   "mons_by_class": {
+    "frustration_bp": 1
+   },
+   "samples_differing": 0,
+   "samples_material": 0,
+   "differing": {
+    "sft431.txt": {
+     "diffs": [
+      "mon 2 (gyarados) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    }
+   },
+   "input_sha256": "569513d292239b6a35769069eec9d92ec1323c8953c1240865247f9a181867bf"
+  },
+  "home72": {
+   "teams": 72,
+   "showdown_invalid": 0,
+   "legacy_pack_raised": 0,
+   "teams_differing": 0,
+   "teams_material": 0,
+   "teams_by_class": {},
+   "mons_by_class": {},
+   "samples_differing": 0,
+   "samples_material": 0,
+   "differing": {},
+   "input_sha256": "dfe0c510ad393596738b0184db0a1d0b847b8f816b25bd25d7897fe6c1870c0a"
+  },
+  "p72": {
+   "teams": 72,
+   "showdown_invalid": 0,
+   "legacy_pack_raised": 0,
+   "teams_differing": 0,
+   "teams_material": 0,
+   "teams_by_class": {},
+   "mons_by_class": {},
+   "samples_differing": 0,
+   "samples_material": 0,
+   "differing": {},
+   "input_sha256": "73e3daca22724b9ac02a6381b43e93b78a84db725d90d614fe64b5771e19dedd"
+  },
+  "heldout72_hpfix": {
+   "teams": 72,
+   "showdown_invalid": 0,
+   "legacy_pack_raised": 0,
+   "teams_differing": 0,
+   "teams_material": 0,
+   "teams_by_class": {},
+   "mons_by_class": {},
+   "samples_differing": 0,
+   "samples_material": 0,
+   "differing": {},
+   "input_sha256": "ef8c691a708f212ac586de4977100de17ef0ce7c5d69a6232e455e967f6b0862"
+  },
+  "rc72b": {
+   "teams": 72,
+   "showdown_invalid": 0,
+   "legacy_pack_raised": 0,
+   "teams_differing": 0,
+   "teams_material": 0,
+   "teams_by_class": {},
+   "mons_by_class": {},
+   "samples_differing": 0,
+   "samples_material": 0,
+   "differing": {},
+   "input_sha256": "a8a5a0ae6c49c66a2e067ef2c6afe7d9f25c4d736772e672d71b0ecd9d903d63"
+  },
+  "w_forum_v1": {
+   "teams": 1981,
+   "showdown_invalid": 0,
+   "legacy_pack_raised": 0,
+   "teams_differing": 49,
+   "teams_material": 4,
+   "teams_by_class": {
+    "frustration_bp": 4,
+    "ivs_stat_only": 35,
+    "happiness_inert": 11
+   },
+   "mons_by_class": {
+    "frustration_bp": 4,
+    "ivs_stat_only": 36,
+    "happiness_inert": 18
+   },
+   "samples_differing": 0,
+   "samples_material": 0,
+   "differing": {
+    "sfv2_0663": {
+     "diffs": [
+      "mon 3 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "sfv2_0647": {
+     "diffs": [
+      "mon 1 (forretress) ivs: legacy 31,31,31,31,31,31, now 31,30,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_stat_only"
+     ],
+     "sample": false
+    },
+    "sfv2_0659": {
+     "diffs": [
+      "mon 5 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "sfv2_0869": {
+     "diffs": [
+      "mon 1 (celebi) happiness: legacy 255, now 0",
+      "mon 2 (exeggutor) happiness: legacy 255, now 0",
+      "mon 3 (metagross) happiness: legacy 255, now 0",
+      "mon 4 (jirachi) happiness: legacy 255, now 0",
+      "mon 5 (solrock) happiness: legacy 255, now 0",
+      "mon 6 (medicham) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "happiness_inert",
+      "happiness_inert",
+      "happiness_inert",
+      "happiness_inert",
+      "happiness_inert",
+      "happiness_inert"
+     ],
+     "sample": false
+    },
+    "sfv2_0739": {
+     "diffs": [
+      "mon 4 (gyarados) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "happiness_inert"
+     ],
+     "sample": false
+    },
+    "sfv2_0696": {
+     "diffs": [
+      "mon 2 (skarmory) ivs: legacy 31,31,31,31,31,31, now 31,30,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_stat_only"
+     ],
+     "sample": false
+    },
+    "sfv2_4853": {
+     "diffs": [
+      "mon 1 (heracross) ivs: legacy 31,31,31,31,31,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_stat_only"
+     ],
+     "sample": false
+    },
+    "sfv2_4749": {
+     "diffs": [
+      "mon 1 (tyranitar) ivs: legacy 31,31,31,31,31,31, now 31,30,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_stat_only"
+     ],
+     "sample": false
+    },
+    "sfv2_4775": {
+     "diffs": [
+      "mon 2 (tyranitar) ivs: legacy 31,31,31,31,31,31, now 31,30,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_stat_only"
+     ],
+     "sample": false
+    },
+    "sfv2_4946": {
+     "diffs": [
+      "mon 1 (tyranitar) ivs: legacy 31,31,31,31,31,31, now 31,30,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_stat_only"
+     ],
+     "sample": false
+    },
+    "sfv2_4364": {
+     "diffs": [
+      "mon 1 (tyranitar) ivs: legacy 31,31,31,31,31,31, now 31,30,30,31,30,31",
+      "mon 2 (metagross) ivs: legacy 31,31,31,31,31,31, now 31,30,31,30,31,30"
+     ],
+     "classes": [
+      "ivs_stat_only",
+      "ivs_stat_only"
+     ],
+     "sample": false
+    },
+    "sfv2_4784": {
+     "diffs": [
+      "mon 1 (metagross) ivs: legacy 31,31,31,31,31,31, now 31,30,31,30,31,30"
+     ],
+     "classes": [
+      "ivs_stat_only"
+     ],
+     "sample": false
+    },
+    "sfv2_4661": {
+     "diffs": [
+      "mon 4 (dugtrio) happiness: legacy 255, now 0",
+      "mon 5 (gengar) happiness: legacy 255, now 0",
+      "mon 6 (flygon) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "happiness_inert",
+      "happiness_inert",
+      "happiness_inert"
+     ],
+     "sample": false
+    },
+    "sfv2_1186": {
+     "diffs": [
+      "mon 1 (tyranitar) ivs: legacy 31,31,31,31,31,31, now 31,30,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_stat_only"
+     ],
+     "sample": false
+    },
+    "sfv2_5041": {
+     "diffs": [
+      "mon 1 (salamence) ivs: legacy 31,31,31,31,31,31, now 31,30,31,30,31,31"
+     ],
+     "classes": [
+      "ivs_stat_only"
+     ],
+     "sample": false
+    },
+    "sfv2_4734": {
+     "diffs": [
+      "mon 1 (tyranitar) ivs: legacy 31,31,31,31,31,31, now 31,30,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_stat_only"
+     ],
+     "sample": false
+    },
+    "sfv2_4813": {
+     "diffs": [
+      "mon 1 (tyranitar) ivs: legacy 31,31,31,31,31,31, now 31,30,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_stat_only"
+     ],
+     "sample": false
+    },
+    "sfv2_0946": {
+     "diffs": [
+      "mon 3 (gengar) ivs: legacy 31,31,31,31,31,31, now 31,30,31,30,31,31"
+     ],
+     "classes": [
+      "ivs_stat_only"
+     ],
+     "sample": false
+    },
+    "sfv2_1406": {
+     "diffs": [
+      "mon 1 (zapdos) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "happiness_inert"
+     ],
+     "sample": false
+    },
+    "sfv2_2806": {
+     "diffs": [
+      "mon 6 (moltres) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "happiness_inert"
+     ],
+     "sample": false
+    },
+    "sfv2_2294": {
+     "diffs": [
+      "mon 2 (vaporeon) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "happiness_inert"
+     ],
+     "sample": false
+    },
+    "sfv2_4835": {
+     "diffs": [
+      "mon 1 (tyranitar) ivs: legacy 31,31,31,31,31,31, now 31,30,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_stat_only"
+     ],
+     "sample": false
+    },
+    "sfv2_2972": {
+     "diffs": [
+      "mon 6 (salamence) ivs: legacy 31,31,31,31,31,31, now 31,30,31,30,31,31"
+     ],
+     "classes": [
+      "ivs_stat_only"
+     ],
+     "sample": false
+    },
+    "sfv2_4950": {
+     "diffs": [
+      "mon 1 (tyranitar) ivs: legacy 31,31,31,31,31,31, now 31,30,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_stat_only"
+     ],
+     "sample": false
+    },
+    "sfv2_4709": {
+     "diffs": [
+      "mon 1 (salamence) ivs: legacy 31,31,31,31,31,31, now 31,30,31,30,31,31"
+     ],
+     "classes": [
+      "ivs_stat_only"
+     ],
+     "sample": false
+    },
+    "sfv2_2596": {
+     "diffs": [
+      "mon 1 (tyranitar) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "happiness_inert"
+     ],
+     "sample": false
+    },
+    "sfv2_4951": {
+     "diffs": [
+      "mon 1 (heracross) ivs: legacy 31,31,31,31,31,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_stat_only"
+     ],
+     "sample": false
+    },
+    "sfv2_0973": {
+     "diffs": [
+      "mon 1 (regirock) ivs: legacy 31,31,31,31,31,31, now 31,31,30,31,30,30"
+     ],
+     "classes": [
+      "ivs_stat_only"
+     ],
+     "sample": false
+    },
+    "sfv2_3012": {
+     "diffs": [
+      "mon 1 (salamence) ivs: legacy 31,31,31,31,31,31, now 31,30,31,30,31,31",
+      "mon 6 (gyarados) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "ivs_stat_only",
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "sfv2_1243": {
+     "diffs": [
+      "mon 2 (tyranitar) ivs: legacy 31,31,31,31,31,31, now 31,30,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_stat_only"
+     ],
+     "sample": false
+    },
+    "sfv2_1231": {
+     "diffs": [
+      "mon 3 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "sfv2_5193": {
+     "diffs": [
+      "mon 1 (forretress) ivs: legacy 31,31,31,31,31,31, now 31,30,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_stat_only"
+     ],
+     "sample": false
+    },
+    "sfv2_5124": {
+     "diffs": [
+      "mon 1 (tyranitar) ivs: legacy 31,31,31,31,31,31, now 31,30,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_stat_only"
+     ],
+     "sample": false
+    },
+    "sfv2_1037": {
+     "diffs": [
+      "mon 3 (tyranitar) ivs: legacy 31,31,31,31,31,31, now 31,30,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_stat_only"
+     ],
+     "sample": false
+    },
+    "sfv2_5302": {
+     "diffs": [
+      "mon 1 (furret) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "happiness_inert"
+     ],
+     "sample": false
+    },
+    "sfv2_5011": {
+     "diffs": [
+      "mon 1 (hariyama) ivs: legacy 31,31,31,31,31,31, now 31,30,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_stat_only"
+     ],
+     "sample": false
+    },
+    "sfv2_1254": {
+     "diffs": [
+      "mon 1 (tyranitar) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "happiness_inert"
+     ],
+     "sample": false
+    },
+    "sfv2_1244": {
+     "diffs": [
+      "mon 2 (tyranitar) ivs: legacy 31,31,31,31,31,31, now 31,30,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_stat_only"
+     ],
+     "sample": false
+    },
+    "sfv2_1046": {
+     "diffs": [
+      "mon 1 (tyranitar) ivs: legacy 31,31,31,31,31,31, now 31,30,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_stat_only"
+     ],
+     "sample": false
+    },
+    "sfv2_5096": {
+     "diffs": [
+      "mon 1 (tyranitar) ivs: legacy 31,31,31,31,31,31, now 31,30,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_stat_only"
+     ],
+     "sample": false
+    },
+    "sfv2_3698": {
+     "diffs": [
+      "mon 4 (flygon) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "happiness_inert"
+     ],
+     "sample": false
+    },
+    "sfv2_5003": {
+     "diffs": [
+      "mon 2 (tyranitar) ivs: legacy 31,31,31,31,31,31, now 31,30,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_stat_only"
+     ],
+     "sample": false
+    },
+    "sfv2_1072": {
+     "diffs": [
+      "mon 3 (breloom) ivs: legacy 31,31,31,31,31,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_stat_only"
+     ],
+     "sample": false
+    },
+    "sfv2_3014": {
+     "diffs": [
+      "mon 6 (gyarados) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "happiness_inert"
+     ],
+     "sample": false
+    },
+    "sfv2_5020": {
+     "diffs": [
+      "mon 1 (heracross) ivs: legacy 31,31,31,31,31,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_stat_only"
+     ],
+     "sample": false
+    },
+    "sfv2_5194": {
+     "diffs": [
+      "mon 5 (metagross) ivs: legacy 31,31,31,31,31,31, now 31,30,31,30,31,31"
+     ],
+     "classes": [
+      "ivs_stat_only"
+     ],
+     "sample": false
+    },
+    "sfv2_1056": {
+     "diffs": [
+      "mon 1 (tyranitar) ivs: legacy 31,31,31,31,31,31, now 31,30,31,30,31,31"
+     ],
+     "classes": [
+      "ivs_stat_only"
+     ],
+     "sample": false
+    },
+    "sfv2_3647": {
+     "diffs": [
+      "mon 1 (tyranitar) ivs: legacy 31,31,31,31,31,31, now 31,30,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_stat_only"
+     ],
+     "sample": false
+    },
+    "sfv2_3010": {
+     "diffs": [
+      "mon 1 (tyranitar) ivs: legacy 31,31,31,31,31,31, now 31,30,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_stat_only"
+     ],
+     "sample": false
+    }
+   },
+   "input_sha256": "d5524f62415cc9f41f07043711a27c5cb11feae5609657263edd62d5fe6935a0"
+  },
+  "d3_setmut_v1": {
+   "teams": 2876,
+   "showdown_invalid": 0,
+   "legacy_pack_raised": 0,
+   "teams_differing": 122,
+   "teams_material": 8,
+   "teams_by_class": {
+    "ivs_hp_same_type": 103,
+    "frustration_bp": 8,
+    "ivs_stat_only": 7,
+    "happiness_inert": 4
+   },
+   "mons_by_class": {
+    "ivs_hp_same_type": 106,
+    "frustration_bp": 8,
+    "ivs_stat_only": 7,
+    "happiness_inert": 4
+   },
+   "samples_differing": 0,
+   "samples_material": 0,
+   "differing": {
+    "d3m_0da3a8201b25_2": {
+     "diffs": [
+      "mon 3 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_7c2da415818d_2": {
+     "diffs": [
+      "mon 1 (hariyama) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_91bb3ca65012_2": {
+     "diffs": [
+      "mon 1 (hariyama) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_aef1d513a01e_2": {
+     "diffs": [
+      "mon 1 (swampert) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_b77c0b2f29bd_1": {
+     "diffs": [
+      "mon 5 (breloom) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_897d82584707_0": {
+     "diffs": [
+      "mon 6 (gyarados) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_ea77ed837814_0": {
+     "diffs": [
+      "mon 2 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_c1f15174fab7_3": {
+     "diffs": [
+      "mon 3 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_467be8eb9a74_1": {
+     "diffs": [
+      "mon 4 (tyranitar) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_3c23d59258d2_1": {
+     "diffs": [
+      "mon 2 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_3d212372055c_1": {
+     "diffs": [
+      "mon 2 (tyranitar) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_652a9f6a7034_2": {
+     "diffs": [
+      "mon 6 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_7a37ec10384b_0": {
+     "diffs": [
+      "mon 2 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_5db4b16917f5_1": {
+     "diffs": [
+      "mon 6 (gyarados) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_e9fc605b571b_1": {
+     "diffs": [
+      "mon 6 (gyarados) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_9918c74e595f_1": {
+     "diffs": [
+      "mon 6 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "d3m_e9fc605b571b_2": {
+     "diffs": [
+      "mon 6 (gyarados) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_0e9a96f1b6f8_0": {
+     "diffs": [
+      "mon 2 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_eb39be62390b_2": {
+     "diffs": [
+      "mon 6 (charizard) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "d3m_528776effd0e_0": {
+     "diffs": [
+      "mon 2 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_9d55b86a6f05_2": {
+     "diffs": [
+      "mon 6 (gyarados) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_1610536dbe06_1": {
+     "diffs": [
+      "mon 6 (gyarados) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_652a9f6a7034_0": {
+     "diffs": [
+      "mon 6 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_4e3fa7b1f2fc_1": {
+     "diffs": [
+      "mon 6 (gyarados) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_c0e8f32e072b_2": {
+     "diffs": [
+      "mon 3 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_fc1c8b358ac4_3": {
+     "diffs": [
+      "mon 2 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_f9f5c501a664_0": {
+     "diffs": [
+      "mon 2 (breloom) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_1610536dbe06_3": {
+     "diffs": [
+      "mon 6 (gyarados) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_e7fe344718ca_1": {
+     "diffs": [
+      "mon 6 (salamence) ivs: legacy 31,31,31,31,31,31, now 31,30,31,30,31,31"
+     ],
+     "classes": [
+      "ivs_stat_only"
+     ],
+     "sample": false
+    },
+    "d3m_aef1d513a01e_3": {
+     "diffs": [
+      "mon 1 (swampert) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_023e134d7121_3": {
+     "diffs": [
+      "mon 4 (gyarados) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "happiness_inert"
+     ],
+     "sample": false
+    },
+    "d3m_fc1c8b358ac4_2": {
+     "diffs": [
+      "mon 2 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_9fba07043f2d_2": {
+     "diffs": [
+      "mon 3 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_c1f15174fab7_0": {
+     "diffs": [
+      "mon 3 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_ae14a5bc50e9_3": {
+     "diffs": [
+      "mon 2 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_50115b655aec_1": {
+     "diffs": [
+      "mon 1 (swampert) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_9fba07043f2d_1": {
+     "diffs": [
+      "mon 3 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_528776effd0e_2": {
+     "diffs": [
+      "mon 2 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_b77c0b2f29bd_0": {
+     "diffs": [
+      "mon 5 (breloom) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_f6afb22ecaf0_0": {
+     "diffs": [
+      "mon 3 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_0da3a8201b25_1": {
+     "diffs": [
+      "mon 3 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_023e134d7121_2": {
+     "diffs": [
+      "mon 4 (gyarados) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "happiness_inert"
+     ],
+     "sample": false
+    },
+    "d3m_897d82584707_1": {
+     "diffs": [
+      "mon 6 (gyarados) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_50115b655aec_0": {
+     "diffs": [
+      "mon 1 (swampert) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_6f880012bcc9_3": {
+     "diffs": [
+      "mon 1 (tyranitar) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_aef1d513a01e_1": {
+     "diffs": [
+      "mon 1 (swampert) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_d04e4f4e9214_1": {
+     "diffs": [
+      "mon 1 (tyranitar) ivs: legacy 31,31,31,31,31,31, now 31,30,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_stat_only"
+     ],
+     "sample": false
+    },
+    "d3m_91bb3ca65012_3": {
+     "diffs": [
+      "mon 1 (hariyama) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_c0e8f32e072b_3": {
+     "diffs": [
+      "mon 3 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_7a37ec10384b_1": {
+     "diffs": [
+      "mon 2 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_5db4b16917f5_3": {
+     "diffs": [
+      "mon 6 (gyarados) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_7c2da415818d_0": {
+     "diffs": [
+      "mon 1 (hariyama) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_e7fe344718ca_2": {
+     "diffs": [
+      "mon 6 (salamence) ivs: legacy 31,31,31,31,31,31, now 31,30,31,30,31,31"
+     ],
+     "classes": [
+      "ivs_stat_only"
+     ],
+     "sample": false
+    },
+    "d3m_7c2da415818d_3": {
+     "diffs": [
+      "mon 1 (hariyama) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_dd1fd5249e89_3": {
+     "diffs": [
+      "mon 2 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_0e9a96f1b6f8_3": {
+     "diffs": [
+      "mon 2 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31",
+      "mon 3 (swampert) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type",
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_b77c0b2f29bd_2": {
+     "diffs": [
+      "mon 5 (breloom) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_fe24deed63a7_0": {
+     "diffs": [
+      "mon 1 (slaking) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "d3m_6f880012bcc9_1": {
+     "diffs": [
+      "mon 1 (tyranitar) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_f9f5c501a664_1": {
+     "diffs": [
+      "mon 2 (breloom) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_7c2da415818d_1": {
+     "diffs": [
+      "mon 1 (hariyama) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_de7a2f5960f5_0": {
+     "diffs": [
+      "mon 2 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_91bb3ca65012_1": {
+     "diffs": [
+      "mon 1 (hariyama) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_ea77ed837814_1": {
+     "diffs": [
+      "mon 2 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_4e3fa7b1f2fc_2": {
+     "diffs": [
+      "mon 6 (gyarados) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_394030b7adc9_2": {
+     "diffs": [
+      "mon 5 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "d3m_652a9f6a7034_3": {
+     "diffs": [
+      "mon 6 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_467be8eb9a74_0": {
+     "diffs": [
+      "mon 4 (tyranitar) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_c0e8f32e072b_1": {
+     "diffs": [
+      "mon 3 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_023e134d7121_0": {
+     "diffs": [
+      "mon 4 (gyarados) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "happiness_inert"
+     ],
+     "sample": false
+    },
+    "d3m_ae14a5bc50e9_0": {
+     "diffs": [
+      "mon 2 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_dd1fd5249e89_0": {
+     "diffs": [
+      "mon 2 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_de7a2f5960f5_1": {
+     "diffs": [
+      "mon 2 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_e9fc605b571b_0": {
+     "diffs": [
+      "mon 6 (gyarados) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_de7a2f5960f5_2": {
+     "diffs": [
+      "mon 2 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_fc1c8b358ac4_1": {
+     "diffs": [
+      "mon 2 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_e7fe344718ca_0": {
+     "diffs": [
+      "mon 6 (salamence) ivs: legacy 31,31,31,31,31,31, now 31,30,31,30,31,31"
+     ],
+     "classes": [
+      "ivs_stat_only"
+     ],
+     "sample": false
+    },
+    "d3m_d04e4f4e9214_2": {
+     "diffs": [
+      "mon 1 (tyranitar) ivs: legacy 31,31,31,31,31,31, now 31,30,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_stat_only"
+     ],
+     "sample": false
+    },
+    "d3m_d04e4f4e9214_3": {
+     "diffs": [
+      "mon 1 (tyranitar) ivs: legacy 31,31,31,31,31,31, now 31,30,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_stat_only"
+     ],
+     "sample": false
+    },
+    "d3m_7664c7a4db4d_2": {
+     "diffs": [
+      "mon 6 (gyarados) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_8f020143b6d9_0": {
+     "diffs": [
+      "mon 2 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_50115b655aec_3": {
+     "diffs": [
+      "mon 1 (swampert) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_0da3a8201b25_3": {
+     "diffs": [
+      "mon 3 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_91bb3ca65012_0": {
+     "diffs": [
+      "mon 1 (hariyama) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_f6afb22ecaf0_3": {
+     "diffs": [
+      "mon 3 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_22c1d4b808c6_1": {
+     "diffs": [
+      "mon 3 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "d3m_3d212372055c_0": {
+     "diffs": [
+      "mon 2 (tyranitar) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_897d82584707_2": {
+     "diffs": [
+      "mon 6 (gyarados) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_f9f5c501a664_2": {
+     "diffs": [
+      "mon 2 (breloom) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_f83bd5881da4_2": {
+     "diffs": [
+      "mon 5 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "d3m_897d82584707_3": {
+     "diffs": [
+      "mon 6 (gyarados) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_dd1fd5249e89_2": {
+     "diffs": [
+      "mon 2 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_7a37ec10384b_3": {
+     "diffs": [
+      "mon 2 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_e7fe344718ca_3": {
+     "diffs": [
+      "mon 6 (salamence) ivs: legacy 31,31,31,31,31,31, now 31,30,31,30,31,31"
+     ],
+     "classes": [
+      "ivs_stat_only"
+     ],
+     "sample": false
+    },
+    "d3m_b77c0b2f29bd_3": {
+     "diffs": [
+      "mon 5 (breloom) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_652a9f6a7034_1": {
+     "diffs": [
+      "mon 6 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_467be8eb9a74_2": {
+     "diffs": [
+      "mon 4 (tyranitar) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_3c23d59258d2_3": {
+     "diffs": [
+      "mon 2 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_6f880012bcc9_2": {
+     "diffs": [
+      "mon 1 (tyranitar) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_023e134d7121_1": {
+     "diffs": [
+      "mon 4 (gyarados) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "happiness_inert"
+     ],
+     "sample": false
+    },
+    "d3m_0e9a96f1b6f8_2": {
+     "diffs": [
+      "mon 2 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31",
+      "mon 3 (swampert) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type",
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_1610536dbe06_2": {
+     "diffs": [
+      "mon 6 (gyarados) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_ae14a5bc50e9_1": {
+     "diffs": [
+      "mon 2 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_3d212372055c_2": {
+     "diffs": [
+      "mon 2 (tyranitar) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_9fba07043f2d_3": {
+     "diffs": [
+      "mon 3 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_9918c74e595f_3": {
+     "diffs": [
+      "mon 6 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "d3m_0e9a96f1b6f8_1": {
+     "diffs": [
+      "mon 2 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31",
+      "mon 3 (swampert) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type",
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_e9fc605b571b_3": {
+     "diffs": [
+      "mon 6 (gyarados) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_dd1fd5249e89_1": {
+     "diffs": [
+      "mon 2 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_bda82407823d_1": {
+     "diffs": [
+      "mon 2 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_bda82407823d_0": {
+     "diffs": [
+      "mon 2 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_dedb7474505a_0": {
+     "diffs": [
+      "mon 5 (machamp) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_9fba07043f2d_0": {
+     "diffs": [
+      "mon 3 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_8f020143b6d9_1": {
+     "diffs": [
+      "mon 2 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_7664c7a4db4d_0": {
+     "diffs": [
+      "mon 6 (gyarados) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_9918c74e595f_0": {
+     "diffs": [
+      "mon 6 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "d3m_c1f15174fab7_2": {
+     "diffs": [
+      "mon 3 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_bda82407823d_3": {
+     "diffs": [
+      "mon 2 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_f6afb22ecaf0_2": {
+     "diffs": [
+      "mon 3 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_528776effd0e_1": {
+     "diffs": [
+      "mon 2 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_50115b655aec_2": {
+     "diffs": [
+      "mon 1 (swampert) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    },
+    "d3m_c0e8f32e072b_0": {
+     "diffs": [
+      "mon 3 (forretress) ivs: legacy 31,30,31,31,30,31, now 31,31,30,31,30,31"
+     ],
+     "classes": [
+      "ivs_hp_same_type"
+     ],
+     "sample": false
+    }
+   },
+   "input_sha256": "00c8aa22d14b79f72427b6ab4b9ff12de57881d5c10faa87ceebcd751e0c7b80"
+  },
+  "n1_proc_v1": {
+   "teams": 12000,
+   "showdown_invalid": 0,
+   "legacy_pack_raised": 0,
+   "teams_differing": 75,
+   "teams_material": 75,
+   "teams_by_class": {
+    "frustration_bp": 75
+   },
+   "mons_by_class": {
+    "frustration_bp": 75
+   },
+   "samples_differing": 0,
+   "samples_material": 0,
+   "differing": {
+    "corpus_00145": {
+     "diffs": [
+      "mon 1 (gyarados) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_00398": {
+     "diffs": [
+      "mon 6 (registeel) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_00657": {
+     "diffs": [
+      "mon 3 (slaking) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_00873": {
+     "diffs": [
+      "mon 1 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_01220": {
+     "diffs": [
+      "mon 6 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_01294": {
+     "diffs": [
+      "mon 6 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_01407": {
+     "diffs": [
+      "mon 3 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_01533": {
+     "diffs": [
+      "mon 5 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_01540": {
+     "diffs": [
+      "mon 6 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_01705": {
+     "diffs": [
+      "mon 5 (regice) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_02271": {
+     "diffs": [
+      "mon 6 (metagross) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_02596": {
+     "diffs": [
+      "mon 6 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_02624": {
+     "diffs": [
+      "mon 1 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_02906": {
+     "diffs": [
+      "mon 4 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_03143": {
+     "diffs": [
+      "mon 6 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_03342": {
+     "diffs": [
+      "mon 1 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_03441": {
+     "diffs": [
+      "mon 4 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_03511": {
+     "diffs": [
+      "mon 5 (ursaring) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_03706": {
+     "diffs": [
+      "mon 5 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_03854": {
+     "diffs": [
+      "mon 6 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_04120": {
+     "diffs": [
+      "mon 1 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_04185": {
+     "diffs": [
+      "mon 3 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_04229": {
+     "diffs": [
+      "mon 1 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_04243": {
+     "diffs": [
+      "mon 3 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_04381": {
+     "diffs": [
+      "mon 1 (salamence) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_04426": {
+     "diffs": [
+      "mon 6 (slaking) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_04573": {
+     "diffs": [
+      "mon 1 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_04924": {
+     "diffs": [
+      "mon 2 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_05296": {
+     "diffs": [
+      "mon 5 (magneton) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_05366": {
+     "diffs": [
+      "mon 2 (heracross) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_05842": {
+     "diffs": [
+      "mon 1 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_05849": {
+     "diffs": [
+      "mon 4 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_05892": {
+     "diffs": [
+      "mon 6 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_05916": {
+     "diffs": [
+      "mon 1 (tauros) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_06112": {
+     "diffs": [
+      "mon 2 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_06253": {
+     "diffs": [
+      "mon 2 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_06385": {
+     "diffs": [
+      "mon 1 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_06512": {
+     "diffs": [
+      "mon 6 (flygon) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_06570": {
+     "diffs": [
+      "mon 5 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_06614": {
+     "diffs": [
+      "mon 3 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_06638": {
+     "diffs": [
+      "mon 1 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_06801": {
+     "diffs": [
+      "mon 1 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_06961": {
+     "diffs": [
+      "mon 3 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_07205": {
+     "diffs": [
+      "mon 3 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_07220": {
+     "diffs": [
+      "mon 6 (slaking) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_07390": {
+     "diffs": [
+      "mon 3 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_07428": {
+     "diffs": [
+      "mon 6 (miltank) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_08038": {
+     "diffs": [
+      "mon 3 (marowak) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_08371": {
+     "diffs": [
+      "mon 6 (claydol) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_08880": {
+     "diffs": [
+      "mon 2 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_08981": {
+     "diffs": [
+      "mon 2 (salamence) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_09456": {
+     "diffs": [
+      "mon 5 (heracross) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_09593": {
+     "diffs": [
+      "mon 6 (gyarados) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_09612": {
+     "diffs": [
+      "mon 5 (miltank) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_09613": {
+     "diffs": [
+      "mon 1 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_09668": {
+     "diffs": [
+      "mon 3 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_09947": {
+     "diffs": [
+      "mon 5 (tauros) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_10122": {
+     "diffs": [
+      "mon 4 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_10254": {
+     "diffs": [
+      "mon 5 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_10415": {
+     "diffs": [
+      "mon 5 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_10449": {
+     "diffs": [
+      "mon 4 (slaking) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_10523": {
+     "diffs": [
+      "mon 3 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_10882": {
+     "diffs": [
+      "mon 4 (salamence) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_11064": {
+     "diffs": [
+      "mon 2 (slaking) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_11310": {
+     "diffs": [
+      "mon 6 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_11312": {
+     "diffs": [
+      "mon 3 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_11544": {
+     "diffs": [
+      "mon 2 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_11690": {
+     "diffs": [
+      "mon 4 (heracross) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_11816": {
+     "diffs": [
+      "mon 1 (gyarados) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_12106": {
+     "diffs": [
+      "mon 5 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_12325": {
+     "diffs": [
+      "mon 2 (slaking) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_12610": {
+     "diffs": [
+      "mon 6 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_12993": {
+     "diffs": [
+      "mon 1 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_13088": {
+     "diffs": [
+      "mon 5 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    },
+    "corpus_13220": {
+     "diffs": [
+      "mon 1 (snorlax) happiness: legacy 255, now 0"
+     ],
+     "classes": [
+      "frustration_bp"
+     ],
+     "sample": false
+    }
+   },
+   "input_sha256": "a1afa5b54920e2f5a02816bfc5d225a48e11b85d78d9517a9ad82da7e8064cfb"
+  }
+ },
+ "draws": {
+  "C0 / LR-F / X26c / X48 (no mix)": {
+   "any": {
+    "trainee": 0.04895,
+    "opponent": 0.05285,
+    "battle_either": 0.09922
+   },
+   "material": {
+    "trainee": 0.00125,
+    "opponent": 0.00139,
+    "battle_either": 0.00264
+   }
+  },
+  "D1 (w_forum_v1@ABC:0.5)": {
+   "any": {
+    "trainee": 0.03684,
+    "opponent": 0.03879,
+    "battle_either": 0.07421
+   },
+   "material": {
+    "trainee": 0.00164,
+    "opponent": 0.00171,
+    "battle_either": 0.00334
+   }
+  },
+  "D3 (d3_setmut_v1@ALL:0.3)": {
+   "any": {
+    "trainee": 0.04699,
+    "opponent": 0.04972,
+    "battle_either": 0.09438
+   },
+   "material": {
+    "trainee": 0.00171,
+    "opponent": 0.00181,
+    "battle_either": 0.00352
+   }
+  },
+  "N1-P (n1_proc_v1@ALL:0.5)": {
+   "any": {
+    "trainee": 0.0276,
+    "opponent": 0.02955,
+    "battle_either": 0.05634
+   },
+   "material": {
+    "trainee": 0.00375,
+    "opponent": 0.00382,
+    "battle_either": 0.00756
+   }
+  }
+ }
+}

@@ -68,6 +68,16 @@ conflates pilot competence with team strength (see the tracking section).
   so a drop means the validator or the pin moved and the recorded identity would lie). It then echoes
   `🧬 [TEAM-MIX] <corpus>@<tier> (N teams, tier sha …) share 0.50 on both sides; eval stays on the pool` and the
   count of corpus teams that PACK identically to a pool team (0 expected).
+- **The pack regime of a pin.** From `d8d674b99`, every builder path (pool, sample-bias, mix) checks its packs with
+  the Showdown pack oracle (`check_pack_identity`, `gen3_team_pack_oracle_v1`) and raises on a mismatch
+  (`src/utils/teambuilder_pack_guard_integration_test.py`). Older pins have neither the fix nor the guard: the
+  production pin `f4b25238` and its corpus-only pins (every X35 arm, X26c, LR-F, X48), and P\*'s `9c033489`.
+  - On those pins every Frustration set played base power 1.
+  - Material share of draws (trainee side): C0 0.125 %, D1 0.164 %, D3 0.171 %, N1-P 0.375 %.
+  - The arm-vs-C0 bias is ≤ 0.2 pp (`designs/research_state/measurements/x35_pack_regime_2026-10-27/`).
+
+  A new corpus that launches on that family records its legacy-pack material share in its PREREG
+  (`pack_regime_audit.py` there). Above 2 % of its teams, it takes a packer-backport pin and a matched control.
 - **Eval stays on the pool.** `MatchupSpec.eval_trainee_teams` is the trainee source WITHOUT the mix, and the eval
   core builds its own pool builders (`rust_eval.build.eval_builders`), so a mix arm and its no-mix control (X35's
   C0) evaluate on the same teams; `main.h2h`'s `check_team_source` accepts a mix run's players unchanged.

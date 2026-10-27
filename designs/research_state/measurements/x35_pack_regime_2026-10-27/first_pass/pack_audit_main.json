@@ -1,0 +1,62 @@
+{
+ "forum72": {
+  "teams": 72,
+  "showdown_invalid": 0,
+  "teams_differing": 0,
+  "by_field": {},
+  "raw_happiness_frustration_return": [
+   1,
+   1,
+   4
+  ],
+  "examples": {}
+ },
+ "pool": {
+  "teams": 719,
+  "showdown_invalid": 0,
+  "teams_differing": 0,
+  "by_field": {},
+  "raw_happiness_frustration_return": [
+   1,
+   1,
+   52
+  ],
+  "examples": {}
+ },
+ "d3_setmut_v1": {
+  "teams": 2876,
+  "showdown_invalid": 0,
+  "teams_differing": 0,
+  "by_field": {},
+  "raw_happiness_frustration_return": [
+   4,
+   8,
+   206
+  ],
+  "examples": {}
+ },
+ "n1_proc_v1": {
+  "teams": 12000,
+  "showdown_invalid": 0,
+  "teams_differing": 0,
+  "by_field": {},
+  "raw_happiness_frustration_return": [
+   0,
+   75,
+   865
+  ],
+  "examples": {}
+ },
+ "w_forum_v1": {
+  "teams": 1981,
+  "showdown_invalid": 0,
+  "teams_differing": 0,
+  "by_field": {},
+  "raw_happiness_frustration_return": [
+   15,
+   4,
+   95
+  ],
+  "examples": {}
+ }
+}

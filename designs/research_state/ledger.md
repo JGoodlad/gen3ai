@@ -29658,3 +29658,73 @@ proposed (a guard that refuses a Foul Play cell holding a validator-refused file
 
 **Evidence:** SOP H23; `designs/ops/TECH_DEBT_BACKLOG.md` (d); `main.anchors.frontend_pack.cell_record` on the `away`, pool and
 `home72` directories; `python -m main.anchors --dry-run --opponent foulplay --teamset away`.
+
+### 2026-10-27 · AUDIT · **The pre-`d8d674b9` packer in X35 training: P\*, X26c and every X35-frame arm played Frustration at base power 1 on 0.13–0.38 % of team draws (C0 0.125 %, D1 0.164 %, D3 0.171 %, N1-P 0.375 %, trainee side). The arm-vs-C0 bias is ≤ 0.2 pp; no stated conclusion moves. Future forks against a banked `f4b25238` control stay on that family, with a corpus precondition**
+
+**Question.** Every X35-frame arm trained at `f4b25238` or a corpus-only pin on it (D1 `440b61c3`, D3 `9e289ba4`,
+N1-P `5f8f6cfa`; LR-F, X26c and the queued X48 at `f4b25238` itself). P\* (X26 0 → 380M) trained at `9c033489`. All
+of these predate `d8d674b99`, whose packer keeps `Happiness: 0` and a `Hidden Power: <Type>` line's IVs. How much of
+each arm's training saw a team Showdown would play differently? Can that bias D1 final, D3 look 1, N1-P look 1, LR-F,
+X48, X26c or P\*'s numbers?
+
+**Method.** Each pin's own packer and `TeamLoader` packed the pool, the three corpora at the arms' tiers, and the five
+Kakuna panels. Main's `showdown_pack.js` judged every pack field by field. Each difference was classed by its battle
+effect: MATERIAL means Frustration or Return off by happiness, or a different Hidden Power type. Draw shares come
+from each run's recorded `--team-mix`: trainee s · corpus + (1 − s)(0.9 · pool + 0.1 · sample); opponent
+s · corpus + (1 − s) · pool. Our side's `sft431` games were counted over every banked forum72 Kakuna game.
+
+**Result.**
+- **Material teams** (each has 1 Frustration mon at base power 1 instead of 102):
+  - the pool: 1 of 719 (`pool_202` Snorlax); the 72 sample teams: 0;
+  - `w_forum_v1@ABC`: 4 of 1,981. The brief's 49 counts every differing team; the other 45 are inert (`Happiness: 0`
+    with no Frustration or Return) or stat-only (±1 point, a Hidden Power line without the move);
+  - `d3_setmut_v1`: 8 of 2,876; `n1_proc_v1`: 75 of 12,000 (all of them);
+  - forum72: `sft431` alone. home72, p72, heldout72_hpfix and rc72b pack identically.
+
+  At `9c033489` the material counts are the same. Its pre-10-19 Hidden Power table adds 35 pool mons and 106 D3 mons
+  of the same type and power with swapped stats. So **P\*'s pool training had the defect at C0's rate.**
+- **Material share of draws** (trainee / opponent):
+  - C0, LR-F, X26c, X48 and P\*: 0.125 / 0.139 %;
+  - D1 0.164 / 0.171 %; D3 0.171 / 0.181 %; N1-P 0.375 / 0.382 %.
+
+  Against C0 that is +0.04, +0.05 and +0.25 pp per side. With any difference counted (mostly inert), C0 0.50 %,
+  D1 1.49 %, D3 0.55 %, N1-P 0.56 % (trainee).
+- **Bias bound.** The levers move 30–50 % of draws, and no measured effect leaves ±5.2 pp, so the outcome moves at
+  most about 17 pp per unit of draw share. The defect moved 0.26–0.76 % of battles. So |bias| ≤ 0.17 pp (N1-P) and
+  ≤ 0.10 pp (D1, D3) even with no cancellation, and it is loose: the defect changes 1 move of 24. LR-F, X48 and
+  X26c share C0's and P\*'s exposure exactly, so their differential is 0.
+- **What it taught.** Every Frustration set in this training played base power 1, so P\* and all X35 arms learned
+  that Frustration is dead, for both sides. The damage op prices it at 102. A post-fix eval pin is the same for every
+  arm on it.
+- **Eval side.** Our side piloted `sft431` in 72 of 9,583 banked forum72 games, and won 22 of them.
+  - **D1 final:** 0 of 1,400, pre-fix. **D3 look 1:** crosses the split (D3 post-fix `2cc864f2f`, C0's bank pre-fix),
+    with 0 games on either side, so no effect.
+  - **N1-P look 1:** post-fix for both arms, 2 of 1,920 so far.
+  - **The x26c read:** 6 of 400 per model at the same seeds. **H-CTX:** 4 of 720, post-fix.
+  - **D3 look 2's hybrid** `c4a5c37b6` keeps the pre-fix packer, the same as C0's bank.
+  - **The goal-(b) headline** (P\* 0.487, pre-fix): hard bound 0.5 pp of U if all 6 games flipped. Kakuna's legacy
+    pack crippled the same Gyarados on its side, so the two partly offset. The realistic effect is ≪ 0.1 pp.
+
+**FINDINGs.**
+1. The `f4b25238` family launches without the pack oracle, so a new corpus-only pin inherits the legacy packer
+   silently.
+2. The 10-27 GIGO FIX entry's "Our own side was never affected" holds only for reads at a post-`d8d674b9` pin.
+3. The 10-27 Hidden Power AUDIT's "in training, byte for byte" holds from `f4b25238` on, not at P\*'s pin (finding 3
+   of the README).
+4. The guard on main: every `Gen3Teambuilder` path (pool, sample-bias, `--team-mix`) calls `check_pack_identity`.
+   Until now no test proved the wiring. `src/utils/teambuilder_pack_guard_integration_test.py` re-creates the legacy
+   packer on an explicit `Happiness: 0` Frustration team; reverting the 3 calls fails 3 of its 6 tests (executed).
+
+**Recommendation.**
+- **Stay on the `f4b25238` family** for forks read against a banked `f4b25238` control (X63 vs X26c, X62 vs C0).
+  - Moving to a post-fix pin changes at least 6 training inputs (`d8d674b9`'s label, op and volatile fixes, and the
+    10-26 engine batch), not just the packer.
+  - A packer-only backport pin needs a re-trained control (C0′ ≈ 13 GPU-h) to buy back ≤ 0.2 pp.
+- **Precondition:** each new corpus's legacy-pack material share goes in its PREREG, computed with the audit script.
+  Above 2 % of its teams: a backport pin and a matched control.
+- **Eval:** never split a read's arms across OUR-side pack regimes on a panel with a material file (forum72).
+- **Fresh runs** with no banked control (X53-N1, the next era baseline) train at a post-fix main pin. PR-1′ needs only
+  the one-eval-regime rule.
+
+**Evidence:** `research_state/measurements/x35_pack_regime_2026-10-27/`: the README, `pack_regime_audit.py`,
+`result_f4b2.json`, `result_9c03.json`, `sft431_tally.out`, and `first_pass/`.

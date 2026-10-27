@@ -1,0 +1,152 @@
+{
+ "forum72": {
+  "teams": 72,
+  "showdown_invalid": 0,
+  "teams_differing": 1,
+  "by_field": {
+   "happiness": 1
+  },
+  "raw_happiness_frustration_return": [
+   1,
+   1,
+   4
+  ],
+  "examples": {
+   "sft431.txt": [
+    "mon 2 (gyarados) happiness: legacy 255, now 0"
+   ]
+  }
+ },
+ "pool": {
+  "teams": 719,
+  "showdown_invalid": 0,
+  "teams_differing": 4,
+  "by_field": {
+   "happiness": 2,
+   "ivs": 2
+  },
+  "raw_happiness_frustration_return": [
+   1,
+   1,
+   52
+  ],
+  "examples": {
+   "pool_202": [
+    "mon 6 (snorlax) happiness: legacy 255, now 0"
+   ],
+   "pool_464": [
+    "mon 6 (salamence) ivs: legacy 31,31,31,31,31,31, now 31,30,31,30,31,31"
+   ],
+   "pool_518": [
+    "mon 1 (tyranitar) ivs: legacy 31,31,31,31,31,31, now 31,30,30,31,30,31"
+   ],
+   "pool_623": [
+    "mon 4 (gyarados) happiness: legacy 255, now 0"
+   ]
+  }
+ },
+ "d3_setmut_v1": {
+  "teams": 2876,
+  "showdown_invalid": 0,
+  "teams_differing": 19,
+  "by_field": {
+   "happiness": 12,
+   "ivs": 7
+  },
+  "raw_happiness_frustration_return": [
+   4,
+   8,
+   206
+  ],
+  "examples": {
+   "d3m_9918c74e595f_1": [
+    "mon 6 (snorlax) happiness: legacy 255, now 0"
+   ],
+   "d3m_eb39be62390b_2": [
+    "mon 6 (charizard) happiness: legacy 255, now 0"
+   ],
+   "d3m_e7fe344718ca_1": [
+    "mon 6 (salamence) ivs: legacy 31,31,31,31,31,31, now 31,30,31,30,31,31"
+   ],
+   "d3m_023e134d7121_3": [
+    "mon 4 (gyarados) happiness: legacy 255, now 0"
+   ],
+   "d3m_023e134d7121_2": [
+    "mon 4 (gyarados) happiness: legacy 255, now 0"
+   ],
+   "d3m_d04e4f4e9214_1": [
+    "mon 1 (tyranitar) ivs: legacy 31,31,31,31,31,31, now 31,30,30,31,30,31"
+   ]
+  }
+ },
+ "n1_proc_v1": {
+  "teams": 12000,
+  "showdown_invalid": 0,
+  "teams_differing": 75,
+  "by_field": {
+   "happiness": 75
+  },
+  "raw_happiness_frustration_return": [
+   0,
+   75,
+   865
+  ],
+  "examples": {
+   "corpus_00145": [
+    "mon 1 (gyarados) happiness: legacy 255, now 0"
+   ],
+   "corpus_00398": [
+    "mon 6 (registeel) happiness: legacy 255, now 0"
+   ],
+   "corpus_00657": [
+    "mon 3 (slaking) happiness: legacy 255, now 0"
+   ],
+   "corpus_00873": [
+    "mon 1 (snorlax) happiness: legacy 255, now 0"
+   ],
+   "corpus_01220": [
+    "mon 6 (snorlax) happiness: legacy 255, now 0"
+   ],
+   "corpus_01294": [
+    "mon 6 (snorlax) happiness: legacy 255, now 0"
+   ]
+  }
+ },
+ "w_forum_v1": {
+  "teams": 1981,
+  "showdown_invalid": 0,
+  "teams_differing": 49,
+  "by_field": {
+   "happiness": 22,
+   "ivs": 36
+  },
+  "raw_happiness_frustration_return": [
+   15,
+   4,
+   95
+  ],
+  "examples": {
+   "sfv2_0663": [
+    "mon 3 (snorlax) happiness: legacy 255, now 0"
+   ],
+   "sfv2_0647": [
+    "mon 1 (forretress) ivs: legacy 31,31,31,31,31,31, now 31,30,30,31,30,31"
+   ],
+   "sfv2_0659": [
+    "mon 5 (snorlax) happiness: legacy 255, now 0"
+   ],
+   "sfv2_0869": [
+    "mon 1 (celebi) happiness: legacy 255, now 0",
+    "mon 2 (exeggutor) happiness: legacy 255, now 0",
+    "mon 3 (metagross) happiness: legacy 255, now 0",
+    "mon 4 (jirachi) happiness: legacy 255, now 0"
+   ],
+   "sfv2_0739": [
+    "mon 4 (gyarados) happiness: legacy 255, now 0"
+   ],
+   "sfv2_0696": [
+    "mon 2 (skarmory) ivs: legacy 31,31,31,31,31,31, now 31,30,30,31,30,31"
+   ]
+  }
+ }
+}
