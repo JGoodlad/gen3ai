@@ -153,7 +153,7 @@
     "why": "H is not a GAIN: the guards gate only a qualifying primary (the A1 ruling (a)); not played. On a GAIN this note is not applied and each unplayed guard stays INCONCLUSIVE until it is played (PREREG \u00a75)"
    },
    "void": {
-    "k9b_dir": "designs/research_state/measurements/x35_breakers_stage_2026-10-17/k9b",
+    "k9b_dir": "/home/goodlad/dev/gen3ai/designs/research_state/measurements/x35_breakers_stage_2026-10-17/k9b",
     "runs": {
      "d3_s3501": "models/rb_x35_d3mut_s3501",
      "d3_s3502": "models/rb_x35_d3mut_s3502",

@@ -297,3 +297,61 @@ unattributed p72 divergence is gone too. Its cause is therefore among the restor
    played without these guards too, and `e28318c82` found the long-tail line in no counted archived unit. **Registered
    here:** before `record`, every counted unit of the look-2 state has its peer logs scanned for `Force resetting due
    to long-tail error` (H21's rule). A unit with one is moved aside and re-played at its seed before `decide`.
+
+### AM-D3-L2 addendum (2026-10-27): the pre-data review's rulings ([`REVIEW_look2.md`](REVIEW_look2.md), `71d74e5c1`). Before any look-2 game
+
+Every look-2 state file so far was a plan file. That state is moved aside (`look2.void_plan_k9b_<epoch>`) and
+re-planned from the spec below, so no look-2 game has been played under the old registration.
+
+1. **B1 (the BLOCKER): the VOID gate reads main's K9(b) records, and the PIN decides.**
+   - `params.void.k9b_dir` is now ABSOLUTE:
+     `/home/goodlad/dev/gen3ai/designs/research_state/measurements/x35_breakers_stage_2026-10-17/k9b`. s3505's
+     record (`28711af06`) is not in the pin's tree, so a repo-relative path read it MISSING at the pin.
+   - The spec is [`read/read_spec_look2.json`](read/read_spec_look2.json), sha256 `f67c56d4…` (was `2e98bf74…`; only
+     this field changed).
+   - **The deciding checkout is the pin's playing worktree** (`c4a5c37b6`, clean): `record` / `decide` run there,
+     never from main.
+   - Verified with the pin's own code (`rules.void_gate` on this spec): d3_s3501–s3505 all `PASS`,
+     `void_failures` = `{}`.
+   - `check-spec` at the pin: `play_path_differs_at_head` 0, `sha256_final` true.
+2. **M1: NULL is unreachable at look 2.** At 700 games per panel per arm and panel rates of 0.45–0.50, H's
+   unwidened half-width is ≥ 3.0 pp (3.006–3.022). Even Δ̂ = 0 exactly reads [−3.015, +3.015] → UNDECIDED. The
+   band [−3.0, +3.0] is NOT changed (D1's rule verbatim). **Registered:** the record reports the final 95 % interval
+   as a bound on D3's H effect, as a reported line beside the class: "D3's effect on H lies within [LB, UB] pp". An
+   UNDECIDED whose interval lies inside [−3.1, +3.1] is reported as "no effect beyond ≈ 3 pp". No class reads it.
+3. **M2: look 2 is TERMINAL.** No further D3 units or seeds will ever be pooled with these rows. Any later D3 read is
+   a new registration on new seeds. The expected outcome is registered with the review's table: P(GAIN | what is
+   known) ≈ 3–7 %, otherwise UNDECIDED with an interval of about ±3 pp. The orchestrator ruled to proceed, with
+   the Kakuna lane deferred (item 4).
+4. **Schedule (the orchestrator's ruling; it replaces item 6's start condition).**
+   - The **S lane** (one job) starts when the H-CTX rc72b read's anchor supervisor exits.
+   - The **Kakuna anchor lane** (`--concurrency 1`) is DEFERRED until N1-P look 1's Kakuna lane finishes: its
+     supervisor has exited AND either every planned unit there is counted, or no anchor supervisor of that state has
+     been alive for 30 min. The latter is logged as "stopped with units left".
+   - Both are started by the detached, bounded queue starter, whose log is `<state>/queue_starter.jsonl`.
+   - **m7:** a lane that stops at its registered stop with units left is RESUMED (`main.reads resume`) at the pin.
+     This is pre-approved.
+5. **m1: the guard's ordering.** The 80 / 80 identity check above was run before any D3 game, and it covers §3's
+   "checked BEFORE any D3 unit" at look 2. The in-state guard group plays interleaved by unit seed, as the pin's
+   runner orders it, and still gates H's pooling at `decide`.
+6. **m2 and m3: record-time checks, run BEFORE `record`.** Their outputs are committed with the record.
+   - `read/look2_identity_compare.py` on the 7 guard units against the banked units (choice level). **Any choice
+     difference is a FINDING that stops pooling:** the banked C0 H rows are not used, and every C0 unit is re-played
+     at the pin (§3's mismatch branch).
+   - Every counted unit of the state (h and guard) must stamp `model_loader: bare` (the strict loader, restored,
+     training mode), as the bank and look 1 did. A unit loaded any other way is moved aside and re-played.
+   - **Wording correction to AM-D3-L2:** only `snapshot.py`'s half of the eval-mode change (`141f36f7f`) is restored.
+     The pin's `session.foreign_loader` (a harness file) loads in eval mode, which is why the `bare` check is
+     required.
+   - H21's long-tail scan (item 7 above) runs at the same time.
+7. **m5: external state.** The Metamon checkout (`/home/goodlad/dev/metamon`: HEAD, tracked changes, untracked) and
+   both conda envs (`metamon`, `gen3ai_torch28`: `conda list --explicit --md5` and `pip freeze --all` digests) are
+   snapshotted at each lane's start and at the end. The snapshots go in `<state>/external_snapshots.jsonl` and are
+   recorded. Any change between start and end is a FINDING named in the record.
+8. **m6: two descriptive rows, no rule reads them.**
+   - D3 s3501–s3503 on E1 (this state) against look 1's E2 units, game for game: the engine effect on the ON arm.
+   - Look 1's Δ̂ recomputed with its ON rows replaced by their E1 re-plays. AM-D3-ENG's CONTINUE stands whatever it
+     reads.
+9. **m4 (the S lane's identity) is accepted as declared:** `main.h2h`, `agents/{model,observation,inference}`,
+   `rust_env` and the packer are identical to the bank's. **m8:** no H game draws the forum72 Frustration set at unit
+   seeds 0–6.
