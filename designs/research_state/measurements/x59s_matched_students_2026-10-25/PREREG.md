@@ -873,3 +873,54 @@ fails).
   `x59s_floor` rule is never decided.
 - **Committed artefacts (none is a student result):** `results/floor_refs.json`, `results/identity.json`,
   `results/fr2.json`.
+
+## Amendment 6 (2026-10-27, BLIND: before any pilot result is read): REVIEW G's MAJORs and MINORs
+
+**Blindness statement.** As Amendment 5's: no `assemble`, `decide` or `record` has run on the pilot state, and no
+pilot cell, summary, game or win count has been opened by the operator (the pilot has settled about 20 of 181 units).
+New since A5 and seen: A5.7's re-encode share (0.60 %, `results/m3_reencode.json`) and [REVIEW G](REVIEW_G_data_bias.md)
+(`b27226c3`), which read the students' sidecars and the rows, never a game. G-M2 is answered by A5.7 (a registered
+limit: the encoder shift costs S-H and S-P only) and G-M3 by A5.4 (POPULATION-SPECIFIC, G's LADDER-POPULATION-SPECIFIC).
+
+### A6.1 FR-2 is reported, not the closure's guard; the guard is Δ_restriction (G-M1; replaces A2.5's gate)
+
+- **FR-2's class answers rung 1b's question** ("completion costs the HOM more than P\*"), not "did a model learn the
+  drawn-move signature": C-GAME completes from the whole game's reveals, so a learned signature SHRINKS the twin gap
+  (G-M1). Its NO-ARTEFACT certifies nothing about the signature. It stays reported; it gates nothing.
+- **The guard: Δ_restriction = S-P0 − S-P on U**, the two arms with the same rows and teacher that differ exactly in
+  whether the labels carry the signature. Its interval is A5.2's (z with σ̂ pooled over S-P0 and S-P alone, df 8,
+  widened to their own Welch).
+- **A SELF-PLAY-DATA-BETTER closes nothing until Δ_restriction is read, and nothing if its LB > 0** (a bound within
+  1e-9 of 0 counts as > 0, the conservative side). Before Δ_restriction is read, such a class is reported as
+  "closure pending Δ_restriction".
+- So S-P0's U units (0–19 of H, F, P72, its 5 students) play right after the full read's units, ahead of home72
+  (A4.5 step 6 reordered), in a state of their own whose spec and rule are registered before any S-P0 game; the S-P
+  cells are imported from the full read. Cost ≈ 300 units (ESTIMATE ≈ 25–35 lane-h at the pilot's measured rate).
+- Descriptive, as the records allow: per arm, the rate at which a student's chosen action is a move not yet used that
+  game or a switch to a mon not yet revealed, beside its training labels' rate.
+
+### A6.2 The closure names the slice, and a length split is a registered secondary (G-M4)
+
+- **The closure's text** (A5.6 extended): "1300+ ladder data in the panel-distant, forfeit-heavy slice (50.6 % of its
+  rows from forfeits; median turn 15 against S-S's 19), at this mix and volume, as a behaviour-cloning target for a
+  fresh network at 3 epochs (7,041 steps)".
+- **Registered secondary (descriptive, routes nothing):** each arm's U win rate in three game-length terciles. The cut
+  points are the turn-count terciles of ALL counted U games of the 15 primary students pooled; each arm's rate per
+  tercile pools its students' games, and Δ_data per tercile is reported with a binomial interval. If S-H's deficit
+  against S-S concentrates in the long tercile, the report says Δ_data is partly endgame coverage. (Length is
+  post-treatment: the split describes, it does not decompose.)
+
+### A6.3 The MINORs
+
+- **G-m1:** the human validation split leaks at the battle level (71 % of S-H's validation rows share a battle with a
+  TRAIN seat); the human yardsticks are not a clean held-out measure and no rule reads them. The human yardstick on the
+  252 clean battles is reported beside them as the CPU allows.
+- **G-m2:** the validation-NLL ordering is teacher entropy and set labels, not data quality; it is never quoted as
+  evidence, and each NLL is reported beside its teacher floor (REVIEW G's table).
+- **G-m3:** A2.11 m7's profile reads the forced share from the mask, not the `forced` flag.
+- **G-m4, G-m5:** registered limits (the audit's drop removed the rows least like P\*; S-S's states predate the
+  parity batches, S-H's are real Showdown).
+- **G-m6:** forum72's regime (A5.9 m13) is named beside every F-only number.
+- **G-m7:** the interval holds student-seed variance only; each arm is ONE dataset. Stated beside σ̂.
+- **G-m8:** the owner's sentence calls S-S "our plateau policy's own games and choices" (P\* distillation), not the RL
+  rollout data that trains P\*.
