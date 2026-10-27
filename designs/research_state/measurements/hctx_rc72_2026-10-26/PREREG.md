@@ -154,3 +154,7 @@ reported only as a descriptive replay check. §3's guard, §5's rule (`score_ban
 **Predictions (unchanged in substance).** H-CTX: rc72 ≈ F, R / P ≈ 0 (SUPPORTED). SET-LEVEL: rc72 ≈ home72, R / P ≈ 1
 (KILLED). Mine: R / P ≈ 0.25–0.4, so SUPPORTED or a low UNDECIDED. F's premium is smaller than U's (X51: 6.8 vs 11.1
 pp), which is why the resolution gate exists.
+
+**Amendment 1 registration.** Pin `aaf7ced86` (lands `premium_recovery` and this amendment; after `20875e96`, so
+every unit stamps its engine). Spec `read_spec_am1.json`, sha256
+`93b3fa31c50bc7e9a446452053a4d78c95e6e2d20964c9abf8c8ed533350b244`; state `~/gen3ai_archive/hctx_rc72_am1_read`.
