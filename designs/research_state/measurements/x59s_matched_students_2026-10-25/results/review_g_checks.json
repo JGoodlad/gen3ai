@@ -1,0 +1,196 @@
+{
+ "schema": "x59s_review_g_checks_v1",
+ "split": {
+  "s_h_r2": {
+   "val_rows": 29904,
+   "val_battles": 1007,
+   "val_rows_in_a_battle_with_train_rows": 21318,
+   "val_battles_with_train_rows": 755
+  },
+  "s_s": {
+   "val_rows": 29904,
+   "val_battles": 360,
+   "val_rows_in_a_battle_with_train_rows": 0,
+   "val_battles_with_train_rows": 0
+  }
+ },
+ "profile": {
+  "s_h_r2": {
+   "rows": 1201538,
+   "battles": 27056,
+   "rows_per_battle": 44.41,
+   "turn_quantiles_10_25_50_75_90": [
+    3.0,
+    7.0,
+    15.0,
+    26.0,
+    43.0
+   ],
+   "share_turn_ge_30": 0.2059,
+   "share_turn_ge_50": 0.0762,
+   "forced_share": 0.0852,
+   "switch_label_share_labelled": 0.3074,
+   "legal_actions_mean": 7.441,
+   "end_share": {
+    "ko": 0.4592,
+    "forfeit": 0.506,
+    "timer": 0.0287,
+    "tie": 0.006,
+    "none": 0.0
+   }
+  },
+  "s_s": {
+   "rows": 1201538,
+   "battles": 14709,
+   "rows_per_battle": 81.69,
+   "turn_quantiles_10_25_50_75_90": [
+    4.0,
+    10.0,
+    19.0,
+    31.0,
+    50.0
+   ],
+   "share_turn_ge_30": 0.2718,
+   "share_turn_ge_50": 0.1029,
+   "forced_share": 0.0,
+   "switch_label_share_labelled": 0.2953,
+   "legal_actions_mean": 6.808,
+   "end_share": {
+    "ko": 1.0,
+    "forfeit": 0.0,
+    "timer": 0.0,
+    "tie": 0.0,
+    "none": 0.0
+   }
+  }
+ },
+ "logs": {
+  "battles": 27586,
+  "missing_logs": 0,
+  "seconds": 72.2,
+  "r2_rows_matched": 1231442,
+  "r2_rows": 1231442,
+  "panel_residual": {
+   "rule": "every SEEN mon (no revealed move needed) of a side; fits = textpass.fits on what the log revealed; max over one team of H, F, P72, heldout72",
+   "actor_side_fit_hist": {
+    "0": 240,
+    "1": 6686,
+    "2": 26057,
+    "3": 10166,
+    "4": 1627,
+    "5": 157,
+    "6": 14
+   },
+   "opponent_side_fit_hist": {
+    "0": 285,
+    "1": 7080,
+    "2": 25786,
+    "3": 10012,
+    "4": 1612,
+    "5": 160,
+    "6": 12
+   },
+   "actor_side_species_only_hist": {
+    "0": 20,
+    "1": 795,
+    "2": 5788,
+    "3": 17491,
+    "4": 15815,
+    "5": 4500,
+    "6": 538
+   },
+   "kept_seats": 44947,
+   "r2_row_share": {
+    "own_ge4": 0.0255,
+    "own_ge5": 0.002,
+    "own_eq6": 0.0001,
+    "opp_ge4": 0.0278,
+    "opp_ge5": 0.0025
+   }
+  },
+  "silent_volatiles": {
+   "battles_flagged": 3346,
+   "battle_share": 0.1213,
+   "kinds": {
+    "-singleturn:Endure": 1692,
+    "-activate:trapped": 1392,
+    "-singlemove:Destiny Bond": 1576,
+    "-singleturn:Snatch": 42,
+    "-singlemove:Grudge": 7,
+    "-singlemove:Rage": 3
+   },
+   "r2_rows_in_flagged_battles": 180020,
+   "r2_rows_at_or_after_first_start_UB": 102433,
+   "r2_row_share_UB": 0.0832
+  },
+  "duplicates": {
+   "battle_ids_seen_twice": 0,
+   "same_accounts_turns_ending_twice": 788
+  }
+ },
+ "nll": {
+  "human_val": {
+   "pstar0_teacher_entropy_labelled": 1.0064454771762745,
+   "pstar_restricted_teacher_entropy_labelled": 0.8584648088406343,
+   "hidden_rows_pstar_setnll": 0.6131213814378038,
+   "hidden_share": 0.0800561797752809,
+   "pstar0_floor_all_rows": 0.9749574526578856,
+   "pstar_floor_all_rows": 0.8388235513097897,
+   "human_switch_share_labelled": 0.2848418756815703
+  },
+  "selfplay_val": {
+   "pstar_entropy": 0.9983583794783881,
+   "pstar_nll_of_recorded_label": 0.9927220566785605
+  },
+  "students": {
+   "s_h_5901": {
+    "human_val_human_labels": 1.1808360154306028,
+    "human_val_labelled_rows_only": 1.2604130252630317,
+    "human_val_hidden_rows_only": 0.26639844630356857,
+    "switch_mass_labelled_rows": 0.27045062975186007,
+    "mass_outside_consistent_set_labelled_rows": 0.14177771903097172
+   },
+   "s_p_5901": {
+    "human_val_human_labels": 1.3588531993753907,
+    "human_val_labelled_rows_only": 1.4490772437397874,
+    "human_val_hidden_rows_only": 0.32206812817048225,
+    "switch_mass_labelled_rows": 0.32868007934479193,
+    "mass_outside_consistent_set_labelled_rows": 0.1451060519201103
+   },
+   "s_p0_5901": {
+    "human_val_human_labels": 1.3901978994052222,
+    "human_val_labelled_rows_only": 1.4894904160247417,
+    "human_val_hidden_rows_only": 0.249204945268637,
+    "switch_mass_labelled_rows": 0.3034235174127458,
+    "mass_outside_consistent_set_labelled_rows": 0.17635808948220844
+   },
+   "s_s_5901": {
+    "human_val_human_labels": 1.4161690816026,
+    "human_val_labelled_rows_only": 1.5075793052880557,
+    "human_val_hidden_rows_only": 0.3657533532872737,
+    "switch_mass_labelled_rows": 0.308908428346858,
+    "mass_outside_consistent_set_labelled_rows": 0.17427726171063637
+   }
+  }
+ },
+ "pairs": {
+  "battles": 27586,
+  "both_seats_kept": 17361,
+  "pairs_meeting": {
+   "2": {
+    "pairs": 956,
+    "battles": 2193
+   },
+   "5": {
+    "pairs": 13,
+    "battles": 80
+   },
+   "10": {
+    "pairs": 0,
+    "battles": 0
+   }
+  },
+  "max_meetings": 9,
+  "two_seat_same_accounts_turns_ending_groups": 25
+ }
+}
