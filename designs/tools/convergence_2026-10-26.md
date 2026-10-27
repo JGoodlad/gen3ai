@@ -23,7 +23,7 @@ literal where an interpreter boundary forces one) is left.
 |---|---|---|---|
 | reserved ports 8000 / 8001 | `src/utils/bridge/ws_frontend.py`, `src/main/play.py`, `src/main/anchors/server.py`, `src/main/anchors/peer_scripts/metamon_side.py` (each a literal dict) | `utils.ports.RESERVED_PORTS` | CONVERGED; Metamon's peer keeps a literal (it runs under Metamon's interpreter and never imports this tree), pinned equal by `src/utils/ports_test.py` |
 | "can a server bind this port" | `kakuna.choose_port` / `claim_port` (0.0.0.0, no `SO_REUSEADDR`), `anchors.server._free`, `team_strength.cli._port_free` (127.0.0.1, `SO_REUSEADDR`); the frozen measurement queues `mmq.py` / `hrrq.py` | `utils.ports.bindable` / `first_bindable` / `claim` (host and reuse are the caller's) | CONVERGED (in-repo); the measurement scripts are records, never edited |
-| a port CLAIM (flock held for a unit's life) | `kakuna.claim_port` only; the standalone anchors `pick_port` and the team-strength lane bind-and-release with NO claim | `utils.ports.claim` | stage 2: every server-starting tool claims |
+| a port CLAIM (flock held for a unit's life) | `kakuna.claim_port`; `anchors.server.pick_port` / `claim_port` and the tests' `claimed_port` fixture / `ports.claimed` (CLAIMED in `utils.ports.PORT_LOCK_DIR`, 2026-10-27); the team-strength lane names a fixed port per unit and only waits for it (`wait_port_free`) | `utils.ports.claim` | CONVERGED but the lane's fixed ports (stage 2) |
 | non-blocking exclusive flock on an open file | `kakuna.claim_port` / `cmd_run` (`supervisor.lock`), `reads.runner._lock`, `reads.supervisors.acquire`; fd-level `heavy_slots._try`, `gate_lock._try`; `arm_chain.chain.run`, `arm_chain.ship._lock` | `utils.filelock.try_exclusive` | CONVERGED for kakuna and reads; the fd-level and arm_chain copies are stage 1 / 2 |
 | ONE supervisor per state path | `reads.supervisors.Hold` (path lock outside the state + `/proc` scan + dir identity), used by `main.reads run` and `kakuna run`; the legacy in-state locks (`<state>/supervisor.lock`, `<state>/<lane>.lock`); `arm_chain.chain` (a flock on its state file) | `main.reads.supervisors` | kakuna and reads already share it (N1-P); the in-state locks are deleted in stage 2; arm_chain keeps its own until stage 3 |
 | pid liveness | `procfs.pid_alive` (one `/proc/<pid>/stat` read; Z / X = gone); the remaining copies: `_common.sh` `pid_alive` and `launch_x35.sh` (a verbatim copy of `_common.sh`'s), and `agents.training.learner_benchmark` (`os.path.exists("/proc/<pid>")`: a zombie reads ALIVE, so its exit wait runs to the deadline) | `utils.procfs.pid_alive`; the shell twin `_common.sh` | CONVERGED for the Python sites (2026-10-27: `atomic_io`, `eval_ledger.store`, both `compile_cache*`, `launcher.worktree`, `heavy_slots._alive` read `/proc`; `utils.liveness_fakes.assert_pid_liveness` is the one contract each site's test runs: a zombie is gone, a live pid is alive when `kill` says ESRCH or EPERM). Left: the shell twins (stage 1) and the benchmark's wait |
@@ -98,8 +98,9 @@ chain item is mid-flight: the chain runs main's `kit` / `batch` from the main ch
    `utils.filelock` (an fd form). Split `src/main/x35/batch.py` and its test.
 2. **When no read pinned before `de15dfc7` is live.** Delete the in-state supervisor locks and `kakuna run`'s queue
    (the anchor lane is `main.reads`). Every server-starting tool takes a `utils.ports.claim` in ONE shared lock
-   dir: anchors' `pick_port` and the team-strength lane change from bind-and-release to claim, and kakuna's 0.0.0.0
-   probe meets the others' 127.0.0.1, so this is a behaviour change. `utils.records` (`append_jsonl`, atomic JSON)
+   dir: DONE 2026-10-27 for anchors' `pick_port` (`utils.ports.PORT_LOCK_DIR`, the dir kakuna already used) and the
+   tests; the team-strength lane's fixed per-unit ports remain, and kakuna's 0.0.0.0 probe still meets the others'
+   127.0.0.1 one. `utils.records` (`append_jsonl`, atomic JSON)
    replaces the `_jl` / `_atomic` copies; `reads.runner._atomic`'s fixed `.part` is a latent two-writer collision.
    One agent-cores constant. A `main.reads checkout` verb makes the pinned read checkouts.
 3. **arm_chain idle between items, with the owner of the chain consulted.** Promote `ProcRef` and the
@@ -120,5 +121,5 @@ chain item is mid-flight: the chain runs main's `kit` / `batch` from the main ch
 - **`launch_x35.sh` is live tooling inside a measurement folder.** Measurement folders read as frozen records, so an
   agent could leave a fix out of it or "restore" it.
 - **The port probes disagree by design today.** Kakuna probes `0.0.0.0` without `SO_REUSEADDR`; anchors and the
-  team-strength lane probe `127.0.0.1` with it, and they take no claim. A standalone `main.anchors` can pick a port
-  a Kakuna unit has claimed but not yet bound. Stage 2 closes this.
+  team-strength lane probe `127.0.0.1` with it. Every picker claims in the one lock dir, so a standalone
+  `main.anchors` no longer picks a port a Kakuna unit has claimed but not yet bound; the probes themselves differ.

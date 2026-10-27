@@ -273,8 +273,10 @@ def test_THIS_pytest_process_compiles_into_a_fresh_private_dir():
     assert not os.environ.get("GEN3AI_K3_PROBE_FAIL"), "deliberate failure (the teardown probe)"
     from utils.paths import repo_path
     conf = Path(repo_path("conftest.py")).read_text()
-    # ONE scratch helper: the conftest LOADS src/utils/scratch.py (by path) and has no copy of its own
-    assert '"src", "utils", "scratch.py"' in conf and "def _fs_type" not in conf
+    # ONE scratch helper: the conftest LOADS src/utils/scratch.py (by path, `_util_module("scratch")`) and has no
+    # copy of its own
+    assert '"src", "utils", f"{name}.py"' in conf and '_util_module("scratch")' in conf
+    assert "def _fs_type" not in conf
     assert '".cache", "gen3ai", "tmp"' not in conf, "a second copy of the scratch-root rule"
     assert ('_COMPILE_CACHE_ENV = ("GEN3AI_COMPILE_CACHE_DIR", "TORCHINDUCTOR_CACHE_DIR", '
             '"TRITON_CACHE_DIR")') in conf

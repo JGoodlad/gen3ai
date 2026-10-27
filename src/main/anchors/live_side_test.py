@@ -184,35 +184,36 @@ def test_bare_mode_does_NOT_silently_fall_back(monkeypatch) -> None:
 # ──────────────────────────────────────────────────────────────────────────────── sim ───
 async def _bot_series(bot: str, bot_seed: int, n: int = 2, seed_base: int = 61_007):
     """``n`` battles on the in-process front end: our Rust bot (accepting) vs a seeded random live client."""
-    from main.anchors.server import InProcessFrontEnd, pick_port
+    from main.anchors.server import InProcessFrontEnd
     from main.live.client import ClientConfig, LiveClient
     from main.live.policy import RandomPolicy
+    from utils.ports import claimed
     from utils.team_sources import packed_teams
 
     teams = packed_teams("pool")
-    port = pick_port([9500, 9599])
-    front = InProcessFrontEnd(port, seed_base=seed_base)
-    await front.__aenter__()
-    state = OurSideState()
-    ours = opp = None
-    choices: List[Any] = []
-    try:
-        plan = _plan(server_uri=front.uri, our_side=f"bot:{bot}", bot_seed=bot_seed, team_seed=11)
-        ours = live_side.build_client(plan, "peer_challenge", username="p6ours", team_spec={"kind": "pool"},
-                                      state=state)
-        opp = LiveClient(ClientConfig(uri=front.uri, username="p6opp", forfeit_turn_limit=250),
-                         policy=RandomPolicy(3), team_fn=lambda: teams[5])
-        await ours.connect()
-        await opp.connect()
-        acc = asyncio.ensure_future(ours.accept("p6opp", n))
-        await asyncio.wait_for(opp.challenge("p6ours", n), timeout=600)
-        await asyncio.wait_for(acc, timeout=120)
-        choices = list(ours._reader.choices)
-    finally:
-        for c in (ours, opp):
-            if c is not None:
-                await c.close()
-        await front.__aexit__(None, None, None)
+    with claimed() as port:        # CLAIMED while the front end binds and serves, not picked and let go
+        front = InProcessFrontEnd(port, seed_base=seed_base)
+        await front.__aenter__()
+        state = OurSideState()
+        ours = opp = None
+        choices: List[Any] = []
+        try:
+            plan = _plan(server_uri=front.uri, our_side=f"bot:{bot}", bot_seed=bot_seed, team_seed=11)
+            ours = live_side.build_client(plan, "peer_challenge", username="p6ours", team_spec={"kind": "pool"},
+                                          state=state)
+            opp = LiveClient(ClientConfig(uri=front.uri, username="p6opp", forfeit_turn_limit=250),
+                             policy=RandomPolicy(3), team_fn=lambda: teams[5])
+            await ours.connect()
+            await opp.connect()
+            acc = asyncio.ensure_future(ours.accept("p6opp", n))
+            await asyncio.wait_for(opp.challenge("p6ours", n), timeout=600)
+            await asyncio.wait_for(acc, timeout=120)
+            choices = list(ours._reader.choices)
+        finally:
+            for c in (ours, opp):
+                if c is not None:
+                    await c.close()
+            await front.__aexit__(None, None, None)
     return state, choices
 
 

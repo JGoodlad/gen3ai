@@ -7,6 +7,10 @@
 * :func:`first_bindable` / :func:`claim` -- pick the first free port of a range; :func:`claim` also takes an exclusive
   ``flock`` on ``<lock_dir>/<port>.lock`` held for the unit's life, so two supervisors never pick one port, which
   bind-and-release alone cannot promise (D1 look 1's 9540 collision).
+* :data:`PORT_LOCK_DIR` -- THE lock directory every claimant uses (the Kakuna lanes, a standalone ``main.anchors`` read,
+  a test session): claimants whose ranges overlap exclude each other only if they flock the same files.
+* :func:`claimed` / :data:`TEST_PORT_RANGE` -- the same claim as a ``with`` block, for a test that starts a server on a
+  port it picked (the root conftest's ``claimed_port`` fixture is its function-scoped form).
 
 The probe's ``host`` and ``reuse_addr`` are the CALLER's, unchanged from each tool's own copy before convergence: the
 anchors server and the team-strength lane probe ``127.0.0.1`` with ``SO_REUSEADDR`` (as their server sets it, so a
@@ -16,11 +20,23 @@ STDLIB ONLY: it sits under the play path (``main.reads.playpath``) and the webso
 """
 from __future__ import annotations
 
+import contextlib
 import os
 import socket
-from typing import IO, Container, Optional, Tuple
+from pathlib import Path
+from typing import IO, Container, Iterator, Optional, Tuple
 
 from utils.filelock import try_exclusive
+
+#: Every claimant's lock directory (one ``<port>.lock`` flock per port, held for the claimant's unit): the Kakuna lanes
+#: (``main.x35.kakuna.PORT_LOCK_DIR``), a standalone ``main.anchors`` read (``main.anchors.server.pick_port``) and the
+#: test sessions' ``claimed_port`` fixture all claim here, so none of them takes a port another holds. The directory
+#: keeps the name the live Kakuna supervisors already hold their locks in: a rename would hide their claims.
+PORT_LOCK_DIR = Path.home() / ".claude" / "jobs" / "x35_kakuna_ports"
+
+#: Where the test sessions claim their server ports: clear of the Kakuna lanes' 9540-9599 and a standalone anchors
+#: read's default 9500-9599, so a test never waits on a live read's ports even before the shared lock dir says so.
+TEST_PORT_RANGE = (9600, 9699)
 
 #: Ports no tool may bind, start a server on or dial, with the reason the refusal states.
 RESERVED_PORTS = {8000: "the shared DEV server",
@@ -52,12 +68,15 @@ def first_bindable(lo: int, hi: int, *, host: str = "127.0.0.1", reuse_addr: boo
 
 
 def claim(lo: int, hi: int, lock_dir: "str | os.PathLike[str]", *, host: str = "127.0.0.1",
-          reuse_addr: bool = True) -> Optional[Tuple[int, IO[str]]]:
-    """``(port, held lock file)``: the first port in ``[lo, hi]`` no OTHER claimant holds (an exclusive flock on
-    ``<lock_dir>/<port>.lock``) and :func:`bindable` passes; ``None`` when there is none. The caller keeps the file
-    open until its unit ends; closing it releases the claim."""
+          reuse_addr: bool = True, skip: Container[int] = ()) -> Optional[Tuple[int, IO[str]]]:
+    """``(port, held lock file)``: the first port in ``[lo, hi]`` not in ``skip`` that no OTHER claimant holds (an
+    exclusive flock on ``<lock_dir>/<port>.lock``) and :func:`bindable` passes; ``None`` when there is none. A port in
+    ``skip`` is passed over before its lock file is touched (the reserved ports get no lock file). The caller keeps
+    the file open until its unit ends; closing it releases the claim."""
     os.makedirs(lock_dir, exist_ok=True)
     for port in range(lo, hi + 1):
+        if port in skip:
+            continue
         fh = try_exclusive(os.path.join(lock_dir, f"{port}.lock"), "w")
         if fh is None:
             continue
@@ -66,3 +85,20 @@ def claim(lo: int, hi: int, lock_dir: "str | os.PathLike[str]", *, host: str = "
             continue
         return port, fh
     return None
+
+
+@contextlib.contextmanager
+def claimed(lo: int = TEST_PORT_RANGE[0], hi: int = TEST_PORT_RANGE[1],
+            lock_dir: "str | os.PathLike[str]" = PORT_LOCK_DIR, *, host: str = "127.0.0.1",
+            reuse_addr: bool = True) -> Iterator[int]:
+    """A port in ``[lo, hi]`` CLAIMED (:func:`claim`, the reserved ports skipped) for the ``with`` block: held while
+    the server the block starts binds it and serves, released when the block ends. ``RuntimeError`` when none is free
+    and unclaimed. A test that picked a port by bind-and-release shared it with any other session that did the same."""
+    got = claim(lo, hi, lock_dir, host=host, reuse_addr=reuse_addr, skip=RESERVED_PORTS)
+    if got is None:
+        raise RuntimeError(f"no free, unclaimed port in {lo}-{hi} (claims in {lock_dir})")
+    port, fh = got
+    try:
+        yield port
+    finally:
+        fh.close()

@@ -8,7 +8,6 @@
 """
 import asyncio
 import json
-import socket
 import threading
 
 import pytest
@@ -18,17 +17,6 @@ from main.live import halt as H
 from main.live.reader import LiveReader, ReaderRefusal
 
 pytestmark = pytest.mark.integration
-
-
-def _free_port() -> int:
-    for port in range(9640, 9700):
-        with socket.socket() as s:
-            try:
-                s.bind(("127.0.0.1", port))
-                return port
-            except OSError:
-                continue
-    raise RuntimeError("no free 96xx port")
 
 
 def _team() -> str:
@@ -51,9 +39,9 @@ def test_the_reader_refuses_an_unknown_keyword_and_stays_dead():
 
 
 @pytest.mark.slow  # ship gate (2026-10-19): 10 s beside a live run
-def test_gate_a_two_roads_one_row_in_miniature(tmp_path):
+def test_gate_a_two_roads_one_row_in_miniature(tmp_path, claimed_port):
     from main.live import two_roads as TR
-    port = _free_port()
+    port = claimed_port()
     assert TR.main(["--battles", "2", "--pairs", "1", "--port", str(port), "--seed", "3",
                     "--out", str(tmp_path / "a")]) == 0
     summary = json.loads((tmp_path / "a" / "summary.json").read_text())
@@ -125,11 +113,11 @@ class _PlantingServer:
         self.thread.join(20)
 
 
-def test_a_planted_bad_line_halts_and_refuses_the_next_start(tmp_path, monkeypatch, capsys):
+def test_a_planted_bad_line_halts_and_refuses_the_next_start(tmp_path, monkeypatch, capsys, claimed_port):
     from main.play import run
     marker = tmp_path / "halt.json"
     monkeypatch.setenv(H.HALT_ENV, str(marker))
-    port = _free_port()
+    port = claimed_port()
     with _PlantingServer(port) as srv:
         with pytest.raises(SystemExit) as ei:
             run(["--mode", "selfplay", "--port", str(port), "--username", "p4self", "--connect-timeout", "20"])

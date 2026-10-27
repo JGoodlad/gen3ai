@@ -128,8 +128,9 @@ PORT_RANGE = (9540, 9599)
 #: The address a port probe binds (this queue's rule since FR-3: every interface, no ``SO_REUSEADDR``).
 PORT_HOST = "0.0.0.0"
 #: Every supervisor's port claims (one ``<port>.lock`` flock per port, held for the unit's life): two supervisors
-#: never pick the same port, which bind-and-release alone could not promise (D1 look 1's 9540 collision).
-PORT_LOCK_DIR = Path.home() / ".claude" / "jobs" / "x35_kakuna_ports"
+#: never pick the same port, which bind-and-release alone could not promise (D1 look 1's 9540 collision). The ONE
+#: directory every claimant shares (a standalone anchors read, a test session): :data:`utils.ports.PORT_LOCK_DIR`.
+PORT_LOCK_DIR = ports.PORT_LOCK_DIR
 #: A unit DECLARES the heavy slots' SHORT LANE (``mem_cap.sh --max-s``): it plays in 2-5 min, so it need not wait
 #: out the 40-min S chunks ahead of it (D1 look 1's starvation). An overrun is killed at ``UNIT_MAX_S`` + 30 s and
 #: exits :data:`SHORT_LANE_OVERRUN`; :func:`run_unit` then plays the unit ONCE more as a normal heavy-slot (long) job.

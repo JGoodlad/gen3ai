@@ -53,7 +53,6 @@ import html as _html
 import json
 import os
 import re
-import socket
 import subprocess
 import sys
 import time
@@ -66,6 +65,7 @@ from main.prober.web import fixture_run
 from utils.contention import describe_contention, scale_timeout
 from utils.headless_chrome import LOOPBACK_ONLY, Chrome, ChromeTimeout, find_chrome
 from utils.paths import repo_root
+from utils.ports import claimed
 
 # MEASURED 2026-08-14: this file alone was 1280 s, blamed on "a chrome cold start is ~25 s".
 # RE-MEASURED 2026-09-29 — that attribution was WRONG: a bare headless chrome starts in 0.37 s, and
@@ -87,12 +87,6 @@ def _chrome_binary() -> str:
     return path
 
 
-def _free_port() -> int:
-    with socket.socket() as probe:
-        probe.bind(("127.0.0.1", 0))
-        return probe.getsockname()[1]
-
-
 def _serve(target: str):
     """The REAL app under uvicorn on a loopback port nobody else uses, serving `target` (a run, or a models
     ROOT for picker mode). Yields the base URL; always stops the process.
@@ -101,32 +95,32 @@ def _serve(target: str):
     talks to. `arch_viewer_serve`'s own test makes the same argument: byte-identical generated
     output says nothing about whether the server answers.
     """
-    port = _free_port()
-    env = dict(os.environ, PYTHONPATH=os.path.join(_REPO, "src"))
-    proc = subprocess.Popen(
-        [sys.executable, "-m", "main.prober.web", target, "--port", str(port)],
-        cwd=_REPO, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-    base = f"http://127.0.0.1:{port}"
-    try:
-        last = None
-        for _ in range(int(200 * scale_timeout(1.0))):   # wait for the socket; never guess a sleep
-            if proc.poll() is not None:
-                pytest.fail(f"the server exited early:\n{proc.stdout.read()[-1500:]}")
-            try:
-                urllib.request.urlopen(base + "/api/health", timeout=1).read()
-                break
-            except Exception as exc:              # noqa: BLE001 — not up yet
-                last = exc
-                time.sleep(0.1)
-        else:
-            pytest.fail(f"the server never came up on {port}: {last}\n{describe_contention()}")
-        yield base
-    finally:
-        proc.terminate()
+    with claimed() as port:      # the claim lives as long as the server does
+        env = dict(os.environ, PYTHONPATH=os.path.join(_REPO, "src"))
+        proc = subprocess.Popen(
+            [sys.executable, "-m", "main.prober.web", target, "--port", str(port)],
+            cwd=_REPO, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        base = f"http://127.0.0.1:{port}"
         try:
-            proc.wait(timeout=15)
-        except subprocess.TimeoutExpired:
-            proc.kill()
+            last = None
+            for _ in range(int(200 * scale_timeout(1.0))):   # wait for the socket; never guess a sleep
+                if proc.poll() is not None:
+                    pytest.fail(f"the server exited early:\n{proc.stdout.read()[-1500:]}")
+                try:
+                    urllib.request.urlopen(base + "/api/health", timeout=1).read()
+                    break
+                except Exception as exc:              # noqa: BLE001 — not up yet
+                    last = exc
+                    time.sleep(0.1)
+            else:
+                pytest.fail(f"the server never came up on {port}: {last}\n{describe_contention()}")
+            yield base
+        finally:
+            proc.terminate()
+            try:
+                proc.wait(timeout=15)
+            except subprocess.TimeoutExpired:
+                proc.kill()
 
 
 @pytest.fixture(scope="module")

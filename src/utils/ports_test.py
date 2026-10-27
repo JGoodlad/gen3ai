@@ -177,18 +177,19 @@ def test_kakuna_claim_port_makes_the_same_syscalls_and_claims_as_its_old_copy(mo
 @pytest.mark.parametrize("busy", [set(), {LO}])
 @pytest.mark.parametrize("old", [_old_anchors_free, _old_team_strength_port_free])
 def test_the_anchors_and_team_strength_probes_make_the_same_syscalls_as_their_old_copies(monkeypatch, busy, old):
-    from main.anchors import server as S
     from main.team_strength import cli as TS
 
-    for new in (S.bindable, TS.bindable):
+    for new in (P.bindable, TS.bindable):
         assert _run(monkeypatch, busy, new, LO) == _run(monkeypatch, busy, old, LO)
 
 
-def test_anchors_pick_port_skips_the_reserved_ports_and_picks_the_first_bindable(monkeypatch):
+def test_anchors_pick_port_skips_the_reserved_ports_and_picks_the_first_bindable(monkeypatch, tmp_path):
     from main.anchors import server as S
 
-    (res, calls) = _run(monkeypatch, {7999}, S.pick_port, [7999, 8002])
+    (res, calls) = _run(monkeypatch, {7999}, S.pick_port, [7999, 8002], tmp_path)
+    S.release_all_ports()
     assert res == ("ok", 8002) and [c[2] for c in calls if c[0] == "bind"] == [7999, 8002]
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["7999.lock", "8002.lock"], "a reserved port got a lock file"
 
 
 def test_a_real_listener_reads_busy_to_every_probe_and_free_once_closed():
@@ -269,3 +270,49 @@ def test_claim_returns_none_when_every_port_is_taken(tmp_path, monkeypatch):
     monkeypatch.setattr(socket, "socket", _fake_socket_cls(tr))
     got: Optional[Tuple[int, Any]] = P.claim(LO, HI, tmp_path)
     assert got is None and P.first_bindable(LO, HI) is None
+
+
+# ------------------------------------------------------------------------------ claims for the tests' own servers
+def test_claim_skips_the_ports_it_is_told_to_before_touching_their_lock_files(tmp_path, monkeypatch):
+    monkeypatch.setattr(P, "bindable", lambda *a, **k: True)
+    first, second = (P.claim(7999, 8002, tmp_path, skip=P.RESERVED_PORTS) for _ in range(2))
+    assert first is not None and second is not None and (first[0], second[0]) == (7999, 8002)
+    assert P.claim(7999, 8002, tmp_path, skip=P.RESERVED_PORTS) is None
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["7999.lock", "8002.lock"], "a reserved port got a lock file"
+    first[1].close()
+    second[1].close()
+
+
+def test_claimed_holds_a_port_for_the_block_and_gives_it_back_after(tmp_path, monkeypatch):
+    monkeypatch.setattr(P, "bindable", lambda *a, **k: True)       # nothing has bound the port: only the claim differs
+    with P.claimed(9650, 9651, tmp_path) as a:
+        with P.claimed(9650, 9651, tmp_path) as b:
+            assert {a, b} == {9650, 9651}
+            with pytest.raises(RuntimeError, match="no free, unclaimed port"):
+                with P.claimed(9650, 9651, tmp_path):
+                    pass
+        with P.claimed(9650, 9651, tmp_path) as again:
+            assert again == b, "a released claim is the next picker's"
+    with P.claimed(9650, 9651, tmp_path) as first:
+        assert first == 9650
+
+
+def test_claimed_never_hands_out_a_reserved_port(tmp_path, monkeypatch):
+    monkeypatch.setattr(P, "bindable", lambda *a, **k: True)
+    with P.claimed(8000, 8002, tmp_path) as port:
+        assert port == 8002 and not {"8000.lock", "8001.lock"} & {p.name for p in tmp_path.iterdir()}
+
+
+def test_the_test_port_range_is_clear_of_the_lanes_and_the_anchors_default_range():
+    from main.x35 import kakuna
+
+    lo, hi = P.TEST_PORT_RANGE
+    assert lo > kakuna.PORT_RANGE[1] and lo > 9599 and not set(range(lo, hi + 1)) & set(P.RESERVED_PORTS)
+
+
+def test_the_claimed_port_fixture_claims_in_the_shared_lock_dir_and_each_call_is_distinct(claimed_port):
+    a, b = claimed_port(), claimed_port()
+    assert a != b and all(P.TEST_PORT_RANGE[0] <= p <= P.TEST_PORT_RANGE[1] for p in (a, b))
+    for p in (a, b):
+        assert try_exclusive(P.PORT_LOCK_DIR / f"{p}.lock") is None, f"{p} is not claimed in the shared lock dir"
+    assert claimed_port() not in (a, b)

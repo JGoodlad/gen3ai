@@ -8,8 +8,8 @@ sets `tmp_path_retention_policy = failed` / `_count = 1`.
 This runs a CHILD pytest session (`-n 2`, so xdist workers and a grandchild subprocess are covered)
 over `pytest_tmp_probe_child.py` with `$GEN3AI_SCRATCH` pointed at a fresh on-disk dir, and asserts
 (1) every temp location it reports is under that root and not on tmpfs, and (2) after it PASSES, no
-`pytest-N` basetemp remains. Reverting the conftest half fails (1); reverting the ini half fails (2).
-A third case: a tmpfs scratch root is REFUSED.
+basetemp remains (the session's own `session-<pid>-<starttime>` tree, or a legacy `pytest-N`). Reverting the
+conftest half fails (1); reverting the ini half fails (2). A third case: a tmpfs scratch root is REFUSED.
 """
 from __future__ import annotations
 
@@ -75,7 +75,8 @@ def test_child_session_temp_is_on_disk_and_a_pass_leaves_nothing(tmp_path_factor
             assert where == root or where.startswith(root + os.sep), (worker, key, rep)
             assert _fs_type(where) not in ("tmpfs", "ramfs"), (worker, key, rep)
 
-    retained = sorted(str(p) for p in scratch.glob("pytest-of-*/pytest-[0-9]*"))
+    retained = sorted(str(p) for pat in ("pytest-of-*/session-*", "pytest-of-*/pytest-[0-9]*")
+                      for p in scratch.glob(pat))
     assert not retained, f"a PASSING session retained its basetemp: {retained}"
 
 

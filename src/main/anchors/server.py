@@ -21,8 +21,11 @@ them from :class:`ManagedServer` rather than restating them:
 * **We start it, we stop it, BY PID.** A :class:`ManagedServer` is a context manager that records
   ``proc.pid`` and terminates exactly that process on exit — success, failure or exception. Never
   ``npm run stop``, which kills :8000, and never a blanket ``pkill``.
-* **The port is ours alone.** :func:`pick_port` binds a candidate before returning it, so two
-  anchor reads on the same box cannot collide. The search range comes from the config
+* **The port is ours alone.** :func:`pick_port` CLAIMS a candidate (an exclusive ``flock`` on
+  ``<port>.lock`` in :data:`utils.ports.PORT_LOCK_DIR`, the directory the Kakuna lanes and the test sessions
+  claim in, held for this process's life) after checking that it binds, so two anchor reads, or a read and a
+  test session, cannot take one port between the pick and the server's own bind (a bind-and-release pick
+  can: D1 look 1's 9540, the `peer_patience` pair's 9500). The search range comes from the config
   (``9500-9599`` by default); the two reserved ports are excluded from every path.
 * **"Started" means SERVING, not "the process exists".** :meth:`ManagedServer.wait_ready` waits
   for the child's own readiness LINE when it prints one (the front end does) and polls the port
@@ -43,10 +46,10 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-from typing import IO, Dict, List, Optional
+from typing import IO, Dict, List, Optional, Tuple
 
 from utils.paths import repo_path, src_root
-from utils.ports import RESERVED_PORTS, bindable
+from utils.ports import PORT_LOCK_DIR, RESERVED_PORTS, claim
 
 
 #: The websocket path every Showdown server serves.
@@ -85,19 +88,52 @@ def refuse_reserved(port: Optional[int]) -> None:
         )
 
 
-def pick_port(port_range: Optional[List[int]] = None) -> int:
-    """The first free port in the configured range, with the two reserved ports excluded.
+#: The claims :func:`pick_port` took and :func:`release_port` has not dropped, by port. Each is an open lock file, so
+#: the claim lives as long as this process does (the read's unit); a claim is never inherited by a child (a Python
+#: file is close-on-exec), so a server we start does not keep it past our own exit.
+_HELD: Dict[int, IO[str]] = {}
 
-    Bound-then-released rather than merely "nothing is listening": the race window is small and
-    the alternative — two anchor reads sharing a server — silently mixes two measurements.
-    """
+
+def claim_port(port_range: Optional[List[int]] = None, lock_dir: "str | os.PathLike[str] | None" = None
+               ) -> Tuple[int, IO[str]]:
+    """``(port, held lock file)``: the first port in the configured range that no other claimant holds and that
+    binds now, the two reserved ports excluded. The caller keeps the file open until its server has bound the port
+    (or its unit ends) and closes it to release the claim; :func:`pick_port` is the form that keeps it for you."""
     lo, hi = (port_range or [9500, 9599])[:2]
-    for port in range(int(lo), int(hi) + 1):
-        if port in RESERVED_PORTS:
-            continue
-        if bindable(port):
-            return port
-    raise ServerError(f"no free port in {lo}-{hi}; another anchor read may still be running")
+    try:
+        got = claim(int(lo), int(hi), PORT_LOCK_DIR if lock_dir is None else lock_dir, skip=RESERVED_PORTS)
+    except OSError as exc:      # fail closed: an unclaimed pick would put the race back
+        raise ServerError(f"cannot take a port claim in {lock_dir or PORT_LOCK_DIR}: {exc}") from exc
+    if got is None:
+        raise ServerError(f"no free, unclaimed port in {lo}-{hi}; another anchor read may still be running")
+    return got
+
+
+def pick_port(port_range: Optional[List[int]] = None, lock_dir: "str | os.PathLike[str] | None" = None) -> int:
+    """The first free port in the configured range, CLAIMED for this process (see :func:`claim_port`), with the two
+    reserved ports excluded.
+
+    Claimed rather than merely "bound and released": the window between a release and the server's own bind is small,
+    but two anchor reads (or a read and a Kakuna lane, or two test sessions) landing in it share a server and
+    silently mix two measurements. The claim is held until :func:`release_port` or the process ends.
+    """
+    port, fh = claim_port(port_range, lock_dir)
+    _HELD[port] = fh
+    return port
+
+
+def release_port(port: int) -> None:
+    """Drop the claim :func:`pick_port` took on ``port`` (a no-op when it holds none): for a caller whose unit ends
+    before its process does (a test, a long-lived session)."""
+    fh = _HELD.pop(port, None)
+    if fh is not None:
+        fh.close()
+
+
+def release_all_ports() -> None:
+    """Drop every claim :func:`pick_port` still holds."""
+    for port in list(_HELD):
+        release_port(port)
 
 
 class ManagedServer:

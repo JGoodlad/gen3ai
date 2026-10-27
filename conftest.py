@@ -238,27 +238,43 @@ _slow_write_note = []
 #   * HOW LONG — `pytest.ini` sets `tmp_path_retention_policy = failed` and `_count = 1`: a PASSING
 #     test's `tmp_path` is removed at its teardown and a passing session's basetemp at sessionfinish.
 # Pinned by `src/utils/pytest_tmp_on_disk_test.py` (a child session; fails on revert of either half).
+#
+# And each session's tree is ITS OWN (gen3_session_private_tmp_v1, `utils.pytest_session_tmp`): the basetemp is
+# `<scratch>/pytest-of-<user>/session-<pid>-<starttime>`, named for the process that owns it, never the next
+# `pytest-N` of a directory every concurrent session shares. A session's start sweeps the trees of DEAD owners (by
+# `/proc`, then by age and the retention count) and nothing else; a passing session removes its own at the last sessionfinish
+# (pytest only does that for a numbered dir, not for a given basetemp). An explicit `--basetemp`, and every xdist
+# worker (xdist hands it `<controller's>/popen-gwN`), is left exactly as given. Pinned by
+# `src/utils/pytest_session_tmp_test.py` (child sessions run at once; it fails on revert).
 
 
-def _scratch_module():
-    """`src/utils/scratch.py` — the ONE scratch-root helper (shared with `agents.model.compile_cache`),
-    loaded BY PATH: this runs before anything guarantees `src/` is importable, and a `sys.path` edit
-    here would mask the import-precedence gates. The file is stdlib-only by contract."""
+def _util_module(name):
+    """`src/utils/<name>.py`, loaded BY PATH (the helpers the conftest needs before anything guarantees `src/` is
+    importable: `scratch`, `pytest_session_tmp`). A `sys.path` edit here would mask the import-precedence gates.
+    `scratch` is stdlib-only by contract; `pytest_session_tmp` imports only `utils.procfs` (stdlib-only too), which
+    resolves because `_put_this_checkouts_src_first` ran at import."""
     import importlib
     import importlib.util
-    mod = sys.modules.get("_gen3ai_conftest_scratch")
+    key = f"_gen3ai_conftest_{name}"
+    mod = sys.modules.get(key)
     if mod is None:
-        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "src", "utils", "scratch.py")
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "src", "utils", f"{name}.py")
         if os.path.exists(path):
-            spec = importlib.util.spec_from_file_location("_gen3ai_conftest_scratch", path)
+            spec = importlib.util.spec_from_file_location(key, path)
             mod = importlib.util.module_from_spec(spec)
+            sys.modules[key] = mod
             spec.loader.exec_module(mod)
         else:
             # a COPY of this conftest in a test's temp dir (the conftest's own tests do that): the
             # same module, reached through the import path the child session was given
-            mod = importlib.import_module("utils.scratch")
-        sys.modules["_gen3ai_conftest_scratch"] = mod
+            mod = importlib.import_module(f"utils.{name}")
+        sys.modules[key] = mod
     return mod
+
+
+def _scratch_module():
+    """`src/utils/scratch.py` — the ONE scratch-root helper (shared with `agents.model.compile_cache`)."""
+    return _util_module("scratch")
 
 
 def _test_scratch_root():
@@ -277,6 +293,42 @@ def _declare_test_tmp_root():
     tempfile.tempdir = root
 
 
+def _declare_session_basetemp(config):
+    """THIS session's own basetemp (`utils.pytest_session_tmp`), and the sweep of the dead sessions' trees.
+
+    Left exactly as given when `--basetemp` is (a user's, or the one xdist hands every worker as
+    `<controller's basetemp>/popen-gwN`), so only a controller or a serial session names one, and only
+    that one sweeps. Runs before pytest's own `pytest_configure` reads `config.option.basetemp` (this
+    hook is `tryfirst`)."""
+    if config.option.basetemp is not None:
+        return
+    m = _util_module("pytest_session_tmp")
+    root = _test_scratch_root()
+    try:
+        keep = int(config.getini("tmp_path_retention_count"))
+    except ValueError:
+        keep = 1
+    m.sweep_dead_sessions(root, keep=keep)
+    base = m.session_basetemp(root)
+    config.option.basetemp = base
+    config.pluginmanager.register(_SessionTree(base), "gen3ai_session_tree")
+
+
+class _SessionTree:
+    """Registered only by a session that named its OWN basetemp. After every other `pytest_sessionfinish` (so
+    after the budget / ship-bar verdicts that may turn a pass into a fail, and after the session-scoped fixtures
+    have finalized), a session that PASSED removes its own tree, as the `failed` retention policy did for pytest's
+    numbered one; a failed session's tree stays for the post-mortem."""
+
+    def __init__(self, base):
+        self.base = base
+
+    @pytest.hookimpl(trylast=True)
+    def pytest_sessionfinish(self, session, exitstatus):
+        _util_module("pytest_session_tmp").finish_session(
+            self.base, int(session.exitstatus), session.config.getini("tmp_path_retention_policy"))
+
+
 # --- K3: a HERMETIC compile cache per test process (gen3_hermetic_compile_cache_v1) --------------
 #
 # Every pytest process (the controller and each xdist worker) compiles into a FRESH private temp dir,
@@ -284,41 +336,17 @@ def _declare_test_tmp_root():
 # never a dir any other run, pin or torch env wrote. Overwrites an inherited value on purpose: a
 # test run is its own run. Subprocesses a test spawns inherit it. The names mirror
 # `agents.model.compile_cache` (pinned by `compile_cache_test.py`); inlined because this runs before
-# anything guarantees `src/` is importable.
+# anything guarantees `src/` is importable (the dead-owner sweep is `utils.pytest_session_tmp`'s, loaded by path).
 _COMPILE_CACHE_ENV = ("GEN3AI_COMPILE_CACHE_DIR", "TORCHINDUCTOR_CACHE_DIR", "TRITON_CACHE_DIR")
 _compile_cache_session = {"root": None, "pid": None}
 
 
 def _sweep_dead_test_compile_caches():
     """Remove this user's `gen3ai_pytest_compile_<pid>_*` / `gen3ai_compile_<pid>_*` dirs whose PID is
-    dead (a session that was SIGKILLed never reached unconfigure). Mirrors
-    `compile_cache.sweep_stale_temp_caches`."""
-    import shutil
-    base = _test_scratch_root()
-    try:
-        names = os.listdir(base)
-    except OSError:
-        return
-    for name in names:
-        for prefix in ("gen3ai_pytest_compile_", "gen3ai_compile_"):
-            if not name.startswith(prefix):
-                continue
-            head = name[len(prefix):].split("_", 1)[0]
-            if not head.isdigit():
-                continue
-            try:
-                os.kill(int(head), 0)
-                continue                                   # alive (or not ours to judge)
-            except ProcessLookupError:
-                pass
-            except PermissionError:
-                continue
-            path = os.path.join(base, name)
-            try:
-                if os.lstat(path).st_uid == os.getuid():
-                    shutil.rmtree(path, ignore_errors=True)
-            except OSError:
-                pass
+    dead (a session that was SIGKILLed never reached unconfigure). Liveness is `/proc` (`utils.procfs`), never
+    `kill(pid, 0)`, which reads a live session of ANOTHER agent's sandboxed shell as dead and so deleted its
+    compile cache under it. Mirrors `compile_cache.sweep_stale_temp_caches`."""
+    _util_module("pytest_session_tmp").sweep_dead_compile_caches(_test_scratch_root())
 
 
 def _declare_test_compile_cache():
@@ -352,6 +380,7 @@ def pytest_configure(config):
     root conftest as a module (which depends on sys.path order). Then declare this process's fresh
     compile cache (K3, above) — on the same on-disk scratch root."""
     _declare_test_tmp_root()
+    _declare_session_basetemp(config)
     config._gen3ai_slow_collected = _slow_collected
     _declare_test_compile_cache()
 
@@ -1039,6 +1068,37 @@ def run_archive(tmp_path, monkeypatch):
     archive.mkdir(exist_ok=True)
     monkeypatch.setenv(MODELS_DIR_ENV_VAR, str(archive))
     return archive
+
+
+@pytest.fixture
+def claimed_port():
+    """``take() -> int``: a loopback port in `utils.ports.TEST_PORT_RANGE` CLAIMED for this test, released at its end.
+
+    THE way a test picks a port for a server it starts. A bind-and-release pick (`bind(("127.0.0.1", 0))` then
+    `close()`, or `anchors.server.pick_port` before it claimed) hands the same port to every concurrent session
+    that picks in the same window: the `peer_patience` pair both took 9500 under `-n 2`, and the box runs several
+    sessions at once. The claim is an exclusive `flock` in `utils.ports.PORT_LOCK_DIR`, the directory the Kakuna
+    lanes and a standalone anchors read claim in too, so it excludes all of them and is held while the server
+    binds. `take(lo, hi)` claims from another range; each call takes a distinct port."""
+    import contextlib
+
+    from utils import ports
+    with contextlib.ExitStack() as stack:
+        def take(lo=ports.TEST_PORT_RANGE[0], hi=ports.TEST_PORT_RANGE[1]):
+            return stack.enter_context(ports.claimed(lo, hi))
+        yield take
+
+
+@pytest.fixture(autouse=True)
+def _no_port_claim_outlives_its_test():
+    """`anchors.server.pick_port` holds its claim for the PROCESS (a read is one); a pytest worker runs thousands
+    of tests, and a test that drives the anchors CLI in-process picks a port each time, so the claims would
+    exhaust the 100-port range. Whatever a test picked is dropped at its end (an already-imported server module
+    only: this never imports it)."""
+    yield
+    server = sys.modules.get("main.anchors.server")
+    if server is not None:
+        server.release_all_ports()
 
 
 @pytest.fixture(autouse=True)

@@ -18,6 +18,9 @@ from __future__ import annotations
 
 import os
 import socket
+import subprocess
+import sys
+import threading
 
 import pytest
 
@@ -31,8 +34,11 @@ from main.anchors.server import (
     pick_port,
     port_of,
     refuse_reserved,
+    release_port,
     server_uri,
 )
+from utils import ports
+from utils.contention import scale_timeout
 
 
 @pytest.mark.parametrize("port", sorted(RESERVED_PORTS))
@@ -74,35 +80,119 @@ def test_port_of_reads_the_port_or_honestly_says_none(uri: str, expect) -> None:
     assert port_of(uri) == expect
 
 
-def test_pick_port_stays_inside_the_configured_range_and_skips_the_reserved_ones() -> None:
-    port = pick_port([9500, 9599])
+def test_pick_port_stays_inside_the_configured_range_and_skips_the_reserved_ones(tmp_path) -> None:
+    port = pick_port([9500, 9599], tmp_path)
     assert 9500 <= port <= 9599
     assert port not in RESERVED_PORTS
 
 
-def test_pick_port_would_never_hand_back_a_reserved_port_even_if_the_range_covered_it() -> None:
-    """A config that widened the range must not be able to reach 8001."""
-    port = pick_port([8000, 8010])
+def test_pick_port_would_never_hand_back_a_reserved_port_even_if_the_range_covered_it(tmp_path) -> None:
+    """A config that widened the range must not be able to reach 8001 (nor leave a lock file for it)."""
+    port = pick_port([8000, 8010], tmp_path)
     assert port not in RESERVED_PORTS
+    assert not {f"{p}.lock" for p in RESERVED_PORTS} & {p.name for p in tmp_path.iterdir()}
 
 
-def test_pick_port_does_not_return_a_port_something_is_listening_on() -> None:
+def test_pick_port_does_not_return_a_port_something_is_listening_on(tmp_path) -> None:
     """Two anchor reads sharing one server would silently MIX two measurements."""
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as held:
         held.bind(("127.0.0.1", 0))
         held.listen(1)
         taken = held.getsockname()[1]
-        assert pick_port([taken, taken + 5]) != taken
+        assert pick_port([taken, taken + 5], tmp_path) != taken
 
 
-def test_pick_port_refuses_rather_than_reusing_when_the_range_is_full() -> None:
+def test_pick_port_refuses_rather_than_reusing_when_the_range_is_full(tmp_path) -> None:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as held:
         held.bind(("127.0.0.1", 0))
         held.listen(1)
         taken = held.getsockname()[1]
         with pytest.raises(ServerError) as excinfo:
-            pick_port([taken, taken])
-        assert "no free port" in str(excinfo.value)
+            pick_port([taken, taken], tmp_path)
+        assert "no free" in str(excinfo.value)
+
+
+# -- the claim: a pick is not released until the server it is for has had its chance to bind ---------------------
+def test_two_concurrent_pickers_never_get_the_same_port(tmp_path, monkeypatch) -> None:
+    """Bind-and-release gave the SAME port to every picker that probed before any server bound it (the
+    `peer_patience` pair both took 9500 under `-n 2`; D1 look 1's two supervisors both took 9540). Every probe
+    here passes, as it does in that window, so only the CLAIM can tell the pickers apart."""
+    monkeypatch.setattr(ports, "bindable", lambda *a, **k: True)
+    n, lo = 8, 9680
+    barrier, got, errors = threading.Barrier(n), [], []
+
+    def picker() -> None:
+        try:
+            barrier.wait(timeout=30)
+            got.append(pick_port([lo, lo + n + 1], tmp_path))
+        except Exception as exc:  # noqa: BLE001 - reported below, never swallowed
+            errors.append(exc)
+
+    threads = [threading.Thread(target=picker) for _ in range(n)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join(timeout=60)
+    assert not errors, errors
+    assert len(got) == n and len(set(got)) == n, f"two pickers took one port: {sorted(got)}"
+    assert all(lo <= p <= lo + n + 1 for p in got)
+
+
+def test_a_claimed_port_is_refused_to_the_next_picker_until_it_is_released(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr(ports, "bindable", lambda *a, **k: True)       # the server has not bound it yet
+    first = pick_port([9690, 9691], tmp_path)
+    second = pick_port([9690, 9691], tmp_path)
+    assert {first, second} == {9690, 9691}
+    with pytest.raises(ServerError, match="no free, unclaimed port"):
+        pick_port([9690, 9691], tmp_path)
+    release_port(first)
+    assert pick_port([9690, 9691], tmp_path) == first
+
+
+def test_a_pick_in_another_process_holds_until_that_process_ends(tmp_path) -> None:
+    """Two SESSIONS, not two threads: a child picks the only port of a one-port range and keeps living; the claim
+    outlives the pick (nothing has bound the port, so a bind probe alone calls it free) and dies with the process."""
+    lo = ports.first_bindable(9670, 9679)
+    assert lo is not None, "no bindable port in 9670-9679: the box is holding the whole range"
+    code = (f"import sys; from main.anchors.server import pick_port; print(pick_port([{lo}, {lo}], sys.argv[1]), "
+            "flush=True); sys.stdin.read()")
+    child = subprocess.Popen([sys.executable, "-c", code, str(tmp_path)], stdin=subprocess.PIPE,
+                             stdout=subprocess.PIPE, text=True)
+    try:
+        assert int(child.stdout.readline()) == lo
+        with pytest.raises(ServerError, match="no free, unclaimed port"):
+            pick_port([lo, lo], tmp_path)
+    finally:
+        child.stdin.close()
+        child.wait(timeout=scale_timeout(30))
+    assert pick_port([lo, lo], tmp_path) == lo, "the claim must end with the process that took it"
+
+
+def test_a_pick_cannot_take_a_port_a_kakuna_lane_has_claimed(tmp_path) -> None:
+    """The lanes claim through `kakuna.claim_port`; a standalone read and a test session claim in the SAME directory
+    by default, so a port the lane holds (and has not bound yet) is passed over."""
+    from main.x35 import kakuna
+
+    assert kakuna.PORT_LOCK_DIR == ports.PORT_LOCK_DIR
+    import main.anchors.server as server
+    assert server.PORT_LOCK_DIR == ports.PORT_LOCK_DIR
+    lo = ports.first_bindable(9660, 9669)
+    assert lo is not None
+    held = ports.claim(lo, lo, tmp_path, host=kakuna.PORT_HOST, reuse_addr=False)
+    assert held is not None
+    try:
+        with pytest.raises(ServerError, match="no free, unclaimed port"):
+            pick_port([lo, lo], tmp_path)
+    finally:
+        held[1].close()
+    assert pick_port([lo, lo], tmp_path) == lo
+
+
+def test_an_unwritable_lock_dir_fails_closed_rather_than_picking_unclaimed(tmp_path) -> None:
+    blocker = tmp_path / "file"
+    blocker.write_text("x")
+    with pytest.raises(ServerError, match="cannot take a port claim"):
+        pick_port([9660, 9669], blocker / "locks")
 
 
 def test_the_argv_starts_OUR_pinned_submodule_with_the_port_positional() -> None:
@@ -221,7 +311,7 @@ def test_the_in_process_front_end_refuses_the_reserved_ports_too(port: int) -> N
         InProcessFrontEnd(port)
 
 
-async def test_the_in_process_front_end_serves_a_real_websocket_logs_and_closes(tmp_path) -> None:
+async def test_the_in_process_front_end_serves_a_real_websocket_logs_and_closes(tmp_path, claimed_port) -> None:
     """It binds a 95XX port, greets a real client the way a Showdown server does, writes its log
     under the read's directory with the READY line, and on exit stops listening — nothing to kill
     by PID, because the server is this process."""
@@ -229,7 +319,7 @@ async def test_the_in_process_front_end_serves_a_real_websocket_logs_and_closes(
 
     from main.anchors.server import InProcessFrontEnd, in_process_version
 
-    port = pick_port([9500, 9599])
+    port = claimed_port()
     log = tmp_path / "ws_frontend.log"
     async with InProcessFrontEnd(port, log_path=log) as srv:
         assert srv.pid == os.getpid() and srv.front is not None

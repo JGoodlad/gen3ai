@@ -52,30 +52,63 @@ early does not merely lose a cycle, it collects **partial** results that flow in
 ramp, the promotion gate and the ELO fit — and a truncated sample is whichever shards got scheduled,
 not a random subsample. Measurements + the incident record:
 `designs/research_state/claude_md_archive/contention_measurements.md`.
-### Test TEMP DIRS live on the real disk, and a PASS leaves nothing (`gen3_test_tmp_on_disk_v1`)
+### Test TEMP DIRS live on the real disk, each session has its OWN, and a PASS leaves nothing (`gen3_test_tmp_on_disk_v1`, `gen3_session_private_tmp_v1`)
 
 `/tmp` on this box is **tmpfs** — RAM plus a FIXED 1,048,576-inode table. On 2026-09-30 its inodes
 went 42% → 61% in 15 minutes: each concurrent `-n 2` routine gate retained a
 `pytest-of-<user>/pytest-NNNN` of ~80k files (~900 per frame-building test), five sessions were
-alive across worktrees, and pytest's default keeps the last 3 on top of the in-flight ones. Two
-halves fix it at the source:
+alive across worktrees, and pytest's default keeps the last 3 on top of the in-flight ones. Three
+rules fix it at the source:
 
 - **WHERE** — the root `conftest.py`'s `pytest_configure` (tryfirst) sets `tempfile.tempdir` and
   `$TMPDIR` to `_test_scratch_root()`: `$GEN3AI_SCRATCH`, else `~/.cache/gen3ai/tmp` — the same
   root the K3 compile caches use. So `tmp_path`, every bare `tempfile.mkdtemp()`, every xdist
   worker and every subprocess a test spawns land on disk. A tmpfs/ramfs root is **REFUSED** with a
   `UsageError` naming `$GEN3AI_SCRATCH`.
+- **WHOSE** — a session's basetemp is `<scratch>/pytest-of-<user>/session-<pid>-<starttime>`, named
+  for the process that owns it (`utils.pytest_session_tmp`), never the next `pytest-N` of a
+  directory every concurrent session shares. pytest numbered those and spared a live session's by a
+  `.lock` younger than three days: a clock, not a liveness read, and a session's exit cleaned the
+  others'. Now the only cleanup that reaches a session's tree is the sweep of a DEAD owner's, run at
+  each new session's start: owner liveness is `/proc` (`utils.procfs`, `(pid, starttime)` so a
+  reused pid is not the owner, never `kill(pid, 0)`, which reads a sandboxed shell's other agents as
+  dead); of the dead owners' trees the newest `tmp_path_retention_count` (1) younger than 24 h stay
+  for the post-mortem, the rest go. The same rule sweeps the per-process compile caches
+  (`gen3ai_pytest_compile_<pid>_*`). A basetemp the user gave (and every xdist worker's, which xdist
+  sets to `<controller's>/popen-gwN`) is left as given.
 - **HOW LONG** — `pytest.ini` sets `tmp_path_retention_policy = failed` and
   `tmp_path_retention_count = 1` (pytest 9.0.3 in both `gen3ai_stable` and `gen3ai_torch28`): a
-  passing test's `tmp_path` is removed at its teardown, a passing session's basetemp at
-  sessionfinish; a FAILED test's dir is kept for the post-mortem.
+  passing test's `tmp_path` is removed at its teardown, a passing session's own tree at the
+  last `pytest_sessionfinish` (pytest only does this for a numbered dir, so the conftest does it for
+  the given one); a FAILED test's dir and a failed session's tree are kept.
 
-Pinned by `src/utils/pytest_tmp_on_disk_test.py`, which runs a CHILD session (`-n 2`, plus a
-grandchild subprocess) and fails on a revert of either half. ⚠️ A deep `tmp_path` can exceed a unix
-socket's 108-byte `sun_path` — bind by a RELATIVE name from inside the dir (as
-`src/main/ops/tmp_sweep_test.py` does). Hard-coded `/tmp` defaults that remain for bulk data:
-`main/ladder_drift_scan.py --cache /tmp/psreplays` and
-`/tmp` defaults of the remaining fuzz scripts (scripts, not collected).
+Pinned by `src/utils/pytest_tmp_on_disk_test.py` (a CHILD session `-n 2`; fails on a revert of the
+WHERE or HOW LONG half) and `src/utils/pytest_session_tmp_test.py` (real child sessions at once: a
+held session's tree, aged ten days, survives a passing and a failing neighbour's start and exit; the
+retention count is a unit case with injected liveness; a child whose `os.kill` answers ESRCH for every other pid still spares a live
+owner's tree and compile cache; it fails on a revert of the conftest wiring or of the `/proc` read).
+⚠️ A deep `tmp_path` can exceed a unix socket's 108-byte `sun_path` — bind by a RELATIVE name from
+inside the dir (as `src/main/ops/tmp_sweep_test.py` does). Hard-coded `/tmp` defaults that remain
+for bulk data: `main/ladder_drift_scan.py --cache /tmp/psreplays` and `/tmp` defaults of the
+remaining fuzz scripts (scripts, not collected).
+
+### A test that starts a server CLAIMS its port (`utils.ports`, `claimed_port`)
+
+A port picked by bind-and-release (`bind(("127.0.0.1", 0))` then `close()`, or the old
+`anchors.server.pick_port`) goes to every session that picks before the first server binds: the
+`peer_patience` pair both took 9500 under `-n 2`, and the box runs several sessions and live Kakuna
+lanes at once. Take the root conftest's **`claimed_port`** fixture (`take() -> int`, released at the
+test's end; `utils.ports.claimed(lo, hi)` is the `with` form for a module-scoped fixture or an async
+helper): an exclusive `flock` on `<port>.lock` in `utils.ports.PORT_LOCK_DIR`
+(`~/.claude/jobs/x35_kakuna_ports`, the directory the Kakuna lanes and a standalone `main.anchors`
+read claim in, so it excludes all of them), from `TEST_PORT_RANGE` 9600-9699 (clear of the lanes' 9540-9599
+and the anchors default 9500-9599), held while the server binds and serves. `pick_port(range, lock_dir)`
+is the same claim for the production path, held for the process (`release_port` drops it early; the
+anchors CLI drops it when its read or dry run ends and the conftest at every test's end); a test of
+it passes a `tmp_path` lock dir. Pinned by `server_test.py` (eight threads never share a port;
+a claimed port is refused to the next picker, in another process too, until it ends; a Kakuna lane's
+claim is respected; each fails on a revert to bind-and-release) and `ports_test.py`. A port that must stay
+CLOSED (a dead proxy) needs no claim, and an in-process `websockets.serve(..., 0)` has no window.
 
 ### Test tiers — TWO AXES, and keeping them apart is the point
 

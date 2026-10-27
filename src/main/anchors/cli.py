@@ -859,6 +859,13 @@ def _trainer_forfeit_limit() -> int:
     return StallConfig().threshold
 
 
+def _release_port_claim(plan: runner_mod.SeriesPlan) -> None:
+    """Drop the claim :func:`main.anchors.server.pick_port` took for this read's server (a no-op for a port the
+    caller named: ``--port`` is the caller's own claim, as a Kakuna lane's is, and ``--server-uri`` starts nothing)."""
+    if plan.server_port is not None:
+        server_mod.release_port(plan.server_port)
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     args = build_parser().parse_args(argv)
     cfg = config_mod.load_config()
@@ -877,6 +884,7 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     if args.dry_run:
         print(render_plan(plan, cfg))
+        _release_port_claim(plan)           # a dry run starts nothing: it keeps no claim
         return 0
 
     if not args.model and plan.our_side == "model":
@@ -918,6 +926,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         if srv is not None:
             srv.stop()
             print(f"[anchors] {srv.label} stopped (pid was {srv.pid})", flush=True)
+        _release_port_claim(plan)           # the unit is over: the port is the next picker's
 
     cell = runner_mod.cell_spec(plan, report, rows[0].cell.our_team_count if rows
                                 else int(report.get("our_team_count") or 0))
