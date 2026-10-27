@@ -93,6 +93,11 @@ decide`` (X47). The record names its arm and look; a record for another arm or l
   against :data:`N1P_CORPORA_TREE`. Its runs are judged against ``N1P_PIN`` only. :data:`N1P_STAGES` holds it, never
   :data:`STAGES`; :func:`stage_status` treats it as D3 (the AM-8 side gate; look 2 only on its own look-1 CONTINUE).
   Its read record is ``reads/n1p_look<k>.json``, arm label ``X61P`` (``decide-d1``: D1's rule on ``forum72`` alone).
+* **X48, PER-TOKEN-KIND FFN EXPERTS** (``x48_kffn_production_2026-10-27/PREREG.md``, 2026-10-27): ``x48``
+  (:data:`X48_ARMS`) is SIDE-PINNED at the production pin (B-KFFN is in it), held by :data:`X48_STAGES`, never
+  :data:`STAGES`. It is read by N4's ONE-look screen rule at s3501-s3503, so there is no look 2 and no look-2
+  licence: :func:`stage_status` gives it the AM-8 side gate and nothing else. Its read record is
+  ``reads/x48_look1.json``, arm label ``X48``.
 * **THE G-E READERS** (``main.x35.ge``; launch sheet §0 "G-E readers"): ``ge_a1`` / ``ge_a2`` / ``ge_d1`` / ``ge_c0``
   are not batch-1 ARMS (not in :data:`STAGES`, the disk count or AM-6's K9(b) pre-check) but they run at the SIDE'S
   pin: :func:`pin_check` judges their recorded pins with the side's batch-1 runs, and :func:`stage_status` gives a
@@ -194,7 +199,9 @@ X52_ARMS = ("x52",)
 D3_ARMS = ("d3",)
 #: X61P / N1-P, procedural breadth at the plateau (AM-N1P, 2026-10-26): one production arm at its OWN corpus-only pin.
 N1P_ARMS = ("n1p",)
-SIDE_PINNED_ARMS = BATCH1_ARMS + BATCH2_ARMS + R0_ARMS + X52_ARMS + D3_ARMS + N1P_ARMS
+#: X48, per-token-kind FFN experts (2026-10-27): one production arm at the side pin, read by N4's one-look screen.
+X48_ARMS = ("x48",)
+SIDE_PINNED_ARMS = BATCH1_ARMS + BATCH2_ARMS + R0_ARMS + X52_ARMS + D3_ARMS + N1P_ARMS + X48_ARMS
 #: AM-D1-FIX (launch sheet §0, 2026-10-22): D1's pin. The production pin ``f4b25238`` + the corpus label-guard commit
 #: (``fix(team corpora): refuse teams the env's label path cannot encode ...``), rebuilt onto it with only
 #: ``src/utils/team_corpora/`` replaced. Kept reachable by the local branch ``x35-d1-pin``.
@@ -266,10 +273,15 @@ N1P_STAGES: Tuple[Tuple[str, Tuple[Tuple[str, int], ...]], ...] = (
     ("N1P", (("n1p", 3501), ("n1p", 3502), ("n1p", 3503))),
     ("N1Pb", (("n1p", 3504), ("n1p", 3505))),
 )
+#: X48's stage (2026-10-27, PREREG x48_kffn_production_2026-10-27 §3): one look, three seeds, on the orchestrator's GO.
+#: C0 s3501-s3503 (already run at the side pin) is the control. Never merged into STAGES.
+X48_STAGES: Tuple[Tuple[str, Tuple[Tuple[str, int], ...]], ...] = (
+    ("X48", (("x48", 3501), ("x48", 3502), ("x48", 3503))),
+)
 #: The arm label each read record carries (``readout`` A1 / A2 / SPRT / LRF, ``d1`` X38, ``d3`` X41, ``n1p`` X61P,
-#: ``x47`` X47).
+#: ``x47`` X47, ``x48`` X48).
 READ_LABEL = {"a1": "A1", "a2": "A2", "d1": "X38", "d3": "X41", "n1p": "X61P", "toy_a1": "A1", "toy_a2": "A2", "toy_x47": "X47",
-              "sprt": "SPRT", "toy_sprt": "SPRT", "lrfloor": "LRF", "toy_lrfloor": "LRF"}
+              "sprt": "SPRT", "toy_sprt": "SPRT", "lrfloor": "LRF", "toy_lrfloor": "LRF", "x48": "X48"}
 #: The toy arms whose look-1 CONTINUE licenses toy C0's look-2 seeds s3604-s3605 (their shared control).
 TOY_LOOK2_LICENSORS = ("toy_x47", "toy_a1", "toy_a2", "toy_lrfloor", "toy_sprt")
 #: Where a read record keeps its PRIMARY when it is not R1 (``d1.D1Verdict``: H).
@@ -792,7 +804,7 @@ def _look2_licence(stage: str, arm: str) -> Tuple[str, str]:
 
 
 def stage_of(arm: str, seed: int) -> Optional[str]:
-    for name, forks in STAGES + BATCH2_STAGES + R0_STAGES + X52_STAGES + D3_STAGES + N1P_STAGES:
+    for name, forks in STAGES + BATCH2_STAGES + R0_STAGES + X52_STAGES + D3_STAGES + N1P_STAGES + X48_STAGES:
         if (arm, seed) in forks:
             return name
     return None
@@ -808,13 +820,14 @@ def stage_status(stage: str, arm: str, seed: int) -> Tuple[str, str]:
         return trigger(stage, arm)
     if arm in BATCH2_ARMS:                   # F-AS-8: the AM-8 side gate, then batch 2's registered conditions
         return _batch2_status(stage, arm, seed)
-    if arm in R0_ARMS + X52_ARMS:            # AM-R0 / AM-X52: the side gate only (production waits for FP32_ALT, AM-8)
+    if arm in R0_ARMS + X52_ARMS + X48_ARMS:  # AM-R0 / AM-X52 / X48: the side gate only (production: FP32_ALT, AM-8)
         if ARMS[arm].side == "production":
             filled, why = side_gate(stage, "production")
             if not filled:
                 return PENDING, why
-        return ALLOWED, f"{arm} s{seed}: no unmet condition (stage {stage_of(arm, seed)}, " \
-                        f"{'AM-X52' if arm in X52_ARMS else 'AM-R0'})"
+        tag = ("AM-X52" if arm in X52_ARMS else "X48 PREREG: one look, the orchestrator's GO" if arm in X48_ARMS
+               else "AM-R0")
+        return ALLOWED, f"{arm} s{seed}: no unmet condition (stage {stage_of(arm, seed)}, {tag})"
     if arm in D3_ARMS + N1P_ARMS:            # AM-D3 / AM-N1P: the side gate; look 2 only on its own look-1 CONTINUE
         filled, why = side_gate(stage, "production")
         if not filled:

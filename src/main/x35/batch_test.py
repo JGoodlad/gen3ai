@@ -1198,3 +1198,24 @@ def test_every_committed_read_record_carries_its_arms_registered_label():
         assert B.read_record(str(stage), arm, look) is not None
         found += 1
     assert found >= 1, "no committed read record found: the precondition of this test does not hold"
+
+
+# ------------------------------------------------- X48 (PREREG x48_kffn_production_2026-10-27): one look, side-pinned
+def test_x48_is_side_pinned_and_one_look_on_the_side_gate_only(tmp_path):
+    stage = tmp_path / "stage"
+    (stage / B.READS_DIR).mkdir(parents=True)
+    st = str(stage)
+    assert "x48" in B.SIDE_PINNED_ARMS and "x48" not in B.ARM_PINS and B.READ_LABEL["x48"] == "X48"
+    assert B.stage_status(st, "x48", 3501)[0] == B.PENDING                       # AM-8: no FP32_ALT named
+    _fill_fp32(stage)
+    for seed in (3501, 3502, 3503):
+        status, why = B.stage_status(st, "x48", seed)
+        assert status == B.ALLOWED and "X48 PREREG" in why and B.stage_of("x48", seed) == "X48", why
+    assert B.stage_of("x48", 3504) is None and B.stage_of("x48", 3505) is None   # no look 2 is registered
+    (stage / B.READS_DIR / "x48_look1.json").write_text(json.dumps({"arm": "X48", "look": 1, "verdict": "GO"}))
+    assert B.read_record(st, "x48", 1)["verdict"] == "GO"
+    (stage / B.READS_DIR / "x48_look1.json").write_text(json.dumps({"arm": "X61P", "look": 1}))
+    with pytest.raises(B.BatchError, match="not X48"):
+        B.read_record(st, "x48", 1)
+    names = B.side_pinned_run_names()
+    assert {n for n, (a, _) in names.items() if a == "x48"} == {f"rb_x35_x48kffn_s{s}" for s in (3501, 3502, 3503)}

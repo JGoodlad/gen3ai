@@ -325,8 +325,8 @@ def test_x47_is_an_alias_of_toy_x47_on_every_arm_taking_subcommand(tmp_path, mon
         except SystemExit as exc:  # argparse: an invalid choice would land here
             raise AssertionError(f"{argv[0]} --arm x47 died in argparse: {capsys.readouterr().err}") from exc
         assert "invalid choice" not in capsys.readouterr().err
-    with pytest.raises(SystemExit):   # an unknown arm is still refused
-        K.main(["describe", "--arm", "x48", "--seed", "3601", "--call", str(call)])
+    with pytest.raises(SystemExit):   # an unknown arm is still refused (x48 is a real arm since 2026-10-27)
+        K.main(["describe", "--arm", "x49", "--seed", "3601", "--call", str(call)])
 
 
 def test_x47_is_toy_c0_plus_the_grow_lever_and_nothing_else():
@@ -538,3 +538,86 @@ def test_corpus_check_passes_n1p_at_its_registered_pin_and_fails_at_the_side_pin
     assert ok and "12000 teams" in line and "120000 battles" in line, line
     ok, line = K.corpus_check("n1p", B.N1P_PIN_BASE, str(repo_root()))
     assert not ok and "holds no" in line, line
+
+
+# ------------------------------------------------- X48 (PREREG x48_kffn_production_2026-10-27): per-token-kind FFN experts
+X48_DIR = repo_path("designs/research_state/measurements/x48_kffn_production_2026-10-27")
+
+
+def _real_production_call() -> Dict:
+    """The frozen production R's call record (P* = rb_x26_s2601 @280,000,170), as committed."""
+    return json.loads((STAGE / "reference_population_production.json").read_text())
+
+
+def test_x48_is_the_validated_argv_token_for_token():
+    """The kit builds exactly the line checkargs / the dry run validated at f4b25238 (PREREG §2)."""
+    want = (X48_DIR / "argv_x48_s3501.txt").read_text().split()
+    assert K.build_argv("x48", 3501, _real_production_call()) == want
+
+
+def test_x48_is_c0_plus_the_grow_lever_and_nothing_else():
+    call = standin_call()
+    for seed in (3501, 3502, 3503):
+        on, off = K.build_argv("x48", seed, call), K.build_argv("c0", seed, call)
+        assert on[:-2] == off[:-2][:off.index("--seed")] + list(K.X48_LEVER) + ["--seed", str(seed)]
+        assert on[-2:] == ["--run-name", f"rb_x35_x48kffn_s{seed}"]
+    assert K.X48_LEVER == ("--grow", "trunk_ffn_by_kind=on")
+    d = K.describe("x48", 3502, call)
+    assert d["side"] == "production" and d["delta_text"] == "+20,000,000 steps" and d["behaviour"] == "warn"
+    assert d["parent_run_dir"].endswith("rb_x26_s2601") and d["k9b_ceilings"] is None
+
+
+@pytest.mark.parametrize("seed", [3504, 3505, 3500, 3601])
+def test_x48_refuses_every_seed_but_the_one_registered_look(seed):
+    with pytest.raises(K.KitError, match="not registered"):
+        K.build_argv("x48", seed, standin_call())
+
+
+def test_x48_refuses_the_toy_call_and_no_alias_or_variant_reaches_it(capsys):
+    with pytest.raises(K.KitError, match="reads the production call record"):
+        K.build_argv("x48", 3501, toy_call())
+    for name in ("X48", "x48kffn", "toy_x48", "x48b"):
+        assert K.canonical_arm(name) == name
+        with pytest.raises(K.KitError, match="is not one of"):
+            K.build_argv(name, 3501, standin_call())
+        with pytest.raises(SystemExit):
+            K.main(["describe", "--arm", name, "--seed", "3501", "--call", "/nonexistent"])
+        capsys.readouterr()
+
+
+def test_the_growth_each_arm_must_declare():
+    assert K.ARM_GROWTH == {"toy_x47": "trunk_layers 2 -> 4", "x48": "trunk_ffn_by_kind 'off' -> 'on'"}
+    for arm in K.ARMS:
+        argv = K.build_argv(arm, K.ARMS[arm].seeds[0], toy_call() if K.ARMS[arm].side == "toy" else standin_call()) \
+            if K.ARMS[arm].phase == 0 and arm != "x52" else None
+        if argv is not None:
+            assert ("--grow" in argv) == (arm in K.ARM_GROWTH), arm
+
+
+def _x48_transcripts():
+    return ((X48_DIR / "dryrun_x48_s3501.txt").read_text(), (X48_DIR / "checkargs_x48_s3501.txt").read_text())
+
+
+def _visible(dry: str) -> str:
+    """The registration's dry run hid the card (rule 5); the chain re-runs it visible. Model that one line only."""
+    return dry.replace("this command would NOT launch", "this command would launch")
+
+
+def test_the_verdict_passes_the_real_x48_transcripts_and_shows_its_declared_growth():
+    dry, chk = _x48_transcripts()
+    ok, line = K.check_validation(K.describe("x48", 3501, _real_production_call()), _visible(dry), chk, 0, 0)
+    assert ok, line
+    assert "grow=[DECLARED trunk_ffn_by_kind 'off' -> 'on']" in line
+
+
+def test_the_verdict_fails_x48_transcripts_read_as_c0_or_as_x47s_growth():
+    dry, chk = _x48_transcripts()
+    call = _real_production_call()
+    ok, line = K.check_validation(K.describe("c0", 3501, call), _visible(dry), chk, 0, 0)
+    assert not ok and "declared growth" in line, line                 # a growth line on an arm that declares none
+    ok, line = K.check_validation(K.describe("x48", 3501, call),
+                                  _visible(dry).replace("trunk_ffn_by_kind 'off' -> 'on'", "trunk_layers 3 -> 4"),
+                                  chk.replace("trunk_ffn_by_kind 'off' -> 'on'", "trunk_layers 3 -> 4"), 0, 0)
+    assert not ok and "trunk_ffn_by_kind" in line, line
+    ok, line = K.check_validation(K.describe("x48", 3501, call), dry, chk, 0, 3)   # the hidden card: exit 3
+    assert not ok and "dry-run exit 3" in line, line

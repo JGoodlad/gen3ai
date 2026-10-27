@@ -821,8 +821,9 @@ HOLDs (exit 0 / 3). The ratio is judged only at a FATAL: a PASS above the bar is
 
 Source: Training Oct's X35 job log (`~/.claude/jobs/x35/FINDINGS.md`, outside the repo) and the orchestrator's rulings
 there. The run-name map is `canary_decide.FAMILY_NAME_PATTERNS`: every production arm `rb_x35_{c0,a1*,sprt,lrfloor*,
-d1wide,x52*,d3mut,n1p}_s*` is a fork of P* (rb_x26_s2601 @280M) at production pins, the same family as C0, so it takes the
-C0 bar; the toy `rb_x35t_c0_*` takes C0 and `rb_x35t_x47*_*` takes X47. **UNVERIFIED:** the 2.64 was measured on the TOY
+d1wide,x52*,d3mut,n1p,x48kffn}_s*` is a fork of P* (rb_x26_s2601 @280M) at production pins, the same family as C0, so it
+takes the C0 bar (X48, per-token-kind FFN experts grown at the fork, by its PREREG's ruling:
+`designs/research_state/measurements/x48_kffn_production_2026-10-27/PREREG.md` §7); the toy `rb_x35t_c0_*` takes C0 and `rb_x35t_x47*_*` takes X47. **UNVERIFIED:** the 2.64 was measured on the TOY
 C0, not on a production arm; the production reads so far sit under it (C0 s3504 u10 2.38) except one PASS above it
 (rb_x26c_s2601 u1000, 3.18, which is not an X35 arm). Any other name (`rb_x35_r0_*`) HOLDs until `--family` or a typed
 `--bar` (logged with `--log`, this run only).

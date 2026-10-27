@@ -18,6 +18,8 @@
 #          · R0, the exploitability curve (AM-R0, main.x35.r0, +20M, a best responder of the side's start node):
 #          toy_r0 3631 (toy pin) · r0 3531 (production pin) · X52, the practice ceiling (AM-X52, main.x35.x52, +5M,
 #          C0's argv + --trainee-teams <36 practised files>, verified at describe): x52 3501 3502 (production pin)
+#          · X48, per-token-kind FFN experts (PREREG x48_kffn_production_2026-10-27, +20M, C0's argv + --grow
+#          trunk_ffn_by_kind=on): x48 3501 3502 3503 (production pin; one look, no look 2)
 #                                                                             (main.x35.kit holds every argv)
 #   phase 1 → 2:  after the three exploiters END,
 #          python -m main.x35.kit phase1-record --arm a3 --call <R> --out <stage>/phase1_a3.json   (write-once)

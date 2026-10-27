@@ -37,7 +37,12 @@ canonical flag order (the order carries no meaning to the trainer's parser):
   target, +20M (the toy with its side extras), side-pinned, read at fixed checkpoints by ``python -m main.x35.r0 play``;
 * X52, the PRACTICE CEILING (``main.x35.x52``; launch sheet §0 AM-X52, 2026-10-22; ``batch.X52_STAGES``): ``x52`` --
   C0's argv token for token at +5M + the ONE lever ``--trainee-teams <the 36 practised files>`` (verified against
-  their manifest at every build), seeds 3501-3502, side-pinned at the production pin.
+  their manifest at every build), seeds 3501-3502, side-pinned at the production pin;
+* X48, PER-TOKEN-KIND FFN EXPERTS (``design_bot_ideas_screen.md`` §2.2; PREREG
+  ``x48_kffn_production_2026-10-27/PREREG.md``): ``x48`` -- C0's argv token for token + the ONE lever ``--grow
+  trunk_ffn_by_kind=on`` (B-KFFN, a DECLARED function-preserving growth at the fork), seeds 3501-3503 ONLY (N4's
+  one-look screen rule: no look 2), side-pinned at the production pin (B-KFFN ``3f69e6e2e`` is an ancestor of
+  ``f4b25238``), read against C0 s3501-s3503 at the same pin, re-played in X48's read.
 
     python -m main.x35.kit describe --arm a1 --seed 3501 --call <R_production.json> [--phase1 <record>]
     python -m main.x35.kit describe --arm ge_a1 --seed 3501 --call <R_production.json> [--models-dir D]   # a G-E reader
@@ -134,6 +139,15 @@ ARM_CORPUS = {"d1": D1_CORPUS, "d3": D3_CORPUS, "n1p": N1P_CORPUS}
 X47_LEVER = ("--grow", "trunk_layers=4")
 #: What ``checkargs`` / ``--dry-run`` print for it ("DECLARED <this> (parent from its model_config.json)").
 X47_GROWTH = "trunk_layers 2 -> 4"
+#: X48's ONE lever (``design_bot_ideas_screen.md`` §2.2; B-KFFN, T66; PREREG ``x48_kffn_production_2026-10-27``): every
+#: round's shared FFN is untied into five per-token-kind experts at the fork, each a COPY of the shared FFN with its
+#: AdamW state (ruling Q-K3), so the grown network starts as P*'s function bit for bit at the 64-row gate (the child
+#: refuses to start otherwise: ``[GrowFork] FATAL``). +0.79M parameters, ≈ 0 extra FLOPs.
+X48_LEVER = ("--grow", "trunk_ffn_by_kind=on")
+#: What ``checkargs`` / ``--dry-run`` print for it (the 2026-10-27 transcripts at ``f4b25238``).
+X48_GROWTH = "trunk_ffn_by_kind 'off' -> 'on'"
+#: The declared growth each growing arm's transcripts must show (in BOTH tools); every other arm must show none.
+ARM_GROWTH: Dict[str, str] = {"toy_x47": X47_GROWTH, "x48": X48_GROWTH}
 #: C3 (orchestrator, 2026-10-19): the toy arms run ``--behaviour-check warn`` (K9(b)), as T*'s own run X34 does
 #: (``x34_toy_deep_stage_2026-10-17/STAGED_LAUNCH.md`` §7, c9516bac / 96c663d4). The mechanism is the flag plus
 #: ceilings READ BY HAND (``main.ops.tb_read``, at every restart and daily); the trainer enforces none: STOP the arm on
@@ -162,6 +176,8 @@ class Arm:
 
 PROD_SEEDS = tuple(range(3501, 3506))
 TOY_SEEDS = tuple(range(3601, 3606))
+#: X48: ONE look at three seeds under N4's screen rule (PREREG x48_kffn_production_2026-10-27 §3); more is a new registration
+X48_SEEDS = (3501, 3502, 3503)
 X47_SEEDS = TOY_SEEDS   # X47: look 1 at 3601-3603, look 2 at 3604-3605 (AM-4, orchestrator 2026-10-19), against toy C0 at the same seeds
 ARMS: Dict[str, Arm] = {a.name: a for a in (
     Arm("c0", "production", L_PROD, PROD_SEEDS, "rb_x35_c0_s{seed}", 0, "warn"),
@@ -172,6 +188,8 @@ ARMS: Dict[str, Arm] = {a.name: a for a in (
     Arm("d3", "production", L_PROD, PROD_SEEDS, "rb_x35_d3mut_s{seed}", 0, "warn"),
     # X61P / N1-P, procedural breadth (PREREG x61p_n1_production_2026-10-26): look 1 s3501-s3503, look 2 s3504-s3505
     Arm("n1p", "production", L_PROD, PROD_SEEDS, "rb_x35_n1p_s{seed}", 0, "warn"),
+    # X48, per-token-kind FFN experts (PREREG x48_kffn_production_2026-10-27): N4's one-look screen at s3501-s3503
+    Arm("x48", "production", L_PROD, X48_SEEDS, "rb_x35_x48kffn_s{seed}", 0, "warn"),
     Arm("a3_mx", "production", L_EXPLOITER, (3511, 3512, 3513), "rb_x35_mx_s{seed}", 1, "warn"),
     Arm("a3", "production", L_PROD, PROD_SEEDS, "rb_x35_a3mx_s{seed}", 2, "warn", phase1_of="a3_mx"),
     Arm("a6_lx", "production", L_EXPLOITER, (3521, 3522, 3523), "rb_x35_lx_s{seed}", 1, "warn"),
@@ -280,6 +298,8 @@ def build_argv(arm: str, seed: int, call: Mapping[str, Any], phase1: Optional[Ma
         lever = list(N1P_LEVER)
     elif arm == "toy_x47":
         lever = list(X47_LEVER)
+    elif arm == "x48":
+        lever = list(X48_LEVER)
     elif arm in ("sprt", "toy_sprt"):
         lever = list(SPRT_LEVER)
     elif arm in ("lrfloor", "toy_lrfloor"):
@@ -413,8 +433,8 @@ def check_validation(d: Mapping[str, Any], dryrun: str, checkargs: str, rc_check
     """``validate_batch1.sh``'s verdict on ONE argv: ``(ok, one line)``. ``d`` is :func:`describe`'s record. PASS iff
     both tools exited 0, the dry run says "would launch" as a FORK of the start node's run with the arm's +steps and
     the arm's K9(b) mode, ``checkargs`` prints the same mode, the trainer's own arch check passed, and the DECLARED
-    growth line is there for X47 (``X47_GROWTH``, in BOTH tools) and for no other arm (the always-printed
-    "(child-only: a declared growth's …)" note is not a growth line)."""
+    growth line is the arm's own (:data:`ARM_GROWTH`: X47's, X48's; in BOTH tools) and absent for every other arm (the
+    always-printed "(child-only: a declared growth's …)" note is not a growth line)."""
     probs: List[str] = []
     if rc_checkargs != 0:
         probs.append(f"checkargs exit {rc_checkargs}")
@@ -433,7 +453,9 @@ def check_validation(d: Mapping[str, Any], dryrun: str, checkargs: str, rc_check
         if m is None or m.group(1) != d["behaviour"]:
             probs.append(f"{tool} K9(b) mode {m.group(1) if m else None!r} != the arm's {d['behaviour']!r}")
     gd, gc = _DRY_GROW.search(dryrun), _CHK_GROW.search(checkargs)
-    want = X47_GROWTH if "--grow" in d["argv"] else None
+    want = ARM_GROWTH.get(d["arm"])
+    if "--grow" in d["argv"] and want is None:
+        probs.append(f"{d['arm']}'s argv types --grow but the arm declares no growth (ARM_GROWTH)")
     for tool, g in (("dry-run", gd), ("checkargs", gc)):
         got = g.group(1) if g else None
         if got != want:

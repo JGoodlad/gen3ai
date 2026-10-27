@@ -8,7 +8,7 @@ this doc updates it in the same commit, and the Decision record at the end says 
 (T67), and their BUILD SPECS are [`design_growth_builds_kffn_int.md`](design_growth_builds_kffn_int.md). **X47** (toy depth 2 to 4, candidate §2.1) RAN as the
 X35 kit arm `toy_x47` ([`BATCH1_LAUNCH_SHEET.md`](../research_state/measurements/x35_breakers_stage_2026-10-17/BATCH1_LAUNCH_SHEET.md)) and READ 2026-10-21: UNDECIDED with
 a point estimate at or below zero, FINAL at look 1 (primary -0.88 pp [-3.20, +1.44]); X47b (production depth 3 to 4) is DEPRIORITISED. X48 and X49 are not launched
-(no ledger read); X48 is launch-ready, X49 waits for B-INT. Each candidate has its cheapest A/B,
+(no ledger read); X48 is QUEUED (kit arm `x48` and its PREREG under N4's screen rule, 2026-10-27), X49 waits for B-INT. Each candidate has its cheapest A/B,
 its decision rule, its risks and its build, written so the orchestrator can adopt it into an X35 batch. Launches need
 the orchestrator's GO, and a design block is not a launch command.
 
@@ -228,8 +228,12 @@ shares its batch's control C0.
 - **Why not the toy.** The toy has no move, threat or event tokens. Its only kinds are Pokémon and 3 board tokens, so
   the faithful partition unties 3 of 15 tokens and is nearly vacuous. A toy split by SIDE (ours / theirs / board) is a
   DIFFERENT lever (it breaks the side symmetry) and is rejected here. This is an architecture-bound breaker (§1.5).
-- **The decision rule.** §1.4. If it reads ADOPT-CANDIDATE, an ATTRIBUTION arm follows: a wider shared FFN with equal
-  parameters. It separates "untying" from "more parameters".
+- **The decision rule (REGISTERED 2026-10-27, superseding §1.4 for X48).** N4's one-look SCREEN, not X35 R1: under R1
+  three seeds can neither GAIN nor, mostly, NULL (the N4 review §4). S at 2,000 mirrored pairs a cell and Kakuna on
+  `forum72`, GO / NO-GO / UNDECIDED with a MIXED harm veto, R1 reported only
+  ([`../research_state/measurements/x48_kffn_production_2026-10-27/PREREG.md`](../research_state/measurements/x48_kffn_production_2026-10-27/PREREG.md); kit arm `x48`, seeds 3501–3503). On GO, the
+  ATTRIBUTION arm is production width directly (N4-P: a wider shared FFN with X48's parameter count), which separates
+  "untying" from "more parameters".
 - **Risks:**
   - more parameters per update;
   - the per-kind slicing adds small kernels (CPU meters, GPU utilisation already 6–8 %, §1.6 there);
@@ -542,4 +546,5 @@ labels, offline, feeding search's opponent model. Re-open **rung 3**, the BC war
 | 2026-10-20 | **X50 S0 RUN (census worker)** | The census on the Rust reader over all 376,410 logs ([`x50_replay_census_2026-10-20`](../research_state/measurements/x50_replay_census_2026-10-20/README.md)): FEASIBLE by ai_v11's floor (489,973 tier A at ≥ 1500), but no decision has a complete own side; intent-label yield 86.0 % (choice) / 69.4 % (production rules) of opponent turn actions at ≥ 1500; §2.4, §3, §4 and §5 now carry it. Recommendation on Q1: re-open rung 1 only | treating "FEASIBLE on volume" as a GO for S1 (the completion problem is not a volume problem); quoting ai_v11's 3.9 % own items (a deleted-reader artifact); the production intent labeller on replays (it folds at decisions, and a replay has none: F-X50-5) | `census.py` / `census_report.py` / `shards/` / `results/census.md` there; HEAD `dfeb3d92d` |
 | 2026-10-20 | **B-KFFN BUILT** (build worker; `TASK_BACKLOG` T66) | `--grow trunk_ffn_by_kind=on` as specified in [`design_growth_builds_kffn_int.md`](design_growth_builds_kffn_int.md) §1 (its Decision record has the detail and what changed: F-GB-3 corrected, Q-K3 built); X48 is launch-ready once X47 reads | — | `trunk_kffn_test.py`, `grow_fork_test.py`; fresh production 2,609,183 → 3,400,223 params; grow gate max \|Δ\| 0.0 |
 | 2026-10-21 | **X47 look 1 READ as registered (X47 readout worker)** | UNDECIDED with Δ̂ ≤ 0, final at look 1: primary −0.88 pp [−3.20, +1.44] at s_eq, secondary −0.41 [−2.34, +1.51], G-F / G-C PASS. Not CONTINUE, so look 2 (T1b) does not run; X47b leaves its rank-9 slot and is deprioritised (AM-X47b-4). §2.1 and §3 rows 5 / 9 updated. Record `reads/toy_x47_look1.json` |
+| 2026-10-27 | **X48 REGISTERED under N4's one-look screen, not §1.4 / R1** (X48 build worker, orchestrator brief + the N4 review `7660d717` §4) | Under R1 three seeds can neither GAIN nor, mostly, NULL; the screen reads S at 2,000 pairs and Kakuna `forum72` once, with a MIXED harm veto (M2) and R1 reported only. Seeds 3501–3503 only, C0 re-played in the read (its banked S is at 500 pairs and its Kakuna rows predate the pack regime split). The attribution arm on GO is production width directly (N4-P) | R1 with two looks (13 GPU-h to read UNDECIDED); five seeds (a screen has no look 2) | §2.2's decision rule; `x48_kffn_production_2026-10-27/PREREG.md`; `kit.py` arm `x48`; `canary_decide` C0 family |
 | 2026-10-25 | Status line made true (docs-health pass) | the 10-19 status said nothing was registered or launched and B-KFFN was unbuilt; the Decision record's 10-20 / 10-21 rows show B-KFFN BUILT and X47 READ (UNDECIDED, Δ̂ ≤ 0, FINAL); the status now says so | the old line | this Decision record 2026-10-20, 2026-10-21; `ledger_index.md` (X47); `EXPERIMENT_BACKLOG.md` BI-1 to BI-3 |
