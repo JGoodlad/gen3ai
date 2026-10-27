@@ -1,0 +1,54 @@
+Kaorine (Claydol) @ Leftovers  
+Ability: Levitate  
+EVs: 252 HP / 176 Def / 52 SpA / 28 SpD  
+Relaxed Nature  
+- Earthquake  
+- Psychic  
+- Rest  
+- Rapid Spin  
+
+Smeargle @ Salac Berry
+Ability: Own Tempo
+EVs: 12 HP / 188 Atk / 56 SpD / 252 Spe
+Jolly Nature
+- Spore
+- Substitute
+- Spikes
+- Explosion
+
+Metagross @ Leftovers  
+Ability: Clear Body  
+EVs: 240 HP / 176 Atk / 92 Spe  
+Adamant Nature  
+- Meteor Mash  
+- Earthquake  
+- Agility  
+- Explosion  
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 220 Def / 36 Spe
+Bold Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Surf
+- Roar
+- Calm Mind
+- Rest
+
+Skarmory @ Leftovers  
+Ability: Keen Eye  
+EVs: 240 HP / 240 SpD / 28 Spe  
+Careful Nature  
+- Spikes  
+- Taunt  
+- Drill Peck  
+- Roar  
+
+Tyranitar @ Leftovers  
+Ability: Sand Stream  
+EVs: 252 HP / 20 Def / 188 SpA / 48 Spe  
+Modest Nature  
+- Flamethrower  
+- Crunch  
+- Pursuit  
+- Brick Break  

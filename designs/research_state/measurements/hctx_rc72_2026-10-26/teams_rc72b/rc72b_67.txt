@@ -1,0 +1,57 @@
+Jolteon @ Leftovers  
+Ability: Volt Absorb  
+EVs: 8 HP / 248 SpA / 252 Spe  
+Timid Nature  
+IVs: 2 Atk / 30 SpA  
+- Wish  
+- Thunderbolt  
+- Hidden Power [Grass]  
+- Baton Pass  
+
+Metagross @ Salac Berry
+Ability: Clear Body
+EVs: 168 HP / 128 Atk / 8 Def / 204 Spe
+Jolly Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
+- Explosion
+
+Starmie @ Leftovers  
+Ability: Natural Cure  
+EVs: 248 HP / 44 SpA / 216 Spe  
+Timid Nature  
+IVs: 0 Atk  
+- Surf  
+- Ice Beam  
+- Recover  
+- Rapid Spin  
+
+Zapdos @ Leftovers  
+Ability: Pressure  
+EVs: 216 HP / 92 SpA / 200 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 Def  
+- Thunder Wave  
+- Toxic  
+- Thunderbolt  
+- Hidden Power [Ice]  
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 31 Spe
+- Double-Edge
+- Rock Slide
+- Earthquake
+- Hidden Power Flying
+
+Smeargle @ Salac Berry
+Ability: Own Tempo
+EVs: 12 HP / 188 Atk / 56 SpD / 252 Spe
+Jolly Nature
+- Spore
+- Substitute
+- Spikes
+- Explosion

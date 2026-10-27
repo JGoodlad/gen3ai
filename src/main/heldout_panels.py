@@ -9,7 +9,7 @@ widening corpus (``main.team_corpora``) and the ``--team-mix`` startup guard rea
 that drew it, its seed, its manifest's sha256, and ``held_out_from``: the list of things that must never train on it.
 A SEALED panel (:data:`SEALED`) is registered and excluded like any held-out panel but played by no meter until its
 read (``forum216b``: X54). ``home72`` and ``away`` are IN-POOL reference panels (``held_out_from == []``: our pool already holds them); the others
-are held out from every training team source. A DIAGNOSTIC panel (``rc72``, the H-CTX read's recombined pool sets)
+are held out from every training team source. A DIAGNOSTIC panel (``rc72b``, the H-CTX read's recombined pool sets; ``rc72`` its retired first draw)
 lives in its own registry, ``designs/research_state/diagnostic_panels.json`` (:func:`load_diagnostic`): played and
 verified by name like any panel, but outside the exclusion rule below (:func:`panel_names` never names it).
 

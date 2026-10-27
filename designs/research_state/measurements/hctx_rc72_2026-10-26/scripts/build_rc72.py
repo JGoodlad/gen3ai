@@ -53,7 +53,12 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 from utils.paths import repo_path, repo_root
 
 HERE = Path(__file__).resolve().parent.parent
-NAME = "rc72"
+#: The two draws. ``rc72`` (RETIRED before any game counted): its Hidden Power rule let 71 sets through whose
+#: text names a type but carries no IV line (all 31); the live server REJECTS such a team (``rc72__00`` failed twice,
+#: "Aerodactyl has Hidden Power Bug, but its IVs are for Hidden Power Water"). ``rc72b``: X37a's strict rule.
+PANELS = {"rc72": "validated", "rc72b": "strict"}
+NAME = "rc72b"
+HP_RULE = PANELS[NAME]
 N_TEAMS = 72
 BUILD_SEED = 7272
 MAX_SHARED_TRAIN = 2
@@ -66,9 +71,16 @@ N1P72_DIR = "designs/research_state/measurements/x61_n1_breadth_2026-10-25/teams
 READS_DIR = Path("/home/goodlad/dev/gen3ai-reads/hctx_rc72_2026-10-26")
 METAMON_TEAMS = Path("/home/goodlad/dev/metamon/cache/teams")
 BASE_CONFIG = "designs/research_state/measurements/x37a_eval_matrix_2026-10-18/configs/anchors_x37a_forum72.json"
-CONFIG_NAME = "anchors_rc72_kakuna.json"
-MANIFEST_NAME = "rc72_manifest.json"
-TEAMS_DIR = HERE / "teams_rc72"
+CONFIG_NAME = f"anchors_{NAME}_kakuna.json"
+MANIFEST_NAME = f"{NAME}_manifest.json"
+TEAMS_DIR = HERE / f"teams_{NAME}"
+
+
+def set_panel(name: str) -> None:
+    """Point the module at one draw (``--panel``): its name, Hidden Power rule and file names."""
+    global NAME, HP_RULE, CONFIG_NAME, MANIFEST_NAME, TEAMS_DIR
+    NAME, HP_RULE = name, PANELS[name]
+    CONFIG_NAME, MANIFEST_NAME, TEAMS_DIR = f"anchors_{name}_kakuna.json", f"{name}_manifest.json", HERE / f"teams_{name}"
 
 
 def stream_seed(*parts: object) -> int:
@@ -193,12 +205,16 @@ def draw_team(i: int, a: int, profile: Dict[str, int], occ: Dict[str, List[Tuple
 
 
 def hp_bad(verdict: Dict[str, Any]) -> List[Dict[str, Any]]:
-    """A Hidden Power that does not play its named type at 70 once the validator has set its IVs. NOT X37a's
-    stricter rule (which also refused IVs the validator rewrites): 736 of the pool's 1,912 Hidden Power sets name a
-    type and carry no IV line, so the validator writes the IVs (home72 plays them so); refusing them would keep
-    those pool sets out of a panel made of pool sets."""
+    """``strict`` (rc72b; X37a's rule): a Hidden Power that does not play its named type at 70 AS WRITTEN, or whose
+    IVs the validator rewrites. 737 of the pool's 1,912 Hidden Power sets name a type and carry no IV line, and the
+    live server rejects them (the batch validator only rewrites them, which is why ``validated`` let them through);
+    home72 and F hold none. ``validated`` (rc72, retired): the named type once the validator has set the IVs."""
+    if HP_RULE == "validated":
+        return [s for s in verdict.get("sets", []) if s.get("hp_move") and (
+            s.get("validator_hp_type") != s["hp_move"].split()[-1] or s.get("power") != 70)]
     return [s for s in verdict.get("sets", []) if s.get("hp_move") and (
-        s.get("validator_hp_type") != s["hp_move"].split()[-1] or s.get("power") != 70)]
+        s.get("hp_type") != s["hp_move"].split()[-1] or s.get("power") != 70
+        or s.get("ivs_after_validate") != s.get("ivs_in"))]
 
 
 def build() -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
@@ -230,7 +246,7 @@ def build() -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
             if got is None:
                 continue
             text = "\n\n".join(b for b, _, _ in got) + "\n"
-            cands[i] = {"id": f"rc72_{i:02d}", "attempt": a, "text": text,
+            cands[i] = {"id": f"{NAME}_{i:02d}", "attempt": a, "text": text,
                         "mons": [{"species": m.species, "moves": list(m.moves), "source": sid} for _, m, sid in got]}
         if cands:
             sd = showdown_rows({c["id"]: c["text"] for c in cands.values()})
@@ -318,6 +334,8 @@ def build() -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
             "distinct_mon_sets": len({m.key for t in teams for m in t.mons}),
         },
     }
+    if NAME != "rc72":          # the retired draw's manifest predates these two keys (it must still reproduce)
+        manifest.update({"panel": NAME, "hidden_power_rule": HP_RULE})
     return rows, manifest
 
 
@@ -358,7 +376,9 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--check", action="store_true", help="exit 1 unless the committed panel and manifest reproduce")
     ap.add_argument("--install", action="store_true", help="write the panel, manifest, config and byte copies")
+    ap.add_argument("--panel", choices=sorted(PANELS), default="rc72b", help="which draw (rc72 is retired)")
     a = ap.parse_args(argv)
+    set_panel(a.panel)
     rows, manifest = build()
     text = json.dumps(manifest, indent=1, sort_keys=True) + "\n"
     if a.check:

@@ -1,6 +1,6 @@
-"""The DIAGNOSTIC panel registry (``designs/research_state/diagnostic_panels.json``) and its one panel, rc72 (the H-CTX
-read's recombined pool sets, ``measurements/hctx_rc72_2026-10-26``): outside the exclusion rule, verified like any
-panel, and built as its PREREG §2 says."""
+"""The DIAGNOSTIC panel registry (``designs/research_state/diagnostic_panels.json``) and its live panel, rc72b (the
+H-CTX read's recombined pool sets, ``measurements/hctx_rc72_2026-10-26``): outside the exclusion rule, verified like
+any panel, and built as its PREREG §2 and Amendment 2 say. ``rc72`` is the retired first draw."""
 import collections
 import json
 
@@ -11,9 +11,10 @@ from main.anchors import team_overlap as TO
 
 
 def test_a_diagnostic_panel_is_verified_but_never_part_of_the_exclusion_rule():
-    assert H.diagnostic_panel_names() == ["rc72"]
-    assert "rc72" not in H.panel_names() and H.panel_entry("rc72")["held_out_from"] == []
-    assert len(H.panel_team_texts("rc72")) == 72 and H.verify()["rc72"] == 72
+    assert H.diagnostic_panel_names() == ["rc72", "rc72b"]
+    assert not {"rc72", "rc72b"} & set(H.panel_names()) and H.panel_entry("rc72b")["held_out_from"] == []
+    assert len(H.panel_team_texts("rc72b")) == 72 and H.verify()["rc72b"] == 72
+    assert H.panel_entry("rc72")["role"].startswith("RETIRED")
     with pytest.raises(KeyError, match="diagnostic_panels.json"):
         H.panel_entry("no_such_panel")
 
@@ -31,12 +32,43 @@ def test_a_name_in_both_registries_is_refused(monkeypatch, tmp_path):
     finally:
         monkeypatch.undo()
         H.load_diagnostic.cache_clear()
-    assert H.diagnostic_panel_names() == ["rc72"]
+    assert H.diagnostic_panel_names() == ["rc72", "rc72b"]
 
 
 @pytest.fixture(scope="module")
 def rc72():
-    return TO.parse_items(H.panel_team_texts("rc72"))
+    return TO.parse_items(H.panel_team_texts("rc72b"))
+
+
+def _hp_as_written_mismatches(text):
+    """Hidden Power sets whose named type is not the type their IVs AS WRITTEN give (a missing IV reads 31): the
+    class the live server rejects (rc72__00, "Aerodactyl has Hidden Power Bug, but its IVs are for Hidden Power
+    Water")."""
+    import re
+
+    from agents.gen3_data import hidden_power
+
+    stats = {"hp": "hp", "atk": "atk", "def": "def", "spa": "spa", "spd": "spd", "spe": "spe"}
+    out = []
+    for block in re.split(r"\n\s*\n", text.strip()):
+        m = re.search(r"^-\s*Hidden Power\s*\[?\s*([A-Za-z]+)", block, re.M)
+        if not m:
+            continue
+        ivs = {}
+        iv = re.search(r"^IVs:\s*(.+)$", block, re.M)
+        for part in (iv.group(1).split("/") if iv else []):
+            n, name = part.split()[:2]
+            ivs[stats[name.strip().lower()]] = int(n)
+        if hidden_power.type_of(ivs).lower() != m.group(1).lower():
+            out.append(block.split("\n", 1)[0])
+    return out
+
+
+def test_every_rc72b_hidden_power_plays_its_named_type_as_written_and_rc72s_did_not():
+    bad = {lab: b for lab, t in H.panel_team_texts("rc72b") if (b := _hp_as_written_mismatches(t))}
+    assert bad == {}
+    assert sum(len(_hp_as_written_mismatches(t)) for _, t in H.panel_team_texts("rc72")) == 71, \
+        "the retired draw's defect, which this check must see"
 
 
 def test_rc72_is_made_only_of_pool_sets_and_shares_at_most_two_with_any_training_team(rc72):

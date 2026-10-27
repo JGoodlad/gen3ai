@@ -1,0 +1,55 @@
+Staross (Starmie) @ Leftovers  
+Ability: Natural Cure  
+EVs: 252 HP / 40 Def / 8 SpA / 32 SpD / 176 Spe  
+Timid Nature  
+- Thunder Wave  
+- Surf  
+- Rapid Spin  
+- Recover  
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 52 Def / 112 SpD / 96 Spe
+Timid Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Thunderbolt
+- Ice Punch
+- Will-O-Wisp
+- Giga Drain
+
+Tyranitar @ Lum Berry  
+Ability: Sand Stream  
+EVs: 200 HP / 136 Atk / 172 Spe  
+Adamant Nature  
+- Dragon Dance  
+- Rock Slide  
+- Earthquake  
+- Double-Edge  
+
+Metagross @ Leftovers  
+Ability: Clear Body  
+EVs: 252 HP / 56 Atk / 140 Def / 60 Spe  
+Adamant Nature  
+- Explosion  
+- Protect  
+- Meteor Mash  
+- Earthquake  
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 172 Def / 96 Spe
+Relaxed Nature
+- Earthquake
+- Ice Beam
+- Protect
+- Refresh
+
+Celebi @ Leftovers  
+Ability: Natural Cure  
+EVs: 184 HP / 180 SpA / 144 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 SpA / 30 Spe  
+- Calm Mind  
+- Giga Drain  
+- Hidden Power [Fire]  
+- Psychic  

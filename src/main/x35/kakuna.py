@@ -39,7 +39,7 @@ CONTENT digest (``gen3_team_set_digest_v1``) and count of BOTH sides' team dirs 
 Metamon's cache set) against the registry -- a moved team is a refusal, never a different read. ``home72`` / ``away``
 units are exactly as before (the home72 manifest; :data:`CONFIG`), and G-K reads only them. A panel unit also passes
 ``--capture-dir <unit>/capture`` (both packed teams of every game, F-DV-17), which changes no stamp and no play.
-A DIAGNOSTIC cell (:data:`DIAGNOSTIC_CELLS`: ``rc72``, the H-CTX read's recombined pool sets) is a panel cell in every
+A DIAGNOSTIC cell (:data:`DIAGNOSTIC_CELLS`: ``rc72b``, the H-CTX read's recombined pool sets) is a panel cell in every
 respect above; its panel is registered in ``diagnostic_panels.json``, outside the held-out exclusion rule.
 
 OTHER METAMON OPPONENTS (``plan_units(opponent=...)``; :data:`OPPONENTS`). A unit may face ``metamon:SmallRL``,
@@ -109,10 +109,13 @@ PANEL_CELLS: Dict[str, PanelCell] = {
                      "71bd9bad2d69cdc51649c345428cb6b6605db7f262ab6c16f31a1934f88072ac"),
 }
 #: DIAGNOSTIC cells (``designs/research_state/diagnostic_panels.json``): a panel played by name that is neither held out
-#: nor part of D1's H. ``rc72``: the H-CTX read's recombined pool sets (``measurements/hctx_rc72_2026-10-26``).
+#: nor part of D1's H. ``rc72b``: the H-CTX read's recombined pool sets (``measurements/hctx_rc72_2026-10-26``);
+#: ``rc72`` is its retired first draw (the live server rejects 71 of its Hidden Power sets), kept so old specs parse.
 DIAGNOSTIC_CELLS: Dict[str, PanelCell] = {
     "rc72": PanelCell(f"{_MEAS}/hctx_rc72_2026-10-26/anchors_rc72_kakuna.json",
                       "bb0217e6e5208b89c06456d2598470610557d9e6522d7741c9b0fbe26d4fe793"),
+    "rc72b": PanelCell(f"{_MEAS}/hctx_rc72_2026-10-26/anchors_rc72b_kakuna.json",
+                       "3c30dc01f76674f8754ce0a3e0750a3c7ebf61c8cc759dde08cc0f4f97691161"),
 }
 PANEL_CELLS.update(DIAGNOSTIC_CELLS)
 #: D1's PRIMARY H panels, in the registered order.

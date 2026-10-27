@@ -1,0 +1,57 @@
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Hydro Pump
+- Ice Beam
+- Thunderbolt
+- Rapid Spin
+
+Suicune @ Leftovers  
+Ability: Pressure  
+EVs: 252 HP / 228 SpA / 28 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Rest  
+- Calm Mind  
+- Surf  
+- Ice Beam  
+
+Tyranitar @ Leftovers  
+Ability: Sand Stream  
+EVs: 240 HP / 252 SpA / 16 Spe  
+Modest Nature  
+- Crunch  
+- Pursuit  
+- Flamethrower  
+- Brick Break  
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 56 HP / 44 Atk / 52 Def / 148 SpA / 8 SpD / 200 Spe
+Naive Nature
+- Thunderbolt
+- Ice Punch
+- Explosion
+- Hypnosis
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 200 Atk / 124 SpA / 184 Spe
+Mild Nature
+IVs: 31 HP / 31 Atk / 30 Def / 30 SpA / 31 SpD / 31 Spe
+- Agility
+- Drill Peck
+- Hidden Power Grass
+- Thunderbolt
+
+Swampert (M) @ Leftovers  
+Ability: Torrent  
+EVs: 248 HP / 156 Def / 104 SpD  
+Bold Nature  
+IVs: 0 Atk  
+- Surf  
+- Toxic  
+- Protect  
+- Refresh  

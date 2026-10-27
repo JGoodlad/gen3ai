@@ -158,3 +158,28 @@ pp), which is why the resolution gate exists.
 **Amendment 1 registration.** Pin `aaf7ced86` (lands `premium_recovery` and this amendment; after `20875e96`, so
 every unit stamps its engine). Spec `read_spec_am1.json`, sha256
 `93b3fa31c50bc7e9a446452053a4d78c95e6e2d20964c9abf8c8ed533350b244`; state `~/gen3ai_archive/hctx_rc72_am1_read`.
+
+## Amendment 2 (2026-10-27, before any rc72 game counted): the panel is redrawn as rc72b
+
+**Why.** The first Amendment-1 rc72 unit (`pstar__rc72__00`) failed twice with 0 games: the live server rejected
+the team ("Aerodactyl has Hidden Power Bug, but its IVs are for Hidden Power Water"). §2's Hidden Power rule was too
+loose: it accepted a set whose text names a type and carries NO IV line (all 31), because Showdown's batch validator
+REWRITES such IVs, while the live server REJECTS the team. 737 of the pool's 1,912 Hidden Power sets are of that
+class; home72 and F hold none; rc72 held 71 (almost every team). The lane was HELD at 01:11 PT. No rc72 unit was
+counted; the Amendment-1 state (`~/gen3ai_archive/hctx_rc72_am1_read`) is superseded and never recorded (its
+counted home72 / F units are discarded with it).
+
+**The fix.** `rc72b`: the same builder, seed and rules (§2) with X37a's STRICT Hidden Power rule: refused if a Hidden
+Power does not play its named type at 70 AS WRITTEN, or the validator rewrites its IVs
+(`build_rc72.py --panel rc72b`; content digest `4feda9ef…`, manifest `rc72b_manifest.json`). Every rc72b Hidden
+Power set is of the class home72 and F play. Its profile: 34 species, 0.116 total variation from home72's; pool
+repeats of each set median 18 (home72 21); max shared sets with ONE pool or corpus team 2 (all 72); with held-out
+panels ≤ 2; within the panel ≤ 3. `rc72` stays registered as RETIRED (the superseded specs still parse).
+
+**Consequence (stated before any game).** rc72b excludes the pool's no-IV-line Hidden Power sets, as home72 and F
+do; a recombined panel cannot use the 38 % of the pool's Hidden Power sets that P\* saw written that way. If those
+sets play differently in training than in the live server (an open question this read reports as a FINDING), rc72b is closer to home72 on that axis.
+
+**Everything else is Amendment 1's** (arms, sizes, interleave, rule `premium_recovery`, bootstrap, VOID, secondary
+line, stop), with the panel `rc72b`: spec `read_spec_am2.json`, a new state `~/gen3ai_archive/hctx_rc72_am2_read`,
+pinned at the commit that lands rc72b.

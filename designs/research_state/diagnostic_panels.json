@@ -4,7 +4,7 @@
  "what": "DIAGNOSTIC panels: played and verified by name like a registered panel, but OUTSIDE the near-neighbour exclusion rule of heldout_panels.json (panel_names() never names them, so no corpus, training guard or registry_sha256 moves). Neither held out nor a sample ground.",
  "panels": {
   "rc72": {
-   "role": "DIAGNOSTIC (PRACTISED sets, new teams): the H-CTX read's recombined panel. Every mon set is one our 719-team pool holds, verbatim; no team shares more than 2 sets with any single pool or training-corpus team",
+   "role": "RETIRED before any game counted (2026-10-27): 71 of its Hidden Power sets name a type and carry no IV line, which the live server rejects (rc72__00 failed twice); superseded by rc72b. Kept registered so the two superseded specs still parse",
    "source": "our pool's mon sets (main.anchors.session.pool_team_texts), recombined; species drawn by home72's profile with Smogon teammate lift",
    "team_dir": "designs/research_state/measurements/hctx_rc72_2026-10-26/teams_rc72",
    "n": 72,
@@ -16,6 +16,21 @@
     "sha256": "18acaa38d5ebd38e8bcb5ffc8c0abb6ac24a0ae6ad34ea2a1c9e7bdc3e5463ec"
    },
    "frozen_since": "2026-10-26 (the H-CTX PREREG)",
+   "held_out_from": []
+  },
+  "rc72b": {
+   "role": "DIAGNOSTIC (PRACTISED sets, new teams): the H-CTX read's recombined panel. Every mon set is one our 719-team pool holds, verbatim; no team shares more than 2 sets with any single pool or training-corpus team; every Hidden Power plays its named type as written (X37a's strict rule)",
+   "source": "our pool's mon sets (main.anchors.session.pool_team_texts), recombined; species drawn by home72's profile with Smogon teammate lift",
+   "team_dir": "designs/research_state/measurements/hctx_rc72_2026-10-26/teams_rc72b",
+   "n": 72,
+   "content_digest": "4feda9efd33f8c50ae6b36d5f657e9c06d115bbbe60c2bc78627c12670eb4b48",
+   "draw_rule": "hctx_rc72_2026-10-26/scripts/build_rc72.py --panel rc72b (PREREG.md §2): <= 2 shared mon sets with ONE team of the pool, d3_setmut_v1, n1_proc_v1 or w_forum_v1; < 3 with ONE team of every held-out panel and n1p72 (REVIEW A's revealed-fit rule); < 4 within the panel; validator, level 100 by the pack, Hidden Power named type at 70 as written, IVs not rewritten by the validator (X37a's strict rule), engine-playable",
+   "seed": 7272,
+   "manifest": {
+    "path": "designs/research_state/measurements/hctx_rc72_2026-10-26/rc72b_manifest.json",
+    "sha256": "fc2a0a4f8cb9e0cfa57215c622f26c4a24e64edd9cad9c225fc64ae9bda78694"
+   },
+   "frozen_since": "2026-10-27 (the H-CTX PREREG, Amendment 2)",
    "held_out_from": []
   }
  }

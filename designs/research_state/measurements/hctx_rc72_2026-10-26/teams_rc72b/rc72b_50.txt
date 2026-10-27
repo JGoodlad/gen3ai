@@ -1,0 +1,57 @@
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 144 HP / 172 SpD / 192 Spe
+Calm Nature
+- Surf
+- Rapid Spin
+- Explosion
+- Spikes
+
+Tyranitar @ Leftovers  
+Ability: Sand Stream  
+EVs: 248 HP / 104 Atk / 8 SpD / 148 Spe  
+Adamant Nature  
+IVs: 30 SpD / 30 Spe  
+- Dragon Dance  
+- Rock Slide  
+- Hidden Power [Bug]  
+- Focus Punch  
+
+Zapdos @ Leftovers  
+Ability: Pressure  
+EVs: 216 HP / 136 SpA / 156 Spe  
+Modest Nature  
+IVs: 30 Spe  
+- Thunder Wave  
+- Toxic  
+- Thunderbolt  
+- Hidden Power [Ice]  
+
+Jirachi @ Leftovers  
+Ability: Serene Grace  
+EVs: 252 HP / 80 Def / 140 SpA / 36 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 SpA  
+- Calm Mind  
+- Fire Punch  
+- Hidden Power [Grass]  
+- Psychic  
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 216 Def / 52 Spe
+Bold Nature
+- Surf
+- Roar
+- Protect
+- Refresh
+
+Gengar @ Leftovers  
+Ability: Levitate  
+EVs: 248 HP / 8 Def / 60 SpD / 192 Spe  
+Timid Nature  
+IVs: 0 Atk  
+- Thunderbolt  
+- Will-O-Wisp  
+- Taunt  
+- Destiny Bond  

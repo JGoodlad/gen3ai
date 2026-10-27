@@ -11,7 +11,7 @@ from utils.paths import repo_path
 def test_registry_verifies_against_the_committed_panels():
     got = H.verify()
     assert got == {"home72": 72, "away": 20, "heldout72": 72, "heldout72_hpfix": 72, "forum72": 72, "p72": 72,
-                   "forum216b": 216, "rc72": 72}
+                   "forum216b": 216, "rc72": 72, "rc72b": 72}
 
 
 def test_held_out_panels_are_exactly_the_unfamiliar_ones():

@@ -1,0 +1,56 @@
+Cloyster @ Leftovers  
+Ability: Shell Armor  
+EVs: 168 SpA / 244 SpD / 96 Spe  
+Modest Nature  
+- Spikes  
+- Rapid Spin  
+- Ice Beam  
+- Explosion  
+
+Metagross @ Leftovers  
+Ability: Clear Body  
+EVs: 248 HP / 176 Atk / 68 Def / 16 Spe  
+Adamant Nature  
+- Meteor Mash  
+- Earthquake  
+- Explosion  
+- Rain Dance  
+
+Zapdos @ Leftovers  
+Ability: Pressure  
+EVs: 252 HP / 104 Def / 44 SpA / 72 SpD / 36 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 SpA  
+- Thunderbolt  
+- Hidden Power [Grass]  
+- Thunder Wave  
+- Roar
+
+Charizard @ Leftovers  
+Ability: Blaze  
+EVs: 252 SpA / 4 SpD / 252 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 SpA  
+- Dragon Claw  
+- Flamethrower  
+- Hidden Power [Grass]  
+- Beat Up
+
+Blissey (F) @ Leftovers  
+Ability: Natural Cure  
+EVs: 252 Def / 200 SpA / 56 Spe  
+Bold Nature  
+IVs: 0 Atk  
+- Ice Beam  
+- Soft-Boiled  
+- Seismic Toss  
+- Aromatherapy  
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 80 Atk / 112 Def / 28 SpD / 36 Spe
+Impish Nature
+- Earthquake
+- Rock Slide
+- Toxic
+- Protect

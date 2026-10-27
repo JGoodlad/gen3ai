@@ -1,0 +1,54 @@
+Kaorine (Claydol) @ Leftovers  
+Ability: Levitate  
+EVs: 248 HP / 112 Def / 132 SpD / 16 Spe  
+Sassy Nature  
+- Earthquake  
+- Psychic  
+- Rapid Spin  
+- Rest  
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 52 Def / 12 SpA / 100 SpD / 96 Spe
+Timid Nature
+- Fire Punch
+- Thunderbolt
+- Explosion
+- Will-O-Wisp
+
+Skarmory @ Leftovers  
+Ability: Keen Eye  
+EVs: 240 HP / 240 SpD / 28 Spe  
+Careful Nature  
+- Spikes  
+- Taunt  
+- Drill Peck  
+- Roar  
+
+Charizard @ Leftovers  
+Ability: Blaze  
+EVs: 4 HP / 252 SpA / 252 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 SpA  
+- Dragon Claw  
+- Fire Blast  
+- Hidden Power [Grass]  
+- Beat Up  
+
+Swampert @ Leftovers  
+Ability: Torrent  
+EVs: 240 HP / 216 Def / 44 SpD / 8 Spe  
+Relaxed Nature  
+- Protect  
+- Earthquake  
+- Hydro Pump  
+- Ice Beam  
+
+Suicune @ Leftovers  
+Ability: Pressure  
+EVs: 252 HP / 228 SpA / 28 Spe  
+Modest Nature  
+- Substitute  
+- Calm Mind  
+- Surf  
+- Ice Beam  

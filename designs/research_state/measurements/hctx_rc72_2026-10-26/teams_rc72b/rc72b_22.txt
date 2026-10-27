@@ -1,0 +1,53 @@
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Rapid Spin
+- Earthquake
+- Explosion
+
+Metagross @ Choice Band  
+Ability: Clear Body  
+EVs: 188 HP / 252 Atk / 68 Spe  
+Adamant Nature  
+- Meteor Mash  
+- Earthquake  
+- Rock Slide  
+- Explosion  
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 16 HP / 252 Atk / 136 Def / 80 SpD / 24 Spe
+Adamant Nature
+- Shadow Ball
+- Focus Punch
+- Body Slam
+- Self-Destruct
+
+Swampert @ Leftovers  
+Ability: Torrent  
+EVs: 240 HP / 176 Def / 44 SpD / 48 Spe  
+Relaxed Nature  
+- Protect  
+- Earthquake  
+- Hydro Pump  
+- Ice Beam  
+
+Drattak (Salamence) @ Leftovers  
+Ability: Intimidate  
+EVs: 4 Atk / 252 SpA / 252 Spe  
+Naive Nature  
+- Dragon Claw  
+- Flamethrower  
+- Brick Break  
+- Roar  
+
+Slaking @ Choice Band  
+Ability: Truant  
+EVs: 252 Atk / 4 Def / 252 Spe  
+Adamant Nature  
+- Double-Edge  
+- Earthquake  
+- Rain Dance  
+- Focus Punch  

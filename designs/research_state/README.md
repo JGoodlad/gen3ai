@@ -88,7 +88,7 @@ view is wrong**: fix the view.
   [era_boundary_deprecation_2026-09-06.md](era_boundary_deprecation_2026-09-06.md),
   [models_retention_policy.md](models_retention_policy.md) (what `models/` keeps).
 - **Data files other code reads**: `heldout_panels.json`, `diagnostic_panels.json` (panels played by name outside the
-  exclusion rule: `rc72`), `plateau_panels.json`, `human_replay_snapshots.json`,
+  exclusion rule: `rc72b`; `rc72` retired), `plateau_panels.json`, `human_replay_snapshots.json`,
   `exploiter_teamsets_2026-09-22.json`, `exploiter_coverage_board.json`. Do not edit one by hand without
   finding its reader (`grep` the name under `src/`).
 - **[literature/](literature/)**: dated external-literature surveys (every claim cited and marked primary,

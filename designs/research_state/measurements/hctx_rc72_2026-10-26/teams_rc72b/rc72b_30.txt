@@ -1,0 +1,56 @@
+Salamence @ Leftovers  
+Ability: Intimidate  
+EVs: 8 Atk / 248 SpA / 252 Spe  
+Naive Nature  
+- Wish  
+- Dragon Claw  
+- Flamethrower  
+- Brick Break
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 104 SpA / 152 Spe
+Modest Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Hydro Pump
+- Ice Beam
+- Roar
+- Calm Mind
+
+Kaorine (Claydol) @ Leftovers  
+Ability: Levitate  
+EVs: 236 HP / 40 Atk / 136 Def / 96 Spe  
+Impish Nature  
+- Earthquake  
+- Explosion  
+- Rock Slide  
+- Rapid Spin  
+
+Metagross @ Lum Berry
+Ability: Clear Body
+EVs: 112 HP / 244 Atk / 16 SpA / 136 Spe
+Adamant Nature
+IVs: 31 HP / 31 Atk / 30 Def / 30 SpA / 31 SpD / 31 Spe
+- Meteor Mash
+- Earthquake
+- Explosion
+- Hidden Power Grass
+
+Magneton @ Salac Berry  
+Ability: Magnet Pull  
+EVs: 4 HP / 252 SpA / 252 Spe  
+Timid Nature  
+IVs: 2 Atk / 30 Def  
+- Endure  
+- Toxic  
+- Thunderbolt  
+- Hidden Power [Ice]  
+
+Snorlax @ Leftovers  
+Ability: Immunity  
+EVs: 16 HP / 216 Atk / 96 Def / 168 SpD / 12 Spe  
+Adamant Nature  
+- Body Slam  
+- Shadow Ball  
+- Focus Punch  
+- Self-Destruct  

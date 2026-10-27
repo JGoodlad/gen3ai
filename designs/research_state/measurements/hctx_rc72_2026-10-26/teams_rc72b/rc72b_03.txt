@@ -1,0 +1,57 @@
+Snorlax (M) @ Leftovers  
+Ability: Thick Fat  
+EVs: 204 HP / 72 Atk / 132 Def / 100 SpD  
+Careful Nature  
+- Curse  
+- Return  
+- Shadow Ball  
+- Rest  
+
+Suicune @ Leftovers  
+Ability: Pressure  
+EVs: 224 HP / 216 SpA / 68 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Toxic  
+- Calm Mind  
+- Surf  
+- Ice Beam  
+
+Jirachi @ Leftovers  
+Ability: Serene Grace  
+EVs: 252 HP / 76 Def / 180 SpD  
+Sassy Nature  
+- Wish  
+- Protect  
+- Fire Punch  
+- Body Slam  
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 8 HP / 248 Atk / 252 Spe
+Jolly Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Earthquake
+- Hidden Power Bug
+- Rock Slide
+- Aerial Ace
+
+Celebi @ Leftovers  
+Ability: Natural Cure  
+EVs: 252 HP / 168 Def / 56 SpD / 32 Spe  
+Calm Nature  
+IVs: 2 Atk / 30 SpA  
+- Leech Seed  
+- Hidden Power [Grass]  
+- Recover  
+- Perish Song  
+
+Tyranitar @ Leftovers  
+Ability: Sand Stream  
+EVs: 248 HP / 56 Def / 188 SpA / 16 Spe  
+Modest Nature  
+IVs: 2 Atk / 30 SpA  
+- Crunch  
+- Pursuit  
+- Flamethrower  
+- Hidden Power [Grass]  
