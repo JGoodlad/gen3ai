@@ -39,7 +39,11 @@ with its reasons (N1-P FINDING 7).
 * ``score_bands`` -- the H-CTX read (``hctx_rc72_2026-10-26`` PREREG): ONE model's pooled score on ONE panel placed in
   registered bands (``>= kill_at`` KILL, ``<= support_at`` SUPPORT, else UNDECIDED; exact fractions), VOID unless a
   guard group replays banked units game for game (``prior_mix_ab``'s guard); its comparisons with the banked familiar
-  and unfamiliar cells are descriptive.
+  and unfamiliar cells are descriptive. SUPERSEDED for that read, before any rc72 game, by ``premium_recovery``.
+* ``premium_recovery`` -- the H-CTX read as amended (engine-identity rule): rc72, home72 and an unfamiliar panel, all
+  played on ONE engine in one read; the share of the home premium (familiar − unfamiliar) rc72 recovers, by exact
+  fractions against ``kill_frac`` / ``support_frac``; INCONCLUSIVE unless the premium's unit-bootstrap lower bound
+  clears 0; the absolute bands against X51 survive only as a secondary, cross-engine line.
 """
 from __future__ import annotations
 
@@ -1000,6 +1004,182 @@ def _sb_decide(doc: Mapping[str, Any], p: Mapping[str, Any]) -> Dict[str, Any]:
         "verdict": f"{words[band]}: {p['panel']} {w}/{n} = {sc:.3f} [{lo:.3f}, {hi:.3f}]"}}
 
 
+# ------------------------------------------------------------------------------------------------ premium_recovery
+_PR_KEYS = ("label", "arms", "kill_frac", "support_frac", "min_unit_frac", "bootstrap", "secondary", "verdict_text")
+_PR_ARMS = ("rc", "familiar", "unfamiliar")
+PR_KILL, PR_SUPPORT, PR_UNDECIDED, PR_INCONCLUSIVE = "KILL", "SUPPORT", "UNDECIDED", "INCONCLUSIVE"
+
+
+def _pr_check(p: Mapping[str, Any], *, models: Any, anchor: Any, s: Any) -> List[str]:
+    probs = _check_keys(p, _PR_KEYS[:-1], _PR_KEYS)
+    if p.get("label") not in models:
+        probs.append(f"label {p.get('label')!r} is not a model label")
+    arms = p.get("arms") or {}
+    if not isinstance(arms, dict) or set(arms) != set(_PR_ARMS):
+        return probs + [f"arms: {{{', '.join(_PR_ARMS)}: {{panel, groups: [anchor group, ...]}}}}"]
+    seen: List[str] = []
+    for name, a in arms.items():
+        if not (isinstance(a, dict) and isinstance(a.get("panel"), str) and isinstance(a.get("groups"), list)
+                and a["groups"]):
+            probs.append(f"arms.{name}: {{panel, groups: [...]}}")
+            continue
+        for g in a["groups"]:
+            grp = anchor.get(g)
+            if grp is None:
+                probs.append(f"arms.{name}: {g!r} is not an anchor group")
+            elif list(grp.models) != [p.get("label")] or list(grp.teamsets) != [a["panel"]]:
+                probs.append(f"arms.{name}: group {g!r} must play exactly {p.get('label')!r} on {a['panel']!r}")
+            seen.append(g)
+    if len(seen) != len(set(seen)):
+        probs.append("arms: a group belongs to one arm")
+    try:
+        lo, hi = float(p["support_frac"]), float(p["kill_frac"])
+        if not 0.0 < lo < hi < 1.0:
+            probs.append("0 < support_frac < kill_frac < 1")
+    except (KeyError, TypeError, ValueError):
+        probs.append("support_frac / kill_frac: numbers")
+    b = p.get("bootstrap") or {}
+    if not (isinstance(b, dict) and isinstance(b.get("B"), int) and b["B"] >= 1000 and isinstance(b.get("seed"), int)):
+        probs.append("bootstrap: {B: int >= 1000, seed: int}")
+    sec = p.get("secondary") or {}
+    bk = sec.get("banked") or {}
+    if not (isinstance(bk, dict) and isinstance(bk.get("path"), str) and isinstance(bk.get("sha256"), str)
+            and isinstance(bk.get("cells"), dict) and sec.get("familiar") in bk.get("cells", {})
+            and set(sec.get("unfamiliar") or []) <= set(bk.get("cells", {})) and sec.get("unfamiliar")
+            and isinstance(sec.get("kill_at"), (int, float)) and isinstance(sec.get("support_at"), (int, float))):
+        probs.append("secondary: {kill_at, support_at, familiar, unfamiliar: [...], banked: {path, sha256, cells}} "
+                     "(the cross-engine line)")
+    return probs
+
+
+def _pr_inputs(cells: Mapping[str, Any], p: Mapping[str, Any], spec: Any) -> Dict[str, Any]:
+    sec = p["secondary"]
+    bank = banked_units(sec["banked"])
+    doc: Dict[str, Any] = {"label": p["label"], "arms": {}, "secondary_bank": {
+        ts: {str(s): {k: v for k, v in u.items() if k != "games"} for s, u in sorted(by.items())}
+        for ts, by in bank.items()}, "secondary_source": {"path": sec["banked"]["path"],
+                                                         "sha256": sec["banked"]["sha256"]}}
+    for name, a in p["arms"].items():
+        arm: Dict[str, Any] = {"panel": a["panel"], "groups": {}, "units": []}
+        for gname in a["groups"]:
+            g = _group(cells, "anchor", gname)
+            arm["groups"][gname] = {"engine": g.get("engine"), "regime_id": g.get("regime_id"),
+                                    "units_planned": len(g["unit_seeds"])}
+            for u in g["units"]:
+                if u["label"] != p["label"]:
+                    continue
+                want = bank.get(u["panel"], {}).get(int(u["unit_seed"]))
+                row = {k: u.get(k) for k in ("unit", "panel", "unit_seed", "counted", "wins", "ties", "n",
+                                             "our_regime")}
+                row["group"] = gname
+                row["x51_games_equal"] = (None if want is None or u.get("games") is None
+                                          else [list(x) for x in u["games"]] == want["games"])
+                arm["units"].append(row)
+        doc["arms"][name] = arm
+    return doc
+
+
+def _pr_boot(units: Mapping[str, Sequence[Tuple[int, int]]], B: int, seed: int) -> Dict[str, List[float]]:
+    """Percentile 95 % intervals of the premium (familiar − unfamiliar), the recovery (rc − unfamiliar), rc −
+    familiar and the recovered FRACTION, resampling each arm's 20-game units with replacement, independently
+    (``random.Random(seed)``: deterministic)."""
+    import random
+
+    rng = random.Random(seed)
+    out: Dict[str, List[float]] = {"premium": [], "recovery": [], "rc_minus_familiar": [], "fraction": []}
+    for _ in range(B):
+        p = {}
+        for name, us in units.items():
+            pick = [us[rng.randrange(len(us))] for _u in us]
+            p[name] = sum(w for w, _ in pick) / sum(n for _, n in pick)
+        prem, rec = p["familiar"] - p["unfamiliar"], p["rc"] - p["unfamiliar"]
+        out["premium"].append(prem)
+        out["recovery"].append(rec)
+        out["rc_minus_familiar"].append(p["rc"] - p["familiar"])
+        if prem != 0:
+            out["fraction"].append(rec / prem)
+
+    def pct(xs: List[float]) -> List[float]:
+        xs = sorted(xs)
+        return [xs[int(0.025 * (len(xs) - 1))], xs[int(0.975 * (len(xs) - 1))]] if xs else [float("nan")] * 2
+
+    return {k: pct(v) for k, v in out.items()}
+
+
+def _pr_decide(doc: Mapping[str, Any], p: Mapping[str, Any]) -> Dict[str, Any]:
+    """The H-CTX read's AMENDED rule (``hctx_rc72_2026-10-26`` PREREG, Amendment 1): on ONE engine, the share of the
+    home premium (familiar − unfamiliar) that rc72 recovers (rc − unfamiliar). VOID if a counted unit is not greedy,
+    an arm has fewer than ``min_unit_frac`` of its planned units counted, or the groups' engines are not ONE known
+    engine. INCONCLUSIVE if the premium's unit-bootstrap 95 % lower bound is not above 0. Otherwise, by EXACT fractions
+    of the pooled scores: recovery ≥ ``kill_frac`` × premium KILL, ≤ ``support_frac`` × premium SUPPORT, else
+    UNDECIDED. The SECONDARY line (cross-engine, read by no verdict): rc's absolute band against X51's banked bars."""
+    from fractions import Fraction
+
+    reasons: List[str] = []
+    engines = sorted({str(g["engine"]) for a in doc["arms"].values() for g in a["groups"].values()
+                      if g["engine"] is not None})
+    if any(g["engine"] is None for a in doc["arms"].values() for g in a["groups"].values()) or len(engines) != 1:
+        reasons.append(f"engine: the groups must share ONE known engine, got {engines or 'none'}")
+    pooled: Dict[str, Dict[str, Any]] = {}
+    per_unit: Dict[str, List[Tuple[int, int]]] = {}
+    for name, a in doc["arms"].items():
+        us = [u for u in a["units"] if u["counted"]]
+        bad = sorted({str(u["our_regime"]) for u in us if u["our_regime"] != "greedy"})
+        if bad:
+            reasons.append(f"{name}: counted units stamped {bad}, not 'greedy'")
+        planned = sum(int(g["units_planned"]) for g in a["groups"].values())
+        if len(us) < float(p["min_unit_frac"]) * planned - RULE8_EPS:
+            reasons.append(f"{name}: {len(us)} / {planned} units counted (< {float(p['min_unit_frac']):.0%})")
+        w, n = sum(int(u["wins"]) for u in us), sum(int(u["n"]) for u in us)
+        sc, lo, hi = wilson(w, n) if n else (None, None, None)
+        match = [u["x51_games_equal"] for u in us if u["x51_games_equal"] is not None]
+        pooled[name] = {"panel": a["panel"], "wins": w, "ties": sum(int(u.get("ties") or 0) for u in us), "n": n,
+                        "units_counted": len(us), "units_planned": planned, "score": sc, "wilson95": [lo, hi],
+                        "x51_units_replayed": {"compared": len(match), "equal": sum(bool(x) for x in match)}}
+        per_unit[name] = [(int(u["wins"]), int(u["n"])) for u in us]
+    out: Dict[str, Any] = {"arms": pooled, "engine": engines[0] if len(engines) == 1 else None}
+    if any(not pooled[k]["n"] for k in _PR_ARMS):
+        return dict(out, decision={"verdict": VOID, "reasons": reasons + ["an arm has no counted game"]})
+    fr = {k: Fraction(pooled[k]["wins"], pooled[k]["n"]) for k in _PR_ARMS}
+    prem, rec = fr["familiar"] - fr["unfamiliar"], fr["rc"] - fr["unfamiliar"]
+    b = p["bootstrap"]
+    ci = _pr_boot(per_unit, int(b["B"]), int(b["seed"]))
+    est = {"premium": float(prem), "recovery": float(rec), "rc_minus_familiar": float(fr["rc"] - fr["familiar"]),
+           "fraction": float(rec / prem) if prem else None, "boot95": ci, "bootstrap": dict(b)}
+    out["estimates"] = est
+    # the SECONDARY line: cross-engine, against X51's banked cells
+    sec = p["secondary"]
+    bank = doc["secondary_bank"]
+
+    def _cell(ts: str) -> Tuple[int, int]:
+        return (sum(int(u["wins"]) for u in bank[ts].values()), sum(int(u["n"]) for u in bank[ts].values()))
+
+    x_rc = fr["rc"]
+    band = (PR_KILL if x_rc >= Fraction(str(sec["kill_at"])) else PR_SUPPORT
+            if x_rc <= Fraction(str(sec["support_at"])) else PR_UNDECIDED)
+    fw, fn = _cell(str(sec["familiar"]))
+    unf = list(sec["unfamiliar"])
+    out["secondary_cross_engine"] = {
+        "band": band, "kill_at": sec["kill_at"], "support_at": sec["support_at"],
+        "x51_familiar": fw / fn, "x51_unfamiliar_mean": strat_score({k: _cell(k) for k in unf}, unf).mean,
+        "note": "cross-engine: X51 played on engine E0; read by no verdict"}
+    words = dict({k: k for k in (PR_KILL, PR_SUPPORT, PR_UNDECIDED, PR_INCONCLUSIVE)}, **(p.get("verdict_text") or {}))
+    tail = (f"{pooled['rc']['panel']} {float(fr['rc']):.3f}, {pooled['familiar']['panel']} "
+            f"{float(fr['familiar']):.3f}, {pooled['unfamiliar']['panel']} {float(fr['unfamiliar']):.3f}; premium "
+            f"{float(prem):+.3f} [{ci['premium'][0]:+.3f}, {ci['premium'][1]:+.3f}]")
+    if reasons:
+        return dict(out, decision={"verdict": VOID, "reasons": reasons})
+    if not clears(ci["premium"][0], 0.0)[0]:
+        return dict(out, decision={"band": PR_INCONCLUSIVE, "verdict": f"{words[PR_INCONCLUSIVE]}: the premium is "
+                                   f"not resolved on this engine ({tail})"})
+    kill, sup = Fraction(str(p["kill_frac"])), Fraction(str(p["support_frac"]))
+    verdict = PR_KILL if rec >= kill * prem else PR_SUPPORT if rec <= sup * prem else PR_UNDECIDED
+    frac = f"{float(rec / prem):.2f} [{ci['fraction'][0]:.2f}, {ci['fraction'][1]:.2f}]"
+    return dict(out, decision={"band": verdict, "kill_frac": p["kill_frac"], "support_frac": p["support_frac"],
+                               "verdict": f"{words[verdict]}: rc72 recovers {frac} of the home premium ({tail}); "
+                                          f"secondary, cross-engine: {words[band]}"})
+
+
 # ------------------------------------------------------------------------------------------------ registry
 @dataclass(frozen=True)
 class Rule:
@@ -1031,6 +1211,8 @@ RULES: Dict[str, Rule] = {
                          _pm_check, _pm_inputs, _pm_decide, False),
     "score_bands": Rule("score_bands", "one model's score on one panel against two registered bands; a determinism "
                         "guard against banked rows (the H-CTX rc72 read)", _sb_check, _sb_inputs, _sb_decide, False),
+    "premium_recovery": Rule("premium_recovery", "the share of the home premium a panel recovers, on ONE engine, "
+                             "unit-bootstrap (the H-CTX read, amended)", _pr_check, _pr_inputs, _pr_decide, False),
 }
 
 

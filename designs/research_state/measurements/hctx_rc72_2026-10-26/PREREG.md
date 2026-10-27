@@ -111,3 +111,46 @@ home72 − U premium rc72 keeps, (s − U) / (home72 − U).
 Pin `b044d214b` (the commit that lands the panel, its cell, the rule and this PREREG; nothing on the play path
 differs at the registration commit). Spec `read_spec.json`, sha256 `b9b52d6e18457f98dd5247c1e05020fe2c16111784ff0d977b081514ec03c101`.
 Played from a clean detached worktree at the pin, `--concurrency 2`, `--hours 48`.
+
+## Amendment 1 (2026-10-26, before ANY rc72 game): same-engine controls (the engine-identity rule, `20875e96`)
+
+**Why.** The engine-identity rule (`designs/tools/reads.md` §4) landed while the first two guard units were in
+flight. X51's rows were played on engine E0; this read plays on main's current engine. The parity fixes since
+10-20 change rare mechanics, so a game-for-game guard against X51 does NOT license comparing rc72 with X51's banked
+home72 / U. The coordinator's ruling: matched controls on THIS read's engine, interleaved unit by unit with rc72,
+and the verdict read relative to them. Its sizes, interval method and the INCONCLUSIVE rule are mine, below.
+
+**State at the amendment.** The registered lane (`~/gen3ai_archive/hctx_rc72_read`, spec `b9b52d6e…`, pin
+`b044d214b`) was HELD at 23:27 PT. It had started only two GUARD units (home72 and H at seed 15); no rc72 unit was
+ever started, so no rc72 game has been played or seen. That state is SUPERSEDED: never recorded, its two guard units
+reported only as a descriptive replay check. §3's guard, §5's rule (`score_bands`) and §4's size are replaced by:
+
+- **Arms, one read, one engine** (`read_spec_am1.json`, rule `premium_recovery`, a new state; pinned at the commit
+  that lands the rule, which is after `20875e96`, so every unit stamps its engine):
+  - **rc72:** unit seeds 0–59, **60 units, 1,200 games** (unchanged);
+  - **home72 (familiar control):** seeds 0–39, **40 units, 800 games**;
+  - **F = `forum72` (unfamiliar control):** seeds 0–39, **40 units, 800 games**.
+  140 units, 2,800 games. Two-thirds of rc72's size per control: equal sizes would be 3,600 games. At 40 units each,
+  the premium's 95 % half-width is ≈ ±4.8 pp; with X51's home72 − F (6.8 pp) as the truth, P(its lower bound
+  clears 0) ≈ 0.80 (at 30 units, ≈ 0.66).
+- **Interleaving.** Seven anchor groups, in this order: rc72 0–19, home72 0–19, F 0–19, rc72 20–39, home72 20–39, F
+  20–39, rc72 40–59. The lane plays unit index i of every group before index i + 1, so each round of 7 units is 3
+  rc72 + 2 home72 + 2 F and a stop at any point leaves the arms in proportion.
+- **The rule** (exact fractions on the pooled scores; ties count as not won):
+  - premium P = home72 − F; recovery R = rc72 − F;
+  - **INCONCLUSIVE** if P's 95 % interval lower bound is not above 0;
+  - otherwise **H-CTX KILLED** if R ≥ 0.75 P (rc72 recovers ≥ 75 % of the home premium), **H-CTX SUPPORTED** if
+    R ≤ 0.25 P, else **UNDECIDED**.
+- **Intervals:** a percentile bootstrap over 20-game units, each arm resampled with replacement independently,
+  B = 10,000, `random.Random(7273)` (deterministic). Reported for P, R, rc72 − home72 and R / P.
+- **VOID** if any counted unit is not stamped `greedy`, any arm has fewer than 75 % of its planned units counted, or
+  the seven groups do not share ONE known engine. The engine is recorded in the decision.
+- **Secondary, cross-engine (read by no verdict):** §5's absolute bands (≥ 0.57 / ≤ 0.52) on rc72, beside X51's
+  banked home72 0.598 and U 0.487, labelled cross-engine. Also descriptive: how many home72 / F units at seeds 0–19
+  replay X51's games exactly.
+- **Stop:** `--hours 72`, `--concurrency 2`, `allow_partial_at_stop: true` (the 75 % floor still applies). The N1-P
+  read keeps priority on the heavy slots. At 2–4 units an hour, 35–70 h.
+
+**Predictions (unchanged in substance).** H-CTX: rc72 ≈ F, R / P ≈ 0 (SUPPORTED). SET-LEVEL: rc72 ≈ home72, R / P ≈ 1
+(KILLED). Mine: R / P ≈ 0.25–0.4, so SUPPORTED or a low UNDECIDED. F's premium is smaller than U's (X51: 6.8 vs 11.1
+pp), which is why the resolution gate exists.
