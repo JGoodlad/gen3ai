@@ -1,0 +1,1595 @@
+{
+ "seed": 20261026,
+ "reps": 40000,
+ "sigma_floor_pp": 1.0,
+ "band_pp": 3.0,
+ "base": {
+  "F": 0.49,
+  "H": 0.46,
+  "P72": 0.47
+ },
+ "measured_noise": {
+  "source": "C0 + D1 (5 finals each, d1_read/read_look2_input.json), D3 (3 finals, look-1 cells.json); 140 games per (seed final, panel)",
+  "F": {
+   "per_seed_means_pp": {
+    "C0": [
+     51.4,
+     48.6,
+     48.6,
+     49.3,
+     46.4
+    ],
+    "D1": [
+     53.6,
+     55.7,
+     51.4,
+     57.1,
+     46.4
+    ],
+    "D3": [
+     52.1,
+     46.4,
+     50.0
+    ]
+   },
+   "W_sd_pp": 3.16,
+   "binomial_sd_pp": 4.22,
+   "phi": 0.56,
+   "df": 10,
+   "sigma_point_pp": 0.0,
+   "sigma_upper95_pp": 2.75
+  },
+  "F+P72": {
+   "per_seed_means_pp": {
+    "C0": [
+     46.8,
+     50.7,
+     47.1,
+     50.7,
+     45.0
+    ],
+    "D1": [
+     52.5,
+     51.4,
+     49.6,
+     49.6,
+     47.5
+    ],
+    "D3": [
+     47.5,
+     47.9,
+     50.7
+    ]
+   },
+   "W_sd_pp": 2.16,
+   "binomial_sd_pp": 2.98,
+   "phi": 0.53,
+   "df": 10,
+   "sigma_point_pp": 0.0,
+   "sigma_upper95_pp": 1.74
+  },
+  "H+F": {
+   "per_seed_means_pp": {
+    "C0": [
+     50.4,
+     47.9,
+     46.8,
+     45.7,
+     44.3
+    ],
+    "D1": [
+     52.1,
+     50.7,
+     51.8,
+     50.7,
+     45.0
+    ],
+    "D3": [
+     53.6,
+     45.4,
+     50.4
+    ]
+   },
+   "W_sd_pp": 2.99,
+   "binomial_sd_pp": 2.98,
+   "phi": 1.01,
+   "df": 10,
+   "sigma_point_pp": 0.22,
+   "sigma_upper95_pp": 3.71
+  },
+  "H+F+P72": {
+   "per_seed_means_pp": {
+    "C0": [
+     47.6,
+     49.5,
+     46.4,
+     47.9,
+     44.0
+    ],
+    "D1": [
+     51.9,
+     49.5,
+     50.5,
+     47.9,
+     46.2
+    ],
+    "D3": [
+     50.0,
+     46.7,
+     50.7
+    ]
+   },
+   "W_sd_pp": 2.14,
+   "binomial_sd_pp": 2.43,
+   "phi": 0.77,
+   "df": 10,
+   "sigma_point_pp": 0.0,
+   "sigma_upper95_pp": 2.39
+  }
+ },
+ "primary": {
+  "F alone, 1200 games/final, sigma 0.0 pp, delta +0 pp": {
+   "x60": {
+    "GAIN": 0.008,
+    "LOSS": 0.008,
+    "NO-USEFUL-GAIN": 0.787,
+    "NOT-RESOLVED": 0.197
+   },
+   "x60_equivalent_reported": 0.355,
+   "x60_stop_at_look1": 0.504,
+   "x60_halfwidth_look2_pp": 2.18,
+   "x60_welch_guard_fires": 0.004,
+   "d1_point (the draft)": {
+    "GAIN": 0.031,
+    "LOSS": 0.019,
+    "NO-DIFF": 0.54,
+    "UNDECIDED": 0.41
+   },
+   "d1_t (REVIEW D's fix)": {
+    "GAIN": 0.009,
+    "LOSS": 0.002,
+    "NO-DIFF": 0.276,
+    "UNDECIDED": 0.713
+   }
+  },
+  "F alone, 1200 games/final, sigma 0.0 pp, delta +2 pp": {
+   "x60": {
+    "GAIN": 0.409,
+    "NO-USEFUL-GAIN": 0.106,
+    "NOT-RESOLVED": 0.486
+   },
+   "x60_equivalent_reported": 0.076,
+   "x60_stop_at_look1": 0.044,
+   "x60_halfwidth_look2_pp": 2.18,
+   "x60_welch_guard_fires": 0.004,
+   "d1_point (the draft)": {
+    "GAIN": 0.564,
+    "LOSS": 0.0,
+    "NO-DIFF": 0.177,
+    "UNDECIDED": 0.26
+   },
+   "d1_t (REVIEW D's fix)": {
+    "GAIN": 0.397,
+    "NO-DIFF": 0.062,
+    "UNDECIDED": 0.541
+   }
+  },
+  "F alone, 1200 games/final, sigma 0.0 pp, delta +3 pp": {
+   "x60": {
+    "GAIN": 0.802,
+    "LOSS": 0.0,
+    "NO-USEFUL-GAIN": 0.011,
+    "NOT-RESOLVED": 0.187
+   },
+   "x60_equivalent_reported": 0.008,
+   "x60_stop_at_look1": 0.005,
+   "x60_halfwidth_look2_pp": 2.18,
+   "x60_welch_guard_fires": 0.004,
+   "d1_point (the draft)": {
+    "GAIN": 0.884,
+    "LOSS": 0.0,
+    "NO-DIFF": 0.028,
+    "UNDECIDED": 0.088
+   },
+   "d1_t (REVIEW D's fix)": {
+    "GAIN": 0.784,
+    "LOSS": 0.0,
+    "NO-DIFF": 0.006,
+    "UNDECIDED": 0.21
+   }
+  },
+  "F alone, 1200 games/final, sigma 0.0 pp, delta +4 pp": {
+   "x60": {
+    "GAIN": 0.971,
+    "NO-USEFUL-GAIN": 0.0,
+    "NOT-RESOLVED": 0.028
+   },
+   "x60_equivalent_reported": 0.0,
+   "x60_stop_at_look1": 0.0,
+   "x60_halfwidth_look2_pp": 2.18,
+   "x60_welch_guard_fires": 0.004,
+   "d1_point (the draft)": {
+    "GAIN": 0.987,
+    "NO-DIFF": 0.002,
+    "UNDECIDED": 0.011
+   },
+   "d1_t (REVIEW D's fix)": {
+    "GAIN": 0.963,
+    "NO-DIFF": 0.0,
+    "UNDECIDED": 0.037
+   }
+  },
+  "F alone, 1200 games/final, sigma 0.5 pp, delta +0 pp": {
+   "x60": {
+    "GAIN": 0.01,
+    "LOSS": 0.011,
+    "NO-USEFUL-GAIN": 0.758,
+    "NOT-RESOLVED": 0.221
+   },
+   "x60_equivalent_reported": 0.33,
+   "x60_stop_at_look1": 0.501,
+   "x60_halfwidth_look2_pp": 2.18,
+   "x60_welch_guard_fires": 0.008,
+   "d1_point (the draft)": {
+    "GAIN": 0.036,
+    "LOSS": 0.023,
+    "NO-DIFF": 0.497,
+    "UNDECIDED": 0.444
+   },
+   "d1_t (REVIEW D's fix)": {
+    "GAIN": 0.011,
+    "LOSS": 0.003,
+    "NO-DIFF": 0.245,
+    "UNDECIDED": 0.741
+   }
+  },
+  "F alone, 1200 games/final, sigma 0.5 pp, delta +2 pp": {
+   "x60": {
+    "GAIN": 0.405,
+    "LOSS": 0.0,
+    "NO-USEFUL-GAIN": 0.117,
+    "NOT-RESOLVED": 0.478
+   },
+   "x60_equivalent_reported": 0.079,
+   "x60_stop_at_look1": 0.055,
+   "x60_halfwidth_look2_pp": 2.18,
+   "x60_welch_guard_fires": 0.008,
+   "d1_point (the draft)": {
+    "GAIN": 0.547,
+    "LOSS": 0.0,
+    "NO-DIFF": 0.174,
+    "UNDECIDED": 0.279
+   },
+   "d1_t (REVIEW D's fix)": {
+    "GAIN": 0.386,
+    "NO-DIFF": 0.06,
+    "UNDECIDED": 0.553
+   }
+  },
+  "F alone, 1200 games/final, sigma 0.5 pp, delta +3 pp": {
+   "x60": {
+    "GAIN": 0.779,
+    "NO-USEFUL-GAIN": 0.015,
+    "NOT-RESOLVED": 0.206
+   },
+   "x60_equivalent_reported": 0.01,
+   "x60_stop_at_look1": 0.008,
+   "x60_halfwidth_look2_pp": 2.18,
+   "x60_welch_guard_fires": 0.009,
+   "d1_point (the draft)": {
+    "GAIN": 0.86,
+    "NO-DIFF": 0.034,
+    "UNDECIDED": 0.106
+   },
+   "d1_t (REVIEW D's fix)": {
+    "GAIN": 0.749,
+    "NO-DIFF": 0.007,
+    "UNDECIDED": 0.244
+   }
+  },
+  "F alone, 1200 games/final, sigma 0.5 pp, delta +4 pp": {
+   "x60": {
+    "GAIN": 0.96,
+    "NO-USEFUL-GAIN": 0.001,
+    "NOT-RESOLVED": 0.039
+   },
+   "x60_equivalent_reported": 0.001,
+   "x60_stop_at_look1": 0.001,
+   "x60_halfwidth_look2_pp": 2.18,
+   "x60_welch_guard_fires": 0.009,
+   "d1_point (the draft)": {
+    "GAIN": 0.978,
+    "NO-DIFF": 0.004,
+    "UNDECIDED": 0.018
+   },
+   "d1_t (REVIEW D's fix)": {
+    "GAIN": 0.948,
+    "NO-DIFF": 0.0,
+    "UNDECIDED": 0.052
+   }
+  },
+  "F alone, 1200 games/final, sigma 1.0 pp, delta +0 pp": {
+   "x60": {
+    "GAIN": 0.02,
+    "LOSS": 0.018,
+    "NO-USEFUL-GAIN": 0.664,
+    "NOT-RESOLVED": 0.298
+   },
+   "x60_equivalent_reported": 0.252,
+   "x60_stop_at_look1": 0.503,
+   "x60_halfwidth_look2_pp": 2.18,
+   "x60_welch_guard_fires": 0.049,
+   "d1_point (the draft)": {
+    "GAIN": 0.051,
+    "LOSS": 0.032,
+    "NO-DIFF": 0.369,
+    "UNDECIDED": 0.548
+   },
+   "d1_t (REVIEW D's fix)": {
+    "GAIN": 0.019,
+    "LOSS": 0.007,
+    "NO-DIFF": 0.164,
+    "UNDECIDED": 0.81
+   }
+  },
+  "F alone, 1200 games/final, sigma 1.0 pp, delta +2 pp": {
+   "x60": {
+    "GAIN": 0.375,
+    "LOSS": 0.0,
+    "NO-USEFUL-GAIN": 0.133,
+    "NOT-RESOLVED": 0.491
+   },
+   "x60_equivalent_reported": 0.077,
+   "x60_stop_at_look1": 0.083,
+   "x60_halfwidth_look2_pp": 2.18,
+   "x60_welch_guard_fires": 0.05,
+   "d1_point (the draft)": {
+    "GAIN": 0.489,
+    "LOSS": 0.001,
+    "NO-DIFF": 0.153,
+    "UNDECIDED": 0.358
+   },
+   "d1_t (REVIEW D's fix)": {
+    "GAIN": 0.339,
+    "LOSS": 0.0,
+    "NO-DIFF": 0.051,
+    "UNDECIDED": 0.61
+   }
+  },
+  "F alone, 1200 games/final, sigma 1.0 pp, delta +3 pp": {
+   "x60": {
+    "GAIN": 0.705,
+    "NO-USEFUL-GAIN": 0.028,
+    "NOT-RESOLVED": 0.267
+   },
+   "x60_equivalent_reported": 0.016,
+   "x60_stop_at_look1": 0.019,
+   "x60_halfwidth_look2_pp": 2.18,
+   "x60_welch_guard_fires": 0.05,
+   "d1_point (the draft)": {
+    "GAIN": 0.785,
+    "NO-DIFF": 0.041,
+    "UNDECIDED": 0.174
+   },
+   "d1_t (REVIEW D's fix)": {
+    "GAIN": 0.659,
+    "NO-DIFF": 0.01,
+    "UNDECIDED": 0.331
+   }
+  },
+  "F alone, 1200 games/final, sigma 1.0 pp, delta +4 pp": {
+   "x60": {
+    "GAIN": 0.91,
+    "NO-USEFUL-GAIN": 0.003,
+    "NOT-RESOLVED": 0.086
+   },
+   "x60_equivalent_reported": 0.001,
+   "x60_stop_at_look1": 0.003,
+   "x60_halfwidth_look2_pp": 2.18,
+   "x60_welch_guard_fires": 0.05,
+   "d1_point (the draft)": {
+    "GAIN": 0.945,
+    "NO-DIFF": 0.007,
+    "UNDECIDED": 0.049
+   },
+   "d1_t (REVIEW D's fix)": {
+    "GAIN": 0.888,
+    "NO-DIFF": 0.001,
+    "UNDECIDED": 0.111
+   }
+  },
+  "F alone, 1200 games/final, sigma 1.5 pp, delta +0 pp": {
+   "x60": {
+    "GAIN": 0.029,
+    "LOSS": 0.03,
+    "NO-USEFUL-GAIN": 0.519,
+    "NOT-RESOLVED": 0.422
+   },
+   "x60_equivalent_reported": 0.15,
+   "x60_stop_at_look1": 0.507,
+   "x60_halfwidth_look2_pp": 2.47,
+   "x60_welch_guard_fires": 0.2,
+   "d1_point (the draft)": {
+    "GAIN": 0.064,
+    "LOSS": 0.042,
+    "NO-DIFF": 0.222,
+    "UNDECIDED": 0.672
+   },
+   "d1_t (REVIEW D's fix)": {
+    "GAIN": 0.027,
+    "LOSS": 0.01,
+    "NO-DIFF": 0.08,
+    "UNDECIDED": 0.883
+   }
+  },
+  "F alone, 1200 games/final, sigma 1.5 pp, delta +2 pp": {
+   "x60": {
+    "GAIN": 0.318,
+    "LOSS": 0.001,
+    "NO-USEFUL-GAIN": 0.138,
+    "NOT-RESOLVED": 0.542
+   },
+   "x60_equivalent_reported": 0.062,
+   "x60_stop_at_look1": 0.119,
+   "x60_halfwidth_look2_pp": 2.47,
+   "x60_welch_guard_fires": 0.202,
+   "d1_point (the draft)": {
+    "GAIN": 0.42,
+    "LOSS": 0.002,
+    "NO-DIFF": 0.113,
+    "UNDECIDED": 0.465
+   },
+   "d1_t (REVIEW D's fix)": {
+    "GAIN": 0.285,
+    "LOSS": 0.0,
+    "NO-DIFF": 0.033,
+    "UNDECIDED": 0.681
+   }
+  },
+  "F alone, 1200 games/final, sigma 1.5 pp, delta +3 pp": {
+   "x60": {
+    "GAIN": 0.573,
+    "LOSS": 0.0,
+    "NO-USEFUL-GAIN": 0.042,
+    "NOT-RESOLVED": 0.385
+   },
+   "x60_equivalent_reported": 0.019,
+   "x60_stop_at_look1": 0.039,
+   "x60_halfwidth_look2_pp": 2.48,
+   "x60_welch_guard_fires": 0.2,
+   "d1_point (the draft)": {
+    "GAIN": 0.674,
+    "LOSS": 0.0,
+    "NO-DIFF": 0.043,
+    "UNDECIDED": 0.282
+   },
+   "d1_t (REVIEW D's fix)": {
+    "GAIN": 0.536,
+    "LOSS": 0.0,
+    "NO-DIFF": 0.01,
+    "UNDECIDED": 0.454
+   }
+  },
+  "F alone, 1200 games/final, sigma 1.5 pp, delta +4 pp": {
+   "x60": {
+    "GAIN": 0.795,
+    "NO-USEFUL-GAIN": 0.008,
+    "NOT-RESOLVED": 0.197
+   },
+   "x60_equivalent_reported": 0.003,
+   "x60_stop_at_look1": 0.009,
+   "x60_halfwidth_look2_pp": 2.47,
+   "x60_welch_guard_fires": 0.199,
+   "d1_point (the draft)": {
+    "GAIN": 0.872,
+    "LOSS": 0.0,
+    "NO-DIFF": 0.01,
+    "UNDECIDED": 0.118
+   },
+   "d1_t (REVIEW D's fix)": {
+    "GAIN": 0.778,
+    "NO-DIFF": 0.001,
+    "UNDECIDED": 0.22
+   }
+  },
+  "F alone, 1200 games/final, sigma 2.0 pp, delta +0 pp": {
+   "x60": {
+    "GAIN": 0.033,
+    "LOSS": 0.04,
+    "NO-USEFUL-GAIN": 0.366,
+    "NOT-RESOLVED": 0.561
+   },
+   "x60_equivalent_reported": 0.077,
+   "x60_stop_at_look1": 0.498,
+   "x60_halfwidth_look2_pp": 2.93,
+   "x60_welch_guard_fires": 0.448,
+   "d1_point (the draft)": {
+    "GAIN": 0.072,
+    "LOSS": 0.051,
+    "NO-DIFF": 0.118,
+    "UNDECIDED": 0.758
+   },
+   "d1_t (REVIEW D's fix)": {
+    "GAIN": 0.033,
+    "LOSS": 0.017,
+    "NO-DIFF": 0.034,
+    "UNDECIDED": 0.916
+   }
+  },
+  "F alone, 1200 games/final, sigma 2.0 pp, delta +2 pp": {
+   "x60": {
+    "GAIN": 0.239,
+    "LOSS": 0.004,
+    "NO-USEFUL-GAIN": 0.125,
+    "NOT-RESOLVED": 0.632
+   },
+   "x60_equivalent_reported": 0.04,
+   "x60_stop_at_look1": 0.163,
+   "x60_halfwidth_look2_pp": 2.93,
+   "x60_welch_guard_fires": 0.45,
+   "d1_point (the draft)": {
+    "GAIN": 0.354,
+    "LOSS": 0.005,
+    "NO-DIFF": 0.068,
+    "UNDECIDED": 0.573
+   },
+   "d1_t (REVIEW D's fix)": {
+    "GAIN": 0.232,
+    "LOSS": 0.001,
+    "NO-DIFF": 0.018,
+    "UNDECIDED": 0.75
+   }
+  },
+  "F alone, 1200 games/final, sigma 2.0 pp, delta +3 pp": {
+   "x60": {
+    "GAIN": 0.432,
+    "LOSS": 0.001,
+    "NO-USEFUL-GAIN": 0.051,
+    "NOT-RESOLVED": 0.516
+   },
+   "x60_equivalent_reported": 0.017,
+   "x60_stop_at_look1": 0.07,
+   "x60_halfwidth_look2_pp": 2.93,
+   "x60_welch_guard_fires": 0.448,
+   "d1_point (the draft)": {
+    "GAIN": 0.571,
+    "LOSS": 0.001,
+    "NO-DIFF": 0.034,
+    "UNDECIDED": 0.394
+   },
+   "d1_t (REVIEW D's fix)": {
+    "GAIN": 0.428,
+    "LOSS": 0.0,
+    "NO-DIFF": 0.007,
+    "UNDECIDED": 0.564
+   }
+  },
+  "F alone, 1200 games/final, sigma 2.0 pp, delta +4 pp": {
+   "x60": {
+    "GAIN": 0.638,
+    "LOSS": 0.0,
+    "NO-USEFUL-GAIN": 0.015,
+    "NOT-RESOLVED": 0.347
+   },
+   "x60_equivalent_reported": 0.005,
+   "x60_stop_at_look1": 0.024,
+   "x60_halfwidth_look2_pp": 2.93,
+   "x60_welch_guard_fires": 0.452,
+   "d1_point (the draft)": {
+    "GAIN": 0.769,
+    "LOSS": 0.0,
+    "NO-DIFF": 0.013,
+    "UNDECIDED": 0.218
+   },
+   "d1_t (REVIEW D's fix)": {
+    "GAIN": 0.647,
+    "NO-DIFF": 0.002,
+    "UNDECIDED": 0.351
+   }
+  },
+  "F alone, 1200 games/final, sigma 3.0 pp, delta +0 pp": {
+   "x60": {
+    "GAIN": 0.028,
+    "LOSS": 0.04,
+    "NO-USEFUL-GAIN": 0.164,
+    "NOT-RESOLVED": 0.768
+   },
+   "x60_equivalent_reported": 0.014,
+   "x60_stop_at_look1": 0.502,
+   "x60_halfwidth_look2_pp": 4.83,
+   "x60_welch_guard_fires": 0.832,
+   "d1_point (the draft)": {
+    "GAIN": 0.078,
+    "LOSS": 0.056,
+    "NO-DIFF": 0.027,
+    "UNDECIDED": 0.84
+   },
+   "d1_t (REVIEW D's fix)": {
+    "GAIN": 0.038,
+    "LOSS": 0.021,
+    "NO-DIFF": 0.005,
+    "UNDECIDED": 0.936
+   }
+  },
+  "F alone, 1200 games/final, sigma 3.0 pp, delta +2 pp": {
+   "x60": {
+    "GAIN": 0.133,
+    "LOSS": 0.01,
+    "NO-USEFUL-GAIN": 0.081,
+    "NOT-RESOLVED": 0.776
+   },
+   "x60_equivalent_reported": 0.012,
+   "x60_stop_at_look1": 0.235,
+   "x60_halfwidth_look2_pp": 4.81,
+   "x60_welch_guard_fires": 0.83,
+   "d1_point (the draft)": {
+    "GAIN": 0.262,
+    "LOSS": 0.013,
+    "NO-DIFF": 0.023,
+    "UNDECIDED": 0.702
+   },
+   "d1_t (REVIEW D's fix)": {
+    "GAIN": 0.161,
+    "LOSS": 0.004,
+    "NO-DIFF": 0.003,
+    "UNDECIDED": 0.831
+   }
+  },
+  "F alone, 1200 games/final, sigma 3.0 pp, delta +3 pp": {
+   "x60": {
+    "GAIN": 0.239,
+    "LOSS": 0.004,
+    "NO-USEFUL-GAIN": 0.042,
+    "NOT-RESOLVED": 0.715
+   },
+   "x60_equivalent_reported": 0.007,
+   "x60_stop_at_look1": 0.137,
+   "x60_halfwidth_look2_pp": 4.82,
+   "x60_welch_guard_fires": 0.831,
+   "d1_point (the draft)": {
+    "GAIN": 0.409,
+    "LOSS": 0.005,
+    "NO-DIFF": 0.014,
+    "UNDECIDED": 0.571
+   },
+   "d1_t (REVIEW D's fix)": {
+    "GAIN": 0.279,
+    "LOSS": 0.001,
+    "NO-DIFF": 0.002,
+    "UNDECIDED": 0.717
+   }
+  },
+  "F alone, 1200 games/final, sigma 3.0 pp, delta +4 pp": {
+   "x60": {
+    "GAIN": 0.377,
+    "LOSS": 0.001,
+    "NO-USEFUL-GAIN": 0.023,
+    "NOT-RESOLVED": 0.599
+   },
+   "x60_equivalent_reported": 0.003,
+   "x60_stop_at_look1": 0.07,
+   "x60_halfwidth_look2_pp": 4.81,
+   "x60_welch_guard_fires": 0.829,
+   "d1_point (the draft)": {
+    "GAIN": 0.568,
+    "LOSS": 0.002,
+    "NO-DIFF": 0.008,
+    "UNDECIDED": 0.422
+   },
+   "d1_t (REVIEW D's fix)": {
+    "GAIN": 0.427,
+    "LOSS": 0.001,
+    "NO-DIFF": 0.001,
+    "UNDECIDED": 0.572
+   }
+  },
+  "F alone, 1600 games/final, sigma 0.0 pp, delta +0 pp": {
+   "x60": {
+    "GAIN": 0.005,
+    "LOSS": 0.006,
+    "NO-USEFUL-GAIN": 0.886,
+    "NOT-RESOLVED": 0.103
+   },
+   "x60_equivalent_reported": 0.554,
+   "x60_stop_at_look1": 0.499,
+   "x60_halfwidth_look2_pp": 1.98,
+   "x60_welch_guard_fires": 0.001
+  },
+  "F alone, 1600 games/final, sigma 0.0 pp, delta +2 pp": {
+   "x60": {
+    "GAIN": 0.498,
+    "NO-USEFUL-GAIN": 0.109,
+    "NOT-RESOLVED": 0.393
+   },
+   "x60_equivalent_reported": 0.099,
+   "x60_stop_at_look1": 0.026,
+   "x60_halfwidth_look2_pp": 1.98,
+   "x60_welch_guard_fires": 0.001
+  },
+  "F alone, 1600 games/final, sigma 0.0 pp, delta +3 pp": {
+   "x60": {
+    "GAIN": 0.893,
+    "NO-USEFUL-GAIN": 0.007,
+    "NOT-RESOLVED": 0.1
+   },
+   "x60_equivalent_reported": 0.007,
+   "x60_stop_at_look1": 0.001,
+   "x60_halfwidth_look2_pp": 1.98,
+   "x60_welch_guard_fires": 0.001
+  },
+  "F alone, 1600 games/final, sigma 0.0 pp, delta +4 pp": {
+   "x60": {
+    "GAIN": 0.993,
+    "NO-USEFUL-GAIN": 0.0,
+    "NOT-RESOLVED": 0.006
+   },
+   "x60_equivalent_reported": 0.0,
+   "x60_stop_at_look1": 0.0,
+   "x60_halfwidth_look2_pp": 1.98,
+   "x60_welch_guard_fires": 0.001
+  },
+  "F alone, 1600 games/final, sigma 0.5 pp, delta +0 pp": {
+   "x60": {
+    "GAIN": 0.009,
+    "LOSS": 0.009,
+    "NO-USEFUL-GAIN": 0.853,
+    "NOT-RESOLVED": 0.129
+   },
+   "x60_equivalent_reported": 0.504,
+   "x60_stop_at_look1": 0.503,
+   "x60_halfwidth_look2_pp": 1.98,
+   "x60_welch_guard_fires": 0.006
+  },
+  "F alone, 1600 games/final, sigma 0.5 pp, delta +2 pp": {
+   "x60": {
+    "GAIN": 0.485,
+    "LOSS": 0.0,
+    "NO-USEFUL-GAIN": 0.122,
+    "NOT-RESOLVED": 0.393
+   },
+   "x60_equivalent_reported": 0.108,
+   "x60_stop_at_look1": 0.035,
+   "x60_halfwidth_look2_pp": 1.98,
+   "x60_welch_guard_fires": 0.005
+  },
+  "F alone, 1600 games/final, sigma 0.5 pp, delta +3 pp": {
+   "x60": {
+    "GAIN": 0.868,
+    "NO-USEFUL-GAIN": 0.011,
+    "NOT-RESOLVED": 0.121
+   },
+   "x60_equivalent_reported": 0.01,
+   "x60_stop_at_look1": 0.003,
+   "x60_halfwidth_look2_pp": 1.98,
+   "x60_welch_guard_fires": 0.005
+  },
+  "F alone, 1600 games/final, sigma 0.5 pp, delta +4 pp": {
+   "x60": {
+    "GAIN": 0.987,
+    "NO-USEFUL-GAIN": 0.0,
+    "NOT-RESOLVED": 0.013
+   },
+   "x60_equivalent_reported": 0.0,
+   "x60_stop_at_look1": 0.0,
+   "x60_halfwidth_look2_pp": 1.98,
+   "x60_welch_guard_fires": 0.005
+  },
+  "F alone, 1600 games/final, sigma 1.0 pp, delta +0 pp": {
+   "x60": {
+    "GAIN": 0.019,
+    "LOSS": 0.02,
+    "NO-USEFUL-GAIN": 0.745,
+    "NOT-RESOLVED": 0.217
+   },
+   "x60_equivalent_reported": 0.385,
+   "x60_stop_at_look1": 0.505,
+   "x60_halfwidth_look2_pp": 1.98,
+   "x60_welch_guard_fires": 0.049
+  },
+  "F alone, 1600 games/final, sigma 1.0 pp, delta +2 pp": {
+   "x60": {
+    "GAIN": 0.443,
+    "LOSS": 0.0,
+    "NO-USEFUL-GAIN": 0.149,
+    "NOT-RESOLVED": 0.408
+   },
+   "x60_equivalent_reported": 0.115,
+   "x60_stop_at_look1": 0.065,
+   "x60_halfwidth_look2_pp": 1.98,
+   "x60_welch_guard_fires": 0.048
+  },
+  "F alone, 1600 games/final, sigma 1.0 pp, delta +3 pp": {
+   "x60": {
+    "GAIN": 0.783,
+    "NO-USEFUL-GAIN": 0.025,
+    "NOT-RESOLVED": 0.192
+   },
+   "x60_equivalent_reported": 0.02,
+   "x60_stop_at_look1": 0.011,
+   "x60_halfwidth_look2_pp": 1.98,
+   "x60_welch_guard_fires": 0.05
+  },
+  "F alone, 1600 games/final, sigma 1.0 pp, delta +4 pp": {
+   "x60": {
+    "GAIN": 0.949,
+    "NO-USEFUL-GAIN": 0.002,
+    "NOT-RESOLVED": 0.05
+   },
+   "x60_equivalent_reported": 0.001,
+   "x60_stop_at_look1": 0.001,
+   "x60_halfwidth_look2_pp": 1.98,
+   "x60_welch_guard_fires": 0.05
+  },
+  "F alone, 1600 games/final, sigma 1.5 pp, delta +0 pp": {
+   "x60": {
+    "GAIN": 0.031,
+    "LOSS": 0.033,
+    "NO-USEFUL-GAIN": 0.557,
+    "NOT-RESOLVED": 0.38
+   },
+   "x60_equivalent_reported": 0.227,
+   "x60_stop_at_look1": 0.502,
+   "x60_halfwidth_look2_pp": 2.32,
+   "x60_welch_guard_fires": 0.235
+  },
+  "F alone, 1600 games/final, sigma 1.5 pp, delta +2 pp": {
+   "x60": {
+    "GAIN": 0.349,
+    "LOSS": 0.001,
+    "NO-USEFUL-GAIN": 0.149,
+    "NOT-RESOLVED": 0.501
+   },
+   "x60_equivalent_reported": 0.093,
+   "x60_stop_at_look1": 0.104,
+   "x60_halfwidth_look2_pp": 2.32,
+   "x60_welch_guard_fires": 0.238
+  },
+  "F alone, 1600 games/final, sigma 1.5 pp, delta +3 pp": {
+   "x60": {
+    "GAIN": 0.621,
+    "LOSS": 0.0,
+    "NO-USEFUL-GAIN": 0.04,
+    "NOT-RESOLVED": 0.339
+   },
+   "x60_equivalent_reported": 0.026,
+   "x60_stop_at_look1": 0.03,
+   "x60_halfwidth_look2_pp": 2.32,
+   "x60_welch_guard_fires": 0.239
+  },
+  "F alone, 1600 games/final, sigma 1.5 pp, delta +4 pp": {
+   "x60": {
+    "GAIN": 0.832,
+    "LOSS": 0.0,
+    "NO-USEFUL-GAIN": 0.008,
+    "NOT-RESOLVED": 0.16
+   },
+   "x60_equivalent_reported": 0.005,
+   "x60_stop_at_look1": 0.007,
+   "x60_halfwidth_look2_pp": 2.32,
+   "x60_welch_guard_fires": 0.238
+  },
+  "F alone, 1600 games/final, sigma 2.0 pp, delta +0 pp": {
+   "x60": {
+    "GAIN": 0.033,
+    "LOSS": 0.04,
+    "NO-USEFUL-GAIN": 0.374,
+    "NOT-RESOLVED": 0.552
+   },
+   "x60_equivalent_reported": 0.114,
+   "x60_stop_at_look1": 0.499,
+   "x60_halfwidth_look2_pp": 3.35,
+   "x60_welch_guard_fires": 0.519
+  },
+  "F alone, 1600 games/final, sigma 2.0 pp, delta +2 pp": {
+   "x60": {
+    "GAIN": 0.247,
+    "LOSS": 0.004,
+    "NO-USEFUL-GAIN": 0.128,
+    "NOT-RESOLVED": 0.621
+   },
+   "x60_equivalent_reported": 0.057,
+   "x60_stop_at_look1": 0.152,
+   "x60_halfwidth_look2_pp": 3.37,
+   "x60_welch_guard_fires": 0.524
+  },
+  "F alone, 1600 games/final, sigma 2.0 pp, delta +3 pp": {
+   "x60": {
+    "GAIN": 0.451,
+    "LOSS": 0.001,
+    "NO-USEFUL-GAIN": 0.049,
+    "NOT-RESOLVED": 0.499
+   },
+   "x60_equivalent_reported": 0.024,
+   "x60_stop_at_look1": 0.059,
+   "x60_halfwidth_look2_pp": 3.35,
+   "x60_welch_guard_fires": 0.52
+  },
+  "F alone, 1600 games/final, sigma 2.0 pp, delta +4 pp": {
+   "x60": {
+    "GAIN": 0.661,
+    "LOSS": 0.0,
+    "NO-USEFUL-GAIN": 0.015,
+    "NOT-RESOLVED": 0.324
+   },
+   "x60_equivalent_reported": 0.007,
+   "x60_stop_at_look1": 0.019,
+   "x60_halfwidth_look2_pp": 3.36,
+   "x60_welch_guard_fires": 0.522
+  },
+  "F alone, 1600 games/final, sigma 3.0 pp, delta +0 pp": {
+   "x60": {
+    "GAIN": 0.026,
+    "LOSS": 0.041,
+    "NO-USEFUL-GAIN": 0.156,
+    "NOT-RESOLVED": 0.777
+   },
+   "x60_equivalent_reported": 0.022,
+   "x60_stop_at_look1": 0.504,
+   "x60_halfwidth_look2_pp": 4.71,
+   "x60_welch_guard_fires": 0.879
+  },
+  "F alone, 1600 games/final, sigma 3.0 pp, delta +2 pp": {
+   "x60": {
+    "GAIN": 0.134,
+    "LOSS": 0.009,
+    "NO-USEFUL-GAIN": 0.075,
+    "NOT-RESOLVED": 0.781
+   },
+   "x60_equivalent_reported": 0.016,
+   "x60_stop_at_look1": 0.227,
+   "x60_halfwidth_look2_pp": 4.72,
+   "x60_welch_guard_fires": 0.88
+  },
+  "F alone, 1600 games/final, sigma 3.0 pp, delta +3 pp": {
+   "x60": {
+    "GAIN": 0.241,
+    "LOSS": 0.004,
+    "NO-USEFUL-GAIN": 0.04,
+    "NOT-RESOLVED": 0.715
+   },
+   "x60_equivalent_reported": 0.009,
+   "x60_stop_at_look1": 0.131,
+   "x60_halfwidth_look2_pp": 4.71,
+   "x60_welch_guard_fires": 0.879
+  },
+  "F alone, 1600 games/final, sigma 3.0 pp, delta +4 pp": {
+   "x60": {
+    "GAIN": 0.385,
+    "LOSS": 0.001,
+    "NO-USEFUL-GAIN": 0.019,
+    "NOT-RESOLVED": 0.594
+   },
+   "x60_equivalent_reported": 0.006,
+   "x60_stop_at_look1": 0.068,
+   "x60_halfwidth_look2_pp": 4.7,
+   "x60_welch_guard_fires": 0.88
+  },
+  "F alone, 2000 games/final, sigma 0.0 pp, delta +0 pp": {
+   "x60": {
+    "GAIN": 0.005,
+    "LOSS": 0.004,
+    "NO-USEFUL-GAIN": 0.939,
+    "NOT-RESOLVED": 0.053
+   },
+   "x60_equivalent_reported": 0.675,
+   "x60_stop_at_look1": 0.502,
+   "x60_halfwidth_look2_pp": 1.86,
+   "x60_welch_guard_fires": 0.001
+  },
+  "F alone, 2000 games/final, sigma 0.0 pp, delta +2 pp": {
+   "x60": {
+    "GAIN": 0.58,
+    "NO-USEFUL-GAIN": 0.113,
+    "NOT-RESOLVED": 0.308
+   },
+   "x60_equivalent_reported": 0.11,
+   "x60_stop_at_look1": 0.014,
+   "x60_halfwidth_look2_pp": 1.86,
+   "x60_welch_guard_fires": 0.0
+  },
+  "F alone, 2000 games/final, sigma 0.0 pp, delta +3 pp": {
+   "x60": {
+    "GAIN": 0.945,
+    "NO-USEFUL-GAIN": 0.004,
+    "NOT-RESOLVED": 0.05
+   },
+   "x60_equivalent_reported": 0.004,
+   "x60_stop_at_look1": 0.0,
+   "x60_halfwidth_look2_pp": 1.86,
+   "x60_welch_guard_fires": 0.001
+  },
+  "F alone, 2000 games/final, sigma 0.0 pp, delta +4 pp": {
+   "x60": {
+    "GAIN": 0.999,
+    "NO-USEFUL-GAIN": 0.0,
+    "NOT-RESOLVED": 0.001
+   },
+   "x60_equivalent_reported": 0.0,
+   "x60_stop_at_look1": 0.0,
+   "x60_halfwidth_look2_pp": 1.86,
+   "x60_welch_guard_fires": 0.001
+  },
+  "F alone, 2000 games/final, sigma 0.5 pp, delta +0 pp": {
+   "x60": {
+    "GAIN": 0.006,
+    "LOSS": 0.008,
+    "NO-USEFUL-GAIN": 0.909,
+    "NOT-RESOLVED": 0.077
+   },
+   "x60_equivalent_reported": 0.62,
+   "x60_stop_at_look1": 0.502,
+   "x60_halfwidth_look2_pp": 1.86,
+   "x60_welch_guard_fires": 0.003
+  },
+  "F alone, 2000 games/final, sigma 0.5 pp, delta +2 pp": {
+   "x60": {
+    "GAIN": 0.551,
+    "LOSS": 0.0,
+    "NO-USEFUL-GAIN": 0.135,
+    "NOT-RESOLVED": 0.314
+   },
+   "x60_equivalent_reported": 0.129,
+   "x60_stop_at_look1": 0.023,
+   "x60_halfwidth_look2_pp": 1.86,
+   "x60_welch_guard_fires": 0.003
+  },
+  "F alone, 2000 games/final, sigma 0.5 pp, delta +3 pp": {
+   "x60": {
+    "GAIN": 0.921,
+    "NO-USEFUL-GAIN": 0.009,
+    "NOT-RESOLVED": 0.071
+   },
+   "x60_equivalent_reported": 0.008,
+   "x60_stop_at_look1": 0.002,
+   "x60_halfwidth_look2_pp": 1.86,
+   "x60_welch_guard_fires": 0.004
+  },
+  "F alone, 2000 games/final, sigma 0.5 pp, delta +4 pp": {
+   "x60": {
+    "GAIN": 0.996,
+    "NO-USEFUL-GAIN": 0.0,
+    "NOT-RESOLVED": 0.004
+   },
+   "x60_equivalent_reported": 0.0,
+   "x60_stop_at_look1": 0.0,
+   "x60_halfwidth_look2_pp": 1.86,
+   "x60_welch_guard_fires": 0.003
+  },
+  "F alone, 2000 games/final, sigma 1.0 pp, delta +0 pp": {
+   "x60": {
+    "GAIN": 0.019,
+    "LOSS": 0.019,
+    "NO-USEFUL-GAIN": 0.795,
+    "NOT-RESOLVED": 0.167
+   },
+   "x60_equivalent_reported": 0.473,
+   "x60_stop_at_look1": 0.5,
+   "x60_halfwidth_look2_pp": 1.86,
+   "x60_welch_guard_fires": 0.051
+  },
+  "F alone, 2000 games/final, sigma 1.0 pp, delta +2 pp": {
+   "x60": {
+    "GAIN": 0.489,
+    "LOSS": 0.0,
+    "NO-USEFUL-GAIN": 0.16,
+    "NOT-RESOLVED": 0.351
+   },
+   "x60_equivalent_reported": 0.138,
+   "x60_stop_at_look1": 0.052,
+   "x60_halfwidth_look2_pp": 1.86,
+   "x60_welch_guard_fires": 0.05
+  },
+  "F alone, 2000 games/final, sigma 1.0 pp, delta +3 pp": {
+   "x60": {
+    "GAIN": 0.83,
+    "LOSS": 0.0,
+    "NO-USEFUL-GAIN": 0.024,
+    "NOT-RESOLVED": 0.147
+   },
+   "x60_equivalent_reported": 0.021,
+   "x60_stop_at_look1": 0.007,
+   "x60_halfwidth_look2_pp": 1.86,
+   "x60_welch_guard_fires": 0.05
+  },
+  "F alone, 2000 games/final, sigma 1.0 pp, delta +4 pp": {
+   "x60": {
+    "GAIN": 0.97,
+    "NO-USEFUL-GAIN": 0.002,
+    "NOT-RESOLVED": 0.028
+   },
+   "x60_equivalent_reported": 0.002,
+   "x60_stop_at_look1": 0.001,
+   "x60_halfwidth_look2_pp": 1.86,
+   "x60_welch_guard_fires": 0.049
+  },
+  "F alone, 2000 games/final, sigma 1.5 pp, delta +0 pp": {
+   "x60": {
+    "GAIN": 0.029,
+    "LOSS": 0.033,
+    "NO-USEFUL-GAIN": 0.581,
+    "NOT-RESOLVED": 0.357
+   },
+   "x60_equivalent_reported": 0.272,
+   "x60_stop_at_look1": 0.5,
+   "x60_halfwidth_look2_pp": 2.23,
+   "x60_welch_guard_fires": 0.269
+  },
+  "F alone, 2000 games/final, sigma 1.5 pp, delta +2 pp": {
+   "x60": {
+    "GAIN": 0.366,
+    "LOSS": 0.001,
+    "NO-USEFUL-GAIN": 0.159,
+    "NOT-RESOLVED": 0.474
+   },
+   "x60_equivalent_reported": 0.112,
+   "x60_stop_at_look1": 0.096,
+   "x60_halfwidth_look2_pp": 2.22,
+   "x60_welch_guard_fires": 0.27
+  },
+  "F alone, 2000 games/final, sigma 1.5 pp, delta +3 pp": {
+   "x60": {
+    "GAIN": 0.651,
+    "LOSS": 0.0,
+    "NO-USEFUL-GAIN": 0.04,
+    "NOT-RESOLVED": 0.309
+   },
+   "x60_equivalent_reported": 0.031,
+   "x60_stop_at_look1": 0.025,
+   "x60_halfwidth_look2_pp": 2.22,
+   "x60_welch_guard_fires": 0.269
+  },
+  "F alone, 2000 games/final, sigma 1.5 pp, delta +4 pp": {
+   "x60": {
+    "GAIN": 0.859,
+    "LOSS": 0.0,
+    "NO-USEFUL-GAIN": 0.006,
+    "NOT-RESOLVED": 0.135
+   },
+   "x60_equivalent_reported": 0.004,
+   "x60_stop_at_look1": 0.004,
+   "x60_halfwidth_look2_pp": 2.22,
+   "x60_welch_guard_fires": 0.265
+  },
+  "F alone, 2000 games/final, sigma 2.0 pp, delta +0 pp": {
+   "x60": {
+    "GAIN": 0.032,
+    "LOSS": 0.043,
+    "NO-USEFUL-GAIN": 0.377,
+    "NOT-RESOLVED": 0.547
+   },
+   "x60_equivalent_reported": 0.128,
+   "x60_stop_at_look1": 0.503,
+   "x60_halfwidth_look2_pp": 3.29,
+   "x60_welch_guard_fires": 0.574
+  },
+  "F alone, 2000 games/final, sigma 2.0 pp, delta +2 pp": {
+   "x60": {
+    "GAIN": 0.251,
+    "LOSS": 0.004,
+    "NO-USEFUL-GAIN": 0.129,
+    "NOT-RESOLVED": 0.617
+   },
+   "x60_equivalent_reported": 0.066,
+   "x60_stop_at_look1": 0.141,
+   "x60_halfwidth_look2_pp": 3.31,
+   "x60_welch_guard_fires": 0.576
+  },
+  "F alone, 2000 games/final, sigma 2.0 pp, delta +3 pp": {
+   "x60": {
+    "GAIN": 0.464,
+    "LOSS": 0.001,
+    "NO-USEFUL-GAIN": 0.047,
+    "NOT-RESOLVED": 0.488
+   },
+   "x60_equivalent_reported": 0.026,
+   "x60_stop_at_look1": 0.056,
+   "x60_halfwidth_look2_pp": 3.31,
+   "x60_welch_guard_fires": 0.578
+  },
+  "F alone, 2000 games/final, sigma 2.0 pp, delta +4 pp": {
+   "x60": {
+    "GAIN": 0.679,
+    "LOSS": 0.0,
+    "NO-USEFUL-GAIN": 0.013,
+    "NOT-RESOLVED": 0.308
+   },
+   "x60_equivalent_reported": 0.007,
+   "x60_stop_at_look1": 0.016,
+   "x60_halfwidth_look2_pp": 3.3,
+   "x60_welch_guard_fires": 0.574
+  },
+  "F alone, 2000 games/final, sigma 3.0 pp, delta +0 pp": {
+   "x60": {
+    "GAIN": 0.026,
+    "LOSS": 0.039,
+    "NO-USEFUL-GAIN": 0.152,
+    "NOT-RESOLVED": 0.783
+   },
+   "x60_equivalent_reported": 0.023,
+   "x60_stop_at_look1": 0.504,
+   "x60_halfwidth_look2_pp": 4.63,
+   "x60_welch_guard_fires": 0.907
+  },
+  "F alone, 2000 games/final, sigma 3.0 pp, delta +2 pp": {
+   "x60": {
+    "GAIN": 0.133,
+    "LOSS": 0.008,
+    "NO-USEFUL-GAIN": 0.07,
+    "NOT-RESOLVED": 0.789
+   },
+   "x60_equivalent_reported": 0.017,
+   "x60_stop_at_look1": 0.224,
+   "x60_halfwidth_look2_pp": 4.64,
+   "x60_welch_guard_fires": 0.906
+  },
+  "F alone, 2000 games/final, sigma 3.0 pp, delta +3 pp": {
+   "x60": {
+    "GAIN": 0.246,
+    "LOSS": 0.003,
+    "NO-USEFUL-GAIN": 0.039,
+    "NOT-RESOLVED": 0.711
+   },
+   "x60_equivalent_reported": 0.011,
+   "x60_stop_at_look1": 0.127,
+   "x60_halfwidth_look2_pp": 4.64,
+   "x60_welch_guard_fires": 0.904
+  },
+  "F alone, 2000 games/final, sigma 3.0 pp, delta +4 pp": {
+   "x60": {
+    "GAIN": 0.396,
+    "LOSS": 0.001,
+    "NO-USEFUL-GAIN": 0.018,
+    "NOT-RESOLVED": 0.584
+   },
+   "x60_equivalent_reported": 0.005,
+   "x60_stop_at_look1": 0.063,
+   "x60_halfwidth_look2_pp": 4.62,
+   "x60_welch_guard_fires": 0.906
+  }
+ },
+ "contrast_teams_minus_d1": {
+  "n_c 600, sigma 0.0 pp, delta +0 pp": {
+   "GAIN": 0.008,
+   "LOSS": 0.007,
+   "NO-DIFF": 0.607,
+   "NOT-RESOLVED": 0.378,
+   "halfwidth_pp": 2.17
+  },
+  "n_c 600, sigma 0.0 pp, delta +2 pp": {
+   "GAIN": 0.405,
+   "NO-DIFF": 0.092,
+   "NOT-RESOLVED": 0.504,
+   "halfwidth_pp": 2.17
+  },
+  "n_c 600, sigma 0.0 pp, delta +3 pp": {
+   "GAIN": 0.801,
+   "NO-DIFF": 0.007,
+   "NOT-RESOLVED": 0.191,
+   "halfwidth_pp": 2.18
+  },
+  "n_c 600, sigma 0.0 pp, delta +4 pp": {
+   "GAIN": 0.973,
+   "NO-DIFF": 0.0,
+   "NOT-RESOLVED": 0.027,
+   "halfwidth_pp": 2.17
+  },
+  "n_c 600, sigma 1.0 pp, delta +0 pp": {
+   "GAIN": 0.02,
+   "LOSS": 0.019,
+   "NO-DIFF": 0.437,
+   "NOT-RESOLVED": 0.524,
+   "halfwidth_pp": 2.17
+  },
+  "n_c 600, sigma 1.0 pp, delta +2 pp": {
+   "GAIN": 0.374,
+   "LOSS": 0.0,
+   "NO-DIFF": 0.106,
+   "NOT-RESOLVED": 0.52,
+   "halfwidth_pp": 2.18
+  },
+  "n_c 600, sigma 1.0 pp, delta +3 pp": {
+   "GAIN": 0.703,
+   "NO-DIFF": 0.018,
+   "NOT-RESOLVED": 0.279,
+   "halfwidth_pp": 2.18
+  },
+  "n_c 600, sigma 1.0 pp, delta +4 pp": {
+   "GAIN": 0.908,
+   "NO-DIFF": 0.001,
+   "NOT-RESOLVED": 0.09,
+   "halfwidth_pp": 2.18
+  },
+  "n_c 600, sigma 1.5 pp, delta +0 pp": {
+   "GAIN": 0.028,
+   "LOSS": 0.029,
+   "NO-DIFF": 0.269,
+   "NOT-RESOLVED": 0.673,
+   "halfwidth_pp": 2.47
+  },
+  "n_c 600, sigma 1.5 pp, delta +2 pp": {
+   "GAIN": 0.315,
+   "LOSS": 0.001,
+   "NO-DIFF": 0.095,
+   "NOT-RESOLVED": 0.589,
+   "halfwidth_pp": 2.47
+  },
+  "n_c 600, sigma 1.5 pp, delta +3 pp": {
+   "GAIN": 0.575,
+   "NO-DIFF": 0.027,
+   "NOT-RESOLVED": 0.399,
+   "halfwidth_pp": 2.47
+  },
+  "n_c 600, sigma 1.5 pp, delta +4 pp": {
+   "GAIN": 0.791,
+   "NO-DIFF": 0.004,
+   "NOT-RESOLVED": 0.205,
+   "halfwidth_pp": 2.47
+  },
+  "n_c 600, sigma 2.0 pp, delta +0 pp": {
+   "GAIN": 0.033,
+   "LOSS": 0.033,
+   "NO-DIFF": 0.132,
+   "NOT-RESOLVED": 0.802,
+   "halfwidth_pp": 2.93
+  },
+  "n_c 600, sigma 2.0 pp, delta +2 pp": {
+   "GAIN": 0.243,
+   "LOSS": 0.002,
+   "NO-DIFF": 0.061,
+   "NOT-RESOLVED": 0.695,
+   "halfwidth_pp": 2.92
+  },
+  "n_c 600, sigma 2.0 pp, delta +3 pp": {
+   "GAIN": 0.431,
+   "LOSS": 0.0,
+   "NO-DIFF": 0.024,
+   "NOT-RESOLVED": 0.545,
+   "halfwidth_pp": 2.93
+  },
+  "n_c 600, sigma 2.0 pp, delta +4 pp": {
+   "GAIN": 0.636,
+   "NO-DIFF": 0.006,
+   "NOT-RESOLVED": 0.358,
+   "halfwidth_pp": 2.93
+  },
+  "n_c 1200, sigma 0.0 pp, delta +0 pp": {
+   "GAIN": 0.003,
+   "LOSS": 0.003,
+   "NO-DIFF": 0.941,
+   "NOT-RESOLVED": 0.053,
+   "halfwidth_pp": 1.77
+  },
+  "n_c 1200, sigma 0.0 pp, delta +2 pp": {
+   "GAIN": 0.634,
+   "NO-DIFF": 0.114,
+   "NOT-RESOLVED": 0.252,
+   "halfwidth_pp": 1.77
+  },
+  "n_c 1200, sigma 0.0 pp, delta +3 pp": {
+   "GAIN": 0.971,
+   "NO-DIFF": 0.003,
+   "NOT-RESOLVED": 0.026,
+   "halfwidth_pp": 1.77
+  },
+  "n_c 1200, sigma 0.0 pp, delta +4 pp": {
+   "GAIN": 1.0,
+   "NO-DIFF": 0.0,
+   "NOT-RESOLVED": 0.0,
+   "halfwidth_pp": 1.77
+  },
+  "n_c 1200, sigma 1.0 pp, delta +0 pp": {
+   "GAIN": 0.02,
+   "LOSS": 0.018,
+   "NO-DIFF": 0.738,
+   "NOT-RESOLVED": 0.225,
+   "halfwidth_pp": 1.77
+  },
+  "n_c 1200, sigma 1.0 pp, delta +2 pp": {
+   "GAIN": 0.528,
+   "NO-DIFF": 0.164,
+   "NOT-RESOLVED": 0.308,
+   "halfwidth_pp": 1.77
+  },
+  "n_c 1200, sigma 1.0 pp, delta +3 pp": {
+   "GAIN": 0.864,
+   "NO-DIFF": 0.019,
+   "NOT-RESOLVED": 0.117,
+   "halfwidth_pp": 1.77
+  },
+  "n_c 1200, sigma 1.0 pp, delta +4 pp": {
+   "GAIN": 0.979,
+   "NO-DIFF": 0.001,
+   "NOT-RESOLVED": 0.02,
+   "halfwidth_pp": 1.77
+  },
+  "n_c 1200, sigma 1.5 pp, delta +0 pp": {
+   "GAIN": 0.031,
+   "LOSS": 0.031,
+   "NO-DIFF": 0.429,
+   "NOT-RESOLVED": 0.509,
+   "halfwidth_pp": 2.15
+  },
+  "n_c 1200, sigma 1.5 pp, delta +2 pp": {
+   "GAIN": 0.382,
+   "LOSS": 0.0,
+   "NO-DIFF": 0.137,
+   "NOT-RESOLVED": 0.48,
+   "halfwidth_pp": 2.15
+  },
+  "n_c 1200, sigma 1.5 pp, delta +3 pp": {
+   "GAIN": 0.67,
+   "LOSS": 0.0,
+   "NO-DIFF": 0.032,
+   "NOT-RESOLVED": 0.299,
+   "halfwidth_pp": 2.15
+  },
+  "n_c 1200, sigma 1.5 pp, delta +4 pp": {
+   "GAIN": 0.871,
+   "NO-DIFF": 0.004,
+   "NOT-RESOLVED": 0.125,
+   "halfwidth_pp": 2.15
+  },
+  "n_c 1200, sigma 2.0 pp, delta +0 pp": {
+   "GAIN": 0.031,
+   "LOSS": 0.033,
+   "NO-DIFF": 0.181,
+   "NOT-RESOLVED": 0.754,
+   "halfwidth_pp": 3.25
+  },
+  "n_c 1200, sigma 2.0 pp, delta +2 pp": {
+   "GAIN": 0.256,
+   "LOSS": 0.001,
+   "NO-DIFF": 0.079,
+   "NOT-RESOLVED": 0.664,
+   "halfwidth_pp": 3.24
+  },
+  "n_c 1200, sigma 2.0 pp, delta +3 pp": {
+   "GAIN": 0.468,
+   "LOSS": 0.0,
+   "NO-DIFF": 0.028,
+   "NOT-RESOLVED": 0.504,
+   "halfwidth_pp": 3.24
+  },
+  "n_c 1200, sigma 2.0 pp, delta +4 pp": {
+   "GAIN": 0.692,
+   "NO-DIFF": 0.007,
+   "NOT-RESOLVED": 0.301,
+   "halfwidth_pp": 3.23
+  }
+ },
+ "placebo_after_gain": {
+  "sigma 0.0 pp, H-BC +2 pp, P-BC +2 pp": {
+   "P(H-BC GAIN)": 0.407,
+   "P(labels matter | GAIN), fresh games": 0.009,
+   "P(labels matter | GAIN), primary games re-used": 0.017
+  },
+  "sigma 0.0 pp, H-BC +3 pp, P-BC +3 pp": {
+   "P(H-BC GAIN)": 0.8,
+   "P(labels matter | GAIN), fresh games": 0.009,
+   "P(labels matter | GAIN), primary games re-used": 0.01
+  },
+  "sigma 0.0 pp, H-BC +4 pp, P-BC +4 pp": {
+   "P(H-BC GAIN)": 0.972,
+   "P(labels matter | GAIN), fresh games": 0.008,
+   "P(labels matter | GAIN), primary games re-used": 0.008
+  },
+  "sigma 0.0 pp, H-BC +4 pp, P-BC +1 pp": {
+   "P(H-BC GAIN)": 0.973,
+   "P(labels matter | GAIN), fresh games": 0.799,
+   "P(labels matter | GAIN), primary games re-used": 0.81
+  },
+  "sigma 0.0 pp, H-BC +5 pp, P-BC +2 pp": {
+   "P(H-BC GAIN)": 0.999,
+   "P(labels matter | GAIN), fresh games": 0.802,
+   "P(labels matter | GAIN), primary games re-used": 0.803
+  },
+  "sigma 1.0 pp, H-BC +2 pp, P-BC +2 pp": {
+   "P(H-BC GAIN)": 0.376,
+   "P(labels matter | GAIN), fresh games": 0.027,
+   "P(labels matter | GAIN), primary games re-used": 0.043
+  },
+  "sigma 1.0 pp, H-BC +3 pp, P-BC +3 pp": {
+   "P(H-BC GAIN)": 0.703,
+   "P(labels matter | GAIN), fresh games": 0.023,
+   "P(labels matter | GAIN), primary games re-used": 0.026
+  },
+  "sigma 1.0 pp, H-BC +4 pp, P-BC +4 pp": {
+   "P(H-BC GAIN)": 0.912,
+   "P(labels matter | GAIN), fresh games": 0.022,
+   "P(labels matter | GAIN), primary games re-used": 0.023
+  },
+  "sigma 1.0 pp, H-BC +4 pp, P-BC +1 pp": {
+   "P(H-BC GAIN)": 0.909,
+   "P(labels matter | GAIN), fresh games": 0.709,
+   "P(labels matter | GAIN), primary games re-used": 0.738
+  },
+  "sigma 1.0 pp, H-BC +5 pp, P-BC +2 pp": {
+   "P(H-BC GAIN)": 0.983,
+   "P(labels matter | GAIN), fresh games": 0.705,
+   "P(labels matter | GAIN), primary games re-used": 0.714
+  },
+  "sigma 1.5 pp, H-BC +2 pp, P-BC +2 pp": {
+   "P(H-BC GAIN)": 0.313,
+   "P(labels matter | GAIN), fresh games": 0.049,
+   "P(labels matter | GAIN), primary games re-used": 0.07
+  },
+  "sigma 1.5 pp, H-BC +3 pp, P-BC +3 pp": {
+   "P(H-BC GAIN)": 0.577,
+   "P(labels matter | GAIN), fresh games": 0.04,
+   "P(labels matter | GAIN), primary games re-used": 0.048
+  },
+  "sigma 1.5 pp, H-BC +4 pp, P-BC +4 pp": {
+   "P(H-BC GAIN)": 0.797,
+   "P(labels matter | GAIN), fresh games": 0.033,
+   "P(labels matter | GAIN), primary games re-used": 0.035
+  },
+  "sigma 1.5 pp, H-BC +4 pp, P-BC +1 pp": {
+   "P(H-BC GAIN)": 0.796,
+   "P(labels matter | GAIN), fresh games": 0.606,
+   "P(labels matter | GAIN), primary games re-used": 0.646
+  },
+  "sigma 1.5 pp, H-BC +5 pp, P-BC +2 pp": {
+   "P(H-BC GAIN)": 0.922,
+   "P(labels matter | GAIN), fresh games": 0.587,
+   "P(labels matter | GAIN), primary games re-used": 0.603
+  }
+ },
+ "inhouse": {
+  "per_final_sd_pp": {
+   "C0": 0.37,
+   "D1": 0.86
+  },
+  "MDE80_pp (both arms at C0's SD)": 0.74,
+  "MDE80_pp (C0's and D1's SD)": 1.44,
+  "MDE80_pp (both arms at D1's SD)": 1.75
+ },
+ "eight_seeds_for_comparison": {
+  "8 seeds, sigma 0.0 pp, delta +0 pp": {
+   "GAIN": 0.008,
+   "LOSS": 0.008,
+   "NO-USEFUL-GAIN": 0.93,
+   "NOT-RESOLVED": 0.054
+  },
+  "8 seeds, sigma 0.0 pp, delta +3 pp": {
+   "GAIN": 0.957,
+   "LOSS": 0.0,
+   "NO-USEFUL-GAIN": 0.013,
+   "NOT-RESOLVED": 0.03
+  },
+  "8 seeds, sigma 1.0 pp, delta +0 pp": {
+   "GAIN": 0.02,
+   "LOSS": 0.019,
+   "NO-USEFUL-GAIN": 0.83,
+   "NOT-RESOLVED": 0.131
+  },
+  "8 seeds, sigma 1.0 pp, delta +3 pp": {
+   "GAIN": 0.891,
+   "NO-USEFUL-GAIN": 0.029,
+   "NOT-RESOLVED": 0.079
+  },
+  "8 seeds, sigma 1.5 pp, delta +0 pp": {
+   "GAIN": 0.028,
+   "LOSS": 0.03,
+   "NO-USEFUL-GAIN": 0.673,
+   "NOT-RESOLVED": 0.269
+  },
+  "8 seeds, sigma 1.5 pp, delta +3 pp": {
+   "GAIN": 0.779,
+   "LOSS": 0.0,
+   "NO-USEFUL-GAIN": 0.043,
+   "NOT-RESOLVED": 0.179
+  },
+  "8 seeds, sigma 2.0 pp, delta +0 pp": {
+   "GAIN": 0.029,
+   "LOSS": 0.041,
+   "NO-USEFUL-GAIN": 0.49,
+   "NOT-RESOLVED": 0.441
+  },
+  "8 seeds, sigma 2.0 pp, delta +3 pp": {
+   "GAIN": 0.618,
+   "LOSS": 0.001,
+   "NO-USEFUL-GAIN": 0.053,
+   "NOT-RESOLVED": 0.328
+  }
+ }
+}

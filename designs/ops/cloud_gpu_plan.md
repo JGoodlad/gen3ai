@@ -76,7 +76,7 @@ production start node `rb_x26_s2601` @280,000,170; C0 = X35's plain-continuation
 | **SPRT**, **LR-F** (production side) | 12.9 per side each (REPLAN §1) | **YES, against C0v** | same frame as D3: the same side's C0 is the control, so C0v serves |
 | LR-F / any arm on the **toy** side | toy fork +70M steps, ≈ 4.2 h at 4,607 fps | **NO** | the toy cycle is CPU-heavy (fps 3.5× production's), so a 5090's speedup there is unmeasured and likely small. The rented host's CPU becomes a second confound. Toy C0 is banked locally |
 | **X59-S**, the matched-student contest | ≈ 2 (`human_data_architecture.md` §7) | **NO** | its rowset derives from the gitignored human replays and the salted-account scheme, so human data would leave the box (§4). 2 GPU-h fits a local gap. REVIEW D's majors are still open |
-| **human-data A/B arms** (X60, H-TEAMS / H-BC) | unregistered | **NO, for now** | the switch is PROPOSED, NOT BUILT; X60 is NOT-READY. Later only as a whole arm plus its own control, and only if the owner rules on human data leaving the box |
+| **human-data A/B arms** (X60, H-TEAMS / H-BC) | unregistered | **NO, for now** | the switch is PROPOSED, NOT BUILT; X60 is REDESIGNED, pending review, and conditional on X59-S. Later only as a whole arm plus its own control, and only if the owner rules on human data leaving the box |
 
 ---
 

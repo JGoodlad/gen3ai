@@ -216,9 +216,9 @@ checks it against `designs/research_state/heldout_panels.json`).
 | **Q-H6 COVERAGE** | Do human teams reach the unfamiliar region? | partly: ≥ 15.9 % of FULL-SIX ≥ 1500 human sides; humans pilot 3-set cores of most H and F teams, so the panel exclusion (≥ 3 move-revealed fits, before the fill) removes ≈ 71 % of ≥ 1500 battles without `forum216b` and 83.2 % of the candidate battles with it (a ≥ 1300 seat, ≥ 11 turns; `hr_spec_v1.r1`'s scan). What it KEEPS is a different population: 64 % forfeits or timer losses (49 % among the excluded), 52 % full-six sides (75 %); it keeps the pool-unfamiliar region better than proportionally (REVIEW D M7) | `hr_spec_v1` |
 | **Q-H7 LEARNABILITY** | Can a model learn human choices? | yes: the HOM beats P\* by ≈ 0.6 nats in every cut, and by 0.503 nats [0.467, 0.542] on accounts it never played on the train dates (0.605 on seen accounts: ≈ 17 % of the gain is account memory); the familiarity proxy is uninformative (fact 4) | `hr_spec_v1` |
 | **Q-H8 DRIFT** | Has the meta / population / rating moved? | slow and small: consecutive months' species mix differs by 0.038–0.049 TVD, most of which two account-disjoint halves of ONE month also show (0.047–0.064); the EXCESS beyond that floor is 0.005–0.011 a month, positive in 19–20 of 20 splits; the distance to the pool and panels is flat (0.19–0.20 to the pool); the mean side rating stays 1,258–1,287; the archive swings 0.09–0.23 (uploaders, not meta) | `hr_spec_v1` |
-| **Q-H11 DOES A LEVER HELP?** | Does a lever raise U vs Kakuna without costing home72? | unmeasured; X60 (fixed per REVIEW B) | — |
+| **Q-H11 DOES A LEVER HELP?** | Does ONE human-data clause added to P\* raise its win rate vs Kakuna on human-built teams it never trained on, without costing home72, and is the gain the human part? | unmeasured. X60 is REDESIGNED, pending review (the plan §6), with both routes written before X59-S is read: X60-B (H-BC vs a P\*-label placebo) if X59-S routes "H-BC first", none if it closes human data, X60-T (H-TEAMS vs D1's forum corpus) otherwise. Primary: F alone vs Kakuna (1,200 games a final, 5 seeds, C0 shared); a gain needs the in-house meter (never trained on human data) to agree; GAIN 0.80 at +3 pp at the measured seed noise | `hr_spec_v1` (rowset r2, or the route's new `hr_spec_v1.r<n>`) |
 | **Q-H12 TOGGLE INTEGRITY** | With every lever off, is the system unchanged? | trivially yes today (nothing is built); the gates of §6 are PROPOSED | — |
-| **Q-H13 CONTAMINATION** | Which meters already carry human data, and what does a lever's gain on them mean? | H is replay-derived; P72 is drawn from the fill's own Smogon tables; F is human-built with human cores near most teams; Kakuna is human-pretrained. No unfamiliar panel is clean; the sealed `forum216b` is the cleanest claim | — |
+| **Q-H13 CONTAMINATION** | Which meters already carry human data, and what does a lever's gain on them mean? | Every panel is TEAM-clean once the ≥ 3-fit exclusion runs; POPULATION is what differs. H is the human levers' own population and construction (ladder sides with usage fills): a gain there alone is "learned the ladder". P72 is fill-adjacent (its generator draws from the Smogon tables C-GAME fills with). F (human-built forum teams) is the cleanest open panel, so X60's primary is F alone. Kakuna is human-pretrained, so a lever's Kakuna gain counts only if the in-house meter against our own reference population agrees. The sealed `forum216b` carries the clean claim at X54 | — |
 | **Q-H14 PROVENANCE** | Given a checkpoint, did any ancestor train on human data, and on which rowset? | today: no run can have (nothing is built); after the build, `main.lineage` (PROPOSED) | — |
 | **Q-H15 TEACHER QUALITY** | How strong is the population we would imitate, against P\* and Kakuna? | upstream's human-only policies all lose to P\* (U 0.63–0.79 for P\*) and are 14–30 pp weaker than Kakuna; imitation is the weakest (LargeIL), offline RL the strongest (LargeRL). Human labels inside our architecture (X59-S's students) are unread | — |
 
@@ -241,13 +241,18 @@ checks it against `designs/research_state/heldout_panels.json`).
 
 1. The first reads of §7.1: FR-1 and FR-3 are playing; X59-S is built and registered and trains under a GPU lease
    after its PREREG's adversarial review; the trace twin runs in parallel (off X59-S's path).
-2. The switch and the consumer-side snapshot check (≈ 1 agent-day), only once a first read routes a lever to a build.
-3. H-TEAMS (with the D1 contrast) or H-BC, per X59-S, read in X60 once X60's four fixes land (it is NOT-READY).
+2. The switch and the consumer-side snapshot check (≈ 1.5 agent-days), only once a first read routes a lever to a
+   build.
+3. H-TEAMS (with the D1 contrast) or H-BC (with the P\*-label placebo), per X59-S, read in X60 (REDESIGNED, pending
+   review; the plan §6).
 4. A live spectator collector on the Rust live reader: read-only spectating needs the owner's word; not designed here.
 5. The (c1) intake, the one full-information human source within reach.
-6. `n1_hrep_v1`, a corpus of Hidden-Power-repaired REPLAY teams for N1's breadth (X61 PREREG §10): its own
-   `--team-mix` toggle, its snapshot id and `"human_data": true` in its manifest, the ≥ 3 move-revealed-fit exclusion
-   before the fill. The procedural `n1_proc_v1` is Smogon aggregates, not this.
+6. `n1_hrep_v1`, a corpus of Hidden-Power-repaired REPLAY teams for N1's breadth (X61 PREREG §10; X53-N1's arm
+   N1H): its own `--team-mix` toggle, its snapshot id and `"human_data": true` in its manifest, the ≥ 3
+   move-revealed-fit exclusion before the fill. It is the corpus H-TEAMS needs too (the plan §6.4), so it is built
+   once, under one rowset id. **OPEN:** one corpus then has two entry points (`--team-mix n1_hrep_v1` and
+   `--human-data teams:<rowset>@<share>`); the switch's build makes them one provenance record (one resolves to the
+   other) before either arm launches. The procedural `n1_proc_v1` is Smogon aggregates, not this.
 
 ---
 
@@ -264,3 +269,4 @@ checks it against `designs/research_state/heldout_panels.json`).
 | 2026-10-25 | **REVIEW E answered (X59-S NOT-READY → Amendment 2)** | before any training: S-S faces the human panel rule (a simulated human reveal, redrawn while near); the Kakuna-family audit runs first and drops flagged accounts above 1.0 % of rows; the quitter's last 10 decisions leave; S-P named "P\*-restricted-to-human-support" with an unrestricted S-P0; floor references, UNINFORMATIVE, NO-DIFFERENCE-AT-4PP, KAKUNA-SPECIFIC; a CUDA pre-flight and an exit-3-only window; a conditional ≥ 1500 follow-up | the review's kept-side reveal profile (it under-excludes); a margin against S-S for the H-BC gate (no margin can be set before data); retraining after the audit | `RESPONSE.md` §E; `REVIEW_E.md`; the PREREG's Amendment 2 |
 | 2026-10-26 | **X59-S inputs rebuilt (Amendment 2b); `hr_spec_v1.r2` registered** | the audit ran first (POWER; drop rule fired on 11 accounts, 1.73 %, none Kakuna-like); r2 = r1 minus the quitter's last 10 decisions and those accounts; S-S regenerated (16.8 % of pool pairs pass the panel rule, as 16.8 % of human battles did); READY to train | waiving the drop after reading that the flagged accounts are not Kakuna-like (a post-hoc deviation from a registered rule) | the PREREG's Amendment 2b; `results/kakuna_audit.json`; `results/registration_a2.json` |
 | 2026-10-26 | **FR-3 READ: OURS-BEATS LargeRL and LargeIL** | Q-H10 answered NO for every human-only model Metamon publishes; human data's value inside our network rests on X59-S | — | `human_only_vs_pstar_2026-10-25/README.md` |
+| 2026-10-26 | **X60 REDESIGNED (pending review); Q-H11 and Q-H13 restated** | Q-H11 names the conditional A/B (X60-B / none / X60-T by X59-S's verdict, F alone, the in-house agreement rule); Q-H13 splits contamination into team (settled by the exclusion) and population (H own, P72 fill-adjacent, F cleanest open); `n1_hrep_v1` and H-TEAMS are one corpus, built once (its two entry points left OPEN, §9 item 6) | two corpora for one population; F + P72 as a human lever's primary | the plan §6; `x60_redesign_2026-10-26/power.py` |
