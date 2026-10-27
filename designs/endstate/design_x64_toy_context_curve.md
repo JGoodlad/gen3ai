@@ -128,7 +128,7 @@ in-pool price.
 
 | corpus | what grows with N | sets across the arms | its arm variable | built? |
 |---|---|---|---|---|
-| **`x62_recomb_v1`** (X62: verbatim pool blocks, ≤ 2 shared with any pool team, pool-matched species profile with Smogon teammate lift) | the number of sixes only | **the pool's 658 sets in every arm** | context count | NO (≈ 1 agent-day; X62 builds it on its own gate) |
+| **`x62_recomb_v1`** (X62: verbatim pool blocks, ≤ 2 shared with any pool team, pool-matched species profile with Smogon teammate lift) | the number of sixes only | **the pool's 658 sets in every arm's pool half; 572 of them in the recombined part** (X62's STRICT Hidden Power rule; FINDING 3) | context count | NO (≈ 1 agent-day; X62 builds it on its own gate) |
 | `n1_proc_v1` (N1-P: 12,000 Smogon-usage teams, tiers K1 ⊂ K3 ⊂ K10 ⊂ ALL) | sixes AND new sets: 72 % of its slots are sets P\* never piloted, 9,372 of 15,655 sets seen once | grows with N | contexts + set novelty + incoherence | yes |
 
 **Chosen: recombined.** The reasons, in order of weight:
@@ -492,8 +492,8 @@ P(FLAT) in brackets.
    - KILLED means the premium is set-level, and a recombined curve has nothing to close.
    - INCONCLUSIVE or VOID ⇒ hold, as X62 does.
    - This is the gate on which X62 builds its corpus, so X64 adds no corpus build of its own.
-2. **`x62_recomb_v1` is built with a K3 prefix tier** and soaked, as X62 §2 specifies. One change is needed: it
-   refuses rc72b's sixes as well as rc72's (FINDING 3).
+2. **`x62_recomb_v1` is built with a K3 prefix tier** and soaked, as X62 §2 specifies.
+   X62's revision already refuses rc72b's sixes and applies the STRICT Hidden Power rule (FINDING 3).
 3. **The K0 gate passes** (§4.6; CPU, ≈ 19–27 lane-h).
 4. **The build:**
    - an arms module modeled on `main.x61.arms`, with three arms, the derivation test and `check --tree`;
@@ -625,9 +625,11 @@ UNINFORMATIVE 0.03, UNDECIDED 0.50. **P(K0 HOLD) ≈ 0.3.**
    recommended 3 / 2 / 3 costs ≈ 50 GPU-h; the budget 2 / 1 / 2 ≈ 32.
 2. **100M is not the toy's plateau.** X34's Tier 1 read GAIN at 210–270M and FLAT only at 280M and 290M (ledger
    2026-10-20). X64 is a matched-budget read (§3.1).
-3. **X62's builder sketch refuses rc72; the H-CTX panel is now rc72b** (Amendment 2, `905c29f5b`). The builder must
-   refuse rc72b's sixes too, or X64's G_ctx line, and X62's M1 line, are read on a panel the corpus may contain.
-   This note is for X62's build unit. X62's doc is not edited here.
+3. **X62's revision (2026-10-27) refuses rc72b at radius 3 and applies the STRICT Hidden Power rule** (Amendment 2,
+   `905c29f5b`; X62 §2.2). STRICT withdraws 86 of the pool's 658 sets and 6 of its 69 species from the recombined
+   corpus. So "N is the only variable" holds only approximately: those sets keep only the pool share's exposure,
+   ≈ 19 % of A-719's in A-3.7k and ≈ 6 % in A-12.7k. home72 holds none of them. The PREREG must report their share
+   of each panel's slots, or the curve may be read on a set-level change that grows with N.
 4. **The toy's throughput at HEAD is unmeasured.** 4,607 steps/s is the toy C0 forks at `4609c155`, and ≈ 4,880 the
    fresh `rb_toy_ent_s4002` at `3899277a`. The bf16 trunk and the FP32_ALT τ solve came later. The first-hour guard
    (§7.1) and the first run's dose record settle it.
@@ -658,3 +660,4 @@ UNINFORMATIVE 0.03, UNDECIDED 0.50. **P(K0 HOLD) ≈ 0.3.**
 | date | decision | chosen | rejected / alternatives | evidence |
 |---|---|---|---|---|
 | 2026-10-27 | **This doc CREATED (DRAFT)** (experiment designer, orchestrator brief; docs only) | X64: three nested toy arms (719 / 3,719 / 12,719 distinct teams), fresh to 100M at one pin, the larger two adding X62's recombined corpus at shares K / (K + 719) on both sides so every team is drawn equally often; 3 / 2 / 3 seeds, ≈ 50 GPU-h; the primary is the log-linear slope of home72 − U against Kakuna, its 90 % interval widened by a 2 pp seed floor; classes SHRINKS (→ -U / -HOME by Δ_U's sign), GROWS, FLAT (bar −2 pp, with A-719's gap detected), UNINFORMATIVE, UNDECIDED; gated on rc72b not KILLED, X62's corpus with a K3 tier, and a CPU K0 gate on the old toys at 100M | the procedural tiers of `n1_proc_v1` (set novelty and the H / P72 meter hazard grow with N); three pure corpora (a different trained panel per arm; the smallest arm is not our system); X62's share 0.5 (a mixture, not N equal contexts); one seed per arm (≈ 19 GPU-h; unreadable); 290M (≈ 145 GPU-h); an endpoint contrast instead of the slope (equal power) | [`../research_state/literature/context_generalisation_2026-10-27.md`](../research_state/literature/context_generalisation_2026-10-27.md) §7 rec 5 (`5d554c23`); [`design_x62_team_recombination.md`](design_x62_team_recombination.md) §2; [`../research_state/measurements/x61_n1_breadth_2026-10-25/REVIEW.md`](../research_state/measurements/x61_n1_breadth_2026-10-25/REVIEW.md); [`design_n4_capacity_screen.md`](design_n4_capacity_screen.md) §3.3; X51 (`3010c81ba`); ledger 2026-10-20 (X34's Tier 1) |
+| 2026-10-27 | **X62's revision propagated** (X62 revision worker, orchestrator brief; docs only) | the corpus X64 borrows refuses rc72b and applies the STRICT Hidden Power rule, which withdraws 86 of the pool's 658 sets from the recombined part; §2's "658 sets in every arm" and FINDING 3 now say so, and the PREREG must report the withdrawn sets' share per panel. Nothing else in this doc changed | — | [`design_x62_team_recombination.md`](design_x62_team_recombination.md) §2.2, FINDING 8 |

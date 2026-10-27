@@ -1,0 +1,14 @@
+pool: 719 teams, 4314 mons, 658 distinct sets, 69 species
+STRICT removes 739 of 4314 pool mons (0.171); drawable sets 572 of 658 (lost 86); species lost ['arcanine', 'blaziken', 'dragonite', 'glalie', 'linoone', 'weezing']
+pool teams holding >= 1 strict-bad block: 471 of 719
+accepted 12000 of 12000 indices in 25 s; refusals {'heldout_fit': 1555, 'pool_species_six': 298, 'train_overlap': 9636, 'within_gt4': 29}
+within-corpus max shared with an EARLIER accepted team: {0: 3, 1: 63, 2: 2307, 3: 8307, 4: 1320}
+max shared with ONE rc72b team: {0: 2, 1: 3415, 2: 8583}
+species TVD corpus vs pool 0.048; set-exposure TVD corpus vs pool occurrences 0.173; distinct sets 572 of 658
+slots carrying Hidden Power: pool 0.443 -> corpus 0.367
+top pool species, share of slots pool -> corpus: tyranitar 0.106->0.090, swampert 0.098->0.080, metagross 0.075->0.072, salamence 0.056->0.055, jirachi 0.055->0.053, zapdos 0.051->0.053, celebi 0.049->0.048, skarmory 0.047->0.048
+exact pool species six in the corpus: 0
+NEAR-DUPLICATES: max sets shared with ONE team of each breadth corpus (histogram; reported, not refused)
+  d3_setmut_v1: {1: 128, 2: 9460, 3: 2410, 4: 2}  (>= 5: 0)
+  n1_proc_v1: {1: 1467, 2: 9568, 3: 956, 4: 9}  (>= 5: 0)
+  w_forum_v1: {1: 277, 2: 8772, 3: 2901, 4: 50}  (>= 5: 0)

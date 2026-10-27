@@ -1,0 +1,26 @@
+A. ADOPT odds over each branch's GUESS (PR rule + AM-5 on F; PRICE r = 1; FLOOR home72 LB > 0.50)
+  SUPPORTED, run branch: d_F +1.5 (-1.5, +4.5), sigma_s 0.0 pp: P(GAIN) 0.558; P(PRICE WITHIN) 0.417; P(EXCEEDED) 0.140; P(FLOOR) 0.994; P(GAIN & WITHIN & FLOOR) 0.305; P(GAIN & not EXCEEDED & FLOOR) 0.519
+  SUPPORTED, run branch: d_F +1.5 (-1.5, +4.5), sigma_s 0.5 pp: P(GAIN) 0.541; P(PRICE WITHIN) 0.418; P(EXCEEDED) 0.136; P(FLOOR) 0.995; P(GAIN & WITHIN & FLOOR) 0.298; P(GAIN & not EXCEEDED & FLOOR) 0.505
+  SUPPORTED, run branch: d_F +1.5 (-1.5, +4.5), sigma_s 1.0 pp: P(GAIN) 0.487; P(PRICE WITHIN) 0.419; P(EXCEEDED) 0.127; P(FLOOR) 0.993; P(GAIN & WITHIN & FLOOR) 0.276; P(GAIN & not EXCEEDED & FLOOR) 0.458
+  UNDECIDED / soft KILLED: d_F +1.0 (-1.5, +3.5), sigma_s 0.0 pp: P(GAIN) 0.474; P(PRICE WITHIN) 0.376; P(EXCEEDED) 0.156; P(FLOOR) 0.995; P(GAIN & WITHIN & FLOOR) 0.240; P(GAIN & not EXCEEDED & FLOOR) 0.434
+  UNDECIDED / soft KILLED: d_F +1.0 (-1.5, +3.5), sigma_s 0.5 pp: P(GAIN) 0.452; P(PRICE WITHIN) 0.377; P(EXCEEDED) 0.150; P(FLOOR) 0.994; P(GAIN & WITHIN & FLOOR) 0.231; P(GAIN & not EXCEEDED & FLOOR) 0.416
+  UNDECIDED / soft KILLED: d_F +1.0 (-1.5, +3.5), sigma_s 1.0 pp: P(GAIN) 0.393; P(PRICE WITHIN) 0.378; P(EXCEEDED) 0.140; P(FLOOR) 0.992; P(GAIN & WITHIN & FLOOR) 0.206; P(GAIN & not EXCEEDED & FLOOR) 0.366
+A2. the exchange rate r (the owner's to change), SUPPORTED run branch, sigma_s 0.5 pp
+  r 0.5: P(GAIN & WITHIN & FLOOR) 0.225; P(GAIN & not EXCEEDED & FLOOR) 0.476
+  r 1.0: P(GAIN & WITHIN & FLOOR) 0.299; P(GAIN & not EXCEEDED & FLOOR) 0.505
+  r 2.0: P(GAIN & WITHIN & FLOOR) 0.400; P(GAIN & not EXCEEDED & FLOOR) 0.529
+  r 3.0: P(GAIN & WITHIN & FLOOR) 0.442; P(GAIN & not EXCEEDED & FLOOR) 0.533
+B. fixed truths, sigma_s 0.5 pp
+  d_F +1.5, d_H +0.75, d_P72 +0.4, d_home72 -1.6: P(GAIN) 0.654; WITHIN 0.342; EXCEEDED 0.050; FLOOR 1.000; ADOPT-CANDIDATE 0.238
+  d_F +1.5, d_H +0.75, d_P72 +0.4, d_home72 -3.0: P(GAIN) 0.652; WITHIN 0.116; EXCEEDED 0.169; FLOOR 1.000; ADOPT-CANDIDATE 0.083
+  null: all 0: P(GAIN) 0.028; WITHIN 0.501; EXCEEDED 0.022; FLOOR 1.000; ADOPT-CANDIDATE 0.017
+C. G0 routing (M4): the registered classes; BUILD = SUPPORTED or UNDECIDED (the revised tree); the R/P-bound option, delta-method
+  rho 0.00: SUPPORTED 0.609, KILLED 0.003, SHELVE if routed by R/P LB >= 0.5 (the review option NOT taken) 0.000, BUILD by the revised tree (SUPPORTED or UNDECIDED) 0.786, INCONCLUSIVE 0.211
+  rho 0.25: SUPPORTED 0.357, KILLED 0.024, SHELVE if routed by R/P LB >= 0.5 (the review option NOT taken) 0.000, BUILD by the revised tree (SUPPORTED or UNDECIDED) 0.766, INCONCLUSIVE 0.210
+  rho 0.40: SUPPORTED 0.209, KILLED 0.070, SHELVE if routed by R/P LB >= 0.5 (the review option NOT taken) 0.002, BUILD by the revised tree (SUPPORTED or UNDECIDED) 0.719, INCONCLUSIVE 0.211
+  rho 0.60: SUPPORTED 0.071, KILLED 0.206, SHELVE if routed by R/P LB >= 0.5 (the review option NOT taken) 0.013, BUILD by the revised tree (SUPPORTED or UNDECIDED) 0.584, INCONCLUSIVE 0.210
+  rho 0.75: SUPPORTED 0.025, KILLED 0.359, SHELVE if routed by R/P LB >= 0.5 (the review option NOT taken) 0.039, BUILD by the revised tree (SUPPORTED or UNDECIDED) 0.431, INCONCLUSIVE 0.211
+  rho 1.00: SUPPORTED 0.002, KILLED 0.615, SHELVE if routed by R/P LB >= 0.5 (the review option NOT taken) 0.162, BUILD by the revised tree (SUPPORTED or UNDECIDED) 0.174, INCONCLUSIVE 0.211
+D. per resource-day (GPU 20.5 h; lane 160-230 games / h)
+  C0 FRESH: 54,800 games, 238-342 lane-h, 10.78-15.12 resource-days; P(GAIN) sigma_s 0 0.558: 0.037-0.052; sigma_s 1 0.487: 0.032-0.045; P(ADOPT-CANDIDATE) sigma_s 0 0.305: 0.020-0.028; sigma_s 1 0.276: 0.018-0.026
+  C0 F BANKED by PR-1': 39,800 games, 173-249 lane-h, 8.06-11.22 resource-days; P(GAIN) sigma_s 0 0.558: 0.050-0.069; sigma_s 1 0.487: 0.043-0.060; P(ADOPT-CANDIDATE) sigma_s 0 0.305: 0.027-0.038; sigma_s 1 0.276: 0.025-0.034

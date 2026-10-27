@@ -144,7 +144,7 @@ read against Kakuna; Stage A reads it on F as the trajectory's origin when the l
 
 | component | teams | what it varies (X62 §1.2, measured) | panel hazard | in X63 |
 |---|---:|---|---|---|
-| `x62_recomb_v1` (X62, NOT BUILT) | 12,000 | **context only**: every set a pool set, ≤ 2 shared with any pool team | none (radius-3 refusal of every panel, rc72 and `forum216b`) | yes, if H-CTX is not KILLED |
+| `x62_recomb_v1` (X62, NOT BUILT) | 12,000 | **context**: every set a pool set (572 of the pool's 658 under X62's STRICT Hidden Power rule), ≤ 2 shared with any pool team | none (radius-3 refusal of every panel, rc72b and `forum216b`) | yes, if H-CTX is not KILLED |
 | `n1_proc_v1` (N1-P) | 12,000 | context **and** sets: 72 % of slots new sets, procedural, incoherent | H and P72 (62 % / 56.5 % of their full sets in the corpus); F 19 % | yes, unless N1-P reads LOSS |
 | `d3_setmut_v1` (D3) | 2,876 | sets inside familiar sixes: 4–5 sets shared with one pool team | none | yes, unless D3 reads LOSS |
 | `w_forum_v1@ABC` (D1) | 1,981 | contexts, mostly familiar sets, human-built | **F is its own population** (D1: F +4.0 vs H +2.1) | **no** |
@@ -410,9 +410,9 @@ with the arm's own pin.
   plasticity LOSS that did not happen; an X63 ADOPT-CANDIDATE is then the one result that re-opens it (to the owner).
   X63's σ̂ (a continuation's seed spread) is not X53's σ (a fresh run's), but it is the nearest measured figure.
 - **X62** (P\*-fork, x62 at 0.5, 20M). X63 needs X62's corpus, not its fork read. X62's fork is the attribution read
-  (is the recombined component itself worth anything at 20M?); X63 is the dose read on the union. X62's own design
-  routes its corpus to "the breadth stack" on N1-P GAIN; X63 is a home for it in every branch where H-CTX is not
-  KILLED. If both run, X62's read goes first on the lane only if its registration says so: the survey ranks X62 first.
+  (is the recombined component itself worth anything at 20M?); X63 is the dose read on the union. X62's revised tree
+  (`d997a146`'s B2) retires its own 20M fork on a PR-1′ KILL but keeps the corpus for X63, and sends the corpus to
+  X63's union on N1-P GAIN or PR-1′ BREADTH-GAIN; X63 is a home for it in every branch where H-CTX is not KILLED. If both run, X62's read goes first on the lane only if its registration says so: the survey ranks X62 first.
 - **PR-1 and the strategy's tree.**
   - Lane contention is the real interaction: PR-1 165–238 lane-h, X62's read 126–181, X63's Stage A 66–95, all on one
     lane. Unless a rented CPU box is approved (the owner question PR-1 already carries), they run in series: weeks.
@@ -497,7 +497,9 @@ with the arm's own pin.
    are unchanged, and `EXPERIMENT_BACKLOG.md` has no X63 row.
 2. **X62's corpus is not built.** The X62 review's prototype draw
    ([`x62_review_2026-10-27.md`](reviews/x62_review_2026-10-27.md)) fits 12,000 sixes under the ≤ 4 cap, so U3's
-   12,000 holds; the review's M1 (refuse rc72b, not rc72) must be applied to the builder first.
+   12,000 holds. X62's revision applied the review's M1, and the union inherits it: rc72b refused at radius 3, the
+   STRICT Hidden Power rule (86 of the pool's 658 sets and 6 species leave the recombined third; its set TVD from the
+   pool is 0.17), and near-duplicates against D1, D3 and N1-P reported (none ≥ 5 in the prototype).
 3. **The false GAIN exceeds 0.05 at σ ≥ 1.5 pp** (0.057 / 0.069 at 1.5 / 2.0). No read has measured a +100M
    continuation's seed spread; C0's 20M φ̂ (0.6–0.77) was read at 420–1,200 games a seed.
 4. **D3's sixes are near-pool** (4–5 shared sets), so U3's pool-like share is ≈ 0.29, above the survey's ≤ 0.2 in
@@ -508,9 +510,8 @@ with the arm's own pin.
 7. **The hybrid play pin (§6.1 b) is UNVERIFIED.** AM-D3-L2 restored `src/utils/bridge/` to `f4b25238`'s bytes; H22's
    peer pack added files there. Whether E1's game paths and the post-H22 peer can share a play path is a build check.
 8. **rc72b's distance to the union is not yet guaranteed.** rc72b's own build refused overlap with D1, D3 and N1-P
-   (the X62 review's m8), but X62's draw as written refuses rc72, not rc72b: without the fix 491 of 12,000 prototype
-   teams sit at ≥ 3 shared sets with an rc72b team (review M1). rc72b is REPORTED only once the built union is
-   measured at ≤ 2 against it.
+   (the X62 review's m8), and X62's revised draw refuses rc72b at radius 3 (its review's M1; without it 491 of 12,000
+   prototype teams sat at ≥ 3). rc72b is REPORTED only once the built union is measured at ≤ 2 against it.
 9. **Whether the startup guard's panel set includes the SEALED `forum216b` is UNVERIFIED** here; `w_forum_v1` and
    X62 exclude it by construction, `n1_proc_v1` and `d3_setmut_v1` by their builds' panel lists (not re-checked).
 10. **The S cost per model (≈ 1.5 heavy-slot-h) is an ESTIMATE**, and X26c's banked S2 imports only on E1.
@@ -529,3 +530,4 @@ with the arm's own pin.
 | date | decision | chosen | rejected / alternatives | evidence |
 |---|---|---|---|---|
 | 2026-10-27 | **This doc CREATED (DRAFT)** (X63 designer, orchestrator brief; docs and a CPU Monte Carlo) | X63-U: X26@380M + 100M at X26c's pin with `--team-mix x63_union_v1@ALL:0.8 --team-mix-sides both`, the union of x62 + n1 + d3 drawn uniformly over teams; X26c as the matched Stage-A control (valid from its own start, one seed, re-played); a 1 v 1 screen, a 2 v 2 read with a 1 pp seed allowance, a 3 v 3 Stage C on a near miss; F against Kakuna at one engine and the post-H22 regime; home72 as goal (a)'s floor and S as a registered price; gated on H-CTX, N1-P look 1 and D3 look 2, not on PR-1 | a P\*-start arm (X26c is no control for it at any dose; a new control per seed); X26's 280→380M segment as the control (cross-pin, not a fork); the forum teams in the union (F would lose its clean status); a multi-corpus `--team-mix` or component weights (a build that buys nothing here); a 1 v 1 verdict; a harm bar at 0 on home72 | the survey (`5d554c23`) §0, §6.2, §7; X26c README and dose records; the strategy doc (`7574743d`) §2, §3; X62 §1.2, §2; X53 §2; the team curriculum doc; `reads.md` §4; `power_x63.log` |
+| 2026-10-27 | **X62's revision propagated** (X62 revision worker, orchestrator brief; docs only) | the recombined third inherits X62's revised builder: rc72b refused at radius 3, the STRICT Hidden Power rule (86 of 658 pool sets and 6 species withdrawn), near-duplicates reported; §9's X62 bullet follows X62's new tree (a PR-1′ KILL retires X62's 20M fork, not the corpus); FINDINGS 2 and 8 updated. Nothing else in this doc changed | — | [`design_x62_team_recombination.md`](design_x62_team_recombination.md) §2.2, §6, §10 |
