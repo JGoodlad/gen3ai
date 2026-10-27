@@ -146,7 +146,7 @@ exactly like one that found nothing.
 
 | Gate | Checks | Opt-out |
 |---|---|---|
-| `src/agents/model/mypy_gate_test.py` | `python -m mypy`, scope from `mypy.ini`'s `files =` (`src/agents/model`, `src/agents/observation`) | `GEN3AI_SKIP_MYPY_GATE=1` |
+| `src/agents/model/mypy_gate_test.py` | `python -m mypy`, scope from `mypy.ini`'s `files =` (`src/agents/model`, `src/agents/observation`, `src/main/reads`) | `GEN3AI_SKIP_MYPY_GATE=1` |
 | `src/ruff_gate_test.py` | pyflakes over `src/agents`, `src/main`, `src/utils`: `--select F,E9`, wrongness only, never style | `GEN3AI_SKIP_RUFF_GATE=1` |
 | `src/file_size_gate_test.py` | a file over 2,000 lines fails; 1,000-2,000 is reported. The allowlist is empty: decompose instead | `GEN3AI_SKIP_SIZE_GATE=1` |
 | `src/claude_md_freshness_gate_test.py` | every repo-relative path, `--flag` and `python -m` module a `CLAUDE.md`, `designs/ARCHITECTURE.md`, `designs/endstate/*.md`, a `designs/ops/` SOP, `docs/*.md` or an owned `README.md` names still resolves (a deliberately historical one is listed in `designs/deleted_flags.md`; a path git ignores, i.e. a build output such as `src/rust_env/target/...`, is unverifiable by design and skipped); every `<file> § <section>` pointer in any doc or code comment lands on a section (`python -m utils.section_refs`); every instruction file (`CLAUDE.md`, `.claude/commands/`, and, where present, `MEMORY.md` and `~/.claude/agents/`) stays within its byte-budget ratchet (`designs/ops/instruction_docs_budget.json`) | `GEN3AI_SKIP_CLAUDE_MD_GATE=1`; the machine-local files only: `GEN3AI_SKIP_USER_DOC_BUDGET=1` |

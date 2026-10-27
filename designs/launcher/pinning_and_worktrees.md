@@ -33,9 +33,9 @@
 
   | state | verdict |
   |---|---|
-  | owner file present, pid alive (`os.kill(pid, 0)`) **and** its starttime matches | **KEEP** — a live run |
+  | owner file present, pid alive (read from `/proc` via `utils.procfs`, never `kill`) **and** its starttime matches | **KEEP** — a live run |
   | owner alive but starttime unrecorded / `/proc` unreadable | **KEEP** — cannot verify reuse |
-  | owner pid gone, or alive with a DIFFERENT starttime (pid reuse) | remove |
+  | owner pid gone (or an exited, unreaped zombie), or alive with a DIFFERENT starttime (pid reuse) | remove |
   | no owner file (pre-fix worktree), mtime < 24 h | **KEEP** — may be a live pre-fix run |
   | no owner file, mtime > 24 h (`_LEGACY_ORPHAN_MAX_AGE_S`) | remove — abandoned |
   | the directory no longer exists | remove — the case git's own prune handles |

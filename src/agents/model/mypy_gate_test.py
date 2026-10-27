@@ -8,8 +8,8 @@ way the project has already watched other invariants rot: silently, while everyt
 So the obligation lives here, beside the code it constrains, and it goes red in the same 4-minute
 gate everything else does.
 
-**Scope is `src/agents/model` + `src/agents/observation` + the one module `src/utils/disk_guard.py`, and
-the rest of the tree is deliberately out.** `mypy.ini` names them under one `files =` at one strictness tier, with
+**Scope is `src/agents/model` + `src/agents/observation` + `src/main/reads` (the instrument of every read) + the one
+module `src/utils/disk_guard.py`, and the rest of the tree is deliberately out.** `mypy.ini` names them under one `files =` at one strictness tier, with
 `follow_imports = silent` so mypy READS the remainder for types without reporting its errors. That
 lets the checked packages be held to `disallow_untyped_defs`-grade strictness without first
 annotating `training/` and `battle/`.
@@ -58,7 +58,7 @@ _REPO_ROOT = str(repo_root())
 # Every package `mypy.ini` is expected to hold at the zero-error bar. Adding one here without
 # adding it to `mypy.ini` fails the scope assertion below — which is the point: the two must
 # move together, or the gate starts reporting on a scope nobody chose.
-_CHECKED_PACKAGES = ("src/agents/model", "src/agents/observation", "src/utils/disk_guard.py")
+_CHECKED_PACKAGES = ("src/agents/model", "src/agents/observation", "src/main/reads", "src/utils/disk_guard.py")
 
 
 @pytest.mark.skipif(os.environ.get("GEN3AI_SKIP_MYPY_GATE") == "1",

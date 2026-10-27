@@ -298,6 +298,7 @@ PYTEST_PREFIX = "gen3ai_pytest_compile_"
 #: `~/.cache/gen3ai/tmp`, the REAL disk, never tmpfs `/tmp` (RAM + a 1,048,576-inode cap that ran out
 #: on 2026-09-30; a compile cache is thousands of files and up to 1.5 GB on torch 2.8). ONE helper,
 #: shared with the root conftest's pytest temp root. A run's own cache is already on disk.
+from utils import procfs  # noqa: E402
 from utils.scratch import SCRATCH_ENV as ENV_SCRATCH  # noqa: E402,F401  (re-exported)
 from utils.scratch import ScratchOnRamError, fs_type  # noqa: E402,F401  (fs_type: re-exported)
 
@@ -311,14 +312,10 @@ def scratch_root() -> str:
         raise CompileCacheError(str(exc)) from exc
 
 
-def _pid_alive(pid: int) -> bool:
-    try:
-        os.kill(pid, 0)
-    except ProcessLookupError:
-        return False
-    except PermissionError:
-        return True
-    return True
+# Is ``pid`` a RUNNING process? Read from ``/proc`` (``utils.procfs``), never ``kill(pid, 0)``: inside a sandboxed shell
+# ``kill`` read a live process as dead (acf2193f), it reads an exited-but-unreaped zombie as alive, and it answers
+# EPERM for a process we may not signal where ``/proc`` simply lists it.
+_pid_alive = procfs.pid_alive
 
 
 def sweep_stale_temp_caches(tmpdir: Optional[str] = None) -> List[str]:

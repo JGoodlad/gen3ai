@@ -19,7 +19,7 @@ from typing import Callable, Optional
 from main.exit_codes import TrainExitCode
 from main.launcher.checkpoint import run_dir_for_checkpoint
 from main.train.fork_lr import is_same_run_checkpoint
-from utils import showdown_deps, worktree_guard
+from utils import procfs, showdown_deps, worktree_guard
 from utils.git import get_git_hash, get_main_repo_root, get_repo_root
 
 _WORKTREE_PREFIX = "launcher-"
@@ -309,21 +309,19 @@ def _owner_is_alive(owner: dict) -> bool:
     pid = owner.get("pid")
     if not isinstance(pid, int) or pid <= 0:
         return False
-    try:
-        os.kill(pid, 0)
-    except ProcessLookupError:
-        return False
-    except PermissionError:
-        return True          # alive, just owned by another user
-    except OSError:
-        return True          # cannot tell - keep it
+    # Liveness is read from /proc, never ``kill(pid, 0)``: inside a sandboxed shell ``kill`` read a live process as dead
+    # (acf2193f), it reads an exited-but-unreaped zombie as alive, and it answers EPERM for a process we may not signal
+    # where /proc simply lists it (so the reuse check below now reaches that pid too).
+    st = procfs.read_stat(pid)
+    if st is None:
+        # not in /proc: gone - unless /proc cannot be read here at all (not even our own entry): cannot tell, keep it
+        return procfs.read_stat(os.getpid()) is None
+    if st.state in ("Z", "X"):
+        return False         # exited, not yet reaped: the owner is gone (its worktree is no longer in use by it)
     recorded = owner.get("proc_starttime")
     if recorded is None:
         return True          # written without a starttime - cannot check reuse, keep it
-    actual = _proc_starttime(pid)
-    if actual is None:
-        return True          # /proc unreadable - cannot check reuse, keep it
-    return str(actual) == str(recorded)
+    return str(st.starttime) == str(recorded)
 
 
 def _classify_worktree(path: str) -> "tuple[str, str]":

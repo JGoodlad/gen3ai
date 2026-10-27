@@ -90,6 +90,6 @@ The live `MODEL_CONFIG_VERSION`, `ARCH_SIGNATURE` and `OBS_SEMANTICS_VERSION` ar
 
 ## mypy
 
-`src/agents/model` and `src/agents/observation` share `mypy.ini` at zero errors (`mypy_gate_test.py`). Never loosen
-`mypy.ini` to clear an error, since that de-tiers both packages; use a targeted `# type: ignore[code]` with a
+`src/agents/model`, `src/agents/observation` and `src/main/reads` share `mypy.ini` at zero errors (`mypy_gate_test.py`).
+Never loosen `mypy.ini` to clear an error, since that de-tiers them all; use a targeted `# type: ignore[code]` with a
 reason. Detail: `designs/model/typing.md`.

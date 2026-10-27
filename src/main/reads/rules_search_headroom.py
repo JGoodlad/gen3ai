@@ -87,12 +87,14 @@ def check(p: Mapping[str, Any], *, models: Any, anchor: Any, s: Any) -> List[str
     from main.reads.spec import SpecError, search_twins
 
     probs = _check_keys(p, KEYS, KEYS + OPTIONAL)
-    g = anchor.get(p.get("group"))
+    group: Any = p.get("group")
+    g = anchor.get(group)
     if g is None:
         return probs + [f"group {p.get('group')!r} is not an anchor group"]
     if not g.per_game:
         probs.append(f"group {g.name!r} is not per_game (a deal is one game of each arm)")
-    srch, raw = p.get("searched"), p.get("raw")
+    srch: Any = p.get("searched")
+    raw: Any = p.get("raw")
     if srch == raw or set(g.models) != {srch, raw}:
         probs.append(f"group {g.name!r} must play exactly the searched label and its raw twin, plays {list(g.models)}")
     else:
@@ -132,7 +134,7 @@ def check(p: Mapping[str, Any], *, models: Any, anchor: Any, s: Any) -> List[str
             and not isinstance(bs.get("B"), bool) and bs["B"] >= 1000 and isinstance(bs.get("seed"), int)
             and not isinstance(bs.get("seed"), bool)):
         probs.append("bootstrap: {B: int >= 1000, seed: int}")
-    eps = p.get("rule8_eps")
+    eps: Any = p.get("rule8_eps")
     if not (_num(eps) and 0 <= eps < 0.01):
         probs.append("rule8_eps: a number in [0, 0.01) (a bound this close to a bar is never a crossing)")
     if "engine" in p and not (isinstance(p["engine"], str) and p["engine"]):
@@ -360,7 +362,8 @@ def _search_report(doc: Mapping[str, Any]) -> Dict[str, Any]:
 
     raw = {deal(u) for u in doc["units"] if u["label"] == doc["raw"] and u["counted"]}
     sets = {doc["home_panel"]: "home", **{ts: "U" for ts in doc["u_panels"]}}
-    acc = {k: {"searched": 0, "deviations": 0, "search_cpu_s": 0.0, "games": 0} for k in ("home", "U")}
+    acc: Dict[str, Dict[str, Any]] = {k: {"searched": 0, "deviations": 0, "search_cpu_s": 0.0, "games": 0}
+                                      for k in ("home", "U")}
     for u in doc["units"]:
         sp = u.get("search_played") or {}
         if u["label"] != doc["searched"] or not u["counted"] or deal(u) not in raw:

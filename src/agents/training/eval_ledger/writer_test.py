@@ -17,6 +17,7 @@ from agents.training.eval_ledger import schema as S
 from agents.training.eval_ledger import store as ST
 from agents.training.eval_ledger import testkit as K
 from agents.training.eval_ledger import writer as W
+from utils import liveness_fakes as LF
 
 HOST = "testhost"
 
@@ -329,3 +330,22 @@ def test_close_stale_gzips_only_a_dead_idle_writers_shard_on_this_host(env):
     rep = ST.close_stale(root, now=now + 10 ** 6, alive=alive, host=HOST)
     assert rep.closed == [str(w_dead.rows_path)] and any("alive" in s for s in rep.skipped)
     assert ST.close_stale(root, now=now + 10 ** 6, alive=alive, host="elsewhere").closed == []
+
+
+def test_the_default_liveness_is_read_from_proc_not_from_kill(env, monkeypatch):
+    """`store.pid_alive` (the default of `close_stale` and of every writer) reads ``/proc``: a zombie writer is DEAD
+    (``kill`` says alive), a live one is ALIVE however ``kill`` answers (the sandbox says ESRCH). Each cell fails on a
+    revert to ``os.kill``."""
+    LF.assert_pid_liveness(ST.pid_alive, monkeypatch)
+    root, clock, alive = env
+    with LF.zombie() as z:
+        w_zombie, w_live = writer(root, clock, alive, z), writer(root, clock, alive, os.getpid())
+        req = opened(w_zombie)
+        w_zombie.append_row(row_for(w_zombie, req), claim(w_zombie, req))
+        w_live.append_row(row_for(w_live, req, batch=1), claim(w_live, req, batch=1))
+        later = os.path.getmtime(w_zombie.rows_path) + 10 ** 6
+        with monkeypatch.context() as m:
+            LF.rig_kill(m, "esrch")                               # the sandbox: a LIVE pid reads as gone to kill
+            rep = ST.close_stale(root, now=later, host=HOST)      # the DEFAULT oracle
+    assert rep.closed == [str(w_zombie.rows_path)], rep
+    assert any(str(w_live.rows_path) in s and "alive" in s for s in rep.skipped), rep

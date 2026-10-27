@@ -691,7 +691,10 @@ def await_free_slot(cmd: Sequence[str] = (), *, force: bool = False, timeout_s: 
 
 
 def _alive(pid: int) -> bool:
-    return os.path.exists(f"/proc/{pid}")
+    """Is ``pid`` a RUNNING process? ``procfs.pid_alive``: an exited-but-unreaped zombie is NOT alive (a bare
+    ``/proc/<pid>`` existence test read it as alive, so a zombie waiter's ticket kept its place in the queue and its
+    record kept showing as a waiter)."""
+    return procfs.pid_alive(pid)
 
 
 def collect(d: Optional[Path] = None, n: Optional[int] = None, *, now: Optional[float] = None) -> dict:

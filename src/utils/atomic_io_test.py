@@ -22,6 +22,7 @@ import zipfile
 import pytest
 
 from utils import atomic_io
+from utils import liveness_fakes as LF
 from utils.atomic_io import (
     AtomicWriteError, atomic_save_model, atomic_write, atomic_write_bytes, atomic_write_json, atomic_write_text,
     is_temp_name, model_zip_path, sweep_stale_temps, temp_path,
@@ -170,20 +171,17 @@ def test_sweep_stale_temps_reports_what_it_removed_and_survives_a_missing_direct
     assert sweep_stale_temps(tmp_path / "missing") == []
 
 
-def test_the_pid_probe_deletes_only_on_proof_of_death(monkeypatch):
-    assert atomic_io._pid_alive(os.getpid()) is True              # a real, live process
-
-    def raising(exc):
-        def kill(pid, sig):
-            raise exc
-        return kill
-
-    monkeypatch.setattr(os, "kill", raising(ProcessLookupError()))
-    assert atomic_io._pid_alive(123) is False                      # ESRCH: no such process
-    monkeypatch.setattr(os, "kill", raising(PermissionError()))
-    assert atomic_io._pid_alive(123) is True                       # EPERM: someone else's, alive
-    monkeypatch.setattr(os, "kill", raising(OSError(5, "io")))
-    assert atomic_io._pid_alive(123) is True                       # any other doubt: keep the file
+def test_the_pid_probe_reads_proc_not_kill_so_a_sweep_deletes_only_on_proof_of_death(tmp_path, monkeypatch):
+    """A zombie owner's temp is debris (``kill`` says alive); a live owner's temp is never swept even when ``kill``
+    says ESRCH (the sandbox, acf2193f) or EPERM. Each cell fails on a revert to ``os.kill``."""
+    LF.assert_pid_liveness(atomic_io._pid_alive, monkeypatch)
+    mine = _stray(tmp_path, "checkpoint_200_steps.zip", os.getpid())             # a live writer mid-save
+    with LF.zombie() as z:
+        dead = _stray(tmp_path, "checkpoint_100_steps.zip", z)
+        with monkeypatch.context() as m:
+            LF.rig_kill(m, "esrch")
+            assert sweep_stale_temps(tmp_path) == [dead]
+    assert os.listdir(tmp_path) == [mine]
 
 
 def test_temp_names_are_hidden_unique_and_in_the_final_names_directory(tmp_path):

@@ -86,6 +86,7 @@ def game_report(cell: Path) -> Optional[Dict[str, Any]]:
     asked = [r for r in late if r.get("n_legal", 0) >= 2]
     cpu = sum(float(r.get("cpu_s") or 0.0) for r in searched + excluded)
     peer = ((summary.get("provenance") or {}).get("peer_report") or {})
+    whole_cpu_s = unit_cpu(cell.parent.parent, cell.name)
     return {"cell": str(cell), "search": sorted(x for x in search if x), "decisions": len(recs),
             "from_turn": from_turn, "from_turn_decisions": len(late), "asked": len(asked),
             "ge2_legal_share": round(len(asked) / len(late), 4) if late else None,
@@ -95,8 +96,7 @@ def game_report(cell: Path) -> Optional[Dict[str, Any]]:
             else None,
             "search_cpu_min": round(cpu / 60.0, 3), "game_wall_min": (round(float(peer["wall_s"]) / 60.0, 3)
                                                                       if peer.get("wall_s") is not None else None),
-            "unit_cpu_min": (None if unit_cpu(cell.parent.parent, cell.name) is None
-                             else round(unit_cpu(cell.parent.parent, cell.name) / 60.0, 3)),
+            "unit_cpu_min": None if whole_cpu_s is None else round(whole_cpu_s / 60.0, 3),
             "turns": [g.get("turns") for g in _games(cell)], "status": summary.get("status"),
             "decision_cpu_s": [float(r["cpu_s"]) for r in searched if r.get("cpu_s") is not None],
             "decision_wall_s": [float(r["wall_s"]) for r in searched if r.get("wall_s") is not None]}

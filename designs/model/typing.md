@@ -5,7 +5,8 @@ the same ALWAYS-CURRENT obligation as that leaf — update it in the same pass a
 [`../ARCHITECTURE.md`](../ARCHITECTURE.md) is the doc of record for what the model IS; where the
 two disagree, ARCHITECTURE.md wins.
 
-**Config: `mypy.ini` at the repo root**, deliberately SCOPED to this package, `src/agents/observation/` and
+**Config: `mypy.ini` at the repo root**, deliberately SCOPED to this package, `src/agents/observation/`,
+`src/main/reads/` (the instrument of every read; joined 2026-10-27 after 27 errors were zeroed) and
 the one module `src/utils/disk_guard.py` (checked at the same tier; its `is_disk_full` once typed its cursor
 as `BaseException` and assigned `__cause__ or __context__`, an Optional). Everything else in
 the tree is read for types via `follow_imports = silent` but its errors are not reported, so this

@@ -128,9 +128,11 @@ def live_supervisors(state: "str | os.PathLike[str]", *, lane: Optional[str] = N
         if not any(m in raw for m in _SUPERVISOR_MODULES):
             continue
         got = parse_argv([t for t in raw.split("\0") if t != ""])
-        if got is None or got[1] is None:
+        if got is None:
             continue
         _verb, st, ln = got
+        if st is None:
+            continue
         if lane is not None and ln != lane:
             continue
         cwd = procfs.readlink(pid, "cwd", proc) or None

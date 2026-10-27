@@ -22,6 +22,7 @@ import time
 import pytest
 
 import main.launcher.worktree as wt
+from utils import liveness_fakes as LF
 
 
 # ---------------------------------------------------------------------------------------
@@ -140,6 +141,46 @@ def test_b_an_unverifiable_owner_is_KEPT(repo, monkeypatch):
         assert os.path.isdir(path), "an unverifiable but LIVE pid must not lose its worktree"
     finally:
         cleanup()
+
+
+def test_b_a_zombie_owners_worktree_is_removed(repo, monkeypatch):
+    """An owner that has EXITED but is not yet reaped is gone (``kill(pid, 0)`` says alive, and the recorded start ticks
+    still match): the worktree is collected. Fails on a revert to ``os.kill``."""
+    path, cleanup = _make_worktree(repo, monkeypatch)
+    try:
+        with LF.zombie() as z:
+            with open(wt._owner_path(path), "w") as f:
+                json.dump({"pid": z, "proc_starttime": wt._proc_starttime(z)}, f)
+            wt._prune_stale_launcher_worktrees(repo, report=lambda _l: None)
+        assert not os.path.isdir(path), "a zombie owner's worktree must be collected"
+    finally:
+        cleanup()
+
+
+def test_b_the_owner_check_reads_proc_not_kill(monkeypatch):
+    """Liveness is read from /proc (``utils.procfs``), whatever ``kill(pid, 0)`` says (the sandbox says ESRCH for a live
+    pid, acf2193f; ``EPERM`` for one we may not signal); the start-ticks reuse guard still runs. Each cell fails on a
+    revert to ``os.kill``."""
+    LF.assert_pid_liveness(lambda pid: wt._owner_is_alive({"pid": pid}), monkeypatch)
+    me = os.getpid()
+    ticks = wt._proc_starttime(me)
+    assert ticks == str(wt.procfs.read_stat(me).starttime), "the recorded and the compared start ticks are one number"
+    for mode in LF.KILL_MODES:
+        with monkeypatch.context() as m:
+            LF.rig_kill(m, mode)
+            assert wt._owner_is_alive({"pid": me, "proc_starttime": ticks}) is True, mode
+            # a pid /proc lists and kill refuses ('eperm'), or accepts, but whose start ticks differ: a DIFFERENT process
+            assert wt._owner_is_alive({"pid": me, "proc_starttime": "0"}) is False, mode
+            with LF.zombie() as z:
+                assert wt._owner_is_alive({"pid": z, "proc_starttime": wt._proc_starttime(z)}) is False, mode
+
+
+def test_b_an_unreadable_proc_keeps_the_worktree(monkeypatch):
+    """No /proc at all (not even our own entry) ⇒ cannot tell ⇒ KEEP (the 2026-09-05 rule: every ambiguity keeps it)."""
+    gone = LF.reaped_pid()
+    assert wt._owner_is_alive({"pid": gone, "proc_starttime": "1"}) is False, "precondition: /proc says gone"
+    monkeypatch.setattr(wt.procfs, "read_stat", lambda *a, **k: None)
+    assert wt._owner_is_alive({"pid": gone, "proc_starttime": "1"}) is True
 
 
 # ---------------------------------------------------------------------------------------

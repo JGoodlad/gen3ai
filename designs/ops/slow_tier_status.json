@@ -579,26 +579,26 @@
   },
   "src/agents/model/compile_cache_shared_test.py::test_T2s_startup_parity_gate_runs_every_slot_x_bucket_on_a_hit": {
    "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:41:46Z",
-   "duration_s": 3.93,
-   "contention": 1.51,
+   "commit": "e28318c82cd9c224e5177c06fe9863914592cdb6",
+   "at": "2026-10-27T15:10:15Z",
+   "duration_s": 22.53,
+   "contention": 4.31,
    "detail": ""
   },
   "src/agents/model/compile_cache_shared_test.py::test_two_real_processes_share_one_compile": {
    "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:41:46Z",
-   "duration_s": 18.83,
-   "contention": 1.46,
+   "commit": "e28318c82cd9c224e5177c06fe9863914592cdb6",
+   "at": "2026-10-27T15:10:15Z",
+   "duration_s": 47.65,
+   "contention": 2.72,
    "detail": ""
   },
   "src/agents/model/compile_cache_test.py::test_a_real_compile_lands_in_the_run_cache": {
    "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:41:46Z",
-   "duration_s": 9.49,
-   "contention": 1.45,
+   "commit": "e28318c82cd9c224e5177c06fe9863914592cdb6",
+   "at": "2026-10-27T15:10:15Z",
+   "duration_s": 26.18,
+   "contention": 3.85,
    "detail": ""
   },
   "src/agents/model/compile_canary_test.py::test_TWO_CONSECUTIVE_unconfirmed_disagreements_are_FATAL": {
@@ -5029,5 +5029,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-27T14:56:12Z"
+ "last_written": "2026-10-27T15:10:15Z"
 }

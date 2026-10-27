@@ -603,7 +603,7 @@ def status(state: Path) -> Dict[str, Any]:
     for g, a in spec.anchor.items():
         for lab in a.models:
             st = LY.anchor_state(state, g, lab)
-            if lab in imported(a):
+            if a.imports is not None and lab in imported(a):        # imported(a) is empty unless imports is set
                 out["anchor"].setdefault(g, {})[lab] = f"imported from {a.imports.state} ({a.imports.group})"
                 continue
             if not (st / "plan.json").exists():
@@ -615,6 +615,7 @@ def status(state: Path) -> Dict[str, Any]:
     for g, x in spec.s.items():
         for lab in x.models:
             out["s"].setdefault(g, {})[lab] = (
-                f"imported from {x.imports.state} ({x.imports.group})" if lab in imported(x)
+                f"imported from {x.imports.state} ({x.imports.group})"
+                if x.imports is not None and lab in imported(x)
                 else s_pairs(state, spec, g, lab, models[lab]["sha256"]) if lab in models else "waiting")
     return out

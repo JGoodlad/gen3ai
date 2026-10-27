@@ -622,7 +622,7 @@ rots. Both carry `static` (the budget tier above — they run even in the fast i
 
 | Gate | Runs | Scope | Measured |
 |---|---|---|---|
-| `src/agents/model/mypy_gate_test.py` | `python -m mypy` (**no path argument** — the scope comes from `mypy.ini`) | `src/agents/model` **+ `src/agents/observation`**, per `mypy.ini`'s `files =` | **0.28 s warm**, 19.6 s cold (32.6 s on a loaded box, 2026-10-02) |
+| `src/agents/model/mypy_gate_test.py` | `python -m mypy` (**no path argument** — the scope comes from `mypy.ini`) | `src/agents/model` **+ `src/agents/observation` + `src/main/reads`**, per `mypy.ini`'s `files =` | **0.28 s warm**, 19.6 s cold (32.6 s on a loaded box, 2026-10-02) |
 | `src/ruff_gate_test.py` | `ruff check src/agents src/main src/utils --select F,E9 --exclude src/rust_sim` | `agents/` + `main/` + `utils/` | **0.10 s** |
 
 **A fresh checkout's mypy caches are SEEDED, not built cold** (`src/utils/mypy_cache_seed.py`,
@@ -637,7 +637,7 @@ cores beside a live run (nice 19, `-n 2`): the static tier from empty caches **2
 Never SHARE one cache dir: mypy rewrites entries with its checkout's paths and two checkouts thrash.
 
 They are complementary, not overlapping: mypy is deep over a **declared short list** of packages
-(`mypy.ini` sets `files = src/agents/model, src/agents/observation` with `follow_imports = silent`,
+(`mypy.ini` sets `files = src/agents/model, src/agents/observation, src/main/reads, src/utils/disk_guard.py` with `follow_imports = silent`,
 so the rest of the tree is read for types but not reported), while ruff is shallow over everything.
 **Widening is a `mypy.ini` edit and the test follows it** — the gate invokes bare `python -m mypy`
 with no path argument precisely so the config is the only scope declaration, and its

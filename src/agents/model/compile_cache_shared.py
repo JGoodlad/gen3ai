@@ -83,6 +83,8 @@ import tempfile
 import time
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
+from utils import procfs
+
 SCHEMA = "gen3_shared_compile_cache_v1"
 #: Opt-out: `0` / `off` / `false` / `no` turns sharing off (K3's per-run cache for every run). Unset,
 #: `1` / `on` / `true` / `yes` = ON. Any other value is treated as OFF, with the notice saying so.
@@ -362,14 +364,10 @@ def plan(stamp: Dict[str, Any], run: Optional[Dict[str, Any]], *, root: Optional
 
 
 # --------------------------------------------------------------------------- entries + leases
-def _pid_alive(pid: int) -> bool:
-    try:
-        os.kill(pid, 0)
-    except ProcessLookupError:
-        return False
-    except PermissionError:
-        return True
-    return True
+# Is ``pid`` a RUNNING process? Read from ``/proc`` (``utils.procfs``), never ``kill(pid, 0)``: inside a sandboxed shell
+# ``kill`` read a live process as dead (acf2193f), it reads an exited-but-unreaped zombie as alive, and it answers
+# EPERM for a process we may not signal where ``/proc`` simply lists it.
+_pid_alive = procfs.pid_alive
 
 
 def _write_atomic(path: str, text: str) -> None:

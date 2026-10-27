@@ -37,6 +37,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple
 
 from agents.training.eval_ledger import schema as S
+from utils import procfs
 
 LEDGER_DIRNAME = "_ledger"
 ROWS, REQUESTS, DECISIONS, REFERENCES = "rows", "requests", "decisions", "references"
@@ -175,14 +176,10 @@ def this_host() -> str:
 
 
 def pid_alive(pid: int) -> bool:
-    """Is ``pid`` a live process on THIS host (signal 0; a process we may not signal is alive)."""
-    try:
-        os.kill(int(pid), 0)
-    except ProcessLookupError:
-        return False
-    except PermissionError:
-        return True
-    return True
+    """Is ``pid`` a RUNNING process on THIS host? Read from ``/proc`` (``utils.procfs``), never ``kill(pid, 0)``: inside a
+    sandboxed shell ``kill`` read a live writer as dead (acf2193f), it reads an exited-but-unreaped zombie as alive, and
+    it answers EPERM for a process we may not signal where ``/proc`` simply lists it."""
+    return procfs.pid_alive(int(pid))
 
 
 # ------------------------------------------------------------------------------------------------ the lock

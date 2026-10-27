@@ -1,9 +1,10 @@
 # Ops and read tooling: one copy per concept (2026-10-26)
 
-**Status:** stage 0 (the safe refactors) LANDED with this doc; stages 1-4 are STAGED, each with the condition that
-lets it start. Owner grant: maintain the active tooling, converge where it helps, deep interfaces, aligned with the
-end state. Keep this doc current as stages land (it is in an always-current tree); delete a stage's section once it
-lands and its row in §1 says CONVERGED.
+**Status:** stage 0 (the safe refactors) LANDED with this doc; stage 1's pid-liveness part LANDED 2026-10-27 (its
+other items are still staged); stages 2-4 are STAGED, each with the condition that lets it start. Owner grant:
+maintain the active tooling, converge where it helps, deep interfaces, aligned with the end state. Keep this doc
+current as stages land (it is in an always-current tree); delete a stage's section once it lands and its row in §1
+says CONVERGED.
 
 In three days five tool families grew side by side: `src/main/x35/` (kit, kakuna, batch, readout, d1, ge),
 `src/main/reads/` (the one read module, `reads.md`), `src/main/ops/arm_chain/` (the chain supervisor),
@@ -25,7 +26,7 @@ literal where an interpreter boundary forces one) is left.
 | a port CLAIM (flock held for a unit's life) | `kakuna.claim_port` only; the standalone anchors `pick_port` and the team-strength lane bind-and-release with NO claim | `utils.ports.claim` | stage 2: every server-starting tool claims |
 | non-blocking exclusive flock on an open file | `kakuna.claim_port` / `cmd_run` (`supervisor.lock`), `reads.runner._lock`, `reads.supervisors.acquire`; fd-level `heavy_slots._try`, `gate_lock._try`; `arm_chain.chain.run`, `arm_chain.ship._lock` | `utils.filelock.try_exclusive` | CONVERGED for kakuna and reads; the fd-level and arm_chain copies are stage 1 / 2 |
 | ONE supervisor per state path | `reads.supervisors.Hold` (path lock outside the state + `/proc` scan + dir identity), used by `main.reads run` and `kakuna run`; the legacy in-state locks (`<state>/supervisor.lock`, `<state>/<lane>.lock`); `arm_chain.chain` (a flock on its state file) | `main.reads.supervisors` | kakuna and reads already share it (N1-P); the in-state locks are deleted in stage 2; arm_chain keeps its own until stage 3 |
-| pid liveness | `procfs.pid_alive` (one `/proc/<pid>/stat` read; Z / X = gone); `_common.sh` `pid_alive`; `launch_x35.sh` (a verbatim copy of `_common.sh`'s); `heavy_slots._alive` (`os.path.exists`: a zombie reads ALIVE); `kill -0`: `atomic_io._pid_alive`, `eval_ledger.store.pid_alive`, `compile_cache._pid_alive`, `compile_cache_shared._pid_alive`, `launcher.worktree` | `utils.procfs.pid_alive`; the shell twin `_common.sh` | stage 1 (each switch changes the zombie or sandbox answer, so none is a pure refactor) |
+| pid liveness | `procfs.pid_alive` (one `/proc/<pid>/stat` read; Z / X = gone); the remaining copies: `_common.sh` `pid_alive` and `launch_x35.sh` (a verbatim copy of `_common.sh`'s), and `agents.training.learner_benchmark` (`os.path.exists("/proc/<pid>")`: a zombie reads ALIVE, so its exit wait runs to the deadline) | `utils.procfs.pid_alive`; the shell twin `_common.sh` | CONVERGED for the Python sites (2026-10-27: `atomic_io`, `eval_ledger.store`, both `compile_cache*`, `launcher.worktree`, `heavy_slots._alive` read `/proc`; `utils.liveness_fakes.assert_pid_liveness` is the one contract each site's test runs: a zombie is gone, a live pid is alive when `kill` says ESRCH or EPERM). Left: the shell twins (stage 1) and the benchmark's wait |
 | process IDENTITY (pid + start ticks) | `arm_chain.procwatch.ProcRef` / `ref_of` / `alive` / `signal_if`; `procfs.Proc.key`; `gpu_lease` (`start_ticks`); `launcher.gpu_window.protocol.process_identity`; `launcher.worktree._proc_starttime` (its own `/proc` parse); `_common.sh` / `launch_x35.sh` `pid_start` | `ProcRef` and its three functions, promoted into `utils.procfs` | stage 3 (arm_chain is the owner; move after its cut-over settles) |
 | live training runs | `procfs.live_training_runs` (by trainer argv; `kit.live_runs` delegates); `arm_chain.live` (by launcher argv + trainer descendants, reports the unresolved) | `arm_chain.live`'s rule, promoted to `utils.procfs` | stage 3 |
 | sha256 of a file | `kakuna._sha`, `reads.models.sha256_file`, `x35.gc._file_sha`, `x35.refpop.sha256_file`, `x35.batch.sha256_of`, `arm_chain.canary._sha256`, `peer_scripts/weight_pins.sha256_file`, and ~15 outside the tool layer (`agents.training`: weights_link, lineage, baselines, cycle_ledger, untaught_meter, policy_drift; `main`: h2h.play, belief_roles, probe_battery, policy_spectrum, human_data, x50_r1, hidden_info_study) | `utils.hashing.sha256_file` | CONVERGED for kakuna, `reads.models`, gc; refpop / batch / canary in stage 1; `weight_pins` stays (Metamon's interpreter); the rest is stage 4 |
@@ -93,10 +94,7 @@ chain item is mid-flight: the chain runs main's `kit` / `batch` from the main ch
 
 1. **After the arm_chain cut-over has run one item cleanly.** `refpop.sha256_file`, `batch.sha256_of`,
    `canary._sha256` onto `utils.hashing`. `launch_x35.sh` sources `_common.sh` and moves to `scripts/ops/`
-   (`arm_chain.launch` and its tests name the path). `heavy_slots._alive` onto `procfs.pid_alive`: this CHANGES
-   the answer for a zombie holder, so it ships as a fix with a regression test. The `kill -0` liveness copies onto
-   `procfs.pid_alive` (`atomic_io`, `eval_ledger.store`, `compile_cache*`, `launcher.worktree`): a fix for the
-   sandbox false-dead (acf2193f), one test each. The fd-level `_try` in `heavy_slots` / `gate_lock` onto
+   (`arm_chain.launch` and its tests name the path). (The Python pid-liveness copies landed 2026-10-27; §1.) The fd-level `_try` in `heavy_slots` / `gate_lock` onto
    `utils.filelock` (an fd form). Split `src/main/x35/batch.py` and its test.
 2. **When no read pinned before `de15dfc7` is live.** Delete the in-state supervisor locks and `kakuna run`'s queue
    (the anchor lane is `main.reads`). Every server-starting tool takes a `utils.ports.claim` in ONE shared lock

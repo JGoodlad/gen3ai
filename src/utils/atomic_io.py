@@ -25,6 +25,8 @@ import re
 import secrets
 from typing import Any, Callable, List
 
+from utils import procfs
+
 #: ``.<final name>.<pid>.<token>.tmp`` (see the module docstring).
 _TEMP_RE = re.compile(r"^\..+\.(?P<pid>\d+)\.[0-9a-f]{8}\.tmp$")
 
@@ -44,15 +46,11 @@ def is_temp_name(name: str) -> bool:
     return _TEMP_RE.match(os.path.basename(name)) is not None
 
 
-def _pid_alive(pid: int) -> bool:
-    """Is ``pid`` a process? A permission error or an unknown error counts as ALIVE (never delete on doubt)."""
-    try:
-        os.kill(pid, 0)
-    except ProcessLookupError:
-        return False
-    except OSError:
-        return True
-    return True
+#: Is ``pid`` a RUNNING process? Read from ``/proc`` (``utils.procfs``), never ``kill(pid, 0)``: inside a sandboxed shell
+#: ``kill`` read a live process as dead (acf2193f), it reads an exited-but-unreaped zombie as alive, and it answers
+#: EPERM for a process we may not signal where ``/proc`` simply lists it. A zombie's temp is debris (its writer has
+#: exited); a process that ``/proc`` lists is never swept, whoever owns it.
+_pid_alive = procfs.pid_alive
 
 
 def sweep_stale_temps(directory: "str | os.PathLike[str]") -> List[str]:

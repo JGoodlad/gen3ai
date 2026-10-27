@@ -58,7 +58,7 @@ import json
 import math
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple
+from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Set, Tuple
 
 from main.anchors.results import Z95, newcombe, wilson
 from main.reads import engine as EN
@@ -631,7 +631,8 @@ def _at_decide(doc: Mapping[str, Any], p: Mapping[str, Any]) -> Dict[str, Any]:
     goal = clears(k[on]["wilson95"][0], float(p["goal_bar"]))[0]
     climbing = clears(k["delta"]["lo"], 0.0)[0]
     dec: Dict[str, Any] = {"goal_met": goal, "trajectory": "CLIMBING" if climbing else "FLAT"}
-    s1, base = doc.get("s1"), p.get("s_baseline")
+    s1: Any = doc.get("s1")
+    base: Any = p.get("s_baseline")
     if p.get("s1") is not None:
         if s1 is not None and s1.get("se_pp") is not None:
             d = s1["s_pp"] - base["s_pp"]
@@ -805,7 +806,7 @@ def _pm_inputs(cells: Mapping[str, Any], p: Mapping[str, Any], spec: Any) -> Dic
     return doc
 
 
-def _pm_paired(arm: Mapping[str, Any], bank: Mapping[str, Mapping[str, Any]], panels: Sequence[str]
+def _pm_paired(arm: Mapping[str, Any], bank: Mapping[str, Mapping[Any, Any]], panels: Sequence[str]
                ) -> Optional[Dict[str, Any]]:
     """The unit-paired Δ (arm − banked λ = 0) over ``panels``, equal weight (:func:`paired_unit_diff`)."""
     per: Dict[Tuple[str, str, int], float] = {}
@@ -860,7 +861,7 @@ def _pm_decide(doc: Mapping[str, Any], p: Mapping[str, Any]) -> Dict[str, Any]:
             planned = int(a["units_planned"][ts])
             if n < float(p["min_unit_frac"]) * planned - RULE8_EPS:
                 reasons.append(f"{name} {ts}: {n} / {planned} units counted (< {float(p['min_unit_frac']):.0%})")
-        cells = {}
+        cells: Dict[str, Dict[str, Any]] = {}
         for ts in unf + [fam]:
             w = sum(int(u["wins"]) for u in a["units"] if u["counted"] and u["panel"] == ts)
             n = sum(int(u["n"]) for u in a["units"] if u["counted"] and u["panel"] == ts)
@@ -887,8 +888,8 @@ def _pm_decide(doc: Mapping[str, Any], p: Mapping[str, Any]) -> Dict[str, Any]:
         harmed = dh is not None and (ch == "LOSS" or clears(dh["d"], -margin, above=False)[0])
         verdict = (PM_HELPS if cu == "GAIN" and not harmed else PM_HELPS_COST if cu == "GAIN"
                    else PM_HURTS if cu == "LOSS" else PM_ND)
-        a: Dict[str, Any] = {"lambda": r["lambda"], "u_class": cu, "home_class": ch, "home_harmed": harmed,
-                             "verdict": verdict, "d0f": None}
+        arm_dec: Dict[str, Any] = {"lambda": r["lambda"], "u_class": cu, "home_class": ch, "home_harmed": harmed,
+                                   "verdict": verdict, "d0f": None}
         if float(r["lambda"]) == 1.0 and du is not None and dh is not None:
             # D0f (prior only): the DiD (U − home72) and H3's kill rule (design_diversity_teams_opponents §3.3)
             d = du["d"] - dh["d"]
@@ -896,8 +897,9 @@ def _pm_decide(doc: Mapping[str, Any], p: Mapping[str, Any]) -> Dict[str, Any]:
             held_d = r["cells"][held]["paired"]
             killed = (clears(d + Z95 * se, float(p["did_ub_pp"]) / 100.0, above=False)[0]
                       and held_d is not None and not clears(held_d["lo"], 0.0)[0])
-            a["d0f"] = {"did": d, "lo": d - Z95 * se, "hi": d + Z95 * se, "heldout": held_d, "h3_killed": killed}
-        dec["arms"][name] = a
+            arm_dec["d0f"] = {"did": d, "lo": d - Z95 * se, "hi": d + Z95 * se, "heldout": held_d,
+                              "h3_killed": killed}
+        dec["arms"][name] = arm_dec
     order = [p["primary"]] + sorted(n for n in dec["arms"] if n != p["primary"])
     dec["verdict"] = " | ".join(
         f"lambda={dec['arms'][n]['lambda']:g}: {dec['arms'][n]['verdict']}"
@@ -934,7 +936,7 @@ def _sb_check(p: Mapping[str, Any], *, models: Any, anchor: Any, s: Any) -> List
             and isinstance(b.get("cells"), dict)):
         probs.append("banked: {path, sha256, cells: {teamset: read_cell}}")
     else:
-        need = set(p.get("unfamiliar") or []) | {p.get("familiar")}
+        need: Set[Any] = set(p.get("unfamiliar") or []) | {p.get("familiar")}
         if not need <= set(b["cells"]):
             probs.append(f"banked.cells lacks {sorted(need - set(b['cells']))}")
         if g.get("group") in anchor and not set(anchor[g["group"]].teamsets) <= set(b["cells"]):

@@ -127,9 +127,10 @@ def _weights_identity(cell: Mapping[str, Any]) -> Dict[str, Any]:
     (a pre-pin read) or stamps the legacy weights, so every banked id is unchanged and a re-read of the same weights
     is comparable to it."""
     out: Dict[str, Any] = {}
-    sides = (("their", cell.get("opponent_agent"), cell.get("hf_revision"), cell.get("weights_sha256")),
-             ("our", str(cell.get("our_side") or "").partition("metamon:")[2], cell.get("our_hf_revision"),
-              cell.get("our_weights_sha256")))
+    sides: Tuple[Tuple[str, Any, Any, Any], ...] = (
+        ("their", cell.get("opponent_agent"), cell.get("hf_revision"), cell.get("weights_sha256")),
+        ("our", str(cell.get("our_side") or "").partition("metamon:")[2], cell.get("our_hf_revision"),
+         cell.get("our_weights_sha256")))
     for prefix, agent, revision, digest in sides:
         if not (revision and digest):
             continue
@@ -276,7 +277,8 @@ def _search_played(summary: Mapping[str, Any]) -> Dict[str, Any]:
     peer = (summary.get("provenance") or {}).get("peer_report") or {}
     if "search" not in peer and "our_search" not in peer:
         return {}
-    rec = peer.get("search") if isinstance(peer.get("search"), dict) else {}
+    found = peer.get("search")
+    rec: Dict[str, Any] = found if isinstance(found, dict) else {}
     return {"search_played": dict({k: rec.get(k) for k in SEARCH_PLAYED_KEYS}, our_search=peer.get("our_search"))}
 
 
@@ -527,28 +529,29 @@ def assemble(spec: Any, state: Path) -> Dict[str, Any]:
     for g, x in spec.s.items():
         mem = members_of(spec_path(x.refpop), want_content=x.refpop_content_sha256)
         have = {lab: shas[lab] for lab in x.models if lab in shas and lab not in imported(x)}
-        grp = None
+        sgrp: Optional[Dict[str, Any]] = None
         if have or x.imports is None:
-            grp = s_group(LY.s_ledger(state, g), x.family, {lab: x.request(lab) for lab in have}, have, mem,
-                          panel=x.panel, want_regime=x.regime_id, refpop_content_sha256=x.refpop_content_sha256,
-                          min_pairs=x.pairs)
+            sgrp = s_group(LY.s_ledger(state, g), x.family, {lab: x.request(lab) for lab in have}, have, mem,
+                           panel=x.panel, want_regime=x.regime_id, refpop_content_sha256=x.refpop_content_sha256,
+                           min_pairs=x.pairs)
         if x.imports is not None:
             ig, meta = IM.s_group(spec, g, shas, mem, this_state=state)
-            if grp is None:
-                grp = dict(ig)                                # every node imported: the earlier ledger's read
+            if sgrp is None:
+                sgrp = dict(ig)                               # every node imported: the earlier ledger's read
             else:
-                grp["nodes"] = dict(grp["nodes"], **ig["nodes"])
-                grp["inconclusive"] = list(grp["inconclusive"]) + [f"imported: {w}" for w in ig["inconclusive"]]
-                if grp.get("rows"):                           # this ledger played too: one engine for both
-                    IM.check_engine(f"s.{g} import", grp.get("engine"), ig.get("engine"))
-                if ig.get("regime_id") != grp.get("regime_id"):
-                    grp["inconclusive"].append(f"imported regime {ig.get('regime_id')} is not this ledger's "
-                                               f"{grp.get('regime_id')}")
-            grp["imports"] = meta
+                sgrp["nodes"] = dict(sgrp["nodes"], **ig["nodes"])
+                sgrp["inconclusive"] = list(sgrp["inconclusive"]) + [f"imported: {w}" for w in ig["inconclusive"]]
+                if sgrp.get("rows"):                          # this ledger played too: one engine for both
+                    IM.check_engine(f"s.{g} import", sgrp.get("engine"), ig.get("engine"))
+                if ig.get("regime_id") != sgrp.get("regime_id"):
+                    sgrp["inconclusive"].append(f"imported regime {ig.get('regime_id')} is not this ledger's "
+                                                f"{sgrp.get('regime_id')}")
+            sgrp["imports"] = meta
+        assert sgrp is not None       # `have or no imports` computed it; otherwise the imports branch set it
         missing = [lab for lab in x.models if lab not in shas]
         if missing:
-            grp["inconclusive"] = list(grp["inconclusive"]) + [f"model(s) {missing} not resolved"]
-        out["s"][g] = grp
+            sgrp["inconclusive"] = list(sgrp["inconclusive"]) + [f"model(s) {missing} not resolved"]
+        out["s"][g] = sgrp
     return out
 
 
