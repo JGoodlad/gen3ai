@@ -29249,3 +29249,40 @@ interval (4.0 pp paired vs 4.0 unpaired).
 
 **Evidence:** `research_state/measurements/belief_prior_mix_2026-10-26/` (README, `read_l100/`); raw units in
 `~/gen3ai_archive/belief_prior_mix_2026-10-26/l100/`. See `UNDERSTANDING.md` §3.1 and the diversity design's D0f row.
+
+### 2026-10-26 · MEASUREMENT · **PILOTING-GAP FORENSICS (descriptive, banked games): P\*'s unfamiliar-team losses against Kakuna come from LEVEL mid-game positions (state at turn 10 carries −0.4 pp [−2.6, +1.3] of the 11.2 pp gap; level-at-10 conversion 0.609 vs 0.501), not from the opening or the kind of decision; the per-mon edge drops with the TEAM, not the set (seen sets only: +0.093 [+0.004, +0.176])**
+
+**Question** (orchestrator brief). Where in the game do P\*'s extra unfamiliar-team losses against Kakuna (0.598
+home72 vs 0.487 U, X51) come from? Banked games only, CPU, post hoc: nothing was registered, so every read is
+DESCRIPTIVE.
+
+**Data.** 5,400 captures parsed (protocol, both teams, seed, every choice): X51's P\* vs Kakuna (1,600), its
+PastaMittens twins (1,600), X37a's X26 @161M deploy / reverse / forum72 / p72 cells and Kakuna-vs-Kakuna `kcal` (2,200).
+Unit-cluster bootstrap (B = 1,000), U at equal panel weight.
+
+**Result.**
+- Phase: the material state at turns 1–10 carries none of the gap; P\* loses the first mon equally often (0.475 vs
+  0.474). From level material at turn 10 it wins 0.609 / 0.501 (+10.8 [+4.8, +17.0]). The state part reaches 2.1 pp at
+  turn 20 and 8.1 [3.3, 12.8] at 40. PastaMittens: the same shape.
+- Decisions: the type mix moves alike for both pilots (every DiD ≤ ±1 pp). The targeting DiDs (switch-in punishment
+  −1.7 [−3.4, 0.0], super-effective share +2.7 [−1.4, +6.8]) exclude 0 only against PastaMittens.
+- Matchups: Kakuna's unseen-set and pool-rare mons do not out-kill its familiar ones against P\*. P\*'s own ≤ 2 % pool
+  species kill 0.14 per entry less than Kakuna's in the same games (≤ 15 % of the gap).
+- Our team vs theirs: P\*'s per-mon KO edge over Kakuna is +0.081 on home72 and −0.028 on U (Δ +0.109 [+0.034,
+  +0.188]). With both sides restricted to pool-seen sets it is still −0.012 on U (Δ +0.093 [+0.004, +0.176]).
+  Within U each of OUR seen sets is worth +3.0 pp [+0.5, +5.4], each of THEIRS −1.9 [−4.9, +0.9].
+- X26 piloting H (reverse) trails Kakuna piloting the same teams by D(20) −0.29 [−0.49, −0.08]. The pilot gap is in
+  the state by turn 15–20.
+
+**Reading.** The familiarity premium is team-context play (how to use a familiar six over the mid game), not set
+knowledge or facing. Hypotheses with tests: H-CTX (a recombined-pool panel scores like U), H-MID (V calibration at
+level turn-10 states, home72 vs U), H-RARE, H-TGT. D3 (new sets in old teams) is bounded at ≈ a quarter of the
+premium under H-CTX; N1-P's new contexts are H-CTX's lever.
+
+**FINDINGS.** No V traces exist for anchor games (material is the state proxy, so the state share is an under-
+estimate). X37a's `kcal` peer aliases are swapped relative to the team sets (`MetaKakunaAway*` pilots home72). 20
+forfeit-limit games end with one unanswered request. No multiplicity correction is applied to §2's 20+ DiDs.
+
+**Evidence:** `research_state/measurements/piloting_gap_forensics_2026-10-26/` (README, `results.json`, scripts);
+per-game rows `~/gen3ai_archive/piloting_gap_forensics_2026-10-26/games.jsonl.gz` (sha256 in the folder). See
+`UNDERSTANDING.md` §3.1.

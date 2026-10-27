@@ -26,7 +26,7 @@ lever from noise.
 | 1 | **The strongest baseline** | **AT ITS PLATEAU.** P\* = X26 @ 280M. Training on to 480M changed nothing. | P\* vs the production baseline: 0.694 [0.666, 0.721]. The 480M continuation vs P\* against Kakuna: +0.08 pp [−3.90, +4.06], FLAT. | `d172c10ed`, `204204bbf` |
 | 2a | **Beat Metamon on our teams** | **MET.** | P\* vs Kakuna on home72: **0.598 [0.549, 0.644]** | `3010c81ba` |
 | 2b | **Beat Metamon on unfamiliar teams** | **NOT MET**, about 4 pp short. The lower bound must clear 0.50, which needs about 0.53. | P\* 0.487 [0.459, 0.515]. Best arm so far: D3 at 0.491 (look 1). | `3010c81ba`, `58287c525` |
-| 3 | **Know where we are** | **MAPPED.** The deficit is **piloting** an unfamiliar team, not facing one. In-house meters cannot see it; only Kakuna games can. | Piloting deficit, strength-corrected: +0.123 [+0.039, +0.206]. P\* is equal to Metamon's ensemble and beats every human-only Metamon model (§4). | `82858f433`, `82f273eff`, `df35d1bb0` |
+| 3 | **Know where we are** | **MAPPED.** The deficit is **piloting** an unfamiliar team, not facing one. In-house meters cannot see it; only Kakuna games can. It is lost from level mid-game positions, not the opening, and it goes with the team, not the set (descriptive: `research_state/measurements/piloting_gap_forensics_2026-10-26/`). | Piloting deficit, strength-corrected: +0.123 [+0.039, +0.206]. P\* is equal to Metamon's ensemble and beats every human-only Metamon model (§4). | `82858f433`, `82f273eff`, `df35d1bb0` |
 | 4 | **AlphaStar-style improvement** (league, PFSP, exploiters) | **NO GAIN YET.** The archive-pool and promotion levers are NULL. An exploiter beats P\* easily, so headroom exists. No league arm has run. | Best responder vs P\*: **+11.1 pp [+8.3, +13.8]** (saturates by 8M steps) | `806e50931`, `4290d652a`, `c456b6a09` |
 | 5 | **What search needs** | **PAUSED, and not getting closer.** Every search gain we see is graded by our own model ("self-referee"). Graded by a real bot, the gains shrink. At P\* the one gain that replicates is gone. | L1 cell at P\*: +0.0001 [−0.0097, +0.0101]. At the 25M policy: +0.0193. | `f756019d7`, `015f00e20`, `0d0058408`, `73428c077` |
 | 6 | **Which collapse, and counterfactuals** | **READ: a treadmill, not a collapse** (one seed, provisional). The policy keeps changing without improving, the opponent pool goes stale and the learning rate halves. No coverage, rank or dormant-unit collapse. No counterfactual source is built into training. | about 30 % of greedy choices change per 20M steps | `3e8a41249` |
@@ -59,6 +59,7 @@ lever from noise.
 | E1-0: a real bot as the search referee | UNDECIDED, no relabel | oracle bot − self −0.024 [−0.054, +0.009] | `015f00e20` |
 | Hidden-info maturity, plateau step | GAP-SHRINKS NOT DETECTED; frontier static | G_F change −0.003 [−0.020, +0.015] | `e7048bb1d` |
 | L1 replication (piKL, 4-turn leaf) | REPLICATES thinly, only at 25M | +0.0097 [+0.0025, +0.0169]; at P\* +0.0001 | `f756019d7` |
+| Piloting-gap forensics (banked Kakuna games, descriptive) | the gap forms after turn 10, from level positions; it goes with the TEAM context | level at turn 10: 0.609 home72 vs 0.501 U; seen sets only, per-mon KO edge drop +0.093 [+0.004, +0.176] | `piloting_gap_forensics_2026-10-26/` (ledger 10-26) |
 
 ## 4. How we compare with the state of the art
 

@@ -908,6 +908,26 @@ panel, one checkpoint] H3's mechanism, read on calibration:
   (`measurements/belief_prior_mix_2026-10-26/`)
 [ledger 2026-10-26 · *H3 (BELIEF-HEAD MEMORISATION) BANKED ON CALIBRATION* · *THE BELIEF PRIOR MIX at λ = 0.25* · *at λ = 1 (D0f)*]
 
+**WHERE the familiarity premium is lost: from level mid-game positions, and with the TEAM rather than the set
+(2026-10-26, `measurements/piloting_gap_forensics_2026-10-26/`):** [MEASURED · DESCRIPTIVE, post hoc · X51's 1,600
+banked P\* vs Kakuna games; replicated on the 1,600 PastaMittens twins, which share teams and seeds]
+- **Not the opening.** Through turn 10 the material state carries none of the 11.2 pp gap (−0.4 pp [−2.6, +1.3]),
+  and P\* loses the first mon equally often on both sets. From LEVEL material at turn 10 (≈ 3 in 4 games) P\* wins
+  0.609 on home72 against 0.501 on U (+10.8 pp [+4.8, +17.0]). The state carries 2 pp of the gap by turn 20 and 8 by
+  turn 40.
+- **Not the kind of decision.** The mix of attacks, switches, setup, status, hazards and Explosions shifts between
+  the sets alike for P\* and Kakuna (every pilot-specific shift ≤ ±1 pp). What moves is targeting (switch-in
+  punishment, super-effective share), and it holds only against PastaMittens.
+- **The team, not the set.** P\*'s mons out-kill Kakuna's by +0.081 per entry on home72 and −0.028 on U. Restricted
+  to sets in our pool on both sides, U still reads −0.012, so the home-to-U drop is **+0.093 [+0.004, +0.176]** for
+  familiar sets (PastaMittens +0.072, not detected). Set novelty costs about a third as much again. The premium sits
+  on common species, so it is a team-context account: how to play a familiar six, not knowledge of sets. This
+  bounds D3 (new sets in old teams) at ≈ a quarter of the premium. P\* also pilots species on ≤ 2 % of pool teams
+  badly on any team (−0.14 KOs per entry against Kakuna's), but that is ≤ 15 % of the gap.
+- Its kill test is a recombined-pool panel (familiar sets in new sixes) read against Kakuna: H-CTX predicts it
+  scores like U. Facing stays the minor channel: Kakuna's unseen-set and rare-species mons do not out-kill its
+  familiar ones.
+
 **…and X26's plateau sits beside a small, REAL cyclic component (2026-10-19, the cycle monitor's retro read,
 `measurements/cycle_monitor_retro_2026-10-19/`):** [MEASURED · DESCRIPTIVE · the in-run snapshot ladder, not the
 registered instrument] Read by the cycle monitor's four signals, X26's ladder (72 snapshots, 1,150 mirrored lines) is

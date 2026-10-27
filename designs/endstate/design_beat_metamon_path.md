@@ -219,6 +219,12 @@ The reads point at one mechanism: X26 plays a team well in proportion to how muc
   (ai_v7 era) argues that a team-averaged objective with a tail-blind critic learns a team-agnostic "locally sensible"
   policy. Under that argument per-team win conditions are learned only by repetition, which matches the premium.
   Nobody has re-measured it on the end state.
+- **Where it is lost (2026-10-26, DESCRIPTIVE, `measurements/piloting_gap_forensics_2026-10-26/`).** In X51's games
+  the premium is not lost in the opening: the material state at turn 10 carries none of it. It is lost converting
+  level mid-game positions (0.609 vs 0.501 from level at turn 10). Per mon it goes with the TEAM context: a pool set
+  on an unfamiliar six plays like Kakuna's (+0.093 [+0.004, +0.176] of the drop), and set novelty costs about a third
+  as much again. This is the per-team win-condition account above. It bounds D3 at ≈ a quarter of the premium and
+  points at new team contexts (N1-P). The kill test is a recombined-pool panel (README H-CTX).
 
 ---
 
