@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-29,541-line file. **The ledger itself is append-only and is never edited by this**;
+29,581-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**972 headings · 917 dated · 2026-08-01 → 2026-10-27 · ledger 29,541 lines.**
+**973 headings · 918 dated · 2026-08-01 → 2026-10-27 · ledger 29,581 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -992,3 +992,4 @@ rename.
   - `L29423` · `2026-10-26` · MEASUREMENT · **H-MID, read under its registration (`2dd522785`): CRITIC-MISCALIBRATED-ON-U. From level turn-10 states P\* wins 0.609 on home72 and 0.501 on U, but its critic rates them 0.557 / 0.525 (Δbias +0.076 [+0.016, +0.139]); at equal V it wins 8.6 pp [+2.3, +15.1] less on U. The critic's ordering is intact (AUC 0.663 vs 0.667): it misses the familiarity premium in its LEVEL**
   - `L29467` · `2026-10-27` · MEASUREMENT · **THE PLASTICITY CHECK on X26's lineage: NO-LOSS by the strategy doc's registered bars (PLASTICITY-LOSS-UNLIKELY). P\*'s end-to-end refit of its own greedy labels has a normalised loss AUC 0.986× X26 @25M's (bar < 1.10), and its near-dormant share is 0.78× (LOSS needs ≥ 2×). On a neutral target the trunk refits 1.11× slower than @25M, all of it paid by 175M (100M 0.576 → P\* 0.598 → 480M 0.602)**
 - `L29524` · `2026-10-27` · OPS · the ladder-usage corpus rebuilt after gen-3 full parity: all 22,862 Metamon teams kept (was 22,813)
+  - `L29541` · `2026-10-27` · AUDIT · **The H-CTX Hidden Power FINDING closed: a set that names its Hidden Power type with no IV line plays its NAMED type with the validator's IVs in training, eval and our live side, byte for byte as Showdown does. The live-server rejection came from Kakuna's packer (poke-env's mis-ordered IV table), not from the set**

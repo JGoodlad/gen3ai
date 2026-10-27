@@ -29538,3 +29538,43 @@ change with the reshuffle (deterministic either way): the COMMIT tier's `core_ca
 panic and spec boards), `proc_integration_test` (`test_gate_1_the_ladder_commit_tier_ffi_equals_process`, the
 `teams("commit")[:3]` specs, the SIGKILL leak board) and `oracle_reveal_integration_test` (`teams("commit")[:8]`); the
 MILESTONE tier's `core_cargo_test::test_gate_1_on_the_ladder_milestone_tier` and every `--mode ladder` fuzz draw.
+### 2026-10-27 · AUDIT · **The H-CTX Hidden Power FINDING closed: a set that names its Hidden Power type with no IV line plays its NAMED type with the validator's IVs in training, eval and our live side, byte for byte as Showdown does. The live-server rejection came from Kakuna's packer (poke-env's mis-ordered IV table), not from the set**
+
+**Question.** 736 of the pool's 1,912 Hidden Power sets (and 2,234 of d3_setmut_v1's) are written `- Hidden Power [Bug]`
+with no `IVs:` line (the 737th of the FINDING's count is the pool's one untyped set). rc72's first unit died on
+"Aerodactyl has Hidden Power Bug, but its IVs are for Hidden Power Water". What does training play: (a) the named type
+with the validator's IVs, (b) the all-31 type (Dark), or (c) the named type with all-31 stats?
+
+**Answer: (a) on every path of ours.**
+- Showdown's import does not fill the IVs: `Teams.import` creates each set with all-31 IVs (`sim/teams.ts` ~615), so its
+  bracket fill (~541, guarded by `!set.ivs`) never runs. The VALIDATOR fills them (`sim/team-validator.ts` ~1154-1164),
+  in the batch validator and the server alike. An unvalidated pack plays (c) (`sim/pokemon.ts` ~357-410).
+- Our pack (`Gen3Teambuilder` → `fix_gen3_hp_ivs`, and the packer's own fill) writes the validator's IVs, and
+  `gen3_team_pack_oracle_v1` refuses any pool, bias or corpus pack that Showdown reads differently. Every Rust training
+  and eval path, `main.h2h` panels, the anchors' own side and `main.play` pack this way.
+- One seeded battle (Aerodactyl's pool set vs Celebi), Node's sim and the Rust engine fed the same packs:
+  - (a), our pack: Atk 301, request "Hidden Power Bug 70", Celebi 100 → 3 %;
+  - (c), the unvalidated pack: Atk 302, "Hidden Power Bug 70", 100 → 2 %;
+  - (b), bare Hidden Power with all-31 IVs: Atk 302, "Hidden Power Dark 70", 100 → 89 %.
+  Each arm is byte-identical per side between the two engines. The request the encoder reads is the validated one.
+- The rejection was Metamon's poke-env (`TeambuilderPokemon.HP_TO_IVS`, Metamon's env). Its table is in the formula's
+  bit order (hp, atk, def, spe, spa, spd) but is packed as (hp, atk, def, spa, spd, spe). So for a named Hidden Power
+  with all-31 IVs, Kakuna's pack plays a different type for 12 of the 16 types (536 of the 736 pool sets; the server
+  then refuses the team). Flying keeps its type but not its IVs (62 sets). Fire, Fighting and Ice match. Only a team
+  file with an explicit IV line is safe on the peer, which is why the pool export and `mirrored.with_hp_ivs` write one.
+
+**Which panels and corpora hold the class:**
+- None: home72, forum72, p72, forum216b, heldout72_hpfix, n1p72, rc72b, the installed `gen3ai_pool` (IVs written out),
+  w_forum_v1 (1 set), n1_proc_v1 (15 sets with an explicit all-31 line, Dark either way).
+- rc72 (retired): 71 sets.
+- Metamon's `competitive` (away), installed as is: 3 sets. On the peer, Gyarados's Hidden Power Flying keeps its type
+  but plays IVs 31/31/31/30/30/30, where the validator writes 30/30/30/30/30/31. Our side, and a mirrored file, play the
+  validator's IVs.
+
+**FINDINGS.**
+- Kakuna's team packer differs from Showdown's validator on any named all-31 Hidden Power. Most such teams are refused
+  loudly; the Flying case is silent, and it reaches one away set on unmirrored reads only.
+- `build_rc72.py --install` copied panel files verbatim, bypassing the explicit-IV export. rc72b holds no such set.
+
+**Evidence:** `src/utils/bridge/hidden_power_named_no_iv_line_integration_test.py`. It pins the pack and the three
+arms, and checks Rust against Node per arm. It fails on revert: with both fill sites removed the pack oracle raises.
