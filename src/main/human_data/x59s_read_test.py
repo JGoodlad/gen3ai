@@ -44,9 +44,7 @@ def test_a_bound_on_zero_takes_the_undecided_class():
     assert X.classify(2e-9, 0.05, ("B", "W", "U")) == "B"
 
 
-def test_floor_and_inhouse():
-    arms = {a: _arm([0.10] * 5) for a in X.ARMS}
-    assert X.read(arms)["floor"]
+def test_inhouse():
     assert X.inhouse([0.56, 0.58, 0.55, 0.57, 0.56], ("B", "W", "U"))["class"] == "B"
     assert X.inhouse([0.52, 0.47, 0.51, 0.49, 0.50], ("B", "W", "U"))["class"] == X.NO_DIFF
     assert X.inhouse([0.58, 0.40, 0.55, 0.45, 0.52], ("B", "W", "U"))["class"] == "U"
@@ -105,44 +103,90 @@ def _read(sh, sp, ss):
     return X.read({"S-H": _arm([sh] * 5), "S-P": _arm([sp] * 5), "S-S": _arm([ss] * 5)})
 
 
-def test_uninformative_when_every_arm_sits_near_the_floor():
-    r = _read(0.20, 0.17, 0.18)
-    ih = {k: {"delta": 0.01, "class": "x"} for k in ("delta_data", "delta_labels")}
-    v = X.verdict(r, ih, {"random": 0.05, "maxdamage": 0.16}, [1.4] * 5, [1.6] * 5, "UNCLEAR")
-    assert v["uninformative"] and "close nothing" in v["actions"][0]
-    v = X.verdict(r, ih, {"random": 0.05, "maxdamage": 0.10}, [1.4] * 5, [1.6] * 5, "UNCLEAR")
-    assert not v["uninformative"]
-    assert X.uninformative({"a": 0.15}, {"f": 0.10}, False)              # exactly 5 pp: within (tie)
+YARD_LEARNED = {"S-P": [1.42] * 5, "S-S": [1.40] * 5, "S-H": [1.60] * 5}
+FLOOR = {"random": 0.0, "aggressive": 0.0458}
 
 
-def test_a_kakuna_only_gain_is_kakuna_specific_and_routes_nothing():
+def _ih(d, lo=None, hi=None):
+    return {"delta": d, "lo": d - 0.05 if lo is None else lo, "hi": d + 0.05 if hi is None else hi, "class": "x"}
+
+
+def _v(r, ih, *, uninf=None, f=None, yard=YARD_LEARNED, fr2="NO-ARTEFACT", fit=0.001, share=0.0):
+    return X.verdict(r, ih, uninf or {"delta_data": False, "delta_labels": False},
+                     f or {"delta_data": 0.05, "delta_labels": 0.05}, yard, fr2, fit, share)
+
+
+def test_the_gate_is_per_contrast_on_the_measured_references():
+    pilot = {"S-H": _arm([0.05] * 5), "S-P": _arm([0.05] * 5), "S-S": _arm([0.20] * 5)}
+    g = X.gate(pilot, FLOOR)
+    assert g["uninformative"] == {"delta_data": False, "delta_labels": True, "delta_states": False}
+    assert g["continue"]
+    allfloor = {a: _arm([0.05] * 5) for a in X.ARMS}
+    assert not X.gate(allfloor, FLOOR)["continue"]
+    at_bar = {a: _arm([0.0958] * 5, g=10000) for a in X.ARMS}                 # 958 / 10000 = the bar: within
+    assert X.gate(at_bar, FLOOR)["uninformative"]["delta_data"]
+
+
+def test_the_interval_widens_to_the_contrasts_own_welch():
+    # one noisy arm (S-H SD ~3 pp, the others 0): the pooled guard does not fire, the contrast's own Welch is wider
+    noisy = {"S-H": _arm([0.21, 0.25, 0.29, 0.23, 0.27]), "S-P": _arm([0.25] * 5), "S-S": _arm([0.25] * 5)}
+    r = X.read(noisy)
+    assert not r["seed_sd"]["guard_fires"]
+    c = r["delta_data"]
+    assert c["halfwidth"] == max(c["halfwidth_registered"], c["halfwidth_welch"])
+    assert c["halfwidth_welch"] > c["halfwidth_registered"] and "widened" in c["rule"]
+
+
+def test_no_difference_needs_the_in_house_interval_too():
+    r = _read(0.25, 0.25, 0.25)
+    assert r["delta_data"]["class"] == X.NO_DIFF
+    ih = {k: _ih(0.0, -0.03, 0.03) for k in ("delta_data", "delta_labels")}
+    assert _v(r, ih)["classes"]["delta_data"] == X.NO_DIFF
+    ih = {k: _ih(0.0, -0.05, 0.03) for k in ("delta_data", "delta_labels")}
+    assert _v(r, ih)["classes"]["delta_data"] == "NOT-RESOLVED"
+
+
+def test_the_agreement_guard_runs_both_ways_and_f_must_agree():
     r = _read(0.30, 0.20, 0.20)
     assert r["delta_data"]["class"] == "HUMAN-DATA-BETTER"
-    ih = {"delta_data": {"delta": 0.0, "class": "x"}, "delta_labels": {"delta": -0.02, "class": "x"}}
-    v = X.verdict(r, ih, {"random": 0.02, "maxdamage": 0.05}, [1.4] * 5, [1.6] * 5, "UNCLEAR")
-    assert v["classes"] == {"delta_data": "KAKUNA-SPECIFIC", "delta_labels": "KAKUNA-SPECIFIC"}
-    assert not any("H-BC first" in a for a in v["actions"])
-
-
-def test_hbc_needs_sp_to_have_learned_its_teacher_and_closure_needs_fr2():
-    r = _read(0.30, 0.20, 0.25)
-    ih = {k: {"delta": 0.03, "class": "x"} for k in ("delta_data", "delta_labels")}
-    fl = {"random": 0.02, "maxdamage": 0.05}
-    yes = X.verdict(r, ih, fl, [1.40, 1.41, 1.39, 1.40, 1.42], [1.60, 1.61, 1.59, 1.62, 1.60], "UNCLEAR")
-    no = X.verdict(r, ih, fl, [1.60, 1.61, 1.59, 1.62, 1.60], [1.60, 1.61, 1.59, 1.62, 1.60], "UNCLEAR")
-    assert yes["actions"][0].startswith("H-BC first") and "NOT routed" in no["actions"][0]
+    ih = {"delta_data": _ih(0.0), "delta_labels": _ih(-0.02)}
+    v = _v(r, ih)
+    assert v["classes"] == {"delta_data": X.KAKUNA_SPECIFIC, "delta_labels": X.KAKUNA_SPECIFIC}
+    ih = {"delta_data": _ih(0.03), "delta_labels": _ih(0.03)}
+    v = _v(r, ih, f={"delta_data": 0.0, "delta_labels": 0.02})
+    assert v["classes"] == {"delta_data": X.POP_SPECIFIC, "delta_labels": "HUMAN-LABELS-BETTER"}
     r = _read(0.20, 0.30, 0.30)
-    assert r["delta_data"]["class"] == "SELF-PLAY-DATA-BETTER" and r["delta_states"]["lo"] <= 0
-    ih = {k: {"delta": -0.05, "class": "x"} for k in ("delta_data", "delta_labels")}
-    ok = X.verdict(r, ih, fl, [1.4] * 4 + [1.41], [1.6] * 4 + [1.61], "NO-ARTEFACT")
-    art = X.verdict(r, ih, fl, [1.4] * 4 + [1.41], [1.6] * 4 + [1.61], "ARTEFACT")
-    assert any(a.startswith("closes 1300+") for a in ok["actions"])
-    assert not any(a.startswith("closes 1300+") for a in art["actions"])
-    assert any(">= 1500 follow-up" in a for a in ok["actions"])
+    assert r["delta_data"]["class"] == "SELF-PLAY-DATA-BETTER"
+    v = _v(r, {k: _ih(0.0) for k in ("delta_data", "delta_labels")})
+    assert v["classes"]["delta_data"] == X.KAKUNA_SPECIFIC and not any("closes 1300" in a for a in v["actions"])
+
+
+def test_hbc_needs_the_midpoint_and_the_closure_needs_every_gate():
+    r = _read(0.30, 0.20, 0.25)
+    ih = {k: _ih(0.03) for k in ("delta_data", "delta_labels")}
+    assert _v(r, ih)["actions"][0].startswith("H-BC first")
+    far = {"S-P": [1.52] * 5, "S-S": [1.40] * 5, "S-H": [1.60] * 5}           # closer to S-H than to S-S
+    assert "NOT routed" in _v(r, ih, yard=far)["actions"][0]
+    r = _read(0.20, 0.30, 0.30)
+    ih = {k: _ih(-0.05) for k in ("delta_data", "delta_labels")}
+    assert any(a.startswith("closes 1300+") for a in _v(r, ih)["actions"])
+    for kw in ({"fr2": "ARTEFACT"}, {"fit": 0.01}, {"share": 0.0101}):
+        assert not any(a.startswith("closes 1300+") for a in _v(r, ih, **kw)["actions"]), kw
+    assert any(a.startswith("closes 1300+") for a in _v(r, ih, share=0.01)["actions"])   # exactly 1.0 %: not more
+    assert any(">= 1500 follow-up" in a for a in _v(r, ih)["actions"])
+
+
+def test_an_uninformative_contrast_routes_nothing():
+    r = _read(0.30, 0.20, 0.25)
+    ih = {k: _ih(0.03) for k in ("delta_data", "delta_labels")}
+    v = _v(r, ih, uninf={"delta_data": True, "delta_labels": True})
+    assert v["classes"] == {"delta_data": X.UNINF, "delta_labels": X.UNINF}
+    assert v["kakuna_classes"]["delta_data"] == "HUMAN-DATA-BETTER"
+    assert not any("follow-up" in a for a in v["actions"])
 
 
 def test_the_verdict_refuses_an_unread_fr2():
     r = _read(0.20, 0.30, 0.30)
-    ih = {k: {"delta": -0.05, "class": "x"} for k in ("delta_data", "delta_labels")}
+    ih = {k: _ih(-0.05) for k in ("delta_data", "delta_labels")}
     with pytest.raises(ValueError, match="FR-2"):
-        X.verdict(r, ih, {"random": 0.02, "maxdamage": 0.05}, [1.4] * 5, [1.6] * 5, "UNREAD")
+        _v(r, ih, fr2="UNREAD")

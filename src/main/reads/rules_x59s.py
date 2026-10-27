@@ -1,18 +1,20 @@
 r"""X59-S's registered reads as ``main.reads`` rules (``x59s_matched_students_2026-10-25/PREREG.md`` §4–§5,
-Amendments 2 and 4). The statistics are :mod:`main.human_data.x59s_read`'s, unchanged; this module only gathers
+Amendments 2, 4 and 5). The statistics are :mod:`main.human_data.x59s_read`'s; this module only gathers
 their inputs from the assembled Kakuna cells and the read's sha-recorded artefacts.
 
-* ``x59s_floor`` -- the FLOOR PILOT (units 0-3 of H, F and P72 per primary student): every arm's mean U rate
-  ``< floor_bar`` fires the floor (the in-house rule then decides). It releases ONLY that boolean (A2.11 m3), with
-  VOID 6 (a repeat of one student's unit under a second label must equal the original GAME FOR GAME) and the cells
-  that lost more than one unit (VOID 7, reported).
-* ``x59s`` -- the FULL READ: each primary student's U counts over the named groups (the pilot's imported, the rest
-  played), σ̂ and the three contrasts (:func:`x59s_read.read`), the pilot's floor boolean, the in-house
-  head-to-heads (:func:`x59s_read.inhouse`), the floor references, the yardsticks and FR-2's class, through
-  :func:`x59s_read.verdict` (Amendment 2's overrides). VOID 3 (and the learned-nothing guard), VOID 5 (the identity
-  unit), VOID 6 (from the pilot's record) and VOID 7 (two cells with more than one uncounted unit) refuse a verdict
-  (``VOID``). Descriptive, read by no rule: Δ per panel, Q-H10 (each arm minus P\*'s X51 twins, unit-paired), each
-  arm's student SD, the yardstick table, m5's flags.
+* ``x59s_floor`` -- the floor pilot as first registered (every arm's mean U rate ``< floor_bar``). SUPERSEDED before
+  it was ever decided by Amendment 5 A5.1 (REVIEW H B1): kept so the pilot state's spec still loads.
+* ``x59s_gate`` -- the per-contrast floor gate (A5.1) on the pilot and repeat groups IMPORTED from the pilot state: a
+  contrast is UNINFORMATIVE iff both its arms' pilot means are <= the better floor reference + ``band``; it releases
+  ONLY those booleans and whether the read continues (A2.11 m3), with VOID 6 (the repeat, game for game) and one
+  engine for the pilot and the floor references.
+* ``x59s`` -- the FULL READ: each primary student's U counts over the named groups, σ̂ and the three contrasts with
+  A5.2's widened interval (:func:`x59s_read.read`), the in-house head-to-heads (:func:`x59s_read.inhouse`), the gate's
+  booleans, forum72's own contrasts, the yardsticks, S-H's fit, the re-encode share and FR-2's class, through
+  :func:`x59s_read.verdict` (Amendments 2 and 5). VOID 3, 5, 6 (the gate's), 7, a second engine (the in-house core
+  stamps included, m5), a missing FR-2 class or re-encode share, or short in-house cells refuse a verdict (``VOID``).
+  Descriptive, read by no rule: each panel's contrasts with intervals, the paired per-seed contrasts, the MDE at the
+  measured interval, the student-to-P\* gap (secondary, cross-engine), the arms' SDs, the yardsticks, m5's flags.
 
 A student's rate is the equal-weight mean of its three panels' (wins / games); a tie is a non-win (X51's rule).
 """
@@ -27,8 +29,9 @@ FLOOR_FIRES = "FLOOR FIRES"
 FLOOR_HOLDS = "FLOOR DOES NOT FIRE"
 VOID = "VOID"
 ARMS = ("S-H", "S-P", "S-S")
-ARTEFACTS = ("students", "floor_refs", "inhouse", "fr2", "identity", "pilot_record")
+ARTEFACTS = ("students", "floor_refs", "inhouse", "fr2", "identity", "gate_record", "m3_reencode")
 _FLOOR_KEYS = ("group", "panels", "arms", "floor_bar", "repeat")
+_GATE_KEYS = ("group", "panels", "arms", "floor_refs", "band", "repeat")
 _FULL_KEYS = ("groups", "panels", "arms", "artefacts", "x51")
 
 
@@ -184,6 +187,66 @@ def _floor_decide(doc: Mapping[str, Any], p: Mapping[str, Any]) -> Dict[str, Any
             "decision": {"verdict": FLOOR_FIRES if fires else FLOOR_HOLDS}}
 
 
+# ------------------------------------------------------------------------- the gate (Amendment 5 A5.1, replaces it)
+def _gate_check(p: Mapping[str, Any], *, models: Any, anchor: Any, s: Any) -> List[str]:
+    from main.reads.rules import _check_keys
+
+    probs = _check_keys(p, _GATE_KEYS, _GATE_KEYS)
+    fp = dict(p)
+    fp.pop("floor_refs", None)
+    fp.pop("band", None)
+    fp["floor_bar"] = 0.5                       # the shared checks of the group, the arms and the repeat
+    probs += [x for x in _floor_check(fp, models=models, anchor=anchor, s=s) if "missing" not in x
+              and "unknown" not in x]
+    if not isinstance(p.get("floor_refs"), str):
+        probs.append("floor_refs: the path of x59s_ops floor's JSON")
+    if not 0.0 < float(p.get("band", 0) or 0) < 1.0:
+        probs.append("band in (0, 1)")
+    return probs
+
+
+def _gate_inputs(cells: Mapping[str, Any], p: Mapping[str, Any], spec: Any) -> Dict[str, Any]:
+    doc = _floor_inputs(cells, p, spec)
+    body, sha = _artefact(p["floor_refs"])
+    doc["floor_refs"] = {"path": p["floor_refs"], "sha256": sha, "rates": body.get("rates"),
+                         "uncounted": body.get("uncounted"), "engines": body.get("engines")}
+    from main.reads.rules import _group
+
+    doc["engines"] = {g: _group(cells, "anchor", g).get("engine") for g in (p["group"], p["repeat"]["group"])}
+    return doc
+
+
+def _gate_decide(doc: Mapping[str, Any], p: Mapping[str, Any]) -> Dict[str, Any]:
+    """A5.1: one UNINFORMATIVE boolean per contrast and whether the rest of the read plays, and NOTHING else (A2.11
+    m3); VOID 6 (the repeat, game for game) and one engine for the pilot and the references."""
+    from main.human_data import x59s_read as X
+
+    reasons: List[str] = []
+    for c in doc["repeat"]:
+        if not (c["counted"] and c["of_counted"]):
+            reasons.append(f"VOID 6: {c['unit']} or its original {c['of']} is not counted")
+        elif not c["games_equal"]:
+            reasons.append(f"VOID 6: {c['unit']} does not reproduce {c['of']} game for game")
+    if not doc["repeat"]:
+        reasons.append("VOID 6: the repeat unit was not played")
+    fl = doc["floor_refs"]
+    if fl.get("uncounted") or not fl.get("rates") or any(r is None for r in fl["rates"].values()):
+        reasons.append(f"the floor references are short: {fl.get('uncounted')}")
+    engines = set(doc["engines"].values()) | set(fl.get("engines") or [])
+    if len(engines) != 1 or None in engines:
+        reasons.append(f"one engine per read (A4.1): {sorted(map(str, engines))}")
+    if _no_games(doc):
+        reasons.append(f"cells with no counted game: {_no_games(doc)}")
+    short = _short_cells(doc)
+    if reasons:
+        return {"gate": None, "short_cells": short, "decision": {"verdict": VOID, "reasons": reasons}}
+    g = X.gate(_arms_counts(doc), dict(fl["rates"]), float(p["band"]))
+    words = ", ".join(f"{k} {'UNINFORMATIVE' if v else 'informative'}" for k, v in g["uninformative"].items())
+    return {"gate": {"uninformative": g["uninformative"], "continue": g["continue"]}, "short_cells": short,
+            "repeat_pass": True, "engine": next(iter(engines)),
+            "decision": {"verdict": f"{'CONTINUE' if g['continue'] else 'STOP'}: {words}"}}
+
+
 # ------------------------------------------------------------------------------------------------ the full read
 def _full_check(p: Mapping[str, Any], *, models: Any, anchor: Any, s: Any) -> List[str]:
     from main.reads.rules import _check_keys
@@ -271,6 +334,42 @@ def qh10(doc: Mapping[str, Any], arm: str) -> Dict[str, Any]:
     return {"delta": d, "lo": d - 1.959963985 * se, "hi": d + 1.959963985 * se, "per_panel": per_panel}
 
 
+def _fit_drop(sdoc: Mapping[str, Any], labels: Sequence[str]) -> float:
+    """A5.6: the mean over ``labels`` of the drop in validation NLL over the last quarter epoch (``val_hist``'s last
+    two points; positive = still falling)."""
+    drops = [float(sdoc["students"][lab]["val_hist"][-2][1]) - float(sdoc["students"][lab]["val_hist"][-1][1])
+             for lab in labels]
+    return sum(drops) / len(drops)
+
+
+def _panel_contrasts(arms: Mapping[str, List[Dict[str, Tuple[int, int]]]], panels: Sequence[str], sd: Dict[str, float]
+                     ) -> Dict[str, Dict[str, Any]]:
+    """Per panel, each contrast with A5.2's interval on that panel's games alone (descriptive, no claim)."""
+    from main.human_data import x59s_read as X
+
+    out: Dict[str, Dict[str, Any]] = {}
+    for ts in panels:
+        one = {a: [{ts: s[ts]} for s in v] for a, v in arms.items()}
+        out[ts] = {name: {**X.contrast(one[a], one[b], sd, names), "stamp": "descriptive, no claim"}
+                   for name, (a, b, names) in X.CONTRASTS.items()}
+    return out
+
+
+def _paired(arms: Mapping[str, List[Dict[str, Tuple[int, int]]]]) -> Dict[str, Dict[str, Any]]:
+    """m3: the per-seed paired contrast (students share an init per seed), a t interval df k - 1; descriptive."""
+    from scipy.stats import t as tdist
+
+    from main.human_data import x59s_read as X
+
+    out = {}
+    for name, (a, b, _) in X.CONTRASTS.items():
+        d = [X.student_rate(x) - X.student_rate(y) for x, y in zip(arms[a], arms[b])]
+        m = sum(d) / len(d)
+        hw = tdist.ppf(0.975, len(d) - 1) * math.sqrt(X._var(d) / len(d))
+        out[name] = {"delta": m, "lo": m - hw, "hi": m + hw, "stamp": "descriptive, no claim"}
+    return out
+
+
 def _full_decide(doc: Mapping[str, Any], p: Mapping[str, Any]) -> Dict[str, Any]:
     from main.human_data import x59s_read as X
 
@@ -280,79 +379,84 @@ def _full_decide(doc: Mapping[str, Any], p: Mapping[str, Any]) -> Dict[str, Any]
     reasons += [f"VOID 3: {r}" for r in sdoc.get("void3") or []]
     if not body["identity"].get("pass"):
         reasons.append(f"VOID 5: the identity unit does not reproduce X51 ({body['identity'].get('unit')})")
-    pilot = body["pilot_record"]
-    pdec = pilot.get("decision") or {}
-    floor = pdec.get("floor")
-    if not isinstance(floor, bool):
-        reasons.append(f"VOID 6 / the pilot: its record carries no floor boolean ({(pdec.get('decision') or {})})")
+    gdec = body["gate_record"].get("decision") or {}
+    gate = gdec.get("gate")
+    if not (isinstance(gate, dict) and isinstance(gate.get("uninformative"), dict)):
+        reasons.append(f"VOID 6 / the gate: its record carries no per-contrast booleans ({gdec.get('decision')})")
     short = _short_cells(doc)
     if len(short) >= 2:
         reasons.append(f"VOID 7: {len(short)} cells lost more than one unit {short}")
     empty = _no_games(doc)
     if empty:
         reasons.append(f"cells with no counted game: {empty}")
-    engines = set(doc.get("engines", {}).values()) | set(body["floor_refs"].get("engines") or [])
+    ih = body["inhouse"]
+    engines = (set(doc.get("engines", {}).values()) | set(body["floor_refs"].get("engines") or [])
+               | ({gdec.get("engine")} if gdec.get("engine") else set()))
     if len(engines) != 1 or None in engines:
-        reasons.append(f"one engine per read (A4.1): the Kakuna groups and floor references played on {sorted(map(str, engines))}")
+        reasons.append(f"one engine per read (A4.1): the Kakuna groups, the gate and the floor references played on "
+                       f"{sorted(map(str, engines))}")
+    ih_env = set(ih.get("core_stamps") or [])
+    if len(engines) == 1 and ih_env != {str(next(iter(engines))).split(";")[-1]}:
+        reasons.append(f"the in-house head-to-heads' core stamps {sorted(ih_env)} are not the read's one engine (m5)")
     fr2 = body["fr2"].get("class")
     if fr2 not in X.FR2_CLASSES:
         reasons.append(f"FR-2 carries no class ({fr2!r}): Delta_data is not reported without it (A2.5)")
-    ih = body["inhouse"]
     if ih.get("short") or any(r is None for v in (ih.get("rates") or {}).values() for r in v):
         reasons.append(f"the in-house head-to-heads are short: {ih.get('short')}")
-    fl = body["floor_refs"]
-    if fl.get("uncounted") or any(r is None for r in (fl.get("rates") or {}).values()):
-        reasons.append(f"the floor references are short: {fl.get('uncounted')}")
+    m3 = body["m3_reencode"].get("share_differing")
+    if not isinstance(m3, (int, float)):
+        reasons.append("A5.7: the re-encode check carries no share_differing")
     out: Dict[str, Any] = {"short_cells": short}
     if reasons:
         out["decision"] = {"verdict": VOID, "reasons": reasons}
         return out
     arms = _arms_counts(doc)
     read_ = X.read(arms)
-    read_["floor_on_all_units"] = read_["floor"]
-    read_["floor"] = bool(floor)                     # §4: the floor is the PILOT's (units 0-3), not the full read's
+    sd = X.seed_sd(arms)
     names = {"delta_data": X.CONTRASTS["delta_data"][2], "delta_labels": X.CONTRASTS["delta_labels"][2]}
     inh = {c: X.inhouse(ih["rates"][c], names[c]) for c in names}
     lab_of = {lab: a for a, labs in doc["arms"].items() for lab in labs}
-    yard = {lab: s["yardsticks"] for lab, s in sdoc["students"].items() if lab in lab_of}
-    sp = [yard[lab]["selfplay_val_pstar_labels"] for lab in doc["arms"]["S-P"]]
-    sh = [yard[lab]["selfplay_val_pstar_labels"] for lab in doc["arms"]["S-H"]]
-    v = X.verdict(read_, inh, dict(fl["rates"]), sp, sh, fr2)
+    yard_all = {lab: s["yardsticks"] for lab, s in sdoc["students"].items() if lab in lab_of}
+    yard = {a: [yard_all[lab]["selfplay_val_pstar_labels"] for lab in doc["arms"][a]] for a in ARMS}
+    panels = _panel_contrasts(arms, doc["panels"], sd)
+    f_delta = {c: panels["forum72"][c]["delta"] for c in names}
+    fit = _fit_drop(sdoc, doc["arms"]["S-H"])
+    v = X.verdict(read_, inh, dict(gate["uninformative"]), f_delta, yard, fr2, fit, float(m3))
     rate = {a: [X.student_rate(s) for s in arms[a]] for a in ARMS}
-    per_panel = {}
-    for ts in doc["panels"]:
-        m = {a: sum(w / g for w, g in (s[ts] for s in arms[a])) / len(arms[a]) for a in ARMS}
-        per_panel[ts] = {"arm_means": m, "delta_data": m["S-H"] - m["S-S"], "delta_labels": m["S-H"] - m["S-P"],
-                         "delta_states": m["S-P"] - m["S-S"]}
+    mde = {name: (1.959963985 + 0.841621234) * read_[name]["halfwidth"] / 1.959963985 for name in X.CONTRASTS}
     out.update({
-        "engine": next(iter(engines)), "read": read_, "inhouse": inh, "floor_rates": fl["rates"], "fr2": fr2, "verdict_detail": v,
+        "engine": next(iter(engines)), "read": read_, "inhouse": inh, "gate": gate, "fr2": fr2,
+        "sh_fit_drop": fit, "reencode_share": m3, "verdict_detail": v,
         "descriptive": {
+            "stamp": "descriptive, no claim (A5.9 m14)",
             "arm_rates": {a: {"mean": sum(r) / len(r), "sd": math.sqrt(X._var(r)), "students": r}
                           for a, r in rate.items()},
-            "per_panel": per_panel,
-            "qh10_vs_pstar_x51": {a: qh10(doc, a) for a in ARMS},
-            "yardsticks": {lab: {"arm": lab_of[lab], **y} for lab, y in yard.items()},
+            "per_panel": panels, "paired_per_seed": _paired(arms), "mde80_at_measured": mde,
+            "student_to_pstar_gap_secondary_cross_engine": {a: qh10(doc, a) for a in ARMS},
+            "yardsticks": {lab: {"arm": lab_of[lab], **y} for lab, y in yard_all.items()},
             "val_rose_last_epoch": sorted(lab for lab, s in sdoc["students"].items()
-                                          if lab in lab_of and s.get("val_rose_last_epoch"))}})
+                                          if lab in lab_of and s.get("val_rose_last_epoch")),
+            "forum72_regime": "the legacy Kakuna peer pack (before b0441623e); no later F read is set against it"}})
 
     def _c(name: str) -> str:
         c = read_[name]
-        return (f"{name} {v['classes'].get(name, c['class'])} {100 * c['delta']:+.2f} pp "
-                f"[{100 * c['lo']:+.2f}, {100 * c['hi']:+.2f}]")
+        base = ", ".join(f"{a} {m:.3f}" for a, m in zip(X.CONTRASTS[name][:2], c["arm_means"]))
+        cls = v["classes"].get(name, c["class"])
+        if cls == X.UNINF:
+            cls = "UNINFORMATIVE (both arms at the floor)"
+        return (f"{name} {cls} {100 * c['delta']:+.2f} pp [{100 * c['lo']:+.2f}, {100 * c['hi']:+.2f}] "
+                f"(Kakuna {v['kakuna_classes'][name]}; {base}; in-house {100 * inh[name]['delta']:+.2f} pp "
+                f"[{100 * inh[name]['lo']:+.2f}, {100 * inh[name]['hi']:+.2f}])")
 
     words = [_c("delta_data"), _c("delta_labels"),
-             f"delta_states {read_['delta_states']['class']} {100 * read_['delta_states']['delta']:+.2f} pp",
-             f"FR-2 {fr2}"]
-    if v["uninformative"]:
-        words.insert(0, "UNINFORMATIVE")
-    if read_["floor"]:
-        words.insert(0, "FLOOR (in-house decides)")
+             f"delta_states {read_['delta_states']['class']} {100 * read_['delta_states']['delta']:+.2f} pp", f"FR-2 {fr2}"]
     out["decision"] = {"verdict": "; ".join(words), "classes": v["classes"], "actions": v["actions"],
                        "uninformative": v["uninformative"]}
     return out
 
 
 RULE_DOCS = {
+    "x59s_gate": "X59-S's per-contrast floor gate (Amendment 5 A5.1) on the imported pilot; VOID 6 repeat; booleans only",
     "x59s_floor": "X59-S's floor pilot: every arm's U mean < floor_bar fires the in-house fallback; VOID 6 repeat",
     "x59s": "X59-S's full read: x59s_read.read / inhouse / verdict on the Kakuna cells and the read's artefacts",
 }

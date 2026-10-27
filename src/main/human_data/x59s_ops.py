@@ -267,6 +267,22 @@ def inhouse_play(state: Path, students: Mapping[str, Any], attempts: int = 2) ->
             k += 1
 
 
+def ledger_engines(ledger: Path) -> List[str]:
+    """m5: every engine (``env=<src>/<n>``, :func:`main.reads.engine.row_engine`) the in-house ledger's rows ran on."""
+    from main.reads import engine as EN
+
+    seen = set()
+    for f in sorted(ledger.rglob("*.jsonl")) if ledger.exists() else []:
+        for ln in f.read_text().splitlines():
+            try:
+                row = json.loads(ln)
+            except ValueError:
+                continue
+            if isinstance(row, dict) and "compute" in row:
+                seen.add(EN.row_engine(row))
+    return sorted(str(e) for e in seen)
+
+
 def inhouse_read(state: Path, students: Mapping[str, Any]) -> Dict[str, Any]:
     """Each pairing's rate (module docstring) and the cells it came from; a cell short of :data:`PAIRS` pairs is
     listed and its pairing has no rate."""
@@ -279,6 +295,7 @@ def inhouse_read(state: Path, students: Mapping[str, Any]) -> Dict[str, Any]:
                                       "regime_id": (s or {}).get("regime_id")}
         if not ok:
             out["short"].append(cell["name"])
+    out["core_stamps"] = ledger_engines(state / "ledger")
     for c in INHOUSE:
         rates = []
         for k in SEEDS:

@@ -104,7 +104,7 @@ def test_an_imported_control_on_another_r_is_refused():
 
 def test_every_rule_is_registered_and_names_its_record_shape():
     assert set(RU.RULES) == {"x35_r1", "d1", "anchor_trajectory", "prior_mix_ab", "score_bands", "premium_recovery",
-                            "x59s_floor", "x59s", "search_headroom"}
+                            "x59s_floor", "x59s_gate", "x59s", "search_headroom"}
     assert [n for n, r in sorted(RU.RULES.items()) if r.x35_record] == ["d1", "x35_r1"]
     with pytest.raises(RU.RuleInputError):
         RU.RULES["anchor_trajectory"].verdict_of({"decision": {}})

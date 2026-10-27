@@ -9,22 +9,25 @@ students. The interval of a contrast A − B is
 ``m`` the U games a student, ``k`` the students an arm, p̂ an arm's pooled U rate; σ̂² = W − b with W the mean of the
 arms' sample variances of their students' U rates (df = arms × (k − 1)) and b the mean per-student binomial variance
 ``p (1 − p) / m``. GUARD: if σ̂'s one-sided 95 % lower bound ``W df / χ²(df, 0.95) − b`` exceeds SIGMA_MAX², the bound
-is refuted and the contrast is read by a Welch t interval across its 2k students. Classes: LB > 0 / UB < 0 /
-**NO-DIFFERENCE-AT-4PP** (Amendment 2, REVIEW E M6: the whole 95 % interval inside ±:data:`EQUIV`, the 80 % MDE) /
-else undecided; a bound within 1e-9 of 0 or of ±EQUIV takes the undecided class (root rule 8).
+is refuted and the contrast is read by a Welch t interval across its 2k students; and in every case the interval is
+WIDENED to the Welch interval on the contrast's own students when that is wider (Amendment 5 A5.2). Classes: LB > 0 /
+UB < 0 / **NO-DIFFERENCE-AT-4PP** (Amendment 2, REVIEW E M6: the whole 95 % interval inside ±:data:`EQUIV`, the 80 %
+MDE) / else undecided; a bound within 1e-9 of 0 or of ±EQUIV takes the undecided class (root rule 8).
 
-Amendment 2's overrides, applied by :func:`verdict` after the contrasts (REVIEW E M2, M3, M4, M8):
+The overrides :func:`verdict` applies after the contrasts (Amendment 2, REVIEW E; Amendment 5, REVIEW H):
 
-* **UNINFORMATIVE** (M4): every arm's U rate is within :data:`FLOOR_BAND` of the better FLOOR reference (random-legal
-  or max-damage vs Kakuna on the pilot twins), or the floor fallback fires. The classes are reported; they close
-  nothing and route nothing beyond "H-TEAMS first".
-* **KAKUNA-SPECIFIC** (M8): a HUMAN-DATA-BETTER or HUMAN-LABELS-BETTER on Kakuna whose in-house point estimate is
-  <= 0 opens no lever and routes no H-BC.
-* **The H-BC gate** (M2): HUMAN-LABELS-BETTER (read "against P\*-restricted-to-human-support") routes H-BC only if
-  the S-P students' yardstick on the S-S validation rows (P\*'s labels on P\*'s states) is BELOW the S-H students'
-  (a Welch t across the 10 students, UB < 0): S-P learned its teacher.
-* **The closure gate** (M3, M5): SELF-PLAY-DATA-BETTER closes "1300+ ladder data, at this mix and volume" only if
-  FR-2 did not read ARTEFACT.
+* **UNINFORMATIVE, per contrast** (A5.1, :func:`gate`): both of its arms' PILOT means (units 0–3) are <= the better
+  floor reference + :data:`FLOOR_BAND`. Reported; routes nothing beyond "H-TEAMS first".
+* **NO-DIFFERENCE-AT-4PP** needs the matching in-house interval inside ±EQUIV too (A5.3).
+* **KAKUNA-SPECIFIC** (A2.10, A5.5): a "better" class whose in-house point estimate is <= 0, or a "worse" class whose
+  in-house point estimate is >= 0, opens, closes, routes and drops nothing.
+* **POPULATION-SPECIFIC** (A5.4): a "better" class whose forum72-only point estimate is <= 0 opens no lever.
+* **The H-BC gate** (A5.8): HUMAN-LABELS-BETTER routes H-BC only if the S-P students' mean yardstick on the S-S
+  validation rows' P\* labels is closer to the S-S students' mean than to the S-H students' (:func:`midpoint`).
+* **The closure** (A2.5, A5.6, A5.7): SELF-PLAY-DATA-BETTER closes "1300+ ladder data, at this mix and volume, as a
+  behaviour-cloning target for a fresh network at 3 epochs" only if FR-2 is not ARTEFACT, Δ_labels is not
+  HUMAN-LABELS-BETTER, Δ_states' LB <= 0, S-H is fitted (:data:`FIT_DROP`) and the re-encode share is <=
+  :data:`REENCODE_SHARE`.
 
 ``python -m main.human_data.x59s_read <counts.json>`` prints the three contrasts. The in-house fallback
 (:func:`inhouse`) is a t interval across the k pairings' S-H win rates minus 0.50.
@@ -91,26 +94,38 @@ def classify(lo: float, hi: float, names: Tuple[str, str, str]) -> str:
     return names[2]
 
 
-def contrast(a: List[Student], b: List[Student], sd: Dict[str, float], names: Tuple[str, str, str]) -> Dict:
+def welch(ra: Sequence[float], rb: Sequence[float]) -> Tuple[float, float]:
+    """(half-width, df) of the Welch 95 % interval of mean(ra) − mean(rb) on the contrast's own students."""
     from scipy.stats import t as tdist
 
+    va, vb = _var(ra) / len(ra), _var(rb) / len(rb)
+    if va + vb <= 0:
+        return 0.0, float(len(ra) + len(rb) - 2)
+    df = (va + vb) ** 2 / (va ** 2 / (len(ra) - 1) + vb ** 2 / (len(rb) - 1))
+    return tdist.ppf(0.975, df) * math.sqrt(va + vb), df
+
+
+def contrast(a: List[Student], b: List[Student], sd: Dict[str, float], names: Tuple[str, str, str]) -> Dict:
+    """The registered interval (§4: z with the pooled seed term, Welch when the guard fires), WIDENED to the Welch
+    interval on the contrast's own students when that is wider (Amendment 5 A5.2, REVIEW H M1)."""
     k = len(a)
     ra, rb = [student_rate(s) for s in a], [student_rate(s) for s in b]
     pa, pb = sum(ra) / k, sum(rb) / k
     d = pa - pb
-    guard = sd["sigma2_lb95"] > SIGMA_MAX ** 2
-    if guard:
-        va, vb = _var(ra) / k, _var(rb) / k
-        df = (va + vb) ** 2 / (va ** 2 / (k - 1) + vb ** 2 / (k - 1)) if va + vb > 0 else float(2 * k - 2)
-        hw = tdist.ppf(0.975, df) * math.sqrt(va + vb)
-        rule = f"Welch t (df {df:.1f}): the 1.5 pp seed bound was refuted"
+    w_hw, w_df = welch(ra, rb)
+    if sd["sigma2_lb95"] > SIGMA_MAX ** 2:
+        reg_hw, rule = w_hw, f"Welch t (df {w_df:.1f}): the 1.5 pp seed bound was refuted"
     else:
         vbin = (sum(student_binom(s) for s in a) + sum(student_binom(s) for s in b)) / k ** 2
-        hw = Z * math.sqrt(vbin + 2 * max(SIGMA_MAX ** 2, sd["sigma2_hat"]) / k)
+        reg_hw = Z * math.sqrt(vbin + 2 * max(SIGMA_MAX ** 2, sd["sigma2_hat"]) / k)
         rule = "z with the registered seed term"
+    hw = max(reg_hw, w_hw)
+    if w_hw > reg_hw:
+        rule += f"; widened to its own Welch (df {w_df:.1f}, A5.2)"
     lo, hi = d - hw, d + hw
-    return {"delta": d, "lo": lo, "hi": hi, "halfwidth": hw, "class": classify(lo, hi, names), "rule": rule,
-            "arm_means": [pa, pb]}
+    return {"delta": d, "lo": lo, "hi": hi, "halfwidth": hw, "halfwidth_registered": reg_hw, "halfwidth_welch": w_hw,
+            "class": classify(lo, hi, names), "rule": rule, "arm_means": [pa, pb],
+            "arm_sds": [math.sqrt(_var(ra)), math.sqrt(_var(rb))]}
 
 
 def read(arms: Dict[str, List[Student]]) -> Dict:
@@ -123,61 +138,87 @@ def read(arms: Dict[str, List[Student]]) -> Dict:
                        "guard_fires": sd["sigma2_lb95"] > SIGMA_MAX ** 2}}
     for name, (a, b, names) in CONTRASTS.items():
         out[name] = contrast(arms[a], arms[b], sd, names)
-    out["floor"] = all(sum(student_rate(s) for s in v) / len(v) < 0.15 for v in arms.values())
     return out
 
 
-def welch_ub(a: Sequence[float], b: Sequence[float]) -> float:
-    """The upper 95 % bound of mean(a) − mean(b), Welch t."""
-    from scipy.stats import t as tdist
-
-    va, vb = _var(a) / len(a), _var(b) / len(b)
-    df = (va + vb) ** 2 / (va ** 2 / (len(a) - 1) + vb ** 2 / (len(b) - 1)) if va + vb > 0 else float(len(a) + len(b) - 2)
-    return sum(a) / len(a) - sum(b) / len(b) + tdist.ppf(0.975, df) * math.sqrt(va + vb)
-
-
-def uninformative(arm_rates: Dict[str, float], floor_rates: Dict[str, float], floor_fired: bool) -> bool:
-    """M4 (module docstring): every arm within FLOOR_BAND of the better floor reference (a tie counts as within)."""
-    best = max(floor_rates.values())
-    return floor_fired or all(r - best <= FLOOR_BAND + TIE for r in arm_rates.values())
+#: Amendment 5 A5.6: S-H is FITTED iff its students' mean last-quarter-epoch drop in validation NLL is below this
+FIT_DROP = 0.01
+#: Amendment 5 A5.7: more than this share of re-encoded rows differing blocks the closure and STATES-HURT
+REENCODE_SHARE = 0.01
+POP_SPECIFIC = "POPULATION-SPECIFIC"
+KAKUNA_SPECIFIC = "KAKUNA-SPECIFIC"
+UNINF = "UNINFORMATIVE"
 
 
-def verdict(read_: Dict, inhouse_: Dict[str, Dict], floor_rates: Dict[str, float],
-            sp_yard: Sequence[float], sh_yard: Sequence[float], fr2: str) -> Dict:
-    r"""Amendment 2's final classes and actions (module docstring). ``inhouse_`` holds :func:`inhouse` reads keyed
-    ``delta_data`` and ``delta_labels``; ``sp_yard`` / ``sh_yard`` the S-P / S-H students' NLL on the S-S validation
-    rows' P\* labels; ``fr2`` FR-2's class (:data:`FR2_CLASSES`: it is read BEFORE Δ_data is reported)."""
+def gate(pilot: Dict[str, List[Student]], floor_rates: Dict[str, float], band: float = FLOOR_BAND) -> Dict:
+    """Amendment 5 A5.1: a contrast is UNINFORMATIVE iff BOTH its arms' pilot means are <= the better floor reference +
+    ``band`` (a mean within 1e-9 counts as within); the rest of the read plays iff Δ_data or Δ_labels is informative."""
+    bar = max(floor_rates.values()) + band
+    mean = {a: sum(student_rate(s) for s in v) / len(v) for a, v in pilot.items()}
+    out = {name: all(mean[x] <= bar + TIE for x in CONTRASTS[name][:2]) for name in CONTRASTS}
+    return {"uninformative": out, "continue": not (out["delta_data"] and out["delta_labels"]), "bar": bar}
+
+
+def midpoint(sp: Sequence[float], ss: Sequence[float], sh: Sequence[float]) -> bool:
+    """A5.8: S-P learned its teacher iff its mean yardstick is closer to S-S's mean than to S-H's (a tie fails)."""
+    m = lambda xs: sum(xs) / len(xs)  # noqa: E731
+    return abs(m(sp) - m(ss)) < abs(m(sp) - m(sh)) - TIE
+
+
+def _inside(lo: float, hi: float) -> bool:
+    return lo > -EQUIV + TIE and hi < EQUIV - TIE
+
+
+def verdict(read_: Dict, inhouse_: Dict[str, Dict], uninf: Dict[str, bool], f_delta: Dict[str, float],
+            yard: Dict[str, Sequence[float]], fr2: str, sh_fit_drop: float, reencode_share: float) -> Dict:
+    r"""Amendment 5's final classes and actions (A5.1–A5.8 over A2's). ``inhouse_``: :func:`inhouse` reads keyed
+    ``delta_data`` / ``delta_labels``; ``uninf``: :func:`gate`'s per-contrast booleans (from the pilot); ``f_delta``:
+    each contrast's forum72-only point estimate; ``yard``: ``{"S-H", "S-P", "S-S"}`` -> the students' NLL on the S-S
+    validation rows' P\* labels; ``fr2``: FR-2's class (read BEFORE Δ_data is reported); ``sh_fit_drop``: the S-H
+    students' mean last-quarter-epoch drop in validation NLL; ``reencode_share``: A5.7's share of re-encoded rows that
+    differ."""
     if fr2 not in FR2_CLASSES:
         raise ValueError(f"FR-2 must be read before Delta_data is reported (got {fr2!r}; one of {FR2_CLASSES})")
-    arm_rates = {a: m for name in ("delta_data", "delta_labels") for a, m in
-                 zip(CONTRASTS[name][:2], read_[name]["arm_means"])}
-    uninf = uninformative(arm_rates, floor_rates, bool(read_["floor"]))
-    out: Dict = {"uninformative": uninf, "classes": {}, "actions": []}
+    out: Dict = {"classes": {}, "kakuna_classes": {}, "actions": [], "uninformative": dict(uninf)}
     for name in ("delta_data", "delta_labels"):
-        c = read_[name]["class"] if not read_["floor"] else inhouse_[name]["class"]
-        better = CONTRASTS[name][2][0]
-        if c == better and inhouse_[name]["delta"] <= TIE:
-            c = "KAKUNA-SPECIFIC"
+        better, worse, undecided = CONTRASTS[name][2]
+        c = read_[name]["class"]
+        out["kakuna_classes"][name] = c
+        ih = inhouse_[name]
+        if uninf[name]:
+            c = UNINF
+        elif c == NO_DIFF and not _inside(ih["lo"], ih["hi"]):
+            c = undecided                                                # A5.3
+        elif c == better and ih["delta"] <= TIE:
+            c = KAKUNA_SPECIFIC                                          # A2.10
+        elif c == worse and ih["delta"] >= -TIE:
+            c = KAKUNA_SPECIFIC                                          # A5.5
+        elif c == better and f_delta[name] <= TIE:
+            c = POP_SPECIFIC                                             # A5.4
         out["classes"][name] = c
     d, lab = out["classes"]["delta_data"], out["classes"]["delta_labels"]
-    if uninf:
-        out["actions"].append("UNINFORMATIVE: report every class; close nothing; route nothing beyond H-TEAMS first")
-        return out
-    learned_teacher = welch_ub(sp_yard, sh_yard) < -TIE
-    out["sp_learned_its_teacher"] = learned_teacher
+    learned = midpoint(yard["S-P"], yard["S-S"], yard["S-H"])
+    out["sp_learned_its_teacher"] = learned
+    fitted = sh_fit_drop < FIT_DROP - TIE
+    out["sh_fitted"] = fitted
+    out["reencode_blocks"] = reencode_share > REENCODE_SHARE + TIE
     if lab == "HUMAN-LABELS-BETTER":
-        out["actions"].append("H-BC first (against P*-restricted-to-human-support)" if learned_teacher else
+        out["actions"].append("H-BC first (against P*-restricted-to-human-support)" if learned else
                               "HUMAN-LABELS-BETTER reported; H-BC NOT routed (S-P did not learn its teacher)")
     elif lab == "OWN-LABELS-BETTER":
         out["actions"].append("H-BC dropped (conservative: against a handicapped P*)")
     else:
-        out["actions"].append("H-TEAMS first, with the D1 contrast")
+        out["actions"].append(f"{lab}: H-TEAMS first, with the D1 contrast")
     if d == "SELF-PLAY-DATA-BETTER":
-        out["actions"].append("closes 1300+ ladder data at this mix and volume" if fr2 != "ARTEFACT" and
-                              lab != "HUMAN-LABELS-BETTER" and read_["delta_states"]["lo"] <= TIE else
-                              "SELF-PLAY-DATA-BETTER reported; closes nothing (FR-2 ARTEFACT, or a label/state "
-                              "contrast keeps a lever open)")
-    if d != "HUMAN-DATA-BETTER":
+        why = [w for w, bad in (("FR-2 ARTEFACT", fr2 == "ARTEFACT"),
+                                ("Delta_labels HUMAN-LABELS-BETTER", lab == "HUMAN-LABELS-BETTER"),
+                                ("Delta_states' LB > 0", read_["delta_states"]["lo"] > TIE),
+                                ("S-H not fitted (at this budget)", not fitted),
+                                ("the re-encode check blocks it (A5.7)", out["reencode_blocks"])) if bad]
+        out["actions"].append(
+            "closes 1300+ ladder data, at this mix and volume, as a behaviour-cloning target for a fresh network at 3 "
+            "epochs (7,041 steps)" if not why else f"SELF-PLAY-DATA-BETTER reported; closes nothing ({'; '.join(why)})")
+    if d not in ("HUMAN-DATA-BETTER", UNINF):
         out["actions"].append("the conditional >= 1500 follow-up fires (S-H>=1500 vs S-H-mix vs S-S at matched rows)")
     return out
 
