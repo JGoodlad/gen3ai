@@ -11,10 +11,12 @@
     python -m main.reads hold    --state DIR --lane anchor|s --by WHO --why TEXT   # no new unit; the units in flight
                                                                                    # finish; the supervisor exits 0
     python -m main.reads pid     --state DIR --lane anchor|s [--wait S]  # the lane's LIVE supervisor pid (it records itself)
-    python -m main.reads status  --state DIR                           # + supervisor_pids (the pid to watch) and holds
+    python -m main.reads status  --state DIR                           # + supervisor_pids (the pid to watch), holds, each
+                                                                       #   label's `exhausted` units (retries spent)
     python -m main.reads repin   --state DIR --to COMMIT --by WHO --why TEXT  # accept another playing commit IF the play
                                                                               # path is byte-identical (else refuse)
-    python -m main.reads assemble --state DIR                          # -> cells.json (regime ids ALWAYS)
+    python -m main.reads assemble --state DIR                          # -> cells.json (regime ids ALWAYS; an anchor group
+                                                                       #    names its unplayed and EXHAUSTED units)
     python -m main.reads decide  --state DIR                           # -> inputs.json, decision.json
     python -m main.reads record  --state DIR [--out PATH]              # -> record.json (schema-checked; INCOMPLETE_BY_STOP
                                                                        #    only for a spec that registered a reduced read)
@@ -140,7 +142,10 @@ def main(argv: Optional[List[str]] = None) -> int:
             return 0
         if a.cmd == "assemble":
             cells = api.assemble(Path(a.state))
-            _dump({g: {"regime_id": grp["regime_id"], "inconclusive": grp["inconclusive"]}
+            _dump({g: dict({"regime_id": grp["regime_id"], "inconclusive": grp["inconclusive"]},
+                           # an anchor group's unplayed units, and which of them EXHAUSTED their retries (reads.md §6)
+                           **({k: grp[k] for k in ("unplayed", "exhausted_units", "unplayed_exhausted_units")}
+                              if lane == "anchor" else {}))
                    for lane in ("anchor", "s") for g, grp in cells[lane].items()})
             return 0
         if a.cmd == "decide":

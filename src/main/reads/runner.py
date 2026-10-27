@@ -34,6 +34,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 from main.reads import anchor_pool as AP
+from main.reads import attempts as AT
 from main.reads import lanectl as LC
 from main.reads import layout as LY
 from main.reads.assemble import AssembleError
@@ -366,6 +367,23 @@ def _s_pending(spec: ReadSpec, state: Path, models: Dict[str, Dict[str, Any]]) -
 
 
 # -------------------------------------------------------------------------------------------- run
+def _claim_substates(spec: ReadSpec, state: Path, claims: "SV.SubStateClaims") -> None:
+    """The anchor lane holds every kakuna state it plays (``SV.SubStateClaims``): a standalone ``kakuna run`` on
+    ``<state>/anchor/<group>/<label>/`` would play the same units (NESTED supervisors, ``reads.md`` §3). A conflict is a
+    :class:`RunError` (a typed refusal, logged as ``refused``), never the path-moved ``SupervisorError``."""
+    from main.reads.spec import imported
+
+    for g, a in spec.anchor.items():
+        for lab in a.models:
+            st = LY.anchor_state(state, g, lab)
+            if lab in imported(a) or not (st / "plan.json").exists():
+                continue
+            try:
+                claims.claim(st)
+            except SV.SupervisorError as exc:
+                raise RunError(f"anchor {g}/{lab}: {exc}") from None
+
+
 def _lock(state: Path, lane: str) -> Any:
     fh = try_exclusive(LY.lane_lock(state, lane), "w")
     if fh is None:
@@ -420,6 +438,13 @@ def _check_prefix(spec: ReadSpec, state: Path, st: Path, u: Any, jl: Path) -> No
         LC.hold(state, "anchor", by="G-PREFIX", why=f"deal {res['deal']}: {res['why']}"[:600])
 
 
+def _gave_up(fails: Dict[str, int]) -> List[str]:
+    """The units this supervisor's ``MAX_ATTEMPTS`` attempts all failed to count (EXHAUSTED: ``main.reads.attempts``)."""
+    from main.x35 import kakuna as KA
+
+    return sorted(n for n, k in fails.items() if k >= KA.MAX_ATTEMPTS)
+
+
 def anchor_concurrency(requested: int, lane: str) -> int:
     """The units the anchor lane runs at once: ``requested`` (>= 1), capped at the box's heavy-slot count. Only the
     anchor lane runs units concurrently (an S unit is already several engines inside ONE slot)."""
@@ -467,9 +492,13 @@ def run(state: Path, lane: str, stop_epoch: float, *, workers: int = S_WORKERS, 
     run_unit = run_unit or KA.run_unit
     run_s = run_s or (lambda argv: subprocess.run(argv, check=False, env=child_env()).returncode)
     jl = LY.supervisor_log(state, lane)
+    claims = SV.SubStateClaims()        # the kakuna states the anchor lane plays (NESTED supervisors, supervisors.py)
     try:
+        if lane == "anchor":
+            _claim_substates(spec, state, claims)               # refused before anything is written or played
         LC.write_pidfile(state, lane, stop_epoch=stop_epoch)   # THIS process's pid: `$!` of setsid nohup is the wrapper's
     except BaseException:
+        claims.close()
         hold.close()
         sv.close()
         raise
@@ -500,6 +529,7 @@ def run(state: Path, lane: str, stop_epoch: float, *, workers: int = S_WORKERS, 
             waiting = settle(spec, state)
             models = _load_models(state)
             if lane == "anchor":
+                _claim_substates(spec, state, claims)           # a model that settled this turn has a state to hold now
                 todo = [(st, u) for st, u in _anchor_todo(spec, state, fails) if not pool.busy(st, u)]
                 if todo and max_units is not None and started[0] >= max_units:
                     pool.drain()                # the units this supervisor may start are started: finish, then stop
@@ -509,7 +539,8 @@ def run(state: Path, lane: str, stop_epoch: float, *, workers: int = S_WORKERS, 
                 if todo and pool.free():
                     if clock() >= stop_epoch:
                         pool.drain()            # a lane never stops with a unit of its own in flight
-                        _jl(jl, {"event": "stop_at", "left": len(_anchor_todo(spec, state, fails))})
+                        _jl(jl, {"event": "stop_at", "left": len(_anchor_todo(spec, state, fails)),
+                                 "not_counted": _gave_up(fails)})
                         return 0
                     n_new = pool.free() if max_units is None else min(pool.free(), max_units - started[0])
                     for st, u in todo[:n_new]:
@@ -549,7 +580,7 @@ def run(state: Path, lane: str, stop_epoch: float, *, workers: int = S_WORKERS, 
                                        f"{spec.s[g].pairs} pairs (incomplete batches?); read the ledger")
                     continue
             if not waiting:
-                _jl(jl, {"event": "done", "not_counted": sorted(n for n, k in fails.items() if k >= KA.MAX_ATTEMPTS)})
+                _jl(jl, {"event": "done", "not_counted": _gave_up(fails)})
                 return 0
             if clock() + POLL_S >= stop_epoch:
                 _jl(jl, {"event": "stop_at", "waiting": waiting})
@@ -567,6 +598,7 @@ def run(state: Path, lane: str, stop_epoch: float, *, workers: int = S_WORKERS, 
     finally:
         pool.close()                    # the claims below are held until the last unit of this lane has ended
         LC.remove_pidfile(state, lane)  # only if it still names this process (a moved state's new dir has none)
+        claims.close()
         hold.close()
         sv.close()
 
@@ -595,6 +627,13 @@ def status(state: Path) -> Dict[str, Any]:
                            # each lane's supervisor as IT recorded itself (<state>/<lane>/supervisor.pid): the pid a
                            # watcher targets, with start ticks; alive is checked against /proc. null = none recorded
                            "supervisor_pids": {ln: LC.pid_status(state, ln) for ln in SV.LANES},
+                           # live supervisors of code that predates `hold`: no valid pid file, so a hold cannot stop them
+                           # (stop them by pid, restart on a repinned commit; reads.md §3)
+                           "not_honoring_hold": {ln: LC.supervisors_of(state, ln)["not_honoring"] for ln in SV.LANES},
+                           # standalone `kakuna run` queues INSIDE this state: they play the anchor lane's units too
+                           # (NESTED supervisors, supervisors.py); [] = none
+                           "nested_kakuna": [{"pid": p, "state": st}
+                                             for p, _ln, st in SV.nested_supervisors(state, "anchor")],
                            # a held lane (main.reads.lanectl): who, why, since when; null = not held
                            "holds": {ln: _hold_view(state, ln) for ln in SV.LANES},
                            # the playing commits a repin accepted beyond code.json's (main.reads.repin)
@@ -611,8 +650,11 @@ def status(state: Path) -> Dict[str, Any]:
                 out["anchor"].setdefault(g, {})[lab] = "not planned"
                 continue
             units = KA.load_plan(st)
+            # `exhausted`: not counted and every attempt spent (units.jsonl, main.reads.attempts), unlike a unit the stop
+            # has not reached yet
             out["anchor"].setdefault(g, {})[lab] = {"counted": sum(KA.is_done(st, u) for u in units),
-                                                    "planned": len(units)}
+                                                    "planned": len(units),
+                                                    "exhausted": len(AT.exhausted_units(st, units))}
     for g, x in spec.s.items():
         for lab in x.models:
             out["s"].setdefault(g, {})[lab] = (

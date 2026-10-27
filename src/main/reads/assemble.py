@@ -36,6 +36,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 
 from agents.training import eval_ledger as L
+from main.reads import attempts as AT
 from main.reads import engine as EN
 
 ANCHOR_REGIME_SCHEMA = "gen3_read_anchor_regime_v1"
@@ -308,7 +309,8 @@ def anchor_units(kakuna_state: Path) -> List[Dict[str, Any]]:
 
 def anchor_group(rows: Sequence[Mapping[str, Any]], *, labels: Sequence[str], teamsets: Sequence[str],
                  unit_seeds: Sequence[int], shas: Optional[Mapping[str, str]] = None,
-                 loads: Optional[Mapping[str, Mapping[str, Any]]] = None, per_game: bool = False) -> Dict[str, Any]:
+                 loads: Optional[Mapping[str, Mapping[str, Any]]] = None, per_game: bool = False,
+                 exhausted: Sequence[str] = ()) -> Dict[str, Any]:
     """One anchor group's cells ``{label: {teamset: {wins, ties, n, units, planned, skipped}}}`` over COUNTED units,
     its ONE regime id and every reason it is not conclusive. ``shas``: the resolved models' sha256 (a unit played
     on other bytes refuses).
@@ -322,7 +324,12 @@ def anchor_group(rows: Sequence[Mapping[str, Any]], *, labels: Sequence[str], te
     :func:`mixed_group_regime_id`, and the group carries ``regime_ids_by_load`` and ``loads``.
 
     ``per_game`` (S-U): each unit is ONE game of its seed's series (its row's ``game``), so a cell plans
-    ``len(unit_seeds) × UNIT_GAMES`` units and a unit is keyed by (label, set, seed, game)."""
+    ``len(unit_seeds) × UNIT_GAMES`` units and a unit is keyed by (label, set, seed, game).
+
+    ``exhausted``: the names of this group's own units whose retries are spent (``main.reads.attempts``: not counted,
+    ``MAX_ATTEMPTS`` attempts ended uncounted). The group carries them as ``exhausted_units`` and those of them with no
+    row at all (no summary) as ``unplayed_exhausted_units``, a part of ``unplayed``: the rest of ``unplayed`` is what the
+    lane's stop cut off (``stop_cut``)."""
     from main.reads.spec import load_stamp
     from main.x35.kakuna import UNIT_GAMES
 
@@ -399,10 +406,14 @@ def anchor_group(rows: Sequence[Mapping[str, Any]], *, labels: Sequence[str], te
     if engine_why:
         why.append(f"counted units {engine_why}")
     unplayed = len(labels) * len(teamsets) * len(unit_seeds) * per_seed - len(seen)
+    have = {str(r["unit"]) for r in rows}
+    spent = sorted(set(exhausted))
     return {"regime_id": rid, "regime_ids": by_ts, "engine": engine, "teamsets": list(teamsets),
             "unit_seeds": list(unit_seeds),
             "cells": cells, "units": sorted((dict(r) for r in rows), key=lambda r: r["unit"]),
-            "unplayed": unplayed, "inconclusive": sorted(set(why)), **out_extra}
+            "unplayed": unplayed, "exhausted_units": spent,
+            "unplayed_exhausted_units": [n for n in spent if n not in have],
+            "inconclusive": sorted(set(why)), **out_extra}
 
 
 # ------------------------------------------------------------------------------------------------ S
@@ -511,16 +522,19 @@ def assemble(spec: Any, state: Path) -> Dict[str, Any]:
 
     for g, a in spec.anchor.items():
         rows: List[Dict[str, Any]] = []
+        spent: List[str] = []
         for lab in a.models:
             st = LY.anchor_state(state, g, lab)
             if lab not in imported(a) and (st / "plan.json").exists():
                 rows += anchor_units(st)
+                spent += AT.exhausted_units(st)
         meta = None
         if a.imports is not None:                         # the earlier read's units: sha-, regime- and engine-checked
             got, meta = IM.anchor_rows(spec, g, shas, this_state=state, own=rows)
             rows += got
         grp = anchor_group(rows, labels=a.models, teamsets=a.teamsets, unit_seeds=a.unit_seeds, shas=shas,
-                           loads={lab: spec.models[lab].load for lab in a.models}, per_game=a.per_game)
+                           loads={lab: spec.models[lab].load for lab in a.models}, per_game=a.per_game,
+                           exhausted=spent)
         if a.per_game and any("search" in spec.models[lab].load for lab in a.models):
             # G-PREFIX (main.reads.prefix): a pair whose protocol diverged before the search's first turn is a
             # nondeterminism that corrupts the pairing; the group is not conclusive (the read VOID) until it is resolved
@@ -596,17 +610,23 @@ def conclusive(cells: Mapping[str, Any], *, reported: Sequence[Tuple[str, str]] 
     return why
 
 
-def unplayed_groups(cells: Mapping[str, Any], reported: Sequence[Tuple[str, str]] = ()) -> Dict[str, Dict[str, int]]:
-    """``{"anchor.<group>": {planned, played, unplayed, counted}}`` of each DECIDED (not reported-only) anchor group that
-    has units unplayed: what a reduced read at a registered stop leaves out. ``counted`` = units that entered the cells."""
+def unplayed_groups(cells: Mapping[str, Any], reported: Sequence[Tuple[str, str]] = ()) -> Dict[str, Dict[str, Any]]:
+    """``{"anchor.<group>": {planned, played, unplayed, counted, unplayed_exhausted, stop_cut, unplayed_exhausted_units}}``
+    of each DECIDED (not reported-only) anchor group that has units unplayed: what a reduced read at a registered stop
+    leaves out. ``counted`` = units that entered the cells. ``unplayed`` is TWO things: ``unplayed_exhausted`` units whose
+    retries were spent without a summary (a defect of the play, which a longer stop would not have fixed) and ``stop_cut``
+    units the lane's registered stop never reached (``main.reads.attempts``)."""
     skip = set(reported)
-    out: Dict[str, Dict[str, int]] = {}
+    out: Dict[str, Dict[str, Any]] = {}
     for g, grp in (cells.get("anchor") or {}).items():
         n = int(grp.get("unplayed") or 0)
         if n and ("anchor", g) not in skip:
             planned = sum(int(c["planned"]) for by in grp["cells"].values() for c in by.values())
+            lost = list(grp.get("unplayed_exhausted_units") or ())
             out[f"anchor.{g}"] = {"planned": planned, "played": planned - n, "unplayed": n,
-                                  "counted": sum(int(c["units"]) for by in grp["cells"].values() for c in by.values())}
+                                  "counted": sum(int(c["units"]) for by in grp["cells"].values() for c in by.values()),
+                                  "unplayed_exhausted": len(lost), "stop_cut": n - len(lost),
+                                  "unplayed_exhausted_units": lost}
     return out
 
 

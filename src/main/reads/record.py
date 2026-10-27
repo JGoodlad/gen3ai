@@ -13,8 +13,9 @@
      "imports": {"<lane>.<group>": {state, spec_sha256, ...}},      cells imported from an earlier read's state
      "completeness": {"class": "COMPLETE"} |                        every planned unit of every decided group was played, or
                     {"class": "INCOMPLETE_BY_STOP", "opt_in": "decision.allow_partial_at_stop",   the spec REGISTERED a reduced read
-                     "groups": {"anchor.<g>": {planned, played, unplayed, counted}},               and the lane ended at its
-                     "stops": {"anchor": {event: "stop_at", time, left, stop_epoch}}}              registered stop (absent = COMPLETE)
+                     "groups": {"anchor.<g>": {planned, played, unplayed, counted,                 and the lane ended at its
+                                unplayed_exhausted, stop_cut, unplayed_exhausted_units}},          registered stop (absent = COMPLETE)
+                     "stops": {"anchor": {event: "stop_at", time, left, not_counted, stop_epoch}}}
      "inputs": {...}, "decision": {...}}                            the rule's input and output, as decided
 
 An X35-stage rule (``Rule.x35_record``: ``x35_r1``, ``d1``) also carries its decision's keys at the TOP level (``arm``,
@@ -53,7 +54,9 @@ def build(spec: Any, cells: Mapping[str, Any], inputs: Mapping[str, Any], decisi
     """``partial``: ``None`` (every planned unit played) or ``{groups, stops}`` of :func:`main.reads.api.record` (the decided
     anchor groups with units unplayed, and each lane's registered-stop evidence): the record is then
     :data:`INCOMPLETE_BY_STOP`, which the spec must have registered (``allow_partial_at_stop``), and only those groups'
-    unplayed units are left out of ``cells_inconclusive``."""
+    unplayed units are left out of ``cells_inconclusive``. Each group's unplayed units are two kinds and the record names
+    both: ``stop_cut`` (the stop never reached them) and ``unplayed_exhausted`` (their retries were spent: a defect of
+    the play, not of the schedule)."""
     from main.reads.assemble import conclusive, reported_incomplete
     from main.reads.rules import RULES
 
@@ -171,6 +174,12 @@ def _check_completeness(comp: Any) -> List[str]:
     for k, g in groups.items():
         if not (isinstance(g, dict) and int(g.get("unplayed") or 0) > 0):
             probs.append(f"completeness.groups[{k}]: no unplayed unit")
+        elif ("unplayed_exhausted" in g or "stop_cut" in g) and (
+                int(g.get("unplayed_exhausted") or 0) + int(g.get("stop_cut") or 0) != int(g["unplayed"])
+                or int(g.get("unplayed_exhausted") or 0) != len(g.get("unplayed_exhausted_units") or ())):
+            probs.append(f"completeness.groups[{k}]: unplayed {g['unplayed']} is not unplayed_exhausted "
+                         f"{g.get('unplayed_exhausted')} + stop_cut {g.get('stop_cut')} (or the exhausted count does "
+                         "not match the units named)")
         if k.split(".", 1)[0] not in stops:
             probs.append(f"completeness.groups[{k}]: its lane has no recorded stop")
     for lane, st in stops.items():
@@ -205,6 +214,8 @@ def summary_line(rec: Mapping[str, Any]) -> str:
     comp = rec.get("completeness") or {}
     part = ""
     if comp.get("class") == INCOMPLETE_BY_STOP:
-        n = {k: (g["played"], g["planned"]) for k, g in comp["groups"].items()}
-        part = f" [{INCOMPLETE_BY_STOP}: " + ", ".join(f"{k} {a} of {b} units played" for k, (a, b) in sorted(n.items())) + "]"
+        n = {k: (g["played"], g["planned"], int(g.get("unplayed_exhausted") or 0)) for k, g in comp["groups"].items()}
+        part = f" [{INCOMPLETE_BY_STOP}: " + ", ".join(
+            f"{k} {a} of {b} units played" + (f", {e} EXHAUSTED (retries spent)" if e else "")
+            for k, (a, b, e) in sorted(n.items())) + "]"
     return f"{rec['read']}: {rec['verdict']}{part} (rule {rec['rule']}; regimes {regs}; models {mods})"

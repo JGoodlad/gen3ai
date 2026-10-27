@@ -18,6 +18,17 @@ one kakuna state are refused, whatever became of the in-state ``supervisor.lock`
 A running supervisor also pins its state dir's IDENTITY (device, inode) at start: if the path stops naming that dir
 (renamed aside, replaced), it stops instead of writing into whatever now sits at the path (:func:`check_same_dir`).
 
+NESTED supervisors (the duplicate-play class by another route, N1-P / D3 look 1, 2026-10-26): the anchor lane of a reads
+state ``S`` plays its units on the kakuna states ``S/anchor/<group>/<label>/``, so a standalone ``kakuna run`` on one of
+them plays the SAME units, and neither path above names the other (different paths). Three claims close it:
+
+* :class:`Hold` of a ``kakuna`` queue refuses when a live ``main.reads`` ANCHOR supervisor names a state that CONTAINS the
+  queue's state (the ``/proc`` scan), or when an ancestor's anchor path lock is held (:func:`nested_supervisors`);
+* :class:`Hold` of an ``anchor`` lane refuses when a live standalone ``kakuna run`` names a state INSIDE its own;
+* the anchor lane holds every kakuna state it plays (:class:`SubStateClaims`): that state's ``kakuna``-lane path lock
+  and its in-state ``supervisor.lock``, the two a ``kakuna run`` takes, so a queue started AFTER the lane (of this code or
+  older) is refused by the lock it already honors, and a queue already on the state refuses the lane.
+
 Liveness is read from ``/proc/<pid>`` only (``utils.procfs``), never ``kill -0`` (acf2193f: inside a sandboxed agent
 shell ``kill -0`` read a live supervisor as dead).
 """
@@ -69,13 +80,14 @@ def lock_path(state: "str | os.PathLike[str]", lane: str) -> Path:
 def _holder(path: Path) -> str:
     try:
         d = json.loads(path.read_text() or "{}")
-        return f"pid {d.get('pid')} (since {d.get('since')})"
+        return f"pid {d.get('pid')} (since {d.get('since')}{', ' + d['via'] if d.get('via') else ''})"
     except (OSError, ValueError):
         return "an unknown pid"
 
 
-def acquire(state: "str | os.PathLike[str]", lane: str) -> Any:
-    """The path-keyed lane lock (held open for the supervisor's life; closing it releases it)."""
+def acquire(state: "str | os.PathLike[str]", lane: str, *, via: Optional[str] = None) -> Any:
+    """The path-keyed lane lock (held open for the supervisor's life; closing it releases it). ``via``: who holds it on
+    the lane's behalf (the anchor lane holds its kakuna states' ``kakuna`` locks), written in the holder record."""
     p = lock_path(state, lane)
     p.parent.mkdir(parents=True, exist_ok=True)
     fh = try_exclusive(p, "a+")          # "a+": a refused caller reads the holder's record, so never truncate
@@ -85,7 +97,7 @@ def acquire(state: "str | os.PathLike[str]", lane: str) -> Any:
     fh.seek(0)
     fh.truncate()
     fh.write(json.dumps({"pid": os.getpid(), "state": canonical(state), "lane": lane,
-                         "since": time.strftime("%Y-%m-%dT%H:%M:%S%z")}) + "\n")
+                         "since": time.strftime("%Y-%m-%dT%H:%M:%S%z"), **({"via": via} if via else {})}) + "\n")
     fh.flush()
     return fh
 
@@ -112,15 +124,11 @@ def parse_argv(argv: Sequence[str]) -> Optional[Tuple[str, Optional[str], Option
     return None
 
 
-def live_supervisors(state: "str | os.PathLike[str]", *, lane: Optional[str] = None, proc: str = "/proc",
-                     exclude: Iterable[int] = ()) -> Dict[str, List[int]]:
-    """``{lane: [pid, ...]}`` of every LIVE supervisor (``main.reads run|resume``, or the standalone
-    ``main.x35.kakuna run`` as lane :data:`KAKUNA_LANE`) naming ``state``'s canonical path (each argv's ``--state``
-    resolved against that process's own ``cwd``), from ``/proc`` alone. ``exclude``: pids to skip (the
-    caller and its ancestors, whose argv may carry the same words)."""
-    want = canonical(state)
+def _scan(proc: str, exclude: Iterable[int]) -> List[Tuple[int, str, str]]:
+    """``(pid, lane, canonical state path)`` of every LIVE supervisor in ``/proc`` (the argv's ``--state`` resolved
+    against that process's own cwd), pids ascending. ``exclude``: pids to skip."""
     skip = set(exclude)
-    out: Dict[str, List[int]] = {}
+    out: List[Tuple[int, str, str]] = []
     for pid in sorted(procfs.all_pids(proc)):
         if pid in skip:
             continue
@@ -133,12 +141,60 @@ def live_supervisors(state: "str | os.PathLike[str]", *, lane: Optional[str] = N
         _verb, st, ln = got
         if st is None:
             continue
-        if lane is not None and ln != lane:
-            continue
         cwd = procfs.readlink(pid, "cwd", proc) or None
-        if canonical(st, cwd=cwd) != want or not procfs.pid_alive(pid, proc):
+        if not procfs.pid_alive(pid, proc):
             continue
-        out.setdefault(str(ln), []).append(pid)
+        out.append((pid, str(ln), canonical(st, cwd=cwd)))
+    return out
+
+
+def live_supervisors(state: "str | os.PathLike[str]", *, lane: Optional[str] = None, proc: str = "/proc",
+                     exclude: Iterable[int] = ()) -> Dict[str, List[int]]:
+    """``{lane: [pid, ...]}`` of every LIVE supervisor (``main.reads run|resume``, or the standalone
+    ``main.x35.kakuna run`` as lane :data:`KAKUNA_LANE`) naming ``state``'s canonical path (each argv's ``--state``
+    resolved against that process's own ``cwd``), from ``/proc`` alone. ``exclude``: pids to skip (the
+    caller and its ancestors, whose argv may carry the same words)."""
+    want = canonical(state)
+    out: Dict[str, List[int]] = {}
+    for pid, ln, st in _scan(proc, exclude):
+        if st == want and (lane is None or ln == lane):
+            out.setdefault(ln, []).append(pid)
+    return out
+
+
+def _within(child: str, parent: str) -> bool:
+    """``child`` is a path strictly inside ``parent`` (both canonical)."""
+    return child != parent and child.startswith(parent.rstrip(os.sep) + os.sep)
+
+
+def nested_supervisors(state: "str | os.PathLike[str]", lane: str, *, proc: str = "/proc",
+                       exclude: Iterable[int] = ()) -> List[Tuple[int, str, str]]:
+    """The live supervisors that would play the SAME kakuna units as a ``lane`` supervisor at ``state``, by another path
+    (module docstring, NESTED): ``(pid, lane, their canonical state)``. For a ``kakuna`` queue: the ``main.reads`` ANCHOR
+    supervisors whose state CONTAINS ``state``. For an ``anchor`` lane: the standalone ``kakuna`` queues INSIDE
+    ``state``. Empty for any other lane (the S lane plays no kakuna unit)."""
+    me = canonical(state)
+    if lane == KAKUNA_LANE:
+        return [(p, ln, st) for p, ln, st in _scan(proc, exclude) if ln == "anchor" and _within(me, st)]
+    if lane == "anchor":
+        return [(p, ln, st) for p, ln, st in _scan(proc, exclude) if ln == KAKUNA_LANE and _within(st, me)]
+    return []
+
+
+def held_ancestor_locks(state: "str | os.PathLike[str]") -> List[Tuple[str, str]]:
+    """``(ancestor path, holder)`` of every proper ancestor of ``state`` whose ANCHOR-lane path lock is held right now:
+    a reads anchor supervisor on that ancestor, of THIS code (older code took no path lock; the ``/proc`` scan sees it).
+    The lock is taken and released at once; a lock file that does not exist is not created."""
+    out: List[Tuple[str, str]] = []
+    for anc in Path(canonical(state)).parents:
+        p = lock_path(anc, "anchor")
+        if not p.exists():
+            continue
+        fh = try_exclusive(p, "a+")
+        if fh is None:
+            out.append((str(anc), _holder(p)))
+        else:
+            fh.close()
     return out
 
 
@@ -164,7 +220,8 @@ def check_same_dir(state: "str | os.PathLike[str]", ident: Tuple[int, int]) -> N
 
 
 class Hold:
-    """Every claim a lane supervisor holds: the path lock, the ``/proc`` check passed, the dir identity."""
+    """Every claim a lane supervisor holds: the path lock, the ``/proc`` check passed, the dir identity, and (module
+    docstring, NESTED) no supervisor that plays the same kakuna units from a state containing / inside this one."""
 
     def __init__(self, state: Path, lane: str) -> None:
         self.state, self.lane = state, lane
@@ -174,6 +231,15 @@ class Hold:
             if others:
                 raise SupervisorError(f"a live {lane} supervisor already names {canonical(state)}: pid(s) "
                                       f"{others[lane]} (/proc scan)")
+            nested = nested_supervisors(state, lane, exclude=self_and_ancestors())
+            if nested:
+                raise SupervisorError(_nested_message(state, lane, nested))
+            if lane == KAKUNA_LANE:
+                locked = held_ancestor_locks(state)
+                if locked:
+                    raise SupervisorError(
+                        f"{canonical(state)} lies inside {locked[0][0]}, whose anchor lane holds its path lock "
+                        f"({locked[0][1]}): that lane plays this state's units")
             self.ident = dir_identity(state)
         except Exception:
             self.fh.close()
@@ -184,3 +250,48 @@ class Hold:
 
     def close(self) -> None:
         self.fh.close()
+
+
+def _nested_message(state: "str | os.PathLike[str]", lane: str, nested: Sequence[Tuple[int, str, str]]) -> str:
+    who = ", ".join(f"pid {p} ({ln} supervisor of {st})" for p, ln, st in nested)
+    if lane == KAKUNA_LANE:
+        return (f"{canonical(state)} lies inside a state whose reads ANCHOR lane plays its units: {who} (/proc scan). "
+                "A second supervisor on a kakuna state plays every unit twice; stop one of them (by pid)")
+    return (f"a live standalone kakuna queue plays a state INSIDE {canonical(state)}: {who} (/proc scan). The anchor "
+            "lane would play the same units twice; let the queue finish or stop it (by pid)")
+
+
+class SubStateClaims:
+    """The claims the ANCHOR lane holds on the kakuna states it plays, ``<state>/anchor/<group>/<label>/`` (module
+    docstring, NESTED). Per state: no live standalone ``kakuna run`` names it (the ``/proc`` scan), its ``kakuna``-lane
+    path lock (outside the state) and its in-state ``supervisor.lock``, the two a ``kakuna run`` honors. Held until
+    :meth:`close` (the lane's end): a queue started later is refused by the lock it takes first. :meth:`claim` raises
+    :class:`SupervisorError` naming the state when another supervisor holds it, and holds nothing of that state then."""
+
+    def __init__(self) -> None:
+        self._held: Dict[str, Tuple[Any, Any]] = {}
+
+    def __contains__(self, kakuna_state: "str | os.PathLike[str]") -> bool:
+        return canonical(kakuna_state) in self._held
+
+    def claim(self, kakuna_state: Path) -> None:
+        key = canonical(kakuna_state)
+        if key in self._held:
+            return
+        others = live_supervisors(kakuna_state, lane=KAKUNA_LANE, exclude=self_and_ancestors()).get(KAKUNA_LANE, [])
+        if others:
+            raise SupervisorError(f"a live standalone kakuna queue already plays {key}: pid(s) {others} (/proc scan); the "
+                                  "anchor lane would play its units twice")
+        path_fh = acquire(kakuna_state, KAKUNA_LANE, via="main.reads anchor lane")
+        lock = try_exclusive(Path(kakuna_state) / "supervisor.lock", "w")
+        if lock is None:
+            path_fh.close()
+            raise SupervisorError(f"another supervisor holds {Path(kakuna_state) / 'supervisor.lock'}: it plays {key}, "
+                                  "which the anchor lane plays too")
+        self._held[key] = (path_fh, lock)
+
+    def close(self) -> None:
+        held, self._held = list(self._held.values()), {}
+        for path_fh, lock in held:
+            lock.close()
+            path_fh.close()

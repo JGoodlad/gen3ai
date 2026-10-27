@@ -121,7 +121,7 @@ def test_k3_runs_three_units_at_once_and_never_more(lane):
     assert meter.peak == 3, "the barrier held three units at once; a fourth would have raised the peak"
     assert sorted(meter.played) == sorted(f"{lab}__heldout72_hpfix__{s:02d}" for lab in LABELS for s in range(6))
     assert len(meter.played) == N_UNITS, "every unit exactly once"
-    assert RN.status(lane)["anchor"]["u"] == {"old": {"counted": 6, "planned": 6}, "new": {"counted": 6, "planned": 6}}
+    assert RN.status(lane)["anchor"]["u"] == {"old": {"counted": 6, "planned": 6, "exhausted": 0}, "new": {"counted": 6, "planned": 6, "exhausted": 0}}
     start = _sup(lane)[0]
     assert (start["event"], start["concurrency"], start["concurrency_requested"]) == ("start", 3, 3)
     assert _sup(lane)[-1] == {**_sup(lane)[-1], "event": "done", "not_counted": []}
@@ -188,7 +188,7 @@ def test_a_failed_units_retry_still_works_at_k3(lane):
     assert meter.played.count(bad_always) == KA.MAX_ATTEMPTS, "bounded by MAX_ATTEMPTS, then given up"
     assert len(meter.played) == N_UNITS + 1 + (KA.MAX_ATTEMPTS - 1), "each unit once, the retries on top"
     assert _sup(lane)[-1]["event"] == "done" and _sup(lane)[-1]["not_counted"] == [bad_always]
-    assert RN.status(lane)["anchor"]["u"] == {"old": {"counted": 6, "planned": 6}, "new": {"counted": 5, "planned": 6}}
+    assert RN.status(lane)["anchor"]["u"] == {"old": {"counted": 6, "planned": 6, "exhausted": 0}, "new": {"counted": 5, "planned": 6, "exhausted": 0}}
 
 
 def test_a_failure_is_counted_identically_at_k1_and_k3(lane, tmp_path):
@@ -277,7 +277,7 @@ def test_every_unit_in_flight_holds_its_own_95xx_port(lane, keyed_play):
     assert all("--max-s" in a for argvs in keyed_play.argvs.values() for a in argvs), "each is a short-lane mem_cap job"
     assert all(any(x.endswith("scripts/ops/mem_cap.sh") for x in a) and "x35kakuna" in a
                for argvs in keyed_play.argvs.values() for a in argvs)
-    assert RN.status(lane)["anchor"]["u"] == {"old": {"counted": 6, "planned": 6}, "new": {"counted": 6, "planned": 6}}
+    assert RN.status(lane)["anchor"]["u"] == {"old": {"counted": 6, "planned": 6, "exhausted": 0}, "new": {"counted": 6, "planned": 6, "exhausted": 0}}
 
 
 CHILD = """
@@ -316,7 +316,7 @@ def test_three_real_child_processes_run_at_once_on_distinct_ports(lane, tmp_path
     assert RN.run(lane, "anchor", time.time() + 3600, sleep=lambda s: None, concurrency=3) == 0
     started = sorted(p.name for p in shared.glob("started.*"))
     assert len(started) == N_UNITS and list(shared.glob("live.*")) == [], "every child ended and released its port"
-    assert RN.status(lane)["anchor"]["u"] == {"old": {"counted": 6, "planned": 6}, "new": {"counted": 6, "planned": 6}}
+    assert RN.status(lane)["anchor"]["u"] == {"old": {"counted": 6, "planned": 6, "exhausted": 0}, "new": {"counted": 6, "planned": 6, "exhausted": 0}}
     log = [json.loads(x) for st in ("old", "new") for x in
            (LY.anchor_state(lane, "u", st) / "units.jsonl").read_text().splitlines()]
     assert all(e["rc"] == 0 for e in log if e["event"] == "end")

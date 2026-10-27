@@ -279,7 +279,9 @@ def supervisor_events(state: Path, lane: str) -> List[Dict[str, Any]]:
 def stop_evidence(state: Path, lane: str) -> Dict[str, Any]:
     """Proof that ``lane`` ended at its REGISTERED stop with work left: no supervisor of it is alive, and the last event of
     its log is ``stop_at`` (which a supervisor writes only once its ``--hours`` / ``--stop-at-epoch`` has passed). A lane that
-    never ran, that was held, killed, refused or finished is not at a stop. Refuses otherwise."""
+    never ran, that was held, killed, refused or finished is not at a stop. Refuses otherwise. ``not_counted``: the units
+    that supervisor gave up on (retries spent) before the stop, as the ``stop_at`` event logged them (``None`` on a log
+    written before the field)."""
     _check_lane(lane)
     live = SV.live_supervisors(state, lane=lane, exclude=SV.self_and_ancestors()).get(lane, [])
     if live:
@@ -289,8 +291,11 @@ def stop_evidence(state: Path, lane: str) -> Dict[str, Any]:
         raise LaneError(f"the {lane} lane has no supervisor log ({LY.supervisor_log(state, lane)}): it never ran")
     last = evs[-1]
     if last.get("event") != "stop_at":
+        spent = last.get("not_counted") if last.get("event") == "done" else None
         raise LaneError(f"the {lane} lane's last supervisor event is {last.get('event')!r}, not a registered stop "
-                        "(`stop_at`): a read is recorded partial only at a stop, never after a hold, a kill or a refusal")
+                        "(`stop_at`): a read is recorded partial only at a stop, never after a hold, a kill or a refusal"
+                        + (f"; it FINISHED with {len(spent)} unit(s) whose retries were spent (EXHAUSTED, not cut off by "
+                           f"a stop): {spent[:6]}{' ...' if len(spent) > 6 else ''}" if spent else ""))
     start = next((e for e in reversed(evs) if e.get("event") == "start"), {})
     return {"event": "stop_at", "t": last.get("t"), "time": _now_iso(last["t"]) if last.get("t") else None,
-            "left": last.get("left"), "stop_epoch": start.get("stop_epoch")}
+            "left": last.get("left"), "not_counted": last.get("not_counted"), "stop_epoch": start.get("stop_epoch")}

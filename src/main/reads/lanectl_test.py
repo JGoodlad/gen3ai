@@ -168,7 +168,7 @@ def test_a_hold_starts_no_new_unit_and_the_lane_runs_again_only_after_resume(lan
 
     assert _run(lane, unit) == 0
     assert played == ["old__heldout72_hpfix__00"], "the unit in flight finished; nothing new was started"
-    assert RN.status(lane)["anchor"]["u"]["old"] == {"counted": 1, "planned": 4}
+    assert RN.status(lane)["anchor"]["u"]["old"] == {"counted": 1, "planned": 4, "exhausted": 0}
     ev = _events(lane)
     assert [e["event"] for e in ev] == ["start", "held", "held_stopped"]
     assert ev[1]["by"] == "orchestrator" and ev[2]["left"] == 7
@@ -180,7 +180,7 @@ def test_a_hold_starts_no_new_unit_and_the_lane_runs_again_only_after_resume(lan
     rel = LC.release(lane, "anchor", by="orchestrator", why="go")
     assert rel["released"] is True and LC.read_hold(lane, "anchor") is None
     assert _run(lane, unit) == 0
-    assert len(played) == 8 and RN.status(lane)["anchor"]["u"]["new"] == {"counted": 4, "planned": 4}, \
+    assert len(played) == 8 and RN.status(lane)["anchor"]["u"]["new"] == {"counted": 4, "planned": 4, "exhausted": 0}, \
         "the rest of the queue resumed, no counted unit replayed"
     log = LC.load_holds(lane)
     assert [e["event"] for e in log] == ["hold", "release"] and log[1]["held_by"] == "orchestrator"
@@ -202,7 +202,7 @@ def test_a_hold_lets_every_unit_in_flight_finish_at_concurrency_two(lane):
 
     assert _run(lane, unit, concurrency=2) == 0
     assert sorted(played) == ["new__heldout72_hpfix__00", "old__heldout72_hpfix__00"]
-    assert RN.status(lane)["anchor"]["u"] == {"old": {"counted": 1, "planned": 4}, "new": {"counted": 1, "planned": 4}}
+    assert RN.status(lane)["anchor"]["u"] == {"old": {"counted": 1, "planned": 4, "exhausted": 0}, "new": {"counted": 1, "planned": 4, "exhausted": 0}}
     assert [e["event"] for e in _events(lane)][-2:] == ["held", "held_stopped"]
 
 

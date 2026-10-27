@@ -121,7 +121,8 @@ def test_the_anchor_lane_works_every_unit_once_then_stops(tmp_path, run_archive_
     assert RN.run(state, "anchor", time.time() + 3600, run_unit=fake_unit, sleep=lambda s: None) == 0
     assert len(played) == 4, "a counted unit is never replayed"
     st = RN.status(state)
-    assert st["anchor"]["u"] == {"old": {"counted": 2, "planned": 2}, "new": {"counted": 2, "planned": 2}}
+    assert st["anchor"]["u"] == {"old": {"counted": 2, "planned": 2, "exhausted": 0},
+                                 "new": {"counted": 2, "planned": 2, "exhausted": 0}}
 
 
 def test_the_anchor_lane_counts_a_unit_that_overran_the_short_lane_by_playing_it_once_more_long(
@@ -140,7 +141,8 @@ def test_the_anchor_lane_counts_a_unit_that_overran_the_short_lane_by_playing_it
     assert len(fake_play.argvs) == 5, "four units, one of them played twice"
     assert "--max-s" in fake_play.argvs[0] and "--max-s" not in fake_play.argvs[1] and "timeout" in fake_play.argvs[1]
     assert all("--max-s" in a for a in fake_play.argvs[2:])
-    assert RN.status(state)["anchor"]["u"] == {"old": {"counted": 2, "planned": 2}, "new": {"counted": 2, "planned": 2}}
+    assert RN.status(state)["anchor"]["u"] == {"old": {"counted": 2, "planned": 2, "exhausted": 0},
+                                               "new": {"counted": 2, "planned": 2, "exhausted": 0}}
     jl = [json.loads(x) for x in (LY.anchor_state(state, "u", "old") / "units.jsonl").read_text().splitlines()]
     assert [e["unit"] for e in jl if e["event"] == "short_lane_overrun"] == ["old__heldout72_hpfix__00"]
     assert not any(e.get("event") == "done" and e["not_counted"] for e in

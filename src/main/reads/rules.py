@@ -27,7 +27,13 @@ THE VOID GATE (:func:`void_gate`): an X35-stage rule (``x35_r1``, ``d1``) may re
 {label: run dir}}``; ``x35_r1`` on a batch-2 arm (SPRT, LRF) MUST. ``decide`` runs it BEFORE the rule: each named run's
 AM-6 K9(b) record (``<k9b_dir>/<run>.json``) must read PASS, and a batch-2 arm's V-S1 / V-S2 (SPRT) or LR-F KL guard
 (``main.x35.batch2_void.read_void``) too; anything else refuses the decision (a VOID seed enters no read; SPRT's
-``assemble.py`` STOP, be60f24f FINDING 3).
+``assemble.py`` STOP, be60f24f FINDING 3). Two further guards read the RUN DIR's own artefacts and are OPT-IN, each a
+key of ``params.void`` (a spec that names neither is gated exactly as before): ``pin`` (a commit sha or prefix: every
+git hash the run recorded, ``metadata.json``'s ``git_hash`` and each ``pin_history`` span, must be that commit; N1-P's
+PREREG §9 guard 3) and ``pool_seed`` (``{fork_step}``: ``<run>/snapshots/pool_seed.json`` is the T54 schema-2 record, its
+``fork_step`` the registered one, no seeded snapshot later than it and every dropped one later; guard 4's record half).
+What stays an operator check: guard 2's startup banner and held-out hit lines (the launcher log is outside the run dir)
+and the pool-seed check's startup-line half.
 
 REPORTED-ONLY GROUPS (``Rule.reported``): the groups a rule carries for description and no verdict reads (``d1``'s
 ``reported_group``). An incomplete one never blocks the record of the decided primary: the record names it INCOMPLETE
@@ -57,6 +63,7 @@ from __future__ import annotations
 
 import json
 import math
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Set, Tuple
@@ -206,10 +213,17 @@ def _void_check(p: Mapping[str, Any], models: Any, *, required: bool) -> List[st
     if v is None:
         return [f"void: required for arm {p.get('arm')!r} (its V-S1 / V-S2 / LR-F and K9(b) gate the read)"] if required \
             else []
-    if not (isinstance(v, dict) and set(v) == {"k9b_dir", "runs"} and isinstance(v["k9b_dir"], str)
-            and isinstance(v["runs"], dict) and v["runs"]):
-        return ["void: {k9b_dir: <dir of AM-6 K9(b) records>, runs: {label: run dir}}"]
+    if not (isinstance(v, dict) and {"k9b_dir", "runs"} <= set(v) <= {"k9b_dir", "runs", *VOID_RUN_DIR_GUARDS}
+            and isinstance(v["k9b_dir"], str) and isinstance(v["runs"], dict) and v["runs"]):
+        return ["void: {k9b_dir: <dir of AM-6 K9(b) records>, runs: {label: run dir}, [pin: <sha>], "
+                "[pool_seed: {fork_step: <int>}]}"]
     probs = [f"void.runs: {lab!r} is not a model label" for lab in v["runs"] if lab not in models]
+    if "pin" in v and not (isinstance(v["pin"], str) and re.fullmatch(r"[0-9a-f]{7,40}", v["pin"])):
+        probs.append("void.pin: a commit sha (7 to 40 lowercase hex digits)")
+    if "pool_seed" in v and not (isinstance(v["pool_seed"], dict) and set(v["pool_seed"]) == {"fork_step"}
+                                 and isinstance(v["pool_seed"]["fork_step"], int)
+                                 and not isinstance(v["pool_seed"]["fork_step"], bool) and v["pool_seed"]["fork_step"] > 0):
+        probs.append("void.pool_seed: {fork_step: <the fork parent's step, a positive integer>}")
     probs += [f"void.runs.{lab}: a run dir path" for lab, r in v["runs"].items() if not (isinstance(r, str) and r)]
     on = [lab for lab, m in models.items() if m.arm == p.get("on")]
     probs += [f"void.runs: the ON model {lab!r} has no run (every ON seed is gated)" for lab in on
@@ -217,11 +231,75 @@ def _void_check(p: Mapping[str, Any], models: Any, *, required: bool) -> List[st
     return probs
 
 
+#: The ``params.void`` keys that read the run dir itself (opt-in; module docstring).
+VOID_RUN_DIR_GUARDS = ("pin", "pool_seed")
+
+
+def void_pin_guard(run_dir: Any, want: str) -> Dict[str, Any]:
+    """PREREG §9 guard 3's record half: every git hash the run recorded (``main.x35.batch.recorded_pins``: ``metadata.json``'s
+    ``git_hash`` and each ``pin_history`` span) is the registered commit ``want`` (a sha or prefix of at least 7 digits).
+    ``{want, recorded, pass, why}``; a run with no metadata, or no ``pin_history`` span, fails (it cannot show its pin)."""
+    from main.x35 import batch as B
+
+    try:
+        recorded = B.recorded_pins(str(run_dir))
+    except B.BatchError as exc:
+        return {"want": want, "recorded": [], "pass": False, "why": str(exc)}
+    meta = json.loads((Path(run_dir) / "metadata.json").read_text()) if recorded else {}
+    spans = [e for e in meta.get("pin_history") or [] if isinstance(e, dict) and e.get("git_hash")]
+
+    def same(a: str, b: str) -> bool:
+        n = min(len(a), len(b))
+        return n >= 7 and a[:n] == b[:n]
+
+    if not recorded:
+        why = "no metadata.json (or no recorded git hash): the run cannot show its pin"
+    elif not spans:
+        why = "metadata.json holds no pin_history span: the run cannot show its pin"
+    else:
+        bad = sorted({h for h in recorded if not same(h, want)})
+        why = f"recorded commit(s) {[h[:12] for h in bad]} are not the registered {want[:12]}" if bad else ""
+    return {"want": want, "recorded": sorted(set(recorded)), "pass": not why, "why": why}
+
+
+def void_pool_seed_guard(run_dir: Any, fork_step: int) -> Dict[str, Any]:
+    """PREREG §9 guard 4's record half (T54, ``kit.check_pool_seed``'s checks that need no call record or log): the run's
+    ``snapshots/pool_seed.json`` is schema 2, its ``fork_step`` is ``fork_step`` (the fork parent's step, registered), every
+    seeded snapshot is at or before it and every dropped step is after it. ``{fork_step, got, snapshots, dropped, pass,
+    why}`` (``why`` lists every failure)."""
+    from agents.training.pool_seed import SEED_RECORD_SCHEMA, pool_dir_for, read_seed_record, snapshot_step
+
+    rec = read_seed_record(pool_dir_for(str(run_dir)))
+    out: Dict[str, Any] = {"fork_step": fork_step, "got": None, "snapshots": 0, "dropped": 0, "pass": False, "why": ""}
+    if rec is None:
+        out["why"] = "no readable snapshots/pool_seed.json"
+        return out
+    probs: List[str] = []
+    if rec.get("schema") != SEED_RECORD_SCHEMA:
+        probs.append(f"schema {rec.get('schema')!r} != {SEED_RECORD_SCHEMA} (a pin without T54?)")
+    fs = rec.get("fork_step")
+    out["got"] = fs
+    snaps, dropped = list(rec.get("snapshots") or []), list(rec.get("dropped_steps") or [])
+    out["snapshots"], out["dropped"] = len(snaps), len(dropped)
+    if fs is None:
+        probs.append("fork_step is null (T54 could not read the step and seeded UNFILTERED)")
+    elif int(fs) != int(fork_step):
+        probs.append(f"fork_step {fs} != the registered {fork_step}")
+    late = [n for n in snaps if (st := snapshot_step(str(n))) is None or st > int(fork_step)]
+    if late:
+        probs.append(f"seeded snapshot(s) later than fork_step {fork_step} (or unnamed): {late[:5]}")
+    early = [d for d in dropped if not isinstance(d, int) or d <= int(fork_step)]
+    if early:
+        probs.append(f"dropped step(s) not later than fork_step {fork_step}: {early[:5]}")
+    out["pass"], out["why"] = not probs, "; ".join(probs)
+    return out
+
+
 def void_gate(spec: Any) -> Optional[Dict[str, Dict[str, Any]]]:
     """The registered VOID gate of ``spec`` (module docstring), or ``None`` when it registers none: ``{label: {run,
-    k9b, k9b_file, batch2, pass}}``. Reads the K9(b) records and the run dirs (read-only)."""
-    from pathlib import Path
-
+    k9b, k9b_file, batch2, pass}}`` plus ``pin`` / ``pool_seed`` (:func:`void_pin_guard`, :func:`void_pool_seed_guard`) for
+    the run-dir guards the spec registered (absent otherwise); ``pass`` is the AND of every guard registered. Reads the
+    K9(b) records and the run dirs (read-only)."""
     from main.reads.models import spec_path
     from main.x35 import batch2_void as V
 
@@ -238,15 +316,30 @@ def void_gate(spec: Any) -> Optional[Dict[str, Dict[str, Any]]]:
         except (OSError, ValueError, KeyError):
             k9b = "MISSING"
         b = V.read_void(b2, str(rd)).as_dict() if b2 else None
-        out[lab] = {"run": str(run), "k9b": k9b, "k9b_file": str(kf), "batch2": b,
-                    "pass": k9b == V.PASS and (b is None or b["verdict"] == V.PASS)}
+        row: Dict[str, Any] = {"run": str(run), "k9b": k9b, "k9b_file": str(kf), "batch2": b,
+                               "pass": k9b == V.PASS and (b is None or b["verdict"] == V.PASS)}
+        if "pin" in v:
+            row["pin"] = void_pin_guard(rd, v["pin"])
+            row["pass"] = row["pass"] and row["pin"]["pass"]
+        if "pool_seed" in v:
+            row["pool_seed"] = void_pool_seed_guard(rd, v["pool_seed"]["fork_step"])
+            row["pass"] = row["pass"] and row["pool_seed"]["pass"]
+        out[lab] = row
     return out
 
 
 def void_failures(gate: Optional[Mapping[str, Any]]) -> Dict[str, str]:
     """``{label: why}`` of every gated run that is not PASS (empty = the gate passes or none is registered)."""
-    return {lab: f"K9(b) {g['k9b']}" + (f", {g['batch2']['guard']} {g['batch2']['verdict']}" if g.get("batch2") else "")
-            for lab, g in (gate or {}).items() if not g.get("pass")}
+    out: Dict[str, str] = {}
+    for lab, g in (gate or {}).items():
+        if g.get("pass"):
+            continue
+        why = f"K9(b) {g['k9b']}" + (f", {g['batch2']['guard']} {g['batch2']['verdict']}" if g.get("batch2") else "")
+        for key, name in (("pin", "pin"), ("pool_seed", "pool seed")):
+            if g.get(key) is not None and not g[key].get("pass"):
+                why += f"; {name}: {g[key].get('why')}"
+        out[lab] = why
+    return out
 
 
 # ------------------------------------------------------------------------------------------------ x35_r1

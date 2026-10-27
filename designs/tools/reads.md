@@ -20,7 +20,7 @@ python -m main.reads run      --state DIR --lane anchor --hours 20 --concurrency
 python -m main.reads run      --state DIR --lane anchor --hours 20 --max-units 40   # start 40 units, finish, stop (§3)
 python -m main.reads run      --state DIR --lane s      --hours 20
 python -m main.reads pid      --state DIR --lane s [--wait 180]    # the lane's LIVE supervisor pid, as it recorded itself (§3)
-python -m main.reads status   --state DIR                          # .supervisor_pids (the pid to watch), .holds, progress
+python -m main.reads status   --state DIR                          # .supervisor_pids (the pid to watch), .holds, progress, .exhausted
 python -m main.reads hold     --state DIR --lane s --by WHO --why TEXT      # no new unit; those in flight finish; exit 0 (§3)
 python -m main.reads resume   --state DIR --lane s --hours 20 [--by WHO]    # = run (after printing what is left); a HELD lane is released first
 python -m main.reads repin    --state DIR --to COMMIT --by WHO --why TEXT   # another playing commit, if the play path is identical (§3)
@@ -199,10 +199,23 @@ dir and log), started on a thread that only waits on the child. Nothing on the p
   and inode). `plan` refuses a FRESH state (no `spec.json`) that a live supervisor names. `status` lists the live
   supervisor pids per lane (the `/proc` scan; `supervisor_pids` is the supervisor's own record, below). The standalone queue `python -m main.x35.kakuna run --state S` takes the same claims through
   `supervisors.Hold` (lane `kakuna`: the path lock, the `/proc` scan, the dir-identity stop) beside its in-state
-  `supervisor.lock`. A `kakuna run` aimed at a state INSIDE a reads state (`<state>/anchor/<group>/<label>/`) is not
-  seen by the reads supervisors, and the reverse (§10);
+  `supervisor.lock`;
+- **NESTED supervisors** (N1-P / D3 look 1, 2026-10-26). The anchor lane plays its units on the kakuna states
+  `<state>/anchor/<group>/<label>/`, so a `kakuna run` on one of them plays the SAME units while sharing no path with the
+  lane. Three claims (`supervisors.py`): a `kakuna` queue is refused when a live anchor-lane supervisor names a state that
+  CONTAINS its own (the `/proc` scan, which also sees older code) or when an ancestor's anchor path lock is held; an anchor
+  lane is refused when a live `kakuna run` names a state INSIDE its own; and the lane holds every kakuna state it plays (its
+  `kakuna`-lane path lock, holder record `via: main.reads anchor lane`, and its in-state `supervisor.lock`, the two a
+  queue of any age honors) from its first loop turn, or from when a model settles, to its end. A conflict is a typed refusal
+  (exit 2) naming the state and the pid. The S lane plays no kakuna unit and is never nested. `status` lists
+  `nested_kakuna` (queues inside the state);
 - a registered stop (`--hours` or `--stop-at-epoch`, never open-ended);
-- a counted unit or a recorded batch is never replayed;
+- a counted unit or a recorded batch is never replayed. A unit gets `MAX_ATTEMPTS` (2) attempts per supervisor life; one
+  that spends them uncounted is **EXHAUSTED** (`main.reads.attempts`, from the kakuna state's `units.jsonl`: one `end`
+  event per child that did not count, a short-lane overrun netted out; an interrupted attempt is not a failure). `status`
+  prints each label's `exhausted`, `assemble` each anchor group's `exhausted_units` and `unplayed_exhausted_units`, and the
+  supervisor's `stop_at` / `done` events list `not_counted`. An exhausted unit is a defect of the play; a unit the stop never reached
+  is a defect of the schedule, and the record keeps them apart (§6);
 - every child gets THIS checkout's `src` on `PYTHONPATH`;
 - the playing checkout must stay at the commit `plan` wrote to `code.json` (or one a `repin` accepted, below), and a
   dirty tree at the same `git diff HEAD` digest. This addresses "the playing code is not
@@ -221,7 +234,8 @@ git objects, not the working tree); otherwise it exits 2 naming the files that d
   inputs that make `sim_bridge` (`src/rust_sim/src/`, `Cargo.*`, `build*.rs`), `data/`, the `deps/` pointers,
   `mem_cap.sh`, `anchors.json`, the panel registry and the committed cell configs and home72 teams. Tests and `*.md`
   are never on it. Within `main/reads/` only `__init__.py` and `supervisors.py` are ON it (`kakuna` reaches them), so editing
-  either blocks a repin; every other module (`runner`, `api`, `cli`, `repin`, `playpath`, `anchor_pool`, `lanectl`,
+  either blocks a repin (the nested-supervisor claims and the package docstring edited both: a read pinned before them
+  repins only to a commit that leaves them as they were); every other module (`runner`, `api`, `cli`, `repin`, `playpath`, `anchor_pool`, `lanectl`,
   `speccheck`, …) is OFF it (`playpath_test` pins this). NOT covered, because git does not hold them: the Metamon cache and weights,
   panel team dirs outside the repo, the model copies, the toolchain. Each unit verifies those at play (team digests,
   weight pins, the model sha256).
@@ -265,10 +279,11 @@ logs `held` and `held_stopped` to `<lane>_supervisor.jsonl`, and exits 0. A held
 `resume` (= `run`, which already printed what is left) first RELEASES a held lane: it needs `--by` then, and refuses while
 a supervisor of the lane is still alive (it is still draining; a second one would be refused by the path lock anyway).
 
-- **A supervisor of code older than this cannot be held**: it writes no pid file and never reads the hold. `hold` lists the
-  live supervisors as `honoring` (a valid pid file) and `not_honoring`, and warns on the latter, so a lane is never
-  reported held when it is not. Such a supervisor is stopped by pid, once, and restarted from a checkout with these
-  verbs (`repin` accepts that checkout when the play path is identical).
+- **A supervisor of code older than this cannot be held**: it writes no pid file and never reads the hold, and no change on
+  main reaches a running process. `hold` lists the live supervisors as `honoring` (a valid pid file) and `not_honoring`,
+  and warns on the latter, and `status` lists them as `not_honoring_hold`, so a lane is never reported held when it is
+  not. Such a supervisor is stopped by pid, once, and restarted from a checkout with these verbs (`repin` accepts that
+  checkout when the play path is identical), or left to reach its registered stop.
 - A repeat `hold` is a no-op (`already: true`) that keeps the first `by` / `why`. A damaged `hold.json` is a refusal,
   never a free lane. A hold on a lane no supervisor is running only keeps `run` from starting one.
 - The S lane notices a hold between units, not inside one (a unit is time-boxed to `--unit-s`).
@@ -475,9 +490,18 @@ A new rule is a new `Rule` entry with a test. It never replaces an existing rule
 K9(b) record (`<k9b_dir>/<run>.json`) must read PASS, and on a batch-2 arm its V-S1 / V-S2 (SPRT) or LR-F KL guard
 (`main.x35.batch2_void.read_void`) too. Any other verdict refuses the decision and names the seed: a VOID seed enters no
 read (SPRT's `assemble.py` STOP). The record carries the gate, and a record of a batch-2 arm without one is refused.
-The gate reads K9(b) records and the batch-2 guards only. A read whose PREREG lists other VOID guards (N1-P's §9: the
-startup banner, the pin and corpus, the pool seed, a corpus-team crash) registers K9(b) here and keeps the rest as
-named operator checks in its PREREG amendment (AM-N1P-1, FINDING 11).
+Two further guards read the RUN DIR's own artefacts and are OPT-IN, each a key of `params.void` (a spec that names neither is
+gated exactly as before, its gate rows unchanged):
+
+| key | holds | the gate checks, per gated run |
+|---|---|---|
+| `pin` | a commit sha (7 to 40 hex digits) | every git hash the run recorded (`metadata.json`'s `git_hash` and each `pin_history` span) is that commit; a run with no `pin_history` span fails (N1-P PREREG §9 guard 3) |
+| `pool_seed` | `{fork_step}` | `snapshots/pool_seed.json` is the T54 schema-2 record, its `fork_step` is the registered one, no seeded snapshot is later than it and every dropped step is later (guard 4's record half) |
+
+The row carries `pin` / `pool_seed` (`{pass, why, ...}`), `pass` is the AND of every guard registered, and `void_failures`
+names the failing guard beside the K9(b) text. What stays an operator check, as AM-N1P-1 words it: the startup banner and the
+held-out hit lines (guard 2; the launcher log is outside the run dir) and the pool-seed check's startup-line half; a
+corpus-team crash (guard 5) is the settled rule's (a run that stopped has no final).
 
 **Reported-only groups** (`Rule.reported`; N1-P FINDING 7). A group a rule carries for description and no verdict
 reads (`d1`'s `reported_group`) never blocks the record of the decided primary. When it is short (unplayed units, no
@@ -504,13 +528,16 @@ The record holds:
 every planned unit played even when the rule's `min_unit_frac` would decide). When a decided ANCHOR group has units
 unplayed and the spec registered the option, `record` writes the counted units with `completeness.class` =
 `INCOMPLETE_BY_STOP`, `opt_in: "decision.allow_partial_at_stop"`, `groups` (`planned`, `played`, `unplayed`, `counted` per
-group) and `stops` (the lane's `stop_at` event: its time, `left`, the registered `stop_epoch`); `summary_line` names the
-class. It does so only if each such lane ENDED at its registered stop (`lanectl.stop_evidence`: no supervisor of it alive
+group, and `unplayed` split in two: `unplayed_exhausted`, with the units named in `unplayed_exhausted_units`, whose retries
+were spent with no summary, and `stop_cut`, which the stop never reached; `check` refuses a split that does not add up) and
+`stops` (the lane's `stop_at` event: its time, `left`, `not_counted`, the registered `stop_epoch`); `summary_line` names the
+class and any exhausted units. It does so only if each such lane ENDED at its registered stop (`lanectl.stop_evidence`: no supervisor of it alive
 and the last event of `<lane>_supervisor.jsonl` is `stop_at`, which a supervisor writes only once its `--hours` /
 `--stop-at-epoch` has passed); a lane never run, held, killed, refused or done is refused, naming its last event. Only the
 unplayed units are exempted: a wrong regime, an S node short of its `pairs` or a failed VOID gate still refuse, and the
 RULE's own floor still decides (`min_unit_frac` makes the verdict VOID). Without the option `record` refuses as always.
-Units that exhausted their attempts are unplayed too; the record cannot tell them from units the stop cut off.
+An exhausted unit that left an uncounted summary is a played, skipped unit (the rule's floor reads it), not an unplayed one.
+A lane that finished (`done`) with exhausted units is not at a stop, and the refusal names them.
 
 The record is refused if any regime id is missing (a reported-only group listed INCOMPLETE excepted), a model was
 never resolved, a ledger digest or the playing commit is missing, `cells_inconclusive` is not empty (a verdict decided
@@ -561,7 +588,8 @@ skips and names why.
 | heavy-slot starvation (d1_read F2; drift 2-3; x51 F5) | yes | short lane for Kakuna units; time-boxed S units in one slot each |
 | rule-8 and statistic copies (≈10 scripts' `EPS`; x26c's `clears`, hand-copied baselines) | yes | one `clears`; baselines in the spec with their source |
 | a missing panel argument to `strat_score` (x26c `verdict.py`, correct only because its panels were d1's default) | latent | panels always passed (rules_test caught it) |
-| two supervisors on one read (D3 reader 10-26: the state renamed aside took its in-state lock) | first live use | the path lock outside the state, the `/proc` scan, the dir-identity stop, `plan`'s refusal (§3) |
+| two supervisors on one read (D3 reader 10-26: the state renamed aside took its in-state lock; a `kakuna run` on a state inside the read's) | first live use | the path lock outside the state, the `/proc` scan, the dir-identity stop, `plan`'s refusal, the lane's claims on the kakuna states it plays (§3) |
+| a unit whose retries were spent recorded as cut off by the stop (INCOMPLETE_BY_STOP) | any reduced read | the attempts read back from `units.jsonl`; `exhausted` in `status`, `assemble` and the record (§3, §6) |
 | a later look re-plays the earlier look's finals (N1-P F6) | every multi-look read | the sha-checked, regime-matched cross-state import (§3) |
 | a short reported-only group blocks the primary's record (N1-P F7) | X61P's spec | reported groups recorded INCOMPLETE (§5) |
 | a VOID seed read (SPRT's STOP, absent from `x35_r1`; be60f24f F3) | latent | the registered VOID gate before `decide` (§5) |
@@ -607,12 +635,9 @@ skips and names why.
 - **A repin's reach.** `repin` proves the TRACKED play path identical (§3). It cannot see what git does not hold (the
   Metamon cache, panel team dirs outside the repo), and its closure is static (a module named only in a string is not
   followed; the prefixes over-approximate for that). A change in the box's untracked inputs is the units' own preflight's.
-- **Nested supervisors.** A `kakuna run` on `<state>/anchor/<group>/<label>/` and a `main.reads run --lane anchor` on
-  `<state>` can both play that kakuna state: the lanes call `run_unit` without taking the sub-state's
-  `supervisor.lock`, and neither path scan looks at a parent or child path.
-- **The `d1` VOID gate is K9(b) only.** X61P's specs register it (AM-N1P-1); the rest of its PREREG §9 (banner, pin and
-  corpus, pool seed, corpus-team crash) is checked by the operator from the kit's launch records and the launcher log,
-  which lives outside the run dir. A module guard for them would read `pin_history` and `snapshots/pool_seed.json`.
+- **The VOID gate's run-dir guards are opt-in** (§5): X61P's committed specs register K9(b) alone (AM-N1P-1; editing a
+  registered spec moves its sha256), so their `pin`, pool-seed and banner checks stay the operator's. A new spec registers `pin` /
+  `pool_seed`; the launcher log's banner lines are outside the run dir and stay manual.
 - **The always-run D1 golden re-decides only.** `rules.h_input` / `p_input` are compared with the shipped
   input only in the archive half (D1's per-unit rows are not committed); off the owner's box that half skips.
 - **The tests stub play.** The verbs are tested with a stubbed unit runner and stubbed heavy slots (`runner_test`,

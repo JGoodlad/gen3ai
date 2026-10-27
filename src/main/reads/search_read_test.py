@@ -117,7 +117,7 @@ def test_the_per_game_queue_plays_deal_by_deal_raw_before_searched_and_max_units
     oks = [e for e in ev if e["event"] == "g_prefix"]
     assert len(oks) == 3 and all(e["ok"] for e in oks)
     st = RN.status(state)["anchor"]["su"]
-    assert st == {"pstar": {"counted": 3, "planned": 40}, "pstar_s": {"counted": 3, "planned": 40}}
+    assert st == {"pstar": {"counted": 3, "planned": 40, "exhausted": 0}, "pstar_s": {"counted": 3, "planned": 40, "exhausted": 0}}
 
 
 def test_a_pair_that_diverges_before_the_first_searched_turn_holds_the_lane_and_voids_the_group(

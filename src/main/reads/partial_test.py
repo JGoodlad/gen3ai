@@ -54,7 +54,7 @@ def _stop_after(state, n_units):
 def test_without_the_opt_in_a_stop_with_units_unplayed_is_still_refused(tmp_path, run_archive_env, monkeypatch):
     state = _planned(tmp_path, run_archive_env, monkeypatch, allow=False)
     _stop_after(state, 4)
-    assert RN.status(state)["anchor"]["u"]["old"] == {"counted": 2, "planned": 4}
+    assert RN.status(state)["anchor"]["u"]["old"] == {"counted": 2, "planned": 4, "exhausted": 0}
     with pytest.raises(api.RecordError, match=r"cells not conclusive.*4 unit\(s\) unplayed"):
         api.record(state)
     assert not LY.record_file(state).exists()
@@ -66,7 +66,8 @@ def test_a_registered_reduced_read_records_the_counted_units_as_incomplete_by_st
     rec = api.record(state, out=tmp_path / "reads" / "demo_look1.json")
     comp = rec["completeness"]
     assert comp["class"] == REC.INCOMPLETE_BY_STOP == "INCOMPLETE_BY_STOP" and comp["opt_in"] == "decision.allow_partial_at_stop"
-    assert comp["groups"] == {"anchor.u": {"planned": 8, "played": 4, "unplayed": 4, "counted": 4}}
+    assert comp["groups"] == {"anchor.u": {"planned": 8, "played": 4, "unplayed": 4, "counted": 4,
+                                           "unplayed_exhausted": 0, "stop_cut": 4, "unplayed_exhausted_units": []}}
     assert comp["stops"]["anchor"]["event"] == "stop_at" and comp["stops"]["anchor"]["stop_epoch"] == stop
     assert comp["stops"]["anchor"]["left"] == 4
     assert rec["cells_inconclusive"] == [] and rec["verdict"] == rec["decision"]["decision"]["verdict"]
