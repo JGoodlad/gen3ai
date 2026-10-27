@@ -131,7 +131,12 @@ def peek_checkpoint(ckpt_path: str) -> dict:
         out["extractor_kwargs"] = fek
         layout = fek.get("layout")
         parts = (layout or {}).get("parts") if isinstance(layout, dict) else None
-        if isinstance(parts, dict):
+        total = (layout or {}).get("total_dim") if isinstance(layout, dict) else None
+        if isinstance(total, int) and not isinstance(total, bool) and total > 0:
+            # The layout's own width. NOT the largest part `end`: since 5c80fca2a each part's `end` is that block's own
+            # end, and `pair_history` (an overlay inside `reactive`) is not the last block, so max(end) read 1801.
+            out["obs_dim"] = total
+        elif isinstance(parts, dict):             # a layout recorded without `total_dim`: its last part ends the row
             ends = [p.get("end") for p in parts.values() if isinstance(p, dict) and p.get("end")]
             if ends:
                 out["obs_dim"] = int(max(ends))
@@ -853,6 +858,8 @@ class ProbeModel:
         d = getattr(F, "D_MODEL", "?")
         # gen3_static_recovery_v1: the model's OWN depth (`--trunk-layers`), the constant only for an older extractor.
         layers = getattr(ex, "trunk_layers", getattr(F, "TRANSFORMER_N_LAYERS", "?"))
+        ffn = getattr(ex, "trunk_ffn_dim", 256)       # B-FFNW (config v164): above 256 every round adds a width branch
+        ffn_note = f" · FFN {ffn} wide (256 + a width branch)" if isinstance(ffn, int) and ffn != 256 else ""
         hist = getattr(F, "N_HISTORY_TURNS", 0)   # gen3_frame_deletion_v1: absent ⇒ 0 frames
         tokens = 12 + (hist if isinstance(hist, int) else 0) + 1
         proj = getattr(ex, "projection_dim", getattr(F, "PROJECTION_DIM", "?"))
@@ -892,7 +899,7 @@ class ProbeModel:
              + " → the trunk (prefuse_proj) + both heads · T1 REASON, PRE-transformer, once",
              False),
             ("TeamTransformer", True, False, "trunk",
-             f"SELF-ATTENTION over {tokens} tokens (12 mon + {hist} hist + 1 global) · {layers} layers ({d}d)", True),
+             f"SELF-ATTENTION over {tokens} tokens (12 mon + {hist} hist + 1 global) · {layers} layers ({d}d){ffn_note}", True),
             ("BeliefHead", on("belief_head"), True, "side",
              "aux: predict hidden species/moves (side readout)", False),
             ("CLSPool", True, False, "fork",

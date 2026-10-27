@@ -111,7 +111,7 @@ units. Every trunk round is read in execution order: the post-LN `BiasedEncoderL
 3/4`, the pre-LN `IdentityInitRound`s after them (for a pre-LN round zeroing both updates IS the identity, so
 `zero_update` equals `lens`; the verdict reads the LAST round, whichever it is). A round replica computes every variant
 and is refused unless the full replica equals the real trunk (max |Δ| ≤ 1e-4 on the policy and the win-prob) and the
-rounds ran in module order; `probe_battery_test.py` pins the replica against both round classes. `main.capacity` computes a pooled effective rank on eval-trace states; this
+rounds ran in module order; `probe_battery_test.py` pins the replica against both round classes. The replica reads only the round's base FFN, so a trunk with per-kind FFN experts (`trunk_ffn_by_kind`) or a width branch (`--grow trunk_ffn_dim=N`, `round.ffn_extra`) is REFUSED, typed (`pin_worker.UnsupportedTrunk`); the prober's own model views (`ProbeModel`) are unaffected and load a grown checkpoint (`arch_drift.md`). `main.capacity` computes a pooled effective rank on eval-trace states; this
 reads it per token type and per depth on the bank instead (the same participation-ratio definition).
 
 ## 7. Limits

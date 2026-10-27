@@ -26,7 +26,7 @@ and `plain` — ONE plain-language sentence a page shows verbatim:
 | `newer_than_code` | recorded by NEWER code than the one running (a stale server) | the record (pre-load) |
 | `no_checkpoint` | nothing loadable — a trimmed skeleton, or the file is gone | the ladder finding no path / `os.path.exists` (`NoCheckpointError`, also a `FileNotFoundError`) |
 | `unreadable` | the file is there but is not a zip | `zipfile.is_zipfile` (pre-load) |
-| `state_dict` | the strict load rejected missing / unexpected / mis-shaped parameters | the failed load (`StrictLoadError`, "state_dict", "size mismatch", "shapes cannot be multiplied") |
+| `state_dict` | the strict load rejected missing / unexpected / mis-shaped parameters (a grown `ffn_extra` under a 256-wide record, or the reverse) | the failed load (`StrictLoadError`, "state_dict", "size mismatch", "shapes cannot be multiplied") |
 | `config_value` | the code now rejects a value the checkpoint recorded, or no longer has a flag it names | the failed load (`TypeError` / `ValueError` / `ModelVersionError`) |
 | `load_failed` | any other failure of the load itself — the catch-all, so nothing escapes untyped | the failed load |
 
@@ -115,6 +115,12 @@ so just a model-INTERNAL input can differ:
 | 162 | the op reads a consumed item as no item (30/719 teams with item removal); stale Destiny Bond / Grudge / Rage / Endure / Snatch / Helping Hand / Mean Look volatile cells clear (36/991 golden decisions); lock-in and recharge counters end with Showdown's | `warn` | the op change is model-internal, so the stored observations are unchanged for an own-trace replay and only the damage-op reads on item-removal rows differ; the volatile cells and counters were stale in the OLD encode, so a replay shows the old, stale values the model really saw |
 | 163 | the opponent's Hidden Power type belief reads a Ghost under Foresight / Odor Sleuth as hit by Fighting (no immunity); it read every Ghost as immune (`gen3_hp_foresight_v1`) | `warn` | an ENCODE-time fix of the HP-type belief cells: a trace stores the (wrong) belief its own model saw, so an own-trace replay is exact |
 
+**Config v164 has NO row** (`--grow trunk_ffn_dim=N`, `gen3_trunk_ffn_width_v1`): it widens the trunk FFN with a
+`round.ffn_extra` branch and moves no observation cell, so `OBS_SEMANTICS_VERSION` stays 163, a v164 record (grown or
+not) reads CURRENT, and a v163 record reads current too. A grown checkpoint carries `trunk_ffn_dim` in its pickled
+extractor kwargs, so `ProbeModel.load` rebuilds the wide extractor and the strict load sees the extra parameters; a
+pre-164 zip has no such kwarg and builds 256. `gap_policy_test.py::test_config_v164_adds_no_marker_row_…` pins it.
+
 A future row that changes the encoder LAYOUT (a stored trace no longer fits what HEAD's network reads) declares
 `refuse`. ⚠ A `nearest` / `recent` rung pairs a checkpoint with traces it did not play; across a row that re-defines
 a cell the badge covers that pairing only as far as its change list says.
@@ -184,6 +190,22 @@ CPU, read-only on `models/`. `rb_x35_d3mut_s3501` (config v161, trained obs_sema
   no unavailable card, and `/partials/analyze` rendered `p.banner.warn[data-obs-semantics][data-obs-semantics-use=
   trace_replay]` with the badge and the `v162` change line.
 
+## Measured (2026-10-27, config v163 and v164, CPU)
+
+Production runs (`rb_x35_*`, config v161, trained obs_semantics v151): `arch_status` reads `obs_semantics`, "model views
+may run", and `query analyze` on `rb_x35_n1p_s3501`'s `step_300000095/aggressive/win_s0_001` (peak 0.90 GB, 69 s)
+ran with `obs_semantics.action = warn`, `use = trace_replay`, `code_semantics = 163` and a badge naming BOTH `v162: …;
+v163: …`; `find … disagree` ran and returned `[]`. A config-162 record names only v163 (`grown_model_test.py`).
+Real toy checkpoints (`grown_model_test.py`, one AdamW step): a plain v164 and the same toy grown 256 → 512 (18
+`ffn_extra` tensors on the 2-round toy) both read CURRENT, `allow`, no badge, for every use, and answer `action_dist`,
+the batch forwards, `logit_grad` / `value_grad`, `capture_battle` and `architecture()` (which names "FFN 512 wide"); the
+grown child's outputs equal its parent's bit for bit. A zip carrying the OTHER one's weights (the grown weights under a
+256 extractor, and the reverse) refuses every use as `state_dict`. ⚠ That refusal first read "This run's architecture
+(config v164 …) is older than the code (config v164 …)": a record equal to the code is not older. The `state_dict` /
+`config_value` / `load_failed` sentences now say "records the code's own architecture … yet its checkpoint does not load
+under it (the weights and the record disagree)" when the record IS the code's identity. `main.probe_battery`'s depth
+diagnostics refuse a wide trunk (`UnsupportedTrunk`, `probe_battery.md`).
+
 ## The three walls behind the load-time classes (measured 2026-08-13)
 
 Each used to surface as a raw error from inside SB3:
@@ -200,7 +222,7 @@ Each used to surface as a raw error from inside SB3:
 3. weight SHAPES that no longer fit (kind `state_dict`, or `arch_signature` / `obs_dim` when the record already
    said so). Not recoverable in principle.
 
-`peek_checkpoint` reads the arch fingerprint from the zip's JSON `data` member in **~5 ms**, which is what makes
+`peek_checkpoint` reads the arch fingerprint from the zip's JSON `data` member in **~5 ms** (the observation width is the pickled layout's `total_dim`, never the largest part `end`: since `5c80fca2a` `pair_history` ends inside `reactive`, and the max read 1801 and refused every freshly saved checkpoint as `obs_dim` — `model_test.py::test_peek_reads_the_width_a_live_layout_declares`), which is what makes
 diagnosing cheap enough to do before the load is even attempted. `analyze`'s `model_resolution.dropped_kwargs`
 carries a drop to a surface.
 
@@ -217,7 +239,9 @@ Tests: `main/prober/arch_status_test.py` (the verdicts and the record readers), 
 badge, every call site's declared use), `model_test.py` (every class end to end through `ProbeModel.load`, the
 semantics-only case with a loader that WOULD succeed — loaded badged for every use, a trace replay refused only under a
 marker row declaring `replay: refuse` — and the session judging per use on a gap run),
-`web/runs_test.py` + `web/app_test.py` ("the run picker, by architecture"), `agents/model/obs_semantics_test.py`.
+`grown_model_test.py` (REAL toy checkpoints through `ProbeModel.load`: v164 plain and grown, the 162 / 161 replay
+badges, a record that disagrees with its weights), `web/runs_test.py` + `web/app_test.py` ("the run picker, by
+architecture"), `agents/model/obs_semantics_test.py`.
 
 ## From the prober leaf (moved 2026-10-10)
 

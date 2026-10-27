@@ -100,6 +100,24 @@ def test_peek_reads_the_arch_without_deserializing(tmp_path):
     assert set(peek["extractor_kwargs"]) == {"spread_belief", "gone_flag", "layout"}
 
 
+def test_peek_reads_the_width_a_live_layout_declares(tmp_path):
+    """The LIVE `get_layout()` (as a checkpoint pickles it): its `pair_history` overlay ends INSIDE `reactive`
+    (1801 < 2845), so a peek that took the largest part `end` called every checkpoint saved after 5c80fca2a an
+    `obs_dim` drift (trained on 1801 inputs) and refused it for every use. The peek reads `total_dim`."""
+    from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
+    from main.prober.arch_status import current_obs_dim
+
+    layout = json.loads(json.dumps(Gen3ObservationEncoder(load_mappings()).get_layout(), default=list))
+    assert layout["total_dim"] == current_obs_dim()
+    assert max(p["end"] for p in layout["parts"].values()) < layout["total_dim"], "the premise: an overlay part ends early"
+    data = {"policy_kwargs": {"features_extractor_kwargs": {"layout": layout}}}
+    path = tmp_path / "live.zip"
+    with zipfile.ZipFile(path, "w") as z:
+        z.writestr("data", json.dumps(data))
+    assert peek_checkpoint(str(path))["obs_dim"] == current_obs_dim()
+    assert A.checkpoint_verdict(str(path), peek_obs_dim=peek_checkpoint(str(path))["obs_dim"]).kind != A.KIND_OBS_DIM
+
+
 def test_peek_never_raises_on_garbage(tmp_path):
     """A raising peek would turn a merely-unreadable checkpoint into a crash BEFORE the real load
     got its chance to produce a proper error."""

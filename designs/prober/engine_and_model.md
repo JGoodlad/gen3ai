@@ -190,7 +190,7 @@ Moved verbatim-ish out of `src/main/prober/CLAUDE.md` when that leaf was cut to 
   once from `enc.get_layout()`, and raises
   `ArchDriftError` (typed: `kind` + `plain`; `NoCheckpointError` when there is no checkpoint) on a stale one — checked against the RECORDED identity BEFORE the load (`arch_status`). `action_dist` / `logit_grad` are the forward/backward pair;
   `belief`, `damage_op_view`, `move_belief`, `win_prob_at` and `architecture()` each
-  read a head's stash after one clean forward. **`capture_battle(obs, masks)`** is `/game`'s ONE
+  read a head's stash after one clean forward. `architecture()`'s TeamTransformer row names a widened trunk FFN ("FFN 512 wide") when the extractor's `trunk_ffn_dim` is above 256. **`capture_battle(obs, masks)`** is `/game`'s ONE
   batched EAGER forward over a battle's stored decisions with read-only hooks (`model_capture.py`, the
   same torch boundary): the trunk's attention recomputed from EVERY trunk round's own `in_proj`
   + bias (the post-LN `BiasedEncoderLayer`s and, under `--trunk-layers 3/4`, the pre-LN `IdentityInitRound`s, over

@@ -65,6 +65,20 @@ def test_the_table_has_every_cell_and_each_is_the_ruled_one():
     assert {(g, u): A.GAP_POLICY[g][u] for g in A.GAPS for u in A.USES} == _EXPECTED
 
 
+def test_config_v164_adds_no_marker_row_and_a_v164_record_is_current():
+    """v164 (`--grow trunk_ffn_dim`, config only) moves no observation cell: the newest marker row stays v163, a v163
+    or v164 record is a CURRENT verdict (no gap, no badge), and v162 / v161 records warn, naming the rows newer than
+    their marker (a replay `warn` on both)."""
+    assert OBS_SEMANTICS_VERSION == 163 and MODEL_CONFIG_VERSION >= 164
+    for cv in (163, 164):
+        v = A.verdict_from_record(cv, _HEAD_SIG)
+        assert A.gap_of(v) == A.GAP_NONE and A.decide(v, A.USE_TRACE_REPLAY).badge is None
+    for cv, rows in ((162, [163]), (161, [162, 163])):
+        d = A.decide(A.verdict_from_record(cv, _HEAD_SIG), A.USE_TRACE_REPLAY)
+        assert d.action == A.WARN and [c["version"] for c in d.as_dict()["changes_since"]] == rows
+        assert all(c["replay"] == "warn" for c in d.as_dict()["changes_since"])
+
+
 @pytest.mark.parametrize("gap,use", sorted(_EXPECTED))
 def test_decide_reads_the_table_for_a_real_verdict(gap, use):
     v = _verdict(gap)

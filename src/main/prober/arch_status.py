@@ -148,6 +148,13 @@ def plain_sentence(kind: str, *, config_version: Optional[int] = None, arch_sign
     older = (f"This run's architecture ({saved}) is older than the code ({code}); "
              if saved else f"This run's architecture is older than the code ({code}); ")
     tail = "model views need a current-architecture checkpoint."
+    if kind in (KIND_STATE_DICT, KIND_CONFIG_VALUE, KIND_LOAD_FAILED) and config_version == MODEL_CONFIG_VERSION \
+            and arch_signature in (None, ARCH_SIGNATURE):
+        # The record IS the code's identity (a `--grow trunk_ffn_dim` child, say): the load failed anyway, so the
+        # weights and the record disagree, and "older than the code" would be false.
+        older = (f"This run records the code's own architecture ({saved}), yet its checkpoint does not load under it "
+                 "(the weights and the record disagree); ")
+        tail = "model views need a checkpoint that matches its record."
     if kind == KIND_ARCH_SIGNATURE:
         return older + tail + " Its network was restructured since, so its weights have no home in the current one."
     if kind == KIND_OBS_DIM:
