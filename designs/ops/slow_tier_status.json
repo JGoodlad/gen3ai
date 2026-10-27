@@ -4750,26 +4750,82 @@
   },
   "src/main/value_search/name_variant_integration_test.py::test_no_world_of_the_variant_team_holds_a_move_twice_and_the_revealed_one_sits_in_its_true_slot": {
    "status": "pass",
-   "commit": "9ba613a2e2e8178c8fc6c3bbd60f1ac1d29cbbb7",
-   "at": "2026-10-27T10:56:54Z",
-   "duration_s": 34.9,
-   "contention": 1.0,
+   "commit": "3dd8f72ed7ef7e1c7ba28d94fc0e041f3b024d52",
+   "at": "2026-10-27T17:40:10Z",
+   "duration_s": 26.72,
+   "contention": 1.58,
    "detail": ""
   },
   "src/main/value_search/search_integration_test.py::test_honest_search_runs_on_sampled_worlds": {
    "status": "pass",
-   "commit": "9ba613a2e2e8178c8fc6c3bbd60f1ac1d29cbbb7",
-   "at": "2026-10-27T10:56:54Z",
-   "duration_s": 17.18,
-   "contention": 1.0,
+   "commit": "3dd8f72ed7ef7e1c7ba28d94fc0e041f3b024d52",
+   "at": "2026-10-27T17:40:10Z",
+   "duration_s": 6.67,
+   "contention": 1.39,
    "detail": ""
   },
   "src/main/value_search/world_legality_integration_test.py::test_the_builder_applies_the_rule_to_seen_and_never_seen_draws_and_raises_on_one_rejecting_the_truth": {
    "status": "pass",
-   "commit": "9ba613a2e2e8178c8fc6c3bbd60f1ac1d29cbbb7",
-   "at": "2026-10-27T10:56:54Z",
-   "duration_s": 2.05,
+   "commit": "3dd8f72ed7ef7e1c7ba28d94fc0e041f3b024d52",
+   "at": "2026-10-27T17:40:10Z",
+   "duration_s": 1.9,
+   "contention": 1.39,
+   "detail": ""
+  },
+  "src/main/value_search/world_screen_parity_test.py::test_a_wrong_screen_is_caught": {
+   "status": "pass",
+   "commit": "3dd8f72ed7ef7e1c7ba28d94fc0e041f3b024d52",
+   "at": "2026-10-27T17:40:10Z",
+   "duration_s": 11.04,
+   "contention": 1.41,
+   "detail": ""
+  },
+  "src/main/value_search/world_screen_parity_test.py::test_the_lean_screen_builds_exactly_the_reference_worlds[10-rolls]": {
+   "status": "pass",
+   "commit": "3dd8f72ed7ef7e1c7ba28d94fc0e041f3b024d52",
+   "at": "2026-10-27T17:40:10Z",
+   "duration_s": 3.23,
    "contention": 1.0,
+   "detail": ""
+  },
+  "src/main/value_search/world_screen_parity_test.py::test_the_lean_screen_builds_exactly_the_reference_worlds[10-seed]": {
+   "status": "pass",
+   "commit": "3dd8f72ed7ef7e1c7ba28d94fc0e041f3b024d52",
+   "at": "2026-10-27T17:40:10Z",
+   "duration_s": 21.94,
+   "contention": 1.48,
+   "detail": ""
+  },
+  "src/main/value_search/world_screen_parity_test.py::test_the_lean_screen_builds_exactly_the_reference_worlds[29-seed]": {
+   "status": "pass",
+   "commit": "3dd8f72ed7ef7e1c7ba28d94fc0e041f3b024d52",
+   "at": "2026-10-27T17:40:10Z",
+   "duration_s": 99.54,
+   "contention": 1.2,
+   "detail": ""
+  },
+  "src/main/value_search/world_screen_parity_test.py::test_the_lean_screen_builds_exactly_the_reference_worlds[32-seed]": {
+   "status": "pass",
+   "commit": "3dd8f72ed7ef7e1c7ba28d94fc0e041f3b024d52",
+   "at": "2026-10-27T17:40:10Z",
+   "duration_s": 18.0,
+   "contention": 1.2,
+   "detail": ""
+  },
+  "src/main/value_search/world_screen_parity_test.py::test_the_lean_screen_builds_exactly_the_reference_worlds[43-seed]": {
+   "status": "pass",
+   "commit": "3dd8f72ed7ef7e1c7ba28d94fc0e041f3b024d52",
+   "at": "2026-10-27T17:40:10Z",
+   "duration_s": 25.13,
+   "contention": 1.0,
+   "detail": ""
+  },
+  "src/main/value_search/world_screen_parity_test.py::test_the_search_on_the_lean_screens_worlds_is_the_reference_search": {
+   "status": "pass",
+   "commit": "3dd8f72ed7ef7e1c7ba28d94fc0e041f3b024d52",
+   "at": "2026-10-27T17:40:10Z",
+   "duration_s": 8.13,
+   "contention": 1.93,
    "detail": ""
   },
   "src/main/x35/kakuna_test.py::test_the_real_peer_started_from_a_derived_config_verifies_the_registry_weights": {
@@ -5085,5 +5141,5 @@
    "detail": ""
   }
  },
-  "last_written": "2026-10-27T17:03:54Z"
+ "last_written": "2026-10-27T17:40:10Z"
 }

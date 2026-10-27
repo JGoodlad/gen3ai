@@ -74,6 +74,10 @@ class SearchResult:
     #: the OPPONENT's team in each searched world, in world order (empty for the oracle): what a caller measures the
     #: worlds' quality against the truth with (S-U's REPORTED world-quality covariate)
     world_teams: List[str] = field(default_factory=list)
+    #: the CPU split (:func:`cpu_all`: every thread of this process plus its reaped children): building the worlds
+    #: (the honest screen's ``core_events`` replays included) and playing the leaves
+    world_cpu_s: float = 0.0
+    playout_cpu_s: float = 0.0
 
 
 def seeds_for(key: str, n: int) -> List[str]:
@@ -86,6 +90,15 @@ def _cpu() -> float:
 
     a = resource.getrusage(resource.RUSAGE_SELF)
     return a.ru_utime + a.ru_stime
+
+
+def cpu_all() -> float:
+    """This process's CPU, every thread, plus its REAPED children's: the world screen's ``core_events`` replays are
+    children, so a CPU split of a decision reads this clock on both sides of each phase."""
+    import resource
+
+    a, c = resource.getrusage(resource.RUSAGE_SELF), resource.getrusage(resource.RUSAGE_CHILDREN)
+    return a.ru_utime + a.ru_stime + c.ru_utime + c.ru_stime
 
 
 def search_decision(engine: LeafEngine, log: dict, at: int, side: str, root_row: np.ndarray,
@@ -113,6 +126,7 @@ def search_decision(engine: LeafEngine, log: dict, at: int, side: str, root_row:
     root_turn = int(decode_turn(root_row[None], engine.off)[0])
     tries, leak = [], {}
     log_w: List[float] = []
+    k0 = cpu_all()
     if cfg.oracle:
         logs = [log] * cfg.n_worlds
     else:
@@ -133,6 +147,7 @@ def search_decision(engine: LeafEngine, log: dict, at: int, side: str, root_row:
         teams_w = list(getattr(w, "teams", None) or [])
     seeds = seeds_for(key, cfg.n_worlds)
     budget = cfg.budget if cfg.budget is not None else cfg.per_action * len(legal)
+    k1 = cpu_all()
 
     def play(req: Dict[int, int], have: Dict[int, int]) -> Dict[int, List[float]]:
         reqs, who = [], []
@@ -177,10 +192,11 @@ def search_decision(engine: LeafEngine, log: dict, at: int, side: str, root_row:
         action, spent = rules.pick(score, order), k * len(legal)
     else:
         raise ValueError(f"unknown allocation {cfg.allocation!r}")
+    k2 = cpu_all()
     pi_t = rules.improved_policy(logits, legal, q, visits, v_root)
     cq = rules.completed_q(logits, legal, q, visits, v_root)
     return SearchResult(action=int(action), policy_target=pi_t, q=q, visits=visits, completed_q=cq,
                         root_value=v_root, value_target=float(sum(pi_t[a] * cq[a] for a in legal)),
                         prior=rules.softmax_masked(logits, legal), spent=int(spent),
                         cpu_s=_cpu() - c0, wall_s=time.monotonic() - w0, world_tries=tries, leak=leak,
-                        world_teams=teams_w)
+                        world_teams=teams_w, world_cpu_s=k1 - k0, playout_cpu_s=k2 - k1)

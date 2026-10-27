@@ -18,6 +18,17 @@ facts; an event coupling two is caught by the joint gate). A seen mon's unreveal
 drawn directly (they never acted). The value-discrimination pilot's builder (v1 / v2: a seen mon's item, ability and
 spread kept TRUE) is the ``pilot`` preset.
 
+THE SCREEN'S COST (measured 2026-10-27 on S-U stage 0's first searched game, ``search_ledger.md`` §6.1): a screening
+replay is the candidate WORLD's whole log from turn 1, never the truth's, so it cannot start from a shared prefix: the
+world differs from the truth from the screened mon's first switch-in on (here every opponent mon was in by turn 10),
+and the cost a decision is (replays) × (log length). THE LEAN SCREEN (``lean_screen``, default on) cuts each replay,
+not their number or their order: ``core_events`` ``SCREEN`` stops a replay after the command that first ships the
+searched side a line differing from the truth's (the gate's verdict, the matched length and the hint are fixed by the
+lines up to that difference) and returns only what the gate reads, and a chain proposal the prior rules out is not
+replayed (``world_screen.run``). The worlds, the draws and every verdict are the reference path's
+(``world_screen_parity_test``); what the stop gives up is a refusal one of ``core_events``' own cross-checks would
+have raised after it (none in the parity gate's builds).
+
 THE DICE (F1 of ``design_world_sampler.md``, tier A BUILT 2026-10-19, default OFF): with ``dice="seed"`` (the default) a
 world must reproduce every printed damage number with the TRUTH's own damage roll. ``dice="rolls"`` arms the Rust core's
 damage-roll control (``pokesim::rolls``): the truth's replay records what the searched side saw at every damage roll,
@@ -520,7 +531,7 @@ class WorldSampler:
 
     def __init__(self, prior: Optional[Prior] = None, max_tries: int = MAX_TRIES, reveal="off",
                  playout_check: bool = True, playout_lib=None, legality: Optional[WL.Legality] = None,
-                 dice: str = "seed"):
+                 dice: str = "seed", lean_screen: bool = True):
         if dice not in DICE:
             raise ValueError(f"dice={dice!r}: one of {DICE}")
         #: F1 tier A (module docstring, THE DICE): ``seed`` (today, the default) or ``rolls``
@@ -537,6 +548,11 @@ class WorldSampler:
         #: core_events replay the gate runs accepts some choice logs the playout tool refuses (a numeric ``move k``, a
         #: Struggle the world does not force; the blind replica's finding), and a world search cannot play is no world
         self.playout_check = playout_check
+        #: THE LEAN SCREEN (module docstring, THE SCREEN'S COST): a screening replay STOPS at the searched side's first
+        #: line that differs from the truth's and returns only what the gate reads, and a chain proposal the prior
+        #: rules out is never replayed. False = the REFERENCE path (every candidate replayed in full, the verdicts the
+        #: lean screen must equal): ``world_screen_parity_test`` runs both
+        self.lean_screen = lean_screen
         self._playout_lib = playout_lib
         self._playout_core = None
         #: set to a list to record why joint gates fail (the first divergent line), for diagnosis
@@ -672,8 +688,12 @@ class WorldSampler:
                 def cmds_of(t: str) -> List[list]:
                     cs = world_cmds(t)
                     return [c + ["if_open"] if lenient and c[0] != "forcelose" else c for c in cs]
+                # the lean screen: a lenient screen with no exact-HP constraint (``opp_conditions`` reads the
+                # opponent's own requests, which a screened replay does not return) stops at the first difference
+                lean = (self.lean_screen and lenient and not any(c for _, c in todo.values()))
                 out = run_core([rec(t, f"{key}#s{screens[0] + i}", cmds_of(t), roll_match)
-                                for i, (t, _) in enumerate(todo.values())], trackers=True, obs=True)
+                                for i, (t, _) in enumerate(todo.values())], trackers=True, obs=True,
+                               screen={"viewer": viewer, "lines": ref_proto} if lean else None)
                 screens[0] += len(todo)
                 for (kk, (_, c)), r in zip(todo.items(), out):
                     verdict[kk] = gate(r, set(c))
@@ -842,7 +862,7 @@ class WorldSampler:
                     sampler_for(k, i, b[0])
             for k, c in want.items():
                 samplers[k].needed = max(samplers[k].needed, used.get(k, 0) + c)
-            WS.run([samplers[k] for k in want], rev_hp, entries, screen_gate)
+            WS.run([samplers[k] for k in want], rev_hp, entries, screen_gate, skip_impossible=self.lean_screen)
             dead = [samplers[k] for k in want if samplers[k].failed]
             if dead:                            # a seen mon no honest draw fits: every further try fails the same way
                 fails["screen"] = fails.get("screen", 0) + len(base)

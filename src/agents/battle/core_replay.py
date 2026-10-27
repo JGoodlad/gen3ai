@@ -87,11 +87,15 @@ def selfcheck_counts(stderr: str) -> Optional[Dict[str, int]]:
 def run_core(battles: Sequence[RecordedBattle], record_dir: Optional[str] = None,
              commit: str = "unknown", views: bool = False,
              selfcheck: Optional[collections.Counter] = None, trackers: bool = False,
-             obs: bool = False) -> List[dict]:
+             obs: bool = False, screen: Optional[dict] = None) -> List[dict]:
     """Replay ``battles`` through the core in ONE process; one result dict per battle.
     ``views`` also captures slice V's decision boards (``core_events --views``). ``selfcheck``
     accumulates the EMISSION SELF-CHECK's counts (``selfcheck["runs_without"]`` counts a process
-    that ran without the check)."""
+    that ran without the check). ``screen`` (``{"viewer": 0|1, "lines": [...]}``, with ``obs``): the
+    world screen's LEAN replay (``core_events`` ``SCREEN``): each battle STOPS after the command that
+    first ships the viewer a line differing from ``lines`` (``"stopped"``), and its result carries only
+    the viewer's chunks (every other chunk an empty placeholder: a chunk index keeps its meaning) and
+    its decisions' ``after`` and ``obs``."""
     from utils.bridge.sim_bridge_bin import resolve_core_events_bin
 
     argv = [resolve_core_events_bin()]
@@ -103,7 +107,11 @@ def run_core(battles: Sequence[RecordedBattle], record_dir: Optional[str] = None
         argv.append("--obs")
     if record_dir:
         argv += ["--record-dir", record_dir, "--commit", commit]
-    stdin = "\n".join(line for b in battles for line in b.script()) + "\n"
+    if screen is not None and not obs:
+        raise ValueError("a screened replay needs obs=True (its gate compares the viewer's rows)")
+    head = [] if screen is None else ["SCREEN " + json.dumps({"viewer": int(screen["viewer"]),
+                                                             "lines": list(screen["lines"])})]
+    stdin = "\n".join(head + [line for b in battles for line in b.script()]) + "\n"
     p = subprocess.run(argv, input=stdin, capture_output=True, text=True, check=False)
     if p.returncode != 0:
         raise RuntimeError(f"core_events failed (exit {p.returncode}): {p.stderr.strip()[-2000:]}")

@@ -248,6 +248,28 @@ The prober reads a battle from the core, never from poke-env (`src/main/prober/c
   test, and the poke-env materializer's rows on the P5 identity set
   (`designs/research_state/measurements/pokeenv_p5_prober_2026-10-07/`).
 
+## 10. The world screen's reader — `SCREEN` (2026-10-27)
+
+The honest world builder (`main.value_search.worlds`) gates every candidate world by replaying its whole log
+through `core_events --trackers --obs` and comparing the searched side's lines and rows with the truth's. That
+replay was the cost of a searched decision (S-U stage 0: ≈ 95 % of a world build, half of it the Python decode of
+the 2–5 MB line each battle printed; `designs/endstate/search_ledger.md` §6.1). A stdin line `SCREEN
+{"viewer":0|1,"lines":[…]}` (with `--obs`; `agents.battle.core_replay.run_core(screen=…)`) arms, for every later
+battle of the process:
+
+- **The stop.** The battle replays exactly as without it, every command and every check, until the command whose
+  processing first ships the viewer a line that differs from the reference (or one past its end); then it stops
+  and the end-of-battle checks run on what was replayed. The gate's verdict (a match; else the matched length and
+  the stat the first difference implicates) is fixed by the lines up to that difference, so it is unchanged; what
+  the stop gives up is a refusal a cross-check would have raised after it.
+- **The lean line.** `"stopped"`, the viewer's chunks (every other chunk an empty placeholder, so a decision's
+  `after` indexes the same chunk) and, per viewer decision, `after` and the `obs` frame. Only formatting is skipped
+  (the tracker and window JSON, the other side's rows, every mask and token string); every fallible computation
+  runs.
+
+Gates: `src/main/value_search/world_screen_parity_test.py` (the lean builds equal the full ones on banked S-U
+decisions, an exclusion included; a wrong reference is caught; the direct test of the stop and the placeholders).
+
 ---
 
 ## Moved from the leaf (2026-10-10)

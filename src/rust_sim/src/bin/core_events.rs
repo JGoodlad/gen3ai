@@ -64,6 +64,18 @@
 //! `TrackerState::terminal_delta`, `RewardTracker.finalize`'s `TurnDelta`), so a reader rebuilds a
 //! battle's per-decision board from the core alone.
 //!
+//! `SCREEN <json>` (a stdin line, with `--obs`) is the honest WORLD SCREEN's lean replay
+//! (`main.value_search.worlds`, `designs/endstate/search_ledger.md` §6.1):
+//! `{"viewer":0|1,"lines":[…]}`, the reference = the viewer's protocol lines through its root
+//! decision. Every later battle of the process is replayed exactly as without it — every command and
+//! every check — except that it STOPS after the command whose processing first ships the viewer a
+//! line that differs from the reference (or one past its end), and its line renders only what the
+//! screen's gate reads: `"stopped"`, the viewer's chunks (each other chunk an EMPTY placeholder, so a
+//! chunk index means what it means without the screen) and, per viewer decision, `after` and the
+//! `obs` frame. A gate verdict (match / the first difference / the decisions before it) is decided
+//! by the lines up to that difference; what the stop gives up is a refusal a check would have raised
+//! after it.
+//!
 //! `--obs-bench SIDE K REPS` (with `--obs`) also TIMES the encoder at viewer SIDE's K-th decision
 //! (0-based): REPS encodes of the version (its view memoized — the production shape) and REPS of
 //! `present()` + encode (the COLD shape), reported as `"obs_bench"` with the row it timed — the core
@@ -106,6 +118,58 @@ struct Battle {
     /// START's opt-in `"rolls"` (the damage-roll control, `pokesim::rolls`): absent, not one byte
     /// changes.
     rolls: Option<RollCtl>,
+}
+
+/// `SCREEN` (module docs): the viewer and the reference lines a screened battle is compared against.
+struct Screen {
+    viewer: usize,
+    lines: Vec<String>,
+}
+
+/// How far a screened battle's comparison has read: the chunks examined and the viewer lines matched.
+#[derive(Default)]
+struct ScreenCursor {
+    chunk: usize,
+    line: usize,
+}
+
+impl Screen {
+    fn parse(rest: &str) -> Result<Screen, String> {
+        let v = Json::parse(rest).map_err(|e| format!("SCREEN JSON: {e}"))?;
+        let viewer = match v.get("viewer").and_then(|x| x.as_f64()) {
+            Some(x) if x == 0.0 => 0,
+            Some(x) if x == 1.0 => 1,
+            o => return Err(format!("SCREEN: viewer must be 0 or 1, not {o:?}")),
+        };
+        let lines = v
+            .get("lines")
+            .and_then(|x| x.as_array())
+            .ok_or("SCREEN: lines")?
+            .iter()
+            .map(|l| l.as_str().map(str::to_string).ok_or("SCREEN: a line that is not a string"))
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(Screen { viewer, lines })
+    }
+
+    /// Whether the viewer has been shipped, since `cur`, a line that differs from the reference (or
+    /// one past its end); `cur` advances over what matched. The chunk list is append-only.
+    fn diverged(&self, sess: &BridgeSession, cur: &mut ScreenCursor) -> bool {
+        let chunks = &sess.chunks().chunks;
+        while cur.chunk < chunks.len() {
+            let c = &chunks[cur.chunk];
+            cur.chunk += 1;
+            if c.side != self.viewer {
+                continue;
+            }
+            for l in &c.lines {
+                if self.lines.get(cur.line) != Some(l) {
+                    return true;
+                }
+                cur.line += 1;
+            }
+        }
+        false
+    }
 }
 
 enum Script {
@@ -300,7 +364,9 @@ thread_local! {
     static BENCH_OUT: std::cell::RefCell<Option<String>> = const { std::cell::RefCell::new(None) };
 }
 
-type Run = (BridgeSession, [Vec<CoreEvent>; 2], Vec<ViewCap>, [Vec<TrackCap>; 2]);
+/// The replayed session, both sides' core events, the views, the trackers, and whether a `SCREEN`
+/// stopped it at the viewer's first line that differs from the reference.
+type Run = (BridgeSession, [Vec<CoreEvent>; 2], Vec<ViewCap>, [Vec<TrackCap>; 2], bool);
 
 /// Slice T at ONE transition: every side whose stream took a DECISION at this version's boundary.
 /// The decision's request must be the LAST line the side was shipped in the write (the live
@@ -312,8 +378,12 @@ type Run = (BridgeSession, [Vec<CoreEvent>; 2], Vec<ViewCap>, [Vec<TrackCap>; 2]
 /// BYTE-identical to the step chain's, its mask and choice tokens equal
 /// (`version::parse_encode_matches_step`, `gen3_core_parse_obs_gate_v1`). Any difference REFUSES the
 /// battle, naming the side, the decision index and the first differing cell.
+///
+/// `lean` (`SCREEN`, the viewer): every check and every fallible computation runs as without it;
+/// only the formatting the screen does not render is skipped (the tracker and window JSON, and every
+/// row field but the viewer's frame).
 fn track(v: &BattleVersion, sess: &BridgeSession, caps: &mut [Vec<TrackCap>; 2], obs: bool,
-         parsed: &[Option<BattleVersion>; 2]) -> Result<(), String> {
+         parsed: &[Option<BattleVersion>; 2], lean: Option<usize>) -> Result<(), String> {
     for side in 0..2 {
         let tag = side + 1;
         let k = caps[side].len();
@@ -348,7 +418,10 @@ fn track(v: &BattleVersion, sess: &BridgeSession, caps: &mut [Vec<TrackCap>; 2],
         }
         let after = sess.chunks().chunks.iter().rposition(|c| c.side == side).ok_or("a decision with no chunk")?;
         let mut window = String::new();
-        d.window.as_ref().ok_or("a tracker stream without its record")?.json_into(&mut window);
+        let rec = d.window.as_ref().ok_or("a tracker stream without its record")?;
+        if lean.is_none() {
+            rec.json_into(&mut window);
+        }
         if let Some(&(bs, bk, reps)) = OBS_BENCH.get() {
             if obs && bs == side && bk == caps[side].len() {
                 let b = obs_bench(v, side, reps)?;
@@ -361,14 +434,19 @@ fn track(v: &BattleVersion, sess: &BridgeSession, caps: &mut [Vec<TrackCap>; 2],
             let legal = v.legal(side).ok_or("a decision with no legality")?;
             let reading = &v.stream(side).ok_or("no stream")?.board_reading;
             let tokens = pokesim::present::choice_tokens(reading, &legal).map_err(|e| e.message().to_string())?;
-            Some((pokesim::encoder::wire::frame(&row), pokesim::present::mask(&legal), pokesim::present::tokens_json(&tokens)))
+            match lean {
+                None => Some((pokesim::encoder::wire::frame(&row), pokesim::present::mask(&legal),
+                              pokesim::present::tokens_json(&tokens))),
+                Some(s) if s == side => Some((pokesim::encoder::wire::frame(&row), [0u8; 11], String::new())),
+                Some(_) => None,
+            }
         } else {
             None
         };
         let walk = if walking() { Some(walk_decision(v, side)?) } else { None };
         caps[side].push(TrackCap {
             after,
-            trackers: v.trackers(side).map_or("null".into(), |t| t.json()),
+            trackers: if lean.is_some() { String::new() } else { v.trackers(side).map_or("null".into(), |t| t.json()) },
             window,
             reward: d.reward,
             obs,
@@ -385,11 +463,26 @@ fn advance_parsed(sess: &BridgeSession, parsed: &mut [Option<BattleVersion>; 2])
     for side in 0..2 {
         let p = parsed[side].take().ok_or("parse chain lost")?;
         let from = p.stream(side).map_or(0, |s| s.lines);
-        let text = sess.side_lines(side);
-        let next = p.parse_advance(&text[from..]).map_err(|e| format!("parse p{}: {e}", side + 1))?;
+        let next = p.parse_advance(&side_lines_from(sess, side, from)).map_err(|e| format!("parse p{}: {e}", side + 1))?;
         parsed[side] = Some(next);
     }
     Ok(())
+}
+
+/// `side`'s shipped lines from line `from` on: `sess.side_lines(side)[from..]` without cloning the lines before it
+/// (a whole-stream copy per command made every replay quadratic in its length).
+fn side_lines_from(sess: &BridgeSession, side: usize, from: usize) -> Vec<String> {
+    let mut seen = 0usize;
+    let mut out = Vec::new();
+    for c in sess.chunks().side_chunks(side) {
+        let n = c.lines.len();
+        if seen + n > from {
+            out.extend(c.lines[from.saturating_sub(seen)..].iter().cloned());
+        }
+        seen += n;
+    }
+    assert!(from <= seen, "parse chain past the stream ({from} > {seen})");
+    out
 }
 
 /// The M2 gate at ONE transition: each side's parse-built version, fed the same new TEXT the
@@ -416,7 +509,8 @@ fn parse_cfg(cfg: Option<ClockConfig>) -> Option<ClockConfig> {
     cfg
 }
 
-fn run(b: &Battle, dex: &Dex, record_dir: Option<&str>, commit: &str, views: bool, trackers: bool, obs: bool) -> Result<Run, String> {
+fn run(b: &Battle, dex: &Dex, record_dir: Option<&str>, commit: &str, views: bool, trackers: bool, obs: bool,
+       screen: Option<&Screen>) -> Result<Run, String> {
     let mut sess = if b.init_seed {
         BridgeSession::new_core(&b.opts, b.quick_claw, dex)?
     } else {
@@ -444,8 +538,9 @@ fn run(b: &Battle, dex: &Dex, record_dir: Option<&str>, commit: &str, views: boo
         Some(BattleVersion::parse_root_with(1, names[1], teams[1], pcfg)?),
     ];
     advance_parsed(&sess, &mut parsed)?;
+    let lean = screen.map(|sc| sc.viewer);
     if trackers {
-        track(&v, &sess, &mut tcaps, obs, &parsed)?;
+        track(&v, &sess, &mut tcaps, obs, &parsed, lean)?;
     }
     parse_gate(&v, &parsed)?;
     let mut caps: Vec<ViewCap> = Vec::new();
@@ -453,7 +548,12 @@ fn run(b: &Battle, dex: &Dex, record_dir: Option<&str>, commit: &str, views: boo
     if views {
         capture(&v, &sess, dex, &mut seen, &mut caps)?;
     }
+    let mut cursor = ScreenCursor::default();
+    let mut stopped = screen.is_some_and(|sc| sc.diverged(&sess, &mut cursor));
     for c in &b.cmds {
+        if stopped {
+            break;
+        }
         if sess.is_ended() {
             break;
         }
@@ -481,7 +581,7 @@ fn run(b: &Battle, dex: &Dex, record_dir: Option<&str>, commit: &str, views: boo
         v = v.observe(&sess).map_err(|e| format!("version step: {e}"))?;
         advance_parsed(&sess, &mut parsed)?;
         if trackers {
-            track(&v, &sess, &mut tcaps, obs, &parsed)?;
+            track(&v, &sess, &mut tcaps, obs, &parsed, lean)?;
         }
         if let Some(f) = sess.fatal() {
             // A capture golden's blind per-decision script can re-send a rejected choice until
@@ -497,6 +597,7 @@ fn run(b: &Battle, dex: &Dex, record_dir: Option<&str>, commit: &str, views: boo
         if views {
             capture(&v, &sess, dex, &mut seen, &mut caps)?;
         }
+        stopped = screen.is_some_and(|sc| sc.diverged(&sess, &mut cursor));
     }
     let bs = sess.battle_state().ok_or("no battle state")?;
     let recs = sess.source_recs().ok_or("no source records")?;
@@ -547,19 +648,26 @@ fn run(b: &Battle, dex: &Dex, record_dir: Option<&str>, commit: &str, views: boo
                                         reward: if won { 1.0 } else { 0.0 }, obs: None, choice: None, walk });
         }
     }
-    Ok((sess, out, caps, tcaps))
+    Ok((sess, out, caps, tcaps, stopped))
 }
 
-fn render(b: &Battle, res: Result<Run, String>) -> String {
+fn render(b: &Battle, res: Result<Run, String>, screen: Option<&Screen>) -> String {
     let mut o = String::from("{\"label\":");
     json_out::str_into(&mut o, &b.label);
+    let res = match (res, screen) {
+        (Ok(run), Some(sc)) => {
+            render_screen(&mut o, run, sc.viewer);
+            return o;
+        }
+        (res, _) => res,
+    };
     match res {
         Err(e) => {
             o.push_str(",\"ok\":false,\"error\":");
             json_out::str_into(&mut o, &e);
             o.push('}');
         }
-        Ok((sess, viewers, caps, tcaps)) => {
+        Ok((sess, viewers, caps, tcaps, _)) => {
             o.push_str(",\"ok\":true,\"error\":null,\"ended\":");
             o.push_str(if sess.is_ended() { "true" } else { "false" });
             o.push_str(",\"truncated\":");
@@ -663,6 +771,60 @@ fn render(b: &Battle, res: Result<Run, String>) -> String {
         }
     }
     o
+}
+
+/// The `SCREEN` line of one battle (module docs): what the world screen's gate reads, nothing else.
+/// `chunks` keeps every chunk's place (another side's chunk is an empty placeholder) so a decision's
+/// `after` indexes it as it does a full line.
+fn render_screen(o: &mut String, run: Run, viewer: usize) {
+    let (sess, _viewers, _caps, tcaps, stopped) = run;
+    o.push_str(",\"ok\":true,\"error\":null,\"ended\":");
+    o.push_str(if sess.is_ended() { "true" } else { "false" });
+    o.push_str(",\"truncated\":");
+    o.push_str(if sess.fatal().is_some() { "true" } else { "false" });
+    o.push_str(",\"stopped\":");
+    o.push_str(if stopped { "true" } else { "false" });
+    if let Some(ctl) = sess.roll_ctl() {
+        o.push_str(",\"rolls\":");
+        o.push_str(&ctl.json());
+    }
+    o.push_str(",\"chunks\":[");
+    for (i, c) in sess.chunks().chunks.iter().enumerate() {
+        if i > 0 {
+            o.push(',');
+        }
+        o.push_str(&format!("[{},[", c.side));
+        if c.side == viewer {
+            for (j, l) in c.lines.iter().enumerate() {
+                if j > 0 {
+                    o.push(',');
+                }
+                json_out::str_into(o, l);
+            }
+        }
+        o.push_str("]]");
+    }
+    o.push_str("],\"trackers\":[");
+    for side in 0..2 {
+        if side > 0 {
+            o.push(',');
+        }
+        o.push('[');
+        if side == viewer {
+            let mut first = true;
+            for c in tcaps[side].iter().filter(|c| c.after != usize::MAX) {
+                if let Some((frame, _, _)) = &c.obs {
+                    if !first {
+                        o.push(',');
+                    }
+                    first = false;
+                    o.push_str(&format!("{{\"after\":{},\"obs\":{frame}}}", c.after));
+                }
+            }
+        }
+        o.push(']');
+    }
+    o.push_str("]}");
 }
 
 /// `--present-stream`: ONE side's protocol TEXT on stdin → its `present()` view. The first line is
@@ -921,7 +1083,7 @@ fn bench_parse(rounds: usize, battles: &[Battle], dex: &Dex) -> String {
     use std::time::Instant;
     let mut streams: Vec<(usize, Vec<Vec<String>>)> = Vec::new();
     for b in battles {
-        let (sess, _, _, _) = match run(b, dex, None, "bench", false, false, false) {
+        let (sess, _, _, _, _) = match run(b, dex, None, "bench", false, false, false, None) {
             Ok(x) => x,
             Err(e) => return format!("{{\"error\":{:?}}}", e),
         };
@@ -1054,6 +1216,7 @@ fn main() {
     let stdin = io::stdin();
     let mut out = io::stdout().lock();
     let mut cur: Option<Battle> = None;
+    let mut screen: Option<Screen> = None;
     let mut n = 0usize;
     for line in stdin.lock().lines() {
         let line = match line {
@@ -1098,6 +1261,15 @@ fn main() {
                     let tok = rest.split_once(' ').map_or("", |(_, t)| t).to_string();
                     b.cmds.push(if cmd == "CHOOSE" { Script::Choose(c, tok) } else { Script::ChooseIfOpen(c, tok) });
                 }
+                "SCREEN" => {
+                    if !obs {
+                        return Err("SCREEN needs --obs (the screen's gate compares the viewer's rows)".into());
+                    }
+                    if cur.is_some() {
+                        return Err("SCREEN inside a battle".into());
+                    }
+                    screen = Some(Screen::parse(rest)?);
+                }
                 "FORCELOSE" => {
                     let b = cur.as_mut().ok_or("FORCELOSE before START")?;
                     b.cmds.push(Script::ForceLose(side_of(rest.trim())?));
@@ -1108,8 +1280,8 @@ fn main() {
                         bench_battles.push(b);
                         return Ok(());
                     }
-                    let res = run(&b, &dex, record_dir.as_deref(), &commit, views, trackers, obs);
-                    let _ = writeln!(out, "{}", render(&b, res));
+                    let res = run(&b, &dex, record_dir.as_deref(), &commit, views, trackers, obs, screen.as_ref());
+                    let _ = writeln!(out, "{}", render(&b, res, screen.as_ref()));
                     let _ = out.flush();
                     n += 1;
                 }

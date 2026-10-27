@@ -39,10 +39,12 @@ unit read committed artefacts only; it ran one arithmetic script (the power tabl
    S-U is a GAME-level read against a real non-self opponent. It is E4 of
    [`design_search_next.md`](design_search_next.md), re-cut around H-MID's interaction and carrying its review's
    fixes; if S-U registers, E4 is not registered separately.
-5. **The cost** (ESTIMATE; the build's smoke measured ≈ 4–8× less on 12 decisions, S-1, and stage 0 decides). About
-   30–37 searched decisions a game at 29–60 CPU-s each gives **≈ 15–37 CPU-min per searched game, central ≈ 25**. A raw game costs 11.8 s. The recommended size is 1,200 deals per set (§4.4): ≈ 2,400
-   searched games, **≈ 1,000 CPU-h (600–1,500)**. Phase 1, which reads G_U finally, is ≈ 1,600 of them
-   (≈ 667 CPU-h).
+5. **The cost** (ESTIMATE from stage 0's one finished searched game, §4.2; stage 0 decides). The searched decision's
+   cost is the honest world screen, and it climbs with the turn. On the LEAN screen (2026-10-27, bit-identical, the
+   default) a searched game costs **median ≈ 5 CPU-min, mean ≈ 12–16**, the mean set by the long games. A raw game
+   costs 11.8 s. The recommended size is 1,200 deals per set (§4.4): ≈ 2,400 searched games, **≈ 560 CPU-h
+   (480–640)**. Phase 1, which reads G_U finally, is ≈ 1,600 of them (≈ 370 CPU-h). The builder stage 0 played would
+   have cost ≈ 2,000–3,000 CPU-h.
 6. **Its power** (d = 0.4; §4.3).
    - DOES-NOT-CLOSE-B, i.e. G_U's UB < +4.3 pp: 0.65 if G_U is truly 0.
    - U-GAIN at a true G_U of +4.3 pp: 0.65.
@@ -52,9 +54,9 @@ unit read committed artefacts only; it ran one arithmetic script (the power tabl
    **It resolves large effects only.** An interaction the size of a third of the gap (≈ 3.5 pp) would need ≈ 5,100
    deals a set.
 7. **When it can run.** Not on the local agent cores. Their 2 heavy slots are shared with the N1-P, H-CTX and X59-S
-   reads, and 1,000 CPU-h would take 6–12 weeks there. A rented CPU box (an owner question, strategy §3.1) makes it a
-   2–4-day job for ≈ $25–85 (UNVERIFIED). The live player's build and stage 0 (≈ 8 CPU-h for the cost re-size) can go
-   locally whenever a slot is free (§5).
+   reads, and ≈ 560 CPU-h would take 3–7 weeks there. A rented CPU box (an owner question, strategy §3.1) makes it a
+   1–2-day job for ≈ $15–50 (UNVERIFIED). The live player's build and stage 0 (≈ 4–5 CPU-h for the cost re-size) can
+   go locally whenever a slot is free (§5).
 8. **Verdict expected** (GUESS): DOES-NOT-CLOSE-B is the likeliest informative class (P ≈ 0.55), and I most likely
    reads UNDECIDED. Its value is to close or open "search on V reopens on U" with a real opponent, at the price of one
    rented-box run.
@@ -220,11 +222,17 @@ deep with the critic at the cut. A live decision rebuilds its worlds each time; 
 unmeasured.
 
 **The cost a searched game** (ESTIMATE, corrected by stage 0's first searched game, 2026-10-27; S-1):
-- **The cost a decision climbs with the turn**, ≈ 6 search CPU-s at turns 10–19 to ≈ 130 at turns 50–60, with the
-  worlds, depth, tries and playouts flat or falling: it is the world screen (each chain step replays the whole true
-  log), not the search's width ([`AMENDMENT_1_DRAFT.md`](../research_state/measurements/su_headroom_2026-10-27/AMENDMENT_1_DRAFT.md) §1).
-- So a median-length (≈ 35-turn) game ≈ 10–13 CPU-min of whole-unit CPU, the 66-turn first game 78, and the MEAN, set
-  by the long tail, ≈ 15–25 (the original central ≈ 25 is the upper end). R0 §4's ≈ 32 CPU-min sits inside.
+- **The cost a decision climbs with the turn, and it is the honest world screen (MEASURED 2026-10-27,
+  [`AMENDMENT_1_DRAFT.md`](../research_state/measurements/su_headroom_2026-10-27/AMENDMENT_1_DRAFT.md) §1b).** On
+  the builder stage 0 played, a decision went from ≈ 6 search CPU-s at turns 10–19 to ≈ 130 at turns 50–60, with worlds, depth, tries and playouts flat or falling. Re-played offline, turn 59 is
+  240.5 CPU-s of world building and 2.3 of playouts. Every screening replay is the candidate world's battle from
+  turn 1, and both the replays a decision and their length climb.
+- **The LEAN screen** (`worlds.WorldSampler(lean_screen)`, the default; the same worlds, draws and picks, bit for
+  bit) stops each replay at its first line that differs from the truth's. That game's 57 searched or excluded
+  decisions cost 77.8 search CPU-min on the old builder and **18.0** on the lean one (4.3×; its 9 exclusions 6.4×, turn 59 243 → 54 s).
+- **Per game** (that game's per-turn cost over X51's 2,800 game lengths, ESTIMATE): median ≈ 5 CPU-min of whole-unit
+  CPU, mean ≈ 12–16, so ≈ 560 CPU-h (480–640) for the full read. The old builder's mean would have been ≈ 50–74
+  CPU-min (≈ 2,000–3,000 CPU-h), so the design's central ≈ 25 was low: the long games set the mean, and they are dear.
 - The raw twin costs 11.8 s (X51, measured).
 - Kakuna's forward is not counted. It waits while we search.
 
@@ -263,10 +271,10 @@ policies from turn 1. S-U's pairs share nine turns, and a game with no deviation
 - **Final: 1,200 deals per set.** For U that is unit seeds 0–19 on each of H, F and P72 (400 a panel, X51's). For
   home72 it is unit seeds 0–59. Balanced n minimises SE(I) for a fixed number of searched games, because both sets
   cost the same per game.
-- **Stage 0** is the first 5 deals of unit seed 0 on each panel: 20 searched games, ≈ 8 CPU-h. It reads COST ONLY:
+- **Stage 0** is the first 5 deals of unit seed 0 on each panel: 20 searched games, ≈ 4–5 CPU-h. It reads COST ONLY:
   CPU per searched game, plus the G-PREFIX and peer-stability checks. Its games are the read's first games, not extra.
 - **Phase 1** is unit seeds 0–19 on all four panels: U complete at 1,200, home72 at 400 (the 1,200 / 400 row, ≈ 1,600
-  searched games, ≈ 667 CPU-h central). **G_U's classes are READ here, and are final.** I is read futility-only: the
+  searched games, ≈ 370 CPU-h central on the lean screen). **G_U's classes are READ here, and are final.** I is read futility-only: the
   read STOPS iff NO-U-PREMIUM or U-LESS is already reached. No positive class of I is read at phase 1.
 - **Phase 2** is home72 unit seeds 20–59 (+800 searched games, ≈ 333 CPU-h), played only when I is UNDECIDED at phase 1.
   I's classes are then read on all 1,200 / 1,200. Every phase-2 deal is still raw-then-searched in one job on the same
@@ -289,10 +297,10 @@ policies from turn 1. S-U's pairs share nine turns, and a game with no deviation
 - D3 look 2's read;
 - PR-1 (165–238 lane-h) and X62's read when they register.
 
-At ≈ 1,000 CPU-h on about one effective lane, S-U would take **≈ 6–12 weeks** of local wall time, behind those reads.
+At ≈ 560 CPU-h on about one effective lane, S-U would take **≈ 3–7 weeks** of local wall time, behind those reads.
 So:
 - **The build (B1–B4, §6) is CPU-light** and can land any time.
-- **Stage 0 (≈ 8 CPU-h)** runs locally in one free heavy slot. It turns this doc's cost ESTIMATE into a measurement
+- **Stage 0 (≈ 4–5 CPU-h)** runs locally in one free heavy slot. It turns this doc's cost ESTIMATE into a measurement
   before anyone rents anything.
 - **The read itself does not run locally** unless the queue empties.
 
@@ -300,7 +308,7 @@ So:
 both arms, because the engine rule does not let a cross-host import stand in for either.
 - A 32-vCPU box is likely memory-bound: a P\* + search process plus a Kakuna peer is ≈ 4–6 GB (X51's unit peaked at
   3.7 GB; stage 1c's 128-world chunk at 6.3 GB). It might hold 12–24 games at once.
-- That gives ≈ 42–85 box-h, **≈ 2–4 days, ≈ $25–85** at the strategy doc's ≈ $0.6–1 a box-h (UNVERIFIED: no rented
+- That gives ≈ 24–48 box-h, **≈ 1–2 days, ≈ $15–50** at the strategy doc's ≈ $0.6–1 a box-h (UNVERIFIED: no rented
   CPU has played a Kakuna game or a search).
 - A few units re-played locally game for game are the cross-host guard, REPORTED.
 - **Order on the box** (MY JUDGEMENT): after PR-1. PR-1 is ranked by P(GAIN) per resource-day, and S-U's expected class
@@ -423,25 +431,23 @@ secondary.
 
 ## 9. FINDINGS (standing rule 7)
 
-- **S-1.** Every cost in §4–§5 is an ESTIMATE from other reads' measured per-decision costs on contended pool-team
-  states. **The build's smoke (2026-10-27, `~/gen3ai_archive/su_build_smoke_2026-10-27/`) measured far less**, on only 12
-  searched decisions of 2 deals (home72 seed 0 game 0 and forum72 seed 0 game 13, turns 10–19, our forfeit lowered to
-  turn 12 / 20): **6.4 CPU-s a searched decision, median** (5.1–8.2; the worker thread plus its replay children), 6.7 s
-  of wall, every world at its first try; the whole process spent ≈ 10.3 CPU-s more per searched decision than the
-  identical raw game. At 30–37 searched decisions that is ≈ 3–6 CPU-min a searched game, 4–8× below the central 25,
-  and the whole read would be ≈ 150–250 CPU-h, not ≈ 1,000 (MY JUDGEMENT; UNVERIFIED: later turns, P72 and H were not
-  played). Stage 0 measures it on 20 searched games before the read sizes; the re-size rule (§4.4) is unchanged.
-  **Stage 0's first searched game REFUTED the smoke's figure past turn 20** (home72 seed 0 game 0: 66 turns, 77.8 search
-  CPU-min, 78.3 whole-unit, 83 min of wall; ≈ 6 CPU-s a decision at turns 10–19, ≈ 130 at 50–60; 7 exclusions at 60–407 s each). The
-  smoke's ≈ 150–250 CPU-h is withdrawn and §4.2's corrected ≈ 15–25 CPU-min a game (≈ 600–1,000 CPU-h) is ONE game's, UNVERIFIED.
-  Stage 0 is HELD (it held a heavy slot ahead of the reads ranked above it); the cost-capped variants are
-  `AMENDMENT_1_DRAFT.md` (DRAFT, not registered).
+- **S-1.** Every cost in §4–§5 is an ESTIMATE resting on ONE searched game. The build's smoke (12 decisions at turns
+  10–19, `~/gen3ai_archive/su_build_smoke_2026-10-27/`) measured 6.4 CPU-s a decision and did not hold past turn 20.
+  Stage 0's first searched game (home72 seed 0 game 0, 66 turns, a loss) cost 77.8 search CPU-min on the builder it
+  played (78.3 whole-unit, 83 min of wall), 36.5 of them in 9 exclusions. **MEASURED (2026-10-27): the climb is the
+  honest world screen** (turn 59: 240.5 of 243.0 CPU-s), and the LEAN screen re-makes all 57 of its decisions
+  identically for 18.0 CPU-min
+  (`AMENDMENT_1_DRAFT.md` §1b). The per-game figures spread that one game's per-turn cost over X51's game lengths;
+  its exclusion rate, which sets the late cost, is unmeasured anywhere else. Stage 0's 20 games measure it before the
+  read sizes. It is HELD behind N1-P, H-CTX and X59-S; the cost variants are `AMENDMENT_1_DRAFT.md` (DRAFT, not
+  registered).
 - **S-2.** CLOSED by B3: one-game units (`per_game`), a searched unit a long heavy-slot job with a 3-h watchdog.
   Residual: a searched unit never takes the short lane, so it queues behind the slots' 40–45-min chunks; if stage 0
   confirms ≈ 5 min of wall a searched game, the short lane with its exit-88 long fallback would fit (a one-line change
-  in `main.x35.kakuna`, not made). Stage 0's first searched game ran > 1 h of wall: the short lane does NOT fit, and
-  a searched long job takes a heavy slot ahead of the short units of reads ranked above S-U. A game that does run past 45 min holds its slot past the chunk policy: it cannot be
-  split.
+  in `main.x35.kakuna`, not made). Stage 0's first searched game ran > 1 h of wall on the old builder: the short lane
+  did NOT fit, and a searched long job took a heavy slot ahead of the short units of reads ranked above S-U. On the
+  lean screen that game is 18 search CPU-min and a median game ≈ 5 (ESTIMATE): the short lane would fit most games, a
+  long one still not. A game that runs past 45 min holds its slot past the chunk policy: it cannot be split.
 - **S-3.** CLOSED (A9): the keepalive is the one clock, and the search runs off the event loop.
 - **S-4.** The leak-cancellation argument for I is first-order and UNVERIFIED (A4).
 - **S-5.** The X51 twins' discordance (0.36–0.41) is between two DIFFERENT policies from turn 1. S-U's d is
@@ -487,3 +493,4 @@ secondary.
 | 2026-10-27 | **B4 BUILT, the forfeit-win guard landed** (S-U operator, orchestrator brief) | `search_headroom` (§6 B4; ONE `per_game` group, pairs only where both games counted, a percentile unit bootstrap within panel with the U panels drawn first, exact-fraction bars with rule 8's 0.0005, the phase-1 futility-only rule, VOID on G-PREFIX / engines / bytes / the search stamp and played preset); every anchor game a FORCELOSE decided other than our own turn-limit cap is VOID (`runner.forced_end_verdict`, A9) | computing the REPORTED subgroup / world quality / Δbias inside the rule (the cells do not carry them: separate scripts); counting a forced-end game as a loss instead of VOID (a peer's drop is a harness defect, never an outcome) | `src/main/reads/rules_search_headroom.py`, `src/main/anchors/forced_end_guard_test.py`, `peer_patience_integration_test.py` (the negative control); the banked scan: 0 forced-end games in 972 counted units |
 | 2026-10-27 | **Stage 0 held; the cost model corrected** (S-U operator; orchestrator ruling (b)) | stage 0 HELD until N1-P, H-CTX and X59-S finish (a searched game held a heavy slot > 1 h); §4.2's per-game cost corrected from stage 0's first searched game (the world screen's cost climbs with the turn); the smoke's ≈ 150–250 CPU-h withdrawn; the cost-capped variants drafted, not registered (`AMENDMENT_1_DRAFT.md`: an incremental screen first, else search turns 10–30) | continuing stage 0 now (a day of a slot above the brief's priority); a per-decision CPU-time budget (not deterministic); 4 worlds (no longer L1's S) | stage 0's `search_decisions.jsonl` for `pstar_s__home72__00__g00` |
 | 2026-10-27 | **A filter proposed: V-RANK** (research designer, orchestrator brief; docs only here) | §8 A1's update: the within-node ranking read now has a non-self referee (live Kakuna branches by deterministic replay), `design_v_rank_on_u.md`; its gate can turn S-U OFF (RANK-NULL-ON-U, RANK-WORSE-ON-U) or make it ELIGIBLE (RANK-HOLDS-ON-U). Nothing in this doc's classes, bars or size changes | treating an intact ranking as evidence that S pays (on P\*'s own states the slope is 0.54 while L1 reads +0.0001) | `design_v_rank_on_u.md` §0, §4.3, §5.1 |
+| 2026-10-27 | **The cost's cause MEASURED; the LEAN world screen BUILT (bit-identical)** (search-performance engineer, orchestrator brief) | the climb is the world screen (turn 59: 240.5 of 243.0 CPU-s; every screening replay is the candidate world's battle from turn 1); the lean screen, the default: a screening replay stops at its first line that differs from the truth's and returns only what the gate reads, and a proposal the prior rules out is not replayed; the decision log splits world vs playout CPU; §0, §4.2, §4.4, §5, S-1 re-costed (≈ 560 CPU-h, was ≈ 1,000; the old builder ≈ 2,000–3,000) | replaying the TRUE log's prefix once (the draft's E: not bit-identical, a world leaves the truth at the screened mon's first switch-in, every mon by turn 10 here); dropping `core_events`' cross-checks from screens (2.4× more on the replays, but the other side's checks can refuse a candidate the searched side's cannot: not identical by construction; FINDING) | `AMENDMENT_1_DRAFT.md` §1b; `src/main/value_search/world_screen_parity_test.py` (4 banked decisions both ways, an exclusion included, and a wrong reference caught); all 57 of the game's decisions re-made offline equal to their live records |

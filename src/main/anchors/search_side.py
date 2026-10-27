@@ -30,16 +30,20 @@ packed teams, the names, the seed — so the raw and searched games of one deal 
 decision index): the worlds, their screens and the playouts' dice are functions of the key, the forward is the
 checkpoint on CPU, so a searched game replays exactly.
 
-**Off the event loop.** A searched decision costs 30-90 CPU-s. It runs in a worker thread (``asyncio.to_thread``) so
-this process's websocket server keeps answering the peer's keepalive pings (poke-env's client pings every 20 s and
-drops a connection whose pong is 20 s late: a search ON the loop would disconnect the peer, and the front end would
-book the dropped peer's forfeit as OUR win). Our own watchdog (``--first-game-timeout`` / ``--progress-timeout``) must
-be sized for a searched game (``main.x35.kakuna`` sets it); the front end has no battle timer.
+**Off the event loop.** A searched decision costs ≈ 4-55 CPU-s (S-U stage 0 on the lean world screen). It runs in a
+worker thread (``asyncio.to_thread``) so this process's websocket server keeps answering the peer's keepalive pings
+(poke-env's client pings every 20 s and drops a connection whose pong is 20 s late: a search ON the loop would
+disconnect the peer, and the front end would book the dropped peer's forfeit as OUR win). Our own watchdog
+(``--first-game-timeout`` / ``--progress-timeout``) must be sized for a searched game (``main.x35.kakuna`` sets it);
+the front end has no battle timer.
 
 **The record.** One JSON line per decision of ours (schema :data:`SCHEMA`) in ``<out>/search_decisions.jsonl``:
 whether it was searched (and why not), π's greedy action, the pick, Q̂ and log π per legal action, the critic at the
 root, the playouts spent, its CPU and wall seconds, the worlds' tries and leak block and their species hit rate
 against the truth (S-U's REPORTED world-quality covariate, at species level). ``main.reads search-cost`` reads them.
+``cpu_s`` (this worker thread plus the replay children) is the figure every banked record carries; ``world_cpu_s`` /
+``playout_cpu_s`` SPLIT a decision (``search.cpu_all``: every thread plus the children, so they need not sum to
+``cpu_s``): building the worlds (an exclusion is all world building) and playing the leaves.
 """
 from __future__ import annotations
 
@@ -245,7 +249,7 @@ class LiveSearcher:
     def _search(self, log: Dict[str, Any], at: int, side: str, row: np.ndarray, mask: np.ndarray,
                 d: Dict[str, Any], key: str, argmax: int) -> Dict[str, Any]:
         from main.value_search import rules
-        from main.value_search.search import search_decision
+        from main.value_search.search import cpu_all, search_decision
         from main.value_search.worlds import WorldError
 
         c0, k0, w0 = time.thread_time(), _children_cpu(), time.monotonic()
@@ -261,6 +265,7 @@ class LiveSearcher:
                                   f"the acting policy's greedy choice is {argmax} ({lg[argmax]:.6f}): piKL would anchor "
                                   "to another policy")
         lsm = rules.log_softmax_ordered(lg, order)
+        a0 = cpu_all()
         try:
             res = search_decision(self.engine, log, at, side, np.asarray(row, dtype=np.float32),
                                   np.asarray(mask, dtype=np.uint8), self.cfg, key, sampler=self.sampler,
@@ -271,6 +276,7 @@ class LiveSearcher:
             self.stats["excluded"] += 1
             return {"searched": False, "why": "excluded", "error": f"{type(exc).__name__}: {str(exc)[:400]}",
                     "played": argmax, "cpu_s": round(time.thread_time() - c0 + _children_cpu() - k0, 3),
+                    "world_cpu_s": round(cpu_all() - a0, 3), "playout_cpu_s": 0.0,
                     "wall_s": round(time.monotonic() - w0, 3)}
         if sorted(res.q) != legal:
             raise LiveSearchError(f"{key}: the search valued {sorted(res.q)}, the legal actions are {legal}")
@@ -288,6 +294,7 @@ class LiveSearcher:
                 "log_pi": {str(a): round(float(lsm[a]), 6) for a in legal},
                 "root_v": round(float(res.root_value), 6), "spent": int(res.spent),
                 "cpu_s": round(cpu, 3), "wall_s": round(wall, 3), "process_cpu_s": round(float(res.cpu_s), 3),
+                "world_cpu_s": round(float(res.world_cpu_s), 3), "playout_cpu_s": round(float(res.playout_cpu_s), 3),
                 "world_tries": list(res.world_tries), "leak": res.leak, "species_hit": hits,
                 "config": self.preset.as_dict()}
 

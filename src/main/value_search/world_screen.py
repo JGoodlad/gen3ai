@@ -20,7 +20,8 @@ shifted between / added to stats, a nature, an item, an ability; and independent
 draw (stationary from the start) or, when none was accepted, at the draw whose replay matched the log the longest,
 hill-climbed on that matched length until it fits the log and then burnt in (``BURN``) before it is sampled every
 ``THIN`` steps. No step reads the truth. A sampler that cannot fit the log in ``MAX_STEPS`` fails (the world's try
-fails, counted ``screen``).
+fails, counted ``screen``). A chain proposal the prior rules out is discarded unreplayed (``run``'s
+``skip_impossible``).
 """
 from __future__ import annotations
 
@@ -408,9 +409,14 @@ def true_state(f: Sequence[str]) -> State:
 Gate = Callable[[List[Tuple[str, int, bool]]], List[Tuple[bool, float, Optional[Tuple[str, int]]]]]
 
 
-def run(samplers: List[MonSampler], rev_hp: Dict[int, Optional[int]], entries: List[str], gate: Gate) -> int:
+def run(samplers: List[MonSampler], rev_hp: Dict[int, Optional[int]], entries: List[str], gate: Gate,
+        skip_impossible: bool = True) -> int:
     """Fill every sampler's ``samples`` (module docstring). ``rev_hp``: slot → its revealed bare Hidden Power's move
-    slot. Returns the number of screening replays. Every replay of a step is ONE batched gate call."""
+    slot. Returns the number of screening replays. Every replay of a step is ONE batched gate call.
+    ``skip_impossible``: a CHAIN proposal the prior rules out (log-prior −∞: an EV below 0 or a total above 510 after
+    a local move) is never replayed. Both of the chain's branches discard such a proposal whatever its verdict, and
+    it draws no random number, so skipping the replay changes no state, no draw and no sample (False: every
+    proposal replayed, the reference path)."""
     replays = 0
 
     def jobs_of(cands: List[Tuple[MonSampler, State]]):
@@ -475,12 +481,16 @@ def run(samplers: List[MonSampler], rev_hp: Dict[int, Optional[int]], entries: L
                     s, sy = m.local(m.state)
                 cands.append((m, s))
                 sym.append(sy)
-        res = screened(cands)
-        replays += len(cands)
+        lps = [m.logp(s) for m, s in cands]
+        live_ix = [i for i, lp in enumerate(lps) if lp > -math.inf or not skip_impossible]
+        got = screened([cands[i] for i in live_ix]) if live_ix else []
+        res: List[Tuple[bool, float, Optional[Tuple[str, int]]]] = [(False, -1.0, None)] * len(cands)
+        for i, r in zip(live_ix, got):
+            res[i] = r
+        replays += len(live_ix)
         best: Dict[int, Tuple[float, bool, State, Optional[Tuple[str, int]]]] = {}
-        for (m, s), (ok, ln, hint), sy in zip(cands, res, sym):
+        for (m, s), (ok, ln, hint), sy, lp in zip(cands, res, sym, lps):
             m.proposals += 1
-            lp = m.logp(s)
             if not m.consistent:
                 if lp > -math.inf and (ok or ln >= m.best_len):
                     cur = best.get(id(m))

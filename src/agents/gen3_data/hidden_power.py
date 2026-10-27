@@ -17,7 +17,8 @@ FAILS on a second table or formula anywhere else in ``src/``.
 """
 from __future__ import annotations
 
-from typing import Dict, List, Mapping, Sequence
+import functools
+from typing import Dict, List, Mapping, Sequence, Tuple
 
 #: The gen-3 formula's type order (index = ``x * 15 // 63``), lowercase ids.
 FORMULA_TYPES = ("fighting", "flying", "poison", "ground", "rock", "bug", "ghost", "steel", "fire", "water",
@@ -85,13 +86,19 @@ def ivs_packed(t: str) -> List[int]:
 
 def iv_patterns(t: str) -> List[List[int]]:
     """EVERY 30/31 IV pattern (:data:`STATS` order) giving Hidden Power type ``t`` at 70 power: the canonical fill
-    (:func:`ivs_packed`) first, then the rest by most 31s (ties: the reversed list, descending-stable)."""
-    canon = ivs_packed(t)
-    want = _canon(t).lower()
+    (:func:`ivs_packed`) first, then the rest by most 31s (ties: the reversed list, descending-stable). Computed once
+    per type (the world screen asks for every type's patterns at each of its proposals); each call gets fresh lists."""
+    return [list(m) for m in _iv_patterns(_canon(t))]
+
+
+@functools.lru_cache(maxsize=None)
+def _iv_patterns(name: str) -> Tuple[Tuple[int, ...], ...]:
+    canon = ivs_packed(name)
+    want = name.lower()
     out = []
     for mask in range(64):
         iv = {k: 30 + ((mask >> i) & 1) for i, k in enumerate(STATS)}
         if type_of(iv) == want:
             out.append([iv[k] for k in STATS])
     out.sort(key=lambda m: (-sum(x - 30 for x in m), m[::-1]))
-    return [canon] + [m for m in out if m != canon]
+    return tuple(tuple(m) for m in [canon] + [m for m in out if m != canon])

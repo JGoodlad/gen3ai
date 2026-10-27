@@ -142,7 +142,8 @@ settles. Unit seeds are the outer loop, so a stopped queue stays balanced by see
   `max_units` and exits 0. It is not a registered stop (`INCOMPLETE_BY_STOP` needs one).
 - **`search-cost`** (`main.reads.search_cost`): per searched game and pooled, the CPU-s and wall-s of a searched decision
   (median, mean, p10, p90), the share of our decisions from the search's first turn with >= 2 legal actions, the
-  exclusions (no consistent world), the deviation rate, each game's search CPU-min and wall-min, each searched unit's
+  exclusions (no consistent world), the deviation rate, each game's search CPU-min (and its split into world building and
+  playouts, from the decision log's `world_cpu_s` / `playout_cpu_s`) and wall-min, each searched unit's
   WHOLE-process CPU (the `end` event's `cpu_s` in the kakuna state's `units.jsonl`: the unit's child reaped by
   `os.wait4` with every descendant, so concurrent units never mix; the conservative figure), G-PREFIX per group, and
   S-U's re-size input (the median searched game against 50 CPU-min), REPORTED. Its `--cells` form reads `main.anchors

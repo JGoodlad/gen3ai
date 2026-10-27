@@ -12,8 +12,9 @@ It reads each searched game's per-decision log (``search_decisions.jsonl``, :mod
 * the share of our decisions from the search's first turn that have >= 2 legal actions (searched or excluded: the
   decisions the search is asked to make; S-6);
 * per game: the searched decisions, the exclusions (no consistent world), the deviation rate (the pick is not π's
-  greedy action), the search CPU-min (the decisions' own), the WHOLE unit's CPU-min (``kakuna``'s ``units.jsonl``,
-  the conservative figure: model load, peer, every thread and child) and the game's wall-min;
+  greedy action), the search CPU-min (the decisions' own), its SPLIT into world building and playouts (``world_cpu_s``
+  / ``playout_cpu_s``; None for a log written before the split), the WHOLE unit's CPU-min (``kakuna``'s
+  ``units.jsonl``, the conservative figure: model load, peer, every thread and child) and the game's wall-min;
 * the registered re-size input: the MEDIAN searched game's search CPU-min against the design's 2 × central (50 CPU-min;
   §4.4: above it, phase 2 is dropped). It is REPORTED here, decided by the read's rule.
 
@@ -85,6 +86,9 @@ def game_report(cell: Path) -> Optional[Dict[str, Any]]:
     excluded = [r for r in recs if r.get("why") == "excluded"]
     asked = [r for r in late if r.get("n_legal", 0) >= 2]
     cpu = sum(float(r.get("cpu_s") or 0.0) for r in searched + excluded)
+    split = {k: (round(sum(float(r[k]) for r in searched + excluded) / 60.0, 3)
+                 if searched + excluded and all(r.get(k) is not None for r in searched + excluded) else None)
+             for k in ("world_cpu_s", "playout_cpu_s")}
     peer = ((summary.get("provenance") or {}).get("peer_report") or {})
     whole_cpu_s = unit_cpu(cell.parent.parent, cell.name)
     return {"cell": str(cell), "search": sorted(x for x in search if x), "decisions": len(recs),
@@ -94,7 +98,8 @@ def game_report(cell: Path) -> Optional[Dict[str, Any]]:
             "deviations": sum(1 for r in searched if r.get("deviation")),
             "deviation_rate": round(sum(1 for r in searched if r.get("deviation")) / len(searched), 4) if searched
             else None,
-            "search_cpu_min": round(cpu / 60.0, 3), "game_wall_min": (round(float(peer["wall_s"]) / 60.0, 3)
+            "search_cpu_min": round(cpu / 60.0, 3), "world_cpu_min": split["world_cpu_s"],
+            "playout_cpu_min": split["playout_cpu_s"], "game_wall_min": (round(float(peer["wall_s"]) / 60.0, 3)
                                                                       if peer.get("wall_s") is not None else None),
             "unit_cpu_min": None if whole_cpu_s is None else round(whole_cpu_s / 60.0, 3),
             "turns": [g.get("turns") for g in _games(cell)], "status": summary.get("status"),
@@ -126,6 +131,8 @@ def report(cells: Iterable[Path], *, prefix: Optional[Dict[str, Any]] = None) ->
             "searched": searched, "excluded": sum(g["excluded"] for g in games),
             "deviation_rate": (round(sum(g["deviations"] for g in games) / searched, 4) if searched else None),
             "game_search_cpu_min": _dist(game_cpu),
+            "game_world_cpu_min": _dist([g["world_cpu_min"] for g in games if g["world_cpu_min"] is not None]),
+            "game_playout_cpu_min": _dist([g["playout_cpu_min"] for g in games if g["playout_cpu_min"] is not None]),
             "game_wall_min": _dist([g["game_wall_min"] for g in games if g["game_wall_min"] is not None]),
             # the WHOLE unit's CPU (kakuna's units.jsonl): the per-decision cpu_s leaves out the validator's persistent
             # Node child and every other thread, so this is the conservative figure for a searched game

@@ -88,9 +88,9 @@ def _fake_unit(played, diverge=None):
                 {"turn": 9, "n_legal": 3, "searched": False, "why": "before_turn", "search": "r0s4@10"},
                 {"turn": 10, "n_legal": 1, "searched": False, "why": "one_legal", "search": "r0s4@10"},
                 {"turn": 10, "n_legal": 4, "searched": True, "deviation": True, "cpu_s": 30.0, "wall_s": 40.0,
-                 "search": "r0s4@10"},
+                 "world_cpu_s": 24.0, "playout_cpu_s": 7.5, "search": "r0s4@10"},
                 {"turn": 11, "n_legal": 4, "searched": True, "deviation": False, "cpu_s": 50.0, "wall_s": 70.0,
-                 "search": "r0s4@10"})) + "\n")
+                 "world_cpu_s": 36.0, "playout_cpu_s": 16.5, "search": "r0s4@10"})) + "\n")
         return 0
     return run
 
@@ -169,5 +169,8 @@ def test_the_search_cost_report_reads_the_decision_logs(tmp_path, model, monkeyp
     assert rep["ge2_legal_share"] == round(4 / 6, 4)          # turn >= 10: two of three decisions have >= 2 legal
     assert rep["deviation_rate"] == 0.5
     assert rep["game_search_cpu_min"]["median"] == round(80.0 / 60.0, 3)
+    # the split: world building vs playouts, per game, summed over its searched and excluded decisions
+    assert rep["game_world_cpu_min"]["median"] == round(60.0 / 60.0, 3)
+    assert rep["game_playout_cpu_min"]["median"] == round(24.0 / 60.0, 3)
     assert rep["resize"]["above"] is False
     assert rep["g_prefix"]["su"]["checked"] == 2 and not rep["g_prefix"]["su"]["mismatches"]
