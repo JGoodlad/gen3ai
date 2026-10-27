@@ -4,7 +4,8 @@
   (``mem_cap.sh --max-s 600``; one killed past its bound, exit 88, is played once more as a long job), each on a 95xx
   port claimed with a held flock (``kakuna.claim_port``), each preflighted (the T28 halt marker, the committed team
   manifest / panel cell, the model's bytes). One kakuna state per (group, model), planned only once the model SETTLES
-  (``main.reads.models``), so a not-yet-final model is never played.
+  (``main.reads.models``), so a not-yet-final model is never played. ``concurrency`` K (default 1) runs up to K units at
+  once (:mod:`main.reads.anchor_pool`, scheduling only; K is capped at the box's heavy-slot count).
 * THE S LANE plays S against the frozen R: ``main.h2h play-many`` cells of ``pairs`` mirrored pairs recorded in
   ``batch_pairs`` batches (the resume grain) into the group's own eval ledger and family; a UNIT is up to ``workers``
   engines inside ONE heavy slot (``mem_cap.sh --slot``), time-boxed to ``unit_s`` (<= 40 min), at nice 19 on the
@@ -29,6 +30,7 @@ import time
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
+from main.reads import anchor_pool as AP
 from main.reads import layout as LY
 from main.reads.assemble import AssembleError
 from main.reads import models as M
@@ -377,11 +379,28 @@ def _anchor_todo(spec: ReadSpec, state: Path, fails: Dict[str, int]) -> List[Tup
     return out
 
 
+def anchor_concurrency(requested: int, lane: str) -> int:
+    """The units the anchor lane runs at once: ``requested`` (>= 1), capped at the box's heavy-slot count. Only the
+    anchor lane runs units concurrently (an S unit is already several engines inside ONE slot)."""
+    if isinstance(requested, bool) or not isinstance(requested, int) or requested < 1:
+        raise RunError(f"--concurrency {requested!r}: need an integer >= 1")
+    if lane != "anchor":
+        if requested != 1:
+            raise RunError(f"--concurrency {requested} applies to the anchor lane only (an S unit is already "
+                           "--workers engines in one heavy slot)")
+        return 1
+    cap = AP.slot_cap()
+    if requested > cap:
+        _log(f"anchor: --concurrency {requested} capped at the box's {cap} heavy slots")
+    return min(requested, cap)
+
+
 def run(state: Path, lane: str, stop_epoch: float, *, workers: int = S_WORKERS, threads: int = S_THREADS,
         unit_s: int = S_UNIT_S, run_unit: Optional[Callable[..., int]] = None,
         run_s: Optional[Callable[[List[str]], int]] = None, sleep: Callable[[float], None] = time.sleep,
-        clock: Callable[[], float] = time.time) -> int:
-    """Work ``lane`` (``anchor`` | ``s``) until done or ``stop_epoch``; resumable (module docstring)."""
+        clock: Callable[[], float] = time.time, concurrency: int = 1) -> int:
+    """Work ``lane`` (``anchor`` | ``s``) until done or ``stop_epoch``; resumable (module docstring). ``concurrency``:
+    the anchor lane's units at once (:func:`anchor_concurrency`; 1 = one at a time, the default)."""
     from main.x35 import kakuna as KA
 
     if lane not in ("anchor", "s"):
@@ -389,6 +408,7 @@ def run(state: Path, lane: str, stop_epoch: float, *, workers: int = S_WORKERS, 
     spec = load_state(state)
     if lane == "anchor" and not spec.anchor or lane == "s" and not spec.s:
         raise RunError(f"the spec has no {lane} group")
+    k = anchor_concurrency(concurrency, lane)
     KA.check_stop_epoch(int(stop_epoch), now=clock())
     state = LY.check_state_dir(state)
     sv = SV.Hold(state, lane)           # the path lock + the /proc scan + the dir's identity
@@ -400,8 +420,15 @@ def run(state: Path, lane: str, stop_epoch: float, *, workers: int = S_WORKERS, 
     run_unit = run_unit or KA.run_unit
     run_s = run_s or (lambda argv: subprocess.run(argv, check=False, env=child_env()).returncode)
     jl = state / f"{lane}_supervisor.jsonl"
-    _jl(jl, {"event": "start", "pid": os.getpid(), "stop_epoch": stop_epoch})
+    _jl(jl, {"event": "start", "pid": os.getpid(), "stop_epoch": stop_epoch,
+             **({"concurrency": k, "concurrency_requested": concurrency} if lane == "anchor" else {})})
     fails: Dict[str, int] = {}
+
+    def ended(st: Path, u: Any) -> None:
+        if not KA.is_done(st, u):
+            fails[u.name] = fails.get(u.name, 0) + 1
+
+    pool = AP.UnitPool(k, run_unit, ended, log=_log)
     try:
         while True:
             sv.check()                  # the path still names the dir this supervisor started on
@@ -409,15 +436,19 @@ def run(state: Path, lane: str, stop_epoch: float, *, workers: int = S_WORKERS, 
             waiting = settle(spec, state)
             models = _load_models(state)
             if lane == "anchor":
-                todo = _anchor_todo(spec, state, fails)
-                if todo:
-                    st, u = todo[0]
+                todo = [(st, u) for st, u in _anchor_todo(spec, state, fails) if not pool.busy(st, u)]
+                if todo and pool.free():
                     if clock() >= stop_epoch:
-                        _jl(jl, {"event": "stop_at", "left": len(todo)})
+                        pool.drain()            # a lane never stops with a unit of its own in flight
+                        _jl(jl, {"event": "stop_at", "left": len(_anchor_todo(spec, state, fails))})
                         return 0
-                    run_unit(st, u)
-                    if not KA.is_done(st, u):
-                        fails[u.name] = fails.get(u.name, 0) + 1
+                    for st, u in todo[:pool.free()]:
+                        if k > 1:
+                            _log(f"anchor: start {u.name} ({len(pool) + 1}/{k} in flight)")
+                        pool.submit(st, u)      # k == 1: played right here, to its end
+                    continue
+                if len(pool):                   # the pool is full, or nothing new to start: wait for a unit to end
+                    pool.wait_one(AP.POLL_S)
                     continue
             else:
                 try:
@@ -459,7 +490,11 @@ def run(state: Path, lane: str, stop_epoch: float, *, workers: int = S_WORKERS, 
     except Exception as exc:
         _jl(jl, {"event": "refused", "why": f"{type(exc).__name__}: {exc}"})
         raise
+    except BaseException:
+        pool.abandon()                  # an interrupt leaves the units (own sessions) running, as at k == 1
+        raise
     finally:
+        pool.close()                    # the claims below are held until the last unit of this lane has ended
         hold.close()
         sv.close()
 

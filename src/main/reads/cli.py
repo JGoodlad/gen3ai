@@ -3,6 +3,7 @@
     python -m main.reads check-spec --spec read_spec.json              # validate a spec (no file but it is read)
     python -m main.reads plan    --spec read_spec.json --state DIR     # write the state; copy settled models
     python -m main.reads run     --state DIR --lane anchor|s --hours H # work one lane (detached; resumable)
+                                 [--concurrency K]                     #   anchor: K units at once (default 1)
     python -m main.reads resume  --state DIR --lane anchor|s --hours H # = run, after printing what is left
     python -m main.reads status  --state DIR
     python -m main.reads assemble --state DIR                          # -> cells.json (regime ids ALWAYS)
@@ -40,6 +41,9 @@ def _parser() -> argparse.ArgumentParser:
         r.add_argument("--workers", type=int, default=2, help="S engines per heavy-slot unit")
         r.add_argument("--threads", type=int, default=2, help="the Rust core's worker threads per S engine")
         r.add_argument("--unit-s", type=int, default=2400, help="an S unit's time box (one heavy-slot hold), s")
+        r.add_argument("--concurrency", type=int, default=1,
+                       help="ANCHOR lane only: units at once, each its own short-lane job and port (default 1; "
+                            "capped at the box's heavy-slot count)")
     for n in ("status", "assemble", "decide"):
         sub.add_parser(n).add_argument("--state", required=True)
     rec = sub.add_parser("record")
@@ -79,7 +83,8 @@ def main(argv: Optional[List[str]] = None) -> int:
             stop = a.stop_at_epoch if a.stop_at_epoch is not None else time.time() + 3600.0 * a.hours
             if a.cmd == "resume":
                 _dump(api.status(Path(a.state)))
-            return api.run(Path(a.state), a.lane, stop, workers=a.workers, threads=a.threads, unit_s=a.unit_s)
+            return api.run(Path(a.state), a.lane, stop, workers=a.workers, threads=a.threads, unit_s=a.unit_s,
+                           concurrency=a.concurrency)
         if a.cmd == "status":
             _dump(api.status(Path(a.state)))
             return 0
