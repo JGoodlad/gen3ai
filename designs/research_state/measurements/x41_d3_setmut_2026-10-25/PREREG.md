@@ -355,3 +355,11 @@ re-planned from the spec below, so no look-2 game has been played under the old 
 9. **m4 (the S lane's identity) is accepted as declared:** `main.h2h`, `agents/{model,observation,inference}`,
    `rust_env` and the packer are identical to the bank's. **m8:** no H game draws the forum72 Frustration set at unit
    seeds 0–6.
+10. **(2026-10-27, the orchestrator's ruling; registered after the S lane started and before any look-2 Kakuna
+    game.)** The pin decides and carries no re-derived anchor guards, so a REPORT-only step runs before `record`:
+    - main's G14 re-derivation (`src/main/reads/rederive.py`, `29b90161f`: `unit_check` on every counted unit of
+      both anchor groups) runs READ-ONLY over the look-2 state from main's checkout;
+    - it checks the forced ends (`FORCELOSE`) in the captures, the front end's `disconnected mid-battle` lines, and
+      the peers' long-tail lines;
+    - its summary is a descriptive row in the record. Counting is unchanged;
+    - any HIT on a counted unit STOPS the record: the orchestrator is told before `record` runs.
