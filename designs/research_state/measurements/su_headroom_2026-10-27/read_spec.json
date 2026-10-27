@@ -1,0 +1,74 @@
+{
+ "schema": "gen3_read_spec_v1",
+ "read": "su_headroom_2026-10-27",
+ "prereg": "designs/research_state/measurements/su_headroom_2026-10-27/PREREG.md",
+ "pin": "bf5f1a8e7",
+ "note": "S-U phase 1: P* raw vs P* + r0s4@10 (R0 4's one-ply search from turn 10) against Kakuna on home72 and U (H, F, P72), one per_game group, seeds 0-19, deal-paired with G-PREFIX; search_headroom",
+ "models": {
+  "pstar": {
+   "arm": "pstar",
+   "seed": 2601,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip",
+    "sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed"
+   }
+  },
+  "pstar_s": {
+   "arm": "pstar_s",
+   "seed": 2601,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip",
+    "sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed"
+   },
+   "load": {
+    "search": "r0s4@10"
+   }
+  }
+ },
+ "anchor": {
+  "su": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "home72",
+    "heldout72_hpfix",
+    "forum72",
+    "p72"
+   ],
+   "unit_seeds": "0-19",
+   "per_game": true,
+   "models": [
+    "pstar",
+    "pstar_s"
+   ]
+  }
+ },
+ "decision": {
+  "rule": "search_headroom",
+  "params": {
+   "group": "su",
+   "searched": "pstar_s",
+   "raw": "pstar",
+   "home_panel": "home72",
+   "u_panels": [
+    "heldout72_hpfix",
+    "forum72",
+    "p72"
+   ],
+   "phase": 1,
+   "bars": {
+    "no_u_premium_pp": 5.5,
+    "dnc_b_pp": 4.3,
+    "goal_b": 0.5
+   },
+   "bootstrap": {
+    "B": 2000,
+    "seed": 20261027
+   },
+   "rule8_eps": 0.0005,
+   "expected_search": "r0s4@10",
+   "engine": "port=bdc5d2be3af5e1fb/94;env=95b45f104119bdb2/129"
+  }
+ }
+}

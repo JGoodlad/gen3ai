@@ -1,8 +1,9 @@
 # S-U — search headroom on unfamiliar teams: does one-ply search on P\* gain MORE on U than on home72?
 
-**Status: DRAFT (2026-10-27), for adversarial review; nothing registered. The live searched player, the per-game
-lane, G-PREFIX, the stage-0 harness and the rule `search_headroom` are BUILT (B1–B4, §6).** A proposed registered
-read. Its PREREG is written now that the build has landed (the registration flow, `../tools/reads.md` §1). It is the read that H-MID's FINDING 1 names
+**Status: REGISTERED (2026-10-27): [`PREREG.md`](../research_state/measurements/su_headroom_2026-10-27/PREREG.md), pin
+`bf5f1a8e7`; stage 0 (cost only) next, the full read only on the orchestrator's go. The live searched player, the
+per-game lane, G-PREFIX, the stage-0 harness and the rule `search_headroom` are BUILT (B1–B4, §6).** The PREREG
+re-quotes §4's cost from the build's smoke and changes no class, bar or size. It is the read that H-MID's FINDING 1 names
 ([`h_mid_value_test_2026-10-26/README.md`](../research_state/measurements/h_mid_value_test_2026-10-26/README.md),
 `f200258f`). Search stays PAUSED ([`search_ledger.md`](search_ledger.md)) until a read like this one says otherwise. This
 unit read committed artefacts only; it ran one arithmetic script (the power table, §4.3) and no game.

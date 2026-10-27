@@ -822,7 +822,8 @@ limits:
   P72 and H were not played). All 12 decisions from turn 10 had ≥ 2 legal actions; 1 of 12 deviated from π. The same
   searched deal played twice was byte-identical over the whole game, decision records included; G-PREFIX held on both
   pairs, and the home72 pair diverged at turn 11, where the search first deviated.
-- **The rule** `search_headroom` (B4, `src/main/reads/rules_search_headroom.py`) decides S-U's classes. No full live read has been
+- **The rule** `search_headroom` (B4, `src/main/reads/rules_search_headroom.py`) decides S-U's classes. S-U is REGISTERED
+  (`../research_state/measurements/su_headroom_2026-10-27/PREREG.md`, pin `bf5f1a8e7`); no full live read has been
   played.
 
 ---
