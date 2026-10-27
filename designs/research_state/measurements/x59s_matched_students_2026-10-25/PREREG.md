@@ -856,3 +856,20 @@ fails).
 - **m13:** the record names forum72's regime: the legacy Kakuna peer pack (before `b0441623e`); no later F read is set
   against X59-S's F numbers.
 - **m12** is moot under A5.1.
+
+### A5.10 As built (same day, still blind)
+
+- **Code:** `x59s_read` (A5.2–A5.8: `gate`, `contrast`'s widening, `verdict`, `midpoint`, `FIT_DROP`,
+  `REENCODE_SHARE`); `main.reads` rule **`x59s_gate`** (A5.1) and the rewritten **`x59s`** (artefacts `gate_record`
+  and `m3_reencode` replace `pilot_record`; the in-house core stamps); `x59s_ops inhouse` records the ledger's engines.
+- **The pin of the gate and the full read is `f2c3866c6`**, a commit on the local branch `x59s-pin-a5`: `0534e90a6`
+  plus exactly this code, so its engine is the read's (`engine_at` = `port=bdc5d2be3af5e1fb/94;env=95b45f104119bdb2/129`)
+  and `main.reads` can load the new rules where the read plays. Main carries the same code; main's own later Rust
+  differs from the pin (`check-spec` at HEAD: 46 play-path files, none of this read's).
+- **Specs:** [`read_spec_gate.json`](read_spec_gate.json) (the pilot and repeat groups IMPORTED from the pilot state,
+  spec sha256 `dc860ae3…`) and [`read_spec_full.json`](read_spec_full.json) (re-registered: the pilot imported, the
+  rest played; its artefacts `results/{floor_refs,identity,fr2,inhouse,m3_reencode}.json`, the archive's
+  `students.json` and the gate state's `record.json`). The pilot's own spec and state are unchanged; its
+  `x59s_floor` rule is never decided.
+- **Committed artefacts (none is a student result):** `results/floor_refs.json`, `results/identity.json`,
+  `results/fr2.json`.

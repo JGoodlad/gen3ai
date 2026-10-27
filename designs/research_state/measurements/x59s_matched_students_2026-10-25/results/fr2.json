@@ -1,0 +1,127 @@
+{
+ "schema": "x59s_fr2_trace_twin_v1",
+ "registration": "designs/endstate/design_human_replay_lever.md \u00a72.2; designs/endstate/design_x50_rung1b_human_opponent_model.md \u00a78.5",
+ "viewer": "opponent",
+ "true_rows": "full",
+ "registered": true,
+ "exclude": {
+  "path": "/home/goodlad/gen3ai_archive/x50_r1b/fr2_exclude.json",
+  "sha256": "1c6f1ef8a14f27d08dfbbdc3df355f8d12d5114d48f31a11d1fc721e45dd79f7",
+  "count": 33,
+  "dropped": {
+   "battles": 33,
+   "rows": 2860
+  }
+ },
+ "class": "NO-ARTEFACT",
+ "rule": "D = gap(HOM) - gap(P*), gap = mean NLL(completed) - mean NLL(true); ARTEFACT iff D's CI lower > 0.05 + 1e-09; NO-ARTEFACT iff its upper < 0.05 - 1e-09; else UNCLEAR",
+ "counts": {
+  "parts": 5,
+  "battles": 2091,
+  "decisions_paired": 62415,
+  "decisions_paired_vs_sentinel": 35639,
+  "decisions_paired_vs_bot": 26776,
+  "dropped": {
+   "fewer_than_2_legal": 2122,
+   "no_own_action_label": 6454,
+   "only_completed": 8255
+  },
+  "excluded": {
+   "battles": 33,
+   "rows": 2860
+  },
+  "read_rows_by_viewer": {
+   "opponent": 150237
+  },
+  "true_rows": "full (mode 1)"
+ },
+ "parts": [
+  {
+   "part": "traces_0000",
+   "json_sha256": "527aaee9926c734584d57605d8a726d6adbb0de4df3f6dcaac1042a7e3e20d28",
+   "npz_sha256": "4287370697244f0e17dcf3ce8b8d8bd9c2200526b667e2e70cb0328a4225c262",
+   "commit": "0534e90a6a54005157f62ae7b91e25ba968b70d4",
+   "complete": true
+  },
+  {
+   "part": "traces_0001",
+   "json_sha256": "29f074e841f276a97f27b633785b33e44db40e414384a92710b84984e7c1421b",
+   "npz_sha256": "edfee67ffd2273eabe036dd866077ec440264da4ec49feb76165889789b3b828",
+   "commit": "0534e90a6a54005157f62ae7b91e25ba968b70d4",
+   "complete": true
+  },
+  {
+   "part": "traces_0002",
+   "json_sha256": "3aa5664e9d9cac74cb239d59564ea99c1c32156437f9cc67e995a425406d78f5",
+   "npz_sha256": "b4c0450568b226d02f8dc8ecafae37103e427eb3449daf72aef3a92666879d83",
+   "commit": "0534e90a6a54005157f62ae7b91e25ba968b70d4",
+   "complete": true
+  },
+  {
+   "part": "traces_0003",
+   "json_sha256": "869778be5b3f7b0b8a5eea4a4b7e73a21ca5ebc37de32638e549b3556eb11130",
+   "npz_sha256": "32cf1fbabaaa7b501c52e0d98170602e58158ae1205718e9a144105ea6bf25e3",
+   "commit": "0534e90a6a54005157f62ae7b91e25ba968b70d4",
+   "complete": true
+  },
+  {
+   "part": "traces_0004",
+   "json_sha256": "46c72de90368930dd75026bd73852afb8b548641159d5838242515befb0ceffe",
+   "npz_sha256": "9582942ec1a49788eb052dd926fa5caa9ea49d767186e71c44f2a9cd9c35b4d0",
+   "commit": "0534e90a6a54005157f62ae7b91e25ba968b70d4",
+   "complete": true
+  }
+ ],
+ "nll": {
+  "hom": {
+   "completed": 1.2093173830346984,
+   "true": 1.1405528945521324
+  },
+  "pstar": {
+   "completed": 1.6040424189333438,
+   "true": 1.3865302956625196
+  }
+ },
+ "gap": {
+  "hom": {
+   "mean": 0.068764488482566,
+   "ci95": [
+    0.0615249575797661,
+    0.0757249331439033
+   ]
+  },
+  "pstar": {
+   "mean": 0.21751212327082414,
+   "ci95": [
+    0.19973088765949842,
+    0.2346075484789436
+   ]
+  }
+ },
+ "D": {
+  "mean": -0.14874763478825814,
+  "ci95": [
+   -0.16294038497932192,
+   -0.13385322277424164
+  ]
+ },
+ "bootstrap": {
+  "n": 2000,
+  "seed": 50,
+  "cluster": "battle",
+  "resampling": "joint: one battle draw for both models and both modes",
+  "ci": "percentile 95 %"
+ },
+ "inputs": {
+  "traces": "/home/goodlad/gen3ai_archive/x50_r1b/traces_oppseat",
+  "hom": "/home/goodlad/gen3ai_archive/x50_r1b/hom/model/hom_x50r1b.zip",
+  "hom_sha256": "76e29a0176fd450d95496b4722d898e38ca2b98a50de0fc9147a2dea671bb36f",
+  "sidecar": "/home/goodlad/gen3ai_archive/x50_r1b/hom/model/hom_sidecar.json",
+  "sidecar_sha256": "7a1de1ec120846753ad7b7560a8b45f266fe74222a80fc211ea93e5dce2a1da3",
+  "pstar": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip",
+  "pstar_sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed"
+ },
+ "commit": "e652875c631f9af0e9ede630961dfb5e5f462266",
+ "threads": 2,
+ "seconds": 543.5
+}

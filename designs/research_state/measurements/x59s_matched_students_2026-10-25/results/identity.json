@@ -1,0 +1,16 @@
+{
+ "unit": "pstar__home72__00",
+ "x51_cell": "pstar_home72",
+ "unit_seed": 0,
+ "games_here": 20,
+ "games_x51": 20,
+ "game_keys": [
+  "half",
+  "index",
+  "our_team",
+  "result",
+  "turns"
+ ],
+ "pass": true,
+ "differing": []
+}

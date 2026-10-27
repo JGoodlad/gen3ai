@@ -1,0 +1,67 @@
+{
+ "cells": {
+  "aggressive": {
+   "forum72": [
+    4,
+    80
+   ],
+   "heldout72_hpfix": [
+    6,
+    80
+   ],
+   "p72": [
+    1,
+    80
+   ]
+  },
+  "random": {
+   "forum72": [
+    0,
+    80
+   ],
+   "heldout72_hpfix": [
+    0,
+    80
+   ],
+   "p72": [
+    0,
+    80
+   ]
+  }
+ },
+ "engines": [
+  "port=bdc5d2be3af5e1fb/94;env=95b45f104119bdb2/129"
+ ],
+ "rates": {
+  "aggressive": 0.04583333333333334,
+  "random": 0.0
+ },
+ "schema": "gen3_x59s_floor_v1",
+ "uncounted": [],
+ "units": [
+  "bot_random__heldout72_hpfix__00",
+  "bot_aggressive__heldout72_hpfix__00",
+  "bot_random__forum72__00",
+  "bot_aggressive__forum72__00",
+  "bot_random__p72__00",
+  "bot_aggressive__p72__00",
+  "bot_random__heldout72_hpfix__01",
+  "bot_aggressive__heldout72_hpfix__01",
+  "bot_random__forum72__01",
+  "bot_aggressive__forum72__01",
+  "bot_random__p72__01",
+  "bot_aggressive__p72__01",
+  "bot_random__heldout72_hpfix__02",
+  "bot_aggressive__heldout72_hpfix__02",
+  "bot_random__forum72__02",
+  "bot_aggressive__forum72__02",
+  "bot_random__p72__02",
+  "bot_aggressive__p72__02",
+  "bot_random__heldout72_hpfix__03",
+  "bot_aggressive__heldout72_hpfix__03",
+  "bot_random__forum72__03",
+  "bot_aggressive__forum72__03",
+  "bot_random__p72__03",
+  "bot_aggressive__p72__03"
+ ]
+}
