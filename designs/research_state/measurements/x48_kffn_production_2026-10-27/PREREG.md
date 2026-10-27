@@ -250,7 +250,35 @@ CPU only, no lease, `CUDA_VISIBLE_DEVICES=""`, nice 19 on cores 5-7,13-15, from 
 - `python -m main.ops.arm_chain plan <draft> --check-pins --describe` on a scratch chain file holding the three items →
   [`arm_chain_plan_x48.txt`](arm_chain_plan_x48.txt).
 
-**NOTES** (appended before the first GO, never after any X48 number): none yet.
+**NOTES** (appended before the first GO, never after any X48 number):
+
+**NOTE 1 (2026-10-27, before the first GO; no X48 run exists).** The pre-launch review [`REVIEW.md`](REVIEW.md)
+(`77d33ed2`) §7 item 2, adopted whole. It tightens one VOID guard, corrects one stated reason and adds two labels.
+§5's classes, bars, α, seeds, pin and power are UNCHANGED; there is no look 2.
+
+- **(a) VOID 4 made exact (review M2).** A seed is VOID unless its run's `model_config.json` `growth` has
+  `optimizer_state` == {`carried` 280, `no_state` 0, `fresh` 0, `copied` 48}, `new_parameters` == {`tensors` 48,
+  `elements` 791,040}, and `function_check.bit_identical` true with `max_abs_d_logits` and `max_abs_d_value` both
+  0.0. These are the values MEASURED on P\* at the pin (review §1). Any other value is VOID: in particular `copied` 0
+  (a reset optimizer state, Q-K3's rejected fresh-moments alternative), which "has no `copied` count" did not catch.
+  It is checked **by a script at arm end, beside `kit k9b`**, before the seed enters any read; never by hand. The
+  chain's banner now expects `fresh for 0, COPIED for 48` (the Training session's chain file, on the coordinator's
+  word), so a different growth line STOPs the run within 20 min.
+- **(b) "experts not engaged", a weak NO-GO (review M1).** A NO-GO is labelled "experts not engaged" when, at the
+  final, §8.7's D_k / null ≤ 1.0 for every non-Pokémon kind in rounds 0–1, averaged over `linear1` and `linear2` and
+  over the three seeds (rule 8: a value within 1e-9 of 1.0 counts as ≤ 1.0). Round 2 is excluded: its board, threat
+  and event experts get no policy or value gradient by construction. The read then states that the experts did not
+  diverge more than two copies of C0's own FFN drift would. §8.7's script runs before the class is published.
+- **(c) VOID 6's reason corrected, and the NO-GO text (review M1).** §4 item 6's last sentence is wrong. It now
+  reads: "Copied experts add 30 % parameters, which move SLOWER than η at first: each inherits the shared FFN's
+  second moment, built from all 64 tokens' gradient (Q-K3; review §2: ≈ 0.35–0.65 of their own-calibrated rate over
+  20M for the board, threat and event experts)." The 0.08 bar itself stays (C0's trailing approx KL is 0.018). Every
+  NO-GO text gains "with the experts' AdamW state copied from the shared FFN (Q-K3)".
+- **(d) "LR-elevated", a weak GO (review M3).** A GO is labelled "LR-elevated" when X48's three-seed mean LR is
+  > 1.1× C0's (rule 8 at 1e-9), from the same `snapshot_history` read as §8.3. It is the mirror of §8.3's
+  "LR-confounded" NO-GO: throttled experts may lower the per-update KL and keep the controller one ×1.2 rung higher,
+  which is LR-F's own lever. C0's mean LR is 1.02–1.05e-4 (review §7).
+- (b) and (d) are labels, not classes, like "LR-confounded": the `n4_screen` rule's params or post-rule lines.
 
 ## 14. FINDINGS at registration (standing rule 7)
 
