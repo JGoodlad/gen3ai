@@ -1,0 +1,71 @@
+{
+ "schema": "x41_d3_look2_pin_v1",
+ "pin": "c4a5c37b6b3749b93157048169e9c2fb348c995a",
+ "tag": "x41-d3-look2-play-c4a5c37b",
+ "base": "a9c09711d9490bf0e1cbd444e3477fb32b256fb9",
+ "base_is": "b0441623e^ (the newest commit before gen3_peer_showdown_pack_v1)",
+ "game_from": "f4b25238def57900c0305bb2a3a5a8f9edaef285",
+ "restored": {
+  "src/rust_sim": {
+   "tree_or_blob": "b5db970782a7f73a87efea9b688f7044c5254afb",
+   "equals_game_from": true
+  },
+  "src/rust_env": {
+   "tree_or_blob": "b02bfcde490f5e44ae59ff3650c4c91985abc7a0",
+   "equals_game_from": true
+  },
+  "src/agents/model": {
+   "tree_or_blob": "67f9a2b3da6fcd54d728633b38e3b7a71285490e",
+   "equals_game_from": true
+  },
+  "src/agents/observation": {
+   "tree_or_blob": "d51f8c6666d1ee7f492ea02b0498bd4b48903b13",
+   "equals_game_from": true
+  },
+  "src/agents/inference": {
+   "tree_or_blob": "a9465f3bbb2fac681d32f236f4c5ef5fb16b5b77",
+   "equals_game_from": true
+  },
+  "src/utils/bridge": {
+   "tree_or_blob": "ee4311c57bfece136c492eb15dd5ab39282538a7",
+   "equals_game_from": true
+  },
+  "src/utils/team_loader": {
+   "tree_or_blob": "c25bc7b35e56b5694f997c9faf29e2fb7d9f1caf",
+   "equals_game_from": true
+  },
+  "src/utils/team_packing.py": {
+   "tree_or_blob": "db208ee6d7422c537ad0a9bcae9721054ea890f7",
+   "equals_game_from": true
+  },
+  "src/utils/teambuilder.py": {
+   "tree_or_blob": "3f3711fff2bc395fc6629ad1ecb8f9c3a7a1de3f",
+   "equals_game_from": true
+  },
+  "src/utils/gen3_utils.py": {
+   "tree_or_blob": "9fd54659817ea92b7d9436a7c9612367a8a06bb9",
+   "equals_game_from": true
+  }
+ },
+ "engine": {
+  "engine_at_pin": "port=7d932165eced1c79/90;env=7c53280566d666ae/125",
+  "is": "E1",
+  "built": {
+   "sim_bridge": "src=7d932165eced1c79;nfiles=90",
+   "rust_env_proc": "src=7c53280566d666ae;nfiles=125",
+   "cdylib_ffi_load": "pass (source, schema, data dir)",
+   "column_schema": "0a6035e172e514b3"
+  },
+  "cargo_lock_blobs": {
+   "rust_sim": "676e633ed0f069788af9c039a35eb5ee194a632d",
+   "rust_env": "3d00802e5b8fb5f7466b8b90dc681025e845e51d"
+  }
+ },
+ "play_path_vs_bank": {
+  "6c428453a": 205,
+  "5e389ddac": 201,
+  "of": 1683,
+  "game_files_differing": 0,
+  "pin_play_path_digest": "73513a9c131b8cb0"
+ }
+}

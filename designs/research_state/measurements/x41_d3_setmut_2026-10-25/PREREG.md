@@ -186,3 +186,114 @@ The rule of §3–§6 (D1's, verbatim), the panels, the unit seeds and the look 
   refuses a mismatched `schema`).
 - Register the pin in the look-2 spec.
 - Leave look 1's state untouched: its re-played ON units are a new group of the look-2 state, not a repin.
+
+## AMENDMENT AM-D3-L2 (2026-10-27): the look-2 play pin, its identity check, the look-2 spec. Before any look-2 game. No decision-rule change
+
+**The pin: `c4a5c37b6b3749b93157048169e9c2fb348c995a`** (annotated tag `x41-d3-look2-play-c4a5c37b`, on origin;
+NOT on main). It carries E1's game under the newest read harness that predates `b0441623e`:
+- **Base `a9c09711d` = `b0441623e^`.** `b0441623e` packs the Kakuna peer's teams through Showdown
+  (`gen3_peer_showdown_pack_v1`), which makes forum72 a new regime. C0's banked forum72 rows then refuse to import.
+- **Restored byte for byte to `f4b25238d`** (the arms' training pin; each tree object equals `f4b25238d`'s):
+  `src/rust_sim/`, `src/rust_env/`, `src/agents/model/`, `src/agents/observation/`, `src/agents/inference/`,
+  `src/utils/bridge/`, `src/utils/team_loader/`, `src/utils/team_packing.py`, `src/utils/teambuilder.py`,
+  `src/utils/gen3_utils.py`. `data/` and `deps/` are the same at both commits.
+- **Kept from `a9c09711d`:** the read harness. That is `main.reads` (`import_off`, the engine stamp, the VOID gate,
+  `--concurrency`), `main.anchors` and `main.x35.kakuna` (registry weight pins, offline peer, the engine stamp), and
+  the heavy-slot, port and lock helpers.
+
+**Why more than the Rust.** AM-D3-ENG asked for E1's Rust plus the column table its core expects. The column table
+is unchanged from `f4b25238` to `a9c09711` (`columns.py`, `protocol.py` and `label_inventory.py` are identical, schema
+`0a6035e172e514b3`). But between those commits the PYTHON play path also changed what our side plays, and the engine
+key cannot see a Python change (`kakuna_determinism_2026-10-27/` §7):
+- the damage operator's consumed-item rule (`gen3_op_held_item_v1`, `d8d674b99`): a knocked-off Choice Band or Quick
+  Claw;
+- the eval-mode load (`141f36f7f`): `nn.MultiheadAttention`'s fused path, logits moved by up to 4.8e-7;
+- our packer (`d8d674b99`): Frustration's `Happiness: 0`, and a `Hidden Power: <Type>` line's IVs.
+
+So the pin takes the training pin's bytes for every model, observation, inference, bridge and team-packing file. Our
+side plays what C0's bank played. The bank's playing commits `6c428453a` and `5e389ddac` differ from the pin in **0**
+of those files.
+
+**Engine = E1, at three levels:**
+- `engine_at('c4a5c37b6') == E1` (git objects; also under main's `main.reads.engine`);
+- the playing worktree's `main.anchors.server.engine_stamp()` = `port=7d932165eced1c79/90;env=7c53280566d666ae/125`;
+- its built artifacts' stamps: `sim_bridge --build-stamp` `src=7d932165eced1c79;nfiles=90`; `rust_env_proc` and the
+  cdylib `src=7c53280566d666ae;nfiles=125`, schema `0a6035e172e514b3`. `ffi.load` passes its source, schema and
+  data-dir checks. The untracked `Cargo.lock` files are the legacy blobs `676e633e…` / `3d00802e…`, and `cargo build
+  --locked` left them unchanged.
+
+**Play path vs the bank** (`main.reads.playpath`): 205 / 201 of 1,683 files differ from `6c428453a` / `5e389ddac`.
+All are harness:
+- `main.anchors` (weight pins, the engine stamp; the unused `--our-belief-prior-mix` option);
+- `main.x35.kakuna` and `main.reads` `__init__` / `supervisors`;
+- `mem_cap`, heavy slots, ports, locks;
+- the anchors registry (its Kakuna weights are the banked ones) and the panel registries;
+- `team_corpora`'s level-100 guard;
+- training-only modules in the import closure (`agents.training`, `main.train`, `main.launcher`), which a unit
+  imports but does not run;
+- the stamp module's CLI, and the rc72 cell files.
+
+**The identity check: PASS, 80 / 80 games identical choice by choice** ([`read/look2_identity.json`](read/look2_identity.json),
+by [`read/look2_identity_compare.py`](read/look2_identity_compare.py)). The pin's own queue (`python -m main.x35.kakuna
+run`, its `mem_cap` short lane, 95xx port claims, `HF_HUB_OFFLINE=1`) re-played four of C0's banked E1 units from the
+bank's model bytes, with captures. The state is `~/gen3ai_archive/x41_d3_read/look2_identity/`. Each was compared with
+the banked unit game for game on five levels: the 5-tuple the guard compares, the seed and START (both packed teams),
+OUR choices in order, Kakuna's choices in order, and every per-side protocol chunk (timestamps removed).
+
+| re-played unit (bank) | why this unit | 5-tuple | our choices | Kakuna's | protocol bytes | regime id | engine |
+|---|---|---|---|---|---|---|---|
+| c0_s3501 forum72 u04 (`6c428453a`) | game 8: E1 plays Destiny Bond (a loss in 64), E3 Ice Punch (a win in 105) | 20 / 20 | 20 / 20 | 20 / 20 | 20 / 20 | `2118812c27885de3` = bank | E1 = bank |
+| c0_s3502 p72 u01 (`6c428453a`) | game 9: E1 Thunderbolt, E3 Thunder Wave (the divergence the determinism study could not attribute) | 20 / 20 | 20 / 20 | 20 / 20 | 20 / 20 | `b7547f904af56acc` = bank | E1 = bank |
+| c0_s3503 forum72 u02 (`6c428453a`) | game 19 after an Endure; game 9's choice that never ran | 20 / 20 | 20 / 20 | 20 / 20 | 20 / 20 | `2118812c27885de3` = bank | E1 = bank |
+| c0_s3505 forum72 u00 (`5e389ddac`) | the second bank commit (D1's h_e) | 20 / 20 | 20 / 20 | 20 / 20 | 20 / 20 | `2118812c27885de3` = bank | E1 = bank |
+
+The first three are positive controls. On engine E3 they diverge from the bank (`kakuna_determinism_2026-10-27/`), so a
+pin carrying any post-E1 observation semantics would have failed them. The pin plays E1's game in every one, and the
+unattributed p72 divergence is gone too. Its cause is therefore among the restored paths. The read's registered guard
+(C0 s3501's 7 banked `heldout72_hpfix` units, §3) re-checks this inside the look-2 state.
+
+**Look 2's data (AM-D3-ENG, made concrete).** Spec [`read/read_spec_look2.json`](read/read_spec_look2.json); state
+`~/gen3ai_archive/x41_d3_read/look2/`. Look 1's state and record are untouched.
+1. **D3 ON s3501–s3505**: every H unit (3 panels × unit seeds 0–6) and every P cell is played at the pin.
+   - s3501–s3503 are re-played from the same bytes as look 1 (`pinned` refs, look 1's sha256s).
+   - Look 1's E2 rows are not read at look 2. They stay look 1's record, and look 1's CONTINUE stands.
+2. **C0 s3501–s3505** are imported from D1's committed `d1_read/read_look2_input.json` (sha256 `8c4884aa…`; E1 in
+   both lanes by `LEGACY_BANK_ENGINE`) through `import_off`.
+   - The registered regimes are `09f297883701a35a` (anchor) and `d4de0fd7c16a2658` (S). The pin's engine must equal
+     the bank's in both lanes.
+   - H is pooled only if the guard group re-plays C0 s3501's 7 banked `heldout72_hpfix` units game for game (§3,
+     unchanged; banked file `be989806…`).
+3. **The rule** is §3–§6 verbatim at look 2 (`look: 2`): 95 %, AM-5's widening, the sign rule ≥ 3 of 5. The look is
+   final. The INCONCLUSIVE floor is 140 · 5 − 20 = 680 counted games per panel per arm.
+4. **The VOID gate is registered** (`params.void`): each D3 run's AM-6 K9(b) record must read PASS, or `decide`
+   refuses. §5's other VOID guards were checked by hand before any look-2 game, as look 1's were. Every seed passes:
+
+   | seed | K9(b) at arm end | `[TEAM-MIX]` banner; held-out hits; pool copies | `pin_history` / corpus-check | pool-seed check | FATAL on a `d3m_*` team |
+   |---|---|---|---|---|---|
+   | 3501–3503 | PASS (look 1's table) | as look 1 | `9e289ba4…` / PASS | PASS | none |
+   | 3504 | PASS (`k9b/rb_x35_d3mut_s3504.json`, `a9c09711d`) | the exact line; 0 hits over 5 panels; `0 corpus team(s) pack identically to a pool team` | `9e289ba4…` / PASS | PASS | none |
+   | 3505 | PASS (`k9b/rb_x35_d3mut_s3505.json`, `28711af06`) | as s3504 | `9e289ba4…` / PASS | PASS | none |
+
+   The sources are the X35 launcher journal (`~/.claude/jobs/x35/rb_x35_d3mut_s350{4,5}.launcher.log`,
+   `*.go.pin.txt`, `*.go.corpus.txt`, `*.pool_seed_check.txt`), each run's `metadata.json` `pin_history`, and a
+   FATAL search of those files and each `launcher_child.full.log`. The only FATAL-bearing lines are the
+   flag banners and K9(b)'s per-update AM-6 warnings.
+5. **Guards** (G-F, G-E, G-C): `guards_not_read` is registered as at look 1. It applies only to a non-GAIN H. On a
+   GAIN the unplayed guards stay INCONCLUSIVE until they are played (§5), so the verdict reads INCONCLUSIVE until
+   then. G-E needs a GPU-trained best responder: the orchestrator's call.
+6. **Play order and cost.** `main.reads run --lane anchor --concurrency 1` and one `--lane s` job. Both start when
+   the H-CTX rc72b read's anchor supervisor exits (the orchestrator's ruling, 2026-10-27). N1-P look 1 keeps its
+   K = 2, and the heavy-slot queue interleaves the reads.
+   - Anchor: 105 H + 7 guard units = 2,240 games. At look 1's measured 8.5 min a unit, about 16 lane-h, more on a
+     contended box.
+   - S: 5 × 3,500 mirrored pairs. Look 1 ran 1.5 h a seed, so about 7.5 h in the second heavy slot.
+7. **Not at the pin** (FINDING): three harness guards that landed after `b0441623e`.
+   - The forfeit-win guard (`bf5f1a8e7`).
+   - H5's fail-fast at the first long-tail line, and H21's "any peer fault voids the unit" (`e28318c82`).
+   - The choice-level guard comparison (`e28318c82`). The pin's guard compares the 5-tuple; the identity check above
+     compared choices.
+
+   At the pin, H5 is covered by `peer_clean`, which drops the whole unit. Every banked unit this read imports was
+   played without these guards too, and `e28318c82` found the long-tail line in no counted archived unit. **Registered
+   here:** before `record`, every counted unit of the look-2 state has its peer logs scanned for `Force resetting due
+   to long-tail error` (H21's rule). A unit with one is moved aside and re-played at its seed before `decide`.

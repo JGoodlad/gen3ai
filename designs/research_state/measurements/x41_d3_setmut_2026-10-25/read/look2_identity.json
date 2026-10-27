@@ -1,0 +1,76 @@
+{
+ "units": [
+  {
+   "bank": "/home/goodlad/gen3ai_archive/x35_d1_read/h_a/cells/c0_s3501__forum72__04",
+   "replay": "/home/goodlad/gen3ai_archive/x41_d3_read/look2_identity/cells/c0_s3501__forum72__04",
+   "games": 20,
+   "replay_games": 20,
+   "regime_bank": "2118812c27885de3",
+   "regime_replay": "2118812c27885de3",
+   "engine_bank": "port=7d932165eced1c79/90;env=7c53280566d666ae/125",
+   "engine_replay": "port=7d932165eced1c79/90;env=7c53280566d666ae/125",
+   "five_equal": 20,
+   "start_equal": 20,
+   "our_choices_equal": 20,
+   "their_choices_equal": 20,
+   "protocol_bytes_equal": 20,
+   "diffs": []
+  },
+  {
+   "bank": "/home/goodlad/gen3ai_archive/x35_d1_read/h_a/cells/c0_s3502__p72__01",
+   "replay": "/home/goodlad/gen3ai_archive/x41_d3_read/look2_identity/cells/c0_s3502__p72__01",
+   "games": 20,
+   "replay_games": 20,
+   "regime_bank": "b7547f904af56acc",
+   "regime_replay": "b7547f904af56acc",
+   "engine_bank": "port=7d932165eced1c79/90;env=7c53280566d666ae/125",
+   "engine_replay": "port=7d932165eced1c79/90;env=7c53280566d666ae/125",
+   "five_equal": 20,
+   "start_equal": 20,
+   "our_choices_equal": 20,
+   "their_choices_equal": 20,
+   "protocol_bytes_equal": 20,
+   "diffs": []
+  },
+  {
+   "bank": "/home/goodlad/gen3ai_archive/x35_d1_read/h_a/cells/c0_s3503__forum72__02",
+   "replay": "/home/goodlad/gen3ai_archive/x41_d3_read/look2_identity/cells/c0_s3503__forum72__02",
+   "games": 20,
+   "replay_games": 20,
+   "regime_bank": "2118812c27885de3",
+   "regime_replay": "2118812c27885de3",
+   "engine_bank": "port=7d932165eced1c79/90;env=7c53280566d666ae/125",
+   "engine_replay": "port=7d932165eced1c79/90;env=7c53280566d666ae/125",
+   "five_equal": 20,
+   "start_equal": 20,
+   "our_choices_equal": 20,
+   "their_choices_equal": 20,
+   "protocol_bytes_equal": 20,
+   "diffs": []
+  },
+  {
+   "bank": "/home/goodlad/gen3ai_archive/x35_d1_read/h_e/cells/c0_s3505__forum72__00",
+   "replay": "/home/goodlad/gen3ai_archive/x41_d3_read/look2_identity/cells/c0_s3505__forum72__00",
+   "games": 20,
+   "replay_games": 20,
+   "regime_bank": "2118812c27885de3",
+   "regime_replay": "2118812c27885de3",
+   "engine_bank": "port=7d932165eced1c79/90;env=7c53280566d666ae/125",
+   "engine_replay": "port=7d932165eced1c79/90;env=7c53280566d666ae/125",
+   "five_equal": 20,
+   "start_equal": 20,
+   "our_choices_equal": 20,
+   "their_choices_equal": 20,
+   "protocol_bytes_equal": 20,
+   "diffs": []
+  }
+ ],
+ "total": {
+  "games": 80,
+  "five_equal": 80,
+  "start_equal": 80,
+  "our_choices_equal": 80,
+  "their_choices_equal": 80,
+  "protocol_bytes_equal": 80
+ }
+}

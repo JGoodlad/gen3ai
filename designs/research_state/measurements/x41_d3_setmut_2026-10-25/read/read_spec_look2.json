@@ -1,0 +1,167 @@
+{
+ "schema": "gen3_read_spec_v1",
+ "read": "x41_d3_look2_2026-10-27",
+ "prereg": "designs/research_state/measurements/x41_d3_setmut_2026-10-25/PREREG.md",
+ "note": "D3 look 2, the FINAL look (PREREG 9938d7b6 \u00a73-\u00a76; AM-D3-ENG; AM-D3-L2): EVERY game on engine E1 at the play pin c4a5c37b6 (E1's game code, f4b25238's bytes, under the newest pre-b0441623 read harness). H = D1's rule on Kakuna's three unfamiliar panels and P = S on home72, D3 s3501-s3505 (s3501-s3503 RE-PLAYED: look 1's E2 rows are not read); C0 s3501-s3505 imported from D1's committed look-2 input (E1), H's only if the guard group re-plays C0 s3501's 7 banked heldout72_hpfix units game for game.",
+ "pin": "c4a5c37b6b3749b93157048169e9c2fb348c995a",
+ "models": {
+  "d3_s3501": {
+   "arm": "D3",
+   "seed": 3501,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x35_d3mut_s3501/final_model.zip",
+    "sha256": "ffe73d318beea94ff22a70dd00f8b4216a02dcc8306f1f5131babe29f02dd481"
+   }
+  },
+  "d3_s3502": {
+   "arm": "D3",
+   "seed": 3502,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x35_d3mut_s3502/final_model.zip",
+    "sha256": "6f1e26af9bdcac64c76cddf0006d53ade3e9fed3a1067db19ee9d7505d3147c1"
+   }
+  },
+  "d3_s3503": {
+   "arm": "D3",
+   "seed": 3503,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x35_d3mut_s3503/final_model.zip",
+    "sha256": "e00a90c4f6200fba05a6a3d70c3a20902ddaf8d723dbe35c54027eb0c746b9c9"
+   }
+  },
+  "d3_s3504": {
+   "arm": "D3",
+   "seed": 3504,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x35_d3mut_s3504/final_model.zip",
+    "sha256": "04f3fd8b49641b1721ffd310ba59e41c2e31154603cb42716b839e64fb3ccef1"
+   }
+  },
+  "d3_s3505": {
+   "arm": "D3",
+   "seed": 3505,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x35_d3mut_s3505/final_model.zip",
+    "sha256": "2a08ff42af46e5c6d0ace5d9535e7ee4e51fbab5dd6109673aa2359073e02b35"
+   }
+  },
+  "c0_s3501": {
+   "arm": "C0",
+   "seed": 3501,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x35_c0_s3501/final_model.zip",
+    "sha256": "09a6a2df48509a59fd9aefe6d20d9722aad6717f1730c6dfd75274446b283303"
+   }
+  }
+ },
+ "anchor": {
+  "h": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "heldout72_hpfix",
+    "forum72",
+    "p72"
+   ],
+   "unit_seeds": "0-6",
+   "models": [
+    "d3_s3501",
+    "d3_s3502",
+    "d3_s3503",
+    "d3_s3504",
+    "d3_s3505"
+   ]
+  },
+  "guard": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "heldout72_hpfix"
+   ],
+   "unit_seeds": "0-6",
+   "models": [
+    "c0_s3501"
+   ]
+  }
+ },
+ "s": {
+  "p": {
+   "refpop": "designs/research_state/measurements/x35_breakers_stage_2026-10-17/reference_population_production.json",
+   "refpop_content_sha256": "cef0960eac605f1dc026442d1089dc23654e23df91010feaaeea7890901e4519",
+   "panel": "home72",
+   "pairs": 500,
+   "batch_pairs": 100,
+   "family": "x41_d3_p_look2_2026-10-27",
+   "models": [
+    "d3_s3501",
+    "d3_s3502",
+    "d3_s3503",
+    "d3_s3504",
+    "d3_s3505"
+   ],
+   "regime_id": "d4de0fd7c16a2658"
+  }
+ },
+ "decision": {
+  "rule": "d1",
+  "params": {
+   "arm": "X41",
+   "look": 2,
+   "on": "D3",
+   "off": "C0",
+   "anchor_group": "h",
+   "s_group": "p",
+   "import_off": {
+    "path": "designs/research_state/measurements/x35_breakers_stage_2026-10-17/d1_read/read_look2_input.json",
+    "sha256": "8c4884aafcb5fa77a15b2e8be517460cf64f411a43a6ffa67bf02d1f4f2170b7",
+    "labels": {
+     "3501": "c0_s3501",
+     "3502": "c0_s3502",
+     "3503": "c0_s3503",
+     "3504": "c0_s3504",
+     "3505": "c0_s3505"
+    },
+    "regimes": {
+     "anchor": "09f297883701a35a",
+     "s": "d4de0fd7c16a2658"
+    }
+   },
+   "determinism_guard": {
+    "group": "guard",
+    "label": "c0_s3501",
+    "banked": {
+     "path": "designs/research_state/measurements/x41_d3_setmut_2026-10-25/read/c0_s3501_heldout72_banked_games.jsonl",
+     "sha256": "be989806098e1b06f994ce9175c81238f6926ef94f367ab74b450db2e30ba336",
+     "cells": {
+      "heldout72_hpfix": "heldout72_hpfix"
+     }
+    }
+   },
+   "reported_without": [
+    "heldout72_hpfix"
+   ],
+   "guards_not_read": {
+    "guards": [
+     "G-F",
+     "G-E",
+     "G-C"
+    ],
+    "why": "H is not a GAIN: the guards gate only a qualifying primary (the A1 ruling (a)); not played. On a GAIN this note is not applied and each unplayed guard stays INCONCLUSIVE until it is played (PREREG \u00a75)"
+   },
+   "void": {
+    "k9b_dir": "designs/research_state/measurements/x35_breakers_stage_2026-10-17/k9b",
+    "runs": {
+     "d3_s3501": "models/rb_x35_d3mut_s3501",
+     "d3_s3502": "models/rb_x35_d3mut_s3502",
+     "d3_s3503": "models/rb_x35_d3mut_s3503",
+     "d3_s3504": "models/rb_x35_d3mut_s3504",
+     "d3_s3505": "models/rb_x35_d3mut_s3505"
+    }
+   }
+  }
+ }
+}

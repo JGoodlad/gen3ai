@@ -41,9 +41,9 @@ Kakuna reads are their own regime: a different regime id, and an import of banke
 | where | job | what decision it drives |
 |---|---|---|
 | **GPU** (lease: Training session) | **X59-S students**: 15 primary + 5 S-P0 networks trained on fixed data, at most 3 at a time. | **Is human data better than our own self-play data?** The answer is S-H − S-S. It decides whether the `--human-data` switch (PROPOSED, not built) and the X60 arm get built ([`endstate/design_human_replay_lever.md`](endstate/design_human_replay_lever.md)). |
-| **GPU queue, next** | **D3 look 2** (seeds 3504 and 3505, about 8.1 GPU-h). Look 1 read CONTINUE. Every look-2 game is played on ONE Rust engine, E1 (the arms' training engine): look 1's D3 units are re-played on it, and C0's banked rows import (PREREG AM-D3-ENG). | Whether **set mutation** is adopted as a goal-(b) lever: 2,876 pool teams with 1–2 sets redrawn from Smogon. |
-| GPU queue, then | **LR-F** (seeds 3502 and 3503): the plateau checkpoint continued with a floor on the learning rate. | Whether the plateau comes from the learning-rate controller, not from capacity or data. |
+| GPU queue, next | **LR-F** (seeds 3502 and 3503): the plateau checkpoint continued with a floor on the learning rate. | Whether the plateau comes from the learning-rate controller, not from capacity or data. |
 | **CPU** (Kakuna lanes) | **N1-P look 1** (X61P): the three 12,000-procedural-team arms (finished training 2026-10-26), read against Kakuna and in-house. | **GO** funds **X53-N1**, a fresh production run on 10⁴ teams, the survey's top-ranked lever. **NULL** rules out only "N1 at the plateau". |
+| CPU, queued behind the H-CTX rc72b read | **D3 look 2**, the final read: all five D3 seeds (s3504 and s3505 trained, `a9c09711d`, `28711af06`) against C0's banked rows. Every game is played on ONE Rust engine, E1 (the arms' training engine), at a dedicated play pin: E1's game code under the newest read harness that predates the Kakuna pack change (PREREG AM-D3-L2). It starts when H-CTX's Kakuna lane ends and shares the heavy slots with N1-P look 1. About 16 h of Kakuna lane and 7.5 h of in-house S. | Whether **set mutation** is adopted as a goal-(b) lever: 2,876 pool teams with 1–2 sets redrawn from Smogon. |
 
 ## 3. Results of the last week (2026-10-19 → 10-26)
 

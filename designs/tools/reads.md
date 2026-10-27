@@ -435,10 +435,16 @@ rc72b at `905c29f5b`, X59-S at `fca58b24d`) run from their own pinned worktrees 
 
 **Reads in flight or planned:**
 - **D3 look 2** (the orchestrator's ruling, 2026-10-26): EVERY game on **E1**, the engine both arms trained on.
-  - D3 ON's look-1 units are re-played on E1, and the look-2 units are played on E1.
-  - C0's banked rows (E1) then import cleanly.
-  - No commit carries both E1's Rust and `import_off` (it landed at `2cc864f2`, already on E2). So the read needs a
-    pin whose engine is E1 (`engine_at(<pin>) == E1`, checked before the spec registers it).
+  D3 ON's look-1 units are re-played on E1, the look-2 units are played on E1, and C0's banked rows (E1) import.
+  - **A HYBRID PIN, because no commit carried both E1's Rust and `import_off`:** `c4a5c37b6` (tag
+    `x41-d3-look2-play-c4a5c37b`; PREREG AM-D3-L2). It is `b0441623e^`'s read harness with every GAME path at the
+    training pin `f4b25238`'s bytes: `src/rust_sim/`, `src/rust_env/`, `src/agents/{model,observation,inference}/`,
+    `src/utils/bridge/`, the team packer and loader.
+  - **Restoring only the Rust is not enough.** Between those commits the Python play path also changed what our side
+    plays (the op's consumed-item rule, the eval-mode load, the packer), and the engine key cannot see it.
+  - **Checked:** `engine_at` and the built artifacts' stamps equal E1. The play path differs from the bank's
+    commits only in harness files. Four banked E1 units re-played identically, 80 / 80 games choice by choice. Three
+    of them are units where E3 diverges from E1, so they would have caught a post-E1 observation.
 - **X59-S games / X60 / X61P look 2:** one engine per read, named at registration. An import from N1-P look 1 needs E3.
 - **The human-only / PastaMittens reads:** each was played on one commit, all on E1.
 
