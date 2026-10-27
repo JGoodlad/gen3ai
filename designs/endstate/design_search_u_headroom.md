@@ -1,0 +1,438 @@
+# S-U — search headroom on unfamiliar teams: does one-ply search on P\* gain MORE on U than on home72?
+
+**Status: DRAFT (2026-10-27), explicit-only, for adversarial review. Nothing is built, registered or played.** A
+proposed registered read. It needs one build first (the live search player, §6), and its PREREG is written only after
+that build lands (the registration flow, `../tools/reads.md` §1). It is the read that H-MID's FINDING 1 names
+([`h_mid_value_test_2026-10-26/README.md`](../research_state/measurements/h_mid_value_test_2026-10-26/README.md),
+`f200258f`). Search stays PAUSED ([`search_ledger.md`](search_ledger.md)) until a read like this one says otherwise. This
+unit read committed artefacts only; it ran one arithmetic script (the power table, §4.3) and no game.
+
+**Abbreviations.**
+- P\* = `rb_x26_s2601` @280,000,170, the plateau policy. Kakuna = Metamon's Kakuna ckpt 34, greedy.
+- home72 = 72 pool teams. U = H (`heldout72_hpfix`), F (`forum72`) and P72 at equal panel weight (X51's definition).
+- S = L1's anchored one-ply search: 8 honest F worlds (`dice="seed"`), the TRUNC-4-K8 leaf (8 playouts of 4 turns, then
+  the critic V, P\* playing both sides), piKL at the fitted λ = 0.015 (argmax Q + λ·log π). It is R0 §4's search,
+  unchanged ([`R0_REGISTRATION.md`](../research_state/measurements/x35_breakers_stage_2026-10-17/R0_REGISTRATION.md) §4).
+- G_set = WR(P\* + S) − WR(P\*) on a set, paired by deal. **I = G_U − G_home72**, the interaction.
+- d = the discordance: the share of paired deals whose two outcomes differ.
+- pp = percentage points; LB / UB = the lower / upper bound of a 95 % interval; IMP = the per-decision gain of
+  `search_ledger.md` §6.2; GUESS = an unmeasured effect; ESTIMATE = a cost from measured rates; MY JUDGEMENT = an
+  inference no read states.
+
+---
+
+## 0. One screen
+
+1. **The question.** P\* converts level mid-game positions about 11 pp worse on U than on home72 against Kakuna, and
+   its critic sees only about a third of that (H-MID: Δbias +0.076 [+0.016, +0.139]). V's error is a LEVEL shift
+   between the sets. Its ordering of games is intact (AUC 0.667 on U, 0.663 on home72). One-ply search compares the
+   actions of ONE node, so a level shift common to all successors cancels. Does search then recover part of the U
+   conversion gap?
+2. **The read.** P\* against P\* + S, against Kakuna on home72 and on U, on ONE engine and interleaved. Every deal is
+   played twice, raw then searched. **S acts only from turn 10**, where the forensics put the gap. Before that both arms
+   are the same deterministic play, so each pair shares its first nine turns exactly (§2).
+3. **The estimands.** I, which is the H-MID question, and G_U alone, which is goal (b). G_U is LEAK-INCLUSIVE: the
+   honest builder replays the true seed (`search_ledger.md` §6.1). So only G_U's negative class can be credited (§3).
+4. **It is a new question.** No search read so far had P\* PILOTING an unfamiliar team (§1.1). E1-0 tests the
+   decision-level instrument. L1 at P\* is a decision-level null on P\*'s own pool-team states, under the self-referee.
+   S-U is a GAME-level read against a real non-self opponent. It is E4 of
+   [`design_search_next.md`](design_search_next.md), re-cut around H-MID's interaction and carrying its review's
+   fixes; if S-U registers, E4 is not registered separately.
+5. **The cost** (ESTIMATE). About 30–37 searched decisions a game at 29–60 CPU-s each gives **≈ 15–37 CPU-min per
+   searched game, central ≈ 25**. A raw game costs 11.8 s. The recommended size is 1,200 deals per set (§4.4): ≈ 2,400
+   searched games, **≈ 1,000 CPU-h (600–1,500)**. Phase 1, which reads G_U finally, is ≈ 1,600 of them
+   (≈ 667 CPU-h).
+6. **Its power** (d = 0.4; §4.3).
+   - DOES-NOT-CLOSE-B, i.e. G_U's UB < +4.3 pp: 0.65 if G_U is truly 0.
+   - U-GAIN at a true G_U of +4.3 pp: 0.65.
+   - U-HEADROOM at a true I of +7 pp: 0.77; at +5 pp, 0.49.
+   - NO-U-PREMIUM (UB(I) < +5.5 pp) if I is truly 0: 0.57.
+
+   **It resolves large effects only.** An interaction the size of a third of the gap (≈ 3.5 pp) would need ≈ 5,100
+   deals a set.
+7. **When it can run.** Not on the local agent cores. Their 2 heavy slots are shared with the N1-P, H-CTX and X59-S
+   reads, and 1,000 CPU-h would take 6–12 weeks there. A rented CPU box (an owner question, strategy §3.1) makes it a
+   2–4-day job for ≈ $25–85 (UNVERIFIED). The live player's build and stage 0 (≈ 8 CPU-h for the cost re-size) can go
+   locally whenever a slot is free (§5).
+8. **Verdict expected** (GUESS): DOES-NOT-CLOSE-B is the likeliest informative class (P ≈ 0.55), and I most likely
+   reads UNDECIDED. Its value is to close or open "search on V reopens on U" with a real opponent, at the price of one
+   rented-box run.
+
+---
+
+## 1. The question, and how it differs from the reads already done
+
+### 1.1 What H-MID adds, and what it does not
+
+H-MID read P\*'s critic V on the X51 games, from level positions at turn 10:
+
+| | home72 | U | home72 − U |
+|---|---|---|---|
+| win rate | 0.609 | 0.501 | +0.108 [+0.046, +0.173] |
+| mean V | 0.557 | 0.525 | +0.033 [+0.010, +0.059] |
+| AUC of V for the outcome | 0.663 | 0.667 | −0.004 [−0.090, +0.078] |
+
+At equal V, P\* wins 8.6 pp [+2.3, +15.1] less on U.
+
+Its FINDING 1 says the lever map is contested.
+- **The case for search.** A one-ply search compares successors within a node, so a between-set level error in V does
+  not by itself rule out headroom on U. V's within-set ordering is intact.
+- **The case against.** H-MID's reading 2 places the deficit in a per-team skill that applies across the whole game
+  (H-CTX), not in specific positions that V misreads.
+
+The direct test is a search read on U, and that is this doc.
+
+**What H-MID did NOT measure.** AUC is a BETWEEN-GAME ordering: which U games are going better. Search needs a
+WITHIN-NODE ordering: which ACTION is better at one state, after the 4-turn playout that P\* pilots for both sides. No
+read has measured V's action ranking on U. The self-check returns to this (§8, A1).
+
+### 1.2 Against E1-0, L1 at P\* and E4
+
+| read | what it asks | states / games | referee | bears on S-U how |
+|---|---|---|---|---|
+| **E1-0** (UNDECIDED; `../research_state/measurements/search_e1_0_2026-10-26/`) | Does the decision-level self-referee misread gains against a non-self opponent? | 160 bot-stratum states, X26 225M, pool teams | the self-referee against the in-core bot | **A different question:** it checks the instrument, and S-U uses none (the game result against Kakuna is the measure). Its direction, gains shrinking against the real opponent, is a PRIOR for S-U: expect less than any self-referee read implies |
+| **L1 at P\*** (`../research_state/measurements/search_l1_plateau_2026-10-25/`) | Does the piKL cell pay on the plateau bank? | 719 states from P\*'s own games, pool teams | self | +0.0001 [−0.0097, +0.0101] per decision at P\*. A prior for G_home72 ≈ 0. Its interval is ≈ ±29 pp in game units (≈ 30 decisions; `design_search_next.md` §1.6, UNVERIFIED bridge), so it bounds nothing at game scale. It holds no U state |
+| **Off-pool bank, stage 1 / 1c, maturity** | the worlds, the judge | P\* on POOL teams; the off-pool bank's opponents on `heldout72_hpfix` ("the traced side on a pool team", its G-OFF guard) | self | Where any team was unfamiliar, it was the opponent's (facing), never P\*'s own (piloting). X37a puts the deficit in piloting |
+| **E4** (`design_search_next.md` §3; review F11) | Does one-ply search pay in games against Kakuna? | U and home72 vs Kakuna, paired with raw P\* | the game | **The same player and opponent.** S-U re-cuts it: (a) the H-MID interaction as a co-primary; (b) the review's F11 fixes (sized against the bars, a DOES-NOT-CLOSE class, PAYS read as leak-inclusive, σ̂ = π only); (c) search from turn 10 only, for a shared prefix. E4's gate (an E1 / E2 arm predicting ≥ +4.6 pp) has not opened. S-U enters on H-MID's mechanism, not on that gate (§8, A6) |
+
+"L1 gains vanish at P\*" and S-U therefore ask different things.
+- L1 asks whether search improves P\* where P\* is at its best, on its own teams, scored against itself.
+- S-U asks whether search helps where P\* is measurably worse at piloting, scored by a real opponent.
+
+---
+
+## 2. The read
+
+**The arms.** Two labels, one checkpoint:
+- **P\*** (raw, greedy);
+- **P\* + S.** S runs only at our side's decisions from turn 10 onwards that have ≥ 2 legal actions. Every other
+  decision is P\*'s greedy choice.
+
+The opponent is Kakuna ckpt 34, greedy, the X51 regime. Each searched decision is seeded from (deal, turn, slot), so a
+searched game replays exactly.
+
+**The sets.** home72, H, F and P72: X51's four panels.
+- **Pooled U is primary** for G_U and I, because it is goal (b)'s meter and H-MID's population.
+- F, H and P72 are each REPORTED.
+- F alone is the X60 / X62 panel. Its interaction is a secondary, not a verdict.
+
+**Pairing and interleaving.** One unit is one (unit seed, panel) cell of X51's shape: 20 role-balanced deals, played
+raw then searched, deal by deal, in ONE job. So the arms are interleaved at the deal, on one engine, in one process
+lifetime. Unit seeds are the outer loop, and the four panels share each seed. A stopped read therefore stays balanced
+by seed and set.
+
+**The shared prefix (a GIGO tooth).** Before turn 10 both arms are P\* greedy against Kakuna greedy, on the same seed.
+- X51 measured Kakuna's argmax rate at 1.0000.
+- The H-MID and `prior_mix_ab` guards reproduced banked games exactly.
+- **G-PREFIX:** every pair's protocol through turn 9 must be byte-identical. Any mismatch holds the lane for a root
+  cause. If the mismatch is not resolved, the read is VOID. It means a nondeterminism that would corrupt the pairing.
+
+A bonus follows from the prefix. The turn-10 state is a PRE-treatment covariate, so the level-at-10 subgroup (H-MID's
+population) is a valid conditional estimand. It is not a post-hoc cut.
+
+**The engine.** The read plays on ONE engine, named at registration (`../tools/reads.md` §4, "The engine"). The raw arm
+is re-played, not imported: X51's banked rows are on E0. Its fresh P\* vs Kakuna numbers on that engine are a
+by-product, compared with X51 game for game as a REPORTED cross-engine guard, never pooled.
+
+**What it does not do.**
+- No search on Kakuna's side.
+- No opponent model other than π inside the leaf (σ̂ = π, as R0 §4; Kakuna cannot run in the playout core,
+  `design_search_next.md` D-7).
+- No training.
+- No public server.
+
+The only play is on our own `ws_frontend` on a 9XXX port, against the locally run Metamon peer.
+
+---
+
+## 3. Estimands and the registered rules (PROPOSED: rule `search_headroom`, not built)
+
+Per set, the unit statistic is the mean paired difference (searched − raw) over the unit's 20 deals, with a tie as ½.
+- G_home72 is the mean over home72 units.
+- G_U is the equal-weight mean of the three U panels' means.
+- I = G_U − G_home72.
+- Intervals: a percentile bootstrap over units, resampled within each panel, B = 2,000, seed 20261027 (H-MID's and the
+  forensics' scheme).
+- Bars are compared as exact fractions. A bound within 0.0005 of a bar takes UNDECIDED (root rule 8).
+
+**Primary A, the H-MID question (I).**
+
+| class | rule | meaning |
+|---|---|---|
+| **U-HEADROOM** | LB(I) > 0 and LB(G_U) > 0 | search gains more on U, and gains there. V's within-node use survives its level error |
+| **U-LESS** | UB(I) < 0 | search gains LESS on U. The diffuse per-team deficit (H-CTX) leaves one ply less to fix there |
+| **NO-U-PREMIUM** | UB(I) < +5.5 pp | search recovers less than half of the U premium (11.1 pp, X51) beyond what it does on home72. It may co-occur with U-LESS |
+| UNDECIDED | otherwise | |
+
+**Primary B, goal (b) (G_U).** Every positive class here is LEAK-INCLUSIVE.
+
+| class | rule | meaning |
+|---|---|---|
+| **DOES-NOT-CLOSE-B** | UB(G_U) < +4.3 pp | even with the builder's leaks, search adds less than goal (b)'s gap (X51: 0.487 vs ≈ 0.53). **This class is creditable**, because the leaks only push G_U up |
+| **U-GAIN (leaky)** | LB(G_U) > 0 | a gain that is not credited to honest search until the fresh-dice replay exists (`search_ledger.md` §6.1, Tier B) |
+| **GOAL-B-REACHED (leaky)** | the searched arm's pooled U score has LB > 0.50 (`main.x35.d1.newcombe_strat`'s stratified score) | reported, never claimed as goal (b) met |
+| UNDECIDED | otherwise | |
+
+**Why I is the leak-robust estimand.** The two residual leaks act the same way on both sets: speed ties on the reused
+seed (20.1 % of decisions) and the truth's hidden counters. To the extent their value does not depend on the set, they
+cancel in I. That is plausible but UNVERIFIED (FINDING S-4).
+
+**REPORTED, never decided.**
+- G_home72 alone, and G per panel.
+- I on F alone.
+- G and I in the level-at-10 subgroup (valid, §2).
+- The deviation rate (the share of searched decisions where S ≠ π's argmax), by set.
+- Searched CPU-s per decision and per game.
+- The world quality by set, from the true log in process at zero playouts: the exact never-seen species mass and the
+  share of the truth's binding facts held. This is the covariate for confound A3.
+- The raw arm's score per panel on this engine, against X51's.
+- H-MID's Δbias re-read on the raw arm's captures, a free replication on a new engine.
+
+**VOID.**
+- Counted units on two engines, or an unknown engine.
+- An unresolved G-PREFIX mismatch.
+- A raw arm on another checkpoint (sha256).
+- Any search record whose config differs from the registered one.
+
+---
+
+## 4. Cost and power
+
+### 4.1 Per decision (measured elsewhere; none of it on Kakuna games)
+
+| figure | value | source |
+|---|---|---|
+| an honest F world build | ≈ 14 CPU-s | maturity README, "Costs" (MEASURED, one thread, contended) |
+| one 8-world arm played | ≈ 15 CPU-s | same |
+| an honest decision at 4 worlds | ≈ 28 s | `search_ledger.md` §6.1 |
+| an honest decision at 8 worlds | 42–96 s | R0 §4 |
+| a full playout | ≈ 0.3 CPU-s | `design_search_next.md` E2's cost (the pilot's LEAF-K8) |
+
+**The planned budget, one decision ≈ 29–60 CPU-s.** It builds 8 worlds, then plays each legal action 8 times 4 turns
+deep with the critic at the cut. A live decision rebuilds its worlds each time; no amortisation is designed.
+
+### 4.2 Per game
+
+**Decisions a game.** P\* made 79,799 choices in X51's 1,600 Kakuna games, ≈ 50 a game, forced switches included
+(H-MID's reconstruction table). Median length is 32–38 turns (X51). Turns ≥ 10 hold ≈ 74 % of a 35-turn game, so
+≈ 37 choices fall from turn 10 on. Of those, an estimated 30–37 have ≥ 2 legal actions; the ≥ 2-legal share is
+unmeasured.
+
+**The cost a searched game** (ESTIMATE):
+- 30–37 × 29–60 s ≈ **15–37 CPU-min, central ≈ 25**. R0 §4's ≈ 32 CPU-min (32 decisions × 60 s) sits inside.
+- The raw twin costs 11.8 s (X51, measured).
+- Kakuna's forward is not counted. It waits while we search.
+
+**Wall time:**
+- At nice 19 on the agent cores, a game runs ≈ 1–1.5× its CPU time.
+- Under SCHED_IDLE it ran 2.5–3× (stage 1c's log). A searched game is therefore ≈ 25–75 min of wall time.
+- That is too long for the anchor lane's 600-s short lane and for 20-game units in a heavy slot (FINDING S-2, build
+  B3).
+
+### 4.3 Power (two-sided 95 %, normal approximation; d from X51's twins)
+
+**The discordance.** X51's P\* vs X26 @161M twins on the same deals had discordance 0.36–0.41. Those are two different
+policies from turn 1. S-U's pairs share nine turns, and a game with no deviation is concordant. So d ≈ 0.3–0.4, with
+0.5 as the worst case, where outcomes are independent once the pair diverges (review F11; N4).
+
+**The model.** SE(G) = √(d / n) per set, and SE(I) = √(SE_U² + SE_H²).
+
+| n_U / n_home72 | d | SE G_U | SE I | P(DNC-B) at G_U = 0 | P(U-GAIN) at G_U = +4.3 | P(U-HEADROOM) at I = +5 / +7 | P(NO-U-PREMIUM) at I = 0 | searched games | CPU-h at 15 / 25 / 32 min |
+|---|---|---|---|---|---|---|---|---|---|
+| 400 / 400 (X51's size) | 0.4 | 3.16 | 4.47 | 0.27 | 0.27 | 0.20 / 0.35 | 0.23 | 800 | 200 / 333 / 427 |
+| 1,200 / 400 | 0.4 | 1.83 | 3.65 | 0.65 | 0.65 | 0.28 / 0.48 | 0.33 | 1,600 | 400 / 667 / 853 |
+| 1,200 / 800 | 0.4 | 1.83 | 2.89 | 0.65 | 0.65 | 0.41 / 0.68 | 0.48 | 2,000 | 500 / 833 / 1,067 |
+| **1,200 / 1,200** | 0.3 | 1.58 | 2.24 | 0.78 | 0.78 | 0.61 / 0.88 | 0.69 | 2,400 | 600 / 1,000 / 1,280 |
+| **1,200 / 1,200** | **0.4** | **1.83** | **2.58** | **0.65** | **0.65** | **0.49 / 0.77** | **0.57** | **2,400** | **600 / 1,000 / 1,280** |
+| 1,200 / 1,200 | 0.5 | 2.04 | 2.89 | 0.56 | 0.56 | 0.41 / 0.68 | 0.48 | 2,400 | 600 / 1,000 / 1,280 |
+| 1,800 / 1,800 | 0.4 | 1.49 | 2.11 | 0.82 | 0.82 | 0.66 / 0.91 | 0.74 | 3,600 | 900 / 1,500 / 1,920 |
+
+- DOES-NOT-CLOSE-B at 80 % power with G_U truly 0 needs n_U ≈ 4,240·d: 1,273 / 1,698 / 2,122 at d = 0.3 / 0.4 / 0.5.
+- **An interaction the size of a third of the gap (≈ 3.5 pp), at 80 %, needs ≈ 5,100 deals a set** (≈ 10,200 searched
+  games). That is out of reach: S-U sees only large interactions.
+- The table is arithmetic from the model above (z = 1.96, 80 % power at z = 0.84), computed in under a second on
+  the agent cores. No script is committed.
+
+### 4.4 The size, the looks and the re-size rule
+
+- **Final: 1,200 deals per set.** For U that is unit seeds 0–19 on each of H, F and P72 (400 a panel, X51's). For
+  home72 it is unit seeds 0–59. Balanced n minimises SE(I) for a fixed number of searched games, because both sets
+  cost the same per game.
+- **Stage 0** is the first 5 deals of unit seed 0 on each panel: 20 searched games, ≈ 8 CPU-h. It reads COST ONLY:
+  CPU per searched game, plus the G-PREFIX and peer-stability checks. Its games are the read's first games, not extra.
+- **Phase 1** is unit seeds 0–19 on all four panels: U complete at 1,200, home72 at 400 (the 1,200 / 400 row, ≈ 1,600
+  searched games, ≈ 667 CPU-h central). **G_U's classes are READ here, and are final.** I is read futility-only: the
+  read STOPS iff NO-U-PREMIUM or U-LESS is already reached. No positive class of I is read at phase 1.
+- **Phase 2** is home72 unit seeds 20–59 (+800 searched games, ≈ 333 CPU-h), played only when I is UNDECIDED at phase 1.
+  I's classes are then read on all 1,200 / 1,200. Every phase-2 deal is still raw-then-searched in one job on the same
+  engine (the pairing is within the deal), so the cross-set interleaving of phase 1 is not needed for validity.
+- **Two looks on I.** A negative class read at either look has a false rate ≤ 2 × 2.5 % (MY JUDGEMENT, the Bonferroni
+  bound), acceptable for a futility stop. The positive class is read once.
+- **The re-size rule** is fixed now, and cost is not an outcome. If stage 0's median searched game costs > 2× the
+  central estimate (> 50 CPU-min), phase 2 is dropped and I becomes REPORTED. Nothing else re-sizes.
+- **Discordance.** The pooled b + c is reported after stage 0 and again before phase 2's decision, together with the
+  achieved power. The sign, b − c, is not shown. It never changes n.
+
+---
+
+## 5. When it can run
+
+**Locally, not now.** The 2 heavy slots on rule 5b's agent cores are shared with:
+- N1-P look 1 (≈ 60 h left at its start);
+- the H-CTX read (35–70 lane-h);
+- X59-S's reads;
+- D3 look 2's read;
+- PR-1 (165–238 lane-h) and X62's read when they register.
+
+At ≈ 1,000 CPU-h on about one effective lane, S-U would take **≈ 6–12 weeks** of local wall time, behind those reads.
+So:
+- **The build (B1–B4, §6) is CPU-light** and can land any time.
+- **Stage 0 (≈ 8 CPU-h)** runs locally in one free heavy slot. It turns this doc's cost ESTIMATE into a measurement
+  before anyone rents anything.
+- **The read itself does not run locally** unless the queue empties.
+
+**A rented CPU box changes it.** The approval is the one already asked for PR-1 (strategy §3.1). The box would play
+both arms, because the engine rule does not let a cross-host import stand in for either.
+- A 32-vCPU box is likely memory-bound: a P\* + search process plus a Kakuna peer is ≈ 4–6 GB (X51's unit peaked at
+  3.7 GB; stage 1c's 128-world chunk at 6.3 GB). It might hold 12–24 games at once.
+- That gives ≈ 42–85 box-h, **≈ 2–4 days, ≈ $25–85** at the strategy doc's ≈ $0.6–1 a box-h (UNVERIFIED: no rented
+  CPU has played a Kakuna game or a search).
+- A few units re-played locally game for game are the cross-host guard, REPORTED.
+- **Order on the box** (MY JUDGEMENT): after PR-1. PR-1 is ranked by P(GAIN) per resource-day, and S-U's expected class
+  is a negative one.
+
+---
+
+## 6. Builds (PROPOSED, each default OFF)
+
+| # | build | why | size |
+|---|---|---|---|
+| **B1** | **The live one-ply search player** in the anchors core slot (`src/main/anchors/core_side.py`). At each eligible decision it calls `main.value_search.search` on the in-process TRUE log (the honest builder needs it; D-8), with seeds keyed by (deal, turn, slot), and it writes a per-decision record: S's pick, π's argmax, Q̂ per action, the world-quality stats, CPU-s | No live search player exists. R0 §4 F-R0-8 and S0b's were never built | ≈ 1–1.5 agent-days (`design_search_next.md` E4; R0 says ≈ 1) |
+| B2 | **piKL as an acting rule** in `main.value_search.rules`. Today it exists only in L1's measurement scripts (`../research_state/measurements/search_l1_l5_2026-10-20/`), which re-score banked rows. The rule ports L1's frozen formula, and a golden test re-scores L1's banked rows bit for bit | `SearchConfig.rule` knows only `gumbel` and `argmax` | ≈ 0.25 day |
+| B3 | **A searched label in `main.reads`**: a `search` model-load option beside `belief_prior_mix` (`spec.LOAD_OPTIONS`), stamped into `our_regime`; units that may be split per deal into heavy-slot jobs of ≈ 1 game; a G-REPRO test that a searched label with the switch OFF reproduces raw P\* game for game | A 20-game searched unit is 5–25 wall-h | ≈ 0.5 day |
+| B4 | **The rule `search_headroom`** (§3), with G-PREFIX as its VOID gate, and a test | the registered rule as code | ≈ 0.25 day |
+
+The PREREG pins the commit that lands B1–B4 (`../tools/reads.md` §1's flow). Stage 0 plays at that pin.
+
+---
+
+## 7. Predictions (GUESSES, to be registered)
+
+- **The deviation rate** is 8–15 % of searched decisions on both sets, a few points higher on U. The policy is less
+  sure there: the N2 probe's policy shift is 1.19× on unfamiliar sets.
+- **G_home72 = +0.5 pp (−3, +4).** L1 at P\* reads ≈ 0, and E1-0's direction shrinks gains against a real opponent.
+- **G_U = +1.0 pp (−3, +5).**
+- **I = +0.5 pp (−4, +5).** H-MID's ordering argument pushes it up. H-CTX's diffuse per-team skill and the leaf's
+  opponent model (A2) push it down.
+- **The classes:** DOES-NOT-CLOSE-B 0.55; U-GAIN (leaky) 0.15; U-HEADROOM 0.08; NO-U-PREMIUM 0.45; U-LESS 0.07;
+  a phase-1 stop on I ≈ 0.3.
+- **The cost:** a searched game at 20–30 CPU-min.
+
+---
+
+## 8. Adversarial self-check
+
+**A1. "V orders positions on U" is the wrong ordering.**
+- **The objection.** H-MID's AUC ranks GAMES by outcome; search ranks ACTIONS within a node. Equal AUC does not imply
+  equal action ranking, and the action ranking on U is unmeasured.
+- **The leaf compounds it.** The TRUNC-4 leaf is 4 turns of P\* on both sides and then V. So Q̂ carries P\*'s U piloting
+  for 4 turns, which is the right continuation for one-ply improvement. But it also carries P\* as the model of Kakuna on
+  Kakuna's U team.
+- **Answer.** That is why the read is a game read and not a re-analysis of H-MID. The hypothesis is the brief's, held
+  with low confidence (§7). The cheap mechanism read (the within-node Spearman of Q̂ against a true-world referee on U vs
+  home72 states) is decision-level, and it needs a self-referee here, because Kakuna cannot run in the core. E1-0 left
+  that instrument UNDECIDED. It was REJECTED as a gate (§10 below).
+
+**A2. The leaf's opponent model differs by set.**
+- **The objection.** On U the playouts model Kakuna as P\* piloting an unfamiliar team, which P\* does ≈ 11 pp worse
+  than Kakuna does. The leaf then expects the opponent to blunder. Search would over-value lines that need the opponent
+  to mis-pilot. That is a set-dependent S-factor error (`design_search_next.md` §1.4) pushing G_U down, so it is a
+  confound for I.
+- **Answer.** It cannot be removed without Kakuna in the core. It is named, and it biases I toward U-LESS. It makes a
+  U-HEADROOM, if found, conservative.
+
+**A3. The worlds differ by set.**
+- **The objection.** The F worlds draw Kakuna's team from Smogon usage. How close they come to the truth differs between
+  a pool team (home72), forum teams (F), ladder teams (H) and procedural teams (P72). So I mixes "V / π headroom on U"
+  with "the honest worlds fit U teams better or worse".
+- **Answer.** The REPORTED world-quality covariate (§3) measures this per decision at zero playouts, and its set
+  difference is reported beside I. The oracle arm that would remove it was rejected (§10).
+
+**A4. The leaks may not cancel in I.** The speed-tie leak's value depends on which species' speed ties occur, and the
+species mix differs by set. FINDING S-4. The interaction is leak-ROBUST only to first order. A U-HEADROOM still has to
+survive the fresh-dice replay before anything is built on it.
+
+**A5. Power.**
+- **The objection.** At the recommended size the read sees I ≥ ≈ 7 pp with 77 % power. Its own prediction (+0.5)
+  makes UNDECIDED the likeliest outcome for I.
+- **Answer.** This is stated up front (§0.6, §7). The read is worth its cost because G_U's negative class is reachable,
+  at 0.65, and because no game-level search read against a non-self opponent exists at all. Buying I at a third-of-gap
+  resolution would cost ≈ 4× and is not proposed. If the owner prefers to spend only on the creditable class,
+  phase 1 alone (the 1,200 / 400 row) reads DNC-B equally well for ⅔ of the CPU.
+
+**A6. It bypasses E4's gate.**
+- **The objection.** `design_search_next.md` gates E4 on an E1 / E2 arm predicting ≥ +4.6 pp, and none has.
+- **Answer.** S-U's entry is H-MID's mechanism, a new prior that E4's gate did not have. Its review (F11) said a
+  NEGATIVE is the informative class of a live read with leaks. S-U is built around exactly that class. This is MY
+  JUDGEMENT; the orchestrator rules whether the gate applies.
+
+**A7. Search from turn 10 changes the question.**
+- **The objection.** Searching only from turn 10 leaves turns 1–9 as P\*'s. If search would help in the opening, S-U
+  misses it.
+- **Answer.** The forensics put none of the U gap in the state at turn 10 (−0.4 pp [−2.6, +1.3]). The prefix buys the
+  pre-treatment covariate and ≈ 25 % of the cost. G is "search from the mid game", and the doc says so.
+
+**A8. Determinism of the prefix.**
+- **The objection.** If Kakuna or our side is not bit-deterministic across two plays in one process (thread counts, a
+  peer's internal state), G-PREFIX fails and the pairing is lost.
+- **Answer.** The evidence is X51's argmax rate 1.0000 and the game-for-game guards (H-MID 1,600 / 1,600; prior-mix
+  80 / 80). Stage 0 tests it on 20 pairs before any outcome.
+
+**A9. The peer's patience.** Kakuna waits 30–90 s per searched decision. Whether the in-process `ws_frontend` or the
+Metamon peer has an inactivity timer is UNVERIFIED (FINDING S-3). Stage 0 checks it. A timer firing is a defect of the
+harness, never an outcome (root: "a timeout is never a semantic outcome").
+
+**A10. Pooled U carries P72.** P72 is weak and procedural. X51 FINDING 2: it sits below 0.50 and did not move at the
+plateau. A G_U carried by P72 alone would be a weak-team effect. The per-panel G is REPORTED, and F's I is a
+secondary.
+
+**A11. The scope rule.**
+- **The objection.** The owner's one-ply rule caps IN-LOOP search.
+- **Answer.** A live, measurement-only player on our own server against a local bot follows the owner's 2026-10-20
+  "exploiter + pi search, just to know" (R0 §4; review F13). It never plays in training or on a public server. D-10's
+  owner question (`design_search_next.md` §6) covers this read too.
+
+---
+
+## 9. FINDINGS (standing rule 7)
+
+- **S-1.** Every cost here is an ESTIMATE from other reads' measured per-decision costs on contended pool-team states.
+  No search has run on a Kakuna game. Stage 0 measures it before the read sizes.
+- **S-2.** The anchor lane cannot run a searched 20-game unit as built: the short lane is 600 s and the long fallback
+  2,700 s. B3 is required.
+- **S-3.** It is UNVERIFIED whether the Metamon peer or the in-process server times out a 30–90-s decision.
+- **S-4.** The leak-cancellation argument for I is first-order and UNVERIFIED (A4).
+- **S-5.** The X51 twins' discordance (0.36–0.41) is between two DIFFERENT policies from turn 1. S-U's d is
+  extrapolated from it.
+- **S-6.** The ≥ 2-legal share of decisions from turn 10 is unmeasured (the 30–37 range).
+- **S-7.** The rented box's memory per search game, its parallelism and its price are UNVERIFIED.
+- **S-8.** This doc ran no game and no search. Its only computation is the power arithmetic of §4.3.
+
+## 10. Alternatives considered
+
+| alternative | why not (now) |
+|---|---|
+| A decision-level read on X51's banked level states: the honest piKL pick against a self-referee, IMP_U − IMP_home72 | n·SE² ≈ 0.0074 gives ≈ ±0.0075 a decision at 1,000 states a set, ≈ ±23 pp a game. Its referee is P\*, not Kakuna, which is E1-0's open problem. It is no cheaper than games at the game bar (review F12) |
+| An ORACLE-worlds arm as a ceiling | It removes A3 but adds a huge information gain on both sets (G_O ≈ +0.05 a decision). That saturates the win rate and compresses I. It doubles the read |
+| F alone, not pooled U | Goal (b) and H-MID are pooled U. F's I is REPORTED |
+| Search on every turn | +≈ 25–35 % CPU. It loses the shared prefix and the pre-treatment subgroup. The gap is not in the opening |
+| The asymmetric cell (we pilot U, Kakuna pilots home72), which isolates piloting | Not goal (b)'s meter, and it changes A2's confound rather than removing it. A possible follow-up on a U-HEADROOM |
+| Running E4 as written | Sized against 0, not its bar, and no DOES-NOT-PAY class (review F11) |
+
+---
+
+## Decision record
+
+| date | decision | chosen | rejected / alternatives | evidence |
+|---|---|---|---|---|
+| 2026-10-27 | **This doc CREATED (DRAFT, explicit-only)** (search-research design worker, orchestrator brief; docs only, one arithmetic script) | S-U: P\* vs P\* + L1's piKL search (8 honest worlds, TRUNC-4-K8, λ 0.015) from turn 10, against Kakuna on home72 and pooled U, ONE engine, deal-interleaved and paired with a byte-identical nine-turn prefix. The co-primaries are I = G_U − G_home72 (U-HEADROOM / U-LESS / NO-U-PREMIUM) and G_U (DOES-NOT-CLOSE-B creditable; positives leak-inclusive). 1,200 deals a set: a cost-only stage 0; phase 1 (U complete, home72 400) reads G_U finally and I futility-only; phase 2 tops home72 up only if I is UNDECIDED. ≈ 1,000 CPU-h central: a rented-box read, not a local one. It supersedes E4's registration if registered | a decision-level self-referee screen (too coarse, wrong referee); an oracle ceiling arm (saturates, doubles); F alone; search every turn; E4 as written; buying a third-of-gap interaction (≈ 4× the CPU) | H-MID README (`f200258f`) FINDING 1, reading 2–3; the forensics (`c758fcb8`); X51 README (twins, costs); maturity README "Costs"; R0 §4; `search_ledger.md` §6.1, §6.2; `design_search_next.md` E4 and its review (`9738296f`) F11, F12; `../tools/reads.md` §3, §4 (`20875e96`) |

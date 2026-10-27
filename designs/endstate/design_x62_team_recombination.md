@@ -46,7 +46,8 @@ states.
   - **KILLED** ⇒ shelve. The premium is set-level, and X62 adds no set.
   - **UNDECIDED** ⇒ build the corpus and hold. The fork runs as a D1-rule screen only if N1-P reads NULL or LOSS.
   - **INCONCLUSIVE or VOID** ⇒ hold, and extend H-CTX's controls first.
-  - H-MID never blocks X62. It picks the mechanism read and says whether search on V reopens.
+  - H-MID never blocks X62. It read CRITIC-MISCALIBRATED-ON-U (`f200258f`), so M3 is a registered secondary. Whether
+    search on V reopens on U is S-U's question ([`design_search_u_headroom.md`](design_search_u_headroom.md)).
 - **The read (§5).** Goal (b) on **F** against Kakuna, against C0 on ONE engine. Two read options:
   - **The PR rule** (17,400 F games an arm, 5 seeds): P(GAIN) **0.80 / 0.67 / 0.44 at +1.5 pp** for σ_s = 0 / 0.5 /
     1 pp, and 1.00 / 1.00 / 0.95 at +3 pp. Its false GAIN is 0.025 with a correct widening, and **0.10 at σ_s = 1 pp
@@ -279,8 +280,8 @@ do. D1 cost −1.61 pp in-house. X62 keeps every set's exposure, so it is predic
 - **M2, the seen-set per-mon KO edge on F** (the forensics' statistic, from the captures; minutes of CPU). H-CTX
   predicts X62 raises it toward home72's +0.081.
 - **M3, H-MID's Δbias** on X62's and C0's F and home72 captures, re-encoded and read through H-MID's own scripts
-  (forward passes, CPU, ≈ a few CPU-h; H-MID PREREG §3's fidelity gate applies). It is registered as a SECONDARY when
-  H-MID reads CRITIC-MISCALIBRATED-ON-U (§6).
+  (forward passes, CPU, ≈ a few CPU-h; H-MID PREREG §3's fidelity gate applies). H-MID read CRITIC-MISCALIBRATED-ON-U
+  (`f200258f`), so M3 is a registered SECONDARY (§6).
 - **M4, H-TGT's switch-punish DiD** on F (forensics §2): X62 trains both sides, so it should move toward 0 if
   opponent-team breadth carries switch anticipation.
 - **H, P72, home72 against Kakuna** at 7 units per final (D1's REPORTED group), and **U**. home72 is goal (a)'s
@@ -330,9 +331,15 @@ G2  H-MID (registered 2dd522785) routes the MECHANISM, never the go
  │                         X62's target. The prior rises slightly (MY JUDGEMENT). Mechanism reads M1 + M2. Search on
  │                         V has headroom on U (design_search_next.md), a separate CPU-lane lever that competes with
  │                         X62's read for the anchor lane: the orchestrator orders them.
- ├─ CRITIC-MISCALIBRATED-ON-U ► the critic shares the memorisation; breadth trains both heads, so X62 still applies.
- │                         M3 (Δbias on X62 vs C0 captures) becomes a registered SECONDARY: does X62 shrink V's
- │                         optimism on unfamiliar sixes? Search stays paused until some arm fixes V on U.
+ ├─ CRITIC-MISCALIBRATED-ON-U ◄ READ 2026-10-26 (f200258f): Δbias +0.076 [+0.016, +0.139]; V's ordering intact
+ │                         (AUC 0.667 U vs 0.663 home72). The critic shares the memorisation; breadth trains both
+ │                         heads, so X62 still applies. M3 (Δbias on X62 vs C0 captures) IS a registered SECONDARY:
+ │                         does X62 shrink Δbias, the part of the U deficit V does not see? (Not "V's optimism":
+ │                         V is about calibrated on U and under-confident on home72, H-MID FINDING 2.) Search: V's
+ │                         error is a between-set LEVEL shift, which a one-ply comparison within a node cancels, so
+ │                         this branch alone does not keep search paused (H-MID FINDING 1). The direct test is S-U
+ │                         (design_search_u_headroom.md), a CPU read (≈ 1,000 CPU-h, a rented-box read) that would
+ │                         compete with X62's for the anchor lane: the orchestrator orders them.
  └─ INCONCLUSIVE ───────► no change; M1–M3 all reported.
 G3  X62's own outcome (by its registered rule)
  ├─ GAIN, P NON-INFERIOR ► team-context breadth works at the plateau. X53-N1's corpus question reopens (X62 or the
@@ -439,3 +446,4 @@ H-CTX read itself (35–70 h), N1-P's look 1 (≈ 60 h), D3 look 2's read and PR
 | date | decision | chosen | rejected / alternatives | evidence |
 |---|---|---|---|---|
 | 2026-10-26 | **This doc CREATED (DRAFT, gated on H-CTX)** (research-design worker, orchestrator brief; docs + two CPU scripts) | X62: a P\*-fork at the X35 production shape (+20M, the `f4b25238` pin + a corpus-only commit), with `--team-mix x62_recomb_v1@ALL:0.5 --team-mix-sides both`: 12,000 teams of verbatim pool blocks, ≤ 2 shared with any pool team, a pool-matched species profile with Smogon teammate lift, static; read on F vs Kakuna against C0 on one engine (the PR rule if PR-1's C0 is banked, else D1's); the gate tree keyed on H-CTX, then N1-P, with H-MID routing the mechanism reads | treating N1-P as this lever (28 % pool-set slots, 0.6 % recombined-like); an in-loop re-draw (≈ 24 pilots a team makes it a no-op); share 1.0 (a second lever); the then-current recipe (a new C0 for no information); a standalone fork on UNDECIDED H-CTX with N1-P GAIN | `piloting_gap_forensics_2026-10-26/` (`c758fcb82`); `hctx_rc72_2026-10-26/PREREG.md` (`caec2bb2c`); `n2_identity_test_2026-10-26/` (`fd4160d76`); `x61p_n1_production_2026-10-26/PREREG.md`; [`x62_design_2026-10-26/`](../research_state/measurements/x62_design_2026-10-26/) (`set_familiarity.log`, `power_pgain.log`) |
+| 2026-10-27 | **G2 resolved: H-MID read CRITIC-MISCALIBRATED-ON-U** (search-research design worker, orchestrator brief; docs only) | G2's branch marked READ; M3 is a registered SECONDARY, its question re-worded to Δbias (H-MID FINDING 2: "optimism" depends on an absolute baseline); "search stays paused until some arm fixes V on U" replaced by H-MID FINDING 1 (a between-set level error cancels within a node; V's ordering is intact) and a pointer to S-U | keeping "search stays paused" as an X62 consequence (it is the search ledger's call, and S-U is its test) | [`h_mid_value_test_2026-10-26/README.md`](../research_state/measurements/h_mid_value_test_2026-10-26/README.md) (`f200258f`); [`design_search_u_headroom.md`](design_search_u_headroom.md) |
