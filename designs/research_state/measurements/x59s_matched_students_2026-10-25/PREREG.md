@@ -737,3 +737,22 @@ specs are re-registered there. **The read's ONE engine is therefore `port=bdc5d2
 identity unit (A4.3, VOID 5) is re-played on this tree before any student game; the earlier PASSes (`b712c46d1` and
 `fca58b24d`, engine `67a272e7…/93`) are recorded and certify nothing about this engine. The floor references, FR-2's
 opponent-seat extraction and every student game run from the tree at `0534e90a6`. Nothing else changes.
+
+## Amendment 4c (2026-10-27, before FR-2 is run on any data): G-ENC's drift and FR-2's battle exclusion
+
+FR-2's precondition G-ENC (A4.7) FAILED at the pin `0534e90a6`: `equal 2095, DIFF 11, short_by_one 9, skipped_refused_choice
+191` (`~/gen3ai_archive/x50_r1b/traces_oppseat_genc.json`). R1's PASS at `2bbdffa7d` had the same 9 / 191 and no DIFF.
+**Diagnosis (no FR-2 number was computed):** every DIFF is one cell of one active-mon volatile (`trapped`, `snatch`,
+`destinybond`, `endure`) that the X26 training reader left at 1 after Showdown ended it silently, and the current
+reader clears it: `d8d674b99`, `gen3_volatile_silent_ends_v1` (obs semantics 151 → 162). 27 rows of 465 compared
+in the 11 battles, each one cell, always recorded 1 / read 0, at a point the protocol shows the effect ended; no other
+cell or mask differs. This is reader drift toward correctness, not a reader defect.
+
+**The registered exclusion:** a battle whose stream holds `|-singleturn|…|Endure` (or `move: Endure`), `Snatch` or
+`Helping Hand`, `|-singlemove|…|Destiny Bond`, `Grudge` or `Rage`, or `|-activate|…|trapped` leaves FR-2 for BOTH
+seats and both modes (33 of 2,306 traces flag; every DIFF battle among them). The precondition becomes: G-ENC over the
+kept traces reads no DIFF (`short_by_one` stays tolerated, as R1's). The exclusion list and its sha256 enter
+`results/fr2.json`. **Registered limits:** G-ENC certifies the trainee's view only (the opponent seat has no recorded
+states); `d8d674b99` also changed the in-model damage operator's held-item read (`gen3_op_held_item_v1`), which both
+models meet alike in both modes (unmeasured, expected to cancel in D); FR-2 reads both models at obs semantics 162,
+newer than either trained on.
