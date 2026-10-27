@@ -88,12 +88,16 @@ teams (survey: [`research_state/literature/sota_survey_2026-10-26.md`](research_
 ## 6. The three biggest risks and unknowns
 
 1. **No lever we have measured closes goal (b)'s ≈ 4 pp alone.** D1, D3, X52 and the belief mix each read +1 to
-   +3 pp with intervals ±3–4 pp wide. Kakuna games run on CPU at about 10 s each, so each look costs days. The bet
+   +3 pp with intervals ±3–4 pp wide. Kakuna games run on CPU at 160–230 an hour on the shared agent cores, so each look costs days. The bet
    left is breadth at 10⁴ teams (N1-P, then [X53-N1](endstate/design_x53_n1_fresh_breadth.md), ≈ 39 GPU-h to a
-   one-seed screen). If D3, N1-P and X59-S all miss, the DRAFT fallback is
-   [`endstate/strategy_if_levers_null_2026-10-26.md`](endstate/strategy_if_levers_null_2026-10-26.md) (`cb85e54f4`).
-   Their [review](research_state/measurements/strategy_review_2026-10-26/REVIEW.md): X53-N1 NOT READY to register
-   (its seed-SD floor and F's small headroom), the fallback REVISE (its tree cannot resolve +1–1.5 pp).
+   one-seed screen). If D3, N1-P and X59-S all miss, the fallback is
+   [`endstate/strategy_if_levers_null_2026-10-26.md`](endstate/strategy_if_levers_null_2026-10-26.md), both REVISED
+   after their [review](research_state/measurements/strategy_review_2026-10-26/REVIEW.md) (`6fca2c061`). The
+   fallback's first branch is now a zero-GPU **precision read**: D1, D3 and N1-P against C0, pooled, on 38,000 new
+   Kakuna games at one engine, which sees +1.5 pp with probability 0.76. Its cost is the CPU: about 7–10 days of the
+   local Kakuna lane, or about a day on a rented CPU box (an owner question when it runs). X53-N1 now waits on a
+   zero-GPU measurement of how far two fresh runs differ: above about 2 pp, no affordable seed count can see a
+   realistic +2–3 pp effect.
 2. **The meter itself.** It is unverified whether Kakuna's self-play saw near copies of our unfamiliar-team panel
    (assumption A-K, open). Foul Play has never been read against P\*. In-house meters are blind to the deficit, so
    only slow Kakuna reads steer goal (b).

@@ -1,0 +1,18 @@
+## 1. D1's rule on F, final GAIN, 1500 draws a cell
+sigma 0 pp: -2.0: 0.000, -1.0: 0.001, +0.0: 0.026, +0.5: 0.081, +1.0: 0.188, +1.5: 0.365, +2.0: 0.570, +3.0: 0.891, +4.0: 0.980, +5.0: 0.999, +6.0: 1.000, +8.0: 1.000
+sigma 1 pp: -2.0: 0.001, -1.0: 0.009, +0.0: 0.047, +0.5: 0.102, +1.0: 0.205, +1.5: 0.314, +2.0: 0.491, +3.0: 0.774, +4.0: 0.939, +5.0: 0.993, +6.0: 1.000, +8.0: 1.000
+
+## P(GAIN) per row (sigma 0 / 1 pp)
+  N2 set-channel noise                             GUESS +1.5 (+0.0, +3.0): D1 rule 0.41 / 0.37 | PR rule 0.64
+  breadth bet, plateau stack (after PR-1 GAIN)     GUESS +1.5 (+0.0, +3.5): D1 rule 0.42 / 0.38 | PR rule 0.62
+  breadth bet, plateau stack (no PR-1)             GUESS +1.0 (-1.5, +3.5): D1 rule 0.35 / 0.32 | PR rule 0.49
+  H-TEAMS (X60)                                    GUESS +1.0 (-1.0, +4.0): D1 rule 0.35 / 0.32 | PR rule 0.49
+  N3 regret curriculum                             GUESS +0.5 (+0.0, +3.0): D1 rule 0.19 / 0.18 | PR rule 0.33
+  N5 offline breadth student, from scratch         GUESS +1.0 (-2.0, +5.0): D1 rule 0.38 / 0.36 | PR rule 0.49
+  fork extension N1-P +40M                         GUESS +1.0 (-1.0, +3.0): D1 rule 0.32 / 0.30 | PR rule 0.49
+  batch x2 with breadth                            GUESS +0.5 (-1.0, +3.0): D1 rule 0.23 / 0.22 | PR rule 0.37
+  specialist distillation K~100                    GUESS +1.5 (-1.0, +4.0): D1 rule 0.44 / 0.40 | PR rule 0.59
+
+## 2. M6's pools (inverse-variance; not an estimate of one effect)
+  the selected four: +1.65 pp, SE 0.97, [-0.25, +3.56]
+  all six in scope: +0.91 pp, SE 0.81, [-0.67, +2.49]

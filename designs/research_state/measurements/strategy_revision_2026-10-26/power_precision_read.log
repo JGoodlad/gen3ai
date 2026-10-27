@@ -1,0 +1,93 @@
+200000 draws a cell; base F 0.49; KILL bar +1.5 pp; effects in pp
+
+## POOLED 3 breadth arms x 8,000 + C0 14,000 (5/5/5/5 seeds); between-seed sigma 0.0 pp
+  null 0/0/0                                    GAIN 0.021 KILL 0.789 (LOSS 0.000, interim stop 0.466) UNDECIDED 0.190 | E[games] 29,146 of 38,000 | mean half-width 1.11 pp | median phi 0.96 | bias|GAIN +1.27 pp
+  +0.5 each                                     GAIN 0.130 KILL 0.463 (LOSS 0.000, interim stop 0.229) UNDECIDED 0.407 | E[games] 33,650 of 38,000 | mean half-width 1.11 pp | median phi 0.96 | bias|GAIN +0.85 pp
+  +1.0 each                                     GAIN 0.418 KILL 0.164 (LOSS 0.000, interim stop 0.081) UNDECIDED 0.417 | E[games] 36,468 of 38,000 | mean half-width 1.11 pp | median phi 0.96 | bias|GAIN +0.49 pp
+  +1.5 each                                     GAIN 0.764 KILL 0.035 (LOSS 0.000, interim stop 0.021) UNDECIDED 0.201 | E[games] 37,610 of 38,000 | mean half-width 1.11 pp | median phi 0.96 | bias|GAIN +0.21 pp
+  +2.0 each                                     GAIN 0.948 KILL 0.004 (LOSS 0.000, interim stop 0.003) UNDECIDED 0.047 | E[games] 37,934 of 38,000 | mean half-width 1.11 pp | median phi 0.96 | bias|GAIN +0.06 pp
+  hetero D1 +2 / D3 +1 / N1-P 0 (mean +1.0)     GAIN 0.420 KILL 0.166 (LOSS 0.000, interim stop 0.082) UNDECIDED 0.415 | E[games] 36,450 of 38,000 | mean half-width 1.11 pp | median phi 0.96 | bias|GAIN +0.48 pp
+  hetero D1 +3 / D3 +1.5 / N1-P 0 (mean +1.5)   GAIN 0.763 KILL 0.034 (LOSS 0.000, interim stop 0.021) UNDECIDED 0.203 | E[games] 37,608 of 38,000 | mean half-width 1.11 pp | median phi 0.96 | bias|GAIN +0.21 pp
+
+## POOLED 3 breadth arms x 8,000 + C0 14,000 (5/5/5/5 seeds); between-seed sigma 0.5 pp
+  null 0/0/0                                    GAIN 0.027 KILL 0.738 (LOSS 0.001, interim stop 0.450) UNDECIDED 0.235 | E[games] 29,458 of 38,000 | mean half-width 1.18 pp | median phi 1.14 | bias|GAIN +1.34 pp
+  +0.5 each                                     GAIN 0.137 KILL 0.434 (LOSS 0.000, interim stop 0.227) UNDECIDED 0.428 | E[games] 33,687 of 38,000 | mean half-width 1.17 pp | median phi 1.14 | bias|GAIN +0.92 pp
+  +1.0 each                                     GAIN 0.392 KILL 0.169 (LOSS 0.000, interim stop 0.087) UNDECIDED 0.439 | E[games] 36,348 of 38,000 | mean half-width 1.17 pp | median phi 1.14 | bias|GAIN +0.56 pp
+  +1.5 each                                     GAIN 0.709 KILL 0.042 (LOSS 0.000, interim stop 0.024) UNDECIDED 0.249 | E[games] 37,543 of 38,000 | mean half-width 1.17 pp | median phi 1.14 | bias|GAIN +0.28 pp
+  +2.0 each                                     GAIN 0.913 KILL 0.007 (LOSS 0.000, interim stop 0.005) UNDECIDED 0.080 | E[games] 37,912 of 38,000 | mean half-width 1.17 pp | median phi 1.14 | bias|GAIN +0.10 pp
+  hetero D1 +2 / D3 +1 / N1-P 0 (mean +1.0)     GAIN 0.392 KILL 0.170 (LOSS 0.000, interim stop 0.087) UNDECIDED 0.438 | E[games] 36,350 of 38,000 | mean half-width 1.17 pp | median phi 1.14 | bias|GAIN +0.56 pp
+  hetero D1 +3 / D3 +1.5 / N1-P 0 (mean +1.5)   GAIN 0.707 KILL 0.042 (LOSS 0.000, interim stop 0.024) UNDECIDED 0.251 | E[games] 37,546 of 38,000 | mean half-width 1.17 pp | median phi 1.14 | bias|GAIN +0.28 pp
+
+## POOLED 3 breadth arms x 8,000 + C0 14,000 (5/5/5/5 seeds); between-seed sigma 1.0 pp
+  null 0/0/0                                    GAIN 0.038 KILL 0.609 (LOSS 0.000, interim stop 0.402) UNDECIDED 0.353 | E[games] 30,371 of 38,000 | mean half-width 1.39 pp | median phi 1.69 | bias|GAIN +1.55 pp
+  +0.5 each                                     GAIN 0.131 KILL 0.360 (LOSS 0.000, interim stop 0.216) UNDECIDED 0.510 | E[games] 33,888 of 38,000 | mean half-width 1.38 pp | median phi 1.69 | bias|GAIN +1.15 pp
+  +1.0 each                                     GAIN 0.316 KILL 0.163 (LOSS 0.000, interim stop 0.095) UNDECIDED 0.521 | E[games] 36,199 of 38,000 | mean half-width 1.38 pp | median phi 1.69 | bias|GAIN +0.80 pp
+  +1.5 each                                     GAIN 0.566 KILL 0.055 (LOSS 0.000, interim stop 0.032) UNDECIDED 0.380 | E[games] 37,388 of 38,000 | mean half-width 1.37 pp | median phi 1.69 | bias|GAIN +0.49 pp
+  +2.0 each                                     GAIN 0.793 KILL 0.013 (LOSS 0.000, interim stop 0.009) UNDECIDED 0.194 | E[games] 37,834 of 38,000 | mean half-width 1.37 pp | median phi 1.69 | bias|GAIN +0.26 pp
+  hetero D1 +2 / D3 +1 / N1-P 0 (mean +1.0)     GAIN 0.318 KILL 0.164 (LOSS 0.000, interim stop 0.095) UNDECIDED 0.518 | E[games] 36,188 of 38,000 | mean half-width 1.38 pp | median phi 1.69 | bias|GAIN +0.80 pp
+  hetero D1 +3 / D3 +1.5 / N1-P 0 (mean +1.5)   GAIN 0.567 KILL 0.055 (LOSS 0.000, interim stop 0.032) UNDECIDED 0.379 | E[games] 37,383 of 38,000 | mean half-width 1.37 pp | median phi 1.69 | bias|GAIN +0.49 pp
+
+## POOLED, D3 and N1-P at 3 seeds (5/3/3/5); between-seed sigma 0.0 pp
+  null 0/0/0                                    GAIN 0.020 KILL 0.785 (LOSS 0.000, interim stop 0.459) UNDECIDED 0.196 | E[games] 29,379 of 38,120 | mean half-width 1.13 pp | median phi 0.93 | bias|GAIN +1.27 pp
+  +0.5 each                                     GAIN 0.128 KILL 0.457 (LOSS 0.000, interim stop 0.228) UNDECIDED 0.414 | E[games] 33,784 of 38,120 | mean half-width 1.12 pp | median phi 0.93 | bias|GAIN +0.85 pp
+  +1.0 each                                     GAIN 0.413 KILL 0.162 (LOSS 0.000, interim stop 0.080) UNDECIDED 0.425 | E[games] 36,587 of 38,120 | mean half-width 1.12 pp | median phi 0.94 | bias|GAIN +0.49 pp
+  +1.5 each                                     GAIN 0.756 KILL 0.034 (LOSS 0.000, interim stop 0.020) UNDECIDED 0.210 | E[games] 37,739 of 38,120 | mean half-width 1.12 pp | median phi 0.94 | bias|GAIN +0.21 pp
+  +2.0 each                                     GAIN 0.945 KILL 0.004 (LOSS 0.000, interim stop 0.003) UNDECIDED 0.051 | E[games] 38,058 of 38,120 | mean half-width 1.12 pp | median phi 0.93 | bias|GAIN +0.06 pp
+  hetero D1 +2 / D3 +1 / N1-P 0 (mean +1.0)     GAIN 0.415 KILL 0.162 (LOSS 0.000, interim stop 0.080) UNDECIDED 0.423 | E[games] 36,593 of 38,120 | mean half-width 1.12 pp | median phi 0.93 | bias|GAIN +0.49 pp
+  hetero D1 +3 / D3 +1.5 / N1-P 0 (mean +1.5)   GAIN 0.756 KILL 0.034 (LOSS 0.000, interim stop 0.020) UNDECIDED 0.211 | E[games] 37,747 of 38,120 | mean half-width 1.12 pp | median phi 0.93 | bias|GAIN +0.21 pp
+
+## POOLED, D3 and N1-P at 3 seeds (5/3/3/5); between-seed sigma 0.5 pp
+  null 0/0/0                                    GAIN 0.027 KILL 0.721 (LOSS 0.001, interim stop 0.439) UNDECIDED 0.252 | E[games] 29,744 of 38,120 | mean half-width 1.21 pp | median phi 1.16 | bias|GAIN +1.34 pp
+  +0.5 each                                     GAIN 0.133 KILL 0.423 (LOSS 0.000, interim stop 0.223) UNDECIDED 0.445 | E[games] 33,873 of 38,120 | mean half-width 1.20 pp | median phi 1.16 | bias|GAIN +0.93 pp
+  +1.0 each                                     GAIN 0.380 KILL 0.166 (LOSS 0.000, interim stop 0.085) UNDECIDED 0.454 | E[games] 36,496 of 38,120 | mean half-width 1.20 pp | median phi 1.16 | bias|GAIN +0.57 pp
+  +1.5 each                                     GAIN 0.688 KILL 0.041 (LOSS 0.000, interim stop 0.024) UNDECIDED 0.270 | E[games] 37,670 of 38,120 | mean half-width 1.19 pp | median phi 1.16 | bias|GAIN +0.29 pp
+  +2.0 each                                     GAIN 0.900 KILL 0.007 (LOSS 0.000, interim stop 0.005) UNDECIDED 0.093 | E[games] 38,028 of 38,120 | mean half-width 1.19 pp | median phi 1.16 | bias|GAIN +0.11 pp
+  hetero D1 +2 / D3 +1 / N1-P 0 (mean +1.0)     GAIN 0.379 KILL 0.166 (LOSS 0.000, interim stop 0.085) UNDECIDED 0.455 | E[games] 36,494 of 38,120 | mean half-width 1.19 pp | median phi 1.16 | bias|GAIN +0.57 pp
+  hetero D1 +3 / D3 +1.5 / N1-P 0 (mean +1.5)   GAIN 0.688 KILL 0.043 (LOSS 0.000, interim stop 0.024) UNDECIDED 0.270 | E[games] 37,654 of 38,120 | mean half-width 1.19 pp | median phi 1.16 | bias|GAIN +0.29 pp
+
+## POOLED, D3 and N1-P at 3 seeds (5/3/3/5); between-seed sigma 1.0 pp
+  null 0/0/0                                    GAIN 0.038 KILL 0.574 (LOSS 0.000, interim stop 0.382) UNDECIDED 0.387 | E[games] 30,839 of 38,120 | mean half-width 1.48 pp | median phi 1.84 | bias|GAIN +1.57 pp
+  +0.5 each                                     GAIN 0.123 KILL 0.341 (LOSS 0.000, interim stop 0.208) UNDECIDED 0.537 | E[games] 34,151 of 38,120 | mean half-width 1.46 pp | median phi 1.84 | bias|GAIN +1.19 pp
+  +1.0 each                                     GAIN 0.296 KILL 0.156 (LOSS 0.000, interim stop 0.092) UNDECIDED 0.548 | E[games] 36,366 of 38,120 | mean half-width 1.45 pp | median phi 1.84 | bias|GAIN +0.84 pp
+  +1.5 each                                     GAIN 0.530 KILL 0.053 (LOSS 0.000, interim stop 0.032) UNDECIDED 0.417 | E[games] 37,508 of 38,120 | mean half-width 1.45 pp | median phi 1.84 | bias|GAIN +0.53 pp
+  +2.0 each                                     GAIN 0.754 KILL 0.014 (LOSS 0.000, interim stop 0.009) UNDECIDED 0.233 | E[games] 37,951 of 38,120 | mean half-width 1.44 pp | median phi 1.84 | bias|GAIN +0.30 pp
+  hetero D1 +2 / D3 +1 / N1-P 0 (mean +1.0)     GAIN 0.293 KILL 0.156 (LOSS 0.000, interim stop 0.092) UNDECIDED 0.551 | E[games] 36,367 of 38,120 | mean half-width 1.45 pp | median phi 1.84 | bias|GAIN +0.83 pp
+  hetero D1 +3 / D3 +1.5 / N1-P 0 (mean +1.5)   GAIN 0.531 KILL 0.054 (LOSS 0.000, interim stop 0.032) UNDECIDED 0.415 | E[games] 37,510 of 38,120 | mean half-width 1.45 pp | median phi 1.84 | bias|GAIN +0.53 pp
+
+## POOLED, smaller: 3 x 6,000 + C0 10,000 (5/5/5/5); between-seed sigma 0.0 pp
+  null 0/0/0                                    GAIN 0.020 KILL 0.659 (LOSS 0.001, interim stop 0.354) UNDECIDED 0.321 | E[games] 23,048 of 28,000 | mean half-width 1.30 pp | median phi 0.96 | bias|GAIN +1.49 pp
+  +0.5 each                                     GAIN 0.102 KILL 0.361 (LOSS 0.000, interim stop 0.177) UNDECIDED 0.536 | E[games] 25,524 of 28,000 | mean half-width 1.30 pp | median phi 0.96 | bias|GAIN +1.07 pp
+  +1.0 each                                     GAIN 0.317 KILL 0.136 (LOSS 0.000, interim stop 0.069) UNDECIDED 0.547 | E[games] 27,036 of 28,000 | mean half-width 1.30 pp | median phi 0.96 | bias|GAIN +0.69 pp
+  +1.5 each                                     GAIN 0.624 KILL 0.033 (LOSS 0.000, interim stop 0.020) UNDECIDED 0.343 | E[games] 27,726 of 28,000 | mean half-width 1.30 pp | median phi 0.96 | bias|GAIN +0.37 pp
+  +2.0 each                                     GAIN 0.865 KILL 0.006 (LOSS 0.000, interim stop 0.005) UNDECIDED 0.129 | E[games] 27,936 of 28,000 | mean half-width 1.30 pp | median phi 0.96 | bias|GAIN +0.15 pp
+  hetero D1 +2 / D3 +1 / N1-P 0 (mean +1.0)     GAIN 0.319 KILL 0.135 (LOSS 0.000, interim stop 0.068) UNDECIDED 0.546 | E[games] 27,055 of 28,000 | mean half-width 1.30 pp | median phi 0.96 | bias|GAIN +0.69 pp
+  hetero D1 +3 / D3 +1.5 / N1-P 0 (mean +1.5)   GAIN 0.624 KILL 0.034 (LOSS 0.000, interim stop 0.020) UNDECIDED 0.343 | E[games] 27,717 of 28,000 | mean half-width 1.30 pp | median phi 0.96 | bias|GAIN +0.37 pp
+
+## POOLED, smaller: 3 x 6,000 + C0 10,000 (5/5/5/5); between-seed sigma 0.5 pp
+  null 0/0/0                                    GAIN 0.025 KILL 0.624 (LOSS 0.001, interim stop 0.349) UNDECIDED 0.351 | E[games] 23,114 of 28,000 | mean half-width 1.36 pp | median phi 1.10 | bias|GAIN +1.54 pp
+  +0.5 each                                     GAIN 0.111 KILL 0.349 (LOSS 0.000, interim stop 0.178) UNDECIDED 0.540 | E[games] 25,510 of 28,000 | mean half-width 1.35 pp | median phi 1.09 | bias|GAIN +1.13 pp
+  +1.0 each                                     GAIN 0.308 KILL 0.141 (LOSS 0.000, interim stop 0.071) UNDECIDED 0.551 | E[games] 27,002 of 28,000 | mean half-width 1.35 pp | median phi 1.09 | bias|GAIN +0.75 pp
+  +1.5 each                                     GAIN 0.587 KILL 0.040 (LOSS 0.000, interim stop 0.023) UNDECIDED 0.374 | E[games] 27,676 of 28,000 | mean half-width 1.35 pp | median phi 1.09 | bias|GAIN +0.43 pp
+  +2.0 each                                     GAIN 0.826 KILL 0.008 (LOSS 0.000, interim stop 0.006) UNDECIDED 0.166 | E[games] 27,919 of 28,000 | mean half-width 1.35 pp | median phi 1.09 | bias|GAIN +0.21 pp
+  hetero D1 +2 / D3 +1 / N1-P 0 (mean +1.0)     GAIN 0.307 KILL 0.141 (LOSS 0.000, interim stop 0.072) UNDECIDED 0.552 | E[games] 26,988 of 28,000 | mean half-width 1.35 pp | median phi 1.09 | bias|GAIN +0.75 pp
+  hetero D1 +3 / D3 +1.5 / N1-P 0 (mean +1.5)   GAIN 0.587 KILL 0.040 (LOSS 0.000, interim stop 0.023) UNDECIDED 0.373 | E[games] 27,675 of 28,000 | mean half-width 1.35 pp | median phi 1.09 | bias|GAIN +0.43 pp
+
+## POOLED, smaller: 3 x 6,000 + C0 10,000 (5/5/5/5); between-seed sigma 1.0 pp
+  null 0/0/0                                    GAIN 0.036 KILL 0.534 (LOSS 0.001, interim stop 0.324) UNDECIDED 0.431 | E[games] 23,460 of 28,000 | mean half-width 1.54 pp | median phi 1.50 | bias|GAIN +1.73 pp
+  +0.5 each                                     GAIN 0.113 KILL 0.310 (LOSS 0.000, interim stop 0.176) UNDECIDED 0.577 | E[games] 25,533 of 28,000 | mean half-width 1.53 pp | median phi 1.50 | bias|GAIN +1.33 pp
+  +1.0 each                                     GAIN 0.269 KILL 0.143 (LOSS 0.000, interim stop 0.080) UNDECIDED 0.587 | E[games] 26,887 of 28,000 | mean half-width 1.53 pp | median phi 1.50 | bias|GAIN +0.95 pp
+  +1.5 each                                     GAIN 0.490 KILL 0.051 (LOSS 0.000, interim stop 0.029) UNDECIDED 0.459 | E[games] 27,588 of 28,000 | mean half-width 1.52 pp | median phi 1.50 | bias|GAIN +0.63 pp
+  +2.0 each                                     GAIN 0.715 KILL 0.014 (LOSS 0.000, interim stop 0.009) UNDECIDED 0.272 | E[games] 27,878 of 28,000 | mean half-width 1.52 pp | median phi 1.49 | bias|GAIN +0.37 pp
+  hetero D1 +2 / D3 +1 / N1-P 0 (mean +1.0)     GAIN 0.269 KILL 0.144 (LOSS 0.000, interim stop 0.080) UNDECIDED 0.587 | E[games] 26,880 of 28,000 | mean half-width 1.53 pp | median phi 1.50 | bias|GAIN +0.96 pp
+  hetero D1 +3 / D3 +1.5 / N1-P 0 (mean +1.5)   GAIN 0.489 KILL 0.052 (LOSS 0.000, interim stop 0.030) UNDECIDED 0.459 | E[games] 27,583 of 28,000 | mean half-width 1.52 pp | median phi 1.50 | bias|GAIN +0.63 pp
+
+## The per-arm alternative: ONE breadth arm vs C0 at 17,400 F games each (5/5 seeds), no interim
+  sigma 0.0 delta +0.0: GAIN 0.020 KILL 0.744 (LOSS 0.019, interim stop 0.000) UNDECIDED 0.237 | E[games] 34,800 of 34,800 | mean half-width 1.14 pp | median phi 0.92 | bias|GAIN +1.28 pp
+  sigma 0.0 delta +1.0: GAIN 0.403 KILL 0.124 (LOSS 0.000, interim stop 0.000) UNDECIDED 0.472 | E[games] 34,800 of 34,800 | mean half-width 1.14 pp | median phi 0.92 | bias|GAIN +0.50 pp
+  sigma 0.0 delta +1.5: GAIN 0.744 KILL 0.019 (LOSS 0.000, interim stop 0.000) UNDECIDED 0.237 | E[games] 34,800 of 34,800 | mean half-width 1.14 pp | median phi 0.92 | bias|GAIN +0.22 pp
+  sigma 0.5 delta +0.0: GAIN 0.029 KILL 0.651 (LOSS 0.028, interim stop 0.000) UNDECIDED 0.320 | E[games] 34,800 of 34,800 | mean half-width 1.25 pp | median phi 1.24 | bias|GAIN +1.37 pp
+  sigma 0.5 delta +1.0: GAIN 0.359 KILL 0.131 (LOSS 0.000, interim stop 0.000) UNDECIDED 0.511 | E[games] 34,800 of 34,800 | mean half-width 1.25 pp | median phi 1.24 | bias|GAIN +0.61 pp
+  sigma 0.5 delta +1.5: GAIN 0.653 KILL 0.028 (LOSS 0.000, interim stop 0.000) UNDECIDED 0.319 | E[games] 34,800 of 34,800 | mean half-width 1.25 pp | median phi 1.24 | bias|GAIN +0.33 pp
+  sigma 1.0 delta +0.0: GAIN 0.039 KILL 0.464 (LOSS 0.039, interim stop 0.000) UNDECIDED 0.497 | E[games] 34,800 of 34,800 | mean half-width 1.59 pp | median phi 2.20 | bias|GAIN +1.66 pp
+  sigma 1.0 delta +1.0: GAIN 0.260 KILL 0.117 (LOSS 0.002, interim stop 0.000) UNDECIDED 0.624 | E[games] 34,800 of 34,800 | mean half-width 1.59 pp | median phi 2.20 | bias|GAIN +0.94 pp
+  sigma 1.0 delta +1.5: GAIN 0.463 KILL 0.040 (LOSS 0.000, interim stop 0.000) UNDECIDED 0.497 | E[games] 34,800 of 34,800 | mean half-width 1.59 pp | median phi 2.19 | bias|GAIN +0.64 pp

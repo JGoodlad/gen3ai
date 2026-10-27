@@ -1,0 +1,97 @@
+100000 draws a cell; delta, sigma, floor in pp; base rising 0.30/0.40/0.45 unless stated
+
+## A. M1: false GAIN (delta 0) of the DRAFT chain (draft stops, bar +2, one Stage-B pair) by floor
+  floor 1.5 sigma 0 (flat base 0.49): early-stop 0.172 GO 0.067 GAIN 0.0002 RETIRE 0.761 (KILL 0.000) E[GPU-h] 38.6 | bias|GAIN pooled +nan pp, Stage-B-only +nan pp; Stage-B-only bias|GO -0.00 pp
+  floor 1.5 sigma 1 (flat base 0.49): early-stop 0.219 GO 0.148 GAIN 0.0048 RETIRE 0.632 (KILL 0.000) E[GPU-h] 40.8 | bias|GAIN pooled +4.04 pp, Stage-B-only +3.87 pp; Stage-B-only bias|GO -0.01 pp
+  floor 1.5 sigma 2 (flat base 0.49): early-stop 0.294 GO 0.254 GAIN 0.0337 RETIRE 0.452 (KILL 0.000) E[GPU-h] 43.3 | bias|GAIN pooled +4.68 pp, Stage-B-only +4.50 pp; Stage-B-only bias|GO +0.00 pp
+  floor 1.5 sigma 3 (flat base 0.49): early-stop 0.345 GO 0.320 GAIN 0.0596 RETIRE 0.335 (KILL 0.000) E[GPU-h] 44.5 | bias|GAIN pooled +5.64 pp, Stage-B-only +5.55 pp; Stage-B-only bias|GO -0.03 pp
+  floor 3.0 sigma 0 (flat base 0.49): early-stop 0.171 GO 0.068 GAIN 0.0000 RETIRE 0.761 (KILL 0.000) E[GPU-h] 38.7 | bias|GAIN pooled +nan pp, Stage-B-only +nan pp; Stage-B-only bias|GO +0.01 pp
+  floor 3.0 sigma 1 (flat base 0.49): early-stop 0.218 GO 0.149 GAIN 0.0000 RETIRE 0.633 (KILL 0.000) E[GPU-h] 40.9 | bias|GAIN pooled +nan pp, Stage-B-only +nan pp; Stage-B-only bias|GO -0.03 pp
+  floor 3.0 sigma 2 (flat base 0.49): early-stop 0.293 GO 0.257 GAIN 0.0026 RETIRE 0.450 (KILL 0.000) E[GPU-h] 43.4 | bias|GAIN pooled +6.92 pp, Stage-B-only +6.85 pp; Stage-B-only bias|GO +0.02 pp
+  floor 3.0 sigma 3 (flat base 0.49): early-stop 0.343 GO 0.320 GAIN 0.0183 RETIRE 0.337 (KILL 0.000) E[GPU-h] 44.6 | bias|GAIN pooled +7.52 pp, Stage-B-only +7.44 pp; Stage-B-only bias|GO -0.00 pp
+
+## B. The DRAFT chain at realistic effects (M2): floor 1.5 vs 3.0, draft course
+  floor 1.5 sigma 1 delta +2: early-stop 0.119 GO 0.466 GAIN 0.1105 RETIRE 0.415 (KILL 0.000) E[GPU-h] 55.4 | bias|GAIN pooled +2.34 pp, Stage-B-only +2.19 pp; Stage-B-only bias|GO -0.02 pp
+  floor 1.5 sigma 1 delta +3: early-stop 0.082 GO 0.655 GAIN 0.2958 RETIRE 0.263 (KILL 0.000) E[GPU-h] 63.6 | bias|GAIN pooled +1.58 pp, Stage-B-only +1.47 pp; Stage-B-only bias|GO -0.00 pp
+  floor 1.5 sigma 1 delta +4: early-stop 0.056 GO 0.802 GAIN 0.5475 RETIRE 0.141 (KILL 0.000) E[GPU-h] 69.9 | bias|GAIN pooled +0.96 pp, Stage-B-only +0.86 pp; Stage-B-only bias|GO +0.00 pp
+  floor 1.5 sigma 2 delta +2: early-stop 0.202 GO 0.479 GAIN 0.1568 RETIRE 0.319 (KILL 0.000) E[GPU-h] 54.1 | bias|GAIN pooled +3.14 pp, Stage-B-only +3.01 pp; Stage-B-only bias|GO -0.00 pp
+  floor 1.5 sigma 2 delta +3: early-stop 0.164 GO 0.597 GAIN 0.2695 RETIRE 0.239 (KILL 0.000) E[GPU-h] 59.5 | bias|GAIN pooled +2.45 pp, Stage-B-only +2.33 pp; Stage-B-only bias|GO -0.00 pp
+  floor 1.5 sigma 2 delta +4: early-stop 0.131 GO 0.704 GAIN 0.4126 RETIRE 0.165 (KILL 0.000) E[GPU-h] 64.4 | bias|GAIN pooled +1.85 pp, Stage-B-only +1.73 pp; Stage-B-only bias|GO +0.00 pp
+  floor 1.5 sigma 3 delta +2: early-stop 0.273 GO 0.485 GAIN 0.1604 RETIRE 0.241 (KILL 0.000) E[GPU-h] 52.5 | bias|GAIN pooled +4.22 pp, Stage-B-only +4.10 pp; Stage-B-only bias|GO +0.02 pp
+  floor 1.5 sigma 3 delta +3: early-stop 0.238 GO 0.568 GAIN 0.2315 RETIRE 0.193 (KILL 0.000) E[GPU-h] 56.5 | bias|GAIN pooled +3.56 pp, Stage-B-only +3.45 pp; Stage-B-only bias|GO -0.04 pp
+  floor 1.5 sigma 3 delta +4: early-stop 0.210 GO 0.643 GAIN 0.3177 RETIRE 0.147 (KILL 0.000) E[GPU-h] 60.1 | bias|GAIN pooled +2.96 pp, Stage-B-only +2.85 pp; Stage-B-only bias|GO -0.01 pp
+  floor 3.0 sigma 1 delta +2: early-stop 0.117 GO 0.470 GAIN 0.0014 RETIRE 0.413 (KILL 0.000) E[GPU-h] 55.6 | bias|GAIN pooled +4.63 pp, Stage-B-only +4.66 pp; Stage-B-only bias|GO -0.00 pp
+  floor 3.0 sigma 1 delta +3: early-stop 0.082 GO 0.653 GAIN 0.0124 RETIRE 0.265 (KILL 0.000) E[GPU-h] 63.5 | bias|GAIN pooled +3.71 pp, Stage-B-only +3.68 pp; Stage-B-only bias|GO +0.01 pp
+  floor 3.0 sigma 1 delta +4: early-stop 0.056 GO 0.805 GAIN 0.0615 RETIRE 0.139 (KILL 0.000) E[GPU-h] 70.0 | bias|GAIN pooled +2.82 pp, Stage-B-only +2.82 pp; Stage-B-only bias|GO +0.01 pp
+  floor 3.0 sigma 2 delta +2: early-stop 0.202 GO 0.480 GAIN 0.0281 RETIRE 0.318 (KILL 0.000) E[GPU-h] 54.1 | bias|GAIN pooled +5.08 pp, Stage-B-only +5.07 pp; Stage-B-only bias|GO -0.00 pp
+  floor 3.0 sigma 2 delta +3: early-stop 0.165 GO 0.598 GAIN 0.0701 RETIRE 0.236 (KILL 0.000) E[GPU-h] 59.5 | bias|GAIN pooled +4.26 pp, Stage-B-only +4.25 pp; Stage-B-only bias|GO +0.02 pp
+  floor 3.0 sigma 2 delta +4: early-stop 0.133 GO 0.704 GAIN 0.1465 RETIRE 0.163 (KILL 0.000) E[GPU-h] 64.3 | bias|GAIN pooled +3.45 pp, Stage-B-only +3.41 pp; Stage-B-only bias|GO -0.01 pp
+  floor 3.0 sigma 3 delta +2: early-stop 0.271 GO 0.487 GAIN 0.0696 RETIRE 0.242 (KILL 0.000) E[GPU-h] 52.7 | bias|GAIN pooled +5.86 pp, Stage-B-only +5.83 pp; Stage-B-only bias|GO -0.00 pp
+  floor 3.0 sigma 3 delta +3: early-stop 0.237 GO 0.569 GAIN 0.1210 RETIRE 0.194 (KILL 0.000) E[GPU-h] 56.6 | bias|GAIN pooled +5.06 pp, Stage-B-only +5.04 pp; Stage-B-only bias|GO +0.04 pp
+  floor 3.0 sigma 3 delta +4: early-stop 0.207 GO 0.648 GAIN 0.1911 RETIRE 0.145 (KILL 0.000) E[GPU-h] 60.3 | bias|GAIN pooled +4.27 pp, Stage-B-only +4.23 pp; Stage-B-only bias|GO -0.01 pp
+
+## C. M3: the early stops under late / dip courses, draft vs revised stops (sigma 1, floor 1.5, delta +4)
+  stops draft   course draft: early-stop 0.056 GO 0.806 GAIN 0.5472 RETIRE 0.138 (KILL 0.000) E[GPU-h] 70.0 | bias|GAIN pooled +0.95 pp, Stage-B-only +0.87 pp; Stage-B-only bias|GO -0.00 pp
+  stops draft   course late : early-stop 0.217 GO 0.691 GAIN 0.4791 RETIRE 0.092 (KILL 0.000) E[GPU-h] 62.3 | bias|GAIN pooled +0.99 pp, Stage-B-only +0.84 pp; Stage-B-only bias|GO +0.01 pp
+  stops draft   course dip  : early-stop 0.235 GO 0.678 GAIN 0.4716 RETIRE 0.087 (KILL 0.000) E[GPU-h] 61.0 | bias|GAIN pooled +0.99 pp, Stage-B-only +0.84 pp; Stage-B-only bias|GO +0.01 pp
+  stops revised course draft: early-stop 0.000 GO 0.836 GAIN 0.5644 RETIRE 0.164 (KILL 0.000) E[GPU-h] 72.3 | bias|GAIN pooled +0.94 pp, Stage-B-only +0.88 pp; Stage-B-only bias|GO +0.00 pp
+  stops revised course late : early-stop 0.000 GO 0.837 GAIN 0.5625 RETIRE 0.163 (KILL 0.000) E[GPU-h] 72.4 | bias|GAIN pooled +0.93 pp, Stage-B-only +0.88 pp; Stage-B-only bias|GO -0.01 pp
+  stops revised course dip  : early-stop 0.003 GO 0.836 GAIN 0.5646 RETIRE 0.161 (KILL 0.000) E[GPU-h] 72.2 | bias|GAIN pooled +0.94 pp, Stage-B-only +0.88 pp; Stage-B-only bias|GO +0.01 pp
+
+## D. The REVISED chain (revised stops, bar +2): Stage-B pairs m_B and floor (= the proxy's sigma bound)
+  m_B 1 floor=sigma 1.0 delta +0 course draft: early-stop 0.000 GO 0.158 GAIN 0.0151 RETIRE 0.842 (KILL 0.000) E[GPU-h] 45.6 | bias|GAIN pooled +3.43 pp, Stage-B-only +3.15 pp; Stage-B-only bias|GO -0.03 pp
+  m_B 1 floor=sigma 1.0 delta +2 course draft: early-stop 0.000 GO 0.498 GAIN 0.2092 RETIRE 0.502 (KILL 0.000) E[GPU-h] 59.0 | bias|GAIN pooled +1.83 pp, Stage-B-only +1.65 pp; Stage-B-only bias|GO -0.00 pp
+  m_B 1 floor=sigma 1.0 delta +2 course late : early-stop 0.000 GO 0.495 GAIN 0.2067 RETIRE 0.505 (KILL 0.000) E[GPU-h] 58.9 | bias|GAIN pooled +1.82 pp, Stage-B-only +1.65 pp; Stage-B-only bias|GO -0.00 pp
+  m_B 1 floor=sigma 1.0 delta +3 course draft: early-stop 0.000 GO 0.686 GAIN 0.4318 RETIRE 0.314 (KILL 0.000) E[GPU-h] 66.4 | bias|GAIN pooled +1.17 pp, Stage-B-only +1.03 pp; Stage-B-only bias|GO -0.01 pp
+  m_B 1 floor=sigma 1.0 delta +3 course late : early-stop 0.000 GO 0.686 GAIN 0.4328 RETIRE 0.313 (KILL 0.000) E[GPU-h] 66.4 | bias|GAIN pooled +1.17 pp, Stage-B-only +1.03 pp; Stage-B-only bias|GO -0.01 pp
+  m_B 1 floor=sigma 1.0 delta +4 course draft: early-stop 0.000 GO 0.838 GAIN 0.6735 RETIRE 0.162 (KILL 0.000) E[GPU-h] 72.4 | bias|GAIN pooled +0.66 pp, Stage-B-only +0.58 pp; Stage-B-only bias|GO -0.00 pp
+  m_B 1 floor=sigma 1.0 delta +4 course late : early-stop 0.000 GO 0.836 GAIN 0.6736 RETIRE 0.163 (KILL 0.000) E[GPU-h] 72.3 | bias|GAIN pooled +0.66 pp, Stage-B-only +0.57 pp; Stage-B-only bias|GO +0.00 pp
+  m_B 1 floor=sigma 1.5 delta +0 course draft: early-stop 0.002 GO 0.215 GAIN 0.0173 RETIRE 0.783 (KILL 0.000) E[GPU-h] 47.8 | bias|GAIN pooled +4.32 pp, Stage-B-only +4.18 pp; Stage-B-only bias|GO -0.00 pp
+  m_B 1 floor=sigma 1.5 delta +2 course draft: early-stop 0.001 GO 0.498 GAIN 0.1472 RETIRE 0.501 (KILL 0.000) E[GPU-h] 59.0 | bias|GAIN pooled +2.68 pp, Stage-B-only +2.58 pp; Stage-B-only bias|GO -0.00 pp
+  m_B 1 floor=sigma 1.5 delta +2 course late : early-stop 0.001 GO 0.494 GAIN 0.1474 RETIRE 0.504 (KILL 0.000) E[GPU-h] 58.8 | bias|GAIN pooled +2.68 pp, Stage-B-only +2.57 pp; Stage-B-only bias|GO +0.00 pp
+  m_B 1 floor=sigma 1.5 delta +3 course draft: early-stop 0.001 GO 0.648 GAIN 0.2975 RETIRE 0.351 (KILL 0.000) E[GPU-h] 64.9 | bias|GAIN pooled +1.97 pp, Stage-B-only +1.87 pp; Stage-B-only bias|GO -0.01 pp
+  m_B 1 floor=sigma 1.5 delta +3 course late : early-stop 0.001 GO 0.644 GAIN 0.2961 RETIRE 0.354 (KILL 0.000) E[GPU-h] 64.7 | bias|GAIN pooled +1.96 pp, Stage-B-only +1.88 pp; Stage-B-only bias|GO -0.00 pp
+  m_B 1 floor=sigma 1.5 delta +4 course draft: early-stop 0.000 GO 0.782 GAIN 0.4912 RETIRE 0.218 (KILL 0.000) E[GPU-h] 70.2 | bias|GAIN pooled +1.34 pp, Stage-B-only +1.28 pp; Stage-B-only bias|GO +0.01 pp
+  m_B 1 floor=sigma 1.5 delta +4 course late : early-stop 0.001 GO 0.780 GAIN 0.4932 RETIRE 0.218 (KILL 0.000) E[GPU-h] 70.1 | bias|GAIN pooled +1.34 pp, Stage-B-only +1.27 pp; Stage-B-only bias|GO +0.01 pp
+  m_B 1 floor=sigma 2.0 delta +0 course draft: early-stop 0.005 GO 0.263 GAIN 0.0183 RETIRE 0.733 (KILL 0.000) E[GPU-h] 49.6 | bias|GAIN pooled +5.37 pp, Stage-B-only +5.31 pp; Stage-B-only bias|GO -0.03 pp
+  m_B 1 floor=sigma 2.0 delta +2 course draft: early-stop 0.003 GO 0.499 GAIN 0.1088 RETIRE 0.499 (KILL 0.000) E[GPU-h] 59.0 | bias|GAIN pooled +3.67 pp, Stage-B-only +3.63 pp; Stage-B-only bias|GO +0.00 pp
+  m_B 1 floor=sigma 2.0 delta +2 course late : early-stop 0.004 GO 0.497 GAIN 0.1081 RETIRE 0.499 (KILL 0.000) E[GPU-h] 58.8 | bias|GAIN pooled +3.68 pp, Stage-B-only +3.61 pp; Stage-B-only bias|GO +0.00 pp
+  m_B 1 floor=sigma 2.0 delta +3 course draft: early-stop 0.002 GO 0.620 GAIN 0.2093 RETIRE 0.377 (KILL 0.000) E[GPU-h] 63.8 | bias|GAIN pooled +2.92 pp, Stage-B-only +2.88 pp; Stage-B-only bias|GO +0.02 pp
+  m_B 1 floor=sigma 2.0 delta +3 course late : early-stop 0.004 GO 0.621 GAIN 0.2086 RETIRE 0.375 (KILL 0.000) E[GPU-h] 63.7 | bias|GAIN pooled +2.93 pp, Stage-B-only +2.89 pp; Stage-B-only bias|GO -0.00 pp
+  m_B 1 floor=sigma 2.0 delta +4 course draft: early-stop 0.002 GO 0.732 GAIN 0.3458 RETIRE 0.266 (KILL 0.000) E[GPU-h] 68.2 | bias|GAIN pooled +2.22 pp, Stage-B-only +2.18 pp; Stage-B-only bias|GO -0.00 pp
+  m_B 1 floor=sigma 2.0 delta +4 course late : early-stop 0.004 GO 0.734 GAIN 0.3444 RETIRE 0.262 (KILL 0.000) E[GPU-h] 68.2 | bias|GAIN pooled +2.22 pp, Stage-B-only +2.20 pp; Stage-B-only bias|GO -0.00 pp
+  m_B 1 floor=sigma 3.0 delta +0 course draft: early-stop 0.021 GO 0.326 GAIN 0.0186 RETIRE 0.653 (KILL 0.000) E[GPU-h] 51.6 | bias|GAIN pooled +7.55 pp, Stage-B-only +7.48 pp; Stage-B-only bias|GO -0.01 pp
+  m_B 1 floor=sigma 3.0 delta +2 course draft: early-stop 0.016 GO 0.499 GAIN 0.0705 RETIRE 0.485 (KILL 0.000) E[GPU-h] 58.6 | bias|GAIN pooled +5.84 pp, Stage-B-only +5.86 pp; Stage-B-only bias|GO +0.01 pp
+  m_B 1 floor=sigma 3.0 delta +2 course late : early-stop 0.020 GO 0.500 GAIN 0.0703 RETIRE 0.480 (KILL 0.000) E[GPU-h] 58.5 | bias|GAIN pooled +5.84 pp, Stage-B-only +5.85 pp; Stage-B-only bias|GO +0.01 pp
+  m_B 1 floor=sigma 3.0 delta +3 course draft: early-stop 0.014 GO 0.588 GAIN 0.1221 RETIRE 0.398 (KILL 0.000) E[GPU-h] 62.1 | bias|GAIN pooled +5.04 pp, Stage-B-only +5.05 pp; Stage-B-only bias|GO +0.01 pp
+  m_B 1 floor=sigma 3.0 delta +3 course late : early-stop 0.021 GO 0.588 GAIN 0.1208 RETIRE 0.391 (KILL 0.000) E[GPU-h] 61.9 | bias|GAIN pooled +5.02 pp, Stage-B-only +5.03 pp; Stage-B-only bias|GO +0.01 pp
+  m_B 1 floor=sigma 3.0 delta +4 course draft: early-stop 0.013 GO 0.669 GAIN 0.1930 RETIRE 0.318 (KILL 0.000) E[GPU-h] 65.4 | bias|GAIN pooled +4.28 pp, Stage-B-only +4.25 pp; Stage-B-only bias|GO +0.01 pp
+  m_B 1 floor=sigma 3.0 delta +4 course late : early-stop 0.021 GO 0.670 GAIN 0.1915 RETIRE 0.309 (KILL 0.000) E[GPU-h] 65.2 | bias|GAIN pooled +4.28 pp, Stage-B-only +4.27 pp; Stage-B-only bias|GO -0.01 pp
+  m_B 3 floor=sigma 1.0 delta +0 course draft: early-stop 0.000 GO 0.158 GAIN 0.0082 RETIRE 0.922 (KILL 0.081) E[GPU-h] 58.1 | bias|GAIN pooled +2.51 pp, Stage-B-only +2.21 pp; Stage-B-only bias|GO -0.02 pp
+  m_B 3 floor=sigma 1.0 delta +2 course draft: early-stop 0.000 GO 0.497 GAIN 0.2491 RETIRE 0.525 (KILL 0.022) E[GPU-h] 98.1 | bias|GAIN pooled +1.03 pp, Stage-B-only +0.80 pp; Stage-B-only bias|GO +0.00 pp
+  m_B 3 floor=sigma 1.0 delta +2 course late : early-stop 0.000 GO 0.496 GAIN 0.2489 RETIRE 0.527 (KILL 0.023) E[GPU-h] 98.0 | bias|GAIN pooled +1.04 pp, Stage-B-only +0.81 pp; Stage-B-only bias|GO +0.01 pp
+  m_B 3 floor=sigma 1.0 delta +3 course draft: early-stop 0.000 GO 0.686 GAIN 0.5295 RETIRE 0.318 (KILL 0.003) E[GPU-h] 120.5 | bias|GAIN pooled +0.55 pp, Stage-B-only +0.37 pp; Stage-B-only bias|GO -0.00 pp
+  m_B 3 floor=sigma 1.0 delta +3 course late : early-stop 0.000 GO 0.686 GAIN 0.5302 RETIRE 0.317 (KILL 0.004) E[GPU-h] 120.5 | bias|GAIN pooled +0.55 pp, Stage-B-only +0.37 pp; Stage-B-only bias|GO -0.00 pp
+  m_B 3 floor=sigma 1.0 delta +4 course draft: early-stop 0.000 GO 0.839 GAIN 0.7753 RETIRE 0.162 (KILL 0.000) E[GPU-h] 138.5 | bias|GAIN pooled +0.25 pp, Stage-B-only +0.13 pp; Stage-B-only bias|GO -0.00 pp
+  m_B 3 floor=sigma 1.0 delta +4 course late : early-stop 0.000 GO 0.834 GAIN 0.7694 RETIRE 0.165 (KILL 0.000) E[GPU-h] 138.0 | bias|GAIN pooled +0.26 pp, Stage-B-only +0.14 pp; Stage-B-only bias|GO +0.01 pp
+  m_B 3 floor=sigma 1.5 delta +0 course draft: early-stop 0.001 GO 0.217 GAIN 0.0106 RETIRE 0.844 (KILL 0.062) E[GPU-h] 65.0 | bias|GAIN pooled +3.14 pp, Stage-B-only +2.89 pp; Stage-B-only bias|GO -0.00 pp
+  m_B 3 floor=sigma 1.5 delta +2 course draft: early-stop 0.001 GO 0.499 GAIN 0.1776 RETIRE 0.513 (KILL 0.013) E[GPU-h] 98.4 | bias|GAIN pooled +1.61 pp, Stage-B-only +1.39 pp; Stage-B-only bias|GO +0.01 pp
+  m_B 3 floor=sigma 1.5 delta +2 course late : early-stop 0.001 GO 0.501 GAIN 0.1776 RETIRE 0.512 (KILL 0.014) E[GPU-h] 98.6 | bias|GAIN pooled +1.61 pp, Stage-B-only +1.39 pp; Stage-B-only bias|GO +0.00 pp
+  m_B 3 floor=sigma 1.5 delta +3 course draft: early-stop 0.001 GO 0.649 GAIN 0.3876 RETIRE 0.353 (KILL 0.003) E[GPU-h] 116.1 | bias|GAIN pooled +1.01 pp, Stage-B-only +0.82 pp; Stage-B-only bias|GO -0.00 pp
+  m_B 3 floor=sigma 1.5 delta +3 course late : early-stop 0.001 GO 0.645 GAIN 0.3869 RETIRE 0.356 (KILL 0.003) E[GPU-h] 115.7 | bias|GAIN pooled +1.00 pp, Stage-B-only +0.80 pp; Stage-B-only bias|GO -0.00 pp
+  m_B 3 floor=sigma 1.5 delta +4 course draft: early-stop 0.000 GO 0.780 GAIN 0.6238 RETIRE 0.220 (KILL 0.000) E[GPU-h] 131.6 | bias|GAIN pooled +0.57 pp, Stage-B-only +0.42 pp; Stage-B-only bias|GO +0.00 pp
+  m_B 3 floor=sigma 1.5 delta +4 course late : early-stop 0.001 GO 0.778 GAIN 0.6211 RETIRE 0.221 (KILL 0.000) E[GPU-h] 131.3 | bias|GAIN pooled +0.58 pp, Stage-B-only +0.42 pp; Stage-B-only bias|GO +0.00 pp
+  m_B 3 floor=sigma 2.0 delta +0 course draft: early-stop 0.004 GO 0.262 GAIN 0.0109 RETIRE 0.774 (KILL 0.041) E[GPU-h] 70.3 | bias|GAIN pooled +3.87 pp, Stage-B-only +3.62 pp; Stage-B-only bias|GO -0.02 pp
+  m_B 3 floor=sigma 2.0 delta +2 course draft: early-stop 0.003 GO 0.499 GAIN 0.1282 RETIRE 0.508 (KILL 0.009) E[GPU-h] 98.3 | bias|GAIN pooled +2.31 pp, Stage-B-only +2.08 pp; Stage-B-only bias|GO +0.00 pp
+  m_B 3 floor=sigma 2.0 delta +2 course late : early-stop 0.004 GO 0.498 GAIN 0.1265 RETIRE 0.507 (KILL 0.009) E[GPU-h] 98.2 | bias|GAIN pooled +2.30 pp, Stage-B-only +2.07 pp; Stage-B-only bias|GO -0.02 pp
+  m_B 3 floor=sigma 2.0 delta +3 course draft: early-stop 0.002 GO 0.622 GAIN 0.2761 RETIRE 0.378 (KILL 0.002) E[GPU-h] 112.8 | bias|GAIN pooled +1.62 pp, Stage-B-only +1.41 pp; Stage-B-only bias|GO -0.01 pp
+  m_B 3 floor=sigma 2.0 delta +3 course late : early-stop 0.004 GO 0.619 GAIN 0.2742 RETIRE 0.379 (KILL 0.002) E[GPU-h] 112.5 | bias|GAIN pooled +1.63 pp, Stage-B-only +1.42 pp; Stage-B-only bias|GO -0.00 pp
+  m_B 3 floor=sigma 2.0 delta +4 course draft: early-stop 0.002 GO 0.733 GAIN 0.4693 RETIRE 0.266 (KILL 0.000) E[GPU-h] 125.9 | bias|GAIN pooled +1.07 pp, Stage-B-only +0.90 pp; Stage-B-only bias|GO -0.01 pp
+  m_B 3 floor=sigma 2.0 delta +4 course late : early-stop 0.004 GO 0.732 GAIN 0.4708 RETIRE 0.264 (KILL 0.000) E[GPU-h] 125.8 | bias|GAIN pooled +1.08 pp, Stage-B-only +0.91 pp; Stage-B-only bias|GO +0.01 pp
+  m_B 3 floor=sigma 3.0 delta +0 course draft: early-stop 0.020 GO 0.324 GAIN 0.0121 RETIRE 0.675 (KILL 0.020) E[GPU-h] 77.1 | bias|GAIN pooled +5.44 pp, Stage-B-only +5.21 pp; Stage-B-only bias|GO +0.02 pp
+  m_B 3 floor=sigma 3.0 delta +2 course draft: early-stop 0.016 GO 0.500 GAIN 0.0789 RETIRE 0.489 (KILL 0.005) E[GPU-h] 98.1 | bias|GAIN pooled +3.82 pp, Stage-B-only +3.61 pp; Stage-B-only bias|GO +0.02 pp
+  m_B 3 floor=sigma 3.0 delta +2 course late : early-stop 0.020 GO 0.500 GAIN 0.0770 RETIRE 0.484 (KILL 0.005) E[GPU-h] 97.9 | bias|GAIN pooled +3.81 pp, Stage-B-only +3.58 pp; Stage-B-only bias|GO +0.00 pp
+  m_B 3 floor=sigma 3.0 delta +3 course draft: early-stop 0.014 GO 0.586 GAIN 0.1547 RETIRE 0.401 (KILL 0.002) E[GPU-h] 108.3 | bias|GAIN pooled +3.08 pp, Stage-B-only +2.87 pp; Stage-B-only bias|GO -0.00 pp
+  m_B 3 floor=sigma 3.0 delta +3 course late : early-stop 0.020 GO 0.589 GAIN 0.1528 RETIRE 0.393 (KILL 0.002) E[GPU-h] 108.5 | bias|GAIN pooled +3.08 pp, Stage-B-only +2.89 pp; Stage-B-only bias|GO -0.01 pp
+  m_B 3 floor=sigma 3.0 delta +4 course draft: early-stop 0.013 GO 0.672 GAIN 0.2670 RETIRE 0.316 (KILL 0.001) E[GPU-h] 118.4 | bias|GAIN pooled +2.41 pp, Stage-B-only +2.23 pp; Stage-B-only bias|GO -0.00 pp
+  m_B 3 floor=sigma 3.0 delta +4 course late : early-stop 0.020 GO 0.670 GAIN 0.2649 RETIRE 0.310 (KILL 0.001) E[GPU-h] 118.0 | bias|GAIN pooled +2.40 pp, Stage-B-only +2.20 pp; Stage-B-only bias|GO -0.02 pp
