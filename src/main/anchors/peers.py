@@ -31,6 +31,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from main.anchors.peer_scripts import peer_code as pc
 from main.anchors.peer_scripts import team_pack as tp
 from main.anchors.peer_scripts import weight_pins as wp
 from utils.paths import src_path
@@ -280,6 +281,7 @@ class MetamonPeer(Peer):
         })
         MetamonPeer._check_weight_pin(plan, blob, out)
         MetamonPeer._check_team_pack(blob, out)
+        MetamonPeer._check_peer_code(blob, out)
         out["regime_verified"] = bool(out["regime_verified_decisions"] and out["peer_error_free"])
         return out
 
@@ -297,6 +299,28 @@ class MetamonPeer(Peer):
         if not (isinstance(record, dict) and record.get("schema") == tp.PEER_PACK_SCHEMA and isinstance(changed, bool)):
             out["regime_verified_decisions"] = False
             out["team_pack_note"] = "the peer did not report a verified Showdown team pack (gen3_peer_showdown_pack_v1)"
+
+    @staticmethod
+    def _check_peer_code(blob: Dict[str, Any], out: Dict[str, Any]) -> None:
+        """FAIL CLOSED on the peer's code (gen3_peer_code_v1, ``peer_scripts/peer_code.py``): the report must name what
+        the peer executed, and the scripts it hashed must be the ones this checkout launched (a file edited under a
+        running read is not the code the cell names). ``peer_code`` is the record's digest (it enters the regime id
+        unless it is a banked one, ``main.reads.side_identity``); ``peer_code_record`` keeps the parts. A report without
+        it, or with an error, voids the regime verification, so the unit does not count."""
+        record = blob.get("peer_code")
+        ok = isinstance(record, dict) and record.get("schema") == pc.SCHEMA and not record.get("error")
+        out.update({"peer_code": pc.digest(record) if ok else None,
+                    "peer_code_record": record if isinstance(record, dict) else None})
+        if not ok:
+            out["regime_verified_decisions"] = False
+            out["peer_code_note"] = ("the peer did not report its code (gen3_peer_code_v1)" if not isinstance(record, dict)
+                                     else f"the peer's code record is unusable: {record.get('error') or record.get('schema')}")
+            return
+        here = pc.script_hashes(str(src_path("main", "anchors", "peer_scripts")), str(src_path("utils", "bridge")))
+        if record.get("scripts") != here:
+            out["regime_verified_decisions"] = False
+            out["peer_code_note"] = (f"the peer hashed scripts {record.get('scripts')}, this checkout holds {here}: the "
+                                     "peer did not run the code the cell names")
 
     @staticmethod
     def _check_weight_pin(plan: PeerPlan, blob: Dict[str, Any], out: Dict[str, Any]) -> None:

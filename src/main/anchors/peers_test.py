@@ -22,6 +22,7 @@ from pathlib import Path
 import pytest
 
 from main.anchors.config import load_config
+from main.anchors.peer_scripts import peer_code as pc
 from main.anchors.peer_scripts import team_pack as tp
 from main.anchors.peers import (
     PEERS,
@@ -32,6 +33,7 @@ from main.anchors.peers import (
     check_username,
     team_source_count,
 )
+from utils.paths import src_path
 
 
 @pytest.fixture()
@@ -68,7 +70,15 @@ def pin_report_fields(plan: PeerPlan) -> dict:
     team pack (gen3_peer_showdown_pack_v1, SOP H22; here a team set the legacy pack played identically)."""
     pin = plan.extra["weight_pin"]
     return {"hf_hub_offline": True, "hf_revision": pin.revision, "weights_verified": dict(pin.weights),
-            "weights_loaded": sorted(pin.weights), **team_pack_fields()}
+            "weights_loaded": sorted(pin.weights), **team_pack_fields(), "peer_code": peer_code_record()}
+
+
+def peer_code_record(**override) -> dict:
+    """A peer report's code record (``metamon_side.peer_code_record``): this checkout's scripts, a clean Metamon
+    checkout and an env (gen3_peer_code_v1)."""
+    here = pc.script_hashes(str(src_path("main", "anchors", "peer_scripts")), str(src_path("utils", "bridge")))
+    return {"schema": pc.SCHEMA, "scripts": here, "metamon": {"commit": "a" * 40, "dirty": "", "dirty_paths": 0},
+            "python": "3.10.21", "packages": "b" * 64, "n_packages": 104, **override}
 
 
 def team_pack_fields(changed: bool = False) -> dict:
@@ -429,3 +439,47 @@ def test_the_cell_stamps_the_frontend_pack_change_and_a_cell_changed_if_any_half
     assert stamp["frontend_pack_changed"] is True and stamp["our_frontend_pack_changed"] is False
     assert runner_mod.cell_spec(plan, {}, 20).stamp()["frontend_pack_changed"] is None, "no report, no claim"
     assert "frontend_pack_changed" in runner_mod.PEER_PACK_KEYS and "our_frontend_pack_changed" in runner_mod.PEER_PACK_KEYS
+
+
+# ------------------------------------------------------------------------------ the peer's code (gen3_peer_code_v1)
+def test_the_peer_code_reaches_the_report_as_its_digest(cfg, tmp_path) -> None:
+    """TECH_DEBT P1 (b): the report names what the peer executed; the cell stamps its digest. Another Metamon checkout
+    or env is another digest. Fails on revert of ``MetamonPeer._check_peer_code``."""
+    r = _pack_report(cfg, tmp_path)
+    assert r["regime_verified_decisions"] is True and r["peer_code"] == pc.digest(peer_code_record())
+    assert r["peer_code_record"]["metamon"]["commit"] == "a" * 40
+    moved = {pc.digest(peer_code_record(metamon={"commit": "c" * 40, "dirty": ""})),
+             pc.digest(peer_code_record(metamon={"commit": "a" * 40, "dirty": "d" * 64})),
+             pc.digest(peer_code_record(packages="e" * 64)), pc.digest(peer_code_record(python="3.11.0"))}
+    assert len(moved) == 4 and r["peer_code"] not in moved
+    # recorded-only fields are not identity
+    assert pc.digest(peer_code_record(n_packages=7)) == r["peer_code"]
+
+
+def test_a_peer_that_did_not_report_its_code_or_ran_other_scripts_never_counts(cfg, tmp_path) -> None:
+    """FAIL CLOSED: no record, an error, another schema, or scripts other than this checkout's void the unit."""
+    bad_scripts = dict(peer_code_record()["scripts"], **{"peer_scripts/metamon_side.py": "0" * 64})
+    for override in ({"peer_code": ...}, {"peer_code": {"schema": pc.SCHEMA, "error": "RuntimeError: git"}},
+                     {"peer_code": peer_code_record(schema="other")},
+                     {"peer_code": peer_code_record(scripts=bad_scripts)}):
+        r = _pack_report(cfg, tmp_path, **override)
+        assert r["regime_verified_decisions"] is False and r["peer_code_note"], override
+
+
+def test_the_cell_stamps_both_peer_codes_and_a_half_that_differs_voids_the_series(cfg, tmp_path) -> None:
+    from main.anchors import runner as runner_mod
+    from main.anchors.cli import build_parser, build_plan
+
+    plan = build_plan(build_parser().parse_args(["--model", "", "--opponent", "metamon:SmallRL", "--dry-run"]), cfg)
+    stamp = runner_mod.cell_spec(plan, {"peer_code": "1" * 16, "our_peer_code": "2" * 16, "policy_mode": "eval"},
+                                 20).stamp()
+    assert (stamp["peer_code"], stamp["our_peer_code"], stamp["policy_mode"]) == ("1" * 16, "2" * 16, "eval")
+    halves = [{"peer_code": "1" * 16, "policy_mode": "eval", "regime_verified_decisions": True},
+              {"peer_code": "1" * 16, "policy_mode": "eval", "regime_verified_decisions": True}]
+    runner_mod.check_side_halves(halves)
+    assert halves[1]["regime_verified_decisions"] is True
+    for key, other in (("peer_code", "3" * 16), ("policy_mode", "train")):
+        h = [dict(x) for x in halves]
+        h[1][key] = other
+        runner_mod.check_side_halves(h)
+        assert h[1]["regime_verified_decisions"] is False and key in h[1]["side_mismatch"]

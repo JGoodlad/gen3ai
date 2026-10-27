@@ -437,11 +437,13 @@ def _d1_import_check(p: Mapping[str, Any], *, models: Any, anchor: Any) -> List[
     imp, dg = p.get("import_off"), p.get("determinism_guard")
     if imp is None and dg is None:
         return probs
-    if not isinstance(imp, dict) or sorted(set(imp) - {"engines"}) != sorted(_IMPORT_KEYS) \
-            or not isinstance(imp.get("engines", {}), dict) or not isinstance(imp.get("labels"), dict) \
+    if not isinstance(imp, dict) or sorted(set(imp) - {"engines", "sides"}) != sorted(_IMPORT_KEYS) \
+            or not isinstance(imp.get("engines", {}), dict) or not isinstance(imp.get("sides", {}), dict) \
+            or not isinstance(imp.get("labels"), dict) \
             or not isinstance(imp.get("regimes"), dict) or sorted(imp["regimes"]) != ["anchor", "s"]:
         probs.append(f"import_off: {{{', '.join(_IMPORT_KEYS)}}} with labels {{seed: label}} and regimes {{anchor, s}} "
-                     "(and optionally engines {anchor, s}: the bank's engines, main.reads.engine)")
+                     "(and optionally engines {anchor, s}: the bank's engines, main.reads.engine; sides {peer_code, "
+                     "policy_mode}: the bank's, main.reads.side_identity)")
     if not isinstance(dg, dict) or dg.get("group") not in anchor or dg.get("group") == p.get("anchor_group") \
             or dg.get("label") not in models or models[dg["label"]].load:
         probs.append("determinism_guard: {group, label, banked}: an anchor group other than the primary playing the "
@@ -488,6 +490,7 @@ def _d1_guard(cells: Mapping[str, Any], dg: Mapping[str, Any]) -> Dict[str, Any]
     bank = banked_units(dg["banked"])
     g = _group(cells, "anchor", dg["group"])
     _same_engine("determinism_guard", g.get("engine"), EN.bank_engine(dg["banked"], "anchor", _bank_rows(dg["banked"])))
+    _same_sides("determinism_guard", g, dg["banked"], _bank_rows(dg["banked"]))
     checks = []
     for u in g["units"]:
         want = bank.get(u["panel"], {}).get(int(u["unit_seed"]))
@@ -570,6 +573,7 @@ def _d1_import(doc: Dict[str, Any], cells: Mapping[str, Any], p: Mapping[str, An
     bank = imported_d1(imp)
     _same_engine("import_off (anchor)", _group(cells, "anchor", p["anchor_group"]).get("engine"),
                  EN.bank_engine(imp, "anchor"))
+    _same_sides("import_off (anchor)", _group(cells, "anchor", p["anchor_group"]), imp)
     _same_engine("import_off (S)", _group(cells, "s", p["s_group"]).get("engine"), EN.bank_engine(imp, "s"))
     if (bank["p"]["panel"], bank["p"]["team_set"]) != (doc["p"]["panel"], doc["p"]["team_set"]):
         raise RuleInputError(f"import_off: the banked P panel / team set {bank['p']['panel']} / "
@@ -796,6 +800,18 @@ def _same_engine(what: str, here: Optional[str], there: Optional[str]) -> None:
         raise RuleInputError(str(exc)) from None
 
 
+def _same_sides(what: str, group: Mapping[str, Any], entry: Mapping[str, Any],
+                rows: Sequence[Mapping[str, Any]] = ()) -> None:
+    """A banked anchor control pools only with THIS read's Metamon peer code and policy load mode (TECH_DEBT P1 (b);
+    :func:`main.reads.side_identity.require_same`; the bank's from :func:`main.reads.side_identity.bank_sides`)."""
+    from main.reads import side_identity as SI
+
+    try:
+        SI.require_same(what, {k: group.get(k) for k in SI.SIDE_KEYS}, SI.bank_sides(entry, rows))
+    except SI.SideError as exc:
+        raise RuleInputError(str(exc)) from None
+
+
 def _bank_rows(entry: Mapping[str, Any]) -> List[Dict[str, Any]]:
     """The banked per-game rows of ``entry``'s registered cells (what :func:`main.reads.engine.bank_engine` reads)."""
     from main.reads.models import spec_path
@@ -879,6 +895,9 @@ def _pm_inputs(cells: Mapping[str, Any], p: Mapping[str, Any], spec: Any) -> Dic
     for name, a in p["arms"].items():
         _same_engine(f"prior_mix_ab arm {name}", _group(cells, "anchor", a["group"]).get("engine"), there)
     _same_engine("prior_mix_ab guard", _group(cells, "anchor", p["guard"]["group"]).get("engine"), there)
+    bank_rows = _bank_rows(p["banked"])
+    for name, gname in [*((f"arm {n}", a["group"]) for n, a in p["arms"].items()), ("guard", p["guard"]["group"])]:
+        _same_sides(f"prior_mix_ab {name}", _group(cells, "anchor", gname), p["banked"], bank_rows)
     doc: Dict[str, Any] = {"banked": {ts: {str(s): {k: v for k, v in u.items() if k not in ("games", "sources")}
                                            for s, u in sorted(by.items())} for ts, by in bank.items()},
                            "banked_source": {"path": p["banked"]["path"], "sha256": p["banked"]["sha256"]},

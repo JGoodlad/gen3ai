@@ -65,8 +65,8 @@ implementation fact about Metamon that could change in a release. The one carry-
 
 A registered read's id is `main.reads.assemble.anchor_regime_id`: a digest of the cell identity `summary.json` stamps
 (`ANCHOR_REGIME_KEYS` plus the three conditional rows). A difference in any row is a different regime: never pooled
-(inside one read the group is INCONCLUSIVE); an import refuses outright on a different engine or team pack (G7, G9),
-and `import_off` on the regime id it registers.
+(inside one read the group is INCONCLUSIVE); an import refuses outright on a different engine, team pack, peer code or
+policy mode (G7, G9, G14), and `import_off` on the regime id it registers.
 
 | component | enters the id | stamped as | note |
 |---|---|---|---|
@@ -79,22 +79,25 @@ and `import_off` on the regime id it registers.
 | the engine | only when NOT a banked engine | `engine_stamp` = `port=<src>/<n>;env=<src>/<n>`: the build stamps of `sim_bridge` and the env core (`main.anchors.server.engine_stamp`; empty on Node, on an external server and under `POKESIM_ALLOW_STALE_BUILD=1`; the dry-run plan prints it) | the per-read engine table is `designs/tools/reads.md` §4 |
 | the Metamon peer's team pack | only when True | `peer_pack_changed` (`our_peer_pack_changed`) | H22 |
 | Foul Play's played team | only when True | `frontend_pack_changed` (`our_frontend_pack_changed`): the front end plays the validator's re-pack, and a validator-accepted file Foul Play may draw plays a different set re-packed than as Foul Play packed it (`main.anchors.frontend_pack`) | H22 |
+| the Metamon peer's code | only when NOT a banked one (`side_identity.LEGACY_PEER_CODE`) | `peer_code` (`our_peer_code`): the digest of what the peer executed (`peer_scripts/peer_code.py`): our peer scripts, the Metamon checkout's HEAD and any local change, its interpreter and every installed package | another checkout, env or peer script is a new regime (G14) |
+| our policy's load mode | only when NOT `train` | `policy_mode` = `eval` / `train` / `mixed`, read back from the loaded modules (`core_side.policy_mode`); the loader's name is `model_loader` above | `eval` since `141f36f7f`; every banked read played `train` but N1-P look 1 (`eval`) |
 
 **The LEGACY rule.** A conditional row enters the id only when it differs from what EVERY banked read played, so every
 banked id is unchanged (`assemble_test._BANKED_ID`) and a new read on the banked weights, engine or pack keeps the same
 id and is comparable with them. The price: ids cannot tell two banked engines apart, so every import compares the
-engines themselves (G7). `assemble.LEGACY_WEIGHTS` and `engine.LEGACY_ENGINE` are FROZEN: a repin never edits them.
+engines and the sides themselves (G7, G14). `assemble.LEGACY_WEIGHTS`, `engine.LEGACY_ENGINE` and `side_identity`'s
+legacy tables are FROZEN: a repin never edits them.
 
 **Not in the id, so "the same id" is necessary and not sufficient:**
-- The playing commit and the harness files (`server_version` is recorded per row). A Python-only change to the play
-  path between two commits on one engine (the observation encoder, the front end, the packer) moves no id; only
-  `repin`'s play-path identity (G8) or a game-for-game guard (G10) sees one.
+- The playing commit and the harness files (`server_version` is recorded per row). A Python-only change to OUR play
+  path between two commits on one engine (the observation encoder, the front end, our packer) moves no id; only
+  `repin`'s play-path identity (G8) or a game-for-game guard (G10) sees one. The peer's own Python is `peer_code`.
 - **OUR side's pack regime (H24).** A play commit before `d8d674b99` packs forum72's `sft431` Gyarados with
   Frustration at base power 1; from `d8d674b99` on, at 102. No other panel differs. The id does not see it. The read's
   play pin decides it: never split one read's arms across it on forum72, and quote it beside any forum72 number.
 - Our checkpoint: its sha256 is checked per unit by `main.reads` and its step is stamped, but neither is in the id.
-- What git does not hold: the Metamon cache, panel team dirs outside the repo, the toolchain. Each unit verifies those
-  at play (weight pins, team digests).
+- What git does not hold: the Metamon cache, panel team dirs outside the repo, our toolchain and env. Each unit verifies
+  the first two at play (weight pins, team digests); the Metamon checkout and env are `peer_code`.
 - Seeds, n, wall time.
 
 ### 0.2 The guards, and what each proves
@@ -117,6 +120,7 @@ it leaves open.
 | G11 | G-PREFIX (`main.reads.prefix`) | a searched game and its raw twin differ before the search starts (through `\|turn\|10`): the lane HOLDS and the group stays inconclusive | the pair is a valid pairing | |
 | G12 | search replay guard (`main.anchors.search_side`) | the replay of the true input log fails to reproduce the live decision's tokens and row byte for byte: the game fails by name | the searcher saw the state we played | a gain without the leak: searched gains are leak-inclusive |
 | G13 | mirrored-pair check (`main.anchors.mirrored`) | a pair whose sides did not play the planned teams in order, or whose two battles did not share a seed: VOIDed with its reason | team-draw luck cancelled inside the pair | |
+| G14 | side identity (`main.reads.side_identity`; `peers.MetamonPeer._check_peer_code`, `runner.check_side_halves`) | a peer report without its code record, or whose scripts are not this checkout's, or two halves that differ: the unit is unverified; a group spanning two peer codes or policy modes is INCONCLUSIVE; an import, `import_off`, the determinism guard or `prior_mix_ab`'s bank across either, or from an unknown one, refuses | every counted unit names the peer code and policy mode it played, and no comparison crosses them | that the legacy checkout and env were the same at every banked read (reconstructed from the box on 2026-10-27; reads.md §4) |
 
 Read-level gates (the VOID gate, `guards_not_read`, the reduced read at a registered stop) are `designs/tools/reads.md`
 §5 and §6.

@@ -122,6 +122,11 @@ class CellSpec:
     #: A cross-run frozen snapshot FAILS a bare load, so which loader ran is part of what the row
     #: says about the policy that played.
     model_loader: str = ""
+    #: The MODE our policy played in, READ BACK from the loaded module (``main.anchors.core_side.policy_mode``): "eval"
+    #: (no module training: every loader since 141f36f7f), "train" (every banked read before it), "mixed", or "" (our
+    #: side is a bot or a peer). ``nn.MultiheadAttention`` runs another kernel in each (logits within 4.8e-7), so a mode
+    #: other than the banked "train" enters the regime id (``main.reads.side_identity``).
+    policy_mode: str = ""
     #: T17 (`gen3_mirrored_pairs_v1`): were the battles MIRRORED TEAM PAIRS (each pairing from both
     #: sides on one seed; the pair the unit)? On the ROW: a mirrored cell half-plays our side on the
     #: PEER's team draw, so it is a different population from an unmirrored one and is never read beside
@@ -167,6 +172,12 @@ class CellSpec:
     #: when it is. Same rule as ``peer_pack_changed``: True enters the regime id, False / None leave it alone.
     frontend_pack_changed: Optional[bool] = None
     our_frontend_pack_changed: Optional[bool] = None
+    #: gen3_peer_code_v1: the digest of what the Metamon peer EXECUTED (``peer_scripts/peer_code.py``: our peer scripts,
+    #: the Metamon checkout, its interpreter and packages). THEIRS = the opponent peer; ``our_*`` = our side when it is a
+    #: Metamon peer. None = not a Metamon peer, or a row before the stamp. Any digest a banked read did not play enters
+    #: the regime id (``main.reads.side_identity``).
+    peer_code: Optional[str] = None
+    our_peer_code: Optional[str] = None
 
     def stamp(self) -> Dict[str, Any]:
         return asdict(self)
@@ -247,7 +258,7 @@ class GameRow:
 REQUIRED_ROW_FIELDS = (
     "opponent", "opponent_version", "opponent_commit",
     "server_impl", "server_version", "our_transport",
-    "our_side", "model_loader",
+    "our_side", "model_loader", "policy_mode",
     "our_regime", "their_regime", "regime_matched",
     "teamset", "our_team_count", "their_team_count",
     "model_zip", "model_step", "model_rung",
@@ -263,6 +274,8 @@ REQUIRED_ROW_FIELDS = (
     "our_teamset", "our_team_digest", "their_team_digest",
     # FR-1 FINDING 3: the Metamon weights this cell verified (None for a non-Metamon peer).
     "hf_revision", "weights_sha256",
+    # gen3_peer_code_v1: what the Metamon peer executed (None for another opponent).
+    "peer_code",
 )
 
 
@@ -497,7 +510,10 @@ def render(summary: Dict[str, Any]) -> str:
         f"content_asymmetry={summary.get('team_content_asymmetry')}  "
         f"declared={summary.get('declared_team_cell', 'symmetric')}",
         f"  our side    {cell.get('our_side', 'model')}"
-        + (f"  loader={cell['model_loader']}" if cell.get("model_loader") else ""),
+        + (f"  loader={cell['model_loader']}" if cell.get("model_loader") else "")
+        + (f"  mode={cell['policy_mode']}" if cell.get("policy_mode") else "")
+        + (f"  peer code theirs={cell['peer_code']}" if cell.get("peer_code") else "")
+        + (f" ours={cell['our_peer_code']}" if cell.get("our_peer_code") else ""),
         f"  our model   {cell['model_zip'] or '(none — our side is not a checkpoint)'}"
         + (f" @ step {cell['model_step']} (resolved via {cell['model_rung']})"
            if cell['model_zip'] else ""),

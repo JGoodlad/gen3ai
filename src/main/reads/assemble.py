@@ -25,6 +25,10 @@ it is an engine a banked read played on (:data:`main.reads.engine.LEGACY_ENGINE`
 alone cannot tell two banked engines apart (they were computed without one), so every import compares the engines
 themselves (:func:`main.reads.engine.require_same`).
 
+THE SIDES (TECH_DEBT P1 (b), 2026-10-27): the Metamon peer's code and our policy's load mode, by the same LEGACY rule
+(:mod:`main.reads.side_identity`). Every unit row and group carries ``peer_code`` and ``policy_mode``; a group whose
+counted units span two is INCONCLUSIVE, and every import compares them.
+
 A cell or node with no regime id is never conclusive.
 """
 from __future__ import annotations
@@ -38,6 +42,7 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 from agents.training import eval_ledger as L
 from main.reads import attempts as AT
 from main.reads import engine as EN
+from main.reads import side_identity as SI
 
 ANCHOR_REGIME_SCHEMA = "gen3_read_anchor_regime_v1"
 #: The cell fields of an anchor summary that ARE the regime (everything else is recorded, not identity).
@@ -95,6 +100,7 @@ def anchor_regime_id(summary: Mapping[str, Any], *, strip_load: str = "") -> Opt
         ident["our_regime"] = ours[:-len(strip_load)]
     ident.update(_weights_identity(cell))
     ident.update(peer_pack_identity(cell))
+    ident.update(SI.regime_identity(cell))                 # the peer's code, our load mode: each only when not legacy
     stamped = cell.get("engine_stamp")
     if stamped and not EN.is_legacy(str(stamped)):
         ident["engine"] = str(stamped)                     # a banked engine keeps its id (the LEGACY rule)
@@ -275,7 +281,7 @@ def unit_row(u: Any, summary: Mapping[str, Any], games: Optional[List[List[Any]]
             "counted": uc.counts, "reasons": list(uc.reasons), "regime_id": anchor_regime_id(summary),
             "base_regime_id": anchor_regime_id(summary, strip_load=stamp), "engine": EN.unit_engine(cell),
             "server_version": cell.get("server_version"), "model_step": cell.get("model_step"),
-            "peer_pack": peer_pack_state(cell), **_search_played(summary)}
+            "peer_pack": peer_pack_state(cell), **SI.unit_sides(cell), **_search_played(summary)}
 
 
 #: The searched half's record a ``main.anchors --our-search`` summary carries (``provenance.peer_report.search``, the
@@ -405,10 +411,12 @@ def anchor_group(rows: Sequence[Mapping[str, Any]], *, labels: Sequence[str], te
     engine, engine_why = EN.one(r.get("engine") for r in rows if r["counted"])
     if engine_why:
         why.append(f"counted units {engine_why}")
+    sides, sides_why = SI.group_sides(rows)
+    why += sides_why
     unplayed = len(labels) * len(teamsets) * len(unit_seeds) * per_seed - len(seen)
     have = {str(r["unit"]) for r in rows}
     spent = sorted(set(exhausted))
-    return {"regime_id": rid, "regime_ids": by_ts, "engine": engine, "teamsets": list(teamsets),
+    return {"regime_id": rid, "regime_ids": by_ts, "engine": engine, **sides, "teamsets": list(teamsets),
             "unit_seeds": list(unit_seeds),
             "cells": cells, "units": sorted((dict(r) for r in rows), key=lambda r: r["unit"]),
             "unplayed": unplayed, "exhausted_units": spent,

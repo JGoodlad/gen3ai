@@ -97,7 +97,17 @@ def load_policy(path: str, device: str, model_loader: str, state: OurSideState,
 
         set_belief_prior_mix(model, belief_prior_mix)
         state.belief_prior_mix = belief_prior_mix_of(model)
+    state.policy_mode = policy_mode(model)
     return model
+
+
+def policy_mode(model: Any) -> str:
+    """The mode the loaded policy will play in, READ BACK from its modules (never from the loader's intent): "eval"
+    when no module is training, "train" when every one is, "mixed" otherwise. It is stamped on every row
+    (``policy_mode``) and enters the regime id unless it is the banked "train" (``main.reads.side_identity``): in each
+    mode ``nn.MultiheadAttention`` runs another kernel (141f36f7f: logits within 4.8e-7, an argmax can move)."""
+    flags = [bool(m.training) for m in model.policy.modules()]
+    return "eval" if not any(flags) else ("train" if all(flags) else "mixed")
 
 
 def _load_policy(path: str, device: str, model_loader: str, state: OurSideState) -> Any:

@@ -15,7 +15,8 @@ labels are never planned or played here. The import is refused (:class:`ReadImpo
 Engine-matched (REVIEW F F-M2): the imported units or S rows must have played on THIS read's engine
 (:mod:`main.reads.engine`): an import across engines, or of rows whose engine nobody can name beside this read's
 own, refuses (:func:`check_engine`). A regime id cannot tell two banked engines apart, so the engines are compared
-themselves.
+themselves. Side-matched the same way (TECH_DEBT P1 (b)): the imported units' Metamon peer code and our policy's load
+mode must equal this read's, both known (:func:`check_sides`, :mod:`main.reads.side_identity`).
 
 Regime-matched: imported anchor units enter :func:`main.reads.assemble.anchor_group` with this state's own, so a
 (group, team set) whose units span two regime ids is INCONCLUSIVE, exactly as within one state; an imported S node
@@ -44,6 +45,25 @@ def check_engine(what: str, here: Optional[str], there: Optional[str]) -> None:
         EN.require_same(what, here, there)
     except EN.EngineError as exc:
         raise ReadImportError(str(exc)) from None
+
+
+def check_sides(what: str, mine: Sequence[Mapping[str, Any]], theirs: Sequence[Mapping[str, Any]]) -> Dict[str, Any]:
+    """Refuse an import whose counted units ran another Metamon peer code or another policy load mode than this read's
+    counted units (:mod:`main.reads.side_identity`; TECH_DEBT P1 (b)), or either unknown. A regime id cannot tell the
+    legacy values apart, so the values are compared themselves. Returns the imported side values (recorded)."""
+    from main.reads import side_identity as SI
+
+    there, why = SI.group_sides(theirs)
+    if not any(r.get("counted") for r in mine) or not any(r.get("counted") for r in theirs):
+        return there
+    here, why_here = SI.group_sides(mine)
+    if why or why_here:
+        raise ReadImportError(f"{what}: {'; '.join(why or why_here)}")
+    try:
+        SI.require_same(what, here, there)
+    except SI.SideError as exc:
+        raise ReadImportError(str(exc)) from None
+    return there
 
 
 def check_peer_pack(what: str, mine: Sequence[Mapping[str, Any]], theirs: Sequence[Mapping[str, Any]]) -> None:
@@ -194,6 +214,7 @@ def anchor_rows(spec: Any, g: str, shas: Mapping[str, str], *, this_state: Optio
         if why or why_here:
             raise ReadImportError(f"anchor.{g} import from {old.read}: {why or why_here}")
         check_engine(f"anchor.{g} import from {old.read} ({imp.group})", here, theirs)
+    meta["sides"] = check_sides(f"anchor.{g} import from {old.read} ({imp.group})", mine, rows)
     return rows, meta
 
 

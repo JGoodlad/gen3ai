@@ -318,8 +318,12 @@ def _d3_spec(tmp_path, banked_rows, **over):
 E1_S = "env=7c53280566d666ae/125"                      # D1's P rows' env core (E1): the bank's S engine
 
 
+#: What D1's banked C0 played with (``main.reads.side_identity``): the legacy Kakuna peer, our policy in train mode.
+LEGACY_SIDES = {"peer_code": "their=legacy", "policy_mode": "train"}
+
+
 def _d3_cells(guard_games, *, anchor_regime="aaaa", s_regime="bbbb", engine=EN.E1, s_engine=E1_S,
-              guard_engine=EN.E1):
+              guard_engine=EN.E1, sides=LEGACY_SIDES, guard_sides=LEGACY_SIDES):
     def cell(w):
         return {"wins": w, "n": 140, "ties": 0, "units": 7, "skipped": []}
 
@@ -327,8 +331,9 @@ def _d3_cells(guard_games, *, anchor_regime="aaaa", s_regime="bbbb", engine=EN.E
     units = [{"unit": f"c0_s3501__heldout72_hpfix__{s:02d}", "label": "c0_s3501", "panel": "heldout72_hpfix",
               "unit_seed": s, "counted": True, "n": len(g), "wins": sum(x[3] == "win" for x in g), "games": g}
              for s, g in guard_games.items()]
-    return {"anchor": {"h": {"cells": on, "regime_id": anchor_regime, "engine": engine},
-                       "guard": {"cells": {}, "units": units, "regime_id": "cccc", "engine": guard_engine}},
+    return {"anchor": {"h": {"cells": on, "regime_id": anchor_regime, "engine": engine, **sides},
+                       "guard": {"cells": {}, "units": units, "regime_id": "cccc", "engine": guard_engine,
+                                 **guard_sides}},
             "s": {"p": {"nodes": {lab: {"s_pp": 56.0, "population_score": {}} for lab in on}, "inconclusive": [],
                         "panel": "home72", "team_set": "ts:08142ee8b0c18e8a", "regime_id": s_regime,
                         "engine": s_engine}}}
@@ -340,7 +345,9 @@ GAMES = {0: [["ours_challenge", 1, "t1.txt", "win", 30], ["peer_challenge", 1, "
 
 def _banked(games):
     return [{"read_cell": "heldout72_hpfix", "unit_seed": s, "half": g[0], "index": g[1], "our_team": g[2],
-             "result": g[3], "turns": g[4], "engine_stamp": EN.E1} for s, gs in games.items() for g in gs]
+             "result": g[3], "turns": g[4], "engine_stamp": EN.E1,
+             "server_version": "ws_frontend[in-process]@6c428453a+rust:cargo:src/rust_sim"}   # D1 h_a's commit
+            for s, gs in games.items() for g in gs]
 
 
 def test_d3_pools_the_banked_c0_side_only_when_the_guard_replays_it_game_for_game(tmp_path):
@@ -393,4 +400,25 @@ def test_d3_refuses_a_banked_side_played_on_another_engine(tmp_path):
     reg = dict(sp.params["import_off"], engines={"anchor": EN.E2, "s": "env=9ecb4249afb76504/125"})
     sp2 = _d3_spec(tmp_path, _banked(GAMES), import_off=reg)
     with pytest.raises(RU.RuleInputError, match="never crosses engines"):
+        RU.inputs("d1", _d3_cells(GAMES), sp2.params, sp2)
+
+
+def test_d3_refuses_a_banked_side_played_by_another_peer_code_or_load_mode(tmp_path):
+    """TECH_DEBT P1 (b): the banked C0 played the legacy Kakuna peer with our policy in TRAIN mode (D1, 6c428453). A
+    read whose primary or guard group played another peer code or the EVAL mode, or one nobody can name, refuses its
+    import_off and its determinism guard; a bank that registers its sides is read by them. Fails on revert of
+    ``rules._same_sides``."""
+    sp = _d3_spec(tmp_path, _banked(GAMES))
+    RU.inputs("d1", _d3_cells(GAMES), sp.params, sp)
+    eval_mode = dict(LEGACY_SIDES, policy_mode="eval")
+    other_peer = dict(LEGACY_SIDES, peer_code="their=0123456789abcdef")
+    for kw, why in (({"sides": eval_mode}, "import_off \\(anchor\\).*policy mode"),
+                    ({"sides": other_peer}, "import_off \\(anchor\\).*peer code"),
+                    ({"guard_sides": eval_mode}, "determinism_guard.*policy mode"),
+                    ({"sides": dict(LEGACY_SIDES, policy_mode=None)}, "policy mode unknown")):
+        with pytest.raises(RU.RuleInputError, match=why):
+            RU.inputs("d1", _d3_cells(GAMES, **kw), sp.params, sp)
+    reg = dict(sp.params["import_off"], sides={"peer_code": "their=legacy", "policy_mode": "eval"})
+    sp2 = _d3_spec(tmp_path, _banked(GAMES), import_off=reg)
+    with pytest.raises(RU.RuleInputError, match="policy mode"):
         RU.inputs("d1", _d3_cells(GAMES), sp2.params, sp2)

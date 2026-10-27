@@ -326,7 +326,7 @@ does with it:
 - The playing commit and file paths are recorded per unit and are not part of the id; the engine the commit played on is.
   A unit played on bytes other than the resolved model's is a refusal, never a pooled row.
 - Every unit row carries its `games` (`[half, index, our_team, result, turns]` from `games.jsonl`), its `cell_dir`, its
-  `engine` and its team-pack state (`peer_pack`).
+  `engine`, its team-pack state (`peer_pack`) and its sides (`peer_code`, `policy_mode`).
 - **One group may hold models with DIFFERENT loads** (`anchor_group(..., loads=)`, from each `models.<label>.load`). A
   load option changes the id through `our_regime` (a `belief_prior_mix` unit is stamped `greedy+belief_prior_mix=<λ>`),
   so it never pools with the unchanged model, and a mixed group is read three ways: the counted units of one (load, team
@@ -447,6 +447,51 @@ The front end plays the validator's re-pack, as a real server does. Our side and
 to the id only when True, `unit_row` carries it as `peer_pack = "frontend_changed"` and `imports.check_peer_pack` refuses an
 import across it. A record that cannot be computed voids the regime verification. `frontend_pack_integration_test.py` pins the
 rule and, on a box with Foul Play, the measurement.
+
+### The sides: the peer's code and our load mode (`main.reads.side_identity`; 2026-10-27)
+
+Two inputs changed play without moving any id: the Metamon peer's own Python, and the mode our policy was loaded in.
+What enters the id is the SOP's § 0.1; G14 is its guard. Here, what the module does with them.
+- **`peer_code`** (`our_peer_code` for a Metamon our-side) is the 16-hex digest of the record the peer reports at startup
+  (`peer_scripts/peer_code.py`). It covers our peer scripts (the bridge pack scripts only beside `team_pack.py`), the
+  Metamon checkout's HEAD and any tracked change or untracked file in its `metamon/` package, the interpreter, and every
+  installed distribution with its VCS commit. The harness refuses a missing record, and one whose scripts are not its own.
+- **`policy_mode`** is `eval` / `train` / `mixed`, read back from the loaded modules. `nn.MultiheadAttention` runs another
+  kernel in each mode (`141f36f7f`: logits within 4.8e-7).
+- **Halves that differ** in either void the unit (`runner.check_side_halves`).
+
+**The legacy values.** Each is reconstructed and FROZEN:
+
+| what | value | banked commits |
+|---|---|---|
+| peer code `f230353c40e43488` | `metamon_side` e17d4869 | X51, x37a, X52, D1, x26c, PastaMittens, human-only (`4b0ab220e`) |
+| peer code `64c220c05cca7382` | `metamon_side` 9f8520a1 | metamon strongest / human-only (`d32ffcee4`), belief prior mix, D3 look 1 |
+| peer code `b817d3216c418f75` | `metamon_side` 9a550a80 + `weight_pins` | N1-P look 1 |
+| policy mode | `train` | every banked commit but N1-P look 1's two, which are `eval` (`LEGACY_COMMIT_MODE`) |
+
+- Each peer digest also holds Metamon at `0a00a759`, clean, and the `metamon` env as it stands (`LEGACY_PEER_ENV`, 104
+  packages, Python 3.10.21).
+- `0a00a759` is the `opponent_commit` of all 1,281 archived Metamon units. The env's last conda change and every
+  site-packages file date from 2026-09-14, before X51.
+- The checkout's dirty state at the banked reads is UNVERIFIED (it was clean on 2026-10-27).
+- The three script versions differ only by instruments and refusals (the ensemble router's no-RNG check, the preset pin,
+  the weight pins), so they are ONE legacy peer regime: a unit row says `their=legacy`.
+- `side_identity_test` re-derives the tables from git.
+
+**What it does.**
+- A stamp enters the id only when it is not legacy.
+- Every unit row and group carries `peer_code` and `policy_mode`: stamped, else from the banked commit's tables, else
+  unknown (`None`). A group spanning two values is INCONCLUSIVE.
+- These refuse across either side, or from an unknown one: the cross-state import (`imports.check_sides`), `import_off`,
+  the determinism guard and `prior_mix_ab`'s bank (`rules._same_sides`). A bank names its sides by its rows' commits,
+  its registered `sides`, or `LEGACY_BANK_SIDE`.
+- Every read stamped by this code gets a new id, because its peer scripts are not a banked version (`b0441623e` and this
+  change). Main's engine is unbanked already.
+
+**Checked.**
+- Banked ids are unchanged: all 1,423 archived unit summaries give the same `anchor_regime_id` before and after (2026-10-27).
+- Pinned reads are untouched: they play and read at their own pins (D3 look 2's hybrid `c4a5c37b6`, N1-P look 2, X59-S,
+  H-CTX).
 
 ## 5. Decide: the registered rules (`main.reads.rules`)
 

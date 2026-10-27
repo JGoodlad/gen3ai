@@ -28,8 +28,9 @@ Playing (the lanes and their claims):
 Reading (cells, rules, the record):
 
 * :mod:`main.reads.assemble` -- units and ledger rows -> cells, the regime id ALWAYS recorded;
-* :mod:`main.reads.engine` -- the Rust engine a unit played on (part of every regime); :mod:`main.reads.imports` -- cells
-  taken from an EARLIER read's state, sha-, regime- and engine-checked;
+* :mod:`main.reads.engine` -- the Rust engine a unit played on (part of every regime); :mod:`main.reads.side_identity` --
+  the Metamon peer's code and our policy's load mode it played with (likewise); :mod:`main.reads.imports` -- cells taken
+  from an EARLIER read's state, sha-, regime-, engine- and side-checked;
 * :mod:`main.reads.rules` (with :mod:`main.reads.rules_n4_screen`, :mod:`main.reads.rules_search_headroom` and
   :mod:`main.reads.rules_x59s`) -- the registered interval and decision rules, by name (reusing ``main.x35.readout`` /
   ``main.x35.d1`` / ``main.anchors.results``), and the registered VOID gate;

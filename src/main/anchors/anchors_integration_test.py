@@ -256,6 +256,16 @@ def _assert_the_pieces_fit(summary: dict, rows: list, out: Path, server: str, n_
 
     assert summary["cell"]["engine_stamp"] == (engine_stamp() if server == "rust" else "")
     assert summary["cell"]["engine_stamp"] != "" or server != "rust"
+    # ... and what each SIDE played with (TECH_DEBT P1 (b)): the real peer reported its code (the digest of a record the
+    # harness checked against its own scripts) and our policy's mode was READ BACK from the loaded module
+    import re
+
+    from main.anchors.peer_scripts import peer_code as pc
+
+    record = summary["provenance"]["peer_report"]["peer_code_record"]
+    assert re.fullmatch(r"[0-9a-f]{16}", summary["cell"]["peer_code"] or "") and record["schema"] == pc.SCHEMA
+    assert summary["cell"]["peer_code"] == pc.digest(record) and record["metamon"]["commit"]
+    assert summary["cell"]["policy_mode"] == "eval" and all(row["policy_mode"] == "eval" for row in rows)
 
     # The server we started is gone, its log is named after it, and nothing else was touched.
     log = "ws_frontend.log" if server == "rust" else "showdown.log"

@@ -25,9 +25,13 @@ CODE = {"commit": "b" * 40, "dirty": False, "root": "/tmp/pin"}
 ENGINE = "port=aaaaaaaaaaaaaaaa/90;env=bbbbbbbbbbbbbbbb/125"
 
 
+PEER_CODE = "0123456789abcdef"
+
+
 def _cell(opponent_version="kakuna-ckpt34", engine=ENGINE):
-    return {"opponent": "metamon:Kakuna", "opponent_version": opponent_version, "our_regime": "greedy",
-            "their_regime": "greedy", "battle_format": "gen3ou", "teamset": "home", "engine_stamp": engine}
+    return {"opponent": "metamon:Kakuna", "opponent_kind": "metamon", "opponent_version": opponent_version,
+            "our_regime": "greedy", "their_regime": "greedy", "battle_format": "gen3ou", "teamset": "home",
+            "engine_stamp": engine, "peer_code": PEER_CODE, "policy_mode": "eval"}
 
 
 def _played(wins, cell):
@@ -259,3 +263,22 @@ def test_an_import_of_banked_units_across_the_foul_play_played_team_change_refus
     RN.run(st5, "anchor", time.time() + 3600, run_unit=_played({"on": 13}, dict(_cell(), frontend_pack_changed=False)),
            sleep=lambda s: None)
     assert api.assemble(st5)["anchor"]["u"]["inconclusive"] == []
+
+
+def test_an_anchor_import_across_the_peer_code_or_the_policy_mode_refuses(tmp_path, monkeypatch):
+    """TECH_DEBT P1 (b): the same cell on the same engine, but the Metamon peer ran other code (another checkout, env or
+    script) or our policy loaded in another mode, is never pooled; nor is a unit whose sides nobody can name (a commit
+    outside the legacy tables, no stamp). Fails on revert of ``imports.check_sides`` (the group would only be
+    INCONCLUSIVE, two regime ids, or for two legacy values not even that)."""
+    st1, sha1 = _look1(tmp_path, monkeypatch)
+    imp = {"state": str(st1), "spec_sha256": sha1, "group": "u", "models": ["off"]}
+    unknown = {k: v for k, v in _cell().items() if k != "policy_mode"}
+    unknown["server_version"] = "ws_frontend[in-process]@" + "e" * 9 + "+rust:cargo:src/rust_sim"
+    for name, cell, why in (("p", dict(_cell(), peer_code="fedcba9876543210"), "peer code"),
+                            ("m", dict(_cell(), policy_mode="train"), "policy mode"),
+                            ("u", unknown, "policy mode unknown")):
+        st2 = tmp_path / f"look2{name}"
+        RN.plan(_anchor_spec(tmp_path, f"look2{name}_read", imp), st2, code=CODE, step_of=lambda _p: 1)
+        RN.run(st2, "anchor", time.time() + 3600, run_unit=_played({"on": 13}, cell), sleep=lambda s: None)
+        with pytest.raises(ReadImportError, match=why):
+            api.assemble(st2)

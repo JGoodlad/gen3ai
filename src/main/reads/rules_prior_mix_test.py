@@ -57,9 +57,13 @@ def _unit(label: str, ts: str, s: int, wins: int, regime: str, lam: Any, counted
 X51_SERVER = "ws_frontend[in-process]@63f97a575+rust:cargo:src/rust_sim"
 
 
+#: What X51's rows played with (``main.reads.side_identity``): the legacy Kakuna peer, our policy in train mode.
+X51_SIDES = {"peer_code": "their=legacy", "policy_mode": "train"}
+
+
 def _group(units: List[Dict[str, Any]], teamsets: List[str], engine: Any = EN.E0) -> Dict[str, Any]:
     return {"units": units, "teamsets": teamsets, "unit_seeds": list(SEEDS), "regime_id": "r" * 16,
-            "regime_ids": {ts: "r" * 16 for ts in teamsets}, "engine": engine}
+            "regime_ids": {ts: "r" * 16 for ts in teamsets}, "engine": engine, **X51_SIDES}
 
 
 class _Spec:
@@ -162,3 +166,20 @@ def test_a_banked_control_on_another_engine_refuses(tmp_path):
         cells["anchor"][group]["engine"] = EN.E1
         with pytest.raises(RU.RuleInputError, match="never crosses engines"):
             RU.inputs("prior_mix_ab", cells, p, _Spec())
+
+
+def test_a_banked_control_played_by_another_peer_code_or_load_mode_refuses(tmp_path):
+    """TECH_DEBT P1 (b): X51's banked rows (63f97a575) played the legacy Kakuna peer with our policy in TRAIN mode, read
+    from the rows' own commit. An arm or the guard in EVAL mode, on another peer code, or unknown, refuses. Fails on
+    revert of ``rules._same_sides``."""
+    path, sha = _bank(tmp_path, 5)
+    p = _params(path, sha)
+    same = {ts: 5 for ts in UNF + [FAM]}
+    RU.inputs("prior_mix_ab", _cells(same, same, 5), p, _Spec())
+    for group in ("g025", "guard"):
+        for key, value, why in (("policy_mode", "eval", "policy mode"), ("peer_code", "their=0123456789abcdef", "peer code"),
+                                ("policy_mode", None, "policy mode unknown")):
+            cells = _cells(same, same, 5)
+            cells["anchor"][group][key] = value
+            with pytest.raises(RU.RuleInputError, match=why):
+                RU.inputs("prior_mix_ab", cells, p, _Spec())

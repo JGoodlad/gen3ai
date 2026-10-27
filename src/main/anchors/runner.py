@@ -337,7 +337,9 @@ async def run_peer_pair_half(plan: SeriesPlan, cfg: Any, half: str, n_games: int
     # ...and OUR peer's team pack (gen3_peer_showdown_pack_v1, SOP H22): its own regime-id input.
     report["our_peer_pack_changed"] = our_report.get("peer_pack_changed")
     report["our_frontend_pack_changed"] = our_report.get("frontend_pack_changed")
+    report["our_peer_code"] = our_report.get("peer_code")         # gen3_peer_code_v1: OUR peer's code too
     report["model_loader"] = ""
+    report["policy_mode"] = ""
     # BOTH peers are peers here, so the regime question is an AND over the two and the process
     # question is an AND over BOTH return codes.
     report["regime_verified_decisions"] = bool(report.get("regime_verified_decisions")) and bool(
@@ -528,6 +530,7 @@ def _half_report(plan: SeriesPlan, half: str, n_games: int, pplan: Any, proc: An
     report["their_regime"] = pplan.their_regime
     report["our_stochastic_kwargs"] = list(state.stochastic_kwargs)
     report["model_loader"] = state.model_loader
+    report["policy_mode"] = state.policy_mode          # train / eval, READ BACK from the loaded policy ("" for a bot)
     if plan.our_side_is_bot and plan.our_transport == "live":
         from main.anchors.live_side import bot_streams
 
@@ -614,6 +617,7 @@ def cell_spec(plan: SeriesPlan, report: Dict[str, Any], our_team_count: int) -> 
         engine_stamp=plan.engine_stamp,
         our_side=plan.our_side,
         model_loader=str(report.get("model_loader") or ""),
+        policy_mode=str(report.get("policy_mode") or ""),
         mirrored_pairs=bool(plan.mirrored_pairs),
         our_transport=_row_transport(plan),
         our_bot_seed=(plan.bot_seed if plan.our_side_is_bot and plan.our_transport == "live" else None),
@@ -628,12 +632,30 @@ def cell_spec(plan: SeriesPlan, report: Dict[str, Any], our_team_count: int) -> 
         our_peer_pack_changed=report.get("our_peer_pack_changed"),
         frontend_pack_changed=report.get("frontend_pack_changed"),
         our_frontend_pack_changed=report.get("our_frontend_pack_changed"),
+        peer_code=report.get("peer_code"),
+        our_peer_code=report.get("our_peer_code"),
     )
 
 
 #: The cell's team-pack facts: THEIR Metamon peer's and OUR Metamon peer's (gen3_peer_showdown_pack_v1), THEIR Foul Play's
 #: and OUR Foul Play's (gen3_frontend_validated_pack_v1).
 PEER_PACK_KEYS = ("peer_pack_changed", "our_peer_pack_changed", "frontend_pack_changed", "our_frontend_pack_changed")
+
+
+#: What each side PLAYED WITH (``main.reads.side_identity``): the Metamon peer's code (theirs, ours) and our policy's
+#: load mode. One value per cell: a half that differs from an earlier half voids the regime verification.
+SIDE_KEYS = ("peer_code", "our_peer_code", "policy_mode")
+
+
+def check_side_halves(half_reports: List[Dict[str, Any]]) -> None:
+    """The latest half's report must play with what every earlier half played with (:data:`SIDE_KEYS`): else its
+    ``regime_verified_decisions`` is False (the series' is their AND) and ``side_mismatch`` names the values."""
+    last = half_reports[-1]
+    for key in SIDE_KEYS:
+        seen = [r.get(key) for r in half_reports]
+        if len(set(seen)) > 1:
+            last["regime_verified_decisions"] = False
+            last.setdefault("side_mismatch", {})[key] = seen
 
 
 def any_half(values: Any) -> Optional[bool]:
@@ -902,6 +924,7 @@ async def run_series(plan: SeriesPlan, cfg: Any) -> Tuple[List[GameRow], Dict[st
             half_reports.append(report)
             for key in PEER_PACK_KEYS:                  # a cell's pack changed iff ANY half's did (SOP H22)
                 report[key] = any_half(r.get(key) for r in half_reports)
+            check_side_halves(half_reports)
             cell = cell_spec(plan, report, our_team_count)
             all_rows.extend(rows_from(records, half, cell, report, len(all_rows) + 1))
             if failure is not None:

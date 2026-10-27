@@ -139,6 +139,7 @@ def build_client(plan: Any, half: str, *, username: str, team_spec: Dict[str, An
         seed = int(plan.bot_seed)
         env = HALF_ENV[half]
         state.model_loader = ""
+        state.policy_mode = ""
         return _client_cls()(cfg, policy=BotPolicy(), team_fn=teams.yield_team,
                              reader_factory=lambda: BotReader(name, seed=seed, env=env),
                              state=state, forfeit_limit=plan.forfeit_turn_limit)

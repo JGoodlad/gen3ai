@@ -102,6 +102,14 @@ def test_a_bot_client_never_forfeits_and_reports_no_argmax(monkeypatch) -> None:
     assert rec.our_argmax_matches is None and rec.hit_forfeit_limit is True and rec.n_decisions == 140
 
 
+def _loaded(tag: Any, training: bool = False) -> Any:
+    """A stand-in for a loaded model: ``tag`` names it, its one policy module is in ``training`` mode."""
+    import types
+
+    return types.SimpleNamespace(tag=tag, policy=types.SimpleNamespace(
+        modules=lambda: [types.SimpleNamespace(training=training)]))
+
+
 @pytest.mark.parametrize("mode, expected", [("bare", "bare"), ("auto", "bare")])
 def test_a_successful_bare_load_is_recorded_as_bare(monkeypatch, mode, expected) -> None:
     import agents.model.oracle_reveal as oracle_reveal
@@ -109,10 +117,10 @@ def test_a_successful_bare_load_is_recorded_as_bare(monkeypatch, mode, expected)
 
     monkeypatch.setattr(oracle_reveal, "refuse_if_revealed", lambda *a, **k: None)
     monkeypatch.setattr(snapshot, "historical_load_kwargs", lambda path: {})
-    monkeypatch.setattr(snapshot, "load_checkpoint_strict", lambda path, device, **k: ("model", path, device))
+    monkeypatch.setattr(snapshot, "load_checkpoint_strict", lambda path, device, **k: _loaded(("model", path, device)))
     state = OurSideState()
-    assert core_side.load_policy("/s.zip", "cpu", mode, state) == ("model", "/s.zip", "cpu")
-    assert state.model_loader == expected
+    assert core_side.load_policy("/s.zip", "cpu", mode, state).tag == ("model", "/s.zip", "cpu")
+    assert state.model_loader == expected and state.policy_mode == "eval"
 
 
 def test_a_belief_prior_mix_is_set_on_the_loaded_policy_and_read_back(monkeypatch) -> None:
@@ -126,7 +134,8 @@ def test_a_belief_prior_mix_is_set_on_the_loaded_policy_and_read_back(monkeypatc
     def model():
         legs = {n: types.SimpleNamespace() for n in ("hypothesis_builder", "move_belief", "item_belief_head")}
         legs["move_belief"].prior_fusion = True
-        return types.SimpleNamespace(policy=types.SimpleNamespace(features_extractor=types.SimpleNamespace(**legs)))
+        return types.SimpleNamespace(policy=types.SimpleNamespace(features_extractor=types.SimpleNamespace(**legs),
+                                                                  modules=lambda: []))
 
     monkeypatch.setattr(oracle_reveal, "refuse_if_revealed", lambda *a, **k: None)
     monkeypatch.setattr(snapshot, "historical_load_kwargs", lambda path: {})
@@ -154,9 +163,9 @@ def test_auto_falls_back_to_the_foreign_loader_and_says_which_one_ran(monkeypatc
     monkeypatch.setattr(oracle_reveal, "refuse_if_revealed", lambda *a, **k: None)
     monkeypatch.setattr(snapshot, "historical_load_kwargs", lambda path: {})
     monkeypatch.setattr(snapshot, "load_checkpoint_strict", bare)
-    monkeypatch.setattr(session_mod, "foreign_loader", lambda path, device: "foreign-model")
+    monkeypatch.setattr(session_mod, "foreign_loader", lambda path, device: _loaded("foreign-model"))
     state = OurSideState()
-    assert core_side.load_policy("/s.zip", "cpu", "auto", state) == "foreign-model"
+    assert core_side.load_policy("/s.zip", "cpu", "auto", state).tag == "foreign-model"
     assert state.model_loader == "foreign"
     out = capsys.readouterr().out
     assert "bare load failed" in out and "threat_prob_outspeed" in out

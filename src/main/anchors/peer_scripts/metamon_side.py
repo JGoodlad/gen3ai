@@ -35,6 +35,12 @@ became another type; the server refused the team), ``Happiness: 0`` packed as 25
 (seeded, sequence, Metamon's own unseeded one) yields that pack. The report's ``peer_pack_changed`` says whether any
 file plays differently from the legacy pack; it enters the cell's regime id (``EXTERNAL_ANCHORS_SOP.md`` H22).
 
+THE PEER'S CODE IS REPORTED (gen3_peer_code_v1, 2026-10-27)
+----------------------------------------------------------
+The report's ``peer_code`` (``peer_code.py``) names what this process executed: these scripts, the Metamon checkout it
+imports (HEAD and any local change), this interpreter and its packages. The cell stamps its digest and the regime id
+carries it unless it is a banked one (``main.reads.side_identity``).
+
 HOW GREEDY IS SET — and why NOT with a temperature (hazard H-D)
 ---------------------------------------------------------------
 ``amago``'s rollout loop calls ``policy.get_actions(..., sample=Experiment.sample_actions_val)``,
@@ -119,6 +125,7 @@ def _load_sibling(filename, name):
 
 WP = _load_sibling("weight_pins.py", "metamon_weight_pins")
 TP = _load_sibling("team_pack.py", "metamon_team_pack")
+PC = _load_sibling("peer_code.py", "metamon_peer_code")
 #: ``{abspath: packed}`` for every team file this peer may draw: packed through Showdown and verified at startup
 #: (:func:`install_showdown_pack`). Every yield reads it; a file not in it never plays.
 _PACKS = {}
@@ -593,6 +600,18 @@ def install_cpu_attention(choice, record):
     amago.cli_utils.use_config = use_config
 
 
+def peer_code_record(bridge_dir):
+    """What this peer executes (``peer_code.py``, gen3_peer_code_v1): its scripts, the Metamon checkout ``metamon`` is
+    imported from, this interpreter and its packages. An error is RECORDED, never raised: the harness voids the unit."""
+    import metamon
+
+    try:
+        return PC.identity(os.path.dirname(os.path.abspath(__file__)), bridge_dir,
+                           os.path.dirname(os.path.dirname(os.path.abspath(metamon.__file__))))
+    except Exception as exc:                # noqa: BLE001 - recorded, and the unit does not count
+        return {"schema": PC.SCHEMA, "error": f"{type(exc).__name__}: {exc}"}
+
+
 def install_weight_pins(args):
     """Offline, pinned-revision, sha-verified weights (FR-1 FINDING 3): replace ``huggingface_hub.hf_hub_download``
     (which Metamon calls without a revision) by the pinned downloader, then hash EVERY pinned file BEFORE the model is
@@ -692,6 +711,7 @@ def main(argv=None):
     else:
         pack_files = list(team_set.team_files)
     pack_record = install_showdown_pack(pack_files, args.battle_format, args.bridge_dir)
+    code_record = peer_code_record(args.bridge_dir)
 
     pin_record = install_weight_pins(args)
     model = get_pretrained_model(args.agent)
@@ -749,6 +769,7 @@ def main(argv=None):
         **pin_record,
         "team_pack": pack_record,
         "peer_pack_changed": pack_record["peer_pack_changed"],
+        "peer_code": code_record,
     })
     # Metamon's own scoreboard, complementing ours — the independent cross-check that the win
     # accounting is right. Its `won` field is a BOOLEAN, so it books a TIE as its own loss
