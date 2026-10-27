@@ -127,10 +127,11 @@ def test_a_trace_replay_badge_names_what_may_differ():
 
 
 def test_every_declared_marker_row_justifies_its_replay_action():
-    """v151 and v162 both declare `warn`: neither moves an encoder cell's LAYOUT, so a model's replay of its own
+    """v151, v162 and v163 all declare `warn`: none moves an encoder cell's LAYOUT, so a model's replay of its own
     traces feeds the exact stored observations (v151 re-scales / re-defines cells at ENCODE time; v162 changes an
-    op read and the volatile cells, 36 of 991 golden decisions). A `refuse` is for a change that does not."""
-    assert [(v, a) for v, _, a in OBS_SEMANTICS_HISTORY] == [(151, "warn"), (162, "warn")]
+    op read and the volatile cells, 36 of 991 golden decisions; v163 corrects the HP-type belief cells at encode time
+    under Foresight). A `refuse` is for a change that does not."""
+    assert [(v, a) for v, _, a in OBS_SEMANTICS_HISTORY] == [(151, "warn"), (162, "warn"), (163, "warn")]
     assert {a for _, _, a in OBS_SEMANTICS_HISTORY} <= {A.WARN, A.REFUSE}
 
 
@@ -141,7 +142,7 @@ def test_a_marker_row_declaring_refuse_still_refuses_a_trace_replay_but_not_the_
     monkeypatch.setattr(A, "OBS_SEMANTICS_HISTORY",
                         tuple(OBS_SEMANTICS_HISTORY) + ((future, "the cell layout moved", "refuse"),))
     monkeypatch.setattr(A, "OBS_SEMANTICS_VERSION", future)
-    below = A.verdict_from_record(OBS_SEMANTICS_VERSION, _HEAD_SIG)      # a v162 checkpoint, now one row behind
+    below = A.verdict_from_record(OBS_SEMANTICS_VERSION, _HEAD_SIG)      # a checkpoint at the marker, now one row behind
     assert A.gap_of(below) == A.GAP_SEMANTICS and not below.model_views
     assert A.decide(below, A.USE_TRACE_REPLAY).refused
     assert "cannot be read under" in below.plain

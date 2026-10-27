@@ -581,6 +581,10 @@ def _migrate_config(data: dict) -> dict:
     # unchanged), so every past config stamps through.
     if version < 162:
         data["config_version"] = 162
+    # v163 (gen3_hp_foresight_v1) — no field: the Rust Hidden-Power belief reads a foresighted Ghost without its Fighting
+    # immunity (an observation-value fix; the state_dict is unchanged), so every past config stamps through.
+    if version < 163:
+        data["config_version"] = 163
     #
     # ---- v97–v120 MIGRATION HISTORY — documentation, not code (floored away at v121) ---------
     # gen3_event_record_v2 (the observation-architecture batch: the E12 event-row reshape, the E4

@@ -113,6 +113,7 @@ so just a model-INTERNAL input can differ:
 |---|---|---|---|
 | 151 | Toxic counter cell stage/8 → stage/15; the Wish flag's meaning | `warn` | an ENCODE-time re-scale: a trace stores the observation its own model trained on, so its replay is exact; only a trace/checkpoint pair that straddles v151 (a `nearest` / `recent` rung) feeds a mismatched cell, and the badge names the Toxic / Wish cells to doubt |
 | 162 | the op reads a consumed item as no item (30/719 teams with item removal); stale Destiny Bond / Grudge / Rage / Endure / Snatch / Helping Hand / Mean Look volatile cells clear (36/991 golden decisions); lock-in and recharge counters end with Showdown's | `warn` | the op change is model-internal, so the stored observations are unchanged for an own-trace replay and only the damage-op reads on item-removal rows differ; the volatile cells and counters were stale in the OLD encode, so a replay shows the old, stale values the model really saw |
+| 163 | the opponent's Hidden Power type belief reads a Ghost under Foresight / Odor Sleuth as hit by Fighting (no immunity); it read every Ghost as immune (`gen3_hp_foresight_v1`) | `warn` | an ENCODE-time fix of the HP-type belief cells: a trace stores the (wrong) belief its own model saw, so an own-trace replay is exact |
 
 A future row that changes the encoder LAYOUT (a stored trace no longer fits what HEAD's network reads) declares
 `refuse`. ⚠ A `nearest` / `recent` rung pairs a checkpoint with traces it did not play; across a row that re-defines
@@ -125,7 +126,8 @@ version whose observation (and model-input) values mean something different, wit
 (the Toxic / Wish fix; v148 / v149's `x`-cell input fixes precede it, so one row covers them) and **162** (the
 2026-10-26 GIGO audit: the op reads a consumed item as no item and the stale Destiny Bond / Grudge / Rage / Endure /
 Snatch / Helping Hand / Mean Look `trapped` cells clear, `d8d674b9`; the lock-in and recharge counters end when
-Showdown's do, `f9978586`). A checkpoint "trained on obs_semantics N" has N = the newest row at or below its recorded
+Showdown's do, `f9978586`) and **163** (the Hidden Power type belief honours Foresight / Odor Sleuth,
+`gen3_hp_foresight_v1`). A checkpoint "trained on obs_semantics N" has N = the newest row at or below its recorded
 config version (`arch_status.obs_semantics_of`). `ARCH_SIGNATURE` / `MIGRATION_FLOOR` only see weights. A commit that
 re-scales or re-defines a cell without a shape change appends a row for the version it stamps. Nothing gates a resume
 or an opponent load on it — `check_compatible` is unchanged; it is a READER's marker, acted on through the gap policy.

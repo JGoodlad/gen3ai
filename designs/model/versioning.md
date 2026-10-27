@@ -266,6 +266,11 @@ harvest meters for every current model) and RAISED to 162 the same day, once the
 checkpoint is refused, a fresh probe or a stored-obs score runs with the badge "trained on obs_semantics v151, probed at
 v162". The v162 history row also names `f9978586`'s lock-in / recharge counter fixes.
 
+**v163 (`gen3_hp_foresight_v1`, 2026-10-27)** — an OBSERVATION-VALUE fix with NO field and no weight shape: the Rust
+Hidden-Power type belief (`trackers/hp_belief.rs`) reads a Ghost target under the `foresight` volatile (Foresight / Odor
+Sleuth) without its Fighting immunity, as Showdown resolves the hit. `_migrate_config` stamps every past config through;
+`OBS_SEMANTICS_VERSION` rises to 163 with a `warn` row (an encode-time cell fix). No `ARCH_SIGNATURE` or floor change.
+
 **The exact P(KO) (then `ko_ramp = 'exact'`; flagless since v156) is computed in CLOSED FORM (`gen3_ko_exact_closed_v1`,
 2026-10-10), with NO config, obs-semantics or signature bump.** The value `exact_closed` that carried the closed form beside the 16-roll sum was legal for one
 commit (`6e0a1a7a`, no bump: a new VALUE of an existing field, nothing to migrate, no parameter); the owner's "remove

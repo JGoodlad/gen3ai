@@ -200,7 +200,8 @@ neither reads as a reveal), and `BoardReading.upkeep_turn` (an `|upkeep|`, read 
 **What the move fired against** (`gen3_hp_fire_time_target_v1`, F-M5-1): the `|move|` handler's damaging-move capture
 (`DamagingMoveRead`, poke-env's `DamagingMoveEvent`) also snapshots the target's TYPES and ABILITY and whether the USER
 is transformed, at the line — a later faint / switch-out clears a Transform overlay, so the next decision's board is
-not the board the hit landed on. `MonView.transformed` (`Pokemon.transformed`) is on the Rust view only — not in
+not the board the hit landed on. It also snapshots whether the target holds the `foresight` volatile
+(`target_foresight`, `gen3_hp_foresight_v1`): Foresight / Odor Sleuth lift a Ghost's Fighting immunity. `MonView.transformed` (`Pokemon.transformed`) is on the Rust view only — not in
 `OneSidedView::json`, so the Python `LivePokemon` shape is unchanged; the Hidden-Power belief reads both
 (`designs/rust_sim/trackers.md` §5).
 

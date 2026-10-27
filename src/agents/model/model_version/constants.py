@@ -634,7 +634,15 @@ from typing import Any, Dict
 #   gen3_volatile_silent_ends_v1 (the Rust reading: Destiny Bond / Grudge / Rage end at the holder's next move,
 #   Endure / Snatch / Helping Hand at the turn, Mean Look's `trapped` when its trapper leaves and through Baton Pass;
 #   the obs golden moved on 36 of 991 decisions, all a stale Destiny Bond cell 1 -> 0).
-MODEL_CONFIG_VERSION = 162
+# v163 (gen3_hp_foresight_v1, 2026-10-27; TECH_DEBT P3, `designs/rust_sim/gen3_full_parity.md` "Known divergences"):
+#   no field, no weight shape. The Rust core's Hidden-Power type belief (`trackers/hp_belief.rs`; its Python twin was
+#   deleted in T27 P6 6d-2) read every Ghost target as immune to Fighting; a target under the `foresight` volatile
+#   (Foresight or Odor Sleuth: `data/moves.ts` `onNegateImmunity`) is not, and its Ghost type adds 0 to the type mod.
+#   A Hidden Power Fighting into a foresighted Ghost was misread (a 2x on Sableye dropped as infeasible, a 0.5x on
+#   Gengar zeroed the true Fighting). The reading's fire-time target snapshot now carries the volatile. An
+#   OBSERVATION-VALUE fix of the opponent HP-type cells: OBS_SEMANTICS_VERSION raised to 163 (`warn`). Every past
+#   config stamps through. No ARCH_SIGNATURE bump, no MIGRATION_FLOOR change.
+MODEL_CONFIG_VERSION = 163
 
 # THE OBS-SEMANTICS MARKER (declared 2026-10-09, with v151): the FIRST config version whose OBSERVATION VALUES
 # (the vector the encoder writes, and the model-input cells derived from it) MEAN something different from every
@@ -673,6 +681,9 @@ OBS_SEMANTICS_HISTORY = (
           "as held), the Destiny Bond / Grudge / Rage / Endure / Snatch / Helping Hand cells and Mean Look's "
           "trapped flag now clear when their effect ends, and the lock-in and recharge counters end when "
           "Showdown's do", "warn"),
+    # gen3_hp_foresight_v1 (TECH_DEBT P3 closed): an encode-time fix of the Rust HP-type belief.
+    (163, "the opponent's Hidden Power type belief reads a Ghost under Foresight or Odor Sleuth as hit by Fighting "
+          "(no immunity), where it read every Ghost as immune", "warn"),
 )
 OBS_SEMANTICS_VERSION = OBS_SEMANTICS_HISTORY[-1][0]
 

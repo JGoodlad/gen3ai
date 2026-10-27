@@ -340,7 +340,7 @@ def test_a_recorded_incompatibility_is_refused_typed_before_any_load(tmp_path, m
 def test_the_semantics_only_class_is_caught_though_the_weights_would_load(tmp_path, monkeypatch):
     """THE SILENT CLASS, end to end: a checkpoint recorded one version below `OBS_SEMANTICS_VERSION` has the
     current signature and the current width, so every shape check passes and the (stubbed) strict load
-    SUCCEEDS — and a TRACE REPLAY of it RUNS badged (the gap policy; v151 and v162 declare `replay: warn`), while a
+    SUCCEEDS — and a TRACE REPLAY of it RUNS badged (the gap policy; every marker row declares `replay: warn`), while a
     marker row declaring `replay: refuse` refuses it WITHOUT a load; the checkpoint one version later has no badge."""
     calls: list = []
     _loader_succeeds(monkeypatch, calls)

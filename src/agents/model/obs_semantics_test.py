@@ -35,7 +35,9 @@ from agents.model.model_version import (
 # first KEPT at 151 (a hard refusal in `ProbeModel.load` would have blinded every reader of current models) and RAISED
 # to 162 with the same hash once the gap policy landed (`main.prober.arch_status.decide`): a trace replay across the
 # gap is refused, a fresh probe or a stored-obs score runs with a badge.
-_GOLDEN_PIN = ("ab3cdda779eb21b340170039667f9e63071d1549de1efbe2f43e3c6f1f897235", 162)
+# Re-pinned 2026-10-27 (config v163, gen3_hp_foresight_v1): the marker RAISED to 163 with the SAME hash — the HP-type
+# belief now honours Foresight / Odor Sleuth, a cell-value fix no golden battle reaches (991 / 991 unchanged).
+_GOLDEN_PIN = ("ab3cdda779eb21b340170039667f9e63071d1549de1efbe2f43e3c6f1f897235", 163)
 
 _GOLDEN = Path(__file__).resolve().parents[1] / "training" / "golden_obs_fixture.json"
 

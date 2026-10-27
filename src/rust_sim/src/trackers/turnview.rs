@@ -24,6 +24,8 @@ pub struct DamagingMove {
     /// only by the reading's PROMOTED move ([`DamagingMove::from_read`]); `None` on this fold.
     pub target_types: Option<Vec<String>>,
     pub target_ability: Option<String>,
+    /// The target held the `foresight` volatile when the move fired (`gen3_hp_foresight_v1`).
+    pub target_foresight: bool,
     /// The user was transformed when it fired (its Hidden Power is the copied mon's type).
     pub user_transformed: bool,
 }
@@ -40,6 +42,7 @@ impl DamagingMove {
             effectiveness: Some(d.effectiveness),
             target_types: Some(d.target_types.clone()),
             target_ability: d.target_ability.clone(),
+            target_foresight: d.target_foresight,
             user_transformed: d.user_transformed,
         }
     }
@@ -283,6 +286,7 @@ impl<'a> TurnView<'a> {
                     effectiveness: st.effectiveness.or(if dealt < 0.0 { Some(1.0) } else { None }),
                     target_types: None,
                     target_ability: None,
+                    target_foresight: false,
                     user_transformed: false,
                 });
             }

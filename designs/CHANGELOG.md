@@ -15497,3 +15497,17 @@ was downloaded or written under `data/`.
 - **Tests.** `main/prober/gap_policy_test.py` (the table cell by cell; the use every call site declares, by AST);
   `model_test.py` (the seam and the session per use on a gap run); `app_test.py` (the badge on each fresh job result, the
   card's fresh-probes line). Doc: `designs/prober/arch_drift.md` "The gap policy".
+
+## 2026-10-27 — the Hidden Power type belief honours Foresight / Odor Sleuth (`gen3_hp_foresight_v1`; config v163, no field; `OBS_SEMANTICS_VERSION` 162 → 163, `warn`)
+
+- **The bug** (TECH_DEBT P3, `designs/rust_sim/gen3_full_parity.md` "Known divergences"). The Rust core's Hidden-Power
+  type belief (`trackers/hp_belief.rs`; the Python twin was deleted in T27 P6 6d-2) read every Ghost target as immune to
+  Fighting. Under the `foresight` volatile (Foresight or Odor Sleuth) Showdown negates that immunity
+  (`data/moves.ts` `onNegateImmunity`, `sim/pokemon.ts` `runImmunity`) and the Ghost adds 0 to the type mod, so a Hidden
+  Power Fighting lands at the other type's multiplier: a 2x on Sableye was dropped as infeasible, a 0.5x on Gengar zeroed
+  the true Fighting.
+- **The fix.** `DamagingMoveRead` / `DamagingMove` snapshot `target_foresight` at the `|move|` line, and the belief's
+  `effective_multiplier` reads a negated Ghost as neutral to Normal / Fighting. Pins: two constructed battles in
+  `tests/tracker_semantics_test.rs` (each FAILS on revert) and an `hp_belief` unit test.
+- **Measured.** Obs golden 991 / 991 unchanged (no golden battle reaches it); `obs_semantics_test` re-pinned at 163 with
+  the same hash. Encoder benchmark 11.1 → 11.1 µs encode, 16.8 → 16.7 µs present + encode (median, same contended box).
