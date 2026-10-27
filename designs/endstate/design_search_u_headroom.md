@@ -219,8 +219,12 @@ deep with the critic at the cut. A live decision rebuilds its worlds each time; 
 ≈ 37 choices fall from turn 10 on. Of those, an estimated 30–37 have ≥ 2 legal actions; the ≥ 2-legal share is
 unmeasured.
 
-**The cost a searched game** (ESTIMATE):
-- 30–37 × 29–60 s ≈ **15–37 CPU-min, central ≈ 25**. R0 §4's ≈ 32 CPU-min (32 decisions × 60 s) sits inside.
+**The cost a searched game** (ESTIMATE, corrected by stage 0's first searched game, 2026-10-27; S-1):
+- **The cost a decision climbs with the turn**, ≈ 6 search CPU-s at turns 10–19 to ≈ 130 at turns 50–60, with the
+  worlds, depth, tries and playouts flat or falling: it is the world screen (each chain step replays the whole true
+  log), not the search's width ([`AMENDMENT_1_DRAFT.md`](../research_state/measurements/su_headroom_2026-10-27/AMENDMENT_1_DRAFT.md) §1).
+- So a median-length (≈ 35-turn) game ≈ 15–20 CPU-min of whole-unit CPU, a 60-turn game ≥ 100, and the MEAN, set by
+  the long tail, ≈ the original **central ≈ 25** (15–37). R0 §4's ≈ 32 CPU-min sits inside.
 - The raw twin costs 11.8 s (X51, measured).
 - Kakuna's forward is not counted. It waits while we search.
 
@@ -423,10 +427,16 @@ secondary.
   identical raw game. At 30–37 searched decisions that is ≈ 3–6 CPU-min a searched game, 4–8× below the central 25,
   and the whole read would be ≈ 150–250 CPU-h, not ≈ 1,000 (MY JUDGEMENT; UNVERIFIED: later turns, P72 and H were not
   played). Stage 0 measures it on 20 searched games before the read sizes; the re-size rule (§4.4) is unchanged.
+  **Stage 0's first searched game REFUTED the smoke's figure past turn 20** (home72 seed 0 game 0: 59 search CPU-min
+  by turn 60, still running; ≈ 6 CPU-s a decision at turns 10–19, ≈ 130 at 50–60; 7 exclusions at 60–407 s each). The
+  smoke's ≈ 150–250 CPU-h is withdrawn and §4.2's central ≈ 25 CPU-min (≈ 1,000 CPU-h) stands, ONE game, UNVERIFIED.
+  Stage 0 is HELD (it held a heavy slot ahead of the reads ranked above it); the cost-capped variants are
+  `AMENDMENT_1_DRAFT.md` (DRAFT, not registered).
 - **S-2.** CLOSED by B3: one-game units (`per_game`), a searched unit a long heavy-slot job with a 3-h watchdog.
   Residual: a searched unit never takes the short lane, so it queues behind the slots' 40–45-min chunks; if stage 0
   confirms ≈ 5 min of wall a searched game, the short lane with its exit-88 long fallback would fit (a one-line change
-  in `main.x35.kakuna`, not made). A game that does run past 45 min holds its slot past the chunk policy: it cannot be
+  in `main.x35.kakuna`, not made). Stage 0's first searched game ran > 1 h of wall: the short lane does NOT fit, and
+  a searched long job takes a heavy slot ahead of the short units of reads ranked above S-U. A game that does run past 45 min holds its slot past the chunk policy: it cannot be
   split.
 - **S-3.** CLOSED (A9): the keepalive is the one clock, and the search runs off the event loop.
 - **S-4.** The leak-cancellation argument for I is first-order and UNVERIFIED (A4).
@@ -471,3 +481,4 @@ secondary.
 | 2026-10-27 | **This doc CREATED (DRAFT, explicit-only)** (search-research design worker, orchestrator brief; docs only, one arithmetic script) | S-U: P\* vs P\* + L1's piKL search (8 honest worlds, TRUNC-4-K8, λ 0.015) from turn 10, against Kakuna on home72 and pooled U, ONE engine, deal-interleaved and paired with a byte-identical nine-turn prefix. The co-primaries are I = G_U − G_home72 (U-HEADROOM / U-LESS / NO-U-PREMIUM) and G_U (DOES-NOT-CLOSE-B creditable; positives leak-inclusive). 1,200 deals a set: a cost-only stage 0; phase 1 (U complete, home72 400) reads G_U finally and I futility-only; phase 2 tops home72 up only if I is UNDECIDED. ≈ 1,000 CPU-h central: a rented-box read, not a local one. It supersedes E4's registration if registered | a decision-level self-referee screen (too coarse, wrong referee); an oracle ceiling arm (saturates, doubles); F alone; search every turn; E4 as written; buying a third-of-gap interaction (≈ 4× the CPU) | H-MID README (`f200258f`) FINDING 1, reading 2–3; the forensics (`c758fcb8`); X51 README (twins, costs); maturity README "Costs"; R0 §4; `search_ledger.md` §6.1, §6.2; `design_search_next.md` E4 and its review (`9738296f`) F11, F12; `../tools/reads.md` §3, §4 (`20875e96`) |
 | 2026-10-27 | **B1–B3 BUILT and smoke-tested** (search engineer, orchestrator brief; no read registered or played) | the live searched player (`main.anchors --our-search r0s4@10`), piKL in `main.value_search.rules`, per-game units with G-PREFIX and the stage-0 harness (`run --max-units`, `search-cost`) in `main.reads`; §6's table, A9, §9 (S-1 measured on the smoke, S-2 and S-3 closed, S-9–S-12 new) | searching ON the event loop (the peer's keepalive drops it, and the forfeit reads as our win); a mid-game checkpoint to split a long searched game into chunks (one game per unit fits once the smoke's cost holds); re-sizing §4 on the smoke's 12 decisions (stage 0 does it, by §4.4's rule) | `src/main/anchors/search_side.py`, `search_presets.py`, `peer_patience_integration_test.py`; `src/main/reads/prefix.py`, `search_cost.py`; `~/gen3ai_archive/su_build_smoke_2026-10-27/` |
 | 2026-10-27 | **B4 BUILT, the forfeit-win guard landed** (S-U operator, orchestrator brief) | `search_headroom` (§6 B4; ONE `per_game` group, pairs only where both games counted, a percentile unit bootstrap within panel with the U panels drawn first, exact-fraction bars with rule 8's 0.0005, the phase-1 futility-only rule, VOID on G-PREFIX / engines / bytes / the search stamp and played preset); every anchor game a FORCELOSE decided other than our own turn-limit cap is VOID (`runner.forced_end_verdict`, A9) | computing the REPORTED subgroup / world quality / Δbias inside the rule (the cells do not carry them: separate scripts); counting a forced-end game as a loss instead of VOID (a peer's drop is a harness defect, never an outcome) | `src/main/reads/rules_search_headroom.py`, `src/main/anchors/forced_end_guard_test.py`, `peer_patience_integration_test.py` (the negative control); the banked scan: 0 forced-end games in 972 counted units |
+| 2026-10-27 | **Stage 0 held; the cost model corrected** (S-U operator; orchestrator ruling (b)) | stage 0 HELD until N1-P, H-CTX and X59-S finish (a searched game held a heavy slot > 1 h); §4.2's per-game cost corrected from stage 0's first searched game (the world screen's cost climbs with the turn); the smoke's ≈ 150–250 CPU-h withdrawn; the cost-capped variants drafted, not registered (`AMENDMENT_1_DRAFT.md`: an incremental screen first, else search turns 10–30) | continuing stage 0 now (a day of a slot above the brief's priority); a per-decision CPU-time budget (not deterministic); 4 worlds (no longer L1's S) | stage 0's `search_decisions.jsonl` for `pstar_s__home72__00__g00` |

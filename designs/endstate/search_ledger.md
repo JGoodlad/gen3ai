@@ -813,13 +813,14 @@ limits:
   peer (`keepalive ping timeout`) and the front end booked a forfeit WIN for us at turn 3. The forfeit-win guard
   (2026-10-27, `EXTERNAL_ANCHORS_SOP.md` § Counting a unit) now voids any game a forced end decided other than our own
   turn-limit cap, in every anchor lane; the same control is its slow test.
-- **Cost** (the build's smoke, 2026-10-27; `~/gen3ai_archive/su_build_smoke_2026-10-27/`; MEASURED on only 12 searched
-  decisions of 2 deals, home72 and forum72, turns 10–19, our forfeit lowered to turn 12 / 20): a searched decision
-  **6.4 CPU-s median** (5.1–8.2; the worker thread plus its replay children) and 6.7 s of wall; every world built at its
-  first try; the whole process spent ≈ 10.3 CPU-s more per searched decision than the identical raw game (the
-  validator's Node child, the peer's polling and the other threads included). At 30–37 searched decisions a game that is
-  ≈ 3–6 CPU-min a searched game, **4–8× below S-U's central ESTIMATE of 25 CPU-min (15–37)** (UNVERIFIED until stage 0: later turns,
-  P72 and H were not played). All 12 decisions from turn 10 had ≥ 2 legal actions; 1 of 12 deviated from π. The same
+- **Cost.** The build's smoke (2026-10-27; 12 searched decisions, turns 10–19) measured **6.4 CPU-s a decision**
+  (median; the worker thread plus its replay children), the whole process ≈ 10.3 CPU-s more per searched decision than
+  the raw game. **It does not hold past turn 20**: S-U stage 0's first searched game (home72, 2026-10-27) climbed from
+  ≈ 6 CPU-s a decision at turns 10–19 to ≈ 130 at turns 50–60 (59 search CPU-min by turn 60), with worlds, depth, world
+  tries and playouts flat or falling: the cost is the honest world screen, each chain step a replay of the whole true
+  log (MY JUDGEMENT; the split is not logged), and a late decision with no consistent world costs up to 407 CPU-s. A
+  median-length game ≈ 15–20 CPU-min of whole-unit CPU, a long one ≥ 100; S-U's central ≈ 25 stands (ONE game;
+  `../research_state/measurements/su_headroom_2026-10-27/AMENDMENT_1_DRAFT.md`). In the smoke all 12 decisions from turn 10 had ≥ 2 legal actions; 1 of 12 deviated from π. The same
   searched deal played twice was byte-identical over the whole game, decision records included; G-PREFIX held on both
   pairs, and the home72 pair diverged at turn 11, where the search first deviated.
 - **The rule** `search_headroom` (B4, `src/main/reads/rules_search_headroom.py`) decides S-U's classes. S-U is REGISTERED
