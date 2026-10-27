@@ -1,2 +1,3 @@
 *.npz
+draws_meta.json
 __pycache__/

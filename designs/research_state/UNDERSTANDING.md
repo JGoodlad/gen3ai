@@ -73,7 +73,11 @@ under `measurements/`. A number with no pointer is not a measurement.
 4. **It is lost from level mid-game positions, and it goes with the TEAM, not the set.** From level material at
    turn 10 P\* wins 0.609 on home72 and 0.501 on U; the opening carries none of the gap. Sets we trained on lose
    their edge inside an unfamiliar six (+0.093 [+0.004, +0.176]). [DESCRIPTIVE · banked X51 games, replicated on the
-   PastaMittens twins · `c758fcb82`] H-CTX, H-MID and N2 test it (§6).
+   PastaMittens twins · `c758fcb82`] H-CTX and H-MID test it (§6). The policy does NOT key on our sets' exact
+   identity. A Smogon re-draw of one familiar bench set moves it only 1.19× [1.07, 1.33] as much as re-drawing an
+   unfamiliar one (the bar was 1.5×). Erasing all six mons' identity embeddings costs familiar and unfamiliar teams
+   alike (1.07 [0.91, 1.25]). Lever N2 is dropped. [MEASURED · CPU, P\* vs P\* rows, one checkpoint · PREREG
+   `98bcb1146`, `measurements/n2_identity_test_2026-10-26/`]
 5. **No lever measured so far closes goal (b).** Against its own control each reads +1 to +3 pp with intervals
    ±3–4 pp wide: practice on 36 teams (X52) +1.3 pp on the unpractised half, UNDECIDED; a wider pool (D1) +2.10
    [−0.92, +5.11], UNDECIDED (final), at −1.61 pp in-pool; set mutation (D3, look 1) +1.27 [−2.63, +5.16], CONTINUE,
@@ -490,7 +494,6 @@ retired for the fold-gift question only; they live in the last full text (§0) a
 | Is human data better than our own self-play data? | **X59-S**: three matched student arms, five seeds each; S-H − S-S answers it, S-H − S-P picks the lever ([`PREREG.md`](measurements/x59s_matched_students_2026-10-25/PREREG.md), `5cbf46dc0`). It decides whether the human-data switch and X60 get built |
 | Is the familiarity premium TEAM context or set knowledge (H-CTX)? | **H-CTX on rc72**: P\* vs Kakuna on 72 new teams of verbatim pool sets, ≤ 2 shared with any pool team; ≥ 0.57 kills H-CTX, ≤ 0.52 supports it ([`PREREG.md`](measurements/hctx_rc72_2026-10-26/PREREG.md), `b712c46d1`) |
 | In the level mid-game positions, does P\*'s critic mis-value unfamiliar teams, or does its policy fail to act? | **H-MID**: critic calibration at level turn-10 states, home72 vs U, on banked X51 games; CRITIC-MISCALIBRATED-ON-U vs POLICY-CANNOT-ACT ([`PREREG.md`](measurements/h_mid_value_test_2026-10-26/PREREG.md), `2dd522785`) |
-| Does P\* key on the EXACT identity of its own sets (a memorised team → plan)? | **the N2 identity test**: pool-team KL ≥ 1.5 × unfamiliar-team KL under a same-species Smogon redraw; KILL lever N2 if the ratio's interval covers 1.0 and excludes 1.5 ([`PREREG.md`](measurements/n2_identity_test_2026-10-26/PREREG.md), `98bcb1146`) |
 | Does the plateau resist new data a young network would absorb (plasticity)? | **the plasticity probe** on X26 @25M / @100M / P\*; its bars (LOSS / NO-LOSS / UNCLEAR) are drafted in `../endstate/strategy_if_levers_null_2026-10-26.md` §2 and fixed in its own registration before any number |
 
 **Queued and planned**

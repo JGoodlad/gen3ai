@@ -29325,3 +29325,39 @@ CPU only, no games.
   ("H +1.27 pp … per panel H +2.9"). Read the statistic as U, the equal-weight mean over H, F and P72.
 
 **Evidence:** `research_state/measurements/views_audit_2026-10-26/README.md`.
+
+### 2026-10-26 · MEASUREMENT · **THE N2 EXACT-SET IDENTITY TEST, read under its registration (`98bcb1146`): COMPOSITIONAL, N2 DROPPED. A Smogon re-draw of one never-seen bench set moves P\*'s policy 1.19× [1.07, 1.33] as much on a pool team as on an unfamiliar one (bar 1.5×); erasing our six mons' identity embeddings costs both alike (1.07 [0.91, 1.25])**
+
+**Question** (`endstate/strategy_if_levers_null_2026-10-26.md`, lever N2). Does P\* choose by the EXACT identity of
+our own sets (a memorised team → plan), beyond their mechanics? If so, training-only noise on that channel (N2) is
+funded.
+
+**Design** (`research_state/measurements/n2_identity_test_2026-10-26/PREREG.md`). CPU only, P\* forward on the
+architecture-generalisation review's archived P\* vs P\* rows, side 0 (a home72 opponent in both groups). Per
+eligible bench mon (never seen, full HP, no status), 3 Smogon usage re-draws of its species by D3's generator, all
+validated, spliced into the row. R = POOL (home72) / UNFAMILIAR (F + H + P72) mean KL, standardised over the
+difference pattern; game bootstrap. KEYS-ON-SETS iff R ≥ 1.5 and CI lower > 1.0; COMPOSITIONAL iff CI upper < 1.5.
+
+**Result** (`result.json`).
+- **R 1.19 [1.07, 1.33]**: KL 0.102 vs 0.086; 7,260 / 24,384 units, 48 / 143 games; splice guard 0 failures in
+  10,548 targets. Raw ratio 1.14 [1.02, 1.28]; shared species 1.20 [1.06, 1.34]; flip 1.04 [0.93, 1.16]; |Δv| 1.11
+  [0.98, 1.26]; the switch-to-that-mon shift 1.03 [0.92, 1.16].
+- Our-side mean ablation: identity embeddings KL 0.572 vs 0.537 (R 1.07 [0.91, 1.25]); mechanics columns 0.183 vs
+  0.188 (0.97 [0.84, 1.12]). The team-level guard did not fire.
+- Mechanics-preserving edits: move order and a nickname leave the observation identical; a stat-identical EV change
+  moves the smooth stat input and reads KL ~1e-5.
+
+**Reading.** P\* is slightly more attached to sets it trained on (≈ +19 %, the generalisation review's P8 size,
+from the other side), but nowhere near the 1.5× a set-keyed team signature needs. The identity embeddings are used
+as a vocabulary, equally on familiar and unfamiliar teams. This agrees with the piloting-gap forensics (team
+context, not set knowledge). **The interval excludes 1.0**, so the strategy doc's older literal KILL clause
+("covers 1.0 and excludes 1.5") is not met. The verdict rests on the PREREG's declared rule (upper < 1.5).
+
+**FINDINGS.** The review's rows use 48 teams with indices up to 68, not "the panel's first 48". The draws were built
+for all 72 teams; the seeds are per team, so no design change. 27 of 2,000 bootstrap resamples with an empty sparse
+cell were discarded (unregistered; the raw ratio agrees). The probe ran on main's `src/` (the worktree has no Rust
+build). One checkpoint, P\* vs P\* rows, never-seen bench mons only.
+
+**Evidence:** `research_state/measurements/n2_identity_test_2026-10-26/` (README, `result.json`, scripts); binaries
+sha256-pinned and archived in `~/gen3ai_archive/n2_identity_test_2026-10-26/`. See `UNDERSTANDING.md` §3 and the
+strategy doc's N2 row.

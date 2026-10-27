@@ -1,6 +1,6 @@
 """BUILD the perturbed sets and their Rust encodings (no policy forward). Writes draws.npz + draws_meta.json.
 
-For each panel (home72, F, H, P72) and each of the first 48 teams (the teams side 0 piloted in the archived rows),
+For each panel (home72, F, H, P72) and each of its 72 teams (the archived rows' 48 games use indices up to 68),
 each slot whose species is D3-eligible:
   * PRIMARY: K=3 Smogon usage draws of the same species by D3's own generator (`build_d3_setmut.mutate_block`, its
     engine prefilter, the HP repair), rule 4 (a NEW mon set, `team_overlap` key) and the pinned gen3ou validator on the
@@ -24,7 +24,7 @@ from agents.observation import constants as K
 C = N.C
 K_DRAWS = 3
 ATTEMPT_ROUNDS = ((0, 8), (8, 20), (20, 40))
-N_TEAMS = 48
+N_TEAMS = 72                      # the rows' 48 games use team indices up to 68 (collect.py stages ahead)
 PANELS = ("home72", "F", "H", "P72")
 
 

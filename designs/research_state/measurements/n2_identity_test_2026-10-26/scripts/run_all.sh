@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # The whole N2 identity test, CPU only, rule 5b's shape (nice 19 on the agent cores, mem_cap-capped). Read-only on models/.
 # Runs with MAIN's src on PYTHONPATH (its release Rust build passes its stamp there; see README F-N2-H1).
-set -eu
+set -euo pipefail
 D="$(cd "$(dirname "$0")" && pwd)"
 SRC=${N2_SRC:-/home/goodlad/dev/gen3ai/src}
 export PYTHONPATH=$SRC:$D CUDA_VISIBLE_DEVICES="" PROBE_THREADS=3

@@ -42,11 +42,12 @@ unmeasured effect; **ESTIMATE** = a cost from measured rates; **MY JUDGEMENT** =
 - **The revised top three by P(GAIN) per resource-day** (§3.2), each after its zero-GPU gate:
   1. **PR-1** itself (zero GPU). It is information, not a lever: it decides whether the six breadth rows are worth
      any GPU, and it banks a 14,000-game C0 at the tree's engine stamp that every later fork reuses.
-  2. **N2, the training-only set-channel mask**: P(GAIN) 0.64 on a read sized for +1.5 pp, ≈ 20.5 GPU-h + ≈ 107 lane-h
-     (≈ 0.12 per resource-day), only if its registered exact-set identity test reads KEYS-ON-SETS.
+  2. ~~**N2, the training-only set-channel mask**~~: **DROPPED 2026-10-26.** Its registered exact-set identity test
+     read COMPOSITIONAL: a familiar set's Smogon re-draw moves P\* only 1.19× [1.07, 1.33] an unfamiliar one's,
+     against a 1.5× bar ([`n2_identity_test_2026-10-26/README.md`](../research_state/measurements/n2_identity_test_2026-10-26/README.md)).
   3. **The breadth STACK fork, only on PR-1's BREADTH-GAIN**: P(GAIN) 0.62 at the same cost (≈ 0.12 per
      resource-day). Without PR-1 it falls to 0.49 and is not run.
-- **The tree** (§4): T1 is zero-GPU (PR-1, the N2 / N3 / plasticity probes, search's E2). **The owner is asked at the
+- **The tree** (§4): T1 is zero-GPU (PR-1, the N3 / plasticity probes, search's E2; N2's test ran 10-26 and dropped N2). **The owner is asked at the
   END OF T1, with an information trigger** (§5), not when a GPU budget runs out: PR-1 KILL with no plasticity LOSS ⇒
   at once; otherwise T2 runs under a cap of ≈ 40 GPU-h and ≈ 250 lane-h without a GAIN.
 - **The only bet whose expected value alone reaches the ≈ 4.3 pp gap** is still the scale bet (a wider network from
@@ -185,7 +186,7 @@ Neither reading is supported at that resolution.
 | rank | lever | escapes / tests | GUESS (80 %) | P(GAIN) D1 / PR | GPU-h | lane-h | agent-days | per resource-day (PR) | gate |
 |---|---|---|---|---|---:|---:|---:|---:|---|
 | **1** | **PR-1** (§3.1) | resolution | — (an information read) | — | 0 | 165–238 | ≈ 1 | — | none: T1's first item |
-| **2** | **N2: set-channel noise.** In training only, each own mon's set fields are masked with ONE registered probability p (no tuning: a second p is a second lever) | identification | +1.5 (0, +3) | 0.41 / **0.64** | 20.5 | ≈ 107 | ≈ 1.5 | **≈ 0.12** | the exact-set identity test (zero GPU), REGISTERED at [`n2_identity_test_2026-10-26/PREREG.md`](../research_state/measurements/n2_identity_test_2026-10-26/PREREG.md) (`98bcb114`): KEYS-ON-SETS (R ≥ 1.5, CI lower > 1.0) funds N2; COMPOSITIONAL (CI upper < 1.5) drops it; INCONCLUSIVE otherwise |
+| ~~2~~ | **N2: set-channel noise — DROPPED 2026-10-26** (its test read COMPOSITIONAL, R = 1.19 [1.07, 1.33]; the row is kept for the record). In training only, each own mon's set fields are masked with ONE registered probability p (no tuning: a second p is a second lever) | identification | +1.5 (0, +3) | 0.41 / **0.64** | 20.5 | ≈ 107 | ≈ 1.5 | **≈ 0.12** | the exact-set identity test (zero GPU), REGISTERED at [`n2_identity_test_2026-10-26/PREREG.md`](../research_state/measurements/n2_identity_test_2026-10-26/PREREG.md) (`98bcb114`): KEYS-ON-SETS (R ≥ 1.5, CI lower > 1.0) funds N2; COMPOSITIONAL (CI upper < 1.5) drops it; INCONCLUSIVE otherwise |
 | **3** | **The breadth stack** (breadth bet, plateau form). One union corpus of `w_forum_v1@ABC`, `d3_setmut_v1` and `n1_proc_v1` (panel exclusion re-derived on the union) | resolution (on GAIN) | +1.5 (0, +3.5) after PR-1 GAIN | 0.42 / **0.62** | 20.5 | ≈ 107 | 0.5–1 | **≈ 0.12** | **PR-1 BREADTH-GAIN** only. P is co-primary (D1's −1.6 pp may compound). FINDING 6: no current panel is unhazarded for the union |
 | 4 | **H-TEAMS (X60).** Human ladder teams in the pool, the human-data toggle | breadth, human sets | +1.0 (−1, +4) | 0.35 / 0.49 | 12–20 | ≈ 107 | 2–3 | ≈ 0.09 | X59-S not closing human data; X60 READY; LOCAL only |
 | 5 | **Specialist distillation.** Practise K ≈ 100 human-built teams that are in no panel (≈ 0.6 GPU-h a team, X52's regime), then distil the K specialists into the generalist (policy distillation, 5 seeds) | the familiarity premium directly | +1.5 (−1, +4) | 0.44 / 0.59 | ≈ 60 + 20 | ≈ 107 | ≈ 3 | ≈ 0.07 | X52's practised gain stands (+3.2 [−0.2, +6.8]); its teams carry the F-adjacency hazard of any forum source |
@@ -234,7 +235,7 @@ T0  the three reads land (D3 look 2 · N1-P look 1 [+ look 2] · X59-S)
  └─ none ─────────────► T1
 T1  THE ZERO-GPU STAGE (the GPU keeps its queue). At its START the owner is asked one question: a CPU box for PR-1?
       a. PR-1, the precision read (§3.1)          ≈ 1 box-day, or ≈ 7–10 days of the local anchor lane
-      b. N2's exact-set identity test (registered) ≈ 0.5 agent-day
+      b. N2's exact-set identity test: RAN 2026-10-26, COMPOSITIONAL ⇒ N2 dropped
       c. N3's PLR-signal probe                     ≈ 0.5 agent-day
       d. the plasticity probe (§2's bars)           ≈ 1 agent-day, 5–10 CPU-h
       e. search's E2 bridge read                   ≈ 0.5 agent-day, 25–35 lane-h
@@ -242,7 +243,7 @@ T1  THE ZERO-GPU STAGE (the GPU keeps its queue). At its START the owner is aske
 T1 END ⇒ THE OWNER (§5), with PR-1's class and d's class in hand
 T2  CAPPED FORKS (each read by the PR rule at the tree's engine; cap ≈ 40 GPU-h and ≈ 250 lane-h without a GAIN)
       PR-1 BREADTH-GAIN ─► the STACK fork (rank 3); then the extension (rank 6); N3 (rank 8) if c passes
-      b KEYS-ON-SETS ────► the N2 flag, then its fork (rank 2)
+      (b read COMPOSITIONAL: no N2 flag or fork)
       X59-S UNCLEAR ─────► H-TEAMS once X60 is READY (rank 4; local)
       PR-1 not KILL ─────► batch × 2 (rank 9) only if the cap has room
 T3  THE BRANCH ON d
@@ -255,14 +256,16 @@ T5  THE SECOND ESCALATION: the T2 cap reached without a GAIN, or every branch ex
 
 **Routing on the piloting-gap analysis** (by outcome class; the analysis owns its numbers):
 - the gap concentrates in identifiable decision classes (switching, set-up, item-dependent lines) ⇒ N3 with a
-  targeted score, and a targeted D3-style corpus for those mons, move ahead of N2;
-- it concentrates in team identity (familiar sets read as a signature) ⇒ N2 moves to the top of T2;
+  targeted score, and a targeted D3-style corpus for those mons, move first;
+- it concentrates in team identity (familiar sets read as a signature) ⇒ N2's test already argues against a
+  set-keyed signature (COMPOSITIONAL); N2 re-opens only with a probe that reaches revealed / active mons or the
+  battle's course, which the one-mon bench re-draw cannot;
 - it is spread evenly over decisions ⇒ breadth and capacity carry the hope; PR-1's class decides which;
 - it localises to the critic (value errors on unfamiliar teams, not policy errors) ⇒ the amortisation question in
   `design_beat_metamon_path.md` §4 is re-opened before any T2 fork.
 
-**Why this order.** T1 costs no GPU, can kill N2, N3 and the whole plateau breadth bet outright, and points T3 one
-way. T2's forks run in the X35 frame against a C0 that PR-1 has already banked at the tree's engine. T3 is the
+**Why this order.** T1 costs no GPU, can kill N2, N3 and the whole plateau breadth bet outright (it dropped N2 on
+2026-10-26), and points T3 one way. T2's forks run in the X35 frame against a C0 that PR-1 has already banked at the tree's engine. T3 is the
 expensive split and waits for the probe that chooses the side.
 
 ---
@@ -274,7 +277,7 @@ PR-1?" A yes shortens T1 from ≈ 1–2 weeks to ≈ 2–3 days.
 
 **Asked at the END of T1** (the trigger, deterministic on the registered classes):
 - **PR-1 KILL and the plasticity probe not LOSS** ⇒ escalate AT ONCE: no cheap breadth lever remains, and what is
-  left (N2 aside) is capacity or scale.
+  left is capacity or scale (N2 was dropped 2026-10-26).
 - **PR-1 KILL and plasticity LOSS** ⇒ escalate with the fresh-breadth costs (N5-S ≈ 8 GPU-h; X53-N1 behind its σ gate,
   ≈ 46–72 GPU-h expected); T3's N5-S may run meanwhile.
 - **PR-1 BREADTH-GAIN or UNDECIDED** ⇒ T2 runs under its cap; the owner is told the class and the plan, and asked
@@ -362,3 +365,4 @@ PR-1?" A yes shortens T1 from ≈ 1–2 weeks to ≈ 2–3 days.
 |---|---|---|---|---|
 | 2026-10-26 | **This doc CREATED (DRAFT)** (research-strategy worker, orchestrator brief) | a contingency plan for D3, N1-P and X59-S all missing a GAIN: four explanations and the cheapest read separating each; a ranking by expected pp per GPU-h (N5, N2, the stack first); a zero-GPU week, cheap forks, a plasticity branch, an owner escalation at ≈ 90 GPU-h | another single lever read alone; more plain training; FACING levers; the scale bet first; test-time adaptation as goal (b)'s number | `design_beat_metamon_path.md` §0–§6; `sota_survey_2026-10-26.md` §5; the D3, N1-P and X59-S PREREGs; `design_search_next.md` §3; `cloud_gpu_plan.md` |
 | 2026-10-26 | **REVISED DRAFT after the review** (research-strategy worker, orchestrator brief; docs + CPU Monte Carlos) | PR-1, the zero-GPU precision read, as T1's first item (D1 + D3 + N1-P vs C0 pooled on F, 38,000 games at one engine stamp; GAIN / KILL at +1.5 pp; futility interim); five explanations (dose added); one breadth bet chosen by PR-1; rank by P(GAIN) per resource-day with lane-h counted; T2 forks read by the PR rule; N5 from scratch; new rows (extension, batch × 2, distillation); the owner asked at T1's start (CPU box) and end (information trigger) | per-arm precision reads (≈ 70,000 games); D1's rule for T2 forks (retires real +1 pp levers); the ≈ 90 GPU-h budget exit; N5 from P\*; ranking by expected pp | [`REVIEW.md`](../research_state/measurements/strategy_review_2026-10-26/REVIEW.md) (`6fca2c06`); [`strategy_revision_2026-10-26/`](../research_state/measurements/strategy_revision_2026-10-26/) (`power_precision_read`, `pgain_rows`); D3 look-1 README FINDING 5 and `reads.md` §3 (the measured lane rate); D1 read README (F per panel) |
+| 2026-10-26 | **N2 DROPPED by its registered exact-set identity test** (N2 identity-test worker, orchestrator brief; CPU only) | COMPOSITIONAL: a Smogon re-draw of one never-seen bench set moves P\*'s policy 1.19× [1.07, 1.33] as much on a pool team as on an unfamiliar one (pattern-standardised KL, 7,260 / 24,384 units, 48 / 143 games); erasing our six mons' identity embeddings hurts both alike (1.07 [0.91, 1.25]); mechanics-preserving edits are invisible. The interval excludes 1.0 (a small familiarity premium, ≈ the generalisation review's +19 %), so the verdict rests on the PREREG's declared rule (upper < 1.5), not on the older literal KILL clause | funding the N2 flag (the premium it could remove is ≈ 0.2 of one set change's effect); reading the premium as memorisation | [`n2_identity_test_2026-10-26/README.md`](../research_state/measurements/n2_identity_test_2026-10-26/README.md) (PREREG `98bcb1146`); `piloting_gap_forensics_2026-10-26/` (team context, not set knowledge) |

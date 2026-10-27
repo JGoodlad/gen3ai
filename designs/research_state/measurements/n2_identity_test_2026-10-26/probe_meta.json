@@ -1,0 +1,14 @@
+{
+ "stats": {
+  "home72_targets": 2420,
+  "home72_no_target_or_draw": 438,
+  "F_no_target_or_draw": 565,
+  "F_targets": 2346,
+  "H_targets": 2822,
+  "H_no_target_or_draw": 225,
+  "P72_targets": 2960,
+  "P72_no_target_or_draw": 109
+ },
+ "n_rows": 4666,
+ "n_units": 31644
+}

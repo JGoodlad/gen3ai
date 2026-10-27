@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-29,328-line file. **The ledger itself is append-only and is never edited by this**;
+29,364-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**965 headings · 910 dated · 2026-08-01 → 2026-10-26 · ledger 29,328 lines.**
+**966 headings · 911 dated · 2026-08-01 → 2026-10-26 · ledger 29,364 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -985,3 +985,4 @@ rename.
   - `L29253` · `2026-10-26` · MEASUREMENT · **PILOTING-GAP FORENSICS (descriptive, banked games): P\*'s unfamiliar-team losses against Kakuna come from LEVEL mid-game positions (state at turn 10 carries −0.4 pp [−2.6, +1.3] of the 11.2 pp gap; level-at-10 conversion 0.609 vs 0.501), not from the opening or the kind of decision; the per-mon edge drops with the TEAM, not the set (seen sets only: +0.093 [+0.004, +0.176])**
   - `L29289` · `2026-10-26` · BASELINES · P\* registered as the named baseline `pstar_plateau` (X26 `rb_x26_s2601` @ 280,000,170, frozen as the reference by `d172c10ed`)
   - `L29297` · `2026-10-26` · CORRECTION · **THE VIEWS AUDIT: the D3 look-1 entry omits an engine mix (C0's banked Kakuna games predate the 10-25 obs / label and engine fixes; D3's carry them); ten RUST SIM entries break the heading convention and cite no record; "H" names two things in the D1 / D3 entries. No ledger number is wrong.**
+  - `L29329` · `2026-10-26` · MEASUREMENT · **THE N2 EXACT-SET IDENTITY TEST, read under its registration (`98bcb1146`): COMPOSITIONAL, N2 DROPPED. A Smogon re-draw of one never-seen bench set moves P\*'s policy 1.19× [1.07, 1.33] as much on a pool team as on an unfamiliar one (bar 1.5×); erasing our six mons' identity embeddings costs both alike (1.07 [0.91, 1.25])**

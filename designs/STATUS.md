@@ -60,6 +60,7 @@ rate. **NOT DETECTED / UNDECIDED** means the interval spans zero, so we cannot t
 | Hidden-info maturity, plateau step | GAP-SHRINKS NOT DETECTED; frontier static | G_F change −0.003 [−0.020, +0.015] | `e7048bb1d` |
 | L1 replication (piKL, 4-turn leaf) | REPLICATES thinly, pooled over the 25M and P\* anchors; post hoc it is all the 25M anchor's | +0.0097 [+0.0025, +0.0169]; at P\* +0.0001 [−0.0097, +0.0101] | `f756019d7` |
 | Piloting-gap forensics (banked Kakuna games, descriptive) | the gap forms after turn 10, from level positions; it goes with the TEAM context | level at turn 10: 0.609 home72 vs 0.501 U; seen sets only, per-mon KO edge drop +0.093 [+0.004, +0.176] | `piloting_gap_forensics_2026-10-26/` (ledger 10-26) |
+| N2 identity test: does P\* key on our sets' exact identity? (CPU probe) | COMPOSITIONAL: lever N2 dropped | familiar / unfamiliar policy shift under a set re-draw 1.19× [1.07, 1.33] (bar 1.5×) | `98bcb1146` (PREREG), `n2_identity_test_2026-10-26/` (ledger 10-26) |
 
 ## 4. How we compare with the state of the art
 
