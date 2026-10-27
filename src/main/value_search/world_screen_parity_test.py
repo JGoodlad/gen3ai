@@ -6,6 +6,8 @@ candidate replayed in full): the teams, tries, facts, failure counts, leak block
 an exclusion's error, word for word. The only field that may differ is the count of replays run (``Worlds.screens``),
 which the lean screen exists to cut; it must be smaller, so the lean path is known to have run. The search on those
 worlds picks the same action with the same values. A deliberately wrong screen (one reference line changed) is caught.
+Per replay (the 2026-10-27 review): on other games, the p2 viewer and the rolls dice, every screened replay is its full
+replay cut after the stop, and deliberately wrong worlds draw no refusal after it.
 """
 from __future__ import annotations
 
@@ -188,3 +190,125 @@ def test_a_screened_replay_returns_the_viewers_part_and_stops_after_the_first_di
     got = [ln for s, lines in st["chunks"] if s == viewer for ln in lines]
     assert st["ok"] and st["stopped"] is True
     assert got[:i] == ref[:i] and i < len(got) < len(ref)
+
+
+# ---- the per-replay invariant (adversarial review 2026-10-27, designs/endstate/reviews/
+# lean_world_screen_review_2026-10-27.md): every SCREENED batch is also replayed in full, and the lean line must be the
+# full line cut after the stop. That fixes every input the gate reads, so it holds the verdicts equal battle by battle
+# (not only the chain's end state), on other games, the p2 viewer and the rolls dice. A refusal the full replay raises
+# AFTER the stop (the one class the lean screen is not identical on by construction) fails it.
+
+#: stage-0-independent banked decisions (``main.policy_spectrum`` BANK_V1): a p2 viewer, a p1 viewer, and ``dice="rolls"``
+BANK_CASES = [("ai_v14_09_r0_offense_a/step_92000016/ext_ai_v14_07_g0p_k2/loss_s0_003#p2#5", "seed"),
+              ("ai_v14_01_base/step_36000000/random/win_s0_001#p1#7", "seed"),
+              ("ai_v14_01_base/step_36000000/random/win_s0_001#p1#10", "rolls")]
+
+
+def _bank_decision(did: str):
+    from main.policy_spectrum import bank as B
+    from main.policy_spectrum.bank_test import BANK_V1
+    from main.policy_spectrum.truth import cmd_index, to_log
+
+    bank = B.load_bank(BANK_V1)
+    d = next(x for x in bank.decisions if x["id"] == did)
+    bat = bank.battles[bank.battle_index[d["battle"]]]
+    return to_log(bat), cmd_index(bat, d["side"], d["n"]), d["side"]
+
+
+def _assert_lean_is_the_full_line_cut_at_the_stop(rf: dict, rl: dict, viewer: int, ref: list) -> None:
+    assert rl["ok"] == rf["ok"], (rf.get("error"), rl.get("error"))
+    if not rf["ok"]:
+        return
+    full_c, lean_c = rf["chunks"], rl["chunks"]
+    assert len(lean_c) <= len(full_c)
+    assert [s for s, _ in lean_c] == [s for s, _ in full_c[: len(lean_c)]]
+    assert all(lines == (f if s == viewer else []) for (s, lines), (_, f) in zip(lean_c, full_c))
+    seen = [ln for s, lines in lean_c if s == viewer for ln in lines]
+    k = next((i for i, (a, b) in enumerate(zip(seen, ref)) if a != b), min(len(seen), len(ref)))
+    if rl["stopped"]:
+        assert k < len(seen), "a stop with no differing line shipped (or none past the reference's end)"
+    else:
+        assert len(lean_c) == len(full_c)
+    rows = [(e["after"], e["obs"]) for e in rf["trackers"][viewer] if "obs" in e and e["after"] < len(lean_c)]
+    assert [(e["after"], e["obs"]) for e in rl["trackers"][viewer]] == rows
+
+
+@pytest.mark.slow
+@pytest.mark.sim
+@pytest.mark.integration
+@pytest.mark.parametrize("did,dice", BANK_CASES)
+def test_every_screened_replay_is_the_full_replay_cut_at_its_stop(did, dice, monkeypatch):
+    """Other games than the fixture's, both viewers, both dice: the lean build equals the reference build, and every
+    screened replay in it equals its full replay cut after the stop (some replays do stop)."""
+    log, at, side = _bank_decision(did)
+    viewer = 0 if side == "p1" else 1
+    key = "lws_review|" + did
+    ref = W.prepare_root(log, at, side, key, False).ref_proto
+    orig = CR.run_core
+    n = {"battles": 0, "stopped": 0}
+
+    def both(battles, **kw):
+        lean = orig(battles, **kw)
+        if kw.get("screen") is not None:
+            assert kw["screen"] == {"viewer": viewer, "lines": ref}, "the screen's reference is the truth's protocol"
+            full = orig(battles, **dict(kw, screen=None))
+            for rf, rl in zip(full, lean):
+                _assert_lean_is_the_full_line_cut_at_the_stop(rf, rl, viewer, kw["screen"]["lines"])
+                n["battles"] += 1
+                n["stopped"] += bool(rl.get("stopped"))
+        return lean
+
+    def build(lean: bool) -> dict:
+        s = W.WorldSampler(reveal="off", max_tries=60, dice=dice, lean_screen=lean)
+        try:
+            return dataclasses.asdict(s.sample(log, at, side, J, key, root_choice_in_log=False))
+        except W.WorldError as exc:
+            return {"error": str(exc)}
+
+    with monkeypatch.context() as m:
+        m.setattr(CR, "run_core", both)
+        lean = build(True)
+    assert n["stopped"] > 0 and n["battles"] > n["stopped"], n
+    assert _canon(lean) == _canon(build(False))
+
+
+@pytest.mark.slow
+@pytest.mark.sim
+@pytest.mark.integration
+def test_deliberately_wrong_worlds_refuse_nothing_after_the_stop():
+    """The stress: opponent teams far from any honest draw (whole teams of other bank battles, and one mon swapped for
+    another battle's), replayed leniently long past their first difference, full and screened. No full replay may
+    refuse after the stop, and every screened one is its full replay cut there."""
+    import random
+
+    from main.policy_spectrum import bank as B
+    from main.policy_spectrum.bank_test import BANK_V1
+
+    did = "ai_v14_09_r0_offense_a/step_92000016/ext_ai_v14_07_g0p_k2/loss_s1_004#p2#21"
+    log, at, side = _bank_decision(did)
+    root = W.prepare_root(log, at, side, "lws_review|stress|" + did, False)
+    bank = B.load_bank(BANK_V1)
+    rnd = random.Random(20261027)
+    pool = [t for bt in bank.battles for t in (bt.p1["team"], bt.p2["team"])]
+    ents = root.team.split("]")
+    have = {W.species_id(W.parse_set(e)) for e in ents if e}
+    teams = [rnd.choice(pool) for _ in range(6)]
+    while len(teams) < 12:
+        other = [e for e in rnd.choice(pool).split("]") if e and W.species_id(W.parse_set(e)) not in have]
+        if other:
+            i = rnd.randrange(len(ents))
+            teams.append("]".join(ents[:i] + [rnd.choice(other)] + ents[i + 1:]))
+    recs = []
+    for k, t in enumerate(teams):
+        try:
+            cmds = [c + ["if_open"] if c[0] != "forcelose" else c for c in W.render(root.tmpl, t)]
+        except IndexError:                  # a substitute with fewer moves than the template's slot: not a world
+            continue
+        recs.append(root.rec(t, f"wrong{k}", cmds))
+    assert len(recs) >= 8
+    full = CR.run_core(recs, trackers=True, obs=True)
+    lean = CR.run_core(recs, trackers=True, obs=True, screen={"viewer": root.viewer, "lines": root.ref_proto})
+    assert all(r["ok"] for r in full), [r.get("error") for r in full if not r["ok"]]
+    assert sum(bool(r["stopped"]) for r in lean) >= len(recs) // 2
+    for rf, rl in zip(full, lean):
+        _assert_lean_is_the_full_line_cut_at_the_stop(rf, rl, root.viewer, root.ref_proto)

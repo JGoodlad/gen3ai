@@ -268,7 +268,9 @@ battle of the process:
   runs.
 
 Gates: `src/main/value_search/world_screen_parity_test.py` (the lean builds equal the full ones on banked S-U
-decisions, an exclusion included; a wrong reference is caught; the direct test of the stop and the placeholders).
+decisions, an exclusion included; a wrong reference is caught; the direct test of the stop and the placeholders;
+on BANK_V1 decisions, p2 and `dice="rolls"` included, every screened replay is its full replay cut after the stop, and
+deliberately wrong worlds refuse nothing after it: the one class the stop is not identical on by construction).
 
 ---
 
