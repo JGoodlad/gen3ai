@@ -466,6 +466,36 @@ A read that imports banked forum72 / away / pool Kakuna rows (D3 look 2's C0) mu
   eval-mode load, the packer), and the engine key cannot see it (SOP § 0.1). Checked: `engine_at` and the built
   artifacts' stamps equal E1; the play path differs from the bank's commits only in harness files; four banked E1 units,
   three of them where E3 diverges from E1, re-played identically, 80 / 80 games choice by choice.
+- **The X35-frame SHARED play pin, FROZEN** (REVIEW_2 M1 option (C), `strategy_review_2026-10-26/REVIEW_2.md`): ONE pin
+  for every read of the X35-frame arms (all trained at `f4b25238`): PR-1′, X62, X63 and X48's C0 replay. `86cfdf7ef`, tag
+  `x35-shared-play-86cfdf7e` (on origin, not on main). It is D3's method on the newest harness: main `f6bef5d68` with
+  the same game paths restored to `f4b25238`'s tree objects (`src/rust_sim/`, `src/rust_env/`,
+  `src/agents/{model,observation,inference}/`, `src/utils/team_loader/`, the packer, `teambuilder.py`, `gen3_utils.py`).
+  `src/utils/bridge/` stays main's: against `f4b25238` it differs only in the Kakuna peer's Showdown pack scripts, the
+  front end (the validator's re-pack, the forced-end record, the input log), `team_validator` / `validate_team.js` and
+  `sim_bridge_bin`. The front end's re-pack changes no set OUR side plays (0 field differences over home72, forum72,
+  p72, heldout72_hpfix and away). **Its regime:**
+
+  | component | at this pin |
+  |---|---|
+  | engine | **E1** (`engine_at`, and the built stamps) |
+  | Kakuna's team pack | post-H22: `peer_pack_changed` True on forum72 / away / pool, False on home72 / p72 / heldout72_hpfix |
+  | peer code / policy mode | `9cc9caacde85f8ea` (not legacy, so in every id) / `train` (legacy) |
+  | OUR side's pack | the legacy pack (H24): forum72 `sft431` plays Frustration at base power 1, as the arms trained |
+  | ids it gave | p72 `0e9cde5bb0396d64`, forum72 `5e1e14aaa845e97e`: each the banked E1 id plus exactly these stamps |
+
+  - Its ids differ from every banked id, so no banked E1 row imports into a read at it (G9, G14). Its C0 bank is the
+    one every X35-frame read shares; disjoint unit seeds per read (REVIEW_2 m2).
+  - **Checked** (`measurements/x35_shared_pin_2026-10-27/`): three builds of the same restore (on main `48eeb0b70`,
+    `eb39f1b77`, then `f6bef5d68`), the play path identical in every game file. 220 / 220 captured game comparisons
+    were equal by 5-tuple and by both players' choices. A further 20 / 20 home72 games were equal by 5-tuple against an
+    E1 bank with no capture. The references were banked E1 units on p72, heldout72_hpfix and forum72 (each one where
+    E3 diverges from E1) and the same units played at the D3 pin. 218 of the 220 were also equal in protocol bytes.
+    The other 2 are Kakuna's `sft431` games at unit seed 16 (games 1 and 11), and their bytes differ only in Kakuna's
+    own request: `frustration1` → `frustration102`.
+  - **FROZEN:** a later harness change reaches a read only through a new, named pin. Not in it: `29b90161f`'s H3 (an
+    unstorable forced end reads blind; play path). Its H1 / H2 run at assemble, off the play path, so a deciding checkout
+    at main applies them. `--our-belief-prior-mix` cannot load (`f4b25238` has no `belief_prior_mix`).
 - **X59-S games / X60 / X61P look 2:** one engine per read, named at registration. An import from N1-P look 1 needs E3.
 - **The human-only / PastaMittens reads:** each was played on one commit, all on E1.
 

@@ -63,7 +63,7 @@ The orchestrator's order after REVIEW_2 of the all-null strategy (`69c7cd34d`). 
    forum teams (DRAFT, [`endstate/design_x63_long_breadth_continuation.md`](endstate/design_x63_long_breadth_continuation.md),
    `49fbf75a7`; ≈ 20 GPU-h to its screen). It waits on its adversarial review and on N1-P look 1 and D3 look 2 (H-CTX read SUPPORTED).
 3. **PR-1′**, the precision read re-scoped by REVIEW_2: D3 and N1-P against C0 on F (D1 reported only), 30,000–38,000
-   new Kakuna games at one post-`b0441623e` pin. Information only; it gates nothing above it. It runs after X48's read,
+   new Kakuna games at the frozen X35-frame shared pin `x35-shared-play-86cfdf7e` (E1, post-H22; reads.md §4). Information only; it gates nothing above it. It runs after X48's read,
    or at once on a rented CPU box (§6).
 
 **Gated.** **X62**, P\*-forks on 12,000 recombined teams (REVISED DRAFT, `58cb02dc6`): its first gate, H-CTX, read

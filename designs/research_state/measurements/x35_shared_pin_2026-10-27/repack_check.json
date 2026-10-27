@@ -1,0 +1,41 @@
+{
+ "schema": "x35_shared_pin_repack_v1",
+ "what": "OUR side f4b25238 Gen3Teambuilder packs vs the front end validator re-pack (showdown_pack.js legacy_diffs over pack_norm fields + gender + name)",
+ "sources": {
+  "home72": {
+   "files": 72,
+   "packed": 72,
+   "string_equal": 0,
+   "frontend_repack_equals_showdown_pack": 72,
+   "played_diffs": {}
+  },
+  "forum72": {
+   "files": 72,
+   "packed": 72,
+   "string_equal": 0,
+   "frontend_repack_equals_showdown_pack": 72,
+   "played_diffs": {}
+  },
+  "p72": {
+   "files": 72,
+   "packed": 72,
+   "string_equal": 0,
+   "frontend_repack_equals_showdown_pack": 72,
+   "played_diffs": {}
+  },
+  "heldout72_hpfix": {
+   "files": 72,
+   "packed": 72,
+   "string_equal": 0,
+   "frontend_repack_equals_showdown_pack": 72,
+   "played_diffs": {}
+  },
+  "away": {
+   "files": 20,
+   "packed": 20,
+   "string_equal": 0,
+   "frontend_repack_equals_showdown_pack": 20,
+   "played_diffs": {}
+  }
+ }
+}

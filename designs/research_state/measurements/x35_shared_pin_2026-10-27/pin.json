@@ -1,0 +1,122 @@
+{
+ "schema": "x35_shared_play_pin_v1",
+ "pin": "86cfdf7efbe21b4ff3382541e6d78390df7d9966",
+ "tag": "x35-shared-play-86cfdf7e",
+ "base": "f6bef5d68978269583693b4a40987781adca69d2",
+ "base_is": "main at the build",
+ "game_from": "f4b25238def57900c0305bb2a3a5a8f9edaef285",
+ "restored": {
+  "src/rust_sim": {
+   "tree_or_blob": "b5db970782a7f73a87efea9b688f7044c5254afb",
+   "equals_game_from": true
+  },
+  "src/rust_env": {
+   "tree_or_blob": "b02bfcde490f5e44ae59ff3650c4c91985abc7a0",
+   "equals_game_from": true
+  },
+  "src/agents/model": {
+   "tree_or_blob": "67f9a2b3da6fcd54d728633b38e3b7a71285490e",
+   "equals_game_from": true
+  },
+  "src/agents/observation": {
+   "tree_or_blob": "d51f8c6666d1ee7f492ea02b0498bd4b48903b13",
+   "equals_game_from": true
+  },
+  "src/agents/inference": {
+   "tree_or_blob": "a9465f3bbb2fac681d32f236f4c5ef5fb16b5b77",
+   "equals_game_from": true
+  },
+  "src/utils/team_loader": {
+   "tree_or_blob": "c25bc7b35e56b5694f997c9faf29e2fb7d9f1caf",
+   "equals_game_from": true
+  },
+  "src/utils/team_packing.py": {
+   "tree_or_blob": "db208ee6d7422c537ad0a9bcae9721054ea890f7",
+   "equals_game_from": true
+  },
+  "src/utils/teambuilder.py": {
+   "tree_or_blob": "3f3711fff2bc395fc6629ad1ecb8f9c3a7a1de3f",
+   "equals_game_from": true
+  },
+  "src/utils/gen3_utils.py": {
+   "tree_or_blob": "9fd54659817ea92b7d9436a7c9612367a8a06bb9",
+   "equals_game_from": true
+  }
+ },
+ "kept_from_base": {
+  "src/utils/bridge": "c957f5ed7b395f37965ce65645b1b3d5639d9a83",
+  "equals_base": true
+ },
+ "engine": {
+  "engine_at_pin": "port=7d932165eced1c79/90;env=7c53280566d666ae/125",
+  "is_E1": true,
+  "built_engine_stamp": "port=7d932165eced1c79/90;env=7c53280566d666ae/125",
+  "cargo_lock_blobs": {
+   "rust_sim": "676e633ed0f069788af9c039a35eb5ee194a632d",
+   "rust_env": "3d00802e5b8fb5f7466b8b90dc681025e845e51d"
+  }
+ },
+ "play_path": {
+  "files": 1715,
+  "digest": "afedc505f0e2c931",
+  "vs": {
+   "6c428453a": {
+    "differ": 249,
+    "game_files_differing": 0,
+    "bridge": [
+     "added src/utils/bridge/pack_norm.js",
+     "added src/utils/bridge/pack_oracle.js",
+     "added src/utils/bridge/showdown_pack.js",
+     "changed src/utils/bridge/sim_bridge_bin.py",
+     "changed src/utils/bridge/team_validator.py",
+     "changed src/utils/bridge/validate_team.js",
+     "changed src/utils/bridge/ws_frontend.py"
+    ]
+   },
+   "5e389ddac": {
+    "differ": 246,
+    "game_files_differing": 0,
+    "bridge": [
+     "added src/utils/bridge/pack_norm.js",
+     "added src/utils/bridge/pack_oracle.js",
+     "added src/utils/bridge/showdown_pack.js",
+     "changed src/utils/bridge/sim_bridge_bin.py",
+     "changed src/utils/bridge/team_validator.py",
+     "changed src/utils/bridge/validate_team.js",
+     "changed src/utils/bridge/ws_frontend.py"
+    ]
+   },
+   "f4b25238d": {
+    "differ": 249,
+    "game_files_differing": 0,
+    "bridge": [
+     "added src/utils/bridge/pack_norm.js",
+     "added src/utils/bridge/pack_oracle.js",
+     "added src/utils/bridge/showdown_pack.js",
+     "changed src/utils/bridge/sim_bridge_bin.py",
+     "changed src/utils/bridge/team_validator.py",
+     "changed src/utils/bridge/validate_team.js",
+     "changed src/utils/bridge/ws_frontend.py"
+    ]
+   },
+   "c4a5c37b6": {
+    "differ": 61,
+    "game_files_differing": 0,
+    "bridge": [
+     "added src/utils/bridge/pack_norm.js",
+     "added src/utils/bridge/pack_oracle.js",
+     "added src/utils/bridge/showdown_pack.js",
+     "changed src/utils/bridge/sim_bridge_bin.py",
+     "changed src/utils/bridge/team_validator.py",
+     "changed src/utils/bridge/validate_team.js",
+     "changed src/utils/bridge/ws_frontend.py"
+    ]
+   },
+   "f6bef5d68": {
+    "differ": 83,
+    "game_files_differing": 83,
+    "bridge": []
+   }
+  }
+ }
+}

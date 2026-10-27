@@ -95,6 +95,16 @@ legacy tables are FROZEN: a repin never edits them.
 - **OUR side's pack regime (H24).** A play commit before `d8d674b99` packs forum72's `sft431` Gyarados with
   Frustration at base power 1; from `d8d674b99` on, at 102. No other panel differs. The id does not see it. The read's
   play pin decides it: never split one read's arms across it on forum72, and quote it beside any forum72 number.
+- **The X35-frame shared play pin**, `x35-shared-play-86cfdf7e` (FROZEN; `designs/tools/reads.md` §4), the play pin of
+  every X35-frame arm read (PR-1′, X62, X63, X48's C0 replay). Its regime:
+  - engine E1;
+  - Kakuna's pack post-H22;
+  - peer code `9cc9caacde85f8ea`, policy mode `train`;
+  - OUR side's pack the legacy one (H24, as the arms trained);
+  - the front end plays the validator's re-pack, which OUR side's sets survive unchanged.
+
+  Its ids are new on every panel, so no banked row imports into it. A later harness fix reaches it only as a new,
+  named pin.
 - Our checkpoint: its sha256 is checked per unit by `main.reads` and its step is stamped, but neither is in the id.
 - What git does not hold: the Metamon cache, panel team dirs outside the repo, our toolchain and env. Each unit verifies
   the first two at play (weight pins, team digests); the Metamon checkout and env are `peer_code`.

@@ -1,0 +1,552 @@
+{
+ "schema": "x35_shared_pin_identity_v1",
+ "pin": "86cfdf7efbe21b4ff3382541e6d78390df7d9966",
+ "tag": "x35-shared-play-86cfdf7e",
+ "states": "~/gen3ai_archive/x35_shared_pin/{identity_pin,identity_v2,identity_v3,identity_ctl_d3pin,identity_ctl_k431}",
+ "note": "start_string_equal is 0 by design: the front end plays the validator's re-pack (ce50227a5), field for field the same sets for our side (repack_check.json). captured_pairs 0 = a 5-tuple-only reference (no capture).",
+ "builds": [
+  {
+   "build": "v1 3443b53de (main 48eeb0b70 + the restore)",
+   "units": [
+    {
+     "ref": "/home/goodlad/gen3ai_archive/x35_d1_read/h_a/cells/c0_s3503__p72__00",
+     "replay": "/home/goodlad/gen3ai_archive/x35_shared_pin/identity_pin/cells/c0_s3503__p72__00",
+     "games": 20,
+     "replay_games": 20,
+     "ref_meta": {
+      "regime": "b7547f904af56acc",
+      "engine": "port=7d932165eced1c79/90;env=7c53280566d666ae/125",
+      "model_loader": "bare",
+      "peer_pack_changed": null,
+      "server_version": "ws_frontend[in-process]@6c428453a+rust:cargo:src/rust_sim",
+      "peer_clean": true,
+      "n": 20,
+      "wins": 4
+     },
+     "replay_meta": {
+      "regime": "b7547f904af56acc",
+      "engine": "port=7d932165eced1c79/90;env=7c53280566d666ae/125",
+      "model_loader": "bare",
+      "peer_pack_changed": false,
+      "server_version": "ws_frontend[in-process]@3443b53de+rust:cargo:src/rust_sim",
+      "peer_clean": true,
+      "n": 20,
+      "wins": 4
+     },
+     "five_equal": 20,
+     "captured_pairs": 20,
+     "seed_equal": 20,
+     "start_string_equal": 0,
+     "our_choices_equal": 20,
+     "their_choices_equal": 20,
+     "protocol_bytes_equal": 20,
+     "frustration_games": [],
+     "diffs": []
+    },
+    {
+     "ref": "/home/goodlad/gen3ai_archive/x35_d1_read/h_a/cells/c0_s3503__heldout72_hpfix__04",
+     "replay": "/home/goodlad/gen3ai_archive/x35_shared_pin/identity_pin/cells/c0_s3503__heldout72_hpfix__04",
+     "games": 20,
+     "replay_games": 20,
+     "ref_meta": {
+      "regime": "28e65ac93633f6b5",
+      "engine": "port=7d932165eced1c79/90;env=7c53280566d666ae/125",
+      "model_loader": "bare",
+      "peer_pack_changed": null,
+      "server_version": "ws_frontend[in-process]@6c428453a+rust:cargo:src/rust_sim",
+      "peer_clean": true,
+      "n": 20,
+      "wins": 10
+     },
+     "replay_meta": {
+      "regime": "28e65ac93633f6b5",
+      "engine": "port=7d932165eced1c79/90;env=7c53280566d666ae/125",
+      "model_loader": "bare",
+      "peer_pack_changed": false,
+      "server_version": "ws_frontend[in-process]@3443b53de+rust:cargo:src/rust_sim",
+      "peer_clean": true,
+      "n": 20,
+      "wins": 10
+     },
+     "five_equal": 20,
+     "captured_pairs": 20,
+     "seed_equal": 20,
+     "start_string_equal": 0,
+     "our_choices_equal": 20,
+     "their_choices_equal": 20,
+     "protocol_bytes_equal": 20,
+     "frustration_games": [],
+     "diffs": []
+    },
+    {
+     "ref": "/home/goodlad/gen3ai_archive/x35_d1_read/h_a/cells/c0_s3501__forum72__02",
+     "replay": "/home/goodlad/gen3ai_archive/x35_shared_pin/identity_pin/cells/c0_s3501__forum72__02",
+     "games": 20,
+     "replay_games": 20,
+     "ref_meta": {
+      "regime": "2118812c27885de3",
+      "engine": "port=7d932165eced1c79/90;env=7c53280566d666ae/125",
+      "model_loader": "bare",
+      "peer_pack_changed": null,
+      "server_version": "ws_frontend[in-process]@6c428453a+rust:cargo:src/rust_sim",
+      "peer_clean": true,
+      "n": 20,
+      "wins": 8
+     },
+     "replay_meta": {
+      "regime": "48ce6e445701781f",
+      "engine": "port=7d932165eced1c79/90;env=7c53280566d666ae/125",
+      "model_loader": "bare",
+      "peer_pack_changed": true,
+      "server_version": "ws_frontend[in-process]@3443b53de+rust:cargo:src/rust_sim",
+      "peer_clean": true,
+      "n": 20,
+      "wins": 8
+     },
+     "five_equal": 20,
+     "captured_pairs": 20,
+     "seed_equal": 20,
+     "start_string_equal": 0,
+     "our_choices_equal": 20,
+     "their_choices_equal": 20,
+     "protocol_bytes_equal": 20,
+     "frustration_games": [],
+     "diffs": []
+    },
+    {
+     "ref": "/home/goodlad/gen3ai_archive/x35_shared_pin/identity_ctl_d3pin/cells/c0_s3501__home72__00",
+     "replay": "/home/goodlad/gen3ai_archive/x35_shared_pin/identity_pin/cells/c0_s3501__home72__00",
+     "games": 20,
+     "replay_games": 20,
+     "ref_meta": {
+      "regime": "2e756ff1ca5e4f40",
+      "engine": "port=7d932165eced1c79/90;env=7c53280566d666ae/125",
+      "model_loader": "bare",
+      "peer_pack_changed": null,
+      "server_version": "ws_frontend[in-process]@c4a5c37b6+rust:cargo:src/rust_sim",
+      "peer_clean": true,
+      "n": 20,
+      "wins": 12
+     },
+     "replay_meta": {
+      "regime": "2e756ff1ca5e4f40",
+      "engine": "port=7d932165eced1c79/90;env=7c53280566d666ae/125",
+      "model_loader": "bare",
+      "peer_pack_changed": false,
+      "server_version": "ws_frontend[in-process]@3443b53de+rust:cargo:src/rust_sim",
+      "peer_clean": true,
+      "n": 20,
+      "wins": 12
+     },
+     "five_equal": 20,
+     "captured_pairs": 20,
+     "seed_equal": 20,
+     "start_string_equal": 0,
+     "our_choices_equal": 20,
+     "their_choices_equal": 20,
+     "protocol_bytes_equal": 20,
+     "frustration_games": [],
+     "diffs": []
+    }
+   ],
+   "total": {
+    "games": 80,
+    "five_equal": 80,
+    "captured_pairs": 80,
+    "seed_equal": 80,
+    "start_string_equal": 0,
+    "our_choices_equal": 80,
+    "their_choices_equal": 80,
+    "protocol_bytes_equal": 80
+   }
+  },
+  {
+   "build": "v1 3443b53de (main 48eeb0b70 + the restore)",
+   "units": [
+    {
+     "ref": "/home/goodlad/gen3ai_archive/x35_shared_pin/identity_ctl_d3pin/cells/c0_s3501__forum72__17",
+     "replay": "/home/goodlad/gen3ai_archive/x35_shared_pin/identity_pin/cells/c0_s3501__forum72__17",
+     "games": 20,
+     "replay_games": 20,
+     "ref_meta": {
+      "regime": "2118812c27885de3",
+      "engine": "port=7d932165eced1c79/90;env=7c53280566d666ae/125",
+      "model_loader": "bare",
+      "peer_pack_changed": null,
+      "server_version": "ws_frontend[in-process]@c4a5c37b6+rust:cargo:src/rust_sim",
+      "peer_clean": true,
+      "n": 20,
+      "wins": 8
+     },
+     "replay_meta": {
+      "regime": "48ce6e445701781f",
+      "engine": "port=7d932165eced1c79/90;env=7c53280566d666ae/125",
+      "model_loader": "bare",
+      "peer_pack_changed": true,
+      "server_version": "ws_frontend[in-process]@3443b53de+rust:cargo:src/rust_sim",
+      "peer_clean": true,
+      "n": 20,
+      "wins": 8
+     },
+     "five_equal": 20,
+     "captured_pairs": 20,
+     "seed_equal": 20,
+     "start_string_equal": 0,
+     "our_choices_equal": 20,
+     "their_choices_equal": 20,
+     "protocol_bytes_equal": 20,
+     "frustration_games": [
+      "battle-gen3ou-1",
+      "battle-gen3ou-11"
+     ],
+     "diffs": []
+    },
+    {
+     "ref": "/home/goodlad/gen3ai_archive/belief_prior_mix_2026-10-26/l025/anchor/guard/pstar/cells/pstar__home72__00",
+     "replay": "/home/goodlad/gen3ai_archive/x35_shared_pin/identity_pin/cells/pstar__home72__00",
+     "games": 20,
+     "replay_games": 20,
+     "ref_meta": {
+      "regime": "2e756ff1ca5e4f40",
+      "engine": "port=7d932165eced1c79/90;env=7c53280566d666ae/125",
+      "model_loader": "bare",
+      "peer_pack_changed": null,
+      "server_version": "ws_frontend[in-process]@4ee655648+rust:cargo:src/rust_sim",
+      "peer_clean": true,
+      "n": 20,
+      "wins": 13
+     },
+     "replay_meta": {
+      "regime": "2e756ff1ca5e4f40",
+      "engine": "port=7d932165eced1c79/90;env=7c53280566d666ae/125",
+      "model_loader": "bare",
+      "peer_pack_changed": false,
+      "server_version": "ws_frontend[in-process]@3443b53de+rust:cargo:src/rust_sim",
+      "peer_clean": true,
+      "n": 20,
+      "wins": 13
+     },
+     "five_equal": 20,
+     "captured_pairs": 0,
+     "seed_equal": 0,
+     "start_string_equal": 0,
+     "our_choices_equal": 0,
+     "their_choices_equal": 0,
+     "protocol_bytes_equal": 0,
+     "frustration_games": [],
+     "diffs": []
+    }
+   ],
+   "total": {
+    "games": 40,
+    "five_equal": 40,
+    "captured_pairs": 20,
+    "seed_equal": 20,
+    "start_string_equal": 0,
+    "our_choices_equal": 20,
+    "their_choices_equal": 20,
+    "protocol_bytes_equal": 20
+   }
+  },
+  {
+   "build": "v2 8ddfe47a9 (main eb39f1b77 + the restore)",
+   "units": [
+    {
+     "ref": "/home/goodlad/gen3ai_archive/x35_d1_read/h_a/cells/c0_s3503__p72__00",
+     "replay": "/home/goodlad/gen3ai_archive/x35_shared_pin/identity_v2/cells/c0_s3503__p72__00",
+     "games": 20,
+     "replay_games": 20,
+     "ref_meta": {
+      "regime": "b7547f904af56acc",
+      "engine": "port=7d932165eced1c79/90;env=7c53280566d666ae/125",
+      "model_loader": "bare",
+      "peer_pack_changed": null,
+      "server_version": "ws_frontend[in-process]@6c428453a+rust:cargo:src/rust_sim",
+      "peer_clean": true,
+      "n": 20,
+      "wins": 4
+     },
+     "replay_meta": {
+      "regime": "b7547f904af56acc",
+      "engine": "port=7d932165eced1c79/90;env=7c53280566d666ae/125",
+      "model_loader": "bare",
+      "peer_pack_changed": false,
+      "server_version": "ws_frontend[in-process]@8ddfe47a9+rust:cargo:src/rust_sim",
+      "peer_clean": true,
+      "n": 20,
+      "wins": 4
+     },
+     "five_equal": 20,
+     "captured_pairs": 20,
+     "seed_equal": 20,
+     "start_string_equal": 0,
+     "our_choices_equal": 20,
+     "their_choices_equal": 20,
+     "protocol_bytes_equal": 20,
+     "frustration_games": [],
+     "diffs": []
+    },
+    {
+     "ref": "/home/goodlad/gen3ai_archive/x35_shared_pin/identity_pin/cells/c0_s3503__p72__00",
+     "replay": "/home/goodlad/gen3ai_archive/x35_shared_pin/identity_v2/cells/c0_s3503__p72__00",
+     "games": 20,
+     "replay_games": 20,
+     "ref_meta": {
+      "regime": "b7547f904af56acc",
+      "engine": "port=7d932165eced1c79/90;env=7c53280566d666ae/125",
+      "model_loader": "bare",
+      "peer_pack_changed": false,
+      "server_version": "ws_frontend[in-process]@3443b53de+rust:cargo:src/rust_sim",
+      "peer_clean": true,
+      "n": 20,
+      "wins": 4
+     },
+     "replay_meta": {
+      "regime": "b7547f904af56acc",
+      "engine": "port=7d932165eced1c79/90;env=7c53280566d666ae/125",
+      "model_loader": "bare",
+      "peer_pack_changed": false,
+      "server_version": "ws_frontend[in-process]@8ddfe47a9+rust:cargo:src/rust_sim",
+      "peer_clean": true,
+      "n": 20,
+      "wins": 4
+     },
+     "five_equal": 20,
+     "captured_pairs": 20,
+     "seed_equal": 20,
+     "start_string_equal": 20,
+     "our_choices_equal": 20,
+     "their_choices_equal": 20,
+     "protocol_bytes_equal": 20,
+     "frustration_games": [],
+     "diffs": []
+    },
+    {
+     "ref": "/home/goodlad/gen3ai_archive/x35_shared_pin/identity_ctl_d3pin/cells/c0_s3501__forum72__17",
+     "replay": "/home/goodlad/gen3ai_archive/x35_shared_pin/identity_v2/cells/c0_s3501__forum72__17",
+     "games": 20,
+     "replay_games": 20,
+     "ref_meta": {
+      "regime": "2118812c27885de3",
+      "engine": "port=7d932165eced1c79/90;env=7c53280566d666ae/125",
+      "model_loader": "bare",
+      "peer_pack_changed": null,
+      "server_version": "ws_frontend[in-process]@c4a5c37b6+rust:cargo:src/rust_sim",
+      "peer_clean": true,
+      "n": 20,
+      "wins": 8
+     },
+     "replay_meta": {
+      "regime": "48ce6e445701781f",
+      "engine": "port=7d932165eced1c79/90;env=7c53280566d666ae/125",
+      "model_loader": "bare",
+      "peer_pack_changed": true,
+      "server_version": "ws_frontend[in-process]@8ddfe47a9+rust:cargo:src/rust_sim",
+      "peer_clean": true,
+      "n": 20,
+      "wins": 8
+     },
+     "five_equal": 20,
+     "captured_pairs": 20,
+     "seed_equal": 20,
+     "start_string_equal": 0,
+     "our_choices_equal": 20,
+     "their_choices_equal": 20,
+     "protocol_bytes_equal": 20,
+     "frustration_games": [
+      "battle-gen3ou-1",
+      "battle-gen3ou-11"
+     ],
+     "diffs": []
+    }
+   ],
+   "total": {
+    "games": 60,
+    "five_equal": 60,
+    "captured_pairs": 60,
+    "seed_equal": 60,
+    "start_string_equal": 20,
+    "our_choices_equal": 60,
+    "their_choices_equal": 60,
+    "protocol_bytes_equal": 60
+   }
+  },
+  {
+   "build": "v3 86cfdf7ef = THE PIN (main f6bef5d68 + the restore)",
+   "units": [
+    {
+     "ref": "/home/goodlad/gen3ai_archive/x35_d1_read/h_a/cells/c0_s3503__p72__00",
+     "replay": "/home/goodlad/gen3ai_archive/x35_shared_pin/identity_v3/cells/c0_s3503__p72__00",
+     "games": 20,
+     "replay_games": 20,
+     "ref_meta": {
+      "regime": "b7547f904af56acc",
+      "engine": "port=7d932165eced1c79/90;env=7c53280566d666ae/125",
+      "model_loader": "bare",
+      "peer_pack_changed": null,
+      "server_version": "ws_frontend[in-process]@6c428453a+rust:cargo:src/rust_sim",
+      "peer_clean": true,
+      "n": 20,
+      "wins": 4
+     },
+     "replay_meta": {
+      "regime": "0e9cde5bb0396d64",
+      "engine": "port=7d932165eced1c79/90;env=7c53280566d666ae/125",
+      "model_loader": "bare",
+      "peer_pack_changed": false,
+      "server_version": "ws_frontend[in-process]@86cfdf7ef+rust:cargo:src/rust_sim",
+      "peer_clean": true,
+      "n": 20,
+      "wins": 4
+     },
+     "five_equal": 20,
+     "captured_pairs": 20,
+     "seed_equal": 20,
+     "start_string_equal": 0,
+     "our_choices_equal": 20,
+     "their_choices_equal": 20,
+     "protocol_bytes_equal": 20,
+     "frustration_games": [],
+     "diffs": []
+    },
+    {
+     "ref": "/home/goodlad/gen3ai_archive/x35_shared_pin/identity_ctl_d3pin/cells/c0_s3501__forum72__17",
+     "replay": "/home/goodlad/gen3ai_archive/x35_shared_pin/identity_v3/cells/c0_s3501__forum72__17",
+     "games": 20,
+     "replay_games": 20,
+     "ref_meta": {
+      "regime": "2118812c27885de3",
+      "engine": "port=7d932165eced1c79/90;env=7c53280566d666ae/125",
+      "model_loader": "bare",
+      "peer_pack_changed": null,
+      "server_version": "ws_frontend[in-process]@c4a5c37b6+rust:cargo:src/rust_sim",
+      "peer_clean": true,
+      "n": 20,
+      "wins": 8
+     },
+     "replay_meta": {
+      "regime": "5e1e14aaa845e97e",
+      "engine": "port=7d932165eced1c79/90;env=7c53280566d666ae/125",
+      "model_loader": "bare",
+      "peer_pack_changed": true,
+      "server_version": "ws_frontend[in-process]@86cfdf7ef+rust:cargo:src/rust_sim",
+      "peer_clean": true,
+      "n": 20,
+      "wins": 8
+     },
+     "five_equal": 20,
+     "captured_pairs": 20,
+     "seed_equal": 20,
+     "start_string_equal": 0,
+     "our_choices_equal": 20,
+     "their_choices_equal": 20,
+     "protocol_bytes_equal": 20,
+     "frustration_games": [
+      "battle-gen3ou-1",
+      "battle-gen3ou-11"
+     ],
+     "diffs": []
+    },
+    {
+     "ref": "/home/goodlad/gen3ai_archive/x35_shared_pin/identity_ctl_k431/cells/c0_s3501__forum72__16",
+     "replay": "/home/goodlad/gen3ai_archive/x35_shared_pin/identity_v3/cells/c0_s3501__forum72__16",
+     "games": 20,
+     "replay_games": 20,
+     "ref_meta": {
+      "regime": "2118812c27885de3",
+      "engine": "port=7d932165eced1c79/90;env=7c53280566d666ae/125",
+      "model_loader": "bare",
+      "peer_pack_changed": null,
+      "server_version": "ws_frontend[in-process]@c4a5c37b6+rust:cargo:src/rust_sim",
+      "peer_clean": true,
+      "n": 20,
+      "wins": 8
+     },
+     "replay_meta": {
+      "regime": "5e1e14aaa845e97e",
+      "engine": "port=7d932165eced1c79/90;env=7c53280566d666ae/125",
+      "model_loader": "bare",
+      "peer_pack_changed": true,
+      "server_version": "ws_frontend[in-process]@86cfdf7ef+rust:cargo:src/rust_sim",
+      "peer_clean": true,
+      "n": 20,
+      "wins": 8
+     },
+     "five_equal": 20,
+     "captured_pairs": 20,
+     "seed_equal": 20,
+     "start_string_equal": 0,
+     "our_choices_equal": 20,
+     "their_choices_equal": 20,
+     "protocol_bytes_equal": 18,
+     "frustration_games": [
+      "battle-gen3ou-1",
+      "battle-gen3ou-11"
+     ],
+     "diffs": [
+      {
+       "tag": "battle-gen3ou-1",
+       "five": true,
+       "seed": true,
+       "start_string": false,
+       "ours": true,
+       "theirs": true,
+       "bytes": false,
+       "ref5": [
+        "ours_challenge",
+        1,
+        "sft127.txt",
+        "win",
+        31
+       ],
+       "replay5": [
+        "ours_challenge",
+        1,
+        "sft127.txt",
+        "win",
+        31
+       ],
+       "first_our_choice_diff": null,
+       "first_their_choice_diff": null
+      },
+      {
+       "tag": "battle-gen3ou-11",
+       "five": true,
+       "seed": true,
+       "start_string": false,
+       "ours": true,
+       "theirs": true,
+       "bytes": false,
+       "ref5": [
+        "peer_challenge",
+        11,
+        "sft127.txt",
+        "win",
+        41
+       ],
+       "replay5": [
+        "peer_challenge",
+        11,
+        "sft127.txt",
+        "win",
+        41
+       ],
+       "first_our_choice_diff": null,
+       "first_their_choice_diff": null
+      }
+     ]
+    }
+   ],
+   "total": {
+    "games": 60,
+    "five_equal": 60,
+    "captured_pairs": 60,
+    "seed_equal": 60,
+    "start_string_equal": 0,
+    "our_choices_equal": 60,
+    "their_choices_equal": 60,
+    "protocol_bytes_equal": 58
+   }
+  }
+ ]
+}
