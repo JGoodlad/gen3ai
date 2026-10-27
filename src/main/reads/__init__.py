@@ -31,9 +31,10 @@ Reading (cells, rules, the record):
 * :mod:`main.reads.engine` -- the Rust engine a unit played on (part of every regime); :mod:`main.reads.side_identity` --
   the Metamon peer's code and our policy's load mode it played with (likewise); :mod:`main.reads.imports` -- cells taken
   from an EARLIER read's state, sha-, regime-, engine- and side-checked;
-* :mod:`main.reads.rules` (with :mod:`main.reads.rules_n4_screen`, :mod:`main.reads.rules_search_headroom` and
-  :mod:`main.reads.rules_x59s`) -- the registered interval and decision rules, by name (reusing ``main.x35.readout`` /
-  ``main.x35.d1`` / ``main.anchors.results``), and the registered VOID gate;
+* :mod:`main.reads.rules` (with :mod:`main.reads.rules_n4_screen`, :mod:`main.reads.rules_search_headroom`,
+  :mod:`main.reads.rules_deviation_sign` and :mod:`main.reads.rules_x59s`) -- the registered interval and decision
+  rules, by name (reusing ``main.x35.readout`` / ``main.x35.d1`` / ``main.anchors.results``), and the registered VOID
+  gate;
 * :mod:`main.reads.record` -- the schema-checked record (X35-stage records load in ``main.x35.batch.read_record``);
 * :mod:`main.reads.api` / :mod:`main.reads.cli` -- the verbs as functions / as a command line.
 

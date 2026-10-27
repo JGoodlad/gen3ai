@@ -216,6 +216,9 @@ class Unit:
     game: Optional[int] = None
     #: our side's registered search (``main.anchors --our-search``, ``<preset>@<turn>``); None = the checkpoint alone
     search: Optional[str] = None
+    #: a RAW unit keeping its decisions' honest input logs in a turn window (``main.anchors --keep-input-logs FROM-TO``,
+    #: the S-U gate test's states); None = none kept. Changes no play.
+    input_log: Optional[str] = None
 
 
 def parse_teamsets(spec: str) -> Tuple[str, ...]:
@@ -331,7 +334,8 @@ def plan_units(finals: Sequence[Mapping[str, Any]], *, hash_models: bool = True,
     """Every (final × team set × unit seed) unit, unit seeds outermost so a stopped queue is role- and seed-balanced
     across finals. ``teamsets`` defaults to X35's G-K cell (home72, away); D1's PRIMARY H names the unfamiliar
     panels (:data:`UNFAMILIAR`). ``unit_seeds`` defaults to the registered 0-6 (:data:`UNIT_SEEDS`). A final may
-    carry ``belief_prior_mix`` and ``search`` (load options every one of its units passes). ``opponent`` is one of
+    carry ``belief_prior_mix``, ``search`` and ``input_log`` (load options every one of its units passes; ``input_log``
+    a raw final only). ``opponent`` is one of
     :data:`OPPONENTS`; one its cell's committed config lacks gets a derived config in ``config_dir``.
 
     ``per_game`` (S-U): each (final × team set × unit seed) series is planned as :data:`UNIT_GAMES` ONE-GAME units
@@ -342,6 +346,8 @@ def plan_units(finals: Sequence[Mapping[str, Any]], *, hash_models: bool = True,
     if not per_game and any(f.get("search") for f in finals):
         raise KakunaError("a searched final plays per-game units only (per_game=True): a 20-game searched unit fits "
                           "no lane")
+    if any(f.get("search") and f.get("input_log") for f in finals):
+        raise KakunaError("input_log keeps a RAW unit's input logs; a searched unit logs its own decisions")
     cfgs = {ts: opponent_config(ts, opponent, config_dir) for ts in teamsets}
     seen = set()
     for f in finals:
@@ -359,12 +365,20 @@ def plan_units(finals: Sequence[Mapping[str, Any]], *, hash_models: bool = True,
                 search = canonical(search)
             except SearchSpecError as exc:
                 raise KakunaError(f"final {f['label']!r}: {exc}") from None
+        input_log = f.get("input_log")
+        if input_log is not None:
+            from main.anchors.input_log import InputLogError, canonical as window_canonical
+
+            try:
+                input_log = window_canonical(input_log)
+            except InputLogError as exc:
+                raise KakunaError(f"final {f['label']!r}: {exc}") from None
         return Unit(name=f"{f['label']}__{ts}__{s:02d}" + ("" if g is None else f"__g{g:02d}"), label=str(f["label"]),
                     arm=str(f["arm"]), seed=int(f["seed"]), teamset=ts, unit_seed=s, model=str(f["path"]),
                     model_sha256=shas[f["label"]], opponent=opponent,
                     belief_prior_mix=(None if f.get("belief_prior_mix") is None else float(f["belief_prior_mix"])),
                     config=None if cfgs[ts][0] is None else str(cfgs[ts][0]), config_sha256=cfgs[ts][1],
-                    games=1 if g is not None else UNIT_GAMES, game=g, search=search)
+                    games=1 if g is not None else UNIT_GAMES, game=g, search=search, input_log=input_log)
 
     if not per_game:
         return [unit(f, ts, s, None) for s in unit_seeds for ts in teamsets for f in finals]
@@ -438,7 +452,9 @@ def unit_argv(u: Unit, out: Path, port: int, py: str = sys.executable, *, short:
     if u.search is not None:
         a += ["--our-search", u.search, "--first-game-timeout", str(UNIT_SEARCH_S),
               "--progress-timeout", str(UNIT_SEARCH_S)]
-    if u.teamset in PANEL_CELLS or u.game is not None:
+    if u.input_log is not None:
+        a += ["--keep-input-logs", u.input_log]
+    if u.teamset in PANEL_CELLS or u.game is not None or u.input_log is not None:
         # the front end's per-battle repro record (its START command carries BOTH packed teams): which team each side
         # piloted in each game (F-DV-6 / F-DV-17), so a matchup-clustered sensitivity read stays possible (F-DV-18).
         # It changes no stamp and no play (the seed comes from --seed-base); home72 / away units are unchanged.

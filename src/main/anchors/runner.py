@@ -41,6 +41,9 @@ from main.anchors.session import (
     watch_peer_pair,
 )
 
+#: `--keep-input-logs`: the recorder's file in the cell's out dir (`main.anchors.input_log`).
+INPUT_LOGS_NAME = "input_logs.jsonl"
+
 #: ``(what our side does — challenge / accept, the peer's role, the username suffix)`` for each half. The names say who
 #: sends the challenge; the SUFFIX is a hazard fix, not decoration — see :func:`half_usernames`.
 HALVES = {
@@ -163,6 +166,10 @@ class SeriesPlan:
     #: (the role), its team draws (both sides skip the half's earlier draws) and its battle seed (the front end counts
     #: battles from G) are the ones game G of the whole series gets. None = the whole series.
     deal_game: Optional[int] = None
+    #: `--keep-input-logs FROM-TO`: a RAW core-slot cell keeps the honest input log of each of our decisions in the
+    #: turn window with >= 2 legal actions (`main.anchors.input_log`, <out>/input_logs.jsonl), for the offline search
+    #: of the S-U gate test (`main.value_search.sign_gate`). Changes no choice, so it stamps no regime.
+    keep_input_logs: Optional[str] = None
 
     @property
     def our_set(self) -> str:
@@ -466,7 +473,8 @@ async def _play_core_half(plan: SeriesPlan, half: str, n_games: int, pplan: Any,
             team_spec=team_spec, team_seed=plan.team_seed,
             forfeit_limit=plan.forfeit_turn_limit, state=state, battle_format=plan.battle_format,
             belief_prior_mix=plan.our_belief_prior_mix, team_skip=plan.deal_skip(half),
-            search=plan.our_search, search_out=plan.out_dir / "search_decisions.jsonl")
+            search=plan.our_search, search_out=plan.out_dir / "search_decisions.jsonl",
+            input_log=plan.keep_input_logs, input_log_out=plan.out_dir / INPUT_LOGS_NAME)
         await slot.login()
         if role == "acceptor":
             proc = start_peer(pplan, nice=plan.nice)
@@ -512,6 +520,8 @@ async def _play_core_half(plan: SeriesPlan, half: str, n_games: int, pplan: Any,
             if getattr(slot, "searcher", None) is not None:
                 state.search_stats = slot.searcher.summary()
                 slot.searcher.close()
+            if getattr(slot, "recorder", None) is not None:
+                state.input_log_stats = slot.recorder.summary()
         stop_peer(proc)
     return proc, failure
 
@@ -550,6 +560,13 @@ def _half_report(plan: SeriesPlan, half: str, n_games: int, pplan: Any, proc: An
         if state.search_stats is None or state.search_stats.get("search") != plan.our_search:
             report["regime_verified_decisions"] = False
             report["our_search_mismatch"] = [plan.our_search, (state.search_stats or {}).get("search")]
+    # `--keep-input-logs`: the half must have had its recorder on the cell's window (its counters are the record).
+    keep = getattr(plan, "keep_input_logs", None)
+    if keep is not None:
+        report["input_logs"] = state.input_log_stats
+        if state.input_log_stats is None or state.input_log_stats.get("window") != keep:
+            report["regime_verified_decisions"] = False
+            report["input_logs_mismatch"] = [keep, (state.input_log_stats or {}).get("window")]
     # `--our-belief-prior-mix`: the λ the loaded policy READS BACK must be the one the cell names.
     report["our_belief_prior_mix"] = state.belief_prior_mix
     if not plan.our_side_is_bot and not plan.our_side_is_peer and state.belief_prior_mix != plan.our_belief_prior_mix:

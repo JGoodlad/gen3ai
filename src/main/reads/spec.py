@@ -47,8 +47,10 @@ ANCHOR_OPPONENTS = KAKUNA_OPPONENTS
 #: A model's LOAD options (``models.<label>.load``), each an inference-time option of OUR checkpoint that the anchor
 #: units pass on: ``belief_prior_mix`` = λ in (0, 1] (``main.anchors --our-belief-prior-mix``; omit it for λ = 0);
 #: ``search`` = a registered search ``<preset>@<turn>`` (``main.anchors --our-search``, :mod:`main.anchors.search_presets`;
-#: S-U's ``r0s4@10``), allowed only in a ``per_game`` anchor group.
-LOAD_OPTIONS = ("belief_prior_mix", "search")
+#: S-U's ``r0s4@10``), allowed only in a ``per_game`` anchor group; ``input_log`` = a turn window ``FROM-TO`` whose
+#: decisions' honest input logs a RAW label's units keep (``main.anchors --keep-input-logs``, the S-U gate test's
+#: states; it changes no play, so it stamps nothing and never with ``search``).
+LOAD_OPTIONS = ("belief_prior_mix", "search", "input_log")
 
 
 def load_stamp(load: Mapping[str, Any]) -> str:
@@ -227,6 +229,15 @@ def _load_opts(d: Any, where: str) -> Dict[str, Any]:
             out["search"] = canonical(d["search"])
         except SearchSpecError as exc:
             raise SpecError(f"{where}.search: {exc}") from None
+    if "input_log" in d:
+        from main.anchors.input_log import InputLogError, canonical as window_canonical
+
+        if "search" in d:
+            raise SpecError(f"{where}.input_log: a RAW label's option (a searched label logs its own decisions)")
+        try:
+            out["input_log"] = window_canonical(d["input_log"])
+        except InputLogError as exc:
+            raise SpecError(f"{where}.input_log: {exc}") from None
     return out
 
 

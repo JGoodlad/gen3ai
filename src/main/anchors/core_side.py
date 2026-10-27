@@ -202,11 +202,13 @@ class _BattleState:
 
 def make_slot(front: Any, *, username: str, policy: CorePolicy, team_source: Any,
               state: OurSideState, forfeit_limit: int, battle_format: str = "gen3ou",
-              searcher: Any = None) -> Any:
+              searcher: Any = None, recorder: Any = None) -> Any:
     """Build the slot as a subclass of the front end's own connection record (imported lazily so
     importing this module stays cheap). ``searcher`` (``--our-search``, :class:`main.anchors.search_side.LiveSearcher`):
     each decision is the searcher's (it plays ``policy``'s greedy choice wherever it does not search); None = the
-    policy decides every decision, unchanged."""
+    policy decides every decision, unchanged. ``recorder`` (``--keep-input-logs``,
+    :class:`main.anchors.input_log.InputLogRecorder`): after the policy decides, the decision's honest input log is
+    kept; it never changes a choice."""
     base = _conn_base()
 
     class CoreSlot(base):  # type: ignore[misc,valid-type]
@@ -219,6 +221,7 @@ def make_slot(front: Any, *, username: str, policy: CorePolicy, team_source: Any
             self.username = username
             self.policy = policy
             self.searcher = searcher
+            self.recorder = recorder
             self.teams = team_source
             self.state = state
             self.forfeit_limit = int(forfeit_limit)
@@ -410,6 +413,8 @@ def make_slot(front: Any, *, username: str, policy: CorePolicy, team_source: Any
             t0 = time.perf_counter()
             if self.searcher is None:
                 idx, argmax = self.policy.decide(row, np.asarray(mask, dtype=np.int8))
+                if self.recorder is not None:
+                    self.recorder.record(self.front, b.tag, d, mask, self, int(argmax))
             else:
                 # S-U's searched player: off the event loop (the peer's keepalive pings keep being answered)
                 idx, argmax = await self.searcher.decide(self.front, b.tag, d, row, np.asarray(mask, dtype=np.int8),
@@ -465,14 +470,16 @@ def build_slot(front: Any, *, username: str, model_zip: str, device: str, model_
                stochastic: bool, temperature: float, team_spec: Dict[str, Any],
                team_seed: Optional[int], forfeit_limit: int, state: OurSideState,
                battle_format: str = "gen3ou", belief_prior_mix: Optional[float] = None,
-               team_skip: int = 0, search: Optional[str] = None, search_out: Any = None) -> Any:
+               team_skip: int = 0, search: Optional[str] = None, search_out: Any = None,
+               input_log: Optional[str] = None, input_log_out: Any = None) -> Any:
     """Everything one half's slot needs: the policy (loaded once per half, as ``play.main`` did),
     the seeded team source (its draws logged into ``state.draws``) and the connection.
 
     ``team_skip`` (``--deal-game``): draw and DISCARD that many teams first, so the half's first battle pilots the
     team the whole series' battle ``team_skip`` of this half drew (the discarded draws are not logged). ``search``
     (``--our-search``): the registered search (:mod:`main.anchors.search_presets`), its per-decision log at
-    ``search_out``; returns a slot whose ``searcher`` the caller closes."""
+    ``search_out``; returns a slot whose ``searcher`` the caller closes. ``input_log`` (``--keep-input-logs``, a raw
+    cell only): the turn window whose decisions' honest input logs go to ``input_log_out``."""
     model = load_policy(model_zip, device, model_loader, state, belief_prior_mix=belief_prior_mix)
     policy = CorePolicy(model, stochastic=stochastic, temperature=temperature)
     teams = build_team_source(team_spec, team_seed, state.draws)
@@ -482,8 +489,15 @@ def build_slot(front: Any, *, username: str, model_zip: str, device: str, model_
         from main.anchors.search_side import LiveSearcher
 
         searcher = LiveSearcher(model, policy, search, search_out)
+    recorder = None
+    if input_log is not None:
+        if searcher is not None:
+            raise ValueError("--keep-input-logs records a RAW cell; a searched cell logs its own decisions")
+        from main.anchors.input_log import InputLogRecorder
+
+        recorder = InputLogRecorder(input_log, input_log_out)
     return make_slot(front, username=username, policy=policy, team_source=teams, state=state,
-                     forfeit_limit=forfeit_limit, battle_format=battle_format, searcher=searcher)
+                     forfeit_limit=forfeit_limit, battle_format=battle_format, searcher=searcher, recorder=recorder)
 
 
 def skip_draws(teams: Any, k: int, draw_log: list) -> None:

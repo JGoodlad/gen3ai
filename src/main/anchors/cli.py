@@ -316,6 +316,12 @@ def build_parser() -> argparse.ArgumentParser:
                         "(each skips the half's earlier draws) and its battle seed (--seed-base's index G). Needs a "
                         "metamon --opponent, the core slot and a --seed-base. S-U's per-game units; the summary "
                         "counts 1 game and records the deal under provenance.deal.")
+    p.add_argument("--keep-input-logs", dest="keep_input_logs", default=None, metavar="FROM-TO",
+                   help="a RAW checkpoint our-side on the in-process core slot with a --seed-base ONLY (no "
+                        "--our-search): at each decision of ours in turns FROM..TO with >= 2 legal actions, keep the "
+                        "battle's honest input log (main.anchors.input_log) in <out>/input_logs.jsonl, for the S-U "
+                        "gate test's offline search (main.value_search.sign_gate). Changes no choice; stamps no "
+                        "regime; the summary records the counters under input_logs.")
     p.add_argument("--allow-unmatched-regime", action="store_true",
                    help="permit a cell where the two sides are NOT at the same regime. Every row "
                         "is then stamped regime_matched=false. Foul Play has no sampling knob at "
@@ -577,6 +583,20 @@ def build_plan(args: argparse.Namespace, cfg: config_mod.AnchorsConfig,
         if why:
             raise SystemExit(f"--our-search needs {why}.")
         _preflight_search_engine(dry_run=bool(getattr(args, "dry_run", False)))
+    keep_input_logs = getattr(args, "keep_input_logs", None)
+    if keep_input_logs is not None:
+        from main.anchors.input_log import InputLogError, canonical as window_canonical
+
+        try:
+            keep_input_logs = window_canonical(keep_input_logs)
+        except InputLogError as exc:
+            raise SystemExit(f"--keep-input-logs: {exc}") from None
+        why = ("a checkpoint our-side" if our_side != "model" else
+               "the in-process core slot (--our-transport core)" if our_transport != "core" else
+               "a RAW cell (no --our-search: a searched cell logs its own decisions)" if our_search is not None else
+               "a --seed-base (the offline search replays the battle's own seed)" if args.seed_base is None else None)
+        if why:
+            raise SystemExit(f"--keep-input-logs needs {why}.")
     deal_game = getattr(args, "deal_game", None)
     if deal_game is not None:
         why = ("a metamon --opponent (its peer skips its own seeded draws)" if kind != "metamon" else
@@ -734,6 +754,7 @@ def build_plan(args: argparse.Namespace, cfg: config_mod.AnchorsConfig,
         our_belief_prior_mix=our_bpm,
         our_search=our_search,
         deal_game=deal_game,
+        keep_input_logs=keep_input_logs,
         our_transport=("peer" if is_peer else our_transport),
         our_transport_note=transport_note,
         bot_seed=((args.bot_seed if args.bot_seed is not None else int(args.team_seed))
@@ -754,7 +775,9 @@ def render_plan(plan: runner_mod.SeriesPlan, cfg: config_mod.AnchorsConfig) -> s
         + (f"  OUR belief prior mix λ={plan.our_belief_prior_mix:g}"
            if plan.our_belief_prior_mix is not None else "")
         + (f"  OUR side SEARCHES ({plan.our_search}: main.anchors.search_presets)"
-           if plan.our_search is not None else ""),
+           if plan.our_search is not None else "")
+        + (f"  input logs kept, turns {plan.keep_input_logs} (main.anchors.input_log)"
+           if plan.keep_input_logs is not None else ""),
         f"  team set          {plan.teamset}  ours={plan.our_team_spec}"
         + (f"  🚨 OUR peer draws {plan.our_set} (ASYMMETRIC pair cell, --our-teamset)"
            if plan.our_set != plan.teamset else ""),

@@ -1009,3 +1009,27 @@ def test_a_deal_game_plays_one_game_of_the_series_in_its_own_half_with_its_own_d
 def test_a_deal_game_is_refused_outside_its_shape(cfg, argv) -> None:
     with pytest.raises(SystemExit):
         build_plan(_args(*argv, "--dry-run"), cfg)
+
+
+# ------------------------------------------------------------------ the S-U gate test: --keep-input-logs
+def test_keep_input_logs_is_canonical_stamps_no_regime_and_is_printed(cfg) -> None:
+    """`--keep-input-logs 10-30` (main.anchors.input_log): a RAW cell keeps its decisions' honest input logs and plays
+    exactly as without it, so our_regime stays the raw one."""
+    plan = build_plan(_args("--opponent", "metamon:Kakuna", "--keep-input-logs", "010-30", "--seed-base", "3",
+                            "--dry-run"), cfg)
+    assert plan.keep_input_logs == "10-30" and plan.our_search is None
+    assert runner_mod.cell_spec(plan, {"their_regime": "greedy"}, 72).our_regime == "greedy"
+    assert "input logs kept, turns 10-30" in render_plan(plan, cfg)
+
+
+@pytest.mark.parametrize("argv", [
+    ("--keep-input-logs", "10-30"),                                                       # no --seed-base
+    ("--keep-input-logs", "30-10", "--seed-base", "3"),                                   # not FROM <= TO
+    ("--keep-input-logs", "10", "--seed-base", "3"),                                      # not FROM-TO
+    ("--keep-input-logs", "10-30", "--seed-base", "3", "--our-search", "r0s4"),          # a searched cell
+    ("--keep-input-logs", "10-30", "--seed-base", "3", "--our-transport", "live"),       # not the core slot
+])
+def test_keep_input_logs_is_refused_outside_its_shape(cfg, argv, monkeypatch) -> None:
+    monkeypatch.setattr("main.anchors.cli._preflight_search_engine", lambda **_k: None)
+    with pytest.raises(SystemExit):
+        build_plan(_args("--opponent", "metamon:Kakuna", *argv, "--dry-run"), cfg)

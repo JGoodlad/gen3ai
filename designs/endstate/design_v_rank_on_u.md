@@ -248,7 +248,7 @@ per action. Pure numpy, < 1 CPU-min, 1.1 GB, read-only.
 | partial β given π's logits | 0.37 [0.25, 0.49] |
 | α_top (π's top over an equally rated alternative) | 1.6 pp |
 | H (Q̂-preferred contenders over π's top) | +0.0006 [−0.015, +0.016]; one seed: SD 0.47 a state |
-| piKL deviations | 13.8 % of states; their Q̂ gap over π's top: median 0.066 (IQR 0.039–0.110) |
+| piKL deviations | **40.2 % of states** (289 of 719, `pikl_deviation_qhat_gap.n`); their Q̂ gap over π's top: median 0.066 (IQR 0.039–0.110). (13.8 % is `imp_pikl_deviation_share`: the share of states whose ONE referee seed gives the pick and π's top DIFFERENT results, not the deviation rate; S-U REVIEW B2, 7aafa527) |
 
 Three readings shape the design.
 1. **The slope is real and search still gains nothing.** β = 0.54 and β_C = 0.30, yet H ≈ 0 and L1's IMP at P\* is
@@ -435,3 +435,4 @@ searched or the raw one), never the siblings. Its stage 0 has the siblings' Q̂ 
 | date | decision | chosen | rejected / alternatives | evidence |
 |---|---|---|---|---|
 | 2026-10-27 | **This doc CREATED (DRAFT, explicit-only); the PREREG not ready (builds B-V1–B-V4 first)** (research designer, orchestrator brief; one < 1-CPU-min probe on banked rows, no game) | V-RANK: at 2 hashed positions a deal (turns 10–19, 20–30), every legal action branched as a real P\* vs Kakuna game by deterministic replay; Q̂ from S (`r0s4`) at the position; the within-node slope β on U and Δβ against home72; RANK-NULL-ON-U / RANK-WORSE-ON-U turn S-U OFF, RANK-HOLDS-ON-U makes it ELIGIBLE; 1,200 positions a set, a NULL-only look at half, an outcome-free sizing rule capped at 2×; ≈ 96 CPU-h central; a self-referee arm at the same positions as a REPORTED decomposition | rollouts with a Kakuna proxy (the M1 flaw); natural experiments in banked games (confounded, rare); the X51 twins (not one ply); Kakuna's own choices as the truth (style, not value); a short-horizon V referee (circular); a gain-facing primary (H or IMP: ≈ 10⁵ positions for a game bar); three actions a position (less precision per CPU) | `../research_state/measurements/v_rank_on_u_2026-10-27/power_probe.json`; survey `5d554c23` F5; H-MID `f200258f` and REVIEW `90708bff` (M1, M4); S-U §1.1, §8 A1, §10 and `AMENDMENT_1_DRAFT.md` §1; L1 at P\*; `kakuna_determinism_2026-10-27`; X51 README (cost) |
+| 2026-10-27 | **§5.1's deviation row corrected** (S-U gate operator; S-U REVIEW B2 / its FINDINGS list, 7aafa527) | piKL deviates on 40.2 % of the probe's states (289 of 719); the 13.8 % the row printed is `imp_pikl_deviation_share` (one referee seed separating the pick from π's top) | — | `power_probe.json` (`pikl_deviation_qhat_gap.n`, `imp_pikl_deviation_share`); `../research_state/measurements/su_headroom_2026-10-27/REVIEW.md` B2 |

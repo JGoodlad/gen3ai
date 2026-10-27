@@ -165,7 +165,7 @@ def _settle(spec: ReadSpec, state: Path, *, now: Optional[float], step_of: Calla
             m = spec.models[lab]
             units = KA.plan_units([{"label": lab, "arm": m.arm, "seed": m.seed, "path": have[lab]["copy"],
                                     "belief_prior_mix": m.load.get("belief_prior_mix"),
-                                    "search": m.load.get("search")}],
+                                    "search": m.load.get("search"), "input_log": m.load.get("input_log")}],
                                   teamsets=a.teamsets, unit_seeds=a.unit_seeds, opponent=a.opponent,
                                   config_dir=st / "configs", per_game=a.per_game)
             if any(u.model_sha256 != have[lab]["sha256"] for u in units):

@@ -590,3 +590,23 @@ def test_a_units_cpu_is_its_own_childs_with_every_descendant_it_reaped():
         def wait(self):
             return 0
     assert KA._wait_cpu(Stand()) == (0, None)
+
+
+# --------------------------------------------------------------- the S-U gate test: a raw unit keeping input logs
+def test_a_raw_unit_keeping_input_logs_passes_its_window_and_a_capture_and_parses():
+    from main.anchors.cli import build_parser
+
+    f = [{**_finals()[0], "input_log": "10-030"}]
+    (u, *_rest) = KA.plan_units(f, hash_models=False, teamsets=("home72",), unit_seeds=(100,))
+    assert u.input_log == "10-30" and u.game is None and u.search is None
+    a = KA.unit_argv(u, Path("/o"), 9541, py="PY")
+    tail = a[a.index("PY"):]
+    assert tail[tail.index("--keep-input-logs") + 1] == "10-30" and "--max-s" in a
+    assert tail[tail.index("--capture-dir") + 1] == "/o/capture"
+    args = build_parser().parse_args(tail[3:])
+    assert args.keep_input_logs == "10-30" and args.games == KA.UNIT_GAMES and args.seed_base == 100
+    with pytest.raises(KA.KakunaError, match="RAW"):
+        KA.plan_units([{**_finals("r0s4")[0], "input_log": "10-30"}], hash_models=False, teamsets=("home72",),
+                      unit_seeds=(0,), per_game=True)
+    with pytest.raises(KA.KakunaError, match="FROM-TO"):
+        KA.plan_units([{**_finals()[0], "input_log": "ten"}], hash_models=False, teamsets=("home72",), unit_seeds=(0,))

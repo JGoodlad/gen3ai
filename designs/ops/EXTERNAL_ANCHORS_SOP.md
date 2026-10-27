@@ -480,6 +480,17 @@ game and records the deal under `provenance.deal`. Needs a metamon `--opponent`,
 **UNVERIFIED:** that a lone game G replays game G of a whole 20-game unit game for game (it does when neither side
 carries state across battles; a Kakuna process plays one battle here, 20 there).
 
+### `--keep-input-logs FROM-TO` — a RAW cell keeps its decisions' input logs (the S-U gate test, 2026-10-27)
+
+`main.anchors.input_log`. A raw checkpoint our-side on the core slot (with a `--seed-base`, never with
+`--our-search`) plays exactly as without the flag; at each of our decisions in turns FROM..TO with ≥ 2 legal actions
+it keeps the battle's honest input log, cut exactly as the live searched player cuts it (`search_side.honest_log`),
+with the decision's live search key, tokens, greedy choice and the live row's sha256, in `<out>/input_logs.jsonl`.
+The offline scorer (`main.value_search.sign_gate`) re-runs the registered search there and refuses any kept log whose
+replay does not reproduce the decision's tokens and row. No regime stamp (play is unchanged); the half's report carries
+the recorder's counters under `input_logs`, and a window that did not take effect fails G1. `main.reads` passes it as
+the label's `load.input_log`.
+
 ### `--mirrored-pairs` — MIRRORED TEAM PAIRS (T17, `gen3_mirrored_pairs_v1`)
 
 Within each half, battle `2k` pits our team `A_k` (drawn from OUR team source) against the peer's

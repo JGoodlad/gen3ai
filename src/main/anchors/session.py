@@ -272,6 +272,9 @@ class OurSideState:
     #: `--our-search`: the live searcher's counters for this half (`main.anchors.search_side.LiveSearcher.summary`), or
     #: None when our side does not search.
     search_stats: Optional[Dict[str, Any]] = None
+    #: `--keep-input-logs`: the input-log recorder's counters for this half
+    #: (`main.anchors.input_log.InputLogRecorder.summary`), or None when nothing is recorded.
+    input_log_stats: Optional[Dict[str, Any]] = None
 
 
 def foreign_loader(zip_path: str, device: str):
