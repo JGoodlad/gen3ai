@@ -25,6 +25,16 @@ forces ``HF_HUB_OFFLINE=1`` at import, replaces that call by ``weight_pins.pinne
 the local cache only, sha256-checked) and hashes every pinned file before the model is built
 (:func:`install_weight_pins`); a mismatch or missing file is ``SystemExit``. See ``EXTERNAL_ANCHORS_SOP.md``.
 
+TEAMS ARE PACKED BY SHOWDOWN (gen3_peer_showdown_pack_v1, 2026-10-27)
+--------------------------------------------------------------------
+Upstream poke-env's packer is not Showdown's reading of a paste: a mis-ordered Hidden Power table (12 of 16 types
+became another type; the server refused the team), ``Happiness: 0`` packed as 255 (Frustration at base power 1), a
+``Hidden Power: <Type>`` line ignored. So every team file this peer may draw is packed through ``showdown_pack.js``
+(import, the validator, ``Teams.pack``: what a real server plays) and checked by ``pack_oracle.js`` at startup
+(``team_pack.py``); a file either fails is ``SystemExit`` naming it, before the model is built. Every draw
+(seeded, sequence, Metamon's own unseeded one) yields that pack. The report's ``peer_pack_changed`` says whether any
+file plays differently from the legacy pack; it enters the cell's regime id (``EXTERNAL_ANCHORS_SOP.md`` H22).
+
 HOW GREEDY IS SET — and why NOT with a temperature (hazard H-D)
 ---------------------------------------------------------------
 ``amago``'s rollout loop calls ``policy.get_actions(..., sample=Experiment.sample_actions_val)``,
@@ -94,19 +104,24 @@ os.environ.setdefault("OMP_NUM_THREADS", "1")
 os.environ.setdefault("MKL_NUM_THREADS", "1")
 
 
-def _load_weight_pins():
-    """``weight_pins.py`` beside this file, loaded BY PATH: the script runs with ``PYTHONPATH=""`` and may itself be
-    imported by a test under another name, so a sibling ``import`` cannot be relied on."""
+def _load_sibling(filename, name):
+    """A stdlib-only module beside this file (``weight_pins.py``, ``team_pack.py``), loaded BY PATH: the script runs
+    with ``PYTHONPATH=""`` and may itself be imported by a test under another name, so a sibling ``import`` cannot be
+    relied on."""
     import importlib.util
 
     spec = importlib.util.spec_from_file_location(
-        "metamon_weight_pins", os.path.join(os.path.dirname(os.path.abspath(__file__)), "weight_pins.py"))
+        name, os.path.join(os.path.dirname(os.path.abspath(__file__)), filename))
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod
 
 
-WP = _load_weight_pins()
+WP = _load_sibling("weight_pins.py", "metamon_weight_pins")
+TP = _load_sibling("team_pack.py", "metamon_team_pack")
+#: ``{abspath: packed}`` for every team file this peer may draw: packed through Showdown and verified at startup
+#: (:func:`install_showdown_pack`). Every yield reads it; a file not in it never plays.
+_PACKS = {}
 # Before ANY import of huggingface_hub (it reads these into constants at import): the weights come from the
 # local cache at the pinned revision or not at all. Overrides whatever the caller exported.
 WP.force_offline()
@@ -154,9 +169,7 @@ def install_seeded_team_draw(seed, draw_log):
         for _ in range(100):
             path = self._draw_rng.choice(files)
             self._most_recent_team_file = path
-            with open(path, "r") as fh:
-                team_data = fh.read()
-            candidate = self.join_team(self.parse_showdown_team(team_data))
+            candidate = TP.pack_of(_PACKS, path)
             if not self.block_team(candidate):
                 draw_log.append(os.path.basename(path))
                 return candidate
@@ -183,8 +196,7 @@ def install_sequence_team_draw(sequence_path, draw_log):
             raise RuntimeError(f"team sequence exhausted after {i} battles ({sequence_path})")
         path = files[i]
         self._most_recent_team_file = path
-        with open(path, "r") as fh:
-            candidate = self.join_team(self.parse_showdown_team(fh.read()))
+        candidate = TP.pack_of(_PACKS, path)
         if self.block_team(candidate):
             raise RuntimeError(f"Metamon blocked mirrored-pair team {path}")
         draw_log.append(os.path.basename(path))
@@ -192,6 +204,52 @@ def install_sequence_team_draw(sequence_path, draw_log):
 
     wrappers.TeamSet.yield_team = sequence_yield_team
     print(f"[peer] team draw = the mirrored-pair SEQUENCE {sequence_path} ({len(files)} battles)", flush=True)
+
+
+def install_default_team_draw():
+    """The UNSEEDED draw (no ``--team-seed`` / ``--team-sequence``; the driver always passes a seed, a run by hand may
+    not): Metamon's own ``yield_team`` (``random.choice`` over its file list, one draw per attempt, the same global
+    RNG use), except that the pack is the verified Showdown pack (:data:`_PACKS`), never poke-env's."""
+    import warnings
+
+    import metamon.env.wrappers as wrappers
+
+    def default_yield_team(self):
+        for attempt in range(100):
+            path = random.choice(self.team_files)
+            self._most_recent_team_file = path
+            candidate = TP.pack_of(_PACKS, path)
+            if not self.block_team(candidate):
+                return candidate
+            if attempt % 10 == 0:
+                warnings.warn(f"Failed to find valid team after {attempt + 1} attempts")
+        raise RuntimeError("Could not find valid team after 100 attempts")
+
+    wrappers.TeamSet.yield_team = default_yield_team
+
+
+def legacy_pack(text):
+    """How this peer packed a team file before ``gen3_peer_showdown_pack_v1``: upstream poke-env's ``Teambuilder``
+    (what Metamon's shipped ``TeamSet.yield_team`` calls). Compared, never played: :func:`install_showdown_pack`."""
+    from poke_env.teambuilder.teambuilder import Teambuilder
+
+    return Teambuilder.join_team(Teambuilder.parse_showdown_team(text))
+
+
+def install_showdown_pack(files, battle_format, bridge_dir):
+    """Pack EVERY team file this peer may draw through Showdown (``team_pack.build``) before the first battle, or
+    ``SystemExit`` naming the file and the set. Returns the record the report carries (``peer_pack_changed``: does any
+    file play differently from the legacy pack; it enters the cell's regime id)."""
+    try:
+        packs, record = TP.build(files, battle_format, bridge_dir, legacy_pack=legacy_pack)
+    except TP.TeamPackError as exc:
+        raise SystemExit(f"[peer] FATAL team pack: {exc}") from None
+    _PACKS.clear()
+    _PACKS.update(packs)
+    print(f"[peer] team pack {record['schema']}: {record['n_files']} file(s) packed through Showdown and verified; "
+          f"{len(record['changed'])} play differently from the legacy pack "
+          f"({', '.join(c['file'] for c in record['changed'][:5]) or 'none'})", flush=True)
+    return record
 
 
 def _rng_states():
@@ -585,6 +643,9 @@ def build_parser():
     ap.add_argument("--attention", default="vanilla", choices=("vanilla", "flex", "flash"))
     ap.add_argument("--results-dir", default=None)
     ap.add_argument("--report-out", required=True)
+    ap.add_argument("--bridge-dir", required=True,
+                    help="our src/utils/bridge (showdown_pack.js, pack_oracle.js): every team file is packed and "
+                         "verified through Showdown there (gen3_peer_showdown_pack_v1)")
     return ap
 
 
@@ -604,6 +665,17 @@ def main(argv=None):
         install_sequence_team_draw(args.team_sequence, draw_log)
     elif args.team_seed is not None:
         install_seeded_team_draw(args.team_seed, draw_log)
+    else:
+        install_default_team_draw()
+    # Every team file packed through Showdown and verified BEFORE the weights and the model (minutes for Kakuna):
+    # a bad file is a startup failure, never a game.
+    team_set = metamon.env.get_metamon_teams(args.battle_format, args.team_set)
+    if args.team_sequence is not None:
+        with open(args.team_sequence) as fh:
+            pack_files = list(json.load(fh))
+    else:
+        pack_files = list(team_set.team_files)
+    pack_record = install_showdown_pack(pack_files, args.battle_format, args.bridge_dir)
 
     pin_record = install_weight_pins(args)
     model = get_pretrained_model(args.agent)
@@ -616,8 +688,6 @@ def main(argv=None):
                         "attention_window": None}
     if args.attention != "flash":
         install_cpu_attention(args.attention, attention_record)
-
-    team_set = metamon.env.get_metamon_teams(args.battle_format, args.team_set)
 
     probe = RegimeProbe(verify=args.verify)
     probe.install()
@@ -661,6 +731,8 @@ def main(argv=None):
         **attention_record,
         **preset_record,
         **pin_record,
+        "team_pack": pack_record,
+        "peer_pack_changed": pack_record["peer_pack_changed"],
     })
     # Metamon's own scoreboard, complementing ours — the independent cross-check that the win
     # accounting is right. Its `won` field is a BOOLEAN, so it books a TIE as its own loss

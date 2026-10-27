@@ -349,3 +349,27 @@ def test_the_legacy_table_is_the_committed_pins_while_they_are_the_legacy_revisi
     if meta.hf_revision != AS.LEGACY_HF_REVISION:
         pytest.skip("anchors.json is repinned past the legacy revision: that is a new regime by design")
     assert {a: meta.pin(a).digest for a in meta.agents} == AS.LEGACY_WEIGHTS
+
+
+# ------------------------------------------------------------------ the Kakuna TEAM PACK in the regime id (SOP H22)
+def test_a_team_set_the_legacy_pack_played_identically_keeps_its_banked_id() -> None:
+    """home72 / p72 / heldout72_hpfix / rc72b: the peer reports ``peer_pack_changed = False`` (or a banked row, None)
+    and the id is the one every banked read of the cell carries, so new and banked units pool."""
+    assert AS.anchor_regime_id(_wsummary(peer_pack_changed=False)) == _BANKED_ID
+    assert AS.anchor_regime_id(_wsummary(peer_pack_changed=None, our_peer_pack_changed=False)) == _BANKED_ID
+    assert AS.unit_row(_Unit(), _wsummary(peer_pack_changed=False))["peer_pack"] == "legacy"
+    assert AS.unit_row(_Unit(), _wsummary())["peer_pack"] == "legacy"
+
+
+def test_a_team_set_whose_kakuna_side_changed_is_a_new_regime() -> None:
+    """forum72 (sft431's Gyarados: Frustration at base power 1 under poke-env's pack, 102 now) / away / the pool: a new
+    id, never pooled with the banked units. Fails on revert: without the pack in the id these equal the banked id."""
+    theirs = AS.anchor_regime_id(_wsummary(peer_pack_changed=True))
+    ours = AS.anchor_regime_id(_wsummary(our_side="metamon:Kakuna28", our_peer_pack_changed=True))
+    assert theirs != _BANKED_ID and ours != AS.anchor_regime_id(_wsummary(our_side="metamon:Kakuna28"))
+    assert theirs != AS.anchor_regime_id(_wsummary(our_peer_pack_changed=True))
+    assert AS.unit_row(_Unit(), _wsummary(peer_pack_changed=True))["peer_pack"] == "changed"
+
+
+class _Unit:
+    name, label, teamset, unit_seed, games, model_sha256, belief_prior_mix = "u0", "pstar", "forum72", 0, 20, None, None

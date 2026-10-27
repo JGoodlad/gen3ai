@@ -22,6 +22,7 @@ from pathlib import Path
 import pytest
 
 from main.anchors.config import load_config
+from main.anchors.peer_scripts import team_pack as tp
 from main.anchors.peers import (
     PEERS,
     FoulPlayPeer,
@@ -48,10 +49,19 @@ def _metamon_plan(cfg, tmp_path: Path, role: str = "acceptor", regime: str = "gr
 
 
 def pin_report_fields(plan: PeerPlan) -> dict:
-    """What a peer that VERIFIED the plan's weight pin writes into its report (FR-1 FINDING 3)."""
+    """What a CURRENT peer writes into its report: the weight pin it VERIFIED (FR-1 FINDING 3) and its verified Showdown
+    team pack (gen3_peer_showdown_pack_v1, SOP H22; here a team set the legacy pack played identically)."""
     pin = plan.extra["weight_pin"]
     return {"hf_hub_offline": True, "hf_revision": pin.revision, "weights_verified": dict(pin.weights),
-            "weights_loaded": sorted(pin.weights)}
+            "weights_loaded": sorted(pin.weights), **team_pack_fields()}
+
+
+def team_pack_fields(changed: bool = False) -> dict:
+    """A peer report's team-pack record (``metamon_side.install_showdown_pack``)."""
+    files = [{"file": "sft431.gen3ou_team", "diffs": ["mon 2 (gyarados) happiness: legacy 255, now 0"]}] if changed else []
+    return {"team_pack": {"schema": tp.PEER_PACK_SCHEMA, "n_files": 72, "files_sha256": "0" * 64,
+                          "legacy_compared": True, "changed": files, "peer_pack_changed": changed},
+            "peer_pack_changed": changed}
 
 
 def _foulplay_plan(cfg, tmp_path: Path, role: str = "challenger") -> PeerPlan:
@@ -320,3 +330,47 @@ def test_the_router_rate_reaches_the_report(cfg, tmp_path) -> None:
     rep = MetamonPeer.read_report(plan)
     assert rep["router_no_rng_rate"] == 1.0 and rep["argmax_match_rate"] is None
     assert rep["regime_verified_decisions"] is True
+
+
+# ------------------------------------------------------- the team pack (gen3_peer_showdown_pack_v1, SOP H22)
+def test_the_metamon_peer_is_told_where_to_pack_its_teams_through_showdown(cfg, tmp_path) -> None:
+    argv = _metamon_plan(cfg, tmp_path).argv
+    bridge = Path(argv[argv.index("--bridge-dir") + 1])
+    assert (bridge / "showdown_pack.js").is_file() and (bridge / "pack_oracle.js").is_file()
+
+
+def _pack_report(cfg, tmp_path, **override) -> dict:
+    plan = _metamon_plan(cfg, tmp_path)
+    blob = {"sample_kwarg_values": [False], "argmax_match_rate": 1.0, "n_decisions": 9,
+            "regime_verified_decisions": True, "peer_error_free": True, **pin_report_fields(plan)}
+    blob.update(override)
+    plan.report_path.write_text(json.dumps({k: v for k, v in blob.items() if v is not ...}))
+    return MetamonPeer.read_report(plan)
+
+
+def test_a_peer_that_did_not_verify_its_team_pack_never_counts(cfg, tmp_path) -> None:
+    """A report from a peer that packed with poke-env (no ``team_pack``) voids the regime verification: FAIL CLOSED."""
+    assert _pack_report(cfg, tmp_path)["regime_verified_decisions"] is True
+    for override in ({"team_pack": ..., "peer_pack_changed": ...}, {"peer_pack_changed": ...},
+                     {"team_pack": {"schema": "something_else"}}):
+        r = _pack_report(cfg, tmp_path, **override)
+        assert r["regime_verified_decisions"] is False and "team pack" in r["team_pack_note"], override
+
+
+def test_the_peer_pack_change_reaches_the_report(cfg, tmp_path) -> None:
+    r = _pack_report(cfg, tmp_path, **team_pack_fields(changed=True))
+    assert r["peer_pack_changed"] is True and r["team_pack_changed_files"] == ["sft431.gen3ou_team"]
+    assert _pack_report(cfg, tmp_path)["peer_pack_changed"] is False
+
+
+def test_the_cell_stamps_the_peer_pack_change_and_a_cell_changed_if_any_half_did(cfg, tmp_path) -> None:
+    from main.anchors import runner as runner_mod
+    from main.anchors.cli import build_parser, build_plan
+
+    plan = build_plan(build_parser().parse_args(["--model", "", "--opponent", "metamon:SmallRL", "--dry-run"]), cfg)
+    r = _pack_report(cfg, tmp_path, **team_pack_fields(changed=True))
+    stamp = runner_mod.cell_spec(plan, {**r, "our_peer_pack_changed": False}, 20).stamp()
+    assert stamp["peer_pack_changed"] is True and stamp["our_peer_pack_changed"] is False
+    assert runner_mod.cell_spec(plan, {}, 20).stamp()["peer_pack_changed"] is None, "no report, no claim"
+    assert runner_mod.any_half([False, True]) is True and runner_mod.any_half([False, None]) is False
+    assert runner_mod.any_half([None, None]) is None

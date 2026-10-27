@@ -156,6 +156,12 @@ class CellSpec:
     weights_sha256: Optional[str] = None
     our_hf_revision: Optional[str] = None
     our_weights_sha256: Optional[str] = None
+    #: gen3_peer_showdown_pack_v1 (SOP H22): does any team file the Metamon peer may draw play differently from how the
+    #: peer packed it before (upstream poke-env's packer)? THEIRS = the opponent peer; ``our_*`` = our side when it is a
+    #: Metamon peer. True enters the regime id (``main.reads.assemble.anchor_regime_id``), so forum72 / away / the pool
+    #: never pool with their banked reads; False and None (not a Metamon peer, or a row before the pack) leave it alone.
+    peer_pack_changed: Optional[bool] = None
+    our_peer_pack_changed: Optional[bool] = None
 
     def stamp(self) -> Dict[str, Any]:
         return asdict(self)

@@ -147,6 +147,35 @@ def test_an_anchor_import_across_engines_refuses(tmp_path, monkeypatch):
             api.assemble(st2)
 
 
+def test_an_import_of_banked_units_across_the_kakuna_team_pack_refuses(tmp_path, monkeypatch):
+    """SOP H22 (gen3_peer_showdown_pack_v1): banked forum72 units had Kakuna play poke-env's pack (sft431's Gyarados
+    at Frustration base power 1); a unit after the fix that changed its team set (``peer_pack_changed``) never pools
+    with them, either way round. A team set the old pack played identically (``False``) imports as before. Fails on
+    revert: without the check the group is only INCONCLUSIVE (two regime ids), not refused."""
+    st1, sha1 = _look1(tmp_path, monkeypatch)                                  # banked: no pack stamp (legacy)
+    imp = {"state": str(st1), "spec_sha256": sha1, "group": "u", "models": ["off"]}
+    st2 = tmp_path / "look2"
+    RN.plan(_anchor_spec(tmp_path, "look2_read", imp), st2, code=CODE, step_of=lambda _p: 1)
+    RN.run(st2, "anchor", time.time() + 3600, run_unit=_played({"on": 13}, dict(_cell(), peer_pack_changed=True)),
+           sleep=lambda s: None)
+    with pytest.raises(ReadImportError, match="never crosses the Kakuna team-pack regime"):
+        api.assemble(st2)
+
+    st3, sha3 = _look1(tmp_path / "b", monkeypatch, cell=dict(_cell(), peer_pack_changed=True))   # the other way round
+    st4 = tmp_path / "look4"
+    RN.plan(_anchor_spec(tmp_path, "look4_read", {"state": str(st3), "spec_sha256": sha3, "group": "u",
+                                                  "models": ["off"]}), st4, code=CODE, step_of=lambda _p: 1)
+    RN.run(st4, "anchor", time.time() + 3600, run_unit=_played({"on": 13}, _cell()), sleep=lambda s: None)
+    with pytest.raises(ReadImportError, match="never crosses the Kakuna team-pack regime"):
+        api.assemble(st4)
+
+    st5 = tmp_path / "look5"                                                  # unchanged set: imports as before
+    RN.plan(_anchor_spec(tmp_path, "look5_read", imp), st5, code=CODE, step_of=lambda _p: 1)
+    RN.run(st5, "anchor", time.time() + 3600, run_unit=_played({"on": 13}, dict(_cell(), peer_pack_changed=False)),
+           sleep=lambda s: None)
+    assert api.assemble(st5)["anchor"]["u"]["inconclusive"] == []
+
+
 def test_an_s_group_imports_the_earlier_reads_nodes_and_plays_only_its_own(tmp_path, no_git):
     refpop, rdoc = _refpop(tmp_path)
     spec1 = _s_spec(tmp_path, refpop, rdoc["content_sha256"])

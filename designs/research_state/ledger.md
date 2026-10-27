@@ -29578,3 +29578,51 @@ with the validator's IVs, (b) the all-31 type (Dark), or (c) the named type with
 
 **Evidence:** `src/utils/bridge/hidden_power_named_no_iv_line_integration_test.py`. It pins the pack and the three
 arms, and checks Rust against Node per arm. It fails on revert: with both fill sites removed the pack oracle raises.
+
+### 2026-10-27 · GIGO FIX · **The Kakuna peer packs its teams as Showdown reads them (`gen3_peer_showdown_pack_v1`, SOP H22). Old forum72 reads had Kakuna's `sft431` Gyarados at Frustration base power 1; forum72, away and pool Kakuna reads are a new regime from here, machine-checked**
+
+**What was wrong.** The Metamon peer packed every team file with upstream poke-env's `Teambuilder`. A sweep of every
+team set installed for it packed each file both ways and compared them with the pack oracle (`pack_oracle.js`, Showdown's
+own reading of the paste). poke-env differs from Showdown in three ways:
+- **Hidden Power table.** Its `HP_TO_IVS` is in the formula's bit order but packed in stat order, so for a named Hidden
+  Power with all-31 IVs, 12 of 16 types read as another type and the server refuses the team (rc72). Flying keeps its
+  type with other IVs (away `team_23`'s Gyarados).
+- **Happiness.** `Happiness: 0` is packed as the default 255, and Showdown's "Frustration ⇒ happiness 0" import rule is
+  missing. Frustration then hits at base power 1, not 102: forum72 `sft431`'s Gyarados in every forum72 Kakuna read, and
+  2 pool teams.
+- **Hidden Power line.** A `Hidden Power: <Type>` line on a mon without the move is ignored (2 pool teams).
+
+Every other installed set packs identically: home72, p72, heldout72(_hpfix), rc72b, the x37a sets, the `tsr_k_*` sets
+except away and forum72, and `tsr_ref24`. Our own side was never affected: its packs are oracle-guarded since `d8d674b99`.
+
+**The fix.**
+- **The pack.** The peer packs every file it may draw through `utils/bridge/showdown_pack.js`: import, the validator,
+  then `Teams.pack` of the validated sets, which is what `server/ladders.ts` plays. `pack_oracle.js` must agree at
+  startup, or the peer exits naming the file and the set (`peer_scripts/team_pack.py`). A report without the pack never
+  counts.
+- **The regime.** The report's `peer_pack_changed` (any file plays differently from the legacy pack) enters
+  `anchor_regime_id` only when True. Unchanged sets keep their banked ids; forum72, away and the pool get new ones.
+- **Imports.** A cross-state import that crosses the pack regime on a shared team set REFUSES
+  (`imports.check_peer_pack`). `import_off` refuses on its registered id.
+- **Live reads untouched.** N1-P look 1 (`de15dfc7b`), H-CTX rc72b (`905c29f5b`) and X59-S (`fca58b24d`) run from
+  their own pinned worktrees. None plays away. N1-P and H-CTX play forum72 under the legacy pack throughout, which is
+  one regime within each read.
+
+**Reading.** Every banked forum72 Kakuna number had Kakuna play `sft431`
+with a near-dead Frustration. That is a small constant handicap on Kakuna's side, about 1 team in 72, the same for every
+arm of a read. So no within-read comparison moves, but a new forum72 read is not comparable with them.
+
+**FINDINGs.**
+1. **D3 look 2** imports C0's banked rows. Its pin must predate this change (its E1 requirement already implies one);
+   a pin carrying the change refuses that import on forum72.
+2. **The local front end** plays the pack as sent, where a real server plays the validator's output. No current path is
+   affected. TECH_DEBT (d), its own unit.
+3. **`build_rc72.py --install --panel rc72`** now refuses (rc72 is retired). Its verbatim copy was the path that put
+   no-IV-line Hidden Power files in front of poke-env.
+4. **H-CTX PREREG Amendment 2 wording.** It says "the live server REJECTS" rc72's no-IV-line Hidden Power sets. The
+   server rejected only Kakuna's poke-env pack of them; our side's pack of the same files plays the named type with the
+   validator's IVs (the 10-27 AUDIT entry above). rc72b and the amendment's design are unaffected. The PREREG text stands
+   as registered.
+
+**Evidence:** `src/main/anchors/peer_scripts/team_pack_test.py`, `peers_test.py`, `reads/assemble_test.py` and
+`reads/imports_test.py` (the regime and import checks fail on revert); SOP H22; `designs/tools/reads.md` §4.

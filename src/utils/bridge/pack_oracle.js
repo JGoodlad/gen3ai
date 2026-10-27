@@ -14,26 +14,8 @@ const path = require('path');
 const psPath = path.resolve(__dirname, '../../../deps/pokemon-showdown');
 const { Teams, TeamValidator, Dex, toID } = require(psPath);
 
-const STATS = ['hp', 'atk', 'def', 'spa', 'spd', 'spe'];
-
-function norm(dex, s) {
-    const moves = (s.moves || []).map(m => dex.moves.get(m).id).filter(x => x);
-    const hasHp = moves.some(m => m.startsWith('hiddenpower'));
-    const ivsObj = s.ivs || { hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31 };
-    const hpEff = hasHp ? dex.getHiddenPower(ivsObj) : null;
-    return {
-        species: dex.species.get(s.species || s.name).id,
-        item: toID(s.item),
-        ability: toID(s.ability),
-        moves: moves.join(','),
-        nature: toID(s.nature) || '',
-        evs: STATS.map(k => (s.evs && s.evs[k]) || 0).join(','),
-        ivs: STATS.map(k => ivsObj[k] === undefined ? 31 : ivsObj[k]).join(','),
-        level: s.level || 100,
-        happiness: (typeof s.happiness === 'number' && !isNaN(s.happiness)) ? s.happiness : 255,
-        hiddenpower: hpEff ? `${hpEff.type}:${hpEff.power}` : '',
-    };
-}
+const { norm: normWith } = require('./pack_norm');
+const norm = (dex, s) => normWith(dex, toID, s);
 
 let input = '';
 process.stdin.on('data', c => { input += c; });

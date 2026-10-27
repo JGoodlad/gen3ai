@@ -57,6 +57,8 @@ HERE = Path(__file__).resolve().parent.parent
 #: text names a type but carries no IV line (all 31); the live server REJECTS such a team (``rc72__00`` failed twice,
 #: "Aerodactyl has Hidden Power Bug, but its IVs are for Hidden Power Water"). ``rc72b``: X37a's strict rule.
 PANELS = {"rc72": "validated", "rc72b": "strict"}
+#: Draws that still reproduce (``--check``) but are never installed again.
+RETIRED = frozenset({"rc72"})
 NAME = "rc72b"
 HP_RULE = PANELS[NAME]
 N_TEAMS = 72
@@ -388,6 +390,10 @@ def main(argv: Optional[List[str]] = None) -> int:
         print("reproduces the committed panel" if same else "DOES NOT reproduce the committed panel")
         return 0 if same else 1
     if a.install:
+        if a.panel in RETIRED:
+            # FINDING 2 (2026-10-27): rc72 is retired, and its install copied files whose no-IV-line Hidden Power the
+            # Kakuna peer then packed with poke-env's mis-ordered table (EXTERNAL_ANCHORS_SOP.md H22). Never re-installed.
+            ap.error(f"--install --panel {a.panel}: {a.panel} is RETIRED (no game counted); install rc72b")
         install(rows, manifest)
     print(json.dumps({"content_digest": manifest["content_digest"], "rule_failures": manifest["rule_failures"],
                       "attempts": manifest["attempts_to_accept"], "describe": {

@@ -279,7 +279,9 @@ is INCONCLUSIVE if any of these holds:
 - a Metamon peer's verified weights (`their_weights` / `our_weights`: hub revision + `weights_sha256`), included only when they
   differ from `assemble.LEGACY_WEIGHTS` (the one commit every pre-pin read played), so banked ids are unchanged and a
   re-read of the same weights keeps the id (`EXTERNAL_ANCHORS_SOP.md` § Weight pins);
-- the ENGINE (`cell.engine_stamp`), included only when it is none of the banked engines (below).
+- the ENGINE (`cell.engine_stamp`), included only when it is none of the banked engines (below);
+- a Metamon peer's TEAM PACK (`peer_pack_changed` / `our_peer_pack_changed`), included only when True: the team set
+  plays differently than under the legacy poke-env pack (below, "The Kakuna team pack").
 
 Each (group, team set) must share ONE id. The group's id is `group_regime_id` over its team sets. The playing commit
 and file paths are recorded per unit but are not part of the id; the engine the commit played on is. A unit played on bytes other than the resolved
@@ -341,6 +343,35 @@ git (`engine_at`: the stamp's listing at that commit, plus the untracked `Cargo.
 
 Re-decided by this code, items 1 and 2 refuse at `inputs`; item 3's scripts predate `main.reads`. The recorded
 verdicts stand as recorded.
+
+### The Kakuna team pack (`gen3_peer_showdown_pack_v1`; `EXTERNAL_ANCHORS_SOP.md` H22, 2026-10-27)
+
+🚨 **A regime split beside the engine's, on forum72 (goal (b)'s primary panel), away and the pool.** Before it the
+Metamon peer packed its team files with upstream poke-env, which is not Showdown's reading of a paste. On these sets
+Kakuna played other sets than the files say:
+
+| team set | the file | Kakuna played (legacy pack) | Kakuna plays now |
+|---|---|---|---|
+| **forum72** (and `tsr_k_forum72`) | `sft431` Gyarados, `Happiness: 0`, Frustration | Frustration at base power **1** (happiness dropped to 255) | base power 102 |
+| away (`competitive`, `tsr_k_away`) | `team_23` Gyarados, Hidden Power Flying, no IV line | IVs 31/31/31/30/30/30 | the validator's 30/30/30/30/30/31 |
+| the pool (`gen3ai_pool`) | 4 teams: 2 Frustration sets (an explicit `Happiness: 0`, or none, which Showdown's import reads as 0 for Frustration) and 2 `Hidden Power: <Type>` lines on mons without the move | Frustration at 1; all-31 IVs | 102; the type's IVs |
+
+Unchanged (the legacy pack played every file as Showdown does): home72, p72, heldout72_hpfix, rc72b, the x37a and
+`tsr_k_*` sets except the two above, `tsr_ref24`.
+
+The peer now packs every file through Showdown at startup and refuses a file the pack oracle disputes. Its report's
+`peer_pack_changed` is True iff any file of the set it may draw plays differently from the legacy pack, and
+`anchor_regime_id` adds it to the id only then (`assemble.peer_pack_identity`). So an unchanged set keeps its banked id
+and pools as before. A changed set gets a new id: old forum72 / away / pool Kakuna reads stay valid as their own regime
+and are never pooled with new ones. Machine-checked:
+- within one state, two ids on a (group, team set) are INCONCLUSIVE, as always;
+- a cross-state import whose counted units differ from this state's in `peer_pack` on a shared team set REFUSES
+  (`imports.check_peer_pack`, `imports_test`);
+- `import_off` refuses on the regime id it registers.
+
+**D3 look 2** imports C0's banked rows, so its pin must predate this change, as its E1 requirement already implies;
+a pin carrying it refuses that import on forum72. The live reads at the change (N1-P look 1 at `de15dfc7b`, H-CTX
+rc72b at `905c29f5b`, X59-S at `fca58b24d`) run from their own pinned worktrees and are untouched.
 
 **Reads in flight or planned:**
 - **D3 look 2** (the orchestrator's ruling, 2026-10-26): EVERY game on **E1**, the engine both arms trained on.

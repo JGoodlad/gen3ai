@@ -31,6 +31,11 @@ rate. **NOT DETECTED / UNDECIDED** means the interval spans zero, so we cannot t
 | 5 | **What search needs** | **PAUSED, and not getting closer.** Every search gain we see is graded by our own model ("self-referee"). Graded by a real bot, the gains shrink (descriptive; the registered read is UNDECIDED). At P\* the one gain that replicates is gone. | L1 cell at P\*: +0.0001 [−0.0097, +0.0101]. At the 25M policy: +0.0193. | `f756019d7`, `015f00e20`, `0d0058408`, `73428c077` |
 | 6 | **Which collapse, and counterfactuals** | **READ: a treadmill, not a collapse** (one seed, provisional). The policy keeps changing without improving, the opponent pool goes stale and the learning rate halves. No coverage, rank or dormant-unit collapse. No counterfactual source is built into training. | about 30 % of greedy choices change per 20M steps | `3e8a41249` |
 
+**Kakuna's team pack changed (2026-10-27, `gen3_peer_showdown_pack_v1`, SOP H22).** Every forum72 Kakuna read before it
+had Kakuna's `sft431` Gyarados play Frustration at base power 1 (its packer dropped `Happiness: 0`), a small constant
+handicap on Kakuna's side (about 1 team in 72). The peer now packs as Showdown does, so new forum72, away and pool
+Kakuna reads are their own regime: a different regime id, and an import of banked rows refuses.
+
 ## 2. Running now (as of 2026-10-26)
 
 | where | job | what decision it drives |

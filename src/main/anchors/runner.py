@@ -298,6 +298,8 @@ async def run_peer_pair_half(plan: SeriesPlan, cfg: Any, half: str, n_games: int
     # OUR peer's weights too (FR-1 FINDING 3): what it verified, beside what theirs verified.
     report["our_hf_revision"] = our_report.get("hf_revision")
     report["our_weights_sha256"] = our_report.get("weights_sha256")
+    # ...and OUR peer's team pack (gen3_peer_showdown_pack_v1, SOP H22): its own regime-id input.
+    report["our_peer_pack_changed"] = our_report.get("peer_pack_changed")
     report["model_loader"] = ""
     # BOTH peers are peers here, so the regime question is an AND over the two and the process
     # question is an AND over BOTH return codes.
@@ -563,7 +565,20 @@ def cell_spec(plan: SeriesPlan, report: Dict[str, Any], our_team_count: int) -> 
         weights_sha256=report.get("weights_sha256"),
         our_hf_revision=report.get("our_hf_revision"),
         our_weights_sha256=report.get("our_weights_sha256"),
+        peer_pack_changed=report.get("peer_pack_changed"),
+        our_peer_pack_changed=report.get("our_peer_pack_changed"),
     )
+
+
+#: The cell's team-pack facts (gen3_peer_showdown_pack_v1): THEIR Metamon peer's and OUR Metamon peer's.
+PEER_PACK_KEYS = ("peer_pack_changed", "our_peer_pack_changed")
+
+
+def any_half(values: Any) -> Optional[bool]:
+    """True if any half says True, else False if any says False, else None (no half reported it: not a Metamon peer,
+    or a report that predates the pack)."""
+    seen = [v for v in values if isinstance(v, bool)]
+    return any(seen) if seen else None
 
 
 #: The exact upstream signature of hazard **H-H / H5**, matched on the peer report's ``error``
@@ -717,6 +732,8 @@ async def run_series(plan: SeriesPlan, cfg: Any) -> Tuple[List[GameRow], Dict[st
                           our_team_digest=our_team_digest)
             last_report = report
             half_reports.append(report)
+            for key in PEER_PACK_KEYS:                  # a cell's pack changed iff ANY half's did (SOP H22)
+                report[key] = any_half(r.get(key) for r in half_reports)
             cell = cell_spec(plan, report, our_team_count)
             all_rows.extend(rows_from(records, half, cell, report, len(all_rows) + 1))
             if failure is not None:

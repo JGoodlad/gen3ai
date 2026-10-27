@@ -93,12 +93,32 @@ def anchor_regime_id(summary: Mapping[str, Any], *, strip_load: str = "") -> Opt
             return None
         ident["our_regime"] = ours[:-len(strip_load)]
     ident.update(_weights_identity(cell))
+    ident.update(peer_pack_identity(cell))
     stamped = cell.get("engine_stamp")
     if stamped and not EN.is_legacy(str(stamped)):
         ident["engine"] = str(stamped)                     # a banked engine keeps its id (the LEGACY rule)
     ident.update(schema=ANCHOR_REGIME_SCHEMA, declared_team_cell=summary.get("declared_team_cell"),
                  team_digest_schema=summary.get("team_digest_schema"))
     return hashlib.sha256(json.dumps(ident, sort_keys=True).encode()).hexdigest()[:16]
+
+
+def peer_pack_identity(cell: Mapping[str, Any]) -> Dict[str, Any]:
+    """The team-pack inputs of a regime id (gen3_peer_showdown_pack_v1, ``EXTERNAL_ANCHORS_SOP.md`` H22): ``{"peer_pack":
+    PEER_PACK_SCHEMA}`` (and/or ``our_peer_pack``) when a Metamon peer's team set holds a file that plays differently
+    from the legacy poke-env pack; ``{}`` otherwise, so a team set the old packer played identically keeps its banked
+    id, and forum72 / away / the pool (whose Kakuna side changed) never share an id with their banked reads."""
+    from main.anchors.peer_scripts.team_pack import PEER_PACK_SCHEMA
+
+    return {key: PEER_PACK_SCHEMA for key, field in (("peer_pack", "peer_pack_changed"),
+                                                     ("our_peer_pack", "our_peer_pack_changed"))
+            if cell.get(field) is True}
+
+
+def peer_pack_state(cell: Mapping[str, Any]) -> str:
+    """A unit's team-pack regime, for the import check (``main.reads.imports``): ``"changed"`` when its peer stamps a
+    team set the legacy pack played differently, else ``"legacy"`` (the same play as every banked unit; a unit before
+    the pack, or one whose files are unchanged)."""
+    return "changed" if peer_pack_identity(cell) else "legacy"
 
 
 def _weights_identity(cell: Mapping[str, Any]) -> Dict[str, Any]:
@@ -170,7 +190,8 @@ def unit_row(u: Any, summary: Mapping[str, Any], games: Optional[List[List[Any]]
             "peer_clean": summary.get("peer_clean"), "team_source_asymmetry": summary.get("team_source_asymmetry"),
             "counted": uc.counts, "reasons": list(uc.reasons), "regime_id": anchor_regime_id(summary),
             "base_regime_id": anchor_regime_id(summary, strip_load=stamp), "engine": EN.unit_engine(cell),
-            "server_version": cell.get("server_version"), "model_step": cell.get("model_step")}
+            "server_version": cell.get("server_version"), "model_step": cell.get("model_step"),
+            "peer_pack": peer_pack_state(cell)}
 
 
 def anchor_units(kakuna_state: Path) -> List[Dict[str, Any]]:

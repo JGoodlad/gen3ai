@@ -31,6 +31,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from main.anchors.peer_scripts import team_pack as tp
 from main.anchors.peer_scripts import weight_pins as wp
 from utils.paths import src_path
 
@@ -172,6 +173,8 @@ class MetamonPeer(Peer):
             "--hf-repo", pin.repo,
             "--hf-revision", pin.revision,
             "--weights-json", json.dumps(pin.weights, sort_keys=True, separators=(",", ":")),
+            # gen3_peer_showdown_pack_v1: the peer packs every team file through Showdown here (H22).
+            "--bridge-dir", str(src_path("utils", "bridge")),
         ]
         if checkpoint is not None:
             argv += ["--checkpoint", str(checkpoint)]
@@ -271,8 +274,24 @@ class MetamonPeer(Peer):
             "team_draws": list(blob.get("team_draws") or []),
         })
         MetamonPeer._check_weight_pin(plan, blob, out)
+        MetamonPeer._check_team_pack(blob, out)
         out["regime_verified"] = bool(out["regime_verified_decisions"] and out["peer_error_free"])
         return out
+
+    @staticmethod
+    def _check_team_pack(blob: Dict[str, Any], out: Dict[str, Any]) -> None:
+        """FAIL CLOSED on the team pack (gen3_peer_showdown_pack_v1, SOP H22): the report must say every team file was
+        packed through Showdown and verified (``team_pack.schema``) and whether any plays differently from the legacy
+        pack (``peer_pack_changed``, a bool; it enters the regime id). A report without them (a peer that packed with
+        poke-env) voids the regime verification, so the unit does not count."""
+        record = blob.get("team_pack")
+        changed = blob.get("peer_pack_changed")
+        out.update({"peer_pack_changed": changed if isinstance(changed, bool) else None,
+                    "team_pack_changed_files": [c.get("file") for c in (record or {}).get("changed") or []]
+                    if isinstance(record, dict) else None})
+        if not (isinstance(record, dict) and record.get("schema") == tp.PEER_PACK_SCHEMA and isinstance(changed, bool)):
+            out["regime_verified_decisions"] = False
+            out["team_pack_note"] = "the peer did not report a verified Showdown team pack (gen3_peer_showdown_pack_v1)"
 
     @staticmethod
     def _check_weight_pin(plan: PeerPlan, blob: Dict[str, Any], out: Dict[str, Any]) -> None:
