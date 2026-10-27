@@ -1,0 +1,69 @@
+# X63 review power. P0 0.53, 4000 F games a model, the registered rule of design §7; 40000 draws a cell
+## A/B. The registered rule (z) and the same rule with a t quantile on sigma_hat's df (2 at B, 4 at C)
+sigma_arm | sigma_ctl | true Delta | CONTINUE | GAIN z | GAIN t | RETIRE z | INCONCLUSIVE z
+0.0 | 0.0 | +0.0 | 0.187 | 0.001 | 0.000 | 0.813 | 0.000
+0.0 | 0.0 | +1.0 | 0.503 | 0.056 | 0.002 | 0.497 | 0.000
+0.0 | 0.0 | +2.0 | 0.818 | 0.462 | 0.081 | 0.182 | 0.000
+0.0 | 0.0 | +3.0 | 0.966 | 0.911 | 0.561 | 0.034 | 0.000
+1.0 | 1.0 | +0.0 | 0.292 | 0.026 | 0.002 | 0.708 | 0.026
+1.0 | 1.0 | +1.0 | 0.502 | 0.139 | 0.025 | 0.497 | 0.030
+1.0 | 1.0 | +2.0 | 0.717 | 0.404 | 0.150 | 0.283 | 0.036
+1.0 | 1.0 | +3.0 | 0.864 | 0.702 | 0.433 | 0.136 | 0.043
+1.5 | 1.5 | +0.0 | 0.339 | 0.057 | 0.008 | 0.661 | 0.089
+1.5 | 1.5 | +1.0 | 0.507 | 0.160 | 0.041 | 0.493 | 0.111
+1.5 | 1.5 | +2.0 | 0.665 | 0.328 | 0.136 | 0.335 | 0.132
+1.5 | 1.5 | +3.0 | 0.798 | 0.524 | 0.309 | 0.202 | 0.150
+2.0 | 2.0 | +0.0 | 0.376 | 0.072 | 0.015 | 0.625 | 0.171
+2.0 | 2.0 | +1.0 | 0.498 | 0.145 | 0.046 | 0.502 | 0.202
+2.0 | 2.0 | +2.0 | 0.630 | 0.255 | 0.112 | 0.370 | 0.239
+2.0 | 2.0 | +3.0 | 0.744 | 0.375 | 0.211 | 0.256 | 0.272
+2.5 | 2.5 | +0.0 | 0.394 | 0.075 | 0.019 | 0.606 | 0.230
+2.5 | 2.5 | +1.0 | 0.504 | 0.131 | 0.044 | 0.496 | 0.279
+2.5 | 2.5 | +2.0 | 0.605 | 0.197 | 0.087 | 0.395 | 0.322
+2.5 | 2.5 | +3.0 | 0.708 | 0.275 | 0.145 | 0.292 | 0.367
+3.0 | 3.0 | +0.0 | 0.408 | 0.070 | 0.022 | 0.592 | 0.282
+3.0 | 3.0 | +1.0 | 0.499 | 0.108 | 0.041 | 0.501 | 0.331
+3.0 | 3.0 | +2.0 | 0.591 | 0.154 | 0.069 | 0.409 | 0.381
+3.0 | 3.0 | +3.0 | 0.678 | 0.202 | 0.109 | 0.322 | 0.430
+2.0 | 1.0 | +0.0 | 0.351 | 0.062 | 0.011 | 0.649 | 0.101
+2.0 | 1.0 | +1.0 | 0.501 | 0.163 | 0.044 | 0.499 | 0.123
+2.0 | 1.0 | +2.0 | 0.653 | 0.327 | 0.140 | 0.347 | 0.139
+2.0 | 1.0 | +3.0 | 0.791 | 0.508 | 0.299 | 0.209 | 0.163
+3.0 | 1.5 | +0.0 | 0.390 | 0.083 | 0.021 | 0.610 | 0.207
+3.0 | 1.5 | +1.0 | 0.507 | 0.148 | 0.053 | 0.493 | 0.248
+3.0 | 1.5 | +2.0 | 0.609 | 0.230 | 0.104 | 0.391 | 0.278
+3.0 | 1.5 | +3.0 | 0.712 | 0.318 | 0.185 | 0.288 | 0.315
+
+## C. The S price ceiling: P(TRADE) = P(Welch 97.5 % LB of Delta_S <= -6.0 pp)
+   per-model S SD (seed + measurement): arm 0.86 pp, control 0.35 pp (D1's finals, the X62 review's C)
+   k = 2, true Delta_S +0.0 pp: P(TRADE) 0.318; median LB -3.9 pp; median t quantile 8.7
+   k = 2, true Delta_S -1.6 pp: P(TRADE) 0.441; median LB -5.4 pp; median t quantile 8.7
+   k = 2, true Delta_S -2.5 pp: P(TRADE) 0.534; median LB -6.3 pp; median t quantile 8.7
+   k = 2, true Delta_S -4.0 pp: P(TRADE) 0.765; median LB -7.9 pp; median t quantile 8.8
+   k = 2, true Delta_S -6.0 pp: P(TRADE) 0.984; median LB -9.8 pp; median t quantile 8.7
+   k = 3, true Delta_S +0.0 pp: P(TRADE) 0.001; median LB -1.6 pp; median t quantile 3.5
+   k = 3, true Delta_S -1.6 pp: P(TRADE) 0.015; median LB -3.2 pp; median t quantile 3.5
+   k = 3, true Delta_S -2.5 pp: P(TRADE) 0.066; median LB -4.1 pp; median t quantile 3.5
+   k = 3, true Delta_S -4.0 pp: P(TRADE) 0.368; median LB -5.6 pp; median t quantile 3.5
+   k = 3, true Delta_S -6.0 pp: P(TRADE) 0.976; median LB -7.6 pp; median t quantile 3.5
+
+## D. The goal-(a) floor: pooled home72 LB > 0.50 (Wilson), 1,200 games a seed
+   1 seed(s), 1200 games: passes at an observed home72 >= 0.529, i.e. a drop of up to 6.9 pp from P*'s 0.598 still PASSES
+   2 seed(s), 2400 games: passes at an observed home72 >= 0.521, i.e. a drop of up to 7.7 pp from P*'s 0.598 still PASSES
+   3 seed(s), 3600 games: passes at an observed home72 >= 0.517, i.e. a drop of up to 8.1 pp from P*'s 0.598 still PASSES
+
+## E1. The +20M dose-curve point: Delta at 1,200 F games a model, 1 v 1
+   binomial SE of a 1 v 1 Delta at 1,200 games: 2.04 pp (95 % half-width 4.0 pp)
+   SE of Delta(+100M) - Delta(+20M) within one pair (independent games): 2.32 pp; the extension trigger (rise >= 1 pp) fires by noise alone with P = 0.33
+
+## E2. X26c's plateau wobble as a sigma proxy: 3 checkpoints at 1,200 / 1,200 / 4,000 F games
+   true wobble SD 0.0 pp: P(net spread > 1.5 pp) 0.091; median net 0.00 pp
+   true wobble SD 1.0 pp: P(net spread > 1.5 pp) 0.224; median net 0.43 pp
+   true wobble SD 1.5 pp: P(net spread > 1.5 pp) 0.368; median net 1.03 pp
+   true wobble SD 2.0 pp: P(net spread > 1.5 pp) 0.502; median net 1.51 pp
+
+## F. P(GAIN) over the design's GUESS +2.0 (-1.0, +5.0), integrated over a sigma prior
+   design (sigma 1 pp): P(GAIN) 0.44
+   reviewer (0.5/1/1.5/2/3 pp at 0.15/0.25/0.25/0.2/0.15): P(GAIN) 0.35
+   both-NULL GUESS +1.0 (-1.5, +4.0), reviewer sigma prior: P(GAIN) 0.24
+   after a PR-1 KILL, GUESS +0.5 (-2.0, +3.0) (reviewer's judgement), reviewer sigma prior: P(GAIN) 0.18
