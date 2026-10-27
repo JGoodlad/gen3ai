@@ -899,9 +899,13 @@ panel, one checkpoint] H3's mechanism, read on calibration:
   calibration (−7.06 → −2.99).
 - **In GAMES that mix does not detectably help (λ = 0.25, preregistered, 1,600 Kakuna games against X51's banked P\*
   on the same seeds): unfamiliar +1.5 pp [−2.7, +5.7], home72 −0.5 pp [−5.3, +4.3], NOT DETECTED.** An effect under
-  ≈ 6 pp is not excluded. This channel is FACING, the smaller part of the Kakuna gap by X37a. D0f (λ = 1, prior only)
-  is pending (`measurements/belief_prior_mix_2026-10-26/`).
-[ledger 2026-10-26 · *H3 (BELIEF-HEAD MEMORISATION) BANKED ON CALIBRATION* · *THE BELIEF PRIOR MIX at λ = 0.25*]
+  ≈ 6 pp is not excluded.
+- **Nor does removing the deltas (D0f, λ = 1, prior only): unfamiliar −1.5 pp [−5.5, +2.5], home72 −1.25 pp
+  [−6.7, +4.2], DiD −0.25 pp [−7.0, +6.5]: H3 NOT KILLED by its rule (too wide), and no H3 effect in games.** So the
+  memorisation is real on calibration and invisible in Kakuna games at ±5 pp; this channel is FACING, the smaller
+  part of the gap by X37a, and the belief-anchoring levers (D7, lever 1 (b) / (c)) have no game-level case.
+  (`measurements/belief_prior_mix_2026-10-26/`)
+[ledger 2026-10-26 · *H3 (BELIEF-HEAD MEMORISATION) BANKED ON CALIBRATION* · *THE BELIEF PRIOR MIX at λ = 0.25* · *at λ = 1 (D0f)*]
 
 **…and X26's plateau sits beside a small, REAL cyclic component (2026-10-19, the cycle monitor's retro read,
 `measurements/cycle_monitor_retro_2026-10-19/`):** [MEASURED · DESCRIPTIVE · the in-run snapshot ladder, not the

@@ -27,10 +27,35 @@ H, F and P72 pooled with equal weight; Δ = the arm minus X51's banked P\* (λ =
   against Kakuna, on unfamiliar teams or on our own. The repaired calibration (P10) is not worth a detectable number
   of games at this sample, through a policy trained on the unmixed belief. An effect below ≈ 5 pp is not excluded.
 
-## λ = 1.0 (D0f): PENDING
+## λ = 1.0 (D0f, prior only): NOT DETECTED; H3 NOT KILLED
 
-Held twice by the orchestrator so other reads could use the CPU (the second time, D3's look-1 read). Its guard
-(unit seed 10) already replays X51 game for game on all four team sets.
+`record`: `belief_prior_mix_l100_2026-10-26: lambda=1: NOT DETECTED, D0f H3 NOT KILLED` (regimes `arm_l100`
+`b62e25ee3852fbc5`, guard `d44d454737bcba71`). Files: `read_l100/`.
+
+| | λ = 1 W / n | score [Wilson 95 %] | banked λ = 0 | Δ unit-paired [95 %] |
+|---|---|---|---|---|
+| H | 197 / 400 | 0.492 [0.444, 0.541] | 199 / 400 | −0.50 pp [−6.65, +5.65] |
+| F | 192 / 400 | 0.480 [0.431, 0.529] | 212 / 400 | −5.00 pp [−12.35, +2.35] |
+| P72 | 177 / 400 | 0.443 [0.395, 0.491] | 173 / 400 | +1.00 pp [−6.06, +8.06] |
+| **U** | | **0.472 [0.444, 0.500]** | 0.487 | **−1.50 pp [−5.47, +2.47]** (Newcombe −1.50 [−5.48, +2.49]) |
+| **home72** | 234 / 400 | 0.585 [0.536, 0.632] | 239 / 400 | **−1.25 pp [−6.71, +4.21]**, not HARMED |
+
+- **D0f:** DiD (U − home72) **−0.25 pp [−7.00, +6.50]**; its UB is above +3.0, so **H3 is NOT KILLED** by the
+  registered rule, because the interval is wide, not because the read shows an H3 effect (the point estimate is ≈ 0).
+- **Not VOID:** the guard (unit seed 10, all four sets) replays X51 game for game; 80 / 80 + 4 / 4 units counted.
+- **The prediction was wrong** on home72 (predicted HARMED ≈ −5 pp; read −1.25, not harmed) and on the DiD (predicted
+  ≈ +4; read −0.25). Removing the learned deltas entirely costs no detectable strength against Kakuna on our own teams,
+  and gains none on unfamiliar ones.
+- Held twice by the orchestrator for CPU priority (λ = 0.25 first, then D3's look-1 read); both holds killed only the
+  supervisor, and each in-flight unit counted on resume.
+
+## Both arms
+
+Neither anchoring the belief toward the prior (λ = 0.25) nor replacing it with the prior (λ = 1) moves Kakuna games
+detectably (U +1.5 / −1.5 pp, home72 −0.5 / −1.25 pp, every interval ≈ ±4–5 pp). The deltas' memorisation is real on
+calibration (the review's P5) and invisible in games at this resolution, consistent with X37a putting the Kakuna gap
+in PILOTING, not FACING. Lever 1 (b) / (c) (anchoring in training) and D7 stay unranked: their registered trigger,
+a game effect of the deltas off-pool, did not fire.
 
 ## FINDINGS (the first live use of `main.reads`)
 

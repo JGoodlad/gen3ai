@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-29,221-line file. **The ledger itself is append-only and is never edited by this**;
+29,252-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**961 headings · 906 dated · 2026-08-01 → 2026-10-26 · ledger 29,221 lines.**
+**962 headings · 907 dated · 2026-08-01 → 2026-10-26 · ledger 29,252 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -981,3 +981,4 @@ rename.
 - `L29163` · `2026-10-26` · RUST SIM · gen3 full parity B8: Bide, Magnitude, Psywave, Present, Triple Kick and the OHKO moves (moves 350 → 359 of 369)
 - `L29185` · `2026-10-26` · RUST SIM · gen3 full parity B10: Teleport, Follow Me, Helping Hand, Role Play, Camouflage, and the Endless Battle Clause (moves 359 → 364 of 369)
 - `L29204` · `2026-10-26` · RUST SIM · a forced Struggle inherited the chosen slot's multi-hit (OU training-data bug, fixed)
+  - `L29222` · `2026-10-26` · MEASUREMENT · **THE BELIEF PRIOR MIX at λ = 1 (D0f, prior-only belief) against Kakuna, read under its registration (`4ee655648`): NOT DETECTED; H3 NOT KILLED. U −1.50 pp [−5.47, +2.47], home72 −1.25 pp [−6.71, +4.21], DiD −0.25 pp [−7.00, +6.50]; with λ = 0.25 (+1.50), neither anchoring nor removing the learned belief deltas moves Kakuna games detectably**

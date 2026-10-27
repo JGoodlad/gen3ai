@@ -29218,3 +29218,34 @@ training-data change for runs on pins after this commit; e2e capstone and obs go
 on gen 3's King's Rock list and runs the multi-hit loop, so the sim rolls the appended flinch per strike; bridge fuzz
 `rmvq1sg27_bab_1_5`, reproduced on main). OU: Beat Up 1.41 % of gen3ou mons, King's Rock 0.014 %, together about
 0.0004 %: a dice change for runs on pins after this commit.
+
+### 2026-10-26 · MEASUREMENT · **THE BELIEF PRIOR MIX at λ = 1 (D0f, prior-only belief) against Kakuna, read under its registration (`4ee655648`): NOT DETECTED; H3 NOT KILLED. U −1.50 pp [−5.47, +2.47], home72 −1.25 pp [−6.71, +4.21], DiD −0.25 pp [−7.00, +6.50]; with λ = 0.25 (+1.50), neither anchoring nor removing the learned belief deltas moves Kakuna games detectably**
+
+**Question** (`endstate/design_diversity_teams_opponents.md` §3.3 D0f, H3's kill test). Does P\* with its belief deltas
+removed (the species / move / item legs at their Smogon prior: `belief_prior_mix` λ = 1, bit-identical to the deltas
+zeroed) lose on our teams and gain, or lose nothing, on unfamiliar ones?
+
+**Design** (`research_state/measurements/belief_prior_mix_2026-10-26/PREREG.md`, spec `read_spec_l100.json`). As the
+λ = 0.25 read: Kakuna ckpt 34 greedy, H / F / P72 / home72, unit seeds 0–19, unit-paired against X51's banked P\*; a
+guard at seed 10. H3 KILLED iff the DiD (Δ_U − Δ_home) has UB < +3.0 pp and Δ_H is not detected above 0.
+
+**Result** (`record`: `lambda=1: NOT DETECTED, D0f H3 NOT KILLED`).
+- **Δ_U −1.50 pp [−5.47, +2.47]** (U 0.472 [0.444, 0.500] vs 0.487); per panel H −0.50, F −5.00 [−12.35, +2.35],
+  P72 +1.00, none detected.
+- **Δ_home −1.25 pp [−6.71, +4.21]**, not HARMED.
+- **DiD −0.25 pp [−7.00, +6.50]**: UB > +3.0, so NOT KILLED (by width; no H3 effect is seen).
+- Guard 4 / 4 identical to X51 game for game; 80 / 80 units counted. The prediction (home72 HARMED ≈ −5, DiD ≈ +4)
+  was WRONG.
+
+**Reading.** At ±5 pp the learned belief deltas are worth nothing measurable against Kakuna either way: removing them
+does not cost our own teams and does not help unfamiliar ones, and a quarter-weight anchor reads +1.5 pp n.d. The
+calibration memorisation (banked today) is real but does not reach games at this resolution, consistent with X37a's
+PILOTING (not FACING) gap. D7 / lever 1 (b) / (c) keep no game-level case; the pre-era DiD +4.8 pp is not reproduced
+at the plateau (point −0.25).
+
+**FINDINGS.** The read was held twice by the orchestrator for CPU priority (λ = 0.25 first; D3's look-1 read); each
+hold killed only the supervisor and the in-flight unit counted on resume. Unit-pairing again did not tighten the
+interval (4.0 pp paired vs 4.0 unpaired).
+
+**Evidence:** `research_state/measurements/belief_prior_mix_2026-10-26/` (README, `read_l100/`); raw units in
+`~/gen3ai_archive/belief_prior_mix_2026-10-26/l100/`. See `UNDERSTANDING.md` §3.1 and the diversity design's D0f row.
