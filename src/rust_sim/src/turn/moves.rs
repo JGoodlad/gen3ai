@@ -2571,6 +2571,12 @@ impl crate::state::BattleState {
                     SubAbsorb::NoSub => unreachable!(),
                 }
             }
+            // KING'S ROCK per strike (`gen3_bf_beatup_kingsrock_v1`, bridge fuzz `rmvq1sg27_bab_1_5`,
+            // pin `bf19`): Beat Up is on gen 3's King's Rock list (data/mods/gen3/items.ts kingsrock
+            // `onModifyMove`) and runs gen 3's multi-hit loop (data/mods/gen3/scripts.ts:409), so each
+            // strike's `secondaries` rolls the appended flinch after the strike's damage and Hit event,
+            // as `run_multihit` does. Behind a sub it draws and does not apply.
+            self.apply_kings_rock_secondary(side, slot, foe, foe_slot, "beatup", absorbed, dex);
             hits += 1;
 
             // --- THE PER-STRIKE `eachEvent('Update')` (gen3 `tryMoveHit` scripts.js:~400, the

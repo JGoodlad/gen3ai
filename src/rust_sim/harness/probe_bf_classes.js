@@ -342,3 +342,11 @@ const SABLEYE_BONE = SET('Sableye', 'keeneye', 'bonemerang');
 const ABSOL_REC = SET('Absol', 'pressure', 'recover,splash');
 run('BF18a struggle: no multi-hit from the chosen slot', 'gen3customgame', [1, 2, 3, 4], SABLEYE_BONE, ABSOL_REC,
   [M(1, 1), M(1, 1), M(1, 1), M(1, 1), M(1, 1), M(1, 1), M(1, 1), M(1, 1), M(1, 1), M(1, 1)]);
+// ---- BF19 (bridge-fuzz-found on the B10 tree, `rmvq1sg27_bab_1_5`) KING'S ROCK rolls on every BEAT UP strike ----
+// gen 3's King's Rock (data/mods/gen3/items.ts kingsrock.onModifyMove) appends `{chance: 10, volatileStatus:
+// 'flinch'}` for a listed move, Beat Up included; Beat Up runs gen 3's multi-hit loop (data/mods/gen3/scripts.ts:409),
+// so each strike's `secondaries` rolls it after the strike's damage. The port rolled none for Beat Up.
+const HOUNDOUR_KR = 'Houndour||kingsrock|flashfire|beatup|Hardy|85,85,85,85,85,85|M||||';
+run('BF19a beat up: kings rock on every strike', 'gen3customgame', [5, 6, 7, 8],
+  HOUNDOUR_KR + ']' + SET('Registeel', 'clearbody', 'splash') + ']' + SET('Tyranitar', 'sandstream', 'splash'),
+  SET('Snorlax', 'thickfat', 'splash'), [M(1, 1)]);

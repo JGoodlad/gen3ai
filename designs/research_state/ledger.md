@@ -29213,3 +29213,8 @@ skips a Struggle (`gen3_bf_struggle_stale_slot_v1`, pin `bf18`); Hyper Beam / Fo
 3387 Struggle uses, about 30 per affected battle); in that sample no Struggle came from a mon carrying a multi-hit
 move (0 of 3387), and multi-hit moves are on 0.17 % of gen3ou mons (Rock Blast 0.095 %, Bonemerang 0.063 %). A
 training-data change for runs on pins after this commit; e2e capstone and obs golden unchanged.
+
+**Also fixed with it (`gen3_bf_beatup_kingsrock_v1`, pin `bf19`):** KING'S ROCK never rolled on BEAT UP strikes (Beat Up is
+on gen 3's King's Rock list and runs the multi-hit loop, so the sim rolls the appended flinch per strike; bridge fuzz
+`rmvq1sg27_bab_1_5`, reproduced on main). OU: Beat Up 1.41 % of gen3ou mons, King's Rock 0.014 %, together about
+0.0004 %: a dice change for runs on pins after this commit.

@@ -18651,3 +18651,34 @@ fn bf18_a_a_struggle_does_not_inherit_the_chosen_slots_multihit() {
         &["62891,40560,22227,62965", "4124,63122,38965,57347", "9621,18248,53276,33281", "17955,3961,38563,46959", "57671,39327,5062,6093", "16838,16016,9865,54939", "61911,59921,9996,41817", "39323,49421,37926,35207", "7426,12014,54694,63659", "21485,18091,27243,23951"],
     );
 }
+
+/// BF19 (bridge-fuzz-found on the B10 tree, `rmvq1sg27_bab_1_5`; `gen3_bf_beatup_kingsrock_v1`): KING'S ROCK rolls its
+/// appended flinch on EVERY Beat Up strike (Beat Up is on gen 3's list, data/mods/gen3/items.ts kingsrock, and runs the
+/// multi-hit loop, data/mods/gen3/scripts.ts:409). WRONG (pre-fix): the port rolled none, so the next strike's crit and
+/// damage rolls took the wrong draws. Here the third strike's roll flinches the slower Snorlax.
+/// Ground truth: `harness/probe_bf_classes.js` (BF19a).
+#[test]
+fn bf19_a_kings_rock_rolls_on_every_beat_up_strike() {
+    bf_check(
+        "BF19a",
+        "gen3customgame",
+        "5,6,7,8",
+        "Houndour||kingsrock|flashfire|beatup|Hardy|85,85,85,85,85,85|M||||]Registeel||none|clearbody|splash|Hardy|85,85,85,85,85,85|M||||]Tyranitar||none|sandstream|splash|Hardy|85,85,85,85,85,85|M||||",
+        "Snorlax||none|thickfat|splash|Hardy|85,85,85,85,85,85|M||||",
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0))],
+        &[
+            "|move|p1a: Houndour|Beat Up|p2a: Snorlax",
+            "|-activate|p1a: Houndour|move: Beat Up|[of] Houndour",
+            "|-damage|p2a: Snorlax|475/482",
+            "|-activate|p1a: Houndour|move: Beat Up|[of] Registeel",
+            "|-damage|p2a: Snorlax|465/482",
+            "|-activate|p1a: Houndour|move: Beat Up|[of] Tyranitar",
+            "|-damage|p2a: Snorlax|449/482",
+            "|-hitcount|p2a: Snorlax|3",
+            "|cant|p2a: Snorlax|flinch",
+            "|upkeep",
+            "|turn|2",
+        ],
+        &["3525,36180,28786,35716"],
+    );
+}
