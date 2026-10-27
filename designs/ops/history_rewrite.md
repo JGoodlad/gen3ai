@@ -5,6 +5,10 @@ owner's go and the rulings in "Decisions first". This page is the procedure. The
 `python -m utils.history_rewrite` (`src/utils/history_rewrite/`); the resolver is `python -m utils.git_sha`
 (`src/utils/git_sha.py`); the map is `designs/ops/history_rewrite_sha_map.tsv` (header-only until the rewrite lands).
 
+**Do not run it yet: the adversarial review of 2026-10-27 found 2 BLOCKERs and 9 MAJORs**
+(`designs/ops/reviews/history_rewrite_review_2026-10-27.md`). `local-plan` fails part-way, because the rewritten
+local-only branches exist only in the clone. And nothing refuses a stale branch that pushes the old history back.
+
 **Why this is a procedure and not a command.** `git filter-repo` gives every commit from the first changed one onward a
 new SHA, and this repository cites SHAs everywhere: ~500 design docs, the slow-tier rows, tag names, read records, run
 sidecars in `models/` (immutable), `baselines.json`, `ledger.md`, the live pinned worktrees. The tooling therefore does
