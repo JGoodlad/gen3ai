@@ -2,7 +2,7 @@
  "schema": "gen3_read_spec_v1",
  "read": "x59s_full_2026-10-26",
  "prereg": "designs/research_state/measurements/x59s_matched_students_2026-10-25/PREREG.md",
- "pin": "f2c3866c6",
+ "pin": "89c2c2501",
  "note": "X59-S full read (PREREG A4.5 step 4): the pilot imported + unit seeds 4-19; rule x59s = the registered verdict",
  "models": {
   "s_h_5901": {
@@ -259,7 +259,8 @@
     "fr2": "designs/research_state/measurements/x59s_matched_students_2026-10-25/results/fr2.json",
     "identity": "designs/research_state/measurements/x59s_matched_students_2026-10-25/results/identity.json",
     "gate_record": "/home/goodlad/gen3ai_archive/x59s/read/gate/record.json",
-    "m3_reencode": "designs/research_state/measurements/x59s_matched_students_2026-10-25/results/m3_reencode.json"
+    "m3_reencode": "designs/research_state/measurements/x59s_matched_students_2026-10-25/results/m3_reencode.json",
+    "restriction_record": "/home/goodlad/gen3ai_archive/x59s/read/restriction/record.json"
    },
    "x51": {
     "path": "designs/research_state/measurements/x51_plateau_vs_kakuna_2026-10-20/rows.jsonl",

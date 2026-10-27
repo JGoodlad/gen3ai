@@ -924,3 +924,15 @@ limit: the encoder shift costs S-H and S-P only) and G-M3 by A5.4 (POPULATION-SP
 - **G-m7:** the interval holds student-seed variance only; each arm is ONE dataset. Stated beside σ̂.
 - **G-m8:** the owner's sentence calls S-S "our plateau policy's own games and choices" (P\* distillation), not the RL
   rollout data that trains P\*.
+
+### A6.4 As built (same day, still blind)
+
+- **Code:** `x59s_read.verdict` takes Δ_restriction's lower bound (None = pending) and no longer gates on FR-2;
+  `CLOSURE_TEXT` names the slice; `main.reads` rule **`x59s_restriction`**; the full rule's optional
+  `restriction_record` artefact and its length terciles.
+- **The pin of the gate, the full read and the Δ_restriction read is `89c2c2501`** (tag `x59s-play-89c2c250` on
+  origin): `0534e90a6` plus the Amendment 5 and 6 code, the read's one engine. It supersedes `f2c3866c6` (A5.10; tag
+  kept), which no state was ever planned on.
+- **Specs, all at that pin:** [`read_spec_gate.json`](read_spec_gate.json), [`read_spec_full.json`](read_spec_full.json)
+  (its artefacts gain the Δ_restriction state's `record.json`) and [`read_spec_restriction.json`](read_spec_restriction.json)
+  (S-P's pilot units imported from the pilot state, its units 4–19 from the full state, S-P0's U units 0–19 played).

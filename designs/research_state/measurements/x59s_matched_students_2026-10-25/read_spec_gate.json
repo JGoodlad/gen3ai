@@ -2,7 +2,7 @@
  "schema": "gen3_read_spec_v1",
  "read": "x59s_gate_2026-10-27",
  "prereg": "designs/research_state/measurements/x59s_matched_students_2026-10-25/PREREG.md",
- "pin": "f2c3866c6",
+ "pin": "89c2c2501",
  "note": "X59-S Amendment 5 A5.1: the per-contrast floor gate on the pilot and repeat groups IMPORTED from the pilot state; booleans only",
  "models": {
   "s_h_5901": {

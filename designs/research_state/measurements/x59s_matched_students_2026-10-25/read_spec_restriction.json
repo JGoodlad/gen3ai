@@ -1,0 +1,208 @@
+{
+ "schema": "gen3_read_spec_v1",
+ "read": "x59s_restriction_2026-10-27",
+ "prereg": "designs/research_state/measurements/x59s_matched_students_2026-10-25/PREREG.md",
+ "pin": "89c2c2501",
+ "note": "X59-S Amendment 6 A6.1: Delta_restriction = S-P0 - S-P on U (the closure's guard); S-P's cells imported from the pilot and full states, S-P0's played",
+ "models": {
+  "s_p_5901": {
+   "arm": "S-P",
+   "seed": 5901,
+   "ref": {
+    "kind": "pinned",
+    "path": "/home/goodlad/gen3ai_archive/x59s/read/students/s_p_5901/model/student_pstar_5901.zip",
+    "sha256": "9d9e88aac2e52cac52c71cdcece183e053f6fe854eb51d8f1bab62d0de440762"
+   }
+  },
+  "s_p_5902": {
+   "arm": "S-P",
+   "seed": 5902,
+   "ref": {
+    "kind": "pinned",
+    "path": "/home/goodlad/gen3ai_archive/x59s/read/students/s_p_5902/model/student_pstar_5902.zip",
+    "sha256": "5cba1a5a49770bab6197aff5104c4d1d161c37e52c392b8e5916e79f3f536d13"
+   }
+  },
+  "s_p_5903": {
+   "arm": "S-P",
+   "seed": 5903,
+   "ref": {
+    "kind": "pinned",
+    "path": "/home/goodlad/gen3ai_archive/x59s/read/students/s_p_5903/model/student_pstar_5903.zip",
+    "sha256": "2099cd571f20bdaeb4c32ebb052a88effef673a817bed5899bee3993093e8d1d"
+   }
+  },
+  "s_p_5904": {
+   "arm": "S-P",
+   "seed": 5904,
+   "ref": {
+    "kind": "pinned",
+    "path": "/home/goodlad/gen3ai_archive/x59s/read/students/s_p_5904/model/student_pstar_5904.zip",
+    "sha256": "0f7077734ef2f5af9f7298ef17907a61cea36b43d47d3b064ae8f21942899e86"
+   }
+  },
+  "s_p_5905": {
+   "arm": "S-P",
+   "seed": 5905,
+   "ref": {
+    "kind": "pinned",
+    "path": "/home/goodlad/gen3ai_archive/x59s/read/students/s_p_5905/model/student_pstar_5905.zip",
+    "sha256": "b1d7eaaa3cfc4f4c8d02e494588ed18256fcf8929e015eece8ec8c31b08a71fc"
+   }
+  },
+  "s_p0_5901": {
+   "arm": "S-P0",
+   "seed": 5901,
+   "ref": {
+    "kind": "pinned",
+    "path": "/home/goodlad/gen3ai_archive/x59s/read/students/s_p0_5901/model/student_pstar0_5901.zip",
+    "sha256": "49893b3ea6ccdbcac4ca920c49c6651ccea4fc6bf45c3339b3042ec409a49238"
+   }
+  },
+  "s_p0_5902": {
+   "arm": "S-P0",
+   "seed": 5902,
+   "ref": {
+    "kind": "pinned",
+    "path": "/home/goodlad/gen3ai_archive/x59s/read/students/s_p0_5902/model/student_pstar0_5902.zip",
+    "sha256": "9914be91cf582938221f7bda05d7d44036f7cda29ef967bc3f6fe9ff5964ff0a"
+   }
+  },
+  "s_p0_5903": {
+   "arm": "S-P0",
+   "seed": 5903,
+   "ref": {
+    "kind": "pinned",
+    "path": "/home/goodlad/gen3ai_archive/x59s/read/students/s_p0_5903/model/student_pstar0_5903.zip",
+    "sha256": "be6826e1000a728140a841239de2bbb74f3c15a8bb315f7f48f7d0fa75c7c264"
+   }
+  },
+  "s_p0_5904": {
+   "arm": "S-P0",
+   "seed": 5904,
+   "ref": {
+    "kind": "pinned",
+    "path": "/home/goodlad/gen3ai_archive/x59s/read/students/s_p0_5904/model/student_pstar0_5904.zip",
+    "sha256": "96f6d1e336b15e337183109341656962d3f8328da8f6066d04fc2ebee8bd2819"
+   }
+  },
+  "s_p0_5905": {
+   "arm": "S-P0",
+   "seed": 5905,
+   "ref": {
+    "kind": "pinned",
+    "path": "/home/goodlad/gen3ai_archive/x59s/read/students/s_p0_5905/model/student_pstar0_5905.zip",
+    "sha256": "4d3af649c2943f375d752f493342d638fee0616284a9c4cbb17d8b3bb1172455"
+   }
+  }
+ },
+ "anchor": {
+  "pilot": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "heldout72_hpfix",
+    "forum72",
+    "p72"
+   ],
+   "unit_seeds": "0-3",
+   "models": [
+    "s_p_5901",
+    "s_p_5902",
+    "s_p_5903",
+    "s_p_5904",
+    "s_p_5905"
+   ],
+   "import": {
+    "state": "/home/goodlad/gen3ai_archive/x59s/read/pilot",
+    "spec_sha256": "dc860ae36e590ad699e487e6d58c60dee252a746df1956ee4ccc805f1e849288",
+    "group": "pilot",
+    "models": [
+     "s_p_5901",
+     "s_p_5902",
+     "s_p_5903",
+     "s_p_5904",
+     "s_p_5905"
+    ]
+   }
+  },
+  "rest": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "heldout72_hpfix",
+    "forum72",
+    "p72"
+   ],
+   "unit_seeds": "4-19",
+   "models": [
+    "s_p_5901",
+    "s_p_5902",
+    "s_p_5903",
+    "s_p_5904",
+    "s_p_5905"
+   ],
+   "import": {
+    "state": "/home/goodlad/gen3ai_archive/x59s/read/full",
+    "spec_sha256": "cdd17ccfa402e61362bccd752870677ed7a32526b663f3662cae571a509e286e",
+    "group": "rest",
+    "models": [
+     "s_p_5901",
+     "s_p_5902",
+     "s_p_5903",
+     "s_p_5904",
+     "s_p_5905"
+    ]
+   }
+  },
+  "sp0": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "heldout72_hpfix",
+    "forum72",
+    "p72"
+   ],
+   "unit_seeds": "0-19",
+   "models": [
+    "s_p0_5901",
+    "s_p0_5902",
+    "s_p0_5903",
+    "s_p0_5904",
+    "s_p0_5905"
+   ]
+  }
+ },
+ "decision": {
+  "rule": "x59s_restriction",
+  "params": {
+   "sp": {
+    "groups": [
+     "pilot",
+     "rest"
+    ],
+    "labels": [
+     "s_p_5901",
+     "s_p_5902",
+     "s_p_5903",
+     "s_p_5904",
+     "s_p_5905"
+    ]
+   },
+   "sp0": {
+    "groups": [
+     "sp0"
+    ],
+    "labels": [
+     "s_p0_5901",
+     "s_p0_5902",
+     "s_p0_5903",
+     "s_p0_5904",
+     "s_p0_5905"
+    ]
+   },
+   "panels": [
+    "heldout72_hpfix",
+    "forum72",
+    "p72"
+   ]
+  }
+ }
+}
