@@ -6,6 +6,8 @@
                                  [--concurrency K]                     #   anchor: K units at once (default 1)
     python -m main.reads resume  --state DIR --lane anchor|s --hours H # = run, after printing what is left
     python -m main.reads status  --state DIR
+    python -m main.reads repin   --state DIR --to COMMIT --by WHO --why TEXT  # accept another playing commit IF the play
+                                                                              # path is byte-identical (else refuse)
     python -m main.reads assemble --state DIR                          # -> cells.json (regime ids ALWAYS)
     python -m main.reads decide  --state DIR                           # -> inputs.json, decision.json
     python -m main.reads record  --state DIR [--out PATH]              # -> record.json (schema-checked)
@@ -44,6 +46,11 @@ def _parser() -> argparse.ArgumentParser:
         r.add_argument("--concurrency", type=int, default=1,
                        help="ANCHOR lane only: units at once, each its own short-lane job and port (default 1; "
                             "capped at the box's heavy-slot count)")
+    rp = sub.add_parser("repin", help="accept another playing commit when the play path is byte-identical")
+    rp.add_argument("--state", required=True)
+    rp.add_argument("--to", required=True, help="the commit (sha, tag or branch) the read will play from")
+    rp.add_argument("--by", required=True, help="who is repinning")
+    rp.add_argument("--why", required=True, help="the reason, recorded with the repin")
     for n in ("status", "assemble", "decide"):
         sub.add_parser(n).add_argument("--state", required=True)
     rec = sub.add_parser("record")
@@ -85,6 +92,9 @@ def main(argv: Optional[List[str]] = None) -> int:
                 _dump(api.status(Path(a.state)))
             return api.run(Path(a.state), a.lane, stop, workers=a.workers, threads=a.threads, unit_s=a.unit_s,
                            concurrency=a.concurrency)
+        if a.cmd == "repin":
+            _dump(api.repin(Path(a.state), a.to, by=a.by, why=a.why))
+            return 0
         if a.cmd == "status":
             _dump(api.status(Path(a.state)))
             return 0

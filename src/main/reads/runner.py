@@ -15,7 +15,8 @@
 Both lanes: resumable (a counted unit / a recorded batch is never replayed), one supervisor per lane per state (a
 flock keyed by the state's PATH outside it, a ``/proc`` scan, and the dir's identity: :mod:`main.reads.supervisors`),
 a REGISTERED stop (``stop_epoch``: an absolute epoch, never open-ended), and the playing checkout must stay at
-the commit ``plan`` recorded (``code.json``; with a spec ``pin``, that commit and a clean tree). Run them detached
+the commit ``plan`` recorded (``code.json``; with a spec ``pin``, that commit and a clean tree), or one a ``repin``
+accepted because the play path is byte-identical (:mod:`main.reads.repin`). Run them detached
 (``setsid nohup python -m main.reads run --lane anchor ...``), one process per lane.
 """
 from __future__ import annotations
@@ -101,12 +102,21 @@ def check_code(spec: ReadSpec, code: Dict[str, Any]) -> None:
 
 
 def _code_holds(state: Path, now_code: Dict[str, Any]) -> None:
+    """The playing checkout is the commit ``plan`` ran at, or one a ``repin`` accepted (its play path byte-identical),
+    with the same clean-tree / diff-digest state."""
+    from main.reads import repin as RP
+
     was = json.loads(LY.code_file(state).read_text())
-    if (now_code["commit"] != was["commit"] or now_code["dirty"] != was["dirty"]
+    try:
+        ok = RP.accepted_commits(state)
+    except RP.RepinError as exc:
+        raise RunError(f"the playing code cannot be checked: {exc}") from None
+    if (now_code["commit"] not in ok or now_code["dirty"] != was["dirty"]
             or now_code.get("diff_sha") != was.get("diff_sha")):
         raise RunError(f"the playing code changed under the read: planned at {was['commit'][:12]}"
-                       f"{' (dirty)' if was['dirty'] else ''}, now {now_code['commit'][:12]}"
-                       f"{' (dirty)' if now_code['dirty'] else ''}")
+                       f"{' (dirty)' if was['dirty'] else ''}"
+                       f"{', repinned to ' + ', '.join(c[:12] for c in ok[1:]) if len(ok) > 1 else ''}"
+                       f", now {now_code['commit'][:12]}{' (dirty)' if now_code['dirty'] else ''}")
 
 
 # -------------------------------------------------------------------------------------------- plan
@@ -502,6 +512,7 @@ def run(state: Path, lane: str, stop_epoch: float, *, workers: int = S_WORKERS, 
 # -------------------------------------------------------------------------------------------- status
 def status(state: Path) -> Dict[str, Any]:
     """Every group's progress: models settled or waiting, anchor units counted / planned, S pairs per member."""
+    from main.reads import repin as RP
     from main.x35 import kakuna as KA
 
     spec = load_state(state)
@@ -510,7 +521,9 @@ def status(state: Path) -> Dict[str, Any]:
                                                               else "waiting") for lab in spec.models},
                            "anchor": {}, "s": {},
                            # live supervisors from /proc (never kill -0), by lane: [] = none is running
-                           "supervisors": {ln: SV.live_supervisors(state, lane=ln).get(ln, []) for ln in SV.LANES}}
+                           "supervisors": {ln: SV.live_supervisors(state, lane=ln).get(ln, []) for ln in SV.LANES},
+                           # the playing commits a repin accepted beyond code.json's (main.reads.repin)
+                           "repins": [{k: r[k] for k in ("to_commit", "by", "time")} for r in RP.load_repins(state)]}
     from main.reads.spec import imported
 
     for g, a in spec.anchor.items():

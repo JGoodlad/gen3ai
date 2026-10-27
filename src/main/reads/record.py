@@ -5,6 +5,8 @@
      "regimes": {"anchor": {group: id}, "s": {group: id}},          ALWAYS present: a record without one refuses
      "ledgers": {group: {family, digest, rows}},                    the S reads' eval-ledger digests
      "code": {commit, dirty, pin},                                  the playing checkout (``code.json``)
+     "repins": [{from_commit, to_commit, playpath_digest, by, why, time, ...}],   each playing commit a repin accepted
+                                                                    (``main.reads.repin``; [] = the read played at ``code``)
      "cells_inconclusive": [...],                                   what assemble could not count, verbatim
      "reported_incomplete": {"<lane>.<group>": [...]},              REPORTED-only groups not complete (never block)
      "void": {label: {run, k9b, batch2, pass}} | null,              the registered VOID gate, every run PASS
@@ -22,7 +24,7 @@ import json
 import re
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional, Sequence
 
 SCHEMA = "gen3_read_record_v1"
 REQUIRED = ("schema", "read", "rule", "spec_sha256", "verdict", "created", "models", "regimes", "ledgers", "code",
@@ -37,7 +39,7 @@ class RecordError(ValueError):
 
 def build(spec: Any, cells: Mapping[str, Any], inputs: Mapping[str, Any], decision: Mapping[str, Any],
           code: Mapping[str, Any], *, now: Optional[str] = None,
-          void: Optional[Mapping[str, Any]] = None) -> Dict[str, Any]:
+          void: Optional[Mapping[str, Any]] = None, repins: Sequence[Mapping[str, Any]] = ()) -> Dict[str, Any]:
     from main.reads.assemble import conclusive, reported_incomplete
     from main.reads.rules import RULES
 
@@ -53,7 +55,7 @@ def build(spec: Any, cells: Mapping[str, Any], inputs: Mapping[str, Any], decisi
                     for lane in ("anchor", "s")},
         "ledgers": {g: {"family": grp.get("family"), "digest": grp.get("ledger_digest"), "rows": grp.get("rows")}
                     for g, grp in (cells.get("s") or {}).items()},
-        "code": dict(code), "cells_inconclusive": conclusive(cells, reported=reported),
+        "code": dict(code), "repins": [dict(r) for r in repins], "cells_inconclusive": conclusive(cells, reported=reported),
         "reported_incomplete": reported_incomplete(cells, reported),
         "void": None if void is None else dict(void),
         "imports": {f"{lane}.{g}": grp["imports"] for lane in ("anchor", "s")
@@ -114,6 +116,12 @@ def check(rec: Mapping[str, Any]) -> List[str]:
         probs.append(f"arm {rec.get('arm')}: no VOID gate recorded (V-S1 / V-S2 / LR-F and K9(b) gate this read)")
     if not (isinstance(rec["code"], dict) and rec["code"].get("commit")):
         probs.append("code: no playing commit")
+    from main.reads.repin import REQUIRED as REPIN_KEYS
+
+    for i, r in enumerate(rec.get("repins") or ()):                # absent on a record written before repin existed
+        miss = [k for k in REPIN_KEYS if not (isinstance(r, dict) and r.get(k))]
+        if miss:
+            probs.append(f"repins[{i}]: lacks {miss}")
     if rule.x35_record:
         for k in ("arm", "look"):
             if k not in rec or rec[k] != rec["decision"].get(k):
