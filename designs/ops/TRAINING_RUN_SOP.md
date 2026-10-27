@@ -194,7 +194,7 @@ half explicit ("set fallback cron (make this standard sop)"):
    arms this is the ARM CHAIN, `python -m main.ops.arm_chain run <chain.json>` ([`arm_chain.md`](arm_chain.md)): one
    tested supervisor for pre-launch, GO, the post-spawn guards, the arm end (completeness, K9(b) into a scratch stage,
    the thin, the dose), the records-only ship, the hand-off at the next arm's OWN pin, GPU windows between arms, and
-   the canary logger. **Live since 2026-10-26 23:04**; the job-directory scripts are its rollback only (§7
+   the canary logger. **Live since 2026-10-26 23:04**; the job-directory scripts it replaced are retired (§7
    step 9).
 3. **`Monitor`** on the status file, filtered to terminal + failure lines only — owned by the
    Training Run session. The orchestrator does NOT watch the run **(owner, 2026-09-02)**; it is

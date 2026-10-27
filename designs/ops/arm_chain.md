@@ -3,7 +3,7 @@
 > Always-current (`designs/CLAUDE.md`). Code: [`src/main/ops/arm_chain/`](../../src/main/ops/arm_chain/), entry point
 > `python -m main.ops.arm_chain`. Tests: `src/main/ops/arm_chain/*_test.py` (289; fake `/proc`, a fake
 > launcher, temp git repos; nothing touches the GPU). **Status: LIVE since 2026-10-26 23:04 PDT** (chain `x35-lrf-oct26`:
-> d3 3504 and 3505 DONE, then LR-F). The job-directory scripts remain only as §7 step 9's rollback.
+> d3 3504 and 3505 and LR-F 3502 and 3503, `chain COMPLETE` 10-27 15:39). The job-directory scripts are retired (§7 step 9).
 
 ## 1. Why
 
@@ -373,8 +373,9 @@ Two classes stay with their owners:
 5. **Retire the old chain without signalling it mid-step.** Let the last old arm-end finish with next `none -`, or
    do not arm one. Confirm that no old chain script is alive.
 6. **Start the canary logger.** Run `python -m main.ops.arm_chain canary --out-dir ~/.claude/jobs/x35/canary
-   --status-file ~/.claude/jobs/x35/status.txt` under `nohup setsid` (its dumps go to `~/gen3ai_archive/`). After its first pass writes the heartbeat,
-   stop `canary_log_v12.sh` by PID through the identity gate (`signal-if <pid> 'canary_log_v12'`).
+   --status-file ~/.claude/jobs/x35/status.txt` under `nohup setsid` (its dumps go to `~/gen3ai_archive/`). Done
+   10-27: it ran beside `canary_log_v12.sh` through LR-F 3502 and 3503 and logged every record v12 did, so v12 was
+   stopped through the identity gate (`signal-if <pid> 'canary_log_v12'`).
 7. **Start the supervisor** from the MAIN checkout at nice 0 (F3), with the env's interpreter and
    `PYTHONPATH=$PWD/src`:
    `nohup setsid python -m main.ops.arm_chain run <file> >> ~/.claude/jobs/x35/arm_chain/<name>.out 2>&1 < /dev/null &`
@@ -396,13 +397,11 @@ Two classes stay with their owners:
    - the scratch K9(b) record;
    - that `git status` on main is clean;
    - the combined records commit, and which way it shipped (`records ship ASYNC` or `SYNCHRONOUS (<why>)`).
-9. **Rollback.** Nothing in the job directory was changed, so the old scripts still work. After a module HOLD:
-   - `abandon` the item;
-   - stop the supervisor (it holds nothing but its lock);
-   - re-arm `arm_end_v13.sh` / `poll_launch_v5.sh` by hand.
-10. **Done on 10-27,** after d3 3505 and lrfloor 3502 ended clean: the status line and TRAINING_RUN_SOP §2 now say
-    LIVE. The job scripts move aside as history only when the orchestrator retires step 9's rollback; never delete
-    them before then.
+9. **Rollback: retired 10-27** (orchestrator, after four clean arms and `chain COMPLETE`). The predecessors
+   `arm_end_v13`, `poll_launch_v5`, `ship_record_v2`, `ship_dose_v2` and `canary_log_v12` now sit in the job
+   directory's `retired-20261027/` as history. A module HOLD is repaired with the module's own verbs: `status`,
+   `clear-hold` / `abandon` on the orchestrator's word, then `run`.
+10. **Done on 10-27,** after d3 3505 and lrfloor 3502 ended clean: the status line and TRAINING_RUN_SOP §2 say LIVE.
 
 ## 8. Decision record
 
