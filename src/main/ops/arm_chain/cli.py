@@ -10,10 +10,12 @@
     live        [--models-dir D]                    live runs from launcher argv (never a glob)
     watch-files --status-file F | --chain CHAIN     the alert watch's file list: the status file + each live launcher's
                                                     stdout log + its run's launcher_child.full.log (--chain: + every
-                                                    unfinished arm's fixed log paths, existing or not)
+                                                    unfinished arm's fixed log paths, existing or not; none
+                                                    inside a run dir from ENDED on). Never under tail -F (CB-47)
     monitor-filter --chain NAME                     the ONE ERE the alert Monitor greps over the watch-files
     monitor     --chain CHAIN [--max-hours H]       the alert follower: re-reads the file set every pass, prints each
-                                                    filtered line, pages a dead / stale supervisor (no re-arm at a GO)
+                                                    filtered line, pages a dead / stale supervisor (no re-arm at a GO);
+                                                    holds no file open, so it never blocks a thin
     canary      --out-dir D [--models-dir D] …      the canary logger loop (bounded, with an EXPIRING line)
     cpu-gate                                        one CPU-gate sample (exit 0 PASS, 1 FAIL, 2 cannot measure)
     wait-pid    PID --timeout-s N                   wait for PID (identity = pid + start ticks) to go; 0 gone, 1 timeout

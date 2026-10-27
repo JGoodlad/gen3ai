@@ -126,6 +126,22 @@ def test_the_open_run_dir_refusal_is_retried_and_others_are_not(w):
     assert len(runner2.calls) == 1
 
 
+def test_a_thin_held_by_an_open_run_dir_names_each_holders_command_line(w):
+    """10-27 03:14: the HOLD named only "pid(s) 2621969", and that was the alert monitor; the reason now carries each
+    holder's /proc cmdline, read at the HOLD."""
+    spec, it = _thin_world(w)
+    holder = subprocess.Popen(["sleep", "37"])
+    try:
+        runner = FakeRunner().on(*planner_handler(w.models, refuse_open_times=99, holder_pids=[holder.pid, 999999999]))
+        with pytest.raises(Hold, match=rf"held open after 3 tries by pid {holder.pid} \[sleep 37\]; "
+                                       r"pid 999999999 \[gone now\]"):
+            A.thin(spec, it, runner, {}, 5000, retries=3, sleep=lambda s: None)
+        assert len(runner.calls) == 3
+    finally:
+        holder.terminate()
+        holder.wait()
+
+
 def test_a_plan_that_drops_the_end_step_checkpoint_holds(w):
     spec, it = _thin_world(w)
     pred, fn = planner_handler(w.models)

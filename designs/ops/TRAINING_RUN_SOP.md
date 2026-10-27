@@ -198,7 +198,10 @@ half explicit ("set fallback cron (make this standard sop)"):
    hand-off, its job-directory scripts still run the chain.
 3. **`Monitor`** on the status file, filtered to terminal + failure lines only — owned by the
    Training Run session. The orchestrator does NOT watch the run **(owner, 2026-09-02)**; it is
-   messaged.
+   messaged. Under the arm chain it is `python -m main.ops.arm_chain monitor --chain <chain.json>`. **Nothing that
+   holds a file open inside a run dir (a `tail -F`, a `less`) may outlive that run's END:** the arm end's thin refuses
+   while any process holds the run dir, and the chain HOLDs with the GPU idle (10-27 03:14: an early `monitor` held
+   `launcher_child.full.log`). The HOLD names the holder's command line; stop it by PID, then `clear-hold`.
 4. **Fallback cron — every 55 MINUTES, never every hour (owner, 2026-09-06)**: the prompt-cache
    time-to-live is 1 h, so a wake inside the window re-uses the cached context and an hourly wake
    re-pays the whole prefix (the root `CLAUDE.md` alone is ~45k tokens). Prefer a drift-free INTERVAL

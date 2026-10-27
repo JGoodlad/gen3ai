@@ -1408,6 +1408,16 @@ def _open_by_other_process(run_dir: str) -> "list[str]":
     return hits
 
 
+def _cmdline(pid: str) -> str:
+    """``/proc/<pid>/cmdline`` as one line ('gone' once it exited): a refusal names WHO holds the run dir (10-27: the
+    arm chain's alert ``monitor`` held it, and the refusal named only a pid)."""
+    try:
+        with open(f"/proc/{pid}/cmdline", "rb") as fh:
+            return fh.read().replace(b"\0", b" ").decode("utf-8", "replace").strip()[:160] or "?"
+    except OSError:
+        return "gone"
+
+
 def _pid_files(run_name: str, extra: "Iterable[str]") -> "list[str]":
     home = os.path.expanduser("~")
     found = glob.glob(os.path.join(home, ".claude", "jobs", "*", f"{run_name}.pid"))
@@ -1449,7 +1459,8 @@ def check_thinnable(run_dir: str, models_dir: str, *, baseline_set: "set[str]",
         raise ThinRefused(f"{name}: launcher pid {pid} from {pf} is alive")
     open_pids = _open_by_other_process(run_dir) if open_pids is None else open_pids
     if open_pids:
-        raise ThinRefused(f"{name}: pid(s) {', '.join(open_pids[:5])} have the run dir open")
+        raise ThinRefused(f"{name}: pid(s) {', '.join(open_pids[:5])} have the run dir open: "
+                          + "; ".join(f"{p} [{_cmdline(p)}]" for p in open_pids[:5]))
     if not allow_no_final and not any(_FINAL_RE.match(f) for f in os.listdir(run_dir)):
         raise ThinRefused(f"{name}: no final_model*.zip — not a FINISHED run "
                           "(--allow-no-final to thin a stopped one)")

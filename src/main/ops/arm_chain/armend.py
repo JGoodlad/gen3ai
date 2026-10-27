@@ -9,8 +9,8 @@ Every step is a HOLD on failure, and nothing after a HOLD runs (no thin, no reco
   records stage under the chain's work dir, and verifies main's stage is byte-for-byte untouched before and after.
 * **The thin deleted the end-step checkpoint** (v2), **thinned arms whose reads need every checkpoint** (v4 / v7 /
   v10: a run-name ``case`` each time), and **HELD on the run's own exiting processes** (v9): :func:`thin` takes the
-  policy from the spec, retries ONLY the planner's "run dir open" refusal (bounded), and verifies the plan KEEPS the
-  newest checkpoint and that ``final_model.zip`` survives the apply.
+  policy from the spec, retries ONLY the planner's "run dir open" refusal (bounded; a HOLD on it names each holder's
+  command line), and verifies the plan KEEPS the newest checkpoint and that ``final_model.zip`` survives the apply.
 * **The dose record read the wrong describe** (``grep -l run_name | head -1``): :func:`dose_record` reads the
   deterministic describe path and refuses a field it cannot source.
 """
@@ -171,8 +171,21 @@ def later_evidence(spec: ChainSpec, it: ArmItem) -> List[str]:
     return sorted(set(out))
 
 
+_OPEN_REFUSAL = re.compile(r"THIN REFUSED: .*have the run dir open")
+_OPEN_PIDS = re.compile(r"pid\(s\) ([\d, ]+) have the run dir open")
+
+
+def open_holders(refusal: str, proc: str = "/proc") -> str:
+    """Each pid the planner's "run dir open" refusal names, with its command line read from ``/proc`` NOW, so the
+    HOLD says WHO holds the run dir (10-27 03:14: it was the alert ``monitor``, and the reason named only its pid)."""
+    m = _OPEN_PIDS.search(refusal)
+    pids = [p for p in re.split(r"[,\s]+", m.group(1)) if p.isdigit()] if m else []
+    return "; ".join(f"pid {p} [{procfs.cmdline(int(p), proc)[:160] or 'gone now'}]" for p in pids) or "unnamed pids"
+
+
 def thin(spec: ChainSpec, it: ArmItem, runner: Runner, base_env: Mapping[str, str], target_steps: int,
-         retries: int = 10, retry_s: float = 30.0, sleep: Callable[[float], None] = time.sleep) -> str:
+         retries: int = 10, retry_s: float = 30.0, sleep: Callable[[float], None] = time.sleep,
+         proc: str = "/proc") -> str:
     if it.thin == "none":
         return f"NOT thinned ({it.thin_reason})"
     run_dir = os.path.join(spec.models_dir, it.run)
@@ -189,10 +202,15 @@ def thin(spec: ChainSpec, it: ArmItem, runner: Runner, base_env: Mapping[str, st
         rc = runner.run(planner, cwd=spec.repo, env=env, timeout_s=1800, out_path=dry)
         if rc == 0:
             break
-        if not re.search(r"THIN REFUSED: .*have the run dir open", open(dry, errors="replace").read()):
+        if not _OPEN_REFUSAL.search(open(dry, errors="replace").read()):
             break
         sleep(retry_s)
     if rc != 0:
+        refusal = open(dry, errors="replace").read()
+        if _OPEN_REFUSAL.search(refusal):
+            raise Hold(f"thin dry run rc={rc}: the run dir is still held open after {retries} tries by "
+                       f"{open_holders(refusal, proc)} — NOT thinned (a follower that never lets go blocks every thin: "
+                       "stop it by PID, then clear-hold)")
         raise Hold(f"thin dry run rc={rc}: {tail(dry, 2, 200)}")
     text = open(dry, errors="replace").read()
     if not re.search(rf"^ +checkpoint_{newest}_steps\.zip ", text, re.M):

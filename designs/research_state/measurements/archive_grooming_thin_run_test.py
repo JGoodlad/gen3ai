@@ -205,8 +205,8 @@ def test_a_process_with_the_run_dir_open_is_refused_for_real(tmp_path):
     run = make_fork(str(tmp_path))
     proc = subprocess.Popen(["sleep", "30"], cwd=run)
     try:
-        with pytest.raises(ag.ThinRefused, match="have the run dir open"):
-            ag.check_thinnable(run, str(tmp_path), baseline_set=set(), live={})
+        with pytest.raises(ag.ThinRefused, match=rf"pid\(s\) {proc.pid} have the run dir open: {proc.pid} \[sleep 30\]"):
+            ag.check_thinnable(run, str(tmp_path), baseline_set=set(), live={})   # the holder's cmdline is named
     finally:
         os.kill(proc.pid, signal.SIGTERM)
         proc.wait()

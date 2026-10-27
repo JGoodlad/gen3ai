@@ -678,7 +678,8 @@ class Chain:
         self._set(it, "K9B_PASS", f"K9(b) PASS (record in the scratch stage {rec})", k9b_record=rec)
 
     def _arm_k9b_pass(self, it: ArmItem) -> None:
-        note = armend.thin(self.spec, it, self.runner, self.d.base_env, self._describe(it).steps, sleep=self._sleep)
+        note = armend.thin(self.spec, it, self.runner, self.d.base_env, self._describe(it).steps, sleep=self._sleep,
+                           proc=self.d.proc)
         self._set(it, "THINNED", note)
 
     def _arm_thinned(self, it: ArmItem) -> None:

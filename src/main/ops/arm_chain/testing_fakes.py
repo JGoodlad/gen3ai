@@ -205,7 +205,7 @@ def k9b_handler(verdict: str = "PASS", into_main_stage: Optional[str] = None, rc
 
 
 def planner_handler(models: str, refuse_open_times: int = 0, keep_extra: Sequence[str] = (),
-                    other_refusal: bool = False) -> Handler:
+                    other_refusal: bool = False, holder_pids: Sequence[int] = (4242, 4243)) -> Handler:
     """The thin planner: keep the newest checkpoint (+ ``keep_extra``); ``--apply`` deletes the rest."""
     state = {"open": refuse_open_times}
 
@@ -219,7 +219,8 @@ def planner_handler(models: str, refuse_open_times: int = 0, keep_extra: Sequenc
             return 3
         if state["open"] > 0:
             state["open"] -= 1
-            open(out, "w").write("THIN REFUSED: 2 process(es) have the run dir open\n")
+            open(out, "w").write(f"THIN REFUSED: {run}: pid(s) {', '.join(map(str, holder_pids))} have the run dir "
+                                 "open\n")
             return 3
         ck = os.path.join(models, run, "checkpoints")
         zips = sorted((int(n.split("_")[1]), n) for n in os.listdir(ck) if n.endswith("_steps.zip"))

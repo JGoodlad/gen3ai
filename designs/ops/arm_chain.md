@@ -1,7 +1,7 @@
 # The arm chain: one tested module that operates production arms end to end
 
 > Always-current (`designs/CLAUDE.md`). Code: [`src/main/ops/arm_chain/`](../../src/main/ops/arm_chain/), entry point
-> `python -m main.ops.arm_chain`. Tests: `src/main/ops/arm_chain/*_test.py` (254; fake `/proc`, a fake
+> `python -m main.ops.arm_chain`. Tests: `src/main/ops/arm_chain/*_test.py` (267; fake `/proc`, a fake
 > launcher, temp git repos; nothing touches the GPU). **Status: BUILT; CUT-OVER PENDING.** The training session
 > still runs its job-directory scripts until the checklist in §7 is done.
 
@@ -91,9 +91,9 @@ The field rules:
 | `abandon CHAIN --item KEY --by WHO --why WHY` | the orchestrator's decision that a held item will not finish: it becomes `DONE_FAILED` and the chain hands off past it. Refused while the item's launch wrapper or launcher is alive (stop it first) |
 | `ship-records CHAIN --item KEY` | ships one arm's K9(b) + dose records from its request file: the async worker the supervisor spawns, and the by-hand retry after a `SHIP-HOLD` (idempotent: records already on the remote are a success) |
 | `live [--models-dir D]` | live runs, read from launcher argv (§4) |
-| `watch-files --status-file F` \| `--chain CHAIN` | the alert watch's file list: the status file, each live launcher's stdout log, and its run's `launcher_child.full.log` (the trainer's own lines; it rotates by rename, which `tail -F` follows). `--chain` adds every unfinished arm's two fixed log paths, existing or not (`tail -F` waits for them) |
+| `watch-files --status-file F` \| `--chain CHAIN` | the file list `monitor` follows, printed: the status file, each live launcher's stdout log, and its run's `launcher_child.full.log` (the trainer's own lines; it rotates by rename). `--chain` adds every unfinished arm's two fixed log paths, existing or not; from ENDED on, nothing inside the arm's run dir is listed. Never feed it to `tail -F` (§7 step 7) |
 | `monitor-filter --chain NAME` | the one ERE the alert Monitor greps over the watch-files (below) |
-| `monitor --chain CHAIN [--max-hours 24]` | the alert FOLLOWER (§7 step 7): every 10 s it re-reads the file set (`watch-files --chain`'s), follows each file `tail -F` style, prints each line the filter matches as `[<file>] <line>`, and pages a dead or stale supervisor once (`SUPERVISOR DEAD\|STALE:` in the status file). No re-arm at a GO; bounded, with an `EXPIRING` line |
+| `monitor --chain CHAIN [--max-hours 24]` | the alert FOLLOWER (§7 step 7): every 10 s it re-reads the file set (`watch-files --chain`'s), follows each file `tail -F` style, prints each line the filter matches as `[<file>] <line>`, and pages a dead or stale supervisor once (`SUPERVISOR DEAD\|STALE:` in the status file). No re-arm at a GO; bounded, with an `EXPIRING` line. It holds NO file open between reads, and an arm at ENDED or later loses its run-dir files after one last read, so it can never block the thin (CB-47) |
 | `canary --out-dir D --status-file F [--archive-root R]` | the canary logger loop. It is bounded, writes a heartbeat file and an `EXPIRING` line, alerts on EVERY non-PASS record, and archives each canary weight dump to `R/<run>_canary_u<u>/` (default `~/gen3ai_archive`) |
 | `cpu-gate` | one GO CPU-gate sample |
 | `wait-pid PID --timeout-s N` | a `/proc` wait on `(pid, start ticks)` |
@@ -111,8 +111,8 @@ The field rules:
 
 **The Monitor filter** (`python -m main.ops.arm_chain monitor-filter --chain <name>` prints it; a test pins this
 line to the code): `ARMCHAIN\[<name>\]: (HOLD|SHIP-HOLD|chain COMPLETE|MONITOR-REARM|SUPERVISOR (DEAD|STALE))|CANARYLOG: HOLD|AWFILES: HOLD|Traceback|Child crashed|WEDGE|UpdateWontFit|BEHAVIOUR-POLICY MISMATCH|StampMismatch|DISAGREES`.
-`MONITOR-REARM <item>: <launcher log> <launcher_child.full.log>` is written at each GO: the cue for a `tail -F`
-Monitor to re-arm on the new run's logs. `SUPERVISOR DEAD|STALE` is written by `monitor`.
+`MONITOR-REARM <item>: <launcher log> <launcher_child.full.log>` is written at each GO: it names the new run's logs
+(`monitor` follows them with no re-arm). `SUPERVISOR DEAD|STALE` is written by `monitor`.
 The part after `AWFILES: HOLD` is the launcher-log alert set (`canary.LAUNCHER_ALERT_ERE`): a crash, a wedge, an
 update that cannot fit, a behaviour-policy mismatch, a Rust stamp mismatch, a compiled-vs-eager disagreement.
 
@@ -135,7 +135,7 @@ WINDOW  PENDING ─▶ STARTED ─▶ DONE | DONE_FAILED (on_fail continue)   an
 | RUNNING | the wrapper's `END <run> launcher_rc=N`. If the wrapper is gone but its launcher (pid file, `main.launcher` cmdline) lives, keep waiting | wrapper and launcher both gone without END |
 | ENDED | completeness: rc 0, launcher `Last step` ≥ `--steps`, `final_model.zip`, newest checkpoint ≥ `--steps − 98,304` | any of the four fails: "stopped, not finished" |
 | COMPLETE | `kit k9b --stage <scratch copy>`; main's records stage checked clean before AND after; the verdict read from the record's JSON | not PASS, or main's stage changed |
-| K9B_PASS | the thin (repo planner `--thin-run`). It retries ONLY the "run dir open" refusal (10 × 30 s). The plan must keep the end-step checkpoint and every checkpoint a later item names; `final_model.zip` must survive | any other refusal; the plan drops a kept file; exit 4 (a hash mismatch) |
+| K9B_PASS | the thin (repo planner `--thin-run`). It retries ONLY the "run dir open" refusal (10 × 30 s): the planner refuses while ANY process has a file or its cwd inside the run dir, reader or writer (kept strict: the chain's own readers let go instead, CB-47). The plan must keep the end-step checkpoint and every checkpoint a later item names; `final_model.zip` must survive | the run dir still open after the retries (the HOLD names each holder's pid AND `/proc` command line); any other refusal; the plan drops a kept file; exit 4 (a hash mismatch) |
 | THINNED | the dose record (the START→END segments of THIS GO only, summed) is written beside the K9(b) record. BOTH ship in one records-only commit (`ship.py`): ASYNCHRONOUSLY (a detached `ship-records` worker) once `ship.kit_k9b_out_of_main` passes, else inline | the dose cannot be sourced, the launcher log names another pin, or (inline only) the ship HOLDs |
 | RECORDED | DONE; the next item starts | — |
 | (chain end) | wait ≤ 45 min for in-flight ships; `chain COMPLETE` only when every record landed | a ship failed or is still in flight: `SHIP-HOLD:` and exit 3 |
@@ -253,6 +253,7 @@ dry run and GO stand either way.
 | CB-44 | `ship-records` loaded the state, so a chain-file edit to a started item killed it with no result (finding 11) | the worker builds its shipper from the chain FILE (`default_shipper`); a missing request writes a result and pages | `chain_review_test::test_ship_records_survives_a_chain_file_edit_to_a_started_item`, `…a_ship_worker_with_no_request_writes_a_result_and_pages` |
 | CB-45 | a failure after the push (main's `index.lock`) left the ship's worktree and branch behind (finding 12) | main's fast-forward is retried, then the worktree is removed whatever happens; the retry lands through `_already_shipped` | `ship_test::test_a_failure_after_the_push_cleans_up_and_the_retry_lands` |
 | CB-46 | a chain file without `x_dose_comparator` silently dropped `c0_comparator` (finding 13) | `chain.dose_comparator`: the chain file's (`null` omits it), else the block every dose record in main's stage agrees on, else none; a status line says which | `chain_review_test::test_the_dose_record_takes_the_comparator_the_stages_records_agree_on` |
+| CB-47 | `monitor` held `launcher_child.full.log` open for its whole life, so the thin of every arm it followed refused "pid(s) … have the run dir open" (d3 3504, 10-27 03:14: K9(b) PASS, then a HOLD and an idle GPU); the HOLD named only the pid | the follower opens, reads and closes each file per pass (rotation found by inode beside the path), and drops an arm's run-dir log once its phase is ENDED or later (`monitor.POST_RUN`; one last read first; only a live launcher back in that dir, which the thin refuses anyway, restores it); the thin's HOLD names each holder's cmdline (`armend.open_holders`; the planner's refusal too) | `monitor_test::test_the_10_27_incident_a_running_monitor_never_blocks_the_arm_ends_thin` (a real monitor process, the real planner's dry run; reverted, it reproduces the refusal), `…the_follower_holds_no_file_open_between_polls`, `…a_rotation_by_rename_is_drained_without_a_held_handle`, `…chain_files_never_lists_an_ended_arms_run_dir`; `armend_test::test_a_thin_held_by_an_open_run_dir_names_each_holders_command_line` |
 | restart | the 10-26 supervisor (`93a05fe91`) is replaced at a restart by this code, onto the state it wrote | the state schema stays `arm_chain_state_v1`: every addition (`supervisor`, `data.stopping` / `attempts` / `accepted`) is optional, and each version keeps the other's keys | `chain_review_test::test_a_93a05fe9_*` on `testdata/state_93a05fe9_*.json` (written by `93a05fe91`'s code on these fakes: held at LAUNCHED twice, held at SPAWNED, mid-RUNNING, an async ship) |
 
 Two classes stay with their owners:
@@ -315,6 +316,17 @@ Two classes stay with their owners:
   line), and every later gate still runs.
 - **F17. `monitor` writes `SUPERVISOR DEAD|STALE` under the chain's own tag.** It is a second writer of that tag,
   and its once-only keys live in `<work_dir>/monitor_alerted.txt`.
+- **F18. Only the thin refuses on open handles, and it refuses EVERY process in the run dir** (CB-47). The ship
+  works in its own worktree and the deletes (`fsguard.remove_under`) check paths, not handles; neither can be
+  blocked by a reader. What the thin can still see:
+  - `monitor`'s one last read of an ended arm's log, on its first pass after ENDED: microseconds, long before
+    K9(b) finishes, and inside the thin's 10 × 30 s retry anyway;
+  - the canary logger (`canary`), which re-reads `canary_verdicts.jsonl` and hashes new dumps in every run dir it has
+    ever seen, every 300 s: transient opens, absorbed by the same retry;
+  - any `tail -F` or `less` an operator leaves on a run's log: it HOLDs the thin, and the HOLD names its command line.
+- **F19. `monitor` keeps no handle, so a rotated generation is found by its inode beside the path**
+  (`launcher_child.full.log.1`). A generation deleted or moved out of the directory before the next pass (two
+  64 MiB rotations within 10 s) loses its unread tail, which a held fd would have kept.
 - **F11. The chain signals a run in ONE case: the arm's registered `stop`** (`on_void` / `on_throughput_fail`),
   SIGTERM only, through `signal_if` on this run's launcher identity. Only the fakes have exercised it (F4); the
   first real `stop` is watched by hand. `page` behaves as the old `d3_redirect.sh` did. `launch_x35.sh`'s own
@@ -348,12 +360,11 @@ Two classes stay with their owners:
 7. **Start the supervisor** from the MAIN checkout at nice 0 (F3), with the env's interpreter and
    `PYTHONPATH=$PWD/src`:
    `nohup setsid python -m main.ops.arm_chain run <file> >> ~/.claude/jobs/x35/arm_chain/<name>.out 2>&1 < /dev/null &`
-   - **The alert Monitor: the operator's choice.** Prefer ONE follower that never needs a re-arm, and that also pages
-     a dead supervisor: `python -m main.ops.arm_chain monitor --chain <file>` (bounded at 24 h; re-arm it at its
-     `EXPIRING` line). The fallback is the `tail -F` pipeline, which must be RE-ARMED at every `MONITOR-REARM` line
-     the filter passes, because the new run's logs did not exist when it started:
-     `tail -F -n0 $(python -m main.ops.arm_chain watch-files --chain <file>) | grep --line-buffered -E
-     "$(python -m main.ops.arm_chain monitor-filter --chain <name>)"`. It cannot see a dead supervisor.
+   - **The alert Monitor is ONE follower**, which never needs a re-arm and also pages a dead supervisor:
+     `python -m main.ops.arm_chain monitor --chain <file>` (bounded at 24 h; re-arm it at its `EXPIRING` line). It is
+     safe beside every arm end (CB-47). **Never a `tail -F` over `watch-files`**: `tail` holds every file it follows
+     open, so it blocks the thin at each arm's end (the 10-27 03:14 HOLD), and it cannot see a dead supervisor. A
+     `monitor` started before CB-47 landed must be stopped by PID and restarted on this code.
    - Keep the 55-min fallback cron. It reads `status` (a `!!!` liveness line pages). Its repair commands are
      `clear-hold --resolution …` or `abandon` on the orchestrator's word, then `run`.
 8. **Watch the first GO by hand** (F4). Check:
@@ -397,6 +408,10 @@ Two classes stay with their owners:
   - The record ship is asynchronous while the kit's `k9b-batch` writes outside main (`7f9ff6236`), inline otherwise
     (CB-35, F1, F12); main is checked clean around every dry run and before every GO.
   - The module deletes only through `fsguard.remove_under` (CB-28).
+- **2026-10-27 (03:14 incident): the monitor and the thin coexist (CB-47).** The thin stays strict (any process in
+  the run dir refuses it): a read-only exemption would trust a `/proc` fd mode to tell a reader from a writer, and a
+  reader in the dir is still something the run's owner should see. The chain's own reader lets go instead, and a
+  HOLD names each holder's command line. The state file is unchanged.
 - **2026-10-26 (evening): the adversarial review's findings 2-13** ([`arm_chain_review_2026-10-26.md`](arm_chain_review_2026-10-26.md);
   finding 1 was fixed at `93a05fe91`). The changes are CB-36-46.
   - The supervisor's liveness became readable: a heartbeat plus a lock probe, and `status` prints ALIVE / STALE / DEAD.
