@@ -86,7 +86,8 @@ def _fake_ckpt(path, extractor_kwargs, obs_end=None):
         from main.prober.arch_status import current_obs_dim
         obs_end = current_obs_dim()
     data = {"policy_kwargs": {"features_extractor_kwargs": dict(
-        extractor_kwargs, layout={"parts": {"our_team": {"start": 0, "end": 696},
+        extractor_kwargs, layout={"total_dim": obs_end,
+                                  "parts": {"our_team": {"start": 0, "end": 696},
                                             "reactive": {"start": 700, "end": obs_end}}})}}
     with zipfile.ZipFile(path, "w") as z:
         z.writestr("data", json.dumps(data))
@@ -116,6 +117,30 @@ def test_peek_reads_the_width_a_live_layout_declares(tmp_path):
         z.writestr("data", json.dumps(data))
     assert peek_checkpoint(str(path))["obs_dim"] == current_obs_dim()
     assert A.checkpoint_verdict(str(path), peek_obs_dim=peek_checkpoint(str(path))["obs_dim"]).kind != A.KIND_OBS_DIM
+
+
+def test_peek_reads_the_width_of_a_layout_saved_in_either_style(tmp_path):
+    """Checkpoints of runs pinned before 5c80fca2a still save `parts["reactive"]["end"]` = the row's width; newer ones
+    save the block's own end. The peek gives the SAME width for both (the layout's `total_dim`), and for a layout
+    that records no `total_dim` it gives none (the verdict reads the sidecar) rather than a width guessed from the
+    part ends."""
+    from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
+
+    new = json.loads(json.dumps(Gen3ObservationEncoder(load_mappings()).get_layout(), default=list))
+    old = json.loads(json.dumps(new))
+    old["parts"]["reactive"]["end"] = old["total_dim"]                       # the pre-5c80fca2a style
+    assert old["parts"]["reactive"]["end"] != new["parts"]["reactive"]["end"]
+    bare = json.loads(json.dumps(new))
+    del bare["total_dim"]
+
+    def peek(layout, name):
+        path = tmp_path / name
+        with zipfile.ZipFile(path, "w") as z:
+            z.writestr("data", json.dumps({"policy_kwargs": {"features_extractor_kwargs": {"layout": layout}}}))
+        return peek_checkpoint(str(path))
+
+    assert peek(old, "old.zip")["obs_dim"] == peek(new, "new.zip")["obs_dim"] == new["total_dim"]
+    assert "obs_dim" not in peek(bare, "bare.zip")
 
 
 def test_peek_never_raises_on_garbage(tmp_path):

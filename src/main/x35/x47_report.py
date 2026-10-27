@@ -8,7 +8,8 @@ decides a verdict; ``main.x35.x47.read`` carries each beside the verdict.
   interval at the look's 97.5 % (``readout.R1_CONFIDENCE``), the out-of-lineage member :data:`OUT_OF_LINEAGE` on its
   own, and the "in-lineage" label on a primary GAIN whose out-of-lineage Δ̂ <= 0.
 * :func:`round_norms` / :func:`run_norms` (AM-X47-10, the bot screen §2.1 DESCRIPTOR): the Frobenius norm of each NEW
-  round's ``out_proj`` and ``linear2`` (``team_transformer.extra_rounds.<i>``), and its ratio to the mean norm of the
+  round's ``out_proj`` and ``linear2`` (``team_transformer.extra_rounds.<i>``; on a widened trunk the width branch's
+  ``ffn_extra.linear2`` is part of the same matrix, their norms taken together), and its ratio to the mean norm of the
   same matrix over the base rounds (``team_transformer.transformer_layers.<j>``) at the same checkpoint. The reading line
   at the last node: a round whose two ratios are both >= :data:`ENGAGED_RATIO` "engaged", else "stayed near identity".
 * :func:`policy_diff` / :func:`run_policy_diff` (AM-X47b-3, registered 2026-10-20 before any read; REPORTED ONLY, in no
@@ -40,8 +41,11 @@ BOUNDARY = "BOUNDARY: the secondary crossed the bar within measurement noise"
 ENGAGED_RATIO = 0.01
 ENGAGED, NEAR_IDENTITY = "engaged", "stayed near identity"
 _MATS = ("out_proj", "linear2")
+#: ``linear2`` is the round's WHOLE FFN output map: the round's own, plus a width branch's (``ffn_extra.linear2``,
+#: `--trunk-ffn-dim` > 256) or a per-kind expert's (``kind_ffn.<kind>.linear2``), whichever the round carries. A key
+#: this misses would read a wide trunk's round as the narrow one.
 _KEY = re.compile(r"^(?P<prefix>.*team_transformer\.)(?P<kind>extra_rounds|transformer_layers)\.(?P<i>\d+)\."
-                  r"(?P<mat>out_proj|linear2)\.weight$")
+                  r"(?:ffn_extra\.|kind_ffn\.\w+\.)?(?P<mat>out_proj|linear2)\.weight$")
 _CKPT = re.compile(r"checkpoint_(\d+)_steps\.zip$")
 
 
@@ -113,14 +117,18 @@ def lineage_label(pm: Optional[Mapping[str, Any]]) -> Optional[str]:
 # ------------------------------------------------------------------------------------------ AM-X47-10
 def round_norms(state: Mapping[str, Any]) -> Dict[str, Any]:
     """The descriptor on one state dict: per ``team_transformer`` prefix, each new round's two norms and ratios."""
-    by: Dict[str, Dict[str, Dict[int, Dict[str, float]]]] = {}
+    pieces: Dict[str, Dict[str, Dict[int, Dict[str, List[float]]]]] = {}
     for k, t in state.items():
         m = _KEY.match(k)
         if m:
-            by.setdefault(m["prefix"], {}).setdefault(m["kind"], {}).setdefault(int(m["i"]), {})[m["mat"]] = \
-                float(t.detach().float().norm())
-    if not by:
+            pieces.setdefault(m["prefix"], {}).setdefault(m["kind"], {}).setdefault(int(m["i"]), {}) \
+                .setdefault(m["mat"], []).append(float(t.detach().float().norm()))
+    if not pieces:
         raise ValueError("no team_transformer rounds in the state dict")
+    # one matrix's norm, or the Frobenius norm of the round's linear2 pieces taken together (the base map + its branch)
+    by = {pre: {kind: {i: {mat: (v[0] if len(v) == 1 else math.sqrt(math.fsum(x * x for x in v)))
+                           for mat, v in mats.items()} for i, mats in rounds.items()}
+                for kind, rounds in kinds.items()} for pre, kinds in pieces.items()}
     out: Dict[str, Any] = {}
     for prefix, kinds in sorted(by.items()):
         base = kinds.get("transformer_layers") or {}
@@ -181,8 +189,10 @@ def run_norms(run_dir: str, *, loader: Any = None) -> Dict[str, Any]:
 
 # ------------------------------------------------------------------------------------------ AM-X47b-3
 def zero_extra_rounds(module: Any) -> int:
-    """Zero ``out_proj`` and ``linear2`` (weight and bias) of every round inside a module named ``extra_rounds``, IN
-    PLACE; returns the number of rounds zeroed (0 = no new round: the descriptor is undefined)."""
+    """Zero ``out_proj`` and EVERY ``linear2`` (weight and bias) of every round inside a module named ``extra_rounds``,
+    IN PLACE: the round's own, a width branch's (``ffn_extra``) and each per-kind expert's (``kind_ffn.*``), because
+    a branch left trained makes the round no longer the identity. Returns the number of rounds zeroed (0 = no new
+    round: the descriptor is undefined)."""
     import torch
 
     n = 0
@@ -191,7 +201,9 @@ def zero_extra_rounds(module: Any) -> int:
             if name.rsplit(".", 1)[-1] != "extra_rounds":
                 continue
             for rnd in mod:
-                for lin in (rnd.out_proj, rnd.linear2):
+                lins = [rnd.out_proj] + [sub for sname, sub in rnd.named_modules()
+                                         if sname.rsplit(".", 1)[-1] == "linear2"]
+                for lin in lins:
                     lin.weight.zero_()
                     if lin.bias is not None:
                         lin.bias.zero_()

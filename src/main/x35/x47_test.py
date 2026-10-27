@@ -375,6 +375,26 @@ def test_am_x47_10_the_descriptor_reads_the_new_rounds():
         XR.round_norms({"policy.x": torch.zeros(1)})
 
 
+def test_am_x47_10_the_descriptor_counts_a_wide_trunks_branch():
+    """On a widened trunk (`--trunk-ffn-dim` > 256) a round's FFN output map is its own `linear2` PLUS
+    `ffn_extra.linear2`; a descriptor that read only the former called a round whose branch had grown "near identity"."""
+    import torch
+
+    pre = "features_extractor.team_transformer."
+    sd = {}
+    for j in range(2):
+        sd[f"{pre}transformer_layers.{j}.out_proj.weight"] = torch.full((4, 4), 1.0)
+        sd[f"{pre}transformer_layers.{j}.linear2.weight"] = torch.full((4, 4), 2.0)               # norm 8
+        sd[f"{pre}transformer_layers.{j}.ffn_extra.linear2.weight"] = torch.full((4, 4), 2.0)     # 8: together 8 * sqrt 2
+    sd[f"{pre}extra_rounds.0.out_proj.weight"] = torch.full((4, 4), 1.0)
+    sd[f"{pre}extra_rounds.0.linear2.weight"] = torch.zeros(4, 4)                                # the base map stayed at zero
+    sd[f"{pre}extra_rounds.0.ffn_extra.linear2.weight"] = torch.full((4, 4), 2.0)                # the branch trained
+    row = XR.round_norms(sd)[pre]["extra_rounds"]["0"]
+    assert row["linear2"] == pytest.approx(8.0) and row["linear2_ratio"] == pytest.approx(1 / 2 ** 0.5)
+    assert XR.round_norms(sd)[pre]["base_mean"]["linear2"] == pytest.approx(8 * 2 ** 0.5)
+    assert XR.reading(XR.round_norms(sd)) == {"0": XR.ENGAGED}
+
+
 def test_am_x47_10_run_norms_reads_every_checkpoint_and_the_final(tmp_path):
     import torch
 
@@ -412,6 +432,45 @@ def test_am_x47b_3_zeroing_the_new_rounds_makes_them_the_identity():
     assert XR.zero_extra_rounds(t) == 2
     assert torch.equal(t.extra_rounds[1](t.extra_rounds[0](x)), x)
     assert XR.zero_extra_rounds(torch.nn.Linear(2, 2)) == 0
+
+
+@pytest.mark.parametrize("width,by_kind", [(512, "off"), (256, "on")])
+def test_am_x47b_3_zeroing_reaches_a_wide_or_by_kind_rounds_every_ffn_output(width, by_kind):
+    """The zeroed twin must be the identity on a widened trunk (the branch's `linear2`) and under per-kind experts
+    too, else pi_zeroed is not the base rounds' function and the KL reads a different quantity."""
+    import torch
+
+    from agents.model.trunk_depth import build_extra_rounds
+    from agents.model.trunk_ffn_width import install_branches
+
+    class Trunk(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.transformer_layers = torch.nn.ModuleList()
+            self.extra_rounds = build_extra_rounds(4, by_kind)
+
+    t = Trunk()
+    if width > 256:
+        assert install_branches(t, width)
+    with torch.no_grad():
+        for p in t.parameters():
+            p.add_(0.05 * torch.randn_like(p))
+    if by_kind == "on":
+        from agents.model.trunk_kffn import KIND_MON
+        segs = ((0, 3, KIND_MON), (3, 4, 1), (4, 5, 2), (5, 6, 3), (6, 7, 4))
+        for r in t.extra_rounds:
+            r.ffn_segments = segs
+        n_tok = 7
+    else:
+        n_tok = 5
+    x = torch.randn(2, n_tok, t.extra_rounds[0].norm1.normalized_shape[0])
+    def run(h):
+        for r in t.extra_rounds:
+            h = r(h)
+        return h
+    assert not torch.equal(run(x), x)
+    assert XR.zero_extra_rounds(t) == 2
+    assert torch.equal(run(x), x)
 
 
 def test_am_x47b_3_policy_diff_is_the_mean_kl_by_hand():

@@ -130,16 +130,13 @@ def peek_checkpoint(ckpt_path: str) -> dict:
     if isinstance(fek, dict):
         out["extractor_kwargs"] = fek
         layout = fek.get("layout")
-        parts = (layout or {}).get("parts") if isinstance(layout, dict) else None
         total = (layout or {}).get("total_dim") if isinstance(layout, dict) else None
         if isinstance(total, int) and not isinstance(total, bool) and total > 0:
-            # The layout's own width. NOT the largest part `end`: since 5c80fca2a each part's `end` is that block's own
-            # end, and `pair_history` (an overlay inside `reactive`) is not the last block, so max(end) read 1801.
+            # The layout's own width, saved in the old style (reactive's `end` = the row) and the new alike. NEVER the
+            # largest part `end`: since 5c80fca2a each part's `end` is that block's own end, and the parts do not
+            # reach the row's end (the event window and the OBS-FACTS block follow them), so max(end) read 1801.
+            # A layout without `total_dim` yields no `obs_dim` (the verdict then reads the sidecar), never a guess.
             out["obs_dim"] = total
-        elif isinstance(parts, dict):             # a layout recorded without `total_dim`: its last part ends the row
-            ends = [p.get("end") for p in parts.values() if isinstance(p, dict) and p.get("end")]
-            if ends:
-                out["obs_dim"] = int(max(ends))
     return out
 
 

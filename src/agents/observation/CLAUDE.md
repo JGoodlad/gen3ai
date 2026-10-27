@@ -19,7 +19,9 @@ encoder (`src/rust_sim/src/encoder/`, `designs/rust_sim/encoder.md`) is the only
   every obs change runs is in the root `CLAUDE.md`.
 - **`get_layout()` validates itself** (`state_encoder.validate_layout`, also run at encoder construction): `parts` + the event
   window + obs-facts must tile `[0, total_dim)` contiguously and each span's width must equal its declared dims, else it
-  RAISES. Every `parts[x]["end"]` is x's own end. Add a block to the row ⇒ it must appear in that tiling.
+  RAISES. Every `parts[x]["end"]` is x's own end, and the parts stop short of the row (the event window and OBS-FACTS follow):
+  the row's width is `total_dim`, never a part `end` (checkpoints of pins before 5c80fca2a save `reactive.end` = the width, newer ones
+  its own end, so a saved layout is read by `total_dim` and `start`). Add a block to the row ⇒ it must appear in that tiling.
 - The archived `TurnDelta` slot and the incoming-damage obs block stay deleted; `turn_delta_encoder.py` and
   `incoming_damage.py` survive only as decoders and pure math (the prober, `damage_tables`), written into no row.
 

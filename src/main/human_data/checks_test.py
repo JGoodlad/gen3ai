@@ -48,6 +48,19 @@ def test_obs_slices_name_every_column_from_the_layout(layout, encoder):
     assert names[col[layout["parts"]["context"]["start"] + ctx["boosts"]["offset"]]] == "context.boosts"
 
 
+def test_obs_slices_read_a_layout_of_either_style_alike(layout):
+    """`parts["reactive"]["end"]` was the row's width until 5c80fca2a (checkpoints of older pins still save it so); the
+    slices must not depend on it: every column past the reactive block is named by its own block."""
+    import copy
+
+    old = copy.deepcopy(layout)
+    old["parts"]["reactive"]["end"] = old["total_dim"]
+    assert old["parts"]["reactive"]["end"] != layout["parts"]["reactive"]["end"]
+    (n_new, c_new), (n_old, c_old) = C.obs_slices(layout), C.obs_slices(old)
+    assert n_new == n_old and np.array_equal(c_new, c_old)
+    assert len(c_new) == layout["total_dim"] and (c_new >= 0).all()
+
+
 def _rows(n: int, dim: int, seed: int = 0) -> Dict[str, np.ndarray]:
     rng = np.random.default_rng(seed)
     return {"rows": rng.random((n, dim), dtype=np.float32), "mask": np.ones((n, RS.N_ACT), np.int8),
