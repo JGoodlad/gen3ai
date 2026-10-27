@@ -59,6 +59,38 @@ from typing import Dict, Any, List, Optional, Tuple
 from agents.observation.reactive import ReactiveEncoder as _ReactiveEncoder
 
 
+def validate_layout(layout: Dict[str, Any]) -> None:
+    """THROWING guard on the row's block spans. `layout["parts"]` (in declaration order) plus the two
+    blocks the layout declares as top-level offsets (`event_window_*`, `obs_facts_*`) must be
+    contiguous, non-overlapping, cover exactly [0, total_dim) in order, and each `parts` span's width
+    must equal its declared dims (`dim`, or the product of `reshape`). A wrong `end` once read
+    `total_dim` for `reactive` and nothing sliced on it; a future reader would have sliced garbage."""
+    spans: List[Tuple[str, int, int, Optional[int]]] = []
+    for name, p in layout["parts"].items():
+        if "reshape" in p:
+            declared: Optional[int] = int(np.prod(p["reshape"]))
+        else:
+            declared = p.get("dim")
+        spans.append((name, int(p["start"]), int(p["end"]), None if declared is None else int(declared)))
+    ew_off = layout["event_window_offset"]
+    spans.append(("event_window", ew_off, ew_off + layout["event_window_dim"], layout["event_window_dim"]))
+    of_off = layout["obs_facts_offset"]
+    spans.append(("obs_facts", of_off, of_off + layout["obs_facts_dim"], layout["obs_facts_dim"]))
+    cursor = 0
+    for name, start, end, declared in spans:
+        if start != cursor:
+            raise ValueError(f"obs layout: block {name!r} starts at {start}, expected {cursor} "
+                             f"(blocks must be contiguous, non-overlapping, in order)")
+        if end <= start:
+            raise ValueError(f"obs layout: block {name!r} has an empty or reversed span [{start}, {end})")
+        if declared is not None and end - start != declared:
+            raise ValueError(f"obs layout: block {name!r} spans [{start}, {end}) = {end - start} wide "
+                             f"but declares {declared}")
+        cursor = end
+    if cursor != layout["total_dim"]:
+        raise ValueError(f"obs layout: blocks end at {cursor} but total_dim is {layout['total_dim']}")
+
+
 def load_mappings() -> Dict[str, Any]:
     """Assemble the observation encoder's reference mappings from the ``gen3_data`` facade.
 
@@ -159,6 +191,7 @@ class Gen3ObservationEncoder(ObservationEncoder):
         self.reactive_encoder = ReactiveEncoder(
             ability_priors=mappings.get("ability_priors", {}),
         )
+        self.get_layout()   # construction-time guard: a mis-declared block span raises (`validate_layout`)
 
     @property
     def base_dimension(self) -> int:
@@ -174,6 +207,11 @@ class Gen3ObservationEncoder(ObservationEncoder):
         return self.base_dimension
 
     def get_layout(self) -> Dict[str, Any]:
+        layout = self._build_layout()
+        validate_layout(layout)   # a mis-declared span RAISES here, never reaches a slicing reader
+        return layout
+
+    def _build_layout(self) -> Dict[str, Any]:
         pokemon_layout = self.pokemon_encoder.get_layout()
         return {
             "parts": {
@@ -199,7 +237,7 @@ class Gen3ObservationEncoder(ObservationEncoder):
                 },
                 "reactive": {
                     "start": OFFSET_REACTIVE, 
-                    "end": self.dimension, 
+                    "end": OFFSET_REACTIVE + REACTIVE_DIM,
                     "dim": self.reactive_encoder.dimension
                 },
                 "pair_history": {

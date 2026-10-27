@@ -17,8 +17,8 @@ critic, every belief / intent / win-prob term the production mirror turns on, vi
   group hashes (``group_sha256``) ride beside it so a failure names WHERE the update moved.
 * ``losses`` — every loss/objective scalar the update logs (``_is_pinned_key``), stored as exact
   float64 values and compared EXACTLY, so a failure names WHICH term moved.
-* ``init_params_sha256`` — the same hash BEFORE the update. The "checkpoint" is not committed (3M
-  params = 12 MB); it is REBUILT from a fixed seed at test time, so the init hash separates "the
+* ``init_params_sha256`` — the same hash BEFORE the update. The "checkpoint" is not committed (2,609,183
+  params, ~10.4 MB); it is REBUILT from a fixed seed at test time, so the init hash separates "the
   model construction / seeding changed" from "the update changed".
 
 ONE SURFACE (the X5 VERSION BREAK, config v144). The production surface is X5's hypothesis tokens; the

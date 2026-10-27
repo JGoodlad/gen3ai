@@ -17,6 +17,9 @@ encoder (`src/rust_sim/src/encoder/`, `designs/rust_sim/encoder.md`) is the only
   `ARCH_SIGNATURE`: `src/agents/model/CLAUDE.md` "Versioning — what to bump". The value gates are the obs golden
   (`python -m agents.training.golden_obs_core --check`) and `designs/rust_sim/encoder.md` §6a. The benchmark
   every obs change runs is in the root `CLAUDE.md`.
+- **`get_layout()` validates itself** (`state_encoder.validate_layout`, also run at encoder construction): `parts` + the event
+  window + obs-facts must tile `[0, total_dim)` contiguously and each span's width must equal its declared dims, else it
+  RAISES. Every `parts[x]["end"]` is x's own end. Add a block to the row ⇒ it must appear in that tiling.
 - The archived `TurnDelta` slot and the incoming-damage obs block stay deleted; `turn_delta_encoder.py` and
   `incoming_damage.py` survive only as decoders and pure math (the prober, `damage_tables`), written into no row.
 
