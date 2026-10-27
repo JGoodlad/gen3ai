@@ -11,6 +11,10 @@
   decision is the key ``(battle, seat, k)`` (``k`` the decision's index in the seat's read; every mode reads the same
   decision points). It is read iff BOTH rows exist, both carry a label and both have >= 2 legal actions; every other
   key is counted under its drop reason, and a duplicated key is a defect.
+* **The exclusion** (X59-S PREREG Amendment 4c): ``--exclude <list.json>`` (``main.x50_r1.fr2_exclude``) drops every
+  row of the battles it names, both modes, whichever seat the extraction holds, BEFORE the pairing; ``fr2.json``
+  records the list's path, sha256 and count and the battles / rows it dropped, and the forward cache's tag carries
+  the list's sha (a read with another list never reuses a chunk).
 * **The viewer:** the registration reads the OPPONENT's seat (the sentinel or bot as viewer and actor). Every read
   row's viewer is checked against its trace summary's ``trainee_side`` (and the part's ``seat`` stamp, when it has
   one); ``--viewer`` declares the seat the extraction holds and any row of the other seat refuses the read. Only
@@ -36,11 +40,12 @@ import json
 import sys
 import time
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, FrozenSet, List, Optional, Tuple
 
 import numpy as np
 
 from main.human_data.x59s_read import FR2_CLASSES
+from main.x50_r1 import fr2_exclude
 from main.x50_r1 import read as R1
 from main.x50_r1.hom import sha256_file
 from main.x50_r1.read_r0 import MODES, _ci, joint_boot
@@ -178,8 +183,10 @@ def twin(nll: Dict[str, np.ndarray], battle: np.ndarray, seed: int = R1.BOOT_SEE
 
 
 def read(traces: Path, forwards: Dict[str, Forward], tags: Dict[str, str], cache: Path,
-         viewer: str, true_rows: str = REGISTERED_TRUE_ROWS) -> Dict[str, Any]:
-    """Every part of the trace extraction -> the paired NLLs, the counts and the twin statistics."""
+         viewer: str, true_rows: str = REGISTERED_TRUE_ROWS,
+         exclude: Optional[FrozenSet[str]] = None) -> Dict[str, Any]:
+    """Every part of the trace extraction -> the paired NLLs, the counts and the twin statistics. ``exclude``: the
+    :func:`main.x50_r1.fr2_exclude.norm` keys of battles whose rows are dropped before the pairing."""
     if viewer not in VIEWERS:
         raise Fr2Error(f"--viewer {viewer!r}: one of {VIEWERS}")
     if true_rows not in TRUE_ROWS:
@@ -189,6 +196,7 @@ def read(traces: Path, forwards: Dict[str, Forward], tags: Dict[str, str], cache
     acc: Dict[str, List[np.ndarray]] = collections.defaultdict(list)
     drops: collections.Counter = collections.Counter()
     seen: collections.Counter = collections.Counter()
+    excluded: collections.Counter = collections.Counter()
     parts: List[Dict[str, Any]] = []
     for js in R1.load_parts(traces):
         meta = json.loads(js.read_text())
@@ -205,6 +213,14 @@ def read(traces: Path, forwards: Dict[str, Forward], tags: Dict[str, str], cache
         sel = np.isin(z["mode"], (MODE_C, MODE_T))
         z = {k: v[sel] for k, v in z.items()}
         paths = part_battles(js, meta)
+        if exclude:
+            gone = {b for b in np.unique(z["battle"]).tolist() if fr2_exclude.norm(str(paths[b])) in exclude}
+            drop = np.isin(z["battle"], list(gone))
+            excluded["battles"] += len(gone)
+            excluded["rows"] += int(drop.sum())
+            z = {k: v[~drop] for k, v in z.items()}
+            if not len(z["battle"]):
+                continue
         vw = viewers(z, {b: trainee_side(paths[b]) for b in np.unique(z["battle"]).tolist()})
         for v, n in zip(*np.unique(vw, return_counts=True)):
             seen[str(v)] += int(n)
@@ -229,7 +245,7 @@ def read(traces: Path, forwards: Dict[str, Forward], tags: Dict[str, str], cache
     counts = {"parts": len(parts), "battles": int(len(np.unique(battle))), "decisions_paired": int(len(battle)),
               "decisions_paired_vs_sentinel": int(sent.sum()),
               "decisions_paired_vs_bot": int(np.isin(opp, R1.BOTS).sum()),
-              "dropped": dict(sorted(drops.items())), "read_rows_by_viewer": dict(seen),
+              "dropped": dict(sorted(drops.items())), "excluded": dict(sorted(excluded.items())), "read_rows_by_viewer": dict(seen),
               "true_rows": f"{true_rows} (mode {MODE_T})"}
     return {"counts": counts, "parts": parts, **twin(arr, battle)}
 
@@ -262,19 +278,31 @@ def main(argv: Optional[List[str]] = None) -> int:
                     help="full: the true team with REAL requests (mode 1, registered); own_true: synthesised (mode 3)")
     ap.add_argument("--cache", default=None, help="default: <traces>/../fr2_cache")
     ap.add_argument("--threads", type=int, default=THREADS)
+    ap.add_argument("--exclude", default=None,
+                    help="a main.x50_r1.fr2_exclude list (Amendment 4c): its battles' rows drop from both modes")
     a = ap.parse_args(argv)
     t0 = time.time()
     hom, pstar = Path(a.hom), Path(a.pstar)
     sidecar = Path(a.sidecar) if a.sidecar else hom.parent / "hom_sidecar.json"
     traces = Path(a.traces)
     cache = Path(a.cache) if a.cache else traces.resolve().parent / "fr2_cache"
+    exclusion: Optional[Dict[str, Any]] = None
+    keys: Optional[FrozenSet[str]] = None
     try:
+        if a.exclude:
+            try:
+                keys, xsha = fr2_exclude.load(Path(a.exclude))
+            except (OSError, ValueError) as exc:
+                raise Fr2Error(f"--exclude {a.exclude}: {exc}") from exc
+            exclusion = {"path": a.exclude, "sha256": xsha, "count": len(keys)}
+        xtag = f"_x{exclusion['sha256'][:12]}" if exclusion else ""
         shas = verify_inputs(hom, sidecar, pstar)
         from main.policy_spectrum.reader import inference_globals
 
         with inference_globals(a.threads):
             res = read(traces, {"hom": _model_forward(hom), "pstar": _model_forward(pstar)},
-                       {m: f"{m}_{shas[m][:12]}_{a.true_rows}" for m in MODEL_NAMES}, cache, a.viewer, a.true_rows)
+                       {m: f"{m}_{shas[m][:12]}_{a.true_rows}{xtag}" for m in MODEL_NAMES}, cache, a.viewer,
+                       a.true_rows, keys)
     except Fr2Error as exc:
         print(f"[fr2] REFUSED: {exc}", file=sys.stderr)
         return 2
@@ -286,6 +314,7 @@ def main(argv: Optional[List[str]] = None) -> int:
            "registration": "designs/endstate/design_human_replay_lever.md §2.2; "
                            "designs/endstate/design_x50_rung1b_human_opponent_model.md §8.5",
            "viewer": a.viewer, "true_rows": a.true_rows, "registered": registered,
+           "exclude": None if exclusion is None else {**exclusion, "dropped": res["counts"]["excluded"]},
            ("class" if registered else "class_unregistered"): cls,
            "rule": f"D = gap(HOM) - gap(P*), gap = mean NLL(completed) - mean NLL(true); ARTEFACT iff D's CI lower > "
                    f"{BAR} + {TIE}; NO-ARTEFACT iff its upper < {BAR} - {TIE}; else UNCLEAR",

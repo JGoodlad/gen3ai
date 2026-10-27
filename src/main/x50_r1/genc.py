@@ -8,6 +8,9 @@ the reader every extraction runs) must equal the rows and masks the trainee play
 
 The one tolerated difference is R1's: a trace whose ``states`` stop one row short of the read (a 250-turn draw's last
 row is not recorded), the common rows equal. Anything else is a FAIL (exit 1): a defect, and nothing is extracted.
+
+``--exclude <list.json>`` (``main.x50_r1.fr2_exclude``, X59-S Amendment 4c) skips the battles it names: counted as
+``excluded``, and the list's path, sha256 and count are recorded.
 """
 from __future__ import annotations
 
@@ -70,6 +73,17 @@ def one(sp: str) -> Tuple[str, str]:
         return "ERROR", f"{sp}: {type(exc).__name__}: {str(exc)[:300]}"
 
 
+def select(items: List[str], exclude: Optional[str]) -> Tuple[List[str], int, Optional[Dict[str, Any]]]:
+    """(the traces to check, how many the list excluded, the list's record) — every trace when ``exclude`` is None."""
+    if exclude is None:
+        return items, 0, None
+    from main.x50_r1 import fr2_exclude
+
+    keys, sha = fr2_exclude.load(Path(exclude))
+    kept = [sp for sp in items if fr2_exclude.norm(sp) not in keys]
+    return kept, len(items) - len(kept), {"path": str(exclude), "sha256": sha, "count": len(keys)}
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     from main.x50_r1.run import trace_summaries
     from utils.git import get_git_hash
@@ -79,14 +93,17 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap.add_argument("--min-step", type=int, required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--workers", type=int, default=3)
+    ap.add_argument("--exclude", default=None, help="a main.x50_r1.fr2_exclude list: its battles are skipped")
     a = ap.parse_args(argv)
-    items = trace_summaries(Path(a.run), a.min_step)
+    items, n_excluded, exclusion = select(trace_summaries(Path(a.run), a.min_step), a.exclude)
     with Pool(a.workers) as pool:
         res = pool.map(one, items, chunksize=8)
     c = collections.Counter(v for v, _ in res)
+    if n_excluded:
+        c["excluded"] = n_excluded
     bad = [d for v, d in res if v in ("DIFF", "ERROR")]
     body: Dict[str, Any] = {"gate": "G-ENC", "commit": get_git_hash(), "run": a.run, "min_step": a.min_step,
-                            "traces": len(items), "counts": dict(c), "failures": bad[:50],
+                            "traces": len(items) + n_excluded, "exclude": exclusion, "counts": dict(c), "failures": bad[:50],
                             "short_by_one": [d for v, d in res if v == "short_by_one"],
                             "verdict": "PASS" if not bad and c["equal"] > 0 else "FAIL"}
     Path(a.out).write_text(json.dumps(body, indent=1))

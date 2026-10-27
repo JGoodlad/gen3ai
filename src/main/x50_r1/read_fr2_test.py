@@ -214,3 +214,51 @@ def test_a_sha_mismatch_refuses_before_any_forward(tmp_path, monkeypatch):
 
 def test_the_registered_p_star_sha_is_the_briefs():
     assert F.PSTAR_SHA256 == "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed"
+
+
+# ------------------------------------------------------------------------------------------------ Amendment 4c
+
+def _exclude_list(path: Path, battles: List[str]) -> Path:
+    from main.x50_r1 import fr2_exclude
+
+    path.write_text(json.dumps({"schema": fr2_exclude.SCHEMA, "count": len(battles), "battles": battles}))
+    return path
+
+
+def test_the_exclusion_drops_every_row_of_its_battles_before_the_pairing(tmp_path):
+    from main.x50_r1 import fr2_exclude
+
+    tr, _ = _write_extraction(tmp_path)
+    battles = json.loads((tr / "traces_0000.json").read_text())["battles"]
+    keys, _ = fr2_exclude.load(_exclude_list(tmp_path / "x.json", [battles[0], battles[3]]))
+    fw = {"hom": _fake(0.0), "pstar": _fake(0.5)}
+    res = F.read(tr, fw, {"hom": "h", "pstar": "p"}, tmp_path / "cache", "opponent", exclude=keys)
+    c = res["counts"]
+    assert c["battles"] == 2 and c["decisions_paired"] == 6               # battles 1 and 2 only
+    assert c["decisions_paired_vs_sentinel"] == 3 and c["decisions_paired_vs_bot"] == 3
+    assert c["excluded"] == {"battles": 2, "rows": 10 + 11}   # both read modes (2 and 1) of battles 0 and 3
+    assert c["dropped"] == {"no_own_action_label": 2, "fewer_than_2_legal": 2}   # battle 3's only_true went too
+    full = F.read(tr, fw, {"hom": "h2", "pstar": "p2"}, tmp_path / "cache", "opponent")
+    assert full["counts"]["battles"] == 4 and full["counts"]["excluded"] == {}
+
+
+def test_the_cli_records_the_exclusion_and_keys_its_cache_by_the_list(tmp_path, monkeypatch):
+    import hashlib
+
+    tr, _ = _write_extraction(tmp_path)
+    battles = json.loads((tr / "traces_0000.json").read_text())["battles"]
+    lst = _exclude_list(tmp_path / "x.json", [battles[1]])
+    monkeypatch.setattr(F, "verify_inputs", lambda h, s, p: {"hom": "a" * 64, "pstar": "b" * 64, "sidecar": "c" * 64})
+    monkeypatch.setattr(F, "_model_forward", lambda path: _fake(0.0))
+    out, cache = tmp_path / "out", tmp_path / "cache"
+    assert F.main(["--traces", str(tr), "--hom", str(tmp_path / "h.zip"), "--pstar", str(tmp_path / "p.zip"),
+                   "--out", str(out), "--cache", str(cache), "--exclude", str(lst)]) == 0
+    body = json.loads((out / "fr2.json").read_text())
+    sha = hashlib.sha256(lst.read_bytes()).hexdigest()
+    assert body["exclude"] == {"path": str(lst), "sha256": sha, "count": 1, "dropped": {"battles": 1, "rows": 10}}
+    assert body["counts"]["battles"] == 3
+    assert {f.name.split("_traces_")[0] for f in cache.glob("*.npz")} == {f"hom_{'a' * 12}_full_x{sha[:12]}",
+                                                                          f"pstar_{'b' * 12}_full_x{sha[:12]}"}
+    (tmp_path / "bad.json").write_text(json.dumps({"schema": "other", "count": 0, "battles": []}))
+    assert F.main(["--traces", str(tr), "--hom", "h", "--pstar", "p", "--out", str(tmp_path / "o2"),
+                   "--exclude", str(tmp_path / "bad.json")]) == 2
