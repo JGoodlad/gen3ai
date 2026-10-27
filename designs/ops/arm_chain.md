@@ -2,8 +2,8 @@
 
 > Always-current (`designs/CLAUDE.md`). Code: [`src/main/ops/arm_chain/`](../../src/main/ops/arm_chain/), entry point
 > `python -m main.ops.arm_chain`. Tests: `src/main/ops/arm_chain/*_test.py` (267; fake `/proc`, a fake
-> launcher, temp git repos; nothing touches the GPU). **Status: BUILT; CUT-OVER PENDING.** The training session
-> still runs its job-directory scripts until the checklist in §7 is done.
+> launcher, temp git repos; nothing touches the GPU). **Status: LIVE since 2026-10-26 23:04 PDT** (chain `x35-lrf-oct26`:
+> d3 3504 and 3505 DONE, then LR-F). The job-directory scripts remain only as §7 step 9's rollback.
 
 ## 1. Why
 
@@ -288,11 +288,13 @@ Two classes stay with their owners:
   run is live) would start the trainer at nice 19 for life (RLIMIT_NICE). The GO now HOLDs at any nice but 0, so
   **start the supervisor at nice 0**; its own CPU is negligible, and its CPU children set their own `nice` /
   `taskset` / `GEN3AI_BLOCKING`.
-- **F4. Only the fakes have exercised the GO path.** The real `launch_x35.sh … GO`, the real `kit k9b` and the real
-  thin planner have not been run under the chain. Its first live transition is that test, and the cut-over watches
-  it by hand (§7).
-- **F5. The GPU lease is held by a `sleep 604800`** that ends ~10-30 08:05. The chain does not renew it. A window
-  checks the owner; the kit checks it at the GO.
+- **F4. The GO path first ran live on 2026-10-26 23:05 (d3 3504), watched by hand (§7).** The real
+  `launch_x35.sh … GO`, `kit k9b` and thin planner all ran under the chain. One HOLD came of it: on 10-27 at 03:14 the
+  thin refused because an early `monitor` held the run dir open. CB-47 (`108232e1`) fixed that.
+- **F5. The chain does not renew the GPU lease.** Its holder watches a long `sleep` that the training session
+  re-creates before it ends. Run `acquire --watch-pid <new sleep>` with the token; it is an atomic record rewrite
+  with no gap. On 10-27 a 14-day sleep was set, ending ≈ 11-10. A window checks the owner; the kit checks it at the
+  GO.
 - **F6. The dose record's FPS and last step come from the NEWEST launcher log.** Wall time is summed over the
   START→END segments. A by-hand resume with a rotated log still needs a hand read.
 - **F7. The CPU gate cannot see a process that exits inside its 60 s sample.** Its time moves to the parent's
@@ -380,8 +382,9 @@ Two classes stay with their owners:
    - `abandon` the item;
    - stop the supervisor (it holds nothing but its lock);
    - re-arm `arm_end_v13.sh` / `poll_launch_v5.sh` by hand.
-10. **After two clean arms,** update this doc's status line and TRAINING_RUN_SOP §2 to remove "cut-over pending".
-    Then move the job scripts aside as history; never delete them before then.
+10. **Done on 10-27,** after d3 3505 and lrfloor 3502 ended clean: the status line and TRAINING_RUN_SOP §2 now say
+    LIVE. The job scripts move aside as history only when the orchestrator retires step 9's rollback; never delete
+    them before then.
 
 ## 8. Decision record
 
