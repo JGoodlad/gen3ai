@@ -207,22 +207,22 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                              "observation's OBS-FACTS block (always in the observation, its last 84 dims) — what "
                              "the opponent has seen of our team, the opponent active's Choice-lock evidence, the "
                              "actives' Encore / Taunt / Disable / Uproar / partial-trap turns, each side's screen "
-                             "turns. 'off' (default; production): builds nothing. 'v1': the zero-init "
+                             "turns. 'off' (the bare default, NOT production): builds nothing. 'v1' (production; --arch production supplies it): the zero-init "
                              "ObsFactsInject adds each fact to its entity's token (under --token-encoding static "
                              "the screens go to the side board tokens). STRUCTURAL, version-checked, fresh-only.")
     from agents.model.static_facts import MON_HAZARD_COST_MODES, MOVE_ACTOR_STATE_MODES
     parser.add_argument("--mon-hazard-cost", "--mon_hazard_cost", dest="mon_hazard_cost",
                         choices=MON_HAZARD_COST_MODES, default=None,
                         help="A NARROW per-mon fact for --token-encoding static (gen3_static_port_v1, v147; "
-                             "designs/endstate/design_static_tokens.md §12). 'off' (default; production): builds "
-                             "nothing. 'on': every mon's token (both sides) gets its own side's Spikes layers and the "
+                             "designs/endstate/design_static_tokens.md §12). 'off' (the bare default, NOT production): builds "
+                             "nothing. 'on' (production): every mon's token (both sides) gets its own side's Spikes layers and the "
                              "fraction of max HP it would lose switching in (the damage operator's one Spikes entry "
                              "rule: 1/8, 1/6, 1/4; 0 for Flying / Levitate), through a zero-init projection. "
                              "STRUCTURAL, version-checked, fresh-only. Requires --token-encoding static and --damage-op.")
     parser.add_argument("--move-actor-state", "--move_actor_state", dest="move_actor_state",
                         choices=MOVE_ACTOR_STATE_MODES, default=None,
                         help="A NARROW per-move fact for --token-encoding static (gen3_static_port_v1, v147). 'off' "
-                             "(default; production): builds nothing. 'on': our active's 4 move seats (E3) get its "
+                             "(the bare default, NOT production): builds nothing. 'on' (production): our active's 4 move seats (E3) get its "
                              "current HP fraction and status one-hot, through a zero-init projection. STRUCTURAL, "
                              "version-checked, fresh-only. Requires --token-encoding static.")
     # gen3_static_recovery_v1 (v150; designs/endstate/design_static_tokens.md §13): the trunk depth (the static-recovery
@@ -240,8 +240,8 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                              "--grow trunk_ffn_by_kind=on (copies: the parent's function bit for bit), never this flag.")
     parser.add_argument("--trunk-layers", "--trunk_layers", dest="trunk_layers", type=int,
                         choices=TRUNK_LAYERS_CHOICES, default=None,
-                        help="The number of trunk self-attention rounds (gen3_static_recovery_v1, v150). 2 (default; "
-                             "production): the two post-LN layers. 3 / 4: append 1 / 2 IDENTITY-INIT pre-LN residual "
+                        help="The number of trunk self-attention rounds (gen3_static_recovery_v1, v150). 2 (the bare default, "
+                             "NOT production): the two post-LN layers. 3 (production) / 4: append 1 / 2 IDENTITY-INIT pre-LN residual "
                              "rounds (zero attention out-proj and FFN output), so the network starts exactly equal to "
                              "the 2-round one. STRUCTURAL, version-checked, fresh-only.")
     # gen3_endstate_facts_v1 (v152; designs/endstate/design_hand_computed_features.md §4 ranks 3-5, §5 rank 1): the
@@ -251,7 +251,7 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--drop-progress-clock", "--drop_progress_clock", dest="drop_progress_clock",
                         choices=DROP_PROGRESS_CLOCK_MODES, default=None,
                         help="The model reads the observation's turns_since_progress as 0 (gen3_endstate_facts_v1, "
-                             "v152; a hand definition of progress, a JUDGMENT). 'off' (default; production). The "
+                             "v152; a hand definition of progress, a JUDGMENT). 'off' (the bare default, NOT production; 'on' is production). The "
                              "observation layout is unchanged.")
     # gen3_probe_facts_v1 (v153; design_hand_computed_features.md §4 rows 12-13, the probe battery's candidates).
     # (`--effective-stats` was DELETED by the legacy deletion's U1: built with the op.)
@@ -259,16 +259,16 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--move-target-state", "--move_target_state", dest="move_target_state",
                         choices=MOVE_TARGET_STATE_MODES, default=None,
                         help="THEIR active's HP fraction + status one-hot onto our 4 E3 move seats (gen3_probe_facts_v1, "
-                             "v153; --move-actor-state's sibling). 'off' (default; production). 'on': through a "
+                             "v153; --move-actor-state's sibling). 'off' (the bare default, NOT production). 'on' (production): through a "
                              "zero-init projection. STRUCTURAL, version-checked, fresh-only.")
     # gen3_move_set_closure_v1 (v154; design_hand_computed_features.md §4, the four-move fact).
     from agents.model.hypothesis_set import MOVE_SET_CLOSURE_MODES
     parser.add_argument("--move-set-closure", "--move_set_closure", dest="move_set_closure",
                         choices=MOVE_SET_CLOSURE_MODES, default=None,
                         help="The four-move FACT in the opponent move belief's reinjection (gen3_move_set_closure_v1, "
-                             "v154). 'off' (default; production): every opponent slot but the active reinjects its "
+                             "v154). 'off' (the bare default, NOT production): every opponent slot but the active reinjects its "
                              "moves by their sigmoid inclusion weights, so a mon with four revealed moves still "
-                             "reinjects believed others. 'on': every slot reads its fixed-mass presence (k = 4 - "
+                             "reinjects believed others. 'on' (production): every slot reads its fixed-mass presence (k = 4 - "
                              "revealed; four revealed -> only them). STRUCTURAL, version-checked, fresh-only. Requires "
                              "the opponent-belief family.")
     parser.add_argument("--t0-species-prior", "--t0_species_prior",

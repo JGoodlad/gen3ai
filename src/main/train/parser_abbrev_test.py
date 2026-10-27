@@ -47,3 +47,36 @@ def test_the_token_encoding_help_names_production_s_encoder_as_production():
     (act,) = [a for a in build_parser()._actions if "--token-encoding" in a.option_strings]
     assert f"'{prod}' (production" in act.help
     assert "(default; production)" not in act.help
+
+
+def test_every_help_string_that_claims_a_production_value_matches_production_config():
+    """A help string saying `'X' (production` / `X (production` must name the value `production_config.json` holds, and
+    "(default; production)" is never true of a flag whose bare default differs from production's."""
+    import json
+    import re
+
+    from utils.paths import repo_path
+
+    prod = json.loads(repo_path("designs", "production_config.json").read_text())
+    claims = 0
+    for act in build_parser()._actions:
+        h = " ".join((act.help or "").split())
+        if "production" not in h or not act.dest or act.dest not in prod:
+            continue
+        want = str(prod[act.dest])
+        for m in re.finditer(r"'?([\w./-]+)'? \(production(?:[;)])", h):
+            claims += 1
+            assert m.group(1) == want, f"{act.option_strings[0]}: help says {m.group(1)!r} is production, config has {want!r}"
+        for m in re.finditer(r"'?([\w./-]+)'? \((?:the bare )?default, NOT production", h):
+            assert m.group(1) != want, f"{act.option_strings[0]}: help says {m.group(1)!r} is NOT production, but it is"
+        if "(default; production)" in h:
+            assert str(act.default) == want or act.default is None and str(_cfg_default(act.dest)) == want, act.option_strings[0]
+    assert claims >= 7
+
+
+def _cfg_default(dest):
+    import re
+
+    from utils.paths import src_path
+    m = re.search(rf'_resolve\("{dest}", ([^)]+)\)', (src_path("main", "train", "config.py")).read_text())
+    return m.group(1).strip("\"'") if m else None
