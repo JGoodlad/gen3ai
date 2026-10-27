@@ -1,0 +1,8 @@
+PR rule: binomial SE 0.536 pp per arm contrast
+  sigma_s 0.0 pp: P(GAIN) widened +0.0: 0.025, +1.5: 0.799, +2.0: 0.962, +3.0: 1.000; unwidened false GAIN 0.025
+  sigma_s 0.5 pp: P(GAIN) widened +0.0: 0.025, +1.5: 0.674, +2.0: 0.895, +3.0: 0.998; unwidened false GAIN 0.046
+  sigma_s 1.0 pp: P(GAIN) widened +0.0: 0.025, +1.5: 0.440, +2.0: 0.674, +3.0: 0.951; unwidened false GAIN 0.103
+D1 rule (final GAIN, from pgain_rows.log): sigma_s 0.0 pp: +1.5 0.365, +3 0.891, 0 0.026; sigma_s 1.0 pp: +1.5 0.314, +3 0.774, 0 0.047
+X62 | H-CTX SUPPORTED, N1-P not GAIN: GUESS +2.0 (-1.0, +5.0) -> P(GAIN) D1 rule 0.52 / 0.49; PR rule 0.65 / 0.56 (sigma_s 0 / 1 pp)
+X62 | H-CTX SUPPORTED, N1-P NULL: GUESS +1.5 (-1.5, +4.5) -> P(GAIN) D1 rule 0.44 / 0.42; PR rule 0.57 / 0.48 (sigma_s 0 / 1 pp)
+X62 | H-CTX UNDECIDED: GUESS +1.0 (-1.5, +3.5) -> P(GAIN) D1 rule 0.35 / 0.32; PR rule 0.49 / 0.38 (sigma_s 0 / 1 pp)
