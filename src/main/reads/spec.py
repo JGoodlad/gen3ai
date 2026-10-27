@@ -9,7 +9,9 @@ A spec is ONE JSON file (schema :data:`SCHEMA`), committed with the read's PRERE
   :mod:`main.x35.kakuna` units on the short lane;
 * ``s`` -- ``{group: {refpop, refpop_content_sha256, panel, pairs, batch_pairs, family, models, regime_id}}``: S
   against a frozen reference population R, played on the heavy slots;
-* ``decision`` -- ``{rule, params}``: a rule of :data:`main.reads.rules.RULES` and its registered parameters;
+* ``decision`` -- ``{rule, params, allow_partial_at_stop?}``: a rule of :data:`main.reads.rules.RULES` and its registered
+  parameters; ``allow_partial_at_stop: true`` registers that the PREREG accepts a reduced read at the registered stop (the
+  record then carries the ``INCOMPLETE_BY_STOP`` class, ``main.reads.record``);
 * ``pin`` (optional) -- the commit the PLAYING checkout must be at (a run from another commit is refused).
 
 An anchor or S group may carry ``import: {state, spec_sha256, group, models}``: those models' cells are NOT played
@@ -42,6 +44,15 @@ ANCHOR_OPPONENTS = KAKUNA_OPPONENTS
 #: A model's LOAD options (``models.<label>.load``), each an inference-time option of OUR checkpoint that the anchor
 #: units pass on: ``belief_prior_mix`` = λ in (0, 1] (``main.anchors --our-belief-prior-mix``; omit it for λ = 0).
 LOAD_OPTIONS = ("belief_prior_mix",)
+
+
+def load_stamp(load: Mapping[str, Any]) -> str:
+    """The suffix a model's load options add to the ``our_regime`` its units stamp (``""`` for none): exactly what
+    ``main.anchors`` writes (``greedy+belief_prior_mix=0.25``; ``runner.py``'s ``our_regime``). It is what lets one anchor
+    group hold models with DIFFERENT load options and still carry a correct regime id per (model, load)
+    (``main.reads.assemble.anchor_group``)."""
+    lam = load.get("belief_prior_mix")
+    return "" if lam is None else f"+belief_prior_mix={float(lam):g}"
 
 
 class SpecError(ValueError):
@@ -120,6 +131,7 @@ class ReadSpec:
     params: Dict[str, Any]
     prereg: Optional[str] = None
     pin: Optional[str] = None
+    allow_partial_at_stop: bool = False   # the PREREG accepts a reduced read at the registered stop (INCOMPLETE_BY_STOP)
     sha256: str = ""                  # of the spec file's bytes
     raw: Dict[str, Any] = field(default_factory=dict)
 
@@ -310,10 +322,19 @@ def parse(doc: Mapping[str, Any], *, sha256: str = "", rule_params: bool = True)
     if not anchor and not s:
         raise SpecError("spec: neither an anchor nor an S group: nothing to play")
     dec = _need(doc, "decision", "spec", dict)
-    _only(dec, ("rule", "params"), "decision")
+    _only(dec, ("rule", "params", "allow_partial_at_stop"), "decision")
     rule = _need(dec, "rule", "decision", str)
     if rule not in RULES:
         raise SpecError(f"decision.rule: {rule!r} is none of {sorted(RULES)}")
+    partial = dec.get("allow_partial_at_stop", False)
+    if not isinstance(partial, bool):
+        raise SpecError(f"decision.allow_partial_at_stop: {partial!r} is not true / false")
+    if partial and RULES[rule].x35_record:
+        raise SpecError(f"decision.allow_partial_at_stop: rule {rule!r} writes an X35-stage record, which "
+                        "main.x35.batch (look licensing, final_class) loads without reading the INCOMPLETE_BY_STOP class")
+    if partial and not anchor:
+        raise SpecError("decision.allow_partial_at_stop: the reduced read is of the ANCHOR lane's unplayed units, and the "
+                        "spec has no anchor group (an S node short of its pairs has no S at all)")
     params = dict(dec.get("params") or {})
     probs = RULES[rule].check_params(params, models=models, anchor=anchor, s=s) if rule_params else []
     if probs:
@@ -322,7 +343,7 @@ def parse(doc: Mapping[str, Any], *, sha256: str = "", rule_params: bool = True)
     if prereg is not None and not isinstance(prereg, str):
         raise SpecError("spec.prereg: a path")
     return ReadSpec(read=read, models=models, anchor=anchor, s=s, rule=rule, params=params, prereg=prereg, pin=pin,
-                    sha256=sha256, raw=dict(doc))
+                    allow_partial_at_stop=partial, sha256=sha256, raw=dict(doc))
 
 
 def load(path: "str | Path", *, rule_params: bool = True) -> ReadSpec:

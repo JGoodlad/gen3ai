@@ -12,12 +12,16 @@ A read is one **spec** file (`read_spec.json`, committed with the PREREG) and on
 lives outside the repo and outside `models/`, for example `~/gen3ai_archive/<read>/`.
 
 ```bash
-python -m main.reads check-spec --spec read_spec.json
+python -m main.reads check-spec --spec read_spec.json              # a pin must name an existing commit (below)
+python -m main.reads check-spec --spec read_spec.json --pin-pending   # review a spec BEFORE its pin is decided
 python -m main.reads plan     --spec read_spec.json --state DIR    # copy settled models; plan units
 python -m main.reads run      --state DIR --lane anchor --hours 20 # detached, resumable; one per lane
 python -m main.reads run      --state DIR --lane anchor --hours 20 --concurrency 2   # K units at once (§3)
 python -m main.reads run      --state DIR --lane s      --hours 20
-python -m main.reads status   --state DIR                          # resume = run again (or `resume`)
+python -m main.reads pid      --state DIR --lane s [--wait 180]    # the lane's LIVE supervisor pid, as it recorded itself (§3)
+python -m main.reads status   --state DIR                          # .supervisor_pids (the pid to watch), .holds, progress
+python -m main.reads hold     --state DIR --lane s --by WHO --why TEXT      # no new unit; those in flight finish; exit 0 (§3)
+python -m main.reads resume   --state DIR --lane s --hours 20 [--by WHO]    # = run (after printing what is left); a HELD lane is released first
 python -m main.reads repin    --state DIR --to COMMIT --by WHO --why TEXT   # another playing commit, if the play path is identical (§3)
 python -m main.reads record   --state DIR [--out <stage>/reads/<arm>_look<k>.json]
 ```
@@ -35,8 +39,8 @@ refusal.
 | `anchor` | `{group: {opponent, teamsets, unit_seeds, models, import?}}`: the external-anchor cells (§3). `opponent` is one of `metamon:Kakuna`, `SmallRL`, `PastaMittens`, `LargeRL`, `LargeIL` (`kakuna.OPPONENTS`) |
 | `s` | `{group: {refpop, refpop_content_sha256, panel, pairs, batch_pairs, family, models, regime_id?, import?}}`: S against a frozen R. **One eval-ledger family per group**, because a family holds one regime |
 | `…import` | `{state, spec_sha256, group, models}`: these models' cells come from group `group` of an EARLIER read's state, never re-played here (§3) |
-| `decision` | `{rule, params}`: a rule from `main.reads.rules.RULES`, with its registered parameters checked at load |
-| `pin` | optional. The commit the playing checkout must be at, with a clean tracked tree |
+| `decision` | `{rule, params, allow_partial_at_stop?}`: a rule from `main.reads.rules.RULES`, with its registered parameters checked at load. `allow_partial_at_stop: true` registers that the PREREG accepts a reduced read at the registered stop (§6); it is refused for `x35_r1` and `d1` (their records are consumed by `main.x35.batch`, which does not read the class) and for a spec with no anchor group |
+| `pin` | optional. The commit the playing checkout must be at, with a clean tracked tree. It must EXIST before the spec (the registration flow below) |
 
 Example. This is x26c's read written as a spec; `golden_test.x26c_spec` parses it.
 
@@ -59,6 +63,24 @@ Example. This is x26c's read written as a spec; `golden_test.x26c_spec` parses i
 
 How paths resolve: an absolute path is used as written; `models/…` resolves under the main checkout's run archive
 (`utils.paths.main_models_dir`); anything else is repo-relative.
+
+**The registration flow (one commit; `main.reads.speccheck`).** A spec cannot pin "the commit that adds this spec" (a
+commit cannot name its own hash), and the belief-prior-mix read landed its PREREG and specs in two commits because it
+pinned the PREREG's own commit. The pin is the commit that ALREADY lands the code the read plays, an ancestor of the
+registration commit, and the PREREG, the spec(s) and any docs are not on the play path (§3), so they land after it
+without changing what plays:
+
+1. Land the code the read plays. Its commit is `P`.
+2. Write the PREREG and the spec WITHOUT `pin`; review with `check-spec --pin-pending`. It validates everything else,
+   prints `pin: PENDING`, the checkout's HEAD as the candidate and `sha256_final: false` (adding the pin changes the
+   spec's sha256, which a PREREG or a later look's `import` may quote), and refuses a spec that already carries a pin.
+3. Add `"pin": "<P>"`. `check-spec` now refuses a pin that names no commit of the repo and reports
+   `play_path_differs_at_head` (0 = the code a reviewer reads at HEAD plays exactly as it does at `P`; otherwise the
+   files).
+4. Commit PREREG + spec(s) together, then play from a clean detached worktree at `P`
+   (`git worktree add --detach <dir> <P>`; `plan --spec <the committed spec>` there). The spec file is read by path, so it
+   need not exist at `P`. A verb added after `P` is not in that checkout: run the operator verbs (`status`, `hold`,
+   `record`) from the newer one.
 
 ## 2. Which file is read (`main.reads.models`)
 
@@ -141,7 +163,7 @@ dir and log), started on a thread that only waits on the child. Nothing on the p
   cwd, names the same path (this also sees a supervisor of older code, which took only the in-state lock, still
   taken too). A running supervisor stops, writing nothing, when its path no longer names the dir it started on (device
   and inode). `plan` refuses a FRESH state (no `spec.json`) that a live supervisor names. `status` lists the live
-  supervisor pids per lane. The standalone queue `python -m main.x35.kakuna run --state S` takes the same claims through
+  supervisor pids per lane (the `/proc` scan; `supervisor_pids` is the supervisor's own record, below). The standalone queue `python -m main.x35.kakuna run --state S` takes the same claims through
   `supervisors.Hold` (lane `kakuna`: the path lock, the `/proc` scan, the dir-identity stop) beside its in-state
   `supervisor.lock`. A `kakuna run` aimed at a state INSIDE a reads state (`<state>/anchor/<group>/<label>/`) is not
   seen by the reads supervisors, and the reverse (§10);
@@ -165,8 +187,8 @@ git objects, not the working tree); otherwise it exits 2 naming the files that d
   inputs that make `sim_bridge` (`src/rust_sim/src/`, `Cargo.*`, `build*.rs`), `data/`, the `deps/` pointers,
   `mem_cap.sh`, `anchors.json`, the panel registry and the committed cell configs and home72 teams. Tests and `*.md`
   are never on it. Within `main/reads/` only `__init__.py` and `supervisors.py` are ON it (`kakuna` reaches them), so editing
-  either blocks a repin; `runner`, `api`, `cli`, `repin`, `playpath` and `anchor_pool` are OFF it (`playpath_test` pins
-  this). NOT covered, because git does not hold them: the Metamon cache and weights,
+  either blocks a repin; every other module (`runner`, `api`, `cli`, `repin`, `playpath`, `anchor_pool`, `lanectl`,
+  `speccheck`, …) is OFF it (`playpath_test` pins this). NOT covered, because git does not hold them: the Metamon cache and weights,
   panel team dirs outside the repo, the model copies, the toolchain. Each unit verifies those at play (team digests,
   weight pins, the model sha256).
 - **What it writes.** One line per repin in `<state>/repins.jsonl`, APPEND-ONLY (`from_commit`, `to_commit`,
@@ -178,17 +200,44 @@ git objects, not the working tree); otherwise it exits 2 naming the files that d
 - **Edges.** A spec that registers a `pin` refuses (a repin never moves a registration). A repeat of an accepted commit
   is a no-op (`already: true`). `--by` and `--why` are required. `status` lists the repins, `record` carries
   `repins` (§6), and an import's record carries the earlier state's.
-- **To move a lane to a newer checkout**: stop ONLY that lane's supervisor by PID (the other lane may keep running), check
-  out `COMMIT` in the lane's playing worktree, `repin` from there, restart the lane from that checkout.
+- **To move a lane to a newer checkout**: stop ONLY that lane's supervisor (`hold` it when `status` shows a
+  `supervisor_pids` record for it; otherwise by PID; the other lane may keep running), check out `COMMIT` in the lane's
+  playing worktree, `repin` from there, `resume` the lane from that checkout.
 
 Run each lane detached, one process per lane, and wait on it through `/proc/<pid>` only, never `kill -0` (inside a
-sandboxed agent shell `kill -0` read a live supervisor as dead, acf2193f):
+sandboxed agent shell `kill -0` read a live supervisor as dead, acf2193f). The pid to watch is the supervisor's own,
+never `$!`:
 
 ```bash
 setsid nohup python -m main.reads run --state DIR --lane s --hours 20 > DIR/s.log 2>&1 &
-PID=$!; timeout 3300 bash -c "while [ -d /proc/$PID ]; do sleep 30; done"   # one bounded watcher; re-arm on wake
-python -m main.reads status --state DIR                                      # .supervisors: the live pids
+PID=$(python -m main.reads pid --state DIR --lane s --wait 180)             # NOT $!: that is the setsid wrapper's pid
+timeout 3300 bash -c "while [ -d /proc/$PID ]; do sleep 30; done"           # one bounded watcher; re-arm on wake
+python -m main.reads status --state DIR                                      # .supervisor_pids and .supervisors (the /proc scan)
 ```
+
+**The supervisor's own pid** (`main.reads.lanectl`; belief-prior-mix FINDING 2). `setsid nohup … &` leaves `$!` naming the
+`setsid` wrapper, which exits within seconds (a process-group leader makes `setsid` fork), so a watcher armed on it watched
+nothing. `run` writes ITS OWN pid and start ticks (`/proc/<pid>/stat` field 22) to `<state>/<lane>/supervisor.pid` once it
+holds the lane, and removes the file when it ends. `status` prints it as `supervisor_pids.<lane>`
+(`{pid, start_ticks, alive, stale, stop_epoch, started}`; `alive` = that pid is running with exactly those start ticks, so a
+reused pid is not taken for it, and a killed supervisor's leftover file reads `stale`); `pid --wait S` prints the live
+pid, waiting at most S s (≤ 600) for a supervisor that is still importing.
+
+**Hold and resume** (`main.reads.lanectl`; belief-prior-mix FINDING 5: a hold meant killing the supervisor by pid by hand).
+`hold --state S --lane L --by WHO --why TEXT` writes `<state>/<lane>/hold.json` and appends to `<state>/holds.jsonl`
+(APPEND-ONLY, with the release). The lane's supervisor looks for the file at the top of every loop turn (every 30 s while
+it waits for a model to settle): it starts NO new unit, waits for the units in flight (all K of them) and counts them,
+logs `held` and `held_stopped` to `<lane>_supervisor.jsonl`, and exits 0. A held lane is refused by `run` until released.
+`resume` (= `run`, which already printed what is left) first RELEASES a held lane: it needs `--by` then, and refuses while
+a supervisor of the lane is still alive (it is still draining; a second one would be refused by the path lock anyway).
+
+- **A supervisor of code older than this cannot be held**: it writes no pid file and never reads the hold. `hold` lists the
+  live supervisors as `honoring` (a valid pid file) and `not_honoring`, and warns on the latter, so a lane is never
+  reported held when it is not. Such a supervisor is stopped by pid, once, and restarted from a checkout with these
+  verbs (`repin` accepts that checkout when the play path is identical).
+- A repeat `hold` is a no-op (`already: true`) that keeps the first `by` / `why`. A damaged `hold.json` is a refusal,
+  never a free lane. A hold on a lane no supervisor is running only keeps `run` from starting one.
+- The S lane notices a hold between units, not inside one (a unit is time-boxed to `--unit-s`).
 
 **Cross-state import** (`main.reads.imports`; N1-P FINDING 6: look 2's spec re-played every look-1 final, about 60 %
 of its CPU). A group's `import` names an earlier state, the sha256 of its `spec.json` (registered in this spec), its
@@ -234,7 +283,14 @@ is INCONCLUSIVE if any of these holds:
 Each (group, team set) must share ONE id. The group's id is `group_regime_id` over its team sets. The playing commit
 and file paths are recorded per unit but are not part of the id. A unit played on bytes other than the resolved
 model's is a refusal, never a pooled row. A model-load option changes the id through `our_regime` (a
-`belief_prior_mix` unit is stamped `greedy+belief_prior_mix=<λ>`), so each option needs its own group. Every unit
+`belief_prior_mix` unit is stamped `greedy+belief_prior_mix=<λ>`), so it never pools with the unchanged model. **One group
+may hold models with DIFFERENT loads** (`anchor_group(..., loads=)`, from each `models.<label>.load`); the id stays
+correct per (model, load) because a mixed group is read three ways: the counted units of one (load, team set) share one id;
+across ALL its models a team set shares one BASE id (`base_regime_id` of each unit row: the id with the load's stamp
+stripped, so the opponent, teams, transport and the rest are the same for every model); and a unit whose model declares a
+load it did not stamp is not conclusive. The group id is then `mixed_group_regime_id` over the base ids and each load's ids;
+the group also carries `regime_ids_by_load` and `loads`. A group whose models share one load (or none) is read as always,
+with the id it always had. `prior_mix_ab` still wants one group per arm (its control is banked). Every unit
 row also carries its `games` (`[half, index, our_team, result, turns]` from `games.jsonl`), which is what a
 game-for-game determinism guard compares.
 
@@ -293,13 +349,26 @@ The record holds:
 - `code` (the playing commit) and `repins` (each other playing commit a `repin` accepted, §3; `[]` when none);
 - `cells_inconclusive` (the decided groups only);
 - `reported_incomplete` (`{"<lane>.<group>": [reasons]}`: reported-only groups that are short, §5);
+- `completeness` (`{"class": "COMPLETE"}`, or `INCOMPLETE_BY_STOP`, below; absent on a record older than the field);
 - `void` (the VOID gate as run, §5, or null);
 - `imports` (each group's cross-state import, §3);
 - the rule's `inputs` and `decision`.
 
+**A reduced read at a registered stop** (`decision.allow_partial_at_stop: true`; belief-prior-mix FINDING 8: `record` needed
+every planned unit played even when the rule's `min_unit_frac` would decide). When a decided ANCHOR group has units
+unplayed and the spec registered the option, `record` writes the counted units with `completeness.class` =
+`INCOMPLETE_BY_STOP`, `opt_in: "decision.allow_partial_at_stop"`, `groups` (`planned`, `played`, `unplayed`, `counted` per
+group) and `stops` (the lane's `stop_at` event: its time, `left`, the registered `stop_epoch`); `summary_line` names the
+class. It does so only if each such lane ENDED at its registered stop (`lanectl.stop_evidence`: no supervisor of it alive
+and the last event of `<lane>_supervisor.jsonl` is `stop_at`, which a supervisor writes only once its `--hours` /
+`--stop-at-epoch` has passed); a lane never run, held, killed, refused or done is refused, naming its last event. Only the
+unplayed units are exempted: a wrong regime, an S node short of its `pairs` or a failed VOID gate still refuse, and the
+RULE's own floor still decides (`min_unit_frac` makes the verdict VOID). Without the option `record` refuses as always.
+Units that exhausted their attempts are unplayed too; the record cannot tell them from units the stop cut off.
+
 The record is refused if any regime id is missing (a reported-only group listed INCOMPLETE excepted), a model was
 never resolved, a ledger digest or the playing commit is missing, `cells_inconclusive` is not empty (a verdict decided
-on cells assemble could not count: a wrong regime or panel, unplayed units, a cell short of the spec's `pairs`), the
+on cells assemble could not count: a wrong regime or panel, unplayed units unless the reduced read above, a cell short of the spec's `pairs`), the
 VOID gate holds a non-PASS run (or a batch-2 arm's record carries none), or the verdict is not the decision's. An X35-stage rule (`x35_r1`, `d1`) also carries the
 decision's keys at the top level. When written to `<stage>/reads/<arm>_look<k>.json`, the file therefore loads in
 `main.x35.batch.read_record` and `final_class` unchanged. A ledger entry cites the record by its path and
@@ -354,6 +423,11 @@ skips and names why.
 | two standalone `kakuna run` queues on one state | latent (the same lock-inside-the-state flaw) | the path lock and `/proc` scan, shared with the lanes (§3) |
 | the anchor lane plays one unit at a time (N1-P look 1: 486 units, about 60 h projected) | any long Kakuna read | bounded `--concurrency K`, scheduling only (§3) |
 | a scheduling fix cannot reach a running read (the pin guard refuses any other commit) | any long read | `repin`, only when the play path is byte-identical (§3) |
+| a watcher armed on `$!` of `setsid nohup … &` (the wrapper's pid; belief-prior-mix F2) | any detached lane | the supervisor's own `supervisor.pid`, `status`, `pid` (§3) |
+| a hold meant killing the supervisor by pid (belief-prior-mix F5) | any read that waits on another | `hold` / `resume` (§3) |
+| a read cut at its registered stop could not be recorded (belief-prior-mix F8) | any long read | the opt-in `INCOMPLETE_BY_STOP` record (§6) |
+| the pin had to exist before the spec, so PREREG and specs took two commits (belief-prior-mix F8) | any pinned read | the one-commit registration flow, `check-spec --pin-pending` (§1) |
+| a load option needed its own anchor group (belief-prior-mix F3) | `anchor_trajectory` / `d1` with an option on one side | a regime id per (model, load) in one group (§4) |
 
 ## 9. What was migrated, wrapped, left
 
@@ -392,8 +466,9 @@ skips and names why.
 - **The tests stub play.** The verbs are tested with a stubbed unit runner and stubbed heavy slots (`runner_test`,
   `pipeline_test`, `imports_test`); the play-many and anchor argv are checked against the real parsers, and each
   derived opponent config against a real `main.anchors --dry-run`. The live reads (D3 look 1, N1-P, from 2026-10-26)
-  are the end-to-end runs; their first uses found the classes in §8's last four rows.
-- **The belief-prior-mix read** (2026-10-26, `measurements/belief_prior_mix_2026-10-26/README.md` FINDINGS) adds:
-  holding a read means killing its supervisor by PID (the in-flight unit finishes in its own session and counts on
-  resume; there is no `hold` verb); `record` needs every planned unit played even when the rule's `min_unit_frac`
-  would decide; a spec's `pin` must exist before the spec, so a PREREG and its specs land in two commits.
+  are the end-to-end runs; their first uses found the live-use classes in §8's later rows.
+- **The belief-prior-mix read's rough edges** (2026-10-26, `measurements/belief_prior_mix_2026-10-26/README.md` FINDINGS 2, 3, 5,
+  8) are closed by `pid` / `hold` / `resume` (§3), the one-commit registration flow (§1), mixed loads in one group (§4) and
+  the `INCOMPLETE_BY_STOP` record (§6). What they leave: a supervisor of code that predates `hold` cannot be held (§3);
+  a reduced read is the anchor lane's alone, because an S node short of its `pairs` has no S, and `x35_r1` / `d1` refuse
+  the option; a lane stopped by `hold` is not a registered stop, so it cannot be recorded partial until it runs on to one.

@@ -19,8 +19,9 @@ Tests (``*_test.py``, ``conftest.py``) and prose (``*.md``) are never on it. NOT
 them: the Metamon cache and weights, the panel team dirs outside the repo, the model copies, the toolchain. Each unit
 verifies those itself at play (the preflight's team digests, the weights pins, the model's sha256).
 
-``main/reads/runner.py``, ``api.py``, ``cli.py``, ``repin.py``, ``anchor_pool.py`` and this module are NOT in the
-closure, which is what lets a scheduling change reach a running read; ``playpath_test`` pins that.
+``main/reads/runner.py``, ``api.py``, ``cli.py``, ``repin.py``, ``anchor_pool.py``, ``lanectl.py``, ``speccheck.py`` and this
+module are NOT in the closure (only ``main/reads/__init__.py`` and ``supervisors.py`` are), which is what lets a scheduling
+change reach a running read; ``playpath_test`` pins that.
 """
 from __future__ import annotations
 

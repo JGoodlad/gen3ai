@@ -17,7 +17,9 @@ flock keyed by the state's PATH outside it, a ``/proc`` scan, and the dir's iden
 a REGISTERED stop (``stop_epoch``: an absolute epoch, never open-ended), and the playing checkout must stay at
 the commit ``plan`` recorded (``code.json``; with a spec ``pin``, that commit and a clean tree), or one a ``repin``
 accepted because the play path is byte-identical (:mod:`main.reads.repin`). Run them detached
-(``setsid nohup python -m main.reads run --lane anchor ...``), one process per lane.
+(``setsid nohup python -m main.reads run --lane anchor ...``), one process per lane. A supervisor writes its OWN pid
+to ``<state>/<lane>/supervisor.pid`` and honors a HOLD (:mod:`main.reads.lanectl`): at the top of every loop turn it looks
+for ``<state>/<lane>/hold.json`` and, when it is there, starts no new unit, waits for those in flight and exits 0.
 """
 from __future__ import annotations
 
@@ -32,6 +34,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 from main.reads import anchor_pool as AP
+from main.reads import lanectl as LC
 from main.reads import layout as LY
 from main.reads.assemble import AssembleError
 from main.reads import models as M
@@ -421,6 +424,7 @@ def run(state: Path, lane: str, stop_epoch: float, *, workers: int = S_WORKERS, 
     k = anchor_concurrency(concurrency, lane)
     KA.check_stop_epoch(int(stop_epoch), now=clock())
     state = LY.check_state_dir(state)
+    LC.refuse_if_held(state, lane)      # a held lane starts only through `resume`, which releases the hold
     sv = SV.Hold(state, lane)           # the path lock + the /proc scan + the dir's identity
     try:
         hold = _lock(state, lane)       # the in-state lock too: a supervisor of older code takes only this one
@@ -429,7 +433,13 @@ def run(state: Path, lane: str, stop_epoch: float, *, workers: int = S_WORKERS, 
         raise
     run_unit = run_unit or KA.run_unit
     run_s = run_s or (lambda argv: subprocess.run(argv, check=False, env=child_env()).returncode)
-    jl = state / f"{lane}_supervisor.jsonl"
+    jl = LY.supervisor_log(state, lane)
+    try:
+        LC.write_pidfile(state, lane, stop_epoch=stop_epoch)   # THIS process's pid: `$!` of setsid nohup is the wrapper's
+    except BaseException:
+        hold.close()
+        sv.close()
+        raise
     _jl(jl, {"event": "start", "pid": os.getpid(), "stop_epoch": stop_epoch,
              **({"concurrency": k, "concurrency_requested": concurrency} if lane == "anchor" else {})})
     fails: Dict[str, int] = {}
@@ -442,6 +452,14 @@ def run(state: Path, lane: str, stop_epoch: float, *, workers: int = S_WORKERS, 
     try:
         while True:
             sv.check()                  # the path still names the dir this supervisor started on
+            held = LC.read_hold(state, lane)
+            if held is not None:        # HOLD: start nothing new, let the units in flight finish, then stop
+                _jl(jl, {"event": "held", "by": held["by"], "why": held["why"], "in_flight": len(pool)})
+                _log(f"{lane}: HELD by {held['by']} ({held['why']}): {len(pool)} unit(s) in flight finish, then stop")
+                pool.drain()
+                _jl(jl, {"event": "held_stopped",
+                         **({"left": len(_anchor_todo(spec, state, fails))} if lane == "anchor" else {})})
+                return 0
             _code_holds(state, checkout_code())
             waiting = settle(spec, state)
             models = _load_models(state)
@@ -494,7 +512,7 @@ def run(state: Path, lane: str, stop_epoch: float, *, workers: int = S_WORKERS, 
                 _jl(jl, {"event": "stop_at", "waiting": waiting})
                 return 0
             _log(f"{lane}: waiting for {sorted(waiting)} to settle (poll {POLL_S} s)")
-            sleep(POLL_S)
+            LC.wait_unless_held(state, lane, POLL_S, sleep)       # looks for a hold between short steps
     except SV.SupervisorError:
         raise                           # the path names another dir now: write nothing there, not even a log line
     except Exception as exc:
@@ -505,11 +523,20 @@ def run(state: Path, lane: str, stop_epoch: float, *, workers: int = S_WORKERS, 
         raise
     finally:
         pool.close()                    # the claims below are held until the last unit of this lane has ended
+        LC.remove_pidfile(state, lane)  # only if it still names this process (a moved state's new dir has none)
         hold.close()
         sv.close()
 
 
 # -------------------------------------------------------------------------------------------- status
+def _hold_view(state: Path, lane: str) -> Optional[Dict[str, Any]]:
+    try:
+        h = LC.read_hold(state, lane)
+    except LC.LaneError as exc:
+        return {"error": str(exc)}
+    return None if h is None else {k: h.get(k) for k in ("by", "why", "time")}
+
+
 def status(state: Path) -> Dict[str, Any]:
     """Every group's progress: models settled or waiting, anchor units counted / planned, S pairs per member."""
     from main.reads import repin as RP
@@ -522,6 +549,11 @@ def status(state: Path) -> Dict[str, Any]:
                            "anchor": {}, "s": {},
                            # live supervisors from /proc (never kill -0), by lane: [] = none is running
                            "supervisors": {ln: SV.live_supervisors(state, lane=ln).get(ln, []) for ln in SV.LANES},
+                           # each lane's supervisor as IT recorded itself (<state>/<lane>/supervisor.pid): the pid a
+                           # watcher targets, with start ticks; alive is checked against /proc. null = none recorded
+                           "supervisor_pids": {ln: LC.pid_status(state, ln) for ln in SV.LANES},
+                           # a held lane (main.reads.lanectl): who, why, since when; null = not held
+                           "holds": {ln: _hold_view(state, ln) for ln in SV.LANES},
                            # the playing commits a repin accepted beyond code.json's (main.reads.repin)
                            "repins": [{k: r[k] for k in ("to_commit", "by", "time")} for r in RP.load_repins(state)]}
     from main.reads.spec import imported

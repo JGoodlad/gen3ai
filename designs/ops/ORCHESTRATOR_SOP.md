@@ -77,9 +77,11 @@ entries naming what they supersede) → **dispatch** the next probe or build to 
   keep running and write per-battle rows) meant the hours were not lost.
 - **A REGISTERED READ IS A `main.reads` SPEC, never a new script (2026-10-25).** A brief for a read (an arm
   against its control, a final against a comparator, Kakuna cells) names: the spec to write
-  (`read_spec.json`, committed with the PREREG before any counted game), the state directory (outside the repo
+  (`read_spec.json`, committed with the PREREG before any counted game; its `pin` is an EXISTING code commit, never
+  the registration commit, `check-spec --pin-pending` reviews it first), the state directory (outside the repo
   and `models/`), and the rule from `main.reads.rules.RULES`; the agent runs `python -m main.reads plan / run /
-  record` (`designs/tools/reads.md`). A read the module cannot express (a new rule, an opponent other than
+  record` (`designs/tools/reads.md`); a lane is held with `hold` / `resume` and watched on the pid `status` / `pid`
+  print, never killed by hand or watched on `$!`. A read the module cannot express (a new rule, an opponent other than
   Kakuna) is a module change with a test, landed BEFORE the read, never a one-off driver under
   `measurements/`. **Why:** every read re-derived the same units, intervals and model choice, and the same bugs
   recurred (the final-selection race, empty regime ids, port races, copies without `model_config.json`).

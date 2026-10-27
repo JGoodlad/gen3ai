@@ -12,7 +12,11 @@ checked by hand on the raw rows. Here:
   cell): every counted unit of a (group, team set) must share ONE, else the group is INCONCLUSIVE, and the group's
   id is :func:`group_regime_id` over its team sets' ids. The playing commit
   (``server_version``) and file paths are recorded per unit, not part of the id (x26c FINDING 1: the play is the
-  same across commits; ``code.json`` pins the commit separately).
+  same across commits; ``code.json`` pins the commit separately);
+* a group may hold models with DIFFERENT load options (``spec.models.<label>.load``, e.g. a belief prior mix λ): each load
+  stamps its own ``our_regime`` (``greedy+belief_prior_mix=0.25``), so the group's id is then taken per (load, team set)
+  AND over the BASE id (``our_regime`` without the load's stamp) that every model of a team set must share (see
+  :func:`anchor_group`). A group whose models share one load keeps the id it always had.
 
 A cell or node with no regime id is never conclusive.
 """
@@ -66,12 +70,20 @@ class AssembleError(RuntimeError):
 
 
 # ------------------------------------------------------------------------------------------------ anchor
-def anchor_regime_id(summary: Mapping[str, Any]) -> Optional[str]:
-    """The regime id of one anchor unit (16 hex), or ``None`` when its summary stamps no cell."""
+def anchor_regime_id(summary: Mapping[str, Any], *, strip_load: str = "") -> Optional[str]:
+    """The regime id of one anchor unit (16 hex), or ``None`` when its summary stamps no cell. ``strip_load``: the
+    ``our_regime`` suffix the unit's model-load options add (``spec.load_stamp``); given, the id is the unit's BASE id,
+    the one it would have without them (``None`` when the unit's ``our_regime`` does not end with it: a unit that
+    declared a load and did not stamp it)."""
     cell = summary.get("cell")
     if not isinstance(cell, dict) or not cell.get("opponent_version"):
         return None
     ident = {k: cell.get(k) for k in ANCHOR_REGIME_KEYS}
+    if strip_load:
+        ours = str(cell.get("our_regime") or "")
+        if not ours.endswith(strip_load):
+            return None
+        ident["our_regime"] = ours[:-len(strip_load)]
     ident.update(_weights_identity(cell))
     ident.update(schema=ANCHOR_REGIME_SCHEMA, declared_team_cell=summary.get("declared_team_cell"),
                  team_digest_schema=summary.get("team_digest_schema"))
@@ -102,6 +114,17 @@ def group_regime_id(by_teamset: Mapping[str, Optional[str]]) -> str:
     return hashlib.sha256(json.dumps(dict(by_teamset), sort_keys=True).encode()).hexdigest()[:16]
 
 
+MIXED_GROUP_SCHEMA = "gen3_read_anchor_group_regime_mixed_v1"
+
+
+def mixed_group_regime_id(base_by_teamset: Mapping[str, str], full_by_load: Mapping[str, Mapping[str, str]]) -> str:
+    """The id of an anchor group whose models carry DIFFERENT load options: the digest of its per-team-set BASE ids
+    (shared by every model) and of each load's per-team-set full ids (``{load stamp or "none": {team set: id}}``)."""
+    doc = {"schema": MIXED_GROUP_SCHEMA, "base": dict(base_by_teamset),
+           "by_load": {k: dict(v) for k, v in full_by_load.items()}}
+    return hashlib.sha256(json.dumps(doc, sort_keys=True).encode()).hexdigest()[:16]
+
+
 #: A unit's per-game identity (``games.jsonl``): what a determinism guard compares game for game.
 GAME_KEYS = ("half", "index", "our_team", "result", "turns")
 
@@ -118,12 +141,15 @@ def unit_games(kakuna_state: Path, name: str) -> Optional[List[List[Any]]]:
 
 
 def unit_row(u: Any, summary: Mapping[str, Any], games: Optional[List[List[Any]]] = None) -> Dict[str, Any]:
-    """One played unit's row (x26c's ``kakuna_units.jsonl`` fields, plus its regime, reasons, model-load options and,
-    when given, its per-game identities :data:`GAME_KEYS`)."""
+    """One played unit's row (x26c's ``kakuna_units.jsonl`` fields, plus its regime, its BASE regime (the id without its
+    model-load options' stamp), reasons, model-load options and, when given, its per-game identities
+    :data:`GAME_KEYS`)."""
     from main.anchors.results import unit_counts
+    from main.reads.spec import load_stamp
 
     uc = unit_counts(summary, games=int(u.games))
     cell = summary.get("cell") or {}
+    stamp = load_stamp({"belief_prior_mix": getattr(u, "belief_prior_mix", None)})
     return {"unit": u.name, "label": u.label, "panel": u.teamset, "unit_seed": int(u.unit_seed),
             "belief_prior_mix": getattr(u, "belief_prior_mix", None), "our_regime": cell.get("our_regime"),
             "games": games,
@@ -132,6 +158,7 @@ def unit_row(u: Any, summary: Mapping[str, Any], games: Optional[List[List[Any]]
             "regime_verified_decisions": summary.get("regime_verified_decisions"),
             "peer_clean": summary.get("peer_clean"), "team_source_asymmetry": summary.get("team_source_asymmetry"),
             "counted": uc.counts, "reasons": list(uc.reasons), "regime_id": anchor_regime_id(summary),
+            "base_regime_id": anchor_regime_id(summary, strip_load=stamp),
             "server_version": cell.get("server_version"), "model_step": cell.get("model_step")}
 
 
@@ -148,15 +175,30 @@ def anchor_units(kakuna_state: Path) -> List[Dict[str, Any]]:
 
 
 def anchor_group(rows: Sequence[Mapping[str, Any]], *, labels: Sequence[str], teamsets: Sequence[str],
-                 unit_seeds: Sequence[int], shas: Optional[Mapping[str, str]] = None) -> Dict[str, Any]:
+                 unit_seeds: Sequence[int], shas: Optional[Mapping[str, str]] = None,
+                 loads: Optional[Mapping[str, Mapping[str, Any]]] = None) -> Dict[str, Any]:
     """One anchor group's cells ``{label: {teamset: {wins, ties, n, units, planned, skipped}}}`` over COUNTED units,
     its ONE regime id and every reason it is not conclusive. ``shas``: the resolved models' sha256 (a unit played
-    on other bytes refuses)."""
+    on other bytes refuses).
+
+    ``loads``: ``{label: the model's load options}``. When every model shares one load (or none is given), a team set's
+    counted units must share ONE regime id and the group's id is :func:`group_regime_id`, as it always was. When the
+    models' loads DIFFER (each load stamps its own ``our_regime``), that rule would call every such group a mix, so
+    instead: (1) the counted units of one (load, team set) share one regime id; (2) across ALL models a team set shares one
+    BASE id (the id without the load's stamp, so the opponent, the teams, the transport and the rest are the same for every
+    model); (3) a unit whose model declares a load but did not stamp it is not conclusive. The group's id is then
+    :func:`mixed_group_regime_id`, and the group carries ``regime_ids_by_load`` and ``loads``."""
+    from main.reads.spec import load_stamp
+
+    stamps = {lab: load_stamp((loads or {}).get(lab) or {}) for lab in labels}
+    mixed = len(set(stamps.values())) > 1
     why: List[str] = []
     cells: Dict[str, Dict[str, Dict[str, Any]]] = {
         lab: {ts: {"wins": 0, "ties": 0, "n": 0, "units": 0, "planned": len(unit_seeds), "skipped": []}
               for ts in teamsets} for lab in labels}
     regimes: Dict[str, set] = {ts: set() for ts in teamsets}
+    by_load: Dict[Tuple[str, str], set] = {}
+    bases: Dict[str, set] = {ts: set() for ts in teamsets}
     seen = set()
     for r in rows:
         key = (r["label"], r["panel"], int(r["unit_seed"]))
@@ -175,23 +217,47 @@ def anchor_group(rows: Sequence[Mapping[str, Any]], *, labels: Sequence[str], te
         if r.get("regime_id") is None:
             why.append(f"unit {r['unit']}: no regime id (its summary stamps no cell)")
         regimes[r["panel"]].add(r.get("regime_id"))
+        if mixed:
+            stamp = stamps[r["label"]]
+            by_load.setdefault((stamp, r["panel"]), set()).add(r.get("regime_id"))
+            base = r.get("base_regime_id", r.get("regime_id")) if not stamp else r.get("base_regime_id")
+            if base is None and r.get("regime_id") is not None:
+                why.append(f"unit {r['unit']}: our_regime {r.get('our_regime')!r} does not end with {stamp!r}, the stamp "
+                           f"its model's load options declare")
+            bases[r["panel"]].add(base)
         c["units"] += 1
         c["wins"] += int(r["wins"])
         c["ties"] += int(r.get("ties", 0))
         c["n"] += int(r["n"])
     by_ts: Dict[str, Optional[str]] = {}
     for ts in teamsets:
-        named = sorted(x for x in regimes[ts] if x is not None)
+        named = sorted(x for x in (bases if mixed else regimes)[ts] if x is not None)
         by_ts[ts] = named[0] if len(named) == 1 else None
+        what = "BASE regimes (load stamps stripped)" if mixed else "regimes"
         if len(named) > 1:
-            why.append(f"{ts}: counted units span {len(named)} regimes {named}")
+            why.append(f"{ts}: counted units span {len(named)} {what} {named}")
         elif not named:
-            why.append(f"{ts}: no counted unit carries a regime id")
-    rid = group_regime_id(by_ts) if all(by_ts.values()) else None
+            why.append(f"{ts}: no counted unit carries a {'base ' if mixed else ''}regime id")
+    out_extra: Dict[str, Any] = {}
+    if mixed:
+        full: Dict[str, Dict[str, Optional[str]]] = {}
+        for stamp in sorted(set(stamps.values())):
+            for ts in teamsets:
+                named = sorted(x for x in by_load.get((stamp, ts), set()) if x is not None)
+                full.setdefault(stamp or "none", {})[ts] = named[0] if len(named) == 1 else None
+                if len(named) > 1:
+                    why.append(f"{ts}: counted units of load {stamp or 'none'!r} span {len(named)} regimes {named}")
+                elif not named:
+                    why.append(f"{ts}: no counted unit of load {stamp or 'none'!r} carries a regime id")
+        ok = all(by_ts.values()) and all(v for d in full.values() for v in d.values())
+        rid = mixed_group_regime_id(by_ts, full) if ok else None    # type: ignore[arg-type]
+        out_extra = {"regime_ids_by_load": full, "loads": stamps}
+    else:
+        rid = group_regime_id(by_ts) if all(by_ts.values()) else None
     unplayed = len(labels) * len(teamsets) * len(unit_seeds) - len(seen)
     return {"regime_id": rid, "regime_ids": by_ts, "teamsets": list(teamsets), "unit_seeds": list(unit_seeds),
             "cells": cells, "units": sorted((dict(r) for r in rows), key=lambda r: r["unit"]),
-            "unplayed": unplayed, "inconclusive": sorted(set(why))}
+            "unplayed": unplayed, "inconclusive": sorted(set(why)), **out_extra}
 
 
 # ------------------------------------------------------------------------------------------------ S
@@ -304,7 +370,8 @@ def assemble(spec: Any, state: Path) -> Dict[str, Any]:
         if a.imports is not None:                         # the earlier read's units: sha- and regime-checked
             got, meta = IM.anchor_rows(spec, g, shas, this_state=state)
             rows += got
-        grp = anchor_group(rows, labels=a.models, teamsets=a.teamsets, unit_seeds=a.unit_seeds, shas=shas)
+        grp = anchor_group(rows, labels=a.models, teamsets=a.teamsets, unit_seeds=a.unit_seeds, shas=shas,
+                           loads={lab: spec.models[lab].load for lab in a.models})
         missing = [lab for lab in a.models if lab not in shas]
         if missing:
             grp["inconclusive"] = sorted(set(grp["inconclusive"]) | {f"model(s) {missing} not resolved"})
@@ -337,12 +404,13 @@ def assemble(spec: Any, state: Path) -> Dict[str, Any]:
     return out
 
 
-def group_reasons(lane: str, g: str, grp: Mapping[str, Any]) -> List[str]:
-    """Every reason ONE assembled group is not complete and regime-stamped (empty = it is)."""
+def group_reasons(lane: str, g: str, grp: Mapping[str, Any], *, allow_unplayed: bool = False) -> List[str]:
+    """Every reason ONE assembled group is not complete and regime-stamped (empty = it is). ``allow_unplayed``: an anchor
+    group's unplayed units are not a reason (a reduced read the spec registered, ``record.completeness``)."""
     why = [f"{lane}.{g}: {w}" for w in grp.get("inconclusive") or ()]
     if not grp.get("regime_id"):
         why.append(f"{lane}.{g}: no regime id")
-    if lane == "anchor" and grp.get("unplayed"):
+    if lane == "anchor" and grp.get("unplayed") and not allow_unplayed:
         why.append(f"anchor.{g}: {grp['unplayed']} unit(s) unplayed")
     if lane == "s":
         for lab, n in (grp.get("nodes") or {}).items():
@@ -351,17 +419,33 @@ def group_reasons(lane: str, g: str, grp: Mapping[str, Any]) -> List[str]:
     return why
 
 
-def conclusive(cells: Mapping[str, Any], *, reported: Sequence[Tuple[str, str]] = ()) -> List[str]:
+def conclusive(cells: Mapping[str, Any], *, reported: Sequence[Tuple[str, str]] = (),
+               allow_unplayed: Sequence[Tuple[str, str]] = ()) -> List[str]:
     """Every reason the assembled cells are not a complete, regime-stamped read (empty = record-ready). The groups in
     ``reported`` (``(lane, group)``: the rule's REPORTED-only groups, which no verdict reads) are left out: they are
-    :func:`reported_incomplete`'s, and never block the record of the decided primary (N1-P FINDING 7)."""
-    skip = set(reported)
+    :func:`reported_incomplete`'s, and never block the record of the decided primary (N1-P FINDING 7). The anchor groups in
+    ``allow_unplayed`` may have units unplayed (:func:`unplayed_groups`); every other reason still stands."""
+    skip, allow = set(reported), set(allow_unplayed)
     why: List[str] = []
     for lane in ("anchor", "s"):
         for g, grp in (cells.get(lane) or {}).items():
             if (lane, g) not in skip:
-                why += group_reasons(lane, g, grp)
+                why += group_reasons(lane, g, grp, allow_unplayed=(lane, g) in allow)
     return why
+
+
+def unplayed_groups(cells: Mapping[str, Any], reported: Sequence[Tuple[str, str]] = ()) -> Dict[str, Dict[str, int]]:
+    """``{"anchor.<group>": {planned, played, unplayed, counted}}`` of each DECIDED (not reported-only) anchor group that
+    has units unplayed: what a reduced read at a registered stop leaves out. ``counted`` = units that entered the cells."""
+    skip = set(reported)
+    out: Dict[str, Dict[str, int]] = {}
+    for g, grp in (cells.get("anchor") or {}).items():
+        n = int(grp.get("unplayed") or 0)
+        if n and ("anchor", g) not in skip:
+            planned = sum(int(c["planned"]) for by in grp["cells"].values() for c in by.values())
+            out[f"anchor.{g}"] = {"planned": planned, "played": planned - n, "unplayed": n,
+                                  "counted": sum(int(c["units"]) for by in grp["cells"].values() for c in by.values())}
+    return out
 
 
 def reported_incomplete(cells: Mapping[str, Any], reported: Sequence[Tuple[str, str]]) -> Dict[str, List[str]]:

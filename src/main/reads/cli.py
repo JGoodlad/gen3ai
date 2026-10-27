@@ -1,16 +1,22 @@
 """``python -m main.reads`` -- the verbs of a registered read (``designs/tools/reads.md``).
 
-    python -m main.reads check-spec --spec read_spec.json              # validate a spec (no file but it is read)
+    python -m main.reads check-spec --spec read_spec.json              # validate a spec; a pin must name a commit
+                                 [--pin-pending]                       #   review a spec BEFORE its pin exists (it has none)
     python -m main.reads plan    --spec read_spec.json --state DIR     # write the state; copy settled models
     python -m main.reads run     --state DIR --lane anchor|s --hours H # work one lane (detached; resumable)
                                  [--concurrency K]                     #   anchor: K units at once (default 1)
-    python -m main.reads resume  --state DIR --lane anchor|s --hours H # = run, after printing what is left
-    python -m main.reads status  --state DIR
+    python -m main.reads resume  --state DIR --lane anchor|s --hours H # = run, after printing what is left; a HELD lane
+                                 [--by WHO] [--why TEXT]               #   is released first (--by required then)
+    python -m main.reads hold    --state DIR --lane anchor|s --by WHO --why TEXT   # no new unit; the units in flight
+                                                                                   # finish; the supervisor exits 0
+    python -m main.reads pid     --state DIR --lane anchor|s [--wait S]  # the lane's LIVE supervisor pid (it records itself)
+    python -m main.reads status  --state DIR                           # + supervisor_pids (the pid to watch) and holds
     python -m main.reads repin   --state DIR --to COMMIT --by WHO --why TEXT  # accept another playing commit IF the play
                                                                               # path is byte-identical (else refuse)
     python -m main.reads assemble --state DIR                          # -> cells.json (regime ids ALWAYS)
     python -m main.reads decide  --state DIR                           # -> inputs.json, decision.json
-    python -m main.reads record  --state DIR [--out PATH]              # -> record.json (schema-checked)
+    python -m main.reads record  --state DIR [--out PATH]              # -> record.json (schema-checked; INCOMPLETE_BY_STOP
+                                                                       #    only for a spec that registered a reduced read)
     python -m main.reads check-record PATH
 
 Exit 0 on success, 2 on a refusal (named on stderr), 3 when R moved under an S lane.
@@ -30,6 +36,8 @@ def _parser() -> argparse.ArgumentParser:
     sub = ap.add_subparsers(dest="cmd", required=True)
     c = sub.add_parser("check-spec")
     c.add_argument("--spec", required=True)
+    c.add_argument("--pin-pending", action="store_true",
+                   help="review a spec whose pin is not decided yet: it must carry none; its sha256 is not final")
     p = sub.add_parser("plan")
     p.add_argument("--spec", required=True)
     p.add_argument("--state", required=True)
@@ -46,6 +54,18 @@ def _parser() -> argparse.ArgumentParser:
         r.add_argument("--concurrency", type=int, default=1,
                        help="ANCHOR lane only: units at once, each its own short-lane job and port (default 1; "
                             "capped at the box's heavy-slot count)")
+        if n == "resume":
+            r.add_argument("--by", default=None, help="who releases a HELD lane (required only when it is held)")
+            r.add_argument("--why", default=None, help="the reason, recorded with the release (default: resume)")
+    h = sub.add_parser("hold", help="stop launching units on a lane; the units in flight finish; the supervisor exits")
+    h.add_argument("--state", required=True)
+    h.add_argument("--lane", required=True, choices=("anchor", "s"))
+    h.add_argument("--by", required=True, help="who is holding the lane")
+    h.add_argument("--why", required=True, help="the reason, recorded with the hold")
+    pd = sub.add_parser("pid", help="print the pid of the lane's live supervisor (as it recorded itself)")
+    pd.add_argument("--state", required=True)
+    pd.add_argument("--lane", required=True, choices=("anchor", "s"))
+    pd.add_argument("--wait", type=float, default=0.0, help="wait up to this many seconds (max 600) for it to start")
     rp = sub.add_parser("repin", help="accept another playing commit when the play path is byte-identical")
     rp.add_argument("--state", required=True)
     rp.add_argument("--to", required=True, help="the commit (sha, tag or branch) the read will play from")
@@ -79,9 +99,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     a = _parser().parse_args(argv)
     try:
         if a.cmd == "check-spec":
-            s = api.load_spec(Path(a.spec))
-            _dump({"read": s.read, "rule": s.rule, "models": sorted(s.models), "anchor": sorted(s.anchor),
-                   "s": sorted(s.s), "sha256": s.sha256})
+            _dump(api.check_spec(Path(a.spec), pin_pending=a.pin_pending))
             return 0
         if a.cmd == "plan":
             _dump(api.plan(Path(a.spec), Path(a.state)))
@@ -89,9 +107,22 @@ def main(argv: Optional[List[str]] = None) -> int:
         if a.cmd in ("run", "resume"):
             stop = a.stop_at_epoch if a.stop_at_epoch is not None else time.time() + 3600.0 * a.hours
             if a.cmd == "resume":
-                _dump(api.status(Path(a.state)))
+                rel = api.release(Path(a.state), a.lane, by=a.by, why=a.why)     # a held lane is released first
+                st = api.status(Path(a.state))
+                if rel["released"]:
+                    st["released_hold"] = rel
+                _dump(st)
             return api.run(Path(a.state), a.lane, stop, workers=a.workers, threads=a.threads, unit_s=a.unit_s,
                            concurrency=a.concurrency)
+        if a.cmd == "hold":
+            doc = api.hold(Path(a.state), a.lane, by=a.by, why=a.why)
+            for w in doc["warnings"]:
+                print(f"[main.reads] WARNING: {w}", file=sys.stderr)
+            _dump(doc)
+            return 0
+        if a.cmd == "pid":
+            print(api.pid(Path(a.state), a.lane, wait_s=a.wait))
+            return 0
         if a.cmd == "repin":
             _dump(api.repin(Path(a.state), a.to, by=a.by, why=a.why))
             return 0

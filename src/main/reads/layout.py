@@ -4,6 +4,9 @@
     <state>/spec.json                   the spec, byte-copied at plan (its sha256 is the read's identity)
     <state>/code.json                   the playing checkout's commit at plan (a run from another commit refuses)
     <state>/repins.jsonl                APPEND-ONLY: each repin (main.reads.repin) that accepted another playing commit
+    <state>/holds.jsonl                 APPEND-ONLY: each hold / release of a lane (main.reads.lanectl)
+    <state>/<lane>/supervisor.pid       the RUNNING supervisor's own pid and start ticks (main.reads.lanectl), removed
+                                        when it ends; <state>/<lane>/hold.json exists exactly while the lane is HELD
     <state>/models.json                 {label: resolved + copied model}, written as each model SETTLES
     <state>/ckpts/<label>/              the sha-checked copies (+ model_config.json, sidecar)
     <state>/anchor/<group>/<label>/     a main.x35.kakuna state per (group, model): plan.json, cells/, units.jsonl
@@ -14,6 +17,7 @@
     <state>/record.json                 the record (main.reads.record)
     <state>/<lane>.lock                 the lane's in-state supervisor flock (with the PATH lock outside the state,
                                         main.reads.supervisors); settle.lock serialises model copies
+    <state>/<lane>_supervisor.jsonl     the lane supervisor's event log (start, stop_at, held, done, ...)
 """
 from __future__ import annotations
 
@@ -97,3 +101,29 @@ def repin_lock(state: Path) -> Path:
 
 def lane_lock(state: Path, lane: str) -> Path:
     return state / f"{lane}.lock"
+
+
+def lane_dir(state: Path, lane: str) -> Path:
+    """``<state>/anchor`` / ``<state>/s``: the lane's group dirs live here (a label never contains a ``.``, so the lane's
+    own files, ``supervisor.pid`` and ``hold.json``, cannot collide with one)."""
+    return state / lane
+
+
+def supervisor_pid_file(state: Path, lane: str) -> Path:
+    return lane_dir(state, lane) / "supervisor.pid"
+
+
+def hold_file(state: Path, lane: str) -> Path:
+    return lane_dir(state, lane) / "hold.json"
+
+
+def holds_file(state: Path) -> Path:
+    return state / "holds.jsonl"
+
+
+def hold_lock(state: Path) -> Path:
+    return state / "hold.lock"
+
+
+def supervisor_log(state: Path, lane: str) -> Path:
+    return state / f"{lane}_supervisor.jsonl"

@@ -73,6 +73,129 @@ def test_a_unit_on_other_bytes_or_twice_or_foreign_refuses():
         AS.anchor_group([_row("a", "p72", 0)], labels=["a"], teamsets=PANELS, unit_seeds=(0, 1))
 
 
+# ------------------------------------------------------------------------------------ models with different loads
+LAM = "+belief_prior_mix=0.25"
+
+
+def _counted_summary(**cell):
+    s = _summary(**cell)
+    s.update(status="OK", n=20, wins=10, losses=10, ties=0, regime_verified_decisions=True, peer_clean=True,
+             team_source_asymmetry=False)
+    return s
+
+
+def _unit(label, panel, seed, lam, **cell):
+    """A played unit's row as `assemble.unit_row` builds it, for a model that declared load option ``lam``."""
+    from types import SimpleNamespace as NS
+
+    stamp = f"greedy{LAM}" if lam else "greedy"
+    u = NS(name=f"{label}__{panel}__{seed:02d}", label=label, teamset=panel, unit_seed=seed, games=20,
+           model_sha256="0" * 64, belief_prior_mix=lam)
+    return AS.unit_row(u, _counted_summary(our_regime=cell.pop("our_regime", stamp), teamset=panel, **cell))
+
+
+def _mixed_rows(**b_cell):
+    return ([_unit("a", ts, s, None) for ts in PANELS for s in (0, 1)]
+            + [_unit("b", ts, s, 0.25, **b_cell) for ts in PANELS for s in (0, 1)])
+
+
+LOADS = {"a": {}, "b": {"belief_prior_mix": 0.25}}
+
+
+def _group(rows, loads=LOADS):
+    return AS.anchor_group(rows, labels=["a", "b"], teamsets=PANELS, unit_seeds=(0, 1), loads=loads)
+
+
+def test_the_base_id_of_a_loaded_unit_is_the_id_of_the_same_cell_without_the_load():
+    plain = _counted_summary()
+    loaded = _counted_summary(our_regime=f"greedy{LAM}")
+    assert AS.anchor_regime_id(loaded) != AS.anchor_regime_id(plain), "a load changes the full id (it never pools)"
+    assert AS.anchor_regime_id(loaded, strip_load=LAM) == AS.anchor_regime_id(plain)
+    assert AS.anchor_regime_id(plain, strip_load=LAM) is None, "a unit that declared a load and did not stamp it"
+    assert _unit("b", PANELS[0], 0, 0.25)["base_regime_id"] == _unit("a", PANELS[0], 0, None)["regime_id"]
+
+
+def test_one_group_holds_models_with_different_loads_with_a_regime_id_per_load_and_one_base():
+    rows = _mixed_rows()
+    g = _group(rows)
+    assert g["inconclusive"] == [] and g["unplayed"] == 0 and g["regime_id"] is not None
+    plain = {ts: _unit("a", ts, 0, None)["regime_id"] for ts in PANELS}
+    loaded = {ts: _unit("b", ts, 0, 0.25)["regime_id"] for ts in PANELS}
+    assert g["regime_ids"] == plain, "the group's per-team-set id is the BASE id every model shares"
+    assert g["regime_ids_by_load"] == {"none": plain, LAM: loaded} and plain != loaded
+    assert g["loads"] == {"a": "", "b": LAM}
+    assert g["regime_id"] == AS.mixed_group_regime_id(plain, {"none": plain, LAM: loaded})
+    assert g["regime_id"] != AS.group_regime_id(plain)
+    legacy = _group(rows, loads=None)             # what the group was before: every load a "mixed regime"
+    assert legacy["regime_id"] is None and any("span 2 regimes" in w for w in legacy["inconclusive"])
+
+
+def test_a_different_lambda_is_a_different_group_regime():
+    a = _group(_mixed_rows())
+    rows = ([_unit("a", ts, s, None) for ts in PANELS for s in (0, 1)]
+            + [dict(_unit("b", ts, s, 0.5, our_regime="greedy+belief_prior_mix=0.5")) for ts in PANELS for s in (0, 1)])
+    b = _group(rows, loads={"a": {}, "b": {"belief_prior_mix": 0.5}})
+    assert a["regime_id"] and b["regime_id"] and a["regime_id"] != b["regime_id"]
+
+
+def test_models_with_one_shared_load_keep_the_group_id_they_always_had():
+    rows = [_unit(lab, ts, s, 0.25) for lab in ("a", "b") for ts in PANELS for s in (0, 1)]
+    same = {"a": {"belief_prior_mix": 0.25}, "b": {"belief_prior_mix": 0.25}}
+    g = _group(rows, loads=same)
+    assert g["regime_id"] == AS.group_regime_id({ts: _unit("a", ts, 0, 0.25)["regime_id"] for ts in PANELS})
+    assert "regime_ids_by_load" not in g and g == _group(rows, loads=None)
+    plain = [_unit(lab, ts, s, None) for lab in ("a", "b") for ts in PANELS for s in (0, 1)]
+    assert _group(plain, loads={"a": {}, "b": {}}) == _group(plain, loads=None)
+
+
+def test_a_mixed_load_group_is_not_conclusive_when_a_model_differs_in_more_than_its_load():
+    other = _group(_mixed_rows(their_regime="t1"))
+    assert other["regime_id"] is None and any("BASE regimes" in w for w in other["inconclusive"]), other["inconclusive"]
+    unstamped = _group(_mixed_rows(our_regime="greedy"))      # b declared lambda = 0.25 but its units stamp nothing
+    assert AS.conclusive({"anchor": {"u": unstamped}}), "the id may exist, the group is still not conclusive"
+    assert any("does not end with" in w and LAM in w for w in unstamped["inconclusive"]), unstamped["inconclusive"]
+    rows = _mixed_rows()
+    rows[0] = _unit("a", PANELS[0], 0, None, their_team_digest="dX")
+    drift = _group(rows)
+    assert drift["regime_id"] is None and any("units of load 'none' span 2 regimes" in w or "BASE regimes" in w
+                                              for w in drift["inconclusive"]), drift["inconclusive"]
+    only_a = _group([r for r in _mixed_rows() if r["label"] == "a"])
+    assert only_a["regime_id"] is None and any(f"no counted unit of load '{LAM}'" in w for w in only_a["inconclusive"])
+
+
+def test_assemble_reads_each_models_load_from_the_spec(tmp_path, run_archive_env, monkeypatch):
+    """End to end over a planned state: the units the kakuna plan carries get their stamps, the group gets its ids."""
+    import json
+    import time
+
+    from main.reads import api, layout as LY, runner as RN
+    from main.reads.runner_test import CODE, _spec as _rspec, _step, _zip
+
+    p = _rspec(tmp_path, run_archive_env)
+    doc = json.loads(p.read_text())
+    doc["models"]["new"]["load"] = {"belief_prior_mix": 0.25}
+    p.write_text(json.dumps(doc))
+    _zip(run_archive_env / "rb_new", age=3600)
+    state = tmp_path / "state"
+    RN.plan(p, state, code=CODE, step_of=_step)
+    monkeypatch.setattr(RN, "checkout_code", lambda root=None: CODE)
+
+    def unit(st, u):
+        d = st / "cells" / u.name
+        d.mkdir(parents=True, exist_ok=True)
+        stamp = "greedy" + (f"+belief_prior_mix={u.belief_prior_mix:g}" if u.belief_prior_mix else "")
+        s = _counted_summary(our_regime=stamp, teamset=u.teamset)
+        (d / "summary.json").write_text(json.dumps(s))
+        return 0
+
+    assert RN.run(state, "anchor", time.time() + 3600, run_unit=unit, sleep=lambda s: None) == 0
+    g = api.assemble(state)["anchor"]["u"]
+    assert g["inconclusive"] == [] and g["regime_id"] and g["loads"] == {"old": "", "new": LAM}
+    assert set(g["regime_ids_by_load"]) == {"none", LAM}
+    assert {u["label"]: u["our_regime"] for u in g["units"]} == {"old": "greedy", "new": f"greedy{LAM}"}
+    assert json.loads(LY.cells_file(state).read_text())["anchor"]["u"]["regime_id"] == g["regime_id"]
+
+
 # ------------------------------------------------------------------------------------------------ S
 def _ledger(root, family, request, cells, reg=None):
     clock = K.Clock()
