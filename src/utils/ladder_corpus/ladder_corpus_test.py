@@ -73,3 +73,16 @@ def test_the_js_twin_reads_the_same_corpus():
     out = subprocess.run(["node", "-e", code], capture_output=True, text=True, check=True).stdout.split("\n")
     assert json.loads(out[0]) == [L.COMMIT_N, L.MILESTONE_N, L.manifest()["tiers"]["full"]["n"]]
     assert out[1] == L.teams("milestone")[799]
+
+
+@pytest.mark.slow  # Node (the pinned validator) over 22,862 teams + the engine's coverage oracle; minutes
+@pytest.mark.integration
+def test_the_committed_corpus_reproduces_from_the_metamon_archive():
+    """`python -m utils.ladder_corpus.build --check`, which nothing ran while two drifts broke it (TECH_DEBT (f),
+    2026-10-27): the engine's coverage grew (now decided by the `ladder_usage_v1` ENGINE PIN) and an informational
+    JS-generator field moved with the fuzz mirrors (dropped from the manifest). Skips LOUDLY without the archive."""
+    from utils.ladder_corpus import build as B
+
+    if not B.DEFAULT_SRC.is_dir():
+        pytest.skip(f"SKIPPED LOUDLY: no Metamon archive at {B.DEFAULT_SRC}; the corpus --check did not run")
+    assert B.main(["--check"]) == 0

@@ -15,16 +15,22 @@ from utils.team_corpora import engine_pin as EP
 
 #: Where each corpus's builder recorded the oracle's answer in its manifest (the pin's provenance).
 RECORDED = {"w_forum_v1": ("engine", "unplayable_ids"), "d3_setmut_v1": ("engine", "prefilter_unplayable"),
-            "n1_proc_v1": ("engine", "prefilter_unplayable")}
+            "n1_proc_v1": ("engine", "prefilter_unplayable"),
+            # The ladder-usage corpus (`utils.ladder_corpus`, the fuzz / parity team source) is pinned too.
+            "ladder_usage_v1": ("filter", "engine_unplayable_ids")}
 
 
 def _manifest(name):
+    if name == "ladder_usage_v1":
+        from utils import ladder_corpus
+        return json.loads(ladder_corpus.MANIFEST.read_text())
     return json.loads((TC.CORPORA[name] / TC.MANIFEST_NAME).read_text())
 
 
 def test_every_registered_corpus_has_a_pin_equal_to_what_its_manifest_recorded():
     pins = EP.load()
-    assert set(pins) == set(TC.CORPORA) == set(RECORDED), "a new corpus needs an engine pin (and a RECORDED row here)"
+    assert set(pins) == set(TC.CORPORA) | {"ladder_usage_v1"} == set(RECORDED), \
+        "a new corpus needs an engine pin (and a RECORDED row here)"
     for name, (block, field) in RECORDED.items():
         rec = _manifest(name)[block][field]
         assert {k: sorted(v) for k, v in EP.pinned(name).items()} == \

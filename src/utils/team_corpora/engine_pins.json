@@ -55,6 +55,16 @@
     "species": []
    }
   },
+  "ladder_usage_v1": {
+   "built_at": "2a877361a",
+   "recorded_in": "src/utils/ladder_corpus/manifest.json :: filter.engine_unplayable_ids",
+   "unplayable": {
+    "ability": [],
+    "item": [],
+    "move": [],
+    "species": []
+   }
+  },
   "n1_proc_v1": {
    "built_at": "de2694804",
    "recorded_in": "src/utils/team_corpora/n1_proc_v1/manifest.json :: engine.prefilter_unplayable",

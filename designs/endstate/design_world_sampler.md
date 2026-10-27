@@ -443,7 +443,7 @@ stated.
 - **Data.**
   - The forum collection: `utils.team_corpora` `w_forum_v1`, 2,424 teams (2,415 when the screen ran, before the crash-class lift) with the pool's exact copies removed (the full
     collection is 5,330, `measurements/smogon_forum_teams_v2_2026-10-18/`).
-  - The ladder-replay corpus: `utils.ladder_corpus`, 22,813 `hl_05_26` teams. Their unrevealed parts were filled by
+  - The ladder-replay corpus: `utils.ladder_corpus`, 22,862 `hl_05_26` teams. Their unrevealed parts were filled by
     Metamon's reconstruction, by a method UNVERIFIED here.
 - **Why rank 1.** It is the only candidate with a measured analogue that pays: POOL, the same method on a CLOSED
   population that contains the truth, recovers r = 0.80 of G. When all 8 POOL worlds were the true team (70 % of

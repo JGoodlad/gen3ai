@@ -29520,3 +29520,21 @@ doc's behavioural complement (≈ 8–16 GPU-h) reads that, and it is not needed
 
 **Evidence:** `research_state/measurements/plasticity_check_2026-10-26/` (README, `results/`, `plasticity_probe.py`,
 `summarize.py`). See `UNDERSTANDING.md` §4.4 and the strategy doc's §2, §4 and Decision record.
+
+## 2026-10-27 · OPS · the ladder-usage corpus rebuilt after gen-3 full parity: all 22,862 Metamon teams kept (was 22,813)
+
+`python -m utils.ladder_corpus.build` against the engine at `2a877361` (every gen-3 move, item, ability and species
+runs): 22,862 of 22,862 `hl_05_26` gen3ou teams kept, 0 engine-unplayable. The 09-24 build had dropped 49 for moves the
+engine then refused (Metronome 11, Shell Bell 11, Snore 10, Psywave 9, Fly 3, Blast Burn 2, Dig / Grudge / Triple Kick
+1). The tiers are prefixes of one seeded permutation of the kept set, so `commit`, `milestone` and `full` are all new
+draws; the manifest's tier sha256s changed with them. A pinned run or read keeps the corpus of its own pin. The bots'
+banked COMMIT corpus stores its teams, so it is unaffected.
+The build now decides by an ENGINE PIN (`ladder_usage_v1` in `src/utils/team_corpora/engine_pins.json`, the
+`gen3_corpus_engine_pin_v1` mechanism of `0c4f1117`), and the informational
+`filter.for_information_generator_coverage_rejects` field (it moved with the JS fuzz mirrors) is dropped, so `--check`
+cannot drift again; a `slow` test now runs it and skips loudly without the Metamon archive. Tests whose fixture battles
+change with the reshuffle (deterministic either way): the COMMIT tier's `core_cargo_test::test_gate_1_on_the_ladder_commit_tier`,
+`ffi_integration_test` (`test_gate_1_the_ladder_commit_tier_through_ffi_is_byte_equal` and the commit-tier teams of its
+panic and spec boards), `proc_integration_test` (`test_gate_1_the_ladder_commit_tier_ffi_equals_process`, the
+`teams("commit")[:3]` specs, the SIGKILL leak board) and `oracle_reveal_integration_test` (`teams("commit")[:8]`); the
+MILESTONE tier's `core_cargo_test::test_gate_1_on_the_ladder_milestone_tier` and every `--mode ladder` fuzz draw.

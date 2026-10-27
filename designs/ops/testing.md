@@ -1199,17 +1199,20 @@ Every gate that plays teams can play three sources (`utils.team_sources`, `gen3_
 `data/` (pinned runs read `data/` from main). Filter: `Teams.import` + six Pokemon +
 `TeamValidator('gen3ou')` + every species / move / item / ability RUNS in the engine
 (`scan_move_probe`, the oracle — not the fuzz picker's `isModeledMove`, which rejects Sleep Talk).
-Measured 2026-09-24: **22,813 of 22,862 kept (99.79%)**; 49 dropped, all engine fail-louds (Metronome
-11, Shell Bell 11, Snore 10, Psywave 9, Fly 3, Blast Burn 2, Dig / Grudge / Triple Kick 1); Heal Bell
-teams kept (440). `manifest.json` records the filter, the counts and every tier's sha256; every
+Rebuilt 2026-10-27 after gen-3 full parity: **all 22,862 kept**; the 09-24 build dropped 49 (Metronome 11,
+Shell Bell 11, Snore 10, Psywave 9, Fly 3, Blast Burn 2, Dig / Grudge / Triple Kick 1) that the engine now
+plays. The rebuild reshuffled every tier (they are prefixes of one seeded permutation of the kept set). `manifest.json` records the filter, the counts and every tier's sha256; every
 reader (Python and JS) REFUSES a data file that does not match. Rebuild (deterministic, `--check`
-proves the committed bytes reproduce): `python -m utils.ladder_corpus.build`.
+proves the committed bytes reproduce, the `slow` `ladder_corpus_test.py` runs it): `python -m utils.ladder_corpus.build`.
+The engine verdict is PINNED (`ladder_usage_v1` in `src/utils/team_corpora/engine_pins.json`, the training corpora's
+`engine_pin`): a grown engine moves nothing, a lost id throws; a rebuild that takes new teams updates the pin from
+the new manifest in the same commit.
 
 | tier | teams | runs in |
 |---|---|---|
 | `commit` | 16 | the COMMIT-tier recorded battles (`ladder_0`, `ladder_1` of the Rust Core parity fixture) |
 | `milestone` | 800 | the fuzzers' default draw (and, until P6 slice 6c, slice E/V MILESTONE: 2 × 150 battles, 600 teams once each) |
-| `full` | 22,813 | the CUTOVER tier; `--ladder-tier full` soaks |
+| `full` | 22,862 | the CUTOVER tier; `--ladder-tier full` soaks |
 
 ```bash
 node src/rust_sim/harness/ab_fuzz.js --mode ladder [--ladder-tier full] --battles 200      # + --protocol --format gen3ou

@@ -7,10 +7,13 @@ teams/hl_05_26/gen3ou``, ``teams`` revision v5, downloaded 2026-09-24). ``--chec
 memory and exits non-zero unless the result is byte-identical to the committed files.
 
 The filter (see the package docstring): Showdown reads it, six Pokemon, ``TeamValidator('gen3ou')``
-legal (``src/rust_sim/harness/ladder_corpus_filter.js``), and the ENGINE runs every one of its
-species / moves / items / abilities (``scan_move_probe``, all four ``PROBE_KIND``s). Exact
-duplicates (same packed string) keep their first file. Then one seeded permutation; the tiers are
-its prefixes. The build is deterministic: the same source, engine and seed give the same bytes.
+legal (``src/rust_sim/harness/ladder_corpus_filter.js``), and the ENGINE ran every one of its
+species / moves / items / abilities AT THIS CORPUS'S BUILD (``scan_move_probe``'s answer then, pinned
+as ``ladder_usage_v1`` in ``src/utils/team_corpora/engine_pins.json``; the live oracle is still asked:
+an engine that lost coverage throws, one that gained it changes nothing). Exact duplicates (same
+packed string) keep their first file. Then one seeded permutation; the tiers are its prefixes. The
+build is deterministic: the same source, engine pin and seed give the same bytes. Rebuilding with a
+new engine verdict is a new corpus build: update the pin from the new manifest in the same commit.
 """
 from __future__ import annotations
 
@@ -29,6 +32,8 @@ from typing import Dict, List
 from utils.ladder_corpus import (COMMIT_N, DATA, MANIFEST, MILESTONE_N, SCHEMA, SEED, tier_sha256)
 from utils.paths import repo_path
 
+#: This corpus's key in `src/utils/team_corpora/engine_pins.json`.
+PIN_NAME = "ladder_usage_v1"
 DEFAULT_SRC = Path.home() / "gen3ai_archive" / "metamon_cache_2026-09-24" / "teams" / "hl_05_26" / "gen3ou"
 FILTER_JS = repo_path("src", "rust_sim", "harness", "ladder_corpus_filter.js")
 KINDS = (("species", "species"), ("move", "moves"), ("item", "items"), ("ability", "abilities"))
@@ -71,18 +76,18 @@ def engine_verdicts(rows: List[dict]) -> Dict[str, Dict[str, str]]:
 def build(src: Path) -> tuple:
     rows = showdown_rows(src)
     verdicts = engine_verdicts(rows)
-    unplayable = {kind: sorted(i for i, v in verdicts[kind].items() if v != "ran") for kind, _ in KINDS}
+    # The ENGINE PIN (`gen3_corpus_engine_pin_v1`, `utils.team_corpora.engine_pin`): the oracle's answer at THIS
+    # corpus's build decides, so an engine that gains coverage cannot drift `--check`; one that loses coverage throws.
+    from utils.team_corpora import engine_pin
+    unplayable = engine_pin.unplayable(PIN_NAME, verdicts)
 
     counts = collections.Counter(r["verdict"] for r in rows)
     why_engine: collections.Counter = collections.Counter()
-    gen_cov: collections.Counter = collections.Counter()
     kept, seen = [], set()
     dup = 0
     for r in rows:
         if r["verdict"] != "ok":
             continue
-        if r.get("generator_coverage"):
-            gen_cov[r["generator_coverage"]] += 1
         bad = [f"{kind}:{i}" for kind, key in KINDS for i in r[key] if i in unplayable[kind]]
         if bad:
             for b in bad:
@@ -129,7 +134,6 @@ def build(src: Path) -> tuple:
             "engine_unplayable_ids": unplayable,
             "engine_unplayable_by_id": dict(why_engine.most_common()),
             "heal_bell_teams_kept": heal_bell,
-            "for_information_generator_coverage_rejects": dict(gen_cov.most_common()),
         },
         "seed": SEED,
         "tiers": {

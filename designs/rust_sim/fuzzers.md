@@ -280,14 +280,14 @@ NEITHER is the training/ladder surface:
 | `pool` | **yes** — the 762 real gen3ou teams | **no**: a FIXED human-built set from a narrow meta, and the committed capstone samples only 220 battles of it |
 | `randbats` | **no** — non-L100 levels, curated movesets, near-uniform items | yes |
 | **`ourandom`** | **yes** | **yes** |
-| **`ladder`** | **yes** — real PUBLIC-LADDER teams | **yes**: 22,813 human-built teams (`--ladder-tier commit\|milestone\|full`) |
+| **`ladder`** | **yes** — real PUBLIC-LADDER teams | **yes**: 22,862 human-built teams (`--ladder-tier commit\|milestone\|full`) |
 
 #### `--mode ladder` — the LADDER-USAGE corpus (`gen3_ladder_usage_corpus_v1`)
 
 All four A/B fuzzers take `--mode ladder` (`harness/ladder_corpus.js`, the JS twin of
 `utils.ladder_corpus`): the Metamon `hl_05_26` gen3ou teams, filtered to what the ENGINE plays
-(`scan_move_probe` — 22,813 of 22,862 kept; the 49 dropped carry Metronome, Shell Bell, Snore,
-Psywave, Fly, Blast Burn, Dig, Grudge or Triple Kick). A team is drawn from the tier with the
+(`scan_move_probe` — all 22,862 kept since the 2026-10-27 rebuild after gen-3 full parity; the 09-24
+build kept 22,813 and dropped 49 that carried moves the engine then refused). A team is drawn from the tier with the
 fuzzer's seeded team RNG, so a master seed replays; `teamFilterClean` (the JS mirror) is REPORTED
 against, never used to drop a team, and typed Hidden Power is pickable (the corpus is gen3ou-valid
 and HP is priced at its IV-true BP). The same corpus is a team source of the Python fuzz scripts (`--team-source ladder`) and was the parity harness's third

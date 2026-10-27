@@ -200,7 +200,7 @@ draws". Evaluation is the fourth axis. The fifth axis is the coupling between th
   - the pool;
   - the procedural Smogon-only generator (`src/rust_sim/harness/ou_random_teams.js`, seeded,
     `TeamValidator`-legal);
-  - the LADDER corpus (`src/utils/ladder_corpus/`, 22,813 engine-playable `hl_05_26` teams, under `src/` so that
+  - the LADDER corpus (`src/utils/ladder_corpus/`, 22,862 engine-playable `hl_05_26` teams, under `src/` so that
     no pinned run reads it).
 
 **Evidence.**
@@ -472,7 +472,7 @@ CPU reads at ≈ 9 s per Kakuna game on one rule-5b lane.
 
 **From where (ranked).**
 
-1. **`hl_05_26` (W_hl):** the ladder corpus already on the box (`src/utils/ladder_corpus`, 22,813 engine-playable,
+1. **`hl_05_26` (W_hl):** the ladder corpus already on the box (`src/utils/ladder_corpus`, 22,862 engine-playable,
    validator-legal teams), MINUS the exclusions below. These are real players' revealed sets from the 1400+
    ladder and smogtours replays, with the gaps filled by usage sampling. It is the population a ladder brings.
 2. `gl_05_26` (the general ladder): not on the box, UNVERIFIED availability. A later dose step.
