@@ -51,8 +51,9 @@ long-lived sessions; an owner ruling on how a session operates goes into the own
 into a memory file. `EXTERNAL_ANCHORS_SOP.md` (strength against agents we did not train; box paths in
 `anchors.json`), `testing.md` and `training_runbook.md` (the root's testing and training chapters),
 `cloud_gpu_benchmark.md` (the vast.ai rental runbook), `cloud_gpu_plan.md` (training on a rented card: the card rule, the mechanics, the cost), `deletion_pass_manifest.md` (the post-M5 deletion
-pass), and `instruction_docs_principles.md` (how every `CLAUDE.md`, `MEMORY.md`, slash command and brief
-is written).
+pass), `history_rewrite.md` (the one-shot account-name purge of git history: runbook; `python -m utils.git_sha`
+resolves an OLD sha an immutable record cites), and `instruction_docs_principles.md` (how every `CLAUDE.md`,
+`MEMORY.md`, slash command and brief is written).
 
 ## Cross-version docs (`designs/` root)
 

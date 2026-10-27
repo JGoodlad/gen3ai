@@ -1,0 +1,3 @@
+# gen3ai history rewrite: old -> new commit SHAs (40 hex, tab separated), CHANGED commits only.
+# status: NO REWRITE HAS HAPPENED (this file holds no rows until `python -m utils.history_rewrite map` writes it; runbook designs/ops/history_rewrite.md)
+# resolve a cited sha with `python -m utils.git_sha <sha-or-prefix>` (map first, git second); the citation rewriter never edits this file
