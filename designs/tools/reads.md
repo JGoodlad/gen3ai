@@ -327,8 +327,16 @@ stripped, so the opponent, teams, transport and the rest are the same for every 
 load it did not stamp is not conclusive. The group id is then `mixed_group_regime_id` over the base ids and each load's ids;
 the group also carries `regime_ids_by_load` and `loads`. A group whose models share one load (or none) is read as always,
 with the id it always had. `prior_mix_ab` still wants one group per arm (its control is banked). Every unit
-row also carries its `games` (`[half, index, our_team, result, turns]` from `games.jsonl`), which is what a
-game-for-game determinism guard compares.
+row also carries its `games` (`[half, index, our_team, result, turns]` from `games.jsonl`) and its `cell_dir`.
+
+**The game-for-game guard** (`rules.guard_games`: `determinism_guard`, `prior_mix_ab`'s and `score_bands`' guards, and
+X59-S's repeat unit) compares each game's 5-tuple AND its choices: `assemble.game_choices` is a digest of each player's
+`CHOOSE` sequence in the unit's capture, the two players kept apart so an order-only game (the same choices racing
+to the server) stays equal. A guard unit passes only if both are equal (`games_equal`; the row also carries
+`tuple_equal`, `choices` and `choices_differing`). The banked side's capture is its rows' one `source_unit`, read
+under `$GEN3AI_ARCHIVE_DIR` (default `~/gen3ai_archive`) as `<read state>/cells/<unit>`, and only when that cell holds
+exactly the banked games. With no capture on either side, `choices` is `unavailable` with its reason and the 5-tuple
+decides alone. X51's rows name no capture source, so the X59-S identity unit records `unavailable`.
 
 ### The engine (`main.reads.engine`; REVIEW F F-M2, 2026-10-26)
 
@@ -391,8 +399,8 @@ verdicts stand as recorded.
 - **So the rate belongs to the engine pair and the panel, not to Kakuna**, and a guard proves exactness only on one
   engine. The one same-engine divergence is H5 (`EXTERNAL_ANCHORS_SOP.md`): its unit is `peer_clean = False` and is
   dropped whole, because the fault also corrupts the game after the peer's forfeit.
-- **The guard compares each game's 5-tuple, not its choices.** The 5-tuple misses about a quarter of the
-  divergences (11 vs 15), those that change neither the result nor the turn count.
+- **The guard compares choices as well as the 5-tuple (2026-10-27).** The 5-tuple alone misses about a quarter of
+  the divergences (11 vs 15), those that change neither the result nor the turn count.
 - **The engine key is the Rust build.** A Python-only change to the play path between two commits on one engine is
   invisible to it. Only `repin`'s play-path identity (§3) or a game-for-game guard catches one.
 

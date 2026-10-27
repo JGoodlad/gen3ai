@@ -43,7 +43,9 @@ DEFAULT_BACK = 10_000_000
 
 
 def archive_root() -> Path:
-    return Path(os.environ.get("GEN3AI_ARCHIVE_DIR") or (Path.home() / "gen3ai_archive"))
+    from utils.paths import gen3ai_archive_dir
+
+    return gen3ai_archive_dir()
 
 
 def resolve_run(run: str) -> Path:

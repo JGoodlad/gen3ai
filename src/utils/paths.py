@@ -391,6 +391,16 @@ def harvest_dir(create: bool = False) -> Path:
     return cand
 
 
+#: Env var that pins the CPU-side archive of read states and measurements (``~/gen3ai_archive``).
+ARCHIVE_DIR_ENV_VAR = "GEN3AI_ARCHIVE_DIR"
+
+
+def gen3ai_archive_dir() -> Path:
+    """The archive of finished read states, captures and measurement outputs: ``$GEN3AI_ARCHIVE_DIR``, else
+    ``~/gen3ai_archive``. Need not exist (a reader that finds nothing there says so)."""
+    return Path(os.environ.get(ARCHIVE_DIR_ENV_VAR) or (Path.home() / "gen3ai_archive"))
+
+
 def run_skip_reason(run_name: str) -> str:
     """The message a test should skip with when :func:`trace_glob` returns ``None``."""
     return (

@@ -171,6 +171,75 @@ def unit_games(kakuna_state: Path, name: str) -> Optional[List[List[Any]]]:
     return sorted(([r.get(k) for k in GAME_KEYS] for r in rows), key=lambda g: (str(g[0]), int(g[1])))
 
 
+#: The stricter game-for-game identity (``measurements/kakuna_determinism_2026-10-27/`` §6): per game, the digest of
+#: each player's CHOOSE sequence in the front end's capture. It holds OUR choices, so a choice that differs but leaves
+#: the 5-tuple equal (a different move that ends in the same result and turn count, or one that never ran) is caught:
+#: 15 divergences where the 5-tuple sees 11 (E1 vs E3). The two sides' choices are kept apart and their interleaving
+#: is ignored, so an ORDER-ONLY game (the same choices racing to the server) stays equal.
+CHOICES_SCHEMA = "gen3_game_choices_v1"
+
+
+def game_choices(capture: Mapping[str, Any]) -> str:
+    """The choices digest of one captured battle (``{tag, seed, commands, chunks}``): sha256 over each player's
+    ``CHOOSE`` strings, in order, per player."""
+    per: Dict[str, List[str]] = {"p1": [], "p2": []}
+    for c in capture.get("commands") or []:
+        parts = str(c).split(" ", 2)
+        if parts[0] == "CHOOSE" and len(parts) == 3:
+            per.setdefault(parts[1], []).append(parts[2])
+    doc = {"schema": CHOICES_SCHEMA, "choose": per}
+    return hashlib.sha256(json.dumps(doc, sort_keys=True).encode()).hexdigest()[:16]
+
+
+def cell_choices(cell: Path) -> Tuple[Optional[List[List[Any]]], Optional[List[str]], str]:
+    """``(games, choices, why)`` of ONE played cell dir: its :data:`GAME_KEYS` rows and, aligned with them in
+    ``(half, index)`` order, each game's :func:`game_choices` from ``capture/<battle_tag>.json``. ``choices`` is None
+    (and ``why`` says why) when the cell has no ``games.jsonl``, or any game has no tag or no capture: a guard never
+    compares a partial choice record."""
+    try:
+        rows = [json.loads(ln) for ln in (cell / "games.jsonl").read_text().splitlines() if ln.strip()]
+    except (OSError, ValueError):
+        return None, None, f"no readable games.jsonl in {cell}"
+    rows.sort(key=lambda r: (str(r.get("half")), int(r.get("index") or 0)))
+    games = [[r.get(k) for k in GAME_KEYS] for r in rows]
+    out: List[str] = []
+    for r in rows:
+        tag = r.get("battle_tag")
+        cap = cell / "capture" / f"{tag}.json"
+        if not tag or not cap.is_file():
+            return games, None, f"no capture for game {r.get('half')}/{r.get('index')} in {cell}"
+        try:
+            out.append(game_choices(json.loads(cap.read_text())))
+        except (OSError, ValueError) as exc:
+            return games, None, f"unreadable capture {cap}: {exc}"
+    return games, out, ""
+
+
+def compare_choices(here: Optional[Path], there: Optional[Path], want_games: Sequence[Sequence[Any]],
+                    unavailable: str = "") -> Dict[str, Any]:
+    """The choices half of a game-for-game guard: ``{choices: equal | differ | unavailable, differing, why}``.
+
+    ``here`` is the re-played unit's cell dir, ``there`` the banked unit's (None: the bank names no capture source,
+    ``unavailable`` says why). The banked cell must hold exactly ``want_games`` (the bank's own rows), so a capture
+    source that is not the banked unit is never compared. ``differing`` lists each game ``[half, index]`` whose
+    choices differ. ``unavailable`` is recorded, never a pass by default: the 5-tuple then decides alone."""
+    if there is None:
+        return {"choices": "unavailable", "differing": [], "why": unavailable or "the bank names no capture source"}
+    if here is None:
+        return {"choices": "unavailable", "differing": [], "why": "the re-played unit has no cell dir"}
+    g_here, c_here, why_here = cell_choices(here)
+    g_there, c_there, why_there = cell_choices(there)
+    if g_there is not None and [list(g) for g in g_there] != [list(g) for g in want_games]:
+        return {"choices": "unavailable", "differing": [],
+                "why": f"the capture source {there} does not hold the banked unit's games"}
+    if c_here is None or c_there is None:
+        return {"choices": "unavailable", "differing": [], "why": why_here or why_there}
+    if g_here is None or [g[:2] for g in g_here] != [g[:2] for g in g_there or []]:
+        return {"choices": "differ", "differing": [], "why": "the two units do not hold the same games"}
+    diff = [list(g[:2]) for g, a, b in zip(g_here, c_here, c_there) if a != b]
+    return {"choices": "differ" if diff else "equal", "differing": diff, "why": ""}
+
+
 def unit_row(u: Any, summary: Mapping[str, Any], games: Optional[List[List[Any]]] = None) -> Dict[str, Any]:
     """One played unit's row (x26c's ``kakuna_units.jsonl`` fields, plus its regime, its BASE regime (the id without its
     model-load options' stamp), reasons, model-load options and, when given, its per-game identities
@@ -219,7 +288,8 @@ def anchor_units(kakuna_state: Path) -> List[Dict[str, Any]]:
     for u in KA.load_plan(kakuna_state):
         s = KA.read_summary(kakuna_state, u.name)
         if s is not None:
-            rows.append(unit_row(u, s, unit_games(kakuna_state, u.name)))
+            rows.append(dict(unit_row(u, s, unit_games(kakuna_state, u.name)),
+                             cell_dir=str(kakuna_state / "cells" / u.name)))
     return rows
 
 

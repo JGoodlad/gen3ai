@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import json
 import math
+from pathlib import Path
 from typing import Any, Dict, List, Mapping, Sequence, Tuple
 
 FLOOR_FIRES = "FLOOR FIRES"
@@ -123,7 +124,9 @@ def _floor_check(p: Mapping[str, Any], *, models: Any, anchor: Any, s: Any) -> L
 
 
 def repeat_checks(cells: Mapping[str, Any], r: Mapping[str, Any], of_group: str) -> List[Dict[str, Any]]:
-    """VOID 6: each unit of the repeat group against the SAME unit of the student it repeats, game for game."""
+    """VOID 6: each unit of the repeat group against the SAME unit of the student it repeats, game for game: the
+    5-tuples and each game's choices from both captures (:func:`main.reads.assemble.compare_choices`)."""
+    from main.reads.assemble import compare_choices
     from main.reads.rules import _group
 
     orig = {(u["panel"], int(u["unit_seed"])): u for u in _group(cells, "anchor", of_group)["units"]
@@ -131,9 +134,16 @@ def repeat_checks(cells: Mapping[str, Any], r: Mapping[str, Any], of_group: str)
     out = []
     for u in _group(cells, "anchor", r["group"])["units"]:
         o = orig.get((u["panel"], int(u["unit_seed"])))
+        tuple_eq = bool(o is not None and u.get("games") is not None and u["games"] == o.get("games"))
+        ch = {"choices": "not compared", "differing": [], "why": "the 5-tuples differ"}
+        if tuple_eq and o is not None:
+            ch = compare_choices(Path(u["cell_dir"]) if u.get("cell_dir") else None,
+                                 Path(o["cell_dir"]) if o.get("cell_dir") else None, o["games"],
+                                 unavailable="the original unit has no cell dir")
         out.append({"unit": u["unit"], "of": None if o is None else o["unit"], "counted": bool(u["counted"]),
                     "of_counted": bool(o and o["counted"]),
-                    "games_equal": bool(o is not None and u.get("games") is not None and u["games"] == o.get("games"))})
+                    "games_equal": tuple_eq and ch["choices"] != "differ", "tuple_equal": tuple_eq,
+                    "choices": ch["choices"], "choices_differing": ch["differing"], "choices_why": ch["why"]})
     return out
 
 

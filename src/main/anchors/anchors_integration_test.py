@@ -145,12 +145,13 @@ def _skip_reason(server: str = "rust") -> "str | None":
 
 
 
-def _read(tmp_path: Path, server: str, n_games: int, *extra: str, blocked: bool = False):
+def _read(tmp_path: Path, server: str, n_games: int, *extra: str, blocked: bool = False, allow_fault: bool = False):
     """One anchor read through the real CLI; returns (rc, summary, rows, out).
 
     ``blocked`` runs the CLI in a FRESH interpreter under ``utils.poke_env_blocker`` (every
     ``import poke_env`` raises and is recorded) — P3's claim that our side of a read runs with no
-    poke-env at all, taken on the RUN-TIME path, which an import look cannot see."""
+    poke-env at all, taken on the RUN-TIME path, which an import look cannot see. ``allow_fault`` returns a read that
+    failed by H5's named ``peer_long_tail_fault`` (the capped smoke's own forfeit is its trigger) instead of failing."""
     reason = _skip_reason(server)
     if reason:
         pytest.skip(reason)
@@ -184,7 +185,7 @@ def _read(tmp_path: Path, server: str, n_games: int, *extra: str, blocked: bool 
     rows = [json.loads(line) for line in (out / "games.jsonl").read_text().splitlines()]
     # A named failure is a legitimate outcome of a contended box — but it must be NAMED, and the
     # games that did finish must still be here. Silence is the one thing this tool may not produce.
-    if rc != 0:
+    if rc != 0 and not (allow_fault and (summary.get("failure") or {}).get("cause") == "peer_long_tail_fault"):
         pytest.fail(
             f"anchor read returned {rc}; failure={summary.get('failure')}; "
             f"{len(rows)} of {n_games} games completed. "
@@ -274,13 +275,21 @@ def test_one_capped_real_game_against_metamon_smallrl(tmp_path: Path, monkeypatc
     Metamon's long-tail handler can recurse to a RecursionError after the battle ended). Measured
     2026-09-30: 1 of 3 capped reads ended with `peer_clean` False and every row intact. So this smoke
     asserts the ROWS, the regime and the server lifecycle — never `peer_clean`, which H16 split out
-    precisely so a peer that dies after its games does not void them."""
+    precisely so a peer that dies after its games does not void them. Since 2026-10-27 a peer that prints the
+    long-tail line fails the read by name (``peer_long_tail_fault``, SOP H5 / H21): that branch is asserted as what it
+    is (named, peer_clean False, never counted), and the full row checks run on the clean branch."""
     # HERMETIC: the Metamon peer otherwise asks the Hugging Face Hub about its (already cached) weights
     # on every start — a network dependency in the routine gate, and seconds of its wall. The peer
     # inherits this environment; the skip guard above has already required the weight cache.
     monkeypatch.setenv("HF_HUB_OFFLINE", "1")
     _rc, summary, rows, out = _read(tmp_path, "rust", 1,
-                                    "--forfeit-turn-limit", str(SMOKE_FORFEIT_TURN))
+                                    "--forfeit-turn-limit", str(SMOKE_FORFEIT_TURN), allow_fault=True)
+    if (summary.get("failure") or {}).get("cause") == "peer_long_tail_fault":
+        from main.anchors.results import unit_counts
+
+        assert summary["status"] == "FAILED" and summary["peer_clean"] is False
+        assert not unit_counts(summary, games=1).counts and len(rows) <= 1
+        return
     _assert_the_pieces_fit(summary, rows, out, "rust", 1)
     [row] = rows
     # P3: our side was the IN-PROCESS core slot (the run-time no-poke-env proof is the slow read's

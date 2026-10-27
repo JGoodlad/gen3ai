@@ -57,6 +57,7 @@ from __future__ import annotations
 import json
 import math
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple
 
 from main.anchors.results import Z95, newcombe, wilson
@@ -396,8 +397,7 @@ def _d1_guard(cells: Mapping[str, Any], dg: Mapping[str, Any]) -> Dict[str, Any]
         checks.append({"unit": u["unit"], "panel": u["panel"], "unit_seed": int(u["unit_seed"]),
                        "counted": bool(u["counted"]), "n": u.get("n"), "wins": u.get("wins"),
                        "banked": None if want is None else {"n": want["n"], "wins": want["wins"]},
-                       "games_equal": (want is not None and u.get("games") is not None
-                                       and [list(x) for x in u["games"]] == want["games"])})
+                       **guard_games(u, want)})
     planned = sum(len(by) for by in bank.values())
     why = [] if checks else ["no guard unit played"]
     why += [f"{c['unit']}: not counted" for c in checks if not c["counted"]]
@@ -707,6 +707,41 @@ def _bank_rows(entry: Mapping[str, Any]) -> List[Dict[str, Any]]:
     return [r for r in rows if r.get("read_cell") in cells]
 
 
+def guard_games(u: Mapping[str, Any], want: Optional[Mapping[str, Any]]) -> Dict[str, Any]:
+    """THE game-for-game comparison of a re-played guard unit ``u`` (an assembled unit row) with its banked unit
+    ``want`` (:func:`banked_units`): the 5-tuple (:data:`main.reads.assemble.GAME_KEYS`) AND each game's choices from
+    both captures (:func:`main.reads.assemble.compare_choices`; ``measurements/kakuna_determinism_2026-10-27/`` §6).
+
+    ``games_equal`` is True iff the 5-tuples are equal and the choices are not seen to differ. When either side has no
+    capture the choices are ``unavailable`` (``choices_why`` says why) and the 5-tuple decides alone, as before."""
+    from main.reads.assemble import compare_choices
+
+    tuple_eq = bool(want is not None and u.get("games") is not None
+                    and [list(x) for x in u["games"]] == want["games"])
+    if not tuple_eq:
+        ch: Dict[str, Any] = {"choices": "not compared", "differing": [], "why": "the 5-tuples differ"}
+    else:
+        assert want is not None
+        here = Path(u["cell_dir"]) if u.get("cell_dir") else None
+        ch = compare_choices(here, bank_cell(want), want["games"],
+                             unavailable="the banked rows name no single source unit")
+    return {"games_equal": tuple_eq and ch["choices"] != "differ", "tuple_equal": tuple_eq,
+            "choices": ch["choices"], "choices_differing": ch["differing"], "choices_why": ch["why"]}
+
+
+def bank_cell(want: Mapping[str, Any]) -> Optional[Path]:
+    """The banked unit's archived cell dir: its rows' one ``source_unit`` (``<read state>/<unit>``, relative to
+    :func:`utils.paths.gen3ai_archive_dir`) as ``<archive>/<read state>/cells/<unit>``; None when the rows name none or
+    several."""
+    from utils.paths import gen3ai_archive_dir
+
+    src = want.get("sources") or []
+    if len(src) != 1 or not src[0]:
+        return None
+    rel = Path(str(src[0]))
+    return gen3ai_archive_dir() / rel.parent / "cells" / rel.name
+
+
 def banked_units(entry: Mapping[str, Any]) -> Dict[str, Dict[int, Dict[str, Any]]]:
     """``{teamset: {unit_seed: {wins, ties, n, games}}}`` from ANOTHER read's committed per-game rows
     (``entry = {path, sha256, cells: {teamset: read_cell}}``), the file's sha256 checked: the banked control."""
@@ -727,11 +762,13 @@ def banked_units(entry: Mapping[str, Any]) -> Dict[str, Dict[int, Dict[str, Any]
         ts = cell_of.get(r.get("read_cell"))
         if ts is None:
             continue
-        u = out[ts].setdefault(int(r["unit_seed"]), {"wins": 0, "ties": 0, "n": 0, "games": []})
+        u = out[ts].setdefault(int(r["unit_seed"]), {"wins": 0, "ties": 0, "n": 0, "games": [], "sources": []})
         u["n"] += 1
         u["wins"] += int(r["result"] == "win")
         u["ties"] += int(r["result"] == "tie")
         u["games"].append([r.get(k) for k in GAME_KEYS])
+        if r.get("source_unit") not in u["sources"]:
+            u["sources"].append(r.get("source_unit"))
     for ts in out:
         for u in out[ts].values():
             u["games"].sort(key=lambda g: (str(g[0]), int(g[1])))
@@ -744,7 +781,7 @@ def _pm_inputs(cells: Mapping[str, Any], p: Mapping[str, Any], spec: Any) -> Dic
     for name, a in p["arms"].items():
         _same_engine(f"prior_mix_ab arm {name}", _group(cells, "anchor", a["group"]).get("engine"), there)
     _same_engine("prior_mix_ab guard", _group(cells, "anchor", p["guard"]["group"]).get("engine"), there)
-    doc: Dict[str, Any] = {"banked": {ts: {str(s): {k: v for k, v in u.items() if k != "games"}
+    doc: Dict[str, Any] = {"banked": {ts: {str(s): {k: v for k, v in u.items() if k not in ("games", "sources")}
                                            for s, u in sorted(by.items())} for ts, by in bank.items()},
                            "banked_source": {"path": p["banked"]["path"], "sha256": p["banked"]["sha256"]},
                            "arms": {}, "guard": None}
@@ -763,9 +800,7 @@ def _pm_inputs(cells: Mapping[str, Any], p: Mapping[str, Any], spec: Any) -> Dic
         checks.append({"unit": u["unit"], "panel": u["panel"], "unit_seed": int(u["unit_seed"]),
                        "counted": bool(u["counted"]), "n": u.get("n"), "wins": u.get("wins"),
                        "banked": None if want is None else {"n": want["n"], "wins": want["wins"]},
-                       "games_equal": (want is not None and u.get("games") is not None
-                                       and [list(x) for x in u["games"]] == want["games"]),
-                       "our_regime": u.get("our_regime")})
+                       **guard_games(u, want), "our_regime": u.get("our_regime")})
     doc["guard"] = {"label": p["guard"]["label"], "units": checks, "regime_ids": gg.get("regime_ids")}
     return doc
 
@@ -915,7 +950,8 @@ def _sb_inputs(cells: Mapping[str, Any], p: Mapping[str, Any], spec: Any) -> Dic
         "units_planned": len(g["unit_seeds"]),
         "units": [{k: u.get(k) for k in ("unit", "panel", "unit_seed", "counted", "wins", "ties", "n", "our_regime")}
                   for u in g["units"] if u["label"] == p["label"]],
-        "banked": {ts: {str(s): {k: v for k, v in u.items() if k != "games"} for s, u in sorted(by.items())}
+        "banked": {ts: {str(s): {k: v for k, v in u.items() if k not in ("games", "sources")}
+                        for s, u in sorted(by.items())}
                    for ts, by in bank.items()},
         "banked_source": {"path": p["banked"]["path"], "sha256": p["banked"]["sha256"]}}
     gg = _group(cells, "anchor", p["guard"]["group"])
@@ -925,9 +961,7 @@ def _sb_inputs(cells: Mapping[str, Any], p: Mapping[str, Any], spec: Any) -> Dic
         checks.append({"unit": u["unit"], "panel": u["panel"], "unit_seed": int(u["unit_seed"]),
                        "counted": bool(u["counted"]), "n": u.get("n"), "wins": u.get("wins"),
                        "banked": None if want is None else {"n": want["n"], "wins": want["wins"]},
-                       "games_equal": (want is not None and u.get("games") is not None
-                                       and [list(x) for x in u["games"]] == want["games"]),
-                       "our_regime": u.get("our_regime")})
+                       **guard_games(u, want), "our_regime": u.get("our_regime")})
     doc["guard"] = {"label": p["guard"]["label"], "units": checks, "regime_ids": gg.get("regime_ids")}
     return doc
 
@@ -1063,7 +1097,7 @@ def _pr_inputs(cells: Mapping[str, Any], p: Mapping[str, Any], spec: Any) -> Dic
     sec = p["secondary"]
     bank = banked_units(sec["banked"])
     doc: Dict[str, Any] = {"label": p["label"], "arms": {}, "secondary_bank": {
-        ts: {str(s): {k: v for k, v in u.items() if k != "games"} for s, u in sorted(by.items())}
+        ts: {str(s): {k: v for k, v in u.items() if k not in ("games", "sources")} for s, u in sorted(by.items())}
         for ts, by in bank.items()}, "secondary_source": {"path": sec["banked"]["path"],
                                                          "sha256": sec["banked"]["sha256"]}}
     for name, a in p["arms"].items():

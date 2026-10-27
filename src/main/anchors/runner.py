@@ -344,6 +344,14 @@ async def run_peer_pair_half(plan: SeriesPlan, cfg: Any, half: str, n_games: int
     report["peer_error_free"] = bool(report.get("peer_error_free")) and bool(
         our_report.get("peer_error_free"))
     finalize_regime_fields(report, peer_rcs=[p.returncode for p in procs] or [None])
+    pair_faults = 0
+    for pp in (theirs, ours):                           # H21: either peer's fault voids the pair cell
+        failure = apply_peer_fault(report, pp, len(state.records), n_games, failure)
+        pair_faults += int(report["peer_fault_lines"])
+    report["peer_fault_lines"] = pair_faults
+    if pair_faults:
+        report["peer_clean"] = False
+        report["regime_verified"] = False
     note = pair_exit_note(plan, half, report, our_report, len(state.records), n_games)
     if note is not None:
         report["peer_exit_note"] = note
@@ -544,6 +552,7 @@ def _half_report(plan: SeriesPlan, half: str, n_games: int, pplan: Any, proc: An
         report["regime_verified_decisions"] = False
         report["our_belief_prior_mix_mismatch"] = [plan.our_belief_prior_mix, state.belief_prior_mix]
     finalize_regime_fields(report, peer_rcs=[proc.returncode if proc is not None else None])
+    failure = apply_peer_fault(report, pplan, len(state.records), n_games, failure)
     if mirror is not None:
         report["mirrored_half"] = mirrored_mod.score_half(
             mirror, state.records, list(state.draws), list(report.get("team_draws") or []),
@@ -710,6 +719,29 @@ def finalize_regime_fields(report: Dict[str, Any], *, peer_rcs: List[Optional[in
     report["peer_rcs"] = peer_rcs
     report["peer_clean"] = bool(report.get("peer_error_free", True)) and all(rc == 0 for rc in rcs)
     report["regime_verified"] = bool(report.get("regime_verified_decisions")) and report["peer_clean"]
+
+
+def apply_peer_fault(report: Dict[str, Any], pplan: Any, done: int, expected: int,
+                     failure: Optional[SeriesFailure]) -> Optional[SeriesFailure]:
+    """🚨 H21: a peer fault ANYWHERE in a half (mid-half, or after its last game) means the unit never counts.
+
+    ``peer_clean`` alone relied on the fault ending in a recorded ``error`` or a nonzero rc. This reads the peer's
+    log itself: any :data:`session.PEER_FAULT_LINE` makes ``peer_clean`` False and the half FAILED
+    (``peer_long_tail_fault``, unless it already failed), so the verdict does not depend on whether the watchdog's
+    poll saw the line before the last record landed. A unit whose peer never printed it is untouched."""
+    from main.anchors.session import PeerFaultScan, peer_fault_failure
+
+    log = getattr(pplan, "log_path", None)
+    scan = PeerFaultScan(Path(log)) if log is not None else None
+    n = scan.final() if scan is not None else 0
+    report["peer_fault_lines"] = n
+    if not n:
+        return failure
+    report["peer_clean"] = False
+    report["regime_verified"] = False
+    print(f"[anchors] 🚨 {pplan.label}: {n} long-tail force-reset line(s) — Metamon's fault (H5/H21); "
+          "this unit is VOID and never counts", flush=True)
+    return failure if failure is not None else peer_fault_failure(pplan.label, scan, done, expected)
 
 
 def rows_from(records: List[Any], half: str, cell: CellSpec, report: Dict[str, Any],

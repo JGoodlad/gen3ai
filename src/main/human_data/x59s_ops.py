@@ -121,7 +121,7 @@ def export_all(students: Path, out: Path, human_rows: Path, selfplay_rows: Path,
 # -------------------------------------------------------------------------------------------------- identity
 def identity(state: Path, unit: str, x51_rows: Path, read_cell: str, unit_seed: int) -> Dict[str, Any]:
     """VOID 5: the play tree's unit ``unit`` against X51's banked unit, game for game."""
-    from main.reads.assemble import GAME_KEYS, unit_games
+    from main.reads.assemble import GAME_KEYS, compare_choices, unit_games
 
     got = unit_games(state, unit)
     want = sorted(([r.get(k) for k in GAME_KEYS] for r in map(json.loads, x51_rows.read_text().splitlines())
@@ -129,8 +129,13 @@ def identity(state: Path, unit: str, x51_rows: Path, read_cell: str, unit_seed: 
                   key=lambda g: (str(g[0]), int(g[1])))
     eq = got is not None and len(want) == 20 and [list(g) for g in got] == want
     diff = [] if got is None else [{"x51": w, "here": g} for w, g in zip(want, got) if list(g) != w]
+    # the stricter comparison (choices from the captures) needs X51's captures, and X51's rows name none: recorded
+    ch = compare_choices(state / "cells" / unit, None, want,
+                         unavailable="X51's banked rows (E0, 2026-10-20) name no capture source")
     return {"unit": unit, "x51_cell": read_cell, "unit_seed": unit_seed, "games_here": None if got is None else
-            len(got), "games_x51": len(want), "game_keys": list(GAME_KEYS), "pass": bool(eq), "differing": diff}
+            len(got), "games_x51": len(want), "game_keys": list(GAME_KEYS),
+            "pass": bool(eq) and ch["choices"] != "differ", "differing": diff, "choices": ch["choices"],
+            "choices_why": ch["why"]}
 
 
 # ----------------------------------------------------------------------------------------------------- floor

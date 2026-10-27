@@ -16,13 +16,15 @@ holds what they share:
 **Watch the pair, and FAIL LOUDLY with a named cause.** This is the half that hazard H-B bought:
 when our side forfeits at turn 250, Metamon's long-tail handler force-resets and then calls itself
 (~985 levels, then a ``RecursionError``), the process dies, and a naive harness sits there with a
-live client, no opponent, and nothing to report. Four named causes, never a silent zero:
+live client, no opponent, and nothing to report. Five named causes, never a silent zero:
 
 =====================  ===================================================================
 ``peer_never_ready``   the peer process never printed its online banner
 ``peer_exited``        the peer died before the series finished (rc and its log tail named)
 ``no_first_game``      nothing finished inside the first-game deadline
 ``no_progress``        games stopped finishing inside the progress deadline
+``peer_long_tail_fault`` the peer printed Metamon's long-tail force-reset line (H5): the unit
+                       stops at its FIRST such line, is VOID and is re-run (``PEER_FAULT_LINE``)
 =====================  ===================================================================
 
 Each is returned as a ``failure`` dict that reaches ``summary.json``'s ``status: "FAILED"`` and a
@@ -360,10 +362,14 @@ async def watch_peer_pair(procs: "list[subprocess.Popen]", plans: "list[PeerPlan
     """
     started = time.time()
     seen = 0
+    faults = [PeerFaultScan(p.log_path) for p in plans]
     while True:
         await asyncio.sleep(poll_s)
         state.records = read_peer_battles(results_dir)
         done = len(state.records)
+        for scan, plan in zip(faults, plans):
+            if scan.scan():                             # H5 fail-fast, either peer
+                raise peer_fault_failure(plan.label, scan, done, expected)
         while seen < done:
             # The same per-game line the observed path prints. Without it an anchor-vs-anchor cell
             # looks IDENTICAL to a hung one from outside — the watchdog knows it is progressing and
@@ -409,6 +415,70 @@ def log_tail(path: Path, n: int = 20) -> str:
         return f"(no log at {path})"
     lines = path.read_text(errors="replace").splitlines()[-n:]
     return f"last {len(lines)} lines of {path}:\n" + "\n".join(lines)
+
+
+#: 🚨 Metamon's long-tail handler's own line (SOP H5 / H21): its ``MetamonAMAGOWrapper.step`` answers "Battle is
+#: already finished" (our turn-250 forfeit, raced against its env) by force-resetting and calling itself. The FIRST
+#: such line is the fault: once it fires, the peer's next game is a 1-turn forfeit and the one after plays on carried
+#: state (``measurements/kakuna_determinism_2026-10-27/`` §4). No unit whose peer printed it may count.
+PEER_FAULT_LINE = "Force resetting due to long-tail error"
+
+
+class PeerFaultScan:
+    """Counts :data:`PEER_FAULT_LINE` in a peer's log, reading only the bytes appended since the last call, so the
+    watchdog can look on every poll without re-reading a log that grows to megabytes."""
+
+    def __init__(self, path: Path) -> None:
+        self.path = path
+        self.offset = 0
+        self.carry = b""
+        self.count = 0
+        self.first_line: Optional[int] = None
+        self.lines = 0
+
+    def scan(self) -> int:
+        """The count so far (0 when the log does not exist yet)."""
+        try:
+            with open(self.path, "rb") as fh:
+                fh.seek(self.offset)
+                data = fh.read()
+        except OSError:
+            return self.count
+        self.offset += len(data)
+        parts = (self.carry + data).split(b"\n")
+        self.carry = parts.pop()                          # a partial last line waits for its newline
+        needle = PEER_FAULT_LINE.encode()
+        for ln in parts:
+            self.lines += 1
+            if needle in ln:
+                self.count += 1
+                if self.first_line is None:
+                    self.first_line = self.lines
+        return self.count
+
+    def final(self) -> int:
+        """The count including a last line with no newline (the peer has exited)."""
+        self.scan()
+        if self.carry and PEER_FAULT_LINE.encode() in self.carry:
+            self.count += 1
+            self.lines += 1
+            self.first_line = self.lines if self.first_line is None else self.first_line
+            self.carry = b""
+        return self.count
+
+
+def peer_fault_lines(path: Path) -> int:
+    """How many :data:`PEER_FAULT_LINE` lines a finished peer's log holds (0 when there is no log)."""
+    return PeerFaultScan(path).final()
+
+
+def peer_fault_failure(label: str, scan: PeerFaultScan, done: int, expected: int) -> SeriesFailure:
+    """The named failure of a unit whose peer faulted (H5 fail-fast / H21): VOID, never counted, re-run."""
+    return SeriesFailure(
+        "peer_long_tail_fault",
+        f"{label} printed {PEER_FAULT_LINE!r} (first at its log line {scan.first_line}) after {done}/{expected} "
+        "games: Metamon's turn-250 fault (SOP H5). Its following games are contaminated (a 1-turn forfeit, then "
+        "carried state), so the unit stops here, is VOID and is re-run with the same seed.")
 
 
 def start_peer(plan: PeerPlan, nice: int = 10) -> subprocess.Popen:
@@ -482,9 +552,12 @@ async def watch(proc: subprocess.Popen, plan: PeerPlan, state: OurSideState, exp
     Runs beside our side's task; whichever finishes first decides the half.
     """
     started = time.time()
+    fault = PeerFaultScan(plan.log_path)
     while True:
         await asyncio.sleep(poll_s)
         done = len(state.records)
+        if fault.scan():                                # H5 fail-fast: never play the contaminated games
+            raise peer_fault_failure(plan.label, fault, done, expected)
         if done >= expected:
             return
         if proc.poll() is not None:
