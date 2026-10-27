@@ -5,7 +5,8 @@ THE CELL. Side A (the reported side, ``--our-teamset away``) is Kakuna on a rate
 registered files, :func:`install`), and each unit's config names them; a unit is one ``python -m main.anchors``
 invocation of 20 role-balanced games (``--declare-asymmetric-teams``, greedy vs greedy, CPU, ``--team-seed =
 --seed-base =`` the plan's seed, ``--capture-dir``), run from a PINNED checkout root under ``nice -n 19 taskset -c
-5-7,13-15 scripts/ops/mem_cap.sh`` (rule 5b), one at a time.
+5-7,13-15 scripts/ops/mem_cap.sh`` (rule 5b; the short lane first, :func:`run_unit`), one at a time, on a 95xx port
+CLAIMED in the lock dir every Kakuna lane shares (:func:`claim_port`).
 
 WHO PLAYED WHICH TEAM. Metamon draws each side's team itself, so the record of a game is the front end's CAPTURE: its
 START command carries both packed teams and the two player names (side A's carries ``Away``, side B's ``Home``), and
@@ -13,7 +14,10 @@ its battle log names the winner (``|win|<name>``). Each packed team is exported 
 ``Teams.export`` and matched to its side's declared set by identity (``panel.team_id``), falling back to the
 species + moves key when that key is UNIQUE in the side's set (the tier is recorded). A unit COUNTS iff
 ``main.anchors.results.unit_counts`` says so against the registered per-side content digests, AND every capture
-matches on both sides, AND the captures' winners agree game for game with the unit's ``games.jsonl`` results.
+matches on both sides, AND the captures' winners agree game for game with the unit's ``games.jsonl`` results, AND
+(when the registration says ``"rederived_guards": "count"``) the guards re-derived from its captures and peer logs
+find no forced end and no peer fault (:func:`rederived_guards`; under the default ``report`` they are listed and
+counting is unchanged).
 """
 from __future__ import annotations
 
@@ -31,6 +35,10 @@ from main.team_strength import panel as PN
 GAMES = 20
 CORES = "5-7,13-15"
 MEM_GB = "12"
+#: The heavy slots' short lane and its overrun exit, and the long retry's bound: ``main.x35.kakuna``'s values.
+UNIT_MAX_S = 600
+SHORT_LANE_OVERRUN = 88
+UNIT_LONG_S = 2700
 METAMON_FILE = ".gen3ou_team"
 _WIN_RE = re.compile(r"\|win\|([^\n|\"\\]+)")
 _EXPORT_JS = ("const {Teams}=require(process.argv[1]);const ls=JSON.parse(require('fs').readFileSync(0,'utf8'));"
@@ -124,14 +132,18 @@ def is_done(state: Path, unit: str) -> bool:
     return s.get("status") == "OK" and s.get("n") == GAMES
 
 
-def argv_for(py: str, tree: Path, out: Path, seed: int, port: int) -> List[str]:
+def argv_for(py: str, tree: Path, out: Path, seed: int, port: int, *, short: bool = True) -> List[str]:
+    """One unit's command. ``short``: the heavy slots' SHORT LANE (``mem_cap.sh --max-s``, hard-killed past it with
+    exit :data:`SHORT_LANE_OVERRUN`), as ``main.x35.kakuna``'s units take it (a 20-game Kakuna pair unit plays in about
+    3 min); otherwise a normal heavy-slot job bounded by ``timeout`` :data:`UNIT_LONG_S`."""
     a = [py, "-m", "main.anchors", "--opponent-a", "metamon:Kakuna", "--opponent-b", "metamon:Kakuna",
          "--teamset", "home", "--our-teamset", "away", "--declare-asymmetric-teams", "--progress-timeout", "1800",
          "--regime", "greedy", "--games", str(GAMES), "--team-seed", str(seed), "--seed-base", str(seed),
          "--device", "cpu", "--port", str(port), "--nice", "19", "--out", str(out), "--capture-dir",
          str(out / "capture")]
+    cap = ["--max-s", str(UNIT_MAX_S), MEM_GB] if short else [MEM_GB, "timeout", str(UNIT_LONG_S)]
     return ["nice", "-n", "19", "taskset", "-c", CORES, str(tree / "scripts" / "ops" / "mem_cap.sh"),
-            "--name", "tsr", MEM_GB, *a]
+            "--name", "tsr", *cap, *a]
 
 
 def env_for(tree: Path, config: Path) -> Dict[str, str]:
@@ -235,21 +247,104 @@ def parse_unit(udir: Path, *, side_a: Mapping[str, str], side_b: Mapping[str, st
     return rows, reasons
 
 
-def run_unit(*, py: str, tree: Path, state: Path, unit: str, config: Path, seed: int, port: int) -> int:
+def claim_port() -> Tuple[int, Any]:
+    """``(port, held lock file)``: a 95xx port CLAIMED in the one lock dir every Kakuna lane shares
+    (``main.x35.kakuna.claim_port``), so a unit never takes a port another lane's server holds or is about to bind."""
+    from main.x35.kakuna import claim_port as _claim
+
+    return _claim()
+
+
+def _play(*, py: str, tree: Path, state: Path, unit: str, config: Path, seed: int, short: bool) -> int:
     out = unit_dir(state, unit)
     if out.exists():
         out.rename(out.with_name(f"{unit}.partial.{int(time.time())}"))
     out.parent.mkdir(parents=True, exist_ok=True)
     logs = Path(state) / "kakuna" / "logs"
     logs.mkdir(parents=True, exist_ok=True)
-    with open(logs / f"{unit}.log", "ab") as log:
-        proc = subprocess.Popen(argv_for(py, tree, out, seed, port), cwd=str(tree), env=env_for(tree, config),
-                                stdout=log, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
-                                start_new_session=True)
-        _journal(state, {"event": "start", "unit": unit, "pid": proc.pid, "seed": seed})
-        rc = proc.wait()
-    _journal(state, {"event": "end", "unit": unit, "rc": rc, "done": is_done(state, unit)})
+    port, claim = claim_port()
+    t0 = time.time()
+    try:
+        with open(logs / f"{unit}.log", "ab") as log:
+            proc = subprocess.Popen(argv_for(py, tree, out, seed, port, short=short), cwd=str(tree),
+                                    env=env_for(tree, config), stdout=log, stderr=subprocess.STDOUT,
+                                    stdin=subprocess.DEVNULL, start_new_session=True)
+            _journal(state, {"event": "start", "unit": unit, "pid": proc.pid, "seed": seed, "port": port,
+                             "short": short})
+            rc = proc.wait()
+    finally:
+        claim.close()
+    _journal(state, {"event": "end", "unit": unit, "rc": rc, "done": is_done(state, unit), "short": short,
+                     "wall_s": round(time.time() - t0, 1)})
     return rc
+
+
+def _overran(state: Path, unit: str) -> bool:
+    p = Path(state) / "kakuna" / "units.jsonl"
+    try:
+        lines = p.read_text().splitlines()
+    except OSError:
+        return False
+    for line in lines:
+        try:
+            ev = json.loads(line)
+        except ValueError:
+            continue
+        if ev.get("event") == "short_lane_overrun" and ev.get("unit") == unit:
+            return True
+    return False
+
+
+def run_unit(*, py: str, tree: Path, state: Path, unit: str, config: Path, seed: int) -> int:
+    """Play ONE attempt of ``unit`` on a claimed port: on the short lane first; if that overran (exit
+    :data:`SHORT_LANE_OVERRUN`) and the unit is not done, ONCE more as a long heavy-slot job (``short_lane_overrun``
+    is journalled, and every later attempt of that unit is long from the start). Returns the last exit code."""
+    short = not _overran(state, unit)
+    rc = _play(py=py, tree=tree, state=state, unit=unit, config=config, seed=seed, short=short)
+    if short and rc == SHORT_LANE_OVERRUN and not is_done(state, unit):
+        _journal(state, {"event": "short_lane_overrun", "unit": unit, "rc": rc})
+        rc = _play(py=py, tree=tree, state=state, unit=unit, config=config, seed=seed, short=False)
+    return rc
+
+
+#: The FORCELOSE command a front end writes into a capture when it decides a battle by a forced end.
+_FORCELOSE = b"FORCELOSE"
+
+
+def rederived_guards(udir: Path, summary: Mapping[str, Any]) -> Dict[str, Any]:
+    """The anchor guards RE-DERIVED from a unit's own files (``main.reads.rederive``, SOP G14), for a pair cell:
+    every FORCELOSE in ANY capture is a hit (neither side is ours, so no forced end is our turn-limit cap; the capture
+    files are scanned directly, so a ``games.jsonl`` tag that names no capture cannot hide one), plus the front end's
+    mid-battle disconnect lines and the peers' long-tail fault lines (``rederive.unit_check``).
+    ``{"status": clean|hit|unavailable, "hits": [...], "why": [...]}``."""
+    from main.reads import rederive as RD
+
+    chk = RD.unit_check(Path(udir), summary)
+    hits = list(chk["hits"])
+    seen = {h.get("tag") for h in hits if h.get("check") == "forced_end"}
+    caps = sorted((Path(udir) / "capture").glob("*.json"))
+    for f in caps:
+        raw = f.read_bytes()
+        if _FORCELOSE not in raw:
+            continue
+        tag = f.stem
+        try:
+            cmds = json.loads(raw).get("commands") or []
+        except ValueError:
+            cmds = ["FORCELOSE ?"]
+        if tag not in seen and any(str(c).split()[:1] == ["FORCELOSE"] for c in cmds):
+            hits.append({"check": "forced_end", "source": "capture-scan", "tag": tag})
+            seen.add(tag)
+    why = list(chk["why"])
+    if not caps:
+        why.append(f"no capture in {udir}")
+    if hits:
+        status = RD.HIT
+    elif not caps or chk["peer_fault"] == RD.UNAVAILABLE:
+        status = RD.UNAVAILABLE
+    else:
+        status = RD.CLEAN
+    return {"status": status, "hits": hits, "why": why}
 
 
 def _journal(state: Path, obj: Mapping[str, Any]) -> None:

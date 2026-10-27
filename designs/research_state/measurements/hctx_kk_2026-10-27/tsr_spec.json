@@ -1,0 +1,24 @@
+{
+ "name": "hctx_kk_2026-10-27",
+ "notes": [
+  "H-CTX's open assumption A-K (REVIEW M3 of hctx_rc72_2026-10-26): Kakuna on BOTH sides, rc72b (side A, all 72 teams) against the COHERENT reference = home72 (71 distinct teams) + forum72 (72), the two control panels of the H-CTX read. PREREG.md.",
+  "Pilot B only (metamon:Kakuna ckpt 34 on both sides, the anchors' declared asymmetric pair cell, greedy vs greedy, CPU). No pilot A. Teams are attributed from the captures' START lines, never from Metamon's battle CSV (REVIEW F1)."
+ ],
+ "sets": {
+  "rc72b": "designs/research_state/measurements/hctx_rc72_2026-10-26/teams_rc72b",
+  "home72": "designs/research_state/measurements/n0_endofrun_2026-09-27/teams_home72",
+  "forum72": "designs/research_state/measurements/x37a_eval_matrix_2026-10-18/teams_forum72"
+ },
+ "reference": {"quota": {"home72": 71, "forum72": 72}, "seed": 7275},
+ "pilots": {
+  "kakuna": {
+   "agent": "metamon:Kakuna", "checkpoint": 34,
+   "subset_size": 72, "subset_seed": 7276, "units_per_set": 60, "unit_games": 20, "seed": 7277,
+   "ref_set": "gen3ai_hctxk_ref143",
+   "subset_sets": {"rc72b": "gen3ai_hctxk_rc72b"},
+   "config_template": "designs/research_state/measurements/hctx_rc72_2026-10-26/anchors_rc72b_kakuna.json",
+   "rederived_guards": "count"
+  }
+ },
+ "fit": {"prior_sd": 2.0, "B": 2000, "seed": 7278, "competitive_margin_elo": 35.0, "comparisons": []}
+}

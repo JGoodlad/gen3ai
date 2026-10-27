@@ -177,10 +177,9 @@ def test_kakuna_claim_port_makes_the_same_syscalls_and_claims_as_its_old_copy(mo
 @pytest.mark.parametrize("busy", [set(), {LO}])
 @pytest.mark.parametrize("old", [_old_anchors_free, _old_team_strength_port_free])
 def test_the_anchors_and_team_strength_probes_make_the_same_syscalls_as_their_old_copies(monkeypatch, busy, old):
-    from main.team_strength import cli as TS
-
-    for new in (P.bindable, TS.bindable):
-        assert _run(monkeypatch, busy, new, LO) == _run(monkeypatch, busy, old, LO)
+    # the team-strength Kakuna lane now claims its port through main.x35.kakuna.claim_port (tested above); its old
+    # probe stays here as the reference bindable() must still match
+    assert _run(monkeypatch, busy, P.bindable, LO) == _run(monkeypatch, busy, old, LO)
 
 
 def test_anchors_pick_port_skips_the_reserved_ports_and_picks_the_first_bindable(monkeypatch, tmp_path):

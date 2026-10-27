@@ -137,19 +137,60 @@ def test_pilot_b_games_cluster_by_matchup_and_self_games_are_dropped(tmp_path, m
         cli.load_kakuna(reg, tmp_path, tmp_path, cluster="pair")
 
 
-def test_a_port_in_use_is_busy_and_a_closed_one_frees():
-    import socket
+def test_a_unit_claims_its_port_takes_the_short_lane_and_retries_long_once_on_an_overrun(tmp_path, monkeypatch):
+    """Pilot B's unit claims a 95xx port in the Kakuna lanes' shared lock dir and holds it for the child's life; it
+    plays on the heavy slots' short lane, and an overrun (exit 88) is played ONCE more as a long job, after which the
+    unit is never short again."""
+    from main.team_strength import kakuna_lane as KL
 
-    from main.team_strength import cli
+    tree = tmp_path / "tree"
+    argv_short = KL.argv_for("py", tree, tmp_path / "o", 7, 9550)
+    argv_long = KL.argv_for("py", tree, tmp_path / "o", 7, 9550, short=False)
+    assert argv_short[argv_short.index("--max-s") + 1] == str(KL.UNIT_MAX_S)
+    assert "--max-s" not in argv_long and argv_long[argv_long.index("timeout") + 1] == str(KL.UNIT_LONG_S)
+    assert argv_short[argv_short.index("--port") + 1] == "9550"
 
-    srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    srv.bind(("127.0.0.1", 0))
-    srv.listen(1)
-    port = srv.getsockname()[1]
-    try:
-        assert not cli.bindable(port)
-        assert not cli.wait_port_free(port, timeout_s=0.2, poll_s=0.1)
-    finally:
-        srv.close()
-    assert cli.wait_port_free(port, timeout_s=5.0, poll_s=0.1)
+    closed = []
+    calls = []
+
+    class _Claim:
+        def close(self):
+            closed.append(True)
+
+    class _Proc:
+        pid = 1
+
+        def __init__(self, argv, **_kw):
+            calls.append(argv)
+
+        def wait(self):
+            return KL.SHORT_LANE_OVERRUN if "--max-s" in calls[-1] else 0
+
+    monkeypatch.setattr(KL, "claim_port", lambda: (9551, _Claim()))
+    monkeypatch.setattr(KL.subprocess, "Popen", _Proc)
+    monkeypatch.setattr(KL, "env_for", lambda *_a: {})
+    rc = KL.run_unit(py="py", tree=tree, state=tmp_path, unit="kak_s_000", config=tmp_path / "c.json", seed=7)
+    assert rc == 0 and len(calls) == 2 and "--max-s" in calls[0] and "--max-s" not in calls[1]
+    assert len(closed) == 2 and all(c[c.index("--port") + 1] == "9551" for c in calls)
+    calls.clear()
+    KL.run_unit(py="py", tree=tree, state=tmp_path, unit="kak_s_000", config=tmp_path / "c.json", seed=7)
+    assert len(calls) == 1 and "--max-s" not in calls[0]           # it overran before: long from the start
+
+
+def test_a_forced_end_in_any_capture_of_a_pair_cell_is_a_rederived_hit(tmp_path):
+    """Neither side of a pair cell is ours, so EVERY FORCELOSE is a hit, found by scanning the capture files even when
+    no games.jsonl row names them; a clean unit with its peer logs is clean."""
+    from main.team_strength import kakuna_lane as KL
+
+    u = tmp_path / "kak_s_000"
+    (u / "capture").mkdir(parents=True)
+    (u / "ours_challenge").mkdir()
+    (u / "ours_challenge" / "peer_ours.log").write_text("ok\n")
+    (u / "games.jsonl").write_text(json.dumps({"index": 0, "half": "ours_challenge", "battle_tag": "battle-1",
+                                               "result": "win"}) + "\n")
+    (u / "capture" / "battle-1.json").write_text(json.dumps({"commands": ["START {}"], "chunks": []}))
+    summ = {"cell": {"our_side": "metamon:Kakuna", "forfeit_turn_limit": 250}}
+    assert KL.rederived_guards(u, summ)["status"] == "clean"
+    (u / "capture" / "battle-gen3ou-9.json").write_text(json.dumps({"commands": ["START {}", "FORCELOSE p2"]}))
+    got = KL.rederived_guards(u, summ)
+    assert got["status"] == "hit" and [h["tag"] for h in got["hits"]] == ["battle-gen3ou-9"]

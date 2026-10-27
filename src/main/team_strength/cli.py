@@ -25,7 +25,6 @@ from main.team_strength import plan as PLN
 from main.team_strength import register as RG
 from main.team_strength import report as RP
 from main.team_strength import x26_lane as XL
-from utils.ports import bindable
 
 def default_metamon_teams() -> Path:
     """Metamon's team cache, from the one anchors config (``designs/ops/anchors.json`` / ``GEN3AI_METAMON_CACHE_DIR``)."""
@@ -61,9 +60,9 @@ def cmd_register(a: argparse.Namespace) -> int:
         print(f"[tsr] {out} already registered (digest {reg['digest'][:12]})")
         return 0
     out.write_text(json.dumps(reg, indent=1, sort_keys=True) + "\n")
-    units = XL.x26_units(reg)
+    plan_a = json.dumps(PLN.summary(XL.x26_units(reg))) if "x26" in reg["pilots"] else "none (no pilot A)"
     print(f"[tsr] registered {out}: digest {reg['digest']}; reference {len(reg['reference']['members'])} teams; "
-          f"pilot A plan {json.dumps(PLN.summary(units))}")
+          f"pilot A plan {plan_a}")
     return 0
 
 
@@ -87,18 +86,6 @@ def cmd_install(a: argparse.Namespace) -> int:
     return 0
 
 
-def wait_port_free(port: int, timeout_s: float = 120.0, poll_s: float = 5.0) -> bool:
-    """True once ``port`` is bindable, False if it is still busy after ``timeout_s`` (the previous unit's server may
-    take a few seconds to exit)."""
-    t_end = time.monotonic() + timeout_s
-    while True:
-        if bindable(port):
-            return True
-        if time.monotonic() >= t_end:
-            return False
-        time.sleep(poll_s)
-
-
 def kakuna_plan(reg: Mapping[str, Any]) -> List[Any]:
     k = reg["pilots"]["kakuna"]
     return PLN.kakuna_units(sorted(k["subset_sets"]), int(k["units_per_set"]), int(k["seed"]))
@@ -109,9 +96,6 @@ def run_kakuna(reg: Mapping[str, Any], state: Path, tree: Path, py: str, stop_at
     from main.anchors.session import team_set_digest
 
     k = reg["pilots"]["kakuna"]
-    port = int(k["port"])
-    if not 9500 <= port <= 9599:
-        raise SystemExit(f"port {port} is outside the anchors' 9500-9599")
     want = kakuna_digests(reg)
     fails: Dict[str, int] = {}
     for unit, s, seed in kakuna_plan(reg):
@@ -123,10 +107,8 @@ def run_kakuna(reg: Mapping[str, Any], state: Path, tree: Path, py: str, stop_at
             if team_set_digest(KL.metamon_set_dir(teams_root, k["ref_set"])) != want["ref"] or \
                     team_set_digest(KL.metamon_set_dir(teams_root, k["subset_sets"][s])) != want[s]:
                 raise SystemExit(f"[tsr] a Metamon set moved since install ({s})")
-            if not wait_port_free(port):
-                raise SystemExit(f"[tsr] port {port} is busy — never another process's server")
-            KL.run_unit(py=py, tree=tree, state=state, unit=unit, config=config_path(state, s), seed=seed,
-                        port=port)
+            # the unit claims its own 95xx port (KL.claim_port); a registration's "port" is no longer read
+            KL.run_unit(py=py, tree=tree, state=state, unit=unit, config=config_path(state, s), seed=seed)
             if not KL.is_done(state, unit):
                 fails[unit] = fails.get(unit, 0) + 1
     return {"stopped": None, "fails": fails}
@@ -159,7 +141,7 @@ def cmd_run(a: argparse.Namespace) -> int:
 def cmd_status(a: argparse.Namespace) -> int:
     reg = RG.load(Path(a.reg))
     state = Path(a.state)
-    xu = XL.x26_units(reg)
+    xu = XL.x26_units(reg) if "x26" in reg["pilots"] else []
     xd = sum((state / "x26" / "units" / f"{u.name}.json").exists() for u in xu)
     ku = kakuna_plan(reg)
     kd = sum(KL.is_done(state, u) for u, _, _ in ku)
@@ -184,6 +166,9 @@ def load_kakuna(reg: Mapping[str, Any], state: Path, showdown_sim: Path, cluster
     if "kakuna" not in reg["pilots"]:
         return {"games": [], "verdicts": [], "self_games": 0}
     k = reg["pilots"]["kakuna"]
+    guards = k.get("rederived_guards", "report")
+    if guards not in ("count", "report"):
+        raise ValueError(f"pilots.kakuna.rederived_guards {guards!r} is not 'count' or 'report'")
     want = kakuna_digests(reg)
     sets = PN.load_registered(reg)
     texts = PN.text_of(sets)
@@ -200,7 +185,14 @@ def load_kakuna(reg: Mapping[str, Any], state: Path, showdown_sim: Path, cluster
         side_a = {t: t for t in k["subsets"][s]}
         rows, why = KL.parse_unit(udir, side_a=side_a, side_b=ref_ids, texts=texts, showdown_sim=showdown_sim)
         reasons += why
-        verdicts.append({"unit": unit, "set": s, "counts": not reasons, "reasons": reasons})
+        rg = KL.rederived_guards(udir, summ)
+        if rg["status"] == "hit" and guards == "count":
+            reasons.append(f"rederived guards hit: {len(rg['hits'])} record(s) (a forced end or a peer fault)")
+        cell = summ.get("cell") or {}
+        verdicts.append({"unit": unit, "set": s, "counts": not reasons, "reasons": reasons, "rederived": rg,
+                         "engine_stamp": cell.get("engine_stamp"), "peer_code": cell.get("peer_code"),
+                         "peer_pack_changed": cell.get("peer_pack_changed"),
+                         "server_version": cell.get("server_version")})
         if reasons:
             continue
         for r in rows:
@@ -229,6 +221,10 @@ def compute(reg: Mapping[str, Any], state: Path, kakuna_cluster: str = "matchup"
         ratings["kakuna"] = F.rate(kk["games"], prior_sd=float(fz["prior_sd"]), anchor=refs, B=int(fz["B"]),
                                    seed=int(fz["seed"]) + 1)
     out["kakuna_units"] = kk["verdicts"]
+    # one engine, one peer code (SOP G7 / G14): the distinct stamps of the COUNTED units, for the reader to check
+    out["kakuna_counted_stamps"] = sorted({json.dumps({x: v.get(x) for x in ("engine_stamp", "peer_code",
+                                                                             "peer_pack_changed")}, sort_keys=True)
+                                           for v in kk["verdicts"] if v["counts"]})
     out["kakuna_self_games_dropped"] = kk["self_games"]
     margin = float(fz["competitive_margin_elo"])
     for pilot, rt in ratings.items():
