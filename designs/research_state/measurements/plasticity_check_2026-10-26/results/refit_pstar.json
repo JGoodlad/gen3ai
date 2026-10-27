@@ -1,0 +1,200 @@
+{
+ "fresh0|pstar|0": {
+  "held_curve": {
+   "0": 1.86383,
+   "25": 1.76839,
+   "50": 1.76453,
+   "100": 1.76948,
+   "200": 1.7773,
+   "300": 1.77241,
+   "400": 1.81099
+  },
+  "seconds": 157.6,
+  "net": "fresh0",
+  "target": "pstar",
+  "seed": 0,
+  "lr": 0.0001,
+  "batch": 64,
+  "spec": "fresh:0:/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip"
+ },
+ "fresh1|pstar|0": {
+  "held_curve": {
+   "0": 1.86383,
+   "25": 1.76921,
+   "50": 1.76388,
+   "100": 1.76925,
+   "200": 1.77326,
+   "300": 1.76223,
+   "400": 1.78179
+  },
+  "seconds": 149.5,
+  "net": "fresh1",
+  "target": "pstar",
+  "seed": 0,
+  "lr": 0.0001,
+  "batch": 64,
+  "spec": "fresh:1:/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip"
+ },
+ "x26_025M|pstar|0": {
+  "held_curve": {
+   "0": 1.86383,
+   "25": 1.73083,
+   "50": 1.68445,
+   "100": 1.67134,
+   "200": 1.66056,
+   "300": 1.64015,
+   "400": 1.65519
+  },
+  "seconds": 131.9,
+  "net": "x26_025M",
+  "target": "pstar",
+  "seed": 0,
+  "lr": 0.0001,
+  "batch": 64,
+  "spec": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_25000027_steps.zip"
+ },
+ "x26_100M|pstar|0": {
+  "held_curve": {
+   "0": 1.86383,
+   "25": 1.74247,
+   "50": 1.68368,
+   "100": 1.65183,
+   "200": 1.64036,
+   "300": 1.61298,
+   "400": 1.68256
+  },
+  "seconds": 128.7,
+  "net": "x26_100M",
+  "target": "pstar",
+  "seed": 0,
+  "lr": 0.0001,
+  "batch": 64,
+  "spec": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_100000037_steps.zip"
+ },
+ "x26_175M|pstar|0": {
+  "held_curve": {
+   "0": 1.86383,
+   "25": 1.74031,
+   "50": 1.67903,
+   "100": 1.64755,
+   "200": 1.64964,
+   "300": 1.63888,
+   "400": 1.66873
+  },
+  "seconds": 109.4,
+  "net": "x26_175M",
+  "target": "pstar",
+  "seed": 0,
+  "lr": 0.0001,
+  "batch": 64,
+  "spec": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_175000114_steps.zip"
+ },
+ "x26_280M|pstar|0": {
+  "held_curve": {
+   "0": 1.86383,
+   "25": 1.72772,
+   "50": 1.66624,
+   "100": 1.62648,
+   "200": 1.63815,
+   "300": 1.63168,
+   "400": 1.62803
+  },
+  "seconds": 119.7,
+  "net": "x26_280M",
+  "target": "pstar",
+  "seed": 0,
+  "lr": 0.0001,
+  "batch": 64,
+  "spec": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip"
+ },
+ "x26_380M|pstar|0": {
+  "held_curve": {
+   "0": 1.86383,
+   "25": 1.73764,
+   "50": 1.67618,
+   "100": 1.63627,
+   "200": 1.61197,
+   "300": 1.59202,
+   "400": 1.63829
+  },
+  "seconds": 108.5,
+  "net": "x26_380M",
+  "target": "pstar",
+  "seed": 0,
+  "lr": 0.0001,
+  "batch": 64,
+  "spec": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_380000195_steps.zip"
+ },
+ "x26c_480M|pstar|0": {
+  "held_curve": {
+   "0": 1.86383,
+   "25": 1.73979,
+   "50": 1.68332,
+   "100": 1.63335,
+   "200": 1.62788,
+   "300": 1.61977,
+   "400": 1.65947
+  },
+  "seconds": 106.2,
+  "net": "x26c_480M",
+  "target": "pstar",
+  "seed": 0,
+  "lr": 0.0001,
+  "batch": 64,
+  "spec": "/home/goodlad/dev/gen3ai/models/rb_x26c_s2601/checkpoints/checkpoint_480000085_steps.zip"
+ },
+ "c0_s3501_300M|pstar|0": {
+  "held_curve": {
+   "0": 1.86383,
+   "25": 1.7326,
+   "50": 1.66775,
+   "100": 1.6347,
+   "200": 1.61601,
+   "300": 1.61668,
+   "400": 1.65869
+  },
+  "seconds": 121.9,
+  "net": "c0_s3501_300M",
+  "target": "pstar",
+  "seed": 0,
+  "lr": 0.0001,
+  "batch": 64,
+  "spec": "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3501/final_model.zip"
+ },
+ "x26_025M|pstar|1": {
+  "held_curve": {
+   "0": 1.86383,
+   "25": 1.73656,
+   "50": 1.68268,
+   "100": 1.65593,
+   "200": 1.65541,
+   "300": 1.65491,
+   "400": 1.67317
+  },
+  "seconds": 135.8,
+  "net": "x26_025M",
+  "target": "pstar",
+  "seed": 1,
+  "lr": 0.0001,
+  "batch": 64,
+  "spec": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_25000027_steps.zip"
+ },
+ "x26_280M|pstar|1": {
+  "held_curve": {
+   "0": 1.86383,
+   "25": 1.72449,
+   "50": 1.66608,
+   "100": 1.62773,
+   "200": 1.61972,
+   "300": 1.63373,
+   "400": 1.63302
+  },
+  "seconds": 137.7,
+  "net": "x26_280M",
+  "target": "pstar",
+  "seed": 1,
+  "lr": 0.0001,
+  "batch": 64,
+  "spec": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip"
+ }
+}

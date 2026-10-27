@@ -328,6 +328,19 @@ rate held for 80M before its plateau, so the step size covaries with the plateau
 starts at P\*'s halved rate, so a NULL there reads "NULL at the halved rate". The learning-rate floor (LR-F) tests
 it (§6). [DESCRIPTIVE · PROVISIONAL, one seed · `3e8a41249`; ledger 2026-10-20 · *X26 COLLAPSE BATTERY*]
 
+**…and it is not a loss of plasticity (2026-10-27).** X26 @25M … X26c @480M, C0 and two fresh inits were refit on
+11,511 states from teams the lineage never saw. Under the strategy doc's registered bars the class is **NO-LOSS**:
+- P\*'s end-to-end refit of its own greedy labels has an area under the loss curve 0.986× @25M's (the bar is < 1.10).
+- Its near-dormant share is 0.78× @25M's; LOSS needs ≥ 2×.
+
+On a neutral target (random projections of a fresh network's features) the trunk does refit slower than @25M, 1.11×.
+That slow-down is paid by 175M and does not grow across the plateau: 100M 0.576 → P\* 0.598 → 480M 0.602, with C0
+level with P\*. Dormancy, feature rank, weight norm and gradient interference are flat or near-flat from 100M. Only the
+policy MLP's tanh units keep saturating (layer 1: 0.84 → 0.92 of activations at |a| > 0.99). The probe measures
+supervised refitting, not PPO under a team-distribution shift. So the strategy tree takes the capacity branch.
+[MEASURED · DESCRIPTIVE · one lineage · `measurements/plasticity_check_2026-10-26/`; ledger 2026-10-27 ·
+*PLASTICITY CHECK*]
+
 ### 4.5 Beliefs: hypothesis tokens adopted; hidden facts are not a policy lever
 
 **X5 (look 3, final, 2026-10-07).** Hypothesis tokens ("fixed_mass": concrete weighted guesses of the opponent's
@@ -508,7 +521,6 @@ retired for the fold-gift question only; they live in the last full text (§0) a
 | Is human data better than our own self-play data? | **X59-S**: three matched student arms, five seeds each; S-H − S-S answers it, S-H − S-P picks the lever ([`PREREG.md`](measurements/x59s_matched_students_2026-10-25/PREREG.md), `5cbf46dc0`). It decides whether the human-data switch and X60 get built |
 | Is the familiarity premium TEAM context or set knowledge (H-CTX)? | **H-CTX on rc72**: P\* vs Kakuna on 72 new teams of verbatim pool sets, ≤ 2 shared with any pool team; ≥ 0.57 kills H-CTX, ≤ 0.52 supports it ([`PREREG.md`](measurements/hctx_rc72_2026-10-26/PREREG.md), `b712c46d1`) |
 | Does a one-ply search on V have headroom on unfamiliar teams, given that V's level misses the premium (H-MID: CRITIC-MISCALIBRATED-ON-U) but its ordering does not? | **not built**: one ply on V against the policy's choice, at banked U positions (the H-MID reconstructions hold every row's V; `measurements/h_mid_value_test_2026-10-26/`) |
-| Does the plateau resist new data a young network would absorb (plasticity)? | **the plasticity probe** on X26 @25M / @100M / P\*; its bars (LOSS / NO-LOSS / UNCLEAR) are drafted in `../endstate/strategy_if_levers_null_2026-10-26.md` §2 and fixed in its own registration before any number |
 
 **Queued and planned**
 

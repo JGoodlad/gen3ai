@@ -1,0 +1,10 @@
+{
+ "fixture_games": 120,
+ "unfam_games": 240,
+ "unfam_rows": 11511,
+ "unfam_teams": 400,
+ "ladder_teams_outside_pool": 22813,
+ "ref_policy": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_50000106_steps.zip",
+ "p1_win_rate": 0.5,
+ "seconds": 226.0
+}

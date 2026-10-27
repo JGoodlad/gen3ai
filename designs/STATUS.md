@@ -62,6 +62,7 @@ rate. **NOT DETECTED / UNDECIDED** means the interval spans zero, so we cannot t
 | Piloting-gap forensics (banked Kakuna games, descriptive) | the gap forms after turn 10, from level positions; it goes with the TEAM context | level at turn 10: 0.609 home72 vs 0.501 U; seen sets only, per-mon KO edge drop +0.093 [+0.004, +0.176] | `piloting_gap_forensics_2026-10-26/` (ledger 10-26) |
 | H-MID: does P\*'s critic see the unfamiliar-team deficit? | **CRITIC-MISCALIBRATED-ON-U**: V sees ≈ 30 % of it; at equal V, P\* wins 8.6 pp less on U; V's ordering (AUC) is equal on both sets | level at turn 10: Δbias +0.076 [+0.016, +0.139] | `2dd522785`, `h_mid_value_test_2026-10-26/` |
 | N2 identity test: does P\* key on our sets' exact identity? (CPU probe) | COMPOSITIONAL: lever N2 dropped | familiar / unfamiliar policy shift under a set re-draw 1.19× [1.07, 1.33] (bar 1.5×) | `98bcb1146` (PREREG), `n2_identity_test_2026-10-26/` (ledger 10-26) |
+| Plasticity probe: has the plateau trunk stopped bending to new data? (CPU probe, X26 25M → 480M) | NO-LOSS: plasticity loss unlikely; the strategy tree takes the capacity branch | refit speed on P\*'s own labels 0.986× X26 @25M's (bar < 1.10); near-dormant units 0.78×; a neutral target refits 1.11× slower than @25M, all of it paid by 175M | `plasticity_check_2026-10-26/` (ledger 10-27) |
 
 ## 4. How we compare with the state of the art
 

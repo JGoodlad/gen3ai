@@ -47,9 +47,10 @@ unmeasured effect; **ESTIMATE** = a cost from measured rates; **MY JUDGEMENT** =
      against a 1.5× bar ([`n2_identity_test_2026-10-26/README.md`](../research_state/measurements/n2_identity_test_2026-10-26/README.md)).
   3. **The breadth STACK fork, only on PR-1's BREADTH-GAIN**: P(GAIN) 0.62 at the same cost (≈ 0.12 per
      resource-day). Without PR-1 it falls to 0.49 and is not run.
-- **The tree** (§4): T1 is zero-GPU (PR-1, the N3 / plasticity probes, search's E2; N2's test ran 10-26 and dropped N2). **The owner is asked at the
+- **The tree** (§4): T1 is zero-GPU (PR-1, the N3 probe, search's E2; N2's test ran 10-26 and dropped N2; **the
+  plasticity probe ran 10-27 and read NO-LOSS**, so T3 takes the capacity branch). **The owner is asked at the
   END OF T1, with an information trigger** (§5), not when a GPU budget runs out: PR-1 KILL with no plasticity LOSS ⇒
-  at once; otherwise T2 runs under a cap of ≈ 40 GPU-h and ≈ 250 lane-h without a GAIN.
+  at once (the plasticity half of that trigger now holds); otherwise T2 runs under a cap of ≈ 40 GPU-h and ≈ 250 lane-h without a GAIN.
 - **The only bet whose expected value alone reaches the ≈ 4.3 pp gap** is still the scale bet (a wider network from
   scratch on 10⁴ teams to its plateau, ≈ 150–250 GPU-h). It is the owner's call, realistic only with a second card.
 
@@ -80,13 +81,13 @@ Not re-opened by this plan, with their status stated exactly:
 | explanation | predicts | the cheapest separating read | cost |
 |---|---|---|---|
 | **Resolution** | the breadth levers help by +1–2 pp each; a big enough read sees it | **PR-1** (§3.1): the breadth family on F at 38,000 games | 0 GPU-h, 165–238 lane-h (or ≈ 1 CPU-box day) |
-| **Plasticity** | the plateau resists data a young network would absorb | **the plasticity probe**, registered bars (below), on X26 @25M / @100M / P\* (all banked); its behavioural complement is a GPU read (N1-P's argv forked from X26 @100M vs from P\*, 20M each at the X35 pin: the Δ difference is plasticity in the meter's units) | probe ≈ 1 agent-day, ≈ 5–10 CPU-h; complement ≈ 8–16 GPU-h + ≈ 60 lane-h |
+| **Plasticity** | the plateau resists data a young network would absorb | **the plasticity probe**, registered bars (below), on X26 @25M / @100M / P\* (all banked). **READ 2026-10-27: NO-LOSS** ([`plasticity_check_2026-10-26/README.md`](../research_state/measurements/plasticity_check_2026-10-26/README.md)): P\*'s end-to-end refit AUC on its own greedy labels 0.986× @25M's, near-dormant 0.78×; on a neutral target the trunk refits slower than @25M (1.11×) but that was paid by 175M and does not grow to 480M; its behavioural complement is a GPU read (N1-P's argv forked from X26 @100M vs from P\*, 20M each at the X35 pin: the Δ difference is plasticity in the meter's units) | probe ≈ 1 agent-day, ≈ 5–10 CPU-h; complement ≈ 8–16 GPU-h + ≈ 60 lane-h |
 | **Dose** | a 20M fork is too short: Δ keeps rising with more breadth steps | **fork extension** (§3.2): N1-P s3501 and C0 s3501 each +40M, read at PR-1's engine; plasticity predicts the extension stays flat, dose that it climbs | ≈ 16 GPU-h + ≈ 180 lane-h |
 | **Capacity** | a wider network pilots unseen teams better at equal data | the N4 toy screen (fresh toy at 2× width vs the toy, matched wall clock); a build first (`D_MODEL` is a constant in `src/agents/model/arch_constants.py`) | ≈ 1.5–2 agent-days + ≈ 13–15 GPU-h |
 | **The meter** | Kakuna is familiar with our "unfamiliar" panels | `forum216b` (sealed, X54) and the reverse cell; the panel-validity read found no panel shown Kakuna-familiar, and dropping H LOWERS P\*'s score | read for the panels; the open part needs downloads not made |
 
-**The plasticity probe's registered bars** (to be fixed in its own registration before any number is seen; MY
-JUDGEMENT on the literature, not re-fetched): fit a FIXED new target (P\*'s own greedy labels on one frozen bank of
+**The plasticity probe's registered bars** (APPLIED 2026-10-27 in [`plasticity_check_2026-10-26/README.md`](../research_state/measurements/plasticity_check_2026-10-26/README.md) §2, class **NO-LOSS**; the
+literature basis was re-fetched there, §7): fit a FIXED new target (P\*'s own greedy labels on one frozen bank of
 held-out-team states, through a fresh linear head on the frozen trunk, then end-to-end) for a fixed CPU budget from
 each checkpoint. **LOSS** iff P\*'s area under the fit-loss curve is ≥ 1.25× X26 @25M's AND its near-dormant unit
 fraction ≥ 2× X26 @25M's; **NO-LOSS** iff the AUC ratio < 1.10; otherwise **UNCLEAR**. The stage confound (a
@@ -237,7 +238,7 @@ T1  THE ZERO-GPU STAGE (the GPU keeps its queue). At its START the owner is aske
       a. PR-1, the precision read (§3.1)          ≈ 1 box-day, or ≈ 7–10 days of the local anchor lane
       b. N2's exact-set identity test: RAN 2026-10-26, COMPOSITIONAL ⇒ N2 dropped
       c. N3's PLR-signal probe                     ≈ 0.5 agent-day
-      d. the plasticity probe (§2's bars)           ≈ 1 agent-day, 5–10 CPU-h
+      d. the plasticity probe (§2's bars)           RAN 2026-10-27: NO-LOSS (≈ 2 slot-h, ≈ 6 CPU-h)
       e. search's E2 bridge read                   ≈ 0.5 agent-day, 25–35 lane-h
       f. the piloting-gap analysis, if it has landed (routing below)
 T1 END ⇒ THE OWNER (§5), with PR-1's class and d's class in hand
@@ -248,7 +249,7 @@ T2  CAPPED FORKS (each read by the PR rule at the tree's engine; cap ≈ 40 GPU-
       PR-1 not KILL ─────► batch × 2 (rank 9) only if the cap has room
 T3  THE BRANCH ON d
       plasticity LOSS ──► N5-S (rank 7) first (≈ 8 GPU-h); X53-N1 (rank 11) only behind its σ gate and PR-1 not KILL
-      NO-LOSS ──────────► the N4 toy screen (rank 10); GO ⇒ production width with a fresh control
+      NO-LOSS ──────────► the N4 toy screen (rank 10); GO ⇒ production width with a fresh control   ◄ TAKEN (d read 10-27)
       UNCLEAR ──────────► the behavioural plasticity complement (§2, ≈ 8–16 GPU-h) before either
 T4  E1 → E4 (search), only if E2 shows the bridge holds and an arm predicts ≥ +4.6 pp. CPU only
 T5  THE SECOND ESCALATION: the T2 cap reached without a GAIN, or every branch exhausted ⇒ the owner (§5)
@@ -331,8 +332,10 @@ PR-1?" A yes shortens T1 from ≈ 1–2 weeks to ≈ 2–3 days.
    generator. The stack's registration needs a panel decision (or a REPORTED-only F) before it can be read.
 7. **The CPU-box throughput and price are UNVERIFIED**; no rented CPU has played a Kakuna game.
 8. **Every P(GAIN) integrates a GUESS** read as a normal; the numbers order rows, they do not predict outcomes.
-9. **The plasticity probe is unbuilt** and its literature basis is MY JUDGEMENT, not re-fetched; its bars (§2) are
-   proposals for its registration.
+9. **The plasticity probe RAN (2026-10-27): NO-LOSS.** Its registered target (P\*'s greedy labels through a linear
+   head) is weakly sensitive and favours P\* by construction; the architecture-neutral target carries the trend, and
+   it sits on the 1.10 line (1.101–1.125 across seeds). It measures supervised refitting, not PPO under a domain
+   shift, which only the behavioural complement reads (the probe's FINDINGS F2, F5).
 10. **N5-S's corpus cost rests on an UNVERIFIED CPU forward rate** for P\* at corpus scale (X59-S's ≈ 2.6 ms per
     forward is the nearest figure).
 11. This unit ran no game and used no GPU. Its Monte Carlos ran on the agent cores at nice 19 (< 1 min each).
@@ -366,3 +369,4 @@ PR-1?" A yes shortens T1 from ≈ 1–2 weeks to ≈ 2–3 days.
 | 2026-10-26 | **This doc CREATED (DRAFT)** (research-strategy worker, orchestrator brief) | a contingency plan for D3, N1-P and X59-S all missing a GAIN: four explanations and the cheapest read separating each; a ranking by expected pp per GPU-h (N5, N2, the stack first); a zero-GPU week, cheap forks, a plasticity branch, an owner escalation at ≈ 90 GPU-h | another single lever read alone; more plain training; FACING levers; the scale bet first; test-time adaptation as goal (b)'s number | `design_beat_metamon_path.md` §0–§6; `sota_survey_2026-10-26.md` §5; the D3, N1-P and X59-S PREREGs; `design_search_next.md` §3; `cloud_gpu_plan.md` |
 | 2026-10-26 | **REVISED DRAFT after the review** (research-strategy worker, orchestrator brief; docs + CPU Monte Carlos) | PR-1, the zero-GPU precision read, as T1's first item (D1 + D3 + N1-P vs C0 pooled on F, 38,000 games at one engine stamp; GAIN / KILL at +1.5 pp; futility interim); five explanations (dose added); one breadth bet chosen by PR-1; rank by P(GAIN) per resource-day with lane-h counted; T2 forks read by the PR rule; N5 from scratch; new rows (extension, batch × 2, distillation); the owner asked at T1's start (CPU box) and end (information trigger) | per-arm precision reads (≈ 70,000 games); D1's rule for T2 forks (retires real +1 pp levers); the ≈ 90 GPU-h budget exit; N5 from P\*; ranking by expected pp | [`REVIEW.md`](../research_state/measurements/strategy_review_2026-10-26/REVIEW.md) (`6fca2c06`); [`strategy_revision_2026-10-26/`](../research_state/measurements/strategy_revision_2026-10-26/) (`power_precision_read`, `pgain_rows`); D3 look-1 README FINDING 5 and `reads.md` §3 (the measured lane rate); D1 read README (F per panel) |
 | 2026-10-26 | **N2 DROPPED by its registered exact-set identity test** (N2 identity-test worker, orchestrator brief; CPU only) | COMPOSITIONAL: a Smogon re-draw of one never-seen bench set moves P\*'s policy 1.19× [1.07, 1.33] as much on a pool team as on an unfamiliar one (pattern-standardised KL, 7,260 / 24,384 units, 48 / 143 games); erasing our six mons' identity embeddings hurts both alike (1.07 [0.91, 1.25]); mechanics-preserving edits are invisible. The interval excludes 1.0 (a small familiarity premium, ≈ the generalisation review's +19 %), so the verdict rests on the PREREG's declared rule (upper < 1.5), not on the older literal KILL clause | funding the N2 flag (the premium it could remove is ≈ 0.2 of one set change's effect); reading the premium as memorisation | [`n2_identity_test_2026-10-26/README.md`](../research_state/measurements/n2_identity_test_2026-10-26/README.md) (PREREG `98bcb1146`); `piloting_gap_forensics_2026-10-26/` (team context, not set knowledge) |
+| 2026-10-27 | **The plasticity probe READ: NO-LOSS ⇒ T3 takes the capacity branch** (plasticity-check worker, orchestrator brief; CPU only) | the §2 bars applied to X26 @25M … X26c @480M, C0 and two fresh inits on 11,511 held-out-team states: P\*'s end-to-end refit AUC on its own greedy labels 0.986× @25M's (seed pairs 0.984–0.987; NO-LOSS < 1.10), near-dormant 0.78× (LOSS needs ≥ 2×); on a neutral random-network target the trunk refits slower than @25M (1.11×, UNCLEAR by the same bars) but the slow-down is paid by 175M and does not grow across the plateau (100M 0.576 → P\* 0.598 → 480M 0.602); the one structure still degrading is the policy MLP's tanh saturation | UNCLEAR (the behavioural complement first) on the neutral target's 1.11, which lies inside its seed noise of the line; the registered class decides | [`plasticity_check_2026-10-26/README.md`](../research_state/measurements/plasticity_check_2026-10-26/README.md) (results, `summarize.py`) |

@@ -1,0 +1,38 @@
+{
+ "fresh0|t_net|0": {
+  "held_curve": {
+   "0": 1.02349,
+   "25": 0.80805,
+   "50": 0.71987,
+   "100": 0.5657,
+   "200": 0.47522,
+   "300": 0.44292,
+   "400": 0.40276
+  },
+  "seconds": 191.1,
+  "net": "fresh0",
+  "target": "t_net",
+  "seed": 0,
+  "lr": 0.0003,
+  "batch": 64,
+  "spec": "fresh:0:/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip"
+ },
+ "x26_280M|t_net|0": {
+  "held_curve": {
+   "0": 1.02349,
+   "25": 0.82679,
+   "50": 0.76337,
+   "100": 0.65242,
+   "200": 0.55017,
+   "300": 0.51139,
+   "400": 0.48561
+  },
+  "seconds": 183.0,
+  "net": "x26_280M",
+  "target": "t_net",
+  "seed": 0,
+  "lr": 0.0003,
+  "batch": 64,
+  "spec": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip"
+ }
+}

@@ -1,0 +1,74 @@
+{
+ "fresh0|t_lin|0": {
+  "held_curve": {
+   "0": 0.99848,
+   "25": 0.82939,
+   "50": 0.79875,
+   "100": 0.78027,
+   "200": 0.77464,
+   "300": 0.7593,
+   "400": 0.80695
+  },
+  "seconds": 108.4,
+  "net": "fresh0",
+  "target": "t_lin",
+  "seed": 0,
+  "lr": 0.0001,
+  "batch": 64,
+  "spec": "fresh:0:/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip"
+ },
+ "x26_100M|t_lin|0": {
+  "held_curve": {
+   "0": 0.99848,
+   "25": 0.88139,
+   "50": 0.82609,
+   "100": 0.81043,
+   "200": 0.79637,
+   "300": 0.77848,
+   "400": 0.80958
+  },
+  "seconds": 106.9,
+  "net": "x26_100M",
+  "target": "t_lin",
+  "seed": 0,
+  "lr": 0.0001,
+  "batch": 64,
+  "spec": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_100000037_steps.zip"
+ },
+ "x26_280M|t_lin|0": {
+  "held_curve": {
+   "0": 0.99848,
+   "25": 0.86737,
+   "50": 0.81002,
+   "100": 0.79271,
+   "200": 0.79486,
+   "300": 0.7642,
+   "400": 0.78711
+  },
+  "seconds": 106.6,
+  "net": "x26_280M",
+  "target": "t_lin",
+  "seed": 0,
+  "lr": 0.0001,
+  "batch": 64,
+  "spec": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip"
+ },
+ "x26c_480M|t_lin|0": {
+  "held_curve": {
+   "0": 0.99848,
+   "25": 0.89473,
+   "50": 0.82026,
+   "100": 0.78853,
+   "200": 0.7837,
+   "300": 0.75713,
+   "400": 0.76604
+  },
+  "seconds": 125.4,
+  "net": "x26c_480M",
+  "target": "t_lin",
+  "seed": 0,
+  "lr": 0.0001,
+  "batch": 64,
+  "spec": "/home/goodlad/dev/gen3ai/models/rb_x26c_s2601/checkpoints/checkpoint_480000085_steps.zip"
+ }
+}

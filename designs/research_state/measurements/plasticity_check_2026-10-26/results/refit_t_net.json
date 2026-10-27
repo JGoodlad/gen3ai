@@ -1,0 +1,290 @@
+{
+ "fresh0|t_net|0": {
+  "held_curve": {
+   "0": 1.02349,
+   "25": 0.8806,
+   "50": 0.79893,
+   "100": 0.68666,
+   "200": 0.56814,
+   "300": 0.51262,
+   "400": 0.48377
+  },
+  "seconds": 132.4,
+  "net": "fresh0",
+  "target": "t_net",
+  "seed": 0,
+  "lr": 0.0001,
+  "batch": 64,
+  "spec": "fresh:0:/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip"
+ },
+ "x26_280M|t_net|0": {
+  "held_curve": {
+   "0": 1.02349,
+   "25": 0.87308,
+   "50": 0.8124,
+   "100": 0.73519,
+   "200": 0.6645,
+   "300": 0.62604,
+   "400": 0.57969
+  },
+  "seconds": 181.1,
+  "net": "x26_280M",
+  "target": "t_net",
+  "seed": 0,
+  "lr": 0.0001,
+  "batch": 64,
+  "spec": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip"
+ },
+ "fresh1|t_net|0": {
+  "held_curve": {
+   "0": 1.02349,
+   "25": 0.89312,
+   "50": 0.82319,
+   "100": 0.68524,
+   "200": 0.58266,
+   "300": 0.52246,
+   "400": 0.48353
+  },
+  "seconds": 131.3,
+  "net": "fresh1",
+  "target": "t_net",
+  "seed": 0,
+  "lr": 0.0001,
+  "batch": 64,
+  "spec": "fresh:1:/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip"
+ },
+ "x26_025M|t_net|0": {
+  "held_curve": {
+   "0": 1.02349,
+   "25": 0.84884,
+   "50": 0.77707,
+   "100": 0.67471,
+   "200": 0.5838,
+   "300": 0.54323,
+   "400": 0.52697
+  },
+  "seconds": 143.6,
+  "net": "x26_025M",
+  "target": "t_net",
+  "seed": 0,
+  "lr": 0.0001,
+  "batch": 64,
+  "spec": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_25000027_steps.zip"
+ },
+ "x26_100M|t_net|0": {
+  "held_curve": {
+   "0": 1.02349,
+   "25": 0.86402,
+   "50": 0.81178,
+   "100": 0.7341,
+   "200": 0.65165,
+   "300": 0.59617,
+   "400": 0.5722
+  },
+  "seconds": 148.5,
+  "net": "x26_100M",
+  "target": "t_net",
+  "seed": 0,
+  "lr": 0.0001,
+  "batch": 64,
+  "spec": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_100000037_steps.zip"
+ },
+ "x26_175M|t_net|0": {
+  "held_curve": {
+   "0": 1.02349,
+   "25": 0.86766,
+   "50": 0.82336,
+   "100": 0.75586,
+   "200": 0.69326,
+   "300": 0.64933,
+   "400": 0.63293
+  },
+  "seconds": 135.7,
+  "net": "x26_175M",
+  "target": "t_net",
+  "seed": 0,
+  "lr": 0.0001,
+  "batch": 64,
+  "spec": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_175000114_steps.zip"
+ },
+ "x26_380M|t_net|0": {
+  "held_curve": {
+   "0": 1.02349,
+   "25": 0.87593,
+   "50": 0.81943,
+   "100": 0.74433,
+   "200": 0.68551,
+   "300": 0.63541,
+   "400": 0.61061
+  },
+  "seconds": 159.7,
+  "net": "x26_380M",
+  "target": "t_net",
+  "seed": 0,
+  "lr": 0.0001,
+  "batch": 64,
+  "spec": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_380000195_steps.zip"
+ },
+ "x26c_480M|t_net|0": {
+  "held_curve": {
+   "0": 1.02349,
+   "25": 0.87799,
+   "50": 0.81405,
+   "100": 0.73413,
+   "200": 0.65125,
+   "300": 0.61743,
+   "400": 0.61047
+  },
+  "seconds": 250.2,
+  "net": "x26c_480M",
+  "target": "t_net",
+  "seed": 0,
+  "lr": 0.0001,
+  "batch": 64,
+  "spec": "/home/goodlad/dev/gen3ai/models/rb_x26c_s2601/checkpoints/checkpoint_480000085_steps.zip"
+ },
+ "c0_s3501_300M|t_net|0": {
+  "held_curve": {
+   "0": 1.02349,
+   "25": 0.87861,
+   "50": 0.81575,
+   "100": 0.73356,
+   "200": 0.66925,
+   "300": 0.62204,
+   "400": 0.59601
+  },
+  "seconds": 140.5,
+  "net": "c0_s3501_300M",
+  "target": "t_net",
+  "seed": 0,
+  "lr": 0.0001,
+  "batch": 64,
+  "spec": "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3501/final_model.zip"
+ },
+ "fresh0|t_net|1": {
+  "held_curve": {
+   "0": 1.02349,
+   "25": 0.89551,
+   "50": 0.79009,
+   "100": 0.70184,
+   "200": 0.56242,
+   "300": 0.50576,
+   "400": 0.46336
+  },
+  "seconds": 113.3,
+  "net": "fresh0",
+  "target": "t_net",
+  "seed": 1,
+  "lr": 0.0001,
+  "batch": 64,
+  "spec": "fresh:0:/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip"
+ },
+ "x26_280M|t_net|1": {
+  "held_curve": {
+   "0": 1.02349,
+   "25": 0.86182,
+   "50": 0.80374,
+   "100": 0.73746,
+   "200": 0.68631,
+   "300": 0.64738,
+   "400": 0.62735
+  },
+  "seconds": 112.7,
+  "net": "x26_280M",
+  "target": "t_net",
+  "seed": 1,
+  "lr": 0.0001,
+  "batch": 64,
+  "spec": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip"
+ },
+ "x26_100M|t_net|1": {
+  "held_curve": {
+   "0": 1.02349,
+   "25": 0.85157,
+   "50": 0.79742,
+   "100": 0.70695,
+   "200": 0.63039,
+   "300": 0.60658,
+   "400": 0.57311
+  },
+  "seconds": 293.1,
+  "net": "x26_100M",
+  "target": "t_net",
+  "seed": 1,
+  "lr": 0.0001,
+  "batch": 64,
+  "spec": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_100000037_steps.zip"
+ },
+ "x26_100M|t_net|2": {
+  "held_curve": {
+   "0": 1.02349,
+   "25": 0.87001,
+   "50": 0.80295,
+   "100": 0.74025,
+   "200": 0.64673,
+   "300": 0.60902,
+   "400": 0.58239
+  },
+  "seconds": 154.6,
+  "net": "x26_100M",
+  "target": "t_net",
+  "seed": 2,
+  "lr": 0.0001,
+  "batch": 64,
+  "spec": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_100000037_steps.zip"
+ },
+ "x26c_480M|t_net|1": {
+  "held_curve": {
+   "0": 1.02349,
+   "25": 0.85822,
+   "50": 0.80971,
+   "100": 0.73349,
+   "200": 0.68003,
+   "300": 0.6173,
+   "400": 0.58956
+  },
+  "seconds": 109.9,
+  "net": "x26c_480M",
+  "target": "t_net",
+  "seed": 1,
+  "lr": 0.0001,
+  "batch": 64,
+  "spec": "/home/goodlad/dev/gen3ai/models/rb_x26c_s2601/checkpoints/checkpoint_480000085_steps.zip"
+ },
+ "x26c_480M|t_net|2": {
+  "held_curve": {
+   "0": 1.02349,
+   "25": 0.87574,
+   "50": 0.80239,
+   "100": 0.75425,
+   "200": 0.69788,
+   "300": 0.64334,
+   "400": 0.60455
+  },
+  "seconds": 123.9,
+  "net": "x26c_480M",
+  "target": "t_net",
+  "seed": 2,
+  "lr": 0.0001,
+  "batch": 64,
+  "spec": "/home/goodlad/dev/gen3ai/models/rb_x26c_s2601/checkpoints/checkpoint_480000085_steps.zip"
+ },
+ "x26_280M|t_net|2": {
+  "held_curve": {
+   "0": 1.02349,
+   "25": 0.87594,
+   "50": 0.80713,
+   "100": 0.74943,
+   "200": 0.66996,
+   "300": 0.61141,
+   "400": 0.58796
+  },
+  "seconds": 117.7,
+  "net": "x26_280M",
+  "target": "t_net",
+  "seed": 2,
+  "lr": 0.0001,
+  "batch": 64,
+  "spec": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip"
+ }
+}

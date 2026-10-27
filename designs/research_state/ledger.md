@@ -29464,3 +29464,59 @@ Kakuna run was killed by my outer timeout in the slot queue and re-run in full.
 **Evidence:** `research_state/measurements/h_mid_value_test_2026-10-26/` (PREREG, README, `results.json`, scripts);
 per-decision V rows `~/gen3ai_archive/h_mid_value_test_2026-10-26/recon_{kakuna,pm}.jsonl.gz` (sha256 in the folder).
 See `UNDERSTANDING.md` §3.1.
+### 2026-10-27 · MEASUREMENT · **THE PLASTICITY CHECK on X26's lineage: NO-LOSS by the strategy doc's registered bars (PLASTICITY-LOSS-UNLIKELY). P\*'s end-to-end refit of its own greedy labels has a normalised loss AUC 0.986× X26 @25M's (bar < 1.10), and its near-dormant share is 0.78× (LOSS needs ≥ 2×). On a neutral target the trunk refits 1.11× slower than @25M, all of it paid by 175M (100M 0.576 → P\* 0.598 → 480M 0.602)**
+
+**Question** (`endstate/strategy_if_levers_null_2026-10-26.md` §2, tree item T1 d). Is X26's plateau partly a loss of
+plasticity, which would explain why the plateau forks (D1, D3, N1-P, A1, SPRT, LR-F) read small or null?
+
+**Design** (`research_state/measurements/plasticity_check_2026-10-26/`; CPU only, read-only on `models/`).
+- **Checkpoints:** X26 @10M / 25M / 100M / 175M / P\* 280M / 380M, X26c @480M, C0 s3501 (P\* + 20M), and two fresh
+  inits of the same architecture.
+- **States:** 11,511 rows from 240 seeded self-play games on 400 ladder teams outside the pool (a 3 : 1 split by
+  game), plus the `play_rows` fixture bank and the obs golden.
+- **Structure probes:** the τ-dormant share, Kumar srank and participation ratio at the penultimate taps, the policy
+  MLP's tanh saturation, weight norms, and per-example policy-gradient norm, cosine and Gram rank.
+- **Fit probes:** a zero-initialised linear head on the frozen trunk; and END-TO-END refits (trunk unfrozen, Adam
+  1e-4, batch 64, 400 steps). The targets are P\*'s greedy labels (the registered target), random projections of a
+  fresh network's features (T_net), a random function of the row (T_lin) and the win label.
+- **Bars** (the strategy doc §2): LOSS iff the AUC ratio to @25M is ≥ 1.25 and the near-dormant ratio ≥ 2; NO-LOSS iff
+  the AUC ratio < 1.10.
+
+**Result.**
+- **Registered target, end-to-end: AUC ratio 0.986** (seed pairs 0.984–0.987). Frozen: 0.947. Near-dormant
+  (τ = 0.025): 25M 0.072, P\* 0.056 (0.78×). **NO-LOSS.**
+- **T_net, end-to-end loss at step 400 (seed means):**
+
+  | fresh | 25M | 100M | 175M | P\* | 380M | 480M | C0 |
+  |---|---|---|---|---|---|---|---|
+  | 0.474 | 0.527 | 0.576 | 0.633 | 0.598 | 0.611 | 0.602 | 0.596 |
+
+  The AUC ratio to @25M is 1.110 (seed pairs 1.101–1.125: UNCLEAR, on the line). The plateau's excess over 100M,
+  +0.028, is less than 2× the 0.047 seed band. T_lin shows no loss at all (fresh 0.807, P\* 0.787, 480M 0.766).
+- **Structure from 100M to 480M:**
+  - dormant 0.059 → 0.057 (flat);
+  - latent_pi srank 493 → 458 (−7 %), vf flat at ≈ 105;
+  - weight norm +5 %;
+  - gradient |cos| 0.044 → 0.039;
+  - per-example gradient norm 2.4× by P\*, then flat;
+  - **the policy MLP's tanh saturation keeps rising:** in layer 1 the share of activations at |a| > 0.99 goes 0.84 →
+    0.92, and the units saturated on ≥ 99 % of rows go 6 % → 18 %.
+
+**Reading.** The trunk fits new targets more slowly than a young one, but the slow-down was paid while X26 was still
+climbing (25M → 175M). The plateau, its 100M continuation and the C0 fork refit alike. A fork from P\* does not start
+from a network that is losing plasticity as it trains, so the strategy tree's T3 takes the capacity branch (the N4
+toy screen). The probe measures supervised refitting, not PPO under a team-distribution shift; only the strategy
+doc's behavioural complement (≈ 8–16 GPU-h) reads that, and it is not needed by this verdict.
+
+**FINDINGS.**
+- The bars arrived in a strategy-doc revision during the unit. The pstar target and the verdict rule were fixed
+  before any pstar number, but after the structure and T_net reads had been seen.
+- The registered target is weakly sensitive (cross-entropy 1.86 → 1.63, because a state-latent head cannot see the
+  pointer head's per-action features) and favours P\* by construction.
+- The win-label refit overfits within 50–100 steps (a game-level label, 180 training games) and is not used.
+- An off-axis observation, unread: the frozen trunk's decodability of the opponent's team composition falls with
+  training (species AUC 0.787 at 10M → 0.69 from 175M).
+- Eight heavy-slot jobs, ≈ 2.0 slot-hours, no GPU.
+
+**Evidence:** `research_state/measurements/plasticity_check_2026-10-26/` (README, `results/`, `plasticity_probe.py`,
+`summarize.py`). See `UNDERSTANDING.md` §4.4 and the strategy doc's §2, §4 and Decision record.
