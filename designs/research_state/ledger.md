@@ -29361,3 +29361,22 @@ build). One checkpoint, P\* vs P\* rows, never-seen bench mons only.
 **Evidence:** `research_state/measurements/n2_identity_test_2026-10-26/` (README, `result.json`, scripts); binaries
 sha256-pinned and archived in `~/gen3ai_archive/n2_identity_test_2026-10-26/`. See `UNDERSTANDING.md` §3 and the
 strategy doc's N2 row.
+
+## 2026-10-26 · RUST SIM · gen3 full parity B11: Metronome, Mirror Move, Assist, Nature Power, Sketch -- every gen-3 move runs (369 of 369)
+
+**B11** (`gen3_b11_moves_v1`, `src/turn/callers.rs`, spec `harness/probe_b11_moves.js`; built by a subagent, merged
+with BF3 and gated here). ONE calling path, `call_move`, mirrors gen 3's `useMoveInner` for Sleep Talk and the four
+callers: the called move sets `lastMoveUsed` and carries `[from] <Caller>`, pays no PP and no Pressure, runs no
+BeforeMove and no `moveUsed`; it runs from the user's own slot or a virtual one, so a called lock (two-turn, Outrage
+family, Rollout, Uproar, Bide) holds, the request shows it with `trapped:true`, Disable / Encore / Spite read the
+repeat, a Choice lock stays on the caller, and Charge's AfterMove keys on the active move. METRONOME: one
+`random(336)` over the num-sorted pool (bare Hidden Power in, typed by the user). MIRROR MOVE: the last `attackedBy`
+entry (bookkeeping added at every damaging, fixed-damage, status, Bide, Present and Future Sight path) against gen
+3's hardcoded no-mirror list. ASSIST: every other party member's moves, fainted ones included, minus `noassist`.
+NATURE POWER: its own 95-accuracy roll, then Swift. SKETCH: the permanent copy at base PP. Golden 780 rows / 54
+boards (2,571 Metronome calls across every move family), 17 pins with 15 reverts verified.
+
+**OU-visible (FINDING):** Metronome 0.035 % of gen3ou mons, Mirror Move 0.0003 %; through the shared path a
+Sleep-Talk-called Charge (0.0029 %) is now kept, and a Sleep-Talk-called move becomes `lastMoveUsed` (Sleep Talk
+1.23 %, read only by Conversion 2, 0.0074 %). e2e capstone and obs golden unchanged. **Left (open rows):** Shell Bell
+heals before a Persim Berry eat the sim does first; an infatuation outlives its fainted source until a switch.

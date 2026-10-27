@@ -239,6 +239,8 @@ impl crate::state::BattleState {
             self.emit_release_miss(side, slot, foe, foe_slot, dex);
             return;
         }
+        // The release's `tryMoveHit` reached `moveHit`: `gotAttacked('bide')` (`gen3_b11_moves_v1`).
+        self.note_attacked((foe, foe_slot), (side, slot), "bide");
         self.apply_fixed_hit(side, slot, foe, foe_slot, amount, Some(Type::Normal), "bide", FixedHit::BideRelease, dex);
         // The in-tryMoveHit `eachEvent('Update')` (`data/mods/gen3/scripts.ts:470`) runs BEFORE the
         // caller's `removeVolatile('bide')`, so it is drawn here rather than by the driver.
@@ -328,6 +330,8 @@ impl crate::state::BattleState {
             self.emit_damaging_miss(side, slot, foe, foe_slot, move_name, false, false, dex);
             return MoveResolution::done(true, false, false);
         }
+        // Reached `moveHit` (the sub's fail and the full-HP fail are inside it): `gotAttacked`.
+        self.note_attacked((foe, foe_slot), (side, slot), "present");
         announce(self);
         if self.sides[foe].pokemon[foe_slot].substitute.is_some() {
             if self.logging() {

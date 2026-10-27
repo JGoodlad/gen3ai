@@ -372,9 +372,10 @@ impl crate::state::BattleState {
                     //     consumes it, a cant (onMoveAborted — full-para / slp / recharge
                     //     / …) consumes it, only an Electric move first gets the ×2 BP
                     //     fold (already applied inside run_move). The AfterMove event
-                    //     fires from `runMove` with the OUTER (queued, post-encore-
-                    //     override) move — so a Sleep-Talk turn consumes it keyed on
-                    //     `sleeptalk`, not the called move; the pursuit-interrupt strike
+                    //     fires from `runMove` with `battle.activeMove` — the CALLEE after a
+                    //     Sleep Talk / Metronome turn, which is why a called Charge survives its
+                    //     own turn (`gen3_b11_moves_v1`; the port keyed it on the outer move
+                    //     until B11); the pursuit-interrupt strike
                     //     is a bare `useMove` (NO runMove → NO AfterMove → NOT consumed
                     //     there, faithful to the source). DRAW-FREE; the removal emits
                     //     `|-end|<user>|Charge|[silent]` (`charge.onEnd`).
@@ -391,11 +392,10 @@ impl crate::state::BattleState {
                         && self.sides[side].pokemon[slot].hp > 0
                         && !res.nopp
                     {
-                        let executed_is_charge = !struggle
-                            && self
-                                .move_at(side, slot, move_index, dex)
-                                .map(|m| m.id == "charge")
-                                .unwrap_or(false);
+                        // Keyed on `battle.activeMove` (`gen3_b11_moves_v1`): after a caller's turn
+                        // that is the CALLEE, so a Metronome / Sleep Talk that called Charge keeps
+                        // the volatile it just set (probe_b11_moves.js "metronome charge").
+                        let executed_is_charge = !struggle && self.active_move_id == "charge";
                         if !executed_is_charge {
                             self.sides[side].pokemon[slot].charge = false;
                             if self.logging() {
@@ -486,10 +486,18 @@ impl crate::state::BattleState {
                             .item(&crate::dex::to_id(&m.item))
                             .map(|i| i.choice)
                             .unwrap_or(false);
-                        if let (true, false, Some(lm)) =
-                            (holds_choice, m.last_move_was_self_overwrite, m.last_move)
+                        // `addVolatile('choicelock')` on a mon that ALREADY holds the volatile is a no-op
+                        // (the condition has no `onRestart`), so an existing lock keeps its move
+                        // (`gen3_b11_moves_v1`: a Choice-Band Metronome user locked to Metronome stays
+                        // locked to it through the Outrage that Metronome called — whose repeat sets
+                        // `lastMove = outrage` — probe_b11_moves.js "cb metronome"). A CALLED move's
+                        // virtual slot is never a lock (`hasMove` fails on it at the next DisableMove).
+                        if let (true, false, Some(lm), None) =
+                            (holds_choice, m.last_move_was_self_overwrite, m.last_move, m.choice_locked_move)
                         {
-                            self.sides[side].pokemon[slot].choice_locked_move = Some(lm);
+                            if lm != crate::state::CALLED_MOVE_SLOT {
+                                self.sides[side].pokemon[slot].choice_locked_move = Some(lm);
+                            }
                         }
                     }
                     // --- forceSwitchFlag consumption (battle.ts:2348-2353): at the END of

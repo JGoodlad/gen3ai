@@ -94,6 +94,7 @@
 use crate::prng::PrngSeed;
 use crate::state::{Status, Weather, BOOST_LEN};
 
+mod callers;
 mod driver;
 mod endless;
 mod forecast;
@@ -116,6 +117,9 @@ mod variable_moves;
 pub(crate) use helpers::mon_types;
 /// The recharge family (`gen3_recharge_family_v1`), public so its pin can check it against the dex.
 pub use moves::{RECHARGE_MOVES, SLEEP_USABLE_MOVES};
+pub use callers::{
+    metronome_pool, METRONOME_EXCLUDED, MIRROR_MOVE_EXCLUDED, NATURE_POWER_CALLS, NOASSIST_MOVES, NOSKETCH_MOVES,
+};
 /// The B6 tables (`gen3_b6_moves_v1`), public so their pins can check them against the dex.
 pub use status_moves::{REFLECTABLE_MOVES, TARGET_BOOST_MOVES};
 /// The B8 move families (`gen3_b8_moves_v1`), public so their pins can check them against the dex.

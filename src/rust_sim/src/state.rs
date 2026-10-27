@@ -540,10 +540,12 @@ pub struct MonState {
     /// keys off the TARGET's last-used move's TYPE. Cleared on switch-out and on faint —
     /// probe-confirmed (`harness/probe_conversion.js` C8: a switched-out mon reports NONE).
     ///
-    /// Set at the same site as `last_move`, i.e. INSIDE the `!pursuit_strike && !sleep_talk_call`
-    /// guard. That placement is probe-settled, not assumed: a SLEEP-TALK-called move does NOT
-    /// overwrite it — after Snorlax Sleep-Talks, the sim reports `lastMoveUsed = sleeptalk`,
-    /// the OUTER move, so the inner `useMove` must leave it alone.
+    /// Set at the same site as `last_move` for the user's own move, AND by every CALLED move
+    /// (`BattleState::call_move`, `gen3_b11_moves_v1`): gen-3 `useMoveInner` opens with
+    /// `pokemon.lastMoveUsed = move` (`data/mods/gen3/scripts.ts:132`), so the callee overwrites
+    /// the caller. Probe-settled (`harness/probe_b11_moves.js` "conversion 2 after sleep talk":
+    /// after Snorlax Sleep-Talks into Body Slam the sim reports `lastMoveUsed = bodyslam`; the
+    /// port kept `sleeptalk` until B11).
     pub last_move_used: Option<String>,
     /// UPROAR's multi-turn lock (`gen3_uproar_v1`): `Some((remaining_turns, move_index))`
     /// while locked, `None` otherwise. The duration is drawn ONCE — a `random(2,6)` on the
@@ -1088,6 +1090,41 @@ pub struct MonState {
     /// The SET carries a berry-cycling means: its ability is Harvest / Pickup or its moves include
     /// Recycle (`sim/battle.ts:1881-1883`). Captured at construction, like `set_restorative_berry`.
     pub set_berry_cycle: bool,
+    /// The CALLED-MOVE virtual slot (`gen3_b11_moves_v1`): the id a move-caller (Metronome, Mirror
+    /// Move, Assist, Nature Power) last ran through `useMove` when the user carries that move in NO
+    /// moveslot. Showdown's `useMove(id)` needs no slot, but the port keys the moves it runs, and the
+    /// locks a called move can start (a two-turn charge, Outrage / Thrash / Petal Dance, Rollout,
+    /// Uproar, Bide), on a slot index: those use [`CALLED_MOVE_SLOT`], which [`Self::slot_move_id`]
+    /// resolves to this id. PP is never read or charged there (a called move and every locked
+    /// repeat skip `deductPP`, `sim/battle-actions.ts` runMove / `data/mods/gen3/scripts.ts`
+    /// useMoveInner). Overwritten by the next call; a slot-held callee uses its real slot instead.
+    pub called_move: Option<String>,
+    /// `pokemon.attackedBy` (`sim/pokemon.ts` gotAttacked / getLastAttackedBy, `gen3_b11_moves_v1`):
+    /// one entry per foe move that reached `moveHit` against this mon (gen-3 `tryMoveHit` pushes it
+    /// after the hit, `data/mods/gen3/scripts.ts:464`, so not for a miss, a Protect / TryHit block,
+    /// a natural immunity or a field / side / self move). Cleared on switch-out and faint
+    /// (`clearVolatile`); at each endTurn an entry whose source is no longer active is dropped
+    /// (`sim/battle.ts` endTurn). MIRROR MOVE reads the LAST entry.
+    pub attacked_by: Vec<AttackedBy>,
+    /// SKETCH's copied slots, one bit per slot (`gen3_b11_moves_v1`): `data/mods/gen4/moves.ts`
+    /// sketch writes a moveslot literal WITHOUT `target` into `moveSlots` AND `baseMoveSlots`, so
+    /// the request omits that key for the slot for the rest of the battle (the Mimic precedent,
+    /// `gen3_mimic_request_no_target_v1`). Never cleared.
+    pub sketched: u32,
+}
+
+/// The CALLED-MOVE virtual slot index (`gen3_b11_moves_v1`, see [`MonState::called_move`]): past
+/// every real slot (gen-3 Custom Game allows at most 24 moves, `gen3_format_rules_v1` M4).
+pub const CALLED_MOVE_SLOT: usize = 64;
+
+/// One `pokemon.attackedBy` entry (`gen3_b11_moves_v1`): the attacking mon (its side and STABLE
+/// `uid`) and the id of the move that reached `moveHit` (`move.id`: a called move's own id, a typed
+/// Hidden Power's bare `hiddenpower`).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AttackedBy {
+    pub side: usize,
+    pub uid: usize,
+    pub move_id: String,
 }
 
 /// The `lockon` volatile's state (`gen3_b7_moves_v1`): `effectState.source` (the locked mon,
@@ -1710,6 +1747,9 @@ impl MonState {
             pending_staleness: false,
             set_restorative_berry,
             set_berry_cycle,
+            called_move: None,
+            attacked_by: Vec::new(),
+            sketched: 0,
         })
     }
 
@@ -1832,6 +1872,15 @@ impl MonState {
             .or(self.rollout.map(|(_, s)| s))
             .or(self.uproar.map(|(_, s)| s))
             .or(self.bide.map(|b| b.move_index))
+    }
+
+    /// The move id held at slot `k` (`gen3_b11_moves_v1`): a real moveslot's id as packed, or, for
+    /// [`CALLED_MOVE_SLOT`], the called move ([`Self::called_move`]). `None` past the moveset.
+    pub fn slot_move_id(&self, k: usize) -> Option<&str> {
+        if k == CALLED_MOVE_SLOT {
+            return self.called_move.as_deref();
+        }
+        self.set.moves.get(k).map(String::as_str)
     }
 
     /// The current PP of move slot `k` (`gen3_pp_tracking_v1`), or `0` for an
@@ -2229,7 +2278,7 @@ pub struct BattleState {
     /// `if (effect.id === 'yawn') return;` — the exemption keys on the EFFECT, not the
     /// source — so a PENDING Yawn sleeps its target THROUGH an active Safeguard (drawing
     /// its `random(2,6)` normally) even though a Yawn CAST into that same ward is blocked.
-    /// The `pursuit_strike` / `sleep_talk_call` pattern: never persisted, never observed.
+    /// The `pursuit_strike` / `use_move_call` pattern: never persisted, never observed.
     pub yawn_resolving: bool,
     /// The PER-TURN **first-mover override** for a PURSUIT-INTERRUPT turn
     /// (`gen3_move_coverage_batch4_v1`). On a turn where a mon VOLUNTARILY switches out and the
@@ -2252,7 +2301,14 @@ pub struct BattleState {
     /// `last_move` stays the Sleep Talk slot) + the mustrecharge gate. The called move
     /// otherwise runs its FULL NORMAL draw chain (acc/crit/damage/secondary — probed).
     /// The `pursuit_strike` transient pattern.
-    pub sleep_talk_call: bool,
+    pub use_move_call: bool,
+    /// TRANSIENT: the id of the battle's ACTIVE move when the last `run_move` returned
+    /// (`gen3_b11_moves_v1`) — `battle.activeMove`, which every `useMove` re-sets and nothing
+    /// restores, so after a caller's turn it is the CALLEE (`sim/battle-actions.ts` runMove:
+    /// `if (this.battle.activeMove) move = this.battle.activeMove;` before `AfterMove`). Read by the
+    /// driver's Charge consumption (`charge.onAfterMove`: `if (move.id !== 'charge')`): a Metronome
+    /// or Sleep Talk that called Charge keeps it (probe_b11_moves.js "metronome charge").
+    pub active_move_id: String,
     /// The battle-global **Quick Claw roll** (`Battle.quickClawRoll`, sim battle.js:1485
     /// `gen === 3` ⇒ `randomChance(1, 5)`, drawn UNCONDITIONALLY at every completed `endTurn`).
     /// Read next turn by gen3 `getActionSpeed` (scripts.js:47-48): a Quick-Claw HOLDER whose
@@ -2327,7 +2383,8 @@ impl BattleState {
             faint_emit_queue: Vec::new(),
             pursuit_strike: false,
             yawn_resolving: false,
-            sleep_talk_call: false,
+            use_move_call: false,
+            active_move_id: String::new(),
             pursuit_first_mover: None,
             quick_claw_roll: false,
             rolls: None,

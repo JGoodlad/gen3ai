@@ -437,6 +437,11 @@ const MODELED_B5_MOVES = new Set(['spite', 'grudge', 'nightmare', 'ingrain']);
 // rides MODELED_BATCH5_VARBP_MOVES). Kept in lockstep with the status_moves.rs B7 arms; golden
 // `gen_b7_moves_golden.js` → `tests/b7_moves_golden_test.rs`.
 const MODELED_B7_MOVES = new Set(['stockpile', 'swallow', 'mudsport', 'watersport', 'mist', 'lockon', 'mindreader']);
+// GEN3 FULL PARITY B11 (`gen3_b11_moves_v1`, `src/turn/callers.rs`) — the move-callers Metronome,
+// Mirror Move, Assist and Nature Power (one shared `useMove` path with Sleep Talk) and Sketch, all
+// category Status; every callee they can reach is a modeled move (B10 closed the last five). Golden
+// `gen_b11_moves_golden.js` → `tests/b11_moves_golden_test.rs`.
+const MODELED_B11_MOVES = new Set(['metronome', 'mirrormove', 'assist', 'naturepower', 'sketch']);
 
 // GEN3 FULL PARITY B10 (`gen3_b10_moves_v1`) — Teleport, Follow Me, Helping Hand, Role Play,
 // Camouflage (all category Status). Kept in lockstep with the src/turn/status_moves.rs B10 arms;
@@ -859,6 +864,7 @@ function isModeledMove(id, allowHiddenPower = false) {
       MODELED_B5_MOVES.has(id) ||
       MODELED_B7_MOVES.has(id) ||
       MODELED_B10_MOVES.has(id) ||
+      MODELED_B11_MOVES.has(id) ||
       MODELED_FOCUS_ENERGY_MOVES.has(id) ||
       // HAZE (`gen3_haze_v1`) — the boost-reset FIELD move, category Status + bit-for-bit modeled.
       (HAZE_E2E_EXCLUDED ? false : MODELED_HAZE_MOVES.has(id)) ||

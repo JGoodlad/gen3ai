@@ -241,9 +241,10 @@ pub fn resolve_choice(state: &BattleState, side: usize, choice: &WireChoice) -> 
                 let locked_id = if mon.must_recharge {
                     "recharge".to_string()
                 } else {
+                    // `slot_move_id` resolves a CALLED move's lock too (`gen3_b11_moves_v1`).
                     mon.locked_slot()
-                        .and_then(|k| mon.set.moves.get(k))
-                        .map(|m| crate::dex::to_id(m))
+                        .and_then(|k| mon.slot_move_id(k))
+                        .map(crate::dex::to_id)
                         .unwrap_or_default()
                 };
                 return if want == locked_id { Some(Choice::Move(0)) } else { None };
@@ -895,10 +896,13 @@ fn serialize_active_with_disabled_source(
             // rendered `{"move":"Solar Beam","id":"solarbeam"}` — a request poke-env's live
             // player ASSERTS on (`available_moves_from_request`), found by the Rust Core parity
             // harness's procedural-generator sweep (`gen3_locked_request_move_v1`).
+            // A lock a CALLED move started holds the CALLED-MOVE virtual slot (`gen3_b11_moves_v1`):
+            // the sim's `lockedMove` is the called id (`{"move":"Outrage","id":"outrage"}` for a
+            // Metronome-called Outrage, probe_b11_moves.js).
             let mid = mon
                 .locked_slot()
-                .and_then(|k| mon.set.moves.get(k))
-                .cloned()
+                .and_then(|k| mon.slot_move_id(k))
+                .map(str::to_string)
                 .expect("move_locked() implies a locked slot");
             // (No move in the two-turn/recharge family is a Hidden Power or a
             // Return/Frustration, so this renders the plain dex name either way — matching
@@ -981,9 +985,12 @@ fn serialize_active_with_disabled_source(
                 // probe `harness/probe_bf_classes.js` BF11).
                 let nonghost_curse = crate::dex::to_id(mv) == "curse"
                     && !crate::turn::mon_types(mon, dex).contains(&crate::dex::Type::Ghost);
+                // A SKETCHED slot is the same no-`target` literal, permanently (`gen3_b11_moves_v1`,
+                // `data/mods/gen4/moves.ts` sketch; probe_b11_moves.js "sketch request").
                 let mimicked = mon.transform.is_none()
                     && !nonghost_curse
-                    && mon.mimic_overlay.as_ref().is_some_and(|ov| ov.slot == k);
+                    && (mon.mimic_overlay.as_ref().is_some_and(|ov| ov.slot == k)
+                        || (k < 32 && mon.sketched & (1u32 << k) != 0));
                 // The post-reject mutation: this slot is the one the client was refused, so
                 // it renders `disabled:true` + the trailing `disabledSource` key.
                 let ds = k < 8 && ds_mask & (1u8 << k) != 0;

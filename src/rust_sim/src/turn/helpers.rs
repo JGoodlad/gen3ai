@@ -275,6 +275,9 @@ impl crate::state::BattleState {
                 mon.active_turns = mon.active_turns.saturating_add(1);
             }
         }
+        // The same endTurn per-active loop drops every `attackedBy` entry whose source left the
+        // field (`sim/battle.ts` endTurn; `gen3_b11_moves_v1`, Mirror Move's read). DRAW-FREE.
+        self.prune_attacked_by();
     }
 
     /// Play a SCRIPTED sequence of `(p1_move_slot, p2_move_slot)` turns through the
@@ -1690,10 +1693,12 @@ impl crate::state::BattleState {
     pub(crate) fn last_move_id(&self, side: usize, slot: usize) -> Option<String> {
         let m = &self.sides[side].pokemon[slot];
         let k = m.last_move?;
+        // A lock a CALLED move started (`gen3_b11_moves_v1`) repeats from the virtual slot, and its
+        // repeat's `moveUsed` sets `lastMove` to the called id, which no moveslot holds.
         let id = if m.last_move_was_self_overwrite {
             m.last_move_used.clone()?
         } else {
-            to_id(m.set.moves.get(k)?)
+            to_id(m.slot_move_id(k)?)
         };
         Some(if id.starts_with("hiddenpower") { "hiddenpower".to_string() } else { id })
     }

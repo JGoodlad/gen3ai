@@ -7,12 +7,12 @@ the GATE is `node src/rust_sim/harness/dump_gen3_handlers.js --audit` (wired int
 handler, a STALE manifest row, a body-FINGERPRINT drift, a dead `implemented` anchor.
 
 Surface: 77 abilities (MODELED ∪ NOOP), 67 items,
-76 conditions (engine state space + attached), 348 modeled moves
-→ **1272 (effect, hook) rows**.
+76 conditions (engine state space + attached), 353 modeled moves
+→ **1287 (effect, hook) rows**.
 
 | disposition | rows |
 |---|---|
-| implemented | 1210 |
+| implemented | 1225 |
 | noop_justified | 36 |
 | unreachable_justified | 26 |
 
@@ -690,7 +690,7 @@ Surface: 77 abilities (MODELED ∪ NOOP), 67 items,
 | yawn | onResidualSubOrder | implemented | `turn.rs::run_residuals` |
 | yawn | onStart | implemented | `turn.rs::run_status_move` |
 
-## move (613 rows: implemented=606, noop_justified=2, unreachable_justified=5)
+## move (628 rows: implemented=621, noop_justified=2, unreachable_justified=5)
 
 | effect | hook | disposition | anchor / reason |
 |---|---|---|---|
@@ -713,6 +713,9 @@ Surface: 77 abilities (MODELED ∪ NOOP), 67 items,
 | aromatherapy | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | aromatherapy | neverMiss | implemented | `turn.rs::never_miss` |
 | aromatherapy | onHit | implemented | `turn.rs::run_status_move` |
+| assist | ignoreImmunity | implemented | `callers.rs::run_b11_move` |
+| assist | neverMiss | implemented | `callers.rs::run_b11_move` |
+| assist | onHit | implemented | `callers.rs::run_b11_move` |
 | astonish | secondaries | implemented | `turn.rs::apply_secondaries` |
 | attract | ignoreImmunity | implemented | `status_moves.rs::attract` |
 | attract | onTryImmunity | implemented | `status_moves.rs::attract` |
@@ -994,6 +997,9 @@ Surface: 77 abilities (MODELED ∪ NOOP), 67 items,
 | metalsound | boosts | implemented | `turn.rs::stat_drop_boosts` |
 | metalsound | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | meteormash | secondaries | implemented | `turn.rs::apply_secondaries` |
+| metronome | ignoreImmunity | implemented | `callers.rs::run_b11_move` |
+| metronome | neverMiss | implemented | `callers.rs::run_b11_move` |
+| metronome | onHit | implemented | `callers.rs::metronome_pool` |
 | milkdrink | heal | implemented | `turn.rs::recovery_heal_amount` |
 | milkdrink | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | milkdrink | neverMiss | implemented | `turn.rs::never_miss` |
@@ -1009,6 +1015,9 @@ Surface: 77 abilities (MODELED ∪ NOOP), 67 items,
 | minimize | volatileStatus | implemented | `turn/status_moves.rs::run_status_move` |
 | mirrorcoat | onTry | implemented | `turn.rs::run_fixed_damage_move` |
 | mirrorcoat | priority | implemented | `turn.rs::move_priority` |
+| mirrormove | ignoreImmunity | implemented | `callers.rs::run_b11_move` |
+| mirrormove | neverMiss | implemented | `callers.rs::run_b11_move` |
+| mirrormove | onHit | implemented | `callers.rs::run_b11_move` |
 | mist | ignoreImmunity | implemented | `status_moves.rs::run_status_move` |
 | mist | neverMiss | implemented | `status_moves.rs::run_status_move` |
 | mist | sideCondition | implemented | `status_moves.rs::run_status_move` |
@@ -1025,6 +1034,8 @@ Surface: 77 abilities (MODELED ∪ NOOP), 67 items,
 | mudsport | ignoreImmunity | implemented | `status_moves.rs::run_status_move` |
 | mudsport | neverMiss | implemented | `status_moves.rs::run_status_move` |
 | mudsport | volatileStatus | implemented | `status_moves.rs::run_status_move` |
+| naturepower | ignoreImmunity | implemented | `callers.rs::run_b11_move` |
+| naturepower | onHit | implemented | `callers.rs::NATURE_POWER_CALLS` |
 | needlearm | secondaries | implemented | `turn.rs::apply_secondaries` |
 | nightmare | ignoreImmunity | implemented | `status_moves.rs::run_status_move` |
 | nightmare | neverMiss | implemented | `status_moves.rs::run_status_move` |
@@ -1140,6 +1151,10 @@ Surface: 77 abilities (MODELED ∪ NOOP), 67 items,
 | silverwind | secondaries | implemented | `turn.rs::apply_secondaries` |
 | sing | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | sing | status | implemented | `turn.rs::modeled_status_move` |
+| sketch | ignoreImmunity | implemented | `callers.rs::run_b11_move` |
+| sketch | neverMiss | implemented | `callers.rs::run_b11_move` |
+| sketch | noPPBoosts | implemented | `state.rs::from_set` |
+| sketch | onHit | implemented | `callers.rs::run_sketch` |
 | skillswap | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | skillswap | neverMiss | implemented | `turn.rs::never_miss` |
 | skillswap | onHit | implemented | `turn.rs::run_status_move` |

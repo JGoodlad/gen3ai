@@ -687,6 +687,27 @@ add([mv('triplekick', 'multiaccuracy'), mv('triplekick', 'multihit')],
   IMPL('moves.rs::run_multihit', 'fixed 3 strikes; each strike after the first re-rolls accuracy first (roll_accuracy: stages, ModifyAccuracy) and a miss ends the move silently; BP 10 × move.hit (pinned against the resolved callback, B8-0b)'));
 add([mv('fissure', 'ohko'), mv('horndrill', 'ohko'), mv('guillotine', 'ohko'), mv('sheercold', 'ohko')],
   IMPL('variable_moves.rs::ohko_accuracy', 'the gen-3 OHKO branch in run_fixed_damage_move: a lower-level user → -immune|<t>|[ohko] with no draw; else randomChance(30 + level gap, 100) ignoring stages and ModifyAccuracy; Sturdy; damage = the target\'s current HP (also against a sub); -ohko after a sub line or after a KO (apply_fixed_hit)'));
+// GEN3 FULL PARITY B11 (`gen3_b11_moves_v1`) — Metronome, Mirror Move, Assist, Nature Power, Sketch
+// (src/turn/callers.rs), on the ONE calling path Sleep Talk shares (`call_move`: the sim's bare
+// `useMove` — lastMoveUsed, the `[from] <Caller>` fold, no BeforeMove / PP / moveUsed; a callee outside
+// the user's moveslots runs from the CALLED-MOVE slot). The settled spec is harness/probe_b11_moves.js;
+// the differential is tests/b11_moves_golden_test.rs; the pins tests/b11_moves_test.rs.
+add([mv('metronome', 'onHit')],
+  IMPL('callers.rs::metronome_pool', 'the num-sorted flags.metronome pool (METRONOME_EXCLUDED pinned against the resolved dex, B11-1), ONE random(336) after the announce, then call_move'));
+add([mv('mirrormove', 'onHit')],
+  IMPL('callers.rs::run_b11_move', 'the LAST attackedBy entry (note_attacked at every path\'s reached-moveHit point, cleared on switch-out / faint, prune_attacked_by at endTurn): fails draw-free on none / a source without lastMove / MIRROR_MOVE_EXCLUDED / a move the source no longer holds; else call_move'));
+add([mv('assist', 'onHit')],
+  IMPL('callers.rs::run_b11_move', 'every OTHER party mon\'s moveslots in position order (fainted included), NOASSIST_MOVES dropped, duplicates kept; ONE random(n); an empty pool fails draw-free; a called Hidden Power typed by the user (callee_slot)'));
+add([mv('naturepower', 'onHit')],
+  IMPL('callers.rs::NATURE_POWER_CALLS', 'useMove(swift) through call_move, after Nature Power\'s own 95-accuracy roll against its user (roll_accuracy(user, user), [miss] + -miss|<u>|<u>)'));
+add([mv('sketch', 'onHit')],
+  IMPL('callers.rs::run_sketch', 'fails draw-free (transformed / no lastMove / Substitute / NOSKETCH_MOVES / already known); else the Sketch slot becomes the copied move permanently (set.moves, base PP = max PP, MonState::sketched drops the request target key) and -activate|<u>|move: Mimic|<Move>'));
+add([mv('sketch', 'noPPBoosts')],
+  IMPL('state.rs::from_set', 'Sketch\'s own slot gets 0 PP Ups (1 PP), the generic noPPBoosts rule; the copy it writes takes the base PP of the copied move'));
+add([mv('metronome', 'neverMiss'), mv('metronome', 'ignoreImmunity'), mv('mirrormove', 'neverMiss'), mv('mirrormove', 'ignoreImmunity'),
+  mv('assist', 'neverMiss'), mv('assist', 'ignoreImmunity'), mv('naturepower', 'ignoreImmunity'), mv('sketch', 'neverMiss'), mv('sketch', 'ignoreImmunity')],
+  IMPL('callers.rs::run_b11_move', 'accuracy true (no draw; Nature Power\'s 95 is the one roll) and the Status-default ignoreImmunity: no type immunity gates a caller or Sketch'));
+
 // GEN3 FULL PARITY B5 (`gen3_b5_moves_v1`) — Spite, Grudge, Snore, Nightmare, Ingrain. The settled
 // spec is harness/probe_b5_moves.js; the differential is tests/b5_moves_golden_test.rs.
 add([mv('spite', 'onHit'), mv('spite', 'ignoreImmunity')],

@@ -2356,6 +2356,9 @@ impl crate::state::BattleState {
             }
             return;
         }
+        // The strike's `hitStepMoveHitLoop` ends with `target.gotAttacked(move, …, source)`
+        // (`sim/battle-actions.ts:1013`; the caster may be benched): `gen3_b11_moves_v1`.
+        self.note_attacked((side, slot), (src_side, src_slot), &fm.move_id);
         // The STORED number lands fixed-damage-style (sub-intercept first; Focus Band on
         // a direct hit; deferred faint via the caller's per-handler faintMessages).
         let realized = fm.damage;

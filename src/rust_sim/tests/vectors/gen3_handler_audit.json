@@ -6,8 +6,8 @@
    "abilities": 77,
    "items": 67,
    "conditions": 76,
-   "moves": 348,
-   "rows": 1272
+   "moves": 353,
+   "rows": 1287
   },
   "excluded_deferred": {
    "forecast": "Castform forme+TYPE change under weather — deferred (probe_forecast_rng.js settled the map; the reporting surface is unprobed); the port FAIL-LOUDs in state::MonState::from_set (GIGO guard: an unmodeled ability would silently no-op then desync under weather); NOT in MODELED/NOOP + REJECT_ABILITIES/REJECT_SPECIES so the e2e filter + randbats adapter exclude its teams",
@@ -4031,6 +4031,24 @@
    "anchor": "turn.rs::run_status_move",
    "reason": "the Aromatherapy whole-team clearStatus cure (no Soundproof gate, draw-free)"
   },
+  "move:assist:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "callers.rs::run_b11_move",
+   "reason": "accuracy true (no draw; Nature Power's 95 is the one roll) and the Status-default ignoreImmunity: no type immunity gates a caller or Sketch"
+  },
+  "move:assist:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "callers.rs::run_b11_move",
+   "reason": "accuracy true (no draw; Nature Power's 95 is the one roll) and the Status-default ignoreImmunity: no type immunity gates a caller or Sketch"
+  },
+  "move:assist:onHit": {
+   "disposition": "implemented",
+   "fp": "fn:b5963a38:onHit(target) { const moves = []; for (const pokemon of target.side.pokemon) { if (pokemon === target) continue; for (co",
+   "anchor": "callers.rs::run_b11_move",
+   "reason": "every OTHER party mon's moveslots in position order (fainted included), NOASSIST_MOVES dropped, duplicates kept; ONE random(n); an empty pool fails draw-free; a called Hidden Power typed by the user (callee_slot)"
+  },
   "move:astonish:secondaries": {
    "disposition": "implemented",
    "fp": "val:[{\"chance\":30,\"volatileStatus\":\"flinch\"}]",
@@ -5710,6 +5728,24 @@
    "anchor": "turn.rs::apply_secondaries",
    "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
   },
+  "move:metronome:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "callers.rs::run_b11_move",
+   "reason": "accuracy true (no draw; Nature Power's 95 is the one roll) and the Status-default ignoreImmunity: no type immunity gates a caller or Sketch"
+  },
+  "move:metronome:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "callers.rs::run_b11_move",
+   "reason": "accuracy true (no draw; Nature Power's 95 is the one roll) and the Status-default ignoreImmunity: no type immunity gates a caller or Sketch"
+  },
+  "move:metronome:onHit": {
+   "disposition": "implemented",
+   "fp": "fn:0fb17fe6:onHit(pokemon) { const moves = this.dex.moves.all().filter((move) => (!move.isNonstandard || move.isNonstandard === \"Uno",
+   "anchor": "callers.rs::metronome_pool",
+   "reason": "the num-sorted flags.metronome pool (METRONOME_EXCLUDED pinned against the resolved dex, B11-1), ONE random(336) after the announce, then call_move"
+  },
   "move:milkdrink:heal": {
    "disposition": "implemented",
    "fp": "val:[1,2]",
@@ -5799,6 +5835,24 @@
    "fp": "val:-5",
    "anchor": "turn.rs::move_priority",
    "reason": "the action-order priority sort (draws only on a priority+speed tie)"
+  },
+  "move:mirrormove:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "callers.rs::run_b11_move",
+   "reason": "accuracy true (no draw; Nature Power's 95 is the one roll) and the Status-default ignoreImmunity: no type immunity gates a caller or Sketch"
+  },
+  "move:mirrormove:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "callers.rs::run_b11_move",
+   "reason": "accuracy true (no draw; Nature Power's 95 is the one roll) and the Status-default ignoreImmunity: no type immunity gates a caller or Sketch"
+  },
+  "move:mirrormove:onHit": {
+   "disposition": "implemented",
+   "fp": "fn:ff45905a:onHit(pokemon) { const noMirror = [ \"assist\", \"curse\", \"doomdesire\", \"focuspunch\", \"futuresight\", \"magiccoat\", \"metronom",
+   "anchor": "callers.rs::run_b11_move",
+   "reason": "the LAST attackedBy entry (note_attacked at every path's reached-moveHit point, cleared on switch-out / faint, prune_attacked_by at endTurn): fails draw-free on none / a source without lastMove / MIRROR_MOVE_EXCLUDED / a move the source no longer holds; else call_move"
   },
   "move:mist:ignoreImmunity": {
    "disposition": "implemented",
@@ -5895,6 +5949,18 @@
    "fp": "val:\"mudsport\"",
    "anchor": "status_moves.rs::run_status_move",
    "reason": "the sport arm: ZERO draws; a recast [still] + -fail; -start|<u>|Mud Sport / move: Water Sport; Baton-Passed (noCopy false), cleared silently on switch-out / faint"
+  },
+  "move:naturepower:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "callers.rs::run_b11_move",
+   "reason": "accuracy true (no draw; Nature Power's 95 is the one roll) and the Status-default ignoreImmunity: no type immunity gates a caller or Sketch"
+  },
+  "move:naturepower:onHit": {
+   "disposition": "implemented",
+   "fp": "fn:efcb67ae:onHit(target) { this.actions.useMove(\"swift\", target); }",
+   "anchor": "callers.rs::NATURE_POWER_CALLS",
+   "reason": "useMove(swift) through call_move, after Nature Power's own 95-accuracy roll against its user (roll_accuracy(user, user), [miss] + -miss|<u>|<u>)"
   },
   "move:needlearm:secondaries": {
    "disposition": "implemented",
@@ -6583,6 +6649,30 @@
    "fp": "val:\"slp\"",
    "anchor": "turn.rs::modeled_status_move",
    "reason": "the standalone status-inflicting move arm (accuracy + try_set_status)"
+  },
+  "move:sketch:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "callers.rs::run_b11_move",
+   "reason": "accuracy true (no draw; Nature Power's 95 is the one roll) and the Status-default ignoreImmunity: no type immunity gates a caller or Sketch"
+  },
+  "move:sketch:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "callers.rs::run_b11_move",
+   "reason": "accuracy true (no draw; Nature Power's 95 is the one roll) and the Status-default ignoreImmunity: no type immunity gates a caller or Sketch"
+  },
+  "move:sketch:noPPBoosts": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "state.rs::from_set",
+   "reason": "Sketch's own slot gets 0 PP Ups (1 PP), the generic noPPBoosts rule; the copy it writes takes the base PP of the copied move"
+  },
+  "move:sketch:onHit": {
+   "disposition": "implemented",
+   "fp": "fn:5650bccd:onHit(target, source) { if (source.transformed || !target.lastMove || target.volatiles[\"substitute\"]) { return false; } ",
+   "anchor": "callers.rs::run_sketch",
+   "reason": "fails draw-free (transformed / no lastMove / Substitute / NOSKETCH_MOVES / already known); else the Sketch slot becomes the copied move permanently (set.moves, base PP = max PP, MonState::sketched drops the request target key) and -activate|<u>|move: Mimic|<Move>"
   },
   "move:skillswap:ignoreImmunity": {
    "disposition": "implemented",

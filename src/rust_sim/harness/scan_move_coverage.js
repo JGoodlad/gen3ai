@@ -166,6 +166,8 @@ const MODELED_B5 = new Set(['spite', 'grudge', 'nightmare', 'ingrain']);
 const MODELED_B7 = new Set(['stockpile', 'swallow', 'mudsport', 'watersport', 'mist', 'lockon', 'mindreader']);
 // GEN3 FULL PARITY B10 (`gen3_b10_moves_v1`) — Teleport, Follow Me, Helping Hand, Role Play, Camouflage.
 const MODELED_B10 = new Set(['teleport', 'followme', 'helpinghand', 'roleplay', 'camouflage']);
+// GEN3 FULL PARITY B11 (`gen3_b11_moves_v1`, `src/turn/callers.rs`) — the move-callers and Sketch.
+const MODELED_B11 = new Set(['metronome', 'mirrormove', 'assist', 'naturepower', 'sketch']);
 // MOVE-COVERAGE BATCH 7 (`gen3_move_coverage_batch7_v1`) — the generic MULTI-STRIKE family
 // (`run_multihit`): the FIXED-2 trio + the variable [2,5] family.
 // (`triplekick`, the sole `multiaccuracy` carrier, is MODELED since B8 — `MODELED_B8`.)
@@ -334,6 +336,8 @@ function classifyStatus(m, id) {
   if (MODELED_B7.has(id)) return { cov: 'MODELED', mech: `b7 (${id})` };
   // GEN3 FULL PARITY B10 (`gen3_b10_moves_v1`).
   if (MODELED_B10.has(id)) return { cov: 'MODELED', mech: `b10 (${id})` };
+  // GEN3 FULL PARITY B11 (`gen3_b11_moves_v1`) — Metronome, Mirror Move, Assist, Nature Power, Sketch.
+  if (MODELED_B11.has(id)) return { cov: 'MODELED', mech: `b11 (${id})` };
   // MOVE-COVERAGE BATCH 6 (`gen3_move_coverage_batch6_v1`) — the final tail.
   if (MODELED_BATCH6.has(id)) return { cov: 'MODELED', mech: `batch-6 (${id})` };
   // MOVE-COVERAGE BATCH 3 (`gen3_move_coverage_batch3_v1`) — Curse / Wish / Baton Pass.

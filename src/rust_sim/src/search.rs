@@ -1136,9 +1136,7 @@ pub fn volatile_names(mon: &MonState) -> Vec<&'static str> {
         // a charging Razor Wind holds `["twoturnmove","razorwind"]`), up until the strike lands it.
         if t.charging {
             if let Some(id) = mon
-                .set
-                .moves
-                .get(t.move_index)
+                .slot_move_id(t.move_index) // a CALLED charge too (`gen3_b11_moves_v1`)
                 .and_then(|m| crate::state::TWO_TURN_MOVES.iter().find(|x| **x == crate::dex::to_id(m)))
             {
                 v.push(id);

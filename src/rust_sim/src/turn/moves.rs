@@ -31,8 +31,8 @@ impl crate::state::BattleState {
         move_index: usize,
         dex: &'a Dex,
     ) -> Option<&'a crate::dex::MoveData> {
-        let mon = &self.sides[side].pokemon[slot];
-        let move_id = mon.set.moves.get(move_index)?;
+        // `slot_move_id` also resolves the CALLED-MOVE virtual slot (`gen3_b11_moves_v1`).
+        let move_id = self.sides[side].pokemon[slot].slot_move_id(move_index)?;
         dex.moves(move_id)
     }
 
@@ -224,6 +224,8 @@ impl crate::state::BattleState {
         } else {
             move_name
         };
+        // `battle.activeMove` (`gen3_b11_moves_v1`): every run sets it, a nested `useMove` last.
+        self.active_move_id = move_id.clone();
 
         // BATCH-1 post-hit effect specs (`gen3_move_coverage_batch1_v1`): recoil / drain /
         // self-drop fractions read from the move data. Struggle's recoil rides its OWN
@@ -249,18 +251,18 @@ impl crate::state::BattleState {
         let pursuit_strike = self.pursuit_strike;
         self.pursuit_strike = false;
         // --- SLEEP TALK CALLED MOVE (`gen3_move_coverage_batch5_v1`): read+clear the
-        //     transient `sleep_talk_call` flag the Sleep Talk arm sets for the ONE
+        //     transient `use_move_call` flag the Sleep Talk arm sets for the ONE
         //     recursive run_move that executes the SAMPLED move (the sim's bare
         //     `actions.useMove(picked)` inside `sleeptalk.onHit`). Like the pursuit
         //     strike, the called move SKIPS on_before_move / PP / lastMove / the
         //     mustrecharge gate (all owned by the OUTER Sleep Talk run) but otherwise
         //     runs its FULL NORMAL draw chain. ---
-        let sleep_talk_call = self.sleep_talk_call;
-        self.sleep_talk_call = false;
+        let use_move_call = self.use_move_call;
+        self.use_move_call = false;
         // FAKE OUT (`gen3_fakeout_v1`): the sim increments `activeMoveActions` at the TOP of
         // `runMove`, before BeforeMove/PP/announce — so a turn spent CANT-ed still burns the gate.
         // Both transient callers below are `useMove` in the sim, which does NOT bump it.
-        if !pursuit_strike && !sleep_talk_call {
+        if !pursuit_strike && !use_move_call {
             self.sides[side].pokemon[slot].active_move_actions =
                 self.sides[side].pokemon[slot].active_move_actions.saturating_add(1);
             // RAGE's volatile is removed by the holder's own next move ATTEMPT: `rage.condition.
@@ -302,11 +304,11 @@ impl crate::state::BattleState {
         //     Grudge user that is then asleep or fully paralysed has still lost its Grudge. Not
         //     for a `useMove` (the Pursuit strike, a Sleep-Talk-called move): those run no
         //     BeforeMove (the OUTER Sleep Talk's own runMove already removed it). DRAW-FREE. ---
-        if !pursuit_strike && !sleep_talk_call {
+        if !pursuit_strike && !use_move_call {
             self.sides[side].pokemon[slot].grudge = false;
         }
 
-        if !pursuit_strike && !sleep_talk_call && self.sides[side].pokemon[slot].must_recharge {
+        if !pursuit_strike && !use_move_call && self.sides[side].pokemon[slot].must_recharge {
             self.sides[side].pokemon[slot].must_recharge = false;
             self.sides[side].pokemon[slot].must_recharge_duration = 0;
             // DESTINY BOND's `onMoveAborted` (`gen3_move_coverage_batch6_v1`): a cant
@@ -555,7 +557,7 @@ impl crate::state::BattleState {
         //     here — DRAW-FREE, and NO PP is spent (the block sits before the deduct, which is
         //     why it must precede the PP region rather than ride the immunity short-circuit).
         //     [EMIT] `|cant|<user>|move: Imprison|<Move>`. ---
-        if !pursuit_strike && !sleep_talk_call && self.imprisoned_for(side, &move_id, dex) {
+        if !pursuit_strike && !use_move_call && self.imprisoned_for(side, &move_id, dex) {
             if self.logging() {
                 let u = self.mon_ref(side, slot, dex);
                 let name = dex.moves(&move_id).map(|m| m.display_name().to_string()).unwrap_or_default();
@@ -582,6 +584,17 @@ impl crate::state::BattleState {
         let locked_lockin = !pursuit_strike
             && matches!(move_id.as_str(), "outrage" | "petaldance" | "thrash")
             && self.sides[side].pokemon[slot].locked_move.is_some();
+        // ENCORE OVERRODE A LOCKED REPEAT (`gen3_b11_moves_v1`): a lock a CALLED move started holds
+        // the user to the callee while `lastMove` is still the CALLER (Metronome), so a foe's
+        // Encore lands on the caller and its `onOverrideAction` swaps the locked action for it
+        // (the driver's override). `runMove` still finds `getLockedMove()`, so the overriding move
+        // pays NO PP and announces `|[from] lockedmove` (`sim/battle-actions.ts` runMove), and the
+        // lock is not repeated (its volatile is left to expire). Probe_b11_moves.js "encore over a
+        // called outrage".
+        let lock_overridden = !pursuit_strike
+            && !use_move_call
+            && !struggle
+            && self.sides[side].pokemon[slot].locked_slot().is_some_and(|k| k != move_index);
 
         // The PRE-move Choice-lock snapshot (`gen3_move_coverage_batch5_v1`, the Sleep
         // Talk `onTryHit` choicelock gate): the lock the PP block below sets for THIS
@@ -589,7 +602,7 @@ impl crate::state::BattleState {
         // probed; only a lock from a PREVIOUS turn fails the next Sleep Talk).
         let was_choice_locked = self.sides[side].pokemon[slot].choice_locked_move.is_some();
 
-        if !pursuit_strike && !sleep_talk_call {
+        if !pursuit_strike && !use_move_call {
         // `is_status` for the TAUNT onBeforeMove cant — whether Taunt BLOCKS this move
         // (`gen3_taunt_disable_v1`): a derived-Status move that is NOT a fixed-damage move
         // (Seismic Toss etc. are bp-0 but a non-Status Showdown category, so Taunt does not
@@ -667,8 +680,20 @@ impl crate::state::BattleState {
         //     0 — after every cant above; Destiny Bond's −1 already cleared the window) prints the
         //     wait `-activate` or runs the release, and `runMove` ends there either way (no PP, no
         //     lastMove). See `variable_moves.rs`. ---
-        if self.sides[side].pokemon[slot].bide.is_some() {
-            return self.bide_before_move(side, slot, dex);
+        //     A CALLED Bide's wait turn whose action Encore overrode (`gen3_b11_moves_v1`, see
+        //     `lock_overridden`): the condition's `onBeforeMove` prints the wait `-activate` and
+        //     returns nothing, and only Bide's OWN `beforeMoveCallback` ends `runMove` — so the
+        //     overriding move then runs (probe_b11_moves.js "encore over a called bide"). The
+        //     release turn returns false whatever the move.
+        if let Some(b) = self.sides[side].pokemon[slot].bide {
+            if move_id != "bide" && b.duration != 1 {
+                if self.logging() {
+                    let u = self.mon_ref(side, slot, dex);
+                    self.log.activate(&u, "move: Bide", None);
+                }
+            } else {
+                return self.bide_before_move(side, slot, dex);
+            }
         }
 
         // --- `cant … nopp` (`gen3_b5_moves_v1`; `sim/battle-actions.ts` runMove: `if
@@ -685,6 +710,7 @@ impl crate::state::BattleState {
             && !locked_uproar
             && !locked_lockin
             && !locked_rollout
+            && !lock_overridden
             && self.sides[side].pokemon[slot].move_pp.get(move_index).copied().unwrap_or(0) == 0
         {
             self.sides[side].pokemon[slot].rage = false;
@@ -714,7 +740,7 @@ impl crate::state::BattleState {
         //     `useMoveInner` lockedmove path skips `deductPP` (`gen3_move_coverage_
         //     batch4c_v1`; probed: PP is paid ONCE, at the CHARGE — 16→15, or 16→14 under
         //     a Pressure foe — and the fire turn leaves it untouched).
-        if !struggle && !locked_fire && !locked_uproar && !locked_lockin && !locked_rollout {
+        if !struggle && !locked_fire && !locked_uproar && !locked_lockin && !locked_rollout && !lock_overridden {
             let pressure_extra = pressure_targets_foe
                 && to_id(&self.sides[foe].pokemon[foe_slot].ability) == "pressure";
             let deduct = if pressure_extra { 2 } else { 1 };
@@ -754,8 +780,8 @@ impl crate::state::BattleState {
         // `lastMoveUsed` (`gen3_conversion_v1`) — an ID, not a slot, and set for a STRUGGLE too
         // (where `last_move` is deliberately None). Conversion 2 special-cases "struggle" to
         // Normal and gen-3 struggle's dex type is ALREADY Normal, so that arm is a no-op either
-        // way. Sitting inside the same guard is what makes a Sleep-Talk-called move leave the
-        // OUTER move recorded, matching the sim.
+        // way. A CALLED move sets it in `call_move` instead (`gen3_b11_moves_v1`: `useMoveInner`'s
+        // `lastMoveUsed = move` runs for the callee too, so the callee is what the sim records).
         self.sides[side].pokemon[slot].last_move_used = Some(if struggle {
             "struggle".to_string()
         } else {
@@ -764,7 +790,11 @@ impl crate::state::BattleState {
         // `gen3_mimic_disable_self_overwrite_v1`: reset the self-overwrite flag for EVERY move;
         // the Mimic success block re-sets it TRUE after it overlays its own slot.
         self.sides[side].pokemon[slot].last_move_was_self_overwrite = false;
-        } // end `if !pursuit_strike && !sleep_talk_call` (on_before_move + PP + lastMove)
+        if lock_overridden {
+            // The overriding move's own announce carries the lockedmove `[from]` (see above).
+            self.log.set_next_move_from("lockedmove");
+        }
+        } // end `if !pursuit_strike && !use_move_call` (on_before_move + PP + lastMove)
 
         // --- MAGNITUDE / PRESENT `onModifyMove` (`gen3_b8_moves_v1`): the draw runs in
         //     `useMoveInner` (`data/mods/gen3/scripts.ts:145`) after BeforeMove and the PP
@@ -1556,6 +1586,12 @@ impl crate::state::BattleState {
             }
             return MoveResolution::done(true, false, false);
         }
+
+        // The move reached `moveHit` (accuracy, the Invulnerability event, every TryHit block and
+        // the natural immunity are behind it): `target.gotAttacked` (`data/mods/gen3/scripts.ts:464`,
+        // `gen3_b11_moves_v1` — Mirror Move's read). Beat Up, the multi-hit family and the single
+        // hit below all land here.
+        self.note_attacked((foe, foe_slot), (side, slot), &move_id);
 
         // --- BEAT UP (`gen3_move_coverage_batch4b_v1`) — a MULTI-STRIKE move: ONE strike
         //     PER healthy (non-fainted, NON-STATUSED) party member of the USER's side, each a
@@ -3326,6 +3362,9 @@ impl crate::state::BattleState {
             }
             return MoveResolution::done(true, false, false);
         }
+
+        // Reached `moveHit`: `target.gotAttacked` (`gen3_b11_moves_v1`, see `note_attacked`).
+        self.note_attacked((foe, foe_slot), (side, slot), move_id);
 
         // [EMIT] `|move|<user>|<Name>|<foe>` (a landed fixed-damage move). NO effectiveness
         // line (`-supereffective`/`-resisted`): a `damage:` move deals TYPELESS raw damage —
