@@ -1,0 +1,26 @@
+# review_probe_growth.py, run 2026-10-27 from a detached worktree at f4b25238 (PYTHONPATH=<that>/src, CUDA_VISIBLE_DEVICES="", nice 19,
+# cores 5-7,13-15, ulimit -v 12 GB) on models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip + its model_config.json:
+saved trunk_ffn_by_kind: off trunk_layers 3
+optimizer state entries before growth: 280 after realign: 280
+REPORT {"function_check": {"rows": 64, "rows_source": "agents/model/compile_parity_obs.npz (agents.model.compile_parity_fixture)", "device": "cpu", "dtype": "float32", "mode": "eager", "max_abs_d_logits": 0.0, "max_abs_d_value": 0.0, "bit_identical": true}, "optimizer_state": {"carried": 280, "no_state": 0, "fresh": 0, "copied": 48}, "new_parameters": {"tensors": 48, "elements": 791040}}
+fp32 64-row child-parent max|dlogit| 0.0
+bf16 64-row child-parent max|dlogit| 0.0 value 0.0
+bf16-vs-fp32 shift (parent) max|dlogit| 0.24959468841552734
+batch-1 (8 rows) child-parent max|dlogit| fp32 1.1444091796875e-05 bf16 0.0
+copied moments equal: True step tensor(56880.)
+param_group lr 0.00012056327160493829 {'lr': 0.00012056327160493829, 'betas': (0.9, 0.999), 'eps': 1e-05, 'weight_decay': 1e-05, 'amsgrad': False, 'maximize': False, 'foreach': None, 'capturable': False, 'differentiable': False, 'fused': None, 'decoupled_weight_decay': True}
+rc=0
+
+# review_probe_grad_share.py (same checkpoint, same pin worktree; fp32 CPU; a PROXY loss on the 64 gate rows):
+# per-round share of the shared FFN's gradient energy (linear1 + linear2 weights) carried by each kind's tokens
+policy round 0 shared energy 14 {'mon': 0.6982, 'board': 0.035, 'move': 0.1745, 'threat': 0.0292, 'event': 0.0149}
+policy round 1 shared energy 8.06 {'mon': 0.7427, 'board': 0.012, 'move': 0.2008, 'threat': 0.0331, 'event': 0.0181}
+policy round 2 shared energy 3.51 {'mon': 0.8732, 'board': 0.0, 'move': 0.1177, 'threat': 0.0, 'event': 0.0}
+value round 0 shared energy 3.61 {'mon': 0.5711, 'board': 0.0881, 'move': 0.0549, 'threat': 0.2313, 'event': 0.0322}
+value round 1 shared energy 2.07 {'mon': 0.5837, 'board': 0.0769, 'move': 0.082, 'threat': 0.2675, 'event': 0.0173}
+value round 2 shared energy 0.911 {'mon': 0.8622, 'board': 0.0742, 'move': 0.0, 'threat': 0.0, 'event': 0.0}
+P* round0 linear1.weight sqrt(v): median 0.000402 p10 0.000263 p90 0.000686; eps 1e-5; step tensor(56880.)
+
+# load check: P* grown at the pin, saved (model.save + save_model_snapshot), loaded by MAIN @48eeb0b70's load_model_snapshot:
+main reads config: kffn on ffn_dim 256
+main-loaded kffn child vs pin forward: equal True
