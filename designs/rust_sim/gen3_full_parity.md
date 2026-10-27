@@ -44,8 +44,10 @@ hand-mirrored copy of `turn.rs` and keeps only the invariant gate (`move_census.
 
 The item universe was cross-checked against the resolved handlers: every gen3 item outside the modeled
 set has no battle handler (the fossils, evolution items, balls, the Pokéblock and EV berries, whose
-`onEat` is never triggered in gen 3); `berryjuice`, the one handler-bearing item still refused, is gen-3
-`Unobtainable`, outside the universe.
+`onEat` is never triggered in gen 3). Outside the universe, eleven handler-bearing items are REFUSED at team
+construction: `berryjuice` (`Unobtainable`) and the ten gen-2 `Past` berries an unvalidated Custom Game team can
+still hold (`berry`, `goldberry`, and the eight `onUpdate` cure berries: Bitter, Burnt, Ice, Mint, Miracle, Mystery,
+PRZ Cure, PSN Cure; `gen3_bf_past_berries_failloud_v1`). The Past bows and the Future incenses are modeled.
 
 ## Formats: the gen3-mod singles formats Showdown defines
 
@@ -108,7 +110,11 @@ surface:
 | found by the merged-tree fuzz and the B8 agent: OWN TEMPO / OBLIVIOUS gained through Skill Swap cure the confusion / infatuation at the next Update; a LOAFING Truant user's Pursuit lays no volatile (no interrupt, no residual handler); SYNCHRONIZE into a Safeguard announces `-activate`; a MULTI-HIT move stops when its user falls asleep (Effect Spore) or faints (Rough Skin); LOCK-ON before an OHKO move skips the roll (the level check too against a locked semi-invulnerable target), the B7 × B8 merge | `tests/regression_test.rs` `bf12`-`bf17`, `harness/probe_bf_classes.js` | fixed in BF (`bf17` with B8) |
 | a forced STRUGGLE (every PP spent) read `multihit` from the stale chosen slot, so after a spent Bonemerang / Fury Swipes it struck two or more times (OU-reachable; found by the B7 + B8 bridge fuzz) | `tests/regression_test.rs` `bf18`, `harness/probe_bf_classes.js` BF18 | fixed with B10 |
 | KING'S ROCK did not roll on BEAT UP strikes (the sim rolls the appended flinch on every strike; found by the B10 bridge fuzz) | `tests/regression_test.rs` `bf19`, `harness/probe_bf_classes.js` BF19 | fixed with B10 |
-| a Snatch steal does not set the snatcher's last-used move (a later Conversion 2 reads it); the Hidden Power belief tracker ignores Foresight; Bitter Berry (gen-2 `Past`) cures confusion in an unvalidated Custom Game but is inert in the port | the B6 agent | open |
+| with two or more screens up, BEAT UP strikes and the JUMP KICK / HIGH JUMP KICK crash skipped the ModifyDamagePhase1 tie shuffle (the B7 agent's finding, confirmed in the sim) | `tests/regression_test.rs` `bf20`, `harness/probe_bf_classes.js` BF20 | fixed in BF3 |
+| the ten gen-2 `Past` berries with a live gen-3 handler were silently inert in the port (the sim applies them in an unvalidated Custom Game; the B6 agent's Bitter Berry finding) | `unmodeled_items_fail_loud_at_construction` | refused in BF3 (fail-loud) |
+| a SNATCH-stolen move did not become the user's `lastMoveUsed`, so a later Conversion 2 read the outer move (gen 3's `useMoveInner` sets it on every `useMove`) | `tests/regression_test.rs` `bf21`, `harness/probe_bf_classes.js` BF21 | fixed in BF3 |
+| the Hidden Power belief tracker (`trackers/hp_belief.rs`, twin of the Python tracker) ignores Foresight / Odor Sleuth, so a Fighting Hidden Power landing neutral on a foresighted Ghost would be read as impossible | the B6 agent | open (observation tracker; needs the Python twin changed in step) |
+| a hit that confuses a Persim Berry holder: the sim eats the berry BEFORE the attacker's Shell Bell heal, the port heals first (`/tmp/g3fp_b11/fuzz_2202/divergences/rmvq6vp32_ab_1_4`); an infatuation ends at the Update after its SOURCE faints at the residual (`-end|<mon>|Attract|[silent]` right after `|faint|`), the port only on the source's switch-out | the B11 agent's fuzz and golden | open |
 | a Sleep-Talk-called move did not set `lastMoveUsed` (Conversion 2 read `sleeptalk`), and Charge's AfterMove keyed on the caller (a Sleep-Talk-called Charge was removed at once); gen-3 `useMoveInner` sets `lastMoveUsed` and `activeMove` to the callee | `harness/probe_b11_moves.js`; `tests/b11_moves_test.rs` B11-17, the B11 golden's `st_charge` board | fixed in B11 (both Sleep Talk behaviour changes) |
 | the timed side conditions (Reflect, Light Screen, Safeguard) were gathered for the residual in a FIXED order with Safeguard / Light Screen after the lock-in volatiles; the sim walks `side.sideConditions` in insertion order, which decides a tie's `-sideend` order | the B7 Mist + screens golden board (`mi_screens_b`) | fixed in B7 |
 
@@ -162,5 +168,7 @@ commit.
 | B8 | Bide, Magnitude, Psywave, Present, Triple Kick, the four OHKO moves | shipped |
 | B9 | Attract (M6 resolved by design: harnesses pin genders); the Custom Game EV-balance warning | shipped |
 | B10 | Teleport, Follow Me, Helping Hand, Role Play, Camouflage, Endless Battle Clause staleness (M7) | shipped |
-| B11 | Metronome, Mirror Move, Assist, Nature Power, Sketch, on ONE `useMove` path shared with Sleep Talk (`turn/callers.rs`) | WIP (`gen3-b11`) |
-| BF | the fix batch: Rage, Fury Cutter, Uproar's wake, Smelling Salts, False Swipe, Rest by an Insomnia user, the Pursuit interrupt's last move, the defrost thaw, a fainted future-move caster's ident, Lansat on a focused holder, a Mimic'd Curse's request target | WIP (`gen3-bfix`) |
+| B11 | Metronome, Mirror Move, Assist, Nature Power, Sketch, on ONE `useMove` path shared with Sleep Talk (`turn/callers.rs`) | shipped |
+| BF | the fix batch: Rage, Fury Cutter, Uproar's wake, Smelling Salts, False Swipe, Rest by an Insomnia user, the Pursuit interrupt's last move, the defrost thaw, a fainted future-move caster's ident, Lansat on a focused holder, a Mimic'd Curse's request target; then Own Tempo / Oblivious gained by Skill Swap, a loafing Truant user's Pursuit, Synchronize into Safeguard, the multi-hit user guard, and (with B8) Lock-On before an OHKO move | shipped (`bf1`-`bf17`) |
+| BF2 | a forced Struggle reading the stale slot's multi-hit; King's Rock on every Beat Up strike (both OU-reachable, found by the bridge fuzz) | shipped with B10 (`bf18`, `bf19`) |
+| BF3 | the screens shuffle on Beat Up and the crash; a Snatch-stolen move sets `lastMoveUsed`; the ten gen-2 berries refused | shipped with B11 (`bf20`, `bf21`) |

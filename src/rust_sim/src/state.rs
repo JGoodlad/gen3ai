@@ -1544,16 +1544,21 @@ impl MonState {
         // Resolving every id in `data/pokemon/gen3_items.json` through `Dex.mod('gen3')` and
         // discarding the gen7+ universal no-ops (`onDrive`/`onMemory`/`onPlate`) plus
         // `Fling`/`NaturalGift` leaves 98 of 132 items with a real battle handler, of which 32
-        // are unreferenced by this engine. Twenty-seven of those 32 are inert here — gen-2
-        // carry-overs (goldberry / mintberry / iceberry / bitterberry / burntberry /
-        // psncureberry / miracleberry / mysteryberry) and Pokéblock berries whose ONLY handler
-        // is `onEat`. FIVE had a genuine gen-3 battle effect; FOUR are MODELED since gen3 full
+        // are unreferenced by this engine. The Pokéblock / EV berries among them are inert here
+        // (their ONLY handler is `onEat`, never triggered in gen 3). FIVE had a genuine gen-3 battle effect; FOUR are MODELED since gen3 full
         // parity B3 (`gen3_items_b3_v1`: Shell Bell `onAfterMoveSecondarySelf` in `moves.rs`,
         // Macho Brace `onModifySpe` in `speed.rs`, Mail `onTakeItem` in Trick's gate, Mental Herb
         // `onUpdate` in `items.rs`). The one left:
         //   * `berryjuice`  — `onUpdate` + `onResidual`, restores 20 HP at <= 50%. It is
         //                     `isNonstandard: 'Unobtainable'` in gen 3, so outside the gen-3 universe;
         //                     it stays refused.
+        //   * the TEN gen-2 berries with a live gen-3 handler (`gen3_bf_past_berries_failloud_v1`,
+        //     the B6 agent's Bitter Berry finding, resolved `Dex.mod('gen3')`): `berry` and
+        //     `goldberry` (`onResidual` heal), `bitterberry` / `burntberry` / `iceberry` / `mintberry`
+        //     / `miracleberry` / `mysteryberry` / `przcureberry` / `psncureberry` (`onUpdate` cure).
+        //     `isNonstandard: 'Past'`, so outside the gen-3 universe, but an unvalidated Custom Game
+        //     team can hold one and the sim then applies it: refused like Berry Juice, never inert.
+        //     (The earlier "only `onEat`" reading of these was wrong for all ten.)
         //
         // EXPOSURE IS ZERO ON BOTH SURFACES WE ACTUALLY USE: 0 hits across 4722 training-pool
         // team-blocks in `data/teams/`, and 0 across 3000 generated `gen3randombattle` teams.
@@ -1561,7 +1566,10 @@ impl MonState {
         // day one of these reaches the engine (a hand-built team, a format change, a new pool)
         // it CRASHES instead of lying. An earlier audit's "~2.7% of ladder battles" figure was
         // inferred from Smogon usage weights and does not describe either surface.
-        const UNMODELED_FAILLOUD_ITEMS: [&str; 1] = ["berryjuice"];
+        const UNMODELED_FAILLOUD_ITEMS: [&str; 11] = [
+            "berryjuice", "berry", "goldberry", "bitterberry", "burntberry", "iceberry", "mintberry",
+            "miracleberry", "mysteryberry", "przcureberry", "psncureberry",
+        ];
         let item_id = crate::dex::to_id(&item);
         if UNMODELED_FAILLOUD_ITEMS.contains(&item_id.as_str()) {
             panic!(

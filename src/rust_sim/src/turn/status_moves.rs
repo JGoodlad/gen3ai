@@ -265,7 +265,7 @@ impl crate::state::BattleState {
         //           port used to model (3) as a pure no-op → under-deducted → `pp:15`);
         //       (4) `this.actions.useMove(stolenId, snatcher)` — the snatcher executes the
         //           stolen move in ITS OWN context (a bare useMove: no accuracy/on_before_move/
-        //           PP/lastMove, just the effect + the stolen move's NATIVE draws — SwordsDance/
+        //           PP/lastMove — but `lastMoveUsed` IS set, by `useMoveInner` — just the effect + the stolen move's NATIVE draws — SwordsDance/
         //           Recover/Substitute draw 0 extra, Rest draws its sleep `random(2,6)`). Its
         //           announce carries the `|[from] Snatch` fold (set below);
         //       (5) `return null` → the FOE's move aborts (does nothing).
@@ -315,6 +315,10 @@ impl crate::state::BattleState {
             //     carry the snatcher's source scope (`gen3_core_nested_move_scope_v1`); the
             //     `-activate` above stays in the victim's (the sim prints it from the victim's
             //     `PrepareHit`, before the nested `useMove`).
+            // The nested `useMove(stolen, snatcher)` sets the SNATCHER's `lastMoveUsed` (gen 3's
+            // `useMoveInner`, data/mods/gen3/scripts.ts:127), as the Magic Coat bounce does: a later
+            // Conversion 2 reads the stolen move (`gen3_bf_called_move_last_used_v1`, pin `bf21b`).
+            self.sides[foe].pokemon[foe_slot].last_move_used = Some(move_id.to_string());
             self.log.set_next_move_from("Snatch");
             self.in_nested_move_scope(foe, |s| {
                 s.run_status_move(

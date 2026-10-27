@@ -2500,6 +2500,11 @@ impl crate::state::BattleState {
             // [BasePower sport tie shuffle] per strike (`gen3_b7_moves_v1`; probe: both sports on
             // one mon add one draw per Beat Up strike, after the crit, before the damage roll).
             self.base_power_sport_shuffle();
+            // [ModifyDamagePhase1 shuffle] per strike (`gen3_bf_screens_phase1_beatup_crash_v1`, the B7
+            // agent's finding, probe BF20a): every strike's `getDamage` reaches gen 3's `modifyDamage`
+            // (data/mods/gen3/scripts.ts:61) `runEvent('ModifyDamagePhase1')`, so two or more screens tie
+            // and shuffle, after the sport shuffle and before the `random(16)`, as in `run_multihit`.
+            self.modify_damage_phase1_shuffle();
             // [damage] `random(16)` selects the roll — every other damaging move's order.
             let r = self.damage_roll(
             crate::rolls::Site { kind: crate::rolls::SiteKind::BeatUp, att_side: side, tgt_side: foe, tgt_slot: foe_slot, move_id: "beatup", rolls: &dmg.rolls, via_sub: true, false_swipe: false, endure_applies: false },
@@ -4266,6 +4271,9 @@ impl crate::state::BattleState {
         // The crash's `getDamage` runs `runEvent('BasePower')` (`gen3_b7_moves_v1`; probe: both
         // sports on one mon add one draw to a High Jump Kick crash).
         self.base_power_sport_shuffle();
+        // The crash's `getDamage` reaches `modifyDamage`'s `runEvent('ModifyDamagePhase1')` too
+        // (`gen3_bf_screens_phase1_beatup_crash_v1`, probe BF20b): the screens' tie shuffle.
+        self.modify_damage_phase1_shuffle();
         let r = self.damage_roll(
             crate::rolls::Site { kind: crate::rolls::SiteKind::Crash, att_side: side, tgt_side: side, tgt_slot: slot, move_id: "crash", rolls: &dmg.rolls, via_sub: false, false_swipe: false, endure_applies: false },
             dex,

@@ -350,3 +350,23 @@ const HOUNDOUR_KR = 'Houndour||kingsrock|flashfire|beatup|Hardy|85,85,85,85,85,8
 run('BF19a beat up: kings rock on every strike', 'gen3customgame', [5, 6, 7, 8],
   HOUNDOUR_KR + ']' + SET('Registeel', 'clearbody', 'splash') + ']' + SET('Tyranitar', 'sandstream', 'splash'),
   SET('Snorlax', 'thickfat', 'splash'), [M(1, 1)]);
+// ---- BF20 (the B7 agent's unverified finding, confirmed) the SCREENS tie shuffle on BEAT UP and the CRASH ----
+// gen 3's `modifyDamage` (data/mods/gen3/scripts.ts:61) runs `runEvent('ModifyDamagePhase1')`; with two or more screens
+// up their `onAnyModifyDamagePhase1` handlers tie and `speedSort` shuffles them (one draw for two). Every `getDamage`
+// reaches it: each Beat Up strike (BF20a) and the Jump Kick / High Jump Kick crash's `getDamage` (BF20b, into Protect).
+run('BF20a screens: the phase-1 shuffle on every beat up strike', 'gen3customgame', [1, 2, 3, 4],
+  SET('Houndour', 'flashfire', 'beatup,splash') + ']' + SET('Registeel', 'clearbody', 'splash'),
+  SET('Snorlax', 'thickfat', 'reflect,lightscreen,splash'), [M(2, 1), M(2, 2), M(1, 3)]);
+run('BF20b screens: the phase-1 shuffle on the high jump kick crash', 'gen3customgame', [1, 2, 3, 4],
+  SET('Hitmonlee', 'limber', 'highjumpkick,splash'),
+  SET('Snorlax', 'thickfat', 'reflect,lightscreen,protect'), [M(2, 1), M(2, 2), M(1, 3)]);
+// ---- BF21 a CALLED move sets the user's lastMoveUsed (gen 3's useMoveInner, data/mods/gen3/scripts.ts:127) ----
+// Every `useMove` sets `pokemon.lastMoveUsed`, the nested ones included: a Sleep-Talk-called Earthquake (BF21a) and a
+// Snatch-stolen Swords Dance (BF21b) are what a faster foe's Conversion 2 then reads (Flying resists Ground; Ghost is
+// immune to Normal). The port kept Sleep Talk / Snatch as the snatcher's or sleeper's last move used.
+run('BF21a called move: sleep talk sets lastMoveUsed', 'gen3customgame', [1, 2, 3, 4],
+  SET('Snorlax', 'thickfat', 'sleeptalk,earthquake'), 'Porygon2||none|trace|spore,conversion2,splash|Hardy|85,85,85,85,85,85|N||||',
+  [M(1, 1), M(1, 2)]);
+run('BF21b called move: a snatch steal sets lastMoveUsed', 'gen3customgame', [1, 2, 3, 4],
+  SET('Snorlax', 'thickfat', 'snatch,splash'), 'Porygon2||none|trace|swordsdance,conversion2|Hardy|85,85,85,85,85,85|N||||',
+  [M(1, 1), M(2, 2)]);

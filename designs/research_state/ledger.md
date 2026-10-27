@@ -29380,3 +29380,20 @@ boards (2,571 Metronome calls across every move family), 17 pins with 15 reverts
 Sleep-Talk-called Charge (0.0029 %) is now kept, and a Sleep-Talk-called move becomes `lastMoveUsed` (Sleep Talk
 1.23 %, read only by Conversion 2, 0.0074 %). e2e capstone and obs golden unchanged. **Left (open rows):** Shell Bell
 heals before a Persim Berry eat the sim does first; an infatuation outlives its fainted source until a switch.
+## 2026-10-26 · RUST SIM · gen3 full parity BF3: the screens shuffle on Beat Up and the crash, called moves set lastMoveUsed, ten gen-2 berries refused
+
+**BF3** (`gen3_bf_screens_phase1_beatup_crash_v1`, `gen3_bf_called_move_last_used_v1`, `gen3_bf_past_berries_failloud_v1`;
+pins `bf20`, `bf21`, `unmodeled_items_fail_loud_at_construction`; spec `harness/probe_bf_classes.js` BF20-21), three
+earlier agents' open findings, each confirmed in the sim before the fix. With two or more screens up, each BEAT UP
+strike's and the JUMP KICK / HIGH JUMP KICK crash's `getDamage` reaches gen 3's `modifyDamage`
+`runEvent('ModifyDamagePhase1')`, where the screens tie and shuffle (one draw for two); the port drew it only on the
+other damage paths. Gen 3's `useMoveInner` sets `lastMoveUsed` on every `useMove`, so a Sleep-Talk-called move and a
+Snatch-stolen move become the user's last move used (a faster foe's Conversion 2 reads them); the port kept the outer
+move. The ten gen-2 `Past` berries with a live gen-3 handler (`berry`, `goldberry`, and the eight `onUpdate` cure
+berries) were silently inert; an unvalidated Custom Game team can hold one and the sim applies it, so they are now
+refused at construction like Berry Juice. Each pin diverges on main's build before the fix.
+
+**OU-visible (FINDING):** dice: the screens shuffle (Beat Up 1.41 % of gen3ou mons, High Jump Kick 0.045 %; Reflect
+0.27 %, Light Screen 0.20 %; two screens up at once in 0 of 6665 N1-P eval battles); state: Conversion 2 after a
+Sleep Talk call or a Snatch steal (Conversion 2 0.0074 %, Sleep Talk common). No validated gen3ou team can hold a
+gen-2 berry. **Left:** the Hidden Power belief tracker ignores Foresight (an observation tracker with a Python twin).

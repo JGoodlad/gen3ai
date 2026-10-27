@@ -16483,7 +16483,12 @@ fn a_ditto_without_transform_builds_fine() {
 fn unmodeled_items_fail_loud_at_construction() {
     let d = dex();
     let foe = "Snorlax|||immunity|bodyslam|Adamant|252,252,,,,|||||";
-    for item in ["berryjuice"] {
+    // berryjuice (Unobtainable) and the ten gen-2 `Past` berries with a live gen-3 handler
+    // (`gen3_bf_past_berries_failloud_v1`, node-checked by the guard's comment), each verified alone.
+    for item in [
+        "berryjuice", "berry", "goldberry", "bitterberry", "burntberry", "iceberry", "mintberry",
+        "miracleberry", "mysteryberry", "przcureberry", "psncureberry",
+    ] {
         let carrier = format!("Snorlax||{item}|immunity|bodyslam|Adamant|252,252,,,,|||||");
         let caught = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             Battle::start_with_switchins(&opts_cg(&carrier, foe, "1,2,3,4"), &d)
@@ -16499,7 +16504,7 @@ fn unmodeled_items_fail_loud_at_construction() {
 /// battle effect at all, must still construct fine. Without this, an over-broad item guard
 /// (e.g. one keyed on "unreferenced in the engine source") would pass the test above while
 /// wrongly rejecting legal teams, and nothing would catch it. `pokeball` stands in for the
-/// 27 inert ids the guard deliberately does NOT list.
+/// inert ids (the Pokéblock / EV berries, balls, fossils) the guard deliberately does NOT list.
 #[test]
 fn modeled_and_inert_items_still_build_fine() {
     let d = dex();
@@ -18680,5 +18685,145 @@ fn bf19_a_kings_rock_rolls_on_every_beat_up_strike() {
             "|turn|2",
         ],
         &["3525,36180,28786,35716"],
+    );
+}
+
+/// BF20 (the B7 agent's finding, confirmed in the sim; `gen3_bf_screens_phase1_beatup_crash_v1`): with two or more screens
+/// up, every `getDamage` reaches gen 3's `modifyDamage` (data/mods/gen3/scripts.ts:61) `runEvent('ModifyDamagePhase1')`,
+/// where the screens' handlers tie and shuffle: each BEAT UP strike (BF20a) and the HIGH JUMP KICK crash (BF20b) draw it.
+/// WRONG (pre-fix): neither path drew it, so the damage roll took the shuffle's draw.
+/// Ground truth: `harness/probe_bf_classes.js` (BF20a, BF20b).
+#[test]
+fn bf20_a_the_screens_shuffle_draws_on_every_beat_up_strike() {
+    bf_check(
+        "BF20a",
+        "gen3customgame",
+        "1,2,3,4",
+        "Houndour||none|flashfire|beatup,splash|Hardy|85,85,85,85,85,85|M||||]Registeel||none|clearbody|splash|Hardy|85,85,85,85,85,85|M||||",
+        "Snorlax||none|thickfat|reflect,lightscreen,splash|Hardy|85,85,85,85,85,85|M||||",
+        &[ScriptDecision::both(Choice::Move(1), Choice::Move(0)), ScriptDecision::both(Choice::Move(1), Choice::Move(1)), ScriptDecision::both(Choice::Move(0), Choice::Move(2))],
+        &[
+            "|move|p1a: Houndour|Splash|p1a: Houndour",
+            "|-nothing",
+            "|move|p2a: Snorlax|Reflect|p2a: Snorlax",
+            "|-sidestart|p2: P2|Reflect",
+            "|upkeep",
+            "|turn|2",
+            "|move|p1a: Houndour|Splash|p1a: Houndour",
+            "|-nothing",
+            "|move|p2a: Snorlax|Light Screen|p2a: Snorlax",
+            "|-sidestart|p2: P2|move: Light Screen",
+            "|upkeep",
+            "|turn|3",
+            "|move|p1a: Houndour|Beat Up|p2a: Snorlax",
+            "|-activate|p1a: Houndour|move: Beat Up|[of] Houndour",
+            "|-damage|p2a: Snorlax|478/482",
+            "|-activate|p1a: Houndour|move: Beat Up|[of] Registeel",
+            "|-damage|p2a: Snorlax|473/482",
+            "|-hitcount|p2a: Snorlax|2",
+            "|move|p2a: Snorlax|Splash|p2a: Snorlax",
+            "|-nothing",
+            "|upkeep",
+            "|turn|4",
+        ],
+        &["57890,13032,12358,42006", "43514,9542,40559,8561", "7104,42574,9152,10809"],
+    );
+}
+
+#[test]
+fn bf20_b_the_screens_shuffle_draws_on_the_high_jump_kick_crash() {
+    bf_check(
+        "BF20b",
+        "gen3customgame",
+        "1,2,3,4",
+        "Hitmonlee||none|limber|highjumpkick,splash|Hardy|85,85,85,85,85,85|M||||",
+        "Snorlax||none|thickfat|reflect,lightscreen,protect|Hardy|85,85,85,85,85,85|M||||",
+        &[ScriptDecision::both(Choice::Move(1), Choice::Move(0)), ScriptDecision::both(Choice::Move(1), Choice::Move(1)), ScriptDecision::both(Choice::Move(0), Choice::Move(2))],
+        &[
+            "|move|p1a: Hitmonlee|Splash|p1a: Hitmonlee",
+            "|-nothing",
+            "|move|p2a: Snorlax|Reflect|p2a: Snorlax",
+            "|-sidestart|p2: P2|Reflect",
+            "|upkeep",
+            "|turn|2",
+            "|move|p1a: Hitmonlee|Splash|p1a: Hitmonlee",
+            "|-nothing",
+            "|move|p2a: Snorlax|Light Screen|p2a: Snorlax",
+            "|-sidestart|p2: P2|move: Light Screen",
+            "|upkeep",
+            "|turn|3",
+            "|move|p2a: Snorlax|Protect|p2a: Snorlax",
+            "|-singleturn|p2a: Snorlax|Protect",
+            "|move|p1a: Hitmonlee|High Jump Kick|p2a: Snorlax",
+            "|-activate|p2a: Snorlax|Protect",
+            "|-damage|p1a: Hitmonlee|189/262",
+            "|upkeep",
+            "|turn|4",
+        ],
+        &["57890,13032,12358,42006", "43514,9542,40559,8561", "50886,5712,59628,20063"],
+    );
+}
+
+/// BF21 (`gen3_bf_called_move_last_used_v1`; the B6 agent's Snatch finding and the BF agent's Sleep Talk note, both
+/// confirmed in the sim): gen 3's `useMoveInner` sets `pokemon.lastMoveUsed` on EVERY `useMove`
+/// (data/mods/gen3/scripts.ts:127), the nested ones too, so a faster foe's Conversion 2 reads the CALLED move: a
+/// Sleep-Talk-called Earthquake (BF21a: Flying) and a Snatch-stolen Swords Dance (BF21b: Ghost). WRONG (pre-fix): the
+/// port kept Sleep Talk / Snatch, so Conversion 2 picked from the wrong resist list.
+/// Ground truth: `harness/probe_bf_classes.js` (BF21a, BF21b).
+#[test]
+fn bf21_a_a_sleep_talk_called_move_sets_last_move_used() {
+    bf_check(
+        "BF21a",
+        "gen3customgame",
+        "1,2,3,4",
+        "Snorlax||none|thickfat|sleeptalk,earthquake|Hardy|85,85,85,85,85,85|M||||",
+        "Porygon2||none|trace|spore,conversion2,splash|Hardy|85,85,85,85,85,85|N||||",
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0)), ScriptDecision::both(Choice::Move(0), Choice::Move(1))],
+        &[
+            "|move|p2a: Porygon2|Spore|p1a: Snorlax",
+            "|-status|p1a: Snorlax|slp|[from] move: Spore",
+            "|cant|p1a: Snorlax|slp",
+            "|move|p1a: Snorlax|Sleep Talk|p1a: Snorlax",
+            "|move|p1a: Snorlax|Earthquake|p2a: Porygon2|[from] Sleep Talk",
+            "|-damage|p2a: Porygon2|238/332",
+            "|upkeep",
+            "|turn|2",
+            "|move|p2a: Porygon2|Conversion 2|p1a: Snorlax",
+            "|-start|p2a: Porygon2|typechange|Flying",
+            "|-curestatus|p1a: Snorlax|slp|[msg]",
+            "|move|p1a: Snorlax|Sleep Talk|p1a: Snorlax",
+            "|upkeep",
+            "|turn|3",
+        ],
+        &["50886,5712,59628,20063", "7104,42574,9152,10809"],
+    );
+}
+
+#[test]
+fn bf21_b_a_snatch_stolen_move_sets_last_move_used() {
+    bf_check(
+        "BF21b",
+        "gen3customgame",
+        "1,2,3,4",
+        "Snorlax||none|thickfat|snatch,splash|Hardy|85,85,85,85,85,85|M||||",
+        "Porygon2||none|trace|swordsdance,conversion2|Hardy|85,85,85,85,85,85|N||||",
+        &[ScriptDecision::both(Choice::Move(0), Choice::Move(0)), ScriptDecision::both(Choice::Move(1), Choice::Move(1))],
+        &[
+            "|move|p1a: Snorlax|Snatch|p1a: Snorlax",
+            "|-singleturn|p1a: Snorlax|Snatch",
+            "|move|p2a: Porygon2|Swords Dance|p2a: Porygon2",
+            "|-activate|p1a: Snorlax|move: Snatch|[of] p2a: Porygon2",
+            "|move|p1a: Snorlax|Swords Dance|p1a: Snorlax|[from] Snatch",
+            "|-boost|p1a: Snorlax|atk|2",
+            "|upkeep",
+            "|turn|2",
+            "|move|p2a: Porygon2|Conversion 2|p1a: Snorlax",
+            "|-start|p2a: Porygon2|typechange|Ghost",
+            "|move|p1a: Snorlax|Splash|p1a: Snorlax",
+            "|-nothing",
+            "|upkeep",
+            "|turn|3",
+        ],
+        &["43514,9542,40559,8561", "55250,62519,52978,42619"],
     );
 }
