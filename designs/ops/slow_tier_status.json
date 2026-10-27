@@ -3030,121 +3030,129 @@
   },
   "src/main/anchors/anchors_integration_test.py::test_one_capped_real_game_against_metamon_smallrl": {
    "status": "pass",
-   "commit": "9ba613a2e2e8178c8fc6c3bbd60f1ac1d29cbbb7",
-   "at": "2026-10-27T10:56:54Z",
-   "duration_s": 38.15,
-   "contention": 1.58,
+   "commit": "5fea300b89101bc7a2d5eb43e0c13561a13e9ed6",
+   "at": "2026-10-27T12:01:17Z",
+   "duration_s": 29.62,
+   "contention": 1.06,
    "detail": ""
   },
   "src/main/anchors/anchors_integration_test.py::test_two_real_games_against_metamon_smallrl[node-live]": {
    "status": "pass",
-   "commit": "9ba613a2e2e8178c8fc6c3bbd60f1ac1d29cbbb7",
-   "at": "2026-10-27T11:04:21Z",
-   "duration_s": 30.67,
-   "contention": 1.17,
+   "commit": "5fea300b89101bc7a2d5eb43e0c13561a13e9ed6",
+   "at": "2026-10-27T12:01:17Z",
+   "duration_s": 32.06,
+   "contention": 1.26,
    "detail": ""
   },
   "src/main/anchors/anchors_integration_test.py::test_two_real_games_against_metamon_smallrl[rust-core]": {
    "status": "pass",
-   "commit": "9ba613a2e2e8178c8fc6c3bbd60f1ac1d29cbbb7",
-   "at": "2026-10-27T11:04:21Z",
-   "duration_s": 39.11,
-   "contention": 1.0,
+   "commit": "5fea300b89101bc7a2d5eb43e0c13561a13e9ed6",
+   "at": "2026-10-27T12:01:17Z",
+   "duration_s": 30.57,
+   "contention": 1.03,
    "detail": ""
   },
   "src/main/anchors/anchors_integration_test.py::test_two_real_games_against_metamon_smallrl[rust-live]": {
    "status": "pass",
-   "commit": "9ba613a2e2e8178c8fc6c3bbd60f1ac1d29cbbb7",
-   "at": "2026-10-27T11:04:21Z",
-   "duration_s": 29.11,
+   "commit": "5fea300b89101bc7a2d5eb43e0c13561a13e9ed6",
+   "at": "2026-10-27T12:01:17Z",
+   "duration_s": 30.07,
    "contention": 1.0,
    "detail": ""
   },
   "src/main/anchors/anchors_integration_test.py::test_two_real_games_with_a_RUST_BOT_as_our_side": {
    "status": "pass",
-   "commit": "9ba613a2e2e8178c8fc6c3bbd60f1ac1d29cbbb7",
-   "at": "2026-10-27T10:56:54Z",
-   "duration_s": 27.89,
-   "contention": 1.14,
+   "commit": "5fea300b89101bc7a2d5eb43e0c13561a13e9ed6",
+   "at": "2026-10-27T12:01:17Z",
+   "duration_s": 28.8,
+   "contention": 1.01,
    "detail": ""
   },
   "src/main/anchors/ensemble_router_regime_integration_test.py::test_install_instruments_the_real_router_class": {
    "status": "pass",
-   "commit": "9ba613a2e2e8178c8fc6c3bbd60f1ac1d29cbbb7",
-   "at": "2026-10-27T10:56:54Z",
-   "duration_s": 5.39,
+   "commit": "5fea300b89101bc7a2d5eb43e0c13561a13e9ed6",
+   "at": "2026-10-27T12:01:17Z",
+   "duration_s": 5.83,
    "contention": 1.0,
    "detail": ""
   },
   "src/main/anchors/ensemble_router_regime_integration_test.py::test_the_pinned_preset_passes_and_a_wrong_pin_is_refused": {
    "status": "pass",
-   "commit": "9ba613a2e2e8178c8fc6c3bbd60f1ac1d29cbbb7",
-   "at": "2026-10-27T10:56:54Z",
-   "duration_s": 6.03,
-   "contention": 1.09,
+   "commit": "5fea300b89101bc7a2d5eb43e0c13561a13e9ed6",
+   "at": "2026-10-27T12:01:17Z",
+   "duration_s": 5.61,
+   "contention": 1.01,
    "detail": ""
   },
   "src/main/anchors/live_side_test.py::test_a_rust_bot_plays_our_side_on_its_own_reading_and_its_streams_are_seeded": {
    "status": "pass",
-   "commit": "9ba613a2e2e8178c8fc6c3bbd60f1ac1d29cbbb7",
-   "at": "2026-10-27T11:04:21Z",
-   "duration_s": 4.65,
+   "commit": "5fea300b89101bc7a2d5eb43e0c13561a13e9ed6",
+   "at": "2026-10-27T12:01:17Z",
+   "duration_s": 4.67,
    "contention": 1.0,
    "detail": ""
   },
   "src/main/anchors/peer_patience_integration_test.py::test_a_seventy_second_decision_off_the_loop_keeps_the_kakuna_peer_connected": {
    "status": "pass",
-   "commit": "9ba613a2e2e8178c8fc6c3bbd60f1ac1d29cbbb7",
-   "at": "2026-10-27T11:04:21Z",
-   "duration_s": 98.03,
+   "commit": "5fea300b89101bc7a2d5eb43e0c13561a13e9ed6",
+   "at": "2026-10-27T12:11:14Z",
+   "duration_s": 107.53,
+   "contention": 1.0,
+   "detail": ""
+  },
+  "src/main/anchors/peer_patience_integration_test.py::test_the_negative_control_a_blocked_loop_drops_the_peer_and_its_forfeit_win_is_void": {
+   "status": "pass",
+   "commit": "5fea300b89101bc7a2d5eb43e0c13561a13e9ed6",
+   "at": "2026-10-27T12:11:14Z",
+   "duration_s": 264.7,
    "contention": 1.0,
    "detail": ""
   },
   "src/main/anchors/registry_pins_test.py::test_the_real_peer_started_from_a_panel_config_verifies_its_weights": {
    "status": "pass",
-   "commit": "9ba613a2e2e8178c8fc6c3bbd60f1ac1d29cbbb7",
-   "at": "2026-10-27T10:56:54Z",
-   "duration_s": 8.07,
-   "contention": 1.35,
+   "commit": "5fea300b89101bc7a2d5eb43e0c13561a13e9ed6",
+   "at": "2026-10-27T12:01:17Z",
+   "duration_s": 6.07,
+   "contention": 1.0,
    "detail": ""
   },
   "src/main/anchors/weight_pins_integration_test.py::test_a_wrong_sha_a_missing_revision_and_an_unpinned_load_are_each_refused": {
    "status": "pass",
-   "commit": "9ba613a2e2e8178c8fc6c3bbd60f1ac1d29cbbb7",
-   "at": "2026-10-27T10:56:54Z",
-   "duration_s": 6.68,
-   "contention": 1.33,
+   "commit": "5fea300b89101bc7a2d5eb43e0c13561a13e9ed6",
+   "at": "2026-10-27T12:01:17Z",
+   "duration_s": 5.99,
+   "contention": 1.0,
    "detail": ""
   },
   "src/main/anchors/weight_pins_integration_test.py::test_the_real_model_loads_its_checkpoint_only_through_the_pinned_offline_downloader": {
    "status": "pass",
-   "commit": "9ba613a2e2e8178c8fc6c3bbd60f1ac1d29cbbb7",
-   "at": "2026-10-27T10:56:54Z",
-   "duration_s": 6.04,
+   "commit": "5fea300b89101bc7a2d5eb43e0c13561a13e9ed6",
+   "at": "2026-10-27T12:01:17Z",
+   "duration_s": 5.47,
    "contention": 1.0,
    "detail": ""
   },
   "src/main/anchors/windowed_attention_integration_test.py::test_each_model_resolves_to_its_own_attention[Kakuna-WindowedVanillaAttention-want_window0]": {
    "status": "pass",
-   "commit": "9ba613a2e2e8178c8fc6c3bbd60f1ac1d29cbbb7",
-   "at": "2026-10-27T10:56:54Z",
-   "duration_s": 5.26,
+   "commit": "5fea300b89101bc7a2d5eb43e0c13561a13e9ed6",
+   "at": "2026-10-27T12:01:17Z",
+   "duration_s": 5.4,
    "contention": 1.0,
    "detail": ""
   },
   "src/main/anchors/windowed_attention_integration_test.py::test_each_model_resolves_to_its_own_attention[SyntheticRLV2-VanillaAttention-want_window1]": {
    "status": "pass",
-   "commit": "9ba613a2e2e8178c8fc6c3bbd60f1ac1d29cbbb7",
-   "at": "2026-10-27T10:56:54Z",
-   "duration_s": 5.14,
+   "commit": "5fea300b89101bc7a2d5eb43e0c13561a13e9ed6",
+   "at": "2026-10-27T12:01:17Z",
+   "duration_s": 5.41,
    "contention": 1.0,
    "detail": ""
   },
   "src/main/anchors/windowed_attention_integration_test.py::test_windowed_attention_matches_a_naive_sliding_window_reference": {
    "status": "pass",
-   "commit": "9ba613a2e2e8178c8fc6c3bbd60f1ac1d29cbbb7",
-   "at": "2026-10-27T10:56:54Z",
-   "duration_s": 3.49,
+   "commit": "5fea300b89101bc7a2d5eb43e0c13561a13e9ed6",
+   "at": "2026-10-27T12:01:17Z",
+   "duration_s": 3.45,
    "contention": 1.0,
    "detail": ""
   },
@@ -4710,10 +4718,10 @@
   },
   "src/main/x35/kakuna_test.py::test_the_real_peer_started_from_a_derived_config_verifies_the_registry_weights": {
    "status": "pass",
-   "commit": "9ba613a2e2e8178c8fc6c3bbd60f1ac1d29cbbb7",
-   "at": "2026-10-27T11:04:21Z",
+   "commit": "5fea300b89101bc7a2d5eb43e0c13561a13e9ed6",
+   "at": "2026-10-27T12:01:17Z",
    "duration_s": 6.12,
-   "contention": 1.0,
+   "contention": 1.01,
    "detail": ""
   },
   "src/node_free_search_integration_test.py::test_search_replay_and_the_prober_run_with_node_impossible": {
@@ -4774,42 +4782,42 @@
   },
   "src/utils/bridge/node_reject_bound_integration_test.py::test_refusals_reset_across_committed_decisions": {
    "status": "pass",
-   "commit": "9ba613a2e2e8178c8fc6c3bbd60f1ac1d29cbbb7",
-   "at": "2026-10-27T10:56:54Z",
-   "duration_s": 5.37,
-   "contention": 1.01,
+   "commit": "5fea300b89101bc7a2d5eb43e0c13561a13e9ed6",
+   "at": "2026-10-27T12:01:17Z",
+   "duration_s": 5.42,
+   "contention": 1.0,
    "detail": ""
   },
   "src/utils/bridge/ws_frontend_byte_identity_integration_test.py::test_the_front_ends_protocol_is_byte_identical_to_the_node_bridges": {
    "status": "pass",
-   "commit": "9ba613a2e2e8178c8fc6c3bbd60f1ac1d29cbbb7",
-   "at": "2026-10-27T10:56:54Z",
-   "duration_s": 9.9,
-   "contention": 1.6,
+   "commit": "5fea300b89101bc7a2d5eb43e0c13561a13e9ed6",
+   "at": "2026-10-27T12:01:17Z",
+   "duration_s": 7.91,
+   "contention": 1.0,
    "detail": ""
   },
   "src/utils/bridge/ws_frontend_byte_identity_integration_test.py::test_the_rust_backed_front_end_is_byte_identical_to_the_node_bridge": {
    "status": "pass",
-   "commit": "9ba613a2e2e8178c8fc6c3bbd60f1ac1d29cbbb7",
-   "at": "2026-10-27T10:56:54Z",
-   "duration_s": 1.2,
-   "contention": 1.7,
+   "commit": "5fea300b89101bc7a2d5eb43e0c13561a13e9ed6",
+   "at": "2026-10-27T12:01:17Z",
+   "duration_s": 0.8,
+   "contention": 1.0,
    "detail": ""
   },
   "src/utils/bridge/ws_frontend_integration_test.py::test_a_battle_is_backed_by_exactly_one_bridge_child_that_is_reaped": {
    "status": "pass",
-   "commit": "9ba613a2e2e8178c8fc6c3bbd60f1ac1d29cbbb7",
-   "at": "2026-10-27T10:56:54Z",
-   "duration_s": 0.8,
+   "commit": "5fea300b89101bc7a2d5eb43e0c13561a13e9ed6",
+   "at": "2026-10-27T12:01:17Z",
+   "duration_s": 0.89,
    "contention": 1.0,
    "detail": ""
   },
   "src/utils/bridge/ws_frontend_integration_test.py::test_two_clients_complete_a_two_battle_series_over_the_websocket": {
    "status": "pass",
-   "commit": "9ba613a2e2e8178c8fc6c3bbd60f1ac1d29cbbb7",
-   "at": "2026-10-27T10:56:54Z",
-   "duration_s": 5.71,
-   "contention": 1.35,
+   "commit": "5fea300b89101bc7a2d5eb43e0c13561a13e9ed6",
+   "at": "2026-10-27T12:01:17Z",
+   "duration_s": 4.97,
+   "contention": 1.0,
    "detail": ""
   },
   "src/utils/compile_pool_teardown_test.py::test_the_compile_pool_is_gone_after_its_module_and_the_check_sees_a_live_one": {
@@ -5021,5 +5029,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-27T11:04:21Z"
+ "last_written": "2026-10-27T12:11:14Z"
 }

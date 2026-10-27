@@ -281,6 +281,19 @@ class ShowdownServer(ManagedServer):
         return f"showdown:{showdown_pin()}"
 
 
+#: The front end's forced-end record in a read's directory (``ws_frontend.FORCED_END_SCHEMA``, one JSON line per battle
+#: ended by FORCELOSE): what ``main.anchors.runner.forced_end_verdict`` reads, for both placements of our front end.
+FORCED_ENDS_NAME = "forced_ends.jsonl"
+
+
+def arm_forced_ends(path: Optional[Path]) -> None:
+    """Start the read's forced-end record EMPTY: its existence is what says the guard was armed (a missing file reads
+    BLIND, never clean), and an earlier attempt's records in a reused directory never reach this one."""
+    if path is not None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("")
+
+
 class FrontEndServer(ManagedServer):
     """The in-repo websocket front end (:mod:`utils.bridge.ws_frontend`) — **no Node server**.
 
@@ -304,8 +317,10 @@ class FrontEndServer(ManagedServer):
     def __init__(self, port: int, python: Optional[str] = None, impl: str = "rust",
                  battle_format: str = "gen3ou", seed_base: Optional[int] = None,
                  capture_dir: Optional[Path] = None, log_path: Optional[Path] = None,
-                 start_timeout_s: float = 180.0, pair_log: Optional[Path] = None) -> None:
+                 start_timeout_s: float = 180.0, pair_log: Optional[Path] = None,
+                 forced_ends_log: Optional[Path] = None) -> None:
         super().__init__(port, log_path=log_path, start_timeout_s=start_timeout_s)
+        self.forced_ends_log = Path(forced_ends_log) if forced_ends_log is not None else None
         self.python = python or sys.executable
         self.impl = impl
         self.battle_format = battle_format
@@ -325,6 +340,8 @@ class FrontEndServer(ManagedServer):
             argv += ["--capture-dir", str(self.capture_dir)]
         if self.pair_log is not None:
             argv += ["--pair-seeds", "--pair-log", str(self.pair_log)]
+        if self.forced_ends_log is not None:
+            argv += ["--forced-ends-log", str(self.forced_ends_log)]
         return argv
 
     def env(self) -> Dict[str, str]:
@@ -342,6 +359,7 @@ class FrontEndServer(ManagedServer):
     def preflight(self) -> None:
         if self.capture_dir is not None:
             self.capture_dir.mkdir(parents=True, exist_ok=True)
+        arm_forced_ends(self.forced_ends_log)
 
     def version(self) -> str:
         """``ws_frontend@<gen3ai short HEAD>+<the bridge binary that backs each battle>``.
@@ -378,7 +396,8 @@ class InProcessFrontEnd:
 
     def __init__(self, port: int, battle_format: str = "gen3ou", seed_base: Optional[int] = None,
                  capture_dir: Optional[Path] = None, log_path: Optional[Path] = None,
-                 pair_log: Optional[Path] = None, host: str = "127.0.0.1", battle_index_base: int = 0) -> None:
+                 pair_log: Optional[Path] = None, host: str = "127.0.0.1", battle_index_base: int = 0,
+                 forced_ends_log: Optional[Path] = None) -> None:
         refuse_reserved(port)
         self.port = port
         self.host = host
@@ -389,6 +408,7 @@ class InProcessFrontEnd:
         self.capture_dir = Path(capture_dir) if capture_dir is not None else None
         self.pair_log = Path(pair_log) if pair_log is not None else None
         self.log_path = log_path
+        self.forced_ends_log = Path(forced_ends_log) if forced_ends_log is not None else None
         self.front = None
         self._server = None
         self._handler = None
@@ -411,6 +431,7 @@ class InProcessFrontEnd:
             validate_seed_spec(derive_seed_from_base(self.seed_base, 0))
         if self.capture_dir is not None:
             self.capture_dir.mkdir(parents=True, exist_ok=True)
+        arm_forced_ends(self.forced_ends_log)
         log = logging.getLogger("ws_frontend")
         self._saved_log = (log.level, log.propagate)
         if self.log_path is not None:
@@ -426,7 +447,8 @@ class InProcessFrontEnd:
             capture_dir=str(self.capture_dir) if self.capture_dir is not None else None,
             pair_seeds=self.pair_log is not None,
             pair_log=str(self.pair_log) if self.pair_log is not None else None,
-            battle_index_base=self.battle_index_base)
+            battle_index_base=self.battle_index_base,
+            forced_ends_log=str(self.forced_ends_log) if self.forced_ends_log is not None else None)
         self._server = await serve(self.front.handler, self.host, self.port, max_size=None,
                                    ping_interval=None)
         log.info("ws_frontend listening IN-PROCESS — %s (seed_base=%s)", self.uri, self.seed_base)
@@ -502,4 +524,5 @@ def build_server(kind: str, port: int, *, node: str = "node", python: Optional[s
     return FrontEndServer(
         port, python=python, impl="rust", battle_format=battle_format, seed_base=seed_base,
         capture_dir=capture_dir, pair_log=pair_log,
-        log_path=(out_dir / FrontEndServer.log_name) if out_dir is not None else None)
+        log_path=(out_dir / FrontEndServer.log_name) if out_dir is not None else None,
+        forced_ends_log=(out_dir / FORCED_ENDS_NAME) if out_dir is not None else None)

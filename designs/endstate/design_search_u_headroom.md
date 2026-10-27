@@ -1,8 +1,8 @@
 # S-U — search headroom on unfamiliar teams: does one-ply search on P\* gain MORE on U than on home72?
 
 **Status: DRAFT (2026-10-27), for adversarial review; nothing registered. The live searched player, the per-game
-lane, G-PREFIX and the stage-0 harness are BUILT (B1–B3, §6); the rule (B4) is not.** A proposed registered read. Its
-PREREG is written now that the build has landed (the registration flow, `../tools/reads.md` §1), and the rule `search_headroom` lands with it. It is the read that H-MID's FINDING 1 names
+lane, G-PREFIX, the stage-0 harness and the rule `search_headroom` are BUILT (B1–B4, §6).** A proposed registered
+read. Its PREREG is written now that the build has landed (the registration flow, `../tools/reads.md` §1). It is the read that H-MID's FINDING 1 names
 ([`h_mid_value_test_2026-10-26/README.md`](../research_state/measurements/h_mid_value_test_2026-10-26/README.md),
 `f200258f`). Search stays PAUSED ([`search_ledger.md`](search_ledger.md)) until a read like this one says otherwise. This
 unit read committed artefacts only; it ran one arithmetic script (the power table, §4.3) and no game.
@@ -145,7 +145,7 @@ The only play is on our own `ws_frontend` on a 9XXX port, against the locally ru
 
 ---
 
-## 3. Estimands and the registered rules (PROPOSED: rule `search_headroom`, not built)
+## 3. Estimands and the registered rules (rule `search_headroom`, BUILT; not registered)
 
 Per set, the unit statistic is the mean paired difference (searched − raw) over the unit's 20 deals, with a tie as ½.
 - G_home72 is the mean over home72 units.
@@ -310,7 +310,7 @@ both arms, because the engine rule does not let a cross-host import stand in for
 | **B1** | **The live one-ply search player** in the anchors core slot | **BUILT**: `main.anchors --our-search r0s4@10` (`src/main/anchors/search_side.py`, presets in `search_presets.py`). Each eligible decision runs `main.value_search.search_decision` on the battle's TRUE input log, read in process from the front end (`ws_frontend._Battle.choice_log`) and cut honestly: every command of the earlier request updates, ordered (update, p1 before p2), never the opponent's choice of OUR update (so its root decision is open in every world and π answers it), and `root_choice_in_log=False`. Two guards before any world: the log's replay opens our decision with the live tokens, turn and decision index, and its replayed observation row is the live core frame's, byte for byte. The worlds are `WorldSampler(reveal="off", max_tries=60)`, `dice="seed"` (the maturity battery's F builder). Each search is keyed by the DEAL (a digest of the battle's `START`: both teams, names, seed) and the decision (turn, our decision index), so a searched game replays exactly. It runs in a worker thread (§8 A9). A `WorldError` (no consistent world) is an EXCLUSION, played as π's choice and recorded; any other exception fails the game. One record per decision in `<out>/search_decisions.jsonl`: searched or why not, π's argmax, the pick, Q̂ and log π per legal action, the root V, the playouts, CPU-s (the worker thread plus the replay children) and wall-s, the worlds' tries, leak block and species hit rate against the truth (the world-quality covariate, at species level). Tests: `search_side_test.py`, `search_side_integration_test.py` (a live in-process battle: every decision's root replays byte for byte; the search on that live log is deterministic and blind to the order of an update's two choices) |
 | B2 | **piKL as an acting rule** | **BUILT**: `SearchConfig(rule="pikl", pikl_lambda=0.015)` (`main.value_search.rules.pikl_scores`, L1's arithmetic). `rules_pikl_test.py` re-scores L1's banked rows with it: E2's and X26's held-out TRUNC-4-K8 IMP and deviation share and the Tier-1 fit point reproduce `result_l1.json` / `fit_l1.json` to their rounding |
 | B3 | **A searched label in `main.reads`** | **BUILT**: `models.<label>.load.search` (stamped `our_regime = greedy+search=r0s4@10`) in an `anchor` group with `per_game: true`: each seed's 20-game series is 20 ONE-GAME units (`main.anchors --games 20 --deal-game G`: game G's role, both sides' team draws, its seed), queued DEAL by deal (raw before searched), so a stopped read resumes at game granularity. A searched unit is a long heavy-slot job with its watchdog at 3 h. **G-PREFIX** (`main.reads.prefix`): each pair's protocol through `\|turn\|10` must be byte-identical; a mismatch HOLDS the lane and keeps the group inconclusive. `run --max-units N` and `search-cost` (`../tools/reads.md` §3). The design's G-REPRO (a searched label with the switch OFF reproduces raw P\* game for game) is G-PREFIX's own condition: before turn 10 the searched arm IS the raw arm |
-| B4 | **The rule `search_headroom`** (§3), with G-PREFIX as its VOID gate, and a test | **NOT BUILT**: it lands with the PREREG |
+| B4 | **The rule `search_headroom`** (§3), with G-PREFIX as its VOID gate, and a test | **BUILT**: `src/main/reads/rules_search_headroom.py` (`rules_search_headroom_test.py`). ONE `per_game` group; a deal is a pair only when both games counted; the bootstrap draws the U panels before home72 from one `default_rng(20261027)`, so phase 2's extra home72 units leave G_U's interval as phase 1 read it; VOID on G-PREFIX, engines, bytes, the searched units' stamp and played preset, or a raw unit's search stamp (§3). Not in the rule (the cells do not carry them): the level-at-10 subgroup, the world quality, the raw arm against X51, H-MID's Δbias (S-12) |
 
 The PREREG pins the commit that lands B1–B4 (`../tools/reads.md` §1's flow). Stage 0 plays at that pin: `python -m
 main.reads run --state DIR --lane anchor --hours H --max-units 40` (with the four panels in ONE `per_game` group, the
@@ -395,8 +395,9 @@ survive the fresh-dice replay before anything is built on it.
 has no battle timer and the Metamon peer waits on its observation queue with no timeout; its ONE clock is poke-env's
 websocket keepalive (a ping every 20 s, the connection closed when a pong is 20 s late). The search therefore runs off
 the event loop: a 70-s off-loop decision kept Kakuna connected (`src/main/anchors/peer_patience_integration_test.py`),
-and the negative control, 70 s ON the loop, dropped the peer and the front end booked a forfeit WIN for us. Our own
-watchdog is sized for a searched game (`main.x35.kakuna.UNIT_SEARCH_S`). A timer firing is a defect of the harness,
+and the negative control, 70 s ON the loop, dropped the peer and the front end booked a forfeit WIN for us. Such a
+game is now VOID in every anchor lane, never an outcome (the forfeit-win guard, `EXTERNAL_ANCHORS_SOP.md` § Counting a
+unit; that control is its test). Our own watchdog is sized for a searched game (`main.x35.kakuna.UNIT_SEARCH_S`). A timer firing is a defect of the harness,
 never an outcome (root: "a timeout is never a semantic outcome").
 
 **A10. Pooled U carries P72.** P72 is weak and procedural. X51 FINDING 2: it sits below 0.50 and did not move at the
@@ -443,7 +444,11 @@ secondary.
   live one) and the integration test's order-swap check hold it, and the smoke replayed all 12 roots byte for byte.
 - **S-11.** The builds changed `main.reads`' play path (`ws_frontend`, `main.anchors`, `main.x35.kakuna`): a running read
   can no longer `repin` to a commit after them. N1-P, H-CTX and X59-S play their own pinned commits and need no repin.
-- **S-12.** The rule `search_headroom` (B4) is not built: no read can be recorded yet.
+- **S-12.** CLOSED by B4: `search_headroom` decides §3's classes. Residual: (a) it reads ONE `per_game` group, whose
+  team sets share its unit seeds, and a searched group imports nothing, so phase 2 (home72 seeds 20–59 alone) has no
+  spec shape yet; the PREREG must pick one (two groups the rule pools, or a phase-2 group read beside phase 1's) before
+  phase 2 can be played; (b) the REPORTED level-at-10 subgroup, world quality, raw-vs-X51 guard and Δbias re-read are
+  not in the rule: the cells do not carry their data.
 
 ## 10. Alternatives considered
 
@@ -464,3 +469,4 @@ secondary.
 |---|---|---|---|---|
 | 2026-10-27 | **This doc CREATED (DRAFT, explicit-only)** (search-research design worker, orchestrator brief; docs only, one arithmetic script) | S-U: P\* vs P\* + L1's piKL search (8 honest worlds, TRUNC-4-K8, λ 0.015) from turn 10, against Kakuna on home72 and pooled U, ONE engine, deal-interleaved and paired with a byte-identical nine-turn prefix. The co-primaries are I = G_U − G_home72 (U-HEADROOM / U-LESS / NO-U-PREMIUM) and G_U (DOES-NOT-CLOSE-B creditable; positives leak-inclusive). 1,200 deals a set: a cost-only stage 0; phase 1 (U complete, home72 400) reads G_U finally and I futility-only; phase 2 tops home72 up only if I is UNDECIDED. ≈ 1,000 CPU-h central: a rented-box read, not a local one. It supersedes E4's registration if registered | a decision-level self-referee screen (too coarse, wrong referee); an oracle ceiling arm (saturates, doubles); F alone; search every turn; E4 as written; buying a third-of-gap interaction (≈ 4× the CPU) | H-MID README (`f200258f`) FINDING 1, reading 2–3; the forensics (`c758fcb8`); X51 README (twins, costs); maturity README "Costs"; R0 §4; `search_ledger.md` §6.1, §6.2; `design_search_next.md` E4 and its review (`9738296f`) F11, F12; `../tools/reads.md` §3, §4 (`20875e96`) |
 | 2026-10-27 | **B1–B3 BUILT and smoke-tested** (search engineer, orchestrator brief; no read registered or played) | the live searched player (`main.anchors --our-search r0s4@10`), piKL in `main.value_search.rules`, per-game units with G-PREFIX and the stage-0 harness (`run --max-units`, `search-cost`) in `main.reads`; §6's table, A9, §9 (S-1 measured on the smoke, S-2 and S-3 closed, S-9–S-12 new) | searching ON the event loop (the peer's keepalive drops it, and the forfeit reads as our win); a mid-game checkpoint to split a long searched game into chunks (one game per unit fits once the smoke's cost holds); re-sizing §4 on the smoke's 12 decisions (stage 0 does it, by §4.4's rule) | `src/main/anchors/search_side.py`, `search_presets.py`, `peer_patience_integration_test.py`; `src/main/reads/prefix.py`, `search_cost.py`; `~/gen3ai_archive/su_build_smoke_2026-10-27/` |
+| 2026-10-27 | **B4 BUILT, the forfeit-win guard landed** (S-U operator, orchestrator brief) | `search_headroom` (§6 B4; ONE `per_game` group, pairs only where both games counted, a percentile unit bootstrap within panel with the U panels drawn first, exact-fraction bars with rule 8's 0.0005, the phase-1 futility-only rule, VOID on G-PREFIX / engines / bytes / the search stamp and played preset); every anchor game a FORCELOSE decided other than our own turn-limit cap is VOID (`runner.forced_end_verdict`, A9) | computing the REPORTED subgroup / world quality / Δbias inside the rule (the cells do not carry them: separate scripts); counting a forced-end game as a loss instead of VOID (a peer's drop is a harness defect, never an outcome) | `src/main/reads/rules_search_headroom.py`, `src/main/anchors/forced_end_guard_test.py`, `peer_patience_integration_test.py` (the negative control); the banked scan: 0 forced-end games in 972 counted units |

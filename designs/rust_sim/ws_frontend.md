@@ -96,7 +96,7 @@ from the sim as ordinary chunk content — the front end adds nothing to them an
 | `/reject` / `/cancelchallenge` | drops it, PMs the empty `/challenge` update |
 | `<tag>\|/choose <choice>[\|<rqid>]` | forwarded as `CHOOSE <slot> <choice>` |
 | `<tag>\|/team <order>[\|<rqid>]` | forwarded as a choice (team preview — gen3 has none) |
-| `<tag>\|/forfeit` | forwarded as `FORCELOSE <slot>` |
+| `<tag>\|/forfeit` | forwarded as `FORCELOSE <slot>`, and RECORDED as a forced end (below) |
 | `/leave [<tag>]` | answers `\|deinit` |
 | `/search <format>` | **refused** with a popup naming `/challenge` as the alternative |
 | `/timer`, `/undo`, `/join`, `/savereplay`, `/avatar`, `/cancelsearch`, chat | accepted, no effect |
@@ -249,7 +249,14 @@ must never be presented as one.**
 | **spectators / the omniscient stream** | never served | the one-sided wall: only a slot's own chunks reach that slot |
 | **`__RECON__`** | dropped in the pump | full-information (both teams + the seed). It must never reach a player, and the front end has no forensic sink |
 | **multiple formats at once** | `--format` is global | every consumer is gen3ou |
-| **reconnection / `/rejoin`** | a dropped client FORFEITS its live battles | a half-finished battle with an absent player is worse than a recorded loss |
+| **reconnection / `/rejoin`** | a dropped client FORFEITS its live battles, RECORDED as a forced end (below) | a half-finished battle with an absent player is worse than a recorded loss |
+
+**Forced ends (`FORCED_END_SCHEMA`, 2026-10-27).** After a FORCELOSE the sim emits the very `|win|` batch a played-out
+battle does, so a client cannot tell a peer's drop from a win. The front end records every FORCELOSE that DECIDES a
+battle (one sent before any `|win|` / `|tie` was relayed; a later one decides nothing and is only logged): `{tag,
+index, slot, user, name, cause: forfeit | disconnect, turn}`, in `ShowdownFrontEnd.forced_ends`, as a `FORCED_END
+<json>` log line, and in `--forced-ends-log` (JSONL) when set. The anchors' forfeit-win guard reads it
+(`EXTERNAL_ANCHORS_SOP.md` § Counting a unit).
 
 ---
 

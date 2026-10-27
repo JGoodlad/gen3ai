@@ -193,7 +193,22 @@ def unit_row(u: Any, summary: Mapping[str, Any], games: Optional[List[List[Any]]
             "counted": uc.counts, "reasons": list(uc.reasons), "regime_id": anchor_regime_id(summary),
             "base_regime_id": anchor_regime_id(summary, strip_load=stamp), "engine": EN.unit_engine(cell),
             "server_version": cell.get("server_version"), "model_step": cell.get("model_step"),
-            "peer_pack": peer_pack_state(cell)}
+            "peer_pack": peer_pack_state(cell), **_search_played(summary)}
+
+
+#: The searched half's record a ``main.anchors --our-search`` summary carries (``provenance.peer_report.search``, the
+#: searcher's own counters): what ``search_headroom`` checks against the registered preset and reports.
+SEARCH_PLAYED_KEYS = ("search", "preset", "searched", "deviations", "excluded", "search_cpu_s")
+
+
+def _search_played(summary: Mapping[str, Any]) -> Dict[str, Any]:
+    """``{"search_played": {...}}`` when the unit's summary carries a search record (or ``our_search``), else ``{}``:
+    a raw or banked unit's row is unchanged."""
+    peer = (summary.get("provenance") or {}).get("peer_report") or {}
+    if "search" not in peer and "our_search" not in peer:
+        return {}
+    rec = peer.get("search") if isinstance(peer.get("search"), dict) else {}
+    return {"search_played": dict({k: rec.get(k) for k in SEARCH_PLAYED_KEYS}, our_search=peer.get("our_search"))}
 
 
 def anchor_units(kakuna_state: Path) -> List[Dict[str, Any]]:

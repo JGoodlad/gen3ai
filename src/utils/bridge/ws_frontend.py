@@ -52,6 +52,7 @@ import os
 import re
 import secrets
 import sys
+import time
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple
 
@@ -153,6 +154,15 @@ class _Conn:
             logger.debug("send to %s failed: %s", self.userid or "guest", exc)
 
 
+#: A battle the front end ENDED BY FORCELOSE rather than by play (S-U's forfeit-win guard, ``designs/rust_sim/ws_frontend.md``
+#: § Forced ends): a client's ``/forfeit`` (cause ``forfeit``) or its connection going away mid-battle (cause
+#: ``disconnect``: a peer's keepalive timeout, a crash, a kill). The sim's win batch after a FORCELOSE is byte-identical
+#: to a win by play, so this record is the ONLY place the difference survives: one per forced end, in memory
+#: (``ShowdownFrontEnd.forced_ends``), in the log (``FORCED_END <json>``) and in ``forced_ends_log`` (JSONL) when set.
+#: ``main.anchors.runner.forced_end_verdict`` reads it: only OUR side's own turn-limit forfeit is an outcome.
+FORCED_END_SCHEMA = "gen3_forced_end_v1"
+
+
 @dataclass
 class _Battle:
     """One battle = one bridge child + the two connections it feeds."""
@@ -191,6 +201,11 @@ class _Battle:
     choice_log: List[Tuple[int, str, str]] = field(default_factory=list)
     req_n: Dict[str, int] = field(default_factory=lambda: {"p1": 0, "p2": 0})
     req_err: Dict[str, bool] = field(default_factory=lambda: {"p1": False, "p2": False})
+    #: the last ``|turn|N`` relayed, and whether a ``|win|`` / ``|tie`` was (the result is then decided by play)
+    turn: int = 0
+    result_relayed: bool = False
+    #: every FORCELOSE that DECIDED this battle (:meth:`ShowdownFrontEnd._force_lose`, schema :data:`FORCED_END_SCHEMA`)
+    forced_ends: List[dict] = field(default_factory=list)
 
     def slot_of(self, conn: _Conn) -> Optional[str]:
         for slot, c in self.conns.items():
@@ -239,7 +254,7 @@ class ShowdownFrontEnd:
                  seed_base: Optional[int] = None, validate_teams: bool = True,
                  capture: bool = False, capture_dir: Optional[str] = None,
                  pair_seeds: bool = False, pair_log: Optional[str] = None,
-                 battle_index_base: int = 0):
+                 battle_index_base: int = 0, forced_ends_log: Optional[str] = None):
         if pair_seeds and seed_base is None:
             raise ValueError("pair_seeds needs a seed_base: a mirrored pair shares ONE derived seed")
         if isinstance(battle_index_base, bool) or not isinstance(battle_index_base, int) or battle_index_base < 0:
@@ -291,6 +306,9 @@ class ShowdownFrontEnd:
         # loop is gone and raises `RuntimeError: Event loop is closed` out of a destructor.)
         self._live: Dict[str, _Battle] = {}
         self.n_battles_finished = 0
+        #: every forced end of this front end's life, in order (:data:`FORCED_END_SCHEMA`), and its JSONL sink
+        self.forced_ends: List[dict] = []
+        self._forced_ends_log = forced_ends_log
 
     # -- connection lifecycle ------------------------------------------------------------
     async def handler(self, ws) -> None:
@@ -317,7 +335,7 @@ class ShowdownFrontEnd:
             if slot is not None and not battle.finished:
                 logger.warning("%s disconnected mid-battle %s — forfeiting %s",
                                conn.userid, battle.tag, slot)
-                await self._write_child(battle, f"FORCELOSE {slot}")
+                await self._force_lose(battle, slot, conn, "disconnect")
         for key in [k for k in self.challenges if conn.userid in k]:
             self.challenges.pop(key, None)
         if conn.userid and self.users.get(conn.userid) is conn:
@@ -732,6 +750,13 @@ class ShowdownFrontEnd:
 
     def _note_side_line(self, battle: _Battle, slot: str, ln: str) -> str:
         state = battle.req[slot]
+        if ln.startswith("|turn|"):
+            try:
+                battle.turn = int(ln[len("|turn|"):])
+            except ValueError:
+                pass
+        elif ln.startswith("|win|") or ln == "|tie" or ln.startswith("|tie|"):
+            battle.result_relayed = True
         if ln.startswith("|request|") and len(ln) > len("|request|"):
             payload = ln[len("|request|"):]
             # the input log's update index (``_Battle.choice_log``): a re-request after an [Unavailable choice] asks
@@ -795,7 +820,31 @@ class ShowdownFrontEnd:
             return
         slot = battle.slot_of(conn)
         if slot is not None:
-            await self._write_child(battle, f"FORCELOSE {slot}")
+            await self._force_lose(battle, slot, conn, "forfeit")
+
+    async def _force_lose(self, battle: _Battle, slot: str, conn: _Conn, cause: str) -> None:
+        """FORCELOSE ``slot`` and RECORD it (:data:`FORCED_END_SCHEMA`) when it decides the battle.
+
+        A FORCELOSE after the battle's result was already relayed decides nothing (the child ignores it once ended),
+        so it is logged and not recorded: recording it would void a game that was played out.
+        """
+        if not battle.result_relayed and not battle.finished:
+            rec = {"schema": FORCED_END_SCHEMA, "tag": battle.tag, "index": battle.index, "slot": slot,
+                   "user": conn.userid, "name": battle.names.get(slot), "cause": cause, "turn": battle.turn,
+                   "time": time.time()}
+            battle.forced_ends.append(rec)
+            self.forced_ends.append(rec)
+            line = json.dumps(rec, sort_keys=True)
+            logger.warning("FORCED_END %s", line)
+            if self._forced_ends_log:
+                try:
+                    with open(self._forced_ends_log, "a") as handle:
+                        handle.write(line + "\n")
+                except OSError as exc:  # the in-memory record and the log line still carry it
+                    logger.error("could not append the forced end to %s: %s", self._forced_ends_log, exc)
+        else:
+            logger.info("%s: %s of %s after the result — decides nothing", battle.tag, cause, slot)
+        await self._write_child(battle, f"FORCELOSE {slot}")
 
     async def _cmd_leave(self, conn: _Conn, room: str) -> None:
         tag = room.strip().lstrip(">")
@@ -861,6 +910,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--pair-log", default=None,
                    help="with --pair-seeds: append one JSON line per battle (tag, pair key, occurrence, "
                         "seed) here, so the harness can verify every pair shared its seed")
+    p.add_argument("--forced-ends-log", default=None,
+                   help="append one JSON line per battle ENDED BY FORCELOSE (a /forfeit or a mid-battle disconnect) "
+                        "here: the anchors' forfeit-win guard reads it (FORCED_END_SCHEMA)")
     p.add_argument("--no-validate-teams", dest="validate_teams", action="store_false",
                    help="skip the Node team validator on /utm (faster; loses the loud refusal)")
     p.add_argument("--log-level", default="INFO")
@@ -880,7 +932,7 @@ async def serve_forever(args) -> int:
     front = ShowdownFrontEnd(impl=args.impl, battle_format=args.battle_format,
                              seed_base=args.seed_base, validate_teams=args.validate_teams,
                              capture_dir=args.capture_dir, pair_seeds=args.pair_seeds,
-                             pair_log=args.pair_log)
+                             pair_log=args.pair_log, forced_ends_log=args.forced_ends_log)
     async with serve(front.handler, args.host, args.port, max_size=None, ping_interval=None):
         uri = f"ws://{args.host}:{args.port}/showdown/websocket"
         logger.info("ws_frontend listening — %s  (impl=%s, format=%s, seed_base=%s)",

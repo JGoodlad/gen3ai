@@ -923,6 +923,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         mirrored=report.get("mirrored_pairs"),
         team_overlap=overlap,
         declared_team_cell=plan.declared_team_cell,
+        forced_end={"guard": report.get("forced_end_guard"), "forced_ends": report.get("forced_ends"),
+                    "void": report.get("non_battle_endings")} if "forced_end_guard" in report else None,
         provenance={
             "anchors_config": str(cfg.source),
             "peer_report": {k: v for k, v in report.items() if k != "team_draws"},

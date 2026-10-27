@@ -558,3 +558,41 @@ async def test_a_choice_the_sim_drops_as_invalid_leaves_the_input_log_and_an_una
     front._note_side_line(battle, "p1", "|error|[Unavailable choice] Can't switch: The active Pokémon is trapped")
     assert battle.choice_log == [(1, "p2", "CHOOSE p2 move dragonclaw"), (1, "p1", "CHOOSE p1 switch 2")]
     assert battle.commands == ["CHOOSE p2 move outrage", "CHOOSE p2 move dragonclaw", "CHOOSE p1 switch 2"]
+
+
+# --------------------------------------------------------------------------------------------
+# forced ends (S-U's forfeit-win guard): a FORCELOSE's win batch is byte-identical to a win by play,
+# so the front end's record is the only place a peer's drop can be told from a win
+# --------------------------------------------------------------------------------------------
+async def test_a_disconnect_mid_battle_is_recorded_as_a_forced_end_with_its_cause_and_turn(tmp_path):
+    log = tmp_path / "forced_ends.jsonl"
+    front = _front(forced_ends_log=str(log))
+    alpha, beta = await _named(front, "Alpha"), await _named(front, "Beta")
+    battle = _fake_battle(front, alpha, beta)
+    front._note_side_line(battle, "p2", "|turn|3")
+    await front._drop(beta)
+    assert battle.commands == ["FORCELOSE p2"]
+    (rec,) = front.forced_ends
+    assert rec["schema"] == ws_frontend.FORCED_END_SCHEMA
+    assert (rec["tag"], rec["slot"], rec["user"], rec["cause"], rec["turn"]) == (battle.tag, "p2", "beta",
+                                                                                 "disconnect", 3)
+    assert battle.forced_ends == [rec]
+    assert [json.loads(ln) for ln in log.read_text().splitlines()] == [rec]
+
+
+async def test_a_clients_forfeit_is_recorded_as_a_forced_end():
+    front = _front()
+    alpha = await _named(front, "Alpha")
+    battle = _fake_battle(front, alpha, await _named(front, "Beta"))
+    await front._client_line(alpha, f"{battle.tag}|/forfeit")
+    assert [(r["slot"], r["user"], r["cause"]) for r in front.forced_ends] == [("p1", "alpha", "forfeit")]
+
+
+async def test_a_forfeit_or_drop_after_the_result_was_relayed_decides_nothing_and_is_not_recorded():
+    front = _front()
+    alpha, beta = await _named(front, "Alpha"), await _named(front, "Beta")
+    battle = _fake_battle(front, alpha, beta)
+    front._note_side_line(battle, "p1", "|win|Alpha")
+    await front._cmd_forfeit(beta, battle.tag)
+    await front._drop(beta)
+    assert front.forced_ends == [] and battle.forced_ends == []

@@ -810,8 +810,9 @@ limits:
 - **The peer's patience** (FINDING S-3, closed): the only clock on Kakuna's side is poke-env's websocket keepalive
   (20 s + 20 s), so the search runs off the event loop; a 70-s off-loop decision kept Kakuna connected
   (`src/main/anchors/peer_patience_integration_test.py`). The negative control, the same 70 s ON the loop, dropped the
-  peer (`keepalive ping timeout`) and the front end booked a forfeit WIN for us at turn 3 (the unit then reads
-  `regime_verified_decisions` false, so it would not count).
+  peer (`keepalive ping timeout`) and the front end booked a forfeit WIN for us at turn 3. The forfeit-win guard
+  (2026-10-27, `EXTERNAL_ANCHORS_SOP.md` § Counting a unit) now voids any game a forced end decided other than our own
+  turn-limit cap, in every anchor lane; the same control is its slow test.
 - **Cost** (the build's smoke, 2026-10-27; `~/gen3ai_archive/su_build_smoke_2026-10-27/`; MEASURED on only 12 searched
   decisions of 2 deals, home72 and forum72, turns 10–19, our forfeit lowered to turn 12 / 20): a searched decision
   **6.4 CPU-s median** (5.1–8.2; the worker thread plus its replay children) and 6.7 s of wall; every world built at its
@@ -821,7 +822,8 @@ limits:
   P72 and H were not played). All 12 decisions from turn 10 had ≥ 2 legal actions; 1 of 12 deviated from π. The same
   searched deal played twice was byte-identical over the whole game, decision records included; G-PREFIX held on both
   pairs, and the home72 pair diverged at turn 11, where the search first deviated.
-- **Not built:** S-U's rule (B4). No live read has been played.
+- **The rule** `search_headroom` (B4, `src/main/reads/rules_search_headroom.py`) decides S-U's classes. No full live read has been
+  played.
 
 ---
 

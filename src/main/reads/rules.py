@@ -47,6 +47,10 @@ with its reasons (N1-P FINDING 7).
 * ``x59s_floor`` / ``x59s`` -- X59-S's floor pilot and full read (``x59s_matched_students_2026-10-25`` PREREG
   Amendment 4; :mod:`main.reads.rules_x59s`): ``main.human_data.x59s_read``'s registered statistics on the
   students' Kakuna cells and the read's sha-recorded artefacts.
+* ``search_headroom`` -- S-U (``design_search_u_headroom.md`` §3; :mod:`main.reads.rules_search_headroom`): a searched
+  label against its raw twin, paired by deal in ONE ``per_game`` group; I = G_U − G_home72 and G_U by a within-panel
+  unit bootstrap against exact-fraction bars, I futility-only at phase 1; VOID on G-PREFIX, engines, bytes or the
+  search config.
 """
 from __future__ import annotations
 
@@ -1225,6 +1229,11 @@ RULES.update({
                        _X59S._floor_decide, False),
     "x59s": Rule("x59s", _X59S.RULE_DOCS["x59s"], _X59S._full_check, _X59S._full_inputs, _X59S._full_decide, False),
 })
+
+from main.reads import rules_search_headroom as _SH  # noqa: E402  (it imports this module lazily: no cycle at import)
+
+RULES["search_headroom"] = Rule("search_headroom", _SH.RULE_DOCS["search_headroom"], _SH.check, _SH.inputs, _SH.decide,
+                                False)
 
 
 def inputs(rule: str, cells: Mapping[str, Any], params: Mapping[str, Any], spec: Any) -> Dict[str, Any]:

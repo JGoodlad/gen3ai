@@ -148,7 +148,8 @@ settles. Unit seeds are the outer loop, so a stopped queue stays balanced by see
   S-U's re-size input (the median searched game against 50 CPU-min), REPORTED. Its `--cells` form reads `main.anchors
   --out` dirs (a smoke).
 
-No registered rule reads a searched group yet: S-U's `search_headroom` rule (its §3, build B4) is not built (§10).
+The rule that reads a searched group is `search_headroom` (§5): it pairs each deal's two counted games, and a
+G-PREFIX mismatch, two engines or a search record other than the registered preset VOIDs it.
 
 **Concurrency** (`--concurrency K`, anchor lane only, default 1; `main.reads.anchor_pool`; N1-P look 1 projected about
 60 h for 486 units one at a time). SCHEDULING ONLY: the lane keeps up to K units in flight, and each is
@@ -426,6 +427,7 @@ params)` produces the verdict as recorded. A decision can therefore be re-checke
 | `anchor_trajectory` | x26c PREREG §5: the goal bar on the ON score's Wilson LB; CLIMBING / FLAT on the Newcombe-of-strata Δ; S1 RISING against a banked node; VOID on K9(b) or under-counted units | ported from x26c `verdict.py` |
 | `prior_mix_ab` | the belief-prior-mix read (`measurements/belief_prior_mix_2026-10-26/PREREG.md` §5): each λ arm (its own anchor group, one regime) against a BANKED λ = 0 control (another read's committed per-game rows, sha-checked, never re-played; `banked_units`), unit-paired on the same seeds; VOID unless a guard group re-playing banked units at λ = 0 reproduces them GAME FOR GAME; PRIOR-HELPS / -AT-A-COST / -HURTS / NOT DETECTED; D0f's DiD and H3 kill rule on a λ = 1 arm | new (2026-10-26) |
 | `score_bands` | the H-CTX read (`measurements/hctx_rc72_2026-10-26/PREREG.md` §5): ONE model's pooled score on ONE panel placed in two registered bands (`>= kill_at` KILL, `<= support_at` SUPPORT, else UNDECIDED), compared as exact fractions (no rounding error sits on a boundary); VOID on `prior_mix_ab`'s game-for-game guard against banked rows or under-counted units; Newcombe against the banked familiar cell and the banked unfamiliar mean, descriptive; superseded for its read by `premium_recovery` before any game | new (2026-10-26) |
+| `search_headroom` | S-U (`design_search_u_headroom.md` §3, §4.4; `rules_search_headroom`): ONE `per_game` group, a searched label and its raw twin, each deal a pair only when both games counted (a one-sided deal is excluded and counted); the unit (panel, seed) statistic is the mean paired difference (tie ½); I = G_U − G_home72 and G_U by a percentile bootstrap over units within each panel (`default_rng(seed)`, U panels drawn before home72); Primary A (U-HEADROOM / U-LESS / NO-U-PREMIUM, futility-only at phase 1) and Primary B (DOES-NOT-CLOSE-B, U-GAIN and GOAL-B-REACHED leaky) by exact fractions with `rule8_eps`; VOID on G-PREFIX, two or unknown engines, other bytes, a searched unit not stamped and played as `expected_search`'s preset, a raw unit with a search stamp; the discordance is b + c only | new (2026-10-27) |
 | `premium_recovery` | the H-CTX read as amended (`measurements/hctx_rc72_2026-10-26/PREREG.md` Amendment 1, the engine-identity rule): a panel (rc72) and its familiar (home72) and unfamiliar (F) controls played on ONE engine in one read, interleaved; KILL / SUPPORT on the share of the premium (familiar − unfamiliar) the panel recovers, by exact fractions; INCONCLUSIVE unless the premium's unit-bootstrap lower bound clears 0; VOID on two engines or an unknown one; absolute bars against a banked read only as a secondary, cross-engine line | new (2026-10-26) |
 
 **The estimators are not re-derived.** Each is the one function a read already used, re-exported under a name:
@@ -572,9 +574,11 @@ skips and names why.
 
 ## 10. Not built (each a FINDING of the build)
 
-- **The searched read's rule** (S-U's `search_headroom`, `design_search_u_headroom.md` §3, B4): no rule reads a
-  `per_game` group's deal-paired difference yet. `assemble` carries the per-game cells and G-PREFIX; the rule, with
-  G-PREFIX as its VOID gate, lands with S-U's PREREG.
+- **S-U's phase 2 and its REPORTED extras** (`search_headroom`, §5). The rule reads ONE `per_game` group, whose team
+  sets share its unit seeds, and a searched group imports nothing, so phase 2 (home72 seeds 20–59 only) has no spec
+  shape yet. The level-at-10 subgroup, the world-quality covariate, the raw arm against X51 and H-MID's Δbias re-read
+  need the captures, `search_decisions.jsonl` or X51's rows, which the cells do not carry; the decision lists them
+  under `not_reported`.
 
 - **Reported-only extras** (SPRT's mechanism block, dose from launcher summaries) stay per-read. A rule's `params`
   can carry them, but only the VOID gate reads run dirs.

@@ -19,6 +19,7 @@ series becomes a named failure instead of a report with nothing in it.
 from __future__ import annotations
 
 import asyncio
+import json
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -741,6 +742,89 @@ def rows_from(records: List[Any], half: str, cell: CellSpec, report: Dict[str, A
     return out
 
 
+def our_front_end_serves(plan: SeriesPlan) -> bool:
+    """Did OUR websocket front end serve this read (in process or as our subprocess)? Only then is a forced end seen."""
+    return plan.server_impl == "rust" and bool(plan.started_server)
+
+
+def forced_end_verdict(plan: SeriesPlan, rows: List[GameRow], records: Optional[List[Dict[str, Any]]],
+                       ) -> Dict[str, Any]:
+    """🚨 THE FORFEIT-WIN GUARD (S-U, 2026-10-27): which battles ended by a FORCELOSE that is NOT an outcome.
+
+    The sim's win batch after a FORCELOSE is byte-identical to a win by play, so a peer that DROPS (poke-env's
+    keepalive timeout when our event loop blocked: the S-U build's negative control booked a forfeit WIN for us at
+    turn 3), a ``/forfeit`` from the peer, or our own side disconnecting would otherwise read as an ordinary win or
+    loss. ``records`` are the front end's forced ends (``ws_frontend.FORCED_END_SCHEMA``; None = the record is
+    missing). The ONE forced end that is an outcome is OUR side's own turn-limit forfeit (the trainer's cap: a
+    ``forfeit`` by one of our names at a turn >= ``plan.forfeit_turn_limit`` > 0, on a row stamped
+    ``hit_forfeit_limit``). Every other one is VOID: the game is no outcome at all and the series fails by name.
+
+    Returns ``{guard, forced_ends, void}``: ``guard`` is ``armed`` (our front end served and its record was read),
+    ``blind`` (our front end served but the record is missing: nothing it served can count) or ``unavailable`` (Node
+    or an external server: a forced end there is invisible to this guard).
+    """
+    from utils.bridge.ws_frontend import FORCED_END_SCHEMA, to_id
+
+    if not our_front_end_serves(plan):
+        return {"guard": "unavailable", "forced_ends": [], "void": []}
+    if records is None:
+        return {"guard": "blind", "forced_ends": [], "void": []}
+    ours = {to_id(half_usernames(plan, half)[0]) for half in HALVES}
+    limit = int(plan.forfeit_turn_limit or 0)
+    by_tag = {r.battle_tag: r for r in rows}
+    void: List[Dict[str, Any]] = []
+    for rec in records:
+        row = by_tag.get(rec.get("tag"))
+        cap = (rec.get("schema") == FORCED_END_SCHEMA and rec.get("cause") == "forfeit"
+               and rec.get("user") in ours and not plan.our_side_is_peer and limit > 0
+               and int(rec.get("turn") or 0) >= limit and (row is None or bool(row.hit_forfeit_limit)))
+        if not cap:
+            void.append({**rec, "booked": None if row is None else row.result})
+    return {"guard": "armed", "forced_ends": list(records), "void": void}
+
+
+def read_forced_ends(path: Path) -> Optional[List[Dict[str, Any]]]:
+    """The front end's forced-end JSONL; None when it does not exist (the guard is then BLIND, never clean)."""
+    try:
+        text = path.read_text()
+    except OSError:
+        return None
+    return [json.loads(ln) for ln in text.splitlines() if ln.strip()]
+
+
+def apply_forced_end_guard(plan: SeriesPlan, rows: List[GameRow], report: Dict[str, Any],
+                           failure: Optional[SeriesFailure],
+                           ) -> Tuple[List[GameRow], Optional[SeriesFailure]]:
+    """Run :func:`forced_end_verdict` on the series: a VOID battle's row is DROPPED (it is no outcome), the report
+    carries ``forced_end_guard`` / ``forced_ends`` / ``non_battle_endings``, and the series FAILS by name
+    (``non_battle_termination``, or ``forced_end_guard_blind``) unless it already failed."""
+    from main.anchors.server import FORCED_ENDS_NAME
+
+    verdict = forced_end_verdict(plan, rows, read_forced_ends(plan.out_dir / FORCED_ENDS_NAME)
+                                 if our_front_end_serves(plan) else [])
+    report["forced_end_guard"] = verdict["guard"]
+    report["forced_ends"] = verdict["forced_ends"]
+    report["non_battle_endings"] = verdict["void"]
+    if verdict["void"]:
+        tags = {v.get("tag") for v in verdict["void"]}
+        rows = [r for r in rows if r.battle_tag not in tags]
+        what = "; ".join(f"{v.get('tag')}: {v.get('cause')} of {v.get('slot')} ({v.get('user')}) at turn "
+                         f"{v.get('turn')}, booked {v.get('booked')}" for v in verdict["void"])
+        print(f"[anchors] 🚨 NON-BATTLE TERMINATION — VOID, no outcome counted: {what}", flush=True)
+        if failure is None:
+            failure = SeriesFailure("non_battle_termination",
+                                    f"{len(verdict['void'])} battle(s) ended by a forced end that is not our "
+                                    f"turn-limit forfeit (VOID, never an outcome): {what}")
+    elif verdict["guard"] == "blind":
+        print("[anchors] 🚨 the forfeit-win guard is BLIND: our front end served but wrote no forced-end record",
+              flush=True)
+        if failure is None:
+            failure = SeriesFailure("forced_end_guard_blind",
+                                    f"our front end served this read but {FORCED_ENDS_NAME} is missing: a peer's "
+                                    "drop could not be told from a win, so nothing here counts")
+    return rows, failure
+
+
 async def run_series(plan: SeriesPlan, cfg: Any) -> Tuple[List[GameRow], Dict[str, Any],
                                                           Optional[SeriesFailure]]:
     """Both halves, in order. A failure in the first half STOPS the read — a half-series against a
@@ -758,13 +842,13 @@ async def run_series(plan: SeriesPlan, cfg: Any) -> Tuple[List[GameRow], Dict[st
     if plan.our_transport == "core" and not plan.our_side_is_peer:
         # P3: the front end runs IN THIS PROCESS so our side can be a slot of it; the peer still
         # dials it over a real websocket on the read's 95XX port.
-        from main.anchors.server import InProcessFrontEnd
+        from main.anchors.server import FORCED_ENDS_NAME, InProcessFrontEnd
 
         in_process = InProcessFrontEnd(
             plan.server_port, battle_format=plan.battle_format, seed_base=plan.seed_base,
             capture_dir=plan.capture_dir, pair_log=plan.pair_log,
             log_path=plan.out_dir / InProcessFrontEnd.log_name,
-            battle_index_base=plan.deal_game or 0)
+            battle_index_base=plan.deal_game or 0, forced_ends_log=plan.out_dir / FORCED_ENDS_NAME)
         await in_process.__aenter__()
         print(f"[anchors] {in_process.label} serving {in_process.uri} inside pid={in_process.pid} "
               f"({plan.server_version})", flush=True)
@@ -791,6 +875,8 @@ async def run_series(plan: SeriesPlan, cfg: Any) -> Tuple[List[GameRow], Dict[st
         if in_process is not None:
             await in_process.__aexit__(None, None, None)
             print(f"[anchors] {in_process.label} closed (every battle child reaped)", flush=True)
+    # 🚨 the forfeit-win guard: a battle a FORCELOSE decided (other than our own turn-limit cap) is no outcome
+    all_rows, failure = apply_forced_end_guard(plan, all_rows, last_report, failure)
     # 🚨 SERIES-LEVEL, STAMPED ON EVERY ROW. The two verification facts are properties of the
     # WHOLE cell — "both halves' regime verified", "every peer exited 0" — but a row has to be
     # self-contained, so they are back-filled onto the rows the first half already produced. An

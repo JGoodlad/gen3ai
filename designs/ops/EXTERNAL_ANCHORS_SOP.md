@@ -320,7 +320,8 @@ enter it, so a `.txt` copy and a `.gen3ou_team` copy of one set digest the same)
 `team_content_asymmetry` (the digests differ; null when either is unknown) beside the count-based
 `team_source_asymmetry` (unchanged). `unit_counts(summary, *, games, declared_digests=None,
 verified_digests=None) -> UnitCount(counts, reasons)` counts a unit iff `status == "OK"`,
-`n == games`, `regime_verified_decisions is True`, `peer_clean is True`, and:
+`n == games`, `regime_verified_decisions is True`, `peer_clean is True`, no game of it ended by a non-battle
+termination (below), and:
 
 * **undeclared** (`declared_digests=None`): `team_source_asymmetry is False` and
   `team_content_asymmetry` is not true — a 72-vs-72 cell of DIFFERENT teams no longer counts on its
@@ -329,6 +330,19 @@ verified_digests=None) -> UnitCount(counts, reasons)` counts a unit iff `status 
   (else the caller's `verified_digests`, computed from file sets it sha-checked itself — a summary
   from an older pinned tree carries none) must EQUAL the declared pair; no digest at all ⇒ it does
   NOT count. `team_source_asymmetry` is not a reason here, so a declared 72-vs-16 cell CAN count.
+
+**The forfeit-win guard (2026-10-27, after the S-U build's negative control booked a peer's keepalive drop as OUR
+win).** After a FORCELOSE the sim emits the same `|win|` batch a played-out win does, so only the front end can tell
+them apart. Our front end records every FORCELOSE that decides a battle (`ws_frontend.FORCED_END_SCHEMA`: the battle,
+the slot, the user, `cause` = `forfeit` or `disconnect`, the turn) in `<out>/forced_ends.jsonl`, in both placements
+(in process and as our subprocess). `main.anchors.runner.forced_end_verdict` then allows exactly ONE forced end as an
+outcome, our side's own turn-limit forfeit (the cap, a row stamped `hit_forfeit_limit`). Any other (the peer's drop or
+`/forfeit`, our side's drop, a forfeit before the cap) is VOID: its row is dropped, the summary lists it in
+`non_battle_endings` and fails with `non_battle_termination`, and the unit never counts. `forced_end_guard` is `armed`
+(the record was read), `blind` (our front end served but no record: FAILED, `forced_end_guard_blind`) or
+`unavailable` (`--server node` / `--server-uri`: the guard cannot see a forced end there); a summary that carries the
+field counts only when it is `armed`, and an older summary, without it, is judged as before. The live negative
+control is `peer_patience_integration_test.py` (slow).
 
 Every failing reason is listed. `main.x35.kakuna` counts through it (undeclared), and so does a registered read's
 anchor lane (`python -m main.reads`, `designs/tools/reads.md`), which plays kakuna's units and records each unit's
@@ -387,7 +401,8 @@ Metamon peer waits on its observation queue with no timeout; its ONE clock is po
 every 20 s, the connection closed when a pong is 20 s late). A searched decision (30-90 s) therefore runs OFF the event
 loop, in a worker thread, so the front end keeps answering pings: a 70-s off-loop decision kept Kakuna connected
 (`src/main/anchors/peer_patience_integration_test.py`, slow tier). A decision that BLOCKS the loop that long drops the
-peer, and the front end then forfeits it, booking OUR win: never decide on the loop. Our own watchdog is the other
+peer, and the front end then forfeits it; the sim books OUR win, which the forfeit-win guard (§ Counting a unit)
+voids: never decide on the loop. Our own watchdog is the other
 clock: size `--first-game-timeout` / `--progress-timeout` for a searched game (`main.x35.kakuna` does).
 
 ### `--deal-game G` — ONE game of a seeded series (S-U's per-game units)

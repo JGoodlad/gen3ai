@@ -277,7 +277,8 @@ def summarize(cell: CellSpec, rows: List[GameRow], *, status: str,
               provenance: Optional[Dict[str, Any]] = None,
               mirrored: Optional[Dict[str, Any]] = None,
               team_overlap: Optional[Dict[str, Any]] = None,
-              declared_team_cell: str = "symmetric") -> Dict[str, Any]:
+              declared_team_cell: str = "symmetric",
+              forced_end: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """The cell's one number, its Wilson interval, and every integrity counter beside it.
 
     ``status`` is ``"OK"`` or ``"FAILED"``; a FAILED summary still carries whatever games did
@@ -372,6 +373,12 @@ def summarize(cell: CellSpec, rows: List[GameRow], *, status: str,
         # for a summary built outside `main.anchors.cli` (a unit test); the CLI always computes it.
         "team_overlap": team_overlap,
     }
+    if forced_end is not None:
+        # 🚨 THE FORFEIT-WIN GUARD (`runner.forced_end_verdict`): `armed` / `blind` / `unavailable`, every forced end our
+        # front end recorded, and the VOID ones (no outcome; their rows are not in `rows`). `unit_counts` reads both.
+        out["forced_end_guard"] = forced_end.get("guard")
+        out["forced_ends"] = list(forced_end.get("forced_ends") or [])
+        out["non_battle_endings"] = list(forced_end.get("void") or [])
     if cell.mirrored_pairs:
         # THE PAIR IS THE UNIT (T17): the pentanomial over the verified pairs and ITS interval. The
         # Wilson line above treats paired games as independent and is kept only as a per-game count.
@@ -404,7 +411,9 @@ def unit_counts(summary: Mapping[str, Any], *, games: int,
     """🚨 THE ONE COUNTING RULE for an anchor unit (B-D6; design_diversity_teams_opponents.md §5.6).
 
     A unit counts iff ``status == "OK"``, ``n == games``, ``regime_verified_decisions is True``,
-    ``peer_clean is True``, AND its team condition holds:
+    ``peer_clean is True``, NO game of it ended by a non-battle termination (the forfeit-win guard: a summary that
+    carries ``forced_end_guard`` must read ``armed`` with an empty ``non_battle_endings``; an older summary carries
+    neither and is judged as before), AND its team condition holds:
 
     * **undeclared** (``declared_digests is None``): ``team_source_asymmetry is False`` (the counts
       agree) and ``team_content_asymmetry`` is not True (the CONTENT agrees, where it is known — a
@@ -427,6 +436,12 @@ def unit_counts(summary: Mapping[str, Any], *, games: int,
         reasons.append(f"regime_verified_decisions={summary.get('regime_verified_decisions')!r}")
     if summary.get("peer_clean") is not True:
         reasons.append(f"peer_clean={summary.get('peer_clean')!r}")
+    if summary.get("non_battle_endings"):
+        reasons.append(f"non_battle_endings={len(summary['non_battle_endings'])} (a peer's drop or a forfeit that "
+                       "is not our turn-limit cap: VOID, never an outcome)")
+    if "forced_end_guard" in summary and summary.get("forced_end_guard") != "armed":
+        reasons.append(f"forced_end_guard={summary.get('forced_end_guard')!r} (needs 'armed': a forced end could "
+                       "not be told from a win)")
     if declared_digests is None:
         if summary.get("team_source_asymmetry") is not False:
             reasons.append(f"team_source_asymmetry={summary.get('team_source_asymmetry')!r} "
