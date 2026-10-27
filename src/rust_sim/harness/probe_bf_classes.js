@@ -333,3 +333,12 @@ run('BF12c own tempo: copied by role play cures the confused user', 'gen3customg
 run('BF13b oblivious: copied by role play ends the attract on the user', 'gen3customgame', [5, 6, 7, 8],
   SET('Alakazam', 'synchronize', 'roleplay,splash'),
   'Jynx||none|oblivious|attract,splash|Hardy|85,85,85,85,85,85|F||||', [M(2, 1), M(1, 2)]);
+// ---- BF18 (bridge-fuzz-found, `rmvpyo27k_bab_0_0`) a STRUGGLE does not inherit the chosen slot's MULTI-HIT ----
+// With every PP spent, `side.choose` substitutes `moveid: 'struggle'` (sim/side.ts chooseMove) and the action runs
+// the Struggle move (gen 3: 50 BP, accuracy 100, typeless, recoil 1/4; data/mods/gen3/moves.ts:580-586). The port
+// read the multi-hit count from the stale chosen slot (Bonemerang here: 2 strikes, Fury Swipes: a [2,5] sample),
+// so its Struggle struck twice. Absol's Pressure spends Bonemerang's 16 PP in 8 turns; turns 9-10 Struggle.
+const SABLEYE_BONE = SET('Sableye', 'keeneye', 'bonemerang');
+const ABSOL_REC = SET('Absol', 'pressure', 'recover,splash');
+run('BF18a struggle: no multi-hit from the chosen slot', 'gen3customgame', [1, 2, 3, 4], SABLEYE_BONE, ABSOL_REC,
+  [M(1, 1), M(1, 1), M(1, 1), M(1, 1), M(1, 1), M(1, 1), M(1, 1), M(1, 1), M(1, 1), M(1, 1)]);

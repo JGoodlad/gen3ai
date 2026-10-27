@@ -29200,3 +29200,16 @@ boards (nine gen3ou clause boards past turn 100), 16 pins revert-verified.
 **OU-visible (FINDING):** the clause can now END a gen3ou battle (past turn 100, after a Skill Swap, 0.0081 % of OU
 mons, plus a Trick / Thief / Covet / Recycle berry cycle); the staleness hooks are hidden state otherwise. e2e capstone
 and obs golden unchanged. **Left:** the search world builder does not reconstruct staleness (offline only).
+
+## 2026-10-26 · RUST SIM · a forced Struggle inherited the chosen slot's multi-hit (OU training-data bug, fixed)
+
+The B7 + B8 bridge fuzz (`rmvpyo27k_bab_0_0`) showed a Struggle dealing 37 where Showdown deals 35 on identical
+draws. Cause, reproduced on hand-built boards through the sim's own recorder: with every PP spent `side.choose`
+substitutes `moveid: 'struggle'`, but the port routed the move through `run_multihit` whenever the STALE chosen slot
+was a multi-hit move (a spent Bonemerang struck twice; a Fury Swipes slot drew a [2,5] count), shifting every later
+draw. A Taunt-forced Struggle over status moves was already right, which is why it hid. Fix: the multi-hit routing
+skips a Struggle (`gen3_bf_struggle_stale_slot_v1`, pin `bf18`); Hyper Beam / Focus Punch slots checked clean.
+**OU frequency (FINDING):** Struggle occurs in 1.67 % of the N1-P eval battles (111 of 6665 across 14 opponents,
+3387 Struggle uses, about 30 per affected battle); in that sample no Struggle came from a mon carrying a multi-hit
+move (0 of 3387), and multi-hit moves are on 0.17 % of gen3ou mons (Rock Blast 0.095 %, Bonemerang 0.063 %). A
+training-data change for runs on pins after this commit; e2e capstone and obs golden unchanged.

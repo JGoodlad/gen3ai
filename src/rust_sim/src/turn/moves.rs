@@ -1581,7 +1581,14 @@ impl crate::state::BattleState {
         //     whole-move accuracy roll already drew (`acc_hit`); a variable count draws ONE more
         //     `sample` HERE, then per strike crit + `random(16)` + the move's per-strike
         //     secondary. ---
-        if let Some(mh) = self.move_at(side, slot, move_index, dex).and_then(|m| m.multihit) {
+        //     A forced STRUGGLE never routes here (`gen3_bf_struggle_stale_slot_v1`, bridge fuzz
+        //     `rmvpyo27k_bab_0_0`, pin `bf18`): `move_index` is the STALE chosen slot, and the port
+        //     used to read that slot's `multihit` (a spent Bonemerang / Fury Swipes made the Struggle
+        //     strike twice, drawing the count and every extra strike). Struggle is single-hit.
+        if let Some(mh) = (!struggle)
+            .then(|| self.move_at(side, slot, move_index, dex).and_then(|m| m.multihit))
+            .flatten()
+        {
             let multiaccuracy = self
                 .move_at(side, slot, move_index, dex)
                 .map(|m| m.multiaccuracy)
