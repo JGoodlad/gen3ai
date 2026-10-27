@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-29,629-line file. **The ledger itself is append-only and is never edited by this**;
+29,661-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**974 headings · 919 dated · 2026-08-01 → 2026-10-27 · ledger 29,629 lines.**
+**975 headings · 920 dated · 2026-08-01 → 2026-10-27 · ledger 29,661 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -994,3 +994,4 @@ rename.
 - `L29524` · `2026-10-27` · OPS · the ladder-usage corpus rebuilt after gen-3 full parity: all 22,862 Metamon teams kept (was 22,813)
   - `L29541` · `2026-10-27` · AUDIT · **The H-CTX Hidden Power FINDING closed: a set that names its Hidden Power type with no IV line plays its NAMED type with the validator's IVs in training, eval and our live side, byte for byte as Showdown does. The live-server rejection came from Kakuna's packer (poke-env's mis-ordered IV table), not from the set**
   - `L29582` · `2026-10-27` · GIGO FIX · **The Kakuna peer packs its teams as Showdown reads them (`gen3_peer_showdown_pack_v1`, SOP H22). Old forum72 reads had Kakuna's `sft431` Gyarados at Frustration base power 1; forum72, away and pool Kakuna reads are a new regime from here, machine-checked**
+  - `L29630` · `2026-10-27` · AUDIT · **Foul Play's `away` set cannot start 19 of its 21 draws, and no banked Foul Play cell, claim or number rests on it (SOP H23)**

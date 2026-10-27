@@ -35,7 +35,7 @@ rate. **NOT DETECTED / UNDECIDED** means the interval spans zero, so we cannot t
 had Kakuna's `sft431` Gyarados play Frustration at base power 1 (its packer dropped `Happiness: 0`), a small constant
 handicap on Kakuna's side (about 1 team in 72). The peer now packs as Showdown does, so new forum72, away and pool
 Kakuna reads are their own regime: a different regime id, and an import of banked rows refuses.
-The front end now also plays the validator's re-pack (a real server's rule): our side and Kakuna are unaffected, but Foul Play's Hidden Power sets change (11 of 72 pool files, `away`'s `team_23`), so Foul Play reads of the pool and `away` are their own regime too (`gen3_frontend_validated_pack_v1`).
+The front end now also plays the validator's re-pack (a real server's rule): our side and Kakuna are unaffected, but Foul Play's Hidden Power sets change (11 of 72 pool files, `away`'s `team_23`), so Foul Play reads of the pool are their own regime too (`gen3_frontend_validated_pack_v1`). Foul Play on `away` cannot run: 19 of its 21 team files are refused, no such cell exists, and every Foul Play cell so far drew a 72-file `home` set (SOP H23).
 
 ## 2. Running now (as of 2026-10-26)
 

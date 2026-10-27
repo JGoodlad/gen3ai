@@ -418,7 +418,7 @@ A read that imports banked forum72 / away / pool Kakuna rows (D3 look 2's C0) mu
 ### Foul Play's played team (`gen3_frontend_validated_pack_v1`; the SOP's H22)
 
 The front end plays the validator's re-pack, as a real server does. Our side and Kakuna play the same sets; Foul Play does not
-(its packer writes no Hidden Power IVs: 11 of 72 pool files and `away`'s `team_23`; the SOP's H22 has the numbers).
+(its packer writes no Hidden Power IVs: 11 of 72 pool files and `away`'s `team_23`, one of the only two `away` files Foul Play can start; the SOP's H22 and H23 have the numbers).
 `FoulPlayPeer.read_report` stamps `frontend_pack_changed` (`main.anchors.frontend_pack`), `assemble.peer_pack_identity` adds it
 to the id only when True, `unit_row` carries it as `peer_pack = "frontend_changed"` and `imports.check_peer_pack` refuses an
 import across it. A record that cannot be computed voids the regime verification. `frontend_pack_integration_test.py` pins the

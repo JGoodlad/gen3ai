@@ -29626,3 +29626,35 @@ arm of a read. So no within-read comparison moves, but a new forum72 read is not
 
 **Evidence:** `src/main/anchors/peer_scripts/team_pack_test.py`, `peers_test.py`, `reads/assemble_test.py` and
 `reads/imports_test.py` (the regime and import checks fail on revert); SOP H22; `designs/tools/reads.md` §4.
+
+### 2026-10-27 · AUDIT · **Foul Play's `away` set cannot start 19 of its 21 draws, and no banked Foul Play cell, claim or number rests on it (SOP H23)**
+
+**Question.** The played-team landing (`gen3_frontend_validated_pack_v1`, SOP H22) found that 19 of the 21 files in Foul Play's `away`
+team directory, the raw Metamon `competitive` set with its `index.csv`, are refused by the validator. Nobody had checked how a
+banked Foul Play `away` cell coped.
+
+**Answer: no such cell exists.** Every record of a Foul Play cell on this box (a `main.anchors` `summary.json` and `games.jsonl`,
+searched in the repo's measurements, `~/gen3ai_archive`, `~/dev/gen3ai-reads`, the worktrees, `/tmp` and `~/.claude/jobs`) is on a
+72-file `home` set: 50 cells, 817 games (the 09-16 axes 400, the P2 and Rust-front-end gates 13, the N0 end-of-run A3 and P3 cells
+200, the Kakuna goal read's Kakuna-vs-Foul Play cells 200, the N0 smokes 4). The pre-tool de-risk and flywheel campaigns ran
+`--team-name gen3/ou/gen3ai_pool`. All 72 files of `gen3ai_pool` and of `home72` start (the validator accepts 72 of 72; `home72`
+re-packs unchanged, the pool changes 11 of 72, H22). The "away" cells beside Foul Play's in those campaigns are Metamon `SmallRL`
+cells, whose peer reads a file ending `\n\n\n` correctly. Every Foul Play config has pointed `away` at the raw directory since 2026-09-16, so
+the cell was constructible, but none was run (a failed attempt that left no record cannot be excluded: UNVERIFIED).
+
+**What a cell would do (read from the code; not reproduced live).** Foul Play's `export_to_packed` splits a paste on `"\n\n"`: 18 of the
+20 team files (trailing `\n\n\n`) pack a seventh EMPTY mon, `index.csv` packs a mon named `filename`, and only `team_22` and `team_23`
+start (P(a draw starts) = 2/21). The front end drops a refused `/utm`, the next accept or challenge is refused, and Foul Play waits
+for a battle that never begins: `no_first_game` / `no_progress`, `status: FAILED`. No rule counts a refused start as anything (no
+battle, row or forced-end record exists; `unit_counts` drops the FAILED unit). The tool's guards do not see it: the team count and
+digests are taken through the `TEAM_FILE_GLOBS` allowlist and `.strip()`, so `--dry-run` plans a symmetric cell (`peer teams: 20
+files`). The true coverage of a Foul Play `away` panel is 2 of 20 teams. This is the 2026-09-14 entry's H-A hang again, on Foul Play's own
+parser.
+
+**Conclusions changed: none.** UNDERSTANDING, STATUS, the beat-Metamon path and the SOP's Foul Play numbers (0.388 [0.288, 0.497] on
+the pool, Kakuna's 0.490 [0.422, 0.559] on `home72`) use no `away` cell. Wording corrected, not a number: the SOP's H22 line "a banked
+Foul Play read of `gen3ai_pool` or `away`" and STATUS's "Foul Play reads of the pool and `away`" implied an `away` read existed. Fix
+proposed (a guard that refuses a Foul Play cell holding a validator-refused file, and retiring `away` for Foul Play): TECH_DEBT (d).
+
+**Evidence:** SOP H23; `designs/ops/TECH_DEBT_BACKLOG.md` (d); `main.anchors.frontend_pack.cell_record` on the `away`, pool and
+`home72` directories; `python -m main.anchors --dry-run --opponent foulplay --teamset away`.
