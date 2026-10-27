@@ -1,0 +1,113 @@
+{
+ "schema": "x59s_m3_reencode_v1",
+ "check": "PREREG Amendment 5 A5.7 (M3)",
+ "seed": 20261025,
+ "battles_in_both": 27586,
+ "battles_sampled": 200,
+ "battles_sha256": "9da8b22233d1574af25598a5eeeb09c6ac1a981a9564c2f392124e9a3d8468b6",
+ "rowset": "hr_spec_v1.r2",
+ "rows_manifest_sha256": "2a413c85e2109553b4f930d85f369625a5daf77a7e1103afeb01e962ec0332b8",
+ "registered": {
+  "extraction_commit": [
+   "da36173c9f21f980b714e93fd4529cff84fc815e"
+  ],
+  "source_sha256": "40f8a5d22e3a32e1a593a2a5e6e8e957909de834d5de2e58d47dfc6c35c09176",
+  "live_reader_sha256": "1a91cbeb419ecd3c7a1aa37a7019bf8274430e17442f3da3197748950480593a",
+  "layout_hash": "fbc5c674056d762df1d7abdbb04b3a53dbcbd8ba739e053bb9afce6fb90323ec"
+ },
+ "today": {
+  "commit": "8ed8164ea45619ce12f05d8d918257c9b85c2c89",
+  "source_sha256": "14bc0fa5d5eff9ca5fac6ea505b8cdf43ed72561afe0761bdbeb383cc5632354",
+  "sources_dirty_vs_commit": false,
+  "live_reader_bin": "/home/goodlad/dev/gen3ai-reads/x59s_play_0534e90a/src/rust_sim/target/release/live_reader",
+  "live_reader_sha256": "59e0674990d7c80350c7c8fa0d10e35dc807a9ced20910fabd19ba764b25a1e5",
+  "encoder_identity": {
+   "obs_golden_sha256": "95e24c326973305aa134ceed143a33ec62d0bcebf85191010eed42aafb3a5532",
+   "obs_dim": 2845,
+   "arch_signature": "gen3_mon_tied_gain_v1"
+  },
+  "layout_hash": "b9d868ecf4590f98eb6136599c0e6c1ca25d814922e51186919c3874622bf900"
+ },
+ "extract_counts": {
+  "c_attempt_action_illegal": 43,
+  "c_attempt_team_illegal": 2,
+  "c_attempts_0": 309,
+  "c_attempts_1": 8,
+  "c_attempts_2": 1,
+  "c_attempts_3": 1,
+  "c_excluded:no_consistent_team": 1,
+  "c_guard_checks": 319,
+  "c_seats": 319,
+  "row_drop:one_legal": 111,
+  "row_drop:quitter_tail": 212,
+  "row_drop:unlabelled:none": 74,
+  "row_drop:unlabelled:pursuit": 1,
+  "row_hidden:cant": 320,
+  "row_hidden:confusion": 1,
+  "row_hidden:faint": 403,
+  "seat_excluded:c_game": 1,
+  "seats_read": 319
+ },
+ "rows_today": 9632,
+ "rows_skipped_not_in_registered": 1076,
+ "rows_skipped_quitter_tail": 851,
+ "rows_skipped_other": 225,
+ "registered_rows_not_made_today": 0,
+ "rows_compared": 8556,
+ "rows_differing": 51,
+ "share_differing": 0.005960729312762973,
+ "rows_differing_obs": 51,
+ "rows_differing_mask": 0,
+ "rows_differing_consistent_set": 0,
+ "rows_differing_label": 0,
+ "rows_differing_label_by_field": {
+  "act": 0,
+  "hidden": 0,
+  "moveset": 0
+ },
+ "rows_differing_meta_only": 0,
+ "obs_columns_differing": 7,
+ "obs_columns": [
+  {
+   "col": 1484,
+   "slice": "context.volatiles",
+   "rows": 1
+  },
+  {
+   "col": 1488,
+   "slice": "context.volatiles",
+   "rows": 14
+  },
+  {
+   "col": 1516,
+   "slice": "context.volatiles",
+   "rows": 4
+  },
+  {
+   "col": 1544,
+   "slice": "context.volatiles",
+   "rows": 1
+  },
+  {
+   "col": 1548,
+   "slice": "context.volatiles",
+   "rows": 26
+  },
+  {
+   "col": 1571,
+   "slice": "context.volatiles",
+   "rows": 1
+  },
+  {
+   "col": 1576,
+   "slice": "context.volatiles",
+   "rows": 5
+  }
+ ],
+ "rows_differing_by_obs_slice": {
+  "context.volatiles": 51
+ },
+ "limit_share": 0.01,
+ "over_limit": false,
+ "pass": true
+}
