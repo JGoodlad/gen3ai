@@ -4982,28 +4982,28 @@
   },
   "src/utils/team_corpora/d3_setmut_test.py::test_the_committed_corpus_reproduces_from_the_pool_and_the_priors": {
    "status": "pass",
-   "commit": "9ff6cafb753164486553a32c33d119be861d333a",
-   "at": "2026-10-25T19:31:08Z",
-   "duration_s": 8.28,
-   "contention": 1.23,
+   "commit": "0c4f111703c457f55091c30e06b906cb0c3925cd",
+   "at": "2026-10-27T08:03:05Z",
+   "duration_s": 13.79,
+   "contention": 1.73,
    "detail": ""
   },
   "src/utils/team_corpora/n1_proc_test.py::test_the_committed_corpus_and_panel_reproduce_from_the_priors": {
    "status": "pass",
-   "commit": "0bc5ea0fc3133776d4845988e777451a987cd2ea",
-   "at": "2026-10-26T00:34:49Z",
-   "duration_s": 69.36,
-   "contention": 1.09,
+   "commit": "0c4f111703c457f55091c30e06b906cb0c3925cd",
+   "at": "2026-10-27T08:03:05Z",
+   "duration_s": 97.86,
+   "contention": 1.65,
    "detail": ""
   },
   "src/utils/team_corpora/team_corpora_test.py::test_the_committed_corpus_reproduces_from_its_source": {
    "status": "pass",
-   "commit": "9ff6cafb753164486553a32c33d119be861d333a",
-   "at": "2026-10-25T19:31:08Z",
-   "duration_s": 7.01,
-   "contention": 1.13,
+   "commit": "0c4f111703c457f55091c30e06b906cb0c3925cd",
+   "at": "2026-10-27T08:03:05Z",
+   "duration_s": 9.76,
+   "contention": 1.54,
    "detail": ""
   }
  },
- "last_written": "2026-10-27T06:55:07Z"
+ "last_written": "2026-10-27T08:03:05Z"
 }
