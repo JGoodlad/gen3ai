@@ -1,0 +1,231 @@
+{
+ "schema": "gen3_read_spec_v1",
+ "read": "x59s_pilot_2026-10-26",
+ "prereg": "designs/research_state/measurements/x59s_matched_students_2026-10-25/PREREG.md",
+ "pin": "fca58b24d",
+ "note": "X59-S floor pilot (PREREG A4.5 step 2): 15 primary students x H/F/P72 x unit seeds 0-3 vs Kakuna; VOID 6 repeat of s_h_5901 on forum72 seed 0",
+ "models": {
+  "s_h_5901": {
+   "arm": "S-H",
+   "seed": 5901,
+   "ref": {
+    "kind": "pinned",
+    "path": "/home/goodlad/gen3ai_archive/x59s/read/students/s_h_5901/model/student_human_5901.zip",
+    "sha256": "c83b4753efb46b976ff31c1a30dca2e0ab8cb6a8e8716d6677312670470cc60d"
+   }
+  },
+  "s_h_5902": {
+   "arm": "S-H",
+   "seed": 5902,
+   "ref": {
+    "kind": "pinned",
+    "path": "/home/goodlad/gen3ai_archive/x59s/read/students/s_h_5902/model/student_human_5902.zip",
+    "sha256": "3a683547089e1c4cd04dc9915af9e99ca7a3f26747df72210061068c7882610c"
+   }
+  },
+  "s_h_5903": {
+   "arm": "S-H",
+   "seed": 5903,
+   "ref": {
+    "kind": "pinned",
+    "path": "/home/goodlad/gen3ai_archive/x59s/read/students/s_h_5903/model/student_human_5903.zip",
+    "sha256": "02de05dc064e42645274f0fa3e643fb44dfe5594e795f1d675e72425baaf1969"
+   }
+  },
+  "s_h_5904": {
+   "arm": "S-H",
+   "seed": 5904,
+   "ref": {
+    "kind": "pinned",
+    "path": "/home/goodlad/gen3ai_archive/x59s/read/students/s_h_5904/model/student_human_5904.zip",
+    "sha256": "53030abaada63ed9d3717c4a9468839c57c7adc5768195519dffcaee422639da"
+   }
+  },
+  "s_h_5905": {
+   "arm": "S-H",
+   "seed": 5905,
+   "ref": {
+    "kind": "pinned",
+    "path": "/home/goodlad/gen3ai_archive/x59s/read/students/s_h_5905/model/student_human_5905.zip",
+    "sha256": "6afe5657caccdaf2d383da1b4dc6735d4fa453b0982d41ad47c1768f58546352"
+   }
+  },
+  "s_p_5901": {
+   "arm": "S-P",
+   "seed": 5901,
+   "ref": {
+    "kind": "pinned",
+    "path": "/home/goodlad/gen3ai_archive/x59s/read/students/s_p_5901/model/student_pstar_5901.zip",
+    "sha256": "9d9e88aac2e52cac52c71cdcece183e053f6fe854eb51d8f1bab62d0de440762"
+   }
+  },
+  "s_p_5902": {
+   "arm": "S-P",
+   "seed": 5902,
+   "ref": {
+    "kind": "pinned",
+    "path": "/home/goodlad/gen3ai_archive/x59s/read/students/s_p_5902/model/student_pstar_5902.zip",
+    "sha256": "5cba1a5a49770bab6197aff5104c4d1d161c37e52c392b8e5916e79f3f536d13"
+   }
+  },
+  "s_p_5903": {
+   "arm": "S-P",
+   "seed": 5903,
+   "ref": {
+    "kind": "pinned",
+    "path": "/home/goodlad/gen3ai_archive/x59s/read/students/s_p_5903/model/student_pstar_5903.zip",
+    "sha256": "2099cd571f20bdaeb4c32ebb052a88effef673a817bed5899bee3993093e8d1d"
+   }
+  },
+  "s_p_5904": {
+   "arm": "S-P",
+   "seed": 5904,
+   "ref": {
+    "kind": "pinned",
+    "path": "/home/goodlad/gen3ai_archive/x59s/read/students/s_p_5904/model/student_pstar_5904.zip",
+    "sha256": "0f7077734ef2f5af9f7298ef17907a61cea36b43d47d3b064ae8f21942899e86"
+   }
+  },
+  "s_p_5905": {
+   "arm": "S-P",
+   "seed": 5905,
+   "ref": {
+    "kind": "pinned",
+    "path": "/home/goodlad/gen3ai_archive/x59s/read/students/s_p_5905/model/student_pstar_5905.zip",
+    "sha256": "b1d7eaaa3cfc4f4c8d02e494588ed18256fcf8929e015eece8ec8c31b08a71fc"
+   }
+  },
+  "s_s_5901": {
+   "arm": "S-S",
+   "seed": 5901,
+   "ref": {
+    "kind": "pinned",
+    "path": "/home/goodlad/gen3ai_archive/x59s/read/students/s_s_5901/model/student_selfplay_5901.zip",
+    "sha256": "a3fa98114e429855742d528c8a67b0b629f6bee14d27d2429c34e86508b2000b"
+   }
+  },
+  "s_s_5902": {
+   "arm": "S-S",
+   "seed": 5902,
+   "ref": {
+    "kind": "pinned",
+    "path": "/home/goodlad/gen3ai_archive/x59s/read/students/s_s_5902/model/student_selfplay_5902.zip",
+    "sha256": "cb8ce1fb21b77da0f795ba6fe83bae9b74174c44d0cea907c8ec2eae2c12bba2"
+   }
+  },
+  "s_s_5903": {
+   "arm": "S-S",
+   "seed": 5903,
+   "ref": {
+    "kind": "pinned",
+    "path": "/home/goodlad/gen3ai_archive/x59s/read/students/s_s_5903/model/student_selfplay_5903.zip",
+    "sha256": "f4e46b97a6504b98f46b4a3f82784a7926abba5002d3f936dab87e4792d7c8ab"
+   }
+  },
+  "s_s_5904": {
+   "arm": "S-S",
+   "seed": 5904,
+   "ref": {
+    "kind": "pinned",
+    "path": "/home/goodlad/gen3ai_archive/x59s/read/students/s_s_5904/model/student_selfplay_5904.zip",
+    "sha256": "205b39af98aa1e8f43f2ca33855376fa39568cf5bdc55c5bebecf4ed257ac043"
+   }
+  },
+  "s_s_5905": {
+   "arm": "S-S",
+   "seed": 5905,
+   "ref": {
+    "kind": "pinned",
+    "path": "/home/goodlad/gen3ai_archive/x59s/read/students/s_s_5905/model/student_selfplay_5905.zip",
+    "sha256": "04e53879e03d00603261da95befca4a572bf503ee88502d7b881951fae889e14"
+   }
+  },
+  "s_h_5901_rep": {
+   "arm": "S-H",
+   "seed": 5901,
+   "ref": {
+    "kind": "pinned",
+    "path": "/home/goodlad/gen3ai_archive/x59s/read/students/s_h_5901/model/student_human_5901.zip",
+    "sha256": "c83b4753efb46b976ff31c1a30dca2e0ab8cb6a8e8716d6677312670470cc60d"
+   }
+  }
+ },
+ "anchor": {
+  "repeat": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "forum72"
+   ],
+   "unit_seeds": "0",
+   "models": [
+    "s_h_5901_rep"
+   ]
+  },
+  "pilot": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "heldout72_hpfix",
+    "forum72",
+    "p72"
+   ],
+   "unit_seeds": "0-3",
+   "models": [
+    "s_h_5901",
+    "s_h_5902",
+    "s_h_5903",
+    "s_h_5904",
+    "s_h_5905",
+    "s_p_5901",
+    "s_p_5902",
+    "s_p_5903",
+    "s_p_5904",
+    "s_p_5905",
+    "s_s_5901",
+    "s_s_5902",
+    "s_s_5903",
+    "s_s_5904",
+    "s_s_5905"
+   ]
+  }
+ },
+ "decision": {
+  "rule": "x59s_floor",
+  "params": {
+   "group": "pilot",
+   "panels": [
+    "heldout72_hpfix",
+    "forum72",
+    "p72"
+   ],
+   "arms": {
+    "S-H": [
+     "s_h_5901",
+     "s_h_5902",
+     "s_h_5903",
+     "s_h_5904",
+     "s_h_5905"
+    ],
+    "S-P": [
+     "s_p_5901",
+     "s_p_5902",
+     "s_p_5903",
+     "s_p_5904",
+     "s_p_5905"
+    ],
+    "S-S": [
+     "s_s_5901",
+     "s_s_5902",
+     "s_s_5903",
+     "s_s_5904",
+     "s_s_5905"
+    ]
+   },
+   "floor_bar": 0.15,
+   "repeat": {
+    "group": "repeat",
+    "label": "s_h_5901_rep",
+    "of": "s_h_5901"
+   }
+  }
+ }
+}

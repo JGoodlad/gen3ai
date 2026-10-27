@@ -44,6 +44,9 @@ with its reasons (N1-P FINDING 7).
   played on ONE engine in one read; the share of the home premium (familiar − unfamiliar) rc72 recovers, by exact
   fractions against ``kill_frac`` / ``support_frac``; INCONCLUSIVE unless the premium's unit-bootstrap lower bound
   clears 0; the absolute bands against X51 survive only as a secondary, cross-engine line.
+* ``x59s_floor`` / ``x59s`` -- X59-S's floor pilot and full read (``x59s_matched_students_2026-10-25`` PREREG
+  Amendment 4; :mod:`main.reads.rules_x59s`): ``main.human_data.x59s_read``'s registered statistics on the
+  students' Kakuna cells and the read's sha-recorded artefacts.
 """
 from __future__ import annotations
 
@@ -1214,6 +1217,14 @@ RULES: Dict[str, Rule] = {
     "premium_recovery": Rule("premium_recovery", "the share of the home premium a panel recovers, on ONE engine, "
                              "unit-bootstrap (the H-CTX read, amended)", _pr_check, _pr_inputs, _pr_decide, False),
 }
+
+from main.reads import rules_x59s as _X59S  # noqa: E402  (it imports this module lazily: no cycle at import)
+
+RULES.update({
+    "x59s_floor": Rule("x59s_floor", _X59S.RULE_DOCS["x59s_floor"], _X59S._floor_check, _X59S._floor_inputs,
+                       _X59S._floor_decide, False),
+    "x59s": Rule("x59s", _X59S.RULE_DOCS["x59s"], _X59S._full_check, _X59S._full_inputs, _X59S._full_decide, False),
+})
 
 
 def inputs(rule: str, cells: Mapping[str, Any], params: Mapping[str, Any], spec: Any) -> Dict[str, Any]:

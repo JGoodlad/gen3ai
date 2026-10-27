@@ -599,3 +599,130 @@ archive and fixture), so the fault shows only once the weights have moved. The w
 - **S-P0 still runs in the same window**, after the 15 primaries (the registered order, so it never delays a primary
   student). If the lease must end first, the window stops between chunks and S-P0 resumes in a later lease from its
   `state.pt` (`window.py --dir` with the same directory); S-P0 is descriptive and no rule reads it.
+
+## Amendment 4 (2026-10-26, after training, before any game of the read): how the read is played
+
+The 20 students trained at Amendment 3's commit (window `PASS` 23:04, `~/gen3ai_archive/x59s/students/`). **No game
+of this read has been played and no student's Kakuna, in-house or floor result exists.** Their final validation NLLs
+were seen (the window's table); no rule reads them. **No decision rule, class, interval, VOID guard or registered
+input changes.** This amendment says what machinery plays the read, where it differs from what §4 assumed, and the
+order. Code: [`x59s_ops.py`](../../../../src/main/human_data/x59s_ops.py) (export, identity, floor references,
+in-house) and [`rules_x59s.py`](../../../../src/main/reads/rules_x59s.py) (the `main.reads` rules `x59s_floor` and
+`x59s`, which call `x59s_read` unchanged); specs [`read_spec_pilot.json`](read_spec_pilot.json),
+[`read_spec_full.json`](read_spec_full.json).
+
+### A4.1 One play tree, one engine
+
+- **Every game of the read** (Kakuna, floor references, in-house) is played from ONE clean detached checkout at
+  **`fca58b24d`** (main, 2026-10-27), so ONE Rust sim build plays the whole read (`designs/tools/reads.md` §4: one
+  engine per read, named at registration). **The engine is main's, `port=67a272e7796bd85e/93;env=d79c3a74b241a75b/128`**
+  (`main.reads.engine.engine_at`; equal at `b712c46d1`, the tree first built), NOT X51's E0
+  (`05b106e2…/84` / `dfd24aec…/119`). Every unit stamps it (`cell.engine_stamp`, `20875e96`) and the record carries it.
+  §4 named "a detached checkout of this registration's commit"; that commit predates `141f36f7f` (every checkpoint
+  reader in eval mode, A3.1) and `20875e96` (the engine in the regime id), so the tree moves to a commit carrying both.
+  The identity unit (A4.3) is what certifies that this tree reproduces X51. The specs register `pin: fca58b24d`; this
+  amendment's own changes are off the play path. (`check-spec` at its commit reports 15 play-path files differing
+  from the pin: all are main's later Rust commits under `src/rust_sim/src/`, none of this read's; the read plays at the
+  pin, never at HEAD.)
+- **Every registered contrast is student against student on this one engine** (Δ_data, Δ_labels, Δ_states, the
+  in-house head-to-heads, the floor references). **Q-H10 (each arm minus P\*'s X51 rows) is CROSS-ENGINE** (X51 played
+  on E0): it is reported as a SECONDARY, descriptive line, guarded only by the identity unit, and routes nothing.
+- **Export** (`python -m main.human_data.x59s_ops export`, `student export` per student; run 2026-10-27 at this
+  amendment's code, the save path identical to the pin's): each
+  student into its OWN directory `~/gen3ai_archive/x59s/read/students/<label>/` (`state.pt` symlinked; the training
+  archive is not written), with both yardsticks; `students.json` records every sidecar, VOID 3 (one `init_sha256` per
+  seed across the arms; 7,041 steps each), Amendment 2's learned-nothing guard and m5's flag. `export`'s own
+  reload and anchors-`bare` bit-equality checks are VOID 4.
+
+### A4.2 The Kakuna cells: `main.reads`' anchor lane
+
+- Each unit is a `main.x35.kakuna` unit: Kakuna ckpt 34, greedy vs greedy, CPU, 20 role-balanced games,
+  `--team-seed = --seed-base =` the unit seed: X51's unit exactly.
+- **Configs.** The lane plays its registered panel cells (`heldout72_hpfix_kakuna.json`, X37a's `forum72` and `p72`)
+  and `anchors_home72_kakuna.json`, not `anchors_x51_sym_<panel>.json`. They differ from X51's ONLY in the directory
+  of our byte copy of each panel (both content-digest-checked against the panel registry before every unit) and in
+  X51's `reference_team_dirs` (read only by the overlap report, `main.anchors.team_overlap`). Every student game
+  therefore still twins X51's P\* game of the same panel, seed, half and index.
+- **Counting** is X51's (`main.anchors.results.unit_counts`). **Retries:** the lane makes 2 attempts a pass
+  (`kakuna.MAX_ATTEMPTS`); §4's "re-run at most twice" is one `resume` pass for a unit still uncounted (3 attempts at
+  most). VOID 7 is read by the rule (a cell with > 1 uncounted unit reported; two such cells VOID the primary).
+
+### A4.3 VOID 5, the identity unit (before any student game)
+
+A standalone `main.x35.kakuna` state at the play tree: P\* (`814823c5…91ed`) on home72, unit seed 0. **PASS iff its 20
+games equal X51's `pstar_home72` unit 0 game for game on (half, index, our team, result, turns)** (`x59s_ops
+identity`; stricter than §4's "winner and turns"). Played and read before any student game. A FAIL is VOID 5: the
+read stops and is reported, nothing is amended after it.
+
+### A4.4 VOID 6, the seeded repeat
+
+In the pilot state S-H 5901 also plays under a second label, `s_h_5901_rep` (the SAME bytes, pinned by sha256), on
+forum72 unit seed 0. **PASS iff that unit equals `s_h_5901`'s forum72 unit 0 game for game** (`x59s_floor`).
+
+### A4.5 The order
+
+1. **The identity unit (A4.3), then the floor references (A2.6, A4.8)**.
+2. **The floor pilot** (`read_spec_pilot.json`, state `~/gen3ai_archive/x59s/read/pilot`): groups `repeat` and
+   `pilot` (the 15 primary students × H, F, P72 × unit seeds 0–3: 180 units, 3,600 games). Rule `x59s_floor`: the floor
+   FIRES iff every arm's mean U rate is below 0.15 (a mean within 1e-9 of 0.15 does not fire). Its decision carries
+   the boolean ONLY (A2.11 m3): no arm rate is written into it or read by the operator until the full record. The
+   teams units 0–3 cover are listed in the full read's report (m3).
+3. **FR-2** (A4.7) is run and its class reported to the orchestrator before any contrast is computed.
+4. **The rest of the Kakuna read**, if the floor does not fire: `read_spec_full.json` (state
+   `~/gen3ai_archive/x59s/read/full`): group `pilot` IMPORTED from the pilot state (sha-checked, never re-played) and
+   group `rest` (unit seeds 4–19: 720 units). Its rule `x59s` is the whole registered verdict: `x59s_read.read` on
+   each student's 20 units a panel, the pilot's floor boolean, `x59s_read.inhouse`, the floor references, the
+   yardsticks and FR-2's class through `x59s_read.verdict`, refusing a verdict on VOID 3, 5, 6 or 7, a missing FR-2
+   class, or short in-house or floor cells. The artefacts it reads are files of this folder's `results/` (and the
+   archive's `students.json`), their sha256 recorded in the record. If the floor FIRES, the same rule is read on the
+   imported pilot group alone (`read_spec_floor.json`, written then from this text; the in-house contrasts decide, §5).
+5. **The in-house head-to-heads** (A4.6), played beside step 4.
+6. **After the verdict, as the CPU allows (descriptive):** home72 units 0–9 of the 15 primaries, and S-P0's U units
+   0–19 and home72 0–9 (A2.4's Δ_restriction). §4 placed home72 in the primary play; it moves after the U units
+   because no rule reads it and the CPU (A4.9) does not cover both before the verdict.
+
+### A4.6 The in-house head-to-heads
+
+`main.h2h play --player <S-H_k> --opponent <S-S_k | S-P_k> --panel <heldout72_hpfix | forum72 | p72> --pairs 200
+--seed k` for k = 5901–5905 (30 cells, 12,000 games), CPU, the default schedule key, the ledger outside `models/`
+(`x59s_ops inhouse`). **A pairing's rate** = the equal-weight mean over the three panels of h2h's mirrored-pair score of
+S-H (a draw counts ½; §4's "win rate" is that score); the contrast = the mean of the 5 pairings − 0.50 with a t
+interval, df 4 (`x59s_read.inhouse`, unchanged).
+
+### A4.7 FR-2, operationally (A2.5; the class rule is `design_human_replay_lever.md` §2.2's, unchanged)
+
+R1's trace extraction (`~/gen3ai_archive/x50_r1b/traces/`, the sentinel and bot seats as viewer and actor), each
+decision read twice: its C-GAME-completed row (mode 2) and its TRUE-team row on that seat's REAL request (mode 1),
+both labelled with that actor's own action; only decisions with both rows, a usable label and ≥ 2 legal actions. For the HOM
+(`~/gen3ai_archive/x50_r1b/hom/model/`) and P\* (`814823c5…91ed`): the policy NLL of the label (masked softmax over
+the legal actions, eval mode). Twin gap = mean NLL(mode 2) − mean NLL(mode 3), decision-weighted; **D = gap(HOM) −
+gap(P\*)**; a battle-cluster bootstrap, 2,000 resamples, seed 50, battles resampled jointly for both models and modes,
+percentile 95 % CI. **ARTEFACT iff LB > 0.05 nats; NO-ARTEFACT iff UB < 0.05; else UNCLEAR** (a bound within 1e-9 of
+0.05 takes UNCLEAR). Its record is `results/fr2.json`.
+
+**As built (before FR-2 has been run on any data):** `python -m main.x50_r1.read_fr2` pairs the two rows by
+(battle, seat, decision index); they pair 1:1. **R1's existing extraction reads only OUR trainee's seat** (every one
+of its 151,234 mode 2 / 3 rows has the X26 trainee as viewer), not the sentinel's or bot's that §8.5 registers, and
+its mode-3 rows carry requests SYNTHESISED from public lines, not real ones. FR-2 is therefore read on a NEW
+opponent-seat extraction of the same traces (`main.x50_r1.run traces --seat opponent`: the sentinel or bot as viewer
+and actor; the traces carry that seat's own requests, so its true rows are on REAL requests, mode 1, `read_fr2
+--true-rows full`, the default), so the registered definition stands unchanged. Preconditions, read before FR-2:
+G-ENC PASS at the extraction's commit; refused seats ≤ 1 % of seats read (the extraction's stop rule); the mode 1 /
+mode 3 own-action differ count reported. Seats with a refused choice have no real-request rows and drop from the
+pairing (counted). The trainee-seat read (`--viewer trainee`) is not FR-2: there P\* is an ancestor of the
+actor (steps ≥ 360M), which changes what its twin gap means; if computed, it is recorded `registered: false`.
+
+### A4.8 The floor references
+
+`x59s_ops floor`: the Kakuna unit's command with `--model <zip>` replaced by `--our-side bot:random` or
+`--our-side bot:aggressive` and nothing else changed; units 0–3 of H, F, P72 (240 games each); counted by
+`unit_counts`. A bot's U rate is the equal-weight panel mean; "the better floor reference" (A2.6) is the larger.
+
+### A4.9 Reporting rules made concrete
+
+- **Q-H10** (SECONDARY, cross-engine, A4.1): per arm, per (panel, unit seed), the mean over its students of the unit's win rate minus
+  P\*'s X51 unit's; equal weight over panels; a normal interval over the unit seeds within each panel.
+- **m1:** S-H and S-P train on 1,201,538 rows of which 92,435 carry a set label (hidden moves); S-S on 1,201,538 rows,
+  none. **m3, m5, m6** come from the record (`descriptive`), **m7** from the rows.
+- **CPU:** the floor pilot measures units a lane-hour on this box; the projected finish is reported then, and any cut
+  the budget forces is a further amendment before the affected units' data is read.

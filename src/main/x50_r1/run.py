@@ -5,10 +5,12 @@
 
 * ``humans`` reads the SPECTATOR MANIFEST's logs of the named date folders only (never the archive pulls; design
   §4), both seats each, in sorted order, ``--part-size`` logs per part file.
-* ``traces`` reads the run's eval traces of every cycle at or after ``--min-step`` (sorted): the TRAINEE's seat,
-  through the spectator view (``mode`` 0) and, when its stream holds no refused choice, its own stream (``mode`` 1,
-  the training row; the control). Each battle's spectator decision points must equal the trainee's real request
-  positions, and the two reads' labels must agree: a :class:`main.x50_r1.extract.GuardError` otherwise.
+* ``traces`` reads the run's eval traces of every cycle at or after ``--min-step`` (sorted): ONE seat (``--seat``:
+  the TRAINEE's, default, or the OPPONENT's, the sentinel or bot, for FR-2's trace twin), through the spectator view
+  (``mode`` 0) and, when its stream holds no refused choice, its own stream (``mode`` 1: its real requests and true
+  team; the trainee's training row). Each battle's spectator decision points must equal that seat's real request
+  positions, and the two reads' labels must agree: a :class:`main.x50_r1.extract.GuardError` otherwise. A mode 1 row
+  carries the seat's own action (``own_action``: (b)'s label on the real request, ``extract.full_own_actions``).
 
 Every part is one ``<name>.npz`` (rows of LABELLED decisions only: kind MOVE / SWITCH) + ``<name>.json`` (battle ids,
 counters, the commit and the reader's hash); a part whose JSON exists is skipped (resume). Each seat's guarded
@@ -44,6 +46,9 @@ MODE_SPECTATOR, MODE_FULL, MODE_COMPLETED, MODE_OWN_TRUE = 0, 1, 2, 3
 _READER: Optional[LiveReader] = None
 #: emit the COMPLETED modes (2, 3) beside R1's (rung 1b step 0; ``--complete``)
 COMPLETE = False
+#: the traces' seat read (``--seat``): the trainee's, or its opponent's (the sentinel or bot as viewer and actor)
+SEATS = ("trainee", "opponent")
+SEAT = "trainee"
 #: keep only the COMPLETED rows of a human seat (``--rows completed``; the spectator read still runs, as the label
 #: guard): the HOM's training extraction, which reads mode 2 alone
 COMPLETED_ONLY = False
@@ -73,13 +78,13 @@ def _rating(info: Dict[str, Dict[str, Optional[str]]], seat: str) -> int:
 
 
 def _pack(read: E.SeatRead, *, battle: int, seat: str, mode: int, r_lab: int, r_view: int,
-          counts: collections.Counter, tag: str, own: Optional[E.CompletedRead] = None) -> Dict[str, np.ndarray]:
-    """A seat's rows: every decision with an opponent-action label (use (a)) or, on a completed read, a legal own
-    action (use (b)'s label, ``own_action``: the 11-way index; -1 none)."""
+          counts: collections.Counter, tag: str, own: Optional[List[int]] = None) -> Dict[str, np.ndarray]:
+    """A seat's rows: every decision with an opponent-action label (use (a)) or a legal own action (use (b)'s label,
+    ``own``: the 11-way index per decision; -1 none)."""
     lab, hp = read.labels()
     n = len(read.rows)
     counts[f"{tag}decisions"] += n
-    oa = np.asarray(own.own_action, np.int8) if own is not None else np.full(n, -1, np.int8)
+    oa = np.asarray(own, np.int8) if own is not None else np.full(n, -1, np.int8)
     nl = np.asarray([int(np.asarray(m).sum()) for m in read.masks], np.int8)
     keep = (lab[:, 0] != E.KIND_UNKNOWN) | (oa >= 0)
     if own is not None:
@@ -235,7 +240,7 @@ def human_job(args: Tuple[int, str]) -> Dict[str, Any]:
             counts["c_refused:label_mismatch"] += 1
             continue
         d = _pack(cr.read, battle=battle, seat=seat, mode=MODE_COMPLETED, r_lab=_rating(info, other),
-                  r_view=_rating(info, seat), counts=counts, tag="c_", own=cr)
+                  r_view=_rating(info, seat), counts=counts, tag="c_", own=cr.own_action)
         if d:
             parts.append(d)
     return {"counts": counts, "parts": parts}
@@ -272,7 +277,7 @@ def trace_job(args: Tuple[int, str]) -> Dict[str, Any]:
     meta = json.loads(sp_p.read_text())["meta"]
     ts = meta["trace_source"]
     d = sp_p.parent
-    seat = ts["trainee_side"]
+    seat = ts["trainee_side"] if SEAT == "trainee" else {"p1": "p2", "p2": "p1"}[ts["trainee_side"]]
     _, s1 = S.read_stream(d / ts["records"]["p1"])
     _, s2 = S.read_stream(d / ts["records"]["p2"])
     s1, s2 = battle_lines("\n".join(s1)), battle_lines("\n".join(s2))
@@ -290,26 +295,29 @@ def trace_job(args: Tuple[int, str]) -> Dict[str, Any]:
         spec = _guarded_spectator(reader, view.lines, seat, name, sp, counts)
         rec = json.loads((d / ts["reconstruction"]).read_text())
         team = [json.loads(x.split(" ", 2)[2])["team"] for x in rec["input_log"] if x.startswith(f">player {seat}")][0]
-        full = None
+        full, full_oa = None, None
         if refused_choice:
             counts["full_skipped_refused_choice"] += 1
         else:
             full = E.read_full(reader, own, seat, name, team)
             if not np.array_equal(spec.labels()[0], full.labels()[0]):
                 raise E.GuardError(f"{sp}: the spectator and full reads' labels differ")
+            full_oa = E.full_own_actions(view.lines, seat, pts, full)
+            if any(x == -2 for x in full_oa):
+                raise E.GuardError(f"{sp}: an own action is illegal under the seat's REAL requests")
     except (ReaderRefusal, PointError, S.SpectateError, E.LabelError, E.GuardError, RuntimeError) as exc:
         counts[f"refused:{type(exc).__name__}"] += 1
         return {"counts": counts, "parts": parts, "error": f"{sp}: {exc}"[:400]}
     counts["seats_read"] += 1
-    for mode, read in ((MODE_SPECTATOR, spec), (MODE_FULL, full)):
+    for mode, read, oa in ((MODE_SPECTATOR, spec, None), (MODE_FULL, full, full_oa)):
         if read is None:
             continue
         dd = _pack(read, battle=battle, seat=seat, mode=mode, r_lab=-1, r_view=-1, counts=counts,
-                   tag="" if mode == 0 else "full_")
+                   tag="" if mode == 0 else "full_", own=oa)
         if dd:
             parts.append(dd)
     if COMPLETE:
-        parts.extend(_trace_completed(battle, sp, view.lines, seat, name, own, team, spec, counts))
+        parts.extend(_trace_completed(battle, sp, view.lines, seat, name, own, team, spec, counts, full_oa))
     return {"counts": counts, "parts": parts}
 
 
@@ -324,10 +332,12 @@ def _real_genders(own: List[str]) -> Dict[str, str]:
 
 
 def _trace_completed(battle: int, sp: str, lines: List[str], seat: str, name: str, own: List[str], team: str,
-                     spec: E.SeatRead, counts: collections.Counter) -> List[Dict[str, np.ndarray]]:
-    """The trainee's seat COMPLETED (mode 2: C-GAME from the public log) and OWN-TRUE (mode 3: its true team,
+                     spec: E.SeatRead, counts: collections.Counter,
+                     full_oa: Optional[List[int]] = None) -> List[Dict[str, np.ndarray]]:
+    """The read seat COMPLETED (mode 2: C-GAME from the public log) and OWN-TRUE (mode 3: its true team,
     synthesised decisions). The true team must pass the validator (the design's stop rule: a defect, never an
-    exclusion)."""
+    exclusion). Where the full read labelled the seat's own action (``full_oa``: its real requests), mode 3's labels
+    are compared with it decision by decision (counted: ``t_own_action_vs_full_agree`` / ``_differ``)."""
     from main.value_search.world_legality import LegalityRuleError
 
     out: List[Dict[str, np.ndarray]] = []
@@ -348,7 +358,12 @@ def _trace_completed(battle: int, sp: str, lines: List[str], seat: str, name: st
         if not np.array_equal(cr.read.labels()[0], spec.labels()[0]):
             counts[f"{tag}refused:label_mismatch"] += 1
             continue
-        dd = _pack(cr.read, battle=battle, seat=seat, mode=mode, r_lab=-1, r_view=-1, counts=counts, tag=tag, own=cr)
+        if mode == MODE_OWN_TRUE and full_oa is not None:
+            for x, y in zip(cr.own_action, full_oa):
+                if x >= 0 or y >= 0:
+                    counts[f"t_own_action_vs_full_{'agree' if x == y else 'differ'}"] += 1
+        dd = _pack(cr.read, battle=battle, seat=seat, mode=mode, r_lab=-1, r_view=-1, counts=counts, tag=tag,
+                   own=cr.own_action)
         if dd:
             out.append(dd)
     return out
@@ -410,6 +425,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     t = sub.add_parser("traces")
     t.add_argument("--run", required=True)
     t.add_argument("--min-step", type=int, required=True)
+    t.add_argument("--seat", choices=SEATS, default="trainee",
+                   help="the seat read: the trainee's, or its opponent's (the sentinel or bot; FR-2's trace twin)")
     for p in (h, t):
         p.add_argument("--out", required=True)
         p.add_argument("--workers", type=int, default=3)
@@ -418,7 +435,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         p.add_argument("--complete", action="store_true",
                        help="also emit the completed own side (modes 2 / 3; rung 1b step 0)")
     a = ap.parse_args(argv)
-    global COMPLETE, COMPLETED_ONLY, EXCLUDE_TEAMS
+    global COMPLETE, COMPLETED_ONLY, EXCLUDE_TEAMS, SEAT
     COMPLETE = bool(a.complete)
     if a.cmd == "humans":
         COMPLETED_ONLY = a.rows == "completed"
@@ -440,6 +457,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         items = human_paths(corpus, [x for x in a.dates.split(",") if x])
         job, prefix = human_job, "humans"
     else:
+        SEAT = a.seat
+        meta["seat"] = SEAT
         items = trace_summaries(Path(a.run), a.min_step)
         job, prefix = trace_job, "traces"
     chunks = [items[i:i + a.part_size] for i in range(0, len(items), a.part_size)]

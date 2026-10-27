@@ -150,6 +150,21 @@ def read_full(reader: LiveReader, own_lines: Sequence[str], seat: str, name: str
     return out
 
 
+def full_own_actions(lines: Sequence[str], seat: str, points: List[Tuple[int, str]], full: SeatRead) -> List[int]:
+    """The viewer's OWN action at each decision of its FULL read (its REAL requests): (b)'s label, read off the public
+    log's decision windows (``own.viewer_actions``, as :func:`read_completed` reads it) and mapped onto the real
+    request's frame by ``own.action_index`` (-2 = not legal under the real request: the label-legality refusal), the
+    move set being that frame's own move tokens. ``points`` are the spectator decision points, which the caller has
+    checked equal the seat's real request positions."""
+    from main.x50_r1 import own as O
+
+    if len(points) != len(full.rows):
+        raise GuardError(f"{seat}: {len(points)} decision points but {len(full.rows)} full-read decisions")
+    acts = O.viewer_actions(lines, seat, points)
+    return [O.action_index(a, tk, m, [t[len("move "):] for t in tk.values() if t.startswith("move ")])
+            for a, tk, m in zip(acts, full.tokens, full.masks)]
+
+
 @dataclass
 class CompletedRead:
     """:func:`read_completed`'s result: the rows (a :class:`SeatRead`), the synthesised request of each decision,
