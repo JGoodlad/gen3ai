@@ -135,10 +135,17 @@ def _floor_check(p: Mapping[str, Any], *, models: Any, anchor: Any, s: Any) -> L
     return probs
 
 
+def guard_unit_reason(c: Mapping[str, Any], differ: str) -> Optional[str]:
+    """:func:`main.reads.rules.guard_unit_reason` (imported lazily: ``rules`` imports this module)."""
+    from main.reads.rules import guard_unit_reason as why
+
+    return why(c, differ)
+
+
 def repeat_checks(cells: Mapping[str, Any], r: Mapping[str, Any], of_group: str) -> List[Dict[str, Any]]:
     """VOID 6: each unit of the repeat group against the SAME unit of the student it repeats, game for game: the
     5-tuples and each game's choices from both captures (:func:`main.reads.assemble.compare_choices`)."""
-    from main.reads.assemble import compare_choices
+    from main.reads.assemble import compare_choices, five_tuple_ok
     from main.reads.rules import _group
 
     orig = {(u["panel"], int(u["unit_seed"])): u for u in _group(cells, "anchor", of_group)["units"]
@@ -151,10 +158,11 @@ def repeat_checks(cells: Mapping[str, Any], r: Mapping[str, Any], of_group: str)
         if tuple_eq and o is not None:
             ch = compare_choices(Path(u["cell_dir"]) if u.get("cell_dir") else None,
                                  Path(o["cell_dir"]) if o.get("cell_dir") else None, o["games"],
-                                 unavailable="the original unit has no cell dir")
+                                 unavailable="the original unit has no cell dir",
+                                 five_tuple_ok=five_tuple_ok(cells))
         out.append({"unit": u["unit"], "of": None if o is None else o["unit"], "counted": bool(u["counted"]),
                     "of_counted": bool(o and o["counted"]),
-                    "games_equal": tuple_eq and ch["choices"] != "differ", "tuple_equal": tuple_eq,
+                    "games_equal": tuple_eq and ch["choices"] in ("equal", "unavailable"), "tuple_equal": tuple_eq,
                     "choices": ch["choices"], "choices_differing": ch["differing"], "choices_why": ch["why"]})
     return out
 
@@ -183,7 +191,8 @@ def _floor_decide(doc: Mapping[str, Any], p: Mapping[str, Any]) -> Dict[str, Any
         if not (c["counted"] and c["of_counted"]):
             reasons.append(f"VOID 6: {c['unit']} or its original {c['of']} is not counted")
         elif not c["games_equal"]:
-            reasons.append(f"VOID 6: {c['unit']} does not reproduce {c['of']} game for game")
+            reasons.append(f"VOID 6: {c['unit']}: " + str(guard_unit_reason(
+                c, f"does not reproduce {c['of']} game for game")))
     empty = _no_games(doc)
     if empty:
         reasons.append(f"cells with no counted game: {empty}")
@@ -235,7 +244,8 @@ def _gate_decide(doc: Mapping[str, Any], p: Mapping[str, Any]) -> Dict[str, Any]
         if not (c["counted"] and c["of_counted"]):
             reasons.append(f"VOID 6: {c['unit']} or its original {c['of']} is not counted")
         elif not c["games_equal"]:
-            reasons.append(f"VOID 6: {c['unit']} does not reproduce {c['of']} game for game")
+            reasons.append(f"VOID 6: {c['unit']}: " + str(guard_unit_reason(
+                c, f"does not reproduce {c['of']} game for game")))
     if not doc["repeat"]:
         reasons.append("VOID 6: the repeat unit was not played")
     fl = doc["floor_refs"]

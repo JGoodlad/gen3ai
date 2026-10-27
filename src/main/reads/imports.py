@@ -198,7 +198,7 @@ def anchor_rows(spec: Any, g: str, shas: Mapping[str, str], *, this_state: Optio
         st = LY.anchor_state(earlier_state(imp), imp.group, lab)
         if not (st / "plan.json").exists():
             continue
-        rows += [dict(r, imported_from=str(earlier_state(imp))) for r in anchor_units(st)
+        rows += [dict(r, imported_from=str(earlier_state(imp))) for r in anchor_units(st, rederived=spec.rederived_guards)
                  if r["panel"] in grp.teamsets and int(r["unit_seed"]) in grp.unit_seeds]
     digest = hashlib.sha256(json.dumps(sorted(rows, key=lambda r: r["unit"]), sort_keys=True,
                                        default=str).encode()).hexdigest()

@@ -73,6 +73,7 @@ from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Set, 
 
 from main.anchors.results import Z95, newcombe, wilson
 from main.reads import engine as EN
+from main.reads.assemble import five_tuple_ok
 from main.x35 import d1 as D
 from main.x35 import readout as R
 from main.x35.d1 import newcombe_strat, overdispersion, strat_score, widen, wilson_pn
@@ -497,16 +498,18 @@ def _d1_guard(cells: Mapping[str, Any], dg: Mapping[str, Any]) -> Dict[str, Any]
         checks.append({"unit": u["unit"], "panel": u["panel"], "unit_seed": int(u["unit_seed"]),
                        "counted": bool(u["counted"]), "n": u.get("n"), "wins": u.get("wins"),
                        "banked": None if want is None else {"n": want["n"], "wins": want["wins"]},
-                       **guard_games(u, want)})
+                       **guard_games(u, want, five_tuple_ok=five_tuple_ok(cells))})
     planned = sum(len(by) for by in bank.values())
     why = [] if checks else ["no guard unit played"]
     why += [f"{c['unit']}: not counted" for c in checks if not c["counted"]]
-    why += [f"{c['unit']}: its games differ from the banked unit's" for c in checks if not c["games_equal"]]
+    why += [f"{c['unit']}: {guard_unit_reason(c, 'its games differ from the banked unit')}"
+            for c in checks if not c["games_equal"]]
     if len(checks) != planned:
         why.append(f"{len(checks)} guard unit(s) played, {planned} banked")
     return {"label": dg["label"], "group": dg["group"], "units": checks, "regime_id": g.get("regime_id"),
             "banked_source": {"path": dg["banked"]["path"], "sha256": dg["banked"]["sha256"]},
-            "passed": not why, "reasons": why}
+            "passed": not why, "reasons": why,
+            "inconclusive": [c["unit"] for c in checks if c.get("choices") == "inconclusive"]}
 
 
 def h_input(group: Mapping[str, Any], spec: Any, on: str, off: str) -> Dict[str, Any]:
@@ -821,13 +824,16 @@ def _bank_rows(entry: Mapping[str, Any]) -> List[Dict[str, Any]]:
     return [r for r in rows if r.get("read_cell") in cells]
 
 
-def guard_games(u: Mapping[str, Any], want: Optional[Mapping[str, Any]]) -> Dict[str, Any]:
+def guard_games(u: Mapping[str, Any], want: Optional[Mapping[str, Any]], *, five_tuple_ok: bool = False
+                ) -> Dict[str, Any]:
     """THE game-for-game comparison of a re-played guard unit ``u`` (an assembled unit row) with its banked unit
     ``want`` (:func:`banked_units`): the 5-tuple (:data:`main.reads.assemble.GAME_KEYS`) AND each game's choices from
     both captures (:func:`main.reads.assemble.compare_choices`; ``measurements/kakuna_determinism_2026-10-27/`` §6).
 
-    ``games_equal`` is True iff the 5-tuples are equal and the choices are not seen to differ. When either side has no
-    capture the choices are ``unavailable`` (``choices_why`` says why) and the 5-tuple decides alone, as before."""
+    ``games_equal`` is True iff the 5-tuples are equal and the choices are ``equal``, or ``unavailable`` because the
+    bank names no single source (or the spec registered ``choices_guard: five_tuple``). A capture the comparison
+    expects and cannot read is ``choices: inconclusive`` with ``games_equal`` False (review H2: fail closed); name it
+    with :func:`guard_unit_reason`."""
     from main.reads.assemble import compare_choices
 
     tuple_eq = bool(want is not None and u.get("games") is not None
@@ -838,9 +844,21 @@ def guard_games(u: Mapping[str, Any], want: Optional[Mapping[str, Any]]) -> Dict
         assert want is not None
         here = Path(u["cell_dir"]) if u.get("cell_dir") else None
         ch = compare_choices(here, bank_cell(want), want["games"],
-                             unavailable="the banked rows name no single source unit")
-    return {"games_equal": tuple_eq and ch["choices"] != "differ", "tuple_equal": tuple_eq,
+                             unavailable="the banked rows name no single source unit", five_tuple_ok=five_tuple_ok)
+    return {"games_equal": tuple_eq and ch["choices"] in ("equal", "unavailable"), "tuple_equal": tuple_eq,
             "choices": ch["choices"], "choices_differing": ch["differing"], "choices_why": ch["why"]}
+
+
+def guard_unit_reason(c: Mapping[str, Any], differ: str) -> Optional[str]:
+    """Why ONE guard check (:func:`guard_games` / X59-S's repeat) does not pass, or None: ``INCONCLUSIVE`` (named:
+    an expected capture is missing) before ``differ`` (the caller's words for games that differ)."""
+    from main.reads.assemble import CHOICES_INCONCLUSIVE
+
+    if c["games_equal"]:
+        return None
+    if c.get("choices") == CHOICES_INCONCLUSIVE:
+        return f"INCONCLUSIVE: {c.get('choices_why')}"
+    return differ
 
 
 def bank_cell(want: Mapping[str, Any]) -> Optional[Path]:
@@ -917,7 +935,7 @@ def _pm_inputs(cells: Mapping[str, Any], p: Mapping[str, Any], spec: Any) -> Dic
         checks.append({"unit": u["unit"], "panel": u["panel"], "unit_seed": int(u["unit_seed"]),
                        "counted": bool(u["counted"]), "n": u.get("n"), "wins": u.get("wins"),
                        "banked": None if want is None else {"n": want["n"], "wins": want["wins"]},
-                       **guard_games(u, want), "our_regime": u.get("our_regime")})
+                       **guard_games(u, want, five_tuple_ok=five_tuple_ok(cells)), "our_regime": u.get("our_regime")})
     doc["guard"] = {"label": p["guard"]["label"], "units": checks, "regime_ids": gg.get("regime_ids")}
     return doc
 
@@ -963,7 +981,8 @@ def _pm_decide(doc: Mapping[str, Any], p: Mapping[str, Any]) -> Dict[str, Any]:
         if not c["counted"]:
             reasons.append(f"guard {c['unit']}: not counted")
         elif not c["games_equal"]:
-            reasons.append(f"guard {c['unit']}: its games differ from the banked unit's (determinism broken)")
+            reasons.append(f"guard {c['unit']}: " + str(guard_unit_reason(
+                c, "its games differ from the banked unit's (determinism broken)")))
         if c.get("our_regime") != "greedy":
             reasons.append(f"guard {c['unit']}: our_regime {c.get('our_regime')!r} is not the banked 'greedy'")
     out: Dict[str, Any] = {"arms": {}}
@@ -1079,7 +1098,7 @@ def _sb_inputs(cells: Mapping[str, Any], p: Mapping[str, Any], spec: Any) -> Dic
         checks.append({"unit": u["unit"], "panel": u["panel"], "unit_seed": int(u["unit_seed"]),
                        "counted": bool(u["counted"]), "n": u.get("n"), "wins": u.get("wins"),
                        "banked": None if want is None else {"n": want["n"], "wins": want["wins"]},
-                       **guard_games(u, want), "our_regime": u.get("our_regime")})
+                       **guard_games(u, want, five_tuple_ok=five_tuple_ok(cells)), "our_regime": u.get("our_regime")})
     doc["guard"] = {"label": p["guard"]["label"], "units": checks, "regime_ids": gg.get("regime_ids")}
     return doc
 
@@ -1111,7 +1130,8 @@ def _sb_decide(doc: Mapping[str, Any], p: Mapping[str, Any]) -> Dict[str, Any]:
         if not c["counted"]:
             reasons.append(f"guard {c['unit']}: not counted")
         elif not c["games_equal"]:
-            reasons.append(f"guard {c['unit']}: its games differ from the banked unit's (determinism broken)")
+            reasons.append(f"guard {c['unit']}: " + str(guard_unit_reason(
+                c, "its games differ from the banked unit's (determinism broken)")))
         if c.get("our_regime") != "greedy":
             reasons.append(f"guard {c['unit']}: our_regime {c.get('our_regime')!r} is not the banked 'greedy'")
     units = [u for u in doc["units"] if u["counted"]]

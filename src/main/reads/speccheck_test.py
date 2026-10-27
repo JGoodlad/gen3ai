@@ -43,6 +43,7 @@ def test_a_spec_without_a_pin_checks_as_unpinned_and_final(tmp_path, mini_repo):
     out = check_spec(_write(tmp_path), repo=mini_repo)
     assert out["pin"] is None and out["sha256_final"] is True and out["read"] == "demo_read_2026-10-25"
     assert out["allow_partial_at_stop"] is False
+    assert (out["rederived_guards"], out["choices_guard"]) == ("count", "require")   # a spec this change never saw
 
 
 def test_a_pin_must_name_a_commit_that_exists_before_the_spec(tmp_path, mini_repo):

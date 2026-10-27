@@ -70,7 +70,7 @@ def test_compare_choices_names_the_differing_game_and_never_passes_a_foreign_sou
     assert compare_choices(_cell(tmp_path / "same", games, order_only=1), there, games)["choices"] == "equal"
     # a capture source that does not hold the banked games is never compared (and never a pass)
     wrong = [games[0], ["peer_challenge", 1, "t2.txt", "win", 40]]
-    assert compare_choices(here, there, wrong)["choices"] == "unavailable"
+    assert compare_choices(here, there, wrong)["choices"] == "inconclusive"
     assert compare_choices(here, None, games, unavailable="no source")["why"] == "no source"
 
 
@@ -144,23 +144,24 @@ def test_x59s_repeat_unit_fails_void6_on_a_pair_that_differs_only_in_one_choice(
     assert good[0]["games_equal"] is True and good[0]["choices"] == "equal"
 
 
-# ------------------------------------------------------------------- REVIEW 2026-10-27 (anchor_guards_review)
-@pytest.mark.xfail(strict=True, reason=(
-    "REVIEW 2026-10-27 H2 (MAJOR, designs/ops/reviews/anchor_guards_review_2026-10-27.md): a bank that NAMES its "
-    "capture source degrades to the 5-tuple alone when that capture is not under $GEN3AI_ARCHIVE_DIR (moved, pruned, "
-    "another box), so one registered decision PASSES or VOIDs by the environment. Flips RED when a named-but-missing "
-    "capture fails the guard."))
+# ------------------------------------------------------- REVIEW 2026-10-27 H2 (fixed): fail CLOSED on a missing capture
 def test_a_bank_that_names_its_capture_never_passes_on_the_5_tuple_when_the_capture_is_gone(tmp_path, monkeypatch):
+    """The bank names its source, but the source is not under ``$GEN3AI_ARCHIVE_DIR`` (moved, pruned, another box):
+    the guard is INCONCLUSIVE (named), never a pass on the 5-tuple."""
     sp, cells = _guard_fixture(tmp_path, monkeypatch, flip=1)
     monkeypatch.setenv("GEN3AI_ARCHIVE_DIR", str(tmp_path / "pruned"))
     doc = RU.inputs("d1", cells, sp.params, sp)
-    assert doc["import_off"]["guard"]["passed"] is False
+    guard = doc["import_off"]["guard"]
+    assert guard["passed"] is False and doc["import_off"]["h_pooled"] is False
+    assert {c["choices"] for c in guard["units"]} == {"inconclusive"}
+    assert sorted(guard["inconclusive"]) == sorted(c["unit"] for c in guard["units"])
+    assert all("INCONCLUSIVE" in r for r in guard["reasons"])
+    v = RU.decide("d1", doc, sp.params)
+    assert any("determinism guard failed" in r and "INCONCLUSIVE" in r for r in v["reasons"])
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "REVIEW 2026-10-27 H2 (MAJOR): the RE-PLAYED guard unit's own capture missing (capture off, a cell dir lost) "
-    "also degrades to the 5-tuple and passes. Flips RED when it fails the guard."))
 def test_a_replayed_guard_unit_without_its_capture_never_passes_on_the_5_tuple(tmp_path, monkeypatch):
+    """The RE-PLAYED guard unit's own capture missing (capture off, a cell dir lost): INCONCLUSIVE too."""
     import shutil
 
     sp, cells = _guard_fixture(tmp_path, monkeypatch, flip=1)
@@ -168,3 +169,51 @@ def test_a_replayed_guard_unit_without_its_capture_never_passes_on_the_5_tuple(t
         shutil.rmtree(Path(u["cell_dir"]) / "capture")
     doc = RU.inputs("d1", cells, sp.params, sp)
     assert doc["import_off"]["guard"]["passed"] is False
+    assert {c["choices"] for c in doc["import_off"]["guard"]["units"]} == {"inconclusive"}
+    for u in cells["anchor"]["guard"]["units"]:
+        u.pop("cell_dir")                                     # no cell dir at all: the same, never a pass
+    assert RU.inputs("d1", cells, sp.params, sp)["import_off"]["guard"]["passed"] is False
+
+
+def test_a_spec_that_registers_five_tuple_lets_the_5_tuple_decide_a_missing_capture(tmp_path, monkeypatch):
+    """``choices_guard: five_tuple`` (a bank known to lack captures, recorded in the spec and the cells): the missing
+    capture is ``unavailable`` with the spec named, and the 5-tuple decides alone. A choice that DIFFERS still fails."""
+    sp, cells = _guard_fixture(tmp_path, monkeypatch, flip=None)
+    monkeypatch.setenv("GEN3AI_ARCHIVE_DIR", str(tmp_path / "pruned"))
+    cells["guards"] = {"choices": "five_tuple"}
+    guard = RU.inputs("d1", cells, sp.params, sp)["import_off"]["guard"]
+    assert guard["passed"] is True and {c["choices"] for c in guard["units"]} == {"unavailable"}
+    assert all("five_tuple" in c["choices_why"] for c in guard["units"])
+    cells["guards"] = {"choices": "require"}
+    assert RU.inputs("d1", cells, sp.params, sp)["import_off"]["guard"]["passed"] is False
+    (tmp_path / "b").mkdir()
+    sp2, cells2 = _guard_fixture(tmp_path / "b", monkeypatch, flip=1)          # captures present, a choice differs
+    cells2["guards"] = {"choices": "five_tuple"}
+    assert RU.inputs("d1", cells2, sp2.params, sp2)["import_off"]["guard"]["passed"] is False
+
+
+def test_the_spec_field_choices_guard_is_validated_and_recorded_in_the_cells(tmp_path):
+    from main.reads import spec as SP
+
+    sp = _d3_spec(tmp_path, _banked(GAMES))
+    assert sp.choices_guard == "require"
+    doc = dict(sp.raw, choices_guard="five_tuple")
+    assert SP.parse(doc, sha256="").choices_guard == "five_tuple"
+    with pytest.raises(SP.SpecError, match="choices_guard"):
+        SP.parse(dict(sp.raw, choices_guard="maybe"), sha256="")
+
+
+def test_x59s_repeat_unit_without_a_capture_is_inconclusive_void6(tmp_path):
+    """VOID 6 (X59-S's repeat) names INCONCLUSIVE when the repeat unit's capture is gone."""
+    import shutil
+
+    from main.reads.rules_x59s import repeat_checks
+
+    games = GAMES[0]
+    orig = {"unit": "s_h__forum72__00", "label": "s_h", "panel": "forum72", "unit_seed": 0, "counted": True,
+            "games": [list(g) for g in games], "cell_dir": str(_cell(tmp_path / "o", games))}
+    rep = dict(orig, unit="rep__forum72__00", label="rep", cell_dir=str(_cell(tmp_path / "r", games)))
+    shutil.rmtree(tmp_path / "r" / "capture")
+    cells = {"anchor": {"students": {"units": [orig]}, "repeat": {"units": [rep]}}}
+    (c,) = repeat_checks(cells, {"group": "repeat", "of": "s_h"}, "students")
+    assert c["tuple_equal"] is True and c["choices"] == "inconclusive" and c["games_equal"] is False

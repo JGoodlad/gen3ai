@@ -24,6 +24,7 @@ python -m main.reads status   --state DIR                          # .supervisor
 python -m main.reads hold     --state DIR --lane s --by WHO --why TEXT      # no new unit; those in flight finish; exit 0 (§3)
 python -m main.reads resume   --state DIR --lane s --hours 20 [--by WHO]    # = run (after printing what is left); a HELD lane is released first
 python -m main.reads repin    --state DIR --to COMMIT --by WHO --why TEXT   # another playing commit, if the play path is identical (§3)
+python -m main.reads release-guard-hold --state DIR --by WHO --why TEXT   # the orchestrator's ruling on a HELD decide (§4)
 python -m main.reads record   --state DIR [--out <stage>/reads/<arm>_look<k>.json]
 python -m main.reads search-cost --state DIR | --cells DIR...     # a searched read's cost and G-PREFIX (§3)
 ```
@@ -43,6 +44,8 @@ refusal.
 | `…import` | `{state, spec_sha256, group, models}`: these models' cells come from group `group` of an EARLIER read's state, never re-played here (§3) |
 | `decision` | `{rule, params, allow_partial_at_stop?}`: a rule from `main.reads.rules.RULES`, with its registered parameters checked at load. `allow_partial_at_stop: true` registers that the PREREG accepts a reduced read at the registered stop (§6); it is refused for `x35_r1`, `d1` and `n4_screen` (their records are consumed by `main.x35.batch`, which does not read the class) and for a spec with no anchor group |
 | `pin` | optional. The commit the playing checkout must be at, with a clean tracked tree. It must EXIST before the spec (the registration flow below) |
+| `rederived_guards` | optional, `count` or `report`: how assemble acts on the anchor guards it re-derives (§4). Absent: `report` for a spec registered before 2026-10-27's change (`rederive.REGISTERED_BEFORE`, the sha256 of every spec on file then), else `count`; `check-spec` prints the resolved value |
+| `choices_guard` | optional, `require` (default) or `five_tuple`: a game-for-game guard whose expected capture is missing is INCONCLUSIVE, unless the spec registers that its banks lack captures (§4) |
 
 Example. This is x26c's read written as a spec; `golden_test.x26c_spec` parses it.
 
@@ -343,9 +346,36 @@ X59-S's repeat unit) compares each game's 5-tuple AND its choices: `assemble.gam
 server) stays equal. A guard unit passes only if both are equal (`games_equal`; the row also carries `tuple_equal`,
 `choices` and `choices_differing`). The banked side's capture is its rows' one `source_unit`, read under
 `$GEN3AI_ARCHIVE_DIR` (default `~/gen3ai_archive`) as `<read state>/cells/<unit>`, and only when that cell holds exactly
-the banked games. With no capture on either side, `choices` is `unavailable` with its reason and the 5-tuple decides
-alone (X51's rows name no capture source, so the X59-S identity unit records `unavailable`). The 5-tuple alone misses
-about a quarter of the divergences (11 vs 15 below), those that change neither the result nor the turn count.
+the banked games. When the bank names no single source, `choices` is `unavailable` with its reason and the 5-tuple
+decides alone (X51's rows name no capture source, so the X59-S identity unit records `unavailable`). Once the bank
+NAMES its source, it fails closed (anchor-guards review H2): the source missing under the archive (moved, pruned,
+another box), the re-played unit's capture or cell dir missing, or a source holding other games makes `choices`
+`inconclusive`, `games_equal` false, and the rule names it (`INCONCLUSIVE: ...` in the guard's reasons; `d1`'s
+guard lists the units as `inconclusive`), so one decision never passes or fails by the environment. A spec with
+`choices_guard: five_tuple` (banks known to lack captures) turns that into `unavailable`, recorded per unit;
+`assemble` writes the policy into `cells.json` as `guards`. The 5-tuple alone misses about a quarter of the
+divergences (11 vs 15 below), those that change neither the result nor the turn count.
+
+**The anchor guards re-derived** (`main.reads.rederive`; anchor-guards review H1). The forfeit-win guard (SOP G6)
+and the H21 peer-fault check (G2) run inside the playing tree, so a unit a pre-guard pin plays carries neither,
+and a registered read keeps playing at its pin. Assemble re-derives both for every played unit, its own and
+imported, from what every pin writes, and records the result on the unit row as `rederived` (`forced_end`,
+`peer_fault`: `clean` / `hit` / `unavailable`, the `hits`, the `why`):
+
+- **forced end**: a `FORCELOSE <slot>` in a game's capture is a hit unless it is OUR turn-limit cap (the row booked
+  a `loss` stamped `hit_forfeit_limit` at `turns >= forfeit_turn_limit > 0`, our side not a Metamon peer). The
+  capture holds no cause, so our own drop AT the cap reads as the cap, and a FORCELOSE after the result (it decides
+  nothing) reads as a hit: fail closed;
+- **peer fault**: the long-tail line in any played half's `peer_*.log`;
+- **evidence missing** (capture off, a pruned log): `unavailable`, and the unit is judged as before.
+
+The spec's `rederived_guards` decides what a hit does. `count`: the unit does not count (`rederived_uncounted`,
+its reason named). `report` (every read registered before the change: N1-P look 1, H-CTX rc72 / rc72b, X59-S, D3,
+S-U and its gate test, the belief-prior-mix reads): counting never changes mid-read; a hit on a COUNTED unit is a
+FINDING that HOLDS
+`decide` (and so `record`; typed refusal, exit 2) until the orchestrator rules with `release-guard-hold`, which
+writes `<state>/rederived_release.json` naming the digest of exactly those hits, so a later hit holds again.
+The record carries the check as `rederived_guards` (§6).
 
 ### The engine (`main.reads.engine`; REVIEW F F-M2, 2026-10-26)
 
@@ -568,6 +598,7 @@ The record holds:
 - `reported_incomplete` (`{"<lane>.<group>": [reasons]}`: reported-only groups that are short, §5);
 - `completeness` (`{"class": "COMPLETE"}`, or `INCOMPLETE_BY_STOP`, below; absent on a record older than the field);
 - `void` (the VOID gate as run, §5, or null);
+- `rederived_guards` (the re-derived anchor guards, §4: mode, units checked, those `unavailable`, the hits, `held`, the release; absent on a record older than the field; a held record never released is refused);
 - `imports` (each group's cross-state import, §3);
 - the rule's `inputs` and `decision`.
 

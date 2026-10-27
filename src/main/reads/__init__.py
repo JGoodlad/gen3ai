@@ -1,8 +1,8 @@
 """REGISTERED READS: one module for every read of a trained model against a registered rule
 (``designs/tools/reads.md``, the design of record). A read is a SPEC (``read_spec.json``, committed with its PREREG)
 and a STATE directory; the verbs are ``python -m main.reads check-spec | plan | run | resume | hold | pid | status |
-repin | assemble | decide | record | check-record | search-cost`` (``main.reads.cli`` is the list; ``s-unit`` is the S
-lane's internal child, not an operator verb). Every module, by the job it does:
+repin | assemble | decide | release-guard-hold | record | check-record | search-cost`` (``main.reads.cli`` is the list;
+``s-unit`` is the S lane's internal child, not an operator verb). Every module, by the job it does:
 
 The spec and the models:
 
@@ -31,6 +31,8 @@ Reading (cells, rules, the record):
 * :mod:`main.reads.engine` -- the Rust engine a unit played on (part of every regime); :mod:`main.reads.side_identity` --
   the Metamon peer's code and our policy's load mode it played with (likewise); :mod:`main.reads.imports` -- cells taken
   from an EARLIER read's state, sha-, regime-, engine- and side-checked;
+* :mod:`main.reads.rederive` -- the forfeit-win guard and the H21 peer-fault check RE-DERIVED from each unit's captures
+  and peer logs (units of pre-guard pins too): a hit voids the unit, or HOLDS ``decide`` for a read registered before;
 * :mod:`main.reads.rules` (with :mod:`main.reads.rules_n4_screen`, :mod:`main.reads.rules_search_headroom`,
   :mod:`main.reads.rules_deviation_sign` and :mod:`main.reads.rules_x59s`) -- the registered interval and decision
   rules, by name (reusing ``main.x35.readout`` / ``main.x35.d1`` / ``main.anchors.results``), and the registered VOID

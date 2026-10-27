@@ -309,6 +309,9 @@ class ShowdownFrontEnd:
         #: every forced end of this front end's life, in order (:data:`FORCED_END_SCHEMA`), and its JSONL sink
         self.forced_ends: List[dict] = []
         self._forced_ends_log = forced_ends_log
+        #: a forced end the JSONL sink could not store (REVIEW 2026-10-27 H3): the sink is then moved aside for good
+        #: (:meth:`_poison_forced_ends`), so the guard reads BLIND and nothing this front end served counts
+        self.forced_ends_unrecorded = False
 
     # -- connection lifecycle ------------------------------------------------------------
     async def handler(self, ws) -> None:
@@ -845,15 +848,36 @@ class ShowdownFrontEnd:
             self.forced_ends.append(rec)
             line = json.dumps(rec, sort_keys=True)
             logger.warning("FORCED_END %s", line)
-            if self._forced_ends_log:
+            if self._forced_ends_log and not self.forced_ends_unrecorded:
                 try:
                     with open(self._forced_ends_log, "a") as handle:
                         handle.write(line + "\n")
-                except OSError as exc:  # the in-memory record and the log line still carry it
-                    logger.error("could not append the forced end to %s: %s", self._forced_ends_log, exc)
+                except OSError as exc:
+                    self._poison_forced_ends(exc)
         else:
             logger.info("%s: %s of %s after the result — decides nothing", battle.tag, cause, slot)
         await self._write_child(battle, f"FORCELOSE {slot}")
+
+    def _poison_forced_ends(self, exc: OSError) -> None:
+        """FAIL CLOSED on a forced end the sink could not store (a full disk, a permission change; REVIEW 2026-10-27
+        H3). The armed sink exists EMPTY from the start, so leaving it would read ``armed`` with no void and a peer's
+        drop would count as our win. It is moved aside (``<log>.unwritable``, kept as evidence; removed if it cannot
+        be moved) and never appended to again, so ``runner.read_forced_ends`` finds no record: the guard is BLIND and
+        the series fails ``forced_end_guard_blind``. The in-memory record and the ``FORCED_END`` log line still carry
+        the forced end."""
+        log = str(self._forced_ends_log)
+        self.forced_ends_unrecorded = True
+        try:
+            os.replace(log, log + ".unwritable")
+            gone = "moved aside to " + log + ".unwritable"
+        except OSError:
+            try:
+                os.unlink(log)
+                gone = "removed"
+            except OSError as exc2:
+                gone = f"NOT removed ({exc2}): the runner's in-process check is the last guard"
+        logger.critical("could not append a forced end to %s (%s): the record is %s, so the forfeit-win guard reads "
+                        "BLIND and nothing this front end served counts", log, exc, gone)
 
     async def _cmd_leave(self, conn: _Conn, room: str) -> None:
         tag = room.strip().lstrip(">")

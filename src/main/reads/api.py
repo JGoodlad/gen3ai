@@ -12,6 +12,7 @@ from main.reads.assemble import AssembleError, assemble as _assemble, unplayed_g
 from main.reads.models import ModelError
 from main.reads.playpath import PlayPathError
 from main.reads.prefix import PrefixError
+from main.reads import rederive as RD
 from main.reads.record import RecordError, build as build_record, load as load_record, summary_line, write
 from main.reads.repin import RepinError, load_repins, repin
 from main.reads.rules import RULES, RuleInputError, void_failures, void_gate as rules_void_gate
@@ -23,11 +24,11 @@ from main.reads.supervisors import SupervisorError
 from main.x35.kakuna import KakunaError
 
 __all__ = ["REFUSALS", "assemble", "check_spec", "decide", "hold", "load_record", "load_repins", "load_spec", "pid", "plan",
-           "record", "release", "repin", "run", "status", "summary_line", "void_gate"]
+           "record", "release", "release_guard_hold", "repin", "run", "status", "summary_line", "void_gate"]
 
 #: Every typed refusal a verb raises (the CLI's exit 2).
 REFUSALS = (SpecError, ModelError, RunError, AssembleError, RuleInputError, RecordError, LY.StateError, KakunaError,
-            SupervisorError, ReadImportError, RepinError, PlayPathError, LC.LaneError, PrefixError)
+            SupervisorError, ReadImportError, RepinError, PlayPathError, LC.LaneError, PrefixError, RD.GuardHoldError)
 hold, release = LC.hold, LC.release
 
 
@@ -67,16 +68,24 @@ def void_gate(state: Path) -> Optional[Dict[str, Any]]:
 
 def decide(state: Path) -> Dict[str, Any]:
     """The registered rule on the assembled cells (``assemble`` first if ``cells.json`` is absent), after the
-    registered VOID gate (:func:`void_gate`)."""
+    registered VOID gate (:func:`void_gate`) and the re-derived guards' HOLD (:func:`main.reads.rederive.check_hold`:
+    a ``report``-mode read whose counted units they hit waits for the orchestrator's :func:`release_guard_hold`)."""
     void_gate(state)
     spec = load_state(state)
     cf = LY.cells_file(state)
     cells = json.loads(cf.read_text()) if cf.exists() else assemble(state)
+    RD.check_hold(state, cells)
     doc = RULES[spec.rule].inputs(cells, spec.params, spec)
     _write(LY.inputs_file(state), doc)
     dec = RULES[spec.rule].decide(doc, spec.params)
     _write(LY.decision_file(state), dec)
     return dec
+
+
+def release_guard_hold(state: Path, *, by: str, why: str) -> Dict[str, Any]:
+    """The orchestrator's release of the re-derived guards' hits that HOLD ``decide`` (re-assembled first, so the release
+    names exactly the hits on file now; a later hit is held again)."""
+    return RD.release(state, assemble(state), by=by, why=why)
 
 
 def partial_at_stop(state: Path, spec: Any, cells: Dict[str, Any]) -> Optional[Dict[str, Any]]:
@@ -106,7 +115,7 @@ def record(state: Path, *, out: Optional[Path] = None) -> Dict[str, Any]:
     vf = LY.void_file(state)
     gate = json.loads(vf.read_text()) if spec.params.get("void") else None   # decide just wrote it
     rec = build_record(spec, cells, doc, dec, code, void=gate, repins=load_repins(state),
-                       partial=partial_at_stop(state, spec, cells))
+                       partial=partial_at_stop(state, spec, cells), rederived=RD.check_hold(state, cells))
     write(rec, LY.record_file(state))
     if out is not None:
         write(rec, out)

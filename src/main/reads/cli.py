@@ -17,7 +17,9 @@
                                                                               # path is byte-identical (else refuse)
     python -m main.reads assemble --state DIR                          # -> cells.json (regime ids ALWAYS; an anchor group
                                                                        #    names its unplayed and EXHAUSTED units)
-    python -m main.reads decide  --state DIR                           # -> inputs.json, decision.json
+    python -m main.reads decide  --state DIR                           # -> inputs.json, decision.json (HELD while a
+                                                                       #    report-mode read's re-derived guards hit)
+    python -m main.reads release-guard-hold --state DIR --by WHO --why TEXT  # the orchestrator releases THOSE hits
     python -m main.reads record  --state DIR [--out PATH]              # -> record.json (schema-checked; INCOMPLETE_BY_STOP
                                                                        #    only for a spec that registered a reduced read)
     python -m main.reads check-record PATH
@@ -80,6 +82,11 @@ def _parser() -> argparse.ArgumentParser:
     rp.add_argument("--why", required=True, help="the reason, recorded with the repin")
     for n in ("status", "assemble", "decide"):
         sub.add_parser(n).add_argument("--state", required=True)
+    rg = sub.add_parser("release-guard-hold",
+                        help="the orchestrator releases the re-derived guards' hits that HOLD decide (rederive, H1)")
+    rg.add_argument("--state", required=True)
+    rg.add_argument("--by", required=True, help="who releases the hold (the orchestrator)")
+    rg.add_argument("--why", required=True, help="the ruling, recorded with the release")
     rec = sub.add_parser("record")
     rec.add_argument("--state", required=True)
     rec.add_argument("--out", default=None, help="also write the record here (e.g. <stage>/reads/<arm>_look<k>.json)")
@@ -133,6 +140,9 @@ def main(argv: Optional[List[str]] = None) -> int:
             return 0
         if a.cmd == "pid":
             print(api.pid(Path(a.state), a.lane, wait_s=a.wait))
+            return 0
+        if a.cmd == "release-guard-hold":
+            _dump(api.release_guard_hold(Path(a.state), by=a.by, why=a.why))
             return 0
         if a.cmd == "repin":
             _dump(api.repin(Path(a.state), a.to, by=a.by, why=a.why))

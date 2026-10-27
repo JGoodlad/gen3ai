@@ -15,7 +15,12 @@ A spec is ONE JSON file (schema :data:`SCHEMA`), committed with the read's PRERE
 * ``decision`` -- ``{rule, params, allow_partial_at_stop?}``: a rule of :data:`main.reads.rules.RULES` and its registered
   parameters; ``allow_partial_at_stop: true`` registers that the PREREG accepts a reduced read at the registered stop (the
   record then carries the ``INCOMPLETE_BY_STOP`` class, ``main.reads.record``);
-* ``pin`` (optional) -- the commit the PLAYING checkout must be at (a run from another commit is refused).
+* ``pin`` (optional) -- the commit the PLAYING checkout must be at (a run from another commit is refused);
+* ``rederived_guards`` (optional) -- ``count`` / ``report``: how assemble acts on the anchor guards it re-derives from
+  the captures and peer logs (:mod:`main.reads.rederive`); absent = ``report`` for a spec registered before them, else
+  ``count``;
+* ``choices_guard`` (optional) -- ``require`` (default) / ``five_tuple``: a game-for-game guard whose expected capture
+  is missing is INCONCLUSIVE, unless the spec registers that its banks lack captures.
 
 An anchor or S group may carry ``import: {state, spec_sha256, group, models}``: those models' cells are NOT played
 here but taken from group ``group`` of an EARLIER read's state (its ``spec.json`` must hash to ``spec_sha256``), sha-
@@ -36,6 +41,11 @@ from typing import Any, Dict, List, Mapping, Optional, Tuple
 from main.x35.kakuna import OPPONENTS as KAKUNA_OPPONENTS
 
 SCHEMA = "gen3_read_spec_v1"
+#: ``choices_guard`` (review H2): ``require`` (the default) makes a game-for-game guard INCONCLUSIVE when a capture its
+#: choice comparison expects is missing; ``five_tuple`` registers that the banks are known to lack captures, so the
+#: 5-tuple decides alone there (recorded per unit).
+CHOICES_REQUIRE, CHOICES_FIVE_TUPLE = "require", "five_tuple"
+CHOICES_GUARDS = (CHOICES_REQUIRE, CHOICES_FIVE_TUPLE)
 _LABEL = re.compile(r"^[a-z0-9][a-z0-9_]{0,47}$")
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _COMMIT = re.compile(r"^[0-9a-f]{7,40}$")
@@ -145,6 +155,8 @@ class ReadSpec:
     allow_partial_at_stop: bool = False   # the PREREG accepts a reduced read at the registered stop (INCOMPLETE_BY_STOP)
     sha256: str = ""                  # of the spec file's bytes
     raw: Dict[str, Any] = field(default_factory=dict)
+    rederived_guards: str = "count"   # main.reads.rederive.MODES: a re-derived guard hit voids the unit, or HOLDS decide
+    choices_guard: str = "require"    # CHOICES_GUARDS: a game-for-game guard missing an expected capture is INCONCLUSIVE
 
 
 def _need(d: Mapping[str, Any], key: str, where: str, typ: Any) -> Any:
@@ -297,7 +309,8 @@ def parse(doc: Mapping[str, Any], *, sha256: str = "", rule_params: bool = True)
     its own day)."""
     from main.reads.rules import RULES
 
-    _only(doc, ("schema", "read", "prereg", "pin", "models", "anchor", "s", "decision", "note"), "spec")
+    _only(doc, ("schema", "read", "prereg", "pin", "models", "anchor", "s", "decision", "note", "rederived_guards",
+                "choices_guard"), "spec")
     if doc.get("schema") != SCHEMA:
         raise SpecError(f"spec.schema: {doc.get('schema')!r} is not {SCHEMA!r}")
     read = _need(doc, "read", "spec", str)
@@ -397,8 +410,17 @@ def parse(doc: Mapping[str, Any], *, sha256: str = "", rule_params: bool = True)
     prereg = doc.get("prereg")
     if prereg is not None and not isinstance(prereg, str):
         raise SpecError("spec.prereg: a path")
+    from main.reads import rederive as RD
+
+    rederived = doc.get("rederived_guards", RD.default_mode(sha256))
+    if rederived not in RD.MODES:
+        raise SpecError(f"spec.rederived_guards: {rederived!r} is none of {RD.MODES}")
+    choices = doc.get("choices_guard", CHOICES_REQUIRE)
+    if choices not in CHOICES_GUARDS:
+        raise SpecError(f"spec.choices_guard: {choices!r} is none of {CHOICES_GUARDS}")
     return ReadSpec(read=read, models=models, anchor=anchor, s=s, rule=rule, params=params, prereg=prereg, pin=pin,
-                    allow_partial_at_stop=partial, sha256=sha256, raw=dict(doc))
+                    allow_partial_at_stop=partial, sha256=sha256, raw=dict(doc), rederived_guards=rederived,
+                    choices_guard=choices)
 
 
 def load(path: "str | Path", *, rule_params: bool = True) -> ReadSpec:

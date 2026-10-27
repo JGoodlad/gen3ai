@@ -26,6 +26,14 @@ fails open only on a path that has not fired yet. Two MAJORs and five MINORs. Th
 tests (each flips RED when its hole is fixed, so the marker must then come off) plus one plain test that pins an
 unpinned clause.
 
+**Resolution (2026-10-27, the orchestrator's rulings).** H1: the two guards are re-derived at assemble
+(`main.reads.rederive`, SOP G14): a hit voids the unit under a spec's `rederived_guards: count`, and HOLDS `decide`
+for the reads registered before it (`report`: counting unchanged mid-read). H2: a missing expected capture is
+`inconclusive`, never the 5-tuple alone (opt-out: the spec's `choices_guard: five_tuple`). H3: a forced end the
+record cannot store moves the record aside, so the guard reads `blind`. H7: M24, M10 and M27 are pinned fast
+(`src/main/anchors/guard_wiring_test.py`). H5 and H6 are rows of `designs/ops/TECH_DEBT_BACKLOG.md` §2(b); H4 is
+open. The strict xfails below now pass as plain tests.
+
 ## Findings
 
 ### MAJOR
@@ -167,10 +175,10 @@ change's tests.
 | `src/main/anchors/forced_end_guard_test.py::test_a_peers_forfeit_at_the_cap_on_a_capped_row_is_void` | plain | M1 |
 | `src/main/anchors/peer_fault_test.py::test_the_pair_watchdog_fails_at_the_first_fault_line_of_either_peer` | plain | M9 |
 | `src/main/anchors/peer_fault_test.py::test_every_single_peer_half_report_applies_h21` | plain | M11 |
-| `src/main/anchors/forced_end_guard_test.py::test_an_unguarded_summary_whose_capture_shows_a_peer_drop_does_not_count` | strict xfail | H1 |
-| `src/main/reads/guard_choices_test.py::test_a_bank_that_names_its_capture_never_passes_on_the_5_tuple_when_the_capture_is_gone` | strict xfail | H2 |
-| `src/main/reads/guard_choices_test.py::test_a_replayed_guard_unit_without_its_capture_never_passes_on_the_5_tuple` | strict xfail | H2 |
-| `src/main/anchors/forced_end_guard_test.py::test_a_forced_end_the_record_could_not_store_never_reads_armed_and_clean` | strict xfail | H3 |
+| `src/main/anchors/forced_end_guard_test.py::test_an_unguarded_summary_whose_capture_shows_a_peer_drop_does_not_count` | plain (was strict xfail) | H1 |
+| `src/main/reads/guard_choices_test.py::test_a_bank_that_names_its_capture_never_passes_on_the_5_tuple_when_the_capture_is_gone` | plain (was strict xfail) | H2 |
+| `src/main/reads/guard_choices_test.py::test_a_replayed_guard_unit_without_its_capture_never_passes_on_the_5_tuple` | plain (was strict xfail) | H2 |
+| `src/main/anchors/forced_end_guard_test.py::test_a_forced_end_the_record_could_not_store_never_reads_armed_and_clean` | plain (was strict xfail) | H3 |
 
 Each xfail was run with `--runxfail` and fails on its own assertion (the hole), not on a fixture error.
 

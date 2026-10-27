@@ -50,13 +50,17 @@ class RecordError(ValueError):
 def build(spec: Any, cells: Mapping[str, Any], inputs: Mapping[str, Any], decision: Mapping[str, Any],
           code: Mapping[str, Any], *, now: Optional[str] = None,
           void: Optional[Mapping[str, Any]] = None, repins: Sequence[Mapping[str, Any]] = (),
-          partial: Optional[Mapping[str, Any]] = None) -> Dict[str, Any]:
+          partial: Optional[Mapping[str, Any]] = None,
+          rederived: Optional[Mapping[str, Any]] = None) -> Dict[str, Any]:
     """``partial``: ``None`` (every planned unit played) or ``{groups, stops}`` of :func:`main.reads.api.record` (the decided
     anchor groups with units unplayed, and each lane's registered-stop evidence): the record is then
     :data:`INCOMPLETE_BY_STOP`, which the spec must have registered (``allow_partial_at_stop``), and only those groups'
     unplayed units are left out of ``cells_inconclusive``. Each group's unplayed units are two kinds and the record names
     both: ``stop_cut`` (the stop never reached them) and ``unplayed_exhausted`` (their retries were spent: a defect of
-    the play, not of the schedule)."""
+    the play, not of the schedule).
+
+    ``rederived``: the anchor guards re-derived at assemble time (:func:`main.reads.rederive.check_hold`: mode, units
+    checked, those whose evidence is missing, the hits and any release), recorded as ``rederived_guards``."""
     from main.reads.assemble import conclusive, reported_incomplete
     from main.reads.rules import RULES
 
@@ -88,6 +92,8 @@ def build(spec: Any, cells: Mapping[str, Any], inputs: Mapping[str, Any], decisi
         "imports": {f"{lane}.{g}": grp["imports"] for lane in ("anchor", "s")
                     for g, grp in (cells.get(lane) or {}).items() if grp.get("imports")},
         "inputs": dict(inputs), "decision": dict(decision)}
+    if rederived is not None:
+        rec["rederived_guards"] = dict(rederived)
     if rule.x35_record:
         for k, v in decision.items():
             if k != "verdict":
@@ -144,6 +150,9 @@ def check(rec: Mapping[str, Any]) -> List[str]:
     if not (isinstance(rec["code"], dict) and rec["code"].get("commit")):
         probs.append("code: no playing commit")
     probs += _check_completeness(rec.get("completeness"))
+    rd = rec.get("rederived_guards")                              # absent on a record older than the field
+    if isinstance(rd, dict) and rd.get("held") and not rd.get("released"):
+        probs.append(f"rederived_guards: {len(rd.get('hits') or ())} held hit(s) never released by the orchestrator")
     from main.reads.repin import REQUIRED as REPIN_KEYS
 
     for i, r in enumerate(rec.get("repins") or ()):                # absent on a record written before repin existed

@@ -234,39 +234,79 @@ def cell_choices(cell: Path) -> Tuple[Optional[List[List[Any]]], Optional[List[s
     return games, out, ""
 
 
+#: :func:`compare_choices`' result when a capture the comparison EXPECTS cannot be read (review H2): the guard is
+#: INCONCLUSIVE, never a silent fall back to the 5-tuple. ``unavailable`` is kept for a bank that names no single
+#: capture source (a property of the registration, e.g. X51's rows) and for a spec's ``choices_guard: five_tuple``.
+CHOICES_INCONCLUSIVE = "inconclusive"
+
+
 def compare_choices(here: Optional[Path], there: Optional[Path], want_games: Sequence[Sequence[Any]],
-                    unavailable: str = "") -> Dict[str, Any]:
-    """The choices half of a game-for-game guard: ``{choices: equal | differ | unavailable, differing, why}``.
+                    unavailable: str = "", *, five_tuple_ok: bool = False) -> Dict[str, Any]:
+    """The choices half of a game-for-game guard: ``{choices: equal | differ | inconclusive | unavailable, differing,
+    why}``.
 
     ``here`` is the re-played unit's cell dir, ``there`` the banked unit's (None: the bank names no capture source,
-    ``unavailable`` says why). The banked cell must hold exactly ``want_games`` (the bank's own rows), so a capture
-    source that is not the banked unit is never compared. ``differing`` lists each game ``[half, index]`` whose
-    choices differ. ``unavailable`` is recorded, never a pass by default: the 5-tuple then decides alone."""
+    ``unavailable`` says why; the 5-tuple then decides alone). The banked cell must hold exactly ``want_games`` (the
+    bank's own rows), so a capture source that is not the banked unit is never compared. ``differing`` lists each game
+    ``[half, index]`` whose choices differ.
+
+    FAIL CLOSED (review H2): once the bank names its source, a capture missing on EITHER side (the source moved or
+    pruned, ``$GEN3AI_ARCHIVE_DIR`` elsewhere, the re-played unit's capture off or lost), or a source that holds other
+    games, is :data:`CHOICES_INCONCLUSIVE`, so one registered decision never passes or fails by the environment.
+    ``five_tuple_ok`` (the spec's ``choices_guard: five_tuple``) turns that into ``unavailable``, recorded."""
+    def missing(why: str) -> Dict[str, Any]:
+        if five_tuple_ok:
+            return {"choices": "unavailable", "differing": [],
+                    "why": f"{why} (the spec registers choices_guard = five_tuple: the 5-tuple decides alone)"}
+        return {"choices": CHOICES_INCONCLUSIVE, "differing": [],
+                "why": f"{why}: the choice comparison expects this capture (INCONCLUSIVE, never the 5-tuple alone)"}
+
     if there is None:
         return {"choices": "unavailable", "differing": [], "why": unavailable or "the bank names no capture source"}
     if here is None:
-        return {"choices": "unavailable", "differing": [], "why": "the re-played unit has no cell dir"}
+        return missing("the re-played unit has no cell dir")
     g_here, c_here, why_here = cell_choices(here)
     g_there, c_there, why_there = cell_choices(there)
     if g_there is not None and [list(g) for g in g_there] != [list(g) for g in want_games]:
-        return {"choices": "unavailable", "differing": [],
-                "why": f"the capture source {there} does not hold the banked unit's games"}
+        return missing(f"the capture source {there} does not hold the banked unit's games")
     if c_here is None or c_there is None:
-        return {"choices": "unavailable", "differing": [], "why": why_here or why_there}
+        return missing(why_here or why_there)
     if g_here is None or [g[:2] for g in g_here] != [g[:2] for g in g_there or []]:
         return {"choices": "differ", "differing": [], "why": "the two units do not hold the same games"}
     diff = [list(g[:2]) for g, a, b in zip(g_here, c_here, c_there) if a != b]
     return {"choices": "differ" if diff else "equal", "differing": diff, "why": ""}
 
 
-def unit_row(u: Any, summary: Mapping[str, Any], games: Optional[List[List[Any]]] = None) -> Dict[str, Any]:
+def five_tuple_ok(cells: Mapping[str, Any]) -> bool:
+    """Whether the read's spec registered ``choices_guard: five_tuple`` (recorded in the cells by :func:`assemble`)."""
+    from main.reads.spec import CHOICES_FIVE_TUPLE
+
+    return (cells.get("guards") or {}).get("choices") == CHOICES_FIVE_TUPLE
+
+
+def unit_row(u: Any, summary: Mapping[str, Any], games: Optional[List[List[Any]]] = None, *,
+             cell_dir: Optional[Path] = None, rederived: Optional[str] = None) -> Dict[str, Any]:
     """One played unit's row (x26c's ``kakuna_units.jsonl`` fields, plus its regime, its BASE regime (the id without its
     model-load options' stamp), reasons, model-load options and, when given, its per-game identities
-    :data:`GAME_KEYS`)."""
+    :data:`GAME_KEYS`).
+
+    ``cell_dir`` + ``rederived`` (a :data:`main.reads.rederive.MODES` mode): the forfeit-win guard and the H21 peer-fault
+    check RE-DERIVED from the unit's captures and peer logs (:mod:`main.reads.rederive`, review H1) are recorded as
+    ``rederived``; in ``count`` mode a hit makes the unit not count (``rederived_uncounted``), in ``report`` mode the
+    counting is unchanged."""
     from main.anchors.results import unit_counts
+    from main.reads import rederive as RD
     from main.reads.spec import load_stamp
 
     uc = unit_counts(summary, games=int(u.games))
+    counted, reasons = uc.counts, list(uc.reasons)
+    extra: Dict[str, Any] = {}
+    if cell_dir is not None and rederived is not None:
+        chk = RD.unit_check(cell_dir, summary)
+        extra["rederived"] = chk
+        if rederived == RD.COUNT and chk["hits"]:
+            extra["rederived_uncounted"] = counted
+            counted, reasons = False, reasons + [RD.hit_reason(chk)]
     cell = summary.get("cell") or {}
     stamp = load_stamp({k: v for k, v in (("belief_prior_mix", getattr(u, "belief_prior_mix", None)),
                                           ("search", getattr(u, "search", None))) if v is not None})
@@ -278,10 +318,10 @@ def unit_row(u: Any, summary: Mapping[str, Any], games: Optional[List[List[Any]]
             "wins": summary.get("wins"), "losses": summary.get("losses"), "ties": summary.get("ties", 0),
             "regime_verified_decisions": summary.get("regime_verified_decisions"),
             "peer_clean": summary.get("peer_clean"), "team_source_asymmetry": summary.get("team_source_asymmetry"),
-            "counted": uc.counts, "reasons": list(uc.reasons), "regime_id": anchor_regime_id(summary),
+            "counted": counted, "reasons": reasons, "regime_id": anchor_regime_id(summary),
             "base_regime_id": anchor_regime_id(summary, strip_load=stamp), "engine": EN.unit_engine(cell),
             "server_version": cell.get("server_version"), "model_step": cell.get("model_step"),
-            "peer_pack": peer_pack_state(cell), **SI.unit_sides(cell), **_search_played(summary)}
+            "peer_pack": peer_pack_state(cell), **SI.unit_sides(cell), **_search_played(summary), **extra}
 
 
 #: The searched half's record a ``main.anchors --our-search`` summary carries (``provenance.peer_report.search``, the
@@ -300,16 +340,18 @@ def _search_played(summary: Mapping[str, Any]) -> Dict[str, Any]:
     return {"search_played": dict({k: rec.get(k) for k in SEARCH_PLAYED_KEYS}, our_search=peer.get("our_search"))}
 
 
-def anchor_units(kakuna_state: Path) -> List[Dict[str, Any]]:
-    """Every PLAYED unit of one ``main.x35.kakuna`` state (a unit with no summary is unplayed, not a row)."""
+def anchor_units(kakuna_state: Path, *, rederived: Optional[str] = None) -> List[Dict[str, Any]]:
+    """Every PLAYED unit of one ``main.x35.kakuna`` state (a unit with no summary is unplayed, not a row);
+    ``rederived``: the spec's mode of the re-derived guards (:func:`unit_row`; None = not checked)."""
     from main.x35 import kakuna as KA
 
     rows = []
     for u in KA.load_plan(kakuna_state):
         s = KA.read_summary(kakuna_state, u.name)
         if s is not None:
-            rows.append(dict(unit_row(u, s, unit_games(kakuna_state, u.name)),
-                             cell_dir=str(kakuna_state / "cells" / u.name)))
+            cell = kakuna_state / "cells" / u.name
+            rows.append(dict(unit_row(u, s, unit_games(kakuna_state, u.name), cell_dir=cell, rederived=rederived),
+                             cell_dir=str(cell)))
     return rows
 
 
@@ -523,7 +565,10 @@ def assemble(spec: Any, state: Path) -> Dict[str, Any]:
                            "models": {lab: dict(models[lab], arm=m.arm, seed=m.seed) if lab in models
                                       else {"arm": m.arm, "seed": m.seed, "unresolved": True}
                                       for lab, m in spec.models.items()},
-                           "anchor": {}, "s": {}}
+                           "anchor": {}, "s": {},
+                           # the guard policy the spec registers, read by the rules' game-for-game guards (H2) and
+                           # main.reads.rederive (H1)
+                           "guards": {"rederived": spec.rederived_guards, "choices": spec.choices_guard}}
     shas = {lab: e["sha256"] for lab, e in models.items()}
     from main.reads import imports as IM
     from main.reads.spec import imported
@@ -534,7 +579,7 @@ def assemble(spec: Any, state: Path) -> Dict[str, Any]:
         for lab in a.models:
             st = LY.anchor_state(state, g, lab)
             if lab not in imported(a) and (st / "plan.json").exists():
-                rows += anchor_units(st)
+                rows += anchor_units(st, rederived=spec.rederived_guards)
                 spent += AT.exhausted_units(st)
         meta = None
         if a.imports is not None:                         # the earlier read's units: sha-, regime- and engine-checked

@@ -38,7 +38,8 @@ def check_spec(path: "str | Path", *, pin_pending: bool = False, repo: Optional[
     """The spec's summary plus its pin standing (module docstring). Refusals are :class:`SpecError`."""
     s = load_spec(path)
     out: Dict[str, Any] = {"read": s.read, "rule": s.rule, "models": sorted(s.models), "anchor": sorted(s.anchor),
-                           "s": sorted(s.s), "sha256": s.sha256, "allow_partial_at_stop": s.allow_partial_at_stop}
+                           "s": sorted(s.s), "sha256": s.sha256, "allow_partial_at_stop": s.allow_partial_at_stop,
+                           "rederived_guards": s.rederived_guards, "choices_guard": s.choices_guard}
     head = _head(repo)
     if pin_pending:
         if s.pin is not None:

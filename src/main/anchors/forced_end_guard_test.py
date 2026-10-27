@@ -7,8 +7,6 @@ from __future__ import annotations
 from pathlib import Path
 from types import SimpleNamespace
 
-import pytest
-
 from main.anchors import runner
 from main.anchors.results import unit_counts
 from main.anchors.server import FORCED_ENDS_NAME, arm_forced_ends
@@ -116,11 +114,9 @@ def test_a_peers_forfeit_at_the_cap_on_a_capped_row_is_void(tmp_path):
     assert runner.forced_end_verdict(_plan(tmp_path), [_row(result="win", cap=True)], [rec])["void"]
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "REVIEW 2026-10-27 H3 (MINOR, designs/ops/reviews/anchor_guards_review_2026-10-27.md): ws_frontend._force_lose "
-    "swallows an OSError on the forced-end append, so the armed-EMPTY file reads 'armed' with no void and a peer's "
-    "drop counts as our win. Flips RED when a failed append makes the guard blind (fail closed)."))
 async def test_a_forced_end_the_record_could_not_store_never_reads_armed_and_clean(tmp_path, monkeypatch):
+    """REVIEW 2026-10-27 H3 (fixed): a forced end whose JSONL append fails (a full disk) moves the armed sink aside for
+    good, so the guard reads BLIND (fail closed) and a later forced end never re-creates a clean-looking record."""
     import builtins
 
     from utils.bridge import ws_frontend
@@ -140,38 +136,130 @@ async def test_a_forced_end_the_record_could_not_store_never_reads_armed_and_cle
     battle = _fake_battle(front, alpha, beta)
     front._note_side_line(battle, "p2", "|turn|3")
     await front._drop(beta)                                    # the peer drops at turn 3: a FORCELOSE, OUR "win"
-    assert len(front.forced_ends) == 1                         # the front end KNOWS
+    assert len(front.forced_ends) == 1 and front.forced_ends_unrecorded   # the front end KNOWS
     v = runner.forced_end_verdict(_plan(tmp_path), [_row(battle.tag, "win")], runner.read_forced_ends(path))
-    assert v["guard"] != "armed" or v["void"], v               # ...but the guard reads armed and clean today
+    assert v["guard"] == "blind", v
+    assert not path.exists() and (tmp_path / (FORCED_ENDS_NAME + ".unwritable")).exists()
+    monkeypatch.setattr(ws_frontend, "open", builtins.open, raising=False)    # the disk frees up: still never clean
+    gamma, delta = await _named(front, "Gen3AIAnchor2"), await _named(front, "MetaKakuna2")
+    await front._drop(_fake_battle(front, gamma, delta).conns["p2"])
+    assert len(front.forced_ends) == 2 and not path.exists()
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "REVIEW 2026-10-27 H1 (MAJOR): a summary without forced_end_guard (any unit played by a pin before bf5f1a8e, "
-    "e.g. a registered read still playing at its old pin) is 'judged as before', even when its own capture shows "
-    "the peer's FORCELOSE at turn 3. Flips RED when assemble re-derives the guard from the captures."))
-def test_an_unguarded_summary_whose_capture_shows_a_peer_drop_does_not_count(tmp_path):
+def test_an_unrecorded_forced_end_makes_the_series_guard_blind(tmp_path):
+    """The runner's in-process cross-check (H3): ``unrecorded`` reads no record at all, even an armed, clean one."""
+    plan = _plan(tmp_path)
+    arm_forced_ends(tmp_path / FORCED_ENDS_NAME)
+    kept, failure = runner.apply_forced_end_guard(plan, [_row()], report := {}, None, unrecorded=True)
+    assert failure is not None and failure.cause == "forced_end_guard_blind" and report["forced_end_guard"] == "blind"
+    kept, failure = runner.apply_forced_end_guard(plan, [_row()], report := {}, None)
+    assert failure is None and report["forced_end_guard"] == "armed"
+
+
+# --------------------------------------------- REVIEW H1 (fixed): the guards RE-DERIVED at assemble time (rederive)
+def _unguarded_unit(tmp_path: Path, *, result="win", turns=3, cap=False, forcelose="p2", capture=True,
+                    peer_log: str = "battle 1 done\n", our_side: str = "model", limit: int = LIMIT) -> Path:
+    """A kakuna state with ONE unit played by a pre-guard pin: its summary carries no ``forced_end_guard`` and no
+    ``peer_fault_lines``; its capture and peer log are what every pinned unit writes."""
     import json
-
-    from main.reads.assemble import anchor_units
 
     state = tmp_path / "kakuna"
     u = {"name": "p__home72__00", "label": "p", "arm": "p", "seed": 1, "teamset": "home72", "unit_seed": 0,
          "model": "m.zip", "model_sha256": "0" * 64, "games": 1}
     cell = state / "cells" / u["name"]
     (cell / "capture").mkdir(parents=True)
+    (cell / "peer_challenge").mkdir()
+    (cell / "peer_challenge" / "peer_challenger.log").write_text(peer_log)
     (state / "plan.json").write_text(json.dumps({"units": [u]}))
     (cell / "summary.json").write_text(json.dumps(_summary(
-        wins=1, losses=0, ties=0,
-        cell={"opponent_version": "Kakuna@ckpt34", "forfeit_turn_limit": LIMIT, "our_regime": "greedy",
-              "server_version": "ws_frontend[in-process]@de15dfc7b+rust:cargo:src/rust_sim"})))
+        wins=int(result == "win"), losses=int(result == "loss"), ties=0,
+        cell={"opponent_version": "Kakuna@ckpt34", "forfeit_turn_limit": limit, "our_regime": "greedy",
+              "our_side": our_side, "server_version": "ws_frontend[in-process]@de15dfc7b+rust:cargo:src/rust_sim"})))
     (cell / "games.jsonl").write_text(json.dumps({"half": "peer_challenge", "index": 1, "our_team": "t1.txt",
-                                                  "result": "win", "turns": 3, "battle_tag": "battle-gen3ou-1"}) + "\n")
-    start = {"formatid": "gen3ou", "p1": {"name": "Gen3AIAnchor1"}, "p2": {"name": "MetaKakuna1"}}
-    (cell / "capture" / "battle-gen3ou-1.json").write_text(json.dumps({
-        "tag": "battle-gen3ou-1", "seed": [1, 2, 3, 4],
-        "commands": ["START " + json.dumps(start), "CHOOSE p1 move surf", "CHOOSE p2 move spikes", "FORCELOSE p2",
-                     "END"],
-        "chunks": [["p1", "|turn|1"], ["p2", "|turn|1"], ["p1", "|turn|3"], ["p2", "|turn|3"],
-                   ["p1", "|win|Gen3AIAnchor1"], ["p2", "|win|Gen3AIAnchor1"]]}))
-    (row,) = anchor_units(state)
+                                                  "result": result, "turns": turns, "hit_forfeit_limit": cap,
+                                                  "battle_tag": "battle-gen3ou-1"}) + "\n")
+    if capture:
+        start = {"formatid": "gen3ou", "p1": {"name": "Gen3AIAnchor1"}, "p2": {"name": "MetaKakuna1"}}
+        cmds = ["START " + json.dumps(start), "CHOOSE p1 move surf", "CHOOSE p2 move spikes"]
+        (cell / "capture" / "battle-gen3ou-1.json").write_text(json.dumps({
+            "tag": "battle-gen3ou-1", "seed": [1, 2, 3, 4],
+            "commands": cmds + ([f"FORCELOSE {forcelose}"] if forcelose else []) + ["END"],
+            "chunks": [["p1", "|turn|1"], ["p2", "|turn|1"], ["p1", f"|turn|{turns}"], ["p2", f"|turn|{turns}"],
+                       ["p1", "|win|Gen3AIAnchor1"], ["p2", "|win|Gen3AIAnchor1"]]}))
+    return state
+
+
+def test_an_unguarded_summary_whose_capture_shows_a_peer_drop_does_not_count(tmp_path):
+    """THE H1 reproducer, fixed: under a spec's ``rederived_guards = count`` (every spec registered after the fix), the
+    peer's FORCELOSE at turn 3 that booked OUR win, re-derived from the capture, makes the unit not count."""
+    from main.reads.assemble import anchor_units
+
+    (row,) = anchor_units(_unguarded_unit(tmp_path), rederived="count")
     assert row["counted"] is False, row["reasons"]
+    assert any("rederived guards hit (forced_end" in r for r in row["reasons"])
+    assert row["rederived"]["forced_end"] == "hit" and row["rederived"]["peer_fault"] == "clean"
+    assert row["rederived_uncounted"] is True
+
+
+def test_a_read_registered_before_the_rederivation_only_reports_the_hit(tmp_path):
+    """``report`` (a spec registered before the fix, in flight): counting is unchanged, the hit is recorded."""
+    from main.reads.assemble import anchor_units
+
+    (row,) = anchor_units(_unguarded_unit(tmp_path), rederived="report")
+    assert row["counted"] is True and row["rederived"]["hits"][0]["booked"] == "win"
+    assert "rederived_uncounted" not in row
+
+
+def test_our_own_turn_limit_forfeit_in_the_capture_is_the_one_clean_forced_end(tmp_path):
+    from main.reads.assemble import anchor_units
+
+    (row,) = anchor_units(_unguarded_unit(tmp_path, result="loss", turns=LIMIT, cap=True, forcelose="p1"),
+                          rederived="count")
+    assert row["counted"] is True and row["rederived"]["forced_end"] == "clean", row["rederived"]
+    for kw in ({"turns": LIMIT - 1}, {"cap": False}, {"result": "tie"}, {"our_side": "metamon:Kakuna"},
+               {"limit": 0}):                                            # each clause of the cap, on its own
+        sub = tmp_path / str(sorted(kw.items()))
+        args = {**dict(result="loss", turns=LIMIT, cap=True, forcelose="p1"), **kw}
+        (row,) = anchor_units(_unguarded_unit(sub, **args), rederived="count")
+        assert row["counted"] is False and row["rederived"]["forced_end"] == "hit", kw
+
+
+def test_a_peer_long_tail_line_in_an_unguarded_units_log_is_a_hit(tmp_path):
+    from main.anchors.session import PEER_FAULT_LINE
+    from main.reads.assemble import anchor_units
+
+    state = _unguarded_unit(tmp_path, forcelose=None, peer_log=f"battle 1 done\n{PEER_FAULT_LINE}")
+    (row,) = anchor_units(state, rederived="count")
+    assert row["counted"] is False and row["rederived"]["peer_fault"] == "hit"
+    assert row["rederived"]["hits"][0]["lines"] == 1
+
+
+def test_a_unit_without_its_evidence_is_unavailable_and_judged_as_before(tmp_path):
+    import shutil
+
+    from main.reads.assemble import anchor_units
+
+    state = _unguarded_unit(tmp_path, capture=False)
+    shutil.rmtree(state / "cells" / "p__home72__00" / "peer_challenge")
+    (row,) = anchor_units(state, rederived="count")
+    assert row["counted"] is True
+    assert (row["rederived"]["forced_end"], row["rederived"]["peer_fault"]) == ("unavailable", "unavailable")
+    assert all(row["rederived"]["why"])
+
+
+def test_a_logged_mid_battle_drop_is_a_hit_even_without_a_capture(tmp_path):
+    """The front end's log is a second witness (every pin logs ``disconnected mid-battle``): a unit played with
+    capture off still shows the peer's drop. The capture and the log naming the same drop count once."""
+    from main.reads.assemble import anchor_units
+
+    line = ("2026-10-26 01:02:03,456 WARNING ws_frontend metakakuna2 disconnected mid-battle battle-gen3ou-1 — "
+            "forfeiting p2\n")
+    state = _unguarded_unit(tmp_path, capture=False)
+    (state / "cells" / "p__home72__00" / "ws_frontend.log").write_text(line)
+    (row,) = anchor_units(state, rederived="count")
+    assert row["counted"] is False and row["rederived"]["forced_end"] == "hit"
+    assert [(h["source"], h["booked"]) for h in row["rederived"]["hits"]] == [("ws_frontend.log", "win")]
+    both = _unguarded_unit(tmp_path / "both")
+    (both / "cells" / "p__home72__00" / "ws_frontend.log").write_text(line)
+    (row,) = anchor_units(both, rederived="count")
+    assert [h["source"] for h in row["rederived"]["hits"]] == ["capture"]

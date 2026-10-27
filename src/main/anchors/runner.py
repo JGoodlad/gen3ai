@@ -867,15 +867,17 @@ def read_forced_ends(path: Path) -> Optional[List[Dict[str, Any]]]:
 
 
 def apply_forced_end_guard(plan: SeriesPlan, rows: List[GameRow], report: Dict[str, Any],
-                           failure: Optional[SeriesFailure],
+                           failure: Optional[SeriesFailure], *, unrecorded: bool = False,
                            ) -> Tuple[List[GameRow], Optional[SeriesFailure]]:
     """Run :func:`forced_end_verdict` on the series: a VOID battle's row is DROPPED (it is no outcome), the report
     carries ``forced_end_guard`` / ``forced_ends`` / ``non_battle_endings``, and the series FAILS by name
-    (``non_battle_termination``, or ``forced_end_guard_blind``) unless it already failed."""
+    (``non_battle_termination``, or ``forced_end_guard_blind``) unless it already failed. ``unrecorded``: the
+    in-process front end could not store a forced end (``ShowdownFrontEnd.forced_ends_unrecorded``, REVIEW H3): the
+    record is then not read at all and the guard is BLIND (fail closed)."""
     from main.anchors.server import FORCED_ENDS_NAME
 
-    verdict = forced_end_verdict(plan, rows, read_forced_ends(plan.out_dir / FORCED_ENDS_NAME)
-                                 if our_front_end_serves(plan) else [])
+    records = None if unrecorded else read_forced_ends(plan.out_dir / FORCED_ENDS_NAME)
+    verdict = forced_end_verdict(plan, rows, records if our_front_end_serves(plan) else [])
     report["forced_end_guard"] = verdict["guard"]
     report["forced_ends"] = verdict["forced_ends"]
     report["non_battle_endings"] = verdict["void"]
@@ -951,7 +953,9 @@ async def run_series(plan: SeriesPlan, cfg: Any) -> Tuple[List[GameRow], Dict[st
             await in_process.__aexit__(None, None, None)
             print(f"[anchors] {in_process.label} closed (every battle child reaped)", flush=True)
     # 🚨 the forfeit-win guard: a battle a FORCELOSE decided (other than our own turn-limit cap) is no outcome
-    all_rows, failure = apply_forced_end_guard(plan, all_rows, last_report, failure)
+    all_rows, failure = apply_forced_end_guard(
+        plan, all_rows, last_report, failure,
+        unrecorded=bool(in_process is not None and getattr(in_process.front, "forced_ends_unrecorded", False)))
     # 🚨 SERIES-LEVEL, STAMPED ON EVERY ROW. The two verification facts are properties of the
     # WHOLE cell — "both halves' regime verified", "every peer exited 0" — but a row has to be
     # self-contained, so they are back-filled onto the rows the first half already produced. An
