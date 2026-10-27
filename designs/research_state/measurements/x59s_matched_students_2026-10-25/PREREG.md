@@ -765,3 +765,94 @@ PASSES:** equal 2,077, short_by_one 9, skipped_refused_choice 187, excluded 33, 
 (`~/gen3ai_archive/x50_r1b/traces_oppseat_genc_excluded.json`). FR-2 runs from a checkout of the commit that lands
 this code; its reader, encoder and Rust sources equal the pin's (`src/rust_sim`, `src/main/live`, `src/main/x50_r1`
 before this change and `src/agents/observation` are unchanged between `0534e90a6` and it).
+
+## Amendment 5 (2026-10-27, BLIND: before any pilot result is read): REVIEW H's BLOCKER and MAJORs
+
+**Blindness statement.** Written while the pilot plays (about 15 of 181 units settled). No `main.reads assemble`,
+`decide` or `record` has run on the pilot state; no pilot `cells.json`, `inputs.json`, `summary.json`, `games.jsonl`
+or win count has been opened by the operator. What has been seen: the identity PASSes, the floor references (random
+0.000, max-damage 0.046), FR-2 (NO-ARTEFACT), the units' wall times and counted flags, and the students' final
+validation NLLs (the window's table). The students' validation histories (`val_hist`) and yardsticks have not been
+read. [REVIEW H](REVIEW_H_causal.md) (`9a6a0e2b`) is answered here; REVIEW G (data and bias) is folded in by a further
+amendment, also before any pilot result is read.
+
+### A5.1 The floor is per CONTRAST, read on the pilot against the measured references (B1; replaces §4's 0.15 bar and A2.6's band)
+
+- **A contrast is UNINFORMATIVE iff BOTH of its arms' pilot means (units 0–3 of H, F, P72, equal weight) are ≤ the
+  better floor reference + 5 pp**: max(random 0.000, max-damage 0.0458) + 0.05 = **0.0958** (a mean within 1e-9 of
+  it counts as within). Both sides are read on the same twins (units 0–3).
+- **The rest of the Kakuna read plays iff Δ_data or Δ_labels is informative.** An UNINFORMATIVE contrast is reported
+  with its Kakuna and in-house numbers and routes nothing ("H-TEAMS first", as A2.6); the others are read as
+  registered. §4's "the in-house rule decides under the floor" and §5's "read on the in-house contrasts" are deleted:
+  under the floor nothing is decided.
+- **The pilot releases one boolean per contrast and nothing else** (A2.11 m3). It is decided in a NEW state (the
+  `x59s_gate` rule, `read_spec_gate.json`) that IMPORTS the pilot and repeat groups from the pilot state, so the
+  pilot state's registered `x59s_floor` rule (the 0.15 bar) is never decided. VOID 6 is read there.
+- The pilot units stay in the final estimate (as registered). m1's conditioning (continuing only when a contrast is
+  informative) is a registered limit; `review_h_sim.py` is re-run against this rule and its P(continue) reported.
+
+### A5.2 The interval of a contrast is the WIDER of the registered z interval and the Welch interval on its own 10 students (M1)
+
+σ̂ stays pooled for the z interval (§4); the Welch interval uses only the contrast's two arms. Each arm's student SD
+is reported beside σ̂ (A2.11 m2). The same rule applies to the descriptive Δ_states and to S-P0's Δ_restriction (m7:
+S-P0 − S-P, the z interval with σ̂ pooled over S-P0 and S-P alone, df 8, widened to Welch).
+
+### A5.3 NO-DIFFERENCE-AT-4PP also needs the in-house interval inside ±4 pp (M2)
+
+A contrast reads NO-DIFFERENCE-AT-4PP only if its Kakuna interval AND its matching in-house interval (§4, df 4) each
+lie inside ±4 pp (a bound within 1e-9 of ±4 pp takes the undecided class). Otherwise it takes the undecided class.
+Every message to the owner carries both arms' Kakuna base rates beside any class.
+
+### A5.4 A human-data or human-label win opens a lever only if forum72 alone agrees (M4)
+
+HUMAN-DATA-BETTER or HUMAN-LABELS-BETTER on U whose forum72-only point estimate (the arm means on F alone) is ≤ 0 (a
+tie within 1e-9 counts as ≤ 0) is reported as **POPULATION-SPECIFIC**: it opens no lever and routes no H-BC. Each
+per-panel Δ is reported with §4's interval on that panel's games and a "descriptive, no claim" stamp.
+
+### A5.5 The meter-agreement guard runs in both directions (M5)
+
+SELF-PLAY-DATA-BETTER and OWN-LABELS-BETTER whose matching in-house point estimate is ≥ 0 (a tie within 1e-9 counts as
+≥ 0) are reported as **KAKUNA-SPECIFIC**: SELF-PLAY-DATA-BETTER then closes nothing and OWN-LABELS-BETTER drops
+nothing (A2.10's guard, mirrored).
+
+### A5.6 The closure's scope and its fit gate (M6)
+
+- The closure reads **"1300+ ladder data, at this mix and volume, as a behaviour-cloning target for a fresh network
+  at 3 epochs (7,041 steps)"**, in the record and in the owner's message.
+- **Fit gate:** SELF-PLAY-DATA-BETTER closes anything only if S-H is fitted: the mean over the 5 S-H students of the
+  drop in validation NLL over the last quarter epoch (`val_hist`'s last two points) is < 0.01 nat (exactly 0.01
+  fails). Otherwise it reads "at this budget" and closes nothing.
+
+### A5.7 The training-encoder asymmetry is measured before the verdict (M3)
+
+S-H and S-P's rows were extracted at `da36173c9` (obs golden `9a6f947b`, before `d8d674b99` and `f9978586b`); S-S's
+rows and the play tree share golden `95e24c32`. Before the full record: the 200 seeded battles of VOID 8 are
+re-extracted at the pin and their rows compared byte for byte with `hr_spec_v1.r2`'s (`results/m3_reencode.json`,
+the share of rows that differ). **If more than 1.0 % of rows differ**, SELF-PLAY-DATA-BETTER and STATES-HURT close
+nothing until the S-H students' NLL on the stale vs the re-encoded twins is measured and its gap is < 0.05 nats. The
+share is a registered limit either way. The ≥ 1500 follow-up (A2.7) inherits the check.
+
+### A5.8 The H-BC gate is a midpoint test (m8; replaces A2.4's Welch gate)
+
+HUMAN-LABELS-BETTER routes H-BC only if S-P learned its teacher: the S-P students' mean yardstick on the S-S
+validation rows' P\* labels is closer to the S-S students' mean than to the S-H students' mean (a tie within 1e-9
+fails).
+
+### A5.9 The MINORs
+
+- **m2:** the wording above; the verdict string says "UNINFORMATIVE (both arms at the floor)" per contrast.
+- **m3, m10, m11, m14, m15:** reported, descriptive: the paired per-seed contrast (t, df 4); a team-cluster bootstrap
+  of Δ_data (if it crosses 0 where the registered interval does not, the owner's message says "on these 216 teams");
+  `read_fr2`'s twin gap on S-H_k against S-S_k as CPU allows; every descriptive row with its interval and a
+  "descriptive, no claim" stamp, none entering `UNDERSTANDING.md` or the ledger without its own registration; the MDE
+  quoted at the measured σ̂.
+- **m4 (the pin predates `e28318c8`'s guards):** the pin stays (moving it would re-play counted units on another
+  engine). Before the full record the operator, from HEAD: scans every counted X59-S unit's peer log for
+  `session.PEER_FAULT_LINE` (a hit is uncounted and re-played) and re-checks the VOID 6 repeat with
+  `assemble.compare_choices` on the two captures (a choice-level difference is VOID 6).
+- **m5:** the in-house head-to-heads record their core stamp; the full rule refuses a second engine.
+- **m6:** the pilot's and the gate's records stay in the archive, uncommitted, until the full record exists.
+- **m9:** Q-H10's line is renamed "the student-to-P\* gap" (secondary, cross-engine), in the record and the Q-H table.
+- **m13:** the record names forum72's regime: the legacy Kakuna peer pack (before `b0441623e`); no later F read is set
+  against X59-S's F numbers.
+- **m12** is moot under A5.1.
