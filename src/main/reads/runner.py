@@ -40,6 +40,7 @@ from main.reads.assemble import AssembleError
 from main.reads import models as M
 from main.reads import supervisors as SV
 from main.reads.spec import ReadSpec, load as load_spec
+from utils import git_sha
 from utils.filelock import try_exclusive
 
 CORES = "5-7,13-15"
@@ -99,7 +100,7 @@ def checkout_code(root: Optional[Path] = None) -> Dict[str, Any]:
 
 def check_code(spec: ReadSpec, code: Dict[str, Any]) -> None:
     if spec.pin is not None:
-        if not code["commit"].startswith(spec.pin):
+        if not code["commit"].startswith(git_sha.current(spec.pin, repo=code.get("root"))):
             raise RunError(f"the playing checkout is at {code['commit'][:12]}, not the spec's pin {spec.pin}")
         if code["dirty"]:
             raise RunError(f"the playing checkout {code['root']} has tracked changes (a pin plays a clean tree)")
@@ -115,7 +116,7 @@ def _code_holds(state: Path, now_code: Dict[str, Any]) -> None:
         ok = RP.accepted_commits(state)
     except RP.RepinError as exc:
         raise RunError(f"the playing code cannot be checked: {exc}") from None
-    if (now_code["commit"] not in ok or now_code["dirty"] != was["dirty"]
+    if (now_code["commit"] not in [git_sha.current(c, repo=now_code.get("root")) for c in ok] or now_code["dirty"] != was["dirty"]
             or now_code.get("diff_sha") != was.get("diff_sha")):
         raise RunError(f"the playing code changed under the read: planned at {was['commit'][:12]}"
                        f"{' (dirty)' if was['dirty'] else ''}"

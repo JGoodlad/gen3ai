@@ -28,6 +28,7 @@ from typing import Any, Dict, List, Optional
 
 from main.reads import layout as LY
 from main.reads import playpath as PP
+from utils import git_sha
 
 SCHEMA = "gen3_read_repin_v1"
 REQUIRED = ("schema", "from_commit", "to_commit", "playpath_digest", "playpath_files", "playpath_schema", "by", "why",
@@ -96,8 +97,9 @@ def repin(state: Path, to: str, *, by: str, why: str, repo: Optional[Path] = Non
         raise RepinError(str(exc)) from None
     with open(LY.repin_lock(state), "w") as lk:
         fcntl.flock(lk, fcntl.LOCK_EX)              # one repin at a time; the check and the append are one step
-        if new in accepted_commits(state):
-            prior = [r for r in load_repins(state) if r["to_commit"] == new]
+        root = str(repo or PP.default_repo())
+        if new in [git_sha.current(c, repo=root) for c in accepted_commits(state)]:        # recorded shas: NEW names
+            prior = [r for r in load_repins(state) if git_sha.current(r["to_commit"], repo=root) == new]
             return dict(prior[-1] if prior else {"to_commit": new, "from_commit": old}, already=True)
         try:
             diffs, dig, n = PP.compare(old, new, repo)

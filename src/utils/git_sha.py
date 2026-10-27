@@ -15,6 +15,10 @@ Map first, git second, because for a while after the rewrite the local object da
 (a pinned worktree, the reflog until it is expired): asking git first would silently return the commit that still
 carries the purged names. With no rewrite the map is empty and this is ``git rev-parse``.
 
+A site that reads a RECORDED sha (a sidecar's ``git_hash``, a spec's ``pin``, a ``--fixed-by``) calls :func:`commit_of`
+(a ``rev-parse`` through the map), :func:`current` (the new sha of a rewritten commit, else the token) or
+:func:`is_ancestor`, never a bare ``git rev-parse``; ``git_sha_sites_test`` pins each converted site.
+
 ``python -m utils.git_sha <sha-or-prefix>...`` prints ``<query> -> <full sha>  (<status>)`` per query; the exit code
 is 0 when all resolve, 1 when one is ``unknown``, 2 when one is ``ambiguous``. The module is deliberately
 self-contained (stdlib + :mod:`utils.paths`): it outlives the one-shot rewrite tooling that produced the map.
@@ -116,6 +120,44 @@ def resolve(token: str, *, repo: Optional[str] = None, map_path: str | Path | No
     if live_ambiguous:
         return Resolution(token, AMBIGUOUS, note="ambiguous in git")
     return Resolution(token, UNKNOWN, note="not a commit here, and not a rewritten one")
+
+
+def commit_of(token: str, *, repo: Optional[str] = None, map_path: str | Path | None = None) -> Optional[str]:
+    """Drop-in for ``git rev-parse --verify --quiet <token>^{commit}`` at a site that reads a RECORDED commit: the full
+    sha, or ``None`` when ``token`` names no commit (or an ambiguous one). A 4-40 lowercase-hex token goes through
+    :func:`resolve` (the map first, so a rewritten commit answers with its NEW sha even while the old object lingers);
+    any other spelling (a ref, ``HEAD``, an upper-case sha) is git's alone."""
+    tok = token.strip()
+    if _HEX.match(tok):
+        r = resolve(tok, repo=repo, map_path=map_path)
+        return r.full if r.ok else None
+    return _git_commit(tok, repo)[0] if tok else None
+
+
+def current(token: str, *, repo: Optional[str] = None, map_path: str | Path | None = None) -> str:
+    """``token`` as the repository names it NOW: the NEW full sha when ``token`` cites a rewritten commit, else
+    ``token`` unchanged (so with an empty map this is the identity and runs no git). For a site that stores, prints or
+    prefix-compares a recorded sha rather than rev-parsing it."""
+    tok = token.strip()
+    if not load_map(map_path) or not _HEX.match(tok):
+        return token
+    r = resolve(tok, repo=repo, map_path=map_path)
+    return r.full if r.status == MAPPED and r.full else token
+
+
+def is_ancestor(ancestor: str, descendant: str, *, repo: Optional[str] = None,
+                map_path: str | Path | None = None, timeout: float = 30) -> Optional[bool]:
+    """``git merge-base --is-ancestor`` of two commit-ish spellings, either of which may be a RECORDED (possibly
+    rewritten) sha. ``None`` when git cannot say (a spelling that names no commit, no git, a timeout)."""
+    a, d = commit_of(ancestor, repo=repo, map_path=map_path), commit_of(descendant, repo=repo, map_path=map_path)
+    if a is None or d is None:
+        return None
+    try:
+        r = subprocess.run(["git", "-C", repo or str(repo_root()), "merge-base", "--is-ancestor", a, d],
+                           capture_output=True, timeout=timeout)
+    except Exception:                                  # noqa: BLE001 — no git, or it hung: unknown
+        return None
+    return {0: True, 1: False}.get(r.returncode)
 
 
 def new_sha(token: str, *, repo: Optional[str] = None, map_path: str | Path | None = None) -> str:

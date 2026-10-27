@@ -85,11 +85,13 @@ def resolve(ref: str, repo: Optional[Path] = None) -> str:
     """The full commit sha ``ref`` names in this repo (any commit-ish: a sha, a tag, a branch)."""
     if not ref or ref.startswith("-"):
         raise PlayPathError(f"{ref!r} is not a commit")
-    r = subprocess.run(["git", "-C", str(repo or default_repo()), "rev-parse", "--verify", "--quiet", f"{ref}^{{commit}}"],
-                       capture_output=True, text=True, check=False)
-    if r.returncode != 0 or not r.stdout.strip():
+    from utils import git_sha
+
+    # a spec's `pin` and a state's `code.json` commit are RECORDED shas: the history-rewrite map first, git second
+    full = git_sha.commit_of(ref, repo=str(repo or default_repo()))
+    if not full:
         raise PlayPathError(f"{ref!r} names no commit in {repo or default_repo()}")
-    return r.stdout.strip()
+    return full
 
 
 def tree(commit: str, repo: Optional[Path] = None) -> Dict[str, Entry]:

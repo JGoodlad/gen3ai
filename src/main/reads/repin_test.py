@@ -178,3 +178,36 @@ def test_the_cli_repins_with_exit_0_and_refuses_with_exit_2(planned, capsys):
     assert json.loads(capsys.readouterr().out)["to_commit"] == ok
     assert main(["status", "--state", str(state)]) == 0
     assert json.loads(capsys.readouterr().out)["repins"][0]["to_commit"] == ok
+
+
+# ---- the history rewrite: the recorded commits of a state, a spec and a repin resolve through `utils.git_sha` ----------
+def test_a_state_planned_at_an_old_sha_still_holds_at_its_new_sha_and_a_repin_to_it_is_already(planned, tmp_path,
+                                                                                               monkeypatch):
+    from utils.git_sha_testkit import fake_old, use_map
+
+    state, repo, base = planned
+    old = fake_old("a")
+    use_map(monkeypatch, tmp_path, {old: base})
+    cf = LY.code_file(state)
+    cf.write_text(json.dumps(dict(json.loads(cf.read_text()), commit=old)))       # code.json as a pre-rewrite plan wrote it
+    RN._code_holds(state, dict(CODE, commit=base))                                 # the playing checkout is the NEW sha
+    with pytest.raises(RN.RunError, match="changed under the read"):
+        RN._code_holds(state, dict(CODE, commit=fake_old("c")))
+    assert RP.repin(state, base, by="reader", why="same commit", repo=repo)["already"] is True
+    assert _lines(state) == []
+    new = commit_on(repo, base, SCHEDULING_ONLY)
+    rec = RP.repin(state, new, by="reader", why="scheduling", repo=repo)           # `old` resolves as the from-commit
+    assert (rec["from_commit"], rec["to_commit"]) == (base, new)
+
+
+def test_a_spec_pin_registered_at_an_old_sha_matches_the_playing_checkout_at_the_new_sha(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+
+    from utils.git_sha_testkit import fake_old, use_map
+
+    new = "ab" * 20
+    use_map(monkeypatch, tmp_path, {fake_old("a"): new})
+    spec = SimpleNamespace(pin=fake_old("a")[:12])
+    RN.check_code(spec, {"commit": new, "dirty": False, "root": str(tmp_path)})
+    with pytest.raises(RN.RunError, match="not the spec's pin"):
+        RN.check_code(spec, {"commit": "cd" * 20, "dirty": False, "root": str(tmp_path)})

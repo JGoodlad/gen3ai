@@ -131,11 +131,15 @@ names. `mapped` = the new full SHA; `git` = a live commit (unchanged by the rewr
 (exit 2) names the candidates; `unknown` (exit 1) is not a commit here. Prefixes of several rewritten commits are
 ambiguous, never guessed. Tag NAMES keep their old SHA text by design: the tag points at the new commit.
 
-**Code that reads a RECORDED sha must route through it before the old objects are collected** (Phase C):
-`src/main/launcher/worktree.py` `_rev_parse` (a resume pins to the sidecar's `git_hash`), `src/main/checkargs.py`
-`pin_predates_commit`, `src/main/live/halt.py` (`--fixed-by`), and every `main.reads` / `main.anchors` record that names a
-play commit. `sidecar_audit` compares hashes textually among sidecars and is unaffected. Until then the old objects
-keep every one of them working, which is why Phase C waits.
+**Code that reads a RECORDED sha routes through it** (`commit_of` = `rev-parse --verify <x>^{commit}` through the map,
+`current` = the new sha of a rewritten commit or the token unchanged, `is_ancestor`), so Phase C can collect the old
+objects: `main.launcher.worktree` (`_rev_parse`; a resume pins to the sidecar's `git_hash`), `main.launcher.pinned_argv`,
+`main.checkargs.pin_predates_commit`, `main.live.halt` (`--fixed-by`), `main.reads.playpath.resolve` (so `repin` and
+`speccheck`), `main.reads.runner` (`check_code`, `_code_holds`) and `main.reads.repin`; each has a test that feeds an
+old sha through a fake map (`utils.git_sha_testkit.use_map`) and fails on revert. **Still on git alone, deferred while the
+arm chain is live (`TECH_DEBT_BACKLOG.md` row in (g))**: `main.ops.arm_chain.window` / `.spec`, `main.x35.batch`,
+`main.x35.kit`: do not start Phase C before they are converted. `sidecar_audit` compares hashes textually among sidecars
+and is unaffected. A new site that reads a recorded sha uses these helpers, never a bare `git rev-parse`.
 
 ## Cannot be rewritten
 

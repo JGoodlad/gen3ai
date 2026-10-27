@@ -211,10 +211,12 @@ def is_test_path(path: str) -> bool:
 def check_fix_commit(commit: str, cwd: Optional[str] = None) -> Dict[str, Any]:
     """Resolve ``commit`` and check T28's clear rule: it exists, it is an ancestor of HEAD (the fix is
     in the code that will play), and it touches at least one test file. Returns its facts."""
-    r = _git("rev-parse", "--verify", f"{commit}^{{commit}}", cwd=cwd)
-    if r.returncode != 0:
+    from utils import git_sha
+    from utils.paths import repo_root
+    # a RECORDED fixing commit (cited in a note or a ledger row): the history-rewrite map first, git second
+    sha = git_sha.commit_of(commit, repo=cwd or str(repo_root()))
+    if sha is None:
         raise ClearRefused(f"--fixed-by {commit!r}: not a commit in this repository")
-    sha = r.stdout.strip()
     if _git("merge-base", "--is-ancestor", sha, "HEAD", cwd=cwd).returncode != 0:
         raise ClearRefused(f"--fixed-by {sha[:12]}: not an ancestor of HEAD — the fix is not in the code "
                            "that would play")

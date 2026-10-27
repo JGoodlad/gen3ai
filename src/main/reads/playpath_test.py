@@ -191,3 +191,13 @@ def test_the_real_play_path_holds_every_rust_source_the_engine_stamp_hashes():
                 assert rel.endswith("Cargo.lock"), f"{rel}: untracked yet in the {scope} stamp"
                 continue
             assert rel in got, f"{rel} ({tag}) is hashed by the {scope} engine stamp but is off the play path"
+
+
+def test_a_recorded_old_sha_resolves_through_the_history_rewrite_map(mini_repo, tmp_path, monkeypatch):
+    from utils.git_sha_testkit import fake_old, use_map
+
+    base = base_of(mini_repo)
+    use_map(monkeypatch, tmp_path, {fake_old("a"): base})
+    assert PP.resolve(fake_old("a"), mini_repo) == PP.resolve(fake_old("a")[:10], mini_repo) == base
+    with pytest.raises(PP.PlayPathError, match="names no commit"):
+        PP.resolve(fake_old("c"), mini_repo)

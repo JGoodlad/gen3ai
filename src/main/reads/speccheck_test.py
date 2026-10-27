@@ -93,3 +93,13 @@ def test_the_cli_check_spec_modes(tmp_path, capsys):
     assert "already carries pin" in capsys.readouterr().err
     assert cli.main(["check-spec", "--spec", str(_write(tmp_path, pin="abcdef0"))]) == 2
     assert "names no commit" in capsys.readouterr().err
+
+
+def test_a_spec_pin_registered_at_an_old_sha_checks_through_the_history_rewrite_map(tmp_path, mini_repo, monkeypatch):
+    """The 7 content-pinned `read_spec*.json` keep their one old sha: `check-spec` must find its commit."""
+    from utils.git_sha_testkit import fake_old, use_map
+
+    base = base_of(mini_repo)
+    use_map(monkeypatch, tmp_path, {fake_old("a"): base})
+    out = check_spec(_write(tmp_path, pin=fake_old("a")[:12]), repo=mini_repo)
+    assert out["pin"]["commit"] == base and out["pin"]["is_head"] is True

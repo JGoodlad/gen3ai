@@ -64,6 +64,8 @@ import time
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple
 
+from utils import git_sha
+
 #: What of the tree the pinned parser needs. ``src/rust_sim`` is deliberately excluded — 66 MB of
 #: the 86 MB a full ``src/`` archive costs, and nothing importable from it is on the parser path.
 #: ``data/`` IS included (18 MB) and is NOT optional: ``utils.paths.repo_root()`` is
@@ -227,6 +229,7 @@ def differs_from_head(sha: str, repo_root: Optional[str] = None) -> bool:
     head = head_sha(repo_root)
     if not head or not sha:
         return False
+    sha = git_sha.current(sha, repo=repo_root or _repo_root())      # a recorded pin: its rewritten commit's NEW sha
     return not (head == sha or head.startswith(sha) or sha.startswith(head))
 
 
@@ -241,8 +244,10 @@ def _tree_paths(sha: str, repo_root: str) -> List[str]:
     moved over the range of commits a pin can name — so ask before extracting. A spec that names
     no commit is refused here rather than surfacing as a confusing archive error.
     """
-    if _git(repo_root, "rev-parse", "--verify", "--quiet", f"{sha}^{{commit}}").returncode != 0:
+    full = git_sha.commit_of(sha, repo=repo_root)           # a recorded pin: the history-rewrite map first, git second
+    if full is None:
         raise _Unavailable(f"{sha!r} does not name a commit in {repo_root}")
+    sha = full
     return [p for p in _ARCHIVE_PATHS
             if _git(repo_root, "rev-parse", "--verify", "--quiet", f"{sha}:{p}").returncode == 0]
 
@@ -256,6 +261,7 @@ def materialise(sha: str, repo_root: Optional[str] = None) -> str:
     nothing registered anywhere.
     """
     root = repo_root or _repo_root()
+    sha = git_sha.current(sha, repo=root)                  # a recorded pin: a rewritten commit's NEW sha
     key = (os.path.abspath(root), sha)
     cached = _CACHE.get(key)
     if cached and os.path.isdir(os.path.join(cached, "src")):

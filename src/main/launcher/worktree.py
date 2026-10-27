@@ -19,7 +19,7 @@ from typing import Callable, Optional
 from main.exit_codes import TrainExitCode
 from main.launcher.checkpoint import run_dir_for_checkpoint
 from main.train.fork_lr import is_same_run_checkpoint
-from utils import procfs, showdown_deps, worktree_guard
+from utils import git_sha, procfs, showdown_deps, worktree_guard
 from utils.git import get_git_hash, get_main_repo_root, get_repo_root
 
 _WORKTREE_PREFIX = "launcher-"
@@ -126,15 +126,10 @@ def _rev_parse(spec: str, *, repo_root: "str | None" = None) -> "str | None":
     if not spec:
         return None
     try:
-        out = subprocess.run(
-            ["git", "rev-parse", "--verify", "--quiet", f"{spec}^{{commit}}"],
-            capture_output=True, text=True, cwd=repo_root or get_repo_root(),
-        )
+        # a RECORDED sha (a sidecar's ``git_hash``, ``--pin-commit``) goes through the history-rewrite map first
+        return git_sha.commit_of(spec, repo=repo_root or get_repo_root())
     except Exception:
         return None
-    if out.returncode != 0:
-        return None
-    return out.stdout.strip() or None
 
 
 def _commit_subject(sha: str, *, repo_root: "str | None" = None) -> str:
@@ -214,7 +209,7 @@ def resolve_pin(
                 f"Use --no-pin to skip worktree isolation.",
                 exit_code=1,
             )
-        return PinDecision(recorded, "checkpoint")
+        return PinDecision(git_sha.current(recorded, repo=repo_root), "checkpoint")
 
     return PinDecision(
         get_git_hash(),  # full hash for worktree add
@@ -427,6 +422,7 @@ def _create_run_worktree(
     (see the 2026-09-05 incident note above). ``cleanup_fn`` removes both.
     """
     repo_root = get_repo_root()
+    git_hash = git_sha.current(git_hash, repo=repo_root)       # a recorded pin names its rewritten commit by the new sha
     tmp = tempfile.mkdtemp(prefix=f"{_WORKTREE_PREFIX}{git_hash[:8]}-")
     os.rmdir(tmp)  # git worktree add requires the target not to exist
     result = subprocess.run(

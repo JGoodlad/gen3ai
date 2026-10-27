@@ -583,16 +583,10 @@ def pin_predates_commit(sha: str | None, last_commit: str) -> bool | None:
     """Is `sha` at or before `last_commit`? ``None`` when git cannot say."""
     if not sha:
         return None
-    import subprocess
+    from utils import git_sha
     from utils.paths import repo_root
-    try:
-        r = subprocess.run(["git", "merge-base", "--is-ancestor", sha, last_commit],
-                           cwd=str(repo_root()), capture_output=True, timeout=30)
-    except Exception:                                 # noqa: BLE001 — no git: unknown
-        return None
-    if r.returncode in (0, 1):
-        return r.returncode == 0
-    return None
+    # `sha` is a RECORDED pin: the history-rewrite map first, git second (`utils.git_sha`)
+    return git_sha.is_ancestor(sha, last_commit, repo=str(repo_root()))
 
 
 def _without_deleted_flags(argv: List[str], unknown_flags: List[str]) -> List[str] | None:
