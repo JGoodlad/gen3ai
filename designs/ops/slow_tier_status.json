@@ -3092,6 +3092,62 @@
    "contention": 1.24,
    "detail": ""
   },
+  "src/main/anchors/our_side_played_team_integration_test.py::test_the_validators_repack_plays_the_same_sets_as_our_side_pack[away]": {
+   "status": "pass",
+   "commit": "cdeb88f43817300ceff144409d5c088fdcea5de0",
+   "at": "2026-10-27T16:30:18Z",
+   "duration_s": 2.12,
+   "contention": 1.5,
+   "detail": ""
+  },
+  "src/main/anchors/our_side_played_team_integration_test.py::test_the_validators_repack_plays_the_same_sets_as_our_side_pack[forum72]": {
+   "status": "pass",
+   "commit": "cdeb88f43817300ceff144409d5c088fdcea5de0",
+   "at": "2026-10-27T16:30:18Z",
+   "duration_s": 3.41,
+   "contention": 1.49,
+   "detail": ""
+  },
+  "src/main/anchors/our_side_played_team_integration_test.py::test_the_validators_repack_plays_the_same_sets_as_our_side_pack[heldout72_hpfix]": {
+   "status": "pass",
+   "commit": "cdeb88f43817300ceff144409d5c088fdcea5de0",
+   "at": "2026-10-27T16:30:18Z",
+   "duration_s": 2.85,
+   "contention": 1.35,
+   "detail": ""
+  },
+  "src/main/anchors/our_side_played_team_integration_test.py::test_the_validators_repack_plays_the_same_sets_as_our_side_pack[home-pool]": {
+   "status": "pass",
+   "commit": "cdeb88f43817300ceff144409d5c088fdcea5de0",
+   "at": "2026-10-27T16:30:18Z",
+   "duration_s": 6.37,
+   "contention": 1.3,
+   "detail": ""
+  },
+  "src/main/anchors/our_side_played_team_integration_test.py::test_the_validators_repack_plays_the_same_sets_as_our_side_pack[p72]": {
+   "status": "pass",
+   "commit": "cdeb88f43817300ceff144409d5c088fdcea5de0",
+   "at": "2026-10-27T16:30:18Z",
+   "duration_s": 2.62,
+   "contention": 1.25,
+   "detail": ""
+  },
+  "src/main/anchors/our_side_played_team_integration_test.py::test_the_validators_repack_plays_the_same_sets_as_our_side_pack[rc72]": {
+   "status": "pass",
+   "commit": "cdeb88f43817300ceff144409d5c088fdcea5de0",
+   "at": "2026-10-27T16:30:18Z",
+   "duration_s": 2.23,
+   "contention": 1.22,
+   "detail": ""
+  },
+  "src/main/anchors/our_side_played_team_integration_test.py::test_the_validators_repack_plays_the_same_sets_as_our_side_pack[rc72b]": {
+   "status": "pass",
+   "commit": "cdeb88f43817300ceff144409d5c088fdcea5de0",
+   "at": "2026-10-27T16:30:18Z",
+   "duration_s": 2.12,
+   "contention": 1.17,
+   "detail": ""
+  },
   "src/main/anchors/peer_patience_integration_test.py::test_a_seventy_second_decision_off_the_loop_keeps_the_kakuna_peer_connected": {
    "status": "pass",
    "commit": "21fa891f21a1dd066d7a9ee097d118cffa6e3e73",
@@ -5029,5 +5085,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-27T15:10:15Z"
+ "last_written": "2026-10-27T16:30:18Z"
 }

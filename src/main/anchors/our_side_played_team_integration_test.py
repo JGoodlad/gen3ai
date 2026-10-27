@@ -11,8 +11,6 @@ as the sim resolves it, the nickname). A pack where it finds a difference is a P
 """
 from __future__ import annotations
 
-from pathlib import Path
-
 import pytest
 
 from main.anchors.config import AnchorConfigError, load_config

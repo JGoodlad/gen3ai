@@ -41,10 +41,7 @@ def test_scored_slot_action_and_executed_move_agree_on_real_battles():
     from agents.action.ordering_integrity import check_obs_move_order, row_offsets
     from agents.battle.core_obs import wrap_row
     from agents.battle.core_replay import run_core
-    from agents.model.extractor_ctx import (
-        active_move_legality_sorted,
-        active_request_sorted_match,
-    )
+    from agents.model.extractor_ctx import active_move_legality_sorted, active_request_sorted_match
     from main.policy_spectrum.bank import load_bank
 
     battles = load_bank(BANK, verify=False).battles[:N_BATTLES]
