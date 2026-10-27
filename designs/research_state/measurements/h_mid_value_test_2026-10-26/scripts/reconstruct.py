@@ -166,7 +166,9 @@ def main() -> None:
     torch.set_num_threads(a.threads)
     binary = bridge_bin()
     model = Model(a.model)
-    print(f"[reconstruct] policy.training={model.training_flag} bridge={binary}", flush=True)
+    import agents
+
+    print(f"[reconstruct] policy.training={model.training_flag} bridge={binary} code={agents.__file__}", flush=True)
     t0 = time.time()
     n = 0
     with gzip.open(a.out, "wt") as fh:

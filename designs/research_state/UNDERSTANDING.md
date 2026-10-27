@@ -73,7 +73,9 @@ under `measurements/`. A number with no pointer is not a measurement.
 4. **It is lost from level mid-game positions, and it goes with the TEAM, not the set.** From level material at
    turn 10 P\* wins 0.609 on home72 and 0.501 on U; the opening carries none of the gap. Sets we trained on lose
    their edge inside an unfamiliar six (+0.093 [+0.004, +0.176]). [DESCRIPTIVE · banked X51 games, replicated on the
-   PastaMittens twins · `c758fcb82`] H-CTX and H-MID test it (§6). The policy does NOT key on our sets' exact
+   PastaMittens twins · `c758fcb82`] P\*'s own critic does not see that deficit: from the same level states it rates U
+   only 3.3 pp below home72, and at equal V P\* wins 8.6 pp less on U (H-MID: CRITIC-MISCALIBRATED-ON-U, below).
+   H-CTX tests the team account (§6). The policy does NOT key on our sets' exact
    identity. A Smogon re-draw of one familiar bench set moves it only 1.19× [1.07, 1.33] as much as re-drawing an
    unfamiliar one (the bar was 1.5×). Erasing all six mons' identity embeddings costs familiar and unfamiliar teams
    alike (1.07 [0.91, 1.25]). Lever N2 is dropped. [MEASURED · CPU, P\* vs P\* rows, one checkpoint · PREREG
@@ -228,6 +230,18 @@ replicated on the 1,600 PastaMittens twins · `c758fcb82`; `measurements/pilotin
   unfamiliar six. Set novelty costs about a third as much again. This bounds what new sets in old teams (D3) can buy
   at ≈ a quarter of the premium.
 - Facing stays minor: Kakuna's unseen-set and rare-species mons do not out-kill its familiar ones.
+- **The critic does not see the deficit (H-MID, registered, 2026-10-26).** [MEASURED · forward passes on the same
+  1,600 X51 games, replayed exactly (79,799 / 79,799 greedy choices reproduced) · PREREG `2dd522785`;
+  `measurements/h_mid_value_test_2026-10-26/`] From level states at turn 10, P\*'s V is 0.557 on home72 and 0.525 on
+  U (G_V +0.033 [+0.010, +0.059]), against outcomes 0.609 / 0.501. Δbias **+0.076 [+0.016, +0.139]**: the verdict is
+  **CRITIC-MISCALIBRATED-ON-U**. At equal V P\* wins **+0.086 [+0.023, +0.151]** more on home72; where V ≥ 0.6 it
+  converts 0.756 vs 0.650. V's set gap is already there at turn 1 (+0.035) and does not grow; it does not revise U
+  positions down by turn 20. It ranks positions equally well on both sets (AUC 0.663 vs 0.667), so the miss is in
+  its LEVEL, not its ordering, and Brier barely moves (+0.004, the forensics' ΔBrier ≥ 0.02 prediction MISSES). In
+  absolute terms V is under-confident on home72 (−5.2 pp) and about calibrated on U; the registered rule reads only
+  the difference. PastaMittens points the same way, INCONCLUSIVE (Δbias +0.033 [−0.027, +0.098]). Reading: the
+  critic shares the policy's home-team view. Whether search on V has headroom on U is NOT settled by this read,
+  because V's within-set ordering is intact.
 
 **The levers, each against its own control (Kakuna, U unless stated).**
 - **Practice (X52, 2026-10-23).** P\* + 5M piloting only 36 forum teams: practised half +3.2 pp [−0.2, +6.8],
@@ -493,7 +507,7 @@ retired for the fold-gift question only; they live in the last full text (§0) a
 | Does breadth at 10⁴ procedural teams lift unfamiliar-team piloting at the plateau? | **N1-P look 1** (X61P, D1's rule on F; [`PREREG.md`](measurements/x61p_n1_production_2026-10-26/PREREG.md), `5b84bca62`). GAIN funds **X53-N1**, a fresh production run on 10⁴ teams (`../endstate/design_x53_n1_fresh_breadth.md`); NULL rules out only "N1 at the plateau" |
 | Is human data better than our own self-play data? | **X59-S**: three matched student arms, five seeds each; S-H − S-S answers it, S-H − S-P picks the lever ([`PREREG.md`](measurements/x59s_matched_students_2026-10-25/PREREG.md), `5cbf46dc0`). It decides whether the human-data switch and X60 get built |
 | Is the familiarity premium TEAM context or set knowledge (H-CTX)? | **H-CTX on rc72**: P\* vs Kakuna on 72 new teams of verbatim pool sets, ≤ 2 shared with any pool team; ≥ 0.57 kills H-CTX, ≤ 0.52 supports it ([`PREREG.md`](measurements/hctx_rc72_2026-10-26/PREREG.md), `b712c46d1`) |
-| In the level mid-game positions, does P\*'s critic mis-value unfamiliar teams, or does its policy fail to act? | **H-MID**: critic calibration at level turn-10 states, home72 vs U, on banked X51 games; CRITIC-MISCALIBRATED-ON-U vs POLICY-CANNOT-ACT ([`PREREG.md`](measurements/h_mid_value_test_2026-10-26/PREREG.md), `2dd522785`) |
+| Does a one-ply search on V have headroom on unfamiliar teams, given that V's level misses the premium (H-MID: CRITIC-MISCALIBRATED-ON-U) but its ordering does not? | **not built**: one ply on V against the policy's choice, at banked U positions (the H-MID reconstructions hold every row's V; `measurements/h_mid_value_test_2026-10-26/`) |
 | Does the plateau resist new data a young network would absorb (plasticity)? | **the plasticity probe** on X26 @25M / @100M / P\*; its bars (LOSS / NO-LOSS / UNCLEAR) are drafted in `../endstate/strategy_if_levers_null_2026-10-26.md` §2 and fixed in its own registration before any number |
 
 **Queued and planned**

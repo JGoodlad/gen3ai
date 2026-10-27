@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-29,423-line file. **The ledger itself is append-only and is never edited by this**;
+29,467-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**969 headings · 914 dated · 2026-08-01 → 2026-10-26 · ledger 29,423 lines.**
+**970 headings · 915 dated · 2026-08-01 → 2026-10-26 · ledger 29,467 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -989,3 +989,4 @@ rename.
 - `L29365` · `2026-10-26` · RUST SIM · gen3 full parity B11: Metronome, Mirror Move, Assist, Nature Power, Sketch -- every gen-3 move runs (369 of 369)
 - `L29383` · `2026-10-26` · RUST SIM · gen3 full parity BF3: the screens shuffle on Beat Up and the crash, called moves set lastMoveUsed, ten gen-2 berries refused
 - `L29401` · `2026-10-26` · RUST SIM · gen3 full parity BF4: the independent review's confirmed divergences (F1, F4, F5, P1)
+  - `L29423` · `2026-10-26` · MEASUREMENT · **H-MID, read under its registration (`2dd522785`): CRITIC-MISCALIBRATED-ON-U. From level turn-10 states P\* wins 0.609 on home72 and 0.501 on U, but its critic rates them 0.557 / 0.525 (Δbias +0.076 [+0.016, +0.139]); at equal V it wins 8.6 pp [+2.3, +15.1] less on U. The critic's ordering is intact (AUC 0.663 vs 0.667): it misses the familiarity premium in its LEVEL**

@@ -29420,3 +29420,47 @@ infatuation ends at the Update right after a Future Sight strike faints its sour
 and Attract after a Future Sight KO; F1 dice (a Focus Punch that no longer lands; Present 0.0007 % of gen3ou mons,
 Focus Punch common), F4 dice (Shedinja + Trace + a Beat Up user together; Beat Up 1.41 %), F5 dice (Eruption at ~1 HP into Thick
 Fat). A training-data change for runs on pins after this commit; e2e capstone and obs golden checked with B11.
+### 2026-10-26 · MEASUREMENT · **H-MID, read under its registration (`2dd522785`): CRITIC-MISCALIBRATED-ON-U. From level turn-10 states P\* wins 0.609 on home72 and 0.501 on U, but its critic rates them 0.557 / 0.525 (Δbias +0.076 [+0.016, +0.139]); at equal V it wins 8.6 pp [+2.3, +15.1] less on U. The critic's ordering is intact (AUC 0.663 vs 0.667): it misses the familiarity premium in its LEVEL**
+
+**Question** (orchestrator brief; H-MID from the piloting-gap forensics, `c758fcb82`). In the level mid-game
+positions where P\* loses its extra unfamiliar-team games against Kakuna, does its critic mis-value them, or does it
+value them right while the policy cannot act on it?
+
+**Design** (`research_state/measurements/h_mid_value_test_2026-10-26/PREREG.md`, registered before any V was read).
+All 1,600 X51 P\* vs Kakuna captures were replayed through the sim_bridge built at the read's own pin (`63f97a575`),
+and P\* re-read every `__OBS__` row with that pin's code. Fidelity gate: 1,600 / 1,600 protocol-identical, 79,799 /
+79,799 greedy choices reproduced. The PastaMittens twins (pin `d32ffcee4`) were also exact (81,183 / 81,183). Rule
+on level states (−1 < D(10) < 1): CRITIC-MISCALIBRATED-ON-U iff Δbias = bias_U − bias_home72 ≥ +0.05 with LB > 0;
+POLICY-CANNOT-ACT iff Δbias covers 0 and G_V ≥ +0.05 with LB > 0. Unit-cluster bootstrap, B = 2,000.
+
+**Result** (n = 298 home72, 930 U).
+- W 0.609 / 0.501 (G_y +0.108 [+0.046, +0.173]); mean V 0.557 / 0.525 (G_V +0.033 [+0.010, +0.059]). **Δbias +0.076
+  [+0.016, +0.139] ⇒ CRITIC-MISCALIBRATED-ON-U.** In absolute terms V is under-confident on home72 (−0.052 [−0.103,
+  −0.004]) and about calibrated on U (+0.024 [−0.017, +0.063]).
+- (b) Matched-V outcome gap +0.086 [+0.023, +0.151]; at V ≥ 0.6 P\* converts 0.756 vs 0.650 (+0.106 [+0.026, +0.186]).
+- (c) AUC 0.663 vs 0.667 (Δ −0.004 [−0.090, +0.078]); Brier 0.2245 vs 0.2284 (Δ +0.004 [−0.018, +0.026]).
+- Turn profile: G_V is +0.035 already at turn 1 and stays at ≈ +0.03 to turn 15; Δbias ≈ +0.08 from turn 1 to 20.
+  V drift from turn 10 to 20: home72 +0.017, U +0.001 (Δ −0.017 [−0.054, +0.021]).
+- PastaMittens (replication, outside the verdict): INCONCLUSIVE, the same direction (G_y +0.074, G_V +0.040, Δbias
+  +0.033 [−0.027, +0.098], matched-V gap +0.038 [−0.023, +0.101]).
+- Predictions: P1 (forensics: ΔBrier ≥ 0.02) MISS; P2 (miscalibrated with G_V ≤ 0.04) HIT; P3 (AUC lower on U by ≥
+  0.03) MISS.
+
+**Reading.** The critic shares the policy's home-team view. It rates level unfamiliar-team positions only ≈ 3 pp
+below home ones (a gap present from turn 1 that does not grow) while P\* converts them ≈ 11 pp worse. It ranks
+positions within each set equally well, so what it lacks is the set-level conversion premium, not position reading.
+Under the brief's map the lever is value-training breadth or search on the value. That a search on V cannot help
+does NOT follow (within-game ordering is what a one-ply search uses, and it is intact). A direct search-headroom read
+on U is the open test. Breadth that trains both heads (X62, N1-P) is unaffected; X62's M3 (Δbias on its captures)
+becomes the registered secondary its doc names.
+
+**FINDINGS.** (1) The brief's lever map and the forensics README disagree on search under this branch, and the data
+favour neither outright. (2) V's absolute bias is set by its training opponents; the rule reads only the difference.
+(3) The pinned loader returns the policy in training mode (dropout 0, so no effect; the 100 % agreement shows it).
+(4) The two-game PREREG smoke ran HEAD's code (`python -I` dropped `PYTHONPATH`); the full runs used each pin's,
+verified by the printed path. (5) One diagnostic print was added to `reconstruct.py` after registration. (6) The first
+Kakuna run was killed by my outer timeout in the slot queue and re-run in full.
+
+**Evidence:** `research_state/measurements/h_mid_value_test_2026-10-26/` (PREREG, README, `results.json`, scripts);
+per-decision V rows `~/gen3ai_archive/h_mid_value_test_2026-10-26/recon_{kakuna,pm}.jsonl.gz` (sha256 in the folder).
+See `UNDERSTANDING.md` §3.1.
