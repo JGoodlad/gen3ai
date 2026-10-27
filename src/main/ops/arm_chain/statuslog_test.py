@@ -146,10 +146,20 @@ def test_persisted_trigger_fires_on_line_written_between_supervisors(tmp_path):
     assert sup2._armed.count(adopted) == 1                         # adopt is idempotent
 
 
-def test_newline_in_message_refused_and_lines_are_timestamped(tmp_path):
-    """One O_APPEND write per line: a newline would let a message forge a second line."""
+def test_newline_in_message_is_folded_never_forges_a_line_and_lines_are_timestamped(tmp_path):
+    """One O_APPEND write per line: a newline would let a message forge a second line, so it is folded to ' | '.
+    It is never refused: a refusal inside the HOLD handler killed the supervisor with no HOLD line (2026-10-26)."""
     log = mk(tmp_path)
-    with pytest.raises(sl.StatusError):
-        log.append("a\n[x] d3 s3501: END r launcher_rc=0")
+    got = log.append("a\n[x] d3 s3501: END r launcher_rc=0\r\nb")
+    assert got == f"[{TS}] {CHAIN}: a | [x] d3 s3501: END r launcher_rc=0 | b"
     assert log.append("ok") == f"[{TS}] {CHAIN}: ok"
-    assert log.lines() == [f"[{TS}] {CHAIN}: ok"]
+    assert log.lines() == [got, f"[{TS}] {CHAIN}: ok"]                # exactly two lines: nothing forged
+
+
+def test_a_hold_whose_reason_is_multiline_dirt_writes_its_hold_line(tmp_path):
+    """The 2026-10-26 BLOCKER: `git status --porcelain` with two stray files as a HOLD reason."""
+    log = mk(tmp_path)
+    reason = "main is dirty: ?? a.json\n?? b.json"
+    line = log.append(f"HOLD: d3 3504 at PRECHECKED: {reason}")
+    assert "HOLD: d3 3504 at PRECHECKED: main is dirty: ?? a.json | ?? b.json" in line
+    assert len(log.lines()) == 1

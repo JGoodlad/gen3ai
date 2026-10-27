@@ -137,8 +137,11 @@ class StatusLog:
 
     # -- writing -------------------------------------------------------------------------------------------------
     def append(self, msg: str, tag: Optional[str] = None) -> str:
+        # One line per event: a multi-line reason (e.g. `git status --porcelain` dirt) is folded, never refused --
+        # refusing here ran inside the HOLD handler and killed the supervisor with no HOLD line (2026-10-26 review).
+        msg = msg.replace("\r\n", "\n").replace("\r", "\n").replace("\n", " | ")
         line = f"[{self._clock()}] {tag or self.own_tag}: {msg}"
-        if "\n" in line:
+        if "\n" in line or "\r" in line:
             raise StatusError("a status line may not contain a newline")
         for t in self._armed:
             if t.pattern.match(line):
