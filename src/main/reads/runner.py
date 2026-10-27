@@ -1,4 +1,4 @@
-"""PLAN / RUN / STATUS: a read's games, on the box's two lanes (``designs/tools/reads.md`` §4).
+"""PLAN / RUN / STATUS: a read's games, on the box's two lanes (``designs/tools/reads.md`` §3).
 
 * THE ANCHOR LANE plays :mod:`main.x35.kakuna` units, unchanged: 20-game units on the heavy slots' SHORT lane
   (``mem_cap.sh --max-s 600``; one killed past its bound, exit 88, is played once more as a long job), each on a 95xx

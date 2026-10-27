@@ -172,7 +172,7 @@ def test_the_rendered_block_prints_the_two_facts_on_SEPARATE_lines() -> None:
     text = render(summarize(_cell(), rows, status="OK"))
     assert "regime      per-decision VERIFIED: True" in text
     assert "peers       exited cleanly: False" in text
-    assert "does NOT invalidate a verified regime" in text
+    assert "the regime verified, but a long-tail line voids the unit (H21)" in text
 
 
 def test_the_deprecation_note_exists_and_names_the_replacement() -> None:

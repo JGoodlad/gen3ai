@@ -1,4 +1,4 @@
-"""``check-spec``: validate a spec, and say where its PIN stands (``designs/tools/reads.md`` §3, "The registration flow").
+"""``check-spec``: validate a spec, and say where its PIN stands (``designs/tools/reads.md`` §1, "The registration flow").
 
 A spec's ``pin`` is the commit the PLAYING checkout must be at. It can never be "the commit that adds this spec" (a
 commit cannot name its own hash), so the pin is a commit that ALREADY EXISTS: the one that lands the code the read plays,

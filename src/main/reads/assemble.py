@@ -1,4 +1,4 @@
-"""ASSEMBLE: the played units and ledger rows -> CELLS, each with its regime id (``designs/tools/reads.md`` §5).
+"""ASSEMBLE: the played units and ledger rows -> CELLS, each with its regime id (``designs/tools/reads.md`` §4).
 
 THE REGIME ID IS ALWAYS RECORDED. Five S drivers wrote ``regime_ids: [""]`` because the ledger's ``Cell`` carries no
 regime and they read it with ``getattr(c, "regime_id", "")`` (x26c FINDING 4, g1 FINDING 3); the regime was then

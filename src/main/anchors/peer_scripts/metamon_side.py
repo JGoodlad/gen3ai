@@ -789,7 +789,7 @@ def main(argv=None):
         print("[peer] 🚨 REGIME CHECK FAILED — this cell is NOT a measurement", flush=True)
     elif not timing["peer_error_free"]:
         print("[peer] ⚠️ the regime VERIFIED on every decision, but this process did not exit "
-              "cleanly — the games stand, the process does not", flush=True)
+              "cleanly — the unit is VOID if a long-tail line was logged (H21)", flush=True)
 
     with open(args.report_out, "w") as fh:
         json.dump(timing, fh, indent=1, default=str)

@@ -1,4 +1,4 @@
-"""The READ SPEC: what a registered read plays, written once before any counted game (``designs/tools/reads.md`` §2).
+"""The READ SPEC: what a registered read plays, written once before any counted game (``designs/tools/reads.md`` §1).
 
 A spec is ONE JSON file (schema :data:`SCHEMA`), committed with the read's PREREG. It names:
 

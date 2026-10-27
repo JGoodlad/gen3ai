@@ -355,7 +355,7 @@ async def run_peer_pair_half(plan: SeriesPlan, cfg: Any, half: str, n_games: int
     note = pair_exit_note(plan, half, report, our_report, len(state.records), n_games)
     if note is not None:
         report["peer_exit_note"] = note
-        print(f"[anchors] ⚠️  {half}: {note['cause']} — the games stand, the process does not.",
+        print(f"[anchors] ⚠️  {half}: {note['cause']} — the unit is VOID (H21; apply_peer_fault), re-run it with the same seed.",
               flush=True)
     return state.records, report, failure
 
@@ -560,7 +560,7 @@ def _half_report(plan: SeriesPlan, half: str, n_games: int, pplan: Any, proc: An
     note = classify_peer_error(report, half, plan.opponent_kind, len(state.records), n_games)
     if note is not None:
         report["peer_exit_note"] = note
-        print(f"[anchors] ⚠️  {half}: {note['cause']} — the games stand, the process does not.",
+        print(f"[anchors] ⚠️  {half}: {note['cause']} — the unit is VOID (H21; apply_peer_fault), re-run it with the same seed.",
               flush=True)
     return state.records, report, failure
 
@@ -663,17 +663,16 @@ def classify_peer_error(report: Dict[str, Any], half: str, opponent_kind: str,
     * **challenger** — poke-env's ``start_challenging(n_challenges=num_battles)``, the PIPELINED
       loop, whose battle semaphore is released when a battle *starts*.
 
-    That is the same defect class as our own hazard **H14** (see
-    :func:`main.anchors.session.serialized_send_challenges`), on the other side of the wire:
+    That is the same defect class as our own hazard **H14** (our own
+    serialized challenge send), on the other side of the wire:
     Metamon serialized one role and left the other pipelined. The env's ``current_battle`` and the
     agent's then disagree, ``openai_api.step`` raises ``Battle is already finished, call reset``,
     and the unbounded handler above turns it into a ``RecursionError``.
 
-    **It costs no games, and this function exists so that it costs no measurements either.** All
-    four recorded occurrences are post-game: the 2026-09-20 continuation campaign flagged 31 of 84
-    sub-cells this way and every one had ``argmax_match_rate`` 1.0000 (re-derived: all 31 flip to
-    verified, no win rate changes). A read whose games are all present and whose regime verified
-    on every decision is a measurement; the peer's teardown is a fact about a process.
+    **It costs no recorded game, but it voids the unit.** All four recorded occurrences are
+    post-game, and the games were all present with the regime verified on every decision. This
+    function only NAMES the cause; :func:`apply_peer_fault` (with ``results.unit_counts``) voids
+    any unit whose peer logged a long-tail line (H21), and the unit is re-run with the same seed.
 
     Returns a ``{"cause", "detail"}`` note for the summary, or ``None`` when this is not that.
     """
@@ -688,7 +687,7 @@ def classify_peer_error(report: Dict[str, Any], half: str, opponent_kind: str,
             f"{error} — Metamon's OWN post-game teardown (hazard H-H/H5), in the half where "
             "METAMON challenges. All "
             f"{n_records}/{expected} games are present and the regime verified on every "
-            "decision, so this read stands: the defect is upstream and post-game. Cause: "
+            "decision; the defect is upstream and post-game, but the peer logged a long-tail line, so the unit is VOID and is re-run with the same seed (apply_peer_fault, H21). Cause: "
             "MetamonAMAGOWrapper.step answers any exception with `self.reset(); return "
             "self.step(action)` — unbounded — and Metamon drives the CHALLENGER role through "
             "poke-env's pipelined start_challenging() while driving the ACCEPTOR role through "

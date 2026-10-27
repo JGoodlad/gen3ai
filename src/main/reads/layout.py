@@ -1,4 +1,4 @@
-"""A read's STATE directory (``designs/tools/reads.md`` §4): where every verb reads and writes. Outside the repo and
+"""A read's STATE directory (``designs/tools/reads.md`` §3): where every verb reads and writes. Outside the repo and
 ``models/``; one per read; nothing in it is ever edited by hand.
 
     <state>/spec.json                   the spec, byte-copied at plan (its sha256 is the read's identity)

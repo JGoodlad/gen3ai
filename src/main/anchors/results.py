@@ -529,8 +529,8 @@ def render(summary: Dict[str, Any]) -> str:
                      + ("" if ok else "   🚨 this cell is NOT a measurement"))
         clean = summary.get("peer_clean")
         lines.append(f"  peers       exited cleanly: {clean}"
-                     + ("" if clean else "   ⚠️ a peer exited nonzero — read its log; this does "
-                                         "NOT invalidate a verified regime"))
+                     + ("" if clean else "   ⚠️ a peer exited nonzero — read its log; the regime "
+                                         "verified, but a long-tail line voids the unit (H21)"))
         # A dirty exit we RECOGNISE is worth more than a dirty exit a reader has to diagnose.
         for note in summary.get("peer_exit_notes") or []:
             lines.append(f"  peer exit   {note.get('cause')}: {note.get('detail')}")

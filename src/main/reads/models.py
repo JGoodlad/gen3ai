@@ -1,4 +1,4 @@
-"""Which file a read plays, and its bytes (``designs/tools/reads.md`` §3). ``models/`` is only READ here.
+"""Which file a read plays, and its bytes (``designs/tools/reads.md`` §2). ``models/`` is only READ here.
 
 THE SETTLED RULE (a ``final`` ref). A run's final is ``<run>/final_model.zip`` and nothing else: it is SETTLED iff
 the file exists, its recorded step is >= ``min_step``, nothing has written it for ``quiet_s`` seconds, and (when the
