@@ -538,7 +538,7 @@ retired for the fold-gift question only; they live in the last full text (§0) a
 |---|---|
 | Is set mutation a goal-(b) lever? | **D3 look 2**, final: all five seeds trained; every game on engine E1 at the play pin `c4a5c37b6` (E1's game code under the pre-`b0441623e` read harness; PREREG AM-D3-L2 and its addendum: TERMINAL, P(GAIN) ≈ 3–7 %, NULL unreachable at this size), its S lane queued behind H-CTX rc72b and its Kakuna lane behind N1-P look 1 (`measurements/x41_d3_setmut_2026-10-25/PREREG.md`) |
 | Is the plateau the learning-rate controller's halving (§4.4)? | **LR-F**: P\* continued with a floor on the learning rate, seeds 3502–3503 (X35 `measurements/x35_breakers_stage_2026-10-17/STAGED_PLAN.md` §4.1.2) |
-| Do the breadth levers help by +1–2 pp each, below what one read can see? | **PR-1**, the zero-GPU precision read: D1, D3 and N1-P against C0 pooled on F, 38,000 new Kakuna games at one engine (`../endstate/strategy_if_levers_null_2026-10-26.md` §3.1); the fallback's first branch |
+| Do the breadth levers help by +1–2 pp each, below what one read can see? | **PR-1**, the zero-GPU precision read: D1, D3 and N1-P against C0 pooled on F, 38,000 new Kakuna games at one engine (`../endstate/strategy_if_levers_null_2026-10-26.md` §3.1). NOT READY TO REGISTER ([`REVIEW_2.md`](measurements/strategy_review_2026-10-26/REVIEW_2.md)): D1 out of the primary (its F is its own population), one post-`b0441623` pin; an information read behind X48 and X63 |
 
 **Open, no read scheduled**
 

@@ -1,6 +1,8 @@
 # If D3, N1-P and X59-S all come back without a GAIN: the plan for goal (b)
 
-**Status: REVISED DRAFT (2026-10-26), explicit-only. Nothing is built, registered or launched.** It is a contingency
+**Status: REVISED DRAFT (2026-10-26), explicit-only. Nothing is built, registered or launched.** **The second review
+([`REVIEW_2.md`](../research_state/measurements/strategy_review_2026-10-26/REVIEW_2.md), 2026-10-27) finds PR-1 NOT READY TO REGISTER as written**: D1's own population can carry its GAIN (B1),
+and no engine or pack regime is chosen (M1); its §6 re-ranks the top three. It is a contingency
 plan for the MODAL outcome of the three reads in flight, revised after the adversarial review
 [`strategy_review_2026-10-26/REVIEW.md`](../research_state/measurements/strategy_review_2026-10-26/REVIEW.md)
 (`6fca2c06`: B1 + M6–M9 + m9–m12 on this doc; §9 disposes of each). Goal (b), its meter and every read it cites are
@@ -9,7 +11,7 @@ plan for the MODAL outcome of the three reads in flight, revised after the adver
 [`search_ledger.md`](search_ledger.md) and [`design_search_next.md`](design_search_next.md). The from-scratch breadth
 pair is [`design_x53_n1_fresh_breadth.md`](design_x53_n1_fresh_breadth.md). The revision's Monte Carlos are in
 [`strategy_revision_2026-10-26/`](../research_state/measurements/strategy_revision_2026-10-26/). The piloting-gap
-analysis and the engine-mix audit had NOT landed when this was revised (§8 FINDINGS 2–3).
+analysis and the engine-mix audit had NOT landed when this was revised; both have since (§8 FINDINGS 2–3).
 
 Abbreviations: pp = percentage points; LB / UB = the lower / upper bound of a 95 % interval; P\* = X26's plateau
 (`rb_x26_s2601` @280M); C0 = X35's plain-continuation control; U = the three unfamiliar panels pooled (goal (b)'s
@@ -115,11 +117,11 @@ Neither reading is supported at that resolution.
 
 | item | the design |
 |---|---|
-| **arms** | the banked finals of **D1** (s3501–s3505), **D3** (s3501–s3503, + s3504–s3505 if look 2 has trained by registration), **N1-P** (s3501–s3503, + look 2's seeds likewise) and **C0** (s3501–s3505). The seed set is fixed at registration. X52 is excluded (practice on 36 teams: another estimand, 2 seeds); the belief arms are excluded (not breadth) |
+| **arms** | the banked finals of **D1** (s3501–s3505), **D3** (s3501–s3505; s3504–s3505 trained, `a9c09711d`, `28711af06`), **N1-P** (s3501–s3503, + look 2's seeds likewise) and **C0** (s3501–s3505). The seed set is fixed at registration. X52 is excluded (practice on 36 teams: another estimand, 2 seeds); the belief arms are excluded (not breadth) |
 | **estimand** | Δ_B = mean over the three breadth arms of (F_arm − F_C0), each arm's F the equal-weight mean of its seed finals: "breadth at the plateau, any corpus, 20M" |
-| **meter** | F only: Kakuna ckpt 34, greedy vs greedy, CPU, role-balanced 20-game units, the D3 / N1-P regime. F is the one panel unhazarded for N1-P (H and P72 carry its generator, N1-P PREREG §8). **D1's corpus is forum-sourced, so F is D1's own population** (D1's F +4.0 vs H +2.1, P72 +0.1): the leave-D1-out contrast is a REPORTED line beside the rule |
-| **games** | **8,000 F games per breadth arm, 14,000 for C0** (C0 at √3× a breadth arm minimises the family contrast's variance): 1,900 units, 38,000 games, all NEW unit seeds. No banked game is imported, and the in-flight reads' games are REPORTED beside it, never pooled (they were seen before PR-1 was registered, and they are why it runs) |
-| **ONE engine** | every game at ONE playing commit held in a pinned worktree for the read's life (`main.reads`' `code.json`; `repin` only onto a byte-identical play path); each unit records `server_version` and the Rust sim binary's sha256, and the read is VOID if two stamps appear. The queue interleaves the arms unit by unit (unit seeds outermost), so a stop at any point leaves the arms within one unit of their planned shares. That stamp becomes **the tree's eval engine**: every T2 read plays at it, so PR-1's C0 is banked for them |
+| **meter** | F only: Kakuna ckpt 34, greedy vs greedy, CPU, role-balanced 20-game units, ONE peer-pack regime, H22 (`b0441623`; D3 look 2 and N1-P look 1 play the legacy pack, on E1 and E3). F is the one panel unhazarded for N1-P (H and P72 carry its generator, N1-P PREREG §8). **D1's corpus is forum-sourced, so F is D1's own population** (D1's F +4.0 vs H +2.1, P72 +0.1): the leave-D1-out contrast is a REPORTED line beside the rule. **REVIEW_2 B1: with only D1 moving F (+4 pp) this primary reads BREADTH-GAIN 0.46–0.65, so the primary must leave D1 out before registration** (D3 + N1-P at C0 = 2 × an arm has the same power at equal games) |
+| **games** | **8,000 F games per breadth arm, 14,000 for C0** (C0 at 1.75× a breadth arm; the pooled mean's variance is least at C0 = 3× an arm, which reaches this variance at ≈ 35,400 games: REVIEW_2 m1): 1,900 units, 38,000 games, all NEW unit seeds. No banked game is imported, and the in-flight reads' games are REPORTED beside it, never pooled (they were seen before PR-1 was registered, and they are why it runs) |
+| **ONE engine** | every game at ONE playing commit held in a pinned worktree for the read's life (`main.reads`' `code.json`; `repin` only onto a byte-identical play path); each unit records `server_version` and the Rust sim binary's sha256, and the read is VOID if two stamps appear. The queue interleaves the arms unit by unit (unit seeds outermost), so a stop at any point leaves the arms within one unit of their planned shares. That stamp becomes **the tree's eval engine**: every T2 read plays at it, so PR-1's C0 is banked for them. **No engine is chosen yet** (REVIEW_2 M1): the peer pack enters the regime id (H22), X48 registered its own post-`b0441623` playing commit, and X62 / X63 / X64 play H22, so PR-1 plays one post-`b0441623` pin they share (preferred: E1's game paths under a post-H22 harness), never D3's legacy-pack pin `c4a5c37b6` |
 | **interval** | normal, Δ̂_B ± 1.96 × SE, widened by AM-5's √max(1, φ̂), with φ̂ the mean of the four arms' seed-dispersion ratios (`main.x35.d1`'s estimator). A team-cluster bootstrap over F's 72 teams is REPORTED beside it (review m7) |
 | **classes** (rule 8: a bound within 1e-9 of a threshold ⇒ UNDECIDED) | **BREADTH-GAIN** iff LB > 0. **KILL** iff UB < +1.5 pp (LOSS iff UB < 0, a sub-case). Otherwise **UNDECIDED**. GAIN and KILL cannot both hold at the registered games (half-width ≥ 1.1 pp) |
 | **interim** | ONE binding futility look at half the games: KILL-STOP iff the half-sample UB < +1.5 pp. No efficacy stop |
@@ -172,6 +174,9 @@ Neither reading is supported at that resolution.
    out and takes ≈ 7–10 days.
 
 ### 3.2 The ranked levers
+
+**REVIEW_2 M4 (2026-10-27):** rows are missing for X48 (production capacity: registered, GPU-next), X62 (and its
+review's B2 conflict with PR-1's KILL), X63 (DRAFT), X64 and LR-F; REVIEW_2 §6 re-ranks the top three.
 
 **How to read the table.**
 - "P(GAIN)" is the probability of a GAIN on the row's read, integrated over its GUESS (read as a normal with the
@@ -279,6 +284,8 @@ PR-1?" A yes shortens T1 from ≈ 1–2 weeks to ≈ 2–3 days.
 **Asked at the END of T1** (the trigger, deterministic on the registered classes):
 - **PR-1 KILL and the plasticity probe not LOSS** ⇒ escalate AT ONCE: no cheap breadth lever remains, and what is
   left is capacity or scale (N2 was dropped 2026-10-26).
+  **[REVIEW_2 M3: no longer true as written. X62 (gated on rc72b) and X63 (dose, DRAFT) are breadth levers outside
+  KILL's scope, and X48 is registered; the routing is the orchestrator's to rule on.]**
 - **PR-1 KILL and plasticity LOSS** ⇒ escalate with the fresh-breadth costs (N5-S ≈ 8 GPU-h; X53-N1 behind its σ gate,
   ≈ 46–72 GPU-h expected); T3's N5-S may run meanwhile.
 - **PR-1 BREADTH-GAIN or UNDECIDED** ⇒ T2 runs under its cap; the owner is told the class and the plan, and asked
@@ -321,11 +328,12 @@ PR-1?" A yes shortens T1 from ≈ 1–2 weeks to ≈ 2–3 days.
 ## 8. FINDINGS (standing rule 7)
 
 1. **The scenario's probability** is 0.58 (independent) to 0.68 (D3 and N1-P perfectly correlated).
-2. **The piloting-gap analysis had not landed** (no `piloting_gap_forensics_2026-10-26/` at `6fca2c06`). §4 routes on
-   its outcome classes only.
-3. **The engine-mix audit had not landed** (no engine table in `designs/tools/reads.md`). PR-1 follows REVIEW F's
-   F-M2 fix pattern (one harness commit, the transport identity recorded per unit); `main.reads.assemble.
-   ANCHOR_REGIME_KEYS` still omits `server_version`, so the one-stamp check is the read's own until the audit lands.
+2. **The piloting-gap analysis has LANDED** ([`piloting_gap_forensics_2026-10-26/`](../research_state/measurements/piloting_gap_forensics_2026-10-26/),
+   H-MID, their review `90708bff`): the gap shows after turn 10 from level positions; team vs set is OPEN until
+   rc72b; V is blind to it, as a self-play critic must be. §4's critic branch does not fire (REVIEW_2 m6).
+3. **The engine-mix audit has LANDED** (`designs/tools/reads.md` §4): every unit row and group carries its engine,
+   and a group spanning two is INCONCLUSIVE; the peer-pack regime (H22, `b0441623`) is in the id too. On one engine a
+   Kakuna unit replays exactly (0 / 2,100 games); E1 and E3 differ on 6 / 420 F games (`21fa891f`).
 4. **D3's input to P(all miss) should be its look-2 power at its look-1 posterior**; not recomputed here.
 5. **PR-1's power rests on σ_s ≤ ≈ 0.5 pp**, which "≈ 0" at 420–1,200 games a seed does not establish (§3.1).
 6. **No current panel is unhazarded for the stack's union corpus**: F carries D1's forum source, H and P72 carry N1-P's
@@ -371,3 +379,4 @@ PR-1?" A yes shortens T1 from ≈ 1–2 weeks to ≈ 2–3 days.
 | 2026-10-26 | **N2 DROPPED by its registered exact-set identity test** (N2 identity-test worker, orchestrator brief; CPU only) | COMPOSITIONAL: a Smogon re-draw of one never-seen bench set moves P\*'s policy 1.19× [1.07, 1.33] as much on a pool team as on an unfamiliar one (pattern-standardised KL, 7,260 / 24,384 units, 48 / 143 games); erasing our six mons' identity embeddings hurts both alike (1.07 [0.91, 1.25]); mechanics-preserving edits are invisible. The interval excludes 1.0 (a small familiarity premium, ≈ the generalisation review's +19 %), so the verdict rests on the PREREG's declared rule (upper < 1.5), not on the older literal KILL clause | funding the N2 flag (the premium it could remove is ≈ 0.2 of one set change's effect); reading the premium as memorisation | [`n2_identity_test_2026-10-26/README.md`](../research_state/measurements/n2_identity_test_2026-10-26/README.md) (PREREG `98bcb1146`); `piloting_gap_forensics_2026-10-26/` (team context, not set knowledge) |
 | 2026-10-27 | **The plasticity probe READ: NO-LOSS ⇒ T3 takes the capacity branch** (plasticity-check worker, orchestrator brief; CPU only) | the §2 bars applied to X26 @25M … X26c @480M, C0 and two fresh inits on 11,511 held-out-team states: P\*'s end-to-end refit AUC on its own greedy labels 0.986× @25M's (seed pairs 0.984–0.987; NO-LOSS < 1.10), near-dormant 0.78× (LOSS needs ≥ 2×); on a neutral random-network target the trunk refits slower than @25M (1.11×, UNCLEAR by the same bars) but the slow-down is paid by 175M and does not grow across the plateau (100M 0.576 → P\* 0.598 → 480M 0.602); the one structure still degrading is the policy MLP's tanh saturation | UNCLEAR (the behavioural complement first) on the neutral target's 1.11, which lies inside its seed noise of the line; the registered class decides | [`plasticity_check_2026-10-26/README.md`](../research_state/measurements/plasticity_check_2026-10-26/README.md) (results, `summarize.py`) |
 | 2026-10-27 | **N4 designed and registered** (N4 designer, orchestrator brief; CPU only) | the capacity branch made runnable: a growth fork of T\* widening every trunk FFN 256 → 1,024 (a zero-init branch, bit-identical at the fork) against a same-pin C0′, 3 + 3 seeds × 70M at a new pin, ≈ 30 GPU-h; a one-look screen (S: GO iff LB > 0, NO-GO iff UB < +2.0 pp; Kakuna F: GO iff LB > 0), matched steps | this doc's sketch (a fresh 2× `D_MODEL` toy at matched wall clock: the T-ENT equal-compute / plateau reversal makes it the wrong question); its 13–15 GPU-h (the banked toy C0's pin cannot carry the build) | [`design_n4_capacity_screen.md`](design_n4_capacity_screen.md); [`n4_capacity_screen_2026-10-27/PREREG.md`](../research_state/measurements/n4_capacity_screen_2026-10-27/PREREG.md) |
+| 2026-10-27 | **REVIEW_2 (adversarial): PR-1 NOT READY TO REGISTER as written** (strategy reviewer, orchestrator brief; docs + one CPU Monte Carlo) | B1: the primary leaves D1 out (D1 plays F inside its own population; D1-only +4 pp reads BREADTH-GAIN 0.46–0.65), D3 + N1-P at C0 = 2 × an arm (0.78 at +1.5 pp for 38,000 games, 0.68 for 30,000); M1: one post-`b0441623` tree pin shared with X48 / X62 / X63 (preferred: E1's game paths under a post-H22 harness); M2: after X48's read in the Kakuna queue, or on a rented CPU box; M3–M4: PR-1 re-scoped as an information read (σ_s, the 20M dose point, the C0 bank), behind X48 and X63; the false statements here corrected in place | registering PR-1 as written; D3's legacy-pack E1 pin `c4a5c37b6` for PR-1 (its C0 bank would serve no later read) | [`REVIEW_2.md`](../research_state/measurements/strategy_review_2026-10-26/REVIEW_2.md), `power_review2.log`; `kakuna_determinism_2026-10-27/`; `designs/tools/reads.md` §4; the X48 PREREG §5.1; `context_generalisation_2026-10-27.md` §7 |

@@ -105,7 +105,10 @@ teams (survey: [`research_state/literature/sota_survey_2026-10-26.md`](research_
    after their [review](research_state/measurements/strategy_review_2026-10-26/REVIEW.md) (`6fca2c061`). The
    fallback's first branch is now a zero-GPU **precision read**: D1, D3 and N1-P against C0, pooled, on 38,000 new
    Kakuna games at one engine, which sees +1.5 pp with probability 0.76. Its cost is the CPU: about 7–10 days of the
-   local Kakuna lane, or about a day on a rented CPU box (an owner question when it runs). X53-N1 now waits on a
+   local Kakuna lane, or about a day on a rented CPU box (an owner question when it runs). A [second review](research_state/measurements/strategy_review_2026-10-26/REVIEW_2.md)
+   (2026-10-27) finds it NOT READY TO REGISTER: D1 plays F inside its own team population, so the primary must be D3
+   and N1-P alone (the same power at equal games), on one post-`b0441623` pin shared with X48's read; it now ranks
+   behind X48 and X63 (dose) as an information read. X53-N1 now waits on a
    zero-GPU measurement of how far two fresh runs differ: above about 2 pp, no affordable seed count can see a
    realistic +2–3 pp effect.
 2. **The meter itself.** It is unverified whether Kakuna's self-play saw near copies of our unfamiliar-team panel
