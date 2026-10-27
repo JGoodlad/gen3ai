@@ -819,7 +819,7 @@ limits:
   ≈ 6 CPU-s a decision at turns 10–19 to ≈ 130 at turns 50–60 (59 search CPU-min by turn 60), with worlds, depth, world
   tries and playouts flat or falling: the cost is the honest world screen, each chain step a replay of the whole true
   log (MY JUDGEMENT; the split is not logged), and a late decision with no consistent world costs up to 407 CPU-s. A
-  median-length game ≈ 15–20 CPU-min of whole-unit CPU, a long one ≥ 100; S-U's central ≈ 25 stands (ONE game;
+  median-length game ≈ 10–13 CPU-min of whole-unit CPU, that 66-turn game 78; a mean of ≈ 15–25 (ONE game;
   `../research_state/measurements/su_headroom_2026-10-27/AMENDMENT_1_DRAFT.md`). In the smoke all 12 decisions from turn 10 had ≥ 2 legal actions; 1 of 12 deviated from π. The same
   searched deal played twice was byte-identical over the whole game, decision records included; G-PREFIX held on both
   pairs, and the home72 pair diverged at turn 11, where the search first deviated.

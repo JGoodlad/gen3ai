@@ -223,8 +223,8 @@ unmeasured.
 - **The cost a decision climbs with the turn**, ≈ 6 search CPU-s at turns 10–19 to ≈ 130 at turns 50–60, with the
   worlds, depth, tries and playouts flat or falling: it is the world screen (each chain step replays the whole true
   log), not the search's width ([`AMENDMENT_1_DRAFT.md`](../research_state/measurements/su_headroom_2026-10-27/AMENDMENT_1_DRAFT.md) §1).
-- So a median-length (≈ 35-turn) game ≈ 15–20 CPU-min of whole-unit CPU, a 60-turn game ≥ 100, and the MEAN, set by
-  the long tail, ≈ the original **central ≈ 25** (15–37). R0 §4's ≈ 32 CPU-min sits inside.
+- So a median-length (≈ 35-turn) game ≈ 10–13 CPU-min of whole-unit CPU, the 66-turn first game 78, and the MEAN, set
+  by the long tail, ≈ 15–25 (the original central ≈ 25 is the upper end). R0 §4's ≈ 32 CPU-min sits inside.
 - The raw twin costs 11.8 s (X51, measured).
 - Kakuna's forward is not counted. It waits while we search.
 
@@ -427,9 +427,9 @@ secondary.
   identical raw game. At 30–37 searched decisions that is ≈ 3–6 CPU-min a searched game, 4–8× below the central 25,
   and the whole read would be ≈ 150–250 CPU-h, not ≈ 1,000 (MY JUDGEMENT; UNVERIFIED: later turns, P72 and H were not
   played). Stage 0 measures it on 20 searched games before the read sizes; the re-size rule (§4.4) is unchanged.
-  **Stage 0's first searched game REFUTED the smoke's figure past turn 20** (home72 seed 0 game 0: 59 search CPU-min
-  by turn 60, still running; ≈ 6 CPU-s a decision at turns 10–19, ≈ 130 at 50–60; 7 exclusions at 60–407 s each). The
-  smoke's ≈ 150–250 CPU-h is withdrawn and §4.2's central ≈ 25 CPU-min (≈ 1,000 CPU-h) stands, ONE game, UNVERIFIED.
+  **Stage 0's first searched game REFUTED the smoke's figure past turn 20** (home72 seed 0 game 0: 66 turns, 77.8 search
+  CPU-min, 78.3 whole-unit, 83 min of wall; ≈ 6 CPU-s a decision at turns 10–19, ≈ 130 at 50–60; 7 exclusions at 60–407 s each). The
+  smoke's ≈ 150–250 CPU-h is withdrawn and §4.2's corrected ≈ 15–25 CPU-min a game (≈ 600–1,000 CPU-h) is ONE game's, UNVERIFIED.
   Stage 0 is HELD (it held a heavy slot ahead of the reads ranked above it); the cost-capped variants are
   `AMENDMENT_1_DRAFT.md` (DRAFT, not registered).
 - **S-2.** CLOSED by B3: one-game units (`per_game`), a searched unit a long heavy-slot job with a 3-h watchdog.

@@ -8,7 +8,7 @@ ruling (b), 2026-10-27): it resumes after N1-P, H-CTX and X59-S finish.
 
 The source is stage 0's first searched game, `pstar_s__home72__00__g00` (home72, seed 0, game 0). Its log is
 `~/gen3ai_archive/su_headroom_2026-10-27/anchor/su/pstar_s/cells/pstar_s__home72__00__g00/search_decisions.jsonl`.
-These are its decisions from turn 10 to turn 60, the game still in flight; search CPU is the worker thread plus its
+These are its decisions from turn 10 to turn 60 (the game ended at turn 66: `search-cost`, below); search CPU is the worker thread plus its
 replay children.
 
 | turns | searched / excluded | legal actions | playouts (`spent`) | world tries | search CPU a decision | CPU a playout |
@@ -20,7 +20,7 @@ replay children.
 | 50–60 | 9 / 4 | 2–6 | 16–48 | 8–9 | 65–243 s, median ≈ 130 | 1.4–6.1 s |
 | excluded (no consistent world) | 7 | | 0 | | 60 s (t29) → 407 s (t60) | |
 
-Totals so far: **59 search CPU-min**, of which turns ≤ 30 took 6.1, turns 31–45 took 11.6 and turns > 45 took 41.3.
+Totals to turn 60: **59 search CPU-min**, of which turns ≤ 30 took 6.1, turns 31–45 took 11.6 and turns > 45 took 41.3.
 The 7 exclusions took 17.6. The game passed the registered re-size bar (50 CPU-min) on its own.
 
 **Which cause it is** (the four the orchestrator asked about):
@@ -41,18 +41,22 @@ The 7 exclusions took 17.6. The game passed the registered re-size bar (50 CPU-m
   fix that measures it (two timers in `search_side`) is a build.
 
 **The corrected cost model.** It rests on one game, so treat it as an ESTIMATE.
-- **A median-length game (≈ 35 turns):** ≈ 10–12 search CPU-min, ≈ 15–20 CPU-min of whole-unit CPU. The whole-unit
-  figure uses the smoke's ratio of whole-process to search CPU, ≈ 1.6.
-- **A long game:** 60 turns or more costs ≥ 60 search CPU-min, ≥ 100 whole-unit.
-- **The read:** the mean is set by the long-game tail, so the design's original central ≈ 25 CPU-min a searched game
-  (≈ 1,000 CPU-h for the full read) is plausible again. The PREREG's ≈ 6 CPU-min (≈ 270 CPU-h), taken from the smoke's
+- **The finished game** (`python -m main.reads search-cost`, 07:43 PDT): 66 turns, counted, the forfeit-win guard
+  armed with 0 non-battle endings. 48 searched and 9 excluded of 57 asked; the ≥ 2-legal share 0.93; the deviation
+  rate 18 / 48 = 0.375. A searched decision cost 36.5 CPU-s at the median (p10 5.9, p90 130, max 243). **77.8 search
+  CPU-min, 78.3 whole-unit CPU-min, 82.7 min of wall**: the whole unit is ≈ search + 0.5 min, so the smoke's whole /
+  search ratio of ≈ 1.6 does not hold for a long game. The re-size input reads 77.8 against its bar of 50 (one game).
+- **A median-length game (≈ 35 turns):** ≈ 10–13 CPU-min of whole-unit CPU.
+- **A long game:** ≈ 80 at 66 turns, the cost a decision still climbing.
+- **The read:** the mean is set by the long-game tail, ≈ 15–25 CPU-min a searched game (≈ 600–1,000 CPU-h for
+  the full read); the design's original central ≈ 25 is its upper end. The PREREG's ≈ 6 CPU-min (≈ 270 CPU-h), taken from the smoke's
   turns 10–19, is wrong.
 
 ## 2. The cost-capped variants
 
 | variant | deterministic? | cost a searched game (whole unit, ESTIMATE) | full read (2,400 searched) | what it gives up |
 |---|---|---|---|---|
-| **as registered**, `r0s4@10` | yes | 15–20 median, ≥ 100 for long games; mean ≈ 25 | ≈ 1,000 CPU-h (600–1,500) | nothing |
+| **as registered**, `r0s4@10` | yes | 10–13 median, ≈ 80 at 66 turns; mean ≈ 15–25 (the tail) | ≈ 600–1,000 CPU-h | nothing |
 | **A. a turn window, `r0s4@10-30`** (search turns 10–30, π after) | yes | ≈ 10 (this game: 6.1 search CPU-min to turn 30) | **≈ 400 CPU-h** (phase 1 ≈ 270) | every decision after turn 30: the last ≈ 5 turns of a median game, the whole endgame of a long one |
 | B. a per-decision CPU-TIME budget, π past it | **no**: it depends on contention and the host | bounded | bounded | **REJECTED.** A searched game would no longer replay exactly, and stage 0's determinism check and a cross-host (rented box) replay would break |
 | C. a deterministic screening budget (total chain steps or replays a decision; past it, an exclusion, π plays) | yes | bounded, set by the budget | depends on the budget | the decisions whose worlds are HARD to fit, chosen by difficulty. That difficulty differs by set (confound A3: U teams vs pool teams), so the exclusions would bias I. Every exclusion rate must be reported by set |
