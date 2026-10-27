@@ -253,6 +253,9 @@ legality check above; the team validator. Counts of refusals and exclusions go i
   - The build re-asserts it at its own commit on R1's 2,306 traces before extracting anything
     (`python -m main.x50_r1.genc`: the full read against `*_states.npz`'s rows and masks, bit for bit).
   - The bank's rows are already byte-identical at X26's pin (the off-pool gate G4).
+  - Since `d8d674b99` (`gen3_volatile_silent_ends_v1`) the reader clears seven silently ending volatiles X26's
+    traces recorded set, so G-ENC FAILS on 11 of the 2,306 traces. `genc --exclude` takes X59-S Amendment 4c's
+    list (`python -m main.x50_r1.fr2_exclude`), and passes with it.
 
 ## 5. (a) The intent head, offline (R-a1)
 
