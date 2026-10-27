@@ -1,0 +1,23 @@
+E. G0 (H-CTX) verdict probabilities by the true recovery fraction rho = R / P (home72 0.598, F 0.530)
+  rho 0.00: INCONCLUSIVE 0.212, SUPPORTED 0.610, UNDECIDED 0.176, KILLED 0.003
+  rho 0.25: INCONCLUSIVE 0.213, SUPPORTED 0.357, UNDECIDED 0.406, KILLED 0.024
+  rho 0.40: INCONCLUSIVE 0.211, SUPPORTED 0.206, UNDECIDED 0.512, KILLED 0.071
+  rho 0.60: INCONCLUSIVE 0.211, SUPPORTED 0.071, UNDECIDED 0.512, KILLED 0.206
+  rho 0.75: INCONCLUSIVE 0.213, SUPPORTED 0.024, UNDECIDED 0.404, KILLED 0.359
+  rho 1.00: INCONCLUSIVE 0.210, SUPPORTED 0.002, UNDECIDED 0.173, KILLED 0.614
+A. PR rule with AM-5 (5 x 3,480 F a side): P(GAIN)
+  sigma_s 0.0 pp: +0.0: 0.018, +1.5: 0.743, +2.0: 0.939, +3.0: 1.000
+  sigma_s 0.5 pp: +0.0: 0.028, +1.5: 0.655, +2.0: 0.872, +3.0: 0.995
+  sigma_s 1.0 pp: +0.0: 0.040, +1.5: 0.461, +2.0: 0.674, +3.0: 0.938
+B. shared C0: P(X62 GAIN) vs P(X62 GAIN | N1-P not GAIN), X62 true +1.5 pp, PR rule
+  sigma_s 0.5 pp, N1-P true +0.0: P(GAIN) 0.652 -> | N1-P not GAIN 0.651 (P(N1-P not GAIN) 0.976); X62 true 0: false GAIN 0.030 -> | N1-P GAIN 0.038
+  sigma_s 0.5 pp, N1-P true +1.5: P(GAIN) 0.652 -> | N1-P not GAIN 0.639 (P(N1-P not GAIN) 0.691); X62 true 0: false GAIN 0.029 -> | N1-P GAIN 0.036
+  sigma_s 1.0 pp, N1-P true +0.0: P(GAIN) 0.461 -> | N1-P not GAIN 0.455 (P(N1-P not GAIN) 0.968); X62 true 0: false GAIN 0.038 -> | N1-P GAIN 0.104
+  sigma_s 1.0 pp, N1-P true +1.5: P(GAIN) 0.465 -> | N1-P not GAIN 0.428 (P(N1-P not GAIN) 0.722); X62 true 0: false GAIN 0.040 -> | N1-P GAIN 0.065
+C. co-primary P(NON-INFERIOR), Welch 97.5 %, margin -2.0 pp, 5 v 5 seeds (seed SD 0.86 / 0.35 pp)
+  fixed true effect: -1.6: 0.072, -1.0: 0.358, -0.5: 0.681, +0.0: 0.893, +0.5: 0.977
+  over the design's GUESS -1.0 (80 % -2.5, +0.5): P(NI) 0.428
+D. headline odds on the branch where X62 runs (GUESS +1.5, 80 % (-1.5, +4.5)), PR rule with AM-5
+  sigma_s 0.0 pp: P(GAIN) 0.559, P(GAIN and P NI) 0.240; PR-1's C0 banked, 126-181 lane-h: 0.067-0.092 per resource-day (joint with P NI: 0.029-0.039); C0 fresh, 187-269 lane-h: 0.046-0.065 per resource-day (joint with P NI: 0.020-0.028)
+  sigma_s 0.5 pp: P(GAIN) 0.542, P(GAIN and P NI) 0.232; PR-1's C0 banked, 126-181 lane-h: 0.065-0.089 per resource-day (joint with P NI: 0.028-0.038); C0 fresh, 187-269 lane-h: 0.045-0.063 per resource-day (joint with P NI: 0.019-0.027)
+  sigma_s 1.0 pp: P(GAIN) 0.485, P(GAIN and P NI) 0.208; PR-1's C0 banked, 126-181 lane-h: 0.058-0.080 per resource-day (joint with P NI: 0.025-0.034); C0 fresh, 187-269 lane-h: 0.040-0.056 per resource-day (joint with P NI: 0.017-0.024)
