@@ -29959,3 +29959,56 @@ holding strength fixed: −0.001. That row reads direction only (reliability ≈
   - G-5: the rule's verdict shape; fixed before the record.
 - **Evidence:** `measurements/su_gate_2026-10-27/` (README, PREREG, `record_summary.json`, `bank_check.json`); state
   `~/gen3ai_archive/su_gate_2026-10-27/`.
+### 2026-10-28 · MEASUREMENT · **X61P N1-P LOOK 1 reads CONTINUE: breadth at 10⁴ procedural teams moves F (forum72, the primary) by +0.75 pp [−1.56, +3.06] over the shared C0 (N1-P 0.516 vs 0.508, 3,600 games per arm; seeds +1.0 / −0.25 / +1.5), UNDECIDED with Δ̂ > 0 ⇒ look 2; in-house S on home72 −3.27 pp [−4.20, −2.33] (INFERIORITY-NOT-EXCLUDED, twice D1's cost). Reported only: U +1.76 [−1.52, +5.03], without H +1.80 [−2.17, +5.77], Δ_H − Δ_F +0.92**
+
+**What was read.** N1-P = C0 + `--team-mix n1_proc_v1@ALL:0.5 --team-mix-sides both` (12,000 procedural teams from
+the Smogon facade alone), P\* + 20M at N1P_PIN `5f8f6cfa`, s3501–s3503, against C0 s3501–s3503 RE-PLAYED in the same
+state (the registered spec carries no banked-row import). PREREG `x61p_n1_production_2026-10-26/PREREG.md` §4–§9 and
+AM-N1P-1 (§14); `main.reads` rule `d1`, arm `X61P`; spec `read_spec_look1.json` byte for byte (sha256 `1266daad…`),
+state `~/gen3ai_archive/x61p_n1p_read/look1` (the path look 2's import pins).
+
+**Result.**
+
+| read | N1-P | C0 | N1-P − C0 | class |
+|---|---|---|---|---|
+| **F (primary)**, Kakuna ckpt 34 greedy, 60 units per seed | 1,857 / 3,600 = 0.516 | 1,830 / 3,600 = 0.508 | **+0.75 pp [−1.56, +3.06]** (Newcombe 95 %; φ̂ 0.33, not widened) | **UNDECIDED → CONTINUE** |
+| **P (co-primary)**, S on home72 vs R (7 × 500 pairs) | 53.48 / 54.11 / 53.66 | 56.82 / 57.39 / 56.84 | **−3.27 pp [−4.20, −2.33]** (Welch 97.5 %) | **INFERIORITY-NOT-EXCLUDED** |
+| H (reported) | 205 / 420 | 198 / 420 | +1.67 [−5.07, +8.38] | — |
+| P72 (reported) | 208 / 420 | 196 / 420 | +2.86 [−3.89, +9.56] | — |
+| home72 vs Kakuna (reported) | 232 / 420 | 236 / 420 | −0.95 [−7.63, +5.74] | — |
+| U (reported, M4-hazarded) | 0.500 | 0.482 | +1.76 [−1.52, +5.03] | not a goal read |
+| U without H (F + P72; by hand) | 0.506 | 0.488 | +1.80 [−2.17, +5.77] (widened ×1.11) | — |
+
+Δ_H − Δ_F +0.92 pp: no concentration on the generator-adjacent panel. Guards G-F / G-E / G-C not read (F is not a
+GAIN). Against the registered GUESS: Δ_F +1.5 [−1.5, +4.5] → +0.75; Δ_P −1.5 [−3.0, 0.0] → −3.27, below its 80 %
+interval. No GAIN, so the two-look false-GAIN rate (3.5–7.4 %) is not yet in play; a look-2 GAIN is read beside it and,
+with this P, is a TRADE unless P's interval clears −2.0.
+
+**VOID guards (PREREG §9): every seed PASS.** K9(b) at arm end PASS ×3 (the module's gate, `void.json`); the
+`[TEAM-MIX] n1_proc_v1@ALL (12000 teams, tier sha d59f44f0b33b) share 0.50 on both sides; eval stays on the pool`
+banner, `0 hits over 5 panel(s)` and `0 corpus team(s) pack identically to a pool team` at launcher-log lines 54–55
+of each seed; `pin_history` = `5f8f6cfa…` alone and corpus-check PASS; pool-seed PASS; no `corpus_<n>` in either log.
+
+**Dose.** N1-P 4.401 / 4.045 / 3.995 GPU-h (12.44; registered ≈ 12.3), C0 12.47. Read: 9,720 Kakuna games + 21,000
+in-house pairs, CPU; Kakuna ≈ 41.5 h wall on the contended heavy slots (registered ≈ 27 lane-h).
+
+**Harness-drift line (PREREG §7, by hand):** C0's re-played forum72 units 0–6 against D1's banked C0 units: 414 / 420
+games identical, wins 212 vs 208.
+
+**FINDINGs.**
+1. **The in-pool cost is resolved and large:** −3.27 pp, against D1's −1.61 at the same share and the registered
+   guess −1.5.
+2. **Kakuna play is near-deterministic, not exact:** 6 / 420 re-played C0 games differ from D1's banked rows (teams
+   `sft053/054/058/081/105`, not the re-packed `sft431`), and the one uncounted unit's replay matched its first play
+   on 18 / 20. Look 2 imports look 1's rows, so it is unaffected.
+3. **Two playing commits:** `46b9e572c` (tag `x61p-n1p-look1-play-46b9e572`), then for the anchor lane from 10-26
+   18:41 `de15dfc7b` (tag `x61p-n1p-look1-sched-de15dfc7`) by `main.reads repin` (play path byte-identical, 1,537
+   files, digest `9822a306…`; `repins.jsonl`), to run two Kakuna units at once. The repin was requested by the
+   reads-tooling worker on the coordinator's behalf.
+4. **The read is on Kakuna's legacy pack** (the play commit predates `b0441623e`), our side's packer fixed
+   (`d8d674b99`); both arms on one engine. Its primary regime id `00c8c0114bdf0836` differs from D1's / D3's.
+
+**Evidence:** `designs/research_state/measurements/x61p_n1_production_2026-10-26/read/` (README, cells, inputs,
+decision, void, models, code, repins, `harness_drift.{py,json}`); record
+`designs/research_state/measurements/x35_breakers_stage_2026-10-17/reads/n1p_look1.json` (loads in
+`main.x35.batch.read_record`; `kit stage-check --arm n1p --seed 3504` ALLOWED).

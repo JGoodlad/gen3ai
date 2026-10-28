@@ -1,0 +1,197 @@
+{
+ "units": [
+  {
+   "unit": "c0_s3501__forum72__00",
+   "identical": 20,
+   "games": 20,
+   "wins_now": 12,
+   "wins_banked": 12
+  },
+  {
+   "unit": "c0_s3501__forum72__01",
+   "identical": 19,
+   "games": 20,
+   "wins_now": 9,
+   "wins_banked": 9
+  },
+  {
+   "unit": "c0_s3501__forum72__02",
+   "identical": 19,
+   "games": 20,
+   "wins_now": 9,
+   "wins_banked": 8
+  },
+  {
+   "unit": "c0_s3501__forum72__03",
+   "identical": 20,
+   "games": 20,
+   "wins_now": 10,
+   "wins_banked": 10
+  },
+  {
+   "unit": "c0_s3501__forum72__04",
+   "identical": 19,
+   "games": 20,
+   "wins_now": 11,
+   "wins_banked": 10
+  },
+  {
+   "unit": "c0_s3501__forum72__05",
+   "identical": 20,
+   "games": 20,
+   "wins_now": 7,
+   "wins_banked": 7
+  },
+  {
+   "unit": "c0_s3501__forum72__06",
+   "identical": 20,
+   "games": 20,
+   "wins_now": 16,
+   "wins_banked": 16
+  },
+  {
+   "unit": "c0_s3502__forum72__00",
+   "identical": 20,
+   "games": 20,
+   "wins_now": 8,
+   "wins_banked": 8
+  },
+  {
+   "unit": "c0_s3502__forum72__01",
+   "identical": 20,
+   "games": 20,
+   "wins_now": 12,
+   "wins_banked": 12
+  },
+  {
+   "unit": "c0_s3502__forum72__02",
+   "identical": 20,
+   "games": 20,
+   "wins_now": 6,
+   "wins_banked": 6
+  },
+  {
+   "unit": "c0_s3502__forum72__03",
+   "identical": 20,
+   "games": 20,
+   "wins_now": 16,
+   "wins_banked": 16
+  },
+  {
+   "unit": "c0_s3502__forum72__04",
+   "identical": 19,
+   "games": 20,
+   "wins_now": 9,
+   "wins_banked": 8
+  },
+  {
+   "unit": "c0_s3502__forum72__05",
+   "identical": 20,
+   "games": 20,
+   "wins_now": 7,
+   "wins_banked": 7
+  },
+  {
+   "unit": "c0_s3502__forum72__06",
+   "identical": 20,
+   "games": 20,
+   "wins_now": 11,
+   "wins_banked": 11
+  },
+  {
+   "unit": "c0_s3503__forum72__00",
+   "identical": 20,
+   "games": 20,
+   "wins_now": 7,
+   "wins_banked": 7
+  },
+  {
+   "unit": "c0_s3503__forum72__01",
+   "identical": 20,
+   "games": 20,
+   "wins_now": 11,
+   "wins_banked": 11
+  },
+  {
+   "unit": "c0_s3503__forum72__02",
+   "identical": 19,
+   "games": 20,
+   "wins_now": 10,
+   "wins_banked": 10
+  },
+  {
+   "unit": "c0_s3503__forum72__03",
+   "identical": 20,
+   "games": 20,
+   "wins_now": 10,
+   "wins_banked": 10
+  },
+  {
+   "unit": "c0_s3503__forum72__04",
+   "identical": 20,
+   "games": 20,
+   "wins_now": 7,
+   "wins_banked": 7
+  },
+  {
+   "unit": "c0_s3503__forum72__05",
+   "identical": 19,
+   "games": 20,
+   "wins_now": 10,
+   "wins_banked": 9
+  },
+  {
+   "unit": "c0_s3503__forum72__06",
+   "identical": 20,
+   "games": 20,
+   "wins_now": 14,
+   "wins_banked": 14
+  }
+ ],
+ "drift": {
+  "identical": 414,
+  "games": 420,
+  "wins_now": 212,
+  "wins_banked": 208,
+  "banked_source": "x35_d1_read/h_a"
+ },
+ "p72_replay": {
+  "unit": "n1p_s3503__p72__03",
+  "identical": 18,
+  "games": 20,
+  "differ": [
+   {
+    "first": [
+     "peer_challenge",
+     16,
+     "p72_008.txt",
+     "win",
+     1
+    ],
+    "counted_replay": [
+     "peer_challenge",
+     16,
+     "p72_008.txt",
+     "loss",
+     152
+    ]
+   },
+   {
+    "first": [
+     "peer_challenge",
+     17,
+     "p72_001.txt",
+     "win",
+     30
+    ],
+    "counted_replay": [
+     "peer_challenge",
+     17,
+     "p72_001.txt",
+     "win",
+     38
+    ]
+   }
+  ]
+ }
+}

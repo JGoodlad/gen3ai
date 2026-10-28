@@ -1,0 +1,977 @@
+{
+ "arm": "X61P",
+ "cells_inconclusive": [],
+ "code": {
+  "commit": "46b9e572cc0fa237f62ddd948fb5fa4d115e44a4",
+  "diff_sha": "e3b0c44298fc1c14",
+  "dirty": false,
+  "pin": null,
+  "root": "/home/goodlad/dev/gen3ai-reads/n1p_play_46b9e572"
+ },
+ "created": "2026-10-28T08:54:46-0700",
+ "decision": {
+  "arm": "X61P",
+  "guards": {
+   "G-C": {
+    "detail": {},
+    "guard": "G-C",
+    "near_boundary": [],
+    "reasons": [
+     "the guards gate only a QUALIFYING primary (the orchestrator's A1 ruling (a)): H is not GAIN, so they were not played"
+    ],
+    "status": "INCONCLUSIVE"
+   },
+   "G-E": {
+    "detail": {},
+    "guard": "G-E",
+    "near_boundary": [],
+    "reasons": [
+     "the guards gate only a QUALIFYING primary (the orchestrator's A1 ruling (a)): H is not GAIN, so they were not played"
+    ],
+    "status": "INCONCLUSIVE"
+   },
+   "G-F": {
+    "detail": {},
+    "guard": "G-F",
+    "near_boundary": [],
+    "reasons": [
+     "the guards gate only a QUALIFYING primary (the orchestrator's A1 ruling (a)): H is not GAIN, so they were not played"
+    ],
+    "status": "INCONCLUSIVE"
+   }
+  },
+  "h": {
+   "ci95_pp": [
+    -1.5584355909252117,
+    3.057305657078251
+   ],
+   "ci95_unwidened_pp": [
+    -1.5584355909252117,
+    3.057305657078251
+   ],
+   "class": "UNDECIDED",
+   "delta_pp": 0.7500000000000062,
+   "final": false,
+   "look": 1,
+   "near_boundary": [],
+   "off": {
+    "mean": 0.5083333333333333,
+    "n_eff": 3600.0,
+    "per_panel": {
+     "forum72": [
+      1830,
+      3600
+     ]
+    },
+    "var": 6.942515432098765e-05,
+    "wilson95": [
+     0.4920023896381334,
+     0.5246465114540927
+    ]
+   },
+   "on": {
+    "mean": 0.5158333333333334,
+    "n_eff": 3600.0,
+    "per_panel": {
+     "forum72": [
+      1857,
+      3600
+     ]
+    },
+    "var": 6.937480709876543e-05,
+    "wilson95": [
+     0.4995003082814514,
+     0.5321326037937785
+    ]
+   },
+   "outcome": "CONTINUE",
+   "overdispersion": {
+    "df": 4,
+    "half_width_factor": 1.0,
+    "phi_hat": 0.33021318149261897,
+    "ratio_off": 0.6303957484420786,
+    "ratio_on": 0.03003061454315933
+   },
+   "per_panel_reported": {
+    "forum72": {
+     "ci95_pp": [
+      -1.5584355909252117,
+      3.057305657078251
+     ],
+     "delta_pp": 0.7500000000000062,
+     "off": [
+      1830,
+      3600
+     ],
+     "on": [
+      1857,
+      3600
+     ],
+     "role": "the PRIMARY: human-built forum teams; 19 % of its full sets sit in the corpus (X61 review B1)"
+    }
+   },
+   "positive_seeds": 2,
+   "reasons": [],
+   "seed_deltas_pp": {
+    "3501": 1.0000000000000009,
+    "3502": -0.2500000000000058,
+    "3503": 1.4999999999999958
+   },
+   "sign_ok": true,
+   "sign_rule": ">= 2 of 3"
+  },
+  "look": 1,
+  "p": {
+   "bar_pp": -2.0,
+   "class": "INFERIORITY-NOT-EXCLUDED",
+   "look": 1,
+   "near_boundary": [],
+   "reasons": [],
+   "stat": {
+    "ci_pp": [
+     -4.199572766436017,
+     -2.3337605668973285
+    ],
+    "confidence": 0.975,
+    "delta_pp": -3.266666666666673,
+    "df": 3.999849789550194,
+    "mean_off_pp": 57.01666666666667,
+    "mean_on_pp": 53.75,
+    "n_off": 3,
+    "n_on": 3,
+    "q": 3.495473199352532,
+    "se_pp": 0.26688978760934196,
+    "var_off": 0.10619047619047714,
+    "var_on": 0.10750000000000189
+   }
+  },
+  "reasons": [
+   "H UNDECIDED with \u0394\u0302 > 0 at look 1: go to look 2"
+  ],
+  "reported": {
+   "dose": {
+    "read": false
+   },
+   "reported_panels": {
+    "dH_minus_dF_pp": 0.9166666666666601,
+    "per_panel": {
+     "forum72": {
+      "ci95_pp": [
+       -1.5584355909252117,
+       3.057305657078251
+      ],
+      "delta_pp": 0.7500000000000062,
+      "off": [
+       1830,
+       3600
+      ],
+      "on": [
+       1857,
+       3600
+      ],
+      "role": "the PRIMARY: human-built forum teams; 19 % of its full sets sit in the corpus (X61 review B1)"
+     },
+     "heldout72_hpfix": {
+      "ci95_pp": [
+       -5.069455951253143,
+       8.381461478567658
+      ],
+      "delta_pp": 1.6666666666666663,
+      "off": [
+       198,
+       420
+      ],
+      "on": [
+       205,
+       420
+      ],
+      "role": "REPORTED: generator-adjacent (62 % of its full sets sit verbatim in the corpus, B1)"
+     },
+     "home72": {
+      "ci95_pp": [
+       -7.63455077369665,
+       5.741835322959171
+      ],
+      "delta_pp": -0.952380952380949,
+      "off": [
+       236,
+       420
+      ],
+      "on": [
+       232,
+       420
+      ],
+      "role": "REPORTED: the in-pool cost (the pool's own teams)"
+     },
+     "p72": {
+      "ci95_pp": [
+       -3.8854210534286406,
+       9.563138013636944
+      ],
+      "delta_pp": 2.857142857142858,
+      "off": [
+       196,
+       420
+      ],
+      "on": [
+       208,
+       420
+      ],
+      "role": "REPORTED: a sibling generator over the same Smogon tables (the corpus's own population)"
+     }
+    },
+    "reasons": [],
+    "u": {
+     "ci95_pp": [
+      -1.5174562562410745,
+      5.028010346262938
+     ],
+     "ci95_unwidened_pp": [
+      -1.5174562562410745,
+      5.028010346262938
+     ],
+     "delta_pp": 1.7579365079365084,
+     "off": {
+      "mean": 0.48214285714285715,
+      "n_eff": 1790.0965899293203,
+      "per_panel": {
+       "forum72": [
+        1830,
+        3600
+       ],
+       "heldout72_hpfix": [
+        198,
+        420
+       ],
+       "p72": [
+        196,
+        420
+       ]
+      },
+      "var": 0.0001394791341727755,
+      "wilson95": [
+       0.4590584342933975,
+       0.5053037569687888
+      ]
+     },
+     "on": {
+      "mean": 0.49972222222222223,
+      "n_eff": 1786.479976866318,
+      "per_panel": {
+       "forum72": [
+        1857,
+        3600
+       ],
+       "heldout72_hpfix": [
+        205,
+        420
+       ],
+       "p72": [
+        208,
+        420
+       ]
+      },
+      "var": 0.00013993995235145792,
+      "wilson95": [
+       0.4765620733622549,
+       0.5228835631272312
+      ]
+     },
+     "overdispersion": {
+      "df": 4,
+      "half_width_factor": 1.0,
+      "phi_hat": 0.6013867007028748,
+      "ratio_off": 1.139152916318252,
+      "ratio_on": 0.06362048508749746
+     }
+    }
+   }
+  },
+  "verdict": "CONTINUE"
+ },
+ "guards": {
+  "G-C": {
+   "detail": {},
+   "guard": "G-C",
+   "near_boundary": [],
+   "reasons": [
+    "the guards gate only a QUALIFYING primary (the orchestrator's A1 ruling (a)): H is not GAIN, so they were not played"
+   ],
+   "status": "INCONCLUSIVE"
+  },
+  "G-E": {
+   "detail": {},
+   "guard": "G-E",
+   "near_boundary": [],
+   "reasons": [
+    "the guards gate only a QUALIFYING primary (the orchestrator's A1 ruling (a)): H is not GAIN, so they were not played"
+   ],
+   "status": "INCONCLUSIVE"
+  },
+  "G-F": {
+   "detail": {},
+   "guard": "G-F",
+   "near_boundary": [],
+   "reasons": [
+    "the guards gate only a QUALIFYING primary (the orchestrator's A1 ruling (a)): H is not GAIN, so they were not played"
+   ],
+   "status": "INCONCLUSIVE"
+  }
+ },
+ "h": {
+  "ci95_pp": [
+   -1.5584355909252117,
+   3.057305657078251
+  ],
+  "ci95_unwidened_pp": [
+   -1.5584355909252117,
+   3.057305657078251
+  ],
+  "class": "UNDECIDED",
+  "delta_pp": 0.7500000000000062,
+  "final": false,
+  "look": 1,
+  "near_boundary": [],
+  "off": {
+   "mean": 0.5083333333333333,
+   "n_eff": 3600.0,
+   "per_panel": {
+    "forum72": [
+     1830,
+     3600
+    ]
+   },
+   "var": 6.942515432098765e-05,
+   "wilson95": [
+    0.4920023896381334,
+    0.5246465114540927
+   ]
+  },
+  "on": {
+   "mean": 0.5158333333333334,
+   "n_eff": 3600.0,
+   "per_panel": {
+    "forum72": [
+     1857,
+     3600
+    ]
+   },
+   "var": 6.937480709876543e-05,
+   "wilson95": [
+    0.4995003082814514,
+    0.5321326037937785
+   ]
+  },
+  "outcome": "CONTINUE",
+  "overdispersion": {
+   "df": 4,
+   "half_width_factor": 1.0,
+   "phi_hat": 0.33021318149261897,
+   "ratio_off": 0.6303957484420786,
+   "ratio_on": 0.03003061454315933
+  },
+  "per_panel_reported": {
+   "forum72": {
+    "ci95_pp": [
+     -1.5584355909252117,
+     3.057305657078251
+    ],
+    "delta_pp": 0.7500000000000062,
+    "off": [
+     1830,
+     3600
+    ],
+    "on": [
+     1857,
+     3600
+    ],
+    "role": "the PRIMARY: human-built forum teams; 19 % of its full sets sit in the corpus (X61 review B1)"
+   }
+  },
+  "positive_seeds": 2,
+  "reasons": [],
+  "seed_deltas_pp": {
+   "3501": 1.0000000000000009,
+   "3502": -0.2500000000000058,
+   "3503": 1.4999999999999958
+  },
+  "sign_ok": true,
+  "sign_rule": ">= 2 of 3"
+ },
+ "imports": {},
+ "inputs": {
+  "arm": "X61P",
+  "h": {
+   "off": {
+    "3501": {
+     "forum72": [
+      607,
+      1200
+     ]
+    },
+    "3502": {
+     "forum72": [
+      625,
+      1200
+     ]
+    },
+    "3503": {
+     "forum72": [
+      598,
+      1200
+     ]
+    }
+   },
+   "on": {
+    "3501": {
+     "forum72": [
+      619,
+      1200
+     ]
+    },
+    "3502": {
+     "forum72": [
+      622,
+      1200
+     ]
+    },
+    "3503": {
+     "forum72": [
+      616,
+      1200
+     ]
+    }
+   },
+   "ties": {
+    "off": {
+     "3501": {
+      "forum72": 2
+     },
+     "3502": {
+      "forum72": 2
+     },
+     "3503": {
+      "forum72": 1
+     }
+    },
+    "on": {
+     "3501": {
+      "forum72": 2
+     },
+     "3502": {
+      "forum72": 2
+     },
+     "3503": {
+      "forum72": 0
+     }
+    }
+   },
+   "units": {
+    "off": {
+     "3501": {
+      "forum72": {
+       "counted": 60,
+       "skipped": []
+      }
+     },
+     "3502": {
+      "forum72": {
+       "counted": 60,
+       "skipped": []
+      }
+     },
+     "3503": {
+      "forum72": {
+       "counted": 60,
+       "skipped": []
+      }
+     }
+    },
+    "on": {
+     "3501": {
+      "forum72": {
+       "counted": 60,
+       "skipped": []
+      }
+     },
+     "3502": {
+      "forum72": {
+       "counted": 60,
+       "skipped": []
+      }
+     },
+     "3503": {
+      "forum72": {
+       "counted": 60,
+       "skipped": []
+      }
+     }
+    }
+   }
+  },
+  "look": 1,
+  "p": {
+   "inconclusive": [],
+   "off": {
+    "3501": 56.82142857142857,
+    "3502": 57.392857142857146,
+    "3503": 56.83571428571429
+   },
+   "on": {
+    "3501": 53.47857142857142,
+    "3502": 54.114285714285714,
+    "3503": 53.65714285714286
+   },
+   "panel": "home72",
+   "per_final": {
+    "c0_s3501": {
+     "final": "09a6a2df48509a59fd9aefe6d20d9722aad6717f1730c6dfd75274446b283303",
+     "inconclusive": [],
+     "per_member_pp": {
+      "production": 73.45,
+      "tstar": 57.550000000000004,
+      "x26_080m": 59.45,
+      "x26_140m": 53.300000000000004,
+      "x26_210m": 51.800000000000004,
+      "x26_270m": 50.8,
+      "x26_pstar": 51.4
+     },
+     "s_pp": 56.82142857142857
+    },
+    "c0_s3502": {
+     "final": "7e9a9890e2b397de6d8b87588c597d7f53e39b84efd3d1080305f77dbf22feec",
+     "inconclusive": [],
+     "per_member_pp": {
+      "production": 75.44999999999999,
+      "tstar": 59.4,
+      "x26_080m": 59.4,
+      "x26_140m": 54.949999999999996,
+      "x26_210m": 50.849999999999994,
+      "x26_270m": 52.400000000000006,
+      "x26_pstar": 49.3
+     },
+     "s_pp": 57.392857142857146
+    },
+    "c0_s3503": {
+     "final": "99096be8eccfc1cef4268ab4d6de15063a386cda475e72340212fdbf3a1b7e26",
+     "inconclusive": [],
+     "per_member_pp": {
+      "production": 75.5,
+      "tstar": 59.45,
+      "x26_080m": 54.50000000000001,
+      "x26_140m": 52.849999999999994,
+      "x26_210m": 53.2,
+      "x26_270m": 50.74999999999999,
+      "x26_pstar": 51.6
+     },
+     "s_pp": 56.83571428571429
+    },
+    "n1p_s3501": {
+     "final": "312612745844914259f2383de8965c6f913fbea3fac005f267d428c1ecd6079e",
+     "inconclusive": [],
+     "per_member_pp": {
+      "production": 69.75,
+      "tstar": 56.65,
+      "x26_080m": 51.74999999999999,
+      "x26_140m": 50.8,
+      "x26_210m": 47.4,
+      "x26_270m": 47.4,
+      "x26_pstar": 50.6
+     },
+     "s_pp": 53.47857142857142
+    },
+    "n1p_s3502": {
+     "final": "4d0f4bdb63094ba7008a9292096149e0765fd1fed86edcba6bb69dd673d833d1",
+     "inconclusive": [],
+     "per_member_pp": {
+      "production": 70.89999999999999,
+      "tstar": 57.75,
+      "x26_080m": 54.800000000000004,
+      "x26_140m": 53.0,
+      "x26_210m": 47.5,
+      "x26_270m": 46.5,
+      "x26_pstar": 48.35
+     },
+     "s_pp": 54.114285714285714
+    },
+    "n1p_s3503": {
+     "final": "b96d4eae6e92a154cda7076aeb41739fd812426c7101c8086b1ba2f9c2ab79d4",
+     "inconclusive": [],
+     "per_member_pp": {
+      "production": 71.1,
+      "tstar": 56.10000000000001,
+      "x26_080m": 55.400000000000006,
+      "x26_140m": 50.05,
+      "x26_210m": 49.25,
+      "x26_270m": 45.4,
+      "x26_pstar": 48.3
+     },
+     "s_pp": 53.65714285714286
+    }
+   },
+   "team_set": "ts:08142ee8b0c18e8a"
+  },
+  "reported_panels": {
+   "off": {
+    "3501": {
+     "heldout72_hpfix": [
+      69,
+      140
+     ],
+     "home72": [
+      83,
+      140
+     ],
+     "p72": [
+      59,
+      140
+     ]
+    },
+    "3502": {
+     "heldout72_hpfix": [
+      66,
+      140
+     ],
+     "home72": [
+      74,
+      140
+     ],
+     "p72": [
+      74,
+      140
+     ]
+    },
+    "3503": {
+     "heldout72_hpfix": [
+      63,
+      140
+     ],
+     "home72": [
+      79,
+      140
+     ],
+     "p72": [
+      63,
+      140
+     ]
+    }
+   },
+   "on": {
+    "3501": {
+     "heldout72_hpfix": [
+      66,
+      140
+     ],
+     "home72": [
+      79,
+      140
+     ],
+     "p72": [
+      72,
+      140
+     ]
+    },
+    "3502": {
+     "heldout72_hpfix": [
+      70,
+      140
+     ],
+     "home72": [
+      74,
+      140
+     ],
+     "p72": [
+      65,
+      140
+     ]
+    },
+    "3503": {
+     "heldout72_hpfix": [
+      69,
+      140
+     ],
+     "home72": [
+      79,
+      140
+     ],
+     "p72": [
+      71,
+      140
+     ]
+    }
+   }
+  }
+ },
+ "ledgers": {
+  "p": {
+   "digest": "70187d7b6709ff4630421f9e9feb488fcefb98c28e8bf416e1d2b9e5d59a866c",
+   "family": "x61p_n1p_p_look1_2026-10-26",
+   "rows": 210
+  }
+ },
+ "look": 1,
+ "models": {
+  "c0_s3501": {
+   "arm": "c0",
+   "seed": 3501,
+   "sha256": "09a6a2df48509a59fd9aefe6d20d9722aad6717f1730c6dfd75274446b283303",
+   "source": "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3501/final_model.zip",
+   "step": 300061940
+  },
+  "c0_s3502": {
+   "arm": "c0",
+   "seed": 3502,
+   "sha256": "7e9a9890e2b397de6d8b87588c597d7f53e39b84efd3d1080305f77dbf22feec",
+   "source": "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3502/final_model.zip",
+   "step": 300061805
+  },
+  "c0_s3503": {
+   "arm": "c0",
+   "seed": 3503,
+   "sha256": "99096be8eccfc1cef4268ab4d6de15063a386cda475e72340212fdbf3a1b7e26",
+   "source": "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3503/final_model.zip",
+   "step": 300061491
+  },
+  "n1p_s3501": {
+   "arm": "n1p",
+   "seed": 3501,
+   "sha256": "312612745844914259f2383de8965c6f913fbea3fac005f267d428c1ecd6079e",
+   "source": "/home/goodlad/dev/gen3ai/models/rb_x35_n1p_s3501/final_model.zip",
+   "step": 300061625
+  },
+  "n1p_s3502": {
+   "arm": "n1p",
+   "seed": 3502,
+   "sha256": "4d0f4bdb63094ba7008a9292096149e0765fd1fed86edcba6bb69dd673d833d1",
+   "source": "/home/goodlad/dev/gen3ai/models/rb_x35_n1p_s3502/final_model.zip",
+   "step": 300061852
+  },
+  "n1p_s3503": {
+   "arm": "n1p",
+   "seed": 3503,
+   "sha256": "b96d4eae6e92a154cda7076aeb41739fd812426c7101c8086b1ba2f9c2ab79d4",
+   "source": "/home/goodlad/dev/gen3ai/models/rb_x35_n1p_s3503/final_model.zip",
+   "step": 300061085
+  }
+ },
+ "p": {
+  "bar_pp": -2.0,
+  "class": "INFERIORITY-NOT-EXCLUDED",
+  "look": 1,
+  "near_boundary": [],
+  "reasons": [],
+  "stat": {
+   "ci_pp": [
+    -4.199572766436017,
+    -2.3337605668973285
+   ],
+   "confidence": 0.975,
+   "delta_pp": -3.266666666666673,
+   "df": 3.999849789550194,
+   "mean_off_pp": 57.01666666666667,
+   "mean_on_pp": 53.75,
+   "n_off": 3,
+   "n_on": 3,
+   "q": 3.495473199352532,
+   "se_pp": 0.26688978760934196,
+   "var_off": 0.10619047619047714,
+   "var_on": 0.10750000000000189
+  }
+ },
+ "prereg": "designs/research_state/measurements/x61p_n1_production_2026-10-26/PREREG.md",
+ "read": "x61p_n1p_look1_2026-10-26",
+ "reasons": [
+  "H UNDECIDED with \u0394\u0302 > 0 at look 1: go to look 2"
+ ],
+ "regimes": {
+  "anchor": {
+   "primary": "00c8c0114bdf0836",
+   "reported": "3d2cbdc0b1413bcb"
+  },
+  "s": {
+   "p": "d4de0fd7c16a2658"
+  }
+ },
+ "repins": [
+  {
+   "by": "N1-P look-1 reader",
+   "from_commit": "46b9e572cc0fa237f62ddd948fb5fa4d115e44a4",
+   "playpath_digest": "9822a30606cbd79aa160854a4826acdfc4c0e7ceb336928776015f3f24f6f9c8",
+   "playpath_files": 1537,
+   "playpath_schema": "gen3_read_playpath_v1",
+   "root": "/home/goodlad/dev/gen3ai-reads/n1p_play_sched_de15dfc7",
+   "schema": "gen3_read_repin_v1",
+   "t": 1793065264.6105964,
+   "time": "2026-10-26T18:41:04-0700",
+   "to_commit": "de15dfc7b6d19d6f0e4a3724f269e26e7aa22957",
+   "why": "anchor lane --concurrency 2; scheduling-only change, play path byte-identical to 46b9e572"
+  }
+ ],
+ "reported": {
+  "dose": {
+   "read": false
+  },
+  "reported_panels": {
+   "dH_minus_dF_pp": 0.9166666666666601,
+   "per_panel": {
+    "forum72": {
+     "ci95_pp": [
+      -1.5584355909252117,
+      3.057305657078251
+     ],
+     "delta_pp": 0.7500000000000062,
+     "off": [
+      1830,
+      3600
+     ],
+     "on": [
+      1857,
+      3600
+     ],
+     "role": "the PRIMARY: human-built forum teams; 19 % of its full sets sit in the corpus (X61 review B1)"
+    },
+    "heldout72_hpfix": {
+     "ci95_pp": [
+      -5.069455951253143,
+      8.381461478567658
+     ],
+     "delta_pp": 1.6666666666666663,
+     "off": [
+      198,
+      420
+     ],
+     "on": [
+      205,
+      420
+     ],
+     "role": "REPORTED: generator-adjacent (62 % of its full sets sit verbatim in the corpus, B1)"
+    },
+    "home72": {
+     "ci95_pp": [
+      -7.63455077369665,
+      5.741835322959171
+     ],
+     "delta_pp": -0.952380952380949,
+     "off": [
+      236,
+      420
+     ],
+     "on": [
+      232,
+      420
+     ],
+     "role": "REPORTED: the in-pool cost (the pool's own teams)"
+    },
+    "p72": {
+     "ci95_pp": [
+      -3.8854210534286406,
+      9.563138013636944
+     ],
+     "delta_pp": 2.857142857142858,
+     "off": [
+      196,
+      420
+     ],
+     "on": [
+      208,
+      420
+     ],
+     "role": "REPORTED: a sibling generator over the same Smogon tables (the corpus's own population)"
+    }
+   },
+   "reasons": [],
+   "u": {
+    "ci95_pp": [
+     -1.5174562562410745,
+     5.028010346262938
+    ],
+    "ci95_unwidened_pp": [
+     -1.5174562562410745,
+     5.028010346262938
+    ],
+    "delta_pp": 1.7579365079365084,
+    "off": {
+     "mean": 0.48214285714285715,
+     "n_eff": 1790.0965899293203,
+     "per_panel": {
+      "forum72": [
+       1830,
+       3600
+      ],
+      "heldout72_hpfix": [
+       198,
+       420
+      ],
+      "p72": [
+       196,
+       420
+      ]
+     },
+     "var": 0.0001394791341727755,
+     "wilson95": [
+      0.4590584342933975,
+      0.5053037569687888
+     ]
+    },
+    "on": {
+     "mean": 0.49972222222222223,
+     "n_eff": 1786.479976866318,
+     "per_panel": {
+      "forum72": [
+       1857,
+       3600
+      ],
+      "heldout72_hpfix": [
+       205,
+       420
+      ],
+      "p72": [
+       208,
+       420
+      ]
+     },
+     "var": 0.00013993995235145792,
+     "wilson95": [
+      0.4765620733622549,
+      0.5228835631272312
+     ]
+    },
+    "overdispersion": {
+     "df": 4,
+     "half_width_factor": 1.0,
+     "phi_hat": 0.6013867007028748,
+     "ratio_off": 1.139152916318252,
+     "ratio_on": 0.06362048508749746
+    }
+   }
+  }
+ },
+ "reported_incomplete": {},
+ "rule": "d1",
+ "schema": "gen3_read_record_v1",
+ "spec_sha256": "1266daadeefe4142a2f2f339bbdedaf4e052c3f2ef3fb8a8b0d5550fb8729f03",
+ "verdict": "CONTINUE",
+ "void": {
+  "n1p_s3501": {
+   "batch2": null,
+   "k9b": "PASS",
+   "k9b_file": "/home/goodlad/dev/gen3ai-reads/n1p_play_sched_de15dfc7/designs/research_state/measurements/x35_breakers_stage_2026-10-17/k9b/rb_x35_n1p_s3501.json",
+   "pass": true,
+   "run": "models/rb_x35_n1p_s3501"
+  },
+  "n1p_s3502": {
+   "batch2": null,
+   "k9b": "PASS",
+   "k9b_file": "/home/goodlad/dev/gen3ai-reads/n1p_play_sched_de15dfc7/designs/research_state/measurements/x35_breakers_stage_2026-10-17/k9b/rb_x35_n1p_s3502.json",
+   "pass": true,
+   "run": "models/rb_x35_n1p_s3502"
+  },
+  "n1p_s3503": {
+   "batch2": null,
+   "k9b": "PASS",
+   "k9b_file": "/home/goodlad/dev/gen3ai-reads/n1p_play_sched_de15dfc7/designs/research_state/measurements/x35_breakers_stage_2026-10-17/k9b/rb_x35_n1p_s3503.json",
+   "pass": true,
+   "run": "models/rb_x35_n1p_s3503"
+  }
+ }
+}

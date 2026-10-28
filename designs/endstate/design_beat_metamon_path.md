@@ -5,7 +5,8 @@
 UNDECIDED (§6.2); D1 FINAL UNDECIDED, U +2.10 pp [−0.92, +5.11] at an in-pool cost (§6.3); X26c, 100M more training,
 FLAT (+0.08 pp [−3.90, +4.06]); D3 look 1 CONTINUE, +1.27 pp [−2.63, +5.16], look 2 queued (§6.4); the belief prior
 mix NOT DETECTED at λ = 0.25 and λ = 1 (§5); Metamon's ensemble no stronger than Kakuna (§6.7). X61P / N1-P (12,000
-procedural teams, a fork of P\* against the shared C0) TRAINED 2026-10-26, look 1 being read (§6.5b); H-CTX
+procedural teams, a fork of P\* against the shared C0) look 1 READ 2026-10-28: CONTINUE, F +0.75 pp [−1.56, +3.06] at a
+resolved in-pool cost (P −3.27 pp [−4.20, −2.33]), look 2 licensed (§6.5b); H-CTX
 SUPPORTED: the home premium does not go with the sets, which keep at most about a fifth of it (§4, 2026-10-27), and under a neutral pilot rc72b is only about 4 pp weaker (A-K, 2026-10-28); X61's toy
 design is NOT-READY and not run. X53-N1 and the all-null fallback are REVISED DRAFTs after their review (`6fca2c06`): X53-N1
 gated on a zero-GPU seed-spread read, the fallback opening with PR-1, a zero-GPU pooled precision read (§6.5, §7).** ALWAYS-CURRENT
@@ -60,7 +61,11 @@ Smogon-usage teams; U = the three UNFAMILIAR panels H, F and P72; "pilot" = play
      [−2.63, +5.16] (D3 0.491, LB 0.464; 2 of 3 seeds positive), +0.48 [−4.29, +5.24] without H; P −0.24 pp [−1.10,
      +0.62], NON-INFERIOR. C0's side reuses D1's banked games, played before the 10-25 obs and engine fixes (a
      140-game replay guard passed; §6.4). Look 2 (s3504–s3505, ≈ 8.1 GPU-h) is queued and decides.
-  5. **X61P / N1-P: breadth at 10⁴ teams, at the plateau.** TRAINED 2026-10-26 (s3501–s3503), look 1 being read (§6.5b): 12,000
+  5. **X61P / N1-P: breadth at 10⁴ teams, at the plateau.** Look 1 READ 2026-10-28: **CONTINUE** (§6.5b). F (the
+     primary) +0.75 pp [−1.56, +3.06] (N1-P 0.516 vs C0 0.508, 3,600 games per arm; 2 of 3 seeds positive); P
+     **−3.27 pp [−4.20, −2.33]**, INFERIORITY-NOT-EXCLUDED, twice D1's in-pool cost; reported U +1.76 [−1.52, +5.03]
+     (M4-hazarded), without H +1.80 [−2.17, +5.77], Δ_H − Δ_F +0.92 (no sign of learning the generator). Look 2
+     (s3504–s3505) decides; on an F GAIN the P cost makes it a TRADE unless P recovers. 12,000
      procedural teams drawn from Smogon usage alone, 0.5 of each side's draws, forked from P\* at C0's pin + the corpus,
      read by D1's rule on F alone against the shared C0 (≈ 12.3 GPU-h at look 1, ≈ 20.5 with look 2). GO (F GAIN)
      funds X53-N1, a from-scratch production run with this corpus; NULL rules out only "N1 at the plateau". The
@@ -262,7 +267,7 @@ behind it is a GUESS.
 | **Practice ceiling** | X52 | sizes the familiarity premium and its within-population transfer | diagnostic; **READ: practised +3.2 [−0.2, +6.8], unpractised +1.3 [−3.5, +6.1], UNDECIDED** (§6.2) | §4; R0's practice curve | 2.2 GPU-h; 8.4 lane-h | **2** (DONE) |
 | **Widen the pool (D1)** | X38 | breadth on BOTH sides: forum teams at a 0.5 share | **MEASURED (final): +2.1 [−0.9, +5.1], UNDECIDED**; in-pool −1.6 [−2.9, −0.3] | §6.3; what gain there is sits on its own forum population | ≈ 13 GPU-h (C0 shared); ≈ 10 lane-h for the readout | **DONE** (UNDECIDED) |
 | **Set mutation (D3)** | X41 | defeats exact-set identification on familiar cores, the CORE-stratum ≈ 11 pp | **MEASURED (look 1): +1.3 [−2.6, +5.2], CONTINUE**; in-pool −0.2, non-inferior | §6.4; X37a reverse CORE 0.463 vs home72 0.575 | 12.54 GPU-h at look 1 (MEASURED); look 2 ≈ 8.1 (C0 shared) | **look 2 queued next on the GPU** |
-| **Breadth at 10⁴ (N1), at the plateau** | X61P (N1-P; the X61 toy NOT-READY) | Procgen-scale breadth: 12,000 procedural Smogon-usage teams at 0.5 per side, a fork of P\*; the field's common factor (Metamon 11k + 107k teams, random-battle bots) | **+3 to +8** on production from step 0 (survey GUESS); N1-P's GUESS **+1.5 [−1.5, +4.5]** on F at the plateau | Procgen's gap closes at ≈ 10⁴ levels; VGC-Bench's monotone team-count gain; against: D1 +2.1 at 10³, procedural teams rate −146 Elo, plasticity at the plateau | TRAINED 2026-10-26 (s3501–s3503); ≈ 12.3 GPU-h at look 1, + 8.2 at look 2 | **look 1 being read** |
+| **Breadth at 10⁴ (N1), at the plateau** | X61P (N1-P; the X61 toy NOT-READY) | Procgen-scale breadth: 12,000 procedural Smogon-usage teams at 0.5 per side, a fork of P\*; the field's common factor (Metamon 11k + 107k teams, random-battle bots) | **+3 to +8** on production from step 0 (survey GUESS); N1-P's GUESS **+1.5 [−1.5, +4.5]** on F at the plateau | Procgen's gap closes at ≈ 10⁴ levels; VGC-Bench's monotone team-count gain; against: D1 +2.1 at 10³, procedural teams rate −146 Elo, plasticity at the plateau | TRAINED 2026-10-26 (s3501–s3503); ≈ 12.3 GPU-h at look 1, + 8.2 at look 2 | **look 1 CONTINUE** (2026-10-28): F +0.75 [−1.56, +3.06], P −3.27 [−4.20, −2.33] |
 | **Fresh wide run** | X53 | breadth from step 0, without plateau plasticity | **+3 to +8** (GUESS) | X26 gained most of its in-house strength by 100M (X37b), so a 100M look is informative | ≈ 21 GPU-h to 100M; ≈ 60 to 280M (ESTIMATE: 1,333 steps/s); as X53-N1 ≈ 39 to its screen | conditional on N1-P's GAIN (§6.5) |
 | Off-meta exploiters (D4) | X42 | exploiters pilot FAR teams | +0 to +3 (GUESS) | FAR 0.263 | ≈ 18 GPU-h | conditional (diversity doc §6.1) |
 | X35 plateau breakers (A1 archive, A2 PFSP, A3 exploiters) | X35 | the in-pool plateau and its cycling | **+0 to +2** (GUESS) | ≈ 79 % of in-house gain transfers (X37b), but the plateau's in-house remainder is small; A2's prior is negative | ≈ 65–91 GPU-h for batch 1 | A1 NULL and SPRT NULL (in-house S, FINAL); LR-F (a learning-rate floor) UNDECIDED, FINAL: −1.1 pp [−2.4, +0.2] in-house S, no Kakuna read (owner goal 4) |
@@ -278,8 +283,9 @@ behind it is a GUESS.
 | Sample our side at T > 0 | — | — | negative | T = 1 cost N0 23 pp; 0 < T < 1 unmeasured | — | no |
 
 **The arithmetic.** At P\* goal (b) needs ≈ +4 pp (0.487 → ≈ 0.53; X51). Every measured lever reads below that, and
-none is detected: D1 +2.1 (final), D3 +1.3 (look 1), the belief prior mix +1.5 / −1.5, plain training +0.1 (X26c).
-**No single row reaches the bar on its own.** The open routes are D3 look 2, N1-P look 1 and X59-S.
+none is detected: D1 +2.1 (final), D3 +1.3 (look 1), N1-P +0.75 on F (look 1), the belief prior mix +1.5 / −1.5,
+plain training +0.1 (X26c). **No single row reaches the bar on its own.** The open routes are D3 look 2, N1-P look 2
+and X59-S.
 
 **Goal (a) needs no lever.** X51 read it MET at P\* against ckpt 34, and ckpt 28 is not detectably stronger. Had it
 failed, specialisation (more exposure to the teams we bring: the X52 mechanism pointed at our own deployment set)
@@ -462,7 +468,7 @@ orchestrator's standing queue item, so the GO is a fresh ruling.
 - **Registered prediction (GUESS):** H +1.5 pp, 80 % [−1.5, +4.5]; P −0.8 [−2.5, +0.9]; the final class UNDECIDED with
   probability 0.67.
 
-### 6.5b X61P / N1-P — breadth at 10⁴ teams, at the plateau: TRAINED 2026-10-26, look 1 being read (the X61 toy: NOT-READY)
+### 6.5b X61P / N1-P — breadth at 10⁴ teams, at the plateau: look 1 READ 2026-10-28: CONTINUE (the X61 toy: NOT-READY)
 
 **Why.** The literature survey (`../research_state/literature/sota_survey_2026-10-26.md` §5, N1) ranks breadth first:
 every system that generalises across teams trained on 10⁴–10⁵ of them, and every breadth test here (D1, D3, X52) ran
@@ -494,6 +500,14 @@ at 10³ teams.
 - **The M4 hazard:** any N1-trained model's U is inflated on H and P72, so a goal-(b) claim from one needs a set-level
   coverage line and leans on F and the sealed `forum216b` (X54's owner is told first).
 - **Registered prediction (GUESS):** Δ_F +1.5 pp, 80 % [−1.5, +4.5]; final GAIN 0.20, NULL 0.30.
+- **Look 1 READ 2026-10-28: CONTINUE** ([`read/README.md`](../research_state/measurements/x61p_n1_production_2026-10-26/read/README.md),
+  record `x35_breakers_stage_2026-10-17/reads/n1p_look1.json`). F +0.75 pp [−1.56, +3.06] (seeds +1.0 / −0.25 / +1.5;
+  φ̂ 0.33, not widened): UNDECIDED with Δ̂ > 0, so look 2 (s3504–s3505) decides. P −3.27 pp [−4.20, −2.33]
+  (Welch 97.5 %): the in-pool cost is resolved and below the registered 80 % guess. Reported: H +1.67 [−5.07, +8.38],
+  P72 +2.86 [−3.89, +9.56], home72 vs Kakuna −0.95 [−7.63, +5.74], U +1.76 [−1.52, +5.03] (M4: not a goal read), U
+  without H +1.80 [−2.17, +5.77], Δ_H − Δ_F +0.92. K9(b) and VOID guards 2–5 PASS on every seed; C0 re-played on one
+  engine (Kakuna's legacy pack). A look-2 GAIN is read beside D1's two-look false-GAIN rate, 3.5–7.4 %, and is a TRADE
+  unless P's interval clears −2.0.
 - **Not built:** N4 (no width flag; `D_MODEL` is a constant) and the human-derived arm `n1_hrep_v1` (X61 PREREG §10).
   The from-step-0 toy screen, if wanted, is the review's Option T by a new registration.
 
@@ -558,7 +572,7 @@ with the interval named in the registration.
 | X52 | ≈ 2.2 | ≈ 8.4 | ≈ 0.5 (halves + prereg + kit, DONE) |
 | X38 / D1 (already in X35) | ≈ 13 (C0 shared) | ≈ 10 | 0 (built) |
 | X41 / D3: look 1 RUN and READ; look 2 queued | 12.54 (look 1, MEASURED); ≈ 8.1 (look 2) | ≈ 10 | DONE |
-| X61P / N1-P: look 1 TRAINED, being read (the X61 toy: NOT-READY, not run) | ≈ 12.3 (look 1); ≈ 20.5 (final) | ≈ 44 (look 1); ≈ 29 (look 2, AM-N1P-1) | DONE |
+| X61P / N1-P: look 1 READ, CONTINUE; look 2 licensed (the X61 toy: NOT-READY, not run) | ≈ 12.3 (look 1); ≈ 20.5 (final) | ≈ 44 (look 1); ≈ 29 (look 2, AM-N1P-1) | DONE |
 | X53 (conditional); as X53-N1 (on N1-P's GO), a fresh pair (§6.5) | ≈ 21 to the look; ≈ 60 in all. X53-N1: ≈ 39 to the screen, ≈ 150 in all (CF to its plateau) | ≈ 7. X53-N1: ≈ 110–160 to the screen (with Stage 0), ≈ 205–305 in all, at the measured lane rate | ≈ 0.3. X53-N1: ≈ 2.2 |
 | X54 | 0 | ≈ 5.6–7.9 per model | ≈ 0.3 (prereg; the carve is DONE) |
 | **sure path (X51, X52, D1, X54)** | **≈ 15.2** | **≈ 36–39** | **≈ 1.0** |
@@ -666,3 +680,4 @@ with the interval named in the registration.
 | 2026-10-27 | **H-CTX's reading narrowed after its adversarial review** (reviewer, orchestrator brief; docs + one CPU script on banked games) | §4 and the status line: "goes with the TEAM" becomes "does not go with the sets" (≤ about a fifth; a quarter against X51's U); the mechanism is open, since rc72b's sixes are less coherent than both controls (memorised sixes, core knowledge or a plan-less six); "must add TEAM contexts" and "the win-condition account is now measured" withdrawn; X62's corpus read on F only. The verdict is unchanged | "the per-team win-condition account is now measured, not a hypothesis" | `../research_state/measurements/hctx_rc72_2026-10-26/REVIEW.md` M1–M3, `review_results.json` |
 | 2026-10-28 | **LR-F look 1 read: UNDECIDED, FINAL** (LR-F read operator, orchestrator brief; 21,000 in-house S games, CPU) | the X35 plateau-breakers row: LR-F (P\* + 20M with the learning rate floored two controller rungs up) reads −1.13 pp [−2.45, +0.18] on in-house S (Welch 97.5 %, 3 seeds). No look 2. It says nothing about goal (b), and no Kakuna game was played (the guards are read only on a GAIN) | — | `x35_breakers_stage_2026-10-17/reads/lrfloor_look1.json`; ledger 2026-10-28 · *X35 LR-F LOOK 1* |
 | 2026-10-28 | **H-CTX's A-K check read: rc72b UNDECIDED under Kakuna, detected weaker** (A-K read operator, orchestrator brief; 1,080 Kakuna-vs-Kakuna games, CPU) | §4's H-CTX caveat replaced: under a neutral pilot rc72b is about 4 pp weaker, uniformly (no coherence gradient); the strength-adjusted share (post hoc, across engines) is 0.21 [−0.88, +0.88]; the premium stays mostly team-level, and "no plan" covers at most the ~4 pp part. No lever's order changes; rc72c (core-preserving recombination) is the registered separator of memorised sixes from cores | the A-K cell was the review's cheapest check; it bounds Kakuna's own response, which H-CTX left open |
+| 2026-10-28 | **N1-P LOOK 1 READ: CONTINUE** (N1-P look-1 reader, orchestrator brief; CPU, 9,720 Kakuna games + 21,000 in-house pairs; `main.reads` spec `read_spec_look1.json` byte for byte, state at the registered path) | F +0.75 pp [−1.56, +3.06] (N1-P 0.516 vs C0 0.508; 2 of 3 seeds positive), UNDECIDED with Δ̂ > 0 ⇒ look 2; P −3.27 pp [−4.20, −2.33], INFERIORITY-NOT-EXCLUDED; H / P72 / home72 / U reported only (U +1.76, without H +1.80, Δ_H − Δ_F +0.92); guards not read; every VOID guard PASS; §0 item 5, §5's row and arithmetic, §6.5b and §6.8 quote it | re-using C0's banked rows (the registered spec has no `import_off`, and editing it would move look 2's pinned sha); reading +0.75 as breadth transfer (LB < 0); calling the look a NULL (UB +3.06 > +3) | `x61p_n1_production_2026-10-26/read/`; `x35_breakers_stage_2026-10-17/reads/n1p_look1.json` |
