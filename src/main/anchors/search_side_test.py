@@ -76,6 +76,11 @@ def test_the_presets_parse_and_r0s4_is_r0s_search():
         (8, 8, 4, "pikl", 0.015, "off", "seed", 60)
     assert t == 10 and SP.parse("r0s4")[1] == SP.DEFAULT_FROM_TURN == 10
     assert SP.canonical("r0s4") == "r0s4@10" and SP.stamp("r0s4@12") == "+search=r0s4@12" and SP.stamp(None) == ""
+    # r0s4_rolls: r0s4 with only the dice changed (the S-U gate's leak-reduced re-gate)
+    r, tr = SP.parse("r0s4_rolls@10")
+    assert tr == 10 and r.dice == "rolls" and SP.stamp("r0s4_rolls") == "+search=r0s4_rolls@10"
+    assert {k: v for k, v in r.as_dict().items() if k not in ("name", "dice")} == \
+        {k: v for k, v in p.as_dict().items() if k not in ("name", "dice")}
     for bad in ("r0s5@10", "r0s4@0", "r0s4@x", "", None, 3):
         with pytest.raises(SP.SearchSpecError):
             SP.parse(bad)

@@ -12,6 +12,11 @@ Pure and light (no torch, no engine): ``main.reads.spec`` validates a spec with 
   then the critic V, the checkpoint greedy on BOTH sides (σ̂ = π);
 * piKL at L1's fitted λ = 0.015: argmax Q(a) + λ·log π(a).
 
+``r0s4_rolls`` is ``r0s4`` with ONE lever changed, the world builder's dice: ``dice="rolls"`` (F1 tier A,
+``main.value_search.worlds`` THE DICE), so a world may reproduce each printed damage number on ANY consistent roll
+rather than the truth's own. Its worlds stay uniformly weighted (``SearchConfig(weights="uniform")``, as every live
+preset). It is the S-U gate's leak-reduced re-gate (``measurements/su_regate_rolls_2026-10-28/``; the gate review's M1 / M3).
+
 A searched decision is one of OUR side's decisions at turn >= ``from_turn`` with >= 2 legal actions; every other
 decision is the checkpoint's greedy choice, exactly the raw arm's.
 
@@ -57,6 +62,8 @@ class SearchPreset:
 PRESETS: Dict[str, SearchPreset] = {
     "r0s4": SearchPreset(name="r0s4", n_worlds=8, per_action=8, depth=4, rule="pikl", pikl_lambda=0.015,
                          reveal="off", dice="seed", max_tries=60),
+    "r0s4_rolls": SearchPreset(name="r0s4_rolls", n_worlds=8, per_action=8, depth=4, rule="pikl", pikl_lambda=0.015,
+                               reveal="off", dice="rolls", max_tries=60),
 }
 
 
