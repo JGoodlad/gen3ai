@@ -1,0 +1,54 @@
+{
+ "D2_team_resampled": {
+  "ci": [
+   0.4019320880879847,
+   0.5151172302677415
+  ],
+  "teams": 72
+ },
+ "alias_matches": 12,
+ "alias_teams": [
+  "tsr:47f4cb2ab938e169"
+ ],
+ "class_if_registered": {
+  "bound_near_bar": false,
+  "class": "UNDECIDED",
+  "detected_weaker": true
+ },
+ "post_hoc": true,
+ "primary": {
+  "S": 0.4575,
+  "binomial_unit_sd": 0.11139877692326787,
+  "ci": [
+   0.42875,
+   0.48833333333333334
+  ],
+  "games": 1200,
+  "unit_sd": 0.11701622370496106,
+  "units": 60
+ },
+ "schema": "hctx_kk_sensitivity_alias_v1",
+ "units_counted": 60,
+ "vs_forum72": {
+  "S": 0.4562289562289562,
+  "binomial_unit_sd": 0.15697563370025505,
+  "ci": [
+   0.41408934707903783,
+   0.4983922829581994
+  ],
+  "games": 594,
+  "unit_sd": 0.16928286291738517,
+  "units": 59
+ },
+ "vs_home72": {
+  "S": 0.45874587458745875,
+  "binomial_unit_sd": 0.15679276135558534,
+  "ci": [
+   0.4138225255972696,
+   0.5050171432740006
+  ],
+  "games": 606,
+  "unit_sd": 0.18401080191780483,
+  "units": 60
+ }
+}

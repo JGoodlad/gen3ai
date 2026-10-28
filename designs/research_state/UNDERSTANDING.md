@@ -82,7 +82,15 @@ under `measurements/`. A number with no pointer is not a measurement.
    the sets keep at most about a fifth (a quarter against X51's U, across engines). Why the six matters (memorised
    sixes, broken cores, or no plan on a recombined six: rc72b's sixes are less coherent than both controls) is open.
    [MEASURED · registered, one checkpoint, symmetric cells · `hctx_rc72_2026-10-26`, record `read_am2/record.json`;
-   review `REVIEW.md` M1, M2] The policy keys on our sets' exact identity only weakly: a Smogon re-draw of one familiar
+   review `REVIEW.md` M1, M2]
+   - **Under a neutral pilot rc72b is slightly weaker.** With Kakuna on both sides it scores 0.459 [0.428, 0.493]
+     against home72 + F teams (−28 Elo, UNDECIDED against the 35-Elo bar). It is uniformly weaker: there is no
+     coherence gradient inside the panel. [MEASURED · registered · `hctx_kk_2026-10-27`]
+   - **Strength-adjusted (POST HOC, across engines, assuming the weakness transfers in full):** rc72b would recover
+     about 0.21 [−0.88, +0.88] of the premium. Under the first-order cancellation of H-CTX's symmetric cells, the
+     registered −0.34 stands.
+   - **So:** the premium is mostly team-level either way, and "no plan" explains at most the ~4 pp part of the
+     rc72b − F gap. The policy keys on our sets' exact identity only weakly: a Smogon re-draw of one familiar
    bench set moves it 1.19× [1.07, 1.33] as much as re-drawing an unfamiliar one, a small real premium under the
    registered 1.5× bar (bench mons only; plan memorisation keyed on the battle's course is not ruled out). Erasing
    all six mons' identity embeddings costs familiar and unfamiliar teams alike (1.07 [0.91, 1.25]). Lever N2 is
@@ -253,7 +261,18 @@ replicated on the 1,600 PastaMittens twins · `c758fcb82`; `measurements/pilotin
     fit: memorised pool sixes, core (pair) knowledge that F keeps and rc72b breaks, or a recombined six with no plan.
   - **P\*'s edge barely moves with coherence** across rc72b's thirds (0.50 / 0.51 / 0.53). The most coherent third
     sits at F's level, which leans against "no plan" alone, but the read is underpowered.
-  - **Caveats:** Kakuna pilots rc72b too (A-K), and the Kakuna-vs-Kakuna strength cell was not played.
+  - **A-K, measured (registered, 2026-10-28):** Kakuna on BOTH sides, rc72b against home72 + F teams, scores
+    **0.459 [0.428, 0.493]** (1,080 games, one engine). Class UNDECIDED, detected weaker by about 4 pp (−28 Elo).
+    - Kakuna finds home72 and F equal opponents.
+    - The deficit is flat across rc72b's coherence thirds (lift 0.459 / 0.458 / 0.461), so "no plan" is not what
+      the coherence metrics track.
+    - P\*'s banked per-team edge does not move with PMI once team strength is held fixed (partial r ≈ 0; direction
+      only, reliability ≈ 0.33): no sign of (b) or (c) inside the panel.
+    - **POST HOC, across engines:** if the 4 pp weakness transferred fully into P\*'s symmetric score, the recovered
+      share would be 0.21 [−0.88, +0.88], an UNDECIDED reading. Under first-order cancellation it is the registered
+      −0.34.
+    - (a) against (b) needs the rc72c core-preserving panel (predictions registered).
+    [`measurements/hctx_kk_2026-10-27/README.md`]
   [MEASURED · one checkpoint, one draw · PREREG `b044d214b` + Amendments `aaf7ced86`, `905c29f5b`; record
   `measurements/hctx_rc72_2026-10-26/read_am2/record.json`; review `measurements/hctx_rc72_2026-10-26/REVIEW.md`]
 - Facing stays minor: Kakuna's unseen-set and rare-species mons do not out-kill its familiar ones.

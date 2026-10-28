@@ -29885,3 +29885,51 @@ with its S imported from G1's committed results, never re-played.
 **Evidence:** `research_state/measurements/x35_breakers_stage_2026-10-17/lrf_read/` (README, `read_spec_look1.json`,
 `s_identity.json`, `mechanism.json`, `churn.json`), `reads/lrfloor_look1.json`. The state is
 `~/gen3ai_archive/x35_lrf_read/look1` (family `x35_lrf_s_look1_2026-10-27`). See `UNDERSTANDING.md` §4.12.
+
+### 2026-10-28 · MEASUREMENT · **H-CTX's A-K check reads UNDECIDED, detected weaker: with Kakuna piloting BOTH sides, rc72b scores 0.459 [0.428, 0.493] against home72 + forum72 teams (−28 Elo [−51, −5]; the bar is −35 Elo). The weakness is flat across rc72b's coherence thirds; post hoc and across engines, a full transfer into P\*'s symmetric score would make H-CTX's recovered share 0.21 [−0.88, +0.88]**
+
+**Question** (H-CTX review M3): is rc72b, the panel of new sixes of familiar pool sets, weaker as a set of teams
+under a pilot that knows none of them? And does Kakuna's own response to it (A-K) explain P\*'s drop?
+
+**Design** (PREREG `fb84c260f`, before any game; play pin `3d11545b5`, the first main commit with the F1 fix).
+- **The cell:** the team-strength meter's Kakuna lane. Kakuna on rc72b (72 teams) against Kakuna on the coherent
+  reference: home72's 71 + forum72's 72 teams.
+- **Units:** 60 units of 20 role-balanced games. Teams are attributed from the capture START lines. The re-derived
+  guards run in count mode.
+- **Engine:** one engine, `port=e00a212a102f5ce2/94;env=f2918a060efd2723/128`, with the new peer pack.
+- **The rule:** S's unit-bootstrap interval against 0.450. MATERIALLY WEAKER if the upper bound is below it,
+  NOT MATERIALLY WEAKER if the lower bound is above it, otherwise UNDECIDED.
+
+**Result** (54 of 60 units counted, exactly the floor; the six refused units all drew `rc72b_05`, whose `- wisp`
+alias the meter's team identity does not canonicalise).
+
+| quantity | value |
+|---|---|
+| S, registered | 0.459 [0.428, 0.493] |
+| post-hoc sensitivity, alias mapped, 60 / 60 units | 0.458 [0.429, 0.488] |
+| against home72's teams / forum72's | 0.458 / 0.461 (difference +0.005 [−0.066, +0.077]) |
+| teams resampled too | [0.400, 0.519] |
+| S by Smogon-lift tercile | 0.459 / 0.458 / 0.461 |
+| S by pool-PMI tercile | 0.473 / 0.439 / 0.465 |
+
+P\*'s banked per-team edge on rc72b against each team's Kakuna strength: r = 0.14. Its partial correlation with PMI,
+holding strength fixed: −0.001. That row reads direction only (reliability ≈ 0.33).
+
+**Reading.**
+- rc72b is about 4 pp weaker than human-built sixes in a neutral pilot's hands, uniformly across coherence. So "no
+  plan" is not what the coherence metrics track, and no within-panel sign of the cores account (b) appears.
+- **The account predictions:** (c) predicted MATERIALLY WEAKER plus a coherence gradient; neither was seen. (a) and
+  (b) predicted NOT MATERIALLY WEAKER; the result is in between.
+- **POST HOC, across engines (H-CTX played on another engine and Kakuna's legacy pack):** if the 4 pp transferred
+  fully into P\*'s symmetric score, the recovered share would be (−2.6 + 4.2) / 7.5 = 0.21 [−0.88, +0.88], an
+  UNDECIDED reading. Under the first-order cancellation of symmetric cells, the registered −0.34 stands.
+- Either way the premium is mostly team-level, and "no plan" covers at most the ~4 pp part.
+- (a) against (b) is not separated. The registered separator is a core-preserving recombined panel (rc72c).
+
+**FINDINGs.**
+1. Team identity (`main.team_strength.panel.team_id`, `team_overlap` keys) does not canonicalise Showdown move
+   aliases. A TECH_DEBT row is added.
+2. `main.reads` has no Kakuna-vs-Kakuna group shape.
+
+**Evidence:** `designs/research_state/measurements/hctx_kk_2026-10-27/` (PREREG, `tsr_registration.json`,
+`record.json`, `sensitivity_alias.json`, `scripts/`); state `~/gen3ai_archive/hctx_kk_read/`.

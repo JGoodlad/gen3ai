@@ -1,0 +1,208 @@
+{
+ "D1": {
+  "home72_minus_forum72": {
+   "ci": [
+    -0.06589023975222545,
+    0.07732397852383739
+   ],
+   "diff": 0.004827959439443974,
+   "units": 53
+  },
+  "vs_forum72": {
+   "S": 0.4608208955223881,
+   "binomial_unit_sd": 0.1567429976650961,
+   "ci": [
+    0.4153846153846154,
+    0.5076953124999999
+   ],
+   "games": 536,
+   "unit_sd": 0.17303379281243006,
+   "units": 53
+  },
+  "vs_home72": {
+   "S": 0.4577205882352941,
+   "binomial_unit_sd": 0.156967308630445,
+   "ci": [
+    0.4100318987889274,
+    0.508364409481887
+   ],
+   "games": 544,
+   "unit_sd": 0.19125159502922004,
+   "units": 54
+  }
+ },
+ "D2": {
+  "ci": [
+   0.39991086159174266,
+   0.5192654626104714
+  ],
+  "teams": 71
+ },
+ "D4": {
+  "smogon_lift": {
+   "corr_team_score": 0.08285122499883368,
+   "terciles": {
+    "0": {
+     "S": 0.4587765957446808,
+     "games": 376,
+     "x_range": [
+      -0.38940680030680075,
+      -0.07621823947891088
+     ]
+    },
+    "1": {
+     "S": 0.4583333333333333,
+     "games": 336,
+     "x_range": [
+      -0.06848815970544807,
+      0.05744279135014872
+     ]
+    },
+    "2": {
+     "S": 0.46059782608695654,
+     "games": 368,
+     "x_range": [
+      0.0587408555161086,
+      0.4687735053489696
+     ]
+    }
+   },
+   "x_mean": -0.0029744957115022657
+  },
+  "species_pair_pmi": {
+   "corr_team_score": 0.07425244828398751,
+   "terciles": {
+    "0": {
+     "S": 0.4725433526011561,
+     "games": 346,
+     "x_range": [
+      -0.6709166129007292,
+      -0.2597973978046666
+     ]
+    },
+    "1": {
+     "S": 0.438953488372093,
+     "games": 344,
+     "x_range": [
+      -0.24221104102055027,
+      -0.12871961634493917
+     ]
+    },
+    "2": {
+     "S": 0.4653846153846154,
+     "games": 390,
+     "x_range": [
+      -0.1190779226097082,
+      0.20519456181006207
+     ]
+    }
+   },
+   "x_mean": -0.21447793675597643
+  },
+  "teams": 71
+ },
+ "D5": {
+  "corr_edge_kakuna_strength": 0.14103743785814102,
+  "edge_by_kakuna_strength_tercile": {
+   "0": 0.5114958858014413,
+   "1": 0.4844009826152683,
+   "2": 0.5384563202497985
+  },
+  "smogon_lift": {
+   "corr_edge": -0.003672912134357261,
+   "partial_corr_edge_given_strength": -0.015566620688471401
+  },
+  "species_pair_pmi": {
+   "corr_edge": 0.009036853272990227,
+   "partial_corr_edge_given_strength": -0.001454029646321911
+  },
+  "teams": 71
+ },
+ "bar": 0.45,
+ "integrity": {
+  "rederived": {
+   "clean": 60
+  },
+  "rederived_hits": [],
+  "refused": [
+   {
+    "reasons": [
+     "battle-gen3ou-7: side A no strict match; 0 species+moves matches, side B ok",
+     "battle-gen3ou-17: side A no strict match; 0 species+moves matches, side B ok"
+    ],
+    "unit": "kak_rc72b_012"
+   },
+   {
+    "reasons": [
+     "battle-gen3ou-6: side A no strict match; 0 species+moves matches, side B ok",
+     "battle-gen3ou-16: side A no strict match; 0 species+moves matches, side B ok"
+    ],
+    "unit": "kak_rc72b_030"
+   },
+   {
+    "reasons": [
+     "battle-gen3ou-2: side A no strict match; 0 species+moves matches, side B ok",
+     "battle-gen3ou-12: side A no strict match; 0 species+moves matches, side B ok"
+    ],
+    "unit": "kak_rc72b_040"
+   },
+   {
+    "reasons": [
+     "battle-gen3ou-1: side A no strict match; 0 species+moves matches, side B ok",
+     "battle-gen3ou-11: side A no strict match; 0 species+moves matches, side B ok"
+    ],
+    "unit": "kak_rc72b_052"
+   },
+   {
+    "reasons": [
+     "battle-gen3ou-8: side A no strict match; 0 species+moves matches, side B ok",
+     "battle-gen3ou-18: side A no strict match; 0 species+moves matches, side B ok"
+    ],
+    "unit": "kak_rc72b_056"
+   },
+   {
+    "reasons": [
+     "battle-gen3ou-7: side A no strict match; 0 species+moves matches, side B ok",
+     "battle-gen3ou-17: side A no strict match; 0 species+moves matches, side B ok"
+    ],
+    "unit": "kak_rc72b_058"
+   }
+  ],
+  "stamps": {
+   "{\"engine_stamp\": \"port=e00a212a102f5ce2/94;env=f2918a060efd2723/128\", \"peer_code\": \"9cc9caacde85f8ea\", \"peer_pack_changed\": true, \"server_version\": \"ws_frontend@3d11545b5+rust:cargo:src/rust_sim\"}": 54
+  },
+  "ties": 2,
+  "turns_mean": 58.18981481481482,
+  "turns_median": 46.0,
+  "units_counted": 54,
+  "units_seen": 60
+ },
+ "primary": {
+  "S": 0.45925925925925926,
+  "binomial_unit_sd": 0.1114316364512107,
+  "ci": [
+   0.42777777777777776,
+   0.4925925925925926
+  ],
+  "elo": -28.37246824888082,
+  "elo_ci": [
+   -50.538599813076125,
+   -5.147570475728404
+  ],
+  "games": 1080,
+  "unit_sd": 0.1224067122936291,
+  "units": 54
+ },
+ "read": "hctx_kk_2026-10-27",
+ "registration_digest": "d30f3d793d28c10b124dd0e3f93f369c42df3c97a8940af6da6ced707bf4dd5e",
+ "schema": "hctx_kk_record_v1",
+ "self_games_dropped": 0,
+ "units_floor": 54,
+ "units_planned": 60,
+ "verdict": {
+  "bound_near_bar": false,
+  "class": "UNDECIDED",
+  "detected_weaker": true
+ },
+ "verdict_line": "hctx_kk_2026-10-27: rc72b UNDECIDED under Kakuna (S = 0.459 [0.428, 0.493])"
+}

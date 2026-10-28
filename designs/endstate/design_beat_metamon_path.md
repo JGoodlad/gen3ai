@@ -6,7 +6,7 @@ UNDECIDED (§6.2); D1 FINAL UNDECIDED, U +2.10 pp [−0.92, +5.11] at an in-pool
 FLAT (+0.08 pp [−3.90, +4.06]); D3 look 1 CONTINUE, +1.27 pp [−2.63, +5.16], look 2 queued (§6.4); the belief prior
 mix NOT DETECTED at λ = 0.25 and λ = 1 (§5); Metamon's ensemble no stronger than Kakuna (§6.7). X61P / N1-P (12,000
 procedural teams, a fork of P\* against the shared C0) TRAINED 2026-10-26, look 1 being read (§6.5b); H-CTX
-SUPPORTED: the home premium does not go with the sets, which keep at most about a fifth of it (§4, 2026-10-27); X61's toy
+SUPPORTED: the home premium does not go with the sets, which keep at most about a fifth of it (§4, 2026-10-27), and under a neutral pilot rc72b is only about 4 pp weaker (A-K, 2026-10-28); X61's toy
 design is NOT-READY and not run. X53-N1 and the all-null fallback are REVISED DRAFTs after their review (`6fca2c06`): X53-N1
 gated on a zero-GPU seed-spread read, the fallback opening with PR-1, a zero-GPU pooled precision read (§6.5, §7).** ALWAYS-CURRENT
 (owner, 2026-09-27): a later read, decision or build that differs updates this doc in the same commit, and the
@@ -240,8 +240,14 @@ The reads point at one mechanism: X26 plays a team well in proportion to how muc
     keep, and a plan-less recombined six all fit (review `measurements/hctx_rc72_2026-10-26/REVIEW.md` M1, M2).
   - **The levers:** they are recombined teams (X62, whose first gate this was), procedural teams (N1-P) and their
     union (X63). X62's corpus breaks cores as rc72b does, so only F reads it.
-  - **Caveats:** Kakuna also pilots rc72b, and no cell rates rc72b's strength (A-K). The cheapest check is a
-    Kakuna-vs-Kakuna rc72b-vs-home72 cell (REVIEW M3).
+  - **A-K, measured (2026-10-28, `measurements/hctx_kk_2026-10-27/`).** With Kakuna on both sides, rc72b scores
+    0.459 [0.428, 0.493] against home72 + F teams: UNDECIDED, detected weaker by about 4 pp (−28 Elo).
+    - It is flat across coherence thirds, so the weakness is not what the coherence metrics track.
+    - POST HOC, across engines: a full transfer of that weakness into P\*'s symmetric score would make the recovered
+      share 0.21 [−0.88, +0.88]. Under first-order cancellation the registered −0.34 stands.
+    - Either way the premium is mostly team-level. "No plan" explains at most the ~4 pp part.
+    - (a) memorised sixes against (b) cores needs the rc72c core-preserving panel (predictions in that PREREG §2).
+    - For X62: its ≤ 2 corpus is about 28 Elo weaker as teams, small next to P72's −128.
 
 ---
 
@@ -659,3 +665,4 @@ with the interval named in the registration.
 | 2026-10-27 | **H-CTX read: SUPPORTED** (H-CTX worker, orchestrator brief; 2,800 Kakuna games) | §4's "Where it is lost": the premium goes with the TEAM context (rc72b recovers −0.34 [−2.05, +0.20] of it, on one engine with home72 and F controls); the per-team win-condition account is now measured, not a hypothesis; the status line names it | "OPEN until rc72b" (10-27 softening, now resolved); the absolute ≥ 0.57 / ≤ 0.52 bars against X51 (kept only as a cross-engine line, Amendment 1) | `measurements/hctx_rc72_2026-10-26/README.md`, record `read_am2/record.json`; PREREG `b044d214b` + `aaf7ced86`, `905c29f5b` |
 | 2026-10-27 | **H-CTX's reading narrowed after its adversarial review** (reviewer, orchestrator brief; docs + one CPU script on banked games) | §4 and the status line: "goes with the TEAM" becomes "does not go with the sets" (≤ about a fifth; a quarter against X51's U); the mechanism is open, since rc72b's sixes are less coherent than both controls (memorised sixes, core knowledge or a plan-less six); "must add TEAM contexts" and "the win-condition account is now measured" withdrawn; X62's corpus read on F only. The verdict is unchanged | "the per-team win-condition account is now measured, not a hypothesis" | `../research_state/measurements/hctx_rc72_2026-10-26/REVIEW.md` M1–M3, `review_results.json` |
 | 2026-10-28 | **LR-F look 1 read: UNDECIDED, FINAL** (LR-F read operator, orchestrator brief; 21,000 in-house S games, CPU) | the X35 plateau-breakers row: LR-F (P\* + 20M with the learning rate floored two controller rungs up) reads −1.13 pp [−2.45, +0.18] on in-house S (Welch 97.5 %, 3 seeds). No look 2. It says nothing about goal (b), and no Kakuna game was played (the guards are read only on a GAIN) | — | `x35_breakers_stage_2026-10-17/reads/lrfloor_look1.json`; ledger 2026-10-28 · *X35 LR-F LOOK 1* |
+| 2026-10-28 | **H-CTX's A-K check read: rc72b UNDECIDED under Kakuna, detected weaker** (A-K read operator, orchestrator brief; 1,080 Kakuna-vs-Kakuna games, CPU) | §4's H-CTX caveat replaced: under a neutral pilot rc72b is about 4 pp weaker, uniformly (no coherence gradient); the strength-adjusted share (post hoc, across engines) is 0.21 [−0.88, +0.88]; the premium stays mostly team-level, and "no plan" covers at most the ~4 pp part. No lever's order changes; rc72c (core-preserving recombination) is the registered separator of memorised sixes from cores | the A-K cell was the review's cheapest check; it bounds Kakuna's own response, which H-CTX left open |
