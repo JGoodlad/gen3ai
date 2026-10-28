@@ -1,5 +1,6 @@
 """`main.ops.canary_dump_replay`: the pre-declared summary rule (each class, the ceil(N/2) boundary), the validity
-check against the dump's record, the sha256 refusal, the out-dir refusals, and (slow) the real learner's E32 / Ebf
+check against the dump's record, anchor mode's self-validity and refusals, the sha256 refusal, the out-dir refusals, and
+(slow) the real learner's E32 / Ebf
 path on CPU plus the canary's own check through dynamo's eager backend."""
 from __future__ import annotations
 
@@ -83,6 +84,90 @@ def test_validity_passes_on_the_records_numbers_and_fails_on_a_moved_state():
     cpu = R.validity(_direct(eager=0.17, ph=0.08, drift=0.18), {}, _record(), "cpu")
     assert cpu["valid"] and any(r.get("ratio") and r["judged"] is False for r in cpu["rows"])
     assert not R.validity(_direct(reloc=703), {}, _record(), "cpu")["valid"]
+
+
+# ------------------------------------------------------------------------------------------------ anchor mode
+def _slice(reloc=40, near=0.75, drift=0.2, eager=0.06, c_reloc=None, c_near=None, c_drift=None, c_eager=None,
+           canary=True):
+    d = {"relocated_rows": reloc, "rows": 2048, "nearest_unmoved": near, "watch": {"global": {"drift_grad": drift}},
+         "per_param": {EDGE: {"eager": eager, "compiled": 1.0}, "pointer_head.x.weight": {"eager": 9.9}}}
+    c = {"watch": {"clip_margin": {"relocated_rows": reloc if c_reloc is None else c_reloc, "rows": 2048,
+                                   "nearest_unmoved": near if c_near is None else c_near},
+                   "global": {"drift_grad": drift if c_drift is None else c_drift},
+                   "edge_bias": {EDGE: {"eager": eager if c_eager is None else c_eager, "compiled": 1.0}}}}
+    return {"direct": d, "canary": c if canary else None}
+
+
+def _areps(*per_repeat):
+    return [{"slices": {"2": sr}} for sr in per_repeat]
+
+
+def test_self_validity_passes_on_self_consistent_numbers():
+    v = R.self_validity(_areps(_slice(), _slice(eager=0.06 * 1.04, drift=0.2 * 0.97)), (2,))
+    assert v["valid"] and v["n_failures"] == 0 and v["n_rows"] > 0
+
+
+@pytest.mark.parametrize("bad", [dict(reloc=41), dict(near=0.76), dict(eager=0.066), dict(drift=0.23)])
+def test_self_validity_fails_when_a_repeat_moves(bad):
+    v = R.self_validity(_areps(_slice(), _slice(**bad)), (2,))
+    assert not v["valid"] and all("vs repeat 0" in f["quantity"] or "vs direct" in f["quantity"]
+                                  for f in v["failures"])
+
+
+@pytest.mark.parametrize("bad", [dict(c_reloc=39), dict(c_near=0.76), dict(c_eager=0.07), dict(c_drift=0.25)])
+def test_self_validity_fails_when_the_canary_and_direct_arms_disagree(bad):
+    v = R.self_validity(_areps(_slice(**bad)), (2,))
+    assert not v["valid"] and all(f["quantity"].endswith("vs direct") for f in v["failures"])
+
+
+def test_self_validity_judges_only_edge_bias_and_cpu_without_a_canary_still_checks_repeats():
+    assert R.self_validity(_areps(_slice(canary=False), _slice(canary=False)), (2,))["valid"]
+    assert not R.self_validity(_areps(_slice(canary=False), _slice(canary=False, reloc=1)), (2,))["valid"]
+    assert not R.self_validity([], (2,))["valid"]                  # nothing read is never valid
+
+
+def _zip(path: Path, members=("policy.pth", "data")) -> Path:
+    import zipfile
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with zipfile.ZipFile(path, "w") as z:
+        for m in members:
+            z.writestr(m, b"x")
+    return path
+
+
+def test_anchor_must_be_a_policy_zip_inside_the_run(tmp_path):
+    run = tmp_path / "run"
+    run.mkdir()
+    for f in ("model_config.json", "metadata.json"):
+        (run / f).write_text("{}")
+    good = _zip(run / "checkpoints" / "checkpoint_1_steps.zip")
+    assert R.check_anchor(good, run.resolve()) == good.resolve()
+    with pytest.raises(R.Refusal, match="not inside"):
+        R.check_anchor(_zip(tmp_path / "other" / "final_model.zip"), run.resolve())
+    with pytest.raises(R.Refusal, match="policy.pth"):
+        R.check_anchor(_zip(run / "nopolicy.zip", members=("data",)), run.resolve())
+    with pytest.raises(R.Refusal, match="no anchor"):
+        R.check_anchor(run / "missing.zip", run.resolve())
+    (run / "metadata.json").unlink()
+    with pytest.raises(R.Refusal, match="metadata.json"):
+        R.check_anchor(good, run.resolve())
+
+
+def test_compile_keys_refuses_a_route_the_replay_does_not_compile():
+    from types import SimpleNamespace
+    ok = SimpleNamespace(learner_cudagraphs="off", grad_checkpointing=False, trunk_precision="bf16", batch_size=4096)
+    assert R.compile_keys(ok)["trunk_precision"] == "bf16"
+    for k, v in (("learner_cudagraphs", "on"), ("grad_checkpointing", True), ("trunk_precision", "fp32")):
+        bad = SimpleNamespace(**{**vars(ok), k: v})
+        with pytest.raises(R.Refusal, match=k.replace("_", "-")):
+            R.compile_keys(bad)
+
+
+def test_main_needs_exactly_one_of_dump_or_anchor(tmp_path, capsys):
+    base = ["--run-dir", str(tmp_path), "--out", str(tmp_path / "o"), "--device", "cpu"]
+    assert R.main(base) == 2 and "exactly one" in capsys.readouterr().err
+    assert R.main(["--dump", "a.pt", "--anchor", "b.zip", *base]) == 2 and "exactly one" in capsys.readouterr().err
+    assert R.main(["--anchor", "b.zip", "--verdicts", "v.jsonl", *base]) == 2
 
 
 # ------------------------------------------------------------------------------------------------ refusals

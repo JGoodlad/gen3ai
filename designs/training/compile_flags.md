@@ -808,6 +808,15 @@ reads 2.7x a CPU null, so k is unsettled. Every canary records each row's 16-see
 `row_null` and judges nothing (`learner_lifecycle.md`), so each production canary from its next pin on is one CUDA census row;
 the global M stays binding. The lease-gated census `gpu_census.sh` is written there, not run.
 
+**Replaying a canary on the GPU (`python -m main.ops.canary_dump_replay`).** `--dump <x>_policy.pt --run-dir <run>` runs a
+dumped `state_dict` through the canary's own `_check` and through the arms E32 / Ebf / Cbf, using the canary's rows (the K9
+golden buffer, tiled to the run's B). Its validity is the dump's own record. `--anchor <zip> --run-dir <run>` (the X-CHECK)
+puts a different run's checkpoint through the same rows, B, compile (the default R1 route) and rule. That separates a
+weight-specific event from a graph-wide one (X48's kffn u200 event against the production graph: C0 / X26c). Its
+validity is the anchor's own eager-bf16 numbers, which must be self-consistent across repeats and between the canary and
+direct arms, because no record exists for that state. Its module docstring holds the pre-declared rule (REPRODUCES / DOES
+NOT / MIXED / INVALID-REPLAY).
+
 ### The canary-FATAL resume rule and its family bars (`python -m main.ops.canary_decide <run>`, 2026-10-26)
 
 A FATAL canary on an X35 arm resumes (`--canary-shift-max 0.3`, the orchestrator's operator step) iff 0 PPO-clip

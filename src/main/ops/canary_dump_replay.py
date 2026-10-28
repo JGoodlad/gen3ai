@@ -51,8 +51,29 @@ compared with the record's (`canary_verdicts.jsonl`, the record whose ``policy_p
 Also reported: Cbf's bitwise stability across repeats in one process (the number of distinct gradient sha256s per
 slice) and the spread (max - min) of each ``edge_bias.*`` compiled distance across repeats.
 
+ANCHOR MODE (`--anchor <zip>`, 2026-10-28, the X-CHECK: is the X48 event kffn's graph or the production graph's?).
+The SAME rows (the K9 golden buffer, `learner_golden.BUFFER_PATH`, whose sha256 every replay's meta records), the SAME
+B, the SAME arms, rule and production compile (`compile_regions.install`: default preset, no graphed route, the trunk
+at bf16), but the learner is built from ANOTHER run's resolved config and carries THAT checkpoint's own weights (the
+zip's ``policy.pth``, loaded STRICT) and init record; the clip margin is that run's own (its `--canary-shift-max`, as
+its in-run canary judged). Only the weights / architecture change. The summary rule is the one above, unchanged.
+There is no canary record for such a state, so VALIDITY (pre-declared, judged on every device: it is self-consistency,
+not a cross-device comparison) is the anchor's OWN eager-bf16 numbers, `self_validity`:
+
+  * STATE: per slice, ``relocated_rows`` / ``rows`` EXACT and ``nearest_unmoved`` within `NEAREST_ABS` across every
+    repeat, and the canary arm's own relocation (its GradWatch margin) equal to the direct arms';
+  * EAGER bf16 (Ebf vs E32): per slice, every judged ``edge_bias.*`` eager distance and the global ``drift_grad`` within
+    `EAGER_REL_CUDA` relative between the canary arm and the direct arm of the same repeat (two independent
+    computations of one quantity) and across repeats (vs repeat 0) — the K the rule multiplies is stable, so a
+    compiled/eager ratio > K is the compiled arm's, never a wandering denominator.
+
+A run whose resolved config compiles R1 differently (``--learner-cudagraphs on``, ``--grad-checkpointing``, a trunk not
+at bf16) is REFUSED in both modes: this replay compiles the default route only.
+
     python -m main.ops.canary_dump_replay --dump <dir>/canary_u200_unconfirmed_policy.pt \\
         --run-dir models/rb_x35_x48kffn_s3502 --out /tmp/replay --device cuda --repeats 5
+    python -m main.ops.canary_dump_replay --anchor models/rb_x35_c0_s3501/final_model.zip \\
+        --run-dir models/rb_x35_c0_s3501 --out /tmp/xcheck_c0 --device cuda --repeats 5
 
 EXIT: 0 the replay ran (whatever it found), 2 a refusal (a sha mismatch, a missing file, an out dir inside models/ or
 a checkout, CUDA asked but absent), 1 an error. No wall budget: a timeout is never a semantic outcome.
@@ -178,6 +199,53 @@ def run_anchor(run_dir: Path) -> Path:
     return ck[-1]
 
 
+def check_anchor(anchor: Path, run_dir: Path) -> Path:
+    """`--anchor`: a zip INSIDE ``run_dir`` (its config is that run's), carrying a ``policy.pth``."""
+    a = anchor.expanduser().resolve()
+    if not a.is_file():
+        raise Refusal(f"no anchor zip {a}")
+    if not _inside(a, run_dir):
+        raise Refusal(f"--anchor {a} is not inside --run-dir {run_dir}: the config and the weights must be one run's")
+    for f in ("model_config.json", "metadata.json"):
+        if not (run_dir / f).is_file():
+            raise Refusal(f"the run dir {run_dir} has no {f}")
+    with zipfile.ZipFile(a) as z:
+        if "policy.pth" not in z.namelist():
+            raise Refusal(f"the anchor {a} holds no policy.pth")
+    return a
+
+
+def anchor_state_dict(anchor: Path) -> Dict[str, Any]:
+    """The anchor zip's ``policy.pth`` (the policy `state_dict` a checkpoint carries, as a canary dump does)."""
+    import io
+
+    import torch
+    with zipfile.ZipFile(anchor) as z:
+        return torch.load(io.BytesIO(z.read("policy.pth")), map_location="cpu", weights_only=True)
+
+
+def golden_rows_sha() -> str:
+    """The sha256 of the rows every replay reads (the K9 golden buffer): equal across replays = the same data."""
+    from agents.training import learner_golden as LG
+    return sha256_file(Path(LG.BUFFER_PATH))
+
+
+#: the resolved compile-shaping keys the replay's compile assumes (`install`: the default route only)
+COMPILE_ASSUMED = {"learner_cudagraphs": ("off", False, None), "grad_checkpointing": (False, None, "off"),
+                   "trunk_precision": ("bf16",)}
+
+
+def compile_keys(args: Any) -> Dict[str, Any]:
+    """The run's resolved `COMPILE_ARG_KEYS` (reported) — REFUSED unless the ones the replay's compile assumes hold."""
+    from agents.model.compile_cache_shared import COMPILE_ARG_KEYS
+    keys = {k: getattr(args, k, None) for k in COMPILE_ARG_KEYS}
+    for k, ok in COMPILE_ASSUMED.items():
+        if keys.get(k) not in ok:
+            raise Refusal(f"the run's resolved --{k.replace('_', '-')} is {keys.get(k)!r}: this replay compiles R1's "
+                          f"default route only (wanted one of {ok})")
+    return keys
+
+
 def init_record_of(zip_path: Path) -> Optional[Dict[str, str]]:
     with zipfile.ZipFile(zip_path) as z:
         data = json.loads(z.read("data"))
@@ -186,24 +254,29 @@ def init_record_of(zip_path: Path) -> Optional[Dict[str, str]]:
 
 
 # ------------------------------------------------------------------------------------------------ the learner
-def build_model(run_dir: Path, dump: Path, device: str, batch: int) -> Tuple[Any, Dict[str, Any]]:
+def build_model(run_dir: Path, dump: Optional[Path], device: str, batch: int,
+                anchor: Optional[Path] = None) -> Tuple[Any, Dict[str, Any]]:
     """The run's learner at THIS checkout (the trainer's resolution of ``--model <anchor>``: every flag from the run's
-    config), the dump loaded STRICT, the trunk at bf16, the run's init record attached, on ``device``."""
+    config), the dump loaded STRICT (dump mode) or the anchor's own ``policy.pth`` (anchor mode: ``dump`` None,
+    ``anchor`` the zip), the trunk at bf16, the anchor's init record attached, on ``device``."""
     import torch
 
     from agents.model import compile_regions as cr
     from agents.model.trunk_precision import set_trunk_precision, trunk_precision_of
     from agents.training import learner_golden as LG
     from main.ops.cuda_build_validate import resolved_args
-    anchor = run_anchor(run_dir)
+    if (dump is None) == (anchor is None):
+        raise Refusal("exactly one of a dump (dump mode) or an anchor zip (anchor mode)")
+    mode = "dump" if dump is not None else "anchor"
+    anchor = run_anchor(run_dir) if anchor is None else anchor
     args = resolved_args(["--model", str(anchor)], "cpu")
-    if getattr(args, "trunk_precision", None) != "bf16":
-        raise Refusal(f"the run's resolved --trunk-precision is {getattr(args, 'trunk_precision', None)!r}, not bf16")
+    keys = compile_keys(args)
     model = LG.build_learner(args=args)
     set_trunk_precision(model.policy, "bf16")
     if trunk_precision_of(model.policy) != "bf16":
         raise Refusal(f"the learner's trunk is {trunk_precision_of(model.policy)}, wanted bf16")
-    sd = torch.load(dump, map_location="cpu", weights_only=True)
+    sd = (torch.load(dump, map_location="cpu", weights_only=True) if dump is not None
+          else anchor_state_dict(anchor))
     model.policy.load_state_dict(sd, strict=True)
     rec = init_record_of(anchor)
     if rec is not None:
@@ -216,8 +289,11 @@ def build_model(run_dir: Path, dump: Path, device: str, batch: int) -> Tuple[Any
     model.behaviour_dump_dir = None                 # nothing the canary code calls may write a run dir
     model._learner_cudagraphs = False
     model.policy.set_training_mode(True)
-    return model, {"anchor": str(anchor), "init_record": rec is not None, "keys": len(sd),
-                   "shift_max": cr.shift_max_of(model), "margin": cr.clip_margin_of(model)}
+    return model, {"mode": mode, "anchor": str(anchor), "anchor_sha256": sha256_file(anchor),
+                   "init_record": rec is not None, "keys": len(sd), "shift_max": cr.shift_max_of(model),
+                   "margin": cr.clip_margin_of(model), "compile_keys": keys,
+                   "trunk_ffn_by_kind": getattr(args, "trunk_ffn_by_kind", None),
+                   "canary_shift_max_arg": getattr(args, "canary_shift_max", None)}
 
 
 def install_compiled(model: Any, backend: Optional[str] = None) -> None:
@@ -420,6 +496,66 @@ def validity(direct: Dict[int, Dict[str, Any]], canary: Dict[int, Dict[str, Any]
                                      "cpu: reported with the ratio replay / recorded, never judged")}}
 
 
+def _rel_ok(a: Optional[float], b: Optional[float]) -> bool:
+    return (a is not None and b is not None and math.isfinite(a) and math.isfinite(b) and b != 0
+            and abs(a / b - 1.0) <= EAGER_REL_CUDA)
+
+
+def self_validity(reps: List[Dict[str, Any]], slices: Sequence[int]) -> Dict[str, Any]:
+    """ANCHOR mode's validity (module docstring): the anchor's own STATE and eager-bf16 numbers, self-consistent across
+    the canary / direct arms and across repeats. Judged on every device (no cross-device comparison is made)."""
+    rows: List[Dict[str, Any]] = []
+    for s in slices:
+        key = str(s)
+        per = [r["slices"][key] for r in reps if key in r["slices"]]
+        if not per:
+            continue
+        d0 = per[0]["direct"]
+        for i, sr in enumerate(per):
+            d = sr["direct"]
+            for q in ("relocated_rows", "rows"):
+                rows.append({"slice": s, "repeat": i, "quantity": f"{q} vs repeat 0", "replay": d[q],
+                             "reference": d0[q], "judged": True, "ok": int(d[q]) == int(d0[q])})
+            rows.append({"slice": s, "repeat": i, "quantity": "nearest_unmoved vs repeat 0",
+                         "replay": d["nearest_unmoved"], "reference": d0["nearest_unmoved"], "judged": True,
+                         "ok": abs(float(d["nearest_unmoved"]) - float(d0["nearest_unmoved"])) <= NEAREST_ABS})
+            g = d["watch"]["global"].get("drift_grad")
+            rows.append({"slice": s, "repeat": i, "quantity": "direct drift_grad vs repeat 0", "replay": g,
+                         "reference": d0["watch"]["global"].get("drift_grad"), "judged": True,
+                         "ok": _rel_ok(g, d0["watch"]["global"].get("drift_grad"))})
+            for n, pd in d["per_param"].items():
+                if EDGE_RE.search(n):
+                    ref = (d0["per_param"].get(n) or {}).get("eager")
+                    rows.append({"slice": s, "repeat": i, "quantity": f"direct eager[{n}] vs repeat 0",
+                                 "replay": pd.get("eager"), "reference": ref, "judged": True,
+                                 "ok": _rel_ok(pd.get("eager"), ref)})
+            c = sr.get("canary")
+            if not c:
+                continue
+            cm = c["watch"].get("clip_margin") or {}
+            for q in ("relocated_rows", "rows"):
+                rows.append({"slice": s, "repeat": i, "quantity": f"canary {q} vs direct", "replay": cm.get(q),
+                             "reference": d[q], "judged": True,
+                             "ok": cm.get(q) is not None and int(cm[q]) == int(d[q])})
+            rows.append({"slice": s, "repeat": i, "quantity": "canary nearest_unmoved vs direct",
+                         "replay": cm.get("nearest_unmoved"), "reference": d["nearest_unmoved"], "judged": True,
+                         "ok": cm.get("nearest_unmoved") is not None
+                         and abs(float(cm["nearest_unmoved"]) - float(d["nearest_unmoved"])) <= NEAREST_ABS})
+            cg = c["watch"]["global"].get("drift_grad")
+            rows.append({"slice": s, "repeat": i, "quantity": "canary drift_grad vs direct", "replay": cg,
+                         "reference": g, "judged": True, "ok": _rel_ok(cg, g)})
+            for n, cd in c["watch"]["edge_bias"].items():
+                ref = (d["per_param"].get(n) or {}).get("eager")
+                rows.append({"slice": s, "repeat": i, "quantity": f"canary eager[{n}] vs direct",
+                             "replay": cd.get("eager"), "reference": ref, "judged": True,
+                             "ok": _rel_ok(cd.get("eager"), ref)})
+    bad = [r for r in rows if r.get("judged") and r.get("ok") is False]
+    return {"valid": bool(rows) and not bad, "failures": bad[:200], "n_failures": len(bad), "n_rows": len(rows),
+            "basis": "anchor mode: the anchor's own eager-bf16 numbers (no canary record exists for this state)",
+            "tolerances": {"state": "relocated_rows / rows exact; nearest_unmoved abs <= %g" % NEAREST_ABS,
+                           "eager": f"relative <= {EAGER_REL_CUDA:g}, canary vs direct and repeat k vs repeat 0"}}
+
+
 def stability(reps: List[Dict[str, Any]], slices: Sequence[int]) -> Dict[str, Any]:
     """Cbf (and E32 / Ebf) across repeats: distinct gradient sha256s per slice; each edge_bias.* compiled distance's
     spread (max - min) across repeats, from the canary arm and from the direct Cbf arm."""
@@ -460,11 +596,22 @@ def _say(line: str) -> None:
 
 def run(a: argparse.Namespace) -> int:
     import torch
-    dump = Path(a.dump).expanduser().resolve()
-    sha = check_dump_sha(dump)
+    if bool(a.dump) == bool(a.anchor):
+        raise Refusal("exactly one of --dump (replay a canary dump) or --anchor (a run's own checkpoint)")
     run_dir = Path(a.run_dir).expanduser().resolve()
-    record = recorded(Path(a.verdicts).expanduser() if a.verdicts else dump.parent / "canary_verdicts.jsonl",
-                      dump.name)
+    dump: Optional[Path] = None
+    anchor: Optional[Path] = None
+    record: Dict[str, Any] = {}
+    if a.dump:
+        dump = Path(a.dump).expanduser().resolve()
+        sha: Optional[str] = check_dump_sha(dump)
+        record = recorded(Path(a.verdicts).expanduser() if a.verdicts else dump.parent / "canary_verdicts.jsonl",
+                          dump.name)
+    else:
+        if a.verdicts:
+            raise Refusal("--verdicts names a dump's record: anchor mode has none (its validity is self_validity)")
+        anchor = check_anchor(Path(a.anchor), run_dir)
+        sha = None
     out = check_out_dir(Path(a.out))
     slices = tuple(int(x) for x in str(a.slices).split(",") if x.strip())
     if FIRED_SLICE not in slices or any(s not in (0, 1, 2) for s in slices):
@@ -488,10 +635,11 @@ def run(a: argparse.Namespace) -> int:
     out.mkdir(parents=True, exist_ok=True)
     compiled = device == "cuda" or bool(a.compile_backend)
     t0 = time.perf_counter()
-    model, info = build_model(run_dir, dump, device, batch)
+    model, info = build_model(run_dir, dump, device, batch, anchor=anchor)
     if compiled:
         install_compiled(model, a.compile_backend or None)
-    meta = {"dump": str(dump), "sha256": sha, "run_dir": str(run_dir), "device": device, "batch": batch,
+    meta = {"mode": info["mode"], "dump": str(dump) if dump else None, "sha256": sha, "run_dir": str(run_dir),
+            "golden_rows_sha256": golden_rows_sha(), "device": device, "batch": batch,
             "slices": list(slices), "repeats": a.repeats, "torch": torch.__version__, "cuda": torch.version.cuda,
             "device_name": torch.cuda.get_device_name(0) if device == "cuda" else "cpu",
             "threads": torch.get_num_threads(), "compile_backend": a.compile_backend or ("inductor" if compiled else None),
@@ -543,13 +691,20 @@ def run(a: argparse.Namespace) -> int:
         reps.append(rep)
         classes.append(cls)
         _write(out / f"repeat_{i:02d}.json", rep)
-        val = validity(first_direct, first_canary, record, device)
+        val = (validity(first_direct, first_canary, record, device) if dump is not None
+               else self_validity(reps, slices))
         summ = summarize(classes, val["valid"], compiled)
         _write(out / "summary.json", {"complete": i + 1 == a.repeats, **summ, "validity": val,
                                       "stability": stability(reps, slices), "meta": meta,
                                       "elapsed_s": time.perf_counter() - t0})
     _say(f"[replay] VERDICT {summ['verdict']} (counts {summ['counts']}); validity {'OK' if val['valid'] else 'FAILED'}"
          f" ({len(val['failures'])} failure(s)); {time.perf_counter() - t0:.0f}s -> {out}/summary.json")
+    if dump is None:                                          # anchor mode: hundreds of self-checks; name the fails
+        _say(f"[replay]   self-validity: {val['n_rows']} checks, {val['n_failures']} failure(s)")
+        for r in val["failures"][:20]:
+            _say(f"[replay]   FAIL slice {r.get('slice')} repeat {r.get('repeat')}: {r.get('quantity')} "
+                 f"{r.get('replay')} vs {r.get('reference')}")
+        return 0
     for r in val["rows"]:
         if r.get("judged") or "edge_bias" in str(r.get("quantity")) or r.get("quantity") == "drift_grad":
             _say(f"[replay]   validity slice {r.get('slice')}: {r.get('quantity')} replay {r.get('replay')} "
@@ -561,7 +716,9 @@ def run(a: argparse.Namespace) -> int:
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="python -m main.ops.canary_dump_replay", description=__doc__.split("\n\n")[0],
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("--dump", required=True, help="the canary's *_policy.pt (SHA256SUMS beside it)")
+    p.add_argument("--dump", default="", help="the canary's *_policy.pt (SHA256SUMS beside it); or --anchor")
+    p.add_argument("--anchor", default="", help="ANCHOR mode: a checkpoint zip inside --run-dir whose OWN weights run "
+                   "on the same rows (module docstring); or --dump")
     p.add_argument("--run-dir", required=True, help="the run directory (model_config.json / metadata.json; read-only)")
     p.add_argument("--out", required=True, help="a NEW directory outside models/ and outside any checkout")
     p.add_argument("--device", choices=("cuda", "cpu"), default="cuda")
