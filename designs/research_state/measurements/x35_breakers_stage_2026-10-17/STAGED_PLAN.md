@@ -348,6 +348,85 @@ and now FROZEN: no ruling may revise them. The kit arm is built in the commit th
   ([`checkargs_lrfloor_s3501.txt`](batch2_lr_floor/checkargs_lrfloor_s3501.txt), `min_lr 0.00017361 (TYPED)`). Not yet
   at the production X35 pin, which is not written: `launch_x35.sh`'s pre-checks run it at the GO (F-LRF-1).
 
+#### 4.1.3 Production LR-F look 1: AMENDMENT AM-LRF-L1 (2026-10-27), how look 1 is played and decided. Before any LR-F game
+
+**Registered after all three look-1 seeds trained** (s3501 DONE at 19:48 PDT, `407abd835`, s3502 `c4e463b0f`, s3503
+`c01828a16`) **and before any LR-F game of any kind.** Nothing in §4.1.2 changes: the rule, the ±2 pp bar, the
+97.5 % Welch interval, the predictions, the KL VOID guard and the class consequences
+([`../../../endstate/precommit_reads_2026-10-27.md`](../../../endstate/precommit_reads_2026-10-27.md) §2.2, rulings 2
+and 3) stand. This fixes what §4.1.2 left open: the code that plays, the engine, how the control enters, the guards'
+play, and where the read is decided. The spec is [`lrf_read/read_spec_look1.json`](lrf_read/read_spec_look1.json).
+
+1. **The rule, in code.** `main.reads` rule `x35_r1` (`main.x35.readout.read`), arm `LRF`, look 1.
+   - ON: the `lrfloor` finals s3501–s3503, each pinned by its sha256.
+   - OFF: C0 s3501–s3503, IMPORTED, not re-played, from G1's committed [`g1/results.json`](g1/results.json)
+     (sha256 `393b7d57…`). SPRT look 1 read its C0 from the same file.
+   - S group `pool`: R = `reference_population_production.json` (content `cef0960e…`), no panel, 500 mirrored pairs
+     per cell in batches of 100, family `x35_lrf_s_look1_2026-10-27`. The regime is registered as
+     `adfdbee824c9eb0a`, G1's and SPRT's: a ledger row of any other regime makes the group INCONCLUSIVE.
+2. **The engine and the play pin.** The import refuses across engines (`x35_r1 import_off (S)`), and G1's rows are on
+   E1 (`env=7c532805…/125`, `engine.LEGACY_BANK_ENGINE`). The arms trained on E1 (`f4b25238`). So every LR-F game
+   plays on E1, at the X35-frame shared play pin `86cfdf7ef` (tag `x35-shared-play-86cfdf7e`). That pin is FROZEN for
+   every read of an arm trained at `f4b25238` ([`designs/tools/reads.md`](../../../tools/reads.md) §4), and LR-F is
+   one.
+   - Its game paths are `f4b25238`'s tree objects. Its engine is E1 by `engine_at` and by the stamp this unit's
+     build printed.
+   - It is played from a clean detached worktree with E1's untracked `Cargo.lock` blobs
+     (`engine.LEGACY_LOCK_BLOBS`), as every E1 build is.
+   - Not D3 look 2's hybrid `c4a5c37b6`: both are E1 with `f4b25238`'s game paths, but the shared pin has the newer
+     harness and is the one pin REVIEW_2 M1 named for X35-frame reads. Neither pin's S lane was checked before (D3's
+     m4 accepted it as declared), so item 3 checks it.
+3. **The S lane's identity, checked BEFORE any LR-F game (new).** The shared pin's identity check (220 / 220) covered
+   the Kakuna lane, not `main.h2h`. At the pin `src/agents/training/` is main's, not `f4b25238`'s, and it hosts the eval
+   core's driver (`rust_eval`, `eval_sharding`, `rust_rollout`).
+   - **The check:** C0 s3501's G1 cells against `x26_pstar` (architecture A) and `tstar` (architecture B), batch 0
+     each (100 mirrored pairs, 200 games), re-played at the pin with G1's schedule (seed 0, the content-hash schedule
+     key). Each row is compared with G1's row of the same cell and batch on five fields: the regime id, the seed
+     block, the W/L/D counts, `outcome_digest` and `outcome_digest_all`
+     ([`lrf_read/s_identity_compare.py`](lrf_read/s_identity_compare.py)).
+   - **PASS** iff all five are equal on both cells (exact equality; no boundary for rule 8).
+   - **A difference STOPS the read.** No LR-F game is played, and the orchestrator is told. Re-playing C0 at the pin
+     instead would be an amendment of its own.
+   - **Result:** PENDING at registration. It is recorded in `lrf_read/s_identity.json` before any LR-F game.
+4. **G14 and the sides.** G14 (the Metamon peer's code and our policy's load mode) and the re-derived anchor guards
+   are checks on anchor units. Look 1 plays no anchor unit (item 5), so they have nothing to read. The S-lane analogue,
+   our load mode inside `main.h2h`, is what item 3's digests pin.
+5. **The guards, and the Kakuna lane.** §4.1.2 reads G-F, G-C and G-K, and G-E only on a GAIN. The orchestrator's A1
+   ruling (a) reads the guards only on a QUALIFYING R1, as SPRT look 1 did.
+   - Registered as `guards_not_read`: on a non-qualifying R1, G-F / G-C / G-K are INCONCLUSIVE ("not read"), and
+     G-E is absent by design.
+   - `x35_r1` in `main.reads` takes no G-F, G-C or G-K input, so this spec cannot read a GAIN through to ADOPT.
+   - **So the Kakuna lane (G-K) plays only on an R1 GAIN.** It would play home72 and away, LR-F and C0 finals both
+     fresh (C0 has no G-K rows banked at any pin), ≥ 400 counted games per team set per side (design §5.6.6), at
+     this pin, `--concurrency 1`, behind N1-P look 1, X59-S's pilot and D3 look 2. A further amendment registers it
+     before any guard game.
+   - **On a GAIN, this look's record is not written** until the guards are played and a reader for them is built.
+     The orchestrator is told at once. On any other R1 class, the record is written as registered.
+   - Why G-K is not played now: about 84 Kakuna units (1,680 games) of CPU, the binding resource, for the branch the
+     registration predicts against (modal UNDECIDED), and nothing in `x35_r1` would read them.
+6. **The VOID gate** (`params.void`, which `x35_r1` requires for LRF).
+   - The K9(b) records, read at the ABSOLUTE path `…/x35_breakers_stage_2026-10-17/k9b`: s3501's lands on main after
+     the pin (D3's AM-D3-L2 B1).
+   - LR-F's KL guard (`batch2_void.read_lrf_kl`): every trailing-2M window of the fork's own `train/approx_kl`
+     against 0.08, rule 8 at 1e-9.
+   - **Added, opt-in, stricter:** `pin` = `f4b25238` (every git hash each run recorded) and `pool_seed` (fork step
+     280,000,170). A VOID seed enters no read and is re-run at the same pin and seed (§4.1.2).
+7. **Decide.** `record` runs in the play worktree, whose `main.reads` (the pin's) carries `x35_r1`, `import_off`,
+   the engine check and the VOID gate. It writes [`reads/lrf_look1.json`](reads/lrf_look1.json). `dose` is reported
+   and never decides: GPU-h per seed from `dose/<run>.json`, C0's as SPRT used them.
+8. **Reported beside the verdict** (§4.1.2's instruments; none decides):
+   - each seed's LR path (the share of updates at the floor);
+   - the arm-mean approx KL and the clip fraction;
+   - N_prom and the final pool's median age against C0's, from `snapshots/`, as SPRT read them;
+   - greedy churn per 20M on `bank_x26` (`main.x35.x47 policy-diff`, the final against P\*), with C0's finals beside
+     it for scale.
+9. **Schedule.** The S lane (`--lane s`, one heavy slot per unit, nice 19 on cores 5-7,13-15) starts once item 3
+   passes. It is 10,500 mirrored pairs. At D3 look 2's measured rate of ≈ 3,100 pairs per lane-hour that is ≈ 3.4 h of
+   play, plus the slots' queue.
+10. **Look 2, on CONTINUE.** No pool S for C0 s3504–s3505 is banked anywhere: G1 holds s3501–s3503, and D1 holds
+    only home72 for them. So look 2 plays those two C0 finals' pool S fresh at this pin, beside LR-F s3504–s3505,
+    under an amendment of its own. Its seeds s3501–s3503 stay imported, as item 3 licenses.
+
 ### 4.2 SPRT, the PROMOTION-RULE arm (REGISTERED 2026-10-20 by AM-RP-f, before X47's look 1 and any production arm)
 
 **In plain words.** Today a snapshot joins the self-play pool the first eval cycle its win rate against the pool crosses

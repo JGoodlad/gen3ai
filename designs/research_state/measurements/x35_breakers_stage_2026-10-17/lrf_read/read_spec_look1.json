@@ -1,0 +1,102 @@
+{
+ "schema": "gen3_read_spec_v1",
+ "read": "x35_lrf_look1_2026-10-27",
+ "prereg": "designs/research_state/measurements/x35_breakers_stage_2026-10-17/STAGED_PLAN.md",
+ "note": "Production LR-F look 1 (STAGED_PLAN \u00a74.1.2, AM-LRF-L1 \u00a74.1.3): R1 = Welch 97.5 % on S over the frozen R, LR-F s3501-s3503 played on E1 at the X35-frame shared play pin 86cfdf7ef, C0 s3501-s3503 imported from G1's committed results (E1, regime adfdbee824c9eb0a), never re-played. Guards G-F / G-C / G-K read only on a qualifying R1 (A1 ruling (a)); on a GAIN no record is written until they are played (AM-LRF-L1 item 5).",
+ "models": {
+  "lrf_s3501": {
+   "arm": "lrfloor",
+   "seed": 3501,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x35_lrfloor_s3501/final_model.zip",
+    "sha256": "c1464919df0b27a17269ab7c379b62be42997862357469d4c29360dec1de8ded"
+   }
+  },
+  "lrf_s3502": {
+   "arm": "lrfloor",
+   "seed": 3502,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x35_lrfloor_s3502/final_model.zip",
+    "sha256": "911d9e5a7b6a90ad4b9a98ee079f19c1ae10c28f5f5da6ad2697227a59f61292"
+   }
+  },
+  "lrf_s3503": {
+   "arm": "lrfloor",
+   "seed": 3503,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x35_lrfloor_s3503/final_model.zip",
+    "sha256": "4d57ad50e3a1021d7fd5a71b44cc2bdfdc0a1f25ecc8735c9100e174bb883f04"
+   }
+  }
+ },
+ "s": {
+  "pool": {
+   "refpop": "designs/research_state/measurements/x35_breakers_stage_2026-10-17/reference_population_production.json",
+   "refpop_content_sha256": "cef0960eac605f1dc026442d1089dc23654e23df91010feaaeea7890901e4519",
+   "panel": null,
+   "pairs": 500,
+   "batch_pairs": 100,
+   "family": "x35_lrf_s_look1_2026-10-27",
+   "models": [
+    "lrf_s3501",
+    "lrf_s3502",
+    "lrf_s3503"
+   ],
+   "regime_id": "adfdbee824c9eb0a"
+  }
+ },
+ "decision": {
+  "rule": "x35_r1",
+  "params": {
+   "arm": "LRF",
+   "look": 1,
+   "on": "lrfloor",
+   "off": "c0",
+   "s_group": "pool",
+   "import_off": {
+    "path": "designs/research_state/measurements/x35_breakers_stage_2026-10-17/g1/results.json",
+    "sha256": "393b7d572bb03c25afc089e3c7f9ca121c79aab9e1d436380fbbac96d9cf6786",
+    "arm": "c0"
+   },
+   "dose": {
+    "on": [
+     4.12,
+     4.067,
+     4.133
+    ],
+    "off": [
+     4.43,
+     4.027,
+     4.012
+    ]
+   },
+   "void": {
+    "k9b_dir": "/home/goodlad/dev/gen3ai/designs/research_state/measurements/x35_breakers_stage_2026-10-17/k9b",
+    "runs": {
+     "lrf_s3501": "models/rb_x35_lrfloor_s3501",
+     "lrf_s3502": "models/rb_x35_lrfloor_s3502",
+     "lrf_s3503": "models/rb_x35_lrfloor_s3503"
+    },
+    "pin": "f4b25238def57900c0305bb2a3a5a8f9edaef285",
+    "pool_seed": {
+     "fork_step": 280000170
+    }
+   },
+   "guards_not_read": {
+    "guards": [
+     "G-F",
+     "G-C",
+     "G-K"
+    ],
+    "why": "not read: R1 is non-qualifying, so registered guard semantics cannot change the class (the orchestrator's A1 ruling (a); AM-LRF-L1 item 5)",
+    "absent": {
+     "G-E": "absent by design: the G-E readers launch only on an R1 GAIN"
+    }
+   }
+  }
+ },
+ "pin": "86cfdf7efbe21b4ff3382541e6d78390df7d9966"
+}
