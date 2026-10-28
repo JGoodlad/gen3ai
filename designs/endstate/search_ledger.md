@@ -13,6 +13,13 @@ the owner's goal 5. It makes four points:
 - a ranked plan: E2, the bridge and R0's known hole; E1, an opponent-exact referee; E3, human identification and the
   human judge, zero playouts; E4, a live player against Kakuna, gated.
 
+**Status (2026-10-28, latest): the S-U GATE reads GO.** On 1,560 states of raw P\* vs Kakuna games, S's deviations
+from π are right 0.635 [0.578, 0.687] of the time on pooled U under the self-referee. On home72 they are right 0.537
+[0.458, 0.617], as on the bank's 0.513. GO is a licence for V-RANK's live branches, never a gain: the referee is S's
+best case, and U − home72 (+0.098 [−0.002, +0.194]) is leak-confounded. Offline S on the agent cores needs ONE torch
+thread; the default pool is ≈ 20× slower there, with identical results
+(`../research_state/measurements/su_gate_2026-10-27/README.md`).
+
 **Proposed read (DRAFT, 2026-10-27, explicit-only, not registered):** [`design_search_u_headroom.md`](design_search_u_headroom.md),
 S-U. P\* against P\* + L1's piKL search from turn 10, against Kakuna on home72 and on pooled unfamiliar teams (U), on
 one engine, paired by deal. Its co-primaries are the interaction G_U − G_home72 (H-MID's question) and G_U alone (goal
@@ -932,3 +939,4 @@ limits:
 | 2026-10-27 | **The live search's cost MEASURED and cut, bit-identically: the LEAN world screen** (search-performance engineer, orchestrator brief) | §6.1 (the screen's cost and the lean screen), §6.4 (Cost), the S-U pointer line and §7 Q17's cost cell (≈ 560 CPU-h, was ≈ 1,000; the old builder's ≈ 2,000–3,000). No verdict moves: the worlds, draws and picks are unchanged | replaying the true log's prefix once (a world's battle leaves the truth's at the screened mon's first switch-in); dropping `core_events`' cross-checks from screens (not identical by construction) | `../research_state/measurements/su_headroom_2026-10-27/AMENDMENT_1_DRAFT.md` §1b; `src/main/value_search/world_screen_parity_test.py` |
 | 2026-10-27 | **The lean world screen REVIEWED adversarially: no BLOCKER** (adversarial reviewer, orchestrator brief; docs, two slow tests, CPU probes) | §6.1: "bit-identical" is conditional on no core refusal after a screen's stop (measured 0 / 14,746, now gated by `world_screen_parity_test`'s per-replay invariant and wrong-world stress) | scoring a refused replay by its shipped lines (identity by construction; a reference-semantics change, left to the search owner) | [`reviews/lean_world_screen_review_2026-10-27.md`](reviews/lean_world_screen_review_2026-10-27.md) |
 | 2026-10-27 | **The S-U gate test BUILT** (S-U gate operator, orchestrator brief) | §6.4's offline-at-kept-states line: raw cells keep honest input logs; S re-run offline exactly as the live searcher; deviations scored by the self-referee; rule `deviation_sign` | a zero-playout gate (none exists for U states) | `../research_state/measurements/su_headroom_2026-10-27/REVIEW.md` § The gate test |
+| 2026-10-28 | **The S-U gate READ: GO** (S-U gate operator, orchestrator brief) | the new latest status line; Q17 unchanged until V-RANK | reading GO as a gain or as H-MID's mechanism (self-referee; U − home72 sign-only, leak-confounded) | `../research_state/measurements/su_gate_2026-10-27/README.md` |

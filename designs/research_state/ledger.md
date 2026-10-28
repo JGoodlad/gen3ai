@@ -29933,3 +29933,29 @@ holding strength fixed: −0.001. That row reads direction only (reliability ≈
 
 **Evidence:** `designs/research_state/measurements/hctx_kk_2026-10-27/` (PREREG, `tsr_registration.json`,
 `record.json`, `sensitivity_alias.json`, `scripts/`); state `~/gen3ai_archive/hctx_kk_read/`.
+
+### 2026-10-28 · MEASUREMENT · **The S-U gate test reads GO: on unfamiliar teams the registered search's deviations from P\*'s top move are right 0.635 [0.578, 0.687] of the time under its own referee (n 346, pooled U); home72 0.537 [0.458, 0.617], as on the bank (0.513). GO licenses V-RANK next, never a gain**
+
+- **What was read** (PREREG `ef05d165c`, pin `835c6b4b2`, rule `deviation_sign`; the S-U review's gate test,
+  `7aafa527`). 800 raw P\* vs Kakuna games (unit seeds 100–109, home72 / H / F / P72), one engine
+  (`port=e00a212a102f5ce2/94;env=3d0d5c9c0f5d3c23/129`). Two hashed decisions a game at turns 10–30 gave 1,560 states.
+  S (`r0s4@10`, the live searcher's own `_search`) was re-run at each. Its deviations were scored by the 24-seed
+  self-referee (P\* both sides, common dice). GO iff LB(pooled-U sign accuracy) > 0.50.
+- **The GIGO tooth** (the review's bank digits, exactly) passed at the pin before play.
+- **Per U panel:** H 0.640 [0.550, 0.727], F 0.660 [0.563, 0.755], P72 0.605 [0.517, 0.694].
+- **Deviation rates:** ≈ 0.40 on every set, U as home72.
+- **IMP per searched state:** +0.009 to +0.020.
+- **REPORTED:** U − home72 +0.098 [−0.002, +0.194].
+- **Exclusions:** home72 9.8 %, F 10.7 %, H 1.4 %, P72 1.5 %.
+- **Speed ±1 pins:** 0.15 home72, 0.19–0.22 U.
+- **Reading.** The self-referee is S's best case, so GO is a licence for the next stage (V-RANK's live branches), not
+  a gain. U − home72 is sign-only and leak-confounded (review M1); leak exposure is higher on U.
+- **The PREREG's guess missed high:** pooled U ≈ 0.52, P(GO) ≈ 0.25.
+- **FINDINGs:**
+  - G-1: the engine is not S-U's registered one.
+  - G-3: one H unit was exhausted by Kakuna's turn-250 fault.
+  - G-4: PyTorch's default thread pool made offline S ≈ 20× slower on the shared agent cores. One thread is
+    bit-identical.
+  - G-5: the rule's verdict shape; fixed before the record.
+- **Evidence:** `measurements/su_gate_2026-10-27/` (README, PREREG, `record_summary.json`, `bank_check.json`); state
+  `~/gen3ai_archive/su_gate_2026-10-27/`.

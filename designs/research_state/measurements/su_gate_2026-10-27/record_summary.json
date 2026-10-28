@@ -1,0 +1,400 @@
+{
+ "cells_inconclusive": [],
+ "code": {
+  "commit": "835c6b4b27db28115fab08c1b5c29e71f6cfbfdb",
+  "diff_sha": "e3b0c44298fc1c14",
+  "dirty": false,
+  "pin": "835c6b4b2",
+  "root": "/home/goodlad/dev/gen3ai-reads/su_gate_835c6b4b"
+ },
+ "completeness": {
+  "class": "COMPLETE"
+ },
+ "created": "2026-10-28T05:08:53-0700",
+ "imports": {},
+ "ledgers": {},
+ "models": {
+  "pstar": {
+   "arm": "pstar",
+   "seed": 2601,
+   "sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed",
+   "source": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip",
+   "step": 280000170
+  }
+ },
+ "prereg": "designs/research_state/measurements/su_gate_2026-10-27/PREREG.md",
+ "read": "su_gate_2026-10-27",
+ "rederived_guards": {
+  "held": false,
+  "hits": [],
+  "mode": "report",
+  "schema": "gen3_read_rederived_guards_v1",
+  "unavailable": [],
+  "units_checked": 40
+ },
+ "regimes": {
+  "anchor": {
+   "gate": "7de9f7fcbe251df0"
+  },
+  "s": {}
+ },
+ "repins": [],
+ "reported_incomplete": {},
+ "rule": "deviation_sign",
+ "schema": "gen3_read_record_v1",
+ "spec_sha256": "d1fde5b550e74e73836c97c140933b5c7edd0f3bf4b88bbdc59ec0f25d96c957",
+ "verdict": "GO: pooled-U sign accuracy 0.635 [0.578, 0.687] (n 346; GO iff LB > 0.5)",
+ "void": null,
+ "decision": {
+  "artefacts": {
+   "scored": {
+    "path": "/home/goodlad/gen3ai_archive/su_gate_2026-10-27/gate/scored.jsonl",
+    "sha256": "975f4a2dc9f0ab8a436d9e417b740c7059c6eb6244a69c528b3cf7046e071606"
+   },
+   "selected": {
+    "path": "/home/goodlad/gen3ai_archive/su_gate_2026-10-27/gate/selected.jsonl",
+    "sha256": "cd28bd5dca08a67248d62ff6b02d1728ebe34c5403641aa6b56ec7933497e12d"
+   }
+  },
+  "boundary": false,
+  "decision": {
+   "class": "GO",
+   "verdict": "GO: pooled-U sign accuracy 0.635 [0.578, 0.687] (n 346; GO iff LB > 0.5)"
+  },
+  "engine": "port=e00a212a102f5ce2/94;env=3d0d5c9c0f5d3c23/129",
+  "n_states": 1560,
+  "primary": {
+   "est": 0.6348775080368031,
+   "hi": 0.6865950919291437,
+   "lo": 0.5778559237933216,
+   "n": 346,
+   "per_panel": {
+    "forum72": [
+     0.6597938144329897,
+     97,
+     200
+    ],
+    "heldout72_hpfix": [
+     0.64,
+     125,
+     180
+    ],
+    "p72": [
+     0.6048387096774194,
+     124,
+     200
+    ]
+   }
+  },
+  "reported": {
+   "home72_sign": {
+    "est": 0.5373134328358209,
+    "hi": 0.6165533514637657,
+    "lo": 0.4577266579610111,
+    "n": 134,
+    "per_panel": {
+     "home72": [
+      0.5373134328358209,
+      134,
+      200
+     ]
+    }
+   },
+   "per_set": {
+    "forum72": {
+     "countable_deviations": 97,
+     "deviation_rate": {
+      "est": 0.38095238095238093,
+      "hi": 0.436632796780684,
+      "lo": 0.33146067415730335,
+      "n": 357,
+      "per_panel": {
+       "forum72": [
+        0.38095238095238093,
+        357,
+        200
+       ]
+      }
+     },
+     "deviations": 136,
+     "excluded": 43,
+     "exclusion_rate": 0.1075,
+     "games": 200,
+     "imp": {
+      "est": 0.013246965452847804,
+      "hi": 0.02395077104536918,
+      "lo": 0.00222331819296214,
+      "n": 357,
+      "per_panel": {
+       "forum72": [
+        0.013246965452847804,
+        357,
+        200
+       ]
+      }
+     },
+     "leak": {
+      "attribution_miss": 161,
+      "rewritten_moves": 262,
+      "rewritten_switches": 8,
+      "states_with_rewrites": 161
+     },
+     "referee_cpu_s": {
+      "mean": 12.132963235294119,
+      "total": 1650.083
+     },
+     "search_cpu_s": {
+      "mean": 7.34036,
+      "median": 5.7044999999999995,
+      "total": 2936.1440000000002
+     },
+     "searched": 357,
+     "sign": {
+      "est": 0.6597938144329897,
+      "hi": 0.754906962785114,
+      "lo": 0.562485119047619,
+      "n": 97,
+      "per_panel": {
+       "forum72": [
+        0.6597938144329897,
+        97,
+        200
+       ]
+      }
+     },
+     "speed_flip": {
+      "control_failed": 0,
+      "mons": 1983,
+      "mons_pinned": 77,
+      "rate": 0.1875,
+      "states": 400,
+      "states_pinned": 75
+     },
+     "states": 400
+    },
+    "heldout72_hpfix": {
+     "countable_deviations": 125,
+     "deviation_rate": {
+      "est": 0.4140845070422535,
+      "hi": 0.467966573816156,
+      "lo": 0.35691530225188456,
+      "n": 355,
+      "per_panel": {
+       "heldout72_hpfix": [
+        0.4140845070422535,
+        355,
+        180
+       ]
+      }
+     },
+     "deviations": 147,
+     "excluded": 5,
+     "exclusion_rate": 0.013888888888888888,
+     "games": 180,
+     "imp": {
+      "est": 0.01971830985915493,
+      "hi": 0.034880158812531876,
+      "lo": 0.005574628325508607,
+      "n": 355,
+      "per_panel": {
+       "heldout72_hpfix": [
+        0.01971830985915493,
+        355,
+        180
+       ]
+      }
+     },
+     "leak": {
+      "attribution_miss": 251,
+      "rewritten_moves": 174,
+      "rewritten_switches": 2,
+      "states_with_rewrites": 124
+     },
+     "referee_cpu_s": {
+      "mean": 10.436843537414967,
+      "total": 1534.2160000000001
+     },
+     "search_cpu_s": {
+      "mean": 4.7207888888888885,
+      "median": 4.125500000000001,
+      "total": 1699.484
+     },
+     "searched": 355,
+     "sign": {
+      "est": 0.64,
+      "hi": 0.7272727272727273,
+      "lo": 0.5499904580152672,
+      "n": 125,
+      "per_panel": {
+       "heldout72_hpfix": [
+        0.64,
+        125,
+        180
+       ]
+      }
+     },
+     "speed_flip": {
+      "control_failed": 0,
+      "mons": 1632,
+      "mons_pinned": 83,
+      "rate": 0.21666666666666667,
+      "states": 360,
+      "states_pinned": 78
+     },
+     "states": 360
+    },
+    "home72": {
+     "countable_deviations": 134,
+     "deviation_rate": {
+      "est": 0.4182825484764543,
+      "hi": 0.4726775956284153,
+      "lo": 0.36205979457079973,
+      "n": 361,
+      "per_panel": {
+       "home72": [
+        0.4182825484764543,
+        361,
+        200
+       ]
+      }
+     },
+     "deviations": 151,
+     "excluded": 39,
+     "exclusion_rate": 0.0975,
+     "games": 200,
+     "imp": {
+      "est": 0.009406740535549398,
+      "hi": 0.022038810483870946,
+      "lo": -0.002677781873558417,
+      "n": 361,
+      "per_panel": {
+       "home72": [
+        0.009406740535549398,
+        361,
+        200
+       ]
+      }
+     },
+     "leak": {
+      "attribution_miss": 155,
+      "rewritten_moves": 237,
+      "rewritten_switches": 3,
+      "states_with_rewrites": 144
+     },
+     "referee_cpu_s": {
+      "mean": 12.473503311258277,
+      "total": 1883.4989999999998
+     },
+     "search_cpu_s": {
+      "mean": 6.475694999999999,
+      "median": 5.097,
+      "total": 2590.278
+     },
+     "searched": 361,
+     "sign": {
+      "est": 0.5373134328358209,
+      "hi": 0.6165533514637657,
+      "lo": 0.4577266579610111,
+      "n": 134,
+      "per_panel": {
+       "home72": [
+        0.5373134328358209,
+        134,
+        200
+       ]
+      }
+     },
+     "speed_flip": {
+      "control_failed": 0,
+      "mons": 1985,
+      "mons_pinned": 73,
+      "rate": 0.1475,
+      "states": 400,
+      "states_pinned": 59
+     },
+     "states": 400
+    },
+    "p72": {
+     "countable_deviations": 124,
+     "deviation_rate": {
+      "est": 0.41878172588832485,
+      "hi": 0.46908393950494526,
+      "lo": 0.36882756132756134,
+      "n": 394,
+      "per_panel": {
+       "p72": [
+        0.41878172588832485,
+        394,
+        200
+       ]
+      }
+     },
+     "deviations": 165,
+     "excluded": 6,
+     "exclusion_rate": 0.015,
+     "games": 200,
+     "imp": {
+      "est": 0.010310913705583756,
+      "hi": 0.023504408060453404,
+      "lo": -0.002080669224211422,
+      "n": 394,
+      "per_panel": {
+       "p72": [
+        0.010310913705583756,
+        394,
+        200
+       ]
+      }
+     },
+     "leak": {
+      "attribution_miss": 199,
+      "rewritten_moves": 219,
+      "rewritten_switches": 4,
+      "states_with_rewrites": 155
+     },
+     "referee_cpu_s": {
+      "mean": 12.303987878787877,
+      "total": 2030.158
+     },
+     "search_cpu_s": {
+      "mean": 4.9183825,
+      "median": 4.1935,
+      "total": 1967.3529999999998
+     },
+     "searched": 394,
+     "sign": {
+      "est": 0.6048387096774194,
+      "hi": 0.6940298507462687,
+      "lo": 0.5172413793103449,
+      "n": 124,
+      "per_panel": {
+       "p72": [
+        0.6048387096774194,
+        124,
+        200
+       ]
+      }
+     },
+     "speed_flip": {
+      "control_failed": 0,
+      "mons": 1883,
+      "mons_pinned": 99,
+      "rate": 0.22,
+      "states": 400,
+      "states_pinned": 88
+     },
+     "states": 400
+    }
+   },
+   "u_minus_home72_sign": {
+    "est": 0.0975640752009822,
+    "hi": 0.19432084463382446,
+    "lo": -0.0017787173106349296,
+    "sign": "+"
+   }
+  },
+  "rule": "GO iff LB(sign accuracy, pooled U ['heldout72_hpfix', 'forum72', 'p72'], panels equal-weighted) > 0.5 (rule 8: within 0.0005 = STOP)",
+  "schema": "gen3_read_deviation_sign_v1",
+  "verdict": "GO"
+ }
+}

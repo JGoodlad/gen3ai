@@ -169,10 +169,17 @@ def decide(doc: Mapping[str, Any], p: Mapping[str, Any]) -> Dict[str, Any]:
 
     why = void_reasons(doc, p)
     if why:
-        return {"schema": SCHEMA, "verdict": VOID, "void": why}
+        return {"schema": SCHEMA, "verdict": VOID, "void": why,
+                "decision": {"class": VOID, "verdict": f"{VOID}: " + "; ".join(why)}}
     res = read(doc["scored"], {"home_panel": p["home_panel"], "u_panels": list(p["u_panels"]), "bar": p["bar"],
                                "rule8_eps": p["rule8_eps"], "bootstrap": dict(p["bootstrap"]),
                                "expected_states": len(doc["selected"])})
+    pr = res["primary"]
+    line = (f"{res['verdict']}: pooled-U sign accuracy {pr['est']:.3f} [{pr['lo']:.3f}, {pr['hi']:.3f}] "
+            f"(n {pr['n']}; GO iff LB > {p['bar']}" + ("; LB within rule 8's eps: STOP" if res["boundary"] else "")
+            + ")")
+    # the record reads ``decision.verdict`` (``rules.Rule.verdict_of``, a non-X35 rule); the class rides beside it
     return {"schema": SCHEMA, "verdict": res["verdict"], "boundary": res["boundary"], "rule": res["rule"],
-            "primary": res["primary"], "reported": res["reported"], "n_states": res["n_states"],
-            "artefacts": doc["artefacts"], "engine": doc["group"]["engine"]}
+            "primary": pr, "reported": res["reported"], "n_states": res["n_states"],
+            "artefacts": doc["artefacts"], "engine": doc["group"]["engine"],
+            "decision": {"class": res["verdict"], "verdict": line}}

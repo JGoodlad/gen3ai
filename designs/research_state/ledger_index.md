@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-29,936-line file. **The ledger itself is append-only and is never edited by this**;
+29,962-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**980 headings · 925 dated · 2026-08-01 → 2026-10-28 · ledger 29,936 lines.**
+**981 headings · 926 dated · 2026-08-01 → 2026-10-28 · ledger 29,962 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -1000,3 +1000,4 @@ rename.
   - `L29782` · `2026-10-27` · GIGO FIX · **An anchor-vs-anchor cell's per-game `our_team` is the team the peer PLAYED, from its draw log; Metamon's CSV `Team File` column names the NEXT draw in 82 % of games. No banked read, claim or number rested on the old label (SOP, `main.anchors.peer_teams`)**
   - `L29838` · `2026-10-28` · MEASUREMENT · **X35 LR-F LOOK 1 reads UNDECIDED, FINAL: a learning-rate floor two controller rungs above P\*'s (≈ ×1.73 over C0's rate) moves in-house S by −1.13 pp [−2.45, +0.18]; every LR-F seed sits below every C0 seed; no look 2; the guards are not read. The lever acted (the rate at the floor on 100 % of updates) but the per-update KL rose only ×1.29 (0.018 → 0.024), under the predicted band**
   - `L29889` · `2026-10-28` · MEASUREMENT · **H-CTX's A-K check reads UNDECIDED, detected weaker: with Kakuna piloting BOTH sides, rc72b scores 0.459 [0.428, 0.493] against home72 + forum72 teams (−28 Elo [−51, −5]; the bar is −35 Elo). The weakness is flat across rc72b's coherence thirds; post hoc and across engines, a full transfer into P\*'s symmetric score would make H-CTX's recovered share 0.21 [−0.88, +0.88]**
+  - `L29937` · `2026-10-28` · MEASUREMENT · **The S-U gate test reads GO: on unfamiliar teams the registered search's deviations from P\*'s top move are right 0.635 [0.578, 0.687] of the time under its own referee (n 346, pooled U); home72 0.537 [0.458, 0.617], as on the bank (0.513). GO licenses V-RANK next, never a gain**

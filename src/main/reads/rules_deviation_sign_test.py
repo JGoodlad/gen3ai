@@ -113,8 +113,11 @@ def test_go_and_stop_through_the_gates_reader(tmp_path):
     go = _read(tmp_path)
     assert go["verdict"] == "GO" and go["n_states"] == len(SEEDS) * 4 * 20
     assert go["artefacts"]["scored"]["sha256"] and go["engine"] == ENGINE
+    assert RU.RULES["deviation_sign"].verdict_of(go).startswith("GO: pooled-U sign accuracy")
+    assert go["decision"]["class"] == "GO"
     _artefacts(tmp_path, 0.5)
-    assert _read(tmp_path)["verdict"] == "STOP"
+    stop = _read(tmp_path)
+    assert stop["verdict"] == "STOP" and RU.RULES["deviation_sign"].verdict_of(stop).startswith("STOP")
 
 
 @pytest.mark.parametrize("case, needle", [
@@ -139,6 +142,7 @@ def test_each_void_reason(tmp_path, case, needle):
         units[0]["counted"] = False
     res = _read(tmp_path, units=units)
     assert res["verdict"] == DS.VOID and any(needle in w for w in res["void"]), res["void"]
+    assert RU.RULES["deviation_sign"].verdict_of(res).startswith("VOID: ")
 
 
 def test_a_missing_artefact_refuses_the_inputs(tmp_path):
