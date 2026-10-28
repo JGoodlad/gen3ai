@@ -1036,7 +1036,7 @@ def unmoved_parameters(model: Any) -> List[str]:
 
 def r1_rungs(model: Any, args: Tuple[Any, ...], names: List[str], regime: str, *,
              source: Optional[str] = None, fn: Optional[Callable[..., Any]] = None,
-             route: Optional[str] = None, watch: Optional["GradWatch"] = None
+             route: Optional[str] = None, watch: Optional["GradWatch"] = None, row_bars: Any = None
              ) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor], List[str]]:
     """Region R1's verdict rungs, shared by the startup gate and the in-run canary. Returns the live
     rung's EAGER and COMPILED arms (the judged-set rule and the canary's cosine read them) and one
@@ -1055,7 +1055,8 @@ def r1_rungs(model: Any, args: Tuple[Any, ...], names: List[str], regime: str, *
     ``fn`` / ``route``: the R1 route under judgement (`r1_routes`; None = the installed compiled route,
     rule lines prefixed ``R1``; a named route prefixes ``R1[<route>]``). ``watch``: a `GradWatch` the LIVE rung fills
     with its watch-list's per-parameter numbers (the canary's growth-curve record), also when the rung refuses.
-    """
+    ``row_bars``: the canary's per-row clip-margin bars (`canary_row_bar.BatchRowBars`), judged on the LIVE rung only
+    (the null is the live weights'); None = the scalar margin (the startup gate)."""
     unmoved = unmoved_parameters(model) if regime != "fresh" else []
     pre = "R1 " if route is None else f"R1[{route}] "
     idx = {n: i for i, n in enumerate(names)}
@@ -1063,7 +1064,8 @@ def r1_rungs(model: Any, args: Tuple[Any, ...], names: List[str], regime: str, *
     tail = f" [{source}]" if source else ""
     if unmoved:
         tail += f" [unmoved rule: {unmoved_rule(model)}]"
-    eager, comp, line = _r1_judge(model, args, names, regime, fn, bar_by_index=excepted, watch=watch)
+    eager, comp, line = _r1_judge(model, args, names, regime, fn, bar_by_index=excepted, watch=watch,
+                                  row_bars=row_bars)
     rules = [pre + line + tail]
     if regime == "fresh":
         rules.append(pre + _r1_perturbed(model, args, names, fn))
@@ -1075,7 +1077,7 @@ def r1_rungs(model: Any, args: Tuple[Any, ...], names: List[str], regime: str, *
 def _r1_judge(model: Any, args: Tuple[Any, ...], names: List[str], regime: str,
               fn: Optional[Callable[..., Any]] = None, *,
               label: Optional[str] = None, bar_by_index: Optional[Dict[int, float]] = None,
-              watch: Optional["GradWatch"] = None
+              watch: Optional["GradWatch"] = None, row_bars: Any = None
               ) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor], str]:
     """ONE rung: the independent compiled / eager pair on the CURRENT weights, judged by the rule of the
     policy's trunk precision — fp32: `_r1_verdict` (compiled vs eager at the fp32 bars); bf16: THE bf16 PARITY
@@ -1113,7 +1115,7 @@ def _r1_judge(model: Any, args: Tuple[Any, ...], names: List[str], regime: str,
         # the margin's precondition is read whatever the verdict (the watch record is complete), and an arm that broke
         # it is named as ITSELF — its gradient verdict would be the 0/1 switch this fixture exists to exclude
         try:
-            m_line = _clip_margin_rule(fix, arms, watch, rerun=not events)
+            m_line = _clip_margin_rule(fix, arms, watch, rerun=not events, row_bars=row_bars)
         except _YardstickOutOfMargin as y:
             events.append(y.event)
             if watch is not None:
@@ -1575,7 +1577,7 @@ def yardstick_line(event: Dict[str, Any]) -> str:
 
 
 def _clip_margin_rule(fix: ClipRelocation, arms: Dict[str, Dict[str, torch.Tensor]],
-                      watch: Optional["GradWatch"] = None, *, rerun: bool = False) -> str:
+                      watch: Optional["GradWatch"] = None, *, rerun: bool = False, row_bars: Any = None) -> str:
     """The precondition (module comment above): every judged arm's largest |Δ log π| from the relocation's
     reference is <= the margin, and — its consequence, checked rather than assumed — no arm's clip branch differs from
     the reference's on any row. Returns the rule-line fragment, else:
@@ -1583,13 +1585,24 @@ def _clip_margin_rule(fix: ClipRelocation, arms: Dict[str, Dict[str, torch.Tenso
       * ``rerun`` and a YARDSTICK arm (`YARDSTICK_ARMS`) out of margin: `_YardstickOutOfMargin`, carrying the event
         and M' (the caller re-runs the rung there; the compiled arm is judged only at M');
       * a COMPILED arm out of margin: `CompileTrainerError` naming it (as before gen3_r1_yardstick_margin_v1);
-      * a yardstick out of margin without ``rerun`` (the re-run itself, or a direct caller): `YardstickRefusal`."""
+      * a yardstick out of margin without ``rerun`` (the re-run itself, or a direct caller): `YardstickRefusal`.
+
+    ``row_bars`` (`canary_row_bar.BatchRowBars`, the canary only): a JUDGED arm is held to each row's own bar instead
+    of the scalar margin (`gen3_canary_row_bar_v1`); the yardsticks keep the scalar rule."""
+    from agents.model import canary_row_bar as RB
     reads = _margin_reads(fix, arms)
     same = _same_precision(arms)
+    per_row = None
+    if row_bars is not None:
+        if not RB.ROW_BAR_CAP <= fix.margin:                  # rule 8: no arm's bar may pass the relocation margin
+            raise ct.CompileTrainerError(f"--compile-trainer region R1: the per-row cap {RB.ROW_BAR_CAP:g} passes the "
+                                         f"relocation margin {fix.margin:.4g}")
+        per_row = RB.judge(fix.ref_log_prob, {n: a for n, a in arms.items() if n not in YARDSTICK_ARMS}, row_bars)
     if watch is not None:
-        watch.fill_margin(fix, reads, same)
+        watch.fill_margin(fix, reads, same, per_row, row_bars)
         watch.fill_rows(fix, arms)
-    out = [n for n, (sh, _, fl) in reads.items() if not sh <= fix.margin or fl]
+    out = [n for n, (sh, _, fl) in reads.items()
+           if fl or (per_row[n]["fails"] if per_row is not None and n in per_row else not sh <= fix.margin)]
     yard = [n for n in out if n in YARDSTICK_ARMS]
     judged = [n for n in out if n not in YARDSTICK_ARMS]
     if yard and rerun:
@@ -1606,6 +1619,8 @@ def _clip_margin_rule(fix: ClipRelocation, arms: Dict[str, Dict[str, torch.Tenso
                 "compiled_shift": max(comp) if comp else float("nan")})
     for name in judged + yard:
         shift, row, flips = reads[name]
+        if per_row is not None and name in per_row:
+            raise ct.CompileTrainerError(RB.refusal(name, per_row[name], flips, row_bars))
         if name in YARDSTICK_ARMS:
             raise YardstickRefusal(
                 f"--compile-trainer region R1: the YARDSTICK {name} arm — NOT the compiled one — moved a fixture "
@@ -1629,7 +1644,7 @@ def _clip_margin_rule(fix: ClipRelocation, arms: Dict[str, Dict[str, torch.Tenso
             + f" <= {fix.margin:.3f}, 0 clip-branch switches")
     if same is not None:
         line += f"; same-precision |{same[0]} - eager| {same[1]:.2e} (row {same[2]}; recorded, no bar)"
-    return line
+    return line + ("; " + RB.line(per_row, row_bars) if per_row is not None else "")
 
 
 # ------------------------------------------------------------------ the canary's WATCH-LIST record
@@ -1661,7 +1676,8 @@ class GradWatch:
         return int(fr[row]) if fr is not None and 0 <= row < len(fr) else None
 
     def fill_margin(self, fix: "ClipRelocation", reads: Dict[str, Tuple[float, int, int]],
-                    same: Optional[Tuple[str, float, int]] = None) -> None:
+                    same: Optional[Tuple[str, float, int]] = None, per_row: Optional[Dict[str, Any]] = None,
+                    row_bars: Any = None) -> None:
         """The rung's clip-boundary fixture (`gen3_r1_clip_margin_v1`): rows relocated, the margin, the nearest unmoved
         row's distance and every arm's largest |Δ log π| from the reference — so a run's records carry the compiled
         arm's shift (the margin's provisional input) at every canary — plus (gen3_r1_yardstick_margin_v1) the WORST
@@ -1677,6 +1693,9 @@ class GradWatch:
             self.margin["same_precision"] = {"arms": f"{same[0]} - eager", "max_abs_dlogp": float(same[1]),
                                              "row": int(same[2]), "fixture_row": self._fixture(int(same[2])),
                                              "bar": None}
+        if per_row is not None:                         # gen3_canary_row_bar_v1: each judged arm's worst row / its bar
+            self.margin["row_bar"] = {"bars": row_bars.rows.label,
+                                      "arms": {n: {k: v for k, v in d.items() if k != "fails"} for n, d in per_row.items()}}
 
     def fill_rows(self, fix: "ClipRelocation", arms: Dict[str, Dict[str, torch.Tensor]]) -> None:
         """Every arm's |Δ log π| from the relocation's reference PER FIXTURE ROW (the max over the batch rows that tile
@@ -1787,9 +1806,12 @@ class GradWatch:
 #: DERIVED (window D, 2026-10-10, `E_bf16_envelope`: RTX 3080 Ti, torch 2.8, `--arch endstate`, B = 2,048 of the gate's
 #: rows, 20 reads = fresh + 6 ladder-perturbed + 3 bf16-trained states x 2 slices, each arm twice — both bf16 arms were
 #: run-to-run bit-identical): healthy max drift loss 3.26e-3, gradient rel-L2 0.169; healthy max envelope ratio loss
-#: 1.35, gradient 1.58, per parameter 2.94. Each bar = R1_BAR_K x that, rounded UP to 2 significant digits.
+#: 1.35, gradient 1.58, per parameter 2.94. Each bar = R1_BAR_K x that, rounded UP to 2 significant digits. EXCEPT the
+#: LOSS envelope (ruled 2026-10-28, `gen3_canary_row_bar_v1`): 9.2 = 4 x 2.283, the healthy maximum over 159 production
+#: canary checks (X35 + the P* lineage, every slice; window D held no production state), basis
+#: `testdata/canary_stage1_basis.json` (window D's 5.4 refused the C0 s3501 final's healthy slice 1 at 1.036 of it).
 BF16_DRIFT_BARS: Optional[Dict[str, float]] = {"loss": 0.014, "grad_rel_l2": 0.68}
-BF16_ENVELOPE_K: Optional[Dict[str, float]] = {"loss": 5.4, "grad_rel_l2": 6.4, "param": 12.0}
+BF16_ENVELOPE_K: Optional[Dict[str, float]] = {"loss": 9.2, "grad_rel_l2": 6.4, "param": 12.0}
 #: the global gradient's floor: the fp32 rule's cosine bar as a relative L2 (|a - b| / |b| = sqrt(2 (1 - cos)) for
 #: equal norms)
 BF16_GRAD_FLOOR = float(np.sqrt(2.0 * (1.0 - ct._MIN_GRAD_COSINE)))

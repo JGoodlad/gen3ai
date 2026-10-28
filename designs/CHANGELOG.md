@@ -15539,3 +15539,27 @@ was downloaded or written under `data/`.
   state, no other initial byte moved, the save / load round trip through the bare and snapshot loaders, depth + width,
   the refusals); `main/train/grow_fork_test.py` (the parser, resolve, the stamp, `checkargs`, the fork-arch verdict on
   a toy parent, the dry run, the trainee loader and the seeded pool); `probe_battery_test.py` (the refusal).
+
+## 2026-10-28 — the canary's per-row clip margin, STAGE 1, and the bf16 loss envelope K 5.4 → 9.2 (`gen3_canary_row_bar_v1`; no model / config / obs / signature change; training math untouched)
+
+- **The ruling** (the orchestrator, on `training/canary_recalibration_2026-10-28.md`, from the W0 CUDA census and 159
+  banked production checks): (1) the compiled arm's clip margin per fixture row, min(6.0 x max(16-seed dither null,
+  0.02), 0.72), the relocation still one scalar; (2) `BF16_ENVELOPE_K["loss"]` 5.4 → 9.2 (4 x 2.283, the production
+  healthy maximum); (3) the per-parameter K 12 kept, no edge_bias exemption; (4) the family bars C0 2.64 / X47 2.40 kept
+  for global-M records, dropped on per-row ones. Stage 2 (cap 1.2) waits on a leased read.
+- **The build.** `agents/model/canary_row_bar.py`: the bar, the fallback (every row at the cap when the null is off,
+  skipped, truncated, in error or short of 16 seeds), the per-row judge. The canary turns its per-row null
+  (`canary_row_null`, the shadow until now) into bars before the check and hands them to the scheduled check and both
+  halves (`r1_rungs` / `_r1_judge` / `_clip_margin_rule(row_bars=)`, the live rung only); the yardsticks and the startup
+  gate keep the scalar margin. Every `canary_verdicts.jsonl` record carries `canary_rule_version` (`per_row_stage1`; a
+  record without it is `global_m`) and `canary_rule` (constants, the bars and their source, the loss K); TB
+  `compile/canary_row_bars_live`. `main.ops.canary_decide` HOLDs a per-row FATAL whatever the bar;
+  `main.ops.canary_dump_replay --dump` judges by the rule and bars its record names.
+- **The pin boundary.** Code reaches a run only through its pin: every X35-frame arm and X63-C at `f4b25238` keeps the
+  global M, K 5.4 and its family-bar resume; the first run launched at a pin carrying this takes it.
+- **Tests.** `agents/model/canary_row_bar_test.py` (k and K_loss re-derived from the committed basis
+  `testdata/canary_stage1_basis.json`; the bar and its cap; the fallbacks; a compiled shift under M refused past its
+  row's bar; the yardsticks unchanged; the census backtest, 0 of 20 checkpoints refusing and a synthetic shift above a
+  row's bar refusing; the canary binding and recording), `canary_decide_test`, `canary_dump_replay_test`; the shadow,
+  yardstick and near-margin tests run their planted checks through the bars. The played-bits sentinel and the K9
+  learner golden do not move.

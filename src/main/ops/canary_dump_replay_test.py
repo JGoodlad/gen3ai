@@ -261,3 +261,21 @@ def test_the_eager_arms_and_the_canary_check_run_on_the_real_learner_cpu():
         cr.uninstall(m)
         cc._reset_control_for_tests()
         torch._dynamo.reset()
+
+
+def test_the_replay_judges_by_the_RULE_its_record_names():
+    """gen3_canary_row_bar_v1: a global-M record (no field) replays at the scalar margin; a per-row record replays
+    against ITS OWN recorded bars (or the cap when it fell back); an unknown rule refuses."""
+    from agents.model import canary_row_bar as RB
+    from main.ops import canary_dump_replay as R
+    assert R.replay_row_bars({"verdict": "unconfirmed"}) is None
+    assert R.replay_row_bars({"canary_rule_version": RB.LEGACY_RULE_VERSION}) is None
+    live = R.replay_row_bars({"canary_rule_version": RB.CANARY_RULE_VERSION,
+                              "canary_rule": {"bar_per_row": [0.12, 0.72], "row_bars_source": "null"}})
+    assert live.live and live.bars.tolist() == [0.12, 0.72]
+    fb = R.replay_row_bars({"canary_rule_version": RB.CANARY_RULE_VERSION,
+                            "canary_rule": {"row_bars_source": "fallback: the null skipped"}})
+    assert not fb.live and "skipped" in fb.source
+    import pytest as _pt
+    with _pt.raises(R.Refusal, match="per_row_stage9"):
+        R.replay_row_bars({"canary_rule_version": "per_row_stage9"})

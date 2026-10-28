@@ -169,8 +169,9 @@ graph, so a disagreement is confirmed IN THE SAME UPDATE:
   the 2026-10-12 golden rebuild), so a miscompile only one half judges is FATAL by the consecutive rule below.
 - **Every check runs on the fixture moved off the PPO clip boundary** (`compile_regions.relocate_clip_boundary`,
   the startup gate's rows exactly; standing rule 8): a row within `R1_CLIP_MARGIN` of the clip bound that switches
-  its gradient is moved 2 × the margin inside its active side, and a COMPILED arm that moves a log-prob past the
-  margin is refused by name (`compile_flags.md` "The bf16 canary FATAL on trained weights"). **A YARDSTICK arm past
+  its gradient is moved 2 × the margin inside its active side, and a COMPILED arm that moves a fixture row's log-prob
+  past THAT ROW's bar (min(6 × max(its dither null, 0.02), 0.72), `gen3_canary_row_bar_v1`; the cap 0.72 when the null
+  cannot bind) is refused by name (`compile_flags.md` "The per-row clip margin, STAGE 1"). **A YARDSTICK arm past
   the margin is not a disagreement** (`gen3_r1_yardstick_margin_v1`, 2026-10-19; the X34 u1700 UNCONFIRMED, where
   EAGER bf16 read 0.856 > 0.72 and compiled 0.52): eager and the fp32 reference are what the compiled arm is measured
   against, so their tail is a recorded `yardstick_out_of_margin` event, never counted toward confirm / FATAL; the rung
@@ -227,8 +228,9 @@ the fp32 rule's form).
 The FATAL names the SAFE ROLLBACK POINT: the newest `checkpoints/*_<N>_steps.zip` at or before the last
 PASSING canary's step (`rollback_point`; the file is the run's, so it spans restarts).
 
-**The SHADOW per-row null** (`gen3_canary_row_null_shadow_v1`, 2026-10-25, orchestrator-approved; `canary_row_null`;
-the design: `../research_state/measurements/canary_row_null_design_2026-10-25/`). Every canary, BEFORE its check and
+**The per-row null** (`gen3_canary_row_null_shadow_v1`, 2026-10-25, a recorded-only shadow; BINDING since
+`gen3_canary_row_bar_v1`, 2026-10-28; `canary_row_null`; the design:
+`../research_state/measurements/canary_row_null_design_2026-10-25/`). Every canary, BEFORE its check and
 outside its timer and memory card, computes each golden row's fp32 dither null on the live weights: the fp32 reference
 forward (`evaluate_actions_functional` under `fp32_scope`, no grad, train mode, matmul precision 'highest') on the 64
 UNIQUE fixture rows, then `ROW_NULL_SEEDS` = 16 dithers of relative 2^-9, name-keyed with FIXED seeds 0..15
@@ -238,15 +240,18 @@ The reference runs twice (`ref_repeat_max_abs`: the fp32 forward's own run-to-ru
 device; the warm second call is the one timed). Every record carries `row_null`: `null_per_row`, the per-seed matrix (`per_seed`, so a K-sensitivity is recoverable),
 each seed's worst row, the null's p50 / p90 / max, and per arm of the scheduled check's judged read
 (`GradWatch.row_dlogp`: the max over a row's tiles at the canary's B) `dlogp_per_row` and `ratio_per_row` =
-shift / max(null, `ROW_NULL_FLOOR` 0.02), with their p50 / p90 / max and row. **It judges NOTHING**
-(`"judged": false`): the verdict, the TB scalars and every other record field are identical with it off
-(`canary_row_null_test`, which fails if the shadow moves a verdict). Budget: `ROW_NULL_CAP_S` 5 s
+shift / max(null, `ROW_NULL_FLOOR` 0.02), with their p50 / p90 / max and row. **It sets the compiled arm's per-row
+clip-margin bars** (`canary_row_bar`: min(6 x max(null, 0.02), 0.72) per fixture row, for the scheduled check and both
+halves; `"judged": true` then); a null that cannot bind (off, skipped, truncated, in error, or short of 16 seeds) puts
+every row at the cap 0.72, the global rule, and the record's `canary_rule.row_bars_source` names why
+(`designs/training/compile_flags.md` "The per-row clip margin, STAGE 1"; `canary_row_bar_test`). Every record carries
+`canary_rule_version` (`per_row_stage1`; none = a record from a pin before it, judged at the global M). Budget: `ROW_NULL_CAP_S` 5 s
 (`$GEN3AI_CANARY_ROW_NULL_CAP_S`; 0 = off; a malformed value refuses at construction): when (K + 1) × the timed reference
 forward would pass it the seeds are SKIPPED with the reason recorded, and a mid-run overrun records the seeds done
 (`truncated`); an error is recorded, never raised. Cost: CPU, the K9 golden learner (2.6M parameters, bf16 trunk), 0.17-0.20 s
 per B = 64 forward, 3.3-3.5 s per canary at K 16 on 3 agent cores beside a live run; GPU UNVERIFIED (the design
 estimates 0.5-1.6 s). Its transient is not in `update_fit`'s dry canary (`measure` runs the check only). Every
-production canary is thereby one row of the CUDA census the per-row margin's k, K and floor wait on.
+production canary's record is thereby also one more row of the CUDA census behind stage 2 of the per-row margin.
 
 The canary runs under `fork_rng`, restores the training mode and leaves every `.grad` None, so training
 is untouched (pinned). TB scalars, written on canary updates only:
@@ -254,7 +259,8 @@ is untouched (pinned). TB scalars, written on canary updates only:
 - `compile/canary_unconfirmed_disagreements`;
 - `compile/canary_yardstick_events` (cumulative yardstick-out-of-margin events: recorded, never counted);
 - `compile/canary_seconds` (the check alone);
-- `compile/canary_row_null_seconds` (the shadow per-row null's wall time; absent when it is off);
+- `compile/canary_row_null_seconds` (the per-row null's wall time; absent when it is off);
+- `compile/canary_row_bars_live` (1 when the per-row bars came from the null, 0 when they fell back to the cap);
 - `compile/canary_grad_cosine`;
 - `compile/canary_unmoved_params` (how many judged parameters are still exactly 0.0, `gen3_r1_unmoved_param_v1`).
 

@@ -54,6 +54,13 @@ record dumps the policy weights (`DUMP_WEIGHTS_MAX` per process). So does a PASS
 of its bar (`gen3_canary_near_margin_dump_v1`, the X26c u1000 PASS at 0.712 / 0.72: `NEAR_MARGIN_FRACTION`, rotated to
 the newest `NEAR_MARGIN_KEEP` per run); every record carries each judged quantity's `bar_fractions`.
 
+THE PER-ROW BAR, STAGE 1 (`gen3_canary_row_bar_v1`, ruled 2026-10-28; `canary_row_bar`). The per-row dither null
+(`canary_row_null`, computed before the check on the live weights) is BINDING: the compiled arm's shift on each fixture
+row is held to min(6 x max(null, 0.02), 0.72) in the scheduled check and both confirmation halves, the yardsticks keep
+the scalar margin, and a null that cannot bind (off, skipped, truncated, in error) puts every row at the cap (the
+global rule at M). Every record carries ``canary_rule_version`` and ``canary_rule`` (the constants, the bars' source,
+the bf16 loss envelope's K), so a reader tells this regime from a record written before it (no field: the global M).
+
 Every verdict (update, step, pass / unconfirmed / fatal) is appended to
 `<run_dir>/canary_verdicts.jsonl` WITH THE WATCH-LIST RECORD (`WATCH_PREFIXES`, `gen3_canary_watch_v1`): every
 watched parameter's per-check numbers — under the bf16 rule its ratio, the compiled distance and eager bf16's
@@ -84,6 +91,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import torch
 
+from agents.model import canary_row_bar
 from agents.model import canary_row_null
 from agents.model import compile_trainer as ct
 
@@ -230,8 +238,9 @@ def bar_fractions(watch: Any) -> Dict[str, Dict[str, Any]]:
     """EVERY JUDGED QUANTITY of one check, as the fraction of the bar it was judged at (`gen3_canary_near_margin_dump_v1`),
     from the live rung's `compile_regions.GradWatch` (its UNROUNDED numbers, so the 0.9 trigger is not a rounding read):
 
-      * ``clip_margin`` — the largest |Δ log π| from the fp32 reference over the arms, / the margin the rung was judged
-        at (M, or the yardstick re-run's M′); ``arm`` names the arm that carries it;
+      * ``clip_margin`` — the largest over the arms of |Δ log π| from the fp32 reference / the bar it was judged at:
+        a yardstick's against the margin (M, or the yardstick re-run's M′), the judged arm's worst row against that
+        row's own bar (`canary_row_bar`); ``arm`` names the arm that carries it;
       * bf16 rule only (`_r1_verdict_bf16`): ``drift_loss`` / ``drift_grad`` (eager bf16 vs the reference, /
         `BF16_DRIFT_BARS`), ``envelope_loss`` / ``envelope_grad`` (compiled vs the reference, / `BF16_ENVELOPE_K` x
         max(eager's, the floor)), ``param_ratio`` (the worst per-parameter ratio, / `BF16_ENVELOPE_K["param"]`).
@@ -241,10 +250,12 @@ def bar_fractions(watch: Any) -> Dict[str, Dict[str, Any]]:
     from agents.model import compile_regions as cr
     out: Dict[str, Dict[str, Any]] = {}
     m = getattr(watch, "margin", None)
-    if m and m.get("max_abs_dlogp"):
-        arm, shift = max(m["max_abs_dlogp"].items(), key=lambda kv: _frac(kv[1], m["margin"]))
-        out["clip_margin"] = {"fraction": _frac(shift, m["margin"]), "value": float(shift), "bar": float(m["margin"]),
-                              "arm": arm}
+    if m and m.get("max_abs_dlogp"):                  # gen3_canary_row_bar_v1: a judged arm against its row's own bar
+        rb = (m.get("row_bar") or {}).get("arms") or {}
+        cand = {a: ((rb[a]["fraction"], rb[a]["shift"], rb[a]["bar"]) if a in rb
+                    else (_frac(v, m["margin"]), v, m["margin"])) for a, v in m["max_abs_dlogp"].items()}
+        arm, (f, v, b) = max(cand.items(), key=lambda kv: kv[1][0])
+        out["clip_margin"] = {"fraction": float(f), "value": float(v), "bar": float(b), "arm": arm}
     g = getattr(watch, "globals", None) or {}
     if getattr(watch, "rule", None) == "bf16" and cr.BF16_DRIFT_BARS is not None and cr.BF16_ENVELOPE_K is not None:
         drift = {"loss": ("drift_loss", cr.BF16_LOSS_FLOOR), "grad_rel_l2": ("drift_grad", cr.BF16_GRAD_FLOOR)}
@@ -383,6 +394,7 @@ class CompileCanary:
             except ValueError as exc:
                 raise ct.CompileTrainerError(str(exc)) from exc
         self._row_null_raw: Optional[Dict[str, Any]] = None
+        self._row_bars: Optional[canary_row_bar.RowBars] = None     # gen3_canary_row_bar_v1: this canary's bars
         self._w0: Optional[Any] = None
 
     def after_update(self) -> Dict[str, float]:
@@ -394,10 +406,13 @@ class CompileCanary:
         return self.run()
 
     # ---------------------------------------------------------------------------- one verdict
-    def _check(self, slice_: int, out: Dict[str, float], watch: Optional[Any] = None) -> List[str]:
+    def _check(self, slice_: int, out: Dict[str, float], watch: Optional[Any] = None,
+               row_bars: Optional[canary_row_bar.RowBars] = None) -> List[str]:
         """One full comparison (compiled AND eager re-computed) on fixture slice ``slice_``. Raises
         `CompileTrainerError` on a disagreement; restores training mode and `.grad` either way. ``watch``: a
-        `compile_regions.GradWatch` the live rung fills (whatever the verdict)."""
+        `compile_regions.GradWatch` the live rung fills (whatever the verdict). ``row_bars``: the per-row clip-margin
+        bars the compiled arm is judged by (`canary_row_bar`); None = the scalar margin (a replay of a global-M record,
+        the dry update's memory read)."""
         from agents.model import compile_regions as cr
         model = self.model
         policy = model.policy
@@ -406,7 +421,7 @@ class CompileCanary:
         mem = cr.GateMemory(model)
         try:
             with torch.random.fork_rng(devices=devices), cr.gate_memory(mem):
-                return self._regions(model, out, slice_, watch)
+                return self._regions(model, out, slice_, watch, row_bars)
         finally:
             policy.set_training_mode(was_training)
             for p in policy.parameters():
@@ -434,11 +449,14 @@ class CompileCanary:
         rec: Dict[str, Any] = {"verdict": verdict, "update": self.updates,
                                "num_timesteps": int(getattr(self.model, "num_timesteps", 0) or 0),
                                "time": time.time(), "detail": detail[:4000],
-                               "canary_shift_max": self._shift_max_record()}
+                               "canary_shift_max": self._shift_max_record(),
+                               "canary_rule_version": canary_row_bar.CANARY_RULE_VERSION,
+                               "canary_rule": self._rule_record()}
         if fractions is not None:                           # gen3_canary_near_margin_dump_v1: every judged quantity
             rec["bar_fractions"] = {q: {k: _r4(v) for k, v in d.items()} for q, d in fractions.items()}
         if self._row_null_raw is not None:                  # gen3_canary_row_null_shadow_v1: recorded, never judged
-            rec["row_null"] = canary_row_null.record(self._row_null_raw, getattr(self._w0, "row_dlogp", None))
+            rec["row_null"] = canary_row_null.record(self._row_null_raw, getattr(self._w0, "row_dlogp", None),
+                                                     judged=self._bars_live())
         if verdict != "pass":                               # gen3_r1_yardstick_margin_v1: the weights it was read on
             rec["policy_pt"] = _dump_weights(self.model, _run_dir(self.model), self.updates, verdict,
                                              rec["num_timesteps"])
@@ -458,6 +476,16 @@ class CompileCanary:
         _append(_run_dir(self.model), VERDICTS_FILE, {k: v for k, v in rec.items() if k != "detail"}
                 if verdict == "pass" else rec)
         return rec
+
+    def _bars_live(self) -> bool:
+        return self._row_bars is not None and self._row_bars.live
+
+    def _rule_record(self) -> Dict[str, Any]:
+        """THE RULE every record names (`gen3_canary_row_bar_v1`): the per-row bar's constants, where this canary's bars
+        came from, and the bf16 loss envelope's K."""
+        from agents.model import compile_regions as cr
+        rb = self._row_bars or canary_row_bar.fallback("no per-row null was computed (outside a scheduled canary)")
+        return {**rb.record(), "envelope_loss_k": cr.BF16_ENVELOPE_K["loss"] if cr.BF16_ENVELOPE_K else None}
 
     def _shift_max_record(self) -> Dict[str, Any]:
         """THE JUDGEMENT INPUT every record carries (`--canary-shift-max`, T37): the shift the margin was built from, where
@@ -504,20 +532,21 @@ class CompileCanary:
             f"(FATAL_CONFIG). See designs/training/learner_lifecycle.md (the canary).") from first
 
     def run(self) -> Dict[str, float]:
-        # gen3_canary_row_null_shadow_v1: the SHADOW per-row null on these weights, BEFORE the check and outside its
-        # timer and memory card; it judges nothing (`canary_row_null`), and every record of this canary carries it
+        # the per-row null on these weights, BEFORE the check and outside its timer and memory card; it sets the compiled
+        # arm's per-row bars (gen3_canary_row_bar_v1), or the fallback at the cap when it cannot bind
         self._row_null_raw = None
         if self.row_null_on:
             try:
                 self._row_null_raw = canary_row_null.compute(self.model)
-            except Exception as exc:                        # noqa: BLE001 — recorded, never a verdict
+            except Exception as exc:                        # noqa: BLE001 — recorded; the bars fall back to the cap
                 self._row_null_raw = {"error": f"{type(exc).__name__}: {exc}"[:500]}
+        self._row_bars = canary_row_bar.from_null(self._row_null_raw)
         out: Dict[str, float] = {}
         t0 = time.perf_counter()
         w0 = self._new_watch()
         self._w0 = w0
         try:
-            rules = self._check(0, out, w0)
+            rules = self._check(0, out, w0, self._row_bars)
         except ct.GateArmsNotIndependentError as first:
             # Not a disagreement: the two arms were not independent (the compiled route ran eager, or
             # the eager reference ran the compiled graph), so there is no verdict to CONFIRM. A dispatch
@@ -538,7 +567,7 @@ class CompileCanary:
             for sl in ct.FIXTURE_HALVES:
                 wc = self._new_watch()
                 try:
-                    self._check(sl, {}, wc)
+                    self._check(sl, {}, wc, self._row_bars)
                 except ct.CompileTrainerError as exc:
                     again.append((sl, exc))
                 watches[f"confirm_slice{sl}"] = wc.record()
@@ -593,22 +622,27 @@ class CompileCanary:
         return out
 
     def _row_null_scalars(self) -> Dict[str, float]:
-        """The shadow null's TB scalar (its wall time; absent when it was off) — gen3_canary_row_null_shadow_v1."""
+        """The null's TB scalars: its wall time (absent when it was off) and whether the per-row bars came from it (1)
+        or fell back to the cap (0) — gen3_canary_row_bar_v1."""
         raw = self._row_null_raw
-        return {"compile/canary_row_null_seconds": float(raw["seconds"])} if raw and "seconds" in raw else {}
+        out = {"compile/canary_row_null_seconds": float(raw["seconds"])} if raw and "seconds" in raw else {}
+        out["compile/canary_row_bars_live"] = float(self._bars_live())
+        return out
 
     def _row_null_line(self) -> str:
-        """The PASS line's shadow fragment: the null's worst row and each arm's worst ratio (recorded, NOT judged)."""
+        """The PASS line's null fragment: the null's worst row and each arm's worst shift / null (the bars themselves
+        are on the R1 rule line), or why the per-row bars fell back to the cap."""
         raw = self._row_null_raw
         if raw is None:
-            return ""
+            return f" | row null: OFF, {self._row_bars.source if self._row_bars else 'no bars'}"
         rec = canary_row_null.record(raw, getattr(self._w0, "row_dlogp", None))
         if "null" not in rec:
             why = rec.get("skipped") or rec.get("error") or "no null"
-            return f" | row null (shadow, not judged): {why}"
+            return f" | row null: {why} (per-row bars at the cap {canary_row_bar.ROW_BAR_CAP:g})"
         arms = ", ".join(f"{a} ratio max {d['ratio']['max']} (row {d['ratio']['argmax_row']})"
                          for a, d in rec.get("arms", {}).items() if "ratio" in d)
-        return (f" | row null (shadow, not judged; K {rec['seeds_done']}, {rec['seconds']:.2f} s): max "
+        return (f" | row null (K {rec['seeds_done']}, {rec['seconds']:.2f} s; "
+                f"{self._row_bars.source if self._row_bars else 'no bars'}): max "
                 f"{rec['null']['max']} (row {rec['null']['argmax_row']})" + (f"; {arms}" if arms else ""))
 
     def _note_yardstick(self, watches: Dict[str, Any]) -> None:
@@ -621,7 +655,8 @@ class CompileCanary:
                 self._say(f"📏 [CompileCanary] update {self.updates} ({name}): {yardstick_line(ev)}")
 
     # ------------------------------------------------------------------ the compiled region
-    def _regions(self, model: Any, out: Dict[str, float], slice_: int = 0, watch: Optional[Any] = None) -> list:
+    def _regions(self, model: Any, out: Dict[str, float], slice_: int = 0, watch: Optional[Any] = None,
+                 row_bars: Optional[canary_row_bar.RowBars] = None) -> list:
         """K8's declared region: R1 (compiled micro-step vs eager: loss + every policy gradient) on the
         same real labelled batch the startup gate uses (``slice_`` 2 / 1 = the disjoint halves). ``watch`` is filled
         by the FIRST route's live rung (`compile_regions.r1_rungs`)."""
@@ -633,12 +668,15 @@ class CompileCanary:
         if watch is not None and b.fixture_rows is not None:      # worst rows recorded as FIXTURE rows too
             watch.fixture_rows = [int(x) for x in b.fixture_rows]
         names = [n for n, _ in ct.grad_parameters(model, policy.features_extractor)]
+        if row_bars is not None and b.fixture_rows is None:
+            row_bars = canary_row_bar.fallback("the batch names no fixture rows")
+        bb = None if row_bars is None else row_bars.for_batch(b.fixture_rows)     # gen3_canary_row_bar_v1
         # the startup gate's rungs (`compile_regions.r1_rungs`): the live weights at the regime's bar,
         # an unmoved zero-init parameter at the FRESH bar there and on its own perturbed rung at the
         # TRAINED bar (`gen3_r1_unmoved_param_v1`)
         regime = cr.weights_regime(model)
         if not cr.learner_cudagraphs_on(model):
-            eager, comp, rules = cr.r1_rungs(model, args, names, regime, watch=watch)
+            eager, comp, rules = cr.r1_rungs(model, args, names, regime, watch=watch, row_bars=bb)
             out["compile/canary_grad_cosine"] = ct._cos(comp["grad"], eager["grad"])
             out["compile/canary_unmoved_params"] = float(len(cr.unmoved_parameters(model)))
             return rules
@@ -649,7 +687,7 @@ class CompileCanary:
         rules = []
         for i, (route, fn) in enumerate(cr.r1_routes(model)):
             eager, comp, r = cr.r1_rungs(model, args, names, regime, fn=fn, route=route,
-                                         watch=watch if i == 0 else None)
+                                         watch=watch if i == 0 else None, row_bars=bb)
             rules.extend(r)
             if i == 0:
                 out["compile/canary_grad_cosine"] = ct._cos(comp["grad"], eager["grad"])

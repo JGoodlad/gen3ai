@@ -46,13 +46,16 @@ def world(monkeypatch, tmp_path):
     plan: Dict[str, Any] = {"checks": [], "rows": {"eager": 31, "compiled": 50}}
     said: List[str] = []
 
-    def check(self, slice_, out, watch=None):
+    def check(self, slice_, out, watch=None, row_bars=None):
         shifts = plan["checks"].pop(0)
+        # no learner, so the canary's null cannot bind: the per-row bars are the FALLBACK, every row at the cap = M
+        assert row_bars is None or not row_bars.live
+        bb = None if row_bars is None else row_bars.for_batch(range(ROWS))      # the planted fixture's rows
         if watch is not None:
             watch.fixture_rows = [int(x) for x in ct.fixture_index(2 * ROWS, ROWS, slice_)]
         with monkeypatch.context() as mp:
             _Rung(mp, shifts, plan["rows"])
-            return [_judge(watch)]
+            return [_judge(watch, bb)]
     monkeypatch.setattr(CC.CompileCanary, "_check", check)
 
     def canary() -> CC.CompileCanary:

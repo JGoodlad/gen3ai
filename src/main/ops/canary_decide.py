@@ -18,6 +18,12 @@ Training Oct's X35 job log; this module replaces the job-directory ``canary_deci
   4. at least one arm was judged (a record that carries no ``clip_margin`` judges nothing, so it HOLDs; the job-
      directory version resumed on an empty judgement).
 
+THE BARS APPLY ONLY TO RUNS ON THE GLOBAL MARGIN (ruling 2026-10-28, `designs/training/canary_recalibration_2026-10-28.md`
+§6). A FATAL whose record carries a ``canary_rule_version`` other than ``global_m`` (`FAMILY_BAR_RULES`; a record with no
+field was written at a pin before the per-row rule, ``agents.model.canary_row_bar``) was judged against each row's own
+dither null, so the family ratio means nothing there: it HOLDs, whatever the bar, and the operator replays the dump
+(``python -m main.ops.canary_dump_replay --dump``).
+
 The same-precision gap |compiled - eager| is DESCRIPTIVE: it is bounded by the SUM of the two arms' shifts, so two
 healthy bf16 arms drifting apart read up to 2x either (re-ruled 2026-10-21 ~01:15). It is printed, never judged.
 
@@ -52,6 +58,10 @@ from typing import Any, Dict, List, Optional, Sequence
 
 #: The registered family ratio bars (compiled / eager ``max_abs_dlogp`` at a FATAL). Provenance in the module doc.
 FAMILY_BARS: Dict[str, float] = {"c0": 2.64, "x47": 2.40}
+
+#: The canary rules the family bars judge (`agents.model.canary_row_bar.LEGACY_RULE_VERSION`: the compiled arm at the
+#: global margin M). A record without ``canary_rule_version`` is ``global_m``; any other rule HOLDs (module doc).
+FAMILY_BAR_RULES = ("global_m",)
 
 #: The one disagreement class whose clip-switch count may be absent (see the module doc, rule 2).
 EAGER_DRIFT = "bf16 EAGER micro-step has DRIFTED from the fp32"
@@ -124,6 +134,12 @@ def decide(run: str, verdicts: Sequence[dict], disagreements: Sequence[str], *, 
     if str(last.get("verdict")).lower() != "fatal":
         d.reasons.append(f"the last verdict is {last.get('verdict')!r} at update {last.get('update')}, not fatal "
                          "(the ratio is judged only at a FATAL)")
+        return d
+    rule = str(last.get("canary_rule_version") or "global_m")
+    if rule not in FAMILY_BAR_RULES:
+        d.reasons.append(f"the FATAL was judged under the {rule!r} canary rule: the family bars apply only to "
+                         f"{list(FAMILY_BAR_RULES)} runs (ruling 2026-10-28); replay the dump "
+                         "(python -m main.ops.canary_dump_replay --dump)")
         return d
     if bar is None:
         d.reasons.append(bar_source)

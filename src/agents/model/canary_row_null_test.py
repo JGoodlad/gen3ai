@@ -9,14 +9,16 @@ and margin rule, `canary_yardstick_test._Rung`):
 * its dither is the design's (`main.ops.diag_bf16_canary.dithered`, relative 2^-9, name-keyed): seed s's per-row
   value is exactly that dither's;
 * the cap SKIPS with its reason, an error is RECORDED (never raised), a malformed cap refuses at construction;
-* the canary's verdict, its TB scalars and every record field but ``row_null`` are IDENTICAL with the shadow on and
-  off — for a PASS, an UNCONFIRMED and a FATAL — and the ON record carries the per-row null, each arm's per-row
-  shift and the per-row ratio.
+* a null that CANNOT BIND (here K = 3 seeds, not the rule's 16: `canary_row_bar.from_null` falls back to the cap = M)
+  leaves the canary's verdict, its TB scalars and every record field but ``row_null`` / ``canary_rule`` IDENTICAL with
+  the null on and off — for a PASS, an UNCONFIRMED and a FATAL — and the ON record carries the per-row null, each
+  arm's per-row shift and the per-row ratio. The BINDING null is `canary_row_bar_test`'s.
 
 Planted shifts sit far from every bar (rule 8): PASS 0.30 / 0.20 vs M 0.72; the breach 0.90."""
 from __future__ import annotations
 
 import json
+from types import SimpleNamespace
 from typing import Any, Dict, List, Tuple
 
 import numpy as np
@@ -27,7 +29,7 @@ from agents.model import canary_row_null as RN
 from agents.model import compile_canary as CC
 from agents.model import compile_regions as cr
 from agents.model import compile_trainer as ct
-from agents.model.canary_yardstick_test import ROWS, _judge, _Rung
+from agents.model.canary_yardstick_test import ROWS, _Rung
 
 K = 3          # seeds per null here (production: `ROW_NULL_SEEDS`): each is one B = 64 forward, ~0.2 s on CPU
 CAP = 600.0    # far above the CPU cost, so no read here depends on the clock
@@ -159,13 +161,16 @@ def _world(monkeypatch, tmp, learner, row_null: bool) -> Tuple[CC.CompileCanary,
     plan: Dict[str, Any] = {"checks": [], "rows": {"eager": 4, "compiled": 20}}
     said: List[str] = []
 
-    def check(self, slice_, out, watch=None):
+    def check(self, slice_, out, watch=None, row_bars=None):
         shifts = plan["checks"].pop(0)
+        fr = ct.fixture_index(ROWS, ROWS, slice_)
         if watch is not None:                              # B = ROWS: batch row == fixture row (slice 0)
-            watch.fixture_rows = [int(x) for x in ct.fixture_index(ROWS, ROWS, slice_)]
+            watch.fixture_rows = [int(x) for x in fr]
         with monkeypatch.context() as mp:
             _Rung(mp, shifts, plan["rows"])
-            return [_judge(watch)]
+            model = SimpleNamespace(policy=None)
+            bb = None if row_bars is None else row_bars.for_batch(fr)
+            return [cr._r1_judge(model, ("args",), ["pointer_head.w"], "trained", watch=watch, row_bars=bb)[2]]
     monkeypatch.setattr(CC.CompileCanary, "_check", check)
     learner.behaviour_dump_dir = str(tmp)
     learner.num_timesteps = 478_310_831
@@ -208,9 +213,11 @@ def test_the_verdict_is_IDENTICAL_with_the_shadow_on_and_off(learner, monkeypatc
     off, recs_off = _run(monkeypatch, tmp_path / "off", learner, False, SEQUENCE)
     assert on == off
     assert [r["verdict"] for r in recs_on] == ["pass", "unconfirmed", "fatal"]
-    strip = lambda r: {k: v for k, v in r.items() if k not in ("row_null", "time")}   # noqa: E731
+    strip = lambda r: {k: v for k, v in r.items() if k not in ("row_null", "canary_rule", "time")}   # noqa: E731
     assert [strip(r) for r in recs_on] == [strip(r) for r in recs_off]
     assert all("row_null" not in r for r in recs_off)
+    assert all(r["canary_rule"]["row_bars_source"].startswith("fallback: the null has 3 seeds") for r in recs_on)
+    assert all(r["canary_rule"]["row_bars_source"].startswith("fallback: the per-row null is off") for r in recs_off)
     assert _same(before, _params(learner))
     rn = recs_on[0]["row_null"]
     assert rn["judged"] is False and rn["seeds_done"] == K and len(rn["null_per_row"]) == ROWS, rn

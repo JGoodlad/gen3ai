@@ -1,6 +1,17 @@
-# Canary recalibration from the W0 census (DRAFT, 2026-10-28)
+# Canary recalibration from the W0 census (2026-10-28)
 
-**Status: DRAFT, for the orchestrator to rule.** Nothing here changes code or a live run. The backtest is
+**Status: RULED (2026-10-28): stage 1 implemented** (`gen3_canary_row_bar_v1`, `src/agents/model/canary_row_bar.py`;
+the rules as built are `compile_flags.md` "The per-row clip margin, STAGE 1"). The orchestrator accepted stage 1: the
+per-row bar (k 6.0 over a 16-seed per-row dithered null, floor 0.02, each row's bar capped at 0.72, the relocation
+scalar), the bf16 loss envelope K 5.4 -> 9.2, the per-parameter rule kept at 12 with no edge_bias exemption, and the
+family bars (C0 2.64 / X47 2.40) kept as descriptive tags for runs on the global M and dropped on per-row runs (a per-row
+FATAL HOLDs in `canary_decide`). **Stage 2** (cap 1.2) needs a leased read later, not now. Every run at a pin before the
+implementing commit (every X35-frame arm and X63-C at `f4b25238`) keeps the global M and K 5.4; every canary record
+names its regime (`canary_rule_version`). The basis the code re-derives k and K_loss from is
+`src/agents/model/testdata/canary_stage1_basis.json` (`extract_stage1_basis.py` beside the backtest, from the census and
+the banked records); `canary_row_bar_test` backtests the rule on it. The DRAFT below is kept as the ruling's evidence.
+
+The backtest is
 `designs/research_state/measurements/canary_recalibration_2026-10-28/backtest.py` (CPU, read-only, seconds; its
 docstring holds the command). Its outputs are `results/backtest.json` (the proposal) and `results/backtest_cap072.json`
 (stage 1, the bar capped at M) beside it. Every number below comes from those files unless it names another source.
@@ -10,7 +21,7 @@ rule and its family bars"). The per-row design is `../research_state/measurement
 The two debt rows this answers are in `../ops/TECH_DEBT_BACKLOG.md`: "The canary-FATAL resume rule's C0 bar 2.64…" and
 "The canary's bf16 per-parameter rule divides by ONE eager draw…". The C0 loss-envelope row is answered too.
 
-## The rulings asked for
+## The rulings asked for (all four ruled as proposed for stage 1, 2026-10-28)
 
 | question | proposal | the evidence in one line |
 |---|---|---|
@@ -286,3 +297,4 @@ The first run launched at a pin carrying the change takes it, fresh or as a fork
 | date | decision | why |
 |---|---|---|
 | 2026-10-28 | DRAFT written: per-row k 6.0 (K 16, floor 0.02, scalar cap 0.72, then 1.2), K_loss 9.2, per-parameter 12 kept, C0 2.64 confirmed for global-M runs and dropped on per-row runs, switch only at a new pin | W0's CUDA census (20 checkpoints) and the 159 banked production checks; awaiting the orchestrator's ruling |
+| 2026-10-28 | RULED: stage 1 accepted as proposed; stage 2 (cap 1.2) deferred to a later leased read. BUILT behind the pin boundary: the judged arm only, the canary only (the startup gate keeps the scalar margin), the fallback at the cap when the null cannot bind, `canary_rule_version` on every record, `canary_dump_replay` judging a dump by its record's own bars. The frozen `backtest.py` refuses at the new pin by design (its `check_constants` pins the pre-ruling bars); the committed basis replaces it for CI | the orchestrator's ruling; `canary_row_bar_test` re-derives k and K_loss and backtests the census |

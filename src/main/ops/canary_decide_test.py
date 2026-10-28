@@ -158,3 +158,23 @@ def test_the_cli_exit_codes_the_log_and_the_text(tmp_path, capsys):
     assert json.loads(capsys.readouterr().out)["verdict"] == "HOLD"
     with pytest.raises(SystemExit):
         cd.main([str(run), "--family", "c0", "--bar", "1"])      # a family and a typed bar are exclusive
+
+
+# ------------------------------------------------------------------ the per-row rule (gen3_canary_row_bar_v1, 2026-10-28)
+@pytest.mark.parametrize("bar", [None, 99.0])
+def test_a_FATAL_judged_under_the_PER_ROW_rule_HOLDS_whatever_the_bar(tmp_path, bar):
+    """Fails on revert: the family ratio 0.5 / 1.0 is far under the C0 bar, so a global-M record RESUMES; the same
+    record written under the per-row rule HOLDs (the family bars are dropped there, ruling 2026-10-28)."""
+    from agents.model import canary_row_bar as RB
+    legacy = _record(compiled=0.5, eager=1.0)
+    per_row = {**legacy, "canary_rule_version": RB.CANARY_RULE_VERSION}
+    assert cd.decide_run(_run(tmp_path, "rb_x63c_s6302", [legacy]), bar=bar).verdict == cd.RESUME
+    explicit = {**legacy, "canary_rule_version": RB.LEGACY_RULE_VERSION}
+    assert cd.decide_run(_run(tmp_path, "rb_x35_c0_s3501", [explicit]), bar=bar).verdict == cd.RESUME
+    d = cd.decide_run(_run(tmp_path, "rb_x35_c0_s3502", [per_row]), bar=bar)
+    assert d.verdict == cd.HOLD and any(RB.CANARY_RULE_VERSION in r and "replay the dump" in r for r in d.reasons)
+
+
+def test_the_family_bar_rules_name_the_legacy_global_margin():
+    from agents.model import canary_row_bar as RB
+    assert cd.FAMILY_BAR_RULES == (RB.LEGACY_RULE_VERSION,)

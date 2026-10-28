@@ -67,6 +67,11 @@ not a cross-device comparison) is the anchor's OWN eager-bf16 numbers, `self_val
     computations of one quantity) and across repeats (vs repeat 0) — the K the rule multiplies is stable, so a
     compiled/eager ratio > K is the compiled arm's, never a wandering denominator.
 
+THE CANARY RULE (`gen3_canary_row_bar_v1`, 2026-10-28). The ``canary`` arm judges by the rule the dump's record names
+(``canary_rule_version``; none = the global margin M, every record written before the per-row rule): a per-row record
+is replayed against ITS OWN recorded bars (``canary_rule.bar_per_row``, or the cap when it fell back), so the replay
+reads the bars the run judged by, not a new null. ANCHOR mode judges by the global M (no record names a rule).
+
 A run whose resolved config compiles R1 differently (``--learner-cudagraphs on``, ``--grad-checkpointing``, a trunk not
 at bf16) is REFUSED in both modes: this replay compiles the default route only.
 
@@ -321,8 +326,26 @@ def _watch_out(w: Any) -> Dict[str, Any]:
             "clip_margin": w.margin, "yardstick_out_of_margin": list(w.yardstick)}
 
 
-def canary_check(model: Any, slice_: int, batch: int) -> Dict[str, Any]:
-    """`CompileCanary._check` VERBATIM on ``slice_`` with a GradWatch over every parameter; never raises a refusal."""
+def replay_row_bars(record: Dict[str, Any]) -> Any:
+    """The per-row bars a dump's record judged by (`canary_row_bar.RowBars`), or None for a global-M record."""
+    import numpy as np
+    from agents.model import canary_row_bar as RB
+    rule = RB.rule_version_of(record)
+    if rule == RB.LEGACY_RULE_VERSION:
+        return None
+    if rule != RB.CANARY_RULE_VERSION:
+        raise Refusal(f"the record names canary rule {rule!r}; this checkout replays {RB.LEGACY_RULE_VERSION!r} and "
+                      f"{RB.CANARY_RULE_VERSION!r} only")
+    rec = record.get("canary_rule") or {}
+    bars = rec.get("bar_per_row")
+    if bars is None:
+        return RB.fallback(f"the record's bars fell back ({rec.get('row_bars_source')})")
+    return RB.RowBars(np.asarray(bars, dtype=np.float64), "the record's bars (4 significant digits)")
+
+
+def canary_check(model: Any, slice_: int, batch: int, row_bars: Any = None) -> Dict[str, Any]:
+    """`CompileCanary._check` VERBATIM on ``slice_`` with a GradWatch over every parameter; never raises a refusal.
+    ``row_bars``: the record's per-row bars (`replay_row_bars`), None = the global margin."""
     from agents.model import compile_regions as cr
     from agents.model import compile_trainer as ct
     from agents.model.compile_canary import CompileCanary
@@ -331,7 +354,7 @@ def canary_check(model: Any, slice_: int, batch: int) -> Dict[str, Any]:
     t0 = time.perf_counter()
     out: Dict[str, Any] = {}
     try:
-        rules = can._check(slice_, {}, w)
+        rules = can._check(slice_, {}, w, row_bars)
         out.update(refused=False, text=" | ".join(rules))
     except ct.CompileTrainerError as exc:
         out.update(refused=True, error=type(exc).__name__, text=str(exc)[:4000])
@@ -612,6 +635,7 @@ def run(a: argparse.Namespace) -> int:
             raise Refusal("--verdicts names a dump's record: anchor mode has none (its validity is self_validity)")
         anchor = check_anchor(Path(a.anchor), run_dir)
         sha = None
+    row_bars = replay_row_bars(record)
     out = check_out_dir(Path(a.out))
     slices = tuple(int(x) for x in str(a.slices).split(",") if x.strip())
     if FIRED_SLICE not in slices or any(s not in (0, 1, 2) for s in slices):
@@ -644,6 +668,8 @@ def run(a: argparse.Namespace) -> int:
             "device_name": torch.cuda.get_device_name(0) if device == "cuda" else "cpu",
             "threads": torch.get_num_threads(), "compile_backend": a.compile_backend or ("inductor" if compiled else None),
             "record_update": record.get("update"), "record_verdict": record.get("verdict"), "build": info,
+            "canary_rule_version": record.get("canary_rule_version") or "global_m",
+            "row_bars_source": None if row_bars is None else row_bars.source,
             "build_seconds": time.perf_counter() - t0, "argv": sys.argv[1:], "rule": RULE_TEXT}
     try:
         from utils.git import head_sha
@@ -665,7 +691,7 @@ def run(a: argparse.Namespace) -> int:
         for s in slices:
             sr: Dict[str, Any] = {}
             if compiled:
-                c = canary_check(model, s, batch)
+                c = canary_check(model, s, batch, row_bars)
                 c["class"] = classify(c["refused"], c["watch"]["edge_bias"], k)
                 cls[s] = c["class"]
                 sr["canary"] = c

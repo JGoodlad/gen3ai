@@ -1,14 +1,15 @@
-"""THE SHADOW PER-ROW DITHER NULL (`gen3_canary_row_null_shadow_v1`, 2026-10-25) — RECORDED, never judged.
+"""THE PER-ROW DITHER NULL (`gen3_canary_row_null_shadow_v1`, 2026-10-25; BINDING since `gen3_canary_row_bar_v1`,
+2026-10-28).
 
-WHY. R1's clip-margin rule holds every arm to ONE global margin M (`R1_BAR_K` x `R1_LOGPROB_SHIFT_MAX`, 0.72), from a
+WHY. R1's clip-margin rule held every arm to ONE global margin M (`R1_BAR_K` x `R1_LOGPROB_SHIFT_MAX`, 0.72), from a
 CPU census of a toy run. On X26-lineage weights the fp32 function ALONE moves some fixture row by 0.80-1.23 under a
-rounding-sized weight dither, and the compiled arm read 0.712 at the X26 continuation's u1000. The designed fix is a
-PER-ROW bar from each row's own dither null (`designs/research_state/measurements/canary_row_null_design_2026-10-25/`),
-but its k, K and the null's device need a CUDA census. This module is that census: every production canary records
-each golden row's fp32 null beside each arm's per-row |Δ log π|, on its own weights and its own kernels, and judges
-NOTHING — the canary's verdict is byte-for-byte the one it reads without it (`canary_row_null_test`).
+rounding-sized weight dither, and the compiled arm read 0.712 at the X26 continuation's u1000. The fix is a PER-ROW bar
+from each row's own dither null (`designs/research_state/measurements/canary_row_null_design_2026-10-25/`). This module
+computes that null at every canary, on its own weights and its own kernels; it was a recorded-only shadow until the W0
+CUDA census set k, and now `canary_row_bar` turns it into the compiled arm's per-row bars (stage 1). This module itself
+still judges nothing: a skip, a truncation or an error is recorded and the bars fall back to the cap.
 
-WHAT IT COMPUTES (the design's rule 1, verbatim but recorded only). On the K9 golden's UNIQUE fixture rows (B = the
+WHAT IT COMPUTES (the design's rule 1). On the K9 golden's UNIQUE fixture rows (B = the
 fixture's row count, batch row == fixture row: E32 at the canary's tiled B equals E32 at 64 to 2.9e-5):
 
   * the fp32 REFERENCE: `evaluate_actions_functional` under `trunk_precision.fp32_scope`, no grad, train mode, fp32
@@ -30,7 +31,7 @@ that overruns mid-way stops and records the seeds it finished (``truncated``). E
 
 WHAT IT DOES NOT DO: change training. Under `torch.random.fork_rng`; training mode, the fp32 matmul precision and every
 parameter are restored; nothing is backpropagated; the policy's stashes are released (`release_gate_memory`); any
-error is RECORDED (``error``), never raised — the canary's verdict stands on its own rule.
+error is RECORDED (``error``), never raised — the per-row bars then fall back to the cap (`canary_row_bar.from_null`).
 """
 from __future__ import annotations
 
@@ -178,10 +179,11 @@ def compute(model: Any, *, k: Optional[int] = None, rel: float = ROW_NULL_REL, c
 
 
 def record(raw: Dict[str, Any], row_dlogp: Optional[Dict[str, np.ndarray]] = None,
-           floor: float = ROW_NULL_FLOOR) -> Dict[str, Any]:
+           floor: float = ROW_NULL_FLOOR, judged: bool = False) -> Dict[str, Any]:
     """The JSONL record (`canary_verdicts.jsonl` ``row_null``) of `compute`'s result and the scheduled check's per-row
-    |Δ log π| per arm (fixture-row indexed; None / absent when the check never reached the margin rule)."""
-    rec: Dict[str, Any] = {"shadow": True, "judged": False}
+    |Δ log π| per arm (fixture-row indexed; None / absent when the check never reached the margin rule). ``judged``:
+    the per-row bars came from this null (`canary_row_bar`, gen3_canary_row_bar_v1)."""
+    rec: Dict[str, Any] = {"shadow": not judged, "judged": bool(judged)}
     for key in ("k", "rel", "cap_s", "rows", "ref_repeat_max_abs", "skipped", "truncated", "error"):
         if key in raw:
             rec[key] = raw[key]

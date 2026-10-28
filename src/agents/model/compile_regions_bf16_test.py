@@ -173,8 +173,9 @@ _BARS_JSON = os.path.join(os.path.dirname(__file__), "..", "..", "..", "designs"
 
 
 def test_the_committed_bars_are_the_DERIVED_ones():
-    """`BF16_DRIFT_BARS` / `BF16_ENVELOPE_K` equal `derive_bf16_bars.py` re-run on the committed GPU reads; with
-    no committed derivation both must be None (the rule refuses)."""
+    """`BF16_DRIFT_BARS` / `BF16_ENVELOPE_K` equal `derive_bf16_bars.py` re-run on the committed GPU reads (window D);
+    with no committed derivation both must be None (the rule refuses). EXCEPT the LOSS envelope's K, re-derived on
+    production (ruled 2026-10-28): its basis is `canary_row_bar_test.test_the_loss_envelope_K_RE_DERIVES_…`."""
     if not os.path.exists(_BARS_JSON):
         assert cr.BF16_DRIFT_BARS is None and cr.BF16_ENVELOPE_K is None
         return
@@ -192,4 +193,7 @@ def test_the_committed_bars_are_the_DERIVED_ones():
                      param_floor_frac=ct._PARAM_GRAD_FLOOR, loss_floor=cr.BF16_LOSS_FLOOR,
                      grad_floor=cr.BF16_GRAD_FLOOR, param_bar=dict(cr.R1_PARAM_BAR))
     assert out["BF16_DRIFT_BARS"] == rec["BF16_DRIFT_BARS"] == cr.BF16_DRIFT_BARS
-    assert out["BF16_ENVELOPE_K"] == rec["BF16_ENVELOPE_K"] == cr.BF16_ENVELOPE_K
+    assert out["BF16_ENVELOPE_K"] == rec["BF16_ENVELOPE_K"]
+    assert rec["BF16_ENVELOPE_K"]["loss"] == 5.4 and cr.BF16_ENVELOPE_K["loss"] == 9.2     # window D's, then production's
+    assert {k: v for k, v in cr.BF16_ENVELOPE_K.items() if k != "loss"} == \
+        {k: v for k, v in rec["BF16_ENVELOPE_K"].items() if k != "loss"}

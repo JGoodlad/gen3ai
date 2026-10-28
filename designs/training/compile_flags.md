@@ -621,12 +621,15 @@ flag (next section). Each is OFF by default; off, the production and end-state c
     proved eager by the region counters). (1) **DRIFT**: eager bf16 vs the reference, loss rel and global gradient rel-L2,
     each <= `BF16_DRIFT_BARS` (loss 0.014, gradient 0.68). (2) **ENVELOPE**: compiled bf16 vs the reference <= K x
     max(eager bf16 vs the reference, a floor), for the loss, the global gradient and EVERY judged parameter
-    (`BF16_ENVELOPE_K`: loss 5.4, gradient 6.4, per parameter 12); the floor is the fp32 bar of that quantity, except the
+    (`BF16_ENVELOPE_K`: loss 9.2, gradient 6.4, per parameter 12); the floor is the fp32 bar of that quantity, except the
     scalar loss's, which is bf16's unit roundoff 2^-9 (`BF16_LOSS_FLOOR`). With `--learner-cudagraphs on`, the graphed
     route's accumulation rung is judged by the same rule. The bars are `R1_BAR_K` x the healthy GPU maxima of window D's 20
     reads, derived into
     `designs/research_state/measurements/perf_phase_2026-10-10/results/bf16_parity_bars.json` (`compile_regions_bf16_test`
-    re-derives them and fails on a differing constant); a `None` table refuses a bf16 R1 ("no measured bars").
+    re-derives them and fails on a differing constant); a `None` table refuses a bf16 R1 ("no measured bars"). **Except the
+    loss envelope's K** (ruled 2026-10-28, `canary_recalibration_2026-10-28.md` §4): 9.2 = 4 x 2.283, the healthy maximum
+    over 159 production canary checks (window D held no production state, and its 5.4 refused the healthy C0 s3501 final's
+    slice 1), re-derived from `src/agents/model/testdata/canary_stage1_basis.json` by `canary_row_bar_test`.
   - ⚠️ **The bf16 gate's resolution is a KNOWN LIMIT** (`gen3_r1_bf16_resolution_v1`): a parameter's backward miscompile is
     refused only above K = 12 x max(that parameter's own bf16 error, the fp32 bar), and bf16 moves the micro-batch gradient
     1-18 % rel-L2 from fp32's. On window D's GPU reads (B = 2,048) the MEDIAN parameter is refused above 0.22-1.29 relative
@@ -800,13 +803,33 @@ dumped nothing, so the 478.31M weights were lost and the CUDA read cannot be rep
 (`NEAR_MARGIN_KEEP`, independent of `DUMP_WEIGHTS_MAX`); every record carries `bar_fractions`. The record and the rotation are
 documented in `learner_lifecycle.md` (the canary). A run picks it up only at its next PIN.
 
-**The per-row dither-null margin is DESIGNED; its null runs as a RECORDED-ONLY SHADOW**
-(`../research_state/measurements/canary_row_null_design_2026-10-25/README.md`; `gen3_canary_row_null_shadow_v1`,
-`canary_row_null`). The margin would replace the global M with a per-row bar of k x that row's own fp32 half-ulp dither null.
-On CPU healthy bf16 arms read at most 1.1x their row's null (704 row-reads), so k ~ 4.4; the one CUDA compiled point (u1000)
-reads 2.7x a CPU null, so k is unsettled. Every canary records each row's 16-seed null and each arm's per-row shift / null as
-`row_null` and judges nothing (`learner_lifecycle.md`), so each production canary from its next pin on is one CUDA census row;
-the global M stays binding. The lease-gated census `gpu_census.sh` is written there, not run.
+**The per-row clip margin, STAGE 1 (`gen3_canary_row_bar_v1`, ruled and built 2026-10-28;
+`canary_recalibration_2026-10-28.md`; `agents/model/canary_row_bar.py`).** The compiled arm's shift on each fixture
+row i is held to its OWN bar b_i = min(k x max(null_i, f), C), k = 6.0, f = 0.02, C = 0.72 (= M), where null_i is the
+row's 16-seed fp32 dither null on the canary's own weights, computed at check time (`canary_row_null`, which was the
+recorded-only shadow `gen3_canary_row_null_shadow_v1` until now). k is 4 x the healthy maximum (1.479) of the canary's
+two bf16 arms at B = 2,048 over the W0 CUDA census (20 X26-lineage checkpoints); the census refuses 0 of 20 (in sample,
+leave-one-out, cross-lineage). The rules around it:
+
+- **Only the judged arm, only the canary.** The yardsticks (eager, the fp32 reference) keep the scalar margin, its
+  events and the M' re-run; the startup gate keeps the scalar margin (it computes no null). The scheduled check and both
+  confirmation halves judge by the same canary's bars.
+- **Stage 1 is strictly tighter than the global rule.** The relocation stays one scalar at the model's margin, and no
+  bar passes C = 0.72, so neither `--canary-shift-max` nor M' loosens the judged arm on a per-row run (a healthy compiled
+  shift above 0.72 refuses, as under M = 0.72). Stage 2 (C = 1.2) waits on a leased read of the gradient rule on rows
+  relocated at 1.2 (TECH_DEBT).
+- **The fallback is the cap.** A null that is off, skipped by its 5 s cap, truncated, in error or short of 16 seeds puts
+  every row at C, which is the global rule at M = 0.72; TB `compile/canary_row_bars_live` reads 0 then, and the record
+  names the reason. The cap is wall-time-based, so which branch a canary takes can depend on the clock (on CUDA the K 16
+  null measured 2.35 s, an upper bound, against 5 s).
+- **Every record names its rule**: `canary_rule_version` (`per_row_stage1`; a record without the field was judged at the
+  global M, `global_m`) and `canary_rule` (k, floor, seeds, cap, the bars' source, the per-row bars, the loss
+  envelope's K); the rung's watch carries `clip_margin.row_bar` (the judged arm's worst row against its bar), and
+  `bar_fractions.clip_margin` reads that row against its own bar.
+- **The pin boundary.** A canary rule is code, so a run takes it only through its pin: every run launched or resumed at a
+  pin before this commit (every X35-frame arm and X63-C at `f4b25238`, N1-P at `5f8f6cfa`) keeps the global M, the loss
+  K 5.4 and its family-bar resume; the first run launched at a pin carrying it, fresh or as a fork, takes it.
+  `--sync-to-main` is the only way a live run crosses it (and it moves all of HEAD).
 
 **Replaying a canary on the GPU (`python -m main.ops.canary_dump_replay`).** `--dump <x>_policy.pt --run-dir <run>` runs a
 dumped `state_dict` through the canary's own `_check` and through the arms E32 / Ebf / Cbf, using the canary's rows (the K9
@@ -826,16 +849,18 @@ edge_bias event belongs to the **X48 s3502 u200 STATE, not to a graph class**:
   repeats (compiled 1.09e-2 > 5.4 x max(eager, floor) = 1.05e-2, about 4 % over), which a scheduled canary (slice 0)
   would not see.
 
-That marginal loss-rule refusal is a TECH_DEBT row (`../ops/TECH_DEBT_BACKLOG.md`, "C0 s3501 final refuses the bf16 loss
-rule"). **The recalibration from W0's census is PROPOSED, not ruled** (DRAFT, `canary_recalibration_2026-10-28.md`):
-per-row k 6.0 (16 seeds, floor 0.02, a scalar cap 0.72 then 1.2) at the next pin only, the loss envelope's K 5.4 -> 9.2,
-the per-parameter 12 kept, the C0 2.64 confirmed for global-M runs. Until a ruling, every bar above stands.
+That marginal loss-rule refusal is answered by the recalibration from W0's census (RULED 2026-10-28, stage 1 built:
+`canary_recalibration_2026-10-28.md`): the loss envelope's K 5.4 -> 9.2 (the slice reads 0.61 of it), the per-row
+margin above, the per-parameter 12 kept with no edge_bias exemption, the family bars kept for global-M runs only.
 
 ### The canary-FATAL resume rule and its family bars (`python -m main.ops.canary_decide <run>`, 2026-10-26)
 
 A FATAL canary on an X35 arm resumes (`--canary-shift-max 0.3`, the orchestrator's operator step) iff 0 PPO-clip
 branches switched AND every judged arm's compiled / eager `max_abs_dlogp` is at or below its FAMILY's bar; anything else
-HOLDs (exit 0 / 3). The ratio is judged only at a FATAL: a PASS above the bar is descriptive. The bars are fixed, not drifting:
+HOLDs (exit 0 / 3). The ratio is judged only at a FATAL: a PASS above the bar is descriptive. **The bars apply only to a
+record judged at the global margin** (no `canary_rule_version`, or `global_m`): a FATAL under the per-row rule HOLDs
+whatever the bar, and the operator replays its dump (ruled 2026-10-28; `canary_dump_replay` then judges by the record's
+own per-row bars). The bars are fixed, not drifting:
 
 | Family | Bar | Derivation | Ruled |
 |---|---|---|---|
@@ -846,9 +871,10 @@ Source: Training Oct's X35 job log (`~/.claude/jobs/x35/FINDINGS.md`, outside th
 there. The run-name map is `canary_decide.FAMILY_NAME_PATTERNS`: every production arm `rb_x35_{c0,a1*,sprt,lrfloor*,
 d1wide,x52*,d3mut,n1p,x48kffn}_s*` is a fork of P* (rb_x26_s2601 @280M) at production pins, the same family as C0, so it
 takes the C0 bar (X48, per-token-kind FFN experts grown at the fork, by its PREREG's ruling:
-`designs/research_state/measurements/x48_kffn_production_2026-10-27/PREREG.md` §7); the toy `rb_x35t_c0_*` takes C0 and `rb_x35t_x47*_*` takes X47. **UNVERIFIED:** the 2.64 was measured on the TOY
-C0, not on a production arm; the production reads so far sit under it (C0 s3504 u10 2.38) except one PASS above it
-(rb_x26c_s2601 u1000, 3.18, which is not an X35 arm). Any other name (`rb_x35_r0_*`) HOLDs until `--family` or a typed
+`designs/research_state/measurements/x48_kffn_production_2026-10-27/PREREG.md` §7); the toy `rb_x35t_c0_*` takes C0 and `rb_x35t_x47*_*` takes X47. The 2.64 was measured on the TOY C0 and
+KEPT for global-M runs by the 2026-10-28 ruling on production provenance (`canary_recalibration_2026-10-28.md` §6): 3 of
+91 healthy X35 passes read above it (maximum 5.0, D3 s3504 u200), so it errs to HOLD, and 1.25 x 5.0 would resume most
+real disagreements. Any other name (`rb_x35_r0_*`) HOLDs until `--family` or a typed
 `--bar` (logged with `--log`, this run only).
 
 ### bf16 drift on a sharpening policy: the loss is read on the golden's own rows (`gen3_r1_loss_on_golden_rows_v1`, 2026-10-17)
