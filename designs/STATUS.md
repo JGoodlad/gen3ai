@@ -75,8 +75,12 @@ differ. **S-U** (one-ply search on unfamiliar teams, registered `ffd9a443a`) has
 in the states where the true battle seed leaks (the leak's value, not its exposure, is higher on unfamiliar teams). The
 leak-reduced re-gate (`dice="rolls"`) supersedes it and **still reads GO**: on unfamiliar teams the departures are right
 0.599 [0.543, 0.649] of the time, still by our own playouts
-([`su_regate_rolls_2026-10-28/`](research_state/measurements/su_regate_rolls_2026-10-28/README.md)). Next, the
-orchestrator's call: a deviation-only live read against Kakuna, or V-RANK.
+([`su_regate_rolls_2026-10-28/`](research_state/measurements/su_regate_rolls_2026-10-28/README.md)). Next is the
+**deviation-only live read**, REGISTERED 2026-10-28 and not yet played
+([`dlive_read_2026-10-28/PREREG.md`](research_state/measurements/dlive_read_2026-10-28/PREREG.md)): at ≈ 1,800 such
+departures on unfamiliar teams, the departure is forced in a replay of the game against the real Kakuna and compared with
+the game as played. GO (lower bound of the mean gain > 0) licenses the amended S-U. ≈ 40 CPU-h; it queues behind X59-S,
+X48 and D3 look 2.
 
 **Dropped or retired.** **X64**, the toy context-count curve: DROPPED by its review (`c0fd72bd8`; it would cost more
 than the production reads it was meant to gate). **N2**, the set-identity lever: dropped, P\*'s encoding is mostly

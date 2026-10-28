@@ -500,8 +500,11 @@ the Metamon peer's seeded draw, `metamon_side.py --team-skip`, each skip the hal
 (the front end counts battles from G, so game G gets `derive_seed_from_base(--seed-base, G)`). The summary counts 1
 game and records the deal under `provenance.deal`. Needs a metamon `--opponent`, the core slot, a `--seed-base` and no
 `--mirrored-pairs`. `main.x35.kakuna` plans a `per_game` read as 20 such units per seed (`designs/tools/reads.md`).
-**UNVERIFIED:** that a lone game G replays game G of a whole 20-game unit game for game (it does when neither side
-carries state across battles; a Kakuna process plays one battle here, 20 there).
+**Verified (2026-10-28, against Kakuna on the engine `e00a212a…/3d0d5c9c…`):** a lone game G replays game G of a whole
+20-game unit byte for byte. Two null branches (`--our-force` with π's own action) reproduced games 0 and 10 of the S-U
+gate's units whole: the same protocol, result and length (`designs/research_state/measurements/dlive_read_2026-10-28/PREREG.md` §9). A one-game unit's
+battle TAG is still `battle-gen3ou-1`, because the front end's tag counter is per process; match a game by its series
+index, never by its tag.
 
 ### `--keep-input-logs FROM-TO` — a RAW cell keeps its decisions' input logs (the S-U gate test, 2026-10-27)
 

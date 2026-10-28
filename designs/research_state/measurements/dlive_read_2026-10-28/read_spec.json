@@ -1,0 +1,79 @@
+{
+ "schema": "gen3_read_spec_v1",
+ "read": "dlive_read_2026-10-28",
+ "prereg": "designs/research_state/measurements/dlive_read_2026-10-28/PREREG.md",
+ "pin": "c01ae8ee5",
+ "note": "The deviation-only live read: raw P* vs Kakuna on U (seeds 200-244) and home72 (200-224), keeping the honest input logs of turns 10-30; S' (r0s4_rolls@10) re-run offline at 2 hashed states a game in the registered order to each panel's quota of S' deviations (U 600 a panel, home72 300), T reported; each deviation's S' pick FORCED in a one-game replay of its deal against Kakuna (main.anchors --our-force), one null control per raw unit; deviation_live: GO iff LB(pooled-U mean of y(branch) - y(raw)) > 0",
+ "models": {
+  "pstar": {
+   "arm": "pstar",
+   "seed": 2601,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip",
+    "sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed"
+   },
+   "load": {
+    "input_log": "10-30"
+   }
+  }
+ },
+ "anchor": {
+  "u": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "heldout72_hpfix",
+    "forum72",
+    "p72"
+   ],
+   "unit_seeds": "200-244",
+   "models": [
+    "pstar"
+   ]
+  },
+  "home": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "home72"
+   ],
+   "unit_seeds": "200-224",
+   "models": [
+    "pstar"
+   ]
+  }
+ },
+ "decision": {
+  "rule": "deviation_live",
+  "params": {
+   "label": "pstar",
+   "u_group": "u",
+   "home_group": "home",
+   "u_panels": [
+    "heldout72_hpfix",
+    "forum72",
+    "p72"
+   ],
+   "home_panel": "home72",
+   "quota": {
+    "heldout72_hpfix": 600,
+    "forum72": 600,
+    "p72": 600,
+    "home72": 300
+   },
+   "bar": 0.0,
+   "bootstrap": {
+    "B": 2000,
+    "seed": 20261028
+   },
+   "rule8_eps": 0.0005,
+   "input_log": "10-30",
+   "per_game": 2,
+   "search": "r0s4_rolls@10",
+   "max_drop_frac": 0.1,
+   "selected": "/home/goodlad/gen3ai_archive/dlive_read_2026-10-28/live/selected.jsonl",
+   "scored": "/home/goodlad/gen3ai_archive/dlive_read_2026-10-28/live/scored.jsonl",
+   "branch_state": "/home/goodlad/gen3ai_archive/dlive_read_2026-10-28/live/branches",
+   "engine": "port=e00a212a102f5ce2/94;env=3d0d5c9c0f5d3c23/129"
+  }
+ }
+}

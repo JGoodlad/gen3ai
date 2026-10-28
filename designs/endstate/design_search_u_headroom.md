@@ -67,9 +67,12 @@ unit read committed artefacts only; it ran one arithmetic script (the power tabl
    `deviation_sign`, `main.value_search.sign_gate`). It read GO (2026-10-28, 0.635 [0.578, 0.687] on pooled U), its
    excess in the true-seed-leak-exposed states (review `52f470c21` M1). **The leak-reduced re-gate SUPERSEDES it and
    reads GO: 0.599 [0.543, 0.649]** (S′ = `r0s4_rolls@10`, `dice="rolls"`; home72 0.551; leak-clean 0.564 [0.478,
-   0.639]; `../research_state/measurements/su_regate_rolls_2026-10-28/`). Next, the orchestrator's call: a
-   deviation-only live read against Kakuna (review M3) or V-RANK. An amendment that cites the re-gate registers S′ and
-   its engine (`e00a212a…/3d0d5c9c…`, not this PREREG's `bdc5d2be…`).
+   0.639]; `../research_state/measurements/su_regate_rolls_2026-10-28/`). **Next, the deviation-only live read**
+   (review M3, REGISTERED 2026-10-28, not played; `../research_state/measurements/dlive_read_2026-10-28/PREREG.md`): at
+   ≈ 1,800 U deviations of S′, S′'s pick is forced in a replay of the raw game against Kakuna (`main.anchors
+   --our-force`) and scored against the raw game; GO iff the pooled-U mean of y(branch) − y(raw) has LB > 0. Its GO
+   licenses this read amended (S′, the re-gate's engine); its STOP keeps S-U unplayed. An amendment that cites either
+   registers S′ and its engine (`e00a212a…/3d0d5c9c…`, not this PREREG's `bdc5d2be…`).
 
 ---
 
@@ -508,3 +511,4 @@ secondary.
 | 2026-10-27 | **The gate test BUILT** (S-U gate operator, orchestrator brief; the review's "gate test") | §0 item 9: raw cells keep honest input logs (`main.anchors --keep-input-logs`), S re-run offline through the live searcher's `_search` at 2 hashed states a game, deviations scored by the 24-seed self-referee; GO / STOP on the pooled-U sign accuracy's LB (rule `deviation_sign`) | V-RANK first (the review's M6: its ON class is uninformative; ≈ 96 CPU-h); the live read first (≈ 370–560 CPU-h for a likely chance-level S) | `../research_state/measurements/su_headroom_2026-10-27/REVIEW.md` B2, M6, § The gate test |
 | 2026-10-28 | **The gate READ: GO** (S-U gate operator) | §0 item 9: pooled-U sign accuracy 0.635 [0.578, 0.687], home72 0.537 [0.458, 0.617]; next V-RANK, then the amendment (B1's four items, M3, M4, and the gate's engine) | treating GO as a gain (self-referee) | `../research_state/measurements/su_gate_2026-10-27/README.md` |
 | 2026-10-28 | **The leak-reduced RE-GATE READ: GO; it supersedes the gate's GO** (S-U re-gate operator, orchestrator brief; PREREG `3626ef6e5`) | §0 item 9: S′ = `r0s4_rolls@10` (S with `dice="rolls"`, one lever) on the gate's 1,560 states, rule unchanged: 0.599 [0.543, 0.649] on pooled U, home72 0.551; the amendment cites S′ and the gate's engine | citing the gate's leak-exposed 0.635 for the licence; treating GO as a gain (self-referee) | `../research_state/measurements/su_regate_rolls_2026-10-28/README.md` |
+| 2026-10-28 | **The deviation-only live read REGISTERED, in V-RANK's place as S-U's next filter** (its designer, orchestrator brief; review M3) | §0 item 9: S′'s deviations on fresh raw states, each forced in a one-game replay of its deal against Kakuna (G-BRANCH: the honest-log digest, tokens, row and greedy action equal the raw decision's), one continuation an arm on the deal's seed; quotas 600 a U panel, 300 home72; GO iff LB(pooled-U mean D) > 0 licenses the amended S-U; ≈ 40 CPU-h | V-RANK's all-sibling slope first (z ≈ 1.4 on the deviation contrast, ≈ 96 CPU-h); several continuations an arm (less efficient at the measured noise; needs a reseed); the gate's banked states as the first block (fresh states keep the confirmation independent of the licence) | `../research_state/measurements/dlive_read_2026-10-28/PREREG.md`; `../research_state/measurements/su_headroom_2026-10-27/REVIEW_gate.md` M2, M3 |
