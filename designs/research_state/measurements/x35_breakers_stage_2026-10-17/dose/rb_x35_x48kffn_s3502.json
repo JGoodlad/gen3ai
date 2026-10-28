@@ -1,0 +1,38 @@
+{
+ "schema": "x35_dose_v1",
+ "run": "rb_x35_x48kffn_s3502",
+ "arm": "x48",
+ "seed": 3502,
+ "pin": "f4b25238def57900c0305bb2a3a5a8f9edaef285",
+ "wall_min": 249.8,
+ "gpu_h": 4.164,
+ "gpu_h_note": "one card: GPU-h = wall START\u2192END",
+ "steps_per_s": 1375,
+ "steps_per_s_source": "launcher summary 'FPS'",
+ "first_step": 280000170,
+ "last_step": 300061657,
+ "target_steps": 300000170,
+ "restarts": 0,
+ "launcher_rc": 0,
+ "start": "2026-10-28T00:23:08-07:00",
+ "end": "2026-10-28T04:32:57-07:00",
+ "segments": 1,
+ "segments_note": "wall = the sum of every START\u2192END segment; FPS / last step from the newest launcher log",
+ "c0_comparator": {
+  "wall_min": [
+   265,
+   241,
+   240
+  ],
+  "steps_per_s": [
+   1384,
+   1418,
+   1424
+  ],
+  "seeds": [
+   3501,
+   3502,
+   3503
+  ]
+ }
+}
