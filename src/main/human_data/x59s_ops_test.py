@@ -65,3 +65,15 @@ def test_inhouse_rates_are_the_equal_weight_panel_mean(tmp_path):
     (tmp_path / "delta_labels_5903_p72.log").write_text(json.dumps({"pairs": 100, "score": 0.9}))
     out = O.inhouse_read(tmp_path, side)
     assert out["short"] == ["delta_labels_5903_p72"] and out["rates"]["delta_labels"][2] is None
+
+
+def test_ledger_engines_reads_the_gzipped_count_rows(tmp_path):
+    import gzip
+
+    d = tmp_path / "rows" / "h2h"
+    d.mkdir(parents=True)
+    row = {"compute": {"core_stamp": "src=95b45f104119bdb2;nfiles=129"}}
+    (d / "ledger.x.jsonl.gz").write_bytes(gzip.compress((json.dumps(row) + "\n").encode()))
+    (tmp_path / "requests.jsonl").write_text(json.dumps({"event": "x"}) + "\n")       # no compute: not a row
+    got = O.ledger_engines(tmp_path)
+    assert len(got) == 1 and got[0].startswith("env=")

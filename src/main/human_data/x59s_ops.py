@@ -271,9 +271,13 @@ def ledger_engines(ledger: Path) -> List[str]:
     """m5: every engine (``env=<src>/<n>``, :func:`main.reads.engine.row_engine`) the in-house ledger's rows ran on."""
     from main.reads import engine as EN
 
+    import gzip
+
     seen = set()
-    for f in sorted(ledger.rglob("*.jsonl")) if ledger.exists() else []:
-        for ln in f.read_text().splitlines():
+    files = sorted(list(ledger.rglob("*.jsonl")) + list(ledger.rglob("*.jsonl.gz"))) if ledger.exists() else []
+    for f in files:
+        text = gzip.decompress(f.read_bytes()).decode() if f.suffix == ".gz" else f.read_text()
+        for ln in text.splitlines():
             try:
                 row = json.loads(ln)
             except ValueError:
