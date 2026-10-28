@@ -1,0 +1,46 @@
+{
+ "rows": [
+  {
+   "schema": "x48_canary_note_v1",
+   "note": "DESCRIPTIVE ROW (orchestrator 10-28 ~04:35): an UNCONFIRMED compile canary, not a VOID condition under the X48 PREREG (precedent: N1-P s3501 u200). Training continued; the run completed.",
+   "run": "rb_x35_x48kffn_s3502",
+   "update": 200,
+   "num_timesteps": 299668245,
+   "time": "2026-10-28T04:27:28-07:00",
+   "verdict": "unconfirmed",
+   "confirmation": "reproduced on slice(s) [2] of the disjoint halves [2, 1] (1 of 2) -- not confirmed",
+   "rule": "--compile-trainer region R1, bf16 rule: the compiled TRAIN graph's gradient farther from the fp32 reference than 12 x eager bf16's own error",
+   "parameters": [
+    {
+     "name": "features_extractor.edge_bias.s1_map.weight",
+     "compiled": 1.29,
+     "eager": 0.0587
+    },
+    {
+     "name": "features_extractor.edge_bias.c2_map.weight",
+     "compiled": 1.27,
+     "eager": 0.0547
+    }
+   ],
+   "not_the_new_experts": "both parameters are edge_bias maps; neither belongs to the per-kind FFN experts X48 grows (trunk_ffn_by_kind)",
+   "canary_logger_row": "rb_x35_x48kffn_s3502 u200 @299668245 unconfirmed compiled 0.4132 eager 0.1934 ratio 2.137 same-precision 0.3079 (ratio above C0's healthy max 2.108; below the C0 family bar 2.64; descriptive)",
+   "other_canaries": {
+    "rb_x35_x48kffn_s3502": {
+     "u10": "pass ratio 1.379",
+     "u100": "pass ratio 0.679"
+    },
+    "rb_x35_x48kffn_s3501": {
+     "u10": "pass ratio 0.945",
+     "u100": "pass ratio 1.528",
+     "u200": "pass ratio 0.853"
+    }
+   },
+   "archive": {
+    "path": "~/gen3ai_archive/x48kffn_s3502_canary_u200_unconfirmed_2026-10-28/",
+    "canary_u200_unconfirmed_policy.pt_sha256": "410febd9145a387cb2fd2474f33a3b31b3904b3ce3a903b8aa41c6f45f353687",
+    "canary_disagreements.jsonl_sha256": "1192aca1aafe1d3f8e360ea2faf15b933c4334ceccbb925415fa4cdf60bc2a49"
+   },
+   "follow_up": "orchestrator queues a GPU-window investigation of the archived dump (compiled vs eager backward on edge_bias under bf16) after X48; any edge_bias disagreement on s3503 pages at once"
+  }
+ ]
+}
