@@ -1,0 +1,39 @@
+{
+ "c0_mean_flip_share": 0.30738948966040597,
+ "lrf_mean_flip_share": 0.32455890722822994,
+ "n": 7028,
+ "predicted_lrf": [
+  0.33,
+  0.42
+ ],
+ "reads": "/home/goodlad/gen3ai_archive/x35_lrf_read/churn/reads",
+ "reported_only": true,
+ "rows": {
+  "c0_s3501": {
+   "greedy_flip_share": 0.3062037564029596,
+   "mean_tv": 0.2143049629035682
+  },
+  "c0_s3502": {
+   "greedy_flip_share": 0.31004553215708597,
+   "mean_tv": 0.21188396929461858
+  },
+  "c0_s3503": {
+   "greedy_flip_share": 0.30591918042117244,
+   "mean_tv": 0.21254850180634452
+  },
+  "lrf_s3501": {
+   "greedy_flip_share": 0.3332384746727376,
+   "mean_tv": 0.22963931219602263
+  },
+  "lrf_s3502": {
+   "greedy_flip_share": 0.31132612407512805,
+   "mean_tv": 0.22040770827950276
+  },
+  "lrf_s3503": {
+   "greedy_flip_share": 0.3291121229368241,
+   "mean_tv": 0.23510881989748747
+  }
+ },
+ "schema": "x35_lrf_churn_v1",
+ "vs": "pstar"
+}

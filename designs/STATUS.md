@@ -23,7 +23,7 @@ rate. **NOT DETECTED / UNDECIDED** means the interval spans zero, so we cannot t
 
 | # | goal | status | best number [95 % interval] | proof |
 |---|---|---|---|---|
-| 1 | **The strongest baseline** | **AT ITS PLATEAU.** P\* = X26 @ 280M. Training on to 480M changed nothing. | P\* vs the production baseline: 0.694 [0.666, 0.721]. The 480M continuation vs P\* against Kakuna: +0.08 pp [−3.90, +4.06], FLAT. | `d172c10ed`, `204204bbf` |
+| 1 | **The strongest baseline** | **AT ITS PLATEAU.** P\* = X26 @ 280M. Training on to 480M changed nothing. Holding the learning rate up (LR-F) did not help in-house: UNDECIDED, final, leaning negative. | P\* vs the production baseline: 0.694 [0.666, 0.721]. The 480M continuation vs P\* against Kakuna: +0.08 pp [−3.90, +4.06], FLAT. LR-F − C0 on S: −1.13 pp [−2.45, +0.18] (97.5 %, 3 seeds; `x35_breakers_stage_2026-10-17/reads/lrfloor_look1.json`). | `d172c10ed`, `204204bbf`, `f7fddc39b` |
 | 2a | **Beat Metamon on our teams** | **MET.** | P\* vs Kakuna on home72: **0.598 [0.549, 0.644]** | `3010c81ba` |
 | 2b | **Beat Metamon on unfamiliar teams** | **NOT MET**, about 4 pp short. The lower bound must clear 0.50, which needs about 0.53. | P\* 0.487 [0.459, 0.515] (its forum72 third under Kakuna's legacy pack, below). No lever's interval clears 0.50. Highest point estimates, each against its own control and none detected: the belief prior mix (λ = 0.25) 0.502, D1 0.492, D3 0.491 (look 1). | `3010c81ba`, `f299a7243`, `eb99ab362`, `58287c525` |
 | 3 | **Know where we are** | **MAPPED.** The deficit is **piloting** an unfamiliar team, not facing one. In-house meters cannot see it; only Kakuna games can. Nothing measurable is lost in the opening; the gap shows from level positions after turn 10 (descriptive). It does not go with the SETS (H-CTX SUPPORTED): on new sixes of familiar pool sets P\* scores 0.514, below F's 0.540 and 10 pp under home72 on the same engine; the sets keep at most about a fifth of the premium. Why the six matters (memorised sixes, broken cores, no plan) is open (`hctx_rc72_2026-10-26/REVIEW.md` M1). P\*'s own critic does not see it (H-MID: CRITIC-MISCALIBRATED-ON-U), as a self-play critic cannot (REVIEW M1). | Piloting deficit, strength-corrected (X26 @161M, PROVISIONAL, resting on the unverified assumption A-K): +0.123 [+0.039, +0.206], facing +0.017 [−0.062, +0.095]; their difference +0.106 [−0.009, +0.221] is UNDECIDED. P\* is level with Metamon's ensemble on unfamiliar teams, ahead of it on home72, and beats every human-only Metamon model (§5). | `8b43eb44a`, `82858f433`, `c758fcb82`, `905c29f5b`, `f200258f6`, `90708bff5`, `82f273eff`, `df35d1bb0` |
@@ -44,12 +44,12 @@ The arm-vs-C0 bias is ≤ 0.2 pp, and no verdict moves (the ledger's 10-27 pack-
 
 ## 2. Running now (as of 2026-10-27)
 
-Read at 12:05 PDT from the arm chain's status and each read's state directory.
+Read at 12:05 PDT from the arm chain's status and each read's state directory; the GPU rows at 23:55.
 
 | where | job | what decision it drives |
 |---|---|---|
-| **GPU** (lease: Training session) | **LR-F s3503**: P\* + 20M with the learning rate held at or above 1.74e-4, two controller rungs above P\*'s (GO 11:32, 1,459 steps/s; ends ≈ 15:40). s3502 is done (`c4e463b0f`). | Whether the plateau comes from the learning-rate controller, not from capacity or data. |
-| GPU queue, next (the orchestrator's chains; draft order [`ops/gpu_plan_2026-10-27.md`](ops/gpu_plan_2026-10-27.md)) | **LR-F s3501** (≈ 4.3 GPU-h; completes look 1's three registered seeds) → **X48** s3501–s3503 (≈ 13 GPU-h; per-token-kind FFN experts grown at P\*, read under N4's one-look screen; PREREG `fc888c18f`) → **N4** (the toy capacity screen; its model build landed at `c35ffab9e`, its kit arms and pin have not). | Capacity at the plateau, the branch the plasticity probe's NO-LOSS chose (X48, N4). |
+| **GPU** (lease: Training session) | **X48 s3501**: per-token-kind FFN experts grown at P\*, + 20M (GO ≈ 19:51, 1,399 steps/s; ends ≈ 00:00 10-28; PREREG `fc888c18f`). LR-F's three seeds are done (`407abd835`) and read: UNDECIDED, final (§1). | Capacity at the plateau, the branch the plasticity probe's NO-LOSS chose. |
+| GPU queue, next (the orchestrator's chains; draft order [`ops/gpu_plan_2026-10-27.md`](ops/gpu_plan_2026-10-27.md)) | **X48** s3502–s3503 (≈ 8.6 GPU-h; read under N4's one-look screen) → **N4** (the toy capacity screen; its model build landed at `c35ffab9e`, its kit arms and pin have not). | Capacity at the plateau, the branch the plasticity probe's NO-LOSS chose (X48, N4). |
 | **CPU**, Kakuna lane | **N1-P look 1** (X61P): the three forks with half their teams from 12,000 procedural teams, against Kakuna on F. In-house S is done; F stands at 89 of 360 units (≈ 10-29). | **GO** (F GAIN, in-house non-inferior) funds X53-N1, a fresh production run on 10⁴ teams. **NULL** rules out only "N1 at the plateau". It is X62's third gate. |
 | **CPU**, Kakuna lane | **X59-S floor pilot**: the 15 students (trained on human rows, on the same rows labelled by P\*, or on self-play rows; five seeds each) on units 0–3 of H, F and P72; 26 of 180 units. It releases one "too weak to read" flag per contrast and nothing else (Amendment 5, `aaeabbd46`). | Whether human data beats our own self-play data (the full read follows the pilot). |
 | CPU, queued | **D3 look 2**, the terminal read of set mutation: all five seeds on one engine at the play pin (PREREG AM-D3-L2, `35f60839a`, and its addendum `0e32c5002`). Its in-house lane is free since H-CTX ended (10-27), its Kakuna lane starts when N1-P look 1 ends. NULL cannot be reached at this size; the expected result is UNDECIDED, about ±3 pp (P(GAIN) ≈ 3–7 %, `71d74e5c1`). | Whether set mutation is adopted as a goal-(b) lever. |
@@ -58,7 +58,7 @@ Read at 12:05 PDT from the arm chain's status and each read's state directory.
 
 The orchestrator's order after REVIEW_2 of the all-null strategy (`69c7cd34d`). Every item needs its GO.
 
-1. **X48**, production capacity at the plateau: GPU next after LR-F s3501, then its read (≈ 26–38 Kakuna lane-hours).
+1. **X48**, production capacity at the plateau: on the GPU since 10-27 19:51 (s3501), then its read (≈ 26–38 Kakuna lane-hours).
 2. **X63**, dose: X26 @380M continued 100M on a union of the recombined, procedural and set-mutated corpora, no
    forum teams (DRAFT, [`endstate/design_x63_long_breadth_continuation.md`](endstate/design_x63_long_breadth_continuation.md),
    `49fbf75a7`; ≈ 20 GPU-h to its screen). It waits on its adversarial review and on N1-P look 1 and D3 look 2 (H-CTX read SUPPORTED).
@@ -158,8 +158,8 @@ Every open owner question, in one place.
    only slow Kakuna reads steer goal (b).
 3. **The plateau may be the recipe, not the ceiling.** Plain training is FLAT and the population levers are NULL,
    yet a best responder still finds +11 pp. Search does not pay at P\*, and the plateau trunk has not lost its
-   plasticity. LR-F (the optimiser) and X48 and N4 (capacity) are the next tests of whether P\* is the most this
-   architecture can reach.
+   plasticity. Holding the learning rate up did not help (LR-F, UNDECIDED final, −1.13 pp [−2.45, +0.18]), so X48 and
+   N4 (capacity) are the next tests of whether P\* is the most this architecture can reach.
 4. **The X35 family trains under the legacy packer.** `f4b25238` and its corpus-only pins predate `d8d674b99` and
    launch without the pack oracle, so a new corpus can bring Frustration sets that play at base power 1, unseen.
    Forks against a banked `f4b25238` control stay on that family, but only if the PREREG records the corpus's

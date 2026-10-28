@@ -29834,3 +29834,54 @@ exist, in 6 families). **None depends on it.**
 **Evidence:** `src/main/anchors/peer_teams.py`, `peer_teams_test.py`, `testdata/peer_pair_cell_tsr_kak_away_000.json`;
 SOP §"anchor-vs-anchor"; `designs/endstate/design_diversity_teams_opponents.md` F-DV-6; REVIEW F1 of
 `research_state/measurements/hctx_rc72_2026-10-26/`.
+
+### 2026-10-28 · MEASUREMENT · **X35 LR-F LOOK 1 reads UNDECIDED, FINAL: a learning-rate floor two controller rungs above P\*'s (≈ ×1.73 over C0's rate) moves in-house S by −1.13 pp [−2.45, +0.18]; every LR-F seed sits below every C0 seed; no look 2; the guards are not read. The lever acted (the rate at the floor on 100 % of updates) but the per-update KL rose only ×1.29 (0.018 → 0.024), under the predicted band**
+
+**Question** (STAGED_PLAN §4.1.2, registered 2026-10-20; the X26 treadmill read's open cause). Is the plateau the
+adaptive controller halving the learning rate? The one lever is `--min-lr 1.7361e-4`. Prediction: Δ 0.0 pp, 80 %
+[−2.0, +1.5], with UNDECIDED the modal class. Mechanism predictions: the rate at the floor on ≥ 95 % of updates; the
+approx KL in [0.025, 0.045]; the clip fraction 0.20–0.30; churn on `bank_x26` 0.33–0.42; N_prom within ±2 of C0's.
+
+**Design.** LR-F s3501–s3503: P\* + 20M at pin `f4b25238`. The matched control is C0 s3501–s3503 at the same pin,
+with its S imported from G1's committed results, never re-played.
+- AM-LRF-L1 (STAGED_PLAN §4.1.3, `f7fddc39b`) was registered after the three seeds trained and before any LR-F
+  game. It sets the rule (`x35_r1` in `main.reads`) and the engine.
+- The engine: every LR-F game is on E1 at the X35-frame shared pin `86cfdf7ef`, because the import refuses across
+  engines.
+- An S-lane identity check came first. C0 s3501's G1 batch 0 was re-played at the pin against `x26_pstar` and
+  against `tstar`. Regime, seed, counts and both outcome digests were all equal.
+- The VOID gate passed on every seed: K9(b), the KL guard (max trailing-2M mean 0.024 against 0.08), the pin
+  `f4b25238` and the pool seed.
+- S was read in G1's regime `adfdbee824c9eb0a`: 7 members × 500 mirrored pairs, greedy, CPU. All 105 rows carry that
+  regime and env core `7c532805…/125`.
+
+**Result.**
+
+| | s3501 | s3502 | s3503 | mean |
+|---|---|---|---|---|
+| S, LR-F (pp) | 55.98 | 55.56 | 55.99 | 55.85 |
+| S, C0 (pp, G1) | 57.52 | 56.60 | 56.81 | 56.98 |
+| approx KL, LR-F / C0 | 0.0236 / 0.0185 | 0.0237 / 0.0183 | 0.0236 / 0.0180 | 0.0236 / 0.0183 |
+| clip fraction, LR-F / C0 | 0.211 / 0.171 | 0.211 / 0.169 | 0.210 / 0.166 | 0.211 / 0.169 |
+| churn vs P\* on `bank_x26`, LR-F / C0 | 0.333 / 0.306 | 0.311 / 0.310 | 0.329 / 0.306 | 0.325 / 0.307 |
+| N_prom, LR-F / C0 | 1 / 1 | 0 / 1 | 1 / 1 | 2 / 3 |
+
+- **R1 Δ −1.13 pp [−2.45, +0.18]** (Welch 97.5 %, df 2.96): **UNDECIDED, FINAL at look 1**, because Δ̂ ≤ 0.
+  - It excludes a gain above +0.2 pp. It does not exclude a loss down to −2.45 pp.
+  - It sits inside the registered 80 % band at its lower half.
+- **Mechanism.** The rate sat at the floor on every update (HIT); the clip fraction and N_prom are HITs.
+  - The KL MISSED low: ×1.29 for a ×1.73 rate, under even KL ∝ LR.
+  - Churn missed narrowly (0.325 against the predicted 0.33–0.42).
+- **Guards:** G-F / G-C / G-K were not read, because R1 is non-qualifying (A1 ruling (a); AM-LRF-L1 item 5). No
+  Kakuna game was played, so this read says nothing about goal (b).
+- **Dose:** equal, 4.11 against 4.16 GPU-h.
+- **Reading** (precommit memo §2.2, "UNDECIDED, final"): nothing is licensed.
+  - The capacity reads (X48, N4) proceed as for "not GAIN", and X48 carries no "at the controller's learning rate"
+    label.
+  - The X35 NULLs keep their meaning.
+  - The controller's halving shows no sign of holding the plateau. The point estimate is negative, but a loss is
+    not detected.
+
+**Evidence:** `research_state/measurements/x35_breakers_stage_2026-10-17/lrf_read/` (README, `read_spec_look1.json`,
+`s_identity.json`, `mechanism.json`, `churn.json`), `reads/lrfloor_look1.json`. The state is
+`~/gen3ai_archive/x35_lrf_read/look1` (family `x35_lrf_s_look1_2026-10-27`). See `UNDERSTANDING.md` §4.12.

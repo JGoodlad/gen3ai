@@ -119,7 +119,7 @@ since the F-AS-8 build (§4.3), and every launch NEEDS the orchestrator's GO. Th
 
 | candidate | in plain words | the lever | GPU-h, look 1 | designed in |
 |---|---|---|---|---|
-| **LR-F, the LR FLOOR** (§4.1; **toy REGISTERED**, AM-RP-f; **production REGISTERED**, §4.1.2) | continue the plateau checkpoint with the learning-rate controller forbidden to go below the rate the run used while it was still climbing | `--min-lr` (two controller rungs above the start's rate) | toy 12.9; production 12.9 | here |
+| **LR-F, the LR FLOOR** (§4.1; **toy REGISTERED**, AM-RP-f; **production REGISTERED**, §4.1.2; **production look 1 READ: UNDECIDED, FINAL**, §4.1.3) | continue the plateau checkpoint with the learning-rate controller forbidden to go below the rate the run used while it was still climbing | `--min-lr` (two controller rungs above the start's rate) | toy 12.9; production 12.9 | here |
 | LG-1, main exploiters (A3) + R0 | train 3 exploiters to beat P\*, then fold them into P\*'s opponents | the exploiter slice | ≈ 19 | [`design_alphastar_league_path.md`](../../../endstate/design_alphastar_league_path.md) §6 |
 | LG-2, PFSP over the archive (**only on an A1 GAIN**, AM-RP-b) | A1 with the archive nodes the trainee loses to drawn more often | `--stable-opponent-pfsp` | ≈ 14.4 | the same |
 | A4, the trailing magnet | a pull toward a recent copy of itself (R-NaD / MMD) | `β · KL(π ‖ π_mag)` (build T56) | ≈ 15 | [`design_compute_efficiency.md`](../../../endstate/design_compute_efficiency.md) §5.6.2 |
@@ -310,6 +310,9 @@ predictions are §4.1's as designed in `6befe873`, unchanged and now FROZEN: no 
 
 #### 4.1.2 Production LR-F: the REGISTRATION (2026-10-20, the F-AS-8 kit unit's brief, before any slot (8) launch)
 
+**READ 2026-10-28: look 1 UNDECIDED, FINAL** (Δ̂ −1.13 pp, Welch 97.5 % [−2.45, +0.18]; no look 2):
+[`reads/lrfloor_look1.json`](reads/lrfloor_look1.json), [`lrf_read/README.md`](lrf_read/README.md).
+
 **Registered before any production X35 arm has launched** (`models/` holds only the toy's `rb_x35t_*` runs) **and
 before any LR-F read.** The values and predictions are §4.1's production values as designed in `6befe873`, unchanged
 and now FROZEN: no ruling may revise them. The kit arm is built in the commit that follows this one (§4.3).
@@ -387,7 +390,10 @@ play, and where the read is decided. The spec is [`lrf_read/read_spec_look1.json
    - **PASS** iff all five are equal on both cells (exact equality; no boundary for rule 8).
    - **A difference STOPS the read.** No LR-F game is played, and the orchestrator is told. Re-playing C0 at the pin
      instead would be an amendment of its own.
-   - **Result:** PENDING at registration. It is recorded in `lrf_read/s_identity.json` before any LR-F game.
+   - **Result: PASS** (2026-10-27 20:39, before any LR-F game): both cells equal on all five fields, regime
+     `adfdbee824c9eb0a`, env core `7c532805…/125` ([`lrf_read/s_identity.json`](lrf_read/s_identity.json)). Two earlier
+     attempts played no game: the identity family was unregistered, then the play worktree lacked its Showdown
+     checkout (team validation); both refused before the first game.
 4. **G14 and the sides.** G14 (the Metamon peer's code and our policy's load mode) and the re-derived anchor guards
    are checks on anchor units. Look 1 plays no anchor unit (item 5), so they have nothing to read. The S-lane analogue,
    our load mode inside `main.h2h`, is what item 3's digests pin.
@@ -412,7 +418,7 @@ play, and where the read is decided. The spec is [`lrf_read/read_spec_look1.json
    - **Added, opt-in, stricter:** `pin` = `f4b25238` (every git hash each run recorded) and `pool_seed` (fork step
      280,000,170). A VOID seed enters no read and is re-run at the same pin and seed (§4.1.2).
 7. **Decide.** `record` runs in the play worktree, whose `main.reads` (the pin's) carries `x35_r1`, `import_off`,
-   the engine check and the VOID gate. It writes [`reads/lrf_look1.json`](reads/lrf_look1.json). `dose` is reported
+   the engine check and the VOID gate. It writes [`reads/lrfloor_look1.json`](reads/lrfloor_look1.json). `dose` is reported
    and never decides: GPU-h per seed from `dose/<run>.json`, C0's as SPRT used them.
 8. **Reported beside the verdict** (§4.1.2's instruments; none decides):
    - each seed's LR path (the share of updates at the floor);

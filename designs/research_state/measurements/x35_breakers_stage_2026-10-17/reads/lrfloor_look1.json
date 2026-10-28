@@ -1,0 +1,388 @@
+{
+ "arm": "LRF",
+ "cells_inconclusive": [],
+ "code": {
+  "commit": "86cfdf7efbe21b4ff3382541e6d78390df7d9966",
+  "diff_sha": "e3b0c44298fc1c14",
+  "dirty": false,
+  "pin": "86cfdf7efbe21b4ff3382541e6d78390df7d9966",
+  "root": "/home/goodlad/dev/gen3ai-reads/lrf_play_86cfdf7e"
+ },
+ "completeness": {
+  "class": "COMPLETE"
+ },
+ "created": "2026-10-27T23:49:50-0700",
+ "decision": {
+  "arm": "LRF",
+  "guards": {
+   "G-C": {
+    "detail": {},
+    "guard": "G-C",
+    "near_boundary": [],
+    "reasons": [
+     "not read: R1 is non-qualifying, so registered guard semantics cannot change the class (the orchestrator's A1 ruling (a); AM-LRF-L1 item 5)"
+    ],
+    "status": "INCONCLUSIVE"
+   },
+   "G-E": {
+    "detail": {},
+    "guard": "G-E",
+    "near_boundary": [],
+    "reasons": [
+     "absent by design: the G-E readers launch only on an R1 GAIN"
+    ],
+    "status": "INCONCLUSIVE"
+   },
+   "G-F": {
+    "detail": {},
+    "guard": "G-F",
+    "near_boundary": [],
+    "reasons": [
+     "not read: R1 is non-qualifying, so registered guard semantics cannot change the class (the orchestrator's A1 ruling (a); AM-LRF-L1 item 5)"
+    ],
+    "status": "INCONCLUSIVE"
+   },
+   "G-K": {
+    "detail": {},
+    "guard": "G-K",
+    "near_boundary": [],
+    "reasons": [
+     "not read: R1 is non-qualifying, so registered guard semantics cannot change the class (the orchestrator's A1 ruling (a); AM-LRF-L1 item 5)"
+    ],
+    "status": "INCONCLUSIVE"
+   }
+  },
+  "look": 1,
+  "r1": {
+   "class": "UNDECIDED",
+   "final": true,
+   "look": 1,
+   "near_boundary": [],
+   "outcome": "UNDECIDED",
+   "reasons": [],
+   "seeds": [
+    "3501",
+    "3502",
+    "3503"
+   ],
+   "stat": {
+    "ci_pp": [
+     -2.449842393178735,
+     0.1831757265120697
+    ],
+    "confidence": 0.975,
+    "delta_pp": -1.1333333333333329,
+    "df": 2.957216255833261,
+    "mean_off_pp": 56.97857142857143,
+    "mean_on_pp": 55.845238095238095,
+    "n_off": 3,
+    "n_on": 3,
+    "q": 4.221606806147993,
+    "se_pp": 0.3118502315109378,
+    "var_off": 0.23250000000000454,
+    "var_on": 0.059251700680271975
+   }
+  },
+  "r2": {
+   "falls": false,
+   "gap_diff": null,
+   "near_boundary": [],
+   "reasons": [
+    "no R2 read"
+   ]
+  },
+  "reasons": [
+   "R1 does not qualify"
+  ],
+  "reported": {
+   "dose": {
+    "confound": false,
+    "dose_off": 4.156333333333333,
+    "dose_on": 4.1066666666666665,
+    "near": false,
+    "read": true,
+    "rel_gap": 0.01194963509503576
+   }
+  },
+  "verdict": "UNDECIDED"
+ },
+ "guards": {
+  "G-C": {
+   "detail": {},
+   "guard": "G-C",
+   "near_boundary": [],
+   "reasons": [
+    "not read: R1 is non-qualifying, so registered guard semantics cannot change the class (the orchestrator's A1 ruling (a); AM-LRF-L1 item 5)"
+   ],
+   "status": "INCONCLUSIVE"
+  },
+  "G-E": {
+   "detail": {},
+   "guard": "G-E",
+   "near_boundary": [],
+   "reasons": [
+    "absent by design: the G-E readers launch only on an R1 GAIN"
+   ],
+   "status": "INCONCLUSIVE"
+  },
+  "G-F": {
+   "detail": {},
+   "guard": "G-F",
+   "near_boundary": [],
+   "reasons": [
+    "not read: R1 is non-qualifying, so registered guard semantics cannot change the class (the orchestrator's A1 ruling (a); AM-LRF-L1 item 5)"
+   ],
+   "status": "INCONCLUSIVE"
+  },
+  "G-K": {
+   "detail": {},
+   "guard": "G-K",
+   "near_boundary": [],
+   "reasons": [
+    "not read: R1 is non-qualifying, so registered guard semantics cannot change the class (the orchestrator's A1 ruling (a); AM-LRF-L1 item 5)"
+   ],
+   "status": "INCONCLUSIVE"
+  }
+ },
+ "imports": {},
+ "inputs": {
+  "arm": "LRF",
+  "dose": {
+   "off": [
+    4.43,
+    4.027,
+    4.012
+   ],
+   "on": [
+    4.12,
+    4.067,
+    4.133
+   ]
+  },
+  "look": 1,
+  "r1": {
+   "off": {
+    "3501": 57.52142857142858,
+    "3502": 56.6,
+    "3503": 56.81428571428571
+   },
+   "on": {
+    "3501": 55.97857142857142,
+    "3502": 55.56428571428571,
+    "3503": 55.99285714285714
+   }
+  }
+ },
+ "ledgers": {
+  "pool": {
+   "digest": "dc0b2af950f9da295f86fcfba0922f83da806ac6535620abe828451a5edf1ddb",
+   "family": "x35_lrf_s_look1_2026-10-27",
+   "rows": 105
+  }
+ },
+ "look": 1,
+ "models": {
+  "lrf_s3501": {
+   "arm": "lrfloor",
+   "seed": 3501,
+   "sha256": "c1464919df0b27a17269ab7c379b62be42997862357469d4c29360dec1de8ded",
+   "source": "/home/goodlad/dev/gen3ai/models/rb_x35_lrfloor_s3501/final_model.zip",
+   "step": 300061776
+  },
+  "lrf_s3502": {
+   "arm": "lrfloor",
+   "seed": 3502,
+   "sha256": "911d9e5a7b6a90ad4b9a98ee079f19c1ae10c28f5f5da6ad2697227a59f61292",
+   "source": "/home/goodlad/dev/gen3ai/models/rb_x35_lrfloor_s3502/final_model.zip",
+   "step": 300061592
+  },
+  "lrf_s3503": {
+   "arm": "lrfloor",
+   "seed": 3503,
+   "sha256": "4d57ad50e3a1021d7fd5a71b44cc2bdfdc0a1f25ecc8735c9100e174bb883f04",
+   "source": "/home/goodlad/dev/gen3ai/models/rb_x35_lrfloor_s3503/final_model.zip",
+   "step": 300061294
+  }
+ },
+ "prereg": "designs/research_state/measurements/x35_breakers_stage_2026-10-17/STAGED_PLAN.md",
+ "r1": {
+  "class": "UNDECIDED",
+  "final": true,
+  "look": 1,
+  "near_boundary": [],
+  "outcome": "UNDECIDED",
+  "reasons": [],
+  "seeds": [
+   "3501",
+   "3502",
+   "3503"
+  ],
+  "stat": {
+   "ci_pp": [
+    -2.449842393178735,
+    0.1831757265120697
+   ],
+   "confidence": 0.975,
+   "delta_pp": -1.1333333333333329,
+   "df": 2.957216255833261,
+   "mean_off_pp": 56.97857142857143,
+   "mean_on_pp": 55.845238095238095,
+   "n_off": 3,
+   "n_on": 3,
+   "q": 4.221606806147993,
+   "se_pp": 0.3118502315109378,
+   "var_off": 0.23250000000000454,
+   "var_on": 0.059251700680271975
+  }
+ },
+ "r2": {
+  "falls": false,
+  "gap_diff": null,
+  "near_boundary": [],
+  "reasons": [
+   "no R2 read"
+  ]
+ },
+ "read": "x35_lrf_look1_2026-10-27",
+ "reasons": [
+  "R1 does not qualify"
+ ],
+ "regimes": {
+  "anchor": {},
+  "s": {
+   "pool": "adfdbee824c9eb0a"
+  }
+ },
+ "repins": [],
+ "reported": {
+  "dose": {
+   "confound": false,
+   "dose_off": 4.156333333333333,
+   "dose_on": 4.1066666666666665,
+   "near": false,
+   "read": true,
+   "rel_gap": 0.01194963509503576
+  }
+ },
+ "reported_incomplete": {},
+ "rule": "x35_r1",
+ "schema": "gen3_read_record_v1",
+ "spec_sha256": "5d32e464e57705b6e47069aa61aea13a9cb7934031020633bd3b931214c94dd4",
+ "verdict": "UNDECIDED",
+ "void": {
+  "lrf_s3501": {
+   "batch2": {
+    "detail": {
+     "fork_step": 280000170,
+     "max_window_end": 282071850,
+     "max_window_mean": 0.02468476016074419,
+     "rows_after_fork": 203,
+     "windows": 184
+    },
+    "fires": [],
+    "guard": "LR-F KL",
+    "near_bar": [],
+    "reasons": [],
+    "run": "rb_x35_lrfloor_s3501",
+    "schema": "x35_batch2_void_v1",
+    "verdict": "PASS"
+   },
+   "k9b": "PASS",
+   "k9b_file": "/home/goodlad/dev/gen3ai/designs/research_state/measurements/x35_breakers_stage_2026-10-17/k9b/rb_x35_lrfloor_s3501.json",
+   "pass": true,
+   "pin": {
+    "pass": true,
+    "recorded": [
+     "f4b25238def57900c0305bb2a3a5a8f9edaef285"
+    ],
+    "want": "f4b25238def57900c0305bb2a3a5a8f9edaef285",
+    "why": ""
+   },
+   "pool_seed": {
+    "dropped": 6,
+    "fork_step": 280000170,
+    "got": 280000170,
+    "pass": true,
+    "snapshots": 14,
+    "why": ""
+   },
+   "run": "models/rb_x35_lrfloor_s3501"
+  },
+  "lrf_s3502": {
+   "batch2": {
+    "detail": {
+     "fork_step": 280000170,
+     "max_window_end": 282072046,
+     "max_window_mean": 0.02431302787736058,
+     "rows_after_fork": 203,
+     "windows": 184
+    },
+    "fires": [],
+    "guard": "LR-F KL",
+    "near_bar": [],
+    "reasons": [],
+    "run": "rb_x35_lrfloor_s3502",
+    "schema": "x35_batch2_void_v1",
+    "verdict": "PASS"
+   },
+   "k9b": "PASS",
+   "k9b_file": "/home/goodlad/dev/gen3ai/designs/research_state/measurements/x35_breakers_stage_2026-10-17/k9b/rb_x35_lrfloor_s3502.json",
+   "pass": true,
+   "pin": {
+    "pass": true,
+    "recorded": [
+     "f4b25238def57900c0305bb2a3a5a8f9edaef285"
+    ],
+    "want": "f4b25238def57900c0305bb2a3a5a8f9edaef285",
+    "why": ""
+   },
+   "pool_seed": {
+    "dropped": 6,
+    "fork_step": 280000170,
+    "got": 280000170,
+    "pass": true,
+    "snapshots": 14,
+    "why": ""
+   },
+   "run": "models/rb_x35_lrfloor_s3502"
+  },
+  "lrf_s3503": {
+   "batch2": {
+    "detail": {
+     "fork_step": 280000170,
+     "max_window_end": 282464604,
+     "max_window_mean": 0.024595126953153384,
+     "rows_after_fork": 203,
+     "windows": 184
+    },
+    "fires": [],
+    "guard": "LR-F KL",
+    "near_bar": [],
+    "reasons": [],
+    "run": "rb_x35_lrfloor_s3503",
+    "schema": "x35_batch2_void_v1",
+    "verdict": "PASS"
+   },
+   "k9b": "PASS",
+   "k9b_file": "/home/goodlad/dev/gen3ai/designs/research_state/measurements/x35_breakers_stage_2026-10-17/k9b/rb_x35_lrfloor_s3503.json",
+   "pass": true,
+   "pin": {
+    "pass": true,
+    "recorded": [
+     "f4b25238def57900c0305bb2a3a5a8f9edaef285"
+    ],
+    "want": "f4b25238def57900c0305bb2a3a5a8f9edaef285",
+    "why": ""
+   },
+   "pool_seed": {
+    "dropped": 6,
+    "fork_step": 280000170,
+    "got": 280000170,
+    "pass": true,
+    "snapshots": 14,
+    "why": ""
+   },
+   "run": "models/rb_x35_lrfloor_s3503"
+  }
+ }
+}

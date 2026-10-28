@@ -107,7 +107,8 @@ under `measurements/`. A number with no pointer is not a measurement.
    test (SPRT, −0.25 pp) are NULL in-house. [MEASURED · in-house · `c456b6a09`, `806e50931`, `4290d652a`]
 9. **The plateau is a treadmill, not a collapse.** About 30 % of greedy choices change per 20M steps without
    improvement, the self-play pool goes stale and the learning rate halves; no coverage, rank or dormant-unit
-   collapse, and no repeat of the pre-era lineage's starvation. [DESCRIPTIVE · one seed · `3e8a41249`]
+   collapse, and no repeat of the pre-era lineage's starvation. Holding the rate up shows no sign of lifting S (LR-F, −1.13 pp
+   [−2.45, +0.18], UNDECIDED final, §4.12). [DESCRIPTIVE · one seed · `3e8a41249`; LR-F MEASURED · in-house]
 10. **Search does not pay at P\*, and is not getting closer.** In honest worlds the rollout leaf's edge is gone (it
     was hidden information about the opponent's team); training to the plateau leaves the oracle − honest gap flat
     (−0.003 [−0.020, +0.015]); only identifying the opponent's EXACT team pays; the one cell that replicates (a
@@ -357,8 +358,8 @@ with lag; the pool goes stale (promotions per 50M 9 → 3, median member age 63M
 8.4e-5) under its adaptive controller, which holds the policy change per update (the KL divergence) at
 0.017–0.019. Starvation creeps up +0.03 to +0.06. No coverage, rank, dormant-unit or opponent-model collapse. The toy shows the same halving and staleness, but its
 rate held for 80M before its plateau, so the step size covaries with the plateau without coinciding. Every X35 fork
-starts at P\*'s halved rate, so a NULL there reads "NULL at the halved rate". The learning-rate floor (LR-F) tests
-it (§6). [DESCRIPTIVE · PROVISIONAL, one seed · `3e8a41249`; ledger 2026-10-20 · *X26 COLLAPSE BATTERY*]
+starts at P\*'s halved rate, so a NULL there reads "NULL at the halved rate". The learning-rate floor (LR-F) tested
+it and found no sign that the halving holds the plateau (§4.12). [DESCRIPTIVE · PROVISIONAL, one seed · `3e8a41249`; ledger 2026-10-20 · *X26 COLLAPSE BATTERY*]
 
 **…and it is not a loss of plasticity (2026-10-27).** X26 @25M … X26c @480M, C0 and two fresh inits were refit on
 11,511 states from teams the lineage never saw. Under the strategy doc's registered bars the class is **NO-LOSS**:
@@ -518,6 +519,17 @@ SPRT (a sequential probability ratio test) admits each 2M snapshot to the pool o
 freshness is not the binding constraint. It costs 15 % of throughput. [`4290d652a`; ledger 2026-10-24 · *X35 SPRT
 LOOK 1*]
 
+### 4.12 Holding the learning rate up: no sign it helps (LR-F, 2026-10-28)
+
+LR-F continued P\* 20M with the adaptive controller forbidden to go below 1.7361e-4, two rungs above P\*'s rate. C0
+cut to 1.0047e-4, so the contrast was about ×1.73. The lever acted: the rate sat at the floor on every update, and the
+per-update policy change (approx KL) rose from 0.018 to 0.024. That is below the predicted 0.025–0.045. **R1 −1.13 pp
+[−2.45, +0.18]** (Welch 97.5 %, 3 seeds; every LR-F seed below every C0 seed): UNDECIDED, final at look 1 because
+Δ̂ ≤ 0. It excludes a gain above +0.2 pp and does not exclude a loss down to −2.45 pp. The halving is not what holds
+the plateau, as far as three seeds can tell. Nothing is licensed: the capacity reads (X48, N4) proceed as "not GAIN",
+and the X35 NULLs keep their meaning. It is not a NULL, so it retires nothing (§5's rule). [MEASURED · in-house S only,
+E1 · `f7fddc39b`; ledger 2026-10-28 · *X35 LR-F LOOK 1*]
+
 ---
 
 ## 5. Retired hypotheses
@@ -552,14 +564,13 @@ retired for the fold-gift question only; they live in the last full text (§0) a
 |---|---|
 | Does breadth at 10⁴ procedural teams lift unfamiliar-team piloting at the plateau? | **N1-P look 1** (X61P, D1's rule on F; [`PREREG.md`](measurements/x61p_n1_production_2026-10-26/PREREG.md), `5b84bca62`). ADOPT-CANDIDATE (F GAIN, in-house non-inferior) funds **X53-N1**, a fresh production run on 10⁴ teams (`../endstate/design_x53_n1_fresh_breadth.md`); NULL rules out only "N1 at the plateau" |
 | Is human data better than our own self-play data? | **X59-S**: three matched student arms, five seeds each; S-H − S-S answers it, S-H − S-P picks the lever ([`PREREG.md`](measurements/x59s_matched_students_2026-10-25/PREREG.md), `5cbf46dc0`). Its floor pilot plays first and releases one UNINFORMATIVE flag per contrast (Amendment 5, `aaeabbd46`). It decides whether the human-data switch and X60 get built |
-| Is the plateau the learning-rate controller's halving (§4.4)? | **LR-F look 1**: P\* + 20M with the rate floored two controller rungs above P\*'s, seeds 3501–3503 against C0 (X35 `measurements/x35_breakers_stage_2026-10-17/STAGED_PLAN.md` §4.1.2); s3502 trained (`c4e463b0f`), s3503 training, s3501 queued |
 
 **Queued and planned** (the ranked order: X48, X63, PR-1′, after REVIEW_2 `69c7cd34d` §6)
 
 | question | the read that answers it |
 |---|---|
 | Is set mutation a goal-(b) lever? | **D3 look 2**, final: all five seeds trained; every game on engine E1 at the play pin `c4a5c37b6` (E1's game code under the pre-`b0441623e` read harness; PREREG AM-D3-L2 and its addendum `0e32c5002`: TERMINAL, P(GAIN) ≈ 3–7 %, NULL unreachable at this size), its S lane free since H-CTX ended (2026-10-27) and its Kakuna lane behind N1-P look 1 (`measurements/x41_d3_setmut_2026-10-25/PREREG.md`) |
-| Is the shared trunk FFN a capacity bottleneck between token kinds at the plateau? | **X48**: per-token-kind FFN experts grown at P\*, s3501–s3503 against C0 (its finals re-played on the read's one engine), under N4's one-look screen (S at 2,000 pairs and Kakuna F; [`PREREG.md`](measurements/x48_kffn_production_2026-10-27/PREREG.md), `fc888c18f`). GPU next after LR-F |
+| Is the shared trunk FFN a capacity bottleneck between token kinds at the plateau? | **X48**: per-token-kind FFN experts grown at P\*, s3501–s3503 against C0 (its finals re-played on the read's one engine), under N4's one-look screen (S at 2,000 pairs and Kakuna F; [`PREREG.md`](measurements/x48_kffn_production_2026-10-27/PREREG.md), `fc888c18f`). s3501 on the GPU since 2026-10-27 19:51; its record needs no "at the controller's learning rate" label (LR-F is not GAIN) |
 | Does a wider trunk buy strength at the plateau (on the toy)? | **N4**: T\* with every trunk FFN grown 256 → 1,024 against a same-pin C0′, 3 + 3 seeds × 70M (PREREG `8ed8164ea`); the model build landed (`c35ffab9e`), its kit arms have not |
 | Does breadth pay at DOSE rather than at 20M? | **X63**: X26 @380M + 100M on a union of the recombined, procedural and set-mutated corpora, no forum teams, against X26c (DRAFT, `../endstate/design_x63_long_breadth_continuation.md`, `49fbf75a7`); gated on its review, N1-P look 1 and D3 look 2 (H-CTX, its other gate, read SUPPORTED) |
 | Do the breadth levers help by +1–2 pp each, below what one read can see? | **PR-1′**, the zero-GPU precision read re-scoped by [`REVIEW_2.md`](measurements/strategy_review_2026-10-26/REVIEW_2.md): D3 and N1-P against C0 on F (D1 reported only: its F is its own population), 30,000–38,000 new Kakuna games at one post-`b0441623e` pin. Information only; it runs after X48's read, or on a rented CPU box |

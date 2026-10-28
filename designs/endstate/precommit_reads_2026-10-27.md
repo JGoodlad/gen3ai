@@ -394,3 +394,9 @@ the read it concerns lands.
 - **Rule for later entries.** When a read lands, add a dated line here: the class, the row that fired, and any
   departure with the orchestrator's reason. A §4 ruling, once made, is recorded here too. The branches above are
   never edited after their read lands.
+- **2026-10-28: LR-F look 1 landed: UNDECIDED, FINAL** (Δ̂ −1.13 pp, Welch 97.5 % [−2.45, +0.18], 3 seeds; record
+  `x35_breakers_stage_2026-10-17/reads/lrfloor_look1.json`). The §2.2 row that fired is **UNDECIDED, final (Δ̂ ≤ 0)**:
+  nothing is licensed, look 2 does not run (`kit stage-check` REFUSES it), and the capacity reads proceed as for "not
+  GAIN". With X48: J13 (X48 GO) names LR-F UNDECIDED-final; J14 (X48 NO-GO) names only an LR-F NULL, so on a NO-GO
+  the §2.2 row governs ("as for not GAIN"). Either way X48 carries no "at the controller's learning rate" label. One departure, registered before any game (AM-LRF-L1, `f7fddc39b`; accepted by
+  the orchestrator): the guards were registered as not read on a non-qualifying R1, so no G-K Kakuna lane played.
