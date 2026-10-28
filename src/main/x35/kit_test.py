@@ -627,7 +627,10 @@ def test_the_verdict_fails_x48_transcripts_read_as_c0_or_as_x47s_growth():
 #: X26c's RECORDED argv, the launcher's own flags (``--restart-interval-hours 24 --pin-commit f4b25238…``, which
 #: ``launch_x35.sh`` adds) removed: ``models/rb_x26c_s2601/metadata.json`` ``original_command`` (immutable; read
 #: 2026-10-28 through json). Embedded, never read from models/, so this test needs no run archive.
-X26C_ARGV = ("--model /home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_380000195_steps.zip "
+#: The ``--model`` path is the call record's own models dir (the frozen record names this machine's absolute path),
+#: never a literal home path here.
+X26C_ARGV = ("--model " + str(Path(_real_production_call()["pstar"]["path"]).parents[2])
+             + "/rb_x26_s2601/checkpoints/checkpoint_380000195_steps.zip "
              "--behaviour-check warn --steps 480000195 --checkpoint-every-steps 1000000 --device cuda --seed 2601 "
              "--run-name rb_x26c_s2601").split()
 

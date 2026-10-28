@@ -35,6 +35,8 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
+from utils.paths import repo_root
+
 CENSUS_DIR = "designs/research_state/measurements/canary_row_null_design_2026-10-25"
 #: gpu_census.sh's checkpoint lists (``w0_window_test`` parses the script and asserts these are its lists).
 X26_AT = ("100M", "180M", "230M", "280M", "330M", "380M")
@@ -147,13 +149,24 @@ def prep_u1000(out_dir: str, models_dir: str, archive: str) -> List[str]:
     return done
 
 
+def _main_checkout() -> str:
+    """The default window checkout: the MAIN checkout, from any worktree."""
+    from utils.git import get_main_repo_root
+    return get_main_repo_root(cwd=str(repo_root()))
+
+
+def _env_python() -> str:
+    """The default interpreter: the shared ``gen3ai_torch28`` env's, under this user's home."""
+    return str(Path.home() / "miniconda3" / "envs" / "gen3ai_torch28" / "bin" / "python3")
+
+
 def main(argv: Optional[Sequence[str]] = None) -> int:
     ap = argparse.ArgumentParser(prog="python -m main.ops.w0_window", description=__doc__.split("\n\n")[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
     e = sub.add_parser("emit", help="print the W0 window item (JSON) for a chain file")
-    e.add_argument("--repo", default="/home/goodlad/dev/gen3ai", help="the window's checkout (clean, >= the commit)")
+    e.add_argument("--repo", default=_main_checkout(), help="the window's checkout (clean, >= the commit)")
     e.add_argument("--require-commit", required=True)
-    e.add_argument("--python", default="/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3")
+    e.add_argument("--python", default=_env_python())
     e.add_argument("--out-dir", required=True, help="absolute; outside every checkout and models/")
     e.add_argument("--models-dir", default=None, help="default: <repo>/models")
     e.add_argument("--home", default=os.path.expanduser("~"))
