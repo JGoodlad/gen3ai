@@ -46,10 +46,11 @@ def test_the_family_is_read_from_the_run_name(name, fam):
 
 #: Every X35 run name that exists under models/ (2026-10-26) plus the planned lrfloor arm: production = C0 (a fork of
 #: P* at production pins), toy C0 = C0, toy X47 = X47. X48 (per-kind FFN experts, a P*-fork) takes C0's bar by its
-#: PREREG's ruling (x48_kffn_production_2026-10-27 §7).
+#: PREREG's ruling (x48_kffn_production_2026-10-27 §7). X63-C (the X63 control replicate, X26c's argv from X26 @380M)
+#: is production C0's argv and architecture, so it takes C0's bar too.
 PRODUCTION_ARMS = ["rb_x35_c0_s3501", "rb_x35_a1arch_s3501", "rb_x35_sprt_s3503", "rb_x35_d1wide_s3505",
                    "rb_x35_d1wide_s3501.crashed-20261022", "rb_x35_x52prac_s3502", "rb_x35_d3mut_s3503",
-                   "rb_x35_n1p_s3502", "rb_x35_lrfloor_s3501", "rb_x35_x48kffn_s3501"]
+                   "rb_x35_n1p_s3502", "rb_x35_lrfloor_s3501", "rb_x35_x48kffn_s3501", "rb_x63c_s6302"]
 
 
 @pytest.mark.parametrize("name", PRODUCTION_ARMS)

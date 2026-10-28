@@ -98,6 +98,13 @@ decide`` (X47). The record names its arm and look; a record for another arm or l
   :data:`STAGES`. It is read by N4's ONE-look screen rule at s3501-s3503, so there is no look 2 and no look-2
   licence: :func:`stage_status` gives it the AM-8 side gate and nothing else. Its read record is
   ``reads/x48_look1.json``, arm label ``X48``.
+* **X63-C, THE X63 CONTROL REPLICATE** (``reviews/x63_review_2026-10-27.md`` B1 fix 3; PREREG
+  ``x63c_control_replicate_2026-10-28/PREREG.md``, :data:`X63C_PREREG`): ``x63c`` (:data:`X63C_ARMS`) is X26c's
+  recorded argv with only the seed (6302) and run name changed, a +100M continuation from X26 @380M (not P*), with no
+  lever. It is SIDE-PINNED at the production pin (X26c's own pin ``f4b25238``), held by :data:`X63C_STAGES`, never
+  :data:`STAGES`; :func:`stage_status` gives it the AM-8 side gate and its PREREG (PENDING until the file exists). Its
+  pool is checked against X26c's recorded seed (``kit.reference_pool_names``), never this module's :data:`POOL_FILE`.
+  Its run name is not ``rb_x35*``, so :func:`_side_pinned_dirs` lists it by name. Arm label ``X63C``.
 * **THE G-E READERS** (``main.x35.ge``; launch sheet §0 "G-E readers"): ``ge_a1`` / ``ge_a2`` / ``ge_d1`` / ``ge_c0``
   are not batch-1 ARMS (not in :data:`STAGES`, the disk count or AM-6's K9(b) pre-check) but they run at the SIDE'S
   pin: :func:`pin_check` judges their recorded pins with the side's batch-1 runs, and :func:`stage_status` gives a
@@ -201,7 +208,11 @@ D3_ARMS = ("d3",)
 N1P_ARMS = ("n1p",)
 #: X48, per-token-kind FFN experts (2026-10-27): one production arm at the side pin, read by N4's one-look screen.
 X48_ARMS = ("x48",)
-SIDE_PINNED_ARMS = BATCH1_ARMS + BATCH2_ARMS + R0_ARMS + X52_ARMS + D3_ARMS + N1P_ARMS + X48_ARMS
+#: X63-C, the X63 control replicate (2026-10-28): one production arm at the side pin (X26c's), forking X26 @380M.
+X63C_ARMS = ("x63c",)
+#: X63-C's registration: its stage-check is PENDING until this file exists (repo-relative, read in the kit's checkout).
+X63C_PREREG = "designs/research_state/measurements/x63c_control_replicate_2026-10-28/PREREG.md"
+SIDE_PINNED_ARMS = BATCH1_ARMS + BATCH2_ARMS + R0_ARMS + X52_ARMS + D3_ARMS + N1P_ARMS + X48_ARMS + X63C_ARMS
 #: AM-D1-FIX (launch sheet §0, 2026-10-22): D1's pin. The production pin ``f4b25238`` + the corpus label-guard commit
 #: (``fix(team corpora): refuse teams the env's label path cannot encode ...``), rebuilt onto it with only
 #: ``src/utils/team_corpora/`` replaced. Kept reachable by the local branch ``x35-d1-pin``.
@@ -278,10 +289,15 @@ N1P_STAGES: Tuple[Tuple[str, Tuple[Tuple[str, int], ...]], ...] = (
 X48_STAGES: Tuple[Tuple[str, Tuple[Tuple[str, int], ...]], ...] = (
     ("X48", (("x48", 3501), ("x48", 3502), ("x48", 3503))),
 )
+#: X63-C's stage (2026-10-28, review B1 fix 3): one seed, on the orchestrator's GO once its PREREG exists. Its comparators
+#: are X26c (s2601) and X63's own continuation, not C0. Never merged into STAGES.
+X63C_STAGES: Tuple[Tuple[str, Tuple[Tuple[str, int], ...]], ...] = (
+    ("X63C", (("x63c", 6302),)),
+)
 #: The arm label each read record carries (``readout`` A1 / A2 / SPRT / LRF, ``d1`` X38, ``d3`` X41, ``n1p`` X61P,
-#: ``x47`` X47, ``x48`` X48).
+#: ``x47`` X47, ``x48`` X48, ``x63c`` X63C).
 READ_LABEL = {"a1": "A1", "a2": "A2", "d1": "X38", "d3": "X41", "n1p": "X61P", "toy_a1": "A1", "toy_a2": "A2", "toy_x47": "X47",
-              "sprt": "SPRT", "toy_sprt": "SPRT", "lrfloor": "LRF", "toy_lrfloor": "LRF", "x48": "X48"}
+              "sprt": "SPRT", "toy_sprt": "SPRT", "lrfloor": "LRF", "toy_lrfloor": "LRF", "x48": "X48", "x63c": "X63C"}
 #: The toy arms whose look-1 CONTINUE licenses toy C0's look-2 seeds s3604-s3605 (their shared control).
 TOY_LOOK2_LICENSORS = ("toy_x47", "toy_a1", "toy_a2", "toy_lrfloor", "toy_sprt")
 #: Where a read record keeps its PRIMARY when it is not R1 (``d1.D1Verdict``: H).
@@ -320,14 +336,15 @@ def side_of_run(base: str) -> str:
 
 
 def _side_pinned_dirs(models_dir: str, *, readers: bool = False) -> Tuple[List[Tuple[str, str]], List[str]]:
-    """``([(dir name, run name)], [other rb_x35* dirs])``; ``<run>.<SUFFIX>`` (moved aside) counts as its run."""
+    """``([(dir name, run name)], [other rb_x35* dirs])``; ``<run>.<SUFFIX>`` (moved aside) counts as its run. A
+    side-pinned run not named ``rb_x35*`` (X63-C's ``rb_x63c_*``) is found by its registered name."""
     names = side_pinned_run_names(readers=readers)
     ours: List[Tuple[str, str]] = []
     other: List[str] = []
     if not os.path.isdir(models_dir):
         return ours, other
     for d in sorted(os.listdir(models_dir)):
-        if not d.startswith("rb_x35") or not os.path.isdir(os.path.join(models_dir, d)):
+        if not (d.startswith("rb_x35") or d.split(".", 1)[0] in names) or not os.path.isdir(os.path.join(models_dir, d)):
             continue
         base = d.split(".", 1)[0]
         if base in names:
@@ -804,7 +821,7 @@ def _look2_licence(stage: str, arm: str) -> Tuple[str, str]:
 
 
 def stage_of(arm: str, seed: int) -> Optional[str]:
-    for name, forks in STAGES + BATCH2_STAGES + R0_STAGES + X52_STAGES + D3_STAGES + N1P_STAGES + X48_STAGES:
+    for name, forks in STAGES + BATCH2_STAGES + R0_STAGES + X52_STAGES + D3_STAGES + N1P_STAGES + X48_STAGES + X63C_STAGES:
         if (arm, seed) in forks:
             return name
     return None
@@ -828,6 +845,15 @@ def stage_status(stage: str, arm: str, seed: int) -> Tuple[str, str]:
         tag = ("AM-X52" if arm in X52_ARMS else "X48 PREREG: one look, the orchestrator's GO" if arm in X48_ARMS
                else "AM-R0")
         return ALLOWED, f"{arm} s{seed}: no unmet condition (stage {stage_of(arm, seed)}, {tag})"
+    if arm in X63C_ARMS:                     # X63-C: the side gate, then its PREREG (the orchestrator's GO)
+        filled, why = side_gate(stage, "production")
+        if not filled:
+            return PENDING, why
+        from utils.paths import repo_path
+
+        if not repo_path(X63C_PREREG).is_file():
+            return PENDING, f"{arm} s{seed}: its PREREG {X63C_PREREG} is not in this checkout yet"
+        return ALLOWED, f"{arm} s{seed}: no unmet condition (stage {stage_of(arm, seed)}, X63-C PREREG present)"
     if arm in D3_ARMS + N1P_ARMS:            # AM-D3 / AM-N1P: the side gate; look 2 only on its own look-1 CONTINUE
         filled, why = side_gate(stage, "production")
         if not filled:

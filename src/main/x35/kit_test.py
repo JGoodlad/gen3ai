@@ -621,3 +621,154 @@ def test_the_verdict_fails_x48_transcripts_read_as_c0_or_as_x47s_growth():
     assert not ok and "trunk_ffn_by_kind" in line, line
     ok, line = K.check_validation(K.describe("x48", 3501, call), dry, chk, 0, 3)   # the hidden card: exit 3
     assert not ok and "dry-run exit 3" in line, line
+
+
+# ------------------------------------------------- X63-C (X63 review B1 fix 3): the control replicate from X26 @380M
+#: X26c's RECORDED argv, the launcher's own flags (``--restart-interval-hours 24 --pin-commit f4b25238…``, which
+#: ``launch_x35.sh`` adds) removed: ``models/rb_x26c_s2601/metadata.json`` ``original_command`` (immutable; read
+#: 2026-10-28 through json). Embedded, never read from models/, so this test needs no run archive.
+X26C_ARGV = ("--model /home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_380000195_steps.zip "
+             "--behaviour-check warn --steps 480000195 --checkpoint-every-steps 1000000 --device cuda --seed 2601 "
+             "--run-name rb_x26c_s2601").split()
+
+
+def test_x63c_is_x26cs_recorded_argv_with_only_the_seed_and_run_changed():
+    want = list(X26C_ARGV)
+    want[want.index("--seed") + 1] = "6302"
+    want[want.index("--run-name") + 1] = "rb_x63c_s6302"
+    got = K.build_argv("x63c", 6302, _real_production_call())
+    assert got == want                                                   # token for token, the order too
+    assert [i for i, (g, x) in enumerate(zip(got, X26C_ARGV)) if g != x] == [want.index("6302"), len(want) - 1]
+
+
+def test_x63c_forks_x26_at_380m_not_pstar():
+    call = _real_production_call()
+    s = K.start_node("x63c", call)
+    assert s["step"] == 380_000_195 and s["sha256"].startswith("7e0ebe942eaa")
+    assert s["path"].endswith("/rb_x26_s2601/checkpoints/checkpoint_380000195_steps.zip")
+    assert K.start_node("c0", call)["path"] == call["pstar"]["path"]                     # every other arm: P*
+    d = K.describe("x63c", 6302, standin_call())          # the stand-in's start file is absent: no sha to compare
+    assert d["delta_text"] == "+100,000,000 steps" and d["delta_steps"] == 100_000_000 and d["behaviour"] == "warn"
+    assert d["parent_run_dir"] == "models/rb_x26_s2601" == K.describe("c0", 3501, standin_call())["parent_run_dir"]
+    assert d["run_name"] == "rb_x63c_s6302" and d["side"] == "production" and d["k9b_ceilings"] is None
+    assert set(flags(d["argv"])) == set(flags(K.build_argv("c0", 3501, standin_call())))   # no lever: C0's flags
+
+
+@pytest.mark.parametrize("seed", [6301, 6303, 3501, 2601])
+def test_x63c_refuses_every_seed_but_6302(seed):
+    with pytest.raises(K.KitError, match="not registered"):
+        K.build_argv("x63c", seed, standin_call())
+
+
+def test_x63c_refuses_the_toy_call_and_a_pstar_outside_x26():
+    with pytest.raises(K.KitError, match="reads the production call record"):
+        K.build_argv("x63c", 6302, toy_call())
+    other = standin_call()
+    other["pstar"] = dict(other["pstar"], path="models/rb_x99_s1/checkpoints/checkpoint_180000055_steps.zip")
+    with pytest.raises(K.KitError, match="not rb_x26_s2601"):
+        K.build_argv("x63c", 6302, other)
+
+
+def _x63c_tree(tmp_path: Path, start_bytes: bytes = b"x26 at 380M"):
+    """A fake models/: rb_x26_s2601 (P*'s run, the 380M checkpoint, 3 snapshots) + rb_x26c_s2601's pool_seed.json."""
+    models = tmp_path / "models"
+    ck = models / "rb_x26_s2601" / "checkpoints"
+    ck.mkdir(parents=True)
+    (ck / "checkpoint_380000195_steps.zip").write_bytes(start_bytes)
+    snaps = models / "rb_x26_s2601" / "snapshots"
+    snaps.mkdir()
+    for st in (164000130, 376000163, 279000000):
+        (snaps / f"snapshot_{st:012d}.zip").write_bytes(f"s{st}".encode())
+    ref = models / "rb_x26c_s2601" / "snapshots"
+    ref.mkdir(parents=True)
+    names = sorted(f"snapshot_{st:012d}.zip" for st in (164000130, 279000000, 376000163))
+    (ref / "pool_seed.json").write_text(json.dumps({"schema": 2, "parent_run_name": "rb_x26_s2601",
+                                                    "fork_step": 380000195, "snapshots": names}))
+    call = {"side": "production", "archive": [],
+            "pstar": {"label": "x26_pstar", "path": str(ck / "checkpoint_280000170_steps.zip"), "step": 280000170,
+                      "sha256": "shaP"}}
+    return models, call, names
+
+
+def test_x63c_describe_refuses_a_start_file_whose_sha256_moved(tmp_path, monkeypatch):
+    models, call, _ = _x63c_tree(tmp_path)
+    with pytest.raises(K.KitError, match="the file moved"):
+        K.describe("x63c", 6302, call)
+    from main.x35.refpop import sha256_file
+    monkeypatch.setitem(K.X63C_START, "sha256", sha256_file(models / "rb_x26_s2601" / "checkpoints"
+                                                            / "checkpoint_380000195_steps.zip"))
+    assert K.describe("x63c", 6302, call)["parent_run_dir"] == str(models / "rb_x26_s2601")
+    K.describe("c0", 3501, call)                                       # P*-forking arms never hash a start file
+
+
+X63C_LINE = "🌱 [SELFPLAY] [pool] seeded 3 snapshots + metadata from rb_x26_s2601 [step filter <= 380000195: none later]"
+
+
+def _x63c_seeded(tmp_path: Path, names, fork_step: int = 380000195) -> Path:
+    run = tmp_path / "rb_x63c_s6302"
+    (run / "snapshots").mkdir(parents=True)
+    (run / "snapshots" / "pool_seed.json").write_text(json.dumps(
+        {"schema": 2, "fork_step": fork_step, "snapshots": list(names), "dropped_steps": []}))
+    return run
+
+
+def test_x63c_pool_seed_passes_at_380m_with_x26cs_set_and_fails_with_pstars(tmp_path):
+    _, call, names = _x63c_tree(tmp_path)
+    ref = K.reference_pool_names("x63c", call)
+    assert ref == names
+    run = _x63c_seeded(tmp_path / "a", names)
+    assert K.check_pool_seed("x63c", str(run), call, X63C_LINE, 380000195, ref) == ("PASS", [])
+    # P*'s step: the record, the startup line and the checkpoint all at 280,000,170
+    run = _x63c_seeded(tmp_path / "b", names[:2], fork_step=280000170)
+    st, probs = K.check_pool_seed("x63c", str(run), call, X63C_LINE.replace("380000195", "280000170"), 280000170, ref)
+    assert st == "FAIL" and any("registered step 380000195" in p for p in probs), probs
+    # P*'s seeded set (what the side's record holds) at the right step
+    run = _x63c_seeded(tmp_path / "c", names[:2])
+    st, probs = K.check_pool_seed("x63c", str(run), call, X63C_LINE, 380000195, ref)
+    assert st == "FAIL" and any("missing ['snapshot_000376000163.zip']" in p for p in probs), probs
+
+
+@pytest.mark.parametrize("over,why", [({"fork_step": 280000170}, "fork_step 280000170"), ({"schema": 1}, "schema 1"),
+                                      ({"parent_run_name": "rb_x35_c0_s3501"}, "not the start node's run"),
+                                      ({"snapshots": []}, "no seeded snapshot")])
+def test_x63c_refuses_a_reference_that_is_not_a_seed_of_its_start_node(tmp_path, over, why):
+    models, call, _ = _x63c_tree(tmp_path)
+    p = models / "rb_x26c_s2601" / "snapshots" / "pool_seed.json"
+    p.write_text(json.dumps(dict(json.loads(p.read_text()), **over)))
+    with pytest.raises(K.KitError, match=why):
+        K.reference_pool_names("x63c", call)
+
+
+def test_x63c_pool_check_compares_with_x26c_and_never_writes_the_sides_record(tmp_path, capsys):
+    models, call, _ = _x63c_tree(tmp_path)
+    stage = tmp_path / "stage"
+    stage.mkdir()
+    cf = tmp_path / "call.json"
+    cf.write_text(json.dumps(call))
+    for extra in ([], ["--write"]):
+        assert K.main(["pool-check", "--arm", "x63c", "--call", str(cf), "--stage", str(stage), *extra]) == 0
+        out = capsys.readouterr().out
+        assert "PASS" in out and "rb_x26c_s2601's recorded seed (3 snapshot(s)" in out, out
+    assert "--write records nothing for x63c" in out and not list(stage.iterdir())      # no POOL_FILE, nothing at all
+    (models / "rb_x26_s2601" / "snapshots" / "snapshot_000300000000.zip").write_bytes(b"new")
+    assert K.main(["pool-check", "--arm", "x63c", "--call", str(cf), "--stage", str(stage), "--write"]) == 1
+    assert "extra ['snapshot_000300000000.zip']" in capsys.readouterr().out and not list(stage.iterdir())
+
+
+def test_x63c_pool_seed_check_cli_reads_x26cs_set_and_its_start_steps(tmp_path, capsys, monkeypatch):
+    from agents.training import lineage
+
+    _, call, names = _x63c_tree(tmp_path)
+    cf = tmp_path / "call.json"
+    cf.write_text(json.dumps(call))
+    log = tmp_path / "launcher.log"
+    log.write_text(X63C_LINE + "\n")
+    seen = []
+    monkeypatch.setattr(lineage, "checkpoint_num_timesteps", lambda p: seen.append(p) or 380000195)
+    run = _x63c_seeded(tmp_path / "r", names)
+    assert K.main(["pool-seed-check", "--arm", "x63c", "--run-dir", str(run), "--call", str(cf), "--log", str(log),
+                   "--stage", str(tmp_path / "no_stage")]) == 0, capsys.readouterr().out
+    assert seen == [K.start_node("x63c", call)["path"]]
+    run = _x63c_seeded(tmp_path / "s", names[:2])
+    assert K.main(["pool-seed-check", "--arm", "x63c", "--run-dir", str(run), "--call", str(cf), "--log", str(log)]) == 1
+    assert "missing" in capsys.readouterr().out

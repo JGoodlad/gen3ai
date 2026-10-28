@@ -42,7 +42,13 @@ canonical flag order (the order carries no meaning to the trainer's parser):
   ``x48_kffn_production_2026-10-27/PREREG.md``): ``x48`` -- C0's argv token for token + the ONE lever ``--grow
   trunk_ffn_by_kind=on`` (B-KFFN, a DECLARED function-preserving growth at the fork), seeds 3501-3503 ONLY (N4's
   one-look screen rule: no look 2), side-pinned at the production pin (B-KFFN ``3f69e6e2e`` is an ancestor of
-  ``f4b25238``), read against C0 s3501-s3503 at the same pin, re-played in X48's read.
+  ``f4b25238``), read against C0 s3501-s3503 at the same pin, re-played in X48's read;
+* X63-C, THE X63 CONTROL REPLICATE (``design_x63_long_breadth_continuation.md``; ``reviews/x63_review_2026-10-27.md``
+  B1 fix 3; PREREG ``x63c_control_replicate_2026-10-28/PREREG.md``): ``x63c`` -- X26c's recorded argv token for token
+  with only ``--seed`` (6302) and ``--run-name`` changed, +100M, side-pinned at the production pin. It has NO lever:
+  it measures the +100M seed spread. Its START NODE is not P*: it forks X26 @380,000,195 (:data:`X63C_START`, the
+  checkpoint X26c forked; ``describe`` refuses it if its sha256 moved), and its pool reference is X26c's own recorded
+  seeded set (:func:`reference_pool_names`), never the production side's P* record (``pool-check`` writes nothing).
 
     python -m main.x35.kit describe --arm a1 --seed 3501 --call <R_production.json> [--phase1 <record>]
     python -m main.x35.kit describe --arm ge_a1 --seed 3501 --call <R_production.json> [--models-dir D]   # a G-E reader
@@ -146,6 +152,20 @@ X47_GROWTH = "trunk_layers 2 -> 4"
 X48_LEVER = ("--grow", "trunk_ffn_by_kind=on")
 #: What ``checkargs`` / ``--dry-run`` print for it (the 2026-10-27 transcripts at ``f4b25238``).
 X48_GROWTH = "trunk_ffn_by_kind 'off' -> 'on'"
+#: X63-C's START NODE (``x63_review_2026-10-27.md`` B1 fix 3): X26 @380,000,195, the checkpoint X26c
+#: (``rb_x26c_s2601``) forked at ``f4b25238`` (its ``metadata.json`` ``original_command``). The file is resolved in the
+#: run directory of the call record's P* (the same run, ``rb_x26_s2601``), as P*'s own path is; the sha256 was computed
+#: read-only with ``sha256sum`` on 2026-10-28 (``main.lineage``'s short ``7e0ebe942eaa``).
+X63C_START: Dict[str, Any] = {"label": "x26_380m", "run": "rb_x26_s2601", "file": "checkpoint_380000195_steps.zip",
+                              "step": 380_000_195,
+                              "sha256": "7e0ebe942eaaac69f1a5ef123d236fbb69f1e7a9fe32011f4d7e0e833dfbf6fd"}
+#: The arms whose start node is a REGISTERED node, not the call record's P* (:func:`start_node`).
+START_NODES: Dict[str, Dict[str, Any]] = {"x63c": X63C_START}
+#: The run whose recorded ``pool_seed.json`` is X63-C's pool reference: X26c forked the same checkpoint at the same pin,
+#: so its seeded set is the set X63-C's fork must seed (a sibling of the start node's run under ``models/``).
+X63C_POOL_REFERENCE_RUN = "rb_x26c_s2601"
+#: The arms whose pool reference is a sibling run's recorded seed (:func:`reference_pool_names`), not the side's record.
+POOL_REFERENCE_RUNS: Dict[str, str] = {"x63c": X63C_POOL_REFERENCE_RUN}
 #: The declared growth each growing arm's transcripts must show (in BOTH tools); every other arm must show none.
 ARM_GROWTH: Dict[str, str] = {"toy_x47": X47_GROWTH, "x48": X48_GROWTH}
 #: C3 (orchestrator, 2026-10-19): the toy arms run ``--behaviour-check warn`` (K9(b)), as T*'s own run X34 does
@@ -178,6 +198,10 @@ PROD_SEEDS = tuple(range(3501, 3506))
 TOY_SEEDS = tuple(range(3601, 3606))
 #: X48: ONE look at three seeds under N4's screen rule (PREREG x48_kffn_production_2026-10-27 §3); more is a new registration
 X48_SEEDS = (3501, 3502, 3503)
+#: X63-C: one seed, the control replicate of X63 (review B1 fix 3); more is a new registration
+X63C_SEEDS = (6302,)
+#: X63-C's length: X63's +100M continuation from X26 @380M (X26c's own +100M).
+L_X63C = 100_000_000
 X47_SEEDS = TOY_SEEDS   # X47: look 1 at 3601-3603, look 2 at 3604-3605 (AM-4, orchestrator 2026-10-19), against toy C0 at the same seeds
 ARMS: Dict[str, Arm] = {a.name: a for a in (
     Arm("c0", "production", L_PROD, PROD_SEEDS, "rb_x35_c0_s{seed}", 0, "warn"),
@@ -190,6 +214,8 @@ ARMS: Dict[str, Arm] = {a.name: a for a in (
     Arm("n1p", "production", L_PROD, PROD_SEEDS, "rb_x35_n1p_s{seed}", 0, "warn"),
     # X48, per-token-kind FFN experts (PREREG x48_kffn_production_2026-10-27): N4's one-look screen at s3501-s3503
     Arm("x48", "production", L_PROD, X48_SEEDS, "rb_x35_x48kffn_s{seed}", 0, "warn"),
+    # X63-C, the X63 control replicate (review B1 fix 3): X26c's argv, seed and run changed; start X26 @380M, not P*
+    Arm("x63c", "production", L_X63C, X63C_SEEDS, "rb_x63c_s{seed}", 0, "warn"),
     Arm("a3_mx", "production", L_EXPLOITER, (3511, 3512, 3513), "rb_x35_mx_s{seed}", 1, "warn"),
     Arm("a3", "production", L_PROD, PROD_SEEDS, "rb_x35_a3mx_s{seed}", 2, "warn", phase1_of="a3_mx"),
     Arm("a6_lx", "production", L_EXPLOITER, (3521, 3522, 3523), "rb_x35_lx_s{seed}", 1, "warn"),
@@ -262,6 +288,34 @@ def run_name(arm: str, seed: int) -> str:
     return _arm(arm, seed).run.format(seed=seed)
 
 
+def start_node(arm: str, call: Mapping[str, Any]) -> Dict[str, Any]:
+    """The node ``arm`` forks: ``{label, path, step, sha256}``. The call record's P* for every arm but those with a
+    registered start node (:data:`START_NODES`: X63-C's X26 @380M), whose file is resolved in P*'s run directory and
+    must be the registered run's."""
+    node = START_NODES.get(canonical_arm(arm))
+    if node is None:
+        p = call["pstar"]
+        return {"label": p.get("label"), "path": str(p["path"]), "step": int(p["step"]), "sha256": p.get("sha256")}
+    run_dir = _run_dir_of(str(call["pstar"]["path"]))
+    if Path(run_dir).name != node["run"]:
+        raise KitError(f"arm {arm} forks {node['run']} @{node['step']:,}, but the call record's P* is in "
+                       f"{Path(run_dir).name}, not {node['run']}")
+    return {"label": node["label"], "path": str(Path(run_dir) / "checkpoints" / node["file"]), "step": node["step"],
+            "sha256": node["sha256"]}
+
+
+def verify_start_node(arm: str, call: Mapping[str, Any]) -> None:
+    """A registered start node (:data:`START_NODES`) whose file exists must still hash to its registered sha256."""
+    if canonical_arm(arm) not in START_NODES:
+        return
+    s = start_node(arm, call)
+    if os.path.exists(s["path"]):
+        got = sha256_file(s["path"])
+        if got != s["sha256"]:
+            raise KitError(f"arm {arm}'s start node {s['path']} has sha256 {got[:12]}, not the registered "
+                           f"{s['sha256'][:12]} (X63C_START): the file moved")
+
+
 def build_argv(arm: str, seed: int, call: Mapping[str, Any], phase1: Optional[Mapping[str, Any]] = None,
                target: Optional[Mapping[str, Any]] = None) -> List[str]:
     """The trainer argv (the launcher's own flags excluded) of one arm × seed. A G-E reader needs its ``target``
@@ -277,7 +331,8 @@ def build_argv(arm: str, seed: int, call: Mapping[str, Any], phase1: Optional[Ma
         return _R0.build_r0_argv(arm, seed, call, run_name=run_name(arm, seed), behaviour=a.behaviour,
                                  ckpt_every=CKPT_EVERY, extras=TOY_EXTRAS if a.side == "toy" else ())
     p = call["pstar"]
-    start, step = str(p["path"]), int(p["step"])
+    s = start_node(arm, call)
+    start, step = str(s["path"]), int(s["step"])
     head = ["--model", start]
     lever: List[str] = []
     if arm == "a3_mx":
@@ -329,9 +384,9 @@ def _run_dir_of(path: str) -> str:
     return str(p.parent.parent if p.parent.name == "checkpoints" else p.parent)
 
 
-def parent_run_dir(call: Mapping[str, Any]) -> str:
-    """The run the fork's dry-run must name: the start node's run directory."""
-    return _run_dir_of(str(call["pstar"]["path"]))
+def parent_run_dir(call: Mapping[str, Any], arm: Optional[str] = None) -> str:
+    """The run the fork's dry-run must name: the start node's run directory (P*'s unless ``arm`` registers its own)."""
+    return _run_dir_of(str(start_node(arm, call)["path"]) if arm else str(call["pstar"]["path"]))
 
 
 def reader_target(arm: str, seed: int, call: Mapping[str, Any], *, models_dir: Optional[str] = None,
@@ -354,7 +409,8 @@ def describe(arm: str, seed: int, call: Mapping[str, Any],
              phase1: Optional[Mapping[str, Any]] = None, target: Optional[Mapping[str, Any]] = None) -> Dict[str, Any]:
     a = _arm(arm, seed)
     argv = build_argv(arm, seed, call, phase1, target)
-    parent = _run_dir_of(str(target["path"])) if a.phase == _GE.READER_PHASE and target else parent_run_dir(call)
+    verify_start_node(arm, call)
+    parent = _run_dir_of(str(target["path"])) if a.phase == _GE.READER_PHASE and target else parent_run_dir(call, arm)
     return {"arm": a.name, "seed": seed, "side": a.side, "phase": a.phase, "run_name": run_name(arm, seed),
             "parent_run_dir": parent, "delta_steps": a.length, "delta_text": f"+{a.length:,} steps",
             "behaviour": a.behaviour, "k9b_ceilings": dict(K9B_TOY_CEILINGS) if a.side == "toy" else None,
@@ -486,7 +542,8 @@ def check_pool_seed(arm: str, run_dir: str, call: Mapping[str, Any], log_text: s
     """T54's post-spawn check (``--dry-run`` cannot preview it: the seed runs in the child). ``(status, problems)``,
     status PASS / FAIL / PENDING (the record is not written yet). FAIL iff ``pool_seed.json`` is not schema 2, its
     ``fork_step`` is NULL (T54 only WARNS and seeds unfiltered when it cannot read the step: a HOLD here) or differs
-    from P*'s ``num_timesteps`` (and the call record's step), a seeded snapshot is later than it, or the startup
+    from the start node's ``num_timesteps`` (and its step: the call record's P*, or the arm's registered
+    :data:`START_NODES` entry), a seeded snapshot is later than it, or the startup
     line "[step filter <= N: …]" disagrees with the record (or says the filter is OFF), or -- POOL, 2026-10-19 --
     the seeded names differ from ``expected_names`` (the side's recorded set, ``batch.POOL_FILE``)."""
     from agents.training.pool_seed import SEED_RECORD_FILE, pool_dir_for, snapshot_step
@@ -504,14 +561,16 @@ def check_pool_seed(arm: str, run_dir: str, call: Mapping[str, Any], log_text: s
     if rec.get("schema") != POOL_SEED_SCHEMA:
         probs.append(f"pool_seed.json schema {rec.get('schema')!r} != {POOL_SEED_SCHEMA} (a pin without T54?)")
     fs = rec.get("fork_step")
-    want = int(call["pstar"]["step"])
+    want = int(start_node(arm, call)["step"])
+    who = "P*" if canonical_arm(arm) not in START_NODES else f"the start node {START_NODES[canonical_arm(arm)]['label']}"
     if fs is None:
         probs.append("fork_step is NULL: T54 could not read the fork step and seeded UNFILTERED")
     else:
         if fork_num_timesteps is None or int(fs) != int(fork_num_timesteps):
-            probs.append(f"fork_step {fs} != P*'s num_timesteps {fork_num_timesteps}")
+            probs.append(f"fork_step {fs} != {who}'s num_timesteps {fork_num_timesteps}")
         if int(fs) != want:
-            probs.append(f"fork_step {fs} != the call record's P* step {want}")
+            probs.append(f"fork_step {fs} != the call record's P* step {want}" if who == "P*"
+                         else f"fork_step {fs} != {who}'s registered step {want}")
         late = [n for n in rec.get("snapshots") or [] if (st := snapshot_step(n)) is None or st > int(fs)]
         if late:
             probs.append(f"seeded snapshot(s) later than fork_step {fs} (or unnamed): {late}")
@@ -533,6 +592,55 @@ def check_pool_seed(arm: str, run_dir: str, call: Mapping[str, Any], log_text: s
         if logged != sorted(rec.get("dropped_steps") or []) or (k and int(k) != len(logged)):
             probs.append(f"the startup line's dropped steps {logged} != the record's {rec.get('dropped_steps')}")
     return ("FAIL" if probs else "PASS"), probs
+
+
+def reference_pool_names(arm: str, call: Mapping[str, Any]) -> List[str]:
+    """The seeded set an arm with a pool REFERENCE RUN (:data:`POOL_REFERENCE_RUNS`: X63-C's X26c) must seed: that run's
+    recorded ``pool_seed.json`` names, a sibling of the start node's run. The record must be schema 2, seeded from the
+    start node's run at the start node's step (else it is not the same fork and is no reference)."""
+    from agents.training.pool_seed import SEED_RECORD_FILE, pool_dir_for
+
+    arm = canonical_arm(arm)
+    ref = POOL_REFERENCE_RUNS.get(arm)
+    if ref is None:
+        raise KitError(f"arm {arm} has no pool reference run (its reference is the side's record, batch.POOL_FILE)")
+    s = start_node(arm, call)
+    parent = _run_dir_of(s["path"])
+    path = Path(pool_dir_for(str(Path(parent).parent / ref))) / SEED_RECORD_FILE
+    try:
+        rec = json.loads(path.read_text())
+    except (OSError, ValueError) as exc:
+        raise KitError(f"{arm}'s pool reference {path} is unreadable ({exc})") from exc
+    probs = []
+    if rec.get("schema") != POOL_SEED_SCHEMA:
+        probs.append(f"schema {rec.get('schema')!r} != {POOL_SEED_SCHEMA}")
+    if rec.get("fork_step") != s["step"]:
+        probs.append(f"fork_step {rec.get('fork_step')!r} != the start node's {s['step']}")
+    if rec.get("parent_run_name") != Path(parent).name:
+        probs.append(f"seeded from {rec.get('parent_run_name')!r}, not the start node's run {Path(parent).name}")
+    names = rec.get("snapshots")
+    if not names or not isinstance(names, list):
+        probs.append("no seeded snapshot names")
+    if probs:
+        raise KitError(f"{arm}'s pool reference {path} is not a seed of its start node: " + "; ".join(probs))
+    return [str(n) for n in names]
+
+
+def reference_pool_check(arm: str, call: Mapping[str, Any], *, write: bool = False) -> Tuple[bool, str]:
+    """``pool-check`` for an arm with a pool reference run (X63-C): the start node's seeded set, computed as
+    :func:`batch.expected_pool` computes P*'s, must name exactly the reference run's recorded set. It NEVER writes a
+    record (``write`` only says so): the side's ``batch.POOL_FILE`` is P*'s set and belongs to the side's arms."""
+    s = start_node(arm, call)
+    now = _B.expected_pool(_run_dir_of(s["path"]), int(s["step"]))
+    have = sorted(x["name"] for x in now["snapshots"])
+    want = sorted(reference_pool_names(arm, call))
+    ref = POOL_REFERENCE_RUNS[canonical_arm(arm)]
+    note = f"; --write records nothing for {arm} (the side's record is P*'s set)" if write else ""
+    if have != want:
+        return False, (f"the start node's seeded set is not {ref}'s recorded set: missing {sorted(set(want) - set(have))}, "
+                       f"extra {sorted(set(have) - set(want))}{note}")
+    return True, (f"pool set == {ref}'s recorded seed ({len(have)} snapshot(s) at or below {s['step']:,}, digest "
+                  f"{now['digest'][:12]}){note}")
 
 
 # ------------------------------------------------------------------------------------------------ pre-checks
@@ -742,12 +850,15 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
             call = _load(a.call)
             text = "".join(Path(x).read_text(errors="replace") for x in a.log if os.path.isfile(x))
-            names = _B.recorded_pool_names(a.stage, ARMS[a.arm].side) if a.stage else None
+            if a.arm in POOL_REFERENCE_RUNS:      # X63-C: its reference run's recorded seed, never the side's record
+                names: Optional[List[str]] = reference_pool_names(a.arm, call)
+            else:
+                names = _B.recorded_pool_names(a.stage, ARMS[a.arm].side) if a.stage else None
             if a.stage and names is None:
                 print(f"[x35 kit] pool seed: FAIL: no recorded {ARMS[a.arm].side} set in {a.stage} (POOL)")
                 return 1
             status, probs = check_pool_seed(a.arm, a.run_dir, call, text,
-                                            checkpoint_num_timesteps(str(call["pstar"]["path"])), names)
+                                            checkpoint_num_timesteps(str(start_node(a.arm, call)["path"])), names)
             print(f"[x35 kit] pool seed: {status}" + (f": {probs}" if probs else ""))
             return {"PASS": 0, "FAIL": 1}.get(status, 3)
         if a.cmd == "validate-run":
@@ -786,7 +897,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             return 0 if ok else 1
         if a.cmd == "pool-check":
             call = _load(a.call)
-            ok, line = _B.pool_check(a.stage, ARMS[a.arm].side, call, parent_run_dir(call), write=a.write)
+            if a.arm in POOL_REFERENCE_RUNS:      # X63-C: compared with X26c's seed; never writes the side's record
+                ok, line = reference_pool_check(a.arm, call, write=a.write)
+            else:
+                ok, line = _B.pool_check(a.stage, ARMS[a.arm].side, call, parent_run_dir(call), write=a.write)
             print(f"[x35 kit] pool-check: {'PASS' if ok else 'FAIL'}: {line}")
             return 0 if ok else 1
         if a.cmd == "gate":

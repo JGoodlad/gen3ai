@@ -4428,6 +4428,14 @@
    "contention": 1.12,
    "detail": ""
   },
+  "src/main/ops/canary_dump_replay_test.py::test_the_eager_arms_and_the_canary_check_run_on_the_real_learner_cpu": {
+   "status": "pass",
+   "commit": "b5cd22862f1430ac3cb113ffc9fa6c1ab793fbeb",
+   "at": "2026-10-28T12:14:08Z",
+   "duration_s": 24.89,
+   "contention": 1.0,
+   "detail": ""
+  },
   "src/main/ops/diag_bf16_canary_test.py::test_EVERY_route_of_the_GPU_read_RUNS_through_a_smoke_backend_on_cpu": {
    "status": "pass",
    "commit": "0dcf0ea4c8242a33319e3b1c46d57a72b5efde88",
@@ -4886,10 +4894,10 @@
   },
   "src/main/x35/kakuna_test.py::test_the_real_peer_started_from_a_derived_config_verifies_the_registry_weights": {
    "status": "pass",
-   "commit": "ddef070f8b5e72530459a2d3d2a56cf9fc2aedf6",
-   "at": "2026-10-27T20:52:55Z",
-   "duration_s": 8.12,
-   "contention": 1.56,
+   "commit": "b5cd22862f1430ac3cb113ffc9fa6c1ab793fbeb",
+   "at": "2026-10-28T12:14:08Z",
+   "duration_s": 6.12,
+   "contention": 1.1,
    "detail": ""
   },
   "src/node_free_search_integration_test.py::test_search_replay_and_the_prober_run_with_node_impossible": {
@@ -5197,5 +5205,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-27T21:41:01Z"
+ "last_written": "2026-10-28T12:14:08Z"
 }

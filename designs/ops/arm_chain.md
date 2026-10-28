@@ -77,6 +77,12 @@ The field rules:
   only, and the run keeps training until the orchestrator decides.
 - **A window's `on_fail` says what a failed window means.** `hold` stops the chain. `continue` hands off to the
   next arm.
+- **A window step never wraps itself in `gpu_lock.sh` or `mem_cap.sh`, nor runs a script that does.** A `"gpu": true`
+  step already runs under both. Nesting would still run: a nested `gpu_lock` is a re-entrant no-op (a verified
+  ancestor holder, or the lease token), and a nested `mem_cap` opens a sibling scope. But a wrapper script that
+  swallows its children's exit codes (`gpu_census.sh`) turns every failed read into one passing step, hidden from
+  the per-step lease check and budget. Split such a script into one step per process, as `main.ops.w0_window` emits
+  W0 (gpu_plan FINDING 5, resolved 2026-10-28).
 
 `x_*` keys are free extras; `x_dose_comparator` is copied into the dose record.
 
