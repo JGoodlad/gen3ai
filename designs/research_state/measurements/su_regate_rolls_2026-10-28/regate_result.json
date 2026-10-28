@@ -1,0 +1,548 @@
+{
+ "boundary": false,
+ "checks": {
+  "referee_tooth": {
+   "pass": true,
+   "same_pick_deviations": 398
+  },
+  "speed_pin_tooth": "pass",
+  "states": 1560
+ },
+ "control": false,
+ "primary": {
+  "est": 0.5986613577983049,
+  "hi": 0.649335274351156,
+  "lo": 0.5433699963839767,
+  "n": 362,
+  "per_panel": {
+   "forum72": [
+    0.5826086956521739,
+    115,
+    200
+   ],
+   "heldout72_hpfix": [
+    0.6201550387596899,
+    129,
+    180
+   ],
+   "p72": [
+    0.5932203389830508,
+    118,
+    200
+   ]
+  }
+ },
+ "reported": {
+  "decision_rows": {
+   "home72_sign": {
+    "est": 0.5511811023622047,
+    "hi": 0.6384615384615384,
+    "lo": 0.46211990595611285,
+    "n": 127,
+    "per_panel": {
+     "home72": [
+      0.5511811023622047,
+      127,
+      200
+     ]
+    }
+   },
+   "per_set": {
+    "forum72": {
+     "countable_deviations": 115,
+     "deviation_rate": {
+      "est": 0.40789473684210525,
+      "hi": 0.46374680438022053,
+      "lo": 0.3571381702287214,
+      "n": 380,
+      "per_panel": {
+       "forum72": [
+        0.40789473684210525,
+        380,
+        200
+       ]
+      }
+     },
+     "deviations": 155,
+     "excluded": 20,
+     "exclusion_rate": 0.05,
+     "games": 200,
+     "imp": {
+      "est": 0.010307017543859648,
+      "hi": 0.0206158443228133,
+      "lo": -0.0003298590455127638,
+      "n": 380,
+      "per_panel": {
+       "forum72": [
+        0.010307017543859648,
+        380,
+        200
+       ]
+      }
+     },
+     "leak": {
+      "attribution_miss": 189,
+      "rewritten_moves": 270,
+      "rewritten_switches": 7,
+      "states_with_rewrites": 170
+     },
+     "referee_cpu_s": {
+      "mean": 12.154529032258063,
+      "total": 1883.9519999999998
+     },
+     "search_cpu_s": {
+      "mean": 6.085255,
+      "median": 4.6525,
+      "total": 2434.102
+     },
+     "searched": 380,
+     "sign": {
+      "est": 0.5826086956521739,
+      "hi": 0.6666666666666666,
+      "lo": 0.4951381243118807,
+      "n": 115,
+      "per_panel": {
+       "forum72": [
+        0.5826086956521739,
+        115,
+        200
+       ]
+      }
+     },
+     "speed_flip": {
+      "control_failed": 0,
+      "mons": 1983,
+      "mons_pinned": 77,
+      "rate": 0.1875,
+      "states": 400,
+      "states_pinned": 75
+     },
+     "states": 400
+    },
+    "heldout72_hpfix": {
+     "countable_deviations": 129,
+     "deviation_rate": {
+      "est": 0.4329608938547486,
+      "hi": 0.4845959832400927,
+      "lo": 0.3788300835654596,
+      "n": 358,
+      "per_panel": {
+       "heldout72_hpfix": [
+        0.4329608938547486,
+        358,
+        180
+       ]
+      }
+     },
+     "deviations": 155,
+     "excluded": 2,
+     "exclusion_rate": 0.005555555555555556,
+     "games": 180,
+     "imp": {
+      "est": 0.02060055865921788,
+      "hi": 0.03666671205448611,
+      "lo": 0.006242273445691124,
+      "n": 358,
+      "per_panel": {
+       "heldout72_hpfix": [
+        0.02060055865921788,
+        358,
+        180
+       ]
+      }
+     },
+     "leak": {
+      "attribution_miss": 252,
+      "rewritten_moves": 182,
+      "rewritten_switches": 2,
+      "states_with_rewrites": 127
+     },
+     "referee_cpu_s": {
+      "mean": 9.90110322580645,
+      "total": 1534.6709999999998
+     },
+     "search_cpu_s": {
+      "mean": 4.206994444444445,
+      "median": 3.9035,
+      "total": 1514.518
+     },
+     "searched": 358,
+     "sign": {
+      "est": 0.6201550387596899,
+      "hi": 0.7112825256624492,
+      "lo": 0.5251651138105908,
+      "n": 129,
+      "per_panel": {
+       "heldout72_hpfix": [
+        0.6201550387596899,
+        129,
+        180
+       ]
+      }
+     },
+     "speed_flip": {
+      "control_failed": 0,
+      "mons": 1632,
+      "mons_pinned": 83,
+      "rate": 0.21666666666666667,
+      "states": 360,
+      "states_pinned": 78
+     },
+     "states": 360
+    },
+    "home72": {
+     "countable_deviations": 127,
+     "deviation_rate": {
+      "est": 0.3973684210526316,
+      "hi": 0.44828268583386405,
+      "lo": 0.34906746743788397,
+      "n": 380,
+      "per_panel": {
+       "home72": [
+        0.3973684210526316,
+        380,
+        200
+       ]
+      }
+     },
+     "deviations": 151,
+     "excluded": 20,
+     "exclusion_rate": 0.05,
+     "games": 200,
+     "imp": {
+      "est": 0.01025219298245614,
+      "hi": 0.023513342792378218,
+      "lo": -0.00219984715383532,
+      "n": 380,
+      "per_panel": {
+       "home72": [
+        0.01025219298245614,
+        380,
+        200
+       ]
+      }
+     },
+     "leak": {
+      "attribution_miss": 162,
+      "rewritten_moves": 240,
+      "rewritten_switches": 4,
+      "states_with_rewrites": 148
+     },
+     "referee_cpu_s": {
+      "mean": 12.042562913907286,
+      "total": 1818.4270000000001
+     },
+     "search_cpu_s": {
+      "mean": 5.257082499999999,
+      "median": 4.4670000000000005,
+      "total": 2102.8329999999996
+     },
+     "searched": 380,
+     "sign": {
+      "est": 0.5511811023622047,
+      "hi": 0.6384615384615384,
+      "lo": 0.46211990595611285,
+      "n": 127,
+      "per_panel": {
+       "home72": [
+        0.5511811023622047,
+        127,
+        200
+       ]
+      }
+     },
+     "speed_flip": {
+      "control_failed": 0,
+      "mons": 1985,
+      "mons_pinned": 73,
+      "rate": 0.1475,
+      "states": 400,
+      "states_pinned": 59
+     },
+     "states": 400
+    },
+    "p72": {
+     "countable_deviations": 118,
+     "deviation_rate": {
+      "est": 0.4005037783375315,
+      "hi": 0.44836272040302266,
+      "lo": 0.35025061054354356,
+      "n": 397,
+      "per_panel": {
+       "p72": [
+        0.4005037783375315,
+        397,
+        200
+       ]
+      }
+     },
+     "deviations": 159,
+     "excluded": 3,
+     "exclusion_rate": 0.0075,
+     "games": 200,
+     "imp": {
+      "est": 0.011859781696053735,
+      "hi": 0.025358199001291108,
+      "lo": -0.0010021400242983985,
+      "n": 397,
+      "per_panel": {
+       "p72": [
+        0.011859781696053735,
+        397,
+        200
+       ]
+      }
+     },
+     "leak": {
+      "attribution_miss": 206,
+      "rewritten_moves": 220,
+      "rewritten_switches": 4,
+      "states_with_rewrites": 156
+     },
+     "referee_cpu_s": {
+      "mean": 12.699251572327043,
+      "total": 2019.1809999999998
+     },
+     "search_cpu_s": {
+      "mean": 4.55353,
+      "median": 3.9545000000000003,
+      "total": 1821.412
+     },
+     "searched": 397,
+     "sign": {
+      "est": 0.5932203389830508,
+      "hi": 0.6796875,
+      "lo": 0.5041999444405861,
+      "n": 118,
+      "per_panel": {
+       "p72": [
+        0.5932203389830508,
+        118,
+        200
+       ]
+      }
+     },
+     "speed_flip": {
+      "control_failed": 0,
+      "mons": 1883,
+      "mons_pinned": 99,
+      "rate": 0.22,
+      "states": 400,
+      "states_pinned": 88
+     },
+     "states": 400
+    }
+   },
+   "u_minus_home72_sign": {
+    "est": 0.04748025543610013,
+    "hi": 0.14261144859425498,
+    "lo": -0.06149623439512519,
+    "sign": "+"
+   }
+  },
+  "imp_minus_gate": {
+   "U": {
+    "est": -0.0,
+    "hi": 0.0045,
+    "lo": -0.0043,
+    "n": 1092
+   },
+   "home72": {
+    "est": 0.0014,
+    "hi": 0.0117,
+    "lo": -0.0086,
+    "n": 357
+   }
+  },
+  "leak_split": {
+   "clean": {
+    "U": {
+     "est": 0.564,
+     "hi": 0.6386,
+     "lo": 0.4783,
+     "n": 182,
+     "per_panel": {
+      "forum72": [
+       0.5667,
+       60
+      ],
+      "heldout72_hpfix": [
+       0.5882,
+       68
+      ],
+      "p72": [
+       0.537,
+       54
+      ]
+     }
+    },
+    "home72": {
+     "est": 0.5385,
+     "hi": 0.6479,
+     "lo": 0.423,
+     "n": 78,
+     "per_panel": {
+      "home72": [
+       0.5385,
+       78
+      ]
+     }
+    }
+   },
+   "exposed": {
+    "U": {
+     "est": 0.6321,
+     "hi": 0.7021,
+     "lo": 0.5603,
+     "n": 180,
+     "per_panel": {
+      "forum72": [
+       0.6,
+       55
+      ],
+      "heldout72_hpfix": [
+       0.6557,
+       61
+      ],
+      "p72": [
+       0.6406,
+       64
+      ]
+     }
+    },
+    "home72": {
+     "est": 0.5714,
+     "hi": 0.7091,
+     "lo": 0.4375,
+     "n": 49,
+     "per_panel": {
+      "home72": [
+       0.5714,
+       49
+      ]
+     }
+    }
+   },
+   "share_exposed_of_searched": {
+    "forum72": 0.532,
+    "heldout72_hpfix": 0.492,
+    "home72": 0.466,
+    "p72": 0.552
+   }
+  },
+  "moved_vs_gate": {
+   "forum72": {
+    "both_agree_with_pi": 182,
+    "deviation_gained": 31,
+    "deviation_lost": 21,
+    "excluded_both": 9,
+    "excluded_rolls_only": 11,
+    "excluded_seed_only": 34,
+    "other_deviation": 27,
+    "same_deviation": 85
+   },
+   "heldout72_hpfix": {
+    "both_agree_with_pi": 184,
+    "deviation_gained": 23,
+    "deviation_lost": 17,
+    "excluded_rolls_only": 2,
+    "excluded_seed_only": 5,
+    "other_deviation": 17,
+    "same_deviation": 112
+   },
+   "home72": {
+    "both_agree_with_pi": 187,
+    "deviation_gained": 22,
+    "deviation_lost": 31,
+    "excluded_both": 16,
+    "excluded_rolls_only": 4,
+    "excluded_seed_only": 23,
+    "other_deviation": 31,
+    "same_deviation": 86
+   },
+   "p72": {
+    "both_agree_with_pi": 203,
+    "deviation_gained": 25,
+    "deviation_lost": 31,
+    "excluded_both": 2,
+    "excluded_rolls_only": 1,
+    "excluded_seed_only": 4,
+    "other_deviation": 19,
+    "same_deviation": 115
+   }
+  },
+  "speed_pin": {
+   "not_pinned": {
+    "U": {
+     "est": 0.5981,
+     "hi": 0.6561,
+     "lo": 0.5337,
+     "n": 289,
+     "per_panel": {
+      "forum72": [
+       0.5806,
+       93
+      ],
+      "heldout72_hpfix": [
+       0.6117,
+       103
+      ],
+      "p72": [
+       0.6022,
+       93
+      ]
+     }
+    },
+    "home72": {
+     "est": 0.5536,
+     "hi": 0.6491,
+     "lo": 0.4553,
+     "n": 112,
+     "per_panel": {
+      "home72": [
+       0.5536,
+       112
+      ]
+     }
+    }
+   },
+   "pinned": {
+    "U": {
+     "est": 0.6016,
+     "hi": 0.7124,
+     "lo": 0.4937,
+     "n": 73,
+     "per_panel": {
+      "forum72": [
+       0.5909,
+       22
+      ],
+      "heldout72_hpfix": [
+       0.6538,
+       26
+      ],
+      "p72": [
+       0.56,
+       25
+      ]
+     }
+    },
+    "home72": {
+     "est": 0.5333,
+     "hi": 0.7692,
+     "lo": 0.2999,
+     "n": 15,
+     "per_panel": {
+      "home72": [
+       0.5333,
+       15
+      ]
+     }
+    }
+   }
+  }
+ },
+ "schema": "gen3_su_regate_rolls_v1",
+ "verdict": "GO",
+ "verdict_line": "GO: pooled-U sign accuracy 0.599 [0.543, 0.649] (n 362; GO iff LB > 0.5)"
+}

@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-30,015-line file. **The ledger itself is append-only and is never edited by this**;
+30,059-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**982 headings · 927 dated · 2026-08-01 → 2026-10-28 · ledger 30,015 lines.**
+**983 headings · 928 dated · 2026-08-01 → 2026-10-28 · ledger 30,059 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -1002,3 +1002,4 @@ rename.
   - `L29889` · `2026-10-28` · MEASUREMENT · **H-CTX's A-K check reads UNDECIDED, detected weaker: with Kakuna piloting BOTH sides, rc72b scores 0.459 [0.428, 0.493] against home72 + forum72 teams (−28 Elo [−51, −5]; the bar is −35 Elo). The weakness is flat across rc72b's coherence thirds; post hoc and across engines, a full transfer into P\*'s symmetric score would make H-CTX's recovered share 0.21 [−0.88, +0.88]**
   - `L29937` · `2026-10-28` · MEASUREMENT · **The S-U gate test reads GO: on unfamiliar teams the registered search's deviations from P\*'s top move are right 0.635 [0.578, 0.687] of the time under its own referee (n 346, pooled U); home72 0.537 [0.458, 0.617], as on the bank (0.513). GO licenses V-RANK next, never a gain**
   - `L29962` · `2026-10-28` · MEASUREMENT · **X61P N1-P LOOK 1 reads CONTINUE: breadth at 10⁴ procedural teams moves F (forum72, the primary) by +0.75 pp [−1.56, +3.06] over the shared C0 (N1-P 0.516 vs 0.508, 3,600 games per arm; seeds +1.0 / −0.25 / +1.5), UNDECIDED with Δ̂ > 0 ⇒ look 2; in-house S on home72 −3.27 pp [−4.20, −2.33] (INFERIORITY-NOT-EXCLUDED, twice D1's cost). Reported only: U +1.76 [−1.52, +5.03], without H +1.80 [−2.17, +5.77], Δ_H − Δ_F +0.92**
+  - `L30016` · `2026-10-28` · MEASUREMENT · **The S-U gate's leak-reduced re-gate reads GO: with `dice="rolls"` (the damage-roll truth filter removed) S's deviations on unfamiliar teams are right 0.599 [0.543, 0.649] of the time under the self-referee (n 362, pooled U; the gate's S 0.635); home72 0.551. It SUPERSEDES the gate's leak-exposed GO for licensing V-RANK / S-U; GO licenses the next stage, never a gain**

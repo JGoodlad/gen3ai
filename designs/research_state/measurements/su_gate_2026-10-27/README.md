@@ -46,7 +46,11 @@ plus the superseded first chunks (FINDING G-4). That is ≈ 8–10 CPU-h in all,
   panel separately (each LB ≥ 0.517). The deviation RATE is the same on U as on home72 (≈ 0.40), so the review's
   "noise dose" worry, more deviations on U, is not seen.
 - **The U − home72 difference is +0.10 with an interval touching 0.** It is the mechanism H-MID would predict, but it
-  is sign-only and leak-confounded (review M1). Leak exposure is HIGHER on U: Speed ±1 pins 0.19–0.22 against 0.15.
+  is sign-only and leak-confounded (review M1). The leak's VALUE is higher on U; its exposure is about equal: 0.47 of
+  searched states are leak-exposed on home72 against 0.49–0.55 on U (Speed ±1 pins alone: 0.15 against 0.19–0.22).
+  The leak-exposed U states carry the GO (0.716 [0.643, 0.782]); the leak-clean ones read 0.554 [0.469, 0.629]
+  (`REVIEW_gate.md` M1, post hoc). The `dice="rolls"` re-gate supersedes this GO for any licence
+  ([`../su_regate_rolls_2026-10-28/`](../su_regate_rolls_2026-10-28/PREREG.md)).
   Exclusions are LOWER on H and P72 (1.4–1.5 % against home72's 9.8 %), the opposite of the PREREG's guess. Nothing
   here attributes the U − home72 gap to V.
 - **Predictions** (PREREG §8): pooled U ≈ 0.52 (0.45–0.60), P(GO) ≈ 0.25. Both MISSED high. Home72 ≈ 0.51 held.

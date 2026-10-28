@@ -103,7 +103,11 @@ def checks(sel: List[Mapping[str, Any]], gate: Dict[str, Mapping[str, Any]], row
            and (r["search"]["config"].get("dice") != dice or r["search"]["config"].get("name") != want)]
     if bad:
         raise RegateDefect(f"{len(bad)} searched row(s) not on preset {want} (dice {dice}); first {bad[0]}")
-    flip_bad = [r["key"] for r in rows if r["speed_flip"] != gate[r["key"]]["speed_flip"] or not r["speed_flip"]["ok"]]
+    # the marker's fields only: ``cpu_s`` is a timing (FINDING R-1: the registered tooth compared it too, and refused
+    # 1,539 rows whose marker was equal)
+    mk = lambda f: {k: f[k] for k in ("ok", "speed_mons", "speed_pinned")}  # noqa: E731
+    flip_bad = [r["key"] for r in rows if mk(r["speed_flip"]) != mk(gate[r["key"]]["speed_flip"])
+                or not r["speed_flip"]["ok"]]
     if flip_bad:
         raise RegateDefect(f"SPEED-PIN TOOTH: {len(flip_bad)} row(s) whose Speed +-1 marker differs from the gate's "
                            f"(a true-root property) or whose control failed; first {flip_bad[0]}")

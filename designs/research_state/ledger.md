@@ -30012,3 +30012,47 @@ games identical, wins 212 vs 208.
 decision, void, models, code, repins, `harness_drift.{py,json}`); record
 `designs/research_state/measurements/x35_breakers_stage_2026-10-17/reads/n1p_look1.json` (loads in
 `main.x35.batch.read_record`; `kit stage-check --arm n1p --seed 3504` ALLOWED).
+
+### 2026-10-28 · MEASUREMENT · **The S-U gate's leak-reduced re-gate reads GO: with `dice="rolls"` (the damage-roll truth filter removed) S's deviations on unfamiliar teams are right 0.599 [0.543, 0.649] of the time under the self-referee (n 362, pooled U; the gate's S 0.635); home72 0.551. It SUPERSEDES the gate's leak-exposed GO for licensing V-RANK / S-U; GO licenses the next stage, never a gain**
+
+- **What was read** (PREREG `3626ef6e5`, before any state was scored; the gate review's M1 / M3 step 2, `52f470c21`).
+  - The states: the gate's frozen 1,560, unchanged.
+  - The search: S′ = `r0s4_rolls@10`, which is `r0s4` with ONE lever changed, `dice="rolls"` (F1 tier A); its worlds
+    stay uniform.
+  - Unchanged from the gate: the 24-seed self-referee, the rule `deviation_sign` (GO iff LB(pooled-U sign accuracy)
+    > 0.50) and the engine `port=e00a212a102f5ce2/94;env=3d0d5c9c0f5d3c23/129` (the gate's G-1 carried).
+  - Two deterministic teeth passed:
+    - the Speed-pin marker equals the gate's on all 1,560 states;
+    - all 398 same-pick deviations have the gate's exact referee result.
+- **Per U panel:** H 0.620 [0.525, 0.711], F 0.583 [0.495, 0.667], P72 0.593 [0.504, 0.680].
+- **Home72:** 0.551 [0.462, 0.638]. U − home72 is +0.047 [−0.061, +0.143] (the gate's was +0.098).
+- **Exclusions fall** (F 10.7 % → 5.0 %, home72 9.8 % → 5.0 %). Deviation rates stay ≈ 0.40. 70 % of S's U
+  deviations are kept as the same action. The paired IMP S′ − S on U is 0.000 [−0.004, +0.005].
+- **The strata** (REPORTED; the gate review's split, post hoc in origin):
+
+  | | U, S′ | U, the gate's S |
+  |---|---|---|
+  | leak-exposed | 0.632 [0.560, 0.702] | 0.716 |
+  | leak-clean | 0.564 [0.478, 0.639] | 0.554 |
+  | Speed-pinned | 0.602 | 0.711 |
+  | not pinned | 0.598 | 0.618 |
+
+  - The damage-roll leak carried part of the exposed excess.
+  - The clean half alone still has an LB below 0.50 (n 182).
+  - S′ is leak-REDUCED, not leak-free. The prefix still runs on the true seed: speed ties, crits, hidden durations.
+- **Reading.** The licence stands on S′. The self-referee confound (review M2) is untouched.
+  - The next step is the orchestrator's call. The review's M3 orders a deviation-only live read against Kakuna
+    (≈ 20–25 CPU-h) before V-RANK's all-sibling slope.
+  - Any amendment that cites this re-gate registers `r0s4_rolls` and this engine.
+- **Predictions:** pooled U ≈ 0.58 HIT; P(GO) ≈ 0.55.
+- **Cost:** ≈ 4.3 CPU-h.
+- **CORRECTION to the S-U gate entry above** ("leak exposure is higher on U"): the leak's VALUE is higher on U; its
+  exposure is about equal (0.47 of searched states on home72, 0.49–0.55 on U; Speed pins alone 0.15 against
+  0.19–0.22).
+- **FINDINGs:**
+  - R-1: the registered Speed-pin tooth also compared a CPU timing field and refused 1,539 equal markers. It was
+    narrowed to the marker's fields after scoring, before the verdict was read.
+  - R-2: the gate's engine, not S-U's registered one.
+  - R-3: tier A's likelihood weights are unread.
+- **Evidence:** `measurements/su_regate_rolls_2026-10-28/` (PREREG, README, `regate_result.json`,
+  `scripts/regate_read.py`); state `~/gen3ai_archive/su_regate_rolls_2026-10-28/`.

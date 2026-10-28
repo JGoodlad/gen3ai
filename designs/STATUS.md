@@ -71,9 +71,12 @@ SUPPORTED, which builds its corpus; then PR-1′ KILL retires the fork and N1-P 
 resource-day it ranks below X63, and X63 Stage A runs before X62 under both SUPPORTED and UNDECIDED (ruled 2026-10-27). **X53-N1** waits on N1-P's GO and a zero-GPU measurement of how far two fresh runs
 differ. **S-U** (one-ply search on unfamiliar teams, registered `ffd9a443a`) has two BLOCKERs from its review
 (`7aafa527f`): where its search rule departs from the policy at P\* (40 % of decisions) it picks the better move
-0.513 [0.447, 0.580] of the time, by our own playouts. Its sign-accuracy gate read **GO** (2026-10-28): on unfamiliar
-teams those departures are right 0.635 [0.578, 0.687] of the time, still by our own playouts, so V-RANK's live branches come
-next ([`su_gate_2026-10-27/`](research_state/measurements/su_gate_2026-10-27/README.md)).
+0.513 [0.447, 0.580] of the time, by our own playouts. Its sign-accuracy gate read **GO** (2026-10-28) at 0.635, but
+in the states where the true battle seed leaks (the leak's value, not its exposure, is higher on unfamiliar teams). The
+leak-reduced re-gate (`dice="rolls"`) supersedes it and **still reads GO**: on unfamiliar teams the departures are right
+0.599 [0.543, 0.649] of the time, still by our own playouts
+([`su_regate_rolls_2026-10-28/`](research_state/measurements/su_regate_rolls_2026-10-28/README.md)). Next, the
+orchestrator's call: a deviation-only live read against Kakuna, or V-RANK.
 
 **Dropped or retired.** **X64**, the toy context-count curve: DROPPED by its review (`c0fd72bd8`; it would cost more
 than the production reads it was meant to gate). **N2**, the set-identity lever: dropped, P\*'s encoding is mostly
