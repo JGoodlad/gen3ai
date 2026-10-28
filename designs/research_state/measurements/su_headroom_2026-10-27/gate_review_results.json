@@ -1,0 +1,513 @@
+{
+ "attribution_miss_moves": {
+  "forum72": {
+   "hiddenpower": 207
+  },
+  "heldout72_hpfix": {
+   "hiddenpower": 254
+  },
+  "home72": {
+   "hiddenpower": 165
+  },
+  "p72": {
+   "hiddenpower": 206
+  }
+ },
+ "clusters": {
+  "game_U": {
+   "clusters": {
+    "forum72": 200,
+    "heldout72_hpfix": 180,
+    "p72": 200
+   },
+   "est": 0.6349,
+   "hi": 0.6866,
+   "lo": 0.5779,
+   "n": 346
+  },
+  "game_home72": {
+   "clusters": {
+    "home72": 200
+   },
+   "est": 0.5373,
+   "hi": 0.6166,
+   "lo": 0.4577,
+   "n": 134
+  },
+  "opp_team_U": {
+   "clusters": {
+    "forum72": 52,
+    "heldout72_hpfix": 50,
+    "p72": 52
+   },
+   "est": 0.6349,
+   "hi": 0.6849,
+   "lo": 0.5826,
+   "n": 346
+  },
+  "our_team_U": {
+   "clusters": {
+    "forum72": 54,
+    "heldout72_hpfix": 50,
+    "p72": 54
+   },
+   "est": 0.6349,
+   "hi": 0.6807,
+   "lo": 0.5847,
+   "n": 346
+  },
+  "our_team_home72": {
+   "clusters": {
+    "home72": 53
+   },
+   "est": 0.5373,
+   "hi": 0.6053,
+   "lo": 0.4632,
+   "n": 134
+  }
+ },
+ "kinds_pick_over_top": {
+  "forum72": {
+   "mv>mv": [
+    38,
+    0.553
+   ],
+   "mv>sw": [
+    13,
+    0.615
+   ],
+   "sw>mv": [
+    32,
+    0.781
+   ],
+   "sw>sw": [
+    14,
+    0.714
+   ]
+  },
+  "heldout72_hpfix": {
+   "mv>mv": [
+    57,
+    0.649
+   ],
+   "mv>sw": [
+    7,
+    0.429
+   ],
+   "sw>mv": [
+    37,
+    0.595
+   ],
+   "sw>sw": [
+    24,
+    0.75
+   ]
+  },
+  "home72": {
+   "mv>mv": [
+    52,
+    0.538
+   ],
+   "mv>sw": [
+    11,
+    0.364
+   ],
+   "sw>mv": [
+    50,
+    0.52
+   ],
+   "sw>sw": [
+    21,
+    0.667
+   ]
+  },
+  "p72": {
+   "mv>mv": [
+    47,
+    0.532
+   ],
+   "mv>sw": [
+    15,
+    0.467
+   ],
+   "sw>mv": [
+    39,
+    0.692
+   ],
+   "sw>sw": [
+    23,
+    0.696
+   ]
+  }
+ },
+ "leak": {
+  "clean": {
+   "U": {
+    "clusters": {
+     "forum72": 200,
+     "heldout72_hpfix": 180,
+     "p72": 200
+    },
+    "est": 0.5544,
+    "hi": 0.6291,
+    "lo": 0.4692,
+    "n": 174
+   },
+   "home72": {
+    "clusters": {
+     "home72": 200
+    },
+    "est": 0.5625,
+    "hi": 0.6667,
+    "lo": 0.4583,
+    "n": 80
+   }
+  },
+  "context": {
+   "forum72/clean": {
+    "dev_rate": 0.461,
+    "root_v": 0.491,
+    "states": 165,
+    "turn": 18.3
+   },
+   "forum72/leaky": {
+    "dev_rate": 0.312,
+    "root_v": 0.639,
+    "states": 192,
+    "turn": 19.9
+   },
+   "heldout72_hpfix/clean": {
+    "dev_rate": 0.434,
+    "root_v": 0.405,
+    "states": 182,
+    "turn": 17.2
+   },
+   "heldout72_hpfix/leaky": {
+    "dev_rate": 0.393,
+    "root_v": 0.615,
+    "states": 173,
+    "turn": 20.4
+   },
+   "home72/clean": {
+    "dev_rate": 0.453,
+    "root_v": 0.525,
+    "states": 190,
+    "turn": 18.4
+   },
+   "home72/leaky": {
+    "dev_rate": 0.38,
+    "root_v": 0.64,
+    "states": 171,
+    "turn": 19.9
+   },
+   "p72/clean": {
+    "dev_rate": 0.415,
+    "root_v": 0.457,
+    "states": 176,
+    "turn": 17.6
+   },
+   "p72/leaky": {
+    "dev_rate": 0.422,
+    "root_v": 0.574,
+    "states": 218,
+    "turn": 19.1
+   }
+  },
+  "leaky": {
+   "U": {
+    "clusters": {
+     "forum72": 200,
+     "heldout72_hpfix": 180,
+     "p72": 200
+    },
+    "est": 0.7157,
+    "hi": 0.7818,
+    "lo": 0.6426,
+    "n": 172
+   },
+   "home72": {
+    "clusters": {
+     "home72": 200
+    },
+    "est": 0.5,
+    "hi": 0.6379,
+    "lo": 0.375,
+    "n": 54
+   }
+  },
+  "leaky_minus_clean": {
+   "U": [
+    0.161,
+    0.057,
+    0.268
+   ],
+   "home72": [
+    -0.062,
+    -0.243,
+    0.106
+   ],
+   "interaction": [
+    0.224,
+    0.021,
+    0.427
+   ]
+  },
+  "no_rewrite": {
+   "U": {
+    "clusters": {
+     "forum72": 200,
+     "heldout72_hpfix": 180,
+     "p72": 200
+    },
+    "est": 0.5832,
+    "hi": 0.6506,
+    "lo": 0.5115,
+    "n": 218
+   },
+   "home72": {
+    "clusters": {
+     "home72": 200
+    },
+    "est": 0.5435,
+    "hi": 0.642,
+    "lo": 0.4493,
+    "n": 92
+   }
+  },
+  "not_pinned": {
+   "U": {
+    "clusters": {
+     "forum72": 200,
+     "heldout72_hpfix": 180,
+     "p72": 200
+    },
+    "est": 0.6183,
+    "hi": 0.6765,
+    "lo": 0.5535,
+    "n": 277
+   },
+   "home72": {
+    "clusters": {
+     "home72": 200
+    },
+    "est": 0.5431,
+    "hi": 0.6321,
+    "lo": 0.4545,
+    "n": 116
+   }
+  },
+  "pinned": {
+   "U": {
+    "clusters": {
+     "forum72": 200,
+     "heldout72_hpfix": 180,
+     "p72": 200
+    },
+    "est": 0.7108,
+    "hi": 0.8153,
+    "lo": 0.6031,
+    "n": 69
+   },
+   "home72": {
+    "clusters": {
+     "home72": 200
+    },
+    "est": 0.5,
+    "hi": 0.7,
+    "lo": 0.2857,
+    "n": 18
+   }
+  },
+  "pinned_no_rewrite": {
+   "U": {
+    "clusters": {
+     "forum72": 200,
+     "heldout72_hpfix": 180,
+     "p72": 200
+    },
+    "est": 0.7181,
+    "hi": 0.8514,
+    "lo": 0.5898,
+    "n": 44
+   },
+   "home72": {
+    "clusters": {
+     "home72": 200
+    },
+    "est": 0.4167,
+    "hi": 0.6667,
+    "lo": 0.1429,
+    "n": 12
+   }
+  },
+  "rewrite": {
+   "U": {
+    "clusters": {
+     "forum72": 200,
+     "heldout72_hpfix": 180,
+     "p72": 200
+    },
+    "est": 0.721,
+    "hi": 0.7991,
+    "lo": 0.6361,
+    "n": 128
+   },
+   "home72": {
+    "clusters": {
+     "home72": 200
+    },
+    "est": 0.5238,
+    "hi": 0.6842,
+    "lo": 0.3684,
+    "n": 42
+   }
+  },
+  "rewrite_not_pinned": {
+   "U": {
+    "clusters": {
+     "forum72": 200,
+     "heldout72_hpfix": 180,
+     "p72": 200
+    },
+    "est": 0.7195,
+    "hi": 0.8102,
+    "lo": 0.6203,
+    "n": 103
+   },
+   "home72": {
+    "clusters": {
+     "home72": 200
+    },
+    "est": 0.5,
+    "hi": 0.683,
+    "lo": 0.3333,
+    "n": 36
+   }
+  },
+  "share_leaky_of_searched": {
+   "forum72": 0.538,
+   "heldout72_hpfix": 0.487,
+   "home72": 0.474,
+   "p72": 0.553
+  }
+ },
+ "live_power": {
+  "U": {
+   "deviations": 448,
+   "expected_splits": 129,
+   "live_acc_given_split": 0.561,
+   "mean_dT": 0.0352,
+   "per_seed_split": 0.287,
+   "z": 1.39
+  },
+  "home72": {
+   "deviations": 151,
+   "expected_splits": 48,
+   "live_acc_given_split": 0.535,
+   "mean_dT": 0.0225,
+   "per_seed_split": 0.317,
+   "z": 0.49
+  }
+ },
+ "reproduce": {
+  "decision": [
+   0.6348775080368031,
+   0.5778559237933216,
+   0.6865950919291437,
+   346
+  ],
+  "equal": true,
+  "mine": {
+   "clusters": {
+    "forum72": 200,
+    "heldout72_hpfix": 180,
+    "p72": 200
+   },
+   "est": 0.6349,
+   "hi": 0.6866,
+   "lo": 0.5779,
+   "n": 346
+  }
+ },
+ "robust": {
+  "forum72": {
+   "acc": 0.6598,
+   "acc_if_all_excluded_wrong": 0.5889,
+   "all_turn": 19.5,
+   "countable": 97,
+   "deviations": 136,
+   "excluded": 43,
+   "excluded_expected_countable": 11.7,
+   "excluded_turn": 21.9,
+   "ties": 39,
+   "ties_as_half": 0.614
+  },
+  "heldout72_hpfix": {
+   "acc": 0.64,
+   "acc_if_all_excluded_wrong": 0.6311,
+   "all_turn": 18.7,
+   "countable": 125,
+   "deviations": 147,
+   "excluded": 5,
+   "excluded_expected_countable": 1.8,
+   "excluded_turn": 20.0,
+   "ties": 22,
+   "ties_as_half": 0.619
+  },
+  "home72": {
+   "acc": 0.5373,
+   "acc_if_all_excluded_wrong": 0.4849,
+   "all_turn": 19.2,
+   "countable": 134,
+   "deviations": 151,
+   "excluded": 39,
+   "excluded_expected_countable": 14.5,
+   "excluded_turn": 20.1,
+   "ties": 17,
+   "ties_as_half": 0.5331
+  },
+  "p72": {
+   "acc": 0.6048,
+   "acc_if_all_excluded_wrong": 0.5958,
+   "all_turn": 18.5,
+   "countable": 124,
+   "deviations": 165,
+   "excluded": 6,
+   "excluded_expected_countable": 1.9,
+   "excluded_turn": 24.0,
+   "ties": 41,
+   "ties_as_half": 0.5788
+  },
+  "pooled_U_acc_if_all_excluded_wrong": 0.6053,
+  "pooled_U_ties_as_half": 0.6039
+ },
+ "teams": {
+  "forum72": {
+   "opp_also_ours_in_panel": 50,
+   "opp_teams": 52,
+   "our_teams": 54
+  },
+  "heldout72_hpfix": {
+   "opp_also_ours_in_panel": 44,
+   "opp_teams": 50,
+   "our_teams": 50
+  },
+  "home72": {
+   "opp_also_ours_in_panel": 49,
+   "opp_teams": 51,
+   "our_teams": 53
+  },
+  "p72": {
+   "opp_also_ours_in_panel": 50,
+   "opp_teams": 52,
+   "our_teams": 54
+  }
+ },
+ "threads": {
+  "max_abs_dq": 1.0000000000287557e-06,
+  "referee_rows": 6,
+  "same_pick": 15,
+  "same_referee_out": 6,
+  "states": 15
+ }
+}
