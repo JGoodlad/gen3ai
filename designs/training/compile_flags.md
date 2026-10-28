@@ -817,6 +817,18 @@ validity is the anchor's own eager-bf16 numbers, which must be self-consistent a
 direct arms, because no record exists for that state. Its module docstring holds the pre-declared rule (REPRODUCES / DOES
 NOT / MIXED / INVALID-REPLAY).
 
+**The X-CHECK's finding (2026-10-28, 5 repeats each, CUDA, all VALID; `~/.claude/jobs/x35/w0_2026-10-28/xcheck/`).** The
+edge_bias event belongs to the **X48 s3502 u200 STATE, not to a graph class**:
+- the dump REPRODUCES (c2_map 26.6 x eager);
+- X48 s3502's own final checkpoint (kffn graph, about 4 updates later) DOES NOT (worst edge_bias 8.0);
+- neither does X26c @480M (2.4) on the production graph;
+- C0 s3501 final reads edge_bias-clean (worst 8.67 < K 12), but is MIXED: slice 1 refuses the bf16 LOSS rule in 5 of 5
+  repeats (compiled 1.09e-2 > 5.4 x max(eager, floor) = 1.05e-2, about 4 % over), which a scheduled canary (slice 0)
+  would not see.
+
+That marginal loss-rule refusal is a TECH_DEBT row (`../ops/TECH_DEBT_BACKLOG.md`, "C0 s3501 final refuses the bf16 loss
+rule"), to be weighed in the canary-rule recalibration from W0's census.
+
 ### The canary-FATAL resume rule and its family bars (`python -m main.ops.canary_decide <run>`, 2026-10-26)
 
 A FATAL canary on an X35 arm resumes (`--canary-shift-max 0.3`, the orchestrator's operator step) iff 0 PPO-clip

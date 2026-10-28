@@ -4430,58 +4430,58 @@
   },
   "src/main/ops/canary_dump_replay_test.py::test_the_eager_arms_and_the_canary_check_run_on_the_real_learner_cpu": {
    "status": "pass",
-   "commit": "b5cd22862f1430ac3cb113ffc9fa6c1ab793fbeb",
-   "at": "2026-10-28T12:14:08Z",
-   "duration_s": 24.89,
+   "commit": "8f35c21b1744fc9f14f4468cf89ae9086a78c4fd",
+   "at": "2026-10-28T16:23:29Z",
+   "duration_s": 19.71,
    "contention": 1.0,
    "detail": ""
   },
   "src/main/ops/diag_bf16_canary_test.py::test_EVERY_route_of_the_GPU_read_RUNS_through_a_smoke_backend_on_cpu": {
    "status": "pass",
-   "commit": "0dcf0ea4c8242a33319e3b1c46d57a72b5efde88",
-   "at": "2026-10-25T18:54:55Z",
-   "duration_s": 204.4,
-   "contention": 1.42,
+   "commit": "8f35c21b1744fc9f14f4468cf89ae9086a78c4fd",
+   "at": "2026-10-28T16:23:29Z",
+   "duration_s": 160.81,
+   "contention": 1.16,
    "detail": ""
   },
   "src/main/ops/eval_trace_gen_integration_test.py::test_a_rerun_at_the_same_seed_is_identical_file_for_file": {
    "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:36:26Z",
-   "duration_s": 0.04,
-   "contention": 1.2,
+   "commit": "8f35c21b1744fc9f14f4468cf89ae9086a78c4fd",
+   "at": "2026-10-28T16:23:29Z",
+   "duration_s": 0.03,
+   "contention": 1.23,
    "detail": ""
   },
   "src/main/ops/eval_trace_gen_integration_test.py::test_another_seed_is_another_cycle": {
    "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:36:26Z",
+   "commit": "8f35c21b1744fc9f14f4468cf89ae9086a78c4fd",
+   "at": "2026-10-28T16:23:29Z",
    "duration_s": 0.0,
-   "contention": 1.61,
+   "contention": 1.6,
    "detail": ""
   },
   "src/main/ops/eval_trace_gen_integration_test.py::test_the_manifest_records_the_RUNs_regime_and_the_sentinels_it_played": {
    "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:36:26Z",
-   "duration_s": 173.96,
-   "contention": 1.33,
+   "commit": "8f35c21b1744fc9f14f4468cf89ae9086a78c4fd",
+   "at": "2026-10-28T16:23:29Z",
+   "duration_s": 132.57,
+   "contention": 1.11,
    "detail": ""
   },
   "src/main/ops/eval_trace_gen_integration_test.py::test_the_prober_summary_and_scan_read_the_generated_cycle": {
    "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:36:26Z",
-   "duration_s": 2.2,
-   "contention": 1.02,
+   "commit": "8f35c21b1744fc9f14f4468cf89ae9086a78c4fd",
+   "at": "2026-10-28T16:23:29Z",
+   "duration_s": 3.14,
+   "contention": 1.19,
    "detail": ""
   },
   "src/main/ops/eval_trace_gen_integration_test.py::test_the_shadow_run_resolves_the_step_snapshot_and_the_pinned_sentinel": {
    "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:36:26Z",
+   "commit": "8f35c21b1744fc9f14f4468cf89ae9086a78c4fd",
+   "at": "2026-10-28T16:23:29Z",
    "duration_s": 0.0,
-   "contention": 1.0,
+   "contention": 1.19,
    "detail": ""
   },
   "src/main/policy_spectrum/policy_spectrum_integration_test.py::test_a_slice_of_the_committed_bank_replays_through_the_core": {
@@ -5205,5 +5205,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-28T12:14:08Z"
+ "last_written": "2026-10-28T16:23:29Z"
 }
