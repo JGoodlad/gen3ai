@@ -827,7 +827,9 @@ edge_bias event belongs to the **X48 s3502 u200 STATE, not to a graph class**:
   would not see.
 
 That marginal loss-rule refusal is a TECH_DEBT row (`../ops/TECH_DEBT_BACKLOG.md`, "C0 s3501 final refuses the bf16 loss
-rule"), to be weighed in the canary-rule recalibration from W0's census.
+rule"). **The recalibration from W0's census is PROPOSED, not ruled** (DRAFT, `canary_recalibration_2026-10-28.md`):
+per-row k 6.0 (16 seeds, floor 0.02, a scalar cap 0.72 then 1.2) at the next pin only, the loss envelope's K 5.4 -> 9.2,
+the per-parameter 12 kept, the C0 2.64 confirmed for global-M runs. Until a ruling, every bar above stands.
 
 ### The canary-FATAL resume rule and its family bars (`python -m main.ops.canary_decide <run>`, 2026-10-26)
 
