@@ -1421,6 +1421,11 @@ from main.reads import rules_deviation_sign as _DS  # noqa: E402  (it imports th
 RULES["deviation_sign"] = Rule("deviation_sign", _DS.RULE_DOCS["deviation_sign"], _DS.check, _DS.inputs, _DS.decide,
                                False)
 
+from main.reads import rules_deviation_live as _DL  # noqa: E402  (it imports this module lazily: no cycle at import)
+
+RULES["deviation_live"] = Rule("deviation_live", _DL.RULE_DOCS["deviation_live"], _DL.check, _DL.inputs, _DL.decide,
+                               False)
+
 
 def inputs(rule: str, cells: Mapping[str, Any], params: Mapping[str, Any], spec: Any) -> Dict[str, Any]:
     return RULES[rule].inputs(cells, params, spec)

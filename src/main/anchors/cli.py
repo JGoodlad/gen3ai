@@ -322,6 +322,14 @@ def build_parser() -> argparse.ArgumentParser:
                         "battle's honest input log (main.anchors.input_log) in <out>/input_logs.jsonl, for the S-U "
                         "gate test's offline search (main.value_search.sign_gate). Changes no choice; stamps no "
                         "regime; the summary records the counters under input_logs.")
+    p.add_argument("--our-force", dest="our_force", default=None, metavar="SPEC",
+                   help="a --deal-game unit of a RAW greedy checkpoint on the core slot ONLY (no --our-search, no "
+                        "--keep-input-logs, no --our-temperature): a FORCED BRANCH of the raw game "
+                        "(main.anchors.forced_branch). Greedy everywhere but the spec's named decision, where "
+                        "G-BRANCH checks the replay against the raw decision (the honest input log's sha256, the "
+                        "tokens, the row's sha256, π's greedy action) and the spec's action is played. Recorded in "
+                        "<out>/branch.jsonl; stamps our_regime='<regime>+force=<kind>:a<action>@t<turn>n<n>'. The "
+                        "deviation-only live read's play path.")
     p.add_argument("--allow-unmatched-regime", action="store_true",
                    help="permit a cell where the two sides are NOT at the same regime. Every row "
                         "is then stamped regime_matched=false. Foul Play has no sampling knob at "
@@ -607,6 +615,25 @@ def build_plan(args: argparse.Namespace, cfg: config_mod.AnchorsConfig,
         if why:
             raise SystemExit(f"--deal-game needs {why}.")
 
+    our_force = getattr(args, "our_force", None)
+    our_force_spec = None
+    if our_force is not None:
+        from main.anchors.forced_branch import BranchError, load_spec
+
+        try:
+            our_force_spec = load_spec(our_force)
+        except BranchError as exc:
+            raise SystemExit(f"--our-force: {exc}") from None
+        why = ("a --deal-game (a forced branch replays ONE game of a seeded series)" if deal_game is None else
+               "a RAW greedy checkpoint: no --our-search" if our_search is not None else
+               "no --keep-input-logs (the raw game kept them)" if keep_input_logs is not None else
+               "--regime greedy with no --our-temperature" if args.regime != "greedy" or our_t is not None else
+               f"the spec's game {our_force_spec['game']} == --deal-game {deal_game}"
+               if our_force_spec["game"] != deal_game else None)
+        if why:
+            raise SystemExit(f"--our-force needs {why}.")
+        our_force = str(Path(our_force).resolve())
+
     # The reproducibility pair is the FRONT END's, and there is no Node counterpart — a
     # `--seed-base` silently ignored on the Node path would make an unrepeatable series look
     # seeded, which is the one failure a seed exists to prevent.
@@ -755,6 +782,8 @@ def build_plan(args: argparse.Namespace, cfg: config_mod.AnchorsConfig,
         our_search=our_search,
         deal_game=deal_game,
         keep_input_logs=keep_input_logs,
+        our_force=our_force,
+        our_force_spec=our_force_spec,
         our_transport=("peer" if is_peer else our_transport),
         our_transport_note=transport_note,
         bot_seed=((args.bot_seed if args.bot_seed is not None else int(args.team_seed))
@@ -777,7 +806,10 @@ def render_plan(plan: runner_mod.SeriesPlan, cfg: config_mod.AnchorsConfig) -> s
         + (f"  OUR side SEARCHES ({plan.our_search}: main.anchors.search_presets)"
            if plan.our_search is not None else "")
         + (f"  input logs kept, turns {plan.keep_input_logs} (main.anchors.input_log)"
-           if plan.keep_input_logs is not None else ""),
+           if plan.keep_input_logs is not None else "")
+        + (f"  FORCED BRANCH ({plan.our_force_spec['kind']} {plan.our_force_spec['key']}: action "
+           f"{plan.our_force_spec['action']}, π's top {plan.our_force_spec['pi_argmax']}; main.anchors.forced_branch)"
+           if getattr(plan, "our_force_spec", None) is not None else ""),
         f"  team set          {plan.teamset}  ours={plan.our_team_spec}"
         + (f"  🚨 OUR peer draws {plan.our_set} (ASYMMETRIC pair cell, --our-teamset)"
            if plan.our_set != plan.teamset else ""),
@@ -983,6 +1015,8 @@ def main(argv: Optional[List[str]] = None) -> int:
             **({"deal": {"game": plan.deal_game, "of": plan.games, "half": plan.deal_position()[0],
                          "skip": plan.deal_position()[1], "seed_base": plan.seed_base, "team_seed": plan.team_seed}}
                if plan.deal_game is not None else {}),
+            **({"force": dict(plan.our_force_spec, path=plan.our_force)}
+               if getattr(plan, "our_force_spec", None) is not None else {}),
         })
     results_mod.write_summary(summary_path, summary)
 

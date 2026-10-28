@@ -514,6 +514,20 @@ replay does not reproduce the decision's tokens and row. No regime stamp (play i
 the recorder's counters under `input_logs`, and a window that did not take effect fails G1. `main.reads` passes it as
 the label's `load.input_log`.
 
+### `--our-force SPEC` — a FORCED BRANCH of a raw game (the deviation-only live read, 2026-10-28)
+
+`main.anchors.forced_branch`. A `--deal-game G` unit of a RAW greedy checkpoint on the core slot (no `--our-search`,
+no `--keep-input-logs`, no `--our-temperature`) replays game G of the raw series and plays the checkpoint greedy at
+every decision but ONE: the spec's named decision (turn, core frame index), where it plays the spec's action, then
+greedy again. The spec (`gen3_forced_branch_v1`) is built from the raw game's KEPT decision (`--keep-input-logs`): its
+key, the series index G, the action, π's greedy action, the choice tokens, the live row's sha256 and the sha256 of the
+honest input log at that decision. **G-BRANCH**, live, before the action is sent: the branch game's series index,
+honest-log digest, tokens, row digest and greedy action must all equal the raw decision's, or the unit fails by name
+(the record in `<out>/branch.jsonl` says which); a game that never reaches the decision fails the half's verification.
+The battle TAG is a per-process counter (a one-game unit's first battle is `battle-gen3ou-1` whatever G is), so it is
+never compared. Stamps `our_regime = <regime>+force=<kind>:a<action>@t<turn>n<n>` (`kind` = `branch`, or `null` when
+the action is π's own: a replay control). `main.value_search.live_branch` plans these units for `main.x35.kakuna run`.
+
 ### `--mirrored-pairs` — MIRRORED TEAM PAIRS (T17, `gen3_mirrored_pairs_v1`)
 
 Within each half, battle `2k` pits our team `A_k` (drawn from OUR team source) against the peer's

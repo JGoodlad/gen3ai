@@ -219,6 +219,9 @@ class Unit:
     #: a RAW unit keeping its decisions' honest input logs in a turn window (``main.anchors --keep-input-logs FROM-TO``,
     #: the S-U gate test's states); None = none kept. Changes no play.
     input_log: Optional[str] = None
+    #: a FORCED BRANCH of a raw per-game unit (``main.anchors --our-force SPEC``, :mod:`main.anchors.forced_branch`;
+    #: the deviation-only live read, :mod:`main.value_search.live_branch`): the spec's path; None = no branch
+    force: Optional[str] = None
 
 
 def parse_teamsets(spec: str) -> Tuple[str, ...]:
@@ -454,6 +457,10 @@ def unit_argv(u: Unit, out: Path, port: int, py: str = sys.executable, *, short:
               "--progress-timeout", str(UNIT_SEARCH_S)]
     if u.input_log is not None:
         a += ["--keep-input-logs", u.input_log]
+    if u.force is not None:
+        if u.game is None or u.search is not None or u.input_log is not None:
+            raise KakunaError(f"{u.name}: a forced branch is a RAW per-game unit (a game, no search, no input log)")
+        a += ["--our-force", str(u.force)]
     if u.teamset in PANEL_CELLS or u.game is not None or u.input_log is not None:
         # the front end's per-battle repro record (its START command carries BOTH packed teams): which team each side
         # piloted in each game (F-DV-6 / F-DV-17), so a matchup-clustered sensitivity read stays possible (F-DV-18).

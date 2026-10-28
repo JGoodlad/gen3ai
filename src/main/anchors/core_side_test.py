@@ -228,3 +228,55 @@ def test_the_core_policy_is_RLPlayers_arithmetic() -> None:
     assert core_side.CorePolicy(model, stochastic=False, temperature=1.0).decide(row, mask) == (3, 3)
     idx, arg = core_side.CorePolicy(model, stochastic=True, temperature=1.0).decide(row, mask)
     assert arg == 3 and idx in (2, 3)
+
+
+class _Forcer:
+    """A stub forced-branch player: plays ``action`` at frame ``n``, the greedy choice elsewhere; ``fail`` raises."""
+
+    def __init__(self, n: int, action: int, fail: bool = False) -> None:
+        self.n, self.action, self.fail = n, action, fail
+
+    def choose(self, front, tag, d, mask, conn, argmax):
+        if self.fail:
+            from main.anchors.forced_branch import BranchError
+
+            raise BranchError("G-BRANCH: stub")
+        return self.action if int(d["n"]) == self.n else int(argmax)
+
+
+def test_a_forced_branch_plays_the_forcers_action_and_counts_it_off_argmax() -> None:
+    front, state = _Front(), OurSideState()
+    slot = core_side.make_slot(front, username="Gen3AIAnchor1", policy=_Policy(2), team_source=_Teams(),
+                               state=state, forfeit_limit=250, forcer=_Forcer(n=1, action=3))
+
+    async def go():
+        await _start(slot)
+        for n in (0, 1):
+            await slot.on_obs(TAG, "p1", _frame(n))
+            await slot.send(f'>{TAG}\n|request|{{"active":[],"rqid":{n}}}')
+        await slot.send(f">{TAG}\n|win|Gen3AIAnchor1")
+    _run(go())
+    chosen = [ln for ln in front.lines if "/choose" in ln]
+    assert chosen == [f"{TAG}|/choose move earthquake|0", f"{TAG}|/choose move protect|1"]
+    rec = state.records[-1]
+    assert rec.our_argmax_decisions == 2 and rec.our_argmax_matches == 1 and slot.failure is None
+
+
+def test_a_g_branch_failure_is_a_named_core_slot_failure() -> None:
+    front, state = _Front(), OurSideState()
+    slot = core_side.make_slot(front, username="Gen3AIAnchor1", policy=_Policy(2), team_source=_Teams(),
+                               state=state, forfeit_limit=250, forcer=_Forcer(n=0, action=3, fail=True))
+
+    async def go():
+        await _start(slot)
+        await slot.on_obs(TAG, "p1", _frame(0))
+        await slot.send(f'>{TAG}\n|request|{{"active":[],"rqid":4}}')
+    _run(go())
+    assert slot.failure is not None and slot.failure.cause == "core_slot_error" and "G-BRANCH" in slot.failure.detail
+    assert not [ln for ln in front.lines if "/choose" in ln]
+
+
+def test_a_forcer_never_rides_with_a_searcher() -> None:
+    with pytest.raises(ValueError, match="never searches"):
+        core_side.make_slot(_Front(), username="Gen3AIAnchor1", policy=_Policy(2), team_source=_Teams(),
+                            state=OurSideState(), forfeit_limit=250, searcher=object(), forcer=_Forcer(0, 3))

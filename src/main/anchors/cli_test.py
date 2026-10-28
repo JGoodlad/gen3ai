@@ -20,7 +20,9 @@ diff: both peer commands verbatim, both team sources with their counts, and ever
 """
 from __future__ import annotations
 
+import json
 import re
+from pathlib import Path
 
 import pytest
 
@@ -1033,3 +1035,48 @@ def test_keep_input_logs_is_refused_outside_its_shape(cfg, argv, monkeypatch) ->
     monkeypatch.setattr("main.anchors.cli._preflight_search_engine", lambda **_k: None)
     with pytest.raises(SystemExit):
         build_plan(_args("--opponent", "metamon:Kakuna", *argv, "--dry-run"), cfg)
+
+
+# ------------------------------------------------------------------ the deviation-only live read: --our-force
+def _force_spec(tmp_path, game: int = 3, action: int = 3) -> str:
+    from main.anchors.forced_branch import spec_from_kept
+
+    rec = {"key": "su_live_v1|d|t12|n14", "battle": f"battle-gen3ou-{game + 1}", "index": game, "turn": 12, "n": 14,
+           "pi_argmax": 2, "tokens": {"2": "move earthquake", "3": "move protect"}, "frame_sha256": "c" * 64,
+           "log": {"cmds": []}}
+    p = tmp_path / "spec.json"
+    p.write_text(json.dumps(spec_from_kept(rec, action, game=game)))
+    return str(p)
+
+
+def test_our_force_stamps_the_branch_and_records_the_spec(cfg, tmp_path) -> None:
+    """`--our-force SPEC` (main.anchors.forced_branch): a --deal-game unit plays the raw greedy checkpoint but at the
+    spec's decision; its rows never pool with the raw cell's."""
+    spec = _force_spec(tmp_path)
+    plan = build_plan(_args("--opponent", "metamon:Kakuna", "--games", "20", "--deal-game", "3", "--seed-base", "1",
+                            "--our-force", spec, "--dry-run"), cfg)
+    assert plan.our_force == str(Path(spec).resolve()) and plan.our_force_spec["action"] == 3
+    assert runner_mod.cell_spec(plan, {"their_regime": "greedy"}, 72).our_regime == "greedy+force=branch:a3@t12n14"
+    assert "FORCED BRANCH (branch su_live_v1|d|t12|n14: action 3" in render_plan(plan, cfg)
+
+
+@pytest.mark.parametrize("extra", [
+    (),                                                                                  # no --deal-game
+    ("--deal-game", "4"),                                                                # the spec's game is 3
+    ("--deal-game", "3", "--our-search", "r0s4"),                                        # a searched cell
+    ("--deal-game", "3", "--keep-input-logs", "10-30"),                                  # the raw kept them
+    ("--deal-game", "3", "--our-temperature", "1.0"),                                    # not greedy
+])
+def test_our_force_is_refused_outside_its_shape(cfg, tmp_path, extra, monkeypatch) -> None:
+    monkeypatch.setattr("main.anchors.cli._preflight_search_engine", lambda **_k: None)
+    with pytest.raises(SystemExit):
+        build_plan(_args("--opponent", "metamon:Kakuna", "--games", "20", "--seed-base", "1", "--our-force",
+                         _force_spec(tmp_path), *extra, "--dry-run"), cfg)
+
+
+def test_an_unreadable_force_spec_is_refused_by_name(cfg, tmp_path) -> None:
+    bad = tmp_path / "bad.json"
+    bad.write_text(json.dumps({"schema": "nope"}))
+    with pytest.raises(SystemExit, match="--our-force"):
+        build_plan(_args("--opponent", "metamon:Kakuna", "--games", "20", "--deal-game", "3", "--seed-base", "1",
+                         "--our-force", str(bad), "--dry-run"), cfg)

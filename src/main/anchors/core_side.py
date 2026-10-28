@@ -202,13 +202,16 @@ class _BattleState:
 
 def make_slot(front: Any, *, username: str, policy: CorePolicy, team_source: Any,
               state: OurSideState, forfeit_limit: int, battle_format: str = "gen3ou",
-              searcher: Any = None, recorder: Any = None) -> Any:
+              searcher: Any = None, recorder: Any = None, forcer: Any = None) -> Any:
     """Build the slot as a subclass of the front end's own connection record (imported lazily so
     importing this module stays cheap). ``searcher`` (``--our-search``, :class:`main.anchors.search_side.LiveSearcher`):
     each decision is the searcher's (it plays ``policy``'s greedy choice wherever it does not search); None = the
     policy decides every decision, unchanged. ``recorder`` (``--keep-input-logs``,
     :class:`main.anchors.input_log.InputLogRecorder`): after the policy decides, the decision's honest input log is
-    kept; it never changes a choice."""
+    kept; it never changes a choice. ``forcer`` (``--our-force``, :class:`main.anchors.forced_branch.ForcedBranch`): after
+    the policy decides, the forcer returns the action to play (the greedy one except at its named decision)."""
+    if forcer is not None and searcher is not None:
+        raise ValueError("a forced branch plays the checkpoint greedy elsewhere; it never searches")
     base = _conn_base()
 
     class CoreSlot(base):  # type: ignore[misc,valid-type]
@@ -222,6 +225,7 @@ def make_slot(front: Any, *, username: str, policy: CorePolicy, team_source: Any
             self.policy = policy
             self.searcher = searcher
             self.recorder = recorder
+            self.forcer = forcer
             self.teams = team_source
             self.state = state
             self.forfeit_limit = int(forfeit_limit)
@@ -415,6 +419,9 @@ def make_slot(front: Any, *, username: str, policy: CorePolicy, team_source: Any
                 idx, argmax = self.policy.decide(row, np.asarray(mask, dtype=np.int8))
                 if self.recorder is not None:
                     self.recorder.record(self.front, b.tag, d, mask, self, int(argmax))
+                if self.forcer is not None:
+                    # the deviation-only live read's branch: greedy everywhere but the named decision (G-BRANCH first)
+                    idx = self.forcer.choose(self.front, b.tag, d, mask, self, int(argmax))
             else:
                 # S-U's searched player: off the event loop (the peer's keepalive pings keep being answered)
                 idx, argmax = await self.searcher.decide(self.front, b.tag, d, row, np.asarray(mask, dtype=np.int8),
@@ -471,7 +478,8 @@ def build_slot(front: Any, *, username: str, model_zip: str, device: str, model_
                team_seed: Optional[int], forfeit_limit: int, state: OurSideState,
                battle_format: str = "gen3ou", belief_prior_mix: Optional[float] = None,
                team_skip: int = 0, search: Optional[str] = None, search_out: Any = None,
-               input_log: Optional[str] = None, input_log_out: Any = None) -> Any:
+               input_log: Optional[str] = None, input_log_out: Any = None, force: Optional[str] = None,
+               force_out: Any = None) -> Any:
     """Everything one half's slot needs: the policy (loaded once per half, as ``play.main`` did),
     the seeded team source (its draws logged into ``state.draws``) and the connection.
 
@@ -479,7 +487,8 @@ def build_slot(front: Any, *, username: str, model_zip: str, device: str, model_
     team the whole series' battle ``team_skip`` of this half drew (the discarded draws are not logged). ``search``
     (``--our-search``): the registered search (:mod:`main.anchors.search_presets`), its per-decision log at
     ``search_out``; returns a slot whose ``searcher`` the caller closes. ``input_log`` (``--keep-input-logs``, a raw
-    cell only): the turn window whose decisions' honest input logs go to ``input_log_out``."""
+    cell only): the turn window whose decisions' honest input logs go to ``input_log_out``. ``force`` (``--our-force``,
+    a ``--deal-game`` unit only): the forced-branch spec's path; its record goes to ``force_out``."""
     model = load_policy(model_zip, device, model_loader, state, belief_prior_mix=belief_prior_mix)
     policy = CorePolicy(model, stochastic=stochastic, temperature=temperature)
     teams = build_team_source(team_spec, team_seed, state.draws)
@@ -496,8 +505,16 @@ def build_slot(front: Any, *, username: str, model_zip: str, device: str, model_
         from main.anchors.input_log import InputLogRecorder
 
         recorder = InputLogRecorder(input_log, input_log_out)
+    forcer = None
+    if force is not None:
+        if searcher is not None or recorder is not None or stochastic:
+            raise ValueError("--our-force plays a RAW greedy checkpoint (no --our-search, no --keep-input-logs)")
+        from main.anchors.forced_branch import ForcedBranch, load_spec
+
+        forcer = ForcedBranch(load_spec(force), force_out)
     return make_slot(front, username=username, policy=policy, team_source=teams, state=state,
-                     forfeit_limit=forfeit_limit, battle_format=battle_format, searcher=searcher, recorder=recorder)
+                     forfeit_limit=forfeit_limit, battle_format=battle_format, searcher=searcher, recorder=recorder,
+                     forcer=forcer)
 
 
 def skip_draws(teams: Any, k: int, draw_log: list) -> None:

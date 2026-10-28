@@ -610,3 +610,22 @@ def test_a_raw_unit_keeping_input_logs_passes_its_window_and_a_capture_and_parse
                       unit_seeds=(0,), per_game=True)
     with pytest.raises(KA.KakunaError, match="FROM-TO"):
         KA.plan_units([{**_finals()[0], "input_log": "ten"}], hash_models=False, teamsets=("home72",), unit_seeds=(0,))
+
+
+# --------------------------------------------------------------- the deviation-only live read: a forced-branch unit
+def test_a_forced_branch_unit_is_a_raw_deal_game_with_its_spec_and_parses():
+    import dataclasses
+
+    from main.anchors.cli import build_parser
+
+    (raw, *_rest) = KA.plan_units(_finals(), hash_models=False, teamsets=("home72",), unit_seeds=(200,))
+    u = dataclasses.replace(raw, name=raw.name + "__g07__branch__t12n14", games=1, game=7, force="/s/spec.json")
+    a = KA.unit_argv(u, Path("/o"), 9541, py="PY")
+    tail = a[a.index("PY"):]
+    assert tail[tail.index("--our-force") + 1] == "/s/spec.json" and tail[tail.index("--deal-game") + 1] == "7"
+    assert "--keep-input-logs" not in tail and "--max-s" in a and tail[tail.index("--games") + 1] == "20"
+    args = build_parser().parse_args(tail[3:])
+    assert args.our_force == "/s/spec.json" and args.deal_game == 7 and args.seed_base == 200
+    for bad in (dict(game=None), dict(search="r0s4@10"), dict(input_log="10-30")):
+        with pytest.raises(KA.KakunaError, match="RAW per-game"):
+            KA.unit_argv(dataclasses.replace(u, **bad), Path("/o"), 9541, py="PY")

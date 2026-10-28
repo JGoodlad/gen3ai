@@ -281,6 +281,9 @@ class OurSideState:
     #: `--keep-input-logs`: the input-log recorder's counters for this half
     #: (`main.anchors.input_log.InputLogRecorder.summary`), or None when nothing is recorded.
     input_log_stats: Optional[Dict[str, Any]] = None
+    #: `--our-force`: the forced-branch player's counters for this half (`main.anchors.forced_branch.ForcedBranch
+    #: .summary`), or None when nothing is forced.
+    force_stats: Optional[Dict[str, Any]] = None
 
 
 def foreign_loader(zip_path: str, device: str):

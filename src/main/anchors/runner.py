@@ -44,6 +44,8 @@ from main.anchors.session import (
 
 #: `--keep-input-logs`: the recorder's file in the cell's out dir (`main.anchors.input_log`).
 INPUT_LOGS_NAME = "input_logs.jsonl"
+#: `--our-force`: the forced-branch player's record in the cell's out dir (`main.anchors.forced_branch`).
+FORCE_RECORD_NAME = "branch.jsonl"
 
 #: ``(what our side does — challenge / accept, the peer's role, the username suffix)`` for each half. The names say who
 #: sends the challenge; the SUFFIX is a hazard fix, not decoration — see :func:`half_usernames`.
@@ -171,6 +173,11 @@ class SeriesPlan:
     #: turn window with >= 2 legal actions (`main.anchors.input_log`, <out>/input_logs.jsonl), for the offline search
     #: of the S-U gate test (`main.value_search.sign_gate`). Changes no choice, so it stamps no regime.
     keep_input_logs: Optional[str] = None
+    #: `--our-force SPEC`: a FORCED BRANCH of a raw game (`main.anchors.forced_branch`, a `--deal-game` unit only): our
+    #: checkpoint greedy everywhere but ONE named decision, where it plays the spec's action after G-BRANCH. The spec's
+    #: path and its validated content (stamped our_regime='<regime>+force=<kind>:a<action>@t<turn>n<n>').
+    our_force: Optional[str] = None
+    our_force_spec: Optional[Dict[str, Any]] = None
 
     @property
     def our_set(self) -> str:
@@ -486,7 +493,8 @@ async def _play_core_half(plan: SeriesPlan, half: str, n_games: int, pplan: Any,
             forfeit_limit=plan.forfeit_turn_limit, state=state, battle_format=plan.battle_format,
             belief_prior_mix=plan.our_belief_prior_mix, team_skip=plan.deal_skip(half),
             search=plan.our_search, search_out=plan.out_dir / "search_decisions.jsonl",
-            input_log=plan.keep_input_logs, input_log_out=plan.out_dir / INPUT_LOGS_NAME)
+            input_log=plan.keep_input_logs, input_log_out=plan.out_dir / INPUT_LOGS_NAME,
+            force=getattr(plan, "our_force", None), force_out=plan.out_dir / FORCE_RECORD_NAME)
         await slot.login()
         if role == "acceptor":
             proc = start_peer(pplan, nice=plan.nice)
@@ -534,6 +542,8 @@ async def _play_core_half(plan: SeriesPlan, half: str, n_games: int, pplan: Any,
                 slot.searcher.close()
             if getattr(slot, "recorder", None) is not None:
                 state.input_log_stats = slot.recorder.summary()
+            if getattr(slot, "forcer", None) is not None:
+                state.force_stats = slot.forcer.summary()
         stop_peer(proc)
     return proc, failure
 
@@ -579,6 +589,16 @@ def _half_report(plan: SeriesPlan, half: str, n_games: int, pplan: Any, proc: An
         if state.input_log_stats is None or state.input_log_stats.get("window") != keep:
             report["regime_verified_decisions"] = False
             report["input_logs_mismatch"] = [keep, (state.input_log_stats or {}).get("window")]
+    # `--our-force`: the half that played the deal's game must have forced its named decision once, G-BRANCH passing.
+    spec = getattr(plan, "our_force_spec", None)
+    if spec is not None:
+        from main.anchors.forced_branch import check_half
+
+        report["force"] = state.force_stats
+        why = check_half(state.force_stats, spec, n_games)
+        if why is not None:
+            report["regime_verified_decisions"] = False
+            report["force_mismatch"] = why
     # `--our-belief-prior-mix`: the λ the loaded policy READS BACK must be the one the cell names.
     report["our_belief_prior_mix"] = state.belief_prior_mix
     if not plan.our_side_is_bot and not plan.our_side_is_peer and state.belief_prior_mix != plan.our_belief_prior_mix:
@@ -596,6 +616,15 @@ def _half_report(plan: SeriesPlan, half: str, n_games: int, pplan: Any, proc: An
         print(f"[anchors] ⚠️  {half}: {note['cause']} — the unit is VOID (H21; apply_peer_fault), re-run it with the same seed.",
               flush=True)
     return state.records, report, failure
+
+
+def _force_stamp(plan: SeriesPlan) -> str:
+    spec = getattr(plan, "our_force_spec", None)
+    if spec is None:
+        return ""
+    from main.anchors.forced_branch import stamp
+
+    return stamp(spec)
 
 
 def _row_transport(plan: SeriesPlan) -> str:
@@ -621,7 +650,8 @@ def cell_spec(plan: SeriesPlan, report: Dict[str, Any], our_team_count: int) -> 
                                 if plan.our_temperature is not None else plan.regime)
                           + (f"+belief_prior_mix={float(plan.our_belief_prior_mix):g}"
                              if plan.our_belief_prior_mix is not None else "")
-                          + (f"+search={plan.our_search}" if plan.our_search is not None else ""))),
+                          + (f"+search={plan.our_search}" if plan.our_search is not None else "")
+                          + (_force_stamp(plan)))),
         their_regime=str(report.get("their_regime") or plan.regime),
         regime_matched=plan.regime_matched and not plan.our_side_is_bot,
         teamset=plan.teamset,
