@@ -363,3 +363,16 @@ re-planned from the spec below, so no look-2 game has been played under the old 
       the peers' long-tail lines;
     - its summary is a descriptive row in the record. Counting is unchanged;
     - any HIT on a counted unit STOPS the record: the orchestrator is told before `record` runs.
+11. **(2026-10-28, the orchestrator's ruling after LR-F's FINDING, `1355d2d3f`; registered after the S lane finished and
+    before any look-2 Kakuna game.) The S lane's identity at the pin.** The 80 / 80 identity covered the Kakuna lane
+    only. The pin's S eval core (`main.h2h` and `agents.training`'s eval path) is now checked against banked E1 S rows
+    by LR-F's method (`x35_breakers_stage_2026-10-17/lrf_read/`: `run_identity.sh`, `s_identity_compare.py`), before
+    `record`:
+    - C0 s3501's batch 0 (100 mirrored pairs) is re-played at the pin against `x26_pstar` and `tstar`, from the bank's
+      model bytes (`09a6a2df…`, `814823c5…`, `cfa7f7be…`), twice:
+      - on the pool, against G1's rows (`~/gen3ai_archive/x35_g1/ledger`, regime `adfdbee824c9eb0a`; the
+        orchestrator's check);
+      - on `home72`, against D1's P rows (`~/gen3ai_archive/x35_d1_read/p/ledger`, regime `d4de0fd7c16a2658`), which
+        are the rows this read imports.
+    - Compared per cell: the regime id, the seed block, W / L / D and both outcome digests.
+    - Any mismatch HOLDS the read for the orchestrator (no `record`). The result is a descriptive row in the record.
