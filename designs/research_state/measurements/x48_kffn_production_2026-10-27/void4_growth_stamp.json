@@ -1,0 +1,179 @@
+{
+ "all_pass": true,
+ "banner": "fresh for 0, COPIED for 48",
+ "runs": [
+  {
+   "banner_lines": {
+    "launcher_child.full.log": 1,
+    "launcher_child.log": 0
+   },
+   "final_model": true,
+   "growth": {
+    "date": "2026-10-28T02:51:20.844338+00:00",
+    "fields": {
+     "trunk_ffn_by_kind": {
+      "child": "on",
+      "parent": "off"
+     }
+    },
+    "function_check": {
+     "bit_identical": true,
+     "device": "cpu",
+     "dtype": "float32",
+     "max_abs_d_logits": 0.0,
+     "max_abs_d_value": 0.0,
+     "mode": "eager",
+     "rows": 64,
+     "rows_source": "agents/model/compile_parity_obs.npz (agents.model.compile_parity_fixture)"
+    },
+    "new_parameters": {
+     "elements": 791040,
+     "tensors": 48
+    },
+    "optimizer": "every parent parameter's AdamW state (exp_avg, exp_avg_sq, step) carried unchanged after the fork's by-name realignment; every NEW parameter starts with no state (zero moments, step 0); the param group (LR included) carried; trunk_ffn_by_kind: each new expert parameter is a COPY of its round's shared FFN parameter and gets an independent clone of that parameter's AdamW state (exp_avg, exp_avg_sq, step; Q-K3)",
+    "optimizer_state": {
+     "carried": 280,
+     "copied": 48,
+     "fresh": 0,
+     "no_state": 0
+    },
+    "parent_model": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip",
+    "schema": "gen3_grow_fork_v1"
+   },
+   "lineage_grow_equal": true,
+   "logs_scanned": [
+    "launcher_child.full.log",
+    "launcher_child.log"
+   ],
+   "num_timesteps": 300061281,
+   "pass": true,
+   "problems": [],
+   "run": "rb_x35_x48kffn_s3501"
+  },
+  {
+   "banner_lines": {
+    "launcher_child.full.log": 1,
+    "launcher_child.log": 0
+   },
+   "final_model": true,
+   "growth": {
+    "date": "2026-10-28T07:23:26.869885+00:00",
+    "fields": {
+     "trunk_ffn_by_kind": {
+      "child": "on",
+      "parent": "off"
+     }
+    },
+    "function_check": {
+     "bit_identical": true,
+     "device": "cpu",
+     "dtype": "float32",
+     "max_abs_d_logits": 0.0,
+     "max_abs_d_value": 0.0,
+     "mode": "eager",
+     "rows": 64,
+     "rows_source": "agents/model/compile_parity_obs.npz (agents.model.compile_parity_fixture)"
+    },
+    "new_parameters": {
+     "elements": 791040,
+     "tensors": 48
+    },
+    "optimizer": "every parent parameter's AdamW state (exp_avg, exp_avg_sq, step) carried unchanged after the fork's by-name realignment; every NEW parameter starts with no state (zero moments, step 0); the param group (LR included) carried; trunk_ffn_by_kind: each new expert parameter is a COPY of its round's shared FFN parameter and gets an independent clone of that parameter's AdamW state (exp_avg, exp_avg_sq, step; Q-K3)",
+    "optimizer_state": {
+     "carried": 280,
+     "copied": 48,
+     "fresh": 0,
+     "no_state": 0
+    },
+    "parent_model": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip",
+    "schema": "gen3_grow_fork_v1"
+   },
+   "lineage_grow_equal": true,
+   "logs_scanned": [
+    "launcher_child.full.log",
+    "launcher_child.log"
+   ],
+   "num_timesteps": 300061657,
+   "pass": true,
+   "problems": [],
+   "run": "rb_x35_x48kffn_s3502"
+  },
+  {
+   "banner_lines": {
+    "launcher_child.full.log": 1,
+    "launcher_child.log": 0
+   },
+   "final_model": true,
+   "growth": {
+    "date": "2026-10-28T11:35:01.087189+00:00",
+    "fields": {
+     "trunk_ffn_by_kind": {
+      "child": "on",
+      "parent": "off"
+     }
+    },
+    "function_check": {
+     "bit_identical": true,
+     "device": "cpu",
+     "dtype": "float32",
+     "max_abs_d_logits": 0.0,
+     "max_abs_d_value": 0.0,
+     "mode": "eager",
+     "rows": 64,
+     "rows_source": "agents/model/compile_parity_obs.npz (agents.model.compile_parity_fixture)"
+    },
+    "new_parameters": {
+     "elements": 791040,
+     "tensors": 48
+    },
+    "optimizer": "every parent parameter's AdamW state (exp_avg, exp_avg_sq, step) carried unchanged after the fork's by-name realignment; every NEW parameter starts with no state (zero moments, step 0); the param group (LR included) carried; trunk_ffn_by_kind: each new expert parameter is a COPY of its round's shared FFN parameter and gets an independent clone of that parameter's AdamW state (exp_avg, exp_avg_sq, step; Q-K3)",
+    "optimizer_state": {
+     "carried": 280,
+     "copied": 48,
+     "fresh": 0,
+     "no_state": 0
+    },
+    "parent_model": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip",
+    "schema": "gen3_grow_fork_v1"
+   },
+   "lineage_grow_equal": true,
+   "logs_scanned": [
+    "launcher_child.full.log",
+    "launcher_child.log"
+   ],
+   "num_timesteps": 300061319,
+   "pass": true,
+   "problems": [],
+   "run": "rb_x35_x48kffn_s3503"
+  }
+ ],
+ "schema": "x48_void4_growth_stamp_v1",
+ "void_lines": [
+  "[GrowFork] FATAL",
+  "[ModelVersion] FATAL",
+  "does NOT inherit"
+ ],
+ "want": {
+  "fields": {
+   "trunk_ffn_by_kind": {
+    "child": "on",
+    "parent": "off"
+   }
+  },
+  "function_check": {
+   "bit_identical": true,
+   "max_abs_d_logits": 0.0,
+   "max_abs_d_value": 0.0
+  },
+  "new_parameters": {
+   "elements": 791040,
+   "tensors": 48
+  },
+  "optimizer_state": {
+   "carried": 280,
+   "copied": 48,
+   "fresh": 0,
+   "no_state": 0
+  }
+ }
+}

@@ -1,0 +1,55 @@
+{
+ "lr_confounded_applies": false,
+ "lr_confounded_bar": 0.9,
+ "lr_elevated_applies": false,
+ "lr_elevated_bar": 1.1,
+ "mean_lr_off": 0.00010348347479423871,
+ "mean_lr_on": 0.00010482306670096023,
+ "ratio": 1.01294498381877,
+ "runs": {
+  "rb_x35_c0_s3501": {
+   "mean_lr": 0.000105492862654321,
+   "n_nodes": 20,
+   "run": "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3501",
+   "side": "off",
+   "source": "metadata.json snapshot_history (the dose record)"
+  },
+  "rb_x35_c0_s3502": {
+   "mean_lr": 0.00010247878086419755,
+   "n_nodes": 20,
+   "run": "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3502",
+   "side": "off",
+   "source": "metadata.json snapshot_history (the dose record)"
+  },
+  "rb_x35_c0_s3503": {
+   "mean_lr": 0.00010247878086419755,
+   "n_nodes": 20,
+   "run": "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3503",
+   "side": "off",
+   "source": "metadata.json snapshot_history (the dose record)"
+  },
+  "rb_x35_x48kffn_s3501": {
+   "mean_lr": 0.00010649755658436217,
+   "n_nodes": 20,
+   "run": "/home/goodlad/dev/gen3ai/models/rb_x35_x48kffn_s3501",
+   "side": "on",
+   "source": "metadata.json snapshot_history (the dose record)"
+  },
+  "rb_x35_x48kffn_s3502": {
+   "mean_lr": 0.00010649755658436217,
+   "n_nodes": 20,
+   "run": "/home/goodlad/dev/gen3ai/models/rb_x35_x48kffn_s3502",
+   "side": "on",
+   "source": "metadata.json snapshot_history (the dose record)"
+  },
+  "rb_x35_x48kffn_s3503": {
+   "mean_lr": 0.00010147408693415639,
+   "n_nodes": 20,
+   "run": "/home/goodlad/dev/gen3ai/models/rb_x35_x48kffn_s3503",
+   "side": "on",
+   "source": "metadata.json snapshot_history (the dose record)"
+  }
+ },
+ "schema": "x48_pre_read_lr_v1",
+ "source": "main.reads.rules_n4_screen.mean_lr (the rule's own read: each run's mean metadata.json snapshot_history lr; each arm the mean over its three finals)"
+}

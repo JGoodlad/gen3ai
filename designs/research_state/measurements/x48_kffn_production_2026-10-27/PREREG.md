@@ -305,6 +305,71 @@ CPU only, no lease, `CUDA_VISIBLE_DEVICES=""`, nice 19 on cores 5-7,13-15, from 
 - The record carries R1 under `reported.r1_look1`, never at the top level, so `batch.final_class` cannot read R1 as
   X48's class.
 
+**NOTE 4 (2026-10-28, the read's registration: after the three X48 finals exist, before any X48 read game; no S or
+K number of X48 has been seen).** The pre-read gates, the pin and the registered spec. §5's classes, bars, α and seeds
+are UNCHANGED; there is no look 2. All of it was run CPU only (`CUDA_VISIBLE_DEVICES=""`, one torch thread, nice 19 on
+cores 5-7,13-15), read-only on `models/`.
+
+- **(a) VOID 4, exact (NOTE 1 (a)): PASS on all three seeds.** [`void4_growth_stamp.py`](void4_growth_stamp.py) →
+  [`void4_growth_stamp.json`](void4_growth_stamp.json). Both stamps (`model_config.json` `growth` and the lineage's
+  `grow`) are equal and hold exactly carried 280 / no_state 0 / fresh 0 / copied 48, 48 tensors / 791,040 elements,
+  `bit_identical` true with both max |Δ| 0.0, parent P\*. Each `launcher_child.full.log` holds the banner `fresh for 0,
+  COPIED for 48` once and no void line. (`launcher_child.log` is a ~1 MiB ring buffer whose head is trimmed, so the
+  banner is read from the full log.) VOID 1: `num_timesteps` 300,061,281 / 300,061,657 / 300,061,319. The registered
+  VOID gate (K9(b), pin, pool seed), pre-run with main's `rules.void_gate` on the spec: PASS for all six ON labels
+  ([`void_gate_preread.json`](void_gate_preread.json)). VOID 6: trailing-21-rollout approx KL max 0.0202 / 0.0205 /
+  0.0199, median 0.019 (bar 0.08; [`pre_read_kl.txt`](pre_read_kl.txt)).
+- **(b) "Experts engaged" (§8.7, NOTE 1 (b)): the label WOULD apply.** [`expert_divergence.py`](expert_divergence.py)
+  → [`expert_divergence.json`](expert_divergence.json). Fixed here before any game: the null for each (round, linear)
+  is √2 × the mean over C0's three seeds of C0's own FFN drift from P\* at the same node. R_k is the mean over the
+  three X48 seeds and both linears of D_k / null. At the final, R_k for rounds 0–1 spans **0.72 (r1 event) to 0.93
+  (r0 move)**: every one is ≤ 1.0, so **a NO-GO is labelled "experts not engaged"**. A seed-matched null gives the
+  same (min 0.72). At +10M the span is 0.68–0.82. Drift from P\* over 20M, as a fraction of the mon FFN's own: move
+  experts 0.78–0.82×; board, threat and event 0.24–0.43× in rounds 0–1; round 2's threat and event experts 0.04×
+  (no policy or value gradient, review M1). This is the throttle review M1 predicted.
+- **(c) Mean LR (M4, NOTE 1 (d)): neither label can apply.** By the rule's own read (`rules_n4_screen.mean_lr`,
+  [`pre_read_lr.json`](pre_read_lr.json)), X48 has 1.0482e-4 (nodes at 1.2056e-4: 6, 6, 1 of 20) and C0 has
+  1.0348e-4 (5, 2, 2 of 20). The ratio is **1.013**, inside [0.9, 1.1]. `main.dose`
+  ([`pre_read_dose.md`](pre_read_dose.md)): median LR 1.005e-4 and dose rate 2.044e-8 on all six runs.
+- **(d) NOTE 2's label does not apply.** LR-F look 1 is UNDECIDED, final (`reads/lrfloor_look1.json`), not GAIN
+  (precommit memo §2.2, its 2026-10-28 line).
+- **(e) The pin: the X35-frame shared play pin `86cfdf7efbe21b4ff3382541e6d78390df7d9966`** (tag
+  `x35-shared-play-86cfdf7e`; `designs/tools/reads.md` §4). It is not a main commit, so this departs from §10's "any
+  `main` commit carrying the rule". The reasons:
+  1. It carries the rule: `a05a0ca2c` is its ancestor, and `rules_n4_screen.py` is byte-identical to main's.
+  2. It plays both arms on the game they trained on: E1, with `f4b25238`'s model, observation, inference and Rust
+     trees. A main pin would play on an unbanked engine and across `d8d674b99` (an observation fix that changes OUR
+     side's inputs), and with our post-H24 pack, unlike the arms' training.
+  3. Kakuna plays the post-H22 pack (§5.1).
+  4. It is the frozen pin reads.md assigns to "X48's C0 replay", so X48's C0 rows are the C0 bank the other X35-frame
+     reads share (review m6).
+  5. G1's banked C0 S is on E1 and regime `adfdbee824c9eb0a`, as is this pin's S lane (LR-F, and (g) below). So
+     §8.6's pin-drift line now differs by pair count and harness only, not by engine.
+- **(f) The spec: [`read_spec.json`](read_spec.json), sha256 `94bb64dcc6c3409ac9581860dd488a7c26713d066b6c72c4b8e82e3a70d3478a`.**
+  `check-spec` exits 0 at the pin and at main. Against the draft:
+  - `pin` added.
+  - The **slope group** (§8.4, family `x35_x48_slope`, 500 pairs) plays the six +10M nodes, each a `pinned` ref by
+    sha256: X48 `checkpoint_290000046` / `_290000083` / `_290000182`, C0 `_290000009` / `_290000046` / `_290000131`.
+    Thinning kept all six.
+  - **`regime_id` `adfdbee824c9eb0a` is registered on both S groups.** The pair count does not enter it.
+  - `void.runs` gains the three +10M labels, on the same run dirs, because the rule gates every ON label.
+  - **`rederived_guards` is absent, and it resolves to `count`.** The pin's spec parser predates the field
+    (`29b90161f`) and refuses it. Main's `check-spec` prints `rederived_guards: count`, because this spec's sha256 is
+    not in `rederive.REGISTERED_BEFORE`. G14's re-derivation runs at assemble, and `record` / `decide` run from a main
+    checkout (reads.md §1: operator verbs from the newer checkout).
+  - The X48 finals stay `final` refs, which settle to sha256 `85c74453…f9446` / `2463a178…409ce8` / `2b8c3a4e…290e`.
+- **(g) The S-lane identity at the pin, before any X48 read game** (as LR-F did): C0 s3501's G1 batch 0 re-played
+  against `x26_pstar` and `tstar` from this read's play worktree ([`run_s_identity.sh`](run_s_identity.sh),
+  [`s_identity_compare.py`](s_identity_compare.py) → [`s_identity.json`](s_identity.json)). **IDENTICAL**: both cells equal G1's rows on regime (`adfdbee824c9eb0a`), seed block,
+  counts (109-90-1 and 121-79-0) and both outcome digests, with env core `7c532805…/125`.
+- **(h) Where it plays.** The play worktree is `/home/goodlad/dev/gen3ai-reads/x48_play_86cfdf7e`: a detached checkout
+  of the pin, `bootstrap.sh --skip-env`, and E1's untracked `Cargo.lock` blobs and Rust build copied from LR-F's play
+  worktree. `main.anchors --dry-run` prints `port=7d932165eced1c79/90;env=7c53280566d666ae/125` (E1). The state is
+  `~/gen3ai_archive/x35_x48_read/look1/`. Both lanes run at `--concurrency 1` with a registered stop of `--hours 168`,
+  resumable. The record goes to `../x35_breakers_stage_2026-10-17/reads/x48_look1.json` (§10).
+- **(i) Not played** (reported lines the spec does not hold): G-F (§8.5) and home72 (§8.8). Each is its own read, run
+  only if the lanes have room after the record. ρ (§8.2) is read from the dose records at the record.
+
 ## 14. FINDINGS at registration (standing rule 7)
 
 1. **The read's rule does not exist yet.** `n4_screen` is N4's, to be built with T69, and needs M2's MIXED class. X48's

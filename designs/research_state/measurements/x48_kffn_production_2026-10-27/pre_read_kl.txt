@@ -1,0 +1,19 @@
+# VOID 6 (the KL): python -m main.ops.tb_read <run> --last 21 --tag train/approx_kl (21 rollouts x 98,304 steps ~ the trailing 2M; main 8f35c21b1, 2026-10-28)
+## rb_x35_x48kffn_s3501
+FORK at step 280,000,170 (lineage record): TensorBoard points at steps <= 280,000,170 are the PARENT's (gen3_tb_inherit_v1) and are EXCLUDED — every number below is this arm's own
+train/approx_kl
+  points 204   steps 280,203,583 .. 300,061,281   (last 21)
+  median +0.0191   min +0.0175   max +0.0202   last +0.0192
+=== CALIBRATION COST ===
+## rb_x35_x48kffn_s3502
+FORK at step 280,000,170 (lineage record): TensorBoard points at steps <= 280,000,170 are the PARENT's (gen3_tb_inherit_v1) and are EXCLUDED — every number below is this arm's own
+train/approx_kl
+  points 204   steps 280,204,332 .. 300,061,657   (last 21)
+  median +0.0189   min +0.0178   max +0.0205   last +0.0193
+=== CALIBRATION COST ===
+## rb_x35_x48kffn_s3503
+FORK at step 280,000,170 (lineage record): TensorBoard points at steps <= 280,000,170 are the PARENT's (gen3_tb_inherit_v1) and are EXCLUDED — every number below is this arm's own
+train/approx_kl
+  points 204   steps 280,203,923 .. 300,061,319   (last 21)
+  median +0.0183   min +0.0170   max +0.0199   last +0.0183
+=== CALIBRATION COST ===
