@@ -1,0 +1,21 @@
+{
+ "schema": "x35_dose_v1",
+ "run": "rb_x63c_s6302",
+ "arm": "x63c",
+ "seed": 6302,
+ "pin": "f4b25238def57900c0305bb2a3a5a8f9edaef285",
+ "wall_min": 1242.9,
+ "gpu_h": 20.714,
+ "gpu_h_note": "one card: GPU-h = wall START\u2192END",
+ "steps_per_s": 1348,
+ "steps_per_s_source": "launcher summary 'FPS'",
+ "first_step": 380000195,
+ "last_step": 480080582,
+ "target_steps": 480000195,
+ "restarts": 0,
+ "launcher_rc": 0,
+ "start": "2026-10-28T10:54:42-07:00",
+ "end": "2026-10-29T07:37:34-07:00",
+ "segments": 1,
+ "segments_note": "wall = the sum of every START\u2192END segment; FPS / last step from the newest launcher log"
+}
