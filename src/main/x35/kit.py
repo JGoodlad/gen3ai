@@ -48,7 +48,14 @@ canonical flag order (the order carries no meaning to the trainer's parser):
   with only ``--seed`` (6302) and ``--run-name`` changed, +100M, side-pinned at the production pin. It has NO lever:
   it measures the +100M seed spread. Its START NODE is not P*: it forks X26 @380,000,195 (:data:`X63C_START`, the
   checkpoint X26c forked; ``describe`` refuses it if its sha256 moved), and its pool reference is X26c's own recorded
-  seeded set (:func:`reference_pool_names`), never the production side's P* record (``pool-check`` writes nothing).
+  seeded set (:func:`reference_pool_names`), never the production side's P* record (``pool-check`` writes nothing);
+* X63-U, THE X63 TREATMENT (``design_x63_long_breadth_continuation.md`` §2; PREREG ``x63_2026-10-29/PREREG.md``):
+  ``x63u`` -- X63-C's arm (the same start node X26 @380,000,195, :data:`X26_380M_START`; the same pool reference,
+  X26c's recorded seed; +100M) with X26c's recorded argv token for token + N1-P's lever pattern: the ONE lever
+  ``--team-mix x63_union_v1@ALL:0.8 --team-mix-sides both`` (:data:`X63U_LEVER`), in N1-P's slot, so ``checkargs``
+  against X26c shows only those four tokens and the run name. Stage A runs seed 2601 ONLY (X26c's own seed); Stage B /
+  C seeds are later amendments. Its own corpus-only pin ``batch.X63U_PIN`` (AM-X63U, AM-N1P's pattern) and its
+  corpus identity :data:`X63U_CORPUS` are checked by ``pin-check`` and ``corpus-check``.
 
     python -m main.x35.kit describe --arm a1 --seed 3501 --call <R_production.json> [--phase1 <record>]
     python -m main.x35.kit describe --arm ge_a1 --seed 3501 --call <R_production.json> [--models-dir D]   # a G-E reader
@@ -137,8 +144,17 @@ N1P_LEVER = ("--team-mix", "n1_proc_v1@ALL:0.5", "--team-mix-sides", "both")
 N1P_CORPUS = {"corpus": "n1_proc_v1", "tier": "ALL", "n": 12000,
               "tier_sha256": "d59f44f0b33bd3532a2434b4b9cc4d77da6b871e4a642dd71a9b38d3d875314f",
               "data_sha256": "99e3425aa687e7d0663525e4ab1df2a3cb52c8d6bf162df35da0bccf7c20bad6"}
+#: X63-U's ONE lever (``design_x63_long_breadth_continuation.md`` §2): with probability 0.8 per episode and side, the
+#: team is drawn uniformly from the union corpus ``x63_union_v1`` (x62 + n1 + d3), both sides; eval stays on the pool.
+#: N1-P's pattern, in N1-P's slot of the argv.
+X63U_LEVER = ("--team-mix", "x63_union_v1@ALL:0.8", "--team-mix-sides", "both")
+#: The corpus X63U_LEVER names (AM-X63U), from the committed manifest at X63-U's own pin (``batch.X63U_PIN``);
+#: :func:`corpus_check` REFUSES an identity with any field None.
+X63U_CORPUS: Dict[str, Any] = {"corpus": "x63_union_v1", "tier": "ALL", "n": 17876,
+                               "tier_sha256": "f324b6b10fcae17567a285d7ecdf4ff98e439d403a9d3a1131568b3fbc7d3f5e",
+                               "data_sha256": "f5cdc121ab6d8ec9b13dff60570183add14f30379ddaa68863d36529007128a7"}
 #: The arms whose argv names a team corpus, and the identity their pin must carry.
-ARM_CORPUS = {"d1": D1_CORPUS, "d3": D3_CORPUS, "n1p": N1P_CORPUS}
+ARM_CORPUS = {"d1": D1_CORPUS, "d3": D3_CORPUS, "n1p": N1P_CORPUS, "x63u": X63U_CORPUS}
 #: X47's ONE lever (``design_bot_ideas_screen.md`` §2.1; B-GROW, T64): the toy's 2 attention rounds become 4 at the
 #: fork, the 2 new rounds identity-init, so the grown network starts as T*'s function bit for bit (the child refuses
 #: to start otherwise: ``FATAL_CONFIG``). ``--dry-run`` prints ``grow : DECLARED trunk_layers 2 -> 4``.
@@ -152,20 +168,24 @@ X47_GROWTH = "trunk_layers 2 -> 4"
 X48_LEVER = ("--grow", "trunk_ffn_by_kind=on")
 #: What ``checkargs`` / ``--dry-run`` print for it (the 2026-10-27 transcripts at ``f4b25238``).
 X48_GROWTH = "trunk_ffn_by_kind 'off' -> 'on'"
-#: X63-C's START NODE (``x63_review_2026-10-27.md`` B1 fix 3): X26 @380,000,195, the checkpoint X26c
-#: (``rb_x26c_s2601``) forked at ``f4b25238`` (its ``metadata.json`` ``original_command``). The file is resolved in the
-#: run directory of the call record's P* (the same run, ``rb_x26_s2601``), as P*'s own path is; the sha256 was computed
-#: read-only with ``sha256sum`` on 2026-10-28 (``main.lineage``'s short ``7e0ebe942eaa``).
-X63C_START: Dict[str, Any] = {"label": "x26_380m", "run": "rb_x26_s2601", "file": "checkpoint_380000195_steps.zip",
-                              "step": 380_000_195,
-                              "sha256": "7e0ebe942eaaac69f1a5ef123d236fbb69f1e7a9fe32011f4d7e0e833dfbf6fd"}
+#: X63's START NODE (``x63_review_2026-10-27.md`` B1 fix 3), shared by X63-C and X63-U: X26 @380,000,195, the
+#: checkpoint X26c (``rb_x26c_s2601``) forked at ``f4b25238`` (its ``metadata.json`` ``original_command``). The file is
+#: resolved in the run directory of the call record's P* (the same run, ``rb_x26_s2601``), as P*'s own path is; the
+#: sha256 was computed read-only with ``sha256sum`` on 2026-10-28 (``main.lineage``'s short ``7e0ebe942eaa``).
+X26_380M_START: Dict[str, Any] = {"label": "x26_380m", "run": "rb_x26_s2601", "file": "checkpoint_380000195_steps.zip",
+                                  "step": 380_000_195,
+                                  "sha256": "7e0ebe942eaaac69f1a5ef123d236fbb69f1e7a9fe32011f4d7e0e833dfbf6fd"}
+#: X63-C's name for it (the same dict object).
+X63C_START = X26_380M_START
 #: The arms whose start node is a REGISTERED node, not the call record's P* (:func:`start_node`).
-START_NODES: Dict[str, Dict[str, Any]] = {"x63c": X63C_START}
-#: The run whose recorded ``pool_seed.json`` is X63-C's pool reference: X26c forked the same checkpoint at the same pin,
-#: so its seeded set is the set X63-C's fork must seed (a sibling of the start node's run under ``models/``).
-X63C_POOL_REFERENCE_RUN = "rb_x26c_s2601"
+START_NODES: Dict[str, Dict[str, Any]] = {"x63c": X26_380M_START, "x63u": X26_380M_START}
+#: The run whose recorded ``pool_seed.json`` is X63's pool reference: X26c forked the same checkpoint at the same pin,
+#: so its seeded set is the set X63-C's and X63-U's forks must seed (a sibling of the start node's run under
+#: ``models/``). A team mix draws the TRAINEE's and the opponent's teams; it does not change the snapshot pool's seed.
+X26C_POOL_REFERENCE_RUN = "rb_x26c_s2601"
+X63C_POOL_REFERENCE_RUN = X26C_POOL_REFERENCE_RUN
 #: The arms whose pool reference is a sibling run's recorded seed (:func:`reference_pool_names`), not the side's record.
-POOL_REFERENCE_RUNS: Dict[str, str] = {"x63c": X63C_POOL_REFERENCE_RUN}
+POOL_REFERENCE_RUNS: Dict[str, str] = {"x63c": X26C_POOL_REFERENCE_RUN, "x63u": X26C_POOL_REFERENCE_RUN}
 #: The declared growth each growing arm's transcripts must show (in BOTH tools); every other arm must show none.
 ARM_GROWTH: Dict[str, str] = {"toy_x47": X47_GROWTH, "x48": X48_GROWTH}
 #: C3 (orchestrator, 2026-10-19): the toy arms run ``--behaviour-check warn`` (K9(b)), as T*'s own run X34 does
@@ -202,6 +222,11 @@ X48_SEEDS = (3501, 3502, 3503)
 X63C_SEEDS = (6302,)
 #: X63-C's length: X63's +100M continuation from X26 @380M (X26c's own +100M).
 L_X63C = 100_000_000
+#: X63-U, Stage A: X26c's own seed, so its argv differs from X26c's only by the lever and the run name. Stage B / C
+#: seeds (6302, 6303) are later amendments; until then the kit refuses them.
+X63U_SEEDS = (2601,)
+#: X63-U's length: the same +100M as X63-C and X26c.
+L_X63U = L_X63C
 X47_SEEDS = TOY_SEEDS   # X47: look 1 at 3601-3603, look 2 at 3604-3605 (AM-4, orchestrator 2026-10-19), against toy C0 at the same seeds
 ARMS: Dict[str, Arm] = {a.name: a for a in (
     Arm("c0", "production", L_PROD, PROD_SEEDS, "rb_x35_c0_s{seed}", 0, "warn"),
@@ -216,6 +241,8 @@ ARMS: Dict[str, Arm] = {a.name: a for a in (
     Arm("x48", "production", L_PROD, X48_SEEDS, "rb_x35_x48kffn_s{seed}", 0, "warn"),
     # X63-C, the X63 control replicate (review B1 fix 3): X26c's argv, seed and run changed; start X26 @380M, not P*
     Arm("x63c", "production", L_X63C, X63C_SEEDS, "rb_x63c_s{seed}", 0, "warn"),
+    # X63-U, the X63 treatment (PREREG x63_2026-10-29): X26c's argv + the union team mix; start X26 @380M; own pin
+    Arm("x63u", "production", L_X63U, X63U_SEEDS, "rb_x63u_s{seed}", 0, "warn"),
     Arm("a3_mx", "production", L_EXPLOITER, (3511, 3512, 3513), "rb_x35_mx_s{seed}", 1, "warn"),
     Arm("a3", "production", L_PROD, PROD_SEEDS, "rb_x35_a3mx_s{seed}", 2, "warn", phase1_of="a3_mx"),
     Arm("a6_lx", "production", L_EXPLOITER, (3521, 3522, 3523), "rb_x35_lx_s{seed}", 1, "warn"),
@@ -313,7 +340,7 @@ def verify_start_node(arm: str, call: Mapping[str, Any]) -> None:
         got = sha256_file(s["path"])
         if got != s["sha256"]:
             raise KitError(f"arm {arm}'s start node {s['path']} has sha256 {got[:12]}, not the registered "
-                           f"{s['sha256'][:12]} (X63C_START): the file moved")
+                           f"{s['sha256'][:12]} (START_NODES): the file moved")
 
 
 def build_argv(arm: str, seed: int, call: Mapping[str, Any], phase1: Optional[Mapping[str, Any]] = None,
@@ -351,6 +378,8 @@ def build_argv(arm: str, seed: int, call: Mapping[str, Any], phase1: Optional[Ma
         lever = list(D3_LEVER)
     elif arm == "n1p":
         lever = list(N1P_LEVER)
+    elif arm == "x63u":
+        lever = list(X63U_LEVER)
     elif arm == "toy_x47":
         lever = list(X47_LEVER)
     elif arm == "x48":
@@ -682,6 +711,11 @@ def corpus_check(arm: str, pin: str, repo: str) -> Tuple[bool, str]:
     want = ARM_CORPUS.get(canonical_arm(arm))
     if want is None:
         return True, f"{arm} names no team corpus"
+    unset = [k for k in ("n", "tier_sha256", "data_sha256") if want.get(k) is None]
+    if unset:
+        return False, (f"{arm}'s registered corpus {want['corpus']}@{want['tier']} is a PLACEHOLDER "
+                       f"({', '.join(unset)} unset): no launch until the registration fills its identity from the "
+                       f"committed manifest")
     rel = f"src/utils/team_corpora/{want['corpus']}/manifest.json"
     p = subprocess.run(["git", "-C", repo, "show", f"{pin}:{rel}"], capture_output=True, text=True)
     if p.returncode != 0:
@@ -692,7 +726,7 @@ def corpus_check(arm: str, pin: str, repo: str) -> Tuple[bool, str]:
     bad = {k: (got[k], want[k]) for k in got if got[k] != want[k]}
     if bad:
         return False, (f"the pin {pin[:12]}'s {want['corpus']}@{want['tier']} is not {arm}'s registered corpus "
-                       f"(AMENDMENT D1-CORPUS / AM-D3 / AM-N1P): "
+                       f"(AMENDMENT D1-CORPUS / AM-D3 / AM-N1P / AM-X63U): "
                        + "; ".join(f"{k} {g} != {w}" for k, (g, w) in bad.items()))
     soak_rel = f"src/utils/team_corpora/{want['corpus']}/soak_selfcheck.json"
     p = subprocess.run(["git", "-C", repo, "show", f"{pin}:{soak_rel}"], capture_output=True, text=True)
@@ -850,7 +884,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
             call = _load(a.call)
             text = "".join(Path(x).read_text(errors="replace") for x in a.log if os.path.isfile(x))
-            if a.arm in POOL_REFERENCE_RUNS:      # X63-C: its reference run's recorded seed, never the side's record
+            if a.arm in POOL_REFERENCE_RUNS:      # X63-C / X63-U: X26c's recorded seed, never the side's record
                 names: Optional[List[str]] = reference_pool_names(a.arm, call)
             else:
                 names = _B.recorded_pool_names(a.stage, ARMS[a.arm].side) if a.stage else None
@@ -897,7 +931,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             return 0 if ok else 1
         if a.cmd == "pool-check":
             call = _load(a.call)
-            if a.arm in POOL_REFERENCE_RUNS:      # X63-C: compared with X26c's seed; never writes the side's record
+            if a.arm in POOL_REFERENCE_RUNS:      # X63-C / X63-U: X26c's seed; never writes the side's record
                 ok, line = reference_pool_check(a.arm, call, write=a.write)
             else:
                 ok, line = _B.pool_check(a.stage, ARMS[a.arm].side, call, parent_run_dir(call), write=a.write)

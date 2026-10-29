@@ -34,7 +34,8 @@ Reading (cells, rules, the record):
 * :mod:`main.reads.rederive` -- the forfeit-win guard and the H21 peer-fault check RE-DERIVED from each unit's captures
   and peer logs (units of pre-guard pins too): a hit voids the unit, or HOLDS ``decide`` for a read registered before;
 * :mod:`main.reads.rules` (with :mod:`main.reads.rules_n4_screen`, :mod:`main.reads.rules_search_headroom`,
-  :mod:`main.reads.rules_deviation_sign`, :mod:`main.reads.rules_deviation_live` and :mod:`main.reads.rules_x59s`) --
+  :mod:`main.reads.rules_deviation_sign`, :mod:`main.reads.rules_deviation_live`, :mod:`main.reads.rules_x63` and
+  :mod:`main.reads.rules_x59s`) --
   the registered interval and decision rules, by name (reusing ``main.x35.readout`` / ``main.x35.d1`` /
   ``main.anchors.results``), and the registered VOID gate;
 * :mod:`main.reads.record` -- the schema-checked record (X35-stage records load in ``main.x35.batch.read_record``);

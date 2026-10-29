@@ -1,0 +1,51 @@
+$ python -m main.x35.kit describe --arm x63u --seed 2601 --call designs/research_state/measurements/x35_breakers_stage_2026-10-17/reference_population_production.json
+{
+ "arm": "x63u",
+ "seed": 2601,
+ "side": "production",
+ "phase": 0,
+ "run_name": "rb_x63u_s2601",
+ "parent_run_dir": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601",
+ "delta_steps": 100000000,
+ "delta_text": "+100,000,000 steps",
+ "behaviour": "warn",
+ "k9b_ceilings": null,
+ "target": null,
+ "argv": [
+  "--model",
+  "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_380000195_steps.zip",
+  "--behaviour-check",
+  "warn",
+  "--steps",
+  "480000195",
+  "--checkpoint-every-steps",
+  "1000000",
+  "--device",
+  "cuda",
+  "--team-mix",
+  "x63_union_v1@ALL:0.8",
+  "--team-mix-sides",
+  "both",
+  "--seed",
+  "2601",
+  "--run-name",
+  "rb_x63u_s2601"
+ ],
+ "argv_shell": "--model /home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_380000195_steps.zip --behaviour-check warn --steps 480000195 --checkpoint-every-steps 1000000 --device cuda --team-mix x63_union_v1@ALL:0.8 --team-mix-sides both --seed 2601 --run-name rb_x63u_s2601"
+}
+[exit 0]
+$ python -m main.x35.kit pool-check --arm x63u --call designs/research_state/measurements/x35_breakers_stage_2026-10-17/reference_population_production.json --stage designs/research_state/measurements/x35_breakers_stage_2026-10-17
+[x35 kit] pool-check: PASS: pool set == rb_x26c_s2601's recorded seed (20 snapshot(s) at or below 380,000,195, digest 640ea665ad95)
+[exit 0]
+$ python -m main.x35.kit stage-check --arm x63u --seed 2601 --stage designs/research_state/measurements/x35_breakers_stage_2026-10-17
+[x35 kit] stage-check x63u s2601: ALLOWED: x63u s2601: no unmet condition (stage X63U-A, X63-U PREREG present)
+[exit 0]
+$ python -m main.x35.kit pin-check --arm x63u --pin 39eaa326736376a5ec3dde41af4afbe8a76a9015 --side production --stage designs/research_state/measurements/x35_breakers_stage_2026-10-17 --models-dir /home/goodlad/dev/gen3ai/models
+[x35 kit] pin-check: AM-X63U: X63U's pin 39eaa3267363 = the side's pin f4b25238def5 + one commit, 4 file(s), all under ['src/utils/team_corpora/'], corpus tree ca0845cfcb22 (the registered X63-U union tree)
+[x35 kit] pin-check: rb_x35_d1wide_s3501.crashed-20261022: a PRE-FIX d1 attempt at X35_PIN_1_production f4b25238def5 (AM-D1-FIX-f: VOID, never read)
+[x35 kit] pin-check: 36 side-pinned production run(s) checked against f4b25238def5
+[x35 kit] pin-check: the other side's run(s), judged at its own launches: ['rb_x35t_c0_s3601', 'rb_x35t_c0_s3602', 'rb_x35t_c0_s3603', 'rb_x35t_r0_s3631', 'rb_x35t_x47d4_s3601', 'rb_x35t_x47d4_s3602', 'rb_x35t_x47d4_s3603']
+[exit 0]
+$ python -m main.x35.kit corpus-check --arm x63u --pin 39eaa326736376a5ec3dde41af4afbe8a76a9015
+[x35 kit] corpus-check: PASS: x63_union_v1@ALL at the pin 39eaa3267363: 17876 teams, tier sha f324b6b10fca (the registered corpus), soaked with the label path: 178760 battles, 0 core errors
+[exit 0]

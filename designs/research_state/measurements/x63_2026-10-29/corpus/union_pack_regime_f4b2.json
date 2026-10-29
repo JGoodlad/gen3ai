@@ -1,0 +1,995 @@
+{
+ "by_component": {
+  "d3_setmut_v1": {
+   "legacy_pack_raised": 0,
+   "mons_by_class": {
+    "frustration_bp": 8,
+    "happiness_inert": 4,
+    "ivs_stat_only": 7
+   },
+   "share_material": 0.00278,
+   "showdown_invalid": 0,
+   "teams": 2876,
+   "teams_by_class": {
+    "frustration_bp": 8,
+    "happiness_inert": 4,
+    "ivs_stat_only": 7
+   },
+   "teams_differing": 19,
+   "teams_material": 8
+  },
+  "n1_proc_v1": {
+   "legacy_pack_raised": 0,
+   "mons_by_class": {
+    "frustration_bp": 16
+   },
+   "share_material": 0.00533,
+   "showdown_invalid": 0,
+   "teams": 3000,
+   "teams_by_class": {
+    "frustration_bp": 16
+   },
+   "teams_differing": 16,
+   "teams_material": 16
+  },
+  "x62_recomb_v1": {
+   "legacy_pack_raised": 0,
+   "mons_by_class": {
+    "frustration_bp": 15,
+    "happiness_inert": 48
+   },
+   "share_material": 0.00125,
+   "showdown_invalid": 0,
+   "teams": 12000,
+   "teams_by_class": {
+    "frustration_bp": 15,
+    "happiness_inert": 48
+   },
+   "teams_differing": 63,
+   "teams_material": 15
+  }
+ },
+ "differing": {
+  "x63u_00126": {
+   "classes": [
+    "happiness_inert"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 2 (gyarados) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_00226": {
+   "classes": [
+    "happiness_inert"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 5 (gyarados) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_00667": {
+   "classes": [
+    "frustration_bp"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 5 (snorlax) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_00722": {
+   "classes": [
+    "happiness_inert"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 4 (gyarados) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_00998": {
+   "classes": [
+    "happiness_inert"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 1 (gyarados) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_01313": {
+   "classes": [
+    "happiness_inert"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 6 (gyarados) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_01738": {
+   "classes": [
+    "happiness_inert"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 2 (gyarados) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_01794": {
+   "classes": [
+    "happiness_inert"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 5 (gyarados) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_01840": {
+   "classes": [
+    "happiness_inert"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 3 (gyarados) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_02159": {
+   "classes": [
+    "happiness_inert"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 6 (gyarados) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_02423": {
+   "classes": [
+    "happiness_inert"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 4 (gyarados) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_02582": {
+   "classes": [
+    "happiness_inert"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 6 (gyarados) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_02629": {
+   "classes": [
+    "frustration_bp"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 5 (snorlax) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_02678": {
+   "classes": [
+    "happiness_inert"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 1 (gyarados) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_03034": {
+   "classes": [
+    "happiness_inert"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 6 (gyarados) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_03404": {
+   "classes": [
+    "happiness_inert"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 5 (gyarados) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_03409": {
+   "classes": [
+    "happiness_inert"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 1 (gyarados) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_04181": {
+   "classes": [
+    "happiness_inert"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 5 (gyarados) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_04298": {
+   "classes": [
+    "frustration_bp"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 3 (snorlax) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_04411": {
+   "classes": [
+    "happiness_inert"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 6 (gyarados) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_04479": {
+   "classes": [
+    "happiness_inert"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 2 (gyarados) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_04546": {
+   "classes": [
+    "frustration_bp"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 1 (snorlax) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_04630": {
+   "classes": [
+    "frustration_bp"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 6 (snorlax) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_04972": {
+   "classes": [
+    "happiness_inert"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 6 (gyarados) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_05084": {
+   "classes": [
+    "happiness_inert"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 6 (gyarados) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_05126": {
+   "classes": [
+    "happiness_inert"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 6 (gyarados) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_05140": {
+   "classes": [
+    "happiness_inert"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 3 (gyarados) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_05261": {
+   "classes": [
+    "frustration_bp"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 6 (snorlax) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_05482": {
+   "classes": [
+    "happiness_inert"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 2 (gyarados) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_05601": {
+   "classes": [
+    "frustration_bp"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 3 (snorlax) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_05831": {
+   "classes": [
+    "frustration_bp"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 5 (snorlax) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_06344": {
+   "classes": [
+    "happiness_inert"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 4 (gyarados) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_06734": {
+   "classes": [
+    "frustration_bp"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 5 (snorlax) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_06817": {
+   "classes": [
+    "happiness_inert"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 3 (gyarados) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_06861": {
+   "classes": [
+    "happiness_inert"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 4 (gyarados) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_07335": {
+   "classes": [
+    "happiness_inert"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 6 (gyarados) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_07417": {
+   "classes": [
+    "happiness_inert"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 4 (gyarados) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_07449": {
+   "classes": [
+    "happiness_inert"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 2 (gyarados) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_07470": {
+   "classes": [
+    "happiness_inert"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 2 (gyarados) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_07830": {
+   "classes": [
+    "happiness_inert"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 1 (gyarados) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_08124": {
+   "classes": [
+    "happiness_inert"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 5 (gyarados) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_08143": {
+   "classes": [
+    "happiness_inert"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 1 (gyarados) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_08384": {
+   "classes": [
+    "frustration_bp"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 1 (snorlax) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_08401": {
+   "classes": [
+    "happiness_inert"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 5 (gyarados) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_08469": {
+   "classes": [
+    "happiness_inert"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 4 (gyarados) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_08699": {
+   "classes": [
+    "happiness_inert"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 4 (gyarados) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_09092": {
+   "classes": [
+    "frustration_bp"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 4 (snorlax) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_09185": {
+   "classes": [
+    "happiness_inert"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 6 (gyarados) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_09325": {
+   "classes": [
+    "frustration_bp"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 6 (snorlax) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_09501": {
+   "classes": [
+    "happiness_inert"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 6 (gyarados) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_09653": {
+   "classes": [
+    "happiness_inert"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 5 (gyarados) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_09868": {
+   "classes": [
+    "happiness_inert"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 4 (gyarados) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_09896": {
+   "classes": [
+    "happiness_inert"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 2 (gyarados) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_09898": {
+   "classes": [
+    "happiness_inert"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 5 (gyarados) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_10015": {
+   "classes": [
+    "frustration_bp"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 6 (snorlax) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_10145": {
+   "classes": [
+    "happiness_inert"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 6 (gyarados) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_10318": {
+   "classes": [
+    "happiness_inert"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 5 (gyarados) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_10611": {
+   "classes": [
+    "happiness_inert"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 1 (gyarados) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_10906": {
+   "classes": [
+    "happiness_inert"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 1 (gyarados) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_10930": {
+   "classes": [
+    "happiness_inert"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 6 (gyarados) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_11103": {
+   "classes": [
+    "frustration_bp"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 1 (snorlax) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_11565": {
+   "classes": [
+    "frustration_bp"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 4 (snorlax) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_11739": {
+   "classes": [
+    "happiness_inert"
+   ],
+   "curator": "x62_recomb_v1",
+   "diffs": [
+    "mon 4 (gyarados) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_12128": {
+   "classes": [
+    "frustration_bp"
+   ],
+   "curator": "n1_proc_v1",
+   "diffs": [
+    "mon 1 (gyarados) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_12355": {
+   "classes": [
+    "frustration_bp"
+   ],
+   "curator": "n1_proc_v1",
+   "diffs": [
+    "mon 6 (registeel) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_12588": {
+   "classes": [
+    "frustration_bp"
+   ],
+   "curator": "n1_proc_v1",
+   "diffs": [
+    "mon 3 (slaking) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_12777": {
+   "classes": [
+    "frustration_bp"
+   ],
+   "curator": "n1_proc_v1",
+   "diffs": [
+    "mon 1 (snorlax) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_13087": {
+   "classes": [
+    "frustration_bp"
+   ],
+   "curator": "n1_proc_v1",
+   "diffs": [
+    "mon 6 (snorlax) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_13148": {
+   "classes": [
+    "frustration_bp"
+   ],
+   "curator": "n1_proc_v1",
+   "diffs": [
+    "mon 6 (snorlax) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_13250": {
+   "classes": [
+    "frustration_bp"
+   ],
+   "curator": "n1_proc_v1",
+   "diffs": [
+    "mon 3 (snorlax) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_13358": {
+   "classes": [
+    "frustration_bp"
+   ],
+   "curator": "n1_proc_v1",
+   "diffs": [
+    "mon 5 (snorlax) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_13364": {
+   "classes": [
+    "frustration_bp"
+   ],
+   "curator": "n1_proc_v1",
+   "diffs": [
+    "mon 6 (snorlax) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_13512": {
+   "classes": [
+    "frustration_bp"
+   ],
+   "curator": "n1_proc_v1",
+   "diffs": [
+    "mon 5 (regice) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_14000": {
+   "classes": [
+    "frustration_bp"
+   ],
+   "curator": "n1_proc_v1",
+   "diffs": [
+    "mon 6 (metagross) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_14293": {
+   "classes": [
+    "frustration_bp"
+   ],
+   "curator": "n1_proc_v1",
+   "diffs": [
+    "mon 6 (snorlax) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_14316": {
+   "classes": [
+    "frustration_bp"
+   ],
+   "curator": "n1_proc_v1",
+   "diffs": [
+    "mon 1 (snorlax) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_14570": {
+   "classes": [
+    "frustration_bp"
+   ],
+   "curator": "n1_proc_v1",
+   "diffs": [
+    "mon 4 (snorlax) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_14778": {
+   "classes": [
+    "frustration_bp"
+   ],
+   "curator": "n1_proc_v1",
+   "diffs": [
+    "mon 6 (snorlax) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_14954": {
+   "classes": [
+    "frustration_bp"
+   ],
+   "curator": "n1_proc_v1",
+   "diffs": [
+    "mon 1 (snorlax) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_15445": {
+   "classes": [
+    "frustration_bp"
+   ],
+   "curator": "d3_setmut_v1",
+   "diffs": [
+    "mon 6 (snorlax) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_15479": {
+   "classes": [
+    "frustration_bp"
+   ],
+   "curator": "d3_setmut_v1",
+   "diffs": [
+    "mon 6 (charizard) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_15779": {
+   "classes": [
+    "ivs_stat_only"
+   ],
+   "curator": "d3_setmut_v1",
+   "diffs": [
+    "mon 6 (salamence) ivs: legacy 31,31,31,31,31,31, now 31,30,31,30,31,31"
+   ]
+  },
+  "x63u_15806": {
+   "classes": [
+    "happiness_inert"
+   ],
+   "curator": "d3_setmut_v1",
+   "diffs": [
+    "mon 4 (gyarados) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_16014": {
+   "classes": [
+    "happiness_inert"
+   ],
+   "curator": "d3_setmut_v1",
+   "diffs": [
+    "mon 4 (gyarados) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_16114": {
+   "classes": [
+    "ivs_stat_only"
+   ],
+   "curator": "d3_setmut_v1",
+   "diffs": [
+    "mon 1 (tyranitar) ivs: legacy 31,31,31,31,31,31, now 31,30,30,31,30,31"
+   ]
+  },
+  "x63u_16190": {
+   "classes": [
+    "ivs_stat_only"
+   ],
+   "curator": "d3_setmut_v1",
+   "diffs": [
+    "mon 6 (salamence) ivs: legacy 31,31,31,31,31,31, now 31,30,31,30,31,31"
+   ]
+  },
+  "x63u_16291": {
+   "classes": [
+    "frustration_bp"
+   ],
+   "curator": "d3_setmut_v1",
+   "diffs": [
+    "mon 1 (slaking) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_16395": {
+   "classes": [
+    "frustration_bp"
+   ],
+   "curator": "d3_setmut_v1",
+   "diffs": [
+    "mon 5 (snorlax) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_16512": {
+   "classes": [
+    "happiness_inert"
+   ],
+   "curator": "d3_setmut_v1",
+   "diffs": [
+    "mon 4 (gyarados) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_16824": {
+   "classes": [
+    "ivs_stat_only"
+   ],
+   "curator": "d3_setmut_v1",
+   "diffs": [
+    "mon 6 (salamence) ivs: legacy 31,31,31,31,31,31, now 31,30,31,30,31,31"
+   ]
+  },
+  "x63u_16826": {
+   "classes": [
+    "ivs_stat_only"
+   ],
+   "curator": "d3_setmut_v1",
+   "diffs": [
+    "mon 1 (tyranitar) ivs: legacy 31,31,31,31,31,31, now 31,30,30,31,30,31"
+   ]
+  },
+  "x63u_16832": {
+   "classes": [
+    "ivs_stat_only"
+   ],
+   "curator": "d3_setmut_v1",
+   "diffs": [
+    "mon 1 (tyranitar) ivs: legacy 31,31,31,31,31,31, now 31,30,30,31,30,31"
+   ]
+  },
+  "x63u_17046": {
+   "classes": [
+    "frustration_bp"
+   ],
+   "curator": "d3_setmut_v1",
+   "diffs": [
+    "mon 3 (snorlax) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_17102": {
+   "classes": [
+    "frustration_bp"
+   ],
+   "curator": "d3_setmut_v1",
+   "diffs": [
+    "mon 5 (snorlax) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_17185": {
+   "classes": [
+    "ivs_stat_only"
+   ],
+   "curator": "d3_setmut_v1",
+   "diffs": [
+    "mon 6 (salamence) ivs: legacy 31,31,31,31,31,31, now 31,30,31,30,31,31"
+   ]
+  },
+  "x63u_17325": {
+   "classes": [
+    "happiness_inert"
+   ],
+   "curator": "d3_setmut_v1",
+   "diffs": [
+    "mon 4 (gyarados) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_17519": {
+   "classes": [
+    "frustration_bp"
+   ],
+   "curator": "d3_setmut_v1",
+   "diffs": [
+    "mon 6 (snorlax) happiness: legacy 255, now 0"
+   ]
+  },
+  "x63u_17769": {
+   "classes": [
+    "frustration_bp"
+   ],
+   "curator": "d3_setmut_v1",
+   "diffs": [
+    "mon 6 (snorlax) happiness: legacy 255, now 0"
+   ]
+  }
+ },
+ "material_ids": [
+  "x63u_00667",
+  "x63u_02629",
+  "x63u_04298",
+  "x63u_04546",
+  "x63u_04630",
+  "x63u_05261",
+  "x63u_05601",
+  "x63u_05831",
+  "x63u_06734",
+  "x63u_08384",
+  "x63u_09092",
+  "x63u_09325",
+  "x63u_10015",
+  "x63u_11103",
+  "x63u_11565",
+  "x63u_12128",
+  "x63u_12355",
+  "x63u_12588",
+  "x63u_12777",
+  "x63u_13087",
+  "x63u_13148",
+  "x63u_13250",
+  "x63u_13358",
+  "x63u_13364",
+  "x63u_13512",
+  "x63u_14000",
+  "x63u_14293",
+  "x63u_14316",
+  "x63u_14570",
+  "x63u_14778",
+  "x63u_14954",
+  "x63u_15445",
+  "x63u_15479",
+  "x63u_16291",
+  "x63u_16395",
+  "x63u_17046",
+  "x63u_17102",
+  "x63u_17519",
+  "x63u_17769"
+ ],
+ "method": "x35_pack_regime_2026-10-27/pack_regime_audit.py (pack under the old pin's src, judge with showdown_pack.js, its _classify); MATERIAL = frustration_bp, ivs_hp_type_changed, return_bp",
+ "old_src": "/tmp/x63pack/src_f4b2/src",
+ "total": {
+  "above_threshold": false,
+  "legacy_pack_raised": 0,
+  "share_differing": 0.00548,
+  "share_material": 0.00218,
+  "showdown_invalid": 0,
+  "teams": 17876,
+  "teams_differing": 98,
+  "teams_material": 39,
+  "threshold_share": 0.02
+ },
+ "union": {
+  "data_sha256": "f5cdc121ab6d8ec9b13dff60570183add14f30379ddaa68863d36529007128a7",
+  "name": "x63_union_v1",
+  "tier_sha256": "f324b6b10fcae17567a285d7ecdf4ff98e439d403a9d3a1131568b3fbc7d3f5e"
+ }
+}

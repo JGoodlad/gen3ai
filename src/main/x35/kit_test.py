@@ -775,3 +775,110 @@ def test_x63c_pool_seed_check_cli_reads_x26cs_set_and_its_start_steps(tmp_path, 
     run = _x63c_seeded(tmp_path / "s", names[:2])
     assert K.main(["pool-seed-check", "--arm", "x63c", "--run-dir", str(run), "--call", str(cf), "--log", str(log)]) == 1
     assert "missing" in capsys.readouterr().out
+
+
+# ------------------------------------------------- X63-U (design_x63 §2, PREREG x63_2026-10-29): the X63 treatment
+def test_x63u_is_x26cs_recorded_argv_plus_exactly_the_four_lever_tokens_and_the_run_name():
+    want = list(X26C_ARGV)
+    want[want.index("--run-name") + 1] = "rb_x63u_s2601"
+    i = want.index("--seed")                                             # N1-P's slot: after --device, before --seed
+    want[i:i] = ["--team-mix", "x63_union_v1@ALL:0.8", "--team-mix-sides", "both"]
+    got = K.build_argv("x63u", 2601, _real_production_call())
+    assert got == want                                                   # token for token, the order too
+    assert got[got.index("--seed") + 1] == "2601"                        # X26c's own seed, unchanged
+    rest = got[:i] + got[i + 4:]
+    assert len(rest) == len(X26C_ARGV)                                   # without the lever: X26c's argv ...
+    assert [j for j, (g, x) in enumerate(zip(rest, X26C_ARGV)) if g != x] == [len(rest) - 1]   # ... but the run name
+    assert K.X63U_LEVER == ("--team-mix", "x63_union_v1@ALL:0.8", "--team-mix-sides", "both")
+    assert K.X63U_LEVER[1] == f"{K.X63U_CORPUS['corpus']}@{K.X63U_CORPUS['tier']}:0.8"
+    assert K.ARM_CORPUS["x63u"] is K.X63U_CORPUS
+
+
+def test_x63u_places_its_lever_where_n1p_places_its_own():
+    call = standin_call()
+    u, n = K.build_argv("x63u", 2601, call), K.build_argv("n1p", 3501, call)
+    assert u.index("--team-mix") - u.index("--device") == n.index("--team-mix") - n.index("--device") == 2
+    assert u.index("--seed") - u.index("--team-mix") == n.index("--seed") - n.index("--team-mix") == 4
+
+
+@pytest.mark.parametrize("seed", [6302, 6303, 3501, 2602])
+def test_x63u_refuses_every_seed_but_2601(seed):
+    with pytest.raises(K.KitError, match="not registered"):
+        K.build_argv("x63u", seed, standin_call())
+
+
+def test_x63u_forks_x26_at_380m_as_x63c_does():
+    call = _real_production_call()
+    s = K.start_node("x63u", call)
+    assert s == K.start_node("x63c", call) and s["step"] == 380_000_195 and s["sha256"].startswith("7e0ebe942eaa")
+    assert s["path"].endswith("/rb_x26_s2601/checkpoints/checkpoint_380000195_steps.zip")
+    assert K.X63C_START is K.X26_380M_START                                           # the alias is the same node
+    d = K.describe("x63u", 2601, standin_call())          # the stand-in's start file is absent: no sha to compare
+    assert d["delta_text"] == "+100,000,000 steps" and d["behaviour"] == "warn" and d["side"] == "production"
+    assert d["parent_run_dir"] == "models/rb_x26_s2601" and d["run_name"] == "rb_x63u_s2601"
+    assert d["argv"][d["argv"].index("--steps") + 1] == "480000195"
+    want = dict(flags(K.build_argv("x63c", 6302, standin_call())), **{"--team-mix": "x63_union_v1@ALL:0.8",
+                                                                      "--team-mix-sides": "both", "--seed": "2601",
+                                                                      "--run-name": "rb_x63u_s2601"})
+    assert flags(d["argv"]) == want                                     # X63-C's flags + the lever, nothing else
+
+
+def test_x63u_describe_refuses_a_start_file_whose_sha256_moved(tmp_path):
+    _, call, _ = _x63c_tree(tmp_path)
+    with pytest.raises(K.KitError, match="the file moved"):
+        K.describe("x63u", 2601, call)
+
+
+def test_x63us_registered_corpus_is_the_committed_one_and_passes_at_its_pin_only(monkeypatch):
+    from agents.training.matchup_spec import parse_team_mix
+    from main.x35 import batch as B
+    from utils.paths import repo_root
+    from utils.team_corpora import load_corpus
+
+    c = load_corpus(K.X63U_CORPUS["corpus"], K.X63U_CORPUS["tier"])
+    assert (len(c), c.tier_sha256, c.data_sha256) == (K.X63U_CORPUS["n"], K.X63U_CORPUS["tier_sha256"],
+                                                      K.X63U_CORPUS["data_sha256"])
+    assert parse_team_mix(K.X63U_LEVER[1]) == ("x63_union_v1", "ALL", 0.8)
+    ok, line = K.corpus_check("x63u", B.X63U_PIN, str(repo_root()))
+    assert ok and "17876 teams" in line and "178760 battles" in line, line
+    ok, line = K.corpus_check("x63u", B.X63U_PIN_BASE, str(repo_root()))
+    assert not ok and "holds no src/utils/team_corpora/x63_union_v1/manifest.json" in line, line
+    monkeypatch.setitem(K.X63U_CORPUS, "data_sha256", None)            # an unset field refuses before the pin is read
+    ok, line = K.corpus_check("x63u", B.X63U_PIN, str(repo_root()))
+    assert not ok and "PLACEHOLDER" in line and "data_sha256 unset" in line, line
+
+
+def test_x63u_pool_check_compares_with_x26c_and_never_writes_the_sides_record(tmp_path, capsys):
+    models, call, _ = _x63c_tree(tmp_path)
+    stage = tmp_path / "stage"
+    stage.mkdir()
+    cf = tmp_path / "call.json"
+    cf.write_text(json.dumps(call))
+    for extra in ([], ["--write"]):
+        assert K.main(["pool-check", "--arm", "x63u", "--call", str(cf), "--stage", str(stage), *extra]) == 0
+        out = capsys.readouterr().out
+        assert "PASS" in out and "rb_x26c_s2601's recorded seed (3 snapshot(s)" in out, out
+    assert "--write records nothing for x63u" in out and not list(stage.iterdir())
+    (models / "rb_x26_s2601" / "snapshots" / "snapshot_000300000000.zip").write_bytes(b"new")
+    assert K.main(["pool-check", "--arm", "x63u", "--call", str(cf), "--stage", str(stage), "--write"]) == 1
+    assert "extra ['snapshot_000300000000.zip']" in capsys.readouterr().out and not list(stage.iterdir())
+
+
+def test_x63u_pool_seed_check_reads_x26cs_set_at_the_start_nodes_step(tmp_path, capsys, monkeypatch):
+    from agents.training import lineage
+
+    _, call, names = _x63c_tree(tmp_path)
+    cf = tmp_path / "call.json"
+    cf.write_text(json.dumps(call))
+    log = tmp_path / "launcher.log"
+    log.write_text(X63C_LINE + "\n")
+    seen = []
+    monkeypatch.setattr(lineage, "checkpoint_num_timesteps", lambda p: seen.append(p) or 380000195)
+    run = _x63c_seeded(tmp_path / "r", names)
+    assert K.main(["pool-seed-check", "--arm", "x63u", "--run-dir", str(run), "--call", str(cf), "--log", str(log),
+                   "--stage", str(tmp_path / "no_stage")]) == 0, capsys.readouterr().out
+    assert seen == [K.start_node("x63u", call)["path"]]
+    run = _x63c_seeded(tmp_path / "s", names, fork_step=280000170)       # P*'s step: not X63-U's start
+    st, probs = K.check_pool_seed("x63u", str(run), call, X63C_LINE.replace("380000195", "280000170"), 280000170,
+                                  names)
+    assert st == "FAIL" and any("registered step 380000195" in p for p in probs), probs

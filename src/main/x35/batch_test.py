@@ -1250,3 +1250,131 @@ def test_x63cs_run_is_judged_by_the_production_pin_check_though_not_named_rb_x35
     assert ours == [("rb_x63c_s6302", "rb_x63c_s6302"), ("rb_x63c_s6302.crashed-1", "rb_x63c_s6302")]
     assert other == []                                     # names that are neither rb_x35* nor registered: ignored
     assert B.side_of_run("rb_x63c_s6302") == "production"
+
+
+# ------------------------------------------- AM-X63U (2026-10-29): X63-U's own corpus-only pin
+def test_the_registered_x63u_pin_adds_only_the_union_files_main_landed_and_its_registry_line():
+    """The real X63U_PIN (local branch ``x63u-pin``; tag ``x63u-pin-<sha8>`` on origin) passes its own check against
+    the production pin; its ``x63_union_v1`` subtree IS the one main's history holds (the bytes the soak read), and its
+    ``__init__.py`` differs from the side pin's by the one ``CORPORA`` entry, nothing else (no builder, no component
+    corpus, no label-guard or GIGO-fix code)."""
+    from utils.paths import repo_root
+
+    root = str(repo_root())
+    assert B.ARM_PINS["x63u"] == B.X63U_PIN and B.X63U_PIN_BASE == "f4b25238def57900c0305bb2a3a5a8f9edaef285"
+    ok, lines = B.x63u_pin_check(B.X63U_PIN, B.X63U_PIN_BASE, root)
+    assert ok, lines
+
+    def git(*a: str) -> str:
+        return subprocess.run(["git", "-C", root, *a], check=True, capture_output=True, text=True).stdout
+
+    assert git("rev-parse", f"{B.X63U_PIN}:src/utils/team_corpora").strip() == B.X63U_CORPORA_TREE
+    assert sorted(git("diff", "--name-only", B.X63U_PIN_BASE, B.X63U_PIN).split()) == [
+        "src/utils/team_corpora/__init__.py", "src/utils/team_corpora/x63_union_v1/manifest.json",
+        "src/utils/team_corpora/x63_union_v1/soak_selfcheck.json", "src/utils/team_corpora/x63_union_v1/teams.jsonl.gz"]
+    sub = "src/utils/team_corpora/x63_union_v1"
+    assert git("rev-parse", f"{B.X63U_PIN}:{sub}").strip() == git("rev-parse", f"HEAD:{sub}").strip()
+    diff = [ln for ln in git("diff", "-U0", B.X63U_PIN_BASE, B.X63U_PIN, "--",
+                             "src/utils/team_corpora/__init__.py").splitlines()
+            if ln[:1] in "+-" and not ln.startswith(("+++", "---"))]
+    assert diff == ['-CORPORA: Dict[str, Path] = {"w_forum_v1": HERE / "w_forum_v1"}',
+                    '+CORPORA: Dict[str, Path] = {"w_forum_v1": HERE / "w_forum_v1", "x63_union_v1": HERE / "x63_union_v1"}']
+
+
+def test_x63u_pin_check_refuses_an_unset_pin(monkeypatch):
+    from utils.paths import repo_root
+
+    monkeypatch.setattr(B, "X63U_PIN", None)
+    monkeypatch.setattr(B, "X63U_CORPORA_TREE", None)
+    ok, lines = B.x63u_pin_check(B.X63U_PIN_BASE, B.X63U_PIN_BASE, str(repo_root()))
+    assert not ok and "AM-X63U: X63U_PIN and X63U_CORPORA_TREE are PLACEHOLDERS (unset)" in lines[0], lines
+
+
+def test_own_pin_check_names_the_one_placeholder_left():
+    ok, lines = B.own_pin_check("x63u", PIN, PIN, ".", want_pin=PIN, base=PIN, paths=("src/",), tree_want=None,
+                                tree_of="t")
+    assert not ok and "AM-X63U: X63U_CORPORA_TREE is a PLACEHOLDER (unset)" in lines[0], lines
+
+
+@pytest.fixture
+def x63u_repo(d1_repo, monkeypatch):
+    """D1's fixture repo, read as X63-U's: ``pin`` is the corpus-only commit on the side pin."""
+    r = d1_repo
+    monkeypatch.setattr(B, "X63U_PIN", r["pin"])
+    monkeypatch.setattr(B, "X63U_PIN_BASE", r["base"])
+    monkeypatch.setattr(B, "X63U_CORPORA_TREE", B.D1_CORPORA_TREE)
+    monkeypatch.setattr(B, "ARM_PINS", {"x63u": r["pin"]})
+    return r
+
+
+def test_x63u_pin_check_accepts_only_the_side_pin_plus_one_corpus_only_commit(x63u_repo, monkeypatch):
+    r = x63u_repo
+    ok, lines = B.x63u_pin_check(r["pin"], r["base"], r["repo"])
+    assert ok and lines[0].startswith("AM-X63U: X63U's pin") and "registered X63-U union tree" in lines[0], lines
+    assert B.arm_pin_check("x63u", r["pin"], r["base"], r["repo"]) == (ok, lines)
+    ok, lines = B.x63u_pin_check(r["base"], r["base"], r["repo"])
+    assert not ok and "x63u launches only at X63U_PIN" in lines[0], lines
+    monkeypatch.setattr(B, "X63U_PIN", r["wide"])
+    ok, lines = B.x63u_pin_check(r["wide"], r["base"], r["repo"])
+    assert not ok and "outside: ['src/main/train.py']" in lines[0], lines
+    monkeypatch.setattr(B, "X63U_PIN", r["two"])
+    ok, lines = B.x63u_pin_check(r["two"], r["base"], r["repo"])
+    assert not ok and "parent(s)" in lines[0], lines
+    monkeypatch.setattr(B, "X63U_PIN", r["pin"])
+    monkeypatch.setattr(B, "X63U_CORPORA_TREE", "0" * 40)
+    ok, lines = B.x63u_pin_check(r["pin"], r["base"], r["repo"])
+    assert not ok and "registered X63-U union tree" in lines[0], lines
+
+
+def test_pin_check_holds_x63u_to_its_own_pin_and_an_x63u_run_at_the_side_pin_is_refused(x63u_repo, tmp_path):
+    r = x63u_repo
+    stage, models = tmp_path / "stage", tmp_path / "models"
+    stage.mkdir()
+    models.mkdir()
+    B.pin_write_if_absent(r["base"], str(stage), PROD, FP32)
+    assert B.pin_check(r["pin"], str(stage), str(models), PROD, arm="x63u", repo=r["repo"])[0]
+    ok, lines = B.pin_check(r["base"], str(stage), str(models), PROD, arm="x63u", repo=r["repo"])
+    assert not ok and "x63u launches only at X63U_PIN" in lines[0], lines
+    assert "unchanged" in B.pin_write_if_absent(r["pin"], str(stage), PROD, None, arm="x63u")
+    with pytest.raises(B.BatchError, match="AM-X63U"):
+        B.pin_write_if_absent(r["base"], str(stage), PROD, None, arm="x63u")
+    _run(models, "rb_x63u_s2601", r["pin"])                       # not named rb_x35*: still judged, at its own pin
+    ok, lines = B.pin_check(r["base"], str(stage), str(models), PROD, arm="c0", repo=r["repo"])
+    assert ok and "1 side-pinned production run(s) checked" in lines[-1], lines
+    _run(models, "rb_x63u_s2601.crashed-1", r["base"])            # no pre-fix attempt exists for X63-U: refused
+    ok, lines = B.pin_check(r["base"], str(stage), str(models), PROD, arm="c0", repo=r["repo"])
+    assert not ok and any(x.startswith("rb_x63u_s2601.crashed-1:") for x in lines), lines
+
+
+def test_x63u_is_side_pinned_on_its_own_pin_and_allowed_only_with_its_prereg(tmp_path, monkeypatch):
+    stage = tmp_path / "stage"
+    (stage / B.READS_DIR).mkdir(parents=True)
+    st = str(stage)
+    prereg = tmp_path / "x63" / "PREREG.md"
+    monkeypatch.setattr(B, "X63U_PREREG", str(prereg))              # absolute: repo_path() returns it unchanged
+    assert B.X63U_ARMS == ("x63u",) and "x63u" in B.SIDE_PINNED_ARMS and "x63u" in B.ARM_PINS
+    assert B.ARM_PIN_AMENDMENT["x63u"] == "AM-X63U" and B.READ_LABEL["x63u"] == "X63U"
+    assert B.X63U_STAGES == (("X63U-A", (("x63u", 2601),)),)
+    assert B.stage_of("x63u", 2601) == "X63U-A" and B.stage_of("x63u", 6302) is None
+    assert not {a for _, forks in B.STAGES for a, _ in forks} & {"x63u"}                    # STAGES is closed
+    assert B.stage_status(st, "x63u", 2601)[0] == B.PENDING                     # AM-8: no FP32_ALT named
+    _fill_fp32(stage)
+    status, why = B.stage_status(st, "x63u", 2601)
+    assert status == B.PENDING and "PREREG" in why and str(prereg) in why, why
+    prereg.parent.mkdir()
+    prereg.write_text("# X63\n")
+    status, why = B.stage_status(st, "x63u", 2601)
+    assert status == B.ALLOWED and "X63-U PREREG present" in why, why
+    assert B.arm_prereg("x63c") == (B.X63C_PREREG, "X63-C") and B.X63C_PREREG != str(prereg)   # each arm its own
+    assert {n for n, (a, _) in B.side_pinned_run_names().items() if a == "x63u"} == {"rb_x63u_s2601"}
+
+
+def test_x63us_run_is_listed_by_its_registered_name_and_x26cs_same_seed_run_is_not(tmp_path):
+    models = tmp_path / "models"
+    for d in ("rb_x63u_s2601", "rb_x63u_s2601.crashed-1", "rb_x63u_s6302", "rb_x26c_s2601", "rb_x63c_s6302"):
+        (models / d).mkdir(parents=True)
+    ours, other = B._side_pinned_dirs(str(models))
+    assert ours == [("rb_x63c_s6302", "rb_x63c_s6302"), ("rb_x63u_s2601", "rb_x63u_s2601"),
+                    ("rb_x63u_s2601.crashed-1", "rb_x63u_s2601")]
+    assert other == []                     # rb_x63u_s6302 (an unregistered seed) and X26c's own run: not judged here
+    assert B.side_of_run("rb_x63u_s2601") == "production"

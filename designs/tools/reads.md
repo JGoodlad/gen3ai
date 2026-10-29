@@ -497,6 +497,12 @@ A read that imports banked forum72 / away / pool Kakuna rows (D3 look 2's C0) mu
   - **FROZEN:** a later harness change reaches a read only through a new, named pin. Not in it: `29b90161f`'s H3 (an
     unstorable forced end reads blind; play path). Its H1 / H2 run at assemble, off the play path, so a deciding checkout
     at main applies them. `--our-belief-prior-mix` cannot load (`f4b25238` has no `belief_prior_mix`).
+  - **Its X63 successor** `65b998daffffaa1669b0b4ef840874e23edc12d3` (local branch `x63-play-pin`; X63 PREREG §5):
+    `86cfdf7ef` plus ONE commit adding only rule `x63_kvk` (`rules_x63.py`, its test, the registration in `rules.py`,
+    the rule set in `rules_test.py`), because the frozen pin's spec parser refuses a rule it does not hold. Its play
+    path equals `86cfdf7ef`'s (`playpath.compare`: 0 differences, digest `afedc505f0e2…` over 1,715 files), so its
+    regime is the frozen pin's. Its `package_doc_test` fails by construction: naming the module in
+    `main/reads/__init__.py`, which is on the play path, would break that identity.
 - **X59-S games / X60 / X61P look 2:** one engine per read, named at registration. An import from N1-P look 1 needs E3.
 - **The human-only / PastaMittens reads:** each was played on one commit, all on E1.
 
@@ -575,6 +581,7 @@ params)` produces the verdict as recorded. A decision can therefore be re-checke
 | `x59s` | X59-S's full read: `x59s_read.read` / `inhouse` / `verdict` on the Kakuna cells and the read's sha-recorded artefacts (three contrasts with A5.2's widened interval, the gate's booleans, yardsticks); VOID 3, 5, 6, 7 or a second engine | new (2026-10-25) |
 | `x59s_restriction` | X59-S's Delta_restriction = S-P0 - S-P on U with A5.2's interval (Amendment 6 A6.1), the closure's guard; the full read takes its record as an optional artefact | new (2026-10-26) |
 | `n4_screen` | the one-look capacity screen (N4 PREREG §5 with its review's M2 / M4 / M5; X48 PREREG §5, §8; `rules_n4_screen`): S = Welch two-sided `confidence` (90 %) on the finals' S, every cell at least the S group's `pairs` (X48 2,000, N4 500); K = the `d1` estimators on the anchor group (forum72) at `z`, φ̂-widened, φ̂ printed. In order: INCONCLUSIVE (a missing input, an S cell short, K beyond one uncounted unit per arm (`d1.min_games`), unplayed units, a meter on two or unknown engines) → MIXED (`mixed_veto`: GO-S with UB_K < 0 or GO-K with UB_S < 0; classed UNDECIDED, never GO) → GO (`GO (both)` / `(in-house)` / `(unfamiliar)`) → NO-GO (NO-GO-S and not GO-K, M5's text from `nogo_scope` (+ its `qualifier`), `LR-confounded` when the ON arm's mean `snapshot_history` LR < 0.9× the OFF arm's; a GO is `LR-elevated` above 1.1×) → UNDECIDED. Exact fractions, `rule8_eps`; `near_scope` `bound` (X48) or `meter` (N4: a near bound reads its meter UNDECIDED). `params.on` / `off` are label lists. REPORTED: R1 at look 1, per-member Δ_S, the `slope` group (reported-only), `pin_drift`, σ̂, the S power at σ̂ (seeded). An X35-stage record (top-level `arm` = `batch.READ_LABEL` of the ON arm, `look` 1; no top-level `r1`) | new (2026-10-27) |
+| `x63_kvk` | X63's k-v-k decision on forum72 against Kakuna (`measurements/x63_2026-10-29/PREREG.md` §6–§7; `rules_x63`): `params.on` / `off` label lists (k_on and k_off may differ; `stage` A = 1 v 2, B = 2 v 2, C = 3 v 3, checked at load), a `primary` and a `home` anchor group (one panel each). Each model a PLAIN proportion (a tie a non-win); Δ = mean_on − mean_off, B = Σ p̂q̂/G / k² per side, σ̂² = the mean over the sides with ≥ 2 models of (sample variance − mean p̂q̂/G) (at Stage A the OFF side's alone, = X63-C's σ̂_CC), SE² = B + max(`sigma_floor`, σ̂)² (1/k_on + 1/k_off), q = 1.959964 iff σ̂ is clearly ≤ the floor, else Student-t 0.975 on Σ (k − 1). Stage A: CONTINUE iff Δ̂ ≥ `screen`, else NOT PURSUED, σ̂_CC and (`stage_a_power`) the registered P(NOT PURSUED) row printed; B / C: INCONCLUSIVE (σ̂ > `inconclusive_sigma`) > GAIN (LB > 0) > RETIRE (UB < `kill_bar`) > UNDECIDED, B says whether C fires (UNDECIDED and Δ̂ ≥ `stage_c_bar`); a GAIN is FLOOR-checked (the ON models' pooled `home` Wilson LB > 0.50) and priced (net = Δ_home + r·Δ_F): FLOOR fails ⇒ OVER-RATE, r null ⇒ UNPRICED (r* printed), WITHIN ⇒ ADOPT-CANDIDATE, EXCEEDED ⇒ OVER-RATE, else TRADE. Exact fractions, `rule8_eps` (a near statistic takes the side that licenses less). A deciding group not conclusive is INCONCLUSIVE with its reasons. REPORTED: Δ_home at every stage, the team-cluster bootstrap of Δ_F (our team per game, seeded), the `reported` groups; `home` is reported-only at Stage A. Optional `void` (the VOID gate below) | new (2026-10-29) |
 
 **The estimators are not re-derived.** Each is the one function a read already used, re-exported under a name:
 
@@ -593,7 +600,7 @@ Migrated here from the scripts, which had no home in `src/`:
 
 A new rule is a new `Rule` entry with a test. It never replaces an existing rule's numbers.
 
-**The VOID gate** (`rules.void_gate`; be60f24f FINDING 3). An X35-stage rule (`x35_r1`, `d1`, `n4_screen`) may register
+**The VOID gate** (`rules.void_gate`; be60f24f FINDING 3). An X35-stage rule (`x35_r1`, `d1`, `n4_screen`), and `x63_kvk`, may register
 `params.void = {k9b_dir, runs: {label: run dir}}`, every ON model named; `x35_r1` on a batch-2 arm (SPRT, LRF) and `n4_screen` always MUST
 (the spec is refused without it). `decide`, and so `record`, runs it FIRST and writes `void.json`: each run's AM-6
 K9(b) record (`<k9b_dir>/<run>.json`) must read PASS, and on a batch-2 arm its V-S1 / V-S2 (SPRT) or LR-F KL guard

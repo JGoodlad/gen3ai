@@ -1,0 +1,10 @@
+📦 72 sample teams (bias) / 719 total loaded
+🧭 [MATCHUP 7cdbc69447] trainee teams: full pool + 10% sample-team bias
+   opponent teams: full pool | mix: bots
+   eval: trainee on full pool + 10% sample-team bias vs opponents greedy
+⚠️ [MATCHUP DRIFT] this FORK of rb_x26_s2601 declares matchup 7cdbc69447; the parent recorded fb823b7177 — the fork trains on a DIFFERENT distribution than its parent did. Metrics across the change are NOT comparable (a new era lands in metadata.json:matchup_history).
+   ⚠️ mix_kind: 'self_play' → 'bots'
+[Opponents] training pool = 8 bots (heuristic, heuristic2, staller, staller_v2, aggressive, aggressive_v2, setup_sweep, setup_sweep_v2)
+[startup] stopped after the team phase: TypeError: float() argument must be a string or a real number, not 'NoneType'
+[startup] 2.5 s
+[startup] peak RSS 0.62 GB

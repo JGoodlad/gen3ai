@@ -1,0 +1,130 @@
+{
+ "forum72": {
+  "pool (719)": {
+   "slots": 432,
+   "set_share": 0.7014,
+   "strict_share": 0.2315
+  },
+  "x62_recomb_v1@ALL": {
+   "slots": 432,
+   "set_share": 0.6991,
+   "strict_share": 0.2222
+  },
+  "n1_proc_v1@K3": {
+   "slots": 432,
+   "set_share": 0.7616,
+   "strict_share": 0.1551
+  },
+  "n1_proc_v1@ALL": {
+   "slots": 432,
+   "set_share": 0.831,
+   "strict_share": 0.1944
+  },
+  "d3_setmut_v1@ALL": {
+   "slots": 432,
+   "set_share": 0.7778,
+   "strict_share": 0.2546
+  },
+  "x63_union_v1@ALL": {
+   "slots": 432,
+   "set_share": 0.8495,
+   "strict_share": 0.294
+  }
+ },
+ "heldout72_hpfix": {
+  "pool (719)": {
+   "slots": 432,
+   "set_share": 0.3796,
+   "strict_share": 0.1042
+  },
+  "x62_recomb_v1@ALL": {
+   "slots": 432,
+   "set_share": 0.3657,
+   "strict_share": 0.0972
+  },
+  "n1_proc_v1@K3": {
+   "slots": 432,
+   "set_share": 0.8657,
+   "strict_share": 0.4769
+  },
+  "n1_proc_v1@ALL": {
+   "slots": 432,
+   "set_share": 0.9491,
+   "strict_share": 0.6227
+  },
+  "d3_setmut_v1@ALL": {
+   "slots": 432,
+   "set_share": 0.7593,
+   "strict_share": 0.2731
+  },
+  "x63_union_v1@ALL": {
+   "slots": 432,
+   "set_share": 0.9005,
+   "strict_share": 0.5046
+  }
+ },
+ "p72": {
+  "pool (719)": {
+   "slots": 432,
+   "set_share": 0.3079,
+   "strict_share": 0.081
+  },
+  "x62_recomb_v1@ALL": {
+   "slots": 432,
+   "set_share": 0.2986,
+   "strict_share": 0.0787
+  },
+  "n1_proc_v1@K3": {
+   "slots": 432,
+   "set_share": 0.7546,
+   "strict_share": 0.4074
+  },
+  "n1_proc_v1@ALL": {
+   "slots": 432,
+   "set_share": 0.8565,
+   "strict_share": 0.5648
+  },
+  "d3_setmut_v1@ALL": {
+   "slots": 432,
+   "set_share": 0.6157,
+   "strict_share": 0.2407
+  },
+  "x63_union_v1@ALL": {
+   "slots": 432,
+   "set_share": 0.787,
+   "strict_share": 0.4352
+  }
+ },
+ "home72": {
+  "pool (719)": {
+   "slots": 432,
+   "set_share": 1.0,
+   "strict_share": 1.0
+  },
+  "x62_recomb_v1@ALL": {
+   "slots": 432,
+   "set_share": 0.9468,
+   "strict_share": 0.8843
+  },
+  "n1_proc_v1@K3": {
+   "slots": 432,
+   "set_share": 0.8611,
+   "strict_share": 0.3333
+  },
+  "n1_proc_v1@ALL": {
+   "slots": 432,
+   "set_share": 0.919,
+   "strict_share": 0.4236
+  },
+  "d3_setmut_v1@ALL": {
+   "slots": 432,
+   "set_share": 1.0,
+   "strict_share": 1.0
+  },
+  "x63_union_v1@ALL": {
+   "slots": 432,
+   "set_share": 1.0,
+   "strict_share": 1.0
+  }
+ }
+}

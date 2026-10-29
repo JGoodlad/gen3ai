@@ -1,0 +1,120 @@
+{
+ "schema": "gen3_read_spec_v1",
+ "read": "x63_kvk_2026-10-29",
+ "prereg": "designs/research_state/measurements/x63_2026-10-29/PREREG.md",
+ "note": "DRAFT, NOT the spec of record (PREREG §5: the spec of record is registered by amendment before the first X63 game). X63 Stage A under rule x63_kvk (PREREG §6-§7): X63-U s2601 against X26c and X63-C, forum72 unit seeds 1000-1199 (4,000 games a model) deciding, home72 1000-1099 (2,000) reported-only at Stage A and pricing a GAIN at B / C. Played at the X63 successor of the X35-frame shared play pin (x35-shared-play-86cfdf7e + ONE commit adding only x63_kvk to src/main/reads/; play path identical). The REPORTED groups (traj, reported, pstar), the void gate and the 400M / 430M node refs are added at registration. rederived_guards is ABSENT because the pin's spec parser predates the field; record and decide run from main.",
+ "models": {
+  "x63u_s2601": {
+   "arm": "x63u",
+   "seed": 2601,
+   "ref": {
+    "kind": "final",
+    "run": "models/rb_x63u_s2601",
+    "min_step": 480000195,
+    "quiet_s": 300
+   }
+  },
+  "x26c_s2601": {
+   "arm": "x26c",
+   "seed": 2601,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x26c_s2601/final_model.zip",
+    "sha256": "cba7a1f835930e618871cfcafcc78d95320bd0c3b20210d4f423f0b4ff72fc4c"
+   }
+  },
+  "x63c_s6302": {
+   "arm": "x63c",
+   "seed": 6302,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x63c_s6302/final_model.zip",
+    "sha256": "e778c4a46e3bade7bfcf4d439ee85a0a80c16e5c4bb5dbeecb2e64b343826f0b"
+   }
+  }
+ },
+ "anchor": {
+  "primary": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "forum72"
+   ],
+   "unit_seeds": "1000-1199",
+   "models": [
+    "x63u_s2601",
+    "x26c_s2601",
+    "x63c_s6302"
+   ]
+  },
+  "home": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "home72"
+   ],
+   "unit_seeds": "1000-1099",
+   "models": [
+    "x63u_s2601",
+    "x26c_s2601",
+    "x63c_s6302"
+   ]
+  }
+ },
+ "decision": {
+  "rule": "x63_kvk",
+  "params": {
+   "on": [
+    "x63u_s2601"
+   ],
+   "off": [
+    "x26c_s2601",
+    "x63c_s6302"
+   ],
+   "primary": "primary",
+   "home": "home",
+   "stage": "A",
+   "screen": 0.01,
+   "kill_bar": 0.015,
+   "stage_c_bar": 0.015,
+   "sigma_floor": 0.01,
+   "inconclusive_sigma": 0.03,
+   "r": null,
+   "rule8_eps": 1e-09,
+   "stage_a_power": {
+    "source": "designs/research_state/measurements/x63_2026-10-29/power/power_x63_v2.log section A, rows 'floor 1.0 t-when-above, INC 3.0 (REGISTERED)', sigma_arm = sigma_ctl, the NOT PURSUED column at true Delta +2.0 / +3.0",
+    "rows": [
+     {
+      "sigma_pp": 0.0,
+      "p_np_at_2pp": 0.149,
+      "p_np_at_3pp": 0.02
+     },
+     {
+      "sigma_pp": 0.5,
+      "p_np_at_2pp": 0.192,
+      "p_np_at_3pp": 0.04
+     },
+     {
+      "sigma_pp": 1.0,
+      "p_np_at_2pp": 0.261,
+      "p_np_at_3pp": 0.1
+     },
+     {
+      "sigma_pp": 1.5,
+      "p_np_at_2pp": 0.311,
+      "p_np_at_3pp": 0.168
+     },
+     {
+      "sigma_pp": 2.0,
+      "p_np_at_2pp": 0.351,
+      "p_np_at_3pp": 0.227
+     },
+     {
+      "sigma_pp": 3.0,
+      "p_np_at_2pp": 0.393,
+      "p_np_at_3pp": 0.295
+     }
+    ]
+   }
+  }
+ },
+ "pin": "65b998daffffaa1669b0b4ef840874e23edc12d3"
+}

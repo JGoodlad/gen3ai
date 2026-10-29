@@ -56,7 +56,11 @@ conflates pilot competence with team strength (see the tracking section).
   `d3_setmut_v1` (D3: 2,876 pool teams with 1–2 mons' sets redrawn from Smogon usage, one tier `ALL`;
   `utils.team_corpora.build_d3_setmut`) and `n1_proc_v1` (X61 / N1: 12,000 whole procedural teams drawn from Smogon
   usage alone, prefix tiers K1 ⊂ K3 ⊂ K10 ⊂ ALL; `utils.team_corpora.build_n1_proc`; its arm is X61P's production
-  fork `n1p` at its own corpus-only pin; X61's fresh toy arms, `main.x61.arms`, are NOT-READY by review). A corpus
+  fork `n1p` at its own corpus-only pin; X61's fresh toy arms, `main.x61.arms`, are NOT-READY by review),
+  `x62_recomb_v1` (X62: 12,000 new sixes of familiar STRICT-class pool sets, tiers K1 ⊂ K3 ⊂ ALL;
+  `utils.team_corpora.build_x62_recomb`) and `x63_union_v1` (X63: x62@ALL + n1@K3 + d3@ALL verbatim, 17,876 teams,
+  one tier `ALL`, refusing duplicate sixes and any rc72b near-copy; `utils.team_corpora.build_x63_union`; its arm is
+  `x63u` at its own pin `batch.X63U_PIN`, which registers `w_forum_v1` and `x63_union_v1` only). A corpus
   reaches only a pin that holds it, so each arm that names a new one launches at a pin that carries it
   (`main.x35.batch.ARM_PINS`; X61's `main.x61.arms.PIN`). The `CORPORA` registry a run sees is its pin's own: N1-P's pin
   (`batch.N1P_PIN`) registers `w_forum_v1` and `n1_proc_v1` only. A large corpus soaks in

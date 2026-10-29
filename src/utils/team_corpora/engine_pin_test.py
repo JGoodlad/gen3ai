@@ -16,6 +16,8 @@ from utils.team_corpora import engine_pin as EP
 #: Where each corpus's builder recorded the oracle's answer in its manifest (the pin's provenance).
 RECORDED = {"w_forum_v1": ("engine", "unplayable_ids"), "d3_setmut_v1": ("engine", "prefilter_unplayable"),
             "n1_proc_v1": ("engine", "prefilter_unplayable"),
+            # Verbatim pool sets / registered components: nothing pre-filtered, every output id asked, an empty pin.
+            "x62_recomb_v1": ("engine", "output_unplayable"), "x63_union_v1": ("engine", "output_unplayable"),
             # The ladder-usage corpus (`utils.ladder_corpus`, the fuzz / parity team source) is pinned too.
             "ladder_usage_v1": ("filter", "engine_unplayable_ids")}
 

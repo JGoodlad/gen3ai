@@ -141,6 +141,26 @@
     ],
     "species": []
    }
+  },
+  "x62_recomb_v1": {
+   "built_at": "8a7f293f3",
+   "recorded_in": "src/utils/team_corpora/x62_recomb_v1/manifest.json :: engine.output_unplayable",
+   "unplayable": {
+    "ability": [],
+    "item": [],
+    "move": [],
+    "species": []
+   }
+  },
+  "x63_union_v1": {
+   "built_at": "8a7f293f3",
+   "recorded_in": "src/utils/team_corpora/x63_union_v1/manifest.json :: engine.output_unplayable",
+   "unplayable": {
+    "ability": [],
+    "item": [],
+    "move": [],
+    "species": []
+   }
   }
  },
  "schema": "gen3_corpus_engine_pin_v1",

@@ -59,15 +59,19 @@ Read at 12:05 PDT from the arm chain's status and each read's state directory; t
 The orchestrator's order after REVIEW_2 of the all-null strategy (`69c7cd34d`). Every item needs its GO.
 
 1. **X48**, production capacity at the plateau: on the GPU since 10-27 19:51 (s3501), then its read (≈ 26–38 Kakuna lane-hours).
-2. **X63**, dose: X26 @380M continued 100M on a union of the recombined, procedural and set-mutated corpora, no
-   forum teams (DRAFT, [`endstate/design_x63_long_breadth_continuation.md`](endstate/design_x63_long_breadth_continuation.md),
-   `49fbf75a7`; ≈ 20 GPU-h to its screen). It waits on its adversarial review (H-CTX read SUPPORTED; N1-P look 1 read CONTINUE; D3 look 2 read UNDECIDED, final, 10-28).
+2. **X63**, a long union continuation (REGISTERED 2026-10-29, not launched;
+   [`endstate/design_x63_long_breadth_continuation.md`](endstate/design_x63_long_breadth_continuation.md),
+   PREREG [`x63_2026-10-29/`](research_state/measurements/x63_2026-10-29/PREREG.md)): X26 @380M + 100M with 80 % of
+   teams from a 17,876-team union (X62's recombined sixes 0.537 of draws, N1-P's procedural teams at its 3,000-team
+   tier 0.134, D3's 0.129), read on forum72 against Kakuna at the shared play pin against X26c and X63-C (both trained:
+   a 1-arm-v-2-control screen that also measures the +100M seed spread). ≈ 20 GPU-h to its screen; it takes the GPU
+   after N1-P look 2's seeds, on the orchestrator's GO.
 3. **PR-1′**, the precision read re-scoped by REVIEW_2: D3 and N1-P against C0 on F (D1 reported only), 30,000–38,000
    new Kakuna games at the frozen X35-frame shared pin `x35-shared-play-86cfdf7e` (E1, post-H22; reads.md §4). Information only; it gates nothing above it. It runs after X48's read,
    or at once on a rented CPU box (§6).
 
 **Gated.** **X62**, P\*-forks on 12,000 recombined teams (REVISED DRAFT, `58cb02dc6`): its first gate, H-CTX, read
-SUPPORTED, which builds its corpus; then PR-1′ KILL retires the fork and N1-P GAIN makes it redundant. Per
+SUPPORTED, so its corpus `x62_recomb_v1` is built (2026-10-29, as X63's largest component); then PR-1′ KILL retires the fork and N1-P GAIN makes it redundant. Per
 resource-day it ranks below X63, and X63 Stage A runs before X62 under both SUPPORTED and UNDECIDED (ruled 2026-10-27). **X53-N1** waits on N1-P's GO and a zero-GPU measurement of how far two fresh runs
 differ. **S-U** (one-ply search on unfamiliar teams, registered `ffd9a443a`) has two BLOCKERs from its review
 (`7aafa527f`): where its search rule departs from the policy at P\* (40 % of decisions) it picks the better move
@@ -149,9 +153,17 @@ Every open owner question, in one place.
    the ledger stay on old SHAs, the default; and when the local old objects are pruned); and a GitHub Support
    request to purge cached copies of the old commits (only the repository owner can file it). Every commit gets a
    new SHA, so this page's gate fails until its SHAs are re-mapped from the table the rewrite writes.
-4. **X62's exchange rate r.** X62 prices its in-pool cost against its unfamiliar-team gain: net = Δ_home72 + r · Δ_U
-   against Kakuna, with a home72 floor (lower bound above 0.50). r = 1 is the orchestrator's default, the owner's to
-   change before X62 registers (`58cb02dc6`).
+4. **The exchange rate r, for X62 and X63.** Both breadth designs price their in-pool cost against their
+   unfamiliar-team gain, both against Kakuna: X62's net = Δ_home72 + r · Δ_U; X63's net = Δ_home72 + r · Δ_F (F,
+   because X63's procedural component hazards H and P72). A lever whose net is ≥ 0 is adopted; r says how many points
+   of the home-team margin (goal 2a) one point of unfamiliar-team strength (goal 2b) is worth. **Recommended default:
+   r = 1**, because both goals measure the same win rate against the same opponent, goal 2a has about 5 pp of margin
+   over its bar (lower bound 0.549 against 0.50) while goal 2b is about 4 pp short, and one rate for both designs
+   prices the same trade alike. A larger r (say 2) says goal 2b matters more now that 2a is met; a smaller one
+   protects 2a. **X63 needs r written before X63-U launches** (≈ 10-29 evening, after N1-P's seeds; once it trains, its
+   in-pool numbers would preview the cost r prices). If none is written, X63 does not
+   assume one: a GAIN reads UNPRICED and the owner rules on it afterwards, with the break-even rate printed.
+   X62's default r = 1 stays the orchestrator's until the owner writes one (`58cb02dc6`).
 
 ## 7. The biggest risks and unknowns
 
@@ -159,7 +171,7 @@ Every open owner question, in one place.
    +3 pp with intervals ±3–4 pp wide. Kakuna games run on CPU at 160–230 an hour on the shared agent cores, so each
    look costs days. The bets left are breadth at 10⁴ teams (N1-P, then
    [X53-N1](endstate/design_x53_n1_fresh_breadth.md), ≈ 39 GPU-h to a one-seed screen), recombined teams (X62; H-CTX
-   supports them) and dose (X63). X53-N1 is affordable only if two fresh runs differ by less than about 2 pp;
+   supports them) and a long union continuation (X63). X53-N1 is affordable only if two fresh runs differ by less than about 2 pp;
    above that, no affordable seed count can see a realistic +2–3 pp effect. If the levers miss, the fallback is
    [`endstate/strategy_if_levers_null_2026-10-26.md`](endstate/strategy_if_levers_null_2026-10-26.md), revised after
    its [review](research_state/measurements/strategy_review_2026-10-26/REVIEW.md) (`6fca2c061`) and re-ranked by

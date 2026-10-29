@@ -4899,10 +4899,10 @@
   },
   "src/main/x35/kakuna_test.py::test_the_real_peer_started_from_a_derived_config_verifies_the_registry_weights": {
    "status": "pass",
-   "commit": "bc81a9a72f3c0279b9658d9ca596757f57c355c9",
-   "at": "2026-10-28T19:49:43Z",
-   "duration_s": 6.12,
-   "contention": 1.0,
+   "commit": "8a7f293f3a37dfd38dbe80ba14e311f5b68a2176",
+   "at": "2026-10-29T14:57:53Z",
+   "duration_s": 6.07,
+   "contention": 1.15,
    "detail": ""
   },
   "src/node_free_search_integration_test.py::test_search_replay_and_the_prober_run_with_node_impossible": {
@@ -5208,7 +5208,23 @@
    "duration_s": 9.76,
    "contention": 1.54,
    "detail": ""
+  },
+  "src/utils/team_corpora/x62_recomb_test.py::test_the_committed_corpus_reproduces": {
+   "status": "pass",
+   "commit": "a4e188d09ff5ecf631527b8356a7ac64260dfbb1",
+   "at": "2026-10-29T16:53:18Z",
+   "duration_s": 62.0,
+   "contention": 1.17,
+   "detail": ""
+  },
+  "src/utils/team_corpora/x63_union_test.py::test_the_committed_union_reproduces": {
+   "status": "pass",
+   "commit": "a4e188d09ff5ecf631527b8356a7ac64260dfbb1",
+   "at": "2026-10-29T16:53:18Z",
+   "duration_s": 33.75,
+   "contention": 1.14,
+   "detail": ""
   }
  },
- "last_written": "2026-10-29T15:17:26Z"
+ "last_written": "2026-10-29T16:53:18Z"
 }

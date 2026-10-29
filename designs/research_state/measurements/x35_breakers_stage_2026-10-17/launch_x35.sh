@@ -22,6 +22,9 @@
 #          trunk_ffn_by_kind=on): x48 3501 3502 3503 (production pin; one look, no look 2)
 #          · X63-C, the X63 control replicate (PREREG x63c_control_replicate_2026-10-28, +100M, X26c's argv with seed and
 #          run changed, starting at X26 @380M, not P*; pool checked against X26c's seed): x63c 6302 (production pin)
+#          · X63-U, the X63 treatment (PREREG x63_2026-10-29, +100M, X26c's argv + --team-mix x63_union_v1@ALL:0.8
+#          --team-mix-sides both, from X26 @380M; pool checked against X26c's seed): x63u 2601 (its OWN corpus-only pin,
+#          batch.X63U_PIN, AM-X63U; pin-check / corpus-check HOLD while it is a placeholder)
 #                                                                             (main.x35.kit holds every argv)
 #   phase 1 → 2:  after the three exploiters END,
 #          python -m main.x35.kit phase1-record --arm a3 --call <R> --out <stage>/phase1_a3.json   (write-once)

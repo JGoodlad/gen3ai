@@ -61,6 +61,9 @@ with its reasons (N1-P FINDING 7).
 * ``n4_screen`` -- the one-look capacity screen (N4 PREREG §5 with its review's M2 / M4 / M5; X48 PREREG §5;
   :mod:`main.reads.rules_n4_screen`): S by Welch 90 % on the finals, K by the ``d1`` estimators on forum72;
   INCONCLUSIVE > MIXED > GO > NO-GO > UNDECIDED, the LR-confounded label and M5's NO-GO wording; an X35-stage record.
+* ``x63_kvk`` -- X63's k-v-k decision on forum72 (X63 PREREG §6–§7; :mod:`main.reads.rules_x63`): Δ of per-model plain
+  proportions with a floored seed term, z below the σ floor else t; Stage A's screen, B / C's classes, a GAIN priced on
+  home72 (FLOOR, then r).
 """
 from __future__ import annotations
 
@@ -1425,6 +1428,10 @@ from main.reads import rules_deviation_live as _DL  # noqa: E402  (it imports th
 
 RULES["deviation_live"] = Rule("deviation_live", _DL.RULE_DOCS["deviation_live"], _DL.check, _DL.inputs, _DL.decide,
                                False)
+
+from main.reads import rules_x63 as _X63  # noqa: E402  (it imports this module lazily: no cycle at import)
+
+RULES["x63_kvk"] = Rule("x63_kvk", _X63.RULE_DOCS["x63_kvk"], _X63.check, _X63.inputs, _X63.decide, False, _X63.reported)
 
 
 def inputs(rule: str, cells: Mapping[str, Any], params: Mapping[str, Any], spec: Any) -> Dict[str, Any]:

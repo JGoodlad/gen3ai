@@ -1,0 +1,1175 @@
+{
+ "built_by": "python -m utils.team_corpora.build_x62_recomb",
+ "candidate_refusals": {
+  "duplicate": 0,
+  "hidden_power": 118,
+  "level": 0,
+  "pack_level": 0,
+  "pool_species_six": 275,
+  "slot_exhausted": 0,
+  "validator": 1,
+  "within_gt4": 18
+ },
+ "candidates_drawn": 12412,
+ "data_file": "teams.jsonl.gz",
+ "data_sha256": "60a4d2e02b68a11da0c284aa4d8ae156b32e199bf6ea0e64000b919016fc5ea6",
+ "default_tier": "ALL",
+ "describe": {
+  "distinct_sets_drawn": 572,
+  "exact_pool_species_six": 0,
+  "max_shared_hist": {
+   "forum216b": {
+    "0": 2,
+    "1": 4240,
+    "2": 7758
+   },
+   "forum72": {
+    "0": 122,
+    "1": 7955,
+    "2": 3923
+   },
+   "heldout72": {
+    "0": 1879,
+    "1": 9403,
+    "2": 718
+   },
+   "heldout72_hpfix": {
+    "0": 608,
+    "1": 9952,
+    "2": 1440
+   },
+   "n1p72": {
+    "0": 1137,
+    "1": 9916,
+    "2": 947
+   },
+   "p72": {
+    "0": 1379,
+    "1": 9669,
+    "2": 952
+   },
+   "pool": {
+    "1": 267,
+    "2": 11733
+   },
+   "rc72b": {
+    "0": 1,
+    "1": 3395,
+    "2": 8604
+   }
+  },
+  "n_teams": 12000,
+  "near_duplicates_vs_breadth_corpora": {
+   "d3_setmut_v1@ALL": {
+    "at_4": 2,
+    "at_ge_5": 0,
+    "max_shared_hist": {
+     "1": 110,
+     "2": 9513,
+     "3": 2375,
+     "4": 2
+    }
+   },
+   "n1_proc_v1@ALL": {
+    "at_4": 2,
+    "at_ge_5": 0,
+    "max_shared_hist": {
+     "1": 1461,
+     "2": 9566,
+     "3": 971,
+     "4": 2
+    }
+   },
+   "w_forum_v1@ABC": {
+    "at_4": 62,
+    "at_ge_5": 0,
+    "max_shared_hist": {
+     "1": 252,
+     "2": 8782,
+     "3": 2904,
+     "4": 62
+    }
+   }
+  },
+  "set_exposure_ratio_quantiles": {
+   "all_pool_sets": {
+    "q00": 0.0,
+    "q05": 0.0,
+    "q10": 0.0,
+    "q100": 5.6921,
+    "q25": 0.9124,
+    "q50": 1.1384,
+    "q75": 1.3781,
+    "q90": 1.7376,
+    "q95": 2.0372
+   },
+   "drawable_sets": {
+    "q00": 0.0342,
+    "q05": 0.7512,
+    "q10": 0.8388,
+    "q100": 5.6921,
+    "q25": 1.0186,
+    "q50": 1.1983,
+    "q75": 1.438,
+    "q90": 1.7975,
+    "q95": 2.0771
+   },
+   "rule": "per pool set: (corpus share of slots) / (pool share of slots)"
+  },
+  "set_exposure_tvd_vs_pool_occurrences": 0.1713,
+  "slots_with_hidden_power": {
+   "corpus": 0.3697,
+   "pool": 0.4432
+  },
+  "species_drawn": 63,
+  "species_tvd_vs_pool": 0.0462,
+  "strict_filter": {
+   "drawable_distinct_sets": 572,
+   "drawable_mons": 3575,
+   "drawable_species": 63,
+   "pool_distinct_sets": 658,
+   "pool_mons": 4314,
+   "removed_mons": 739,
+   "species_lost": [
+    "arcanine",
+    "blaziken",
+    "dragonite",
+    "glalie",
+    "linoone",
+    "weezing"
+   ]
+  },
+  "top_pool_species_share_pool_to_corpus": {
+   "blissey": [
+    0.0422,
+    0.0483
+   ],
+   "celebi": [
+    0.0491,
+    0.0497
+   ],
+   "gengar": [
+    0.0422,
+    0.0451
+   ],
+   "jirachi": [
+    0.0554,
+    0.0535
+   ],
+   "metagross": [
+    0.0753,
+    0.0701
+   ],
+   "salamence": [
+    0.0559,
+    0.0544
+   ],
+   "skarmory": [
+    0.0471,
+    0.0508
+   ],
+   "swampert": [
+    0.0981,
+    0.0791
+   ],
+   "tyranitar": [
+    0.1057,
+    0.0923
+   ],
+   "zapdos": [
+    0.051,
+    0.0508
+   ]
+  },
+  "withdrawn_sets": {
+   "n": 86,
+   "rule": "a pool set with no STRICT-class occurrence (every occurrence names a non-Dark Hidden Power with no IVs line): never drawn",
+   "sets": [
+    [
+     "aerodactyl",
+     [
+      "earthquake",
+      "hiddenpowerbug",
+      "pursuit",
+      "rockslide"
+     ]
+    ],
+    [
+     "arcanine",
+     [
+      "extremespeed",
+      "fireblast",
+      "hiddenpowerice",
+      "toxic"
+     ]
+    ],
+    [
+     "arcanine",
+     [
+      "extremespeed",
+      "flamethrower",
+      "hiddenpowergrass",
+      "toxic"
+     ]
+    ],
+    [
+     "blaziken",
+     [
+      "hiddenpowergrass",
+      "overheat",
+      "skyuppercut",
+      "toxic"
+     ]
+    ],
+    [
+     "breloom",
+     [
+      "brickbreak",
+      "focuspunch",
+      "hiddenpowerghost",
+      "spore"
+     ]
+    ],
+    [
+     "breloom",
+     [
+      "brickbreak",
+      "focuspunch",
+      "hiddenpowerrock",
+      "spore"
+     ]
+    ],
+    [
+     "breloom",
+     [
+      "brickbreak",
+      "hiddenpowerghost",
+      "machpunch",
+      "spore"
+     ]
+    ],
+    [
+     "camerupt",
+     [
+      "explosion",
+      "flamethrower",
+      "hiddenpowergrass",
+      "sunnyday"
+     ]
+    ],
+    [
+     "camerupt",
+     [
+      "explosion",
+      "flamethrower",
+      "hiddenpowergrass",
+      "toxic"
+     ]
+    ],
+    [
+     "charizard",
+     [
+      "brickbreak",
+      "dragonclaw",
+      "flamethrower",
+      "hiddenpowergrass"
+     ]
+    ],
+    [
+     "charizard",
+     [
+      "brickbreak",
+      "flamethrower",
+      "hiddenpowergrass",
+      "toxic"
+     ]
+    ],
+    [
+     "charizard",
+     [
+      "brickbreak",
+      "flamethrower",
+      "hiddenpowerice",
+      "toxic"
+     ]
+    ],
+    [
+     "charizard",
+     [
+      "dragonclaw",
+      "flamethrower",
+      "focuspunch",
+      "hiddenpowergrass"
+     ]
+    ],
+    [
+     "charizard",
+     [
+      "flamethrower",
+      "focuspunch",
+      "hiddenpowerdark",
+      "substitute"
+     ]
+    ],
+    [
+     "charizard",
+     [
+      "flamethrower",
+      "focuspunch",
+      "hiddenpowergrass",
+      "substitute"
+     ]
+    ],
+    [
+     "charizard",
+     [
+      "flamethrower",
+      "focuspunch",
+      "hiddenpowergrass",
+      "toxic"
+     ]
+    ],
+    [
+     "charizard",
+     [
+      "flamethrower",
+      "focuspunch",
+      "hiddenpowerice",
+      "substitute"
+     ]
+    ],
+    [
+     "cloyster",
+     [
+      "explosion",
+      "hiddenpowergrass",
+      "icebeam",
+      "spikes"
+     ]
+    ],
+    [
+     "donphan",
+     [
+      "earthquake",
+      "hiddenpowerrock",
+      "rapidspin",
+      "rest"
+     ]
+    ],
+    [
+     "dragonite",
+     [
+      "dragondance",
+      "earthquake",
+      "focuspunch",
+      "hiddenpowerflying"
+     ]
+    ],
+    [
+     "dugtrio",
+     [
+      "aerialace",
+      "doubleedge",
+      "earthquake",
+      "hiddenpowerbug"
+     ]
+    ],
+    [
+     "dugtrio",
+     [
+      "aerialace",
+      "earthquake",
+      "hiddenpowerbug",
+      "substitute"
+     ]
+    ],
+    [
+     "dugtrio",
+     [
+      "aerialace",
+      "earthquake",
+      "hiddenpowerbug",
+      "triattack"
+     ]
+    ],
+    [
+     "dugtrio",
+     [
+      "beatup",
+      "earthquake",
+      "hiddenpowerbug",
+      "rockslide"
+     ]
+    ],
+    [
+     "flygon",
+     [
+      "earthquake",
+      "hiddenpowerbug",
+      "rockslide",
+      "substitute"
+     ]
+    ],
+    [
+     "flygon",
+     [
+      "earthquake",
+      "hiddenpowerrock",
+      "protect",
+      "toxic"
+     ]
+    ],
+    [
+     "forretress",
+     [
+      "counter",
+      "hiddenpowerghost",
+      "rapidspin",
+      "spikes"
+     ]
+    ],
+    [
+     "forretress",
+     [
+      "explosion",
+      "hiddenpowerfire",
+      "rapidspin",
+      "spikes"
+     ]
+    ],
+    [
+     "forretress",
+     [
+      "explosion",
+      "hiddenpowerghost",
+      "rapidspin",
+      "spikes"
+     ]
+    ],
+    [
+     "forretress",
+     [
+      "hiddenpowerghost",
+      "rapidspin",
+      "rest",
+      "spikes"
+     ]
+    ],
+    [
+     "forretress",
+     [
+      "hiddenpowersteel",
+      "protect",
+      "rapidspin",
+      "spikes"
+     ]
+    ],
+    [
+     "gengar",
+     [
+      "explosion",
+      "firepunch",
+      "hiddenpowergrass",
+      "thunderbolt"
+     ]
+    ],
+    [
+     "gengar",
+     [
+      "explosion",
+      "hiddenpowergrass",
+      "hypnosis",
+      "thunderbolt"
+     ]
+    ],
+    [
+     "gengar",
+     [
+      "explosion",
+      "hiddenpowergrass",
+      "icepunch",
+      "thunderbolt"
+     ]
+    ],
+    [
+     "gengar",
+     [
+      "explosion",
+      "hiddenpowergrass",
+      "thunderbolt",
+      "willowisp"
+     ]
+    ],
+    [
+     "glalie",
+     [
+      "explosion",
+      "hiddenpowerfighting",
+      "icebeam",
+      "spikes"
+     ]
+    ],
+    [
+     "gyarados",
+     [
+      "dragondance",
+      "earthquake",
+      "hiddenpowerghost",
+      "return"
+     ]
+    ],
+    [
+     "gyarados",
+     [
+      "dragondance",
+      "earthquake",
+      "hiddenpowerrock",
+      "return"
+     ]
+    ],
+    [
+     "gyarados",
+     [
+      "dragondance",
+      "flail",
+      "hiddenpowerflying",
+      "substitute"
+     ]
+    ],
+    [
+     "gyarados",
+     [
+      "dragondance",
+      "hiddenpowerflying",
+      "rest",
+      "thunderwave"
+     ]
+    ],
+    [
+     "gyarados",
+     [
+      "hiddenpowerflying",
+      "rest",
+      "roar",
+      "thunderwave"
+     ]
+    ],
+    [
+     "hariyama",
+     [
+      "crosschop",
+      "focuspunch",
+      "hiddenpowerghost",
+      "knockoff"
+     ]
+    ],
+    [
+     "hariyama",
+     [
+      "crosschop",
+      "hiddenpowerghost",
+      "knockoff",
+      "rockslide"
+     ]
+    ],
+    [
+     "jirachi",
+     [
+      "bodyslam",
+      "doomdesire",
+      "firepunch",
+      "hiddenpowerfighting"
+     ]
+    ],
+    [
+     "jirachi",
+     [
+      "bodyslam",
+      "dynamicpunch",
+      "firepunch",
+      "hiddenpowergrass"
+     ]
+    ],
+    [
+     "jirachi",
+     [
+      "bodyslam",
+      "firepunch",
+      "hiddenpowerfighting",
+      "icepunch"
+     ]
+    ],
+    [
+     "jirachi",
+     [
+      "bodyslam",
+      "firepunch",
+      "hiddenpowerfighting",
+      "psychic"
+     ]
+    ],
+    [
+     "jirachi",
+     [
+      "bodyslam",
+      "firepunch",
+      "hiddenpowergrass",
+      "icepunch"
+     ]
+    ],
+    [
+     "jirachi",
+     [
+      "bodyslam",
+      "hiddenpowerfighting",
+      "protect",
+      "wish"
+     ]
+    ],
+    [
+     "jirachi",
+     [
+      "calmmind",
+      "hiddenpowerfighting",
+      "icepunch",
+      "thunderbolt"
+     ]
+    ],
+    [
+     "jirachi",
+     [
+      "dynamicpunch",
+      "firepunch",
+      "hiddenpowergrass",
+      "icepunch"
+     ]
+    ],
+    [
+     "jirachi",
+     [
+      "dynamicpunch",
+      "firepunch",
+      "hiddenpowergrass",
+      "thunderbolt"
+     ]
+    ],
+    [
+     "jirachi",
+     [
+      "dynamicpunch",
+      "firepunch",
+      "hiddenpowergrass",
+      "thunderwave"
+     ]
+    ],
+    [
+     "jirachi",
+     [
+      "firepunch",
+      "hiddenpowerfighting",
+      "icepunch",
+      "psychic"
+     ]
+    ],
+    [
+     "jirachi",
+     [
+      "firepunch",
+      "hiddenpowerfighting",
+      "protect",
+      "wish"
+     ]
+    ],
+    [
+     "linoone",
+     [
+      "bellydrum",
+      "extremespeed",
+      "hiddenpowerground",
+      "shadowball"
+     ]
+    ],
+    [
+     "machamp",
+     [
+      "earthquake",
+      "hiddenpowerghost",
+      "lowkick",
+      "rockslide"
+     ]
+    ],
+    [
+     "metagross",
+     [
+      "earthquake",
+      "explosion",
+      "hiddenpowergrass",
+      "thunderpunch"
+     ]
+    ],
+    [
+     "metagross",
+     [
+      "earthquake",
+      "explosion",
+      "hiddenpowerrock",
+      "meteormash"
+     ]
+    ],
+    [
+     "metagross",
+     [
+      "explosion",
+      "hiddenpowerfire",
+      "psychic",
+      "pursuit"
+     ]
+    ],
+    [
+     "metagross",
+     [
+      "explosion",
+      "hiddenpowergrass",
+      "icepunch",
+      "thunderpunch"
+     ]
+    ],
+    [
+     "porygon2",
+     [
+      "hiddenpowerfighting",
+      "icebeam",
+      "recover",
+      "toxic"
+     ]
+    ],
+    [
+     "regirock",
+     [
+      "curse",
+      "explosion",
+      "focuspunch",
+      "hiddenpowerrock"
+     ]
+    ],
+    [
+     "regirock",
+     [
+      "earthquake",
+      "explosion",
+      "hiddenpowerrock",
+      "thunderwave"
+     ]
+    ],
+    [
+     "regirock",
+     [
+      "explosion",
+      "hiddenpowerrock",
+      "superpower",
+      "thunderwave"
+     ]
+    ],
+    [
+     "salamence",
+     [
+      "brickbreak",
+      "dragonclaw",
+      "flamethrower",
+      "hiddenpowerbug"
+     ]
+    ],
+    [
+     "salamence",
+     [
+      "brickbreak",
+      "dragonclaw",
+      "hiddenpowergrass",
+      "wish"
+     ]
+    ],
+    [
+     "salamence",
+     [
+      "brickbreak",
+      "dragondance",
+      "fireblast",
+      "hiddenpowerflying"
+     ]
+    ],
+    [
+     "salamence",
+     [
+      "brickbreak",
+      "dragondance",
+      "hiddenpowerflying",
+      "refresh"
+     ]
+    ],
+    [
+     "salamence",
+     [
+      "brickbreak",
+      "dragondance",
+      "hiddenpowerflying",
+      "substitute"
+     ]
+    ],
+    [
+     "salamence",
+     [
+      "brickbreak",
+      "earthquake",
+      "hiddenpowerflying",
+      "wish"
+     ]
+    ],
+    [
+     "skarmory",
+     [
+      "drillpeck",
+      "hiddenpowerground",
+      "roar",
+      "spikes"
+     ]
+    ],
+    [
+     "skarmory",
+     [
+      "hiddenpowersteel",
+      "protect",
+      "roar",
+      "spikes"
+     ]
+    ],
+    [
+     "skarmory",
+     [
+      "hiddenpowersteel",
+      "roar",
+      "spikes",
+      "thief"
+     ]
+    ],
+    [
+     "snorlax",
+     [
+      "curse",
+      "hiddenpowerbug",
+      "rest",
+      "return"
+     ]
+    ],
+    [
+     "swampert",
+     [
+      "curse",
+      "earthquake",
+      "hiddenpowerrock",
+      "rest"
+     ]
+    ],
+    [
+     "swampert",
+     [
+      "earthquake",
+      "hiddenpowerghost",
+      "hydropump",
+      "rockslide"
+     ]
+    ],
+    [
+     "tyranitar",
+     [
+      "earthquake",
+      "focuspunch",
+      "hiddenpowerghost",
+      "rockslide"
+     ]
+    ],
+    [
+     "tyranitar",
+     [
+      "earthquake",
+      "hiddenpowerbug",
+      "rockslide",
+      "thunderwave"
+     ]
+    ],
+    [
+     "tyranitar",
+     [
+      "earthquake",
+      "hiddenpowerghost",
+      "return",
+      "rockslide"
+     ]
+    ],
+    [
+     "weezing",
+     [
+      "explosion",
+      "flamethrower",
+      "hiddenpowergrass",
+      "memento"
+     ]
+    ],
+    [
+     "weezing",
+     [
+      "explosion",
+      "flamethrower",
+      "hiddenpowergrass",
+      "thunderbolt"
+     ]
+    ],
+    [
+     "weezing",
+     [
+      "explosion",
+      "flamethrower",
+      "hiddenpowergrass",
+      "willowisp"
+     ]
+    ],
+    [
+     "weezing",
+     [
+      "explosion",
+      "hiddenpowergrass",
+      "thunderbolt",
+      "willowisp"
+     ]
+    ],
+    [
+     "zapdos",
+     [
+      "batonpass",
+      "drillpeck",
+      "hiddenpowergrass",
+      "thunderbolt"
+     ]
+    ],
+    [
+     "zapdos",
+     [
+      "drillpeck",
+      "hiddenpowerfighting",
+      "raindance",
+      "thunderbolt"
+     ]
+    ]
+   ]
+  },
+  "within_corpus_max_shared_with_an_earlier_team": {
+   "0": 4,
+   "1": 69,
+   "2": 2276,
+   "3": 8230,
+   "4": 1421
+  }
+ },
+ "design": "designs/endstate/design_x62_team_recombination.md §2",
+ "draw": {
+  "candidate_rules": [
+   "slot_exhausted",
+   "pool_species_six",
+   "level",
+   "validator",
+   "pack_level",
+   "hidden_power",
+   "duplicate",
+   "within_gt4"
+  ],
+  "set": "one STRICT-class pool occurrence of the species, uniform over occurrences, verbatim except the nickname (stripped)",
+  "slot_refusals": "> 2 shared with ONE pool team; >= 3 with ONE team of a held-out panel, n1p72 or rc72b; redrawn up to 80 tries, then the candidate fails",
+  "species": "slot 1 by c_pool(s); each later slot among species not yet chosen by c_pool(s) x geomean_t lift(t, s), lift = P(s | t) / share(s) (Smogon), clipped to [1/4, 4]"
+ },
+ "engine": {
+  "oracle": "scan_move_probe",
+  "output_unplayable": {
+   "ability": [],
+   "item": [],
+   "move": [],
+   "species": []
+  },
+  "rule": "every id the corpus carries is asked; an unplayable one THROWS (the pin is empty)"
+ },
+ "generator": "gen3_x62_recombination_v1",
+ "hidden_power": {
+  "rule": "STRICT (rc72b's hp_bad strict via utils.bridge.hp_set_check): the named type at 70 as written, IVs not rewritten by the validator",
+  "slot_text_filter": "a Hidden Power naming a type other than Dark with no IVs line is never drawn"
+ },
+ "name": "x62_recomb_v1",
+ "panels": {
+  "diagnostic_registry": {
+   "path": "designs/research_state/diagnostic_panels.json",
+   "sha256": "22f9345f440913a90eb91bc99552925287aa28beeea346a13dd86d071515e18b"
+  },
+  "n1p72_manifest": {
+   "path": "designs/research_state/measurements/x61_n1_breadth_2026-10-25/n1p72_manifest.json",
+   "sha256": "5f364876a97615435f63b11cb441524ceff7237f7d6abc7a08de9c98ccf488b0"
+  },
+  "panel_registry": {
+   "path": "designs/research_state/heldout_panels.json",
+   "sha256": "ea3917c2f1e61c8a6e9d74cd38f20888eccb2cf9f8d7d4d4ff90fe224391784f"
+  },
+  "refused_at_radius_3": {
+   "forum216b": {
+    "content_sha256": "e7e40cd874cd59264b0818a96e4555cf2dddd61ab6b4f269c8a158dbbca26baa",
+    "n": 216
+   },
+   "forum72": {
+    "content_sha256": "9cdd6151d592d4e45362761828d0fc118f443f851b520d935b78e379f8d736e1",
+    "n": 72
+   },
+   "heldout72": {
+    "content_sha256": "871f1531daf1106e6a6df21a24a7a3a81a55c90edc8abdb9ecebc8a0b0070106",
+    "n": 72
+   },
+   "heldout72_hpfix": {
+    "content_sha256": "a8bcbb8ca1ce86bd1ba847918c0d58b8262290e53c764f0438af9c5e949eab09",
+    "n": 72
+   },
+   "n1p72": {
+    "content_sha256": "8115043dd727521ba9a8d761ff8673eb22266fc0521f7db986e7e40711b5fab0",
+    "n": 72
+   },
+   "p72": {
+    "content_sha256": "55553e28c1c83f89c89ab76405ac1e479328fc301ee963f0b49852157be0ca82",
+    "n": 72
+   },
+   "rc72b": {
+    "content_sha256": "b3195a8253fcccd8e7f199978d45c2eef01f5b86167628480cfa90d14caeb601",
+    "n": 72
+   }
+  }
+ },
+ "params": {
+  "heldout_refuse": 3,
+  "lift_clip": [
+   0.25,
+   4.0
+  ],
+  "matcher": "gen3_team_overlap_v1",
+  "max_shared_pool": 2,
+  "n": 12000,
+  "profile": "c_pool(s) = the species' count over ALL the pool's mons (the prototype strict_draw_sim.py's profile), for the species with >= 1 STRICT-class occurrence; DEVIATION from §2.1's wording 'over the pool's STRICT-class mons', declared in the builder's report",
+  "slot_tries": 80,
+  "within_max": 4
+ },
+ "pool": {
+  "content_sha256": "53b6e7e222bf6d8095f42e39c13d6b39be79f3d20b12843940762ce44cea2b38",
+  "n_teams": 719,
+  "profile": {
+   "aerodactyl": 90,
+   "alakazam": 2,
+   "armaldo": 3,
+   "blissey": 182,
+   "breloom": 11,
+   "camerupt": 3,
+   "celebi": 212,
+   "chansey": 1,
+   "charizard": 141,
+   "claydol": 117,
+   "cloyster": 52,
+   "donphan": 6,
+   "dugtrio": 120,
+   "dusclops": 1,
+   "exeggutor": 1,
+   "flygon": 26,
+   "forretress": 82,
+   "gengar": 182,
+   "gyarados": 53,
+   "hariyama": 15,
+   "heracross": 42,
+   "houndoom": 12,
+   "jirachi": 239,
+   "jolteon": 106,
+   "jumpluff": 1,
+   "jynx": 8,
+   "kingdra": 6,
+   "ludicolo": 4,
+   "lunatone": 2,
+   "machamp": 6,
+   "magneton": 127,
+   "mantine": 1,
+   "marowak": 2,
+   "medicham": 8,
+   "metagross": 325,
+   "milotic": 44,
+   "misdreavus": 5,
+   "moltres": 41,
+   "politoed": 1,
+   "porygon2": 15,
+   "quagsire": 11,
+   "raikou": 18,
+   "regice": 11,
+   "regirock": 12,
+   "registeel": 10,
+   "sableye": 1,
+   "salamence": 241,
+   "sceptile": 3,
+   "shiftry": 1,
+   "skarmory": 203,
+   "slaking": 5,
+   "smeargle": 4,
+   "snorlax": 136,
+   "starmie": 77,
+   "steelix": 3,
+   "suicune": 141,
+   "swampert": 423,
+   "tyranitar": 456,
+   "umbreon": 11,
+   "vaporeon": 13,
+   "venusaur": 7,
+   "wailord": 1,
+   "zapdos": 220
+  }
+ },
+ "priors": {
+  "gen3_smogon_stats.json": "03c8233a0268e5704b568f263da23d48e53aaa5de0143bc994e1cad22e7c713e",
+  "gen3_teammate_priors.json": "e1dc77a442fce9493e8c34cd462929caa9065ef87eda45c5cd10b0105c7d22d2"
+ },
+ "prototype": "designs/research_state/measurements/x62_design_2026-10-26/revision_2026-10-27/strict_draw_sim.py",
+ "schema": "gen3_team_corpus_v1",
+ "seeds": {
+  "build": 6201,
+  "rule": "one random.Random per (stream 'corpus', candidate j): stream_seed = sha256('BUILD_SEED|corpus|j')"
+ },
+ "slot_refusals": {
+  "heldout_fit": 1602,
+  "train_overlap": 9780
+ },
+ "tiers": {
+  "ALL": {
+   "n": 12000,
+   "sha256": "f20326386208905b3e819ea77c8922fdc54bda276b0a97cbf32ce179f7674d69",
+   "source_tiers": [
+    "K1",
+    "K3",
+    "ALL"
+   ]
+  },
+  "K1": {
+   "n": 1000,
+   "sha256": "4e613d9f575b9c85cb241553daf1ea72f5ba52d61a4f14962d52262673d50a72",
+   "source_tiers": [
+    "K1"
+   ]
+  },
+  "K3": {
+   "n": 3000,
+   "sha256": "2e0a595c5c760762a306ee5f0d53180dd8b577c4629604f2f09209defd455de8",
+   "source_tiers": [
+    "K1",
+    "K3"
+   ]
+  }
+ },
+ "validator": "TeamValidator('gen3ou') via src/rust_sim/harness/ladder_corpus_filter.js, pinned deps/pokemon-showdown; level 100 by Showdown's pack; hp_set_check.js",
+ "validator_failures_by_reason": {
+  "validator_fail: Multiple Pokemon have Baton Pass and a way to boost their stats, which is banned": 1
+ },
+ "what": "X62's recombination corpus: new gen3ou sixes made only of the pool's STRICT-class mon sets (verbatim, nickname stripped), species drawn by the pool's profile with Smogon teammate lift, <= 2 sets shared with any one pool team; TRAINING DATA, never a prior"
+}

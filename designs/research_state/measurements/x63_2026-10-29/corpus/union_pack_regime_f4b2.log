@@ -1,0 +1,63 @@
+{
+ "by_component": {
+  "d3_setmut_v1": {
+   "legacy_pack_raised": 0,
+   "mons_by_class": {
+    "frustration_bp": 8,
+    "happiness_inert": 4,
+    "ivs_stat_only": 7
+   },
+   "share_material": 0.00278,
+   "showdown_invalid": 0,
+   "teams": 2876,
+   "teams_by_class": {
+    "frustration_bp": 8,
+    "happiness_inert": 4,
+    "ivs_stat_only": 7
+   },
+   "teams_differing": 19,
+   "teams_material": 8
+  },
+  "n1_proc_v1": {
+   "legacy_pack_raised": 0,
+   "mons_by_class": {
+    "frustration_bp": 16
+   },
+   "share_material": 0.00533,
+   "showdown_invalid": 0,
+   "teams": 3000,
+   "teams_by_class": {
+    "frustration_bp": 16
+   },
+   "teams_differing": 16,
+   "teams_material": 16
+  },
+  "x62_recomb_v1": {
+   "legacy_pack_raised": 0,
+   "mons_by_class": {
+    "frustration_bp": 15,
+    "happiness_inert": 48
+   },
+   "share_material": 0.00125,
+   "showdown_invalid": 0,
+   "teams": 12000,
+   "teams_by_class": {
+    "frustration_bp": 15,
+    "happiness_inert": 48
+   },
+   "teams_differing": 63,
+   "teams_material": 15
+  }
+ },
+ "total": {
+  "above_threshold": false,
+  "legacy_pack_raised": 0,
+  "share_differing": 0.00548,
+  "share_material": 0.00218,
+  "showdown_invalid": 0,
+  "teams": 17876,
+  "teams_differing": 98,
+  "teams_material": 39,
+  "threshold_share": 0.02
+ }
+}

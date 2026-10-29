@@ -1,0 +1,65 @@
+{
+ "battles_finished": 178760,
+ "battles_planned": 178760,
+ "chunks": [
+  {
+   "battles_finished": 89380,
+   "first_round": 0,
+   "rounds": 5,
+   "seed": 3802,
+   "verdict": "PASS",
+   "wall_s": 521.2
+  },
+  {
+   "battles_finished": 89380,
+   "first_round": 5,
+   "rounds": 5,
+   "seed": 3803,
+   "verdict": "PASS",
+   "wall_s": 405.3
+  }
+ ],
+ "core_errors": [],
+ "corpus": {
+  "corpus": "x63_union_v1",
+  "data_sha256": "f5cdc121ab6d8ec9b13dff60570183add14f30379ddaa68863d36529007128a7",
+  "manifest_sha256": "d9b493831a1ab9954fb4b22a9d3ea522067b25b2f83204b3b83efa38375ea13c",
+  "n": 17876,
+  "schema": "gen3_team_corpus_v1",
+  "tier": "ALL",
+  "tier_sha256": "f324b6b10fcae17567a285d7ecdf4ff98e439d403a9d3a1131568b3fbc7d3f5e"
+ },
+ "decisions_p1": 6032857,
+ "end_turn": {
+  "max": 250,
+  "median": 23
+ },
+ "forfeits": 335,
+ "labels": [
+  "belief",
+  "spread",
+  "hp_type",
+  "item",
+  "margin",
+  "intent"
+ ],
+ "n_envs": 8,
+ "opponent": {
+  "bot": "heuristic",
+  "kind": "bot",
+  "seed": 3,
+  "streams": "episode"
+ },
+ "profile": "selfcheck",
+ "rounds": 10,
+ "schema": "gen3_team_corpus_soak_v2",
+ "seats": "per round, every team once as p1 (uniform over its mask) and once as p2 (the heuristic bot); round r pairs team i with team i + 1 + r",
+ "seed": [
+  3802,
+  3803
+ ],
+ "threads": 3,
+ "turn_limit": 250,
+ "verdict": "PASS",
+ "wall_s": 926.5
+}

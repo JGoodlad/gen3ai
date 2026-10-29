@@ -1,0 +1,1 @@
+--model /home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_380000195_steps.zip --behaviour-check warn --steps 480000195 --checkpoint-every-steps 1000000 --device cuda --team-mix x63_union_v1@ALL:0.8 --team-mix-sides both --seed 2601 --run-name rb_x63u_s2601

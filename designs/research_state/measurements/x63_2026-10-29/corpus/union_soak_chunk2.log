@@ -1,0 +1,67 @@
+2026-10-29T08:41:10-07:00
+[heavy_slots] waiting 0 s for one of 2 heavy slots (a training run is live (rb_x35_n1p_s3504): rule 5b; 3 queued ahead, FIFO per lane, long lane): held: slot 0 pid 325748 0m15s '/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m '; slot 1 pid 323511 0m18s '/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m '; 4 waiting — `scripts/ops/mem_cap.sh --status`; the orchestrator marks a GPU-blocking job with GEN3AI_BLOCKING=<reason>
+[heavy_slots] waiting 60 s for one of 2 heavy slots (a training run is live (rb_x35_n1p_s3504): rule 5b; 3 queued ahead, FIFO per lane, long lane): held: slot 0 pid 325748 1m15s '/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m '; slot 1 pid 323511 1m18s '/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m '; 4 waiting — `scripts/ops/mem_cap.sh --status`; the orchestrator marks a GPU-blocking job with GEN3AI_BLOCKING=<reason>
+[heavy_slots] waiting 121 s for one of 2 heavy slots (a training run is live (rb_x35_n1p_s3504): rule 5b; 3 queued ahead, FIFO per lane, long lane): held: slot 0 pid 325748 2m16s '/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m '; slot 1 pid 323511 2m18s '/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m '; 4 waiting — `scripts/ops/mem_cap.sh --status`; the orchestrator marks a GPU-blocking job with GEN3AI_BLOCKING=<reason>
+[heavy_slots] waiting 181 s for one of 2 heavy slots (a training run is live (rb_x35_n1p_s3504): rule 5b; 3 queued ahead, FIFO per lane, long lane): held: slot 0 pid 314927 0m34s '/home/goodlad/dev/gen3ai/.claude/worktrees/gpufill-window/sc'; slot 1 pid 328196 0m50s '/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m '; 4 waiting — `scripts/ops/mem_cap.sh --status`; the orchestrator marks a GPU-blocking job with GEN3AI_BLOCKING=<reason>
+[heavy_slots] waiting 241 s for one of 2 heavy slots (a training run is live (rb_x35_n1p_s3504): rule 5b; 3 queued ahead, FIFO per lane, long lane): held: slot 0 pid 314927 1m34s '/home/goodlad/dev/gen3ai/.claude/worktrees/gpufill-window/sc'; slot 1 pid 328196 1m50s '/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m '; 4 waiting — `scripts/ops/mem_cap.sh --status`; the orchestrator marks a GPU-blocking job with GEN3AI_BLOCKING=<reason>
+[heavy_slots] waiting 302 s for one of 2 heavy slots (a training run is live (rb_x35_n1p_s3504): rule 5b; 3 queued ahead, FIFO per lane, long lane): held: slot 0 pid 314927 2m35s '/home/goodlad/dev/gen3ai/.claude/worktrees/gpufill-window/sc'; slot 1 pid 342171 0m36s '/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m '; 4 waiting — `scripts/ops/mem_cap.sh --status`; the orchestrator marks a GPU-blocking job with GEN3AI_BLOCKING=<reason>
+[heavy_slots] waiting 362 s for one of 2 heavy slots (a training run is live (rb_x35_n1p_s3504): rule 5b; 3 queued ahead, FIFO per lane, long lane): held: slot 0 pid 314927 3m35s '/home/goodlad/dev/gen3ai/.claude/worktrees/gpufill-window/sc'; slot 1 pid 342171 1m36s '/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m '; 4 waiting — `scripts/ops/mem_cap.sh --status`; the orchestrator marks a GPU-blocking job with GEN3AI_BLOCKING=<reason>
+[heavy_slots] waiting 422 s for one of 2 heavy slots (a training run is live (rb_x35_n1p_s3504): rule 5b; 3 queued ahead, FIFO per lane, long lane): held: slot 0 pid 314927 4m35s '/home/goodlad/dev/gen3ai/.claude/worktrees/gpufill-window/sc'; slot 1 pid 342171 2m37s '/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m '; 4 waiting — `scripts/ops/mem_cap.sh --status`; the orchestrator marks a GPU-blocking job with GEN3AI_BLOCKING=<reason>
+[heavy_slots] waiting 483 s for one of 2 heavy slots (a training run is live (rb_x35_n1p_s3504): rule 5b; 3 queued ahead, FIFO per lane, long lane): held: slot 0 pid 314927 5m36s '/home/goodlad/dev/gen3ai/.claude/worktrees/gpufill-window/sc'; slot 1 pid 342412 0m09s '/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m '; 4 waiting — `scripts/ops/mem_cap.sh --status`; the orchestrator marks a GPU-blocking job with GEN3AI_BLOCKING=<reason>
+[heavy_slots] waiting 543 s for one of 2 heavy slots (a training run is live (rb_x35_n1p_s3504): rule 5b; 3 queued ahead, FIFO per lane, long lane): held: slot 0 pid 314927 6m36s '/home/goodlad/dev/gen3ai/.claude/worktrees/gpufill-window/sc'; slot 1 pid 342412 1m09s '/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m '; 4 waiting — `scripts/ops/mem_cap.sh --status`; the orchestrator marks a GPU-blocking job with GEN3AI_BLOCKING=<reason>
+[heavy_slots] waiting 603 s for one of 2 heavy slots (a training run is live (rb_x35_n1p_s3504): rule 5b; 3 queued ahead, FIFO per lane, long lane): held: slot 0 pid 314927 7m36s '/home/goodlad/dev/gen3ai/.claude/worktrees/gpufill-window/sc'; slot 1 pid 342412 2m09s '/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m '; 4 waiting — `scripts/ops/mem_cap.sh --status`; the orchestrator marks a GPU-blocking job with GEN3AI_BLOCKING=<reason>
+[heavy_slots] waiting 664 s for one of 2 heavy slots (a training run is live (rb_x35_n1p_s3504): rule 5b; 3 queued ahead, FIFO per lane, long lane): held: slot 0 pid 352929 0m56s '/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m '; slot 1 pid 342412 3m10s '/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m '; 4 waiting — `scripts/ops/mem_cap.sh --status`; the orchestrator marks a GPU-blocking job with GEN3AI_BLOCKING=<reason>
+[heavy_slots] waiting 724 s for one of 2 heavy slots (a training run is live (rb_x35_n1p_s3504): rule 5b; 3 queued ahead, FIFO per lane, long lane): held: slot 0 pid 352929 1m57s '/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m '; slot 1 pid 339941 0m45s 'nice -n 19 taskset -c 5-7,13-15 /home/goodlad/miniconda3/env'; 4 waiting — `scripts/ops/mem_cap.sh --status`; the orchestrator marks a GPU-blocking job with GEN3AI_BLOCKING=<reason>
+[heavy_slots] waiting 784 s for one of 2 heavy slots (a training run is live (rb_x35_n1p_s3504): rule 5b; 2 queued ahead, FIFO per lane, long lane): held: slot 0 pid 363820 0m04s '/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m '; slot 1 pid 339941 1m45s 'nice -n 19 taskset -c 5-7,13-15 /home/goodlad/miniconda3/env'; 4 waiting — `scripts/ops/mem_cap.sh --status`; the orchestrator marks a GPU-blocking job with GEN3AI_BLOCKING=<reason>
+[heavy_slots] waiting 844 s for one of 2 heavy slots (a training run is live (rb_x35_n1p_s3504): rule 5b; 2 queued ahead, FIFO per lane, long lane): held: slot 0 pid 363820 1m04s '/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m '; slot 1 pid 339941 2m45s 'nice -n 19 taskset -c 5-7,13-15 /home/goodlad/miniconda3/env'; 4 waiting — `scripts/ops/mem_cap.sh --status`; the orchestrator marks a GPU-blocking job with GEN3AI_BLOCKING=<reason>
+[heavy_slots] waiting 905 s for one of 2 heavy slots (a training run is live (rb_x35_n1p_s3504): rule 5b; 2 queued ahead, FIFO per lane, long lane): held: slot 0 pid 363820 2m05s '/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m '; slot 1 pid 339941 3m45s 'nice -n 19 taskset -c 5-7,13-15 /home/goodlad/miniconda3/env'; 4 waiting — `scripts/ops/mem_cap.sh --status`; the orchestrator marks a GPU-blocking job with GEN3AI_BLOCKING=<reason>
+[heavy_slots] waiting 965 s for one of 2 heavy slots (a training run is live (rb_x35_n1p_s3504): rule 5b; 1 queued ahead, FIFO per lane, long lane): held: slot 0 pid 380914 0m56s 'nice -n 19 taskset -c 5-7,13-15 /home/goodlad/miniconda3/env'; slot 1 pid 339941 4m46s 'nice -n 19 taskset -c 5-7,13-15 /home/goodlad/miniconda3/env'; 4 waiting — `scripts/ops/mem_cap.sh --status`; the orchestrator marks a GPU-blocking job with GEN3AI_BLOCKING=<reason>
+[heavy_slots] waiting 1025 s for one of 2 heavy slots (a training run is live (rb_x35_n1p_s3504): rule 5b; 1 queued ahead, FIFO per lane, long lane): held: slot 1 pid 339941 5m46s 'nice -n 19 taskset -c 5-7,13-15 /home/goodlad/miniconda3/env'; 4 waiting — `scripts/ops/mem_cap.sh --status`; the orchestrator marks a GPU-blocking job with GEN3AI_BLOCKING=<reason>
+[heavy_slots] waiting 1085 s for one of 2 heavy slots (a training run is live (rb_x35_n1p_s3504): rule 5b; 0 queued ahead, FIFO per lane, long lane): held: slot 0 pid 381289 0m59s '/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m '; slot 1 pid 339941 6m46s 'nice -n 19 taskset -c 5-7,13-15 /home/goodlad/miniconda3/env'; 4 waiting — `scripts/ops/mem_cap.sh --status`; the orchestrator marks a GPU-blocking job with GEN3AI_BLOCKING=<reason>
+[heavy_slots] waiting 1145 s for one of 2 heavy slots (a training run is live (rb_x35_n1p_s3504): rule 5b; 0 queued ahead, FIFO per lane, long lane): held: slot 0 pid 381289 2m00s '/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m '; slot 1 pid 339941 7m46s 'nice -n 19 taskset -c 5-7,13-15 /home/goodlad/miniconda3/env'; 4 waiting — `scripts/ops/mem_cap.sh --status`; the orchestrator marks a GPU-blocking job with GEN3AI_BLOCKING=<reason>
+[heavy_slots] took heavy slot 0 of 2 after waiting 1175.0 s (a training run is live (rb_x35_n1p_s3504): rule 5b)
+[mem_cap] cap 12.00 GB (swap 0) · unit gen3ai-capped-x63soak2-340155.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+== soak chunk 2 2026-10-29T09:00:46-07:00
+3989,
+ "end_turn": {
+  "max": 250,
+  "median": 23
+ },
+ "first_round": 5,
+ "forfeits": 171,
+ "labels": [
+  "belief",
+  "spread",
+  "hp_type",
+  "item",
+  "margin",
+  "intent"
+ ],
+ "n_envs": 8,
+ "opponent": {
+  "bot": "heuristic",
+  "kind": "bot",
+  "seed": 3,
+  "streams": "episode"
+ },
+ "profile": "selfcheck",
+ "rounds": 5,
+ "schema": "gen3_team_corpus_soak_v2",
+ "seats": "per round, every team once as p1 (uniform over its mask) and once as p2 (the heuristic bot); round r pairs team i with team i + 1 + r",
+ "seed": 3803,
+ "threads": 3,
+ "turn_limit": 250,
+ "verdict": "PASS",
+ "wall_s": 405.3
+}
+
+PASS 178760 battles 0 core errors
+== done 2026-10-29T09:08:12-07:00
+[mem_cap] done: gen3ai-capped-x63soak2-340155.scope exit 0 · peak 0.71 GB of cap 12.00 GB (6%) · not OOM-killed
+[heavy_slots] released heavy slot 0 after 447 s
+
+real	27m1.754s
+user	16m37.552s
+sys	0m4.379s
+EXIT 0
+2026-10-29T09:08:12-07:00

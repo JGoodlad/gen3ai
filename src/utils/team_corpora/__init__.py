@@ -3,7 +3,9 @@
 Design: ``designs/endstate/design_diversity_teams_opponents.md`` §4.1 ("Where it lives", F-DV-2), §4.2 (D1 / X38:
 ``w_forum_v1``, human-built forum teams, ``build_w_forum``) and §4.5 (D3 / X41: ``d3_setmut_v1``, pool teams with 1-2
 mons' sets redrawn from Smogon usage, ``build_d3_setmut``); X61 / N1's ``n1_proc_v1`` (12,000 whole procedural teams from
-Smogon usage, ``build_n1_proc``; ``x61_n1_breadth_2026-10-25/PREREG.md``).
+Smogon usage, ``build_n1_proc``; ``x61_n1_breadth_2026-10-25/PREREG.md``); X62's ``x62_recomb_v1`` (12,000 new sixes
+of the pool's own STRICT-class sets, ``build_x62_recomb``; ``design_x62_team_recombination.md`` §2); X63's
+``x63_union_v1`` (``x62_recomb_v1@ALL`` + ``n1_proc_v1@K3`` + ``d3_setmut_v1@ALL`` verbatim, ``build_x63_union``).
 
 🚨 **Why under ``src/`` and not ``data/teams/``.** ``TeamLoader`` walks ``data/teams/`` RECURSIVELY, and a pinned run
 reads ``data/`` from MAIN: a corpus placed there would silently widen every live run's pool at its next restart. A
@@ -44,7 +46,8 @@ DATA_NAME = "teams.jsonl.gz"
 MANIFEST_NAME = "manifest.json"
 #: The registered corpora, by name. A name not here is refused (a typo must not train on nothing).
 CORPORA: Dict[str, Path] = {"w_forum_v1": HERE / "w_forum_v1", "d3_setmut_v1": HERE / "d3_setmut_v1",
-                            "n1_proc_v1": HERE / "n1_proc_v1"}
+                            "n1_proc_v1": HERE / "n1_proc_v1", "x62_recomb_v1": HERE / "x62_recomb_v1",
+                            "x63_union_v1": HERE / "x63_union_v1"}
 
 
 class CorpusError(RuntimeError):

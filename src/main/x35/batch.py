@@ -105,6 +105,15 @@ decide`` (X47). The record names its arm and look; a record for another arm or l
   :data:`STAGES`; :func:`stage_status` gives it the AM-8 side gate and its PREREG (PENDING until the file exists). Its
   pool is checked against X26c's recorded seed (``kit.reference_pool_names``), never this module's :data:`POOL_FILE`.
   Its run name is not ``rb_x35*``, so :func:`_side_pinned_dirs` lists it by name. Arm label ``X63C``.
+* **AM-X63U, X63-U'S OWN CORPUS-ONLY PIN** (``design_x63_long_breadth_continuation.md`` §2; PREREG
+  ``x63_2026-10-29/PREREG.md``, :data:`X63U_PREREG`): ``x63u`` (:data:`X63U_ARMS`) is X63-C's arm (X26c's recorded
+  argv, X26 @380M, X26c's pool reference, +100M) + N1-P's pattern: the ONE lever ``--team-mix x63_union_v1@ALL:0.8
+  --team-mix-sides both``, at :data:`X63U_PIN` = the production pin + ONE commit confined to ``src/utils/team_corpora/``
+  adding only the union corpus and its ``CORPORA`` line, checked by :func:`arm_pin_check` against
+  :data:`X63U_CORPORA_TREE` (filled at the registration; a None in either makes every pin check of ``x63u`` REFUSE
+  and a run recorded for it unjudgeable). :data:`X63U_STAGES` holds Stage A (s2601 only),
+  never :data:`STAGES`; :func:`stage_status` gives it the AM-8 side gate and its PREREG, as X63-C's. Its run name is
+  ``rb_x63u_*`` (listed by name, as X63-C's). Arm label ``X63U``.
 * **THE G-E READERS** (``main.x35.ge``; launch sheet §0 "G-E readers"): ``ge_a1`` / ``ge_a2`` / ``ge_d1`` / ``ge_c0``
   are not batch-1 ARMS (not in :data:`STAGES`, the disk count or AM-6's K9(b) pre-check) but they run at the SIDE'S
   pin: :func:`pin_check` judges their recorded pins with the side's batch-1 runs, and :func:`stage_status` gives a
@@ -212,7 +221,15 @@ X48_ARMS = ("x48",)
 X63C_ARMS = ("x63c",)
 #: X63-C's registration: its stage-check is PENDING until this file exists (repo-relative, read in the kit's checkout).
 X63C_PREREG = "designs/research_state/measurements/x63c_control_replicate_2026-10-28/PREREG.md"
-SIDE_PINNED_ARMS = BATCH1_ARMS + BATCH2_ARMS + R0_ARMS + X52_ARMS + D3_ARMS + N1P_ARMS + X48_ARMS + X63C_ARMS
+#: X63-U, the X63 treatment (2026-10-29): one production arm at its OWN corpus-only pin (:data:`X63U_PIN`), forking
+#: X26 @380M with X26c's argv + the union team mix.
+X63U_ARMS = ("x63u",)
+#: X63-U's registration: its stage-check is PENDING until this file exists (repo-relative, read in the kit's checkout).
+X63U_PREREG = "designs/research_state/measurements/x63_2026-10-29/PREREG.md"
+#: The arms whose stage-check is the side gate + their PREREG present (the orchestrator's GO): :func:`arm_prereg`.
+PREREG_GATED_ARMS = X63C_ARMS + X63U_ARMS
+SIDE_PINNED_ARMS = (BATCH1_ARMS + BATCH2_ARMS + R0_ARMS + X52_ARMS + D3_ARMS + N1P_ARMS + X48_ARMS + X63C_ARMS
+                    + X63U_ARMS)
 #: AM-D1-FIX (launch sheet §0, 2026-10-22): D1's pin. The production pin ``f4b25238`` + the corpus label-guard commit
 #: (``fix(team corpora): refuse teams the env's label path cannot encode ...``), rebuilt onto it with only
 #: ``src/utils/team_corpora/`` replaced. Kept reachable by the local branch ``x35-d1-pin``.
@@ -245,10 +262,23 @@ N1P_PIN_PATHS = ("src/utils/team_corpora/",)
 #: The git tree of ``src/utils/team_corpora`` at N1P_PIN (content-addressed). No main commit holds it: it is the side
 #: pin's package + the corpus subtree main's ``de269480`` landed (``batch_test`` checks that composition).
 N1P_CORPORA_TREE = "b273cfe1ff1117e855bbf5f83f25f15fd755d61c"
-#: The arms with their own pin (AM-D1-FIX, AM-D3, AM-N1P): ``{arm: pin}``.
-ARM_PINS = {"d1": D1_PIN, "d3": D3_PIN, "n1p": N1P_PIN}
+#: AM-X63U (2026-10-29): X63-U's pin. The production pin ``f4b25238`` + ONE commit adding only ``x63_union_v1``'s
+#: committed files (``manifest.json``, ``soak_selfcheck.json``, ``teams.jsonl.gz``) and its line in ``CORPORA``.
+#: Tagged on origin as ``x63u-pin-39eaa326`` and kept reachable by the local branch ``x63u-pin`` (filled 2026-10-29 at
+#: the registration; a None here would make every :func:`x63u_pin_check` REFUSE).
+X63U_PIN: Optional[str] = "39eaa326736376a5ec3dde41af4afbe8a76a9015"
+#: The production pin X63U_PIN sits directly on (X26c's own pin; the same side pin as D1's, D3's and N1-P's).
+X63U_PIN_BASE = D1_PIN_BASE
+#: The only paths X63U_PIN may change relative to X63U_PIN_BASE.
+X63U_PIN_PATHS = ("src/utils/team_corpora/",)
+#: The git tree of ``src/utils/team_corpora`` at X63U_PIN (content-addressed): the side pin's package + the union's
+#: subtree + the one CORPORA line (no main commit holds it, as N1P_CORPORA_TREE).
+X63U_CORPORA_TREE: Optional[str] = "ca0845cfcb22f70e7a808871f57cff480ad621db"
+#: The arms with their own pin (AM-D1-FIX, AM-D3, AM-N1P, AM-X63U): ``{arm: pin}``; None = a registered placeholder
+#: (every check of that arm refuses until it is filled).
+ARM_PINS: Dict[str, Optional[str]] = {"d1": D1_PIN, "d3": D3_PIN, "n1p": N1P_PIN, "x63u": X63U_PIN}
 #: The amendment that registered each own-pin arm (named in every line its checks print).
-ARM_PIN_AMENDMENT = {"d1": "AM-D1-FIX", "d3": "AM-D3", "n1p": "AM-N1P"}
+ARM_PIN_AMENDMENT = {"d1": "AM-D1-FIX", "d3": "AM-D3", "n1p": "AM-N1P", "x63u": "AM-X63U"}
 #: The own-pin arms whose run MAY also sit at the side's pin: D1's VOID pre-fix attempt (AM-D1-FIX-f) only.
 ARM_PIN_PREFIX_OK = ("d1",)
 #: Batch 2's stages (F-AS-8), in AM-RP-e's slots: (6) production SPRT, (8) production LR-F, (11) the toy pair; each
@@ -294,10 +324,16 @@ X48_STAGES: Tuple[Tuple[str, Tuple[Tuple[str, int], ...]], ...] = (
 X63C_STAGES: Tuple[Tuple[str, Tuple[Tuple[str, int], ...]], ...] = (
     ("X63C", (("x63c", 6302),)),
 )
+#: X63-U's Stage A (2026-10-29): seed 2601 only, on the orchestrator's GO once its PREREG exists. Its control is X26c
+#: (banked, the same seed); Stage B / C seeds are later amendments. Never merged into STAGES.
+X63U_STAGES: Tuple[Tuple[str, Tuple[Tuple[str, int], ...]], ...] = (
+    ("X63U-A", (("x63u", 2601),)),
+)
 #: The arm label each read record carries (``readout`` A1 / A2 / SPRT / LRF, ``d1`` X38, ``d3`` X41, ``n1p`` X61P,
-#: ``x47`` X47, ``x48`` X48, ``x63c`` X63C).
+#: ``x47`` X47, ``x48`` X48, ``x63c`` X63C, ``x63u`` X63U).
 READ_LABEL = {"a1": "A1", "a2": "A2", "d1": "X38", "d3": "X41", "n1p": "X61P", "toy_a1": "A1", "toy_a2": "A2", "toy_x47": "X47",
-              "sprt": "SPRT", "toy_sprt": "SPRT", "lrfloor": "LRF", "toy_lrfloor": "LRF", "x48": "X48", "x63c": "X63C"}
+              "sprt": "SPRT", "toy_sprt": "SPRT", "lrfloor": "LRF", "toy_lrfloor": "LRF", "x48": "X48", "x63c": "X63C",
+              "x63u": "X63U"}
 #: The toy arms whose look-1 CONTINUE licenses toy C0's look-2 seeds s3604-s3605 (their shared control).
 TOY_LOOK2_LICENSORS = ("toy_x47", "toy_a1", "toy_a2", "toy_lrfloor", "toy_sprt")
 #: Where a read record keeps its PRIMARY when it is not R1 (``d1.D1Verdict``: H).
@@ -337,7 +373,8 @@ def side_of_run(base: str) -> str:
 
 def _side_pinned_dirs(models_dir: str, *, readers: bool = False) -> Tuple[List[Tuple[str, str]], List[str]]:
     """``([(dir name, run name)], [other rb_x35* dirs])``; ``<run>.<SUFFIX>`` (moved aside) counts as its run. A
-    side-pinned run not named ``rb_x35*`` (X63-C's ``rb_x63c_*``) is found by its registered name."""
+    side-pinned run not named ``rb_x35*`` (X63-C's ``rb_x63c_*``, X63-U's ``rb_x63u_*``) is found by its registered
+    name."""
     names = side_pinned_run_names(readers=readers)
     ours: List[Tuple[str, str]] = []
     other: List[str] = []
@@ -430,12 +467,17 @@ def _same_sha(a: str, b: str) -> bool:
     return n >= 7 and a[:n] == b[:n]
 
 
-def own_pin_check(arm: str, pin: str, side_pin: str, repo: str, *, want_pin: str, base: str,
-                  paths: Tuple[str, ...], tree_want: str, tree_of: str) -> Tuple[bool, List[str]]:
+def own_pin_check(arm: str, pin: str, side_pin: str, repo: str, *, want_pin: Optional[str], base: str,
+                  paths: Tuple[str, ...], tree_want: Optional[str], tree_of: str) -> Tuple[bool, List[str]]:
     """An OWN-PIN arm's check (AM-D1-FIX, AM-D3): ``pin`` is ``want_pin``, sits directly on the side's written pin
     (``base``), changes only paths under ``paths``, and carries the registered corpus tree ``tree_want`` (``tree_of``
-    names whose tree it is)."""
+    names whose tree it is). A ``want_pin`` or ``tree_want`` of None is a registered PLACEHOLDER: a refusal."""
     am, tag = ARM_PIN_AMENDMENT.get(arm, arm), arm.upper()
+    unset = [n for n, v in ((f"{tag}_PIN", want_pin), (f"{tag}_CORPORA_TREE", tree_want)) if v is None]
+    if unset:
+        return False, [f"{am}: {' and '.join(unset)} {'is a PLACEHOLDER' if len(unset) == 1 else 'are PLACEHOLDERS'} "
+                       f"(unset): {arm} launches nowhere until its own pin is registered"]
+    assert want_pin is not None and tree_want is not None
 
     def git(*args: str) -> "subprocess.CompletedProcess[str]":
         return subprocess.run(["git", "-C", repo, *args], capture_output=True, text=True, check=False)
@@ -484,9 +526,18 @@ def n1p_pin_check(pin: str, side_pin: str, repo: str) -> Tuple[bool, List[str]]:
                          tree_want=N1P_CORPORA_TREE, tree_of="registered N1-P tree")
 
 
+def x63u_pin_check(pin: str, side_pin: str, repo: str) -> Tuple[bool, List[str]]:
+    """AM-X63U: ``pin`` is :data:`X63U_PIN`, sits directly on the side's written pin (:data:`X63U_PIN_BASE`), changes
+    only paths under :data:`X63U_PIN_PATHS`, and carries the registered union tree (:data:`X63U_CORPORA_TREE`). REFUSES
+    while either constant is its None placeholder."""
+    return own_pin_check("x63u", pin, side_pin, repo, want_pin=X63U_PIN, base=X63U_PIN_BASE, paths=X63U_PIN_PATHS,
+                         tree_want=X63U_CORPORA_TREE, tree_of="registered X63-U union tree")
+
+
 def arm_pin_check(arm: str, pin: str, side_pin: str, repo: str) -> Tuple[bool, List[str]]:
     """The own-pin check of ``arm`` (:data:`ARM_PINS`)."""
-    return {"d1": d1_pin_check, "d3": d3_pin_check, "n1p": n1p_pin_check}[arm](pin, side_pin, repo)
+    return {"d1": d1_pin_check, "d3": d3_pin_check, "n1p": n1p_pin_check,
+            "x63u": x63u_pin_check}[arm](pin, side_pin, repo)
 
 
 def pin_check(pin: str, stage: str, models_dir: str, side: str, t62: Optional[str] = None,
@@ -532,8 +583,13 @@ def pin_check(pin: str, stage: str, models_dir: str, side: str, t62: Optional[st
             lines.append(f"{d}: no recorded pin (metadata.json absent or without git_hash): cannot show it is {label}")
             continue
         run_arm = names[base][0]
-        allowed = ((want, ARM_PINS[run_arm]) if run_arm in ARM_PIN_PREFIX_OK else (ARM_PINS[run_arm],)) \
-            if run_arm in ARM_PINS else (want,)
+        own = ARM_PINS.get(run_arm)
+        if run_arm in ARM_PINS and own is None:              # a registered placeholder: no pin to judge the run by
+            ok = False
+            lines.append(f"{d}: {ARM_PIN_AMENDMENT.get(run_arm, run_arm)}: {run_arm}'s own pin is a PLACEHOLDER "
+                         f"(unset), so its recorded pin(s) {[h[:12] for h in hs]} cannot be judged")
+            continue
+        allowed = ((want, own) if run_arm in ARM_PIN_PREFIX_OK else (own,)) if own is not None else (want,)
         bad = sorted({h for h in hs if not any(_same_sha(h, a) for a in allowed)})
         if bad:
             ok = False
@@ -557,8 +613,12 @@ def pin_write_if_absent(pin: str, stage: str, side: str, t62: Optional[str], arm
     label, fname = pin_label(side), os.path.basename(path)
     rec = read_pin_file(path, side)
     if arm in ARM_PINS:
-        if pin != ARM_PINS[arm] or rec is None:
-            raise BatchError(f"{ARM_PIN_AMENDMENT.get(arm, arm)}: {arm} launches at {ARM_PINS[arm][:12]} on a written {label} "
+        own = ARM_PINS[arm]
+        if own is None:
+            raise BatchError(f"{ARM_PIN_AMENDMENT.get(arm, arm)}: {arm}'s own pin is a PLACEHOLDER (unset): nothing "
+                             f"launches or is recorded for it until the pin is registered")
+        if pin != own or rec is None:
+            raise BatchError(f"{ARM_PIN_AMENDMENT.get(arm, arm)}: {arm} launches at {own[:12]} on a written {label} "
                              f"(got {pin[:12]}, {fname} {'absent' if rec is None else rec['sha'][:12]})")
         return f"{arm}'s own pin {pin[:12]} ({ARM_PIN_AMENDMENT.get(arm, arm)}) on {label} {rec['sha'][:12]}; {fname} unchanged"
     if rec is not None:
@@ -821,10 +881,16 @@ def _look2_licence(stage: str, arm: str) -> Tuple[str, str]:
 
 
 def stage_of(arm: str, seed: int) -> Optional[str]:
-    for name, forks in STAGES + BATCH2_STAGES + R0_STAGES + X52_STAGES + D3_STAGES + N1P_STAGES + X48_STAGES + X63C_STAGES:
+    for name, forks in (STAGES + BATCH2_STAGES + R0_STAGES + X52_STAGES + D3_STAGES + N1P_STAGES + X48_STAGES
+                        + X63C_STAGES + X63U_STAGES):
         if (arm, seed) in forks:
             return name
     return None
+
+
+def arm_prereg(arm: str) -> Tuple[str, str]:
+    """``(PREREG path, tag)`` of a PREREG-gated arm (:data:`PREREG_GATED_ARMS`), read from the constants now."""
+    return {"x63c": (X63C_PREREG, "X63-C"), "x63u": (X63U_PREREG, "X63-U")}[arm]
 
 
 def stage_status(stage: str, arm: str, seed: int) -> Tuple[str, str]:
@@ -845,15 +911,16 @@ def stage_status(stage: str, arm: str, seed: int) -> Tuple[str, str]:
         tag = ("AM-X52" if arm in X52_ARMS else "X48 PREREG: one look, the orchestrator's GO" if arm in X48_ARMS
                else "AM-R0")
         return ALLOWED, f"{arm} s{seed}: no unmet condition (stage {stage_of(arm, seed)}, {tag})"
-    if arm in X63C_ARMS:                     # X63-C: the side gate, then its PREREG (the orchestrator's GO)
+    if arm in PREREG_GATED_ARMS:             # X63-C / X63-U: the side gate, then its PREREG (the orchestrator's GO)
         filled, why = side_gate(stage, "production")
         if not filled:
             return PENDING, why
         from utils.paths import repo_path
 
-        if not repo_path(X63C_PREREG).is_file():
-            return PENDING, f"{arm} s{seed}: its PREREG {X63C_PREREG} is not in this checkout yet"
-        return ALLOWED, f"{arm} s{seed}: no unmet condition (stage {stage_of(arm, seed)}, X63-C PREREG present)"
+        prereg, tag = arm_prereg(arm)
+        if not repo_path(prereg).is_file():
+            return PENDING, f"{arm} s{seed}: its PREREG {prereg} is not in this checkout yet"
+        return ALLOWED, f"{arm} s{seed}: no unmet condition (stage {stage_of(arm, seed)}, {tag} PREREG present)"
     if arm in D3_ARMS + N1P_ARMS:            # AM-D3 / AM-N1P: the side gate; look 2 only on its own look-1 CONTINUE
         filled, why = side_gate(stage, "production")
         if not filled:

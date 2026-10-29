@@ -1,6 +1,6 @@
 # X62 — team recombination: train P\*-forks on new sixes made of familiar sets
 
-**Status: REVISED DRAFT (2026-10-27), explicit-only, GATED ON rc72b. Nothing is built, registered or launched.** It
+**Status: REVISED DRAFT (2026-10-27), explicit-only. rc72b read SUPPORTED (G0 passed); its corpus `x62_recomb_v1` is BUILT (2026-10-29, as X63's largest component); the fork is not registered or launched.** It
 designs the training lever that H-CTX implies, if the H-CTX read supports it. This revision answers the adversarial
 review [`reviews/x62_review_2026-10-27.md`](reviews/x62_review_2026-10-27.md) (`d997a146`); §10 disposes of every
 finding. H-CTX comes from the piloting-gap forensics
@@ -151,7 +151,7 @@ why X62 waits for it.
 
 ---
 
-## 2. The corpus `x62_recomb_v1` (a builder sketch; NOT BUILT)
+## 2. The corpus `x62_recomb_v1` (BUILT 2026-10-29: `utils.team_corpora.build_x62_recomb`)
 
 A builder beside `build_n1_proc` in `utils.team_corpora` (proposed name `build_x62_recomb`), deterministic, with
 `--check` as its siblings have. It generalises rc72b's `build_rc72.py` from a 72-team panel to a 12,000-team corpus.
@@ -163,7 +163,9 @@ coherence.** It ships no prior: it is a training corpus, like `n1_proc_v1`.
 One `random.Random` per (stream, i), as in `build_n1_proc`.
 
 1. **Species, usage-matched to what P\* trained on.**
-   - Slot 1 is drawn with weight c_pool(s), the species' occurrence count over the pool's STRICT-class mons.
+   - Slot 1 is drawn with weight c_pool(s), the species' occurrence count over ALL the pool's mons, for the species
+     with at least one STRICT-class occurrence (the prototype's profile, which every number in §2.2 used; counting only
+     STRICT-class mons moved the species TVD to 0.109).
    - Each later slot is drawn among species not yet on the team, which enforces the Species Clause by construction.
      Its weight is c_pool(s) × the geomean, over the team's species t, of lift(t, s). Here lift(t, s) = P(s | t) /
      share(s), from Smogon's teammate and usage tables, clipped to [¼, 4]. These are rc72b's rules, with the pool's
@@ -675,3 +677,4 @@ those rows too. A rented CPU box (strategy §3.1, an owner question) would serve
 | 2026-10-27 | **Two overstatements softened after the H-MID review** (doc editor; docs only) | "the premium goes with the TEAM" became OPEN until rc72b; "the critic shares the memorisation" became not shown | keeping both as the rationale | `../research_state/measurements/h_mid_value_test_2026-10-26/REVIEW.md` B1, M1, M3 |
 | 2026-10-27 | **REVISED DRAFT after the adversarial review** (research-design worker, orchestrator brief; docs + two CPU scripts) | **B1:** the in-pool cost becomes a PRICE (net = Δ_home72 + r · Δ_U vs Kakuna, r = 1 the orchestrator's default, the owner's to change before registration) with a home72 FLOOR (LB > 0.50), S REPORTED. **B2:** a PR-1′ node above N1-P; its KILL retires the 20M fork, not the corpus (X63 / X64). **M1:** rc72b refused at radius 3, the STRICT Hidden Power rule (86 of 658 sets and 6 species withdrawn; the first draft's 69 % no-IV-line teams go to 0), near-duplicates reported. **M2:** P(GAIN) 0.56 / 0.49 and ADOPT-CANDIDATE 0.31 / 0.28 on the run branch; 0.032–0.052 and 0.018–0.028 per resource-day at fresh C0. **M3:** NULL routes to dose (X63), with a 10M dose line. **M4:** SUPPORTED and UNDECIDED route identically. Plus the minors (exact species six refused, the nickname rewrite, the trainee bias arithmetic); D1's read rule dropped; Kakuna at the tree pin | `validated` HP (trains a class every meter and the live server exclude); IV-line completion (not verbatim; depends on FINDING 9); NI at −2.0 pp as a decider; shelving on R / P's LB ≥ 0.5 (no teeth: 0.16 at R / P = 1); an argued exception to PR-1′'s KILL; D1's rule as a screen | [`reviews/x62_review_2026-10-27.md`](reviews/x62_review_2026-10-27.md) (`d997a146`) and its `review_2026-10-27/` logs; [`revision_2026-10-27/`](../research_state/measurements/x62_design_2026-10-26/revision_2026-10-27/) (`strict_draw_sim.log`, `revised_odds.log`); `REVIEW_2.md` (`69c7cd34d`) M1–M4, §6; the plasticity check (`8bebdfe31`); the survey (`5d554c23`) recs 1–2; X63 §9 |
 | 2026-10-27 | **Ruling 7 of the precommit memo accepted** (doc editor; docs only) | an H-CTX INCONCLUSIVE top-up of home72 / F control units is allowed only as a dated registration naming its alpha, the units and the pooled rule, before any top-up game; otherwise the HOLD stands and X62 waits for PR-1' or N1-P; ruling 5: X63 Stage A runs before X62 under SUPPORTED and UNDECIDED | — | `precommit_reads_2026-10-27.md` §4 |
+| 2026-10-29 | **`x62_recomb_v1` BUILT (G0; H-CTX read SUPPORTED)** (X63 registration worker, orchestrator brief) | built as §2 with the prototype's species profile (§2.1 corrected: all of a species' pool mons, not its STRICT-class ones); 12,000 of 12,412 candidates, 572 of 658 sets, 63 species, set-exposure TVD 0.171, all ≤ 2 shared with rc72b; tiers K1 ⊂ K3 ⊂ ALL; reproduces under `--check`. No soak of its own: its teams are soaked inside `x63_union_v1` (178,760 battles, 0 core errors). X62's fork stays its own registration | the §2.1 wording's STRICT-class profile (species TVD 0.109, off the prototype) | `designs/research_state/measurements/x63_2026-10-29/corpus/build_x62_recomb.log`; the manifest |
