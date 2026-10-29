@@ -153,17 +153,11 @@ Every open owner question, in one place.
    the ledger stay on old SHAs, the default; and when the local old objects are pruned); and a GitHub Support
    request to purge cached copies of the old commits (only the repository owner can file it). Every commit gets a
    new SHA, so this page's gate fails until its SHAs are re-mapped from the table the rewrite writes.
-4. **The exchange rate r, for X62 and X63.** Both breadth designs price their in-pool cost against their
-   unfamiliar-team gain, both against Kakuna: X62's net = Δ_home72 + r · Δ_U; X63's net = Δ_home72 + r · Δ_F (F,
-   because X63's procedural component hazards H and P72). A lever whose net is ≥ 0 is adopted; r says how many points
-   of the home-team margin (goal 2a) one point of unfamiliar-team strength (goal 2b) is worth. **Recommended default:
-   r = 1**, because both goals measure the same win rate against the same opponent, goal 2a has about 5 pp of margin
-   over its bar (lower bound 0.549 against 0.50) while goal 2b is about 4 pp short, and one rate for both designs
-   prices the same trade alike. A larger r (say 2) says goal 2b matters more now that 2a is met; a smaller one
-   protects 2a. **X63 needs r written before X63-U launches** (≈ 10-29 evening, after N1-P's seeds; once it trains, its
-   in-pool numbers would preview the cost r prices). If none is written, X63 does not
-   assume one: a GAIN reads UNPRICED and the owner rules on it afterwards, with the break-even rate printed.
-   X62's default r = 1 stays the orchestrator's until the owner writes one (`58cb02dc6`).
+4. **The exchange rate r, for X62 and X63: DECIDED, r = 1** (2026-10-29; the owner: "You choose"; X63's AM-X63-R,
+   recorded before X63-U launches). Both breadth designs price their in-pool cost against their unfamiliar-team gain
+   against Kakuna: X62's net = Δ_home72 + r · Δ_U; X63's net = Δ_home72 + r · Δ_F. A lever whose net is ≥ 0 is
+   adopted. r = 1 because both goals measure the same win rate against the same opponent, and goal 2a has about 5 pp of
+   margin over its bar while goal 2b is about 4 pp short. It is never changed after a launch.
 
 ## 7. The biggest risks and unknowns
 

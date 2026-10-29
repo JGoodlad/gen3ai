@@ -176,7 +176,7 @@ For k_U arm seeds and k_C control seeds at +100M, each model's score a plain pro
    - **FLOOR PASS iff the arm seeds' pooled home72 Wilson 95 % LB > 0.50.**
    - **net = Δ_home72 + r · Δ_F**; SE_net² = SE_home² + r² SE_F²; **PRICE WITHIN iff net ≥ 0**; **PRICE EXCEEDED iff
      net + 1.959964 · SE_net < 0**.
-   - **r = UNSET at registration.** The owner writes it (STATUS §6; recommended default 1) and the orchestrator
+   - **r = 1, recorded 2026-10-29 by AM-X63-R (§14), before X63-U s2601 launches.** At registration r was UNSET; the owner writes it (STATUS §6; recommended default 1) and the orchestrator
      records it here as a dated amendment **before X63-U s2601 launches** (the chain's GO; re-review blocker 2: once
      the arm trains, its pool win rate and arm-end records preview the in-pool cost that r prices). If none is
      recorded by then, the verdict on a GAIN with FLOOR PASS is UNPRICED and the record prints
@@ -266,7 +266,8 @@ P(GAIN) ≈ 0.28 over the σ prior; E[GPU-h] ≈ 41.
    throughput gate is the guard.
 6. **The kit holds Stage A's seed only.** Stage B (`rb_x63u_s6302`) and Stage C (`rb_x63u_s6303`, `rb_x63c_s6303`)
    join by dated amendments after their gates.
-7. **r is UNSET at registration.** It is the owner's (STATUS §6 item 4); the chain draft's `go_by` says so.
+7. **r was UNSET at registration.** It is the owner's (STATUS §6 item 4); the chain draft's `go_by` says so. Resolved
+   by AM-X63-R (§14): r = 1, before launch.
 8. **The two pins are local branches until the ship**: `x63u-pin` (39eaa326) and `x63-play-pin` (65b998da); their
    tags `x63u-pin-39eaa326` and `x63-play-65b998da` go to origin with the ship.
 9. **The successor play pin fails two tests at itself by design** (`package_doc_test`: `main/reads/__init__.py` is on
@@ -292,3 +293,19 @@ Its non-blocking checks: seed sharing (X63-U s2601 with X26c) makes the test mor
 0.049 / 0.026 / 0.004 at a pair correlation of 0 / 0.5 / 0.9); n1 at K3 is consistent with ruling 1; a resume at
 `f4b25238` restores the optimizer's rate and re-sends the mix; and the pin's `CORPORA` line must not name the component
 corpora absent there (it names only `x63_union_v1`).
+
+## 14. AMENDMENT AM-X63-R (2026-10-29, before X63-U s2601 launches): r = 1
+
+- **r = 1.** It is written before any X63-U step, game or arm-end record, and before the chain's GO.
+- **Who set it:** the owner was asked for r, recommended default 1 (STATUS §6 item 4). The owner replied "You choose"
+  on 2026-10-29, so the orchestrator set it, using the default's reasoning from STATUS §6: both goals are measured as
+  a win rate against the same opponent, and goal 2a has about 5 pp of margin while goal 2b is about 4 pp short.
+- **What is fixed:** §7 step 4 now reads: on a GAIN with FLOOR PASS, net = Δ_home72 + 1 · Δ_F.
+  - net ≥ 0 ⇒ ADOPT-CANDIDATE;
+  - net + 1.959964 · SE_net < 0 ⇒ OVER-RATE;
+  - otherwise TRADE.
+  - The UNPRICED class can no longer occur for this arm.
+- **Scope:** r applies to X63 at every stage (A, B and C). It also stands as X62's r unless X62's own registration
+  sets another.
+- **Changing it:** r is never changed after launch. A different r would be a new, separately labelled analysis,
+  never the verdict.
