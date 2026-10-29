@@ -1,0 +1,21 @@
+{
+ "schema": "x35_dose_v1",
+ "run": "rb_x35_n1p_s3504",
+ "arm": "n1p",
+ "seed": 3504,
+ "pin": "5f8f6cfa37de8e283ba553c0d415680cf51bff18",
+ "wall_min": 242.2,
+ "gpu_h": 4.036,
+ "gpu_h_note": "one card: GPU-h = wall START\u2192END",
+ "steps_per_s": 1418,
+ "steps_per_s_source": "launcher summary 'FPS'",
+ "first_step": 280000170,
+ "last_step": 300061235,
+ "target_steps": 300000170,
+ "restarts": 0,
+ "launcher_rc": 0,
+ "start": "2026-10-29T07:42:10-07:00",
+ "end": "2026-10-29T11:44:21-07:00",
+ "segments": 1,
+ "segments_note": "wall = the sum of every START\u2192END segment; FPS / last step from the newest launcher log"
+}
