@@ -393,6 +393,17 @@ X48 cell at the pin, so X48's S cells play through [`x48_s_driver.py`](x48_s_dri
   The S lane is HELD, so the runner cannot start on it, and the driver also plays the C0 slope cells.
 - **No change to the measurement.** Grouping cells into processes was already free under the runner: C0's units
   regrouped cells from unit to unit.
+- **(a) 2026-10-29 ≈ 03:30, the coordinator's condition, met before any X48 S row was read: the driver reproduces the
+  runner EXACTLY.** [`driver_identity.py`](driver_identity.py) → [`driver_identity.json`](driver_identity.json). One
+  banked C0 cell pair, `c0_s3501` against `x26_pstar` and `tstar`, which the runner played in mixed engines. The
+  driver's `pure_engines` split it into two engines (`c0_s3501:x26_pstar`, `c0_s3501:tstar`), and each ran the
+  runner's own `play_many_argv` (batch 0, `--pairs 100`, a scratch ledger) in one short-lane heavy slot. Both rows
+  equal the read ledger's banked rows on regime `adfdbee824c9eb0a`, seed block, counts (109-90-1, 121-79-0) and both
+  outcome digests. A mismatch would have HELD the S lane.
+  - The driver's first X48 engine came up with 2 slot groups and the same regime.
+  - Script sha256s (the record carries them): `x48_s_driver.py` `ddc182399a769c24e991947a6b50697364bcdacc4fe608fd9fc79184c4320ed6`,
+    `driver_identity.py` `119cd9575dcba0a560203e755a863fc1be0ec046ab28ba98d04e3a3b050a2de9`. The running copies
+    under `~/gen3ai_archive/x35_x48_read/driver/` hash the same.
 
 ## 14. FINDINGS at registration (standing rule 7)
 

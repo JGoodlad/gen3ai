@@ -1,0 +1,121 @@
+{
+ "engines": [
+  "c0_s3501:x26_pstar",
+  "c0_s3501:tstar"
+ ],
+ "fields": [
+  "regime_id",
+  "seed",
+  "counts",
+  "outcome_digest",
+  "outcome_digest_all"
+ ],
+ "identical": true,
+ "ledger_problems": [],
+ "play_rc": 0,
+ "rows": [
+  {
+   "bank": {
+    "commit": "86cfdf7efbe21b4ff3382541e6d78390df7d9966",
+    "counts": {
+     "aborted": 0,
+     "d": 1,
+     "l": 90,
+     "w": 109
+    },
+    "outcome_digest": "0a075a4ed6adf6fce452f97278de8738d22922dca6be0d39a08f8716c9f3a2b6",
+    "outcome_digest_all": "14158ae54abfd23c0e5733c35bc91b0e800381a0cacde357f64a8a54661f4f62",
+    "regime_id": "adfdbee824c9eb0a",
+    "seed": {
+     "batch": 0,
+     "cycle_seed": 2930729699984423416,
+     "game_hi": 199,
+     "game_lo": 0,
+     "item_key": "h2h",
+     "rule": "gen3_eval_game_seed_v1",
+     "schedule_key": "h2h:72ebb8257be48673",
+     "schedule_seed": 0
+    }
+   },
+   "batch": 0,
+   "differing": [],
+   "equal": true,
+   "opponent": "x26_pstar@280000170",
+   "player": "c0_s3501@300061940",
+   "replay": {
+    "commit": "86cfdf7efbe21b4ff3382541e6d78390df7d9966",
+    "counts": {
+     "aborted": 0,
+     "d": 1,
+     "l": 90,
+     "w": 109
+    },
+    "outcome_digest": "0a075a4ed6adf6fce452f97278de8738d22922dca6be0d39a08f8716c9f3a2b6",
+    "outcome_digest_all": "14158ae54abfd23c0e5733c35bc91b0e800381a0cacde357f64a8a54661f4f62",
+    "regime_id": "adfdbee824c9eb0a",
+    "seed": {
+     "batch": 0,
+     "cycle_seed": 2930729699984423416,
+     "game_hi": 199,
+     "game_lo": 0,
+     "item_key": "h2h",
+     "rule": "gen3_eval_game_seed_v1",
+     "schedule_key": "h2h:72ebb8257be48673",
+     "schedule_seed": 0
+    }
+   }
+  },
+  {
+   "bank": {
+    "commit": "86cfdf7efbe21b4ff3382541e6d78390df7d9966",
+    "counts": {
+     "aborted": 0,
+     "d": 0,
+     "l": 79,
+     "w": 121
+    },
+    "outcome_digest": "9b7273653ad999746c34355442a8f60495570c6d0268b8a1d7ef0d7dabac9a1b",
+    "outcome_digest_all": "58936c9def71e0f61a4c1846b1b8058145d529553787907dba89af11185e6dff",
+    "regime_id": "adfdbee824c9eb0a",
+    "seed": {
+     "batch": 0,
+     "cycle_seed": 3940714001707190432,
+     "game_hi": 199,
+     "game_lo": 0,
+     "item_key": "h2h",
+     "rule": "gen3_eval_game_seed_v1",
+     "schedule_key": "h2h:1c455c81cd43fcef",
+     "schedule_seed": 0
+    }
+   },
+   "batch": 0,
+   "differing": [],
+   "equal": true,
+   "opponent": "tstar@290000087",
+   "player": "c0_s3501@300061940",
+   "replay": {
+    "commit": "86cfdf7efbe21b4ff3382541e6d78390df7d9966",
+    "counts": {
+     "aborted": 0,
+     "d": 0,
+     "l": 79,
+     "w": 121
+    },
+    "outcome_digest": "9b7273653ad999746c34355442a8f60495570c6d0268b8a1d7ef0d7dabac9a1b",
+    "outcome_digest_all": "58936c9def71e0f61a4c1846b1b8058145d529553787907dba89af11185e6dff",
+    "regime_id": "adfdbee824c9eb0a",
+    "seed": {
+     "batch": 0,
+     "cycle_seed": 3940714001707190432,
+     "game_hi": 199,
+     "game_lo": 0,
+     "item_key": "h2h",
+     "rule": "gen3_eval_game_seed_v1",
+     "schedule_key": "h2h:1c455c81cd43fcef",
+     "schedule_seed": 0
+    }
+   }
+  }
+ ],
+ "schema": "x48_driver_identity_v1"
+}
