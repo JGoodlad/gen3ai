@@ -311,3 +311,52 @@ own artifacts (`pin_history`, `snapshots/pool_seed.json`) would be a new module 
 
 **FINDING 12 (this amendment).** Look 2's S for s3501-s3503 is look 1's draw, not a fresh one: a reader comparing the look-2
 P to a re-played one (D1 look 2) sees different numbers for those seeds' S, from sampling, not from the rule.
+
+
+## 15. AMENDMENT AM-N1P-2 (2026-10-29, before any look-2 game): look 2's play commit, engine and regime
+
+**Why, and when.** Written after s3504 and s3505 finished (K9(b) PASS: `46f616b1a`, `4db59591e`) and before any look-2
+game: no look-2 state exists and no `main.reads plan` has run for it. Neither the spec nor §14 names the commit look 2 plays
+on, and so neither names its regime. Look 2 imports look 1's Kakuna units and S nodes (§14.3), and `main.reads` pools an
+import only on the same engine, the same Kakuna team pack and the same sides (`designs/tools/reads.md` §4: "An import from
+N1-P look 1 needs E3"). A look 2 played at main would split every panel across two regimes and read INCONCLUSIVE. **No
+decision rule changes**: the classes (§4), the bars, the sign rule (≥ 3 of 5), the floor, AM-5's widening, P (§5), the
+guards (§6), the REPORTED group (§7), the VOID guards (§9, §14) and the predictions (§10) stand as registered. The spec
+files are not edited (look 2's sha256 `f28654cc…` stays, so its `rederived_guards` resolves to `report`, as registered
+before 2026-10-27).
+
+**1. The play commit: look 1's own.** Both lanes of look 2 play at **`de15dfc7b6d19d6f0e4a3724f269e26e7aa22957`** (tag
+`x61p-n1p-look1-sched-de15dfc7`, look 1's anchor-lane commit after its repin), from a clean detached worktree
+`~/dev/gen3ai-reads/n1p_play_look2_de15dfc7` built by its own `scripts/bootstrap.sh --skip-env --with-rust`. The state is
+`~/gen3ai_archive/x61p_n1p_read/look2`. Its regime is look 1's in every component, checked at this amendment:
+
+| component | look 2 at `de15dfc7b` | how checked |
+|---|---|---|
+| engine | **E3** (`port=0d3d7629f16a0eaf/91;env=393631b886965b0c/126`) | `main.reads.engine.engine_at('de15dfc7b') == E3`; the built `sim_bridge` stamps `src=0d3d7629f16a0eaf;nfiles=91`, the env core `src=393631b886965b0c;nfiles=126`, commit `de15dfc7b`; both `Cargo.lock` blobs equal `LEGACY_LOCK_BLOBS` |
+| Kakuna's team pack | legacy (the commit predates `b0441623e`) | `git merge-base` |
+| our side's pack | post-fix (`d8d674b99` is in it) | as look 1 |
+| peer code / policy mode | legacy `b817d3216c418f75` / `eval` (`side_identity`'s tables name `de15dfc7b`) | Metamon at `0a00a759`, its `metamon/` package clean; the `metamon` env's last change 2026-09-14 |
+
+So every one of the ten finals is played on ONE engine and one regime, and §14's import applies as registered. The
+PREREG has no cross-engine provision, and none is needed.
+
+**2. The record is written from a main checkout,** not from the play worktree. The play commit's `k9b/` predates s3504's
+and s3505's AM-6 records, and main's `assemble` adds the checks landed after 2026-10-26, each run on look 2's own and
+imported units: the engine identity per group (G7), the import's Kakuna-pack and sides checks, the re-derived forced-end and
+peer-fault guards (G14, in `report` mode: a hit on a counted unit HOLDS `decide` for the orchestrator), and the
+choice-level guard where a game-for-game guard exists (this spec has none). `record` reads the state; it does not play.
+
+**3. Not changed by this amendment:** the heavy slots. The play commit's `mem_cap.sh` and `utils.heavy_slots` take the
+same ticketed FIFO queue as main; main's `52ff8cb1f` changed only how a ZOMBIE waiter's liveness reads (FINDING 14).
+
+**FINDING 13 (this amendment): compile canary UNCONFIRMED verdicts on the ON arm.** `rb_x35_n1p_s3505` u100 (289,837,734):
+UNCONFIRMED, `--compile-trainer` region R1 (bf16 rule), `features_extractor.flat_intent_head.hidden.weight` compiled
+1.20e-01 against eager 5.85e-03, reproduced on slice 2 of [2, 1]; u10 and u200 PASS. The dump is archived at
+`~/gen3ai_archive/n1p_s3505_canary_u100_unconfirmed_2026-10-29/`. `rb_x35_n1p_s3501` also carries one, at u200,
+which look 1 read without a note. N1-P has 2 UNCONFIRMED in 15 scheduled checks, and C0 s3501–s3505 have 0 in 15. The X35
+stage as a whole has 4 in 95 (`designs/training/canary_recalibration_2026-10-28.md`). **This PREREG names no canary guard**:
+§9 and §14 VOID a seed only on K9(b), the startup banner and held-out lines, the pin and corpus, the pool seed, and a
+corpus-team FATAL. Both seeds are therefore read. The record names them, and no verdict is conditioned on them.
+
+**FINDING 14 (this amendment).** The play commit predates `52ff8cb1f`. In that version a ZOMBIE waiter's ticket in the shared
+heavy-slot queue reads as alive to look 2's own `mem_cap.sh` calls. That costs at most a wait, never a wrong game.
