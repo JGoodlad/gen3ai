@@ -1396,6 +1396,10 @@ from main.reads import rules_n4_screen as _N4  # noqa: E402  (it imports this mo
 RULES["n4_screen"] = Rule("n4_screen", _N4.RULE_DOCS["n4_screen"], _N4.check, _N4.inputs, _N4.decide, True,
                           _N4.reported)
 
+from main.reads import rules_x63 as _X63  # noqa: E402  (it imports this module lazily: no cycle at import)
+
+RULES["x63_kvk"] = Rule("x63_kvk", _X63.RULE_DOCS["x63_kvk"], _X63.check, _X63.inputs, _X63.decide, False, _X63.reported)
+
 
 def inputs(rule: str, cells: Mapping[str, Any], params: Mapping[str, Any], spec: Any) -> Dict[str, Any]:
     return RULES[rule].inputs(cells, params, spec)
