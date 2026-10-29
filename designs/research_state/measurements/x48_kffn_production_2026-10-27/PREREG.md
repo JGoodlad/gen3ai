@@ -370,6 +370,30 @@ cores 5-7,13-15), read-only on `models/`.
 - **(i) Not played** (reported lines the spec does not hold): G-F (§8.5) and home72 (§8.8). Each is its own read, run
   only if the lanes have room after the record. ρ (§8.2) is read from the dose records at the record.
 
+**NOTE 5 (2026-10-29 ≈ 03:00, before any X48 S number exists; no X48 S row was written).** The S lane cannot play an
+X48 cell at the pin, so X48's S cells play through [`x48_s_driver.py`](x48_s_driver.py).
+- **What happened.** The lane's first X48 unit (02:23) refused at preflight, before any game:
+  `CellArchMismatch: cell opponent tstar@290000087: its architecture matches neither of the engine's 2 slot groups`.
+  An h2h engine at the pin serves at most `main.h2h.arch.MAX_GROUPS` = 2 architectures. A C0 final shares one
+  architecture with six of R's members (production, `x26_*`), and `tstar` is the second, so every C0 engine had two.
+  The X48 final is a third (per-kind FFN experts). `runner.s_engines` stripes a label's members over engines
+  (`left[w::k]`), so it puts `tstar` beside the others, and the supervisor exited rc 1.
+- **Why not a code fix.** The runner is off the play path, but a pinned spec cannot `repin`. Neither the registration
+  nor §5 moves.
+- **The driver.** It is the S lane's own loop with one change: it groups each label's pending members by architecture
+  before it puts them on engines. Engines are `x48kffn_s350x:production,x26_*` and `x48kffn_s350x:tstar`. Everything
+  else is the runner's own code at the pin:
+  - R is re-verified before every unit, and the pending cells come from the runner;
+  - `s_unit_argv` gives the heavy slot, nice 19 and the agent cores;
+  - the `s-unit` verb re-hashes every model and plays `play_many_argv` with the same pairs, batches, family, request
+    and ledger;
+  - the 2,400 s box, 2 workers and the registered stop are unchanged.
+
+  The pairs, seeds, regime and rows are the ones the runner would write; only which process plays which cell differs.
+  The S lane is HELD, so the runner cannot start on it, and the driver also plays the C0 slope cells.
+- **No change to the measurement.** Grouping cells into processes was already free under the runner: C0's units
+  regrouped cells from unit to unit.
+
 ## 14. FINDINGS at registration (standing rule 7)
 
 1. **The read's rule does not exist yet.** `n4_screen` is N4's, to be built with T69, and needs M2's MIXED class. X48's
