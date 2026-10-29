@@ -1,0 +1,426 @@
+{
+ "built_by": "python -m utils.team_corpora.build_x63_union",
+ "components": [
+  {
+   "data_sha256": "60a4d2e02b68a11da0c284aa4d8ae156b32e199bf6ea0e64000b919016fc5ea6",
+   "first_union_i": 0,
+   "manifest_sha256": "4204418607edb1e9b4b2032af4b2e7da7bcd17a2eb11ed3331bbb6b6682f6b6c",
+   "n": 12000,
+   "name": "x62_recomb_v1",
+   "tier": "ALL",
+   "tier_sha256": "f20326386208905b3e819ea77c8922fdc54bda276b0a97cbf32ce179f7674d69"
+  },
+  {
+   "data_sha256": "99e3425aa687e7d0663525e4ab1df2a3cb52c8d6bf162df35da0bccf7c20bad6",
+   "first_union_i": 12000,
+   "manifest_sha256": "4db822ba1e0cf2e21d3ab7780ab42017ae3b02b15b3687661961b1c8e191e067",
+   "n": 3000,
+   "name": "n1_proc_v1",
+   "tier": "K3",
+   "tier_sha256": "8335d302a47eb9072e3136b46c14961b0cad9865af71cd2830d3aa8533ea52ef"
+  },
+  {
+   "data_sha256": "fa3674297fcaed2c7508401d2c69774a5289f63902ce8107b18859dd916f6778",
+   "first_union_i": 15000,
+   "manifest_sha256": "02f097f730eb621b43fe744b21620c532019c5eacde84b826ec5512dd8620160",
+   "n": 2876,
+   "name": "d3_setmut_v1",
+   "tier": "ALL",
+   "tier_sha256": "625d664aff2125dc39a0c574eb62bfaa8f28d8b2c7aa107a1cbf2cd9d248bcd3"
+  }
+ ],
+ "data_file": "teams.jsonl.gz",
+ "data_sha256": "f5cdc121ab6d8ec9b13dff60570183add14f30379ddaa68863d36529007128a7",
+ "default_tier": "ALL",
+ "describe": {
+  "component_share_of_draws": {
+   "d3_setmut_v1": {
+    "n": 2876,
+    "share": 0.1609
+   },
+   "n1_proc_v1": {
+    "n": 3000,
+    "share": 0.1678
+   },
+   "x62_recomb_v1": {
+    "n": 12000,
+    "share": 0.6713
+   }
+  },
+  "cross_component_near_duplicates": {
+   "d3_setmut_v1 vs n1_proc_v1": {
+    "at_ge_5": [],
+    "max_shared_hist": {
+     "1": 1200,
+     "2": 1632,
+     "3": 44
+    }
+   },
+   "d3_setmut_v1 vs x62_recomb_v1": {
+    "at_ge_5": [],
+    "max_shared_hist": {
+     "1": 20,
+     "2": 2302,
+     "3": 552,
+     "4": 2
+    }
+   },
+   "n1_proc_v1 vs d3_setmut_v1": {
+    "at_ge_5": [],
+    "max_shared_hist": {
+     "0": 16,
+     "1": 1904,
+     "2": 1058,
+     "3": 22
+    }
+   },
+   "n1_proc_v1 vs x62_recomb_v1": {
+    "at_ge_5": [],
+    "max_shared_hist": {
+     "0": 456,
+     "1": 1199,
+     "2": 1221,
+     "3": 124
+    }
+   },
+   "x62_recomb_v1 vs d3_setmut_v1": {
+    "at_ge_5": [],
+    "max_shared_hist": {
+     "1": 110,
+     "2": 9513,
+     "3": 2375,
+     "4": 2
+    }
+   },
+   "x62_recomb_v1 vs n1_proc_v1": {
+    "at_ge_5": [],
+    "max_shared_hist": {
+     "1": 3669,
+     "2": 7980,
+     "3": 351
+    }
+   }
+  },
+  "frustration_by_text": {
+   "by_component": {
+    "d3_setmut_v1": {
+     "with_frustration": 8,
+     "without_happiness0": 8
+    },
+    "n1_proc_v1": {
+     "with_frustration": 16,
+     "without_happiness0": 16
+    },
+    "x62_recomb_v1": {
+     "with_frustration": 15,
+     "without_happiness0": 15
+    }
+   },
+   "ids_without_happiness0": [
+    "x63u_00667",
+    "x63u_02629",
+    "x63u_04298",
+    "x63u_04546",
+    "x63u_04630",
+    "x63u_05261",
+    "x63u_05601",
+    "x63u_05831",
+    "x63u_06734",
+    "x63u_08384",
+    "x63u_09092",
+    "x63u_09325",
+    "x63u_10015",
+    "x63u_11103",
+    "x63u_11565",
+    "x63u_12128",
+    "x63u_12355",
+    "x63u_12588",
+    "x63u_12777",
+    "x63u_13087",
+    "x63u_13148",
+    "x63u_13250",
+    "x63u_13358",
+    "x63u_13364",
+    "x63u_13512",
+    "x63u_14000",
+    "x63u_14293",
+    "x63u_14316",
+    "x63u_14570",
+    "x63u_14778",
+    "x63u_14954",
+    "x63u_15445",
+    "x63u_15479",
+    "x63u_16291",
+    "x63u_16395",
+    "x63u_17046",
+    "x63u_17102",
+    "x63u_17519",
+    "x63u_17769"
+   ],
+   "rule": "a mon block with a '- Frustration' move line; 'no_happiness0' = no explicit 'Happiness: 0' line. The legacy (pre-d8d674b9) packer played every Frustration at base power 1 (x35_pack_regime_2026-10-27); the classified count is that audit's, run on this corpus",
+   "share_with_frustration": 0.00218,
+   "share_without_happiness0": 0.00218,
+   "teams_with_frustration": 39,
+   "teams_without_happiness0": 39
+  },
+  "max_shared_hist_by_panel": {
+   "forum216b": {
+    "all": {
+     "0": 439,
+     "1": 7480,
+     "2": 9736,
+     "3": 221
+    },
+    "by_component": {
+     "d3_setmut_v1": {
+      "0": 2,
+      "1": 1063,
+      "2": 1590,
+      "3": 221
+     },
+     "n1_proc_v1": {
+      "0": 435,
+      "1": 2177,
+      "2": 388
+     },
+     "x62_recomb_v1": {
+      "0": 2,
+      "1": 4240,
+      "2": 7758
+     }
+    },
+    "max": 3
+   },
+   "forum72": {
+    "all": {
+     "0": 1148,
+     "1": 11739,
+     "2": 4930,
+     "3": 59
+    },
+    "by_component": {
+     "d3_setmut_v1": {
+      "0": 112,
+      "1": 1890,
+      "2": 815,
+      "3": 59
+     },
+     "n1_proc_v1": {
+      "0": 914,
+      "1": 1894,
+      "2": 192
+     },
+     "x62_recomb_v1": {
+      "0": 122,
+      "1": 7955,
+      "2": 3923
+     }
+    },
+    "max": 3
+   },
+   "heldout72": {
+    "all": {
+     "0": 3642,
+     "1": 13294,
+     "2": 938,
+     "3": 2
+    },
+    "by_component": {
+     "d3_setmut_v1": {
+      "0": 680,
+      "1": 2054,
+      "2": 140,
+      "3": 2
+     },
+     "n1_proc_v1": {
+      "0": 1083,
+      "1": 1837,
+      "2": 80
+     },
+     "x62_recomb_v1": {
+      "0": 1879,
+      "1": 9403,
+      "2": 718
+     }
+    },
+    "max": 3
+   },
+   "heldout72_hpfix": {
+    "all": {
+     "0": 1409,
+     "1": 14524,
+     "2": 1937,
+     "3": 6
+    },
+    "by_component": {
+     "d3_setmut_v1": {
+      "0": 224,
+      "1": 2332,
+      "2": 314,
+      "3": 6
+     },
+     "n1_proc_v1": {
+      "0": 577,
+      "1": 2240,
+      "2": 183
+     },
+     "x62_recomb_v1": {
+      "0": 608,
+      "1": 9952,
+      "2": 1440
+     }
+    },
+    "max": 3
+   },
+   "n1p72": {
+    "all": {
+     "0": 2161,
+     "1": 14334,
+     "2": 1370,
+     "3": 11
+    },
+    "by_component": {
+     "d3_setmut_v1": {
+      "0": 418,
+      "1": 2192,
+      "2": 255,
+      "3": 11
+     },
+     "n1_proc_v1": {
+      "0": 606,
+      "1": 2226,
+      "2": 168
+     },
+     "x62_recomb_v1": {
+      "0": 1137,
+      "1": 9916,
+      "2": 947
+     }
+    },
+    "max": 3
+   },
+   "p72": {
+    "all": {
+     "0": 2505,
+     "1": 14056,
+     "2": 1314,
+     "3": 1
+    },
+    "by_component": {
+     "d3_setmut_v1": {
+      "0": 560,
+      "1": 2095,
+      "2": 220,
+      "3": 1
+     },
+     "n1_proc_v1": {
+      "0": 566,
+      "1": 2292,
+      "2": 142
+     },
+     "x62_recomb_v1": {
+      "0": 1379,
+      "1": 9669,
+      "2": 952
+     }
+    },
+    "max": 3
+   },
+   "rc72b": {
+    "all": {
+     "0": 1030,
+     "1": 6693,
+     "2": 10153
+    },
+    "by_component": {
+     "d3_setmut_v1": {
+      "0": 16,
+      "1": 1445,
+      "2": 1415
+     },
+     "n1_proc_v1": {
+      "0": 1013,
+      "1": 1853,
+      "2": 134
+     },
+     "x62_recomb_v1": {
+      "0": 1,
+      "1": 3395,
+      "2": 8604
+     }
+    },
+    "max": 2
+   }
+  },
+  "n_teams": 17876
+ },
+ "engine": {
+  "oracle": "scan_move_probe",
+  "output_unplayable": {
+   "ability": [],
+   "item": [],
+   "move": [],
+   "species": []
+  },
+  "rule": "every id the union carries is asked; an unplayable one THROWS (the pin is empty)"
+ },
+ "name": "x63_union_v1",
+ "panels": {
+  "diagnostic_registry": {
+   "path": "designs/research_state/diagnostic_panels.json",
+   "sha256": "22f9345f440913a90eb91bc99552925287aa28beeea346a13dd86d071515e18b"
+  },
+  "histogrammed": {
+   "forum216b": {
+    "content_sha256": "e7e40cd874cd59264b0818a96e4555cf2dddd61ab6b4f269c8a158dbbca26baa",
+    "n": 216
+   },
+   "forum72": {
+    "content_sha256": "9cdd6151d592d4e45362761828d0fc118f443f851b520d935b78e379f8d736e1",
+    "n": 72
+   },
+   "heldout72": {
+    "content_sha256": "871f1531daf1106e6a6df21a24a7a3a81a55c90edc8abdb9ecebc8a0b0070106",
+    "n": 72
+   },
+   "heldout72_hpfix": {
+    "content_sha256": "a8bcbb8ca1ce86bd1ba847918c0d58b8262290e53c764f0438af9c5e949eab09",
+    "n": 72
+   },
+   "n1p72": {
+    "content_sha256": "8115043dd727521ba9a8d761ff8673eb22266fc0521f7db986e7e40711b5fab0",
+    "n": 72
+   },
+   "p72": {
+    "content_sha256": "55553e28c1c83f89c89ab76405ac1e479328fc301ee963f0b49852157be0ca82",
+    "n": 72
+   },
+   "rc72b": {
+    "content_sha256": "b3195a8253fcccd8e7f199978d45c2eef01f5b86167628480cfa90d14caeb601",
+    "n": 72
+   }
+  },
+  "n1p72_manifest": "designs/research_state/measurements/x61_n1_breadth_2026-10-25/n1p72_manifest.json",
+  "panel_registry": {
+   "path": "designs/research_state/heldout_panels.json",
+   "sha256": "ea3917c2f1e61c8a6e9d74cd38f20888eccb2cf9f8d7d4d4ff90fe224391784f"
+  }
+ },
+ "refusals": {
+  "duplicate": "the same six mon sets as another union team (raises)",
+  "matcher": "gen3_team_overlap_v1",
+  "rc72b": ">= 3 shared mon sets with ONE rc72b team (raises; the X63 review's m3)"
+ },
+ "schema": "gen3_team_corpus_v1",
+ "tiers": {
+  "ALL": {
+   "n": 17876,
+   "sha256": "f324b6b10fcae17567a285d7ecdf4ff98e439d403a9d3a1131568b3fbc7d3f5e",
+   "source_tiers": [
+    "ALL"
+   ]
+  }
+ },
+ "validator": "TeamValidator('gen3ou') via src/rust_sim/harness/ladder_corpus_filter.js, pinned deps/pokemon-showdown: every union team must pass (raises otherwise)",
+ "what": "X63's union corpus: x62_recomb_v1@ALL + n1_proc_v1@K3 + d3_setmut_v1@ALL, verbatim, in that order; TRAINING DATA, never a prior"
+}
