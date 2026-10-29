@@ -1,0 +1,1131 @@
+{
+ "schema": "x41_d3_look2_precheck_v1",
+ "state": "/home/goodlad/gen3ai_archive/x41_d3_read/look2",
+ "rederive_schema": "gen3_read_rederived_guards_v1",
+ "counted_units": 112,
+ "hit_units": [],
+ "unavailable_units": [],
+ "not_bare": [],
+ "units": [
+  {
+   "group": "guard",
+   "label": "c0_s3501",
+   "unit": "c0_s3501__heldout72_hpfix__00",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "guard",
+   "label": "c0_s3501",
+   "unit": "c0_s3501__heldout72_hpfix__01",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "guard",
+   "label": "c0_s3501",
+   "unit": "c0_s3501__heldout72_hpfix__02",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "guard",
+   "label": "c0_s3501",
+   "unit": "c0_s3501__heldout72_hpfix__03",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "guard",
+   "label": "c0_s3501",
+   "unit": "c0_s3501__heldout72_hpfix__04",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "guard",
+   "label": "c0_s3501",
+   "unit": "c0_s3501__heldout72_hpfix__05",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "guard",
+   "label": "c0_s3501",
+   "unit": "c0_s3501__heldout72_hpfix__06",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3501",
+   "unit": "d3_s3501__forum72__00",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3501",
+   "unit": "d3_s3501__forum72__01",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3501",
+   "unit": "d3_s3501__forum72__02",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3501",
+   "unit": "d3_s3501__forum72__03",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3501",
+   "unit": "d3_s3501__forum72__04",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3501",
+   "unit": "d3_s3501__forum72__05",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3501",
+   "unit": "d3_s3501__forum72__06",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3501",
+   "unit": "d3_s3501__heldout72_hpfix__00",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3501",
+   "unit": "d3_s3501__heldout72_hpfix__01",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3501",
+   "unit": "d3_s3501__heldout72_hpfix__02",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3501",
+   "unit": "d3_s3501__heldout72_hpfix__03",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3501",
+   "unit": "d3_s3501__heldout72_hpfix__04",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3501",
+   "unit": "d3_s3501__heldout72_hpfix__05",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3501",
+   "unit": "d3_s3501__heldout72_hpfix__06",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3501",
+   "unit": "d3_s3501__p72__00",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3501",
+   "unit": "d3_s3501__p72__01",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3501",
+   "unit": "d3_s3501__p72__02",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3501",
+   "unit": "d3_s3501__p72__03",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3501",
+   "unit": "d3_s3501__p72__04",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3501",
+   "unit": "d3_s3501__p72__05",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3501",
+   "unit": "d3_s3501__p72__06",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3502",
+   "unit": "d3_s3502__forum72__00",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3502",
+   "unit": "d3_s3502__forum72__01",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3502",
+   "unit": "d3_s3502__forum72__02",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3502",
+   "unit": "d3_s3502__forum72__03",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3502",
+   "unit": "d3_s3502__forum72__04",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3502",
+   "unit": "d3_s3502__forum72__05",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3502",
+   "unit": "d3_s3502__forum72__06",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3502",
+   "unit": "d3_s3502__heldout72_hpfix__00",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3502",
+   "unit": "d3_s3502__heldout72_hpfix__01",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3502",
+   "unit": "d3_s3502__heldout72_hpfix__02",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3502",
+   "unit": "d3_s3502__heldout72_hpfix__03",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3502",
+   "unit": "d3_s3502__heldout72_hpfix__04",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3502",
+   "unit": "d3_s3502__heldout72_hpfix__05",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3502",
+   "unit": "d3_s3502__heldout72_hpfix__06",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3502",
+   "unit": "d3_s3502__p72__00",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3502",
+   "unit": "d3_s3502__p72__01",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3502",
+   "unit": "d3_s3502__p72__02",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3502",
+   "unit": "d3_s3502__p72__03",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3502",
+   "unit": "d3_s3502__p72__04",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3502",
+   "unit": "d3_s3502__p72__05",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3502",
+   "unit": "d3_s3502__p72__06",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3503",
+   "unit": "d3_s3503__forum72__00",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3503",
+   "unit": "d3_s3503__forum72__01",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3503",
+   "unit": "d3_s3503__forum72__02",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3503",
+   "unit": "d3_s3503__forum72__03",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3503",
+   "unit": "d3_s3503__forum72__04",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3503",
+   "unit": "d3_s3503__forum72__05",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3503",
+   "unit": "d3_s3503__forum72__06",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3503",
+   "unit": "d3_s3503__heldout72_hpfix__00",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3503",
+   "unit": "d3_s3503__heldout72_hpfix__01",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3503",
+   "unit": "d3_s3503__heldout72_hpfix__02",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3503",
+   "unit": "d3_s3503__heldout72_hpfix__03",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3503",
+   "unit": "d3_s3503__heldout72_hpfix__04",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3503",
+   "unit": "d3_s3503__heldout72_hpfix__05",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3503",
+   "unit": "d3_s3503__heldout72_hpfix__06",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3503",
+   "unit": "d3_s3503__p72__00",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3503",
+   "unit": "d3_s3503__p72__01",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3503",
+   "unit": "d3_s3503__p72__02",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3503",
+   "unit": "d3_s3503__p72__03",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3503",
+   "unit": "d3_s3503__p72__04",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3503",
+   "unit": "d3_s3503__p72__05",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3503",
+   "unit": "d3_s3503__p72__06",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3504",
+   "unit": "d3_s3504__forum72__00",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3504",
+   "unit": "d3_s3504__forum72__01",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3504",
+   "unit": "d3_s3504__forum72__02",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3504",
+   "unit": "d3_s3504__forum72__03",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3504",
+   "unit": "d3_s3504__forum72__04",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3504",
+   "unit": "d3_s3504__forum72__05",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3504",
+   "unit": "d3_s3504__forum72__06",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3504",
+   "unit": "d3_s3504__heldout72_hpfix__00",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3504",
+   "unit": "d3_s3504__heldout72_hpfix__01",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3504",
+   "unit": "d3_s3504__heldout72_hpfix__02",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3504",
+   "unit": "d3_s3504__heldout72_hpfix__03",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3504",
+   "unit": "d3_s3504__heldout72_hpfix__04",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3504",
+   "unit": "d3_s3504__heldout72_hpfix__05",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3504",
+   "unit": "d3_s3504__heldout72_hpfix__06",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3504",
+   "unit": "d3_s3504__p72__00",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3504",
+   "unit": "d3_s3504__p72__01",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3504",
+   "unit": "d3_s3504__p72__02",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3504",
+   "unit": "d3_s3504__p72__03",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3504",
+   "unit": "d3_s3504__p72__04",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3504",
+   "unit": "d3_s3504__p72__05",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3504",
+   "unit": "d3_s3504__p72__06",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3505",
+   "unit": "d3_s3505__forum72__00",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3505",
+   "unit": "d3_s3505__forum72__01",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3505",
+   "unit": "d3_s3505__forum72__02",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3505",
+   "unit": "d3_s3505__forum72__03",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3505",
+   "unit": "d3_s3505__forum72__04",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3505",
+   "unit": "d3_s3505__forum72__05",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3505",
+   "unit": "d3_s3505__forum72__06",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3505",
+   "unit": "d3_s3505__heldout72_hpfix__00",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3505",
+   "unit": "d3_s3505__heldout72_hpfix__01",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3505",
+   "unit": "d3_s3505__heldout72_hpfix__02",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3505",
+   "unit": "d3_s3505__heldout72_hpfix__03",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3505",
+   "unit": "d3_s3505__heldout72_hpfix__04",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3505",
+   "unit": "d3_s3505__heldout72_hpfix__05",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3505",
+   "unit": "d3_s3505__heldout72_hpfix__06",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3505",
+   "unit": "d3_s3505__p72__00",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3505",
+   "unit": "d3_s3505__p72__01",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3505",
+   "unit": "d3_s3505__p72__02",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3505",
+   "unit": "d3_s3505__p72__03",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3505",
+   "unit": "d3_s3505__p72__04",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3505",
+   "unit": "d3_s3505__p72__05",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  },
+  {
+   "group": "h",
+   "label": "d3_s3505",
+   "unit": "d3_s3505__p72__06",
+   "forced_end": "clean",
+   "peer_fault": "clean",
+   "hits": [],
+   "why": [],
+   "model_loader": "bare"
+  }
+ ]
+}

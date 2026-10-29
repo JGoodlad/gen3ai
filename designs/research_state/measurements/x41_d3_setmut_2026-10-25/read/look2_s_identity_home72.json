@@ -1,0 +1,122 @@
+{
+ "bank": "/home/goodlad/gen3ai_archive/x35_d1_read/p/ledger",
+ "fields": [
+  "regime_id",
+  "seed",
+  "counts",
+  "outcome_digest",
+  "outcome_digest_all"
+ ],
+ "identical": true,
+ "ledger_problems": [],
+ "replay": "/home/goodlad/gen3ai_archive/x41_d3_read/look2_s_identity/home72/ledger",
+ "rows": [
+  {
+   "bank": {
+    "commit": "6c428453a59b4b64b44df64b879b56c105c49e5a",
+    "core_stamp": "stamp=v2;kind=env;commit=6c428453a59b4b64b44df64b879b56c105c49e5a;src=7c53280566d666ae;nfiles=125;nan_poison=0;schema=0a6035e172e514b3;data=/home/goodlad/dev/gen3ai/.claude/worktrees/x35-d1-read/data/pokemon",
+    "counts": {
+     "aborted": 0,
+     "d": 2,
+     "l": 81,
+     "w": 117
+    },
+    "outcome_digest": "d846cca743cab6220344e93497ec27374855999c33816b14192531d12999fc2c",
+    "outcome_digest_all": "807971d0ddc7d8120ec69efe190c7342c8d1ba03d4f19e632a928c58c9b7ace1",
+    "regime_id": "d4de0fd7c16a2658",
+    "seed": {
+     "batch": 0,
+     "cycle_seed": 2930729699984423416,
+     "game_hi": 199,
+     "game_lo": 0,
+     "item_key": "h2h",
+     "rule": "gen3_eval_game_seed_v1",
+     "schedule_key": "h2h:72ebb8257be48673",
+     "schedule_seed": 0
+    }
+   },
+   "batch": 0,
+   "differing": [],
+   "equal": true,
+   "opponent": "x26_pstar@280000170",
+   "player": "c0_s3501@300061940",
+   "replay": {
+    "commit": "c4a5c37b6b3749b93157048169e9c2fb348c995a",
+    "core_stamp": "stamp=v2;kind=env;commit=c4a5c37b6b3749b93157048169e9c2fb348c995a;src=7c53280566d666ae;nfiles=125;nan_poison=0;schema=0a6035e172e514b3;data=/home/goodlad/dev/gen3ai-reads/d3l2_pin/data/pokemon",
+    "counts": {
+     "aborted": 0,
+     "d": 2,
+     "l": 81,
+     "w": 117
+    },
+    "outcome_digest": "d846cca743cab6220344e93497ec27374855999c33816b14192531d12999fc2c",
+    "outcome_digest_all": "807971d0ddc7d8120ec69efe190c7342c8d1ba03d4f19e632a928c58c9b7ace1",
+    "regime_id": "d4de0fd7c16a2658",
+    "seed": {
+     "batch": 0,
+     "cycle_seed": 2930729699984423416,
+     "game_hi": 199,
+     "game_lo": 0,
+     "item_key": "h2h",
+     "rule": "gen3_eval_game_seed_v1",
+     "schedule_key": "h2h:72ebb8257be48673",
+     "schedule_seed": 0
+    }
+   }
+  },
+  {
+   "bank": {
+    "commit": "6c428453a59b4b64b44df64b879b56c105c49e5a",
+    "core_stamp": "stamp=v2;kind=env;commit=6c428453a59b4b64b44df64b879b56c105c49e5a;src=7c53280566d666ae;nfiles=125;nan_poison=0;schema=0a6035e172e514b3;data=/home/goodlad/dev/gen3ai/.claude/worktrees/x35-d1-read/data/pokemon",
+    "counts": {
+     "aborted": 0,
+     "d": 3,
+     "l": 78,
+     "w": 119
+    },
+    "outcome_digest": "cdc425ffe333c46a838a6abda92bd9645a0d465226baf66e812d3c4f78b4e367",
+    "outcome_digest_all": "37876aea2b14e9df243d8b97be66c213c25be1de84e59fd4a5815c29f32fb0fe",
+    "regime_id": "d4de0fd7c16a2658",
+    "seed": {
+     "batch": 0,
+     "cycle_seed": 3940714001707190432,
+     "game_hi": 199,
+     "game_lo": 0,
+     "item_key": "h2h",
+     "rule": "gen3_eval_game_seed_v1",
+     "schedule_key": "h2h:1c455c81cd43fcef",
+     "schedule_seed": 0
+    }
+   },
+   "batch": 0,
+   "differing": [],
+   "equal": true,
+   "opponent": "tstar@290000087",
+   "player": "c0_s3501@300061940",
+   "replay": {
+    "commit": "c4a5c37b6b3749b93157048169e9c2fb348c995a",
+    "core_stamp": "stamp=v2;kind=env;commit=c4a5c37b6b3749b93157048169e9c2fb348c995a;src=7c53280566d666ae;nfiles=125;nan_poison=0;schema=0a6035e172e514b3;data=/home/goodlad/dev/gen3ai-reads/d3l2_pin/data/pokemon",
+    "counts": {
+     "aborted": 0,
+     "d": 3,
+     "l": 78,
+     "w": 119
+    },
+    "outcome_digest": "cdc425ffe333c46a838a6abda92bd9645a0d465226baf66e812d3c4f78b4e367",
+    "outcome_digest_all": "37876aea2b14e9df243d8b97be66c213c25be1de84e59fd4a5815c29f32fb0fe",
+    "regime_id": "d4de0fd7c16a2658",
+    "seed": {
+     "batch": 0,
+     "cycle_seed": 3940714001707190432,
+     "game_hi": 199,
+     "game_lo": 0,
+     "item_key": "h2h",
+     "rule": "gen3_eval_game_seed_v1",
+     "schedule_key": "h2h:1c455c81cd43fcef",
+     "schedule_seed": 0
+    }
+   }
+  }
+ ],
+ "schema": "x41_d3_l2_s_identity_v1"
+}

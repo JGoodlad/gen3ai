@@ -30056,3 +30056,58 @@ decision, void, models, code, repins, `harness_drift.{py,json}`); record
   - R-3: tier A's likelihood weights are unread.
 - **Evidence:** `measurements/su_regate_rolls_2026-10-28/` (PREREG, README, `regate_result.json`,
   `scripts/regate_read.py`); state `~/gen3ai_archive/su_regate_rolls_2026-10-28/`.
+
+### 2026-10-28 · MEASUREMENT · **X41 D3 LOOK 2 (FINAL, TERMINAL), read under its registration (`9938d7b6` + AM-D3-ENG + AM-D3-L2 and its addendum): UNDECIDED. Set mutation scores H +2.33 pp [−0.69, +5.35] on Kakuna's three unfamiliar panels (D3 0.494 vs C0 0.471; 4 of 5 seeds positive) at no in-pool cost (P −0.45 pp [−1.16, +0.25], NON-INFERIOR); every game on ONE engine, E1**
+
+**Question.** As at look 1: does training on our pool teams with 1–2 mons' sets redrawn from Smogon usage raise our
+piloting of unfamiliar teams against Kakuna (goal (b))? This is the final look, by D1's rule verbatim (arm `X41`,
+look 2).
+
+**Design.**
+- **Arms.** D3 s3501–s3505 (P\* + 20M at D3_PIN `9e289ba4`; every K9(b) and VOID guard PASS) against C0 s3501–s3505.
+- **H:** Kakuna ckpt 34, greedy vs greedy, symmetric `heldout72_hpfix` / `forum72` / `p72`, 700 games per panel per
+  arm.
+- **P:** S on `home72` vs the frozen R, 7 × 500 mirrored pairs per final.
+- **One engine (AM-D3-ENG).** Every D3 game, the look-1 seeds included, was played on E1, the arms' training engine.
+  The play pin was `c4a5c37b6` (tag `x41-d3-look2-play-c4a5c37b`): the newest pre-`b0441623e` read harness with E1's
+  game code restored byte for byte. That covers the Rust and also the Python model, observation, bridge and team-packer
+  paths, whose 10-25 changes the engine key cannot see.
+- **C0's rows were imported from D1's E1 bank** after the registered guard re-played C0 s3501's 7 `heldout72_hpfix`
+  units identically.
+- **Look 2 was registered TERMINAL**, with NULL unreachable at this size (the pre-data review `71d74e5c1`, M1 / M2).
+
+**Predictions (registered).** H +1.5 pp, 80 % [−1.5, +4.5]; P −0.8 [−2.5, +0.9]; final classes GAIN 0.15 · NULL 0.15
+· UNDECIDED 0.67. The review's conditional P(GAIN) given look 1 and the bank was 3–7 %.
+
+**Result.**
+- **H UNDECIDED (final):** +2.33 pp [−0.69, +5.35] (φ̂ 0.60, not widened). Per seed +2.1 / −3.1 / +4.3 / +2.1 / +6.2,
+  so the sign rule (≥ 3 of 5) holds but the LB does not clear 0.
+- **H per panel (reported):** H +3.7 [−1.5, +8.9], P72 +2.1 [−3.1, +7.4], F +1.1 [−4.1, +6.4].
+- **Without H:** +1.64 [−2.06, +5.34].
+- **P NON-INFERIOR:** −0.45 pp [−1.16, +0.25] (Welch 97.5 %). D3 S 57.08 / 56.74 / 56.59 / 55.89 / 56.44; C0 56.78 /
+  57.39 / 56.86 / 57.38 / 56.58.
+- **The effect bound** (registered M1 line): D3's effect on H lies within [−0.69, +5.35] pp.
+- **Guards** G-F / G-E / G-C were not read. **Goal (b)** is not met (LB 0.473). **Dose:** D3 20.68 GPU-h vs C0 20.49.
+- **Checks, all PASS:**
+  - Kakuna-lane identity at the pin: 80 / 80 games, choice by choice, three of them units where E3 diverges from E1.
+  - S-lane identity: C0 s3501 batch 0 vs `x26_pstar` / `tstar` equal on regime, seed, counts and both outcome
+    digests, on the pool vs G1 and on home72 vs D1's P.
+  - The guard, choice level: 140 / 140.
+  - VOID gate: 5 / 5 K9(b) PASS.
+  - `model_loader: bare` on 112 / 112 counted units.
+  - main's re-derived anchor guards (forced ends, disconnects, peer long-tail): 112 / 112 clean.
+  - External state unchanged.
+- **Descriptive:** D3 s3501–s3503 on E1 vs look 1's E2 differ in 9 of 1,260 games (net −2 wins). Look 1 recomputed
+  on E1 reads +1.11 [−2.79, +5.00], still CONTINUE.
+- **Against the guess:** H above the point guess and inside its band; P closer to 0 than predicted; the modal class
+  (UNDECIDED) came in.
+
+**What it cannot say.** Whether set mutation helps at all. The interval excludes a loss beyond 0.7 pp but not a gain up
+to ≈ 5 pp, and with NULL unreachable this size of read could not have closed it. The read is terminal: no D3 seeds are
+ever pooled with these rows, and a later D3 question is a new registration (or PR-1′'s pooled precision read on F).
+
+**Evidence:** `research_state/measurements/x41_d3_setmut_2026-10-25/read/` (`README_look2.md`,
+`read_spec_look2.json`, `look2_*.json` state copies and check outputs, the check scripts) and its PREREG (AM-D3-L2 and
+items 1–11). Record `x35_breakers_stage_2026-10-17/reads/d3_look2.json`; state `~/gen3ai_archive/x41_d3_read/look2/`.
+View: `UNDERSTANDING.md` (item 5, the D3 paragraph), `STATUS.md`, `endstate/design_beat_metamon_path.md` §0, §5, §6.4,
+§7, §9.

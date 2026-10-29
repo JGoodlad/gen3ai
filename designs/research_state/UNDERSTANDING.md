@@ -98,9 +98,9 @@ under `measurements/`. A number with no pointer is not a measurement.
    `measurements/n2_identity_test_2026-10-26/`]
 5. **No lever measured so far closes goal (b).** Against its own control each reads +1 to +3 pp with intervals
    ±3–4 pp wide: practice on 36 teams (X52) +1.3 pp on the unpractised half, UNDECIDED; a wider pool (D1) +2.10
-   [−0.92, +5.11], UNDECIDED (final), at −1.61 pp in-pool; set mutation (D3, look 1) +1.27 [−2.63, +5.16], CONTINUE,
-   with an engine-mix caveat; the belief prior mix ±1.50, NOT DETECTED; plain training FLAT. [Kakuna · `42bb0858d`,
-   `eb99ab362`, `58287c525`, `f299a7243`, `71c76dfbb`, `204204bbf`] Breadth at 10⁴ teams (N1-P) reads +0.75 on F at look 1
+   [−0.92, +5.11], UNDECIDED (final), at −1.61 pp in-pool; set mutation (D3, final, every game on one engine) +2.33 [−0.69, +5.35],
+   UNDECIDED, at −0.45 pp in-pool; the belief prior mix ±1.50, NOT DETECTED; plain training FLAT. [Kakuna · `42bb0858d`,
+   `eb99ab362`, D3's look-2 record, `f299a7243`, `71c76dfbb`, `204204bbf`] Breadth at 10⁴ teams (N1-P) reads +0.75 on F at look 1
    (CONTINUE) at −3.27 pp in-pool; human data (X59-S) is being read; H-CTX says the breadth that matters is breadth of TEAMS (item 4). The plan after them is §6.
 6. **The belief stack memorises the pool, but that is not where games are lost.** On unfamiliar opponents 63–85 %
    of the hidden slots hold the wrong species guess, yet mixing in the Smogon prior (λ = 0.25: U +1.50 pp [−2.74,
@@ -152,8 +152,8 @@ owner's approval (`designs/endstate/design_ladder_campaign.md`).
 5. what search needs, read as a trajectory across checkpoints (§4.7);
 6. which collapse we see, and a source of counterfactuals (§4.4).
 
-The plan for goal (b) is `designs/endstate/design_beat_metamon_path.md`; if D3, N1-P and X59-S all miss, the
-fallback is `designs/endstate/strategy_if_levers_null_2026-10-26.md`.
+The plan for goal (b) is `designs/endstate/design_beat_metamon_path.md`; D3 has missed (UNDECIDED, final); if N1-P and
+X59-S miss too, the fallback is `designs/endstate/strategy_if_levers_null_2026-10-26.md`.
 
 **The Rustboro era.** It starts with the X5 belief A/B and X26 (2026-10-03): the fixed bots and the Rustboro anchor
 base, the Rust environment core, the END STATE architecture (adopted 2026-10-12, §4.6b) and the bf16 trunk (§4.6c).
@@ -304,16 +304,20 @@ replicated on the 1,600 PastaMittens twins · `c758fcb82`; `measurements/pilotin
   what our side observes, OUR policy diverges in about 1 % of games, Kakuna never first
   (`measurements/kakuna_determinism_2026-10-27/`). [`204204bbf`; ledger 2026-10-25 · *X26c
   CONTINUATION vs KAKUNA*]
-- **Set mutation (D3 / X41, look 1, 2026-10-26).** 30 % of each side's teams from 2,876 variants of our 719 pool
-  teams with 1–2 mons' sets redrawn from Smogon: **+1.27 pp [−2.63, +5.16]** (per seed +2.4 / −2.9 / +4.3),
-  CONTINUE to look 2; in-house **−0.24 pp [−1.10, +0.62], NON-INFERIOR**. **Read across two Rust engines** (REVIEW F F-M2; `designs/tools/reads.md` §4): D3's games ran on engine E2,
-  C0's banked rows (D1's games) on E1, before the 10-25 observation / label and engine fixes (`d8d674b99`,
-  `f9978586b`). The guard's 140 / 140 identical replayed games bound the divergence below about 2.1 % of games
-  (95 %). The rate measured since is 11 / 1,260 games E1 vs E3, all our own choices, nearly all after a Destiny Bond or an Endure.
-  On forum72 it moved C0 by +4 wins in 420 (+0.95 pp), the same order as Δ̂, so a bias of Δ̂'s size is not excluded
-  [MEASURED rate; INFERRED bias] (`measurements/kakuna_determinism_2026-10-27/`). Look 2 plays every game on E1
-  (PREREG AM-D3-ENG). [`58287c525`; ledger 2026-10-26 ·
-  *X41 D3 LOOK 1* and its CORRECTION]
+- **Set mutation (D3 / X41), FINAL (look 2, 2026-10-28): UNDECIDED.** 30 % of each side's teams come from 2,876
+  variants of our 719 pool teams, with 1–2 mons' sets redrawn from Smogon.
+  - **On Kakuna's three unfamiliar panels, five seeds a side: +2.33 pp [−0.69, +5.35].** D3 0.494 vs C0 0.471. Per seed
+    +2.1 / −3.1 / +4.3 / +2.1 / +6.2, so 4 of 5 are positive. Every panel reads positive: H +3.7, P72 +2.1, F +1.1.
+  - **In-house −0.45 pp [−1.16, +0.25], NON-INFERIOR.**
+  - **Every game ran on ONE engine, E1** (the arms' training engine), at a play pin carrying E1's game code (PREREG
+    AM-D3-L2). An identity check replayed 80 / 80 banked games choice by choice, and the guard 140 / 140. That
+    removes look 1's engine-mix caveat.
+  - **Look 1 was not moved by the engine.** Its D3 games re-played on E1 differ from E2 in 9 of 1,260 games (net −2
+    wins), and look 1 recomputed on E1 reads +1.11 [−2.79, +5.00], still CONTINUE.
+  - **The read is TERMINAL.** NULL was unreachable at this size. As a bound, the effect lies in [−0.7, +5.3] pp: a
+    loss is excluded, and a gain of up to ≈ 5 pp is not.
+  [MEASURED · Kakuna + in-house · `measurements/x41_d3_setmut_2026-10-25/read/README_look2.md`; ledger 2026-10-28 ·
+  *X41 D3 LOOK 2*]
 - **The belief prior mix (2026-10-26).** P\*'s learned belief deltas are confidently wrong off the pool: 63–85 % of
   an unfamiliar team's hidden slots hold the wrong species (24–29 % on a familiar one), and the true species'
   log-presence is −4.6 to −10.0 against the prior's −2.0 to −3.2 (calibration, 48 games a panel). Our own unseen
@@ -593,7 +597,6 @@ retired for the fold-gift question only; they live in the last full text (§0) a
 
 | question | the read that answers it |
 |---|---|
-| Is set mutation a goal-(b) lever? | **D3 look 2**, final: all five seeds trained; every game on engine E1 at the play pin `c4a5c37b6` (E1's game code under the pre-`b0441623e` read harness; PREREG AM-D3-L2 and its addendum `0e32c5002`: TERMINAL, P(GAIN) ≈ 3–7 %, NULL unreachable at this size), its S lane free since H-CTX ended (2026-10-27) and its Kakuna lane behind N1-P look 1 (`measurements/x41_d3_setmut_2026-10-25/PREREG.md`) |
 | Is the shared trunk FFN a capacity bottleneck between token kinds at the plateau? | **X48**: per-token-kind FFN experts grown at P\*, s3501–s3503 against C0 (its finals re-played on the read's one engine), under N4's one-look screen (S at 2,000 pairs and Kakuna F; [`PREREG.md`](measurements/x48_kffn_production_2026-10-27/PREREG.md), `fc888c18f`). s3501 on the GPU since 2026-10-27 19:51; its record needs no "at the controller's learning rate" label (LR-F is not GAIN) |
 | Does a wider trunk buy strength at the plateau (on the toy)? | **N4**: T\* with every trunk FFN grown 256 → 1,024 against a same-pin C0′, 3 + 3 seeds × 70M (PREREG `8ed8164ea`); the model build landed (`c35ffab9e`), its kit arms have not |
 | Does breadth pay at DOSE rather than at 20M? | **X63**: X26 @380M + 100M on a union of the recombined, procedural and set-mutated corpora, no forum teams, against X26c (DRAFT, `../endstate/design_x63_long_breadth_continuation.md`, `49fbf75a7`); gated on its review, N1-P look 1 and D3 look 2 (H-CTX, its other gate, read SUPPORTED) |

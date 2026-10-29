@@ -400,7 +400,7 @@ table reconstructed from git (`engine_at`: the stamp's listing at that commit, p
 | engine | port / env | banked reads (playing commit) |
 |---|---|---|
 | E0 | `05b106e2…/84` / `dfd24aec…/119` | X51 and x37a (`63f97a575`), `cb0f1769c`, `acb99527`. X51's `k28v34_home72` rows: `b9c758841`, E0B `e64b127b…` / `b92ea7ad…` |
-| **E1** | `7d932165…/90` / `7c532805…/125` | x26c (`e05c45eeb`); D1 H (`6c428453a`, `5e389ddac`) and P; X52 (`f4b25238d`); SPRT (`eb99ab362`) and G1 (`3f3a2ed41`) S; human-only vs P\* and metamon-strongest (`d32ffcee4`, `4b0ab220e`); PastaMittens (`62bb07c00`); belief prior mix (`4ee655648`; smoke `033fcbcd2`). **The X35 stage's training engine** (`f4b25238`, D3_PIN `9e289ba4`) |
+| **E1** | `7d932165…/90` / `7c532805…/125` | x26c (`e05c45eeb`); D1 H (`6c428453a`, `5e389ddac`) and P; X52 (`f4b25238d`); SPRT (`eb99ab362`) and G1 (`3f3a2ed41`) S; human-only vs P\* and metamon-strongest (`d32ffcee4`, `4b0ab220e`); PastaMittens (`62bb07c00`); belief prior mix (`4ee655648`; smoke `033fcbcd2`). D3 look 2 (`c4a5c37b6`, the hybrid pin). **The X35 stage's training engine** (`f4b25238`, D3_PIN `9e289ba4`) |
 | E2 | `806f97bd…/90` / `9ecb4249…/125` | D3 look 1 (anchor `2cc864f2f`, S `1ed71c9dd`) |
 | E3 | `0d3d7629…/91` / `393631b8…/126` | N1-P look 1 (`46b9e572c`; repin `de15dfc7b`): one engine throughout |
 | unbanked | `67a272e7…/93` / `d79c3a74…/128` | main after the 2026-10-26 full-parity batches (BF4, `2a877361a`), X59-S's registered engine. Any engine not listed is unbanked and enters the id; `main.anchors --dry-run` prints a checkout's |
@@ -465,7 +465,8 @@ A read that imports banked forum72 / away / pool Kakuna rows (D3 look 2's C0) mu
   enough: the Python play path also changed what our side plays between those commits (the op's consumed-item rule, the
   eval-mode load, the packer), and the engine key cannot see it (SOP § 0.1). Checked: `engine_at` and the built
   artifacts' stamps equal E1; the play path differs from the bank's commits only in harness files; four banked E1 units,
-  three of them where E3 diverges from E1, re-played identically, 80 / 80 games choice by choice.
+  three of them where E3 diverges from E1, re-played identically, 80 / 80 games choice by choice. **READ 2026-10-28:**
+  UNDECIDED, final, every group on E1 (record `x35_breakers_stage_2026-10-17/reads/d3_look2.json`).
 - **The X35-frame SHARED play pin, FROZEN** (REVIEW_2 M1 option (C), `strategy_review_2026-10-26/REVIEW_2.md`): ONE pin
   for every read of the X35-frame arms (all trained at `f4b25238`): PR-1′, X62, X63 and X48's C0 replay. `86cfdf7ef`, tag
   `x35-shared-play-86cfdf7e` (on origin, not on main). It is D3's method on the newest harness: main `f6bef5d68` with

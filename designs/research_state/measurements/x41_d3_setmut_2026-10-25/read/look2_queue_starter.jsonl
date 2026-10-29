@@ -1,0 +1,6 @@
+{"t": 1793122446.4, "event": "queue_start_v2", "pid": 4135437, "horizon": 1793554446, "hctx": [2883945, "195719227"], "n1p": ["/home/goodlad/gen3ai_archive/x61p_n1p_read/look1", 2051319, "193186193"]}
+{"t": 1793122446.5, "event": "poll", "hold": false, "go": {"s": false, "anchor": false}}
+{"t": 1793138166.9, "event": "poll", "hold": false, "go": {"s": true, "anchor": false}}
+{"t": 1793138168.2, "event": "started", "lane": "s", "wrapper_pid": 1304409, "argv": ["setsid", "nohup", "nice", "-n", "19", "taskset", "-c", "5-7,13-15", "/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3", "-m", "main.reads", "run", "--state", "/home/goodlad/gen3ai_archive/x41_d3_read/look2", "--lane", "s", "--hours", "30"]}
+{"t": 1793202909.0, "event": "poll", "hold": false, "go": {"s": true, "anchor": true}, "n1p_left": 0, "n1p_live": [], "anchor_why": "N1-P's anchor lane counted every unit"}
+{"t": 1793202910.1, "event": "started", "lane": "anchor", "wrapper_pid": 2585344, "argv": ["setsid", "nohup", "nice", "-n", "19", "taskset", "-c", "5-7,13-15", "/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3", "-m", "main.reads", "run", "--state", "/home/goodlad/gen3ai_archive/x41_d3_read/look2", "--lane", "anchor", "--hours", "60", "--concurrency", "1"]}

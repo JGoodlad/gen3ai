@@ -1,0 +1,64 @@
+{
+ "units": [
+  {
+   "name": "c0_s3501__forum72__04",
+   "label": "c0_s3501",
+   "arm": "C0",
+   "seed": 3501,
+   "teamset": "forum72",
+   "unit_seed": 4,
+   "model": "/home/goodlad/gen3ai_archive/x35_g1/ckpts/finals/c0_s3501/final_model.zip",
+   "model_sha256": "09a6a2df48509a59fd9aefe6d20d9722aad6717f1730c6dfd75274446b283303",
+   "opponent": "metamon:Kakuna",
+   "games": 20,
+   "belief_prior_mix": null,
+   "config": null,
+   "config_sha256": null
+  },
+  {
+   "name": "c0_s3502__p72__01",
+   "label": "c0_s3502",
+   "arm": "C0",
+   "seed": 3502,
+   "teamset": "p72",
+   "unit_seed": 1,
+   "model": "/home/goodlad/gen3ai_archive/x35_g1/ckpts/finals/c0_s3502/final_model.zip",
+   "model_sha256": "7e9a9890e2b397de6d8b87588c597d7f53e39b84efd3d1080305f77dbf22feec",
+   "opponent": "metamon:Kakuna",
+   "games": 20,
+   "belief_prior_mix": null,
+   "config": null,
+   "config_sha256": null
+  },
+  {
+   "name": "c0_s3503__forum72__02",
+   "label": "c0_s3503",
+   "arm": "C0",
+   "seed": 3503,
+   "teamset": "forum72",
+   "unit_seed": 2,
+   "model": "/home/goodlad/gen3ai_archive/x35_g1/ckpts/finals/c0_s3503/final_model.zip",
+   "model_sha256": "99096be8eccfc1cef4268ab4d6de15063a386cda475e72340212fdbf3a1b7e26",
+   "opponent": "metamon:Kakuna",
+   "games": 20,
+   "belief_prior_mix": null,
+   "config": null,
+   "config_sha256": null
+  },
+  {
+   "name": "c0_s3505__forum72__00",
+   "label": "c0_s3505",
+   "arm": "C0",
+   "seed": 3505,
+   "teamset": "forum72",
+   "unit_seed": 0,
+   "model": "/home/goodlad/gen3ai_archive/x35_d1_read/h_ckpts/c0_s3505/final_model.zip",
+   "model_sha256": "bb10cd96b4c5f7e79fcc8256884685053c2ac3c142f6a14c996f809e0b2626a0",
+   "opponent": "metamon:Kakuna",
+   "games": 20,
+   "belief_prior_mix": null,
+   "config": null,
+   "config_sha256": null
+  }
+ ]
+}
