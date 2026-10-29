@@ -72,6 +72,12 @@ THE CANARY RULE (`gen3_canary_row_bar_v1`, 2026-10-28). The ``canary`` arm judge
 is replayed against ITS OWN recorded bars (``canary_rule.bar_per_row``, or the cap when it fell back), so the replay
 reads the bars the run judged by, not a new null. ANCHOR mode judges by the global M (no record names a rule).
 
+THE MARGIN OVERRIDE (`--canary-shift-max V`, ANCHOR mode only; canary recalibration stage 2, 2026-10-29). The anchor's
+clip margin is its run's own (above) unless this flag sets the shift the margin is built from (margin = `R1_BAR_K` x V,
+validated by `compile_regions.resolve_shift_max`: [0.18, 0.5]); V 0.3 relocates the rows at 1.2, the stage-2 cap
+(`designs/training/canary_recalibration_2026-10-28.md` §7). It moves the relocation and the scalar margin rule exactly
+as the trainer's flag does, nothing else. DUMP mode refuses it: a dump replays the margin its own record judged.
+
 A run whose resolved config compiles R1 differently (``--learner-cudagraphs on``, ``--grad-checkpointing``, a trunk not
 at bf16) is REFUSED in both modes: this replay compiles the default route only.
 
@@ -259,8 +265,27 @@ def init_record_of(zip_path: Path) -> Optional[Dict[str, str]]:
 
 
 # ------------------------------------------------------------------------------------------------ the learner
+def resolve_shift_arg(value: Optional[float]) -> Optional[float]:
+    """`--canary-shift-max`, validated by `resolve_shift_max` (a value the trainer's flag would refuse is a `Refusal`
+    here); None keeps the run's own."""
+    if value is None:
+        return None
+    from agents.model import compile_regions as cr
+    try:
+        return cr.resolve_shift_max(value)
+    except cr.CanaryShiftMaxError as exc:
+        raise Refusal(str(exc)) from None
+
+
+def apply_shift_max(model: Any, value: Optional[float]) -> None:
+    """Set the shift ``model``'s clip margin is built from (`compile_regions.clip_margin_of`); None keeps the run's."""
+    v = resolve_shift_arg(value)
+    if v is not None:
+        model._canary_shift_max = v
+
+
 def build_model(run_dir: Path, dump: Optional[Path], device: str, batch: int,
-                anchor: Optional[Path] = None) -> Tuple[Any, Dict[str, Any]]:
+                anchor: Optional[Path] = None, shift_max: Optional[float] = None) -> Tuple[Any, Dict[str, Any]]:
     """The run's learner at THIS checkout (the trainer's resolution of ``--model <anchor>``: every flag from the run's
     config), the dump loaded STRICT (dump mode) or the anchor's own ``policy.pth`` (anchor mode: ``dump`` None,
     ``anchor`` the zip), the trunk at bf16, the anchor's init record attached, on ``device``."""
@@ -286,6 +311,7 @@ def build_model(run_dir: Path, dump: Optional[Path], device: str, batch: int,
     rec = init_record_of(anchor)
     if rec is not None:
         setattr(model, cr.INIT_RECORD_ATTR, rec)
+    apply_shift_max(model, shift_max)
     dev = torch.device(device)
     model.policy.to(dev)
     model.device = dev
@@ -298,7 +324,7 @@ def build_model(run_dir: Path, dump: Optional[Path], device: str, batch: int,
                    "init_record": rec is not None, "keys": len(sd), "shift_max": cr.shift_max_of(model),
                    "margin": cr.clip_margin_of(model), "compile_keys": keys,
                    "trunk_ffn_by_kind": getattr(args, "trunk_ffn_by_kind", None),
-                   "canary_shift_max_arg": getattr(args, "canary_shift_max", None)}
+                   "canary_shift_max_arg": getattr(args, "canary_shift_max", None), "shift_max_override": shift_max}
 
 
 def install_compiled(model: Any, backend: Optional[str] = None) -> None:
@@ -635,6 +661,9 @@ def run(a: argparse.Namespace) -> int:
             raise Refusal("--verdicts names a dump's record: anchor mode has none (its validity is self_validity)")
         anchor = check_anchor(Path(a.anchor), run_dir)
         sha = None
+    if a.canary_shift_max is not None and dump is not None:
+        raise Refusal("--canary-shift-max is ANCHOR mode only: a dump replays the margin its own record judged")
+    shift_max = resolve_shift_arg(a.canary_shift_max)
     row_bars = replay_row_bars(record)
     out = check_out_dir(Path(a.out))
     slices = tuple(int(x) for x in str(a.slices).split(",") if x.strip())
@@ -659,7 +688,7 @@ def run(a: argparse.Namespace) -> int:
     out.mkdir(parents=True, exist_ok=True)
     compiled = device == "cuda" or bool(a.compile_backend)
     t0 = time.perf_counter()
-    model, info = build_model(run_dir, dump, device, batch, anchor=anchor)
+    model, info = build_model(run_dir, dump, device, batch, anchor=anchor, shift_max=shift_max)
     if compiled:
         install_compiled(model, a.compile_backend or None)
     meta = {"mode": info["mode"], "dump": str(dump) if dump else None, "sha256": sha, "run_dir": str(run_dir),
@@ -754,6 +783,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--batch", type=int, default=0, help="rows per read (default: the record's, = the run's B)")
     p.add_argument("--torch-threads", type=int, default=1, help="CPU only: torch threads (default 1: an unpinned pool "
                    "on the shared agent cores runs 34-125x slower)")
+    p.add_argument("--canary-shift-max", type=float, default=None, help="ANCHOR mode only: the shift the clip margin is "
+                   "built from (margin = 4 x it; 0.3 = the stage-2 cap 1.2), in place of the run's own")
     p.add_argument("--compile-backend", default="", help=argparse.SUPPRESS)   # TEST seam: dynamo backend on CPU
     return p
 

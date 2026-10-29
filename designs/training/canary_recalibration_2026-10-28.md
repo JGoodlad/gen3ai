@@ -269,8 +269,33 @@ The first run launched at a pin carrying the change takes it, fresh or as a fork
 
 - **Stage 1:** the per-row bar (k 6.0, K 16, floor 0.02, cap 0.72), binding. The global-M verdict is recorded beside it
   and never judged (the design's rule 5). It also carries K_loss 9.2, and `canary_decide` HOLDs on a per-row FATAL.
-- **Stage 2:** the cap goes to 1.2 after the leased read in FINDING 5 passes. That read is about 30 min: the gradient
-  rule on rows relocated at 1.2 over the census checkpoints.
+- **Stage 2:** the cap goes to 1.2 after the leased read in FINDING 5 passes. That read is the gradient rule on rows
+  relocated at 1.2 over the census checkpoints.
+
+**PREREG, stage 2's read (registered 2026-10-29, before any number exists).**
+
+- **What it decides:** whether `ROW_BAR_CAP` may go from 0.72 to 1.2 at the next pin. Nothing else moves on it.
+- **The read:** the window `canary-stage2` of `main.ops.gpu_fill_window` (its module docstring has the commands).
+  - Each of the 20 census checkpoints (§ The data, the exact zips the census read) is replayed with the canary's own
+    check, `canary_dump_replay --anchor … --canary-shift-max 0.3 --repeats 3 --batch 2048`, on CUDA.
+  - `--canary-shift-max 0.3` relocates the rows at 4 x 0.3 = 1.2.
+  - Each read covers slices 0, 2 and 1.
+  - Outputs go to `~/gen3ai_archive/gpufill_2026-10-29/canary_stage2/<run>_<at>/`, and the verdict to `verdict.json`.
+- **The margin rule in this read is the scalar 1.2.** That is the cap, which a row whose null cannot bind falls back
+  to. The per-row tightening below the cap is the census's own result (§2: 0 of 20 at stage 2). This read adds the
+  part the census could not see: the gradient, loss and per-parameter rules on rows relocated 2 x 1.2 inside the
+  active side.
+- **The rule** (`stage2_verdict`, applied by the window's CPU `verdict` step):
+  - **REJECT** if any checkpoint's canary refuses its scheduled slice (0) in at least 2 of the 3 repeats: a
+    reproducible refusal on a healthy state.
+  - **ADOPT** if all 20 checkpoints read complete, self-valid and at margin 1.2, with zero refusals on any slice and
+    no per-parameter ratio within 0.1 % of K = 12 (standing rule 8).
+  - **INCONCLUSIVE** otherwise: an isolated refusal, a boundary read, or a missing or invalid checkpoint.
+  - Only ADOPT moves the cap. REJECT and INCONCLUSIVE keep 0.72.
+  - An INCONCLUSIVE's follow-up is the orchestrator's call, for example the refusing checkpoint at the run's own
+    margin as a control.
+- **Cost:** about 45 min on the card, UNVERIFIED. Each checkpoint pays one Inductor compile (85 s in the X-CHECK
+  anchor read), then about 10 s per repeat. The step bound is 900 s and the window's budget 90 min.
 
 ## 8. Findings (hazards and what is UNVERIFIED)
 
@@ -283,8 +308,9 @@ The first run launched at a pin carrying the change takes it, fresh or as a fork
 4. **The per-row backtest on records is a proxy.** It borrows a null and sees only the worst row. Only the census is
    exact.
 5. **The gradient rule at relocation 1.2 is unread.** Production ran at M 1.2-1.4 only on resumes (one P\* record at
-   1.4 passed). Whether `canary_dump_replay` can take a margin override is UNVERIFIED; if it cannot, a small flag is
-   part of stage 2.
+   1.4 passed). `canary_dump_replay` could not take a margin override, because anchor mode took the run's own
+   `--canary-shift-max`. It now takes `--canary-shift-max` in anchor mode (2026-10-29; dump mode refuses it). A CPU
+   run on X26 380M read margin 1.200 with 960 of 2,048 rows relocated. The read is §7's PREREG.
 6. **Outside this unit's closed list:** D1 s3505 u100 refused on the eager DRIFT gradient (1.23 against 0.68, a
    window-D bar from a healthy maximum of 0.169). Healthy X35 passes reach 0.52, which is 0.76 of that bar. That bar
    wants the same production re-derivation, by its own ruling.
@@ -298,3 +324,4 @@ The first run launched at a pin carrying the change takes it, fresh or as a fork
 |---|---|---|
 | 2026-10-28 | DRAFT written: per-row k 6.0 (K 16, floor 0.02, scalar cap 0.72, then 1.2), K_loss 9.2, per-parameter 12 kept, C0 2.64 confirmed for global-M runs and dropped on per-row runs, switch only at a new pin | W0's CUDA census (20 checkpoints) and the 159 banked production checks; awaiting the orchestrator's ruling |
 | 2026-10-28 | RULED: stage 1 accepted as proposed; stage 2 (cap 1.2) deferred to a later leased read. BUILT behind the pin boundary: the judged arm only, the canary only (the startup gate keeps the scalar margin), the fallback at the cap when the null cannot bind, `canary_rule_version` on every record, `canary_dump_replay` judging a dump by its record's own bars. The frozen `backtest.py` refuses at the new pin by design (its `check_constants` pins the pre-ruling bars); the committed basis replaces it for CI | the orchestrator's ruling; `canary_row_bar_test` re-derives k and K_loss and backtests the census |
+| 2026-10-29 | Stage 2's read REGISTERED (§7 PREREG) before any number; `canary_dump_replay --canary-shift-max` (anchor mode) built for it; the read packaged as the `canary-stage2` window of `main.ops.gpu_fill_window` | FINDING 5: the replay had no margin override |

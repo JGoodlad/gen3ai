@@ -82,7 +82,8 @@ The field rules:
   ancestor holder, or the lease token), and a nested `mem_cap` opens a sibling scope. But a wrapper script that
   swallows its children's exit codes (`gpu_census.sh`) turns every failed read into one passing step, hidden from
   the per-step lease check and budget. Split such a script into one step per process, as `main.ops.w0_window` emits
-  W0 (gpu_plan FINDING 5, resolved 2026-10-28).
+  W0 (gpu_plan FINDING 5, resolved 2026-10-28) and `main.ops.gpu_fill_window` emits the fill window (a CPU `preflight`
+  step first, which writes the preempt marker on a failed precondition so no GPU step runs).
 
 `x_*` keys are free extras; `x_dose_comparator` is copied into the dose record.
 

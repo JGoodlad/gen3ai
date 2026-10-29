@@ -170,6 +170,62 @@ def test_main_needs_exactly_one_of_dump_or_anchor(tmp_path, capsys):
     assert R.main(["--anchor", "b.zip", "--verdicts", "v.jsonl", *base]) == 2
 
 
+# ------------------------------------------------------------------------------------------------ the margin override
+def test_canary_shift_max_sets_the_margin_the_canary_reads_and_refuses_what_the_trainer_flag_refuses():
+    """`--canary-shift-max` (stage 2's read): 0.3 puts `clip_margin_of` at 4 x 0.3 = 1.2; None keeps the run's own;
+    below the code's 0.18 or above the 0.5 ceiling is a Refusal (exit 2), never a silent clamp."""
+    from types import SimpleNamespace
+
+    from agents.model import compile_regions as cr
+    m = SimpleNamespace(_canary_shift_max=0.35)
+    R.apply_shift_max(m, None)
+    assert cr.clip_margin_of(m) == cr.R1_BAR_K * 0.35
+    R.apply_shift_max(m, 0.3)
+    assert cr.clip_margin_of(m) == cr.R1_BAR_K * 0.3 and abs(cr.clip_margin_of(m) - 1.2) < 1e-12
+    for bad in (0.1, 0.6, float("nan")):
+        with pytest.raises(R.Refusal, match="canary-shift-max"):
+            R.apply_shift_max(SimpleNamespace(), bad)
+
+
+def _anchor_run(tmp_path: Path, batch: int = 64) -> Path:
+    import zipfile
+    run = tmp_path / "models" / "rb_x"
+    (run / "checkpoints").mkdir(parents=True)
+    (run / "model_config.json").write_text("{}")
+    (run / "metadata.json").write_text(json.dumps({"batch_size": batch}))
+    with zipfile.ZipFile(run / "checkpoints" / "checkpoint_100_steps.zip", "w") as z:
+        z.writestr("policy.pth", b"x")
+    return run
+
+
+def test_main_hands_the_override_to_the_learner_build_in_anchor_mode(tmp_path, monkeypatch):
+    """The flag reaches `build_model` (the learner the canary runs on), validated before any build."""
+    run = _anchor_run(tmp_path)
+    seen = {}
+
+    def fake_build(*a, **kw):
+        seen.update(kw)
+        raise R.Refusal("stop after the build call")
+    monkeypatch.setattr(R, "build_model", fake_build)
+    argv = ["--anchor", str(run / "checkpoints" / "checkpoint_100_steps.zip"), "--run-dir", str(run),
+            "--device", "cpu", "--canary-shift-max", "0.3"]
+    assert R.main([*argv, "--out", str(tmp_path / "o1")]) == 2
+    assert seen["shift_max"] == 0.3
+    seen.clear()
+    assert R.main([*argv[:-2], "--out", str(tmp_path / "o2")]) == 2
+    assert seen["shift_max"] is None
+    seen.clear()
+    assert R.main([*argv[:-1], "0.9", "--out", str(tmp_path / "o3")]) == 2 and not seen
+
+
+def test_dump_mode_refuses_the_override(tmp_path, capsys):
+    dump = _dump(tmp_path)
+    (dump.parent / "canary_verdicts.jsonl").write_text(json.dumps({"policy_pt": dump.name}) + "\n")
+    rc = R.main(["--dump", str(dump), "--run-dir", str(tmp_path), "--out", str(tmp_path / "o"), "--device", "cpu",
+                 "--canary-shift-max", "0.3"])
+    assert rc == 2 and "ANCHOR mode only" in capsys.readouterr().err
+
+
 # ------------------------------------------------------------------------------------------------ refusals
 def _dump(tmp_path: Path, good: bool = True) -> Path:
     d = tmp_path / "arch"
@@ -256,6 +312,9 @@ def test_the_eager_arms_and_the_canary_check_run_on_the_real_learner_cpu():
         d2 = R.direct_arms(m, 2, 64, compiled=True)
         assert d2["grad_sha256"]["Cbf"] == d2["grad_sha256"]["Ebf"]        # the eager backend IS eager
         assert d2["grad_sha256"]["E32"] == d["grad_sha256"]["E32"]         # the reference is deterministic
+        R.apply_shift_max(m, 0.3)                                            # stage 2's read: relocated at 1.2
+        d3 = R.direct_arms(m, 2, 64, compiled=False)
+        assert d["watch"]["clip_margin"]["margin"] != 1.2 and abs(d3["watch"]["clip_margin"]["margin"] - 1.2) < 1e-12
     finally:
         from agents.model import compile_regions as cr
         cr.uninstall(m)

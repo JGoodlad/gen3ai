@@ -930,6 +930,23 @@ a merge that must not truncate, a setup-only pass that must not bank green, a sk
 replace a banked verdict — so the gate's
 behaviour is pinned rather than described. Contract: `src/utils/slow_tier_status.py`.
 
+### The GPU slow tier (`main.ops.gpu_fill_window`, the `slow-gpu` window)
+
+The CUDA-only `slow` tests skip in every CPU run, so their rows are banked only in a leased GPU window.
+
+- **Which ids.** `cuda_slow_ids` collects `src -m slow` on the CPU and keeps each test whose collection-time skip
+  reason names CUDA or the hidden GPU. It adds `RUNTIME_CUDA_IDS`, the tests that skip inside their body; a stale
+  entry there is refused, never dropped. On 2026-10-29 that was 30 ids.
+- **How they run.** The window runs one pytest process per node id, so one device-side assert cannot poison later
+  verdicts as it did on 10-24. Each node gets its own bound, `node_timeout`: 3 x its banked duration, at least 600 s.
+  The window runner wraps every step in `gpu_lock.sh mem_cap.sh 24 timeout`, under the chain's lease token.
+- **Where the rows go.** `GEN3AI_SLOW_STATUS_FILE` points at a scratch file outside every checkout. The window's
+  worktree is a clean scratch worktree, never main.
+- **How they ship.** Afterwards, `python -m main.ops.gpu_fill_window merge-rows --rows <file> --into
+  <worktree>/designs/ops/slow_tier_status.json` folds the rows in with the writer's own merge, so a skip never
+  replaces a measurement. It refuses main's file. The worktree then ships through `/gen3ai-ship`.
+- **A banked FAIL is shipped as measured.** It is then fixed or declared, as the rule above says.
+
 ### A FRESH compile cache per test process (root `conftest.py`; K3, `gen3_hermetic_compile_cache_v1`)
 
 Every pytest process — the controller and each xdist worker — compiles into its OWN fresh dir
