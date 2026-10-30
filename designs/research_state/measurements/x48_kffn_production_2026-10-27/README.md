@@ -48,7 +48,8 @@ game. The record is [`../x35_breakers_stage_2026-10-17/reads/x48_look1.json`](..
   +2 pp and NO-GO-S 0.945 at 0.
 - **ρ** (dose records): wall 255.9 / 248.7 min, so 1.03; 1,375 / 1,409 steps/s.
 - **Not played:** the slope (§8.4) is INCOMPLETE, paused under the coordinator's CPU ruling (NOTE 5 (b)); it decides
-  nothing. G-F (§8.5) and home72 (§8.8) are not in the spec.
+  nothing. **Not resumed: CPU priority, orchestrator 10-30.** Its partial rows stay in the state, and the driver's stop
+  marker stays in place. G-F (§8.5) and home72 (§8.8) are not in the spec.
 
 **What it licenses** (§9; precommit memo §2.6, J14 under LR-F "UNDECIDED, final"):
 - It closes per-kind FFN untying at the plateau for production, within 20M, and only weakly, because the copied AdamW
