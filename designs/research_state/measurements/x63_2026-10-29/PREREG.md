@@ -329,3 +329,49 @@ corpora absent there (it names only `x63_union_v1`).
 - **Disclosure:** each such resume is named in the record beside the verdict. If the replay window later reads the
   class REAL, the record says so.
 - **Prior:** P(FATAL of this class during X63-U) ≈ 1.3 % (0.3–6 %), assuming independence.
+
+## 16. AMENDMENT AM-X63-SPEC (2026-10-30, before any X63 game, the controls' included): the read spec of record
+
+- **The spec of record is [`read_spec.json`](read_spec.json)**, sha256
+  `61db0eacd763419419bad22770df0dfc726e051fce9eecb08c779c7690d00c84`. It replaces the draft
+  ([`read_spec.draft.json`](read_spec.draft.json), kept as written). `main.reads check-spec` accepts it at the playing
+  commit `65b998da` (`play_path_differs_at_head: 0`, `sha256_final: true`) and at main (`rederived_guards` resolves to
+  `count`, `choices_guard` to `require`: both fields are absent because the pin's spec parser predates them, and this
+  spec's sha256 is not in `rederive.REGISTERED_BEFORE`).
+- **What it registers** (unchanged from §5–§7 and the draft):
+  - engine and regime: the pin `65b998daffffaa1669b0b4ef840874e23edc12d3` (E1, the post-H22 Kakuna pack, our legacy
+    pack, peer code `9cc9caacde85f8ea`, policy mode `train`); every game of the three models plays there, in ONE state
+    (`~/gen3ai_archive/x63_read/stageA`);
+  - cells: `metamon:Kakuna`, greedy against greedy, role-balanced 20-game units; group `primary` = forum72, unit seeds
+    1000–1199 (4,000 games a model, deciding); group `home` = home72, 1000–1099 (2,000 a model; REPORTED at Stage A,
+    pricing a GAIN at B / C): **18,000 Stage A games**;
+  - models: X26c `models/rb_x26c_s2601/final_model.zip` sha256 `cba7a1f8…72fc4c` and X63-C
+    `models/rb_x63c_s6302/final_model.zip` sha256 `e778c4a4…826f0b` (pinned refs, both re-hashed today), X63-U s2601 a
+    `final` ref on `models/rb_x63u_s2601`, `min_step` 480,000,195, `quiet_s` 300;
+  - the rule `x63_kvk`, Stage A, `on` = [X63-U s2601], `off` = [X26c, X63-C]; screen 0.010, kill bar 0.015, Stage C
+    bar 0.015, σ floor 0.010, INCONCLUSIVE σ 0.030, r = 1 (§14), rule-8 ε 1e-9; the seed term and quantiles as §6;
+    `stage_a_power` the draft's six rows of `power/power_x63_v2.log`.
+- **Added to the draft: the VOID gate** (§8's record half), on X63-U s2601: its AM-6 K9(b) record at the arm's end
+  (`x35_breakers_stage_2026-10-17/k9b/rb_x63u_s2601.json`) must read PASS; every git hash the run recorded is X63U_PIN
+  `39eaa326…`; `snapshots/pool_seed.json` has `fork_step` 380,000,195. §8's operator half (the banner, the restart
+  count, the canary resumes of §15) is checked by hand before the record.
+- **The decision rule is unchanged.** σ̂_CC (X63-C's registered quantity) is computed from `primary` exactly as §5.
+- **The REPORTED groups (`traj`, `reported`, `pstar`) are NOT in this spec** (FINDING 11). The anchor lane queues every
+  group by unit-seed INDEX (`runner._anchor_todo`: seed index outermost, then the groups), so a REPORTED group in this
+  spec would play its 20–60 seeds interleaved with the first seeds of `primary`, against §5's order (REPORTED only
+  after the deciding groups). A second spec importing `primary` / `home` is refused by `x63_kvk` itself ("every X63
+  game is played at the read's pin"). They are registered by a later dated amendment, before any REPORTED game, and
+  never decide. Their node files are fixed NOW by sha256 so that amendment cannot choose them: X63-U s2601 400M
+  `checkpoint_400000143_steps.zip` `4a3bee25cb0d…`, 430M `checkpoint_430000200_steps.zip` `7b80168c58e0…`; X26c 400M
+  `checkpoint_400000161_steps.zip` `83dd30d5a862…`, 430M `checkpoint_430000083_steps.zip` `729eca63f6ed…`; X63-C
+  400M `checkpoint_400000196_steps.zip` `c8501a4fa543…`, 430M `checkpoint_430000153_steps.zip` `37b5cdb05ac0…`; P\*
+  `814823c514fb…` (the registry's `pstar_plateau`).
+- **The lane:** one anchor-lane supervisor on the state, `--concurrency 2` (the heavy slots' count), every unit a
+  short-lane job in the shared FIFO at nice 19 on the agent cores. The controls' units bank first; X63-U's join when its
+  final settles (unit seeds outermost, so its first seeds queue ahead of the controls' later ones). Their numbers are
+  not read against any arm until X63-U's 6,000 have played (§5).
+
+FINDING 11 (this amendment): the runner's group order cannot express §5's "REPORTED after deciding" inside one
+state, and `x63_kvk` refuses imported deciding groups, so the REPORTED groups need either their own registered spec
+under a rule that reads them alone, or a runner group-order option (off the play path) on a new playing commit. Either
+is a later amendment; neither touches the Stage A verdict.
