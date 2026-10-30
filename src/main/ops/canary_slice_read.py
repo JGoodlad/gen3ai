@@ -299,6 +299,7 @@ def run(a: argparse.Namespace) -> int:
         raise R.Refusal("--repeats >= 1 and --dither >= 0")
     shift_max = R.resolve_shift_arg(a.canary_shift_max)
     row_bars = R.replay_row_bars(record)
+    param_null = R.replay_param_null(record)
     out = R.check_out_dir(Path(a.out))
     rows = ((record.get("watch") or {}).get("scheduled") or {}).get("clip_margin", {}).get("rows")
     meta_b = json.loads((run_dir / "metadata.json").read_text()).get("batch_size") if (
@@ -333,7 +334,7 @@ def run(a: argparse.Namespace) -> int:
     for i in range(a.repeats):
         rep: Dict[str, Any] = {"repeat": i, "slices": {}}
         for s in DITHER_SLICES:
-            sr: Dict[str, Any] = {"canary": R.canary_check(model, s, batch, row_bars) if compiled else None,
+            sr: Dict[str, Any] = {"canary": R.canary_check(model, s, batch, row_bars, param_null) if compiled else None,
                                   "direct": R.direct_arms(model, s, batch, compiled)}
             rep["slices"][str(s)] = sr
             c = sr["canary"]
@@ -349,7 +350,7 @@ def run(a: argparse.Namespace) -> int:
               "stability": R.stability(reps, DITHER_SLICES), "validity": val}
     for label, rws in row_sets.items():
         with custom_rows(rws):
-            c = R.canary_check(model, 0, batch, row_bars) if compiled else None
+            c = R.canary_check(model, 0, batch, row_bars, param_null) if compiled else None
         canary.setdefault("row_sets", {})[label] = {"rows": rws, **(_canary_summary(c, watch) if c else {})}
         if c:
             R._say(f"[slice-read] row set {label}: canary {'REFUSED' if c['refused'] else 'pass'}; "

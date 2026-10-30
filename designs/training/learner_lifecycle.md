@@ -253,6 +253,17 @@ per B = 64 forward, 3.3-3.5 s per canary at K 16 on 3 agent cores beside a live 
 estimates 0.5-1.6 s). Its transient is not in `update_fit`'s dry canary (`measure` runs the check only). Every
 production canary's record is thereby also one more row of the CUDA census behind stage 2 of the per-row margin.
 
+**The per-parameter dither null** (`gen3_canary_param_null_v1`, `agents/model/canary_param_null.py`; records name
+`canary_rule_version` `per_row_stage1_param_null`). Inside a check, when the bf16 per-parameter envelope would refuse
+on eager bf16's error alone, the check runs the fp32 reference arm 16 more times on its own rows at
+`diag_bf16_canary.dithered` weights (CPU-drawn, name-keyed; every parameter restored bit-exactly, the stashes
+released, no global seed) and judges every parameter at 12 x max(eager, its null, floor). It allocates no module,
+optimizer, buffer or stream (K6), only one copy of the parameters and one flat gradient at a time; it runs inside the
+check's `fork_rng` and memory card, never in `update_fit`'s dry canary unless that check would refuse. Cap
+`PARAM_NULL_CAP_S` 180 s (`$GEN3AI_CANARY_PARAM_NULL_CAP_S`; 0 = off; malformed refuses at construction); off,
+truncated, in error or short of 16 seeds = the eager bar, named in the refusal. Cost on CPU (K9 learner, B = 16):
+3.6 s; on CUDA UNVERIFIED (about 7-10 s at B = 2,048, inferred). Detail: `compile_flags.md` "Slice-2-only refusals".
+
 The canary runs under `fork_rng`, restores the training mode and leaves every `.grad` None, so training
 is untouched (pinned). TB scalars, written on canary updates only:
 - `compile/canary_ok` (1 pass, 0 unconfirmed);

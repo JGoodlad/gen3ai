@@ -4,15 +4,18 @@
 Is that the compiler (a real numerics difference, which training would have too, since it trains compiled), the
 canary's statistic, or the slicing?
 
-**Short answer (CPU; the GPU read below decides the rest).**
+**Short answer.**
 
 - The refusing parameter's gradient on slices 0 and 2 is carried by one to three **first-half rows**: 9, 18, 22, 24.
 - The fp32 function itself moves that gradient, under the canary's half-ulp weight dither, by about as much as the
   compiled arm does.
 - Eager bf16, the ratio's denominator, sits 5-50x **below** that null.
 - So the ratio is mostly a lucky denominator on a single-row-carried, ill-conditioned parameter.
-- In one state of five (A1-arch), the compiled distance is 1.5x above the CPU null's maximum. Hypothesis (i), real
-  compiled numerics, is therefore **still live** until the GPU dither read.
+- **Hypothesis (i), real compiled numerics, is RULED OUT at these 5 states (CONDITIONING, the GPU replay of
+  2026-10-30).** Compiled CUDA bf16's median distance over 16 dithered seeds sits at 0.09-0.55 of the fp32 null's
+  maximum on every refusing parameter (below, "The GPU read").
+- **The fix is built for new pins** (`gen3_canary_param_null_v1` below, "The fix"): the per-parameter bar divides
+  by max(eager, the parameter's own 16-seed fp32 dither null, floor) instead of one eager draw.
 
 ## What the canary does (code at main `d78700253`, the same at the X35 / X63 pins)
 
@@ -104,24 +107,50 @@ What the CPU reads establish:
    reads that row's rounding sensitivity, and eager bf16 lands far inside it. Supported in all five states.
 2. **Why slice 2: the fixed fixture.** The carriers of these families live in rows 0-31, and slice 0 shares them.
    The two-halves confirmation is independent by rows, but the consecutive rule is not.
-3. **(i) Real compiled numerics.** The compiled distance sits inside the CPU fp32 null in three states. It sits at
-   the null's maximum in N1-P s3505 slice 2, and 1.5x above it in A1-arch. **LIVE until the GPU read.**
-   - A structural miscompile is already excluded on A1-arch's state. The 10-22 read
-     ([`../x35_a1_s3503_canary_u200_2026-10-22/`](../x35_a1_s3503_canary_u200_2026-10-22/README.md)) ran CPU Inductor
-     on the same dump: compiled fp32 equals eager fp32 to 6e-5, and compiled bf16 equals eager bf16 (0.345 against
-     0.350).
-   - What is left for (i) is the CUDA Triton kernels' bf16 rounding, which no CPU read reaches (that read's F1). The
-     GPU dither read is the census that read, and TECH_DEBT's per-parameter-null row, asked for.
-   - If real, compiled bf16 computes rare-feature parameters' per-row gradients (edge-type maps, belief heads) up to
-     ~1.5x off fp32.
-   - In a 4,096-row training batch the gradient of such a parameter is a sum over many rows. The global envelope is
-     within its bar (0.14-0.40 against 6.4 x eager), and the adopted bf16 A/B trained this same compiled learner.
-     So the expected effect is precision on those parameters, not a wrong function. **UNVERIFIED.**
+3. **(i) Real compiled numerics. RULED OUT at these 5 states (CONDITIONING; the GPU replay, 2026-10-30).** Under the
+   pre-declared rule the compiled median over 16 dithered seeds is 0.09-0.55 of the fp32 null's maximum on every
+   refusing parameter, so compiled CUDA bf16 computes these gradients inside the fp32 function's own rounding move.
+   - A structural miscompile was already excluded on A1-arch's state by the 10-22 CPU Inductor read
+     ([`../x35_a1_s3503_canary_u200_2026-10-22/`](../x35_a1_s3503_canary_u200_2026-10-22/README.md)): compiled fp32
+     equals eager fp32 to 6e-5. The GPU replay reaches what that read could not, the Triton kernels' bf16 rounding.
+   - **At the dump's own weights** A1-arch's compiled distance is 1.38-1.42 x the null's maximum (1.46-1.61 against
+     1.05-1.14), and `mon_hazard_proj.weight` on its slice 2 1.60 x. At the 16 dithered weights around it the compiled
+     median is 0.27, a quarter of the maximum. So the dump (kept BECAUSE the canary refused there) is the selected
+     extreme of a rounding-sensitive neighbourhood, not a place where compiled leaves the function. The rule's median
+     was declared before the read for exactly this reason.
 4. **A relocation artefact.** Not the cause (the raw rows show the same carriers), but an amplifier at 1.2. That is
    stage 2's INCONCLUSIVE and a hazard for a `--canary-shift-max 0.3` resume.
 5. **A tie-break in a discrete selection.** Not supported by the hook.
 
 ## The GPU read (`python -m main.ops.canary_slice_read`; the `slice2-replay` window of `main.ops.gpu_fill_window`)
+
+**Ran 2026-10-30 14:46-15:19, every step rc 0; window verdict `RULED OUT AT THESE STATES`, every state
+CONDITIONING.** Outputs: `~/gen3ai_archive/slice2_replay_2026-10-30/slice2_replay/` (`verdict.json`, and per state
+`canary.json`, `dither.json`, `meta.json`, `verdict.json`; sha256s in
+`src/agents/model/testdata/canary_param_null_basis.json`). CUDA, torch 2.8.0+cu126, B = 2,048, the canary replay valid
+on every state.
+
+| state | refusing parameter (slices 0 / 2) | compiled median | null max | compiled / null max | eager median | canary ratio at the dump (old) | with the null (new) |
+|---|---|---|---|---|---|---|---|
+| a X48 s3502 u200 | `edge_bias.s1_map / c2_map.weight` | 0.650-0.681 | 2.06-2.16 | 0.32 | 0.14 | 21.5-23.3 | 0.62 |
+| b N1-P s3505 u100 | `flat_intent_head.hidden.weight / bias` | 0.063-0.084 | 0.116-0.178 | 0.46-0.55 | 0.05 | 12.2-18.0 | 0.94-1.00 |
+| c N1-P s3501 u200 | `hp_type_belief_head.norm.bias` | 0.233-0.298 | 1.18-1.43 | 0.20-0.21 | 0.33-0.40 | 12.3-13.1 | 0.28-0.29 |
+| d X26c @482M, margin 1.2 | `spread_belief.nature_head.weight` | 0.282-0.297 | 3.17-3.25 | 0.09 | 0.33 | 11.7-11.8 (no refusal in this process) | — |
+| e A1-arch s3503 u200 | `edge_bias.s1_map / c2_map.weight` | 0.259-0.275 | 1.05-1.14 | 0.24-0.25 | 0.24-0.26 | 43.8-52.4 | 1.38-1.42 |
+
+- Medians and maxima are over the 16 dithered seeds; "at the dump" is the canary at the dump's own weights, whose
+  refusals also named `hp_type_belief_head.type_head.bias` (c, 12.3 -> 0.28) and `mon_hazard_proj.weight` (e slice 2,
+  14.1 -> 1.60).
+- **The eager draw is the lottery, read directly on CUDA.** The old statistic per dithered seed spans 0.19-27.9 on
+  X48's targets (12-25 % of seeds above K = 12) and up to 23.5 on X26c's; over all 62,880 dithered reads (every judged
+  parameter, slice and seed) it exceeds 12 on 42, the new statistic on none (maximum 9.18).
+- **FINDING (census, not a target):** on X48's slice 2, at dither seeds 2-3, the compiled arm alone moves the value
+  path's gradients (`cls_pool.value_cls_attn.*`, `value_entity_pool.*`, `win_head.net.*`) to 0.02-0.13 relative,
+  against medians of about 0.003 and nulls at the 0.0099 floor (slice 0 reaches 0.04 at the same seeds, slice 1 0.016).
+  That reads 9.18 x the floor under the old and the new statistic alike: under K, unchanged by the fix, and the
+  census's largest new-statistic read. Unexplained; no state refused on it.
+- Its d state did not refuse in this process (11.7-11.8 against stage 2's 12.7 at the same anchor); its target was
+  judged by the dither read regardless.
 
 One process per state:
 
@@ -135,6 +164,16 @@ The verdict rule is pre-declared in the module docstring:
 - a target is REAL iff the median compiled distance is above the null's maximum (1 % band);
 - it is CONDITIONING iff the median is below it;
 - hypothesis (i) is LIVE iff any state reads REAL.
+
+## The fix (`gen3_canary_param_null_v1`, new pins only; `src/agents/model/canary_param_null.py`)
+
+The canary's bf16 per-parameter bar is K x max(eager bf16's error, the parameter's fp32 dither null, the floor), K
+kept at 12. The null is this read's own: the fp32 reference arm on the check's own rows at 16 half-ulp-dithered weights
+(`diag_bf16_canary.dithered`, the same draws), maximum distance from the reference at the live weights. Because the
+bar is never lower than the old one, the null runs only when the eager bar alone would refuse. Records name it
+(`canary_rule_version` `per_row_stage1_param_null`). Its basis is this read
+(`extract_param_null_basis.py` -> `src/agents/model/testdata/canary_param_null_basis.json`); the design and its limits are
+`designs/training/compile_flags.md` "Slice-2-only refusals".
 
 The states are `gpu_fill_window.SLICE2_STATES`, (a)-(e) above: X48, N1-P s3505, N1-P s3501, X26c 482M at 1.2, and
 A1-arch. A1-arch's dump was archived for it, with checksums, to `~/gen3ai_archive/a1arch_s3503_canary_u200_unconfirmed_2026-10-22/`.

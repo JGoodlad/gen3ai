@@ -232,9 +232,11 @@ refused on edge_bias and slice 1 passed. That is why the bar is moved rather tha
 **What protects a run meanwhile is the disjoint halves.** Across all causes, X35's scheduled refusal rate is 4 of 95,
 about 0.2 % per consecutive pair if refusals are independent; 0 of 62 pairs were observed.
 
-**The fix is the TECH_DEBT row's first half:** a per-parameter dithered null, or a guard that judges a parameter only
-when at least N rows carry its gradient. That needs a census W0 did not take (eager-bf16 per-parameter gradients under
-the dither); its scope is that row's.
+**The fix is built (2026-10-30, `gen3_canary_param_null_v1`, new pins only):** the per-parameter dithered null. K 12
+is kept; the denominator becomes max(eager, the parameter's 16-seed fp32 dither null, floor). Its census is the GPU
+slice-2 replay of 2026-10-30, which read all five refusing states CONDITIONING (hypothesis (i) ruled out there) and in
+which no dithered read exceeds the new bar (maximum 9.18, against the eager bar's 27.9 and 42 reads over K). Detail:
+`compile_flags.md` "Slice-2-only refusals".
 
 ## 6. The family bars
 
@@ -326,3 +328,4 @@ The first run launched at a pin carrying the change takes it, fresh or as a fork
 | 2026-10-28 | RULED: stage 1 accepted as proposed; stage 2 (cap 1.2) deferred to a later leased read. BUILT behind the pin boundary: the judged arm only, the canary only (the startup gate keeps the scalar margin), the fallback at the cap when the null cannot bind, `canary_rule_version` on every record, `canary_dump_replay` judging a dump by its record's own bars. The frozen `backtest.py` refuses at the new pin by design (its `check_constants` pins the pre-ruling bars); the committed basis replaces it for CI | the orchestrator's ruling; `canary_row_bar_test` re-derives k and K_loss and backtests the census |
 | 2026-10-29 | Stage 2's read REGISTERED (§7 PREREG) before any number; `canary_dump_replay --canary-shift-max` (anchor mode) built for it; the read packaged as the `canary-stage2` window of `main.ops.gpu_fill_window` | FINDING 5: the replay had no margin override |
 | 2026-10-29 | Stage 2's read: **INCONCLUSIVE**, so the cap stays 0.72 (`~/gen3ai_archive/gpufill_2026-10-29/canary_stage2/verdict.json`). 19 of 20 checkpoints were clean; X26c @482M refused slice 2 in 3 of 3 on `spread_belief.nature_head.weight` (12.7) and read 11.95 (0.996 of K) on slice 0. Diagnosed in `../research_state/measurements/canary_slice2_2026-10-29/`: relocated at 1.2, golden row 9 (rho 9.37) carries 100 % of that gradient, and the fp32 dither null reaches 2.4 | the registered rule; the window budget (90 min against a measured 100) left the last two steps and the verdict to be run by hand |
+| 2026-10-30 | The slice-2 replay (GPU, `main.ops.canary_slice_read --dither 16`): **CONDITIONING at all 5 states**, so hypothesis (i), a real compiled-numerics fault, is RULED OUT there. Compiled median / null max: X48 `edge_bias` 0.32, N1-P s3505 `flat_intent_head` 0.46-0.55, N1-P s3501 `hp_type_belief_head` 0.20, X26c @482M `nature_head` 0.09, A1-arch `edge_bias` 0.25 (`~/gen3ai_archive/slice2_replay_2026-10-30/slice2_replay/verdict.json`). §5's fix BUILT for new pins: the per-parameter dither null (`gen3_canary_param_null_v1`, `canary_rule_version` `per_row_stage1_param_null`), K 12 kept | the registered rule; the 14 refusing reads at the states' own weights read at most 1.60 of 12 under it, and none of the 62,880 dithered reads exceeds it |

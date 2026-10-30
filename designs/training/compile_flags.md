@@ -629,7 +629,9 @@ flag (next section). Each is OFF by default; off, the production and end-state c
     re-derives them and fails on a differing constant); a `None` table refuses a bf16 R1 ("no measured bars"). **Except the
     loss envelope's K** (ruled 2026-10-28, `canary_recalibration_2026-10-28.md` §4): 9.2 = 4 x 2.283, the healthy maximum
     over 159 production canary checks (window D held no production state, and its 5.4 refused the healthy C0 s3501 final's
-    slice 1), re-derived from `src/agents/model/testdata/canary_stage1_basis.json` by `canary_row_bar_test`.
+    slice 1), re-derived from `src/agents/model/testdata/canary_stage1_basis.json` by `canary_row_bar_test`. **In the
+    canary** (scheduled check and halves, from `gen3_canary_param_null_v1`) the per-parameter max also takes the
+    parameter's fp32 dither null: K x max(eager, null, floor) ("Slice-2-only refusals" below).
   - ⚠️ **The bf16 gate's resolution is a KNOWN LIMIT** (`gen3_r1_bf16_resolution_v1`): a parameter's backward miscompile is
     refused only above K = 12 x max(that parameter's own bf16 error, the fp32 bar), and bf16 moves the micro-batch gradient
     1-18 % rel-L2 from fp32's. On window D's GPU reads (B = 2,048) the MEDIAN parameter is refused above 0.22-1.29 relative
@@ -640,7 +642,11 @@ flag (next section). Each is OFF by default; off, the production and end-state c
     `compile_regions_resolution_test.py` (`test_a_10pc_…` pins the limit, so a sharper gate fails it and must update this
     bullet); the CUDA numbers come from `scripts/ops/verify_compile_gate_cuda.sh` (`summary.json`, "resolution"; PASS 4/4 at
     `87e493c3`). The fp32 gate keeps its teeth: a 10 % plant is FATAL on an fp32 learner (`compile_regions_independence_test.py`
-    on CPU, `compile_regions_fixed_mass_cuda_test.py` on CUDA).
+    on CPU, `compile_regions_fixed_mass_cuda_test.py` on CUDA). **At a canary on a pin carrying the per-parameter null**
+    a parameter the eager bar would refuse is judged at 12 x max(eager, its dither null, floor) instead, which is no
+    sharper: on the five refusing GPU states the median judged parameter's null maximum is 0.54 (p10 0.05, p90 1.02),
+    so there the per-parameter rule refuses only errors several times a parameter's own gradient, and the global
+    gradient envelope carries a miscompile.
   - **Decision (2026-10-15): keep the fp32 eager reference; do NOT add a same-precision (compiled bf16 vs EAGER bf16) rule.**
     Under autocast Inductor's fused kernels keep fp32 intermediates where eager rounds every op to bf16, so the two bf16 arms
     also differ by bf16 rounding and the derived K is 11.8, the envelope's 12: the same teeth for a second bar
@@ -822,8 +828,8 @@ leave-one-out, cross-lineage). The rules around it:
   every row at C, which is the global rule at M = 0.72; TB `compile/canary_row_bars_live` reads 0 then, and the record
   names the reason. The cap is wall-time-based, so which branch a canary takes can depend on the clock (on CUDA the K 16
   null measured 2.35 s, an upper bound, against 5 s).
-- **Every record names its rule**: `canary_rule_version` (`per_row_stage1`; a record without the field was judged at the
-  global M, `global_m`) and `canary_rule` (k, floor, seeds, cap, the bars' source, the per-row bars, the loss
+- **Every record names its rule**: `canary_rule_version` (`per_row_stage1`, or `per_row_stage1_param_null` from
+  `gen3_canary_param_null_v1`; a record without the field was judged at the global M, `global_m`) and `canary_rule` (k, floor, seeds, cap, the bars' source, the per-row bars, the loss
   envelope's K); the rung's watch carries `clip_margin.row_bar` (the judged arm's worst row against its bar), and
   `bar_fractions.clip_margin` reads that row against its own bar.
 - **The pin boundary.** A canary rule is code, so a run takes it only through its pin: every run launched or resumed at a
@@ -869,9 +875,46 @@ pattern. The CPU read is `../research_state/measurements/canary_slice2_2026-10-2
 - **Relocation amplifies at 1.2.** Row 9 (A -3.2) relocated to rho 9.37 carries 100 % of `nature_head`'s gradient.
   So a `--canary-shift-max 0.3` resume raises a lineage's exposure to this pattern; it is not a remedy for a
   per-parameter refusal.
-- **Whether CUDA's compiled bf16 sits outside that null is UNVERIFIED.** That is hypothesis (i), a real numerics
-  difference. The leased read is `python -m main.ops.canary_slice_read` (the pre-declared rule is in its docstring),
-  packaged as the `slice2-replay` window of `main.ops.gpu_fill_window`.
+- **CUDA's compiled bf16 sits inside that null: hypothesis (i), a real numerics difference, is RULED OUT at these 5
+  states (CONDITIONING).** The GPU replay of 2026-10-30 (`python -m main.ops.canary_slice_read --dither 16`, the
+  `slice2-replay` window; `~/gen3ai_archive/slice2_replay_2026-10-30/slice2_replay/`) read each refusing parameter's
+  compiled median over 16 dithered seeds at 0.09-0.55 of the fp32 null's maximum: X48 `edge_bias` 0.32, N1-P s3505
+  `flat_intent_head` 0.46-0.55, N1-P s3501 `hp_type_belief_head` 0.20, X26c @482M `nature_head` 0.09, A1-arch
+  `edge_bias` 0.25. At the dumps' own weights A1-arch reads 1.4 x the maximum and 0.27 at the dithered weights around
+  them: the dump is the selected extreme, which is why the rule judged the median.
+
+**THE FIX: the per-parameter dither null (`gen3_canary_param_null_v1`, 2026-10-30; `agents/model/canary_param_null.py`;
+new pins only).** In the canary, a judged parameter p's bf16 bar is
+
+    K x max(d(eager bf16, ref)_p, null_p, f_p)        null_p = max over 16 seeds of d(ref(w_s), ref(w))_p,   K = 12
+
+with ref the fp32 reference arm on the check's own (relocated) rows and w_s the live weights times
+(1 + 2^-9 N(0, 1)), `diag_bf16_canary.dithered`'s draws (CPU-drawn, name-keyed): the replay's own null, so the
+census numbers are this statistic's. K, the floor, the global gradient, loss and drift envelopes and the clip margin
+are unchanged.
+- **Exactly lazy.** The bar is never below the old one, so the null (16 fp32 forward + backward passes at the canary's
+  B) runs only when the eager bar alone would refuse (4 of the 7 production-lineage disagreements in 166 checks at
+  0.72), and the verdict equals
+  running it always. A PASS record's per-parameter ratio is therefore the eager statistic (an upper bound) unless the
+  null ran; `watch.*.param_null` holds the null's parameters, sources and times when it did.
+- **The fallback is the eager bar.** A null off (`$GEN3AI_CANARY_PARAM_NULL_CAP_S` 0), truncated by its 180 s cap, in
+  error or short of 16 seeds leaves the old bar (strictly tighter), and the refusal says why.
+- **Where.** The scheduled canary and both halves, on the live rung. The startup gate, the perturbed and accumulation
+  rungs and the fp32 rule keep the eager bar.
+- **The basis** (`src/agents/model/testdata/canary_param_null_basis.json`, from the replay by the measurement's
+  `extract_param_null_basis.py`; `canary_param_null_test`): the 14 refusing reads at the five states' own weights read
+  at most 1.60 under it (the eager bar refused them at 12.2-52.4); over the replay's 62,880 dithered reads the eager bar
+  exceeds K on 42 and the new bar on none (maximum 9.18, a floor-dominated value-path read the fix does not move).
+- **The teeth.** An injected miscompile (one parameter's compiled gradient x3, or x2 on the real K9 learner after a
+  real 16-seed null) is still refused (`canary_param_null_test`). What it gives up is the bar on single-row-carried
+  parameters, which was a lottery: see "The bf16 gate's resolution" above.
+- **UNVERIFIED on CUDA:** the null's wall time (about 7-10 s at B = 2,048, inferred from the replay's dither read) and
+  the card's transient peak (one fp32 arm, which every check already runs, plus one copy of the policy's parameters).
+- **Records and replay.** `canary_rule_version` `per_row_stage1_param_null`; `canary_rule.param_null` carries the
+  constants. `canary_dump_replay` / `canary_slice_read` judge a dump by its record's rule: a `per_row_stage1` or older
+  record over eager alone, a new record with the null recomputed on the replay's arms.
+- **The pin boundary.** A canary rule is code: every run launched or resumed at a pin before this commit keeps the
+  eager bar; the first run launched at a pin carrying it, fresh or as a fork, takes it.
 
 ### The canary-FATAL resume rule and its family bars (`python -m main.ops.canary_decide <run>`, 2026-10-26)
 

@@ -70,7 +70,10 @@ not a cross-device comparison) is the anchor's OWN eager-bf16 numbers, `self_val
 THE CANARY RULE (`gen3_canary_row_bar_v1`, 2026-10-28). The ``canary`` arm judges by the rule the dump's record names
 (``canary_rule_version``; none = the global margin M, every record written before the per-row rule): a per-row record
 is replayed against ITS OWN recorded bars (``canary_rule.bar_per_row``, or the cap when it fell back), so the replay
-reads the bars the run judged by, not a new null. ANCHOR mode judges by the global M (no record names a rule).
+reads the bars the run judged by, not a new null. ANCHOR mode judges by the global M (no record names a rule). A record
+of `per_row_stage1_param_null` (`gen3_canary_param_null_v1`) also takes the bf16 per-parameter dither null, which the
+replay computes afresh on its own arms (`canary_check(param_null=True)`, `replay_param_null`); an older record and an
+anchor judge the per-parameter bar over eager bf16 alone.
 
 THE MARGIN OVERRIDE (`--canary-shift-max V`, ANCHOR mode only; canary recalibration stage 2, 2026-10-29). The anchor's
 clip margin is its run's own (above) unless this flag sets the shift the margin is built from (margin = `R1_BAR_K` x V,
@@ -359,9 +362,9 @@ def replay_row_bars(record: Dict[str, Any]) -> Any:
     rule = RB.rule_version_of(record)
     if rule == RB.LEGACY_RULE_VERSION:
         return None
-    if rule != RB.CANARY_RULE_VERSION:
-        raise Refusal(f"the record names canary rule {rule!r}; this checkout replays {RB.LEGACY_RULE_VERSION!r} and "
-                      f"{RB.CANARY_RULE_VERSION!r} only")
+    if rule not in RB.KNOWN_RULE_VERSIONS:
+        raise Refusal(f"the record names canary rule {rule!r}; this checkout replays {list(RB.KNOWN_RULE_VERSIONS)} "
+                      "only")
     rec = record.get("canary_rule") or {}
     bars = rec.get("bar_per_row")
     if bars is None:
@@ -369,14 +372,23 @@ def replay_row_bars(record: Dict[str, Any]) -> Any:
     return RB.RowBars(np.asarray(bars, dtype=np.float64), "the record's bars (4 significant digits)")
 
 
-def canary_check(model: Any, slice_: int, batch: int, row_bars: Any = None) -> Dict[str, Any]:
+def replay_param_null(record: Dict[str, Any]) -> bool:
+    """Did the record's rule take the bf16 per-parameter dither null (`canary_param_null`)? Only
+    `canary_row_bar.CANARY_RULE_VERSION` did; an older record (and an anchor, which has none) judged by eager alone."""
+    from agents.model import canary_row_bar as RB
+    return RB.rule_version_of(record) == RB.CANARY_RULE_VERSION
+
+
+def canary_check(model: Any, slice_: int, batch: int, row_bars: Any = None, param_null: bool = False
+                 ) -> Dict[str, Any]:
     """`CompileCanary._check` VERBATIM on ``slice_`` with a GradWatch over every parameter; never raises a refusal.
-    ``row_bars``: the record's per-row bars (`replay_row_bars`), None = the global margin."""
+    ``row_bars``: the record's per-row bars (`replay_row_bars`), None = the global margin. ``param_null``: the record's
+    rule took the per-parameter dither null (`replay_param_null`), computed afresh on the replay's own arms."""
     from agents.model import compile_regions as cr
     from agents.model import compile_trainer as ct
     from agents.model.compile_canary import CompileCanary
     w = cr.GradWatch(("",))
-    can = CompileCanary(model, batch_size=batch, row_null=False)
+    can = CompileCanary(model, batch_size=batch, row_null=False, param_null=param_null)
     t0 = time.perf_counter()
     out: Dict[str, Any] = {}
     try:
@@ -385,7 +397,7 @@ def canary_check(model: Any, slice_: int, batch: int, row_bars: Any = None) -> D
     except ct.CompileTrainerError as exc:
         out.update(refused=True, error=type(exc).__name__, text=str(exc)[:4000])
     out.update(seconds=time.perf_counter() - t0, memory=dict(can.memory), watch=_watch_out(w),
-               all_params={n: d for n, d in w.params.items() if "eager" in d})
+               all_params={n: d for n, d in w.params.items() if "eager" in d}, param_null=w.param_null)
     return out
 
 
@@ -665,6 +677,7 @@ def run(a: argparse.Namespace) -> int:
         raise Refusal("--canary-shift-max is ANCHOR mode only: a dump replays the margin its own record judged")
     shift_max = resolve_shift_arg(a.canary_shift_max)
     row_bars = replay_row_bars(record)
+    param_null = replay_param_null(record)
     out = check_out_dir(Path(a.out))
     slices = tuple(int(x) for x in str(a.slices).split(",") if x.strip())
     if FIRED_SLICE not in slices or any(s not in (0, 1, 2) for s in slices):
@@ -698,7 +711,7 @@ def run(a: argparse.Namespace) -> int:
             "threads": torch.get_num_threads(), "compile_backend": a.compile_backend or ("inductor" if compiled else None),
             "record_update": record.get("update"), "record_verdict": record.get("verdict"), "build": info,
             "canary_rule_version": record.get("canary_rule_version") or "global_m",
-            "row_bars_source": None if row_bars is None else row_bars.source,
+            "row_bars_source": None if row_bars is None else row_bars.source, "param_null": param_null,
             "build_seconds": time.perf_counter() - t0, "argv": sys.argv[1:], "rule": RULE_TEXT}
     try:
         from utils.git import head_sha
@@ -720,7 +733,7 @@ def run(a: argparse.Namespace) -> int:
         for s in slices:
             sr: Dict[str, Any] = {}
             if compiled:
-                c = canary_check(model, s, batch, row_bars)
+                c = canary_check(model, s, batch, row_bars, param_null)
                 c["class"] = classify(c["refused"], c["watch"]["edge_bias"], k)
                 cls[s] = c["class"]
                 sr["canary"] = c

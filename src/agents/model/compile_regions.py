@@ -74,6 +74,7 @@ from typing import Any, Callable, Dict, Iterator, List, NamedTuple, Optional, Tu
 import numpy as np
 import torch
 
+from agents.model import canary_param_null as PN
 from agents.model import inductor_compile as _ic
 from agents.model import compile_trainer as ct
 from agents.model.compile_gate_probe import per_param_grad_errors
@@ -1036,8 +1037,8 @@ def unmoved_parameters(model: Any) -> List[str]:
 
 def r1_rungs(model: Any, args: Tuple[Any, ...], names: List[str], regime: str, *,
              source: Optional[str] = None, fn: Optional[Callable[..., Any]] = None,
-             route: Optional[str] = None, watch: Optional["GradWatch"] = None, row_bars: Any = None
-             ) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor], List[str]]:
+             route: Optional[str] = None, watch: Optional["GradWatch"] = None, row_bars: Any = None,
+             param_null: bool = False) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor], List[str]]:
     """Region R1's verdict rungs, shared by the startup gate and the in-run canary. Returns the live
     rung's EAGER and COMPILED arms (the judged-set rule and the canary's cosine read them) and one
     rule line per rung; raises `CompileTrainerError` on a disagreement.
@@ -1056,7 +1057,8 @@ def r1_rungs(model: Any, args: Tuple[Any, ...], names: List[str], regime: str, *
     rule lines prefixed ``R1``; a named route prefixes ``R1[<route>]``). ``watch``: a `GradWatch` the LIVE rung fills
     with its watch-list's per-parameter numbers (the canary's growth-curve record), also when the rung refuses.
     ``row_bars``: the canary's per-row clip-margin bars (`canary_row_bar.BatchRowBars`), judged on the LIVE rung only
-    (the null is the live weights'); None = the scalar margin (the startup gate)."""
+    (the null is the live weights'); None = the scalar margin (the startup gate). ``param_null``: the bf16 per-parameter
+    bar takes the fp32 dither null on the LIVE rung (`canary_param_null`, the canary only)."""
     unmoved = unmoved_parameters(model) if regime != "fresh" else []
     pre = "R1 " if route is None else f"R1[{route}] "
     idx = {n: i for i, n in enumerate(names)}
@@ -1065,7 +1067,7 @@ def r1_rungs(model: Any, args: Tuple[Any, ...], names: List[str], regime: str, *
     if unmoved:
         tail += f" [unmoved rule: {unmoved_rule(model)}]"
     eager, comp, line = _r1_judge(model, args, names, regime, fn, bar_by_index=excepted, watch=watch,
-                                  row_bars=row_bars)
+                                  row_bars=row_bars, param_null=param_null)
     rules = [pre + line + tail]
     if regime == "fresh":
         rules.append(pre + _r1_perturbed(model, args, names, fn))
@@ -1077,7 +1079,7 @@ def r1_rungs(model: Any, args: Tuple[Any, ...], names: List[str], regime: str, *
 def _r1_judge(model: Any, args: Tuple[Any, ...], names: List[str], regime: str,
               fn: Optional[Callable[..., Any]] = None, *,
               label: Optional[str] = None, bar_by_index: Optional[Dict[int, float]] = None,
-              watch: Optional["GradWatch"] = None, row_bars: Any = None
+              watch: Optional["GradWatch"] = None, row_bars: Any = None, param_null: bool = False
               ) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor], str]:
     """ONE rung: the independent compiled / eager pair on the CURRENT weights, judged by the rule of the
     policy's trunk precision — fp32: `_r1_verdict` (compiled vs eager at the fp32 bars); bf16: THE bf16 PARITY
@@ -1104,8 +1106,9 @@ def _r1_judge(model: Any, args: Tuple[Any, ...], names: List[str], regime: str,
                 ref = _r1_reference(model, args)
                 arms["fp32 reference"] = ref
                 gl = golden_row_losses({"ref": ref, "eager": eager, "comp": comp}, fix, [args])
+                pn = (lambda idx, a=args, r=ref: PN.compute(model, a, r, idx)) if param_null else None
                 line = _r1_verdict_bf16(eager, comp, ref, names, regime, label=label, bar_by_index=bar_by_index,
-                                        watch=watch, losses=(gl["ref"], gl["eager"], gl["comp"]))
+                                        watch=watch, losses=(gl["ref"], gl["eager"], gl["comp"]), param_null=pn)
             else:
                 line = _r1_verdict(eager, comp, names, regime, label=label, bar_by_index=bar_by_index, watch=watch)
         except (ct.NonFiniteGateArmError, ct.GateArmsNotIndependentError):
@@ -1670,6 +1673,7 @@ class GradWatch:
         #: gen3_canary_row_null_shadow_v1: per arm, |Δ log π| from the reference per FIXTURE row (the max over its
         #: tiles), for the canary's shadow per-row null (`canary_row_null.record`); not part of `record()`
         self.row_dlogp: Dict[str, np.ndarray] = {}
+        self.param_null: Optional[Dict[str, Any]] = None  # gen3_canary_param_null_v1: when a parameter needed it
 
     def _fixture(self, row: int) -> Optional[int]:
         fr = self.fixture_rows
@@ -1769,6 +1773,8 @@ class GradWatch:
                                "global": r(self.globals), "clip_margin": r(self.margin)}
         if self.yardstick:                                  # only when one occurred: other records are unchanged
             out["yardstick_out_of_margin"] = [r(e) for e in self.yardstick]
+        if self.param_null is not None:                     # likewise: only when a parameter needed the null
+            out["param_null"] = r(self.param_null)
         return out
 
 
@@ -1794,7 +1800,8 @@ class GradWatch:
 #:            fp32 rule) — except the scalar LOSS, floored at bf16's unit roundoff 2^-9 (`BF16_LOSS_FLOOR`) — so a
 #:            compiled bf16 graph is never held tighter than an fp32 one, and a quantity whose eager error lands
 #:            near zero by chance does not shrink its own bar. K = R1_BAR_K x the healthy maximum of that ratio
-#:            (`BF16_ENVELOPE_K`).
+#:            (`BF16_ENVELOPE_K`). In the CANARY the per-parameter max also takes the parameter's fp32 dither null
+#:            (`canary_param_null`, gen3_canary_param_null_v1), computed only when the eager bar alone would refuse.
 #:
 #: THE TEETH, stated (PLAN.md §2a): a backward miscompile on a parameter is refused only when it exceeds K x that
 #: parameter's own bf16 error — bf16's gradient noise is the resolution limit, coarser than the fp32 rule's by the
@@ -1865,9 +1872,12 @@ def bf16_measured() -> Optional[str]:
 def _r1_verdict_bf16(eager: Dict[str, torch.Tensor], comp: Dict[str, torch.Tensor], ref: Dict[str, torch.Tensor],
                      names: List[str], regime: str, label: Optional[str] = None,
                      bar_by_index: Optional[Dict[int, float]] = None, watch: Optional["GradWatch"] = None,
-                     losses: Optional[Tuple[float, float, float]] = None) -> str:
+                     losses: Optional[Tuple[float, float, float]] = None,
+                     param_null: Optional[PN.NullFn] = None) -> str:
     """THE bf16 PARITY RULE (the block comment above): DRIFT (eager bf16 vs the fp32 reference) and ENVELOPE
-    (compiled bf16 vs the reference, within K x eager bf16's own error, floored at the fp32 bar). ``losses``: the
+    (compiled bf16 vs the reference, within K x eager bf16's own error, floored at the fp32 bar). ``param_null``: the
+    canary's per-parameter dither null (`canary_param_null.judge`: K x max(eager, null, floor), computed only when a
+    parameter breaks the eager bar); None = the eager bar alone. ``losses``: the
     (reference, eager, compiled) losses every LOSS comparison reads — the gate passes each arm's loss on the golden's
     OWN rows (`golden_row_loss`, gen3_r1_loss_on_golden_rows_v1), the arms' own (relocated-row) losses are then
     reported beside them; None reads the arms' own. Raises `CompileTrainerError`; returns the rule line."""
@@ -1921,28 +1931,22 @@ def _r1_verdict_bf16(eager: Dict[str, torch.Tensor], comp: Dict[str, torch.Tenso
         raise ct.VacuousCompileParityError("--compile-trainer region R1 (bf16 rule): no parameter's reference "
                                            "gradient is above the per-parameter floor")
     k = BF16_ENVELOPE_K["param"]
-    worst = (-1.0, -1, 0.0, 0.0)
-    bad = []
-    for i, dc in err_c.items():
-        floor_i = float(over.get(i, R1_PARAM_BAR[regime]))
-        ratio = dc / max(err_e[i], floor_i)
-        if not (ratio == ratio):                            # NaN sorts worst and fails
-            ratio = float("inf")
-        if ratio > worst[0]:
-            worst = (ratio, i, dc, err_e[i])
-        if not ratio <= k:
-            bad.append((names[i] if i < len(names) else f"#{i}", dc, err_e[i]))
-    if bad:
+    pj = PN.judge(err_c, err_e, {i: float(over.get(i, R1_PARAM_BAR[regime])) for i in err_c}, k, param_null, names)
+    if watch is not None:
+        PN.annotate(watch, pj, names)
+    if pj.bad:
         raise ct.CompileTrainerError(
             f"--compile-trainer region R1 (bf16 rule): the compiled TRAIN graph's gradient is farther from the fp32 "
-            f"reference than {k:g} x eager bf16's own error on {len(bad)} parameter(s) (e.g. "
-            + ", ".join(f"{n} compiled {c:.2e} vs eager {e:.2e}" for n, c, e in bad[:5])
-            + "). A backward miscompile under bf16's rounding — investigate before re-enabling.")
+            f"reference than {k:g} x {pj.denominator()} on {len(pj.bad)} parameter(s) (e.g. "
+            + ", ".join(pj.describe(names, err_c, err_e)[:5])
+            + f"). A backward miscompile under bf16's rounding — investigate before re-enabling.{pj.note()}")
+    worst = pj.worst
     wn = names[worst[1]] if 0 <= worst[1] < len(names) else f"#{worst[1]}"
+    wnull = "" if pj.null is None else f", null {pj.null.get(worst[1], 0.0):.2e}"
     return (f"{head} drift loss {d_loss_e:.2e} <= {BF16_DRIFT_BARS['loss']:g}, grad {d_g_e:.2e} <= "
             f"{BF16_DRIFT_BARS['grad_rel_l2']:g}; envelope loss {d_loss_c:.2e} (eager {d_loss_e:.2e}){rows}, grad "
             f"{d_g_c:.2e} (eager {d_g_e:.2e}); per-param worst ratio {worst[0]:.2f} <= {k:g} ({wn}: compiled "
-            f"{worst[2]:.2e} vs eager {worst[3]:.2e}) over {len(err_c)} params")
+            f"{worst[2]:.2e} vs eager {worst[3]:.2e}{wnull}) over {len(err_c)} params{pj.note()}")
 
 
 def _decision_readout(model: Any, obs: Any, mask: Any) -> Dict[str, torch.Tensor]:

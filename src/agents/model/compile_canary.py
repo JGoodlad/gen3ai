@@ -61,6 +61,14 @@ the scalar margin, and a null that cannot bind (off, skipped, truncated, in erro
 global rule at M). Every record carries ``canary_rule_version`` and ``canary_rule`` (the constants, the bars' source,
 the bf16 loss envelope's K), so a reader tells this regime from a record written before it (no field: the global M).
 
+THE PER-PARAMETER DITHER NULL (`gen3_canary_param_null_v1`, 2026-10-30; `canary_param_null`). Under the bf16 rule a
+judged parameter's bar is K x max(eager bf16's error, its fp32 dither null, the floor), K 12: the null (16 seeds of the
+fp32 reference on the check's own rows at half-ulp-dithered weights) replaces ONE eager draw as the denominator's
+floor, which a parameter carried by one to three fixture rows reads as a lottery (the slice-2 refusals; the 2026-10-30
+GPU replay read all five states CONDITIONING). It runs only when the eager bar alone would refuse (the new bar is never
+lower, so the verdict is the same as computing it always), in the scheduled check and both halves, and falls back to
+the eager bar when it cannot bind. ``canary_rule_version`` `per_row_stage1_param_null`; ``canary_rule.param_null``.
+
 Every verdict (update, step, pass / unconfirmed / fatal) is appended to
 `<run_dir>/canary_verdicts.jsonl` WITH THE WATCH-LIST RECORD (`WATCH_PREFIXES`, `gen3_canary_watch_v1`): every
 watched parameter's per-check numbers — under the bf16 rule its ratio, the compiled distance and eager bf16's
@@ -91,6 +99,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import torch
 
+from agents.model import canary_param_null
 from agents.model import canary_row_bar
 from agents.model import canary_row_null
 from agents.model import compile_trainer as ct
@@ -145,6 +154,11 @@ NEAR_MARGIN_SUFFIX = "_near_policy.pt"
 #: judging NOTHING — a CUDA census row for the per-row margin's k at every production canary. A test seam turns it
 #: off per canary (`CompileCanary(row_null=False)`); ``$GEN3AI_CANARY_ROW_NULL_CAP_S`` 0 turns it off for a process.
 ROW_NULL_ON = True
+#: THE PER-PARAMETER DITHER NULL (`gen3_canary_param_null_v1`; `canary_param_null`): the bf16 per-parameter bar takes
+#: max(eager, null, floor) in every check of a scheduled canary. A test / replay seam turns it off per canary
+#: (`CompileCanary(param_null=False)`: the eager bar alone, a record before this rule); ``$GEN3AI_CANARY_PARAM_NULL_CAP_S``
+#: 0 turns it off for a process.
+PARAM_NULL_ON = True
 
 
 def _first_from_env() -> Optional[int]:
@@ -366,7 +380,7 @@ class CompileCanary:
                  every: int = CANARY_EVERY,
                  saver: Optional[Callable[[str], None]] = None,
                  first: Optional[int] = None,
-                 row_null: Optional[bool] = None) -> None:
+                 row_null: Optional[bool] = None, param_null: Optional[bool] = None) -> None:
         self.model = model
         self.batch_size = int(batch_size)
         self.every = max(1, int(every))
@@ -391,6 +405,13 @@ class CompileCanary:
         if self.row_null_on:
             try:                                        # a malformed cap refuses at STARTUP, never at a canary
                 canary_row_null.cap_seconds()
+            except ValueError as exc:
+                raise ct.CompileTrainerError(str(exc)) from exc
+        #: gen3_canary_param_null_v1: the bf16 per-parameter bar takes the dither null (`PARAM_NULL_ON` unless told)
+        self.param_null_on = PARAM_NULL_ON if param_null is None else bool(param_null)
+        if self.param_null_on:
+            try:                                        # likewise: a malformed cap refuses at STARTUP
+                canary_param_null.cap_seconds()
             except ValueError as exc:
                 raise ct.CompileTrainerError(str(exc)) from exc
         self._row_null_raw: Optional[Dict[str, Any]] = None
@@ -450,7 +471,7 @@ class CompileCanary:
                                "num_timesteps": int(getattr(self.model, "num_timesteps", 0) or 0),
                                "time": time.time(), "detail": detail[:4000],
                                "canary_shift_max": self._shift_max_record(),
-                               "canary_rule_version": canary_row_bar.CANARY_RULE_VERSION,
+                               "canary_rule_version": self.rule_version,
                                "canary_rule": self._rule_record()}
         if fractions is not None:                           # gen3_canary_near_margin_dump_v1: every judged quantity
             rec["bar_fractions"] = {q: {k: _r4(v) for k, v in d.items()} for q, d in fractions.items()}
@@ -477,6 +498,12 @@ class CompileCanary:
                 if verdict == "pass" else rec)
         return rec
 
+    @property
+    def rule_version(self) -> str:
+        """The rule this canary judges by (``canary_rule_version``): the per-parameter null on, or stage 1's."""
+        return (canary_row_bar.CANARY_RULE_VERSION if self.param_null_on
+                else canary_row_bar.STAGE1_RULE_VERSION)
+
     def _bars_live(self) -> bool:
         return self._row_bars is not None and self._row_bars.live
 
@@ -485,7 +512,8 @@ class CompileCanary:
         came from, and the bf16 loss envelope's K."""
         from agents.model import compile_regions as cr
         rb = self._row_bars or canary_row_bar.fallback("no per-row null was computed (outside a scheduled canary)")
-        return {**rb.record(), "envelope_loss_k": cr.BF16_ENVELOPE_K["loss"] if cr.BF16_ENVELOPE_K else None}
+        return {**rb.record(), "version": self.rule_version, "envelope_loss_k": cr.BF16_ENVELOPE_K["loss"] if cr.BF16_ENVELOPE_K else None,
+                "param_null": canary_param_null.rule_record() if self.param_null_on else "off"}
 
     def _shift_max_record(self) -> Dict[str, Any]:
         """THE JUDGEMENT INPUT every record carries (`--canary-shift-max`, T37): the shift the margin was built from, where
@@ -676,7 +704,8 @@ class CompileCanary:
         # TRAINED bar (`gen3_r1_unmoved_param_v1`)
         regime = cr.weights_regime(model)
         if not cr.learner_cudagraphs_on(model):
-            eager, comp, rules = cr.r1_rungs(model, args, names, regime, watch=watch, row_bars=bb)
+            eager, comp, rules = cr.r1_rungs(model, args, names, regime, watch=watch, row_bars=bb,
+                                             param_null=self.param_null_on)
             out["compile/canary_grad_cosine"] = ct._cos(comp["grad"], eager["grad"])
             out["compile/canary_unmoved_params"] = float(len(cr.unmoved_parameters(model)))
             return rules
@@ -687,7 +716,7 @@ class CompileCanary:
         rules = []
         for i, (route, fn) in enumerate(cr.r1_routes(model)):
             eager, comp, r = cr.r1_rungs(model, args, names, regime, fn=fn, route=route,
-                                         watch=watch if i == 0 else None, row_bars=bb)
+                                         watch=watch if i == 0 else None, row_bars=bb, param_null=self.param_null_on)
             rules.extend(r)
             if i == 0:
                 out["compile/canary_grad_cosine"] = ct._cos(comp["grad"], eager["grad"])

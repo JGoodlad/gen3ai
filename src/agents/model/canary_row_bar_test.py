@@ -240,7 +240,9 @@ def test_the_canary_BINDS_its_nulls_bars_and_every_record_names_the_rule(monkeyp
     assert len(seen) == 3 and all(s is not None and s.live for s in seen)     # scheduled + both halves, same bars
     (rec,) = _records(tmp_path)
     assert rec["verdict"] == "unconfirmed" and "past that row's bar 0.12" in rec["detail"]
-    assert rec["canary_rule_version"] == RB.CANARY_RULE_VERSION == "per_row_stage1"
+    assert rec["canary_rule_version"] == RB.CANARY_RULE_VERSION == "per_row_stage1_param_null"   # + the param null
+    assert rec["canary_rule"]["version"] == RB.CANARY_RULE_VERSION
+    assert rec["canary_rule"]["param_null"]["version"] == "gen3_canary_param_null_v1"
     rule = rec["canary_rule"]
     assert rule["row_bars_source"] == "null" and rule["k"] == 6.0 and rule["cap"] == 0.72
     assert rule["envelope_loss_k"] == 9.2 and rule["bar_per_row"][20] == pytest.approx(0.12)

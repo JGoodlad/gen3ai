@@ -15563,3 +15563,25 @@ was downloaded or written under `data/`.
   row's bar refusing; the canary binding and recording), `canary_decide_test`, `canary_dump_replay_test`; the shadow,
   yardstick and near-margin tests run their planted checks through the bars. The played-bits sentinel and the K9
   learner golden do not move.
+
+## 2026-10-30 — the canary's bf16 per-parameter rule divides by the fp32 dither null, not one eager draw (`gen3_canary_param_null_v1`; no model / config / obs / signature change; training math untouched)
+
+- **The finding.** The GPU slice-2 replay (`main.ops.canary_slice_read --dither 16`, 2026-10-30) read all five refusing
+  canary states CONDITIONING: compiled CUDA bf16's median distance over 16 half-ulp-dithered seeds is 0.09-0.55 of the
+  fp32 function's own null maximum on every refusing parameter, so hypothesis (i), a real compiled-numerics fault, is
+  ruled out there (`research_state/measurements/canary_slice2_2026-10-29/`).
+- **The build.** `agents/model/canary_param_null.py`: in the canary's checks (scheduled and both halves, live rung, bf16
+  rule) a judged parameter's bar is 12 x max(eager bf16's error, its 16-seed fp32 dither null, floor), the null being
+  the replay's own statistic (`diag_bf16_canary.dithered` draws, the fp32 reference on the check's rows). Computed only
+  when the eager bar alone would refuse (the bar is never lower, so the verdict is unchanged by the laziness); off,
+  truncated (180 s cap), in error or short of 16 seeds = the eager bar, named. `compile_regions.r1_rungs` /
+  `_r1_judge` / `_r1_verdict_bf16` take `param_null`; the startup gate and every other caller keep the eager bar.
+  Records: `canary_rule_version` `per_row_stage1_param_null` (`per_row_stage1` names a canary with the null off),
+  `canary_rule.param_null`, and `watch.*.param_null` when a parameter needed it. `canary_dump_replay` and
+  `canary_slice_read` judge a dump by its record's rule.
+- **The pin boundary.** Runs pinned before this commit keep the eager bar.
+- **Tests.** `agents/model/canary_param_null_test.py` (a single-row-carried parameter inside its null passes where the
+  eager bar refused; an injected x3 miscompile is refused with the null bound, and a x2 on the real K9 learner after a
+  real 16-seed null; exact laziness; the fallbacks; the null equals the replay's dither number for number; the backtest
+  on `testdata/canary_param_null_basis.json`: the 14 refusing reads at the states' own weights pass at <= 1.60 of 12, and
+  none of the census's 62,880 dithered reads exceeds the new bar); `canary_row_bar_test` names the new version.

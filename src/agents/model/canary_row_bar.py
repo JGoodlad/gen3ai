@@ -27,6 +27,9 @@ record names the reason (``row_bars.source``); the per-row bars never fall back 
 THE VERSION. Every canary record carries ``canary_rule_version`` = `CANARY_RULE_VERSION`. A record without the field
 was written at a pin before this change and judged the compiled arm at the global M (`LEGACY_RULE_VERSION`);
 `rule_version_of` reads either. A run's rule is its pin's code: a run pinned before this commit never sees it.
+`STAGE1_RULE_VERSION` names a record of a pin between this stage and the per-parameter dither null
+(`canary_param_null`, gen3_canary_param_null_v1, 2026-10-30): the same per-row bars, the bf16 per-parameter bar over
+eager bf16 alone. `CANARY_RULE_VERSION` is both (`KNOWN_RULE_VERSIONS` in order).
 """
 from __future__ import annotations
 
@@ -37,10 +40,16 @@ import torch
 
 from agents.model import canary_row_null as RN
 
-#: The rule every canary record of this pin names (``canary_rule_version``).
-CANARY_RULE_VERSION = "per_row_stage1"
+#: The rule every canary record of this pin names (``canary_rule_version``): the per-row bars AND the bf16
+#: per-parameter bar K x max(eager, the fp32 dither null, floor) (`canary_param_null`).
+CANARY_RULE_VERSION = "per_row_stage1_param_null"
+#: A record of a pin from `gen3_canary_row_bar_v1` until `gen3_canary_param_null_v1`: the per-row bars, the bf16
+#: per-parameter bar over eager bf16 alone (also what a canary with its null off judges by).
+STAGE1_RULE_VERSION = "per_row_stage1"
 #: What a record WITHOUT ``canary_rule_version`` judged by: the compiled arm at the global margin M.
 LEGACY_RULE_VERSION = "global_m"
+#: Every rule a record can name, oldest first.
+KNOWN_RULE_VERSIONS = (LEGACY_RULE_VERSION, STAGE1_RULE_VERSION, CANARY_RULE_VERSION)
 #: k: 4 x 1.479, the healthy maximum of row shift / max(16-seed null, 0.02) over the census's compiled and eager bf16
 #: arms at B = 2,048 on CUDA (X26 380M, row 63, eager), rounded UP to 2 significant digits (R1's convention).
 ROW_BAR_K = 6.0
