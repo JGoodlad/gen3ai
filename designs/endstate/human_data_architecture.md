@@ -34,9 +34,10 @@ STATUS
   HOM - P* NLL on accounts unseen in training   : -0.503 nats
   human-only models vs P* (Q-H10)               : P* wins all three (U 0.666 / 0.631 / 0.790)
   fill artefact (FR-2)                          : NO-ARTEFACT, which gates nothing (Q-H5)
-  evidence that human data helps goal (b)       : none yet, either way (X59-S trained; its Kakuna read is in flight)
+  human vs self-play data (Q-H9, X59-S)         : SELF-PLAY-DATA-BETTER, Δ_data -7.28 pp [-10.29, -4.28]; in-house -9.06; closure pending Δ_restriction
+  evidence that human data helps goal (b)       : none; at matched volume human rows teach a fresh network LESS than our self-play rows
   switch values (PROPOSED)                      : bc = an extra loss term | teams = more teams in the pool | kl = a pull toward a human model
-  open                                          : is human data better than our self-play data (X59-S: in flight); does ONE human lever raise P* (X60: REVIEW F's fixes owed); how the spectator stream was selected (Q-H4)
+  open                                          : whether X59-S's closure stands (Δ_restriction, playing); rating at fixed slice (the ≥ 1500 follow-up, registered); does ONE human lever raise P* (X60: REVIEW F's fixes owed); how the spectator stream was selected (Q-H4)
 ```
 
 **What the box says, in words.** No human DECISION reaches a production run, an evaluation or play today. The one
@@ -48,8 +49,11 @@ extracted from ladder replays, our external meters were trained on human replays
 aggregate of human ladder games. The switch that would let human decisions train the policy is not built. **There is
 no evidence yet, either way, that human data would help on unfamiliar teams:** the 15.9 % line says human teams
 REACH that region (coverage), the −0.503 line says human choices are LEARNABLE, and upstream's human-only models all
-lose to our P\* (Q-H10); none says that learning human choices improves play inside our network. X59-S is the first
-read that can, and it is in flight.
+lose to our P\* (Q-H10). **X59-S has now read inside our network, and the answer is no at this volume** (2026-10-30):
+a fresh student taught by 1300+ ladder players' games and choices plays unfamiliar teams 7.28 pp [4.28, 10.29] WORSE
+against Kakuna than one taught by our plateau policy's own games and choices, the in-house meter agrees (−9.06 pp), and
+the human labels lose to P\*'s on the same human states (−4.50 pp). H-BC is dropped; whether the read closes this slice
+of human data waits on one registered guard (Δ_restriction, §7.1).
 
 ### 0.1 The named questions at a glance
 
@@ -67,13 +71,13 @@ commit that landed the measurement (`git show <sha>`).
 | **Q-H6** COVERAGE | Do human teams reach the unfamiliar-team region? | Partly: ≥ 15.9 % of full-six ≥ 1500 human sides. The panel-exclusion rule keeps 16.8 % of candidate battles, a forfeit-heavy slice (X59-S's rows: 50.6 % from forfeits, median turn 15 against self-play's 19). | answered | `431b1fdf7`, `a1370436f`, `b27226c3a` |
 | **Q-H7** LEARNABILITY | Can a model learn human choices? | Yes: the human opponent model (HOM, P\* fine-tuned on human choices) beats P\* by 0.503 nats [0.467, 0.542] on accounts it never saw. Learnable is not the same as useful (Q-H9). | answered | `92af1f121`, `431b1fdf7` |
 | **Q-H8** DRIFT | Has the meta or the population moved? | Slow and small (0.005–0.011 a month beyond account noise); no new snapshot has been cut, so the alarm has not been read since. | answered (for `hr_spec_v1`'s months) | `431b1fdf7` |
-| **Q-H9** HUMAN vs SELF-PLAY DATA | Is human data better than our own self-play data, at matched volume and recipe? | X59-S (the matched-student contest): 20 students trained 10-26; the Kakuna floor pilot is playing; **no contrast has been read by anyone**. Amendments 2 to 6 registered the machinery and the rules; 5 and 6 answer reviews H and G before any result. | in flight | `eadacd559`, `0470d273a`, `dd1299109` |
-| **Q-H10** HUMAN-ONLY MODEL | Does a model trained only on human data beat ours? | NO. All three of Metamon's human-only models lose to P\*: U 0.666 / 0.631 / 0.790 (small RL / large RL / large imitation); offline RL beats imitation on the same data by ≈ 16 pp. These are upstream's recipes, not ours. | answered | `4d8d9eef8`, `df35d1bb0` |
+| **Q-H9** HUMAN vs SELF-PLAY DATA | Is human data better than our own self-play data, at matched volume and recipe? | **NO: SELF-PLAY-DATA-BETTER.** Δ_data = S-H − S-S −7.28 pp [−10.29, −4.28] on U vs Kakuna (S-H 0.320, S-S 0.393), in-house −9.06 [−10.98, −7.14], F alone −8.80; Δ_labels OWN-LABELS-BETTER −4.50 [−7.42, −1.58] (H-BC dropped). The closure ("1300+ ladder data in the panel-distant, forfeit-heavy slice, at this mix and volume, as a BC target for a fresh network at 3 epochs") is pending Δ_restriction (playing); the ≥ 1500 follow-up fires | answered (closure pending) | X59-S README; record `~/gen3ai_archive/x59s/read/full/record.json` |
+| **Q-H10** HUMAN-ONLY MODEL | Does a model trained only on human data beat ours? | NO. All three of Metamon's human-only models lose to P\*: U 0.666 / 0.631 / 0.790 (small RL / large RL / large imitation); offline RL beats imitation on the same data by ≈ 16 pp. These are upstream's recipes, not ours. In our architecture (X59-S, secondary, cross-engine) a human-only student sits 16.7 pp under P\*'s X51 twins, the self-play student 9.4 | answered | `4d8d9eef8`, `df35d1bb0`, X59-S README |
 | **Q-H11** DOES A LEVER HELP? | Does ONE human clause added to P\* raise its win rate against Kakuna on human-built teams it never trained on? | Unmeasured. X60 is redesigned with both routes pre-written; REVIEW F: READY-WITH-FIXES, 0 BLOCKERs and 9 MAJORs, none yet applied. The headline "GAIN 0.80 at +3 pp" is the zero-seed-noise cell: 0.70 at a 1.0 pp floor, 0.27 at the measured upper bound of 2.75 pp. | open | `e1512c361`, `e41beafe1` |
 | **Q-H12** TOGGLE INTEGRITY | With every lever off, is the system unchanged? | Trivially yes: the switch is not built. REVIEW F wants one throwing guard now: a human-data team corpus must not enter through `--team-mix` unannounced. | answered (trivially); the guard is open | `e41beafe1` |
 | **Q-H13** CONTAMINATION | Which meters already carry human data, and what does a lever's gain on them mean? | Every panel is team-clean; the POPULATION differs: H (replay-built) is the human levers' own, P72 is fill-adjacent, F (forum-built) is the cleanest. No panel is shown Kakuna-familiar. Kakuna's packer bug (a Gyarados playing Frustration at power 1 on F) is fixed, so F reads before 10-27 are a different regime. | answered | `4f555e577`, `b0441623e`, `431b1fdf7` |
 | **Q-H14** PROVENANCE | Given a checkpoint, did any ancestor train on human data? | No production run did. The only networks of ours trained on human rows are the HOM and X59-S's 15 human-row students, offline and outside `models/`. Lineage tooling is PROPOSED with the switch. | answered (today); the tooling is open | `431b1fdf7` |
-| **Q-H15** TEACHER QUALITY | How strong is the population we would imitate? | Upstream's human-only models lose to P\* and sit 14–30 pp under Kakuna. X59-S's rows are 77.5 % players rated 1300–1499. Human labels inside our own architecture: unread. | answered (upstream); in flight (ours) | `4d8d9eef8`, `df35d1bb0`, `a1370436f` |
+| **Q-H15** TEACHER QUALITY | How strong is the population we would imitate? | Upstream's human-only models lose to P\* and sit 14–30 pp under Kakuna. Inside our architecture the 1300+ slice (77.5 % rated 1300–1499) is a worse cloning target than P\*: human labels lose to P\*'s on the same states by 4.50 pp [1.58, 7.42] (X59-S Δ_labels). The ≥ 1500 stratum at fixed slice and volume: the follow-up, registered | answered (1300+ slice); follow-up (≥ 1500) | `4d8d9eef8`, `df35d1bb0`, X59-S README |
 
 **Names used below.** P\* = our plateau policy (`rb_x26_s2601` at 280M steps); Kakuna = the Metamon agent (checkpoint 34) we play
 as goal (b)'s opponent, itself pretrained on human replays. H / F / P72 = the three unfamiliar-team panels (teams extracted from ladder
@@ -145,7 +149,7 @@ Every hidden fact a replay lacks is filled from Smogon only, never from our pool
 4. **There is no offline evidence either way** that human labels carry the unfamiliar-team skill goal (b) lacks. The
    one proxy (P\*'s human-prediction NLL by team familiarity) is UNINFORMATIVE: it predicts the same flat profile
    whether that hypothesis is true or false (REVIEW A M1). Upstream's human-only models lose to P\* (Q-H10), which
-   compares recipes, not data. X59-S is the read that compares data, and it is in flight.
+   compares recipes, not data. X59-S compares data: SELF-PLAY-DATA-BETTER (§7.1).
 
 ## 4. The source taxonomy: one data card per source
 
@@ -297,7 +301,7 @@ REVIEW G's finding (answered by Amendment 6): the completion uses the whole game
 cost the HOM more than P\*) and certifies nothing about that signature; the closure's guard is Δ_restriction below
 (`results/fr2.json`; `e652875c6`, `eadacd559`).
 
-**Q-H9 HUMAN vs SELF-PLAY DATA: is human data better than our self-play data? IN FLIGHT (X59-S).** Students of our
+**Q-H9 HUMAN vs SELF-PLAY DATA: is human data better than our self-play data? READ 2026-10-30 (X59-S): NO, SELF-PLAY-DATA-BETTER; the closure is pending Δ_restriction.** Students of our
 architecture, five seeds each, one initial network a seed, the same 7,041 steps: **S-H** (human states, human choices),
 **S-P** (the SAME states, P\*'s choice restricted to what the log allows the human), **S-S** (P\*'s own self-play games
 and choices: a distillation of our plateau policy, the best case for self-play data at this volume, not the RL rollout
@@ -306,7 +310,17 @@ owner's question**; Δ_labels = S-H − S-P asks whether a human teaches better 
 H-BC); S-P − S-S is the states part (it routes nothing). Each student plays Kakuna on the three unfamiliar panels and
 its S-S and S-P twins in-house, the meter no human-trained agent shapes.
 
-Where it stands (2026-10-27):
+**The verdict** ([README](../research_state/measurements/x59s_matched_students_2026-10-25/README.md); record
+`~/gen3ai_archive/x59s/read/full/record.json`, COMPLETE, 901 Kakuna units on one engine):
+- **Δ_data SELF-PLAY-DATA-BETTER, −7.28 pp [−10.29, −4.28]** (S-H 0.320, S-S 0.393 on U vs Kakuna); the in-house meter
+  agrees (−9.06 [−10.98, −7.14]), and so does F alone (−8.80 [−12.25, −5.35]).
+- **Δ_labels OWN-LABELS-BETTER, −4.50 pp [−7.42, −1.58]** (S-P 0.365; in-house −5.23): **H-BC is dropped.**
+- Δ_states UNCLEAR, −2.78 [−5.68, +0.12]. σ̂ 1.47 pp. S-H fitted; re-encode 0.60 %; the deficit is not concentrated in
+  long games (terciles −7.0 / −10.2 / −4.6 pp).
+- **The closure waits on Δ_restriction** (S-P0 − S-P, 300 units, playing): a lower bound ≤ 0 closes the slice as
+  quoted below; > 0 closes nothing. The ≥ 1500 follow-up (rating at fixed slice and volume) is registered next.
+
+How it was read (2026-10-27):
 - **Inputs.** Human rows `hr_spec_v1.r2`; S-S's rows regenerated under the human panel rule (a simulated human reveal,
   redrawn while near a panel: 16.8 % of pool team pairs pass, as 16.8 % of human candidate battles did; 15,069 games).
   Registered and checked (`registration_a2.json`: PASS).
@@ -316,8 +330,8 @@ Where it stands (2026-10-27):
   (`ops/TECH_DEBT_BACKLOG.md` P3).
 - **The read.** One engine, one pin (`89c2c2501`, tag `x59s-play-89c2c250`, a commit off main; Amendment 6), through `python -m main.reads`. The identity unit
   reproduces X51's P\* game for game (20 / 20). Floor references: a random player 0 / 240, a max-damage player 11 / 240
-  (4.6 %). The floor pilot had settled about 20 of 181 units at 10:15; **no student's Kakuna, in-house or floor result
-  has been read by anyone**.
+  (4.6 %). The floor pilot (181 units) found every contrast informative; the rest (720 units) and the in-house
+  head-to-heads (30 cells × 400 games) followed, all blind until the full record.
 - **Input checks.** A 200-battle seeded extraction reproduces the rowset byte for byte (8,878 / 8,878 rows). S-H and S-P
   trained on rows made by an older encoder than S-S's and the play tree's (REVIEW G G-M2); re-extracted at the pin,
   51 of 8,556 rows differ (0.60 %, all in one input group, volatile effects), under the 1.0 % trigger: a registered
@@ -358,11 +372,11 @@ Where it stands (2026-10-27):
 | **Q-H6 COVERAGE** | Do human teams reach the unfamiliar region? | partly: ≥ 15.9 % of FULL-SIX ≥ 1500 human sides; humans pilot 3-set cores of most H and F teams, so the panel exclusion (≥ 3 move-revealed fits, before the fill) removes ≈ 71 % of ≥ 1500 battles without `forum216b` and 83.2 % of the candidate battles with it (a ≥ 1300 seat, ≥ 11 turns). What it KEEPS is a different population: 64 % forfeits or timer losses (49 % among the excluded), 52 % full-six sides (75 %); it keeps the pool-unfamiliar region better than proportionally (REVIEW D M7). In X59-S's training rows: 44 rows a battle against self-play's 82, median turn 15 against 19, 2.9 % of rows with no legal switch against 6.6 %, 50.6 % from forfeits against none: a self-play win partly reads "endgame coverage" (REVIEW G G-M4; the length split is registered) | `hr_spec_v1` |
 | **Q-H7 LEARNABILITY** | Can a model learn human choices? | yes: the HOM (X26's network fine-tuned from P\* on human choices of actors ≥ 1500; sha256 `76e29a01…`; barred from every lever and routing rule, and closed as search's judge by R-b2's HOM-NONE) beats P\* by ≈ 0.6 nats in every cut, and by 0.503 nats [0.467, 0.542] on accounts it never played on the train dates (0.605 on seen accounts: ≈ 17 % of the gain is account memory); the familiarity proxy is uninformative (fact 4) | `hr_spec_v1` |
 | **Q-H8 DRIFT** | Has the meta / population / rating moved? | slow and small: consecutive months' species mix differs by 0.038–0.049 TVD, most of which two account-disjoint halves of ONE month also show (0.047–0.064); the EXCESS beyond that floor is 0.005–0.011 a month, positive in 19–20 of 20 splits; the distance to the pool and panels is flat (0.19–0.20 to the pool); the mean side rating stays 1,258–1,287; the archive swings 0.09–0.23 (uploaders, not meta) | `hr_spec_v1` |
-| **Q-H11 DOES A LEVER HELP?** | Does ONE human-data clause added to P\* raise its win rate vs Kakuna on human-built teams it never trained on, without costing home72, and is the gain the human part? | unmeasured. X60 is REDESIGNED (the plan §6) with both routes written before X59-S is read: X60-B (H-BC against a P\*-label placebo) if X59-S routes "H-BC first", none if it closes human data, X60-T (H-TEAMS against D1's forum corpus) otherwise. Primary: F alone against Kakuna (1,200 games a final, 5 seeds, the plain-continuation control shared); a gain needs the in-house meter (never trained on human data) to agree. **REVIEW F (READY-WITH-FIXES, 0 BLOCKERs, 9 MAJORs; none applied yet).** Four gate any build: the route is not frozen (the firing PREREG is written after X59-S's numbers and routes on prose strings); Kakuna's engine drifts under the imported control cells; the human team corpus is not checked at the side pin (the packer there mis-packs Frustration and Hidden Power IVs); one corpus has two entry points. Five gate the firing route's PREREG: the power headline, X60-B's delivery logic (its most damning null lands in "closes nothing"), the KAKUNA-SPECIFIC guard (it passes a Kakuna-only gain half the time), the CPU cost (X60-T's Kakuna games alone ≈ 70–95 h of wall), and X60-B's teacher (77.5 % rated 1300–1499). **Power, restated:** a +3 pp gain is found with probability 0.80 only at zero seed noise; 0.70 at the registered 1.0 pp floor, 0.43 at 2 pp, 0.27 at the measured upper bound of 2.75 pp. The packer fix (Q-H13) adds one rule: F games played after it cannot pool with C0's banked F cells | `hr_spec_v1` (rowset r2, or the route's new `hr_spec_v1.r<n>`) |
+| **Q-H11 DOES A LEVER HELP?** | Does ONE human-data clause added to P\* raise its win rate vs Kakuna on human-built teams it never trained on, without costing home72, and is the gain the human part? | unmeasured. X60 is REDESIGNED (the plan §6) with both routes written before X59-S was read: X60-B (H-BC against a P\*-label placebo) if X59-S routes "H-BC first" (it did NOT: OWN-LABELS-BETTER, 2026-10-30), none if it closes human data (pending Δ_restriction), X60-T (H-TEAMS against D1's forum corpus) otherwise. Primary: F alone against Kakuna (1,200 games a final, 5 seeds, the plain-continuation control shared); a gain needs the in-house meter (never trained on human data) to agree. **REVIEW F (READY-WITH-FIXES, 0 BLOCKERs, 9 MAJORs; none applied yet).** Four gate any build: the route is not frozen (the firing PREREG is written after X59-S's numbers and routes on prose strings); Kakuna's engine drifts under the imported control cells; the human team corpus is not checked at the side pin (the packer there mis-packs Frustration and Hidden Power IVs); one corpus has two entry points. Five gate the firing route's PREREG: the power headline, X60-B's delivery logic (its most damning null lands in "closes nothing"), the KAKUNA-SPECIFIC guard (it passes a Kakuna-only gain half the time), the CPU cost (X60-T's Kakuna games alone ≈ 70–95 h of wall), and X60-B's teacher (77.5 % rated 1300–1499). **Power, restated:** a +3 pp gain is found with probability 0.80 only at zero seed noise; 0.70 at the registered 1.0 pp floor, 0.43 at 2 pp, 0.27 at the measured upper bound of 2.75 pp. The packer fix (Q-H13) adds one rule: F games played after it cannot pool with C0's banked F cells | `hr_spec_v1` (rowset r2, or the route's new `hr_spec_v1.r<n>`) |
 | **Q-H12 TOGGLE INTEGRITY** | With every lever off, is the system unchanged? | trivially yes today (nothing is built); the gates of §6 are PROPOSED, and so is the `--team-mix` guard (REVIEW F F-M7) | — |
 | **Q-H13 CONTAMINATION** | Which meters already carry human data, and what does a lever's gain on them mean? | Every panel is TEAM-clean once the ≥ 3-fit exclusion runs; POPULATION is what differs. H is the human levers' own population and construction (ladder sides with usage fills): a gain there alone is "learned the ladder". P72 is fill-adjacent (its generator draws from the Smogon tables C-GAME fills with). F (human-built forum teams) is the cleanest open panel, so X60's primary is F alone. Kakuna is human-pretrained, so a lever's Kakuna gain counts only if the in-house meter against our own reference population agrees. The sealed `forum216b` carries the clean claim at X54. **No panel is shown Kakuna-familiar** (Kakuna's replay data, up to 2025-08, predates H's source; H's own date window is UNVERIFIED; ladder near-copies, ≥ 4 shared sets: H 4.2 %, F 14 %, P72 0 %, home72 47 %; [`goal_b_panel_validity_2026-10-26`](../research_state/measurements/goal_b_panel_validity_2026-10-26/README.md)). **The Kakuna packer fix (`b0441623e`, 10-27):** Metamon's peer packed teams with an upstream packer that differs from Showdown's reading of a paste. Of the panels here only F (forum72) changed: its `sft431` Gyarados (`Happiness: 0`) played Frustration at base power 1, not 102 (`away` and two pool teams changed too; H, P72 and home72 pack identically). Every earlier Kakuna F read, X59-S's included, faced that small handicap on 1 team in 72, equal across a read's arms, so contrasts inside one read do not move; but a new F read is its own regime and an import of banked F rows across the fix REFUSES (`designs/tools/reads.md` §4) | — |
 | **Q-H14 PROVENANCE** | Given a checkpoint, did any ancestor train on human data, and on which rowset? | today: no run can have (nothing is built). The HOM and X59-S's 15 human-row students (S-H, S-P, S-P0) trained on `hr_spec_v1`'s rows but are offline and outside `models/`; none seeds a run. After the switch is built, `main.lineage` (PROPOSED) | — |
-| **Q-H15 TEACHER QUALITY** | How strong is the population we would imitate, against P\* and Kakuna? | upstream's human-only policies all lose to P\* (U 0.63–0.79 for P\*) and are 14–30 pp weaker than Kakuna; imitation is the weakest (LargeIL), offline RL the strongest (LargeRL). X59-S's rows are 77.5 % rated 1300–1499 (the card ranks that stratum "the comparator only"); a ≥ 1500 follow-up (S-H≥1500 against a volume-matched mix) fires when Δ_data is neither HUMAN-DATA-BETTER nor UNINFORMATIVE (270,260 such rows). Human labels inside our architecture (X59-S's students) are unread | — |
+| **Q-H15 TEACHER QUALITY** | How strong is the population we would imitate, against P\* and Kakuna? | upstream's human-only policies all lose to P\* (U 0.63–0.79 for P\*) and are 14–30 pp weaker than Kakuna; imitation is the weakest (LargeIL), offline RL the strongest (LargeRL). X59-S's rows are 77.5 % rated 1300–1499 (the card ranks that stratum "the comparator only"); a ≥ 1500 follow-up (S-H≥1500 against a volume-matched mix) fired (Δ_data read SELF-PLAY-DATA-BETTER; 270,260 such rows). Human labels inside our architecture lose to P\*'s on the same states: X59-S Δ_labels −4.50 pp [−7.42, −1.58] (OWN-LABELS-BETTER) | `hr_spec_v1.r2` |
 
 ## 8. The drift policy
 
@@ -381,8 +395,9 @@ Where it stands (2026-10-27):
 
 ## 9. Where this is heading (all PROPOSED unless marked)
 
-1. **X59-S's read** (built, registered, in flight): the floor pilot, then the rest of the Kakuna read if a contrast is
-   informative, the in-house head-to-heads, and S-P0's units for Δ_restriction. Its verdict routes X60 (§7.1).
+1. **X59-S** (READ 2026-10-30: SELF-PLAY-DATA-BETTER, OWN-LABELS-BETTER): Δ_restriction decides the closure; the
+   ≥ 1500 follow-up (≈ 1.5 GPU-h, in-house read) asks whether rating changes it at fixed slice and volume. H-BC is
+   dropped, so X60-B is off the table; X60-T stands only if the closure does not (§7.1).
 2. The switch and the consumer-side snapshot check (≈ 1.5 agent-days), only once a first read routes a lever to a
    build; REVIEW F's `--team-mix` guard is written before either arm that uses a human team corpus launches.
 3. X60 (REDESIGNED; REVIEW F's fixes owed before a build): H-BC (with the P\*-label placebo) or H-TEAMS (with the D1
@@ -418,3 +433,4 @@ Where it stands (2026-10-27):
 | 2026-10-27 | **X59-S's read machinery and rules registered, all before any result** (Amendments 4, 4b, 4c, 5, 6) | one play tree and engine (pin last moved to `89c2c2501`); FR-2 READ NO-ARTEFACT, with the battle exclusion for silently ending volatiles; REVIEW H: a per-contrast floor (0.0958), the wider-of-two interval, the in-house interval for "no difference", POPULATION-SPECIFIC and two-way KAKUNA-SPECIFIC, the closure's scope and fit gate, the re-encode check (0.60 %), a midpoint H-BC gate; REVIEW G: Δ_restriction as the closure's guard instead of FR-2, the slice named in the closure, a length split | keeping the 0.15 floor bar (it would call reads UNINFORMATIVE that Kakuna resolves); FR-2 as the closure's guard (it cannot see the signature it gates) | the PREREG; `eadacd559`, `0470d273a`, `dd1299109`, `b27226c3a` |
 | 2026-10-27 | **REVIEW F recorded; Q-H11's power restated; the Kakuna packer fix enters Q-H13** | the headline GAIN 0.80 at +3 pp is the zero-noise cell, quoted as a range (0.70 at the 1.0 pp floor); X60's nine MAJORs listed, four gating any build; F reads before `b0441623e` are a legacy-pack regime and cannot pool with later ones | quoting 0.80 "at the measured noise"; treating the packer fix as invisible to human-team panels | `REVIEW_F_x60.md` (`e41beafe1`); `b0441623e`; `designs/tools/reads.md` §4 |
 | 2026-10-27 | **This doc AUDITED against everything since 10-25** | the Q-H table at a glance with a status and an evidence commit per question; one data card per source with its entry point; rowset r2 in §5 and the students in §2 and §5; Q-H4 gains the spectator's forfeit share; Q-H5 gains FR-2 and its limit; the X59-S window's measured wall time replaces its estimate; stale figures in other docs reported, not edited | appending a changelog to page one (replace, don't append) | this commit |
+| 2026-10-30 | **X59-S READ: SELF-PLAY-DATA-BETTER (Q-H9) and OWN-LABELS-BETTER; H-BC dropped** | page one, Q-H9, Q-H10 (the student-to-P\* gap, secondary) and Q-H15 answered from the full record; the closure of the 1300+ slice pending Δ_restriction; the ≥ 1500 follow-up registered next; X60-B off the table | closing human data before Δ_restriction is read (A6.1 makes it the guard) | X59-S README; `results/full_record_decision.json` |

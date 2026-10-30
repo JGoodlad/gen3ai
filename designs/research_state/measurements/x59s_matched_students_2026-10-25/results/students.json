@@ -1,0 +1,1927 @@
+{
+ "schema": "gen3_x59s_students_v1",
+ "students": {
+  "s_h_5901": {
+   "anchors_bare_load_bit_equal": true,
+   "arm": "human",
+   "commit": "8eda89a0fa154d4d392b6d234f26d07ebeeffd17",
+   "device_info": {
+    "cuda_device": "NVIDIA GeForce RTX 3080 Ti",
+    "device": "cuda",
+    "torch": "2.8.0+cu126"
+   },
+   "epochs": 3,
+   "final_sha256": "34f18cccc7f782e42110d9268bf0e0540dd0d56b8618e5c1214cd0987eaf1a14",
+   "init_sha256": "a8df95673c2951bc7c7c604011428192074066450c18c753a4136b318144b174",
+   "labels_manifest_sha256": null,
+   "learned_guard": {
+    "final_val_nll": 1.1808360243959122,
+    "margin": 0.1,
+    "pass": true,
+    "uniform_val_nll": 1.8468139640028765
+   },
+   "recipe": {
+    "batch": 512,
+    "clip": 0.5,
+    "dtype": "fp32",
+    "loss": "logsumexp(legal) - logsumexp(target set)",
+    "lr": "warm-up 1000 to 0.0003, cosine to 3e-05",
+    "optimizer": "AdamW wd 1e-5 eps 1e-5"
+   },
+   "reload_logits_bit_equal": true,
+   "rows_manifest_sha256": "2a413c85e2109553b4f930d85f369625a5daf77a7e1103afeb01e962ec0332b8",
+   "schema": "gen3_x59s_student_v1",
+   "seed": 5901,
+   "steps": 7041,
+   "train_s": 3777.647554785479,
+   "val_hist": [
+    [
+     0,
+     1.8468139938583599
+    ],
+    [
+     587,
+     1.5936269730692276
+    ],
+    [
+     1174,
+     1.39705491710231
+    ],
+    [
+     1760,
+     1.318310918567484
+    ],
+    [
+     2347,
+     1.289641548620578
+    ],
+    [
+     2934,
+     1.2492730276461805
+    ],
+    [
+     3520,
+     1.230424143175892
+    ],
+    [
+     4107,
+     1.2159459553539371
+    ],
+    [
+     4694,
+     1.202305341322312
+    ],
+    [
+     5281,
+     1.1933277656230528
+    ],
+    [
+     5868,
+     1.1943262123316924
+    ],
+    [
+     6454,
+     1.184751636359129
+    ],
+    [
+     7041,
+     1.1808360243959122
+    ]
+   ],
+   "val_rose_last_epoch": false,
+   "yardsticks": {
+    "human_val_human_labels": 1.1808360165043361,
+    "selfplay_val_pstar_labels": 1.5170499313076575
+   },
+   "zip": "/home/goodlad/gen3ai_archive/x59s/read/students/s_h_5901/model/student_human_5901.zip",
+   "zip_path": "/home/goodlad/gen3ai_archive/x59s/read/students/s_h_5901/model/student_human_5901.zip",
+   "zip_sha256": "c83b4753efb46b976ff31c1a30dca2e0ab8cb6a8e8716d6677312670470cc60d"
+  },
+  "s_h_5902": {
+   "anchors_bare_load_bit_equal": true,
+   "arm": "human",
+   "commit": "b64160439016a3ac95445c9db601d36f0bcdb01b",
+   "device_info": {
+    "cuda_device": "NVIDIA GeForce RTX 3080 Ti",
+    "device": "cuda",
+    "torch": "2.8.0+cu126"
+   },
+   "epochs": 3,
+   "final_sha256": "4fbd25ff09f9bd1b7651e41613b308c9c6dc2a4cb513ea7c9e9c6ce0c0eb3c44",
+   "init_sha256": "a89d3683cc906d29dfd12b49b37d5b0ec26731da22ba436f9b88de8f920bd03f",
+   "labels_manifest_sha256": null,
+   "learned_guard": {
+    "final_val_nll": 1.1818566616480586,
+    "margin": 0.1,
+    "pass": true,
+    "uniform_val_nll": 1.8468139640028765
+   },
+   "recipe": {
+    "batch": 512,
+    "clip": 0.5,
+    "dtype": "fp32",
+    "loss": "logsumexp(legal) - logsumexp(target set)",
+    "lr": "warm-up 1000 to 0.0003, cosine to 3e-05",
+    "optimizer": "AdamW wd 1e-5 eps 1e-5"
+   },
+   "reload_logits_bit_equal": true,
+   "rows_manifest_sha256": "2a413c85e2109553b4f930d85f369625a5daf77a7e1103afeb01e962ec0332b8",
+   "schema": "gen3_x59s_student_v1",
+   "seed": 5902,
+   "steps": 7041,
+   "train_s": 3752.57043207041,
+   "val_hist": [
+    [
+     0,
+     1.8468139938583599
+    ],
+    [
+     587,
+     1.581211677888471
+    ],
+    [
+     1174,
+     1.3769535361298342
+    ],
+    [
+     1760,
+     1.3069243665651054
+    ],
+    [
+     2347,
+     1.2795964272497466
+    ],
+    [
+     2934,
+     1.2619818695250316
+    ],
+    [
+     3520,
+     1.2293682422697216
+    ],
+    [
+     4107,
+     1.2152747175149987
+    ],
+    [
+     4694,
+     1.2119655681469061
+    ],
+    [
+     5281,
+     1.1978771637497572
+    ],
+    [
+     5868,
+     1.1927777241031978
+    ],
+    [
+     6454,
+     1.1875269289617814
+    ],
+    [
+     7041,
+     1.1818566616480586
+    ]
+   ],
+   "val_rose_last_epoch": false,
+   "yardsticks": {
+    "human_val_human_labels": 1.181856667877306,
+    "selfplay_val_pstar_labels": 1.5002951724441058
+   },
+   "zip": "/home/goodlad/gen3ai_archive/x59s/read/students/s_h_5902/model/student_human_5902.zip",
+   "zip_path": "/home/goodlad/gen3ai_archive/x59s/read/students/s_h_5902/model/student_human_5902.zip",
+   "zip_sha256": "3a683547089e1c4cd04dc9915af9e99ca7a3f26747df72210061068c7882610c"
+  },
+  "s_h_5903": {
+   "anchors_bare_load_bit_equal": true,
+   "arm": "human",
+   "commit": "b64160439016a3ac95445c9db601d36f0bcdb01b",
+   "device_info": {
+    "cuda_device": "NVIDIA GeForce RTX 3080 Ti",
+    "device": "cuda",
+    "torch": "2.8.0+cu126"
+   },
+   "epochs": 3,
+   "final_sha256": "025660a8365ea8cc3c3b19c90e472f9a1f9fb98626c22e018a2ce06f57368ca0",
+   "init_sha256": "cf8b4d569ac290d11705b0619c473ba5e2bad7987e5614628339f6f7a4f0a961",
+   "labels_manifest_sha256": null,
+   "learned_guard": {
+    "final_val_nll": 1.1826256650902127,
+    "margin": 0.1,
+    "pass": true,
+    "uniform_val_nll": 1.8468139640028765
+   },
+   "recipe": {
+    "batch": 512,
+    "clip": 0.5,
+    "dtype": "fp32",
+    "loss": "logsumexp(legal) - logsumexp(target set)",
+    "lr": "warm-up 1000 to 0.0003, cosine to 3e-05",
+    "optimizer": "AdamW wd 1e-5 eps 1e-5"
+   },
+   "reload_logits_bit_equal": true,
+   "rows_manifest_sha256": "2a413c85e2109553b4f930d85f369625a5daf77a7e1103afeb01e962ec0332b8",
+   "schema": "gen3_x59s_student_v1",
+   "seed": 5903,
+   "steps": 7041,
+   "train_s": 3757.661469779443,
+   "val_hist": [
+    [
+     0,
+     1.8468139938583599
+    ],
+    [
+     587,
+     1.5870632414285986
+    ],
+    [
+     1174,
+     1.3631521093107486
+    ],
+    [
+     1760,
+     1.309574655226769
+    ],
+    [
+     2347,
+     1.269519470875994
+    ],
+    [
+     2934,
+     1.240830428297883
+    ],
+    [
+     3520,
+     1.2303410514929058
+    ],
+    [
+     4107,
+     1.2025000668769137
+    ],
+    [
+     4694,
+     1.2077594399928087
+    ],
+    [
+     5281,
+     1.1939533463297556
+    ],
+    [
+     5868,
+     1.185155089094003
+    ],
+    [
+     6454,
+     1.1825036450397322
+    ],
+    [
+     7041,
+     1.1826256650902127
+    ]
+   ],
+   "val_rose_last_epoch": false,
+   "yardsticks": {
+    "human_val_human_labels": 1.182625674376032,
+    "selfplay_val_pstar_labels": 1.496323666534446
+   },
+   "zip": "/home/goodlad/gen3ai_archive/x59s/read/students/s_h_5903/model/student_human_5903.zip",
+   "zip_path": "/home/goodlad/gen3ai_archive/x59s/read/students/s_h_5903/model/student_human_5903.zip",
+   "zip_sha256": "02de05dc064e42645274f0fa3e643fb44dfe5594e795f1d675e72425baaf1969"
+  },
+  "s_h_5904": {
+   "anchors_bare_load_bit_equal": true,
+   "arm": "human",
+   "commit": "b64160439016a3ac95445c9db601d36f0bcdb01b",
+   "device_info": {
+    "cuda_device": "NVIDIA GeForce RTX 3080 Ti",
+    "device": "cuda",
+    "torch": "2.8.0+cu126"
+   },
+   "epochs": 3,
+   "final_sha256": "2982588b54614919a799ddd5c2a68c28df176a936402120db982de4add3c6ee2",
+   "init_sha256": "33804d38136fd49b09191af2a16538003f0b88d104b33cb5204cc2fca145295a",
+   "labels_manifest_sha256": null,
+   "learned_guard": {
+    "final_val_nll": 1.1724424523748895,
+    "margin": 0.1,
+    "pass": true,
+    "uniform_val_nll": 1.8468139640028765
+   },
+   "recipe": {
+    "batch": 512,
+    "clip": 0.5,
+    "dtype": "fp32",
+    "loss": "logsumexp(legal) - logsumexp(target set)",
+    "lr": "warm-up 1000 to 0.0003, cosine to 3e-05",
+    "optimizer": "AdamW wd 1e-5 eps 1e-5"
+   },
+   "reload_logits_bit_equal": true,
+   "rows_manifest_sha256": "2a413c85e2109553b4f930d85f369625a5daf77a7e1103afeb01e962ec0332b8",
+   "schema": "gen3_x59s_student_v1",
+   "seed": 5904,
+   "steps": 7041,
+   "train_s": 3706.674853294855,
+   "val_hist": [
+    [
+     0,
+     1.8468139938583599
+    ],
+    [
+     587,
+     1.5403230421876943
+    ],
+    [
+     1174,
+     1.3885981055602448
+    ],
+    [
+     1760,
+     1.3007392842118783
+    ],
+    [
+     2347,
+     1.272261420495553
+    ],
+    [
+     2934,
+     1.2523737667574921
+    ],
+    [
+     3520,
+     1.2185367597949703
+    ],
+    [
+     4107,
+     1.2060113809105864
+    ],
+    [
+     4694,
+     1.1975878120640193
+    ],
+    [
+     5281,
+     1.1917233100114115
+    ],
+    [
+     5868,
+     1.1824080483233501
+    ],
+    [
+     6454,
+     1.1778724449427591
+    ],
+    [
+     7041,
+     1.1724424523748895
+    ]
+   ],
+   "val_rose_last_epoch": false,
+   "yardsticks": {
+    "human_val_human_labels": 1.1724424583108874,
+    "selfplay_val_pstar_labels": 1.5015679793753758
+   },
+   "zip": "/home/goodlad/gen3ai_archive/x59s/read/students/s_h_5904/model/student_human_5904.zip",
+   "zip_path": "/home/goodlad/gen3ai_archive/x59s/read/students/s_h_5904/model/student_human_5904.zip",
+   "zip_sha256": "53030abaada63ed9d3717c4a9468839c57c7adc5768195519dffcaee422639da"
+  },
+  "s_h_5905": {
+   "anchors_bare_load_bit_equal": true,
+   "arm": "human",
+   "commit": "03b7fed15a8aed5117961f622eede32b28775f8a",
+   "device_info": {
+    "cuda_device": "NVIDIA GeForce RTX 3080 Ti",
+    "device": "cuda",
+    "torch": "2.8.0+cu126"
+   },
+   "epochs": 3,
+   "final_sha256": "18f2b31d09c9d6f073e0e923be6afda556b994287dca3def78769b9939e8b1b6",
+   "init_sha256": "a18e73af160e41cef8afb1ee6770422575b2ddb63882b17843e627e2ba54f6cb",
+   "labels_manifest_sha256": null,
+   "learned_guard": {
+    "final_val_nll": 1.190718944941898,
+    "margin": 0.1,
+    "pass": true,
+    "uniform_val_nll": 1.8468139640028765
+   },
+   "recipe": {
+    "batch": 512,
+    "clip": 0.5,
+    "dtype": "fp32",
+    "loss": "logsumexp(legal) - logsumexp(target set)",
+    "lr": "warm-up 1000 to 0.0003, cosine to 3e-05",
+    "optimizer": "AdamW wd 1e-5 eps 1e-5"
+   },
+   "reload_logits_bit_equal": true,
+   "rows_manifest_sha256": "2a413c85e2109553b4f930d85f369625a5daf77a7e1103afeb01e962ec0332b8",
+   "schema": "gen3_x59s_student_v1",
+   "seed": 5905,
+   "steps": 7041,
+   "train_s": 3732.5825942258816,
+   "val_hist": [
+    [
+     0,
+     1.8468139938583599
+    ],
+    [
+     587,
+     1.5857302067390757
+    ],
+    [
+     1174,
+     1.3762917348476194
+    ],
+    [
+     1760,
+     1.3001538024180797
+    ],
+    [
+     2347,
+     1.2988889046679084
+    ],
+    [
+     2934,
+     1.261821689322858
+    ],
+    [
+     3520,
+     1.2332262521776096
+    ],
+    [
+     4107,
+     1.2227291575851742
+    ],
+    [
+     4694,
+     1.2055266387865282
+    ],
+    [
+     5281,
+     1.205396534801536
+    ],
+    [
+     5868,
+     1.1980396778140379
+    ],
+    [
+     6454,
+     1.1918377457281257
+    ],
+    [
+     7041,
+     1.190718944941898
+    ]
+   ],
+   "val_rose_last_epoch": false,
+   "yardsticks": {
+    "human_val_human_labels": 1.1907189688169426,
+    "selfplay_val_pstar_labels": 1.516833439526019
+   },
+   "zip": "/home/goodlad/gen3ai_archive/x59s/read/students/s_h_5905/model/student_human_5905.zip",
+   "zip_path": "/home/goodlad/gen3ai_archive/x59s/read/students/s_h_5905/model/student_human_5905.zip",
+   "zip_sha256": "6afe5657caccdaf2d383da1b4dc6735d4fa453b0982d41ad47c1768f58546352"
+  },
+  "s_p0_5901": {
+   "anchors_bare_load_bit_equal": true,
+   "arm": "pstar0",
+   "commit": "0e1553bd89b8519db687828fd5f8ea4c91f1f772",
+   "device_info": {
+    "cuda_device": "NVIDIA GeForce RTX 3080 Ti",
+    "device": "cuda",
+    "torch": "2.8.0+cu126"
+   },
+   "epochs": 3,
+   "final_sha256": "f8e5f02766189c6f95d8c9a415f1eadf5063bff724fda805d4e1bd3b6d296803",
+   "init_sha256": "a8df95673c2951bc7c7c604011428192074066450c18c753a4136b318144b174",
+   "labels_manifest_sha256": "8f511ca5f2912a366e2e2733699cef3297e47bf259cffd80577f6464550b9d66",
+   "learned_guard": {
+    "final_val_nll": 1.2533888385297034,
+    "margin": 0.1,
+    "pass": true,
+    "uniform_val_nll": 1.8468139640028765
+   },
+   "recipe": {
+    "batch": 512,
+    "clip": 0.5,
+    "dtype": "fp32",
+    "loss": "logsumexp(legal) - logsumexp(target set)",
+    "lr": "warm-up 1000 to 0.0003, cosine to 3e-05",
+    "optimizer": "AdamW wd 1e-5 eps 1e-5"
+   },
+   "reload_logits_bit_equal": true,
+   "rows_manifest_sha256": "2a413c85e2109553b4f930d85f369625a5daf77a7e1103afeb01e962ec0332b8",
+   "schema": "gen3_x59s_student_v1",
+   "seed": 5901,
+   "steps": 7041,
+   "train_s": 3731.5043404169846,
+   "val_hist": [
+    [
+     0,
+     1.8468139938583599
+    ],
+    [
+     587,
+     1.620250211457571
+    ],
+    [
+     1174,
+     1.4653543623243028
+    ],
+    [
+     1760,
+     1.3811465358603776
+    ],
+    [
+     2347,
+     1.3484340257882381
+    ],
+    [
+     2934,
+     1.3324966527487476
+    ],
+    [
+     3520,
+     1.3059132405112752
+    ],
+    [
+     4107,
+     1.288874043381577
+    ],
+    [
+     4694,
+     1.2780161106820955
+    ],
+    [
+     5281,
+     1.269543210496835
+    ],
+    [
+     5868,
+     1.262106992333974
+    ],
+    [
+     6454,
+     1.2550477610752504
+    ],
+    [
+     7041,
+     1.2533888385297034
+    ]
+   ],
+   "val_rose_last_epoch": false,
+   "yardsticks": {
+    "human_val_human_labels": 1.390197900296929,
+    "selfplay_val_pstar_labels": 1.3373526510845575
+   },
+   "zip": "/home/goodlad/gen3ai_archive/x59s/read/students/s_p0_5901/model/student_pstar0_5901.zip",
+   "zip_path": "/home/goodlad/gen3ai_archive/x59s/read/students/s_p0_5901/model/student_pstar0_5901.zip",
+   "zip_sha256": "49893b3ea6ccdbcac4ca920c49c6651ccea4fc6bf45c3339b3042ec409a49238"
+  },
+  "s_p0_5902": {
+   "anchors_bare_load_bit_equal": true,
+   "arm": "pstar0",
+   "commit": "0e1553bd89b8519db687828fd5f8ea4c91f1f772",
+   "device_info": {
+    "cuda_device": "NVIDIA GeForce RTX 3080 Ti",
+    "device": "cuda",
+    "torch": "2.8.0+cu126"
+   },
+   "epochs": 3,
+   "final_sha256": "ebdc41085e630005fb6c0d29366dbd8a289f82829a40c0a6cf7a0845cad8367f",
+   "init_sha256": "a89d3683cc906d29dfd12b49b37d5b0ec26731da22ba436f9b88de8f920bd03f",
+   "labels_manifest_sha256": "8f511ca5f2912a366e2e2733699cef3297e47bf259cffd80577f6464550b9d66",
+   "learned_guard": {
+    "final_val_nll": 1.245430130751516,
+    "margin": 0.1,
+    "pass": true,
+    "uniform_val_nll": 1.8468139640028765
+   },
+   "recipe": {
+    "batch": 512,
+    "clip": 0.5,
+    "dtype": "fp32",
+    "loss": "logsumexp(legal) - logsumexp(target set)",
+    "lr": "warm-up 1000 to 0.0003, cosine to 3e-05",
+    "optimizer": "AdamW wd 1e-5 eps 1e-5"
+   },
+   "reload_logits_bit_equal": true,
+   "rows_manifest_sha256": "2a413c85e2109553b4f930d85f369625a5daf77a7e1103afeb01e962ec0332b8",
+   "schema": "gen3_x59s_student_v1",
+   "seed": 5902,
+   "steps": 7041,
+   "train_s": 3788.1150516334455,
+   "val_hist": [
+    [
+     0,
+     1.8468139938583599
+    ],
+    [
+     587,
+     1.6238963191296334
+    ],
+    [
+     1174,
+     1.4311773172879183
+    ],
+    [
+     1760,
+     1.3705197265513696
+    ],
+    [
+     2347,
+     1.3402244450505514
+    ],
+    [
+     2934,
+     1.3094395231243787
+    ],
+    [
+     3520,
+     1.2972818238290955
+    ],
+    [
+     4107,
+     1.2780684510516496
+    ],
+    [
+     4694,
+     1.2682848188581635
+    ],
+    [
+     5281,
+     1.2555085344385448
+    ],
+    [
+     5868,
+     1.2520387479417532
+    ],
+    [
+     6454,
+     1.2461697742496924
+    ],
+    [
+     7041,
+     1.245430130751516
+    ]
+   ],
+   "val_rose_last_epoch": false,
+   "yardsticks": {
+    "human_val_human_labels": 1.3991186420539485,
+    "selfplay_val_pstar_labels": 1.3203821452714477
+   },
+   "zip": "/home/goodlad/gen3ai_archive/x59s/read/students/s_p0_5902/model/student_pstar0_5902.zip",
+   "zip_path": "/home/goodlad/gen3ai_archive/x59s/read/students/s_p0_5902/model/student_pstar0_5902.zip",
+   "zip_sha256": "9914be91cf582938221f7bda05d7d44036f7cda29ef967bc3f6fe9ff5964ff0a"
+  },
+  "s_p0_5903": {
+   "anchors_bare_load_bit_equal": true,
+   "arm": "pstar0",
+   "commit": "0e1553bd89b8519db687828fd5f8ea4c91f1f772",
+   "device_info": {
+    "cuda_device": "NVIDIA GeForce RTX 3080 Ti",
+    "device": "cuda",
+    "torch": "2.8.0+cu126"
+   },
+   "epochs": 3,
+   "final_sha256": "5ce1abd95ed0793b7f73859e889b3b9afb34c7d943365965a1a8231e21804b6b",
+   "init_sha256": "cf8b4d569ac290d11705b0619c473ba5e2bad7987e5614628339f6f7a4f0a961",
+   "labels_manifest_sha256": "8f511ca5f2912a366e2e2733699cef3297e47bf259cffd80577f6464550b9d66",
+   "learned_guard": {
+    "final_val_nll": 1.2465999471462184,
+    "margin": 0.1,
+    "pass": true,
+    "uniform_val_nll": 1.8468139640028765
+   },
+   "recipe": {
+    "batch": 512,
+    "clip": 0.5,
+    "dtype": "fp32",
+    "loss": "logsumexp(legal) - logsumexp(target set)",
+    "lr": "warm-up 1000 to 0.0003, cosine to 3e-05",
+    "optimizer": "AdamW wd 1e-5 eps 1e-5"
+   },
+   "reload_logits_bit_equal": true,
+   "rows_manifest_sha256": "2a413c85e2109553b4f930d85f369625a5daf77a7e1103afeb01e962ec0332b8",
+   "schema": "gen3_x59s_student_v1",
+   "seed": 5903,
+   "steps": 7041,
+   "train_s": 3783.8714867020026,
+   "val_hist": [
+    [
+     0,
+     1.8468139938583599
+    ],
+    [
+     587,
+     1.6438948114817675
+    ],
+    [
+     1174,
+     1.4418451739011713
+    ],
+    [
+     1760,
+     1.3633105212031755
+    ],
+    [
+     2347,
+     1.3395384528378693
+    ],
+    [
+     2934,
+     1.3123083581999462
+    ],
+    [
+     3520,
+     1.294976382860276
+    ],
+    [
+     4107,
+     1.2794448037785286
+    ],
+    [
+     4694,
+     1.267130782454633
+    ],
+    [
+     5281,
+     1.2581958265049775
+    ],
+    [
+     5868,
+     1.2545997694367916
+    ],
+    [
+     6454,
+     1.2487548246301776
+    ],
+    [
+     7041,
+     1.2465999471462184
+    ]
+   ],
+   "val_rose_last_epoch": false,
+   "yardsticks": {
+    "human_val_human_labels": 1.4113082577451495,
+    "selfplay_val_pstar_labels": 1.31905418665384
+   },
+   "zip": "/home/goodlad/gen3ai_archive/x59s/read/students/s_p0_5903/model/student_pstar0_5903.zip",
+   "zip_path": "/home/goodlad/gen3ai_archive/x59s/read/students/s_p0_5903/model/student_pstar0_5903.zip",
+   "zip_sha256": "be6826e1000a728140a841239de2bbb74f3c15a8bb315f7f48f7d0fa75c7c264"
+  },
+  "s_p0_5904": {
+   "anchors_bare_load_bit_equal": true,
+   "arm": "pstar0",
+   "commit": "0e1553bd89b8519db687828fd5f8ea4c91f1f772",
+   "device_info": {
+    "cuda_device": "NVIDIA GeForce RTX 3080 Ti",
+    "device": "cuda",
+    "torch": "2.8.0+cu126"
+   },
+   "epochs": 3,
+   "final_sha256": "6fc49fc10c59ab6e9b742f813aa70a215ff0a0555b5d4975ae4c616539003551",
+   "init_sha256": "33804d38136fd49b09191af2a16538003f0b88d104b33cb5204cc2fca145295a",
+   "labels_manifest_sha256": "8f511ca5f2912a366e2e2733699cef3297e47bf259cffd80577f6464550b9d66",
+   "learned_guard": {
+    "final_val_nll": 1.2448768045164873,
+    "margin": 0.1,
+    "pass": true,
+    "uniform_val_nll": 1.8468139640028765
+   },
+   "recipe": {
+    "batch": 512,
+    "clip": 0.5,
+    "dtype": "fp32",
+    "loss": "logsumexp(legal) - logsumexp(target set)",
+    "lr": "warm-up 1000 to 0.0003, cosine to 3e-05",
+    "optimizer": "AdamW wd 1e-5 eps 1e-5"
+   },
+   "reload_logits_bit_equal": true,
+   "rows_manifest_sha256": "2a413c85e2109553b4f930d85f369625a5daf77a7e1103afeb01e962ec0332b8",
+   "schema": "gen3_x59s_student_v1",
+   "seed": 5904,
+   "steps": 7041,
+   "train_s": 2639.7220974564552,
+   "val_hist": [
+    [
+     0,
+     1.8468139938583599
+    ],
+    [
+     587,
+     1.608329081505242
+    ],
+    [
+     1174,
+     1.4356118890099574
+    ],
+    [
+     1760,
+     1.3808870031687726
+    ],
+    [
+     2347,
+     1.350219386941696
+    ],
+    [
+     2934,
+     1.3131005018837392
+    ],
+    [
+     3520,
+     1.302565794175395
+    ],
+    [
+     4107,
+     1.2849208130004157
+    ],
+    [
+     4694,
+     1.266366343949002
+    ],
+    [
+     5281,
+     1.2572482125006452
+    ],
+    [
+     5868,
+     1.2530086194120205
+    ],
+    [
+     6454,
+     1.2480800603224895
+    ],
+    [
+     7041,
+     1.2448768045164873
+    ]
+   ],
+   "val_rose_last_epoch": false,
+   "yardsticks": {
+    "human_val_human_labels": 1.4117945741253262,
+    "selfplay_val_pstar_labels": 1.3238184316402202
+   },
+   "zip": "/home/goodlad/gen3ai_archive/x59s/read/students/s_p0_5904/model/student_pstar0_5904.zip",
+   "zip_path": "/home/goodlad/gen3ai_archive/x59s/read/students/s_p0_5904/model/student_pstar0_5904.zip",
+   "zip_sha256": "96f6d1e336b15e337183109341656962d3f8328da8f6066d04fc2ebee8bd2819"
+  },
+  "s_p0_5905": {
+   "anchors_bare_load_bit_equal": true,
+   "arm": "pstar0",
+   "commit": "0e1553bd89b8519db687828fd5f8ea4c91f1f772",
+   "device_info": {
+    "cuda_device": "NVIDIA GeForce RTX 3080 Ti",
+    "device": "cuda",
+    "torch": "2.8.0+cu126"
+   },
+   "epochs": 3,
+   "final_sha256": "6a0ac2e61df7d21640f5f6a7a14f369d17b1f34e4a5e028c9fd07a49c07c3fe5",
+   "init_sha256": "a18e73af160e41cef8afb1ee6770422575b2ddb63882b17843e627e2ba54f6cb",
+   "labels_manifest_sha256": "8f511ca5f2912a366e2e2733699cef3297e47bf259cffd80577f6464550b9d66",
+   "learned_guard": {
+    "final_val_nll": 1.2504863737755465,
+    "margin": 0.1,
+    "pass": true,
+    "uniform_val_nll": 1.8468139640028765
+   },
+   "recipe": {
+    "batch": 512,
+    "clip": 0.5,
+    "dtype": "fp32",
+    "loss": "logsumexp(legal) - logsumexp(target set)",
+    "lr": "warm-up 1000 to 0.0003, cosine to 3e-05",
+    "optimizer": "AdamW wd 1e-5 eps 1e-5"
+   },
+   "reload_logits_bit_equal": true,
+   "rows_manifest_sha256": "2a413c85e2109553b4f930d85f369625a5daf77a7e1103afeb01e962ec0332b8",
+   "schema": "gen3_x59s_student_v1",
+   "seed": 5905,
+   "steps": 7041,
+   "train_s": 2526.7411263235845,
+   "val_hist": [
+    [
+     0,
+     1.8468139938583599
+    ],
+    [
+     587,
+     1.614069793254751
+    ],
+    [
+     1174,
+     1.4731146202035499
+    ],
+    [
+     1760,
+     1.388850463750344
+    ],
+    [
+     2347,
+     1.341799287289409
+    ],
+    [
+     2934,
+     1.329421309378036
+    ],
+    [
+     3520,
+     1.3029302202303157
+    ],
+    [
+     4107,
+     1.2878701434764213
+    ],
+    [
+     4694,
+     1.27778526510841
+    ],
+    [
+     5281,
+     1.267130695601453
+    ],
+    [
+     5868,
+     1.2595304602085886
+    ],
+    [
+     6454,
+     1.2558312496137265
+    ],
+    [
+     7041,
+     1.2504863737755465
+    ]
+   ],
+   "val_rose_last_epoch": false,
+   "yardsticks": {
+    "human_val_human_labels": 1.4019152438696603,
+    "selfplay_val_pstar_labels": 1.3319688347584222
+   },
+   "zip": "/home/goodlad/gen3ai_archive/x59s/read/students/s_p0_5905/model/student_pstar0_5905.zip",
+   "zip_path": "/home/goodlad/gen3ai_archive/x59s/read/students/s_p0_5905/model/student_pstar0_5905.zip",
+   "zip_sha256": "4d3af649c2943f375d752f493342d638fee0616284a9c4cbb17d8b3bb1172455"
+  },
+  "s_p_5901": {
+   "anchors_bare_load_bit_equal": true,
+   "arm": "pstar",
+   "commit": "03b7fed15a8aed5117961f622eede32b28775f8a",
+   "device_info": {
+    "cuda_device": "NVIDIA GeForce RTX 3080 Ti",
+    "device": "cuda",
+    "torch": "2.8.0+cu126"
+   },
+   "epochs": 3,
+   "final_sha256": "42c8ae413c0d147150744f4b614c90fb240c18a9bb78e60c346de301498df13a",
+   "init_sha256": "a8df95673c2951bc7c7c604011428192074066450c18c753a4136b318144b174",
+   "labels_manifest_sha256": "2512c8a72281920fa4a38dd94570186b5220b113e19c579848de822133aeb012",
+   "learned_guard": {
+    "final_val_nll": 1.2991335782341544,
+    "margin": 0.1,
+    "pass": true,
+    "uniform_val_nll": 1.8468139640028765
+   },
+   "recipe": {
+    "batch": 512,
+    "clip": 0.5,
+    "dtype": "fp32",
+    "loss": "logsumexp(legal) - logsumexp(target set)",
+    "lr": "warm-up 1000 to 0.0003, cosine to 3e-05",
+    "optimizer": "AdamW wd 1e-5 eps 1e-5"
+   },
+   "reload_logits_bit_equal": true,
+   "rows_manifest_sha256": "2a413c85e2109553b4f930d85f369625a5daf77a7e1103afeb01e962ec0332b8",
+   "schema": "gen3_x59s_student_v1",
+   "seed": 5901,
+   "steps": 7041,
+   "train_s": 3798.0682648569345,
+   "val_hist": [
+    [
+     0,
+     1.8468139938583599
+    ],
+    [
+     587,
+     1.6893878468347703
+    ],
+    [
+     1174,
+     1.4878189340507868
+    ],
+    [
+     1760,
+     1.4239387621892812
+    ],
+    [
+     2347,
+     1.3967002544944749
+    ],
+    [
+     2934,
+     1.3676945257868665
+    ],
+    [
+     3520,
+     1.3545154057552269
+    ],
+    [
+     4107,
+     1.3378391192758574
+    ],
+    [
+     4694,
+     1.3224410440243577
+    ],
+    [
+     5281,
+     1.3173879526213954
+    ],
+    [
+     5868,
+     1.3064255269432172
+    ],
+    [
+     6454,
+     1.301161351669759
+    ],
+    [
+     7041,
+     1.2991335782341544
+    ]
+   ],
+   "val_rose_last_epoch": false,
+   "yardsticks": {
+    "human_val_human_labels": 1.358853201422349,
+    "selfplay_val_pstar_labels": 1.3670857710358446
+   },
+   "zip": "/home/goodlad/gen3ai_archive/x59s/read/students/s_p_5901/model/student_pstar_5901.zip",
+   "zip_path": "/home/goodlad/gen3ai_archive/x59s/read/students/s_p_5901/model/student_pstar_5901.zip",
+   "zip_sha256": "9d9e88aac2e52cac52c71cdcece183e053f6fe854eb51d8f1bab62d0de440762"
+  },
+  "s_p_5902": {
+   "anchors_bare_load_bit_equal": true,
+   "arm": "pstar",
+   "commit": "03b7fed15a8aed5117961f622eede32b28775f8a",
+   "device_info": {
+    "cuda_device": "NVIDIA GeForce RTX 3080 Ti",
+    "device": "cuda",
+    "torch": "2.8.0+cu126"
+   },
+   "epochs": 3,
+   "final_sha256": "abdef3dbc0b569df7bdec6a66260e532af1e652537e1d3e0d92ce0b4681a364c",
+   "init_sha256": "a89d3683cc906d29dfd12b49b37d5b0ec26731da22ba436f9b88de8f920bd03f",
+   "labels_manifest_sha256": "2512c8a72281920fa4a38dd94570186b5220b113e19c579848de822133aeb012",
+   "learned_guard": {
+    "final_val_nll": 1.2926325778594743,
+    "margin": 0.1,
+    "pass": true,
+    "uniform_val_nll": 1.8468139640028765
+   },
+   "recipe": {
+    "batch": 512,
+    "clip": 0.5,
+    "dtype": "fp32",
+    "loss": "logsumexp(legal) - logsumexp(target set)",
+    "lr": "warm-up 1000 to 0.0003, cosine to 3e-05",
+    "optimizer": "AdamW wd 1e-5 eps 1e-5"
+   },
+   "reload_logits_bit_equal": true,
+   "rows_manifest_sha256": "2a413c85e2109553b4f930d85f369625a5daf77a7e1103afeb01e962ec0332b8",
+   "schema": "gen3_x59s_student_v1",
+   "seed": 5902,
+   "steps": 7041,
+   "train_s": 3789.926468989579,
+   "val_hist": [
+    [
+     0,
+     1.8468139938583599
+    ],
+    [
+     587,
+     1.6591430195273882
+    ],
+    [
+     1174,
+     1.4662926539314294
+    ],
+    [
+     1760,
+     1.4218446607992985
+    ],
+    [
+     2347,
+     1.3851502146706416
+    ],
+    [
+     2934,
+     1.368258743470414
+    ],
+    [
+     3520,
+     1.3413660949920272
+    ],
+    [
+     4107,
+     1.3259923026775926
+    ],
+    [
+     4694,
+     1.3189650516906717
+    ],
+    [
+     5281,
+     1.3047885705650635
+    ],
+    [
+     5868,
+     1.2979868340572325
+    ],
+    [
+     6454,
+     1.2909599137087608
+    ],
+    [
+     7041,
+     1.2926325778594743
+    ]
+   ],
+   "val_rose_last_epoch": false,
+   "yardsticks": {
+    "human_val_human_labels": 1.3626174414666183,
+    "selfplay_val_pstar_labels": 1.3555761677077973
+   },
+   "zip": "/home/goodlad/gen3ai_archive/x59s/read/students/s_p_5902/model/student_pstar_5902.zip",
+   "zip_path": "/home/goodlad/gen3ai_archive/x59s/read/students/s_p_5902/model/student_pstar_5902.zip",
+   "zip_sha256": "5cba1a5a49770bab6197aff5104c4d1d161c37e52c392b8e5916e79f3f536d13"
+  },
+  "s_p_5903": {
+   "anchors_bare_load_bit_equal": true,
+   "arm": "pstar",
+   "commit": "03b7fed15a8aed5117961f622eede32b28775f8a",
+   "device_info": {
+    "cuda_device": "NVIDIA GeForce RTX 3080 Ti",
+    "device": "cuda",
+    "torch": "2.8.0+cu126"
+   },
+   "epochs": 3,
+   "final_sha256": "b554ff46fc5c7994a8c6a64eb3fcbb89a890bd0495255a1ad4685f2eedca52f3",
+   "init_sha256": "cf8b4d569ac290d11705b0619c473ba5e2bad7987e5614628339f6f7a4f0a961",
+   "labels_manifest_sha256": "2512c8a72281920fa4a38dd94570186b5220b113e19c579848de822133aeb012",
+   "learned_guard": {
+    "final_val_nll": 1.283070765911323,
+    "margin": 0.1,
+    "pass": true,
+    "uniform_val_nll": 1.8468139640028765
+   },
+   "recipe": {
+    "batch": 512,
+    "clip": 0.5,
+    "dtype": "fp32",
+    "loss": "logsumexp(legal) - logsumexp(target set)",
+    "lr": "warm-up 1000 to 0.0003, cosine to 3e-05",
+    "optimizer": "AdamW wd 1e-5 eps 1e-5"
+   },
+   "reload_logits_bit_equal": true,
+   "rows_manifest_sha256": "2a413c85e2109553b4f930d85f369625a5daf77a7e1103afeb01e962ec0332b8",
+   "schema": "gen3_x59s_student_v1",
+   "seed": 5903,
+   "steps": 7041,
+   "train_s": 3789.05027966178,
+   "val_hist": [
+    [
+     0,
+     1.8468139938583599
+    ],
+    [
+     587,
+     1.6441727154636572
+    ],
+    [
+     1174,
+     1.4732745927108233
+    ],
+    [
+     1760,
+     1.4053442045570879
+    ],
+    [
+     2347,
+     1.3758481901531183
+    ],
+    [
+     2934,
+     1.3486575897792508
+    ],
+    [
+     3520,
+     1.332050785835665
+    ],
+    [
+     4107,
+     1.3175390479085123
+    ],
+    [
+     4694,
+     1.3051086605020483
+    ],
+    [
+     5281,
+     1.3001613544542872
+    ],
+    [
+     5868,
+     1.286627725748382
+    ],
+    [
+     6454,
+     1.2829034462448563
+    ],
+    [
+     7041,
+     1.283070765911323
+    ]
+   ],
+   "val_rose_last_epoch": false,
+   "yardsticks": {
+    "human_val_human_labels": 1.3657576405408869,
+    "selfplay_val_pstar_labels": 1.348462416350676
+   },
+   "zip": "/home/goodlad/gen3ai_archive/x59s/read/students/s_p_5903/model/student_pstar_5903.zip",
+   "zip_path": "/home/goodlad/gen3ai_archive/x59s/read/students/s_p_5903/model/student_pstar_5903.zip",
+   "zip_sha256": "2099cd571f20bdaeb4c32ebb052a88effef673a817bed5899bee3993093e8d1d"
+  },
+  "s_p_5904": {
+   "anchors_bare_load_bit_equal": true,
+   "arm": "pstar",
+   "commit": "03b7fed15a8aed5117961f622eede32b28775f8a",
+   "device_info": {
+    "cuda_device": "NVIDIA GeForce RTX 3080 Ti",
+    "device": "cuda",
+    "torch": "2.8.0+cu126"
+   },
+   "epochs": 3,
+   "final_sha256": "a35a71036a0a73fa9a86cebdfdee2101645b7c48979e76c93477c893ecd3f8ec",
+   "init_sha256": "33804d38136fd49b09191af2a16538003f0b88d104b33cb5204cc2fca145295a",
+   "labels_manifest_sha256": "2512c8a72281920fa4a38dd94570186b5220b113e19c579848de822133aeb012",
+   "learned_guard": {
+    "final_val_nll": 1.2968790799710967,
+    "margin": 0.1,
+    "pass": true,
+    "uniform_val_nll": 1.8468139640028765
+   },
+   "recipe": {
+    "batch": 512,
+    "clip": 0.5,
+    "dtype": "fp32",
+    "loss": "logsumexp(legal) - logsumexp(target set)",
+    "lr": "warm-up 1000 to 0.0003, cosine to 3e-05",
+    "optimizer": "AdamW wd 1e-5 eps 1e-5"
+   },
+   "reload_logits_bit_equal": true,
+   "rows_manifest_sha256": "2a413c85e2109553b4f930d85f369625a5daf77a7e1103afeb01e962ec0332b8",
+   "schema": "gen3_x59s_student_v1",
+   "seed": 5904,
+   "steps": 7041,
+   "train_s": 3771.127439189935,
+   "val_hist": [
+    [
+     0,
+     1.8468139938583599
+    ],
+    [
+     587,
+     1.6422835962558857
+    ],
+    [
+     1174,
+     1.5093357171504542
+    ],
+    [
+     1760,
+     1.4248743203198044
+    ],
+    [
+     2347,
+     1.4146020529386096
+    ],
+    [
+     2934,
+     1.3642265201175516
+    ],
+    [
+     3520,
+     1.3495862847704834
+    ],
+    [
+     4107,
+     1.334252887534764
+    ],
+    [
+     4694,
+     1.323525641626021
+    ],
+    [
+     5281,
+     1.3121064417194994
+    ],
+    [
+     5868,
+     1.3071892909420861
+    ],
+    [
+     6454,
+     1.2987289328144045
+    ],
+    [
+     7041,
+     1.2968790799710967
+    ]
+   ],
+   "val_rose_last_epoch": false,
+   "yardsticks": {
+    "human_val_human_labels": 1.367917536352893,
+    "selfplay_val_pstar_labels": 1.3637445811721671
+   },
+   "zip": "/home/goodlad/gen3ai_archive/x59s/read/students/s_p_5904/model/student_pstar_5904.zip",
+   "zip_path": "/home/goodlad/gen3ai_archive/x59s/read/students/s_p_5904/model/student_pstar_5904.zip",
+   "zip_sha256": "0f7077734ef2f5af9f7298ef17907a61cea36b43d47d3b064ae8f21942899e86"
+  },
+  "s_p_5905": {
+   "anchors_bare_load_bit_equal": true,
+   "arm": "pstar",
+   "commit": "03b7fed15a8aed5117961f622eede32b28775f8a",
+   "device_info": {
+    "cuda_device": "NVIDIA GeForce RTX 3080 Ti",
+    "device": "cuda",
+    "torch": "2.8.0+cu126"
+   },
+   "epochs": 3,
+   "final_sha256": "bc313dfacf7b751c6d1323050c8283b9c8df30350da5e2067a00c12b60074d4a",
+   "init_sha256": "a18e73af160e41cef8afb1ee6770422575b2ddb63882b17843e627e2ba54f6cb",
+   "labels_manifest_sha256": "2512c8a72281920fa4a38dd94570186b5220b113e19c579848de822133aeb012",
+   "learned_guard": {
+    "final_val_nll": 1.2964136519085878,
+    "margin": 0.1,
+    "pass": true,
+    "uniform_val_nll": 1.8468139640028765
+   },
+   "recipe": {
+    "batch": 512,
+    "clip": 0.5,
+    "dtype": "fp32",
+    "loss": "logsumexp(legal) - logsumexp(target set)",
+    "lr": "warm-up 1000 to 0.0003, cosine to 3e-05",
+    "optimizer": "AdamW wd 1e-5 eps 1e-5"
+   },
+   "reload_logits_bit_equal": true,
+   "rows_manifest_sha256": "2a413c85e2109553b4f930d85f369625a5daf77a7e1103afeb01e962ec0332b8",
+   "schema": "gen3_x59s_student_v1",
+   "seed": 5905,
+   "steps": 7041,
+   "train_s": 3788.9078076814767,
+   "val_hist": [
+    [
+     0,
+     1.8468139938583599
+    ],
+    [
+     587,
+     1.651301995114114
+    ],
+    [
+     1174,
+     1.5156897286739481
+    ],
+    [
+     1760,
+     1.4458687759842674
+    ],
+    [
+     2347,
+     1.3944619239637814
+    ],
+    [
+     2934,
+     1.3699812146173784
+    ],
+    [
+     3520,
+     1.3500139670747489
+    ],
+    [
+     4107,
+     1.33296291540771
+    ],
+    [
+     4694,
+     1.3196179318238537
+    ],
+    [
+     5281,
+     1.3139675682681673
+    ],
+    [
+     5868,
+     1.3027184306121435
+    ],
+    [
+     6454,
+     1.299420660156099
+    ],
+    [
+     7041,
+     1.2964136519085878
+    ]
+   ],
+   "val_rose_last_epoch": false,
+   "yardsticks": {
+    "human_val_human_labels": 1.3631221616474753,
+    "selfplay_val_pstar_labels": 1.3664887554948795
+   },
+   "zip": "/home/goodlad/gen3ai_archive/x59s/read/students/s_p_5905/model/student_pstar_5905.zip",
+   "zip_path": "/home/goodlad/gen3ai_archive/x59s/read/students/s_p_5905/model/student_pstar_5905.zip",
+   "zip_sha256": "b1d7eaaa3cfc4f4c8d02e494588ed18256fcf8929e015eece8ec8c31b08a71fc"
+  },
+  "s_s_5901": {
+   "anchors_bare_load_bit_equal": true,
+   "arm": "selfplay",
+   "commit": "03b7fed15a8aed5117961f622eede32b28775f8a",
+   "device_info": {
+    "cuda_device": "NVIDIA GeForce RTX 3080 Ti",
+    "device": "cuda",
+    "torch": "2.8.0+cu126"
+   },
+   "epochs": 3,
+   "final_sha256": "a9b197f2bd0ce7c0b69c15ebf9dc6399b3cb0d4eab0957394f3c06c519147b06",
+   "init_sha256": "a8df95673c2951bc7c7c604011428192074066450c18c753a4136b318144b174",
+   "labels_manifest_sha256": null,
+   "learned_guard": {
+    "final_val_nll": 1.2766846153064675,
+    "margin": 0.1,
+    "pass": true,
+    "uniform_val_nll": 1.8599532770541447
+   },
+   "recipe": {
+    "batch": 512,
+    "clip": 0.5,
+    "dtype": "fp32",
+    "loss": "logsumexp(legal) - logsumexp(target set)",
+    "lr": "warm-up 1000 to 0.0003, cosine to 3e-05",
+    "optimizer": "AdamW wd 1e-5 eps 1e-5"
+   },
+   "reload_logits_bit_equal": true,
+   "rows_manifest_sha256": "3f81f71c5ece664e1983294343d8013e0cb8b8eaaa9e80305067166e41d26ff4",
+   "schema": "gen3_x59s_student_v1",
+   "seed": 5901,
+   "steps": 7041,
+   "train_s": 3792.5520507935435,
+   "val_hist": [
+    [
+     0,
+     1.8599533060373248
+    ],
+    [
+     587,
+     1.6643037071626947
+    ],
+    [
+     1174,
+     1.5022841541663634
+    ],
+    [
+     1760,
+     1.4287765458890935
+    ],
+    [
+     2347,
+     1.3961442876336851
+    ],
+    [
+     2934,
+     1.3615605213991808
+    ],
+    [
+     3520,
+     1.3412882806959978
+    ],
+    [
+     4107,
+     1.3197035781718758
+    ],
+    [
+     4694,
+     1.3014909348562969
+    ],
+    [
+     5281,
+     1.2947269360462095
+    ],
+    [
+     5868,
+     1.2860630528247428
+    ],
+    [
+     6454,
+     1.2792385602232872
+    ],
+    [
+     7041,
+     1.2766846153064675
+    ]
+   ],
+   "val_rose_last_epoch": false,
+   "yardsticks": {
+    "human_val_human_labels": 1.4161690824961368,
+    "selfplay_val_pstar_labels": 1.2766846249599075
+   },
+   "zip": "/home/goodlad/gen3ai_archive/x59s/read/students/s_s_5901/model/student_selfplay_5901.zip",
+   "zip_path": "/home/goodlad/gen3ai_archive/x59s/read/students/s_s_5901/model/student_selfplay_5901.zip",
+   "zip_sha256": "a3fa98114e429855742d528c8a67b0b629f6bee14d27d2429c34e86508b2000b"
+  },
+  "s_s_5902": {
+   "anchors_bare_load_bit_equal": true,
+   "arm": "selfplay",
+   "commit": "0e1553bd89b8519db687828fd5f8ea4c91f1f772",
+   "device_info": {
+    "cuda_device": "NVIDIA GeForce RTX 3080 Ti",
+    "device": "cuda",
+    "torch": "2.8.0+cu126"
+   },
+   "epochs": 3,
+   "final_sha256": "554a9f939c8ad691e18f3e717e56ca1cb6c79d574d801f8409a299ab5cdd4c5d",
+   "init_sha256": "a89d3683cc906d29dfd12b49b37d5b0ec26731da22ba436f9b88de8f920bd03f",
+   "labels_manifest_sha256": null,
+   "learned_guard": {
+    "final_val_nll": 1.276234628289336,
+    "margin": 0.1,
+    "pass": true,
+    "uniform_val_nll": 1.8599532770541447
+   },
+   "recipe": {
+    "batch": 512,
+    "clip": 0.5,
+    "dtype": "fp32",
+    "loss": "logsumexp(legal) - logsumexp(target set)",
+    "lr": "warm-up 1000 to 0.0003, cosine to 3e-05",
+    "optimizer": "AdamW wd 1e-5 eps 1e-5"
+   },
+   "reload_logits_bit_equal": true,
+   "rows_manifest_sha256": "3f81f71c5ece664e1983294343d8013e0cb8b8eaaa9e80305067166e41d26ff4",
+   "schema": "gen3_x59s_student_v1",
+   "seed": 5902,
+   "steps": 7041,
+   "train_s": 3788.4285225195345,
+   "val_hist": [
+    [
+     0,
+     1.8599533060373248
+    ],
+    [
+     587,
+     1.6600581652501278
+    ],
+    [
+     1174,
+     1.4763809973137316
+    ],
+    [
+     1760,
+     1.4173415356411345
+    ],
+    [
+     2347,
+     1.3845253237732424
+    ],
+    [
+     2934,
+     1.3496319491360407
+    ],
+    [
+     3520,
+     1.3303409158181172
+    ],
+    [
+     4107,
+     1.3182803451117484
+    ],
+    [
+     4694,
+     1.3067767929529683
+    ],
+    [
+     5281,
+     1.2915172337452492
+    ],
+    [
+     5868,
+     1.2839927219022353
+    ],
+    [
+     6454,
+     1.2793701628693706
+    ],
+    [
+     7041,
+     1.276234628289336
+    ]
+   ],
+   "val_rose_last_epoch": false,
+   "yardsticks": {
+    "human_val_human_labels": 1.4143862037106236,
+    "selfplay_val_pstar_labels": 1.2762346266682418
+   },
+   "zip": "/home/goodlad/gen3ai_archive/x59s/read/students/s_s_5902/model/student_selfplay_5902.zip",
+   "zip_path": "/home/goodlad/gen3ai_archive/x59s/read/students/s_s_5902/model/student_selfplay_5902.zip",
+   "zip_sha256": "cb8ce1fb21b77da0f795ba6fe83bae9b74174c44d0cea907c8ec2eae2c12bba2"
+  },
+  "s_s_5903": {
+   "anchors_bare_load_bit_equal": true,
+   "arm": "selfplay",
+   "commit": "0e1553bd89b8519db687828fd5f8ea4c91f1f772",
+   "device_info": {
+    "cuda_device": "NVIDIA GeForce RTX 3080 Ti",
+    "device": "cuda",
+    "torch": "2.8.0+cu126"
+   },
+   "epochs": 3,
+   "final_sha256": "759a3dbb386c2d3582f3f6a64bdd1e3ef517c31be93bf77defa6d48178803fb4",
+   "init_sha256": "cf8b4d569ac290d11705b0619c473ba5e2bad7987e5614628339f6f7a4f0a961",
+   "labels_manifest_sha256": null,
+   "learned_guard": {
+    "final_val_nll": 1.2749731152530446,
+    "margin": 0.1,
+    "pass": true,
+    "uniform_val_nll": 1.8599532770541447
+   },
+   "recipe": {
+    "batch": 512,
+    "clip": 0.5,
+    "dtype": "fp32",
+    "loss": "logsumexp(legal) - logsumexp(target set)",
+    "lr": "warm-up 1000 to 0.0003, cosine to 3e-05",
+    "optimizer": "AdamW wd 1e-5 eps 1e-5"
+   },
+   "reload_logits_bit_equal": true,
+   "rows_manifest_sha256": "3f81f71c5ece664e1983294343d8013e0cb8b8eaaa9e80305067166e41d26ff4",
+   "schema": "gen3_x59s_student_v1",
+   "seed": 5903,
+   "steps": 7041,
+   "train_s": 3797.3356978131924,
+   "val_hist": [
+    [
+     0,
+     1.8599533060373248
+    ],
+    [
+     587,
+     1.6495935443769831
+    ],
+    [
+     1174,
+     1.4780833086217149
+    ],
+    [
+     1760,
+     1.4248178636908349
+    ],
+    [
+     2347,
+     1.3944015139003807
+    ],
+    [
+     2934,
+     1.352043275095631
+    ],
+    [
+     3520,
+     1.3391371446214677
+    ],
+    [
+     4107,
+     1.315111847828083
+    ],
+    [
+     4694,
+     1.3037666227178197
+    ],
+    [
+     5281,
+     1.294722935559558
+    ],
+    [
+     5868,
+     1.2828857331119883
+    ],
+    [
+     6454,
+     1.2764110993902877
+    ],
+    [
+     7041,
+     1.2749731152530446
+    ]
+   ],
+   "val_rose_last_epoch": false,
+   "yardsticks": {
+    "human_val_human_labels": 1.4148975642976775,
+    "selfplay_val_pstar_labels": 1.274973124080677
+   },
+   "zip": "/home/goodlad/gen3ai_archive/x59s/read/students/s_s_5903/model/student_selfplay_5903.zip",
+   "zip_path": "/home/goodlad/gen3ai_archive/x59s/read/students/s_s_5903/model/student_selfplay_5903.zip",
+   "zip_sha256": "f4e46b97a6504b98f46b4a3f82784a7926abba5002d3f936dab87e4792d7c8ab"
+  },
+  "s_s_5904": {
+   "anchors_bare_load_bit_equal": true,
+   "arm": "selfplay",
+   "commit": "0e1553bd89b8519db687828fd5f8ea4c91f1f772",
+   "device_info": {
+    "cuda_device": "NVIDIA GeForce RTX 3080 Ti",
+    "device": "cuda",
+    "torch": "2.8.0+cu126"
+   },
+   "epochs": 3,
+   "final_sha256": "b93b7a297bce4d22247c9bcab244d9b6e26aa525e2c19ae34cca229d1c95757f",
+   "init_sha256": "33804d38136fd49b09191af2a16538003f0b88d104b33cb5204cc2fca145295a",
+   "labels_manifest_sha256": null,
+   "learned_guard": {
+    "final_val_nll": 1.2913576623810072,
+    "margin": 0.1,
+    "pass": true,
+    "uniform_val_nll": 1.8599532770541447
+   },
+   "recipe": {
+    "batch": 512,
+    "clip": 0.5,
+    "dtype": "fp32",
+    "loss": "logsumexp(legal) - logsumexp(target set)",
+    "lr": "warm-up 1000 to 0.0003, cosine to 3e-05",
+    "optimizer": "AdamW wd 1e-5 eps 1e-5"
+   },
+   "reload_logits_bit_equal": true,
+   "rows_manifest_sha256": "3f81f71c5ece664e1983294343d8013e0cb8b8eaaa9e80305067166e41d26ff4",
+   "schema": "gen3_x59s_student_v1",
+   "seed": 5904,
+   "steps": 7041,
+   "train_s": 3771.7811016940977,
+   "val_hist": [
+    [
+     0,
+     1.8599533060373248
+    ],
+    [
+     587,
+     1.6293774767045814
+    ],
+    [
+     1174,
+     1.5087446730584904
+    ],
+    [
+     1760,
+     1.4371684327765943
+    ],
+    [
+     2347,
+     1.392747786715268
+    ],
+    [
+     2934,
+     1.367389456344317
+    ],
+    [
+     3520,
+     1.3514533514740448
+    ],
+    [
+     4107,
+     1.3307971056491443
+    ],
+    [
+     4694,
+     1.3179872908513373
+    ],
+    [
+     5281,
+     1.311636571316203
+    ],
+    [
+     5868,
+     1.301307161308231
+    ],
+    [
+     6454,
+     1.2938020019782055
+    ],
+    [
+     7041,
+     1.2913576623810072
+    ]
+   ],
+   "val_rose_last_epoch": false,
+   "yardsticks": {
+    "human_val_human_labels": 1.4147700793869742,
+    "selfplay_val_pstar_labels": 1.291357643252394
+   },
+   "zip": "/home/goodlad/gen3ai_archive/x59s/read/students/s_s_5904/model/student_selfplay_5904.zip",
+   "zip_path": "/home/goodlad/gen3ai_archive/x59s/read/students/s_s_5904/model/student_selfplay_5904.zip",
+   "zip_sha256": "205b39af98aa1e8f43f2ca33855376fa39568cf5bdc55c5bebecf4ed257ac043"
+  },
+  "s_s_5905": {
+   "anchors_bare_load_bit_equal": true,
+   "arm": "selfplay",
+   "commit": "0e1553bd89b8519db687828fd5f8ea4c91f1f772",
+   "device_info": {
+    "cuda_device": "NVIDIA GeForce RTX 3080 Ti",
+    "device": "cuda",
+    "torch": "2.8.0+cu126"
+   },
+   "epochs": 3,
+   "final_sha256": "5ddd53e7ca3b8c97eab5b73c0ba746fe90e999aefc388830438b7362dd7ba276",
+   "init_sha256": "a18e73af160e41cef8afb1ee6770422575b2ddb63882b17843e627e2ba54f6cb",
+   "labels_manifest_sha256": null,
+   "learned_guard": {
+    "final_val_nll": 1.2839977839855012,
+    "margin": 0.1,
+    "pass": true,
+    "uniform_val_nll": 1.8599532770541447
+   },
+   "recipe": {
+    "batch": 512,
+    "clip": 0.5,
+    "dtype": "fp32",
+    "loss": "logsumexp(legal) - logsumexp(target set)",
+    "lr": "warm-up 1000 to 0.0003, cosine to 3e-05",
+    "optimizer": "AdamW wd 1e-5 eps 1e-5"
+   },
+   "reload_logits_bit_equal": true,
+   "rows_manifest_sha256": "3f81f71c5ece664e1983294343d8013e0cb8b8eaaa9e80305067166e41d26ff4",
+   "schema": "gen3_x59s_student_v1",
+   "seed": 5905,
+   "steps": 7041,
+   "train_s": 3792.193848562194,
+   "val_hist": [
+    [
+     0,
+     1.8599533060373248
+    ],
+    [
+     587,
+     1.6569836158474829
+    ],
+    [
+     1174,
+     1.5092932977367326
+    ],
+    [
+     1760,
+     1.438754220990192
+    ],
+    [
+     2347,
+     1.3917024216888478
+    ],
+    [
+     2934,
+     1.3537375549491797
+    ],
+    [
+     3520,
+     1.3360667077140806
+    ],
+    [
+     4107,
+     1.3263361717473643
+    ],
+    [
+     4694,
+     1.3092323441765734
+    ],
+    [
+     5281,
+     1.2986713110880628
+    ],
+    [
+     5868,
+     1.2923119027766017
+    ],
+    [
+     6454,
+     1.2893151277481887
+    ],
+    [
+     7041,
+     1.2839977839855012
+    ]
+   ],
+   "val_rose_last_epoch": false,
+   "yardsticks": {
+    "human_val_human_labels": 1.4134887036117,
+    "selfplay_val_pstar_labels": 1.2839977856276485
+   },
+   "zip": "/home/goodlad/gen3ai_archive/x59s/read/students/s_s_5905/model/student_selfplay_5905.zip",
+   "zip_path": "/home/goodlad/gen3ai_archive/x59s/read/students/s_s_5905/model/student_selfplay_5905.zip",
+   "zip_sha256": "04e53879e03d00603261da95befca4a572bf503ee88502d7b881951fae889e14"
+  }
+ },
+ "void3": [],
+ "void3_sp0": []
+}

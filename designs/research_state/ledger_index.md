@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-30,190-line file. **The ledger itself is append-only and is never edited by this**;
+30,238-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**985 headings · 930 dated · 2026-08-01 → 2026-10-30 · ledger 30,190 lines.**
+**986 headings · 931 dated · 2026-08-01 → 2026-10-30 · ledger 30,238 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -1005,3 +1005,4 @@ rename.
   - `L30016` · `2026-10-28` · MEASUREMENT · **The S-U gate's leak-reduced re-gate reads GO: with `dice="rolls"` (the damage-roll truth filter removed) S's deviations on unfamiliar teams are right 0.599 [0.543, 0.649] of the time under the self-referee (n 362, pooled U; the gate's S 0.635); home72 0.551. It SUPERSEDES the gate's leak-exposed GO for licensing V-RANK / S-U; GO licenses the next stage, never a gain**
   - `L30060` · `2026-10-28` · MEASUREMENT · **X41 D3 LOOK 2 (FINAL, TERMINAL), read under its registration (`9938d7b6` + AM-D3-ENG + AM-D3-L2 and its addendum): UNDECIDED. Set mutation scores H +2.33 pp [−0.69, +5.35] on Kakuna's three unfamiliar panels (D3 0.494 vs C0 0.471; 4 of 5 seeds positive) at no in-pool cost (P −0.45 pp [−1.16, +0.25], NON-INFERIOR); every game on ONE engine, E1**
   - `L30115` · `2026-10-30` · MEASUREMENT · **X48 LOOK 1 reads NO-GO, labelled "experts not engaged": per-token-kind FFN experts grown at P\* and trained 20M give no ≥ 2 pp in-house gain (Δ_S −0.55 pp [−1.32, +0.21], 90 %); against Kakuna on forum72 Δ_K +2.06 pp [−0.06, +4.19], UNDECIDED; the experts diverged no more than chance drift (D_k / null 0.72–0.93), a weak NO-GO**
+  - `L30191` · `2026-10-30` · MEASUREMENT · **X59-S reads SELF-PLAY-DATA-BETTER: at matched volume, recipe and initial network, a fresh student taught by 1300+ ladder players' games and choices plays unfamiliar teams 7.28 pp [4.28, 10.29] worse against Kakuna than one taught by P\*'s own self-play games and choices (S-H 0.320 vs S-S 0.393, U; in-house −9.06 [−10.98, −7.14]); human labels lose to P\*'s on the same human states by 4.50 pp [1.58, 7.42] (OWN-LABELS-BETTER), so H-BC is dropped; the closure waits on Δ_restriction**

@@ -30187,3 +30187,51 @@ s3501–s3503 at the same pin, re-played.
 `~/gen3ai_archive/x35_x48_read/look1/`. View: `UNDERSTANDING.md` §4.13, `STATUS.md`,
 `endstate/design_beat_metamon_path.md` §5 and §9, `endstate/precommit_reads_2026-10-27.md` §6, `EXPERIMENT_BACKLOG.md`
 BI-2.
+
+### 2026-10-30 · MEASUREMENT · **X59-S reads SELF-PLAY-DATA-BETTER: at matched volume, recipe and initial network, a fresh student taught by 1300+ ladder players' games and choices plays unfamiliar teams 7.28 pp [4.28, 10.29] worse against Kakuna than one taught by P\*'s own self-play games and choices (S-H 0.320 vs S-S 0.393, U; in-house −9.06 [−10.98, −7.14]); human labels lose to P\*'s on the same human states by 4.50 pp [1.58, 7.42] (OWN-LABELS-BETTER), so H-BC is dropped; the closure waits on Δ_restriction**
+
+**Question (the owner's, Q-H9):** is human data better than our own self-play data? Registered in
+`measurements/x59s_matched_students_2026-10-25/PREREG.md` (`5cbf46dc0`) with Amendments 1–6; 5 and 6 answer REVIEW H
+(causal) and REVIEW G (data and bias) and were committed BLIND, before any pilot result was read.
+
+**Design.** Students of our architecture (`--arch production`'s network, 2.6M parameters), one init per seed, 5 seeds
+(5901–5905), 7,041 steps of behaviour cloning at batch 512 on matched volume: **S-H** (`hr_spec_v1.r2`, 1,201,538 rows
+of 1300+ ladder play, human labels), **S-P** (the same rows, P\*'s choice restricted to what the log allows the human),
+**S-S** (P\*'s own self-play rows under the human panel rule, P\*'s labels). Each plays Kakuna ckpt 34 (greedy) on
+H, F, P72, 20 units × 20 games a panel (pilot units 0–3, then 4–19), and its twins in-house (`main.h2h`, 200 mirrored
+pairs a panel). One engine (`port=bdc5d2be3af5e1fb/94;env=95b45f104119bdb2/129`) at the play pin `89c2c2501` (tag
+`x59s-play-89c2c250`).
+
+**Result (rule `x59s`, record `~/gen3ai_archive/x59s/read/full/record.json`, COMPLETE):**
+
+| contrast | Kakuna, U | class | in-house |
+|---|---|---|---|
+| Δ_data = S-H − S-S | −7.28 pp [−10.29, −4.28] | **SELF-PLAY-DATA-BETTER** | −9.06 [−10.98, −7.14] |
+| Δ_labels = S-H − S-P | −4.50 pp [−7.42, −1.58] | **OWN-LABELS-BETTER** | −5.23 [−7.30, −3.15] |
+| Δ_states = S-P − S-S | −2.78 pp [−5.68, +0.12] | UNCLEAR (descriptive) | — |
+
+- σ̂ 1.47 pp (df 12; the guard did not fire); the intervals are the registered z widened to each contrast's own Welch
+  (A5.2). F alone agrees (Δ_data −8.80 [−12.25, −5.35]); the meter-agreement guards pass both ways.
+- **Gates:** the floor pilot found every contrast informative (bar 0.0958 from the references random 0.000 /
+  max-damage 0.046); S-H fitted (last-quarter-epoch NLL drop 0.003 < 0.01); the re-encode share 0.60 % (< 1.0 %);
+  Δ_states' LB ≤ 0; S-P learned its teacher (midpoint). FR-2 NO-ARTEFACT (D −0.149 nats [−0.163, −0.134]; reported
+  only, A6.1).
+- **Guards:** VOID 3 / 5 / 6 / 7 PASS (identity 20 / 20 vs X51; the seeded repeat equal game for game and choice for
+  choice); 901 Kakuna units counted, 0 peer faults in counted units; one engine for every meter.
+- **Descriptive:** the deficit is not concentrated in long games (Δ_data by length tercile −7.0 / −10.2 / −4.6 pp);
+  every arm is far below P\*'s X51 twins (S-S −9.4 pp; cross-engine, secondary); the arm means (0.32–0.39) were above
+  the PREREG's guess (0.10–0.25), and Δ_data outside its guessed range (−6 to +4).
+
+**What it licenses:** H-BC is dropped (X60-B off the table). The closure of "1300+ ladder data in the panel-distant,
+forfeit-heavy slice, at this mix and volume, as a behaviour-cloning target for a fresh network at 3 epochs" is PENDING
+Δ_restriction = S-P0 − S-P (300 Kakuna units, playing; a lower bound ≤ 0 closes it). The registered ≥ 1500 follow-up
+fires (rating at fixed slice and volume; ≈ 1.5 GPU-h + an in-house read).
+
+**What it cannot say:** anything about adding human data to P\* (X60's question), about ≥ 1500 play or human data in
+general, or about the RL value of data (S-S is P\* distillation). Each arm is one dataset; the interval is conditional
+on the 216 panel teams.
+
+**Evidence:** `research_state/measurements/x59s_matched_students_2026-10-25/` (README, PREREG Amendments 4–6,
+`results/full_record_decision.json`, `results/gate_record.json`, `results/inhouse.json`, `results/students.json`,
+`results/m3_reencode.json`, `results/fr2.json`). View: `UNDERSTANDING.md` §4.8 and TL;DR 13, `STATUS.md`,
+`endstate/human_data_architecture.md` (Q-H9, Q-H10, Q-H15), `endstate/design_beat_metamon_path.md`.

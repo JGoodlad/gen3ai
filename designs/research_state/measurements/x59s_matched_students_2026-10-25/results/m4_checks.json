@@ -1,0 +1,14 @@
+{
+ "pilot": {
+  "peer_fault_hits": 0,
+  "repeat_choices": "equal",
+  "repeat_five_tuple_equal": true,
+  "checked_from": "main HEAD (e28318c8 guards)",
+  "time": "2026-10-28T10:45"
+ },
+ "full": {
+  "peer_fault_hits_counted_units": 0,
+  "peer_fault_hits_partial_attempts": 1,
+  "partial": "s_s_5903__p72__15.partial.1793323436 (uncounted attempt; the retry counted)"
+ }
+}

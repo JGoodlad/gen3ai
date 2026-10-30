@@ -101,7 +101,7 @@ under `measurements/`. A number with no pointer is not a measurement.
    [−0.92, +5.11], UNDECIDED (final), at −1.61 pp in-pool; set mutation (D3, final, every game on one engine) +2.33 [−0.69, +5.35],
    UNDECIDED, at −0.45 pp in-pool; the belief prior mix ±1.50, NOT DETECTED; plain training FLAT. [Kakuna · `42bb0858d`,
    `eb99ab362`, D3's look-2 record, `f299a7243`, `71c76dfbb`, `204204bbf`] Breadth at 10⁴ teams (N1-P) reads +0.75 on F at look 1
-   (CONTINUE) at −3.27 pp in-pool; human data (X59-S) is being read; H-CTX says the breadth that matters is breadth of TEAMS (item 4). The plan after them is §6.
+   (CONTINUE) at −3.27 pp in-pool; human 1300+ data teaches less than our own self-play data (X59-S, item 13); H-CTX says the breadth that matters is breadth of TEAMS (item 4). The plan after them is §6.
 6. **The belief stack memorises the pool, but that is not where games are lost.** On unfamiliar opponents 63–85 %
    of the hidden slots hold the wrong species guess, yet mixing in the Smogon prior (λ = 0.25: U +1.50 pp [−2.74,
    +5.74]) or using the prior alone (λ = 1: −1.50 [−5.47, +2.47]) moves Kakuna games by nothing detectable at ±5 pp.
@@ -131,10 +131,13 @@ under `measurements/`. A number with no pointer is not a measurement.
     [−1.19, +3.31]) and trains 22.5 % faster. A small entity-and-attention toy beats production at equal wall clock
     at 15M (+6.5 pp), but at the plateaus P\* is ahead of the toy's T\* against Kakuna. [PASS ×2 · `748f90e6f`,
     `89d258af6`, `38d767462`, `3010c81ba`]
-13. **Human data carries signal; whether it carries goal (b)'s is open.** Our intent head predicts human opponents
-    0.253 nats worse than our own snapshots; a human opponent model learns humans (0.582 nats better than P\*) but
-    does not help search. X59-S asks whether human data beats our self-play data. [MEASURED · `f8d58205c`,
-    `92af1f121`, `73428c077`]
+13. **Human data carries signal, but at matched volume it teaches our network less than our own self-play data.**
+    Our intent head predicts human opponents 0.253 nats worse than our own snapshots, and a human opponent model learns
+    humans (0.582 nats better than P\*) but does not help search. In X59-S, fresh students of our architecture taught by
+    1300+ ladder players' games and choices play unfamiliar teams **7.28 pp [4.28, 10.29] worse** against Kakuna than
+    students taught by P\*'s own games and choices (SELF-PLAY-DATA-BETTER; the in-house meter −9.06), and human labels
+    lose to P\*'s on the same human states by 4.50 pp (OWN-LABELS-BETTER): H-BC is dropped. [SIGNIFICANT · Kakuna and
+    in-house · X59-S record 2026-10-30; `f8d58205c`, `92af1f121`, `73428c077`]
 
 ---
 
@@ -152,8 +155,8 @@ owner's approval (`designs/endstate/design_ladder_campaign.md`).
 5. what search needs, read as a trajectory across checkpoints (§4.7);
 6. which collapse we see, and a source of counterfactuals (§4.4).
 
-The plan for goal (b) is `designs/endstate/design_beat_metamon_path.md`; D3 has missed (UNDECIDED, final); if N1-P and
-X59-S miss too, the fallback is `designs/endstate/strategy_if_levers_null_2026-10-26.md`.
+The plan for goal (b) is `designs/endstate/design_beat_metamon_path.md`; D3 has missed (UNDECIDED, final) and human
+1300+ data is no route (X59-S, SELF-PLAY-DATA-BETTER); if N1-P misses too, the fallback is `designs/endstate/strategy_if_levers_null_2026-10-26.md`.
 
 **The Rustboro era.** It starts with the X5 belief A/B and X26 (2026-10-03): the fixed bots and the Rustboro anchor
 base, the Rust environment core, the END STATE architecture (adopted 2026-10-12, §4.6b) and the bf16 trunk (§4.6c).
@@ -344,7 +347,7 @@ replicated on the 1,600 PastaMittens twins · `c758fcb82`; `measurements/pilotin
   **0.666 [0.639, 0.692] vs `SmallRL`** (14M, offline reinforcement learning, RL), **0.631 [0.603, 0.658] vs `LargeRL`** (195M, offline RL),
   **0.790 [0.766, 0.812] vs `LargeIL`** (194M, imitation). Each is weaker than Kakuna on every panel; offline RL beats
   imitation on the same data by ≈ 16 pp. Against all three the unfamiliar panels are level, so P\*'s P72 deficit is
-  something Kakuna exploits. These compare recipes, not data (X59-S compares data). [OURS-BEATS ×3 · `4d8d9eef8`,
+  something Kakuna exploits. These compare recipes, not data; X59-S compares data inside our architecture (§4.8: self-play data wins). [OURS-BEATS ×3 · `4d8d9eef8`,
   `df35d1bb0`; `measurements/human_only_vs_pstar_2026-10-25/`]
 - **Foul Play** (Monte Carlo tree search over a hand-written evaluator; a Gen 9 OU champion) has NEVER played P\*.
   By proxy: Kakuna draws it, 0.490 [0.422, 0.559], and P\* beats Kakuna on home72. A pre-era 75M policy lost to it
@@ -489,7 +492,7 @@ every search result updates it). The findings that steer it, all on search banks
 **The view.** Search is paused. Enabling it needs a world sampler that holds the opponent's actual team; policy
 training absorbs some of what perfect information would buy, but not enough to make honest search useful.
 
-### 4.8 Human data: signal in the labels; a human opponent model that learns but does not judge
+### 4.8 Human data: signal in the labels; a human opponent model that learns but does not judge; less than self-play as a teacher
 
 - **The intent head's gap (X50 R1 / R0).** X26's intent head predicts human ladder opponents (rated ≥ 1500) worse
   than its own pool snapshots: through the fixed spectator pipeline **+0.253 nats [+0.232, +0.276]**, most on
@@ -506,6 +509,17 @@ training absorbs some of what perfect information would buy, but not enough to m
   has no evidence either way. Human replays may train the policy only as a toggleable lever, off by default (owner).
   [DESCRIPTIVE · `14ae42035`; `measurements/human_replay_quality_2026-10-25/`;
   `../endstate/human_data_architecture.md`, `../endstate/design_human_replay_lever.md`]
+- **Human vs self-play data (X59-S, 2026-10-30).** Fifteen fresh students of our architecture (5 seeds each, one
+  init a seed, 7,041 steps of behaviour cloning on matched volume): S-H on 1.2M 1300+ human rows (human states and
+  choices), S-P on the same rows with P\*'s choice restricted to what the log allows the human, S-S on P\*'s own
+  self-play games and choices. Against Kakuna on U (900 units): **Δ_data = S-H − S-S −7.28 pp [−10.29, −4.28]**,
+  SELF-PLAY-DATA-BETTER (S-H 0.320, S-S 0.393), the in-house meter agreeing (−9.06 [−10.98, −7.14]) and F alone too
+  (−8.80); **Δ_labels = S-H − S-P −4.50 [−7.42, −1.58]**, OWN-LABELS-BETTER; the states part −2.78 [−5.68, +0.12],
+  UNCLEAR. H-BC is dropped. The closure ("1300+ ladder data in the panel-distant, forfeit-heavy slice, at this mix and
+  volume, as a cloning target for a fresh network at 3 epochs") waits on Δ_restriction; the ≥ 1500 follow-up asks
+  whether rating changes it at fixed slice and volume. It says nothing about adding human data to P\* (X60's
+  question). [SIGNIFICANT · Kakuna and in-house · `measurements/x59s_matched_students_2026-10-25/README.md`; ledger
+  2026-10-30 · *X59-S*]
 - The X50 reads and the HOM's rows used the pre-fix intent masks (opponent Explosion / Self-Destruct and 12–17 % of
   attacks unlabelled); no result is invalidated, but an extraction at HEAD is a different population. [ledger
   2026-10-26 · FIX · *the obs / label GIGO audit*]
@@ -608,7 +622,7 @@ retired for the fold-gift question only; they live in the last full text (§0) a
 | question | the read that answers it |
 |---|---|
 | Does breadth at 10⁴ procedural teams lift unfamiliar-team piloting at the plateau? | **N1-P look 2** (look 1 CONTINUE 2026-10-28: F +0.75 [−1.56, +3.06], P −3.27 [−4.20, −2.33]; X61P, D1's rule on F; [`PREREG.md`](measurements/x61p_n1_production_2026-10-26/PREREG.md), `5b84bca62`). ADOPT-CANDIDATE (F GAIN, in-house non-inferior) funds **X53-N1**, a fresh production run on 10⁴ teams (`../endstate/design_x53_n1_fresh_breadth.md`); NULL rules out only "N1 at the plateau" |
-| Is human data better than our own self-play data? | **X59-S**: three matched student arms, five seeds each; S-H − S-S answers it, S-H − S-P picks the lever ([`PREREG.md`](measurements/x59s_matched_students_2026-10-25/PREREG.md), `5cbf46dc0`). Its floor pilot plays first and releases one UNINFORMATIVE flag per contrast (Amendment 5, `aaeabbd46`). It decides whether the human-data switch and X60 get built |
+| Does rating change it, and does the closure stand? | **X59-S's Δ_restriction** (S-P0 − S-P, playing: its lower bound ≤ 0 closes the 1300+ slice) and its **≥ 1500 follow-up** (S-H≥1500 vs a volume-matched mix and vs S-S, in-house; ≈ 1.5 GPU-h). X59-S itself read SELF-PLAY-DATA-BETTER (§4.8) |
 
 **Queued and planned** (the ranked order: X63, PR-1′, after REVIEW_2 `69c7cd34d` §6; X48 read NO-GO 2026-10-30, §4.13)
 
