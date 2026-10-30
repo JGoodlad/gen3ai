@@ -226,13 +226,14 @@ def inhouse_cells(students: Mapping[str, Any]) -> List[Dict[str, Any]]:
             for c, (a, b) in INHOUSE.items() for k in SEEDS for p in PANELS]
 
 
-def inhouse_argv(cell: Mapping[str, Any], ledger: Path, py: str = sys.executable) -> List[str]:
+def inhouse_argv(cell: Mapping[str, Any], ledger: Path, py: str = sys.executable,
+                 label: str = "x59s_inhouse") -> List[str]:
     from utils.paths import repo_path
 
     return ["nice", "-n", "19", "taskset", "-c", "5-7,13-15", str(repo_path("scripts/ops/mem_cap.sh")), "--name",
             "x59s_h2h", "12", "timeout", "2700", py, "-m", "main.h2h", "play", "--player", cell["player"],
             "--opponent", cell["opponent"], "--panel", cell["panel"], "--pairs", str(PAIRS), "--seed",
-            str(cell["seed"]), "--out", str(ledger), "--label", "x59s_inhouse", "--device", "cpu", "--threads", "2",
+            str(cell["seed"]), "--out", str(ledger), "--label", label, "--device", "cpu", "--threads", "2",
             "--torch-threads", "2"]
 
 

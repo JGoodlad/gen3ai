@@ -1,6 +1,7 @@
 r"""X59-S's MATCHED STUDENTS: our architecture from the same random init per seed, taught one label source each.
 
-    python -m main.human_data.student train  --arm human|pstar|pstar0|selfplay --rows <rows> [--labels <labels>] \
+    python -m main.human_data.student train  --arm human|pstar|pstar0|selfplay|human_1500|human_mix|selfplay_cut \
+        --rows <rows> [--labels <labels>] \
         --registration <results/registration.json> --seed 5901 --out <dir>/s_h_5901 [--epochs 3] [--budget-min 40] \
         [--device cpu|cuda]
     python -m main.human_data.student export --out <dir>/s_h_5901
@@ -12,7 +13,9 @@ The three arms (``x59s_matched_students_2026-10-25/PREREG.md``):
   "P\*-restricted-to-human-support" teacher, PREREG Amendment 2 M2: not P\* as an independent teacher);
 * ``pstar0`` (S-P0, descriptive): the SAME rows, P\*'s UNRESTRICTED sample over the legal actions
   (``derive``'s ``labels_pstar0``);
-* ``selfplay`` (S-S): P\*'s own self-play rows (``teacher selfplay``), P\*'s sampled action as the label.
+* ``selfplay`` (S-S): P\*'s own self-play rows (``teacher selfplay``), P\*'s sampled action as the label;
+* the ≥ 1500 follow-up (A2.7, Amendment 7): ``human_1500`` (S-H≥1500), ``human_mix`` (S-H-mix) and
+  ``selfplay_cut`` (S-S cut), each its rows' own labels (:data:`FOLLOWUP_ARMS`).
 
 A hidden-move row (plan §3.2) is trained on its SET label in S-H and S-P alike: the loss is, for every row,
 ``logsumexp(logits over the legal actions) - logsumexp(logits over the TARGET set)``, the target set being the one
@@ -50,11 +53,17 @@ import numpy as np
 
 from main.human_data import rowset as RS
 
-ARMS = ("human", "pstar", "pstar0", "selfplay")
+#: the ≥ 1500 follow-up's arms (PREREG A2.7, Amendment 7; ``main.human_data.followup``): ``human_1500`` and
+#: ``human_mix`` train on their rows' HUMAN labels as ``human`` does, ``selfplay_cut`` on its rows' P\* labels as
+#: ``selfplay`` does; each has its OWN registration key, so no follow-up rows can train under a primary arm's name
+FOLLOWUP_ARMS = ("human_1500", "human_mix", "selfplay_cut")
+ARMS = ("human", "pstar", "pstar0", "selfplay") + FOLLOWUP_ARMS
 LABEL_ARMS = ("pstar", "pstar0")
-#: the registration key of each arm's rows and labels (``checks register``; PREREG Amendment 2, REVIEW E m4)
+#: the registration key of each arm's rows and labels (``checks register``; PREREG Amendment 2, REVIEW E m4;
+#: ``followup register`` for the follow-up's, Amendment 7)
 REG_ROWS = {"human": "rows_manifest_sha256", "pstar": "rows_manifest_sha256", "pstar0": "rows_manifest_sha256",
-            "selfplay": "selfplay_manifest_sha256"}
+            "selfplay": "selfplay_manifest_sha256", "human_1500": "rows_1500_manifest_sha256",
+            "human_mix": "rows_mix_manifest_sha256", "selfplay_cut": "selfplay_cut_manifest_sha256"}
 REG_LABELS = {"pstar": "labels_manifest_sha256", "pstar0": "labels0_manifest_sha256"}
 #: the learned-nothing guard (Amendment 2, REVIEW E M4): the final validation NLL on the arm's OWN labels must be at
 #: least this far below the uniform NLL over the legal actions, else the student is VOID (a bug or a recipe failure)

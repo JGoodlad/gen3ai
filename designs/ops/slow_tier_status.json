@@ -4323,26 +4323,26 @@
   },
   "src/main/human_data/cuda_preflight_test.py::test_preflight_cpu_against_cpu": {
    "status": "pass",
-   "commit": "6a44729267ea5379a86240813081599c853df15b",
-   "at": "2026-10-26T17:32:57Z",
-   "duration_s": 40.33,
-   "contention": 1.28,
+   "commit": "242f74d627ff736faec570b6db53bfe10ea6e34e",
+   "at": "2026-10-30T10:42:54Z",
+   "duration_s": 58.73,
+   "contention": 1.78,
    "detail": ""
   },
   "src/main/human_data/student_test.py::test_the_anchors_bare_load_reads_the_students_function_on_real_rows": {
    "status": "pass",
-   "commit": "c781138b2a76cf46b42fdc32f7a3691d2e2c365d",
-   "at": "2026-10-26T17:52:21Z",
-   "duration_s": 9.13,
-   "contention": 1.19,
+   "commit": "242f74d627ff736faec570b6db53bfe10ea6e34e",
+   "at": "2026-10-30T10:42:54Z",
+   "duration_s": 34.23,
+   "contention": 1.69,
    "detail": ""
   },
   "src/main/human_data/student_test.py::test_train_export_reload_on_synthetic_rows": {
    "status": "pass",
-   "commit": "c781138b2a76cf46b42fdc32f7a3691d2e2c365d",
-   "at": "2026-10-26T17:52:21Z",
-   "duration_s": 8.24,
-   "contention": 1.0,
+   "commit": "242f74d627ff736faec570b6db53bfe10ea6e34e",
+   "at": "2026-10-30T10:42:54Z",
+   "duration_s": 13.52,
+   "contention": 1.62,
    "detail": ""
   },
   "src/main/info_audit/info_audit_integration_test.py::test_every_check_passes_on_the_real_builder": {
@@ -5234,5 +5234,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-30T01:35:01Z"
+ "last_written": "2026-10-30T10:42:54Z"
 }

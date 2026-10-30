@@ -159,8 +159,13 @@ def test_reencode_matches_by_rid_and_counts_skips(tmp_path, monkeypatch, layout)
         seen.append((snap, population, meta["rel"]))
         return {"counts": {"seats_read": 1}, "parts": [today[meta["rel"]]]}
 
+    sub = tmp_path / "sub" / "rows"                         # a sub-rowset training on the moved row and one more
+    _write_registered(sub, {f: v[[0, 1]] for f, v in reg.items()})
     res = C.reencode(tmp_path / "r2" / "rows", parts, hom, 2, prefix, tmp_path, registry, Path("/corpus"),
-                     extract=stub)
+                     extract=stub, within={"sub": sub})
+    w = res["within"]["sub"]
+    assert (w["rows_compared"], w["rows_differing"], w["rowset"]) == (2, 1, "fixture.r2")
+    assert w["rows_differing_by_obs_slice"] == {"opp_team.status_counters": 1} and w["over_limit"] is True
     assert seen == [("snapX", "pop", rel) for rel in sample.chosen]
     assert res["rows_today"] == 6
     assert (res["rows_skipped_not_in_registered"], res["rows_skipped_quitter_tail"]) == (1, 1)

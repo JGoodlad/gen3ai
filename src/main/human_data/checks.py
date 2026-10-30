@@ -3,7 +3,8 @@
     python -m main.human_data.checks hom-repro --rows <rowset>/rows --parts <rowset>/parts \
         --hom ~/gen3ai_archive/x50_r1b/train --n 200 --out <dir>/results/hom_repro.json
     python -m main.human_data.checks reencode --rows <derived rowset>/rows --parts <rowset>/parts \
-        --hom ~/gen3ai_archive/x50_r1b/train --n 200 --out <dir>/results/m3_reencode.json
+        --hom ~/gen3ai_archive/x50_r1b/train --n 200 [--within <name>=<sub-rowset rows dir> ...] \
+        --out <dir>/results/m3_reencode.json
     python -m main.human_data.checks register --rows <rowset>/rows --labels <rowset>/labels_pstar \
         --labels0 <rowset>/labels_pstar0 --selfplay <dir>/ss_rows --out <dir>/results/registration.json
 
@@ -16,6 +17,8 @@
   of a registered rowset: the share of rows differing in the observation, the mask, the consistent set or the label,
   and where in the observation (slices named by ``Gen3ObservationEncoder.get_layout()``). Rows the registered rowset
   dropped are skipped and counted. Descriptive: the share is a registered limit (> 1.0 % routes the NLL twin read).
+  ``--within`` repeats the comparison on the compared rows a SUB-rowset of ``--rows`` trains on (its TRAIN rids; the
+  ≥ 1500 follow-up's arms, Amendment 7, inherit A5.7 through it).
 * ``register``: the sha256 of the rows manifest, the S-P labels manifest and the S-S rows manifest, their row counts
   and the cross-checks the trainer relies on (S-S has the rowset's train / validation counts; the labels were made on
   this rowset; Amendment 2: the S-P0 labels too, and S-S's team draw faced the human panel rule). Written BEFORE any
@@ -230,8 +233,20 @@ def _r2_rows(rows: Path, rids: np.ndarray, bkeys: np.ndarray) -> Tuple[Dict[str,
     return RS._concat(got), missing
 
 
+def _within(name: str, sub: Path, ours: Dict[str, np.ndarray], ref: Dict[str, np.ndarray], names: Sequence[str],
+            col: np.ndarray) -> Dict[str, Any]:
+    """The comparison restricted to the rows the sub-rowset ``sub`` TRAINS on (by rid; every shard sha-checked)."""
+    man, sha = RS.load_manifest(sub)
+    rids = np.concatenate([RS.load_shard(sub, rec, ("rid",))["rid"] for rec in man["train_shards"]])
+    sel = np.isin(ours["rid"], rids)
+    c = compare_rows({f: v[sel] for f, v in ours.items()}, {f: v[sel] for f, v in ref.items()}, names, col)
+    return {"name": name, "rowset": man.get("rowset"), "rows_manifest_sha256": sha,
+            **{k: v for k, v in c.items() if k != "obs_columns"},
+            "over_limit": c["rows_compared"] > 0 and c["rows_differing"] * 100 > c["rows_compared"]}
+
+
 def reencode(rows: Path, parts: Path, hom: Path, n: int, corpus_prefix: str, store: Path, registry: Path,
-             corpus: Path, extract=None) -> Dict[str, Any]:
+             corpus: Path, extract=None, within: Optional[Dict[str, Path]] = None) -> Dict[str, Any]:
     """PREREG A5.7 (M3): VOID 8's battles re-extracted by TODAY's rowset path, each row compared byte for byte with
     the SAME row (by rid) of the registered rowset ``rows``. A row the registered rowset dropped (the derived rules)
     is skipped and counted; a registered row today's extraction no longer makes is counted. ``extract`` is the
@@ -272,8 +287,9 @@ def reencode(rows: Path, parts: Path, hom: Path, n: int, corpus_prefix: str, sto
     order = np.asarray([pos[int(r)] for r in ours["rid"][in_ref]], np.int64)
     enc = Gen3ObservationEncoder(load_mappings())
     names, col = obs_slices(enc.get_layout(), enc.active_context_encoder.get_layout())
-    cmp_ = compare_rows({f: ours[f][in_ref] for f in RS.FIELDS}, {f: ref[f][order] for f in RS.FIELDS},
-                        names, col)
+    ours_c, ref_c = {f: ours[f][in_ref] for f in RS.FIELDS}, {f: ref[f][order] for f in RS.FIELDS}
+    cmp_ = compare_rows(ours_c, ref_c, names, col)
+    strata = {k: _within(k, Path(v), ours_c, ref_c, names, col) for k, v in (within or {}).items()}
     man, man_sha = RS.load_manifest(rows)
     today = RS._code_identity()
     share = cmp_["share_differing"]
@@ -296,6 +312,7 @@ def reencode(rows: Path, parts: Path, hom: Path, n: int, corpus_prefix: str, sto
             **cmp_,
             "limit_share": LIMIT_SHARE,
             "over_limit": share is not None and cmp_["rows_differing"] * 100 > cmp_["rows_compared"],
+            **({"within": strata} if within else {}),
             "pass": cmp_["rows_compared"] > 0}
 
 
@@ -359,6 +376,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     e.add_argument("--store", default=None)
     e.add_argument("--registry", default=None)
     e.add_argument("--corpus", default=None)
+    e.add_argument("--within", action="append", default=[], metavar="NAME=ROWS",
+                   help="also compare on the rows this sub-rowset of --rows trains on (repeatable)")
     r = sub.add_parser("register")
     r.add_argument("--rows", required=True)
     r.add_argument("--labels", required=True)
@@ -374,7 +393,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         res = reencode(Path(a.rows), Path(a.parts), Path(a.hom), a.n, a.corpus_prefix,
                        Path(a.store) if a.store else RS.S.default_store(),
                        Path(a.registry) if a.registry else RS.S.default_registry(),
-                       Path(a.corpus) if a.corpus else RS.S.default_corpus())
+                       Path(a.corpus) if a.corpus else RS.S.default_corpus(),
+                       within=dict(w.split("=", 1) for w in a.within) or None)
     else:
         res = register(Path(a.rows), Path(a.labels), Path(a.selfplay), Path(a.labels0) if a.labels0 else None,
                        a.require_panel_rule)

@@ -1,0 +1,92 @@
+{
+ "schema": "gen3_x59s_fu1500_registration_v1",
+ "amendment": "PREREG Amendment 7 (A2.7)",
+ "n": 270260,
+ "seeds": [
+  5901,
+  5902,
+  5903,
+  5904,
+  5905
+ ],
+ "epochs": 3,
+ "mix_seed": 5930,
+ "parent_rows_manifest_sha256": "2a413c85e2109553b4f930d85f369625a5daf77a7e1103afeb01e962ec0332b8",
+ "parent_selfplay_manifest_sha256": "3f81f71c5ece664e1983294343d8013e0cb8b8eaaa9e80305067166e41d26ff4",
+ "pstar_sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed",
+ "arms": {
+  "h1500": {
+   "student_arm": "human_1500",
+   "rows_manifest_sha256": "2fdb5faf83c110ecc074a650faa1327413e6b0569d4afd3a4205b44f5b403630",
+   "train_rows": 270260,
+   "val_rows": 29904,
+   "shards": 17,
+   "shard_sizes_tail": [
+    16384,
+    8116
+   ],
+   "content_sha256": "16f53820b8eb1cf695635108367939dba07f5b5632a40549435a04996ba7c3ca",
+   "step_budget": {
+    "5901": 1584,
+    "5902": 1584,
+    "5903": 1584,
+    "5904": 1584,
+    "5905": 1584
+   },
+   "labels": "the human's own action, or a hidden move's set (r2's act / moveset)"
+  },
+  "hmix": {
+   "student_arm": "human_mix",
+   "rows_manifest_sha256": "4099a387c10b8ca507af6c78625098926eb4930fa433fa72523f8d93aaadae6d",
+   "train_rows": 270260,
+   "val_rows": 29904,
+   "shards": 17,
+   "shard_sizes_tail": [
+    16384,
+    8116
+   ],
+   "content_sha256": "cace76df8db3ccde7fe92fc252e7f245491bda09b4ae2c8919c75bc5ec50cfa0",
+   "step_budget": {
+    "5901": 1584,
+    "5902": 1584,
+    "5903": 1584,
+    "5904": 1584,
+    "5905": 1584
+   },
+   "labels": "the human's own action, or a hidden move's set (r2's act / moveset)"
+  },
+  "sscut": {
+   "student_arm": "selfplay_cut",
+   "rows_manifest_sha256": "1716c0958c215ba2594c82108070db9bf27e8be042762bb1c521c75165fe7241",
+   "train_rows": 270260,
+   "val_rows": 29904,
+   "shards": 17,
+   "shard_sizes_tail": [
+    16384,
+    8116
+   ],
+   "content_sha256": "3ab0022c6e59844493b50e6e590f29d5b2cfdac369db6baffd098c4325044922",
+   "step_budget": {
+    "5901": 1584,
+    "5902": 1584,
+    "5903": 1584,
+    "5904": 1584,
+    "5905": 1584
+   },
+   "labels": "P*'s sampled action (S-S's act column)"
+  }
+ },
+ "rows_1500_manifest_sha256": "2fdb5faf83c110ecc074a650faa1327413e6b0569d4afd3a4205b44f5b403630",
+ "rows_mix_manifest_sha256": "4099a387c10b8ca507af6c78625098926eb4930fa433fa72523f8d93aaadae6d",
+ "selfplay_cut_manifest_sha256": "1716c0958c215ba2594c82108070db9bf27e8be042762bb1c521c75165fe7241",
+ "step_budget": {
+  "5901": 1584,
+  "5902": 1584,
+  "5903": 1584,
+  "5904": 1584,
+  "5905": 1584
+ },
+ "steps_all_students": 23760,
+ "problems": [],
+ "pass": true
+}

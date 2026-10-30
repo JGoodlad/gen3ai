@@ -2,10 +2,11 @@ r"""X59-S's CUDA PRE-FLIGHT: the first GPU minutes, every check PASS or FAIL (PR
 
     GEN3AI_GPU_LEASE_TOKEN=<token> scripts/ops/gpu_lock.sh scripts/ops/mem_cap.sh 16 <PY> \
         -m main.human_data.cuda_preflight --rows <r2>/rows --registration <results/registration.json> \
-        --scratch <dir> --out <results/cuda_preflight.json> [--device cuda]
+        --scratch <dir> --out <results/cuda_preflight.json> [--device cuda] [--arm human] [--students 20]
 
 Run ONCE, before the first counted student, inside the GPU lease. Exit 0 iff every check passes; any FAIL stops the
-window (nothing trains). The checks (S-H, seed 5901, the registered recipe, scratch dirs only):
+window (nothing trains). The checks (``--arm``, S-H by default; the ≥ 1500 follow-up runs it on ``human_1500``,
+Amendment 7; seed 5901, the registered recipe, scratch dirs only):
 
 1. ``init``: seed 5901's ``init_sha256`` on the device equals the CPU-built digest.
 2. ``parity``: :data:`STEPS` steps on the CPU and on the device from that init: the step-0 validation NLL agrees within
@@ -19,7 +20,7 @@ window (nothing trains). The checks (S-H, seed 5901, the registered recipe, scra
    anchors-bare checks, and its CPU logits agree with its device logits within :data:`TOL_LOGIT` on 256
    validation rows.
 6. ``cost`` (reported, PASS iff measured): ms a step on the device, peak host RSS and peak device memory, and the
-   window extrapolated to :data:`STUDENTS` students (GPU-h) and to three concurrent students' host memory.
+   window extrapolated to ``--students`` students (:data:`STUDENTS` by default; GPU-h) and to three concurrent students' host memory.
 7. ``retry`` is the window runner's (``main.human_data.window``): it continues a student only on exit 3.
 8. ``learns``: the device run continued to :data:`LONG` steps has a training loss below the uniform NLL.
 """
@@ -62,10 +63,10 @@ def _rel_l2(a: Dict[str, Any], b: Dict[str, Any]) -> float:
     return (num / max(den, 1e-300)) ** 0.5
 
 
-def _run(rows: Path, out: Path, device: str, limit: int, reg: Optional[Dict[str, Any]]) -> int:
+def _run(rows: Path, out: Path, device: str, limit: int, reg: Optional[Dict[str, Any]], arm: str = "human") -> int:
     out.mkdir(parents=True, exist_ok=True)
     (out / "rows_path.txt").write_text(str(rows.resolve()) + "\n")
-    return ST.train("human", rows, None, SEED, out, 3, 0, device=device, limit_steps=limit, registration=reg)
+    return ST.train(arm, rows, None, SEED, out, 3, 0, device=device, limit_steps=limit, registration=reg)
 
 
 def _logits(sd: Dict[str, Any], rows: np.ndarray, mask: np.ndarray, device: str) -> np.ndarray:
@@ -84,7 +85,7 @@ def _logits(sd: Dict[str, Any], rows: np.ndarray, mask: np.ndarray, device: str)
 
 
 def preflight(rows: Path, scratch: Path, device: str, reg: Optional[Dict[str, Any]], steps: int = STEPS,
-              long: int = LONG) -> Dict[str, Any]:
+              long: int = LONG, arm: str = "human", students: int = STUDENTS) -> Dict[str, Any]:
     import torch as th
 
     from main.fresh_checkpoint import build_fresh_model
@@ -96,7 +97,8 @@ def preflight(rows: Path, scratch: Path, device: str, reg: Optional[Dict[str, An
     checks: Dict[str, Dict[str, Any]] = {}
     with inference_globals(ST.THREADS):
         cpu_init = ST._state_digest(build_fresh_model(SEED)[0].policy.state_dict())
-    rc = {"cpu": _run(rows, scratch / "cpu", "cpu", steps, reg), "dev": _run(rows, scratch / "dev", device, steps, reg)}
+    rc = {"cpu": _run(rows, scratch / "cpu", "cpu", steps, reg, arm),
+          "dev": _run(rows, scratch / "dev", device, steps, reg, arm)}
     c, d = _state(scratch / "cpu"), _state(scratch / "dev")
     checks["init"] = {"cpu": cpu_init, "device": d["init_sha256"], "pass": d["init_sha256"] == cpu_init}
     mid = str(min(100, steps))
@@ -109,8 +111,8 @@ def preflight(rows: Path, scratch: Path, device: str, reg: Optional[Dict[str, An
     want = {"matmul_allow_tf32": False, "cudnn_allow_tf32": False, "float32_matmul_precision": "highest"}
     checks["precision"] = {**pf, "pass": pf == want if device.startswith("cuda") else bool(pf)}
     half = max(1, steps // 2)
-    r1 = _run(rows, scratch / "resume", device, half, reg)
-    r2 = _run(rows, scratch / "resume", device, steps, reg)
+    r1 = _run(rows, scratch / "resume", device, half, reg, arm)
+    r2 = _run(rows, scratch / "resume", device, steps, reg, arm)
     r = _state(scratch / "resume")
     total = int(d["total"])
     on_dev = r.get("resumed_opt_devices", [])
@@ -140,7 +142,7 @@ def preflight(rows: Path, scratch: Path, device: str, reg: Optional[Dict[str, An
                             "pass": bool(side["anchors_bare_load_bit_equal"] and same_inf and gap <= TOL_LOGIT)}
     except (ST.StudentError, RS.RowsetError) as exc:
         checks["export"] = {"error": str(exc), "pass": False}
-    rl = _run(rows, scratch / "dev", device, long, reg)
+    rl = _run(rows, scratch / "dev", device, long, reg, arm)
     dlong = _state(scratch / "dev")
     loss_long = dlong.get("loss_at", {}).get(str(long))
     checks["learns"] = {"rc": rl, "loss": loss_long, "uniform_val_nll": dlong.get("uniform_val_nll"),
@@ -149,10 +151,10 @@ def preflight(rows: Path, scratch: Path, device: str, reg: Optional[Dict[str, An
     gpu_peak = th.cuda.max_memory_allocated() / 2 ** 30 if device.startswith("cuda") else None
     host_peak = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 2 ** 20
     checks["cost"] = {"ms_per_step": round(ms, 2), "steps_per_student": total,
-                      "gpu_h_for_window_serial": round(STUDENTS * total * ms / 3.6e6, 2),
+                      "students": students, "gpu_h_for_window_serial": round(students * total * ms / 3.6e6, 2),
                       "host_peak_gb": round(host_peak, 2), "device_peak_gb": gpu_peak,
                       "host_gb_three_concurrent_est": round(3 * host_peak, 1), "pass": ms > 0}
-    return {"schema": "gen3_x59s_cuda_preflight_v1", "device": device, "torch": th.__version__,
+    return {"schema": "gen3_x59s_cuda_preflight_v1", "arm": arm, "device": device, "torch": th.__version__,
             "cuda_device": th.cuda.get_device_name(0) if device.startswith("cuda") else None,
             "rows": str(rows), "checks": checks, "pass": all(v["pass"] for v in checks.values())}
 
@@ -164,10 +166,13 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap.add_argument("--scratch", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--device", default="cuda")
+    ap.add_argument("--arm", default="human", choices=("human",) + ST.FOLLOWUP_ARMS[:2],
+                    help="the human-label arm whose registered rows it trains (human_1500: the follow-up, Amendment 7)")
+    ap.add_argument("--students", type=int, default=STUDENTS, help="the window's student count (the cost extrapolation)")
     a = ap.parse_args(argv)
     reg = json.loads(Path(a.registration).read_text())
     try:
-        res = preflight(Path(a.rows), Path(a.scratch), a.device, reg)
+        res = preflight(Path(a.rows), Path(a.scratch), a.device, reg, arm=a.arm, students=a.students)
     except (ST.StudentError, RS.RowsetError) as exc:
         res = {"schema": "gen3_x59s_cuda_preflight_v1", "error": str(exc), "pass": False}
     Path(a.out).write_text(json.dumps(res, indent=1) + "\n")
