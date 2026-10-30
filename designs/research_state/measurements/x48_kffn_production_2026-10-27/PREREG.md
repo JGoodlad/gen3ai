@@ -404,6 +404,11 @@ X48 cell at the pin, so X48's S cells play through [`x48_s_driver.py`](x48_s_dri
   - Script sha256s (the record carries them): `x48_s_driver.py` `ddc182399a769c24e991947a6b50697364bcdacc4fe608fd9fc79184c4320ed6`,
     `driver_identity.py` `119cd9575dcba0a560203e755a863fc1be0ec046ab28ba98d04e3a3b050a2de9`. The running copies
     under `~/gen3ai_archive/x35_x48_read/driver/` hash the same.
+- **(b) 2026-10-29 17:18, operational (the coordinator's CPU ruling).** The slope group is PAUSED with the driver's
+  stop marker (`x48_driver.stop`), which takes effect when the unit in flight ends. That unit is `c0_s3501_p10m` /
+  `c0_s3502_p10m`. Every decided S cell was complete at the pause (six finals × 7 members × 2,000 pairs), and the
+  slope nodes decide nothing (§8.4). The Kakuna lane keeps running. The slope resumes with the same driver when X59-S's
+  full Kakuna lane ends (its supervisor pid 3404175).
 
 ## 14. FINDINGS at registration (standing rule 7)
 
