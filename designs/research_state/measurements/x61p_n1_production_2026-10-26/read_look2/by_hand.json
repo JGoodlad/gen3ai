@@ -1,0 +1,140 @@
+{
+ "drift_units": [
+  {
+   "unit": "c0_s3504__forum72__00",
+   "identical": 20,
+   "games": 20,
+   "wins_now": 8,
+   "wins_banked": 8
+  },
+  {
+   "unit": "c0_s3504__forum72__01",
+   "identical": 20,
+   "games": 20,
+   "wins_now": 7,
+   "wins_banked": 7
+  },
+  {
+   "unit": "c0_s3504__forum72__02",
+   "identical": 20,
+   "games": 20,
+   "wins_now": 11,
+   "wins_banked": 11
+  },
+  {
+   "unit": "c0_s3504__forum72__03",
+   "identical": 20,
+   "games": 20,
+   "wins_now": 10,
+   "wins_banked": 10
+  },
+  {
+   "unit": "c0_s3504__forum72__04",
+   "identical": 20,
+   "games": 20,
+   "wins_now": 9,
+   "wins_banked": 9
+  },
+  {
+   "unit": "c0_s3504__forum72__05",
+   "identical": 20,
+   "games": 20,
+   "wins_now": 11,
+   "wins_banked": 11
+  },
+  {
+   "unit": "c0_s3504__forum72__06",
+   "identical": 20,
+   "games": 20,
+   "wins_now": 13,
+   "wins_banked": 13
+  },
+  {
+   "unit": "c0_s3505__forum72__00",
+   "identical": 20,
+   "games": 20,
+   "wins_now": 8,
+   "wins_banked": 8
+  },
+  {
+   "unit": "c0_s3505__forum72__01",
+   "identical": 20,
+   "games": 20,
+   "wins_now": 12,
+   "wins_banked": 12
+  },
+  {
+   "unit": "c0_s3505__forum72__02",
+   "identical": 20,
+   "games": 20,
+   "wins_now": 9,
+   "wins_banked": 9
+  },
+  {
+   "unit": "c0_s3505__forum72__03",
+   "identical": 20,
+   "games": 20,
+   "wins_now": 8,
+   "wins_banked": 8
+  },
+  {
+   "unit": "c0_s3505__forum72__04",
+   "identical": 20,
+   "games": 20,
+   "wins_now": 7,
+   "wins_banked": 7
+  },
+  {
+   "unit": "c0_s3505__forum72__05",
+   "identical": 19,
+   "games": 20,
+   "wins_now": 9,
+   "wins_banked": 10
+  },
+  {
+   "unit": "c0_s3505__forum72__06",
+   "identical": 20,
+   "games": 20,
+   "wins_now": 11,
+   "wins_banked": 11
+  }
+ ],
+ "drift": {
+  "identical": 279,
+  "games": 280,
+  "wins_now": 133,
+  "wins_banked": 134,
+  "banked_source": "x35_d1_read/h_d, h_e"
+ },
+ "u_without_h": {
+  "on": 0.5039523809523809,
+  "off": 0.48691666666666666,
+  "delta_pp": 1.7035714285714265,
+  "ci95_pp": [
+   -1.0615683536761136,
+   4.465034667390364
+  ],
+  "phi_hat": 0.9558828199745766,
+  "factor": 1.0,
+  "ci95_widened_pp": [
+   -1.0615683536761136,
+   4.465034667390364
+  ]
+ },
+ "n1p_minus_d1_on_f": {
+  "n1p": [
+   3056,
+   6000
+  ],
+  "d1": [
+   370,
+   700
+  ],
+  "delta_pp": -1.9238095238095276,
+  "ci95_pp": [
+   -5.807888681360399,
+   1.9893837989047007
+  ],
+  "note": "N1-P look 2's 5 seeds x 60 units vs D1 look 2's 5 seeds x 7 units; two corpora, two engines (E3 vs E1)"
+ }
+}

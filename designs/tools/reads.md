@@ -370,7 +370,7 @@ imported, from what every pin writes, and records the result on the unit row as 
 - **evidence missing** (capture off, a pruned log): `unavailable`, and the unit is judged as before.
 
 The spec's `rederived_guards` decides what a hit does. `count`: the unit does not count (`rederived_uncounted`,
-its reason named). `report` (every read registered before the change: N1-P look 1, H-CTX rc72 / rc72b, X59-S, D3,
+its reason named). `report` (every read registered before the change: N1-P looks 1 and 2, H-CTX rc72 / rc72b, X59-S, D3,
 S-U and its gate test, the belief-prior-mix reads): counting never changes mid-read; a hit on a COUNTED unit is a
 FINDING that HOLDS
 `decide` (and so `record`; typed refusal, exit 2) until the orchestrator rules with `release-guard-hold`, which
@@ -402,7 +402,7 @@ table reconstructed from git (`engine_at`: the stamp's listing at that commit, p
 | E0 | `05b106e2…/84` / `dfd24aec…/119` | X51 and x37a (`63f97a575`), `cb0f1769c`, `acb99527`. X51's `k28v34_home72` rows: `b9c758841`, E0B `e64b127b…` / `b92ea7ad…` |
 | **E1** | `7d932165…/90` / `7c532805…/125` | x26c (`e05c45eeb`); D1 H (`6c428453a`, `5e389ddac`) and P; X52 (`f4b25238d`); SPRT (`eb99ab362`) and G1 (`3f3a2ed41`) S; human-only vs P\* and metamon-strongest (`d32ffcee4`, `4b0ab220e`); PastaMittens (`62bb07c00`); belief prior mix (`4ee655648`; smoke `033fcbcd2`). D3 look 2 (`c4a5c37b6`, the hybrid pin). **The X35 stage's training engine** (`f4b25238`, D3_PIN `9e289ba4`) |
 | E2 | `806f97bd…/90` / `9ecb4249…/125` | D3 look 1 (anchor `2cc864f2f`, S `1ed71c9dd`) |
-| E3 | `0d3d7629…/91` / `393631b8…/126` | N1-P look 1 (`46b9e572c`; repin `de15dfc7b`): one engine throughout |
+| E3 | `0d3d7629…/91` / `393631b8…/126` | N1-P look 1 (`46b9e572c`; repin `de15dfc7b`) and N1-P look 2 (`de15dfc7b`, AM-N1P-2; look 1 imported): one engine throughout |
 | unbanked | `67a272e7…/93` / `d79c3a74…/128` | main after the 2026-10-26 full-parity batches (BF4, `2a877361a`), X59-S's registered engine. Any engine not listed is unbanked and enters the id; `main.anchors --dry-run` prints a checkout's |
 
 **Mixed-engine comparisons in shipped records.** Each was guarded game for game, and no verdict is shown to be affected.
@@ -423,7 +423,7 @@ stand as recorded.
 **OUR side's pack regime** (SOP H24; not in any id). A play commit before `d8d674b99` packs forum72's `sft431` with
 Frustration at base power 1.
 - **Pre-fix:** every E0 and E1 read in the table, and D3 look 2's hybrid `c4a5c37b6`.
-- **Post-fix:** D3 look 1's ON arm (E2), N1-P look 1 (E3), H-CTX and X59-S.
+- **Post-fix:** D3 look 1's ON arm (E2), N1-P looks 1 and 2 (E3), H-CTX and X59-S.
 - **Our side on `sft431`:** 0 games in D1 and D3 look 1, 2 of 1,920 F games in N1-P look 1, and 6 of 400 per model in
   the x26c read (`measurements/x35_pack_regime_2026-10-27/`).
 
@@ -503,7 +503,10 @@ A read that imports banked forum72 / away / pool Kakuna rows (D3 look 2's C0) mu
     path equals `86cfdf7ef`'s (`playpath.compare`: 0 differences, digest `afedc505f0e2…` over 1,715 files), so its
     regime is the frozen pin's. Its `package_doc_test` fails by construction: naming the module in
     `main/reads/__init__.py`, which is on the play path, would break that identity.
-- **X59-S games / X60 / X61P look 2:** one engine per read, named at registration. An import from N1-P look 1 needs E3.
+- **X59-S games / X60:** one engine per read, named at registration. **X61P look 2** (READ 2026-10-30, NULL) played
+  at look 1's commit `de15dfc7b`, so its import from look 1 is on E3 with Kakuna's legacy pack and the legacy sides
+  (PREREG AM-N1P-2); its record was written from main. The play commit writes no capture for home72 units, so G14's
+  forced-end check reads `unavailable` on those 70 reported-only units (both looks).
 - **The human-only / PastaMittens reads:** each was played on one commit, all on E1.
 
 ### Foul Play's played team (`gen3_frontend_validated_pack_v1`; the SOP's H22)

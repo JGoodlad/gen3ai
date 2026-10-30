@@ -30235,3 +30235,57 @@ on the 216 panel teams.
 `results/full_record_decision.json`, `results/gate_record.json`, `results/inhouse.json`, `results/students.json`,
 `results/m3_reencode.json`, `results/fr2.json`). View: `UNDERSTANDING.md` §4.8 and TL;DR 13, `STATUS.md`,
 `endstate/human_data_architecture.md` (Q-H9, Q-H10, Q-H15), `endstate/design_beat_metamon_path.md`.
+
+### 2026-10-30 · MEASUREMENT · **X61P N1-P LOOK 2 (FINAL) reads NULL: breadth at 10⁴ procedural teams moves F (forum72, the primary) by +0.55 pp [−1.26, +2.36] over the shared C0 (N1-P 0.509 vs 0.504, 6,000 games per arm, 5 seeds), inside ±3 pp; in-house S on home72 −3.28 pp [−4.14, −2.43] (INFERIORITY-NOT-EXCLUDED). Rules out "N1 at the plateau" only; X53-N1 not triggered; X63 unchanged. Reported only: H +4.14, U +2.52 [−0.02, +5.05], Δ_H − Δ_F +3.59**
+
+**What was read.** N1-P = C0 + `--team-mix n1_proc_v1@ALL:0.5 --team-mix-sides both`, P\* + 20M at N1P_PIN `5f8f6cfa`,
+s3501–s3505, against C0 s3501–s3505. PREREG `x61p_n1_production_2026-10-26/PREREG.md` §4–§9, AM-N1P-1 (§14) and
+AM-N1P-2 (§15, `d78700253`, registered before any look-2 game: look 2 plays at look 1's commit `de15dfc7b`, so every
+game is on E3 with Kakuna's legacy pack and the legacy sides). `main.reads` rule `d1`, arm `X61P`, look 2; spec
+`read_spec_look2.json` byte for byte (sha256 `f28654cc…`); state `~/gen3ai_archive/x61p_n1p_read/look2`; look 1's six
+finals IMPORTED from its state (never re-played); 324 new Kakuna units (6,480 games) and 14,000 new in-house pairs.
+
+**Result.**
+
+| read | N1-P | C0 | N1-P − C0 | class |
+|---|---|---|---|---|
+| **F (primary)**, Kakuna ckpt 34 greedy, 60 units per seed | 3,056 / 6,000 = 0.509 | 3,023 / 6,000 = 0.504 | **+0.55 pp [−1.26, +2.36]** (Newcombe 95 %; φ̂ 1.02, ×1.010) | **NULL (final)** |
+| **P (co-primary)**, S on home72 vs R (7 × 500 pairs) | 53.48 / 54.11 / 53.66 / 52.95 / 54.39 | 56.82 / 57.39 / 56.84 / 57.37 / 56.59 | **−3.28 pp [−4.14, −2.43]** (Welch 97.5 %) | **INFERIORITY-NOT-EXCLUDED** |
+| H (reported) | 345 / 700 | 316 / 700 | +4.14 [−1.08, +9.34] | — |
+| P72 (reported) | 349 / 700 | 329 / 700 | +2.86 [−2.37, +8.07] | — |
+| home72 vs Kakuna (reported) | 379 / 700 | 392 / 700 | −1.86 [−7.05, +3.35] | — |
+| U (reported, M4-hazarded) | 0.500 | 0.475 | +2.52 [−0.02, +5.05] | not a goal read |
+| U without H (F + P72; by hand) | 0.504 | 0.487 | +1.70 [−1.06, +4.47] | — |
+
+F per seed +1.0 / −0.25 / +1.5 / +1.0 / −0.5. Δ_H − Δ_F rose to **+3.59** (look 1 +0.92): what gain there is sits on
+the generator-adjacent panels, not on human-built F (descriptive). Guards G-F / G-E / G-C not read (no GAIN).
+Against the GUESS: Δ_F +1.5 [−1.5, +4.5] → +0.55; Δ_P −1.5 [−3.0, 0.0] → −3.28, below its 80 % interval; final NULL
+was given 0.30. **What NULL licenses (PREREG §6):** it rules out "N1 at the plateau" (share 0.5, 20M) beyond ±3 pp,
+not N1 from step 0, the toy screen or a human-derived corpus. X53-N1's trigger did not fire. **X63's AM-X63-N1L2
+(its PREREG §9):** NULL ⇒ unchanged.
+
+**Checks (every registered one PASS).** K9(b) at arm end PASS ×5 (`void.json`); VOID guards 2–5 for s3504 / s3505 from
+their launcher logs (banner, 0 held-out hits, 0 pool copies at lines 54–55), `pin_history` = `5f8f6cfa…`, corpus-check
+and pool-seed PASS, no `corpus_<n>` FATAL. Every counted unit, own and imported, on E3 with one regime id per team set
+(primary `00c8c0114bdf0836`, reported `3d2cbdc0b1413bcb`, S `d4de0fd7c16a2658`, all equal to look 1's);
+`cells_inconclusive` empty; the import accepted by main's engine, pack and sides checks. G14 (report mode): 810 units,
+0 hits. Choice-level guard: not applicable (no game-for-game guard group). Floor 6,000 / 6,000 per arm; 324 / 324 new
+units counted at the first attempt. Harness drift (by hand): C0 s3504 / s3505 forum72 units 0–6 vs D1's banked E1
+units, 279 / 280 games identical.
+
+**Dose.** N1-P 20.53 GPU-h (registered ≈ 20.5), C0 20.49.
+
+**FINDINGs.**
+1. **Compile canary UNCONFIRMED on the ON arm:** s3505 u100 (R1 bf16, `flat_intent_head.hidden.weight`; u200 PASS) and
+   s3501 u200 (read at look 1 without a note); N1-P 2 / 15 checks, C0 0 / 15. No canary guard is registered, so both
+   seeds are read. Descriptive: without s3505 F +0.81 [−1.19, +2.81], without s3501 +0.44 [−1.86, +2.73] (both NULL).
+2. **The in-pool cost holds at −3.28 pp** (five seeds), twice D1's at the same share.
+3. **G14's forced-end half is `unavailable` on all 70 home72 units** (both looks; the play commit captures panel cells
+   only). home72 is reported only.
+4. **The S lane was paused 18:17 → 03:19** by the coordinator's CPU-priority ruling (X59-S's full read) and resumed from
+   the ledger with no batch lost or doubled.
+5. **The play commit predates `52ff8cb1f`** (a zombie heavy-slot waiter reads alive); no effect seen.
+
+**Evidence:** `designs/research_state/measurements/x61p_n1_production_2026-10-26/read_look2/` (README, cells, inputs,
+decision, void, models, code, OPERATOR_NOTES, `by_hand.{py,json}`); record
+`designs/research_state/measurements/x35_breakers_stage_2026-10-17/reads/n1p_look2.json`.

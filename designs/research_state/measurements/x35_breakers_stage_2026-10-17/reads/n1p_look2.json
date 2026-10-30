@@ -1,0 +1,1832 @@
+{
+ "arm": "X61P",
+ "cells_inconclusive": [],
+ "code": {
+  "commit": "de15dfc7b6d19d6f0e4a3724f269e26e7aa22957",
+  "diff_sha": "e3b0c44298fc1c14",
+  "dirty": false,
+  "pin": null,
+  "root": "/home/goodlad/dev/gen3ai-reads/n1p_play_look2_de15dfc7"
+ },
+ "completeness": {
+  "class": "COMPLETE"
+ },
+ "created": "2026-10-30T11:09:16-0700",
+ "decision": {
+  "arm": "X61P",
+  "guards": {
+   "G-C": {
+    "detail": {},
+    "guard": "G-C",
+    "near_boundary": [],
+    "reasons": [
+     "the guards gate only a QUALIFYING primary (the orchestrator's A1 ruling (a)): H is not GAIN, so they were not played"
+    ],
+    "status": "INCONCLUSIVE"
+   },
+   "G-E": {
+    "detail": {},
+    "guard": "G-E",
+    "near_boundary": [],
+    "reasons": [
+     "the guards gate only a QUALIFYING primary (the orchestrator's A1 ruling (a)): H is not GAIN, so they were not played"
+    ],
+    "status": "INCONCLUSIVE"
+   },
+   "G-F": {
+    "detail": {},
+    "guard": "G-F",
+    "near_boundary": [],
+    "reasons": [
+     "the guards gate only a QUALIFYING primary (the orchestrator's A1 ruling (a)): H is not GAIN, so they were not played"
+    ],
+    "status": "INCONCLUSIVE"
+   }
+  },
+  "h": {
+   "ci95_pp": [
+    -1.2573421000745104,
+    2.356839323541027
+   ],
+   "ci95_unwidened_pp": [
+    -1.238688567921993,
+    2.338190980532409
+   ],
+   "class": "NULL",
+   "delta_pp": 0.5499999999999949,
+   "final": true,
+   "look": 2,
+   "near_boundary": [],
+   "off": {
+    "mean": 0.5038333333333334,
+    "n_eff": 6000.0,
+    "per_panel": {
+     "forum72": [
+      3023,
+      6000
+     ]
+    },
+    "var": 4.166421759259259e-05,
+    "wilson95": [
+     0.4911837870576,
+     0.5164779742189914
+    ]
+   },
+   "on": {
+    "mean": 0.5093333333333333,
+    "n_eff": 6000.0,
+    "per_panel": {
+     "forum72": [
+      3056,
+      6000
+     ]
+    },
+    "var": 4.165214814814815e-05,
+    "wilson95": [
+     0.4966820987621847,
+     0.5219726243460376
+    ]
+   },
+   "outcome": "NULL",
+   "overdispersion": {
+    "df": 8,
+    "half_width_factor": 1.0104286081361766,
+    "phi_hat": 1.020965972140011,
+    "ratio_off": 0.8014750966267234,
+    "ratio_on": 1.2404568476532989
+   },
+   "per_panel_reported": {
+    "forum72": {
+     "ci95_pp": [
+      -1.238688567921993,
+      2.338190980532409
+     ],
+     "delta_pp": 0.5499999999999949,
+     "off": [
+      3023,
+      6000
+     ],
+     "on": [
+      3056,
+      6000
+     ],
+     "role": "the PRIMARY: human-built forum teams; 19 % of its full sets sit in the corpus (X61 review B1)"
+    }
+   },
+   "positive_seeds": 3,
+   "reasons": [],
+   "seed_deltas_pp": {
+    "3501": 1.0000000000000009,
+    "3502": -0.2500000000000058,
+    "3503": 1.4999999999999958,
+    "3504": 1.0000000000000009,
+    "3505": -0.5000000000000004
+   },
+   "sign_ok": true,
+   "sign_rule": ">= 3 of 5"
+  },
+  "look": 2,
+  "p": {
+   "bar_pp": -2.0,
+   "class": "INFERIORITY-NOT-EXCLUDED",
+   "look": 2,
+   "near_boundary": [],
+   "reasons": [],
+   "stat": {
+    "ci_pp": [
+     -4.136191028309138,
+     -2.4323804002622933
+    ],
+    "confidence": 0.975,
+    "delta_pp": -3.2842857142857156,
+    "df": 6.841792186200338,
+    "mean_off_pp": 57.001428571428576,
+    "mean_on_pp": 53.71714285714286,
+    "n_off": 5,
+    "n_on": 5,
+    "q": 2.8583800852941,
+    "se_pp": 0.29803780064321617,
+    "var_off": 0.130698979591837,
+    "var_on": 0.3134336734693904
+   }
+  },
+  "reasons": [
+   "H is not a GAIN"
+  ],
+  "reported": {
+   "dose": {
+    "read": false
+   },
+   "reported_panels": {
+    "dH_minus_dF_pp": 3.5928571428571527,
+    "per_panel": {
+     "forum72": {
+      "ci95_pp": [
+       -1.238688567921993,
+       2.338190980532409
+      ],
+      "delta_pp": 0.5499999999999949,
+      "off": [
+       3023,
+       6000
+      ],
+      "on": [
+       3056,
+       6000
+      ],
+      "role": "the PRIMARY: human-built forum teams; 19 % of its full sets sit in the corpus (X61 review B1)"
+     },
+     "heldout72_hpfix": {
+      "ci95_pp": [
+       -1.0844988415152093,
+       9.338335782342218
+      ],
+      "delta_pp": 4.142857142857148,
+      "off": [
+       316,
+       700
+      ],
+      "on": [
+       345,
+       700
+      ],
+      "role": "REPORTED: generator-adjacent (62 % of its full sets sit verbatim in the corpus, B1)"
+     },
+     "home72": {
+      "ci95_pp": [
+       -7.046413467281179,
+       3.34631356234269
+      ],
+      "delta_pp": -1.8571428571428572,
+      "off": [
+       392,
+       700
+      ],
+      "on": [
+       379,
+       700
+      ],
+      "role": "REPORTED: the in-pool cost (the pool's own teams)"
+     },
+     "p72": {
+      "ci95_pp": [
+       -2.3731081410251194,
+       8.065362595628892
+      ],
+      "delta_pp": 2.857142857142858,
+      "off": [
+       329,
+       700
+      ],
+      "on": [
+       349,
+       700
+      ],
+      "role": "REPORTED: a sibling generator over the same Smogon tables (the corpus's own population)"
+     }
+    },
+    "reasons": [],
+    "u": {
+     "ci95_pp": [
+      -0.02031739978148872,
+      5.049086622098438
+     ],
+     "ci95_unwidened_pp": [
+      -0.02031739978148872,
+      5.049086622098438
+     ],
+     "delta_pp": 2.516666666666667,
+     "off": {
+      "mean": 0.4750873015873016,
+      "n_eff": 2987.398210221138,
+      "per_panel": {
+       "forum72": [
+        3023,
+        6000
+       ],
+       "heldout72_hpfix": [
+        316,
+        700
+       ],
+       "p72": [
+        329,
+        700
+       ]
+      },
+      "var": 8.347710613354688e-05,
+      "wilson95": [
+       0.45722340008664025,
+       0.4930151906755174
+      ]
+     },
+     "on": {
+      "mean": 0.5002539682539683,
+      "n_eff": 2976.732841258481,
+      "per_panel": {
+       "forum72": [
+        3056,
+        6000
+       ],
+       "heldout72_hpfix": [
+        345,
+        700
+       ],
+       "p72": [
+        349,
+        700
+       ]
+      },
+      "var": 8.398467340939903e-05,
+      "wilson95": [
+       0.48230349170926856,
+       0.5182037901539642
+      ]
+     },
+     "overdispersion": {
+      "df": 8,
+      "half_width_factor": 1.0,
+      "phi_hat": 0.674207906499433,
+      "ratio_off": 1.1377673809501505,
+      "ratio_on": 0.21064843204871536
+     }
+    }
+   }
+  },
+  "verdict": "NULL"
+ },
+ "guards": {
+  "G-C": {
+   "detail": {},
+   "guard": "G-C",
+   "near_boundary": [],
+   "reasons": [
+    "the guards gate only a QUALIFYING primary (the orchestrator's A1 ruling (a)): H is not GAIN, so they were not played"
+   ],
+   "status": "INCONCLUSIVE"
+  },
+  "G-E": {
+   "detail": {},
+   "guard": "G-E",
+   "near_boundary": [],
+   "reasons": [
+    "the guards gate only a QUALIFYING primary (the orchestrator's A1 ruling (a)): H is not GAIN, so they were not played"
+   ],
+   "status": "INCONCLUSIVE"
+  },
+  "G-F": {
+   "detail": {},
+   "guard": "G-F",
+   "near_boundary": [],
+   "reasons": [
+    "the guards gate only a QUALIFYING primary (the orchestrator's A1 ruling (a)): H is not GAIN, so they were not played"
+   ],
+   "status": "INCONCLUSIVE"
+  }
+ },
+ "h": {
+  "ci95_pp": [
+   -1.2573421000745104,
+   2.356839323541027
+  ],
+  "ci95_unwidened_pp": [
+   -1.238688567921993,
+   2.338190980532409
+  ],
+  "class": "NULL",
+  "delta_pp": 0.5499999999999949,
+  "final": true,
+  "look": 2,
+  "near_boundary": [],
+  "off": {
+   "mean": 0.5038333333333334,
+   "n_eff": 6000.0,
+   "per_panel": {
+    "forum72": [
+     3023,
+     6000
+    ]
+   },
+   "var": 4.166421759259259e-05,
+   "wilson95": [
+    0.4911837870576,
+    0.5164779742189914
+   ]
+  },
+  "on": {
+   "mean": 0.5093333333333333,
+   "n_eff": 6000.0,
+   "per_panel": {
+    "forum72": [
+     3056,
+     6000
+    ]
+   },
+   "var": 4.165214814814815e-05,
+   "wilson95": [
+    0.4966820987621847,
+    0.5219726243460376
+   ]
+  },
+  "outcome": "NULL",
+  "overdispersion": {
+   "df": 8,
+   "half_width_factor": 1.0104286081361766,
+   "phi_hat": 1.020965972140011,
+   "ratio_off": 0.8014750966267234,
+   "ratio_on": 1.2404568476532989
+  },
+  "per_panel_reported": {
+   "forum72": {
+    "ci95_pp": [
+     -1.238688567921993,
+     2.338190980532409
+    ],
+    "delta_pp": 0.5499999999999949,
+    "off": [
+     3023,
+     6000
+    ],
+    "on": [
+     3056,
+     6000
+    ],
+    "role": "the PRIMARY: human-built forum teams; 19 % of its full sets sit in the corpus (X61 review B1)"
+   }
+  },
+  "positive_seeds": 3,
+  "reasons": [],
+  "seed_deltas_pp": {
+   "3501": 1.0000000000000009,
+   "3502": -0.2500000000000058,
+   "3503": 1.4999999999999958,
+   "3504": 1.0000000000000009,
+   "3505": -0.5000000000000004
+  },
+  "sign_ok": true,
+  "sign_rule": ">= 3 of 5"
+ },
+ "imports": {
+  "anchor.primary": {
+   "code": {
+    "commit": "46b9e572cc0fa237f62ddd948fb5fa4d115e44a4",
+    "diff_sha": "e3b0c44298fc1c14",
+    "dirty": false,
+    "pin": null,
+    "root": "/home/goodlad/dev/gen3ai-reads/n1p_play_46b9e572"
+   },
+   "engine": "port=0d3d7629f16a0eaf/91;env=393631b886965b0c/126",
+   "group": "primary",
+   "labels": [
+    "c0_s3501",
+    "c0_s3502",
+    "c0_s3503",
+    "n1p_s3501",
+    "n1p_s3502",
+    "n1p_s3503"
+   ],
+   "read": "x61p_n1p_look1_2026-10-26",
+   "regime_ids": {
+    "forum72": [
+     "2118812c27885de3"
+    ]
+   },
+   "repins": [
+    {
+     "by": "N1-P look-1 reader",
+     "from_commit": "46b9e572cc0fa237f62ddd948fb5fa4d115e44a4",
+     "playpath_digest": "9822a30606cbd79aa160854a4826acdfc4c0e7ceb336928776015f3f24f6f9c8",
+     "playpath_files": 1537,
+     "playpath_schema": "gen3_read_playpath_v1",
+     "root": "/home/goodlad/dev/gen3ai-reads/n1p_play_sched_de15dfc7",
+     "schema": "gen3_read_repin_v1",
+     "t": 1793065264.6105964,
+     "time": "2026-10-26T18:41:04-0700",
+     "to_commit": "de15dfc7b6d19d6f0e4a3724f269e26e7aa22957",
+     "why": "anchor lane --concurrency 2; scheduling-only change, play path byte-identical to 46b9e572"
+    }
+   ],
+   "rows": 360,
+   "rows_sha256": "2ad691812b15289b849ee16e4229f8dffb41e211dece6809e9f1b53ac7d19a22",
+   "sides": {
+    "peer_code": "their=legacy",
+    "policy_mode": "eval"
+   },
+   "spec_sha256": "1266daadeefe4142a2f2f339bbdedaf4e052c3f2ef3fb8a8b0d5550fb8729f03",
+   "state": "/home/goodlad/gen3ai_archive/x61p_n1p_read/look1"
+  },
+  "anchor.reported": {
+   "code": {
+    "commit": "46b9e572cc0fa237f62ddd948fb5fa4d115e44a4",
+    "diff_sha": "e3b0c44298fc1c14",
+    "dirty": false,
+    "pin": null,
+    "root": "/home/goodlad/dev/gen3ai-reads/n1p_play_46b9e572"
+   },
+   "engine": "port=0d3d7629f16a0eaf/91;env=393631b886965b0c/126",
+   "group": "reported",
+   "labels": [
+    "c0_s3501",
+    "c0_s3502",
+    "c0_s3503",
+    "n1p_s3501",
+    "n1p_s3502",
+    "n1p_s3503"
+   ],
+   "read": "x61p_n1p_look1_2026-10-26",
+   "regime_ids": {
+    "heldout72_hpfix": [
+     "28e65ac93633f6b5"
+    ],
+    "home72": [
+     "2e756ff1ca5e4f40"
+    ],
+    "p72": [
+     "b7547f904af56acc"
+    ]
+   },
+   "repins": [
+    {
+     "by": "N1-P look-1 reader",
+     "from_commit": "46b9e572cc0fa237f62ddd948fb5fa4d115e44a4",
+     "playpath_digest": "9822a30606cbd79aa160854a4826acdfc4c0e7ceb336928776015f3f24f6f9c8",
+     "playpath_files": 1537,
+     "playpath_schema": "gen3_read_playpath_v1",
+     "root": "/home/goodlad/dev/gen3ai-reads/n1p_play_sched_de15dfc7",
+     "schema": "gen3_read_repin_v1",
+     "t": 1793065264.6105964,
+     "time": "2026-10-26T18:41:04-0700",
+     "to_commit": "de15dfc7b6d19d6f0e4a3724f269e26e7aa22957",
+     "why": "anchor lane --concurrency 2; scheduling-only change, play path byte-identical to 46b9e572"
+    }
+   ],
+   "rows": 126,
+   "rows_sha256": "aceb659fbdab2e6a9a68c6ff9ddd98e9f4754d677cbe2aa7424d7e6cc12cbf15",
+   "sides": {
+    "peer_code": "their=legacy",
+    "policy_mode": "eval"
+   },
+   "spec_sha256": "1266daadeefe4142a2f2f339bbdedaf4e052c3f2ef3fb8a8b0d5550fb8729f03",
+   "state": "/home/goodlad/gen3ai_archive/x61p_n1p_read/look1"
+  },
+  "s.p": {
+   "code": {
+    "commit": "46b9e572cc0fa237f62ddd948fb5fa4d115e44a4",
+    "diff_sha": "e3b0c44298fc1c14",
+    "dirty": false,
+    "pin": null,
+    "root": "/home/goodlad/dev/gen3ai-reads/n1p_play_46b9e572"
+   },
+   "engine": "env=393631b886965b0c/126",
+   "family": "x61p_n1p_p_look1_2026-10-26",
+   "group": "p",
+   "labels": [
+    "c0_s3501",
+    "c0_s3502",
+    "c0_s3503",
+    "n1p_s3501",
+    "n1p_s3502",
+    "n1p_s3503"
+   ],
+   "ledger_digest": "70187d7b6709ff4630421f9e9feb488fcefb98c28e8bf416e1d2b9e5d59a866c",
+   "read": "x61p_n1p_look1_2026-10-26",
+   "regime_id": "d4de0fd7c16a2658",
+   "repins": [
+    {
+     "by": "N1-P look-1 reader",
+     "from_commit": "46b9e572cc0fa237f62ddd948fb5fa4d115e44a4",
+     "playpath_digest": "9822a30606cbd79aa160854a4826acdfc4c0e7ceb336928776015f3f24f6f9c8",
+     "playpath_files": 1537,
+     "playpath_schema": "gen3_read_playpath_v1",
+     "root": "/home/goodlad/dev/gen3ai-reads/n1p_play_sched_de15dfc7",
+     "schema": "gen3_read_repin_v1",
+     "t": 1793065264.6105964,
+     "time": "2026-10-26T18:41:04-0700",
+     "to_commit": "de15dfc7b6d19d6f0e4a3724f269e26e7aa22957",
+     "why": "anchor lane --concurrency 2; scheduling-only change, play path byte-identical to 46b9e572"
+    }
+   ],
+   "rows": 210,
+   "rows_sha256": "70187d7b6709ff4630421f9e9feb488fcefb98c28e8bf416e1d2b9e5d59a866c",
+   "spec_sha256": "1266daadeefe4142a2f2f339bbdedaf4e052c3f2ef3fb8a8b0d5550fb8729f03",
+   "state": "/home/goodlad/gen3ai_archive/x61p_n1p_read/look1"
+  }
+ },
+ "inputs": {
+  "arm": "X61P",
+  "h": {
+   "off": {
+    "3501": {
+     "forum72": [
+      607,
+      1200
+     ]
+    },
+    "3502": {
+     "forum72": [
+      625,
+      1200
+     ]
+    },
+    "3503": {
+     "forum72": [
+      598,
+      1200
+     ]
+    },
+    "3504": {
+     "forum72": [
+      610,
+      1200
+     ]
+    },
+    "3505": {
+     "forum72": [
+      583,
+      1200
+     ]
+    }
+   },
+   "on": {
+    "3501": {
+     "forum72": [
+      619,
+      1200
+     ]
+    },
+    "3502": {
+     "forum72": [
+      622,
+      1200
+     ]
+    },
+    "3503": {
+     "forum72": [
+      616,
+      1200
+     ]
+    },
+    "3504": {
+     "forum72": [
+      622,
+      1200
+     ]
+    },
+    "3505": {
+     "forum72": [
+      577,
+      1200
+     ]
+    }
+   },
+   "ties": {
+    "off": {
+     "3501": {
+      "forum72": 2
+     },
+     "3502": {
+      "forum72": 2
+     },
+     "3503": {
+      "forum72": 1
+     },
+     "3504": {
+      "forum72": 0
+     },
+     "3505": {
+      "forum72": 1
+     }
+    },
+    "on": {
+     "3501": {
+      "forum72": 2
+     },
+     "3502": {
+      "forum72": 2
+     },
+     "3503": {
+      "forum72": 0
+     },
+     "3504": {
+      "forum72": 0
+     },
+     "3505": {
+      "forum72": 3
+     }
+    }
+   },
+   "units": {
+    "off": {
+     "3501": {
+      "forum72": {
+       "counted": 60,
+       "skipped": []
+      }
+     },
+     "3502": {
+      "forum72": {
+       "counted": 60,
+       "skipped": []
+      }
+     },
+     "3503": {
+      "forum72": {
+       "counted": 60,
+       "skipped": []
+      }
+     },
+     "3504": {
+      "forum72": {
+       "counted": 60,
+       "skipped": []
+      }
+     },
+     "3505": {
+      "forum72": {
+       "counted": 60,
+       "skipped": []
+      }
+     }
+    },
+    "on": {
+     "3501": {
+      "forum72": {
+       "counted": 60,
+       "skipped": []
+      }
+     },
+     "3502": {
+      "forum72": {
+       "counted": 60,
+       "skipped": []
+      }
+     },
+     "3503": {
+      "forum72": {
+       "counted": 60,
+       "skipped": []
+      }
+     },
+     "3504": {
+      "forum72": {
+       "counted": 60,
+       "skipped": []
+      }
+     },
+     "3505": {
+      "forum72": {
+       "counted": 60,
+       "skipped": []
+      }
+     }
+    }
+   }
+  },
+  "look": 2,
+  "p": {
+   "inconclusive": [],
+   "off": {
+    "3501": 56.82142857142857,
+    "3502": 57.392857142857146,
+    "3503": 56.83571428571429,
+    "3504": 57.371428571428574,
+    "3505": 56.58571428571429
+   },
+   "on": {
+    "3501": 53.47857142857142,
+    "3502": 54.114285714285714,
+    "3503": 53.65714285714286,
+    "3504": 52.949999999999996,
+    "3505": 54.385714285714286
+   },
+   "panel": "home72",
+   "per_final": {
+    "c0_s3501": {
+     "final": "09a6a2df48509a59fd9aefe6d20d9722aad6717f1730c6dfd75274446b283303",
+     "inconclusive": [],
+     "per_member_pp": {
+      "production": 73.45,
+      "tstar": 57.550000000000004,
+      "x26_080m": 59.45,
+      "x26_140m": 53.300000000000004,
+      "x26_210m": 51.800000000000004,
+      "x26_270m": 50.8,
+      "x26_pstar": 51.4
+     },
+     "s_pp": 56.82142857142857
+    },
+    "c0_s3502": {
+     "final": "7e9a9890e2b397de6d8b87588c597d7f53e39b84efd3d1080305f77dbf22feec",
+     "inconclusive": [],
+     "per_member_pp": {
+      "production": 75.44999999999999,
+      "tstar": 59.4,
+      "x26_080m": 59.4,
+      "x26_140m": 54.949999999999996,
+      "x26_210m": 50.849999999999994,
+      "x26_270m": 52.400000000000006,
+      "x26_pstar": 49.3
+     },
+     "s_pp": 57.392857142857146
+    },
+    "c0_s3503": {
+     "final": "99096be8eccfc1cef4268ab4d6de15063a386cda475e72340212fdbf3a1b7e26",
+     "inconclusive": [],
+     "per_member_pp": {
+      "production": 75.5,
+      "tstar": 59.45,
+      "x26_080m": 54.50000000000001,
+      "x26_140m": 52.849999999999994,
+      "x26_210m": 53.2,
+      "x26_270m": 50.74999999999999,
+      "x26_pstar": 51.6
+     },
+     "s_pp": 56.83571428571429
+    },
+    "c0_s3504": {
+     "final": "26835480f06840020880b3dd0e4de0558d9677ff1529360b99994dcf1dfa5fae",
+     "inconclusive": [],
+     "per_member_pp": {
+      "production": 71.0,
+      "tstar": 59.0,
+      "x26_080m": 60.45,
+      "x26_140m": 55.7,
+      "x26_210m": 52.1,
+      "x26_270m": 51.349999999999994,
+      "x26_pstar": 52.0
+     },
+     "s_pp": 57.371428571428574
+    },
+    "c0_s3505": {
+     "final": "bb10cd96b4c5f7e79fcc8256884685053c2ac3c142f6a14c996f809e0b2626a0",
+     "inconclusive": [],
+     "per_member_pp": {
+      "production": 73.55000000000001,
+      "tstar": 60.85,
+      "x26_080m": 56.49999999999999,
+      "x26_140m": 54.400000000000006,
+      "x26_210m": 52.65,
+      "x26_270m": 48.949999999999996,
+      "x26_pstar": 49.2
+     },
+     "s_pp": 56.58571428571429
+    },
+    "n1p_s3501": {
+     "final": "312612745844914259f2383de8965c6f913fbea3fac005f267d428c1ecd6079e",
+     "inconclusive": [],
+     "per_member_pp": {
+      "production": 69.75,
+      "tstar": 56.65,
+      "x26_080m": 51.74999999999999,
+      "x26_140m": 50.8,
+      "x26_210m": 47.4,
+      "x26_270m": 47.4,
+      "x26_pstar": 50.6
+     },
+     "s_pp": 53.47857142857142
+    },
+    "n1p_s3502": {
+     "final": "4d0f4bdb63094ba7008a9292096149e0765fd1fed86edcba6bb69dd673d833d1",
+     "inconclusive": [],
+     "per_member_pp": {
+      "production": 70.89999999999999,
+      "tstar": 57.75,
+      "x26_080m": 54.800000000000004,
+      "x26_140m": 53.0,
+      "x26_210m": 47.5,
+      "x26_270m": 46.5,
+      "x26_pstar": 48.35
+     },
+     "s_pp": 54.114285714285714
+    },
+    "n1p_s3503": {
+     "final": "b96d4eae6e92a154cda7076aeb41739fd812426c7101c8086b1ba2f9c2ab79d4",
+     "inconclusive": [],
+     "per_member_pp": {
+      "production": 71.1,
+      "tstar": 56.10000000000001,
+      "x26_080m": 55.400000000000006,
+      "x26_140m": 50.05,
+      "x26_210m": 49.25,
+      "x26_270m": 45.4,
+      "x26_pstar": 48.3
+     },
+     "s_pp": 53.65714285714286
+    },
+    "n1p_s3504": {
+     "final": "a4a8f9aa0f23baba74cd30079f276548b8811604fcb29606cf20a15d24e4d015",
+     "inconclusive": [],
+     "per_member_pp": {
+      "production": 68.55,
+      "tstar": 56.65,
+      "x26_080m": 52.400000000000006,
+      "x26_140m": 49.1,
+      "x26_210m": 49.9,
+      "x26_270m": 47.599999999999994,
+      "x26_pstar": 46.45
+     },
+     "s_pp": 52.949999999999996
+    },
+    "n1p_s3505": {
+     "final": "712756dad974aaf3a8cf009c612acb8e19bc3c55be49c67c8c5e5bf16932a8af",
+     "inconclusive": [],
+     "per_member_pp": {
+      "production": 71.6,
+      "tstar": 54.7,
+      "x26_080m": 54.900000000000006,
+      "x26_140m": 53.400000000000006,
+      "x26_210m": 50.05,
+      "x26_270m": 48.5,
+      "x26_pstar": 47.55
+     },
+     "s_pp": 54.385714285714286
+    }
+   },
+   "team_set": "ts:08142ee8b0c18e8a"
+  },
+  "reported_panels": {
+   "off": {
+    "3501": {
+     "heldout72_hpfix": [
+      69,
+      140
+     ],
+     "home72": [
+      83,
+      140
+     ],
+     "p72": [
+      59,
+      140
+     ]
+    },
+    "3502": {
+     "heldout72_hpfix": [
+      66,
+      140
+     ],
+     "home72": [
+      74,
+      140
+     ],
+     "p72": [
+      74,
+      140
+     ]
+    },
+    "3503": {
+     "heldout72_hpfix": [
+      63,
+      140
+     ],
+     "home72": [
+      79,
+      140
+     ],
+     "p72": [
+      63,
+      140
+     ]
+    },
+    "3504": {
+     "heldout72_hpfix": [
+      59,
+      140
+     ],
+     "home72": [
+      76,
+      140
+     ],
+     "p72": [
+      72,
+      140
+     ]
+    },
+    "3505": {
+     "heldout72_hpfix": [
+      59,
+      140
+     ],
+     "home72": [
+      80,
+      140
+     ],
+     "p72": [
+      61,
+      140
+     ]
+    }
+   },
+   "on": {
+    "3501": {
+     "heldout72_hpfix": [
+      66,
+      140
+     ],
+     "home72": [
+      79,
+      140
+     ],
+     "p72": [
+      72,
+      140
+     ]
+    },
+    "3502": {
+     "heldout72_hpfix": [
+      70,
+      140
+     ],
+     "home72": [
+      74,
+      140
+     ],
+     "p72": [
+      65,
+      140
+     ]
+    },
+    "3503": {
+     "heldout72_hpfix": [
+      69,
+      140
+     ],
+     "home72": [
+      79,
+      140
+     ],
+     "p72": [
+      71,
+      140
+     ]
+    },
+    "3504": {
+     "heldout72_hpfix": [
+      74,
+      140
+     ],
+     "home72": [
+      71,
+      140
+     ],
+     "p72": [
+      69,
+      140
+     ]
+    },
+    "3505": {
+     "heldout72_hpfix": [
+      66,
+      140
+     ],
+     "home72": [
+      76,
+      140
+     ],
+     "p72": [
+      72,
+      140
+     ]
+    }
+   }
+  }
+ },
+ "ledgers": {
+  "p": {
+   "digest": "428375c289a5d7819c4ad4a51301fe0c7a7189d6c509a75f45998cab3816e3c7",
+   "family": "x61p_n1p_p_look2_2026-10-26",
+   "rows": 140
+  }
+ },
+ "look": 2,
+ "models": {
+  "c0_s3501": {
+   "arm": "c0",
+   "seed": 3501,
+   "sha256": "09a6a2df48509a59fd9aefe6d20d9722aad6717f1730c6dfd75274446b283303",
+   "source": "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3501/final_model.zip",
+   "step": 300061940
+  },
+  "c0_s3502": {
+   "arm": "c0",
+   "seed": 3502,
+   "sha256": "7e9a9890e2b397de6d8b87588c597d7f53e39b84efd3d1080305f77dbf22feec",
+   "source": "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3502/final_model.zip",
+   "step": 300061805
+  },
+  "c0_s3503": {
+   "arm": "c0",
+   "seed": 3503,
+   "sha256": "99096be8eccfc1cef4268ab4d6de15063a386cda475e72340212fdbf3a1b7e26",
+   "source": "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3503/final_model.zip",
+   "step": 300061491
+  },
+  "c0_s3504": {
+   "arm": "c0",
+   "seed": 3504,
+   "sha256": "26835480f06840020880b3dd0e4de0558d9677ff1529360b99994dcf1dfa5fae",
+   "source": "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3504/final_model.zip",
+   "step": 300062191
+  },
+  "c0_s3505": {
+   "arm": "c0",
+   "seed": 3505,
+   "sha256": "bb10cd96b4c5f7e79fcc8256884685053c2ac3c142f6a14c996f809e0b2626a0",
+   "source": "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3505/final_model.zip",
+   "step": 300062098
+  },
+  "n1p_s3501": {
+   "arm": "n1p",
+   "seed": 3501,
+   "sha256": "312612745844914259f2383de8965c6f913fbea3fac005f267d428c1ecd6079e",
+   "source": "/home/goodlad/dev/gen3ai/models/rb_x35_n1p_s3501/final_model.zip",
+   "step": 300061625
+  },
+  "n1p_s3502": {
+   "arm": "n1p",
+   "seed": 3502,
+   "sha256": "4d0f4bdb63094ba7008a9292096149e0765fd1fed86edcba6bb69dd673d833d1",
+   "source": "/home/goodlad/dev/gen3ai/models/rb_x35_n1p_s3502/final_model.zip",
+   "step": 300061852
+  },
+  "n1p_s3503": {
+   "arm": "n1p",
+   "seed": 3503,
+   "sha256": "b96d4eae6e92a154cda7076aeb41739fd812426c7101c8086b1ba2f9c2ab79d4",
+   "source": "/home/goodlad/dev/gen3ai/models/rb_x35_n1p_s3503/final_model.zip",
+   "step": 300061085
+  },
+  "n1p_s3504": {
+   "arm": "n1p",
+   "seed": 3504,
+   "sha256": "a4a8f9aa0f23baba74cd30079f276548b8811604fcb29606cf20a15d24e4d015",
+   "source": "/home/goodlad/dev/gen3ai/models/rb_x35_n1p_s3504/final_model.zip",
+   "step": 300061235
+  },
+  "n1p_s3505": {
+   "arm": "n1p",
+   "seed": 3505,
+   "sha256": "712756dad974aaf3a8cf009c612acb8e19bc3c55be49c67c8c5e5bf16932a8af",
+   "source": "/home/goodlad/dev/gen3ai/models/rb_x35_n1p_s3505/final_model.zip",
+   "step": 300062207
+  }
+ },
+ "p": {
+  "bar_pp": -2.0,
+  "class": "INFERIORITY-NOT-EXCLUDED",
+  "look": 2,
+  "near_boundary": [],
+  "reasons": [],
+  "stat": {
+   "ci_pp": [
+    -4.136191028309138,
+    -2.4323804002622933
+   ],
+   "confidence": 0.975,
+   "delta_pp": -3.2842857142857156,
+   "df": 6.841792186200338,
+   "mean_off_pp": 57.001428571428576,
+   "mean_on_pp": 53.71714285714286,
+   "n_off": 5,
+   "n_on": 5,
+   "q": 2.8583800852941,
+   "se_pp": 0.29803780064321617,
+   "var_off": 0.130698979591837,
+   "var_on": 0.3134336734693904
+  }
+ },
+ "prereg": "designs/research_state/measurements/x61p_n1_production_2026-10-26/PREREG.md",
+ "read": "x61p_n1p_look2_2026-10-26",
+ "reasons": [
+  "H is not a GAIN"
+ ],
+ "rederived_guards": {
+  "held": false,
+  "hits": [],
+  "mode": "report",
+  "schema": "gen3_read_rederived_guards_v1",
+  "unavailable": [
+   {
+    "group": "reported",
+    "unit": "c0_s3501__home72__00",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look1/anchor/reported/c0_s3501/cells/c0_s3501__home72__00"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "c0_s3501__home72__01",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look1/anchor/reported/c0_s3501/cells/c0_s3501__home72__01"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "c0_s3501__home72__02",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look1/anchor/reported/c0_s3501/cells/c0_s3501__home72__02"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "c0_s3501__home72__03",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look1/anchor/reported/c0_s3501/cells/c0_s3501__home72__03"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "c0_s3501__home72__04",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look1/anchor/reported/c0_s3501/cells/c0_s3501__home72__04"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "c0_s3501__home72__05",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look1/anchor/reported/c0_s3501/cells/c0_s3501__home72__05"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "c0_s3501__home72__06",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look1/anchor/reported/c0_s3501/cells/c0_s3501__home72__06"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "c0_s3502__home72__00",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look1/anchor/reported/c0_s3502/cells/c0_s3502__home72__00"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "c0_s3502__home72__01",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look1/anchor/reported/c0_s3502/cells/c0_s3502__home72__01"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "c0_s3502__home72__02",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look1/anchor/reported/c0_s3502/cells/c0_s3502__home72__02"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "c0_s3502__home72__03",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look1/anchor/reported/c0_s3502/cells/c0_s3502__home72__03"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "c0_s3502__home72__04",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look1/anchor/reported/c0_s3502/cells/c0_s3502__home72__04"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "c0_s3502__home72__05",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look1/anchor/reported/c0_s3502/cells/c0_s3502__home72__05"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "c0_s3502__home72__06",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look1/anchor/reported/c0_s3502/cells/c0_s3502__home72__06"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "c0_s3503__home72__00",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look1/anchor/reported/c0_s3503/cells/c0_s3503__home72__00"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "c0_s3503__home72__01",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look1/anchor/reported/c0_s3503/cells/c0_s3503__home72__01"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "c0_s3503__home72__02",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look1/anchor/reported/c0_s3503/cells/c0_s3503__home72__02"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "c0_s3503__home72__03",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look1/anchor/reported/c0_s3503/cells/c0_s3503__home72__03"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "c0_s3503__home72__04",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look1/anchor/reported/c0_s3503/cells/c0_s3503__home72__04"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "c0_s3503__home72__05",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look1/anchor/reported/c0_s3503/cells/c0_s3503__home72__05"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "c0_s3503__home72__06",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look1/anchor/reported/c0_s3503/cells/c0_s3503__home72__06"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "c0_s3504__home72__00",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look2/anchor/reported/c0_s3504/cells/c0_s3504__home72__00"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "c0_s3504__home72__01",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look2/anchor/reported/c0_s3504/cells/c0_s3504__home72__01"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "c0_s3504__home72__02",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look2/anchor/reported/c0_s3504/cells/c0_s3504__home72__02"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "c0_s3504__home72__03",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look2/anchor/reported/c0_s3504/cells/c0_s3504__home72__03"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "c0_s3504__home72__04",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look2/anchor/reported/c0_s3504/cells/c0_s3504__home72__04"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "c0_s3504__home72__05",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look2/anchor/reported/c0_s3504/cells/c0_s3504__home72__05"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "c0_s3504__home72__06",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look2/anchor/reported/c0_s3504/cells/c0_s3504__home72__06"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "c0_s3505__home72__00",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look2/anchor/reported/c0_s3505/cells/c0_s3505__home72__00"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "c0_s3505__home72__01",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look2/anchor/reported/c0_s3505/cells/c0_s3505__home72__01"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "c0_s3505__home72__02",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look2/anchor/reported/c0_s3505/cells/c0_s3505__home72__02"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "c0_s3505__home72__03",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look2/anchor/reported/c0_s3505/cells/c0_s3505__home72__03"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "c0_s3505__home72__04",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look2/anchor/reported/c0_s3505/cells/c0_s3505__home72__04"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "c0_s3505__home72__05",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look2/anchor/reported/c0_s3505/cells/c0_s3505__home72__05"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "c0_s3505__home72__06",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look2/anchor/reported/c0_s3505/cells/c0_s3505__home72__06"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "n1p_s3501__home72__00",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look1/anchor/reported/n1p_s3501/cells/n1p_s3501__home72__00"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "n1p_s3501__home72__01",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look1/anchor/reported/n1p_s3501/cells/n1p_s3501__home72__01"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "n1p_s3501__home72__02",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look1/anchor/reported/n1p_s3501/cells/n1p_s3501__home72__02"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "n1p_s3501__home72__03",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look1/anchor/reported/n1p_s3501/cells/n1p_s3501__home72__03"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "n1p_s3501__home72__04",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look1/anchor/reported/n1p_s3501/cells/n1p_s3501__home72__04"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "n1p_s3501__home72__05",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look1/anchor/reported/n1p_s3501/cells/n1p_s3501__home72__05"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "n1p_s3501__home72__06",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look1/anchor/reported/n1p_s3501/cells/n1p_s3501__home72__06"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "n1p_s3502__home72__00",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look1/anchor/reported/n1p_s3502/cells/n1p_s3502__home72__00"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "n1p_s3502__home72__01",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look1/anchor/reported/n1p_s3502/cells/n1p_s3502__home72__01"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "n1p_s3502__home72__02",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look1/anchor/reported/n1p_s3502/cells/n1p_s3502__home72__02"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "n1p_s3502__home72__03",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look1/anchor/reported/n1p_s3502/cells/n1p_s3502__home72__03"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "n1p_s3502__home72__04",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look1/anchor/reported/n1p_s3502/cells/n1p_s3502__home72__04"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "n1p_s3502__home72__05",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look1/anchor/reported/n1p_s3502/cells/n1p_s3502__home72__05"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "n1p_s3502__home72__06",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look1/anchor/reported/n1p_s3502/cells/n1p_s3502__home72__06"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "n1p_s3503__home72__00",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look1/anchor/reported/n1p_s3503/cells/n1p_s3503__home72__00"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "n1p_s3503__home72__01",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look1/anchor/reported/n1p_s3503/cells/n1p_s3503__home72__01"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "n1p_s3503__home72__02",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look1/anchor/reported/n1p_s3503/cells/n1p_s3503__home72__02"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "n1p_s3503__home72__03",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look1/anchor/reported/n1p_s3503/cells/n1p_s3503__home72__03"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "n1p_s3503__home72__04",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look1/anchor/reported/n1p_s3503/cells/n1p_s3503__home72__04"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "n1p_s3503__home72__05",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look1/anchor/reported/n1p_s3503/cells/n1p_s3503__home72__05"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "n1p_s3503__home72__06",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look1/anchor/reported/n1p_s3503/cells/n1p_s3503__home72__06"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "n1p_s3504__home72__00",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look2/anchor/reported/n1p_s3504/cells/n1p_s3504__home72__00"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "n1p_s3504__home72__01",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look2/anchor/reported/n1p_s3504/cells/n1p_s3504__home72__01"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "n1p_s3504__home72__02",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look2/anchor/reported/n1p_s3504/cells/n1p_s3504__home72__02"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "n1p_s3504__home72__03",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look2/anchor/reported/n1p_s3504/cells/n1p_s3504__home72__03"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "n1p_s3504__home72__04",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look2/anchor/reported/n1p_s3504/cells/n1p_s3504__home72__04"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "n1p_s3504__home72__05",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look2/anchor/reported/n1p_s3504/cells/n1p_s3504__home72__05"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "n1p_s3504__home72__06",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look2/anchor/reported/n1p_s3504/cells/n1p_s3504__home72__06"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "n1p_s3505__home72__00",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look2/anchor/reported/n1p_s3505/cells/n1p_s3505__home72__00"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "n1p_s3505__home72__01",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look2/anchor/reported/n1p_s3505/cells/n1p_s3505__home72__01"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "n1p_s3505__home72__02",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look2/anchor/reported/n1p_s3505/cells/n1p_s3505__home72__02"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "n1p_s3505__home72__03",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look2/anchor/reported/n1p_s3505/cells/n1p_s3505__home72__03"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "n1p_s3505__home72__04",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look2/anchor/reported/n1p_s3505/cells/n1p_s3505__home72__04"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "n1p_s3505__home72__05",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look2/anchor/reported/n1p_s3505/cells/n1p_s3505__home72__05"
+    ]
+   },
+   {
+    "group": "reported",
+    "unit": "n1p_s3505__home72__06",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x61p_n1p_read/look2/anchor/reported/n1p_s3505/cells/n1p_s3505__home72__06"
+    ]
+   }
+  ],
+  "units_checked": 810
+ },
+ "regimes": {
+  "anchor": {
+   "primary": "00c8c0114bdf0836",
+   "reported": "3d2cbdc0b1413bcb"
+  },
+  "s": {
+   "p": "d4de0fd7c16a2658"
+  }
+ },
+ "repins": [],
+ "reported": {
+  "dose": {
+   "read": false
+  },
+  "reported_panels": {
+   "dH_minus_dF_pp": 3.5928571428571527,
+   "per_panel": {
+    "forum72": {
+     "ci95_pp": [
+      -1.238688567921993,
+      2.338190980532409
+     ],
+     "delta_pp": 0.5499999999999949,
+     "off": [
+      3023,
+      6000
+     ],
+     "on": [
+      3056,
+      6000
+     ],
+     "role": "the PRIMARY: human-built forum teams; 19 % of its full sets sit in the corpus (X61 review B1)"
+    },
+    "heldout72_hpfix": {
+     "ci95_pp": [
+      -1.0844988415152093,
+      9.338335782342218
+     ],
+     "delta_pp": 4.142857142857148,
+     "off": [
+      316,
+      700
+     ],
+     "on": [
+      345,
+      700
+     ],
+     "role": "REPORTED: generator-adjacent (62 % of its full sets sit verbatim in the corpus, B1)"
+    },
+    "home72": {
+     "ci95_pp": [
+      -7.046413467281179,
+      3.34631356234269
+     ],
+     "delta_pp": -1.8571428571428572,
+     "off": [
+      392,
+      700
+     ],
+     "on": [
+      379,
+      700
+     ],
+     "role": "REPORTED: the in-pool cost (the pool's own teams)"
+    },
+    "p72": {
+     "ci95_pp": [
+      -2.3731081410251194,
+      8.065362595628892
+     ],
+     "delta_pp": 2.857142857142858,
+     "off": [
+      329,
+      700
+     ],
+     "on": [
+      349,
+      700
+     ],
+     "role": "REPORTED: a sibling generator over the same Smogon tables (the corpus's own population)"
+    }
+   },
+   "reasons": [],
+   "u": {
+    "ci95_pp": [
+     -0.02031739978148872,
+     5.049086622098438
+    ],
+    "ci95_unwidened_pp": [
+     -0.02031739978148872,
+     5.049086622098438
+    ],
+    "delta_pp": 2.516666666666667,
+    "off": {
+     "mean": 0.4750873015873016,
+     "n_eff": 2987.398210221138,
+     "per_panel": {
+      "forum72": [
+       3023,
+       6000
+      ],
+      "heldout72_hpfix": [
+       316,
+       700
+      ],
+      "p72": [
+       329,
+       700
+      ]
+     },
+     "var": 8.347710613354688e-05,
+     "wilson95": [
+      0.45722340008664025,
+      0.4930151906755174
+     ]
+    },
+    "on": {
+     "mean": 0.5002539682539683,
+     "n_eff": 2976.732841258481,
+     "per_panel": {
+      "forum72": [
+       3056,
+       6000
+      ],
+      "heldout72_hpfix": [
+       345,
+       700
+      ],
+      "p72": [
+       349,
+       700
+      ]
+     },
+     "var": 8.398467340939903e-05,
+     "wilson95": [
+      0.48230349170926856,
+      0.5182037901539642
+     ]
+    },
+    "overdispersion": {
+     "df": 8,
+     "half_width_factor": 1.0,
+     "phi_hat": 0.674207906499433,
+     "ratio_off": 1.1377673809501505,
+     "ratio_on": 0.21064843204871536
+    }
+   }
+  }
+ },
+ "reported_incomplete": {},
+ "rule": "d1",
+ "schema": "gen3_read_record_v1",
+ "spec_sha256": "f28654ccf31c3c3e6a0a3c3f9d61b904bf504f59d197b67baa3f17d510c2c620",
+ "verdict": "NULL",
+ "void": {
+  "n1p_s3501": {
+   "batch2": null,
+   "k9b": "PASS",
+   "k9b_file": "/home/goodlad/dev/gen3ai/.claude/worktrees/n1p-look2/designs/research_state/measurements/x35_breakers_stage_2026-10-17/k9b/rb_x35_n1p_s3501.json",
+   "pass": true,
+   "run": "models/rb_x35_n1p_s3501"
+  },
+  "n1p_s3502": {
+   "batch2": null,
+   "k9b": "PASS",
+   "k9b_file": "/home/goodlad/dev/gen3ai/.claude/worktrees/n1p-look2/designs/research_state/measurements/x35_breakers_stage_2026-10-17/k9b/rb_x35_n1p_s3502.json",
+   "pass": true,
+   "run": "models/rb_x35_n1p_s3502"
+  },
+  "n1p_s3503": {
+   "batch2": null,
+   "k9b": "PASS",
+   "k9b_file": "/home/goodlad/dev/gen3ai/.claude/worktrees/n1p-look2/designs/research_state/measurements/x35_breakers_stage_2026-10-17/k9b/rb_x35_n1p_s3503.json",
+   "pass": true,
+   "run": "models/rb_x35_n1p_s3503"
+  },
+  "n1p_s3504": {
+   "batch2": null,
+   "k9b": "PASS",
+   "k9b_file": "/home/goodlad/dev/gen3ai/.claude/worktrees/n1p-look2/designs/research_state/measurements/x35_breakers_stage_2026-10-17/k9b/rb_x35_n1p_s3504.json",
+   "pass": true,
+   "run": "models/rb_x35_n1p_s3504"
+  },
+  "n1p_s3505": {
+   "batch2": null,
+   "k9b": "PASS",
+   "k9b_file": "/home/goodlad/dev/gen3ai/.claude/worktrees/n1p-look2/designs/research_state/measurements/x35_breakers_stage_2026-10-17/k9b/rb_x35_n1p_s3505.json",
+   "pass": true,
+   "run": "models/rb_x35_n1p_s3505"
+  }
+ }
+}

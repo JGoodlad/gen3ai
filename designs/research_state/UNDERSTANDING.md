@@ -100,8 +100,8 @@ under `measurements/`. A number with no pointer is not a measurement.
    ±3–4 pp wide: practice on 36 teams (X52) +1.3 pp on the unpractised half, UNDECIDED; a wider pool (D1) +2.10
    [−0.92, +5.11], UNDECIDED (final), at −1.61 pp in-pool; set mutation (D3, final, every game on one engine) +2.33 [−0.69, +5.35],
    UNDECIDED, at −0.45 pp in-pool; the belief prior mix ±1.50, NOT DETECTED; plain training FLAT. [Kakuna · `42bb0858d`,
-   `eb99ab362`, D3's look-2 record, `f299a7243`, `71c76dfbb`, `204204bbf`] Breadth at 10⁴ teams (N1-P) reads +0.75 on F at look 1
-   (CONTINUE) at −3.27 pp in-pool; human 1300+ data teaches less than our own self-play data (X59-S, item 13); H-CTX says the breadth that matters is breadth of TEAMS (item 4). The plan after them is §6.
+   `eb99ab362`, D3's look-2 record, `f299a7243`, `71c76dfbb`, `204204bbf`] Breadth at 10⁴ procedural teams (N1-P) reads NULL
+   (final): F +0.55 [−1.26, +2.36] at −3.28 pp in-pool; human 1300+ data teaches less than our own self-play data (X59-S, item 13); H-CTX says the breadth that matters is breadth of TEAMS (item 4). The plan after them is §6.
 6. **The belief stack memorises the pool, but that is not where games are lost.** On unfamiliar opponents 63–85 %
    of the hidden slots hold the wrong species guess, yet mixing in the Smogon prior (λ = 0.25: U +1.50 pp [−2.74,
    +5.74]) or using the prior alone (λ = 1: −1.50 [−5.47, +2.47]) moves Kakuna games by nothing detectable at ±5 pp.
@@ -156,7 +156,7 @@ owner's approval (`designs/endstate/design_ladder_campaign.md`).
 6. which collapse we see, and a source of counterfactuals (§4.4).
 
 The plan for goal (b) is `designs/endstate/design_beat_metamon_path.md`; D3 has missed (UNDECIDED, final) and human
-1300+ data is no route (X59-S, SELF-PLAY-DATA-BETTER); if N1-P misses too, the fallback is `designs/endstate/strategy_if_levers_null_2026-10-26.md`.
+1300+ data is no route (X59-S, SELF-PLAY-DATA-BETTER); N1-P has missed (NULL, final), so the fallback is `designs/endstate/strategy_if_levers_null_2026-10-26.md`.
 
 **The Rustboro era.** It starts with the X5 belief A/B and X26 (2026-10-03): the fixed bots and the Rustboro anchor
 base, the Rust environment core, the END STATE architecture (adopted 2026-10-12, §4.6b) and the bf16 trunk (§4.6c).
@@ -329,15 +329,17 @@ replicated on the 1,600 PastaMittens twins · `c758fcb82`; `measurements/pilotin
   hypothesis) is not killed: its interval is too wide. The memorisation is real and invisible in Kakuna games at ±5 pp; the belief-anchoring levers have no
   game-level case. [`f299a7243`, `71c76dfbb`; ledger 2026-10-26 · *H3 … BANKED ON CALIBRATION*, *THE BELIEF PRIOR
   MIX* ×2; `measurements/belief_prior_mix_2026-10-26/`; `../model/generalisation_review_2026-10-26.md`]
-- **Breadth at 10⁴ teams (N1-P / X61P) at the plateau: look 1 CONTINUE, at a resolved in-pool cost.** Every system
+- **Breadth at 10⁴ teams (N1-P / X61P) at the plateau: NULL (final), at a resolved in-pool cost.** Every system
   that generalises across teams trained on 10⁴–10⁵ of them; every breadth test here ran at 10³. A fork of P\* with half
-  its teams from 12,000 procedural teams (`n1_proc_v1`), 3 seeds, read on F alone by D1's rule against C0 re-played on
-  one engine: **F +0.75 pp [−1.56, +3.06]** (UNDECIDED, Δ̂ > 0 ⇒ look 2; the guess was +1.5), and **in-house S on
-  home72 −3.27 pp [−4.20, −2.33]**, twice D1's −1.61 at the same 0.5 share. H and P72 overlap the corpus and are
-  reported only: H +1.67, P72 +2.86, U +1.76 [−1.52, +5.03], without H +1.80 [−2.17, +5.77], Δ_H − Δ_F +0.92, so no
-  sign of learning the generator's sets. A look-2 F GAIN would be a TRADE unless P recovers, and is read beside the
-  two-look false-GAIN rate 3.5–7.4 %. [Kakuna · ledger 2026-10-28 · *X61P N1-P LOOK 1*;
-  `measurements/x61p_n1_production_2026-10-26/read/`]
+  its teams from 12,000 procedural teams (`n1_proc_v1`), 5 seeds, read on F alone by D1's rule against C0 on one
+  engine (E3): **F +0.55 pp [−1.26, +2.36]** (N1-P 0.509 vs C0 0.504, 6,000 games per arm; seeds +1.0 / −0.25 / +1.5 /
+  +1.0 / −0.5; the guess was +1.5), inside ±3 pp, so NULL; **in-house S on home72 −3.28 pp [−4.14, −2.43]**, twice
+  D1's −1.61 at the same 0.5 share. H and P72 overlap the corpus and are reported only: H +4.14 [−1.08, +9.34], P72
+  +2.86, U +2.52 [−0.02, +5.05], without H +1.70 [−1.06, +4.47], **Δ_H − Δ_F +3.59** (descriptive: the gain sits on
+  the generator-adjacent panel, the "learned the generator's sets" reading, not on human-built F). It rules out "N1 at
+  the plateau" (share 0.5, 20M) beyond ±3 pp only, not N1 from step 0 (the plasticity confound), the toy screen or a
+  human-derived corpus; X53-N1 is not triggered. [Kakuna · ledger 2026-10-30 · *X61P N1-P LOOK 2*;
+  `measurements/x61p_n1_production_2026-10-26/read_look2/`; look 1: `read/`]
 
 **The opponents.**
 - **PastaMittens** (Metamon's deployed ensemble over Kakuna checkpoints 28, 34, 30 and Alakazam): P\* 0.484 [0.456,
@@ -603,6 +605,7 @@ state), then trained 20M steps against C0, re-played on one engine (E1). **NO-GO
 | The opponent's choices, judged by our network or a human model, make search pay | stage 1c NOT DETECTED on every arm; HOM-NONE (§4.7) |
 | Plain training past 380M keeps lifting goal (b) | X26c FLAT (§3.1) |
 | Better policy-side beliefs are a strength lever at this maturity | the knock-in forks NULL; the prior mix NOT DETECTED (§4.5, §3.1) |
+| 10⁴ procedural teams at share 0.5 lift human-built-team piloting at the plateau within 20M (N1 at the plateau) | N1-P NULL: F +0.55 [−1.26, +2.36], 5 seeds (§3.1; effects beyond ±3 pp only) |
 
 The flywheel-era retirements (fold dose, length, team count, budget, teacher quality, the architecture account) are
 retired for the fold-gift question only; they live in the last full text (§0) and the ledger (2026-09-05 / 06).
@@ -621,7 +624,6 @@ retired for the fold-gift question only; they live in the last full text (§0) a
 
 | question | the read that answers it |
 |---|---|
-| Does breadth at 10⁴ procedural teams lift unfamiliar-team piloting at the plateau? | **N1-P look 2** (look 1 CONTINUE 2026-10-28: F +0.75 [−1.56, +3.06], P −3.27 [−4.20, −2.33]; X61P, D1's rule on F; [`PREREG.md`](measurements/x61p_n1_production_2026-10-26/PREREG.md), `5b84bca62`). ADOPT-CANDIDATE (F GAIN, in-house non-inferior) funds **X53-N1**, a fresh production run on 10⁴ teams (`../endstate/design_x53_n1_fresh_breadth.md`); NULL rules out only "N1 at the plateau" |
 | Does rating change it, and does the closure stand? | **X59-S's Δ_restriction** (S-P0 − S-P, playing: its lower bound ≤ 0 closes the 1300+ slice) and its **≥ 1500 follow-up** (S-H≥1500 vs a volume-matched mix and vs S-S, in-house; ≈ 1.5 GPU-h). X59-S itself read SELF-PLAY-DATA-BETTER (§4.8) |
 
 **Queued and planned** (the ranked order: X63, PR-1′, after REVIEW_2 `69c7cd34d` §6; X48 read NO-GO 2026-10-30, §4.13)

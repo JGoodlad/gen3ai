@@ -1,0 +1,282 @@
+{
+ "arm": "X61P",
+ "guards": {
+  "G-C": {
+   "detail": {},
+   "guard": "G-C",
+   "near_boundary": [],
+   "reasons": [
+    "the guards gate only a QUALIFYING primary (the orchestrator's A1 ruling (a)): H is not GAIN, so they were not played"
+   ],
+   "status": "INCONCLUSIVE"
+  },
+  "G-E": {
+   "detail": {},
+   "guard": "G-E",
+   "near_boundary": [],
+   "reasons": [
+    "the guards gate only a QUALIFYING primary (the orchestrator's A1 ruling (a)): H is not GAIN, so they were not played"
+   ],
+   "status": "INCONCLUSIVE"
+  },
+  "G-F": {
+   "detail": {},
+   "guard": "G-F",
+   "near_boundary": [],
+   "reasons": [
+    "the guards gate only a QUALIFYING primary (the orchestrator's A1 ruling (a)): H is not GAIN, so they were not played"
+   ],
+   "status": "INCONCLUSIVE"
+  }
+ },
+ "h": {
+  "ci95_pp": [
+   -1.2573421000745104,
+   2.356839323541027
+  ],
+  "ci95_unwidened_pp": [
+   -1.238688567921993,
+   2.338190980532409
+  ],
+  "class": "NULL",
+  "delta_pp": 0.5499999999999949,
+  "final": true,
+  "look": 2,
+  "near_boundary": [],
+  "off": {
+   "mean": 0.5038333333333334,
+   "n_eff": 6000.0,
+   "per_panel": {
+    "forum72": [
+     3023,
+     6000
+    ]
+   },
+   "var": 4.166421759259259e-05,
+   "wilson95": [
+    0.4911837870576,
+    0.5164779742189914
+   ]
+  },
+  "on": {
+   "mean": 0.5093333333333333,
+   "n_eff": 6000.0,
+   "per_panel": {
+    "forum72": [
+     3056,
+     6000
+    ]
+   },
+   "var": 4.165214814814815e-05,
+   "wilson95": [
+    0.4966820987621847,
+    0.5219726243460376
+   ]
+  },
+  "outcome": "NULL",
+  "overdispersion": {
+   "df": 8,
+   "half_width_factor": 1.0104286081361766,
+   "phi_hat": 1.020965972140011,
+   "ratio_off": 0.8014750966267234,
+   "ratio_on": 1.2404568476532989
+  },
+  "per_panel_reported": {
+   "forum72": {
+    "ci95_pp": [
+     -1.238688567921993,
+     2.338190980532409
+    ],
+    "delta_pp": 0.5499999999999949,
+    "off": [
+     3023,
+     6000
+    ],
+    "on": [
+     3056,
+     6000
+    ],
+    "role": "the PRIMARY: human-built forum teams; 19 % of its full sets sit in the corpus (X61 review B1)"
+   }
+  },
+  "positive_seeds": 3,
+  "reasons": [],
+  "seed_deltas_pp": {
+   "3501": 1.0000000000000009,
+   "3502": -0.2500000000000058,
+   "3503": 1.4999999999999958,
+   "3504": 1.0000000000000009,
+   "3505": -0.5000000000000004
+  },
+  "sign_ok": true,
+  "sign_rule": ">= 3 of 5"
+ },
+ "look": 2,
+ "p": {
+  "bar_pp": -2.0,
+  "class": "INFERIORITY-NOT-EXCLUDED",
+  "look": 2,
+  "near_boundary": [],
+  "reasons": [],
+  "stat": {
+   "ci_pp": [
+    -4.136191028309138,
+    -2.4323804002622933
+   ],
+   "confidence": 0.975,
+   "delta_pp": -3.2842857142857156,
+   "df": 6.841792186200338,
+   "mean_off_pp": 57.001428571428576,
+   "mean_on_pp": 53.71714285714286,
+   "n_off": 5,
+   "n_on": 5,
+   "q": 2.8583800852941,
+   "se_pp": 0.29803780064321617,
+   "var_off": 0.130698979591837,
+   "var_on": 0.3134336734693904
+  }
+ },
+ "reasons": [
+  "H is not a GAIN"
+ ],
+ "reported": {
+  "dose": {
+   "read": false
+  },
+  "reported_panels": {
+   "dH_minus_dF_pp": 3.5928571428571527,
+   "per_panel": {
+    "forum72": {
+     "ci95_pp": [
+      -1.238688567921993,
+      2.338190980532409
+     ],
+     "delta_pp": 0.5499999999999949,
+     "off": [
+      3023,
+      6000
+     ],
+     "on": [
+      3056,
+      6000
+     ],
+     "role": "the PRIMARY: human-built forum teams; 19 % of its full sets sit in the corpus (X61 review B1)"
+    },
+    "heldout72_hpfix": {
+     "ci95_pp": [
+      -1.0844988415152093,
+      9.338335782342218
+     ],
+     "delta_pp": 4.142857142857148,
+     "off": [
+      316,
+      700
+     ],
+     "on": [
+      345,
+      700
+     ],
+     "role": "REPORTED: generator-adjacent (62 % of its full sets sit verbatim in the corpus, B1)"
+    },
+    "home72": {
+     "ci95_pp": [
+      -7.046413467281179,
+      3.34631356234269
+     ],
+     "delta_pp": -1.8571428571428572,
+     "off": [
+      392,
+      700
+     ],
+     "on": [
+      379,
+      700
+     ],
+     "role": "REPORTED: the in-pool cost (the pool's own teams)"
+    },
+    "p72": {
+     "ci95_pp": [
+      -2.3731081410251194,
+      8.065362595628892
+     ],
+     "delta_pp": 2.857142857142858,
+     "off": [
+      329,
+      700
+     ],
+     "on": [
+      349,
+      700
+     ],
+     "role": "REPORTED: a sibling generator over the same Smogon tables (the corpus's own population)"
+    }
+   },
+   "reasons": [],
+   "u": {
+    "ci95_pp": [
+     -0.02031739978148872,
+     5.049086622098438
+    ],
+    "ci95_unwidened_pp": [
+     -0.02031739978148872,
+     5.049086622098438
+    ],
+    "delta_pp": 2.516666666666667,
+    "off": {
+     "mean": 0.4750873015873016,
+     "n_eff": 2987.398210221138,
+     "per_panel": {
+      "forum72": [
+       3023,
+       6000
+      ],
+      "heldout72_hpfix": [
+       316,
+       700
+      ],
+      "p72": [
+       329,
+       700
+      ]
+     },
+     "var": 8.347710613354688e-05,
+     "wilson95": [
+      0.45722340008664025,
+      0.4930151906755174
+     ]
+    },
+    "on": {
+     "mean": 0.5002539682539683,
+     "n_eff": 2976.732841258481,
+     "per_panel": {
+      "forum72": [
+       3056,
+       6000
+      ],
+      "heldout72_hpfix": [
+       345,
+       700
+      ],
+      "p72": [
+       349,
+       700
+      ]
+     },
+     "var": 8.398467340939903e-05,
+     "wilson95": [
+      0.48230349170926856,
+      0.5182037901539642
+     ]
+    },
+    "overdispersion": {
+     "df": 8,
+     "half_width_factor": 1.0,
+     "phi_hat": 0.674207906499433,
+     "ratio_off": 1.1377673809501505,
+     "ratio_on": 0.21064843204871536
+    }
+   }
+  }
+ },
+ "verdict": "NULL"
+}

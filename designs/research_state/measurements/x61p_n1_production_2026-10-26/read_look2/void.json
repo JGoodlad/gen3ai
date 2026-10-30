@@ -1,0 +1,37 @@
+{
+ "n1p_s3501": {
+  "batch2": null,
+  "k9b": "PASS",
+  "k9b_file": "/home/goodlad/dev/gen3ai/.claude/worktrees/n1p-look2/designs/research_state/measurements/x35_breakers_stage_2026-10-17/k9b/rb_x35_n1p_s3501.json",
+  "pass": true,
+  "run": "models/rb_x35_n1p_s3501"
+ },
+ "n1p_s3502": {
+  "batch2": null,
+  "k9b": "PASS",
+  "k9b_file": "/home/goodlad/dev/gen3ai/.claude/worktrees/n1p-look2/designs/research_state/measurements/x35_breakers_stage_2026-10-17/k9b/rb_x35_n1p_s3502.json",
+  "pass": true,
+  "run": "models/rb_x35_n1p_s3502"
+ },
+ "n1p_s3503": {
+  "batch2": null,
+  "k9b": "PASS",
+  "k9b_file": "/home/goodlad/dev/gen3ai/.claude/worktrees/n1p-look2/designs/research_state/measurements/x35_breakers_stage_2026-10-17/k9b/rb_x35_n1p_s3503.json",
+  "pass": true,
+  "run": "models/rb_x35_n1p_s3503"
+ },
+ "n1p_s3504": {
+  "batch2": null,
+  "k9b": "PASS",
+  "k9b_file": "/home/goodlad/dev/gen3ai/.claude/worktrees/n1p-look2/designs/research_state/measurements/x35_breakers_stage_2026-10-17/k9b/rb_x35_n1p_s3504.json",
+  "pass": true,
+  "run": "models/rb_x35_n1p_s3504"
+ },
+ "n1p_s3505": {
+  "batch2": null,
+  "k9b": "PASS",
+  "k9b_file": "/home/goodlad/dev/gen3ai/.claude/worktrees/n1p-look2/designs/research_state/measurements/x35_breakers_stage_2026-10-17/k9b/rb_x35_n1p_s3505.json",
+  "pass": true,
+  "run": "models/rb_x35_n1p_s3505"
+ }
+}
