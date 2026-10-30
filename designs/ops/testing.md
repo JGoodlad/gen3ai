@@ -940,6 +940,9 @@ The CUDA-only `slow` tests skip in every CPU run, so their rows are banked only 
 - **How they run.** The window runs one pytest process per node id, so one device-side assert cannot poison later
   verdicts as it did on 10-24. Each node gets its own bound, `node_timeout`: 3 x its banked duration, at least 600 s.
   The window runner wraps every step in `gpu_lock.sh mem_cap.sh 24 timeout`, under the chain's lease token.
+- **It never HOLDs what follows it.** The window is `on_fail: continue`, with its own preempt marker
+  (`NO_GO_SLOWGPU`), and sits last in its chain file. A failed preflight, a failed node or a budget overrun ends it
+  DONE_FAILED and the chain hands off. Its budget is computed from the banked durations (`window_budget_min`).
 - **Where the rows go.** `GEN3AI_SLOW_STATUS_FILE` points at a scratch file outside every checkout. The window's
   worktree is a clean scratch worktree, never main.
 - **How they ship.** Afterwards, `python -m main.ops.gpu_fill_window merge-rows --rows <file> --into

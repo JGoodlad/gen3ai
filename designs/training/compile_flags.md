@@ -853,6 +853,26 @@ That marginal loss-rule refusal is answered by the recalibration from W0's censu
 `canary_recalibration_2026-10-28.md`): the loss envelope's K 5.4 -> 9.2 (the slice reads 0.61 of it), the per-row
 margin above, the per-parameter 12 kept with no edge_bias exemption, the family bars kept for global-M runs only.
 
+### Slice-2-only refusals: the per-parameter rule on single-row-carried parameters (2026-10-29)
+
+Six of the seven production-lineage disagreements at M = 0.72 (6 of 166 checks) reproduced on slice 2 and none on
+slice 1. They span the per-parameter rule (`edge_bias.s1/c2_map`, `flat_intent_head.hidden`, `hp_type_belief_head`),
+the clip margin and eager's own drift. Stage 2's X26c @482M refusal (`nature_head`, at 1.2) belongs to the same
+pattern. The CPU read is `../research_state/measurements/canary_slice2_2026-10-29/README.md`:
+
+- **The carrier rows.** Each refusing parameter's judged gradient on slices 0 and 2 is carried by one to three golden
+  rows in 0-31 (9, 18, 22, 24).
+  - Slice 0 therefore re-reads slice 2's row, and "[2] of [2, 1]" is the expected signature.
+  - For `edge_bias.s1/c2_map`, slice 1 carries no gradient at all, so only the consecutive rule can FATAL them.
+- **The denominator is the outlier.** The fp32 function's own half-ulp dither moves those gradients by about the
+  compiled distance (median 0.1-1.0), while eager bf16 sits 5-50x below that null.
+- **Relocation amplifies at 1.2.** Row 9 (A -3.2) relocated to rho 9.37 carries 100 % of `nature_head`'s gradient.
+  So a `--canary-shift-max 0.3` resume raises a lineage's exposure to this pattern; it is not a remedy for a
+  per-parameter refusal.
+- **Whether CUDA's compiled bf16 sits outside that null is UNVERIFIED.** That is hypothesis (i), a real numerics
+  difference. The leased read is `python -m main.ops.canary_slice_read` (the pre-declared rule is in its docstring),
+  packaged as the `slice2-replay` window of `main.ops.gpu_fill_window`.
+
 ### The canary-FATAL resume rule and its family bars (`python -m main.ops.canary_decide <run>`, 2026-10-26)
 
 A FATAL canary on an X35 arm resumes (`--canary-shift-max 0.3`, the orchestrator's operator step) iff 0 PPO-clip

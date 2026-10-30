@@ -4435,10 +4435,18 @@
   },
   "src/main/ops/canary_dump_replay_test.py::test_the_eager_arms_and_the_canary_check_run_on_the_real_learner_cpu": {
    "status": "pass",
-   "commit": "8a7f293f3a37dfd38dbe80ba14e311f5b68a2176",
-   "at": "2026-10-29T15:17:23Z",
-   "duration_s": 29.03,
-   "contention": 1.27,
+   "commit": "d787002536e2cfe65e39c108c6b033c3f01d20e6",
+   "at": "2026-10-30T01:35:01Z",
+   "duration_s": 25.4,
+   "contention": 1.17,
+   "detail": ""
+  },
+  "src/main/ops/canary_slice_read_test.py::test_the_dither_read_runs_on_the_real_learner_cpu": {
+   "status": "pass",
+   "commit": "d787002536e2cfe65e39c108c6b033c3f01d20e6",
+   "at": "2026-10-30T01:35:01Z",
+   "duration_s": 26.24,
+   "contention": 1.07,
    "detail": ""
   },
   "src/main/ops/diag_bf16_canary_test.py::test_EVERY_route_of_the_GPU_read_RUNS_through_a_smoke_backend_on_cpu": {
@@ -5226,5 +5234,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-29T16:53:18Z"
+ "last_written": "2026-10-30T01:35:01Z"
 }

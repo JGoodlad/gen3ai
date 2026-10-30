@@ -63,24 +63,27 @@ def _base(tmp_path: Path) -> dict:
             "records": {"stage": "s", "submodules": []}, "items": [{"kind": "arm"}]}
 
 
-def _items(tmp_path: Path, ids=(GPU_ID, "src/y_test.py::test_b")):
+def _items(tmp_path: Path, ids=(GPU_ID, "src/y_test.py::test_b"), windows=G.WINDOWS):
     return G.window_items(worktree=str(tmp_path / "wt"), require_commit="abcdef1", python="/py",
                           out_dir=str(tmp_path / "out"), models_dir=str(tmp_path / "models"),
                           job_dir=str(tmp_path / "job"), ids=list(ids), durations={GPU_ID: 404.65},
-                          u1000_run_dir=str(tmp_path / "u1000"))
+                          u1000_run_dir=str(tmp_path / "u1000"), windows=windows)
 
 
-def test_the_two_windows_parse_as_a_chain_and_no_step_wraps_itself(tmp_path):
+def test_the_windows_parse_as_a_chain_in_the_safe_order_and_no_step_wraps_itself(tmp_path):
     from main.ops.arm_chain import spec
-    doc = G.chain_doc(_base(tmp_path), "x35-gpufill", _items(tmp_path))
+    doc = G.chain_doc(_base(tmp_path), "x35-gpufill", _items(tmp_path, windows=("slow-gpu", "slice2-replay",
+                                                                                  "canary-stage2")))
     c = spec.parse(doc)
-    assert [w.name for w in c.items] == ["canary-stage2", "slow-gpu"]
-    marker = str(tmp_path / "job" / G.PREEMPT_MARKER)
+    assert [w.name for w in c.items] == ["canary-stage2", "slice2-replay", "slow-gpu"]   # every HOLD window first
     for w in c.items:
-        assert w.on_fail == "hold" and w.preempt_marker == marker and w.worktree == str(tmp_path / "wt")
+        marker = str(tmp_path / "job" / G.PREEMPT_MARKERS[w.name])
+        assert w.preempt_marker == marker and w.worktree == str(tmp_path / "wt")
+        assert w.on_fail == ("continue" if w.name == "slow-gpu" else "hold")
         assert not w.steps[0].gpu and "preflight" in w.steps[0].argv[3] and marker in w.steps[0].argv
         for st in w.steps:
             assert not any(a.endswith(("gpu_lock.sh", "mem_cap.sh")) for a in st.argv)
+    assert len({w.preempt_marker for w in c.items}) == 3                  # a failed preflight stops ITS window only
     canary = c.items[0].steps
     assert sum(st.gpu for st in canary) == 20 and canary[-1].argv[3] == "canary-verdict"
     for st in canary[1:-1]:
@@ -88,11 +91,68 @@ def test_the_two_windows_parse_as_a_chain_and_no_step_wraps_itself(tmp_path):
         assert a[a.index("--canary-shift-max") + 1] == "0.3" and a[a.index("--batch") + 1] == "2048"
         assert a[a.index("--out") + 1].startswith(str(tmp_path / "out" / "canary_stage2"))
     assert any(str(tmp_path / "u1000") in a for a in canary[-2].argv)
-    slow = c.items[1].steps[1:]
+    slow = c.items[2].steps[1:]
     status = f"GEN3AI_SLOW_STATUS_FILE={tmp_path / 'out' / 'slow_gpu' / 'slow_tier_status.json'}"
     assert [list(st.argv[:2]) for st in slow] == [["env", status]] * 2
     assert [st.argv[5] for st in slow] == [GPU_ID, "src/y_test.py::test_b"]     # banked (shortest) first, unknown last
     assert [st.timeout_s for st in slow] == [1260, 1800]
+
+
+def test_the_default_is_the_slice2_window_then_the_slow_tier_and_an_unknown_window_is_refused(tmp_path):
+    assert [w["name"] for w in _items(tmp_path, windows=G.DEFAULT_WINDOWS)] == ["slice2-replay", "slow-gpu"]
+    for bad in (("nope",), (), ("slow-gpu", "slow-gpu")):
+        with pytest.raises(G.FillError, match="--windows"):
+            _items(tmp_path, windows=bad)
+
+
+def test_the_budget_is_the_measured_step_time_with_headroom_never_the_old_fixed_90(tmp_path):
+    items = {w["name"]: w for w in _items(tmp_path)}
+    # 10-29: 20 replay steps at a measured 5 min each did not fit the fixed 90 (three NOT RUN, then the HOLD)
+    assert items["canary-stage2"]["budget_min"] >= 20 * 5.0 * 1.5 and items["canary-stage2"]["budget_min"] > 90
+    assert items["slice2-replay"]["budget_min"] == G.window_budget_min([G.STEP_MIN["slice_read"]] * len(G.SLICE2_STATES))
+    assert G.window_budget_min([5.0] * 20) == 155.0 and G.window_budget_min([]) == G.CPU_STEPS_MIN
+    # slow-gpu: the banked duration (404.65 s) and 30 min for a node never banked
+    assert items["slow-gpu"]["budget_min"] == G.window_budget_min([404.65 / 60.0, 30.0])
+
+
+def test_the_slice2_window_reads_every_state_with_its_targets_and_rows_then_the_cpu_verdict(tmp_path):
+    from main.ops import canary_slice_read as S
+    steps = {w["name"]: w for w in _items(tmp_path)}["slice2-replay"]["steps"]
+    assert [s["gpu"] for s in steps] == [False] + [True] * len(G.SLICE2_STATES) + [False]
+    assert steps[-1]["argv"][2:4] == ["main.ops.canary_slice_read", "verdict"]
+    for st, state in zip(steps[1:-1], G.SLICE2_STATES):
+        a = st["argv"]
+        assert a[2] == "main.ops.canary_slice_read" and a[3] == f"--{state['mode']}"
+        assert a[a.index("--watch") + 1].split(",") == list(state["watch"]) and a[a.index("--dither") + 1] == "16"
+        assert ("--canary-shift-max" in a) == (state.get("shift_max") is not None)
+        sets = [a[i + 1] for i, x in enumerate(a) if x == "--row-set"]
+        assert sets == list(state["row_sets"])
+        S.parse_row_sets(sets)                                 # every row set parses (>= 2 rows, in the fixture)
+        assert st["timeout_s"] == 1800 and a[a.index("--out") + 1].startswith(str(tmp_path / "out" / "slice2_replay"))
+
+
+def test_preflight_slice2_checks_every_dump_sha_and_writes_its_marker(tmp_path, monkeypatch):
+    models, out, marker = tmp_path / "models", tmp_path / "out", tmp_path / "NO_GO_SLICE2"
+    arch = tmp_path / "arch"
+    states = tuple({**s, "path": str(s["path"]).replace("~/gen3ai_archive", str(arch))} for s in G.SLICE2_STATES)
+    monkeypatch.setattr(G, "SLICE2_STATES", states)
+    assert G.preflight_slice2(str(out), str(models), str(marker)) == 3 and marker.is_file()
+    marker.unlink()
+    import hashlib
+    for s in states:
+        path, rd = G.slice2_paths(s, str(models))
+        Path(path).parent.mkdir(parents=True, exist_ok=True)
+        Path(path).write_bytes(b"w")
+        if s["mode"] == "dump":
+            (Path(path).parent / "SHA256SUMS").write_text(f"{hashlib.sha256(b'w').hexdigest()}  {Path(path).name}\n")
+        Path(rd).mkdir(parents=True, exist_ok=True)
+        for f in ("model_config.json", "metadata.json"):
+            (Path(rd) / f).write_text("{}")
+    assert G.preflight_slice2(str(out), str(models), str(marker)) == 0 and not marker.exists()
+    bad = G.slice2_paths(states[0], str(models))[0]
+    Path(bad).write_bytes(b"moved")                            # a dump whose bytes moved is refused BY NAME
+    assert G.preflight_slice2(str(out), str(models), str(marker)) == 3
+    assert "MISMATCH" in marker.read_text() and states[0]["label"] in marker.read_text()
 
 
 def test_an_out_dir_inside_the_worktree_or_models_is_refused(tmp_path):
