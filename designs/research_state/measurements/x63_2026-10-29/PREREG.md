@@ -309,3 +309,23 @@ corpora absent there (it names only `x63_union_v1`).
   sets another.
 - **Changing it:** r is never changed after launch. A different r would be a new, separately labelled analysis,
   never the verdict.
+
+## 15. AMENDMENT AM-X63-CANARY (2026-10-29 ≈ 19:30, before any X63-U canary disagreement)
+
+- **Written while:** X63-U s2601 was training. Its only canary so far is u10, which passed (ratio 1.619), and it has
+  logged no disagreement.
+- **Basis:** the slice-2 diagnosis (`6b3966dc6`, `measurements/canary_slice2_2026-10-29/`).
+  - Six of seven production disagreements at margin 0.72 were per-parameter bf16-rule refusals on the fixed
+    fixture's rows 0–31 (slice 2), with none on slice 1.
+  - Their ratio divides by one eager bf16 draw that sits 5–50× below the function's own rounding sensitivity.
+  - A real compiled-numerics cause is still open, and a GPU replay window after X63-U decides it.
+- **The rule.** Take a canary FATAL whose every disagreement is a per-parameter bf16-rule refusal on slice 0 or
+  slice 2 only. That means it was never confirmed on both halves, and it has no margin, yardstick, drift or
+  non-finite refusal.
+  - Such a FATAL, resumed once from the newest checkpoint at X63U_PIN with the registered argv and its dump
+    archived, **does not count toward §8's restart limit**.
+  - At most two such resumes per seed. A third FATAL, or a FATAL of any other class, follows §8 unchanged.
+  - The resume never raises `--canary-shift-max`, because relocating at 1.2 increases this class's exposure.
+- **Disclosure:** each such resume is named in the record beside the verdict. If the replay window later reads the
+  class REAL, the record says so.
+- **Prior:** P(FATAL of this class during X63-U) ≈ 1.3 % (0.3–6 %), assuming independence.
