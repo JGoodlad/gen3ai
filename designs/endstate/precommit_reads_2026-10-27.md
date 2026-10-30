@@ -400,3 +400,11 @@ the read it concerns lands.
   GAIN". With X48: J13 (X48 GO) names LR-F UNDECIDED-final; J14 (X48 NO-GO) names only an LR-F NULL, so on a NO-GO
   the §2.2 row governs ("as for not GAIN"). Either way X48 carries no "at the controller's learning rate" label. One departure, registered before any game (AM-LRF-L1, `f7fddc39b`; accepted by
   the orchestrator): the guards were registered as not read on a non-qualifying R1, so no G-K Kakuna lane played.
+- **2026-10-30: X48 look 1 landed: NO-GO, labelled "experts not engaged"** (rule `n4_screen`; record
+  `x35_breakers_stage_2026-10-17/reads/x48_look1.json`). Δ_S −0.55 pp [−1.32, +0.21] (90 %), NO-GO-S; Δ_K +2.06 pp
+  [−0.06, +4.19] on forum72, UNDECIDED-K; not MIXED; mean LR ×1.01 (no LR label). The §2.6 row that fired is **NO-GO**,
+  with LR-F UNDECIDED-final, so J14 does not name it and the §2.2 row governs ("as for not GAIN"): per-kind FFN untying
+  at the plateau is closed within 20M, weakly ("experts not engaged": D_k / null 0.72–0.93, registered in X48 NOTE 4
+  before any game). N4 (with its review's fixes) or N4-P-direct is the orchestrator's choice. One departure, registered
+  before any X48 S number (X48 NOTE 5, accepted by the orchestrator with an identity condition met in NOTE 5 (a)): the S
+  cells were played by an architecture-pure driver, because the runner could not put a third architecture on an engine.

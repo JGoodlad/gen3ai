@@ -558,6 +558,23 @@ the plateau, as far as three seeds can tell. Nothing is licensed: the capacity r
 and the X35 NULLs keep their meaning. It is not a NULL, so it retires nothing (§5's rule). [MEASURED · in-house S only,
 E1 · `f7fddc39b`; ledger 2026-10-28 · *X35 LR-F LOOK 1*]
 
+
+### 4.13 Per-kind FFN experts at the plateau: no in-house gain, the experts barely moved (X48, 2026-10-30)
+
+X48 untied each trunk round's shared FFN at P\* into five per-token-kind experts (copies of the FFN, with its AdamW
+state), then trained 20M steps against C0, re-played on one engine (E1). **NO-GO under N4's one-look screen.**
+- In-house: **Δ_S −0.55 pp [−1.32, +0.21]** (90 %), so no ≥ 2 pp gain.
+- Against Kakuna on forum72: **Δ_K +2.06 pp [−0.06, +4.19]**, UNDECIDED. It is the weak meter (1,000 games a final),
+  never goal-(b) progress.
+- **The NO-GO is weak, labelled "experts not engaged."** At the final the experts had diverged from the Pokémon FFN
+  by only 0.72–0.93 of a two-copy chance null (registered ≤ 1). The board, threat and event experts moved
+  0.24–0.43× as far as the shared FFN, because the copied second moments throttled them, as its review predicted.
+- The learning rate matched C0's (×1.01).
+- It closes per-kind untying at the same width within 20M, nothing wider: FFN width (N4), `D_MODEL` and from-scratch
+  capacity stay open.
+
+[MEASURED · S on E1 + Kakuna F (post-H22 pack) · `efe8ea1fa`; ledger 2026-10-30 · *X48 LOOK 1*]
+
 ---
 
 ## 5. Retired hypotheses
@@ -593,14 +610,13 @@ retired for the fold-gift question only; they live in the last full text (§0) a
 | Does breadth at 10⁴ procedural teams lift unfamiliar-team piloting at the plateau? | **N1-P look 2** (look 1 CONTINUE 2026-10-28: F +0.75 [−1.56, +3.06], P −3.27 [−4.20, −2.33]; X61P, D1's rule on F; [`PREREG.md`](measurements/x61p_n1_production_2026-10-26/PREREG.md), `5b84bca62`). ADOPT-CANDIDATE (F GAIN, in-house non-inferior) funds **X53-N1**, a fresh production run on 10⁴ teams (`../endstate/design_x53_n1_fresh_breadth.md`); NULL rules out only "N1 at the plateau" |
 | Is human data better than our own self-play data? | **X59-S**: three matched student arms, five seeds each; S-H − S-S answers it, S-H − S-P picks the lever ([`PREREG.md`](measurements/x59s_matched_students_2026-10-25/PREREG.md), `5cbf46dc0`). Its floor pilot plays first and releases one UNINFORMATIVE flag per contrast (Amendment 5, `aaeabbd46`). It decides whether the human-data switch and X60 get built |
 
-**Queued and planned** (the ranked order: X48, X63, PR-1′, after REVIEW_2 `69c7cd34d` §6)
+**Queued and planned** (the ranked order: X63, PR-1′, after REVIEW_2 `69c7cd34d` §6; X48 read NO-GO 2026-10-30, §4.13)
 
 | question | the read that answers it |
 |---|---|
-| Is the shared trunk FFN a capacity bottleneck between token kinds at the plateau? | **X48**: per-token-kind FFN experts grown at P\*, s3501–s3503 against C0 (its finals re-played on the read's one engine), under N4's one-look screen (S at 2,000 pairs and Kakuna F; [`PREREG.md`](measurements/x48_kffn_production_2026-10-27/PREREG.md), `fc888c18f`). s3501 on the GPU since 2026-10-27 19:51; its record needs no "at the controller's learning rate" label (LR-F is not GAIN) |
 | Does a wider trunk buy strength at the plateau (on the toy)? | **N4**: T\* with every trunk FFN grown 256 → 1,024 against a same-pin C0′, 3 + 3 seeds × 70M (PREREG `8ed8164ea`); the model build landed (`c35ffab9e`), its kit arms have not |
 | Does a long continuation of the plateau on a broad union of teams move unfamiliar-team play? (not a dose read) | **X63**: X26 @380M + 100M at share 0.8 on a 17,876-team union (X62's recombined sixes, N1-P's procedural teams at 3,000, D3's set-mutated teams; no forum teams), against X26c and X63-C on forum72 at the shared play pin (REGISTERED 2026-10-29, [`PREREG.md`](measurements/x63_2026-10-29/PREREG.md); not launched). Its gates read: H-CTX SUPPORTED, N1-P look 1 CONTINUE (n1 in), D3 final UNDECIDED (d3 in) |
-| Do the breadth levers help by +1–2 pp each, below what one read can see? | **PR-1′**, the zero-GPU precision read re-scoped by [`REVIEW_2.md`](measurements/strategy_review_2026-10-26/REVIEW_2.md): D3 and N1-P against C0 on F (D1 reported only: its F is its own population), 30,000–38,000 new Kakuna games at one post-`b0441623e` pin. Information only; it runs after X48's read, or on a rented CPU box |
+| Do the breadth levers help by +1–2 pp each, below what one read can see? | **PR-1′**, the zero-GPU precision read re-scoped by [`REVIEW_2.md`](measurements/strategy_review_2026-10-26/REVIEW_2.md): D3 and N1-P against C0 on F (D1 reported only: its F is its own population), 30,000–38,000 new Kakuna games at one post-`b0441623e` pin. Information only; X48's read has landed (2026-10-30), so it can run, or on a rented CPU box |
 | Does training on new sixes of familiar sets close the piloting gap? | **X62** (REVISED DRAFT, `../endstate/design_x62_team_recombination.md`, `58cb02dc6`): its first gate, H-CTX, read SUPPORTED (2026-10-27), so its corpus `x62_recomb_v1` is built (2026-10-29, inside X63's union); PR-1′ KILL retires the 20M fork; N1-P GAIN makes it redundant. Its in-pool cost is a registered price (net = Δ_home72 + r · Δ_U, r = 1 pending the owner). Below X63 per resource-day |
 | Does one-ply search on V have headroom on unfamiliar teams (H-MID's open question)? | **S-U** registered (`ffd9a443a`, `../endstate/design_search_u_headroom.md`), stage 0 HELD. Its review (`7aafa527f`, `measurements/su_headroom_2026-10-27/REVIEW.md`): 2 BLOCKERs; where the registered search rule departs from the policy at P\* it picks the better move 0.513 [0.447, 0.580] of the time (0.580 at 25M), so a 10–15 CPU-h sign-accuracy gate came first. **That gate read GO** (2026-10-28, `measurements/su_gate_2026-10-27/`): 0.635 [0.578, 0.687] on U, home72 0.537, but its review (`52f470c21`) put the excess in the TRUE-SEED-LEAK-exposed states (the leak's value, not its exposure, is higher on U). **The leak-reduced re-gate SUPERSEDES it and also reads GO** (`measurements/su_regate_rolls_2026-10-28/`, `dice="rolls"`): 0.599 [0.543, 0.649] (home72 0.551; exposed 0.632, leak-clean 0.564 [0.478, 0.639]). GO is a licence under S's own referee, not a gain. Next (the orchestrator's call): a deviation-only live read against Kakuna (the review's M3) or V-RANK (`../endstate/design_v_rank_on_u.md`, DRAFT), the filters that can turn S-U OFF |
 

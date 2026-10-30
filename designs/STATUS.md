@@ -23,7 +23,7 @@ rate. **NOT DETECTED / UNDECIDED** means the interval spans zero, so we cannot t
 
 | # | goal | status | best number [95 % interval] | proof |
 |---|---|---|---|---|
-| 1 | **The strongest baseline** | **AT ITS PLATEAU.** P\* = X26 @ 280M. Training on to 480M changed nothing. Holding the learning rate up (LR-F) did not help in-house: UNDECIDED, final, leaning negative. | P\* vs the production baseline: 0.694 [0.666, 0.721]. The 480M continuation vs P\* against Kakuna: +0.08 pp [−3.90, +4.06], FLAT. LR-F − C0 on S: −1.13 pp [−2.45, +0.18] (97.5 %, 3 seeds; `x35_breakers_stage_2026-10-17/reads/lrfloor_look1.json`). | `d172c10ed`, `204204bbf`, `f7fddc39b` |
+| 1 | **The strongest baseline** | **AT ITS PLATEAU.** P\* = X26 @ 280M. Training on to 480M changed nothing. Holding the learning rate up (LR-F) did not help in-house: UNDECIDED, final, leaning negative. Per-kind FFN experts (X48) gave no ≥ 2 pp in-house gain: NO-GO, weak (the experts barely moved). | P\* vs the production baseline: 0.694 [0.666, 0.721]. The 480M continuation vs P\* against Kakuna: +0.08 pp [−3.90, +4.06], FLAT. X48 − C0 on S: −0.55 pp [−1.32, +0.21] (90 %, 3 seeds; `x35_breakers_stage_2026-10-17/reads/x48_look1.json`). LR-F − C0 on S: −1.13 pp [−2.45, +0.18] (97.5 %, 3 seeds; `x35_breakers_stage_2026-10-17/reads/lrfloor_look1.json`). | `d172c10ed`, `204204bbf`, `f7fddc39b` |
 | 2a | **Beat Metamon on our teams** | **MET.** | P\* vs Kakuna on home72: **0.598 [0.549, 0.644]** | `3010c81ba` |
 | 2b | **Beat Metamon on unfamiliar teams** | **NOT MET**, about 4 pp short. The lower bound must clear 0.50, which needs about 0.53. | P\* 0.487 [0.459, 0.515] (its forum72 third under Kakuna's legacy pack, below). No lever's interval clears 0.50. Highest point estimates, each against its own control and none detected: the belief prior mix (λ = 0.25) 0.502, D1 0.492, D3 0.494 (final, UNDECIDED). N1-P (look 1) 0.500 is M4-hazarded (its corpus overlaps H and P72) and is not read as goal (b); on F it reads +0.75 pp over C0. | `3010c81ba`, `f299a7243`, `eb99ab362`, `58287c525` |
 | 3 | **Know where we are** | **MAPPED.** The deficit is **piloting** an unfamiliar team, not facing one. In-house meters cannot see it; only Kakuna games can. Nothing measurable is lost in the opening; the gap shows from level positions after turn 10 (descriptive). It does not go with the SETS (H-CTX SUPPORTED): on new sixes of familiar pool sets P\* scores 0.514, below F's 0.540 and 10 pp under home72 on the same engine; the sets keep at most about a fifth of the premium. Why the six matters (memorised sixes, broken cores, no plan) is open (`hctx_rc72_2026-10-26/REVIEW.md` M1). Under a neutral pilot (Kakuna on both sides) rc72b is only about 4 pp weaker, flat across coherence (`hctx_kk_2026-10-27`), so the premium stays mostly team-level. P\*'s own critic does not see it (H-MID: CRITIC-MISCALIBRATED-ON-U), as a self-play critic cannot (REVIEW M1). | Piloting deficit, strength-corrected (X26 @161M, PROVISIONAL, resting on the unverified assumption A-K): +0.123 [+0.039, +0.206], facing +0.017 [−0.062, +0.095]; their difference +0.106 [−0.009, +0.221] is UNDECIDED. P\* is level with Metamon's ensemble on unfamiliar teams, ahead of it on home72, and beats every human-only Metamon model (§5). | `8b43eb44a`, `82858f433`, `c758fcb82`, `905c29f5b`, `f200258f6`, `90708bff5`, `82f273eff`, `df35d1bb0` |
@@ -48,17 +48,18 @@ Read at 12:05 PDT from the arm chain's status and each read's state directory; t
 
 | where | job | what decision it drives |
 |---|---|---|
-| **GPU** (lease: Training session) | **X48 s3501**: per-token-kind FFN experts grown at P\*, + 20M (GO ≈ 19:51, 1,399 steps/s; ends ≈ 00:00 10-28; PREREG `fc888c18f`). LR-F's three seeds are done (`407abd835`) and read: UNDECIDED, final (§1). | Capacity at the plateau, the branch the plasticity probe's NO-LOSS chose. |
-| GPU queue, next (the orchestrator's chains; draft order [`ops/gpu_plan_2026-10-27.md`](ops/gpu_plan_2026-10-27.md)) | **X48** s3502–s3503 (≈ 8.6 GPU-h; read under N4's one-look screen) → **N4** (the toy capacity screen; its model build landed at `c35ffab9e`, its kit arms and pin have not). | Capacity at the plateau, the branch the plasticity probe's NO-LOSS chose (X48, N4). |
+| GPU: X48 DONE 10-28 08:42 | **X48** s3501–s3503 trained (each K9(b) PASS, VOID 4 exact PASS; dose ≈ 1.03× C0's wall). Its read is the CPU row below. | — |
+| GPU queue, next (the orchestrator's chains; draft order [`ops/gpu_plan_2026-10-27.md`](ops/gpu_plan_2026-10-27.md)) | **N4** (the toy capacity screen; its model build landed at `c35ffab9e`, its kit arms and pin have not). | Capacity at the plateau, the branch the plasticity probe's NO-LOSS chose (X48, N4). |
 | CPU, Kakuna lane: DONE 10-28 08:54 | **N1-P look 1** (X61P), the three forks with half their teams from 12,000 procedural teams: **CONTINUE**. F +0.75 pp [−1.56, +3.06] (N1-P 0.516 vs C0 0.508), in-house S on home72 −3.27 pp [−4.20, −2.33] (a resolved in-pool cost); look 2 (s3504–s3505, ≈ 8.2 GPU-h) is licensed (`kit stage-check` ALLOWED). Record `x35_breakers_stage_2026-10-17/reads/n1p_look1.json`. | **GO** (F GAIN) funds X53-N1, a fresh production run on 10⁴ teams; with this P cost a look-2 GAIN would be a TRADE. **NULL** rules out only "N1 at the plateau". It is X62's third gate. |
 | **CPU**, Kakuna lane | **X59-S floor pilot**: the 15 students (trained on human rows, on the same rows labelled by P\*, or on self-play rows; five seeds each) on units 0–3 of H, F and P72; 26 of 180 units. It releases one "too weak to read" flag per contrast and nothing else (Amendment 5, `aaeabbd46`). | Whether human data beats our own self-play data (the full read follows the pilot). |
 | CPU: DONE 10-28 18:21 | **D3 look 2**, the terminal read of set mutation: **UNDECIDED, final.** Kakuna, unfamiliar teams +2.33 pp [−0.69, +5.35] (D3 0.494 vs C0 0.471; 4 of 5 seeds positive); in-house −0.45 pp [−1.16, +0.25], NON-INFERIOR. Every game on ONE engine (E1) at the play pin; all registered checks PASS. Record `x35_breakers_stage_2026-10-17/reads/d3_look2.json`. | Set mutation is not adopted as a goal-(b) lever by this read; it stays a candidate ingredient of X63's union. |
+| CPU: DONE 10-30 03:06 | **X48 look 1** (per-token-kind FFN experts grown at P\*, + 20M; N4's one-look screen): **NO-GO, "experts not engaged"** (a weak NO-GO). In-house −0.55 pp [−1.32, +0.21] (90 %; S at 2,000 pairs, C0 re-played); Kakuna on forum72 +2.06 pp [−0.06, +4.19], UNDECIDED (X48 0.526 vs C0 0.506). The experts diverged no more than chance drift (D_k / null 0.72–0.93); mean LR ×1.01. Record `x35_breakers_stage_2026-10-17/reads/x48_look1.json`. | Closes per-kind FFN untying at the plateau within 20M, weakly; not width or `D_MODEL`. N4 or N4-P-direct is the orchestrator's choice. |
 
 ## 3. The plan, ranked (2026-10-27)
 
 The orchestrator's order after REVIEW_2 of the all-null strategy (`69c7cd34d`). Every item needs its GO.
 
-1. **X48**, production capacity at the plateau: on the GPU since 10-27 19:51 (s3501), then its read (≈ 26–38 Kakuna lane-hours).
+1. **X48**, production capacity at the plateau: READ 10-30, **NO-GO** (weak, "experts not engaged"; §2). The next capacity read (N4 with its review's fixes, or N4-P-direct) is the orchestrator's choice.
 2. **X63**, a long union continuation (REGISTERED 2026-10-29, not launched;
    [`endstate/design_x63_long_breadth_continuation.md`](endstate/design_x63_long_breadth_continuation.md),
    PREREG [`x63_2026-10-29/`](research_state/measurements/x63_2026-10-29/PREREG.md)): X26 @380M + 100M with 80 % of
@@ -67,7 +68,7 @@ The orchestrator's order after REVIEW_2 of the all-null strategy (`69c7cd34d`). 
    a 1-arm-v-2-control screen that also measures the +100M seed spread). ≈ 20 GPU-h to its screen; it takes the GPU
    after N1-P look 2's seeds, on the orchestrator's GO.
 3. **PR-1′**, the precision read re-scoped by REVIEW_2: D3 and N1-P against C0 on F (D1 reported only), 30,000–38,000
-   new Kakuna games at the frozen X35-frame shared pin `x35-shared-play-86cfdf7e` (E1, post-H22; reads.md §4). Information only; it gates nothing above it. It runs after X48's read,
+   new Kakuna games at the frozen X35-frame shared pin `x35-shared-play-86cfdf7e` (E1, post-H22; reads.md §4). Information only; it gates nothing above it. X48's read has landed (10-30), so it can run now,
    or at once on a rented CPU box (§6).
 
 **Gated.** **X62**, P\*-forks on 12,000 recombined teams (REVISED DRAFT, `58cb02dc6`): its first gate, H-CTX, read
@@ -83,8 +84,7 @@ leak-reduced re-gate (`dice="rolls"`) supersedes it and **still reads GO**: on u
 **deviation-only live read**, REGISTERED 2026-10-28 and not yet played
 ([`dlive_read_2026-10-28/PREREG.md`](research_state/measurements/dlive_read_2026-10-28/PREREG.md)): at ≈ 1,800 such
 departures on unfamiliar teams, the departure is forced in a replay of the game against the real Kakuna and compared with
-the game as played. GO (lower bound of the mean gain > 0) licenses the amended S-U. ≈ 40 CPU-h; it queues behind X59-S
-and X48.
+the game as played. GO (lower bound of the mean gain > 0) licenses the amended S-U. ≈ 40 CPU-h; it queues behind X59-S.
 
 **Dropped or retired.** **X64**, the toy context-count curve: DROPPED by its review (`c0fd72bd8`; it would cost more
 than the production reads it was meant to gate). **N2**, the set-identity lever: dropped, P\*'s encoding is mostly
@@ -175,8 +175,9 @@ Every open owner question, in one place.
    only slow Kakuna reads steer goal (b).
 3. **The plateau may be the recipe, not the ceiling.** Plain training is FLAT and the population levers are NULL,
    yet a best responder still finds +11 pp. Search does not pay at P\*, and the plateau trunk has not lost its
-   plasticity. Holding the learning rate up did not help (LR-F, UNDECIDED final, −1.13 pp [−2.45, +0.18]), so X48 and
-   N4 (capacity) are the next tests of whether P\* is the most this architecture can reach.
+   plasticity. Holding the learning rate up did not help (LR-F, UNDECIDED final, −1.13 pp [−2.45, +0.18]), and per-kind FFN
+   experts gave no ≥ 2 pp in-house gain (X48 NO-GO, weak: the experts barely moved). N4 (FFN width) is the next test
+   of whether P\* is the most this architecture can reach.
 4. **The X35 family trains under the legacy packer.** `f4b25238` and its corpus-only pins predate `d8d674b99` and
    launch without the pack oracle, so a new corpus can bring Frustration sets that play at base power 1, unseen.
    Forks against a banked `f4b25238` control stay on that family, but only if the PREREG records the corpus's

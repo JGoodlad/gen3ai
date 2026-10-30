@@ -30111,3 +30111,79 @@ ever pooled with these rows, and a later D3 question is a new registration (or P
 items 1–11). Record `x35_breakers_stage_2026-10-17/reads/d3_look2.json`; state `~/gen3ai_archive/x41_d3_read/look2/`.
 View: `UNDERSTANDING.md` (item 5, the D3 paragraph), `STATUS.md`, `endstate/design_beat_metamon_path.md` §0, §5, §6.4,
 §7, §9.
+
+### 2026-10-30 · MEASUREMENT · **X48 LOOK 1 reads NO-GO, labelled "experts not engaged": per-token-kind FFN experts grown at P\* and trained 20M give no ≥ 2 pp in-house gain (Δ_S −0.55 pp [−1.32, +0.21], 90 %); against Kakuna on forum72 Δ_K +2.06 pp [−0.06, +4.19], UNDECIDED; the experts diverged no more than chance drift (D_k / null 0.72–0.93), a weak NO-GO**
+
+**Question** (PREREG `fc888c18f`, NOTEs 1–3 before the first GO). At production's plateau and equal data, does
+untying each trunk round's shared FFN into five per-token-kind experts (copies with their AdamW state, Q-K3) score
+higher than C0? The prediction (GUESS): Δ_S +0.3 pp, 80 % [−1.5, +2.0]; Δ_K +0.3 pp [−2.0, +2.5]. The class
+probabilities were GO 0.28–0.36 and NO-GO 0.36–0.50.
+
+**Design.** X48 s3501–s3503 is P\* + 20M with `--grow trunk_ffn_by_kind=on` at pin `f4b25238`. The control is C0
+s3501–s3503 at the same pin, re-played.
+- **The rule:** N4's one-look screen, `main.reads` rule `n4_screen`. GO-S iff LB_S > 0; NO-GO-S iff UB_S < +2.0;
+  the same for K at a +1.5 pp bar; MIXED veto. The family false GO is ≈ 0.09.
+- **NOTE 4** (`efe8ea1fa`) was registered after the seeds trained and before any read game:
+  - VOID 4 exact passed ×3;
+  - the experts' divergence was measured, so the "experts not engaged" label is set: R_k 0.72–0.93;
+  - the mean LR ratio was 1.013, so neither LR label applies;
+  - the pin is the X35-frame shared play pin `86cfdf7ef` (E1 with the arms' training game paths, post-H22 Kakuna pack);
+  - the S-lane identity at the pin was IDENTICAL.
+- **NOTE 5** (`53030b38c`, before any X48 S number): an h2h engine at the pin serves at most two architectures, so
+  X48's S cells were played by an architecture-pure driver. NOTE 5 (a) (`0d8a3153b`) shows it reproduces the runner's
+  banked rows exactly.
+- **Meters:** S at 2,000 mirrored pairs per (final, member) cell against the frozen R, regime `adfdbee824c9eb0a`. K is
+  50 forum72 units per final.
+
+**Result.**
+
+| | s3501 | s3502 | s3503 | mean |
+|---|---|---|---|---|
+| S, X48 (pp) | 56.89 | 56.05 | 56.76 | 56.57 |
+| S, C0 (pp, re-played) | 57.13 | 57.11 | 57.11 | 57.12 |
+| K forum72, X48 | 0.524 | 0.530 | 0.525 | 0.526 |
+| K forum72, C0 | 0.500 | 0.530 | 0.488 | 0.506 |
+
+- **NO-GO** (NO-GO-S and not GO-K):
+  - Δ_S −0.55 pp [−1.32, +0.21];
+  - Δ_K +2.06 pp [−0.06, +4.19], φ̂ 0.93, UNDECIDED-K;
+  - not MIXED.
+- **Text:** "no ≥ 2 pp in-house gain from per-kind FFN experts within 20M of P\*, with the experts' AdamW state copied
+  from the shared FFN (Q-K3)"; "no unfamiliar-only effect ≥ ≈ 4 pp detected; smaller ones are not excluded".
+- **Label "experts not engaged"** (NOTE 1 (b)): applies, so this is a WEAK NO-GO. The board, threat and event experts
+  drifted 0.24–0.43× as far as the shared FFN (review M1's throttle). Round 2's threat and event experts barely moved
+  (0.04×).
+- **Against the guess:** Δ_S inside its 80 % band, below the point guess. Δ_K inside its band, above the point guess.
+- **Guards:**
+  - VOID gate PASS ×6, VOID 4 exact PASS ×3, KL max 0.0205;
+  - re-derived anchor guards (`count`): 300 units, 0 hits;
+  - one engine per meter (E1);
+  - K counted 2,980 / 3,000 C0 games: one unit hit Metamon's H5 fault twice, inside `d1`'s floor.
+- **Reported:**
+  - R1 at look 1: UNDECIDED, −0.55 [−2.18, +1.07] (97.5 %).
+  - Per-member Δ_S against `tstar`: −1.60 [−3.15, −0.06]. The others span 0.
+  - Pin drift: C0 re-played 57.12 against G1's 56.98 (same engine).
+  - ρ ≈ 1.03.
+  - The slope is INCOMPLETE (paused under the coordinator's CPU ruling; it decides nothing).
+- **FINDING:** C0's three re-played means agree within 0.02 pp, against a 0.275 pp measurement SE. Their rows are
+  distinct, so this is chance. Welch therefore carries X48's spread alone. NO-GO-S holds at any plausible C0 seed SD
+  (UB +0.14 at 0.275, +1.10 at 1.07).
+
+**What it licenses** (PREREG §9; the precommit memo, J14 / §2.2 with LR-F UNDECIDED-final):
+- It closes per-kind FFN untying at the plateau for production, within 20M, weakly.
+- It does not close FFN width, `D_MODEL` or from-scratch capacity.
+- N4 (with its review's fixes) or N4-P-direct is the orchestrator's choice.
+- An X48 follow-up would be the review's reset-v variant (fresh second moments) as a new registration.
+
+**What it cannot say:**
+- Whether experts that actually diverge would help. The lever was delivered at about a third to two thirds of its rate
+  on three of four experts.
+- Anything about goal (b). K is the weak meter (GO-K at a true +3 pp ≈ 0.6) and a post-H22-pack F number, never set
+  beside a legacy-pack F.
+
+**Evidence:** `research_state/measurements/x48_kffn_production_2026-10-27/` (README, PREREG NOTEs 4–5,
+`read_spec.json`, `void4_growth_stamp.*`, `expert_divergence.*`, `pre_read_*`, `s_identity.*`, `x48_s_driver.py`,
+`driver_identity.*`). Record `x35_breakers_stage_2026-10-17/reads/x48_look1.json`; state
+`~/gen3ai_archive/x35_x48_read/look1/`. View: `UNDERSTANDING.md` §4.13, `STATUS.md`,
+`endstate/design_beat_metamon_path.md` §5 and §9, `endstate/precommit_reads_2026-10-27.md` §6, `EXPERIMENT_BACKLOG.md`
+BI-2.

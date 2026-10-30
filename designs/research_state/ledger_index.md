@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-30,114-line file. **The ledger itself is append-only and is never edited by this**;
+30,190-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**984 headings · 929 dated · 2026-08-01 → 2026-10-28 · ledger 30,114 lines.**
+**985 headings · 930 dated · 2026-08-01 → 2026-10-30 · ledger 30,190 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -1004,3 +1004,4 @@ rename.
   - `L29962` · `2026-10-28` · MEASUREMENT · **X61P N1-P LOOK 1 reads CONTINUE: breadth at 10⁴ procedural teams moves F (forum72, the primary) by +0.75 pp [−1.56, +3.06] over the shared C0 (N1-P 0.516 vs 0.508, 3,600 games per arm; seeds +1.0 / −0.25 / +1.5), UNDECIDED with Δ̂ > 0 ⇒ look 2; in-house S on home72 −3.27 pp [−4.20, −2.33] (INFERIORITY-NOT-EXCLUDED, twice D1's cost). Reported only: U +1.76 [−1.52, +5.03], without H +1.80 [−2.17, +5.77], Δ_H − Δ_F +0.92**
   - `L30016` · `2026-10-28` · MEASUREMENT · **The S-U gate's leak-reduced re-gate reads GO: with `dice="rolls"` (the damage-roll truth filter removed) S's deviations on unfamiliar teams are right 0.599 [0.543, 0.649] of the time under the self-referee (n 362, pooled U; the gate's S 0.635); home72 0.551. It SUPERSEDES the gate's leak-exposed GO for licensing V-RANK / S-U; GO licenses the next stage, never a gain**
   - `L30060` · `2026-10-28` · MEASUREMENT · **X41 D3 LOOK 2 (FINAL, TERMINAL), read under its registration (`9938d7b6` + AM-D3-ENG + AM-D3-L2 and its addendum): UNDECIDED. Set mutation scores H +2.33 pp [−0.69, +5.35] on Kakuna's three unfamiliar panels (D3 0.494 vs C0 0.471; 4 of 5 seeds positive) at no in-pool cost (P −0.45 pp [−1.16, +0.25], NON-INFERIOR); every game on ONE engine, E1**
+  - `L30115` · `2026-10-30` · MEASUREMENT · **X48 LOOK 1 reads NO-GO, labelled "experts not engaged": per-token-kind FFN experts grown at P\* and trained 20M give no ≥ 2 pp in-house gain (Δ_S −0.55 pp [−1.32, +0.21], 90 %); against Kakuna on forum72 Δ_K +2.06 pp [−0.06, +4.19], UNDECIDED; the experts diverged no more than chance drift (D_k / null 0.72–0.93), a weak NO-GO**
