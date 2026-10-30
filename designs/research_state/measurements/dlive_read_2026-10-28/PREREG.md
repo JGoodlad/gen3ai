@@ -278,3 +278,31 @@ All on this build's tree, on the registered engine, CPU only (nice 19, the agent
   takes the registered `--engine` and refuses another before any state, and the rule VOIDs on a counted game's engine.
 - **DL-3.** T shares S′'s opponent model, so T's agreement with Kakuna is descriptive. It does not validate T as a gate
   for other reads unless it holds on both U and home72.
+
+## Amendment A1 (2026-10-30, before any game of the read): how the read is operated
+
+Written by the read's operator before the tooth or any raw game. It changes no rule, no quota, no seed, no estimand and
+no VOID reason; it registers the operating choices the PREREG left open.
+
+- **One checkout** serves play, scoring and the branch lane: the detached worktree
+  `/home/goodlad/dev/gen3ai-reads/dlive_play_c01ae8ee` at the pin, bootstrapped `--with-rust` (DL-4). Its
+  `engine_stamp()` is the registered `port=e00a212a102f5ce2/94;env=3d0d5c9c0f5d3c23/129` (checked 2026-10-30
+  14:33). The operator's pipeline (`<state>/ops/pipeline.sh`) re-checks the pin, a clean tracked tree and the engine
+  before the tooth, before the raw lane, before every score chunk and before the branch lane, and HOLDS on a mismatch.
+- **The order** is the PREREG's (Registration), after X59-S's Δ_restriction lane exits (the orchestrator's queue). The
+  tooth's state is `<state>/tooth/`; its FAIL stops the read before any raw game.
+- **The raw lane** runs at `--concurrency 1` (X63 Stage A holds the heavy slots' priority), `--hours 72`. A lane that
+  stops with units neither counted nor exhausted is resumed (`main.reads resume`): a new supervisor life, with
+  `MAX_ATTEMPTS` per life as in every read. `select` runs once, after the lane ends.
+- **The scorer** reads the plan's verified copy `<state>/ckpts/pstar/checkpoint_280000170_steps.zip`, re-hashed to the
+  pinned sha256 (`814823c5…91ed`) before every chunk. Chunks run as the re-gate's did (G-4): one torch / BLAS thread,
+  `chrt -i 0 nice -n 19 taskset -c 5-7,13-15 mem_cap.sh 8 timeout 2700`, `--budget-s 1800`, the registered `--quota`
+  and `--engine`. A chunk killed by its bound (rc 124) is retried; three in a row HOLD. A state interrupted mid-score
+  is never written, so it is scored whole by the next chunk.
+- **The branch lane** is ONE `main.x35.kakuna run` supervisor life with no stop epoch. A dropped unit is `collect`'s
+  (no counted cell once it has `MAX_ATTEMPTS` `end` events), code at the pin. Should the lane need a restart (a crash,
+  or a pause the orchestrator or X63's operator asks for), the supervisor is stopped by PID and restarted only after its
+  in-flight unit's child has exited (a restart moves a live cell aside). A restart gives each uncounted unit
+  `MAX_ATTEMPTS` more (the queue counts per life); any unit counted on a third or later attempt is listed in the record
+  by panel as a FINDING.
+- **The record** is written by `main.reads record` from the same checkout.
