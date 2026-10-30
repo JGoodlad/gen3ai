@@ -936,3 +936,152 @@ limit: the encoder shift costs S-H and S-P only) and G-M3 by A5.4 (POPULATION-SP
 - **Specs, all at that pin:** [`read_spec_gate.json`](read_spec_gate.json), [`read_spec_full.json`](read_spec_full.json)
   (its artefacts gain the Δ_restriction state's `record.json`) and [`read_spec_restriction.json`](read_spec_restriction.json)
   (S-P's pilot units imported from the pilot state, its units 4–19 from the full state, S-P0's U units 0–19 played).
+
+## Amendment 7 (2026-10-30, before any follow-up student trains): the ≥ 1500 follow-up (A2.7) as built, its window and its read
+
+Built on the orchestrator's approval of A2.7's follow-up (2026-10-30). **No follow-up student has trained and no
+follow-up game has been played.** Nothing here used the GPU; every job ran on the CPU at nice 19 on the agent cores
+under `mem_cap.sh`, one at a time. No rule, class, interval or VOID guard of the primary read changes. Code:
+[`followup.py`](../../../../src/main/human_data/followup.py) (the rows, the registration, the window, the read);
+`student.py` gains the three arms `human_1500`, `human_mix` and `selfplay_cut`, each with its OWN registration key;
+`cuda_preflight.py` gains `--arm` and `--students`; `checks reencode` gains `--within`.
+
+### A7.1 The three rowsets (A2.7), each re-cut into 16,384-row shards
+
+| arm | rule | rows manifest sha256 | content sha256 (the rows' bytes) |
+|---|---|---|---|
+| **S-H≥1500** (`human_1500`) | r2's TRAIN rows whose actor's pre-battle rating is ≥ 1500, in r2's order | `2fdb5faf83c110ecc074a650faa1327413e6b0569d4afd3a4205b44f5b403630` | `16f53820…c3ca` |
+| **S-H-mix** (`human_mix`) | r2's TRAIN accounts (`np.unique`, ascending) permuted by `np.random.default_rng(5930)`, taken whole in that order; the last one taken is trimmed to its first rows in r2's order; r2's row order kept | `4099a387c10b8ca507af6c78625098926eb4930fa433fa72523f8d93aaadae6d` | `cace76df…cfa0` |
+| **S-S cut** (`selfplay_cut`) | S-S's (`ss_rows_v2`, `3f81f71c…`) first N TRAIN rows in shard order; P\*'s labels | `1716c0958c215ba2594c82108070db9bf27e8be042762bb1c521c75165fe7241` | `3ab0022c…4922` |
+
+- **N = 270,260 TRAIN rows in every arm**, exactly Amendment 2b's count (the derivation refuses any other: STOP).
+  17 shards each: 16 × 16,384 and a last of 8,116. **The step budget is 1,584 a student for every seed and every
+  arm** (`3 × Σ ceil(buffer rows / 512)`, `student.plan`: 3 × (16 × 32 + 16)); 15 students = **23,760 steps**.
+- **Validation as in r2:** the two human arms carry r2's validation shard (29,904 rows, `8436d1a0…`), S-S cut
+  carries S-S's (29,904 rows, `709c3717…`), each a byte copy. Validation NLL stays descriptive.
+- **The mix:** 660 of r2's 3,419 TRAIN accounts (659 whole; the last keeps 184 of its 187 rows). It holds 63,670
+  rows of ≥ 1500 actors (23.6 %; r2 22.5 %); S-H≥1500 holds 1,059 accounts.
+- **Deterministic:** each rowset was re-selected from its parent by `followup verify` (writing nothing): the
+  re-selected rows, the written shards and the manifest's content digest agree, and every shard re-hashes to its
+  manifest (PASS for all three). An `npz` records its write time, so a re-run gives equal rows under different shard
+  sha256s; the content digest is what a re-run reproduces.
+- **Registered:** [`results/registration_a7.json`](results/registration_a7.json) (`followup register`: **PASS**, no
+  problems): the three rows manifests (keys `rows_1500_manifest_sha256`, `rows_mix_manifest_sha256`,
+  `selfplay_cut_manifest_sha256`), the parents checked against Amendment 2b's registration (r2 `2a413c85…`, S-S
+  `3f81f71c…`), N, the seeds, the mix seed, P\* `814823c5…91ed`, every arm's step budget per seed. The labels are
+  the rows' own columns (the human's action or a hidden move's set; P\*'s sampled action in S-S cut), so each rows
+  manifest's shard digests register them. The trainer refuses any other input given `--registration
+  results/registration_a7.json`, and a follow-up arm on another arm's rows (`student.check_registration`).
+- **Seeds:** 5901–5905, the primary arms' inits (`build_fresh_model(seed)`). The recipe is §3's, at 3 epochs of N.
+- **CPU smoke (scratch dirs, not students):** one training step of each arm, seed 5901, on its registered rows under
+  `--registration results/registration_a7.json`: each stops at step 1 of 1,584 (exit 3); step-0 validation NLL
+  1.84681 for both human arms (one init, one validation shard), 1.85995 for S-S cut; peak host memory 3.9–4.0 GB. The
+  primary arm `human` on S-H≥1500's rows is REFUSED ("VOID: … not the registered one").
+
+### A7.2 FINDING (registered limit): what the follow-up isolates
+
+**The ≥ 1500 rows are the same panel-excluded, forfeit-heavy slice; the follow-up isolates RATING at fixed slice and
+volume, not the slice.** S-H≥1500's rows: 51.0 % from forfeits (r2 50.6 %), 7.5 % hidden-move rows (r2 7.7 %).
+Also registered, unmeasured in effect: the arms differ in account concentration (the heaviest 10 accounts hold
+15.4 % of S-H≥1500's rows and 25.6 % of S-H-mix's, against r2's 7.8 %), and the mix shares 63,670 rows with
+S-H≥1500. S-S cut is the first 270,260 rows of S-S's parts in order, not a random sample of S-S's games.
+
+### A7.3 A5.7 inherited
+
+The human arms' rows are r2's rows, byte for byte, extracted at `da36173c9`; S-S cut's rows are S-S's, which share the
+play tree's obs golden `95e24c32` (A5.7), so the asymmetry A5.7 measured touches S-H≥1500 and S-H-mix only. A5.7's
+0.60 % was measured over all of r2; a rating stratum could differ, so it was **measured within each human arm's rows**
+(`checks reencode --within`, [`results/fu1500_reencode.json`](results/fu1500_reencode.json)): VOID 8's same 200
+seeded battles (battles sha256 `9da8b222…`), today's row path with the pin `0534e90a6`'s live reader (run stale on
+purpose, `POKESIM_ALLOW_STALE_BUILD=1`: HEAD's Rust differs, the row sources `14bc0fa5…`, the reader `59e06749…` and
+the obs golden `95e24c32` equal the A5.7 run's). It **reproduces A5.7 exactly** (51 of 8,556 rows, 0.60 %, every one
+in `context.volatiles`), and within the rows each arm trains on: **S-H≥1500 17 of 2,551 (0.67 %), S-H-mix 6 of 2,160
+(0.28 %)**, all in `context.volatiles`. Both are below A5.7's 1.0 % trigger, so no NLL twin read is required; the
+share stays a registered limit (it costs the human arms only).
+
+### A7.4 The GPU window (one arm-chain window item; `followup emit-chain`)
+
+The pattern of `main.ops.gpu_fill_window` (`designs/ops/arm_chain.md` §2): one process per step, the chain runner
+wraps every GPU step in `gpu_lock.sh mem_cap.sh <GB> timeout <s>`, nothing wraps itself; its own preempt marker
+`NO_GO_X59FU`; **`on_fail: hold`**. In order:
+
+1. `preflight` (CPU): the registration passes and names the three rowsets on disk, every shard re-hashes, the lease
+   token validates (`arm_chain.window.lease_token_valid`); a failure writes the marker, so no later step runs.
+2. `cuda_preflight` (GPU, 16 GB, ≤ 60 min): A2.9's 8 checks on **S-H≥1500** (`--arm human_1500`, seed 5901).
+3. `preflight_gate` (CPU): the pre-flight's JSON must read PASS; a FAIL or a missing result writes the marker: the
+   window HOLDs, nothing trains (A2.9).
+4. The 15 students, ONE per step, **serially**, in the registered order: seed-major (5901 … 5905), and within a
+   seed S-H≥1500, S-H-mix, S-S cut. Each step (`followup train-step`, 10 GB, ≤ 60 min) runs `student train …
+   --device cuda` in chunks of 15 min, continuing ONLY on exit 3 (at most 3 chunks); exit 0 finishes it; any other
+   outcome writes the marker (A2.9's rule). Output `~/gen3ai_archive/x59s/followup_1500/students/<s_h1500 | s_hmix
+   | s_scut>_<seed>/`.
+5. `check` (CPU): every student `done` at 1,584 steps on its registered rows, one `init_sha256` per seed (VOID 3).
+
+**Serial, not three at once (a departure from A2.9's "≤ 3 at once"):** an arm-chain window runs its steps one
+after another, and a step must not run a script that wraps `gpu_lock` / `mem_cap` itself (`arm_chain.md` §2), which
+`window.py` does. The primary window measured three at once at only 1.25× the serial throughput (each student 2.4×
+slower; `TECH_DEBT_BACKLOG.md`, the X59-S concurrency row), so serial costs about 15 % more wall here.
+
+**The budget** (`followup.window_budget`): 225.6 ms a step (the PASSing pre-flight's solo 225.56,
+`~/gen3ai_archive/x59s/results/cuda_preflight.json`) × 23,760 steps = 89.3 min; × 1.5 + 5 min = 139.0, **140 min**
+rounded up. It gates step STARTS only; the pre-flight (11–12 min measured) is not in the formula and sits inside the
+headroom (expected last student start ≈ 1 + 12 + 14 × 7 ≈ 111 min).
+
+**Placing it** (the training session, on its own lease, between arms: the window's preconditions want the GPU
+idle and the lease held by the chain's owner). From the MAIN checkout at nice 0 with `PYTHONPATH=$PWD/src`, the
+window's worktree a clean, bootstrapped scratch checkout of the commit on main that lands this amendment:
+
+```bash
+python -m main.human_data.followup emit-chain --base ~/.claude/jobs/x35/chains/<the queue's chain>.json \
+    --name x59s-fu1500 --worktree <scratch worktree> --require-commit <that commit> \
+    --root ~/gen3ai_archive/x59s/followup_1500 --write ~/.claude/jobs/x35/chains/x59s-fu1500.json
+python -m main.ops.arm_chain plan ~/.claude/jobs/x35/chains/x59s-fu1500.json --check-pins        # PLAN OK
+nohup setsid python -m main.ops.arm_chain run ~/.claude/jobs/x35/chains/x59s-fu1500.json \
+    >> ~/.claude/jobs/x35/arm_chain/x59s-fu1500.out 2>&1 < /dev/null &
+python -m main.ops.arm_chain monitor --chain ~/.claude/jobs/x35/chains/x59s-fu1500.json           # the alert follower
+```
+
+A HOLD (any failure) is repaired with `arm_chain clear-hold` on the orchestrator's word after the marker is removed;
+a re-run repeats the pre-flight and resumes every student from its `state.pt` (a finished one returns at once).
+
+### A7.5 The read (in-house only, A2.7)
+
+After the window: export, then the head-to-heads, all on the CPU at nice 19 on the agent cores, each game cell under
+`mem_cap.sh`. **The play tree is the primary read's pin `89c2c2501`** (tag `x59s-play-89c2c250`, the checkout
+`/home/goodlad/dev/gen3ai-reads/x59s_play_pin_a5`): the engine of the primary in-house cells, and the encoder at
+which A5.7 measured (obs golden `95e24c32`).
+
+```bash
+PY=/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 A=~/gen3ai_archive/x59s R=$A/followup_1500
+M=designs/research_state/measurements/x59s_matched_students_2026-10-25
+# 1. export (each student's zip, both yardsticks, VOID 3 + the learned-nothing guard at 1,584 steps)
+nice -n 19 taskset -c 5-7,13-15 scripts/ops/mem_cap.sh 10 $PY -m main.human_data.followup export \
+    --root $R --r2 $A/hr_spec_v1.r2/rows --ss $A/ss_rows_v2
+# 2. the 30 cells (2 pairings x 5 seeds x 3 panels, 400 games each), played from the pin's tree, then read
+$PY -m main.human_data.followup inhouse --root $R --tree /home/goodlad/dev/gen3ai-reads/x59s_play_pin_a5 \
+    --play --out $M/results/fu1500_inhouse.json
+```
+
+Each cell is exactly (cwd and `PYTHONPATH` the play tree; `k` = 5901–5905; `P` = `heldout72_hpfix`, `forum72`,
+`p72`; the opponent S-H-mix_k for the `rating` pairing, S-S cut_k for the `data` pairing):
+
+```bash
+nice -n 19 taskset -c 5-7,13-15 scripts/ops/mem_cap.sh --name x59s_h2h 12 timeout 2700 $PY -m main.h2h play \
+    --player <S-H≥1500_k zip> --opponent <S-H-mix_k | S-S-cut_k zip> --panel <P> --pairs 200 --seed <k> \
+    --out $R/read/inhouse/ledger --label x59s_fu1500_inhouse --device cpu --threads 2 --torch-threads 2
+```
+
+**The rule** (`followup.inhouse_read`, through `x59s_read.inhouse` unchanged): a pairing's rate for seed k = the
+equal-weight mean over H, F, P72 of S-H≥1500_k's mirrored-pair score (a draw is ½); the contrast = the mean of the
+5 rates − 0.50, with a t interval (df 4). §5's classes with A2.8 and A5.3:
+
+| pairing | LB > 0 | UB < 0 | the whole interval inside ±4 pp | else |
+|---|---|---|---|---|
+| **S-H≥1500 − S-H-mix** (rating at fixed slice and volume) | HIGHER-RATED-BETTER | MIX-BETTER | NO-DIFFERENCE-AT-4PP | NOT-RESOLVED |
+| **S-H≥1500 − S-S cut** (human ≥ 1500 data against our self-play data at N) | HUMAN-DATA-BETTER | SELF-PLAY-DATA-BETTER | NO-DIFFERENCE-AT-4PP | NOT-RESOLVED |
+
+A bound within 1e-9 of 0 or ±4 pp takes the undecided class. NO-DIFFERENCE-AT-4PP needs the in-house interval inside
+±4 pp (A5.3); the in-house meter is this read's only meter. **A class is computed only when all 30 cells hold 200
+pairs and the ledger's rows ran on exactly ONE engine** (else none, reported). VOID: a student whose rows or init
+differ from the registration, or whose steps differ from 1,584 (`check`, `export`'s `void3`), or that fails the
+learned-nothing guard. Every class is reported with both arms' rates; no class closes or opens a lever alone (§5).
