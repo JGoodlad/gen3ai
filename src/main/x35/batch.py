@@ -290,9 +290,9 @@ X63U_PIN_PATHS = ("src/utils/team_corpora/",)
 #: subtree + the one CORPORA line (no main commit holds it, as N1P_CORPORA_TREE).
 X63U_CORPORA_TREE: Optional[str] = "ca0845cfcb22f70e7a808871f57cff480ad621db"
 #: AM-N4-PIN (2026-10-31): N4's pin, the first MAIN commit carrying T69 (B-FFNW, the width field), the ``n4_screen``
-#: rule and the kit arms ``toy_c0n4`` / ``toy_n4ffn``. A commit cannot name itself, so the arms land with None (every
-#: check of them REFUSES) and the next commit fills it, with the PREREG's pin NOTE.
-N4_PIN: Optional[str] = None
+#: rule and the kit arms ``toy_c0n4`` / ``toy_n4ffn`` (``feat(x35 kit): N4's kit arms ...``). A commit cannot name
+#: itself, so the arms landed with None and this one filled it, with the PREREG's AMENDMENT AM-N4-PIN.
+N4_PIN: Optional[str] = "1553f8bd838a13d3709239c43b3ee98d27cac359"
 #: What N4_PIN must carry (each an ancestor of it): ``{name: full sha}``.
 N4_PIN_CARRIES: Dict[str, str] = {"T69 B-FFNW (--grow trunk_ffn_dim)": "c35ffab9ebeb3d5194417991b52060bbcb7bb870",
                                   "the n4_screen read rule": "a05a0ca2c110b870d0ebcda1c92774ddc03c5400"}

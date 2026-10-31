@@ -170,6 +170,65 @@ NEW registration, with its own alpha and its own reason, never this one's look 2
 
 **NOTE 1 (2026-10-27, before the first GO; no N4 run exists).** Ruling 2 of the precommit memo `endstate/precommit_reads_2026-10-27.md` §4, accepted by the orchestrator: LR-F look 2 (8.6 GPU-h) runs after X48's arms and before N4 launches. Nothing registered above changes.
 
+**AMENDMENT AM-N4-PIN (2026-10-31, before the first GO; no N4 or C0′ run, game or number exists).** No class, bar,
+estimator, seed, dose, argv or VOID reason changes.
+1. **`N4_PIN` = `1553f8bd838a13d3709239c43b3ee98d27cac359`**, the first `main` commit carrying T69's width field
+   (`c35ffab9e`), the `n4_screen` rule (`a05a0ca2c`) and the kit arms `toy_c0n4` / `toy_n4ffn`
+   (`main.x35.batch.N4_PIN`, checked by `n4_pin_check`). §3 also named the descriptor readers; they are not built.
+   They read reported lines only (§6 item 7) and never touch training, so `N4_PIN` is the TRAINING pin: all six
+   forks launch there and only there, and §4's pin VOID reads against it.
+2. **The read's pin and S driver are fixed by a NOTE before any read game**, under one constraint: every K and S row
+   plays on ONE engine. Verified 2026-10-31 (CPU): one `main.h2h` engine refuses three architectures
+   (`CellArchMismatch`), and the runner stripes R's members across two engines, so at `N4_PIN` the S lane would
+   refuse. The NOTE takes one of two routes:
+   - `N4_PIN` with an architecture-pure driver (X48 NOTE 5's pattern), with its identity check: one banked toy C0
+     cell replayed equals its banked rows;
+   - or one later `main` commit carrying the runner's grouping fix, with the same check.
+
+   Either commit must also carry the width descriptor readers (E1 / E2) and the battery's width worker, both
+   missing at `N4_PIN`. The frozen X35-frame shared pin `86cfdf7ef` cannot load a grown toy (its model code is
+   config v161), so it is not a route.
+3. **The rule's decision parameters, fixed NOW as registered.** Training writes in-loop eval rows within minutes of
+   the first GO, so these cannot wait for the read. §7 does not list four of them, and the `n4_screen` rule needs
+   them:
+   - `mixed_veto`: `false`. §5.3 registers no MIXED class.
+   - `near_scope`: `"meter"`. §5.3: a bound near its bar reads that meter UNDECIDED. The rule's default, `"bound"`,
+     is X48's wording.
+   - the S group's `pairs`: 500 (§5.1).
+   - `nogo_scope`: `{"lever": "--grow trunk_ffn_dim=1024", "dose": "70M", "start": "T*"}`. These are descriptive
+     strings for the NO-GO record's text, and no class reads them.
+
+   The M4 "LR-confounded" / "LR-elevated" labels the rule prints are labels, never classes. Adopting any of the
+   REVIEW's fixes that touch the classes or their inputs needs its own amendment BEFORE THE FIRST GO, never after
+   any N4 or C0′ number (§5.4, §9's header): M2's harm veto, M3's 2,000 pairs, m3's Δ̂ floor, M5's NO-GO wording.
+   That is the orchestrator's ruling.
+4. **The GPU smoke (§8; design doc §7 item 3) is not a separate launch.** It needs a lease this unit does not hold.
+   Its checks become guards on the chain's arms:
+   - the fork-time gate's line is the N4 banner's `expect`, "(394,752 parameters); optimizer state carried for". The
+     trainer prints it only after the bit-identity gate passes (`main.train.model_build`);
+   - `[GrowFork] FATAL` and `[ModelVersion] FATAL` are `void` lines on both arms, and any `[GrowFork]` line is `void`
+     on C0′ (§8). C0′'s `expect` is "[CompileRegions] parity PASS", which every healthy toy C0 child printed. All arms
+     run with `on_void: stop`;
+   - the pool growth line ("seeded pool grown") is checked by hand at N4 s3641's start. A failure there is already
+     `[GrowFork] FATAL`;
+   - ρ is measured from the dose records (§6 item 2; it decides nothing).
+
+   C0′ s3641 runs first, so a GPU-only failure of the grown net stops the chain after one control arm.
+5. **Verified before this amendment** (CPU, `CUDA_VISIBLE_DEVICES=""`, 2026-10-31):
+   - `checkargs` exits 0 on both argvs, and the only difference between them is the lever;
+   - `launcher --dry-run` shows FORK of `rb_toy_ent_s4002_deep`, +70,000,000 steps, "grow : DECLARED trunk_ffn_dim
+     256 -> 1024" on N4 only, 15.93 GiB REQUIRED, and fork arch compatible. Its one refusal is the CUDA-visibility
+     gate, which the empty `CUDA_VISIBLE_DEVICES` trips by design;
+   - the kit's pool, corpus and K9(b) checks PASS;
+   - a grown T\* (offline, gate max |Δ| 0.0, 394,752 parameters) plays 2 pairs against T\* and 2 against P\* in
+     `main.h2h`, and one counted 20-game forum72 unit against Kakuna in `main.anchors`.
+6. **K units play as finals settle** (the runner's settle loop). "Arms interleaved unit by unit" (§5.1) then holds
+   among the settled finals, and later finals catch up from unit seed 0. Unit seeds are fixed per unit, so no
+   outcome depends on the order.
+7. **NOTE 1's condition is moot.** LR-F look 1 read UNDECIDED, final (`1355d2d3f`), so look 2 does not run (the kit's
+   stage-check refuses it). With X48's NO-GO (`b01dc048b`), the precommit memo's §2.2 row governs ("as for not
+   GAIN"): N4 or N4-P-direct is the orchestrator's choice, and it chose the N4 toy (brief, 2026-10-31).
+
 ## 10. Files
 
 - `power.py`, `power.log`: the screen's and the X35 R1 rule's power.

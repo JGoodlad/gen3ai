@@ -1,12 +1,19 @@
 # N4: the toy capacity screen. Is the network too small to escape the plateau?
 
-**Status: DRAFT (2026-10-27). REGISTERED as
+**Status: REGISTERED, LAUNCH-READY for training (2026-10-31); nothing is launched or armed.** The registration is
 [`../research_state/measurements/n4_capacity_screen_2026-10-27/PREREG.md`](../research_state/measurements/n4_capacity_screen_2026-10-27/PREREG.md).
-T69's MODEL SIDE is built (2026-10-27, `--grow trunk_ffn_dim`); nothing is launched.** This doc makes runnable the capacity branch of
+- **Built:** T69's model side (`c35ffab9e`), the `n4_screen` rule (`a05a0ca2c`) and the kit arms (`toy_c0n4` /
+  `toy_n4ffn`).
+- **The training pin:** `N4_PIN` = `1553f8bd8` (AMENDMENT AM-N4-PIN).
+- **Before the read:** the S lane's grouping by architecture, the width descriptor readers and the battery's width
+  worker (§7, FINDINGS 10–11). They are needed before the read, not the launch.
+- **Before the first GO:** the orchestrator's ruling on the REVIEW's MAJORs that touch the classes (FINDING 13).
+
+This doc makes runnable the capacity branch of
 [`strategy_if_levers_null_2026-10-26.md`](strategy_if_levers_null_2026-10-26.md) §4 (T3). The plasticity check
 (`8bebdfe3`) read NO-LOSS, so T3 takes this branch
 ([`../research_state/measurements/plasticity_check_2026-10-26/README.md`](../research_state/measurements/plasticity_check_2026-10-26/README.md)).
-N4 needs one build first, T69 B-FFNW (§2), and then about 30 GPU-h (§3).
+About 30 GPU-h (§3).
 
 **Abbreviations.**
 - **T\*** is the toy's plateau checkpoint: X34 (`rb_toy_ent_s4002_deep`) at 290,000,087 steps.
@@ -43,11 +50,16 @@ N4 needs one build first, T69 B-FFNW (§2), and then about 30 GPU-h (§3).
   - N4 ≈ 3 × 5.5 GPU-h, at a GUESSED 1.2× wall per step.
   - It is ≈ 2× the strategy doc's 13–15 GPU-h: the banked toy C0 cannot serve as control (§3.2, FINDING 1).
   - Plus ≈ 26–38 lane-h of Kakuna and ≈ 3 CPU-h of S cells and mechanism reads.
-- **The GPU window.** The current arm chain `x35-lrf-oct26`:
-  - LR-F s3502 RUNNING since 07:24 PDT 10-27; s3503 PENDING;
-  - ≈ 4.1 h a 20M arm, so the card frees ≈ 16:00 PDT 10-27.
-  - N4 launches in the first window after T69 lands (≈ 1–1.5 agent-days, so ≈ 10-28 to 10-29), one fork at a
-    time, ≈ 1.3 card-days.
+- **Why now (2026-10-31).** Every other lever on the plateau has now read without a gain:
+  - the learning-rate floor: LR-F UNDECIDED final, −1.13 pp, `1355d2d3f`;
+  - per-kind FFN experts: X48 NO-GO, weak, "experts not engaged", `b01dc048b`;
+  - procedural breadth: N1-P look 2 NULL, `62e46874a`;
+  - +100M of union breadth: X63 Stage A NOT PURSUED, `e05eea096`;
+  - human data: X59-S, human labels lose by 4.50 pp, `c1d2d7fcb`.
+
+  Trunk width is the capacity axis not yet tried. LR-F's non-GAIN also clears the review's first worry, that a
+  binding learning rate would hide a width effect (REVIEW M4 (a)).
+- **The GPU window.** The six forks run one at a time on the arm chain draft (§3.4), ≈ 1.3 card-days.
 - **The read (§4): a SCREEN, one look, two meters.** Each class is set by one-sided 95 % bounds on the 3 + 3 seed
   finals:
   - **S:** GO-S iff the LB of N4 − C0′ is > 0; NO-GO-S iff the UB is < +2.0 pp (the X35 bar); else UNDECIDED-S.
@@ -60,8 +72,8 @@ N4 needs one build first, T69 B-FFNW (§2), and then about 30 GPU-h (§3).
     decision (FINDING 3).
   - **NO-GO** retires "more trunk FFN width at the plateau" for the toy. It transfers WEAKLY, because production asks
     the same trunk widths to carry more input.
-  - **X48** (per-kind FFN experts, built, at the banked production C0's pin) is the production-side capacity read
-    that needs no toy and no build. It is the complement, whatever N4 reads.
+  - **X48** (per-kind FFN experts at P\*) READ NO-GO on 10-30, a weak one: the experts diverged no more than
+    chance drift. It closes per-kind untying at the same width within 20M, not width (§6.2).
 - **The mechanism read (§5)** is reported, never deciding:
   - **engagement:** the new units' output-weight norm, and the policy shift when the new branch is zeroed;
   - **the capacity battery v3** (`python -m main.capacity`): rank, trainability and tanh saturation at every final,
@@ -116,10 +128,13 @@ All three were checked on T\*'s checkpoint `checkpoint_290000087_steps.zip`, at 
 
 So the growth machinery works on the toy at HEAD, and the width field is the build (§2).
 
-**After T69's model side (2026-10-27, `gen3_trunk_ffn_width_v1`, config v164):** `main.checkargs` on T\* with
-`--grow trunk_ffn_dim=1024` prints "declared growth (--grow) : trunk_ffn_dim 256 -> 1024" and "✓ fork arch :
-compatible". A bare `checkargs` on T\* judges the argv against T\*'s OWN recorded commit `ae2d0901`, which predates
-`--grow` (for `trunk_layers=3` too), so the kit must name the pin (`--pin-commit N4_PIN`).
+**At the kit arms (2026-10-31, CPU):** both arms' argvs, at the pin, behave as follows.
+- `main.checkargs` exits 0 on both. They differ only by the lever: "declared growth (--grow) : trunk_ffn_dim
+  256 -> 1024".
+- `main.launcher --dry-run` reads FORK of `rb_toy_ent_s4002_deep`, +70,000,000 steps, 15.93 GiB REQUIRED,
+  "✓ fork arch".
+- The kit names the pin, because a bare `checkargs` on T\* judges the argv against T\*'s own recorded commit
+  `ae2d0901`, which predates `--grow`.
 
 ---
 
@@ -179,21 +194,24 @@ compatible". A bare `checkargs` on T\* judges the argv against T\*'s OWN recorde
    - the grown state dict equals a fresh child build's;
    - the pool grows;
    - the refused pair.
-2. **Kit arms** in `main.x35.kit` / `batch`: `toy_c0n4` (`rb_x35t_c0n4_s{seed}`) and `toy_n4ffn`
-   (`rb_x35t_n4ffn_s{seed}`), seeds 3641–3643.
-   - Both arms are judged against ONE arm-level pin `N4_PIN`, not the toy side pin (AM-1 / AM-8 keep `4609c155`
-     for batch 1).
+2. **Kit arms: BUILT (`1553f8bd8`).** `toy_c0n4` (`rb_x35t_c0n4_s{seed}`) and `toy_n4ffn`
+   (`rb_x35t_n4ffn_s{seed}`), seeds 3641–3643, in `main.x35.kit` / `batch`.
+   - Both are judged against ONE arm-level pin, `batch.N4_PIN`, checked by `n4_pin_check`: a main commit carrying
+     T69 and the rule. The toy side pin `4609c155` stays batch 1's.
+   - `batch.N4_STAGES` holds the PREREG's interleaved order.
    - `toy_n4ffn` is the `toy_c0n4` argv token for token + `--grow trunk_ffn_dim=1024`.
-3. **The descriptor readers**, generalising `main.x35.x47 norms` / `policy-diff` to any declared growth through a
-   per-row `zero_new` hook (§5).
+3. **The descriptor readers: NOT BUILT.** They generalise `main.x35.x47 norms` / `policy-diff` to any declared
+   growth through a per-row `zero_new` hook (§5). Today `x47 norms` on a width-grown toy exits 0 with an EMPTY
+   reading (FINDING 11).
 4. **The read rule** `n4_screen` (PREREG §5) is **BUILT** (2026-10-27, ahead of T69, for X48;
    `src/main/reads/rules_n4_screen.py`, `designs/tools/reads.md` §5): S by `welch_interval` at 0.90 from an `s` group,
    K by the `d1` estimators at z = 1.6449 from an `anchor` group (forum72), M2's MIXED (`mixed_veto`), M4's LR label,
    M5's NO-GO text (`nogo_scope`). N4's spec registers `near_scope` `meter` (§5.3: a near bound reads its meter
    UNDECIDED; X48's wording is `bound`), its `pairs` (500, or 2,000 under M3) as the cell floor, and the K9(b) VOID
    gate; the growth stamps stay operator checks (the gate reads K9(b) only).
-   - T69 still ships a 2-pair smoke of a grown toy against T\* and against P\*, through `main.h2h` and through
-     `main.anchors` against Kakuna (the X47 smoke's pattern: three architectures need split engines).
+   - **The game smoke is DONE (2026-10-31, CPU).** A grown T\* played:
+     - 2 pairs against T\* and 2 against P\* in `main.h2h`, each on its own engine;
+     - one counted 20-game forum72 unit against Kakuna in `main.anchors`.
 
 ---
 
@@ -241,20 +259,17 @@ So both arms run at ONE new pin `N4_PIN`: the first `main` commit that carries T
   took ≈ 50 min on 3 lanes, so this is ≈ 2–3 lane-h of the S lane.
 - **The battery and descriptors:** ≈ 1–2 CPU-h.
 
-### 3.4 The GPU window (cited 2026-10-27 08:00 PDT)
+### 3.4 The GPU window and the hand-off (2026-10-31)
 
-- **The arm chain** `x35-lrf-oct26` (`~/.claude/jobs/x35/arm_chain/x35-lrf-oct26.state.json`):
-  - D3 s3504 / s3505 are DONE;
-  - LR-F `rb_x35_lrfloor_s3502` is RUNNING (GO 07:24 PDT; throughput gate 1,470 steps/s);
-  - `rb_x35_lrfloor_s3503` is PENDING.
-- **When the card frees.** At D3 s3505's measured dose (245.2 min for 20M at 1,397 steps/s, `28711af06`), s3502
-  ends ≈ 11:30 and s3503 ≈ 15:45 PDT, so the card frees ≈ 16:00 PDT 10-27.
-- **N4 is not ready then.** T69 must land first. N4's six forks are the first GPU item after T69 ships, unless the
-  orchestrator orders otherwise; the queue order is the orchestrator's (memory: "GPU queue order is my call").
-- **The hand-off** is a new `arm_chain_v1` file, backend `x35`, six arm items at `N4_PIN` (PREREG §8):
-  - `on_void: stop`, `on_throughput_fail: page`;
+- **The card frees ≈ 17:00 PDT 10-31**, when X63-U s6302 (a speculative replicate, read for nothing) ends. The
+  queue order is the orchestrator's.
+- **The hand-off is an UNARMED draft** in `arm_chain_v1` format:
+  `~/.claude/jobs/x35/chains/drafts/n4-toy-2026-10-31.json`. Backend `x35`, the six arm items in PREREG §3's order,
+  each at `N4_PIN`. Its guards:
+  - `on_void: stop` and `on_throughput_fail: page`;
   - a throughput floor of 2,500 steps/s (UNVERIFIED for N4; C0′ measured 4,607 at the old pin);
-  - a banner guard on the growth line T69 prints.
+  - banner guards from AM-N4-PIN item 4. They replace the separate GPU smoke this unit could not run without a
+    lease.
 
 ---
 
@@ -405,32 +420,46 @@ eval traces; the PREREG's `battery_baseline.log`):
 | **UNDECIDED** | open, unlicensed | no N4-P | the interval goes to the owner at T5; a look 2 is a NEW registration (≈ +20 GPU-h), never an amendment after seeing look 1 |
 | **VOID** | — | — | fix the named input, re-run the seed |
 
-**X48 as the production complement, whatever N4 reads.**
-- X48 (per-token-kind FFN experts at P\*, `--grow trunk_ffn_by_kind=on`) is a capacity lever:
-  - +0.79M parameters at zero extra FLOPs;
-  - BUILT;
-  - its control is the banked production C0 at its own pin (B-KFFN `3f69e6e2e` is an ancestor of `f4b25238`);
-  - READY TO LAUNCH, ≈ 15 GPU-h (EXPERIMENT_BACKLOG BI-2).
-- It reads production capacity directly, which the toy cannot settle (§6.1).
-- **Ranking it is outside this unit (rule 9):** FINDING 4.
+**X48, the production capacity read, has landed (10-30, `b01dc048b`).** Per-token-kind FFN experts at P\*
+(`--grow trunk_ffn_by_kind=on`, +0.79M parameters at about zero extra FLOPs) read **NO-GO, labelled "experts not
+engaged"**:
+- Δ_S −0.55 pp [−1.32, +0.21];
+- Δ_K +2.06 pp [−0.06, +4.19], UNDECIDED;
+- the experts diverged no more than chance drift.
+
+So it closes per-kind untying at the SAME width within 20M, and nothing wider. Its experts were COPIES that
+inherited their AdamW state. N4's branch is zero-init with fresh state, and adds per-token width, which X48 did not
+test. On the strategy memo's routing, N4 (toy) or N4-P-direct was the orchestrator's choice (precommit memo §6,
+2026-10-30); it chose the toy (2026-10-31).
 
 ---
 
 ## 7. What the training session needs, in order
 
-1. **T69 landed** on main (§2): the field, the kit arms, the descriptor readers and the read rule, each tested. Its
-   commit is `N4_PIN`, recorded in the PREREG by a NOTE (not an amendment: the pin is a registered unknown, §3.2).
-2. **The dry runs at `N4_PIN`** (`launch_x35.sh toy_c0n4 3641` / `toy_n4ffn 3641`, no GO). Each transcript reads:
+1. **DONE: T69's training side and `N4_PIN`.** The field, the kit arms and the read rule are on main.
+   `N4_PIN` = `1553f8bd838a13d3709239c43b3ee98d27cac359` (PREREG AMENDMENT AM-N4-PIN). The kit's `pin-check` and
+   `stage-check` refuse every other commit.
+2. **DONE: the dry runs, CPU, 2026-10-31.** `checkargs` exits 0. Each `launcher --dry-run` transcript reads:
    - "FORK of …/rb_toy_ent_s4002_deep";
    - "+70,000,000 steps";
    - "pin : `N4_PIN`";
    - N4 only: "grow : DECLARED trunk_ffn_dim 256 -> 1024".
-3. **A GPU smoke** under the lease, ≤ 15 min: one N4 fork to its first 1M checkpoint in a scratch models dir. It
-   checks the fork-time gate's line, the pool growth and the measured ρ, which replaces §2's GUESS in the PREREG
-   NOTE.
-4. **The chain file and the GO**, the orchestrator's. Six arms in §3.1's order.
-5. **The reads** after the six finals settle:
-   - `main.reads` with the spec PREREG §7 fixes, pinned to `N4_PIN`: S lane and anchor lane, `--concurrency 1`;
+
+   An agent without a lease sees one refusal, the CUDA-visibility gate. The chain's own dry run under the lease
+   repeats these checks.
+3. **The GPU smoke is folded into the chain's banner guards** (AM-N4-PIN item 4). ρ is read from the dose records.
+4. **The chain and the GO are the orchestrator's.** The draft is `~/.claude/jobs/x35/chains/drafts/n4-toy-2026-10-31.json`
+   (§3.4), six arms in §3.1's order.
+5. **Before the read** (needed by the read, not the launch; the training takes ≈ 1.3 card-days):
+   - **(a) The S lane plays one architecture per engine.** Either X48's architecture-pure driver at `N4_PIN`, or the
+     runner's grouping fix at one later main commit. Either way with X48 NOTE 5 (a)'s identity check, by a NOTE
+     (AM-N4-PIN item 2).
+   - **(b) The width descriptor readers** E1 / E2.
+   - **(c) The battery's width worker.**
+   - The rule's decision parameters are fixed already, as registered (AM-N4-PIN item 3). Any adoption of the
+     REVIEW's M2 / M3 / M5 is an amendment BEFORE THE FIRST GO, the orchestrator's ruling.
+6. **The reads**, as the finals settle (AM-N4-PIN item 6):
+   - `main.reads` with PREREG §7's spec: the S lane and the anchor lane, `--concurrency 1`;
    - then the battery and the descriptors;
    - then `record`.
 
@@ -447,20 +476,20 @@ eval traces; the PREREG's `battery_baseline.log`):
    v162, and T69 adds a version, so N4-P needs either a backported own pin with a declared-diff check (a new
    precedent: patch-identity cannot hold) or a new production C0 (≈ +22 GPU-h). It is the orchestrator's choice, on
    a GO only.
-4. **X48 is a ready production capacity read, unranked against N4** (out of scope, rule 9). It needs no build and no
-   new control, at ≈ 15 GPU-h.
+4. **X48 has read (10-30): NO-GO, weak, "experts not engaged"** (§6.2). The ranking question it raised is closed.
 5. **ρ for N4 is a GUESS (≈ 1.2)**, extrapolated from X47's trunk MACs; T69's CPU smoke read 1.23× pooled (pairs 1.05× and
    1.36×, a contended box: a hint only, §2). The GPU smoke (§7 item 3) measures it, and
    the FP32_ALT solve at `N4_PIN` may also make C0′ faster than the banked toy C0's 4,607 steps/s (UNVERIFIED).
 6. **The battery baseline is one seed per row** (T\*, toy C0 s3601, X47 s3601 on one state set). It describes the
    frame and decides nothing.
-7. **Grown-toy LOADING in `main.anchors` is VERIFIED; PLAYING is not.** A grown toy (T69's CPU smoke) loads through
-   the bare loader (`load_checkpoint_strict`) and the foreign loader at width 1024 with the same logits, and
-   `arch_status` reads it CURRENT (2026-10-27). No grown toy has played a game yet: the 2-pair `main.h2h` +
-   `main.anchors` smoke is still open (T69's remaining items).
+7. **A grown toy LOADS and PLAYS (VERIFIED 2026-10-31, CPU).** A T\* grown offline (gate max |Δ| 0.0, 394,752
+   parameters) played:
+   - 2-2 against T\* and 2-2 against P\* in `main.h2h` (mirrored pairs, split 1-1, as an identical function
+     should);
+   - one counted 20-game forum72 unit against Kakuna in `main.anchors` (10-10, regime verified, 143 s).
 8. **The K meter is weak at screen scale**: 6,000 games give GO-K 0.61–0.69 at +3 pp. It is registered as a
    large-effect detector only, and a NO-GO says so (§4.2).
-9. **This unit launched nothing and used no GPU** (`CUDA_VISIBLE_DEVICES=""`).
+9. **No N4 unit launched anything or used the GPU** (`CUDA_VISIBLE_DEVICES=""`), on 10-27 or 10-31.
 10. **The battery's depth worker REFUSES a wide trunk** (T69, 2026-10-27). `pin_worker.trunk_rounds` raises
     `UnsupportedTrunk` on a round with a width branch, because its layer replica, FFN statistics, truncation and spectra
     read only the base FFN (the B-KFFN precedent). The §5 battery on the N4 arms needs that worker taught the branch
@@ -468,6 +497,19 @@ eval traces; the PREREG's `battery_baseline.log`):
    - Its CPU work ran under `nice -n 19 taskset -c 5-7,13-15`, the battery under `mem_cap.sh --max-s 600`:
      `main.checkargs` × 3, `main.launcher --dry-run` × 1, `main.capacity` and `power.py`.
    - `models/` was only read. The battery's output went to `/tmp`.
+11. **The S lane cannot play N4's finals as built** (2026-10-31).
+    - One `main.h2h` engine serves at most two architectures. The runner stripes R's members across two engines,
+      so one engine gets a grown toy, a plain toy and `pstar_x26`, and is refused (`CellArchMismatch`).
+    - The width descriptor readers do not exist yet. `x47 norms` on a grown toy exits 0 with an EMPTY reading,
+      instead of refusing.
+    - Both are owed before the read (§7 item 5).
+12. **The frozen X35-frame shared pin `86cfdf7ef` cannot load a grown toy.** Its model code is f4b25238's, config
+    v161: "unexpected keyword argument 'trunk_ffn_dim'". So N4's K rows sit on their own engine, and no banked
+    Kakuna row imports into them. They compare only within N4's read.
+13. **The rule needs decision parameters PREREG §7 does not list:** `mixed_veto`, `near_scope` (default `"bound"`,
+    not §5.3's `"meter"`) and `nogo_scope`. AM-N4-PIN item 3 fixes them as registered. Training writes eval numbers
+    within minutes of the GO, so whether to adopt the REVIEW's M2 (a harm veto), M3 (2,000 pairs) or M5 (the NO-GO
+    wording) is the orchestrator's ruling BEFORE THE FIRST GO, by its own amendment.
 
 ---
 
@@ -478,3 +520,4 @@ eval traces; the PREREG's `battery_baseline.log`):
 | 2026-10-27 | **N4 DESIGNED AND REGISTERED (DRAFT)** (N4 designer, orchestrator brief; CPU only) | A growth fork at T\*: `--grow trunk_ffn_dim=1024` (a zero-init FFN branch per round, bit-identical at the fork) vs a same-pin C0′, 3 + 3 seeds × 70M at a new pin `N4_PIN`, ≈ 30 GPU-h. A one-look SCREEN on matched-step finals: S at one-sided 95 % (GO LB > 0, NO-GO UB < +2.0 pp) and Kakuna F as a large-effect detector (GO LB > 0). The mechanism read (engagement + battery v3) is reported. The bridge: GO licenses N4-P at the PR rule; NO-GO transfers weakly; X48 is the production complement | the fresh 2× `D_MODEL` toy at matched wall clock (the T-ENT reversal); fresh to the plateau (≈ 110–160 GPU-h); KFFN on the toy (refused by `checkargs`); depth (X47 done); reusing the banked toy C0 (no clean pin); X35 R1 as the decider (+3 pp → GAIN 0.16–0.32); a look 2 (≈ +20 GPU-h, 0.4–0.5 likely under a null) | §1.2's dry runs at `90708bff`; `power.log`; UNDERSTANDING §4.9; `toy_x47_look1.json`; the plasticity check (`8bebdfe3`); the battery on T\*, toy C0 s3601 and X47 s3601 (`battery_baseline.log`) |
 | 2026-10-27 | **Ruling 2 of the precommit memo accepted** (doc editor; docs only) | LR-F look 2 runs after X48 and before N4 launches (PREREG NOTE 1) | — | `precommit_reads_2026-10-27.md` §4 |
 | 2026-10-27 | **The read rule `n4_screen` BUILT before T69** (for X48, which registered under N4's screen) | one rule for both reads, the differences as spec params (`near_scope`, `mixed_veto`, `nogo_scope`, the S group's `pairs`) | two copies of the screen | `rules_n4_screen_test.py`; X48 `read_spec.draft.json` passes `check-spec --pin-pending` |
+| 2026-10-31 | **LAUNCH-READY for training** (N4 launch-readiness unit, orchestrator brief; CPU only) | the kit arms at ONE whole-commit pin `N4_PIN` = `1553f8bd8`, checked by `n4_pin_check`. The read's pin and S driver are fixed by a NOTE before any read game. The GPU smoke is folded into the chain's banner guards. An unarmed chain draft (PREREG AMENDMENT AM-N4-PIN) | a "side pin + one commit" own pin (no clean commit exists, §3.2); waiting for the descriptor readers before pinning (they never touch training); a separate GPU smoke (no lease) | `checkargs` / `--dry-run` / kit checks on both argvs; a grown toy's `main.h2h` + `main.anchors` smoke; the draft's `arm_chain plan` |

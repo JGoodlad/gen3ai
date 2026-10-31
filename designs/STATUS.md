@@ -70,7 +70,7 @@ Read at 17:45 PDT on 2026-10-30 from `python -m main.ops.arm_chain status` (each
 
 The orchestrator's order after REVIEW_2 of the all-null strategy (`69c7cd34d`), with the verdicts since 10-27 applied. Every item needs its GO.
 
-1. **X48**, production capacity at the plateau: READ 10-30, **NO-GO** (weak, "experts not engaged"; `b01dc048b`, §2). The next capacity read (N4 with its review's fixes, or N4-P-direct) is the orchestrator's choice; no N4 arm is on a chain.
+1. **X48**, production capacity at the plateau: READ 10-30, **NO-GO** (weak, "experts not engaged"; `b01dc048b`, §2). The orchestrator chose the N4 toy (10-31). It is launch-ready (kit arms at `N4_PIN` `1553f8bd8`, PREREG AM-N4-PIN); its chain is an unarmed draft.
 2. **X63**, a long union continuation: **Stage A read NOT PURSUED (10-31)**, so X63 stops at Stage A
    ([`endstate/design_x63_long_breadth_continuation.md`](endstate/design_x63_long_breadth_continuation.md), PREREG
    [`x63_2026-10-29/`](research_state/measurements/x63_2026-10-29/PREREG.md), read

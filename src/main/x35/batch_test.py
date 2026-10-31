@@ -1478,13 +1478,21 @@ def test_n4_pin_check_refuses_a_placeholder_and_passes_only_a_main_commit_carryi
     assert not ok and "is not on main" in lines[0], lines
 
 
-def test_n4_pin_check_passes_the_real_carried_commits_in_this_checkout():
-    """T69 and the n4_screen rule are real main commits here (main carries both), so a pin at HEAD would pass."""
+def test_the_real_n4_pin_passes_its_own_check_and_carries_the_kit_arms():
+    """The registered N4_PIN is a main commit of this checkout, carries T69 and the n4_screen rule, and its own tree
+    holds the N4 kit arms (the PREREG names it in full: AMENDMENT AM-N4-PIN)."""
     from utils.paths import repo_root
 
     root = str(repo_root())
-    for sha in B.N4_PIN_CARRIES.values():
-        assert subprocess.run(["git", "-C", root, "merge-base", "--is-ancestor", sha, "HEAD"]).returncode == 0, sha
+    assert B.N4_PIN is not None and re.fullmatch(r"[0-9a-f]{40}", B.N4_PIN)
+    assert all(B.ARM_PINS[a] == B.N4_PIN for a in B.N4_ARMS)
+    ok, lines = B.n4_pin_check(B.N4_PIN, "4609c1554876" + "0" * 28, root)
+    assert ok, lines
+    kit = subprocess.run(["git", "-C", root, "show", f"{B.N4_PIN}:src/main/x35/kit.py"], capture_output=True,
+                         text=True, check=True).stdout
+    assert 'N4_LEVER = ("--grow", "trunk_ffn_dim=1024")' in kit and '"rb_x35t_n4ffn_s{seed}"' in kit
+    assert B.N4_PIN in repo_path(B.N4_PREREG).read_text(encoding="utf-8")
+    assert B.stage_status(".", "toy_n4ffn", 3641)[0] == B.ALLOWED
 
 
 def test_n4_runs_are_judged_against_n4_pin_not_the_toy_side_pin(tmp_path, monkeypatch):
