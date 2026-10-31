@@ -1,6 +1,6 @@
 # STATUS — where gen3ai stands, on one page
 
-**As of 2026-10-27.** This page is the dashboard: what we are trying to do, where each goal stands, and what is
+**As of 2026-10-30.** This page is the dashboard: what we are trying to do, where each goal stands, and what is
 running. It gives each number, its interval and the commit that proves it. The reasoning behind these numbers is in
 [`research_state/UNDERSTANDING.md`](research_state/UNDERSTANDING.md), the plans are in
 [`endstate/README.md`](endstate/README.md), and the research ledger wins any disagreement. A backticked hex string
@@ -23,9 +23,9 @@ rate. **NOT DETECTED / UNDECIDED** means the interval spans zero, so we cannot t
 
 | # | goal | status | best number [95 % interval] | proof |
 |---|---|---|---|---|
-| 1 | **The strongest baseline** | **AT ITS PLATEAU.** P\* = X26 @ 280M. Training on to 480M changed nothing. Holding the learning rate up (LR-F) did not help in-house: UNDECIDED, final, leaning negative. Per-kind FFN experts (X48) gave no ≥ 2 pp in-house gain: NO-GO, weak (the experts barely moved). | P\* vs the production baseline: 0.694 [0.666, 0.721]. The 480M continuation vs P\* against Kakuna: +0.08 pp [−3.90, +4.06], FLAT. X48 − C0 on S: −0.55 pp [−1.32, +0.21] (90 %, 3 seeds; `x35_breakers_stage_2026-10-17/reads/x48_look1.json`). LR-F − C0 on S: −1.13 pp [−2.45, +0.18] (97.5 %, 3 seeds; `x35_breakers_stage_2026-10-17/reads/lrfloor_look1.json`). | `d172c10ed`, `204204bbf`, `f7fddc39b` |
+| 1 | **The strongest baseline** | **AT ITS PLATEAU.** P\* = X26 @ 280M. Training on to 480M changed nothing. Holding the learning rate up (LR-F) did not help in-house: UNDECIDED, final, leaning negative. Per-kind FFN experts (X48) gave no ≥ 2 pp in-house gain: NO-GO, weak (the experts barely moved). | P\* vs the production baseline: 0.694 [0.666, 0.721]. The 480M continuation vs P\* against Kakuna: +0.08 pp [−3.90, +4.06], FLAT. X48 − C0 on S: −0.55 pp [−1.32, +0.21] (90 %, 3 seeds; `x35_breakers_stage_2026-10-17/reads/x48_look1.json`). LR-F − C0 on S: −1.13 pp [−2.45, +0.18] (97.5 %, 3 seeds; `x35_breakers_stage_2026-10-17/reads/lrfloor_look1.json`). | `d172c10ed`, `204204bbf`, `f7fddc39b`, `1355d2d3f`, `b01dc048b` |
 | 2a | **Beat Metamon on our teams** | **MET.** | P\* vs Kakuna on home72: **0.598 [0.549, 0.644]** | `3010c81ba` |
-| 2b | **Beat Metamon on unfamiliar teams** | **NOT MET**, about 4 pp short. The lower bound must clear 0.50, which needs about 0.53. | P\* 0.487 [0.459, 0.515] (its forum72 third under Kakuna's legacy pack, below). No lever's interval clears 0.50. Highest point estimates, each against its own control and none detected: the belief prior mix (λ = 0.25) 0.502, D1 0.492, D3 0.494 (final, UNDECIDED). N1-P (look 2, final: NULL) 0.500 is M4-hazarded (its corpus overlaps H and P72) and is not read as goal (b); on F it reads +0.55 pp [−1.26, +2.36] over C0. | `3010c81ba`, `f299a7243`, `eb99ab362`, `58287c525` |
+| 2b | **Beat Metamon on unfamiliar teams** | **NOT MET**, about 4 pp short. The lower bound must clear 0.50, which needs about 0.53. | P\* 0.487 [0.459, 0.515] (its forum72 third under Kakuna's legacy pack, below). No lever's interval clears 0.50. Highest point estimates, each against its own control and none detected: the belief prior mix (λ = 0.25) 0.502, D1 0.492, D3 0.494 (final, UNDECIDED). N1-P (look 2, final: NULL) 0.500 is M4-hazarded (its corpus overlaps H and P72) and is not read as goal (b); on F it reads +0.55 pp [−1.26, +2.36] over C0. Human data is no lever so far: a student on 1300+ human rows plays U 7.28 pp [4.28, 10.29] worse against Kakuna than one on P\*'s self-play rows (X59-S, `c1d2d7fcb`); that closes nothing (`5bbba6096`), and the ≥ 1500 follow-up is training (§2). | `3010c81ba`, `f299a7243`, `eb99ab362`, `25a736170`, `62e46874a`, `c1d2d7fcb`, `5bbba6096` |
 | 3 | **Know where we are** | **MAPPED.** The deficit is **piloting** an unfamiliar team, not facing one. In-house meters cannot see it; only Kakuna games can. Nothing measurable is lost in the opening; the gap shows from level positions after turn 10 (descriptive). It does not go with the SETS (H-CTX SUPPORTED): on new sixes of familiar pool sets P\* scores 0.514, below F's 0.540 and 10 pp under home72 on the same engine; the sets keep at most about a fifth of the premium. Why the six matters (memorised sixes, broken cores, no plan) is open (`hctx_rc72_2026-10-26/REVIEW.md` M1). Under a neutral pilot (Kakuna on both sides) rc72b is only about 4 pp weaker, flat across coherence (`hctx_kk_2026-10-27`), so the premium stays mostly team-level. P\*'s own critic does not see it (H-MID: CRITIC-MISCALIBRATED-ON-U), as a self-play critic cannot (REVIEW M1). | Piloting deficit, strength-corrected (X26 @161M, PROVISIONAL, resting on the unverified assumption A-K): +0.123 [+0.039, +0.206], facing +0.017 [−0.062, +0.095]; their difference +0.106 [−0.009, +0.221] is UNDECIDED. P\* is level with Metamon's ensemble on unfamiliar teams, ahead of it on home72, and beats every human-only Metamon model (§5). | `8b43eb44a`, `82858f433`, `c758fcb82`, `905c29f5b`, `f200258f6`, `90708bff5`, `82f273eff`, `df35d1bb0` |
 | 4 | **AlphaStar-style improvement** (league, PFSP, exploiters) | **NO GAIN YET.** The archive-pool and promotion levers are NULL. An exploiter beats P\* easily, so headroom exists. No league arm has run. | Best responder vs P\*: **+11.1 pp [+8.3, +13.8]** (saturates by 8M steps) | `806e50931`, `4290d652a`, `c456b6a09` |
 | 5 | **What search needs** | **PAUSED, and not getting closer.** Every search gain we see is graded by our own model ("self-referee"). Graded by a real bot, the gains shrink (descriptive; the registered read is UNDECIDED). At P\* the one gain that replicates is gone. | L1 cell at P\*: +0.0001 [−0.0097, +0.0101]. At the 25M policy: +0.0193. | `f756019d7`, `015f00e20`, `0d0058408`, `73428c077` |
@@ -42,55 +42,69 @@ X26c's and every X35 arm's training (0.13–0.38 % of team draws), and our side'
 The arm-vs-C0 bias is ≤ 0.2 pp, and no verdict moves (the ledger's 10-27 pack-regime AUDIT,
 [`x35_pack_regime_2026-10-27/`](research_state/measurements/x35_pack_regime_2026-10-27/README.md)).
 
-## 2. Running now (as of 2026-10-27)
+## 2. Running now (as of 2026-10-30)
 
-Read at 12:05 PDT from the arm chain's status and each read's state directory; the GPU rows at 23:55.
+Read at 17:45 PDT on 2026-10-30 from `python -m main.ops.arm_chain status` (each chain file under
+`~/.claude/jobs/x35/chains/`) and each read's state directory under `~/gen3ai_archive/`.
 
 | where | job | what decision it drives |
 |---|---|---|
-| GPU: X48 DONE 10-28 08:42 | **X48** s3501–s3503 trained (each K9(b) PASS, VOID 4 exact PASS; dose ≈ 1.03× C0's wall). Its read is the CPU row below. | — |
-| GPU queue, next (the orchestrator's chains; draft order [`ops/gpu_plan_2026-10-27.md`](ops/gpu_plan_2026-10-27.md)) | **N4** (the toy capacity screen; its model build landed at `c35ffab9e`, its kit arms and pin have not). | Capacity at the plateau, the branch the plasticity probe's NO-LOSS chose (X48, N4). |
-| CPU: DONE 10-30 11:04 | **N1-P look 2** (X61P, final), the five forks with half their teams from 12,000 procedural teams: **NULL.** F +0.55 pp [−1.26, +2.36] (N1-P 0.509 vs C0 0.504, 6,000 forum72 games per arm; seeds +1.0 / −0.25 / +1.5 / +1.0 / −0.5), inside ±3 pp; in-house S on home72 −3.28 pp [−4.14, −2.43] (INFERIORITY-NOT-EXCLUDED). Every game on ONE engine (E3) at look 1's commit (AM-N1P-2, `d78700253`); every registered check PASS. Record `x35_breakers_stage_2026-10-17/reads/n1p_look2.json`. | Rules out **"N1 at the plateau"** (share 0.5, 20M) only: not N1 from step 0, the toy screen or a human-derived corpus. X53-N1's trigger (N1-P GAIN) did not fire. X63 unchanged (AM-X63-N1L2: NULL ⇒ unchanged). |
-| CPU: DONE 10-30 03:18 | **X59-S** (human vs self-play data; 15 matched students, 5 seeds each): **SELF-PLAY-DATA-BETTER.** Δ_data = S-H − S-S −7.28 pp [−10.29, −4.28] on U vs Kakuna (S-H 0.320, S-S 0.393); in-house −9.06 [−10.98, −7.14]. **OWN-LABELS-BETTER:** human labels −4.50 [−7.42, −1.58] against P\*'s on the same states. 901 units on one engine at the play pin 89c2c2501 (tag x59s-play-89c2c250, a commit off main). README `measurements/x59s_matched_students_2026-10-25/`. | **H-BC dropped.** The closure is BLOCKED: Δ_restriction (S-P0 − S-P) +2.85 pp [+0.14, +5.56], done 10-30 17:20, so human data stays open and routes H-TEAMS first (X60-T). The ≥ 1500 follow-up (≈ 1.5 GPU-h, a window on Training Oct's lease) is registered (Amendment 7). |
-| CPU: DONE 10-28 18:21 | **D3 look 2**, the terminal read of set mutation: **UNDECIDED, final.** Kakuna, unfamiliar teams +2.33 pp [−0.69, +5.35] (D3 0.494 vs C0 0.471; 4 of 5 seeds positive); in-house −0.45 pp [−1.16, +0.25], NON-INFERIOR. Every game on ONE engine (E1) at the play pin; all registered checks PASS. Record `x35_breakers_stage_2026-10-17/reads/d3_look2.json`. | Set mutation is not adopted as a goal-(b) lever by this read; it stays a candidate ingredient of X63's union. |
-| CPU: DONE 10-30 03:06 | **X48 look 1** (per-token-kind FFN experts grown at P\*, + 20M; N4's one-look screen): **NO-GO, "experts not engaged"** (a weak NO-GO). In-house −0.55 pp [−1.32, +0.21] (90 %; S at 2,000 pairs, C0 re-played); Kakuna on forum72 +2.06 pp [−0.06, +4.19], UNDECIDED (X48 0.526 vs C0 0.506). The experts diverged no more than chance drift (D_k / null 0.72–0.93); mean LR ×1.01. Record `x35_breakers_stage_2026-10-17/reads/x48_look1.json`. | Closes per-kind FFN untying at the plateau within 20M, weakly; not width or `D_MODEL`. N4 or N4-P-direct is the orchestrator's choice. |
+| GPU: RUNNING (chain `x59s-fu1500`, one window, budget 140 min) | **X59-S's ≥ 1500 follow-up** (Amendment 7, `1ffd67817`; built at `165250d55`): 15 fresh students, three arms of five seeds (the ≥ 1500-rating human rows, the seed-5930 account mix, the S-S cut) at N = 270,260 rows and 1,584 steps each, run one after another. Five were trained at 17:45 and the sixth (S-S cut, seed 5902) was running; the window's final check (`window_check.json`) has not been written. | Isolates rating at a fixed slice and volume (Amendment 7), a follow-up to the human-data deficit above (`c1d2d7fcb`). Read through the CPU row below. |
+| GPU: next, NOT ARMED | **X63-U s6302**, Stage B's arm seed trained SPECULATIVELY before Stage A's verdict (AM-X63-BSPEC, PREREG §17, `7ffbe9428`; about 19.9 GPU-h). Only a DRAFT chain exists (`~/.claude/jobs/x35/chains/drafts/x63u-stageb-spec-oct30.json`); arming it is the orchestrator's GO once the follow-up window ends. It is played and read only if Stage A returns CONTINUE; otherwise it is labelled "a speculative replicate, trained before Stage A's verdict, not read for any decision". | Stage B's seed, if Stage A continues; otherwise idle hours spent. |
+| CPU: PLAYING (state `~/gen3ai_archive/x63_read/stageA`) | **X63 Stage A's Kakuna read**: X63-U s2601 against X26c and X63-C, 18,000 games on forum72 1000-1199 and home72 1000-1099 at the successor play pin 65b998da (E1), under rule `x63_kvk` and the read spec of record (AM-X63-SPEC, `962c4ea44`). The deciding groups are due about 10-31 evening (the orchestrator's estimate; **UNVERIFIED** here). | The registered CONTINUE / NOT PURSUED call on X63 (§3 item 2). |
+| CPU: PLAYING (raw lane; state `~/gen3ai_archive/dlive_read_2026-10-28/`) | **The deviation-only live read** (registered `715e0b482`, operated under Amendment A1, `f0029cdca`): at about 1,800 unfamiliar-team departures of S′ from P\*, the departure is forced in a replay of the game against the real Kakuna and scored against the game as played. Its raw lane (P\* against Kakuna, concurrency 1) is playing. | GO (lower bound of the mean gain > 0) licenses the amended S-U (§3). |
+| CPU: WAITING (`chain9.sh`) | **X59-S follow-up's in-house cells**: when the window's final check PASSES, export the 15 students and play 30 head-to-head cells from the read's pin tree. | Reads the follow-up (first row). |
 
-## 3. The plan, ranked (2026-10-27)
+### Landed since 2026-10-27
 
-The orchestrator's order after REVIEW_2 of the all-null strategy (`69c7cd34d`). Every item needs its GO.
+| when | job | result | what it decided |
+|---|---|---|---|
+| GPU 10-30 14:45 | **X63-U s2601 TRAINED, clean** (1,269.9 min, 1,339 steps/s): K9(b) PASS (AM-6) and its dose recorded (`695b20b8c`). X63-C s6302, the control replicate, had trained earlier: K9(b) PASS, 1,242.9 min (`8a7f293f3`). X26c is the banked control. | Both arms of Stage A exist; no X63 score yet. | X63 is launched with r = 1 (AM-X63-R, `13084395e`, §6) and its canary rule AM-X63-CANARY (`71afc431e`: a FATAL made only of slice-0/2 per-parameter bf16 refusals, resumed at the pin, does not count toward the restart limit; at most two per seed). |
+| GPU 10-30 14:46-15:19 | **Canary slice-2 diagnosis** (`6b3966dc6`; verdict `7775b2241`): the compiled-numerics hypothesis is **RULED OUT at 5 states**; every state reads CONDITIONING (compiled median distance 0.09-0.55 of the fp32 dither null's maximum). The 30 GPU slow-tier rows all PASS (`1a07fd819`). | The refusals are an ill-conditioned single-row-carried parameter against a lucky eager denominator, not a compiler fault. | The bf16 per-parameter bar now divides by the fp32 dither null (`gen3_canary_param_null_v1`) **at new pins only**; runs pinned earlier keep the eager bar. The earlier stage-2 read stays **INCONCLUSIVE**: the row bar's cap stays 0.72 (`designs/training/canary_recalibration_2026-10-28.md`). |
+| CPU 10-30 17:24 | **X59-S, final**: SELF-PLAY-DATA-BETTER. Δ_data = S-H − S-S −7.28 pp [−10.29, −4.28] on U vs Kakuna (S-H 0.320, S-S 0.393); in-house −9.06 [−10.98, −7.14]. OWN-LABELS-BETTER: human labels −4.50 [−7.42, −1.58] against P\*'s on the same states (`c1d2d7fcb`). 901 units on one engine at the play pin 89c2c2501 (tag x59s-play-89c2c250, a commit off main). README `measurements/x59s_matched_students_2026-10-25/`. | The closure is **BLOCKED**: Δ_restriction (S-P0 − S-P) +2.85 pp [+0.14, +5.56] (`5bbba6096`); S-P0 = S-S (0.393), descriptive. | **H-BC dropped.** SELF-PLAY-DATA-BETTER closes nothing, so human data stays open and routes H-TEAMS first (X60-T). The ≥ 1500 follow-up is the first row above. |
+| CPU 10-30 11:04 | **N1-P look 2** (X61P, final), the five forks with half their teams from 12,000 procedural teams: **NULL.** F +0.55 pp [−1.26, +2.36] (N1-P 0.509 vs C0 0.504, 6,000 forum72 games per arm; seeds +1.0 / −0.25 / +1.5 / +1.0 / −0.5), inside ±3 pp; in-house S on home72 −3.28 pp [−4.14, −2.43] (INFERIORITY-NOT-EXCLUDED). Every game on ONE engine (E3) at look 1's commit (AM-N1P-2, `d78700253`). Record `62e46874a`. | Rules out **"N1 at the plateau"** (share 0.5, 20M) only: not N1 from step 0, the toy screen or a human-derived corpus. | X53-N1's trigger (N1-P GAIN) did not fire. X63 unchanged (AM-X63-N1L2: NULL ⇒ unchanged). |
+| CPU 10-30 03:06 | **X48 look 1** (per-token-kind FFN experts grown at P\*, + 20M; N4's one-look screen): **NO-GO, "experts not engaged"** (a weak NO-GO). In-house −0.55 pp [−1.32, +0.21] (90 %; S at 2,000 pairs, C0 re-played); Kakuna on forum72 +2.06 pp [−0.06, +4.19], UNDECIDED (X48 0.526 vs C0 0.506). The experts diverged no more than chance drift (D_k / null 0.72-0.93); mean LR ×1.01. Record `b01dc048b`; its slope group was not resumed (`242f74d62`, reported only). | Closes per-kind FFN untying at the plateau within 20M, weakly; not width or `D_MODEL`. | N4 or N4-P-direct is the orchestrator's choice. |
+| CPU 10-28 18:21 | **D3 look 2**, the terminal read of set mutation: **UNDECIDED, final.** Kakuna, unfamiliar teams +2.33 pp [−0.69, +5.35] (D3 0.494 vs C0 0.471; 4 of 5 seeds positive); in-house −0.45 pp [−1.16, +0.25], NON-INFERIOR. Every game on ONE engine (E1) at the play pin; all registered checks PASS. Record `25a736170`. | Set mutation is not adopted as a goal-(b) lever by this read. | It stays a candidate ingredient of X63's union. |
 
-1. **X48**, production capacity at the plateau: READ 10-30, **NO-GO** (weak, "experts not engaged"; §2). The next capacity read (N4 with its review's fixes, or N4-P-direct) is the orchestrator's choice.
-2. **X63**, a long union continuation (REGISTERED 2026-10-29, not launched;
+## 3. The plan, ranked (as revised 2026-10-30)
+
+The orchestrator's order after REVIEW_2 of the all-null strategy (`69c7cd34d`), with the verdicts since 10-27 applied. Every item needs its GO.
+
+1. **X48**, production capacity at the plateau: READ 10-30, **NO-GO** (weak, "experts not engaged"; `b01dc048b`, §2). The next capacity read (N4 with its review's fixes, or N4-P-direct) is the orchestrator's choice; no N4 arm is on a chain.
+2. **X63**, a long union continuation (REGISTERED 2026-10-29, r = 1 per AM-X63-R `13084395e`, **Stage A trained and being read**;
    [`endstate/design_x63_long_breadth_continuation.md`](endstate/design_x63_long_breadth_continuation.md),
    PREREG [`x63_2026-10-29/`](research_state/measurements/x63_2026-10-29/PREREG.md)): X26 @380M + 100M with 80 % of
    teams from a 17,876-team union (X62's recombined sixes 0.537 of draws, N1-P's procedural teams at its 3,000-team
    tier 0.134, D3's 0.129), read on forum72 against Kakuna at the shared play pin against X26c and X63-C (both trained:
-   a 1-arm-v-2-control screen that also measures the +100M seed spread). ≈ 20 GPU-h to its screen; it takes the GPU
-   after N1-P look 2's seeds, on the orchestrator's GO.
+   a 1-arm-v-2-control screen that also measures the +100M seed spread). X63-U s2601 trained clean (`695b20b8c`); the
+   18,000-game Stage A read plays on CPU under the spec of record (`962c4ea44`) and its deciding groups are due about
+   10-31 evening (§2). CONTINUE would register Stage B's read spec before any s6302 game; s6302 may train on the idle
+   GPU first (AM-X63-BSPEC, `7ffbe9428`), played only on CONTINUE. ≈ 20 GPU-h an arm.
 3. **PR-1′**, the precision read re-scoped by REVIEW_2: D3 and N1-P against C0 on F (D1 reported only), 30,000–38,000
-   new Kakuna games at the frozen X35-frame shared pin `x35-shared-play-86cfdf7e` (E1, post-H22; reads.md §4). Information only; it gates nothing above it. X48's read has landed (10-30), so it can run now,
+   new Kakuna games at the frozen X35-frame shared pin `x35-shared-play-86cfdf7e` (E1, post-H22; reads.md §4). Information only; it gates nothing above it. X48's read has landed (10-30), but the agent cores are on X63 Stage A, the dlive raw lane and X59-S's follow-up cells (§2), so it can run only after them,
    or at once on a rented CPU box (§6).
 
 **Gated.** **X62**, P\*-forks on 12,000 recombined teams (REVISED DRAFT, `58cb02dc6`): its first gate, H-CTX, read
 SUPPORTED, so its corpus `x62_recomb_v1` is built (2026-10-29, as X63's largest component); then PR-1′ KILL retires the fork (N1-P read NULL, so it does not make X62 redundant). Per
-resource-day it ranks below X63, and X63 Stage A runs before X62 under both SUPPORTED and UNDECIDED (ruled 2026-10-27). **X53-N1** is not triggered: N1-P read NULL (10-30), not GO. **S-U** (one-ply search on unfamiliar teams, registered `ffd9a443a`) has two BLOCKERs from its review
+resource-day it ranks below X63, and X63 Stage A runs before X62 under both SUPPORTED and UNDECIDED (ruled 2026-10-27). **X53-N1** is not triggered: N1-P read NULL (10-30, `62e46874a`), not GO. **S-U** (one-ply search on unfamiliar teams, registered `ffd9a443a`) has two BLOCKERs from its review
 (`7aafa527f`): where its search rule departs from the policy at P\* (40 % of decisions) it picks the better move
 0.513 [0.447, 0.580] of the time, by our own playouts. Its sign-accuracy gate read **GO** (2026-10-28) at 0.635, but
 in the states where the true battle seed leaks (the leak's value, not its exposure, is higher on unfamiliar teams). The
 leak-reduced re-gate (`dice="rolls"`) supersedes it and **still reads GO**: on unfamiliar teams the departures are right
 0.599 [0.543, 0.649] of the time, still by our own playouts
-([`su_regate_rolls_2026-10-28/`](research_state/measurements/su_regate_rolls_2026-10-28/README.md)). Next is the
-**deviation-only live read**, REGISTERED 2026-10-28 and not yet played
-([`dlive_read_2026-10-28/PREREG.md`](research_state/measurements/dlive_read_2026-10-28/PREREG.md)): at ≈ 1,800 such
-departures on unfamiliar teams, the departure is forced in a replay of the game against the real Kakuna and compared with
-the game as played. GO (lower bound of the mean gain > 0) licenses the amended S-U. ≈ 40 CPU-h; it queues behind X59-S's Δ_restriction.
+([`su_regate_rolls_2026-10-28/`](research_state/measurements/su_regate_rolls_2026-10-28/README.md)). The **deviation-only live read** is REGISTERED (2026-10-28, `715e0b482`;
+[`dlive_read_2026-10-28/PREREG.md`](research_state/measurements/dlive_read_2026-10-28/PREREG.md)) and its raw lane is
+playing (§2; operated under Amendment A1, `f0029cdca`): at ≈ 1,800 such departures on unfamiliar teams, the departure
+is forced in a replay of the game against the real Kakuna and compared with the game as played. GO (lower bound of the
+mean gain > 0) licenses the amended S-U. ≈ 43 CPU-h; its restriction-lane predecessor, X59-S's Δ_restriction, is done
+(`5bbba6096`).
 
 **Dropped or retired.** **X64**, the toy context-count curve: DROPPED by its review (`c0fd72bd8`; it would cost more
 than the production reads it was meant to gate). **N2**, the set-identity lever: dropped, P\*'s encoding is mostly
 compositional (`fd4160d76`). **PR-1 as first written**: replaced by PR-1′ (`69c7cd34d`). **rc72**: retired before any
 game counted, replaced by rc72b (`905c29f5b`). **The 20M stack fork**: superseded by X63.
 
-## 4. Results of the last week (2026-10-20 → 10-27)
+## 4. Results of the last two weeks (2026-10-20 → 10-30)
 
 | lever / read | verdict | effect [95 % interval] | record |
 |---|---|---|---|
@@ -101,7 +115,13 @@ game counted, replaced by rc72b (`905c29f5b`). **The 20M stack fork**: supersede
 | D1: widen the team pool | UNDECIDED, final | Kakuna, unfamiliar teams: +2.10 pp [−0.92, +5.11]; in-pool −1.61 [−2.90, −0.32] | `eb99ab362` |
 | X26c: train on 380M → 480M | FLAT; goal (b) not met | +0.08 pp [−3.90, +4.06] | `204204bbf` |
 | D3 look 1: set mutation | CONTINUE (look 2 decides). Read ACROSS two engines: D3 on E2, banked C0 on E1. C0's rows also predate the 10-25 observation / label fixes. The guard's 140 / 140 identical games (one C0 cell) bound the divergence below about 2.1 % of games | Kakuna, unfamiliar teams: +1.27 pp [−2.63, +5.16]; in-pool −0.24 [−1.10, +0.62], non-inferior | `58287c525` |
-| D3 look 2: set mutation, FINAL | UNDECIDED, terminal. Every game on ONE engine (E1); NULL was unreachable at this size | Kakuna, unfamiliar teams: +2.33 pp [−0.69, +5.35]; in-pool −0.45 [−1.16, +0.25], non-inferior | D3's look-2 record |
+| D3 look 2: set mutation, FINAL | UNDECIDED, terminal. Every game on ONE engine (E1); NULL was unreachable at this size | Kakuna, unfamiliar teams: +2.33 pp [−0.69, +5.35]; in-pool −0.45 [−1.16, +0.25], non-inferior | `25a736170` |
+| LR-F look 1: hold the learning rate up | UNDECIDED, FINAL, leaning negative | in-house S: −1.13 pp [−2.45, +0.18] (97.5 %, 3 seeds) | `1355d2d3f` |
+| X48 look 1: per-kind FFN experts at P\* | NO-GO, weak ("experts not engaged") | in-house dS −0.55 pp [−1.32, +0.21]; Kakuna on forum72 +2.06 [−0.06, +4.19], UNDECIDED | `b01dc048b` |
+| N1-P look 1: procedural breadth at the plateau | CONTINUE | F +0.75 pp [−1.56, +3.06]; P −3.27 [−4.20, −2.33] | `06dba8230` |
+| N1-P look 2, FINAL (one engine, E3) | NULL | F +0.55 pp [−1.26, +2.36]; in-house S −3.28 [−4.14, −2.43] | `62e46874a` |
+| X59-S: human vs self-play data (15 matched students) | SELF-PLAY-DATA-BETTER; OWN-LABELS-BETTER; H-BC dropped; the closure BLOCKED | U vs Kakuna Δ_data −7.28 pp [−10.29, −4.28]; own labels −4.50 [−7.42, −1.58]; Δ_restriction +2.85 [+0.14, +5.56] | `c1d2d7fcb`, `5bbba6096` |
+| S-U gate: sign accuracy of S's departures from P\* (self-referee) | GO (pooled U, with the leak caveat); the leak-reduced re-gate (`dice="rolls"`) also GO | pooled-U 0.635 [0.578, 0.687] (n 346); re-gate 0.599 [0.543, 0.649] (n 362) | `fea88ceeb`, `a61375fa7` |
 | Belief prior mix, λ = 0.25 | NOT DETECTED | +1.50 pp [−2.74, +5.74] | `f299a7243` |
 | Belief prior mix, λ = 1 (prior only) | NOT DETECTED; H3 not killed | −1.50 pp [−5.47, +2.47] | `71c76dfbb` |
 | Human-only Metamon models (FR-1, FR-3) | P\* BEATS all three | SmallRL 0.666 [0.639, 0.692]; LargeRL 0.631 [0.603, 0.658]; LargeIL 0.790 [0.766, 0.812] | `4d8d9eef8`, `df35d1bb0` |
@@ -115,7 +135,7 @@ game counted, replaced by rc72b (`905c29f5b`). **The 20M stack fork**: supersede
 | N2 identity test: does P\* key on our sets' exact identity? (CPU probe) | COMPOSITIONAL: lever N2 dropped | familiar / unfamiliar policy shift under a set re-draw 1.19× [1.07, 1.33] (bar 1.5×) | `98bcb1146` (PREREG), `fd4160d76` |
 | Plasticity probe: has the plateau trunk stopped bending to new data? (CPU probe, X26 25M → 480M) | NO-LOSS: plasticity loss unlikely; the strategy tree takes the capacity branch | refit speed on P\*'s own labels 0.986× X26 @25M's (bar < 1.10); near-dormant units 0.78×; a neutral target refits 1.11× slower than @25M, all of it paid by 175M | `8bebdfe31` |
 | H-CTX: does the familiarity premium go with the TEAM or the SET? (P\* vs Kakuna on rc72b, new sixes of familiar pool sets, with home72 and F on one engine) | **SUPPORTED: the team.** rc72b recovers −0.34 [−2.05, +0.20] of the home premium; X62's first gate passes | rc72b 0.514, F 0.540, home72 0.615; rc72b − home72 −10.1 pp [−14.2, −6.0] | `6f126c4af` |
-| H-CTX A-K: is rc72b weaker as a panel under a NEUTRAL pilot? (Kakuna on both sides, rc72b vs home72 + F teams) | **UNDECIDED, detected weaker** (−28 Elo [−51, −5], 35-Elo bar): uniformly, no coherence gradient; post hoc and across engines, a full transfer would make H-CTX's recovered share 0.21 [−0.88, +0.88] | S 0.459 [0.428, 0.493], 1,080 games | `fb84c260f` (PREREG) |
+| H-CTX A-K: is rc72b weaker as a panel under a NEUTRAL pilot? (Kakuna on both sides, rc72b vs home72 + F teams) | **UNDECIDED, detected weaker** (−28 Elo [−51, −5], 35-Elo bar): uniformly, no coherence gradient; post hoc and across engines, a full transfer would make H-CTX's recovered share 0.21 [−0.88, +0.88] | S 0.459 [0.428, 0.493], 1,080 games | `79ffe8a49` (PREREG `fb84c260f`) |
 
 ## 5. How we compare with the state of the art
 
@@ -181,3 +201,9 @@ Every open owner question, in one place.
    Forks against a banked `f4b25238` control stay on that family, but only if the PREREG records the corpus's
    material share. Above 2 % of its teams, the arm needs a packer-backport pin and a matched control. Fresh runs
    train at a post-fix pin.
+5. **The compile canary can refuse a healthy run.** Its bf16 per-parameter rule refused on the confirmation slice 2
+   in six of seven recorded refusals (across three rules) and never on slice 1; the 10-30 GPU replay read CONDITIONING at all 5 states, so a
+   real compiled-numerics fault is ruled out there (`7775b2241`). The fix (a bar that divides by the fp32 dither
+   null) applies to new pins only, so X63-U, pinned on 10-29 at 39eaa326, keeps the eager bar; AM-X63-CANARY
+   (`71afc431e`) lets up to two such resumes pass per seed. Stage 2 of the row-bar recalibration is INCONCLUSIVE,
+   so the cap stays 0.72.
