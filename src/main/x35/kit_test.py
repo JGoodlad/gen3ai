@@ -350,7 +350,8 @@ def test_x47_is_toy_c0_plus_the_grow_lever_and_nothing_else():
 
 def test_c3_the_toy_arms_run_k9b_warn_under_x34s_ceilings_and_production_is_unchanged():
     toys = [n for n, a in K.ARMS.items() if a.side == "toy"]
-    assert sorted(toys) == ["toy_a1", "toy_a2", "toy_c0", "toy_lrfloor", "toy_r0", "toy_sprt", "toy_x47"]
+    assert sorted(toys) == ["toy_a1", "toy_a2", "toy_c0", "toy_c0n4", "toy_lrfloor", "toy_n4ffn", "toy_r0", "toy_sprt",
+                            "toy_x47"]
     for n in toys:
         s = K.ARMS[n].seeds[0]                     # 3601, or toy R0's 3631 (AM-R0)
         assert flags(K.build_argv(n, s, toy_call()))["--behaviour-check"] == "warn", n
@@ -586,7 +587,8 @@ def test_x48_refuses_the_toy_call_and_no_alias_or_variant_reaches_it(capsys):
 
 
 def test_the_growth_each_arm_must_declare():
-    assert K.ARM_GROWTH == {"toy_x47": "trunk_layers 2 -> 4", "x48": "trunk_ffn_by_kind 'off' -> 'on'"}
+    assert K.ARM_GROWTH == {"toy_x47": "trunk_layers 2 -> 4", "x48": "trunk_ffn_by_kind 'off' -> 'on'",
+                            "toy_n4ffn": "trunk_ffn_dim 256 -> 1024"}
     for arm in K.ARMS:
         argv = K.build_argv(arm, K.ARMS[arm].seeds[0], toy_call() if K.ARMS[arm].side == "toy" else standin_call()) \
             if K.ARMS[arm].phase == 0 and arm != "x52" else None
@@ -893,3 +895,46 @@ def test_x63u_pool_seed_check_reads_x26cs_set_at_the_start_nodes_step(tmp_path, 
     st, probs = K.check_pool_seed("x63u", str(run), call, X63C_LINE.replace("380000195", "280000170"), 280000170,
                                   names)
     assert st == "FAIL" and any("registered step 380000195" in p for p in probs), probs
+
+
+# ------------------------------------------------------------------- N4 (PREREG n4_capacity_screen_2026-10-27 §3)
+def _tstar_call() -> Dict:
+    return toy_call("models/rb_toy_ent_s4002_deep/checkpoints/checkpoint_290000087_steps.zip", 290000087)
+
+
+def test_n4_c0prime_is_toy_c0_token_for_token_but_seed_and_run_and_n4_adds_only_the_width_lever():
+    """PREREG §3: C0' = the banked toy C0's argv at seeds 3641-3643; N4 = C0''s argv + `--grow trunk_ffn_dim=1024`, in
+    X47's slot (between `--device cuda` and `--seed`); both +70M to 360,000,087 from T*."""
+    call = _tstar_call()
+    for seed in (3641, 3642, 3643):
+        c0n4 = K.build_argv("toy_c0n4", seed, call)
+        n4 = K.build_argv("toy_n4ffn", seed, call)
+        x47 = K.build_argv("toy_x47", 3601, call)
+        assert c0n4 == [t for t in x47 if t not in K.X47_LEVER][:-4] + ["--seed", str(seed), "--run-name",
+                                                                         f"rb_x35t_c0n4_s{seed}"]
+        i = c0n4.index("--seed")
+        assert n4 == c0n4[:i] + ["--grow", "trunk_ffn_dim=1024"] + c0n4[i:-1] + [f"rb_x35t_n4ffn_s{seed}"]
+        assert flags(c0n4)["--steps"] == "360000087" and flags(c0n4)["--behaviour-check"] == "warn"
+        assert flags(c0n4)["--model"] == call["pstar"]["path"]
+        for arm in ("toy_c0n4", "toy_n4ffn"):
+            d = K.describe(arm, seed, call)
+            assert d["side"] == "toy" and d["delta_text"] == "+70,000,000 steps"
+            assert d["parent_run_dir"] == "models/rb_toy_ent_s4002_deep"
+    assert K.ARM_GROWTH["toy_n4ffn"] == "trunk_ffn_dim 256 -> 1024" and "toy_c0n4" not in K.ARM_GROWTH
+    for arm in ("toy_c0n4", "toy_n4ffn"):
+        with pytest.raises(K.KitError, match="not registered"):
+            K.build_argv(arm, 3601, call)                 # N4 is registered at 3641-3643 only (no look 2)
+
+
+def test_n4_validation_requires_the_width_growth_line_on_n4_and_none_on_c0prime():
+    call = _tstar_call()
+    base = ("this command would launch\n  role        : FORK of models/rb_toy_ent_s4002_deep\n  +70,000,000 steps\n"
+            "  ✓ fork arch : compatible\n  K9(b) check : warn\n  14.74 GiB REQUIRED\n")
+    chk = "  K9(b) behaviour check          : warn  (typed)\n"
+    grow_dry = "  grow        : DECLARED trunk_ffn_dim 256 -> 1024 (parent from its model_config.json)\n"
+    grow_chk = "  declared growth (--grow)       : trunk_ffn_dim 256 -> 1024  (parent from its model_config.json)\n"
+    n4, c0n4 = K.describe("toy_n4ffn", 3641, call), K.describe("toy_c0n4", 3641, call)
+    assert K.check_validation(n4, base + grow_dry, chk + grow_chk, 0, 0)[0]
+    assert not K.check_validation(n4, base, chk, 0, 0)[0]                      # N4 without its growth line
+    assert K.check_validation(c0n4, base, chk, 0, 0)[0]
+    assert not K.check_validation(c0n4, base + grow_dry, chk + grow_chk, 0, 0)[0]   # C0' must declare none

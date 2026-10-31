@@ -25,6 +25,9 @@
 #          · X63-U, the X63 treatment (PREREG x63_2026-10-29, +100M, X26c's argv + --team-mix x63_union_v1@ALL:0.8
 #          --team-mix-sides both, from X26 @380M; pool checked against X26c's seed): x63u 2601 6302 (its OWN corpus-only pin,
 #          batch.X63U_PIN, AM-X63U; pin-check / corpus-check HOLD while it is a placeholder)
+#          · N4, the toy capacity screen (PREREG n4_capacity_screen_2026-10-27, +70M from T*): toy_c0n4 (C0', toy C0's
+#          argv) and toy_n4ffn (+ --grow trunk_ffn_dim=1024), seeds 3641 3642 3643, at their OWN whole-commit pin
+#          batch.N4_PIN (AM-N4-PIN; pin-check / stage-check HOLD while it is a placeholder; one look, no look 2)
 #                                                                             (main.x35.kit holds every argv)
 #   phase 1 → 2:  after the three exploiters END,
 #          python -m main.x35.kit phase1-record --arm a3 --call <R> --out <stage>/phase1_a3.json   (write-once)

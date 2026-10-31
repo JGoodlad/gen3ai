@@ -57,6 +57,11 @@ canonical flag order (the order carries no meaning to the trainer's parser):
   6302 is registered by AM-X63-BSPEC (trained speculatively, read only if Stage A fires Stage B); Stage C's seed is a
   later amendment. Its own corpus-only pin ``batch.X63U_PIN`` (AM-X63U, AM-N1P's pattern) and its
   corpus identity :data:`X63U_CORPUS` are checked by ``pin-check`` and ``corpus-check``.
+* N4, THE TOY CAPACITY SCREEN (``design_n4_capacity_screen.md``; PREREG ``n4_capacity_screen_2026-10-27/PREREG.md``):
+  ``toy_c0n4`` (C0', the same-pin control) -- toy C0's argv token for token at seeds 3641-3643 -- and ``toy_n4ffn`` --
+  C0''s argv + the ONE lever ``--grow trunk_ffn_dim=1024`` (B-FFNW, T69: every trunk FFN 256 -> 1,024 as a zero-init
+  branch, bit-identical at the fork). Both launch at ONE arm-level pin ``batch.N4_PIN`` (a main commit carrying T69 and
+  these arms, AM-N4-PIN), never the toy side pin ``4609c155``, which cannot carry the width field.
 
     python -m main.x35.kit describe --arm a1 --seed 3501 --call <R_production.json> [--phase1 <record>]
     python -m main.x35.kit describe --arm ge_a1 --seed 3501 --call <R_production.json> [--models-dir D]   # a G-E reader
@@ -169,6 +174,12 @@ X47_GROWTH = "trunk_layers 2 -> 4"
 X48_LEVER = ("--grow", "trunk_ffn_by_kind=on")
 #: What ``checkargs`` / ``--dry-run`` print for it (the 2026-10-27 transcripts at ``f4b25238``).
 X48_GROWTH = "trunk_ffn_by_kind 'off' -> 'on'"
+#: N4's ONE lever (``design_n4_capacity_screen.md`` §2; B-FFNW, T69; PREREG ``n4_capacity_screen_2026-10-27`` §2): every
+#: trunk round's FFN grows 256 -> 1,024 hidden units as a branch whose output weights start at ZERO, so the grown toy
+#: starts as T*'s function bit for bit at the 64-row gate (``FATAL_CONFIG`` otherwise). +394,752 parameters on the toy.
+N4_LEVER = ("--grow", "trunk_ffn_dim=1024")
+#: What ``checkargs`` / ``--dry-run`` print for it (the 2026-10-31 transcripts on T*, CPU).
+N4_GROWTH = "trunk_ffn_dim 256 -> 1024"
 #: X63's START NODE (``x63_review_2026-10-27.md`` B1 fix 3), shared by X63-C and X63-U: X26 @380,000,195, the
 #: checkpoint X26c (``rb_x26c_s2601``) forked at ``f4b25238`` (its ``metadata.json`` ``original_command``). The file is
 #: resolved in the run directory of the call record's P* (the same run, ``rb_x26_s2601``), as P*'s own path is; the
@@ -188,7 +199,7 @@ X63C_POOL_REFERENCE_RUN = X26C_POOL_REFERENCE_RUN
 #: The arms whose pool reference is a sibling run's recorded seed (:func:`reference_pool_names`), not the side's record.
 POOL_REFERENCE_RUNS: Dict[str, str] = {"x63c": X26C_POOL_REFERENCE_RUN, "x63u": X26C_POOL_REFERENCE_RUN}
 #: The declared growth each growing arm's transcripts must show (in BOTH tools); every other arm must show none.
-ARM_GROWTH: Dict[str, str] = {"toy_x47": X47_GROWTH, "x48": X48_GROWTH}
+ARM_GROWTH: Dict[str, str] = {"toy_x47": X47_GROWTH, "x48": X48_GROWTH, "toy_n4ffn": N4_GROWTH}
 #: C3 (orchestrator, 2026-10-19): the toy arms run ``--behaviour-check warn`` (K9(b)), as T*'s own run X34 does
 #: (``x34_toy_deep_stage_2026-10-17/STAGED_LAUNCH.md`` §7, c9516bac / 96c663d4). The mechanism is the flag plus
 #: ceilings READ BY HAND (``main.ops.tb_read``, at every restart and daily); the trainer enforces none: STOP the arm on
@@ -230,6 +241,8 @@ L_X63C = 100_000_000
 X63U_SEEDS = (2601, 6302)
 #: X63-U's length: the same +100M as X63-C and X26c.
 L_X63U = L_X63C
+#: N4: ONE look at three seeds per arm (PREREG n4_capacity_screen_2026-10-27 §3: no look 2); more is a new registration
+N4_SEEDS = (3641, 3642, 3643)
 X47_SEEDS = TOY_SEEDS   # X47: look 1 at 3601-3603, look 2 at 3604-3605 (AM-4, orchestrator 2026-10-19), against toy C0 at the same seeds
 ARMS: Dict[str, Arm] = {a.name: a for a in (
     Arm("c0", "production", L_PROD, PROD_SEEDS, "rb_x35_c0_s{seed}", 0, "warn"),
@@ -254,6 +267,9 @@ ARMS: Dict[str, Arm] = {a.name: a for a in (
     Arm("toy_a1", "toy", L_TOY, TOY_SEEDS, "rb_x35t_a1arch_s{seed}", 0, "warn"),
     Arm("toy_a2", "toy", L_TOY, TOY_SEEDS, "rb_x35t_a2pfsp_s{seed}", 0, "warn"),
     Arm("toy_x47", "toy", L_TOY, X47_SEEDS, "rb_x35t_x47d4_s{seed}", 0, "warn"),
+    # N4, the toy capacity screen (PREREG n4_capacity_screen_2026-10-27): C0' and the width growth at ONE pin, N4_PIN
+    Arm("toy_c0n4", "toy", L_TOY, N4_SEEDS, "rb_x35t_c0n4_s{seed}", 0, "warn"),
+    Arm("toy_n4ffn", "toy", L_TOY, N4_SEEDS, "rb_x35t_n4ffn_s{seed}", 0, "warn"),
     # batch 2 (F-AS-8): look 1 at s3501-s3503 / s3601-s3603, look 2 at the side's last two seeds, as C0's
     Arm("sprt", "production", L_PROD, PROD_SEEDS, "rb_x35_sprt_s{seed}", 0, "warn"),
     Arm("lrfloor", "production", L_PROD, PROD_SEEDS, "rb_x35_lrfloor_s{seed}", 0, "warn"),
@@ -387,6 +403,8 @@ def build_argv(arm: str, seed: int, call: Mapping[str, Any], phase1: Optional[Ma
         lever = list(X47_LEVER)
     elif arm == "x48":
         lever = list(X48_LEVER)
+    elif arm == "toy_n4ffn":
+        lever = list(N4_LEVER)
     elif arm in ("sprt", "toy_sprt"):
         lever = list(SPRT_LEVER)
     elif arm in ("lrfloor", "toy_lrfloor"):
@@ -521,7 +539,7 @@ def check_validation(d: Mapping[str, Any], dryrun: str, checkargs: str, rc_check
     """``validate_batch1.sh``'s verdict on ONE argv: ``(ok, one line)``. ``d`` is :func:`describe`'s record. PASS iff
     both tools exited 0, the dry run says "would launch" as a FORK of the start node's run with the arm's +steps and
     the arm's K9(b) mode, ``checkargs`` prints the same mode, the trainer's own arch check passed, and the DECLARED
-    growth line is the arm's own (:data:`ARM_GROWTH`: X47's, X48's; in BOTH tools) and absent for every other arm (the
+    growth line is the arm's own (:data:`ARM_GROWTH`: X47's, X48's, N4's; in BOTH tools) and absent for every other arm (the
     always-printed "(child-only: a declared growth's …)" note is not a growth line)."""
     probs: List[str] = []
     if rc_checkargs != 0:

@@ -115,6 +115,15 @@ decide`` (X47). The record names its arm and look; a record for another arm or l
   Stage B's speculative seed (s6302, AM-X63-BSPEC: trained before Stage A's verdict, read only if Stage A fires Stage
   B), never :data:`STAGES`; :func:`stage_status` gives it the AM-8 side gate and its PREREG, as X63-C's. Its run name is
   ``rb_x63u_*`` (listed by name, as X63-C's). Arm label ``X63U``.
+* **AM-N4-PIN, N4'S OWN WHOLE-COMMIT PIN** (``design_n4_capacity_screen.md`` §3.2; PREREG
+  ``n4_capacity_screen_2026-10-27/PREREG.md``, :data:`N4_PREREG`): ``toy_c0n4`` (C0') and ``toy_n4ffn`` (the width
+  growth) (:data:`N4_ARMS`) are toy arms that CANNOT run at the toy side pin ``4609c155`` (it predates the field-generic
+  growth table, so no patch-identical cherry-pick exists). Both launch at :data:`N4_PIN`, a MAIN commit carrying
+  :data:`N4_PIN_CARRIES` (T69's width field and the ``n4_screen`` rule), checked by :func:`n4_pin_check` -- not the
+  "side pin + one corpus commit" form of :func:`own_pin_check`. Their runs are judged against ``N4_PIN`` only.
+  :data:`N4_STAGES` holds the six forks in the PREREG's interleaved order, never :data:`STAGES`; :func:`stage_status`
+  is PENDING until ``N4_PIN`` is set AND the PREREG names it in full (its pin NOTE), then ALLOWED (one look, no look
+  2). Arm labels ``C0N4`` / ``N4``.
 * **THE G-E READERS** (``main.x35.ge``; launch sheet §0 "G-E readers"): ``ge_a1`` / ``ge_a2`` / ``ge_d1`` / ``ge_c0``
   are not batch-1 ARMS (not in :data:`STAGES`, the disk count or AM-6's K9(b) pre-check) but they run at the SIDE'S
   pin: :func:`pin_check` judges their recorded pins with the side's batch-1 runs, and :func:`stage_status` gives a
@@ -227,10 +236,15 @@ X63C_PREREG = "designs/research_state/measurements/x63c_control_replicate_2026-1
 X63U_ARMS = ("x63u",)
 #: X63-U's registration: its stage-check is PENDING until this file exists (repo-relative, read in the kit's checkout).
 X63U_PREREG = "designs/research_state/measurements/x63_2026-10-29/PREREG.md"
+#: N4, the toy capacity screen (2026-10-27; AM-N4-PIN 2026-10-31): C0' and the width growth, two toy arms at ONE own
+#: whole-commit pin (:data:`N4_PIN`), read by the one-look ``n4_screen`` rule.
+N4_ARMS = ("toy_c0n4", "toy_n4ffn")
+#: N4's registration: its stage-check is PENDING until this file names N4_PIN in full (repo-relative, the kit's checkout).
+N4_PREREG = "designs/research_state/measurements/n4_capacity_screen_2026-10-27/PREREG.md"
 #: The arms whose stage-check is the side gate + their PREREG present (the orchestrator's GO): :func:`arm_prereg`.
 PREREG_GATED_ARMS = X63C_ARMS + X63U_ARMS
 SIDE_PINNED_ARMS = (BATCH1_ARMS + BATCH2_ARMS + R0_ARMS + X52_ARMS + D3_ARMS + N1P_ARMS + X48_ARMS + X63C_ARMS
-                    + X63U_ARMS)
+                    + X63U_ARMS + N4_ARMS)
 #: AM-D1-FIX (launch sheet §0, 2026-10-22): D1's pin. The production pin ``f4b25238`` + the corpus label-guard commit
 #: (``fix(team corpora): refuse teams the env's label path cannot encode ...``), rebuilt onto it with only
 #: ``src/utils/team_corpora/`` replaced. Kept reachable by the local branch ``x35-d1-pin``.
@@ -275,11 +289,20 @@ X63U_PIN_PATHS = ("src/utils/team_corpora/",)
 #: The git tree of ``src/utils/team_corpora`` at X63U_PIN (content-addressed): the side pin's package + the union's
 #: subtree + the one CORPORA line (no main commit holds it, as N1P_CORPORA_TREE).
 X63U_CORPORA_TREE: Optional[str] = "ca0845cfcb22f70e7a808871f57cff480ad621db"
-#: The arms with their own pin (AM-D1-FIX, AM-D3, AM-N1P, AM-X63U): ``{arm: pin}``; None = a registered placeholder
+#: AM-N4-PIN (2026-10-31): N4's pin, the first MAIN commit carrying T69 (B-FFNW, the width field), the ``n4_screen``
+#: rule and the kit arms ``toy_c0n4`` / ``toy_n4ffn``. A commit cannot name itself, so the arms land with None (every
+#: check of them REFUSES) and the next commit fills it, with the PREREG's pin NOTE.
+N4_PIN: Optional[str] = None
+#: What N4_PIN must carry (each an ancestor of it): ``{name: full sha}``.
+N4_PIN_CARRIES: Dict[str, str] = {"T69 B-FFNW (--grow trunk_ffn_dim)": "c35ffab9ebeb3d5194417991b52060bbcb7bb870",
+                                  "the n4_screen read rule": "a05a0ca2c110b870d0ebcda1c92774ddc03c5400"}
+#: The arms with their own pin (AM-D1-FIX, AM-D3, AM-N1P, AM-X63U, AM-N4-PIN): ``{arm: pin}``; None = a registered placeholder
 #: (every check of that arm refuses until it is filled).
-ARM_PINS: Dict[str, Optional[str]] = {"d1": D1_PIN, "d3": D3_PIN, "n1p": N1P_PIN, "x63u": X63U_PIN}
+ARM_PINS: Dict[str, Optional[str]] = {"d1": D1_PIN, "d3": D3_PIN, "n1p": N1P_PIN, "x63u": X63U_PIN,
+                                      "toy_c0n4": N4_PIN, "toy_n4ffn": N4_PIN}
 #: The amendment that registered each own-pin arm (named in every line its checks print).
-ARM_PIN_AMENDMENT = {"d1": "AM-D1-FIX", "d3": "AM-D3", "n1p": "AM-N1P", "x63u": "AM-X63U"}
+ARM_PIN_AMENDMENT = {"d1": "AM-D1-FIX", "d3": "AM-D3", "n1p": "AM-N1P", "x63u": "AM-X63U", "toy_c0n4": "AM-N4-PIN",
+                     "toy_n4ffn": "AM-N4-PIN"}
 #: The own-pin arms whose run MAY also sit at the side's pin: D1's VOID pre-fix attempt (AM-D1-FIX-f) only.
 ARM_PIN_PREFIX_OK = ("d1",)
 #: Batch 2's stages (F-AS-8), in AM-RP-e's slots: (6) production SPRT, (8) production LR-F, (11) the toy pair; each
@@ -333,6 +356,12 @@ X63U_STAGES: Tuple[Tuple[str, Tuple[Tuple[str, int], ...]], ...] = (
     ("X63U-A", (("x63u", 2601),)),
     ("X63U-B-SPEC", (("x63u", 6302),)),
 )
+#: N4's stage (PREREG n4_capacity_screen_2026-10-27 §3): ONE look, the six forks in the registered interleaved order
+#: (a stop anywhere leaves the arms within one run of each other), on the orchestrator's GO. Never merged into STAGES.
+N4_STAGES: Tuple[Tuple[str, Tuple[Tuple[str, int], ...]], ...] = (
+    ("N4", (("toy_c0n4", 3641), ("toy_n4ffn", 3641), ("toy_n4ffn", 3642), ("toy_c0n4", 3642), ("toy_c0n4", 3643),
+            ("toy_n4ffn", 3643))),
+)
 #: A PREREG-gated stage that joined by a dated amendment: ``stage_status`` is PENDING until the PREREG holds the
 #: amendment's heading (``AMENDMENT <label>``).
 STAGE_AMENDMENT: Dict[str, str] = {"X63U-B-SPEC": "AM-X63-BSPEC"}
@@ -343,7 +372,7 @@ SPECULATIVE_LABEL = ("trained speculatively before Stage A's verdict; played and
 #: ``x47`` X47, ``x48`` X48, ``x63c`` X63C, ``x63u`` X63U).
 READ_LABEL = {"a1": "A1", "a2": "A2", "d1": "X38", "d3": "X41", "n1p": "X61P", "toy_a1": "A1", "toy_a2": "A2", "toy_x47": "X47",
               "sprt": "SPRT", "toy_sprt": "SPRT", "lrfloor": "LRF", "toy_lrfloor": "LRF", "x48": "X48", "x63c": "X63C",
-              "x63u": "X63U"}
+              "x63u": "X63U", "toy_c0n4": "C0N4", "toy_n4ffn": "N4"}
 #: The toy arms whose look-1 CONTINUE licenses toy C0's look-2 seeds s3604-s3605 (their shared control).
 TOY_LOOK2_LICENSORS = ("toy_x47", "toy_a1", "toy_a2", "toy_lrfloor", "toy_sprt")
 #: Where a read record keeps its PRIMARY when it is not R1 (``d1.D1Verdict``: H).
@@ -544,10 +573,34 @@ def x63u_pin_check(pin: str, side_pin: str, repo: str) -> Tuple[bool, List[str]]
                          tree_want=X63U_CORPORA_TREE, tree_of="registered X63-U union tree")
 
 
+def n4_pin_check(pin: str, side_pin: str, repo: str) -> Tuple[bool, List[str]]:
+    """AM-N4-PIN: ``pin`` is :data:`N4_PIN`, a commit on ``main`` (an ancestor of ``origin/main``, else of the local
+    ``main``), carrying every commit of :data:`N4_PIN_CARRIES`. Unlike :func:`own_pin_check` it is a WHOLE commit, not the
+    side pin + one corpus-only commit: the toy side pin ``side_pin`` predates the width field (named in the line only).
+    REFUSES while ``N4_PIN`` is its None placeholder."""
+    am = ARM_PIN_AMENDMENT["toy_n4ffn"]
+    if N4_PIN is None:
+        return False, [f"{am}: N4_PIN is a PLACEHOLDER (unset): toy_c0n4 / toy_n4ffn launch nowhere until it is registered"]
+    if pin != N4_PIN:
+        return False, [f"{am}: the N4 arms launch only at N4_PIN {N4_PIN[:12]}, not {pin[:12]}"]
+    if _git(repo, "rev-parse", "--verify", "--quiet", f"{pin}^{{commit}}").returncode != 0:
+        return False, [f"{am}: N4_PIN {pin[:12]} is not a commit in {repo}"]
+    lacking = [f"{name} ({sha[:12]})" for name, sha in N4_PIN_CARRIES.items()
+               if _git(repo, "merge-base", "--is-ancestor", sha, pin).returncode != 0]
+    if lacking:
+        return False, [f"{am}: N4_PIN {pin[:12]} lacks {lacking}"]
+    refs = [r for r in ("origin/main", "main")
+            if _git(repo, "rev-parse", "--verify", "--quiet", f"{r}^{{commit}}").returncode == 0]
+    if not any(_git(repo, "merge-base", "--is-ancestor", pin, r).returncode == 0 for r in refs):
+        return False, [f"{am}: N4_PIN {pin[:12]} is not on main ({refs or 'no main ref'} does not contain it)"]
+    return True, [f"{am}: N4's pin {pin[:12]} is a main commit carrying {list(N4_PIN_CARRIES)} (the toy side pin "
+                  f"{side_pin[:12]} is not its base: it cannot carry the width field)"]
+
+
 def arm_pin_check(arm: str, pin: str, side_pin: str, repo: str) -> Tuple[bool, List[str]]:
     """The own-pin check of ``arm`` (:data:`ARM_PINS`)."""
-    return {"d1": d1_pin_check, "d3": d3_pin_check, "n1p": n1p_pin_check,
-            "x63u": x63u_pin_check}[arm](pin, side_pin, repo)
+    return {"d1": d1_pin_check, "d3": d3_pin_check, "n1p": n1p_pin_check, "x63u": x63u_pin_check,
+            "toy_c0n4": n4_pin_check, "toy_n4ffn": n4_pin_check}[arm](pin, side_pin, repo)
 
 
 def pin_check(pin: str, stage: str, models_dir: str, side: str, t62: Optional[str] = None,
@@ -892,7 +945,7 @@ def _look2_licence(stage: str, arm: str) -> Tuple[str, str]:
 
 def stage_of(arm: str, seed: int) -> Optional[str]:
     for name, forks in (STAGES + BATCH2_STAGES + R0_STAGES + X52_STAGES + D3_STAGES + N1P_STAGES + X48_STAGES
-                        + X63C_STAGES + X63U_STAGES):
+                        + X63C_STAGES + X63U_STAGES + N4_STAGES):
         if (arm, seed) in forks:
             return name
     return None
@@ -921,6 +974,17 @@ def stage_status(stage: str, arm: str, seed: int) -> Tuple[str, str]:
         tag = ("AM-X52" if arm in X52_ARMS else "X48 PREREG: one look, the orchestrator's GO" if arm in X48_ARMS
                else "AM-R0")
         return ALLOWED, f"{arm} s{seed}: no unmet condition (stage {stage_of(arm, seed)}, {tag})"
+    if arm in N4_ARMS:                       # AM-N4-PIN: N4_PIN set and named in full by the PREREG; one look
+        from utils.paths import repo_path
+
+        if N4_PIN is None:
+            return PENDING, f"{arm} s{seed}: N4_PIN is a PLACEHOLDER (AM-N4-PIN): nothing launches until it is registered"
+        if not repo_path(N4_PREREG).is_file():
+            return PENDING, f"{arm} s{seed}: its PREREG {N4_PREREG} is not in this checkout yet"
+        if N4_PIN not in repo_path(N4_PREREG).read_text(encoding="utf-8"):
+            return PENDING, f"{arm} s{seed}: the PREREG does not name N4_PIN {N4_PIN} in full yet (its pin NOTE)"
+        return ALLOWED, (f"{arm} s{seed}: no unmet condition (stage {stage_of(arm, seed)}, N4 PREREG: one look, "
+                         f"N4_PIN {N4_PIN[:12]}; the orchestrator's GO)")
     if arm in PREREG_GATED_ARMS:             # X63-C / X63-U: the side gate, then its PREREG (the orchestrator's GO)
         filled, why = side_gate(stage, "production")
         if not filled:

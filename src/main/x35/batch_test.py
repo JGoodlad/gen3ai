@@ -1402,3 +1402,129 @@ def test_x63us_run_is_listed_by_its_registered_name_and_x26cs_same_seed_run_is_n
                     ("rb_x63u_s2601.crashed-1", "rb_x63u_s2601"), ("rb_x63u_s6302", "rb_x63u_s6302")]
     assert other == []                     # rb_x63u_s6303 (an unregistered seed) and X26c's own run: not judged here
     assert B.side_of_run("rb_x63u_s2601") == "production"
+
+
+# ------------------------------------- N4 (PREREG n4_capacity_screen_2026-10-27; AM-N4-PIN): one look, a whole-commit pin
+N4_ORDER = [("toy_c0n4", 3641), ("toy_n4ffn", 3641), ("toy_n4ffn", 3642), ("toy_c0n4", 3642), ("toy_c0n4", 3643),
+            ("toy_n4ffn", 3643)]
+
+
+def _n4_repo(tmp_path: Path):
+    """main: base <- t69 <- rule <- pin; ``side`` branches off t69 (lacks the rule); ``off`` branches off pin (not on
+    main). ``(repo, {name: sha})``."""
+    repo = tmp_path / "n4repo"
+    repo.mkdir()
+
+    def git(*a: str) -> str:
+        return subprocess.run(["git", "-C", str(repo), "-c", "user.name=t", "-c", "user.email=t@t", *a],
+                              capture_output=True, text=True, check=True).stdout.strip()
+
+    git("init", "-q", "-b", "main")
+    shas = {}
+    for name in ("base", "t69", "rule", "pin"):
+        (repo / name).write_text(name)
+        git("add", name)
+        git("commit", "-q", "-m", name)
+        shas[name] = git("rev-parse", "HEAD")
+    for branch, at in (("side", "t69"), ("off", "pin")):
+        git("checkout", "-q", "-b", branch, shas[at])
+        (repo / branch).write_text(branch)
+        git("add", branch)
+        git("commit", "-q", "-m", branch)
+        shas[branch] = git("rev-parse", "HEAD")
+    git("checkout", "-q", "main")
+    return repo, shas
+
+
+def _n4_carries(monkeypatch, shas, pin):
+    monkeypatch.setattr(B, "N4_PIN_CARRIES", {"T69": shas["t69"], "rule": shas["rule"]})
+    monkeypatch.setattr(B, "N4_PIN", pin)
+    for a in B.N4_ARMS:
+        monkeypatch.setitem(B.ARM_PINS, a, pin)
+
+
+def test_n4_arms_are_side_pinned_own_pin_toy_arms_in_the_registered_order():
+    assert set(B.N4_ARMS) == {"toy_c0n4", "toy_n4ffn"} and set(B.N4_ARMS) <= set(B.SIDE_PINNED_ARMS)
+    assert all(a in B.ARM_PINS and B.ARM_PIN_AMENDMENT[a] == "AM-N4-PIN" for a in B.N4_ARMS)
+    assert [f for _, forks in B.N4_STAGES for f in forks] == N4_ORDER        # PREREG §3's interleave, verbatim
+    assert all(B.stage_of(a, s) == "N4" for a, s in N4_ORDER) and B.stage_of("toy_n4ffn", 3644) is None
+    assert B.READ_LABEL["toy_c0n4"] == "C0N4" and B.READ_LABEL["toy_n4ffn"] == "N4"
+    assert set(B.N4_PIN_CARRIES.values()) == {"c35ffab9ebeb3d5194417991b52060bbcb7bb870",
+                                              "a05a0ca2c110b870d0ebcda1c92774ddc03c5400"}
+    names = B.side_pinned_run_names()
+    assert {n for n, (a, _) in names.items() if a in B.N4_ARMS} == {
+        f"rb_x35t_{k}_s{s}" for k in ("c0n4", "n4ffn") for s in (3641, 3642, 3643)}
+    assert all(B.side_of_run(f"rb_x35t_{k}_s3641") == "toy" for k in ("c0n4", "n4ffn"))
+
+
+def test_n4_pin_check_refuses_a_placeholder_and_passes_only_a_main_commit_carrying_t69_and_the_rule(tmp_path,
+                                                                                                    monkeypatch):
+    repo, shas = _n4_repo(tmp_path)
+    monkeypatch.setattr(B, "N4_PIN", None)
+    ok, lines = B.n4_pin_check(shas["pin"], shas["base"], str(repo))
+    assert not ok and "N4_PIN is a PLACEHOLDER" in lines[0], lines
+    _n4_carries(monkeypatch, shas, shas["pin"])
+    ok, lines = B.n4_pin_check(shas["pin"], shas["base"], str(repo))
+    assert ok and "main commit carrying" in lines[0], lines
+    for a in B.N4_ARMS:                                     # the dispatcher routes both arms to the same check
+        assert B.arm_pin_check(a, shas["pin"], shas["base"], str(repo))[0]
+    ok, lines = B.n4_pin_check(shas["rule"], shas["base"], str(repo))
+    assert not ok and "launch only at N4_PIN" in lines[0], lines          # any other commit, even an ancestor
+    _n4_carries(monkeypatch, shas, shas["side"])            # lacks the n4_screen rule
+    ok, lines = B.n4_pin_check(shas["side"], shas["base"], str(repo))
+    assert not ok and "lacks" in lines[0] and "rule" in lines[0], lines
+    _n4_carries(monkeypatch, shas, shas["off"])             # carries both, but is not on main
+    ok, lines = B.n4_pin_check(shas["off"], shas["base"], str(repo))
+    assert not ok and "is not on main" in lines[0], lines
+
+
+def test_n4_pin_check_passes_the_real_carried_commits_in_this_checkout():
+    """T69 and the n4_screen rule are real main commits here (main carries both), so a pin at HEAD would pass."""
+    from utils.paths import repo_root
+
+    root = str(repo_root())
+    for sha in B.N4_PIN_CARRIES.values():
+        assert subprocess.run(["git", "-C", root, "merge-base", "--is-ancestor", sha, "HEAD"]).returncode == 0, sha
+
+
+def test_n4_runs_are_judged_against_n4_pin_not_the_toy_side_pin(tmp_path, monkeypatch):
+    repo, shas = _n4_repo(tmp_path)
+    _n4_carries(monkeypatch, shas, shas["pin"])
+    stage, models = tmp_path / "stage", tmp_path / "models"
+    stage.mkdir()
+    B.write_pin_file(B.pin_path(str(stage), "toy"), shas["base"], "NA_TOY", "toy")      # the toy side pin
+    for run, at in (("rb_x35t_c0_s3601", "base"), ("rb_x35t_n4ffn_s3641", "pin")):
+        (models / run).mkdir(parents=True)
+        (models / run / "metadata.json").write_text(json.dumps({"git_hash": shas[at]}))
+    ok, lines = B.pin_check(shas["pin"], str(stage), str(models), "toy", arm="toy_n4ffn", repo=str(repo))
+    assert ok, lines
+    ok, lines = B.pin_check(shas["base"], str(stage), str(models), "toy", arm="toy_c0", repo=str(repo))
+    assert ok, lines                                         # a side-pinned toy launch still passes beside an N4 run
+    ok, lines = B.pin_check(shas["base"], str(stage), str(models), "toy", arm="toy_c0n4", repo=str(repo))
+    assert not ok and any("launch only at N4_PIN" in ln for ln in lines), lines       # never at the side pin
+    (models / "rb_x35t_c0n4_s3641").mkdir()                  # an N4 run recorded at the side pin is a refusal
+    (models / "rb_x35t_c0n4_s3641" / "metadata.json").write_text(json.dumps({"git_hash": shas["base"]}))
+    ok, lines = B.pin_check(shas["base"], str(stage), str(models), "toy", arm="toy_c0", repo=str(repo))
+    assert not ok and any(ln.startswith("rb_x35t_c0n4_s3641: recorded pin") for ln in lines), lines
+    with pytest.raises(B.BatchError, match="AM-N4-PIN"):     # an own-pin arm never writes the side's pin file
+        B.pin_write_if_absent(shas["base"], str(stage), "toy", "NA_TOY", arm="toy_n4ffn")
+    assert "own pin" in B.pin_write_if_absent(shas["pin"], str(stage), "toy", None, arm="toy_n4ffn")
+
+
+def test_n4_stage_is_pending_until_the_pin_is_set_and_named_in_full_by_the_prereg(tmp_path, monkeypatch):
+    st = str(tmp_path)
+    monkeypatch.setattr(B, "N4_PIN", None)
+    assert B.stage_status(st, "toy_n4ffn", 3641)[0] == B.PENDING
+    pin = "b" * 40
+    monkeypatch.setattr(B, "N4_PIN", pin)
+    prereg = tmp_path / "PREREG.md"
+    monkeypatch.setattr(B, "N4_PREREG", str(prereg))
+    status, why = B.stage_status(st, "toy_c0n4", 3641)
+    assert status == B.PENDING and "not in this checkout" in why, why
+    prereg.write_text(f"NOTE: N4_PIN = {pin[:12]}\n")      # a short sha is not the pin NOTE
+    status, why = B.stage_status(st, "toy_c0n4", 3641)
+    assert status == B.PENDING and "in full" in why, why
+    prereg.write_text(f"NOTE: N4_PIN = {pin}\n")
+    for arm, seed in N4_ORDER:
+        status, why = B.stage_status(st, arm, seed)
+        assert status == B.ALLOWED and "one look" in why, (arm, seed, why)
