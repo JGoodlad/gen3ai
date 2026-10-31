@@ -375,3 +375,50 @@ FINDING 11 (this amendment): the runner's group order cannot express §5's "REPO
 state, and `x63_kvk` refuses imported deciding groups, so the REPORTED groups need either their own registered spec
 under a rule that reads them alone, or a runner group-order option (off the play path) on a new playing commit. Either
 is a later amendment; neither touches the Stage A verdict.
+
+## 17. AMENDMENT AM-X63-BSPEC (2026-10-30, before Stage A's verdict): Stage B's arm seed trains speculatively
+
+- **Written while:** Stage A's read is in progress on CPU (the spec of record, §16). No Stage A score has been
+  computed, opened or quoted for this amendment. Its author opened no Stage A game row, unit file or state.
+- **What it adds:** seed **6302** for kit arm `x63u`, the run **`rb_x63u_s6302`** (the Stage B seed §2 and §5 already
+  name). It is at the same pin, X63U_PIN `39eaa326736376a5ec3dde41af4afbe8a76a9015`, with the same start node, lever,
+  length and pool reference as s2601.
+  - Its argv is s2601's with exactly two values changed: `--seed 6302` and `--run-name rb_x63u_s6302`
+    ([`argv_x63u_s6302.txt`](argv_x63u_s6302.txt); a kit test pins this).
+  - The change is main's kit only (`main.x35.kit.X63U_SEEDS`, `main.x35.batch.X63U_STAGES` stage `X63U-B-SPEC`).
+    Nothing at the pin changes. `stage-check` allows s6302 only while this PREREG holds this amendment.
+- **It trains speculatively.** It trains on the otherwise-idle GPU before Stage A's verdict, through its own arm
+  chain, which is the Training session's to arm on the orchestrator's GO. Training it is not Stage B's licence.
+- **When its games are played and read.** Only if Stage A's registered rule (§7 item 1, rule `x63_kvk` on the spec
+  of record) returns **CONTINUE**.
+  - Then, before any s6302 game, a dated amendment registers Stage B's read spec exactly as §5–§7 register Stage B,
+    and s6302 is read there as trained here. Nothing about Stage B changes: k, the statistic, σ_eff, q, the bars, rule
+    8, r = 1, the VOID guards, the floor and the price.
+  - s6302 stays the unselected estimate that the design (§7) reads beside the pooled σ̂: the screen does not select
+    the seed, whenever it trains.
+- **Otherwise** (Stage A NOT PURSUED, or INCONCLUSIVE on its inputs), no s6302 game is played under X63, and nothing
+  in X63 reads its training record. It carries this label everywhere: **"X63-U s6302: a speculative replicate,
+  trained before Stage A's verdict, not read for any decision."** Any later use, such as a start node or a
+  descriptive replicate in another study, is its own registration. It carries that label and never revises an X63
+  verdict.
+- **Stage A is unchanged:**
+  - its rule, its spec of record (sha256 `61db0eac…`), its 18,000 games, its models, its lane and its order;
+  - no s6302 record (banner, throughput, pool win rate, canary, K9(b), dose, arm end) enters Stage A's rule, which
+    reads only its spec's three models;
+  - its timing: s6302 trains on the GPU and the launcher's cores (`taskset -c 0-4,8-12`), not the agent cores the
+    read lane plays on. X63-U s2601 trained beside the controls' units the same way.
+- **The VOID guards apply to s6302 unchanged:** §8 (the banner, the pin, X26c's recorded pool seed at `fork_step`
+  380,000,195, a `corpus_<n>` FATAL, completeness, K9(b) at the arm's end, one restart) and §15 (at most two canary
+  resumes of the slice-2 class). A VOID s6302 re-runs at the same pin and seed (§8).
+- **Cost:** ≈ 19.9 GPU-h (§2) and 20.42 GiB of disk (today's dry run's REQUIRED; Stage A's read 22.75, and the
+  only difference is the shared compile cache's term, 0 now that the cache holds 21.05 GiB against its 20 GiB cap).
+  The chain keeps Stage A's 22.75, and the planner thins the run. §11's E[GPU-h]
+  ≈ 41 counted Stage B only after a CONTINUE, so under NOT PURSUED this amendment spends that 19.9 GPU-h with no
+  read. Those are idle hours, which is the reason for the amendment.
+- **The chain:** `~/.claude/jobs/x35/chains/drafts/x63u-stageb-spec-oct30.json` (DRAFT, not armed; Stage A's
+  `arm_chain_v1` item with only the seed, the run and the `go_by` / `x_registration` text changed).
+- **Checks at this amendment** (CPU, card hidden, no lease):
+  [`kit_checks_x63u_s6302.txt`](kit_checks_x63u_s6302.txt) (describe, pin-check, corpus-check, pool-check,
+  stage-check, disk), [`checkargs_x63u_s6302.txt`](checkargs_x63u_s6302.txt) (against s2601's argv: the seed and the
+  run name only) and [`dryrun_x63u_s6302.txt`](dryrun_x63u_s6302.txt) (`FORK of …/rb_x26_s2601`, +100,000,000 steps,
+  the pin above; the only failing check is the hidden card, as at §2).

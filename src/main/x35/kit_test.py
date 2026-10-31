@@ -801,10 +801,21 @@ def test_x63u_places_its_lever_where_n1p_places_its_own():
     assert u.index("--seed") - u.index("--team-mix") == n.index("--seed") - n.index("--team-mix") == 4
 
 
-@pytest.mark.parametrize("seed", [6302, 6303, 3501, 2602])
-def test_x63u_refuses_every_seed_but_2601(seed):
+@pytest.mark.parametrize("seed", [6301, 6303, 3501, 2602])
+def test_x63u_refuses_every_seed_but_2601_and_6302(seed):
+    assert K.X63U_SEEDS == (2601, 6302)                     # Stage A + Stage B's speculative seed (AM-X63-BSPEC)
     with pytest.raises(K.KitError, match="not registered"):
         K.build_argv("x63u", seed, standin_call())
+
+
+def test_x63u_stage_b_seed_differs_from_stage_a_only_by_the_seed_and_the_run_name():
+    """AM-X63-BSPEC (PREREG §17): s6302's argv is s2601's with exactly two values changed, at the same pin."""
+    call = _real_production_call()
+    a, b = K.build_argv("x63u", 2601, call), K.build_argv("x63u", 6302, call)
+    assert len(a) == len(b) and [x for x, y in zip(a, b) if x != y] == ["2601", "rb_x63u_s2601"]
+    assert [j for j, (x, y) in enumerate(zip(a, b)) if x != y] == [b.index("--seed") + 1, b.index("--run-name") + 1]
+    assert (b[b.index("--seed") + 1], b[-1]) == ("6302", "rb_x63u_s6302") and b[-2] == "--run-name"
+    assert K.run_name("x63u", 6302) == "rb_x63u_s6302"
 
 
 def test_x63u_forks_x26_at_380m_as_x63c_does():

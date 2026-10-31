@@ -53,8 +53,9 @@ canonical flag order (the order carries no meaning to the trainer's parser):
   ``x63u`` -- X63-C's arm (the same start node X26 @380,000,195, :data:`X26_380M_START`; the same pool reference,
   X26c's recorded seed; +100M) with X26c's recorded argv token for token + N1-P's lever pattern: the ONE lever
   ``--team-mix x63_union_v1@ALL:0.8 --team-mix-sides both`` (:data:`X63U_LEVER`), in N1-P's slot, so ``checkargs``
-  against X26c shows only those four tokens and the run name. Stage A runs seed 2601 ONLY (X26c's own seed); Stage B /
-  C seeds are later amendments. Its own corpus-only pin ``batch.X63U_PIN`` (AM-X63U, AM-N1P's pattern) and its
+  against X26c shows only those four tokens and the run name. Stage A runs seed 2601 (X26c's own seed); Stage B's
+  6302 is registered by AM-X63-BSPEC (trained speculatively, read only if Stage A fires Stage B); Stage C's seed is a
+  later amendment. Its own corpus-only pin ``batch.X63U_PIN`` (AM-X63U, AM-N1P's pattern) and its
   corpus identity :data:`X63U_CORPUS` are checked by ``pin-check`` and ``corpus-check``.
 
     python -m main.x35.kit describe --arm a1 --seed 3501 --call <R_production.json> [--phase1 <record>]
@@ -222,9 +223,11 @@ X48_SEEDS = (3501, 3502, 3503)
 X63C_SEEDS = (6302,)
 #: X63-C's length: X63's +100M continuation from X26 @380M (X26c's own +100M).
 L_X63C = 100_000_000
-#: X63-U, Stage A: X26c's own seed, so its argv differs from X26c's only by the lever and the run name. Stage B / C
-#: seeds (6302, 6303) are later amendments; until then the kit refuses them.
-X63U_SEEDS = (2601,)
+#: X63-U: Stage A's 2601 is X26c's own seed, so its argv differs from X26c's only by the lever and the run name.
+#: Stage B's 6302 (X63-C's seed) joins by AM-X63-BSPEC (PREREG §17, 2026-10-30): it TRAINS SPECULATIVELY before Stage
+#: A's verdict and is played and read only if Stage A's registered rule fires Stage B. Stage C's 6303 is a later
+#: amendment; until then the kit refuses it.
+X63U_SEEDS = (2601, 6302)
 #: X63-U's length: the same +100M as X63-C and X26c.
 L_X63U = L_X63C
 X47_SEEDS = TOY_SEEDS   # X47: look 1 at 3601-3603, look 2 at 3604-3605 (AM-4, orchestrator 2026-10-19), against toy C0 at the same seeds

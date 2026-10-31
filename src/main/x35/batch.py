@@ -111,8 +111,9 @@ decide`` (X47). The record names its arm and look; a record for another arm or l
   --team-mix-sides both``, at :data:`X63U_PIN` = the production pin + ONE commit confined to ``src/utils/team_corpora/``
   adding only the union corpus and its ``CORPORA`` line, checked by :func:`arm_pin_check` against
   :data:`X63U_CORPORA_TREE` (filled at the registration; a None in either makes every pin check of ``x63u`` REFUSE
-  and a run recorded for it unjudgeable). :data:`X63U_STAGES` holds Stage A (s2601 only),
-  never :data:`STAGES`; :func:`stage_status` gives it the AM-8 side gate and its PREREG, as X63-C's. Its run name is
+  and a run recorded for it unjudgeable). :data:`X63U_STAGES` holds Stage A (s2601) and
+  Stage B's speculative seed (s6302, AM-X63-BSPEC: trained before Stage A's verdict, read only if Stage A fires Stage
+  B), never :data:`STAGES`; :func:`stage_status` gives it the AM-8 side gate and its PREREG, as X63-C's. Its run name is
   ``rb_x63u_*`` (listed by name, as X63-C's). Arm label ``X63U``.
 * **THE G-E READERS** (``main.x35.ge``; launch sheet §0 "G-E readers"): ``ge_a1`` / ``ge_a2`` / ``ge_d1`` / ``ge_c0``
   are not batch-1 ARMS (not in :data:`STAGES`, the disk count or AM-6's K9(b) pre-check) but they run at the SIDE'S
@@ -324,11 +325,20 @@ X48_STAGES: Tuple[Tuple[str, Tuple[Tuple[str, int], ...]], ...] = (
 X63C_STAGES: Tuple[Tuple[str, Tuple[Tuple[str, int], ...]], ...] = (
     ("X63C", (("x63c", 6302),)),
 )
-#: X63-U's Stage A (2026-10-29): seed 2601 only, on the orchestrator's GO once its PREREG exists. Its control is X26c
-#: (banked, the same seed); Stage B / C seeds are later amendments. Never merged into STAGES.
+#: X63-U's stages, each on the orchestrator's GO once its PREREG exists. Stage A (2026-10-29): seed 2601, its control
+#: X26c (banked, the same seed). Stage B (AM-X63-BSPEC, PREREG §17, 2026-10-30): seed 6302, ALLOWED to TRAIN before
+#: Stage A's verdict (speculative); its games are played and read only if Stage A's rule fires Stage B (the read spec,
+#: never this gate, holds that). Stage C is a later amendment. Never merged into STAGES.
 X63U_STAGES: Tuple[Tuple[str, Tuple[Tuple[str, int], ...]], ...] = (
     ("X63U-A", (("x63u", 2601),)),
+    ("X63U-B-SPEC", (("x63u", 6302),)),
 )
+#: A PREREG-gated stage that joined by a dated amendment: ``stage_status`` is PENDING until the PREREG holds the
+#: amendment's heading (``AMENDMENT <label>``).
+STAGE_AMENDMENT: Dict[str, str] = {"X63U-B-SPEC": "AM-X63-BSPEC"}
+#: The label AM-X63-BSPEC writes for X63-U s6302 when Stage A's rule does not fire Stage B (PREREG §17).
+SPECULATIVE_LABEL = ("trained speculatively before Stage A's verdict; played and read only if Stage A's rule fires "
+                     "Stage B, else a speculative replicate, not read for any decision")
 #: The arm label each read record carries (``readout`` A1 / A2 / SPRT / LRF, ``d1`` X38, ``d3`` X41, ``n1p`` X61P,
 #: ``x47`` X47, ``x48`` X48, ``x63c`` X63C, ``x63u`` X63U).
 READ_LABEL = {"a1": "A1", "a2": "A2", "d1": "X38", "d3": "X41", "n1p": "X61P", "toy_a1": "A1", "toy_a2": "A2", "toy_x47": "X47",
@@ -920,7 +930,14 @@ def stage_status(stage: str, arm: str, seed: int) -> Tuple[str, str]:
         prereg, tag = arm_prereg(arm)
         if not repo_path(prereg).is_file():
             return PENDING, f"{arm} s{seed}: its PREREG {prereg} is not in this checkout yet"
-        return ALLOWED, f"{arm} s{seed}: no unmet condition (stage {stage_of(arm, seed)}, {tag} PREREG present)"
+        stage_name = stage_of(arm, seed)
+        amendment = STAGE_AMENDMENT.get(stage_name or "")
+        if amendment is not None:
+            if f"AMENDMENT {amendment}" not in repo_path(prereg).read_text(encoding="utf-8"):
+                return PENDING, f"{arm} s{seed}: its PREREG {prereg} holds no AMENDMENT {amendment} yet"
+            return ALLOWED, (f"{arm} s{seed}: no unmet condition (stage {stage_name}, {tag} PREREG {amendment}: "
+                             f"{SPECULATIVE_LABEL})")
+        return ALLOWED, f"{arm} s{seed}: no unmet condition (stage {stage_name}, {tag} PREREG present)"
     if arm in D3_ARMS + N1P_ARMS:            # AM-D3 / AM-N1P: the side gate; look 2 only on its own look-1 CONTINUE
         filled, why = side_gate(stage, "production")
         if not filled:

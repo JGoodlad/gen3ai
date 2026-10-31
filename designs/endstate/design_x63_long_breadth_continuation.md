@@ -202,7 +202,7 @@ The rate: X26c 19.92 GPU-h for 100M at 1,402 steps/s; X63-C 20.7 h at 1,348 step
 | stage | new runs | GPU-h | deciding Kakuna games | lane-h | when |
 |---|---|---:|---|---:|---|
 | **A** | `rb_x63u_s2601` | 19.9 | F 4,000 + home72 2,000 for each of X63-U, X26c, X63-C = 18,000 | 78–113 | now (the controls' 12,000 can play first) |
-| **B** | `rb_x63u_s6302` | 19.9 | 6,000 | 26–38 | Stage A CONTINUE |
+| **B** | `rb_x63u_s6302` | 19.9 | 6,000 | 26–38 | trains speculatively before Stage A's verdict (AM-X63-BSPEC); played and read only on Stage A CONTINUE |
 | **C** | `rb_x63u_s6303`, `rb_x63c_s6303` | 39.8 | 12,000 | 52–75 | Stage B UNDECIDED with Δ̂_B ≥ +1.5 pp |
 | **at most** | 4 runs | **79.6** | 36,000 | 156–226 | |
 
@@ -434,8 +434,10 @@ not less.
    (D3 was built at radius 4): the pool's own overlap, inherited at half the pool's rate (PREREG FINDING 3).
 8. **Per-worker memory of a full launch is unmeasured**; the team phase is 31 s at 0.71 GB and a whole-table env core
    peaks at 0.62 GB (PREREG §3). The first-hour throughput gate guards it.
-7. **The kit holds Stage A's seed only** (2601). Stage B's `rb_x63u_s6302` and Stage C's pair are added by a dated
-   amendment after their gate reads.
+7. **The kit holds Stage A's seed (2601) and Stage B's (6302).** Stage B's `rb_x63u_s6302` joined by AM-X63-BSPEC
+   (PREREG §17, 2026-10-30) to train on idle GPU before Stage A's verdict. Its games play only on a Stage A CONTINUE;
+   otherwise it is labelled "a speculative replicate, not read for any decision". Stage C's pair is added by a dated
+   amendment after its gate reads.
 
 ---
 
@@ -446,3 +448,4 @@ not less.
 | 2026-10-27 | **CREATED (DRAFT)** (X63 designer) | X63-U: X26@380M + 100M at X26c's pin with a union mix at 0.8; X26c as the Stage-A control; a 1 v 1 screen, 2 v 2 with a 1 pp allowance, 3 v 3 on a near miss; F against Kakuna; home72 floor; an S ceiling | a P\*-start arm; X26's 280 → 380M as control; forum teams in the union; component weights; a 1 v 1 verdict; a home72 harm bar at 0 | the survey (`5d554c23`); X26c records; the strategy doc (`7574743d`); `power_x63.log` |
 | 2026-10-27 | X62's revision propagated | the recombined third inherits X62's revised builder | — | `design_x62_team_recombination.md` §2.2 |
 | 2026-10-29 | **REVISED IN PLACE and REGISTERED** (X63 registration worker, orchestrator brief; review 1's B1, M1–M5, m1–m10 answered) | Stage A = 1 arm v 2 controls (X63-C trained); NOT PURSUED, never RETIRE, on a screen stop; σ_eff = max(1.0, σ̂) with the t quantile above the floor, INCONCLUSIVE at σ̂ > 3 pp; n1 at its K3 tier (draws 0.537 / 0.134 / 0.129 / pool 0.2); the shared play pin `86cfdf7e`; home72 at 2,000 games; price net = Δ_home72 + r·Δ_F with r the owner's; no dose claim; the throughput gate at 1,200 steps/s; the N1-P look-2 amendment pre-written; x62_recomb_v1 and x63_union_v1 built and soaked | the draft's z rule (false GAIN 0.07–0.08 at σ ≥ 2 pp); a 1.5 pp floor (loses 0.2–0.3 power at σ ≤ 1 pp); a dose read by +20M points at 4,000 games (24–35 lane-h, seed term unverified to cancel); the S ceiling; n1 at 12,000; choosing r for the owner | `power_x63_v2.log`; H-CTX (`6f126c4af`), A-K (`fb84c260f`), D3 look 2 (`25a73617`), N1-P look 1, LR-F final; X63-C arm-end (`8a7f293f`); `reads.md` §4 |
+| 2026-10-30 | **Stage B's seed trains speculatively** (AM-X63-BSPEC, PREREG §17; Stage-B-spec worker, orchestrator brief) | `rb_x63u_s6302` added to the kit at X63U_PIN, argv = s2601's with only the seed and run name changed; trains on the idle GPU before Stage A's verdict; played and read only on Stage A CONTINUE, else labelled "a speculative replicate, not read for any decision"; no rule, game or Stage A timing changes | training Stage B only after CONTINUE (≈ 1 day later if it fires, with the GPU idle meanwhile) | the GPU frees 10-30 ≈ 19:00 with nothing queued; Stage A's verdict lands 10-31 / 11-01 on CPU |

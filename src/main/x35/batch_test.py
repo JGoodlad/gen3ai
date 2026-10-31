@@ -1354,8 +1354,9 @@ def test_x63u_is_side_pinned_on_its_own_pin_and_allowed_only_with_its_prereg(tmp
     monkeypatch.setattr(B, "X63U_PREREG", str(prereg))              # absolute: repo_path() returns it unchanged
     assert B.X63U_ARMS == ("x63u",) and "x63u" in B.SIDE_PINNED_ARMS and "x63u" in B.ARM_PINS
     assert B.ARM_PIN_AMENDMENT["x63u"] == "AM-X63U" and B.READ_LABEL["x63u"] == "X63U"
-    assert B.X63U_STAGES == (("X63U-A", (("x63u", 2601),)),)
-    assert B.stage_of("x63u", 2601) == "X63U-A" and B.stage_of("x63u", 6302) is None
+    assert B.X63U_STAGES == (("X63U-A", (("x63u", 2601),)), ("X63U-B-SPEC", (("x63u", 6302),)))
+    assert B.stage_of("x63u", 2601) == "X63U-A" and B.stage_of("x63u", 6302) == "X63U-B-SPEC"
+    assert B.stage_of("x63u", 6303) is None
     assert not {a for _, forks in B.STAGES for a, _ in forks} & {"x63u"}                    # STAGES is closed
     assert B.stage_status(st, "x63u", 2601)[0] == B.PENDING                     # AM-8: no FP32_ALT named
     _fill_fp32(stage)
@@ -1366,15 +1367,38 @@ def test_x63u_is_side_pinned_on_its_own_pin_and_allowed_only_with_its_prereg(tmp
     status, why = B.stage_status(st, "x63u", 2601)
     assert status == B.ALLOWED and "X63-U PREREG present" in why, why
     assert B.arm_prereg("x63c") == (B.X63C_PREREG, "X63-C") and B.X63C_PREREG != str(prereg)   # each arm its own
-    assert {n for n, (a, _) in B.side_pinned_run_names().items() if a == "x63u"} == {"rb_x63u_s2601"}
+    assert {n for n, (a, _) in B.side_pinned_run_names().items() if a == "x63u"} == {"rb_x63u_s2601", "rb_x63u_s6302"}
+
+
+def test_x63u_stage_b_seed_trains_only_once_its_amendment_is_in_the_prereg(tmp_path, monkeypatch):
+    """AM-X63-BSPEC (PREREG §17): s6302 is ALLOWED to train speculatively, but only once the PREREG holds the
+    amendment; the label it carries otherwise is in the ALLOWED line. Stage A's own gate does not read it."""
+    stage = tmp_path / "stage"
+    (stage / B.READS_DIR).mkdir(parents=True)
+    st = str(stage)
+    prereg = tmp_path / "x63" / "PREREG.md"
+    monkeypatch.setattr(B, "X63U_PREREG", str(prereg))
+    _fill_fp32(stage)
+    prereg.parent.mkdir()
+    prereg.write_text("# X63\n## 16. AMENDMENT AM-X63-SPEC\n")
+    status, why = B.stage_status(st, "x63u", 6302)
+    assert status == B.PENDING and "AMENDMENT AM-X63-BSPEC" in why, why
+    assert B.stage_status(st, "x63u", 2601)[0] == B.ALLOWED                    # Stage A: unchanged, no amendment read
+    prereg.write_text("# X63\n## 17. AMENDMENT AM-X63-BSPEC (2026-10-30)\n")
+    status, why = B.stage_status(st, "x63u", 6302)
+    assert status == B.ALLOWED and "X63U-B-SPEC" in why and "not read for any decision" in why, why
+    assert B.STAGE_AMENDMENT == {"X63U-B-SPEC": "AM-X63-BSPEC"}
+    assert B.stage_status(st, "x63u", 2601) == (B.ALLOWED, "x63u s2601: no unmet condition (stage X63U-A, X63-U "
+                                                           "PREREG present)")
 
 
 def test_x63us_run_is_listed_by_its_registered_name_and_x26cs_same_seed_run_is_not(tmp_path):
     models = tmp_path / "models"
-    for d in ("rb_x63u_s2601", "rb_x63u_s2601.crashed-1", "rb_x63u_s6302", "rb_x26c_s2601", "rb_x63c_s6302"):
+    for d in ("rb_x63u_s2601", "rb_x63u_s2601.crashed-1", "rb_x63u_s6302", "rb_x63u_s6303", "rb_x26c_s2601",
+              "rb_x63c_s6302"):
         (models / d).mkdir(parents=True)
     ours, other = B._side_pinned_dirs(str(models))
     assert ours == [("rb_x63c_s6302", "rb_x63c_s6302"), ("rb_x63u_s2601", "rb_x63u_s2601"),
-                    ("rb_x63u_s2601.crashed-1", "rb_x63u_s2601")]
-    assert other == []                     # rb_x63u_s6302 (an unregistered seed) and X26c's own run: not judged here
+                    ("rb_x63u_s2601.crashed-1", "rb_x63u_s2601"), ("rb_x63u_s6302", "rb_x63u_s6302")]
+    assert other == []                     # rb_x63u_s6303 (an unregistered seed) and X26c's own run: not judged here
     assert B.side_of_run("rb_x63u_s2601") == "production"
