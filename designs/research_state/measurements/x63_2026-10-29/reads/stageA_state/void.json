@@ -1,0 +1,25 @@
+{
+ "x63u_s2601": {
+  "batch2": null,
+  "k9b": "PASS",
+  "k9b_file": "/home/goodlad/dev/gen3ai/.claude/worktrees/x63-read-spec/designs/research_state/measurements/x35_breakers_stage_2026-10-17/k9b/rb_x63u_s2601.json",
+  "pass": true,
+  "pin": {
+   "pass": true,
+   "recorded": [
+    "39eaa326736376a5ec3dde41af4afbe8a76a9015"
+   ],
+   "want": "39eaa326736376a5ec3dde41af4afbe8a76a9015",
+   "why": ""
+  },
+  "pool_seed": {
+   "dropped": 0,
+   "fork_step": 380000195,
+   "got": 380000195,
+   "pass": true,
+   "snapshots": 20,
+   "why": ""
+  },
+  "run": "models/rb_x63u_s2601"
+ }
+}

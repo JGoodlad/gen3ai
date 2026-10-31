@@ -1,6 +1,6 @@
 # STATUS — where gen3ai stands, on one page
 
-**As of 2026-10-30.** This page is the dashboard: what we are trying to do, where each goal stands, and what is
+**As of 2026-10-31.** This page is the dashboard: what we are trying to do, where each goal stands, and what is
 running. It gives each number, its interval and the commit that proves it. The reasoning behind these numbers is in
 [`research_state/UNDERSTANDING.md`](research_state/UNDERSTANDING.md), the plans are in
 [`endstate/README.md`](endstate/README.md), and the research ledger wins any disagreement. A backticked hex string
@@ -50,8 +50,7 @@ Read at 17:45 PDT on 2026-10-30 from `python -m main.ops.arm_chain status` (each
 | where | job | what decision it drives |
 |---|---|---|
 | GPU: RUNNING (chain `x59s-fu1500`, one window, budget 140 min) | **X59-S's ≥ 1500 follow-up** (Amendment 7, `1ffd67817`; built at `165250d55`): 15 fresh students, three arms of five seeds (the ≥ 1500-rating human rows, the seed-5930 account mix, the S-S cut) at N = 270,260 rows and 1,584 steps each, run one after another. Five were trained at 17:45 and the sixth (S-S cut, seed 5902) was running; the window's final check (`window_check.json`) has not been written. | Isolates rating at a fixed slice and volume (Amendment 7), a follow-up to the human-data deficit above (`c1d2d7fcb`). Read through the CPU row below. |
-| GPU: next, NOT ARMED | **X63-U s6302**, Stage B's arm seed trained SPECULATIVELY before Stage A's verdict (AM-X63-BSPEC, PREREG §17, `7ffbe9428`; about 19.9 GPU-h). Only a DRAFT chain exists (`~/.claude/jobs/x35/chains/drafts/x63u-stageb-spec-oct30.json`); arming it is the orchestrator's GO once the follow-up window ends. It is played and read only if Stage A returns CONTINUE; otherwise it is labelled "a speculative replicate, trained before Stage A's verdict, not read for any decision". | Stage B's seed, if Stage A continues; otherwise idle hours spent. |
-| CPU: PLAYING (state `~/gen3ai_archive/x63_read/stageA`) | **X63 Stage A's Kakuna read**: X63-U s2601 against X26c and X63-C, 18,000 games on forum72 1000-1199 and home72 1000-1099 at the successor play pin 65b998da (E1), under rule `x63_kvk` and the read spec of record (AM-X63-SPEC, `962c4ea44`). The deciding groups are due about 10-31 evening (the orchestrator's estimate; **UNVERIFIED** here). | The registered CONTINUE / NOT PURSUED call on X63 (§3 item 2). |
+| GPU: next, NOT ARMED | **X63-U s6302**, Stage B's arm seed trained SPECULATIVELY before Stage A's verdict (AM-X63-BSPEC, PREREG §17, `7ffbe9428`; about 19.9 GPU-h). Only a DRAFT chain exists (`~/.claude/jobs/x35/chains/drafts/x63u-stageb-spec-oct30.json`); arming it is the orchestrator's GO once the follow-up window ends. It is played and read only if Stage A returns CONTINUE; otherwise it is labelled "a speculative replicate, trained before Stage A's verdict, not read for any decision". | **Not read**: Stage A read NOT PURSUED (10-31, §4), so it is "a speculative replicate, trained before Stage A's verdict, not read for any decision". |
 | CPU: PLAYING (raw lane; state `~/gen3ai_archive/dlive_read_2026-10-28/`) | **The deviation-only live read** (registered `715e0b482`, operated under Amendment A1, `f0029cdca`): at about 1,800 unfamiliar-team departures of S′ from P\*, the departure is forced in a replay of the game against the real Kakuna and scored against the game as played. Its raw lane (P\* against Kakuna, concurrency 1) is playing. | GO (lower bound of the mean gain > 0) licenses the amended S-U (§3). |
 | CPU: WAITING (`chain9.sh`) | **X59-S follow-up's in-house cells**: when the window's final check PASSES, export the 15 students and play 30 head-to-head cells from the read's pin tree. | Reads the follow-up (first row). |
 
@@ -59,6 +58,7 @@ Read at 17:45 PDT on 2026-10-30 from `python -m main.ops.arm_chain status` (each
 
 | when | job | result | what it decided |
 |---|---|---|---|
+| CPU 10-31 16:12 | **X63 Stage A: NOT PURSUED.** X63-U s2601 (X26@380M + 100M, 80 % of teams from the 17,876-team union) against X26c and X63-C on forum72 vs Kakuna: Δ_F **−0.69 pp [−3.75, +2.37]** (X63-U 0.512, X26c 0.521, X63-C 0.517; 4,000 games each), short of the +1.0 pp screen; home72 −1.05 [−4.62, +2.52] (reported). σ̂_CC = 0: the two controls differ by 0.43 pp, inside binomial noise. 18,000 games on ONE engine (E1) at the play pin 65b998da (tag x63-play-65b998da); every registered check PASS. Record `measurements/x63_2026-10-29/reads/stageA.json`. | The union continuation at share 0.8 gives no ≥ +1 pp F gain at one seed; a true +3 pp is outside the interval. It claims nothing for the era. | **Stage B does not fire**; s6302 is not read. P(NOT PURSUED) at a true +2 / +3 pp was 0.149 / 0.020 (σ = 0 row). |
 | GPU 10-30 14:45 | **X63-U s2601 TRAINED, clean** (1,269.9 min, 1,339 steps/s): K9(b) PASS (AM-6) and its dose recorded (`695b20b8c`). X63-C s6302, the control replicate, had trained earlier: K9(b) PASS, 1,242.9 min (`8a7f293f3`). X26c is the banked control. | Both arms of Stage A exist; no X63 score yet. | X63 is launched with r = 1 (AM-X63-R, `13084395e`, §6) and its canary rule AM-X63-CANARY (`71afc431e`: a FATAL made only of slice-0/2 per-parameter bf16 refusals, resumed at the pin, does not count toward the restart limit; at most two per seed). |
 | GPU 10-30 14:46-15:19 | **Canary slice-2 diagnosis** (`6b3966dc6`; verdict `7775b2241`): the compiled-numerics hypothesis is **RULED OUT at 5 states**; every state reads CONDITIONING (compiled median distance 0.09-0.55 of the fp32 dither null's maximum). The 30 GPU slow-tier rows all PASS (`1a07fd819`). | The refusals are an ill-conditioned single-row-carried parameter against a lucky eager denominator, not a compiler fault. | The bf16 per-parameter bar now divides by the fp32 dither null (`gen3_canary_param_null_v1`) **at new pins only**; runs pinned earlier keep the eager bar. The earlier stage-2 read stays **INCONCLUSIVE**: the row bar's cap stays 0.72 (`designs/training/canary_recalibration_2026-10-28.md`). |
 | CPU 10-30 17:24 | **X59-S, final**: SELF-PLAY-DATA-BETTER. Δ_data = S-H − S-S −7.28 pp [−10.29, −4.28] on U vs Kakuna (S-H 0.320, S-S 0.393); in-house −9.06 [−10.98, −7.14]. OWN-LABELS-BETTER: human labels −4.50 [−7.42, −1.58] against P\*'s on the same states (`c1d2d7fcb`). 901 units on one engine at the play pin 89c2c2501 (tag x59s-play-89c2c250, a commit off main). README `measurements/x59s_matched_students_2026-10-25/`. | The closure is **BLOCKED**: Δ_restriction (S-P0 − S-P) +2.85 pp [+0.14, +5.56] (`5bbba6096`); S-P0 = S-S (0.393), descriptive. | **H-BC dropped.** SELF-PLAY-DATA-BETTER closes nothing, so human data stays open and routes H-TEAMS first (X60-T). The ≥ 1500 follow-up is the first row above. |
@@ -71,22 +71,20 @@ Read at 17:45 PDT on 2026-10-30 from `python -m main.ops.arm_chain status` (each
 The orchestrator's order after REVIEW_2 of the all-null strategy (`69c7cd34d`), with the verdicts since 10-27 applied. Every item needs its GO.
 
 1. **X48**, production capacity at the plateau: READ 10-30, **NO-GO** (weak, "experts not engaged"; `b01dc048b`, §2). The next capacity read (N4 with its review's fixes, or N4-P-direct) is the orchestrator's choice; no N4 arm is on a chain.
-2. **X63**, a long union continuation (REGISTERED 2026-10-29, r = 1 per AM-X63-R `13084395e`, **Stage A trained and being read**;
-   [`endstate/design_x63_long_breadth_continuation.md`](endstate/design_x63_long_breadth_continuation.md),
-   PREREG [`x63_2026-10-29/`](research_state/measurements/x63_2026-10-29/PREREG.md)): X26 @380M + 100M with 80 % of
-   teams from a 17,876-team union (X62's recombined sixes 0.537 of draws, N1-P's procedural teams at its 3,000-team
-   tier 0.134, D3's 0.129), read on forum72 against Kakuna at the shared play pin against X26c and X63-C (both trained:
-   a 1-arm-v-2-control screen that also measures the +100M seed spread). X63-U s2601 trained clean (`695b20b8c`); the
-   18,000-game Stage A read plays on CPU under the spec of record (`962c4ea44`) and its deciding groups are due about
-   10-31 evening (§2). CONTINUE would register Stage B's read spec before any s6302 game; s6302 may train on the idle
-   GPU first (AM-X63-BSPEC, `7ffbe9428`), played only on CONTINUE. ≈ 20 GPU-h an arm.
+2. **X63**, a long union continuation: **Stage A read NOT PURSUED (10-31)**, so X63 stops at Stage A
+   ([`endstate/design_x63_long_breadth_continuation.md`](endstate/design_x63_long_breadth_continuation.md), PREREG
+   [`x63_2026-10-29/`](research_state/measurements/x63_2026-10-29/PREREG.md), read
+   [`reads/`](research_state/measurements/x63_2026-10-29/reads/README.md)). X26 @380M + 100M with 80 % of teams from a
+   17,876-team union scored Δ_F −0.69 pp [−3.75, +2.37] against X26c and X63-C on forum72 vs Kakuna, short of the
+   +1.0 pp screen; σ̂_CC = 0. Stage B does not fire, and s6302 is a speculative replicate not read for any decision.
+   Its REPORTED groups (the 400M / 430M nodes, H / P72 / rc72b, P\*) were never played (AM-X63-SPEC FINDING 11).
 3. **PR-1′**, the precision read re-scoped by REVIEW_2: D3 and N1-P against C0 on F (D1 reported only), 30,000–38,000
-   new Kakuna games at the frozen X35-frame shared pin `x35-shared-play-86cfdf7e` (E1, post-H22; reads.md §4). Information only; it gates nothing above it. X48's read has landed (10-30), but the agent cores are on X63 Stage A, the dlive raw lane and X59-S's follow-up cells (§2), so it can run only after them,
+   new Kakuna games at the frozen X35-frame shared pin `x35-shared-play-86cfdf7e` (E1, post-H22; reads.md §4). Information only; it gates nothing above it. X48's read has landed (10-30), but the agent cores are on the dlive raw lane and X59-S's follow-up cells (§2), so it can run only after them,
    or at once on a rented CPU box (§6).
 
 **Gated.** **X62**, P\*-forks on 12,000 recombined teams (REVISED DRAFT, `58cb02dc6`): its first gate, H-CTX, read
 SUPPORTED, so its corpus `x62_recomb_v1` is built (2026-10-29, as X63's largest component); then PR-1′ KILL retires the fork (N1-P read NULL, so it does not make X62 redundant). Per
-resource-day it ranks below X63, and X63 Stage A runs before X62 under both SUPPORTED and UNDECIDED (ruled 2026-10-27). **X53-N1** is not triggered: N1-P read NULL (10-30, `62e46874a`), not GO. **S-U** (one-ply search on unfamiliar teams, registered `ffd9a443a`) has two BLOCKERs from its review
+resource-day it ranked below X63, which ran first (ruled 2026-10-27) and read NOT PURSUED at Stage A (10-31); its rank is now the orchestrator's. **X53-N1** is not triggered: N1-P read NULL (10-30, `62e46874a`), not GO. **S-U** (one-ply search on unfamiliar teams, registered `ffd9a443a`) has two BLOCKERs from its review
 (`7aafa527f`): where its search rule departs from the policy at P\* (40 % of decisions) it picks the better move
 0.513 [0.447, 0.580] of the time, by our own playouts. Its sign-accuracy gate read **GO** (2026-10-28) at 0.635, but
 in the states where the true battle seed leaks (the leak's value, not its exposure, is higher on unfamiliar teams). The
@@ -104,7 +102,7 @@ than the production reads it was meant to gate). **N2**, the set-identity lever:
 compositional (`fd4160d76`). **PR-1 as first written**: replaced by PR-1′ (`69c7cd34d`). **rc72**: retired before any
 game counted, replaced by rc72b (`905c29f5b`). **The 20M stack fork**: superseded by X63.
 
-## 4. Results of the last two weeks (2026-10-20 → 10-30)
+## 4. Results of the last two weeks (2026-10-20 → 10-31)
 
 | lever / read | verdict | effect [95 % interval] | record |
 |---|---|---|---|
@@ -120,6 +118,7 @@ game counted, replaced by rc72b (`905c29f5b`). **The 20M stack fork**: supersede
 | X48 look 1: per-kind FFN experts at P\* | NO-GO, weak ("experts not engaged") | in-house dS −0.55 pp [−1.32, +0.21]; Kakuna on forum72 +2.06 [−0.06, +4.19], UNDECIDED | `b01dc048b` |
 | N1-P look 1: procedural breadth at the plateau | CONTINUE | F +0.75 pp [−1.56, +3.06]; P −3.27 [−4.20, −2.33] | `06dba8230` |
 | N1-P look 2, FINAL (one engine, E3) | NULL | F +0.55 pp [−1.26, +2.36]; in-house S −3.28 [−4.14, −2.43] | `62e46874a` |
+| X63 Stage A: +100M on a 17,876-team union at share 0.8 (one engine, E1) | NOT PURSUED (screen +1.0 pp) | F −0.69 pp [−3.75, +2.37]; home72 −1.05 [−4.62, +2.52]; σ̂_CC 0 | `x63_2026-10-29/reads/stageA.json` |
 | X59-S: human vs self-play data (15 matched students) | SELF-PLAY-DATA-BETTER; OWN-LABELS-BETTER; H-BC dropped; the closure BLOCKED | U vs Kakuna Δ_data −7.28 pp [−10.29, −4.28]; own labels −4.50 [−7.42, −1.58]; Δ_restriction +2.85 [+0.14, +5.56] | `c1d2d7fcb`, `5bbba6096` |
 | S-U gate: sign accuracy of S's departures from P\* (self-referee) | GO (pooled U, with the leak caveat); the leak-reduced re-gate (`dice="rolls"`) also GO | pooled-U 0.635 [0.578, 0.687] (n 346); re-gate 0.599 [0.543, 0.649] (n 362) | `fea88ceeb`, `a61375fa7` |
 | Belief prior mix, λ = 0.25 | NOT DETECTED | +1.50 pp [−2.74, +5.74] | `f299a7243` |
@@ -183,8 +182,8 @@ Every open owner question, in one place.
 1. **No lever we have measured closes goal (b)'s ≈ 4 pp alone.** D1, D3, X52 and the belief mix each read +1 to
    +3 pp with intervals ±3–4 pp wide. Kakuna games run on CPU at 160–230 an hour on the shared agent cores, so each
    look costs days. Breadth at 10⁴ procedural teams read NULL at the plateau (N1-P, 10-30), so
-   [X53-N1](endstate/design_x53_n1_fresh_breadth.md) is not triggered. The bets left are recombined teams (X62; H-CTX
-   supports them) and a long union continuation (X63). If the levers miss, the fallback is
+   [X53-N1](endstate/design_x53_n1_fresh_breadth.md) is not triggered. The bet left is recombined teams (X62; H-CTX
+   supports them); the long union continuation (X63) read NOT PURSUED at Stage A (10-31). If the levers miss, the fallback is
    [`endstate/strategy_if_levers_null_2026-10-26.md`](endstate/strategy_if_levers_null_2026-10-26.md), revised after
    its [review](research_state/measurements/strategy_review_2026-10-26/REVIEW.md) (`6fca2c061`) and re-ranked by
    [REVIEW_2](research_state/measurements/strategy_review_2026-10-26/REVIEW_2.md) (`69c7cd34d`, §3 above).

@@ -1,0 +1,114 @@
+{
+ "decision": {
+  "class": "NOT PURSUED",
+  "reasons": [],
+  "sigma_cc": 0.0,
+  "stage": "A",
+  "stage_a_power": {
+   "row": {
+    "p_np_at_2pp": 0.149,
+    "p_np_at_3pp": 0.02,
+    "sigma_pp": 0.0
+   },
+   "sigma_cc_pp": 0.0,
+   "source": "designs/research_state/measurements/x63_2026-10-29/power/power_x63_v2.log section A, rows 'floor 1.0 t-when-above, INC 3.0 (REGISTERED)', sigma_arm = sigma_ctl, the NOT PURSUED column at true Delta +2.0 / +3.0"
+  },
+  "tests": {
+   "delta >= screen": {
+    "crosses": false,
+    "near": false
+   }
+  },
+  "verdict": "NOT PURSUED"
+ },
+ "primary": {
+  "binomial_part": 9.366619921875e-05,
+  "delta": -0.0068750000000000755,
+  "df": 1,
+  "k_off": 2,
+  "k_on": 1,
+  "lb": -0.03746966759192707,
+  "mean_off": 0.5191250000000001,
+  "mean_on": 0.51225,
+  "p_off": [
+   0.52125,
+   0.517
+  ],
+  "p_on": [
+   0.51225
+  ],
+  "q": 1.959964,
+  "q_kind": "z",
+  "se": 0.01560981099240955,
+  "seed_terms": {
+   "off": {
+    "mean_pq_over_g": 6.240742968749999e-05,
+    "sample_var": 9.031249999999898e-06,
+    "term": -5.3376179687500094e-05
+   }
+  },
+  "sigma_eff": 0.01,
+  "sigma_hat": 0.0,
+  "sigma_hat_sq": -5.3376179687500094e-05,
+  "ub": 0.023719667591926917
+ },
+ "reported": {
+  "cluster_bootstrap_delta_f": {
+   "ci95": [
+    -0.025246055777559565,
+    0.01144474958306814
+   ],
+   "clusters": 72,
+   "computed": true,
+   "draws": 10000,
+   "sd": 0.009307120750988515,
+   "seed": 0,
+   "used_draws": 10000
+  },
+  "home": {
+   "stat": {
+    "binomial_part": 0.00018178681249999998,
+    "delta": -0.010500000000000065,
+    "df": 1,
+    "k_off": 2,
+    "k_on": 1,
+    "lb": -0.046200775867969876,
+    "mean_off": 0.5940000000000001,
+    "mean_on": 0.5835,
+    "p_off": [
+     0.5855,
+     0.6025
+    ],
+    "p_on": [
+     0.5835
+    ],
+    "q": 1.959964,
+    "q_kind": "z",
+    "se": 0.018215016126811416,
+    "seed_terms": {
+     "off": {
+      "mean_pq_over_g": 0.000120545875,
+      "sample_var": 0.00014450000000000026,
+      "term": 2.3954125000000254e-05
+     }
+    },
+    "sigma_eff": 0.01,
+    "sigma_hat": 0.0048942951484356005,
+    "sigma_hat_sq": 2.3954125000000254e-05,
+    "ub": 0.025200775867969746
+   },
+   "status": "OK"
+  }
+ },
+ "schema": "gen3_read_x63_kvk_v1",
+ "sides": {
+  "off": [
+   "x26c_s2601",
+   "x63c_s6302"
+  ],
+  "on": [
+   "x63u_s2601"
+  ]
+ },
+ "stage": "A"
+}

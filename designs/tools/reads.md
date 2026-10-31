@@ -502,7 +502,12 @@ A read that imports banked forum72 / away / pool Kakuna rows (D3 look 2's C0) mu
     the rule set in `rules_test.py`), because the frozen pin's spec parser refuses a rule it does not hold. Its play
     path equals `86cfdf7ef`'s (`playpath.compare`: 0 differences, digest `afedc505f0e2…` over 1,715 files), so its
     regime is the frozen pin's. Its `package_doc_test` fails by construction: naming the module in
-    `main/reads/__init__.py`, which is on the play path, would break that identity.
+    `main/reads/__init__.py`, which is on the play path, would break that identity. **READ 2026-10-31:** X63 Stage A,
+    NOT PURSUED (spec of record `x63_2026-10-29/read_spec.json`, AM-X63-SPEC; record `x63_2026-10-29/reads/stageA.json`):
+    900 units on E1, forum72 id `5e1e14aaa845e97e` (= the frozen pin's), a counted unit re-played 20 / 20 by choice.
+    Like N1-P's play commit it captures panel cells only, so G14's forced-end half reads `unavailable` on home72, where
+    the in-tree forfeit-win guard is armed on every unit. Its anchor lane queues every group by seed index, so a
+    REPORTED group sharing a state with a deciding group plays interleaved with it (AM-X63-SPEC FINDING 11).
 - **X59-S games / X60:** one engine per read, named at registration. **X61P look 2** (READ 2026-10-30, NULL) played
   at look 1's commit `de15dfc7b`, so its import from look 1 is on E3 with Kakuna's legacy pack and the legacy sides
   (PREREG AM-N1P-2); its record was written from main. The play commit writes no capture for home72 units, so G14's

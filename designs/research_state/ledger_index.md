@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-30,346-line file. **The ledger itself is append-only and is never edited by this**;
+30,399-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**989 headings · 934 dated · 2026-08-01 → 2026-10-30 · ledger 30,346 lines.**
+**990 headings · 935 dated · 2026-08-01 → 2026-10-31 · ledger 30,399 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -1009,3 +1009,4 @@ rename.
   - `L30239` · `2026-10-30` · MEASUREMENT · **X61P N1-P LOOK 2 (FINAL) reads NULL: breadth at 10⁴ procedural teams moves F (forum72, the primary) by +0.55 pp [−1.26, +2.36] over the shared C0 (N1-P 0.509 vs 0.504, 6,000 games per arm, 5 seeds), inside ±3 pp; in-house S on home72 −3.28 pp [−4.14, −2.43] (INFERIORITY-NOT-EXCLUDED). Rules out "N1 at the plateau" only; X53-N1 not triggered; X63 unchanged. Reported only: H +4.14, U +2.52 [−0.02, +5.05], Δ_H − Δ_F +3.59**
   - `L30293` · `2026-10-30` · FINDING + FIX · **The slice-2 canary refusals are the function's conditioning, not the compiler: the GPU replay reads all five refusing states CONDITIONING (compiled median 0.09-0.55 of the fp32 dither null's maximum), so a real compiled-numerics fault is RULED OUT there; the canary's bf16 per-parameter bar now divides by max(eager, that null, floor) at new pins (`gen3_canary_param_null_v1`)**
   - `L30329` · `2026-10-30` · MEASUREMENT · **X59-S's closure is BLOCKED: Δ_restriction = S-P0 − S-P reads +2.85 pp [+0.14, +5.56] (registered guard, Amendment 6 A6.1), so SELF-PLAY-DATA-BETTER closes nothing; human data stays open as a lever and routes H-TEAMS first (X60-T); H-BC stays dropped**
+  - `L30347` · `2026-10-31` · MEASUREMENT · **X63 STAGE A reads NOT PURSUED: a +100M continuation of the plateau (X26@380M) with 80 % of each side's teams from the 17,876-team union `x63_union_v1` scores Δ_F −0.69 pp [−3.75, +2.37] on forum72 against Kakuna versus the two pool-only continuations (X63-U 0.512 vs X26c 0.521 and X63-C 0.517, 4,000 games each), short of the +1.0 pp screen; σ̂_CC = 0 (the controls differ by 0.43 pp, inside binomial noise); Stage B does not fire, s6302 is a speculative replicate not read for any decision**

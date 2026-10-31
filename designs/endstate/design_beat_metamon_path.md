@@ -242,7 +242,8 @@ The reads point at one mechanism: X26 plays a team well in proportion to how muc
     lift ≈ random; pool pair PMI −0.22 against F's +0.05). Memorised sixes, core (pair) knowledge that human teams
     keep, and a plan-less recombined six all fit (review `measurements/hctx_rc72_2026-10-26/REVIEW.md` M1, M2).
   - **The levers:** they are recombined teams (X62, whose first gate this was), procedural teams (N1-P) and their
-    union (X63). X62's corpus breaks cores as rc72b does, so only F reads it.
+    union (X63, Stage A NOT PURSUED 2026-10-31: F −0.69 pp [−3.75, +2.37]). X62's corpus breaks cores as rc72b does,
+    so only F reads it.
   - **A-K, measured (2026-10-28, `measurements/hctx_kk_2026-10-27/`).** With Kakuna on both sides, rc72b scores
     0.459 [0.428, 0.493] against home72 + F teams: UNDECIDED, detected weaker by about 4 pp (−28 Elo).
     - It is flat across coherence thirds, so the weakness is not what the coherence metrics track.

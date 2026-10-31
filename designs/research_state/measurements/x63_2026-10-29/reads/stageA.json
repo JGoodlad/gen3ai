@@ -1,0 +1,3280 @@
+{
+ "cells_inconclusive": [],
+ "code": {
+  "commit": "65b998daffffaa1669b0b4ef840874e23edc12d3",
+  "diff_sha": "e3b0c44298fc1c14",
+  "dirty": false,
+  "pin": "65b998daffffaa1669b0b4ef840874e23edc12d3",
+  "root": "/home/goodlad/dev/gen3ai-reads/x63_play_65b998da"
+ },
+ "completeness": {
+  "class": "COMPLETE"
+ },
+ "created": "2026-10-31T16:12:51-0700",
+ "decision": {
+  "decision": {
+   "class": "NOT PURSUED",
+   "reasons": [],
+   "sigma_cc": 0.0,
+   "stage": "A",
+   "stage_a_power": {
+    "row": {
+     "p_np_at_2pp": 0.149,
+     "p_np_at_3pp": 0.02,
+     "sigma_pp": 0.0
+    },
+    "sigma_cc_pp": 0.0,
+    "source": "designs/research_state/measurements/x63_2026-10-29/power/power_x63_v2.log section A, rows 'floor 1.0 t-when-above, INC 3.0 (REGISTERED)', sigma_arm = sigma_ctl, the NOT PURSUED column at true Delta +2.0 / +3.0"
+   },
+   "tests": {
+    "delta >= screen": {
+     "crosses": false,
+     "near": false
+    }
+   },
+   "verdict": "NOT PURSUED"
+  },
+  "primary": {
+   "binomial_part": 9.366619921875e-05,
+   "delta": -0.0068750000000000755,
+   "df": 1,
+   "k_off": 2,
+   "k_on": 1,
+   "lb": -0.03746966759192707,
+   "mean_off": 0.5191250000000001,
+   "mean_on": 0.51225,
+   "p_off": [
+    0.52125,
+    0.517
+   ],
+   "p_on": [
+    0.51225
+   ],
+   "q": 1.959964,
+   "q_kind": "z",
+   "se": 0.01560981099240955,
+   "seed_terms": {
+    "off": {
+     "mean_pq_over_g": 6.240742968749999e-05,
+     "sample_var": 9.031249999999898e-06,
+     "term": -5.3376179687500094e-05
+    }
+   },
+   "sigma_eff": 0.01,
+   "sigma_hat": 0.0,
+   "sigma_hat_sq": -5.3376179687500094e-05,
+   "ub": 0.023719667591926917
+  },
+  "reported": {
+   "cluster_bootstrap_delta_f": {
+    "ci95": [
+     -0.025246055777559565,
+     0.01144474958306814
+    ],
+    "clusters": 72,
+    "computed": true,
+    "draws": 10000,
+    "sd": 0.009307120750988515,
+    "seed": 0,
+    "used_draws": 10000
+   },
+   "home": {
+    "stat": {
+     "binomial_part": 0.00018178681249999998,
+     "delta": -0.010500000000000065,
+     "df": 1,
+     "k_off": 2,
+     "k_on": 1,
+     "lb": -0.046200775867969876,
+     "mean_off": 0.5940000000000001,
+     "mean_on": 0.5835,
+     "p_off": [
+      0.5855,
+      0.6025
+     ],
+     "p_on": [
+      0.5835
+     ],
+     "q": 1.959964,
+     "q_kind": "z",
+     "se": 0.018215016126811416,
+     "seed_terms": {
+      "off": {
+       "mean_pq_over_g": 0.000120545875,
+       "sample_var": 0.00014450000000000026,
+       "term": 2.3954125000000254e-05
+      }
+     },
+     "sigma_eff": 0.01,
+     "sigma_hat": 0.0048942951484356005,
+     "sigma_hat_sq": 2.3954125000000254e-05,
+     "ub": 0.025200775867969746
+    },
+    "status": "OK"
+   }
+  },
+  "schema": "gen3_read_x63_kvk_v1",
+  "sides": {
+   "off": [
+    "x26c_s2601",
+    "x63c_s6302"
+   ],
+   "on": [
+    "x63u_s2601"
+   ]
+  },
+  "stage": "A"
+ },
+ "imports": {},
+ "inputs": {
+  "groups": {
+   "home": {
+    "engine": "port=7d932165eced1c79/90;env=7c53280566d666ae/125",
+    "group": "home",
+    "inconclusive": [],
+    "models": {
+     "x26c_s2601": {
+      "home72": {
+       "n": 2000,
+       "planned": 100,
+       "skipped": 0,
+       "ties": 4,
+       "units": 100,
+       "wins": 1171
+      }
+     },
+     "x63c_s6302": {
+      "home72": {
+       "n": 2000,
+       "planned": 100,
+       "skipped": 0,
+       "ties": 1,
+       "units": 100,
+       "wins": 1205
+      }
+     },
+     "x63u_s2601": {
+      "home72": {
+       "n": 2000,
+       "planned": 100,
+       "skipped": 0,
+       "ties": 0,
+       "units": 100,
+       "wins": 1167
+      }
+     }
+    },
+    "regime_id": "8ffa8e6966aeb8f5",
+    "teamsets": [
+     "home72"
+    ],
+    "unplayed": 0
+   },
+   "primary": {
+    "engine": "port=7d932165eced1c79/90;env=7c53280566d666ae/125",
+    "group": "primary",
+    "inconclusive": [],
+    "models": {
+     "x26c_s2601": {
+      "forum72": {
+       "n": 4000,
+       "planned": 200,
+       "skipped": 0,
+       "ties": 4,
+       "units": 200,
+       "wins": 2085
+      }
+     },
+     "x63c_s6302": {
+      "forum72": {
+       "n": 4000,
+       "planned": 200,
+       "skipped": 0,
+       "ties": 8,
+       "units": 200,
+       "wins": 2068
+      }
+     },
+     "x63u_s2601": {
+      "forum72": {
+       "n": 4000,
+       "planned": 200,
+       "skipped": 0,
+       "ties": 9,
+       "units": 200,
+       "wins": 2049
+      }
+     }
+    },
+    "regime_id": "304abd87775f371b",
+    "teams": {
+     "x26c_s2601": {
+      "sft036.txt": [
+       37,
+       58
+      ],
+      "sft050.txt": [
+       34,
+       56
+      ],
+      "sft052.txt": [
+       22,
+       52
+      ],
+      "sft053.txt": [
+       16,
+       36
+      ],
+      "sft054.txt": [
+       41,
+       70
+      ],
+      "sft055.txt": [
+       34,
+       78
+      ],
+      "sft056.txt": [
+       9,
+       46
+      ],
+      "sft057.txt": [
+       36,
+       70
+      ],
+      "sft058.txt": [
+       31,
+       68
+      ],
+      "sft059.txt": [
+       31,
+       60
+      ],
+      "sft060.txt": [
+       34,
+       60
+      ],
+      "sft061.txt": [
+       28,
+       62
+      ],
+      "sft063.txt": [
+       25,
+       50
+      ],
+      "sft064.txt": [
+       13,
+       46
+      ],
+      "sft065.txt": [
+       31,
+       58
+      ],
+      "sft066.txt": [
+       18,
+       34
+      ],
+      "sft067.txt": [
+       29,
+       50
+      ],
+      "sft071.txt": [
+       34,
+       54
+      ],
+      "sft072.txt": [
+       41,
+       58
+      ],
+      "sft073.txt": [
+       28,
+       50
+      ],
+      "sft074.txt": [
+       32,
+       52
+      ],
+      "sft076.txt": [
+       29,
+       52
+      ],
+      "sft077.txt": [
+       42,
+       68
+      ],
+      "sft078.txt": [
+       14,
+       42
+      ],
+      "sft079.txt": [
+       5,
+       46
+      ],
+      "sft080.txt": [
+       21,
+       60
+      ],
+      "sft081.txt": [
+       41,
+       64
+      ],
+      "sft082.txt": [
+       39,
+       74
+      ],
+      "sft085.txt": [
+       38,
+       68
+      ],
+      "sft086.txt": [
+       29,
+       58
+      ],
+      "sft087.txt": [
+       39,
+       58
+      ],
+      "sft089.txt": [
+       28,
+       50
+      ],
+      "sft090.txt": [
+       40,
+       64
+      ],
+      "sft091.txt": [
+       30,
+       44
+      ],
+      "sft092.txt": [
+       25,
+       52
+      ],
+      "sft093.txt": [
+       20,
+       40
+      ],
+      "sft094.txt": [
+       20,
+       40
+      ],
+      "sft095.txt": [
+       21,
+       44
+      ],
+      "sft104.txt": [
+       24,
+       54
+      ],
+      "sft105.txt": [
+       24,
+       46
+      ],
+      "sft108.txt": [
+       27,
+       56
+      ],
+      "sft109.txt": [
+       25,
+       40
+      ],
+      "sft110.txt": [
+       20,
+       34
+      ],
+      "sft116.txt": [
+       28,
+       46
+      ],
+      "sft121.txt": [
+       34,
+       76
+      ],
+      "sft123.txt": [
+       28,
+       62
+      ],
+      "sft127.txt": [
+       31,
+       62
+      ],
+      "sft128.txt": [
+       27,
+       50
+      ],
+      "sft144.txt": [
+       29,
+       50
+      ],
+      "sft153.txt": [
+       25,
+       58
+      ],
+      "sft157.txt": [
+       19,
+       52
+      ],
+      "sft180.txt": [
+       23,
+       52
+      ],
+      "sft323.txt": [
+       37,
+       68
+      ],
+      "sft342.txt": [
+       46,
+       70
+      ],
+      "sft352.txt": [
+       30,
+       52
+      ],
+      "sft361.txt": [
+       32,
+       60
+      ],
+      "sft365.txt": [
+       37,
+       68
+      ],
+      "sft368.txt": [
+       34,
+       66
+      ],
+      "sft369.txt": [
+       19,
+       38
+      ],
+      "sft376.txt": [
+       26,
+       50
+      ],
+      "sft384.txt": [
+       32,
+       56
+      ],
+      "sft386.txt": [
+       33,
+       68
+      ],
+      "sft387.txt": [
+       38,
+       70
+      ],
+      "sft413.txt": [
+       30,
+       58
+      ],
+      "sft419.txt": [
+       28,
+       52
+      ],
+      "sft429.txt": [
+       32,
+       64
+      ],
+      "sft431.txt": [
+       9,
+       38
+      ],
+      "sft432.txt": [
+       31,
+       58
+      ],
+      "sft433.txt": [
+       27,
+       50
+      ],
+      "sft434.txt": [
+       60,
+       78
+      ],
+      "sft435.txt": [
+       21,
+       48
+      ],
+      "sft436.txt": [
+       34,
+       58
+      ]
+     },
+     "x63c_s6302": {
+      "sft036.txt": [
+       43,
+       58
+      ],
+      "sft050.txt": [
+       33,
+       56
+      ],
+      "sft052.txt": [
+       25,
+       52
+      ],
+      "sft053.txt": [
+       13,
+       36
+      ],
+      "sft054.txt": [
+       39,
+       70
+      ],
+      "sft055.txt": [
+       30,
+       78
+      ],
+      "sft056.txt": [
+       10,
+       46
+      ],
+      "sft057.txt": [
+       33,
+       70
+      ],
+      "sft058.txt": [
+       30,
+       68
+      ],
+      "sft059.txt": [
+       30,
+       60
+      ],
+      "sft060.txt": [
+       36,
+       60
+      ],
+      "sft061.txt": [
+       24,
+       62
+      ],
+      "sft063.txt": [
+       21,
+       50
+      ],
+      "sft064.txt": [
+       13,
+       46
+      ],
+      "sft065.txt": [
+       37,
+       58
+      ],
+      "sft066.txt": [
+       11,
+       34
+      ],
+      "sft067.txt": [
+       28,
+       50
+      ],
+      "sft071.txt": [
+       33,
+       54
+      ],
+      "sft072.txt": [
+       39,
+       58
+      ],
+      "sft073.txt": [
+       27,
+       50
+      ],
+      "sft074.txt": [
+       37,
+       52
+      ],
+      "sft076.txt": [
+       27,
+       52
+      ],
+      "sft077.txt": [
+       44,
+       68
+      ],
+      "sft078.txt": [
+       18,
+       42
+      ],
+      "sft079.txt": [
+       7,
+       46
+      ],
+      "sft080.txt": [
+       16,
+       60
+      ],
+      "sft081.txt": [
+       38,
+       64
+      ],
+      "sft082.txt": [
+       41,
+       74
+      ],
+      "sft085.txt": [
+       40,
+       68
+      ],
+      "sft086.txt": [
+       34,
+       58
+      ],
+      "sft087.txt": [
+       30,
+       58
+      ],
+      "sft089.txt": [
+       25,
+       50
+      ],
+      "sft090.txt": [
+       39,
+       64
+      ],
+      "sft091.txt": [
+       34,
+       44
+      ],
+      "sft092.txt": [
+       15,
+       52
+      ],
+      "sft093.txt": [
+       16,
+       40
+      ],
+      "sft094.txt": [
+       25,
+       40
+      ],
+      "sft095.txt": [
+       28,
+       44
+      ],
+      "sft104.txt": [
+       26,
+       54
+      ],
+      "sft105.txt": [
+       27,
+       46
+      ],
+      "sft108.txt": [
+       29,
+       56
+      ],
+      "sft109.txt": [
+       25,
+       40
+      ],
+      "sft110.txt": [
+       13,
+       34
+      ],
+      "sft116.txt": [
+       23,
+       46
+      ],
+      "sft121.txt": [
+       34,
+       76
+      ],
+      "sft123.txt": [
+       26,
+       62
+      ],
+      "sft127.txt": [
+       39,
+       62
+      ],
+      "sft128.txt": [
+       29,
+       50
+      ],
+      "sft144.txt": [
+       26,
+       50
+      ],
+      "sft153.txt": [
+       27,
+       58
+      ],
+      "sft157.txt": [
+       25,
+       52
+      ],
+      "sft180.txt": [
+       31,
+       52
+      ],
+      "sft323.txt": [
+       38,
+       68
+      ],
+      "sft342.txt": [
+       43,
+       70
+      ],
+      "sft352.txt": [
+       34,
+       52
+      ],
+      "sft361.txt": [
+       38,
+       60
+      ],
+      "sft365.txt": [
+       28,
+       68
+      ],
+      "sft368.txt": [
+       38,
+       66
+      ],
+      "sft369.txt": [
+       20,
+       38
+      ],
+      "sft376.txt": [
+       26,
+       50
+      ],
+      "sft384.txt": [
+       24,
+       56
+      ],
+      "sft386.txt": [
+       34,
+       68
+      ],
+      "sft387.txt": [
+       28,
+       70
+      ],
+      "sft413.txt": [
+       29,
+       58
+      ],
+      "sft419.txt": [
+       33,
+       52
+      ],
+      "sft429.txt": [
+       33,
+       64
+      ],
+      "sft431.txt": [
+       13,
+       38
+      ],
+      "sft432.txt": [
+       31,
+       58
+      ],
+      "sft433.txt": [
+       22,
+       50
+      ],
+      "sft434.txt": [
+       46,
+       78
+      ],
+      "sft435.txt": [
+       26,
+       48
+      ],
+      "sft436.txt": [
+       35,
+       58
+      ]
+     },
+     "x63u_s2601": {
+      "sft036.txt": [
+       40,
+       58
+      ],
+      "sft050.txt": [
+       33,
+       56
+      ],
+      "sft052.txt": [
+       25,
+       52
+      ],
+      "sft053.txt": [
+       11,
+       36
+      ],
+      "sft054.txt": [
+       44,
+       70
+      ],
+      "sft055.txt": [
+       36,
+       78
+      ],
+      "sft056.txt": [
+       12,
+       46
+      ],
+      "sft057.txt": [
+       26,
+       70
+      ],
+      "sft058.txt": [
+       31,
+       68
+      ],
+      "sft059.txt": [
+       29,
+       60
+      ],
+      "sft060.txt": [
+       28,
+       60
+      ],
+      "sft061.txt": [
+       26,
+       62
+      ],
+      "sft063.txt": [
+       21,
+       50
+      ],
+      "sft064.txt": [
+       13,
+       46
+      ],
+      "sft065.txt": [
+       36,
+       58
+      ],
+      "sft066.txt": [
+       11,
+       34
+      ],
+      "sft067.txt": [
+       28,
+       50
+      ],
+      "sft071.txt": [
+       20,
+       54
+      ],
+      "sft072.txt": [
+       36,
+       58
+      ],
+      "sft073.txt": [
+       28,
+       50
+      ],
+      "sft074.txt": [
+       35,
+       52
+      ],
+      "sft076.txt": [
+       33,
+       52
+      ],
+      "sft077.txt": [
+       41,
+       68
+      ],
+      "sft078.txt": [
+       24,
+       42
+      ],
+      "sft079.txt": [
+       8,
+       46
+      ],
+      "sft080.txt": [
+       19,
+       60
+      ],
+      "sft081.txt": [
+       38,
+       64
+      ],
+      "sft082.txt": [
+       41,
+       74
+      ],
+      "sft085.txt": [
+       43,
+       68
+      ],
+      "sft086.txt": [
+       33,
+       58
+      ],
+      "sft087.txt": [
+       33,
+       58
+      ],
+      "sft089.txt": [
+       33,
+       50
+      ],
+      "sft090.txt": [
+       37,
+       64
+      ],
+      "sft091.txt": [
+       26,
+       44
+      ],
+      "sft092.txt": [
+       25,
+       52
+      ],
+      "sft093.txt": [
+       14,
+       40
+      ],
+      "sft094.txt": [
+       16,
+       40
+      ],
+      "sft095.txt": [
+       23,
+       44
+      ],
+      "sft104.txt": [
+       31,
+       54
+      ],
+      "sft105.txt": [
+       25,
+       46
+      ],
+      "sft108.txt": [
+       29,
+       56
+      ],
+      "sft109.txt": [
+       27,
+       40
+      ],
+      "sft110.txt": [
+       13,
+       34
+      ],
+      "sft116.txt": [
+       22,
+       46
+      ],
+      "sft121.txt": [
+       35,
+       76
+      ],
+      "sft123.txt": [
+       30,
+       62
+      ],
+      "sft127.txt": [
+       38,
+       62
+      ],
+      "sft128.txt": [
+       30,
+       50
+      ],
+      "sft144.txt": [
+       35,
+       50
+      ],
+      "sft153.txt": [
+       23,
+       58
+      ],
+      "sft157.txt": [
+       21,
+       52
+      ],
+      "sft180.txt": [
+       25,
+       52
+      ],
+      "sft323.txt": [
+       32,
+       68
+      ],
+      "sft342.txt": [
+       46,
+       70
+      ],
+      "sft352.txt": [
+       37,
+       52
+      ],
+      "sft361.txt": [
+       32,
+       60
+      ],
+      "sft365.txt": [
+       33,
+       68
+      ],
+      "sft368.txt": [
+       32,
+       66
+      ],
+      "sft369.txt": [
+       24,
+       38
+      ],
+      "sft376.txt": [
+       24,
+       50
+      ],
+      "sft384.txt": [
+       21,
+       56
+      ],
+      "sft386.txt": [
+       27,
+       68
+      ],
+      "sft387.txt": [
+       39,
+       70
+      ],
+      "sft413.txt": [
+       16,
+       58
+      ],
+      "sft419.txt": [
+       27,
+       52
+      ],
+      "sft429.txt": [
+       35,
+       64
+      ],
+      "sft431.txt": [
+       8,
+       38
+      ],
+      "sft432.txt": [
+       35,
+       58
+      ],
+      "sft433.txt": [
+       19,
+       50
+      ],
+      "sft434.txt": [
+       56,
+       78
+      ],
+      "sft435.txt": [
+       27,
+       48
+      ],
+      "sft436.txt": [
+       39,
+       58
+      ]
+     }
+    },
+    "teams_why": "",
+    "teamsets": [
+     "forum72"
+    ],
+    "unplayed": 0
+   }
+  },
+  "reported": {},
+  "schema": "gen3_read_x63_kvk_v1",
+  "seeds": {
+   "x26c_s2601": 2601,
+   "x63c_s6302": 6302,
+   "x63u_s2601": 2601
+  },
+  "sides": {
+   "off": [
+    "x26c_s2601",
+    "x63c_s6302"
+   ],
+   "on": [
+    "x63u_s2601"
+   ]
+  },
+  "stage": "A"
+ },
+ "ledgers": {},
+ "models": {
+  "x26c_s2601": {
+   "arm": "x26c",
+   "seed": 2601,
+   "sha256": "cba7a1f835930e618871cfcafcc78d95320bd0c3b20210d4f423f0b4ff72fc4c",
+   "source": "/home/goodlad/dev/gen3ai/models/rb_x26c_s2601/final_model.zip",
+   "step": 480081209
+  },
+  "x63c_s6302": {
+   "arm": "x63c",
+   "seed": 6302,
+   "sha256": "e778c4a46e3bade7bfcf4d439ee85a0a80c16e5c4bb5dbeecb2e64b343826f0b",
+   "source": "/home/goodlad/dev/gen3ai/models/rb_x63c_s6302/final_model.zip",
+   "step": 480080819
+  },
+  "x63u_s2601": {
+   "arm": "x63u",
+   "seed": 2601,
+   "sha256": "de2838cd074e98e623f11155f151766dc5182ddeaf9973fdd9449facf4c9e781",
+   "source": "/home/goodlad/dev/gen3ai/models/rb_x63u_s2601/final_model.zip",
+   "step": 480081047
+  }
+ },
+ "prereg": "designs/research_state/measurements/x63_2026-10-29/PREREG.md",
+ "read": "x63_kvk_2026-10-29",
+ "rederived_guards": {
+  "held": false,
+  "hits": [],
+  "mode": "count",
+  "schema": "gen3_read_rederived_guards_v1",
+  "unavailable": [
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1000",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1000"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1001",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1001"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1002",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1002"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1003",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1003"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1004",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1004"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1005",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1005"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1006",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1006"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1007",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1007"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1008",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1008"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1009",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1009"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1010",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1010"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1011",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1011"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1012",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1012"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1013",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1013"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1014",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1014"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1015",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1015"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1016",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1016"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1017",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1017"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1018",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1018"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1019",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1019"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1020",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1020"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1021",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1021"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1022",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1022"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1023",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1023"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1024",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1024"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1025",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1025"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1026",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1026"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1027",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1027"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1028",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1028"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1029",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1029"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1030",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1030"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1031",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1031"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1032",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1032"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1033",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1033"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1034",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1034"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1035",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1035"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1036",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1036"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1037",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1037"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1038",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1038"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1039",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1039"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1040",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1040"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1041",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1041"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1042",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1042"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1043",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1043"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1044",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1044"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1045",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1045"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1046",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1046"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1047",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1047"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1048",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1048"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1049",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1049"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1050",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1050"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1051",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1051"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1052",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1052"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1053",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1053"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1054",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1054"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1055",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1055"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1056",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1056"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1057",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1057"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1058",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1058"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1059",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1059"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1060",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1060"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1061",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1061"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1062",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1062"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1063",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1063"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1064",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1064"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1065",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1065"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1066",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1066"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1067",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1067"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1068",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1068"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1069",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1069"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1070",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1070"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1071",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1071"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1072",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1072"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1073",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1073"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1074",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1074"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1075",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1075"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1076",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1076"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1077",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1077"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1078",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1078"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1079",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1079"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1080",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1080"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1081",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1081"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1082",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1082"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1083",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1083"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1084",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1084"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1085",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1085"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1086",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1086"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1087",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1087"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1088",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1088"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1089",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1089"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1090",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1090"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1091",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1091"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1092",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1092"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1093",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1093"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1094",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1094"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1095",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1095"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1096",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1096"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1097",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1097"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1098",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1098"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x26c_s2601__home72__1099",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x26c_s2601/cells/x26c_s2601__home72__1099"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1000",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1000"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1001",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1001"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1002",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1002"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1003",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1003"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1004",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1004"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1005",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1005"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1006",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1006"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1007",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1007"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1008",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1008"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1009",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1009"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1010",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1010"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1011",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1011"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1012",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1012"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1013",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1013"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1014",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1014"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1015",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1015"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1016",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1016"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1017",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1017"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1018",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1018"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1019",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1019"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1020",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1020"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1021",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1021"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1022",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1022"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1023",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1023"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1024",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1024"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1025",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1025"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1026",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1026"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1027",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1027"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1028",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1028"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1029",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1029"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1030",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1030"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1031",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1031"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1032",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1032"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1033",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1033"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1034",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1034"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1035",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1035"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1036",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1036"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1037",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1037"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1038",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1038"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1039",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1039"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1040",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1040"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1041",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1041"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1042",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1042"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1043",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1043"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1044",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1044"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1045",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1045"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1046",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1046"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1047",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1047"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1048",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1048"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1049",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1049"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1050",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1050"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1051",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1051"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1052",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1052"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1053",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1053"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1054",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1054"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1055",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1055"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1056",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1056"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1057",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1057"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1058",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1058"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1059",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1059"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1060",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1060"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1061",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1061"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1062",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1062"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1063",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1063"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1064",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1064"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1065",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1065"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1066",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1066"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1067",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1067"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1068",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1068"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1069",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1069"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1070",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1070"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1071",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1071"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1072",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1072"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1073",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1073"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1074",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1074"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1075",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1075"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1076",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1076"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1077",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1077"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1078",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1078"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1079",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1079"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1080",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1080"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1081",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1081"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1082",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1082"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1083",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1083"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1084",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1084"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1085",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1085"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1086",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1086"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1087",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1087"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1088",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1088"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1089",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1089"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1090",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1090"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1091",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1091"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1092",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1092"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1093",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1093"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1094",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1094"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1095",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1095"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1096",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1096"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1097",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1097"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1098",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1098"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63c_s6302__home72__1099",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63c_s6302/cells/x63c_s6302__home72__1099"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1000",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1000"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1001",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1001"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1002",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1002"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1003",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1003"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1004",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1004"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1005",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1005"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1006",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1006"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1007",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1007"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1008",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1008"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1009",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1009"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1010",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1010"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1011",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1011"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1012",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1012"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1013",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1013"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1014",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1014"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1015",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1015"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1016",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1016"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1017",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1017"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1018",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1018"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1019",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1019"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1020",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1020"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1021",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1021"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1022",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1022"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1023",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1023"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1024",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1024"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1025",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1025"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1026",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1026"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1027",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1027"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1028",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1028"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1029",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1029"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1030",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1030"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1031",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1031"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1032",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1032"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1033",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1033"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1034",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1034"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1035",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1035"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1036",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1036"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1037",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1037"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1038",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1038"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1039",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1039"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1040",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1040"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1041",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1041"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1042",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1042"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1043",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1043"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1044",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1044"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1045",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1045"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1046",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1046"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1047",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1047"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1048",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1048"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1049",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1049"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1050",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1050"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1051",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1051"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1052",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1052"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1053",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1053"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1054",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1054"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1055",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1055"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1056",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1056"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1057",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1057"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1058",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1058"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1059",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1059"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1060",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1060"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1061",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1061"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1062",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1062"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1063",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1063"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1064",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1064"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1065",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1065"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1066",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1066"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1067",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1067"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1068",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1068"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1069",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1069"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1070",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1070"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1071",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1071"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1072",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1072"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1073",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1073"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1074",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1074"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1075",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1075"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1076",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1076"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1077",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1077"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1078",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1078"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1079",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1079"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1080",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1080"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1081",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1081"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1082",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1082"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1083",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1083"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1084",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1084"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1085",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1085"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1086",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1086"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1087",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1087"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1088",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1088"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1089",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1089"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1090",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1090"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1091",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1091"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1092",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1092"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1093",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1093"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1094",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1094"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1095",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1095"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1096",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1096"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1097",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1097"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1098",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1098"
+    ]
+   },
+   {
+    "group": "home",
+    "unit": "x63u_s2601__home72__1099",
+    "why": [
+     "no capture for game(s) ['ours_challenge/1', 'ours_challenge/2', 'ours_challenge/3', 'ours_challenge/4', 'ours_challenge/5'] in /home/goodlad/gen3ai_archive/x63_read/stageA/anchor/home/x63u_s2601/cells/x63u_s2601__home72__1099"
+    ]
+   }
+  ],
+  "units_checked": 900
+ },
+ "regimes": {
+  "anchor": {
+   "home": "8ffa8e6966aeb8f5",
+   "primary": "304abd87775f371b"
+  },
+  "s": {}
+ },
+ "repins": [],
+ "reported_incomplete": {},
+ "rule": "x63_kvk",
+ "schema": "gen3_read_record_v1",
+ "spec_sha256": "61db0eacd763419419bad22770df0dfc726e051fce9eecb08c779c7690d00c84",
+ "verdict": "NOT PURSUED",
+ "void": {
+  "x63u_s2601": {
+   "batch2": null,
+   "k9b": "PASS",
+   "k9b_file": "/home/goodlad/dev/gen3ai/.claude/worktrees/x63-read-spec/designs/research_state/measurements/x35_breakers_stage_2026-10-17/k9b/rb_x63u_s2601.json",
+   "pass": true,
+   "pin": {
+    "pass": true,
+    "recorded": [
+     "39eaa326736376a5ec3dde41af4afbe8a76a9015"
+    ],
+    "want": "39eaa326736376a5ec3dde41af4afbe8a76a9015",
+    "why": ""
+   },
+   "pool_seed": {
+    "dropped": 0,
+    "fork_step": 380000195,
+    "got": 380000195,
+    "pass": true,
+    "snapshots": 20,
+    "why": ""
+   },
+   "run": "models/rb_x63u_s2601"
+  }
+ }
+}

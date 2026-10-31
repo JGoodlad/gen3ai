@@ -1,0 +1,26 @@
+{
+ "x26c_s2601": {
+  "copied_at": "2026-10-30T06:05:02-0700",
+  "copy": "/home/goodlad/gen3ai_archive/x63_read/stageA/ckpts/x26c_s2601/final_model.zip",
+  "label": "x26c_s2601",
+  "sha256": "cba7a1f835930e618871cfcafcc78d95320bd0c3b20210d4f423f0b4ff72fc4c",
+  "source": "/home/goodlad/dev/gen3ai/models/rb_x26c_s2601/final_model.zip",
+  "step": 480081209
+ },
+ "x63c_s6302": {
+  "copied_at": "2026-10-30T06:05:02-0700",
+  "copy": "/home/goodlad/gen3ai_archive/x63_read/stageA/ckpts/x63c_s6302/final_model.zip",
+  "label": "x63c_s6302",
+  "sha256": "e778c4a46e3bade7bfcf4d439ee85a0a80c16e5c4bb5dbeecb2e64b343826f0b",
+  "source": "/home/goodlad/dev/gen3ai/models/rb_x63c_s6302/final_model.zip",
+  "step": 480080819
+ },
+ "x63u_s2601": {
+  "copied_at": "2026-10-30T14:50:34-0700",
+  "copy": "/home/goodlad/gen3ai_archive/x63_read/stageA/ckpts/x63u_s2601/final_model.zip",
+  "label": "x63u_s2601",
+  "sha256": "de2838cd074e98e623f11155f151766dc5182ddeaf9973fdd9449facf4c9e781",
+  "source": "/home/goodlad/dev/gen3ai/models/rb_x63u_s2601/final_model.zip",
+  "step": 480081047
+ }
+}

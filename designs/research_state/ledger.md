@@ -30343,3 +30343,56 @@ Tag: **FINDING + FIX · slice-2 canary refusals = conditioning (GPU, 5 of 5 COND
   `results/full_record_decision.json`); records `~/gen3ai_archive/x59s/read/{restriction,full}/record.json`. View:
   `UNDERSTANDING.md` §4.8 and TL;DR 13, `STATUS.md`, `endstate/human_data_architecture.md` (Q-H9),
   `endstate/design_beat_metamon_path.md`.
+
+### 2026-10-31 · MEASUREMENT · **X63 STAGE A reads NOT PURSUED: a +100M continuation of the plateau (X26@380M) with 80 % of each side's teams from the 17,876-team union `x63_union_v1` scores Δ_F −0.69 pp [−3.75, +2.37] on forum72 against Kakuna versus the two pool-only continuations (X63-U 0.512 vs X26c 0.521 and X63-C 0.517, 4,000 games each), short of the +1.0 pp screen; σ̂_CC = 0 (the controls differ by 0.43 pp, inside binomial noise); Stage B does not fire, s6302 is a speculative replicate not read for any decision**
+
+**What was read.** X63-U s2601 = X26@380M + 100M at X63U_PIN `39eaa326` with `--team-mix x63_union_v1@ALL:0.8
+--team-mix-sides both`, against X26c s2601 and X63-C s6302 (the same +100M on the pool alone, both at `f4b25238`).
+PREREG `x63_2026-10-29/PREREG.md` §5–§8 with AM-X63-R (r = 1), AM-X63-CANARY, AM-X63-SPEC (§16, the spec of record
+`read_spec.json` sha256 `61db0eac…`, `962c4ea44`, before any game), AM-X63-BSPEC and AM-X63-PARITY. `main.reads` rule
+`x63_kvk`, Stage A (1 arm v 2 controls); every game at the successor play pin `65b998da` on E1, Kakuna checkpoint 34
+greedy against our greedy; state `~/gen3ai_archive/x63_read/stageA`; 900 units (18,000 games), all counted.
+
+**Result.**
+
+| read | X63-U s2601 | X26c s2601 | X63-C s6302 | Δ (U − mean of controls), 95 % | class |
+|---|---|---|---|---|---|
+| **F (deciding)**, forum72 1000–1199 | 2,049 / 4,000 = 0.512 | 2,085 / 4,000 = 0.521 | 2,068 / 4,000 = 0.517 | **−0.69 pp [−3.75, +2.37]** (z; σ_eff = the 1 pp floor) | **NOT PURSUED** (screen +1.0) |
+| F, 72-team cluster bootstrap (reported) | | | | [−2.52, +1.14] | — |
+| home72 (reported at Stage A) 1000–1099 | 1,167 / 2,000 = 0.584 | 1,171 / 2,000 = 0.586 | 1,205 / 2,000 = 0.603 | −1.05 [−4.62, +2.52] | — |
+
+**σ̂_CC = 0** (X63-C's registered quantity): d = −0.43 pp, below the two binomial variances, so the +100M seed spread on
+F is unresolved at 4,000 games a model (home72's σ̂ 0.49 pp). The registered P(NOT PURSUED) at σ = 0: 0.149 at a true
++2 pp, 0.020 at +3 pp; the UB +2.37 pp is below +3. Against the GUESS (§11): Δ_F +1.5 (−1.5, +4.5) → −0.69, inside;
+Δ_home72 −2.0 (−5.0, +1.0) → −1.05; σ 1.25 pp (0.5, 3.0) → not resolved above 0; P(GAIN) ≈ 0.28 → no Stage B.
+
+**What it licenses (§7 item 1).** NOT PURSUED, claiming nothing for the era: this lever (share 0.8 on this union,
++100M at the plateau under the production KL controller) gave no ≥ +1 pp F gain at one seed. Stage B does not fire;
+**"X63-U s6302: a speculative replicate, trained before Stage A's verdict, not read for any decision"** (AM-X63-BSPEC).
+AM-X63-N1L2: N1-P look 2 read NULL, so unchanged. No AM-X63-CANARY or AM-X63-PARITY resume on s2601. No GAIN, so no
+FLOOR and no price.
+
+**Checks (every registered one PASS).** VOID gate: K9(b) PASS at the arm's end, every recorded pin 39eaa326, pool seed
+fork step 380,000,195; operator half: the banner exact, no FATAL, 0 restarts, complete (480,081,047; newest checkpoint
+80,951 back), final sha256 `de2838cd…`. One engine E1 (`port=7d932165…/90;env=7c532805…/125`) on all 900 units, one
+regime id per team set (forum72 `5e1e14aaa845e97e`, the shared pin's), peer `9cc9caacde85f8ea`, policy `train`.
+Kakuna identity on that engine: one counted unit re-played at the pin, 20 / 20 games equal by 5-tuple and by both
+players' choices. G14 (count mode): 900 units, 0 hits, 300 home72 units `unavailable`. Choice-level guard: not
+applicable. By hand: Δ, SE, LB, UB, σ̂, σ̂_CC and the class equal the rule's. 4 attempts uncounted (Metamon long-tail
+resets, voided in tree and re-played); 0 exhausted.
+
+**Dose.** X63-U 1,269.9 min (21.2 GPU-h at 1,339 steps/s), X63-C 1,242.9 min, X26c 19.9 GPU-h.
+
+**FINDINGs.**
+1. **home72 is never captured at this pin** (`kakuna.unit_argv` captures panel cells only; `x63_kvk` refuses
+   `per_game`), so G14's forced-end half is `unavailable` there. The in-tree forfeit-win guard is ARMED on 300 / 300
+   home72 and 600 / 600 forum72 units and fired once (`x26c_s2601__home72__1026`, voided and re-played). Orchestrator
+   ruling 10-30: option 1, missing capture evidence ⇒ judged as before.
+2. **The REPORTED groups (traj, reported, pstar) were not played** (AM-X63-SPEC FINDING 11); they decide nothing.
+3. **σ̂_CC = 0 is a floor**: the design's σ prior is neither confirmed nor refuted.
+4. The pin's bootstrap smoke fails 5 tests beyond PREREG FINDING 9's 2, all from its hybrid construction.
+
+**Evidence:** `designs/research_state/measurements/x63_2026-10-29/reads/` (README, record `stageA.json`, and
+`stageA_state/`: decision, inputs, void, models, code, `checks.json`, `by_hand.{py,json}`).
+
+Tag: **MEASUREMENT · X63 Stage A · NOT PURSUED · Δ_F −0.69 pp [−3.75, +2.37] · σ̂_CC 0**

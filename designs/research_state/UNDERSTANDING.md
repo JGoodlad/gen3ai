@@ -101,7 +101,7 @@ under `measurements/`. A number with no pointer is not a measurement.
    [−0.92, +5.11], UNDECIDED (final), at −1.61 pp in-pool; set mutation (D3, final, every game on one engine) +2.33 [−0.69, +5.35],
    UNDECIDED, at −0.45 pp in-pool; the belief prior mix ±1.50, NOT DETECTED; plain training FLAT. [Kakuna · `42bb0858d`,
    `eb99ab362`, D3's look-2 record, `f299a7243`, `71c76dfbb`, `204204bbf`] Breadth at 10⁴ procedural teams (N1-P) reads NULL
-   (final): F +0.55 [−1.26, +2.36] at −3.28 pp in-pool; human 1300+ data teaches less than our own self-play data, closing nothing (X59-S, item 13); H-CTX says the breadth that matters is breadth of TEAMS (item 4). The plan after them is §6.
+   (final): F +0.55 [−1.26, +2.36] at −3.28 pp in-pool; a long union continuation (X63 Stage A, +100M at share 0.8 on 17,876 teams) reads NOT PURSUED, F −0.69 [−3.75, +2.37]; human 1300+ data teaches less than our own self-play data, closing nothing (X59-S, item 13); H-CTX says the breadth that matters is breadth of TEAMS (item 4). The plan after them is §6.
 6. **The belief stack memorises the pool, but that is not where games are lost.** On unfamiliar opponents 63–85 %
    of the hidden slots hold the wrong species guess, yet mixing in the Smogon prior (λ = 0.25: U +1.50 pp [−2.74,
    +5.74]) or using the prior alone (λ = 1: −1.50 [−5.47, +2.47]) moves Kakuna games by nothing detectable at ±5 pp.
@@ -157,7 +157,7 @@ owner's approval (`designs/endstate/design_ladder_campaign.md`).
 6. which collapse we see, and a source of counterfactuals (§4.4).
 
 The plan for goal (b) is `designs/endstate/design_beat_metamon_path.md`; D3 has missed (UNDECIDED, final) and human
-1300+ labels are no route (X59-S: SELF-PLAY-DATA-BETTER and OWN-LABELS-BETTER, closing nothing; human teams stay open, X60-T); N1-P has missed (NULL, final), so the fallback is `designs/endstate/strategy_if_levers_null_2026-10-26.md`.
+1300+ labels are no route (X59-S: SELF-PLAY-DATA-BETTER and OWN-LABELS-BETTER, closing nothing; human teams stay open, X60-T); N1-P has missed (NULL, final) and X63 stopped at Stage A (NOT PURSUED), so the fallback is `designs/endstate/strategy_if_levers_null_2026-10-26.md`.
 
 **The Rustboro era.** It starts with the X5 belief A/B and X26 (2026-10-03): the fixed bots and the Rustboro anchor
 base, the Rust environment core, the END STATE architecture (adopted 2026-10-12, §4.6b) and the bf16 trunk (§4.6c).
@@ -341,6 +341,14 @@ replicated on the 1,600 PastaMittens twins · `c758fcb82`; `measurements/pilotin
   the plateau" (share 0.5, 20M) beyond ±3 pp only, not N1 from step 0 (the plasticity confound), the toy screen or a
   human-derived corpus; X53-N1 is not triggered. [Kakuna · ledger 2026-10-30 · *X61P N1-P LOOK 2*;
   `measurements/x61p_n1_production_2026-10-26/read_look2/`; look 1: `read/`]
+- **A long union continuation (X63 Stage A) at the plateau: NOT PURSUED.** X26 @380M + 100M with 80 % of each
+  side's teams from the 17,876-team union `x63_union_v1` (X62's recombined sixes, N1-P's procedural teams at 3,000, D3's
+  set-mutated teams; no forum teams), one seed, against the same +100M on the pool alone (X26c, X63-C), on F against
+  Kakuna, every game on one engine (E1): **Δ_F −0.69 pp [−3.75, +2.37]** (X63-U 0.512, X26c 0.521, X63-C 0.517; 4,000
+  games each), short of the registered +1.0 pp screen; home72 −1.05 [−4.62, +2.52] (reported). The seed spread of a
+  +100M continuation is unresolved: σ̂_CC = 0 (the two controls differ by 0.43 pp, inside binomial noise). A true +3 pp
+  lies above the interval; the registered P(NOT PURSUED) at a true +2 pp was 0.15. It claims nothing for the era beyond
+  this lever. [Kakuna · ledger 2026-10-31 · *X63 STAGE A*; `measurements/x63_2026-10-29/reads/`]
 
 **The opponents.**
 - **PastaMittens** (Metamon's deployed ensemble over Kakuna checkpoints 28, 34, 30 and Alakazam): P\* 0.484 [0.456,
@@ -630,14 +638,13 @@ retired for the fold-gift question only; they live in the last full text (§0) a
 |---|---|
 | Does rating change it, and do human TEAMS help? | **X59-S's ≥ 1500 follow-up** (S-H≥1500 vs a volume-matched mix and vs S-S, in-house; ≈ 1.5 GPU-h, Amendment 7) and **X60-T** (H-TEAMS, the registered route now that X59-S closed nothing: Δ_restriction +2.85 [+0.14, +5.56], §4.8) |
 
-**Queued and planned** (the ranked order: X63, PR-1′, after REVIEW_2 `69c7cd34d` §6; X48 read NO-GO 2026-10-30, §4.13)
+**Queued and planned** (the ranked order after REVIEW_2 `69c7cd34d` §6: PR-1′; X48 read NO-GO 2026-10-30, §4.13; X63 read NOT PURSUED 2026-10-31, §3.1)
 
 | question | the read that answers it |
 |---|---|
 | Does a wider trunk buy strength at the plateau (on the toy)? | **N4**: T\* with every trunk FFN grown 256 → 1,024 against a same-pin C0′, 3 + 3 seeds × 70M (PREREG `8ed8164ea`); the model build landed (`c35ffab9e`), its kit arms have not |
-| Does a long continuation of the plateau on a broad union of teams move unfamiliar-team play? (not a dose read) | **X63**: X26 @380M + 100M at share 0.8 on a 17,876-team union (X62's recombined sixes, N1-P's procedural teams at 3,000, D3's set-mutated teams; no forum teams), against X26c and X63-C on forum72 at the shared play pin (REGISTERED 2026-10-29, [`PREREG.md`](measurements/x63_2026-10-29/PREREG.md); not launched). Its gates read: H-CTX SUPPORTED, N1-P look 1 CONTINUE (n1 in), D3 final UNDECIDED (d3 in) |
 | Do the breadth levers help by +1–2 pp each, below what one read can see? | **PR-1′**, the zero-GPU precision read re-scoped by [`REVIEW_2.md`](measurements/strategy_review_2026-10-26/REVIEW_2.md): D3 and N1-P against C0 on F (D1 reported only: its F is its own population), 30,000–38,000 new Kakuna games at one post-`b0441623e` pin. Information only; X48's read has landed (2026-10-30), so it can run, or on a rented CPU box |
-| Does training on new sixes of familiar sets close the piloting gap? | **X62** (REVISED DRAFT, `../endstate/design_x62_team_recombination.md`, `58cb02dc6`): its first gate, H-CTX, read SUPPORTED (2026-10-27), so its corpus `x62_recomb_v1` is built (2026-10-29, inside X63's union); PR-1′ KILL retires the 20M fork; N1-P GAIN makes it redundant. Its in-pool cost is a registered price (net = Δ_home72 + r · Δ_U, r = 1 pending the owner). Below X63 per resource-day |
+| Does training on new sixes of familiar sets close the piloting gap? | **X62** (REVISED DRAFT, `../endstate/design_x62_team_recombination.md`, `58cb02dc6`): its first gate, H-CTX, read SUPPORTED (2026-10-27), so its corpus `x62_recomb_v1` is built (2026-10-29, inside X63's union, which read NOT PURSUED at Stage A); PR-1′ KILL retires the 20M fork; N1-P read NULL, so it is not redundant. Its in-pool cost is a registered price (net = Δ_home72 + r · Δ_U, r = 1) |
 | Does one-ply search on V have headroom on unfamiliar teams (H-MID's open question)? | **S-U** registered (`ffd9a443a`, `../endstate/design_search_u_headroom.md`), stage 0 HELD. Its review (`7aafa527f`, `measurements/su_headroom_2026-10-27/REVIEW.md`): 2 BLOCKERs; where the registered search rule departs from the policy at P\* it picks the better move 0.513 [0.447, 0.580] of the time (0.580 at 25M), so a 10–15 CPU-h sign-accuracy gate came first. **That gate read GO** (2026-10-28, `measurements/su_gate_2026-10-27/`): 0.635 [0.578, 0.687] on U, home72 0.537, but its review (`52f470c21`) put the excess in the TRUE-SEED-LEAK-exposed states (the leak's value, not its exposure, is higher on U). **The leak-reduced re-gate SUPERSEDES it and also reads GO** (`measurements/su_regate_rolls_2026-10-28/`, `dice="rolls"`): 0.599 [0.543, 0.649] (home72 0.551; exposed 0.632, leak-clean 0.564 [0.478, 0.639]). GO is a licence under S's own referee, not a gain. Next (the orchestrator's call): a deviation-only live read against Kakuna (the review's M3) or V-RANK (`../endstate/design_v_rank_on_u.md`, DRAFT), the filters that can turn S-U OFF |
 
 **Dropped.** **X64**, the toy context-count curve: DROPPED by its review (`c0fd72bd8`,
