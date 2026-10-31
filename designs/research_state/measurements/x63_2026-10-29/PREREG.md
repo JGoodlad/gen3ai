@@ -422,3 +422,20 @@ is a later amendment; neither touches the Stage A verdict.
   stage-check, disk), [`checkargs_x63u_s6302.txt`](checkargs_x63u_s6302.txt) (against s2601's argv: the seed and the
   run name only) and [`dryrun_x63u_s6302.txt`](dryrun_x63u_s6302.txt) (`FORK of …/rb_x26_s2601`, +100,000,000 steps,
   the pin above; the only failing check is the hidden card, as at §2).
+
+## 18. AMENDMENT AM-X63-PARITY (2026-10-31 ≈ 02:00, before s6302 resumes and before Stage A's verdict)
+
+- **When written:** X63-U s6302 had stopped on a T2 load-gate `ParityFailure`. No Stage A or Stage B game row had
+  been opened.
+- **Basis:** the diagnosis at `07e2d1a71` (`parity_fatal_s6302/README.md`). The failure is the tie class of TECH_DEBT
+  P3: two exactly equal move logits straddle the X5 move-order cut K = 6 on fixture rows 54 and 55, so one rounding
+  flips their order. The gate has no near-tie exclusion (standing rule 8).
+- **The rule:** consider a T2 load-gate `ParityFailure` that the registered replay
+  (`parity_fatal_s6302/replay_gate.py`) classes TIE CLASS. That means the only rows over the bar are near-tie
+  fixture rows, and the last clean checkpoint passes.
+  - Resumed once from the newest clean checkpoint at X63U_PIN, with the registered argv and the dump archived, such a
+    failure **does not count toward §8's restart limit**.
+  - At most one such resume per seed. A second parity FATAL, or one the replay does not class TIE CLASS, follows §8
+    unchanged: a PAGE, and the seed is VOID unless the orchestrator rules otherwise before the read.
+- **Scope:** every X63-U and X63-C seed at X63U_PIN.
+- **Disclosure:** each such resume is named in the record beside the verdict, and the read rule is unchanged.
