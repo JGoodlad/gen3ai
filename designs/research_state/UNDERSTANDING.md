@@ -101,7 +101,7 @@ under `measurements/`. A number with no pointer is not a measurement.
    [−0.92, +5.11], UNDECIDED (final), at −1.61 pp in-pool; set mutation (D3, final, every game on one engine) +2.33 [−0.69, +5.35],
    UNDECIDED, at −0.45 pp in-pool; the belief prior mix ±1.50, NOT DETECTED; plain training FLAT. [Kakuna · `42bb0858d`,
    `eb99ab362`, D3's look-2 record, `f299a7243`, `71c76dfbb`, `204204bbf`] Breadth at 10⁴ procedural teams (N1-P) reads NULL
-   (final): F +0.55 [−1.26, +2.36] at −3.28 pp in-pool; human 1300+ data teaches less than our own self-play data (X59-S, item 13); H-CTX says the breadth that matters is breadth of TEAMS (item 4). The plan after them is §6.
+   (final): F +0.55 [−1.26, +2.36] at −3.28 pp in-pool; human 1300+ data teaches less than our own self-play data, closing nothing (X59-S, item 13); H-CTX says the breadth that matters is breadth of TEAMS (item 4). The plan after them is §6.
 6. **The belief stack memorises the pool, but that is not where games are lost.** On unfamiliar opponents 63–85 %
    of the hidden slots hold the wrong species guess, yet mixing in the Smogon prior (λ = 0.25: U +1.50 pp [−2.74,
    +5.74]) or using the prior alone (λ = 1: −1.50 [−5.47, +2.47]) moves Kakuna games by nothing detectable at ±5 pp.
@@ -136,7 +136,8 @@ under `measurements/`. A number with no pointer is not a measurement.
     humans (0.582 nats better than P\*) but does not help search. In X59-S, fresh students of our architecture taught by
     1300+ ladder players' games and choices play unfamiliar teams **7.28 pp [4.28, 10.29] worse** against Kakuna than
     students taught by P\*'s own games and choices (SELF-PLAY-DATA-BETTER; the in-house meter −9.06), and human labels
-    lose to P\*'s on the same human states by 4.50 pp (OWN-LABELS-BETTER): H-BC is dropped. [SIGNIFICANT · Kakuna and
+    lose to P\*'s on the same human states by 4.50 pp (OWN-LABELS-BETTER): H-BC is dropped. It closes nothing: restricting
+    labels to the human's support costs 2.85 pp [0.14, 5.56], so human TEAMS stay open (X60-T). [SIGNIFICANT · Kakuna and
     in-house · X59-S record 2026-10-30; `f8d58205c`, `92af1f121`, `73428c077`]
 
 ---
@@ -156,7 +157,7 @@ owner's approval (`designs/endstate/design_ladder_campaign.md`).
 6. which collapse we see, and a source of counterfactuals (§4.4).
 
 The plan for goal (b) is `designs/endstate/design_beat_metamon_path.md`; D3 has missed (UNDECIDED, final) and human
-1300+ data is no route (X59-S, SELF-PLAY-DATA-BETTER); N1-P has missed (NULL, final), so the fallback is `designs/endstate/strategy_if_levers_null_2026-10-26.md`.
+1300+ labels are no route (X59-S: SELF-PLAY-DATA-BETTER and OWN-LABELS-BETTER, closing nothing; human teams stay open, X60-T); N1-P has missed (NULL, final), so the fallback is `designs/endstate/strategy_if_levers_null_2026-10-26.md`.
 
 **The Rustboro era.** It starts with the X5 belief A/B and X26 (2026-10-03): the fixed bots and the Rustboro anchor
 base, the Rust environment core, the END STATE architecture (adopted 2026-10-12, §4.6b) and the bf16 trunk (§4.6c).
@@ -518,7 +519,10 @@ training absorbs some of what perfect information would buy, but not enough to m
   SELF-PLAY-DATA-BETTER (S-H 0.320, S-S 0.393), the in-house meter agreeing (−9.06 [−10.98, −7.14]) and F alone too
   (−8.80); **Δ_labels = S-H − S-P −4.50 [−7.42, −1.58]**, OWN-LABELS-BETTER; the states part −2.78 [−5.68, +0.12],
   UNCLEAR. H-BC is dropped. The closure ("1300+ ladder data in the panel-distant, forfeit-heavy slice, at this mix and
-  volume, as a cloning target for a fresh network at 3 epochs") waits on Δ_restriction; the ≥ 1500 follow-up asks
+  volume, as a cloning target for a fresh network at 3 epochs") is BLOCKED: its registered guard Δ_restriction = S-P0 −
+  S-P read +2.85 pp [+0.14, +5.56] (restricting labels to the human's support costs a student; P\*'s unrestricted
+  labels on human states, S-P0 0.393, teach as well as self-play, S-S 0.393), so human data is not closed and the route
+  is H-TEAMS first (X60-T); the ≥ 1500 follow-up asks
   whether rating changes it at fixed slice and volume. It says nothing about adding human data to P\* (X60's
   question). [SIGNIFICANT · Kakuna and in-house · `measurements/x59s_matched_students_2026-10-25/README.md`; ledger
   2026-10-30 · *X59-S*]
@@ -624,7 +628,7 @@ retired for the fold-gift question only; they live in the last full text (§0) a
 
 | question | the read that answers it |
 |---|---|
-| Does rating change it, and does the closure stand? | **X59-S's Δ_restriction** (S-P0 − S-P, playing: its lower bound ≤ 0 closes the 1300+ slice) and its **≥ 1500 follow-up** (S-H≥1500 vs a volume-matched mix and vs S-S, in-house; ≈ 1.5 GPU-h). X59-S itself read SELF-PLAY-DATA-BETTER (§4.8) |
+| Does rating change it, and do human TEAMS help? | **X59-S's ≥ 1500 follow-up** (S-H≥1500 vs a volume-matched mix and vs S-S, in-house; ≈ 1.5 GPU-h, Amendment 7) and **X60-T** (H-TEAMS, the registered route now that X59-S closed nothing: Δ_restriction +2.85 [+0.14, +5.56], §4.8) |
 
 **Queued and planned** (the ranked order: X63, PR-1′, after REVIEW_2 `69c7cd34d` §6; X48 read NO-GO 2026-10-30, §4.13)
 

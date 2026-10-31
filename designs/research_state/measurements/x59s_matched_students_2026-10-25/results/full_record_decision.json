@@ -10,12 +10,12 @@
  "completeness": {
   "class": "COMPLETE"
  },
- "created": "2026-10-30T03:19:08-0700",
+ "created": "2026-10-30T17:21:03-0700",
  "decision": {
   "decision": {
    "actions": [
     "H-BC dropped (conservative: against a handicapped P*)",
-    "SELF-PLAY-DATA-BETTER reported; closure pending Delta_restriction (A6.1)",
+    "SELF-PLAY-DATA-BETTER reported; closes nothing (Delta_restriction LB > 0 (A6.1))",
     "the conditional >= 1500 follow-up fires (S-H>=1500 vs S-H-mix vs S-S at matched rows)"
    ],
    "classes": {
@@ -347,7 +347,7 @@
      }
     }
    },
-   "restriction_lb": null,
+   "restriction_lb": 0.0013954248430543097,
    "stamp": "descriptive, no claim (A5.9 m14)",
    "student_to_pstar_gap_secondary_cross_engine": {
     "S-H": {
@@ -588,7 +588,7 @@
   "verdict_detail": {
    "actions": [
     "H-BC dropped (conservative: against a handicapped P*)",
-    "SELF-PLAY-DATA-BETTER reported; closure pending Delta_restriction (A6.1)",
+    "SELF-PLAY-DATA-BETTER reported; closes nothing (Delta_restriction LB > 0 (A6.1))",
     "the conditional >= 1500 follow-up fires (S-H>=1500 vs S-H-mix vs S-S at matched rows)"
    ],
    "classes": {
@@ -792,5 +792,5 @@
  "spec_sha256": "cdd17ccfa402e61362bccd752870677ed7a32526b663f3662cae571a509e286e",
  "verdict": "delta_data SELF-PLAY-DATA-BETTER -7.28 pp [-10.29, -4.28] (Kakuna SELF-PLAY-DATA-BETTER; S-H 0.320, S-S 0.393; in-house -9.06 pp [-10.98, -7.14]); delta_labels OWN-LABELS-BETTER -4.50 pp [-7.42, -1.58] (Kakuna OWN-LABELS-BETTER; S-H 0.320, S-P 0.365; in-house -5.23 pp [-7.30, -3.15]); delta_states UNCLEAR -2.78 pp; FR-2 NO-ARTEFACT",
  "void": null,
- "note": "The full main.reads record minus its 'inputs' block (746 KB: every student's cells, units and the artefact bodies); the complete record is ~/gen3ai_archive/x59s/read/full/record.json, sha256 5ed7585f73912a422c37a274de7ce8db2c3d65a702be1e0b8977ae361fb13ca3"
+ "note": "The main.reads record minus its 'inputs' block; the complete record is ~/gen3ai_archive/x59s/read/full/record.json, sha256 780c29d93e5ebdbc50429fcd167145b2418c550fe089fda52b5fdececce41d7e"
 }

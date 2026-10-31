@@ -1,0 +1,225 @@
+{
+ "cells_inconclusive": [],
+ "code": {
+  "commit": "89c2c25011bcc87d1b186f3e14861281d39804ef",
+  "diff_sha": "e3b0c44298fc1c14",
+  "dirty": false,
+  "pin": "89c2c2501",
+  "root": "/home/goodlad/dev/gen3ai-reads/x59s_play_pin_a5"
+ },
+ "completeness": {
+  "class": "COMPLETE"
+ },
+ "created": "2026-10-30T17:20:49-0700",
+ "decision": {
+  "blocks_closure": "True",
+  "decision": {
+   "verdict": "Delta_restriction (S-P0 - S-P) +2.85 pp [+0.14, +5.56]: BLOCKS the closure (A6.1)"
+  },
+  "engine": "port=bdc5d2be3af5e1fb/94;env=95b45f104119bdb2/129",
+  "restriction": {
+   "arm_means": [
+    0.3933333333333333,
+    0.36483333333333334
+   ],
+   "arm_sds": [
+    0.017843844254469884,
+    0.019260639195577665
+   ],
+   "class": "RESTRICTION-COSTS",
+   "delta": 0.02849999999999997,
+   "halfwidth": 0.02710457515694566,
+   "halfwidth_registered": 0.025407223585815052,
+   "halfwidth_welch": 0.02710457515694566,
+   "hi": 0.055604575156945626,
+   "lo": 0.0013954248430543097,
+   "rule": "z with the registered seed term; widened to its own Welch (df 8.0, A5.2)"
+  },
+  "seed_sd": {
+   "binom": 0.00019510538194444444,
+   "df": 8,
+   "sigma2_hat": 0.00014958211805555583,
+   "sigma2_lb95": 0.0,
+   "within": 0.00034468750000000027
+  }
+ },
+ "imports": {
+  "anchor.pilot": {
+   "code": {
+    "commit": "0534e90a6a54005157f62ae7b91e25ba968b70d4",
+    "diff_sha": "e3b0c44298fc1c14",
+    "dirty": false,
+    "pin": "0534e90a6",
+    "root": "/home/goodlad/dev/gen3ai-reads/x59s_play_0534e90a"
+   },
+   "engine": "port=bdc5d2be3af5e1fb/94;env=95b45f104119bdb2/129",
+   "group": "pilot",
+   "labels": [
+    "s_p_5901",
+    "s_p_5902",
+    "s_p_5903",
+    "s_p_5904",
+    "s_p_5905"
+   ],
+   "read": "x59s_pilot_2026-10-26",
+   "regime_ids": {
+    "forum72": [
+     "3c66643a5c7eac95"
+    ],
+    "heldout72_hpfix": [
+     "c8858137261fd8b2"
+    ],
+    "p72": [
+     "b7d422868250acb1"
+    ]
+   },
+   "repins": [],
+   "rows": 60,
+   "rows_sha256": "3a217310c9b73bd4f5f25152ebc8598592a5ae9c7ce73ab039c7fab28da1a342",
+   "sides": {
+    "peer_code": null,
+    "policy_mode": null
+   },
+   "spec_sha256": "dc860ae36e590ad699e487e6d58c60dee252a746df1956ee4ccc805f1e849288",
+   "state": "/home/goodlad/gen3ai_archive/x59s/read/pilot"
+  },
+  "anchor.rest": {
+   "code": {
+    "commit": "89c2c25011bcc87d1b186f3e14861281d39804ef",
+    "diff_sha": "e3b0c44298fc1c14",
+    "dirty": false,
+    "pin": "89c2c2501",
+    "root": "/home/goodlad/dev/gen3ai-reads/x59s_play_pin_a5"
+   },
+   "engine": "port=bdc5d2be3af5e1fb/94;env=95b45f104119bdb2/129",
+   "group": "rest",
+   "labels": [
+    "s_p_5901",
+    "s_p_5902",
+    "s_p_5903",
+    "s_p_5904",
+    "s_p_5905"
+   ],
+   "read": "x59s_full_2026-10-26",
+   "regime_ids": {
+    "forum72": [
+     "3c66643a5c7eac95"
+    ],
+    "heldout72_hpfix": [
+     "c8858137261fd8b2"
+    ],
+    "p72": [
+     "b7d422868250acb1"
+    ]
+   },
+   "repins": [],
+   "rows": 240,
+   "rows_sha256": "b1d83ec6bf4f9cb149d9eb9ce3eda99826f9aae65710848a0d3e5971b8b32a59",
+   "sides": {
+    "peer_code": null,
+    "policy_mode": null
+   },
+   "spec_sha256": "cdd17ccfa402e61362bccd752870677ed7a32526b663f3662cae571a509e286e",
+   "state": "/home/goodlad/gen3ai_archive/x59s/read/full"
+  }
+ },
+ "ledgers": {},
+ "models": {
+  "s_p0_5901": {
+   "arm": "S-P0",
+   "seed": 5901,
+   "sha256": "49893b3ea6ccdbcac4ca920c49c6651ccea4fc6bf45c3339b3042ec409a49238",
+   "source": "/home/goodlad/gen3ai_archive/x59s/read/students/s_p0_5901/model/student_pstar0_5901.zip",
+   "step": 0
+  },
+  "s_p0_5902": {
+   "arm": "S-P0",
+   "seed": 5902,
+   "sha256": "9914be91cf582938221f7bda05d7d44036f7cda29ef967bc3f6fe9ff5964ff0a",
+   "source": "/home/goodlad/gen3ai_archive/x59s/read/students/s_p0_5902/model/student_pstar0_5902.zip",
+   "step": 0
+  },
+  "s_p0_5903": {
+   "arm": "S-P0",
+   "seed": 5903,
+   "sha256": "be6826e1000a728140a841239de2bbb74f3c15a8bb315f7f48f7d0fa75c7c264",
+   "source": "/home/goodlad/gen3ai_archive/x59s/read/students/s_p0_5903/model/student_pstar0_5903.zip",
+   "step": 0
+  },
+  "s_p0_5904": {
+   "arm": "S-P0",
+   "seed": 5904,
+   "sha256": "96f6d1e336b15e337183109341656962d3f8328da8f6066d04fc2ebee8bd2819",
+   "source": "/home/goodlad/gen3ai_archive/x59s/read/students/s_p0_5904/model/student_pstar0_5904.zip",
+   "step": 0
+  },
+  "s_p0_5905": {
+   "arm": "S-P0",
+   "seed": 5905,
+   "sha256": "4d3af649c2943f375d752f493342d638fee0616284a9c4cbb17d8b3bb1172455",
+   "source": "/home/goodlad/gen3ai_archive/x59s/read/students/s_p0_5905/model/student_pstar0_5905.zip",
+   "step": 0
+  },
+  "s_p_5901": {
+   "arm": "S-P",
+   "seed": 5901,
+   "sha256": "9d9e88aac2e52cac52c71cdcece183e053f6fe854eb51d8f1bab62d0de440762",
+   "source": "/home/goodlad/gen3ai_archive/x59s/read/students/s_p_5901/model/student_pstar_5901.zip",
+   "step": 0
+  },
+  "s_p_5902": {
+   "arm": "S-P",
+   "seed": 5902,
+   "sha256": "5cba1a5a49770bab6197aff5104c4d1d161c37e52c392b8e5916e79f3f536d13",
+   "source": "/home/goodlad/gen3ai_archive/x59s/read/students/s_p_5902/model/student_pstar_5902.zip",
+   "step": 0
+  },
+  "s_p_5903": {
+   "arm": "S-P",
+   "seed": 5903,
+   "sha256": "2099cd571f20bdaeb4c32ebb052a88effef673a817bed5899bee3993093e8d1d",
+   "source": "/home/goodlad/gen3ai_archive/x59s/read/students/s_p_5903/model/student_pstar_5903.zip",
+   "step": 0
+  },
+  "s_p_5904": {
+   "arm": "S-P",
+   "seed": 5904,
+   "sha256": "0f7077734ef2f5af9f7298ef17907a61cea36b43d47d3b064ae8f21942899e86",
+   "source": "/home/goodlad/gen3ai_archive/x59s/read/students/s_p_5904/model/student_pstar_5904.zip",
+   "step": 0
+  },
+  "s_p_5905": {
+   "arm": "S-P",
+   "seed": 5905,
+   "sha256": "b1d7eaaa3cfc4f4c8d02e494588ed18256fcf8929e015eece8ec8c31b08a71fc",
+   "source": "/home/goodlad/gen3ai_archive/x59s/read/students/s_p_5905/model/student_pstar_5905.zip",
+   "step": 0
+  }
+ },
+ "prereg": "designs/research_state/measurements/x59s_matched_students_2026-10-25/PREREG.md",
+ "read": "x59s_restriction_2026-10-27",
+ "rederived_guards": {
+  "held": false,
+  "hits": [],
+  "mode": "report",
+  "schema": "gen3_read_rederived_guards_v1",
+  "unavailable": [],
+  "units_checked": 600
+ },
+ "regimes": {
+  "anchor": {
+   "pilot": "afc3553d5b686391",
+   "rest": "afc3553d5b686391",
+   "sp0": "afc3553d5b686391"
+  },
+  "s": {}
+ },
+ "repins": [],
+ "reported_incomplete": {},
+ "rule": "x59s_restriction",
+ "schema": "gen3_read_record_v1",
+ "spec_sha256": "f21ceb632de72d5967cdfb69d013ce232f4b6b40f1ca5cb5b846987c0fb8a7f0",
+ "verdict": "Delta_restriction (S-P0 - S-P) +2.85 pp [+0.14, +5.56]: BLOCKS the closure (A6.1)",
+ "void": null,
+ "note": "The main.reads record minus its 'inputs' block; the complete record is ~/gen3ai_archive/x59s/read/restriction/record.json, sha256 80a352e9d538a88ccb97b36579f7a3517c48cea27c6ec914764f4adb26673641"
+}

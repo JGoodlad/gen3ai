@@ -1,4 +1,4 @@
-# X59-S: is human data better than our own self-play data? (read 2026-10-30)
+# X59-S: is human data better than our own self-play data? (read 2026-10-30; closure blocked the same day)
 
 Registered in [`PREREG.md`](PREREG.md) (`5cbf46dc0`) and amended before every read it governs (Amendments 1–6; the
 blind ones, 5 and 6, answer [REVIEW H](REVIEW_H_causal.md) and [REVIEW G](REVIEW_G_data_bias.md)). Abbreviations
@@ -9,22 +9,26 @@ are the PREREG's. U = the equal-weight mean of H (`heldout72_hpfix`), F (`forum7
 **SELF-PLAY-DATA-BETTER.** Matched in volume, recipe and initial network, a student taught by our plateau policy's
 own games and choices (S-S) beats one taught by 1300+ ladder players' games and choices (S-H) against Kakuna on
 unfamiliar teams by **7.28 pp [4.28, 10.29]** (S-H 0.320, S-S 0.393), and the in-house meter, which never trained on
-human data, agrees: **−9.06 pp [−10.98, −7.14]**.
+human data, agrees: **−9.06 pp [−10.98, −7.14]**. **It closes nothing:** the registered guard Δ_restriction (S-P0 −
+S-P) read **+2.85 pp [+0.14, +5.56]**, so part of the gap is what restricting a label to the human's whole-game support
+(the drawn-move signature) costs, and human data is NOT closed as a lever. Human LABELS do lose to P\*'s (H-BC is
+dropped).
 
 | contrast | Kakuna, U (5 students an arm) | class | in-house (5 pairings) | what follows |
 |---|---|---|---|---|
-| **Δ_data = S-H − S-S** (the owner's question) | **−7.28 pp [−10.29, −4.28]** | **SELF-PLAY-DATA-BETTER** | −9.06 [−10.98, −7.14] | the closure (below) is **pending Δ_restriction**; the ≥ 1500 follow-up fires |
+| **Δ_data = S-H − S-S** (the owner's question) | **−7.28 pp [−10.29, −4.28]** | **SELF-PLAY-DATA-BETTER** | −9.06 [−10.98, −7.14] | **closes nothing** (Δ_restriction's LB > 0); the ≥ 1500 follow-up fires |
 | **Δ_labels = S-H − S-P** (which teacher, on human states) | **−4.50 pp [−7.42, −1.58]** | **OWN-LABELS-BETTER** | −5.23 [−7.30, −3.15] | **H-BC dropped** (conservative: against P\* restricted to the human's support) |
 | Δ_states = S-P − S-S (descriptive) | −2.78 pp [−5.68, +0.12] | UNCLEAR | — | routes nothing |
+| **Δ_restriction = S-P0 − S-P** (the closure's guard, A6.1) | **+2.85 pp [+0.14, +5.56]** (S-P0 0.393) | RESTRICTION-COSTS | — | **blocks the closure** |
 
-- **The closure is pending.** Amendment 6 A6.1 made Δ_restriction (S-P0 − S-P, the same rows and teacher with and
-  without the drawn-move signature in the labels) the guard. Its 300 units are playing (state
-  `~/gen3ai_archive/x59s/read/restriction/`). If its lower bound is ≤ 0, the read closes **"1300+ ladder data in the
-  panel-distant, forfeit-heavy slice (50.6 % of its rows from forfeits; median turn 15 against S-S's 19), at this mix
-  and volume, as a behaviour-cloning target for a fresh network at 3 epochs (7,041 steps)"**; if it is > 0, nothing
-  is closed. Every other gate passed: S-H is fitted (its last-quarter-epoch NLL drop 0.003 nat < 0.01), A5.7's
-  re-encode share is 0.60 % (< 1.0 %), Δ_states' lower bound is ≤ 0, Δ_labels is not HUMAN-LABELS-BETTER, and both
-  directional classes agree with the in-house meter (A2.10, A5.5) and with F alone (A5.4).
+- **The closure is blocked.** Amendment 6 A6.1 made Δ_restriction (S-P0 − S-P: the same human rows and the same
+  teacher, P\*, with and without the labels restricted to what the log allows the human) the guard: a lower bound > 0
+  closes nothing. It read +2.85 pp [+0.14, +5.56] (300 units, all counted; σ̂ pooled over the two arms, widened to
+  their Welch). Every other gate had passed (S-H fitted, re-encode 0.60 %, Δ_states' LB ≤ 0, Δ_labels not
+  HUMAN-LABELS-BETTER, both meters and F alone agreeing). **Descriptive:** S-P0, P\*'s unrestricted labels on HUMAN
+  states, reads 0.393, the same as S-S (0.393): on these students the human states cost nothing once the labels carry
+  no signature, so S-H's 7.28 pp is human labels (S-H − S-P −4.50) plus the restriction (S-P − S-P0 −2.85), not human
+  states.
 - **The arms' rates:** S-H 0.320 (SD 2.07 pp over 5 students), S-P 0.365 (1.93), S-S 0.393 (2.04). σ̂ = 1.47 pp
   (df 12; the guard did not fire); every interval is A5.2's, the registered z widened to the contrast's own Welch.
   The 80 % MDE at the measured intervals is about 4.2 pp.
@@ -43,6 +47,7 @@ human data, agrees: **−9.06 pp [−10.98, −7.14]**.
 | game length, terciles cut at 30 / 46 turns: Δ_data short / mid / long | −7.0 [−10.0, −4.1] / −10.2 [−13.2, −7.3] / −4.6 [−7.6, −1.6] (not concentrated in long games, A6.2) |
 | the student-to-P\* gap (secondary, cross-engine: X51 on E0) | S-H −16.7, S-P −12.2, S-S −9.4 pp (every arm far below P\*, as the PREREG guessed) |
 | yardstick: NLL on the S-S validation rows' P\* labels (5-seed means) | S-H 1.506, S-P 1.360, S-S 1.281 (S-P is closer to S-S: it learned its teacher, A5.8) |
+| Δ_restriction's record | `results/restriction_record_decision.json` (full record `~/gen3ai_archive/x59s/read/restriction/record.json`) |
 | FR-2 (reported only, A6.1) | NO-ARTEFACT, D = −0.149 nats [−0.163, −0.134] |
 | floor references (units 0–3) | random 0.000, max-damage 0.046; the gate found every contrast informative |
 
@@ -55,7 +60,7 @@ guessed, −4.50 read; Δ_data −1 (−6 to +4) guessed, −7.28 read (outside 
 - VOID 3: one init per seed, 7,041 steps each, every student learned (`results/students.json`). VOID 5: the identity
   unit replayed X51's `pstar_home72_00` 20 / 20 on the read's engine (`results/identity.json`). VOID 6: the seeded
   repeat equals its original game for game and choice for choice (`results/gate_record.json`, `results/m4_checks.json`).
-  VOID 7: no cell lost a unit; all 901 Kakuna units counted.
+  VOID 7: no cell lost a unit; all 901 primary and 300 S-P0 Kakuna units counted.
 - A5.9 m4 (the pin predates `e28318c8`): 0 peer faults in counted units (1 in an uncounted partial attempt, whose
   retry counted).
 - **One engine:** every Kakuna unit, the floor references and the in-house games ran on

@@ -30325,3 +30325,21 @@ CUDA:** the null's wall time (about 7-10 s, inferred) and its card peak. Detail:
 "Slice-2-only refusals".
 
 Tag: **FINDING + FIX · slice-2 canary refusals = conditioning (GPU, 5 of 5 CONDITIONING) · gen3_canary_param_null_v1**
+
+### 2026-10-30 · MEASUREMENT · **X59-S's closure is BLOCKED: Δ_restriction = S-P0 − S-P reads +2.85 pp [+0.14, +5.56] (registered guard, Amendment 6 A6.1), so SELF-PLAY-DATA-BETTER closes nothing; human data stays open as a lever and routes H-TEAMS first (X60-T); H-BC stays dropped**
+
+- **The read:** S-P0's five students (P\*'s UNRESTRICTED label at T = 1 on the same human rows as S-P) on U vs
+  Kakuna, 20 units a panel, 300 units all counted, 0 peer faults in counted units, on the read's one engine
+  (`port=bdc5d2be3af5e1fb/94;env=95b45f104119bdb2/129`, play pin `89c2c2501`); S-P's cells imported from the pilot
+  and full states (sha-checked). Rule `x59s_restriction`: the registered z (σ̂ pooled over S-P0 and S-P, df 8),
+  widened to their Welch: **+2.85 pp [+0.14, +5.56]** (S-P0 0.393, S-P 0.365), class RESTRICTION-COSTS.
+- **What follows (registered):** a lower bound > 0 blocks the closure. The full read was re-decided with the record:
+  its actions are now "H-BC dropped", "SELF-PLAY-DATA-BETTER reported; closes nothing (Δ_restriction LB > 0)" and
+  "the ≥ 1500 follow-up fires" (registered as Amendment 7, `1ffd67817`).
+- **Descriptive (no claim):** S-P0 equals S-S (0.393 vs 0.393): P\*'s unrestricted labels on HUMAN states teach as well
+  as its own self-play. On these students S-H's 7.28 pp deficit decomposes into human labels (S-H − S-P −4.50) plus the
+  restriction (S-P − S-P0 −2.85), with no cost left for the human states.
+- **Evidence:** `measurements/x59s_matched_students_2026-10-25/` (README, `results/restriction_record_decision.json`,
+  `results/full_record_decision.json`); records `~/gen3ai_archive/x59s/read/{restriction,full}/record.json`. View:
+  `UNDERSTANDING.md` §4.8 and TL;DR 13, `STATUS.md`, `endstate/human_data_architecture.md` (Q-H9),
+  `endstate/design_beat_metamon_path.md`.
