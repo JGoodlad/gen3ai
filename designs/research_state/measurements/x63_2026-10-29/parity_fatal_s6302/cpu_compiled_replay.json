@@ -1,0 +1,223 @@
+{
+ "bar": 0.001,
+ "predicted_rows": [
+  54,
+  55
+ ],
+ "ckpt": {
+  "direct": {
+   "64": {
+    "verdict": "TIE CLASS",
+    "over_bar": [
+     {
+      "row": 54,
+      "fixture_row": 54,
+      "max_dlogp": 0.005207061767578125,
+      "action": 5,
+      "eager_logp": -9.188419342041016,
+      "gap": 0.0
+     }
+    ],
+    "worst": [
+     {
+      "row": 54,
+      "fixture_row": 54,
+      "max_dlogp": 0.005207061767578125,
+      "action": 5,
+      "eager_logp": -9.188419342041016
+     },
+     {
+      "row": 55,
+      "fixture_row": 55,
+      "max_dlogp": 0.00024306774139404297,
+      "action": 9,
+      "eager_logp": -1.2685049772262573
+     },
+     {
+      "row": 52,
+      "fixture_row": 52,
+      "max_dlogp": 4.7206878662109375e-05,
+      "action": 6,
+      "eager_logp": -2.783118724822998
+     }
+    ]
+   },
+   "256": {
+    "verdict": "TIE CLASS",
+    "over_bar": [
+     {
+      "row": 182,
+      "fixture_row": 54,
+      "max_dlogp": 0.005207061767578125,
+      "action": 5,
+      "eager_logp": -9.188419342041016,
+      "gap": 0.0
+     },
+     {
+      "row": 246,
+      "fixture_row": 54,
+      "max_dlogp": 0.005207061767578125,
+      "action": 5,
+      "eager_logp": -9.188419342041016,
+      "gap": 0.0
+     },
+     {
+      "row": 118,
+      "fixture_row": 54,
+      "max_dlogp": 0.005207061767578125,
+      "action": 5,
+      "eager_logp": -9.188419342041016,
+      "gap": 0.0
+     },
+     {
+      "row": 54,
+      "fixture_row": 54,
+      "max_dlogp": 0.005207061767578125,
+      "action": 5,
+      "eager_logp": -9.188419342041016,
+      "gap": 0.0
+     }
+    ],
+    "worst": [
+     {
+      "row": 182,
+      "fixture_row": 54,
+      "max_dlogp": 0.005207061767578125,
+      "action": 5,
+      "eager_logp": -9.188419342041016
+     },
+     {
+      "row": 246,
+      "fixture_row": 54,
+      "max_dlogp": 0.005207061767578125,
+      "action": 5,
+      "eager_logp": -9.188419342041016
+     },
+     {
+      "row": 118,
+      "fixture_row": 54,
+      "max_dlogp": 0.005207061767578125,
+      "action": 5,
+      "eager_logp": -9.188419342041016
+     }
+    ]
+   }
+  },
+  "service": null,
+  "smallest_gaps": [
+   [
+    14,
+    0.0
+   ],
+   [
+    15,
+    0.0
+   ],
+   [
+    20,
+    0.0
+   ],
+   [
+    21,
+    0.0
+   ],
+   [
+    22,
+    0.0
+   ],
+   [
+    23,
+    0.0
+   ]
+  ],
+  "path": "/home/goodlad/gen3ai_archive/x63u_s6302_parity_fatal_2026-10-31/final_model_exception.zip",
+  "overall": "TIE CLASS"
+ },
+ "control": {
+  "direct": {
+   "64": {
+    "verdict": "NOT REPRODUCED",
+    "over_bar": [],
+    "worst": [
+     {
+      "row": 41,
+      "fixture_row": 41,
+      "max_dlogp": 3.528594970703125e-05,
+      "action": 8,
+      "eager_logp": -6.933082103729248
+     },
+     {
+      "row": 40,
+      "fixture_row": 40,
+      "max_dlogp": 3.24249267578125e-05,
+      "action": 8,
+      "eager_logp": -5.876981258392334
+     },
+     {
+      "row": 32,
+      "fixture_row": 32,
+      "max_dlogp": 3.0517578125e-05,
+      "action": 2,
+      "eager_logp": -5.433428764343262
+     }
+    ]
+   },
+   "256": {
+    "verdict": "NOT REPRODUCED",
+    "over_bar": [],
+    "worst": [
+     {
+      "row": 105,
+      "fixture_row": 41,
+      "max_dlogp": 3.528594970703125e-05,
+      "action": 8,
+      "eager_logp": -6.933082103729248
+     },
+     {
+      "row": 169,
+      "fixture_row": 41,
+      "max_dlogp": 3.528594970703125e-05,
+      "action": 8,
+      "eager_logp": -6.933082103729248
+     },
+     {
+      "row": 41,
+      "fixture_row": 41,
+      "max_dlogp": 3.528594970703125e-05,
+      "action": 8,
+      "eager_logp": -6.933082103729248
+     }
+    ]
+   }
+  },
+  "service": null,
+  "smallest_gaps": [
+   [
+    14,
+    0.0
+   ],
+   [
+    15,
+    0.0
+   ],
+   [
+    20,
+    0.0
+   ],
+   [
+    21,
+    0.0
+   ],
+   [
+    22,
+    0.0
+   ],
+   [
+    23,
+    0.0
+   ]
+  ],
+  "path": "/home/goodlad/gen3ai_archive/x63u_s6302_parity_fatal_2026-10-31/checkpoint_404000148_steps.zip",
+  "overall": "NOT REPRODUCED"
+ }
+}

@@ -1,0 +1,8 @@
+[ckpt] final_model_exception.zip: TIE CLASS; service: None
+   bucket 64: TIE CLASS; worst row 54 (fixture 54) max|dlogp| 5.21e-03 action 5 eager logp -9.188; over bar: [(54, 0.005207, 0.0)]
+   bucket 256: TIE CLASS; worst row 182 (fixture 54) max|dlogp| 5.21e-03 action 5 eager logp -9.188; over bar: [(54, 0.005207, 0.0), (54, 0.005207, 0.0), (54, 0.005207, 0.0), (54, 0.005207, 0.0)]
+   smallest selection gaps (fixture row, gap): [(14, 0.0), (15, 0.0), (20, 0.0), (21, 0.0), (22, 0.0), (23, 0.0)]
+[control] checkpoint_404000148_steps.zip: NOT REPRODUCED; service: None
+   bucket 64: NOT REPRODUCED; worst row 41 (fixture 41) max|dlogp| 3.53e-05 action 8 eager logp -6.933; over bar: []
+   bucket 256: NOT REPRODUCED; worst row 105 (fixture 41) max|dlogp| 3.53e-05 action 8 eager logp -6.933; over bar: []
+   smallest selection gaps (fixture row, gap): [(14, 0.0), (15, 0.0), (20, 0.0), (21, 0.0), (22, 0.0), (23, 0.0)]
