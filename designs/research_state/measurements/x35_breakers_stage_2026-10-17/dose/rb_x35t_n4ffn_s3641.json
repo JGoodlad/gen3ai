@@ -1,0 +1,21 @@
+{
+ "schema": "x35_dose_v1",
+ "run": "rb_x35t_n4ffn_s3641",
+ "arm": "toy_n4ffn",
+ "seed": 3641,
+ "pin": "1553f8bd838a13d3709239c43b3ee98d27cac359",
+ "wall_min": 259.3,
+ "gpu_h": 4.321,
+ "gpu_h_note": "one card: GPU-h = wall START\u2192END",
+ "steps_per_s": 4537,
+ "steps_per_s_source": "launcher summary 'FPS'",
+ "first_step": 290000087,
+ "last_step": 360001004,
+ "target_steps": 360000087,
+ "restarts": 0,
+ "launcher_rc": 0,
+ "start": "2026-10-31T20:54:23-07:00",
+ "end": "2026-11-01T01:13:40-07:00",
+ "segments": 1,
+ "segments_note": "wall = the sum of every START\u2192END segment; FPS / last step from the newest launcher log"
+}
