@@ -309,8 +309,9 @@ def build_parser() -> argparse.ArgumentParser:
                         "8 honest worlds, TRUNC-4-K8, piKL λ 0.015) at every decision of ours from turn TURN (default "
                         "10) with >= 2 legal actions; every other decision is the checkpoint's greedy choice. Each "
                         "decision is logged to <out>/search_decisions.jsonl. Stamps our_regime='<regime>+search="
-                        "<preset>@<turn>'. A searched game costs 15-37 CPU-min: size --first-game-timeout / "
-                        "--progress-timeout for it (S-U, design_search_u_headroom.md).")
+                        "<preset>@<turn>'. A searched game costs 15-37 CPU-min centrally and up to ~3.5 "
+                        "CPU-h at its tail: size --first-game-timeout / --progress-timeout for it (main.x35.kakuna: "
+                        "10 h) (S-U, design_search_u_headroom.md).")
     p.add_argument("--deal-game", dest="deal_game", type=int, default=None, metavar="G",
                    help="play ONLY game G (0-based) of the --games series: its role (half), both sides' team draws "
                         "(each skips the half's earlier draws) and its battle seed (--seed-base's index G). Needs a "

@@ -159,3 +159,68 @@ def test_a_peers_switch_is_respelled_the_way_the_core_names_it():
     log = [(1, "p2", "CHOOSE p2 switch swampert"), (1, "p1", "CHOOSE p1 move earthquake")]
     got, _at, _u = SS.honest_log(_battle(log, req_n={"p1": 2, "p2": 2}), "p1")
     assert got["cmds"] == ["CHOOSE p1 move earthquake", "CHOOSE p2 switch Swampert"]
+
+
+def test_a_searched_or_excluded_record_carries_the_decisions_identity_the_kept_raw_decision_carries(tmp_path,
+                                                                                                    monkeypatch):
+    """B2: ``log_sha256`` / ``frame_sha256`` on every record past the early return, computed by the SAME cut and the
+    SAME digests a kept raw decision of the same state yields (``input_log``'s record; ``forced_branch.log_sha256``),
+    so the live identity guard matches a live decision to the banked offline row of the same state."""
+    from main.anchors.forced_branch import log_sha256
+    from main.anchors.input_log import InputLogRecorder, frame_sha256
+
+    s, _calls = _searcher(tmp_path, monkeypatch, picks=[6])
+    outs = [{"searched": True, "played": 6, "cpu_s": 1.0, "wall_s": 1.0},
+            {"searched": False, "why": "excluded", "played": 3, "cpu_s": 1.0, "wall_s": 1.0}]
+    monkeypatch.setattr(s, "_search", lambda *a: dict(outs.pop(0)))
+    battle = _battle([(1, "p1", "CHOOSE p1 move earthquake"), (1, "p2", "CHOOSE p2 switch swampert"),
+                      (2, "p2", "CHOOSE p2 move surf")], req_n={"p1": 2, "p2": 2})   # the peer's pending choice
+    front = SimpleNamespace(battles={battle.tag: battle})
+    two = np.array([0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0], dtype=np.int8)
+    row = np.zeros(4, dtype=np.float32)
+    frames = [dict(_frame(10, 9, two), frame={"b64": "QUJDRA=="}, tokens={"3": "move a", "6": "move b"}),
+              dict(_frame(11, 10, two), frame={"b64": "RUZHSA=="}, tokens={"3": "move a", "6": "move b"})]
+    kept = InputLogRecorder("10-30", tmp_path / "input_logs.jsonl")
+    for d in frames:
+        asyncio.run(s.decide(front, battle.tag, d, row, two, US))
+        kept.record(front, battle.tag, d, two, US, 3)
+    recs = [json.loads(ln) for ln in s.out.read_text().splitlines()]
+    raws = [json.loads(ln) for ln in (tmp_path / "input_logs.jsonl").read_text().splitlines()]
+    assert [r.get("why") for r in recs] == [None, "excluded"]
+    want_log = log_sha256(SS.honest_log(battle, "p1")[0])
+    for r, k, d in zip(recs, raws, frames):
+        assert r["key"] == k["key"]
+        assert r["frame_sha256"] == k["frame_sha256"] == frame_sha256(d["frame"]["b64"])
+        assert r["log_sha256"] == log_sha256(k["log"]) == want_log
+        assert "CHOOSE p2 move surf" not in k["log"]["cmds"]          # the cut both share leaves it out
+    assert recs[0]["frame_sha256"] != recs[1]["frame_sha256"]
+    # a decision that never reaches the search carries no identity (no log is cut there)
+    asyncio.run(s.decide(front, battle.tag, _frame(9, 8, two), row, two, US))
+    last = json.loads(s.out.read_text().splitlines()[-1])
+    assert last["why"] == "before_turn" and "log_sha256" not in last and "frame_sha256" not in last
+
+
+def test_the_hashed_rescore_sample_carries_what_an_offline_rescore_needs(tmp_path, monkeypatch):
+    """1 in 16 searched-path decisions by key hash (outcome-blind): ``rescore_sample``, the honest log, the mask and
+    the tokens; every other record carries none of them, and no choice changes."""
+    import hashlib
+
+    keys = [f"su_live_v1|d|t{t}|n{n}" for t in range(10, 60) for n in range(3)]
+    want = [k for k in keys if int(hashlib.sha256(k.encode()).hexdigest()[:8], 16) % 16 == 0]
+    assert [k for k in keys if SS.rescore_sampled(k)] == want and 0 < len(want) < len(keys) // 4
+    s, _calls = _searcher(tmp_path, monkeypatch, picks=[6] * 200)
+    battle = _battle([(1, "p1", "CHOOSE p1 move earthquake"), (1, "p2", "CHOOSE p2 move surf")],
+                     req_n={"p1": 2, "p2": 2})
+    front = SimpleNamespace(battles={battle.tag: battle})
+    two = np.array([0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0], dtype=np.int8)
+    row = np.zeros(4, dtype=np.float32)
+    for t in range(10, 60):
+        d = dict(_frame(t, t + 1, two), frame={"b64": "QUJD"}, tokens={"3": "move a", "6": "move b"})
+        assert asyncio.run(s.decide(front, battle.tag, d, row, two, US)) == (6, 3)
+    recs = [json.loads(ln) for ln in s.out.read_text().splitlines()]
+    hit = [r for r in recs if r.get("rescore_sample")]
+    assert [r["key"] for r in hit] == [r["key"] for r in recs if SS.rescore_sampled(r["key"])] and hit
+    for r in hit:
+        assert r["log"] == SS.honest_log(battle, "p1")[0] and r["mask"] == [int(x) for x in two]
+        assert r["tokens"] == {"3": "move a", "6": "move b"} and {"at", "side", "turn", "n", "pi_argmax"} <= set(r)
+    assert not any({"log", "mask", "tokens", "rescore_sample"} & set(r) for r in recs if r not in hit)

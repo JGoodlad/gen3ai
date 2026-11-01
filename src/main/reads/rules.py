@@ -58,6 +58,11 @@ with its reasons (N1-P FINDING 7).
   label against its raw twin, paired by deal in ONE ``per_game`` group; I = G_U − G_home72 and G_U by a within-panel
   unit bootstrap against exact-fraction bars, I futility-only at phase 1; VOID on G-PREFIX, engines, bytes or the
   search config.
+* ``searched_play`` -- the S′ live-play read (``design_sprime_live_play.md``; :mod:`main.reads.rules_searched_play`): a
+  searched label against its raw twin, whole games paired by deal on U only in ONE ``per_game`` group; G_U by a
+  within-panel unit bootstrap, GO / NULL / STOP by exact fractions; peer drops by AM-DL-PEER's classifier
+  (:mod:`main.reads.peer_divergence`); VOID on G-PREFIX, engines, bytes, the search config, unpaired deals or the live
+  identity guard (:mod:`main.value_search.live_identity`).
 * ``n4_screen`` -- the one-look capacity screen (N4 PREREG §5 with its review's M2 / M4 / M5; X48 PREREG §5;
   :mod:`main.reads.rules_n4_screen`): S by Welch 90 % on the finals, K by the ``d1`` estimators on forum72;
   INCONCLUSIVE > MIXED > GO > NO-GO > UNDECIDED, the LR-confounded label and M5's NO-GO wording; an X35-stage record.
@@ -1375,6 +1380,9 @@ class Rule:
     #: the REPORTED-only ``(lane, group)``s of these params: no verdict reads them, so an incomplete one never blocks
     #: the record (it is recorded INCOMPLETE with its reasons)
     reported: Callable[[Mapping[str, Any]], List[Tuple[str, str]]] = lambda p: []
+    #: the rule classifies its group's G-PREFIX mismatches itself (a PEER DROP, or a named VOID), so ``assemble`` does
+    #: not mark the group inconclusive for them (``searched_play``); False = a mismatch blocks the record
+    owns_g_prefix: bool = False
 
     def verdict_of(self, decision: Mapping[str, Any]) -> str:
         v = decision.get("verdict") if self.x35_record else (decision.get("decision") or {}).get("verdict")
@@ -1428,6 +1436,11 @@ from main.reads import rules_deviation_live as _DL  # noqa: E402  (it imports th
 
 RULES["deviation_live"] = Rule("deviation_live", _DL.RULE_DOCS["deviation_live"], _DL.check, _DL.inputs, _DL.decide,
                                False)
+
+from main.reads import rules_searched_play as _SP  # noqa: E402  (it imports this module lazily: no cycle at import)
+
+RULES["searched_play"] = Rule("searched_play", _SP.RULE_DOCS["searched_play"], _SP.check, _SP.inputs, _SP.decide,
+                              False, owns_g_prefix=True)
 
 from main.reads import rules_x63 as _X63  # noqa: E402  (it imports this module lazily: no cycle at import)
 

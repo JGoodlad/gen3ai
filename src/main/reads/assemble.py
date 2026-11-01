@@ -594,7 +594,7 @@ def assemble(spec: Any, state: Path) -> Dict[str, Any]:
             from main.reads import prefix as PX
 
             grp["g_prefix"] = PX.check_group(spec, state, g)
-            if grp["g_prefix"]["mismatches"]:
+            if grp["g_prefix"]["mismatches"] and not _rule_owns_g_prefix(spec):
                 grp["inconclusive"] = sorted(set(grp["inconclusive"]) | {
                     f"G-PREFIX: deal {m['deal']} diverged before the search's first turn ({m['why']})"
                     for m in grp["g_prefix"]["mismatches"]})
@@ -631,6 +631,15 @@ def assemble(spec: Any, state: Path) -> Dict[str, Any]:
             sgrp["inconclusive"] = list(sgrp["inconclusive"]) + [f"model(s) {missing} not resolved"]
         out["s"][g] = sgrp
     return out
+
+
+def _rule_owns_g_prefix(spec: Any) -> bool:
+    """Whether the spec's rule classifies G-PREFIX mismatches itself (``Rule.owns_g_prefix``: each is a peer drop or a
+    named VOID of the rule), so they are carried in ``g_prefix`` without making the group inconclusive."""
+    from main.reads.rules import RULES
+
+    rule = RULES.get(str(getattr(spec, "rule", None) or ""))
+    return bool(rule is not None and rule.owns_g_prefix)
 
 
 def group_reasons(lane: str, g: str, grp: Mapping[str, Any], *, allow_unplayed: bool = False) -> List[str]:

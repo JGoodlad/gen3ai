@@ -38,7 +38,14 @@ disconnect the peer, and the front end would book the dropped peer's forfeit as 
 the front end has no battle timer.
 
 **The record.** One JSON line per decision of ours (schema :data:`SCHEMA`) in ``<out>/search_decisions.jsonl``:
-whether it was searched (and why not), π's greedy action, the pick, Q̂ and log π per legal action, the critic at the
+whether it was searched (and why not), π's greedy action, the pick; on every decision that reaches the search (searched
+or excluded) its ``key``, its ``deal`` and the decision's IDENTITY: ``log_sha256``
+(:func:`main.anchors.forced_branch.log_sha256` of the honest log handed to the search) and ``frame_sha256``
+(:func:`main.anchors.input_log.frame_sha256` of the live core row), the very digests a kept raw decision of the same
+state carries (:mod:`main.value_search.live_identity` matches on them); on the hashed RE-SCORE SAMPLE
+(:func:`rescore_sampled`, 1 in :data:`RESCORE_MOD` by key) also ``rescore_sample: true``, the honest ``log``, the
+``mask`` and the choice ``tokens``: with ``at``, ``side``, ``turn``, ``n`` and ``pi_argmax`` what an offline re-score of
+the decision needs (``live_identity rescore``); Q̂ and log π per legal action, the critic at the
 root, the playouts spent, its CPU and wall seconds, the worlds' tries and leak block and their species hit rate
 against the truth (S-U's REPORTED world-quality covariate, at species level). ``main.reads search-cost`` reads them.
 ``cpu_s`` (this worker thread plus the replay children) is the figure every banked record carries; ``world_cpu_s`` /
@@ -56,10 +63,20 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 
+from main.anchors.forced_branch import log_sha256
+from main.anchors.input_log import frame_sha256
 from main.anchors.search_presets import SearchPreset, canonical, parse
 
 SCHEMA = "gen3_live_search_decision_v1"
 KEY_SCHEMA = "su_live_v1"
+#: the RE-SCORE SAMPLE: a searched-path decision whose key hashes to 0 mod this carries what an offline re-score needs
+RESCORE_MOD = 16
+
+
+def rescore_sampled(key: str) -> bool:
+    """Whether the decision keyed ``key`` is in the hashed re-score sample (``int(sha256(key)[:8], 16) % 16 == 0``):
+    a function of the key alone, so outcome-blind and the same in every replay of the deal."""
+    return int(hashlib.sha256(str(key).encode()).hexdigest()[:8], 16) % RESCORE_MOD == 0
 
 
 class LiveSearchError(RuntimeError):
@@ -225,7 +242,16 @@ class LiveSearcher:
         log, at, update = honest_log(battle, side)
         deal = deal_key(battle.start_doc, side)
         key = self.key(deal, turn, n)
-        rec.update(deal=deal, update=update, at=at, key=key)
+        # the decision's IDENTITY, before the search: the same digests a kept raw decision carries (input_log's
+        # ``frame_sha256``; forced_branch's ``log_sha256`` of the same honest_log cut), so a live searched decision is
+        # matched to the banked offline row of the SAME state (main.value_search.live_identity), not just the same key
+        rec.update(deal=deal, update=update, at=at, key=key, log_sha256=log_sha256(log),
+                   frame_sha256=frame_sha256(d["frame"]["b64"]))
+        if rescore_sampled(key):
+            # the RE-SCORE SAMPLE: what main.value_search.live_identity's ``rescore`` hands the searcher's own
+            # ``_search`` offline (the frame is rebuilt by replaying ``log`` and checked against ``frame_sha256``)
+            rec.update(rescore_sample=True, log=log, mask=[int(x) for x in np.asarray(mask).tolist()],
+                       tokens={str(k): str(v) for k, v in (d.get("tokens") or {}).items()})
         out = await asyncio.to_thread(self._search, log, at, side, row, mask, d, key, int(argmax))
         rec.update(out)
         self._write(rec)

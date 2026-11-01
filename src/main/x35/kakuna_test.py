@@ -555,10 +555,11 @@ def test_a_searched_unit_is_a_long_job_whose_watchdog_is_sized_for_a_searched_ga
         KA.unit_argv(u, Path("/o"), 9541, py="PY")
     a = KA.unit_argv(u, Path("/o"), 9541, py="PY", short=False)
     i = a.index("PY")
-    assert "--max-s" not in a and a[i - 3:i] == [KA.MEM_GB, "timeout", str(KA.UNIT_SEARCH_S + 600)]
+    # literal: a 10-h watchdog (a 3-h one would kill the longest searched games, a length-correlated drop)
+    assert "--max-s" not in a and a[i - 3:i] == [KA.MEM_GB, "timeout", "36600"]
     tail = a[i:]
-    for flag, val in (("--our-search", "r0s4@10"), ("--first-game-timeout", str(KA.UNIT_SEARCH_S)),
-                      ("--progress-timeout", str(KA.UNIT_SEARCH_S)), ("--deal-game", "0")):
+    for flag, val in (("--our-search", "r0s4@10"), ("--first-game-timeout", "36000"),
+                      ("--progress-timeout", "36000"), ("--deal-game", "0")):
         assert tail[tail.index(flag) + 1] == val
     fake_play.script = [(0, True)]
     assert KA.run_unit(tmp_path, u) == 0 and KA.is_done(tmp_path, u)

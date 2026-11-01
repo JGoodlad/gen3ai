@@ -23,7 +23,8 @@ Playing (the lanes and their claims):
   by the stop;
 * :mod:`main.reads.playpath` / :mod:`main.reads.repin` -- the tracked play path at a commit, and ``repin`` (another
   playing commit, only when that path is byte-identical);
-* :mod:`main.reads.prefix` -- G-PREFIX, the paired-prefix tooth of a searched read; :mod:`main.reads.search_cost` -- its cost.
+* :mod:`main.reads.prefix` -- G-PREFIX, the paired-prefix tooth of a searched read; :mod:`main.reads.search_cost` -- its cost;
+  :mod:`main.reads.peer_divergence` -- AM-DL-PEER's classifier of a pair's divergence (a peer drop or not).
 
 Reading (cells, rules, the record):
 
@@ -34,8 +35,8 @@ Reading (cells, rules, the record):
 * :mod:`main.reads.rederive` -- the forfeit-win guard and the H21 peer-fault check RE-DERIVED from each unit's captures
   and peer logs (units of pre-guard pins too): a hit voids the unit, or HOLDS ``decide`` for a read registered before;
 * :mod:`main.reads.rules` (with :mod:`main.reads.rules_n4_screen`, :mod:`main.reads.rules_search_headroom`,
-  :mod:`main.reads.rules_deviation_sign`, :mod:`main.reads.rules_deviation_live`, :mod:`main.reads.rules_x63` and
-  :mod:`main.reads.rules_x59s`) --
+  :mod:`main.reads.rules_deviation_sign`, :mod:`main.reads.rules_deviation_live`, :mod:`main.reads.rules_searched_play`,
+  :mod:`main.reads.rules_x63` and :mod:`main.reads.rules_x59s`) --
   the registered interval and decision rules, by name (reusing ``main.x35.readout`` / ``main.x35.d1`` /
   ``main.anchors.results``), and the registered VOID gate;
 * :mod:`main.reads.record` -- the schema-checked record (X35-stage records load in ``main.x35.batch.read_record``);

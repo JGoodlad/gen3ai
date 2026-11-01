@@ -141,12 +141,14 @@ SHORT_LANE_OVERRUN = 88
 UNIT_LONG_S = 2700
 MANIFEST_SCHEMA = "x35_home72_manifest_v1"
 MAX_ATTEMPTS = 2
-#: A SEARCHED unit (S-U, ``--our-search``): one game of 15-37 CPU-min, 25-75 min of wall at nice 19 (the design's
-#: ESTIMATE, ``design_search_u_headroom.md`` §4.2). It never takes the short lane: it plays as a long heavy-slot job
-#: bounded by ``timeout`` this long, and its own watchdog (``--first-game-timeout`` / ``--progress-timeout``) is the
-#: same bound, so a slow searched game is never failed as a hang. It holds its slot past the slots' 45-min chunk
-#: policy whenever a game runs long (a game cannot be split; FINDING of the S-U build).
-UNIT_SEARCH_S = 3 * 3600
+#: A SEARCHED unit (S-U, ``--our-search``): one game. It never takes the short lane: it plays as a long heavy-slot job
+#: bounded by ``timeout`` this long + 600 s, and its own watchdog (``--first-game-timeout`` / ``--progress-timeout``)
+#: is this bound, so a slow searched game is never failed as a hang. 10 h, not 3 h: the cost model (one lean game's
+#: late-game profile over the dlive raw games' lengths) puts a searched game's CPU at p99 59-104 CPU-min and its max at
+#: 87-204 CPU-min, and under contention wall runs 1-2.5x CPU, so a 3-h watchdog would kill the longest ~0.3-1 % of
+#: searched games: a drop correlated with game length (post-treatment), and so with the outcome. It holds its slot past
+#: the slots' 45-min chunk policy whenever a game runs long (a game cannot be split; FINDING of the S-U build).
+UNIT_SEARCH_S = 10 * 3600
 
 
 class KakunaError(RuntimeError):

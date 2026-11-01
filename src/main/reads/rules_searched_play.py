@@ -1,0 +1,601 @@
+r"""The registered rule ``searched_play``: a SEARCHED label plays whole games live against its RAW TWIN, deal by deal, on
+the U panels only (the S′ live-play read, ``designs/endstate/design_sprime_live_play.md``).
+
+ONE ``per_game`` anchor group plays the searched label (``load.search``, e.g. ``r0s4_rolls@10``) and its raw twin
+(``main.reads.spec.search_twins``: the same pinned bytes, no search) on exactly the ``u_panels``. A DEAL (panel, unit
+seed, game) is a PAIR iff both arms' one-game units COUNTED (``main.anchors.results.unit_counts``) and it is not a peer
+drop (below). A game scores y = win 1, tie ½, loss 0; a pair's D = y_searched − y_raw.
+
+THE ESTIMAND. A UNIT is one (panel, unit seed); its statistic is the mean of its deals' D, exact fractions. G_panel =
+the mean of the panel's unit statistics; G_U = the equal-weight mean of the ``u_panels``' G.
+
+UNPAIRED DEALS. A deal is FINISHED when each arm's unit counted or spent its attempts (``main.reads.attempts``); a
+finished deal that is not a pair is UNPAIRED, of two kinds:
+
+* PRE-TREATMENT: a PEER DROP (below) only. Excluded, never imputed.
+* POST-TREATMENT: every other unpaired deal: the searched side missing (the raw unit counted), the raw side missing,
+  or neither counted. It may depend on the treatment (a searched game that runs long), so it is IMPUTED in the robust
+  classes below.
+
+THE ROBUST CLASSES. Three estimates of G_U, each with its own bootstrap: PAIRED (the pairs only, REPORTED); GO-IMPUTED
+(every post-treatment unpaired deal at its worst case for GO: searched missing D = −y_raw, raw missing D = y_s − 1,
+neither D = −1); NULL-IMPUTED (the opposite: searched missing D = 1 − y_raw, raw missing D = y_s, neither D = +1). An
+imputed deal enters its unit's statistic like a pair. Every bar is compared as an EXACT fraction
+(``search_headroom.cmp``); a bound within ``rule8_eps`` of its bar is ``near``, never a crossing (root rule 8), and the
+decision is flagged ``boundary``:
+
+* GO-LEAKY iff LB(G_U, GO-imputed) > 0 (leak-inclusive: the honest world builder replays the true seed);
+* NULL iff not GO-LEAKY and UB(G_U, NULL-imputed) < ``null_margin_pp`` / 100;
+* STOP otherwise. ``go_below_margin`` flags a GO-LEAKY whose NULL-imputed UB is also below the margin.
+
+THE BOOTSTRAP (``search_headroom``'s scheme on the U panels), run once per estimate with a FRESH
+``numpy.random.default_rng(seed)``: for each panel in ``u_panels`` order, its unit statistics in unit-seed order as a
+float vector ``x`` of length n, ``idx = rng.integers(0, n, size=(B, n))`` and the panel's replicates
+``x[idx].mean(axis=1)``; replicate b of G_U is the mean of the panels' replicate b; each interval
+``numpy.percentile(reps, [2.5, 97.5])``.
+
+PEER DROPS (the dlive read's FINDING DL-7, registered before any game here): each G-PREFIX mismatch (``assemble``'s
+``g_prefix.mismatches``: the pair's protocol differs before the search's first turn) is classified by
+:func:`main.reads.peer_divergence.classify` on the pair's two captures (raw first) with branch turn = the search's
+first turn. ``peer_first`` (Kakuna chose differently first on an identical view, our commands on identical views all
+equal, before that turn) makes the deal a PEER DROP. Any other class, or an unreadable capture, is a VOID reason. This
+rule OWNS its G-PREFIX mismatches (``Rule.owns_g_prefix``): ``assemble`` does not mark the group inconclusive for them,
+so a peer drop does not block the record and every other mismatch VOIDs it. (The lane still HOLDS on a mismatch for a
+look; the operator releases it.)
+
+THE LIVE IDENTITY GUARD (``identity``): ``python -m main.value_search.live_identity rescore`` re-runs S′ offline on the
+hashed sample of the searched label's live decisions (``cells``) and writes ``rescore_json``. The rule reads that JSON
+(its sha256 recorded), checks it was run on these cells, these panels, the registered engine and the raw label's
+bytes, re-derives the registered-order first N of the sampled records from the cells and requires the JSON's re-scored
+states to be exactly those (N = the registered ``max_rescored``; the JSON's own ``max`` must equal it), and needs its
+PASS with >= ``min_rescored`` states.
+
+VOID (named reasons, before any estimate): G-PREFIX not run on the group; a G-PREFIX mismatch not classed a peer drop;
+G-PREFIX checked != pairs + peer drops; counted units on two engines, an unknown engine, or another than ``engine``;
+any counted unit, or a resolved model, on bytes other than the raw label's pinned sha256; a counted searched unit not
+stamped / played as ``expected_search``'s preset; a counted raw unit carrying a search stamp or a regime other than
+greedy; a counted unit whose ``games.jsonl`` disagrees with its summary; a panel with < 2 units holding a pair; any
+UNFINISHED deal (an arm's unit neither counted nor out of attempts: the read is incomplete, never silently short); in any U
+panel, post-treatment unpaired deals above ``max_post_unpaired_frac`` of the panel's planned deals, or pre-treatment
+above ``max_pre_unpaired_frac``; the live identity guard missing, inconsistent, short of ``min_rescored`` or FAIL.
+
+REPORTED, never decided: the three estimates with their intervals, G per panel (each estimate's own replicates); each
+arm's pooled U score over the paired games (``strat_score``, a tie a non-win) and the searched arm's LB against 0.50;
+the discordance share (b + c only, never b − c); the counts per panel (pairs, pre- and post-treatment unpaired by
+cause, unfinished); the deviation rate, exclusions and search CPU-s per game (each searched unit's search record); the
+identity guard's summary.
+"""
+from __future__ import annotations
+
+import json
+import os
+from fractions import Fraction
+from pathlib import Path
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
+
+SCHEMA = "gen3_read_searched_play_v1"
+KEYS = ("group", "searched", "raw", "u_panels", "expected_search", "engine", "null_margin_pp", "bootstrap",
+        "rule8_eps", "max_post_unpaired_frac", "max_pre_unpaired_frac", "identity", "state")
+IDENTITY_KEYS = ("cells", "rescore_json", "min_rescored", "max_rescored")
+RAW_REGIME = "greedy"
+GO_LEAKY, NULL, STOP, VOID = "GO-LEAKY", "NULL", "STOP", "VOID"
+PEER_DROP_CLASS = "peer_first"
+COUNTED, EXHAUSTED, PENDING = "counted", "exhausted", "pending"
+#: an unpaired deal's cause: PRE-treatment (a peer drop) or POST-treatment (the rest)
+PRE_CAUSES, POST_CAUSES = ("peer_drop",), ("searched_missing", "raw_missing", "neither")
+ESTIMATES = ("paired", "go_imputed", "null_imputed")
+RULE_DOCS = {"searched_play": "a searched label plays whole games live against its raw twin, paired by deal on U in "
+                              "ONE per_game group; G_U by a within-panel unit bootstrap; GO-LEAKY iff the GO-imputed "
+                              "LB > 0, NULL iff the NULL-imputed UB < the margin, else STOP; peer drops by AM-DL-PEER's "
+                              "classifier; VOID on G-PREFIX, engines, bytes, the search config, unpaired deals or the "
+                              "live identity guard"}
+_UNIT_KEYS = ("unit", "label", "panel", "unit_seed", "game", "counted", "wins", "ties", "n", "our_regime", "search",
+              "search_played", "model_sha256", "engine", "games")
+
+
+def _err(msg: str) -> Exception:
+    from main.reads.rules import RuleInputError
+
+    return RuleInputError(msg)
+
+
+def _num(x: Any) -> bool:
+    return isinstance(x, (int, float)) and not isinstance(x, bool)
+
+
+def _int(x: Any) -> bool:
+    return isinstance(x, int) and not isinstance(x, bool)
+
+
+def _abs(x: Any) -> bool:
+    return isinstance(x, str) and bool(x) and os.path.isabs(x)
+
+
+def cells_dir(state: str, group: str, label: str) -> str:
+    """The searched label's cells dir of a read state (``main.reads.layout``)."""
+    from main.reads import layout as LY
+
+    return os.path.normpath(str(LY.anchor_state(Path(state), group, label) / "cells"))
+
+
+# ------------------------------------------------------------------------------------------------ check (spec load)
+def check(p: Mapping[str, Any], *, models: Any, anchor: Any, s: Any) -> List[str]:
+    from main.anchors.search_presets import SearchSpecError, canonical
+    from main.reads.rules import _check_keys
+    from main.reads.spec import SpecError, search_twins
+
+    probs = _check_keys(p, KEYS, KEYS)
+    g = anchor.get(p.get("group"))
+    if g is None:
+        return probs + [f"group {p.get('group')!r} is not an anchor group"]
+    if not g.per_game:
+        probs.append(f"group {g.name!r} is not per_game (a deal is one game of each arm)")
+    srch: Any = p.get("searched")
+    raw: Any = p.get("raw")
+    if srch == raw or set(g.models) != {srch, raw}:
+        probs.append(f"group {g.name!r} must play exactly the searched label and its raw twin, plays {list(g.models)}")
+    else:
+        try:
+            twin = search_twins(models, g.models, f"anchor.{g.name}").get(srch)
+        except SpecError as exc:
+            twin = None
+            probs.append(str(exc))
+        if twin != raw:
+            probs.append(f"raw {raw!r} is not searched {srch!r}'s raw twin (same ref, no search)")
+        try:
+            want = canonical(p.get("expected_search"))
+            if want != p.get("expected_search"):
+                probs.append(f"expected_search: spell it {want!r}")
+            if models[srch].load.get("search") != want:
+                probs.append(f"searched {srch!r} loads search {models[srch].load.get('search')!r}, not "
+                             f"expected_search {p.get('expected_search')!r}")
+        except SearchSpecError as exc:
+            probs.append(f"expected_search: {exc}")
+        ref = models[raw].ref
+        if ref.kind != "pinned" or not ref.sha256:
+            probs.append(f"raw {raw!r} must be a pinned ref with its sha256 (a raw arm on other bytes is VOID)")
+    u = p.get("u_panels")
+    if not (isinstance(u, list) and u and all(isinstance(x, str) for x in u) and len(set(u)) == len(u)):
+        probs.append("u_panels: a list of distinct team sets")
+    elif set(u) != set(g.teamsets) or len(u) != len(g.teamsets):
+        probs.append(f"u_panels {u} must be exactly group {g.name!r}'s team sets {list(g.teamsets)} (no home panel)")
+    if not (isinstance(p.get("engine"), str) and p["engine"]):
+        probs.append("engine: the registered engine stamp (port=..;env=..)")
+    if not (_num(p.get("null_margin_pp")) and p["null_margin_pp"] > 0):
+        probs.append("null_margin_pp: a number > 0 (pp)")
+    bs = p.get("bootstrap")
+    if not (isinstance(bs, dict) and set(bs) == {"B", "seed"} and _int(bs.get("B")) and bs["B"] >= 1000
+            and _int(bs.get("seed"))):
+        probs.append("bootstrap: {B: int >= 1000, seed: int}")
+    eps: Any = p.get("rule8_eps")
+    if not (_num(eps) and 0 <= eps < 0.01):
+        probs.append("rule8_eps: a number in [0, 0.01) (a bound this close to a bar is never a crossing)")
+    for k in ("max_post_unpaired_frac", "max_pre_unpaired_frac"):
+        if not (_num(p.get(k)) and 0 <= p[k] <= 0.2):
+            probs.append(f"{k}: a number in [0, 0.2]")
+    if not _abs(p.get("state")):
+        probs.append("state: the read's state dir, an absolute path")
+    idn = p.get("identity")
+    if not (isinstance(idn, dict) and set(idn) == set(IDENTITY_KEYS)):
+        probs.append(f"identity: {{{', '.join(IDENTITY_KEYS)}}}")
+    else:
+        probs += [f"identity.{k}: an absolute path" for k in ("cells", "rescore_json") if not _abs(idn[k])]
+        if not (_int(idn["min_rescored"]) and idn["min_rescored"] >= 1):
+            probs.append("identity.min_rescored: an int >= 1")
+        if not (_int(idn["max_rescored"]) and _int(idn["min_rescored"]) and idn["max_rescored"] >= idn["min_rescored"]):
+            probs.append("identity.max_rescored: an int >= min_rescored (the registered first N of the sample)")
+        if _abs(p.get("state")) and _abs(idn["cells"]) and isinstance(srch, str) and \
+                os.path.normpath(idn["cells"]) != cells_dir(p["state"], g.name, srch):
+            probs.append(f"identity.cells {idn['cells']} is not the searched label's cells dir "
+                         f"{cells_dir(p['state'], g.name, srch)}")
+    return probs
+
+
+# ------------------------------------------------------------------------------------------------ inputs (I/O here)
+def planned_deals(state: Path, group: str, searched: str, raw: str, units: Sequence[Mapping[str, Any]],
+                  exhausted: Sequence[str]) -> List[Dict[str, Any]]:
+    """Every PLANNED deal of the group (the two labels' ``plan.json``), each arm's unit and its status: ``counted``,
+    ``exhausted`` (its retries spent: ``main.reads.attempts``) or ``pending``."""
+    from main.reads import layout as LY
+    from main.x35 import kakuna as KA
+
+    counted = {str(u["unit"]) for u in units if u["counted"]}
+    spent = set(exhausted)
+    by: Dict[Tuple[str, int, int], Dict[str, Any]] = {}
+    for side, lab in (("searched", searched), ("raw", raw)):
+        st = LY.anchor_state(state, group, lab)
+        if not (st / "plan.json").is_file():
+            raise _err(f"{st}: no plan.json (the read is planned before it is decided)")
+        for u in KA.load_plan(st):
+            if u.game is None:
+                raise _err(f"unit {u.name}: not a per-game unit")
+            d = by.setdefault((u.teamset, int(u.unit_seed), int(u.game)), {})
+            if side in d:
+                raise _err(f"deal {(u.teamset, u.unit_seed, u.game)} planned twice for {lab!r}")
+            d[side] = {"unit": u.name, "status": COUNTED if u.name in counted else EXHAUSTED if u.name in spent
+                       else PENDING}
+    out = []
+    for (ts, seed, game), d in sorted(by.items()):
+        if set(d) != {"searched", "raw"}:
+            raise _err(f"deal {ts}:{seed}:{game} is planned for one arm only")
+        out.append({"deal": f"{ts}:{seed}:{game}", "panel": ts, "unit_seed": seed, "game": game, **d})
+    return out
+
+
+def classify_prefix(state: Path, group: str, searched: str, raw: str, mismatches: Sequence[Mapping[str, Any]],
+                    from_turn: int) -> List[Dict[str, Any]]:
+    """Each G-PREFIX mismatch classified on its pair's captures (raw first), branch turn ``from_turn``."""
+    from main.reads import layout as LY
+    from main.reads.peer_divergence import classify_pair
+
+    out = []
+    for m in mismatches:
+        row: Dict[str, Any] = {k: m.get(k) for k in ("deal", "searched", "raw", "why")}
+        row.update(classify_pair(LY.anchor_state(state, group, raw) / "cells" / str(m["raw"]),
+                                 LY.anchor_state(state, group, searched) / "cells" / str(m["searched"]), from_turn))
+        out.append(row)
+    return out
+
+
+def read_identity(idn: Mapping[str, Any], *, u_panels: Sequence[str], engine: str, model_sha256: str
+                  ) -> Dict[str, Any]:
+    """The live identity guard's summary from its ``rescore`` JSON: its own verdict, the rule's consistency checks
+    (``problems``: these cells, panels, engine and bytes; exactly the registered-order first N of the cells' sampled
+    records), the JSON's sha256 and counts."""
+    from main.value_search import live_identity as LI
+    from utils.hashing import sha256_file
+
+    p = Path(idn["rescore_json"])
+    if not p.is_file():
+        return {"verdict": None, "problems": [f"{p}: missing (live_identity rescore writes it before the record)"]}
+    try:
+        doc = json.loads(p.read_text())
+    except ValueError as exc:
+        return {"verdict": None, "problems": [f"{p}: unreadable ({exc})"]}
+    probs: List[str] = []
+    inp = doc.get("inputs") or {}
+    if doc.get("schema") != LI.RESCORE_SCHEMA:
+        probs.append(f"schema {doc.get('schema')!r}, not {LI.RESCORE_SCHEMA!r}")
+    want = {"cells": os.path.normpath(str(idn["cells"])), "panels": list(u_panels), "engine": engine,
+            "model_sha256": model_sha256}
+    have = {"cells": os.path.normpath(str(inp.get("cells"))), "panels": inp.get("panels"),
+            "engine": inp.get("engine"), "model_sha256": inp.get("model_sha256")}
+    probs += [f"it re-scored with {k} {have[k]!r}, not {want[k]!r}" for k in want if have[k] != want[k]]
+    if inp.get("max") != idn["max_rescored"]:
+        probs.append(f"it re-scored the first {inp.get('max')!r} sampled records, not the registered max_rescored "
+                     f"{idn['max_rescored']}")
+    try:
+        order = LI.registered_order(Path(idn["cells"]), list(u_panels), int(inp.get("max") or 0))
+        if order != doc.get("rescored"):
+            probs.append(f"its {len(doc.get('rescored') or [])} re-scored state(s) are not the cells' registered-order "
+                         f"first {len(order)} sampled record(s)")
+    except (LI.IdentityInputError, ValueError, TypeError) as exc:
+        probs.append(f"the cells' sampled records: {exc}")
+    n = int(doc.get("n_rescored") or 0)
+    if n < int(idn["min_rescored"]):
+        probs.append(f"{n} state(s) re-scored, fewer than min_rescored {idn['min_rescored']}")
+    return {"verdict": doc.get("verdict"), "reason": doc.get("reason"), "problems": probs,
+            "rescore_json": {"path": str(p), "sha256": sha256_file(p)}, "n_sampled": doc.get("n_sampled"),
+            "n_rescored": n, "by_panel": doc.get("by_panel"), "mismatches": len(doc.get("mismatches") or ()),
+            "cpu_s": doc.get("cpu_s")}
+
+
+def inputs(cells: Mapping[str, Any], p: Mapping[str, Any], spec: Any) -> Dict[str, Any]:
+    from main.anchors.search_presets import parse
+    from main.reads.rules import _group
+
+    g = _group(cells, "anchor", p["group"])
+    preset, from_turn = parse(p["expected_search"])
+    labels = (p["searched"], p["raw"])
+    models = cells.get("models") or {}
+    units = [{k: u.get(k) for k in _UNIT_KEYS} for u in g["units"] if u["label"] in labels]
+    state = Path(p["state"])
+    gp = g.get("g_prefix")
+    raw_sha = spec.models[p["raw"]].ref.sha256
+    return {
+        "schema": SCHEMA, "searched": p["searched"], "raw": p["raw"], "u_panels": list(p["u_panels"]),
+        "expected_search": p["expected_search"], "expected_regime": f"{RAW_REGIME}+search={p['expected_search']}",
+        "expected_preset": preset.as_dict(), "from_turn": from_turn, "raw_sha256": raw_sha,
+        "resolved_sha256": {lab: (models.get(lab) or {}).get("sha256") for lab in labels},
+        "engine_registered": p["engine"],
+        "group": {"name": p["group"], "engine": g.get("engine"), "regime_id": g.get("regime_id"),
+                  "teamsets": g.get("teamsets"), "unit_seeds": g.get("unit_seeds"), "unplayed": g.get("unplayed"),
+                  "exhausted_units": list(g.get("exhausted_units") or []),
+                  "inconclusive": list(g.get("inconclusive") or []), "g_prefix": gp},
+        "units": units,
+        "deals": planned_deals(state, p["group"], p["searched"], p["raw"], units, g.get("exhausted_units") or ()),
+        "prefix_classes": (classify_prefix(state, p["group"], p["searched"], p["raw"], gp.get("mismatches") or (),
+                                           from_turn) if gp else None),
+        "identity": read_identity(p["identity"], u_panels=p["u_panels"], engine=p["engine"], model_sha256=raw_sha)}
+
+
+# ------------------------------------------------------------------------------------------------ pairing
+def _score(u: Mapping[str, Any]) -> Fraction:
+    n, w, t = int(u["n"]), int(u["wins"]), int(u.get("ties") or 0)
+    if n != 1:
+        raise _err(f"unit {u['unit']}: n = {n}, not a one-game (per_game) unit")
+    return Fraction(2 * w + t, 2)
+
+
+def peer_drops(doc: Mapping[str, Any]) -> set:
+    return {str(c["deal"]) for c in doc.get("prefix_classes") or () if c.get("peer_drop")}
+
+
+def pair_deals(doc: Mapping[str, Any]) -> Tuple[Dict[str, Dict[int, List[Tuple[Fraction, Fraction]]]],
+                                               Dict[str, Dict[str, Any]]]:
+    """``(pairs, tally)``: ``pairs[panel][unit seed]`` = ``[(raw, searched), ...]`` in game order over the deals both
+    arms COUNTED that are not peer drops; ``tally[panel]``: its planned deals, pairs, unfinished deals, unpaired deals
+    by cause (pre- and post-treatment) and the post-treatment ones (``{unit_seed, game, cause, y}``: ``y`` the counted
+    side's score, None when neither counted)."""
+    side = {doc["searched"]: "s", doc["raw"]: "r"}
+    idx: Dict[Tuple[str, str, int, int], Mapping[str, Any]] = {}
+    for u in doc["units"]:
+        if not u["counted"]:
+            continue
+        k = (side[u["label"]], str(u["panel"]), int(u["unit_seed"]), int(u["game"]))
+        if k in idx:
+            raise _err(f"deal {k[1:]} counted twice for {u['label']!r}")
+        idx[k] = u
+    drops = peer_drops(doc)
+    u_panels = list(doc["u_panels"])
+    pairs: Dict[str, Dict[int, List[Tuple[Fraction, Fraction]]]] = {ts: {} for ts in u_panels}
+    tally: Dict[str, Dict[str, Any]] = {
+        ts: {"planned": 0, "pairs": 0, "unfinished": 0, **{c: 0 for c in PRE_CAUSES + POST_CAUSES}, "pre": 0, "post": 0,
+             "post_deals": []} for ts in u_panels}
+    for d in doc["deals"]:
+        ts, seed, game = str(d["panel"]), int(d["unit_seed"]), int(d["game"])
+        if ts not in tally:
+            raise _err(f"deal {d['deal']}: panel {ts!r} is not a U panel")
+        t = tally[ts]
+        t["planned"] += 1
+        st, rt = d["searched"]["status"], d["raw"]["status"]
+        s_u, r_u = idx.get(("s", ts, seed, game)), idx.get(("r", ts, seed, game))
+        if (st == COUNTED) != (s_u is not None) or (rt == COUNTED) != (r_u is not None):
+            raise _err(f"deal {d['deal']}: its planned status disagrees with the counted units")
+        if PENDING in (st, rt):
+            t["unfinished"] += 1
+            continue
+        if s_u is not None and r_u is not None:
+            if d["deal"] in drops:
+                t["peer_drop"] += 1
+                t["pre"] += 1
+            else:
+                pairs[ts].setdefault(seed, []).append((_score(r_u), _score(s_u)))
+                t["pairs"] += 1
+            continue
+        cause = "raw_missing" if s_u is not None else "searched_missing" if r_u is not None else "neither"
+        y = _score(s_u) if s_u is not None else _score(r_u) if r_u is not None else None
+        t[cause] += 1
+        t["post"] += 1
+        t["post_deals"].append({"unit_seed": seed, "game": game, "cause": cause, "y": None if y is None else str(y)})
+    return pairs, tally
+
+
+def imputed_d(cause: str, y: Optional[Fraction], case: str) -> Fraction:
+    """A post-treatment unpaired deal's D at its worst case for ``case`` (``go`` or ``null``; module docstring)."""
+    if cause == "neither":
+        return Fraction(-1 if case == "go" else 1)
+    assert y is not None
+    if cause == "searched_missing":                 # the raw game is known: y = y_raw
+        return -y if case == "go" else 1 - y
+    if cause == "raw_missing":                      # the searched game is known: y = y_searched
+        return y - 1 if case == "go" else y
+    raise _err(f"cause {cause!r}")
+
+
+def unit_stats(pairs: Mapping[str, Mapping[int, Sequence[Tuple[Fraction, Fraction]]]],
+               tally: Optional[Mapping[str, Mapping[str, Any]]] = None, case: Optional[str] = None
+               ) -> Dict[str, Dict[int, Fraction]]:
+    """``{panel: {unit seed: mean D}}`` (exact): the pairs, plus with ``case`` every post-treatment unpaired deal
+    imputed for it (an imputed deal enters its unit like a pair)."""
+    out: Dict[str, Dict[int, Fraction]] = {}
+    for ts, by in pairs.items():
+        ds: Dict[int, List[Fraction]] = {seed: [s - r for r, s in v] for seed, v in by.items()}
+        if case is not None and tally is not None:
+            for e in tally[ts]["post_deals"]:
+                y = None if e["y"] is None else Fraction(e["y"])
+                ds.setdefault(int(e["unit_seed"]), []).append(imputed_d(e["cause"], y, case))
+        out[ts] = {seed: sum(v, Fraction(0)) / len(v) for seed, v in sorted(ds.items())}
+    return out
+
+
+def _games_disagree(u: Mapping[str, Any]) -> bool:
+    gs = u.get("games")
+    if not gs:
+        return False
+    want = "win" if int(u["wins"]) else "tie" if int(u.get("ties") or 0) else "loss"
+    return len(gs) != 1 or str(gs[0][3]) != want
+
+
+def void_reasons(doc: Mapping[str, Any], pairs: Mapping[str, Mapping[int, Sequence[Any]]],
+                 tally: Mapping[str, Mapping[str, Any]], p: Mapping[str, Any]) -> List[str]:
+    """Every named VOID reason of the document (empty = the read may be decided)."""
+    why: List[str] = []
+    gp = doc["group"].get("g_prefix")
+    if not gp:
+        why.append("G-PREFIX: not run on the group")
+    else:
+        why += [f"G-PREFIX: deal {c['deal']} diverged before the search's first turn and is not a peer drop "
+                f"(class {c['class']}: {c.get('why')})" for c in doc.get("prefix_classes") or () if not c["peer_drop"]]
+        n_pairs = sum(len(v) for by in pairs.values() for v in by.values())
+        n_drops = sum(int(t["peer_drop"]) for t in tally.values())
+        if int(gp.get("checked", -1)) != n_pairs + n_drops:
+            why.append(f"G-PREFIX checked {gp.get('checked')} pair(s), the rule pairs {n_pairs} with {n_drops} peer "
+                       "drop(s): every pair must be checked")
+    counted = [u for u in doc["units"] if u["counted"]]
+    engines = {u.get("engine") for u in counted}
+    known = sorted(str(e) for e in engines if e)
+    if None in engines or "" in engines:
+        why.append(f"engine: {sum(1 for u in counted if not u.get('engine'))} counted unit(s) on an unknown engine")
+    if len(known) > 1:
+        why.append(f"engine: counted units span {len(known)} engines {known}")
+    reg = doc.get("engine_registered")
+    if known and known != [reg]:
+        why.append(f"engine: counted units played on {known}, not the registered {reg}")
+    want_sha = doc.get("raw_sha256")
+    for lab, sha in sorted(doc["resolved_sha256"].items()):
+        if sha != want_sha:
+            why.append(f"checkpoint: {lab!r} resolved to {str(sha)[:12]}, not the raw arm's {str(want_sha)[:12]}")
+    other = [u["unit"] for u in counted if u.get("model_sha256") != want_sha]
+    if other:
+        why.append(f"checkpoint: {len(other)} counted unit(s) played other bytes than {str(want_sha)[:12]} "
+                   f"(first {other[0]})")
+    bad_s, bad_r = [], []
+    for u in counted:
+        sp = u.get("search_played")
+        if u["label"] == doc["searched"]:
+            ok = (u.get("our_regime") == doc["expected_regime"] and u.get("search") == doc["expected_search"]
+                  and isinstance(sp, dict) and sp.get("search") == doc["expected_search"]
+                  and sp.get("our_search") == doc["expected_search"] and sp.get("preset") == doc["expected_preset"])
+            if not ok:
+                bad_s.append(u["unit"])
+        elif u.get("our_regime") != RAW_REGIME or u.get("search") is not None or sp is not None:
+            bad_r.append(u["unit"])
+    if bad_s:
+        why.append(f"search config: {len(bad_s)} counted searched unit(s) not stamped / played as the registered "
+                   f"{doc['expected_search']} {doc['expected_preset']} (first {bad_s[0]})")
+    if bad_r:
+        why.append(f"raw arm: {len(bad_r)} counted raw unit(s) carry a search stamp or a regime other than "
+                   f"{RAW_REGIME!r} (first {bad_r[0]})")
+    dis = [u["unit"] for u in counted if _games_disagree(u)]
+    if dis:
+        why.append(f"results: {len(dis)} counted unit(s) whose games.jsonl disagrees with the summary (first {dis[0]})")
+    for ts, by in pairs.items():
+        if len(by) < 2:
+            why.append(f"{ts}: {len(by)} unit(s) hold a pair (the unit bootstrap needs >= 2)")
+    unfinished = {ts: int(t["unfinished"]) for ts, t in tally.items() if t["unfinished"]}
+    if unfinished:
+        # a unit neither counted nor out of attempts (e.g. a FAILED attempt whose retry never ran): never dropped
+        why.append(f"{sum(unfinished.values())} deal(s) unfinished: the read is incomplete ({unfinished})")
+    for ts, t in tally.items():
+        for kind, key, causes in (("post", "max_post_unpaired_frac", POST_CAUSES),
+                                  ("pre", "max_pre_unpaired_frac", PRE_CAUSES)):
+            if t["planned"] and Fraction(int(t[kind]), int(t["planned"])) > Fraction(str(p[key])):
+                txt = ", ".join(f"{c} {t[c]}" for c in causes)
+                why.append(f"{ts}: {t[kind]} of {t['planned']} planned deals {kind}-treatment unpaired ({txt}), above "
+                           f"{key} {p[key]}")
+    idn = doc.get("identity") or {}
+    if idn.get("problems"):
+        why += [f"identity: {x}" for x in idn["problems"]]
+    if idn.get("verdict") != "PASS":
+        why.append(f"identity: the live identity guard reads {idn.get('verdict')!r} ({idn.get('reason')})")
+    return why
+
+
+# ------------------------------------------------------------------------------------------------ estimates
+def bootstrap(stats: Mapping[str, Mapping[int, Fraction]], u_panels: Sequence[str], B: int, seed: int
+              ) -> Dict[str, Any]:
+    """``{"G": {panel: [lo, hi]}, "G_U": [lo, hi]}``: the module docstring's exact scheme, a fresh rng."""
+    import numpy as np
+
+    rng = np.random.default_rng(seed)
+    reps: Dict[str, Any] = {}
+    for ts in u_panels:
+        x = np.array([float(v) for _s, v in sorted(stats[ts].items())])
+        idx = rng.integers(0, len(x), size=(B, len(x)))
+        reps[ts] = x[idx].mean(axis=1)
+    gu = np.stack([reps[ts] for ts in u_panels]).mean(axis=0)
+
+    def ci(r: Any) -> List[float]:
+        lo, hi = np.percentile(r, [2.5, 97.5])
+        return [float(lo), float(hi)]
+
+    return {"G": {ts: ci(reps[ts]) for ts in u_panels}, "G_U": ci(gu)}
+
+
+def classify(go_ci: Sequence[float], null_ci: Sequence[float], margin_pp: Any, eps: Any) -> Dict[str, Any]:
+    """GO-LEAKY / NULL / STOP from the GO-imputed LB and the NULL-imputed UB (proportions; the margin's pp / 100),
+    exact fractions, rule 8."""
+    from main.reads.rules_search_headroom import cmp
+
+    margin = Fraction(str(margin_pp)) / 100
+    t = {"LB(G_U go_imputed) > 0": cmp(go_ci[0], 0, eps, above=True),
+         "UB(G_U null_imputed) < null_margin": cmp(null_ci[1], margin, eps, above=False)}
+    go, below = t["LB(G_U go_imputed) > 0"][0], t["UB(G_U null_imputed) < null_margin"][0]
+    cls = GO_LEAKY if go else NULL if below else STOP
+    return {"class": cls, "boundary": any(near for _c, near in t.values()), "go_below_margin": go and below,
+            "tests": {k: {"crosses": v[0], "near": v[1]} for k, v in t.items()}}
+
+
+def _search_report(doc: Mapping[str, Any], pairs_deals: set) -> Dict[str, Any]:
+    """The deviation rate, exclusions and search CPU-s per game over the PAIRED searched games, per U panel and pooled."""
+    acc: Dict[str, Dict[str, Any]] = {k: {"games": 0, "searched": 0, "deviations": 0, "excluded": 0,
+                                          "search_cpu_s": 0.0} for k in [*doc["u_panels"], "U"]}
+    for u in doc["units"]:
+        if u["label"] != doc["searched"] or not u["counted"]:
+            continue
+        if (str(u["panel"]), int(u["unit_seed"]), int(u["game"])) not in pairs_deals:
+            continue
+        sp = u.get("search_played") or {}
+        for k in (str(u["panel"]), "U"):
+            a = acc[k]
+            a["games"] += 1
+            a["searched"] += int(sp.get("searched") or 0)
+            a["deviations"] += int(sp.get("deviations") or 0)
+            a["excluded"] += int(sp.get("excluded") or 0)
+            a["search_cpu_s"] += float(sp.get("search_cpu_s") or 0.0)
+    for a in acc.values():
+        n, gm = a["searched"], a["games"]
+        a.update(deviation_rate=a["deviations"] / n if n else None,
+                 excluded_per_game=a["excluded"] / gm if gm else None,
+                 search_cpu_s_per_game=a["search_cpu_s"] / gm if gm else None)
+    return acc
+
+
+def decide(doc: Mapping[str, Any], p: Mapping[str, Any]) -> Dict[str, Any]:
+    from main.reads.rules_search_headroom import _goal_b, cmp
+
+    pairs, tally = pair_deals(doc)
+    u = list(doc["u_panels"])
+    flat = [pr for by in pairs.values() for v in by.values() for pr in v]
+    disc = sum(1 for r, s in flat if r != s)
+    counts = {"by_panel": {ts: {"planned": t["planned"], "pairs": t["pairs"], "unfinished": t["unfinished"],
+                                "pre_treatment": {"total": t["pre"], **{c: t[c] for c in PRE_CAUSES}},
+                                "post_treatment": {"total": t["post"], **{c: t[c] for c in POST_CAUSES}}}
+                           for ts, t in tally.items()},
+              "units_with_pairs": {ts: len(pairs[ts]) for ts in pairs},
+              "uncounted_units": {lab: sum(1 for x in doc["units"] if x["label"] == lab and not x["counted"])
+                                  for lab in (doc["searched"], doc["raw"])},
+              "unplayed_units": doc["group"].get("unplayed")}
+    out: Dict[str, Any] = {"schema": SCHEMA, "counts": counts, "engine": doc["group"].get("engine"),
+                           "discordance": {"pairs": len(flat), "discordant": disc,
+                                           "share": disc / len(flat) if flat else None},
+                           "peer_drops": {"classes": doc.get("prefix_classes"),
+                                          "by_panel": {ts: t["peer_drop"] for ts, t in tally.items()}},
+                           "identity": dict(doc.get("identity") or {})}
+    reasons = void_reasons(doc, pairs, tally, p)
+    if reasons:
+        return dict(out, decision={"class": VOID, "verdict": VOID, "reasons": reasons})
+    b = p["bootstrap"]
+    est: Dict[str, Any] = {}
+    for name, case in zip(ESTIMATES, (None, "go", "null")):
+        st = unit_stats(pairs, tally, case)
+        g = {ts: sum(st[ts].values(), Fraction(0)) / len(st[ts]) for ts in u}
+        gu = sum((g[ts] for ts in u), Fraction(0)) / len(u)
+        ci = bootstrap(st, u, int(b["B"]), int(b["seed"]))            # a fresh default_rng(seed) per estimate
+        est[name] = {"G": {ts: {"point": float(g[ts]), "ci95": ci["G"][ts]} for ts in u},
+                     "G_U": {"point": float(gu), "ci95": ci["G_U"]},
+                     "exact": {"G": {ts: str(g[ts]) for ts in g}, "G_U": str(gu)}}
+    est["bootstrap"] = {"B": int(b["B"]), "seed": int(b["seed"]), "scheme": "numpy default_rng(seed), fresh per "
+                        "estimate; u_panels in order; within-panel unit resampling; percentile 2.5 / 97.5"}
+    cls = classify(est["go_imputed"]["G_U"]["ci95"], est["null_imputed"]["G_U"]["ci95"], p["null_margin_pp"],
+                   p["rule8_eps"])
+    goal = _goal_b({"u_panels": u}, pairs)
+    lb = (goal["searched"].get("ci95") or [None])[0]
+    if lb is not None:
+        c, near = cmp(lb, "0.5", p["rule8_eps"], above=True)
+        goal["searched_lb_above_0_50"] = {"lb": lb, "crosses": c, "near": near}
+    drops = peer_drops(doc)
+    pdeals = {(str(d["panel"]), int(d["unit_seed"]), int(d["game"])) for d in doc["deals"]
+              if d["searched"]["status"] == COUNTED and d["raw"]["status"] == COUNTED and d["deal"] not in drops}
+    out["estimates"] = est
+    out["score_u"] = goal
+    out["search"] = _search_report(doc, pdeals)
+    pp = lambda x: f"{100 * x:+.2f}"                                                  # noqa: E731
+    flags = [f for f in ("boundary", "go_below_margin") if cls[f]]
+    gi, ni, pa = est["go_imputed"]["G_U"], est["null_imputed"]["G_U"], est["paired"]["G_U"]
+    verdict = (f"{cls['class']}: G_U (searched − raw, by deal, U) paired {pp(pa['point'])} pp "
+               f"[{pp(pa['ci95'][0])}, {pp(pa['ci95'][1])}]; GO-imputed LB {pp(gi['ci95'][0])} (GO-LEAKY iff > 0); "
+               f"NULL-imputed UB {pp(ni['ci95'][1])} (NULL iff < {p['null_margin_pp']} pp)"
+               + (f"; flagged {', '.join(flags)}" if flags else ""))
+    return dict(out, decision=dict(cls, verdict=verdict))
