@@ -1,0 +1,76 @@
+{
+ "schema": "gen3_read_spec_v1",
+ "read": "sprime_live_play_2026-11-01",
+ "prereg": "designs/research_state/measurements/sprime_live_play_2026-11-01/PREREG.md",
+ "pin": "0c76b521e",
+ "note": "S'-LIVE: P* + S' (r0s4_rolls@10, every eligible decision from turn 10) vs P* raw, both greedy, against Kakuna on U (heldout72_hpfix, forum72, p72; FRESH unit seeds 300-344, 2,700 deals), ONE per_game group, both arms lone one-game units deal by deal, G-PREFIX with pre-registered peer drops, the choice-level identity guard (offline re-score of a hashed 1-in-16 sample, first 600 in registered order); searched_play: GO-LEAKY iff LB(G_U) > 0, NULL iff not GO-LEAKY and UB(G_U) < +3 pp (post-treatment drops imputed at their worst case for each class), else STOP",
+ "models": {
+  "pstar": {
+   "arm": "pstar",
+   "seed": 2601,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip",
+    "sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed"
+   }
+  },
+  "pstar_s": {
+   "arm": "pstar_s",
+   "seed": 2601,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip",
+    "sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed"
+   },
+   "load": {
+    "search": "r0s4_rolls@10"
+   }
+  }
+ },
+ "anchor": {
+  "u": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "heldout72_hpfix",
+    "forum72",
+    "p72"
+   ],
+   "unit_seeds": "300-344",
+   "per_game": true,
+   "models": [
+    "pstar",
+    "pstar_s"
+   ]
+  }
+ },
+ "decision": {
+  "rule": "searched_play",
+  "params": {
+   "group": "u",
+   "searched": "pstar_s",
+   "raw": "pstar",
+   "u_panels": [
+    "heldout72_hpfix",
+    "forum72",
+    "p72"
+   ],
+   "expected_search": "r0s4_rolls@10",
+   "engine": "port=e00a212a102f5ce2/94;env=3d0d5c9c0f5d3c23/129",
+   "null_margin_pp": 3.0,
+   "bootstrap": {
+    "B": 2000,
+    "seed": 20261101
+   },
+   "rule8_eps": 0.0005,
+   "max_post_unpaired_frac": 0.005,
+   "max_pre_unpaired_frac": 0.02,
+   "identity": {
+    "cells": "/home/goodlad/gen3ai_archive/sprime_live_play_2026-11-01/anchor/u/pstar_s/cells",
+    "rescore_json": "/home/goodlad/gen3ai_archive/sprime_live_play_2026-11-01/identity/rescore.json",
+    "min_rescored": 300,
+    "max_rescored": 600
+   },
+   "state": "/home/goodlad/gen3ai_archive/sprime_live_play_2026-11-01"
+  }
+ }
+}

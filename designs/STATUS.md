@@ -94,6 +94,7 @@ leak-reduced re-gate (`dice="rolls"`) supersedes it and **still reads GO**: on u
 - **The result:** at ≈ 1,800 such departures on unfamiliar teams, forcing the departure in a replay of the game wins +1.20 pp [−1.55, +3.88] more than the game as played.
 - **The self-referee on those fresh departures:** only +0.99 pp, against +3.4 on the gate's states. So the gate's headroom mostly did not carry over, and the read had little power at that size.
 - **What follows:** S-U is not played on S′, and search stays paused.
+- **Registered next, not running: S′-LIVE** ([`design_sprime_live_play.md`](endstate/design_sprime_live_play.md)). It asks the game-level question directly. S′ plays every eligible decision against the real Kakuna on 2,700 fresh unfamiliar-team deals, paired with P\* alone. GO-LEAKY licenses only a leak-honest replication; NULL (UB < +3 pp) closes S′ as a stand-alone route. ≈ 370–700 CPU-h: 2–5 weeks on the agent cores, or a rented box (§6 item 2).
 
 **Dropped or retired.** **X64**, the toy context-count curve: DROPPED by its review (`c0fd72bd8`; it would cost more
 than the production reads it was meant to gate). **N2**, the set-identity lever: dropped, P\*'s encoding is mostly
@@ -160,8 +161,8 @@ Every open owner question, in one place.
    longer deadman, possibly two instances at once: `endstate/design_x53_n1_fresh_breadth.md` §9). Recommendation: yes.
 2. **A rented CPU box.** The Kakuna lane, not the GPU, sets when anything is read: PR-1′ alone is 30,000–38,000
    games, weeks on the three agent cores. A 32-vCPU box would play them in about 8–24 box-hours for about $5–25
-   (UNVERIFIED: no rented CPU has played a Kakuna game yet). The same approval would serve X62's, X63's and S-U's
-   reads (`endstate/strategy_if_levers_null_2026-10-26.md` §3.1; REVIEW_2 `69c7cd34d`).
+   (UNVERIFIED: no rented CPU has played a Kakuna game yet). The same approval would serve X62's, X63's, S-U's and S′-LIVE's
+   reads (S′-LIVE: ≈ 10–25 box-hours on a 64-vCPU box, ≈ $20–90, UNVERIFIED) (`endstate/strategy_if_levers_null_2026-10-26.md` §3.1; REVIEW_2 `69c7cd34d`).
 3. **The history rewrite.** It replaces human account names with salted codes in every past version of every file,
    then replaces `main`'s history on GitHub. It is built as a dry-run kit (`39c60355c`,
    [`ops/history_rewrite.md`](ops/history_rewrite.md)) and **not run**. The owner's part: the go; four rulings from its
