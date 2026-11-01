@@ -204,7 +204,7 @@ grown child's outputs equal its parent's bit for bit. A zip carrying the OTHER o
 (config v164 …) is older than the code (config v164 …)": a record equal to the code is not older. The `state_dict` /
 `config_value` / `load_failed` sentences now say "records the code's own architecture … yet its checkpoint does not load
 under it (the weights and the record disagree)" when the record IS the code's identity. `main.probe_battery`'s depth
-diagnostics refuse a wide trunk (`UnsupportedTrunk`, `probe_battery.md`).
+diagnostics read a wide trunk (and refuse per-kind experts, `UnsupportedTrunk`; `probe_battery.md`).
 
 ## The three walls behind the load-time classes (measured 2026-08-13)
 

@@ -350,18 +350,106 @@ def test_the_depth_worker_refuses_a_trunk_with_per_kind_ffn_experts():
         W.trunk_rounds(fe)
 
 
-def test_the_depth_worker_refuses_a_trunk_with_an_ffn_width_branch():
-    """B-FFNW (T69): on a `--trunk-ffn-dim N > 256` network the replica would skip the width branch — refused, typed."""
+def _wide_round(kind: str, ffn_dim: int = 512):
+    """One trunk round of ``kind`` with a width branch at ``ffn_dim``, every parameter random (the branch's zero
+    ``linear2`` included, so a replica that skipped the branch could not match by accident)."""
     import torch
 
     from agents.model.team_transformer import BiasedEncoderLayer
     from agents.model.trunk_depth import IdentityInitRound
     from agents.model.trunk_ffn_width import build_ffn_extra
+
+    g = torch.Generator().manual_seed(7)
+    L = BiasedEncoderLayer() if kind == "BiasedEncoderLayer" else IdentityInitRound()
+    L.ffn_extra = build_ffn_extra(0, ffn_dim)
+    with torch.no_grad():
+        for p in L.parameters():
+            p.copy_(0.2 * torch.randn(p.shape, generator=g))
+    return L.eval()
+
+
+@pytest.mark.parametrize("kind", ["BiasedEncoderLayer", "IdentityInitRound"])
+def test_the_depth_replica_is_a_wide_round_and_reads_its_whole_hidden_layer(kind):
+    """B-FFNW (T69): on a `--trunk-ffn-dim N > 256` round the replica must add the width branch (the round's own
+    forward does), `trunk_rounds` must accept it, and the FFN statistics must see all N hidden units."""
+    import torch
+
     from main.probe_battery import pin_worker as W
 
+    L = _wide_round(kind)
     fe = torch.nn.Module()
-    fe.rounds = torch.nn.ModuleList([BiasedEncoderLayer(), IdentityInitRound()])
-    assert len(W.trunk_rounds(fe)) == 2
-    fe.rounds[0].ffn_extra = build_ffn_extra(0, 512)
-    with pytest.raises(W.UnsupportedTrunk, match="width branch"):
-        W.trunk_rounds(fe)
+    fe.rounds = torch.nn.ModuleList([L])
+    assert W.trunk_rounds(fe) == [L]
+    g = torch.Generator().manual_seed(8)
+    x = torch.randn(2, 9, 128, generator=g)
+    bias = torch.zeros(2, int(L.n_heads), 9, 9)
+    with torch.no_grad():
+        ref = L(x, bias)
+        st: dict = {}
+        assert torch.allclose(W._layer_forward(L, x, bias, mode="full", stats=st), ref, atol=1e-5)
+        assert st["h"].shape[-1] == 512
+        br, L.ffn_extra = L.ffn_extra, None                  # the base-only replica is NOT the round
+        assert not torch.allclose(W._layer_forward(L, x, bias, mode="full"), ref, atol=1e-3)
+        L.ffn_extra = br
+
+
+def test_the_truncation_cuts_a_wide_ffn_as_one_matrix():
+    """A width-N FFN's in / out matrices are truncated WHOLE (rank r of the N-wide matrix, as on a 256-wide FFN),
+    never per part (which would leave rank up to 2r); every other matrix is untouched by `_ffn_mats`."""
+    import torch
+
+    from main.probe_battery import pin_worker as W
+
+    L = _wide_round("BiasedEncoderLayer")
+    mats = W._ffn_mats(L)
+    assert [k for _, k in mats] == ["rows", "cols"]
+    saved = [[m.weight.detach().clone() for m in ms] for ms, _ in mats]
+    W._truncate_mats(mats, saved, 16)
+    w1 = torch.cat([L.linear1.weight, L.ffn_extra.linear1.weight], 0).double()
+    w2 = torch.cat([L.linear2.weight, L.ffn_extra.linear2.weight], 1).double()
+    for w in (w1, w2):
+        s = torch.linalg.svdvals(w)
+        assert s[16] < 1e-4 * s[0] and s[15] > 1e-2 * s[0]
+    assert L.linear1.weight.shape == (256, 128) and L.ffn_extra.linear1.weight.shape == (256, 128)
+
+
+def test_the_depth_worker_reads_a_grown_toy_end_to_end(tmp_path, monkeypatch):
+    """`cmd_depth` on a REAL wide toy (3 rounds: both round kinds, every branch's `linear2` made non-zero) — its own
+    replica gate (the replica must equal the network's forward to 1e-4) passes, and the FFN statistics and spectra
+    read the branch."""
+    import argparse
+    import copy
+    import json
+
+    import torch
+
+    from agents.model.adopted_levers_test import _toy_args
+    from agents.model.growth_test import _rows
+    from main.fresh_checkpoint import build_fresh_model
+    from main.probe_battery import pin_worker as W
+
+    args = copy.deepcopy(_toy_args())
+    args.trunk_layers, args.trunk_ffn_dim = 3, 512
+    model, _a, _pk = build_fresh_model(0, args=args)
+    model.policy.eval()
+    rounds = W.trunk_rounds(model.policy.features_extractor)
+    assert [type(r).__name__ for r in rounds] == ["BiasedEncoderLayer", "BiasedEncoderLayer", "IdentityInitRound"]
+    g = torch.Generator().manual_seed(9)
+    with torch.no_grad():
+        for r in rounds:
+            r.ffn_extra.linear2.weight.copy_(0.05 * torch.randn(r.ffn_extra.linear2.weight.shape, generator=g))
+    obs, mask = _rows()
+    np.save(tmp_path / "rows.npy", obs[:48].astype(np.float32))
+    np.save(tmp_path / "masks.npy", mask[:48])
+    monkeypatch.setattr(W, "_load", lambda ckpt, random_init: model)
+    out = tmp_path / "d.json"
+    W.cmd_depth(argparse.Namespace(bank=str(tmp_path), ckpt="unused.zip", label="wide", out=str(out),
+                                   random_init=None, n_rows=48, threads=1, batch=16))
+    d = json.loads(out.read_text())
+    assert max(d["replica_max_abs_diff"]) <= 1e-4
+    for i in (1, 2, 3):
+        assert d["ffn"][f"L{i}"]["units"] == 512
+        assert d["ffn"][f"L{i}.base"]["units"] == d["ffn"][f"L{i}.ffn_extra"]["units"] == 256
+        assert d["spectra"][f"L{i}.ffn_width.linear1"]["shape"] == [512, 128]
+        assert d["spectra"][f"L{i}.ffn_extra.linear2"]["shape"] == [128, 256]
+    assert {f"trunc_trunk_r{r}" for r in W.TRUNC_RANKS} <= set(d["variants"])

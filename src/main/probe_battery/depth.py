@@ -11,6 +11,10 @@ Per checkpoint (``pin_worker depth``, on a deterministic every-k-th-row subsampl
   d = 128); the singular-value spectra of every trunk matrix (q / k / v, out, FFN in / out) and the input token
   projections; a LOW-RANK TRUNCATION of the trunk's matrices (and, separately, the input projections) to rank
   r ∈ {16, 32, 48, 64, 96}; every attention head ablated alone; dead / always-on FFN units.
+* **A wide trunk** (`--trunk-ffn-dim N > 256`, B-FFNW): the replica adds each round's width branch; ``ffn/L*`` reads
+  the whole N-wide hidden layer (``L*.base`` / ``L*.ffn_extra`` each part), the truncation cuts the stacked width-N
+  in / out matrices as one, and the spectra add ``L*.ffn_extra.*`` and the whole ``L*.ffn_width.*``. Per-kind FFN
+  experts (B-KFFN) stay refused (`pin_worker.UnsupportedTrunk`).
 
 Each arm is summarised over its seeds (mean, 95 % t-interval); a random-init build of each architecture is the
 "architecture alone" reference (its spectra are the orthogonal init's, so a trained matrix is read against it).

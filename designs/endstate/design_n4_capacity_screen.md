@@ -6,7 +6,7 @@
   `toy_n4ffn`).
 - **The training pin:** `N4_PIN` = `1553f8bd8` (AMENDMENT AM-N4-PIN).
 - **Before the read:** the S lane's grouping by architecture, the width descriptor readers and the battery's width
-  worker (§7, FINDINGS 10–11). They are needed before the read, not the launch.
+  worker (§7, FINDINGS 10–11; the battery is done). They are needed before the read, not the launch.
 - **The rule as amended (AM-N4-FIXES, 2026-10-31):** the REVIEW's M2 (MIXED), M3 (2,000 pairs), m3 (GO-S needs
   Δ̂_S ≥ +1.0 pp) and M5 (the "within 70M" NO-GO wording) are adopted. The family false GO is 0.048–0.068 at the
   planning σ (§4.3).
@@ -471,7 +471,8 @@ test. On the strategy memo's routing, N4 (toy) or N4-P-direct was the orchestrat
    - **(a) The S lane plays one architecture per engine,** at ONE later main commit that carries the amended rule
      (AM-N4-FIXES item 6), with X48 NOTE 5 (a)'s identity check, named by a NOTE.
    - **(b) The width descriptor readers** E1 / E2.
-   - **(c) The battery's width worker.**
+   - **(c) DONE: the battery reads a wide trunk.** `main.capacity` always did; the probe battery's depth worker
+     does since `0ecad293a` (FINDING 10).
    - The rule's decision parameters are fixed (AM-N4-FIXES). The S lane plays 2,000 pairs a cell, about 6–12
      lane-h.
 6. **The reads**, as the finals settle (AM-N4-PIN item 6):
@@ -506,10 +507,12 @@ test. On the strategy memo's routing, N4 (toy) or N4-P-direct was the orchestrat
 8. **The K meter is weak at screen scale**: 6,000 games give GO-K 0.61–0.69 at +3 pp. It is registered as a
    large-effect detector only, and a NO-GO says so (§4.2).
 9. **No N4 unit launched anything or used the GPU** (`CUDA_VISIBLE_DEVICES=""`), on 10-27 or 10-31.
-10. **The battery's depth worker REFUSES a wide trunk** (T69, 2026-10-27). `pin_worker.trunk_rounds` raises
-    `UnsupportedTrunk` on a round with a width branch, because its layer replica, FFN statistics, truncation and spectra
-    read only the base FFN (the B-KFFN precedent). The §5 battery on the N4 arms needs that worker taught the branch
-    first; it is not in T69's model side.
+10. **The §5 battery (`main.capacity`, v3) reads a wide trunk; it never needed a fix** (corrected 2026-10-31).
+    - It reads the real network's forward through hooks. On a T\* grown offline, lines (a), (b) and (e) equal T\*'s
+      exactly; only the parameter census moves (848,897 → 1,243,649).
+    - What refused a wide trunk was the probe battery's depth worker (`main.probe_battery depth`,
+      `pin_worker.trunk_rounds`), a different tool. It now reads the width branch (`0ecad293a`), and its output on
+      a plain toy is byte-identical to before.
    - Its CPU work ran under `nice -n 19 taskset -c 5-7,13-15`, the battery under `mem_cap.sh --max-s 600`:
      `main.checkargs` × 3, `main.launcher --dry-run` × 1, `main.capacity` and `power.py`.
    - `models/` was only read. The battery's output went to `/tmp`.

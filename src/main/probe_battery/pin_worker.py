@@ -464,14 +464,58 @@ def trunk_rounds(fe) -> List[Any]:
             "this checkpoint's trunk carries per-kind FFN experts (trunk_ffn_by_kind='on', B-KFFN): the depth "
             "diagnostics' layer replica, FFN statistics, truncation and spectra read only the shared FFN and would be "
             "silently wrong — refused (design_growth_builds_kffn_int.md F-GB-6)")
-    # B-FFNW (`--trunk-ffn-dim N > 256`, T69): the round's FFN adds a width branch (`round.ffn_extra`) that the replica,
-    # the FFN-unit statistics, the truncation and the spectra do not read — the same silent error. Refused until they do.
-    if any(getattr(r, "ffn_extra", None) is not None for r in rounds):
-        raise UnsupportedTrunk(
-            "this checkpoint's trunk FFN carries a width branch (trunk_ffn_dim > 256, B-FFNW): the depth diagnostics' "
-            "layer replica, FFN statistics, truncation and spectra read only the base FFN and would be silently wrong "
-            "— refused (design_n4_capacity_screen.md §2)")
     return rounds
+
+
+def _ffn(L, z, stats=None):
+    """A REPLICA of ``TrunkRound.ffn`` (the shared FFN, no per-kind experts: `trunk_rounds` refuses those): the base
+    ``linear2(relu(linear1 z))`` plus, on a `--trunk-ffn-dim N > 256` round (B-FFNW, `agents.model.trunk_ffn_width`),
+    its width branch ``ffn_extra.linear2(relu(ffn_extra.linear1 z))`` — one FFN of width N over a split hidden layer.
+    ``stats["h"]`` gets the WHOLE hidden layer's pre-activation (base units, then the branch's: N wide)."""
+    import torch
+
+    relu = torch.nn.functional.relu
+    h = L.linear1(z)
+    out = L.linear2(relu(h))
+    br = getattr(L, "ffn_extra", None)
+    if br is not None:
+        hx = br.linear1(z)
+        out = out + br.linear2(relu(hx))
+        h = torch.cat([h, hx], dim=-1)
+    if stats is not None:
+        stats["h"] = h
+    return out
+
+
+def _ffn_mats(L) -> List[Any]:
+    """The round's FFN as the truncation test reads it: ``(modules, kind)`` pairs, kind ``None`` (one matrix) or
+    ``"rows"`` / ``"cols"`` (a width-N FFN's in / out matrix: base and branch weights stacked along that axis and
+    truncated as ONE matrix, so rank r means the same on a 256-wide and a wider FFN)."""
+    br = getattr(L, "ffn_extra", None)
+    if br is None:
+        return [((L.linear1,), None), ((L.linear2,), None)]
+    return [((L.linear1, br.linear1), "rows"), ((L.linear2, br.linear2), "cols")]
+
+
+def _truncate_mats(mats, saved, r: int) -> None:
+    """Set every ``(modules, kind)`` matrix of ``mats`` to its rank-``r`` truncation of the ``saved`` weights:
+    ``"qkv"`` per q / k / v block, ``None`` one matrix, ``"rows"`` / ``"cols"`` (`_ffn_mats`) the stacked width-N
+    matrix truncated whole and split back into its parts."""
+    import torch
+
+    with torch.no_grad():
+        for (ms, kind), W0s in zip(mats, saved):
+            if kind == "qkv":
+                W0 = W0s[0]
+                d = W0.shape[1]
+                ms[0].weight.copy_(torch.cat([_truncate(W0[j * d:(j + 1) * d], r) for j in range(3)]).to(W0.dtype))
+            elif kind is None:
+                ms[0].weight.copy_(_truncate(W0s[0], r).to(W0s[0].dtype))
+            else:
+                ax = 0 if kind == "rows" else 1
+                Wt = _truncate(torch.cat(W0s, dim=ax), r)
+                for m, part in zip(ms, torch.split(Wt, [w.shape[ax] for w in W0s], dim=ax)):
+                    m.weight.copy_(part.to(m.weight.dtype))
 
 
 def _layer_forward(L, x, bias, *, mode: str = "full", head_mask=None, stats=None):
@@ -505,11 +549,9 @@ def _layer_forward(L, x, bias, *, mode: str = "full", head_mask=None, stats=None
             x1 = x + L.out_proj(attn.transpose(1, 2).reshape(B, n, d))
         if mode == "no_ffn":
             return x1
-        h = L.linear1(L.norm2(x1))
         if stats is not None:
             stats["x1"] = x1
-            stats["h"] = h
-        return x1 + L.linear2(torch.nn.functional.relu(h))
+        return x1 + _ffn(L, L.norm2(x1), stats)
     if mode in ("zero_update", "no_attn"):
         x1 = L.norm1(x)
     else:
@@ -522,11 +564,9 @@ def _layer_forward(L, x, bias, *, mode: str = "full", head_mask=None, stats=None
         x1 = L.norm1(x + L.out_proj(attn.transpose(1, 2).reshape(B, n, d)))
     if mode in ("zero_update", "no_ffn"):
         return L.norm2(x1)
-    h = L.linear1(x1)
     if stats is not None:
         stats["x1"] = x1
-        stats["h"] = h
-    return L.norm2(x1 + L.linear2(torch.nn.functional.relu(h)))
+    return L.norm2(x1 + _ffn(L, x1, stats))
 
 
 def _groups(lay: Dict[str, Any]) -> Dict[str, List[int]]:
@@ -657,23 +697,17 @@ def cmd_depth(a: argparse.Namespace) -> int:
             named = dict(fe.named_modules())
             trunk_W = []
             for L in layers:
-                trunk_W += [(L.in_proj, "qkv"), (L.out_proj, None), (L.linear1, None), (L.linear2, None)]
-            input_W = [(named[n], None) for n in INPUT_PROJ if n in named]
+                trunk_W += [((L.in_proj,), "qkv"), ((L.out_proj,), None)] + _ffn_mats(L)
+            input_W = [((named[n],), None) for n in INPUT_PROJ if n in named]
             for gname, mats in (("trunk", trunk_W), ("input", input_W)):
-                saved = [m.weight.detach().clone() for m, _ in mats]
+                saved = [[m.weight.detach().clone() for m in ms] for ms, _ in mats]
                 for r in TRUNC_RANKS:
-                    with torch.no_grad():
-                        for (m, kind), W0 in zip(mats, saved):
-                            if kind == "qkv":
-                                d = W0.shape[1]
-                                m.weight.copy_(torch.cat([_truncate(W0[j * d:(j + 1) * d], r) for j in range(3)])
-                                               .to(W0.dtype))
-                            else:
-                                m.weight.copy_(_truncate(W0, r).to(W0.dtype))
+                    _truncate_mats(mats, saved, r)
                     V[f"trunc_{gname}_r{r}"] = delta(*run()[:2])
                 with torch.no_grad():
-                    for (m, _), W0 in zip(mats, saved):
-                        m.weight.copy_(W0)
+                    for (ms, _), W0s in zip(mats, saved):
+                        for m, W0 in zip(ms, W0s):
+                            m.weight.copy_(W0)
             out["variants"] = V
             out["input_proj_truncated"] = [n for n in INPUT_PROJ if n in named]
         finally:
@@ -688,6 +722,7 @@ def cmd_depth(a: argparse.Namespace) -> int:
         upd = {(g, i): [0.0, 0] for g in G for i in range(nl)}
         ffn_on = [None] * nl
         ffn_n = [0] * nl
+        ffn_base = [int(L.linear1.weight.shape[0]) for L in layers]     # the base FFN's units (the branch's follow)
         for batch in recs:
             keymask = (batch[0]["bias"][:, 0] <= -1e8).all(dim=1).numpy()          # [B, n] masked keys
             live = ~keymask
@@ -726,10 +761,16 @@ def cmd_depth(a: argparse.Namespace) -> int:
                 "n99": int(np.searchsorted(cs, 0.99) + 1), "tokens": int(c)}
         out["rank"] = ranks
         out["update_norm"] = {f"{g}@L{i + 1}": (v[0] / v[1] if v[1] else None) for (g, i), v in upd.items()}
-        out["ffn"] = {f"L{i + 1}": {"units": int(len(ffn_on[i])), "dead": float((ffn_on[i] == 0).mean()),
-                                    "always_on": float((ffn_on[i] >= 0.999 * ffn_n[i]).mean()),
-                                    "mean_active": float((ffn_on[i] / max(ffn_n[i], 1)).mean())}
-                      for i in range(nl)}
+        def ffn_stat(on, n):
+            return {"units": int(len(on)), "dead": float((on == 0).mean()), "always_on": float((on >= 0.999 * n).mean()),
+                    "mean_active": float((on / max(n, 1)).mean())}
+
+        out["ffn"] = {}
+        for i in range(nl):
+            out["ffn"][f"L{i + 1}"] = ffn_stat(ffn_on[i], ffn_n[i])          # the WHOLE hidden layer
+            if len(ffn_on[i]) > ffn_base[i]:                                 # a width branch: each part, too
+                out["ffn"][f"L{i + 1}.base"] = ffn_stat(ffn_on[i][:ffn_base[i]], ffn_n[i])
+                out["ffn"][f"L{i + 1}.ffn_extra"] = ffn_stat(ffn_on[i][ffn_base[i]:], ffn_n[i])
         spec = {}
         for li, L in enumerate(layers):
             W = L.in_proj.weight.detach().numpy()
@@ -738,6 +779,14 @@ def cmd_depth(a: argparse.Namespace) -> int:
                 spec[f"L{li + 1}.{nm}_proj"] = _spectrum(W[j * dd:(j + 1) * dd])
             for nm in ("out_proj", "linear1", "linear2"):
                 spec[f"L{li + 1}.{nm}"] = _spectrum(getattr(L, nm).weight.detach().numpy())
+            br = getattr(L, "ffn_extra", None)
+            if br is not None:          # the branch's own matrices, and the width-N FFN's whole in / out matrices
+                for nm in ("linear1", "linear2"):
+                    spec[f"L{li + 1}.ffn_extra.{nm}"] = _spectrum(getattr(br, nm).weight.detach().numpy())
+                spec[f"L{li + 1}.ffn_width.linear1"] = _spectrum(
+                    np.concatenate([L.linear1.weight.detach().numpy(), br.linear1.weight.detach().numpy()], 0))
+                spec[f"L{li + 1}.ffn_width.linear2"] = _spectrum(
+                    np.concatenate([L.linear2.weight.detach().numpy(), br.linear2.weight.detach().numpy()], 1))
         named = dict(fe.named_modules())
         for n in INPUT_PROJ:
             if n in named:
