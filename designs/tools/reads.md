@@ -184,6 +184,18 @@ dir and log), started on a thread that only waits on the child. Nothing on the p
 - one request per node, `<group>_<label>_b<batch_pairs>`;
 - a unit is up to `--workers` engines in ONE heavy slot (`mem_cap.sh --slot`), time-boxed to `--unit-s` (default
   2,400 s), at nice 19 on cores 5-7,13-15;
+- an engine is one label plus some of its pending members (`runner.s_engines`). The members are striped over the
+  free engines (`left[w::k]`), unless a stripe would hold more architectures, the label's counted, than one
+  `main.h2h` engine serves (`main.h2h.arch.MAX_GROUPS`, 2). Then the members go on engines BY ARCHITECTURE: each
+  engine is the label plus members of one architecture, each group striped over its share of the free engines; a
+  group left without one waits for the next unit. The architecture key (`runner.arch_keys`) is every architecture
+  toggle in the copy's `model_config.json` (`trunk_layers`, `trunk_ffn_dim`, `trunk_ffn_by_kind` among them), a
+  missing one read as its default, computed in one short child so the supervisor never imports torch. N4 needs
+  this: a width-grown toy final, the toy members and `pstar_x26` are three architectures. X48 worked around it with a
+  driver (its PREREG NOTE 5). A read on at most two architectures keeps the stripe exactly, checked on every
+  archived state. Which process plays a cell never enters its row: X48 NOTE 5 (a), and for this code
+  `designs/research_state/measurements/n4_capacity_screen_2026-10-27/s_engines_identity.py`. Equal keys that still
+  differ in a state-dict signature are refused by the engine's own preflight (`CellArchMismatch`, before any game);
 - R is re-verified before every unit (every member's sha256 and `content_sha256`). If R moved, the lane stops
   with exit 3 (the drift pre-read's hazard 1);
 - the box ends at the registered stop at the latest (the slot wait does not extend it); an engine that exits

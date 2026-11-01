@@ -9,7 +9,7 @@
 * THE S LANE plays S against the frozen R: ``main.h2h play-many`` cells of ``pairs`` mirrored pairs recorded in
   ``batch_pairs`` batches (the resume grain) into the group's own eval ledger and family; a UNIT is up to ``workers``
   engines inside ONE heavy slot (``mem_cap.sh --slot``), time-boxed to ``unit_s`` (<= 40 min), at nice 19 on the
-  agent cores. R is re-verified (every member's sha256 and its ``content_sha256``) before every unit; a change STOPS
+  agent cores, each engine at most two architectures (:func:`s_engines`). R is re-verified (every member's sha256 and its ``content_sha256``) before every unit; a change STOPS
   the lane (exit 3), never a silent re-score.
 
 Both lanes: resumable (a counted unit / a recorded batch is never replayed), one supervisor per lane per state (a
@@ -265,15 +265,101 @@ def s_pairs(state: Path, spec: ReadSpec, g: str, label: str, sha: str) -> Dict[s
                       {k: v["sha256"] for k, v in st["members"].items()})
 
 
-def s_engines(pending: Sequence[Tuple[str, Sequence[str]]], workers: int) -> List[str]:
-    """Split the pending ``(label, [members])`` cells over at most ``workers`` engines (``label:m1,m2``)."""
+def arch_key_of_config(cfg: Dict[str, Any]) -> List[List[str]]:
+    """A model's ARCHITECTURE as the engine's slot groups tell them apart, from its ``model_config.json``: every
+    architecture TOGGLE (``agents.model.snapshot.arch_toggles_from_model``'s key set: every ``current_model_version``
+    keyword but the loss coefficients; ``trunk_layers``, ``trunk_ffn_dim`` and ``trunk_ffn_by_kind`` among them), a
+    missing or ``null`` one read as its default, so a config written before a toggle existed keys as that default.
+    Equal keys can still differ in a state-dict signature the config does not show: the engine's own preflight refuses
+    such a pair (``CellArchMismatch``, before any game), so a key never mixes rows. Imports torch: the supervisor
+    calls it through :func:`arch_keys`' child."""
+    import inspect
+
+    from agents.model.snapshot import _NON_TOGGLE_KWARGS, current_model_version
+
+    out = []
+    for k, p in inspect.signature(current_model_version).parameters.items():
+        if k in _NON_TOGGLE_KWARGS:
+            continue
+        d, v = p.default, cfg.get(k)
+        v = d if v is None else (type(d)(v) if d is not None else v)
+        out.append([k, json.dumps(v, sort_keys=True)])
+    return out
+
+
+def _arch_keys_child(configs: Sequence[str]) -> None:
+    print(json.dumps({c: arch_key_of_config(json.loads(Path(c).read_text())) for c in configs}))
+
+
+_ARCH_KEYS: Dict[str, Tuple[Tuple[str, str], ...]] = {}
+
+
+def arch_keys(copies: Sequence[str], *, py: str = sys.executable) -> Dict[str, Tuple[Tuple[str, str], ...]]:
+    """``{copy: its architecture key}`` (:func:`arch_key_of_config` of the ``model_config.json`` beside each copy,
+    which ``models.copy_checked`` copies), computed once per copy in ONE short child, so the supervisor never imports
+    torch (about 0.5 GB)."""
+    need = sorted({c for c in copies if c not in _ARCH_KEYS})
+    if need:
+        cfgs = {str(Path(c).parent / "model_config.json"): c for c in need}
+        missing = [f for f in cfgs if not Path(f).is_file()]
+        if missing:
+            raise RunError(f"no model_config.json beside {missing}: the architecture of the copy is unknown")
+        r = subprocess.run([py, "-c", "import sys; from main.reads.runner import _arch_keys_child; "
+                            "_arch_keys_child(sys.argv[1:])", *cfgs], check=False, env=child_env(),
+                           capture_output=True, text=True)
+        if r.returncode != 0:
+            raise RunError(f"the architecture keys could not be read (exit {r.returncode}): {r.stderr.strip()[-800:]}")
+        for f, key in json.loads(r.stdout.strip().splitlines()[-1]).items():
+            _ARCH_KEYS[cfgs[f]] = tuple(tuple(kv) for kv in key)
+    return {c: _ARCH_KEYS[c] for c in copies}
+
+
+def s_engines(pending: Sequence[Tuple[str, Sequence[str]]], workers: int, *,
+              label_arch: Optional[Callable[[str], Any]] = None,
+              member_arch: Optional[Callable[[str], Any]] = None) -> List[str]:
+    """Split the pending ``(label, [members])`` cells over at most ``workers`` engines (``label:m1,m2``).
+
+    A label's members are striped over its free engines (``left[w::k]``). When ``label_arch`` / ``member_arch`` are
+    given and a stripe would hold more architectures, the label's counted, than one engine serves
+    (``main.h2h.arch.MAX_GROUPS``), the label's members go on engines BY ARCHITECTURE instead: every engine is the
+    label plus members of ONE architecture (the groups in first-member order, each striped over its share of the free
+    engines; a group with no free engine waits for the next unit). A read whose labels and members span at most
+    ``MAX_GROUPS`` architectures keeps the stripe. Which process plays a cell never enters its row (pairs, seeds,
+    regime and request are the cell's own: X48 NOTE 5 (a))."""
+    from main.h2h.arch import MAX_GROUPS
+
     engines: List[str] = []
     for label, left in pending:
-        k = min(len(left), workers - len(engines))
-        engines += [f"{label}:" + ",".join(left[w::k]) for w in range(k)]
+        room = workers - len(engines)
+        k = min(len(left), room)
+        stripes = [list(left[w::k]) for w in range(k)]
+        if label_arch is not None and member_arch is not None and any(
+                len({label_arch(label), *(member_arch(m) for m in s)}) > MAX_GROUPS for s in stripes):
+            groups: Dict[Any, List[str]] = {}
+            for m in left:
+                groups.setdefault(member_arch(m), []).append(m)
+            gs = list(groups.values())[:room]
+            share = [1] * len(gs)
+            spare = room - len(gs)
+            while spare > 0 and any(n < len(g) for g, n in zip(gs, share)):
+                for i, g in enumerate(gs):
+                    if spare > 0 and share[i] < len(g):
+                        share[i] += 1
+                        spare -= 1
+            stripes = [g[w::n] for g, n in zip(gs, share) for w in range(n)]
+        engines += [f"{label}:" + ",".join(s) for s in stripes]
         if len(engines) >= workers:
             break
     return engines
+
+
+def s_unit_engines(spec: ReadSpec, state: Path, g: str, pending: Sequence[Tuple[str, Sequence[str]]],
+                   models: Dict[str, Dict[str, Any]], workers: int) -> List[str]:
+    """:func:`s_engines` for group ``g``'s pending cells, with every label's and member's architecture key."""
+    mem = json.loads((LY.s_dir(state, g) / "state.json").read_text())["members"]
+    keys = arch_keys([models[lab]["copy"] for lab, _ in pending] + [mem[m]["copy"] for _, ms in pending for m in ms])
+    return s_engines(pending, workers, label_arch=lambda lab: keys[models[lab]["copy"]],
+                     member_arch=lambda m: keys[mem[m]["copy"]])
 
 
 def s_unit_argv(state: Path, g: str, engines: Sequence[str], box_s: int, *, deadline_epoch: float,
@@ -565,7 +651,8 @@ def run(state: Path, lane: str, stop_epoch: float, *, workers: int = S_WORKERS, 
                         _jl(jl, {"event": "stop_at", "left": [(g, lab) for g, lab, _ in pending]})
                         return 0
                     g = pending[0][0]
-                    engines = s_engines([(lab, left) for gg, lab, left in pending if gg == g], workers)
+                    engines = s_unit_engines(spec, state, g, [(lab, left) for gg, lab, left in pending if gg == g],
+                                             models, workers)
                     box = int(min(unit_s, stop_epoch - clock()))
                     argv = s_unit_argv(state, g, engines, box, deadline_epoch=stop_epoch, threads=threads)
                     before = _progress(spec, state, g, engines, models)

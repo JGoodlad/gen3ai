@@ -468,8 +468,11 @@ test. On the strategy memo's routing, N4 (toy) or N4-P-direct was the orchestrat
 4. **The chain and the GO are the orchestrator's.** The draft is `~/.claude/jobs/x35/chains/drafts/n4-toy-2026-10-31.json`
    (§3.4), six arms in §3.1's order.
 5. **Before the read** (needed by the read, not the launch; the training takes ≈ 1.3 card-days):
-   - **(a) The S lane plays one architecture per engine,** at ONE later main commit that carries the amended rule
-     (AM-N4-FIXES item 6), with X48 NOTE 5 (a)'s identity check, named by a NOTE.
+   - **(a) DONE: the S lane plays one architecture per engine** (`runner.s_engines`, 2026-10-31).
+     - A stripe that would hold three architectures is grouped by architecture key, `trunk_ffn_dim` included.
+     - Identity check: 5 banked X47 look-1 toy cells, replayed through the new grouping on E1, equal the banked
+       rows on counts and both digests (`s_engines_identity.json`).
+     - The NOTE naming the read's commit is still owed.
    - **(b) The width descriptor readers** E1 / E2.
    - **(c) DONE: the battery reads a wide trunk.** `main.capacity` always did; the probe battery's depth worker
      does since `0ecad293a` (FINDING 10).
@@ -521,7 +524,9 @@ test. On the strategy memo's routing, N4 (toy) or N4-P-direct was the orchestrat
       so one engine gets a grown toy, a plain toy and `pstar_x26`, and is refused (`CellArchMismatch`).
     - The width descriptor readers do not exist yet. `x47 norms` on a grown toy exits 0 with an EMPTY reading,
       instead of refusing.
-    - Both are owed before the read (§7 item 5).
+    - Both are owed before the read (§7 item 5). The S lane's grouping is DONE (§7 item 5 (a)).
+    - N4's S rows will play on main's engine, which no banked S row used. So the pin-drift line against the banked
+      toy C0's 52.428 (PREREG §6 item 5) is cross-engine and descriptive only.
 12. **The frozen X35-frame shared pin `86cfdf7ef` cannot load a grown toy.** Its model code is f4b25238's, config
     v161: "unexpected keyword argument 'trunk_ffn_dim'". So N4's K rows sit on their own engine, and no banked
     Kakuna row imports into them. They compare only within N4's read.

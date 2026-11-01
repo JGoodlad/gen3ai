@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import os
 import time
+from pathlib import Path
 
 import pytest
 
@@ -170,6 +171,113 @@ def test_a_lane_has_one_supervisor_and_a_registered_stop(tmp_path, run_archive_e
 def test_s_engines_split_cells_over_the_workers():
     assert RN.s_engines([("a", ["m1", "m2", "m3"])], 2) == ["a:m1,m3", "a:m2"]
     assert RN.s_engines([("a", ["m1"]), ("b", ["m1", "m2"])], 2) == ["a:m1", "b:m1,m2"]
+
+
+#: N4's S cells: a grown toy final (``trunk_ffn_dim`` 1024), the plain toy R members and ``pstar_x26`` (production)
+#: are THREE architectures; one h2h engine serves at most two (``main.h2h.arch.MAX_GROUPS``).
+_N4_ARCH = {"grown": "G", "c0p": "T", "toy_pstar": "T", "toy_280m": "T", "toy_080m": "T", "toy_150m": "T",
+            "toy_220m": "T", "pstar_x26": "P"}
+_N4_R = ["toy_pstar", "toy_280m", "toy_080m", "toy_150m", "toy_220m", "pstar_x26"]
+
+
+def _arch_count(engine, arch):
+    lab, ms = engine.split(":", 1)
+    return len({arch[lab], *(arch[m] for m in ms.split(","))})
+
+
+def _cells(engines):
+    return sorted((e.split(":", 1)[0], m) for e in engines for m in e.split(":", 1)[1].split(","))
+
+
+def test_s_engines_put_three_architectures_on_pure_engines():
+    """The grown final's members go on engines BY ARCHITECTURE (each engine its label plus ONE member architecture);
+    the old stripe put toy and production members on one engine beside the grown label (CellArchMismatch). Fails on
+    revert: the stripe ignores the architectures."""
+    a = _N4_ARCH.__getitem__
+    old = RN.s_engines([("grown", _N4_R)], 2)
+    assert max(_arch_count(e, _N4_ARCH) for e in old) == 3          # what refused before any game
+    got = RN.s_engines([("grown", _N4_R)], 2, label_arch=a, member_arch=a)
+    assert got == ["grown:toy_pstar,toy_280m,toy_080m,toy_150m,toy_220m", "grown:pstar_x26"]
+    assert all(_arch_count(e, _N4_ARCH) <= 2 for e in got)
+    # spare workers stripe a group over its share; one worker plays the first group now, the rest next unit
+    assert RN.s_engines([("grown", _N4_R)], 4, label_arch=a, member_arch=a) == [
+        "grown:toy_pstar,toy_150m", "grown:toy_280m,toy_220m", "grown:toy_080m", "grown:pstar_x26"]
+    assert RN.s_engines([("grown", _N4_R)], 1, label_arch=a, member_arch=a) == [
+        "grown:toy_pstar,toy_280m,toy_080m,toy_150m,toy_220m"]
+    # a label whose stripe spans two architectures keeps it; the next label (C0': toy + production) fills the rest
+    assert RN.s_engines([("grown", ["pstar_x26"]), ("c0p", _N4_R)], 2, label_arch=a, member_arch=a) == [
+        "grown:pstar_x26", "c0p:" + ",".join(_N4_R)]
+
+
+def test_s_engines_keep_the_stripe_for_one_or_two_architectures():
+    """X47 / X48-like reads (a label and members spanning <= MAX_GROUPS architectures) keep EXACTLY the old engines:
+    the same cells on the same processes, so no other read's assignment moves. Fails on a change that always groups."""
+    a = _N4_ARCH.__getitem__
+    x48 = {"c0": "P", "x26_pstar": "P", "x26_270m": "P", "production": "P", "tstar": "T"}
+    for workers in (1, 2, 3, 4, 7):
+        for pend, arch in (([("c0p", _N4_R)], _N4_ARCH), ([("c0", list(x48)[1:])], x48),
+                           ([("c0p", _N4_R[:5])], _N4_ARCH), ([("c0", ["tstar", "x26_pstar"])], x48)):
+            assert RN.s_engines(pend, workers, label_arch=arch.__getitem__, member_arch=arch.__getitem__) == \
+                RN.s_engines(pend, workers), (pend, workers)
+    assert RN.s_engines([("c0p", _N4_R)], 2, label_arch=a, member_arch=a) == [
+        "c0p:toy_pstar,toy_080m,toy_220m", "c0p:toy_280m,toy_150m,pstar_x26"]
+
+
+def test_s_engines_grouping_never_changes_a_cell():
+    """Grouping moves cells between processes only: every engine's cells are (label, member) pairs of the pending
+    ones, none twice, and the argv each cell plays with (pairs, batches, family, request, ledger: the seeds' and the
+    row's identity) does not depend on its engine-mates."""
+    from types import SimpleNamespace as NS
+
+    from main.reads.spec import SGroup
+
+    a = _N4_ARCH.__getitem__
+    pending = [("grown", _N4_R), ("c0p", _N4_R)]
+    for workers in (1, 2, 3, 6, 12):
+        got = RN.s_engines(pending, workers, label_arch=a, member_arch=a)
+        cells = _cells(got)
+        assert len(cells) == len(set(cells)) and set(cells) <= {(lab, m) for lab, ms in pending for m in ms}
+        assert len(got) <= workers
+    g = SGroup("pool", "r.json", "c" * 64, None, 2000, 100, "x35_n4", ("grown",))
+    spec = NS(s={"pool": g}, read="n4")
+    models = {"grown": {"copy": "/s/grown.zip"}}
+    members = {m: {"copy": f"/s/{m}.zip"} for m in _N4_R}
+
+    def _flags(argv):
+        i = argv.index("--opponents")
+        j = next(k for k in range(i + 1, len(argv)) if argv[k].startswith("--"))
+        return argv[:i] + argv[j:]
+
+    alone = RN.play_many_argv(spec, Path("/st"), "pool", "grown", ["toy_080m"], models, members, threads=2)
+    mixed = RN.play_many_argv(spec, Path("/st"), "pool", "grown", _N4_R, models, members, threads=2)
+    assert _flags(alone) == _flags(mixed)
+
+
+def _config(tmp_path, name, **fields):
+    d = tmp_path / name
+    d.mkdir()
+    (d / "model_config.json").write_text(json.dumps(fields))
+    return str(d / "final_model.zip")
+
+
+def test_arch_keys_read_the_toggles_with_their_defaults(tmp_path):
+    """``trunk_ffn_dim`` is an architecture key (1024 differs from 256); a config that predates a toggle keys as its
+    default (``null`` / missing ``trunk_ffn_dim`` == 256, missing ``tau_solve`` == its default); a loss coefficient
+    is not architecture; ``trunk_layers`` is. The keys come from a child (the supervisor never imports torch)."""
+    old = _config(tmp_path, "old", trunk_layers=2, trunk_ffn_dim=None, move_belief_coef=0.0)
+    c0p = _config(tmp_path, "c0p", trunk_layers=2, trunk_ffn_dim=256, trunk_ffn_by_kind="off", tau_solve="fp32_alt",
+                  move_belief_coef=0.05)
+    grown = _config(tmp_path, "grown", trunk_layers=2, trunk_ffn_dim=1024, trunk_ffn_by_kind="off")
+    deep = _config(tmp_path, "deep", trunk_layers=4)
+    RN._ARCH_KEYS.clear()
+    k = RN.arch_keys([old, c0p, grown, deep])
+    assert k[old] == k[c0p]
+    assert len({k[old], k[grown], k[deep]}) == 3
+    names = {n for n, _v in k[old]}
+    assert {"trunk_ffn_dim", "trunk_ffn_by_kind", "trunk_layers", "damage_op"} <= names
+    assert "move_belief_coef" not in names
+    with pytest.raises(RN.RunError, match="no model_config.json"):
+        RN.arch_keys([str(tmp_path / "nowhere" / "final_model.zip")])
 
 
 def test_the_s_unit_and_play_many_argv_are_what_the_real_parsers_accept(tmp_path):

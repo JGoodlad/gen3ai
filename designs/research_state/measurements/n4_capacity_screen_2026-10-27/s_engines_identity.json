@@ -1,0 +1,378 @@
+{
+ "cases": {
+  "grouped": {
+   "arch_of": {
+    "pstar_x26": 2,
+    "toy_080m": 1,
+    "toy_150m": 1,
+    "x47_s3601": 0
+   },
+   "bank": "/home/goodlad/gen3ai_archive/x47_look1_2026-10-21/ledger",
+   "case": "grouped",
+   "engines": [
+    "x47_s3601:toy_080m,toy_150m",
+    "x47_s3601:pstar_x26"
+   ],
+   "fields": [
+    "regime_id",
+    "seed",
+    "counts",
+    "outcome_digest",
+    "outcome_digest_all"
+   ],
+   "identical": true,
+   "ledger_problems": [],
+   "old_stripe": [
+    "x47_s3601:toy_080m,pstar_x26",
+    "x47_s3601:toy_150m"
+   ],
+   "pin": "86cfdf7efbe21b4ff3382541e6d78390df7d9966",
+   "play_rc": 0,
+   "rows": [
+    {
+     "bank": {
+      "commit": "f4b0a74f2421a167b411972109147c8366b67671",
+      "core_stamp_src": [
+       "src=7c53280566d666ae"
+      ],
+      "counts": {
+       "aborted": 0,
+       "d": 2,
+       "l": 436,
+       "w": 562
+      },
+      "outcome_digest": "095f1362a85492d955d2ca564acdab7ee4082ba5c908e5997cf1f8f9ccd9462d",
+      "outcome_digest_all": "57f4f17569119c23cb0d82d741c29d200f2923424e408d0c656b4e1fcfdf574f",
+      "regime_id": "adfdbee824c9eb0a",
+      "seed": {
+       "batch": 0,
+       "cycle_seed": 1289456079757972451,
+       "game_hi": 999,
+       "game_lo": 0,
+       "item_key": "h2h",
+       "rule": "gen3_eval_game_seed_v1",
+       "schedule_key": "h2h:4bdcbbcbd62efa30",
+       "schedule_seed": 0
+      },
+      "threads": 2,
+      "torch_threads": 2
+     },
+     "bank_row_id": "20261021T142430Z.0-goodlad_desktop-1409710-h2h:0",
+     "batch": 0,
+     "differing": [],
+     "equal": true,
+     "opponent": "rb_toy_ent_s4002@80000019",
+     "player": "rb_x35t_x47d4_s3601@360097733",
+     "replay": {
+      "commit": "86cfdf7efbe21b4ff3382541e6d78390df7d9966",
+      "core_stamp_src": [
+       "src=7c53280566d666ae"
+      ],
+      "counts": {
+       "aborted": 0,
+       "d": 2,
+       "l": 436,
+       "w": 562
+      },
+      "outcome_digest": "095f1362a85492d955d2ca564acdab7ee4082ba5c908e5997cf1f8f9ccd9462d",
+      "outcome_digest_all": "57f4f17569119c23cb0d82d741c29d200f2923424e408d0c656b4e1fcfdf574f",
+      "regime_id": "adfdbee824c9eb0a",
+      "seed": {
+       "batch": 0,
+       "cycle_seed": 1289456079757972451,
+       "game_hi": 999,
+       "game_lo": 0,
+       "item_key": "h2h",
+       "rule": "gen3_eval_game_seed_v1",
+       "schedule_key": "h2h:4bdcbbcbd62efa30",
+       "schedule_seed": 0
+      },
+      "threads": 2,
+      "torch_threads": 2
+     }
+    },
+    {
+     "bank": {
+      "commit": "f4b0a74f2421a167b411972109147c8366b67671",
+      "core_stamp_src": [
+       "src=7c53280566d666ae"
+      ],
+      "counts": {
+       "aborted": 0,
+       "d": 2,
+       "l": 458,
+       "w": 540
+      },
+      "outcome_digest": "a9df31cd8473ce5d4fa8f7c45b20e19cdb820aa2df6e8a13e1483b23212056f1",
+      "outcome_digest_all": "bd7b35ce38f8eb5a253f99b7d3df54945188ae8ee386e3e71e2c57b036fa6013",
+      "regime_id": "adfdbee824c9eb0a",
+      "seed": {
+       "batch": 0,
+       "cycle_seed": 4296458645143899666,
+       "game_hi": 999,
+       "game_lo": 0,
+       "item_key": "h2h",
+       "rule": "gen3_eval_game_seed_v1",
+       "schedule_key": "h2h:8c9f9c130fb92629",
+       "schedule_seed": 0
+      },
+      "threads": 2,
+      "torch_threads": 2
+     },
+     "bank_row_id": "20261021T142417Z.0-goodlad_desktop-1409555-h2h:0",
+     "batch": 0,
+     "differing": [],
+     "equal": true,
+     "opponent": "rb_toy_ent_s4002_deep@150000190",
+     "player": "rb_x35t_x47d4_s3601@360097733",
+     "replay": {
+      "commit": "86cfdf7efbe21b4ff3382541e6d78390df7d9966",
+      "core_stamp_src": [
+       "src=7c53280566d666ae"
+      ],
+      "counts": {
+       "aborted": 0,
+       "d": 2,
+       "l": 458,
+       "w": 540
+      },
+      "outcome_digest": "a9df31cd8473ce5d4fa8f7c45b20e19cdb820aa2df6e8a13e1483b23212056f1",
+      "outcome_digest_all": "bd7b35ce38f8eb5a253f99b7d3df54945188ae8ee386e3e71e2c57b036fa6013",
+      "regime_id": "adfdbee824c9eb0a",
+      "seed": {
+       "batch": 0,
+       "cycle_seed": 4296458645143899666,
+       "game_hi": 999,
+       "game_lo": 0,
+       "item_key": "h2h",
+       "rule": "gen3_eval_game_seed_v1",
+       "schedule_key": "h2h:8c9f9c130fb92629",
+       "schedule_seed": 0
+      },
+      "threads": 2,
+      "torch_threads": 2
+     }
+    },
+    {
+     "bank": {
+      "commit": "f4b0a74f2421a167b411972109147c8366b67671",
+      "core_stamp_src": [
+       "src=7c53280566d666ae"
+      ],
+      "counts": {
+       "aborted": 0,
+       "d": 1,
+       "l": 550,
+       "w": 449
+      },
+      "outcome_digest": "6dd7c1e801d09dc6e5a2fe837bb5bb28fce0e2f59a4aa54d199880154b85d3f1",
+      "outcome_digest_all": "0d2ce4f8afb27688f447eee1c5c739f908ab3c5fc772a6078a5a588a4348ce83",
+      "regime_id": "adfdbee824c9eb0a",
+      "seed": {
+       "batch": 0,
+       "cycle_seed": 1774029098312369163,
+       "game_hi": 999,
+       "game_lo": 0,
+       "item_key": "h2h",
+       "rule": "gen3_eval_game_seed_v1",
+       "schedule_key": "h2h:5489ee39252672e1",
+       "schedule_seed": 0
+      },
+      "threads": 2,
+      "torch_threads": 2
+     },
+     "bank_row_id": "20261021T141614Z.0-goodlad_desktop-1375131-h2h:0",
+     "batch": 0,
+     "differing": [],
+     "equal": true,
+     "opponent": "rb_x26_s2601@280000170",
+     "player": "rb_x35t_x47d4_s3601@360097733",
+     "replay": {
+      "commit": "86cfdf7efbe21b4ff3382541e6d78390df7d9966",
+      "core_stamp_src": [
+       "src=7c53280566d666ae"
+      ],
+      "counts": {
+       "aborted": 0,
+       "d": 1,
+       "l": 550,
+       "w": 449
+      },
+      "outcome_digest": "6dd7c1e801d09dc6e5a2fe837bb5bb28fce0e2f59a4aa54d199880154b85d3f1",
+      "outcome_digest_all": "0d2ce4f8afb27688f447eee1c5c739f908ab3c5fc772a6078a5a588a4348ce83",
+      "regime_id": "adfdbee824c9eb0a",
+      "seed": {
+       "batch": 0,
+       "cycle_seed": 1774029098312369163,
+       "game_hi": 999,
+       "game_lo": 0,
+       "item_key": "h2h",
+       "rule": "gen3_eval_game_seed_v1",
+       "schedule_key": "h2h:5489ee39252672e1",
+       "schedule_seed": 0
+      },
+      "threads": 2,
+      "torch_threads": 2
+     }
+    }
+   ],
+   "schema": "n4_s_engines_identity_v1"
+  },
+  "stripe": {
+   "arch_of": {
+    "c0_s3601": 0,
+    "pstar_x26": 1,
+    "toy_080m": 0
+   },
+   "bank": "/home/goodlad/gen3ai_archive/x47_look1_2026-10-21/ledger",
+   "case": "stripe",
+   "engines": [
+    "c0_s3601:toy_080m,pstar_x26"
+   ],
+   "fields": [
+    "regime_id",
+    "seed",
+    "counts",
+    "outcome_digest",
+    "outcome_digest_all"
+   ],
+   "identical": true,
+   "ledger_problems": [],
+   "old_stripe": [
+    "c0_s3601:toy_080m,pstar_x26"
+   ],
+   "pin": "86cfdf7efbe21b4ff3382541e6d78390df7d9966",
+   "play_rc": 0,
+   "rows": [
+    {
+     "bank": {
+      "commit": "f4b0a74f2421a167b411972109147c8366b67671",
+      "core_stamp_src": [
+       "src=7c53280566d666ae"
+      ],
+      "counts": {
+       "aborted": 0,
+       "d": 2,
+       "l": 431,
+       "w": 567
+      },
+      "outcome_digest": "581e44874b12ba5e875d6a9113cf3a9af1a59549304a2acbe50a0c05310d00b2",
+      "outcome_digest_all": "86468e36139eabc1baf1b416cee37adacc24d52921637671999940247e822818",
+      "regime_id": "adfdbee824c9eb0a",
+      "seed": {
+       "batch": 0,
+       "cycle_seed": 3324586106510538618,
+       "game_hi": 999,
+       "game_lo": 0,
+       "item_key": "h2h",
+       "rule": "gen3_eval_game_seed_v1",
+       "schedule_key": "h2h:3d2c86ab2a67639c",
+       "schedule_seed": 0
+      },
+      "threads": 2,
+      "torch_threads": 2
+     },
+     "bank_row_id": "20261021T140138Z.0-goodlad_desktop-1278041-h2h:0",
+     "batch": 0,
+     "differing": [],
+     "equal": true,
+     "opponent": "rb_toy_ent_s4002@80000019",
+     "player": "rb_x35t_c0_s3601@360098229",
+     "replay": {
+      "commit": "86cfdf7efbe21b4ff3382541e6d78390df7d9966",
+      "core_stamp_src": [
+       "src=7c53280566d666ae"
+      ],
+      "counts": {
+       "aborted": 0,
+       "d": 2,
+       "l": 431,
+       "w": 567
+      },
+      "outcome_digest": "581e44874b12ba5e875d6a9113cf3a9af1a59549304a2acbe50a0c05310d00b2",
+      "outcome_digest_all": "86468e36139eabc1baf1b416cee37adacc24d52921637671999940247e822818",
+      "regime_id": "adfdbee824c9eb0a",
+      "seed": {
+       "batch": 0,
+       "cycle_seed": 3324586106510538618,
+       "game_hi": 999,
+       "game_lo": 0,
+       "item_key": "h2h",
+       "rule": "gen3_eval_game_seed_v1",
+       "schedule_key": "h2h:3d2c86ab2a67639c",
+       "schedule_seed": 0
+      },
+      "threads": 2,
+      "torch_threads": 2
+     }
+    },
+    {
+     "bank": {
+      "commit": "f4b0a74f2421a167b411972109147c8366b67671",
+      "core_stamp_src": [
+       "src=7c53280566d666ae"
+      ],
+      "counts": {
+       "aborted": 0,
+       "d": 8,
+       "l": 572,
+       "w": 420
+      },
+      "outcome_digest": "d0fd5aa20cb4c5250ee50c6ee14ee6caab22f40cd30121634c94bff64cd9680e",
+      "outcome_digest_all": "c2e0e96a2fe9d734ecb8b50fd943e13db6cf917a2941db383f7b33ab5de40283",
+      "regime_id": "adfdbee824c9eb0a",
+      "seed": {
+       "batch": 0,
+       "cycle_seed": 2872362673437380920,
+       "game_hi": 999,
+       "game_lo": 0,
+       "item_key": "h2h",
+       "rule": "gen3_eval_game_seed_v1",
+       "schedule_key": "h2h:5719f8f6ce317407",
+       "schedule_seed": 0
+      },
+      "threads": 2,
+      "torch_threads": 2
+     },
+     "bank_row_id": "20261021T135342Z.0-goodlad_desktop-1244214-h2h:0",
+     "batch": 0,
+     "differing": [],
+     "equal": true,
+     "opponent": "rb_x26_s2601@280000170",
+     "player": "rb_x35t_c0_s3601@360098229",
+     "replay": {
+      "commit": "86cfdf7efbe21b4ff3382541e6d78390df7d9966",
+      "core_stamp_src": [
+       "src=7c53280566d666ae"
+      ],
+      "counts": {
+       "aborted": 0,
+       "d": 8,
+       "l": 572,
+       "w": 420
+      },
+      "outcome_digest": "d0fd5aa20cb4c5250ee50c6ee14ee6caab22f40cd30121634c94bff64cd9680e",
+      "outcome_digest_all": "c2e0e96a2fe9d734ecb8b50fd943e13db6cf917a2941db383f7b33ab5de40283",
+      "regime_id": "adfdbee824c9eb0a",
+      "seed": {
+       "batch": 0,
+       "cycle_seed": 2872362673437380920,
+       "game_hi": 999,
+       "game_lo": 0,
+       "item_key": "h2h",
+       "rule": "gen3_eval_game_seed_v1",
+       "schedule_key": "h2h:5719f8f6ce317407",
+       "schedule_seed": 0
+      },
+      "threads": 2,
+      "torch_threads": 2
+     }
+    }
+   ],
+   "schema": "n4_s_engines_identity_v1"
+  }
+ },
+ "identical": true,
+ "schema": "n4_s_engines_identity_set_v1",
+ "script_sha256": "233d35d4bace430a8ac903929a2bdc230e1036e9aa6d75102be6b2bdf3f2ddc3"
+}
