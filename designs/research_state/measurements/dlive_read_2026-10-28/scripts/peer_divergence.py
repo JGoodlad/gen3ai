@@ -25,8 +25,14 @@ Classes (the amendment's conditions (a)-(c)):
 * ``unattributable``: the streams differ and neither side chose differently on an identical view, or the capture
   cannot be read this way.
 
+A PEER DROP (:func:`is_peer_drop`): a BRANCH attempt classed ``peer_first``; a NULL attempt classed ``peer_first`` or
+``peer_first_late`` ((a) and (b) at any turn: AM-DL-PEER's clarification of 2026-10-31, since a null forces pi's own
+action and any later divergence is not ours either). Every other divergence of a failed or changed unit stays VOID.
+
     python peer_divergence.py classify --raw RAW_CAPTURE.json --branch BRANCH_CAPTURE.json --turn T
-    python peer_divergence.py state --branch-state DIR [--all]      # every uncounted or G-BRANCH-failed attempt
+    python peer_divergence.py state --branch-state DIR [--all]      # every null, and every uncounted or
+                                                                    # G-BRANCH-failed branch attempt
+    python peer_divergence.py selftest                              # synthetic captures, one per class
 """
 from __future__ import annotations
 
@@ -126,6 +132,15 @@ def classify(raw: Mapping[str, Any], br: Mapping[str, Any], branch_turn: int) ->
     return out
 
 
+def is_peer_drop(kind: str, cls: str) -> bool:
+    """AM-DL-PEER rules 1 and 3 (with the 2026-10-31 clarification): a branch needs (a)-(c), a null (a)-(b)."""
+    if kind == "branch":
+        return cls == "peer_first"
+    if kind == "null":
+        return cls in ("peer_first", "peer_first_late")
+    raise ValueError(f"unit kind {kind!r}")
+
+
 def _load(p: Path) -> dict[str, Any]:
     return dict(json.loads(Path(p).read_text()))
 
@@ -135,8 +150,9 @@ def _attempt_dirs(state: Path, unit: str) -> list[Path]:
 
 
 def classify_state(state: Path, everything: bool = False) -> list[dict[str, Any]]:
-    """Every attempt of every planned unit that is not counted or that recorded a G-BRANCH failure (all units with
-    ``everything``), classified against its raw game's capture."""
+    """Every attempt of every NULL, and of every branch that is not counted or that recorded a G-BRANCH failure (every
+    unit with ``everything``), classified against its raw game's capture, with :func:`is_peer_drop`. A null is always
+    classified: a counted null can still change its game after its branch turn."""
     from main.value_search.live_branch import _g_branch_fails
     from main.x35 import kakuna as KA
 
@@ -146,7 +162,7 @@ def classify_state(state: Path, everything: bool = False) -> list[dict[str, Any]
         m = json.loads(line)
         u = units[m["unit"]]
         done, gb = KA.is_done(state, u), _g_branch_fails(state, u.name)
-        if not everything and done and not gb:
+        if not everything and m["kind"] == "branch" and done and not gb:
             continue
         raw = _load(Path(m["raw_state"]) / "cells" / m["cell"] / "capture" / f"{m['battle']}.json")
         for d in _attempt_dirs(state, u.name):
@@ -157,8 +173,54 @@ def classify_state(state: Path, everything: bool = False) -> list[dict[str, Any]
                 continue
             c = classify(raw, _load(caps[0]), int(m["turn"]))
             out.append({"unit": u.name, "kind": m["kind"], "panel": m["panel"], "attempt": d.name, "counted": done,
-                        "g_branch_fails": len(gb), **c})
+                        "g_branch_fails": len(gb), "peer_drop": is_peer_drop(m["kind"], c["class"]), **c})
     return out
+
+
+def _synthetic(turns: int, *, peer_at: int | None = None, ours_at: int | None = None,
+               engine_at: int | None = None) -> dict[str, Any]:
+    """A capture of ``turns`` turns, ours p1 and the peer p2. ``peer_at`` / ``ours_at``: the turn from which that side
+    chooses differently (each later turn's protocol then differs); ``engine_at``: the protocol differs from that turn
+    with every command equal."""
+    start = 'START {"formatid": "gen3ou", "p1": {"name": "Gen3AIAnchor1", "team": "x"}, ' \
+            '"p2": {"name": "MetaKakuna1", "team": "y"}, "seed": [1, 2, 3, 4]}'
+    cmds, chunks = [start], []
+    diverged = False
+    for t in range(1, turns + 1):
+        for side in ("p1", "p2"):
+            chunks.append([side, f'|request|{{"active": [{{}}], "rqid": {t}, "v": {int(diverged)}}}'])
+        ours = "move b" if ours_at is not None and t >= ours_at else "move a"
+        peer = "move d" if peer_at is not None and t >= peer_at else "move c"
+        cmds += [f"CHOOSE p1 {ours}", f"CHOOSE p2 {peer}"]
+        diverged = diverged or ours != "move a" or peer != "move c" or (engine_at is not None and t >= engine_at)
+        for side in ("p1", "p2"):
+            chunks.append([side, f"|\n|move|{ours}|{peer}|{int(diverged)}\n|turn|{t + 1}"])
+    for side in ("p1", "p2"):
+        chunks.append([side, "|win|Gen3AIAnchor1"])
+    return {"tag": "battle-gen3ou-1", "seed": [1, 2, 3, 4], "commands": cmds, "chunks": chunks}
+
+
+def selftest() -> int:
+    """One synthetic case per class, each with its peer-drop verdict for a branch and for a null (branch turn 10)."""
+    raw = _synthetic(20)
+    cases = [  # (replay, class, branch drop, null drop)
+        (_synthetic(20), "identical", False, False),
+        (_synthetic(20, peer_at=3), "peer_first", True, True),
+        (_synthetic(20, peer_at=12), "peer_first_late", False, True),
+        (_synthetic(20, peer_at=10), "peer_first_late", False, True),
+        (_synthetic(20, ours_at=10), "ours_first", False, False),
+        (_synthetic(20, ours_at=3, peer_at=3), "ours_first", False, False),
+        (_synthetic(20, engine_at=4), "unattributable", False, False),
+    ]
+    bad = 0
+    for rep, cls, b_drop, n_drop in cases:
+        got = classify(raw, rep, 10)["class"]
+        ok = got == cls and is_peer_drop("branch", got) == b_drop and is_peer_drop("null", got) == n_drop
+        bad += not ok
+        print(json.dumps({"want": cls, "got": got, "branch_drop": is_peer_drop("branch", got),
+                          "null_drop": is_peer_drop("null", got), "ok": ok}))
+    print(json.dumps({"selftest": "PASS" if not bad else "FAIL", "cases": len(cases)}))
+    return 0 if not bad else 1
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -171,7 +233,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     b = sub.add_parser("state")
     b.add_argument("--branch-state", required=True)
     b.add_argument("--all", action="store_true")
+    sub.add_parser("selftest")
     args = ap.parse_args(argv)
+    if args.verb == "selftest":
+        return selftest()
     if args.verb == "classify":
         print(json.dumps(classify(_load(Path(args.raw)), _load(Path(args.branch)), args.turn), sort_keys=True))
         return 0

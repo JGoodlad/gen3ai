@@ -365,3 +365,28 @@ counted unit passing every tooth.
 result. The unit is dropped (by the code before this amendment and by rule 1 after it), so the result enters no
 estimate. It is the only branch result anyone has seen. Since then the operator reads only the teeth: statuses,
 G-BRANCH records, capture comparisons and the classifier, never a log, a game row or a summary's result.
+
+### AM-DL-PEER clarification (2026-10-31, BLIND: the branch lane still running, no branch outcome read)
+
+The orchestrator's ruling on how rule 3 applies to nulls. **A NULL needs (a) and (b) only, at any turn.**
+- **Why:** condition (c) exists for branches, because after the forced action a divergence is expected and is ours. A
+  null forces π's own action. So a Kakuna-first divergence at any turn, with our choices identical on identical views,
+  is the same peer nondeterminism, and it still shows that our side's replay is faithful.
+- **So rule 3 reads:**
+  - a null attempt classed `peer_first` or `peer_first_late` is a PEER DROP, counted separately. That includes a
+    counted null whose game changes after its branch turn, which rule 6's input then excludes (no VOID);
+  - every other null divergence stays VOID.
+- **For branches, rule 1 is unchanged:** `peer_first` only.
+
+**The classifier** ([`scripts/peer_divergence.py`](scripts/peer_divergence.py)) now:
+- carries `is_peer_drop(kind, class)`;
+- classifies every null on every run (a counted null can change its game after its turn);
+- has a `selftest` verb: seven synthetic captures, one per class, each with its branch and null verdict. It passes,
+  and it fails with the pre-clarification null rule.
+
+On the live state at this clarification it returns the same classes as at the ruling: DL-7's two attempts are peer
+drops, and every counted null is `identical`.
+
+**The record** reports the nulls' peer-drop rate beside the branches', per panel and pooled. It directly estimates how
+often Kakuna's nondeterminism enters a continuation: it adds noise to D, never a bias, because a peer divergence cannot
+read which arm it is in.
