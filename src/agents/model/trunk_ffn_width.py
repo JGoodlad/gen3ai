@@ -115,3 +115,18 @@ def install_branches(tt: Any, ffn_dim: int, *, only_missing: bool = False) -> Li
         r.ffn_extra = br.to(device=ref.device, dtype=ref.dtype)
         built.append(r.ffn_extra)
     return built
+
+
+def zero_branches(module: torch.nn.Module) -> int:
+    """Zero every width branch's output map (``ffn_extra.linear2``; it has no bias) inside ``module``, IN PLACE: each
+    branch then adds an exact 0.0 again, so the network computes its 256-wide parent's function bit for bit (the
+    ``trunk_ffn_dim`` growth's ``zero_new`` hook, `growth.GROWABLE`; N4's E2). ``linear1`` is left trained (it feeds
+    only the zeroed map). Returns the number of branches zeroed (0 = no branch)."""
+    n = 0
+    with torch.no_grad():
+        for _name, mod in module.named_modules():
+            if isinstance(mod, FfnWidthBranch):
+                for p in mod.linear2.parameters(recurse=False):          # its weight (and a bias, were one built)
+                    p.zero_()
+                n += 1
+    return n

@@ -27,8 +27,9 @@ THE GROWABLE FIELDS (one table, `GROWABLE`):
 * ``opp_intent_grad_mode`` — DECLARED, NOT BUILT (B-INT). Naming it is a typed refusal that names the build that adds it.
 
 FIELD-GENERIC (`design_growth_builds_kffn_int.md` §3). Each BUILT row carries its own hooks — ``parse``, ``validate``,
-``current`` (the value the loaded network is BUILT at), ``grow`` (in place; returns the new parameters) and an optional
-``gate`` — and nothing outside the row names its field. :func:`apply_growth` loops over the declared fields in
+``current`` (the value the loaded network is BUILT at), ``grow`` (in place; returns the new parameters), an optional
+``gate`` and an optional ``zero_new`` (zero the growth's zero-init output maps again: the parent's function, read by the
+growth descriptors `main.x35.x47_report`) — and nothing outside the row names its field. :func:`apply_growth` loops over the declared fields in
 ``GROWABLE``'s declaration ORDER: one probe of the parent, every grower, ONE optimizer rebuild over the union of the new
 parameters, one probe of the child; the forward bit-identity check and every row's extra gate read those probes.
 
@@ -105,6 +106,10 @@ class Growable:
     gate: Optional[GateHook] = None
     #: the row's addendum to `OPTIMIZER_RULE`, recorded in the stamp (empty = the shared rule alone)
     optimizer_rule: str = ""
+    #: ``module -> blocks zeroed``: sets every ZERO-INIT output map this growth appended back to zero IN PLACE, so the
+    #: network computes its parent's function again (a growth descriptor's π_zeroed, `main.x35.x47_report`). None = the
+    #: growth appends no zero-init block (B-KFFN's experts are copies), so no zeroed-twin descriptor reads it.
+    zero_new: Optional[Callable[[Any], int]] = None
 
 
 #: The optimizer rule, as recorded in the lineage stamp and the `growth` record.
@@ -363,6 +368,16 @@ def grow_trunk_ffn_dim(policy: Any, child: Any) -> Grown:
     return Grown([(n, p) for n, p in policy.named_parameters() if id(p) in added_ids], {})
 
 
+def _zero_new_rounds(module: Any) -> int:
+    from agents.model.trunk_depth import zero_extra_rounds
+    return zero_extra_rounds(module)
+
+
+def _zero_new_branches(module: Any) -> int:
+    from agents.model.trunk_ffn_width import zero_branches
+    return zero_branches(module)
+
+
 def regrow_optimizer(policy: Any, new_params: Sequence[torch.nn.Parameter],
                      copies: Optional[Mapping[int, torch.nn.Parameter]] = None) -> Dict[str, int]:
     """Rebuild ``policy.optimizer`` over the grown policy (module docstring, THE OPTIMIZER RULE). Returns counts:
@@ -516,7 +531,7 @@ GROWABLE: Dict[str, Growable] = {
         "trunk_layers", True, "B-GROW",
         "appends identity-init pre-LN trunk rounds (trunk_depth.IdentityInitRound: out_proj and linear2 zero)",
         parse=_parse_trunk_layers, validate=_validate_trunk_layers, current=trunk_layers_of,
-        grow=_grow_trunk_layers_row),
+        grow=_grow_trunk_layers_row, zero_new=_zero_new_rounds),
     "trunk_ffn_by_kind": Growable(
         "trunk_ffn_by_kind", True, "B-KFFN",
         "per-token-kind FFN experts upcycled as copies of the shared FFN (design_growth_builds_kffn_int.md §1)",
@@ -527,7 +542,8 @@ GROWABLE: Dict[str, Growable] = {
         "trunk_ffn_dim", True, "B-FFNW",
         "widens every trunk round's FFN with a zero-output width branch (trunk_ffn_width: linear1 D_MODEL -> N - 256, "
         "linear2 back, zero; design_n4_capacity_screen.md §2)",
-        parse=_parse_ffn_dim, validate=_validate_ffn_dim, current=trunk_ffn_dim_of, grow=grow_trunk_ffn_dim),
+        parse=_parse_ffn_dim, validate=_validate_ffn_dim, current=trunk_ffn_dim_of, grow=grow_trunk_ffn_dim,
+        zero_new=_zero_new_branches),
     "opp_intent_grad_mode": Growable(
         "opp_intent_grad_mode", False, "B-INT",
         "the opponent-intent objective's trunk gradient switch (design_bot_ideas_screen.md §2.3)"),

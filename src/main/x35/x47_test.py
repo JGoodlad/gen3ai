@@ -403,6 +403,7 @@ def test_am_x47_10_run_norms_reads_every_checkpoint_and_the_final(tmp_path):
     for n in (FORK + IT, FORK + 2 * IT):
         (run / "checkpoints" / f"checkpoint_{n}_steps.zip").write_bytes(b"z")
     (run / "final_model.zip").write_bytes(b"z")
+    (run / "model_config.json").write_text(json.dumps({"growth": {"fields": {"trunk_layers": {"parent": 2, "child": 4}}}}))
     pre = "features_extractor.team_transformer."
     sd = {f"{pre}transformer_layers.0.out_proj.weight": torch.ones(2, 2), f"{pre}transformer_layers.0.linear2.weight":
           torch.ones(2, 2), f"{pre}extra_rounds.0.out_proj.weight": torch.zeros(2, 2),

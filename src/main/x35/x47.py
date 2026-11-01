@@ -7,8 +7,12 @@ Pure functions plus a read-only loader; no game is played here (S comes from ``m
     python -m main.x35.x47 seq --look 1 --c0-run <dir> ... --x47-run <dir> ...  # B, each seed's s_eq, ρ (JSON)
     python -m main.x35.x47 seq --look 2 ... --prior <look-1 seq.json>          # + which nodes moved (AM-X47-8)
     python -m main.x35.x47 decide <read.json>                                 # the verdict (JSON; ``read``)
-    python -m main.x35.x47 norms --run <dir>                                  # the descriptor (AM-X47-10)
-    python -m main.x35.x47 policy-diff --run <dir> --bank <bank_x26>          # the policy descriptor (AM-X47b-3)
+    python -m main.x35.x47 norms --run <dir>                                  # the descriptor (AM-X47-10; N4's E1)
+    python -m main.x35.x47 policy-diff --run <dir> --bank <bank_x26>          # the policy descriptor (AM-X47b-3; E2)
+    python -m main.x35.x47 width-null --run <C0' dir> --parent <T*.zip> --bank <bank_x26> --ffn-dim 1024  # N4 M1
+
+The descriptors dispatch on the run's DECLARED growth (``x47_report``): a run declaring none, or a field no reader
+handles, is REFUSED with exit 2.
 
 EFFECTIVE LEARN TIME (``design_compute_efficiency.md`` §5.4). Σ = Σ ``rollout/collect_ms`` / 1000 + Σ
 ``lifecycle/update_wall_s`` over the fork's OWN TensorBoard rows (``main.x35.tbrows``: the inherited file and every
@@ -548,15 +552,23 @@ def _main(argv: Optional[Sequence[str]] = None) -> int:
     q.add_argument("--prior", default=None, help="look 2 only: the look-1 seq JSON (records which nodes moved)")
     d = sub.add_parser("decide", help="the verdict of one read JSON (see main.x35.x47.read)")
     d.add_argument("input")
-    n = sub.add_parser("norms", help="AM-X47-10: the new rounds' weight norms on every checkpoint of a run (read-only)")
+    n = sub.add_parser("norms", help="AM-X47-10 / N4 E1: the declared growth's new output maps' weight norms on every "
+                                      "checkpoint of a run (read-only)")
     n.add_argument("--run", required=True)
-    pd = sub.add_parser("policy-diff", help="AM-X47b-3: mean KL on a bank to the same weights with the new rounds "
-                                            "zeroed (read-only; REPORTED only)")
+    pd = sub.add_parser("policy-diff", help="AM-X47b-3 / N4 E2: mean KL on a bank to the same weights with the declared "
+                                            "growth's new output maps zeroed (read-only; REPORTED only)")
     pd.add_argument("--run", required=True)
     pd.add_argument("--bank", required=True, help="a main.policy_spectrum bank (the registered one: bank_x26)")
     pd.add_argument("--stride", type=int, default=10, help="every k-th checkpoint (the final is always read)")
     pd.add_argument("--node", type=int, action="append", default=[], help="read only these checkpoint steps")
     pd.add_argument("--threads", type=int, default=1)
+    wn = sub.add_parser("width-null", help="N4 REVIEW M1: E1's drift null and E2's revert-linear2 KL on a narrow "
+                                           "control's final against its parent (read-only; REPORTED only)")
+    wn.add_argument("--run", required=True, help="the narrow control (C0') run dir; its final_model.zip is read")
+    wn.add_argument("--parent", required=True, help="the parent checkpoint .zip (T*)")
+    wn.add_argument("--bank", required=True, help="a main.policy_spectrum bank (the registered one: bank_x26)")
+    wn.add_argument("--ffn-dim", type=int, required=True, help="the grown arm's trunk FFN width (N4: 1024)")
+    wn.add_argument("--threads", type=int, default=1)
     a = ap.parse_args(argv)
     try:
         if a.cmd == "seq":
@@ -566,6 +578,9 @@ def _main(argv: Optional[Sequence[str]] = None) -> int:
         elif a.cmd == "policy-diff":
             json.dump(XR.run_policy_diff(a.run, a.bank, stride=a.stride, nodes=a.node, threads=a.threads),
                       sys.stdout, indent=1)
+        elif a.cmd == "width-null":
+            json.dump(XR.run_width_null(a.run, a.parent, a.bank, ffn_dim=a.ffn_dim, threads=a.threads),
+                      sys.stdout, indent=1)
         else:
             with open(a.input) as f:
                 json.dump(read(json.load(f)).as_dict(), sys.stdout, indent=1, default=str)
@@ -574,10 +589,10 @@ def _main(argv: Optional[Sequence[str]] = None) -> int:
     except (X47InputError, R.ReadoutInputError) as exc:
         print(f"[x35 x47] INCONCLUSIVE: {exc}", file=sys.stderr)
         return 2
-    except ValueError as exc:                   # policy-diff's refusals (a missing node, not a grown network)
-        if a.cmd != "policy-diff":
+    except ValueError as exc:                   # the descriptors' refusals (no / an unhandled growth, a missing node)
+        if a.cmd not in ("norms", "policy-diff", "width-null"):
             raise
-        print(f"[x35 x47] policy-diff REFUSED: {exc}", file=sys.stderr)
+        print(f"[x35 x47] {a.cmd} REFUSED: {exc}", file=sys.stderr)
         return 2
 
 

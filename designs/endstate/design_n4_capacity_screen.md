@@ -5,8 +5,9 @@
 - **Built:** T69's model side (`c35ffab9e`), the `n4_screen` rule (`a05a0ca2c`) and the kit arms (`toy_c0n4` /
   `toy_n4ffn`).
 - **The training pin:** `N4_PIN` = `1553f8bd8` (AMENDMENT AM-N4-PIN).
-- **Before the read:** the S lane's grouping by architecture, the width descriptor readers and the battery's width
-  worker (§7, FINDINGS 10–11; the battery is done). They are needed before the read, not the launch.
+- **Read-side tools: BUILT (2026-10-31).** The S lane's grouping by architecture (`86b12d0e7`), the width descriptor
+  readers with the M1 nulls, and the battery on a wide trunk (`5e07715ae`). Still owed before the read: the NOTE
+  naming the read's commit, and `read_spec.json` (§7 item 5).
 - **The rule as amended (AM-N4-FIXES, 2026-10-31):** the REVIEW's M2 (MIXED), M3 (2,000 pairs), m3 (GO-S needs
   Δ̂_S ≥ +1.0 pp) and M5 (the "within 70M" NO-GO wording) are adopted. The family false GO is 0.048–0.068 at the
   planning σ (§4.3).
@@ -206,9 +207,11 @@ So the growth machinery works on the toy at HEAD, and the width field is the bui
      T69 and the rule. The toy side pin `4609c155` stays batch 1's.
    - `batch.N4_STAGES` holds the PREREG's interleaved order.
    - `toy_n4ffn` is the `toy_c0n4` argv token for token + `--grow trunk_ffn_dim=1024`.
-3. **The descriptor readers: NOT BUILT.** They generalise `main.x35.x47 norms` / `policy-diff` to any declared
-   growth through a per-row `zero_new` hook (§5). Today `x47 norms` on a width-grown toy exits 0 with an EMPTY
-   reading (FINDING 11).
+3. **The descriptor readers: BUILT (2026-10-31).** `main.x35.x47 norms` / `policy-diff` dispatch on the run's
+   DECLARED growth (`model_config.json` `growth.fields`): the norm reader per field (`x47_report.NORM_READERS`) and
+   the zeroed twin through each `GROWABLE` row's `zero_new` hook (`trunk_ffn_width.zero_branches` for width,
+   `trunk_depth.zero_extra_rounds` for depth). A run declaring no growth, or a field no reader handles, exits 2
+   (REFUSED), never an empty reading. `x47 width-null` computes REVIEW M1's two nulls (§5). The commands are §5's.
 4. **The read rule** `n4_screen` (PREREG §5) is **BUILT** (2026-10-27, ahead of T69, for X48;
    `src/main/reads/rules_n4_screen.py`, `designs/tools/reads.md` §5): S by `welch_interval` at 0.90 from an `s` group,
    K by the `d1` estimators at z = 1.6449 from an `anchor` group (forum72), M2's MIXED (`mixed_veto`), M4's LR label,
@@ -367,6 +370,26 @@ the rule as first registered, at 500 pairs, kept for the comparison.
 - **(E2)** The policy shift on `bank_x26` (7,028 decisions) between each node and the same weights with every
   `linear2_x` zeroed, which restores the narrow function exactly: the mean KL(π_node ‖ π_zeroed) and the share of
   argmax moves, at every 10th node and the final (AM-X47b-3's pattern).
+- **The M1 nulls** (REVIEW M1: E1 cannot fail on its own), on each C0′ final against T\*:
+  - E1's null: C0′'s base drift ‖`linear2`(final) − `linear2`(T\*)‖_F / ‖`linear2`(T\*)‖_F × √(768 / 256);
+  - E2's null: the KL between the final and the same final with every base `linear2` (weight AND bias) reverted to
+    T\*'s.
+- **The commands** (CPU, read-only; `T` = `models/rb_toy_ent_s4002_deep/checkpoints/checkpoint_290000087_steps.zip`,
+  `B` = `~/gen3ai_archive/collapse_pilot_2026-10-17/bank_x26`; one call per seed: `rb_x35t_n4ffn_s364x` and
+  `rb_x35t_c0n4_s364x`, x = 1..3):
+
+  ```bash
+  python -m main.x35.x47 norms --run <N4 run dir>                                # E1, every node
+  python -m main.x35.x47 policy-diff --run <N4 run dir> --bank $B                 # E2, every 10th node + final
+  python -m main.x35.x47 width-null --run <C0' run dir> --parent $T --bank $B --ffn-dim 1024   # both nulls
+  ```
+- **Measured on the frame (2026-10-31, CPU).** On a T\* grown offline, E1 and E2 are exactly 0.0, as they must be.
+  On the BANKED toy C0 s3601 final (the old pin, not C0′), the nulls already read:
+  - E1 null 0.172 / 0.214 (drift 0.0995 / 0.1234 × √3; the REVIEW's table: 0.100 / 0.123);
+  - E2 null KL 0.110 (free decisions 0.115), argmax moved on 21.7 %;
+  - beside X47 s3601's depth E2 at the final: KL 0.155, argmax 25.5 %.
+  So ordinary 70M FFN drift alone carries most of X47's "engaged" policy shift. N4's E2 must clear the C0′ seed
+  range, not 0.
 
 **The capacity battery v3** (`python -m main.capacity <final> --states <C0′ s3641's eval-trace states> --out
 <stage>/battery/<run>.json --max-states 2000`):
@@ -473,7 +496,7 @@ test. On the strategy memo's routing, N4 (toy) or N4-P-direct was the orchestrat
      - Identity check: 5 banked X47 look-1 toy cells, replayed through the new grouping on E1, equal the banked
        rows on counts and both digests (`s_engines_identity.json`).
      - The NOTE naming the read's commit is still owed.
-   - **(b) The width descriptor readers** E1 / E2.
+   - **(b) DONE: the width descriptor readers** E1 / E2 and the M1 nulls (§2 item 3, §5).
    - **(c) DONE: the battery reads a wide trunk.** `main.capacity` always did; the probe battery's depth worker
      does since `0ecad293a` (FINDING 10).
    - The rule's decision parameters are fixed (AM-N4-FIXES). The S lane plays 2,000 pairs a cell, about 6–12
@@ -522,9 +545,9 @@ test. On the strategy memo's routing, N4 (toy) or N4-P-direct was the orchestrat
 11. **The S lane cannot play N4's finals as built** (2026-10-31).
     - One `main.h2h` engine serves at most two architectures. The runner stripes R's members across two engines,
       so one engine gets a grown toy, a plain toy and `pstar_x26`, and is refused (`CellArchMismatch`).
-    - The width descriptor readers do not exist yet. `x47 norms` on a grown toy exits 0 with an EMPTY reading,
-      instead of refusing.
-    - Both are owed before the read (§7 item 5). The S lane's grouping is DONE (§7 item 5 (a)).
+    - The width descriptor readers are BUILT. `x47 norms` reading a grown toy as EMPTY with exit 0 is FIXED: the
+      readers dispatch on the declared growth and refuse what they do not handle (§2 item 3).
+    - The S lane's grouping is DONE (§7 item 5 (a)).
     - N4's S rows will play on main's engine, which no banked S row used. So the pin-drift line against the banked
       toy C0's 52.428 (PREREG §6 item 5) is cross-engine and descriptive only.
 12. **The frozen X35-frame shared pin `86cfdf7ef` cannot load a grown toy.** Its model code is f4b25238's, config
@@ -545,3 +568,4 @@ test. On the strategy memo's routing, N4 (toy) or N4-P-direct was the orchestrat
 | 2026-10-27 | **Ruling 2 of the precommit memo accepted** (doc editor; docs only) | LR-F look 2 runs after X48 and before N4 launches (PREREG NOTE 1) | — | `precommit_reads_2026-10-27.md` §4 |
 | 2026-10-27 | **The read rule `n4_screen` BUILT before T69** (for X48, which registered under N4's screen) | one rule for both reads, the differences as spec params (`near_scope`, `mixed_veto`, `nogo_scope`, the S group's `pairs`) | two copies of the screen | `rules_n4_screen_test.py`; X48 `read_spec.draft.json` passes `check-spec --pin-pending` |
 | 2026-10-31 | **LAUNCH-READY for training** (N4 launch-readiness unit, orchestrator brief; CPU only) | the kit arms at ONE whole-commit pin `N4_PIN` = `1553f8bd8`, checked by `n4_pin_check`. The read's pin and S driver are fixed by a NOTE before any read game. The GPU smoke is folded into the chain's banner guards. An unarmed chain draft (PREREG AMENDMENT AM-N4-PIN) | a "side pin + one commit" own pin (no clean commit exists, §3.2); waiting for the descriptor readers before pinning (they never touch training); a separate GPU smoke (no lease) | `checkargs` / `--dry-run` / kit checks on both argvs; a grown toy's `main.h2h` + `main.anchors` smoke; the draft's `arm_chain plan` |
+| 2026-10-31 | **The width descriptor readers BUILT** (N4 read-side sub-agent; CPU only) | `x47 norms` / `policy-diff` dispatch on the run's declared growth, through a `zero_new` hook on each `GROWABLE` row and a norm reader per field; an unhandled or absent growth is REFUSED (exit 2); `x47 width-null` for REVIEW M1's E1 / E2 nulls | inferring the growth from the state dict (a plain wide build would read as grown); a reader per experiment | `x47_width_test.py` (bit-identical zeroed twin, E1 = 0 on a fresh grown toy, the refusals, the nulls by hand); the readers on an offline-grown T\* and the banked toy C0 s3601 (§5) |

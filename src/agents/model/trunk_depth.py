@@ -95,3 +95,25 @@ def build_extra_rounds(trunk_layers: int, ffn_by_kind: str = "off") -> Optional[
         for j, r in enumerate(rounds):
             r.kind_ffn = build_kind_ffn(TRANSFORMER_N_LAYERS + j, identity=True)
     return rounds
+
+
+def zero_extra_rounds(module: torch.nn.Module) -> int:
+    """Zero ``out_proj`` and EVERY ``linear2`` (weight and bias) of every round inside a module named ``extra_rounds``,
+    IN PLACE: the round's own, a width branch's (``ffn_extra``) and each per-kind expert's (``kind_ffn.*``), because a
+    branch left trained makes the round no longer the identity. The network then computes the base rounds' function
+    (the ``trunk_layers`` growth's ``zero_new`` hook, `growth.GROWABLE`). Returns the number of rounds zeroed (0 = no
+    new round)."""
+    n = 0
+    with torch.no_grad():
+        for name, mod in module.named_modules():
+            if name.rsplit(".", 1)[-1] != "extra_rounds":
+                continue
+            for rnd in mod:
+                lins = [rnd.out_proj] + [sub for sname, sub in rnd.named_modules()
+                                         if sname.rsplit(".", 1)[-1] == "linear2"]
+                for lin in lins:
+                    lin.weight.zero_()
+                    if lin.bias is not None:
+                        lin.bias.zero_()
+                n += 1
+    return n
