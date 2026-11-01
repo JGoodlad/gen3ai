@@ -234,3 +234,67 @@ estimator, seed, dose, argv or VOID reason changes.
 - `power.py`, `power.log`: the screen's and the X35 R1 rule's power.
 - `battery_baseline.log`: the capacity battery v3 on T\*, toy C0 s3601's final and X47 s3601's final, on ONE state
   set (2,000 states of C0 s3601's eval traces). Reported, never deciding.
+
+**AMENDMENT AM-N4-FIXES (2026-10-31, before the first GO; no N4 or C0′ run, game or number exists).** The
+orchestrator's ruling (2026-10-31): adopt the REVIEW's M2, M3, m3 and M5, exactly as the REVIEW proposed them. This
+REPLACES AM-N4-PIN item 3's values where they differ. The training side does not change: the argvs, seeds, dose,
+pin, order, thinning and VOID reasons all stand, and so does the chain draft.
+1. **M2, the harm veto: a MIXED class.** It applies both ways, as the REVIEW wrote it (M2 (a)):
+   - GO-S with UB_K < 0 reads **MIXED**;
+   - so does GO-K with UB_S < 0.
+
+   MIXED is classed UNDECIDED, is never GO, and is printed with both intervals. The class order is INCONCLUSIVE >
+   MIXED > GO > NO-GO > UNDECIDED. Spec: `mixed_veto: true`. M2 (b): α stays 0.05 one-sided per meter, and the
+   record states the family false GO (item 5), never "Bonferroni".
+2. **M3: 2,000 mirrored pairs per (final, member) S cell**, in place of §5.1's 500. Spec: the S group's `pairs`
+   2000, which is also the INCONCLUSIVE floor for a cell. G-F's 3 × 3 stays at 500 pairs (§6 item 3, reported).
+3. **m3: GO-S also needs the point estimate Δ̂_S ≥ +1.0 pp.** This is the REVIEW's own value, "the screen's minimum
+   interesting effect".
+   - A Δ̂_S within 1e-9 of +1.0 is not past it (rule 8). With `near_scope` `"meter"` it reads S UNDECIDED.
+   - NO-GO-S is unchanged: UB_S < +2.0 pp.
+   - GO-K has no floor. The REVIEW's m3 is S-only.
+
+   Spec: `go_s_min_delta: 1.0`. It is a new optional parameter of the `n4_screen` rule, built in this amendment's
+   commit; absent, the rule is unchanged, so X48's banked record does not move.
+4. **M5: the NO-GO wording.** Every NO-GO reads "no ≥ 2 pp in-house gain from a 4× trunk FFN width (`--grow
+   trunk_ffn_dim=1024`) within 70M of T\*". It never reads "capacity does not bind on the toy". Spec: `nogo_scope`
+   `{"lever": "a 4x trunk FFN width (--grow trunk_ffn_dim=1024)", "dose": "70M", "start": "T*"}`.
+   - M5 (a), the three-node slope, is NOT adopted: the ruling names the wording only. The planner's thinning keeps
+     C0′'s 320M and 340M nodes, so a later registration could still read it.
+5. **The error rates under the amended rule** (`power_am_fixes.py` → `power_am_fixes.log`, seeded and
+   deterministic; the REVIEW's model; K 1,000 forum72 games a final, base 0.42). σ_S is the per-final SD of S.
+   - **The planning σ_S is 0.56–0.65 pp:** the REVIEW's ESTIMATE at 2,000 pairs (ESTIMATE, not measured).
+   - **The pessimistic σ_S is 1.07 pp:** §9's registered value at 500 pairs, in case the evaluation-noise share is
+     smaller than the REVIEW's upper bound.
+
+   | true (Δ_S, Δ_K) pp | P(GO), σ_S 0.56–0.65 | P(GO), σ_S 1.07 | P(NO-GO), σ_S 0.56–0.65 | P(MIXED), σ_S 0.56–0.65 |
+   |---|---|---|---|---|
+   | (0, 0): the family false GO | **0.048–0.068** | 0.071–0.084 | 0.83–0.90 | ≤ 0.003 |
+   | (+1, 0) (GO-S alone) | 0.34–0.39 | 0.20 | 0.34–0.39 | — |
+   | (+2, 0) | 0.83–0.91 | 0.52 | 0.009–0.016 | 0.035–0.053 |
+   | (+3, 0) | 0.94–0.96 | 0.79 | 0.000 | 0.039–0.057 |
+   | (0, +4) | 0.78–0.86 | 0.78–0.86 | 0.10–0.18 | 0.025–0.035 |
+   | (+2, −3), the harm case | 0.26–0.37 | 0.16–0.24 | 0.009–0.016 | **0.52–0.66** |
+
+   - Each range spans σ_s(K) 0 and 1 pp, and seed-effect correlations ρ 0 and 0.7 between the meters.
+   - The S meter alone, at σ_S 0.56 / 0.65 / 1.07: GO-S 0.010 / 0.017 / 0.035 at a true 0; 0.94 / 0.88 / 0.53 at
+     +2 pp. NO-GO-S at a true 0: 0.94 / 0.87 / 0.53.
+   - Against the rule as registered (`power.log`, `review_power.log`):
+     - the family false GO falls from 0.090–0.093 to 0.048–0.068;
+     - GO at +2 pp rises from 0.53–0.79 to 0.83–0.91 at the planning σ;
+     - the floor costs GO at a true +1 pp (0.34–0.39 at the planning σ);
+     - in the harm case (+2, −3), P(GO) falls from 0.79 to 0.26–0.37: most of that probability moves to MIXED.
+6. **The read's pin.** The spec's pin must carry this commit's rule (`go_s_min_delta`), and an older pin's rule
+   refuses the key. So the read plays at ONE later `main` commit, never at `N4_PIN`; AM-N4-PIN item 2's first route
+   is withdrawn. That commit carries the read-side tools (the S lane's architecture-pure engines, the width E1 / E2
+   readers, the battery's width worker), with X48 NOTE 5 (a)'s identity check. It is named by a NOTE before any read
+   game.
+7. **The spec's decision parameters, now complete:**
+   - `mixed_veto` true;
+   - `near_scope` "meter";
+   - `go_s_min_delta` 1.0;
+   - `s_bar` 2.0, `k_bar` 0.015, `confidence` 0.90, `z` 1.6449, `rule8_eps` 1e-9;
+   - S `pairs` 2000;
+   - `nogo_scope` as in item 4;
+   - `void` {`k9b_dir`, runs, and the pin VOID against `N4_PIN`}.
+8. **The S lane's cost** rises to about 6–12 lane-h (36 cells × 2,000 pairs), from 1.5–3. CPU only.

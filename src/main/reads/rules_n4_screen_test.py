@@ -232,6 +232,51 @@ def test_near_scope_meter_reads_the_whole_meter_undecided():
     assert N4.classify(m, _params(near_scope="meter"), LR_OK)["class"] == N4.UNDECIDED
 
 
+# ------------------------------------------------------------------- m3: the optional GO-S floor (N4 AM-N4-FIXES)
+@pytest.mark.parametrize("s_d,want_s,want", [
+    (1.25, N4.GO_S, N4.GO),                     # LB_S > 0 and the point estimate past +1.0 pp
+    (0.75, N4.UNDECIDED_S, N4.UNDECIDED),       # LB_S > 0 but Δ̂_S below the floor: not GO-S
+    (1.0, N4.UNDECIDED_S, N4.UNDECIDED),        # exactly at the floor is within eps: never past it (rule 8)
+    (1.0 + 5e-10, N4.UNDECIDED_S, N4.UNDECIDED),
+])
+def test_the_go_s_floor_needs_the_point_estimate_past_it(s_d, want_s, want):
+    c = N4.classify(_m((0.25, 3.0), K_U, s_d=s_d), _params(go_s_min_delta=1.0), LR_OK)
+    assert (c["meters"]["s"]["class"], c["class"]) == (want_s, want)
+    assert N4.classify(_m((0.25, 3.0), K_U, s_d=0.75), _params(), LR_OK)["class"] == N4.GO   # absent: no floor (X48)
+
+
+def test_the_go_s_floor_leaves_no_go_s_and_k_alone_and_near_scope_meter_reads_s_undecided():
+    # a small significant gain under the in-house bar: no GO-S, but UB_S < 2 still reads NO-GO-S ("no >= 2 pp gain")
+    c = N4.classify(_m((0.1, 1.75), K_U, s_d=0.9), _params(go_s_min_delta=1.0), LR_OK)
+    assert c["class"] == N4.NO_GO and c["meters"]["s"]["class"] == N4.NO_GO_S
+    c = N4.classify(_m((0.1, 1.75), K_U, s_d=1.0), _params(go_s_min_delta=1.0, near_scope="meter"), LR_OK)
+    assert c["meters"]["s"]["class"] == N4.UNDECIDED_S and N4.GO_S_FLOOR in c["meters"]["s"]["near"]
+    c = N4.classify(_m(S_U, (0.0025, 0.03), s_d=0.0), _params(go_s_min_delta=1.0), LR_OK)
+    assert c["verdict"] == "GO (unfamiliar)"                          # GO-K needs no floor
+    c = N4.classify(_m((0.25, 3.0), (-0.03, -0.0025), s_d=0.75), _params(go_s_min_delta=1.0), LR_OK)
+    assert c["class"] == N4.UNDECIDED                                 # no GO-S, so no MIXED either
+
+
+def test_the_family_false_go_line_and_the_end_to_end_class_follow_the_floor(tmp_path):
+    """S_GO's Δ̂_S is +1.50 pp: past a +1.0 floor (still GO), short of a +1.75 one (no GO-S), and the record's
+    family false-GO line names the floored rule."""
+    (tmp_path / "a").mkdir()
+    (tmp_path / "b").mkdir()
+    d = _run(tmp_path / "a", _cells(S_GO, K_FLAT), _params(go_s_min_delta=1.0))
+    assert d["verdict"] == "GO (in-house)" and d["family_false_go"].startswith("≈ 0.05-0.07")
+    d = _run(tmp_path / "b", _cells(S_GO, K_FLAT), _params(go_s_min_delta=1.75))
+    assert d["class"] != N4.GO and d["screen"]["meters"]["s"]["class"] != N4.GO_S
+
+
+def test_the_go_s_floor_is_validated_and_lowers_the_reported_power():
+    from main.reads import rules_n4_screen as RN
+    assert any("go_s_min_delta" in x for x in [m for m in RN.check(_params(go_s_min_delta=2.0), models={}, anchor={},
+                                                                     s={})])
+    plain = RN.s_power(0.6, 0.6, 3, 3, 2.0, 0.9, 1e-9)
+    floored = RN.s_power(0.6, 0.6, 3, 3, 2.0, 0.9, 1e-9, go_floor=1.0)
+    assert floored["at_+0pp"]["go_s"] < plain["at_+0pp"]["go_s"] and floored["at_+2pp"]["go_s"] <= plain["at_+2pp"]["go_s"]
+
+
 # ------------------------------------------------------------------------------------------- M4: the LR label
 def _lr(on: float, off: float) -> Dict[str, float]:
     return {**{lab: on for lab in ON}, **{lab: off for lab in OFF}}

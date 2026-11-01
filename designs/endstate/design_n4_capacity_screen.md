@@ -7,7 +7,9 @@
 - **The training pin:** `N4_PIN` = `1553f8bd8` (AMENDMENT AM-N4-PIN).
 - **Before the read:** the S lane's grouping by architecture, the width descriptor readers and the battery's width
   worker (§7, FINDINGS 10–11). They are needed before the read, not the launch.
-- **Before the first GO:** the orchestrator's ruling on the REVIEW's MAJORs that touch the classes (FINDING 13).
+- **The rule as amended (AM-N4-FIXES, 2026-10-31):** the REVIEW's M2 (MIXED), M3 (2,000 pairs), m3 (GO-S needs
+  Δ̂_S ≥ +1.0 pp) and M5 (the "within 70M" NO-GO wording) are adopted. The family false GO is 0.048–0.068 at the
+  planning σ (§4.3).
 
 This doc makes runnable the capacity branch of
 [`strategy_if_levers_null_2026-10-26.md`](strategy_if_levers_null_2026-10-26.md) §4 (T3). The plasticity check
@@ -60,13 +62,17 @@ About 30 GPU-h (§3).
   Trunk width is the capacity axis not yet tried. LR-F's non-GAIN also clears the review's first worry, that a
   binding learning rate would hide a width effect (REVIEW M4 (a)).
 - **The GPU window.** The six forks run one at a time on the arm chain draft (§3.4), ≈ 1.3 card-days.
-- **The read (§4): a SCREEN, one look, two meters.** Each class is set by one-sided 95 % bounds on the 3 + 3 seed
-  finals:
-  - **S:** GO-S iff the LB of N4 − C0′ is > 0; NO-GO-S iff the UB is < +2.0 pp (the X35 bar); else UNDECIDED-S.
+- **The read (§4): a SCREEN, one look, two meters** (as amended by AM-N4-FIXES). Each class is set by one-sided
+  95 % bounds on the 3 + 3 seed finals, with S at 2,000 mirrored pairs per cell:
+  - **S:** GO-S iff the LB of N4 − C0′ is > 0 AND Δ̂_S ≥ +1.0 pp; NO-GO-S iff the UB is < +2.0 pp (the X35 bar);
+    else UNDECIDED-S.
   - **K:** GO-K iff its LB is > 0; NO-GO-K iff its UB is < +1.5 pp (PR-1's bar); else UNDECIDED-K.
-  - **Overall:** GO iff GO-S or GO-K. NO-GO iff NO-GO-S and not GO-K. Else UNDECIDED.
-  - **Power** (`power.log`): a true +3 pp on S reads GO-S 0.83–0.98, and a true 0 reads GO-S 0.04 and NO-GO-S
-    0.52–0.77. K is a large-effect detector only: +4 pp reads GO-K 0.81–0.89 at 1,000 F games a final.
+  - **Overall:** MIXED (classed UNDECIDED, never GO) iff a GO on one meter comes with the other's UB < 0. Else GO iff
+    GO-S or GO-K. NO-GO iff NO-GO-S and not GO-K, worded "within 70M of T\*". Else UNDECIDED.
+  - **Power** (`power_am_fixes.log`, at the planning σ_S 0.56–0.65 pp):
+    - a true +2 pp on S reads GO 0.83–0.91, and a true 0 reads NO-GO 0.83–0.90;
+    - the family false GO is 0.048–0.068;
+    - K is a large-effect detector only: a K-only +4 pp reads GO 0.78–0.86.
 - **What it implies for production (§6).**
   - **GO** licenses a production width fork, read by the PR rule against Kakuna. That fork needs its own pin
     decision (FINDING 3).
@@ -289,6 +295,14 @@ beside it, so the read stays comparable with X47's.
 
 ### 4.2 The classes (exact formulas: PREREG §5)
 
+**Amended 2026-10-31 (PREREG AM-N4-FIXES):**
+- MIXED vetoes a GO that comes with harm on the other meter;
+- GO-S also needs Δ̂_S ≥ +1.0 pp;
+- S plays 2,000 pairs a cell;
+- a NO-GO reads "within 70M of T\*".
+
+The table below is the rule as first registered; §0 gives the amended rule.
+
 - **The primary estimand is matched steps.** Capacity is a question at equal data, so N4 reads every final at
   360M.
 - **ρ is reported.** The equal-learn-time view is a compute question the production fork answers at its own
@@ -311,6 +325,9 @@ beside it, so the read stays comparable with X47's.
     unfamiliar-only effect below ≈ 4 pp.
 
 ### 4.3 Power (`power.py` → `power.log`; 200,000 / 100,000 draws, seeded)
+
+**Under the amended rule, the figures of record are AM-N4-FIXES item 5** (`power_am_fixes.log`). The table below is
+the rule as first registered, at 500 pairs, kept for the comparison.
 
 | true Δ | GO-S, σ 0.75 / 1.07 | NO-GO-S, σ 0.75 / 1.07 | | true Δ_K | GO-K at 1,000 F a final, σ_s 0 / 1 pp |
 |---|---|---|---|---|---|
@@ -451,13 +468,12 @@ test. On the strategy memo's routing, N4 (toy) or N4-P-direct was the orchestrat
 4. **The chain and the GO are the orchestrator's.** The draft is `~/.claude/jobs/x35/chains/drafts/n4-toy-2026-10-31.json`
    (§3.4), six arms in §3.1's order.
 5. **Before the read** (needed by the read, not the launch; the training takes ≈ 1.3 card-days):
-   - **(a) The S lane plays one architecture per engine.** Either X48's architecture-pure driver at `N4_PIN`, or the
-     runner's grouping fix at one later main commit. Either way with X48 NOTE 5 (a)'s identity check, by a NOTE
-     (AM-N4-PIN item 2).
+   - **(a) The S lane plays one architecture per engine,** at ONE later main commit that carries the amended rule
+     (AM-N4-FIXES item 6), with X48 NOTE 5 (a)'s identity check, named by a NOTE.
    - **(b) The width descriptor readers** E1 / E2.
    - **(c) The battery's width worker.**
-   - The rule's decision parameters are fixed already, as registered (AM-N4-PIN item 3). Any adoption of the
-     REVIEW's M2 / M3 / M5 is an amendment BEFORE THE FIRST GO, the orchestrator's ruling.
+   - The rule's decision parameters are fixed (AM-N4-FIXES). The S lane plays 2,000 pairs a cell, about 6–12
+     lane-h.
 6. **The reads**, as the finals settle (AM-N4-PIN item 6):
    - `main.reads` with PREREG §7's spec: the S lane and the anchor lane, `--concurrency 1`;
    - then the battery and the descriptors;
@@ -506,10 +522,10 @@ test. On the strategy memo's routing, N4 (toy) or N4-P-direct was the orchestrat
 12. **The frozen X35-frame shared pin `86cfdf7ef` cannot load a grown toy.** Its model code is f4b25238's, config
     v161: "unexpected keyword argument 'trunk_ffn_dim'". So N4's K rows sit on their own engine, and no banked
     Kakuna row imports into them. They compare only within N4's read.
-13. **The rule needs decision parameters PREREG §7 does not list:** `mixed_veto`, `near_scope` (default `"bound"`,
-    not §5.3's `"meter"`) and `nogo_scope`. AM-N4-PIN item 3 fixes them as registered. Training writes eval numbers
-    within minutes of the GO, so whether to adopt the REVIEW's M2 (a harm veto), M3 (2,000 pairs) or M5 (the NO-GO
-    wording) is the orchestrator's ruling BEFORE THE FIRST GO, by its own amendment.
+13. **The rule's decision parameters are complete, before the first GO** (AM-N4-FIXES item 7). They were missing
+    from PREREG §7: `mixed_veto`, `near_scope` (default `"bound"`, not §5.3's `"meter"`), `nogo_scope` and the new
+    `go_s_min_delta`. The read must therefore play at a main commit carrying the floor parameter, never at
+    `N4_PIN`.
 
 ---
 

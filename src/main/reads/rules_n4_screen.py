@@ -22,7 +22,9 @@ meter is UNDECIDED") makes a near GO / NO-GO bound read the whole meter UNDECIDE
    meter's cells span two engines or sit on an unknown one (the ``main.reads`` engine rule). A VOID seed never reaches
    the rule: the registered VOID gate (``params.void``, ``rules.void_gate``) refuses the decision first.
 2. MIXED (M2, ``mixed_veto``), classed UNDECIDED and never GO: GO-S with UB_K < 0, or GO-K with UB_S < 0.
-3. GO iff GO-S (LB_S > 0) or GO-K (LB_K > 0): ``GO (both)`` / ``GO (in-house)`` / ``GO (unfamiliar)`` with Δ̂_S and
+3. GO iff GO-S (LB_S > 0, and, with the optional ``go_s_min_delta`` (pp; the N4 review's m3, N4 AM-N4-FIXES),
+   Δ̂_S ≥ that floor: a Δ̂_S within ``rule8_eps`` of it is not past it, and under ``near_scope`` "meter" reads S
+   UNDECIDED) or GO-K (LB_K > 0): ``GO (both)`` / ``GO (in-house)`` / ``GO (unfamiliar)`` with Δ̂_S and
    Δ̂_K; its text reads "growth at the plateau helped" (review m4).
 4. NO-GO iff NO-GO-S (UB_S < ``s_bar``) and not GO-K. Its text is M5's: "no ≥ <s_bar> pp in-house gain from <lever>
    within <dose> of <start>" (``nogo_scope``), never "capacity does not bind", plus NO-GO-K (UB_K < ``k_bar``) or
@@ -35,7 +37,8 @@ meter is UNDECIDED") makes a near GO / NO-GO bound read the whole meter UNDECIDE
    ``not_reported``.
 5. UNDECIDED otherwise, with both intervals and the S screen's power at the observed σ.
 
-The family false GO is ≈ 0.09, not 0.05 (M2): stated in every decision (:data:`FAMILY_FALSE_GO`).
+The family false GO is ≈ 0.09, not 0.05 (M2): stated in every decision (:data:`FAMILY_FALSE_GO`); under the GO-S
+floor it is ≈ 0.05-0.07 (:data:`FAMILY_FALSE_GO_FLOORED`, N4 AM-N4-FIXES).
 
 REPORTED, never deciding (X48 §8; no adjectives): R1 at look 1 (``readout.decide_r1``, 97.5 %, ±2 pp) on the same S;
 each arm's mean LR and the ratio; per-member Δ_S (Welch at ``confidence``); the slope (``slope``: S at the +10M
@@ -56,7 +59,7 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 SCHEMA = "gen3_read_n4_screen_v1"
 KEYS = ("on", "off", "s_group", "anchor_group", "s_bar", "k_bar", "confidence", "z", "rule8_eps", "mixed_veto", "void",
         "nogo_scope")
-OPTIONAL = ("near_scope", "slope", "pin_drift")
+OPTIONAL = ("near_scope", "slope", "pin_drift", "go_s_min_delta")
 NEAR_SCOPES = ("bound", "meter")
 SCOPE_KEYS = ("lever", "dose", "start")
 SCOPE_OPTIONAL = ("qualifier",)
@@ -71,11 +74,17 @@ LOOK = 1
 
 INCONCLUSIVE, MIXED, GO, NO_GO, UNDECIDED = "INCONCLUSIVE", "MIXED", "GO", "NO-GO", "UNDECIDED"
 GO_S, NO_GO_S, UNDECIDED_S = "GO-S", "NO-GO-S", "UNDECIDED-S"
+#: m3's test name (the optional ``go_s_min_delta``): GO-S also needs the point estimate at or above the floor.
+GO_S_FLOOR = "Δ̂_S >= go_s_min_delta"
 GO_K, NO_GO_K, UNDECIDED_K = "GO-K", "NO-GO-K", "UNDECIDED-K"
 GO_TEXT = "growth at the plateau helped"
 K_ONLY_LINE = "no unfamiliar-only effect ≥ ≈ 4 pp detected; smaller ones are not excluded"
 FAMILY_FALSE_GO = ("≈ 0.09, not 0.05: α = 0.05 one-sided per meter, two meters, GO on either (N4 REVIEW M2); a screen "
                    "GO buys a production re-read, not an adoption")
+#: The same statement under m3's GO-S floor (``go_s_min_delta``; N4 AM-N4-FIXES, ``power_am_fixes.log``).
+FAMILY_FALSE_GO_FLOORED = ("≈ 0.05-0.07 at σ_S 0.56-0.65 pp (≤ 0.085 at 1.07): α = 0.05 one-sided per meter, two "
+                           "meters, GO on either, GO-S also needing Δ̂_S past the floor (N4 AM-N4-FIXES); a screen GO "
+                           "buys a production re-read, not an adoption")
 #: The S screen's power at the observed σ (reported): seeded, so a re-decision prints the same numbers.
 POWER_DRAWS, POWER_SEED = 20_000, 0
 NOT_REPORTED = {
@@ -89,7 +98,7 @@ NOT_REPORTED = {
                            "post-rule line",
     "read_at_the_controllers_lr": "X48 NOTE 2's label needs LR-F look 1's class (another read): a post-rule line",
 }
-RULE_DOCS = {"n4_screen": "the one-look capacity screen (N4 §5 + M2 MIXED, M4 LR label, M5 NO-GO wording; X48 §5): "
+RULE_DOCS = {"n4_screen": "the one-look capacity screen (N4 §5 + M2 MIXED, M4 LR label, M5 NO-GO wording, m3 GO-S floor; X48 §5): "
                           "S by Welch 90 %, K by the d1 estimators on forum72; INCONCLUSIVE > MIXED > GO > NO-GO > "
                           "UNDECIDED"}
 
@@ -170,6 +179,9 @@ def check(p: Mapping[str, Any], *, models: Any, anchor: Any, s: Any) -> List[str
         probs.append("mixed_veto: true / false (M2's MIXED class)")
     if p.get("near_scope", "bound") not in NEAR_SCOPES:
         probs.append(f"near_scope: one of {list(NEAR_SCOPES)}")
+    if "go_s_min_delta" in p and not (_num(p["go_s_min_delta"]) and _num(p.get("s_bar"))
+                                      and 0 <= p["go_s_min_delta"] < p["s_bar"]):
+        probs.append("go_s_min_delta: a number in [0, s_bar) pp (m3: GO-S also needs Δ̂_S at or above it)")
     sc = p.get("nogo_scope")
     if not (isinstance(sc, dict) and set(SCOPE_KEYS) <= set(sc) <= set(SCOPE_KEYS + SCOPE_OPTIONAL)
             and all(isinstance(v, str) and v for v in sc.values())):
@@ -363,10 +375,11 @@ def _sd(xs: Sequence[float]) -> Optional[float]:
     return math.sqrt(math.fsum((x - m) ** 2 for x in xs) / (len(xs) - 1))
 
 
-def s_power(sd_on: float, sd_off: float, n_on: int, n_off: int, s_bar: float, confidence: float, eps: float
-            ) -> Dict[str, Any]:
+def s_power(sd_on: float, sd_off: float, n_on: int, n_off: int, s_bar: float, confidence: float, eps: float,
+            go_floor: Optional[float] = None) -> Dict[str, Any]:
     """The S meter's P(GO-S) and P(NO-GO-S) at true Δ_S 0 and +``s_bar`` pp, at the observed per-final σ of each arm
-    (a seeded Monte Carlo of the registered Welch rule, :data:`POWER_DRAWS` draws, seed :data:`POWER_SEED`)."""
+    (a seeded Monte Carlo of the registered Welch rule, :data:`POWER_DRAWS` draws, seed :data:`POWER_SEED`); with
+    ``go_floor`` (``go_s_min_delta``), GO-S also needs Δ̂_S past the floor."""
     import numpy as np
     from scipy.stats import t as student_t
 
@@ -382,6 +395,8 @@ def s_power(sd_on: float, sd_off: float, n_on: int, n_off: int, s_bar: float, co
         delta = a.mean(axis=1) - b.mean(axis=1)
         lo, hi = delta - q * np.sqrt(v), delta + q * np.sqrt(v)
         go = lo > eps
+        if go_floor is not None:
+            go &= delta > go_floor + eps
         out[f"at_{d:+g}pp"] = {"go_s": float(go.mean()), "no_go_s": float((~go & (hi < s_bar - eps)).mean())}
     return out
 
@@ -440,7 +455,9 @@ def _tests(m: Mapping[str, Any], p: Mapping[str, Any]) -> Dict[str, Tuple[bool, 
     (s_lo, s_hi), (k_lo, k_hi) = m["s"]["ci"], m["k"]["ci"]
     return {"LB_S > 0": cmp(s_lo, 0, eps, above=True), "UB_S < s_bar": cmp(s_hi, p["s_bar"], eps, above=False),
             "LB_K > 0": cmp(k_lo, 0, eps, above=True), "UB_K < k_bar": cmp(k_hi, p["k_bar"], eps, above=False),
-            "UB_S < 0": cmp(s_hi, 0, eps, above=False), "UB_K < 0": cmp(k_hi, 0, eps, above=False)}
+            "UB_S < 0": cmp(s_hi, 0, eps, above=False), "UB_K < 0": cmp(k_hi, 0, eps, above=False),
+            **({GO_S_FLOOR: cmp(m["s"]["delta"], p["go_s_min_delta"], eps, above=True)}
+               if p.get("go_s_min_delta") is not None else {})}
 
 
 def meter_classes(t: Mapping[str, Tuple[bool, bool]], near_scope: str) -> Dict[str, Any]:
@@ -449,8 +466,9 @@ def meter_classes(t: Mapping[str, Tuple[bool, bool]], near_scope: str) -> Dict[s
     out: Dict[str, Any] = {}
     for m, go_t, nogo_t, cls in (("s", "LB_S > 0", "UB_S < s_bar", (GO_S, NO_GO_S, UNDECIDED_S)),
                                  ("k", "LB_K > 0", "UB_K < k_bar", (GO_K, NO_GO_K, UNDECIDED_K))):
-        near = [n for n in (go_t, nogo_t) if t[n][1]]
-        go, nogo = t[go_t][0], t[nogo_t][0]
+        floor = [GO_S_FLOOR] if m == "s" and GO_S_FLOOR in t else []       # m3: GO-S also needs Δ̂_S >= the floor
+        near = [n for n in (go_t, nogo_t, *floor) if t[n][1]]
+        go, nogo = t[go_t][0] and all(t[n][0] for n in floor), t[nogo_t][0]
         if near and near_scope == "meter":
             go = nogo = False
         out[m] = {"go": go, "no_go": nogo, "near": near,
@@ -563,7 +581,9 @@ def _reported(doc: Mapping[str, Any], p: Mapping[str, Any], m: Mapping[str, Any]
     s = m["s"]
     if s["sigma_on_pp"] is not None and s["sigma_off_pp"] is not None:
         out["s_power_at_observed_sigma"] = s_power(s["sigma_on_pp"], s["sigma_off_pp"], len(s["on"]), len(s["off"]),
-                                                   float(p["s_bar"]), float(p["confidence"]), float(p["rule8_eps"]))
+                                                   float(p["s_bar"]), float(p["confidence"]), float(p["rule8_eps"]),
+                                                   None if p.get("go_s_min_delta") is None
+                                                   else float(p["go_s_min_delta"]))
     if "slope" in doc:
         out["slope"] = _slope(doc, p)
     if "pin_drift" in doc:
@@ -578,7 +598,9 @@ def decide(doc: Mapping[str, Any], p: Mapping[str, Any]) -> Dict[str, Any]:
 
     labels = {side: list(doc["sides"][side]["labels"]) for side in ("on", "off")}
     lr = _lr_block(doc, float(p["rule8_eps"]))
-    base: Dict[str, Any] = {"arm": doc["arm"], "look": doc["look"], "final": True, "family_false_go": FAMILY_FALSE_GO,
+    base: Dict[str, Any] = {"arm": doc["arm"], "look": doc["look"], "final": True,
+                            "family_false_go": FAMILY_FALSE_GO if p.get("go_s_min_delta") is None
+                            else FAMILY_FALSE_GO_FLOORED,
                             "not_reported": dict(NOT_REPORTED)}
     why = _s_reasons(doc["s"], "S") + _k_reasons(doc["k"], labels)
     m: Optional[Dict[str, Any]] = None
