@@ -390,3 +390,27 @@ drops, and every counted null is `identical`.
 **The record** reports the nulls' peer-drop rate beside the branches', per panel and pooled. It directly estimates how
 often Kakuna's nondeterminism enters a continuation: it adds noise to D, never a bias, because a peer divergence cannot
 read which arm it is in.
+
+### AM-DL-PEER rule 6 built (2026-11-01, BLIND: the branch lane still running, no branch outcome read)
+
+The second branch of rule 6 applies, because one G-BRANCH failure exists:
+- **The unit:** `pstar__forum72__212__g16__branch__t12n13` failed G-BRANCH on both attempts (`frame_sha256`, `log_sha256`).
+- **Its classification:** both attempts are `peer_first`. Kakuna diverged at turn 1, the branch turn is 12, and our
+  side's choices on an identical view are equal.
+
+So `deviation_live` now takes the classification as a registered input (`main.reads.rules_deviation_live.
+apply_peer_drops`):
+- **The input** is the classifier's output, written at the read's end to `<branch_state>/peer_drops.jsonl`
+  (`live/branches/peer_drops.jsonl`), with its sha256 recorded among the artefacts.
+- **A G-BRANCH failure** whose every failing attempt is classed a peer drop no longer VOIDs; any other failure still
+  does.
+- **A counted null** classed a peer drop is excluded as dropped.
+- **Every null must be classified.**
+- **The decision carries `peer_drops`:** per panel and pooled, branches beside nulls.
+
+Tests in `rules_deviation_live_test.py`:
+- a `peer_first` failure reads, while `ours_first` and `unattributable` still VOID;
+- a null whose game changed Kakuna-first is dropped, not VOID;
+- an unclassified null refuses.
+
+Each test also asserts the registered VOID without the file. The module is off the play path (`playpath_test`).

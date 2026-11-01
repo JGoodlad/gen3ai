@@ -124,3 +124,74 @@ def test_a_branch_tooth_voids_through_the_rule(tmp_path) -> None:
 def test_a_missing_artefact_refuses_the_inputs(tmp_path) -> None:
     with pytest.raises(RU.RuleInputError, match="missing"):
         _read(tmp_path, [])
+
+
+# ------------------------------------------------------------------- AM-DL-PEER (the PREREG's blind amendment)
+def _classify(tmp_path, extra: List[Dict[str, Any]]) -> None:
+    """The classifier's output for the branch state: every null's live attempt ``identical``, plus ``extra``."""
+    rows = [{"unit": m["unit"], "attempt": m["unit"], "kind": m["kind"], "class": "identical", "peer_drop": False}
+            for m in (json.loads(x) for x in (tmp_path / "br" / "branch_plan.jsonl").read_text().splitlines())
+            if m["kind"] == "null"]
+    rows = [r for r in rows if r["unit"] not in {e["unit"] for e in extra if e["attempt"] == e["unit"]}] + extra
+    (tmp_path / "br" / DL.PEER_DROPS_NAME).write_text("".join(json.dumps(r) + "\n" for r in rows))
+
+
+def _peer_failed_first_attempt(tmp_path) -> str:
+    """One branch whose FIRST attempt failed G-BRANCH (a moved-aside partial) and whose second counted."""
+    br = tmp_path / "br" / "cells"
+    one = sorted(p for p in br.iterdir() if "__branch__" in p.name)[0]
+    part = br / f"{one.name}.partial.1"
+    part.mkdir()
+    (part / "branch.jsonl").write_text(json.dumps({"g_branch": "fail", "forced": 3, "mismatch": ["log_sha256"]}) + "\n")
+    return one.name
+
+
+@pytest.mark.parametrize("cls, peer, verdict", [("peer_first", True, "GO"), ("ours_first", False, DL.VOID),
+                                                ("unattributable", False, DL.VOID)])
+def test_a_peer_first_g_branch_failure_is_a_peer_drop_and_any_other_still_voids(tmp_path, cls, peer, verdict) -> None:
+    units = _world(tmp_path)
+    unit = _peer_failed_first_attempt(tmp_path)
+    assert _read(tmp_path, units)["verdict"] == DL.VOID          # no classification: as registered
+    _classify(tmp_path, [{"unit": unit, "attempt": f"{unit}.partial.1", "kind": "branch", "class": cls,
+                          "peer_drop": peer}])
+    res = _read(tmp_path, units)
+    assert res["verdict"] == verdict, res.get("void")
+    assert res["artefacts"]["peer_drops"]["sha256"] if verdict == "GO" else True
+    panel = next(r["panel"] for r in RU.inputs("deviation_live", *_inputs_args(tmp_path, units))["branches"]
+                 if r["unit"] == unit)
+    rep = res["peer_drops"]["per_panel"][panel]
+    assert rep["g_branch_peer_units"] == ([unit] if peer else [])
+    assert rep["branch_peer_drops"] == 0                          # its second attempt counted: not a drop
+
+
+def _inputs_args(tmp_path, units):
+    p = _params(tmp_path)
+    g = {"engine": ENGINE, "regime_id": "r" * 16, "unit_seeds": [200], "unplayed": 0}
+    cells = {"anchor": {"u": dict(g, units=[u for u in units if u["panel"] != "home72"], teamsets=["heldout72_hpfix"]),
+                        "home": dict(g, units=[u for u in units if u["panel"] == "home72"], teamsets=["home72"])}}
+    spec = SimpleNamespace(models={"pstar": SimpleNamespace(ref=SimpleNamespace(sha256=SHA))})
+    return cells, p, spec
+
+
+def test_a_null_that_changed_its_game_peer_first_is_dropped_not_void(tmp_path) -> None:
+    units = _world(tmp_path)
+    nulls = [json.loads(x) for x in (tmp_path / "br" / "branch_plan.jsonl").read_text().splitlines()]
+    null = next(m for m in nulls if m["kind"] == "null")
+    cap = tmp_path / "br" / "cells" / null["unit"] / "capture" / "battle-gen3ou-1.json"
+    doc = json.loads(cap.read_text())
+    doc["chunks"][-1][1] += "\n|move|late"                      # the null's game changed after its branch turn
+    cap.write_text(json.dumps(doc))
+    assert _read(tmp_path, units)["verdict"] == DL.VOID          # as registered
+    _classify(tmp_path, [{"unit": null["unit"], "attempt": null["unit"], "kind": "null", "class": "peer_first_late",
+                          "peer_drop": True}])
+    res = _read(tmp_path, units)
+    assert res["verdict"] == "GO", res.get("void")
+    assert res["peer_drops"]["per_panel"][null["panel"]]["null_peer_drops"] == 1
+    assert res["peer_drops"]["pooled"]["null_peer_drops"] == 1
+
+
+def test_an_unclassified_null_refuses_the_inputs(tmp_path) -> None:
+    units = _world(tmp_path)
+    (tmp_path / "br" / DL.PEER_DROPS_NAME).write_text("")
+    with pytest.raises(RU.RuleInputError, match="not classified"):
+        _read(tmp_path, units)

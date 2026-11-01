@@ -18,16 +18,27 @@ selected state from a cell that is not a counted cell, whose hash is not its dra
 game; a scored state never selected; the scored rows not each panel's registered-order prefix up to its quota; and
 every tooth of :func:`main.value_search.live_branch.void_reasons` (G-BRANCH, the capture prefix, the null controls,
 the forced action, the engine, the preset, the plan, the drop cap).
+
+PEER DROPS (the PREREG's AM-DL-PEER and its clarification, registered blind on 2026-10-31). Kakuna's choice can differ
+in a lone replay of a deal on an identical view, so a branch replay can leave its raw game before the branch turn. The
+read's classifier (``measurements/dlive_read_2026-10-28/scripts/peer_divergence.py state``) writes one row per
+attempt into ``<branch_state>/peer_drops.jsonl`` at the read's end. When that file exists (its sha256 is recorded with
+the artefacts), :func:`apply_peer_drops` treats as PEER DROPS: a G-BRANCH failure whose every failing attempt the
+classifier calls a peer drop (it no longer VOIDs; the unit counts only if another attempt counted), and a NULL whose
+live attempt it calls one (excluded as dropped, never VOID). Every other G-BRANCH failure and null change still VOIDs.
+It reports peer drops per panel, branches beside nulls.
 """
 from __future__ import annotations
 
 import json
-from typing import Any, Dict, List, Mapping, Tuple
+from typing import Any, Dict, List, Mapping, Sequence, Tuple
 
 SCHEMA = "gen3_read_deviation_live_v1"
 KEYS = ("label", "u_group", "home_group", "u_panels", "home_panel", "quota", "bar", "bootstrap", "rule8_eps",
         "input_log", "per_game", "search", "max_drop_frac", "selected", "scored", "branch_state")
 OPTIONAL = ("engine",)
+#: AM-DL-PEER rule 6: the classifier's output, written into the branch state at the read's end
+PEER_DROPS_NAME = "peer_drops.jsonl"
 RAW_REGIME = "greedy"
 VOID = "VOID"
 RULE_DOCS = {"deviation_live": "the deviation-only live read: mean D = y(S′'s forced branch) - y(raw game) at S′'s "
@@ -130,6 +141,55 @@ def _jsonl(path: str) -> Tuple[List[Dict[str, Any]], str]:
     return [json.loads(x) for x in pp.read_text().splitlines() if x.strip()], sha256_file(pp)
 
 
+def apply_peer_drops(rows: List[Dict[str, Any]], cls: Sequence[Mapping[str, Any]]) -> Tuple[List[Dict[str, Any]],
+                                                                                         Dict[str, Any]]:
+    """AM-DL-PEER on ``live_branch.collect``'s rows, given the classifier's rows (``unit``, ``attempt`` = the cell dir's
+    name, ``kind``, ``class``, ``peer_drop``). Returns the rows as the registered reader is to see them and the report.
+
+    * A row whose G-BRANCH failures all come from attempts classed ``peer_drop`` keeps them as ``g_branch_peer`` and
+      reads none (its status is unchanged: counted only if another attempt counted). Any other failure stays.
+    * A COUNTED null whose live attempt is classed ``peer_drop`` becomes ``dropped`` (a null that changed its game
+      after its branch turn, Kakuna first: the clarification). Every null must be classified, or this refuses.
+    * A dropped unit whose every classified attempt is a peer drop is flagged ``peer_drop`` (the report's count).
+    """
+    by: Dict[str, Dict[str, Mapping[str, Any]]] = {}
+    for c in cls:
+        by.setdefault(str(c["unit"]), {})[str(c["attempt"])] = c
+    out: List[Dict[str, Any]] = []
+    for r0 in rows:
+        r = dict(r0)
+        att = by.get(r["unit"], {})
+        if r["g_branch_fails"]:
+            dirs = {str(f).split(": ", 1)[0] for f in r["g_branch_fails"]}
+            if all(att.get(d, {}).get("peer_drop") is True for d in dirs):
+                r["g_branch_peer"], r["g_branch_fails"] = r["g_branch_fails"], []
+        if r["kind"] == "null" and r["status"] == "counted":
+            live = att.get(r["unit"])
+            if live is None:
+                raise _err(f"{PEER_DROPS_NAME}: the null {r['unit']} is not classified (every null is)")
+            if live.get("peer_drop") is True:
+                r["status"], r["peer_drop"] = "dropped", True
+        if r["status"] == "dropped" and att and all(a.get("peer_drop") is True for a in att.values()):
+            r["peer_drop"] = True
+        out.append(r)
+    per: Dict[str, Dict[str, Any]] = {}
+    for r in out:
+        k = per.setdefault(r["panel"], {"branches": 0, "branch_peer_drops": 0, "nulls": 0, "null_peer_drops": 0,
+                                        "g_branch_peer_units": []})
+        kind = "branch" if r["kind"] == "branch" else "null"
+        k["branches" if kind == "branch" else "nulls"] += 1
+        k[f"{kind}_peer_drops"] += int(bool(r.get("peer_drop")))
+        if r.get("g_branch_peer"):
+            k["g_branch_peer_units"].append(r["unit"])
+    for k in per.values():
+        k["branch_peer_drop_rate"] = k["branch_peer_drops"] / max(k["branches"], 1)
+        k["null_peer_drop_rate"] = k["null_peer_drops"] / max(k["nulls"], 1)
+    tot = {f: sum(k[f] for k in per.values()) for f in ("branches", "branch_peer_drops", "nulls", "null_peer_drops")}
+    tot["branch_peer_drop_rate"] = tot["branch_peer_drops"] / max(tot["branches"], 1)
+    tot["null_peer_drop_rate"] = tot["null_peer_drops"] / max(tot["nulls"], 1)
+    return out, {"per_panel": per, "pooled": tot, "classified_attempts": len(cls)}
+
+
 def inputs(cells: Mapping[str, Any], p: Mapping[str, Any], spec: Any) -> Dict[str, Any]:
     from main.reads.models import spec_path
     from main.reads.rules import _group
@@ -153,9 +213,15 @@ def inputs(cells: Mapping[str, Any], p: Mapping[str, Any], spec: Any) -> Dict[st
     arts = {"selected": {"path": p["selected"], "sha256": sel_sha}, "scored": {"path": p["scored"], "sha256": sc_sha}}
     for key, name in (("branch_units", "plan.json"), ("branch_plan", "branch_plan.jsonl")):
         arts[key] = {"path": str(bs / name), "sha256": sha256_file(bs / name)}
+    peer: Any = None
+    if (bs / PEER_DROPS_NAME).is_file():
+        cls, cls_sha = _jsonl(str(bs / PEER_DROPS_NAME))
+        rows, peer = apply_peer_drops(rows, cls)
+        arts["peer_drops"] = {"path": str(bs / PEER_DROPS_NAME), "sha256": cls_sha}
     return {"schema": SCHEMA, "label": p["label"], "raw_sha256": spec.models[p["label"]].ref.sha256,
             "engine_registered": p.get("engine"), "groups": groups, "units": units, "artefacts": arts,
-            "selected": [{k: r.get(k) for k in _SEL_KEYS} for r in sel], "scored": sc, "branches": rows}
+            "selected": [{k: r.get(k) for k in _SEL_KEYS} for r in sel], "scored": sc, "branches": rows,
+            "peer_drops": peer}
 
 
 def void_reasons(doc: Mapping[str, Any], p: Mapping[str, Any]) -> List[str]:
@@ -215,14 +281,14 @@ def decide(doc: Mapping[str, Any], p: Mapping[str, Any]) -> Dict[str, Any]:
 
     why = void_reasons(doc, p)
     if why:
-        return {"schema": SCHEMA, "verdict": VOID, "void": why,
+        return {"schema": SCHEMA, "verdict": VOID, "void": why, "peer_drops": doc.get("peer_drops"),
                 "decision": {"class": VOID, "verdict": f"{VOID}: " + "; ".join(why)}}
     try:
         res = read(doc["branches"], doc["scored"], _params(p, doc))
     except LiveBranchError as exc:
         raise _err(str(exc)) from None
     if res["verdict"] == VOID:
-        return {"schema": SCHEMA, "verdict": VOID, "void": res["void"],
+        return {"schema": SCHEMA, "verdict": VOID, "void": res["void"], "peer_drops": doc.get("peer_drops"),
                 "decision": {"class": VOID, "verdict": f"{VOID}: " + "; ".join(res["void"])}}
     pr = res["primary"]
     line = (f"{res['verdict']}: pooled-U mean D (S′'s branch - raw) {pr['est']:+.4f} [{pr['lo']:+.4f}, "
@@ -231,5 +297,5 @@ def decide(doc: Mapping[str, Any], p: Mapping[str, Any]) -> Dict[str, Any]:
     return {"schema": SCHEMA, "verdict": res["verdict"], "boundary": res["boundary"], "rule": res["rule"],
             "primary": pr, "reported": res["reported"], "quota": quota_prefix(doc["selected"], doc["scored"],
                                                                                 p["quota"]),
-            "artefacts": doc["artefacts"], "groups": doc["groups"],
+            "artefacts": doc["artefacts"], "groups": doc["groups"], "peer_drops": doc.get("peer_drops"),
             "decision": {"class": res["verdict"], "verdict": line}}
