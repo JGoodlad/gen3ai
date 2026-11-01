@@ -1,6 +1,6 @@
 # STATUS — where gen3ai stands, on one page
 
-**As of 2026-10-31.** This page is the dashboard: what we are trying to do, where each goal stands, and what is
+**As of 2026-11-01.** This page is the dashboard: what we are trying to do, where each goal stands, and what is
 running. It gives each number, its interval and the commit that proves it. The reasoning behind these numbers is in
 [`research_state/UNDERSTANDING.md`](research_state/UNDERSTANDING.md), the plans are in
 [`endstate/README.md`](endstate/README.md), and the research ledger wins any disagreement. A backticked hex string
@@ -51,13 +51,13 @@ Read at 17:45 PDT on 2026-10-30 from `python -m main.ops.arm_chain status` (each
 |---|---|---|
 | GPU: RUNNING (chain `x59s-fu1500`, one window, budget 140 min) | **X59-S's ≥ 1500 follow-up** (Amendment 7, `1ffd67817`; built at `165250d55`): 15 fresh students, three arms of five seeds (the ≥ 1500-rating human rows, the seed-5930 account mix, the S-S cut) at N = 270,260 rows and 1,584 steps each, run one after another. Five were trained at 17:45 and the sixth (S-S cut, seed 5902) was running; the window's final check (`window_check.json`) has not been written. | Isolates rating at a fixed slice and volume (Amendment 7), a follow-up to the human-data deficit above (`c1d2d7fcb`). Read through the CPU row below. |
 | GPU: next, NOT ARMED | **X63-U s6302**, Stage B's arm seed trained SPECULATIVELY before Stage A's verdict (AM-X63-BSPEC, PREREG §17, `7ffbe9428`; about 19.9 GPU-h). Only a DRAFT chain exists (`~/.claude/jobs/x35/chains/drafts/x63u-stageb-spec-oct30.json`); arming it is the orchestrator's GO once the follow-up window ends. It is played and read only if Stage A returns CONTINUE; otherwise it is labelled "a speculative replicate, trained before Stage A's verdict, not read for any decision". | **Not read**: Stage A read NOT PURSUED (10-31, §4), so it is "a speculative replicate, trained before Stage A's verdict, not read for any decision". |
-| CPU: PLAYING (raw lane; state `~/gen3ai_archive/dlive_read_2026-10-28/`) | **The deviation-only live read** (registered `715e0b482`, operated under Amendment A1, `f0029cdca`): at about 1,800 unfamiliar-team departures of S′ from P\*, the departure is forced in a replay of the game against the real Kakuna and scored against the game as played. Its raw lane (P\* against Kakuna, concurrency 1) is playing. | GO (lower bound of the mean gain > 0) licenses the amended S-U (§3). |
 | CPU: WAITING (`chain9.sh`) | **X59-S follow-up's in-house cells**: when the window's final check PASSES, export the 15 students and play 30 head-to-head cells from the read's pin tree. | Reads the follow-up (first row). |
 
 ### Landed since 2026-10-27
 
 | when | job | result | what it decided |
 |---|---|---|---|
+| CPU 11-01 08:09 PST | **The deviation-only live read: STOP.** At 1,793 departures of the search S′ (`r0s4_rolls@10`) from P\* on unfamiliar teams, S′'s pick was forced in a replay of the game against the real Kakuna. It won **+1.20 pp [−1.55, +3.88]** a departure more than the game as played (H +4.2, F +0.5, p72 −1.1; home72 +2.7 [−4.0, +9.6], reported). The self-referee's own edge on the same fresh departures is +0.99 pp, against +3.4 on the gate's states. Every registered check passes: one engine, 135 / 135 null replays identical, 9 / 2,100 branches dropped. All 9 drops are Kakuna replay divergences, made drops instead of a VOID by the blind AM-DL-PEER (`e40d9663c`, `276c5b7e6`). 36.6 CPU-h. README `measurements/dlive_read_2026-10-28/README.md`. | Search stays paused for goal (b). | No amended S-U on S′. |
 | CPU 10-31 16:12 | **X63 Stage A: NOT PURSUED.** X63-U s2601 (X26@380M + 100M, 80 % of teams from the 17,876-team union) against X26c and X63-C on forum72 vs Kakuna: Δ_F **−0.69 pp [−3.75, +2.37]** (X63-U 0.512, X26c 0.521, X63-C 0.517; 4,000 games each), short of the +1.0 pp screen; home72 −1.05 [−4.62, +2.52] (reported). σ̂_CC = 0: the two controls differ by 0.43 pp, inside binomial noise. 18,000 games on ONE engine (E1) at the play pin 65b998da (tag x63-play-65b998da); every registered check PASS. Record `measurements/x63_2026-10-29/reads/stageA.json`. | The union continuation at share 0.8 gives no ≥ +1 pp F gain at one seed; a true +3 pp is outside the interval. It claims nothing for the era. | **Stage B does not fire**; s6302 is not read. P(NOT PURSUED) at a true +2 / +3 pp was 0.149 / 0.020 (σ = 0 row). |
 | GPU 10-30 14:45 | **X63-U s2601 TRAINED, clean** (1,269.9 min, 1,339 steps/s): K9(b) PASS (AM-6) and its dose recorded (`695b20b8c`). X63-C s6302, the control replicate, had trained earlier: K9(b) PASS, 1,242.9 min (`8a7f293f3`). X26c is the banked control. | Both arms of Stage A exist; no X63 score yet. | X63 is launched with r = 1 (AM-X63-R, `13084395e`, §6) and its canary rule AM-X63-CANARY (`71afc431e`: a FATAL made only of slice-0/2 per-parameter bf16 refusals, resumed at the pin, does not count toward the restart limit; at most two per seed). |
 | GPU 10-30 14:46-15:19 | **Canary slice-2 diagnosis** (`6b3966dc6`; verdict `7775b2241`): the compiled-numerics hypothesis is **RULED OUT at 5 states**; every state reads CONDITIONING (compiled median distance 0.09-0.55 of the fp32 dither null's maximum). The 30 GPU slow-tier rows all PASS (`1a07fd819`). | The refusals are an ill-conditioned single-row-carried parameter against a lucky eager denominator, not a compiler fault. | The bf16 per-parameter bar now divides by the fp32 dither null (`gen3_canary_param_null_v1`) **at new pins only**; runs pinned earlier keep the eager bar. The earlier stage-2 read stays **INCONCLUSIVE**: the row bar's cap stays 0.72 (`designs/training/canary_recalibration_2026-10-28.md`). |
@@ -90,12 +90,10 @@ resource-day it ranked below X63, which ran first (ruled 2026-10-27) and read NO
 in the states where the true battle seed leaks (the leak's value, not its exposure, is higher on unfamiliar teams). The
 leak-reduced re-gate (`dice="rolls"`) supersedes it and **still reads GO**: on unfamiliar teams the departures are right
 0.599 [0.543, 0.649] of the time, still by our own playouts
-([`su_regate_rolls_2026-10-28/`](research_state/measurements/su_regate_rolls_2026-10-28/README.md)). The **deviation-only live read** is REGISTERED (2026-10-28, `715e0b482`;
-[`dlive_read_2026-10-28/PREREG.md`](research_state/measurements/dlive_read_2026-10-28/PREREG.md)) and its raw lane is
-playing (§2; operated under Amendment A1, `f0029cdca`): at ≈ 1,800 such departures on unfamiliar teams, the departure
-is forced in a replay of the game against the real Kakuna and compared with the game as played. GO (lower bound of the
-mean gain > 0) licenses the amended S-U. ≈ 43 CPU-h; its restriction-lane predecessor, X59-S's Δ_restriction, is done
-(`5bbba6096`).
+([`su_regate_rolls_2026-10-28/`](research_state/measurements/su_regate_rolls_2026-10-28/README.md)). The **deviation-only live read** (registered `715e0b482`; [`dlive_read_2026-10-28/`](research_state/measurements/dlive_read_2026-10-28/README.md)) then asked the real Kakuna and read **STOP** (2026-11-01).
+- **The result:** at ≈ 1,800 such departures on unfamiliar teams, forcing the departure in a replay of the game wins +1.20 pp [−1.55, +3.88] more than the game as played.
+- **The self-referee on those fresh departures:** only +0.99 pp, against +3.4 on the gate's states. So the gate's headroom mostly did not carry over, and the read had little power at that size.
+- **What follows:** S-U is not played on S′, and search stays paused.
 
 **Dropped or retired.** **X64**, the toy context-count curve: DROPPED by its review (`c0fd72bd8`; it would cost more
 than the production reads it was meant to gate). **N2**, the set-identity lever: dropped, P\*'s encoding is mostly
@@ -121,6 +119,7 @@ game counted, replaced by rc72b (`905c29f5b`). **The 20M stack fork**: supersede
 | X63 Stage A: +100M on a 17,876-team union at share 0.8 (one engine, E1) | NOT PURSUED (screen +1.0 pp) | F −0.69 pp [−3.75, +2.37]; home72 −1.05 [−4.62, +2.52]; σ̂_CC 0 | `x63_2026-10-29/reads/stageA.json` |
 | X59-S: human vs self-play data (15 matched students) | SELF-PLAY-DATA-BETTER; OWN-LABELS-BETTER; H-BC dropped; the closure BLOCKED | U vs Kakuna Δ_data −7.28 pp [−10.29, −4.28]; own labels −4.50 [−7.42, −1.58]; Δ_restriction +2.85 [+0.14, +5.56] | `c1d2d7fcb`, `5bbba6096` |
 | S-U gate: sign accuracy of S's departures from P\* (self-referee) | GO (pooled U, with the leak caveat); the leak-reduced re-gate (`dice="rolls"`) also GO | pooled-U 0.635 [0.578, 0.687] (n 346); re-gate 0.599 [0.543, 0.649] (n 362) | `fea88ceeb`, `a61375fa7` |
+| The deviation-only live read: S′'s departures forced against the real Kakuna | STOP (search stays paused) | pooled U +1.20 pp a departure [−1.55, +3.88] (n 1,793); self-referee on the same departures +0.99 | `715e0b482`, `276c5b7e6` |
 | Belief prior mix, λ = 0.25 | NOT DETECTED | +1.50 pp [−2.74, +5.74] | `f299a7243` |
 | Belief prior mix, λ = 1 (prior only) | NOT DETECTED; H3 not killed | −1.50 pp [−5.47, +2.47] | `71c76dfbb` |
 | Human-only Metamon models (FR-1, FR-3) | P\* BEATS all three | SmallRL 0.666 [0.639, 0.692]; LargeRL 0.631 [0.603, 0.658]; LargeIL 0.790 [0.766, 0.812] | `4d8d9eef8`, `df35d1bb0` |

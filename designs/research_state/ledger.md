@@ -30396,3 +30396,74 @@ resets, voided in tree and re-played); 0 exhausted.
 `stageA_state/`: decision, inputs, void, models, code, `checks.json`, `by_hand.{py,json}`).
 
 Tag: **MEASUREMENT · X63 Stage A · NOT PURSUED · Δ_F −0.69 pp [−3.75, +2.37] · σ̂_CC 0**
+
+### 2026-11-01 · MEASUREMENT · The deviation-only live read: STOP — S′'s departures from P\* do not beat P\*'s choice against the real Kakuna on U at ≈ 1,800 departures
+
+**Question** (PREREG `715e0b482`, review M3 step 3). The S-U gate and re-gate scored S′'s departures under T, which
+plays P\* for the opponent. Do they win more against REAL Kakuna? At each departure of S′ = `r0s4_rolls@10` from P\*'s
+top on fresh raw P\* vs Kakuna states, S′'s pick is forced in a one-game replay of the deal and P\* plays on greedy.
+D = y(branch) − y(raw game). GO iff LB(pooled-U mean D) > 0.
+
+**Verdict: STOP.** Pooled-U mean D **+0.0120 [−0.0155, +0.0388]** (n 1,793 departures, 1,402 games; game-clustered
+bootstrap). By panel: H +0.0417, F +0.0051, p72 −0.0108. home72 (reported) +0.0268 [−0.0396, +0.0956]. Not at the
+boundary. By hand: the estimate, both bounds and the class equal the rule's.
+
+**What it licenses.** Per §4: "S′ at P\* is not shown to improve on π against Kakuna on U at ≈ 1,800 deviations."
+- No live S-U read on S′; search stays paused for goal (b).
+- DOES-NOT-CLOSE-B is not claimed, and "S′ is no better than π" is not claimed.
+- V-RANK's all-sibling slope is not retired.
+
+**Reported (§8).**
+- Live sign accuracy: U 0.521 [0.472, 0.569] (n 507), against T's 0.599 at the re-gate.
+- T's mean improvement on the same departures: U +0.0099 [+0.0014, +0.0193]; home72 +0.0178 [−0.0015, +0.0365].
+- Live − T: U +0.0021 [−0.0263, +0.0292]; home72 +0.0091 [−0.0575, +0.0787]. M2's prediction is not resolved.
+- T-vs-live sign agreement 0.560 [0.513, 0.607] (n 458; descriptive, DL-3).
+- Strata: Speed-pinned +0.027 [−0.035, +0.084], not pinned +0.009; leak-exposed +0.026 [−0.013, +0.064], leak-clean
+  −0.001 [−0.038, +0.036]. No stratum excludes 0.
+
+**Against the GUESSES (§10).**
+- Pooled D +0.012 predicted, +0.0120 measured.
+- P(GO) ≈ 0.3 predicted, STOP measured.
+- Live − T ≈ −0.02 predicted, +0.002 measured.
+- "G-BRANCH 0 failures" predicted, 1 measured (a peer drop).
+- "Drops < 2 %" predicted, ≤ 1.0 % a panel measured.
+
+**Checks (every registered one PASS).**
+- **Pre-play tooth:** 5 / 5.
+- **Raw arm:** 160 / 160 units counted. All 3,200 games are on ONE engine (`port=e00a212a102f5ce2/94;
+  env=3d0d5c9c0f5d3c23/129`), on P\* `814823c5…`, greedy, with no search stamp.
+- **Draw and quotas:** the quota prefix is exact; every panel met its quota.
+- **Branches:** 0 capture-prefix differences in 2,091 counted branches. Every branch played its forced pick at its
+  series index, on one engine.
+- **Nulls:** 135 / 135 replay their games whole.
+- **Drops:** 9 / 2,100 (0.43 %), all peer drops (F 6, H 1, home72 2). G-BRANCH: one unit, a peer drop.
+- **Rederived guards:** G14 160 units, 0 hits.
+- **Record:** COMPLETE, `void: null`.
+
+**Cost:** 36.6 CPU-h measured (ESTIMATE 43). Wall: 39.7 h, 10-30 17:27 → 11-01 08:08 PST.
+
+**Amendments, all registered before a branch outcome was read:**
+- A1 (`f0029cdca`): operations.
+- **AM-DL-PEER** (`e40d9663c`) and its null clarification (`d25b40c55`): the orchestrator's ruling. A failed branch
+  whose replay Kakuna left first, on an identical view and before the branch turn, is a DROP, not a VOID. For a null,
+  any turn counts. The classifier is `scripts/peer_divergence.py`.
+- Rule 6 built (`276c5b7e6`): `deviation_live` reads that classification by path and sha256.
+
+**FINDINGs.**
+- **DL-7.** In a lone one-game replay, Kakuna sometimes chooses differently from the same game inside its 20-game
+  unit, on a byte-identical view: 9 of 2,100 branches, 8 of them at its first choice. They cluster by raw game, and
+  0 / 135 nulls are affected. The root cause is unknown.
+  - Without AM-DL-PEER the registered code would have VOIDed this read on its one G-BRANCH failure.
+  - It corrects `reads.md` §4's "Kakuna's choices never differ first".
+- **DL-8.** The operator saw one branch result, on a dropped unit, while diagnosing DL-7. Disclosed.
+- **DL-9.** The record had to come from the rule-6 checkout, not the pin's. The pipeline's automatic record step was
+  stopped.
+- **DL-10.** T's own effect shrank on fresh states: +0.0099 a departure here, against the re-gate's +0.034, the
+  figure §6's power assumed. So the read's power at T's effect was ≈ 0.11, not 0.71. Live D (+0.012) matches T's
+  (+0.010): Kakuna behaved like T on average, and the gate's headroom shrinks on fresh states before any
+  opponent-model question. GUESS: a winner's curse from choosing the preset on the gate's states.
+
+**Evidence:** `designs/research_state/measurements/dlive_read_2026-10-28/` (README; `record/`: decision, record
+summary, peer-drop summary, by_hand) and the state `~/gen3ai_archive/dlive_read_2026-10-28/` (`record.json`).
+
+Tag: **MEASUREMENT · dlive · STOP · pooled-U D +0.0120 [−0.0155, +0.0388] · T's IMP +0.0099 · 9 peer drops**

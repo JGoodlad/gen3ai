@@ -1,0 +1,158 @@
+{
+ "attempts": 2244,
+ "classes": {
+  "branch|ours_first|counted=True|peer_drop=False": 2091,
+  "branch|peer_first|counted=False|peer_drop=True": 18,
+  "null|identical|counted=True|peer_drop=False": 135
+ },
+ "classifier_sha256": "be4c61f8c5ab8106f244f78cd441a14326fb6177c99b289c4bb5a52d01b19787",
+ "file": "/home/goodlad/gen3ai_archive/dlive_read_2026-10-28/live/branches/peer_drops.jsonl",
+ "ours_first_at_own_branch_turn": 2091,
+ "peer_drops": [
+  {
+   "attempt": "pstar__forum72__203__g11__branch__t18n17",
+   "branch_turn": 18,
+   "g_branch_fails": 0,
+   "panel": "forum72",
+   "peer_divergence_turn": 1,
+   "unit": "pstar__forum72__203__g11__branch__t18n17"
+  },
+  {
+   "attempt": "pstar__forum72__203__g11__branch__t18n17.partial.1793503102",
+   "branch_turn": 18,
+   "g_branch_fails": 0,
+   "panel": "forum72",
+   "peer_divergence_turn": 1,
+   "unit": "pstar__forum72__203__g11__branch__t18n17"
+  },
+  {
+   "attempt": "pstar__heldout72_hpfix__205__g06__branch__t22n22",
+   "branch_turn": 22,
+   "g_branch_fails": 0,
+   "panel": "heldout72_hpfix",
+   "peer_divergence_turn": 1,
+   "unit": "pstar__heldout72_hpfix__205__g06__branch__t22n22"
+  },
+  {
+   "attempt": "pstar__heldout72_hpfix__205__g06__branch__t22n22.partial.1793505502",
+   "branch_turn": 22,
+   "g_branch_fails": 0,
+   "panel": "heldout72_hpfix",
+   "peer_divergence_turn": 1,
+   "unit": "pstar__heldout72_hpfix__205__g06__branch__t22n22"
+  },
+  {
+   "attempt": "pstar__home72__207__g14__branch__t24n25",
+   "branch_turn": 24,
+   "g_branch_fails": 0,
+   "panel": "home72",
+   "peer_divergence_turn": 4,
+   "unit": "pstar__home72__207__g14__branch__t24n25"
+  },
+  {
+   "attempt": "pstar__home72__207__g14__branch__t24n25.partial.1793511719",
+   "branch_turn": 24,
+   "g_branch_fails": 0,
+   "panel": "home72",
+   "peer_divergence_turn": 4,
+   "unit": "pstar__home72__207__g14__branch__t24n25"
+  },
+  {
+   "attempt": "pstar__forum72__212__g06__branch__t29n32",
+   "branch_turn": 29,
+   "g_branch_fails": 0,
+   "panel": "forum72",
+   "peer_divergence_turn": 1,
+   "unit": "pstar__forum72__212__g06__branch__t29n32"
+  },
+  {
+   "attempt": "pstar__forum72__212__g06__branch__t29n32.partial.1793519036",
+   "branch_turn": 29,
+   "g_branch_fails": 0,
+   "panel": "forum72",
+   "peer_divergence_turn": 1,
+   "unit": "pstar__forum72__212__g06__branch__t29n32"
+  },
+  {
+   "attempt": "pstar__forum72__212__g16__branch__t12n13",
+   "branch_turn": 12,
+   "g_branch_fails": 2,
+   "panel": "forum72",
+   "peer_divergence_turn": 1,
+   "unit": "pstar__forum72__212__g16__branch__t12n13"
+  },
+  {
+   "attempt": "pstar__forum72__212__g16__branch__t12n13.partial.1793519889",
+   "branch_turn": 12,
+   "g_branch_fails": 2,
+   "panel": "forum72",
+   "peer_divergence_turn": 1,
+   "unit": "pstar__forum72__212__g16__branch__t12n13"
+  },
+  {
+   "attempt": "pstar__forum72__212__g16__branch__t25n26",
+   "branch_turn": 25,
+   "g_branch_fails": 0,
+   "panel": "forum72",
+   "peer_divergence_turn": 1,
+   "unit": "pstar__forum72__212__g16__branch__t25n26"
+  },
+  {
+   "attempt": "pstar__forum72__212__g16__branch__t25n26.partial.1793519943",
+   "branch_turn": 25,
+   "g_branch_fails": 0,
+   "panel": "forum72",
+   "peer_divergence_turn": 1,
+   "unit": "pstar__forum72__212__g16__branch__t25n26"
+  },
+  {
+   "attempt": "pstar__home72__216__g05__branch__t30n33",
+   "branch_turn": 30,
+   "g_branch_fails": 0,
+   "panel": "home72",
+   "peer_divergence_turn": 1,
+   "unit": "pstar__home72__216__g05__branch__t30n33"
+  },
+  {
+   "attempt": "pstar__home72__216__g05__branch__t30n33.partial.1793526966",
+   "branch_turn": 30,
+   "g_branch_fails": 0,
+   "panel": "home72",
+   "peer_divergence_turn": 1,
+   "unit": "pstar__home72__216__g05__branch__t30n33"
+  },
+  {
+   "attempt": "pstar__forum72__218__g04__branch__t12n11",
+   "branch_turn": 12,
+   "g_branch_fails": 0,
+   "panel": "forum72",
+   "peer_divergence_turn": 1,
+   "unit": "pstar__forum72__218__g04__branch__t12n11"
+  },
+  {
+   "attempt": "pstar__forum72__218__g04__branch__t12n11.partial.1793529366",
+   "branch_turn": 12,
+   "g_branch_fails": 0,
+   "panel": "forum72",
+   "peer_divergence_turn": 1,
+   "unit": "pstar__forum72__218__g04__branch__t12n11"
+  },
+  {
+   "attempt": "pstar__forum72__218__g04__branch__t13n12",
+   "branch_turn": 13,
+   "g_branch_fails": 0,
+   "panel": "forum72",
+   "peer_divergence_turn": 1,
+   "unit": "pstar__forum72__218__g04__branch__t13n12"
+  },
+  {
+   "attempt": "pstar__forum72__218__g04__branch__t13n12.partial.1793529420",
+   "branch_turn": 13,
+   "g_branch_fails": 0,
+   "panel": "forum72",
+   "peer_divergence_turn": 1,
+   "unit": "pstar__forum72__218__g04__branch__t13n12"
+  }
+ ],
+ "sha256": "c963144523ee6dcdfcbd84ac4468681a5b2d5bc78e4feed3751f02c20d490afb"
+}

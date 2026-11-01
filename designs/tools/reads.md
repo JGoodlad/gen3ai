@@ -415,6 +415,7 @@ table reconstructed from git (`engine_at`: the stamp's listing at that commit, p
 | **E1** | `7d932165…/90` / `7c532805…/125` | x26c (`e05c45eeb`); D1 H (`6c428453a`, `5e389ddac`) and P; X52 (`f4b25238d`); SPRT (`eb99ab362`) and G1 (`3f3a2ed41`) S; human-only vs P\* and metamon-strongest (`d32ffcee4`, `4b0ab220e`); PastaMittens (`62bb07c00`); belief prior mix (`4ee655648`; smoke `033fcbcd2`). D3 look 2 (`c4a5c37b6`, the hybrid pin). **The X35 stage's training engine** (`f4b25238`, D3_PIN `9e289ba4`) |
 | E2 | `806f97bd…/90` / `9ecb4249…/125` | D3 look 1 (anchor `2cc864f2f`, S `1ed71c9dd`) |
 | E3 | `0d3d7629…/91` / `393631b8…/126` | N1-P look 1 (`46b9e572c`; repin `de15dfc7b`) and N1-P look 2 (`de15dfc7b`, AM-N1P-2; look 1 imported): one engine throughout |
+| E4 | `e00a212a…/94` / `3d0d5c9c…/129` | the S-U gate test (`835c6b4b2`), its re-gate (offline, scored on the gate's states) and the deviation-only live read (`c01ae8ee5`; raw lane, scorer and branches): one engine throughout. A checkout stamps it only when built `--with-rust` (the stamp hashes the untracked `src/rust_env/Cargo.lock`; dlive DL-4) |
 | unbanked | `67a272e7…/93` / `d79c3a74…/128` | main after the 2026-10-26 full-parity batches (BF4, `2a877361a`), X59-S's registered engine. Any engine not listed is unbanked and enters the id; `main.anchors --dry-run` prints a checkout's |
 
 **Mixed-engine comparisons in shipped records.** Each was guarded game for game, and no verdict is shown to be affected.
@@ -443,12 +444,17 @@ A registered read names its play pin, and so its regime. Its arms never split ac
 
 **Replay determinism, measured** (`measurements/kakuna_determinism_2026-10-27/`):
 - **On one engine, a counted Kakuna unit replays exactly.** Across every replayed unit in the archive whose two plays sit
-  on the same side of an observation change, 0 of 2,100 games differ (95 % upper bound 0.14 %). Kakuna's choices never
-  differ first; threads are pinned to 1. E0 → E1 crosses no observation change: 1,360 of 1,360 games are equal.
+  on the same side of an observation change, 0 of 2,100 games differ (95 % upper bound 0.14 %). Kakuna's choices never differ first between two whole units; threads are pinned to 1. E0 → E1 crosses no observation change: 1,360 of 1,360 games are equal.
 - **Across `d8d674b99`** (`gen3_volatile_silent_ends_v1`, inside E1 → E2), our own greedy policy sees a different input
   after a Destiny Bond or an Endure (11 of the 12 protocol-changing divergences). E1 vs E3: 11 of 1,260 games differ by
   5-tuple (forum72 6 / 420, p72 4 / 420, heldout72_hpfix 1 / 420) and 15 by choice. Each one is OUR choice, made from a
   byte-identical protocol.
+- **A LONE one-game replay is not always game G of its 20-game unit** (the deviation-only live read's DL-7, E4,
+  2026-11-01). In 9 of 2,100 forced branches Kakuna chose differently from the raw game on a byte-identical view: 8 at
+  its first choice, 1 at turn 4. Both attempts agreed every time, so it is a fresh process against a long one, not
+  noise. It clusters by game; 0 of 135 null replays were affected. Root cause unknown. A read that replays single
+  deals must class such divergences (`designs/research_state/measurements/dlive_read_2026-10-28/scripts/peer_divergence.py`: peer first on an identical view)
+  before its prefix tooth VOIDs.
 - **So the rate belongs to the engine pair and the panel, not to Kakuna**, and a guard proves exactness only on one
   engine. The one same-engine divergence is the long-tail fault (SOP H5 · H17 · H21): its unit is `peer_clean = False`
   and is dropped whole, because the fault also corrupts the game after the peer's forfeit.

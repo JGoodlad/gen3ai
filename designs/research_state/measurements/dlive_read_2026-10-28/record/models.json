@@ -1,0 +1,10 @@
+{
+ "pstar": {
+  "copied_at": "2026-10-30T14:34:39-0700",
+  "copy": "/home/goodlad/gen3ai_archive/dlive_read_2026-10-28/ckpts/pstar/checkpoint_280000170_steps.zip",
+  "label": "pstar",
+  "sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed",
+  "source": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip",
+  "step": 280000170
+ }
+}

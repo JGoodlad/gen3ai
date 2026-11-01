@@ -121,8 +121,11 @@ under `measurements/`. A number with no pointer is not a measurement.
     was hidden information about the opponent's team); training to the plateau leaves the oracle − honest gap flat
     (−0.003 [−0.020, +0.015]); only identifying the opponent's EXACT team pays; the one cell that replicates (a
     policy-anchored rule at a 4-turn leaf) is nil at P\* (+0.0001). With a real bot as referee the one registered
-    read is UNDECIDED (E1-0, −0.024 [−0.054, +0.009]). Search is paused. [SELF-REFEREE banks · `e7048bb1d`,
-    `537670f7a`, `f756019d7`, `015f00e20`]
+    read is UNDECIDED (E1-0, −0.024 [−0.054, +0.009]). Against the REAL Kakuna, the leak-reduced search S′'s departures
+    from P\* on unfamiliar teams are not shown to win more: STOP, +1.20 pp a departure [−1.55, +3.88] (1,793 forced
+    branches). The self-referee's own edge on those fresh states is only +0.99 pp a departure, a third of the gate's.
+    Search is paused. [SELF-REFEREE banks · `e7048bb1d`, `537670f7a`, `f756019d7`, `015f00e20`; the live read
+    `measurements/dlive_read_2026-10-28/`]
 11. **Hidden information is a search lever, not a policy lever.** Telling the network the opponent's hidden facts
     for 3M steps buys nothing (moves −0.38 pp [−1.86, +1.10]) and makes it depend on them; perfect species knowledge
     buys ≈ +2.4 pp, within floor. [NULL · PROVISIONAL at 15M · `ffd2280ee`, `c344ccd1a`]
@@ -499,6 +502,19 @@ every search result updates it). The findings that steer it, all on search banks
   −0.024 [−0.054, +0.009]: UNDECIDED, no relabel; descriptively the self-referee's gains shrink against the bot
   (oracle gap +0.050 → +0.010 at 225M). Every figure above is a self-referee size. [`015f00e20`;
   `measurements/search_e1_0_2026-10-26/`]
+- **The deviation-only live read (2026-11-01): STOP.**
+  - **What it measured:** at 1,793 departures of S′ (`r0s4_rolls@10`) from P\* on unfamiliar teams, S′'s pick was
+    forced in a replay of the real game against Kakuna, and P\* played on greedy.
+  - **The result:** the branch won +0.0120 [−0.0155, +0.0388] more than the game as played (STOP; home72 +0.027
+    [−0.040, +0.096]). Its live sign accuracy is 0.521 [0.472, 0.569].
+  - **The self-referee on the same departures:** +0.0099 [+0.0014, +0.0193], against +0.034 on the gate's states.
+    Live tracks it (live − T +0.002 [−0.026, +0.029]), so the gate's headroom mostly did not carry to fresh states.
+    The opponent-model share (review M2) is unresolved.
+  - **What it does not claim:** the STOP is a power statement (≈ 0.11 at T's measured effect), not "no better than
+    the policy".
+  - **One more finding:** in a lone replay Kakuna chose differently first in 0.43 % of games.
+  - [registered rule `deviation_live` · `measurements/dlive_read_2026-10-28/`; ledger 2026-11-01 · *The
+    deviation-only live read: STOP*]
 
 **The view.** Search is paused. Enabling it needs a world sampler that holds the opponent's actual team; policy
 training absorbs some of what perfect information would buy, but not enough to make honest search useful.
@@ -645,7 +661,7 @@ retired for the fold-gift question only; they live in the last full text (§0) a
 | Does a wider trunk buy strength at the plateau (on the toy)? | **N4**: T\* with every trunk FFN grown 256 → 1,024 against a same-pin C0′, 3 + 3 seeds × 70M (PREREG `8ed8164ea`); the model build landed (`c35ffab9e`), its kit arms have not |
 | Do the breadth levers help by +1–2 pp each, below what one read can see? | **PR-1′**, the zero-GPU precision read re-scoped by [`REVIEW_2.md`](measurements/strategy_review_2026-10-26/REVIEW_2.md): D3 and N1-P against C0 on F (D1 reported only: its F is its own population), 30,000–38,000 new Kakuna games at one post-`b0441623e` pin. Information only; X48's read has landed (2026-10-30), so it can run, or on a rented CPU box |
 | Does training on new sixes of familiar sets close the piloting gap? | **X62** (REVISED DRAFT, `../endstate/design_x62_team_recombination.md`, `58cb02dc6`): its first gate, H-CTX, read SUPPORTED (2026-10-27), so its corpus `x62_recomb_v1` is built (2026-10-29, inside X63's union, which read NOT PURSUED at Stage A); PR-1′ KILL retires the 20M fork; N1-P read NULL, so it is not redundant. Its in-pool cost is a registered price (net = Δ_home72 + r · Δ_U, r = 1) |
-| Does one-ply search on V have headroom on unfamiliar teams (H-MID's open question)? | **S-U** registered (`ffd9a443a`, `../endstate/design_search_u_headroom.md`), stage 0 HELD. Its review (`7aafa527f`, `measurements/su_headroom_2026-10-27/REVIEW.md`): 2 BLOCKERs; where the registered search rule departs from the policy at P\* it picks the better move 0.513 [0.447, 0.580] of the time (0.580 at 25M), so a 10–15 CPU-h sign-accuracy gate came first. **That gate read GO** (2026-10-28, `measurements/su_gate_2026-10-27/`): 0.635 [0.578, 0.687] on U, home72 0.537, but its review (`52f470c21`) put the excess in the TRUE-SEED-LEAK-exposed states (the leak's value, not its exposure, is higher on U). **The leak-reduced re-gate SUPERSEDES it and also reads GO** (`measurements/su_regate_rolls_2026-10-28/`, `dice="rolls"`): 0.599 [0.543, 0.649] (home72 0.551; exposed 0.632, leak-clean 0.564 [0.478, 0.639]). GO is a licence under S's own referee, not a gain. Next (the orchestrator's call): a deviation-only live read against Kakuna (the review's M3) or V-RANK (`../endstate/design_v_rank_on_u.md`, DRAFT), the filters that can turn S-U OFF |
+| Does one-ply search on V have headroom on unfamiliar teams (H-MID's open question)? | **S-U** registered (`ffd9a443a`, `../endstate/design_search_u_headroom.md`), stage 0 HELD. Its review (`7aafa527f`, `measurements/su_headroom_2026-10-27/REVIEW.md`): 2 BLOCKERs; where the registered search rule departs from the policy at P\* it picks the better move 0.513 [0.447, 0.580] of the time (0.580 at 25M), so a 10–15 CPU-h sign-accuracy gate came first. **That gate read GO** (2026-10-28, `measurements/su_gate_2026-10-27/`): 0.635 [0.578, 0.687] on U, home72 0.537, but its review (`52f470c21`) put the excess in the TRUE-SEED-LEAK-exposed states (the leak's value, not its exposure, is higher on U). **The leak-reduced re-gate SUPERSEDES it and also reads GO** (`measurements/su_regate_rolls_2026-10-28/`, `dice="rolls"`): 0.599 [0.543, 0.649] (home72 0.551; exposed 0.632, leak-clean 0.564 [0.478, 0.639]). GO is a licence under S's own referee, not a gain. **The deviation-only live read against the real Kakuna then read STOP** (2026-11-01, `measurements/dlive_read_2026-10-28/`): +0.0120 [−0.0155, +0.0388] a departure on U, with the self-referee's own edge on those fresh states only +0.0099. So S-U is not played on S′. The question stays open (a power statement), and no read is queued; V-RANK (`../endstate/design_v_rank_on_u.md`) stays a DRAFT |
 
 **Dropped.** **X64**, the toy context-count curve: DROPPED by its review (`c0fd72bd8`,
 `../endstate/reviews/x64_review_2026-10-27.md`): its statistic rewards the in-pool price it predicts, a U-side

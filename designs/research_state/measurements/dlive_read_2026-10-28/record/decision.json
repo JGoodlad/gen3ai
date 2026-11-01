@@ -1,0 +1,525 @@
+{
+ "artefacts": {
+  "branch_plan": {
+   "path": "/home/goodlad/gen3ai_archive/dlive_read_2026-10-28/live/branches/branch_plan.jsonl",
+   "sha256": "b75b6d395cf0430658b500029a3c60c9d12fb840676711bb8564e360d1d49ac8"
+  },
+  "branch_units": {
+   "path": "/home/goodlad/gen3ai_archive/dlive_read_2026-10-28/live/branches/plan.json",
+   "sha256": "f5cac8f188630bf352acf28a32e40b3c77dbd7a2465a3377d971c3c1d8c3d65f"
+  },
+  "peer_drops": {
+   "path": "/home/goodlad/gen3ai_archive/dlive_read_2026-10-28/live/branches/peer_drops.jsonl",
+   "sha256": "c963144523ee6dcdfcbd84ac4468681a5b2d5bc78e4feed3751f02c20d490afb"
+  },
+  "scored": {
+   "path": "/home/goodlad/gen3ai_archive/dlive_read_2026-10-28/live/scored.jsonl",
+   "sha256": "47dd5ed4c0d8765b900d0777abdbcfe9c37afa75d9b20f9f09de3bccffcf92aa"
+  },
+  "selected": {
+   "path": "/home/goodlad/gen3ai_archive/dlive_read_2026-10-28/live/selected.jsonl",
+   "sha256": "2bcac50d851ba39549a2d3467c8fe58f67fdb142197d6cd140591bc49d5ba9e1"
+  }
+ },
+ "boundary": false,
+ "decision": {
+  "class": "STOP",
+  "verdict": "STOP: pooled-U mean D (S\u2032's branch - raw) +0.0120 [-0.0155, +0.0388] (n 1793; GO iff LB > 0.0)"
+ },
+ "groups": [
+  {
+   "engine": "port=e00a212a102f5ce2/94;env=3d0d5c9c0f5d3c23/129",
+   "name": "u",
+   "regime_id": "bf24d154fd6855cb",
+   "teamsets": [
+    "heldout72_hpfix",
+    "forum72",
+    "p72"
+   ],
+   "unit_seeds": [
+    200,
+    201,
+    202,
+    203,
+    204,
+    205,
+    206,
+    207,
+    208,
+    209,
+    210,
+    211,
+    212,
+    213,
+    214,
+    215,
+    216,
+    217,
+    218,
+    219,
+    220,
+    221,
+    222,
+    223,
+    224,
+    225,
+    226,
+    227,
+    228,
+    229,
+    230,
+    231,
+    232,
+    233,
+    234,
+    235,
+    236,
+    237,
+    238,
+    239,
+    240,
+    241,
+    242,
+    243,
+    244
+   ],
+   "unplayed": 0
+  },
+  {
+   "engine": "port=e00a212a102f5ce2/94;env=3d0d5c9c0f5d3c23/129",
+   "name": "home",
+   "regime_id": "42156996f163bc2a",
+   "teamsets": [
+    "home72"
+   ],
+   "unit_seeds": [
+    200,
+    201,
+    202,
+    203,
+    204,
+    205,
+    206,
+    207,
+    208,
+    209,
+    210,
+    211,
+    212,
+    213,
+    214,
+    215,
+    216,
+    217,
+    218,
+    219,
+    220,
+    221,
+    222,
+    223,
+    224
+   ],
+   "unplayed": 0
+  }
+ ],
+ "peer_drops": {
+  "classified_attempts": 2244,
+  "per_panel": {
+   "forum72": {
+    "branch_peer_drop_rate": 0.01,
+    "branch_peer_drops": 6,
+    "branches": 600,
+    "g_branch_peer_units": [
+     "pstar__forum72__212__g16__branch__t12n13"
+    ],
+    "null_peer_drop_rate": 0.0,
+    "null_peer_drops": 0,
+    "nulls": 41
+   },
+   "heldout72_hpfix": {
+    "branch_peer_drop_rate": 0.0016666666666666668,
+    "branch_peer_drops": 1,
+    "branches": 600,
+    "g_branch_peer_units": [],
+    "null_peer_drop_rate": 0.0,
+    "null_peer_drops": 0,
+    "nulls": 37
+   },
+   "home72": {
+    "branch_peer_drop_rate": 0.006666666666666667,
+    "branch_peer_drops": 2,
+    "branches": 300,
+    "g_branch_peer_units": [],
+    "null_peer_drop_rate": 0.0,
+    "null_peer_drops": 0,
+    "nulls": 20
+   },
+   "p72": {
+    "branch_peer_drop_rate": 0.0,
+    "branch_peer_drops": 0,
+    "branches": 600,
+    "g_branch_peer_units": [],
+    "null_peer_drop_rate": 0.0,
+    "null_peer_drops": 0,
+    "nulls": 37
+   }
+  },
+  "pooled": {
+   "branch_peer_drop_rate": 0.004285714285714286,
+   "branch_peer_drops": 9,
+   "branches": 2100,
+   "null_peer_drop_rate": 0.0,
+   "null_peer_drops": 0,
+   "nulls": 135
+  }
+ },
+ "primary": {
+  "est": 0.01198446625408228,
+  "hi": 0.03879965004071672,
+  "lo": -0.015453024624539501,
+  "n": 1793,
+  "per_panel": {
+   "forum72": [
+    0.005050505050505051,
+    594,
+    471
+   ],
+   "heldout72_hpfix": [
+    0.041736227045075125,
+    599,
+    473
+   ],
+   "p72": [
+    -0.010833333333333334,
+    600,
+    458
+   ]
+  }
+ },
+ "quota": {
+  "forum72": {
+   "deviations": 600,
+   "met": true,
+   "selected": 1800,
+   "states": 1624
+  },
+  "heldout72_hpfix": {
+   "deviations": 600,
+   "met": true,
+   "selected": 1800,
+   "states": 1455
+  },
+  "home72": {
+   "deviations": 300,
+   "met": true,
+   "selected": 999,
+   "states": 799
+  },
+  "p72": {
+   "deviations": 600,
+   "met": true,
+   "selected": 1799,
+   "states": 1450
+  }
+ },
+ "reported": {
+  "home_d": {
+   "est": 0.026845637583892617,
+   "hi": 0.09557132170741967,
+   "lo": -0.039607238869582326,
+   "n": 298,
+   "per_panel": {
+    "home72": [
+     0.026845637583892617,
+     298,
+     226
+    ]
+   }
+  },
+  "leak_clean_u": {
+   "est": -0.0005742683902941788,
+   "hi": 0.03609860033050996,
+   "lo": -0.0379036969468622,
+   "n": 940,
+   "per_panel": {
+    "forum72": [
+     -0.019933554817275746,
+     301,
+     242
+    ],
+    "heldout72_hpfix": [
+     0.02976190476190476,
+     336,
+     271
+    ],
+    "p72": [
+     -0.01155115511551155,
+     303,
+     240
+    ]
+   }
+  },
+  "leak_exposed_u": {
+   "est": 0.02588331132693245,
+   "hi": 0.06439446923473072,
+   "lo": -0.012806678586870585,
+   "n": 853,
+   "per_panel": {
+    "forum72": [
+     0.030716723549488054,
+     293,
+     235
+    ],
+    "heldout72_hpfix": [
+     0.057034220532319393,
+     263,
+     213
+    ],
+    "p72": [
+     -0.010101010101010102,
+     297,
+     240
+    ]
+   }
+  },
+  "live_minus_t_home": {
+   "est": 0.00908836689038031,
+   "hi": 0.07874478344573582,
+   "lo": -0.057534269964723904,
+   "n": 298,
+   "per_panel": {
+    "home72": [
+     0.00908836689038031,
+     298,
+     226
+    ]
+   }
+  },
+  "live_minus_t_u": {
+   "est": 0.002098532783470644,
+   "hi": 0.029241818546340396,
+   "lo": -0.026334184904204604,
+   "n": 1793,
+   "per_panel": {
+    "forum72": [
+     -0.00859287317620651,
+     594,
+     471
+    ],
+    "heldout72_hpfix": [
+     0.037249582637729546,
+     599,
+     473
+    ],
+    "p72": [
+     -0.022361111111111106,
+     600,
+     458
+    ]
+   }
+  },
+  "per_set": {
+   "forum72": {
+    "branch_cpu_s": {
+     "mean": 23.822776911076446,
+     "total": 15270.400000000001
+    },
+    "branches": 600,
+    "counted": 594,
+    "dropped": 6,
+    "games": 475,
+    "nulls": 41,
+    "nulls_counted": 41,
+    "split": 193
+   },
+   "heldout72_hpfix": {
+    "branch_cpu_s": {
+     "mean": 21.28021978021978,
+     "total": 13555.5
+    },
+    "branches": 600,
+    "counted": 599,
+    "dropped": 1,
+    "games": 474,
+    "nulls": 37,
+    "nulls_counted": 37,
+    "split": 159
+   },
+   "home72": {
+    "branch_cpu_s": {
+     "mean": 23.551250000000003,
+     "total": 7536.400000000001
+    },
+    "branches": 300,
+    "counted": 298,
+    "dropped": 2,
+    "games": 228,
+    "nulls": 20,
+    "nulls_counted": 20,
+    "split": 88
+   },
+   "p72": {
+    "branch_cpu_s": {
+     "mean": 23.220094191522765,
+     "total": 14791.2
+    },
+    "branches": 600,
+    "counted": 600,
+    "dropped": 0,
+    "games": 458,
+    "nulls": 37,
+    "nulls_counted": 37,
+    "split": 155
+   }
+  },
+  "sign_live_home": {
+   "est": 0.5454545454545454,
+   "hi": 0.6626506024096386,
+   "lo": 0.4347716293368467,
+   "n": 88,
+   "per_panel": {
+    "home72": [
+     0.5454545454545454,
+     88,
+     226
+    ]
+   }
+  },
+  "sign_live_u": {
+   "est": 0.5212692425884521,
+   "hi": 0.5687700673098683,
+   "lo": 0.471778716676104,
+   "n": 507,
+   "per_panel": {
+    "forum72": [
+     0.5077720207253886,
+     193,
+     471
+    ],
+    "heldout72_hpfix": [
+     0.5786163522012578,
+     159,
+     473
+    ],
+    "p72": [
+     0.4774193548387097,
+     155,
+     458
+    ]
+   }
+  },
+  "speed_not_pinned_u": {
+   "est": 0.008707960070175326,
+   "hi": 0.03920939524227052,
+   "lo": -0.024062850627265313,
+   "n": 1396,
+   "per_panel": {
+    "forum72": [
+     -0.019067796610169493,
+     472,
+     379
+    ],
+    "heldout72_hpfix": [
+     0.046255506607929514,
+     454,
+     363
+    ],
+    "p72": [
+     -0.0010638297872340426,
+     470,
+     359
+    ]
+   }
+  },
+  "speed_pinned_u": {
+   "est": 0.026597672160136827,
+   "hi": 0.08448939012496973,
+   "lo": -0.035364708228231796,
+   "n": 397,
+   "per_panel": {
+    "forum72": [
+     0.09836065573770492,
+     122,
+     96
+    ],
+    "heldout72_hpfix": [
+     0.027586206896551724,
+     145,
+     116
+    ],
+    "p72": [
+     -0.046153846153846156,
+     130,
+     107
+    ]
+   }
+  },
+  "t_imp_home": {
+   "est": 0.017757270693512302,
+   "hi": 0.036460954977628614,
+   "lo": -0.0014552609188882583,
+   "n": 298,
+   "per_panel": {
+    "home72": [
+     0.017757270693512302,
+     298,
+     226
+    ]
+   }
+  },
+  "t_imp_u": {
+   "est": 0.00988593347061164,
+   "hi": 0.019321103672412344,
+   "lo": 0.0013540265149870364,
+   "n": 1793,
+   "per_panel": {
+    "forum72": [
+     0.013643378226711562,
+     594,
+     471
+    ],
+    "heldout72_hpfix": [
+     0.004486644407345577,
+     599,
+     473
+    ],
+    "p72": [
+     0.011527777777777777,
+     600,
+     458
+    ]
+   }
+  },
+  "t_live_sign_agreement_u": {
+   "est": 0.5599196066706532,
+   "hi": 0.6069810920483276,
+   "lo": 0.5129991181110157,
+   "n": 458,
+   "per_panel": {
+    "forum72": [
+     0.5780346820809249,
+     173,
+     471
+    ],
+    "heldout72_hpfix": [
+     0.5517241379310345,
+     145,
+     473
+    ],
+    "p72": [
+     0.55,
+     140,
+     458
+    ]
+   }
+  },
+  "u_minus_home_d": {
+   "est": -0.014861171329810336,
+   "hi": 0.059777633140223836,
+   "lo": -0.0854254253601284
+  }
+ },
+ "rule": "GO iff LB(mean D = y(S\u2032 pick branch) - y(raw), pooled U ['heldout72_hpfix', 'forum72', 'p72'], panels equal-weighted, game-clustered) > 0.0 (rule 8: within 0.0005 = STOP)",
+ "schema": "gen3_read_deviation_live_v1",
+ "verdict": "STOP"
+}

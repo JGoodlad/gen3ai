@@ -1,0 +1,44 @@
+{
+ "class": "STOP",
+ "equal_to_rule": {
+  "class": true,
+  "est": true,
+  "hi": true,
+  "lo": true
+ },
+ "per_panel_mean_d": {
+  "forum72": 0.005050505050505051,
+  "heldout72_hpfix": 0.041736227045075125,
+  "home72": 0.026845637583892617,
+  "p72": -0.010833333333333334
+ },
+ "pooled_u": {
+  "est": 0.01198446625408228,
+  "hi": 0.03879965004071672,
+  "lo": -0.015453024624539501,
+  "n": 1793
+ },
+ "teeth": {
+  "branches_counted": 2091,
+  "branches_dropped": {
+   "forum72": 6,
+   "heldout72_hpfix": 1,
+   "home72": 2,
+   "p72": 0
+  },
+  "branches_pending": 0,
+  "branches_planned": 2100,
+  "capture_fails": 0,
+  "engines": [
+   "port=e00a212a102f5ce2/94;env=3d0d5c9c0f5d3c23/129"
+  ],
+  "forced_wrong": 0,
+  "g_branch_fails_left": 0,
+  "g_branch_peer_units": [
+   "pstar__forum72__212__g16__branch__t12n13"
+  ],
+  "nulls": 135,
+  "nulls_changed": 0,
+  "nulls_counted": 135
+ }
+}
