@@ -298,3 +298,22 @@ pin, order, thinning and VOID reasons all stand, and so does the chain draft.
    - `nogo_scope` as in item 4;
    - `void` {`k9b_dir`, runs, and the pin VOID against `N4_PIN`}.
 8. **The S lane's cost** rises to about 6–12 lane-h (36 cells × 2,000 pairs), from 1.5–3. CPU only.
+
+**NOTE 2 (2026-10-31, before any N4 read game; C0′ s3641 is training, and no final or read number exists).** The
+read's commit and spec, as AM-N4-PIN item 2 and AM-N4-FIXES items 6–7 require. Operational: no class, bar,
+estimator, seed or VOID reason changes.
+- **The read plays at ONE commit, `31bd9ced964f0ea50f8bb9c5a17cff80302f4f80`.** It is a main commit and carries:
+  - the amended `n4_screen` rule (`go_s_min_delta`, `801a96d0e`);
+  - the S lane's per-architecture engines (`86b12d0e7`). Its identity check is `s_engines_identity.json`: 5 banked
+    X47 look-1 toy cells, replayed through the new grouping on the bank's engine E1, equal their banked rows on
+    regime, seed block, counts and both outcome digests;
+  - the width E1 / E2 readers and the M1 nulls (`31bd9ced9`);
+  - the battery on a wide trunk (`5e07715ae`).
+
+  The six forks trained at `N4_PIN`, and `void.pin` checks that.
+- **The spec is `read_spec.json`** (`check-spec`: PASS; sha256 `579d25648d1c0bdfccab03fc4a38cc7f1e1856750e2d20025d36b12d16c15fdb`,
+  final). It is §7's list with AM-N4-FIXES item 7's parameters. `void.runs` names all six runs, since §4's VOIDs
+  apply to every seed.
+- **The engine.** The S and K rows play on this commit's engine, which no banked row used. Within N4 the meters stay
+  on one engine (§4). The pin-drift line (§6 item 5) against the banked 52.428 is cross-engine, so it is
+  descriptive only.

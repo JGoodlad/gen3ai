@@ -6,8 +6,9 @@
   `toy_n4ffn`).
 - **The training pin:** `N4_PIN` = `1553f8bd8` (AMENDMENT AM-N4-PIN).
 - **Read-side tools: BUILT (2026-10-31).** The S lane's grouping by architecture (`86b12d0e7`), the width descriptor
-  readers with the M1 nulls, and the battery on a wide trunk (`5e07715ae`). Still owed before the read: the NOTE
-  naming the read's commit, and `read_spec.json` (§7 item 5).
+  readers with the M1 nulls, and the battery on a wide trunk (`5e07715ae`). The read's commit
+  `31bd9ced9` and `read_spec.json` are registered (PREREG NOTE 2). The read is ready to start as the finals
+  settle.
 - **The rule as amended (AM-N4-FIXES, 2026-10-31):** the REVIEW's M2 (MIXED), M3 (2,000 pairs), m3 (GO-S needs
   Δ̂_S ≥ +1.0 pp) and M5 (the "within 70M" NO-GO wording) are adopted. The family false GO is 0.048–0.068 at the
   planning σ (§4.3).
@@ -495,7 +496,7 @@ test. On the strategy memo's routing, N4 (toy) or N4-P-direct was the orchestrat
      - A stripe that would hold three architectures is grouped by architecture key, `trunk_ffn_dim` included.
      - Identity check: 5 banked X47 look-1 toy cells, replayed through the new grouping on E1, equal the banked
        rows on counts and both digests (`s_engines_identity.json`).
-     - The NOTE naming the read's commit is still owed.
+     - The read's commit `31bd9ced9` and the spec are fixed by PREREG NOTE 2.
    - **(b) DONE: the width descriptor readers** E1 / E2 and the M1 nulls (§2 item 3, §5).
    - **(c) DONE: the battery reads a wide trunk.** `main.capacity` always did; the probe battery's depth worker
      does since `0ecad293a` (FINDING 10).

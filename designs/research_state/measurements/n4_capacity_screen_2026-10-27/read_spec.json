@@ -1,0 +1,146 @@
+{
+ "schema": "gen3_read_spec_v1",
+ "read": "n4_capacity_look1_2026-10-31",
+ "prereg": "designs/research_state/measurements/n4_capacity_screen_2026-10-27/PREREG.md",
+ "note": "REGISTERED (PREREG NOTE 2, before any N4 read game). N4's one look under the n4_screen rule as amended (AMENDMENT AM-N4-FIXES item 7: MIXED veto, 2,000 pairs per S cell, GO-S floor +1.0 pp, near_scope meter, the M5 NO-GO wording). Every K and S row plays at ONE commit, this spec's pin: a main commit carrying the amended rule, the S lane's per-architecture engines and the width readers (AM-N4-FIXES item 6). The six forks trained at N4_PIN 1553f8bd8; void.pin checks it.",
+ "models": {
+  "c0n4_s3641": {
+   "arm": "toy_c0n4",
+   "seed": 3641,
+   "ref": {
+    "kind": "final",
+    "run": "models/rb_x35t_c0n4_s3641",
+    "min_step": 360000087,
+    "quiet_s": 300
+   }
+  },
+  "c0n4_s3642": {
+   "arm": "toy_c0n4",
+   "seed": 3642,
+   "ref": {
+    "kind": "final",
+    "run": "models/rb_x35t_c0n4_s3642",
+    "min_step": 360000087,
+    "quiet_s": 300
+   }
+  },
+  "c0n4_s3643": {
+   "arm": "toy_c0n4",
+   "seed": 3643,
+   "ref": {
+    "kind": "final",
+    "run": "models/rb_x35t_c0n4_s3643",
+    "min_step": 360000087,
+    "quiet_s": 300
+   }
+  },
+  "n4ffn_s3641": {
+   "arm": "toy_n4ffn",
+   "seed": 3641,
+   "ref": {
+    "kind": "final",
+    "run": "models/rb_x35t_n4ffn_s3641",
+    "min_step": 360000087,
+    "quiet_s": 300
+   }
+  },
+  "n4ffn_s3642": {
+   "arm": "toy_n4ffn",
+   "seed": 3642,
+   "ref": {
+    "kind": "final",
+    "run": "models/rb_x35t_n4ffn_s3642",
+    "min_step": 360000087,
+    "quiet_s": 300
+   }
+  },
+  "n4ffn_s3643": {
+   "arm": "toy_n4ffn",
+   "seed": 3643,
+   "ref": {
+    "kind": "final",
+    "run": "models/rb_x35t_n4ffn_s3643",
+    "min_step": 360000087,
+    "quiet_s": 300
+   }
+  }
+ },
+ "anchor": {
+  "unfamiliar": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "forum72"
+   ],
+   "unit_seeds": "0-49",
+   "models": [
+    "c0n4_s3641",
+    "c0n4_s3642",
+    "c0n4_s3643",
+    "n4ffn_s3641",
+    "n4ffn_s3642",
+    "n4ffn_s3643"
+   ]
+  }
+ },
+ "s": {
+  "pool": {
+   "refpop": "designs/research_state/measurements/x35_breakers_stage_2026-10-17/reference_population_toy.json",
+   "refpop_content_sha256": "856c04cb87e9415eda9289845d66a770582c30e773bb7c23df7fdb6221a55a4d",
+   "panel": null,
+   "pairs": 2000,
+   "batch_pairs": 100,
+   "family": "x35_n4",
+   "models": [
+    "c0n4_s3641",
+    "c0n4_s3642",
+    "c0n4_s3643",
+    "n4ffn_s3641",
+    "n4ffn_s3642",
+    "n4ffn_s3643"
+   ]
+  }
+ },
+ "decision": {
+  "rule": "n4_screen",
+  "params": {
+   "on": [
+    "n4ffn_s3641",
+    "n4ffn_s3642",
+    "n4ffn_s3643"
+   ],
+   "off": [
+    "c0n4_s3641",
+    "c0n4_s3642",
+    "c0n4_s3643"
+   ],
+   "s_group": "pool",
+   "anchor_group": "unfamiliar",
+   "s_bar": 2.0,
+   "k_bar": 0.015,
+   "confidence": 0.9,
+   "z": 1.6449,
+   "rule8_eps": 1e-09,
+   "near_scope": "meter",
+   "void": {
+    "k9b_dir": "designs/research_state/measurements/x35_breakers_stage_2026-10-17/k9b",
+    "runs": {
+     "c0n4_s3641": "models/rb_x35t_c0n4_s3641",
+     "c0n4_s3642": "models/rb_x35t_c0n4_s3642",
+     "c0n4_s3643": "models/rb_x35t_c0n4_s3643",
+     "n4ffn_s3641": "models/rb_x35t_n4ffn_s3641",
+     "n4ffn_s3642": "models/rb_x35t_n4ffn_s3642",
+     "n4ffn_s3643": "models/rb_x35t_n4ffn_s3643"
+    },
+    "pin": "1553f8bd838a13d3709239c43b3ee98d27cac359"
+   },
+   "mixed_veto": true,
+   "nogo_scope": {
+    "lever": "a 4x trunk FFN width (--grow trunk_ffn_dim=1024)",
+    "dose": "70M",
+    "start": "T*"
+   },
+   "go_s_min_delta": 1.0
+  }
+ },
+ "pin": "31bd9ced964f0ea50f8bb9c5a17cff80302f4f80"
+}
