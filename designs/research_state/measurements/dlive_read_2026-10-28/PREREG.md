@@ -306,3 +306,62 @@ no VOID reason; it registers the operating choices the PREREG left open.
   `MAX_ATTEMPTS` more (the queue counts per life); any unit counted on a third or later attempt is listed in the record
   by panel as a FINDING.
 - **The record** is written by `main.reads record` from the same checkout.
+
+## Amendment AM-DL-PEER (2026-10-31, BLIND: during the branch lane, before any branch outcome is read)
+
+The orchestrator's ruling (Option 2) on FINDING DL-7, registered before anyone reads a branch outcome. It changes how
+ONE cause of a failed branch is classed. It does not change the estimand, the bar, the bootstrap, the quotas, the drop
+cap or any other VOID reason.
+
+**DL-7 (the cause).** The forced branch `pstar__forum72__203__g11__branch__t18n17` (forum72, raw unit 203, game 11,
+branch at turn 18, frame 17) failed its verification on both attempts. Its replay had the raw game's identical START
+document and battle seed, but Kakuna's FIRST choice differed (the raw game's Earthquake against a switch to Celebi in
+both replays), so the replay was another game from turn 1 and never reached the named decision. The lone one-game
+replay is self-consistent (both attempts agree) but differs from game 11 inside its 20-game unit: a peer
+nondeterminism the PREREG did not foresee (§10 named Kakuna's turn-250 fault as the only known drop cause). Its root
+cause is not established (GUESS: a near-tie in Kakuna's scores flipped by a fresh process's numerics). The branch
+module finds the named decision by (turn, frame index), so such a divergence that does reach that pair fails G-BRANCH,
+which §4 VOIDs: a VOID from a cause outside S′. At the time of the ruling: 284 of 2,235 units played, 1 such drop, every
+counted unit passing every tooth.
+
+**The rule.**
+
+1. **A PEER DROP.** A failed attempt (one that never counted, whether it failed its verification or G-BRANCH) is a peer
+   drop iff the classifier [`scripts/peer_divergence.py`](scripts/peer_divergence.py) classes it `peer_first`
+   against its raw game's capture:
+   - (a) the PEER (Kakuna) chose differently on a view identical in both games (its first differing command answers
+     a request relayed before its stream first differs);
+   - (b) every one of OUR commands made on a view identical in both games is identical;
+   - (c) the peer's divergence turn is below the branch turn.
+   A peer drop's G-BRANCH failure does not VOID the read. The unit's status is otherwise the registered one: counted if
+   an attempt counted, else DROPPED.
+2. **Every other G-BRANCH failure stays VOID** as registered: our side first (`ours_first`), the peer only at or after
+   the branch turn (`peer_first_late`), a state mismatch with no earlier peer divergence or anything the classifier
+   cannot attribute (`unattributable`).
+3. **Null controls.** A null whose replay diverges by the same test (all of (a)-(c)) is DROPPED and counted
+   separately. A null that diverges any other way stays VOID, including a counted null whose game diverges at or after
+   its branch turn: (c) is part of the test.
+4. **The drop cap.** §4's 10 % per-panel cap on branches still applies, counting peer drops together with every other
+   drop. The record reports peer drops per panel, separately, with the null controls' peer-drop rate beside them.
+5. **The classifier** reads two captures' `START` documents, commands and relayed protocol. Every `|win|` / `|tie`
+   line is removed before any comparison, and it prints only indices, turns and sides, never a result. Checked at the
+   ruling on the 294 attempts then on disk (and again after its lint fix, 296: two more counted branches, same classes):
+   - DL-7's unit: both attempts `peer_first` (peer divergence turn 1, branch turn 18; our side's one choice on an
+     identical view equal);
+   - 273 counted branches: all `ours_first` at exactly their own branch turn (the forced action), so the test
+     attributes our side's divergence correctly;
+   - 18 counted nulls: all `identical`;
+   - one in-flight unit with no capture yet (`unattributable`, pending).
+6. **How it reaches the decision.** At the read's end the classifier runs over every attempt of the branch state
+   (`state --all`), and its output is kept with its sha256 beside the record.
+   - If no G-BRANCH failure is classed `peer_first`, the registered rule reads the read unchanged: its drops already
+     include the peer drops of rule 1, and it never VOIDs on a dropped null.
+   - Otherwise, before the record, `deviation_live` gains one registered input: this classification, by path and
+     sha256. It turns exactly those attempts' G-BRANCH failures into uncounted attempts and touches nothing else. It
+     lands with a test, off the play path (`main.reads.rules_deviation_live` is not on it), and the record is written
+     from that checkout.
+
+**DL-8 (disclosure).** While diagnosing DL-7 the operator read the tail of that unit's log, which printed its one game's
+result. The unit is dropped (by the code before this amendment and by rule 1 after it), so the result enters no
+estimate. It is the only branch result anyone has seen. Since then the operator reads only the teeth: statuses,
+G-BRANCH records, capture comparisons and the classifier, never a log, a game row or a summary's result.
