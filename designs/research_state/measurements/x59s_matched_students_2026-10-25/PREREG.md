@@ -1085,3 +1085,43 @@ A bound within 1e-9 of 0 or ±4 pp takes the undecided class. NO-DIFFERENCE-AT-4
 pairs and the ledger's rows ran on exactly ONE engine** (else none, reported). VOID: a student whose rows or init
 differ from the registration, or whose steps differ from 1,584 (`check`, `export`'s `void3`), or that fails the
 learned-nothing guard. Every class is reported with both arms' rates; no class closes or opens a lever alone (§5).
+
+## Amendment 8 (2026-11-03, before any follow-up game): the play tree moves to `08271d245`, which can load the follow-up's students
+
+**No follow-up game has been played.** chain9 (A7.5's commands, 2026-10-30) exported the 15 students (VOID 3 and the
+learned-nothing guard PASS for all 15; reload and anchors-bare bit-equal) and then ran `followup inhouse --play`, which
+logged `rc=0`. But **every one of the 30 cells failed both attempts before a game, at checkpoint load**: `TypeError:
+ExtractorBuild.__init__() got an unexpected keyword argument 'trunk_ffn_dim'`. The ledger holds 0 rows. The students
+trained and exported at main `f995a5d4e`, so they are config v164 (B-FFNW, `c35ffab9e`, 2026-10-27 10:52) and record
+`trunk_ffn_dim = 256`. The pin `89c2c2501` (10:18 the same day) predates that field. A7's CPU smoke trained one step and
+never loaded a v164 zip at the pin, so this was not caught before the window (FINDING). `followup inhouse` exited 0
+with all 30 cells short (FINDING; fixed in the same commit: it now exits 1 unless both pairings carry a class, and it
+refuses a play tree with tracked changes and records the tree's HEAD in the output).
+
+**The play tree is `08271d245`** (branch `x59s-pin-a8`, tag `x59s-play-08271d24`, checkout
+`/home/goodlad/dev/gen3ai-reads/x59s_play_pin_a8`). It is `89c2c2501` plus one change, which applies only on that
+branch: a v164 checkpoint's `trunk_ffn_dim` is removed when it is 256 and REFUSED at any other width. The removal
+happens in the zip's pickled extractor kwargs (`snapshot.sanitize_future_ffn_width`) and in the config migration. At
+256, main builds nothing extra (no width branch, the same state_dict), so the network this tree builds is the saved
+one. v163 (`gen3_hp_foresight_v1`) has no field and is a Rust encode fix this tree does not carry. That is intended:
+A7.5 plays at the primary read's encoder.
+
+- **The engine is unchanged:** `engine_at(08271d245)` = `engine_at(89c2c2501)` =
+  `port=bdc5d2be3af5e1fb/94;env=95b45f104119bdb2/129` (the diff touches no Rust).
+- **Identity (before any game; [`results/fu1500_pin_a8_identity.json`](results/fu1500_pin_a8_identity.json),
+  scripts [`a8_identity_ref.py`](a8_identity_ref.py) / [`a8_identity_pin.py`](a8_identity_pin.py)):** each of the 15
+  students loaded through h2h's own host loader at `08271d245` gives policy logits **bit-equal** to main's strict load
+  (`9c2f023e4`, config v164) on the export's own probe. The probe is the first 256 rows of the student's validation
+  shard, 15 of 15 bit-equal. All 10 pairings declare ONE slot group. One engine per pairing kind is built and closed
+  without a game, and its p72 regime is `88f0de6fbb7e15a9`, the primary read's p72 cells' own.
+- **Unchanged:** the cells, seeds, panels, pairs, label, state directory, the rule (`followup.inhouse_read` through
+  `x59s_read.inhouse`), the classes, the 1e-9 boundary rule, the VOID guards and A7.2's registered limits. The 30
+  failed cell logs move to `read/inhouse/a5_load_failures/`; chain9's short `fu1500_inhouse.json` is kept as
+  `fu1500_inhouse.a5_short.json`. The append-only ledger is not touched: it holds only the 30 `open` request events,
+  and no rows.
+
+```bash
+# from a clean detached checkout of the commit that lands this amendment (the driver), CPU, nice 19, agent cores
+python -m main.human_data.followup inhouse --root ~/gen3ai_archive/x59s/followup_1500 \
+    --tree /home/goodlad/dev/gen3ai-reads/x59s_play_pin_a8 --play --out ~/gen3ai_archive/x59s/followup_1500/fu1500_inhouse.json
+```

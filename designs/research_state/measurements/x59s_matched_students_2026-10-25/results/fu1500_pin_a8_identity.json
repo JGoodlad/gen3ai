@@ -1,0 +1,132 @@
+{
+ "declare": {
+  "data_5901": {
+   "groups": 1
+  },
+  "data_5902": {
+   "groups": 1
+  },
+  "data_5903": {
+   "groups": 1
+  },
+  "data_5904": {
+   "groups": 1
+  },
+  "data_5905": {
+   "groups": 1
+  },
+  "rating_5901": {
+   "groups": 1
+  },
+  "rating_5902": {
+   "groups": 1
+  },
+  "rating_5903": {
+   "groups": 1
+  },
+  "rating_5904": {
+   "groups": 1
+  },
+  "rating_5905": {
+   "groups": 1
+  }
+ },
+ "engine": {
+  "data": {
+   "groups": 1,
+   "regime_id": "88f0de6fbb7e15a9"
+  },
+  "rating": {
+   "groups": 1,
+   "regime_id": "88f0de6fbb7e15a9"
+  }
+ },
+ "engine_at": {
+  "08271d245": "port=bdc5d2be3af5e1fb/94;env=95b45f104119bdb2/129",
+  "89c2c2501": "port=bdc5d2be3af5e1fb/94;env=95b45f104119bdb2/129"
+ },
+ "imported_from": "/home/goodlad/dev/gen3ai-reads/x59s_play_pin_a8/src/agents/model/snapshot.py",
+ "pass": true,
+ "pin": "08271d245",
+ "pin_parent": "89c2c2501",
+ "probe": "each student's first 256 rows of its rows' validation shard (student.export's own probe), CPU, 2 threads",
+ "reference_tree": "main 9c2f023e4 (config v164)",
+ "schema": "gen3_x59s_fu1500_pin_a8_identity_v1",
+ "students": {
+  "s_h1500_5901": {
+   "bit_equal": true,
+   "max_abs": 0.0,
+   "zip_sha256": "a5879e286ea4e5e8ac18a3e95381ff77538cbf3904ee6347152cfc0d70ef7d33"
+  },
+  "s_h1500_5902": {
+   "bit_equal": true,
+   "max_abs": 0.0,
+   "zip_sha256": "b55eec92b733a2340e6f9ee074d8f61beb36c8c5650f5c661bb86fab349a164e"
+  },
+  "s_h1500_5903": {
+   "bit_equal": true,
+   "max_abs": 0.0,
+   "zip_sha256": "7822825dc517e3846c33125d9d77d6bbcc203bb4a0cba20251a884927f4f9529"
+  },
+  "s_h1500_5904": {
+   "bit_equal": true,
+   "max_abs": 0.0,
+   "zip_sha256": "6c52ab1936baa0e30cbb0dfd9ef92f91ae7eb30ad6599d4c2e153330de72e61f"
+  },
+  "s_h1500_5905": {
+   "bit_equal": true,
+   "max_abs": 0.0,
+   "zip_sha256": "fe913bc5deecbbafd16055670160273dbccb8846bbcba29d0dba5fb2e505f865"
+  },
+  "s_hmix_5901": {
+   "bit_equal": true,
+   "max_abs": 0.0,
+   "zip_sha256": "b3e2a41811cac484c8750d9eec0ed82e7118ca45b684e5ee656e45c93541653a"
+  },
+  "s_hmix_5902": {
+   "bit_equal": true,
+   "max_abs": 0.0,
+   "zip_sha256": "122525384e72d6402882ad9601f93de3e820d5897fbfc889cc9823635544c337"
+  },
+  "s_hmix_5903": {
+   "bit_equal": true,
+   "max_abs": 0.0,
+   "zip_sha256": "ab35e64d760f7fe3d5ff98b599535c2b6ca9a8b7a04b432c9c2e4b840d4dcb0c"
+  },
+  "s_hmix_5904": {
+   "bit_equal": true,
+   "max_abs": 0.0,
+   "zip_sha256": "bd7313c57f13cd599d36e9f74c002fab11bfd6255933cb052b89804f2be9b4f0"
+  },
+  "s_hmix_5905": {
+   "bit_equal": true,
+   "max_abs": 0.0,
+   "zip_sha256": "3ec438f4ad4caba6dbcb2fe9a2e3555ed79140a6082bc1f85ceefa058ae84783"
+  },
+  "s_scut_5901": {
+   "bit_equal": true,
+   "max_abs": 0.0,
+   "zip_sha256": "400daa647f83f79165ce39994d0ec0903d421e16b83402d86c4a0f9bde853305"
+  },
+  "s_scut_5902": {
+   "bit_equal": true,
+   "max_abs": 0.0,
+   "zip_sha256": "d66d01b4273e65ca7ca7ed1a3e04e18245c941e1193f73295fede7cf9c35e0ab"
+  },
+  "s_scut_5903": {
+   "bit_equal": true,
+   "max_abs": 0.0,
+   "zip_sha256": "6c0a377b478dcf7febf7cc0af7f95e874c4959d4853175b2a3da391fad7b425e"
+  },
+  "s_scut_5904": {
+   "bit_equal": true,
+   "max_abs": 0.0,
+   "zip_sha256": "d005752d1e0e89a0b293c8d818cd7d2e446a0083dd3a284ceb912b9e477e89a4"
+  },
+  "s_scut_5905": {
+   "bit_equal": true,
+   "max_abs": 0.0,
+   "zip_sha256": "e6154ae49f635fe2c3d7458b871442866cbb37cce5e6c251a67ffa7151632ad9"
+  }
+ }
+}

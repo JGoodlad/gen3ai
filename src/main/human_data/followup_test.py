@@ -264,3 +264,34 @@ def test_the_inhouse_read_classes_each_pairing_on_one_engine(tmp_path, monkeypat
     assert res["classes"]["data"]["class"] == "NO-DIFFERENCE-AT-4PP"
     monkeypatch.setattr(XO, "ledger_engines", lambda ledger: ["env=a/1", "env=b/2"])
     assert FU.inhouse_read(tmp_path, {"students": side})["classes"]["rating"]["class"] is None
+    assert FU.inhouse_rc(FU.inhouse_read(tmp_path, {"students": side})) == 1
+
+
+def test_the_inhouse_exit_is_nonzero_on_a_short_cell_and_zero_only_with_both_classes(tmp_path, monkeypatch):
+    from main.human_data import x59s_ops as XO
+
+    side = {f"{FU.ARMS[a][1]}_{s}": {"zip_path": f"/z/{a}_{s}.zip"} for a, s in FU.jobs()}
+    cells = FU.inhouse_cells({"students": side})
+    monkeypatch.setattr(XO, "ledger_engines", lambda ledger: ["env=a/1"])
+    for c in cells:                                   # every cell's log a load failure: no summary line at all
+        (tmp_path / f"{c['name']}.log").write_text("TypeError: an unexpected keyword argument\n")
+    res = FU.inhouse_read(tmp_path, {"students": side})
+    assert len(res["short"]) == 30 and FU.inhouse_rc(res) == 1
+    for c in cells:
+        (tmp_path / f"{c['name']}.log").write_text(json.dumps({"pairs": 200, "score": 0.5}) + "\n")
+    assert FU.inhouse_rc(FU.inhouse_read(tmp_path, {"students": side})) == 0
+
+
+def test_the_play_tree_must_be_clean(tmp_path):
+    import subprocess
+
+    subprocess.run(["git", "init", "-q", str(tmp_path)], check=True)
+    (tmp_path / "f.txt").write_text("a\n")
+    subprocess.run(["git", "-C", str(tmp_path), "add", "f.txt"], check=True)
+    subprocess.run(["git", "-C", str(tmp_path), "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "x"],
+                   check=True)
+    head = subprocess.run(["git", "-C", str(tmp_path), "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
+    assert FU.clean_tree_commit(tmp_path) == head
+    (tmp_path / "f.txt").write_text("b\n")
+    with pytest.raises(FU.FollowupError, match="tracked changes"):
+        FU.clean_tree_commit(tmp_path)

@@ -568,6 +568,26 @@ def inhouse_read(state: Path, students: Mapping[str, Any]) -> Dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------------------------------- cli
+def clean_tree_commit(tree: Path) -> str:
+    """The play tree's HEAD commit; REFUSED when a tracked file differs from it (A4.1: a clean checkout at the pin)."""
+    dirty = subprocess.run(["git", "-C", str(tree), "status", "--short", "--untracked-files=no"],
+                           capture_output=True, text=True, check=True).stdout.strip()
+    if dirty:
+        raise FollowupError(f"--tree {tree} has tracked changes (it must be a clean checkout at the pin):\n{dirty}")
+    return subprocess.run(["git", "-C", str(tree), "rev-parse", "HEAD"], capture_output=True, text=True,
+                          check=True).stdout.strip()
+
+
+def inhouse_rc(res: Mapping[str, Any]) -> int:
+    """0 only when BOTH pairings carry a class; a short cell or not exactly one engine is a non-zero exit (a chain
+    that logged ``inhouse rc=0`` over 30 cells that never loaded a checkpoint is the case this closes)."""
+    if res["short"] or len(res["core_stamps"]) != 1 or any(v.get("class") is None for v in res["classes"].values()):
+        print(f"[fu1500] NO CLASS: {len(res['short'])} short cell(s), engines {res['core_stamps']}", file=sys.stderr,
+              flush=True)
+        return 1
+    return 0
+
+
 def _env_python() -> str:
     return str(Path.home() / "miniconda3" / "envs" / "gen3ai_torch28" / "bin" / "python3")
 
@@ -679,13 +699,16 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             return 0 if res["pass"] else 1
         st = json.loads((Path(a.root) / "read" / "students" / "students.json").read_text())
         state = Path(a.root) / "read" / "inhouse"
+        tree_commit = clean_tree_commit(Path(a.tree))
         if a.play:
             inhouse_play(state, st, Path(a.tree), a.python)
         res = inhouse_read(state, st)
+        res["tree_commit"] = tree_commit
         Path(a.out).write_text(json.dumps(res, indent=1, sort_keys=True) + "\n")
         print(json.dumps({"out": a.out, "short": res["short"], "core_stamps": res["core_stamps"],
+                          "tree_commit": tree_commit,
                           "classes": {k: v.get("class") for k, v in res["classes"].items()}}), flush=True)
-        return 0
+        return inhouse_rc(res)
     except (FollowupError, RS.RowsetError) as exc:
         print(f"[fu1500] REFUSED: {exc}", file=sys.stderr, flush=True)
         return 2
