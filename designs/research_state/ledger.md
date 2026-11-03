@@ -30467,3 +30467,65 @@ boundary. By hand: the estimate, both bounds and the class equal the rule's.
 summary, peer-drop summary, by_hand) and the state `~/gen3ai_archive/dlive_read_2026-10-28/` (`record.json`).
 
 Tag: **MEASUREMENT · dlive · STOP · pooled-U D +0.0120 [−0.0155, +0.0388] · T's IMP +0.0099 · 9 peer drops**
+
+### 2026-11-03 · MEASUREMENT · **X59-S's ≥ 1500 follow-up: rating NOT-RESOLVED (S-H≥1500 − S-H-mix +1.33 pp [−2.76, +5.43]), and ≥ 1500 human data still teaches a fresh student less than our self-play data at the same volume (S-H≥1500 − S-S cut −4.42 pp [−6.07, −2.76], SELF-PLAY-DATA-BETTER); in-house only, routes nothing alone**
+
+**Question (PREREG A2.7, Amendment 7 `1ffd67817`):** does the human teacher's RATING matter, at a fixed slice and
+volume? Three arms of five seeds share one init per seed and use N = 270,260 TRAIN rows and 1,584 steps each:
+- **S-H≥1500:** r2's rows whose actor is rated ≥ 1500.
+- **S-H-mix:** whole r2 accounts in a seed-5930 order, so the rating mix r2 has.
+- **S-S cut:** S-S's first N rows, with P\*'s labels.
+
+The read is in-house only: 2 pairings × 5 seeds × H / F / P72, 200 mirrored pairs a cell. The rate is the equal-weight
+panel mean, the contrast is the mean of 5 rates − 0.50, and the interval is a t (df 4).
+
+**Result** (`results/fu1500_inhouse.json`, 30 / 30 cells at 200 pairs, one engine `env=95b45f104119bdb2/129`):
+
+| pairing | contrast | class | per-seed S-H≥1500 rate |
+|---|---|---|---|
+| S-H≥1500 − S-H-mix (rating) | +1.33 pp [−2.76, +5.43] | NOT-RESOLVED | 0.517, 0.533, 0.555, 0.482, 0.479 |
+| S-H≥1500 − S-S cut (data) | −4.42 pp [−6.07, −2.76] | SELF-PLAY-DATA-BETTER | 0.444, 0.449, 0.478, 0.452, 0.456 |
+
+- **Per panel (descriptive):** rating H 0.508 / F 0.527 / P72 0.505; data H 0.456 / F 0.445 / P72 0.467.
+- **The rating interval** leaves out a loss larger than ≈ 2.8 pp but not a gain past 4 pp, so it is not
+  NO-DIFFERENCE-AT-4PP (A5.3).
+- **No bound lies within 1e-9 of a class boundary.**
+
+**Reading (registered limits, A7.2):** read it as rating at a FIXED slice and volume, never as "≥ 1500 play":
+- the rows are the same panel-excluded, forfeit-heavy slice (51.0 % from forfeits);
+- the 10 heaviest accounts hold 15.4 % of S-H≥1500's rows and 25.6 % of S-H-mix's, against r2's 7.8 %;
+- the mix shares 63,670 rows with S-H≥1500;
+- S-S cut is S-S's first N rows, not a random draw.
+
+Neither class routes anything alone (§5). Human data's closure stays BLOCKED by Δ_restriction (+2.85 pp
+[+0.14, +5.56]; this follow-up has no S-P0 arm), and H-TEAMS (X60-T) stays first. Not a contrast: the primary in-house
+Δ_data was −9.06 pp at 1.2M rows and 7,041 steps.
+
+**Checks (all PASS):**
+- the window check: 15 students at 1,584 steps on the registered manifests (`2fdb5faf…`, `4099a387…`, `1716c095…`),
+  one init per seed;
+- the export: VOID 3 `[]`, the learned-nothing guard passes for all 15, and the reload and anchors-bare logits are
+  bit-equal;
+- the play: `short` `[]`, 200 pairs in every cell, exactly one engine, and the primary read's three panel regimes;
+- the play tree is clean at `08271d245`.
+
+**Amendment 8 (`71ef78a79`, before any game):** chain9's first `--play` (10-30) never played. All 30 cells failed at
+load: the students are config v164 (`trunk_ffn_dim`) and the registered pin `89c2c2501` is v162. The ledger holds 0
+rows. The play tree moved to `08271d245` (tag `x59s-play-08271d24`): `89c2c2501` plus a strip of `trunk_ffn_dim` at
+256, with any other width refused. It is the same engine. 15 / 15 students' logits are bit-equal to main's v164 load
+(`results/fu1500_pin_a8_identity.json`).
+
+**FINDINGs.**
+- A7's CPU smoke never loaded a v164 zip at the pin, so the window's output could not be played as registered.
+- `followup inhouse --play` exited 0 over 30 short cells. Since `71ef78a79` it exits 1 unless both pairings carry a
+  class, refuses a dirty play tree and records the tree's commit.
+- The students' configs record v163 (`gen3_hp_foresight_v1`) but play at the pin's encoder. That is A7.5's intent, not
+  drift.
+
+**Cost:** CPU only. The 30 cells ran 08:36 → 11:59 PST on 11-03, through the heavy slots at nice 19.
+
+**Evidence:** `designs/research_state/measurements/x59s_matched_students_2026-10-25/` (README § "The ≥ 1500
+follow-up", PREREG Amendments 7–8, `results/fu1500_inhouse.json`, `results/fu1500_pin_a8_identity.json`), and the
+state `~/gen3ai_archive/x59s/followup_1500/`.
+
+Tag: **MEASUREMENT · X59-S ≥ 1500 follow-up · rating NOT-RESOLVED +1.33 [−2.76, +5.43] · data SELF-PLAY-DATA-BETTER −4.42 [−6.07, −2.76] · in-house**

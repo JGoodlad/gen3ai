@@ -546,10 +546,17 @@ training absorbs some of what perfect information would buy, but not enough to m
   volume, as a cloning target for a fresh network at 3 epochs") is BLOCKED: its registered guard Δ_restriction = S-P0 −
   S-P read +2.85 pp [+0.14, +5.56] (restricting labels to the human's support costs a student; P\*'s unrestricted
   labels on human states, S-P0 0.393, teach as well as self-play, S-S 0.393), so human data is not closed and the route
-  is H-TEAMS first (X60-T); the ≥ 1500 follow-up asks
-  whether rating changes it at fixed slice and volume. It says nothing about adding human data to P\* (X60's
+  is H-TEAMS first (X60-T). It says nothing about adding human data to P\* (X60's
   question). [SIGNIFICANT · Kakuna and in-house · `measurements/x59s_matched_students_2026-10-25/README.md`; ledger
   2026-10-30 · *X59-S*]
+- **Rating does not rescue it (X59-S's ≥ 1500 follow-up, 2026-11-03).** At a fixed slice and volume (270,260 rows an
+  arm, 15 fresh students, in-house only), a student taught by ≥ 1500 players against one taught by the same slice's
+  rating mix reads **+1.33 pp [−2.76, +5.43], NOT-RESOLVED**. The ≥ 1500 student still loses to a self-play student at
+  the same N: **−4.42 pp [−6.07, −2.76], SELF-PLAY-DATA-BETTER**, below 0.50 on every seed and panel. Limits: the same
+  panel-excluded, forfeit-heavy slice; concentrated accounts (top 10 hold 15.4 % / 25.6 % of the two human arms' rows);
+  63,670 shared rows; S-S cut is S-S's first N rows. It routes nothing alone, and the closure stays blocked by
+  Δ_restriction. [SIGNIFICANT (data) / NOT DETECTED (rating) · in-house · same README; ledger 2026-11-03 · *X59-S's ≥ 1500
+  follow-up*]
 - The X50 reads and the HOM's rows used the pre-fix intent masks (opponent Explosion / Self-Destruct and 12–17 % of
   attacks unlabelled); no result is invalidated, but an extraction at HEAD is a different population. [ledger
   2026-10-26 · FIX · *the obs / label GIGO audit*]
@@ -652,7 +659,7 @@ retired for the fold-gift question only; they live in the last full text (§0) a
 
 | question | the read that answers it |
 |---|---|
-| Does rating change it, and do human TEAMS help? | **X59-S's ≥ 1500 follow-up** (S-H≥1500 vs a volume-matched mix and vs S-S, in-house; ≈ 1.5 GPU-h, Amendment 7) and **X60-T** (H-TEAMS, the registered route now that X59-S closed nothing: Δ_restriction +2.85 [+0.14, +5.56], §4.8) |
+| Do human TEAMS help? (rating at fixed slice read NOT-RESOLVED, +1.33 pp [−2.76, +5.43], X59-S's ≥ 1500 follow-up, §4.8) | **X60-T** (H-TEAMS, the registered route now that X59-S closed nothing: Δ_restriction +2.85 [+0.14, +5.56], §4.8) |
 
 **Queued and planned** (the ranked order after REVIEW_2 `69c7cd34d` §6: PR-1′; X48 read NO-GO 2026-10-30, §4.13; X63 read NOT PURSUED 2026-10-31, §3.1)
 

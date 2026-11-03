@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-30,470-line file. **The ledger itself is append-only and is never edited by this**;
+30,532-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**991 headings · 936 dated · 2026-08-01 → 2026-11-01 · ledger 30,470 lines.**
+**992 headings · 937 dated · 2026-08-01 → 2026-11-03 · ledger 30,532 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -1011,3 +1011,4 @@ rename.
   - `L30329` · `2026-10-30` · MEASUREMENT · **X59-S's closure is BLOCKED: Δ_restriction = S-P0 − S-P reads +2.85 pp [+0.14, +5.56] (registered guard, Amendment 6 A6.1), so SELF-PLAY-DATA-BETTER closes nothing; human data stays open as a lever and routes H-TEAMS first (X60-T); H-BC stays dropped**
   - `L30347` · `2026-10-31` · MEASUREMENT · **X63 STAGE A reads NOT PURSUED: a +100M continuation of the plateau (X26@380M) with 80 % of each side's teams from the 17,876-team union `x63_union_v1` scores Δ_F −0.69 pp [−3.75, +2.37] on forum72 against Kakuna versus the two pool-only continuations (X63-U 0.512 vs X26c 0.521 and X63-C 0.517, 4,000 games each), short of the +1.0 pp screen; σ̂_CC = 0 (the controls differ by 0.43 pp, inside binomial noise); Stage B does not fire, s6302 is a speculative replicate not read for any decision**
   - `L30400` · `2026-11-01` · MEASUREMENT · The deviation-only live read: STOP — S′'s departures from P\* do not beat P\*'s choice against the real Kakuna on U at ≈ 1,800 departures
+  - `L30471` · `2026-11-03` · MEASUREMENT · **X59-S's ≥ 1500 follow-up: rating NOT-RESOLVED (S-H≥1500 − S-H-mix +1.33 pp [−2.76, +5.43]), and ≥ 1500 human data still teaches a fresh student less than our self-play data at the same volume (S-H≥1500 − S-S cut −4.42 pp [−6.07, −2.76], SELF-PLAY-DATA-BETTER); in-house only, routes nothing alone**

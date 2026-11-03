@@ -1,0 +1,251 @@
+{
+ "cells": {
+  "data_5901_forum72": {
+   "opponent": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_scut_5901/model/student_selfplay_cut_5901.zip",
+   "pairs": 200,
+   "player": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_h1500_5901/model/student_human_1500_5901.zip",
+   "regime_id": "0c972bc06eab468f",
+   "score": 0.43
+  },
+  "data_5901_heldout72_hpfix": {
+   "opponent": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_scut_5901/model/student_selfplay_cut_5901.zip",
+   "pairs": 200,
+   "player": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_h1500_5901/model/student_human_1500_5901.zip",
+   "regime_id": "04c74bb478c5f351",
+   "score": 0.4425
+  },
+  "data_5901_p72": {
+   "opponent": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_scut_5901/model/student_selfplay_cut_5901.zip",
+   "pairs": 200,
+   "player": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_h1500_5901/model/student_human_1500_5901.zip",
+   "regime_id": "88f0de6fbb7e15a9",
+   "score": 0.46
+  },
+  "data_5902_forum72": {
+   "opponent": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_scut_5902/model/student_selfplay_cut_5902.zip",
+   "pairs": 200,
+   "player": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_h1500_5902/model/student_human_1500_5902.zip",
+   "regime_id": "0c972bc06eab468f",
+   "score": 0.42875
+  },
+  "data_5902_heldout72_hpfix": {
+   "opponent": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_scut_5902/model/student_selfplay_cut_5902.zip",
+   "pairs": 200,
+   "player": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_h1500_5902/model/student_human_1500_5902.zip",
+   "regime_id": "04c74bb478c5f351",
+   "score": 0.4525
+  },
+  "data_5902_p72": {
+   "opponent": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_scut_5902/model/student_selfplay_cut_5902.zip",
+   "pairs": 200,
+   "player": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_h1500_5902/model/student_human_1500_5902.zip",
+   "regime_id": "88f0de6fbb7e15a9",
+   "score": 0.465
+  },
+  "data_5903_forum72": {
+   "opponent": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_scut_5903/model/student_selfplay_cut_5903.zip",
+   "pairs": 200,
+   "player": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_h1500_5903/model/student_human_1500_5903.zip",
+   "regime_id": "0c972bc06eab468f",
+   "score": 0.44625
+  },
+  "data_5903_heldout72_hpfix": {
+   "opponent": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_scut_5903/model/student_selfplay_cut_5903.zip",
+   "pairs": 200,
+   "player": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_h1500_5903/model/student_human_1500_5903.zip",
+   "regime_id": "04c74bb478c5f351",
+   "score": 0.47
+  },
+  "data_5903_p72": {
+   "opponent": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_scut_5903/model/student_selfplay_cut_5903.zip",
+   "pairs": 200,
+   "player": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_h1500_5903/model/student_human_1500_5903.zip",
+   "regime_id": "88f0de6fbb7e15a9",
+   "score": 0.51875
+  },
+  "data_5904_forum72": {
+   "opponent": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_scut_5904/model/student_selfplay_cut_5904.zip",
+   "pairs": 200,
+   "player": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_h1500_5904/model/student_human_1500_5904.zip",
+   "regime_id": "0c972bc06eab468f",
+   "score": 0.48
+  },
+  "data_5904_heldout72_hpfix": {
+   "opponent": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_scut_5904/model/student_selfplay_cut_5904.zip",
+   "pairs": 200,
+   "player": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_h1500_5904/model/student_human_1500_5904.zip",
+   "regime_id": "04c74bb478c5f351",
+   "score": 0.44125
+  },
+  "data_5904_p72": {
+   "opponent": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_scut_5904/model/student_selfplay_cut_5904.zip",
+   "pairs": 200,
+   "player": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_h1500_5904/model/student_human_1500_5904.zip",
+   "regime_id": "88f0de6fbb7e15a9",
+   "score": 0.43375
+  },
+  "data_5905_forum72": {
+   "opponent": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_scut_5905/model/student_selfplay_cut_5905.zip",
+   "pairs": 200,
+   "player": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_h1500_5905/model/student_human_1500_5905.zip",
+   "regime_id": "0c972bc06eab468f",
+   "score": 0.43875
+  },
+  "data_5905_heldout72_hpfix": {
+   "opponent": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_scut_5905/model/student_selfplay_cut_5905.zip",
+   "pairs": 200,
+   "player": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_h1500_5905/model/student_human_1500_5905.zip",
+   "regime_id": "04c74bb478c5f351",
+   "score": 0.4725
+  },
+  "data_5905_p72": {
+   "opponent": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_scut_5905/model/student_selfplay_cut_5905.zip",
+   "pairs": 200,
+   "player": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_h1500_5905/model/student_human_1500_5905.zip",
+   "regime_id": "88f0de6fbb7e15a9",
+   "score": 0.4575
+  },
+  "rating_5901_forum72": {
+   "opponent": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_hmix_5901/model/student_human_mix_5901.zip",
+   "pairs": 200,
+   "player": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_h1500_5901/model/student_human_1500_5901.zip",
+   "regime_id": "0c972bc06eab468f",
+   "score": 0.50125
+  },
+  "rating_5901_heldout72_hpfix": {
+   "opponent": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_hmix_5901/model/student_human_mix_5901.zip",
+   "pairs": 200,
+   "player": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_h1500_5901/model/student_human_1500_5901.zip",
+   "regime_id": "04c74bb478c5f351",
+   "score": 0.54375
+  },
+  "rating_5901_p72": {
+   "opponent": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_hmix_5901/model/student_human_mix_5901.zip",
+   "pairs": 200,
+   "player": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_h1500_5901/model/student_human_1500_5901.zip",
+   "regime_id": "88f0de6fbb7e15a9",
+   "score": 0.50625
+  },
+  "rating_5902_forum72": {
+   "opponent": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_hmix_5902/model/student_human_mix_5902.zip",
+   "pairs": 200,
+   "player": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_h1500_5902/model/student_human_1500_5902.zip",
+   "regime_id": "0c972bc06eab468f",
+   "score": 0.5225
+  },
+  "rating_5902_heldout72_hpfix": {
+   "opponent": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_hmix_5902/model/student_human_mix_5902.zip",
+   "pairs": 200,
+   "player": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_h1500_5902/model/student_human_1500_5902.zip",
+   "regime_id": "04c74bb478c5f351",
+   "score": 0.55375
+  },
+  "rating_5902_p72": {
+   "opponent": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_hmix_5902/model/student_human_mix_5902.zip",
+   "pairs": 200,
+   "player": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_h1500_5902/model/student_human_1500_5902.zip",
+   "regime_id": "88f0de6fbb7e15a9",
+   "score": 0.52375
+  },
+  "rating_5903_forum72": {
+   "opponent": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_hmix_5903/model/student_human_mix_5903.zip",
+   "pairs": 200,
+   "player": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_h1500_5903/model/student_human_1500_5903.zip",
+   "regime_id": "0c972bc06eab468f",
+   "score": 0.5775
+  },
+  "rating_5903_heldout72_hpfix": {
+   "opponent": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_hmix_5903/model/student_human_mix_5903.zip",
+   "pairs": 200,
+   "player": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_h1500_5903/model/student_human_1500_5903.zip",
+   "regime_id": "04c74bb478c5f351",
+   "score": 0.53125
+  },
+  "rating_5903_p72": {
+   "opponent": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_hmix_5903/model/student_human_mix_5903.zip",
+   "pairs": 200,
+   "player": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_h1500_5903/model/student_human_1500_5903.zip",
+   "regime_id": "88f0de6fbb7e15a9",
+   "score": 0.5575
+  },
+  "rating_5904_forum72": {
+   "opponent": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_hmix_5904/model/student_human_mix_5904.zip",
+   "pairs": 200,
+   "player": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_h1500_5904/model/student_human_1500_5904.zip",
+   "regime_id": "0c972bc06eab468f",
+   "score": 0.5125
+  },
+  "rating_5904_heldout72_hpfix": {
+   "opponent": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_hmix_5904/model/student_human_mix_5904.zip",
+   "pairs": 200,
+   "player": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_h1500_5904/model/student_human_1500_5904.zip",
+   "regime_id": "04c74bb478c5f351",
+   "score": 0.46125
+  },
+  "rating_5904_p72": {
+   "opponent": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_hmix_5904/model/student_human_mix_5904.zip",
+   "pairs": 200,
+   "player": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_h1500_5904/model/student_human_1500_5904.zip",
+   "regime_id": "88f0de6fbb7e15a9",
+   "score": 0.4725
+  },
+  "rating_5905_forum72": {
+   "opponent": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_hmix_5905/model/student_human_mix_5905.zip",
+   "pairs": 200,
+   "player": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_h1500_5905/model/student_human_1500_5905.zip",
+   "regime_id": "0c972bc06eab468f",
+   "score": 0.52
+  },
+  "rating_5905_heldout72_hpfix": {
+   "opponent": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_hmix_5905/model/student_human_mix_5905.zip",
+   "pairs": 200,
+   "player": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_h1500_5905/model/student_human_1500_5905.zip",
+   "regime_id": "04c74bb478c5f351",
+   "score": 0.45
+  },
+  "rating_5905_p72": {
+   "opponent": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_hmix_5905/model/student_human_mix_5905.zip",
+   "pairs": 200,
+   "player": "/home/goodlad/gen3ai_archive/x59s/followup_1500/read/students/s_h1500_5905/model/student_human_1500_5905.zip",
+   "regime_id": "88f0de6fbb7e15a9",
+   "score": 0.46625
+  }
+ },
+ "classes": {
+  "data": {
+   "class": "SELF-PLAY-DATA-BETTER",
+   "delta": -0.04416666666666663,
+   "hi": -0.027623276759390723,
+   "lo": -0.060710056573942545
+  },
+  "rating": {
+   "class": "NOT-RESOLVED",
+   "delta": 0.013333333333333308,
+   "hi": 0.05431595269057471,
+   "lo": -0.027649286023908093
+  }
+ },
+ "core_stamps": [
+  "env=95b45f104119bdb2/129"
+ ],
+ "pairs": 200,
+ "rates": {
+  "data": [
+   0.44416666666666665,
+   0.44875000000000004,
+   0.47833333333333333,
+   0.45166666666666666,
+   0.45625
+  ],
+  "rating": [
+   0.5170833333333333,
+   0.5333333333333333,
+   0.5554166666666668,
+   0.48208333333333325,
+   0.47875
+  ]
+ },
+ "schema": "gen3_x59s_fu1500_inhouse_v1",
+ "short": [],
+ "tree_commit": "08271d24536720fe5f8149b8814f03a57a3ba894"
+}
