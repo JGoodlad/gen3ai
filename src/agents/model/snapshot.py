@@ -1248,7 +1248,26 @@ def sanitize_dead_extractor_kwargs(fek: dict) -> bool:
         if dead in fek:
             fek.pop(dead)
             changed = True
-    return changed
+    return sanitize_future_ffn_width(fek) or changed
+
+
+def sanitize_future_ffn_width(fek: dict) -> bool:
+    """X59-S PIN BRANCH ONLY (x59s-pin-a8, PREREG Amendment 8): a checkpoint saved AFTER this pin (config v164,
+    main's `c35ffab9e`, B-FFNW) pickles ``trunk_ffn_dim``, which this code's extractor does not take. Main builds
+    NOTHING for the base width (``TRANSFORMER_FFN_DIM`` = 256: no width branch, the same state_dict), so 256 pops
+    and the network this code builds is the saved one (a strict state_dict load checks the keys; Amendment 8's
+    identity check the logits, bit for bit). Any other width is REFUSED: this code cannot build its branch."""
+    from agents.model.arch_constants import TRANSFORMER_FFN_DIM
+
+    if "trunk_ffn_dim" not in fek:
+        return False
+    width = fek["trunk_ffn_dim"]
+    if isinstance(width, bool) or not isinstance(width, int) or width != TRANSFORMER_FFN_DIM:
+        raise ModelVersionError(
+            f"trunk_ffn_dim={width!r} is refused at this pin: it reads only a {TRANSFORMER_FFN_DIM}-wide trunk FFN "
+            "(B-FFNW's base width, which builds no branch).")
+    fek.pop("trunk_ffn_dim")
+    return True
 
 
 def sanitize_dead_policy_kwargs(pk: dict) -> bool:

@@ -581,6 +581,16 @@ def _migrate_config(data: dict) -> dict:
     # unchanged), so every past config stamps through.
     if version < 162:
         data["config_version"] = 162
+    # X59-S PIN BRANCH ONLY (x59s-pin-a8, PREREG Amendment 8): a config saved AFTER this pin (v163 gen3_hp_foresight_v1:
+    # no field, a Rust encode fix this pin's engine does not carry; v164 B-FFNW: `trunk_ffn_dim`) reads here as the
+    # forward this code builds — the config twin of `snapshot.sanitize_future_ffn_width` (256 pops, any other width is
+    # REFUSED). The recorded config_version is kept as saved; what a cell plays with is this pin's engine and encoder.
+    if "trunk_ffn_dim" in data:
+        width = data["trunk_ffn_dim"]
+        if isinstance(width, bool) or not isinstance(width, int) or width != 256:
+            raise ModelVersionError(f"trunk_ffn_dim={width!r} is refused at this pin: it reads only the 256-wide trunk "
+                                    "FFN (B-FFNW's base width, which builds no branch).")
+        data.pop("trunk_ffn_dim")
     #
     # ---- v97–v120 MIGRATION HISTORY — documentation, not code (floored away at v121) ---------
     # gen3_event_record_v2 (the observation-architecture batch: the E12 event-row reshape, the E4
