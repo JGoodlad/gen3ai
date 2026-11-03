@@ -1,0 +1,25 @@
+{
+ "ceilings": {
+  "judged_max": 0.001,
+  "p99": 0.0001
+ },
+ "fires": [],
+ "fork_step": 290000087,
+ "max_after_fork": {
+  "judged_max": 0.00010538101196289062,
+  "p99": 1.9330978830112144e-05
+ },
+ "near_ceiling": [],
+ "overlap": false,
+ "overlap_evidence": [],
+ "read_at": "2026-11-03T20:45:20+00:00",
+ "reasons": [],
+ "required_family": "behaviour",
+ "rows_after_fork": {
+  "judged_max": 712,
+  "p99": 712
+ },
+ "run": "rb_x35t_n4ffn_s3642",
+ "schema": "x35_k9b_arm_end_v1",
+ "verdict": "PASS"
+}
