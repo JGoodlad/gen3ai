@@ -428,6 +428,39 @@ nice -n 19 taskset -c 5-7,13-15 scripts/ops/mem_cap.sh 8 "$PY" "${RESCORE[@]}" -
 - **The order:** the orchestrator's queue. The read takes both heavy slots for days (§8), so it runs when the
   queue's higher reads allow, or on the rental under its amendment.
 
+### Amendment AM-K6 to §12 (2026-11-04, BLIND: mid-read, no outcome read)
+
+Written by the read's operator on the orchestrator's order, before any game result was read (1,402 of 2,700 searched
+units counted). It changes wall-clock only: no unit, seed, deal, attempt bound, engine, pin, timeout, guard or rule.
+
+- **The change.** From resume life 4, the anchor lane runs at **`--concurrency 6`**, with `GEN3AI_HEAVY_SLOTS=6`
+  set in that supervisor's environment only (`anchor_pool.slot_cap` caps K at the slot count). The box-wide default
+  stays 2. The pinned code still places every unit on `nice -n 19 taskset -c 5-7,13-15` under `mem_cap.sh` with
+  `OMP_NUM_THREADS=1`, so six units fill both hyperthreads of 3 physical cores.
+- **What other agents see.** The read's units inherit `GEN3AI_HEAVY_SLOTS=6`, so while slots are wanted (a lease
+  held or a run live) they take up to six slot files. Another agent's `mem_cap` job keeps N = 2 and waits FIFO
+  behind any read unit holding slot 0 or 1.
+- **The justification (measured on 870 unit scopes since life 3 started, from the systemd journal).**
+  - Searched units (451): peak memory 2.3 GB median, 3.2 GB maximum, for the whole process tree (our python, Kakuna's
+    python, `sim_bridge`, node and the `core_events` children). Raw units (419): about 2.2 GB.
+  - About one core per unit: mean CPU time over wall time 1.02 (maximum 1.05) for searched units, 1.05 for raw.
+  - Six units at the 3.2 GB maximum are about 19 GB, under half of the box's 80 GB available.
+  - The searched watchdog is 10 h (`timeout` 36,600 s). The longest searched unit took 146 min, while a training run
+    was live; at an assumed ≈ 1.6× hyperthread slowdown that is ≈ 4 h, inside the bound. The raw short lane's 600 s
+    bound has a 1.5-min maximum. A timeout is never a semantic outcome.
+- **The revert clause.** The moment a training run goes live, or the orchestrator says so, the next life returns to
+  `--concurrency 2` with default slots (rule 5b's ≤ 2 heavy jobs beside a live run stands). The operator holds the
+  lane, waits for the units in flight to drain, and resumes at K = 2.
+- **Considered and rejected: K = 8 on cores 1-7,9-15.** `src/main/x35/kakuna.py` hard-codes `CORES = "5-7,13-15"`
+  in every unit's command, and that file is on the play path (`main.reads.playpath`). Changing it would need a new
+  commit that `repin` refuses unless the play path is byte-identical, so it is a play-path change, outside a
+  wall-clock amendment.
+- **How a life is launched (from life 3).** The supervisor runs as a transient `systemd-run --user` service whose
+  script checks `engine_stamp()` against E4 before `exec`ing `main.reads resume`
+  (`<state>/ops/life<n>.sh`). It lives in its own cgroup, outside any agent session. Lives 1 and 2 were killed by the
+  11-03 reboot and by an orchestrator-session restart. Both left their units in flight uncounted, with no failed
+  attempt (`main.reads.attempts`), and `resume` set each cut-off cell aside as `.partial.<epoch>` before replaying it.
+
 ## 13. The build's smoke (before this PREREG; outside the read)
 
 Run on this build's tree (a detached snapshot of it, bootstrapped `--with-rust`, stamping E4), CPU only, through
