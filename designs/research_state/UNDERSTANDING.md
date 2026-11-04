@@ -101,7 +101,7 @@ under `measurements/`. A number with no pointer is not a measurement.
    [−0.92, +5.11], UNDECIDED (final), at −1.61 pp in-pool; set mutation (D3, final, every game on one engine) +2.33 [−0.69, +5.35],
    UNDECIDED, at −0.45 pp in-pool; the belief prior mix ±1.50, NOT DETECTED; plain training FLAT. [Kakuna · `42bb0858d`,
    `eb99ab362`, D3's look-2 record, `f299a7243`, `71c76dfbb`, `204204bbf`] Breadth at 10⁴ procedural teams (N1-P) reads NULL
-   (final): F +0.55 [−1.26, +2.36] at −3.28 pp in-pool; a long union continuation (X63 Stage A, +100M at share 0.8 on 17,876 teams) reads NOT PURSUED, F −0.69 [−3.75, +2.37]; human 1300+ data teaches less than our own self-play data, closing nothing (X59-S, item 13); H-CTX says the breadth that matters is breadth of TEAMS (item 4). The plan after them is §6.
+   (final): F +0.55 [−1.26, +2.36] at −3.28 pp in-pool; a long union continuation (X63 Stage A, +100M at share 0.8 on 17,876 teams) reads NOT PURSUED, F −0.69 [−3.75, +2.37]; human 1300+ data teaches less than our own self-play data, closing nothing (X59-S, item 13); growing the network at the plateau gives no in-house gain (depth X47 and FFN width N4 on the toy, per-kind experts X48 in production: §4.13, §4.14); H-CTX says the breadth that matters is breadth of TEAMS (item 4). The plan after them is §6.
 6. **The belief stack memorises the pool, but that is not where games are lost.** On unfamiliar opponents 63–85 %
    of the hidden slots hold the wrong species guess, yet mixing in the Smogon prior (λ = 0.25: U +1.50 pp [−2.74,
    +5.74]) or using the prior alone (λ = 1: −1.50 [−5.47, +2.47]) moves Kakuna games by nothing detectable at ±5 pp.
@@ -416,7 +416,7 @@ On a neutral target (random projections of a fresh network's features) the trunk
 That slow-down is paid by 175M and does not grow across the plateau: 100M 0.576 → P\* 0.598 → 480M 0.602, with C0
 level with P\*. Dormancy, feature rank, weight norm and gradient interference are flat or near-flat from 100M. Only the
 policy MLP's tanh units keep saturating (layer 1: 0.84 → 0.92 of activations at |a| > 0.99). The probe measures
-supervised refitting, not PPO under a team-distribution shift. So the strategy tree takes the capacity branch (X48, N4: §6).
+supervised refitting, not PPO under a team-distribution shift. So the strategy tree took the capacity branch (X48, N4: §6); both read NO-GO (§4.13, §4.14).
 [MEASURED · DESCRIPTIVE · one lineage · `8bebdfe31`, `measurements/plasticity_check_2026-10-26/`; ledger 2026-10-27 ·
 *PLASTICITY CHECK*]
 
@@ -621,10 +621,27 @@ state), then trained 20M steps against C0, re-played on one engine (E1). **NO-GO
   by only 0.72–0.93 of a two-copy chance null (registered ≤ 1). The board, threat and event experts moved
   0.24–0.43× as far as the shared FFN, because the copied second moments throttled them, as its review predicted.
 - The learning rate matched C0's (×1.01).
-- It closes per-kind untying at the same width within 20M, nothing wider: FFN width (N4), `D_MODEL` and from-scratch
-  capacity stay open.
+- It closes per-kind untying at the same width within 20M, nothing wider. FFN width has since read NO-GO on the toy
+  (N4, §4.14); `D_MODEL` and from-scratch capacity stay open.
 
 [MEASURED · S on E1 + Kakuna F (post-H22 pack) · `efe8ea1fa`; ledger 2026-10-30 · *X48 LOOK 1*]
+
+### 4.14 A 4× wider trunk FFN at the toy plateau: no in-house gain; the new units moved only as far as drift (N4, 2026-11-04)
+
+N4 grew every trunk FFN of the toy plateau T\* from 256 to 1,024 hidden units (zero-init outputs, fresh optimizer
+state) and trained 70M steps against a same-pin control C0′, 3 + 3 seeds, every row at one commit. **NO-GO.**
+- In-house: **Δ_S +0.46 pp [−0.28, +1.20]** (90 %), so no ≥ 2 pp gain (and below GO-S's +1.0 pp floor).
+- Against Kakuna on forum72: **Δ_K +0.20 pp [−2.91, +3.31]**, UNDECIDED (seeds overdispersed, φ̂ 2.19). The weak
+  meter, never goal-(b) progress.
+- **"Used, buys nothing", at drift scale.** The new units carry 0.18–0.22 of the FFN output and move the policy
+  (KL 0.08–0.09 when zeroed, rising over the 70M), so the optimizer did use them. But the control's own base FFN drifts
+  as far (scaled null 0.18–0.23) and its 70M drift moves the policy more (KL 0.12–0.14). The battery shows no relief:
+  `team_tokens` rank and the policy head's tanh saturation are at C0′'s level.
+- With X47 (depth) it closes growth at the plateau on the toy within 70M. It is weak evidence about production's width
+  (the toy asks less of the same width), and it does not touch from-scratch width (the scale bet), `D_MODEL` or a
+  longer dose.
+
+[MEASURED · S + Kakuna F (post-H22 pack) on `31bd9ced9`'s engine · `8ed8164ea`; ledger 2026-11-04 · *N4 (the toy capacity screen) LOOK 1*]
 
 ---
 
@@ -661,11 +678,10 @@ retired for the fold-gift question only; they live in the last full text (§0) a
 |---|---|
 | Do human TEAMS help? (rating at fixed slice read NOT-RESOLVED, +1.33 pp [−2.76, +5.43], X59-S's ≥ 1500 follow-up, §4.8) | **X60-T** (H-TEAMS, the registered route now that X59-S closed nothing: Δ_restriction +2.85 [+0.14, +5.56], §4.8) |
 
-**Queued and planned** (the ranked order after REVIEW_2 `69c7cd34d` §6: PR-1′; X48 read NO-GO 2026-10-30, §4.13; X63 read NOT PURSUED 2026-10-31, §3.1)
+**Queued and planned** (the ranked order after REVIEW_2 `69c7cd34d` §6: PR-1′; X48 read NO-GO 2026-10-30, §4.13; N4 read NO-GO 2026-11-04, §4.14; X63 read NOT PURSUED 2026-10-31, §3.1)
 
 | question | the read that answers it |
 |---|---|
-| Does a wider trunk buy strength at the plateau (on the toy)? | **N4**: T\* with every trunk FFN grown 256 → 1,024 against a same-pin C0′, 3 + 3 seeds × 70M (PREREG `8ed8164ea`); the model build landed (`c35ffab9e`), its kit arms have not |
 | Do the breadth levers help by +1–2 pp each, below what one read can see? | **PR-1′**, the zero-GPU precision read re-scoped by [`REVIEW_2.md`](measurements/strategy_review_2026-10-26/REVIEW_2.md): D3 and N1-P against C0 on F (D1 reported only: its F is its own population), 30,000–38,000 new Kakuna games at one post-`b0441623e` pin. Information only; X48's read has landed (2026-10-30), so it can run, or on a rented CPU box |
 | Does training on new sixes of familiar sets close the piloting gap? | **X62** (REVISED DRAFT, `../endstate/design_x62_team_recombination.md`, `58cb02dc6`): its first gate, H-CTX, read SUPPORTED (2026-10-27), so its corpus `x62_recomb_v1` is built (2026-10-29, inside X63's union, which read NOT PURSUED at Stage A); PR-1′ KILL retires the 20M fork; N1-P read NULL, so it is not redundant. Its in-pool cost is a registered price (net = Δ_home72 + r · Δ_U, r = 1) |
 | Does one-ply search on V have headroom on unfamiliar teams (H-MID's open question)? | **S-U** registered (`ffd9a443a`, `../endstate/design_search_u_headroom.md`), stage 0 HELD. Its review (`7aafa527f`, `measurements/su_headroom_2026-10-27/REVIEW.md`): 2 BLOCKERs; where the registered search rule departs from the policy at P\* it picks the better move 0.513 [0.447, 0.580] of the time (0.580 at 25M), so a 10–15 CPU-h sign-accuracy gate came first. **That gate read GO** (2026-10-28, `measurements/su_gate_2026-10-27/`): 0.635 [0.578, 0.687] on U, home72 0.537, but its review (`52f470c21`) put the excess in the TRUE-SEED-LEAK-exposed states (the leak's value, not its exposure, is higher on U). **The leak-reduced re-gate SUPERSEDES it and also reads GO** (`measurements/su_regate_rolls_2026-10-28/`, `dice="rolls"`): 0.599 [0.543, 0.649] (home72 0.551; exposed 0.632, leak-clean 0.564 [0.478, 0.639]). GO is a licence under S's own referee, not a gain. **The deviation-only live read against the real Kakuna then read STOP** (2026-11-01, `measurements/dlive_read_2026-10-28/`): +0.0120 [−0.0155, +0.0388] a departure on U, with the self-referee's own edge on those fresh states only +0.0099. So S-U is not played on S′. The question stays open (a power statement), and no read is queued; V-RANK (`../endstate/design_v_rank_on_u.md`) stays a DRAFT |

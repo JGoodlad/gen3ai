@@ -1,6 +1,6 @@
 # STATUS — where gen3ai stands, on one page
 
-**As of 2026-11-01.** This page is the dashboard: what we are trying to do, where each goal stands, and what is
+**As of 2026-11-04.** This page is the dashboard: what we are trying to do, where each goal stands, and what is
 running. It gives each number, its interval and the commit that proves it. The reasoning behind these numbers is in
 [`research_state/UNDERSTANDING.md`](research_state/UNDERSTANDING.md), the plans are in
 [`endstate/README.md`](endstate/README.md), and the research ledger wins any disagreement. A backticked hex string
@@ -23,7 +23,7 @@ rate. **NOT DETECTED / UNDECIDED** means the interval spans zero, so we cannot t
 
 | # | goal | status | best number [95 % interval] | proof |
 |---|---|---|---|---|
-| 1 | **The strongest baseline** | **AT ITS PLATEAU.** P\* = X26 @ 280M. Training on to 480M changed nothing. Holding the learning rate up (LR-F) did not help in-house: UNDECIDED, final, leaning negative. Per-kind FFN experts (X48) gave no ≥ 2 pp in-house gain: NO-GO, weak (the experts barely moved). | P\* vs the production baseline: 0.694 [0.666, 0.721]. The 480M continuation vs P\* against Kakuna: +0.08 pp [−3.90, +4.06], FLAT. X48 − C0 on S: −0.55 pp [−1.32, +0.21] (90 %, 3 seeds; `x35_breakers_stage_2026-10-17/reads/x48_look1.json`). LR-F − C0 on S: −1.13 pp [−2.45, +0.18] (97.5 %, 3 seeds; `x35_breakers_stage_2026-10-17/reads/lrfloor_look1.json`). | `d172c10ed`, `204204bbf`, `f7fddc39b`, `1355d2d3f`, `b01dc048b` |
+| 1 | **The strongest baseline** | **AT ITS PLATEAU.** P\* = X26 @ 280M. Training on to 480M changed nothing. Holding the learning rate up (LR-F) did not help in-house: UNDECIDED, final, leaning negative. Per-kind FFN experts (X48) gave no ≥ 2 pp in-house gain: NO-GO, weak (the experts barely moved). On the toy, a 4× wider trunk FFN (N4) gave none either: NO-GO. | P\* vs the production baseline: 0.694 [0.666, 0.721]. The 480M continuation vs P\* against Kakuna: +0.08 pp [−3.90, +4.06], FLAT. X48 − C0 on S: −0.55 pp [−1.32, +0.21] (90 %, 3 seeds; `x35_breakers_stage_2026-10-17/reads/x48_look1.json`). LR-F − C0 on S: −1.13 pp [−2.45, +0.18] (97.5 %, 3 seeds; `x35_breakers_stage_2026-10-17/reads/lrfloor_look1.json`). | `d172c10ed`, `204204bbf`, `f7fddc39b`, `1355d2d3f`, `b01dc048b` |
 | 2a | **Beat Metamon on our teams** | **MET.** | P\* vs Kakuna on home72: **0.598 [0.549, 0.644]** | `3010c81ba` |
 | 2b | **Beat Metamon on unfamiliar teams** | **NOT MET**, about 4 pp short. The lower bound must clear 0.50, which needs about 0.53. | P\* 0.487 [0.459, 0.515] (its forum72 third under Kakuna's legacy pack, below). No lever's interval clears 0.50. Highest point estimates, each against its own control and none detected: the belief prior mix (λ = 0.25) 0.502, D1 0.492, D3 0.494 (final, UNDECIDED). N1-P (look 2, final: NULL) 0.500 is M4-hazarded (its corpus overlaps H and P72) and is not read as goal (b); on F it reads +0.55 pp [−1.26, +2.36] over C0. Human data is no lever so far: a student on 1300+ human rows plays U 7.28 pp [4.28, 10.29] worse against Kakuna than one on P\*'s self-play rows (X59-S, `c1d2d7fcb`); that closes nothing (`5bbba6096`), and the ≥ 1500 follow-up reads SELF-PLAY-DATA-BETTER too (−4.42 pp [−6.07, −2.76] in-house), with rating NOT-RESOLVED (`71ef78a79`, §2). | `3010c81ba`, `f299a7243`, `eb99ab362`, `25a736170`, `62e46874a`, `c1d2d7fcb`, `5bbba6096` |
 | 3 | **Know where we are** | **MAPPED.** The deficit is **piloting** an unfamiliar team, not facing one. In-house meters cannot see it; only Kakuna games can. Nothing measurable is lost in the opening; the gap shows from level positions after turn 10 (descriptive). It does not go with the SETS (H-CTX SUPPORTED): on new sixes of familiar pool sets P\* scores 0.514, below F's 0.540 and 10 pp under home72 on the same engine; the sets keep at most about a fifth of the premium. Why the six matters (memorised sixes, broken cores, no plan) is open (`hctx_rc72_2026-10-26/REVIEW.md` M1). Under a neutral pilot (Kakuna on both sides) rc72b is only about 4 pp weaker, flat across coherence (`hctx_kk_2026-10-27`), so the premium stays mostly team-level. P\*'s own critic does not see it (H-MID: CRITIC-MISCALIBRATED-ON-U), as a self-play critic cannot (REVIEW M1). | Piloting deficit, strength-corrected (X26 @161M, PROVISIONAL, resting on the unverified assumption A-K): +0.123 [+0.039, +0.206], facing +0.017 [−0.062, +0.095]; their difference +0.106 [−0.009, +0.221] is UNDECIDED. P\* is level with Metamon's ensemble on unfamiliar teams, ahead of it on home72, and beats every human-only Metamon model (§5). | `8b43eb44a`, `82858f433`, `c758fcb82`, `905c29f5b`, `f200258f6`, `90708bff5`, `82f273eff`, `df35d1bb0` |
@@ -42,15 +42,15 @@ X26c's and every X35 arm's training (0.13–0.38 % of team draws), and our side'
 The arm-vs-C0 bias is ≤ 0.2 pp, and no verdict moves (the ledger's 10-27 pack-regime AUDIT,
 [`x35_pack_regime_2026-10-27/`](research_state/measurements/x35_pack_regime_2026-10-27/README.md)).
 
-## 2. Running now (as of 2026-11-03)
+## 2. Running now (as of 2026-11-04)
 
-Read at 12:15 PST on 2026-11-03 from `python -m main.ops.arm_chain status` (each chain file under
-`~/.claude/jobs/x35/chains/`) and `scripts/ops/mem_cap.sh --status`. Only the GPU chains and X59-S's lane were
-re-read on 11-03; nothing else here was re-checked.
+Read at 03:20 PST on 2026-11-04 from `python -m main.ops.arm_chain status` (each chain file under
+`~/.claude/jobs/x35/chains/`), `nvidia-smi` and `scripts/ops/mem_cap.sh --status`. Only the GPU and the N4 chain
+were re-read on 11-04; nothing else here was re-checked.
 
 | where | job | what decision it drives |
 |---|---|---|
-| GPU: RUNNING (chain `n4-toy-2026-11-03`) | **The N4 toy** (kit arms at `N4_PIN` `1553f8bd8`, AM-N4-PIN): `rb_x35t_n4ffn_s3642` training; `rb_x35t_c0n4_s3642`, `rb_x35t_c0n4_s3643` and `rb_x35t_n4ffn_s3643` pending. The 10-31 chain's `n4ffn_s3642` is `DONE_FAILED` and its supervisor is dead. This chain re-runs that arm. | N4's screen (§3 item 1). |
+| GPU: IDLE (11-04 03:19) | The N4 chain `n4-toy-2026-11-03` is DONE: all four re-run arms trained and recorded (K9(b) PASS + dose); its supervisor exited 0 at 01:13. | N4 read NO-GO (below). |
 | GPU: not read | **X63-U s6302** (Stage B's speculative seed) is `DONE_FAILED` in its chain (`x63u-stageb-spec-oct30`, 10-31 00:02). Stage A read NOT PURSUED, so it would not have been read for any decision anyway. | None. |
 | CPU: RUNNING (heavy slots) | **S′-LIVE's play** (`main.anchors` from the pin tree `sprime_live_0c76b521e`, registered `9c2f023e4`). | Search's route to goal (b). |
 
@@ -58,6 +58,7 @@ re-read on 11-03; nothing else here was re-checked.
 
 | when | job | result | what it decided |
 |---|---|---|---|
+| CPU 11-04 03:14 PST | **N4 look 1**, the toy capacity screen (T\* with every trunk FFN grown 256 → 1,024, +70M, against a same-pin C0′; 3 + 3 seeds; PREREG `8ed8164ea`, AM-N4-FIXES `801a96d0e`, NOTE 2 `6aa46f9e0`): **NO-GO.** In-house **+0.46 pp [−0.28, +1.20]** (90 %; S at 2,000 pairs per cell); Kakuna on forum72 **+0.20 pp [−2.91, +3.31]**, UNDECIDED (N4 0.431 vs C0′ 0.429, 3,000 games each). The new units were used, at about the scale of ordinary 70M drift (registered reading "used, buys nothing"). Every registered check PASS; every row at `31bd9ced9`. Survived a GPU fault (11-01) and a box reboot (11-03): the four remaining arms re-ran under the same names and pin. README `research_state/measurements/n4_capacity_screen_2026-10-27/`. | Closes growth at the plateau on the toy within 70M (depth X47, FFN width N4). | No N4-P on toy evidence; the scale bet loses its cheap support (not refuted). |
 | CPU 11-03 11:59 PST | **X59-S's ≥ 1500 follow-up** (in-house only; 15 fresh students at 270,260 rows each; 30 cells of 200 pairs on the read's one engine, played from the pin tag x59s-play-08271d24 (a commit off main) under Amendment 8 because the registered pin could not load the v164 students; `71ef78a79`). **Rating: NOT-RESOLVED**, S-H≥1500 − S-H-mix **+1.33 pp [−2.76, +5.43]**. **Data: SELF-PLAY-DATA-BETTER**, S-H≥1500 − S-S cut **−4.42 pp [−6.07, −2.76]**. Read as rating at a fixed slice and volume: the same panel-excluded, forfeit-heavy slice, with concentrated accounts and shared rows. | Higher-rated human rows still teach a fresh network less than our self-play rows, and the rating effect is unresolved. | Routes nothing alone; human data's closure stays blocked (Δ_restriction), H-TEAMS (X60-T) stays first. |
 | CPU 11-01 08:09 PST | **The deviation-only live read: STOP.** At 1,793 departures of the search S′ (`r0s4_rolls@10`) from P\* on unfamiliar teams, S′'s pick was forced in a replay of the game against the real Kakuna. It won **+1.20 pp [−1.55, +3.88]** a departure more than the game as played (H +4.2, F +0.5, p72 −1.1; home72 +2.7 [−4.0, +9.6], reported). The self-referee's own edge on the same fresh departures is +0.99 pp, against +3.4 on the gate's states. Every registered check passes: one engine, 135 / 135 null replays identical, 9 / 2,100 branches dropped. All 9 drops are Kakuna replay divergences, made drops instead of a VOID by the blind AM-DL-PEER (`e40d9663c`, `276c5b7e6`). 36.6 CPU-h. README `measurements/dlive_read_2026-10-28/README.md`. | Search stays paused for goal (b). | No amended S-U on S′. |
 | CPU 10-31 16:12 | **X63 Stage A: NOT PURSUED.** X63-U s2601 (X26@380M + 100M, 80 % of teams from the 17,876-team union) against X26c and X63-C on forum72 vs Kakuna: Δ_F **−0.69 pp [−3.75, +2.37]** (X63-U 0.512, X26c 0.521, X63-C 0.517; 4,000 games each), short of the +1.0 pp screen; home72 −1.05 [−4.62, +2.52] (reported). σ̂_CC = 0: the two controls differ by 0.43 pp, inside binomial noise. 18,000 games on ONE engine (E1) at the play pin 65b998da (tag x63-play-65b998da); every registered check PASS. Record `measurements/x63_2026-10-29/reads/stageA.json`. | The union continuation at share 0.8 gives no ≥ +1 pp F gain at one seed; a true +3 pp is outside the interval. It claims nothing for the era. | **Stage B does not fire**; s6302 is not read. P(NOT PURSUED) at a true +2 / +3 pp was 0.149 / 0.020 (σ = 0 row). |
@@ -72,7 +73,7 @@ re-read on 11-03; nothing else here was re-checked.
 
 The orchestrator's order after REVIEW_2 of the all-null strategy (`69c7cd34d`), with the verdicts since 10-27 applied. Every item needs its GO.
 
-1. **X48**, production capacity at the plateau: READ 10-30, **NO-GO** (weak, "experts not engaged"; `b01dc048b`, §2). The orchestrator chose the N4 toy (10-31). It is launch-ready (kit arms at `N4_PIN` `1553f8bd8`, PREREG AM-N4-PIN); its chain is an unarmed draft.
+1. **Capacity at the plateau: CLOSED for growth.** X48 (production, per-kind FFN experts) READ 10-30, **NO-GO** (weak, `b01dc048b`); the N4 toy (FFN width 4×) READ 11-04, **NO-GO** ("used, buys nothing", §2). No N4-P on toy evidence; `D_MODEL` and from-scratch width (the scale bet) stay open, unqueued.
 2. **X63**, a long union continuation: **Stage A read NOT PURSUED (10-31)**, so X63 stops at Stage A
    ([`endstate/design_x63_long_breadth_continuation.md`](endstate/design_x63_long_breadth_continuation.md), PREREG
    [`x63_2026-10-29/`](research_state/measurements/x63_2026-10-29/PREREG.md), read
@@ -196,8 +197,8 @@ Every open owner question, in one place.
 3. **The plateau may be the recipe, not the ceiling.** Plain training is FLAT and the population levers are NULL,
    yet a best responder still finds +11 pp. Search does not pay at P\*, and the plateau trunk has not lost its
    plasticity. Holding the learning rate up did not help (LR-F, UNDECIDED final, −1.13 pp [−2.45, +0.18]), and per-kind FFN
-   experts gave no ≥ 2 pp in-house gain (X48 NO-GO, weak: the experts barely moved). N4 (FFN width) is the next test
-   of whether P\* is the most this architecture can reach.
+   experts gave no ≥ 2 pp in-house gain (X48 NO-GO, weak: the experts barely moved). On the toy a 4× wider trunk FFN
+   gave none either (N4 NO-GO, +0.46 pp [−0.28, +1.20]): growing the network at the plateau does not move it.
 4. **The X35 family trains under the legacy packer.** `f4b25238` and its corpus-only pins predate `d8d674b99` and
    launch without the pack oracle, so a new corpus can bring Frustration sets that play at base power 1, unseen.
    Forks against a banked `f4b25238` control stay on that family, but only if the PREREG records the corpus's

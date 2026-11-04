@@ -1,17 +1,16 @@
 # N4: the toy capacity screen. Is the network too small to escape the plateau?
 
-**Status: REGISTERED, LAUNCH-READY for training (2026-10-31); nothing is launched or armed.** The registration is
-[`../research_state/measurements/n4_capacity_screen_2026-10-27/PREREG.md`](../research_state/measurements/n4_capacity_screen_2026-10-27/PREREG.md).
-- **Built:** T69's model side (`c35ffab9e`), the `n4_screen` rule (`a05a0ca2c`) and the kit arms (`toy_c0n4` /
-  `toy_n4ffn`).
-- **The training pin:** `N4_PIN` = `1553f8bd8` (AMENDMENT AM-N4-PIN).
-- **Read-side tools: BUILT (2026-10-31).** The S lane's grouping by architecture (`86b12d0e7`), the width descriptor
-  readers with the M1 nulls, and the battery on a wide trunk (`5e07715ae`). The read's commit
-  `31bd9ced9` and `read_spec.json` are registered (PREREG NOTE 2). The read is ready to start as the finals
-  settle.
-- **The rule as amended (AM-N4-FIXES, 2026-10-31):** the REVIEW's M2 (MIXED), M3 (2,000 pairs), m3 (GO-S needs
-  Δ̂_S ≥ +1.0 pp) and M5 (the "within 70M" NO-GO wording) are adopted. The family false GO is 0.048–0.068 at the
-  planning σ (§4.3).
+**Status: READ, NO-GO (2026-11-04); look 1 is the only look (PREREG §5.4).** A 4× wider trunk FFN at T\* gives no
+≥ 2 pp in-house gain within 70M: Δ_S +0.46 pp [−0.28, +1.20] (Welch 90 %); against Kakuna on forum72 Δ_K +0.20 pp
+[−2.91, +3.31], UNDECIDED. The mechanism read is §5's row "used, buys nothing", with the M1 nulls' qualifier: the new
+units moved the policy less than C0′'s ordinary 70M drift does. §6.2's NO-GO row applies: the capacity branch is
+closed for growth at the plateau on the toy, no N4-P on toy evidence. The read:
+[`../research_state/measurements/n4_capacity_screen_2026-10-27/README.md`](../research_state/measurements/n4_capacity_screen_2026-10-27/README.md);
+the registration: [`PREREG.md`](../research_state/measurements/n4_capacity_screen_2026-10-27/PREREG.md) (AM-N4-PIN,
+AM-N4-FIXES, NOTE 2).
+- **Trained:** all six forks at `N4_PIN` `1553f8bd8`, chains `n4-toy-2026-10-31` and (after a GPU fault, 11-01)
+  `n4-toy-2026-11-03`; ρ = 1.10 (the design guessed 1.2).
+- **Read:** every row at `31bd9ced9`, spec `read_spec.json` (NOTE 2), recorded by `main.reads record`.
 
 This doc makes runnable the capacity branch of
 [`strategy_if_levers_null_2026-10-26.md`](strategy_if_levers_null_2026-10-26.md) §4 (T3). The plasticity check
@@ -570,3 +569,4 @@ test. On the strategy memo's routing, N4 (toy) or N4-P-direct was the orchestrat
 | 2026-10-27 | **The read rule `n4_screen` BUILT before T69** (for X48, which registered under N4's screen) | one rule for both reads, the differences as spec params (`near_scope`, `mixed_veto`, `nogo_scope`, the S group's `pairs`) | two copies of the screen | `rules_n4_screen_test.py`; X48 `read_spec.draft.json` passes `check-spec --pin-pending` |
 | 2026-10-31 | **LAUNCH-READY for training** (N4 launch-readiness unit, orchestrator brief; CPU only) | the kit arms at ONE whole-commit pin `N4_PIN` = `1553f8bd8`, checked by `n4_pin_check`. The read's pin and S driver are fixed by a NOTE before any read game. The GPU smoke is folded into the chain's banner guards. An unarmed chain draft (PREREG AMENDMENT AM-N4-PIN) | a "side pin + one commit" own pin (no clean commit exists, §3.2); waiting for the descriptor readers before pinning (they never touch training); a separate GPU smoke (no lease) | `checkargs` / `--dry-run` / kit checks on both argvs; a grown toy's `main.h2h` + `main.anchors` smoke; the draft's `arm_chain plan` |
 | 2026-10-31 | **The width descriptor readers BUILT** (N4 read-side sub-agent; CPU only) | `x47 norms` / `policy-diff` dispatch on the run's declared growth, through a `zero_new` hook on each `GROWABLE` row and a norm reader per field; an unhandled or absent growth is REFUSED (exit 2); `x47 width-null` for REVIEW M1's E1 / E2 nulls | inferring the growth from the state dict (a plain wide build would read as grown); a reader per experiment | `x47_width_test.py` (bit-identical zeroed twin, E1 = 0 on a fresh grown toy, the refusals, the nulls by hand); the readers on an offline-grown T\* and the banked toy C0 s3601 (§5) |
+| 2026-11-04 | **N4 LOOK 1 READ: NO-GO** (N4 read operator, orchestrator brief; CPU, 144,000 in-house S games + 6,000 Kakuna games at `31bd9ced9`, + 9,000 G-F games) | the registered class, "used, buys nothing" at drift scale (E1 0.18–0.22 vs C0′'s null 0.18–0.23; E2 KL 0.08–0.09 vs null 0.12–0.14); §6.2's NO-GO row: the toy capacity branch closed for growth at the plateau, no N4-P | a look 2 (§5.4: only as a new registration); reading E1 "engaged" alone as a capacity signal (the M1 nulls say it is drift-sized) | the README; record `x35_breakers_stage_2026-10-17/reads/toy_n4ffn_look1.json`; `reported_lines.json`; ledger 2026-11-04 |

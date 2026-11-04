@@ -30529,3 +30529,74 @@ follow-up", PREREG Amendments 7–8, `results/fu1500_inhouse.json`, `results/fu1
 state `~/gen3ai_archive/x59s/followup_1500/`.
 
 Tag: **MEASUREMENT · X59-S ≥ 1500 follow-up · rating NOT-RESOLVED +1.33 [−2.76, +5.43] · data SELF-PLAY-DATA-BETTER −4.42 [−6.07, −2.76] · in-house**
+
+### 2026-11-04 · MEASUREMENT · **N4 (the toy capacity screen) LOOK 1 reads NO-GO: widening every trunk FFN 256 → 1,024 at the toy plateau T\* and training 70M gives no ≥ 2 pp in-house gain (Δ_S +0.46 pp [−0.28, +1.20], Welch 90 %); against Kakuna on forum72 Δ_K +0.20 pp [−2.91, +3.31], UNDECIDED; the new units were used, at about the scale of ordinary 70M drift (E1 0.18–0.22 vs C0′'s null 0.18–0.23; E2 KL 0.08–0.09 vs null 0.12–0.14): the registered reading "used, buys nothing"**
+
+**Question** (PREREG `8ed8164ea`; AM-N4-PIN `5954242e2`, AM-N4-FIXES `801a96d0e` and NOTE 2 `6aa46f9e0`, all before
+the first GO or any read game). At the toy's plateau and equal data, does a trunk with 4× the FFN width score higher
+than the same fork without it? The predictions (MY JUDGEMENT): P(GO) ≈ 0.25, P(NO-GO) ≈ 0.50, P(UNDECIDED) ≈ 0.25;
+E1 "engaged" on all three seeds.
+
+**Design.** N4 s3641–s3643 is T\* (X34 at 290,000,087) + 70M with `--grow trunk_ffn_dim=1024` at `N4_PIN`
+`1553f8bd8`: the 768 new units per round start with zero output weights (bit-identical at the fork) and fresh AdamW
+state. The control C0′ s3641–s3643 is the same argv minus `--grow`, same pin.
+- **The rule:** `n4_screen` as amended: GO-S iff LB_S > 0 and Δ̂_S ≥ +1.0 pp; NO-GO-S iff UB_S < +2.0; K at a +1.5 pp
+  bar; the MIXED harm veto both ways; the family false GO ≈ 0.05–0.07.
+- **Meters:** S at 2,000 mirrored pairs per (final, member) cell against the toy's frozen R (six members), regime
+  `adfdbee824c9eb0a`; K 50 forum72 units per final against Metamon's Kakuna. Every row at the one main commit
+  `31bd9ced9` (NOTE 2), one engine per meter.
+
+**Result.**
+
+| | s3641 | s3642 | s3643 | mean |
+|---|---|---|---|---|
+| S, N4 (pp) | 51.71 | 51.63 | 52.49 | 51.94 |
+| S, C0′ (pp) | 51.69 | 51.33 | 51.41 | 51.48 |
+| K forum72, N4 | 0.428 | 0.413 | 0.451 | 0.431 |
+| K forum72, C0′ | 0.445 | 0.443 | 0.398 | 0.429 |
+
+- **NO-GO** (NO-GO-S and not GO-K):
+  - Δ_S +0.46 pp [−0.28, +1.20] (df 2.6);
+  - Δ_K +0.20 pp [−2.91, +3.31], φ̂ 2.19 (widened ×1.48), UNDECIDED-K;
+  - not MIXED.
+- **Text:** "no ≥ 2 pp in-house gain from a 4x trunk FFN width (`--grow trunk_ffn_dim=1024`) within 70M of T\*"; "no
+  unfamiliar-only effect ≥ ≈ 4 pp detected; smaller ones are not excluded". Never "capacity does not bind on the toy".
+- **Against the predictions:** the NO-GO was the modal guess; E1 read "engaged" on all three seeds, as predicted.
+- **Guards:** VOID gate PASS ×6 (K9(b), pin); growth stamps by hand ×6 (N4 bit-identical, C0′ none); one `pin_history`
+  span per run; re-derived anchor guards (`count`) 300 units, 0 hits; K 300 / 300 units counted; every S cell at
+  2,000 pairs; LR ratio 0.965 (no label).
+- **Reported:**
+  - R1 at look 1: NULL, +0.46 [−0.92, +1.85] (97.5 %).
+  - Per-member Δ_S: every interval spans 0 (largest `toy_150m` +1.15 [−0.17, +2.47]).
+  - G-F (3 × 3, N4 against C0′, 500 pairs a cell): 48.3–52.8 pp, mean 50.57.
+  - Pin drift (cross-engine, descriptive): C0′ 51.48 against the banked toy C0's 52.43, −0.95 [−2.13, +0.23].
+  - σ_S 0.48 (N4) / 0.19 (C0′) pp; S power at σ̂: GO-S 0.994 at +2 pp, NO-GO-S 0.994 at 0.
+  - ρ = 1.10 (the design guessed 1.2).
+  - home72 not played (CPU room).
+- **Mechanism** (registered reading table, MY JUDGEMENT): E1 ≥ 0.01 at every final and E2's KL rising (0.03 → 0.09)
+  read "used, buys nothing". The M1 nulls qualify it: the units' share (0.18–0.22) matches C0′'s scaled base drift
+  (0.18–0.23), and their policy shift (KL 0.08–0.09, argmax 19.5–20.7 %) is below C0′'s ordinary drift (KL 0.12–0.14,
+  argmax 24.8–25.9 %). The battery: `team_tokens` srank99 109 (N4) vs 110 (C0′); layer-1 saturated units 8.2–10.6 %
+  (N4) vs 8.6–9.2 % (C0′), both above T\*'s 6.3 %: no relief of the policy head.
+- **FINDINGS:** the GPU faulted 11-01 01:19 PDT (Xid 154) 3 min into n4ffn s3642; the four remaining arms re-ran under
+  the same names, seeds, argv and pin (the faulted dir kept aside as evidence; the re-run's `pin_history` one span at
+  `N4_PIN`). The box rebooted 11-03, killing the idle gate and lanes; restarted with no unit lost, the stop epoch moved
+  later (never reached) and the gate moved into its own systemd scope. K is overdispersed (φ̂ 2.19).
+
+**What it licenses** (design doc §6.2, NO-GO "used, buys nothing"):
+- The capacity branch (strategy T3) is closed for growth at the plateau on the toy: depth (X47) and FFN width (N4)
+  both read without an in-house gain within 70M.
+- No N4-P on toy evidence. A toy NO-GO is weak evidence about production's width (design doc §6.1).
+- The scale bet (strategy rank 12) loses its cheap support; it is not refuted (from-scratch width is another regime).
+
+**What it cannot say:**
+- Whether more width helps over a longer dose, from scratch, or in production.
+- Anything about goal (b): K is the weak meter and a post-H22-pack forum72 number on this commit's engine.
+
+**Evidence:** `research_state/measurements/n4_capacity_screen_2026-10-27/` (README, PREREG with AM-N4-PIN, AM-N4-FIXES
+and NOTE 2, `read_spec.json`, `reported_lines.*`, `gf.sh`). Record `x35_breakers_stage_2026-10-17/reads/toy_n4ffn_look1.json`;
+state `~/gen3ai_archive/n4_capacity_look1_2026-10-31/` (+ `_ops/`). View: `UNDERSTANDING.md` §4.13, `STATUS.md`,
+`endstate/design_n4_capacity_screen.md`, `endstate/strategy_if_levers_null_2026-10-26.md`,
+`endstate/design_beat_metamon_path.md`, `EXPERIMENT_BACKLOG.md` BM-6.
+
+Tag: **MEASUREMENT · N4 look 1 · NO-GO · Δ_S +0.46 [−0.28, +1.20] · Δ_K +0.20 [−2.91, +3.31] UNDECIDED-K · "used, buys nothing" at drift scale · toy capacity branch closed for growth at the plateau**
