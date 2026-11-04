@@ -445,9 +445,21 @@ units counted). It changes wall-clock only: no unit, seed, deal, attempt bound, 
     python, `sim_bridge`, node and the `core_events` children). Raw units (419): about 2.2 GB.
   - About one core per unit: mean CPU time over wall time 1.02 (maximum 1.05) for searched units, 1.05 for raw.
   - Six units at the 3.2 GB maximum are about 19 GB, under half of the box's 80 GB available.
-  - The searched watchdog is 10 h (`timeout` 36,600 s). The longest searched unit took 146 min, while a training run
-    was live; at an assumed ≈ 1.6× hyperthread slowdown that is ≈ 4 h, inside the bound. The raw short lane's 600 s
-    bound has a 1.5-min maximum. A timeout is never a semantic outcome.
+  - The searched watchdog is 10 h (`timeout` 36,600 s). Over every life (`units.jsonl`'s `wall_s`, corrected
+    2026-11-04 from the journal's 146-min figure, which was a FAILED attempt), the longest COUNTED searched unit took
+    150 min (p99 37, median 2.9); at an assumed ≈ 1.6× hyperthread slowdown that is ≈ 4 h, inside the bound. The raw
+    short lane's 600 s bound has a 4.6-min maximum (p99 3.2). A timeout is never a semantic outcome.
+- **The exhausted searched unit (FINDING S′LIVE-OP-6, found at the AM-K6 drain, root-caused from its error class
+  only).** `pstar_s__forum72__322__g16` failed both attempts (rc 2), and `pstar_s__forum72__317__g17` failed once
+  before counting on its retry. All three failed attempts have one error class: `peer_long_tail_fault`, Kakuna's
+  "Force resetting due to long-tail error" line (SOP H5 / H21; `main.anchors.session.PEER_FAULT_LINE`). Metamon
+  prints it when it races our turn-250 forfeit, so it fires on some, not all, games that reach the 250-turn cap, and
+  any unit whose peer prints it is VOID. That is §5's post-treatment kind (a peer fault after turn 10): the deal
+  enters the classes imputed at its worst case and counts against the 0.5 % cap (4 deals a panel). At 1 exhausted
+  in 1,405 searched units, the cap is not at risk at the rate seen. §6 holds the lane on an exhausted searched unit
+  (the lane was already held for AM-K6). The defect cannot be fixed mid-read (`main.anchors` is play path), so the
+  operator released the hold at life 4's `resume` with this root cause as its `--why`. No raw unit has failed. Every
+  further exhausted searched unit is reported by its error class; a new class holds the lane again.
 - **The revert clause.** The moment a training run goes live, or the orchestrator says so, the next life returns to
   `--concurrency 2` with default slots (rule 5b's ≤ 2 heavy jobs beside a live run stands). The operator holds the
   lane, waits for the units in flight to drain, and resumes at K = 2.
