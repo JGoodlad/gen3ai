@@ -27,11 +27,13 @@ THE VOID GATE (:func:`void_gate`): an X35-stage rule (``x35_r1``, ``d1``, ``n4_s
 {k9b_dir, runs: {label: run dir}}``; ``x35_r1`` on a batch-2 arm (SPRT, LRF) and ``n4_screen`` always MUST. ``decide`` runs it BEFORE the rule: each named run's
 AM-6 K9(b) record (``<k9b_dir>/<run>.json``) must read PASS, and a batch-2 arm's V-S1 / V-S2 (SPRT) or LR-F KL guard
 (``main.x35.batch2_void.read_void``) too; anything else refuses the decision (a VOID seed enters no read; SPRT's
-``assemble.py`` STOP, be60f24f FINDING 3). Two further guards read the RUN DIR's own artefacts and are OPT-IN, each a
-key of ``params.void`` (a spec that names neither is gated exactly as before): ``pin`` (a commit sha or prefix: every
+``assemble.py`` STOP, be60f24f FINDING 3). Three further guards read the RUN DIR's own artefacts and are OPT-IN, each
+a key of ``params.void`` (a spec that names none is gated exactly as before): ``pin`` (a commit sha or prefix: every
 git hash the run recorded, ``metadata.json``'s ``git_hash`` and each ``pin_history`` span, must be that commit; N1-P's
-PREREG §9 guard 3) and ``pool_seed`` (``{fork_step}``: ``<run>/snapshots/pool_seed.json`` is the T54 schema-2 record, its
-``fork_step`` the registered one, no seeded snapshot later than it and every dropped one later; guard 4's record half).
+PREREG §9 guard 3), ``pool_seed`` (``{fork_step}``: ``<run>/snapshots/pool_seed.json`` is the T54 schema-2 record, its
+``fork_step`` the registered one, no seeded snapshot later than it and every dropped one later; guard 4's record half)
+and ``dose`` (``{reference, rel_tol}``: ``main.dose``'s ``lr_median``, ``updates_per_env_step`` and ``dose_rate`` of the
+run each equal the reference run's to ``rel_tol``; X60-T PREREG §13.3, a resume that changed the dose).
 What stays an operator check: guard 2's startup banner and held-out hit lines (the launcher log is outside the run dir)
 and the pool-seed check's startup-line half.
 
@@ -73,6 +75,10 @@ with its reasons (N1-P FINDING 7).
 * ``x63_kvk`` -- X63's k-v-k decision on forum72 (X63 PREREG §6–§7; :mod:`main.reads.rules_x63`): Δ of per-model plain
   proportions with a floored seed term, z below the σ floor else t; Stage A's screen, B / C's classes, a GAIN priced on
   home72 (FLOOR, then r).
+* ``x60`` -- X60-T (``x60t_h_teams_2026-11-06`` PREREG §5-§11, §15; :mod:`main.reads.rules_x60`): Δ_F by
+  ``x60_redesign_2026-10-26/power.py``'s interval and rule, ported (futility-only look 1 at 3 v 3, look 2 at 8 v 8), I_F's
+  LB90 guard, Δ_P (D1's), goal (a), R72, T − D1 (5 v 5, reported) and §11's verdict; a meter may pool several groups
+  that are ONE cell (C0's X61P cells sit in two states, one import each).
 """
 from __future__ import annotations
 
@@ -232,14 +238,22 @@ def _void_check(p: Mapping[str, Any], models: Any, *, required: bool) -> List[st
     if not (isinstance(v, dict) and {"k9b_dir", "runs"} <= set(v) <= {"k9b_dir", "runs", *VOID_RUN_DIR_GUARDS}
             and isinstance(v["k9b_dir"], str) and isinstance(v["runs"], dict) and v["runs"]):
         return ["void: {k9b_dir: <dir of AM-6 K9(b) records>, runs: {label: run dir}, [pin: <sha>], "
-                "[pool_seed: {fork_step: <int>}]}"]
+                "[pool_seed: {fork_step: <int>}], [dose: {reference: <run dir>, rel_tol: <float>}]}"]
     probs = [f"void.runs: {lab!r} is not a model label" for lab in v["runs"] if lab not in models]
-    if "pin" in v and not (isinstance(v["pin"], str) and re.fullmatch(r"[0-9a-f]{7,40}", v["pin"])):
+    from main.reads.spec import PENDING             # a pin the registration fills later (check-spec --pin-pending only)
+
+    if "pin" in v and not (isinstance(v["pin"], str) and (re.fullmatch(r"[0-9a-f]{7,40}", v["pin"])
+                                                          or v["pin"] == PENDING)):
         probs.append("void.pin: a commit sha (7 to 40 lowercase hex digits)")
     if "pool_seed" in v and not (isinstance(v["pool_seed"], dict) and set(v["pool_seed"]) == {"fork_step"}
                                  and isinstance(v["pool_seed"]["fork_step"], int)
                                  and not isinstance(v["pool_seed"]["fork_step"], bool) and v["pool_seed"]["fork_step"] > 0):
         probs.append("void.pool_seed: {fork_step: <the fork parent's step, a positive integer>}")
+    dz = v.get("dose")
+    if "dose" in v and not (isinstance(dz, dict) and set(dz) == {"reference", "rel_tol"}
+                            and isinstance(dz["reference"], str) and dz["reference"]
+                            and isinstance(dz["rel_tol"], float) and 0.0 < dz["rel_tol"] <= 1e-3):
+        probs.append("void.dose: {reference: <the control's run dir>, rel_tol: <a float in (0, 1e-3]>}")
     probs += [f"void.runs.{lab}: a run dir path" for lab, r in v["runs"].items() if not (isinstance(r, str) and r)]
     on = [lab for lab, m in models.items() if m.arm == p.get("on")]
     probs += [f"void.runs: the ON model {lab!r} has no run (every ON seed is gated)" for lab in on
@@ -248,7 +262,28 @@ def _void_check(p: Mapping[str, Any], models: Any, *, required: bool) -> List[st
 
 
 #: The ``params.void`` keys that read the run dir itself (opt-in; module docstring).
-VOID_RUN_DIR_GUARDS = ("pin", "pool_seed")
+VOID_RUN_DIR_GUARDS = ("pin", "pool_seed", "dose")
+#: The ``main.dose`` fields the ``dose`` guard holds equal to the reference run's (X60-T PREREG §13.3).
+DOSE_FIELDS = ("lr_median", "updates_per_env_step", "dose_rate")
+
+
+def void_dose_guard(run_dir: Any, reference: Any, rel_tol: float) -> Dict[str, Any]:
+    """X60-T PREREG §13.3: the run's ``main.dose.read_run`` ``lr_median``, ``updates_per_env_step`` and ``dose_rate``
+    each equal the REFERENCE run's (the control) to a relative ``rel_tol``. ``{reference, got, want, rel_tol, pass,
+    why}``; a field either run cannot state fails (unknown is never equal)."""
+    from main.dose import read_run
+
+    got, want = read_run(str(run_dir)), read_run(str(reference))
+    probs: List[str] = []
+    for k in DOSE_FIELDS:
+        a, b = got.get(k), want.get(k)
+        if not (isinstance(a, (int, float)) and isinstance(b, (int, float)) and math.isfinite(a) and math.isfinite(b)):
+            probs.append(f"{k}: {a!r} vs the reference's {b!r} (unknown)")
+        elif abs(a - b) > rel_tol * abs(b):
+            probs.append(f"{k}: {a!r} is not the reference's {b!r} within a relative {rel_tol}")
+    return {"reference": str(reference), "got": {k: got.get(k) for k in DOSE_FIELDS},
+            "want": {k: want.get(k) for k in DOSE_FIELDS}, "rel_tol": rel_tol, "pass": not probs,
+            "why": "; ".join(probs)}
 
 
 def void_pin_guard(run_dir: Any, want: str) -> Dict[str, Any]:
@@ -313,7 +348,8 @@ def void_pool_seed_guard(run_dir: Any, fork_step: int) -> Dict[str, Any]:
 
 def void_gate(spec: Any) -> Optional[Dict[str, Dict[str, Any]]]:
     """The registered VOID gate of ``spec`` (module docstring), or ``None`` when it registers none: ``{label: {run,
-    k9b, k9b_file, batch2, pass}}`` plus ``pin`` / ``pool_seed`` (:func:`void_pin_guard`, :func:`void_pool_seed_guard`) for
+    k9b, k9b_file, batch2, pass}}`` plus ``pin`` / ``pool_seed`` / ``dose`` (:func:`void_pin_guard`,
+    :func:`void_pool_seed_guard`, :func:`void_dose_guard`) for
     the run-dir guards the spec registered (absent otherwise); ``pass`` is the AND of every guard registered. Reads the
     K9(b) records and the run dirs (read-only)."""
     from main.reads.models import spec_path
@@ -340,6 +376,9 @@ def void_gate(spec: Any) -> Optional[Dict[str, Dict[str, Any]]]:
         if "pool_seed" in v:
             row["pool_seed"] = void_pool_seed_guard(rd, v["pool_seed"]["fork_step"])
             row["pass"] = row["pass"] and row["pool_seed"]["pass"]
+        if "dose" in v:
+            row["dose"] = void_dose_guard(rd, spec_path(v["dose"]["reference"]), float(v["dose"]["rel_tol"]))
+            row["pass"] = row["pass"] and row["dose"]["pass"]
         out[lab] = row
     return out
 
@@ -351,7 +390,7 @@ def void_failures(gate: Optional[Mapping[str, Any]]) -> Dict[str, str]:
         if g.get("pass"):
             continue
         why = f"K9(b) {g['k9b']}" + (f", {g['batch2']['guard']} {g['batch2']['verdict']}" if g.get("batch2") else "")
-        for key, name in (("pin", "pin"), ("pool_seed", "pool seed")):
+        for key, name in (("pin", "pin"), ("pool_seed", "pool seed"), ("dose", "dose")):
             if g.get(key) is not None and not g[key].get("pass"):
                 why += f"; {name}: {g[key].get('why')}"
         out[lab] = why
@@ -1453,6 +1492,10 @@ RULES["distill_play"] = Rule("distill_play", _DP.RULE_DOCS["distill_play"], _DP.
 from main.reads import rules_x63 as _X63  # noqa: E402  (it imports this module lazily: no cycle at import)
 
 RULES["x63_kvk"] = Rule("x63_kvk", _X63.RULE_DOCS["x63_kvk"], _X63.check, _X63.inputs, _X63.decide, False, _X63.reported)
+
+from main.reads import rules_x60 as _X60  # noqa: E402  (it imports this module lazily: no cycle at import)
+
+RULES["x60"] = Rule("x60", _X60.RULE_DOCS["x60"], _X60.check, _X60.inputs, _X60.decide, False, _X60.reported)
 
 
 def inputs(rule: str, cells: Mapping[str, Any], params: Mapping[str, Any], spec: Any) -> Dict[str, Any]:

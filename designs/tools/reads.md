@@ -80,7 +80,8 @@ without changing what plays:
    prints `pin: PENDING`, the checkout's HEAD as the candidate and `sha256_final: false` (adding the pin changes the
    spec's sha256, which a PREREG or a later look's `import` may quote), and refuses a spec that already carries a pin.
    A value that cannot exist yet (X65: the students' zips and sha256s before its pin amendment, an earlier look's
-   final spec sha256) is written as the literal `"PENDING"` (`spec.PENDING`): `--pin-pending` lists every such field as
+   final spec sha256, a VOID gate's `void.pin` before the training pin exists) is written as the literal `"PENDING"`
+   (`spec.PENDING`): `--pin-pending` lists every such field as
    `pending`, and every other load (`check-spec` without the flag, `plan`, an import of the spec) refuses the spec, so it
    never plays. The amendment that fills them is the registration's.
 3. Add `"pin": "<P>"`. `check-spec` now refuses a pin that names no commit of the repo and reports
@@ -339,6 +340,13 @@ sha256 of the earlier spec FILE's bytes (`plan` copies it byte for byte into `sp
 as soon as the earlier spec is committed, with no need to wait for the earlier state; only the earlier STATE path must
 be agreed in advance. Pin it with a test that hashes the committed earlier spec (`rules_test`, X61P look 2), since
 editing the earlier spec moves it.
+
+A group takes ONE import, never transitive (the earlier state's own units only). Cells banked in TWO earlier states
+(X60-T's C0: s3501-s3503 in X61P look 1, s3504-s3505 in look 2) come in as two groups, each with its one import and every
+check above, and the RULE pools them (`rules_x60.pool_anchor` / `pool_s`) only when they are one cell: one engine, one
+regime id per team set, one peer code and policy mode, one Kakuna pack, each label in one group; else that meter is
+INCONCLUSIVE. Read-only on the archive, those two groups pool to exactly X61P look 2's C0 forum72 cells (E3,
+`2118812c27885de3`).
 
 ## 4. Assemble: the regime id is ALWAYS recorded (`main.reads.assemble`)
 
@@ -632,6 +640,7 @@ params)` produces the verdict as recorded. A decision can therefore be re-checke
 | `x59s_restriction` | X59-S's Delta_restriction = S-P0 - S-P on U with A5.2's interval (Amendment 6 A6.1), the closure's guard; the full read takes its record as an optional artefact | new (2026-10-26) |
 | `n4_screen` | the one-look capacity screen (N4 PREREG §5 with its review's M2 / M4 / M5; X48 PREREG §5, §8; `rules_n4_screen`): S = Welch two-sided `confidence` (90 %) on the finals' S, every cell at least the S group's `pairs` (X48 2,000, N4 2,000 by AM-N4-FIXES M3); K = the `d1` estimators on the anchor group (forum72) at `z`, φ̂-widened, φ̂ printed. In order: INCONCLUSIVE (a missing input, an S cell short, K beyond one uncounted unit per arm (`d1.min_games`), unplayed units, a meter on two or unknown engines) → MIXED (`mixed_veto`: GO-S with UB_K < 0 or GO-K with UB_S < 0; classed UNDECIDED, never GO) → GO (`GO (both)` / `(in-house)` / `(unfamiliar)`) → NO-GO (NO-GO-S and not GO-K, M5's text from `nogo_scope` (+ its `qualifier`), `LR-confounded` when the ON arm's mean `snapshot_history` LR < 0.9× the OFF arm's; a GO is `LR-elevated` above 1.1×) → UNDECIDED. Exact fractions, `rule8_eps`; `near_scope` `bound` (X48) or `meter` (N4: a near bound reads its meter UNDECIDED). `params.on` / `off` are label lists. REPORTED: R1 at look 1, per-member Δ_S, the `slope` group (reported-only), `pin_drift`, σ̂, the S power at σ̂ (seeded). An X35-stage record (top-level `arm` = `batch.READ_LABEL` of the ON arm, `look` 1; no top-level `r1`). Read so far: X48 look 1 and N4 look 1 (`reads/toy_n4ffn_look1.json`), both NO-GO | new (2026-10-27) |
 | `x63_kvk` | X63's k-v-k decision on forum72 against Kakuna (`measurements/x63_2026-10-29/PREREG.md` §6–§7; `rules_x63`): `params.on` / `off` label lists (k_on and k_off may differ; `stage` A = 1 v 2, B = 2 v 2, C = 3 v 3, checked at load), a `primary` and a `home` anchor group (one panel each). Each model a PLAIN proportion (a tie a non-win); Δ = mean_on − mean_off, B = Σ p̂q̂/G / k² per side, σ̂² = the mean over the sides with ≥ 2 models of (sample variance − mean p̂q̂/G) (at Stage A the OFF side's alone, = X63-C's σ̂_CC), SE² = B + max(`sigma_floor`, σ̂)² (1/k_on + 1/k_off), q = 1.959964 iff σ̂ is clearly ≤ the floor, else Student-t 0.975 on Σ (k − 1). Stage A: CONTINUE iff Δ̂ ≥ `screen`, else NOT PURSUED, σ̂_CC and (`stage_a_power`) the registered P(NOT PURSUED) row printed; B / C: INCONCLUSIVE (σ̂ > `inconclusive_sigma`) > GAIN (LB > 0) > RETIRE (UB < `kill_bar`) > UNDECIDED, B says whether C fires (UNDECIDED and Δ̂ ≥ `stage_c_bar`); a GAIN is FLOOR-checked (the ON models' pooled `home` Wilson LB > 0.50) and priced (net = Δ_home + r·Δ_F): FLOOR fails ⇒ OVER-RATE, r null ⇒ UNPRICED (r* printed), WITHIN ⇒ ADOPT-CANDIDATE, EXCEEDED ⇒ OVER-RATE, else TRADE. Exact fractions, `rule8_eps` (a near statistic takes the side that licenses less). A deciding group not conclusive is INCONCLUSIVE with its reasons. REPORTED: Δ_home at every stage, the team-cluster bootstrap of Δ_F (our team per game, seeded), the `reported` groups; `home` is reported-only at Stage A. Optional `void` (the VOID gate below) | new (2026-10-29) |
+| `x60` | X60-T (its PREREG §5-§11, §15, the draft `x60t_h_teams_2026-11-06`; `rules_x60`). Δ_F on forum72 at 60 units a final: `x60_redesign_2026-10-26/power.py`'s `x60_interval` / `classes` / `rule_x60` PORTED (binomial + 2·max(1 pp, σ̂)²/n, Welch when σ̂²'s one-sided 95 % LB > (1 pp)²; GAIN / LOSS / NO-USEFUL-GAIN / NOT-RESOLVED with power.py's 1e-9; each arm's pooled Σwins/Σgames, which is power.py's mean at equal games; `rules_x60_test` holds the two equal on fixed and simulated draws); `look` 1 (3 v 3) futility only (Δ̂ ≤ 0 stops, else CONTINUE), `look` 2 (8 v 8) recomputes look 1 on `look1_seeds`; the floor 20·units·finals − 20 per arm. Look 2 also: Δ_P (D1's Welch 97.5 %, LB > −2.0), I_F (Welch 95 % GAIN; the guard its one-sided 90 % LB), R72 (DELIVERED iff LB > 0), goal (a) (ON's home72 Wilson LB > 0.50), G-F / G-E / G-C from a sha-pinned artefact on a GAIN only (`readout`'s arithmetic; G-C's seed sides hold 3501-3505, so 8 v 8 reads INCONCLUSIVE until registered), T − D1 (H + F, 5 v 5, reported-only groups). §11's verdict is the pure `verdict`: ADOPT-CANDIDATE / TRADE / KAKUNA-SPECIFIC / LOSS / NO-TRANSFER / IN-HOUSE-ONLY / NOT-DELIVERED / NO-USEFUL-GAIN (look 1) / NOT-RESOLVED / CONTINUE / INCONCLUSIVE. Each meter may pool several groups that are ONE cell (§3, two-state imports). Optional `determinism_guard` (a re-played unit against the imported one, choices included; a miss is INCONCLUSIVE). Optional `void` | new (2026-11-06) |
 
 **The estimators are not re-derived.** Each is the one function a read already used, re-exported under a name:
 
@@ -650,24 +659,29 @@ Migrated here from the scripts, which had no home in `src/`:
 
 A new rule is a new `Rule` entry with a test. It never replaces an existing rule's numbers.
 
-**The VOID gate** (`rules.void_gate`; be60f24f FINDING 3). An X35-stage rule (`x35_r1`, `d1`, `n4_screen`), and `x63_kvk`, may register
+**The VOID gate** (`rules.void_gate`; be60f24f FINDING 3). An X35-stage rule (`x35_r1`, `d1`, `n4_screen`), `x63_kvk` and `x60` may register
 `params.void = {k9b_dir, runs: {label: run dir}}`, every ON model named; `x35_r1` on a batch-2 arm (SPRT, LRF) and `n4_screen` always MUST
 (the spec is refused without it). `decide`, and so `record`, runs it FIRST and writes `void.json`: each run's AM-6
 K9(b) record (`<k9b_dir>/<run>.json`) must read PASS, and on a batch-2 arm its V-S1 / V-S2 (SPRT) or LR-F KL guard
 (`main.x35.batch2_void.read_void`) too. Any other verdict refuses the decision and names the seed: a VOID seed enters no
 read (SPRT's `assemble.py` STOP). The record carries the gate, and a record of a batch-2 arm without one is refused.
-Two further guards read the RUN DIR's own artefacts and are OPT-IN, each a key of `params.void` (a spec that names neither is
-gated exactly as before, its gate rows unchanged):
+Three further guards read the RUN DIR's own artefacts and are OPT-IN, each a key of `params.void` (a spec that names none
+is gated exactly as before, its gate rows unchanged):
 
 | key | holds | the gate checks, per gated run |
 |---|---|---|
-| `pin` | a commit sha (7 to 40 hex digits) | every git hash the run recorded (`metadata.json`'s `git_hash` and each `pin_history` span) is that commit; a run with no `pin_history` span fails (N1-P PREREG §9 guard 3) |
+| `pin` | a commit sha (7 to 40 hex digits; `PENDING` under `--pin-pending` only) | every git hash the run recorded (`metadata.json`'s `git_hash` and each `pin_history` span) is that commit; a run with no `pin_history` span fails (N1-P PREREG §9 guard 3). One pin gates every listed run |
 | `pool_seed` | `{fork_step}` | `snapshots/pool_seed.json` is the T54 schema-2 record, its `fork_step` is the registered one, no seeded snapshot is later than it and every dropped step is later (guard 4's record half) |
+| `dose` | `{reference, rel_tol}` | `main.dose`'s `lr_median`, `updates_per_env_step` and `dose_rate` each equal the reference run's (the control) to `rel_tol`; a field either run cannot state fails (X60-T PREREG §13.3: a resume that changed the dose) |
 
-The row carries `pin` / `pool_seed` (`{pass, why, ...}`), `pass` is the AND of every guard registered, and `void_failures`
-names the failing guard beside the K9(b) text. What stays an operator check, as AM-N1P-1 words it: the startup banner and the
-held-out hit lines (guard 2; the launcher log is outside the run dir) and the pool-seed check's startup-line half; a
-corpus-team crash (guard 5) is the settled rule's (a run that stopped has no final).
+The row carries `pin` / `pool_seed` / `dose` (`{pass, why, ...}`), `pass` is the AND of every guard registered, and
+`void_failures` names the failing guard beside the K9(b) text. What stays an operator check, as AM-N1P-1 words it: the
+startup banner and the held-out hit lines (guard 2; the launcher log is outside the run dir) and the pool-seed check's
+startup-line half; a corpus-team crash (guard 5) is the settled rule's (a run that stopped has no final). The same holds
+for X60-T's `[HUMAN-DATA] lever=… rowset=… rows_sha=…` stamp "in every launch": the line goes to the launcher log only.
+The run dir holds the RECORD it prints (`metadata.json` `lineage.human_data`, the first launch, immutable;
+`cli_args._human_data`, the last process's), so a run-dir check could show the first and last launches but never a
+resume in between; no `void` key reads it yet.
 
 **Reported-only groups** (`Rule.reported`; N1-P FINDING 7). A group a rule carries for description and no verdict
 reads (`d1`'s `reported_group`) never blocks the record of the decided primary. When it is short (unplayed units, no
