@@ -25,11 +25,13 @@ the owner's goal 5. It makes four points:
 - **What it licenses, and only this.** Building and registering a LEAK-HONEST replication on fresh deals. S′'s worlds
   replay the true battle seed (§6.1: speed ties and hidden counters leak), so this is not deployable search and not
   goal (b) met; no training, league or public-server change follows.
-- **Next: the replication, S′-HONEST, is DESIGNED and not built** (2026-11-05,
-  [`design_sprime_honest.md`](design_sprime_honest.md)). Its inventory reads six channels from the code; none is shown
-  bigger than §6.1 says. On S′-LIVE's own states a Speed is pinned in 23.5 % of decisions and a hidden counter is
-  live in 6.9 %. The design makes the search a function of the searched side's information set alone, on fresh dice
-  matched segment by segment. Its build is ≈ 6–8 agent-days, so its unit stopped for the orchestrator's decision.
+- **Next: the replication, S′-HONEST: its stage 1 is BUILT, its PREREG not written** (2026-11-06,
+  [`design_sprime_honest.md`](design_sprime_honest.md) §8). Its inventory reads six channels from the code; none is
+  shown bigger than §6.1 says. The leak-honest preset `r0s4_honest` searches as a function of the searched side's
+  information set alone, on fresh dice matched segment by segment. Its leak test passes on every channel and fails on
+  `r0s4_rolls` on every one; `r0s4_rolls` is byte-identical at the new engine stamp (600 / 600). At its chosen budget it
+  excludes 3 % of U decisions (F 5 %, `r0s4_rolls` 2.3 %) at ≈ 8.6–13.0 CPU-min a searched game; its picks match
+  `r0s4_rolls`'s in 61 % of U decisions, against 72 % for `r0s4_rolls` re-drawn under another key.
 - **Registered beside it: X65 ExIt-0, search DISTILLATION from the banked labels** (2026-11-05,
   [`design_x65_exit0_search_distillation.md`](design_x65_exit0_search_distillation.md)). It asks whether a P\* student
   fine-tuned toward S′'s piKL targets on two panels' banked searched decisions beats P\* against Kakuna on the third
@@ -770,12 +772,14 @@ no in-Rust builder exists. The pilot's builder cost ≈ 0.08 CPU-s per world (ca
   (decision, seen mon) pairs (5.0 %), in **20.1 %** of decisions; King's Rock / Focus Band 39 % of tests but 4.7·10⁻⁵ prior
   mass per mon and none in the bank's 231 teams; no unrevealed dice-rolling ability seen. On S′-LIVE's own decisions
   (2026-11-05): **23.5 %** of decisions, 5.4 % of pairs. Cure: a playout core that replays on fresh dice constrained to
-  printed outcomes (not built; `design_sprime_honest.md` D3 matches them segment by segment).
+  printed outcomes: BUILT 2026-11-06 as `r0s4_honest` (`design_sprime_honest.md` D3, §8: fresh dice matched segment by
+  segment, `src/rust_sim/src/fresh_dice.rs`); `r0s4` and `r0s4_rolls` keep this leak.
 - **Hidden counters** (sleep / confusion / Encore / lock durations rolled BEFORE the root are the truth's in every world:
   the playouts' reseed swaps only the PRNG). On S′-LIVE's decisions one is live in **6.9 %** (a non-Rest sleep 3.1 % on
   our side, 3.7 % on theirs; confusion 0.05 %). The root turn's Quick Claw roll and a pending Future Sight / Doom
   Desire's damage survive the reseed the same way (none and 0.08 % in U). Cure: the world's own fresh dice
-  (`design_sprime_honest.md` D4; not built).
+  (`design_sprime_honest.md` D4; BUILT 2026-11-06 in `r0s4_honest`, the opponent's hidden exact HP re-rolled the same way,
+  §8 C6).
 - **The full inventory read from the code (2026-11-05, `design_sprime_honest.md` §1)** adds channels this list did not
   name: THRESHOLD dice (a die drawn either way whose outcome a hidden fact moves: Serene Grace, Scope Lens, Sand Veil,
   Shell Armor), dice that pick a hidden SLOT (Sleep Talk, Assist, Roar / Whirlwind) with the TRUE slot order the builder
@@ -1025,3 +1029,4 @@ limits:
 | 2026-11-05 | **S′-LIVE: GO-LEAKY** (its operator, orchestrator brief; PREREG `9c2f023e4`, AM-K6) | the "Registered next" block replaced by the latest status line (GO-LEAKY, G_U +4.60 [+2.66, +6.48], searched U 0.545 leaky); the dlive status line demoted to "Before it"; Q17's row | quoting the searched arm's 0.545 as goal (b) met (leak-inclusive by name, §6.1); pooling with dlive; reading the GO as a validated per-departure bridge (S′L-3) | `../research_state/measurements/sprime_live_play_2026-11-01/README.md`; ledger 2026-11-05 |
 | 2026-11-05 | **S′-HONEST DESIGNED; its build not started** (its designer, orchestrator brief; docs and outcome-blind design inputs only) | the status block's "Next" bullet; §5.2's counters / speed-ties row (exposure measured on S′-LIVE's states); §6.1 (the speed-tie and counter bullets' S′-LIVE exposure, a new inventory bullet, tier A's cure narrowed to the rejection: a world keeps the TRUE roll whenever it prints the same thing); §6.4's leak line | reading the inventory as sizing what the leaks carried (only the replication can); a counters-only fix (it leaves the true seed's prefix); building past the unit's 2-day bound unasked (≈ 6–8 agent-days) | `design_sprime_honest.md` §1, §4, §6; `../research_state/measurements/sprime_honest_2026-11-05/README.md` |
 | 2026-11-05 | **X65 ExIt-0 REGISTERED** (research designer, orchestrator brief: one GPU experiment worth running whatever S′-HONEST finds) | the status block's "Registered beside it" bullet (with the measured label cost and the factory's CPU); Q18's row | fresh-label distillation (9.5 CPU-s a label on S′-HONEST's cores); the in-loop factory (≈ 32 cores); reading S′-LIVE's GO-LEAKY as a licence to train (it is not one; ExIt-0 is its own registration) | `design_x65_exit0_search_distillation.md`; `../research_state/measurements/x65_exit0_2026-11-05/PREREG.md` |
+| 2026-11-06 | **S′-HONEST STAGE 1 BUILT** (its builder, orchestrator brief; no PREREG) | the status block's "Next" and §6.1's two cures: `r0s4_honest` (fresh dice per segment, the search a function of I, keyed by I); INV 14 passed; `r0s4_rolls` 600 / 600 identical at stamp `port=74eb0a3bc35bd465/95;env=87f06ac3ab0b911b/130`; budget B3: U exclusions 3 % (F 5 %), ≈ 8.6–13.0 CPU-min a searched game | — | `design_sprime_honest.md` §8; `measurements/sprime_honest_stage1_2026-11-05/` |

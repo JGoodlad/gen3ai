@@ -1,0 +1,164 @@
+{
+ "b2": {
+  "F": {
+   "excluded": 12,
+   "exclusion_rate": 0.12,
+   "honest_cpu_s_mean": 16.357,
+   "honest_cpu_s_p90": 51.239,
+   "n": 100,
+   "projected_cpu_min_per_game": {
+    "absolute": 10.47,
+    "ratio_to_slive": 13.1
+   },
+   "rerun": 21,
+   "rolls_cpu_s_mean": 7.741
+  },
+  "H": {
+   "excluded": 6,
+   "exclusion_rate": 0.06,
+   "honest_cpu_s_mean": 7.998,
+   "honest_cpu_s_p90": 7.55,
+   "n": 100,
+   "projected_cpu_min_per_game": {
+    "absolute": 5.12,
+    "ratio_to_slive": 7.2
+   },
+   "rerun": 13,
+   "rolls_cpu_s_mean": 6.89
+  },
+  "P72": {
+   "excluded": 1,
+   "exclusion_rate": 0.01,
+   "honest_cpu_s_mean": 7.366,
+   "honest_cpu_s_p90": 11.028,
+   "n": 100,
+   "projected_cpu_min_per_game": {
+    "absolute": 4.72,
+    "ratio_to_slive": 10.1
+   },
+   "rerun": 10,
+   "rolls_cpu_s_mean": 4.524
+  },
+  "U": {
+   "excluded": 19,
+   "exclusion_rate": 0.0633,
+   "honest_cpu_s_mean": 10.574,
+   "honest_cpu_s_p90": 21.63,
+   "n": 300,
+   "projected_cpu_min_per_game": {
+    "absolute": 6.77,
+    "ratio_to_slive": 10.27
+   },
+   "rerun": 44,
+   "rolls_cpu_s_mean": 6.385
+  }
+ },
+ "b3": {
+  "F": {
+   "excluded": 5,
+   "exclusion_rate": 0.05,
+   "honest_cpu_s_mean": 20.837,
+   "honest_cpu_s_p90": 58.514,
+   "n": 100,
+   "projected_cpu_min_per_game": {
+    "absolute": 13.34,
+    "ratio_to_slive": 16.69
+   },
+   "rerun": 21,
+   "rolls_cpu_s_mean": 7.741
+  },
+  "H": {
+   "excluded": 4,
+   "exclusion_rate": 0.04,
+   "honest_cpu_s_mean": 12.156,
+   "honest_cpu_s_p90": 7.55,
+   "n": 100,
+   "projected_cpu_min_per_game": {
+    "absolute": 7.78,
+    "ratio_to_slive": 10.94
+   },
+   "rerun": 13,
+   "rolls_cpu_s_mean": 6.89
+  },
+  "P72": {
+   "excluded": 0,
+   "exclusion_rate": 0.0,
+   "honest_cpu_s_mean": 7.201,
+   "honest_cpu_s_p90": 11.028,
+   "n": 100,
+   "projected_cpu_min_per_game": {
+    "absolute": 4.61,
+    "ratio_to_slive": 9.87
+   },
+   "rerun": 10,
+   "rolls_cpu_s_mean": 4.524
+  },
+  "U": {
+   "excluded": 9,
+   "exclusion_rate": 0.03,
+   "honest_cpu_s_mean": 13.398,
+   "honest_cpu_s_p90": 20.99,
+   "n": 300,
+   "projected_cpu_min_per_game": {
+    "absolute": 8.58,
+    "ratio_to_slive": 13.01
+   },
+   "rerun": 44,
+   "rolls_cpu_s_mean": 6.385
+  }
+ },
+ "base": {
+  "F": {
+   "excluded": 19,
+   "exclusion_rate": 0.19,
+   "honest_cpu_s_mean": 11.113,
+   "honest_cpu_s_p90": 31.795,
+   "n": 100,
+   "projected_cpu_min_per_game": {
+    "absolute": 7.11,
+    "ratio_to_slive": 8.9
+   },
+   "rerun": 0,
+   "rolls_cpu_s_mean": 7.741
+  },
+  "H": {
+   "excluded": 6,
+   "exclusion_rate": 0.06,
+   "honest_cpu_s_mean": 5.906,
+   "honest_cpu_s_p90": 7.55,
+   "n": 100,
+   "projected_cpu_min_per_game": {
+    "absolute": 3.78,
+    "ratio_to_slive": 5.31
+   },
+   "rerun": 0,
+   "rolls_cpu_s_mean": 6.89
+  },
+  "P72": {
+   "excluded": 3,
+   "exclusion_rate": 0.03,
+   "honest_cpu_s_mean": 6.539,
+   "honest_cpu_s_p90": 11.028,
+   "n": 100,
+   "projected_cpu_min_per_game": {
+    "absolute": 4.19,
+    "ratio_to_slive": 8.96
+   },
+   "rerun": 0,
+   "rolls_cpu_s_mean": 4.524
+  },
+  "U": {
+   "excluded": 28,
+   "exclusion_rate": 0.0933,
+   "honest_cpu_s_mean": 7.852,
+   "honest_cpu_s_p90": 19.088,
+   "n": 300,
+   "projected_cpu_min_per_game": {
+    "absolute": 5.03,
+    "ratio_to_slive": 7.62
+   },
+   "rerun": 0,
+   "rolls_cpu_s_mean": 6.385
+  }
+ }
+}

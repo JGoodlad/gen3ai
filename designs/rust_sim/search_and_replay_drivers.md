@@ -423,6 +423,7 @@ Desire cast and a Jump Kick crash. The n-th site of a battle is site `n` (the or
 | `record` | uses the drawn roll; records the TARGET: the site's key (kind, attacking side, hit side, the move id with every typed Hidden Power folded to `hiddenpower`) and what `viewer` SAW of the hit at that roll | `targets` |
 | `match` (targets) | the consistent set C = the rolls whose predicted sight equals target n's. Uses the drawn roll if it is in C (today's trajectory), else the member of C nearest it (ties: the lower); the world's log-weight gains log(|C| / 16); an empty C marks the world INFEASIBLE (the drawn roll is used, and the byte gate rejects the world) | `log_w`, `feasible`, `force` |
 | `force` (table) | uses the table's roll at a named site, the drawn one elsewhere | — |
+| `seg` (the fresh-dice matcher's, below) | the target is read from the VIEWER's own lines for the segment being matched (never a truth pass): the site's line is the (c+1)-th HP event of the hit mon in the segment's lines, c the HP events of that mon logged since the segment began. Uses the drawn roll if it prints that line, else a consistent roll picked by the drawn roll's rank among the inconsistent ones (near-uniform over C), shifted by the segment's PICK OFFSET; no target or an empty C takes the drawn roll. A Beat Up strike is predicted here like a hit (pinned in the other modes, unchanged) | `log_w`, `force` |
 
 `force` in every report lists the sites whose roll differs from the drawn one: `force` mode with it replays that
 trajectory exactly (both sides, every byte). That is how a matched world is replayed later (the playout tool's
@@ -464,6 +465,47 @@ site) — are still the truth's dice (tier B); the choice inside C prefers the d
 roll, so the hidden exact HP a matched world carries after a site is the truth's whenever the truth's roll is
 consistent; the weight is the likelihood ALONG the trajectory the choice took, not marginalised over the other
 members of C.
+
+## Fresh dice: `src/fresh_dice.rs` (`gen3_fresh_dice_match_v1`, the leak-honest builder's replay)
+
+**What it is for.** `r0s4_honest` (`designs/endstate/design_sprime_honest.md` D3, D4, D6) builds every world from the
+searched side's information set I alone, so a world may not be replayed on the battle's seed. The matcher replays a
+world on FRESH dice and keeps it iff every line the viewer was shipped is reproduced, SEGMENT by segment (a segment =
+the lines one write shipped the viewer: I split after each `|request|`; segment 0 is the START write).
+
+**The verbs** (`core_events`, no `START`): `INFOSET <json>` sets I (`fresh_dice::InfoSet::from_json`: the viewer,
+its segments, its commands, per segment the opponent's INTENT, the counters' re-roll targets `backtrack` and the
+opponent mons' rolled hits `hp_last`); each `MATCH <json>` (the world's format, names, teams, and `dice` — the try
+seeds' base — `tries`, `rerolls`, `rolls`, `prev_backtrack`, `max_feeds`) prints one line: `ok`, `matched` /
+`segments`, the kept START `seed`, the `reseed` schedule, the fed `cmds`, the damage-roll table `rolls`, `log_w`, the
+per-segment `tries`, `feeds`, `rerolls`, and on a failure the best try's `fail` (segment, common prefix, its lines,
+what it fed). The leak test's keys: `theirs` (FIXED opponent commands, in place of the intents), `from_segment` +
+`seed0` (the segments before it on the battle's own seed).
+
+**The algorithm.** Segment 0: the battle built on `try_seed(dice, 0, t)`, t = 0, 1, …. Segment s: the open requests
+say who chooses; the opponent's choice is its intent (resolved against its offered tokens: a typed Hidden Power for
+`move hiddenpower`, a switch by name) or, with none, a STAND-IN: each offered choice in request order, the first that
+reproduces the segment; the viewer's is its next command. Every feed of the update is preceded by
+`reseed(try_seed(dice, s, t))` (a feed that resolves nothing draws nothing; each is recorded, so the replay is exact).
+A segment no try matches RE-ROLLS: an HP line of an opponent mon first (its exact HP is hidden in a percent) — that
+mon's rolled hits since its HP was last known (`hp_last`: shown `100/100`, or fainted), latest first, at the same dice
+with its PICK OFFSET stepped (4 a hit, then the next-earlier hit), following the line's `[of]` mon too (recoil,
+drain); else the latest onset of a running counter in `backtrack` (and
+the previous segment under `prev_backtrack`, a Quick Claw on either team) at its next try; `rerolls` in all a world.
+Deterministic; draw-free outside the battle's PRNG.
+
+**The replays.** `core_events`' START `"reseed"` (`[[k, seed], …]`, ascending, `fresh_dice::schedule_from_json`) and the
+env crate's playout `Log.reseed` replace the PRNG immediately before command k; with the world's `rolls` table in
+`force` mode they rebuild the matched battle byte for byte. Absent or empty, not one byte changes (every log but a
+leak-honest world's or an alternative truth's).
+
+**Gates.** `tests/fresh_dice_test.rs` (a battle's own teams and commands matched on fresh dice, with and without the
+damage-roll control, and the schedule replayed in a bare session to every viewer line; a world at another level fails
+at segment 0; deterministic; `try_seed` valid and distinct; a malformed schedule refused);
+`src/rust_env/tests/search_reseed_test.rs` (a scheduled log replays as the battle branched onto that seed, a dropped
+schedule changes the battle, `log_from_json` refusals). The Python side: `main.value_search.honest_worlds` (its strict
+gate replays every kept world through `core_events` with every check) and the leak test
+`src/main/value_search/honest_inv_test.py`.
 
 ## Why the clone-branch snapshot needs no byte format
 

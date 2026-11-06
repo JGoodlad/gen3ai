@@ -1,9 +1,10 @@
 # S′-HONEST — does S′ still beat P\* against the real Kakuna when its worlds see nothing the live player cannot?
 
-**Status: DESIGNED 2026-11-05; BUILD NOT STARTED.** The leak inventory (§1), the design (§2), the leak test (§3) and the
-measured cost inputs (§4) are this doc's. The build is ≈ 6–8 agent-days (§6), over its unit's 2-day bound, so the
-unit STOPPED there for the orchestrator's decision. No PREREG is written and nothing is registered. S′-LIVE's GO-LEAKY
-([`design_sprime_live_play.md`](design_sprime_live_play.md)) licenses this replication and nothing else.
+**Status: STAGE 1 BUILT 2026-11-05 (the builder, its leak test, the timing and exclusion check: §8); STAGE 2 (the
+replication's PREREG, its reviews, its registration) NOT STARTED.** §1–§7 are the design as written before the build;
+§8 is the build as it stands, every choice the spec left open, and the checkpoint's measurements. No PREREG is written
+and nothing is registered. S′-LIVE's GO-LEAKY ([`design_sprime_live_play.md`](design_sprime_live_play.md)) licenses
+this replication and nothing else.
 
 **Abbreviations.**
 - P\* = `rb_x26_s2601` @280,000,170, greedy. Kakuna = Metamon's Kakuna, checkpoint 34, greedy. U = H, F and P72.
@@ -66,7 +67,7 @@ I. The battle seed, the opponent's packed team, its requests and its unexecuted 
 | # | piece | closes |
 |---|---|---|
 | D1 | **The input is I, not the log.** A new entry point takes I alone: no seed, no opponent team. The reference lines and rows come from I itself (`present()` builds a view from one side's stream), so no truth replay runs | the possibility of any L |
-| D2 | **The opponent scaffold from I.** Six mons (the format's prior: a gen-3 protocol names no team size); each seen mon's species, nickname, level, gender and shininess from its switch details; its revealed moves, item and ability from the ONE log source on our lines (`agents.info_levers.revealed`); the rest drawn as today. Party order: the lead, then by first appearance, never-seen last. Every gender NAMED, ours included, so turn 0 draws none. Default happiness. Unrevealed moves in a drawn slot order | L3b, L3c, L3d |
+| D2 | **The opponent scaffold from I.** The team size from `\|teamsize\|` (§8 C1: the gen-3 protocol names it); each seen mon's species, nickname, level, gender and shininess from its switch details; its revealed moves, item and ability from the ONE log source on our lines (`agents.info_levers.revealed`); the rest drawn as today. Party order: the lead, then by first appearance, never-seen last. Every gender NAMED, ours included, so turn 0 draws none. Default happiness. Unrevealed moves in a drawn slot order | L3b, L3c, L3d |
 | D3 | **Fresh dice, matched segment by segment (Rust).** A world is its team, its command list and a RESEED SCHEDULE. Before each command that resolves a segment, the replay reseeds from (key, world, segment, try) for try 0, 1, … ≤ T and keeps the first try whose new lines for our side (requests included) equal I's; the schedule records the kept seeds, and the gate and the playout tool replay it identically. An empty schedule is today's replay byte for byte, so `r0s4_rolls` is unchanged. No die of the truth is ever drawn. A damage-roll control on fresh dice (each damage site matched to the segment's next HP line) is the cost lever of §4, not a correctness piece | L1a–L1d |
 | D4 | **Persisted dice are the world's own.** A counter is drawn on the world's fresh dice at its onset and conditioned by every later segment (a wake on the truth's turn, or not yet). A segment no try matches backtracks to the latest onset, in I's lines, of a counter still running (sleep, confusion, Encore, Disable, a trap, a lock, Uproar), up to R re-rolls, before the candidate fails. At the root each persisted value, the Quick Claw roll included, is the world's own draw, so no root resample is needed | L2 |
 | D5 | **A screen with no true background.** One JOINT chain over every seen mon's item, ability and spread replaces the per-mon screens. Its score is the matched length under D3. A step moves the mon the first unmatched segment implicates (the opponent's active mon there, with `divergence_hint`'s stat), with MonSampler's own kernels (guided, local, a prior draw). Once I fits: Metropolis–Hastings over a uniformly chosen mon, thinned to the J worlds. Never-seen mons are drawn as today. D3's tries are keyed, so a candidate's verdict is deterministic | L3a |
@@ -145,13 +146,21 @@ figures are measured inputs and an estimate from them.
 - **The engine.** D3 changes the Rust sources, so the engine stamp moves off E4 (its `port=` part hashes them). The new
   stamp is registered with the pin. `r0s4_rolls`'s byte identity at the new stamp is shown by re-running S′-LIVE's
   identity re-score (its registered 600 decisions) and the bank tooth there.
-- **Fresh deals**, disjoint from S′-LIVE's (U unit seeds 300–344) and dlive's (200–244).
+- **Fresh deals**, disjoint from S′-LIVE's (U unit seeds 300–344), dlive's (200–244) and X65 ExIt-0's second look
+  (600–674, FINDING X65-F3).
+- **The labels come free for ExIt-0H.** Every searched decision's record keeps what S′-LIVE kept for distillation
+  (Q̂ and log π per legal move, root V, the frame and log digests; the anchor lane keeps its captures), §8.1 C15.
 - **`peer_long_tail_fault` from the start.** It is Kakuna's turn-250 race (S′LIVE-OP-6 / OP-7): a post-treatment drop,
   imputed at its worst case, counted against the 0.5 % cap. It does not hold the lane alone. A new error class, a
   panel's drops reaching 3, or more than 2 new exhaustions in 6 h does.
 - **The operator procedure.** Supervisor lives as transient `systemd-run --user` services whose script checks the
   engine stamp before `exec`ing `main.reads resume`. Concurrency 6 with `GEN3AI_HEAVY_SLOTS=6` in that supervisor only,
-  `nice -n 19 taskset -c 5-7,13-15`. The revert to 2 when a training run goes live (AM-K6's terms, written in).
+  `nice -n 19 taskset -c 5-7,13-15`. **Concurrency stays 6 while a PINNED training run is live** (the coordinator,
+  2026-11-05): X65-F1's contention record (`5fba84342`,
+  [`contention_trainer_vs_kakuna_2026-11-05/`](../research_state/measurements/contention_trainer_vs_kakuna_2026-11-05/))
+  measured a production trainer pinned to cores 0-4, 8-12 slowing a 6-wide S′ workload on 5-7, 13-15 by ≈ 13 %
+  (per-decision CPU ratio 1.153 [1.148, 1.158]), so AM-K6's drop to 2 is replaced: the PREREG cites that record and
+  reverts to 2 only while a run is UNPINNED.
 - **Power** (normal approximation; P(LB > 0) = Φ(δ / SE − 1.96); SE from S′-LIVE's realised interval, 0.974 pp at 2,698
   pairs, scaled by √(2,698 / n); in brackets the conservative √(d / n) at S′-LIVE's d = 0.341):
 
@@ -202,6 +211,124 @@ figures are measured inputs and an estimate from them.
 - **Whether a cheap OFFLINE ablation comes first.** `r0s4_rolls` against `r0s4_honest` at dlive's banked states under
   the self-referee would cost tens of CPU-h, against ≈ 500–1,000 for the live read.
 
+## 8. Stage 1 as built (2026-11-05)
+
+**What exists.** The preset `r0s4_honest` (`main.anchors.search_presets`, `dice="fresh"`); I and what is read off it
+alone (`main.value_search.info_set`: the segments, the key, the opponent's intents, the counters' onsets, the
+opponent's rolled hits); the builder (`main.value_search.honest_worlds`: the scaffold, the joint chain, each world on
+its own fresh dice, the strict gate); the honest search entry (`main.value_search.search.search_decision_honest`,
+which never reads a log); the live searcher's honest path (`main.anchors.search_side`: I read off the log by the ONE
+replay its root guards run, the record's `search_key` and `honest` block); in Rust the fresh-dice matcher
+(`src/rust_sim/src/fresh_dice.rs`, `core_events`' `INFOSET` / `MATCH`), the damage-roll control's `seg` mode
+(`rolls.rs`) and the reseed schedule in both replays (`core_events` START `"reseed"`, `rust_env`'s `Log.reseed`). The
+leak test is `main.value_search.honest_inv` and `honest_inv_test.py`. `r0s4` and `r0s4_rolls` are unchanged (§8.3).
+
+### 8.1 The choices the spec left open
+
+| # | where | chosen | why |
+|---|---|---|---|
+| C1 | D2 team size | read from `\|teamsize\|<side>\|N` | the gen-3 protocol prints it at START to both sides; D2's "six, the protocol names none" was wrong |
+| C2 | D3 segment | I's lines split after each `\|request\|` (one WRITE each; segment 0 the START write) | a write may ship a side several chunks; every write that ships the viewer ends with its request |
+| C3 | D3 reseed point | before EVERY feed of an update, the same seed, each recorded | a feed that resolves nothing draws nothing, so this is D3's "before the resolving command"; recording each keeps both replays exact without relying on it |
+| C4 | D6 executed choice | the opponent's first own action in the segment (a `\|switch\|`, a `\|move\|` with no `[from]`, Focus Punch's tightening, a `cant` line's move), continuing into the next segment while the opponent makes no new choice there | gen 3 replaces a fainted mon MID-turn and a Baton Pass splits a turn: the opponent's turn choice then shows after the viewer's mid-turn switch. A new choice: a `\|turn\|`, the viewer waiting, the opponent's active fainted |
+| C5 | D6 stand-in | each choice the world's opponent is offered, in request order (moves, then switches), the first reproducing the segment | a switch KO'd by Pursuit before it happens shows no line of the opponent; "the first legal move" alone cannot reproduce it |
+| C6 | D4 persisted dice | ALSO the opponent's exact HP: a failure whose first differing line is an HP line of an opponent mon (or names it `[of]`: recoil, drain) re-rolls that mon's rolled hits since its HP was last KNOWN (shown `100/100`, or fainted), latest first, at the SAME dice with its pick inside the consistent rolls stepped (4 a hit, then the next-earlier hit) | the viewer sees a percent; on the true teams, seven Leftovers percents in a row pinned one earlier roll; re-rolling hits from before a full-HP line only burnt the budget (FINDING S′H-6) |
+| C7 | B4 damage control | `rolls::Mode::Seg`: the hit's own line in the viewer's segment (the (c+1)-th HP event of the mon) is the target; the drawn roll if it prints it, else a consistent roll by the drawn roll's rank among the inconsistent ones (near-uniform over the consistent set); a Beat Up strike is predicted like a hit here (pinned in tier A's modes, which are unchanged) | an efficiency device only: every line is still compared. Beat Up's pinned strikes (five or six in a row) excluded the decisions that held one |
+| C8 | D3 tries | a chain step 64 tries, 8 re-rolls (×4 per stuck restart, to 1,024, only when the stuck line is not an HP number); a world 128 tries (its chain's if more), 24 re-rolls, then 1,024 tries on its later attempts, 3 never-seen draws, 4 spare chain samples; a chain's budget 600,000 feeds | on the true teams 39 of 40 dlive decisions matched at 128 / 24; a segment can need rare dice jointly (two exact Speed ties and a crit ≈ 1 in 128 a try) |
+| C9 | D5 the chain's state | each seen mon's item, ability, spread AND unrevealed moves (a 15 % independence kernel redraws them; an IV change retypes, adds or drops the unrevealed Hidden Power); the never-seen mons one keyed draw during the chain and each world's own after it | a spread fits I only through a move it held and never showed (a faster Suicune KO'd before its negative-priority choice): with the moves outside the chain, worlds that redrew them failed their own replay |
+| C10 | D2 move slots | the four slots (revealed and drawn) uniformly permuted per world | the true order is hidden; π's opponent play in the playouts is slot-indexed |
+| C11 | D2 happiness | 0 when the set holds Frustration, else the default | a default-happiness Frustration prints the wrong damage |
+| C12 | D2 our genders | named from our first request's `details` | a fresh START would redraw an unnamed one; the strict gate checks the root row is unchanged |
+| C13 | the strict gate | every kept world replayed by `core_events` with every check on its schedule must reproduce I's lines and the live root row, else RAISE | the matcher compares lines on a bare session; a difference would be a matcher defect, never an exclusion |
+| C14 | D1 entry | the live searcher reads I off the true log with the one replay its root guards run (the tokens, the turn, the row byte for byte) and hands the search I alone | the front end does not keep the lines it shipped the core slot; the replay is a guard, not an input |
+| C15 | the record | `r0s4_honest` writes every field `r0s4_rolls` writes on a searched decision (Q̂, log π, root V, the frame and log digests; the anchor lane keeps its captures), plus `search_key` and `honest` | X65's ExIt-0H: the honest read's labels come free (coordinator, 2026-11-05) |
+| C16 | §5 fresh deals | disjoint from 300–344 (S′-LIVE), 200–244 (dlive) AND 600–674 (X65 ExIt-0's second look, FINDING X65-F3) | the coordinator's instruction, 2026-11-05 |
+
+### 8.2 The leak test (INV) as built
+
+`main.value_search.honest_inv` (the harness and the fixture's builder) and `honest_inv_test.py` (slow): for each
+case, the live searcher's own `_search` on D and on D′ (D′ checked to ship the same I by replay), with a fixed
+DIGEST network (each row's logits and V read off a keyed sha256 of its bytes: INV does not depend on the network, a
+digest is bounded and moves with any difference in a row; a linear stub on the raw rows saturated V, every Q̂ 0, and
+hid the L2 case: FINDING S′H-8). The record compared: searched / why / error, the pick, deviation, Q̂, log π, root V,
+spent, the worlds' tries, the leak block, the search key, the honest build record and the world teams; never a
+CPU or wall time, never `species_hit` (a covariate measured against the truth after the decision).
+
+The fixture (`src/main/value_search/honest_inv_fixtures/cases.json.gz`) holds one pair per channel, each the first in
+the order sha256(key) over dlive's banked states whose D′ ships I AND moves `r0s4_rolls`'s record (its key pinned to
+I's digest, a call-site choice, except L5):
+
+| channel | the case (dlive key) | D′ |
+|---|---|---|
+| L1 the true seed | `794b8881…\|t16\|n15` | D's teams and commands on fresh dice (a 30-entry reseed schedule, the matcher's fixed-commands mode); `r0s4_rolls`'s accepted world teams differ |
+| L2 persisted dice | `58b6b215…\|t12\|n15` | only the root's last update re-diced (`from_segment`); a counter drawn there persists to the root. `r0s4_rolls`'s world teams EQUAL, its Q̂ not |
+| L3 the true scaffold | `fa9e641c…\|t11\|n11` | a seen Tyranitar's unrevealed Earthquake replaced by Thunderbolt (`align_to_truth`, the true background) |
+| L4 private commands | `a9987a13…\|t17\|n17` | an opponent's Roar never executed, replaced by Spikes (the template renders the true slot) |
+| L5 keying | `fa9e641c…\|t11\|n11` | a never-seen Moltres replaced by a Tentacruel; today's live key (the deal) |
+| L6 exclusions | `e97d9fb8…\|t29\|n32` | an opponent's Explosion never executed, replaced by poke-env's untyped `move hiddenpower` (the mon holds one; prior mass < 0.15): today's template keeps it verbatim and `r0s4_rolls` EXCLUDES on D′, searches on D |
+| control | `2a2210bb…` | the same battle at turn 10 against turn 17: another I |
+
+**Result (2026-11-05, at the new engine stamp): 14 passed.** `r0s4_honest`'s record is byte-identical on D and D′ for
+every channel; `r0s4_rolls`'s differs on every channel (the test's teeth: it fails on the leaky builder, channel by
+channel); the control's honest records differ. P3 (a spread moved where I does not pin it) is built
+(`p3_spread`) but no channel's case needed it.
+
+### 8.3 `r0s4_rolls` unchanged
+
+The build moved the engine stamp off E4 (`port=e00a212a102f5ce2/94;env=3d0d5c9c0f5d3c23/129`) to
+**`port=74eb0a3bc35bd465/95;env=87f06ac3ab0b911b/130`** (the new `fresh_dice.rs`, the `seg` mode of `rolls.rs`, the
+reseed schedule in `core_events` and `rust_env`). Every change is opt-in: `r0s4_rolls` arms none of them. **S′-LIVE's
+registered identity re-score at the new stamp: PASS, 600 / 600 decisions re-scored (forum72 217, heldout72 204, p72
+179), 0 mismatches** on searched / why / played / Q̂ / log π / root V (`rescore.sh`, 4,637 CPU-s). The Rust gates at
+the new sources: `cargo test` of the new `fresh_dice_test` and `search_reseed_test` (whose schedule pin fails when the
+replay's reseed is reverted), the rolls and playout tests, the obs golden (991 / 991 hashes), the core corpus and the
+e2e capstone golden (11 passed).
+
+### 8.4 The timing and exclusion check, and the budget
+
+**What ran** ([`measurements/sprime_honest_stage1_2026-11-05/`](../research_state/measurements/sprime_honest_stage1_2026-11-05/README.md),
+outcome-blind): dlive's scored U states, 100 a panel (mean turn 19.2), the live searcher's own `_search` for each
+preset, P\* on CPU, one thread, `nice 19` on the agent cores with a training run live. `r0s4_rolls` was timed once;
+`r0s4_honest` was re-timed after the legality fix (§8.1 C9), with the Showdown validator child's CPU (which no
+record counts: FINDING S′H-9) added, and then at two larger budgets on the 44 states the base budget limited.
+
+**The budget curve** (the coordinator's rule, 2026-11-05: one setting for every panel, the smallest bringing each to
+≤ 10 % exclusions at ≤ 20 projected CPU-min a searched game; else stop with the table). A larger budget replays a
+smaller one's chain exactly and goes on where it stopped, so only the limited states change (a spot check of six
+others at B3: identical records):
+
+| setting (chain steps, chain feeds, world attempts) | F excl. | H excl. | P72 excl. | U excl. | F CPU-min / game | U CPU-min / game |
+|---|---|---|---|---|---|---|
+| base (300, 600,000, 3) | 19 % | 6 % | 3 % | 9.3 % | 7.1–8.9 | 5.0–7.6 |
+| B2 (750, 1,500,000, 5) | 12 % | 6 % | 1 % | 6.3 % | 10.5–13.1 | 6.8–10.3 |
+| **B3 (1,800, 4,000,000, 8): CHOSEN** | **5 %** | **4 %** | **0 %** | **3 %** | **13.3–16.7** | **8.6–13.0** |
+
+CPU-min a searched game is projected two ways: S′-LIVE's 38.4 search-path decisions a game × the mean CPU per
+decision (the lower figure), and S′-LIVE's 6.2 CPU-min × the honest / `r0s4_rolls` CPU ratio on the same states (the
+higher). **B3 is the setting `r0s4_honest` now builds with** (`honest_worlds.MAX_STEPS`, `CHAIN_FEEDS_MAX`, `ATTEMPTS`).
+Before the legality fix the base budget excluded F 19 %, H 9 %, P72 6 %.
+
+**`r0s4_honest` at B3 against `r0s4_rolls`, per panel:**
+
+| panel | excl. rolls / honest | CPU-s a decision rolls / honest (median; honest p90) | honest world / playout / validator CPU-s | CPU-min a game rolls / honest | same pick (both searched) | rolls vs rolls, another key |
+|---|---|---|---|---|---|---|
+| H | 0 % / 4 % | 6.9 / 12.2 (4.1; 7.6) | 9.9 / 2.0 / 0.2 | 4.4 / 7.8–10.9 | 56 % (96) | 62 % (34) |
+| F | 6 % / 5 % | 7.7 / 20.8 (5.7; 58.5) | 18.6 / 1.7 / 0.4 | 5.0 / 13.3–16.7 | 71 % (91) | 69 % (35) |
+| P72 | 1 % / 0 % | 4.5 / 7.2 (4.4; 11.0) | 4.9 / 2.0 / 0.1 | 2.9 / 4.6–9.9 | 57 % (99) | 92 % (25) |
+| **U** | **2.3 % / 3.0 %** | **6.4 / 13.4 (4.4; 21.0)** | 11.1 / 1.9 / 0.2 | **4.1 / 8.6–13.0** | **61 % (286)** | **72 % (94)** |
+
+- **The cost is the long tail of the chain.** The median honest decision (4.4 CPU-s) costs what a `r0s4_rolls` one
+  does; the mean is set by the hard decisions (F's p90 58.5 CPU-s), most of them late F decisions. The playouts cost
+  the same (2.5 against 2.7 CPU-s on the states both searched in one run).
+- **The agreement is read against the noise floor.** Where both search, the two presets pick the same action in 61 %
+  of U decisions; on the 94 states the floor ran, `r0s4_rolls` against itself under another key agrees in 72 % and
+  `r0s4_honest` against `r0s4_rolls` in 67 %: the honest worlds move the pick about 5 pp more than resampling `r0s4_rolls`'s
+  own worlds does. Honest departs from π in 36 % of decisions, `r0s4_rolls` in 32 %.
+- **The stop criteria at the chosen setting:** every panel ≤ 15 % (all ≤ 5 %), the cost ≤ 20 CPU-min (F at most
+  16.7), no channel needed a model or observation change, `r0s4_rolls` stayed byte-identical (§8.3). None fired.
+- **The replication's budget** (§5's 3,840 deals) at ≈ 8.6–13.0 CPU-min a searched game: ≈ 550–830 CPU-h for the
+  searched units, against §4's estimate of 450–960.
+
 ## FINDINGs
 
 - **S′H-1 (no bigger leak shown, none ruled out).** §1: the unlisted channels are small or absent in U, the listed
@@ -215,8 +342,28 @@ figures are measured inputs and an estimate from them.
 - **S′H-5 (the template reads the opponent's private choices).** L4, in 35 % of S′-LIVE's decisions. S′-LIVE's
   `attribution_miss` counter is poke-env's untyped `move hiddenpower` (and `struggle`), not an attribution failure.
 
+- **S′H-6 (the opponent's exact HP is a persisted hidden value).** The viewer sees a percent, so a damage roll's pick
+  inside it is a die a later Leftovers, residual or recoil line can contradict (seven Leftovers percents in a row
+  pinned one roll on a true team). D4 named counters only; the matcher re-rolls HP too (§8.1 C6).
+- **S′H-7 (D2 misread the protocol).** The gen-3 protocol prints `|teamsize|` for both sides at START; the scaffold
+  reads it (§8.1 C1).
+- **S′H-8 (a saturated stub network hides a leak).** The leak test's first stub (a linear map of the raw rows) gave V
+  0 or 1 everywhere, so every Q̂ was 0.0 and `r0s4_rolls`'s L2 records looked identical. The digest network replaced
+  it; L2's pair then differs in Q̂ with equal world teams (§8.2).
+- **S′H-9 (the validator child's CPU is uncounted).** Every world builder's legality check runs in a persistent Node
+  child whose CPU no decision record counts (`cpu_s`: the thread and the reaped children). Measured here for
+  `r0s4_honest`: 0.1–0.4 CPU-s a decision; not measured for `r0s4_rolls` (its records, and S′-LIVE's 6.2 CPU-min, omit
+  it too).
+- **S′H-10 (fresh dice cannot reach every decision).** A segment whose dice are rare jointly (a 10 % paralysis, a
+  1/16 crit and a 70 % miss of another paralysis in one turn) or a long hidden-HP chain can defeat the chain within
+  any affordable budget; at B3 these are U's 3 % exclusions, priced at F's p90 58.5 CPU-s.
+- **S′H-11 (the per-segment rejection weights a dice path by how easy its segments were, §7) and the chain's
+  common dice** (every candidate judged on the same keyed tries, so a fit can lean on a lucky path): a bias, not a
+  leak, both functions of I; worlds stay uniformly weighted. Unmeasured.
+
 ## Decision record
 
 | date | decision | chosen | rejected / alternatives | evidence |
 |---|---|---|---|---|
 | 2026-11-05 | **This doc CREATED** (S′-HONEST designer, orchestrator brief): the leak inventory, the design, the leak test, the measured cost inputs; the unit STOPPED before the build at its 2-day bound | the search as a function of I alone: fresh dice matched per segment (D3), persisted dice drawn on them (D4), a joint chain with no true background (D5), the opponent's commands from I (D6), keying by I (D7), preset `r0s4_honest@10`; INV pointwise; 3,840 fresh deals for 80 % at half the S′-LIVE effect | counters only; tier-B typed dice; a decoy truth; hidden live dice; a particle filter instead of D3–D5 (§6) | the code at `fcfe2575e` (§1); the 49-site draw census; `measurements/sprime_honest_2026-11-05/` (exposure, decision records, segment match, timing run, speed pins) |
+| 2026-11-06 | **STAGE 1 BUILT** (S′-HONEST builder, orchestrator brief + the coordinator's budget pre-decision): the builder, its leak test, the timing and exclusion check; no PREREG | §8: the fresh-dice matcher in Rust (`fresh_dice.rs`, `core_events` `INFOSET` / `MATCH`, the `seg` damage-roll mode, the reseed schedule in both replays); I and the builder in Python (`info_set`, `honest_worlds`, preset `r0s4_honest`, `search_decision_honest`); the choices C1–C16; budget B3 (the smallest of three measured meeting ≤ 10 % / ≤ 20 CPU-min); INV 14 passed (honest identical on every channel, `r0s4_rolls` moves on every one); `r0s4_rolls` byte-identical (600 / 600) at stamp `port=74eb0a3bc35bd465/95;env=87f06ac3ab0b911b/130`; K = 6 under a pinned training run (X65-F1); U seeds 600–674 kept free (X65-F3) | the base budget (F 19 % exclusions) and B2 (F 12 %); per-panel budgets (the rule: one setting); a linear stub network for INV (S′H-8); the moves outside the chain (§8.1 C9) | `measurements/sprime_honest_stage1_2026-11-05/` (`final_summary.json`, `budget_curve.json`, `agreement.json`, `rescore.json`, the rows); `src/main/value_search/honest_inv_test.py` |

@@ -1,0 +1,133 @@
+{
+ "panels": {
+  "F": {
+   "agreement": {
+    "agreement": 0.7143,
+    "both": 91,
+    "dev_honest": 0.2747,
+    "dev_rolls": 0.2857,
+    "honest_vs_rolls_same": 0.7714,
+    "noise_n": 35,
+    "rolls_vs_rolls": 0.6857
+   },
+   "honest": {
+    "cpu_min_per_game_absolute": 13.33,
+    "cpu_min_per_game_ratio_to_slive": 16.67,
+    "cpu_s_mean": 20.82,
+    "cpu_s_median": 5.69,
+    "cpu_s_p90": 58.51,
+    "exclusion_rate": 0.05,
+    "playout_cpu_s_mean": 1.69,
+    "validator_cpu_s_mean": 0.36,
+    "world_cpu_s_mean": 18.62
+   },
+   "mean_turn": 19.26,
+   "n": 100,
+   "rolls": {
+    "cpu_min_per_game_absolute": 4.95,
+    "cpu_s_mean": 7.74,
+    "cpu_s_median": 5.49,
+    "exclusion_rate": 0.06,
+    "playout_cpu_s_mean": 2.21,
+    "world_cpu_s_mean": 5.31
+   }
+  },
+  "H": {
+   "agreement": {
+    "agreement": 0.5625,
+    "both": 96,
+    "dev_honest": 0.4167,
+    "dev_rolls": 0.3646,
+    "honest_vs_rolls_same": 0.5294,
+    "noise_n": 34,
+    "rolls_vs_rolls": 0.6176
+   },
+   "honest": {
+    "cpu_min_per_game_absolute": 7.78,
+    "cpu_min_per_game_ratio_to_slive": 10.94,
+    "cpu_s_mean": 12.16,
+    "cpu_s_median": 4.11,
+    "cpu_s_p90": 7.55,
+    "exclusion_rate": 0.04,
+    "playout_cpu_s_mean": 1.95,
+    "validator_cpu_s_mean": 0.2,
+    "world_cpu_s_mean": 9.85
+   },
+   "mean_turn": 19.13,
+   "n": 100,
+   "rolls": {
+    "cpu_min_per_game_absolute": 4.41,
+    "cpu_s_mean": 6.89,
+    "cpu_s_median": 6.19,
+    "exclusion_rate": 0.0,
+    "playout_cpu_s_mean": 3.61,
+    "world_cpu_s_mean": 3.01
+   }
+  },
+  "P72": {
+   "agreement": {
+    "agreement": 0.5657,
+    "both": 99,
+    "dev_honest": 0.3939,
+    "dev_rolls": 0.3131,
+    "honest_vs_rolls_same": 0.72,
+    "noise_n": 25,
+    "rolls_vs_rolls": 0.92
+   },
+   "honest": {
+    "cpu_min_per_game_absolute": 4.61,
+    "cpu_min_per_game_ratio_to_slive": 9.86,
+    "cpu_s_mean": 7.2,
+    "cpu_s_median": 4.41,
+    "cpu_s_p90": 11.03,
+    "exclusion_rate": 0.0,
+    "playout_cpu_s_mean": 2.03,
+    "validator_cpu_s_mean": 0.13,
+    "world_cpu_s_mean": 4.88
+   },
+   "mean_turn": 19.33,
+   "n": 100,
+   "rolls": {
+    "cpu_min_per_game_absolute": 2.9,
+    "cpu_s_mean": 4.52,
+    "cpu_s_median": 4.25,
+    "exclusion_rate": 0.01,
+    "playout_cpu_s_mean": 2.06,
+    "world_cpu_s_mean": 2.29
+   }
+  },
+  "U": {
+   "agreement": {
+    "agreement": 0.6119,
+    "both": 286,
+    "dev_honest": 0.3636,
+    "dev_rolls": 0.3217,
+    "honest_vs_rolls_same": 0.6702,
+    "noise_n": 94,
+    "rolls_vs_rolls": 0.7234
+   },
+   "honest": {
+    "cpu_min_per_game_absolute": 8.57,
+    "cpu_min_per_game_ratio_to_slive": 13.0,
+    "cpu_s_mean": 13.39,
+    "cpu_s_median": 4.4,
+    "cpu_s_p90": 20.99,
+    "exclusion_rate": 0.03,
+    "playout_cpu_s_mean": 1.89,
+    "validator_cpu_s_mean": 0.23,
+    "world_cpu_s_mean": 11.12
+   },
+   "mean_turn": 19.24,
+   "n": 300,
+   "rolls": {
+    "cpu_min_per_game_absolute": 4.09,
+    "cpu_s_mean": 6.39,
+    "cpu_s_median": 5.26,
+    "exclusion_rate": 0.0233,
+    "playout_cpu_s_mean": 2.63,
+    "world_cpu_s_mean": 3.53
+   }
+  }
+ },
+ "setting": "B3 (1800 steps, 4,000,000 chain feeds, 8 attempts)"
+}

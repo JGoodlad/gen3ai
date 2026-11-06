@@ -532,8 +532,9 @@ every search result updates it). The findings that steer it, all on search banks
 
 **The view.** Search WITH the true seed pays against the real bot at the game level (S′-LIVE); honest search, as
 built, still does not pay on the banks. The next step is the leak-honest replication S′-LIVE licenses: a world
-sampler that does not replay the true seed, on fresh deals. It is designed (`../endstate/design_sprime_honest.md`:
-the search a function of the searched side's information set alone, on fresh dice matched per segment), not built. Enabling honest search needs a world sampler that holds
+sampler that does not replay the true seed, on fresh deals. Its stage 1 is built (`../endstate/design_sprime_honest.md`
+§8: the search a function of the searched side's information set alone, on fresh dice matched per segment; its leak
+test passes on every channel; U exclusions 3 % at ≈ 8.6–13.0 CPU-min a searched game); no read is registered. Enabling honest search needs a world sampler that holds
 the opponent's actual team; policy training absorbs some of what perfect information would buy, but not enough.
 
 ### 4.8 Human data: signal in the labels; a human opponent model that learns but does not judge; less than self-play as a teacher

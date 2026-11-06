@@ -1,0 +1,38 @@
+{
+ "H": {
+  "both": 96,
+  "agreement": 0.5625,
+  "dev_rolls": 0.3646,
+  "dev_honest": 0.4167,
+  "noise_n": 34,
+  "rolls_vs_rolls": 0.6176,
+  "honest_vs_rolls_same": 0.5294
+ },
+ "F": {
+  "both": 91,
+  "agreement": 0.7143,
+  "dev_rolls": 0.2857,
+  "dev_honest": 0.2747,
+  "noise_n": 35,
+  "rolls_vs_rolls": 0.6857,
+  "honest_vs_rolls_same": 0.7714
+ },
+ "P72": {
+  "both": 99,
+  "agreement": 0.5657,
+  "dev_rolls": 0.3131,
+  "dev_honest": 0.3939,
+  "noise_n": 25,
+  "rolls_vs_rolls": 0.92,
+  "honest_vs_rolls_same": 0.72
+ },
+ "U": {
+  "both": 286,
+  "agreement": 0.6119,
+  "dev_rolls": 0.3217,
+  "dev_honest": 0.3636,
+  "noise_n": 94,
+  "rolls_vs_rolls": 0.7234,
+  "honest_vs_rolls_same": 0.6702
+ }
+}

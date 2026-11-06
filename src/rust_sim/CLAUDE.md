@@ -95,6 +95,9 @@ clone-and-branch primitive. Contract and gates: `search_and_replay_drivers.md`.
 - Every gen-3 damage roll (`random(16)`) goes through `BattleState::damage_roll`: the DAMAGE-ROLL
   CONTROL (`src/rolls.rs`) changes a roll's VALUE only when armed. A new damage site that draws directly
   breaks a matched world's replay. Contract: `search_and_replay_drivers.md` "The damage-roll control".
+- A leak-honest world log (`r0s4_honest`) carries a RESEED SCHEDULE (`"reseed"`: the PRNG replaced before command k;
+  `src/fresh_dice.rs` writes it): every replay of such a log must apply it (`core_events` START `"reseed"`, the
+  playout `Log.reseed`), or it plays another battle. Contract: `search_and_replay_drivers.md` "Fresh dice".
 - The gender DRAW PAD (`M*` / `F*` / `N*` in the packed gender field) is ours and offline only.
   Showdown reads `M*` as unnamed, so a padded team never goes to Node or a live server.
 
