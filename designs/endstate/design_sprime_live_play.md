@@ -162,7 +162,9 @@ watchdog, two identity fields on each searched decision, the choice-level identi
   - The checkpoint also projects each game's worst wall time (its slowest wall per turn × 250 turns). The lane HOLDs
     if that exceeds the 10-h watchdog.
 - **The leaks.** S′'s worlds replay the prefix on the TRUE battle seed (speed ties, hidden counters).
-  - `dice="rolls"` removed the damage-roll leak.
+  - `dice="rolls"` removed the rejection by the true damage roll, not its value: a world keeps the truth's roll
+    whenever it prints the same thing ([`design_sprime_honest.md`](design_sprime_honest.md) §1 L1d, which inventories
+    every channel from the code).
   - So a GO is leak-inclusive, and only NULL is credited outright (`search_ledger.md` §6.1). That credit rests on
     A-LEAK, an assumption: the leaks do not lower G. dlive's strata (leak-exposed +2.6 pp, leak-clean −0.06) support
     it but do not prove it.
@@ -205,3 +207,4 @@ watchdog, two identity fields on each searched decision, the choice-level identi
 |---|---|---|---|---|
 | 2026-11-01 | **This doc CREATED** (S′-LIVE designer, orchestrator brief) | the direct game-level read: S′ every eligible decision vs P\* greedy against Kakuna on U, 2,700 fresh deals (seeds 300–344), both arms as lone one-game units, G_U, GO-LEAKY / NULL (UB < +3 pp) / STOP with post-treatment drops imputed at their worst case, the sampled offline re-score as the identity guard, the 10-h watchdog, G-PREFIX peer drops pre-registered | importing dlive's raw arm; dlive's deals (review M1); home72; an interim look; a turn-capped search; 3,600 deals | dlive README (`02fb0f2fc`) DL-7, DL-10; the cost model over dlive's 3,200 raw games and 5,328 S′ rows; S-U AMENDMENT_1_DRAFT §1b; the two reviews (PREREG § Reviews) |
 | 2026-11-05 | **PLAYED: GO-LEAKY** (its operator, orchestrator brief) | the status line: played and recorded; G_U +4.60 pp [+2.66, +6.48], GO-imputed LB +2.57, searched U 0.545 [0.526, 0.564]; AM-K6 ran life 4 at `--concurrency 6` (wall-clock only) | K = 8 on cores 1-7,9-15 (a play-path change: `CORES` is pinned in `main.x35.kakuna`); a retry life for exhausted units (orchestrator: recorded as exhausted, imputed) | `measurements/sprime_live_play_2026-11-01/README.md`; ledger 2026-11-05 |
+| 2026-11-05 | **The leak line corrected; the replication DESIGNED** (S′-HONEST designer, orchestrator brief) | §5's leak bullet: `dice="rolls"` cured the rejection by the true roll, not its value; the replication this read licenses is `design_sprime_honest.md` (designed, its build not started) | — | `design_sprime_honest.md` §1 (L1d) |

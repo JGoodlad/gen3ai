@@ -489,9 +489,14 @@ The honest screen is the cost: a seen mon the prior fits is a few replays; one w
   So the item and ability legs are negligible on this pool; the SPEED-TIE leg is the real one: a fifth of decisions
   have a seen mon whose Speed the gate pins a point tighter than honest play could. Removing it needs a playout core
   that replays the prefix on fresh dice constrained to the printed outcomes (tier B of `design_world_sampler.md`
-  §3.3.1, not built). The DAMAGE-ROLL leg of the same seed reuse is cured behind `WorldSampler(dice="rolls")` (tier A,
-  BUILT 2026-10-19, default OFF: each damage roll's value any roll that prints what the searched side saw, the stream
-  aligned, the world weighted by Π k / 16; exclusions 20 → 6 of 60 rebuilt states).
+  §3.3.1, not built). The DAMAGE-ROLL leg of the same seed reuse is cured, as a REJECTION, behind
+  `WorldSampler(dice="rolls")` (tier A, BUILT 2026-10-19, default OFF: each damage roll's value any roll that prints
+  what the searched side saw, the stream aligned, the world weighted by Π k / 16; exclusions 20 → 6 of 60 rebuilt
+  states). Its VALUE is not: a site keeps the stream's roll, the truth's, whenever it prints the same thing (else the
+  nearest consistent one; a pinned site always), so a world's exact HP still follows the truth's rolls inside what was
+  printed. That and the leaks this section does not name (threshold dice, dice that pick a hidden slot, the true slot
+  order, the opponent's private commands, the root turn's Quick Claw roll) are inventoried from the code in
+  `design_sprime_honest.md` §1, with their exposure on S′-LIVE's decisions.
 - **IVs outside the screen's support** (measured on the bank's 231 teams, 1,386 mons): of 609 Hidden Power sets, 146
   use the canonical 30 / 31 pattern, 253 another 30 / 31 pattern (both in the support), **210 (34 %) IVs below 30**
   (mostly a minimised Attack, e.g. 31 / 2 / 31 / 30 / 31 / 31 for Hidden Power Fire); of 777 other sets, 258 (33 %)
@@ -810,3 +815,4 @@ and §5; the plan is [`design_human_replay_lever.md`](design_human_replay_lever.
 | 2026-10-25 | **§13 ADDED: the HUMAN-DATA levers registered as a second spec family (DESIGN, DRAFT; nothing built)** (owner's grant: human replays may train the policy, toggleable, off by default) | one flag `--human-data` with ONE clause (`bc` / `teams` / `kl` / `judge`) and a snapshot id, its own hash prefix `human_data_v1`, provenance as the reveal spec's | folding human data into `--oracle-reveal` (it reveals nothing about the battle played; mixing the two would make "honest" ambiguous); one flag per lever (the complexity budget) | `design_human_replay_lever.md` |
 | 2026-10-25 | **§13 reduced to a pointer** (REVIEW C F10: the grammar, the hash prefix and the provenance rules lived in three docs and had already drifted on inheritance) | §13 keeps the boundary (no hidden fact; never with `--oracle-reveal`) and points at `human_data_architecture.md` §5–§6, which owns the grammar (`judge` dropped, rowset / model ids, fork and resume refuse without a typed clause) | restating the grammar here (a second home drifts) | `measurements/human_replay_quality_2026-10-25/RESPONSE.md` |
 | 2026-10-25 | Status line made single (docs-health pass) | the 2026-10-25 and 2026-10-12 status blocks, run together in one paragraph, are one status: all three consumers BUILT (§4), `--human-data` PROPOSED and not built (`grep` finds no such flag under `src/`) | two stacked dated status blocks | §4; `src/agents/info_levers/`, `src/main/train/parser/env_core.py` |
+| 2026-11-05 | **The damage-roll cure narrowed; the residuals point at the full inventory** (S′-HONEST designer, orchestrator brief) | §7.5: tier A cures the REJECTION by the true roll, not its value (a site keeps the truth's roll whenever it prints the same thing: `src/rust_sim/src/rolls.rs`); the unnamed leaks are inventoried in `design_sprime_honest.md` §1 | calling the damage-roll leg cured | `design_sprime_honest.md` §1 (L1d, S′H-3) |

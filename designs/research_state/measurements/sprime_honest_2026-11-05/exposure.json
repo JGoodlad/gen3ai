@@ -1,0 +1,49 @@
+{
+ "by_panel": {
+  "forum72": {
+   "ANY": 0.0812,
+   "conf": 0.0,
+   "slp_opp_active": 0.0098,
+   "slp_opp_any": 0.0426,
+   "slp_ours_active": 0.0084,
+   "slp_ours_any": 0.0387
+  },
+  "heldout72_hpfix": {
+   "ANY": 0.044,
+   "conf": 0.0007,
+   "slp_opp_active": 0.0036,
+   "slp_opp_any": 0.0234,
+   "slp_ours_active": 0.0044,
+   "slp_ours_any": 0.0199
+  },
+  "p72": {
+   "ANY": 0.0782,
+   "conf": 0.001,
+   "fs_pending": 0.0026,
+   "slp_opp_active": 0.0073,
+   "slp_opp_any": 0.0441,
+   "slp_ours_active": 0.0069,
+   "slp_ours_any": 0.0322
+  }
+ },
+ "decisions": 103616,
+ "games": 2700,
+ "games_share": {
+  "ANY": 0.1637,
+  "conf": 0.0056,
+  "fs_pending": 0.0078,
+  "slp_opp_active": 0.0733,
+  "slp_opp_any": 0.0815,
+  "slp_ours_active": 0.0693,
+  "slp_ours_any": 0.0748
+ },
+ "share": {
+  "ANY": 0.0686,
+  "conf": 0.0005,
+  "fs_pending": 0.0008,
+  "slp_opp_active": 0.007,
+  "slp_opp_any": 0.0371,
+  "slp_ours_active": 0.0067,
+  "slp_ours_any": 0.0308
+ }
+}

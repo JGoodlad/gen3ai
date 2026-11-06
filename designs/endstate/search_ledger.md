@@ -25,6 +25,11 @@ the owner's goal 5. It makes four points:
 - **What it licenses, and only this.** Building and registering a LEAK-HONEST replication on fresh deals. S′'s worlds
   replay the true battle seed (§6.1: speed ties and hidden counters leak), so this is not deployable search and not
   goal (b) met; no training, league or public-server change follows.
+- **Next: the replication, S′-HONEST, is DESIGNED and not built** (2026-11-05,
+  [`design_sprime_honest.md`](design_sprime_honest.md)). Its inventory reads six channels from the code; none is shown
+  bigger than §6.1 says. On S′-LIVE's own states a Speed is pinned in 23.5 % of decisions and a hidden counter is
+  live in 6.9 %. The design makes the search a function of the searched side's information set alone, on fresh dice
+  matched segment by segment. Its build is ≈ 6–8 agent-days, so its unit stopped for the orchestrator's decision.
 - **Against dlive.** dlive's per-departure +0.012 [−0.016, +0.039] (power ≈ 0.11) is not re-read; the game-level total
   is a different estimand (every decision, composition, turns past 30), never pooled. The performance-difference
   bridge stays UNVERIFIED (S′L-3).
@@ -678,7 +683,7 @@ holds**; "today's p" is the p-EQUIVALENT in value units. Registered read on the 
 | **seen mons' unseen moves** | s_M **0.13** [−0.02, 0.25], n_M **0.42** [0.31, 0.54] (E2, competent-opponent states: s_M 0.16 [0.02, 0.28], n_M **0.58** [0.47, 0.70], B4 HOLDS there: a NECESSARY share); never LEADS at any stage or in any E2 frame; the dose helps a little (D90 − F +0.011 [+0.001, +0.021]), a confident wrong set HURTS (W90 − F −0.013 [−0.024, −0.003]), the honest sharpening buys nothing (MAP100 − F −0.002); R-MOVES **REFUTED** | a real minority share | MEASURED, PROVISIONAL |
 | **items, abilities, spreads, exact HP** | the fully honest gap ≈ the pilot's (which told them true): IMP_F +0.006 vs IMP_P +0.009, ≈ 0.003; the separate F+I/A/S and O−I/A/S arms are Tier 2 (not run) | small | DESCRIPTIVE (Tier 2 owed) |
 | **which TEAM, out of a closed pool** | POOL (the pool's teams consistent with the observation) recovers **0.80** [0.73, 0.87] of G; the pool's per-species set frequencies (POOLSETS) recover −0.02 | large on OUR pool; not available on an open ladder | MEASURED |
-| **hidden counters, speed ties** | residual leaks of the honest builder (§6.1) | unknown | UNVERIFIED |
+| **hidden counters, speed ties** | residual leaks of the honest builder (§6.1); on S′-LIVE's own states (2026-11-05) a seen mon's Speed is pinned in 23.5 % of decisions and a hidden counter is live in 6.9 % | unknown | exposure MEASURED, value UNVERIFIED |
 
 The two-point Shapley credit over the registered 600: φ_U = ½(0.022 + 0.058) = **0.040**, φ_M = ½(0.009 + 0.029) = **0.019** of
 G = 0.070; Σ s = 0.45 [0.22, 0.65] (not NON-ADDITIVE), Σ n = 1.24 (the hide-only costs overlap). Nothing from the study may steer
@@ -753,10 +758,20 @@ no in-Rust builder exists. The pilot's builder cost ≈ 0.08 CPU-s per world (ca
 - **Speed-tie dice (seed reuse).** The prefix is replayed on the TRUE seed, so a hidden fact that spends a die without
   printing a line is visible to the gate. Measured by counterfactual flips: a seen mon's Speed ±1 is rejected for 34 of 674
   (decision, seen mon) pairs (5.0 %), in **20.1 %** of decisions; King's Rock / Focus Band 39 % of tests but 4.7·10⁻⁵ prior
-  mass per mon and none in the bank's 231 teams; no unrevealed dice-rolling ability seen. Cure: a playout core that replays on
-  fresh dice constrained to printed outcomes (not built).
-- **Hidden counters** (sleep / confusion / Encore / lock durations rolled BEFORE the root are the truth's in every world).
-  Cure: a root-state resample in the playout core (not built).
+  mass per mon and none in the bank's 231 teams; no unrevealed dice-rolling ability seen. On S′-LIVE's own decisions
+  (2026-11-05): **23.5 %** of decisions, 5.4 % of pairs. Cure: a playout core that replays on fresh dice constrained to
+  printed outcomes (not built; `design_sprime_honest.md` D3 matches them segment by segment).
+- **Hidden counters** (sleep / confusion / Encore / lock durations rolled BEFORE the root are the truth's in every world:
+  the playouts' reseed swaps only the PRNG). On S′-LIVE's decisions one is live in **6.9 %** (a non-Rest sleep 3.1 % on
+  our side, 3.7 % on theirs; confusion 0.05 %). The root turn's Quick Claw roll and a pending Future Sight / Doom
+  Desire's damage survive the reseed the same way (none and 0.08 % in U). Cure: the world's own fresh dice
+  (`design_sprime_honest.md` D4; not built).
+- **The full inventory read from the code (2026-11-05, `design_sprime_honest.md` §1)** adds channels this list did not
+  name: THRESHOLD dice (a die drawn either way whose outcome a hidden fact moves: Serene Grace, Scope Lens, Sand Veil,
+  Shell Armor), dice that pick a hidden SLOT (Sleep Talk, Assist, Roar / Whirlwind) with the TRUE slot order the builder
+  copies (`align_to_truth`), the screen's true background and the screened mon's true unrevealed moves, the opponent's
+  PRIVATE commands (a choice never executed, rendered at its true slot: 35 % of S′-LIVE's decisions), the deal key and
+  the exclusions. Each is small or absent in U on its own; none is shown to carry S′-LIVE's +4.60.
 - **IVs below 30** (34 % of the bank's Hidden Power sets, 33 % of the others, mostly a minimised Attack) are outside the
   screen's support. **Owner's ruling (2026-10-12): no IV prior below 30**; a minimised Attack is taken as full Attack (it
   matters only in a confusion self-hit or a Struggle endgame), and a decision whose log pins the Attack stays EXCLUDED
@@ -799,7 +814,9 @@ no in-Rust builder exists. The pilot's builder cost ≈ 0.08 CPU-s per world (ca
   §3.3.1, F1).** A world had to reproduce each observed damage number with the truth's own damage ROLL, where an honest
   player knows only the 16-roll range. MEASURED: 9.0 % of the candidates today's screen rejects fit on another roll.
   **Tier A is BUILT behind `WorldSampler(dice="rolls")`, default OFF**: the damage roll's VALUE replaced within the
-  aligned stream, weight Π k / 16, the truth-passes guard raising. On 60 rebuilt states: exclusions 20 → 6, cost
+  aligned stream, weight Π k / 16, the truth-passes guard raising. It cures the REJECTION by the true roll, not the
+  value: a site keeps the stream's roll, the TRUTH's, whenever it prints the same thing, else the nearest consistent
+  one, and a pinned site always (`src/rust_sim/src/rolls.rs`; `design_sprime_honest.md` S′H-3). On 60 rebuilt states: exclusions 20 → 6, cost
   96 → 42 s per state, item / ability / spread matches with the truth 0.953 / 0.989 / 0.056 → 0.951 / 0.980 / 0.047,
   weight ESS 7.3 of 8. **Honest reads used `seed` until the S-U re-gate** (2026-10-28, the live preset `r0s4_rolls`,
   uniform weights); worlds of the two modes are not comparable. Tier B
@@ -863,7 +880,8 @@ limits:
   update it answers; the search replays every update before ours, never the opponent's choice of our own update (its
   root decision is open and π answers it). A guard per decision: the log's replay must reproduce the live decision's
   tokens and observation row byte for byte, or the game fails by name. **The leaks of §6.1 stay** (the true seed's speed
-  ties and hidden counters): a live gain is LEAK-INCLUSIVE.
+  ties and hidden counters, and the rest of `design_sprime_honest.md` §1's inventory: the log the searcher gets holds
+  the true seed, both true teams and the opponent's own commands): a live gain is LEAK-INCLUSIVE.
 - **Paired by deal.** Raw and searched games of one deal (a seed's game G, `main.anchors --deal-game`) must be
   byte-identical through `|turn|10` (G-PREFIX, `main.reads.prefix`); a mismatch holds the lane and voids the group.
 - **The peer's patience** (FINDING S-3, closed): the only clock on Kakuna's side is poke-env's websocket keepalive
@@ -994,3 +1012,4 @@ limits:
 | 2026-11-01 | **The deviation-only live read: STOP** (its operator, orchestrator brief; PREREG `715e0b482`, A1, AM-DL-PEER) | the latest status line replaced (STOP, T's shrunken effect on fresh states, Kakuna's replay nondeterminism); Q17's row | reading STOP as "S′ is no better than π" or DOES-NOT-CLOSE-B (its power at T's measured effect is ≈ 0.11); reading live ≈ T as validating T (DL-3: descriptive); VOIDing on peer divergence (AM-DL-PEER, blind) | `../research_state/measurements/dlive_read_2026-10-28/README.md`; state `~/gen3ai_archive/dlive_read_2026-10-28/record.json` |
 | 2026-11-01 | **S′-LIVE REGISTERED** (its designer, orchestrator brief; two adversarial reviews folded in) | a "Registered next" block above the status line; Q17's row | treating dlive's STOP as closing the game-level question (power ≈ 0.11 at T's measured effect): the orchestrator overruled the filter-then-read pipeline for power, and this read is a new question, never pooled with dlive. Rejected alternatives: dlive's deals (correlated with the estimate that prompted the read, review M1); importing dlive's raw arm (DL-7's process shape); home72; an interim look | `design_sprime_live_play.md`; `../research_state/measurements/sprime_live_play_2026-11-01/PREREG.md` |
 | 2026-11-05 | **S′-LIVE: GO-LEAKY** (its operator, orchestrator brief; PREREG `9c2f023e4`, AM-K6) | the "Registered next" block replaced by the latest status line (GO-LEAKY, G_U +4.60 [+2.66, +6.48], searched U 0.545 leaky); the dlive status line demoted to "Before it"; Q17's row | quoting the searched arm's 0.545 as goal (b) met (leak-inclusive by name, §6.1); pooling with dlive; reading the GO as a validated per-departure bridge (S′L-3) | `../research_state/measurements/sprime_live_play_2026-11-01/README.md`; ledger 2026-11-05 |
+| 2026-11-05 | **S′-HONEST DESIGNED; its build not started** (its designer, orchestrator brief; docs and outcome-blind design inputs only) | the status block's "Next" bullet; §5.2's counters / speed-ties row (exposure measured on S′-LIVE's states); §6.1 (the speed-tie and counter bullets' S′-LIVE exposure, a new inventory bullet, tier A's cure narrowed to the rejection: a world keeps the TRUE roll whenever it prints the same thing); §6.4's leak line | reading the inventory as sizing what the leaks carried (only the replication can); a counters-only fix (it leaves the true seed's prefix); building past the unit's 2-day bound unasked (≈ 6–8 agent-days) | `design_sprime_honest.md` §1, §4, §6; `../research_state/measurements/sprime_honest_2026-11-05/README.md` |
