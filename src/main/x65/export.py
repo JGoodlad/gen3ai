@@ -1,8 +1,8 @@
 r"""B3, THE EXPORT AT THE PLAY PIN (PREREG §3): the picked student as P\*'s checkpoint with the student's policy
 weights, checked bit for bit at the commit that will play it.
 
-    python -m main.x65.export write --fold-dir <dir>/s_h --init <P* zip> --pin-root <worktree at 0c76b521e>
-    python -m main.x65.export smoke --fold-dir <dir>/s_h --pin-root <worktree at 0c76b521e> --teamset <read panel>
+    python -m main.x65.export write --fold-dir <dir>/s_h --init <P* zip> --pin-root <worktree at 320a535d4>
+    python -m main.x65.export smoke --fold-dir <dir>/s_h --pin-root <worktree at 320a535d4> --teamset <read panel>
 
 ``write``:
 
@@ -42,7 +42,9 @@ import numpy as np
 from main.x65 import student as ST
 
 SCHEMA = "gen3_x65_export_v1"
-PLAY_PIN = "0c76b521e"
+#: the PLAY PIN (the pin amendment, REVIEW R-m7): the landed B5 commit, whose play path is byte-identical to S′-LIVE's
+#: ``0c76b521e`` (``main.reads.playpath.compare``: 0 of 1,732 files) and whose ``main.reads`` plans the X65 specs
+PLAY_PIN = "320a535d4"
 SMOKE_SEED = 900
 THREADS = 1
 
