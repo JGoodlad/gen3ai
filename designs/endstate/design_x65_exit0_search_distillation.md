@@ -1,9 +1,14 @@
 # X65 ExIt-0: teach P\* what the search S′ plays, and test whether it learns it
 
 **Status: REGISTERED 2026-11-05** ([`../research_state/measurements/x65_exit0_2026-11-05/PREREG.md`](../research_state/measurements/x65_exit0_2026-11-05/PREREG.md)).
-Nothing is built, trained or played. The rule, the folds, the recipe, the deals and the bars are frozen. The builds
-(§7) and a pin amendment come before the first student trains, and an adversarial review comes before that
-amendment.
+**Builds B1–B5 BUILT 2026-11-05** (§7; package `src/main/x65/`, the read rule `main.reads.rules_distill_play`).
+Nothing is trained or played. The rule, the folds, the recipe, the deals and the bars are frozen. The adversarial
+review, then a pin amendment (code and bank commit, the bank manifest's sha256), come before the first student
+trains. **Open for that amendment:** the read cannot be planned at S′-LIVE's play pin `0c76b521e`, whose
+`main.reads` has neither `distill_play` nor the specs' new fields; the B4 / B5 commits before the package-docstring
+one leave the play path byte-identical to `0c76b521e`'s (`playpath.compare`: 0 of 1,732 files), so the amendment
+can pin one of them or build a successor of `0c76b521e` carrying only those files. The specs' `PENDING` values
+(student zips and sha256s, the bank sha256, the pin, the later looks' import hashes) are what it fills.
 
 **Terms.**
 - **P\*** is X26 @280M (`pstar_plateau`).
@@ -238,13 +243,36 @@ What changes this:
 
 ## 7. The builds (≈ 2.5–3 agent-days; each fails on revert)
 
-| # | build | estimate |
-|---|---|---|
-| B1 | the bank: rows rebuilt in `honest_log`'s order, π′, a `frame_sha256` check on every label row (drop and count), anchor rows, fold and inner-validation keys, a manifest with sha256; outcome-blind | 0.75 d |
-| B2 | the fine-tune: `src/main/human_data/student.py`'s loop started from P\*, with the soft KL, the anchor teacher, the inner-validation pick and resumable state | 0.5 d |
-| B3 | the export: P\*'s zip with the student's policy, written at the play pin; logits bit-identical to the trainer's on the 64-row fixture; one bare-loader smoke game | 0.25 d |
-| B4 | the delivery meter and the rule `distill_play` in `main.reads` (two looks, worst-case imputation, the boundary rule), constructed-case tests and a by-hand script | 0.75 d |
-| B5 | the read spec: G-BANK, the per-fold model labels, look 2's seeds, `check-spec` exit 0 | 0.25 d |
+| # | build | estimate | built as |
+|---|---|---|---|
+| B1 | the bank: rows rebuilt in `honest_log`'s order, π′, a `frame_sha256` check on every label row (drop and count), anchor rows, fold and inner-validation keys, a manifest with sha256; outcome-blind | 0.75 d | `python -m main.x65.bank build / check` |
+| B2 | the fine-tune: P\*-started, the soft KL, the anchor teacher, the inner-validation pick and resumable state | 0.5 d | `python -m main.x65.student train / pick` |
+| B3 | the export: P\*'s zip with the student's policy, written at the play pin; logits bit-identical to the trainer's on the 64-row fixture; one bare-loader smoke game | 0.25 d | `python -m main.x65.export write / smoke` |
+| B4 | the delivery meter and the rule `distill_play` in `main.reads` (two looks, worst-case imputation, the boundary rule), constructed-case tests and a by-hand script | 0.75 d | `python -m main.x65.delivery score / gate`; `main.reads.rules_distill_play`; `by_hand.py` |
+| B5 | the read spec: G-BANK, the per-fold model labels, look 2's seeds, `check-spec` exit 0 | 0.25 d | the measurement folder's read spec(s) |
+
+**How B1 rebuilds a row.** The capture keeps the commands in ARRIVAL order without the request update each one
+answered, so B1 re-derives the update the way the front end counted it: it replays the arrival-order prefix once
+(stopping before our last command, so no replay reaches the result), counts each side's `|request|` lines (a
+re-request after `[Unavailable choice]` asks the same update) and cuts each of our decisions' log exactly as
+`honest_log` did, then rebuilds the row through `prepare_root`. The probe's one miss (our second decision inside
+update 24, after a trapped switch was refused) is its regression fixture (`src/main/x65/testdata/`). Every label row
+must hash to its `frame_sha256` or it is dropped and counted. A raw game has no digest, so an anchor row with none
+must pass two other checks or be dropped and counted: the honest cut's row equals the arrival-order replay's, and
+P\*'s greedy action on the row is the one the game recorded (a row whose two best logits lie within 1e-4 is excluded
+from that check, root rule 8).
+
+**Readings the builds took where the PREREG is silent** (for the adversarial review to accept or amend):
+- the inner-validation `deal` key is `search_side.deal_key`'s digest (the searched records' `deal`, shared by a
+  deal's raw and searched games), not the record's `panel:seed:game` string;
+- an anchor batch is drawn from a fresh permutation of the anchor rows each label epoch, so an epoch uses
+  ≈ 230 × 256 of them, not all;
+- every decision of our side is an anchor row, including one-legal-action decisions (KL 0) and both arms' identical
+  pre-turn-10 prefixes (so those rows weigh twice);
+- π_P\* is computed once, from a frozen copy of P\*'s bytes, before the first step;
+- the inner-validation L is a float64 mean over all held-out label rows plus β times one over all held-out anchor
+  rows; an epoch's last label batch is the remainder;
+- the delivery gate's a(P\*) uses the recorded `pi_argmax`; a(student) the exported zip; root rule 8 applies to its LB.
 
 ## 8. The launch, checked
 
@@ -277,3 +305,4 @@ What changes this:
 | date | decision | chosen | rejected, and why | evidence |
 |---|---|---|---|---|
 | 2026-11-05 | **This doc CREATED and X65 ExIt-0 REGISTERED** (research designer, orchestrator brief: one GPU experiment, worth running whatever S′-HONEST finds) | ExIt-0: supervised distillation of S′ into P\* from S′-LIVE's banked labels, panel cross-fit, read against Kakuna on the held-out panel with the banked raw arm at look 1 | fresh-label ExIt (9.5 CPU-s a label, measured); the in-loop factory (≈ 32 cores at f = 0.25 %); `D_MODEL` growth (not growable; three capacity NO-GOs); from-scratch scale (the owner's question; ≈ 8–12 GPU-days); X60-T (unbuilt; the runner-up); a bare C0 | §2; `frame_probe.json` 976 / 977; `bank_count.json`; `power.txt`; S′-LIVE's record; `design_sprime_honest.md` §4 |
+| 2026-11-05 | **B1–B5 built** (X65 builder, orchestrator brief: build exactly as registered) | B1–B4's meter in `src/main/x65/` (a new loop, reusing X59-S's helpers, HOM's export form and `policy_logits_t`); the rule and the spec in `main.reads` | X59-S's `train` as-is: its loss (set-NLL), its fresh init, its cosine schedule and its rowset format are all different from §3's, so it would be a fork with every line changed | an 18-shard sample (360 games, 17,134 rows): 6,007 / 6,007 label rows and all 6,621 searched-arm digests verified, every recorded `log_sha256` and re-score log reproduced, 0 anchor rows failing either check; the readings in §7 are for the review |
