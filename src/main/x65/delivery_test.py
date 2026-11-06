@@ -71,7 +71,7 @@ def test_the_gate_writes_the_rule_s_file_and_refuses_another_bank(tmp_path):
         a_s = np.maximum(a_p, (rng.random(n) < 0.2)).astype(np.int8)
         np.savez(tmp_path / f"{p}.npz", schema=DV.SCORE_SCHEMA, fold=p, student=f"S{i}", zip_sha256=f"{i}" * 64,
                  bank_manifest_sha256="b" * 64, deal=deal, a_student=a_s, a_pstar=a_p, departure=a_p == 0,
-                 leak_attr=rng.random(n) < 0.3, leak_rewr=rng.random(n) < 0.1, leak_resid=rng.random(n) < 0.05,
+                 leak_attr=rng.random(n) < 0.3, leak_rewr=rng.random(n) < 0.1,
                  v_student=rng.random(n).astype(np.float32), v_pstar=rng.random(n).astype(np.float32),
                  pre_agree_pstar=np.ones(40, np.int8))
     doc = DV.gate(tmp_path, "b" * 64)
@@ -79,8 +79,7 @@ def test_the_gate_writes_the_rule_s_file_and_refuses_another_bank(tmp_path):
     assert doc["students"]["forum72"]["zip_sha256"] == "1" * 64 and doc["delivered"] is True
     assert set(doc["per_panel"]["p72"]) == {"n_rows", "n_deals", "agree_student", "agree_pstar", "delta"}
     assert doc["per_panel"]["p72"]["n_deals"] == 60
-    assert set(doc["reported"]["p72"]["by_exposure"]) == {"attribution_miss", "rewritten_moves",
-                                                          "residual_counters", "none"}
+    assert set(doc["reported"]["p72"]["by_exposure"]) == {"attribution_miss", "rewritten_moves", "neither"}
     # the read rule accepts exactly this file (its key set, its sha256s, its own LB test)
     from main.reads.rules_distill_play import read_delivery
 
@@ -155,7 +154,7 @@ def _score_bank(tmp_path):
            "pi_argmax": np.array([r["pi_argmax"] for r in rows], np.int8),
            "deal": np.array([r["deal"] for r in rows], "U20"), "turn": np.array([r["turn"] for r in rows], np.int16),
            "arm": np.ones(n, np.int8), "leak_attr": np.array([r["attr"] for r in rows], np.int16),
-           "leak_rewr": np.array([r["rewr"] for r in rows], np.int16), "leak_resid": np.ones(n, bool)}
+           "leak_rewr": np.array([r["rewr"] for r in rows], np.int16)}
     shards = []
     for name, a in (("pstar_s__forum72__300", arr), ("pstar__forum72__300", dict(arr, arm=np.zeros(n, np.int8)))):
         np.savez(tmp_path / f"{name}.npz", **a)

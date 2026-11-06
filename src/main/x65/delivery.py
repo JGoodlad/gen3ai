@@ -9,7 +9,9 @@ result file and classes NOT-DELIVERED when it says so.
 
 ``score``: on EVERY label row of the read panel (the searched arm's verified searched decisions; inner validation does
 not apply to a read panel), a(student) = 1[argmax of the exported student's masked logits = ``played``] and
-a(P\*) = 1[``pi_argmax`` = ``played``] (the recorded greedy choice); plus, reported only, the leak-exposure flags,
+a(P\*) = 1[``pi_argmax`` = ``played``] (the recorded greedy choice); plus, reported only, the per-decision leak
+counters (``attribution_miss`` >= 1, ``rewritten_moves`` >= 1, neither; the leak block's ``residual`` is the preset's
+static list, the same on every record, so it splits nothing),
 whether the decision was a DEPARTURE (``played`` ≠ ``pi_argmax``), the student's and P\*'s V (the drift), and on the read
 panel's searched-arm decisions before turn 10 the student's agreement with P\*'s recorded choice. The student is read
 from the EXPORTED zip (its sha256 checked against ``export.json``), through this checkout's loader and the live
@@ -39,8 +41,7 @@ SCORE_SCHEMA = "gen3_x65_delivery_scores_v1"
 B_BOOT = 4000
 SEED = 20261105
 RULE8_EPS = 0.0005
-FIELDS = ("obs", "mask", "label", "played", "pi_argmax", "deal", "turn", "arm", "leak_attr", "leak_rewr",
-          "leak_resid")
+FIELDS = ("obs", "mask", "label", "played", "pi_argmax", "deal", "turn", "arm", "leak_attr", "leak_rewr")
 
 
 class DeliveryError(RuntimeError):
@@ -85,7 +86,6 @@ def score(bank: Path, bank_sha256: str, fold: str, export: Path, init: Path, out
            "a_pstar": (pia[lab_k] == played[lab_k]).astype(np.int8),
            "departure": (pia[lab_k] != played[lab_k]),
            "leak_attr": z["leak_attr"][keep][lab_k] >= 1, "leak_rewr": z["leak_rewr"][keep][lab_k] >= 1,
-           "leak_resid": z["leak_resid"][keep][lab_k],
            "v_student": s_out[lab_k, BK.N_ACT], "v_pstar": p_out[lab_k, BK.N_ACT],
            "pre_agree_pstar": (s_arg[pre_k] == pia[pre_k]).astype(np.int8)}
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -139,9 +139,10 @@ def gate(scores: Path, bank_sha256: str) -> dict[str, Any]:
     rep: dict[str, Any] = {}
     for p, d in docs.items():
         diff = per[p]["diff"]
-        flags = {"attribution_miss": d["leak_attr"], "rewritten_moves": d["leak_rewr"], "residual_counters":
-                 d["leak_resid"]}
-        flags["none"] = ~(d["leak_attr"] | d["leak_rewr"] | d["leak_resid"])
+        # the leak block's ``residual`` / ``partial`` are the PRESET's static leak names, the same on every searched
+        # record (``worlds``: ``SEARCH.residual_of(spec)``), so only the per-decision counters split (REVIEW R-m4)
+        flags = {"attribution_miss": d["leak_attr"], "rewritten_moves": d["leak_rewr"]}
+        flags["neither"] = ~(d["leak_attr"] | d["leak_rewr"])
         rep[p] = {"by_exposure": {k: {"rows": int(m.sum()), "delta": float(diff[m].mean()) if m.any() else None}
                                   for k, m in flags.items()},
                   "departures": {"rows": int(d["departure"].sum()),
