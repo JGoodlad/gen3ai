@@ -221,5 +221,39 @@ The false GO is 0.026 one-sided against a nominal 0.025. GUESS for the true Δ: 
 
 ## Reviews
 
-None yet. One adversarial review (the statistics and the design; the bank and its identity) is owed before the pin
-amendment, every finding disposed in a blind amendment.
+- [`REVIEW.md`](REVIEW.md) (`9b6c0541d`, 2026-11-05): the adversarial review of the PREREG and builds B1–B5 at
+  `c9d86ef53`. Verdict TRAIN, no blocker; 3 MAJOR, 12 MINOR. R-M2 is disposed in Amendment 1, every other finding
+  in the pin amendment.
+
+## Amendment 1 (2026-11-05, before any student trained, any student logit or any game): ExIt-1 waits for the placebo
+
+Written before any student trained, any student logit existed or any game of this read was played (the bank is
+building, outcome-blind). It answers REVIEW R-M2 on the
+orchestrator's ruling of 2026-11-05. **It moves no bar, fold, deal, seed, z, β, learning rate, epoch budget or class
+rule, and it changes no class.** It changes what a GO licenses, and it makes §7's placebo, already scheduled on GO,
+the gate for that licence.
+
+- **Why.** The control is matched on deals, engine, opponent and regime, but not on training dose: the student had
+  ≈ 1M row-passes of fine-tuning and P\* had none. A GO could therefore come from fine-tuning toward sharp targets
+  rather than from S′'s choices. The dose-matched control is §7's PLACEBO student: the same recipe, rows and seeds,
+  with Q̂ permuted.
+- **The licence, as amended (§1's GO row).** GO keeps its class, its wording and its other licences: registering
+  ExIt-0H, and naming the students an X54 candidate on X54's own terms. **Registering ExIt-1 now needs GO AND the
+  placebo attribution SEARCH-INFO.**
+  - SEARCH-INFO: the student − placebo lower bound (95 %) is above 0.
+  - GO with NOT-SEPARATED licenses only the descriptive claim, "a fine-tuned P\* beats P\* against Kakuna on
+    unseen teams". ExIt-1 is not funded on it.
+- **The schedule (§7, unchanged in substance).** On a GO at look 1 or at look 2, the placebo is the GO path's next
+  step, before ExIt-1 is registered:
+  - three placebo students, one per fold, trained by B2's recipe on the same rows, seeds and learning-rate grid,
+    with each label row's Q̂ permuted among its legal actions by `default_rng([6599, row index])` before π′ is formed;
+  - exported by B3 at the play pin;
+  - played on look 1's deals (unit seeds 300–344, 20 a seed, on each student's read panel) as lone one-game units at
+    the play pin on E4.
+- **The attribution statistic.** It is §6's statistic with the placebo's unit in place of P\* raw: D =
+  y(student) − y(placebo) per deal, the panel means, their mean, the within-panel unit-seed bootstrap
+  (B = 4,000, `default_rng(20261106)`), z = 1.96 for the 95 % bound, worst-case imputation adverse to SEARCH-INFO
+  (student 0, placebo 1), and the root-rule-8 boundary (a bound within 0.0005 of 0 is NOT-SEPARATED).
+- **Cost.** It is unchanged: §8's ≈ 37 CPU-h on GO already counts the placebo's 2,700 units.
+- **Owed before a GO's placebo trains.** B2's `--placebo` permutation and the attribution rule are not built. They
+  carry no weight on any class of this read and are built only on GO.

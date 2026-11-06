@@ -42,7 +42,8 @@ can only make them worse targets.
 
 **The GPU stays mostly idle under this plan** (§6). No candidate keeps it busy for days without one of three things:
 the owner's yes, a multi-day build, or slowing S′-HONEST's live read when the two overlap. The days-long GPU work is
-**ExIt-1** (§5.1), ≈ 1.5–2.5 GPU-days, funded only by ExIt-0's GO. It is sequenced to finish inside S′-HONEST's
+**ExIt-1** (§5.1), ≈ 1.5–2.5 GPU-days, funded only by ExIt-0's GO together with the placebo's SEARCH-INFO
+(Amendment 1). It is sequenced to finish inside S′-HONEST's
 6–8-agent-day build.
 
 ## 1. The situation this answers (2026-11-05)
@@ -71,7 +72,7 @@ S′-HONEST's play is the GPU's.
 | **(i-a) ExIt-0: distil S′ from the BANKED labels, supervised, panel cross-fit** | ≈ 0.5 GPU-h (X59-S measured ≈ 0.4 GPU-h for a 1.2M-row, 3-epoch student; this one is ≈ 1M row-passes) | label bank ≈ 1 CPU-h (measured 0.012 CPU-s a frame, §4.1); read ≈ 23 / ≤ 96 CPU-h (S′-LIVE's raw units: 29 CPU-s each) | ≈ 1.5 agent-days to the first GPU minute, ≈ 3 to the first game | GUESS 0.35–0.5 for a GO. One supervised step on ≈ 65k labels of S′, whose gain is +4.6 pp; the leak-share is unknown | **RECOMMENDED** |
 | (i-b) ExIt from FRESH offline labels (self-play states, S′ re-run) | as (i-a) | **9.5 CPU-s a label**, measured: S′-LIVE's 258 search CPU-h ÷ 97,601 labels (worlds 138, exclusions 49, playouts 66). 100k labels ≈ 260 CPU-h, plus the games that host them. The honest builder is ×1.2–1.5 on worlds (`design_sprime_honest.md` §4) | days | same as (i-a), and later | **REJECTED now:** it costs as much CPU as S′-HONEST's read, on the same cores. The bank gives 97.6k labels free |
 | (i-c) the in-loop search factory (`design_value_discrimination.md` §13) | +3–12 % GPU (its ESTIMATE) | at f = 0.25 % of a production run's ≈ 1,333 decisions/s, ≈ 3.3 labels/s × 9.5 CPU-s ≈ **32 cores**. §13.5's ESTIMATE of 0.08 CPU-s a world was ≈ 60× low; measured 5.07 CPU-s a search | 6–9 agent-days | — | **REJECTED:** about 10× over the box's 3 agent cores |
-| (i-d) ExIt-1: PPO + an auxiliary KL to the bank’s π′ (§5.1) | ≈ 35 GPU-h (8 × P\*+20M at 1,333 steps/s = 4.4 GPU-h each) | the forks' own collectors; read ≈ ExIt-0's | ≈ 2 agent-days of build (a trainer loss over an offline label buffer) | conditional on (i-a) | **the GPU-days follow-on, funded by ExIt-0's GO** |
+| (i-d) ExIt-1: PPO + an auxiliary KL to the bank’s π′ (§5.1) | ≈ 35 GPU-h (8 × P\*+20M at 1,333 steps/s = 4.4 GPU-h each) | the forks' own collectors; read ≈ ExIt-0's | ≈ 2 agent-days of build (a trainer loss over an offline label buffer) | conditional on (i-a) | **the GPU-days follow-on, funded by ExIt-0's GO and the placebo's SEARCH-INFO** |
 | (ii) `D_MODEL` growth at P\* | ≈ 26 GPU-h (3 + 3 forks) | ≈ 6,000 Kakuna F games (≈ 50 CPU-h) | `D_MODEL` is not a growable field: widening the residual stream through LayerNorm is not function-preserving by zero padding. A build of 2–3 agent-days (GUESS) | low: the plateau read NO-GO for depth (X47), experts (X48) and FFN width (N4, "used, buys nothing") | **REJECTED**: three capacity NO-GOs, a build, and a multi-day CPU-heavy run |
 | (iii) from-scratch scale (a wider network from step 0) | ≈ 8–12 GPU-days. X26's 380M took ≈ 79 GPU-h at 1,333 steps/s; a 2× `D_MODEL` run is GUESS 1.5–2.5× slower a step, plus a same-pin 1× control | the run's collectors for the whole span, overlapping S′-HONEST's play | needs the owner | N4's NO-GO removed its cheap support (not refuted) | **NOT the winner**: the owner's question stays open (STATUS §6) |
 | (iv-a) X60-T, human-built teams in the pool (`design_human_replay_lever.md` §6.4) | ≈ 20 GPU-h (5 × 4.1) | ≈ 6,000–12,000 Kakuna games | its training clause is PROPOSED, not built; REVIEW F's fixes are owed | GUESS 0.2: a breadth lever, and its sibling D1 read +2.10 [−0.92, +5.11] | **RUNNER-UP** (§3) |
@@ -217,11 +218,13 @@ Panel adjacency is reported, not removed: p72's sets are Smogon usage draws, and
 ### 5.1 What each class licenses (the PREREG's table is binding)
 
 - **GO:** "a network distilled from S′'s leak-inclusive choices beats P\* on teams it never saw, against Kakuna,
-  deployably". It licenses three things:
+  deployably". It licenses:
   - registering ExIt-0H;
-  - registering **ExIt-1**: P\*+20M PPO forks with an auxiliary KL to the bank's π′, cross-fit as here, 3 folds ×
-    2 seeds plus 2 same-pin C0 seeds ≈ 35 GPU-h, the GPU-days rung;
-  - a candidate for X54's sealed `forum216b` confirmation, on X54's own terms.
+  - a candidate for X54's sealed `forum216b` confirmation, on X54's own terms;
+  - **only if the dose-matched PLACEBO (§7: Q̂ permuted, same recipe, rows and seeds) also reads SEARCH-INFO**
+    (Amendment 1, answering REVIEW R-M2), registering **ExIt-1**: P\*+20M PPO forks with an auxiliary KL to the
+    bank's π′, cross-fit as here, 3 folds × 2 seeds plus 2 same-pin C0 seeds ≈ 35 GPU-h, the GPU-days rung. GO with
+    NOT-SEPARATED licenses only "a fine-tuned P\* beats P\*", and ExIt-1 is not funded on it.
 - **NULL:** one supervised step on ≈ 65k labels keeps < 2 pp. It does not close ExIt (more labels, honest labels, an
   in-loop form); ExIt-1 is not funded, and X60-T takes the GPU.
 - **NOT-DELIVERED:** the student did not learn S′'s choices on unseen teams. It closes nothing about larger budgets.
@@ -306,3 +309,4 @@ from that check, root rule 8).
 |---|---|---|---|---|
 | 2026-11-05 | **This doc CREATED and X65 ExIt-0 REGISTERED** (research designer, orchestrator brief: one GPU experiment, worth running whatever S′-HONEST finds) | ExIt-0: supervised distillation of S′ into P\* from S′-LIVE's banked labels, panel cross-fit, read against Kakuna on the held-out panel with the banked raw arm at look 1 | fresh-label ExIt (9.5 CPU-s a label, measured); the in-loop factory (≈ 32 cores at f = 0.25 %); `D_MODEL` growth (not growable; three capacity NO-GOs); from-scratch scale (the owner's question; ≈ 8–12 GPU-days); X60-T (unbuilt; the runner-up); a bare C0 | §2; `frame_probe.json` 976 / 977; `bank_count.json`; `power.txt`; S′-LIVE's record; `design_sprime_honest.md` §4 |
 | 2026-11-05 | **B1–B5 built** (X65 builder, orchestrator brief: build exactly as registered) | B1–B4's meter in `src/main/x65/` (a new loop, reusing X59-S's helpers, HOM's export form and `policy_logits_t`); the rule and the spec in `main.reads` | X59-S's `train` as-is: its loss (set-NLL), its fresh init, its cosine schedule and its rowset format are all different from §3's, so it would be a fork with every line changed | an 18-shard sample (360 games, 17,134 rows): 6,007 / 6,007 label rows and all 6,621 searched-arm digests verified, every recorded `log_sha256` and re-score log reproduced, 0 anchor rows failing either check; the readings in §7 are for the review |
+| 2026-11-05 | **ExIt-1 waits for the placebo** (PREREG Amendment 1; REVIEW R-M2, the orchestrator's ruling) | GO funds ExIt-1 only with the placebo's SEARCH-INFO; the placebo runs on GO at either look, on look 1's deals | GO alone: the control is not dose-matched, so a GO can be fine-tuning rather than S′'s choices | `REVIEW.md` R-M2 |
