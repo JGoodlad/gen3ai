@@ -171,6 +171,42 @@
    "location": "~/gen3ai_archive/x59s/hr_spec_v1.r2/rows/",
    "status": "measurement",
    "use": "X59-S after REVIEW E: the S-H, S-P and S-P0 rows; S-S's row counts (PREREG Amendment 2b)"
+  },
+  "hr_spec_v1.r3": {
+   "snapshot": "hr_spec_v1",
+   "kind": "teams (a gen3_team_corpus_v1 directory, \"human_data\": true; not rows)",
+   "builder": "src/main/human_data/hteams.py (seats | complete | fill-check | filter | pin-check | finalize | soak | stamp | r72)",
+   "parent": "hr_spec_v1.r2",
+   "filter_spec": {
+    "battles": "hr_spec_v1.r2's kept battles (r1's keep.jsonl.gz: TRAIN dates, rated, a result, >= 11 turns, first duplicate body, no bot, the >= 3-fit revealed exclusion)",
+    "rating_min_actor": 1500,
+    "drop_accounts": "the Kakuna-family audit's drop list (r2's, 11 accounts)",
+    "six_mons_seen": true,
+    "fill": "C-GAME (main.x50_r1.run.completed_seat), r1's battle key; nickname dropped",
+    "hp_repair": "gen3_hp_repair_v1",
+    "validator": "TeamValidator('gen3ou')",
+    "level": 100,
+    "post_fill_nets": "exact-set guard (>= 4 shared mon sets, held-out panels) + REVIEW F m4 (>= 3, every registered panel but one drawn from this corpus)",
+    "side_pin": "f4b25238d: the pin's --team-mix packer must pack the authored team (main's pack oracle) and its engine must run every id",
+    "account_cap": 5,
+    "split": "none (teams, not rows)"
+   },
+   "panel_exclusion_set": [
+    "forum216b",
+    "forum72",
+    "heldout72",
+    "heldout72_hpfix",
+    "p72"
+   ],
+   "teams": 2295,
+   "accounts": 812,
+   "corpus_manifest_sha256": "71783ac88917a96a7ec0d61e3e29f17d1cdc2b3633edfd5cd9b00b55701d6bfb",
+   "data_sha256": "2e86457282f719eafaa75c6477c08420a03fafeb0e21f9ee5c24e1d2703afe88",
+   "tier_sha256": "31ca149cc4c09a03b09929eb62eccb7c6c38030cb460556a66ad8c25fd0a4dcb",
+   "c_game_commit": "da36173c9f21f980b714e93fd4529cff84fc815e (the fill's code; re-run at 0b9e6f354, C-GAME's counters equal r1's on its parts 0 and 1)",
+   "location": "~/gen3ai_archive/human_teams/hr_spec_v1.r3/ (LOCAL ONLY: human data is never committed)",
+   "status": "measurement",
+   "use": "X60-T's H-TEAMS corpus (design_human_replay_lever.md \u00a76.4), = X61's n1_hrep_v1 under one id; reached only by --human-data teams:, never by --team-mix; R72 is drawn from it"
   }
  },
  "models": {},

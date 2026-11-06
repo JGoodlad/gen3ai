@@ -14,7 +14,8 @@ human corpus is split in two:
 
 :func:`load` verifies the directory against its stub (each sha256, the count, the human-data flag, the tier ``ALL``
 = the whole corpus) and raises :class:`utils.team_corpora.CorpusError` on a miss or a mismatch, which the trainer
-turns into ``FATAL_CONFIG``. It is the ONLY reader that passes ``human_data_ok`` to ``load_dir``; ``--team-mix``
+turns into ``FATAL_CONFIG``. It is the ONLY training reader that passes ``human_data_ok`` to ``load_dir`` (the corpus's
+builder, ``main.human_data.hteams``, passes it too, to verify what it wrote); ``--team-mix``
 refuses a human corpus (``utils.team_corpora.refuse_human_data``, REVIEW F F-M7).
 
 CLI::

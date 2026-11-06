@@ -1,0 +1,1653 @@
+{
+ "schema": "x60t_parity_classes_1026_v1",
+ "sources": [
+  "706faa0e1",
+  "8dd36e9db",
+  "995c04a8a",
+  "e9f38663c",
+  "2a877361a",
+  "f9978586b",
+  "05e5e038f",
+  "2016f5c2e",
+  "4be4df73d",
+  "84ac12497",
+  "70fadbdf5",
+  "138e0d477",
+  "44480ffeb",
+  "ca12e4887",
+  "71296a269",
+  "448204591",
+  "73af315e0",
+  "designs/rust_sim/gen3_full_parity.md",
+  "designs/rust_sim/parity_review_b6_b10_2026-10-26.md",
+  "designs/rust_sim/move_census.md@f4b25238d",
+  "deps/pokemon-showdown dist (multihit/defrost/reflectable flags, id existence)"
+ ],
+ "match_rule": "a mon matches a class if it carries ANY id in any_of, or ALL ids of ANY one group in all_of_groups. partner_any_of is informational (ids the OTHER side/mon needs for the class to fire; NOT used for matching).",
+ "classes": {
+  "bf1_rage": {
+   "commit": "706faa0e1",
+   "what": "Rage boost runs after -damage, per multi-hit strike, on fixed-damage hits",
+   "any_of": [
+    [
+     "move",
+     "rage"
+    ]
+   ],
+   "all_of_groups": []
+  },
+  "bf2_furycutter": {
+   "commit": "706faa0e1",
+   "what": "Fury Cutter doubles only on a hit (dice+damage)",
+   "any_of": [
+    [
+     "move",
+     "furycutter"
+    ]
+   ],
+   "all_of_groups": []
+  },
+  "bf3_uproar_wake": {
+   "commit": "706faa0e1",
+   "what": "Uproar's wake at TryHit, before -damage",
+   "any_of": [
+    [
+     "move",
+     "uproar"
+    ]
+   ],
+   "all_of_groups": []
+  },
+  "bf4_smellingsalts": {
+   "commit": "706faa0e1",
+   "what": "Smelling Salts no cure on a 0-HP target",
+   "any_of": [
+    [
+     "move",
+     "smellingsalts"
+    ]
+   ],
+   "all_of_groups": []
+  },
+  "bf5_falseswipe": {
+   "commit": "706faa0e1",
+   "what": "False Swipe at 1 HP prints the 0-delta -damage; Endure first",
+   "any_of": [
+    [
+     "move",
+     "falseswipe"
+    ]
+   ],
+   "all_of_groups": [],
+   "partner_any_of": [
+    [
+     "move",
+     "endure"
+    ]
+   ]
+  },
+  "bf6_rest_insomnia": {
+   "commit": "706faa0e1",
+   "what": "Rest by an Insomnia/Vital Spirit user fails in onTry; no gen3ou clause shuffle",
+   "any_of": [],
+   "all_of_groups": [
+    [
+     [
+      "move",
+      "rest"
+     ],
+     [
+      "ability",
+      "insomnia"
+     ]
+    ],
+    [
+     [
+      "move",
+      "rest"
+     ],
+     [
+      "ability",
+      "vitalspirit"
+     ]
+    ]
+   ],
+   "note": "ability may also be GAINED (Skill Swap/Trace/Role Play); not encoded"
+  },
+  "bf7_pursuit_lastmove": {
+   "commit": "706faa0e1",
+   "what": "Pursuit interrupt sets lastMoveUsed (read by Disable/Encore after Mimic, Conversion 2)",
+   "any_of": [
+    [
+     "move",
+     "pursuit"
+    ]
+   ],
+   "all_of_groups": [],
+   "partner_any_of": [
+    [
+     "move",
+     "mimic"
+    ],
+    [
+     "move",
+     "conversion2"
+    ],
+    [
+     "move",
+     "disable"
+    ],
+    [
+     "move",
+     "encore"
+    ]
+   ]
+  },
+  "bf8_defrost_thaw": {
+   "commit": "706faa0e1",
+   "what": "Defrost thaw is frz.onModifyMove after BeforeMove; none on confusion self-hit",
+   "any_of": [
+    [
+     "move",
+     "flamewheel"
+    ],
+    [
+     "move",
+     "sacredfire"
+    ]
+   ],
+   "all_of_groups": []
+  },
+  "bf9_fainted_caster_ident": {
+   "commit": "706faa0e1",
+   "what": "A fainted future-move caster's ident is slot-less",
+   "any_of": [
+    [
+     "move",
+     "doomdesire"
+    ],
+    [
+     "move",
+     "futuresight"
+    ]
+   ],
+   "all_of_groups": [],
+   "note": "commit names Doom Desire (0.089 %); Future Sight included as the same future-move mechanism (inference)"
+  },
+  "bf10_lansat_focused": {
+   "commit": "706faa0e1",
+   "what": "Lansat on an already-focused holder: no -start",
+   "any_of": [],
+   "all_of_groups": [
+    [
+     [
+      "item",
+      "lansatberry"
+     ],
+     [
+      "move",
+      "focusenergy"
+     ]
+    ]
+   ]
+  },
+  "bf11_mimic_curse": {
+   "commit": "706faa0e1",
+   "what": "A Mimic'd Curse keeps target:self in the request for a non-Ghost user",
+   "any_of": [
+    [
+     "move",
+     "mimic"
+    ]
+   ],
+   "all_of_groups": [],
+   "partner_any_of": [
+    [
+     "move",
+     "curse"
+    ]
+   ]
+  },
+  "bf12_13_owntempo_oblivious_gained": {
+   "commit": "706faa0e1",
+   "what": "Own Tempo/Oblivious gained via Skill Swap (or Role Play) cure confusion/infatuation at next Update",
+   "any_of": [
+    [
+     "move",
+     "skillswap"
+    ],
+    [
+     "move",
+     "roleplay"
+    ]
+   ],
+   "all_of_groups": [],
+   "partner_any_of": [
+    [
+     "ability",
+     "owntempo"
+    ],
+    [
+     "ability",
+     "oblivious"
+    ]
+   ],
+   "note": "Role Play added by B10 (pins bf12c/bf13b)"
+  },
+  "bf14_loafing_truant_pursuit": {
+   "commit": "706faa0e1",
+   "what": "A loafing Truant user's Pursuit lays no volatile",
+   "any_of": [],
+   "all_of_groups": [
+    [
+     [
+      "ability",
+      "truant"
+     ],
+     [
+      "move",
+      "pursuit"
+     ]
+    ]
+   ]
+  },
+  "bf15_synchronize_safeguard": {
+   "commit": "706faa0e1",
+   "what": "Synchronize into a Safeguard announces -activate",
+   "any_of": [
+    [
+     "ability",
+     "synchronize"
+    ]
+   ],
+   "all_of_groups": [],
+   "partner_any_of": [
+    [
+     "move",
+     "safeguard"
+    ]
+   ],
+   "note": "Safeguard on the status source's side; both needed on opposite sides"
+  },
+  "bf16_multihit_user_stops": {
+   "commit": "706faa0e1",
+   "what": "Multi-hit move stops when its user falls asleep (Effect Spore) or faints (Rough Skin) between strikes",
+   "any_of": [
+    [
+     "move",
+     "bonerush"
+    ],
+    [
+     "move",
+     "bulletseed"
+    ],
+    [
+     "move",
+     "iciclespear"
+    ],
+    [
+     "move",
+     "rockblast"
+    ],
+    [
+     "move",
+     "pinmissile"
+    ],
+    [
+     "move",
+     "barrage"
+    ],
+    [
+     "move",
+     "cometpunch"
+    ],
+    [
+     "move",
+     "doubleslap"
+    ],
+    [
+     "move",
+     "spikecannon"
+    ],
+    [
+     "move",
+     "twineedle"
+    ],
+    [
+     "move",
+     "bonemerang"
+    ],
+    [
+     "move",
+     "armthrust"
+    ],
+    [
+     "move",
+     "doublekick"
+    ],
+    [
+     "move",
+     "furyattack"
+    ],
+    [
+     "move",
+     "furyswipes"
+    ],
+    [
+     "move",
+     "triplekick"
+    ]
+   ],
+   "all_of_groups": [],
+   "partner_any_of": [
+    [
+     "ability",
+     "effectspore"
+    ],
+    [
+     "ability",
+     "roughskin"
+    ]
+   ],
+   "note": "Beat Up uses run_beat_up, not run_multihit (not in list)"
+  },
+  "bf18_struggle_stale_multihit": {
+   "commit": "995c04a8a",
+   "what": "Forced Struggle (all PP spent) no longer inherits the stale slot's multi-hit",
+   "any_of": [
+    [
+     "move",
+     "bonerush"
+    ],
+    [
+     "move",
+     "bulletseed"
+    ],
+    [
+     "move",
+     "iciclespear"
+    ],
+    [
+     "move",
+     "rockblast"
+    ],
+    [
+     "move",
+     "pinmissile"
+    ],
+    [
+     "move",
+     "barrage"
+    ],
+    [
+     "move",
+     "cometpunch"
+    ],
+    [
+     "move",
+     "doubleslap"
+    ],
+    [
+     "move",
+     "spikecannon"
+    ],
+    [
+     "move",
+     "twineedle"
+    ],
+    [
+     "move",
+     "bonemerang"
+    ],
+    [
+     "move",
+     "armthrust"
+    ],
+    [
+     "move",
+     "doublekick"
+    ],
+    [
+     "move",
+     "furyattack"
+    ],
+    [
+     "move",
+     "furyswipes"
+    ],
+    [
+     "move",
+     "triplekick"
+    ]
+   ],
+   "all_of_groups": [],
+   "note": "any multi-hit slot whose PP runs out; Struggle only reached with every move at 0 PP"
+  },
+  "bf19_beatup_kingsrock": {
+   "commit": "8dd36e9db",
+   "what": "King's Rock rolls flinch on every Beat Up strike",
+   "any_of": [],
+   "all_of_groups": [
+    [
+     [
+      "move",
+      "beatup"
+     ],
+     [
+      "item",
+      "kingsrock"
+     ]
+    ]
+   ]
+  },
+  "bf20_screens_beatup_crash": {
+   "commit": "e9f38663c",
+   "what": "BF3: with 2+ screens up, Beat Up strikes and Jump Kick/HJK crash draw the ModifyDamagePhase1 shuffle",
+   "any_of": [
+    [
+     "move",
+     "beatup"
+    ],
+    [
+     "move",
+     "jumpkick"
+    ],
+    [
+     "move",
+     "highjumpkick"
+    ]
+   ],
+   "all_of_groups": [],
+   "partner_any_of": [
+    [
+     "move",
+     "reflect"
+    ],
+    [
+     "move",
+     "lightscreen"
+    ]
+   ],
+   "note": "screens on the target's side"
+  },
+  "bf21_called_move_lastmoveused": {
+   "commit": "e9f38663c",
+   "what": "BF3: Sleep-Talk-called / Snatch-stolen move becomes lastMoveUsed (read by Conversion 2); B11 callers share the path",
+   "any_of": [
+    [
+     "move",
+     "sleeptalk"
+    ],
+    [
+     "move",
+     "snatch"
+    ],
+    [
+     "move",
+     "metronome"
+    ],
+    [
+     "move",
+     "mirrormove"
+    ],
+    [
+     "move",
+     "assist"
+    ],
+    [
+     "move",
+     "naturepower"
+    ]
+   ],
+   "all_of_groups": [],
+   "partner_any_of": [
+    [
+     "move",
+     "conversion2"
+    ]
+   ]
+  },
+  "bf_past_berries_refused": {
+   "commit": "e9f38663c",
+   "what": "BF3: the ten gen-2 Past berries refused at construction (fail-loud); also berryjuice (B3)",
+   "any_of": [
+    [
+     "item",
+     "berry"
+    ],
+    [
+     "item",
+     "goldberry"
+    ],
+    [
+     "item",
+     "bitterberry"
+    ],
+    [
+     "item",
+     "burntberry"
+    ],
+    [
+     "item",
+     "iceberry"
+    ],
+    [
+     "item",
+     "mintberry"
+    ],
+    [
+     "item",
+     "miracleberry"
+    ],
+    [
+     "item",
+     "mysteryberry"
+    ],
+    [
+     "item",
+     "przcureberry"
+    ],
+    [
+     "item",
+     "psncureberry"
+    ],
+    [
+     "item",
+     "berryjuice"
+    ]
+   ],
+   "all_of_groups": [],
+   "note": "not in a validated gen3ou team; Custom Game only"
+  },
+  "bf22_present_heal_hit": {
+   "commit": "2a877361a",
+   "what": "BF4 F1: a Present HEAL still runs the Hit event (target Rage boosts, Focus Punch loses focus)",
+   "any_of": [
+    [
+     "move",
+     "present"
+    ]
+   ],
+   "all_of_groups": [],
+   "partner_any_of": [
+    [
+     "move",
+     "rage"
+    ],
+    [
+     "move",
+     "focuspunch"
+    ]
+   ]
+  },
+  "bf23_beatup_wonderguard": {
+   "commit": "2a877361a",
+   "what": "BF4 F4: typeless Beat Up hits a Wonder Guard holder",
+   "any_of": [
+    [
+     "move",
+     "beatup"
+    ]
+   ],
+   "all_of_groups": [],
+   "partner_any_of": [
+    [
+     "ability",
+     "wonderguard"
+    ],
+    [
+     "ability",
+     "trace"
+    ]
+   ]
+  },
+  "bf24_bp_zero_eruption": {
+   "commit": "2a877361a",
+   "what": "BF4 F5: Eruption at ~1 HP into Thick Fat/Water Sport has BP 0 (crit draw, no roll)",
+   "any_of": [
+    [
+     "move",
+     "eruption"
+    ]
+   ],
+   "all_of_groups": [],
+   "partner_any_of": [
+    [
+     "ability",
+     "thickfat"
+    ],
+    [
+     "move",
+     "watersport"
+    ]
+   ]
+  },
+  "bf25_attract_source_left_fs": {
+   "commit": "2a877361a",
+   "what": "BF4: attract ends right after a Future Sight/Doom Desire strike KOs its source",
+   "any_of": [
+    [
+     "move",
+     "futuresight"
+    ],
+    [
+     "move",
+     "doomdesire"
+    ]
+   ],
+   "all_of_groups": [],
+   "partner_any_of": [
+    [
+     "move",
+     "attract"
+    ]
+   ],
+   "note": "Doom Desire by inference from the shared generic strike path"
+  },
+  "bf26_update_before_shellbell": {
+   "commit": "2a877361a",
+   "what": "BF4: in-move Update runs before Shell Bell (berry eaten before the heal)",
+   "any_of": [
+    [
+     "item",
+     "shellbell"
+    ]
+   ],
+   "all_of_groups": [],
+   "partner_any_of": [
+    [
+     "item",
+     "cheriberry"
+    ],
+    [
+     "item",
+     "chestoberry"
+    ],
+    [
+     "item",
+     "pechaberry"
+    ],
+    [
+     "item",
+     "rawstberry"
+    ],
+    [
+     "item",
+     "aspearberry"
+    ],
+    [
+     "item",
+     "persimberry"
+    ],
+    [
+     "item",
+     "lumberry"
+    ],
+    [
+     "item",
+     "mentalherb"
+    ]
+   ],
+   "note": "partner list = Update-eaten status/confusion/attract cure items (inferred from the commit's Persim/Cheri repros)"
+  },
+  "f9978586b_lockedmove_counters": {
+   "commit": "f9978586b",
+   "what": "Lock-in (Outrage/Thrash/Petal Dance) has two Showdown counters; mustrecharge expires at 2nd residual when a faint cancels the recharge turn (10-26 gigo audit, not parity)",
+   "any_of": [
+    [
+     "move",
+     "outrage"
+    ],
+    [
+     "move",
+     "thrash"
+    ],
+    [
+     "move",
+     "petaldance"
+    ],
+    [
+     "move",
+     "hyperbeam"
+    ],
+    [
+     "move",
+     "blastburn"
+    ],
+    [
+     "move",
+     "frenzyplant"
+    ],
+    [
+     "move",
+     "hydrocannon"
+    ]
+   ],
+   "all_of_groups": [],
+   "note": "lockedmove-id membership (Outrage/Thrash/Petal Dance) and recharge set are inferred, commit text names only 'lockedmove' and 'mustrecharge'; Rollout/Ice Ball NOT included"
+  },
+  "B1_format_rules": {
+   "commit": "05e5e038f",
+   "what": "Per-format rule table: 9 non-OU gen3 formats no longer run as OU; level>100, 7th mon refused",
+   "any_of": [],
+   "all_of_groups": [],
+   "note": "FORMAT/team-shape class, no move/item/ability trigger; non-gen3ou only (training path gen3ou unchanged). Arena Trap leak only in UU/RU"
+  },
+  "B2_recharge_family": {
+   "commit": "2016f5c2e",
+   "what": "Blast Burn, Frenzy Plant, Hydro Cannon recharge like Hyper Beam",
+   "any_of": [
+    [
+     "move",
+     "blastburn"
+    ],
+    [
+     "move",
+     "frenzyplant"
+    ],
+    [
+     "move",
+     "hydrocannon"
+    ]
+   ],
+   "all_of_groups": []
+  },
+  "B3_items": {
+   "commit": "4be4df73d",
+   "what": "Shell Bell, Macho Brace, Mail (Trick fails), Mental Herb (cures Attract) now modeled",
+   "any_of": [
+    [
+     "item",
+     "shellbell"
+    ],
+    [
+     "item",
+     "machobrace"
+    ],
+    [
+     "item",
+     "mail"
+    ],
+    [
+     "item",
+     "mentalherb"
+    ]
+   ],
+   "all_of_groups": []
+  },
+  "B4_twoturn_family": {
+   "commit": "70fadbdf5",
+   "what": "Two-turn / semi-invulnerable family modeled",
+   "any_of": [
+    [
+     "move",
+     "razorwind"
+    ],
+    [
+     "move",
+     "skyattack"
+    ],
+    [
+     "move",
+     "skullbash"
+    ],
+    [
+     "move",
+     "fly"
+    ],
+    [
+     "move",
+     "bounce"
+    ],
+    [
+     "move",
+     "dig"
+    ],
+    [
+     "move",
+     "dive"
+    ]
+   ],
+   "all_of_groups": []
+  },
+  "B4_imprison_charge": {
+   "commit": "70fadbdf5",
+   "what": "An Imprison cant now loses a two-turn charge (also fixes Solar Beam; OU-visible)",
+   "any_of": [
+    [
+     "move",
+     "imprison"
+    ],
+    [
+     "move",
+     "solarbeam"
+    ]
+   ],
+   "all_of_groups": [],
+   "note": "needs Imprison on one side, Solar Beam (or B4 family move) on the other"
+  },
+  "B5_moves": {
+   "commit": "138e0d477",
+   "what": "Spite, Grudge, Snore, Nightmare, Ingrain modeled",
+   "any_of": [
+    [
+     "move",
+     "spite"
+    ],
+    [
+     "move",
+     "grudge"
+    ],
+    [
+     "move",
+     "snore"
+    ],
+    [
+     "move",
+     "nightmare"
+    ],
+    [
+     "move",
+     "ingrain"
+    ]
+   ],
+   "all_of_groups": []
+  },
+  "B5_rest_under_uproar": {
+   "commit": "138e0d477",
+   "what": "Rest under a live Uproar fails (OU-visible); either side's Uproar",
+   "any_of": [
+    [
+     "move",
+     "uproar"
+    ]
+   ],
+   "all_of_groups": [],
+   "partner_any_of": [
+    [
+     "move",
+     "rest"
+    ]
+   ]
+  },
+  "B6_moves": {
+   "commit": "44480ffeb",
+   "what": "Swagger, Flatter, Foresight, Odor Sleuth, Magic Coat modeled (41 reflectable moves bounce off Magic Coat)",
+   "any_of": [
+    [
+     "move",
+     "swagger"
+    ],
+    [
+     "move",
+     "flatter"
+    ],
+    [
+     "move",
+     "foresight"
+    ],
+    [
+     "move",
+     "odorsleuth"
+    ],
+    [
+     "move",
+     "magiccoat"
+    ]
+   ],
+   "all_of_groups": []
+  },
+  "B7_moves": {
+   "commit": "ca12e4887",
+   "what": "Stockpile, Spit Up, Swallow, Mud Sport, Water Sport, Mist, Lock-On, Mind Reader modeled",
+   "any_of": [
+    [
+     "move",
+     "stockpile"
+    ],
+    [
+     "move",
+     "spitup"
+    ],
+    [
+     "move",
+     "swallow"
+    ],
+    [
+     "move",
+     "mudsport"
+    ],
+    [
+     "move",
+     "watersport"
+    ],
+    [
+     "move",
+     "mist"
+    ],
+    [
+     "move",
+     "lockon"
+    ],
+    [
+     "move",
+     "mindreader"
+    ]
+   ],
+   "all_of_groups": []
+  },
+  "B7_side_condition_insertion_order": {
+   "commit": "ca12e4887",
+   "what": "Reflect/Light Screen/Safeguard (and Mist) end in insertion order; swaps tied -sideend order (OU-visible bytes)",
+   "any_of": [
+    [
+     "move",
+     "reflect"
+    ],
+    [
+     "move",
+     "lightscreen"
+    ],
+    [
+     "move",
+     "safeguard"
+    ],
+    [
+     "move",
+     "mist"
+    ]
+   ],
+   "all_of_groups": [],
+   "note": "matters when two timed side conditions end the same turn"
+  },
+  "B8_moves": {
+   "commit": "71296a269",
+   "what": "Bide, Magnitude, Psywave, Present, Triple Kick, four OHKO moves modeled",
+   "any_of": [
+    [
+     "move",
+     "bide"
+    ],
+    [
+     "move",
+     "magnitude"
+    ],
+    [
+     "move",
+     "psywave"
+    ],
+    [
+     "move",
+     "present"
+    ],
+    [
+     "move",
+     "triplekick"
+    ],
+    [
+     "move",
+     "fissure"
+    ],
+    [
+     "move",
+     "guillotine"
+    ],
+    [
+     "move",
+     "horndrill"
+    ],
+    [
+     "move",
+     "sheercold"
+    ]
+   ],
+   "all_of_groups": []
+  },
+  "B9_attract_move": {
+   "commit": "84ac12497",
+   "what": "Attract move modeled (Oblivious/gender/Safeguard/Substitute rules)",
+   "any_of": [
+    [
+     "move",
+     "attract"
+    ]
+   ],
+   "all_of_groups": []
+  },
+  "B10_moves": {
+   "commit": "448204591",
+   "what": "Teleport, Follow Me, Helping Hand, Role Play, Camouflage modeled",
+   "any_of": [
+    [
+     "move",
+     "teleport"
+    ],
+    [
+     "move",
+     "followme"
+    ],
+    [
+     "move",
+     "helpinghand"
+    ],
+    [
+     "move",
+     "roleplay"
+    ],
+    [
+     "move",
+     "camouflage"
+    ]
+   ],
+   "all_of_groups": []
+  },
+  "B10_endless_battle_clause": {
+   "commit": "448204591",
+   "what": "Endless Battle Clause staleness ends a battle past turn 100 (Skill Swap staleness; item set by Trick/Thief/Covet/Recycle then restorative berry eaten)",
+   "any_of": [
+    [
+     "move",
+     "skillswap"
+    ]
+   ],
+   "all_of_groups": [
+    [
+     [
+      "move",
+      "trick"
+     ],
+     [
+      "item",
+      "leppaberry"
+     ]
+    ],
+    [
+     [
+      "move",
+      "trick"
+     ],
+     [
+      "item",
+      "aguavberry"
+     ]
+    ],
+    [
+     [
+      "move",
+      "trick"
+     ],
+     [
+      "item",
+      "enigmaberry"
+     ]
+    ],
+    [
+     [
+      "move",
+      "trick"
+     ],
+     [
+      "item",
+      "figyberry"
+     ]
+    ],
+    [
+     [
+      "move",
+      "trick"
+     ],
+     [
+      "item",
+      "iapapaberry"
+     ]
+    ],
+    [
+     [
+      "move",
+      "trick"
+     ],
+     [
+      "item",
+      "magoberry"
+     ]
+    ],
+    [
+     [
+      "move",
+      "trick"
+     ],
+     [
+      "item",
+      "sitrusberry"
+     ]
+    ],
+    [
+     [
+      "move",
+      "trick"
+     ],
+     [
+      "item",
+      "wikiberry"
+     ]
+    ],
+    [
+     [
+      "move",
+      "trick"
+     ],
+     [
+      "item",
+      "oranberry"
+     ]
+    ],
+    [
+     [
+      "move",
+      "thief"
+     ],
+     [
+      "item",
+      "leppaberry"
+     ]
+    ],
+    [
+     [
+      "move",
+      "thief"
+     ],
+     [
+      "item",
+      "aguavberry"
+     ]
+    ],
+    [
+     [
+      "move",
+      "thief"
+     ],
+     [
+      "item",
+      "enigmaberry"
+     ]
+    ],
+    [
+     [
+      "move",
+      "thief"
+     ],
+     [
+      "item",
+      "figyberry"
+     ]
+    ],
+    [
+     [
+      "move",
+      "thief"
+     ],
+     [
+      "item",
+      "iapapaberry"
+     ]
+    ],
+    [
+     [
+      "move",
+      "thief"
+     ],
+     [
+      "item",
+      "magoberry"
+     ]
+    ],
+    [
+     [
+      "move",
+      "thief"
+     ],
+     [
+      "item",
+      "sitrusberry"
+     ]
+    ],
+    [
+     [
+      "move",
+      "thief"
+     ],
+     [
+      "item",
+      "wikiberry"
+     ]
+    ],
+    [
+     [
+      "move",
+      "thief"
+     ],
+     [
+      "item",
+      "oranberry"
+     ]
+    ],
+    [
+     [
+      "move",
+      "covet"
+     ],
+     [
+      "item",
+      "leppaberry"
+     ]
+    ],
+    [
+     [
+      "move",
+      "covet"
+     ],
+     [
+      "item",
+      "aguavberry"
+     ]
+    ],
+    [
+     [
+      "move",
+      "covet"
+     ],
+     [
+      "item",
+      "enigmaberry"
+     ]
+    ],
+    [
+     [
+      "move",
+      "covet"
+     ],
+     [
+      "item",
+      "figyberry"
+     ]
+    ],
+    [
+     [
+      "move",
+      "covet"
+     ],
+     [
+      "item",
+      "iapapaberry"
+     ]
+    ],
+    [
+     [
+      "move",
+      "covet"
+     ],
+     [
+      "item",
+      "magoberry"
+     ]
+    ],
+    [
+     [
+      "move",
+      "covet"
+     ],
+     [
+      "item",
+      "sitrusberry"
+     ]
+    ],
+    [
+     [
+      "move",
+      "covet"
+     ],
+     [
+      "item",
+      "wikiberry"
+     ]
+    ],
+    [
+     [
+      "move",
+      "covet"
+     ],
+     [
+      "item",
+      "oranberry"
+     ]
+    ],
+    [
+     [
+      "move",
+      "recycle"
+     ],
+     [
+      "item",
+      "leppaberry"
+     ]
+    ],
+    [
+     [
+      "move",
+      "recycle"
+     ],
+     [
+      "item",
+      "aguavberry"
+     ]
+    ],
+    [
+     [
+      "move",
+      "recycle"
+     ],
+     [
+      "item",
+      "enigmaberry"
+     ]
+    ],
+    [
+     [
+      "move",
+      "recycle"
+     ],
+     [
+      "item",
+      "figyberry"
+     ]
+    ],
+    [
+     [
+      "move",
+      "recycle"
+     ],
+     [
+      "item",
+      "iapapaberry"
+     ]
+    ],
+    [
+     [
+      "move",
+      "recycle"
+     ],
+     [
+      "item",
+      "magoberry"
+     ]
+    ],
+    [
+     [
+      "move",
+      "recycle"
+     ],
+     [
+      "item",
+      "sitrusberry"
+     ]
+    ],
+    [
+     [
+      "move",
+      "recycle"
+     ],
+     [
+      "item",
+      "wikiberry"
+     ]
+    ],
+    [
+     [
+      "move",
+      "recycle"
+     ],
+     [
+      "item",
+      "oranberry"
+     ]
+    ]
+   ],
+   "note": "item-staleness groups approximate: the setItem move and berry may be on different mons; RESTORATIVE_BERRIES from sim/pokemon.ts:43"
+  },
+  "B11_callers": {
+   "commit": "73af315e0",
+   "what": "Metronome, Mirror Move, Assist, Nature Power, Sketch on one useMove path (also Sleep Talk's called Charge kept)",
+   "any_of": [
+    [
+     "move",
+     "metronome"
+    ],
+    [
+     "move",
+     "mirrormove"
+    ],
+    [
+     "move",
+     "assist"
+    ],
+    [
+     "move",
+     "naturepower"
+    ],
+    [
+     "move",
+     "sketch"
+    ]
+   ],
+   "all_of_groups": []
+  },
+  "moves_added_after_f4b25238": {
+   "commit": "B2,B9,B4-B8,B10,B11",
+   "what": "48 moves the engine gained since the production pin (321 modeled at the pin -> 369): B2 3, B9 1 (321->325), B4 7, B5 5, B6 5, B7 8, B8 9, B10 5 (325->364), B11 5 (364->369)",
+   "any_of": [
+    [
+     "move",
+     "blastburn"
+    ],
+    [
+     "move",
+     "frenzyplant"
+    ],
+    [
+     "move",
+     "hydrocannon"
+    ],
+    [
+     "move",
+     "attract"
+    ],
+    [
+     "move",
+     "razorwind"
+    ],
+    [
+     "move",
+     "skyattack"
+    ],
+    [
+     "move",
+     "skullbash"
+    ],
+    [
+     "move",
+     "fly"
+    ],
+    [
+     "move",
+     "bounce"
+    ],
+    [
+     "move",
+     "dig"
+    ],
+    [
+     "move",
+     "dive"
+    ],
+    [
+     "move",
+     "spite"
+    ],
+    [
+     "move",
+     "grudge"
+    ],
+    [
+     "move",
+     "snore"
+    ],
+    [
+     "move",
+     "nightmare"
+    ],
+    [
+     "move",
+     "ingrain"
+    ],
+    [
+     "move",
+     "swagger"
+    ],
+    [
+     "move",
+     "flatter"
+    ],
+    [
+     "move",
+     "foresight"
+    ],
+    [
+     "move",
+     "odorsleuth"
+    ],
+    [
+     "move",
+     "magiccoat"
+    ],
+    [
+     "move",
+     "stockpile"
+    ],
+    [
+     "move",
+     "spitup"
+    ],
+    [
+     "move",
+     "swallow"
+    ],
+    [
+     "move",
+     "mudsport"
+    ],
+    [
+     "move",
+     "watersport"
+    ],
+    [
+     "move",
+     "mist"
+    ],
+    [
+     "move",
+     "lockon"
+    ],
+    [
+     "move",
+     "mindreader"
+    ],
+    [
+     "move",
+     "bide"
+    ],
+    [
+     "move",
+     "magnitude"
+    ],
+    [
+     "move",
+     "psywave"
+    ],
+    [
+     "move",
+     "present"
+    ],
+    [
+     "move",
+     "triplekick"
+    ],
+    [
+     "move",
+     "fissure"
+    ],
+    [
+     "move",
+     "guillotine"
+    ],
+    [
+     "move",
+     "horndrill"
+    ],
+    [
+     "move",
+     "sheercold"
+    ],
+    [
+     "move",
+     "teleport"
+    ],
+    [
+     "move",
+     "followme"
+    ],
+    [
+     "move",
+     "helpinghand"
+    ],
+    [
+     "move",
+     "roleplay"
+    ],
+    [
+     "move",
+     "camouflage"
+    ],
+    [
+     "move",
+     "metronome"
+    ],
+    [
+     "move",
+     "mirrormove"
+    ],
+    [
+     "move",
+     "assist"
+    ],
+    [
+     "move",
+     "naturepower"
+    ],
+    [
+     "move",
+     "sketch"
+    ]
+   ],
+   "all_of_groups": []
+  }
+ },
+ "unverified": [
+  "moves_added_after_f4b25238: the pin count (321 modeled) is from move_census.md at f4b25238d (09-08 census, no move-admitting commit found between 09-08 and 10-26); the 48 ids are assembled from the B2/B9/B4-B8/B10/B11 commit messages, NOT from running scan_move_probe at the pin (no build). 321+48=369 reconciles with the docs' 325->364->369 counts.",
+  "Several triggers are inferences from commit text: bf9 Future Sight, bf25 Doom Desire, f9978586b lockedmove set, bf26 partner berries; each flagged in the class note.",
+  "Classes whose trigger is on the opposing side only or ability gained at runtime (bf6 via Skill Swap/Trace/Role Play, bf12/13 victims, bf15, bf16) are matched on the actor-side ids; partner ids are informational.",
+  "B1_format_rules and gen3_species_clause_v1 (f9978586b: team with two of one species num in a clause format) are format/team-shape classes with no id trigger; the species-clause one is not encoded.",
+  "bf17 (Lock-On before OHKO) is covered by B7/B8 move classes (lockon, mindreader, OHKO moves); not a separate class.",
+  "B4 interactions with semi-invulnerable bypass moves (Earthquake, Surf, Gust, Thunder...) not encoded: too broad, only relevant when the foe uses Fly/Dig/Dive/Bounce.",
+  "B6 Foresight type-effectiveness refactor and the protocol.rs [from]-before-[still] change are byte-neutral without the trigger moves; not encoded."
+ ]
+}

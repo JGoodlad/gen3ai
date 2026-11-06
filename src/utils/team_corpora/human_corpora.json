@@ -1,4 +1,20 @@
 {
- "corpora": {},
+ "corpora": {
+  "hr_spec_v1.r3": {
+   "built_by": "python -m main.human_data.hteams",
+   "data_sha256": "2e86457282f719eafaa75c6477c08420a03fafeb0e21f9ee5c24e1d2703afe88",
+   "human_data": true,
+   "id": "hr_spec_v1.r3",
+   "manifest_sha256": "71783ac88917a96a7ec0d61e3e29f17d1cdc2b3633edfd5cd9b00b55701d6bfb",
+   "n": 2295,
+   "registered_at": "2026-11-06T16:13:02+00:00",
+   "rowset": "hr_spec_v1.r3",
+   "schema": "gen3_team_corpus_v1",
+   "snapshot": null,
+   "soak_sha256": "30b5cec4d843389cee5499035ff1968c2b9df118e4b9951f4b58ab33477b9e7a",
+   "tier": "ALL",
+   "tier_sha256": "31ca149cc4c09a03b09929eb62eccb7c6c38030cb460556a66ad8c25fd0a4dcb"
+  }
+ },
  "schema": "gen3_human_team_stub_v1"
 }

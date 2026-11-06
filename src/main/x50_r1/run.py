@@ -138,10 +138,13 @@ def _completer():
 
 def completed_seat(reader: LiveReader, lines: List[str], seat: str, name: str, battle_id: str,
                    counts: collections.Counter, tag: str = "c_",
-                   team: Optional[str] = None, genders: Optional[Dict[str, str]] = None) -> Optional[E.CompletedRead]:
+                   team: Optional[str] = None, genders: Optional[Dict[str, str]] = None,
+                   sink: Optional[Dict[str, Any]] = None) -> Optional[E.CompletedRead]:
     """One seat's COMPLETED read (design §2): C-GAME's team (``team`` None) redrawn until every own labelled action
     is legal under it (:data:`complete.MAX_ATTEMPTS`), or the given ``team`` (the trace's TRUE team: no redraw; an
-    illegal own action is a refusal). Then the prefix guard on the seat's guarded decision. None = excluded."""
+    illegal own action is a refusal). Then the prefix guard on the seat's guarded decision. None = excluded.
+    ``sink`` (a dict) receives the read's packed ``team`` and its ``attempt`` (H-TEAMS exports the team itself,
+    ``main.human_data.hteams``); it is written only for a read that is returned."""
     from main.x50_r1 import complete as C
 
     pts = decision_points(lines, seat)
@@ -193,6 +196,8 @@ def completed_seat(reader: LiveReader, lines: List[str], seat: str, name: str, b
         E.prefix_guard_completed(reader, lines, seat, name, team, genders, pts, locks, k, cr.read.rows[k])
         counts[f"{tag}guard_checks"] += 1
     counts[f"{tag}seats"] += 1
+    if sink is not None:
+        sink["team"], sink["attempt"] = team, attempt
     return cr
 
 

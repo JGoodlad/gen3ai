@@ -149,7 +149,7 @@ def refuse_human_data(man: Dict[str, object], where: str) -> None:
 
 def load_dir(directory: Path, tier: str, name: str = "", *, human_data_ok: bool = False) -> Corpus:
     """One verified tier of the corpus in ``directory`` (tests build corpora in a temp dir through this).
-    ``human_data_ok`` is passed by ``utils.team_corpora.human`` alone (:func:`refuse_human_data`)."""
+    ``human_data_ok`` is passed by ``utils.team_corpora.human`` and the human corpus builder alone (:func:`refuse_human_data`)."""
     man, rows, data_sha, man_sha = read_dir(directory)
     if not human_data_ok:
         refuse_human_data(man, f"corpus {name or directory}")
