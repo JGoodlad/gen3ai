@@ -5,6 +5,8 @@ rates and sixteen checkpoints each, blind to the read panel.
     python -m main.x65.student train --bank <bank> --bank-sha256 <registered> --fold heldout72_hpfix --lr 1e-5 \
         --init <P* zip> --out <dir>/s_h [--device cuda] [--budget-min 50]
     python -m main.x65.student pick --out <dir>/s_h
+    python -m main.x65.student probe --bank <bank> --bank-sha256 <registered> --fold heldout72_hpfix --name curve \
+        --lr 1e-4 --beta 0.1 --epochs 12 --evals-per-epoch 2 --init <P* zip> --out <dir>/curve_h [--device cuda]
 
 **The folds** (:data:`FOLDS`): a student is named by its READ panel and trains on the other two; its training seed is
 fixed (S_H 6511, S_F 6512, S_P 6513). No row of the read panel is loaded, and :func:`split` refuses a training or
@@ -25,6 +27,13 @@ through ``policy_logits_t``; the rest, the value head's own among them, are froz
 from training; at every quarter epoch (16 checkpoints per learning rate) the same L is computed on them in float64,
 and the checkpoint's policy weights are saved. ``pick`` takes, over both learning rates' 32 checkpoints, the lowest L,
 ties to the lower learning rate and then the earlier checkpoint, and records all 32 values.
+
+**The learnability PROBE** (``probe``; X65-R2, ``designs/research_state/measurements/x65_learnability_probe_2026-11-06/``):
+DESCRIPTIVE, never a student of the registration. The same loop with the recipe's knobs opened (any learning rate,
+β, epoch count, checkpoint rate, a subset of the training panels, and ``--target-model``: a policy whose own masked
+softmax replaces π′ on the same label rows, the learnable control). At step 0 and every checkpoint it writes the
+policy's masked log-softmax on three row sets (``main.x65.learnability``: the trained label rows, the inner-validation
+label rows, and the READ panel's label rows, loaded for scoring only and never batched); ``pick`` refuses a probe.
 
 RESUMABLE: ``state.pt`` (model, optimiser, step, the L history) is written atomically at every checkpoint and every
 few minutes; a state trained under another bank, init, fold, learning rate or plan is refused. The bank must be the
@@ -96,12 +105,14 @@ def split(z: dict[str, np.ndarray], fold: str, read_deals: Sequence[str]) -> dic
     return out
 
 
-def plan(n_label: int, n_anchor: int, seed: int, epochs: int = EPOCHS) -> tuple[int, list[int]]:
-    """``(steps per epoch, the checkpoint steps)``: every quarter epoch, the run's end included."""
+def plan(n_label: int, n_anchor: int, seed: int, epochs: int = EPOCHS,
+         evals_per_epoch: int = EVALS_PER_EPOCH) -> tuple[int, list[int]]:
+    """``(steps per epoch, the checkpoint steps)``: every quarter epoch (a probe: ``evals_per_epoch``), the run's end
+    included."""
     if n_anchor < BATCH_ANCHOR:
         raise StudentError(f"{n_anchor} anchor rows: fewer than one anchor batch")
     per = math.ceil(n_label / BATCH_LABEL)
-    cks = [round(per * (e + q / EVALS_PER_EPOCH)) for e in range(epochs) for q in range(1, EVALS_PER_EPOCH + 1)]
+    cks = [round(per * (e + q / evals_per_epoch)) for e in range(epochs) for q in range(1, evals_per_epoch + 1)]
     if cks[0] < 1 or any(b <= a for a, b in itertools.pairwise(cks)):
         raise StudentError(f"{n_label} label rows: too few for {len(cks)} distinct checkpoints")
     return per, cks
@@ -153,6 +164,11 @@ def sha256_file(p: Path) -> str:
 
 def teacher_logp(model, obs: np.ndarray, mask: np.ndarray, device: str, batch: int = 1024) -> np.ndarray:
     """P\\*'s masked log-softmax on every row, float32 (no gradient; the frozen copy)."""
+    return policy_logp(model.policy, obs, mask, device, batch)
+
+
+def policy_logp(pol, obs: np.ndarray, mask: np.ndarray, device: str, batch: int = 1024) -> np.ndarray:
+    """A policy's masked log-softmax on every row, float32, no gradient."""
     import torch as th
 
     from main.x50_r1.hom import policy_logits_t
@@ -162,11 +178,11 @@ def teacher_logp(model, obs: np.ndarray, mask: np.ndarray, device: str, batch: i
         for i in range(0, len(obs), batch):
             x = th.from_numpy(obs[i:i + batch]).to(device)
             m = th.from_numpy(mask[i:i + batch].astype(np.float32)).to(device)
-            out.append(masked_log_softmax_t(policy_logits_t(model.policy, x, m), m).cpu().numpy())
+            out.append(masked_log_softmax_t(policy_logits_t(pol, x, m), m).cpu().numpy())
     return np.concatenate(out, 0).astype(np.float32)
 
 
-def loss_t(pol, z, tlp, il, ia, device: str):
+def loss_t(pol, z, tlp, il, ia, device: str, beta: float = BETA):
     """``(L, label KL mean, anchor KL mean)`` on label rows ``il`` and anchor rows ``ia`` (tensors, with gradient)."""
     import torch as th
 
@@ -181,10 +197,11 @@ def loss_t(pol, z, tlp, il, ia, device: str):
     kl_lab = part(il, z["pi_prime"][il].astype(np.float32)).mean()
     tgt = np.exp(tlp[ia].astype(np.float64)).astype(np.float32) * (z["mask"][ia] == 1)
     kl_anc = part(ia, tgt).mean()
-    return kl_lab + BETA * kl_anc, kl_lab, kl_anc
+    return kl_lab + beta * kl_anc, kl_lab, kl_anc
 
 
-def eval_L(pol, z, tlp, val_label: np.ndarray, val_anchor: np.ndarray, device: str, batch: int = 1024) -> dict[str, float]:
+def eval_L(pol, z, tlp, val_label: np.ndarray, val_anchor: np.ndarray, device: str, batch: int = 1024,
+           beta: float = BETA) -> dict[str, float]:
     """The inner-validation L (float64 means over ALL inner-validation label and anchor rows), no gradient."""
     import torch as th
 
@@ -204,39 +221,52 @@ def eval_L(pol, z, tlp, val_label: np.ndarray, val_anchor: np.ndarray, device: s
 
     lab = mean_kl(val_label, lambda b: z["pi_prime"][b].astype(np.float64))
     anc = mean_kl(val_anchor, lambda b: np.exp(tlp[b].astype(np.float64)) * (z["mask"][b] == 1))
-    return {"L": lab + BETA * anc, "kl_label": lab, "kl_anchor": anc}
+    return {"L": lab + beta * anc, "kl_label": lab, "kl_anchor": anc}
 
 
-def load_fold(bank: Path, fold: str) -> tuple[dict[str, np.ndarray], dict[str, np.ndarray]]:
-    z = BK.load_rows(bank, train_panels(fold), FIELDS)
+def load_fold(bank: Path, fold: str, fields: Sequence[str] = FIELDS) -> tuple[dict[str, np.ndarray], dict[str, np.ndarray]]:
+    z = BK.load_rows(bank, train_panels(fold), fields)
     read = BK.load_rows(bank, [fold], ("deal",))
     return z, split(z, fold, np.unique(read["deal"]).tolist())
 
 
 def train(bank: Path, bank_sha256: str, fold: str, lr: float, init: Path, out: Path, device: str = "cpu",
           budget_min: float = 0.0, threads: int = THREADS, limit_steps: int | None = None,
-          init_sha256: str = PSTAR_SHA256, epochs: int = EPOCHS) -> int:
-    """One resumable chunk of the registered fine-tune of ``fold`` at learning rate ``lr`` (module docstring).
-    0 = finished, 3 = budget reached."""
+          init_sha256: str = PSTAR_SHA256, epochs: int = EPOCHS, probe: dict[str, Any] | None = None) -> int:
+    """One resumable chunk of the registered fine-tune of ``fold`` at learning rate ``lr`` (module docstring), or,
+    with ``probe`` (``learnability.check_probe``'s dict), of a DESCRIPTIVE probe arm. 0 = finished, 3 = budget
+    reached."""
     import torch as th
 
     from main.policy_spectrum.reader import inference_globals, load_checkpoint
+    from main.x65 import learnability as LB
 
-    if lr not in LRS:
-        raise StudentError(f"learning rate {lr!r} is not one of the registered {LRS}")
+    beta, evals = BETA, EVALS_PER_EPOCH
+    if probe is None:
+        if lr not in LRS:
+            raise StudentError(f"learning rate {lr!r} is not one of the registered {LRS}")
+    else:
+        probe = LB.check_probe(probe, fold, lr)
+        epochs, beta, evals = probe["epochs"], probe["beta"], probe["evals_per_epoch"]
     bk = BK.check(bank, bank_sha256)
     if sha256_file(init) != init_sha256:
         raise StudentError(f"{init}: not P*'s bytes {init_sha256[:12]}")
     name, seed = FOLDS[fold]
     d = out / f"lr{lr:g}"
     d.mkdir(parents=True, exist_ok=True)
-    z, ix = load_fold(bank, fold)
-    per, cks = plan(len(ix["train_label"]), len(ix["train_anchor"]), seed, epochs)
+    if probe is None:
+        z, ix = load_fold(bank, fold)
+    else:
+        z, ix = load_fold(bank, fold, LB.TRAIN_FIELDS)
+        ix = LB.restrict(z, ix, probe["train_panels"])
+    per, cks = plan(len(ix["train_label"]), len(ix["train_anchor"]), seed, epochs, evals)
     total = per * epochs
     ident = {"student": name, "fold": fold, "train_panels": list(train_panels(fold)), "seed": seed, "lr": lr,
              "bank_manifest_sha256": bk["manifest_sha256"], "init_sha256": init_sha256, "epochs": epochs,
              "per_epoch": per, "total": total, "checkpoints": cks,
              "sizes": {k: len(v) for k, v in ix.items()}}
+    if probe is not None:
+        ident["probe"] = probe
     t0 = time.monotonic()
     with inference_globals(threads, device):
         th.manual_seed(seed)
@@ -246,6 +276,9 @@ def train(bank: Path, bank_sha256: str, fold: str, lr: float, init: Path, out: P
         pol.eval()
         teacher.policy.eval()
         tlp = teacher_logp(teacher, z["obs"], z["mask"], device)
+        sets = None
+        if probe is not None:               # the scoring rows and the control's target (learnability's docstring)
+            sets = LB.prepare(bank, fold, z, ix, tlp, teacher, probe, d, device)
         del teacher
         probe = ix["train_anchor"][:64]
         names = logit_path_params(pol, th.from_numpy(z["obs"][probe]).to(device),
@@ -277,7 +310,9 @@ def train(bank: Path, bank_sha256: str, fold: str, lr: float, init: Path, out: P
 
         if not st["hist"]:
             st["hist"].append({"step": 0, "checkpoint": None, **eval_L(pol, z, tlp, ix["val_label"],
-                                                                         ix["val_anchor"], device)})
+                                                                         ix["val_anchor"], device, beta=beta)})
+            if sets is not None:
+                LB.write_eval(d, 0, pol, sets, device)
             st["precision"] = precision_flags()
             st["device_info"] = {"device": device, "torch": th.__version__,
                                  "cuda_device": th.cuda.get_device_name(0) if device.startswith("cuda") else None}
@@ -289,7 +324,10 @@ def train(bank: Path, bank_sha256: str, fold: str, lr: float, init: Path, out: P
             lp_, ap_ = batch_at(step, per, len(ix["train_label"]), len(ix["train_anchor"]), seed)
             for g in opt.param_groups:
                 g["lr"] = lr_at(step, lr)
-            loss, kl_lab, kl_anc = loss_t(pol, z, tlp, ix["train_label"][lp_], ix["train_anchor"][ap_], device)
+            loss, kl_lab, kl_anc = loss_t(pol, z, tlp, ix["train_label"][lp_], ix["train_anchor"][ap_], device,
+                                          beta=beta)
+            if probe is not None and not bool(th.isfinite(loss)):
+                raise StudentError(f"probe {probe['name']}: a non-finite loss at step {step}")
             opt.zero_grad(set_to_none=True)
             loss.backward()
             th.nn.utils.clip_grad_norm_(params, CLIP)
@@ -302,7 +340,9 @@ def train(bank: Path, bank_sha256: str, fold: str, lr: float, init: Path, out: P
                       f"(label {float(kl_lab):.5f}, anchor {float(kl_anc):.5f})", flush=True)
             if st["step"] in cks:
                 k = cks.index(st["step"])
-                ev = eval_L(pol, z, tlp, ix["val_label"], ix["val_anchor"], device)
+                ev = eval_L(pol, z, tlp, ix["val_label"], ix["val_anchor"], device, beta=beta)
+                if sets is not None:
+                    LB.write_eval(d, st["step"], pol, sets, device)
                 ck = d / f"ckpt_{k:02d}.pt"
                 _atomic_save({kk: v.detach().cpu() for kk, v in pol.state_dict().items()}, ck)
                 st["hist"].append({"step": st["step"], "checkpoint": k, "path": ck.name,
@@ -339,6 +379,8 @@ def candidates(out: Path) -> tuple[list[dict[str, Any]], dict[str, Any]]:
         if not sp.exists():
             raise StudentError(f"{sp}: missing")
         st = th.load(sp, weights_only=False, map_location="cpu")
+        if st.get("probe") is not None:
+            raise StudentError(f"{sp}: a learnability probe arm, never a candidate student")
         if not st["done"]:
             raise StudentError(f"{sp}: the fine-tune has not finished")
         mine = {k: st[k] for k in ("student", "fold", "seed", "bank_manifest_sha256", "init_sha256", "epochs")}
@@ -384,10 +426,31 @@ def main(argv: list[str] | None = None) -> int:
     t.add_argument("--budget-min", type=float, default=50.0)
     t.add_argument("--threads", type=int, default=THREADS)
     p = sub.add_parser("pick")
-    for q in (t, p):
+    r = sub.add_parser("probe", help="a DESCRIPTIVE learnability probe arm (module docstring); never picked")
+    r.add_argument("--bank", required=True)
+    r.add_argument("--bank-sha256", required=True)
+    r.add_argument("--fold", required=True, choices=sorted(FOLDS), help="the READ panel (scored, never trained)")
+    r.add_argument("--name", required=True)
+    r.add_argument("--lr", type=float, required=True)
+    r.add_argument("--beta", type=float, required=True)
+    r.add_argument("--epochs", type=int, required=True)
+    r.add_argument("--evals-per-epoch", type=int, required=True)
+    r.add_argument("--train-panels", nargs="+", default=None, help="a subset of the fold's two training panels")
+    r.add_argument("--target-model", default=None, help="the control: this policy's softmax replaces pi'")
+    r.add_argument("--init", required=True, help="P*'s zip")
+    r.add_argument("--device", default="cpu")
+    r.add_argument("--budget-min", type=float, default=0.0)
+    r.add_argument("--threads", type=int, default=THREADS)
+    r.add_argument("--limit-steps", type=int, default=None, help="stop after this step (a smoke)")
+    for q in (t, p, r):
         q.add_argument("--out", required=True)
     a = ap.parse_args(argv)
     try:
+        if a.cmd == "probe":
+            pr = {"name": a.name, "beta": a.beta, "epochs": a.epochs, "evals_per_epoch": a.evals_per_epoch,
+                  "train_panels": a.train_panels, "target_model": a.target_model}
+            return train(Path(a.bank), a.bank_sha256, a.fold, a.lr, Path(a.init), Path(a.out), a.device,
+                         a.budget_min, a.threads, limit_steps=a.limit_steps, probe=pr)
         if a.cmd == "train":
             return train(Path(a.bank), a.bank_sha256, a.fold, a.lr, Path(a.init), Path(a.out), a.device,
                          a.budget_min, a.threads)

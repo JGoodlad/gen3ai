@@ -5067,10 +5067,18 @@
   },
   "src/main/x65/export_test.py::test_a_fold_trains_picks_and_exports_bit_identically": {
    "status": "pass",
-   "commit": "e46c03383412f6010ea6af1c7dcfecb5ae3f41fa",
-   "at": "2026-11-06T03:58:31Z",
-   "duration_s": 113.04,
-   "contention": 1.0,
+   "commit": "110865d2abba12896dec26932e916d67cf3526db",
+   "at": "2026-11-06T11:55:00Z",
+   "duration_s": 148.55,
+   "contention": 1.5,
+   "detail": ""
+  },
+  "src/main/x65/learnability_test.py::test_a_probe_arm_and_its_control_train_dump_and_report": {
+   "status": "pass",
+   "commit": "110865d2abba12896dec26932e916d67cf3526db",
+   "at": "2026-11-06T11:55:00Z",
+   "duration_s": 124.52,
+   "contention": 1.57,
    "detail": ""
   },
   "src/node_free_search_integration_test.py::test_search_replay_and_the_prober_run_with_node_impossible": {
@@ -5394,5 +5402,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-11-06T09:15:01Z"
+ "last_written": "2026-11-06T11:55:00Z"
 }

@@ -48,7 +48,8 @@ def _bank(tmp: Path, n_deals: int = 40, rows_per: int = 30, obs: np.ndarray = No
                "inner_val": np.array([BK.inner_val(str(d)) for d in deals]), "deal": deals,
                "played": np.zeros(n, np.int8), "pi_argmax": np.zeros(n, np.int8), "turn": np.full(n, 12, np.int16),
                "arm": np.ones(n, np.int8), "leak_attr": np.zeros(n, np.int16), "leak_rewr": np.zeros(n, np.int16),
-               "leak_resid": np.zeros(n, bool)}
+               "leak_resid": np.zeros(n, bool), "key": np.array([f"{d}|n{i}" for i, d in enumerate(deals)]),
+               "q": np.where(mask == 1, rng.random((n, N_ACT)), np.nan)}
         name = f"pstar_s__{panel}__300"
         np.savez(tmp / f"{name}.npz", **arr)
         shards.append({"name": name, "label": "pstar_s", "panel": panel, "unit_seed": 300, "rows": n,
