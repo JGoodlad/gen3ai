@@ -17,6 +17,13 @@ Pure and light (no torch, no engine): ``main.reads.spec`` validates a spec with 
 rather than the truth's own. Its worlds stay uniformly weighted (``SearchConfig(weights="uniform")``, as every live
 preset). It is the S-U gate's leak-reduced re-gate (``measurements/su_regate_rolls_2026-10-28/``; the gate review's M1 / M3).
 
+``r0s4_honest`` is ``r0s4_rolls`` with its worlds built by the LEAK-HONEST builder
+(``main.value_search.honest_worlds``, ``designs/endstate/design_sprime_honest.md`` D1-D9): ``dice="fresh"``. The search
+is a function of the searched side's information set I alone — no battle seed, no opponent team, no opponent command
+enters — its worlds replayed on fresh dice matched segment by segment (``pokesim::fresh_dice``), every draw keyed by I.
+Same worlds count, leaf, rule and uniform weights as ``r0s4_rolls``; ``max_tries`` is unused (the builder's budgets are
+its own). ``r0s4`` and ``r0s4_rolls`` are unchanged.
+
 A searched decision is one of OUR side's decisions at turn >= ``from_turn`` with >= 2 legal actions; every other
 decision is the checkpoint's greedy choice, exactly the raw arm's.
 
@@ -43,7 +50,7 @@ class SearchPreset:
     """One registered configuration (module docstring). ``per_action`` playouts per legal action under the uniform
     allocation, each in its own world (``n_worlds`` of them); ``depth`` turns then the critic; the acting ``rule``
     (``pikl`` at ``pikl_lambda``); the world builder's information spec ``reveal`` (``off`` = honest), its ``dice`` and
-    its ``max_tries`` per world."""
+    its ``max_tries`` per world. ``dice="fresh"`` selects the leak-honest builder (``r0s4_honest``)."""
 
     name: str
     n_worlds: int
@@ -64,6 +71,8 @@ PRESETS: Dict[str, SearchPreset] = {
                          reveal="off", dice="seed", max_tries=60),
     "r0s4_rolls": SearchPreset(name="r0s4_rolls", n_worlds=8, per_action=8, depth=4, rule="pikl", pikl_lambda=0.015,
                                reveal="off", dice="rolls", max_tries=60),
+    "r0s4_honest": SearchPreset(name="r0s4_honest", n_worlds=8, per_action=8, depth=4, rule="pikl",
+                                pikl_lambda=0.015, reveal="off", dice="fresh", max_tries=60),
 }
 
 

@@ -78,6 +78,9 @@ class SearchResult:
     #: (the honest screen's ``core_events`` replays included) and playing the leaves
     world_cpu_s: float = 0.0
     playout_cpu_s: float = 0.0
+    #: the leak-honest builder's record (:func:`search_decision_honest`: I's digest, the chain, the worlds' replays);
+    #: empty for every other search
+    honest: dict = field(default_factory=dict)
 
 
 def seeds_for(key: str, n: int) -> List[str]:
@@ -99,6 +102,59 @@ def cpu_all() -> float:
 
     a, c = resource.getrusage(resource.RUSAGE_SELF), resource.getrusage(resource.RUSAGE_CHILDREN)
     return a.ru_utime + a.ru_stime + c.ru_utime + c.ru_stime
+
+
+def _play_and_pick(engine: LeafEngine, logs: List[dict], at: int, side: str, root_turn: int, logits: np.ndarray,
+                   legal: List[int], cfg: SearchConfig, key: str, log_w: List[float]):
+    """The leaves and the acting rule over built worlds (``logs``, every one at command ``at``): ``(action, q, visits,
+    spent)``. The playouts' dice are keyed by ``key`` (:func:`seeds_for`)."""
+    seeds = seeds_for(key, cfg.n_worlds)
+    budget = cfg.budget if cfg.budget is not None else cfg.per_action * len(legal)
+
+    def play(req: Dict[int, int], have: Dict[int, int]) -> Dict[int, List[float]]:
+        reqs, who = [], []
+        for a, n in req.items():
+            for k in range(have.get(a, 0), have.get(a, 0) + n):
+                reqs.append(Request(world=k, action=a, seed=seeds[k]))
+                who.append(a)
+        vals = engine.leaves(logs, at, side, root_turn, reqs, depth=cfg.depth)
+        got: Dict[int, List[float]] = {}
+        for a, v in zip(who, vals):
+            got.setdefault(a, []).append(v)
+        return got
+
+    if cfg.allocation == "halving":
+        sh = rules.SequentialHalving(logits=logits, legal=legal, budget=budget, m=cfg.m, cap=cfg.n_worlds)
+        while not sh.done:
+            req = sh.next_round()
+            if not req:
+                continue
+            got = play(req, {a: len(sh.samples[a]) for a in req})
+            for a in req:
+                sh.observe(a, got[a])
+        q, visits, action, spent = sh.means(), sh.visits(), sh.pick(), sh.spent
+    elif cfg.allocation == "uniform":
+        k = min(cfg.n_worlds, max(1, budget // len(legal)))
+        got = play({a: k for a in legal}, {})
+        if cfg.weights == "likelihood":
+            wk = rules.world_weights(log_w, k)        # sample i of every action is world i (play's request order)
+            q = {a: float(np.dot(wk, np.asarray(v, dtype=np.float64))) for a, v in got.items()}
+        else:
+            q = {a: float(np.mean(v)) for a, v in got.items()}
+        visits = {a: k for a in legal}
+        order = rules.policy_order(logits, legal)
+        if cfg.rule == "gumbel":
+            score = rules.gumbel_scores(logits, q, k)
+        elif cfg.rule == "pikl":
+            score = rules.pikl_scores(logits, q, cfg.pikl_lambda, order)
+        elif cfg.rule == "argmax":
+            score = q
+        else:
+            raise ValueError(f"unknown acting rule {cfg.rule!r}")
+        action, spent = rules.pick(score, order), k * len(legal)
+    else:
+        raise ValueError(f"unknown allocation {cfg.allocation!r}")
+    return action, q, visits, spent
 
 
 def search_decision(engine: LeafEngine, log: dict, at: int, side: str, root_row: np.ndarray,
@@ -145,53 +201,8 @@ def search_decision(engine: LeafEngine, log: dict, at: int, side: str, root_row:
         logs, tries, leak = w.logs, w.tries, w.leak
         log_w = list(getattr(w, "log_w", None) or [])
         teams_w = list(getattr(w, "teams", None) or [])
-    seeds = seeds_for(key, cfg.n_worlds)
-    budget = cfg.budget if cfg.budget is not None else cfg.per_action * len(legal)
     k1 = cpu_all()
-
-    def play(req: Dict[int, int], have: Dict[int, int]) -> Dict[int, List[float]]:
-        reqs, who = [], []
-        for a, n in req.items():
-            for k in range(have.get(a, 0), have.get(a, 0) + n):
-                reqs.append(Request(world=k, action=a, seed=seeds[k]))
-                who.append(a)
-        vals = engine.leaves(logs, at, side, root_turn, reqs, depth=cfg.depth)
-        got: Dict[int, List[float]] = {}
-        for a, v in zip(who, vals):
-            got.setdefault(a, []).append(v)
-        return got
-
-    if cfg.allocation == "halving":
-        sh = rules.SequentialHalving(logits=logits, legal=legal, budget=budget, m=cfg.m, cap=cfg.n_worlds)
-        while not sh.done:
-            req = sh.next_round()
-            if not req:
-                continue
-            got = play(req, {a: len(sh.samples[a]) for a in req})
-            for a in req:
-                sh.observe(a, got[a])
-        q, visits, action, spent = sh.means(), sh.visits(), sh.pick(), sh.spent
-    elif cfg.allocation == "uniform":
-        k = min(cfg.n_worlds, max(1, budget // len(legal)))
-        got = play({a: k for a in legal}, {})
-        if cfg.weights == "likelihood":
-            wk = rules.world_weights(log_w, k)        # sample i of every action is world i (play's request order)
-            q = {a: float(np.dot(wk, np.asarray(v, dtype=np.float64))) for a, v in got.items()}
-        else:
-            q = {a: float(np.mean(v)) for a, v in got.items()}
-        visits = {a: k for a in legal}
-        order = rules.policy_order(logits, legal)
-        if cfg.rule == "gumbel":
-            score = rules.gumbel_scores(logits, q, k)
-        elif cfg.rule == "pikl":
-            score = rules.pikl_scores(logits, q, cfg.pikl_lambda, order)
-        elif cfg.rule == "argmax":
-            score = q
-        else:
-            raise ValueError(f"unknown acting rule {cfg.rule!r}")
-        action, spent = rules.pick(score, order), k * len(legal)
-    else:
-        raise ValueError(f"unknown allocation {cfg.allocation!r}")
+    action, q, visits, spent = _play_and_pick(engine, logs, at, side, root_turn, logits, legal, cfg, key, log_w)
     k2 = cpu_all()
     pi_t = rules.improved_policy(logits, legal, q, visits, v_root)
     cq = rules.completed_q(logits, legal, q, visits, v_root)
@@ -200,3 +211,37 @@ def search_decision(engine: LeafEngine, log: dict, at: int, side: str, root_row:
                         prior=rules.softmax_masked(logits, legal), spent=int(spent),
                         cpu_s=_cpu() - c0, wall_s=time.monotonic() - w0, world_tries=tries, leak=leak,
                         world_teams=teams_w, world_cpu_s=k1 - k0, playout_cpu_s=k2 - k1)
+
+
+def search_decision_honest(engine: LeafEngine, info, root_row: np.ndarray, root_mask: np.ndarray,
+                           cfg: SearchConfig, sampler, root_frame: Optional[str] = None) -> SearchResult:
+    """THE LEAK-HONEST SEARCH (``r0s4_honest``, ``designs/endstate/design_sprime_honest.md`` D1, D7): the decision of
+    the searched side whose information set is ``info`` (:class:`main.value_search.info_set.InfoSet`), ``root_row`` /
+    ``root_mask`` its live row and mask. It never reads a battle log: the worlds are built from I alone
+    (``sampler``: an :class:`main.value_search.honest_worlds.HonestSampler`), and every draw — the worlds and the
+    playouts' dice — is keyed by I's digest, so an alternative truth that ships the same I gives this very result.
+    ``root_frame`` (the live row's base64 frame): every world's strict replay must reproduce it. Uniform allocation and
+    uniform world weights only (the live presets'); a :class:`~main.value_search.world_draws.WorldError` from the
+    builder is an exclusion, the caller's to record."""
+    if cfg.oracle or cfg.proposals is not None or cfg.weights != "uniform" or cfg.allocation != "uniform":
+        raise ValueError("the honest search takes uniform allocation and weights, no oracle and no resample")
+    c0, w0 = _cpu(), time.monotonic()
+    key = info.key()
+    out = engine.forward(root_row[None].astype(np.float32), root_mask[None].astype(np.uint8))[0]
+    logits = np.where(root_mask.astype(bool), out[:ACT].astype(np.float64), -np.inf)
+    v_root = float(out[ACT])
+    legal = [int(a) for a in np.flatnonzero(root_mask)]
+    root_turn = int(decode_turn(root_row[None], engine.off)[0])
+    k0 = cpu_all()
+    w = sampler.sample_info(info, cfg.n_worlds, root_frame)
+    k1 = cpu_all()
+    action, q, visits, spent = _play_and_pick(engine, w.logs, w.at, info.side, root_turn, logits, legal, cfg, key, [])
+    k2 = cpu_all()
+    pi_t = rules.improved_policy(logits, legal, q, visits, v_root)
+    cq = rules.completed_q(logits, legal, q, visits, v_root)
+    return SearchResult(action=int(action), policy_target=pi_t, q=q, visits=visits, completed_q=cq,
+                        root_value=v_root, value_target=float(sum(pi_t[a] * cq[a] for a in legal)),
+                        prior=rules.softmax_masked(logits, legal), spent=int(spent),
+                        cpu_s=_cpu() - c0, wall_s=time.monotonic() - w0, world_tries=list(w.tries), leak=w.leak,
+                        world_teams=list(w.teams), world_cpu_s=k1 - k0, playout_cpu_s=k2 - k1,
+                        honest={"key": key, "chain": w.chain, "fails": w.fails, "worlds": w.stats, "at": w.at})

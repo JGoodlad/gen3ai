@@ -23,7 +23,11 @@ frame's tokens, turn and decision index, and its replayed observation row must b
 byte (:meth:`LiveSearcher._check_root`).
 
 **The leaks the honest builder keeps** (``search_ledger.md`` §6.1): every world replays the prefix on the TRUE battle
-seed (speed ties, hidden counters). A searched arm's gain is therefore LEAK-INCLUSIVE.
+seed (speed ties, hidden counters). A searched arm's gain is therefore LEAK-INCLUSIVE. ``r0s4_honest``
+(``design_sprime_honest.md``) closes them: its search reads the searched side's information set I alone
+(:func:`main.value_search.info_set.extract` reads I off the log, the ONE replay whose lines the search sees, and the
+root guards check it against the live decision), its worlds are built from I (``main.value_search.honest_worlds``) and
+every draw is keyed by I's digest (the record's ``search_key``), not by the deal.
 
 **Deterministic per deal.** Each searched decision is keyed by the DEAL (a digest of the battle's ``START``: both
 packed teams, the names, the seed — so the raw and searched games of one deal share it) and the decision (turn, our
@@ -197,8 +201,15 @@ class LiveSearcher:
             forward = lambda r, m: logits_and_values(model, r, m, batch=1024)   # noqa: E731
         self.forward = forward
         self.engine = LeafEngine(forward, n_cores=self.preset.n_worlds, lib=engine_lib)
-        self.sampler = sampler if sampler is not None else WorldSampler(
-            reveal=self.preset.reveal, max_tries=self.preset.max_tries, dice=self.preset.dice)
+        if sampler is not None:
+            self.sampler = sampler
+        elif self.preset.dice == "fresh":
+            from main.value_search.honest_worlds import HonestSampler
+
+            self.sampler = HonestSampler()
+        else:
+            self.sampler = WorldSampler(reveal=self.preset.reveal, max_tries=self.preset.max_tries,
+                                        dice=self.preset.dice)
         self.cfg = SearchConfig(per_action=self.preset.per_action, n_worlds=self.preset.n_worlds,
                                 depth=self.preset.depth, allocation="uniform", rule=self.preset.rule,
                                 pikl_lambda=self.preset.pikl_lambda, weights="uniform")
@@ -272,14 +283,39 @@ class LiveSearcher:
         if not truth.ref or truth.ref[-1] != d["frame"]["b64"]:
             raise LiveSearchError(f"{key}: the log's replayed observation row is not the live core frame's")
 
+    def _check_root_honest(self, log: Dict[str, Any], at: int, side: str, d: Dict[str, Any], key: str) -> Any:
+        """The honest path's root guards: the log's replay offers the live decision's tokens at its turn and index,
+        and the information set read off it (:func:`main.value_search.info_set.extract`, the ONE replay whose lines
+        and commands the search sees) ends at the live core row, byte for byte. Returns I."""
+        from main.value_search import info_set as IS
+
+        root = self.engine.root(log, at, side)
+        live_tokens = {int(k): str(v) for k, v in (d.get("tokens") or {}).items()}
+        got_tokens = {int(k): str(v) for k, v in (root.get("tokens") or {}).items()}
+        if got_tokens != live_tokens:
+            raise LiveSearchError(f"{key}: the log's replay offers {got_tokens}, the live decision {live_tokens}")
+        if int(root.get("turn", -1)) != int(d.get("turn") or 0) or int(root.get("n", -1)) != int(d["n"]):
+            raise LiveSearchError(f"{key}: the log's replay is at turn {root.get('turn')} decision {root.get('n')}, "
+                                  f"the live decision at turn {d.get('turn')} decision {d['n']}")
+        try:
+            info, row = IS.extract(log, at, side)
+        except ValueError as exc:
+            raise LiveSearchError(f"{key}: the information set cannot be read off the log: {exc}") from None
+        if row != d["frame"]["b64"]:
+            raise LiveSearchError(f"{key}: the information set's root row is not the live core frame's")
+        return info
+
     def _search(self, log: Dict[str, Any], at: int, side: str, row: np.ndarray, mask: np.ndarray,
                 d: Dict[str, Any], key: str, argmax: int) -> Dict[str, Any]:
         from main.value_search import rules
-        from main.value_search.search import cpu_all, search_decision
+        from main.value_search.search import cpu_all, search_decision, search_decision_honest
         from main.value_search.worlds import WorldError
 
         c0, k0, w0 = time.thread_time(), _children_cpu(), time.monotonic()
-        self._check_root(log, at, side, d, key)
+        honest = self.preset.dice == "fresh"
+        info = self._check_root_honest(log, at, side, d, key) if honest else None
+        if not honest:
+            self._check_root(log, at, side, d, key)
         out = np.asarray(self.forward(np.asarray(row, dtype=np.float32)[None],
                                       np.asarray(mask, dtype=np.uint8)[None]))[0]
         m = np.asarray(mask).astype(bool)
@@ -293,17 +329,26 @@ class LiveSearcher:
         lsm = rules.log_softmax_ordered(lg, order)
         a0 = cpu_all()
         try:
-            res = search_decision(self.engine, log, at, side, np.asarray(row, dtype=np.float32),
-                                  np.asarray(mask, dtype=np.uint8), self.cfg, key, sampler=self.sampler,
-                                  root_choice_in_log=False)
+            if info is not None:
+                # the LEAK-HONEST search: I alone, never the log (its digest keys every draw)
+                res = search_decision_honest(self.engine, info, np.asarray(row, dtype=np.float32),
+                                             np.asarray(mask, dtype=np.uint8), self.cfg, self.sampler,
+                                             d["frame"]["b64"])
+            else:
+                res = search_decision(self.engine, log, at, side, np.asarray(row, dtype=np.float32),
+                                      np.asarray(mask, dtype=np.uint8), self.cfg, key, sampler=self.sampler,
+                                      root_choice_in_log=False)
         except WorldError as exc:
             # the honest builder found no consistent world in its tries: an EXCLUSION (the banks' own rule), played
             # as the raw arm's choice and recorded; any other exception is a defect and fails the game
             self.stats["excluded"] += 1
-            return {"searched": False, "why": "excluded", "error": f"{type(exc).__name__}: {str(exc)[:400]}",
-                    "played": argmax, "cpu_s": round(time.thread_time() - c0 + _children_cpu() - k0, 3),
-                    "world_cpu_s": round(cpu_all() - a0, 3), "playout_cpu_s": 0.0,
-                    "wall_s": round(time.monotonic() - w0, 3)}
+            ex = {"searched": False, "why": "excluded", "error": f"{type(exc).__name__}: {str(exc)[:400]}",
+                  "played": argmax, "cpu_s": round(time.thread_time() - c0 + _children_cpu() - k0, 3),
+                  "world_cpu_s": round(cpu_all() - a0, 3), "playout_cpu_s": 0.0,
+                  "wall_s": round(time.monotonic() - w0, 3)}
+            if info is not None:
+                ex["search_key"] = info.key()
+            return ex
         if sorted(res.q) != legal:
             raise LiveSearchError(f"{key}: the search valued {sorted(res.q)}, the legal actions are {legal}")
         true_team = log["teams"][1 if side == "p1" else 0]
@@ -322,7 +367,17 @@ class LiveSearcher:
                 "cpu_s": round(cpu, 3), "wall_s": round(wall, 3), "process_cpu_s": round(float(res.cpu_s), 3),
                 "world_cpu_s": round(float(res.world_cpu_s), 3), "playout_cpu_s": round(float(res.playout_cpu_s), 3),
                 "world_tries": list(res.world_tries), "leak": res.leak, "species_hit": hits,
-                "config": self.preset.as_dict()}
+                "config": self.preset.as_dict(), **self._honest_fields(res)}
+
+    @staticmethod
+    def _honest_fields(res: Any) -> Dict[str, Any]:
+        """The honest search's record (``r0s4_honest``): the key it drew under (I's digest) and its build record; no
+        field for any other preset (their records are unchanged)."""
+        h = getattr(res, "honest", None) or {}
+        if not h:
+            return {}
+        return {"search_key": h["key"], "honest": {"chain": h["chain"], "fails": h["fails"], "worlds": h["worlds"],
+                                                    "at": h["at"], "world_teams": list(res.world_teams)}}
 
     def _write(self, rec: Dict[str, Any]) -> None:
         with open(self.out, "a") as f:
