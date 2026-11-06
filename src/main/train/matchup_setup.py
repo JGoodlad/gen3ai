@@ -244,6 +244,10 @@ def build_matchup_and_opponents(args) -> MatchupSetup:
     # Events panel echoes it, and metadata.json records it (+ spec_hash, the measurement-regime tag).
     # SPECIALIST MODE (--trainee-team) pins ONLY the trainee source; opponents keep the full pool.
     inherit_team_mix(args)
+    # THE HUMAN-DATA SWITCH (`main.train.human_data_setup`): the resume / fork refusal, the NOT-BUILT levers, one team
+    # lever per run, the corpus verified against its committed stub, and the `[HUMAN-DATA]` stamp. FATAL_CONFIG.
+    from main.train.human_data_setup import resolve as _resolve_human_data
+    _resolve_human_data(args, emit=emit)
     try:
         matchup = MatchupSpec.from_args(args)
     except CorpusError as e:

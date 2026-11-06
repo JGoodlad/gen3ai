@@ -116,6 +116,10 @@ def _run_lineage(args, model_dir: str, *, model_path, fork_step) -> "dict | None
         # and the fork-time gate's report (`agents.model.growth.apply_growth` ran before this block is built).
         block["grow"] = dict(args._grow_fork)
     if block is not None:
+        # THE HUMAN-DATA SWITCH (`main.train.human_data_setup.lineage_keys`): this run's clause and its nearest
+        # human-data ancestor, written once with the block, so a later resume or fork must type --human-data.
+        from main.train.human_data_setup import lineage_keys
+        block.update(lineage_keys(args, model_path))
         from agents.training.pool_seed import pool_dir_for, read_seed_record
         record = read_seed_record(pool_dir_for(model_dir))
         if record is not None:

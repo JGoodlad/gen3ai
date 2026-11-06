@@ -52,6 +52,11 @@ def parse_team_mix(value: str) -> "tuple[str, str, float]":
     if not m:
         raise ValueError(f"--team-mix {value!r}: expected <corpus>[@<tier>]:<share>, e.g. w_forum_v1@ABC:0.5")
     corpus, tier, raw = m.group("corpus"), m.group("tier") or "", m.group("share")
+    from utils.team_corpora.human import is_registered as _is_human
+    if _is_human(corpus):
+        # REVIEW F F-M7: a human corpus has ONE entry point (the throwing guard; `refuse_human_data` is its twin)
+        raise ValueError(f"--team-mix {value!r}: {corpus!r} is a HUMAN team corpus; it enters training only "
+                         f"through --human-data teams:{corpus}@<share>")
     if corpus not in CORPORA:
         raise ValueError(f"--team-mix {value!r}: unknown team corpus {corpus!r} (registered: "
                          f"{', '.join(sorted(CORPORA))})")
@@ -321,10 +326,21 @@ class MatchupSpec:
 def team_mix_from_args(args) -> "TeamMix | None":
     """``args.team_mix`` → the verified :class:`TeamMix`, or None when the flag is absent. Loads and VERIFIES the
     corpus tier (``utils.team_corpora.load_corpus``): a ``CorpusError`` propagates (the trainer's startup guard
-    turns it into ``FATAL_CONFIG``)."""
+    turns it into ``FATAL_CONFIG``).
+
+    ``--human-data teams:<rowset>@<share>`` resolves HERE to the same mix over the human corpus's whole tier
+    (``utils.team_corpora.human.load``), team sides both (``--team-mix-sides`` is refused without ``--team-mix``);
+    ``main.train.human_data_setup`` refuses it beside a ``--team-mix`` before this runs. ``off`` opens nothing."""
     raw = getattr(args, "team_mix", None)
     if not raw:
-        return None
+        from agents.info_levers.human_data import parse as _parse_human_data
+
+        clause = _parse_human_data(getattr(args, "human_data", None))
+        if clause.lever != "teams":
+            return None
+        from utils.team_corpora import human as _human
+
+        return TeamMix.from_corpus(_human.load(clause.rowset), clause.param)
     from utils.team_corpora import load_corpus
 
     corpus, tier, share = parse_team_mix(raw)

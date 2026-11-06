@@ -387,6 +387,15 @@ def dry_run(
         from main.train.rust_env_setup import behaviour_check_line
         out(f"  K9(b) check : {behaviour_check_line(ns)}")
 
+    # 6b'. THE HUMAN-DATA SWITCH — `main.train.human_data_setup.decide`, the trainer's own call (the resume / fork
+    #      refusal, the NOT-BUILT levers, the corpus against its stub, the `[HUMAN-DATA]` stamp it would print).
+    human_refusal = None
+    if ns is not None:
+        from main.train.human_data_setup import report_lines as _human_lines
+        _hd_lines, human_refusal = _human_lines(ns)
+        for line in _hd_lines:
+            out(f"  {line}")
+
     # 6c. B-GROW, THE DECLARED GROWTH — `main.train.grow_fork`, the trainer's own namespace step (already applied by
     #     `resolve_against_parent`) and its own `decide`, over the resolved namespace and run dir.
     grow_refusal = None
@@ -564,6 +573,8 @@ def dry_run(
     if disk.refused:                              # printed at 7e
         failed = True
     if grow_refusal is not None and not (pinned is not None and pinned.available):   # printed at 6c
+        failed = True
+    if human_refusal is not None and not (pinned is not None and pinned.available):  # printed at 6b'
         failed = True
     if deps.refused:                              # printed at 7f
         failed = True

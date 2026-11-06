@@ -134,6 +134,15 @@ def _team_mix_sides(args) -> str:
     return getattr(args, "team_mix_sides", None) or "both"
 
 
+def _human_lever(args) -> str:
+    """The ``--human-data`` clause's lever head (``off`` when untyped or unparseable: argparse refuses the latter)."""
+    from agents.info_levers.human_data import HumanDataError, parse
+    try:
+        return parse(getattr(args, "human_data", None)).lever
+    except HumanDataError:
+        return "off"
+
+
 def _belief_mode(args) -> str:
     return _val(args, "move_belief_mode", "off")
 
@@ -303,6 +312,27 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         lambda a: (f"--team-mix on the TRAINEE side ({_team_mix_sides(a)}) cannot combine with a pinned "
                    "--trainee-team(s): a specialist pilots its pin, and a corpus mix on that side would silently "
                    "un-pin it. Pass --team-mix-sides opponent to widen only the opponents' teams."),
+        exit_style="fatal_config"),
+
+    # ---- THE HUMAN-DATA SWITCH (human_data_v1, `--human-data`; designs/endstate/human_data_architecture.md §6) ----
+    CombinationCheck(
+        "human_data_teams_vs_team_mix", ("human_data", "team_mix"),
+        lambda a: _human_lever(a) == "teams" and bool(getattr(a, "team_mix", None)),
+        lambda a: (f"--human-data {a.human_data} cannot combine with --team-mix {a.team_mix}: one team lever per run "
+                   "(the teams clause IS a team mix over the human corpus, sides both)"),
+        exit_style="fatal_config"),
+    CombinationCheck(
+        "human_data_teams_vs_trainee_side_pins", ("human_data", "exploiter", "trainee_team", "trainee_teams"),
+        lambda a: _human_lever(a) == "teams" and bool(getattr(a, "exploiter", None) or getattr(a, "trainee_team", None)
+                                                      or getattr(a, "trainee_teams", None)),
+        lambda a: (f"--human-data {a.human_data} widens BOTH sides' team draw, so it cannot combine with --exploiter "
+                   "or a pinned --trainee-team(s) (an exploiter or a specialist pilots its own teams)"),
+        exit_style="fatal_config"),
+    CombinationCheck(
+        "human_data_vs_oracle_reveal", ("human_data", "oracle_reveal"),
+        lambda a: _human_lever(a) != "off" and _val(a, "oracle_reveal", "off") != "off",
+        lambda a: (f"--human-data {a.human_data} cannot combine with --oracle-reveal {_val(a, 'oracle_reveal', 'off')}: "
+                   "a human-data lever is never combined with a diagnostic reveal (human_data_architecture.md §6)"),
         exit_style="fatal_config"),
 
     # ---- gen3_fork_lr_pin_v1 ---------------------------------------------------------------
