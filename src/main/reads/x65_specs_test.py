@@ -57,6 +57,14 @@ def test_the_committed_specs_carry_the_prereg_numbers(name, look, control):
         assert p["gbank"] == {"group": p["gbank"]["group"], "origin": 300, "min_identical": 133, "n": 135}
         gb = sp.anchor[p["gbank"]["group"]]
         assert gb.games == {s: ((s - 300) % 20,) for s in range(300, 345)} and set(gb.teamsets) == set(U)
+        if look == 1:
+            # REVIEW R-m6: the anchor queue runs unit seeds outermost, then groups in spec order
+            # (runner._anchor_todo), so G-BANK, first in spec order and on every seed the students play, is spread
+            # through the look (each seed's 3 replays, then that seed's 60 student games), never played all first
+            order = list(sp.anchor)
+            assert order[0] == p["gbank"]["group"] and len(order) == 4
+            assert all(tuple(sp.anchor[g].unit_seeds) == tuple(range(300, 345)) for g in order)
+            assert all(STU[sp.anchor[g].teamsets[0]] in sp.anchor[g].models for g in order[1:])
     else:
         assert p["gbank"] is None
     for a in sp.anchor.values():                                       # S′-LIVE's import names its committed spec
