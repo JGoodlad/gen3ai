@@ -257,3 +257,104 @@ the gate for that licence.
 - **Cost.** It is unchanged: §8's ≈ 37 CPU-h on GO already counts the placebo's 2,700 units.
 - **Owed before a GO's placebo trains.** B2's `--placebo` permutation and the attribution rule are not built. They
   carry no weight on any class of this read and are built only on GO.
+
+## Amendment 2 (2026-11-05, before any student trained, any student logit or any game): the pin amendment
+
+The pin amendment §9 and the Status owe before the first student trains. It names the code, the bank and the play
+pin, and disposes of every REVIEW finding. **It moves no bar, fold, deal, seed, z, β, learning rate, epoch budget or
+class rule.**
+
+**The code.** Builds B1–B5 landed at `e0dc4e466..c9d86ef53`:
+
+| build | commit | what it is |
+|---|---|---|
+| B4 rule, `games` subset, `PENDING` | `fb6cd6c59` | `main.reads.rules_distill_play`; `by_hand.py` |
+| B5 | `320a535d4` | the four read specs |
+| — | `76db0229a` | the package docstring names the rule |
+| B1 | `d174672ea` | `main.x65.bank` |
+| B2 | `858dc283c` | `main.x65.student` |
+| B3 | `6fcaaf258` | `main.x65.export` |
+| B4 meter | `9a7ac9238` | `main.x65.delivery` |
+| tests | `03ac60ac7`, `c9d86ef53` | the specs test's home path; the export's slow test |
+
+The review's fixes landed at `9b6c0541d..b074e08d8` (`d6b5ba393`, `f235bb796`, `530d26d0f`, `d9a0cc58f`,
+`2f782ed77`, `d7e2d5193`, Amendment 1 `df7288a04`, `b074e08d8`). The students train at the code as of this
+amendment's commit; `student.train` refuses any bank but the registered one below.
+
+**The bank** (B1, built outcome-blind from `c9d86ef53` on E4, `~/gen3ai_archive/x65_exit0_2026-11-05/bank/`):
+
+- **Manifest sha256 `d13fd55f10ba649ad8e728ce1585e4203c4200148d772919eb175d3273992b7a`** (`bank_manifest.json`),
+  built at `c9d86ef53` (clean) on E4 from S′-LIVE's `record.json` (sha256 `1975d3d3…1bc2`), with the anchor rows'
+  greedy check run on P\*'s bytes (`814823c5…91ed`). `python -m main.x65.bank check --manifest-sha256 <it>` passes.
+  This is the bank the students train on; `student.train --bank-sha256` refuses any other.
+- 270 shards; 5,398 counted games (S′-LIVE's 2,700 deals × 2 arms, less its two uncounted units); **268,905 decision
+  rows**, of which **97,395 are label rows**. Wall time 6,351 s at 5 workers, nice 19 beside a live run.
+
+| panel | label rows recorded | kept (verified) | anchor rows (raw / searched arm) | searched-arm digests checked / matched |
+|---|---|---|---|---|
+| H | 32,020 | 32,020 | 42,249 / 42,035 | 32,434 / 32,434 |
+| F | 33,192 | 33,192 | 49,974 / 48,154 | 38,318 / 38,318 |
+| p72 | 32,183 | 32,183 | 44,132 / 42,361 | 32,642 / 32,642 |
+
+- **Every label row is verified: 97,395 / 97,395 (100 %), drop share 0 on every panel, so the bank is not VOID.**
+  The digests checked include the excluded decisions' (the anchor rows' path check): 103,394 / 103,394.
+- Every recorded `at`, `update`, `log_sha256` and re-score `log` was reproduced (0 mismatches).
+- 0 games failed to place; 0 anchor rows failed the arrival-order cross-check; 0 rows failed P\*'s greedy check.
+  25 rows were excluded from that check as near-ties (two logits within 1e-4) and kept.
+- F holds 206 fewer label rows than `bank_count.json`'s 33,398: that count read every final dir, and
+  `pstar_s__forum72__337__g19` (exhausted, uncounted) is not in the counted set.
+- One label row (H) has a π′ mode that is not the recorded pick, a near-tie broken by S′'s policy-order tie rule.
+  It is reported and kept: its target is still the registered π′.
+
+**The play pin is `320a535d4`** (REVIEW R-m7), the landed B5 commit.
+- Its play path is byte-identical to S′-LIVE's `0c76b521e`: `main.reads.playpath.compare` finds 0 differences over
+  1,732 files (digest `ff2a4b4484ba`). Later commits differ from it only in `src/main/reads/__init__.py`'s docstring.
+- It has no Rust diff from `0c76b521e`, and it stamps E4 (`port=e00a212a102f5ce2/94;env=3d0d5c9c0f5d3c23/129`) once
+  the checkout carries main's untracked `src/rust_env/Cargo.lock`. That file is part of the env stamp. The playing
+  checkout is built `--with-rust`.
+- Its `main.reads` plans the four specs. The operator verbs (`status`, `decide`, `record`) run from the newer
+  checkout, whose `distill_play` carries R-m5's pairing check.
+- **B3's export check passes there.** P\*'s own weights, round-tripped through `export.write_zip`, give bit-identical
+  logits at this checkout and at a detached worktree at `320a535d4`, through the bare loader (`load_policy(...,
+  "bare")`). Both the trainer's function and the play path's masked logits match on the 64-row fixture (sha256
+  `bb4cf83d…`). Each student's export runs `python -m main.x65.export write --pin-root <a worktree at 320a535d4>`,
+  and `export.PLAY_PIN` is now `320a535d4`.
+
+**What the specs still carry as `PENDING`**, filled only once the students are exported (a spec with a pin is refused
+by `check-spec --pin-pending`, so the pin and the student shas land together):
+- each student's zip path and sha256;
+- `pin: 320a535d4`;
+- the import hashes of the earlier looks' final specs, in the order the B5 report gave.
+- The bank sha256 below is written into the four specs now.
+
+**The REVIEW's findings, disposed.**
+
+| finding | disposition |
+|---|---|
+| R-M1 the delivery scorer untested | **FIXED** (`530d26d0f`): `score()` runs under test with its forward stubbed, row by row; `delivery_by_hand.py` recomputes Δagree, the pooled Δ, the LB and DELIVERED from the score files with its own loops. Mutation M15 KILLED |
+| R-M2 GO licenses ExIt-1 before the placebo | **FIXED** by Amendment 1 (`df7288a04`) |
+| R-M3 three bank guards untested | **FIXED** (`d6b5ba393`): mutations M4, M5, M25 KILLED |
+| R-m1 B1's named test missed the identity guard | **FIXED** (`d6b5ba393`). The probe's miss is removed by `rebuild_row`'s decision-index check (the naive prefix opens decision 22, not 23); the test asserts that reason. A one-byte-wrong rebuilt row now reaches the `frame_sha256` guard through the real path |
+| R-m2 two trainer guards untested | **FIXED** (`f235bb796`): mutations M9, M26 KILLED |
+| R-m3 "both cannot hold" | **CORRECTED.** §1's sentence is false. GO and NULL both hold when 0 < LB_go and UB_null < +2 pp, that is when SE < 2 / (z_go + 1.96) pp. The rule checks GO first (tested), so the class is GO. The record says "NULL's test also held" whenever both hold; the rule's `tests` block carries both |
+| R-m4 the §5 leak split degenerate | **FIXED** (`d9a0cc58f`). The leak block's `residual` / `partial` are the preset's static leak names, the same on every record. §5's reported split is now `attribution_miss` ≥ 1, `rewritten_moves` ≥ 1, and neither |
+| R-m5 no per-pair START check | **FIXED** (`2f782ed77`). A counted pair whose captures' START documents differ in the format, the seed, either packed team or our core side, or cannot be read, is a named VOID (`pairing`), in the rule and in `by_hand.py` |
+| R-m6 G-BANK only proves the time it runs | **ALREADY SO, now pinned** (`d7e2d5193`). The queue runs seeds outermost, then groups in spec order. G-BANK is first, so each seed plays its 3 replays and then its 60 student games: the 135 replays are spread through the look |
+| R-m7 the play pin | **NAMED** above: `320a535d4`, with the export check run there; `export.PLAY_PIN` follows (`b074e08d8`) |
+| R-m8 sets overlap | **ACCEPTED, wording made precise.** No two panels share a team or a six-species core. Exact sets (species, item and moves) are shared: H–F 51, H–p72 63, F–p72 44, of 343 / 255 / 373. Every "unseen teams" in §1 means teams, not sets. No class's licence claims unseen sets |
+| R-m9 the drop budget | **NOTED, and §4 corrected.** The cap is 0.5 % of 900 deals a panel, so 4 drops pass and the 5th VOIDs. §4 (line 129) says look 1 carries "two banked raw drops"; it carries ONE, `pstar__heldout72_hpfix__337__g03` on H. S′-LIVE's other OP-7 drop is its searched arm's, whose raw unit counted. So H can absorb 3 more drops at look 1, F and p72 4 each |
+| R-m10 four more bank guards untested | **FIXED** (`d6b5ba393`): mutations M7, M20, M21, M24 KILLED |
+| R-m11 seeds 600–674 | **ACCEPTED.** They are disjoint from every registered spec and played unit. FINDING X65-F3 has no guard: S′-HONEST's registration must avoid them. This amendment does not touch S′-HONEST's files |
+| R-m12 two hazards | (a) the bank finished inside its 5-h timeout (6,351 s); (b) **FIXED** (`d6b5ba393`): the bank-build test pins the engine check both ways instead of depending on the untracked `Cargo.lock` |
+
+**Readings accepted.**
+- The review accepted the builders' readings (the design doc's §7).
+- The B4 / B5 builder's readings also stand:
+  - SE is the sample SD with divisor B − 1;
+  - a fresh `default_rng(20261106)` per estimate;
+  - the look-2 drop cap is over the look's cumulative deals;
+  - a look 1 that is neither GO nor NULL is named CONTINUE;
+  - the delivery file's key set is exact;
+  - G-BANK is re-checked at look 2 from the imported replays;
+  - NOT-DELIVERED is decided with `main.reads decide` on a planned, unplayed state, its record being `decision.json`
+    plus the delivery file.

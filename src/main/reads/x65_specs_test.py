@@ -14,6 +14,7 @@ from utils.paths import repo_path
 U = ["heldout72_hpfix", "forum72", "p72"]
 STU = {"heldout72_hpfix": "s_h", "forum72": "s_f", "p72": "s_p"}
 ENGINE = "port=e00a212a102f5ce2/94;env=3d0d5c9c0f5d3c23/129"
+BANK_SHA256 = "d13fd55f10ba649ad8e728ce1585e4203c4200148d772919eb175d3273992b7a"
 
 X65 = "designs/research_state/measurements/x65_exit0_2026-11-05"
 SLIVE_SPEC = "designs/research_state/measurements/sprime_live_play_2026-11-01/read_spec.json"
@@ -70,8 +71,9 @@ def test_the_committed_specs_carry_the_prereg_numbers(name, look, control):
     for a in sp.anchor.values():                                       # S′-LIVE's import names its committed spec
         if a.imports is not None and a.imports.state.endswith("sprime_live_play_2026-11-01"):
             assert a.imports.spec_sha256 == sha256_file(repo_path(SLIVE_SPEC)) and a.imports.group == "u"
-    assert sp.pending and all(x.endswith(("ref.path", "ref.sha256", "spec_sha256", "bank_manifest_sha256"))
-                              for x in sp.pending)
+    assert sp.pending and all(x.endswith(("ref.path", "ref.sha256", "spec_sha256")) for x in sp.pending)
+    # the registered bank (PREREG Amendment 2): the manifest the students train on and the delivery gate reads
+    assert p["bank_manifest_sha256"] == BANK_SHA256
     with pytest.raises(SpecError, match=PENDING):
         load(repo_path(f"{X65}/{name}"))                                # never planned while anything is PENDING
 

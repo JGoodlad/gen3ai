@@ -1,14 +1,14 @@
 # X65 ExIt-0: teach P\* what the search S′ plays, and test whether it learns it
 
 **Status: REGISTERED 2026-11-05** ([`../research_state/measurements/x65_exit0_2026-11-05/PREREG.md`](../research_state/measurements/x65_exit0_2026-11-05/PREREG.md)).
-**Builds B1–B5 BUILT 2026-11-05** (§7; package `src/main/x65/`, the read rule `main.reads.rules_distill_play`).
-Nothing is trained or played. The rule, the folds, the recipe, the deals and the bars are frozen. The adversarial
-review, then a pin amendment (code and bank commit, the bank manifest's sha256), come before the first student
-trains. **Open for that amendment:** the read cannot be planned at S′-LIVE's play pin `0c76b521e`, whose
-`main.reads` has neither `distill_play` nor the specs' new fields; the B4 / B5 commits before the package-docstring
-one leave the play path byte-identical to `0c76b521e`'s (`playpath.compare`: 0 of 1,732 files), so the amendment
-can pin one of them or build a successor of `0c76b521e` carrying only those files. The specs' `PENDING` values
-(student zips and sha256s, the bank sha256, the pin, the later looks' import hashes) are what it fills.
+**Builds B1–B5 BUILT and REVIEWED 2026-11-05** (§7; package `src/main/x65/`, the read rule
+`main.reads.rules_distill_play`; [`REVIEW.md`](../research_state/measurements/x65_exit0_2026-11-05/REVIEW.md): TRAIN,
+every finding disposed in PREREG Amendments 1 and 2). **The bank is built and registered**: 268,905 decision rows,
+97,395 label rows, every one verified against its `frame_sha256` (manifest sha256 `d13fd55f…2b7a`). **The play pin
+is `320a535d4`**, whose play path is byte-identical to S′-LIVE's `0c76b521e` and whose `main.reads` plans the specs.
+Nothing is trained or played: training goes to the GPU session on the orchestrator's word. The specs' remaining
+`PENDING` values (the student zips and sha256s, the pin, the later looks' import hashes) are filled once the students
+are exported.
 
 **Terms.**
 - **P\*** is X26 @280M (`pstar_plateau`).
@@ -186,7 +186,8 @@ Panel adjacency is reported, not removed: p72's sets are Smogon usage draws, and
 - **Look 1: 2,700 deals, the banked control.**
   - Each student plays its held-out panel's 900 S′-LIVE deals (U unit seeds 300–344), each as a lone one-game unit
     against Kakuna (checkpoint 34, greedy).
-  - It plays at S′-LIVE's play pin `0c76b521e`, on engine E4.
+  - It plays at `320a535d4` (PREREG Amendment 2), whose play path is byte-identical to S′-LIVE's play pin
+    `0c76b521e`, on engine E4.
   - It is paired by deal with the banked P\* raw game.
   - **G-BANK:** first re-play 135 banked raw units at that pin (one per panel and unit seed). At least 133 must be
     byte-identical; the measured rate of Kakuna divergence is 9 in 2,100. Otherwise look 1 plays a fresh raw arm too
@@ -310,3 +311,4 @@ from that check, root rule 8).
 | 2026-11-05 | **This doc CREATED and X65 ExIt-0 REGISTERED** (research designer, orchestrator brief: one GPU experiment, worth running whatever S′-HONEST finds) | ExIt-0: supervised distillation of S′ into P\* from S′-LIVE's banked labels, panel cross-fit, read against Kakuna on the held-out panel with the banked raw arm at look 1 | fresh-label ExIt (9.5 CPU-s a label, measured); the in-loop factory (≈ 32 cores at f = 0.25 %); `D_MODEL` growth (not growable; three capacity NO-GOs); from-scratch scale (the owner's question; ≈ 8–12 GPU-days); X60-T (unbuilt; the runner-up); a bare C0 | §2; `frame_probe.json` 976 / 977; `bank_count.json`; `power.txt`; S′-LIVE's record; `design_sprime_honest.md` §4 |
 | 2026-11-05 | **B1–B5 built** (X65 builder, orchestrator brief: build exactly as registered) | B1–B4's meter in `src/main/x65/` (a new loop, reusing X59-S's helpers, HOM's export form and `policy_logits_t`); the rule and the spec in `main.reads` | X59-S's `train` as-is: its loss (set-NLL), its fresh init, its cosine schedule and its rowset format are all different from §3's, so it would be a fork with every line changed | an 18-shard sample (360 games, 17,134 rows): 6,007 / 6,007 label rows and all 6,621 searched-arm digests verified, every recorded `log_sha256` and re-score log reproduced, 0 anchor rows failing either check; the readings in §7 are for the review |
 | 2026-11-05 | **ExIt-1 waits for the placebo** (PREREG Amendment 1; REVIEW R-M2, the orchestrator's ruling) | GO funds ExIt-1 only with the placebo's SEARCH-INFO; the placebo runs on GO at either look, on look 1's deals | GO alone: the control is not dose-matched, so a GO can be fine-tuning rather than S′'s choices | `REVIEW.md` R-M2 |
+| 2026-11-05 | **The pin amendment** (PREREG Amendment 2) | the bank `d13fd55f…2b7a` (97,395 / 97,395 label rows verified); the play pin `320a535d4`; every REVIEW finding disposed | pinning `0c76b521e` itself: its `main.reads` cannot plan the specs; a successor built on `0c76b521e`: not needed, since `320a535d4`'s play path is byte-identical | `playpath.compare`; the export check at `320a535d4`; `bank_manifest.json` |
