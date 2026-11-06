@@ -127,7 +127,9 @@ under `measurements/`. A number with no pointer is not a measurement.
     (+0.0001). The per-departure live read (dlive) read STOP (+1.20 pp a departure [−1.55, +3.88], power ≈ 0.11),
     a different estimand, never pooled. [GO-LEAKY (registered) · Kakuna · leak-inclusive ·
     `measurements/sprime_live_play_2026-11-01/`; SELF-REFEREE banks · `e7048bb1d`, `f756019d7`, `015f00e20`; dlive
-    `measurements/dlive_read_2026-10-28/`]
+    `measurements/dlive_read_2026-10-28/`] Distilling S′'s banked choices into P\* by one supervised pass did not
+    deliver them on unseen teams (X65, NOT-DELIVERED, pooled Δagree −1.26 pp [−1.40, −1.11]).
+    [NOT-DELIVERED (registered) · offline · `measurements/x65_exit0_2026-11-05/`]
 11. **Hidden information is a search lever, not a policy lever.** Telling the network the opponent's hidden facts
     for 3M steps buys nothing (moves −0.38 pp [−1.86, +1.10]) and makes it depend on them; perfect species knowledge
     buys ≈ +2.4 pp, within floor. [NULL · PROVISIONAL at 15M · `ffd2280ee`, `c344ccd1a`]
@@ -529,6 +531,17 @@ every search result updates it). The findings that steer it, all on search banks
     plays). Every guard PASS (G-PREFIX 0 mismatches; identity re-score 600 / 600; 2 post-treatment drops).
   - [GO-LEAKY (registered) · Kakuna · leak-inclusive · registered rule `searched_play` ·
     `measurements/sprime_live_play_2026-11-01/`; ledger 2026-11-05 · *S′-LIVE: GO-LEAKY*]
+- **X65 ExIt-0, distilling S′ into P\* (2026-11-06): NOT-DELIVERED.**
+  - **What it measured:** three P\* students, each fine-tuned (one supervised pass, KL anchor to P\*, β = 1) toward
+    S′'s piKL targets on two panels' banked decisions, scored on the third panel's banked decisions: does the
+    student's greedy choice match S′'s pick more often than P\*'s does?
+  - **The result:** pooled Δagree **−1.26 pp [−1.40, −1.11]**, every panel negative (H −1.06, F −0.94, p72 −1.78).
+    The students moved off P\*'s choice on 5–8 % of decisions, nearly unrelated to where S′ moved. Even on the training
+    panels' own held-out deals the label KL fell only ≈ 3 %. No game was played.
+  - **What it does not claim:** that the network cannot absorb search. One recipe, leak-inclusive labels; the read
+    cannot separate targets the observation cannot support from a too-weak recipe.
+  - [NOT-DELIVERED (registered) · offline, banked decisions · `measurements/x65_exit0_2026-11-05/`; ledger
+    2026-11-06 · *X65 ExIt-0: NOT-DELIVERED*]
 
 **The view.** Search WITH the true seed pays against the real bot at the game level (S′-LIVE); honest search, as
 built, still does not pay on the banks. The next step is the leak-honest replication S′-LIVE licenses: a world

@@ -1,0 +1,26 @@
+{
+ "heldout72_hpfix": {
+  "rows": 32020,
+  "pstar_offline_eq_recorded_pi_argmax": 1.0,
+  "pstar_offline_agree_played": 0.6280449718925671,
+  "recorded_pi_argmax_agree_played": 0.6280449718925671,
+  "student_eq_pstar_offline": 0.9283572767020613,
+  "student_agree_played": 0.6174266083697689
+ },
+ "forum72": {
+  "rows": 33192,
+  "pstar_offline_eq_recorded_pi_argmax": 1.0,
+  "pstar_offline_agree_played": 0.637412629549289,
+  "recorded_pi_argmax_agree_played": 0.637412629549289,
+  "student_eq_pstar_offline": 0.9461014702337913,
+  "student_agree_played": 0.6280429019040733
+ },
+ "p72": {
+  "rows": 32183,
+  "pstar_offline_eq_recorded_pi_argmax": 1.0,
+  "pstar_offline_agree_played": 0.6364540285243763,
+  "recorded_pi_argmax_agree_played": 0.6364540285243763,
+  "student_eq_pstar_offline": 0.9199888139701085,
+  "student_agree_played": 0.6186495976136469
+ }
+}

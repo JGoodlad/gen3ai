@@ -1,6 +1,6 @@
 # STATUS — where gen3ai stands, on one page
 
-**As of 2026-11-05.** This page is the dashboard: what we are trying to do, where each goal stands, and what is
+**As of 2026-11-06.** This page is the dashboard: what we are trying to do, where each goal stands, and what is
 running. It gives each number, its interval and the commit that proves it. The reasoning behind these numbers is in
 [`research_state/UNDERSTANDING.md`](research_state/UNDERSTANDING.md), the plans are in
 [`endstate/README.md`](endstate/README.md), and the research ledger wins any disagreement. A backticked hex string
@@ -28,7 +28,7 @@ rate. **NOT DETECTED / UNDECIDED** means the interval spans zero, so we cannot t
 | 2b | **Beat Metamon on unfamiliar teams** | **NOT MET**, about 4 pp short. The lower bound must clear 0.50, which needs about 0.53. | P\* 0.487 [0.459, 0.515] (its forum72 third under Kakuna's legacy pack, below). No deployable lever's interval clears 0.50. The leak-inclusive search S′ does (S′-LIVE: 0.545 [0.526, 0.564] on 2,698 fresh U deals, raw P\* 0.498 on the same deals), quoted only as "GOAL-B-REACHED (leaky)": S′ sees the true battle seed. Highest point estimates, each against its own control and none detected: the belief prior mix (λ = 0.25) 0.502, D1 0.492, D3 0.494 (final, UNDECIDED). N1-P (look 2, final: NULL) 0.500 is M4-hazarded (its corpus overlaps H and P72) and is not read as goal (b); on F it reads +0.55 pp [−1.26, +2.36] over C0. Human data is no lever so far: a student on 1300+ human rows plays U 7.28 pp [4.28, 10.29] worse against Kakuna than one on P\*'s self-play rows (X59-S, `c1d2d7fcb`); that closes nothing (`5bbba6096`), and the ≥ 1500 follow-up reads SELF-PLAY-DATA-BETTER too (−4.42 pp [−6.07, −2.76] in-house), with rating NOT-RESOLVED (`71ef78a79`, §2). | `3010c81ba`, `f299a7243`, `eb99ab362`, `25a736170`, `62e46874a`, `c1d2d7fcb`, `5bbba6096` |
 | 3 | **Know where we are** | **MAPPED.** The deficit is **piloting** an unfamiliar team, not facing one. In-house meters cannot see it; only Kakuna games can. Nothing measurable is lost in the opening; the gap shows from level positions after turn 10 (descriptive). It does not go with the SETS (H-CTX SUPPORTED): on new sixes of familiar pool sets P\* scores 0.514, below F's 0.540 and 10 pp under home72 on the same engine; the sets keep at most about a fifth of the premium. Why the six matters (memorised sixes, broken cores, no plan) is open (`hctx_rc72_2026-10-26/REVIEW.md` M1). Under a neutral pilot (Kakuna on both sides) rc72b is only about 4 pp weaker, flat across coherence (`hctx_kk_2026-10-27`), so the premium stays mostly team-level. P\*'s own critic does not see it (H-MID: CRITIC-MISCALIBRATED-ON-U), as a self-play critic cannot (REVIEW M1). | Piloting deficit, strength-corrected (X26 @161M, PROVISIONAL, resting on the unverified assumption A-K): +0.123 [+0.039, +0.206], facing +0.017 [−0.062, +0.095]; their difference +0.106 [−0.009, +0.221] is UNDECIDED. P\* is level with Metamon's ensemble on unfamiliar teams, ahead of it on home72, and beats every human-only Metamon model (§5). | `8b43eb44a`, `82858f433`, `c758fcb82`, `905c29f5b`, `f200258f6`, `90708bff5`, `82f273eff`, `df35d1bb0` |
 | 4 | **AlphaStar-style improvement** (league, PFSP, exploiters) | **NO GAIN YET.** The archive-pool and promotion levers are NULL. An exploiter beats P\* easily, so headroom exists. No league arm has run. | Best responder vs P\*: **+11.1 pp [+8.3, +13.8]** (saturates by 8M steps) | `806e50931`, `4290d652a`, `c456b6a09` |
-| 5 | **What search needs** | **A LEAK-INCLUSIVE GO against the real bot (S′-LIVE, 2026-11-05).** P\* + the search S′, deciding every move from turn 10, beats P\* alone against Kakuna on unfamiliar teams. S′ sees the true battle seed (speed ties, hidden counters), so this is not deployable search; it licenses only a leak-honest replication, and that work alone is un-paused. Graded by our own model alone, earlier search gains did not survive (L1 at P\*). | S′-LIVE G_U **+4.60 pp [+2.66, +6.48]** (2,698 paired deals; worst-case-imputed LB +2.57); searched-arm U score 0.545 [0.526, 0.564], "GOAL-B-REACHED (leaky)" at most. L1 cell at P\*: +0.0001 [−0.0097, +0.0101]. | `9c2f023e4`, `d93a51124`, `f756019d7`, `015f00e20` |
+| 5 | **What search needs** | **A LEAK-INCLUSIVE GO against the real bot (S′-LIVE, 2026-11-05).** P\* + the search S′, deciding every move from turn 10, beats P\* alone against Kakuna on unfamiliar teams. S′ sees the true battle seed (speed ties, hidden counters), so this is not deployable search; it licenses only a leak-honest replication, and that work alone is un-paused. Graded by our own model alone, earlier search gains did not survive (L1 at P\*). Distilling S′ into P\* by one supervised pass on its banked choices did not deliver them (X65, NOT-DELIVERED, 11-06). | S′-LIVE G_U **+4.60 pp [+2.66, +6.48]** (2,698 paired deals; worst-case-imputed LB +2.57); searched-arm U score 0.545 [0.526, 0.564], "GOAL-B-REACHED (leaky)" at most. L1 cell at P\*: +0.0001 [−0.0097, +0.0101]. | `9c2f023e4`, `d93a51124`, `f756019d7`, `015f00e20`, `ff6874fcc` |
 | 6 | **Which collapse, and counterfactuals** | **READ: a treadmill, not a collapse** (one seed, provisional). The policy keeps changing without improving, the opponent pool goes stale and the learning rate halves. No coverage, rank or dormant-unit collapse; starvation creeps up +0.03 to +0.06. No counterfactual source is built into training. | about 30 % of greedy choices change per 20M steps | `3e8a41249` |
 
 **Two pack regimes (2026-10-27, SOP H22 / H23).** Kakuna's peer now packs teams as Showdown does
@@ -42,22 +42,24 @@ X26c's and every X35 arm's training (0.13–0.38 % of team draws), and our side'
 The arm-vs-C0 bias is ≤ 0.2 pp, and no verdict moves (the ledger's 10-27 pack-regime AUDIT,
 [`x35_pack_regime_2026-10-27/`](research_state/measurements/x35_pack_regime_2026-10-27/README.md)).
 
-## 2. Running now (as of 2026-11-05)
+## 2. Running now (as of 2026-11-06)
 
 Read at 03:20 PST on 2026-11-04 from `python -m main.ops.arm_chain status` (each chain file under
 `~/.claude/jobs/x35/chains/`), `nvidia-smi` and `scripts/ops/mem_cap.sh --status`. Only the GPU and the N4 chain
-were re-read on 11-04; nothing else here was re-checked.
+were re-read on 11-04, and the X65 row on 11-06 01:10; nothing else here was re-checked.
 
 | where | job | what decision it drives |
 |---|---|---|
 | GPU: IDLE (11-04 03:19) | The N4 chain `n4-toy-2026-11-03` is DONE: all four re-run arms trained and recorded (K9(b) PASS + dose); its supervisor exited 0 at 01:13. | N4 read NO-GO (below). |
 | GPU: not read | **X63-U s6302** (Stage B's speculative seed) is `DONE_FAILED` in its chain (`x63u-stageb-spec-oct30`, 10-31 00:02). Stage A read NOT PURSUED, so it would not have been read for any decision anyway. | None. |
+| CPU (11-06 01:10) | **X65 ExIt-0 is DONE, NOT-DELIVERED**: the delivery gate ran on the CPU (≈ 7 min); no Kakuna game was played, and the look-1 state is planned and unplayed. | ExIt-1 not funded; X60-T is the GPU's next candidate. |
 | CPU: IDLE (11-05 16:47) | **S′-LIVE is DONE**: its last unit ended 15:37, the identity re-score PASSed, the record was written 16:47. | Search: GO-LEAKY (below). |
 
 ### Landed since 2026-10-27
 
 | when | job | result | what it decided |
 |---|---|---|---|
+| CPU 11-06 01:05 PST | **X65 ExIt-0: NOT-DELIVERED** (PREREG Amendments `df7288a04`, `42dff4e9d`, `ff6874fcc`). Three P\* students, each fine-tuned toward S′'s piKL targets on two panels' banked decisions, agree with S′'s pick on the panel they never saw LESS than P\* does: pooled Δagree **−1.26 pp [−1.40, −1.11]** (H −1.06, F −0.94, p72 −1.78; 97,395 label rows). By hand equal; P\*'s offline forward reproduces its recorded choice on 100 % of rows. No Kakuna game was played ([`x65_exit0_2026-11-05/`](research_state/measurements/x65_exit0_2026-11-05/README.md)). | One supervised distillation pass at this recipe does not deliver S′'s choices; it does not close ExIt (honest labels, larger budgets, in-loop forms). | ExIt-1 is not funded; X60-T is the GPU's next candidate. |
 | CPU 11-05 16:47 PST | **S′-LIVE: GO-LEAKY** (PREREG `9c2f023e4`, AM-K6 `d93a51124`). P\* + S′ (`r0s4_rolls@10`, every eligible decision from turn 10) against P\* alone, both against the real Kakuna, on 2,698 fresh paired unfamiliar-team deals: **+4.60 pp [+2.66, +6.48]** (worst-case-imputed LB +2.57; H +4.5, F +5.2, p72 +4.1). The searched arm scores **0.545 [0.526, 0.564]** (raw 0.498). Every guard PASS (G-PREFIX 0 mismatches, identity re-score 600 / 600, 2 post-treatment drops). ≈ 315 CPU-h, 102 h over four supervisor lives ([`sprime_live_play_2026-11-01/`](research_state/measurements/sprime_live_play_2026-11-01/README.md)). | Goal (b) is "REACHED (leaky)" at most: S′ sees the true battle seed. | Licenses ONLY a leak-honest replication on fresh deals; no training, league or public-server change. |
 | CPU 11-04 03:14 PST | **N4 look 1**, the toy capacity screen (T\* with every trunk FFN grown 256 → 1,024, +70M, against a same-pin C0′; 3 + 3 seeds; PREREG `8ed8164ea`, AM-N4-FIXES `801a96d0e`, NOTE 2 `6aa46f9e0`): **NO-GO.** In-house **+0.46 pp [−0.28, +1.20]** (90 %; S at 2,000 pairs per cell); Kakuna on forum72 **+0.20 pp [−2.91, +3.31]**, UNDECIDED (N4 0.431 vs C0′ 0.429, 3,000 games each). The new units were used, at about the scale of ordinary 70M drift (registered reading "used, buys nothing"). Every registered check PASS; every row at `31bd9ced9`. Survived a GPU fault (11-01) and a box reboot (11-03): the four remaining arms re-ran under the same names and pin. README `research_state/measurements/n4_capacity_screen_2026-10-27/`. | Closes growth at the plateau on the toy within 70M (depth X47, FFN width N4). | No N4-P on toy evidence; the scale bet loses its cheap support (not refuted). |
 | CPU 11-03 11:59 PST | **X59-S's ≥ 1500 follow-up** (in-house only; 15 fresh students at 270,260 rows each; 30 cells of 200 pairs on the read's one engine, played from the pin tag x59s-play-08271d24 (a commit off main) under Amendment 8 because the registered pin could not load the v164 students; `71ef78a79`). **Rating: NOT-RESOLVED**, S-H≥1500 − S-H-mix **+1.33 pp [−2.76, +5.43]**. **Data: SELF-PLAY-DATA-BETTER**, S-H≥1500 − S-S cut **−4.42 pp [−6.07, −2.76]**. Read as rating at a fixed slice and volume: the same panel-excluded, forfeit-heavy slice, with concentrated accounts and shared rows. | Higher-rated human rows still teach a fresh network less than our self-play rows, and the rating effect is unresolved. | Routes nothing alone; human data's closure stays blocked (Δ_restriction), H-TEAMS (X60-T) stays first. |
@@ -74,15 +76,10 @@ were re-read on 11-04; nothing else here was re-checked.
 
 The orchestrator's order after REVIEW_2 of the all-null strategy (`69c7cd34d`), with the verdicts since 10-27 applied. Every item needs its GO.
 
-**Registered 2026-11-05: X65 ExIt-0, search distillation** ([`endstate/design_x65_exit0_search_distillation.md`](endstate/design_x65_exit0_search_distillation.md)).
-- **The question:** can P\* learn what S′ plays? Three panel-fold students are fine-tuned toward S′'s choices from
-  S′-LIVE's 97,601 banked searched decisions (no new search CPU) and read against Kakuna on the panel each never saw,
-  with no search at play time. So the read is leak-free.
-- **The cost:** ≈ 0.5 GPU-h; ≈ 23 Kakuna-lane CPU-h at look 1, ≤ 96 with look 2. Power 0.78–0.82 at +2.3 pp, half
-  of S′'s gain.
-- **What is owed first:** builds B1–B5 (≈ 2.5–3 agent-days), one review and a pin amendment, all before any student.
-- **The GPU:** this plan leaves it mostly idle. The days-long rung, ExIt-1 (≈ 35 GPU-h), is funded only by its GO,
-  and sequenced to end before S′-HONEST's live read, which a live training run would slow ≈ 5–10×.
+**X65 ExIt-0, search distillation: READ 2026-11-06, NOT-DELIVERED** ([`endstate/design_x65_exit0_search_distillation.md`](endstate/design_x65_exit0_search_distillation.md); §2).
+- The students did not learn S′'s choices on unseen teams (pooled Δagree −1.26 pp [−1.40, −1.11]), so no game
+  was played and ExIt-1 (≈ 35 GPU-h) is not funded. X60-T is the GPU's next candidate.
+- Open, each needing its own registration: ExIt-0H on S′-HONEST's honest labels; a stronger distillation recipe.
 
 1. **Capacity at the plateau: CLOSED for growth.** X48 (production, per-kind FFN experts) READ 10-30, **NO-GO** (weak, `b01dc048b`); the N4 toy (FFN width 4×) READ 11-04, **NO-GO** ("used, buys nothing", §2). No N4-P on toy evidence; `D_MODEL` and from-scratch width (the scale bet) stay open, unqueued.
 2. **X63**, a long union continuation: **Stage A read NOT PURSUED (10-31)**, so X63 stops at Stage A

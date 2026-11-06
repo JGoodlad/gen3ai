@@ -30641,3 +30641,45 @@ wall-clock only, blind) ran life 4 at `--concurrency 6`. FINDINGs S′LIVE-OP-2.
 View: `UNDERSTANDING.md`, `STATUS.md`, `endstate/search_ledger.md`, `designs/tools/reads.md` §4.
 
 Tag: **MEASUREMENT · S′-LIVE · GO-LEAKY · G_U +4.60 [+2.66, +6.48] · GO-imputed LB +2.57 · searched U 0.545 [0.526, 0.564] (leaky) · licenses a leak-honest replication only**
+
+### 2026-11-06 · MEASUREMENT · **X65 ExIt-0: NOT-DELIVERED — the three P\* students distilled from S′'s banked choices agree with S′ on their held-out panels LESS than P\* does (pooled Δagree −1.26 pp [−1.40, −1.11]; H −1.06, F −0.94, p72 −1.78); no Kakuna game is played; ExIt-1 is not funded, X60-T is the GPU's next candidate**
+
+**Question** (PREREG 2026-11-05, Amendments 1 `df7288a04`, 2 `42dff4e9d`, 3 `ff6874fcc`; bank `d13fd55f…2b7a`;
+play pin `320a535d4`, engine E4). Does a P\* student fine-tuned toward S′'s piKL targets on two panels' banked
+decisions (KL anchor to P\*, β = 1) beat P\* against Kakuna on the third panel, with no search at play time? First,
+the delivery gate (§5): on every label row of the read panel, Δagree = mean of 1[student's greedy = S′'s pick] −
+1[P\*'s recorded greedy = S′'s pick]; DELIVERED iff the deal-bootstrap LB (B 4,000, `default_rng(20261105)`) > 0.
+
+**Verdict: NOT-DELIVERED.** Pooled Δagree **−1.26 pp [−1.40, −1.11]**; H −1.06 (S_H 0.6174 vs P\* 0.6280, 32,020
+rows), F −0.94 (0.6280 vs 0.6374, 33,192), p72 −1.78 (0.6186 vs 0.6365, 32,183). LB −0.01402, not at the boundary.
+By hand (`delivery_by_hand.py`): equal. `main.reads decide` on the planned, unplayed look-1 state: NOT-DELIVERED.
+
+**What it licenses (§1).** "At this recipe the students did not learn S′'s choices on unseen teams." X60-T is the
+GPU's next candidate; ExIt-1 is not funded. NOT licensed: anything about larger budgets, honest labels (ExIt-0H) or
+in-loop distillation.
+
+**Reported (§5).** The students recover 4.0–5.6 % of S′'s departures from P\* and lose 3.8–6.0 % of the decisions
+where S′ kept P\*'s choice, about twice as many, so the net is negative: their moves off P\* are close to unrelated to
+S′'s. No leak-exposure bucket is positive (neither-exposed: H −0.87, F −0.66, p72 −1.76). Pre-turn-10 agreement with
+P\* 92.5–95.5 %; V drift 0.002–0.004. Training (the GPU session's `pick.json`): the held-out label KL on the TRAINING
+panels' own deals fell only ≈ 3 % (≈ 0.705 → 0.682 at lr 1e-5) while the anchor KL rose, so every pick is early at
+1e-5 (S_H ckpt 5 / step 344, S_F 2 / 169, S_P 12 / 744; anchor KL 0.012–0.022).
+
+**Against the GUESSES.** The design guessed P(GO) 0.35–0.5 and gave NOT-DELIVERED no probability; the GPU session
+flagged the ≈ 2 % inner-validation move before the gate.
+
+**Checks.** The operator's outcome-free path check: P\*'s bytes through the gate's own forward reproduce the recorded
+`pi_argmax` on 100 % of the 97,395 label rows, so the deficit is the students', not the meter's. The students differ
+from P\*'s greedy choice on 5.4–8.0 % of label rows.
+
+**FINDINGs** (README): X65-R1, the gate ran before B3's smoke game, so no game of any kind was played; X65-R2, the
+read cannot separate unfittable (leak-driven) targets from a too-weak recipe; X65-R3, ExIt-1's C0 `rb_x65_c0_s6501`
+(`bf94b3cb4`) has no registered consumer.
+
+**Record:** `measurements/x65_exit0_2026-11-05/README.md` and `record/` (`decision.json`, `delivery.json`,
+`delivery_by_hand.json`, `forward_check.json`); state `~/gen3ai_archive/x65_exit0_2026-11-05/` (`delivery.json`
+sha256 `952c2b3e…5b3f`, `look1/decision.json` `b4eee149…1987`).
+View: `UNDERSTANDING.md`, `STATUS.md`, `endstate/search_ledger.md`, `endstate/design_x65_exit0_search_distillation.md`,
+`EXPERIMENT_BACKLOG.md`.
+
+Tag: **MEASUREMENT · X65 ExIt-0 · NOT-DELIVERED · pooled Δagree −1.26 pp [−1.40, −1.11] · every panel negative · no game played · ExIt-1 not funded**

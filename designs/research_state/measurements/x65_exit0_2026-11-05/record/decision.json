@@ -1,0 +1,101 @@
+{
+ "control": "banked",
+ "decision": {
+  "boundary": false,
+  "class": "NOT-DELIVERED",
+  "verdict": "NOT-DELIVERED: the delivery gate's LB(\u0394agree) -0.01402378805041183 is not above 0 (pooled -0.012597507359581076); no Kakuna game is read"
+ },
+ "delivery": {
+  "boundary": false,
+  "delivered": false,
+  "lb": -0.01402378805041183,
+  "path": "/home/goodlad/gen3ai_archive/x65_exit0_2026-11-05/delivery.json",
+  "per_panel": {
+   "forum72": {
+    "agree_pstar": 0.637412629549289,
+    "agree_student": 0.6280429019040733,
+    "delta": -0.009369727645215715,
+    "n_deals": 895,
+    "n_rows": 33192
+   },
+   "heldout72_hpfix": {
+    "agree_pstar": 0.6280449718925671,
+    "agree_student": 0.6174266083697689,
+    "delta": -0.010618363522798251,
+    "n_deals": 900,
+    "n_rows": 32020
+   },
+   "p72": {
+    "agree_pstar": 0.6364540285243763,
+    "agree_student": 0.6186495976136469,
+    "delta": -0.017804430910729266,
+    "n_deals": 900,
+    "n_rows": 32183
+   }
+  },
+  "pooled": -0.012597507359581076,
+  "problems": [],
+  "sha256": "952c2b3e15ef2797e6f3fa1775109b01e7ede6fa86a0e65b31aaee8d8ecf5b3f"
+ },
+ "gbank": {
+  "differing": [],
+  "identical": 0,
+  "min_identical": 133,
+  "n": 135,
+  "passed": false,
+  "registered_n": 135,
+  "unfinished": 135
+ },
+ "look": 1,
+ "schema": "gen3_read_distill_play_v1",
+ "seeds": {
+  "1": [
+   300,
+   301,
+   302,
+   303,
+   304,
+   305,
+   306,
+   307,
+   308,
+   309,
+   310,
+   311,
+   312,
+   313,
+   314,
+   315,
+   316,
+   317,
+   318,
+   319,
+   320,
+   321,
+   322,
+   323,
+   324,
+   325,
+   326,
+   327,
+   328,
+   329,
+   330,
+   331,
+   332,
+   333,
+   334,
+   335,
+   336,
+   337,
+   338,
+   339,
+   340,
+   341,
+   342,
+   343,
+   344
+  ]
+ },
+ "students_counted_units": 0
+}
