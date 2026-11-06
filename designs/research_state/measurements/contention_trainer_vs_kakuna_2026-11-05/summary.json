@@ -1,0 +1,120 @@
+{
+ "rate_windows": [
+  {
+   "window": "A_clean",
+   "phase": "A_baseline",
+   "t0": 1793930184,
+   "t1": 1793931384,
+   "minutes": 20.0,
+   "rows": 756,
+   "rows_per_min": 37.8,
+   "foreign_minutes_covered": 18.0,
+   "foreign_cpu_s_total": 9.2,
+   "foreign_frac_of_6_mean": 0.0012,
+   "foreign_frac_of_6_max": 0.008,
+   "loadavg1_median": 7.34,
+   "note": "no trainer; agent cores clean (sampler from 17:59; foreign <= 1 % through 18:16)"
+  },
+  {
+   "window": "A_confounded_tail",
+   "phase": "A_baseline",
+   "t0": 1793931384,
+   "t1": 1793931984,
+   "minutes": 10.0,
+   "rows": 189,
+   "rows_per_min": 18.9,
+   "foreign_minutes_covered": 10.0,
+   "foreign_cpu_s_total": 607.8,
+   "foreign_frac_of_6_mean": 0.1688,
+   "foreign_frac_of_6_max": 0.249,
+   "loadavg1_median": 13.26,
+   "note": "no trainer; a builder's slow pytest + 4 spawn workers on the agent cores (CONFOUNDED, not used)"
+  },
+  {
+   "window": "B2_fork_warmup",
+   "phase": "B2_withtrain",
+   "t0": 1793933001,
+   "t1": 1793933241,
+   "minutes": 4.0,
+   "rows": 186,
+   "rows_per_min": 46.5,
+   "foreign_minutes_covered": 4.0,
+   "foreign_cpu_s_total": 0.5,
+   "foreign_frac_of_6_mean": 0.0003,
+   "foreign_frac_of_6_max": 0.001,
+   "loadavg1_median": 9.03,
+   "note": "fork alive but in its pre-learn() setup (env build done, compile / first rollout); 4 min only"
+  },
+  {
+   "window": "B2_training",
+   "phase": "B2_withtrain",
+   "t0": 1793933241,
+   "t1": 1793934802,
+   "minutes": 26.02,
+   "rows": 935,
+   "rows_per_min": 35.94,
+   "foreign_minutes_covered": 26.0,
+   "foreign_cpu_s_total": 2.6,
+   "foreign_frac_of_6_mean": 0.0,
+   "foreign_frac_of_6_max": 0.0,
+   "loadavg1_median": 8.1,
+   "note": "pinned trainer in learn() from 18:47:12 to its SIGTERM at 19:13:36"
+  },
+  {
+   "window": "A2_clean",
+   "phase": "A2_baseline",
+   "t0": 1793934853,
+   "t1": 1793936653,
+   "minutes": 30.0,
+   "rows": 1260,
+   "rows_per_min": 42.0,
+   "foreign_minutes_covered": 24.0,
+   "foreign_cpu_s_total": 2.4,
+   "foreign_frac_of_6_mean": 0.0,
+   "foreign_frac_of_6_max": 0.0,
+   "loadavg1_median": 6.28,
+   "note": "no trainer (fork stopped 19:14:09); builders held off the agent cores"
+  }
+ ],
+ "rate_ratio": {
+  "B2_training_vs_A_clean": 0.9508,
+  "B2_training_vs_A2_clean": 0.8557,
+  "B2_training_vs_pooled_clean": 0.8914,
+  "A_clean_vs_A2_clean": 0.9
+ },
+ "paired_cpu_s": {
+  "rows": {
+   "A_clean": 756,
+   "B2_training": 935,
+   "A2_clean": 1260
+  },
+  "B2_training_vs_A_clean_plus_A2": {
+   "states": 78,
+   "mean_ratio": 1.153,
+   "ci95": [
+    1.1484,
+    1.1577
+   ],
+   "median_ratio": 1.1555
+  },
+  "B2_training_vs_A2": {
+   "states": 78,
+   "mean_ratio": 1.1475,
+   "ci95": [
+    1.1424,
+    1.1526
+   ],
+   "median_ratio": 1.148
+  },
+  "A2_vs_A_clean (no-trainer null)": {
+   "states": 78,
+   "mean_ratio": 1.0128,
+   "ci95": [
+    1.0074,
+    1.0177
+   ],
+   "median_ratio": 1.0136
+  }
+ },
+ "search_mismatches_total": 0
+}

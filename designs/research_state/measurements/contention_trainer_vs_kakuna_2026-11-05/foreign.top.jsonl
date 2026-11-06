@@ -1,0 +1,100 @@
+{"t": 1793930342, "top_foreign": [[0.07, 9085, "server"], [0.01, 6478, "snapd"]]}
+{"t": 1793930402, "top_foreign": [[0.09, 9085, "server"], [0.01, 2952775, "python3"], [0.01, 2889860, "kworker/5:0-events_freezable"], [0.01, 2532728, "kworker/14:2-mm_percpu_wq"], [0.01, 2031738, "kworker/7:1-mm_percpu_wq"]]}
+{"t": 1793930462, "top_foreign": [[0.08, 9085, "server"], [0.01, 2952775, "python3"], [0.01, 1400371, "kworker/13:2-mm_percpu_wq"]]}
+{"t": 1793930522, "top_foreign": [[0.08, 9085, "server"], [0.01, 2952775, "python3"], [0.01, 2889860, "kworker/5:0-mm_percpu_wq"], [0.01, 2439560, "kworker/15:1-mm_percpu_wq"], [0.01, 6478, "snapd"], [0.01, 108, "migration/15"]]}
+{"t": 1793930582, "top_foreign": [[0.08, 9085, "server"], [0.01, 2532728, "kworker/14:2-mm_percpu_wq"], [0.01, 1298575, "kworker/6:2-mm_percpu_wq"], [0.01, 109, "ksoftirqd/15"]]}
+{"t": 1793930642, "top_foreign": [[0.08, 9085, "server"], [0.01, 2952775, "python3"], [0.01, 2889860, "kworker/5:0-events"], [0.01, 102, "migration/14"]]}
+{"t": 1793930702, "top_foreign": [[0.08, 9085, "server"], [0.01, 2031738, "kworker/7:1-mm_percpu_wq"], [0.01, 1400371, "kworker/13:2-mm_percpu_wq"]]}
+{"t": 1793930762, "top_foreign": [[0.08, 9085, "server"], [0.02, 2952775, "python3"], [0.01, 2889860, "kworker/5:0-events"], [0.01, 2439560, "kworker/15:1-mm_percpu_wq"], [0.01, 60, "migration/7"]]}
+{"t": 1793930822, "top_foreign": [[0.08, 9085, "server"], [0.01, 1400371, "kworker/13:2-events"], [0.01, 1298575, "kworker/6:2-mm_percpu_wq"]]}
+{"t": 1793930882, "top_foreign": [[0.07, 9085, "server"], [0.01, 2952775, "python3"], [0.01, 2889860, "kworker/5:0-events_freezable"]]}
+{"t": 1793930942, "top_foreign": [[0.08, 9085, "server"], [0.01, 2952775, "python3"], [0.01, 2532728, "kworker/14:2-mm_percpu_wq"], [0.01, 2031738, "kworker/7:1-mm_percpu_wq"]]}
+{"t": 1793931002, "top_foreign": [[0.09, 9085, "server"], [0.01, 2889860, "kworker/5:0-events"], [0.01, 2439560, "kworker/15:1-mm_percpu_wq"], [0.01, 1400371, "kworker/13:2-mm_percpu_wq"], [0.01, 6478, "snapd"]]}
+{"t": 1793931062, "top_foreign": [[0.08, 9085, "server"], [0.01, 2952775, "python3"], [0.01, 2889860, "kworker/5:0-events"]]}
+{"t": 1793931122, "top_foreign": [[0.09, 9085, "server"], [0.01, 2952775, "python3"], [0.01, 1298575, "kworker/6:2-mm_percpu_wq"]]}
+{"t": 1793931182, "top_foreign": [[0.08, 9085, "server"], [0.01, 2889860, "kworker/5:0-events"], [0.01, 2031738, "kworker/7:1-events"]]}
+{"t": 1793931242, "top_foreign": [[2.16, 3003848, "python3"], [0.09, 9085, "server"], [0.08, 3003855, "python3"], [0.02, 2952775, "python3"], [0.01, 2439560, "kworker/15:1-mm_percpu_wq"], [0.01, 6478, "snapd"]]}
+{"t": 1793931302, "top_foreign": [[2.78, 3003848, "python3"], [0.11, 3003855, "python3"], [0.08, 9085, "server"], [0.01, 2889860, "kworker/5:0-events"], [0.01, 2532728, "kworker/14:2-events"], [0.01, 1400371, "kworker/13:2-mm_percpu_wq"]]}
+{"t": 1793931362, "top_foreign": [[2.06, 3003848, "python3"], [0.09, 3003855, "python3"], [0.08, 9085, "server"], [0.01, 2952775, "python3"], [0.01, 1298575, "kworker/6:2-events"], [0.01, 55, "ksoftirqd/6"]]}
+{"t": 1793931422, "top_foreign": [[7.18, 3012873, "python3"], [6.72, 3013302, "python3"], [6.31, 3012881, "python3"], [6.26, 3013301, "python3"], [6.12, 3012871, "python3"], [5.74, 3013300, "python3"]]}
+{"t": 1793931482, "top_foreign": [[6.73, 3013302, "python3"], [6.46, 3012873, "python3"], [6.44, 3012881, "python3"], [6.15, 3013301, "python3"], [6.04, 3013300, "python3"], [5.62, 3012871, "python3"]]}
+{"t": 1793931542, "top_foreign": [[11.86, 3012883, "python3"], [9.67, 3013299, "python3"], [7.85, 3012873, "python3"], [7.72, 3013301, "python3"], [7.5, 3012871, "python3"], [7.31, 3012881, "python3"]]}
+{"t": 1793931602, "top_foreign": [[12.45, 3013299, "python3"], [11.9, 3013302, "python3"], [9.88, 3013301, "python3"], [9.72, 3013300, "python3"], [0.07, 9085, "server"], [0.02, 2952775, "python3"]]}
+{"t": 1793931662, "top_foreign": [[15.63, 3013300, "python3"], [14.65, 3013301, "python3"], [10.98, 3013299, "python3"], [9.44, 3013302, "python3"], [0.08, 9085, "server"], [0.01, 2889860, "kworker/5:0-events"]]}
+{"t": 1793931722, "top_foreign": [[13.46, 3013300, "python3"], [13.24, 3013301, "python3"], [12.89, 3013299, "python3"], [12.86, 3013302, "python3"], [0.09, 9085, "server"]]}
+{"t": 1793931782, "top_foreign": [[15.9, 3013302, "python3"], [10.37, 3013300, "python3"], [8.09, 3013299, "python3"], [7.2, 3013301, "python3"], [0.07, 9085, "server"], [0.02, 2952775, "python3"]]}
+{"t": 1793931842, "top_foreign": [[44.99, 3038678, "python3"], [10.6, 3013301, "python3"], [9.88, 3013300, "python3"], [8.47, 3013302, "python3"], [7.05, 3013299, "python3"], [0.08, 9085, "server"]]}
+{"t": 1793931902, "top_foreign": [[47.3, 3038678, "python3"], [12.07, 3013299, "python3"], [11.71, 3013301, "python3"], [10.0, 3013300, "python3"], [8.49, 3013302, "python3"], [0.08, 9085, "server"]]}
+{"t": 1793931962, "top_foreign": [[48.33, 3038678, "python3"], [11.02, 3013301, "python3"], [9.4, 3013300, "python3"], [9.17, 3013299, "python3"], [9.08, 3013302, "python3"], [0.08, 9085, "server"]]}
+{"t": 1793932022, "top_foreign": [[90.28, 3038678, "python3"], [23.49, 3013300, "python3"], [21.29, 3013301, "python3"], [20.69, 3013299, "python3"], [20.43, 3013302, "python3"], [0.08, 9085, "server"]]}
+{"t": 1793932082, "top_foreign": [[29.76, 3013300, "python3"], [29.07, 3013301, "python3"], [26.44, 3013302, "python3"], [23.15, 3013299, "python3"], [0.07, 9085, "server"], [0.01, 2889860, "kworker/5:0-events"]]}
+{"t": 1793932142, "top_foreign": [[0.08, 9085, "server"], [0.05, 15, "rcu_preempt"], [0.01, 2952775, "python3"], [0.01, 2889860, "kworker/5:0-events"], [0.01, 2532728, "kworker/14:2-events"], [0.01, 2031738, "kworker/7:1-events"]]}
+{"t": 1793932202, "top_foreign": [[2.01, 45947, "claude"], [1.78, 45403, "claude"], [0.07, 9085, "server"], [0.07, 8666, "cloudflared"], [0.06, 8681, "python3"], [0.05, 13876, "tmux: server"]]}
+{"t": 1793932262, "top_foreign": [[0.07, 9085, "server"], [0.07, 8666, "cloudflared"], [0.03, 15, "rcu_preempt"], [0.01, 2952775, "python3"], [0.01, 2694111, "bash"], [0.01, 1298575, "kworker/6:2-mm_percpu_wq"]]}
+{"t": 1793932322, "top_foreign": [[0.07, 8666, "cloudflared"], [0.06, 9085, "server"], [0.05, 479, "jbd2/nvme0n1p6-8"], [0.01, 3050024, "kworker/u64:0-flush-259:0"], [0.01, 2889860, "kworker/5:0-mm_percpu_wq"], [0.01, 2639597, "kworker/u64:3-events_power_efficient"]]}
+{"t": 1793932382, "top_foreign": [[1.29, 45403, "claude"], [0.07, 9085, "server"], [0.06, 8666, "cloudflared"], [0.03, 15617, "python3"], [0.02, 2639597, "kworker/u64:3-ext4-rsv-conversion"], [0.02, 8674, "tensorboard"]]}
+{"t": 1793932442, "top_foreign": [[4.49, 3081522, "python3"], [1.44, 3081519, "python3"], [1.13, 3081525, "python3"], [0.25, 3081082, "python3"], [0.08, 9085, "server"], [0.08, 8666, "cloudflared"]]}
+{"t": 1793932502, "top_foreign": [[25.79, 3081522, "python3"], [25.24, 3081519, "python3"], [1.42, 3081525, "python3"], [0.29, 3081082, "python3"], [0.06, 9085, "server"], [0.01, 3083064, "kworker/5:1-events"]]}
+{"t": 1793932562, "top_foreign": [[38.75, 3081519, "python3"], [33.25, 3081522, "python3"], [29.48, 3081525, "python3"], [0.38, 3081082, "python3"], [0.08, 9085, "server"], [0.02, 2952775, "python3"]]}
+{"t": 1793932622, "top_foreign": [[37.16, 3081525, "python3"], [35.1, 3081519, "python3"], [19.72, 3081522, "python3"], [0.31, 3081082, "python3"], [0.08, 9085, "server"], [0.01, 3083064, "kworker/5:1-events"]]}
+{"t": 1793932682, "top_foreign": [[34.13, 3081525, "python3"], [27.74, 3081522, "python3"], [21.8, 3081519, "python3"], [1.48, 3081082, "python3"], [0.07, 9085, "server"], [0.01, 3072679, "kworker/13:1-events"]]}
+{"t": 1793932742, "top_foreign": [[0.08, 9085, "server"], [0.01, 2439560, "kworker/15:1-mm_percpu_wq"], [0.01, 1298575, "kworker/6:2-mm_percpu_wq"], [0.01, 97, "ksoftirqd/13"]]}
+{"t": 1793932802, "top_foreign": [[1.71, 45403, "claude"], [0.72, 45947, "claude"], [0.07, 9085, "server"], [0.07, 8681, "python3"], [0.07, 8666, "cloudflared"], [0.06, 15, "rcu_preempt"]]}
+{"t": 1793932862, "top_foreign": [[0.07, 9085, "server"], [0.06, 8698, "python3"], [0.05, 3120295, "kworker/u64:14-events_power_efficient"], [0.01, 3120294, "kworker/u64:13-events_power_efficient"], [0.01, 3083064, "kworker/5:1-events"], [0.01, 8692, "python3"]]}
+{"t": 1793932922, "top_foreign": [[0.08, 9085, "server"], [0.05, 8681, "python3"], [0.02, 3120295, "kworker/u64:14-events_power_efficient"], [0.01, 3120294, "kworker/u64:13-events_power_efficient"], [0.01, 8674, "tensorboard"], [0.01, 6478, "snapd"]]}
+{"t": 1793932982, "top_foreign": [[0.06, 9085, "server"], [0.03, 13876, "tmux: server"], [0.01, 2952775, "python3"], [0.01, 2532728, "kworker/14:2-mm_percpu_wq"], [0.01, 1181152, "pin_enforcer.sh"], [0.01, 8674, "tensorboard"]]}
+{"t": 1793933042, "top_foreign": [[0.08, 9085, "server"], [0.01, 3072679, "kworker/13:1-events"], [0.01, 2952775, "python3"], [0.01, 108, "migration/15"], [0.01, 96, "migration/13"]]}
+{"t": 1793933102, "top_foreign": [[0.06, 9085, "server"], [0.01, 3083064, "kworker/5:1-mm_percpu_wq"], [0.01, 2952775, "python3"], [0.01, 1298575, "kworker/6:2-mm_percpu_wq"]]}
+{"t": 1793933163, "top_foreign": [[0.09, 8666, "cloudflared"], [0.08, 9085, "server"], [0.01, 3083064, "kworker/5:1-mm_percpu_wq"], [0.01, 2439560, "kworker/15:1-mm_percpu_wq"]]}
+{"t": 1793933223, "top_foreign": [[0.09, 9085, "server"], [0.01, 2952775, "python3"], [0.01, 2031738, "kworker/7:1-mm_percpu_wq"]]}
+{"t": 1793933283, "top_foreign": [[0.08, 9085, "server"], [0.01, 3083064, "kworker/5:1-events"], [0.01, 2952775, "python3"]]}
+{"t": 1793933343, "top_foreign": [[0.08, 9085, "server"], [0.01, 3072679, "kworker/13:1-events"], [0.01, 2952775, "python3"], [0.01, 2532728, "kworker/14:2-mm_percpu_wq"], [0.01, 6478, "snapd"]]}
+{"t": 1793933403, "top_foreign": [[0.08, 9085, "server"], [0.01, 3083064, "kworker/5:1-events"], [0.01, 2952775, "python3"], [0.01, 1298575, "kworker/6:2-events"]]}
+{"t": 1793933463, "top_foreign": [[0.08, 9085, "server"], [0.01, 2952775, "python3"], [0.01, 102, "migration/14"], [0.01, 48, "migration/5"]]}
+{"t": 1793933523, "top_foreign": [[0.07, 9085, "server"], [0.01, 3083064, "kworker/5:1-events_freezable"], [0.01, 2952775, "python3"]]}
+{"t": 1793933583, "top_foreign": [[0.08, 9085, "server"], [0.01, 3072679, "kworker/13:1-events"], [0.01, 2952775, "python3"], [0.01, 2439560, "kworker/15:1-mm_percpu_wq"]]}
+{"t": 1793933643, "top_foreign": [[0.08, 9085, "server"], [0.01, 3083064, "kworker/5:1-events"], [0.01, 2952775, "python3"], [0.01, 6478, "snapd"]]}
+{"t": 1793933703, "top_foreign": [[0.07, 9085, "server"], [0.01, 2952775, "python3"], [0.01, 2031738, "kworker/7:1-mm_percpu_wq"], [0.01, 1298575, "kworker/6:2-events"]]}
+{"t": 1793933763, "top_foreign": [[0.08, 9085, "server"], [0.01, 3083064, "kworker/5:1-events"], [0.01, 2532728, "kworker/14:2-events"]]}
+{"t": 1793933823, "top_foreign": [[0.09, 9085, "server"], [0.01, 2952775, "python3"]]}
+{"t": 1793933883, "top_foreign": [[0.08, 9085, "server"], [0.01, 3083064, "kworker/5:1-events"], [0.01, 3072679, "kworker/13:1-events"], [0.01, 2952775, "python3"], [0.01, 54, "migration/6"]]}
+{"t": 1793933943, "top_foreign": [[0.08, 9085, "server"], [0.02, 2952775, "python3"], [0.01, 2532728, "kworker/14:2-events"], [0.01, 2439560, "kworker/15:1-mm_percpu_wq"]]}
+{"t": 1793934003, "top_foreign": [[0.07, 9085, "server"], [0.01, 3083064, "kworker/5:1-events"]]}
+{"t": 1793934063, "top_foreign": [[0.09, 9085, "server"], [0.01, 3083064, "kworker/5:1-events"], [0.01, 2952775, "python3"], [0.01, 2031738, "kworker/7:1-mm_percpu_wq"], [0.01, 1298575, "kworker/6:2-mm_percpu_wq"], [0.01, 6478, "snapd"]]}
+{"t": 1793934123, "top_foreign": [[0.08, 9085, "server"], [0.01, 3072679, "kworker/13:1-mm_percpu_wq"], [0.01, 2952775, "python3"]]}
+{"t": 1793934183, "top_foreign": [[0.07, 9085, "server"], [0.01, 3083064, "kworker/5:1-events"], [0.01, 2952775, "python3"]]}
+{"t": 1793934243, "top_foreign": [[0.09, 9085, "server"], [0.01, 2952775, "python3"], [0.01, 2532728, "kworker/14:2-events"]]}
+{"t": 1793934303, "top_foreign": [[0.07, 9085, "server"], [0.01, 3083064, "kworker/5:1-events_freezable"], [0.01, 2952775, "python3"], [0.01, 60, "migration/7"]]}
+{"t": 1793934363, "top_foreign": [[0.09, 9085, "server"], [0.01, 3072679, "kworker/13:1-events"], [0.01, 2952775, "python3"], [0.01, 2439560, "kworker/15:1-mm_percpu_wq"]]}
+{"t": 1793934423, "top_foreign": [[0.08, 9085, "server"], [0.01, 3083064, "kworker/5:1-events"], [0.01, 2952775, "python3"], [0.01, 6478, "snapd"]]}
+{"t": 1793934483, "top_foreign": [[0.09, 9085, "server"], [0.01, 2952775, "python3"], [0.01, 1298575, "kworker/6:2-events"]]}
+{"t": 1793934543, "top_foreign": [[0.07, 9085, "server"], [0.02, 2952775, "python3"], [0.01, 2031738, "kworker/7:1-events"], [0.01, 6478, "snapd"], [0.01, 61, "ksoftirqd/7"]]}
+{"t": 1793934603, "top_foreign": [[0.08, 9085, "server"], [0.01, 3083064, "kworker/5:1-events"], [0.01, 3072679, "kworker/13:1-events"], [0.01, 2532728, "kworker/14:2-events"]]}
+{"t": 1793934663, "top_foreign": [[0.09, 9085, "server"], [0.01, 3083064, "kworker/5:1-events"], [0.01, 2952775, "python3"]]}
+{"t": 1793934723, "top_foreign": [[0.08, 9085, "server"], [0.01, 2952775, "python3"], [0.01, 6478, "snapd"]]}
+{"t": 1793934783, "top_foreign": [[0.07, 9085, "server"], [0.01, 3083064, "kworker/5:1-events_freezable"], [0.01, 2952775, "python3"], [0.01, 2532728, "kworker/14:2-events"], [0.01, 1298575, "kworker/6:2-mm_percpu_wq"], [0.01, 108, "migration/15"]]}
+{"t": 1793934843, "top_foreign": [[2.78, 45947, "claude"], [0.08, 9085, "server"], [0.06, 8698, "python3"], [0.03, 13876, "tmux: server"], [0.02, 8692, "python3"], [0.02, 15, "rcu_preempt"]]}
+{"t": 1793934903, "top_foreign": [[0.09, 9085, "server"], [0.02, 2952775, "python3"], [0.01, 2031738, "kworker/7:1-mm_percpu_wq"], [0.01, 8644, "systemd"]]}
+{"t": 1793934963, "top_foreign": [[0.09, 9085, "server"], [0.01, 3083064, "kworker/5:1-events"], [0.01, 1298575, "kworker/6:2-events"], [0.01, 96, "migration/13"]]}
+{"t": 1793935023, "top_foreign": [[0.08, 9085, "server"], [0.01, 3072679, "kworker/13:1-events"], [0.01, 2952775, "python3"], [0.01, 2532728, "kworker/14:2-mm_percpu_wq"], [0.01, 2439560, "kworker/15:1-mm_percpu_wq"], [0.01, 6478, "snapd"]]}
+{"t": 1793935083, "top_foreign": [[0.08, 9085, "server"], [0.01, 3083064, "kworker/5:1-events"], [0.01, 2952775, "python3"]]}
+{"t": 1793935143, "top_foreign": [[0.09, 9085, "server"], [0.01, 2952775, "python3"], [0.01, 48, "migration/5"]]}
+{"t": 1793935203, "top_foreign": [[0.09, 9085, "server"], [0.01, 3083064, "kworker/5:1-events"], [0.01, 3072679, "kworker/13:1-events"], [0.01, 2031738, "kworker/7:1-events"]]}
+{"t": 1793935263, "top_foreign": [[0.08, 9085, "server"], [0.02, 2952775, "python3"]]}
+{"t": 1793935323, "top_foreign": [[0.09, 9085, "server"], [0.01, 3083064, "kworker/5:1-events"], [0.01, 2532728, "kworker/14:2-mm_percpu_wq"], [0.01, 1298575, "kworker/6:2-events"], [0.01, 6478, "snapd"]]}
+{"t": 1793935383, "top_foreign": [[0.08, 9085, "server"], [0.01, 2952775, "python3"], [0.01, 102, "migration/14"]]}
+{"t": 1793935443, "top_foreign": [[0.09, 9085, "server"], [0.01, 2952775, "python3"]]}
+{"t": 1793935503, "top_foreign": [[0.08, 9085, "server"], [0.01, 3083064, "kworker/5:1-mm_percpu_wq"], [0.01, 3072679, "kworker/13:1-events"], [0.01, 2439560, "kworker/15:1-mm_percpu_wq"], [0.01, 54, "migration/6"]]}
+{"t": 1793935563, "top_foreign": [[0.08, 9085, "server"], [0.01, 2952775, "python3"]]}
+{"t": 1793935623, "top_foreign": [[0.08, 9085, "server"], [0.01, 3083064, "kworker/5:1-mm_percpu_wq"], [0.01, 2952775, "python3"], [0.01, 2532728, "kworker/14:2-mm_percpu_wq"], [0.01, 2031738, "kworker/7:1-mm_percpu_wq"], [0.01, 1298575, "kworker/6:2-mm_percpu_wq"]]}
+{"t": 1793935683, "top_foreign": [[0.08, 9085, "server"], [0.01, 3072679, "kworker/13:1-mm_percpu_wq"], [0.01, 2952775, "python3"]]}
+{"t": 1793935743, "top_foreign": [[0.09, 9085, "server"]]}
+{"t": 1793935803, "top_foreign": [[0.07, 9085, "server"], [0.01, 3083064, "kworker/5:1-events"], [0.01, 2952775, "python3"], [0.01, 6478, "snapd"]]}
+{"t": 1793935863, "top_foreign": [[0.08, 9085, "server"], [0.01, 3083064, "kworker/5:1-mm_percpu_wq"], [0.01, 2952775, "python3"], [0.01, 2532728, "kworker/14:2-mm_percpu_wq"], [0.01, 1298575, "kworker/6:2-mm_percpu_wq"]]}
+{"t": 1793935923, "top_foreign": [[0.08, 9085, "server"], [0.01, 2952775, "python3"]]}
+{"t": 1793935983, "top_foreign": [[0.08, 9085, "server"], [0.01, 2952775, "python3"], [0.01, 2439560, "kworker/15:1-mm_percpu_wq"]]}
+{"t": 1793936043, "top_foreign": [[0.08, 9085, "server"], [0.01, 3083064, "kworker/5:1-mm_percpu_wq"], [0.01, 3072679, "kworker/13:1-mm_percpu_wq"], [0.01, 2031738, "kworker/7:1-mm_percpu_wq"]]}
+{"t": 1793936103, "top_foreign": [[0.08, 9085, "server"], [0.01, 1298575, "kworker/6:2-mm_percpu_wq"], [0.01, 60, "migration/7"]]}
+{"t": 1793936163, "top_foreign": [[0.08, 9085, "server"], [0.02, 2952775, "python3"]]}
+{"t": 1793936224, "top_foreign": [[0.08, 9085, "server"], [0.01, 3083064, "kworker/5:1-mm_percpu_wq"], [0.01, 2532728, "kworker/14:2-events"], [0.01, 6478, "snapd"]]}
+{"t": 1793936284, "top_foreign": [[0.09, 9085, "server"], [0.01, 3072679, "kworker/13:1-events"], [0.01, 2952775, "python3"]]}

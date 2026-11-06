@@ -1,0 +1,7 @@
+[
+ {"name": "A_clean", "phase": "A_baseline", "t0": 1793930184, "t1": 1793931384, "note": "no trainer; agent cores clean (sampler from 17:59; foreign <= 1 % through 18:16)"},
+ {"name": "A_confounded_tail", "phase": "A_baseline", "t0": 1793931384, "t1": 1793931984, "note": "no trainer; a builder's slow pytest + 4 spawn workers on the agent cores (CONFOUNDED, not used)"},
+ {"name": "B2_fork_warmup", "phase": "B2_withtrain", "t0": 1793933001, "t1": 1793933241, "note": "fork alive but in its pre-learn() setup (env build done, compile / first rollout); 4 min only"},
+ {"name": "B2_training", "phase": "B2_withtrain", "t0": 1793933241, "t1": 1793934802, "note": "pinned trainer in learn() from 18:47:12 to its SIGTERM at 19:13:36"},
+ {"name": "A2_clean", "phase": "A2_baseline", "t0": 1793934853, "t1": 1793936653, "note": "no trainer (fork stopped 19:14:09); builders held off the agent cores"}
+]
