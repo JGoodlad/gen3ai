@@ -63,6 +63,10 @@ with its reasons (N1-P FINDING 7).
   within-panel unit bootstrap, GO / NULL / STOP by exact fractions; peer drops by AM-DL-PEER's classifier
   (:mod:`main.reads.peer_divergence`); VOID on G-PREFIX, engines, bytes, the search config, unpaired deals or the live
   identity guard (:mod:`main.value_search.live_identity`).
+* ``distill_play`` -- X65 ExIt-0 (``x65_exit0_2026-11-05`` PREREG §1, §4, §6; :mod:`main.reads.rules_distill_play`): each
+  distilled P* student against P* raw on its held-out panel, paired by deal; look 1's raw arm banked from S′-LIVE behind
+  G-BANK (the banked deals re-played byte for byte); Ĝ by a within-panel unit-seed bootstrap SE; NOT-DELIVERED from the
+  delivery gate's file, GO iff LB(z by look) > 0, NULL iff UB < +2 pp, drops imputed adverse to each class.
 * ``n4_screen`` -- the one-look capacity screen (N4 PREREG §5 with its review's M2 / M4 / M5; X48 PREREG §5;
   :mod:`main.reads.rules_n4_screen`): S by Welch 90 % on the finals, K by the ``d1`` estimators on forum72;
   INCONCLUSIVE > MIXED > GO > NO-GO > UNDECIDED, the LR-confounded label and M5's NO-GO wording; an X35-stage record.
@@ -1441,6 +1445,10 @@ from main.reads import rules_searched_play as _SP  # noqa: E402  (it imports thi
 
 RULES["searched_play"] = Rule("searched_play", _SP.RULE_DOCS["searched_play"], _SP.check, _SP.inputs, _SP.decide,
                               False, owns_g_prefix=True)
+
+from main.reads import rules_distill_play as _DP  # noqa: E402  (it imports this module lazily: no cycle at import)
+
+RULES["distill_play"] = Rule("distill_play", _DP.RULE_DOCS["distill_play"], _DP.check, _DP.inputs, _DP.decide, False)
 
 from main.reads import rules_x63 as _X63  # noqa: E402  (it imports this module lazily: no cycle at import)
 

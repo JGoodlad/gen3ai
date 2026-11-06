@@ -12,7 +12,9 @@ checkable:
   pin does).
 * ``check-spec --pin-pending``: review a spec BEFORE its pin is decided. The spec must carry no ``pin`` yet; all else is
   validated and the output is marked ``PENDING`` with ``sha256_final: false`` (adding the pin changes the spec's
-  sha256, which a PREREG may quote), plus the checkout's HEAD as the candidate.
+  sha256, which a PREREG may quote), plus the checkout's HEAD as the candidate. Only here may other fields hold the
+  literal ``PENDING`` (``main.reads.spec.PENDING``: a student zip's sha256 that does not exist yet, an earlier look's
+  spec sha256); they are listed as ``pending``, and the default mode, ``plan`` and an import refuse them.
 
 This module is OFF the play path (:mod:`main.reads.playpath`).
 """
@@ -36,7 +38,7 @@ def _head(repo: Optional[Path]) -> Optional[str]:
 
 def check_spec(path: "str | Path", *, pin_pending: bool = False, repo: Optional[Path] = None) -> Dict[str, Any]:
     """The spec's summary plus its pin standing (module docstring). Refusals are :class:`SpecError`."""
-    s = load_spec(path)
+    s = load_spec(path, allow_pending=pin_pending)
     out: Dict[str, Any] = {"read": s.read, "rule": s.rule, "models": sorted(s.models), "anchor": sorted(s.anchor),
                            "s": sorted(s.s), "sha256": s.sha256, "allow_partial_at_stop": s.allow_partial_at_stop,
                            "rederived_guards": s.rederived_guards, "choices_guard": s.choices_guard}
@@ -48,7 +50,7 @@ def check_spec(path: "str | Path", *, pin_pending: bool = False, repo: Optional[
         out.update(pin={"state": "PENDING", "candidate_head": head,
                         "next": "land the code the read plays, then add \"pin\": \"<that commit>\" (an existing commit, "
                                 "never the one that adds the spec); the sha256 below changes when you do"},
-                   sha256_final=False)
+                   sha256_final=False, pending=list(s.pending))
         return out
     out["sha256_final"] = True
     if s.pin is None:

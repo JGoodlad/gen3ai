@@ -7,8 +7,9 @@ labels are never planned or played here. The import is refused (:class:`ReadImpo
 
 * the earlier state's ``spec.json`` hashes to ``spec_sha256``, and it is not this state;
 * the earlier group is the same cell: an anchor group of the same opponent whose team sets and unit seeds include
-  this group's; an S group on the same frozen R (``refpop_content_sha256``), panel, ``pairs`` and ``batch_pairs``,
-  and the same registered ``regime_id`` where both register one;
+  this group's (``per_game`` alike, and every (seed, game) this group plays, ``games``, played there); an S group on
+  the same frozen R (``refpop_content_sha256``), panel, ``pairs`` and ``batch_pairs``, and the same registered
+  ``regime_id`` where both register one;
 * each imported label is a model of the earlier group with the same arm, seed and load options, and the bytes the
   earlier state PLAYED (its ``models.json`` sha256) are the bytes this state resolved (its ``models.json``).
 
@@ -132,6 +133,15 @@ def check(spec: Any, lane: str, g: str, *, this_state: Optional[Path] = None) ->
             probs.append(f"team sets {sorted(set(grp.teamsets) - set(og.teamsets))} were not played there")
         if not set(grp.unit_seeds) <= set(og.unit_seeds):
             probs.append(f"unit seeds {sorted(set(grp.unit_seeds) - set(og.unit_seeds))} were not played there")
+        elif grp.per_game != og.per_game:
+            probs.append(f"per_game {og.per_game} there, {grp.per_game} here")
+        elif grp.games is not None or og.games is not None:
+            from main.x35.kakuna import UNIT_GAMES
+
+            want = {(s, g) for s in grp.unit_seeds for g in range(UNIT_GAMES) if grp.planned(s, g)}
+            gone = sorted(x for x in want if not og.planned(*x))
+            if gone:
+                probs.append(f"(unit seed, game)s {gone[:5]} were not played there")
     else:
         for k in ("refpop_content_sha256", "panel", "pairs", "batch_pairs"):
             if getattr(og, k) != getattr(grp, k):
@@ -199,7 +209,7 @@ def anchor_rows(spec: Any, g: str, shas: Mapping[str, str], *, this_state: Optio
         if not (st / "plan.json").exists():
             continue
         rows += [dict(r, imported_from=str(earlier_state(imp))) for r in anchor_units(st, rederived=spec.rederived_guards)
-                 if r["panel"] in grp.teamsets and int(r["unit_seed"]) in grp.unit_seeds]
+                 if r["panel"] in grp.teamsets and grp.planned(int(r["unit_seed"]), r.get("game"))]
     digest = hashlib.sha256(json.dumps(sorted(rows, key=lambda r: r["unit"]), sort_keys=True,
                                        default=str).encode()).hexdigest()
     meta = _meta(imp, old, digest, len(rows))

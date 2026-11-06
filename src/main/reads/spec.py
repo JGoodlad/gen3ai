@@ -5,11 +5,13 @@ A spec is ONE JSON file (schema :data:`SCHEMA`), committed with the read's PRERE
 * ``models`` -- ``{label: {arm, seed, ref, load?}}``; ``ref`` is a :class:`ModelRef` (``pinned``: a frozen file and its
   sha256; ``final``: a run's ``final_model.zip`` under the SETTLED rule of :mod:`main.reads.models`); ``load`` is
   the model-LOAD options its units pass (:data:`LOAD_OPTIONS`; two labels may play one file under different ones);
-* ``anchor`` -- ``{group: {opponent, teamsets, unit_seeds, models, per_game?}}``: the external-anchor cells, played as
-  :mod:`main.x35.kakuna` units on the short lane; ``per_game: true`` plans each seed's 20-game series as 20 ONE-GAME
+* ``anchor`` -- ``{group: {opponent, teamsets, unit_seeds, models, per_game?, games?}}``: the external-anchor cells, played
+  as :mod:`main.x35.kakuna` units on the short lane; ``per_game: true`` plans each seed's 20-game series as 20 ONE-GAME
   units (S-U: a searched game is 25-75 min, so no 20-game searched unit fits a lane), and a group holding a SEARCHED
   model (``load.search``) must be ``per_game`` and name its RAW TWIN (the same ``ref``, the same other load options),
-  whose unit of the same deal is G-PREFIX's other half (:mod:`main.reads.prefix`);
+  whose unit of the same deal is G-PREFIX's other half (:mod:`main.reads.prefix`); ``games`` (``per_game`` only) =
+  ``{"<unit seed>": [game, ...]}`` naming, for EVERY unit seed of the group, the games of its series the group plays
+  (X65's G-BANK: one banked deal a panel and seed, re-played); absent = all 20;
 * ``s`` -- ``{group: {refpop, refpop_content_sha256, panel, pairs, batch_pairs, family, models, regime_id}}``: S
   against a frozen reference population R, played on the heavy slots;
 * ``decision`` -- ``{rule, params, allow_partial_at_stop?}``: a rule of :data:`main.reads.rules.RULES` and its registered
@@ -21,6 +23,11 @@ A spec is ONE JSON file (schema :data:`SCHEMA`), committed with the read's PRERE
   ``count``;
 * ``choices_guard`` (optional) -- ``require`` (default) / ``five_tuple``: a game-for-game guard whose expected capture
   is missing is INCONCLUSIVE, unless the spec registers that its banks lack captures.
+
+A spec whose registration is not final yet (X65: the students' zips do not exist before its pin amendment) may hold the
+literal :data:`PENDING` as a pinned ref's ``sha256`` or ``path``, an import's ``spec_sha256``, or any parameter value.
+Such a spec is reviewed with ``check-spec --pin-pending`` only (``parse(allow_pending=True)``, which lists every pending
+field); every other load (``plan``, an import of it, ``check-spec`` without the flag) refuses it, so it never plays.
 
 An anchor or S group may carry ``import: {state, spec_sha256, group, models}``: those models' cells are NOT played
 here but taken from group ``group`` of an EARLIER read's state (its ``spec.json`` must hash to ``spec_sha256``), sha-
@@ -49,6 +56,8 @@ CHOICES_GUARDS = (CHOICES_REQUIRE, CHOICES_FIVE_TUPLE)
 _LABEL = re.compile(r"^[a-z0-9][a-z0-9_]{0,47}$")
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _COMMIT = re.compile(r"^[0-9a-f]{7,40}$")
+#: A value the registration fills in later (a pin amendment): accepted by ``parse(allow_pending=True)`` only (module doc).
+PENDING = "PENDING"
 #: The model-reference kinds (``main.reads.models`` owns their rules).
 REF_KINDS = ("pinned", "final")
 #: The anchor opponents a group may name: the Metamon agents :mod:`main.x35.kakuna` plays on its committed cells, each
@@ -122,6 +131,22 @@ class AnchorGroup:
     imports: Optional[Import] = None
     #: one-game units (``main.x35.kakuna.plan_units(per_game=True)``); a searched model's group must be one
     per_game: bool = False
+    #: ``per_game`` only: ``{unit seed: (game, ...)}`` the group plays of each seed's series (None = all of them)
+    games: Optional[Dict[int, Tuple[int, ...]]] = None
+
+    def planned(self, unit_seed: int, game: Optional[int]) -> bool:
+        """Whether the group plans this (unit seed, game): every game of a listed seed unless ``games`` names a subset."""
+        if int(unit_seed) not in self.unit_seeds:
+            return False
+        return self.games is None or (game is not None and int(game) in self.games.get(int(unit_seed), ()))
+
+    def n_planned(self) -> int:
+        """Units a label plans on ONE team set of the group."""
+        from main.x35.kakuna import UNIT_GAMES
+
+        if not self.per_game:
+            return len(self.unit_seeds)
+        return sum(len(v) for v in self.games.values()) if self.games is not None else len(self.unit_seeds) * UNIT_GAMES
 
 
 @dataclass(frozen=True)
@@ -157,6 +182,7 @@ class ReadSpec:
     raw: Dict[str, Any] = field(default_factory=dict)
     rederived_guards: str = "count"   # main.reads.rederive.MODES: a re-derived guard hit voids the unit, or HOLDS decide
     choices_guard: str = "require"    # CHOICES_GUARDS: a game-for-game guard missing an expected capture is INCONCLUSIVE
+    pending: Tuple[str, ...] = ()     # the fields still PENDING (``parse(allow_pending=True)`` only; else refused)
 
 
 def _need(d: Mapping[str, Any], key: str, where: str, typ: Any) -> Any:
@@ -197,8 +223,8 @@ def _ref(d: Any, where: str) -> ModelRef:
     if kind == "pinned":
         _only(d, ("kind", "path", "sha256"), where)
         sha = _need(d, "sha256", where, str)
-        if not _SHA256.match(sha):
-            raise SpecError(f"{where}.sha256: 64 lowercase hex")
+        if not (_SHA256.match(sha) or sha == PENDING):
+            raise SpecError(f"{where}.sha256: 64 lowercase hex (or {PENDING!r} before the registration is final)")
         return ModelRef(kind=kind, path=_need(d, "path", where, str), sha256=sha)
     if kind == "final":
         _only(d, ("kind", "run", "min_step", "quiet_s", "done_marker"), where)
@@ -291,8 +317,9 @@ def _import(d: Any, where: str, group_models: Tuple[str, ...]) -> Optional[Impor
     if not st.strip():
         raise SpecError(f"{where}.state: the earlier read's state dir")
     sha = _need(d, "spec_sha256", where, str)
-    if not _SHA256.match(sha):
-        raise SpecError(f"{where}.spec_sha256: 64 lowercase hex (the earlier state's spec.json)")
+    if not (_SHA256.match(sha) or sha == PENDING):
+        raise SpecError(f"{where}.spec_sha256: 64 lowercase hex (the earlier state's spec.json; or {PENDING!r} before "
+                        "the earlier spec is final)")
     ms = _need(d, "models", where, list)
     if not ms or len(set(ms)) != len(ms):
         raise SpecError(f"{where}.models: a non-empty list without repeats")
@@ -303,11 +330,54 @@ def _import(d: Any, where: str, group_models: Tuple[str, ...]) -> Optional[Impor
                   models=tuple(ms))
 
 
-def parse(doc: Mapping[str, Any], *, sha256: str = "", rule_params: bool = True) -> ReadSpec:
+def _games(d: Any, where: str, per_game: bool, unit_seeds: Tuple[int, ...]) -> Optional[Dict[int, Tuple[int, ...]]]:
+    """``games`` (module docstring): ``{"<unit seed>": [game, ...]}`` over EXACTLY the group's unit seeds, each a
+    non-empty list of distinct games in ``[0, UNIT_GAMES)``; ``per_game`` groups only."""
+    from main.x35.kakuna import UNIT_GAMES
+
+    if d is None:
+        return None
+    if not per_game:
+        raise SpecError(f"{where}: a subset of a seed's games is a per_game group's (per_game: true)")
+    if not isinstance(d, dict) or not d:
+        raise SpecError(f"{where}: an object {{\"<unit seed>\": [game, ...]}}")
+    out: Dict[int, Tuple[int, ...]] = {}
+    for k, v in d.items():
+        if not (isinstance(k, str) and k.isdigit() and str(int(k)) == k):
+            raise SpecError(f"{where}: key {k!r} is not a unit seed (a decimal string)")
+        if not (isinstance(v, list) and v and len(set(v)) == len(v)
+                and all(isinstance(x, int) and not isinstance(x, bool) and 0 <= x < UNIT_GAMES for x in v)):
+            raise SpecError(f"{where}.{k}: a non-empty list of distinct games in [0, {UNIT_GAMES})")
+        out[int(k)] = tuple(sorted(v))
+    if set(out) != set(unit_seeds):
+        raise SpecError(f"{where}: names unit seeds {sorted(set(out) ^ set(unit_seeds))} that are not exactly the "
+                        "group's unit_seeds (every seed names its games)")
+    return {s: out[s] for s in sorted(out)}
+
+
+def pending_fields(doc: Any, where: str = "spec") -> List[str]:
+    """Every path in ``doc`` whose value is the literal :data:`PENDING` (a field the registration fills in later)."""
+    if isinstance(doc, str):
+        return [where] if doc == PENDING else []
+    if isinstance(doc, dict):
+        return [p for k, v in doc.items() for p in pending_fields(v, f"{where}.{k}")]
+    if isinstance(doc, list):
+        return [p for i, v in enumerate(doc) for p in pending_fields(v, f"{where}[{i}]")]
+    return []
+
+
+def parse(doc: Mapping[str, Any], *, sha256: str = "", rule_params: bool = True,
+          allow_pending: bool = False) -> ReadSpec:
     """Validate a spec document (module docstring); every problem is a :class:`SpecError`. ``rule_params=False``
     skips only the rule's parameter check (an EARLIER read's spec, read for an import, was valid under the rules of
-    its own day)."""
+    its own day). ``allow_pending``: a :data:`PENDING` value is accepted (``check-spec --pin-pending`` alone) and
+    listed in ``pending``; otherwise any PENDING value refuses the spec (it never plays)."""
     from main.reads.rules import RULES
+
+    pending = tuple(pending_fields(dict(doc)))
+    if pending and not allow_pending:
+        raise SpecError(f"spec: {len(pending)} field(s) still {PENDING!r} ({list(pending)[:6]}): the registration is not "
+                        "final (its pin amendment fills them); review it with check-spec --pin-pending, never plan it")
 
     _only(doc, ("schema", "read", "prereg", "pin", "models", "anchor", "s", "decision", "note", "rederived_guards",
                 "choices_guard"), "spec")
@@ -334,7 +404,7 @@ def parse(doc: Mapping[str, Any], *, sha256: str = "", rule_params: bool = True)
         w = f"anchor.{_label(g, 'anchor')}"
         if not isinstance(d, dict):
             raise SpecError(f"{w}: an object")
-        _only(d, ("opponent", "teamsets", "unit_seeds", "models", "import", "per_game"), w)
+        _only(d, ("opponent", "teamsets", "unit_seeds", "models", "import", "per_game", "games"), w)
         opp = _need(d, "opponent", w, str)
         if opp not in ANCHOR_OPPONENTS:
             raise SpecError(f"{w}.opponent: {opp!r} is none of {ANCHOR_OPPONENTS} (the kakuna runner's cells)")
@@ -355,9 +425,10 @@ def parse(doc: Mapping[str, Any], *, sha256: str = "", rule_params: bool = True)
         if searched and d.get("import") is not None:
             raise SpecError(f"{w}: a group with a searched model imports nothing (G-PREFIX pairs games of THIS state)")
         search_twins(models, gm, w)
-        anchor[g] = AnchorGroup(name=g, opponent=opp, teamsets=ts,
-                                unit_seeds=parse_unit_seeds(_need(d, "unit_seeds", w, (str, list)), f"{w}.unit_seeds"),
-                                models=gm, imports=_import(d.get("import"), f"{w}.import", gm), per_game=per_game)
+        seeds = parse_unit_seeds(_need(d, "unit_seeds", w, (str, list)), f"{w}.unit_seeds")
+        anchor[g] = AnchorGroup(name=g, opponent=opp, teamsets=ts, unit_seeds=seeds, models=gm,
+                                imports=_import(d.get("import"), f"{w}.import", gm), per_game=per_game,
+                                games=_games(d.get("games"), f"{w}.games", per_game, seeds))
     s: Dict[str, SGroup] = {}
     families: Dict[str, str] = {}
     for g, d in (doc.get("s") or {}).items():
@@ -420,10 +491,10 @@ def parse(doc: Mapping[str, Any], *, sha256: str = "", rule_params: bool = True)
         raise SpecError(f"spec.choices_guard: {choices!r} is none of {CHOICES_GUARDS}")
     return ReadSpec(read=read, models=models, anchor=anchor, s=s, rule=rule, params=params, prereg=prereg, pin=pin,
                     allow_partial_at_stop=partial, sha256=sha256, raw=dict(doc), rederived_guards=rederived,
-                    choices_guard=choices)
+                    choices_guard=choices, pending=pending)
 
 
-def load(path: "str | Path", *, rule_params: bool = True) -> ReadSpec:
+def load(path: "str | Path", *, rule_params: bool = True, allow_pending: bool = False) -> ReadSpec:
     b = Path(path).read_bytes()
     try:
         doc = json.loads(b)
@@ -431,7 +502,7 @@ def load(path: "str | Path", *, rule_params: bool = True) -> ReadSpec:
         raise SpecError(f"{path}: not JSON ({exc})") from None
     if not isinstance(doc, dict):
         raise SpecError(f"{path}: not a JSON object")
-    return parse(doc, sha256=hashlib.sha256(b).hexdigest(), rule_params=rule_params)
+    return parse(doc, sha256=hashlib.sha256(b).hexdigest(), rule_params=rule_params, allow_pending=allow_pending)
 
 
 def imported(group: Any) -> Tuple[str, ...]:

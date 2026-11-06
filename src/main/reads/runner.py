@@ -168,6 +168,8 @@ def _settle(spec: ReadSpec, state: Path, *, now: Optional[float], step_of: Calla
                                     "search": m.load.get("search"), "input_log": m.load.get("input_log")}],
                                   teamsets=a.teamsets, unit_seeds=a.unit_seeds, opponent=a.opponent,
                                   config_dir=st / "configs", per_game=a.per_game)
+            if a.games is not None:                 # a registered subset of each seed's games (spec ``games``)
+                units = [u for u in units if a.planned(u.unit_seed, u.game)]
             if any(u.model_sha256 != have[lab]["sha256"] for u in units):
                 raise RunError(f"{lab}: the copy no longer hashes to its recorded sha256")
             st.mkdir(parents=True, exist_ok=True)

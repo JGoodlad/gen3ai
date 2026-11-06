@@ -358,7 +358,7 @@ def anchor_units(kakuna_state: Path, *, rederived: Optional[str] = None) -> List
 def anchor_group(rows: Sequence[Mapping[str, Any]], *, labels: Sequence[str], teamsets: Sequence[str],
                  unit_seeds: Sequence[int], shas: Optional[Mapping[str, str]] = None,
                  loads: Optional[Mapping[str, Mapping[str, Any]]] = None, per_game: bool = False,
-                 exhausted: Sequence[str] = ()) -> Dict[str, Any]:
+                 exhausted: Sequence[str] = (), games: Optional[Mapping[int, Sequence[int]]] = None) -> Dict[str, Any]:
     """One anchor group's cells ``{label: {teamset: {wins, ties, n, units, planned, skipped}}}`` over COUNTED units,
     its ONE regime id and every reason it is not conclusive. ``shas``: the resolved models' sha256 (a unit played
     on other bytes refuses).
@@ -372,7 +372,8 @@ def anchor_group(rows: Sequence[Mapping[str, Any]], *, labels: Sequence[str], te
     :func:`mixed_group_regime_id`, and the group carries ``regime_ids_by_load`` and ``loads``.
 
     ``per_game`` (S-U): each unit is ONE game of its seed's series (its row's ``game``), so a cell plans
-    ``len(unit_seeds) × UNIT_GAMES`` units and a unit is keyed by (label, set, seed, game).
+    ``len(unit_seeds) × UNIT_GAMES`` units and a unit is keyed by (label, set, seed, game). ``games`` (the spec's
+    ``{unit seed: games}``, ``per_game`` only): the cell plans only those games, and a row of any other is refused.
 
     ``exhausted``: the names of this group's own units whose retries are spent (``main.reads.attempts``: not counted,
     ``MAX_ATTEMPTS`` attempts ended uncounted). The group carries them as ``exhausted_units`` and those of them with no
@@ -382,12 +383,15 @@ def anchor_group(rows: Sequence[Mapping[str, Any]], *, labels: Sequence[str], te
     from main.x35.kakuna import UNIT_GAMES
 
     per_seed = UNIT_GAMES if per_game else 1
+    if games is not None and not per_game:
+        raise AssembleError("a games subset is a per_game group's")
+    per_cell = (sum(len(games[s]) for s in unit_seeds) if games is not None else len(unit_seeds) * per_seed)
 
     stamps = {lab: load_stamp((loads or {}).get(lab) or {}) for lab in labels}
     mixed = len(set(stamps.values())) > 1
     why: List[str] = []
     cells: Dict[str, Dict[str, Dict[str, Any]]] = {
-        lab: {ts: {"wins": 0, "ties": 0, "n": 0, "units": 0, "planned": len(unit_seeds) * per_seed, "skipped": []}
+        lab: {ts: {"wins": 0, "ties": 0, "n": 0, "units": 0, "planned": per_cell, "skipped": []}
               for ts in teamsets} for lab in labels}
     regimes: Dict[str, set] = {ts: set() for ts in teamsets}
     by_load: Dict[Tuple[str, str], set] = {}
@@ -400,6 +404,9 @@ def anchor_group(rows: Sequence[Mapping[str, Any]], *, labels: Sequence[str], te
         if per_game != (r.get("game") is not None) or per_game and not 0 <= int(r["game"]) < UNIT_GAMES:
             raise AssembleError(f"unit {r['unit']} (game {r.get('game')!r}) is not a "
                                 f"{'per-game' if per_game else 'whole-series'} unit of this group")
+        if games is not None and int(r["game"]) not in games[int(r["unit_seed"])]:
+            raise AssembleError(f"unit {r['unit']}: game {r['game']} of seed {r['unit_seed']} is not one this group "
+                                "plays (its registered games)")
         if key in seen:
             raise AssembleError(f"unit {key} appears twice")
         seen.add(key)
@@ -455,7 +462,7 @@ def anchor_group(rows: Sequence[Mapping[str, Any]], *, labels: Sequence[str], te
         why.append(f"counted units {engine_why}")
     sides, sides_why = SI.group_sides(rows)
     why += sides_why
-    unplayed = len(labels) * len(teamsets) * len(unit_seeds) * per_seed - len(seen)
+    unplayed = len(labels) * len(teamsets) * per_cell - len(seen)
     have = {str(r["unit"]) for r in rows}
     spent = sorted(set(exhausted))
     return {"regime_id": rid, "regime_ids": by_ts, "engine": engine, **sides, "teamsets": list(teamsets),
@@ -587,7 +594,7 @@ def assemble(spec: Any, state: Path) -> Dict[str, Any]:
             rows += got
         grp = anchor_group(rows, labels=a.models, teamsets=a.teamsets, unit_seeds=a.unit_seeds, shas=shas,
                            loads={lab: spec.models[lab].load for lab in a.models}, per_game=a.per_game,
-                           exhausted=spent)
+                           exhausted=spent, games=a.games)
         if a.per_game and any("search" in spec.models[lab].load for lab in a.models):
             # G-PREFIX (main.reads.prefix): a pair whose protocol diverged before the search's first turn is a
             # nondeterminism that corrupts the pairing; the group is not conclusive (the read VOID) until it is resolved
