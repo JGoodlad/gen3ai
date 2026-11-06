@@ -22,8 +22,18 @@ def _pair(values, battles):
     return np.asarray(values, dtype=np.float64), np.asarray(battles, dtype=object)
 
 
-def test_side_seeds_are_the_kits():
-    assert GC.SIDE_SEEDS == {"production": K.PROD_SEEDS, "toy": K.TOY_SEEDS}
+def test_side_seeds_are_each_sides_c0_seeds():
+    assert GC.SIDE_SEEDS == {"production": K.ARMS["c0"].seeds, "toy": K.ARMS["toy_c0"].seeds}
+    assert GC.SIDE_SEEDS["production"] == tuple(range(3501, 3509))          # AM-X60T's C0 top-up (AM-X60T-1)
+
+
+def test_an_eight_pair_production_record_fits_an_eight_seed_read_and_no_other():
+    """AM-X60T-1: X60-T's look 2 reads G-C over s3501-s3508; a five-seed X35 read still needs its own five."""
+    eight = list(range(3501, 3509))
+    rec = GC.constructed_record("production", eight, [0.0] * 8, [0.0] * 8)
+    assert GC.check_record(rec, eight, eight)[0] == rec["b1"]
+    with pytest.raises(R.ReadoutInputError, match="pools ON seeds"):
+        GC.check_record(rec, eight[:5], eight[:5])
 
 
 def test_the_point_is_the_equal_weight_mean_of_per_pair_means_by_hand():

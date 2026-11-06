@@ -297,7 +297,7 @@ def _anchor_meter(what: str, d: Any, anchor: Any, labs: Sequence[str], keys: Seq
         for g in holders:
             if not set(range(d["units"])) <= set(anchor[g].unit_seeds):
                 probs.append(f"{what}: group {g} does not plan unit seeds 0-{d['units'] - 1}")
-            if anchor[g].per_game:
+            if getattr(anchor[g], "per_game", False):     # absent at the play pin de15dfc7b (no per_game groups)
                 probs.append(f"{what}: group {g} is per_game (the read plays 20-game units)")
     return probs
 

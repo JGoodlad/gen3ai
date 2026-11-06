@@ -54,8 +54,10 @@ N_BOOT = 2000
 BOOT_SEED = 20261020
 #: rule 8 at the 1 % starve line (the collapse pilot's ``starvation_readout.py`` value).
 BOUNDARY = 1e-6
-#: the seeds of each side (``kit.PROD_SEEDS`` / ``kit.TOY_SEEDS``; ``gc_test`` pins the equality).
-SIDE_SEEDS: Dict[str, Tuple[int, ...]] = {"production": tuple(range(3501, 3506)), "toy": tuple(range(3601, 3606))}
+#: the seeds of each side = its C0's (``kit.ARMS["c0"]`` / ``kit.ARMS["toy_c0"]``; ``gc_test`` pins the equality): a
+#: pair is an arm's final against its SAME-SEED C0 final, so a side holds every seed its control trains at. Production's
+#: 3506-3508 are AM-X60T's C0 top-up (X60-T reads G-C over 8 pairs; AM-X60T-1, registered before any X60 read game).
+SIDE_SEEDS: Dict[str, Tuple[int, ...]] = {"production": tuple(range(3501, 3509)), "toy": tuple(range(3601, 3606))}
 #: AM-X47b-2 / AM-X47c-2: each side's B2 truth, by the continuation every truth row is stamped with (the committed
 #: rows: ``x35_prod_b2_truth_2026-10-20/`` and ``x35_toy_b2_truth_2026-10-20/``, :data:`TRUTH_ROWS_REL`).
 TRUTH_BY_SIDE: Dict[str, str] = {"production": "X26@280M greedy (both sides)",

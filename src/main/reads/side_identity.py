@@ -47,7 +47,7 @@ LEGACY_PEER_CODE: Dict[str, str] = {
     "f230353c40e43488": "metamon_side e17d4869: 63f97a575 cb0f1769c acb99527 b9c758841 f4b25238d 6c428453a 5e389ddac "
                         "e05c45eeb 4b0ab220e 62bb07c00",
     "64c220c05cca7382": "metamon_side 9f8520a1: d32ffcee4 4ee655648 033fcbcd2 2cc864f2f",
-    "b817d3216c418f75": "metamon_side 9a550a80 + weight_pins 3fc9d471: 46b9e572c de15dfc7b",
+    "b817d3216c418f75": "metamon_side 9a550a80 + weight_pins 3fc9d471: 46b9e572c de15dfc7b f564c333f",
 }
 #: The mode every banked read played in but N1-P look 1's (the id's legacy value).
 LEGACY_POLICY_MODE = "train"
@@ -56,7 +56,8 @@ EVAL_MODE_COMMIT = "141f36f7fba07a76b3736a8d3f30bf314f35ba37"
 #: FROZEN: every banked playing commit (:data:`EN.LEGACY_ENGINE`'s) -> our policy's mode there (:func:`policy_mode_at`).
 LEGACY_COMMIT_MODE: Dict[str, str] = {c: "train" for c in EN.LEGACY_ENGINE}
 LEGACY_COMMIT_MODE.update({"46b9e572cc0fa237f62ddd948fb5fa4d115e44a4": "eval",       # N1-P look 1
-                           "de15dfc7b6d19d6f0e4a3724f269e26e7aa22957": "eval"})      # N1-P look 1 (repin)
+                           "de15dfc7b6d19d6f0e4a3724f269e26e7aa22957": "eval",       # N1-P look 1 (repin)
+                           "f564c333f9437f6a636e9daf890535c2c300aeb2": "eval"})      # X60-T (AM-X60T-1)
 #: FROZEN: a banked anchor control file that names no side per row -> its sides (by sha256), as
 #: :data:`EN.LEGACY_BANK_ENGINE`: D1's look-2 input and the C0 s3501 games, played at 6c428453 / 5e389ddac.
 LEGACY_BANK_SIDE: Dict[str, Dict[str, str]] = {

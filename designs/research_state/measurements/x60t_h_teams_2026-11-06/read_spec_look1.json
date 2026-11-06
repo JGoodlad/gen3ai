@@ -1,0 +1,149 @@
+{
+ "schema": "gen3_read_spec_v1",
+ "read": "x60t_look1_2026-11-06",
+ "prereg": "designs/research_state/measurements/x60t_h_teams_2026-11-06/PREREG.md",
+ "note": "X60-T look 1 (AM-X60T-1): Δ_F futility only (forum72, 60 units a final), ON s3501-s3503 (side pin 7fe15726c) vs C0 s3501-s3503 IMPORTED from X61P look 1; the determinism guard re-plays c0_s3501 forum72 unit 0; the VOID gate with a pin per arm. Plan and play at the play pin; assemble / decide / record from a main checkout",
+ "pin": "f564c333f9437f6a636e9daf890535c2c300aeb2",
+ "models": {
+  "x60t_s3501": {
+   "arm": "x60t",
+   "seed": 3501,
+   "ref": {
+    "kind": "final",
+    "run": "models/rb_x60t_s3501",
+    "min_step": 300000170,
+    "quiet_s": 300
+   }
+  },
+  "x60t_s3502": {
+   "arm": "x60t",
+   "seed": 3502,
+   "ref": {
+    "kind": "final",
+    "run": "models/rb_x60t_s3502",
+    "min_step": 300000170,
+    "quiet_s": 300
+   }
+  },
+  "x60t_s3503": {
+   "arm": "x60t",
+   "seed": 3503,
+   "ref": {
+    "kind": "final",
+    "run": "models/rb_x60t_s3503",
+    "min_step": 300000170,
+    "quiet_s": 300
+   }
+  },
+  "c0_s3501": {
+   "arm": "c0",
+   "seed": 3501,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x35_c0_s3501/final_model.zip",
+    "sha256": "09a6a2df48509a59fd9aefe6d20d9722aad6717f1730c6dfd75274446b283303"
+   }
+  },
+  "c0_s3502": {
+   "arm": "c0",
+   "seed": 3502,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x35_c0_s3502/final_model.zip",
+    "sha256": "7e9a9890e2b397de6d8b87588c597d7f53e39b84efd3d1080305f77dbf22feec"
+   }
+  },
+  "c0_s3503": {
+   "arm": "c0",
+   "seed": 3503,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x35_c0_s3503/final_model.zip",
+    "sha256": "99096be8eccfc1cef4268ab4d6de15063a386cda475e72340212fdbf3a1b7e26"
+   }
+  }
+ },
+ "anchor": {
+  "primary": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "forum72"
+   ],
+   "unit_seeds": "0-59",
+   "models": [
+    "x60t_s3501",
+    "x60t_s3502",
+    "x60t_s3503",
+    "c0_s3501",
+    "c0_s3502",
+    "c0_s3503"
+   ],
+   "import": {
+    "state": "~/gen3ai_archive/x61p_n1p_read/look1",
+    "spec_sha256": "1266daadeefe4142a2f2f339bbdedaf4e052c3f2ef3fb8a8b0d5550fb8729f03",
+    "group": "primary",
+    "models": [
+     "c0_s3501",
+     "c0_s3502",
+     "c0_s3503"
+    ]
+   }
+  },
+  "determinism": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "forum72"
+   ],
+   "unit_seeds": "0",
+   "models": [
+    "c0_s3501"
+   ]
+  }
+ },
+ "decision": {
+  "rule": "x60",
+  "params": {
+   "look": 1,
+   "on": [
+    "x60t_s3501",
+    "x60t_s3502",
+    "x60t_s3503"
+   ],
+   "off": [
+    "c0_s3501",
+    "c0_s3502",
+    "c0_s3503"
+   ],
+   "primary": {
+    "groups": [
+     "primary"
+    ],
+    "teamset": "forum72",
+    "units": 60
+   },
+   "determinism_guard": {
+    "group": "determinism",
+    "against": "primary"
+   },
+   "void": {
+    "k9b_dir": "designs/research_state/measurements/x35_breakers_stage_2026-10-17/k9b",
+    "runs": {
+     "x60t_s3501": "models/rb_x60t_s3501",
+     "x60t_s3502": "models/rb_x60t_s3502",
+     "x60t_s3503": "models/rb_x60t_s3503",
+     "c0_s3501": "models/rb_x35_c0_s3501",
+     "c0_s3502": "models/rb_x35_c0_s3502",
+     "c0_s3503": "models/rb_x35_c0_s3503"
+    },
+    "pin": {
+     "x60t": "7fe15726c77cfa823aee78110444bf25c3c7370e",
+     "c0": "f4b25238d"
+    },
+    "dose": {
+     "reference": "models/rb_x35_c0_s3501",
+     "rel_tol": 1e-06
+    }
+   }
+  }
+ }
+}

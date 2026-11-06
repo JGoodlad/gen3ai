@@ -39,8 +39,9 @@ E2 = "port=806f97bd59b9c5bb/90;env=9ecb4249afb76504/125"
 E3 = "port=0d3d7629f16a0eaf/91;env=393631b886965b0c/126"
 
 #: FROZEN: every banked anchor read's playing commit (as ``server_version`` stamps it) -> its engine (:func:`engine_at`
-#: at that commit). ``designs/tools/reads.md`` §4 names the read behind each row. Never edited: a new read stamps its
-#: own engine.
+#: at that commit). ``designs/tools/reads.md`` §4 names the read behind each row. A row is never edited; a new read
+#: stamps its own engine, and a row is ADDED only for a play pin that predates the stamp, before its first game (the
+#: N1-P repin ``de15dfc7b``; X60-T's ``f564c333f``, AM-X60T-1).
 LEGACY_ENGINE: Dict[str, str] = {
     "63f97a57575e6af1db8278b2ae60f6d37466954d": E0,   # X51, x37a (10-17 .. 10-20)
     "cb0f1769ca118aaf2114711b68129a50d789dc8d": E0,
@@ -58,6 +59,7 @@ LEGACY_ENGINE: Dict[str, str] = {
     "2cc864f2fb6b69a7dac42204d01ae88079f26c6d": E2,   # D3 look 1
     "46b9e572cc0fa237f62ddd948fb5fa4d115e44a4": E3,   # N1-P look 1
     "de15dfc7b6d19d6f0e4a3724f269e26e7aa22957": E3,   # N1-P look 1 (repin)
+    "f564c333f9437f6a636e9daf890535c2c300aeb2": E3,   # X60-T's play pin (AM-X60T-1: de15dfc7b + rule x60 + R72's registry entry)
 }
 
 #: FROZEN: a banked control file that names no engine per row -> ``{lane: engine}`` (its sha256 keys it). D1's look-2

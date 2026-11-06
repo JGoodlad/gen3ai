@@ -343,6 +343,32 @@ def test_a_gain_with_every_meter_passing_is_adopt_only_with_the_guards_read(tmp_
     assert "sha256" in _decide(cells, p, spec)["guards"]["G-F"]["reasons"][0]
 
 
+def test_an_eight_pair_g_c_record_lets_a_passing_gain_read_adopt(tmp_path):
+    """AM-X60T-1 (FINDING 2 of the build): G-C read from a REAL seed-pooled record over s3501-s3508, no monkeypatch.
+    Before the fix the production side held s3501-s3505 only, so no 8-pair record could be pooled or accepted, G-C was
+    INCONCLUSIVE at every 8 v 8 read, and an otherwise passing GAIN could never reach ADOPT-CANDIDATE."""
+    from main.x35 import gc as GC
+    from utils.hashing import sha256_file
+
+    cells, p, spec = _look2(home_wins=95)
+    rng = np.random.default_rng(3)
+    eight = list(range(3501, 3509))
+    art = tmp_path / "guards.json"
+    art.write_text(json.dumps({"g_f": {"h_pp": (50 + rng.normal(0, 1, (8, 8))).tolist()},
+                               "r2": {"on": [30, 200], "off": [31, 200]},
+                               "g_c": GC.constructed_record("production", eight, [0.0] * 8, [0.0] * 8)}))
+    p["guards"] = {"path": str(art), "sha256": sha256_file(art)}
+    dec = _decide(cells, p, spec)
+    assert {n: g["status"] for n, g in dec["guards"].items()} == {"G-F": "PASS", "G-E": "PASS", "G-C": "PASS"}
+    assert dec["decision"]["verdict"] == X.ADOPT
+    five = json.loads(art.read_text())
+    five["g_c"] = GC.constructed_record("production", eight[:5], [0.0] * 5, [0.0] * 5)
+    art.write_text(json.dumps(five))                      # an X35 five-pair record does not fit an 8 v 8 read
+    p["guards"]["sha256"] = sha256_file(art)
+    dec = _decide(cells, p, spec)
+    assert dec["guards"]["G-C"]["status"] == "INCONCLUSIVE" and dec["decision"]["verdict"] == X.INCONCLUSIVE
+
+
 def test_kakuna_specific_trade_on_p_and_the_nug_branches():
     cells, p, spec = _look2(i_on=50.0)
     assert _decide(cells, p, spec)["decision"]["verdict"] == X.KSPEC
@@ -644,3 +670,32 @@ def test_the_look1_draft_spec_parses_with_a_pin_per_arm():
     assert pend.pending == ("spec.decision.params.void.pin.x60t",)
     with pytest.raises(SP.SpecError, match="PENDING"):
         SP.parse(look1_draft(side_pin="PENDING"))
+
+
+#: AM-X60T-1: X60-T's PLAY PIN (de15dfc7b + rule x60, its void-check support and R72's registration; tag x60t-play-*).
+PLAY_PIN = "f564c333f9437f6a636e9daf890535c2c300aeb2"
+LOOK1_SPEC = repo_path("designs/research_state/measurements/x60t_h_teams_2026-11-06/read_spec_look1.json")
+
+
+def test_the_registered_look1_spec_is_the_draft_at_the_play_pin():
+    """AM-X60T-1 registers look 1's spec: the draft above, the play pin as its ``pin`` and its own note, nothing else."""
+    from main.reads import spec as SP
+
+    doc = json.loads(LOOK1_SPEC.read_text())
+    assert doc["pin"] == PLAY_PIN and {k: v for k, v in doc.items() if k not in ("pin", "note")} == \
+        {k: v for k, v in look1_draft().items() if k != "note"}
+    got = SP.load(LOOK1_SPEC)
+    assert got.rule == "x60" and got.pin == PLAY_PIN and got.params["look"] == 1
+
+
+def test_main_reconstructs_the_play_pins_engine_and_sides():
+    """AM-X60T-1: the pin predates the engine / side stamps, so main names its units' engine and sides from these rows;
+    without them every X60 group's import refuses (an UNKNOWN engine or side)."""
+    from main.reads import engine as EN
+    from main.reads import side_identity as SI
+
+    assert EN.legacy_engine(PLAY_PIN) == EN.E3 == EN.legacy_engine("de15dfc7b6d19d6f0e4a3724f269e26e7aa22957")
+    assert SI.LEGACY_COMMIT_MODE[PLAY_PIN] == "eval"
+    cell = {"opponent_kind": "metamon", "our_side": "model",
+            "server_version": f"ws_frontend[in-process]@{PLAY_PIN[:9]}+rust:x"}
+    assert SI.unit_sides(cell) == {"peer_code": "their=legacy", "policy_mode": "eval"}

@@ -5,6 +5,9 @@ Every decision rule, seed, class, threshold and cell is fixed HERE. A few build 
 amendment and a mechanical filling rule (§20). None is a choice that X60 data could inform. After the first ON arm
 launches, nothing changes except by a dated amendment, written before the read, that says why.
 
+**Amendments:** AM-X60T-1 (§21, 2026-11-06, before any read game): the play pin `f564c333f`, §4's checks, look 1's spec,
+and G-C read over 8 pairs.
+
 **Two adversarial reviews.**
 - **REVIEW F** reviewed design §6 ([`REVIEW_F_x60.md`](../human_replay_quality_2026-10-25/REVIEW_F_x60.md));
   dispositions in §18.
@@ -696,3 +699,171 @@ ADOPT-CANDIDATE 0.3, TRADE 0.6, KAKUNA-SPECIFIC 0.1.
 |---|---|---|
 | the play pin SHA (`de15dfc7b` + the port of rule `x60` at `4d7367228`, R72's registration, the void-check support); `playpath.compare`; the ids of §4.3; the read specs and their sha256s | **AM-X60T-1**, before any read game | §4's four checks; `check-spec` exit 0; nothing in §5–§11 may change |
 | the queue at the read's start | AM-X60T-1 | `heavy_slots` status at the first read game |
+
+## 21. AMENDMENT AM-X60T-1 (2026-11-06, before any read game): the play pin, its checks, look 1's spec, G-C at 8 pairs
+
+**Why, and when.** Written while look 1's training (ON s3501–s3503) runs, before any X60 read game: no `rb_x60t_*`
+final exists, no `main.reads plan` has run on an X60 spec at any real state path, no G-C record has been pooled for
+any X60 seed, and C0 s3506–s3508 are not trained. It fills §20's placeholders and makes ONE fix the registered intent
+needs (§21.5). **Nothing in §5–§11 changes:** the arms, seeds, cells, classes, thresholds, floor and the verdict table
+stand as registered.
+
+### 21.1 The play pin
+
+**`f564c333f9437f6a636e9daf890535c2c300aeb2`** (annotated tag `x60t-play-f564c333`, on origin) = `de15dfc7b` + ONE
+commit:
+
+| path | what |
+|---|---|
+| `src/main/reads/rules_x60.py` | rule `x60`, byte-identical to main's (this amendment's main commit) |
+| `src/main/reads/rules.py` | the registration; `_void_check` takes main's `void.pin` (a sha or `{arm: sha}`) and `void.dose`; `void_gate` REFUSES to read them there (fail closed: they are read only from main, §4) |
+| `designs/research_state/heldout_panels.json` | **R72** as `r72`: PRACTISED, `held_out_from: []`, `n` 72, content digest `10364442…5501` (§9), seed 6072, the local manifest by sha256 `7aa2342e…e66f`; `team_dir` and manifest are LOCAL ABSOLUTE paths under `~/gen3ai_archive/human_teams/hr_spec_v1.r3/r72/`. Team ids and texts never enter git (REVIEW I M5). Not portable off this box |
+| `src/main/reads/rules_x60_test.py`, `rules_test.py`, `src/main/heldout_panels_test.py` | main's x60 test less its `inputs` / `decide` / `power.py` tests (main holds them; the pin predates their modules), plus: the look-1 spec parses there and the run-dir guards are refused there; the rule and panel sets name `x60` / `r72` |
+
+**The playing checkout:** `~/dev/gen3ai-reads/x60t_play_de15dfc7` at the tag, clean. It was built by its own
+`scripts/bootstrap.sh --skip-env --with-rust` on 2026-11-06, and §21.2 check 5 verifies the build.
+
+**Main learns the pin** (this amendment's main commit): `engine.LEGACY_ENGINE` maps it to E3,
+`side_identity.LEGACY_COMMIT_MODE` to `eval`, and `LEGACY_PEER_CODE`'s `b817d3216c418f75` row names it. The pin predates
+the engine and side stamps, so main reconstructs its units' engine and sides from the playing commit. A commit outside
+those tables is UNKNOWN, and an import never accepts it: without the rows every X60 group would read INCONCLUSIVE.
+`engine_test` / `side_identity_test` re-derive all three from git.
+
+### 21.2 §4's four checks at the play pin
+
+| # | check | result |
+|---|---|---|
+| 1 | `playpath.compare('de15dfc7b', play pin)` | **one difference: `changed designs/research_state/heldout_panels.json`** (1,537 play-path files; digest `5f0b3151…f6cf`). PASS |
+| 2 | `engine_at(play pin) == E3` | **E3** (`port=0d3d7629f16a0eaf/91;env=393631b886965b0c/126`), as at `de15dfc7b`. PASS |
+| 3 | the ids of §4.3 | **No registered id reads the registry outside its own panel's entry.** The forum72 / home72 / heldout72_hpfix / p72 / away entries are byte-identical, and so are their `panel_team_set_id`s at both commits (`ts:61b475d4…` forum72, `ts:08142ee8…` home72; the S regime's only registry input). The Kakuna id's inputs (`assemble.ANCHOR_REGIME_KEYS`, team digests, weights, engine, sides) read the cell config and team dirs, never the registry. PASS by construction. **Machine-checked at read time:** main's `assemble` gives group `primary` ONE regime id per team set, over the imported C0 units and the ON units played at the pin together. Two ids make the group, and so Δ_F, INCONCLUSIVE. Main's assemble of the dry-run state already reads the imported side as `2118812c27885de3` (group `00c8c0114bdf0836`), E3, `their=legacy` / `eval` |
+| 4 | an ON checkpoint plays on the pin's `main.h2h` path | **PASS.** s3501's first checkpoint `checkpoint_281000212_steps.zip` (sha256 `c5b44c42…4952`, a copy beside the run's `model_config.json`) played 1 mirrored pair against itself at the play pin: 2 games, rc 0, W/L/D 1/1/0, CPU, at the coordinator's request (`~/gen3ai_archive/x60t_prelaunch/am1_h2h_check/`). The first try refused before any game because a bare zip copy has no `model_config.json` beside it; the loader requires one |
+| 5 | the build is E3 (added by REVIEW AM-1 B1, AM-N1P-2's check) | **both `Cargo.lock` blobs equal `LEGACY_LOCK_BLOBS`** (`676e633e…` sim, `3d00802e…` env). The built `sim_bridge` stamps `commit=f564c333f…;src=0d3d7629f16a0eaf;nfiles=91`; the env tree hashes `393631b886965b0c` / 126. PASS. The env core's release build happens on demand at the first unit, from the same tree and lock |
+
+### 21.3 Look 1's spec (registered)
+
+[`read_spec_look1.json`](read_spec_look1.json), sha256 **`0f5d9a5fe18aa0b9545f66cc40759024d407618c0d7b389a13e27c7a94d0c57a`**.
+`rules_x60_test` holds it equal to the builder's draft plus the `pin` and note.
+- `pin` = the play pin. `plan` refuses any other playing commit, or a dirty tree.
+- **Models.** ON `x60t_s3501`–`s3503` by the settled `final` rule (`models/rb_x60t_s<s>`, step ≥ 300,000,170, quiet
+  300 s; §13.1). C0 `c0_s3501`–`s3503` pinned by sha256 (§4).
+- **Anchor `primary`:** Kakuna, forum72, unit seeds 0–59, all six. C0's three are IMPORTED from X61P look 1's group
+  `primary` (state `~/gen3ai_archive/x61p_n1p_read/look1`, spec sha256 `1266daad…9f03`). ON's are played.
+- **Anchor `determinism`:** c0_s3501, forum72, unit seed 0, played. §4's guard against the imported unit, game for game
+  and choice for choice. X61P's unit holds all 20 choice captures (`assemble.cell_choices`: 20 games, 20 choice
+  records), so main's default `choices_guard: require` compares choices.
+- **Decision:** rule `x60`, `look` 1, `on` ON, `off` C0, `primary` forum72 at 60 units, the determinism guard. The VOID
+  gate: K9(b) from `x35_breakers_stage_2026-10-17/k9b`, every ON and C0 run gated, `pin`
+  `{x60t: 7fe15726c…, c0: f4b25238d}`, `dose` against `models/rb_x35_c0_s3501` at a relative 1e-6.
+- **Look 1 plays Δ_F only: a REPORTING-ONLY reconciliation of §9 / §11 with §17** (REVIEW AM-1 M3).
+  - §17 priced look 1 as "only ON s3501–s3503's F". But §9 and §11's look-1 row say I_F and R72 are REPORTED at a stop,
+    and §12 lists REPORTED H / P72 / home72. The registered text contradicted itself.
+  - No verdict depends on the choice: X5 keeps I_F and R72 out of every look-1 decision, and `verdict()` never reads
+    them there.
+  - Playing R72 needs it resolvable by MAIN's assemble (FINDING 18). Every S or REPORTED set would also hold the two
+    heavy slots look 1's Kakuna lanes need.
+  - **So a look-1 stop record carries none of I_F, R72, H, P72 or home72.** Its decision shows `i_f` / `r72` as
+    `{"read": false, "reasons": ["…: absent"]}`.
+  - If the orchestrator wants them after a stop, it is a separate REPORTED read at this play pin. I_F can be read at
+    once; R72 only after FINDING 18 is resolved.
+  - On CONTINUE, all 16 finals play I_F and R72 at look 2 (§17's 32 T2 sets).
+
+**Validated by executing (CPU, no game):**
+- `python -m main.reads check-spec`: **exit 0 at main and at the play pin.** Main also reports `rederived_guards:
+  count` and `choices_guard: require`.
+- **`plan` at the play pin into a scratch state** (not the registered path): **exit 0**, spec sha256 `0f5d9a5f…`.
+  - C0 s3501–s3503 were copied at steps 300,061,940 / 300,061,805 / 300,061,491, each matching its sha256.
+  - The X61P import passed `imports.check`, and the determinism group planned 1 unit.
+  - ON s3501–s3503 are `waiting` ("no final yet").
+- **MAIN's `assemble` of that scratch state:** exit 0. Group `primary` imports 180 C0 unit rows, all counted, on E3
+  with regime `2118812c27885de3`, sides `their=legacy` / `eval`, and 180 ON units unplayed. So main's engine, sides and
+  regime checks accept the import before any game.
+- **Main's VOID gate on the spec now:** c0_s3501–s3503 **PASS** on K9(b), pin `f4b25238d` and dose. ON reads MISSING,
+  since no final, record or `metadata.json` exists yet.
+
+### 21.4 How look 1 is played and read (the operator: Training Oct)
+
+The registered state is **`~/gen3ai_archive/x60t_read/look1`**. Steps 1–3 run in the playing checkout with
+`export PYTHONPATH=$PWD/src`; step 4 runs in a main checkout.
+1. **§4.4 is DONE (§21.2 check 4, PASS).**
+   - **It checks the S loader, not the Kakuna loader look 1 uses** (REVIEW AM-1 m5).
+   - A Kakuna-side load refusal shows only as uncounted units. So the operator reads the anchor lane's first ON unit
+     (`status`: counted, not attempt-exhausted) before leaving the lane unattended.
+2. `python -m main.reads plan --spec <main>/designs/research_state/measurements/x60t_h_teams_2026-11-06/read_spec_look1.json --state ~/gen3ai_archive/x60t_read/look1`.
+   Plan may run before the finals settle: an unsettled ON model waits, and the C0 imports are checked at plan.
+3. `python -m main.reads run --state ~/gen3ai_archive/x60t_read/look1 --lane anchor --hours 100 --concurrency 2`,
+   detached, as X61P look 2 ran. Record the queue at the first read game (`scripts/ops/mem_cap.sh --status`) in the
+   look-1 record: §17's placeholder.
+4. From main, after every ON unit is played and the three AM-6 K9(b) records `k9b/rb_x60t_s350{1,2,3}.json` exist:
+   `python -m main.reads assemble|decide|record --state ~/gen3ai_archive/x60t_read/look1`. Then the operator checks
+   §15's launch-log lines and the panel-contamination check, which no module reads.
+
+### 21.5 G-C at 8 pairs (the fix; FINDING 2 of the rule's build)
+
+**The problem, checked in code.** §11 reads G-C over the read's seed pairs. Look 2 is 8 v 8, so its record must pool
+s3501–s3508.
+- `main.x35.gc.SIDE_SEEDS["production"]` was s3501–s3505.
+- `gc.pool_arrays` refused any other production seed. With 3506–3508 a seed set has no side, so `check_record`
+  refused as well.
+- So G-C read INCONCLUSIVE at every 8 v 8 read, and §11's ADOPT-CANDIDATE needs G-C PASS. An otherwise passing GAIN
+  could only read INCONCLUSIVE, never ADOPT-CANDIDATE.
+- The rule's own test had hidden this by monkeypatching `guard_c_record`.
+- G-F (`cross_stat`, any n × n) and G-E (`gap_diff`, the s3501 finals) carry no seed set, so they were never affected.
+
+**The fix:** a side's seeds are its C0's (`kit.ARMS["c0"].seeds` = 3501–3508, AM-X60T's top-up). A pair is an arm's
+final against its same-seed C0 final, so that is the side.
+- `check_record` still requires the record's ON and OFF seeds to EQUAL the read's. So an X35 five-seed read accepts only
+  its own five-pair record, and an 8 v 8 read refuses a five-pair one (`gc_test`, `rules_x60_test`, both on real
+  constructed records).
+- Unchanged: G-C's arithmetic, its bars, its truth (X26@280M, the production side's), and its place in §11.
+
+**Why this is legitimate now:** no X60 read data exists. No X60 game has been played, no G-C record has been pooled for
+any X60 seed, and the seeds it admits (3506–3508) have no trained final in any arm. The fix changes no class or
+threshold. It only lets §11's registered "G-C PASS" be evaluated at the seed count §5.1 registered.
+
+### 21.6 Not registered here (each an amendment before its first game)
+
+- **Look 2's spec** (AM-X60T-2). It needs:
+  - C0 s3506–s3508's final sha256s;
+  - look 1's `spec.json` sha256 for its imports: the sha above, if look 1 is planned from this file;
+  - the guards artefact `{path, sha256}`, written only once look 2's finals exist;
+  - R72 resolvable by main's assemble (FINDING 18).
+- **`ge_x60t`**, §11's fresh G-E reader: not built (FINDING 19). It is needed only on a look-2 GAIN.
+
+### 21.7 Its review (REVIEW AM-1, an independent opus-high reviewer, 2026-11-06): READY-WITH-FIXES, all fixed
+
+| finding | fix |
+|---|---|
+| B1: the play checkout was not built (no `Cargo.lock`, no `target/`) when the reviewer read it | it was mid-build; built, and the locks and stamps verified (§21.2 check 5) |
+| M1: the tag was not on origin | tagged and pushed (the push guard ran against the pin's base `de15dfc7b`: OK) |
+| M2: the plan result was a placeholder | the plan and main-assemble dry-runs above |
+| M3: §21.3 changed §9 / §11's look-1 reporting | restated as a reporting-only reconciliation with §17, including §12's panels (§21.3); FINDING 23 |
+| m1: check 3 named the wrong mechanism | reworded: `assemble`'s one-regime-per-team-set rule over `primary` |
+| m2: the record's wording | aligned to `decide`'s `read: false` |
+| m3: `LEGACY_ENGINE`'s "never edited" | the docstring says when a row is added |
+| m4: reverting the new table rows failed no test | `rules_x60_test.test_main_reconstructs_the_play_pins_engine_and_sides` (fails on revert, checked) |
+| m5: §4.4's check tests the S loader | §21.4 step 1 names it and adds a first-unit read |
+
+### 21.8 FINDINGS (this amendment)
+
+17. **The play pin is not portable off this box:** R72's `team_dir` and manifest are local absolute paths, by design
+    (§9).
+18. **R72 cannot be ASSEMBLED from main as main stands.**
+    - `assemble.s_group` resolves an S panel's team set through main's `heldout_panels.json`, and `r72` is registered
+      only at the play pin.
+    - Registering it on main changes main-wide behaviour:
+      - every corpus builder's exclusion list (`build_w_forum`, `build_n1_proc`) would read it;
+      - the registry tests would need the local archive.
+      That is outside this amendment.
+    - Options for AM-X60T-2:
+      - (a) register `r72` on main, with the builders made to skip PRACTISED panels;
+      - (b) let an S group name its team-set id in the spec when its panel is pin-only.
+    - Until then, look 2's R72 meter would read INCONCLUSIVE, and so would a look-2 NO-USEFUL-GAIN verdict.
+19. **`ge_x60t` (§11's G-E reader) is not built;** `main.x35.ge` reads only `TARGET_SEEDS = (3501,)` and named arms.
+20. **§4.4 played 2 h2h games on a TRAINING checkpoint** (s3501 @ 281,000,212; no final), at the coordinator's
+    request: the S loader only, not the Kakuna loader.
+21. **§17's queue placeholder cannot be filled before the first read game.** It is §21.4 step 3's record line.
+22. **The pin's own test file is a subset of main's.** The interval-versus-`power.py` and decide-side tests run only
+    on main, where `decide` runs.
+23. **A look-1 stop reports no I_F, R72, H, P72 or home72** (§21.3). That is the reporting-only reconciliation of §9 /
+    §11 / §12 with §17. If those numbers are wanted after a stop, it is the orchestrator's call: a separate REPORTED
+    read at the play pin.
