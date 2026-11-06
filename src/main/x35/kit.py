@@ -62,6 +62,12 @@ canonical flag order (the order carries no meaning to the trainer's parser):
   C0''s argv + the ONE lever ``--grow trunk_ffn_dim=1024`` (B-FFNW, T69: every trunk FFN 256 -> 1,024 as a zero-init
   branch, bit-identical at the fork). Both launch at ONE arm-level pin ``batch.N4_PIN`` (a main commit carrying T69 and
   these arms, AM-N4-PIN), never the toy side pin ``4609c155``, which cannot carry the width field.
+* X60-T, H-TEAMS (``design_human_replay_lever.md`` §6.3-§6.4; AM-X60T): ``x60t`` -- C0's argv token for token + the
+  ONE human-data clause ``--human-data teams:hr_spec_v1.r3@0.5`` (:data:`X60T_LEVER`, N1-P's slot), run
+  ``rb_x60t_s<seed>``, seeds 3501-3503 at look 1 and 3504-3508 on its look-1 CONTINUE, at its own pin
+  ``batch.X60T_PIN`` (D1's pin + the switch's backport + the corpus's sha256 stub). ``pin-check --arm x60t`` and
+  ``corpus-check --arm x60t`` read the pin's stub AND the LOCAL corpus (never in git) by sha256, with its two soak
+  records (:func:`human_corpus_check`). C0's top-up seeds 3506-3508 (C0's argv, the side pin) run on the same CONTINUE.
 
     python -m main.x35.kit describe --arm a1 --seed 3501 --call <R_production.json> [--phase1 <record>]
     python -m main.x35.kit describe --arm ge_a1 --seed 3501 --call <R_production.json> [--models-dir D]   # a G-E reader
@@ -161,6 +167,26 @@ X63U_CORPUS: Dict[str, Any] = {"corpus": "x63_union_v1", "tier": "ALL", "n": 178
                                "data_sha256": "f5cdc121ab6d8ec9b13dff60570183add14f30379ddaa68863d36529007128a7"}
 #: The arms whose argv names a team corpus, and the identity their pin must carry.
 ARM_CORPUS = {"d1": D1_CORPUS, "d3": D3_CORPUS, "n1p": N1P_CORPUS, "x63u": X63U_CORPUS}
+#: X60-T's ONE lever (``design_human_replay_lever.md`` §6.4, H-TEAMS; AM-X60T): the human-data switch's ``teams``
+#: clause. With probability 0.5 per episode and side (D1's dose), the team is one of ``hr_spec_v1.r3``'s 2,295 human
+#: ladder teams (the whole corpus, both sides, exactly ``--team-mix <corpus>@ALL:0.5 --team-mix-sides both``); eval
+#: stays on the pool. In N1-P's slot of C0's argv; nothing else changes.
+X60T_CLAUSE = "teams:hr_spec_v1.r3@0.5"
+X60T_LEVER = ("--human-data", X60T_CLAUSE)
+#: The HUMAN corpus X60T_CLAUSE names (``utils.team_corpora.human``): its stub at ``batch.X60T_PIN`` and its LOCAL
+#: files (``utils.paths.human_teams_dir()``; never in git) must carry exactly this identity, with BOTH soak records
+#: (the side pin's env, ``soak_selfcheck.json``; main's env, ``soak_main.json``) PASSing on the label path.
+X60T_CORPUS: Dict[str, Any] = {
+    "corpus": "hr_spec_v1.r3", "tier": "ALL", "n": 2295,
+    "tier_sha256": "31ca149cc4c09a03b09929eb62eccb7c6c38030cb460556a66ad8c25fd0a4dcb",
+    "data_sha256": "2e86457282f719eafaa75c6477c08420a03fafeb0e21f9ee5c24e1d2703afe88",
+    "manifest_sha256": "71783ac88917a96a7ec0d61e3e29f17d1cdc2b3633edfd5cd9b00b55701d6bfb",
+    "soak_sha256": "30b5cec4d843389cee5499035ff1968c2b9df118e4b9951f4b58ab33477b9e7a",
+    "soak_main_sha256": "cd800def19e45bfc2e6ff1126e574cf938c5a781bb4a95df7d60685ffd693a41"}
+#: The human-data clause each arm's transcripts must show (in BOTH tools); every other arm must show ``off``.
+ARM_HUMAN_DATA: Dict[str, str] = {"x60t": X60T_CLAUSE}
+#: The human corpus each human-data arm names (:func:`human_corpus_check`).
+ARM_HUMAN_CORPUS: Dict[str, Dict[str, Any]] = {"x60t": X60T_CORPUS}
 #: X47's ONE lever (``design_bot_ideas_screen.md`` §2.1; B-GROW, T64): the toy's 2 attention rounds become 4 at the
 #: fork, the 2 new rounds identity-init, so the grown network starts as T*'s function bit for bit (the child refuses
 #: to start otherwise: ``FATAL_CONFIG``). ``--dry-run`` prints ``grow : DECLARED trunk_layers 2 -> 4``.
@@ -243,9 +269,13 @@ X63U_SEEDS = (2601, 6302)
 L_X63U = L_X63C
 #: N4: ONE look at three seeds per arm (PREREG n4_capacity_screen_2026-10-27 §3: no look 2); more is a new registration
 N4_SEEDS = (3641, 3642, 3643)
+#: X60-T (AM-X60T): look 1 at 3501-3503, look 2 at 3504-3508 (only on its look-1 CONTINUE; ``batch.X60T_STAGES``)
+X60T_SEEDS = tuple(range(3501, 3509))
+#: C0: the batch-1 seeds + AM-X60T's top-up 3506-3508 (C0's argv at the side pin; gated on x60t's look-1 CONTINUE)
+C0_SEEDS = PROD_SEEDS + (3506, 3507, 3508)
 X47_SEEDS = TOY_SEEDS   # X47: look 1 at 3601-3603, look 2 at 3604-3605 (AM-4, orchestrator 2026-10-19), against toy C0 at the same seeds
 ARMS: Dict[str, Arm] = {a.name: a for a in (
-    Arm("c0", "production", L_PROD, PROD_SEEDS, "rb_x35_c0_s{seed}", 0, "warn"),
+    Arm("c0", "production", L_PROD, C0_SEEDS, "rb_x35_c0_s{seed}", 0, "warn"),
     Arm("a1", "production", L_PROD, PROD_SEEDS, "rb_x35_a1arch_s{seed}", 0, "warn"),
     Arm("a2", "production", L_PROD, PROD_SEEDS, "rb_x35_a2pfsp_s{seed}", 0, "warn"),
     Arm("d1", "production", L_PROD, PROD_SEEDS, "rb_x35_d1wide_s{seed}", 0, "warn"),
@@ -253,6 +283,8 @@ ARMS: Dict[str, Arm] = {a.name: a for a in (
     Arm("d3", "production", L_PROD, PROD_SEEDS, "rb_x35_d3mut_s{seed}", 0, "warn"),
     # X61P / N1-P, procedural breadth (PREREG x61p_n1_production_2026-10-26): look 1 s3501-s3503, look 2 s3504-s3505
     Arm("n1p", "production", L_PROD, PROD_SEEDS, "rb_x35_n1p_s{seed}", 0, "warn"),
+    # X60-T, H-TEAMS (AM-X60T): C0's argv + --human-data teams:hr_spec_v1.r3@0.5; its own pin batch.X60T_PIN
+    Arm("x60t", "production", L_PROD, X60T_SEEDS, "rb_x60t_s{seed}", 0, "warn"),
     # X48, per-token-kind FFN experts (PREREG x48_kffn_production_2026-10-27): N4's one-look screen at s3501-s3503
     Arm("x48", "production", L_PROD, X48_SEEDS, "rb_x35_x48kffn_s{seed}", 0, "warn"),
     # X63-C, the X63 control replicate (review B1 fix 3): X26c's argv, seed and run changed; start X26 @380M, not P*
@@ -399,6 +431,8 @@ def build_argv(arm: str, seed: int, call: Mapping[str, Any], phase1: Optional[Ma
         lever = list(N1P_LEVER)
     elif arm == "x63u":
         lever = list(X63U_LEVER)
+    elif arm == "x60t":
+        lever = list(X60T_LEVER)
     elif arm == "toy_x47":
         lever = list(X47_LEVER)
     elif arm == "x48":
@@ -532,6 +566,7 @@ _CHK_K9B = re.compile(r"^\s+K9\(b\) behaviour check\s*: (\w+)", re.M)
 _DRY_GROW = re.compile(r"^\s+grow\s+: DECLARED (.+?) \(parent", re.M)
 _CHK_GROW = re.compile(r"^\s+declared growth \(--grow\)\s*: (.+?)\s+\(parent", re.M)
 _DRY_GIB = re.compile(r"([0-9.]+) GiB REQUIRED")
+_HUMAN_DATA = re.compile(r"^\s+human data\s+: (.+)$", re.M)
 
 
 def check_validation(d: Mapping[str, Any], dryrun: str, checkargs: str, rc_checkargs: int,
@@ -566,13 +601,28 @@ def check_validation(d: Mapping[str, Any], dryrun: str, checkargs: str, rc_check
         got = g.group(1) if g else None
         if got != want:
             probs.append(f"{tool} declared growth {got!r} != {want!r}")
+    hd_want = ARM_HUMAN_DATA.get(d["arm"])
+    for tool, text in (("dry-run", dryrun), ("checkargs", checkargs)):
+        hd = _HUMAN_DATA.search(text)
+        got_hd = hd.group(1).strip() if hd else None
+        if hd_want is not None and (got_hd is None or not got_hd.startswith(hd_want)):
+            probs.append(f"{tool} human data {got_hd!r} != the arm's clause {hd_want!r}")
+        if hd_want is None and got_hd is not None and not got_hd.startswith("off"):
+            probs.append(f"{tool} human data {got_hd!r}, but {d['arm']} types no clause")
+    if hd_want is not None:
+        want_stamp = f"[HUMAN-DATA] lever=teams rowset={ARM_HUMAN_CORPUS[d['arm']]['corpus']} " \
+                     f"rows_sha={ARM_HUMAN_CORPUS[d['arm']]['data_sha256']}"
+        for tool, text in (("dry-run", dryrun), ("checkargs", checkargs)):
+            if want_stamp not in text:
+                probs.append(f"{tool} prints no '{want_stamp[:60]}...' stamp")
     gib = _DRY_GIB.search(dryrun)
     if gib is None:
         probs.append("the dry-run printed no REQUIRED GiB")
     line = (f"{d['arm']}_s{d['seed']} checkargs={rc_checkargs} dryrun={rc_dryrun} "
             f"would_launch={dryrun.count('this command would launch')} delta=[{d['delta_text']}] "
             f"gib=[{gib.group(1) if gib else None}] role=[FORK of {d['parent_run_dir']}] k9b=[{d['behaviour']}] "
-            f"grow=[{('DECLARED ' + gd.group(1)) if gd else 'none'}] verdict=" + ("PASS" if not probs else
+            f"grow=[{('DECLARED ' + gd.group(1)) if gd else 'none'}] human_data=[{hd_want or 'off'}] "
+            f"verdict=" + ("PASS" if not probs else
                                                                                   "FAIL " + "; ".join(probs)))
     return not probs, line
 
@@ -724,11 +774,77 @@ def disk_check(models_dir: str, required_gib: float, *, thinning: bool,
                          " -- thin finished arms (F22) or pass --thinning")
 
 
-def corpus_check(arm: str, pin: str, repo: str) -> Tuple[bool, str]:
-    """``(ok, line)``: the team corpus ``arm`` names (:data:`ARM_CORPUS`) is, AT ``pin``, the registered identity
-    (count, tier sha256 and data sha256, read from the pin's committed manifest). An arm that names no corpus passes."""
+def _sha256_or_none(path: Path) -> Optional[str]:
+    return sha256_file(str(path)) if path.is_file() else None
+
+
+def human_corpus_check(arm: str, pin: str, repo: str, *, local_dir: Optional[str] = None) -> Tuple[bool, str]:
+    """``(ok, line)`` for a HUMAN-DATA arm (:data:`ARM_HUMAN_CORPUS`, AM-X60T): the stub committed AT ``pin``
+    (``src/utils/team_corpora/human_corpora.json``) registers exactly the arm's corpus with its identity; the LOCAL
+    corpus (``local_dir``, default ``utils.paths.human_teams_dir()/<id>``; never in git) matches it by sha256 (manifest,
+    data, both soak records); the manifest marks it human data with a tier ``ALL`` of ``n`` rows; and BOTH soak
+    records PASS on the label path over this data (``soak_selfcheck.json`` at the side pin's env, ``soak_main.json``
+    at main's)."""
     import subprocess
 
+    from main.x35.batch import D1_PIN_BASE
+
+    want = ARM_HUMAN_CORPUS[canonical_arm(arm)]
+    cid = want["corpus"]
+    p = subprocess.run(["git", "-C", repo, "show", f"{pin}:src/utils/team_corpora/human_corpora.json"],
+                       capture_output=True, text=True)
+    if p.returncode != 0:
+        return False, f"the pin {pin[:12]} holds no human_corpora.json: {p.stderr.strip()[-200:]}"
+    stubs = (json.loads(p.stdout).get("corpora") or {})
+    if set(stubs) != {cid}:
+        return False, f"the pin {pin[:12]}'s stub registers {sorted(stubs)}, not exactly [{cid!r}]"
+    st = stubs[cid]
+    bad = [f"{k} {st.get(k)} != {want[k]}" for k in ("n", "tier", "tier_sha256", "data_sha256", "manifest_sha256",
+                                                     "soak_sha256") if st.get(k) != want[k]]
+    if st.get("human_data") is not True:
+        bad.append("the stub does not say human_data: true")
+    if bad:
+        return False, f"the pin {pin[:12]}'s stub of {cid} is not {arm}'s registered corpus: " + "; ".join(bad)
+    if local_dir is None:
+        from utils.paths import human_teams_dir
+        local_dir = str(human_teams_dir() / cid)
+    d = Path(local_dir)
+    files = {"manifest_sha256": d / "manifest.json", "data_sha256": d / "teams.jsonl.gz",
+             "soak_sha256": d / "soak_selfcheck.json", "soak_main_sha256": d / "soak_main.json"}
+    got = {k: _sha256_or_none(f) for k, f in files.items()}
+    bad = [f"{files[k].name} {str(v)[:12]} != {want[k][:12]}" for k, v in got.items() if v != want[k]]
+    if bad:
+        return False, f"the LOCAL corpus {d} is not {arm}'s registered {cid}: " + "; ".join(bad)
+    man = json.loads(files["manifest_sha256"].read_text())
+    tier = (man.get("tiers") or {}).get(want["tier"]) or {}
+    if not (man.get("human_data") is True and tier.get("n") == want["n"] and tier.get("sha256") == want["tier_sha256"]):
+        return False, f"the LOCAL manifest of {cid} does not mark human data with tier {want['tier']} = {want['n']} rows"
+    lines = []
+    for key, env_want in (("soak_sha256", D1_PIN_BASE), ("soak_main_sha256", None)):
+        soak = json.loads(files[key].read_text())
+        sc = soak.get("corpus", {})
+        if not (soak.get("schema") == D1_SOAK_SCHEMA and soak.get("labels") and soak.get("verdict") == "PASS"
+                and soak.get("core_errors") == [] and sc.get("tier") == want["tier"]
+                and sc.get("data_sha256") == want["data_sha256"]
+                and soak.get("battles_finished") == soak.get("battles_planned") > 0
+                and (env_want is None or soak.get("env_pin") == env_want)):
+            return False, (f"{files[key].name} is not a PASSing label-path soak of {cid}"
+                           + (f" at the side pin's env {env_want[:12]}" if env_want else "") +
+                           f" (schema {soak.get('schema')}, verdict {soak.get('verdict')}, env {soak.get('env_pin')})")
+        lines.append(f"{files[key].name} {soak['battles_finished']} battles PASS at env "
+                     f"{str(soak.get('env_pin'))[:12]}")
+    return True, (f"{cid}@{want['tier']}: the pin {pin[:12]}'s stub and the LOCAL corpus agree: {want['n']} teams, "
+                  f"data {want['data_sha256'][:12]}, manifest {want['manifest_sha256'][:12]}; " + "; ".join(lines))
+
+
+def corpus_check(arm: str, pin: str, repo: str) -> Tuple[bool, str]:
+    """``(ok, line)``: the team corpus ``arm`` names (:data:`ARM_CORPUS`) is, AT ``pin``, the registered identity
+    (count, tier sha256 and data sha256, read from the pin's committed manifest). An arm that names no corpus passes.
+    A HUMAN-DATA arm (:data:`ARM_HUMAN_CORPUS`) is :func:`human_corpus_check`'s."""
+    import subprocess
+
+    if canonical_arm(arm) in ARM_HUMAN_CORPUS:
+        return human_corpus_check(arm, pin, repo)
     want = ARM_CORPUS.get(canonical_arm(arm))
     if want is None:
         return True, f"{arm} names no team corpus"

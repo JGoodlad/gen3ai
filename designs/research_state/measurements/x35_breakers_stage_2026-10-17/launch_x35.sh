@@ -28,6 +28,11 @@
 #          · N4, the toy capacity screen (PREREG n4_capacity_screen_2026-10-27, +70M from T*): toy_c0n4 (C0', toy C0's
 #          argv) and toy_n4ffn (+ --grow trunk_ffn_dim=1024), seeds 3641 3642 3643, at their OWN whole-commit pin
 #          batch.N4_PIN (AM-N4-PIN; pin-check / stage-check HOLD while it is a placeholder; one look, no look 2)
+#          · X60-T, H-TEAMS (AM-X60T, design_human_replay_lever.md §6.4, +20M, C0's argv + --human-data
+#          teams:hr_spec_v1.r3@0.5, run rb_x60t_s<seed>): x60t 3501-3503, then 3504-3508 on its look-1 CONTINUE, at its
+#          OWN pin batch.X60T_PIN (D1's pin + the switch + the corpus stub; pin-check / corpus-check also read the LOCAL
+#          corpus by sha256 and its two soak records) · C0's top-up c0 3506 3507 3508 (C0's argv, the side pin, on the
+#          same CONTINUE)
 #                                                                             (main.x35.kit holds every argv)
 #   phase 1 → 2:  after the three exploiters END,
 #          python -m main.x35.kit phase1-record --arm a3 --call <R> --out <stage>/phase1_a3.json   (write-once)

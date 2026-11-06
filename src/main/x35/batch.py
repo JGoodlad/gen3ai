@@ -93,6 +93,15 @@ decide`` (X47). The record names its arm and look; a record for another arm or l
   against :data:`N1P_CORPORA_TREE`. Its runs are judged against ``N1P_PIN`` only. :data:`N1P_STAGES` holds it, never
   :data:`STAGES`; :func:`stage_status` treats it as D3 (the AM-8 side gate; look 2 only on its own look-1 CONTINUE).
   Its read record is ``reads/n1p_look<k>.json``, arm label ``X61P`` (``decide-d1``: D1's rule on ``forum72`` alone).
+* **AM-X60T, X60-T'S OWN PIN** (``design_human_replay_lever.md`` §6.3-§6.4; REVIEW F F-M3; 2026-11-06): ``x60t``
+  (:data:`X60T_ARMS`, H-TEAMS) is C0's argv + ONE clause, ``--human-data teams:hr_spec_v1.r3@0.5``, which the side pin
+  cannot parse. It launches at :data:`X60T_PIN` = D1's pin (:data:`D1_PIN`, the side pin + the AM-D1-FIX label guard,
+  F-M3 fix 3) + ONE commit changing EXACTLY :data:`X60T_PIN_PATHS` (the switch's backport and the corpus's sha256
+  stub), checked by :func:`x60t_pin_check`, which also checks the stub against ``kit.X60T_CORPUS`` and the LOCAL corpus
+  (outside git) by sha256 with its two soak records (``kit.human_corpus_check``). Its runs are judged against
+  ``X60T_PIN`` only. :data:`X60T_STAGES` holds look 1 (s3501-s3503), look 2 (s3504-s3508) and C0's top-up seeds
+  s3506-s3508 (at the side pin, as every C0 seed): look 2 and the top-up run only on x60t's own look-1 CONTINUE
+  (``reads/x60t_look1.json``). Arm label ``X60T``.
 * **X48, PER-TOKEN-KIND FFN EXPERTS** (``x48_kffn_production_2026-10-27/PREREG.md``, 2026-10-27): ``x48``
   (:data:`X48_ARMS`) is SIDE-PINNED at the production pin (B-KFFN is in it), held by :data:`X48_STAGES`, never
   :data:`STAGES`. It is read by N4's ONE-look screen rule at s3501-s3503, so there is no look 2 and no look-2
@@ -227,6 +236,8 @@ D3_ARMS = ("d3",)
 N1P_ARMS = ("n1p",)
 #: X48, per-token-kind FFN experts (2026-10-27): one production arm at the side pin, read by N4's one-look screen.
 X48_ARMS = ("x48",)
+#: X60-T, H-TEAMS (AM-X60T, 2026-11-06): one production arm at its OWN pin (:data:`X60T_PIN`).
+X60T_ARMS = ("x60t",)
 #: X63-C, the X63 control replicate (2026-10-28): one production arm at the side pin (X26c's), forking X26 @380M.
 X63C_ARMS = ("x63c",)
 #: X63-C's registration: its stage-check is PENDING until this file exists (repo-relative, read in the kit's checkout).
@@ -244,7 +255,7 @@ N4_PREREG = "designs/research_state/measurements/n4_capacity_screen_2026-10-27/P
 #: The arms whose stage-check is the side gate + their PREREG present (the orchestrator's GO): :func:`arm_prereg`.
 PREREG_GATED_ARMS = X63C_ARMS + X63U_ARMS
 SIDE_PINNED_ARMS = (BATCH1_ARMS + BATCH2_ARMS + R0_ARMS + X52_ARMS + D3_ARMS + N1P_ARMS + X48_ARMS + X63C_ARMS
-                    + X63U_ARMS + N4_ARMS)
+                    + X63U_ARMS + N4_ARMS + X60T_ARMS)
 #: AM-D1-FIX (launch sheet §0, 2026-10-22): D1's pin. The production pin ``f4b25238`` + the corpus label-guard commit
 #: (``fix(team corpora): refuse teams the env's label path cannot encode ...``), rebuilt onto it with only
 #: ``src/utils/team_corpora/`` replaced. Kept reachable by the local branch ``x35-d1-pin``.
@@ -289,6 +300,34 @@ X63U_PIN_PATHS = ("src/utils/team_corpora/",)
 #: The git tree of ``src/utils/team_corpora`` at X63U_PIN (content-addressed): the side pin's package + the union's
 #: subtree + the one CORPORA line (no main commit holds it, as N1P_CORPORA_TREE).
 X63U_CORPORA_TREE: Optional[str] = "ca0845cfcb22f70e7a808871f57cff480ad621db"
+#: AM-X60T (2026-11-06): X60-T's pin. D1's pin (:data:`D1_PIN`) + ONE commit: the ``--human-data`` switch backported
+#: from main ``fbd1afa38`` and the committed sha256 stub of ``hr_spec_v1.r3`` (no team text: the corpus lives outside
+#: git). Tagged on origin as ``x60t-pin-7fe15726`` and kept reachable by the local branch ``x60t-pin``.
+X60T_PIN = "7fe15726c77cfa823aee78110444bf25c3c7370e"
+#: The commit X60T_PIN sits directly on: D1's pin (F-M3 fix 3: the side pin carries the AM-D1-FIX label guard).
+X60T_PIN_BASE = D1_PIN
+#: EXACTLY the paths X60T_PIN changes relative to X60T_PIN_BASE (F-M3 fix 4: ``pin-check`` enumerates them).
+X60T_PIN_PATHS: Tuple[str, ...] = (
+    "designs/ops/flag_census.md",
+    "src/agents/info_levers/human_data.py",
+    "src/agents/info_levers/human_data_test.py",
+    "src/agents/training/matchup_spec.py",
+    "src/agents/training/team_mix_testkit.py",
+    "src/main/checkargs.py",
+    "src/main/launcher/dry_run.py",
+    "src/main/train/combination_checks.py",
+    "src/main/train/combination_checks_test.py",
+    "src/main/train/human_data_setup.py",
+    "src/main/train/human_data_setup_test.py",
+    "src/main/train/matchup_setup.py",
+    "src/main/train/parser/eval_subprocess.py",
+    "src/main/train/run_io.py",
+    "src/utils/paths.py",
+    "src/utils/team_corpora/__init__.py",
+    "src/utils/team_corpora/human.py",
+    "src/utils/team_corpora/human_corpora.json",
+    "src/utils/team_corpora/human_test.py",
+)
 #: AM-N4-PIN (2026-10-31): N4's pin, the first MAIN commit carrying T69 (B-FFNW, the width field), the ``n4_screen``
 #: rule and the kit arms ``toy_c0n4`` / ``toy_n4ffn`` (``feat(x35 kit): N4's kit arms ...``). A commit cannot name
 #: itself, so the arms landed with None and this one filled it, with the PREREG's AMENDMENT AM-N4-PIN.
@@ -299,10 +338,10 @@ N4_PIN_CARRIES: Dict[str, str] = {"T69 B-FFNW (--grow trunk_ffn_dim)": "c35ffab9
 #: The arms with their own pin (AM-D1-FIX, AM-D3, AM-N1P, AM-X63U, AM-N4-PIN): ``{arm: pin}``; None = a registered placeholder
 #: (every check of that arm refuses until it is filled).
 ARM_PINS: Dict[str, Optional[str]] = {"d1": D1_PIN, "d3": D3_PIN, "n1p": N1P_PIN, "x63u": X63U_PIN,
-                                      "toy_c0n4": N4_PIN, "toy_n4ffn": N4_PIN}
+                                      "toy_c0n4": N4_PIN, "toy_n4ffn": N4_PIN, "x60t": X60T_PIN}
 #: The amendment that registered each own-pin arm (named in every line its checks print).
 ARM_PIN_AMENDMENT = {"d1": "AM-D1-FIX", "d3": "AM-D3", "n1p": "AM-N1P", "x63u": "AM-X63U", "toy_c0n4": "AM-N4-PIN",
-                     "toy_n4ffn": "AM-N4-PIN"}
+                     "toy_n4ffn": "AM-N4-PIN", "x60t": "AM-X60T"}
 #: The own-pin arms whose run MAY also sit at the side's pin: D1's VOID pre-fix attempt (AM-D1-FIX-f) only.
 ARM_PIN_PREFIX_OK = ("d1",)
 #: Batch 2's stages (F-AS-8), in AM-RP-e's slots: (6) production SPRT, (8) production LR-F, (11) the toy pair; each
@@ -338,6 +377,18 @@ N1P_STAGES: Tuple[Tuple[str, Tuple[Tuple[str, int], ...]], ...] = (
     ("N1P", (("n1p", 3501), ("n1p", 3502), ("n1p", 3503))),
     ("N1Pb", (("n1p", 3504), ("n1p", 3505))),
 )
+#: AM-X60T's stages (2026-11-06): look 1 (s3501-s3503) on the orchestrator's GO; look 2 (s3504-s3508) and C0's top-up
+#: seeds s3506-s3508 (C0's argv at the side pin, so C0 has a final at every x60t look-2 seed) only on x60t's own look-1
+#: CONTINUE. C0 s3501-s3505 (already run at the side pin) is the rest of the control. Never merged into STAGES.
+X60T_STAGES: Tuple[Tuple[str, Tuple[Tuple[str, int], ...]], ...] = (
+    ("X60T", (("x60t", 3501), ("x60t", 3502), ("x60t", 3503))),
+    ("X60Tb", tuple(("x60t", s) for s in range(3504, 3509))),
+    ("X60T-C0b", (("c0", 3506), ("c0", 3507), ("c0", 3508))),
+)
+#: C0's seeds registered by AM-X60T (its top-up), gated on x60t's look 1, never on G1.
+X60T_C0_TOPUP_SEEDS = (3506, 3507, 3508)
+#: The x60t seeds of its look 2.
+X60T_LOOK2_SEEDS = tuple(range(3504, 3509))
 #: X48's stage (2026-10-27, PREREG x48_kffn_production_2026-10-27 §3): one look, three seeds, on the orchestrator's GO.
 #: C0 s3501-s3503 (already run at the side pin) is the control. Never merged into STAGES.
 X48_STAGES: Tuple[Tuple[str, Tuple[Tuple[str, int], ...]], ...] = (
@@ -372,7 +423,7 @@ SPECULATIVE_LABEL = ("trained speculatively before Stage A's verdict; played and
 #: ``x47`` X47, ``x48`` X48, ``x63c`` X63C, ``x63u`` X63U).
 READ_LABEL = {"a1": "A1", "a2": "A2", "d1": "X38", "d3": "X41", "n1p": "X61P", "toy_a1": "A1", "toy_a2": "A2", "toy_x47": "X47",
               "sprt": "SPRT", "toy_sprt": "SPRT", "lrfloor": "LRF", "toy_lrfloor": "LRF", "x48": "X48", "x63c": "X63C",
-              "x63u": "X63U", "toy_c0n4": "C0N4", "toy_n4ffn": "N4"}
+              "x63u": "X63U", "toy_c0n4": "C0N4", "toy_n4ffn": "N4", "x60t": "X60T"}
 #: The toy arms whose look-1 CONTINUE licenses toy C0's look-2 seeds s3604-s3605 (their shared control).
 TOY_LOOK2_LICENSORS = ("toy_x47", "toy_a1", "toy_a2", "toy_lrfloor", "toy_sprt")
 #: Where a read record keeps its PRIMARY when it is not R1 (``d1.D1Verdict``: H).
@@ -573,6 +624,40 @@ def x63u_pin_check(pin: str, side_pin: str, repo: str) -> Tuple[bool, List[str]]
                          tree_want=X63U_CORPORA_TREE, tree_of="registered X63-U union tree")
 
 
+def x60t_pin_check(pin: str, side_pin: str, repo: str) -> Tuple[bool, List[str]]:
+    """AM-X60T: ``pin`` is :data:`X60T_PIN`; the side's written pin is :data:`D1_PIN_BASE`; ``pin``'s one parent is
+    :data:`X60T_PIN_BASE` (D1's pin, which itself passes :func:`d1_pin_check`); ``pin`` changes EXACTLY
+    :data:`X60T_PIN_PATHS` relative to it; its committed stub registers ``kit.X60T_CORPUS`` and nothing else; and the
+    LOCAL corpus (outside git) matches that stub by sha256, with its two soak records (``kit.human_corpus_check``)."""
+    from main.x35.kit import human_corpus_check
+
+    am = ARM_PIN_AMENDMENT["x60t"]
+    if pin != X60T_PIN:
+        return False, [f"{am}: x60t launches only at X60T_PIN {X60T_PIN[:12]}, not {pin[:12]}"]
+    if side_pin != D1_PIN_BASE:
+        return False, [f"{am}: X60T_PIN rests on the side pin {D1_PIN_BASE[:12]}, but the side's written pin is "
+                       f"{side_pin[:12]}"]
+    parents = _git(repo, "rev-list", "--parents", "-n", "1", pin)
+    if parents.returncode != 0:
+        return False, [f"{am}: X60T_PIN {pin[:12]} is not a commit in {repo}: {parents.stderr.strip()[-200:]}"]
+    if parents.stdout.split()[1:] != [X60T_PIN_BASE]:
+        return False, [f"{am}: X60T_PIN's parent(s) {[h[:12] for h in parents.stdout.split()[1:]]} != D1's pin "
+                       f"{X60T_PIN_BASE[:12]} (one commit on top of it, no more)"]
+    ok_d1, d1_lines = d1_pin_check(X60T_PIN_BASE, side_pin, repo)
+    if not ok_d1:
+        return False, [f"{am}: its base, D1's pin, does not pass: {d1_lines}"]
+    names = sorted(n for n in _git(repo, "diff", "--name-only", X60T_PIN_BASE, pin).stdout.splitlines() if n)
+    if names != sorted(X60T_PIN_PATHS):
+        extra, missing = sorted(set(names) - set(X60T_PIN_PATHS)), sorted(set(X60T_PIN_PATHS) - set(names))
+        return False, [f"{am}: X60T_PIN must change EXACTLY the {len(X60T_PIN_PATHS)} enumerated paths relative to "
+                       f"D1's pin; extra {extra[:10]}, missing {missing[:10]}"]
+    ok, line = human_corpus_check("x60t", pin, repo)
+    if not ok:
+        return False, [f"{am}: {line}"]
+    return True, [f"{am}: x60t's pin {pin[:12]} = D1's pin {X60T_PIN_BASE[:12]} (on the side pin {side_pin[:12]}) + "
+                  f"one commit, exactly the {len(names)} enumerated path(s)", f"{am}: {line}"]
+
+
 def n4_pin_check(pin: str, side_pin: str, repo: str) -> Tuple[bool, List[str]]:
     """AM-N4-PIN: ``pin`` is :data:`N4_PIN`, a commit on ``main`` (an ancestor of ``origin/main``, else of the local
     ``main``), carrying every commit of :data:`N4_PIN_CARRIES`. Unlike :func:`own_pin_check` it is a WHOLE commit, not the
@@ -600,7 +685,7 @@ def n4_pin_check(pin: str, side_pin: str, repo: str) -> Tuple[bool, List[str]]:
 def arm_pin_check(arm: str, pin: str, side_pin: str, repo: str) -> Tuple[bool, List[str]]:
     """The own-pin check of ``arm`` (:data:`ARM_PINS`)."""
     return {"d1": d1_pin_check, "d3": d3_pin_check, "n1p": n1p_pin_check, "x63u": x63u_pin_check,
-            "toy_c0n4": n4_pin_check, "toy_n4ffn": n4_pin_check}[arm](pin, side_pin, repo)
+            "toy_c0n4": n4_pin_check, "toy_n4ffn": n4_pin_check, "x60t": x60t_pin_check}[arm](pin, side_pin, repo)
 
 
 def pin_check(pin: str, stage: str, models_dir: str, side: str, t62: Optional[str] = None,
@@ -945,7 +1030,7 @@ def _look2_licence(stage: str, arm: str) -> Tuple[str, str]:
 
 def stage_of(arm: str, seed: int) -> Optional[str]:
     for name, forks in (STAGES + BATCH2_STAGES + R0_STAGES + X52_STAGES + D3_STAGES + N1P_STAGES + X48_STAGES
-                        + X63C_STAGES + X63U_STAGES + N4_STAGES):
+                        + X63C_STAGES + X63U_STAGES + N4_STAGES + X60T_STAGES):
         if (arm, seed) in forks:
             return name
     return None
@@ -1010,6 +1095,13 @@ def stage_status(stage: str, arm: str, seed: int) -> Tuple[str, str]:
             return _look2_licence(stage, arm)
         return ALLOWED, f"{arm} s{seed}: no unmet condition (stage {stage_of(arm, seed)}, " \
                         f"{ARM_PIN_AMENDMENT[arm]}: the orchestrator's GO)"
+    if arm in X60T_ARMS or (arm == "c0" and seed in X60T_C0_TOPUP_SEEDS):   # AM-X60T: look 2 + C0's top-up on CONTINUE
+        filled, why = side_gate(stage, "production")
+        if not filled:
+            return PENDING, why
+        if arm == "c0" or seed in X60T_LOOK2_SEEDS:
+            return _look2_licence(stage, "x60t")
+        return ALLOWED, f"{arm} s{seed}: no unmet condition (stage {stage_of(arm, seed)}, AM-X60T: the orchestrator's GO)"
     if arm not in BATCH1_ARMS:
         return ALLOWED, f"{arm} is not a staged arm (no AM-9 or batch-2 condition)"
     if arm in DROPPED:
