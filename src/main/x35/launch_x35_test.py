@@ -105,3 +105,36 @@ def test_the_script_still_parses_and_a_bad_call_keeps_its_exit_codes(tmp_path):
     assert flag.returncode == 2 and "unknown flag" in flag.stderr
     hold = subprocess.run([str(SCRIPT), "c0", "3501", "--pin", "0" * 40], capture_output=True, text=True, env=env, timeout=30)
     assert hold.returncode == 7 and "HOLD" in hold.stderr
+
+
+def test_the_launcher_is_spawned_in_its_own_session():
+    """11-06: a ``timeout`` around GO signalled GO's whole process group and SIGTERMed X60-T s3501's launcher."""
+    spawn = [ln for ln in TEXT.splitlines() if '"$PY" -m main.launcher' in ln and "--dry-run" not in ln
+             and not ln.lstrip().startswith("#")]
+    assert spawn, "the launcher spawn line is gone"
+    assert all("exec setsid taskset -c 0-4,8-12" in ln for ln in spawn), spawn
+
+
+def test_a_group_signal_to_go_does_not_reach_a_setsid_child(tmp_path):
+    """The spawn pattern itself: under ``timeout`` (which signals its process group), a ``( exec setsid … ) &`` child
+    keeps its pid as ``$!``, sits in its own session, and survives; a plain ``( exec … ) &`` child dies with the group."""
+    pids = {}
+    for mode in ("setsid", "plain"):
+        pidf = tmp_path / f"{mode}.pid"
+        prefix = "setsid " if mode == "setsid" else ""
+        subprocess.run(["timeout", "-s", "TERM", "2", "bash", "-c",
+                        f"( exec {prefix}sleep 60 ) & echo $! > {pidf}; wait"], timeout=30)
+        pids[mode] = int(pidf.read_text())
+    time.sleep(0.5)
+    try:
+        stat = Path(f"/proc/{pids['setsid']}/stat").read_text()
+        fields = stat[stat.rindex(")") + 2:].split()
+        assert int(fields[3]) == pids["setsid"], "the setsid child is not its own session leader"   # field 6: session
+        assert not Path(f"/proc/{pids['plain']}").exists() or \
+            Path(f"/proc/{pids['plain']}/stat").read_text().split()[2] == "Z", "the plain child survived the group signal"
+    finally:
+        for p in pids.values():
+            try:
+                os.kill(p, 9)
+            except ProcessLookupError:
+                pass

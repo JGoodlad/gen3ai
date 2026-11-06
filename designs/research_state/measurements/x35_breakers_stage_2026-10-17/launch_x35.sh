@@ -71,7 +71,9 @@
 # At GO, after the last pre-check: the side's pin file and pool record are written if absent (once).
 # GO with --at-epoch E: E is checked at arming (now <= E <= now + 24 h, an ABSOLUTE epoch, never a clock string),
 # the script sleeps to E, then RE-RUNS every pre-check; a failure then is a HOLD. A launcher that dies within 180 s
-# is a HOLD (a mid-window failure is the orchestrator's decision, never this script's). After the spawn, T54's
+# is a HOLD (a mid-window failure is the orchestrator's decision, never this script's). GO does not return until the
+# run ENDS (it logs END): run it detached (setsid nohup … &), never under `timeout`; the launcher runs in its own
+# session (setsid), so a signal to GO's process group cannot stop the run. After the spawn, T54's
 # pool-seed record is checked (main.x35.kit pool-seed-check, against the side's recorded set too); a failure
 # SIGTERMs the launcher by its PID and HOLDs.
 set -u
@@ -236,7 +238,11 @@ log "batch records: $(tr '\n' ' ' < "$J/$RUN.pin_write.txt") $(cat "$J/$RUN.pool
 # it (renamed, never deleted) so this GO's log, the pool-seed check and the watcher start on a fresh file.
 if [ -e "$J/$RUN.launcher.log" ]; then PREV="$J/$RUN.launcher.log.$(date +%Y%m%dT%H%M%S).prev"; mv "$J/$RUN.launcher.log" "$PREV" && log "rotated the previous launcher log to $(basename "$PREV")" || hold "could not rotate $J/$RUN.launcher.log"; fi
 log "START $RUN: ${A[*]} (pin ${PIN:0:8}, restart 24 h)"
-( cd "$REPO" && export PYTHONPATH="$REPO/src"; exec taskset -c 0-4,8-12 "$PY" -m main.launcher \
+# setsid: the launcher gets its OWN session and process group. The GO lives for the whole run (it waits for END), and a
+# signal to the GO's group (GNU `timeout` signals its whole group) must never reach the run: on 11-06 a `timeout 2400`
+# around GO SIGTERMed X60-T s3501 40 min in. The subshell is not a group leader, so setsid execs in place and $! stays
+# the launcher's pid.
+( cd "$REPO" && export PYTHONPATH="$REPO/src"; exec setsid taskset -c 0-4,8-12 "$PY" -m main.launcher \
   --restart-interval-hours 24 --pin-commit "$PIN" "${A[@]}" ) >> "$J/$RUN.launcher.log" 2>&1 < /dev/null &
 LP=$!; echo "$LP" > "$J/$RUN.pid"; LP_START=$(pid_start "$LP" 2>/dev/null || true)
 for _ in $(seq 36); do launcher_alive || break; sleep 5; done
