@@ -3107,10 +3107,10 @@
   },
   "src/main/anchors/forced_branch_integration_test.py::test_a_forced_branch_shares_the_raw_prefix_and_a_null_branch_replays_the_raw_game": {
    "status": "pass",
-   "commit": "bc81a9a72f3c0279b9658d9ca596757f57c355c9",
-   "at": "2026-10-28T19:49:43Z",
-   "duration_s": 10.18,
-   "contention": 1.0,
+   "commit": "84e5acbb89966ce27d43b835155439ee235e72ff",
+   "at": "2026-11-06T09:15:01Z",
+   "duration_s": 10.16,
+   "contention": 1.01,
    "detail": ""
   },
   "src/main/anchors/frontend_pack_integration_test.py::test_foul_plays_actual_team_sources_are_a_new_regime_under_the_validators_repack": {
@@ -3123,18 +3123,18 @@
   },
   "src/main/anchors/input_log_integration_test.py::test_every_kept_decision_replays_to_the_live_row_and_scores": {
    "status": "pass",
-   "commit": "bc81a9a72f3c0279b9658d9ca596757f57c355c9",
-   "at": "2026-10-28T19:49:43Z",
-   "duration_s": 4.49,
+   "commit": "84e5acbb89966ce27d43b835155439ee235e72ff",
+   "at": "2026-11-06T09:15:01Z",
+   "duration_s": 2.49,
    "contention": 1.0,
    "detail": ""
   },
   "src/main/anchors/live_side_test.py::test_a_rust_bot_plays_our_side_on_its_own_reading_and_its_streams_are_seeded": {
    "status": "pass",
-   "commit": "bc81a9a72f3c0279b9658d9ca596757f57c355c9",
-   "at": "2026-10-28T19:49:43Z",
-   "duration_s": 4.65,
-   "contention": 1.0,
+   "commit": "84e5acbb89966ce27d43b835155439ee235e72ff",
+   "at": "2026-11-06T09:15:01Z",
+   "duration_s": 6.61,
+   "contention": 1.49,
    "detail": ""
   },
   "src/main/anchors/our_side_played_team_integration_test.py::test_the_validators_repack_plays_the_same_sets_as_our_side_pack[away]": {
@@ -3195,17 +3195,17 @@
   },
   "src/main/anchors/peer_patience_integration_test.py::test_a_seventy_second_decision_off_the_loop_keeps_the_kakuna_peer_connected": {
    "status": "pass",
-   "commit": "bc81a9a72f3c0279b9658d9ca596757f57c355c9",
-   "at": "2026-10-28T19:49:43Z",
-   "duration_s": 98.8,
+   "commit": "84e5acbb89966ce27d43b835155439ee235e72ff",
+   "at": "2026-11-06T09:15:01Z",
+   "duration_s": 114.41,
    "contention": 1.0,
    "detail": ""
   },
   "src/main/anchors/peer_patience_integration_test.py::test_the_negative_control_a_blocked_loop_drops_the_peer_and_its_forfeit_win_is_void": {
    "status": "pass",
-   "commit": "bc81a9a72f3c0279b9658d9ca596757f57c355c9",
-   "at": "2026-10-28T19:49:43Z",
-   "duration_s": 262.96,
+   "commit": "84e5acbb89966ce27d43b835155439ee235e72ff",
+   "at": "2026-11-06T09:15:01Z",
+   "duration_s": 261.61,
    "contention": 1.0,
    "detail": ""
   },
@@ -4809,116 +4809,252 @@
    "contention": 1.47,
    "detail": ""
   },
+  "src/main/value_search/honest_inv_test.py::test_the_control_moves_with_I": {
+   "status": "pass",
+   "commit": "84e5acbb89966ce27d43b835155439ee235e72ff",
+   "at": "2026-11-06T09:15:01Z",
+   "duration_s": 3.2,
+   "contention": 1.0,
+   "detail": ""
+  },
+  "src/main/value_search/honest_inv_test.py::test_the_fixture_covers_every_channel": {
+   "status": "pass",
+   "commit": "84e5acbb89966ce27d43b835155439ee235e72ff",
+   "at": "2026-11-06T09:15:01Z",
+   "duration_s": 10.49,
+   "contention": 1.48,
+   "detail": ""
+  },
+  "src/main/value_search/honest_inv_test.py::test_the_honest_record_does_not_move[L1]": {
+   "status": "pass",
+   "commit": "84e5acbb89966ce27d43b835155439ee235e72ff",
+   "at": "2026-11-06T09:15:01Z",
+   "duration_s": 6.53,
+   "contention": 2.43,
+   "detail": ""
+  },
+  "src/main/value_search/honest_inv_test.py::test_the_honest_record_does_not_move[L2]": {
+   "status": "pass",
+   "commit": "84e5acbb89966ce27d43b835155439ee235e72ff",
+   "at": "2026-11-06T09:15:01Z",
+   "duration_s": 5.95,
+   "contention": 1.38,
+   "detail": ""
+  },
+  "src/main/value_search/honest_inv_test.py::test_the_honest_record_does_not_move[L3]": {
+   "status": "pass",
+   "commit": "84e5acbb89966ce27d43b835155439ee235e72ff",
+   "at": "2026-11-06T09:15:01Z",
+   "duration_s": 3.73,
+   "contention": 1.36,
+   "detail": ""
+  },
+  "src/main/value_search/honest_inv_test.py::test_the_honest_record_does_not_move[L4]": {
+   "status": "pass",
+   "commit": "84e5acbb89966ce27d43b835155439ee235e72ff",
+   "at": "2026-11-06T09:15:01Z",
+   "duration_s": 4.42,
+   "contention": 1.34,
+   "detail": ""
+  },
+  "src/main/value_search/honest_inv_test.py::test_the_honest_record_does_not_move[L5]": {
+   "status": "pass",
+   "commit": "84e5acbb89966ce27d43b835155439ee235e72ff",
+   "at": "2026-11-06T09:15:01Z",
+   "duration_s": 3.21,
+   "contention": 1.26,
+   "detail": ""
+  },
+  "src/main/value_search/honest_inv_test.py::test_the_honest_record_does_not_move[L6]": {
+   "status": "pass",
+   "commit": "84e5acbb89966ce27d43b835155439ee235e72ff",
+   "at": "2026-11-06T09:15:01Z",
+   "duration_s": 346.77,
+   "contention": 1.01,
+   "detail": ""
+  },
+  "src/main/value_search/honest_inv_test.py::test_the_leaky_builder_fails_it[L1]": {
+   "status": "pass",
+   "commit": "84e5acbb89966ce27d43b835155439ee235e72ff",
+   "at": "2026-11-06T09:15:01Z",
+   "duration_s": 11.16,
+   "contention": 1.25,
+   "detail": ""
+  },
+  "src/main/value_search/honest_inv_test.py::test_the_leaky_builder_fails_it[L2]": {
+   "status": "pass",
+   "commit": "84e5acbb89966ce27d43b835155439ee235e72ff",
+   "at": "2026-11-06T09:15:01Z",
+   "duration_s": 3.66,
+   "contention": 1.01,
+   "detail": ""
+  },
+  "src/main/value_search/honest_inv_test.py::test_the_leaky_builder_fails_it[L3]": {
+   "status": "pass",
+   "commit": "84e5acbb89966ce27d43b835155439ee235e72ff",
+   "at": "2026-11-06T09:15:01Z",
+   "duration_s": 2.52,
+   "contention": 1.0,
+   "detail": ""
+  },
+  "src/main/value_search/honest_inv_test.py::test_the_leaky_builder_fails_it[L4]": {
+   "status": "pass",
+   "commit": "84e5acbb89966ce27d43b835155439ee235e72ff",
+   "at": "2026-11-06T09:15:01Z",
+   "duration_s": 3.39,
+   "contention": 1.0,
+   "detail": ""
+  },
+  "src/main/value_search/honest_inv_test.py::test_the_leaky_builder_fails_it[L5]": {
+   "status": "pass",
+   "commit": "84e5acbb89966ce27d43b835155439ee235e72ff",
+   "at": "2026-11-06T09:15:01Z",
+   "duration_s": 3.29,
+   "contention": 1.0,
+   "detail": ""
+  },
+  "src/main/value_search/honest_inv_test.py::test_the_leaky_builder_fails_it[L6]": {
+   "status": "pass",
+   "commit": "84e5acbb89966ce27d43b835155439ee235e72ff",
+   "at": "2026-11-06T09:15:01Z",
+   "duration_s": 86.24,
+   "contention": 1.0,
+   "detail": ""
+  },
+  "src/main/value_search/honest_worlds_integration_test.py::test_eight_worlds_each_reproducing_I": {
+   "status": "pass",
+   "commit": "84e5acbb89966ce27d43b835155439ee235e72ff",
+   "at": "2026-11-06T09:15:01Z",
+   "duration_s": 3.78,
+   "contention": 1.41,
+   "detail": ""
+  },
+  "src/main/value_search/honest_worlds_integration_test.py::test_the_build_is_deterministic_and_keyed_by_I": {
+   "status": "pass",
+   "commit": "84e5acbb89966ce27d43b835155439ee235e72ff",
+   "at": "2026-11-06T09:15:01Z",
+   "duration_s": 0.0,
+   "contention": 1.38,
+   "detail": ""
+  },
+  "src/main/value_search/honest_worlds_integration_test.py::test_the_playout_tool_opens_every_world_at_the_live_decision": {
+   "status": "pass",
+   "commit": "84e5acbb89966ce27d43b835155439ee235e72ff",
+   "at": "2026-11-06T09:15:01Z",
+   "duration_s": 0.04,
+   "contention": 1.53,
+   "detail": ""
+  },
   "src/main/value_search/name_variant_integration_test.py::test_no_world_of_the_variant_team_holds_a_move_twice_and_the_revealed_one_sits_in_its_true_slot": {
    "status": "pass",
-   "commit": "3dd8f72ed7ef7e1c7ba28d94fc0e041f3b024d52",
-   "at": "2026-10-27T17:40:10Z",
-   "duration_s": 26.72,
-   "contention": 1.58,
+   "commit": "84e5acbb89966ce27d43b835155439ee235e72ff",
+   "at": "2026-11-06T09:15:01Z",
+   "duration_s": 19.88,
+   "contention": 1.0,
    "detail": ""
   },
   "src/main/value_search/search_integration_test.py::test_honest_search_runs_on_sampled_worlds": {
    "status": "pass",
-   "commit": "3dd8f72ed7ef7e1c7ba28d94fc0e041f3b024d52",
-   "at": "2026-10-27T17:40:10Z",
-   "duration_s": 6.67,
-   "contention": 1.39,
+   "commit": "84e5acbb89966ce27d43b835155439ee235e72ff",
+   "at": "2026-11-06T09:15:01Z",
+   "duration_s": 5.92,
+   "contention": 1.37,
    "detail": ""
   },
   "src/main/value_search/world_legality_integration_test.py::test_the_builder_applies_the_rule_to_seen_and_never_seen_draws_and_raises_on_one_rejecting_the_truth": {
    "status": "pass",
-   "commit": "3dd8f72ed7ef7e1c7ba28d94fc0e041f3b024d52",
-   "at": "2026-10-27T17:40:10Z",
-   "duration_s": 1.9,
-   "contention": 1.39,
+   "commit": "84e5acbb89966ce27d43b835155439ee235e72ff",
+   "at": "2026-11-06T09:15:01Z",
+   "duration_s": 1.97,
+   "contention": 1.4,
    "detail": ""
   },
   "src/main/value_search/world_screen_parity_test.py::test_a_wrong_screen_is_caught": {
    "status": "pass",
-   "commit": "3dd8f72ed7ef7e1c7ba28d94fc0e041f3b024d52",
-   "at": "2026-10-27T17:40:10Z",
-   "duration_s": 11.04,
-   "contention": 1.41,
+   "commit": "84e5acbb89966ce27d43b835155439ee235e72ff",
+   "at": "2026-11-06T09:15:01Z",
+   "duration_s": 6.27,
+   "contention": 1.0,
    "detail": ""
   },
   "src/main/value_search/world_screen_parity_test.py::test_deliberately_wrong_worlds_refuse_nothing_after_the_stop": {
    "status": "pass",
-   "commit": "c0fd72bd81beed9948d71ec815ec524406dddd9b",
-   "at": "2026-10-27T19:45:18Z",
-   "duration_s": 2.04,
-   "contention": 1.87,
+   "commit": "84e5acbb89966ce27d43b835155439ee235e72ff",
+   "at": "2026-11-06T09:15:01Z",
+   "duration_s": 0.89,
+   "contention": 1.0,
    "detail": ""
   },
   "src/main/value_search/world_screen_parity_test.py::test_every_screened_replay_is_the_full_replay_cut_at_its_stop[ai_v14_01_base/step_36000000/random/win_s0_001#p1#10-rolls]": {
    "status": "pass",
-   "commit": "c0fd72bd81beed9948d71ec815ec524406dddd9b",
-   "at": "2026-10-27T19:45:18Z",
-   "duration_s": 24.93,
-   "contention": 2.99,
+   "commit": "84e5acbb89966ce27d43b835155439ee235e72ff",
+   "at": "2026-11-06T09:15:01Z",
+   "duration_s": 5.59,
+   "contention": 1.0,
    "detail": ""
   },
   "src/main/value_search/world_screen_parity_test.py::test_every_screened_replay_is_the_full_replay_cut_at_its_stop[ai_v14_01_base/step_36000000/random/win_s0_001#p1#7-seed]": {
    "status": "pass",
-   "commit": "c0fd72bd81beed9948d71ec815ec524406dddd9b",
-   "at": "2026-10-27T19:45:18Z",
-   "duration_s": 18.93,
-   "contention": 3.23,
+   "commit": "84e5acbb89966ce27d43b835155439ee235e72ff",
+   "at": "2026-11-06T09:15:01Z",
+   "duration_s": 4.18,
+   "contention": 1.0,
    "detail": ""
   },
   "src/main/value_search/world_screen_parity_test.py::test_every_screened_replay_is_the_full_replay_cut_at_its_stop[ai_v14_09_r0_offense_a/step_92000016/ext_ai_v14_07_g0p_k2/loss_s0_003#p2#5-seed]": {
    "status": "pass",
-   "commit": "c0fd72bd81beed9948d71ec815ec524406dddd9b",
-   "at": "2026-10-27T19:45:18Z",
-   "duration_s": 41.87,
-   "contention": 2.18,
+   "commit": "84e5acbb89966ce27d43b835155439ee235e72ff",
+   "at": "2026-11-06T09:15:01Z",
+   "duration_s": 2.69,
+   "contention": 1.0,
    "detail": ""
   },
   "src/main/value_search/world_screen_parity_test.py::test_the_lean_screen_builds_exactly_the_reference_worlds[10-rolls]": {
    "status": "pass",
-   "commit": "3dd8f72ed7ef7e1c7ba28d94fc0e041f3b024d52",
-   "at": "2026-10-27T17:40:10Z",
-   "duration_s": 3.23,
+   "commit": "84e5acbb89966ce27d43b835155439ee235e72ff",
+   "at": "2026-11-06T09:15:01Z",
+   "duration_s": 2.16,
    "contention": 1.0,
    "detail": ""
   },
   "src/main/value_search/world_screen_parity_test.py::test_the_lean_screen_builds_exactly_the_reference_worlds[10-seed]": {
    "status": "pass",
-   "commit": "3dd8f72ed7ef7e1c7ba28d94fc0e041f3b024d52",
-   "at": "2026-10-27T17:40:10Z",
-   "duration_s": 21.94,
-   "contention": 1.48,
+   "commit": "84e5acbb89966ce27d43b835155439ee235e72ff",
+   "at": "2026-11-06T09:15:01Z",
+   "duration_s": 4.07,
+   "contention": 1.0,
    "detail": ""
   },
   "src/main/value_search/world_screen_parity_test.py::test_the_lean_screen_builds_exactly_the_reference_worlds[29-seed]": {
    "status": "pass",
-   "commit": "3dd8f72ed7ef7e1c7ba28d94fc0e041f3b024d52",
-   "at": "2026-10-27T17:40:10Z",
-   "duration_s": 99.54,
-   "contention": 1.2,
+   "commit": "84e5acbb89966ce27d43b835155439ee235e72ff",
+   "at": "2026-11-06T09:15:01Z",
+   "duration_s": 62.18,
+   "contention": 1.0,
    "detail": ""
   },
   "src/main/value_search/world_screen_parity_test.py::test_the_lean_screen_builds_exactly_the_reference_worlds[32-seed]": {
    "status": "pass",
-   "commit": "3dd8f72ed7ef7e1c7ba28d94fc0e041f3b024d52",
-   "at": "2026-10-27T17:40:10Z",
-   "duration_s": 18.0,
-   "contention": 1.2,
+   "commit": "84e5acbb89966ce27d43b835155439ee235e72ff",
+   "at": "2026-11-06T09:15:01Z",
+   "duration_s": 10.87,
+   "contention": 1.0,
    "detail": ""
   },
   "src/main/value_search/world_screen_parity_test.py::test_the_lean_screen_builds_exactly_the_reference_worlds[43-seed]": {
    "status": "pass",
-   "commit": "3dd8f72ed7ef7e1c7ba28d94fc0e041f3b024d52",
-   "at": "2026-10-27T17:40:10Z",
-   "duration_s": 25.13,
+   "commit": "84e5acbb89966ce27d43b835155439ee235e72ff",
+   "at": "2026-11-06T09:15:01Z",
+   "duration_s": 17.67,
    "contention": 1.0,
    "detail": ""
   },
   "src/main/value_search/world_screen_parity_test.py::test_the_search_on_the_lean_screens_worlds_is_the_reference_search": {
    "status": "pass",
-   "commit": "3dd8f72ed7ef7e1c7ba28d94fc0e041f3b024d52",
-   "at": "2026-10-27T17:40:10Z",
-   "duration_s": 8.13,
-   "contention": 1.93,
+   "commit": "84e5acbb89966ce27d43b835155439ee235e72ff",
+   "at": "2026-11-06T09:15:01Z",
+   "duration_s": 3.42,
+   "contention": 1.0,
    "detail": ""
   },
   "src/main/x35/kakuna_test.py::test_the_real_peer_started_from_a_derived_config_verifies_the_registry_weights": {
@@ -4979,18 +5115,18 @@
   },
   "src/rust_sim/e2e_fuzz_golden_test.py::test_a_full_regeneration_equals_the_golden_and_the_taxonomy_byte_for_byte": {
    "status": "pass",
-   "commit": "f8eb5393ef286bb7f606534e87efdaee834b638e",
-   "at": "2026-10-27T17:03:54Z",
-   "duration_s": 503.11,
-   "contention": 1.04,
+   "commit": "84e5acbb89966ce27d43b835155439ee235e72ff",
+   "at": "2026-11-06T09:15:01Z",
+   "duration_s": 490.06,
+   "contention": 1.01,
    "detail": ""
   },
   "src/rust_sim/e2e_fuzz_golden_test.py::test_the_generators_first_battles_are_the_goldens_prefix": {
    "status": "pass",
-   "commit": "f8eb5393ef286bb7f606534e87efdaee834b638e",
-   "at": "2026-10-27T17:03:54Z",
-   "duration_s": 20.18,
-   "contention": 1.61,
+   "commit": "84e5acbb89966ce27d43b835155439ee235e72ff",
+   "at": "2026-11-06T09:15:01Z",
+   "duration_s": 17.11,
+   "contention": 1.6,
    "detail": ""
   },
   "src/utils/bridge/node_reject_bound_integration_test.py::test_refusals_reset_across_committed_decisions": {
@@ -5258,5 +5394,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-11-06T03:58:31Z"
+ "last_written": "2026-11-06T09:15:01Z"
 }
