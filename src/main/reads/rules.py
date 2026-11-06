@@ -36,11 +36,16 @@ with its reasons (N1-P FINDING 7).
 * ``prior_mix_ab`` -- the belief-prior-mix read (``belief_prior_mix_2026-10-26`` PREREG): each λ arm against a
   BANKED λ = 0 control (another read's committed per-game rows, sha-checked, never re-played), unit-paired on the
   same seeds, with a game-for-game determinism guard that re-plays a few banked units at λ = 0.
+* ``x60`` -- X60-T (``x60t_h_teams_2026-11-06`` PREREG §4-§11, AM-X60T-1; :mod:`main.reads.rules_x60`, byte-identical
+  to main's): this play pin parses and CHECKS the rule's params so ``plan`` accepts the spec. Its ``void.pin`` (a sha
+  or ``{arm: sha}``) and ``void.dose`` are CHECKED here, but the run-dir guards are READ only from a main checkout,
+  where ``assemble`` / ``decide`` / ``record`` run (PREREG §4): :func:`void_gate` refuses them here.
 """
 from __future__ import annotations
 
 import json
 import math
+import re
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple
 
@@ -183,19 +188,44 @@ BATCH2_VOID_ARM = {"SPRT": "sprt", "LRF": "lrfloor"}
 
 
 def _void_check(p: Mapping[str, Any], models: Any, *, required: bool) -> List[str]:
+    """Main's ``_void_check`` at 4d7367228 (AM-X60T-1's port), less the ``pool_seed`` key and the PENDING sha, which
+    this commit's specs do not use: ``pin`` is a commit sha or a pin per ARM ``{arm: sha}`` (X60-T REVIEW I m4),
+    ``dose`` is ``{reference, rel_tol}`` (§13.3)."""
     v = p.get("void")
     if v is None:
         return [f"void: required for arm {p.get('arm')!r} (its V-S1 / V-S2 / LR-F and K9(b) gate the read)"] if required \
             else []
-    if not (isinstance(v, dict) and set(v) == {"k9b_dir", "runs"} and isinstance(v["k9b_dir"], str)
-            and isinstance(v["runs"], dict) and v["runs"]):
-        return ["void: {k9b_dir: <dir of AM-6 K9(b) records>, runs: {label: run dir}}"]
+    if not (isinstance(v, dict) and {"k9b_dir", "runs"} <= set(v) <= {"k9b_dir", "runs", *VOID_RUN_DIR_GUARDS}
+            and isinstance(v["k9b_dir"], str) and isinstance(v["runs"], dict) and v["runs"]):
+        return ["void: {k9b_dir: <dir of AM-6 K9(b) records>, runs: {label: run dir}, [pin: <sha> | {arm: sha}], "
+                "[dose: {reference: <run dir>, rel_tol: <float>}]}"]
     probs = [f"void.runs: {lab!r} is not a model label" for lab in v["runs"] if lab not in models]
+
+    def _sha(x: Any) -> bool:
+        return isinstance(x, str) and re.fullmatch(r"[0-9a-f]{7,40}", x) is not None
+
+    pin = v.get("pin")
+    if "pin" in v and isinstance(pin, dict):           # a pin per ARM (X60-T REVIEW I m4: each arm trained at its own)
+        if not pin or not all(isinstance(a, str) and _sha(x) for a, x in pin.items()):
+            probs.append("void.pin: {arm: commit sha} (7 to 40 lowercase hex digits each)")
+        probs += [f"void.pin: no pin for {lab!r}'s arm {models[lab].arm!r}" for lab in v["runs"]
+                  if lab in models and models[lab].arm not in pin]
+    elif "pin" in v and not _sha(pin):
+        probs.append("void.pin: a commit sha (7 to 40 lowercase hex digits), or {arm: sha}")
+    dz = v.get("dose")
+    if "dose" in v and not (isinstance(dz, dict) and set(dz) == {"reference", "rel_tol"}
+                            and isinstance(dz["reference"], str) and dz["reference"]
+                            and isinstance(dz["rel_tol"], float) and 0.0 < dz["rel_tol"] <= 1e-3):
+        probs.append("void.dose: {reference: <the control's run dir>, rel_tol: <a float in (0, 1e-3]>}")
     probs += [f"void.runs.{lab}: a run dir path" for lab, r in v["runs"].items() if not (isinstance(r, str) and r)]
     on = [lab for lab, m in models.items() if m.arm == p.get("on")]
     probs += [f"void.runs: the ON model {lab!r} has no run (every ON seed is gated)" for lab in on
               if lab not in v["runs"]]
     return probs
+
+
+#: The ``params.void`` keys that read the run dir itself: CHECKED at this pin, READ only from a main checkout.
+VOID_RUN_DIR_GUARDS = ("pin", "dose")
 
 
 def void_gate(spec: Any) -> Optional[Dict[str, Dict[str, Any]]]:
@@ -209,6 +239,10 @@ def void_gate(spec: Any) -> Optional[Dict[str, Dict[str, Any]]]:
     v = (spec.params or {}).get("void")
     if not v:
         return None
+    here = [k for k in VOID_RUN_DIR_GUARDS if k in v]
+    if here:                                           # fail closed: this pin cannot read them (PREREG §4, AM-X60T-1)
+        raise RuleInputError(f"void.{'/'.join(here)}: the run-dir VOID guards are read only from a main checkout; "
+                             "run assemble / decide / record there, never at this play pin")
     b2 = BATCH2_VOID_ARM.get(str(spec.params.get("arm")))
     out: Dict[str, Dict[str, Any]] = {}
     for lab, run in sorted(v["runs"].items()):
@@ -854,6 +888,10 @@ RULES: Dict[str, Rule] = {
     "prior_mix_ab": Rule("prior_mix_ab", "belief prior mix: λ arms vs a banked λ = 0, unit-paired; a determinism guard",
                          _pm_check, _pm_inputs, _pm_decide, False),
 }
+
+from main.reads import rules_x60 as _X60  # noqa: E402  (it imports this module lazily: no cycle at import)
+
+RULES["x60"] = Rule("x60", _X60.RULE_DOCS["x60"], _X60.check, _X60.inputs, _X60.decide, False, _X60.reported)
 
 
 def inputs(rule: str, cells: Mapping[str, Any], params: Mapping[str, Any], spec: Any) -> Dict[str, Any]:

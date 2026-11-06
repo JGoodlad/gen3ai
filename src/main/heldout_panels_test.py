@@ -11,13 +11,13 @@ from utils.paths import repo_path
 def test_registry_verifies_against_the_committed_panels():
     got = H.verify()
     assert got == {"home72": 72, "away": 20, "heldout72": 72, "heldout72_hpfix": 72, "forum72": 72, "p72": 72,
-                   "forum216b": 216}
+                   "forum216b": 216, "r72": 72}      # r72: X60-T's play pin only (AM-X60T-1), its files local
 
 
 def test_held_out_panels_are_exactly_the_unfamiliar_ones():
     assert set(H.panel_names(held_out_only=True)) == {"heldout72", "heldout72_hpfix", "forum72", "p72", "forum216b"}
-    # The in-pool panels exist, but nothing is refused for holding them (the pool does).
-    assert set(H.panel_names()) - set(H.panel_names(held_out_only=True)) == {"home72", "away"}
+    # The in-pool panels exist, but nothing is refused for holding them (the pool does); r72 is PRACTISED (AM-X60T-1).
+    assert set(H.panel_names()) - set(H.panel_names(held_out_only=True)) == {"home72", "away", "r72"}
 
 
 def test_registry_names_the_digests_the_x37a_registrations_froze():

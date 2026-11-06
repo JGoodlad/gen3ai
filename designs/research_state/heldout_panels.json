@@ -125,6 +125,21 @@
    "held_out_from": [
     "training"
    ]
+  },
+  "r72": {
+   "role": "PRACTISED positive control of X60-T (R72, PREREG x60t_h_teams_2026-11-06 §9; AM-X60T-1): 72 teams of the human-built ladder corpus hr_spec_v1.r3, trained on by X60-T's ON arm by design and never by C0 or D1; NEVER a held-out panel. Registered ONLY at X60-T's play pin (de15dfc7b + AM-X60T-1), never on main",
+   "source": "hr_spec_v1.r3 (human ladder teams, main.human_data.hteams; LOCAL ONLY: the team files never enter git, and their names are reversible battle pointers, PREREG §9 / REVIEW I M5)",
+   "team_dir": "/home/goodlad/gen3ai_archive/human_teams/hr_spec_v1.r3/r72/teams",
+   "n": 72,
+   "content_digest": "10364442c1c3fe5216f46ab445455497dc350a9f9601fc7af9af1eb39a335501",
+   "draw_rule": "<= 1 per account: accounts shuffled by Random(6072), the first 72, one team each by Random(f'6072|<account>') (the local manifest's rule; drawn AFTER r3 was built and BEFORE any X60 game, PREREG §9 m5)",
+   "seed": 6072,
+   "manifest": {
+    "path": "/home/goodlad/gen3ai_archive/human_teams/hr_spec_v1.r3/r72/manifest.json",
+    "sha256": "7aa2342e2626785d67079cd9b6542f69e081b50ce4710a528b4aecdf078ae66f"
+   },
+   "frozen_since": "2026-11-06 (X60-T PREREG §9, registered at 296747d50; this play-pin commit, AM-X60T-1)",
+   "held_out_from": []
   }
  },
  "subsets_covered_by_parents": {
