@@ -355,7 +355,8 @@ never saw", and U is reported with its contamination named.
   account; both panel nets (§3.1 before the fill, the exact-set guard after). Its size is measured at the build
   (≈ 2,000–3,000 teams, ESTIMATE; D1's corpus held 1,981). It is also the corpus `n1_hrep_v1` (X61 PREREG §10;
   X53-N1's N1H), built once under one id; its two entry points (`--team-mix n1_hrep_v1`, `--human-data teams:`)
-  become one provenance record before either arm launches (§9 FINDING 10).
+  become one provenance record before either arm launches (§9 FINDING 10). BUILT 2026-11-06: `--team-mix` refuses a
+  `"human_data": true` corpus, so `--human-data teams:` is its one entry point (arch doc §6).
 - **The contrast T − D1** (REVIEW B M2): H-TEAMS's five finals against D1's (`rb_x35_d1wide_s3501`–`s3505`) on **H +
   F, equal weight**, units 0–29 of each (600 games per final and panel; D1's units 7–29 are new), §6.3's interval, one
   look, on the seeds the primary ended with (3 v 3 if look 1 ended it, else 5 v 5). **The arena is chosen so each arm owns one panel:** F is D1's own population, H is H-TEAMS's.
@@ -454,7 +455,7 @@ rule read them; R72 asks the delivery question directly), the heterogeneity guar
 
 | # | build | T | B |
 |---|---|---:|---:|
-| 1 | the switch `agents.info_levers.human_data` (grammar, hash, `record()`, provenance in the config / metadata / lineage, the fork / resume refusal, the consumer snapshot check, the off-means-off gates; arch doc §6) | 1.5 | 1.5 |
+| 1 | the switch `agents.info_levers.human_data` (grammar, hash, `record()`, provenance in the config / metadata / lineage, the fork / resume refusal, the consumer snapshot check, the off-means-off gates; arch doc §6). **BUILT 2026-11-06 for `teams` on main** (provenance in `metadata.json` and the lineage, not `model_config.json`; no consumer snapshot check); its side-pin backport is X60-T's | 1.5 | 1.5 |
 | 2 | the read rule: an X60-keyed variant in `main.x35.d1` and a `main.reads` rule (§6.3's interval ported from `power.py`, the futility look, the classes, I_F, R72, the contrasts, the verdict table); D1's, D3's and X61P's reads re-decide unchanged (golden) | 1.5 | 1.5 |
 | 3 | R72: the draw, its registration as a PRACTISED set, its `main.h2h` panel | 0.5 | 0.5 |
 | 4 | H-TEAMS: the r<n> team corpus (export, completion, HP repair, validator, soak, cap, both nets) and `teams:` resolving to the team-mix path | 1.5 | — |
@@ -516,7 +517,8 @@ a verdict speaks for it, and a drift alarm (arch doc §8) sends it to a re-read.
 
 - **The switch:** `agents.info_levers.human_data` (the grammar is the architecture doc's §6): parse, canonicalise,
   hash, `record()` {label, canonical, hash, rowset or model id, the chain down to the snapshot's manifest sha256};
-  training honours `bc` / `teams` / `kl`; eval and play honour only `off`.
+  training honours `bc` / `teams` / `kl`; eval and play honour only `off`. BUILT 2026-11-06 with `teams` alone honoured
+  in training (`bc` / `kl` parsed and refused as NOT BUILT); the arch doc §6 is the built shape.
 - **The rowset builder:** reads the snapshot through the manifest check, applies §3's rules in order (exclusion on
   revealed facts → completion → labels), writes rows plus a rows manifest, and registers the rowset with its panel set.
 - **H-BC in the learner:** a fold in the eager tail after every stash reader, guarded; its loss joins K9; logs
@@ -581,3 +583,4 @@ Every falsifier is an interval statement (REVIEW B m7, REVIEW D m4): a bound wit
 | 2026-10-26 | **X60 REDESIGNED (pending review), conditional on X59-S** | both routes written before X59-S is read (X60-B on "H-BC first", none on a closure, X60-T otherwise); the primary on F alone (P72 fill-adjacent, H the levers' own population); ONE interval (binomial + a 1.0 pp seed-term floor + a Welch guard, X59-S's rule) simulated as registered; look 1 a futility look only; NO-USEFUL-GAIN split by delivery into NO-TRANSFER / NOT-DELIVERED; the in-house meter I_F on the primary panel; the positive control R72 on the lever's own teams; T − D1 on H + F (one panel owned by each); P-BC after a GAIN on fresh games; 5 fixed seeds, C0 and D1 shared | D1's rule as is (false GAIN 3.1–7.2 %, GAIN at look 1); REVIEW D's t-at-df multiplier (no better at the same cost, NULL 0.28); F + P72 as the primary (P72 fill-adjacent); H's practised half in ON's rows (changes the treatment, burns H, an unmeasured dose); an adaptive seed rule; 8 seeds (+25 GPU-h for +0.16 power at the measured noise) | `x60_redesign_2026-10-26/power.py`, `results/power.json`; REVIEW D B1, M6; REVIEW B M1–M3 |
 | 2026-10-26 | **FR-2 TOOL BUILT, NOT RUN** | `main.x50_r1.read_fr2`: pairs by `(battle, seat, k)` (1:1 in R1's extraction: 75,563 keys in both modes, 108 in mode 3 alone, 70,603 usable), R-b1's float64 masked policy NLL, R0's joint battle bootstrap, the sha gates, a resumable chunked cache; a viewer check against `trainee_side` that REFUSES the existing extraction, which holds the TRAINEE's seat only | reading the trainee seat as if it were the registered opponent seat; inventing an opponent-seat pairing | one part (29,902 rows, both models, 2 threads) took 144 s at 2.3 GB peak: 5 parts ≈ 12 min ≈ 0.2 lane-h for an extraction of this size |
 | 2026-10-27 | **FR-2 EXCLUSION BUILT (Amendment 4c)** | `main.x50_r1.fr2_exclude` + `--exclude` on `genc` and `read_fr2`: a battle whose stream starts a silently ending volatile drops from both modes; 33 of 2,306 traces flagged (22 Destiny Bond, 6 trapped, 3 Snatch, 2 Endure); G-ENC with it PASS (2,077 equal, 187 refused-choice, 9 short-by-one, 33 excluded) | dropping only G-ENC's 11 DIFF battles (a stale cell can sit at a decision only the opponent's seat has); a per-row drop (needs the old reader) | G-ENC at `0534e90a6` FAILED on 11 traces, every differing cell one of these volatiles (27 rows of 465, recorded 1, read 0) |
+| 2026-11-06 | **The switch BUILT for `teams` (§6.9 build 1; arch doc §6)** | `teams:<rowset>@<share>` = the team-mix path, sides both, the whole corpus, `@0` the null dose; `bc` / `kl` refused as NOT BUILT; the corpus outside git behind a committed stub; F-M7's guard built; provenance in `metadata.json` and the lineage | a `model_config.json` field (it would make an ON checkpoint unloadable at the eval harness's commit) | the arch doc's decision record |

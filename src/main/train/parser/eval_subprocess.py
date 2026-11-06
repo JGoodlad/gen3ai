@@ -30,6 +30,19 @@ def _team_mix_value(value: str) -> str:
     return value
 
 
+def _human_data_value(value: str) -> str:
+    """``--human-data``'s ``type=``: the grammar's SYNTAX check (``agents.info_levers.human_data.parse``) at parse
+    time; whether the rowset exists and the lever is built is the trainer's startup (``main.train.human_data_setup``).
+    Returns the value AS TYPED (``metadata.json:cli_args`` records it; ``_human_data`` records the canonical)."""
+    from agents.info_levers.human_data import HumanDataError, parse
+
+    try:
+        parse(value)
+    except HumanDataError as e:
+        raise argparse.ArgumentTypeError(str(e)) from None
+    return value
+
+
 def add_eval_subprocess_flags(parser: argparse.ArgumentParser) -> None:
     """Add this family's flags to `parser`, in their original order."""
     # --- Subprocess eval ---
@@ -368,6 +381,16 @@ def add_eval_subprocess_flags(parser: argparse.ArgumentParser) -> None:
                         help="Which side(s) --team-mix widens: both (the default when --team-mix is set; D1), "
                              "trainee, or opponent (D2). Requires --team-mix; an --exploiter run or a pinned "
                              "--trainee-team(s) takes 'opponent' only.")
+    parser.add_argument("--human-data", dest="human_data", type=_human_data_value, default=None,
+                        metavar="CLAUSE",
+                        help="THE HUMAN-DATA SWITCH (human_data_v1; designs/endstate/human_data_architecture.md "
+                             "§6): off | teams:<rowset>@<share> (BUILT: the rowset's human-built team corpus joins "
+                             "the team draw on BOTH sides with probability SHARE in [0, 1], the whole corpus, as "
+                             "--team-mix <corpus>@ALL:<share> --team-mix-sides both would; 0 = the null dose) | "
+                             "bc:<rowset>@<coef> / kl:<model>@<coef> (NOT BUILT: refused). Untyped = off. A "
+                             "--model launch whose source run carries a clause REFUSES unless this is typed (the "
+                             "clause or off); the launcher's restarts re-pass it. Refused beside --team-mix. "
+                             "Stamped at startup as [HUMAN-DATA] lever=... rowset=... rows_sha=...")
     parser.add_argument("--allow-untaught-teacher", dest="allow_untaught_teacher",
                         action="store_true",
                         help="RESEARCH override: allow --trainee-team(s) to pin a team that is a "

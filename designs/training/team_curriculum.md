@@ -65,6 +65,11 @@ conflates pilot competence with team strength (see the tracking section).
   (`main.x35.batch.ARM_PINS`; X61's `main.x61.arms.PIN`). The `CORPORA` registry a run sees is its pin's own: N1-P's pin
   (`batch.N1P_PIN`) registers `w_forum_v1` and `n1_proc_v1` only. A large corpus soaks in
   chunks of rounds (`soak --first-round`, then `soak merge`).
+- **A HUMAN-DATA corpus never enters here** (REVIEW F F-M7): every corpus reader refuses a manifest saying
+  `"human_data": true` (`utils.team_corpora.refuse_human_data`), and the parser refuses a registered human id. A
+  replay-built corpus lives outside git (`utils.team_corpora.human`) and enters only as `--human-data
+  teams:<rowset>@<share>`, which resolves to this same mix, sides both, its whole tier `ALL`
+  (`designs/endstate/human_data_architecture.md` §6).
 - **The startup guard** (`main.train.matchup_setup.team_mix_guard`, FATAL_CONFIG on any failure): the held-out
   panel registry verifies; `main.heldout_panels.contamination` finds NO corpus team that is an exact copy or near
   neighbour (≥ 4 shared mon sets) of a HELD-OUT panel; the validator dropped NO corpus team (corpus teams go through

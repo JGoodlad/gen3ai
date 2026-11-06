@@ -106,6 +106,7 @@ INHERITED_DESTS: FrozenSet[str] = RECORDED_DESTS | RESTART_ONLY_DESTS
 OWN_ROUTE: Dict[str, str] = {
     "team_mix": "matchup_setup.inherit_team_mix: a same-run restart restores it, a fork never does",
     "team_mix_sides": "matchup_setup.inherit_team_mix (with --team-mix)",
+    "human_data": "human_data_setup.decide: NEVER inherited; a --model source carrying a clause REFUSES unless typed",
 }
 
 #: Tri-state `ModelVersion` flags that `config.resolve_eval_sentinel_regime` resolves (not a plain `_resolve` line).

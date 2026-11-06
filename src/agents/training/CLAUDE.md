@@ -80,7 +80,8 @@ changes in the same commit as the code.
   in-place `model.save(path)`: a killed write leaves a torn file at a name a reader trusts. A checkpoint commits as
   zip, then sidecars, then `latest.txt` LAST (`run_io.commit_checkpoint`; `checkpoint_writes.md`).
 - A live lever's supply line goes through `lever_supply.loud`. Team corpora live in `src/utils/team_corpora/`, never
-  `data/` (a pinned run reads `data/` from main).
+  `data/` (a pinned run reads `data/` from main); a HUMAN one lives outside git behind a committed stub
+  (`utils.team_corpora.human`) and enters only as `--human-data teams:`.
 
 ## The collector, compile, value
 

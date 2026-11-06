@@ -25,7 +25,9 @@ to the artefact it must equal; a key renamed in the doc fails loudly (its line i
   `BUILT`, no PROPOSED row, and the module's `LEVERS` equal the lever heads of the doc's one grammar line.
 - **T3 pinned numbers.** Each `PINNED` status line equals its value computed from the registry or the card's
   `results.json`, formatted by the declared rule (exact string equality: rounding is part of the declaration).
-- **T4 production is off.** Pre-build the production mirror has no `human_data` key; post-build it resolves `off`.
+- **T4 production is off.** Pre-build the production mirror has no `human_data` key; post-build it resolves `off`
+  (an absent key resolves to the switch's default, `off`: the mirror's keys are recorded `model_config.json` fields,
+  which the clause deliberately is not).
 - **T5 rowsets track the panels.** Every rowset not `retired` records the held-out panel set it excluded, and that set
   equals the panel registry's current one (a new panel registration retires it).
 
@@ -158,7 +160,7 @@ def check_switch(doc: str, deleted: str, built: bool, levers: Optional[Set[str]]
         out.append(f"{DOC} §6 grammar levers {sorted(heads)} != {MODULE}.LEVERS {sorted(levers)}")
     if not built and "human_data" in prod:
         out.append(f"the production mirror has 'human_data' = {prod['human_data']!r} but {MODULE} is not built")
-    if built and prod.get("human_data") != "off":
+    if built and prod.get("human_data", "off") != "off":
         out.append(f"the production mirror's human_data is {prod.get('human_data')!r}; production must be 'off'")
     return out
 
@@ -304,6 +306,7 @@ def test_meta_t2_t4_catch_a_built_switch_the_doc_does_not_admit():
     assert check_switch(_DOC, _DELETED, True, {"bc", "teams"}, {"human_data": "off"})       # doc still NOT BUILT
     built_doc = _DOC.replace(": NOT BUILT", ": BUILT")
     assert check_switch(built_doc, "", True, {"bc", "teams"}, {"human_data": "off"}) == []
+    assert check_switch(built_doc, "", True, {"bc", "teams"}, {}) == []                       # absent resolves off
     assert check_switch(built_doc, "", True, {"bc", "teams", "kl"}, {"human_data": "off"})   # grammar != module
     assert check_switch(built_doc, _DELETED, True, {"bc", "teams"}, {"human_data": "off"})   # PROPOSED row left
     assert check_switch(built_doc, "", True, {"bc", "teams"}, {"human_data": "bc:x@1"})      # production not off

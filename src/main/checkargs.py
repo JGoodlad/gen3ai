@@ -1023,8 +1023,9 @@ def main(raw: List[str] | None = None) -> int:
 
     _print_resolution(res["resolution"])
     _print_oracle_reveal(res.get("ns"))
+    human_fatal = _print_human_data(res.get("ns"))
     _print_behaviour_check(res.get("ns"))
-    fork_fatal = _print_diagnostic_fork(res.get("ns"))
+    fork_fatal = _print_diagnostic_fork(res.get("ns")) or human_fatal
     fork_fatal = _print_grow_fork(res) or fork_fatal
     _print_fork_lr_inheritance(res["resolution"])
     shaped_fatal = _print_shaped_reward(res.get("shaped_reward"), argv, a.pin)
@@ -1327,6 +1328,20 @@ def _print_oracle_reveal(ns) -> None:
           "the trainee's team too; the in-loop eval plays at this mode). RESUME-IMMUTABLE: recorded in "
           "model_config.json, inherited on a flagless resume, a flip is refused.")
     print(f"      canonical {rec['canonical']}   hash {rec['hash']}")
+
+
+def _print_human_data(ns) -> str | None:
+    """THE HUMAN-DATA SWITCH the launch would decide (`main.train.human_data_setup.decide`, the trainer's own call, over
+    the effective namespace): the clause, its hash and the `[HUMAN-DATA]` stamp, or the refusal (returned, so the
+    verdict below says the launch would fail). Printed on every argv: `off` says so."""
+    if ns is None:
+        return None
+    from main.train.human_data_setup import report_lines
+
+    lines, refusal = report_lines(ns)
+    for line in lines:
+        print(f"  {line}")
+    return refusal
 
 
 def _print_behaviour_check(ns) -> None:

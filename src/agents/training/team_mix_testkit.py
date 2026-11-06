@@ -45,5 +45,37 @@ def install_corpus(monkeypatch, tmp_path: Path, texts: Sequence[str], tiers: Opt
 
 def clear_corpus_cache() -> None:
     import utils.team_corpora as TC
+    from utils.team_corpora import human as H
 
     TC.load_corpus.cache_clear()
+    getattr(H.load, "cache_clear", lambda: None)()      # a test may have monkeypatched `load` itself
+
+
+TEST_HUMAN_CORPUS = "hr_t_v1.r1"
+
+
+def install_human_corpus(monkeypatch, tmp_path: Path, texts: Sequence[str], name: str = TEST_HUMAN_CORPUS,
+                         register: bool = True) -> Path:
+    """A synthetic HUMAN team corpus (``utils.team_corpora.human``): written under a temp
+    ``$GEN3AI_ARCHIVE_DIR/human_teams/<name>/`` with ``"human_data": true``, a tier ``ALL`` and a soak record, and
+    (``register``) its stub written into a temp registry the module reads. Never a real human team."""
+    import utils.team_corpora as TC
+    from utils.team_corpora import MANIFEST_NAME
+    from utils.team_corpora import human as H
+
+    archive = tmp_path / "archive"
+    monkeypatch.setenv("GEN3AI_ARCHIVE_DIR", str(archive))
+    d = write_corpus(archive / "human_teams" / name, texts, {"ALL": len(texts)}, name=name)
+    man = json.loads((d / MANIFEST_NAME).read_text())
+    man["human_data"] = True
+    (d / MANIFEST_NAME).write_text(json.dumps(man, indent=1))
+    (d / H.SOAK_NAME).write_text(json.dumps({"corpus": name, "battles_finished": 0}))
+    reg = tmp_path / "human_corpora.json"
+    if not reg.exists():
+        reg.write_text(json.dumps({"schema": H.STUB_SCHEMA, "corpora": {}}))
+    monkeypatch.setattr(H, "REGISTRY", reg)
+    H.load.cache_clear()
+    TC.load_corpus.cache_clear()
+    if register:
+        H.register(name)
+    return d

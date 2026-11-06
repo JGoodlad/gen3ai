@@ -401,6 +401,12 @@ def gen3ai_archive_dir() -> Path:
     return Path(os.environ.get(ARCHIVE_DIR_ENV_VAR) or (Path.home() / "gen3ai_archive"))
 
 
+def human_teams_dir() -> Path:
+    """Where HUMAN-BUILT team corpora live: ``<gen3ai_archive_dir()>/human_teams/<id>/``, OUTSIDE git (human replay
+    data never leaves this machine; ``utils.team_corpora.human`` holds only their committed sha256 stubs)."""
+    return gen3ai_archive_dir() / "human_teams"
+
+
 def run_skip_reason(run_name: str) -> str:
     """The message a test should skip with when :func:`trace_glob` returns ``None``."""
     return (

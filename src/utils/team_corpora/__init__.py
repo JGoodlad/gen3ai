@@ -133,9 +133,26 @@ def read_dir(directory: Path) -> Tuple[Dict[str, object], Tuple[Dict[str, object
     return man, rows, digest, hashlib.sha256(man_bytes).hexdigest()
 
 
-def load_dir(directory: Path, tier: str, name: str = "") -> Corpus:
-    """One verified tier of the corpus in ``directory`` (tests build corpora in a temp dir through this)."""
+#: The manifest key a HUMAN-DATA corpus carries (``"human_data": true``): REVIEW F F-M7's ONE-ENTRY-POINT guard.
+HUMAN_DATA_KEY = "human_data"
+
+
+def refuse_human_data(man: Dict[str, object], where: str) -> None:
+    """THE F-M7 THROWING GUARD: a corpus whose manifest says ``"human_data": true`` enters training ONLY through
+    ``--human-data teams:<rowset>@<share>`` (``utils.team_corpora.human``), so its provenance can never read ``off``.
+    Every other reader (``--team-mix``, ``load_corpus``, a builder) is refused here."""
+    if man.get(HUMAN_DATA_KEY) is True:
+        raise CorpusError(f"{where}: this corpus is HUMAN DATA (manifest \"human_data\": true); it enters training "
+                          "only through --human-data teams:<rowset>@<share>, never --team-mix "
+                          "(designs/endstate/human_data_architecture.md §6, REVIEW F F-M7)")
+
+
+def load_dir(directory: Path, tier: str, name: str = "", *, human_data_ok: bool = False) -> Corpus:
+    """One verified tier of the corpus in ``directory`` (tests build corpora in a temp dir through this).
+    ``human_data_ok`` is passed by ``utils.team_corpora.human`` alone (:func:`refuse_human_data`)."""
     man, rows, data_sha, man_sha = read_dir(directory)
+    if not human_data_ok:
+        refuse_human_data(man, f"corpus {name or directory}")
     check_label_encodable([str(r["id"]) for r in rows], [str(r["text"]) for r in rows], f"corpus {name or directory}")
     tiers = man["tiers"]
     if tier not in tiers:
