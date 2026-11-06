@@ -123,7 +123,142 @@ def test_the_identity_guard_drops_a_misordered_log(monkeypatch):
     assert not any(r["n"] == MISS_N for r in rows)
     assert st["labels_kept"] == st["labels_recorded"] - 1
     lost = {k: v for k, v in st["drop"].items() if k.startswith("label:")}
-    assert sum(lost.values()) == 1, st["drop"]
+    # the naive prefix opens decision 22, not 23: rebuild_row's decision-index check removes it (REVIEW R-m1)
+    assert lost == {"label:rebuild:BankError": 1}, st["drop"]
+
+
+@pytest.mark.sim
+@pytest.mark.integration
+def test_a_wrong_rebuilt_row_reaches_the_frame_guard_and_is_dropped(monkeypatch):
+    """The identity guard through the REAL path (REVIEW R-m1): the row rebuilt for the miss differs by one byte from
+    the live frame, so its digest differs and the label row is dropped as ``frame_sha256``."""
+    import base64
+
+    real = B.rebuild_row
+
+    def one_byte_off(log, side, k, key):
+        r = real(log, side, k, key)
+        if k == MISS_N:
+            raw = bytearray(base64.b64decode(r["b64"]))
+            raw[100] ^= 0x01
+            r["b64"] = base64.b64encode(bytes(raw)).decode()
+        return r
+
+    monkeypatch.setattr(B, "rebuild_row", one_byte_off)
+    rows, st = B.game_rows(FIXTURE, "pstar_s")
+    assert not any(r["n"] == MISS_N for r in rows)
+    assert {k: v for k, v in st["drop"].items() if k.startswith("label:")} == {"label:frame_sha256": 1}
+
+
+def _edited_cell(tmp_path, edit):
+    """A copy of the fixture cell whose decision records ``edit`` changed in place (``edit(recs)``)."""
+    cell = tmp_path / "cell"
+    shutil.copytree(FIXTURE, cell)
+    recs = _recs()
+    edit(recs)
+    (cell / "search_decisions.jsonl").write_text("".join(json.dumps(r) + "\n" for r in recs))
+    return cell
+
+
+def _searched(recs, nth=0):
+    return [r for r in recs if r["searched"]][nth]
+
+
+@pytest.mark.sim
+@pytest.mark.integration
+@pytest.mark.parametrize("what,reason", [("q_key", "legal_mask"), ("played", "played"), ("key", "key"),
+                                         ("deal", "key"), ("turn", "turn")])
+def test_each_alignment_guard_drops_its_label_row(tmp_path, what, reason):
+    """REVIEW R-M3 / R-m10: a label row whose legal set is not ``q``'s keys, whose recorded ``played`` is not the
+    rebuilt command's index, whose key / deal or turn is not the rebuilt one, is dropped and counted by name."""
+    target = {}
+
+    def edit(recs):
+        r = _searched(recs, 5)
+        target["n"] = int(r["n"])
+        legal = sorted(int(a) for a in r["q"])
+        if what == "q_key":
+            extra = next(a for a in range(11) if a not in legal)
+            r["q"][str(extra)] = 0.5
+            r["log_pi"][str(extra)] = -9.0
+        elif what == "played":
+            r["played"] = next(a for a in legal if a != int(r["played"]))
+        elif what == "key":
+            r["key"] = r["key"] + "x"
+        elif what == "deal":
+            r["deal"] = "0" * 20
+        else:
+            r["turn"] = int(r["turn"]) + 1
+
+    rows, st = B.game_rows(_edited_cell(tmp_path, edit), "pstar_s")
+    assert st["drop"].get("label:" + reason) == 1, st["drop"]
+    assert st["labels_kept"] == st["labels_recorded"] - 1
+    assert not any(r["n"] == target["n"] for r in rows)
+
+
+def test_the_pstar_check_matches_ties_and_mismatches():
+    """REVIEW R-m10: P*'s greedy action is checked against the recorded one; two logits within TIE_EPS are excluded
+    (never passed by chance), a clear mismatch is 0."""
+    mask = [0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0]
+    rows = [{"mask": mask, "arm": 0, "played": 2, "pi_argmax": -1},
+            {"mask": mask, "arm": 1, "played": 1, "pi_argmax": 3},
+            {"mask": mask, "arm": 0, "played": 1, "pi_argmax": -1},
+            {"mask": mask, "arm": 0, "played": 2, "pi_argmax": -1},
+            {"mask": [0, 0, 1] + [0] * 8, "arm": 0, "played": 2, "pi_argmax": -1}]
+    lg = np.full((5, 11), -50.0)
+    lg[0, [1, 2, 3]] = [0.1, 0.9, 0.2]                      # P* plays 2 = played: 1
+    lg[1, [1, 2, 3]] = [0.1, 0.2, 0.9]                      # searched arm: P* plays 3 = pi_argmax: 1
+    lg[2, [1, 2, 3]] = [0.1, 0.9, 0.2]                      # P* plays 2, the game played 1: 0
+    lg[3, [1, 2, 3]] = [0.1, 0.9, 0.9 - B.TIE_EPS / 2]      # a near-tie: 2, excluded
+    lg[4, 2] = 0.0                                          # one legal action, the one played: 1
+    assert B.pstar_check(rows, lg) == [1, 1, 0, 2, 1]
+
+
+def test_more_than_half_a_percent_of_a_panel_s_label_rows_dropped_voids_the_bank():
+    """REVIEW R-M3: PREREG §10's first VOID, exactly at its bar (5 of 1,000 is not more than 0.5 %)."""
+    def shards(lost):
+        return [{"panel": "forum72", "label": "pstar_s", "rows": 2000, "labels": 1000 - lost,
+                 "pstar_mismatch": {"label": 0, "anchor": 0}, "pstar_ties": 0,
+                 "games": [{"labels_recorded": 1000, "drop": {"label:frame_sha256": lost, "frame_sha256": lost}}]},
+                {"panel": "p72", "label": "pstar_s", "rows": 2000, "labels": 1000, "games": [{"labels_recorded": 1000}],
+                 "pstar_mismatch": {"label": 0, "anchor": 0}, "pstar_ties": 0}]
+    assert B.summarize(shards(5))["void"] is None
+    got = B.summarize(shards(6))
+    assert got["void"] and "forum72" in got["void"][0] and got["per_panel"]["forum72"]["label_drop_frac"] == 0.006
+    assert got["per_panel"]["p72"]["label_drop_frac"] == 0
+
+
+@pytest.mark.sim
+@pytest.mark.integration
+def test_a_row_p_star_disagrees_with_is_dropped_from_the_shard(tmp_path, monkeypatch):
+    """REVIEW R-m10: a row whose P* greedy action is not the recorded one never reaches the shard; it is counted
+    (a label row's loss counts toward the VOID share)."""
+    state = tmp_path / "state"
+    cells = state / "anchor" / "u" / "pstar_s" / "cells"
+    cells.mkdir(parents=True)
+    shutil.copytree(FIXTURE, cells / "pstar_s__forum72__340__g10")
+    recs = _recs()
+    bad_n = int(_searched(recs, 3)["n"])
+
+    def fake_logits(model_zip, rows, threads):
+        lg = np.full((len(rows), 11), -50.0)
+        for i, r in enumerate(rows):
+            want = r["played"] if r["arm"] == 0 else r["pi_argmax"]
+            legal = [a for a, m in enumerate(r["mask"]) if m]
+            pick = want if r["n"] != bad_n else next(a for a in legal if a != want)
+            lg[i, pick] = 1.0
+        return lg
+
+    monkeypatch.setattr(B, "pstar_logits", fake_logits)
+    out = tmp_path / "bank"
+    out.mkdir()
+    rec = B.build_shard(state, out, "pstar_s", "forum72", 340,
+                        [{"unit": "pstar_s__forum72__340__g10", "game": 10}], tmp_path / "pstar.zip")
+    assert rec["pstar_mismatch"] == {"label": 1, "anchor": 0} and rec["rows"] == len(recs) - 1
+    z = np.load(out / f"{rec['name']}.npz")
+    assert bad_n not in z["n"].tolist() and (z["pstar_check"] == 1).all()
+    summ = B.summarize([rec])["per_panel"]["forum72"]
+    assert summ["label_drops"]["pstar_check"] == 1 and summ["labels_kept"] == summ["labels_recorded"] - 1
 
 
 @pytest.mark.sim
@@ -167,6 +302,14 @@ def test_the_bank_builds_checks_and_never_opens_a_result_file(tmp_path, monkeypa
 
     monkeypatch.setattr(builtins, "open", spy)
     out = tmp_path / "bank"
+    from main.anchors import server
+
+    monkeypatch.setattr(server, "engine_stamp", lambda: "port=x/1;env=y/1")
+    with pytest.raises(B.BankError, match="not E4"):          # a bank is built on S′-LIVE's engine or not at all
+        B.build(state, tmp_path / "other", workers=1, model=None, allow_dirty=True)
+    # the engine check itself is the line above; here it is E4 whatever this worktree's env stamp says (an
+    # untracked env/Cargo.lock is part of that stamp: REVIEW R-m12)
+    monkeypatch.setattr(server, "engine_stamp", lambda: B.E4)
     man = B.build(state, out, workers=1, model=None, allow_dirty=True)
     monkeypatch.setattr(builtins, "open", real_open)
     assert not set(opened) & B.FORBIDDEN
