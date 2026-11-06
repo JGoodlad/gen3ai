@@ -4,6 +4,7 @@ imports of the earlier looks' states, S′-LIVE's import pinned to its committed
 each spec unplayable until the pin amendment fills them."""
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -16,7 +17,9 @@ ENGINE = "port=e00a212a102f5ce2/94;env=3d0d5c9c0f5d3c23/129"
 
 X65 = "designs/research_state/measurements/x65_exit0_2026-11-05"
 SLIVE_SPEC = "designs/research_state/measurements/sprime_live_play_2026-11-01/read_spec.json"
-BASE = "/home/goodlad/gen3ai_archive/x65_exit0_2026-11-05"
+#: the specs name the reads archive by absolute path, as S′-LIVE's does (the box's archive, ``~/gen3ai_archive``)
+ARCHIVE = str(Path.home() / "gen3ai_archive")
+BASE = f"{ARCHIVE}/x65_exit0_2026-11-05"
 
 
 def _committed(name: str) -> Any:
@@ -69,7 +72,7 @@ def test_look2_imports_each_earlier_look_from_its_registered_state():
     sp = _committed("read_spec_look2.json")
     src = {g: (a.imports.state, a.imports.group, a.imports.models) for g, a in sp.anchor.items() if a.imports}
     assert src["gbank1"] == (f"{BASE}/look1", "gbank", ("pstar",))
-    assert src["ctl1"] == ("/home/goodlad/gen3ai_archive/sprime_live_play_2026-11-01", "u", ("pstar",))
+    assert src["ctl1"] == (f"{ARCHIVE}/sprime_live_play_2026-11-01", "u", ("pstar",))
     assert {src[g] for g in ("h1", "f1", "p1")} == {(f"{BASE}/look1", g[0], (STU[ts],))
                                                     for g, ts in (("h1", U[0]), ("f1", U[1]), ("p1", U[2]))}
     fresh = _committed("read_spec_look2_fresh.json")
