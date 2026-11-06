@@ -566,3 +566,8 @@ above.
   releases it.
 - **S′L-3 (the decision-to-game bridge is not tested here).** A GO or NULL says nothing about whether
   per-departure figures predict game gains.
+- **Operation FINDINGs (2026-11-03 to 11-05, the operator):** S′LIVE-OP-2 (the 11-03 reboot killed life 1),
+  OP-3 (an orchestrator-session restart killed life 2; lives 3-4 ran as `systemd-run --user` services), OP-4
+  (`Linger=no`), OP-5 (the pace under a live training run), OP-6 / OP-7 (`peer_long_tail_fault`, Kakuna's H5 / H21
+  line at our turn-250 forfeit: two exhausted units, one deal a side, both §5 post-treatment drops, imputed) and
+  S′LIVE-R1 (F excludes ≈ 12× as often as H and p72). Each in full: [`README.md`](README.md) § FINDINGs.

@@ -30600,3 +30600,44 @@ state `~/gen3ai_archive/n4_capacity_look1_2026-10-31/` (+ `_ops/`). View: `UNDER
 `endstate/design_beat_metamon_path.md`, `EXPERIMENT_BACKLOG.md` BM-6.
 
 Tag: **MEASUREMENT · N4 look 1 · NO-GO · Δ_S +0.46 [−0.28, +1.20] · Δ_K +0.20 [−2.91, +3.31] UNDECIDED-K · "used, buys nothing" at drift scale · toy capacity branch closed for growth at the plateau**
+
+### 2026-11-05 · MEASUREMENT · **S′-LIVE: GO-LEAKY — P\* + S′ (`r0s4_rolls@10`, every eligible decision from turn 10) beats P\* against the REAL Kakuna on U by +4.60 pp [+2.66, +6.48] on 2,698 fresh paired deals (GO-imputed LB +2.57 > 0); the searched arm scores 0.545 [0.526, 0.564], "GOAL-B-REACHED (leaky)" at most; it licenses only a leak-honest replication**
+
+**Question** (PREREG `9c2f023e4`, pin `0c76b521e`, engine E4). Does P\* + S′, searching every eligible decision from
+turn 10, win more games against Kakuna on U than P\* alone on the same deals? Two lone one-game units a deal, U unit
+seeds 300–344 (900 fresh deals a panel). D = y(searched) − y(raw); G_U = the mean of H, F and P72's mean unit
+statistics. GO-LEAKY iff the GO-imputed LB > 0; NULL iff not and the NULL-imputed UB < +3 pp; else STOP.
+
+**Verdict: GO-LEAKY.** G_U paired **+4.60 pp [+2.66, +6.48]**; GO-imputed +4.54 [**+2.57**, +6.44]; NULL-imputed
++4.61 [+2.68, **+6.48**]. By panel (paired): H +4.53 [+0.79, +7.98], F +5.15 [+1.71, +8.67], p72 +4.11 [+1.33, +7.00].
+Not at the boundary; `go_below_margin` false. By hand (`record/by_hand.py`): every fraction, bound and the class equal
+the rule's.
+
+**What it licenses (§1).** Only: S′ WITH the builder's true-seed information beats P\* on U against Kakuna. Building
+and registering a leak-honest replication on fresh deals is un-paused, and that work alone. The searched arm's
+pooled-U score 0.545 [0.526, 0.564] (raw 0.498 [0.479, 0.517]) is quoted at most as "GOAL-B-REACHED (leaky)". NOT
+licensed: deployable search, "goal (b) met", any training, league or public-server change, a size beyond the interval.
+Never pooled with dlive (§2).
+
+**Reported (§10).** Discordance 919 / 2,698 (0.341). Departure rate 0.366 (35,532 of 97,157 searched decisions);
+exclusions 5,995, F 5.70 a game against H 0.46 and p72 0.51 (S′LIVE-R1). Search 4.6 CPU-min a game. Game length raw
+46.0 turns, searched 44.7; counted games at the 250-turn cap raw 13, searched 10.
+
+**Against the GUESSES (§11).** G_U +4 (−2, +12) guessed, +4.60 measured; P(GO-LEAKY) ≈ 0.5; d 0.42 guessed, 0.341;
+the mean searched game 9 CPU-min guessed, 6.2.
+
+**Checks (every registered one PASS).** One engine E4 and P\* `814823c5…` on every counted unit; regimes as
+registered; G-PREFIX 2,698 checked, 0 mismatches (0 pre-treatment drops); the identity guard re-scored 600 of 6,615
+sampled live decisions offline with 0 mismatches (every panel, turn bucket and supervisor life); post-treatment drops
+H 1, F 1, p72 0 (cap 4 a panel), both `peer_long_tail_fault` (Kakuna's H5 / H21 at our turn-250 forfeit, S′LIVE-OP-7),
+imputed at the worst case; 0 unfinished deals; re-derived guards 5,400 units, 0 hits; COMPLETE, `check-record` OK.
+One unit counted on a third attempt (`pstar_s__forum72__322__g16`, same class).
+
+**Operation.** ≈ 315 CPU-h, 102 h wall over four supervisor lives on this box. AM-K6 (`d93a51124`, `96f661e90`;
+wall-clock only, blind) ran life 4 at `--concurrency 6`. FINDINGs S′LIVE-OP-2..7 and R1 in the README.
+
+**Record:** `measurements/sprime_live_play_2026-11-01/README.md`; state `~/gen3ai_archive/sprime_live_play_2026-11-01/record.json`
+(sha256 `1975d3d3…1bc2`).
+View: `UNDERSTANDING.md`, `STATUS.md`, `endstate/search_ledger.md`, `designs/tools/reads.md` §4.
+
+Tag: **MEASUREMENT · S′-LIVE · GO-LEAKY · G_U +4.60 [+2.66, +6.48] · GO-imputed LB +2.57 · searched U 0.545 [0.526, 0.564] (leaky) · licenses a leak-honest replication only**

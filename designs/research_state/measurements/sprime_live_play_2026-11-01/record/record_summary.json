@@ -1,0 +1,465 @@
+{
+ "cells_inconclusive": [],
+ "code": {
+  "commit": "0c76b521ef4d4bc02f8bc6c21a989720ac01432b",
+  "diff_sha": "e3b0c44298fc1c14",
+  "dirty": false,
+  "pin": "0c76b521e",
+  "root": "/home/goodlad/dev/gen3ai-reads/sprime_live_0c76b521e"
+ },
+ "completeness": {
+  "class": "COMPLETE"
+ },
+ "created": "2026-11-05T16:47:34-0800",
+ "decision": {
+  "counts": {
+   "by_panel": {
+    "forum72": {
+     "pairs": 899,
+     "planned": 900,
+     "post_treatment": {
+      "neither": 0,
+      "raw_missing": 0,
+      "searched_missing": 1,
+      "total": 1
+     },
+     "pre_treatment": {
+      "peer_drop": 0,
+      "total": 0
+     },
+     "unfinished": 0
+    },
+    "heldout72_hpfix": {
+     "pairs": 899,
+     "planned": 900,
+     "post_treatment": {
+      "neither": 0,
+      "raw_missing": 1,
+      "searched_missing": 0,
+      "total": 1
+     },
+     "pre_treatment": {
+      "peer_drop": 0,
+      "total": 0
+     },
+     "unfinished": 0
+    },
+    "p72": {
+     "pairs": 900,
+     "planned": 900,
+     "post_treatment": {
+      "neither": 0,
+      "raw_missing": 0,
+      "searched_missing": 0,
+      "total": 0
+     },
+     "pre_treatment": {
+      "peer_drop": 0,
+      "total": 0
+     },
+     "unfinished": 0
+    }
+   },
+   "uncounted_units": {
+    "pstar": 1,
+    "pstar_s": 1
+   },
+   "units_with_pairs": {
+    "forum72": 45,
+    "heldout72_hpfix": 45,
+    "p72": 45
+   },
+   "unplayed_units": 0
+  },
+  "decision": {
+   "boundary": false,
+   "class": "GO-LEAKY",
+   "go_below_margin": false,
+   "tests": {
+    "LB(G_U go_imputed) > 0": {
+     "crosses": true,
+     "near": false
+    },
+    "UB(G_U null_imputed) < null_margin": {
+     "crosses": false,
+     "near": false
+    }
+   },
+   "verdict": "GO-LEAKY: G_U (searched − raw, by deal, U) paired +4.60 pp [+2.66, +6.48]; GO-imputed LB +2.57 (GO-LEAKY iff > 0); NULL-imputed UB +6.48 (NULL iff < 3.0 pp)"
+  },
+  "discordance": {
+   "discordant": 919,
+   "pairs": 2698,
+   "share": 0.34062268346923646
+  },
+  "engine": "port=e00a212a102f5ce2/94;env=3d0d5c9c0f5d3c23/129",
+  "estimates": {
+   "bootstrap": {
+    "B": 2000,
+    "scheme": "numpy default_rng(seed), fresh per estimate; u_panels in order; within-panel unit resampling; percentile 2.5 / 97.5",
+    "seed": 20261101
+   },
+   "go_imputed": {
+    "G": {
+     "forum72": {
+      "ci95": [
+       0.016652777777777773,
+       0.08666666666666667
+      ],
+      "point": 0.050555555555555555
+     },
+     "heldout72_hpfix": {
+      "ci95": [
+       0.0072083333333333305,
+       0.07944444444444444
+      ],
+      "point": 0.044444444444444446
+     },
+     "p72": {
+      "ci95": [
+       0.013333333333333332,
+       0.06999999999999999
+      ],
+      "point": 0.04111111111111111
+     }
+    },
+    "G_U": {
+     "ci95": [
+      0.025736111111111112,
+      0.06444444444444446
+     ],
+     "point": 0.04537037037037037
+    },
+    "exact": {
+     "G": {
+      "forum72": "91/1800",
+      "heldout72_hpfix": "2/45",
+      "p72": "37/900"
+     },
+     "G_U": "49/1080"
+    }
+   },
+   "null_imputed": {
+    "G": {
+     "forum72": {
+      "ci95": [
+       0.01722222222222222,
+       0.08666666666666667
+      ],
+      "point": 0.051666666666666666
+     },
+     "heldout72_hpfix": {
+      "ci95": [
+       0.008319444444444445,
+       0.07999999999999999
+      ],
+      "point": 0.04555555555555556
+     },
+     "p72": {
+      "ci95": [
+       0.013333333333333332,
+       0.06999999999999999
+      ],
+      "point": 0.04111111111111111
+     }
+    },
+    "G_U": {
+     "ci95": [
+      0.02684722222222222,
+      0.06481481481481481
+     ],
+     "point": 0.04611111111111111
+    },
+    "exact": {
+     "G": {
+      "forum72": "31/600",
+      "heldout72_hpfix": "41/900",
+      "p72": "37/900"
+     },
+     "G_U": "83/1800"
+    }
+   },
+   "paired": {
+    "G": {
+     "forum72": {
+      "ci95": [
+       0.01710233918128655,
+       0.08666666666666667
+      ],
+      "point": 0.05154970760233918
+     },
+     "heldout72_hpfix": {
+      "ci95": [
+       0.00786330409356725,
+       0.07976608187134503
+      ],
+      "point": 0.04532163742690058
+     },
+     "p72": {
+      "ci95": [
+       0.013333333333333332,
+       0.06999999999999999
+      ],
+      "point": 0.04111111111111111
+     }
+    },
+    "G_U": {
+     "ci95": [
+      0.026586500974658873,
+      0.06477582846003899
+     ],
+     "point": 0.04599415204678363
+    },
+    "exact": {
+     "G": {
+      "forum72": "1763/34200",
+      "heldout72_hpfix": "31/684",
+      "p72": "37/900"
+     },
+     "G_U": "1573/34200"
+    }
+   }
+  },
+  "identity": {
+   "by_panel": {
+    "forum72": 217,
+    "heldout72_hpfix": 204,
+    "p72": 179
+   },
+   "cpu_s": 4073.462,
+   "mismatches": 0,
+   "n_rescored": 600,
+   "n_sampled": 6615,
+   "problems": [],
+   "reason": null,
+   "rescore_json": {
+    "path": "/home/goodlad/gen3ai_archive/sprime_live_play_2026-11-01/identity/rescore.json",
+    "sha256": "57216e00b7e8e992847ed2f6c736af7aeafba44e89afbceb0037af3e1cba8939"
+   },
+   "verdict": "PASS"
+  },
+  "peer_drops": {
+   "by_panel": {
+    "forum72": 0,
+    "heldout72_hpfix": 0,
+    "p72": 0
+   },
+   "classes": []
+  },
+  "schema": "gen3_read_searched_play_v1",
+  "score_u": {
+   "newcombe_strat_searched_minus_raw": [
+    0.04707370329172328,
+    0.020467858438948824,
+    0.07358548544251454
+   ],
+   "raw": {
+    "ci95": [
+     0.4789645888650212,
+     0.516608784075477
+    ],
+    "counts": {
+     "forum72": [
+      484,
+      899
+     ],
+     "heldout72_hpfix": [
+      429,
+      899
+     ],
+     "p72": [
+      430,
+      900
+     ]
+    },
+    "score": 0.49778354550323406
+   },
+   "searched": {
+    "ci95": [
+     0.5260561484806661,
+     0.563531334150339
+    ],
+    "counts": {
+     "forum72": [
+      531,
+      899
+     ],
+     "heldout72_hpfix": [
+      471,
+      899
+     ],
+     "p72": [
+      468,
+      900
+     ]
+    },
+    "score": 0.5448572487949573
+   },
+   "searched_lb_above_0_50": {
+    "crosses": true,
+    "lb": 0.5260561484806661,
+    "near": false
+   }
+  },
+  "search": {
+   "U": {
+    "deviation_rate": 0.36571734409255124,
+    "deviations": 35532,
+    "excluded": 5995,
+    "excluded_per_game": 2.2220163083765754,
+    "games": 2698,
+    "search_cpu_s": 741419.7129999996,
+    "search_cpu_s_per_game": 274.80345181615996,
+    "searched": 97157
+   },
+   "forum72": {
+    "deviation_rate": 0.362587370450711,
+    "deviations": 12035,
+    "excluded": 5126,
+    "excluded_per_game": 5.701890989988876,
+    "games": 899,
+    "search_cpu_s": 315594.6659999999,
+    "search_cpu_s_per_game": 351.0507964404893,
+    "searched": 33192
+   },
+   "heldout72_hpfix": {
+    "deviation_rate": 0.371184947454534,
+    "deviations": 11797,
+    "excluded": 410,
+    "excluded_per_game": 0.4560622914349277,
+    "games": 899,
+    "search_cpu_s": 208362.17599999998,
+    "search_cpu_s_per_game": 231.77105228031144,
+    "searched": 31782
+   },
+   "p72": {
+    "deviation_rate": 0.3635459714756238,
+    "deviations": 11700,
+    "excluded": 459,
+    "excluded_per_game": 0.51,
+    "games": 900,
+    "search_cpu_s": 217462.87099999984,
+    "search_cpu_s_per_game": 241.62541222222205,
+    "searched": 32183
+   }
+  }
+ },
+ "imports": {},
+ "ledgers": {},
+ "models": {
+  "pstar": {
+   "arm": "pstar",
+   "seed": 2601,
+   "sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed",
+   "source": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip",
+   "step": 280000170
+  },
+  "pstar_s": {
+   "arm": "pstar_s",
+   "seed": 2601,
+   "sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed",
+   "source": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip",
+   "step": 280000170
+  }
+ },
+ "prereg": "designs/research_state/measurements/sprime_live_play_2026-11-01/PREREG.md",
+ "read": "sprime_live_play_2026-11-01",
+ "rederived_guards": {
+  "held": false,
+  "hits": [],
+  "mode": "count",
+  "schema": "gen3_read_rederived_guards_v1",
+  "unavailable": [],
+  "units_checked": 5400
+ },
+ "regimes": {
+  "anchor": {
+   "u": "4213ee8013a2708f"
+  },
+  "s": {}
+ },
+ "repins": [],
+ "reported_incomplete": {},
+ "rule": "searched_play",
+ "schema": "gen3_read_record_v1",
+ "spec_sha256": "57f0ee87edf7f969f9446fb600f0e8582d6b23fd2642a4db7d1a200dcc3ffb7a",
+ "verdict": "GO-LEAKY: G_U (searched − raw, by deal, U) paired +4.60 pp [+2.66, +6.48]; GO-imputed LB +2.57 (GO-LEAKY iff > 0); NULL-imputed UB +6.48 (NULL iff < 3.0 pp)",
+ "void": null,
+ "note": "record.json minus its 'inputs' block (4.9 MB; in the state, sha256 below)",
+ "state_files_sha256": {
+  "record.json": "1975d3d3f4473e603524ecd6412fcb89eadda7e3119ae23421617f3ab71f1bc2",
+  "spec.json": "57f0ee87edf7f969f9446fb600f0e8582d6b23fd2642a4db7d1a200dcc3ffb7a",
+  "identity/rescore.json": "57216e00b7e8e992847ed2f6c736af7aeafba44e89afbceb0037af3e1cba8939",
+  "identity/checkpoint.json": "be9139837686e215ca4b860c704b56cffa65b1b61a806445131fdb87ef9d5e81"
+ },
+ "inputs_group": {
+  "engine": "port=e00a212a102f5ce2/94;env=3d0d5c9c0f5d3c23/129",
+  "exhausted_units": [
+   "pstar__heldout72_hpfix__337__g03",
+   "pstar_s__forum72__337__g19"
+  ],
+  "g_prefix": {
+   "checked": 2698,
+   "mismatches": [],
+   "pairs": 2700,
+   "pending": 2,
+   "schema": "gen3_read_prefix_v1"
+  },
+  "inconclusive": [],
+  "name": "u",
+  "regime_id": "4213ee8013a2708f",
+  "teamsets": [
+   "heldout72_hpfix",
+   "forum72",
+   "p72"
+  ],
+  "unit_seeds": [
+   300,
+   301,
+   302,
+   303,
+   304,
+   305,
+   306,
+   307,
+   308,
+   309,
+   310,
+   311,
+   312,
+   313,
+   314,
+   315,
+   316,
+   317,
+   318,
+   319,
+   320,
+   321,
+   322,
+   323,
+   324,
+   325,
+   326,
+   327,
+   328,
+   329,
+   330,
+   331,
+   332,
+   333,
+   334,
+   335,
+   336,
+   337,
+   338,
+   339,
+   340,
+   341,
+   342,
+   343,
+   344
+  ],
+  "unplayed": 0
+ }
+}

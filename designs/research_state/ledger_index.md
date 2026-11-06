@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-30,603-line file. **The ledger itself is append-only and is never edited by this**;
+30,644-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**993 headings · 938 dated · 2026-08-01 → 2026-11-04 · ledger 30,603 lines.**
+**994 headings · 939 dated · 2026-08-01 → 2026-11-05 · ledger 30,644 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -1013,3 +1013,4 @@ rename.
   - `L30400` · `2026-11-01` · MEASUREMENT · The deviation-only live read: STOP — S′'s departures from P\* do not beat P\*'s choice against the real Kakuna on U at ≈ 1,800 departures
   - `L30471` · `2026-11-03` · MEASUREMENT · **X59-S's ≥ 1500 follow-up: rating NOT-RESOLVED (S-H≥1500 − S-H-mix +1.33 pp [−2.76, +5.43]), and ≥ 1500 human data still teaches a fresh student less than our self-play data at the same volume (S-H≥1500 − S-S cut −4.42 pp [−6.07, −2.76], SELF-PLAY-DATA-BETTER); in-house only, routes nothing alone**
   - `L30533` · `2026-11-04` · MEASUREMENT · **N4 (the toy capacity screen) LOOK 1 reads NO-GO: widening every trunk FFN 256 → 1,024 at the toy plateau T\* and training 70M gives no ≥ 2 pp in-house gain (Δ_S +0.46 pp [−0.28, +1.20], Welch 90 %); against Kakuna on forum72 Δ_K +0.20 pp [−2.91, +3.31], UNDECIDED; the new units were used, at about the scale of ordinary 70M drift (E1 0.18–0.22 vs C0′'s null 0.18–0.23; E2 KL 0.08–0.09 vs null 0.12–0.14): the registered reading "used, buys nothing"**
+  - `L30604` · `2026-11-05` · MEASUREMENT · **S′-LIVE: GO-LEAKY — P\* + S′ (`r0s4_rolls@10`, every eligible decision from turn 10) beats P\* against the REAL Kakuna on U by +4.60 pp [+2.66, +6.48] on 2,698 fresh paired deals (GO-imputed LB +2.57 > 0); the searched arm scores 0.545 [0.526, 0.564], "GOAL-B-REACHED (leaky)" at most; it licenses only a leak-honest replication**

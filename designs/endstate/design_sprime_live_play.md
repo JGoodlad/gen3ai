@@ -1,7 +1,10 @@
 # S′-LIVE — does S′ playing every decision beat P\* against the real Kakuna on unfamiliar teams?
 
-**Status: DESIGN (2026-11-01), registered as [`PREREG.md`](../research_state/measurements/sprime_live_play_2026-11-01/PREREG.md); not
-played.** It is the direct game-level read that the deviation-only live read (dlive) could not be. The dlive read
+**Status: PLAYED and RECORDED (2026-11-05): GO-LEAKY**, G_U +4.60 pp [+2.66, +6.48] (GO-imputed LB +2.57) on 2,698
+fresh paired U deals, searched-arm U score 0.545 [0.526, 0.564], leak-inclusive; it licenses a leak-honest replication
+only ([`README.md`](../research_state/measurements/sprime_live_play_2026-11-01/README.md)). Registered as
+[`PREREG.md`](../research_state/measurements/sprime_live_play_2026-11-01/PREREG.md); operated under AM-K6 (wall-clock
+only). It is the direct game-level read that the deviation-only live read (dlive) could not be. The dlive read
 STOPPED on a power statement (§1). Every piece it plays on was already BUILT for S-U
 ([`design_search_u_headroom.md`](design_search_u_headroom.md) §6). This unit adds four builds: a 10-h searched
 watchdog, two identity fields on each searched decision, the choice-level identity guard, and the rule
@@ -201,3 +204,4 @@ watchdog, two identity fields on each searched decision, the choice-level identi
 | date | decision | chosen | rejected / alternatives | evidence |
 |---|---|---|---|---|
 | 2026-11-01 | **This doc CREATED** (S′-LIVE designer, orchestrator brief) | the direct game-level read: S′ every eligible decision vs P\* greedy against Kakuna on U, 2,700 fresh deals (seeds 300–344), both arms as lone one-game units, G_U, GO-LEAKY / NULL (UB < +3 pp) / STOP with post-treatment drops imputed at their worst case, the sampled offline re-score as the identity guard, the 10-h watchdog, G-PREFIX peer drops pre-registered | importing dlive's raw arm; dlive's deals (review M1); home72; an interim look; a turn-capped search; 3,600 deals | dlive README (`02fb0f2fc`) DL-7, DL-10; the cost model over dlive's 3,200 raw games and 5,328 S′ rows; S-U AMENDMENT_1_DRAFT §1b; the two reviews (PREREG § Reviews) |
+| 2026-11-05 | **PLAYED: GO-LEAKY** (its operator, orchestrator brief) | the status line: played and recorded; G_U +4.60 pp [+2.66, +6.48], GO-imputed LB +2.57, searched U 0.545 [0.526, 0.564]; AM-K6 ran life 4 at `--concurrency 6` (wall-clock only) | K = 8 on cores 1-7,9-15 (a play-path change: `CORES` is pinned in `main.x35.kakuna`); a retry life for exhausted units (orchestrator: recorded as exhausted, imputed) | `measurements/sprime_live_play_2026-11-01/README.md`; ledger 2026-11-05 |
