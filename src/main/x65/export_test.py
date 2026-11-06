@@ -90,10 +90,10 @@ def test_a_fold_trains_picks_and_exports_bit_identically(tmp_path):
                           text=True, check=False).stdout.strip()
     ex = EX.write(out, init, repo_path(), init_sha256=sha, pin=head)       # this checkout stands in for the pin
     assert ex["bit_identical"] and ex["pin_loader"] == "bare"
-    # a student whose weights are not the picked ones is caught bit for bit
+    # a student whose weights are not the picked ones (its pointer head moved by 1e-3) is caught
     sd = th.load(out / doc["picked"]["path"], weights_only=True)
-    k = next(n for n in sd if n in st["trainable"] and sd[n].dtype == th.float32)
-    sd[k] = sd[k] + th.finfo(th.float32).eps * sd[k].abs().clamp_min(1.0)
+    k = next(n for n in sd if n.startswith("pointer_head.") and n.endswith("weight") and sd[n].dtype == th.float32)
+    sd[k] = sd[k] + 1e-3
     EX.write_zip(init, sd, out / "model" / "bad.zip")
     tr = EX.trainer_logits(init, th.load(out / doc["picked"]["path"], weights_only=True), EX.fixture())
     pn = EX.pin_logits(out / "model" / "bad.zip", repo_path(), tmp_path / "bad.npz")

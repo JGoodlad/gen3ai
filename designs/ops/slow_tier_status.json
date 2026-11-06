@@ -4929,6 +4929,14 @@
    "contention": 1.15,
    "detail": ""
   },
+  "src/main/x65/export_test.py::test_a_fold_trains_picks_and_exports_bit_identically": {
+   "status": "pass",
+   "commit": "e46c03383412f6010ea6af1c7dcfecb5ae3f41fa",
+   "at": "2026-11-06T03:58:31Z",
+   "duration_s": 113.04,
+   "contention": 1.0,
+   "detail": ""
+  },
   "src/node_free_search_integration_test.py::test_search_replay_and_the_prober_run_with_node_impossible": {
    "status": "pass",
    "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
@@ -5250,5 +5258,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-11-06T00:44:26Z"
+ "last_written": "2026-11-06T03:58:31Z"
 }
