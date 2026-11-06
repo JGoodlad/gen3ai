@@ -1,0 +1,255 @@
+{
+ "schema": "gen3_read_spec_v1",
+ "read": "x65_exit0_look2_fresh_2026-11-05",
+ "prereg": "designs/research_state/measurements/x65_exit0_2026-11-05/PREREG.md",
+ "note": "X65 ExIt-0 LOOK 2 after a FRESH-control look 1 (state /home/goodlad/gen3ai_archive/x65_exit0_2026-11-05/look2_fresh; plays only if look1_fresh is CONTINUE): both arms fresh on 600-674, read with look 1's deals (the students imported from look 1, P* raw from look1_fresh); no G-BANK. PENDING: as look 1, plus look 1's and look1_fresh's final spec sha256s.",
+ "models": {
+  "pstar": {
+   "arm": "pstar",
+   "seed": 2601,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip",
+    "sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed"
+   }
+  },
+  "s_h": {
+   "arm": "s_h",
+   "seed": 6511,
+   "ref": {
+    "kind": "pinned",
+    "path": "PENDING",
+    "sha256": "PENDING"
+   }
+  },
+  "s_f": {
+   "arm": "s_f",
+   "seed": 6512,
+   "ref": {
+    "kind": "pinned",
+    "path": "PENDING",
+    "sha256": "PENDING"
+   }
+  },
+  "s_p": {
+   "arm": "s_p",
+   "seed": 6513,
+   "ref": {
+    "kind": "pinned",
+    "path": "PENDING",
+    "sha256": "PENDING"
+   }
+  }
+ },
+ "anchor": {
+  "h1s": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "heldout72_hpfix"
+   ],
+   "unit_seeds": "300-344",
+   "per_game": true,
+   "models": [
+    "s_h"
+   ],
+   "import": {
+    "state": "/home/goodlad/gen3ai_archive/x65_exit0_2026-11-05/look1",
+    "spec_sha256": "PENDING",
+    "group": "h",
+    "models": [
+     "s_h"
+    ]
+   }
+  },
+  "f1s": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "forum72"
+   ],
+   "unit_seeds": "300-344",
+   "per_game": true,
+   "models": [
+    "s_f"
+   ],
+   "import": {
+    "state": "/home/goodlad/gen3ai_archive/x65_exit0_2026-11-05/look1",
+    "spec_sha256": "PENDING",
+    "group": "f",
+    "models": [
+     "s_f"
+    ]
+   }
+  },
+  "p1s": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "p72"
+   ],
+   "unit_seeds": "300-344",
+   "per_game": true,
+   "models": [
+    "s_p"
+   ],
+   "import": {
+    "state": "/home/goodlad/gen3ai_archive/x65_exit0_2026-11-05/look1",
+    "spec_sha256": "PENDING",
+    "group": "p",
+    "models": [
+     "s_p"
+    ]
+   }
+  },
+  "h1r": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "heldout72_hpfix"
+   ],
+   "unit_seeds": "300-344",
+   "per_game": true,
+   "models": [
+    "pstar"
+   ],
+   "import": {
+    "state": "/home/goodlad/gen3ai_archive/x65_exit0_2026-11-05/look1_fresh",
+    "spec_sha256": "PENDING",
+    "group": "h",
+    "models": [
+     "pstar"
+    ]
+   }
+  },
+  "f1r": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "forum72"
+   ],
+   "unit_seeds": "300-344",
+   "per_game": true,
+   "models": [
+    "pstar"
+   ],
+   "import": {
+    "state": "/home/goodlad/gen3ai_archive/x65_exit0_2026-11-05/look1_fresh",
+    "spec_sha256": "PENDING",
+    "group": "f",
+    "models": [
+     "pstar"
+    ]
+   }
+  },
+  "p1r": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "p72"
+   ],
+   "unit_seeds": "300-344",
+   "per_game": true,
+   "models": [
+    "pstar"
+   ],
+   "import": {
+    "state": "/home/goodlad/gen3ai_archive/x65_exit0_2026-11-05/look1_fresh",
+    "spec_sha256": "PENDING",
+    "group": "p",
+    "models": [
+     "pstar"
+    ]
+   }
+  },
+  "h2": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "heldout72_hpfix"
+   ],
+   "unit_seeds": "600-674",
+   "per_game": true,
+   "models": [
+    "pstar",
+    "s_h"
+   ]
+  },
+  "f2": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "forum72"
+   ],
+   "unit_seeds": "600-674",
+   "per_game": true,
+   "models": [
+    "pstar",
+    "s_f"
+   ]
+  },
+  "p2": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "p72"
+   ],
+   "unit_seeds": "600-674",
+   "per_game": true,
+   "models": [
+    "pstar",
+    "s_p"
+   ]
+  }
+ },
+ "decision": {
+  "rule": "distill_play",
+  "params": {
+   "look": 2,
+   "u_panels": [
+    "heldout72_hpfix",
+    "forum72",
+    "p72"
+   ],
+   "students": {
+    "heldout72_hpfix": "s_h",
+    "forum72": "s_f",
+    "p72": "s_p"
+   },
+   "raw": "pstar",
+   "groups": {
+    "heldout72_hpfix": [
+     "h1s",
+     "h1r",
+     "h2"
+    ],
+    "forum72": [
+     "f1s",
+     "f1r",
+     "f2"
+    ],
+    "p72": [
+     "p1s",
+     "p1r",
+     "p2"
+    ]
+   },
+   "seeds": {
+    "1": "300-344",
+    "2": "600-674"
+   },
+   "control": "fresh",
+   "gbank": null,
+   "engine": "port=e00a212a102f5ce2/94;env=3d0d5c9c0f5d3c23/129",
+   "z_go": {
+    "1": 2.576,
+    "2": 2.0
+   },
+   "z_null": 1.96,
+   "null_bar_pp": 2.0,
+   "bootstrap": {
+    "B": 4000,
+    "seed": 20261106
+   },
+   "rule8_eps": 0.0005,
+   "max_drop_frac": 0.005,
+   "delivery": {
+    "path": "/home/goodlad/gen3ai_archive/x65_exit0_2026-11-05/delivery.json",
+    "B": 4000,
+    "seed": 20261105
+   },
+   "bank_manifest_sha256": "PENDING"
+  }
+ }
+}
