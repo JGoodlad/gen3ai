@@ -1,0 +1,49 @@
+== 1. replicate vs W0 on the SAME checkpoint: max |difference| per quantity
+  old 10-25 vs W0 10-28  rb_x26_s2601_100M      null32 0.0e+00 null_seeds 0.0e+00 Ebf~_seeds 0.0e+00 Ebf64 0.0e+00 Ebf 0.0e+00 Cbf 1.4e-02
+  old 10-25 vs W0 10-28  rb_x26_s2601_180M      null32 0.0e+00 null_seeds 0.0e+00 Ebf~_seeds 0.0e+00 Ebf64 0.0e+00 Ebf 0.0e+00 Cbf 9.9e-02
+  old 10-25 vs W0 10-28  rb_x26_s2601_230M      null32 0.0e+00 null_seeds 0.0e+00 Ebf~_seeds 0.0e+00 Ebf64 0.0e+00 Ebf 0.0e+00 Cbf 6.0e-02
+  old 10-25 vs W0 10-28  rb_x26_s2601_280M      null32 0.0e+00 null_seeds 0.0e+00 Ebf~_seeds 0.0e+00 Ebf64 0.0e+00 Ebf 0.0e+00 Cbf 2.6e-02
+  old 10-25 vs W0 10-28  rb_x26_s2601_330M      null32 0.0e+00 null_seeds 0.0e+00 Ebf~_seeds 0.0e+00 Ebf64 0.0e+00 Ebf 0.0e+00 Cbf 2.2e-03
+  old 10-25 vs W0 10-28  rb_x26_s2601_380M      null32 0.0e+00 null_seeds 0.0e+00 Ebf~_seeds 0.0e+00 Ebf64 0.0e+00 Ebf 0.0e+00 Cbf 5.0e-02
+  old 10-25 vs W0 10-28  rb_x26c_s2601_390M     null32 0.0e+00 null_seeds 0.0e+00 Ebf~_seeds 0.0e+00 Ebf64 0.0e+00 Ebf 0.0e+00 Cbf 6.9e-03
+  old 10-25 vs W0 10-28  rb_x26c_s2601_400M     null32 0.0e+00 null_seeds 0.0e+00 Ebf~_seeds 0.0e+00 Ebf64 0.0e+00 Ebf 0.0e+00 Cbf 0.0e+00
+  old 10-25 vs W0 10-28  rb_x26c_s2601_410M     null32 0.0e+00 null_seeds 0.0e+00 Ebf~_seeds 0.0e+00 Ebf64 0.0e+00 Ebf 0.0e+00 Cbf 2.6e-02
+  old 10-25 vs W0 10-28  rb_x26c_s2601_420M     null32 0.0e+00 null_seeds 0.0e+00 Ebf~_seeds 0.0e+00 Ebf64 0.0e+00 Ebf 0.0e+00 Cbf 1.4e-01
+  old 10-25 vs W0 10-28  rb_x26c_s2601_430M     null32 0.0e+00 null_seeds 0.0e+00 Ebf~_seeds 0.0e+00 Ebf64 0.0e+00 Ebf 0.0e+00 Cbf 7.6e-02
+  old 10-25 vs W0 10-28  rb_x26c_s2601_440M     null32 0.0e+00 null_seeds 0.0e+00 Ebf~_seeds 0.0e+00 Ebf64 0.0e+00 Ebf 0.0e+00 Cbf 7.7e-02
+  old 10-25 vs W0 10-28  rb_x26c_s2601_450M     null32 0.0e+00 null_seeds 0.0e+00 Ebf~_seeds 0.0e+00 Ebf64 0.0e+00 Ebf 0.0e+00 Cbf 7.2e-02
+  old 10-25 vs W0 10-28  rb_x26c_s2601_460M     null32 0.0e+00 null_seeds 0.0e+00 Ebf~_seeds 0.0e+00 Ebf64 0.0e+00 Ebf 0.0e+00 Cbf 9.6e-02
+  NEW 11-05 vs W0 10-28  rb_x26c_s2601_470M     null32 0.0e+00 null_seeds 0.0e+00 Ebf~_seeds 0.0e+00 Ebf64 0.0e+00 Ebf 0.0e+00 Cbf 4.7e-02
+  NEW 11-05 vs W0 10-28  rb_x26c_s2601_480M     null32 0.0e+00 null_seeds 0.0e+00 Ebf~_seeds 0.0e+00 Ebf64 0.0e+00 Ebf 0.0e+00 Cbf 3.3e-02
+  NEW 11-05 vs W0 10-28  rb_x26c_s2601_481M     null32 0.0e+00 null_seeds 0.0e+00 Ebf~_seeds 0.0e+00 Ebf64 0.0e+00 Ebf 0.0e+00 Cbf 5.1e-02
+  NEW 11-05 vs W0 10-28  rb_x26c_s2601_482M     null32 0.0e+00 null_seeds 0.0e+00 Ebf~_seeds 0.0e+00 Ebf64 0.0e+00 Ebf 0.0e+00 Cbf 1.0e-01
+  NEW 11-05 vs W0 10-28  x26c_u1000_run_478M    null32 0.0e+00 null_seeds 0.0e+00 Ebf~_seeds 0.0e+00 Ebf64 0.0e+00 Ebf 0.0e+00 Cbf 6.4e-02
+  NEW 11-05 vs W0 10-28  x26c_u1000_run_479M    null32 0.0e+00 null_seeds 0.0e+00 Ebf~_seeds 0.0e+00 Ebf64 0.0e+00 Ebf 0.0e+00 Cbf 6.6e-02
+
+== 2. the compiled arm's draw-to-draw |difference| per row (replicate vs W0)
+  same driver  (10-25 vs 10-28): n 896, median 0.0000, p90 0.0055, p99 0.0504, max 0.1384, bit-equal rows 25 %
+  cross driver (11-05 vs 10-28): n 384, median 0.0000, p90 0.0093, p99 0.0602, max 0.1020, bit-equal rows 17 %
+
+== 3. the RULED k: round_up_2sig(4 x max shift / max(16-seed null, 0.02))
+  W0 (the committed basis)    Cbf      max 1.170 at rb_x26_s2601_100M Cbf row 4 (shift 0.027, null16 0.023) -> k 4.7
+  W0 (the committed basis)    Ebf      max 1.479 at rb_x26_s2601_380M Ebf row 63 (shift 0.066, null16 0.045) -> k 6.0
+  W0 (the committed basis)    Cbf+Ebf  max 1.479 at rb_x26_s2601_380M Ebf row 63 (shift 0.066, null16 0.045) -> k 6.0
+  replicate, all 20           Cbf      max 1.157 at rb_x26_s2601_100M Cbf row 4 (shift 0.027, null16 0.023) -> k 4.7
+  replicate, all 20           Ebf      max 1.479 at rb_x26_s2601_380M Ebf row 63 (shift 0.066, null16 0.045) -> k 6.0
+  replicate, all 20           Cbf+Ebf  max 1.479 at rb_x26_s2601_380M Ebf row 63 (shift 0.066, null16 0.045) -> k 6.0
+  replicate, old driver 14    Cbf      max 1.157 at rb_x26_s2601_100M Cbf row 4 (shift 0.027, null16 0.023) -> k 4.7
+  replicate, old driver 14    Ebf      max 1.479 at rb_x26_s2601_380M Ebf row 63 (shift 0.066, null16 0.045) -> k 6.0
+  replicate, old driver 14    Cbf+Ebf  max 1.479 at rb_x26_s2601_380M Ebf row 63 (shift 0.066, null16 0.045) -> k 6.0
+    W0 on those 14            Cbf      max 1.170 at rb_x26_s2601_100M Cbf row 4 (shift 0.027, null16 0.023) -> k 4.7
+    W0 on those 14            Ebf      max 1.479 at rb_x26_s2601_380M Ebf row 63 (shift 0.066, null16 0.045) -> k 6.0
+    W0 on those 14            Cbf+Ebf  max 1.479 at rb_x26_s2601_380M Ebf row 63 (shift 0.066, null16 0.045) -> k 6.0
+  replicate, NEW driver 6     Cbf      max 1.147 at rb_x26c_s2601_481M Cbf row 61 (shift 0.057, null16 0.049) -> k 4.6
+  replicate, NEW driver 6     Ebf      max 1.408 at rb_x26c_s2601_480M Ebf row 29 (shift 0.406, null16 0.288) -> k 5.7
+  replicate, NEW driver 6     Cbf+Ebf  max 1.408 at rb_x26c_s2601_480M Ebf row 29 (shift 0.406, null16 0.288) -> k 5.7
+    W0 on those 6             Cbf      max 0.969 at rb_x26c_s2601_481M Cbf row 39 (shift 0.077, null16 0.080) -> k 3.9
+    W0 on those 6             Ebf      max 1.408 at rb_x26c_s2601_480M Ebf row 29 (shift 0.406, null16 0.288) -> k 5.7
+    W0 on those 6             Cbf+Ebf  max 1.408 at rb_x26c_s2601_480M Ebf row 29 (shift 0.406, null16 0.288) -> k 5.7
+  both compile draws pooled   Cbf      max 1.170 at rb_x26_s2601_100M Cbf row 4 (shift 0.027, null16 0.023) -> k 4.7
+  both compile draws pooled   Ebf      max 1.479 at rb_x26_s2601_380M Ebf row 63 (shift 0.066, null16 0.045) -> k 6.0
+  both compile draws pooled   Cbf+Ebf  max 1.479 at rb_x26_s2601_380M Ebf row 63 (shift 0.066, null16 0.045) -> k 6.0
+  stage 1 (k 6.0, K 16, floor 0.02, cap 0.72) on the replicate's compiled arm: 0 of 20 checkpoints refuse; the nearest reads 0.481 of its bar (rb_x26c_s2601_470M)

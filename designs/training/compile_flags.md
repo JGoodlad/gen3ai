@@ -815,7 +815,12 @@ row i is held to its OWN bar b_i = min(k x max(null_i, f), C), k = 6.0, f = 0.02
 row's 16-seed fp32 dither null on the canary's own weights, computed at check time (`canary_row_null`, which was the
 recorded-only shadow `gen3_canary_row_null_shadow_v1` until now). k is 4 x the healthy maximum (1.479) of the canary's
 two bf16 arms at B = 2,048 over the W0 CUDA census (20 X26-lineage checkpoints); the census refuses 0 of 20 (in sample,
-leave-one-out, cross-lineage). The rules around it:
+leave-one-out, cross-lineage). **A replicate census of the same 20 checkpoints re-derives k = 6.0 (2026-11-05)**: 14
+read under NVIDIA driver 595.91.07 and 6 under 595.99.02. Every eager and fp32 quantity is bit-identical to W0's at
+both drivers. The compiled arm is NOT bit-reproducible across processes: two fresh compiles of one checkpoint differ
+by up to 0.14 log-prob on a row, at the same driver. Its maximum ratio, 1.16, stays under eager's binding 1.479. The
+evidence is `../research_state/measurements/canary_row_null_design_2026-10-25/` ("The census and its replicate"). The
+rules around it:
 
 - **Only the judged arm, only the canary.** The yardsticks (eager, the fp32 reference) keep the scalar margin, its
   events and the M' re-run; the startup gate keeps the scalar margin (it computes no null). The scheduled check and both
