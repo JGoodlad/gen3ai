@@ -1,0 +1,79 @@
+[gpu_lock] running '/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m main.x65.student probe --bank /home/goodlad/gen3ai_archive/x65_exit0_2026-11-05/bank --bank-sha256 d' as process group 1520 (wrapper pid 1514): PREEMPT = kill -TERM -- -1520 (-KILL to force), never the wrapper's pid
+[x65 student] S_P lr 0.0001 step 50/2748 L 0.66729 (label 0.66222, anchor 0.05071)
+[x65 student] S_P lr 0.0001 step 100/2748 L 0.69159 (label 0.68453, anchor 0.07062)
+[x65 student] S_P lr 0.0001 checkpoint 0 step 114: inner-val L 0.732558
+[x65 student] S_P lr 0.0001 step 150/2748 L 0.71671 (label 0.70578, anchor 0.10932)
+[x65 student] S_P lr 0.0001 step 200/2748 L 0.78665 (label 0.77029, anchor 0.16368)
+[x65 student] S_P lr 0.0001 checkpoint 1 step 229: inner-val L 0.758251
+[x65 student] S_P lr 0.0001 step 250/2748 L 0.68192 (label 0.66434, anchor 0.17580)
+[x65 student] S_P lr 0.0001 step 300/2748 L 0.69226 (label 0.67597, anchor 0.16287)
+[x65 student] S_P lr 0.0001 checkpoint 2 step 344: inner-val L 0.748480
+[x65 student] S_P lr 0.0001 step 350/2748 L 0.65437 (label 0.63565, anchor 0.18712)
+[x65 student] S_P lr 0.0001 step 400/2748 L 0.75876 (label 0.74347, anchor 0.15295)
+[x65 student] S_P lr 0.0001 step 450/2748 L 0.66638 (label 0.65264, anchor 0.13733)
+[x65 student] S_P lr 0.0001 checkpoint 3 step 458: inner-val L 0.739033
+[x65 student] S_P lr 0.0001 step 500/2748 L 0.72877 (label 0.71113, anchor 0.17641)
+[x65 student] S_P lr 0.0001 step 550/2748 L 0.79256 (label 0.77528, anchor 0.17280)
+[x65 student] S_P lr 0.0001 checkpoint 4 step 572: inner-val L 0.732136
+[x65 student] S_P lr 0.0001 step 600/2748 L 0.63871 (label 0.62387, anchor 0.14841)
+[x65 student] S_P lr 0.0001 step 650/2748 L 0.69794 (label 0.68249, anchor 0.15455)
+[x65 student] S_P lr 0.0001 checkpoint 5 step 687: inner-val L 0.731997
+[x65 student] S_P lr 0.0001 step 700/2748 L 0.63306 (label 0.61702, anchor 0.16045)
+[x65 student] S_P lr 0.0001 step 750/2748 L 0.71575 (label 0.69845, anchor 0.17298)
+[x65 student] S_P lr 0.0001 step 800/2748 L 0.64122 (label 0.62484, anchor 0.16376)
+[x65 student] S_P lr 0.0001 checkpoint 6 step 802: inner-val L 0.732231
+[x65 student] S_P lr 0.0001 step 850/2748 L 0.62185 (label 0.60628, anchor 0.15565)
+[x65 student] S_P lr 0.0001 step 900/2748 L 0.65560 (label 0.63830, anchor 0.17302)
+[x65 student] S_P lr 0.0001 checkpoint 7 step 916: inner-val L 0.739646
+[x65 student] S_P lr 0.0001 step 950/2748 L 0.76821 (label 0.75359, anchor 0.14615)
+[x65 student] S_P lr 0.0001 step 1000/2748 L 0.58471 (label 0.56830, anchor 0.16416)
+[x65 student] S_P lr 0.0001 checkpoint 8 step 1030: inner-val L 0.727233
+[x65 student] S_P lr 0.0001 step 1050/2748 L 0.66614 (label 0.64843, anchor 0.17713)
+[x65 student] S_P lr 0.0001 step 1100/2748 L 0.67106 (label 0.65626, anchor 0.14807)
+[x65 student] S_P lr 0.0001 checkpoint 9 step 1145: inner-val L 0.744844
+[x65 student] S_P lr 0.0001 step 1150/2748 L 0.61818 (label 0.60273, anchor 0.15455)
+[x65 student] S_P lr 0.0001 step 1200/2748 L 0.66940 (label 0.65260, anchor 0.16802)
+[x65 student] S_P lr 0.0001 step 1250/2748 L 0.64688 (label 0.63072, anchor 0.16162)
+[x65 student] S_P lr 0.0001 checkpoint 10 step 1260: inner-val L 0.732021
+[x65 student] S_P lr 0.0001 step 1300/2748 L 0.63558 (label 0.61893, anchor 0.16652)
+[x65 student] S_P lr 0.0001 step 1350/2748 L 0.63375 (label 0.61624, anchor 0.17516)
+[x65 student] S_P lr 0.0001 checkpoint 11 step 1374: inner-val L 0.730927
+[x65 student] S_P lr 0.0001 step 1400/2748 L 0.63737 (label 0.62086, anchor 0.16517)
+[x65 student] S_P lr 0.0001 step 1450/2748 L 0.63928 (label 0.62178, anchor 0.17501)
+[x65 student] S_P lr 0.0001 checkpoint 12 step 1488: inner-val L 0.731177
+[x65 student] S_P lr 0.0001 step 1500/2748 L 0.57209 (label 0.55382, anchor 0.18279)
+[x65 student] S_P lr 0.0001 step 1550/2748 L 0.59825 (label 0.57997, anchor 0.18280)
+[x65 student] S_P lr 0.0001 step 1600/2748 L 0.65776 (label 0.64254, anchor 0.15222)
+[x65 student] S_P lr 0.0001 checkpoint 13 step 1603: inner-val L 0.724975
+[x65 student] S_P lr 0.0001 step 1650/2748 L 0.59676 (label 0.57945, anchor 0.17308)
+[x65 student] S_P lr 0.0001 step 1700/2748 L 0.66606 (label 0.65113, anchor 0.14931)
+[x65 student] S_P lr 0.0001 checkpoint 14 step 1718: inner-val L 0.738035
+[x65 student] S_P lr 0.0001 step 1750/2748 L 0.61716 (label 0.60185, anchor 0.15303)
+[x65 student] S_P lr 0.0001 step 1800/2748 L 0.57001 (label 0.55293, anchor 0.17082)
+[x65 student] S_P lr 0.0001 checkpoint 15 step 1832: inner-val L 0.732106
+[x65 student] S_P lr 0.0001 step 1850/2748 L 0.49746 (label 0.48220, anchor 0.15264)
+[x65 student] S_P lr 0.0001 step 1900/2748 L 0.56335 (label 0.54607, anchor 0.17279)
+[x65 student] S_P lr 0.0001 checkpoint 16 step 1946: inner-val L 0.729290
+[x65 student] S_P lr 0.0001 step 1950/2748 L 0.54399 (label 0.52813, anchor 0.15865)
+[x65 student] S_P lr 0.0001 step 2000/2748 L 0.53765 (label 0.52141, anchor 0.16237)
+[x65 student] S_P lr 0.0001 step 2050/2748 L 0.62845 (label 0.60877, anchor 0.19682)
+[x65 student] S_P lr 0.0001 checkpoint 17 step 2061: inner-val L 0.735232
+[x65 student] S_P lr 0.0001 step 2100/2748 L 0.58055 (label 0.56311, anchor 0.17445)
+[x65 student] S_P lr 0.0001 step 2150/2748 L 0.49938 (label 0.48491, anchor 0.14475)
+[x65 student] S_P lr 0.0001 checkpoint 18 step 2176: inner-val L 0.736232
+[x65 student] S_P lr 0.0001 step 2200/2748 L 0.56894 (label 0.55251, anchor 0.16431)
+[x65 student] S_P lr 0.0001 step 2250/2748 L 0.58485 (label 0.56930, anchor 0.15549)
+[x65 student] S_P lr 0.0001 checkpoint 19 step 2290: inner-val L 0.741248
+[x65 student] S_P lr 0.0001 step 2300/2748 L 0.56238 (label 0.54561, anchor 0.16771)
+[x65 student] S_P lr 0.0001 step 2350/2748 L 0.52397 (label 0.50651, anchor 0.17462)
+[x65 student] S_P lr 0.0001 step 2400/2748 L 0.55082 (label 0.53380, anchor 0.17024)
+[x65 student] S_P lr 0.0001 checkpoint 20 step 2404: inner-val L 0.738245
+[x65 student] S_P lr 0.0001 step 2450/2748 L 0.54496 (label 0.52991, anchor 0.15050)
+[x65 student] S_P lr 0.0001 step 2500/2748 L 0.54123 (label 0.52180, anchor 0.19429)
+[x65 student] S_P lr 0.0001 checkpoint 21 step 2519: inner-val L 0.744904
+[x65 student] S_P lr 0.0001 step 2550/2748 L 0.53897 (label 0.52190, anchor 0.17075)
+[x65 student] S_P lr 0.0001 step 2600/2748 L 0.50617 (label 0.48931, anchor 0.16858)
+[x65 student] S_P lr 0.0001 checkpoint 22 step 2634: inner-val L 0.749547
+[x65 student] S_P lr 0.0001 step 2650/2748 L 0.49120 (label 0.47597, anchor 0.15234)
+[x65 student] S_P lr 0.0001 step 2700/2748 L 0.56908 (label 0.55063, anchor 0.18446)
+[x65 student] S_P lr 0.0001 checkpoint 23 step 2748: inner-val L 0.752412

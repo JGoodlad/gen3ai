@@ -1,0 +1,14 @@
+{
+ "kind": "trained",
+ "fold": "heldout72_hpfix",
+ "schema": "gen3_x65_learnability_v1",
+ "name": "cap_h",
+ "beta": 0.0,
+ "epochs": 24,
+ "evals_per_epoch": 1,
+ "train_panels": [
+  "forum72"
+ ],
+ "target_model": null,
+ "target_sha256": null
+}

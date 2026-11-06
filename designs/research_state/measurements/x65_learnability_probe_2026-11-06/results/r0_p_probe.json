@@ -1,0 +1,8 @@
+{
+ "schema": "gen3_x65_learnability_v1",
+ "kind": "dump",
+ "fold": "p72",
+ "model": "/home/goodlad/gen3ai_archive/x65_exit0_2026-11-05/students/s_p/model/x65_S_P.zip",
+ "model_sha256": "ec767f51c793df797a451a44b4f75df2a017303e62e1ca1067c25fde005e1ac3",
+ "init_argmax": "recorded"
+}

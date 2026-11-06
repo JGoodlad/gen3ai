@@ -1,0 +1,15 @@
+{
+ "kind": "trained",
+ "fold": "heldout72_hpfix",
+ "schema": "gen3_x65_learnability_v1",
+ "name": "ctrl_h",
+ "beta": 0.1,
+ "epochs": 12,
+ "evals_per_epoch": 2,
+ "train_panels": [
+  "forum72",
+  "p72"
+ ],
+ "target_model": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_100000037_steps.zip",
+ "target_sha256": "e1858ffe8a7d95fe053395721c8422dd56b194b1a8f9092aea17ad1961efccb2"
+}

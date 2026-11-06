@@ -1,0 +1,15 @@
+{
+ "kind": "trained",
+ "fold": "heldout72_hpfix",
+ "schema": "gen3_x65_learnability_v1",
+ "name": "curve_h",
+ "beta": 0.1,
+ "epochs": 12,
+ "evals_per_epoch": 2,
+ "train_panels": [
+  "forum72",
+  "p72"
+ ],
+ "target_model": null,
+ "target_sha256": null
+}

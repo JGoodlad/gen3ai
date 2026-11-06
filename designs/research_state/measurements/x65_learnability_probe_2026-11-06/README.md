@@ -1,6 +1,7 @@
 # X65 learnability probe (2026-11-06): can a student learn S′'s departures from P\*? DESCRIPTIVE
 
-**Status: DESIGNED. The GPU arms have not run.** This is a descriptive probe. It has no PREREG, no registration and
+**Status: RUN 2026-11-06.** The GPU arms ran 03:57–05:35 and were scored on CPU; see [§ Results](#results-2026-11-06).
+The data match **reading 2, (U) unlearnable at this scale**, with reading 3d's pattern on the curve arms. This is a descriptive probe. It has no PREREG, no registration and
 no verdict. No number from it is creditable as a verdict on X65, S′-LIVE or S′-HONEST. It answers finding X65-R2 of
 [`x65_exit0_2026-11-05/`](../x65_exit0_2026-11-05/README.md).
 
@@ -206,6 +207,80 @@ that fails, nothing below is read.
   The third can win games for S′ without being learnable. The cleanest test is S′-HONEST's replication itself, and the
   same probe on honest labels (an ExIt-0H bank).
 - **Ahead of that replication.** Reading 2 raises the prior that S′-HONEST's gain shrinks. Reading 1 lowers it.
+
+## Results (2026-11-06)
+
+**How it ran.**
+- `gpu_arms.sh` ran from main at `34fe4abe7`, under the training session's lease, on the RTX 3080 Ti, pinned to 0-4,8-12.
+- Arm times: curve_h 03:57–04:21, ctrl_h –04:46, cap_h –05:09, curve_p –05:35. Each finished in one chunk with
+  exit 0.
+- R0_P was dumped afterwards on CPU (181 s, peak 4.4 GB). R0_H is the design-time dump.
+- `report` ran with `--l2`.
+- The outputs are in [`results/`](results/): `report.json`, per-arm logs, `probe.json`s and `driver.log`. The
+  dumps and checkpoints stay in `~/gen3ai_archive/x65_learnability_2026-11-06/`.
+
+**The path check is exact.** On every arm's step-0 dump, D = 0 and K = 1 on train, val and read, with no ties.
+
+**The arms at the val-selected checkpoint (`read` = the read panel's unseen teams).**
+- Δagree is in pp, with a 95 % deal-bootstrap interval.
+- ctrl_h's columns are scored against its own target, P\*'s ancestor at 100 M. Its row "vs S′" scores the same
+  checkpoint against S′.
+
+| arm | step | `train` D / prec / Δagree | `val` D / prec / Δagree | `read` D / K / prec / Δagree |
+|---|---|---|---|---|
+| curve_h | 114 | 0.131 / 0.25 / −4.21 | 0.126 / 0.24 / −4.67 [−5.72, −3.73] | 0.119 / 0.853 / 0.23 / **−4.79 [−5.21, −4.38]** |
+| ctrl_h (own target) | 2,519 | 0.662 / 0.76 / +20.62 | 0.488 / 0.62 / +12.15 [+10.95, +13.34] | 0.487 / 0.905 / **0.61** / **+11.70 [+11.05, +12.32]** |
+| ctrl_h vs S′ | 2,519 | 0.178 / 0.20 / −10.36 | 0.176 / 0.22 / −8.19 | 0.175 / 0.768 / 0.22 / −8.04 |
+| cap_h | 585 | 0.292 / 0.36 / −1.32 | 0.192 / 0.24 / −7.27 [−8.91, −5.73] | 0.182 / 0.750 / 0.22 / −8.92 [−9.55, −8.25] |
+| curve_p | 114 | 0.124 / 0.26 / −3.57 | 0.121 / 0.25 / −4.10 [−5.09, −3.18] | 0.113 / 0.854 / 0.22 / −5.16 [−5.60, −4.71] |
+| R0_H (X65's S_H) | — | 0.069 / 0.35 / −0.10 | 0.053 / 0.28 / −1.19 | 0.054 / 0.951 / 0.28 / −1.06 [−1.32, −0.79] |
+| R0_P (X65's S_P) | — | 0.100 / — / +1.38 | 0.059 / — / −1.34 | 0.056 / 0.940 / 0.25 / −1.78 [−2.05, −1.52] |
+
+**At the last checkpoint.**
+
+| arm | `train` D / prec / Δagree | `val` Δagree | `read` D / K / prec / Δagree |
+|---|---|---|---|
+| curve_h, step 2,748 | 0.312 / 0.43 / +2.44 | −6.11 | 0.167 / 0.798 / 0.24 / −6.50 |
+| cap_h, step 2,808 | **0.688 / 0.67 / +17.01** | −12.32 | 0.199 / 0.663 / 0.18 / −13.79 |
+| curve_p, step 2,748 | 0.303 / 0.42 / +2.03 | −6.54 | 0.166 / 0.778 / 0.22 / −8.10 |
+
+**Over every checkpoint of the three S′ arms:**
+- `val` and `read` Δagree are ≤ 0 throughout. The maximum is 0, at step 0.
+- The best `read` precision is 0.24 (curve_h), 0.23 (curve_p) and 0.23 (cap_h).
+- Every arm's OPTIMISTIC best-on-`read` checkpoint is negative on `read`.
+
+**curve_h's `read` splits at the selected checkpoint** (reported, not decided):
+- By S′'s q margin: D is 0.198 below 0.03 (2,332 departures), 0.108 at 0.03–0.10 (5,815) and 0.088 at ≥ 0.10
+  (3,763).
+- By leak counter: D is 0.112 with `attribution_miss` (3,612 departures), 0.116 with `rewritten_moves` (4,325) and
+  0.125 with neither (5,346).
+- By L2 exposure: 0.145 exposed (594) and 0.118 unexposed (11,316).
+
+**Which reading it matches.** The data match **reading 2**, row by row:
+- "**ctrl_h** transfers: `read` precision against its own target well above ½, and Δagree > 0": precision 0.61,
+  Δagree +11.70 pp [+11.05, +12.32].
+- "**cap_h / curve_h** fit in-sample: `train` D ≥ ½ and precision > ½": cap_h at its last checkpoint, `train` D
+  0.688 and precision 0.67. curve_h does not reach it: `train` D 0.312 at its last checkpoint.
+- "**But curve_h** stays at about chance on `val` and `read` at every checkpoint: precision ≈ ctrl_h's `vs_sprime`
+  precision (≈ 0.2–0.3) and Δagree ≤ 0 throughout": curve_h's `read` precision is 0.23–0.24, against ctrl_h's vs-S′
+  precision of 0.22, and its Δagree is ≤ 0 at every checkpoint.
+
+The reading, in the note's words: "**(U) unlearnable at this scale.** The trainer and the data can learn a target of
+the same departure rate from the observation, and the network can memorise S′'s departures, yet those departures
+carry over to nothing it did not see, not even new deals of familiar teams."
+
+Reading 3d's pattern also shows on curve_h and curve_p: "D rises on `val` / `read`, but precision stays < ½, so K
+falls as fast". On `read`, curve_h's D goes 0.119 → 0.167, K goes 0.853 → 0.798 and precision stays 0.23–0.24.
+
+Readings 1, 3a, 3b and 3c do not match:
+- No S′ arm has Δagree > 0 on `val`.
+- ctrl_h transfers.
+- cap_h fits `train`.
+
+On 3e, curve_h's D is highest at S′'s near-ties. As the note says, these splits are reported, never decided.
+
+**What it does not say** (the note's own limit): reading 2 does not separate the leak, S′'s key noise and genuine
+lookahead (X65L-3).
 
 ## FINDINGs and limits
 
