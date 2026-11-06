@@ -1,0 +1,32 @@
+d=0.45 z1=2.576 z2=2.0
+  delta  0.0 pp: GO 0.026 GO_look1 0.005 NULL 0.740 cont 0.655 UNDEC 0.234
+  delta  1.0 pp: GO 0.238 GO_look1 0.036 NULL 0.284 cont 0.846 UNDEC 0.478
+  delta  1.5 pp: GO 0.465 GO_look1 0.078 NULL 0.124 cont 0.864 UNDEC 0.412
+  delta  2.0 pp: GO 0.705 GO_look1 0.153 NULL 0.044 cont 0.822 UNDEC 0.251
+  delta  2.3 pp: GO 0.820 GO_look1 0.214 NULL 0.022 cont 0.772 UNDEC 0.159
+  delta  3.0 pp: GO 0.963 GO_look1 0.401 NULL 0.003 cont 0.596 UNDEC 0.034
+  delta  4.6 pp: GO 1.000 GO_look1 0.841 NULL 0.000 cont 0.159 UNDEC 0.000
+d=0.45 z1=2.807 z2=1.98
+  delta  0.0 pp: GO 0.024 GO_look1 0.002 NULL 0.740 cont 0.656 UNDEC 0.236
+  delta  1.0 pp: GO 0.240 GO_look1 0.022 NULL 0.284 cont 0.861 UNDEC 0.476
+  delta  1.5 pp: GO 0.468 GO_look1 0.050 NULL 0.124 cont 0.892 UNDEC 0.408
+  delta  2.0 pp: GO 0.707 GO_look1 0.103 NULL 0.043 cont 0.872 UNDEC 0.250
+  delta  2.3 pp: GO 0.823 GO_look1 0.153 NULL 0.022 cont 0.832 UNDEC 0.155
+  delta  3.0 pp: GO 0.964 GO_look1 0.314 NULL 0.004 cont 0.683 UNDEC 0.032
+  delta  4.6 pp: GO 1.000 GO_look1 0.778 NULL 0.000 cont 0.222 UNDEC 0.000
+d=0.5 z1=2.576 z2=2.0
+  delta  0.0 pp: GO 0.026 GO_look1 0.005 NULL 0.697 cont 0.682 UNDEC 0.277
+  delta  1.0 pp: GO 0.217 GO_look1 0.033 NULL 0.264 cont 0.857 UNDEC 0.518
+  delta  1.5 pp: GO 0.425 GO_look1 0.071 NULL 0.118 cont 0.874 UNDEC 0.457
+  delta  2.0 pp: GO 0.660 GO_look1 0.133 NULL 0.043 cont 0.842 UNDEC 0.296
+  delta  2.3 pp: GO 0.779 GO_look1 0.188 NULL 0.022 cont 0.798 UNDEC 0.199
+  delta  3.0 pp: GO 0.945 GO_look1 0.356 NULL 0.004 cont 0.641 UNDEC 0.051
+  delta  4.6 pp: GO 1.000 GO_look1 0.791 NULL 0.000 cont 0.209 UNDEC 0.000
+d=0.5 z1=2.807 z2=1.98
+  delta  0.0 pp: GO 0.025 GO_look1 0.002 NULL 0.699 cont 0.685 UNDEC 0.276
+  delta  1.0 pp: GO 0.218 GO_look1 0.020 NULL 0.265 cont 0.870 UNDEC 0.517
+  delta  1.5 pp: GO 0.430 GO_look1 0.044 NULL 0.118 cont 0.900 UNDEC 0.452
+  delta  2.0 pp: GO 0.663 GO_look1 0.090 NULL 0.044 cont 0.885 UNDEC 0.293
+  delta  2.3 pp: GO 0.782 GO_look1 0.132 NULL 0.022 cont 0.854 UNDEC 0.196
+  delta  3.0 pp: GO 0.947 GO_look1 0.275 NULL 0.004 cont 0.722 UNDEC 0.049
+  delta  4.6 pp: GO 1.000 GO_look1 0.718 NULL 0.000 cont 0.282 UNDEC 0.000

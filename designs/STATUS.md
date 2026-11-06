@@ -74,6 +74,16 @@ were re-read on 11-04; nothing else here was re-checked.
 
 The orchestrator's order after REVIEW_2 of the all-null strategy (`69c7cd34d`), with the verdicts since 10-27 applied. Every item needs its GO.
 
+**Registered 2026-11-05: X65 ExIt-0, search distillation** ([`endstate/design_x65_exit0_search_distillation.md`](endstate/design_x65_exit0_search_distillation.md)).
+- **The question:** can P\* learn what S′ plays? Three panel-fold students are fine-tuned toward S′'s choices from
+  S′-LIVE's 97,601 banked searched decisions (no new search CPU) and read against Kakuna on the panel each never saw,
+  with no search at play time. So the read is leak-free.
+- **The cost:** ≈ 0.5 GPU-h; ≈ 23 Kakuna-lane CPU-h at look 1, ≤ 96 with look 2. Power 0.78–0.82 at +2.3 pp, half
+  of S′'s gain.
+- **What is owed first:** builds B1–B5 (≈ 2.5–3 agent-days), one review and a pin amendment, all before any student.
+- **The GPU:** this plan leaves it mostly idle. The days-long rung, ExIt-1 (≈ 35 GPU-h), is funded only by its GO,
+  and sequenced to end before S′-HONEST's live read, which a live training run would slow ≈ 5–10×.
+
 1. **Capacity at the plateau: CLOSED for growth.** X48 (production, per-kind FFN experts) READ 10-30, **NO-GO** (weak, `b01dc048b`); the N4 toy (FFN width 4×) READ 11-04, **NO-GO** ("used, buys nothing", §2). No N4-P on toy evidence; `D_MODEL` and from-scratch width (the scale bet) stay open, unqueued.
 2. **X63**, a long union continuation: **Stage A read NOT PURSUED (10-31)**, so X63 stops at Stage A
    ([`endstate/design_x63_long_breadth_continuation.md`](endstate/design_x63_long_breadth_continuation.md), PREREG

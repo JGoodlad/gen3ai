@@ -1,0 +1,24 @@
+{
+ "games": {
+  "forum72": 900,
+  "heldout72_hpfix": 900,
+  "p72": 900
+ },
+ "captures": {
+  "forum72": 900,
+  "heldout72_hpfix": 900,
+  "p72": 900
+ },
+ "searched": {
+  "forum72": 33398,
+  "heldout72_hpfix": 32020,
+  "p72": 32183
+ },
+ "departures": {
+  "forum72": 12128,
+  "heldout72_hpfix": 11910,
+  "p72": 11700
+ },
+ "total_searched": 97601,
+ "total_departures": 35738
+}

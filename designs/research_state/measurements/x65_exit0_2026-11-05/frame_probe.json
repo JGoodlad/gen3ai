@@ -1,0 +1,7 @@
+{
+ "what": "frame_probe.py on every 90th final searched cell of S'-LIVE (30 games, sorted names; 10 per panel), at c365f637e",
+ "ok": 976, "bad": 1, "err": 0, "cpu_s": 11.19,
+ "bad_rows": [{"cell": "pstar_s__forum72__340__g10", "key": "su_live_v1|b41c2c681f76c05bc60e|t23|n23", "at": 46,
+               "why": "our side's second decision in one request update (update 24, n 22 and n 23): the capture's arrival order of commands differs from honest_log's (update, side) order, so a naive prefix of length `at` is a different log; B1 must rebuild honest_log's order"}],
+ "first_probe": "3 games (F 300 g00, H 301 g05, p72 330 g12): 153 / 153 bit-exact, 2.31 CPU-s"
+}
