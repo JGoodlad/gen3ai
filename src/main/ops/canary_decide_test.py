@@ -50,7 +50,7 @@ def test_the_family_is_read_from_the_run_name(name, fam):
 #: is production C0's argv and architecture, so it takes C0's bar too, as does X63-U (the same + a team mix, as N1-P).
 PRODUCTION_ARMS = ["rb_x35_c0_s3501", "rb_x35_a1arch_s3501", "rb_x35_sprt_s3503", "rb_x35_d1wide_s3505",
                    "rb_x35_d1wide_s3501.crashed-20261022", "rb_x35_x52prac_s3502", "rb_x35_d3mut_s3503",
-                   "rb_x35_n1p_s3502", "rb_x35_lrfloor_s3501", "rb_x35_x48kffn_s3501", "rb_x63c_s6302",
+                   "rb_x35_n1p_s3502", "rb_x35_lrfloor_s3501", "rb_x35_x48kffn_s3501", "rb_x63c_s6302", "rb_x60t_s3501",
                    "rb_x63u_s2601"]
 
 

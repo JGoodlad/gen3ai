@@ -36,7 +36,8 @@ The family is read from the run name (``FAMILY_NAME_PATTERNS``): the production 
 d1wide,x52*,d3mut,n1p,x48kffn}_s*`` are all C0 (forks of P* at production pins; X48 by its PREREG's ruling,
 ``x48_kffn_production_2026-10-27/PREREG.md`` §7), X63-C's ``rb_x63c_s*`` is C0 (production C0's argv and
 architecture, forking X26 @380M; ``x63c_control_replicate_2026-10-28/PREREG.md``), X63-U's ``rb_x63u_s*`` is C0 (the
-same, + a team mix like N1-P's; ``x63_2026-10-29/PREREG.md``), the toy ``rb_x35t_c0_s*`` is C0 and
+same, + a team mix like N1-P's; ``x63_2026-10-29/PREREG.md``), X60-T's ``rb_x60t_s*`` is C0 (C0's argv + a human team
+mix through ``--human-data``; ``x60t_h_teams_2026-11-06/PREREG.md``), the toy ``rb_x35t_c0_s*`` is C0 and
 ``rb_x35t_x47*_s*`` is X47; any other run (``rb_x35_r0_*``) needs ``--family`` or a typed ``--bar``. The bars'
 provenance is in ``designs/training/compile_flags.md`` ("The canary-FATAL resume rule"). A typed ``--bar`` wins, is printed
 with its source, and is appended to ``--log`` when given (the 2026-10-24 ruling that judged D1 s3505 at the C0
@@ -80,6 +81,7 @@ FAMILY_NAME_PATTERNS: "tuple[tuple[str, str], ...]" = (
     (r"rb_x35_(?:c0|a1[a-z0-9]*|sprt|lrfloor[a-z0-9]*|d1wide|x52[a-z0-9]*|d3mut|n1p|x48kffn)_s\d+", "c0"),
     (r"rb_x63c_s\d+", "c0"),
     (r"rb_x63u_s\d+", "c0"),
+    (r"rb_x60t_s\d+", "c0"),
     (r"rb_x35t_c0_s\d+", "c0"),
     (r"rb_x35t_x47[a-z0-9]*_s\d+", "x47"),
 )
