@@ -1,7 +1,7 @@
 """X65 ExIt-0's committed read specs (``designs/research_state/measurements/x65_exit0_2026-11-05/read_spec_*.json``, PREREG
 §4 / §6, build B5): every registered number, each student on its read panel only, G-BANK's games, look 2's seeds and its
-imports of the earlier looks' states, S′-LIVE's import pinned to its committed spec, and the PENDING fields that keep
-each spec unplayable until the pin amendment fills them."""
+imports of the earlier looks' states, S′-LIVE's import pinned to its committed spec, and the values PREREG Amendment 3
+filled (the students' exported zips and sha256s, the play pin, each earlier look's committed spec sha256)."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -23,10 +23,21 @@ ARCHIVE = str(Path.home() / "gen3ai_archive")
 BASE = f"{ARCHIVE}/x65_exit0_2026-11-05"
 
 
+#: PREREG Amendment 3: the play pin and each student's exported zip and sha256 (``export.json``, ``bit_identical``)
+PIN = "320a535d4"
+STUDENTS = {
+    "s_h": (f"{BASE}/students/s_h/model/x65_S_H.zip", "7af676dd0be5f536494de45fab4a4a9a7da02f3c2e1b3058bbfb8a46685f3f44"),
+    "s_f": (f"{BASE}/students/s_f/model/x65_S_F.zip", "e400efb5819d4a77b7c9fc97710832e8139f2fca27bdb32d3d9794baad407f17"),
+    "s_p": (f"{BASE}/students/s_p/model/x65_S_P.zip", "ec767f51c793df797a451a44b4f75df2a017303e62e1ca1067c25fde005e1ac3"),
+}
+#: each look's state and the committed spec it was planned from (an import names the earlier spec FILE's sha256)
+STATE_SPEC = {f"{BASE}/look1": "read_spec_look1.json", f"{BASE}/look1_fresh": "read_spec_look1_fresh.json"}
+
+
 def _committed(name: str) -> Any:
     from main.reads.spec import load
 
-    return load(repo_path(f"{X65}/{name}"), allow_pending=True)
+    return load(repo_path(f"{X65}/{name}"))                             # refuses any PENDING value left
 
 
 @pytest.mark.parametrize("name,look,control", [("read_spec_look1.json", 1, "banked"),
@@ -36,7 +47,6 @@ def _committed(name: str) -> Any:
 def test_the_committed_specs_carry_the_prereg_numbers(name, look, control):
     """PREREG §4 / §6: the students on their read panels, z 2.576 / 2.0 and 1.96, the +2 pp bar, B 4,000 at
     default_rng(20261106), the 0.0005 boundary and 0.5 % drop cap, E4, the gate's B / seed, look 2's 600-674."""
-    from main.reads.spec import PENDING, SpecError, load
     from utils.hashing import sha256_file
 
     sp = _committed(name)
@@ -71,11 +81,13 @@ def test_the_committed_specs_carry_the_prereg_numbers(name, look, control):
     for a in sp.anchor.values():                                       # S′-LIVE's import names its committed spec
         if a.imports is not None and a.imports.state.endswith("sprime_live_play_2026-11-01"):
             assert a.imports.spec_sha256 == sha256_file(repo_path(SLIVE_SPEC)) and a.imports.group == "u"
-    assert sp.pending and all(x.endswith(("ref.path", "ref.sha256", "spec_sha256")) for x in sp.pending)
+        elif a.imports is not None:                                    # an earlier look: its committed spec's bytes
+            assert a.imports.spec_sha256 == sha256_file(repo_path(f"{X65}/{STATE_SPEC[a.imports.state]}"))
     # the registered bank (PREREG Amendment 2): the manifest the students train on and the delivery gate reads
     assert p["bank_manifest_sha256"] == BANK_SHA256
-    with pytest.raises(SpecError, match=PENDING):
-        load(repo_path(f"{X65}/{name}"))                                # never planned while anything is PENDING
+    # PREREG Amendment 3: nothing PENDING, the play pin, each student's exported bytes
+    assert sp.pending == () and sp.pin == PIN
+    assert {lab: (sp.models[lab].ref.path, sp.models[lab].ref.sha256) for lab in STUDENTS} == STUDENTS
 
 
 def test_look2_imports_each_earlier_look_from_its_registered_state():

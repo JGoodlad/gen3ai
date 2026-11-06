@@ -6,9 +6,9 @@
 every finding disposed in PREREG Amendments 1 and 2). **The bank is built and registered**: 268,905 decision rows,
 97,395 label rows, every one verified against its `frame_sha256` (manifest sha256 `d13fd55f…2b7a`). **The play pin
 is `320a535d4`**, whose play path is byte-identical to S′-LIVE's `0c76b521e` and whose `main.reads` plans the specs.
-Nothing is trained or played: training goes to the GPU session on the orchestrator's word. The specs' remaining
-`PENDING` values (the student zips and sha256s, the pin, the later looks' import hashes) are filled once the students
-are exported.
+**The three students are trained and exported** (every pick at lr 1e-5; B3 bit-identical at the pin), and PREREG
+Amendment 3 fills the specs' last `PENDING` values (the student zips and sha256s, the pin, the later looks' import
+hashes). Nothing is played yet: the delivery gate (§5) reads first.
 
 **Terms.**
 - **P\*** is X26 @280M (`pstar_plateau`).
@@ -312,3 +312,4 @@ from that check, root rule 8).
 | 2026-11-05 | **B1–B5 built** (X65 builder, orchestrator brief: build exactly as registered) | B1–B4's meter in `src/main/x65/` (a new loop, reusing X59-S's helpers, HOM's export form and `policy_logits_t`); the rule and the spec in `main.reads` | X59-S's `train` as-is: its loss (set-NLL), its fresh init, its cosine schedule and its rowset format are all different from §3's, so it would be a fork with every line changed | an 18-shard sample (360 games, 17,134 rows): 6,007 / 6,007 label rows and all 6,621 searched-arm digests verified, every recorded `log_sha256` and re-score log reproduced, 0 anchor rows failing either check; the readings in §7 are for the review |
 | 2026-11-05 | **ExIt-1 waits for the placebo** (PREREG Amendment 1; REVIEW R-M2, the orchestrator's ruling) | GO funds ExIt-1 only with the placebo's SEARCH-INFO; the placebo runs on GO at either look, on look 1's deals | GO alone: the control is not dose-matched, so a GO can be fine-tuning rather than S′'s choices | `REVIEW.md` R-M2 |
 | 2026-11-05 | **The pin amendment** (PREREG Amendment 2) | the bank `d13fd55f…2b7a` (97,395 / 97,395 label rows verified); the play pin `320a535d4`; every REVIEW finding disposed | pinning `0c76b521e` itself: its `main.reads` cannot plan the specs; a successor built on `0c76b521e`: not needed, since `320a535d4`'s play path is byte-identical | `playpath.compare`; the export check at `320a535d4`; `bank_manifest.json` |
+| 2026-11-06 | **The specs filled** (PREREG Amendment 3, the read operator) | the students' exported zips and sha256s, `pin: 320a535d4`, each earlier look's committed spec sha256 | — (it fills only what Amendment 2 listed) | `export.json` per student; `check-spec` exit 0 on all four |

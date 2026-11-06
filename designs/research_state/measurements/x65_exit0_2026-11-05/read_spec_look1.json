@@ -2,7 +2,8 @@
  "schema": "gen3_read_spec_v1",
  "read": "x65_exit0_look1_2026-11-05",
  "prereg": "designs/research_state/measurements/x65_exit0_2026-11-05/PREREG.md",
- "note": "X65 ExIt-0 LOOK 1 (state /home/goodlad/gen3ai_archive/x65_exit0_2026-11-05/look1): each P* student (s_h / s_f / s_p, distilled from S' on the other two panels) plays greedy, no search, lone one-game units vs Kakuna on its held-out panel's 900 S'-LIVE deals (U unit seeds 300-344, 20 a seed), paired by deal with S'-LIVE's BANKED P* raw unit (imported); G-BANK re-plays 135 banked raw deals (game (seed-300) mod 20 per panel and seed), >= 133 byte-identical or the banked control is VOID (read_spec_look1_fresh.json); distill_play: NOT-DELIVERED by the delivery gate's file, GO iff LB(z 2.576) > 0, NULL iff UB(1.96) < +2 pp, else CONTINUE (look 2). PENDING: the students' zips and sha256s and the bank manifest (the pin amendment), and the pin.",
+ "pin": "320a535d4",
+ "note": "X65 ExIt-0 LOOK 1 (state /home/goodlad/gen3ai_archive/x65_exit0_2026-11-05/look1): each P* student (s_h / s_f / s_p, distilled from S' on the other two panels) plays greedy, no search, lone one-game units vs Kakuna on its held-out panel's 900 S'-LIVE deals (U unit seeds 300-344, 20 a seed), paired by deal with S'-LIVE's BANKED P* raw unit (imported); G-BANK re-plays 135 banked raw deals (game (seed-300) mod 20 per panel and seed), >= 133 byte-identical or the banked control is VOID (read_spec_look1_fresh.json); distill_play: NOT-DELIVERED by the delivery gate's file, GO iff LB(z 2.576) > 0, NULL iff UB(1.96) < +2 pp, else CONTINUE (look 2). Its PENDING values (the students' zips and sha256s, the pin, the earlier looks' spec sha256s) are filled by PREREG Amendment 3.",
  "models": {
   "pstar": {
    "arm": "pstar",
@@ -18,8 +19,8 @@
    "seed": 6511,
    "ref": {
     "kind": "pinned",
-    "path": "PENDING",
-    "sha256": "PENDING"
+    "path": "/home/goodlad/gen3ai_archive/x65_exit0_2026-11-05/students/s_h/model/x65_S_H.zip",
+    "sha256": "7af676dd0be5f536494de45fab4a4a9a7da02f3c2e1b3058bbfb8a46685f3f44"
    }
   },
   "s_f": {
@@ -27,8 +28,8 @@
    "seed": 6512,
    "ref": {
     "kind": "pinned",
-    "path": "PENDING",
-    "sha256": "PENDING"
+    "path": "/home/goodlad/gen3ai_archive/x65_exit0_2026-11-05/students/s_f/model/x65_S_F.zip",
+    "sha256": "e400efb5819d4a77b7c9fc97710832e8139f2fca27bdb32d3d9794baad407f17"
    }
   },
   "s_p": {
@@ -36,8 +37,8 @@
    "seed": 6513,
    "ref": {
     "kind": "pinned",
-    "path": "PENDING",
-    "sha256": "PENDING"
+    "path": "/home/goodlad/gen3ai_archive/x65_exit0_2026-11-05/students/s_p/model/x65_S_P.zip",
+    "sha256": "ec767f51c793df797a451a44b4f75df2a017303e62e1ca1067c25fde005e1ac3"
    }
   }
  },

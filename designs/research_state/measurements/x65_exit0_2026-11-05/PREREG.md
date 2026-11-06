@@ -358,3 +358,36 @@ by `check-spec --pin-pending`, so the pin and the student shas land together):
   - G-BANK is re-checked at look 2 from the imported replays;
   - NOT-DELIVERED is decided with `main.reads decide` on a planned, unplayed state, its record being `decision.json`
     plus the delivery file.
+
+## Amendment 3 (2026-11-06, after the students trained, before any read-panel logit or any game): the specs filled
+
+Written after the three students were trained and exported (the GPU session, 11-06 00:37), before the delivery gate
+scored any read-panel row and before any game of this read. It fills the specs' `PENDING` values that Amendment 2
+lists, and nothing else. **It moves no bar, fold, deal, seed, z, β, learning rate, epoch budget or class rule.**
+
+**The students** (`~/gen3ai_archive/x65_exit0_2026-11-05/students/<fold>/`; each `pick.json` is §3's blind pick on
+inner-validation L, each `model/export.json` is B3's export at `320a535d4`, `bit_identical: true` on the fixture
+`bb4cf83d…`, loader `bare`):
+
+| student | read panel | pick: lr, checkpoint, step | inner-val L (label KL, anchor KL) | zip sha256 |
+|---|---|---|---|---|
+| S_H | H | 1e-5, 5, 344 | 0.7011 (0.6836, 0.0175) | `7af676dd0be5f536494de45fab4a4a9a7da02f3c2e1b3058bbfb8a46685f3f44` |
+| S_F | F | 1e-5, 2, 169 | 0.6994 (0.6877, 0.0117) | `e400efb5819d4a77b7c9fc97710832e8139f2fca27bdb32d3d9794baad407f17` |
+| S_P | p72 | 1e-5, 12, 744 | 0.7228 (0.7010, 0.0218) | `ec767f51c793df797a451a44b4f75df2a017303e62e1ca1067c25fde005e1ac3` |
+
+- The GPU session's FINDING, recorded before the gate: inner-validation L moved only ≈ 2 % from P\*'s, and the picks'
+  anchor KL is 0.012–0.022. The delivery gate (§5) exists for exactly this, and its verdict stands as registered.
+
+**The specs.** Each spec now carries `pin: 320a535d4` and the three students' zip paths and sha256s; each later
+look's import of an earlier look names that look's committed spec, filled in the order look 1 → look 1 fresh and
+look 2 → look 2 fresh. `check-spec` exits 0 on all four, with the one play-path difference at HEAD Amendment 2 names
+(`src/main/reads/__init__.py`'s docstring).
+
+| spec | sha256 |
+|---|---|
+| `read_spec_look1.json` | `1d4b6d40e430d9f81473aa671b81c4e1381bd8d592d3fe2e1fcc8a8f10b95fcd` |
+| `read_spec_look1_fresh.json` | `aff9351771526733b71e2571373d6b794adca9fa41b762fce505fb74fca15ad7` |
+| `read_spec_look2.json` | `596fd53f35071d3425091d9edcc1030b3112ee1ab35ef4b67730fa179721ad5c` |
+| `read_spec_look2_fresh.json` | `960d33773fdc1f4270f9193935064362bfa470a151bd494a41d621bc6aa44ef9` |
+
+`src/main/reads/x65_specs_test.py` pins the filled values and each import against the committed spec's bytes.

@@ -2,7 +2,8 @@
  "schema": "gen3_read_spec_v1",
  "read": "x65_exit0_look1_fresh_2026-11-05",
  "prereg": "designs/research_state/measurements/x65_exit0_2026-11-05/PREREG.md",
- "note": "X65 ExIt-0 LOOK 1, FRESH CONTROL (state /home/goodlad/gen3ai_archive/x65_exit0_2026-11-05/look1_fresh; played ONLY if look 1's G-BANK fails, PREREG §4): P* raw played fresh on look 1's 2,700 deals, the students imported from look 1 (state /home/goodlad/gen3ai_archive/x65_exit0_2026-11-05/look1); no G-BANK; the rest as look 1. PENDING: as look 1, plus look 1's final spec sha256.",
+ "pin": "320a535d4",
+ "note": "X65 ExIt-0 LOOK 1, FRESH CONTROL (state /home/goodlad/gen3ai_archive/x65_exit0_2026-11-05/look1_fresh; played ONLY if look 1's G-BANK fails, PREREG §4): P* raw played fresh on look 1's 2,700 deals, the students imported from look 1 (state /home/goodlad/gen3ai_archive/x65_exit0_2026-11-05/look1); no G-BANK; the rest as look 1. Its PENDING values (the students' zips and sha256s, the pin, the earlier looks' spec sha256s) are filled by PREREG Amendment 3.",
  "models": {
   "pstar": {
    "arm": "pstar",
@@ -18,8 +19,8 @@
    "seed": 6511,
    "ref": {
     "kind": "pinned",
-    "path": "PENDING",
-    "sha256": "PENDING"
+    "path": "/home/goodlad/gen3ai_archive/x65_exit0_2026-11-05/students/s_h/model/x65_S_H.zip",
+    "sha256": "7af676dd0be5f536494de45fab4a4a9a7da02f3c2e1b3058bbfb8a46685f3f44"
    }
   },
   "s_f": {
@@ -27,8 +28,8 @@
    "seed": 6512,
    "ref": {
     "kind": "pinned",
-    "path": "PENDING",
-    "sha256": "PENDING"
+    "path": "/home/goodlad/gen3ai_archive/x65_exit0_2026-11-05/students/s_f/model/x65_S_F.zip",
+    "sha256": "e400efb5819d4a77b7c9fc97710832e8139f2fca27bdb32d3d9794baad407f17"
    }
   },
   "s_p": {
@@ -36,8 +37,8 @@
    "seed": 6513,
    "ref": {
     "kind": "pinned",
-    "path": "PENDING",
-    "sha256": "PENDING"
+    "path": "/home/goodlad/gen3ai_archive/x65_exit0_2026-11-05/students/s_p/model/x65_S_P.zip",
+    "sha256": "ec767f51c793df797a451a44b4f75df2a017303e62e1ca1067c25fde005e1ac3"
    }
   }
  },
@@ -55,7 +56,7 @@
    ],
    "import": {
     "state": "/home/goodlad/gen3ai_archive/x65_exit0_2026-11-05/look1",
-    "spec_sha256": "PENDING",
+    "spec_sha256": "1d4b6d40e430d9f81473aa671b81c4e1381bd8d592d3fe2e1fcc8a8f10b95fcd",
     "group": "h",
     "models": [
      "s_h"
@@ -75,7 +76,7 @@
    ],
    "import": {
     "state": "/home/goodlad/gen3ai_archive/x65_exit0_2026-11-05/look1",
-    "spec_sha256": "PENDING",
+    "spec_sha256": "1d4b6d40e430d9f81473aa671b81c4e1381bd8d592d3fe2e1fcc8a8f10b95fcd",
     "group": "f",
     "models": [
      "s_f"
@@ -95,7 +96,7 @@
    ],
    "import": {
     "state": "/home/goodlad/gen3ai_archive/x65_exit0_2026-11-05/look1",
-    "spec_sha256": "PENDING",
+    "spec_sha256": "1d4b6d40e430d9f81473aa671b81c4e1381bd8d592d3fe2e1fcc8a8f10b95fcd",
     "group": "p",
     "models": [
      "s_p"
