@@ -1,0 +1,1901 @@
+{
+ "seed": 20261106,
+ "reps": 40000,
+ "power_py": "/home/goodlad/dev/gen3ai/.claude/worktrees/agent-acda06c11bf64be1a/designs/research_state/measurements/x60_redesign_2026-10-26/power.py",
+ "power_py_sha256": "7c1330a5921b5237d58527065646f10da71eee1e61c5c6c15783037345a88f25",
+ "fm4": {
+  "source": "X61P look 2 cells.json (spec f28654ccf31c), forum72 regime {'forum72': '2118812c27885de3'}, engine port=0d3d7629f16a0eaf/91;env=393631b886965b0c/126; 60 units = 1,200 games a final; ties are non-wins",
+  "pooled_C0_N1P": {
+   "per_arm": {
+    "C0": {
+     "rates_pp": [
+      50.58,
+      52.08,
+      49.83,
+      50.83,
+      48.58
+     ],
+     "sd_pp": 1.292,
+     "mean_pp": 50.383
+    },
+    "N1-P": {
+     "rates_pp": [
+      51.58,
+      51.83,
+      51.33,
+      51.83,
+      48.08
+     ],
+     "sd_pp": 1.607,
+     "mean_pp": 50.933
+    }
+   },
+   "W_sd_pp": 1.458,
+   "binomial_sd_pp": 1.443,
+   "phi": 1.021,
+   "df": 8,
+   "sigma2_point_pp2": 0.0435,
+   "sigma_point_pp": 0.209,
+   "sigma_upper95_pp": 2.035,
+   "sigma2_lower95_pp2": -0.9852,
+   "guard_would_fire_at_floor_1pp": false
+  },
+  "C0_only": {
+   "per_arm": {
+    "C0": {
+     "rates_pp": [
+      50.58,
+      52.08,
+      49.83,
+      50.83,
+      48.58
+     ],
+     "sd_pp": 1.292,
+     "mean_pp": 50.383
+    }
+   },
+   "W_sd_pp": 1.292,
+   "binomial_sd_pp": 1.443,
+   "phi": 0.801,
+   "df": 4,
+   "sigma2_point_pp2": -0.4133,
+   "sigma_point_pp": 0.0,
+   "sigma_upper95_pp": 2.704,
+   "sigma2_lower95_pp2": -1.3786,
+   "guard_would_fire_at_floor_1pp": false
+  },
+  "N1P_only": {
+   "per_arm": {
+    "N1-P": {
+     "rates_pp": [
+      51.58,
+      51.83,
+      51.33,
+      51.83,
+      48.08
+     ],
+     "sd_pp": 1.607,
+     "mean_pp": 50.933
+    }
+   },
+   "W_sd_pp": 1.607,
+   "binomial_sd_pp": 1.443,
+   "phi": 1.24,
+   "df": 4,
+   "sigma2_point_pp2": 0.5004,
+   "sigma_point_pp": 0.707,
+   "sigma_upper95_pp": 3.528,
+   "sigma2_lower95_pp2": -0.9926,
+   "guard_would_fire_at_floor_1pp": false
+  },
+  "fix3_rule": "UB (pooled, one-sided 95 %) > 1.5 pp => 8 seeds an arm; decided on control-only data (X61P's arms, no X60 data)",
+  "fix3_decision": "8 seeds an arm",
+  "power_5_seeds": {
+   "5 seeds, sigma 0.00 pp, delta +0 pp": {
+    "GAIN": 0.007,
+    "LOSS": 0.008,
+    "NO-USEFUL-GAIN": 0.786,
+    "NOT-RESOLVED": 0.199,
+    "stop_at_look1": 0.507,
+    "halfwidth_look2_pp": 2.18,
+    "welch_guard_fires": 0.004
+   },
+   "5 seeds, sigma 0.00 pp, delta +2 pp": {
+    "GAIN": 0.41,
+    "LOSS": 0.0,
+    "NO-USEFUL-GAIN": 0.106,
+    "NOT-RESOLVED": 0.484,
+    "stop_at_look1": 0.045,
+    "halfwidth_look2_pp": 2.18,
+    "welch_guard_fires": 0.004
+   },
+   "5 seeds, sigma 0.00 pp, delta +3 pp": {
+    "GAIN": 0.801,
+    "LOSS": 0.0,
+    "NO-USEFUL-GAIN": 0.01,
+    "NOT-RESOLVED": 0.189,
+    "stop_at_look1": 0.005,
+    "halfwidth_look2_pp": 2.18,
+    "welch_guard_fires": 0.004
+   },
+   "5 seeds, sigma 0.00 pp, delta +4 pp": {
+    "GAIN": 0.974,
+    "NO-USEFUL-GAIN": 0.001,
+    "NOT-RESOLVED": 0.026,
+    "stop_at_look1": 0.0,
+    "halfwidth_look2_pp": 2.18,
+    "welch_guard_fires": 0.003
+   },
+   "5 seeds, sigma 0.21 pp, delta +0 pp": {
+    "GAIN": 0.009,
+    "LOSS": 0.008,
+    "NO-USEFUL-GAIN": 0.779,
+    "NOT-RESOLVED": 0.204,
+    "stop_at_look1": 0.502,
+    "halfwidth_look2_pp": 2.18,
+    "welch_guard_fires": 0.004
+   },
+   "5 seeds, sigma 0.21 pp, delta +2 pp": {
+    "GAIN": 0.406,
+    "NO-USEFUL-GAIN": 0.106,
+    "NOT-RESOLVED": 0.488,
+    "stop_at_look1": 0.048,
+    "halfwidth_look2_pp": 2.18,
+    "welch_guard_fires": 0.004
+   },
+   "5 seeds, sigma 0.21 pp, delta +3 pp": {
+    "GAIN": 0.797,
+    "NO-USEFUL-GAIN": 0.011,
+    "NOT-RESOLVED": 0.191,
+    "stop_at_look1": 0.006,
+    "halfwidth_look2_pp": 2.18,
+    "welch_guard_fires": 0.004
+   },
+   "5 seeds, sigma 0.21 pp, delta +4 pp": {
+    "GAIN": 0.971,
+    "NO-USEFUL-GAIN": 0.0,
+    "NOT-RESOLVED": 0.028,
+    "stop_at_look1": 0.0,
+    "halfwidth_look2_pp": 2.18,
+    "welch_guard_fires": 0.004
+   },
+   "5 seeds, sigma 1.00 pp, delta +0 pp": {
+    "GAIN": 0.019,
+    "LOSS": 0.018,
+    "NO-USEFUL-GAIN": 0.665,
+    "NOT-RESOLVED": 0.298,
+    "stop_at_look1": 0.503,
+    "halfwidth_look2_pp": 2.18,
+    "welch_guard_fires": 0.051
+   },
+   "5 seeds, sigma 1.00 pp, delta +2 pp": {
+    "GAIN": 0.376,
+    "LOSS": 0.0,
+    "NO-USEFUL-GAIN": 0.136,
+    "NOT-RESOLVED": 0.488,
+    "stop_at_look1": 0.083,
+    "halfwidth_look2_pp": 2.18,
+    "welch_guard_fires": 0.05
+   },
+   "5 seeds, sigma 1.00 pp, delta +3 pp": {
+    "GAIN": 0.701,
+    "NO-USEFUL-GAIN": 0.027,
+    "NOT-RESOLVED": 0.272,
+    "stop_at_look1": 0.018,
+    "halfwidth_look2_pp": 2.18,
+    "welch_guard_fires": 0.05
+   },
+   "5 seeds, sigma 1.00 pp, delta +4 pp": {
+    "GAIN": 0.909,
+    "NO-USEFUL-GAIN": 0.003,
+    "NOT-RESOLVED": 0.088,
+    "stop_at_look1": 0.003,
+    "halfwidth_look2_pp": 2.18,
+    "welch_guard_fires": 0.05
+   },
+   "5 seeds, sigma 1.50 pp, delta +0 pp": {
+    "GAIN": 0.029,
+    "LOSS": 0.031,
+    "NO-USEFUL-GAIN": 0.518,
+    "NOT-RESOLVED": 0.421,
+    "stop_at_look1": 0.503,
+    "halfwidth_look2_pp": 2.47,
+    "welch_guard_fires": 0.199
+   },
+   "5 seeds, sigma 1.50 pp, delta +2 pp": {
+    "GAIN": 0.312,
+    "LOSS": 0.001,
+    "NO-USEFUL-GAIN": 0.142,
+    "NOT-RESOLVED": 0.544,
+    "stop_at_look1": 0.122,
+    "halfwidth_look2_pp": 2.47,
+    "welch_guard_fires": 0.201
+   },
+   "5 seeds, sigma 1.50 pp, delta +3 pp": {
+    "GAIN": 0.578,
+    "LOSS": 0.0,
+    "NO-USEFUL-GAIN": 0.042,
+    "NOT-RESOLVED": 0.38,
+    "stop_at_look1": 0.038,
+    "halfwidth_look2_pp": 2.47,
+    "welch_guard_fires": 0.201
+   },
+   "5 seeds, sigma 1.50 pp, delta +4 pp": {
+    "GAIN": 0.793,
+    "NO-USEFUL-GAIN": 0.009,
+    "NOT-RESOLVED": 0.198,
+    "stop_at_look1": 0.01,
+    "halfwidth_look2_pp": 2.48,
+    "welch_guard_fires": 0.205
+   },
+   "5 seeds, sigma 2.00 pp, delta +0 pp": {
+    "GAIN": 0.032,
+    "LOSS": 0.039,
+    "NO-USEFUL-GAIN": 0.369,
+    "NOT-RESOLVED": 0.559,
+    "stop_at_look1": 0.499,
+    "halfwidth_look2_pp": 2.93,
+    "welch_guard_fires": 0.449
+   },
+   "5 seeds, sigma 2.00 pp, delta +2 pp": {
+    "GAIN": 0.243,
+    "LOSS": 0.004,
+    "NO-USEFUL-GAIN": 0.125,
+    "NOT-RESOLVED": 0.628,
+    "stop_at_look1": 0.162,
+    "halfwidth_look2_pp": 2.92,
+    "welch_guard_fires": 0.444
+   },
+   "5 seeds, sigma 2.00 pp, delta +3 pp": {
+    "GAIN": 0.431,
+    "LOSS": 0.001,
+    "NO-USEFUL-GAIN": 0.05,
+    "NOT-RESOLVED": 0.519,
+    "stop_at_look1": 0.068,
+    "halfwidth_look2_pp": 2.94,
+    "welch_guard_fires": 0.452
+   },
+   "5 seeds, sigma 2.00 pp, delta +4 pp": {
+    "GAIN": 0.635,
+    "LOSS": 0.0,
+    "NO-USEFUL-GAIN": 0.016,
+    "NOT-RESOLVED": 0.348,
+    "stop_at_look1": 0.024,
+    "halfwidth_look2_pp": 2.93,
+    "welch_guard_fires": 0.45
+   },
+   "5 seeds, sigma 2.04 pp, delta +0 pp": {
+    "GAIN": 0.032,
+    "LOSS": 0.04,
+    "NO-USEFUL-GAIN": 0.358,
+    "NOT-RESOLVED": 0.57,
+    "stop_at_look1": 0.5,
+    "halfwidth_look2_pp": 2.97,
+    "welch_guard_fires": 0.468
+   },
+   "5 seeds, sigma 2.04 pp, delta +2 pp": {
+    "GAIN": 0.233,
+    "LOSS": 0.003,
+    "NO-USEFUL-GAIN": 0.122,
+    "NOT-RESOLVED": 0.642,
+    "stop_at_look1": 0.164,
+    "halfwidth_look2_pp": 2.97,
+    "welch_guard_fires": 0.468
+   },
+   "5 seeds, sigma 2.04 pp, delta +3 pp": {
+    "GAIN": 0.419,
+    "LOSS": 0.001,
+    "NO-USEFUL-GAIN": 0.051,
+    "NOT-RESOLVED": 0.529,
+    "stop_at_look1": 0.071,
+    "halfwidth_look2_pp": 2.98,
+    "welch_guard_fires": 0.473
+   },
+   "5 seeds, sigma 2.04 pp, delta +4 pp": {
+    "GAIN": 0.627,
+    "LOSS": 0.0,
+    "NO-USEFUL-GAIN": 0.017,
+    "NOT-RESOLVED": 0.357,
+    "stop_at_look1": 0.025,
+    "halfwidth_look2_pp": 2.96,
+    "welch_guard_fires": 0.467
+   },
+   "5 seeds, sigma 2.75 pp, delta +0 pp": {
+    "GAIN": 0.03,
+    "LOSS": 0.044,
+    "NO-USEFUL-GAIN": 0.203,
+    "NOT-RESOLVED": 0.723,
+    "stop_at_look1": 0.499,
+    "halfwidth_look2_pp": 4.49,
+    "welch_guard_fires": 0.761
+   },
+   "5 seeds, sigma 2.75 pp, delta +2 pp": {
+    "GAIN": 0.152,
+    "LOSS": 0.008,
+    "NO-USEFUL-GAIN": 0.088,
+    "NOT-RESOLVED": 0.753,
+    "stop_at_look1": 0.214,
+    "halfwidth_look2_pp": 4.5,
+    "welch_guard_fires": 0.765
+   },
+   "5 seeds, sigma 2.75 pp, delta +3 pp": {
+    "GAIN": 0.276,
+    "LOSS": 0.003,
+    "NO-USEFUL-GAIN": 0.048,
+    "NOT-RESOLVED": 0.674,
+    "stop_at_look1": 0.118,
+    "halfwidth_look2_pp": 4.49,
+    "welch_guard_fires": 0.763
+   },
+   "5 seeds, sigma 2.75 pp, delta +4 pp": {
+    "GAIN": 0.428,
+    "LOSS": 0.001,
+    "NO-USEFUL-GAIN": 0.021,
+    "NOT-RESOLVED": 0.549,
+    "stop_at_look1": 0.058,
+    "halfwidth_look2_pp": 4.49,
+    "welch_guard_fires": 0.764
+   }
+  },
+  "power_8_seeds": {
+   "8 seeds, sigma 0.00 pp, delta +0 pp": {
+    "GAIN": 0.008,
+    "LOSS": 0.008,
+    "NO-USEFUL-GAIN": 0.93,
+    "NOT-RESOLVED": 0.054,
+    "stop_at_look1": 0.505,
+    "halfwidth_look2_pp": 1.72,
+    "welch_guard_fires": 0.002
+   },
+   "8 seeds, sigma 0.00 pp, delta +2 pp": {
+    "GAIN": 0.636,
+    "LOSS": 0.0,
+    "NO-USEFUL-GAIN": 0.164,
+    "NOT-RESOLVED": 0.2,
+    "stop_at_look1": 0.045,
+    "halfwidth_look2_pp": 1.72,
+    "welch_guard_fires": 0.002
+   },
+   "8 seeds, sigma 0.00 pp, delta +3 pp": {
+    "GAIN": 0.956,
+    "NO-USEFUL-GAIN": 0.013,
+    "NOT-RESOLVED": 0.031,
+    "stop_at_look1": 0.006,
+    "halfwidth_look2_pp": 1.72,
+    "welch_guard_fires": 0.001
+   },
+   "8 seeds, sigma 0.00 pp, delta +4 pp": {
+    "GAIN": 0.999,
+    "NO-USEFUL-GAIN": 0.001,
+    "NOT-RESOLVED": 0.001,
+    "stop_at_look1": 0.001,
+    "halfwidth_look2_pp": 1.72,
+    "welch_guard_fires": 0.001
+   },
+   "8 seeds, sigma 0.21 pp, delta +0 pp": {
+    "GAIN": 0.009,
+    "LOSS": 0.007,
+    "NO-USEFUL-GAIN": 0.928,
+    "NOT-RESOLVED": 0.056,
+    "stop_at_look1": 0.504,
+    "halfwidth_look2_pp": 1.72,
+    "welch_guard_fires": 0.002
+   },
+   "8 seeds, sigma 0.21 pp, delta +2 pp": {
+    "GAIN": 0.632,
+    "LOSS": 0.0,
+    "NO-USEFUL-GAIN": 0.172,
+    "NOT-RESOLVED": 0.196,
+    "stop_at_look1": 0.05,
+    "halfwidth_look2_pp": 1.72,
+    "welch_guard_fires": 0.002
+   },
+   "8 seeds, sigma 0.21 pp, delta +3 pp": {
+    "GAIN": 0.956,
+    "NO-USEFUL-GAIN": 0.013,
+    "NOT-RESOLVED": 0.032,
+    "stop_at_look1": 0.005,
+    "halfwidth_look2_pp": 1.72,
+    "welch_guard_fires": 0.002
+   },
+   "8 seeds, sigma 0.21 pp, delta +4 pp": {
+    "GAIN": 0.999,
+    "NO-USEFUL-GAIN": 0.0,
+    "NOT-RESOLVED": 0.001,
+    "stop_at_look1": 0.0,
+    "halfwidth_look2_pp": 1.72,
+    "welch_guard_fires": 0.002
+   },
+   "8 seeds, sigma 1.00 pp, delta +0 pp": {
+    "GAIN": 0.019,
+    "LOSS": 0.019,
+    "NO-USEFUL-GAIN": 0.826,
+    "NOT-RESOLVED": 0.137,
+    "stop_at_look1": 0.502,
+    "halfwidth_look2_pp": 1.72,
+    "welch_guard_fires": 0.052
+   },
+   "8 seeds, sigma 1.00 pp, delta +2 pp": {
+    "GAIN": 0.556,
+    "LOSS": 0.0,
+    "NO-USEFUL-GAIN": 0.198,
+    "NOT-RESOLVED": 0.246,
+    "stop_at_look1": 0.085,
+    "halfwidth_look2_pp": 1.72,
+    "welch_guard_fires": 0.052
+   },
+   "8 seeds, sigma 1.00 pp, delta +3 pp": {
+    "GAIN": 0.893,
+    "NO-USEFUL-GAIN": 0.03,
+    "NOT-RESOLVED": 0.077,
+    "stop_at_look1": 0.018,
+    "halfwidth_look2_pp": 1.72,
+    "welch_guard_fires": 0.051
+   },
+   "8 seeds, sigma 1.00 pp, delta +4 pp": {
+    "GAIN": 0.988,
+    "NO-USEFUL-GAIN": 0.003,
+    "NOT-RESOLVED": 0.009,
+    "stop_at_look1": 0.003,
+    "halfwidth_look2_pp": 1.72,
+    "welch_guard_fires": 0.051
+   },
+   "8 seeds, sigma 1.50 pp, delta +0 pp": {
+    "GAIN": 0.026,
+    "LOSS": 0.03,
+    "NO-USEFUL-GAIN": 0.67,
+    "NOT-RESOLVED": 0.273,
+    "stop_at_look1": 0.501,
+    "halfwidth_look2_pp": 1.99,
+    "welch_guard_fires": 0.269
+   },
+   "8 seeds, sigma 1.50 pp, delta +2 pp": {
+    "GAIN": 0.449,
+    "LOSS": 0.001,
+    "NO-USEFUL-GAIN": 0.188,
+    "NOT-RESOLVED": 0.362,
+    "stop_at_look1": 0.12,
+    "halfwidth_look2_pp": 1.99,
+    "welch_guard_fires": 0.263
+   },
+   "8 seeds, sigma 1.50 pp, delta +3 pp": {
+    "GAIN": 0.776,
+    "LOSS": 0.0,
+    "NO-USEFUL-GAIN": 0.044,
+    "NOT-RESOLVED": 0.179,
+    "stop_at_look1": 0.039,
+    "halfwidth_look2_pp": 1.99,
+    "welch_guard_fires": 0.264
+   },
+   "8 seeds, sigma 1.50 pp, delta +4 pp": {
+    "GAIN": 0.948,
+    "LOSS": 0.0,
+    "NO-USEFUL-GAIN": 0.008,
+    "NOT-RESOLVED": 0.044,
+    "stop_at_look1": 0.009,
+    "halfwidth_look2_pp": 1.99,
+    "welch_guard_fires": 0.263
+   },
+   "8 seeds, sigma 2.00 pp, delta +0 pp": {
+    "GAIN": 0.028,
+    "LOSS": 0.04,
+    "NO-USEFUL-GAIN": 0.492,
+    "NOT-RESOLVED": 0.44,
+    "stop_at_look1": 0.501,
+    "halfwidth_look2_pp": 2.62,
+    "welch_guard_fires": 0.608
+   },
+   "8 seeds, sigma 2.00 pp, delta +2 pp": {
+    "GAIN": 0.336,
+    "LOSS": 0.004,
+    "NO-USEFUL-GAIN": 0.15,
+    "NOT-RESOLVED": 0.51,
+    "stop_at_look1": 0.16,
+    "halfwidth_look2_pp": 2.62,
+    "welch_guard_fires": 0.608
+   },
+   "8 seeds, sigma 2.00 pp, delta +3 pp": {
+    "GAIN": 0.622,
+    "LOSS": 0.001,
+    "NO-USEFUL-GAIN": 0.056,
+    "NOT-RESOLVED": 0.321,
+    "stop_at_look1": 0.069,
+    "halfwidth_look2_pp": 2.61,
+    "welch_guard_fires": 0.605
+   },
+   "8 seeds, sigma 2.00 pp, delta +4 pp": {
+    "GAIN": 0.848,
+    "LOSS": 0.0,
+    "NO-USEFUL-GAIN": 0.015,
+    "NOT-RESOLVED": 0.137,
+    "stop_at_look1": 0.024,
+    "halfwidth_look2_pp": 2.61,
+    "welch_guard_fires": 0.607
+   },
+   "8 seeds, sigma 2.04 pp, delta +0 pp": {
+    "GAIN": 0.029,
+    "LOSS": 0.041,
+    "NO-USEFUL-GAIN": 0.477,
+    "NOT-RESOLVED": 0.454,
+    "stop_at_look1": 0.502,
+    "halfwidth_look2_pp": 2.64,
+    "welch_guard_fires": 0.626
+   },
+   "8 seeds, sigma 2.04 pp, delta +2 pp": {
+    "GAIN": 0.328,
+    "LOSS": 0.004,
+    "NO-USEFUL-GAIN": 0.152,
+    "NOT-RESOLVED": 0.515,
+    "stop_at_look1": 0.165,
+    "halfwidth_look2_pp": 2.65,
+    "welch_guard_fires": 0.629
+   },
+   "8 seeds, sigma 2.04 pp, delta +3 pp": {
+    "GAIN": 0.605,
+    "LOSS": 0.001,
+    "NO-USEFUL-GAIN": 0.054,
+    "NOT-RESOLVED": 0.34,
+    "stop_at_look1": 0.072,
+    "halfwidth_look2_pp": 2.64,
+    "welch_guard_fires": 0.63
+   },
+   "8 seeds, sigma 2.04 pp, delta +4 pp": {
+    "GAIN": 0.84,
+    "LOSS": 0.0,
+    "NO-USEFUL-GAIN": 0.015,
+    "NOT-RESOLVED": 0.145,
+    "stop_at_look1": 0.026,
+    "halfwidth_look2_pp": 2.65,
+    "welch_guard_fires": 0.639
+   },
+   "8 seeds, sigma 2.75 pp, delta +0 pp": {
+    "GAIN": 0.024,
+    "LOSS": 0.043,
+    "NO-USEFUL-GAIN": 0.277,
+    "NOT-RESOLVED": 0.656,
+    "stop_at_look1": 0.504,
+    "halfwidth_look2_pp": 3.29,
+    "welch_guard_fires": 0.912
+   },
+   "8 seeds, sigma 2.75 pp, delta +2 pp": {
+    "GAIN": 0.215,
+    "LOSS": 0.008,
+    "NO-USEFUL-GAIN": 0.106,
+    "NOT-RESOLVED": 0.67,
+    "stop_at_look1": 0.213,
+    "halfwidth_look2_pp": 3.28,
+    "welch_guard_fires": 0.912
+   },
+   "8 seeds, sigma 2.75 pp, delta +3 pp": {
+    "GAIN": 0.422,
+    "LOSS": 0.004,
+    "NO-USEFUL-GAIN": 0.048,
+    "NOT-RESOLVED": 0.526,
+    "stop_at_look1": 0.118,
+    "halfwidth_look2_pp": 3.28,
+    "welch_guard_fires": 0.911
+   },
+   "8 seeds, sigma 2.75 pp, delta +4 pp": {
+    "GAIN": 0.655,
+    "LOSS": 0.001,
+    "NO-USEFUL-GAIN": 0.022,
+    "NOT-RESOLVED": 0.322,
+    "stop_at_look1": 0.06,
+    "halfwidth_look2_pp": 3.29,
+    "welch_guard_fires": 0.91
+   }
+  },
+  "base_F_rate_used": 0.49,
+  "base_F_rate_measured_C0_X61P": 0.5038
+ },
+ "fm6": {
+  "inventory": {
+   "S_groups_on_forum72_anywhere": [],
+   "arms": {
+    "D1 (rb_x35_d1wide)": "Kakuna F/H/P72 5 x 140 (E1); S home72 5 v 5 (D1 P read); S pool 3 v 3; no S on F",
+    "D3 (rb_x35_d3mut)": "Kakuna F/H/P72 5 x 140 (look 2, E1); S home72 5 (vs C0's banked); no S on F",
+    "N1-P (rb_x35_n1p)": "Kakuna F 5 x 1,200 + home72/H/P72 5 x 140 (E3); S home72 5 v 5; no S on F",
+    "X26c (rb_x26c_s2601 @480M)": "Kakuna H/F/P72 vs P* (60 units); S home72 vs X26 @380M (not vs P*): the two meters have DIFFERENT baselines; no S on F",
+    "belief prior mix (lambda 0.25 / 1.0)": "Kakuna only (an inference-time load option; no in-house read)"
+   },
+   "I_F_available_for": []
+  },
+  "same_panel_home72_N1P_minus_C0": {
+   "kakuna_home72": {
+    "c0": "392/700",
+    "n1p": "379/700",
+    "delta_pp": -1.86,
+    "se_pp": 2.66
+   },
+   "S_home72": {
+    "delta_pp": -3.28,
+    "se_pp": 0.3,
+    "df": 6.8,
+    "sd_c0_pp": 0.362,
+    "sd_n1p_pp": 0.56
+   },
+   "rate_point_dS_over_dK": 1.77,
+   "rate_80pct_range_simulated": [
+    -2.6,
+    3.45
+   ],
+   "reading": "one arm, one panel (home72, in-pool), a NEGATIVE effect: the ratio's 80 % range spans zero-to-several, so it does not measure the F exchange rate"
+  },
+  "lever_signatures_cross_panel": {
+   "D1 - C0 (E1)": {
+    "dK_F_pp": 4.0,
+    "dS_home72_pp": -1.61,
+    "sd_S_on_pp": 0.864,
+    "sd_S_off_pp": 0.366
+   },
+   "D3 - C0 (D3 E1 look 2; C0 D1's banked E1)": {
+    "dK_F_pp": 1.14,
+    "dS_home72_pp": -0.45,
+    "sd_S_on_pp": 0.436
+   },
+   "N1-P - C0 (E3)": {
+    "dK_F_pp": 0.55,
+    "dS_home72_pp": -3.28,
+    "sd_S_on_pp": 0.56,
+    "sd_S_off_pp": 0.362
+   }
+  },
+  "structural_rate_logit": {
+   "p_k 0.50, p_s 0.50": 1.0,
+   "p_k 0.504, p_s 0.57": 0.98
+  },
+  "rates_grid": [
+   0.25,
+   0.5,
+   1.0,
+   1.8
+  ],
+  "sds_grid_pp": [
+   0.36,
+   0.56,
+   0.86
+  ],
+  "guard_errors_5v5": {
+   "sd 0.36 pp, true I_F +0.00 pp, 5 v 5": {
+    "pass_point": 0.497,
+    "pass_lb90": 0.095
+   },
+   "sd 0.36 pp, true I_F +0.75 pp, 5 v 5": {
+    "pass_point": 0.999,
+    "pass_lb90": 0.966
+   },
+   "sd 0.36 pp, true I_F +1.50 pp, 5 v 5": {
+    "pass_point": 1.0,
+    "pass_lb90": 1.0
+   },
+   "sd 0.36 pp, true I_F +3.00 pp, 5 v 5": {
+    "pass_point": 1.0,
+    "pass_lb90": 1.0
+   },
+   "sd 0.36 pp, true I_F +5.40 pp, 5 v 5": {
+    "pass_point": 1.0,
+    "pass_lb90": 1.0
+   },
+   "sd 0.56 pp, true I_F +0.00 pp, 5 v 5": {
+    "pass_point": 0.5,
+    "pass_lb90": 0.094
+   },
+   "sd 0.56 pp, true I_F +0.75 pp, 5 v 5": {
+    "pass_point": 0.984,
+    "pass_lb90": 0.755
+   },
+   "sd 0.56 pp, true I_F +1.50 pp, 5 v 5": {
+    "pass_point": 1.0,
+    "pass_lb90": 0.996
+   },
+   "sd 0.56 pp, true I_F +3.00 pp, 5 v 5": {
+    "pass_point": 1.0,
+    "pass_lb90": 1.0
+   },
+   "sd 0.56 pp, true I_F +5.40 pp, 5 v 5": {
+    "pass_point": 1.0,
+    "pass_lb90": 1.0
+   },
+   "sd 0.86 pp, true I_F +0.00 pp, 5 v 5": {
+    "pass_point": 0.504,
+    "pass_lb90": 0.094
+   },
+   "sd 0.86 pp, true I_F +0.75 pp, 5 v 5": {
+    "pass_point": 0.914,
+    "pass_lb90": 0.502
+   },
+   "sd 0.86 pp, true I_F +1.50 pp, 5 v 5": {
+    "pass_point": 0.997,
+    "pass_lb90": 0.904
+   },
+   "sd 0.86 pp, true I_F +3.00 pp, 5 v 5": {
+    "pass_point": 1.0,
+    "pass_lb90": 1.0
+   },
+   "sd 0.86 pp, true I_F +5.40 pp, 5 v 5": {
+    "pass_point": 1.0,
+    "pass_lb90": 1.0
+   }
+  },
+  "guard_errors_8v8": {
+   "sd 0.36 pp, true I_F +0.00 pp, 8 v 8": {
+    "pass_point": 0.5,
+    "pass_lb90": 0.097
+   },
+   "sd 0.36 pp, true I_F +0.75 pp, 8 v 8": {
+    "pass_point": 1.0,
+    "pass_lb90": 0.997
+   },
+   "sd 0.36 pp, true I_F +1.50 pp, 8 v 8": {
+    "pass_point": 1.0,
+    "pass_lb90": 1.0
+   },
+   "sd 0.36 pp, true I_F +3.00 pp, 8 v 8": {
+    "pass_point": 1.0,
+    "pass_lb90": 1.0
+   },
+   "sd 0.36 pp, true I_F +5.40 pp, 8 v 8": {
+    "pass_point": 1.0,
+    "pass_lb90": 1.0
+   },
+   "sd 0.56 pp, true I_F +0.00 pp, 8 v 8": {
+    "pass_point": 0.5,
+    "pass_lb90": 0.098
+   },
+   "sd 0.56 pp, true I_F +0.75 pp, 8 v 8": {
+    "pass_point": 0.996,
+    "pass_lb90": 0.903
+   },
+   "sd 0.56 pp, true I_F +1.50 pp, 8 v 8": {
+    "pass_point": 1.0,
+    "pass_lb90": 1.0
+   },
+   "sd 0.56 pp, true I_F +3.00 pp, 8 v 8": {
+    "pass_point": 1.0,
+    "pass_lb90": 1.0
+   },
+   "sd 0.56 pp, true I_F +5.40 pp, 8 v 8": {
+    "pass_point": 1.0,
+    "pass_lb90": 1.0
+   },
+   "sd 0.86 pp, true I_F +0.00 pp, 8 v 8": {
+    "pass_point": 0.501,
+    "pass_lb90": 0.102
+   },
+   "sd 0.86 pp, true I_F +0.75 pp, 8 v 8": {
+    "pass_point": 0.959,
+    "pass_lb90": 0.657
+   },
+   "sd 0.86 pp, true I_F +1.50 pp, 8 v 8": {
+    "pass_point": 1.0,
+    "pass_lb90": 0.983
+   },
+   "sd 0.86 pp, true I_F +3.00 pp, 8 v 8": {
+    "pass_point": 1.0,
+    "pass_lb90": 1.0
+   },
+   "sd 0.86 pp, true I_F +5.40 pp, 8 v 8": {
+    "pass_point": 1.0,
+    "pass_lb90": 1.0
+   }
+  },
+  "end_to_end_adopt": {
+   "point, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 0.0, dP +0.0 pp, home72 Kakuna +0.0 pp, sd_on 0.56 / sd_off 0.36": {
+    "P(GAIN)": 0.89,
+    "P(I_F pass | GAIN)": 0.495,
+    "P(Delta_P NON-INFERIOR)": 1.0,
+    "P(goal a)": 0.982,
+    "P(ADOPT-CANDIDATE)": 0.432,
+    "P(TRADE)": 0.008,
+    "P(KAKUNA-SPECIFIC)": 0.449
+   },
+   "point, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 0.0, dP +0.0 pp, home72 Kakuna +0.0 pp, sd_on 0.86 / sd_off 0.36": {
+    "P(GAIN)": 0.892,
+    "P(I_F pass | GAIN)": 0.5,
+    "P(Delta_P NON-INFERIOR)": 0.998,
+    "P(goal a)": 0.982,
+    "P(ADOPT-CANDIDATE)": 0.437,
+    "P(TRADE)": 0.009,
+    "P(KAKUNA-SPECIFIC)": 0.446
+   },
+   "point, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 0.0, dP -1.0 pp, home72 Kakuna -2.0 pp, sd_on 0.56 / sd_off 0.36": {
+    "P(GAIN)": 0.889,
+    "P(I_F pass | GAIN)": 0.498,
+    "P(Delta_P NON-INFERIOR)": 0.934,
+    "P(goal a)": 0.77,
+    "P(ADOPT-CANDIDATE)": 0.317,
+    "P(TRADE)": 0.125,
+    "P(KAKUNA-SPECIFIC)": 0.447
+   },
+   "point, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 0.0, dP -1.0 pp, home72 Kakuna -2.0 pp, sd_on 0.86 / sd_off 0.36": {
+    "P(GAIN)": 0.889,
+    "P(I_F pass | GAIN)": 0.499,
+    "P(Delta_P NON-INFERIOR)": 0.646,
+    "P(goal a)": 0.769,
+    "P(ADOPT-CANDIDATE)": 0.22,
+    "P(TRADE)": 0.223,
+    "P(KAKUNA-SPECIFIC)": 0.445
+   },
+   "point, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 0.0, dP -1.6 pp, home72 Kakuna -2.0 pp, sd_on 0.56 / sd_off 0.36": {
+    "P(GAIN)": 0.891,
+    "P(I_F pass | GAIN)": 0.498,
+    "P(Delta_P NON-INFERIOR)": 0.232,
+    "P(goal a)": 0.77,
+    "P(ADOPT-CANDIDATE)": 0.079,
+    "P(TRADE)": 0.365,
+    "P(KAKUNA-SPECIFIC)": 0.447
+   },
+   "point, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 0.0, dP -1.6 pp, home72 Kakuna -2.0 pp, sd_on 0.86 / sd_off 0.36": {
+    "P(GAIN)": 0.893,
+    "P(I_F pass | GAIN)": 0.502,
+    "P(Delta_P NON-INFERIOR)": 0.121,
+    "P(goal a)": 0.766,
+    "P(ADOPT-CANDIDATE)": 0.042,
+    "P(TRADE)": 0.406,
+    "P(KAKUNA-SPECIFIC)": 0.445
+   },
+   "point, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 0.0, dP -3.3 pp, home72 Kakuna -4.0 pp, sd_on 0.56 / sd_off 0.36": {
+    "P(GAIN)": 0.887,
+    "P(I_F pass | GAIN)": 0.497,
+    "P(Delta_P NON-INFERIOR)": 0.0,
+    "P(goal a)": 0.271,
+    "P(ADOPT-CANDIDATE)": 0.0,
+    "P(TRADE)": 0.441,
+    "P(KAKUNA-SPECIFIC)": 0.446
+   },
+   "point, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 0.0, dP -3.3 pp, home72 Kakuna -4.0 pp, sd_on 0.86 / sd_off 0.36": {
+    "P(GAIN)": 0.889,
+    "P(I_F pass | GAIN)": 0.502,
+    "P(Delta_P NON-INFERIOR)": 0.0,
+    "P(goal a)": 0.276,
+    "P(ADOPT-CANDIDATE)": 0.0,
+    "P(TRADE)": 0.446,
+    "P(KAKUNA-SPECIFIC)": 0.443
+   },
+   "point, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 0.25, dP +0.0 pp, home72 Kakuna +0.0 pp, sd_on 0.56 / sd_off 0.36": {
+    "P(GAIN)": 0.892,
+    "P(I_F pass | GAIN)": 0.999,
+    "P(Delta_P NON-INFERIOR)": 1.0,
+    "P(goal a)": 0.982,
+    "P(ADOPT-CANDIDATE)": 0.875,
+    "P(TRADE)": 0.016,
+    "P(KAKUNA-SPECIFIC)": 0.001
+   },
+   "point, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 0.25, dP +0.0 pp, home72 Kakuna +0.0 pp, sd_on 0.86 / sd_off 0.36": {
+    "P(GAIN)": 0.889,
+    "P(I_F pass | GAIN)": 0.989,
+    "P(Delta_P NON-INFERIOR)": 0.998,
+    "P(goal a)": 0.982,
+    "P(ADOPT-CANDIDATE)": 0.861,
+    "P(TRADE)": 0.018,
+    "P(KAKUNA-SPECIFIC)": 0.01
+   },
+   "point, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 0.25, dP -1.0 pp, home72 Kakuna -2.0 pp, sd_on 0.56 / sd_off 0.36": {
+    "P(GAIN)": 0.89,
+    "P(I_F pass | GAIN)": 0.999,
+    "P(Delta_P NON-INFERIOR)": 0.932,
+    "P(goal a)": 0.771,
+    "P(ADOPT-CANDIDATE)": 0.639,
+    "P(TRADE)": 0.25,
+    "P(KAKUNA-SPECIFIC)": 0.001
+   },
+   "point, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 0.25, dP -1.0 pp, home72 Kakuna -2.0 pp, sd_on 0.86 / sd_off 0.36": {
+    "P(GAIN)": 0.893,
+    "P(I_F pass | GAIN)": 0.988,
+    "P(Delta_P NON-INFERIOR)": 0.646,
+    "P(goal a)": 0.771,
+    "P(ADOPT-CANDIDATE)": 0.44,
+    "P(TRADE)": 0.442,
+    "P(KAKUNA-SPECIFIC)": 0.01
+   },
+   "point, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 0.25, dP -1.6 pp, home72 Kakuna -2.0 pp, sd_on 0.56 / sd_off 0.36": {
+    "P(GAIN)": 0.886,
+    "P(I_F pass | GAIN)": 0.999,
+    "P(Delta_P NON-INFERIOR)": 0.233,
+    "P(goal a)": 0.77,
+    "P(ADOPT-CANDIDATE)": 0.158,
+    "P(TRADE)": 0.728,
+    "P(KAKUNA-SPECIFIC)": 0.001
+   },
+   "point, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 0.25, dP -1.6 pp, home72 Kakuna -2.0 pp, sd_on 0.86 / sd_off 0.36": {
+    "P(GAIN)": 0.889,
+    "P(I_F pass | GAIN)": 0.989,
+    "P(Delta_P NON-INFERIOR)": 0.121,
+    "P(goal a)": 0.773,
+    "P(ADOPT-CANDIDATE)": 0.082,
+    "P(TRADE)": 0.797,
+    "P(KAKUNA-SPECIFIC)": 0.01
+   },
+   "point, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 0.25, dP -3.3 pp, home72 Kakuna -4.0 pp, sd_on 0.56 / sd_off 0.36": {
+    "P(GAIN)": 0.895,
+    "P(I_F pass | GAIN)": 0.999,
+    "P(Delta_P NON-INFERIOR)": 0.0,
+    "P(goal a)": 0.272,
+    "P(ADOPT-CANDIDATE)": 0.0,
+    "P(TRADE)": 0.894,
+    "P(KAKUNA-SPECIFIC)": 0.001
+   },
+   "point, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 0.25, dP -3.3 pp, home72 Kakuna -4.0 pp, sd_on 0.86 / sd_off 0.36": {
+    "P(GAIN)": 0.892,
+    "P(I_F pass | GAIN)": 0.989,
+    "P(Delta_P NON-INFERIOR)": 0.0,
+    "P(goal a)": 0.272,
+    "P(ADOPT-CANDIDATE)": 0.0,
+    "P(TRADE)": 0.882,
+    "P(KAKUNA-SPECIFIC)": 0.01
+   },
+   "point, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 0.5, dP +0.0 pp, home72 Kakuna +0.0 pp, sd_on 0.56 / sd_off 0.36": {
+    "P(GAIN)": 0.891,
+    "P(I_F pass | GAIN)": 1.0,
+    "P(Delta_P NON-INFERIOR)": 1.0,
+    "P(goal a)": 0.982,
+    "P(ADOPT-CANDIDATE)": 0.875,
+    "P(TRADE)": 0.016,
+    "P(KAKUNA-SPECIFIC)": 0.0
+   },
+   "point, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 0.5, dP +0.0 pp, home72 Kakuna +0.0 pp, sd_on 0.86 / sd_off 0.36": {
+    "P(GAIN)": 0.893,
+    "P(I_F pass | GAIN)": 1.0,
+    "P(Delta_P NON-INFERIOR)": 0.998,
+    "P(goal a)": 0.981,
+    "P(ADOPT-CANDIDATE)": 0.874,
+    "P(TRADE)": 0.019,
+    "P(KAKUNA-SPECIFIC)": 0.0
+   },
+   "point, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 0.5, dP -1.0 pp, home72 Kakuna -2.0 pp, sd_on 0.56 / sd_off 0.36": {
+    "P(GAIN)": 0.893,
+    "P(I_F pass | GAIN)": 1.0,
+    "P(Delta_P NON-INFERIOR)": 0.933,
+    "P(goal a)": 0.773,
+    "P(ADOPT-CANDIDATE)": 0.642,
+    "P(TRADE)": 0.251,
+    "P(KAKUNA-SPECIFIC)": 0.0
+   },
+   "point, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 0.5, dP -1.0 pp, home72 Kakuna -2.0 pp, sd_on 0.86 / sd_off 0.36": {
+    "P(GAIN)": 0.892,
+    "P(I_F pass | GAIN)": 1.0,
+    "P(Delta_P NON-INFERIOR)": 0.647,
+    "P(goal a)": 0.77,
+    "P(ADOPT-CANDIDATE)": 0.446,
+    "P(TRADE)": 0.446,
+    "P(KAKUNA-SPECIFIC)": 0.0
+   },
+   "point, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 0.5, dP -1.6 pp, home72 Kakuna -2.0 pp, sd_on 0.56 / sd_off 0.36": {
+    "P(GAIN)": 0.89,
+    "P(I_F pass | GAIN)": 1.0,
+    "P(Delta_P NON-INFERIOR)": 0.232,
+    "P(goal a)": 0.768,
+    "P(ADOPT-CANDIDATE)": 0.16,
+    "P(TRADE)": 0.73,
+    "P(KAKUNA-SPECIFIC)": 0.0
+   },
+   "point, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 0.5, dP -1.6 pp, home72 Kakuna -2.0 pp, sd_on 0.86 / sd_off 0.36": {
+    "P(GAIN)": 0.887,
+    "P(I_F pass | GAIN)": 1.0,
+    "P(Delta_P NON-INFERIOR)": 0.121,
+    "P(goal a)": 0.77,
+    "P(ADOPT-CANDIDATE)": 0.082,
+    "P(TRADE)": 0.805,
+    "P(KAKUNA-SPECIFIC)": 0.0
+   },
+   "point, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 0.5, dP -3.3 pp, home72 Kakuna -4.0 pp, sd_on 0.56 / sd_off 0.36": {
+    "P(GAIN)": 0.89,
+    "P(I_F pass | GAIN)": 1.0,
+    "P(Delta_P NON-INFERIOR)": 0.0,
+    "P(goal a)": 0.273,
+    "P(ADOPT-CANDIDATE)": 0.0,
+    "P(TRADE)": 0.89,
+    "P(KAKUNA-SPECIFIC)": 0.0
+   },
+   "point, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 0.5, dP -3.3 pp, home72 Kakuna -4.0 pp, sd_on 0.86 / sd_off 0.36": {
+    "P(GAIN)": 0.892,
+    "P(I_F pass | GAIN)": 1.0,
+    "P(Delta_P NON-INFERIOR)": 0.0,
+    "P(goal a)": 0.274,
+    "P(ADOPT-CANDIDATE)": 0.0,
+    "P(TRADE)": 0.892,
+    "P(KAKUNA-SPECIFIC)": 0.0
+   },
+   "point, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 1.0, dP +0.0 pp, home72 Kakuna +0.0 pp, sd_on 0.56 / sd_off 0.36": {
+    "P(GAIN)": 0.892,
+    "P(I_F pass | GAIN)": 1.0,
+    "P(Delta_P NON-INFERIOR)": 1.0,
+    "P(goal a)": 0.981,
+    "P(ADOPT-CANDIDATE)": 0.875,
+    "P(TRADE)": 0.017,
+    "P(KAKUNA-SPECIFIC)": 0.0
+   },
+   "point, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 1.0, dP +0.0 pp, home72 Kakuna +0.0 pp, sd_on 0.86 / sd_off 0.36": {
+    "P(GAIN)": 0.892,
+    "P(I_F pass | GAIN)": 1.0,
+    "P(Delta_P NON-INFERIOR)": 0.998,
+    "P(goal a)": 0.981,
+    "P(ADOPT-CANDIDATE)": 0.873,
+    "P(TRADE)": 0.019,
+    "P(KAKUNA-SPECIFIC)": 0.0
+   },
+   "point, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 1.0, dP -1.0 pp, home72 Kakuna -2.0 pp, sd_on 0.56 / sd_off 0.36": {
+    "P(GAIN)": 0.891,
+    "P(I_F pass | GAIN)": 1.0,
+    "P(Delta_P NON-INFERIOR)": 0.932,
+    "P(goal a)": 0.772,
+    "P(ADOPT-CANDIDATE)": 0.641,
+    "P(TRADE)": 0.25,
+    "P(KAKUNA-SPECIFIC)": 0.0
+   },
+   "point, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 1.0, dP -1.0 pp, home72 Kakuna -2.0 pp, sd_on 0.86 / sd_off 0.36": {
+    "P(GAIN)": 0.892,
+    "P(I_F pass | GAIN)": 1.0,
+    "P(Delta_P NON-INFERIOR)": 0.647,
+    "P(goal a)": 0.77,
+    "P(ADOPT-CANDIDATE)": 0.447,
+    "P(TRADE)": 0.445,
+    "P(KAKUNA-SPECIFIC)": 0.0
+   },
+   "point, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 1.0, dP -1.6 pp, home72 Kakuna -2.0 pp, sd_on 0.56 / sd_off 0.36": {
+    "P(GAIN)": 0.888,
+    "P(I_F pass | GAIN)": 1.0,
+    "P(Delta_P NON-INFERIOR)": 0.233,
+    "P(goal a)": 0.77,
+    "P(ADOPT-CANDIDATE)": 0.159,
+    "P(TRADE)": 0.729,
+    "P(KAKUNA-SPECIFIC)": 0.0
+   },
+   "point, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 1.0, dP -1.6 pp, home72 Kakuna -2.0 pp, sd_on 0.86 / sd_off 0.36": {
+    "P(GAIN)": 0.89,
+    "P(I_F pass | GAIN)": 1.0,
+    "P(Delta_P NON-INFERIOR)": 0.12,
+    "P(goal a)": 0.771,
+    "P(ADOPT-CANDIDATE)": 0.082,
+    "P(TRADE)": 0.808,
+    "P(KAKUNA-SPECIFIC)": 0.0
+   },
+   "point, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 1.0, dP -3.3 pp, home72 Kakuna -4.0 pp, sd_on 0.56 / sd_off 0.36": {
+    "P(GAIN)": 0.889,
+    "P(I_F pass | GAIN)": 1.0,
+    "P(Delta_P NON-INFERIOR)": 0.0,
+    "P(goal a)": 0.273,
+    "P(ADOPT-CANDIDATE)": 0.0,
+    "P(TRADE)": 0.889,
+    "P(KAKUNA-SPECIFIC)": 0.0
+   },
+   "point, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 1.0, dP -3.3 pp, home72 Kakuna -4.0 pp, sd_on 0.86 / sd_off 0.36": {
+    "P(GAIN)": 0.891,
+    "P(I_F pass | GAIN)": 1.0,
+    "P(Delta_P NON-INFERIOR)": 0.0,
+    "P(goal a)": 0.273,
+    "P(ADOPT-CANDIDATE)": 0.0,
+    "P(TRADE)": 0.891,
+    "P(KAKUNA-SPECIFIC)": 0.0
+   },
+   "lb90, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 0.0, dP +0.0 pp, home72 Kakuna +0.0 pp, sd_on 0.56 / sd_off 0.36": {
+    "P(GAIN)": 0.889,
+    "P(I_F pass | GAIN)": 0.104,
+    "P(Delta_P NON-INFERIOR)": 1.0,
+    "P(goal a)": 0.981,
+    "P(ADOPT-CANDIDATE)": 0.091,
+    "P(TRADE)": 0.002,
+    "P(KAKUNA-SPECIFIC)": 0.797
+   },
+   "lb90, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 0.0, dP +0.0 pp, home72 Kakuna +0.0 pp, sd_on 0.86 / sd_off 0.36": {
+    "P(GAIN)": 0.89,
+    "P(I_F pass | GAIN)": 0.097,
+    "P(Delta_P NON-INFERIOR)": 0.998,
+    "P(goal a)": 0.982,
+    "P(ADOPT-CANDIDATE)": 0.084,
+    "P(TRADE)": 0.002,
+    "P(KAKUNA-SPECIFIC)": 0.803
+   },
+   "lb90, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 0.0, dP -1.0 pp, home72 Kakuna -2.0 pp, sd_on 0.56 / sd_off 0.36": {
+    "P(GAIN)": 0.891,
+    "P(I_F pass | GAIN)": 0.101,
+    "P(Delta_P NON-INFERIOR)": 0.933,
+    "P(goal a)": 0.77,
+    "P(ADOPT-CANDIDATE)": 0.063,
+    "P(TRADE)": 0.027,
+    "P(KAKUNA-SPECIFIC)": 0.801
+   },
+   "lb90, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 0.0, dP -1.0 pp, home72 Kakuna -2.0 pp, sd_on 0.86 / sd_off 0.36": {
+    "P(GAIN)": 0.893,
+    "P(I_F pass | GAIN)": 0.099,
+    "P(Delta_P NON-INFERIOR)": 0.643,
+    "P(goal a)": 0.767,
+    "P(ADOPT-CANDIDATE)": 0.043,
+    "P(TRADE)": 0.046,
+    "P(KAKUNA-SPECIFIC)": 0.805
+   },
+   "lb90, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 0.0, dP -1.6 pp, home72 Kakuna -2.0 pp, sd_on 0.56 / sd_off 0.36": {
+    "P(GAIN)": 0.892,
+    "P(I_F pass | GAIN)": 0.098,
+    "P(Delta_P NON-INFERIOR)": 0.234,
+    "P(goal a)": 0.766,
+    "P(ADOPT-CANDIDATE)": 0.016,
+    "P(TRADE)": 0.072,
+    "P(KAKUNA-SPECIFIC)": 0.804
+   },
+   "lb90, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 0.0, dP -1.6 pp, home72 Kakuna -2.0 pp, sd_on 0.86 / sd_off 0.36": {
+    "P(GAIN)": 0.894,
+    "P(I_F pass | GAIN)": 0.102,
+    "P(Delta_P NON-INFERIOR)": 0.121,
+    "P(goal a)": 0.768,
+    "P(ADOPT-CANDIDATE)": 0.008,
+    "P(TRADE)": 0.082,
+    "P(KAKUNA-SPECIFIC)": 0.803
+   },
+   "lb90, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 0.0, dP -3.3 pp, home72 Kakuna -4.0 pp, sd_on 0.56 / sd_off 0.36": {
+    "P(GAIN)": 0.893,
+    "P(I_F pass | GAIN)": 0.1,
+    "P(Delta_P NON-INFERIOR)": 0.0,
+    "P(goal a)": 0.269,
+    "P(ADOPT-CANDIDATE)": 0.0,
+    "P(TRADE)": 0.089,
+    "P(KAKUNA-SPECIFIC)": 0.804
+   },
+   "lb90, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 0.0, dP -3.3 pp, home72 Kakuna -4.0 pp, sd_on 0.86 / sd_off 0.36": {
+    "P(GAIN)": 0.891,
+    "P(I_F pass | GAIN)": 0.1,
+    "P(Delta_P NON-INFERIOR)": 0.0,
+    "P(goal a)": 0.275,
+    "P(ADOPT-CANDIDATE)": 0.0,
+    "P(TRADE)": 0.089,
+    "P(KAKUNA-SPECIFIC)": 0.802
+   },
+   "lb90, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 0.25, dP +0.0 pp, home72 Kakuna +0.0 pp, sd_on 0.56 / sd_off 0.36": {
+    "P(GAIN)": 0.893,
+    "P(I_F pass | GAIN)": 0.963,
+    "P(Delta_P NON-INFERIOR)": 1.0,
+    "P(goal a)": 0.981,
+    "P(ADOPT-CANDIDATE)": 0.844,
+    "P(TRADE)": 0.017,
+    "P(KAKUNA-SPECIFIC)": 0.033
+   },
+   "lb90, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 0.25, dP +0.0 pp, home72 Kakuna +0.0 pp, sd_on 0.86 / sd_off 0.36": {
+    "P(GAIN)": 0.893,
+    "P(I_F pass | GAIN)": 0.812,
+    "P(Delta_P NON-INFERIOR)": 0.998,
+    "P(goal a)": 0.982,
+    "P(ADOPT-CANDIDATE)": 0.71,
+    "P(TRADE)": 0.015,
+    "P(KAKUNA-SPECIFIC)": 0.168
+   },
+   "lb90, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 0.25, dP -1.0 pp, home72 Kakuna -2.0 pp, sd_on 0.56 / sd_off 0.36": {
+    "P(GAIN)": 0.893,
+    "P(I_F pass | GAIN)": 0.963,
+    "P(Delta_P NON-INFERIOR)": 0.932,
+    "P(goal a)": 0.768,
+    "P(ADOPT-CANDIDATE)": 0.617,
+    "P(TRADE)": 0.244,
+    "P(KAKUNA-SPECIFIC)": 0.033
+   },
+   "lb90, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 0.25, dP -1.0 pp, home72 Kakuna -2.0 pp, sd_on 0.86 / sd_off 0.36": {
+    "P(GAIN)": 0.891,
+    "P(I_F pass | GAIN)": 0.811,
+    "P(Delta_P NON-INFERIOR)": 0.647,
+    "P(goal a)": 0.77,
+    "P(ADOPT-CANDIDATE)": 0.358,
+    "P(TRADE)": 0.365,
+    "P(KAKUNA-SPECIFIC)": 0.168
+   },
+   "lb90, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 0.25, dP -1.6 pp, home72 Kakuna -2.0 pp, sd_on 0.56 / sd_off 0.36": {
+    "P(GAIN)": 0.893,
+    "P(I_F pass | GAIN)": 0.961,
+    "P(Delta_P NON-INFERIOR)": 0.229,
+    "P(goal a)": 0.767,
+    "P(ADOPT-CANDIDATE)": 0.151,
+    "P(TRADE)": 0.707,
+    "P(KAKUNA-SPECIFIC)": 0.035
+   },
+   "lb90, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 0.25, dP -1.6 pp, home72 Kakuna -2.0 pp, sd_on 0.86 / sd_off 0.36": {
+    "P(GAIN)": 0.889,
+    "P(I_F pass | GAIN)": 0.814,
+    "P(Delta_P NON-INFERIOR)": 0.124,
+    "P(goal a)": 0.769,
+    "P(ADOPT-CANDIDATE)": 0.069,
+    "P(TRADE)": 0.655,
+    "P(KAKUNA-SPECIFIC)": 0.165
+   },
+   "lb90, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 0.25, dP -3.3 pp, home72 Kakuna -4.0 pp, sd_on 0.56 / sd_off 0.36": {
+    "P(GAIN)": 0.89,
+    "P(I_F pass | GAIN)": 0.963,
+    "P(Delta_P NON-INFERIOR)": 0.0,
+    "P(goal a)": 0.272,
+    "P(ADOPT-CANDIDATE)": 0.0,
+    "P(TRADE)": 0.857,
+    "P(KAKUNA-SPECIFIC)": 0.033
+   },
+   "lb90, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 0.25, dP -3.3 pp, home72 Kakuna -4.0 pp, sd_on 0.86 / sd_off 0.36": {
+    "P(GAIN)": 0.892,
+    "P(I_F pass | GAIN)": 0.81,
+    "P(Delta_P NON-INFERIOR)": 0.0,
+    "P(goal a)": 0.274,
+    "P(ADOPT-CANDIDATE)": 0.0,
+    "P(TRADE)": 0.723,
+    "P(KAKUNA-SPECIFIC)": 0.169
+   },
+   "lb90, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 0.5, dP +0.0 pp, home72 Kakuna +0.0 pp, sd_on 0.56 / sd_off 0.36": {
+    "P(GAIN)": 0.891,
+    "P(I_F pass | GAIN)": 1.0,
+    "P(Delta_P NON-INFERIOR)": 1.0,
+    "P(goal a)": 0.981,
+    "P(ADOPT-CANDIDATE)": 0.873,
+    "P(TRADE)": 0.017,
+    "P(KAKUNA-SPECIFIC)": 0.0
+   },
+   "lb90, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 0.5, dP +0.0 pp, home72 Kakuna +0.0 pp, sd_on 0.86 / sd_off 0.36": {
+    "P(GAIN)": 0.892,
+    "P(I_F pass | GAIN)": 0.999,
+    "P(Delta_P NON-INFERIOR)": 0.998,
+    "P(goal a)": 0.982,
+    "P(ADOPT-CANDIDATE)": 0.873,
+    "P(TRADE)": 0.018,
+    "P(KAKUNA-SPECIFIC)": 0.001
+   },
+   "lb90, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 0.5, dP -1.0 pp, home72 Kakuna -2.0 pp, sd_on 0.56 / sd_off 0.36": {
+    "P(GAIN)": 0.892,
+    "P(I_F pass | GAIN)": 1.0,
+    "P(Delta_P NON-INFERIOR)": 0.934,
+    "P(goal a)": 0.769,
+    "P(ADOPT-CANDIDATE)": 0.641,
+    "P(TRADE)": 0.252,
+    "P(KAKUNA-SPECIFIC)": 0.0
+   },
+   "lb90, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 0.5, dP -1.0 pp, home72 Kakuna -2.0 pp, sd_on 0.86 / sd_off 0.36": {
+    "P(GAIN)": 0.893,
+    "P(I_F pass | GAIN)": 0.999,
+    "P(Delta_P NON-INFERIOR)": 0.646,
+    "P(goal a)": 0.768,
+    "P(ADOPT-CANDIDATE)": 0.441,
+    "P(TRADE)": 0.451,
+    "P(KAKUNA-SPECIFIC)": 0.001
+   },
+   "lb90, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 0.5, dP -1.6 pp, home72 Kakuna -2.0 pp, sd_on 0.56 / sd_off 0.36": {
+    "P(GAIN)": 0.892,
+    "P(I_F pass | GAIN)": 1.0,
+    "P(Delta_P NON-INFERIOR)": 0.234,
+    "P(goal a)": 0.77,
+    "P(ADOPT-CANDIDATE)": 0.161,
+    "P(TRADE)": 0.731,
+    "P(KAKUNA-SPECIFIC)": 0.0
+   },
+   "lb90, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 0.5, dP -1.6 pp, home72 Kakuna -2.0 pp, sd_on 0.86 / sd_off 0.36": {
+    "P(GAIN)": 0.893,
+    "P(I_F pass | GAIN)": 0.999,
+    "P(Delta_P NON-INFERIOR)": 0.12,
+    "P(goal a)": 0.77,
+    "P(ADOPT-CANDIDATE)": 0.083,
+    "P(TRADE)": 0.809,
+    "P(KAKUNA-SPECIFIC)": 0.001
+   },
+   "lb90, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 0.5, dP -3.3 pp, home72 Kakuna -4.0 pp, sd_on 0.56 / sd_off 0.36": {
+    "P(GAIN)": 0.89,
+    "P(I_F pass | GAIN)": 1.0,
+    "P(Delta_P NON-INFERIOR)": 0.0,
+    "P(goal a)": 0.271,
+    "P(ADOPT-CANDIDATE)": 0.0,
+    "P(TRADE)": 0.89,
+    "P(KAKUNA-SPECIFIC)": 0.0
+   },
+   "lb90, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 0.5, dP -3.3 pp, home72 Kakuna -4.0 pp, sd_on 0.86 / sd_off 0.36": {
+    "P(GAIN)": 0.891,
+    "P(I_F pass | GAIN)": 0.999,
+    "P(Delta_P NON-INFERIOR)": 0.0,
+    "P(goal a)": 0.271,
+    "P(ADOPT-CANDIDATE)": 0.0,
+    "P(TRADE)": 0.89,
+    "P(KAKUNA-SPECIFIC)": 0.001
+   },
+   "lb90, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 1.0, dP +0.0 pp, home72 Kakuna +0.0 pp, sd_on 0.56 / sd_off 0.36": {
+    "P(GAIN)": 0.892,
+    "P(I_F pass | GAIN)": 1.0,
+    "P(Delta_P NON-INFERIOR)": 1.0,
+    "P(goal a)": 0.982,
+    "P(ADOPT-CANDIDATE)": 0.875,
+    "P(TRADE)": 0.016,
+    "P(KAKUNA-SPECIFIC)": 0.0
+   },
+   "lb90, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 1.0, dP +0.0 pp, home72 Kakuna +0.0 pp, sd_on 0.86 / sd_off 0.36": {
+    "P(GAIN)": 0.894,
+    "P(I_F pass | GAIN)": 1.0,
+    "P(Delta_P NON-INFERIOR)": 0.998,
+    "P(goal a)": 0.982,
+    "P(ADOPT-CANDIDATE)": 0.876,
+    "P(TRADE)": 0.018,
+    "P(KAKUNA-SPECIFIC)": 0.0
+   },
+   "lb90, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 1.0, dP -1.0 pp, home72 Kakuna -2.0 pp, sd_on 0.56 / sd_off 0.36": {
+    "P(GAIN)": 0.892,
+    "P(I_F pass | GAIN)": 1.0,
+    "P(Delta_P NON-INFERIOR)": 0.934,
+    "P(goal a)": 0.773,
+    "P(ADOPT-CANDIDATE)": 0.644,
+    "P(TRADE)": 0.248,
+    "P(KAKUNA-SPECIFIC)": 0.0
+   },
+   "lb90, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 1.0, dP -1.0 pp, home72 Kakuna -2.0 pp, sd_on 0.86 / sd_off 0.36": {
+    "P(GAIN)": 0.891,
+    "P(I_F pass | GAIN)": 1.0,
+    "P(Delta_P NON-INFERIOR)": 0.646,
+    "P(goal a)": 0.771,
+    "P(ADOPT-CANDIDATE)": 0.445,
+    "P(TRADE)": 0.447,
+    "P(KAKUNA-SPECIFIC)": 0.0
+   },
+   "lb90, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 1.0, dP -1.6 pp, home72 Kakuna -2.0 pp, sd_on 0.56 / sd_off 0.36": {
+    "P(GAIN)": 0.892,
+    "P(I_F pass | GAIN)": 1.0,
+    "P(Delta_P NON-INFERIOR)": 0.236,
+    "P(goal a)": 0.767,
+    "P(ADOPT-CANDIDATE)": 0.161,
+    "P(TRADE)": 0.731,
+    "P(KAKUNA-SPECIFIC)": 0.0
+   },
+   "lb90, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 1.0, dP -1.6 pp, home72 Kakuna -2.0 pp, sd_on 0.86 / sd_off 0.36": {
+    "P(GAIN)": 0.892,
+    "P(I_F pass | GAIN)": 1.0,
+    "P(Delta_P NON-INFERIOR)": 0.121,
+    "P(goal a)": 0.771,
+    "P(ADOPT-CANDIDATE)": 0.084,
+    "P(TRADE)": 0.808,
+    "P(KAKUNA-SPECIFIC)": 0.0
+   },
+   "lb90, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 1.0, dP -3.3 pp, home72 Kakuna -4.0 pp, sd_on 0.56 / sd_off 0.36": {
+    "P(GAIN)": 0.891,
+    "P(I_F pass | GAIN)": 1.0,
+    "P(Delta_P NON-INFERIOR)": 0.0,
+    "P(goal a)": 0.275,
+    "P(ADOPT-CANDIDATE)": 0.0,
+    "P(TRADE)": 0.891,
+    "P(KAKUNA-SPECIFIC)": 0.0
+   },
+   "lb90, 8 seeds, sigma 1.0 pp, dK_F +3 pp, rate 1.0, dP -3.3 pp, home72 Kakuna -4.0 pp, sd_on 0.86 / sd_off 0.36": {
+    "P(GAIN)": 0.891,
+    "P(I_F pass | GAIN)": 1.0,
+    "P(Delta_P NON-INFERIOR)": 0.0,
+    "P(goal a)": 0.275,
+    "P(ADOPT-CANDIDATE)": 0.0,
+    "P(TRADE)": 0.891,
+    "P(KAKUNA-SPECIFIC)": 0.0
+   }
+  },
+  "end_to_end_null": {
+   "point": {
+    "P(GAIN)": 0.019,
+    "P(I_F pass | GAIN)": 0.499,
+    "P(Delta_P NON-INFERIOR)": 1.0,
+    "P(goal a)": 0.981,
+    "P(ADOPT-CANDIDATE)": 0.009,
+    "P(TRADE)": 0.0,
+    "P(KAKUNA-SPECIFIC)": 0.01
+   },
+   "lb90": {
+    "P(GAIN)": 0.019,
+    "P(I_F pass | GAIN)": 0.096,
+    "P(Delta_P NON-INFERIOR)": 1.0,
+    "P(goal a)": 0.982,
+    "P(ADOPT-CANDIDATE)": 0.002,
+    "P(TRADE)": 0.0,
+    "P(KAKUNA-SPECIFIC)": 0.017
+   }
+  }
+ },
+ "fm5": {
+  "games_per_20M": 570000,
+  "share": 0.5,
+  "dose": {
+   "N 1500": {
+    "draws_per_team_per_side": 190.0,
+    "draws_per_team_both_sides": 380.0,
+    "vs a pool team per side in C0 (\u2248 790)": 0.241,
+    "vs P*'s cumulative pilots per pool team (\u2248 9,300)": 0.0204
+   },
+   "N 2000": {
+    "draws_per_team_per_side": 142.5,
+    "draws_per_team_both_sides": 285.0,
+    "vs a pool team per side in C0 (\u2248 790)": 0.18,
+    "vs P*'s cumulative pilots per pool team (\u2248 9,300)": 0.0153
+   },
+   "N 2500": {
+    "draws_per_team_per_side": 114.0,
+    "draws_per_team_both_sides": 228.0,
+    "vs a pool team per side in C0 (\u2248 790)": 0.144,
+    "vs P*'s cumulative pilots per pool team (\u2248 9,300)": 0.0123
+   },
+   "N 3000": {
+    "draws_per_team_per_side": 95.0,
+    "draws_per_team_both_sides": 190.0,
+    "vs a pool team per side in C0 (\u2248 790)": 0.12,
+    "vs P*'s cumulative pilots per pool team (\u2248 9,300)": 0.0102
+   }
+  },
+  "per_final_S_sd_pp": {
+   "C0 (X61P, home72)": 0.36,
+   "C0 (D1 read)": 0.37,
+   "N1-P (X61P)": 0.56,
+   "D1": 0.86
+  },
+  "mde80_pp": {
+   "C0 (X61P, home72)": {
+    "3 v 3": 1.09,
+    "5 v 5": 0.73,
+    "8 v 8": 0.54,
+    "3 v 5 (look-1 ON vs C0's five)": 0.95
+   },
+   "C0 (D1 read)": {
+    "3 v 3": 1.12,
+    "5 v 5": 0.75,
+    "8 v 8": 0.56,
+    "3 v 5 (look-1 ON vs C0's five)": 0.98
+   },
+   "N1-P (X61P)": {
+    "3 v 3": 1.7,
+    "5 v 5": 1.13,
+    "8 v 8": 0.84,
+    "3 v 5 (look-1 ON vs C0's five)": 1.5
+   },
+   "D1": {
+    "3 v 3": 2.61,
+    "5 v 5": 1.74,
+    "8 v 8": 1.3,
+    "3 v 5 (look-1 ON vs C0's five)": 2.44
+   }
+  },
+  "expected_effect_GUESS_kakuna_pp": {
+   "N 1500": {
+    "linear_pp": 0.15,
+    "log_pp": 4.31
+   },
+   "N 2000": {
+    "linear_pp": 0.11,
+    "log_pp": 4.08
+   },
+   "N 2500": {
+    "linear_pp": 0.09,
+    "log_pp": 3.89
+   },
+   "N 3000": {
+    "linear_pp": 0.08,
+    "log_pp": 3.75
+   }
+  },
+  "note": "the in-house size of R72's effect = the Kakuna-scale GUESS x the exchange rate (fm6), unmeasured"
+ },
+ "fm8": {
+  "rates": {
+   "X61P look 1 (E3, 46b9e572 -> de15dfc7b)": {
+    "anchor": {
+     "units_played_here": 485,
+     "games": 9700,
+     "s_per_game_median": 23.1,
+     "s_per_game_mean": 29.2,
+     "s_per_game_p90": 49.8,
+     "lane_h_per_1000_games_mean": 8.12,
+     "concurrency": 2,
+     "lane_span_h": 41.5,
+     "realised_games_per_wall_h": 233.7
+    },
+    "s": {
+     "sets_played_here": 6,
+     "lane_h_per_set_mean": 2.58,
+     "lane_h_per_set": {
+      "c0_s3501": 2.56,
+      "c0_s3502": 2.14,
+      "c0_s3503": 2.7,
+      "n1p_s3501": 2.35,
+      "n1p_s3502": 2.36,
+      "n1p_s3503": 3.34
+     },
+     "lane_span_h_incl_pauses": 7.7
+    }
+   },
+   "X61P look 2 (E3, de15dfc7b)": {
+    "anchor": {
+     "units_played_here": 324,
+     "games": 6480,
+     "s_per_game_median": 18.9,
+     "s_per_game_mean": 20.9,
+     "s_per_game_p90": 25.3,
+     "lane_h_per_1000_games_mean": 5.81,
+     "concurrency": 2,
+     "lane_span_h": 18.9,
+     "realised_games_per_wall_h": 343.6
+    },
+    "s": {
+     "sets_played_here": 4,
+     "lane_h_per_set_mean": 2.31,
+     "lane_h_per_set": {
+      "c0_s3504": 2.51,
+      "c0_s3505": 2.6,
+      "n1p_s3504": 2.11,
+      "n1p_s3505": 2.03
+     },
+     "lane_span_h_incl_pauses": 13.7
+    }
+   },
+   "D3 look 1 (E2)": {
+    "anchor": {
+     "units_played_here": 70,
+     "games": 1400,
+     "s_per_game_median": 25.4,
+     "s_per_game_mean": 30.1,
+     "s_per_game_p90": 56.0,
+     "lane_h_per_1000_games_mean": 8.36,
+     "concurrency": 1,
+     "lane_span_h": 11.7,
+     "realised_games_per_wall_h": 119.6
+    },
+    "s": {
+     "sets_played_here": 3,
+     "lane_h_per_set_mean": 3.01,
+     "lane_h_per_set": {
+      "d3_s3501": 3.39,
+      "d3_s3502": 3.17,
+      "d3_s3503": 2.47
+     },
+     "lane_span_h_incl_pauses": 4.5
+    }
+   },
+   "D3 look 2 (E1 hybrid)": {
+    "anchor": {
+     "units_played_here": 112,
+     "games": 2240,
+     "s_per_game_median": 11.2,
+     "s_per_game_mean": 14.8,
+     "s_per_game_p90": 25.4,
+     "lane_h_per_1000_games_mean": 4.1,
+     "concurrency": 1,
+     "lane_span_h": 9.4,
+     "realised_games_per_wall_h": 237.6
+    },
+    "s": {
+     "sets_played_here": 5,
+     "lane_h_per_set_mean": 2.2,
+     "lane_h_per_set": {
+      "d3_s3501": 2.53,
+      "d3_s3502": 2.09,
+      "d3_s3503": 2.15,
+      "d3_s3504": 2.17,
+      "d3_s3505": 2.06
+     },
+     "lane_span_h_incl_pauses": 5.5
+    }
+   }
+  },
+  "gpu_h_records": {
+   "runs": {
+    "rb_x35_c0_s3501": {
+     "gpu_h": 4.43,
+     "pin": "f4b25238d",
+     "restarts": 0
+    },
+    "rb_x35_c0_s3502": {
+     "gpu_h": 4.027,
+     "pin": "f4b25238d",
+     "restarts": 0
+    },
+    "rb_x35_c0_s3503": {
+     "gpu_h": 4.012,
+     "pin": "f4b25238d",
+     "restarts": 0
+    },
+    "rb_x35_c0_s3504": {
+     "gpu_h": 3.844,
+     "pin": "f4b25238d",
+     "restarts": 0
+    },
+    "rb_x35_c0_s3505": {
+     "gpu_h": 4.172,
+     "pin": "f4b25238d",
+     "restarts": 0
+    },
+    "rb_x35_d1wide_s3501": {
+     "gpu_h": 4.31,
+     "pin": "440b61c32",
+     "restarts": 0
+    },
+    "rb_x35_d1wide_s3502": {
+     "gpu_h": 3.867,
+     "pin": "440b61c32",
+     "restarts": 0
+    },
+    "rb_x35_d1wide_s3503": {
+     "gpu_h": 4.037,
+     "pin": "440b61c32",
+     "restarts": 0
+    },
+    "rb_x35_d1wide_s3504": {
+     "gpu_h": 3.917,
+     "pin": "440b61c32",
+     "restarts": 0
+    },
+    "rb_x35_d1wide_s3505": {
+     "gpu_h": 4.089,
+     "pin": "440b61c32",
+     "restarts": 0
+    },
+    "rb_x35_d3mut_s3501": {
+     "gpu_h": 4.413,
+     "pin": "9e289ba44",
+     "restarts": 0
+    },
+    "rb_x35_d3mut_s3502": {
+     "gpu_h": 4.069,
+     "pin": "9e289ba44",
+     "restarts": 0
+    },
+    "rb_x35_d3mut_s3503": {
+     "gpu_h": 4.059,
+     "pin": "9e289ba44",
+     "restarts": 0
+    },
+    "rb_x35_d3mut_s3504": {
+     "gpu_h": 4.056,
+     "pin": "9e289ba44",
+     "restarts": 0
+    },
+    "rb_x35_d3mut_s3505": {
+     "gpu_h": 4.087,
+     "pin": "9e289ba44",
+     "restarts": 0
+    },
+    "rb_x35_n1p_s3501": {
+     "gpu_h": 4.401,
+     "pin": "5f8f6cfa3",
+     "restarts": 0
+    },
+    "rb_x35_n1p_s3502": {
+     "gpu_h": 4.045,
+     "pin": "5f8f6cfa3",
+     "restarts": 0
+    },
+    "rb_x35_n1p_s3503": {
+     "gpu_h": 3.995,
+     "pin": "5f8f6cfa3",
+     "restarts": 0
+    },
+    "rb_x35_n1p_s3504": {
+     "gpu_h": 4.036,
+     "pin": "5f8f6cfa3",
+     "restarts": 0
+    },
+    "rb_x35_n1p_s3505": {
+     "gpu_h": 4.053,
+     "pin": "5f8f6cfa3",
+     "restarts": 0
+    }
+   },
+   "n": 20,
+   "mean": 4.096,
+   "min": 3.844,
+   "max": 4.43
+  },
+  "kakuna_s_per_game_used": 25.0,
+  "kakuna_s_per_game_slowest_state": 30.1,
+  "inhouse_lane_h_per_set_used": 2.45,
+  "plan_5_seeds": {
+   "tiers": {
+    "T1 primary F + goal (a) + Delta_P": {
+     "kakuna": {
+      "ON F 0-59": 6000,
+      "ON home72 0-6 (goal a)": 700,
+      "C0 F 0-59, s3504-3505 re-played": 2400,
+      "C0 F 0-59, new seeds": 0,
+      "determinism guard (one imported C0 cell re-played)": 20
+     },
+     "sets": {
+      "ON P": 5,
+      "C0 P s3504-3505 re-played": 2,
+      "C0 P new seeds": 0
+     },
+     "kakuna_games": 9120,
+     "inhouse_sets": 7,
+     "kakuna_lane_h": 63.5,
+     "inhouse_lane_h": 17.1,
+     "kakuna_wall_h_at_X61P_throughput": [
+      26.5,
+      39.0
+     ]
+    },
+    "T2 I_F + R72": {
+     "kakuna": {},
+     "sets": {
+      "ON I_F": 5,
+      "ON R72": 5,
+      "C0 I_F": 5,
+      "C0 R72": 5
+     },
+     "kakuna_games": 0,
+     "inhouse_sets": 20,
+     "kakuna_lane_h": 0.0,
+     "inhouse_lane_h": 48.9,
+     "kakuna_wall_h_at_X61P_throughput": [
+      0.0,
+      0.0
+     ]
+    },
+    "T3 reported (H / P72 / home72 at 7 units)": {
+     "kakuna": {
+      "ON P72 0-6": 700,
+      "C0 H/P72/home72 0-6, s3504-3505 re-played": 840,
+      "C0 H/P72/home72 0-6, new seeds": 0
+     },
+     "sets": {},
+     "kakuna_games": 1540,
+     "inhouse_sets": 0,
+     "kakuna_lane_h": 10.7,
+     "inhouse_lane_h": 0.0,
+     "kakuna_wall_h_at_X61P_throughput": [
+      4.5,
+      6.6
+     ]
+    },
+    "T4 T - D1 contrast (H + F units 0-29, 5 v 5)": {
+     "kakuna": {
+      "ON H 0-29 (s3501-3505)": 3000,
+      "D1 H + F 0-29 re-played at E3": 6000
+     },
+     "sets": {},
+     "kakuna_games": 9000,
+     "inhouse_sets": 0,
+     "kakuna_lane_h": 62.6,
+     "inhouse_lane_h": 0.0,
+     "kakuna_wall_h_at_X61P_throughput": [
+      26.2,
+      38.5
+     ]
+    }
+   },
+   "kakuna_total": 19660,
+   "inhouse_total": 27,
+   "cpu_lane_h": {
+    "kakuna_at_X61P_rate": 136.8,
+    "kakuna_at_slowest_measured": 164.4,
+    "inhouse_at_X61P_rate": 66.0
+   },
+   "wall_h_kakuna_at_realised_throughput": [
+    57.2,
+    164.4
+   ],
+   "wall_h_kakuna_at_X61P_throughput": [
+    57.2,
+    84.1
+   ],
+   "wall_h_inhouse_two_lanes_at_X61P_rate": 33.0,
+   "gpu_h": {
+    "ON look 1 (3 seeds)": 12.3,
+    "ON look 2": 8.2,
+    "new C0 seeds": 0.0,
+    "smoke": 0.2,
+    "total": 20.7
+   },
+   "look1_futility_stop_saves": {
+    "gpu_h": 8.2,
+    "note": "a look-1 stop plays ON's three finals only (F, home72, P72, I_F, R72, P) and no look-2 C0 re-play; T - D1 is read only at 5 v 5, so it is not played after a look-1 stop (see PREREG \u00a79)"
+   }
+  },
+  "plan_8_seeds": {
+   "tiers": {
+    "T1 primary F + goal (a) + Delta_P": {
+     "kakuna": {
+      "ON F 0-59": 9600,
+      "ON home72 0-6 (goal a)": 1120,
+      "C0 F 0-59, s3504-3505 re-played": 2400,
+      "C0 F 0-59, new seeds": 3600,
+      "determinism guard (one imported C0 cell re-played)": 20
+     },
+     "sets": {
+      "ON P": 8,
+      "C0 P s3504-3505 re-played": 2,
+      "C0 P new seeds": 3
+     },
+     "kakuna_games": 16740,
+     "inhouse_sets": 13,
+     "kakuna_lane_h": 116.5,
+     "inhouse_lane_h": 31.8,
+     "kakuna_wall_h_at_X61P_throughput": [
+      48.7,
+      71.6
+     ]
+    },
+    "T2 I_F + R72": {
+     "kakuna": {},
+     "sets": {
+      "ON I_F": 8,
+      "ON R72": 8,
+      "C0 I_F": 8,
+      "C0 R72": 8
+     },
+     "kakuna_games": 0,
+     "inhouse_sets": 32,
+     "kakuna_lane_h": 0.0,
+     "inhouse_lane_h": 78.2,
+     "kakuna_wall_h_at_X61P_throughput": [
+      0.0,
+      0.0
+     ]
+    },
+    "T3 reported (H / P72 / home72 at 7 units)": {
+     "kakuna": {
+      "ON P72 0-6": 1120,
+      "C0 H/P72/home72 0-6, s3504-3505 re-played": 840,
+      "C0 H/P72/home72 0-6, new seeds": 1260
+     },
+     "sets": {},
+     "kakuna_games": 3220,
+     "inhouse_sets": 0,
+     "kakuna_lane_h": 22.4,
+     "inhouse_lane_h": 0.0,
+     "kakuna_wall_h_at_X61P_throughput": [
+      9.4,
+      13.8
+     ]
+    },
+    "T4 T - D1 contrast (H + F units 0-29, 5 v 5)": {
+     "kakuna": {
+      "ON H 0-29 (s3501-3505)": 3000,
+      "D1 H + F 0-29 re-played at E3": 6000
+     },
+     "sets": {},
+     "kakuna_games": 9000,
+     "inhouse_sets": 0,
+     "kakuna_lane_h": 62.6,
+     "inhouse_lane_h": 0.0,
+     "kakuna_wall_h_at_X61P_throughput": [
+      26.2,
+      38.5
+     ]
+    }
+   },
+   "kakuna_total": 28960,
+   "inhouse_total": 45,
+   "cpu_lane_h": {
+    "kakuna_at_X61P_rate": 201.5,
+    "kakuna_at_slowest_measured": 242.1,
+    "inhouse_at_X61P_rate": 110.0
+   },
+   "wall_h_kakuna_at_realised_throughput": [
+    84.3,
+    242.1
+   ],
+   "wall_h_kakuna_at_X61P_throughput": [
+    84.3,
+    123.9
+   ],
+   "wall_h_inhouse_two_lanes_at_X61P_rate": 55.0,
+   "gpu_h": {
+    "ON look 1 (3 seeds)": 12.3,
+    "ON look 2": 20.5,
+    "new C0 seeds": 12.3,
+    "smoke": 0.2,
+    "total": 45.3
+   },
+   "look1_futility_stop_saves": {
+    "gpu_h": 32.8,
+    "note": "a look-1 stop plays ON's three finals only (F, home72, P72, I_F, R72, P) and no look-2 C0 re-play; T - D1 is read only at 5 v 5, so it is not played after a look-1 stop (see PREREG \u00a79)"
+   }
+  }
+ },
+ "fm1": {
+  "file_sha256_at_e1512c361": "ad34aee94f629b873d538722e57abe352f6c43bfdc1f0e30cd880d07f942174f",
+  "section6_sha256_at_e1512c361": "f288b331245c9652aba69542c11dae7bd152029f4c85ef4110b08554ff2330fe",
+  "section6_sha256_at_HEAD": "f288b331245c9652aba69542c11dae7bd152029f4c85ef4110b08554ff2330fe",
+  "section6_unchanged_since": true
+ },
+ "fm2": {
+  "play_commit": "de15dfc7b6d19d6f0e4a3724f269e26e7aa22957",
+  "engine_at_play_commit": "port=0d3d7629f16a0eaf/91;env=393631b886965b0c/126",
+  "engine_E3_matches_X61P_cells": true,
+  "C0_F_cells_played_in": {
+   "look1": [
+    "c0_s3501",
+    "c0_s3502",
+    "c0_s3503"
+   ],
+   "look2": [
+    "c0_s3504",
+    "c0_s3505"
+   ]
+  },
+  "look1_spec_sha256": "1266daadeefe4142a2f2f339bbdedaf4e052c3f2ef3fb8a8b0d5550fb8729f03",
+  "look2_spec_sha256": "f28654ccf31c3c3e6a0a3c3f9d61b904bf504f59d197b67baa3f17d510c2c620"
+ }
+}
