@@ -22,6 +22,18 @@
 //!   Kick crash) is PINNED: the stream's roll, factor 1/16 (the known lower bound), never widened.
 //! - [`Mode::Force`] (the REPLAY of a matched world, and the identity test): the n-th site uses the
 //!   table's roll when it names n, else the stream's.
+//! - [`Mode::Seg`] (the LEAK-HONEST matcher's pass on FRESH dice, `crate::fresh_dice`,
+//!   `designs/endstate/design_sprime_honest.md` D3 / B4): the target is read from the searched side's
+//!   OWN lines for the segment being matched, never from a truth replay. At a site hitting mon X, the
+//!   site's line is the (c+1)-th HP event of X in the segment's reference lines, c the HP events of X
+//!   the battle has logged since the segment began (an HP event: a `-damage` / `-heal` / `-sethp` line
+//!   of X, or X's Substitute holding / breaking). The site uses the stream's roll when it prints that
+//!   line, else a consistent roll picked by the stream's roll's rank among the inconsistent ones (so
+//!   the kept roll is near-uniform over the consistent set), weight |C| / 16; no consistent roll, or
+//!   no target, uses the stream's roll. A PICK OFFSET k (the matcher re-rolling a hidden exact HP on
+//!   the same dice) shifts every pick k places along the consistent set. It is an EFFICIENCY device only: the matcher still compares
+//!   every line of the segment, so a wrong pick costs a try, never a wrong world. A Beat Up strike is
+//!   predicted here like a hit (pinned in the other modes).
 //!
 //! Draw-free and emission-free by construction: the site draws exactly the one `random(16)` it always
 //! drew, and the prediction reads state only.
@@ -101,6 +113,45 @@ pub enum Mode {
     Record,
     Match(Vec<Target>),
     Force(BTreeMap<u32, u8>),
+    /// The leak-honest matcher's segment (module docs): the viewer's reference lines for the segment
+    /// being matched, and the battle log's length when it began.
+    Seg { lines: std::sync::Arc<[String]>, log_start: usize, offset: usize },
+}
+
+/// Whether `line` is an HP EVENT of the mon whose ident is `ident` ([`Mode::Seg`]).
+fn hp_event_of(line: &str, ident: &str) -> bool {
+    let mut p = line.split('|');
+    p.next();
+    let (Some(tag), Some(who)) = (p.next(), p.next()) else { return false };
+    if who != ident {
+        return false;
+    }
+    match tag {
+        "-damage" | "-heal" | "-sethp" => true,
+        "-activate" | "-end" => p.next() == Some("Substitute"),
+        _ => false,
+    }
+}
+
+/// The outcome a [`Mode::Seg`] target line shows, in [`BattleState::roll_outcomes`]' spelling, or
+/// `None` when the line is no hit's outcome (a heal, a set HP).
+fn seg_outcome(line: &str, tgt_side: usize, viewer: usize, percent: bool) -> Option<String> {
+    let p: Vec<&str> = line.split('|').collect();
+    match *p.get(1)? {
+        "-damage" => {
+            let tok = p.get(3)?.split(' ').next()?;
+            if tok == "0" {
+                Some("0".to_string())
+            } else if tgt_side == viewer || !percent {
+                Some(tok.to_string())
+            } else {
+                tok.split('/').next().map(str::to_string)
+            }
+        }
+        "-activate" => Some("sub:held".to_string()),
+        "-end" => Some("sub:broke".to_string()),
+        _ => None,
+    }
 }
 
 /// One site as the report states it.
@@ -188,6 +239,7 @@ impl RollCtl {
             Mode::Record => "record",
             Mode::Match(_) => "match",
             Mode::Force(_) => "force",
+            Mode::Seg { .. } => "seg",
         };
         let mut o = format!("{{\"mode\":\"{mode}\",\"sites\":{}", self.n);
         match self.log_w {
@@ -303,7 +355,20 @@ impl BattleState {
         if self.rolls.is_none() {
             return r0;
         }
-        let pred = self.roll_outcomes(&site, dex);
+        let seg_mode = matches!(self.rolls.as_deref().map(|c| &c.mode), Some(Mode::Seg { .. }));
+        let pred = self.roll_outcomes(&site, dex, seg_mode);
+        // `Mode::Seg`: the target this site's own line shows in the segment's reference lines
+        let seg_target: Option<Option<String>> = match self.rolls.as_deref().map(|c| (&c.mode, c.viewer)) {
+            Some((Mode::Seg { lines, log_start, .. }, viewer)) => {
+                let ident = self.mon_ref(site.tgt_side, site.tgt_slot, dex).to_string();
+                let logged = self.log.lines().get(*log_start..).unwrap_or(&[]);
+                let c = logged.iter().filter(|l| hp_event_of(&l.0, &ident)).count();
+                let percent = !crate::bridge::format_is_debug(&self.format_id);
+                Some(lines.iter().filter(|l| hp_event_of(l, &ident)).nth(c)
+                    .and_then(|l| seg_outcome(l, site.tgt_side, viewer as usize, percent)))
+            }
+            _ => None,
+        };
         let kind = site.kind;
         let key = Target {
             kind,
@@ -326,6 +391,26 @@ impl BattleState {
                 Some(&r) => (r as usize, 16, 'f'),
                 None => (r0, 16, 's'),
             },
+            Mode::Seg { offset, .. } => match (&pred, seg_target.flatten()) {
+                (None, _) => (r0, 1, 'p'),
+                (Some(_), None) => (r0, 16, 'u'),
+                (Some(p), Some(t)) => {
+                    let c: Vec<usize> = (0..16).filter(|&r| p[r] == t).collect();
+                    if c.is_empty() {
+                        (r0, 0, '0')
+                    } else if c.contains(&r0) && *offset == 0 {
+                        (r0, c.len() as u8, 'm')
+                    } else if let Some(i) = c.iter().position(|&r| r == r0) {
+                        // a PICK OFFSET (the matcher re-rolling a hidden HP): the k-th consistent roll on
+                        (c[(i + offset) % c.len()], c.len() as u8, 'm')
+                    } else {
+                        // the stream's roll's rank among the INCONSISTENT rolls picks the consistent
+                        // one: each consistent roll is kept with probability ≈ 1 / |C| (module docs)
+                        let rank = (0..r0).filter(|r| !c.contains(r)).count();
+                        (c[(rank + offset) % c.len()], c.len() as u8, 'm')
+                    }
+                }
+            },
             Mode::Match(targets) => match targets.get(n as usize) {
                 None => (r0, 16, 'u'),
                 Some(t) if t.kind != key.kind || t.att != key.att || t.tgt != key.tgt || t.mv != key.mv => (r0, 16, 'x'),
@@ -346,7 +431,7 @@ impl BattleState {
                 },
             },
         };
-        if matches!(ctl.mode, Mode::Match(_)) {
+        if matches!(ctl.mode, Mode::Match(_) | Mode::Seg { .. }) {
             match flag {
                 'm' | 'p' => {
                     if let Some(w) = ctl.log_w.as_mut() {
@@ -365,8 +450,13 @@ impl BattleState {
     /// PINNED (module docs). Reads state only. Mirrors the apply path after the roll: the
     /// sub-intercept (`absorb_into_sub`: the sub breaks iff the roll reaches its HP), then the
     /// survive-at-1 modifiers (pinned whenever one could fire), then `apply_damage` (HP saturates at 0).
-    pub(crate) fn roll_outcomes(&self, site: &Site<'_>, dex: &Dex) -> Option<Vec<String>> {
-        if site.kind.always_pinned() {
+    ///
+    /// `seg` ([`Mode::Seg`], the fresh-dice matcher): a Beat Up strike is PREDICTED like a hit (its site carries the
+    /// strike's own 16 damages; Endure clamps every strike, so it counts as applying) rather than pinned. The record
+    /// / match / force paths pass `seg = false` and are unchanged, byte for byte.
+    pub(crate) fn roll_outcomes(&self, site: &Site<'_>, dex: &Dex, seg: bool) -> Option<Vec<String>> {
+        let beat_up = seg && site.kind == SiteKind::BeatUp;
+        if site.kind.always_pinned() && !beat_up {
             return None;
         }
         let viewer = self.rolls.as_ref().map_or(0, |c| c.viewer) as usize;
@@ -381,7 +471,7 @@ impl BattleState {
         let hp = mon.hp;
         let lethal = site.rolls.iter().any(|&d| d >= hp);
         let band = dex.item(&crate::dex::to_id(&mon.item)).and_then(|i| i.survive_lethal).is_some();
-        if lethal && (site.false_swipe || (site.endure_applies && mon.endure) || band) {
+        if lethal && (site.false_swipe || ((site.endure_applies || beat_up) && mon.endure) || band) {
             return None;
         }
         Some(

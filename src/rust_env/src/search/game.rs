@@ -47,6 +47,11 @@ pub struct Log {
     /// world sampler): `(site, roll)` — the n-th damage roll of the battle uses `roll` instead of the
     /// stream's (the draw itself is unchanged). Empty (every log but such a world's): the battle as drawn.
     pub rolls: Vec<(u32, u8)>,
+    /// The RESEED SCHEDULE of a world the leak-honest builder matched on FRESH dice (`r0s4_honest`,
+    /// `designs/endstate/design_sprime_honest.md` D3): `(k, seed)` — the battle's PRNG is replaced by
+    /// `seed` immediately before command `k` is fed (ascending `k`, each named once). Empty (every log
+    /// but such a world's): the battle on its own seed, byte for byte.
+    pub reseed: Vec<(usize, String)>,
 }
 
 /// An open decision: `(action index, choice token)` per legal action, and its per-side ordinal.
@@ -102,10 +107,20 @@ impl Game {
             return Err(format!("replay: at = {at} is past the log's {} commands", log.cmds.len()));
         }
         let mut g = Game::start(log, clock)?;
+        let mut sched = log.reseed.iter().peekable();
         for (k, c) in log.cmds[..at].iter().enumerate() {
+            g.reseed_at(k, &mut sched);
             g.feed_logged(k, c)?;
         }
         Ok(g)
+    }
+
+    /// Apply the log's RESEED SCHEDULE entry for command `k`, if it names `k` (`Log::reseed`): the one
+    /// rule both replays (`replay`, `replay_to_turn`) and `core_events`' `"reseed"` START key share.
+    fn reseed_at<'a, I: Iterator<Item = &'a (usize, String)>>(&mut self, k: usize, sched: &mut std::iter::Peekable<I>) {
+        if let Some((_, seed)) = sched.next_if(|(j, _)| *j == k) {
+            self.sess.reseed(seed);
+        }
     }
 
     /// Start `log`'s battle and feed its commands until the battle sits at the START of turn `turn`
@@ -115,10 +130,12 @@ impl Game {
     /// there (the battle ended first, or the commands ran out).
     pub fn replay_to_turn(log: &Log, turn: u32, clock: ClockConfig) -> Result<(Game, usize), String> {
         let mut g = Game::start(log, clock)?;
+        let mut sched = log.reseed.iter().peekable();
         for (k, c) in log.cmds.iter().enumerate() {
             if g.at_turn_start(turn) {
                 return Ok((g, k));
             }
+            g.reseed_at(k, &mut sched);
             g.feed_logged(k, c)?;
         }
         if g.at_turn_start(turn) {

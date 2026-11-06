@@ -178,15 +178,28 @@ fn rolls_from_json(v: Option<&Json>) -> Result<Vec<(u32, u8)>, String> {
     Ok(out)
 }
 
+/// A leak-honest world's RESEED SCHEDULE, `log.reseed` (`[[k, seed], …]`, `Log::reseed`), read by the
+/// core's own rule (`pokesim::fresh_dice::schedule_from_json`: ascending, each index once, every seed
+/// one the PRNG takes); an index past the log's commands is refused too. Absent or null = none.
+fn reseed_from_json(v: Option<&Json>, n_cmds: usize) -> Result<Vec<(usize, String)>, String> {
+    let out = pokesim::fresh_dice::schedule_from_json(v).map_err(|e| format!("playout: `log.{e}"))?;
+    if let Some((k, _)) = out.iter().find(|(k, _)| *k >= n_cmds) {
+        return Err(format!("playout: `log.reseed` names command {k}, past the log's {n_cmds} commands"));
+    }
+    Ok(out)
+}
+
 /// A core input log as JSON: `{"format_id", "seed", "names": [2], "teams": [2], "cmds": [...]}`, and a
-/// matched world's optional `"rolls"` (`rolls_from_json`).
+/// matched world's optional `"rolls"` (`rolls_from_json`) and `"reseed"` (`reseed_from_json`).
 pub fn log_from_json(v: &Json) -> Result<Log, String> {
     let s = |k: &str| v.str_at(k).map(str::to_string).ok_or_else(|| format!("playout: `log.{k}` must be a string"));
     let two = |k: &str| -> Result<[String; 2], String> {
         let a = strings(v.get(k), &format!("log.{k}"))?;
         <[String; 2]>::try_from(a).map_err(|_| format!("playout: `log.{k}` must hold exactly two strings"))
     };
-    Ok(Log { format_id: s("format_id")?, seed: s("seed")?, names: two("names")?, teams: two("teams")?, cmds: strings(v.get("cmds"), "log.cmds")?, rolls: rolls_from_json(v.get("rolls"))? })
+    let cmds = strings(v.get("cmds"), "log.cmds")?;
+    let reseed = reseed_from_json(v.get("reseed"), cmds.len())?;
+    Ok(Log { format_id: s("format_id")?, seed: s("seed")?, names: two("names")?, teams: two("teams")?, cmds, rolls: rolls_from_json(v.get("rolls"))?, reseed })
 }
 
 const OPEN_KEYS: [&str; 10] = ["log", "at", "side", "actions", "seeds", "stall", "max_turns", "keep_cmds", "bot", "text"];

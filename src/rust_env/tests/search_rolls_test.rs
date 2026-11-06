@@ -34,6 +34,7 @@ fn base_log() -> Log {
         teams: [teams[0].clone(), teams[1].clone()],
         cmds: Vec::new(),
         rolls: Vec::new(),
+        reseed: Vec::new(),
     };
     let mut g = Game::start(&log0, ClockConfig::default()).expect("start");
     for _ in 0..24 {

@@ -431,9 +431,12 @@ class Root:
         teams = list(self.log["teams"])
         if team_opp is not None:
             teams[self.oi] = team_opp
+        # a log on a RESEED SCHEDULE (an alternative truth on fresh dice, ``design_sprime_honest.md`` §3 P4) replays on
+        # it: every replay of this decision — the truth's, the screens', the gates' — spends that log's dice
         return RecordedBattle(label=label, format_id=self.log["format_id"], seed=self.log["seed"],
                               p1={"name": self.log["names"][0], "team": teams[0]},
-                              p2={"name": self.log["names"][1], "team": teams[1]}, commands=commands, rolls=rolls)
+                              p2={"name": self.log["names"][1], "team": teams[1]}, commands=commands, rolls=rolls,
+                              reseed=self.log.get("reseed"))
 
 
 def render(tmpl: List[list], team_w: str) -> List[list]:

@@ -159,6 +159,7 @@ fn episode(rep: &mut Report, e: usize, ep: &Val) -> Result<(), String> {
         teams: [str_of(&teams[0])?, str_of(&teams[1])?],
         cmds: Vec::new(),
         rolls: Vec::new(),
+        reseed: Vec::new(),
     };
     let p1: Vec<i64> = arr(ep, "p1")?.iter().map(|v| int(v, "p1")).collect::<Result<_, _>>()?;
     let p2 = arr(ep, "p2")?;

@@ -1691,6 +1691,18 @@ impl BridgeSession {
         Ok(())
     }
 
+    /// Point the armed damage-roll control at the segment the leak-honest matcher is about to
+    /// match (`crate::rolls::Mode::Seg`, `crate::fresh_dice`): the viewer's reference `lines` for it,
+    /// anchored at the battle log's current length, with the PICK OFFSET `offset`. The control's site
+    /// count, report and weight carry on. Refused when no control is armed.
+    pub fn set_roll_segment(&mut self, lines: std::sync::Arc<[String]>, offset: usize) -> Result<(), String> {
+        let st = self.engine.battle_state_mut().ok_or("set_roll_segment: no battle state")?;
+        let log_start = st.log.lines().len();
+        let ctl = st.rolls.as_mut().ok_or("set_roll_segment: no damage-roll control is armed")?;
+        ctl.mode = crate::rolls::Mode::Seg { lines, log_start, offset };
+        Ok(())
+    }
+
     /// The armed damage-roll control and its report so far.
     pub fn roll_ctl(&self) -> Option<&crate::rolls::RollCtl> {
         self.engine.battle_state()?.rolls.as_deref()

@@ -17,7 +17,9 @@
 //!
 //! START's optional `"rolls"` arms the DAMAGE-ROLL CONTROL (`pokesim::rolls`, F1 tier A of the
 //! world sampler: `{"viewer","mode":"record"|"match"|"force",…}`) and adds its report `"rolls":{…}`
-//! to the battle's output line; without it not one byte changes.
+//! to the battle's output line; without it not one byte changes. START's optional `"reseed"`
+//! (`[[k, seed], …]`) is a leak-honest world's RESEED SCHEDULE (`pokesim::fresh_dice`): the PRNG is
+//! replaced by `seed` immediately before command `k`; without it not one byte changes.
 //!
 //! `seed` is the RAW `>start` seed (the live `sim_bridge` path, which runs the turn-0
 //! construction window) unless `init_seed` is true, in which case it is the POST-construction
@@ -76,6 +78,13 @@
 //! by the lines up to that difference; what the stop gives up is a refusal a check would have raised
 //! after it.
 //!
+//! `INFOSET <json>` then `MATCH <json>` lines (no `START`): the LEAK-HONEST builder's FRESH-DICE
+//! matcher (`pokesim::fresh_dice`, `designs/endstate/design_sprime_honest.md` D3). `INFOSET` is the
+//! searched side's information set (`fresh_dice::InfoSet::from_json`) every later `MATCH` is matched
+//! against; a `MATCH` is one world (`{"label","formatid","p1":{name,team},"p2":{…}}` plus
+//! `fresh_dice::MatchCfg::from_json`'s keys) and prints one line,
+//! `{"label":…,"ok",…}` (`fresh_dice::Report::json_into`).
+//!
 //! `--obs-bench SIDE K REPS` (with `--obs`) also TIMES the encoder at viewer SIDE's K-th decision
 //! (0-based): REPS encodes of the version (its view memoized — the production shape) and REPS of
 //! `present()` + encode (the COLD shape), reported as `"obs_bench"` with the row it timed — the core
@@ -118,6 +127,11 @@ struct Battle {
     /// START's opt-in `"rolls"` (the damage-roll control, `pokesim::rolls`): absent, not one byte
     /// changes.
     rolls: Option<RollCtl>,
+    /// START's opt-in `"reseed"` (`[[k, seed], …]`, ascending `k`): the battle's PRNG is replaced by
+    /// `seed` immediately before command `k` (the leak-honest builder's RESEED SCHEDULE,
+    /// `pokesim::fresh_dice`; `rust_env`'s `Log::reseed` is its playout twin). Absent or empty, not
+    /// one byte changes.
+    reseed: Vec<(usize, String)>,
 }
 
 /// `SCREEN` (module docs): the viewer and the reference lines a screened battle is compared against.
@@ -550,12 +564,16 @@ fn run(b: &Battle, dex: &Dex, record_dir: Option<&str>, commit: &str, views: boo
     }
     let mut cursor = ScreenCursor::default();
     let mut stopped = screen.is_some_and(|sc| sc.diverged(&sess, &mut cursor));
-    for c in &b.cmds {
+    let mut sched = b.reseed.iter().peekable();
+    for (k, c) in b.cmds.iter().enumerate() {
         if stopped {
             break;
         }
         if sess.is_ended() {
             break;
+        }
+        if let Some((_, seed)) = sched.next_if(|(j, _)| *j == k) {
+            sess.reseed(seed);
         }
         let skip = matches!(c, Script::ChooseIfOpen(cmd, _) if sess.is_choice_done(cmd.side));
         if skip {
@@ -1217,6 +1235,7 @@ fn main() {
     let mut out = io::stdout().lock();
     let mut cur: Option<Battle> = None;
     let mut screen: Option<Screen> = None;
+    let mut info: Option<pokesim::fresh_dice::InfoSet> = None;
     let mut n = 0usize;
     for line in stdin.lock().lines() {
         let line = match line {
@@ -1251,6 +1270,7 @@ fn main() {
                             None | Some(Json::Null) => None,
                             Some(r) => Some(RollCtl::from_json(r)?),
                         },
+                        reseed: pokesim::fresh_dice::schedule_from_json(v.get("reseed"))?,
                     });
                 }
                 "CHOOSE" | "CHOOSEIF" => {
@@ -1260,6 +1280,36 @@ fn main() {
                     let c = Cmd { side: side_of(side)?, choice };
                     let tok = rest.split_once(' ').map_or("", |(_, t)| t).to_string();
                     b.cmds.push(if cmd == "CHOOSE" { Script::Choose(c, tok) } else { Script::ChooseIfOpen(c, tok) });
+                }
+                "INFOSET" => {
+                    if cur.is_some() {
+                        return Err("INFOSET inside a battle".into());
+                    }
+                    let v = Json::parse(rest).map_err(|e| format!("INFOSET JSON: {e}"))?;
+                    info = Some(pokesim::fresh_dice::InfoSet::from_json(&v)?);
+                }
+                "MATCH" => {
+                    if cur.is_some() {
+                        return Err("MATCH inside a battle".into());
+                    }
+                    let is = info.as_ref().ok_or("MATCH before INFOSET")?;
+                    let v = Json::parse(rest).map_err(|e| format!("MATCH JSON: {e}"))?;
+                    let label = v.str_at("label").map(str::to_string).unwrap_or_else(|| format!("match{n}"));
+                    let opts = BattleOptions {
+                        format_id: v.str_at("formatid").ok_or("MATCH: formatid")?.to_string(),
+                        seed: None,
+                        p1: player(&v, "p1")?,
+                        p2: player(&v, "p2")?,
+                    };
+                    let cfg = pokesim::fresh_dice::MatchCfg::from_json(&v)?;
+                    let rep = pokesim::fresh_dice::match_world(&opts, is, &cfg, &dex);
+                    let mut o = String::from("{\"label\":");
+                    json_out::str_into(&mut o, &label);
+                    rep.json_into(&mut o);
+                    o.push('}');
+                    let _ = writeln!(out, "{o}");
+                    let _ = out.flush();
+                    n += 1;
                 }
                 "SCREEN" => {
                     if !obs {

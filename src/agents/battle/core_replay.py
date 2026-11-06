@@ -35,6 +35,10 @@ class RecordedBattle:
     #: ``{"viewer": 0|1, "mode": "record"|"match"|"force", ...}``; the result then carries ``"rolls"``.
     #: ``None`` (the default) sends no key, and not one byte of the replay changes.
     rolls: Optional[dict] = None
+    #: START's opt-in RESEED SCHEDULE (``[[k, seed], …]``, ``pokesim::fresh_dice``): the PRNG is replaced by ``seed``
+    #: immediately before command ``k`` (a leak-honest world, or an alternative truth on fresh dice). ``None`` (the
+    #: default) sends no key, and not one byte of the replay changes.
+    reseed: Optional[List[list]] = None
 
     def script(self) -> List[str]:
         start = {"label": self.label, "formatid": self.format_id, "seed": self.seed,
@@ -42,6 +46,8 @@ class RecordedBattle:
                  "quick_claw": self.quick_claw}
         if self.rolls is not None:
             start["rolls"] = self.rolls
+        if self.reseed is not None:
+            start["reseed"] = [[int(k), str(sd)] for k, sd in self.reseed]
         out = ["START " + json.dumps(start)]
         for cmd in self.commands:
             side, choice = cmd[0], cmd[1]
