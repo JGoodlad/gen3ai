@@ -12,10 +12,15 @@ reading of the PREREG's "ON's pooled F rate" when a short final is inside the fl
 :data:`BAND`, :data:`TIE`, :data:`Z`):
 
 * Look 1 (3 v 3, ``look: 1``) is futility only: Δ̂ ≤ :data:`TIE` ENDS the read with look 1's class (never GAIN), else
-  CONTINUE. Look 2 (8 v 8) recomputes look 1 on ``look1_seeds`` (power.py's ``a[:, :3]``), so a look-2 decision IS
+  CONTINUE. Look 2 (8 v 8) recomputes look 1 on s3501-s3503 (power.py's ``a[:, :3]``), so a look-2 decision IS
   ``rule_x60`` on the same counts.
-* GAIN iff LB > TIE; LOSS iff UB < −TIE; NO-USEFUL-GAIN iff UB < BAND − TIE; else NOT-RESOLVED; "equivalent" (inside
-  ±BAND by TIE) reported, deciding nothing.
+* THE SEEDS ARE FIXED HERE (REVIEW I M3; :data:`LOOK_SEEDS`, :data:`CONTRAST_SEEDS`): a spec reading other seeds is
+  refused at load, a label's run dir must end ``_s<its seed>``, and a run whose ``metadata.json`` records another seed
+  makes the decision INCONCLUSIVE.
+* GAIN iff LB > TIE; LOSS iff UB < −TIE; NO-USEFUL-GAIN iff UB < BAND − TIE (so an UB in [−TIE, 0) is NO-USEFUL-GAIN,
+  power.py's); else NOT-RESOLVED; "equivalent" (inside ±BAND by TIE) reported, deciding nothing.
+* The Welch guard's tie band (REVIEW I m3): σ̂²'s one-sided 95 % LB within :data:`GUARD_TIE` of (1 pp)² takes the
+  WIDER of the two intervals (power.py's strict ``>`` elsewhere).
 * The floor (X13): each arm counts ≥ 20 · units · finals − 20 games on F, every final > 0; else INCONCLUSIVE.
 
 THE OTHER METERS (look 2; at look 1 the S meters given are REPORTED only, X5):
@@ -54,10 +59,12 @@ compared game for game, choices included (``assemble.compare_choices``), with th
 imported into ``against``; a difference is INCONCLUSIVE ("re-play the imported cells", X7).
 
 THE VOID GATE (§15) is ``rules.void_gate`` (``params.void``): K9(b), ``pin`` (every recorded git hash, so
-``pin_history``, is the side pin) and ``dose`` (``main.dose`` against a C0 run, relative 1e-6, §13.3), on the ON runs.
-Operator checks (not in any run dir this module reads): the ``[HUMAN-DATA]`` stamp in every launch log, the realised
-human share, the panel-contamination check, a FATAL naming a corpus team, the per-resume note, and C0 s3506-s3508's own
-K9(b) / pin (one ``pin`` gates every listed run).
+``pin_history``, is its arm's pin: ``{arm: sha}``, the ON arm at the side pin, C0 at ``f4b25238d``, D1 at
+``440b61c32``) and ``dose`` (``main.dose`` against a C0 run, relative 1e-6, §13.3). At look 2 ``void`` and ``guards``
+are required, ``void.pin`` is per arm and every final the read reads (ON, C0, D1) is gated (REVIEW I m4). Operator
+checks (not in any run dir this module reads): the ``[HUMAN-DATA]`` stamp in every launch log (the run dir holds only
+its record), the realised human share, the panel-contamination check, a FATAL naming a corpus team, the per-resume
+note.
 """
 from __future__ import annotations
 
@@ -71,9 +78,16 @@ Z = 1.959963985
 SIGMA_F = 0.010
 BAND = 0.03
 TIE = 1e-9
-#: The registered seed counts (X1): look 1 is 3 v 3, look 2 8 v 8; the contrast is always 5 v 5 (X9).
-LOOK_FINALS = {1: 3, 2: 8}
-CONTRAST_FINALS = 5
+#: The registered SEEDS (X1, X9; REVIEW I M3: fixed here, so no later spec can re-pick them): look 1 is ON and C0
+#: s3501-s3503; look 2 ON and C0 s3501-s3508, recomputing look 1 on s3501-s3503; the contrast ON and D1 s3501-s3505.
+LOOK1_SEEDS = (3501, 3502, 3503)
+LOOK_SEEDS = {1: LOOK1_SEEDS, 2: tuple(range(3501, 3509))}
+CONTRAST_SEEDS = tuple(range(3501, 3506))
+LOOK_FINALS = {k: len(v) for k, v in LOOK_SEEDS.items()}
+CONTRAST_FINALS = len(CONTRAST_SEEDS)
+#: The Welch guard's tie band (REVIEW I m3, rule 8): σ̂²'s one-sided 95 % LB within this of the floor² takes the WIDER
+#: of the registered and the Welch interval.
+GUARD_TIE = 1e-12
 #: The registered cells: (team set(s), units per final) of each Kakuna meter (§5, §8, §10) and each S meter's panel
 #: (§6, §7; R72's panel name is the registration's ``<<TBD>>``, so any).
 PRIMARY_CELL = ("forum72", 60)
@@ -95,10 +109,11 @@ GUARDS = ("G-F", "G-E", "G-C")
 VERDICTS = (ADOPT, TRADE, KSPEC, LOSS, NO_TRANSFER, IN_HOUSE_ONLY, NOT_DELIVERED, NUG_LOOK1, NOT_RESOLVED, CONTINUE,
             INCONCLUSIVE)
 
-KEYS = ("look", "on", "off", "look1_seeds", "primary")
+KEYS = ("look", "on", "off", "primary")
 OPTIONAL = ("p", "i_f", "r72", "goal_a", "contrast", "reported", "guards", "determinism_guard", "void")
-#: Required at look 2 (the meters the verdict reads); at look 1 only i_f / r72 may be given (REPORTED, X5).
-LOOK2_REQUIRED = ("p", "i_f", "r72", "goal_a")
+#: Required at look 2 (the meters the verdict reads, the guards' artefact and the VOID gate; REVIEW I m4); at look 1
+#: only i_f / r72 may be given (REPORTED, X5).
+LOOK2_REQUIRED = ("p", "i_f", "r72", "goal_a", "guards", "void")
 RULE_DOCS = {"x60": "X60-T (PREREG §5-§11): Δ_F by power.py's x60 interval (futility-only look 1 at 3 v 3, look 2 at "
                     "8 v 8), I_F (LB90 guard), Δ_P (D1's), goal (a), R72, T − D1 (5 v 5, reported) and the §11 verdict"}
 
@@ -129,13 +144,17 @@ def x60_interval(on: Sequence[Sequence[Tuple[int, int]]], off: Sequence[Sequence
     s2 = max(SIGMA_F ** 2, w - b)
     hw = Z * math.sqrt(vbin + 2 * s2 / ns)
     guard_lb = w * df / chi2.ppf(0.95, df) - b
-    guard = bool(guard_lb > SIGMA_F ** 2)
+    guard_near = bool(abs(guard_lb - SIGMA_F ** 2) <= GUARD_TIE)
+    guard = bool(guard_lb > SIGMA_F ** 2) and not guard_near
     va, vc = ma.var(ddof=1) / ns, mc.var(ddof=1) / ns
     dfw = (va + vc) ** 2 / max(va ** 2 / (ns - 1) + vc ** 2 / (ns - 1), 1e-30)
     hw_w = float(tdist.ppf(0.975, dfw) * math.sqrt(va + vc))
+    if guard_near:                                            # REVIEW I m3: the tie band takes the WIDER interval
+        guard = bool(math.isfinite(hw_w) and hw_w > hw)
     half = hw_w if guard else hw
     return {"delta": float(d), "halfwidth": float(half), "lo": float(d - half), "hi": float(d + half),
-            "welch_used": guard, "halfwidth_registered": float(hw), "halfwidth_welch": hw_w, "welch_df": float(dfw),
+            "welch_used": guard, "guard_near": guard_near, "halfwidth_registered": float(hw), "halfwidth_welch": hw_w,
+            "welch_df": float(dfw),
             "sigma_hat_sq": float(w - b), "sigma_hat": math.sqrt(max(0.0, float(w - b))), "W": float(w),
             "b": float(b), "df": df, "sigma2_lb95": float(guard_lb), "vbin": float(vbin), "finals": ns, "panels": k,
             "pooled_on": [float(x) for x in pa], "pooled_off": [float(x) for x in pc],
@@ -323,12 +342,8 @@ def check(p: Mapping[str, Any], *, models: Any, anchor: Any, s: Any) -> List[str
     want = LOOK_FINALS[look]
     if len(on) != want or len(off) != want:
         probs.append(f"look {look} registers {want} v {want} finals (got {len(on)} v {len(off)})")
-    l1 = p.get("look1_seeds")
-    seeds_on = {models[lab].seed for lab in on}
-    seeds_off = {models[lab].seed for lab in off}
-    if not (isinstance(l1, list) and len(l1) == LOOK_FINALS[1] and len(set(l1)) == len(l1)
-            and set(l1) <= seeds_on and set(l1) <= seeds_off):
-        probs.append(f"look1_seeds: {LOOK_FINALS[1]} distinct seeds of both sides' finals")
+    probs += _seed_set("on", on, models, LOOK_SEEDS[look]) + _seed_set("off", off, models, LOOK_SEEDS[look])
+    probs += _seed_ties(on + off, models)
     probs += _anchor_meter("primary", p.get("primary"), anchor, on + off, ("groups", "teamset", "units"))
     probs += _registered("primary", p.get("primary"), *PRIMARY_CELL)
     for key in LOOK2_REQUIRED:
@@ -359,6 +374,9 @@ def check(p: Mapping[str, Any], *, models: Any, anchor: Any, s: Any) -> List[str
                     probs.append("contrast.on: ON finals of this read")
                 if len(c["on"]) != CONTRAST_FINALS or len(c["off"]) != CONTRAST_FINALS:
                     probs.append(f"contrast: always {CONTRAST_FINALS} v {CONTRAST_FINALS} (X9)")
+                probs += _seed_set("contrast.on", c["on"], models, CONTRAST_SEEDS)
+                probs += _seed_set("contrast.off", c["off"], models, CONTRAST_SEEDS)
+                probs += _seed_ties(list(c["off"]), models)
                 if set(c_off_arms) & (set(on_arms) | set(off_arms)):
                     probs.append("contrast.off: D1's finals, an arm of neither side of the primary")
                 probs += _anchor_meter("contrast", {"groups": c["groups"], "panels": c["panels"], "units": c["units"]},
@@ -380,7 +398,73 @@ def check(p: Mapping[str, Any], *, models: Any, anchor: Any, s: Any) -> List[str
         probs.append("determinism_guard: {group (re-played here), against (the group importing those units)}")
     if p.get("void") is not None and len(on_arms) == 1:
         probs += _void_check(dict(p, on=on_arms[0]), models, required=False)
+        v = p["void"]
+        if look == 2 and isinstance(v, dict) and isinstance(v.get("runs"), dict):
+            gated = on + off + (list(c["off"]) if isinstance(c, dict) and isinstance(c.get("off"), list) else [])
+            probs += [f"void.runs: {lab!r} has no run (at look 2 every final the read reads is gated, REVIEW I m4)"
+                      for lab in gated if lab not in v["runs"]]
+            if not isinstance(v.get("pin"), dict):
+                probs.append("void.pin: at look 2 a pin per arm {arm: sha} (the side pin, f4b25238d, 440b61c32)")
     return probs
+
+
+def _seed_set(name: str, labs: Sequence[str], models: Any, want: Sequence[int]) -> List[str]:
+    got = sorted(int(models[lab].seed) for lab in labs if lab in models)
+    return [] if got == sorted(want) else [f"{name}: seeds {got} are not the registered {list(want)} (REVIEW I M3)"]
+
+
+def run_dir_of(ref: Any) -> Optional[str]:
+    """The run dir a model ref names: a ``final`` ref's ``run``, a ``pinned`` ref's file's directory (``<run>/x.zip``)
+    or its run (``<run>/checkpoints/x.zip``)."""
+    import posixpath
+
+    if getattr(ref, "kind", None) == "final":
+        return str(ref.run)
+    path = str(getattr(ref, "path", "") or "")
+    d = posixpath.dirname(path)
+    return posixpath.dirname(d) if posixpath.basename(d) == "checkpoints" else d
+
+
+def path_seed(ref: Any) -> Optional[int]:
+    """The ``_s<seed>`` the ref's run dir name ends with (``rb_x35_c0_s3501``), or None."""
+    import posixpath
+    import re
+
+    m = re.search(r"_s(\d+)$", posixpath.basename(str(run_dir_of(ref) or "").rstrip("/")))
+    return int(m.group(1)) if m else None
+
+
+def _seed_ties(labs: Sequence[str], models: Any) -> List[str]:
+    """REVIEW I M3: each label's seed is its run's: the ``_s<seed>`` of the ref's run dir equals the spec's seed (the
+    run's RECORDED seed is checked at ``inputs``, where the run dir may be read)."""
+    out = []
+    for lab in labs:
+        if lab not in models:
+            continue
+        got = path_seed(models[lab].ref)
+        if got != int(models[lab].seed):
+            out.append(f"{lab}: its run {run_dir_of(models[lab].ref)!r} names seed {got}, the spec {models[lab].seed}")
+    return out
+
+
+def recorded_seeds(spec: Any, labs: Sequence[str]) -> Dict[str, Dict[str, Any]]:
+    """``{label: {run, recorded, ok}}``: each run's recorded seed (``metadata.json`` ``cli_args.seed``) against the
+    spec's; ``recorded`` None (and ``ok`` True) where the record is not readable here (REVIEW I M3: "where readable")."""
+    from main.reads.models import spec_path
+
+    out: Dict[str, Dict[str, Any]] = {}
+    for lab in labs:
+        m = spec.models[lab]
+        run = run_dir_of(getattr(m, "ref", None)) if getattr(m, "ref", None) is not None else None
+        rec = None
+        if run:
+            try:
+                rec = json.loads((spec_path(run) / "metadata.json").read_text()).get("cli_args", {}).get("seed")
+            except (OSError, ValueError, AttributeError):
+                rec = None
+        ok = rec is None or (isinstance(rec, int) and not isinstance(rec, bool) and rec == int(m.seed))
+        out[lab] = {"run": run, "spec": int(m.seed), "recorded": rec, "ok": ok}
+    return out
 
 
 def reported(p: Mapping[str, Any]) -> List[Tuple[str, str]]:
@@ -572,10 +656,12 @@ def inputs(cells: Mapping[str, Any], p: Mapping[str, Any], spec: Any) -> Dict[st
     on, off = list(p["on"]), list(p["off"])
     pr = p["primary"]
     doc: Dict[str, Any] = {"schema": SCHEMA, "look": p["look"], "sides": {"on": on, "off": off},
-                           "seeds": _seeds(spec, on + off), "look1_seeds": list(p["look1_seeds"]),
+                           "seeds": _seeds(spec, on + off), "look1_seeds": list(LOOK1_SEEDS),
                            "primary": dict(pool_anchor(cells, pr["groups"], [pr["teamset"]], on + off),
                                            teamset=pr["teamset"], units=pr["units"])}
     doc["primary"].pop("rows")
+    gated = on + off + list((p.get("contrast") or {}).get("off") or ())
+    doc["recorded_seeds"] = recorded_seeds(spec, gated)
     for key in ("p", "i_f", "r72"):
         if p.get(key) is not None:
             doc[key] = dict(pool_s(cells, p[key]["groups"], on + off), panel=p[key]["panel"])
@@ -812,6 +898,11 @@ def decide(doc: Mapping[str, Any], p: Mapping[str, Any]) -> Dict[str, Any]:
     i_f: Dict[str, Any] = _inhouse(doc, "i_f") if doc.get("i_f") else {"read": False, "reasons": ["i_f: absent"]}
     r72: Dict[str, Any] = _inhouse(doc, "r72") if doc.get("r72") else {"read": False, "reasons": ["r72: absent"]}
     out = dict(base, primary=prim, determinism_guard=det, reported=rep)
+    bad_seeds = [f"{lab}: run {r['run']} recorded seed {r['recorded']}, the spec {r['spec']}"
+                 for lab, r in (doc.get("recorded_seeds") or {}).items() if not r["ok"]]
+    if bad_seeds:
+        return dict(out, decision={"verdict": INCONCLUSIVE, "reasons": [
+            "a label's seed is not its run's recorded seed (REVIEW I M3)"] + bad_seeds})
     if det is not None and not det["passed"]:
         return dict(out, decision={"verdict": INCONCLUSIVE, "reasons": [
             "the determinism guard failed: HOLD, re-play the imported cells at the play pin (X7)"] + det["reasons"]})
@@ -825,7 +916,7 @@ def decide(doc: Mapping[str, Any], p: Mapping[str, Any]) -> Dict[str, Any]:
                                     "guards_not_read": "Δ_F is not a GAIN"}
         if look == 2:
             stop_dec["reasons"] = stop_dec["reasons"] + [
-                "look 2 recomputes look 1's futility stop on look1_seeds (power.py's rule_x60): this read should have "
+                "look 2 recomputes look 1's futility stop on s3501-s3503 (power.py's rule_x60): this read should have "
                 "stopped at look 1"]
         return dict(out, decision=stop_dec)
     p_m = _p_meter(doc)

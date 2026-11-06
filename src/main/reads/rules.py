@@ -28,7 +28,8 @@ THE VOID GATE (:func:`void_gate`): an X35-stage rule (``x35_r1``, ``d1``, ``n4_s
 AM-6 K9(b) record (``<k9b_dir>/<run>.json``) must read PASS, and a batch-2 arm's V-S1 / V-S2 (SPRT) or LR-F KL guard
 (``main.x35.batch2_void.read_void``) too; anything else refuses the decision (a VOID seed enters no read; SPRT's
 ``assemble.py`` STOP, be60f24f FINDING 3). Three further guards read the RUN DIR's own artefacts and are OPT-IN, each
-a key of ``params.void`` (a spec that names none is gated exactly as before): ``pin`` (a commit sha or prefix: every
+a key of ``params.void`` (a spec that names none is gated exactly as before): ``pin`` (a commit sha or prefix, or
+``{arm: sha}`` when the arms trained at different pins: every
 git hash the run recorded, ``metadata.json``'s ``git_hash`` and each ``pin_history`` span, must be that commit; N1-P's
 PREREG §9 guard 3), ``pool_seed`` (``{fork_step}``: ``<run>/snapshots/pool_seed.json`` is the T54 schema-2 record, its
 ``fork_step`` the registered one, no seeded snapshot later than it and every dropped one later; guard 4's record half)
@@ -242,9 +243,17 @@ def _void_check(p: Mapping[str, Any], models: Any, *, required: bool) -> List[st
     probs = [f"void.runs: {lab!r} is not a model label" for lab in v["runs"] if lab not in models]
     from main.reads.spec import PENDING             # a pin the registration fills later (check-spec --pin-pending only)
 
-    if "pin" in v and not (isinstance(v["pin"], str) and (re.fullmatch(r"[0-9a-f]{7,40}", v["pin"])
-                                                          or v["pin"] == PENDING)):
-        probs.append("void.pin: a commit sha (7 to 40 lowercase hex digits)")
+    def _sha(x: Any) -> bool:
+        return isinstance(x, str) and (re.fullmatch(r"[0-9a-f]{7,40}", x) is not None or x == PENDING)
+
+    pin = v.get("pin")
+    if "pin" in v and isinstance(pin, dict):           # a pin per ARM (X60-T REVIEW I m4: each arm trained at its own)
+        if not pin or not all(isinstance(a, str) and _sha(x) for a, x in pin.items()):
+            probs.append("void.pin: {arm: commit sha} (7 to 40 lowercase hex digits each)")
+        probs += [f"void.pin: no pin for {lab!r}'s arm {models[lab].arm!r}" for lab in v["runs"]
+                  if lab in models and models[lab].arm not in pin]
+    elif "pin" in v and not _sha(pin):
+        probs.append("void.pin: a commit sha (7 to 40 lowercase hex digits), or {arm: sha}")
     if "pool_seed" in v and not (isinstance(v["pool_seed"], dict) and set(v["pool_seed"]) == {"fork_step"}
                                  and isinstance(v["pool_seed"]["fork_step"], int)
                                  and not isinstance(v["pool_seed"]["fork_step"], bool) and v["pool_seed"]["fork_step"] > 0):
@@ -371,7 +380,8 @@ def void_gate(spec: Any) -> Optional[Dict[str, Dict[str, Any]]]:
         row: Dict[str, Any] = {"run": str(run), "k9b": k9b, "k9b_file": str(kf), "batch2": b,
                                "pass": k9b == V.PASS and (b is None or b["verdict"] == V.PASS)}
         if "pin" in v:
-            row["pin"] = void_pin_guard(rd, v["pin"])
+            want = v["pin"][spec.models[lab].arm] if isinstance(v["pin"], dict) else v["pin"]
+            row["pin"] = void_pin_guard(rd, want)
             row["pass"] = row["pass"] and row["pin"]["pass"]
         if "pool_seed" in v:
             row["pool_seed"] = void_pool_seed_guard(rd, v["pool_seed"]["fork_step"])

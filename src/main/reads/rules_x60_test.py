@@ -234,12 +234,16 @@ OFF8 = [f"c0_s{s}" for s in range(3501, 3509)]
 D1 = [f"d1_s{s}" for s in range(3501, 3506)]
 SEED = {**{lab: 3501 + i for i, lab in enumerate(ON8)}, **{lab: 3501 + i for i, lab in enumerate(OFF8)},
         **{lab: 3501 + i for i, lab in enumerate(D1)}}
+#: The synthetic runs' dirs: absent, so no recorded seed is readable (``recorded_seeds`` "where readable").
+NO_RUNS = "/nonexistent/x60_rule_test"
+PINS = {"x60t": "7fe15726c77cfa823aee78110444bf25c3c7370e", "c0": "f4b25238d", "d1": "440b61c32"}
 
 
 def _spec(groups: Dict[str, Tuple[Sequence[str], Sequence[str], int, bool]], s: Dict[str, Tuple[str, Sequence[str]]]
           ) -> SimpleNamespace:
     arm = {**{lab: "x60t" for lab in ON8}, **{lab: "c0" for lab in OFF8}, **{lab: "d1" for lab in D1}}
-    models = {lab: SimpleNamespace(arm=arm[lab], seed=SEED[lab], load={}) for lab in arm}
+    models = {lab: SimpleNamespace(arm=arm[lab], seed=SEED[lab], load={},
+                                   ref=SimpleNamespace(kind="final", run=f"{NO_RUNS}/rb_{lab}")) for lab in arm}
     anchor = {g: SimpleNamespace(name=g, teamsets=tuple(ts), models=tuple(ms), unit_seeds=tuple(range(units)),
                                  per_game=False, imports=SimpleNamespace(models=()) if imp else None)
               for g, (ts, ms, units, imp) in groups.items()}
@@ -274,13 +278,16 @@ def _look2(*, p_on: float = 57.0, i_on: float = 52.0, r_on: float = 51.0, f_on: 
               "r72": _sgroup("r72", {**{lab: r_on + 0.2 * (i % 3) for i, lab in enumerate(ON8)},
                                      **{lab: 50.0 + 0.2 * (i % 3) for i, lab in enumerate(OFF8)}})},
         "guards": {"rederived": "count", "choices": "require"}}
-    p = {"look": 2, "on": ON8, "off": OFF8, "look1_seeds": [3501, 3502, 3503],
+    p = {"look": 2, "on": ON8, "off": OFF8,
          "primary": {"groups": ["primary", "c0_look1", "c0_look2"], "teamset": "forum72", "units": 60},
          "p": {"groups": ["p", "p_c0_look1", "p_c0_look2"], "panel": "home72"},
          "i_f": {"groups": ["i_f"], "panel": "forum72"}, "r72": {"groups": ["r72"], "panel": "r72"},
          "goal_a": {"groups": ["home"], "teamset": "home72", "units": 7},
          "contrast": {"on": ON8[:5], "off": D1, "groups": ["primary", "contrast_h", "d1"],
-                      "panels": ["heldout72_hpfix", "forum72"], "units": 30}}
+                      "panels": ["heldout72_hpfix", "forum72"], "units": 30},
+         "guards": {"path": f"{NO_RUNS}/guards.json", "sha256": "0" * 64},       # unreadable: every guard not read
+         "void": {"k9b_dir": "k9b", "runs": {lab: f"{NO_RUNS}/rb_{lab}" for lab in ON8 + OFF8 + D1}, "pin": dict(PINS),
+                  "dose": {"reference": f"{NO_RUNS}/rb_c0_s3501", "rel_tol": 1e-6}}}
     spec = _spec({"primary": (["forum72"], ON8 + OFF8[5:], 60, False),
                   "c0_look1": (["forum72"], OFF8[:3], 60, True), "c0_look2": (["forum72"], OFF8[3:5], 60, True),
                   "home": (["home72"], ON8, 7, False), "contrast_h": (["heldout72_hpfix"], ON8[:5], 30, False),
@@ -397,7 +404,7 @@ def _look1(f_on: Sequence[int]) -> Tuple[Dict, Dict, Any]:
         **{lab: {"forum72": (w, 1200)} for lab, w in zip(ON8[:3], f_on)},
         **{lab: {"forum72": (w, 1200)} for lab, w in zip(OFF8[:3], F_OFF[:3])}})}, "s": {},
         "guards": {"choices": "require"}}
-    p = {"look": 1, "on": ON8[:3], "off": OFF8[:3], "look1_seeds": [3501, 3502, 3503],
+    p = {"look": 1, "on": ON8[:3], "off": OFF8[:3],
          "primary": {"groups": ["primary"], "teamset": "forum72", "units": 60}}
     spec = _spec({"primary": (["forum72"], ON8[:3] + OFF8[:3], 60, True)}, {})
     return cells, p, spec
@@ -453,8 +460,13 @@ def test_the_determinism_guard_compares_the_replayed_unit_with_the_imported_one(
     (lambda p: p.pop("r72"), "r72: required at look 2"),
     (lambda p: p["contrast"].update(on=ON8[:4]), "always 5 v 5"),
     (lambda p: p["contrast"].update(units=7), "registered"),
-    (lambda p: p.update(look1_seeds=[3501, 3502, 3509]), "look1_seeds"),
+    (lambda p: p.update(look1_seeds=[3506, 3507, 3508]), "unknown 'look1_seeds'"),
     (lambda p: p.update(guards={"path": "x"}), "guards:"),
+    (lambda p: p.pop("guards"), "guards: required at look 2"),
+    (lambda p: p.pop("void"), "void: required at look 2"),
+    (lambda p: p["void"].update(pin=PINS["x60t"]), "a pin per arm"),
+    (lambda p: p["void"]["pin"].pop("d1"), "no pin for 'd1_s3501'"),
+    (lambda p: p["void"]["runs"].pop(OFF8[6]), "'c0_s3507' has no run"),
     (lambda p: p.update(extra=1), "unknown 'extra'"),
 ])
 def test_the_spec_load_check_refuses(mutate, needle):
@@ -462,6 +474,93 @@ def test_the_spec_load_check_refuses(mutate, needle):
     mutate(p)
     probs = RU.RULES["x60"].check_params(p, models=spec.models, anchor=spec.anchor, s=spec.s)
     assert any(needle in x for x in probs), probs
+
+
+def _add_model(spec: Any, lab: str, arm: str, seed: int, run_seed: Optional[int] = None) -> None:
+    spec.models[lab] = SimpleNamespace(arm=arm, seed=seed, load={},
+                                       ref=SimpleNamespace(kind="final", run=f"{NO_RUNS}/rb_x_s{run_seed or seed}"))
+
+
+def test_look2_refuses_any_seed_but_s3501_s3508_on_either_side():
+    _, p, spec = _look2()
+    _add_model(spec, "on_s3509", "x60t", 3509)
+    p["on"] = ON8[:7] + ["on_s3509"]
+    probs = X.check(p, models=spec.models, anchor=spec.anchor, s=spec.s)
+    assert any("on: seeds" in x and "REVIEW I M3" in x for x in probs), probs
+    _, p, spec = _look2()
+    _add_model(spec, "c0_s3510", "c0", 3510)
+    p["off"] = OFF8[:7] + ["c0_s3510"]
+    assert any("off: seeds" in x for x in X.check(p, models=spec.models, anchor=spec.anchor, s=spec.s))
+
+
+def test_look1_refuses_any_triplet_but_s3501_s3503():
+    _, p, spec = _look1([640, 650, 630])
+    p["on"] = ON8[5:8]
+    spec.anchor["primary"].models = tuple(ON8[5:8] + OFF8[:3])
+    probs = X.check(p, models=spec.models, anchor=spec.anchor, s=spec.s)
+    assert any("on: seeds [3506, 3507, 3508] are not the registered [3501, 3502, 3503]" in x for x in probs), probs
+
+
+def test_the_contrast_refuses_any_five_but_s3501_s3505_on_both_arms():
+    _, p, spec = _look2()
+    p["contrast"]["on"] = ON8[3:8]
+    spec.anchor["contrast_h"].models = tuple(ON8[3:8])
+    assert any("contrast.on: seeds" in x for x in X.check(p, models=spec.models, anchor=spec.anchor, s=spec.s))
+    _, p, spec = _look2()
+    spec.models[D1[0]] = SimpleNamespace(arm="d1", seed=3509, load={},
+                                         ref=SimpleNamespace(kind="final", run=f"{NO_RUNS}/rb_d1_s3509"))
+    assert any("contrast.off: seeds" in x for x in X.check(p, models=spec.models, anchor=spec.anchor, s=spec.s))
+
+
+def test_a_labels_seed_is_its_run_dirs():
+    _, p, spec = _look2()
+    spec.models[OFF8[0]].ref = SimpleNamespace(kind="pinned", path=f"{NO_RUNS}/rb_x35_c0_s3502/final_model.zip")
+    probs = X.check(p, models=spec.models, anchor=spec.anchor, s=spec.s)
+    assert any("c0_s3501: its run" in x and "names seed 3502" in x for x in probs), probs
+    spec.models[OFF8[0]].ref = SimpleNamespace(kind="pinned", path=f"{NO_RUNS}/rb_x35_c0_s3501/checkpoints/c.zip")
+    assert X.check(p, models=spec.models, anchor=spec.anchor, s=spec.s) == []
+
+
+def test_a_run_recording_another_seed_is_inconclusive(tmp_path):
+    cells, p, spec = _look2()
+    run = tmp_path / "rb_x60t_s3501"
+    run.mkdir()
+    (run / "metadata.json").write_text(json.dumps({"cli_args": {"seed": 3502}}))
+    spec.models[ON8[0]].ref = SimpleNamespace(kind="final", run=str(run))
+    dec = _decide(cells, p, spec)
+    assert dec["decision"]["verdict"] == X.INCONCLUSIVE and "REVIEW I M3" in dec["decision"]["reasons"][0]
+    (run / "metadata.json").write_text(json.dumps({"cli_args": {"seed": 3501}}))
+    assert _decide(cells, p, spec)["decision"]["verdict"] == X.TRADE         # the fixture's GAIN, goal (a) failing
+    rec = X.recorded_seeds(spec, ON8 + OFF8 + D1)
+    assert rec[ON8[0]]["recorded"] == 3501 and all(r["ok"] for r in rec.values())
+
+
+def test_the_welch_guard_tie_band_takes_the_wider_interval(monkeypatch):
+    on = [[(w, 1200)] for w in (560, 700, 600, 660, 520, 720, 610, 640)]
+    off = [[(w, 1200)] for w in (590, 610, 600, 605, 600, 615, 600, 610)]
+    lb = X.x60_interval(on, off)["sigma2_lb95"]
+    for offset, near in ((5e-13, True), (-5e-13, True), (2e-12, False), (-2e-12, False)):
+        monkeypatch.setattr(X, "SIGMA_F", (lb - offset) ** 0.5)     # the floor² sits `offset` below the LB
+        s = X.x60_interval(on, off)
+        assert s["guard_near"] is near
+        if near:
+            assert s["halfwidth"] == max(s["halfwidth_registered"], s["halfwidth_welch"])
+            assert s["welch_used"] == (s["halfwidth_welch"] > s["halfwidth_registered"])
+        else:
+            assert s["welch_used"] is (offset > 0)
+
+
+def test_the_void_gate_pins_each_run_at_its_arms_commit(monkeypatch, tmp_path):
+    seen = {}
+    monkeypatch.setattr(RU, "void_pin_guard", lambda rd, want: seen.setdefault(str(rd).rsplit("/", 1)[-1], want)
+                        and {"pass": True, "want": want, "why": ""})
+    _, p, spec = _look2()
+    v = dict(p["void"], k9b_dir=str(tmp_path))
+    v.pop("dose")
+    gate = RU.void_gate(SimpleNamespace(params={"void": v}, models=spec.models))
+    assert {seen[f"rb_{lab}"] for lab in ON8} == {PINS["x60t"]}
+    assert {seen[f"rb_{lab}"] for lab in OFF8} == {PINS["c0"]} and {seen[f"rb_{lab}"] for lab in D1} == {PINS["d1"]}
+    assert all(row["pin"]["want"] == PINS[spec.models[lab].arm] for lab, row in gate.items())
 
 
 def test_look1_refuses_the_look2_meters_and_the_contrast():
@@ -500,10 +599,13 @@ C0_SHA = {3501: "09a6a2df48509a59fd9aefe6d20d9722aad6717f1730c6dfd75274446b28330
 X61P_LOOK1_SPEC_SHA = "1266daadeefe4142a2f2f339bbdedaf4e052c3f2ef3fb8a8b0d5550fb8729f03"
 
 
-def look1_draft(side_pin: str = "PENDING") -> Dict[str, Any]:
+SIDE_PIN = "7fe15726c77cfa823aee78110444bf25c3c7370e"
+
+
+def look1_draft(side_pin: str = SIDE_PIN) -> Dict[str, Any]:
     """X60-T look 1's spec as DRAFTED (the coordinator's file is the registration): ON s3501-s3503 by the settled
     ``final`` rule (§13.1), C0 s3501-s3503 pinned and IMPORTED from X61P look 1, the determinism guard's one re-played
-    C0 unit, the VOID gate with the side pin (``PENDING`` until it exists)."""
+    C0 unit, the VOID gate with a pin PER ARM (ON at the side pin, C0 at f4b25238d; REVIEW I m4) gating ON and C0."""
     on = {f"x60t_s{s}": {"arm": "x60t", "seed": s, "ref": {"kind": "final", "run": f"models/rb_x60t_s{s}",
                                                           "min_step": 300000170, "quiet_s": 300}}
           for s in (3501, 3502, 3503)}
@@ -522,21 +624,23 @@ def look1_draft(side_pin: str = "PENDING") -> Dict[str, Any]:
             "determinism": {"opponent": "metamon:Kakuna", "teamsets": ["forum72"], "unit_seeds": "0",
                             "models": ["c0_s3501"]}},
         "decision": {"rule": "x60", "params": {
-            "look": 1, "on": sorted(on), "off": sorted(c0), "look1_seeds": [3501, 3502, 3503],
+            "look": 1, "on": sorted(on), "off": sorted(c0),
             "primary": {"groups": ["primary"], "teamset": "forum72", "units": 60},
             "determinism_guard": {"group": "determinism", "against": "primary"},
-            "void": {"k9b_dir": "designs/research_state/measurements/x60t_h_teams_2026-11-06/k9b",
-                     "runs": {lab: f"models/rb_{lab}" for lab in sorted(on)},
-                     "pin": side_pin, "dose": {"reference": "models/rb_x35_c0_s3501", "rel_tol": 1e-6}}}}}
+            "void": {"k9b_dir": "designs/research_state/measurements/x35_breakers_stage_2026-10-17/k9b",
+                     "runs": {**{lab: f"models/rb_{lab}" for lab in sorted(on)},
+                              **{lab: f"models/rb_x35_{lab}" for lab in sorted(c0)}},
+                     "pin": {"x60t": side_pin, "c0": "f4b25238d"},
+                     "dose": {"reference": "models/rb_x35_c0_s3501", "rel_tol": 1e-6}}}}}
 
 
-def test_the_look1_draft_spec_parses_pending_and_with_a_dummy_side_pin():
+def test_the_look1_draft_spec_parses_with_a_pin_per_arm():
     from main.reads import spec as SP
 
-    pend = SP.parse(look1_draft(), allow_pending=True)
-    assert pend.pending == ("spec.decision.params.void.pin",)
-    with pytest.raises(SP.SpecError, match="PENDING"):
-        SP.parse(look1_draft())
-    got = SP.parse(look1_draft(side_pin="f4b25238"))           # DUMMY: f4b25238 stands in for the side pin
+    got = SP.parse(look1_draft())
     assert got.rule == "x60" and got.anchor["primary"].imports.models == ("c0_s3501", "c0_s3502", "c0_s3503")
-    assert X.reported(got.params) == []
+    assert got.params["void"]["pin"] == {"x60t": SIDE_PIN, "c0": "f4b25238d"} and X.reported(got.params) == []
+    pend = SP.parse(look1_draft(side_pin="PENDING"), allow_pending=True)
+    assert pend.pending == ("spec.decision.params.void.pin.x60t",)
+    with pytest.raises(SP.SpecError, match="PENDING"):
+        SP.parse(look1_draft(side_pin="PENDING"))
