@@ -56,7 +56,8 @@ VOID (named reasons): an unfinished deal or G-BANK replay; drops above ``max_dro
 ``engine`` (or on none); a counted unit, or a resolved model, off its label's pinned sha256; a counted unit not greedy, or
 carrying a search or a belief-prior mix; a counted unit whose ``games.jsonl`` disagrees with its summary; a panel's
 counted units (both arms and the G-BANK replays) on more than one regime id, peer code or policy mode; a panel with < 2
-seeds; G-BANK as above.
+seeds; a counted pair whose two captures' START documents differ in the format, the seed, either packed team or our
+core side, or cannot be read (``start_match``, REVIEW R-m5: the pair is not one deal); G-BANK as above.
 
 REPORTED, never decided: the three estimates (each Ĝ_X, Ĝ, SE), each arm's mean score over the paired deals per panel
 and equal-weight; the discordance (b + c); the counts (deals, pairs, drops by side, unfinished) per panel and look;
@@ -367,6 +368,35 @@ def compare_whole(banked: Mapping[str, Any], replay: Mapping[str, Any]) -> Dict[
     return {"identical": True, "why": None}
 
 
+#: the START fields that make the battle (REVIEW R-m5): the format, the seed, both packed teams and our core side; the
+#: players' names are not among them
+START_FIELDS = ("formatid", "seed", "p1.team", "p2.team", "core_obs")
+
+
+def _start_fields(cell: Any) -> Dict[str, Any]:
+    from main.reads import prefix as PX
+
+    st = PX._start(PX.capture_of(Path(str(cell))))
+    return {k: (st.get(k) if "." not in k else (st.get(k.split(".")[0]) or {}).get(k.split(".")[1]))
+            for k in START_FIELDS}
+
+
+def start_match(student: Optional[Mapping[str, Any]], raw: Optional[Mapping[str, Any]]) -> Optional[Dict[str, Any]]:
+    """REVIEW R-m5: a counted pair's two games must be the SAME deal: their captures' START documents agree on
+    :data:`START_FIELDS`. ``None`` unless both sides counted; else ``{match, why}`` (an unreadable capture is no
+    match)."""
+    from main.reads import prefix as PX
+
+    if student is None or raw is None or student["status"] != COUNTED or raw["status"] != COUNTED:
+        return None
+    try:
+        a, b = _start_fields(student["cell_dir"]), _start_fields(raw["cell_dir"])
+    except (PX.PrefixError, TypeError, ValueError) as exc:
+        return {"match": False, "why": f"unreadable: {exc}"}
+    bad = [k for k in START_FIELDS if a[k] != b[k]]
+    return {"match": not bad, "why": f"the START documents differ in {bad}" if bad else None}
+
+
 def gbank_compare(replay: Optional[Mapping[str, Any]], banked: Optional[Mapping[str, Any]]) -> Dict[str, Any]:
     """``{identical, why}``: True / False, or None while the replay is unfinished (a VOID until it is)."""
     from main.reads import prefix as PX
@@ -421,6 +451,7 @@ def inputs(cells: Mapping[str, Any], p: Mapping[str, Any], spec: Any) -> Dict[st
                     r = by.get((lab, ts, seed, game))
                     d[side] = {"unit": unit_name(lab, ts, seed, game) if r is None else r["unit"],
                                "status": MISSING if r is None else r["status"]}
+                d["start"] = start_match(by.get((stu[ts], ts, seed, game)), by.get((raw, ts, seed, game)))
                 deals.append(d)
     gb: Optional[Dict[str, Any]] = None
     if p.get("gbank"):
@@ -622,6 +653,11 @@ def void_reasons(doc: Mapping[str, Any], t: Mapping[str, Any], p: Mapping[str, A
             vals = {u.get(key) for u in mine}
             if len(vals) > 1 or None in vals:
                 why.append(f"{ts}: counted units (both arms, G-BANK) span {key} {sorted(map(str, vals))}")
+    moved = [d["deal"] for d in doc["deals"] if (d.get("start") or {}).get("match") is False]
+    if moved:
+        why.append(f"pairing: {len(moved)} counted pair(s) whose two games are not the same deal (START "
+                   f"{', '.join(START_FIELDS)}; first {moved[0]}: "
+                   f"{next(d['start']['why'] for d in doc['deals'] if d['deal'] == moved[0])})")
     gs = gbank_summary(doc.get("gbank"))
     if gs is not None and not gs["passed"]:
         if gs["unfinished"] or gs["n"] != gs["registered_n"]:

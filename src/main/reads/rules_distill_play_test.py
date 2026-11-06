@@ -439,6 +439,11 @@ def test_inputs_status_pairs_and_gbank_from_cells(tmp_path):
     t = DP.tally(doc)
     assert t["heldout72_hpfix"]["unfinished"] == 2 and t["heldout72_hpfix"]["raw_missing"] == 1
     assert t["heldout72_hpfix"]["student_missing"] == 1
+    # every counted pair's two STARTs were compared (REVIEW R-m5); a one-sided deal is not compared
+    sm = {(d["panel"], d["unit_seed"], d["game"]): d["start"] for d in doc["deals"]}
+    assert sm[("heldout72_hpfix", 301, 3)] is None and sm[("heldout72_hpfix", 300, 7)] is None
+    assert sum(1 for v in sm.values() if v is not None) == 3 * 2 * 20 - 4
+    assert all(v["match"] for v in sm.values() if v is not None)
 
 
 def test_inputs_refuse_a_deal_read_from_two_groups(tmp_path):
@@ -493,3 +498,32 @@ def test_the_rule_check_refuses(mutate, needle):
     with pytest.raises(SpecError, match=needle):
         parse(doc)
 
+
+
+# ------------------------------------------------------------------------------------------------ the pairing (R-m5)
+def test_a_pair_is_one_deal_only_if_its_two_starts_agree(tmp_path):
+    """REVIEW R-m5: a student unit and its raw unit are paired by (panel, seed, game); their captures' START must agree
+    on the format, the seed, both packed teams and our core side (the players' names may differ)."""
+    row = lambda c: {"status": DP.COUNTED, "cell_dir": str(c)}               # noqa: E731
+    a, b, c, d, e = (tmp_path / x for x in "abcde")
+    _capture(a, LINES)
+    _capture(b, LINES, {**START, "p1": {"name": "Other", "team": "x"}})
+    _capture(c, LINES, {**START, "p2": {"name": "B", "team": "z"}})
+    _capture(d, LINES, {**START, "seed": [1, 3]})
+    assert DP.start_match(row(a), row(b)) == {"match": True, "why": None}
+    assert DP.start_match(row(a), row(c))["match"] is False and "p2.team" in DP.start_match(row(a), row(c))["why"]
+    assert DP.start_match(row(a), row(d))["match"] is False
+    assert DP.start_match(row(a), row(e))["match"] is False                     # no capture: unreadable, no match
+    assert DP.start_match(row(a), {"status": DP.EXHAUSTED, "cell_dir": str(a)}) is None
+    assert DP.start_match(row(a), None) is None
+
+
+def test_a_pair_whose_starts_differ_voids_the_look_by_rule_and_by_hand():
+    def moved(doc):
+        for x in doc["deals"]:
+            x["start"] = {"match": True, "why": None}
+        doc["deals"][7]["start"] = {"match": False, "why": "the START documents differ in ['seed']"}
+    out = _decide(_doc(STRONG, mutate=moved))                    # _decide also holds by_hand.py to the same class
+    assert out["decision"]["class"] == DP.VOID and "pairing" in " ".join(out["decision"]["reasons"])
+    ok = _decide(_doc(STRONG, mutate=lambda doc: [x.update(start={"match": True, "why": None}) for x in doc["deals"]]))
+    assert ok["decision"]["class"] == DP.GO

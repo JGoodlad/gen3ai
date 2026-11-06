@@ -76,6 +76,10 @@ def recompute(doc, p):
             void.append(f"{ts}: drops")
         if len(sums["go_imputed"][ts]) < 2:
             void.append(f"{ts}: < 2 seeds")
+    for d in doc["deals"]:                       # REVIEW R-m5: a counted pair whose two STARTs are not one deal
+        st = d.get("start")
+        if st is not None and st["match"] is not True:
+            void.append("pairing")
     for u in doc["units"]:
         if not u["counted"]:
             continue
