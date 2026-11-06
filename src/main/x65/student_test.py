@@ -68,7 +68,46 @@ def test_no_fold_ever_trains_or_validates_on_a_read_panel_deal(tmp_path, fold):
         assert len(v) and not (set(z["deal"][v].tolist()) & read), k
         assert BK.U_PANELS.index(fold) not in set(z["panel"][v].tolist()), k
     assert set(z["deal"][ix["val_anchor"]].tolist()) == {d for d in z["deal"].tolist() if BK.inner_val(d)}
-    assert not (set(z["deal"][ix["train_anchor"]].tolist()) & set(z["deal"][ix["val_anchor"]].tolist()))
+    val = set(z["deal"][ix["val_anchor"]].tolist())
+    assert not (set(z["deal"][ix["train_anchor"]].tolist()) & val)
+    # the inner-validation deals' LABEL rows are withheld too (REVIEW R-m2, mutation M9), and are all held out
+    assert not (set(z["deal"][ix["train_label"]].tolist()) & val)
+    assert set(ix["val_label"].tolist()) == set(np.flatnonzero(z["label"] & z["inner_val"]).tolist())
+    assert set(ix["train_label"].tolist()) == set(np.flatnonzero(z["label"] & ~z["inner_val"]).tolist())
+
+
+def test_the_loss_is_the_label_kl_plus_beta_times_the_anchor_kl(tmp_path, monkeypatch):
+    """REVIEW R-m2 (mutation M26): L = mean KL(pi' || pi_theta) over the label rows + 1.0 x mean KL(pi_P* || pi_theta)
+    over the anchor rows, recomputed here by hand on a stub policy's logits."""
+    import torch as th
+
+    from main.x50_r1 import hom
+
+    w = th.tensor(np.random.default_rng(5).normal(size=(8, N_ACT)).astype(np.float32))
+    monkeypatch.setattr(hom, "policy_logits_t", lambda pol, x, m: x @ w)
+    bank = _bank(tmp_path)
+    z, ix = ST.load_fold(bank, "p72")
+    il, ia = ix["train_label"][:7], ix["train_anchor"][3:12]
+    rng = np.random.default_rng(9)
+    tl = rng.normal(size=(len(z["obs"]), N_ACT))
+    tlp = np.where(z["mask"] == 1, tl - np.log(np.where(z["mask"] == 1, np.exp(tl), 0).sum(1, keepdims=True)),
+                   -np.inf).astype(np.float32)
+    L, kl_lab, kl_anc = ST.loss_t(None, z, tlp, il, ia, "cpu")
+
+    def kl(target, rows):
+        lg = z["obs"][rows].astype(np.float64) @ w.numpy().astype(np.float64)
+        m = z["mask"][rows] == 1
+        lg = np.where(m, lg, -np.inf)
+        lq = lg - np.log(np.exp(lg - lg.max(1, keepdims=True)).sum(1, keepdims=True)) - lg.max(1, keepdims=True)
+        return np.mean([sum(t[a] * (np.log(t[a]) - lq[i, a]) for a in np.flatnonzero(m[i]) if t[a] > 0)
+                        for i, t in enumerate(target)])
+
+    want_lab = kl(z["pi_prime"][il], il)
+    want_anc = kl(np.exp(tlp[ia].astype(np.float64)) * (z["mask"][ia] == 1), ia)
+    assert float(kl_lab) == pytest.approx(want_lab, rel=1e-4)
+    assert float(kl_anc) == pytest.approx(want_anc, rel=1e-4)
+    assert float(L) == pytest.approx(want_lab + ST.BETA * want_anc, rel=1e-4) and ST.BETA == 1.0
+    assert want_anc > 0.05 and want_lab > 0.05                 # both terms carry weight: dropping either fails
 
 
 def test_the_split_refuses_a_read_panel_row_or_deal(tmp_path):
