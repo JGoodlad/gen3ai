@@ -419,20 +419,21 @@ def fm8() -> dict:
 
     def plan(seeds):
         """The games and sets by READ TIER (F-M8 fix 3: a trimmed read still decides). C0 s3501-3503's F and
-        reported cells and P nodes import from X61P look 1; s3504-3505's sit in look 2's state, and a group takes
-        ONE import, so they are re-played unless a two-state import is built (FINDING). The T - D1 contrast uses
+        reported cells and P nodes import from X61P look 1; s3504-3505's sit in look 2's state and import as a
+        SECOND group (one import a group; rule x60's pool_anchor / pool_s pool one-cell groups; REVIEW I m6). The T - D1 contrast uses
         ON's first five finals (m1: always 5 v 5)."""
         new_c0 = 3 if seeds == 8 else 0
         tiers = {
             "T1 primary F + goal (a) + Delta_P": {
                 "kakuna": {"ON F 0-59": 1200 * seeds, "ON home72 0-6 (goal a)": 140 * seeds,
-                           "C0 F 0-59, s3504-3505 re-played": 2 * 1200, "C0 F 0-59, new seeds": 1200 * new_c0,
+                           "C0 F 0-59, s3504-3505 imported from X61P look 2 (REVIEW I m6)": 0, "C0 F 0-59, new seeds": 1200 * new_c0,
                            "determinism guard (one imported C0 cell re-played)": 20},
-                "sets": {"ON P": seeds, "C0 P s3504-3505 re-played": 2, "C0 P new seeds": new_c0}},
+                "sets": {"ON P": seeds, "C0 P s3504-3505 imported from look 2 (fallback: 2 re-played)": 0,
+                         "C0 P new seeds": new_c0}},
             "T2 I_F + R72": {"kakuna": {},
                              "sets": {"ON I_F": seeds, "ON R72": seeds, "C0 I_F": 5 + new_c0, "C0 R72": 5 + new_c0}},
             "T3 reported (H / P72 / home72 at 7 units)": {
-                "kakuna": {"ON P72 0-6": 140 * seeds, "C0 H/P72/home72 0-6, s3504-3505 re-played": 2 * 420,
+                "kakuna": {"ON P72 0-6": 140 * seeds, "C0 H/P72/home72 0-6, s3504-3505 imported (m6)": 0,
                            "C0 H/P72/home72 0-6, new seeds": 420 * new_c0}, "sets": {}},
             "T4 T - D1 contrast (H + F units 0-29, 5 v 5)": {
                 "kakuna": {"ON H 0-29 (s3501-3505)": 5 * 600, "D1 H + F 0-29 re-played at E3": 5 * 2 * 600},

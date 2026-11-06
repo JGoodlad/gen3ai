@@ -1677,22 +1677,22 @@
      "kakuna": {
       "ON F 0-59": 6000,
       "ON home72 0-6 (goal a)": 700,
-      "C0 F 0-59, s3504-3505 re-played": 2400,
+      "C0 F 0-59, s3504-3505 imported from X61P look 2 (REVIEW I m6)": 0,
       "C0 F 0-59, new seeds": 0,
       "determinism guard (one imported C0 cell re-played)": 20
      },
      "sets": {
       "ON P": 5,
-      "C0 P s3504-3505 re-played": 2,
+      "C0 P s3504-3505 imported from look 2 (fallback: 2 re-played)": 0,
       "C0 P new seeds": 0
      },
-     "kakuna_games": 9120,
-     "inhouse_sets": 7,
-     "kakuna_lane_h": 63.5,
-     "inhouse_lane_h": 17.1,
+     "kakuna_games": 6720,
+     "inhouse_sets": 5,
+     "kakuna_lane_h": 46.8,
+     "inhouse_lane_h": 12.2,
      "kakuna_wall_h_at_X61P_throughput": [
-      26.5,
-      39.0
+      19.6,
+      28.8
      ]
     },
     "T2 I_F + R72": {
@@ -1715,17 +1715,17 @@
     "T3 reported (H / P72 / home72 at 7 units)": {
      "kakuna": {
       "ON P72 0-6": 700,
-      "C0 H/P72/home72 0-6, s3504-3505 re-played": 840,
+      "C0 H/P72/home72 0-6, s3504-3505 imported (m6)": 0,
       "C0 H/P72/home72 0-6, new seeds": 0
      },
      "sets": {},
-     "kakuna_games": 1540,
+     "kakuna_games": 700,
      "inhouse_sets": 0,
-     "kakuna_lane_h": 10.7,
+     "kakuna_lane_h": 4.9,
      "inhouse_lane_h": 0.0,
      "kakuna_wall_h_at_X61P_throughput": [
-      4.5,
-      6.6
+      2.0,
+      3.0
      ]
     },
     "T4 T - D1 contrast (H + F units 0-29, 5 v 5)": {
@@ -1744,22 +1744,22 @@
      ]
     }
    },
-   "kakuna_total": 19660,
-   "inhouse_total": 27,
+   "kakuna_total": 16420,
+   "inhouse_total": 25,
    "cpu_lane_h": {
-    "kakuna_at_X61P_rate": 136.8,
-    "kakuna_at_slowest_measured": 164.4,
-    "inhouse_at_X61P_rate": 66.0
+    "kakuna_at_X61P_rate": 114.3,
+    "kakuna_at_slowest_measured": 137.3,
+    "inhouse_at_X61P_rate": 61.1
    },
    "wall_h_kakuna_at_realised_throughput": [
-    57.2,
-    164.4
+    47.8,
+    137.3
    ],
    "wall_h_kakuna_at_X61P_throughput": [
-    57.2,
-    84.1
+    47.8,
+    70.3
    ],
-   "wall_h_inhouse_two_lanes_at_X61P_rate": 33.0,
+   "wall_h_inhouse_two_lanes_at_X61P_rate": 30.6,
    "gpu_h": {
     "ON look 1 (3 seeds)": 12.3,
     "ON look 2": 8.2,
@@ -1778,22 +1778,22 @@
      "kakuna": {
       "ON F 0-59": 9600,
       "ON home72 0-6 (goal a)": 1120,
-      "C0 F 0-59, s3504-3505 re-played": 2400,
+      "C0 F 0-59, s3504-3505 imported from X61P look 2 (REVIEW I m6)": 0,
       "C0 F 0-59, new seeds": 3600,
       "determinism guard (one imported C0 cell re-played)": 20
      },
      "sets": {
       "ON P": 8,
-      "C0 P s3504-3505 re-played": 2,
+      "C0 P s3504-3505 imported from look 2 (fallback: 2 re-played)": 0,
       "C0 P new seeds": 3
      },
-     "kakuna_games": 16740,
-     "inhouse_sets": 13,
-     "kakuna_lane_h": 116.5,
-     "inhouse_lane_h": 31.8,
+     "kakuna_games": 14340,
+     "inhouse_sets": 11,
+     "kakuna_lane_h": 99.8,
+     "inhouse_lane_h": 26.9,
      "kakuna_wall_h_at_X61P_throughput": [
-      48.7,
-      71.6
+      41.7,
+      61.4
      ]
     },
     "T2 I_F + R72": {
@@ -1816,17 +1816,17 @@
     "T3 reported (H / P72 / home72 at 7 units)": {
      "kakuna": {
       "ON P72 0-6": 1120,
-      "C0 H/P72/home72 0-6, s3504-3505 re-played": 840,
+      "C0 H/P72/home72 0-6, s3504-3505 imported (m6)": 0,
       "C0 H/P72/home72 0-6, new seeds": 1260
      },
      "sets": {},
-     "kakuna_games": 3220,
+     "kakuna_games": 2380,
      "inhouse_sets": 0,
-     "kakuna_lane_h": 22.4,
+     "kakuna_lane_h": 16.6,
      "inhouse_lane_h": 0.0,
      "kakuna_wall_h_at_X61P_throughput": [
-      9.4,
-      13.8
+      6.9,
+      10.2
      ]
     },
     "T4 T - D1 contrast (H + F units 0-29, 5 v 5)": {
@@ -1845,22 +1845,22 @@
      ]
     }
    },
-   "kakuna_total": 28960,
-   "inhouse_total": 45,
+   "kakuna_total": 25720,
+   "inhouse_total": 43,
    "cpu_lane_h": {
-    "kakuna_at_X61P_rate": 201.5,
-    "kakuna_at_slowest_measured": 242.1,
-    "inhouse_at_X61P_rate": 110.0
+    "kakuna_at_X61P_rate": 179.0,
+    "kakuna_at_slowest_measured": 215.0,
+    "inhouse_at_X61P_rate": 105.1
    },
    "wall_h_kakuna_at_realised_throughput": [
-    84.3,
-    242.1
+    74.9,
+    215.1
    ],
    "wall_h_kakuna_at_X61P_throughput": [
-    84.3,
-    123.9
+    74.9,
+    110.1
    ],
-   "wall_h_inhouse_two_lanes_at_X61P_rate": 55.0,
+   "wall_h_inhouse_two_lanes_at_X61P_rate": 52.6,
    "gpu_h": {
     "ON look 1 (3 seeds)": 12.3,
     "ON look 2": 20.5,
@@ -1877,8 +1877,8 @@
  "fm1": {
   "file_sha256_at_e1512c361": "ad34aee94f629b873d538722e57abe352f6c43bfdc1f0e30cd880d07f942174f",
   "section6_sha256_at_e1512c361": "f288b331245c9652aba69542c11dae7bd152029f4c85ef4110b08554ff2330fe",
-  "section6_sha256_at_HEAD": "f288b331245c9652aba69542c11dae7bd152029f4c85ef4110b08554ff2330fe",
-  "section6_unchanged_since": true
+  "section6_sha256_at_HEAD": "8833dc8fe6a4674bc86a8d60de904caaa1a84952a83c257a1c168152a02ca4c4",
+  "section6_unchanged_since": false
  },
  "fm2": {
   "play_commit": "de15dfc7b6d19d6f0e4a3724f269e26e7aa22957",

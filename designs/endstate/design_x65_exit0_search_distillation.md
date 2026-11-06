@@ -9,7 +9,7 @@ is `320a535d4`**, whose play path is byte-identical to S′-LIVE's `0c76b521e` a
 The three students are trained and exported (every pick at lr 1e-5; B3 bit-identical at the pin; PREREG Amendment 3
 fills the specs). **READ 2026-11-06: NOT-DELIVERED** ([`README.md`](../research_state/measurements/x65_exit0_2026-11-05/README.md)):
 on their held-out panels the students agree with S′'s pick LESS than P\* does, pooled Δagree −1.26 pp [−1.40, −1.11]
-(H −1.06, F −0.94, p72 −1.78). No Kakuna game is played; ExIt-1 is not funded, and X60-T is the GPU's next candidate
+(H −1.06, F −0.94, p72 −1.78). No Kakuna game is played; ExIt-1 is not funded, and X60-T (REGISTERED 11-06) is the GPU's next job
 (§3). The read cannot separate labels the observation cannot support from a too-weak recipe (FINDING X65-R2).
 
 **Terms.**
