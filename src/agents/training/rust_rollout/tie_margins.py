@@ -31,7 +31,7 @@ from __future__ import annotations
 
 import os
 import sys
-from typing import Any, Dict, List, NamedTuple, Optional, Tuple
+from typing import Any, Callable, Dict, List, NamedTuple, Optional, Tuple
 
 import numpy as np
 import torch as th
@@ -477,6 +477,74 @@ class TieFlip(TieMargins):
         if self.applied != want:
             raise TieMarginError(f"[K9(b)] the flip forward applied {self.applied} of {want} planned flips "
                                  "(it never reached a planned MARGIN call)")
+
+
+def flip_forward(rec: TieMargins, rows: Any, run: Callable[[TieFlip], Any]) -> Any:
+    """THE flip: ``run(mode)`` re-runs the forward ``rec`` recorded, under a `TieFlip` that resolves each of ``rows``'
+    ONE near tie the other way; returns ``run``'s output. Raises `TieMarginError` when the re-run did not reproduce
+    the recording (an undeclared op, a diverged MARGIN call sequence, a pair holding other candidates) or did not
+    apply every planned flip. K9(b)'s flip-judge (`consistency.flip_judge`) and the parity gates' `resolve_ties`
+    share it."""
+    mode = TieFlip(rec.rows, rec.flip_plan(rows), rec.call_sites)
+    out = run(mode)
+    mode.check()
+    mode.check_applied()
+    return out
+
+
+class TieResolution(NamedTuple):
+    """`resolve_ties`' verdict input: ``ref`` is the eager reference with every flip-judged row's quantities taken
+    from the OTHER resolution; ``judged`` [n] bool the rows the bars apply to (no tie, or a flippable tie);
+    ``flipped`` / ``excluded`` the counts a report carries."""
+    ref: Dict[str, th.Tensor]
+    judged: np.ndarray
+    flipped: int
+    excluded: int
+
+
+def resolve_ties(n: int, run: Callable[[TorchFunctionMode], Dict[str, th.Tensor]], served: Dict[str, th.Tensor],
+                 eager: Dict[str, th.Tensor], within: Callable[[Dict[str, th.Tensor], Dict[str, th.Tensor]], np.ndarray]
+                 ) -> Optional[TieResolution]:
+    """K9(b)'s tie rule for a PARITY GATE (`gen3_t2_parity_tie_judge_v1`, root rule 8): a gate that compares a served
+    (compiled) forward with its eager reference must not judge a row whose eager forward sits within a rounding error
+    of a selection cutoff, because any other float arithmetic — a compiled graph whose autotuned launch configs pick
+    another reduction order is enough — may resolve that selection the other way while computing the right function.
+
+    ``run(mode)`` runs the EAGER reference on the gate's ``n`` rows under ``mode`` and returns its quantities (the
+    keys of ``eager``, each ``[n, ...]``); ``within(a, b)`` is the gate's own bars, per row. At K9(b)'s epsilon
+    (`consistency.FP32_TIE_EPS`, read at call time): a row at no tie keeps eager's reference; a tied row whose only
+    near element is one isolated sort pair or threshold (`TieMargins.flippable`) and that fails as it is, is judged
+    against the OTHER resolution (`flip_forward`) when it matches that one; any other tied row is excluded. None when
+    no row is tied. Raises `TieMarginError` when the re-read cannot be trusted: an undeclared discrete op, an eager
+    forward that does not reproduce itself on a row at no tie, or a flip that moves a row at no tie. The margins come
+    from the EAGER forward on the gate's own weights and rows, so no miscompile can move a row into the exclusion."""
+    from agents.training.rust_rollout import consistency
+
+    eps = float(consistency.FP32_TIE_EPS)
+    rec = TieMargins(int(n), near_eps=eps)
+    again = run(rec)
+    rec.check()
+    tied = ~(np.asarray(rec.margin) >= eps)                     # a NaN margin is a tie
+    if not within(again, eager)[~tied].all():
+        raise TieMarginError("[K9(b)] the eager reference does not reproduce itself on a row at no tie, so its "
+                             "selection ties cannot be re-judged")
+    if not tied.any():
+        return None
+    flippable = rec.flippable() & tied
+    need = flippable & ~within(served, eager)
+    use = np.zeros(int(n), dtype=bool)
+    ref = dict(eager)
+    if need.any():
+        other = flip_forward(rec, np.flatnonzero(need), run)
+        moved = ~tied & ~within(other, eager)
+        if moved.any():
+            raise TieMarginError(f"[K9(b)] the flip forward moved {int(moved.sum())} row(s) at no tie beyond the bars: "
+                                 "the rows are not independent, so no tie can be judged on its own row")
+        use = need & within(served, other)
+        for k, v in eager.items():
+            u = th.as_tensor(use, device=v.device).reshape((-1,) + (1,) * (v.dim() - 1))
+            ref[k] = th.where(u, other[k].to(v.dtype), v)
+    return TieResolution(ref, ~tied | flippable, int(use.sum()), int((tied & ~flippable).sum()))
 
 
 def selection_gaps(policy: Any, obs: Dict[str, np.ndarray], actions: Any, masks: Any, device: Any

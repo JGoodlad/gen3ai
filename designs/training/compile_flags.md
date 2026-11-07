@@ -376,6 +376,17 @@ below) and the in-run canary:
 - **T2's gate does the same per slot** (`agents.inference.service`): a `VacuousParity` re-runs the slot on perturbed weights up
   the same ladder (`ServiceSpec.perturb_ladder`), then runs the real weights with the check waived; each verdict records its
   path (`ParityReport.path`). A refusal exits the trainer `FATAL_CONFIG`, because a restart would replay it.
+- **The defect class: a NEAR-TIE at a discrete cut flips under autotune** (`gen3_t2_parity_tie_judge_v1`, root rule 8).
+  The forward selects (`selection_sites.py`); a fixture row whose eager forward sits within a rounding error of a cut can
+  resolve it the other way under any other arithmetic, and which way a compiled graph goes follows its autotuned launch
+  configs, not its code. X60-T s3501 died `FATAL_CONFIG` at 281M steps (2026-11-06) this way: fixture rows 11 / 12, an
+  opponent's Hidden Power Grass vs Ice at the K = 6 move-seat cut 1.6e-6 apart (relative), |dlogp| 0.14 on the b256 graph
+  only; eager with that pair flipped (`TieFlip`) equals the served rows to 1.2e-5, and the b256 module was byte-identical
+  in a passing process (154 kernels' `.best_config` differed). So BOTH decision gates — T2's `parity.judge` and the
+  compiled opponent's `opponent_parity` — re-judge a failure through ONE rule shared with K9(b)
+  (`tie_margins.resolve_ties`, at `FP32_TIE_EPS`): a row at no tie as before, a flippable tied row against either
+  resolution, any other tied row excluded and COUNTED (`ParityReport.tie_flipped` / `tie_excluded`, the opponent's PASS
+  line). The margins are the EAGER forward's, so a miscompile cannot move a row into the exclusion.
 - **Recompiles are normal; dynamo's `cache_size_limit` (8) is the hazard** (past it dynamo falls back to eager SILENTLY): the
   sentinel below owns that; `error_on_recompile = True` would crash a healthy two-shape run on its second call.
 
