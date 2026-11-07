@@ -867,3 +867,67 @@ threshold. It only lets §11's registered "G-C PASS" be evaluated at the seed co
 23. **A look-1 stop reports no I_F, R72, H, P72 or home72** (§21.3). That is the reporting-only reconciliation of §9 /
     §11 / §12 with §17. If those numbers are wanted after a stop, it is the orchestrator's call: a separate REPORTED
     read at the play pin.
+
+## 22. Look 1's run record (Training Oct, written 2026-11-07 BEFORE `decide`)
+
+Every fact below was fixed before the verdict was computed. Evidence: `~/.claude/jobs/x35/status.txt` (the `x60t s350X` and
+`X60TD` lines), each seed's kit launcher log `~/.claude/jobs/x35/rb_x60t_s350X.launcher.log*`, and the archives named.
+
+**1. The aborted s3501 (never read).**
+- Launched 2026-11-06 08:51:41 by `launch_x35.sh x60t 3501` GO.
+- The sequencer had wrapped the GO in `timeout 2400`. At 09:31:32 GNU timeout's process-group SIGTERM reached the
+  launcher, which stopped gracefully at 281,776,556.
+- The orchestrator chose a fresh relaunch over a resume (option A). The dir was moved WHOLE to
+  `models/rb_x60t_s3501.aborted-20261106`, and its launcher log to `rb_x60t_s3501.launcher.log.aborted-20261106`.
+  Nothing was deleted. The read's `final` rule names only `models/rb_x60t_s3501`.
+- The class fix is `2e63e5f0e`: the kit's spawn uses `exec setsid`, plus a header warning and two tests.
+- s3501 then ran fresh at 09:34:01, at the same pin, seed and argv.
+
+**2. Resume #1 of s3501 (§13).**
+
+| field | value |
+|---|---|
+| cause | FATAL T2 `ParityFailure` at 10:00:04, slot 24, bucket 256, legal-logp 0.1432 over the 1e-3 bar; launcher_rc 3 |
+| root cause | A selection near-tie in `hypothesis_set.stable_order`: fixture rows 11 / 12, HP Grass vs HP Ice at the K=6 cut, relative margin 1.6e-6. The b256 compiled graph's autotuned launch configs resolve it the other way. Reproduced in the training geometry and confirmed in a GPU window (`RESULT C1 PASS`, `RESULT B_POISON PASS`; `~/gen3ai_archive/x60t_parity_2026-11-06/`). |
+| fix | The fix is for main and future runs only (`gen3_t2_parity_tie_judge_v1`). The arm stayed on `7fe15726` with no amendment, by the orchestrator's ruling. |
+| resumed | 10:32:41, from `checkpoint_281000181_steps.zip` (281,000,181) |
+| steps re-trained | 875,048 |
+| argv | §13's, through main's launcher with `--pin-commit 7fe15726…`, no `--run-name` |
+| condition 7 | The dry-run (`~/gen3ai_archive/x60t_resumes/s3501_resume1_dryrun.txt`, sha256 `b5eab43139118f15…`) resolved `--seed 3501` (TYPED), K9(b) `warn` (typed) and `--checkpoint-every-steps 1000000` (TYPED). The clause was `teams:hr_spec_v1.r3@0.5`, hash `544c9bc00ea95030`. |
+| outcome | Ended clean at 14:19, at 300,078,185 |
+| live-row guard | The orchestrator's resume condition: any K9(b) logp max > 1e-3 ⇒ HOLD. The max over the run was 4.83e-4. |
+| replicate | "Replicate = same pin + seed" is lost for s3501 (§13). |
+
+1 of 3 ON seeds resumed, which is under §13's ≥ 3 bar, so there is no without-resumed report. s3502 and s3503 ran 0
+restarts.
+
+**3. §13's conditions and §15's VOID checks, per seed.**
+
+| seed | final (step) | launch logs read | `[HUMAN-DATA]` stamp (rows_sha `2e864572…`, hash `544c9bc00ea95030`) | `[TEAM-MIX]` 2295 teams, 0.50 both sides | held-out panels | `corpus_<n>` / FATAL naming a corpus team | pin_history | dose = C0 (display) | K9(b) at arm end |
+|---|---|---|---|---|---|---|---|---|---|
+| 3501 | 300,078,185 | 2: the fresh launch (`.20261106T103241.prev`) and the resume | in both | in both | 0 hits over 5 panels (registry `ea3917c2f1e6`); 0 corpus teams pack to a pool team, in both | none | 1 span, `7fe15726` | lr_median 1.005e-4, upd/step 2.035e-4, dose_rate 2.044e-08 | PASS 4.83e-4 / p99 3.59e-5 |
+| 3502 | 300,061,763 | 1 | yes | yes | as s3501 | none | 1 span | as s3501 | PASS 2.18e-4 / p99 3.14e-5 |
+| 3503 | 300,061,279 | 1 | yes | yes | as s3501 | none | 1 span | as s3501 | PASS 2.06e-4 / p99 3.62e-5 |
+
+- The K9(b) records are `x35_breakers_stage_2026-10-17/k9b/rb_x60t_s350{1,2,3}.json` (`7880cd902`).
+- Every T54 post-spawn pool-seed check PASSED.
+- The exact relative-1e-6 dose comparison is the read's `void.dose`.
+- Each log's `FATAL` matches are the three standing banners: compile is "FATAL by design", the `FATAL_SUPPLY (5)` notice and
+  the K9 learner-golden notice. s3501's fresh-launch log also holds the T2 `ParityFailure` above.
+
+**4. §17's queue placeholder: the queue at the read's start** (`mem_cap.sh --status`, 2026-11-06 09:39:10,
+`~/gen3ai_archive/x60t_read/look1_queue_at_start_20261106T093910.txt`, sha256 `75f3e7f5dc8a132e…`):
+- Both heavy slots were held by the S′-HONEST stage-1b jobs.
+- 3 were queued:
+  - the read's first Kakuna unit (the determinism unit c0_s3501, SHORT ≤ 600 s);
+  - an `honest_inc_test` pytest;
+  - an S′-HONEST PREREG job.
+- No BLOCKING bypassers.
+
+**5. How it was played.**
+- Playing code `f564c333f` (`code.json`: clean, `diff_sha` empty), checkout `~/dev/gen3ai-reads/x60t_play_de15dfc7`.
+- Lane `anchor`, concurrency 2, under the user unit `x60t-look1-anchor.service` (CPUAffinity 5-7,13-15, Nice 19).
+- The lane ran 2026-11-06 09:38 → 2026-11-07 00:40. It ended by itself, `done`, with `not_counted []`.
+- §21.4 step 1: the operator read s3503's first unit as counted (it settled at 23:07; counted 23:11). s3501's and
+  s3502's units were all counted (60 / 60 each) when that read was made; their first units were not read one by one.
+- 180 / 180 ON units counted (3,600 games); the determinism unit 1 / 1; C0's 180 units imported (§21.3).
