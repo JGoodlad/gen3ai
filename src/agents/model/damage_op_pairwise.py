@@ -60,7 +60,8 @@ from agents.model.damage_op_layout import (  # noqa: F401
 from agents.model.index_max import max_by_index
 from agents.model.op_reduction import believed_reduce, noisy_or
 from agents.model.damage_kinds import (beatup_base_def, beatup_party_opp, beatup_swap, gather_beatup,
-                                       gather_bp, gather_nonformula, nonformula_rolls, override_rolls)
+                                       gather_bp, gather_nonformula, nonformula_rolls, our_healed_hp, our_hp_points,
+                                       our_max_hp, override_rolls)
 
 if TYPE_CHECKING:  # no runtime import — `ctx` is only ever passed in, never constructed here
     from agents.model.extractor_ctx import ExtractorContext
@@ -378,8 +379,8 @@ class DamageOperatorPairwise:
         _ba, b_def, _bs2, b_spd, _be = self._boost_stages(ctx.our_ctx_raw)
         def_c = def_stat * self._boost_mult(b_def)
         spd_c = spd_stat * self._boost_mult(b_spd)
-        maxhp = 2.0 * d_base[:, _BS_HP] + iv[:, _BS_HP] + ev[:, _BS_HP] / 4.0 + 110.0
-        cur_hp = ctx.hp_and_active[ar, ctx.our_active_idx, 0] * maxhp
+        maxhp = our_max_hp(d_base[:, _BS_HP], iv[:, _BS_HP], ev[:, _BS_HP])
+        cur_hp = our_hp_points(ctx.hp_and_active[ar, ctx.our_active_idx, 0], maxhp)    # integer-exact
         at1 = ctx.type1_ids[ar, ctx.our_active_idx]
         at2 = ctx.type2_ids[ar, ctx.our_active_idx]
         amul = self.ABILITY_DAMAGE_MULT[ctx.ability1_ids[ar, ctx.our_active_idx]]
@@ -664,8 +665,8 @@ class DamageOperatorPairwise:
                     + 5.0) * nat[:, _NAT_DEF]                                        # [B]
         spd_stat = (2.0 * d_base[:, _BS_SPD] + iv[:, _BS_SPD] + ev[:, _BS_SPD] / 4.0
                     + 5.0) * nat[:, _NAT_SPD]
-        maxhp = 2.0 * d_base[:, _BS_HP] + iv[:, _BS_HP] + ev[:, _BS_HP] / 4.0 + 110.0
-        cur_hp = ctx.hp_and_active[ar, ctx.our_active_idx, 0] * maxhp                # [B]
+        maxhp = our_max_hp(d_base[:, _BS_HP], iv[:, _BS_HP], ev[:, _BS_HP])
+        cur_hp = our_hp_points(ctx.hp_and_active[ar, ctx.our_active_idx, 0], maxhp)    # [B] integer-exact
         _ba, b_def, _bs, b_spd, _be = self._boost_stages(ctx.our_ctx_raw)            # current [B]
         # --- 5 worlds: current + the 4 slots' def/spd hypotheticals → divisors [B,W] ---
         zero = torch.zeros(B, 1, device=device)
@@ -764,12 +765,11 @@ class DamageOperatorPairwise:
         _ba, b_def, _bs2, b_spd, _be = self._boost_stages(ctx.our_ctx_raw)
         def_c = def_stat * self._boost_mult(b_def)                                   # [B]
         spd_c = spd_stat * self._boost_mult(b_spd)
-        maxhp = 2.0 * d_base[:, _BS_HP] + iv[:, _BS_HP] + ev[:, _BS_HP] / 4.0 + 110.0
+        maxhp = our_max_hp(d_base[:, _BS_HP], iv[:, _BS_HP], ev[:, _BS_HP])
         hp_frac = ctx.hp_and_active[ar, ctx.our_active_idx, 0]
-        cur_hp = hp_frac * maxhp                                                     # [B]
+        cur_hp = our_hp_points(hp_frac, maxhp)                                          # [B] integer-exact
         zero = torch.zeros(B, 1, device=device)
-        hp_w = torch.minimum(maxhp[:, None],
-                             cur_hp[:, None] + torch.cat([zero, frac], dim=1) * maxhp[:, None])
+        hp_w = our_healed_hp(cur_hp[:, None], torch.cat([zero, frac], dim=1), maxhp[:, None])   # [B,W] integer-exact
         # --- damage ONCE (world-independent), the KO ramp per world ---
         at1 = ctx.type1_ids[ar, ctx.our_active_idx]
         at2 = ctx.type2_ids[ar, ctx.our_active_idx]
@@ -946,9 +946,9 @@ class DamageOperatorPairwise:
         nat = spread[..., 13:18]
         def_stat = (2.0 * d_base[..., 2] + iv[..., 2] + ev[..., 2] / 4.0 + 5.0) * nat[..., 1]  # [B,6]
         spd_stat = (2.0 * d_base[..., 4] + iv[..., 4] + ev[..., 4] / 4.0 + 5.0) * nat[..., 3]
-        maxhp = 2.0 * d_base[..., 0] + iv[..., 0] + ev[..., 0] / 4.0 + 110.0
+        maxhp = our_max_hp(d_base[..., 0], iv[..., 0], ev[..., 0])
         hp_frac = ctx.hp_and_active[:, :TEAM_SIZE, 0]
-        cur_hp = hp_frac * maxhp
+        cur_hp = our_hp_points(hp_frac, maxhp)                                            # integer-exact
         def_alive = (hp_frac > 0).float()                                              # [B,6]
         t1d = ctx.type1_ids[:, :TEAM_SIZE]
         t2d = ctx.type2_ids[:, :TEAM_SIZE]

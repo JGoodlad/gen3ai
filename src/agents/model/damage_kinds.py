@@ -103,6 +103,37 @@ def effective_bp(bp: torch.Tensor, hp_scaled: torch.Tensor, flail: torch.Tensor,
     return torch.where(flail > 0, flail_bp(f), out)
 
 
+#: A floor nudge for a heal: the heal fractions are 1/4, 1/2, 2/3 and 1, so with maxhp <= 714 a non-integer
+#: ``frac · maxhp`` sits >= 1/4 from the next integer, while fp32 misses an integer product by < 1e-4 (2/3 is
+#: not representable) — the nudge lands an exact product on its integer and never moves a genuine one.
+_HEAL_FLOOR_NUDGE = 1e-3
+
+
+def our_max_hp(base_hp: torch.Tensor, iv_hp: torch.Tensor, ev_hp: torch.Tensor) -> torch.Tensor:
+    """OUR mon's max HP at L100 from its species base HP and the obs spread's HP IV / EV (gen3_our_hp_exact_v1:
+    THE one spelling). Integer-exact for every pool set (its EVs are multiples of 4). FINDING, not fixed: an EV
+    that is not a multiple of 4 reads ``ev / 4`` where the game floors it (up to 0.75 HP high)."""
+    return 2.0 * base_hp + iv_hp + ev_hp / 4.0 + 110.0
+
+
+def our_hp_points(hp_frac: torch.Tensor, maxhp: torch.Tensor) -> torch.Tensor:
+    """OUR mon's current HP in HP points, INTEGER-EXACT (gen3_our_hp_exact_v1). The obs carries
+    ``f32(hp / maxhp)``, and ``f32(hp / maxhp) · maxhp`` misses ``hp`` by an ulp for ~8.5 % of (maxhp <= 714,
+    hp) pairs (e.g. 100 / 714 -> 100.0000076): the fixed-damage KO cut ``fixed >= hp`` then read Seismic Toss as
+    NOT KO-ing a mon at exactly 100 HP, which Showdown faints (`sim/pokemon.ts` ``damage``: ``hp -= d; if
+    (hp <= 0) faint``). The product is a few ulps from the integer (<< 1/2), so ``round`` returns ``hp`` exactly.
+    THEIR HP is a percent × an estimated max HP — not an integer — and never comes through here."""
+    return (hp_frac * maxhp).round()
+
+
+def our_healed_hp(cur_hp: torch.Tensor, frac: torch.Tensor, maxhp: torch.Tensor) -> torch.Tensor:
+    """OUR HP after a self-heal of ``frac`` of max HP, integer-exact: ``min(maxhp, hp + trunc(frac · maxhp))`` —
+    gen-3 Showdown truncates every heal (`sim/battle-actions.ts` ``moveData.heal``: ``Math.floor`` below gen 5;
+    the weather heals' ``this.heal(maxhp * 2 / 3)`` etc. through `sim/battle.ts` ``heal``'s ``trunc``).
+    ``cur_hp`` comes from `our_hp_points`; ``frac`` = 0 is the no-heal world, exactly ``cur_hp``."""
+    return torch.minimum(maxhp, cur_hp + torch.floor(frac * maxhp + _HEAL_FLOOR_NUDGE))
+
+
 def nonformula_rolls(nf_tabs: Tuple[torch.Tensor, ...],
                      tgt_cur_hp: torch.Tensor, tgt_maxhp: torch.Tensor, atk_cur_hp: torch.Tensor,
                      eff: torch.Tensor, acc: torch.Tensor,

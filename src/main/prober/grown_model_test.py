@@ -97,11 +97,11 @@ def test_the_grown_child_is_its_parents_function_and_the_architecture_panel_name
 
 
 @pytest.mark.parametrize("config_version,badge_rows", [
-    (162, [163]),             # trained at the v162 marker: only the Foresight fix is newer
-    (161, [162, 163]),        # the current production runs (marker 151): both rows newer
+    (162, [163, 165]),        # trained at the v162 marker: the Foresight fix and our exact HP (v165) are newer
+    (161, [162, 163, 165]),   # the current production runs (marker 151): every row newer
 ])
 def test_a_pre_163_record_replays_with_the_badge_naming_each_newer_row(toys, tmp_path, config_version, badge_rows):
-    """The WARN across 162 -> 163: weights that fit, an observation whose meaning moved, `replay: warn` on every row,
+    """The WARN across 162 -> 165: weights that fit, an observation whose meaning moved, `replay: warn` on every row,
     so a trace replay RUNS, badged with exactly the rows newer than the record's marker."""
     z = _restamp(toys["plain"], tmp_path / f"v{config_version}", config_version)
     pm = ProbeModel.load(z, "cpu", use=A.USE_TRACE_REPLAY)

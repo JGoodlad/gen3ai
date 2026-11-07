@@ -590,6 +590,10 @@ def _migrate_config(data: dict) -> dict:
     if version < 164:
         data.setdefault("trunk_ffn_dim", 256)
         data["config_version"] = 164
+    # v165 (gen3_our_hp_exact_v1) — no field: our HP reaches the op as an exact integer (a forward fix; the state_dict
+    # is unchanged), so every past config stamps through.
+    if version < 165:
+        data["config_version"] = 165
     #
     # ---- v97–v120 MIGRATION HISTORY — documentation, not code (floored away at v121) ---------
     # gen3_event_record_v2 (the observation-architecture batch: the E12 event-row reshape, the E4

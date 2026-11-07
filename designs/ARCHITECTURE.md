@@ -1500,7 +1500,19 @@ refine, c1/c2/c3, the recovery cell and d4 — applies it through `damage_kinds.
 
 The `fixed` / `target_hp_frac` / `endeavor` kinds respect type / ability immunity (Fighting Seismic
 Toss into a Ghost is 0) and a kind's KO is `acc · [the hit KOs]` (an OHKO always, a fixed amount iff ≥
-the remaining HP).
+the remaining HP — Showdown faints at `hp <= 0`, `sim/pokemon.ts` `damage`).
+
+**OUR HP is an exact integer (`gen3_our_hp_exact_v1`, config v165).** Every HP the op computes for OUR side goes
+through `damage_kinds.our_max_hp` (2·base + IV + EV/4 + 110), `our_hp_points` (`round(fraction × max HP)`) and
+`our_healed_hp` (a heal world: `min(max, hp + trunc(frac × max))`, Showdown's gen-3 truncation). The plain fp32
+product `f32(hp/max) × max` missed the integer by an ulp on 21,764 of the 255,969 (max HP ≤ 714, HP) pairs, so the
+fixed-damage cut read Seismic Toss / Night Shade as NOT KO-ing our mon at exactly 100 HP on 497 of the pool's 4,961
+sets (a 714-HP Blissey among them; Dragon Rage / Sonic Boom at 40 / 20: 26 each) — measured 2026-11-06, CPU eager,
+exhaustively. THEIR HP stays the shown percent × the neutral 0-EV max HP (2·base + 141), a point estimate: it never
+lands within 0.01 HP of a fixed amount, so its cut is deterministic but not exact (the HP-candidate block is not
+read there). An EV that is not a multiple of 4 reads EV/4 unfloored (≤ 0.75 HP high; no pool set has one).
+Pinned by `our_hp_exact_test.py` (exhaustive, plus a source guard: no forward module re-spells our max HP or
+multiplies a fraction by a max HP outside the helpers).
 `MOVE_BP` holds the BP at the attacker's full HP for every formula-priced move, and every
 dex-damaging move rides its TYPE's gen-3 channel in `MOVE_PHYS` (Return is physical). 🚨 **The table
 build RAISES on a damaging (dex category ≠ Status) move with base power 0 and no row** — the

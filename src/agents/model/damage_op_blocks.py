@@ -63,8 +63,8 @@ from agents.gen3_data import format_spec
 
 from agents.model.damage_kinds import (beatup_base_def, beatup_opp_target_def, beatup_party_ours,
                                        beatup_party_opp, beatup_swap, gather_beatup, gather_bp,
-                                       gather_nonformula, is_priced, nonformula_rolls, override_rolls,
-                                       typeless_move_type)
+                                       gather_nonformula, is_priced, nonformula_rolls, our_hp_points, our_max_hp,
+                                       override_rolls, typeless_move_type)
 
 if TYPE_CHECKING:  # no runtime import — `ctx` is only ever passed in, never constructed here
     from agents.model.extractor_ctx import ExtractorContext
@@ -236,7 +236,7 @@ class DamageOperatorBlocks:
         nat = spread[:, 13:18]                                     # [B,5] [atk,def,spa,spd,spe]
         our_atk = (2.0 * a_base[:, 1] + iv[:, 1] + ev[:, 1] / 4.0 + 5.0) * nat[:, 0]   # [B]
         our_spa = (2.0 * a_base[:, 3] + iv[:, 3] + ev[:, 3] / 4.0 + 5.0) * nat[:, 2]   # [B]
-        our_cur_hp = our_hp_frac * (2.0 * a_base[:, 0] + iv[:, 0] + ev[:, 0] / 4.0 + 110.0)  # [B] (Endeavor)
+        our_cur_hp = our_hp_points(our_hp_frac, our_max_hp(a_base[:, 0], iv[:, 0], ev[:, 0]))  # [B] (Endeavor)
         # gen3_unified_op_physics_v1: OUR active's offensive stat-stage boosts (we attack here) + BURN (½ phys atk).
         # (Speed: `_p_first_vs_opp_active` below, the one rule.)
         o_b_atk, o_b_def, o_b_spa, o_b_spd, o_b_spe = self._boost_stages(ctx.our_ctx_raw)
@@ -391,7 +391,7 @@ class DamageOperatorBlocks:
         iv = spr[:, 0:6] * 31.0; ev = spr[:, 6:12] * 252.0; nat = spr[:, 13:18]
         our_atk = (2.0 * a_base[:, 1] + iv[:, 1] + ev[:, 1] / 4.0 + 5.0) * nat[:, 0]
         our_spa = (2.0 * a_base[:, 3] + iv[:, 3] + ev[:, 3] / 4.0 + 5.0) * nat[:, 2]
-        our_cur_hp = our_hp_frac * (2.0 * a_base[:, 0] + iv[:, 0] + ev[:, 0] / 4.0 + 110.0)  # [B] (Endeavor)
+        our_cur_hp = our_hp_points(our_hp_frac, our_max_hp(a_base[:, 0], iv[:, 0], ev[:, 0]))  # [B] (Endeavor)
         o_b_atk, _odf, o_b_spa, _osd, _ose = self._boost_stages(ctx.our_ctx_raw)
         if boost_delta is not None:
             # gen3_edge_bias_trunk_v1 (C1): price the HYPOTHETICAL post-setup world — advance the
@@ -551,7 +551,7 @@ class DamageOperatorBlocks:
         nat = spread[..., 13:18]                                     # [B,6,5] [atk,def,spa,spd,spe]
         our_atk = (2.0 * a_base[..., 1] + iv[..., 1] + ev[..., 1] / 4.0 + 5.0) * nat[..., 0]   # [B,6]
         our_spa = (2.0 * a_base[..., 3] + iv[..., 3] + ev[..., 3] / 4.0 + 5.0) * nat[..., 2]   # [B,6]
-        our_cur_hp = our_hp_frac * (2.0 * a_base[..., 0] + iv[..., 0] + ev[..., 0] / 4.0 + 110.0)  # [B,6]
+        our_cur_hp = our_hp_points(our_hp_frac, our_max_hp(a_base[..., 0], iv[..., 0], ev[..., 0]))  # [B,6]
         # Boosts: the ACTIVE row carries our_ctx_raw's stages; bench rows neutral (mult 1.0) — gen3 resets on
         # switch (mirrors _outgoing_matrix's defender-boost handling exactly). `inherit_stages`
         # (C5 Baton Pass) is the HYPOTHETICAL post-pass world: EVERY row gets the active's stages
@@ -1140,9 +1140,9 @@ class DamageOperatorBlocks:
         nat = spread[..., 13:18]                                                          # [B,6,5]
         def_stat = (2.0 * d_base[..., 2] + iv[..., 2] + ev[..., 2] / 4.0 + 5.0) * nat[..., 1]   # [B,6]
         spd_stat = (2.0 * d_base[..., 4] + iv[..., 4] + ev[..., 4] / 4.0 + 5.0) * nat[..., 3]   # [B,6]
-        maxhp = 2.0 * d_base[..., 0] + iv[..., 0] + ev[..., 0] / 4.0 + 110.0              # [B,6]
+        maxhp = our_max_hp(d_base[..., 0], iv[..., 0], ev[..., 0])                         # [B,6]
         hp_frac = ctx.hp_and_active[:, :TEAM_SIZE, 0]                                     # [B,6]
-        cur_hp = hp_frac * maxhp
+        cur_hp = our_hp_points(hp_frac, maxhp)                                               # integer-exact
         defender_alive = (hp_frac > 0).float()                                           # [B,6]
         t1d = ctx.type1_ids[:, :TEAM_SIZE]                                               # [B,6]
         t2d = ctx.type2_ids[:, :TEAM_SIZE]

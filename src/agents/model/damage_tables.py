@@ -596,7 +596,10 @@ NONFORMULA_LEVEL = 100
 #: sleep; `conditional_threat` counts accuracy once; `intent_conditional`'s Protect needs an action to follow,
 #: Endure no longer blocks Explosion, and Magic Coat bounces the `reflectable` set. A recording made under
 #: gen3_smogon_species_usage_weighted_v1 is not reproducible here.
-OP_SEMANTICS = "gen3_op_ability_status_gigo_v1"   # (was gen3_smogon_species_usage_weighted_v1)
+#: gen3_our_hp_exact_v1 (2026-11-06): our HP reaches every op read as an exact integer (a fixed-damage move equal to
+#: our current HP KOs; a heal world truncates). A recording made under gen3_op_ability_status_gigo_v1 is not
+#: reproducible here on those rows.
+OP_SEMANTICS = "gen3_our_hp_exact_v1"   # (was gen3_op_ability_status_gigo_v1)
 DAMAGE_MODELS: Dict[str, Tuple[str, float, str]] = {
     # --- fixed / level: `getDamage` → `move.damage === 'level'` → source.level, else `move.damage` ---
     "seismictoss": ("fixed", float(NONFORMULA_LEVEL), "data/moves.ts seismictoss: damage 'level'"),

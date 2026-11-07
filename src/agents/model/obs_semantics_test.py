@@ -37,7 +37,9 @@ from agents.model.model_version import (
 # gap is refused, a fresh probe or a stored-obs score runs with a badge.
 # Re-pinned 2026-10-27 (config v163, gen3_hp_foresight_v1): the marker RAISED to 163 with the SAME hash — the HP-type
 # belief now honours Foresight / Odor Sleuth, a cell-value fix no golden battle reaches (991 / 991 unchanged).
-_GOLDEN_PIN = ("ab3cdda779eb21b340170039667f9e63071d1549de1efbe2f43e3c6f1f897235", 163)
+# Re-pinned 2026-11-06 (config v165, gen3_our_hp_exact_v1): the marker RAISED to 165 with the SAME hash — an op-internal
+# input (our HP as an exact integer), which the obs golden cannot see.
+_GOLDEN_PIN = ("ab3cdda779eb21b340170039667f9e63071d1549de1efbe2f43e3c6f1f897235", 165)
 
 _GOLDEN = Path(__file__).resolve().parents[1] / "training" / "golden_obs_fixture.json"
 

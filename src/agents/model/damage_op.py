@@ -138,7 +138,7 @@ class OpStashes:
 
 from agents.model.damage_op_blocks import DamageOperatorBlocks
 from agents.model.damage_kinds import (beatup_base_def, beatup_party_opp, gather_beatup, gather_bp,
-                                       gather_nonformula, nonformula_rolls, override_rolls)
+                                       gather_nonformula, nonformula_rolls, our_hp_points, our_max_hp, override_rolls)
 from agents.model.damage_op_pairwise import DamageOperatorPairwise
 from agents.model.damage_op_speed import DamageOperatorSpeed
 from agents.model.extractor_ctx import held_item_ids, item_unrevealed
@@ -910,9 +910,9 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
         spd_boost = torch.ones_like(spd_stat); spd_boost[ar, ctx.our_active_idx] = self._boost_mult(our_b_spd)
         def_stat = def_stat * def_boost
         spd_stat = spd_stat * spd_boost
-        maxhp = 2.0 * d_base[..., 0] + iv[..., 0] + ev[..., 0] / 4.0 + 110.0                    # [B,6]
+        maxhp = our_max_hp(d_base[..., 0], iv[..., 0], ev[..., 0])                               # [B,6]
         hp_frac = ctx.hp_and_active[:, :TEAM_SIZE, 0]                     # [B,6]
-        cur_hp = hp_frac * maxhp                                          # [B,6]
+        cur_hp = our_hp_points(hp_frac, maxhp)                               # [B,6] integer-exact
         defender_alive = (hp_frac > 0).float()                           # [B,6]
         t1d = ctx.type1_ids[:, :TEAM_SIZE]                               # [B,6]
         t2d = ctx.type2_ids[:, :TEAM_SIZE]

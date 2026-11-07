@@ -257,7 +257,11 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
         "OBS": ("ctx.hp_and_active[:, sl, 0] > 0", "ratio < thr", "status < 0.5", "tgt_cur_hp > 0", "bp > 0",
                 # the Flail / Reversal ratio floor(48 · f): the attacker's observed HP fraction (+ a constant nudge
                 # that keeps an exact k/48 off the step) — the function spelling the 2026-10-10 scan fix exposed
-                "torch.floor(hp_frac * 48.0 + _FLAIL_FLOOR_NUDGE)"),
+                "torch.floor(hp_frac * 48.0 + _FLAIL_FLOOR_NUDGE)",
+                # gen3_our_hp_exact_v1: OUR current HP = round(observed fraction × the exact integer max HP) — the
+                # product sits a few ulps from an integer, never near a .5 step — and a heal's trunc(frac · maxhp)
+                # (table fractions 1/4, 1/2, 2/3, 1: an exact product lands on its integer by the nudge)
+                "(hp_frac * maxhp).round()", "torch.floor(frac * maxhp + _HEAL_FLOOR_NUDGE)"),
         "TABLE": ("fixed + target_frac + endeavor > 0", "hp_scaled > 0", "flail > 0", "eff > 0",
                   "nonformula > 0", "op.MOVE_BEATUP[move_ids] > 0", "target_frac >= 1.0"),
         # gen3_beatup_exact_v1: Beat Up's ally filter reads observed HP fractions and 0/1 condition flags

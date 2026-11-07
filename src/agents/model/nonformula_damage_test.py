@@ -102,8 +102,9 @@ def test_outgoing_super_fang_is_half_current_hp(op):
 
 def test_outgoing_endeavor_is_target_minus_attacker(op):
     our_maxhp = 2.0 * 255 + 31.0 + 110.0                                      # Blissey, IV 31 / EV 0
-    high, _l, _c, pko = _out_hp(op, _ctx("endeavor", _SNORLAX, "NORMAL", our_hp=0.25), _SNORLAX)
-    assert high == pytest.approx(_neutral_maxhp(_SNORLAX) - 0.25 * our_maxhp, abs=1e-2)
+    # a REACHABLE HP (163 of 651; our HP is an exact integer, gen3_our_hp_exact_v1 — 0.25 x 651 is not one)
+    high, _l, _c, pko = _out_hp(op, _ctx("endeavor", _SNORLAX, "NORMAL", our_hp=163.0 / our_maxhp), _SNORLAX)
+    assert high == pytest.approx(_neutral_maxhp(_SNORLAX) - 163.0, abs=1e-2)
     assert pko == 0.0
     hi_full, *_ = _out_hp(op, _ctx("endeavor", _SNORLAX, "NORMAL", our_hp=1.0), _SNORLAX)
     assert hi_full == 0.0                                                     # 651 HP Blissey ≥ Snorlax: it fails

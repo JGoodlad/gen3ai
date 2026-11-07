@@ -15585,3 +15585,26 @@ was downloaded or written under `data/`.
   real 16-seed null; exact laziness; the fallbacks; the null equals the replay's dither number for number; the backtest
   on `testdata/canary_param_null_basis.json`: the 14 refusing reads at the states' own weights pass at <= 1.60 of 12, and
   none of the census's 62,880 dithered reads exceeds the new bar); `canary_row_bar_test` names the new version.
+
+## 2026-11-06 — OUR HP is an exact integer at every op read (`gen3_our_hp_exact_v1`; config v165, no field; `OBS_SEMANTICS_VERSION` 163 → 165 by hand, `warn`; `OP_SEMANTICS` bumped; no `ARCH_SIGNATURE` / floor change)
+
+- **Why.** The op rebuilt our current HP as `f32(hp / max) × max`, which misses the integer by an ulp on 21,764 of the
+  255,969 reachable (max HP ≤ 714, HP) pairs. At the fixed-damage KO cut (`fixed >= hp`) an up-rounding read Seismic
+  Toss / Night Shade as NOT KO-ing our mon at exactly 100 HP on 497 of the pool's 4,961 sets (a 714-HP Blissey among
+  them), which Showdown faints (`sim/pokemon.ts` `damage`: `hp <= 0` faints). Found by the 2026-11-06 tie-rate read.
+  The heal worlds (`pairwise_recovery`) added `frac × max` un-truncated, where gen-3 Showdown truncates every heal.
+- **What.** `damage_kinds.our_max_hp` / `our_hp_points` (round) / `our_healed_hp` (`min(max, hp + trunc(frac × max))`)
+  at every incoming kernel, the heal worlds, Endeavor's attacker and the EOT residual's max HP. THEIR HP (a percent ×
+  a neutral max-HP estimate) is unchanged.
+- **Impact on P\*** (`pstar_plateau`, CPU eager, the tie-rate population of 16,785 rows): 1,118 rows (6.7 %) change at
+  all; |Δ log π| median 2.9e-6, p99 7.3e-4, max 0.113 over them; 30 rows above 1e-4, every one through the heal worlds;
+  0 top-action changes; |ΔV| ≤ 3.0e-4; 0 fixed-damage KO flips in this population.
+- **Guards.** `our_hp_exact_test.py`: exhaustive over every (max HP, HP) pair and heal fraction, the Seismic Toss
+  KO at exactly 100 HP end to end, and a source guard (no forward module multiplies a fraction by a max HP outside
+  the helpers; two declared amount exceptions). `nonformula_damage_test`'s Endeavor row now feeds a reachable HP.
+- **Re-recorded.** The K9 learner golden's UPDATE (init `c44c7e52…` and buffer `a782af44…` kept; post `584de31c…` ->
+  `5ac82095…`, fp32 opt-out `318c114b…` -> `d053756d…`, identical under +cu126 and +cu128); the prober's gap-policy
+  badges name the v165 row.
+- **Not fixed (FINDINGs).** Their HP's fixed-damage cut is a point estimate (the HP-candidate block is not read); an
+  EV that is not a multiple of 4 reads EV/4 unfloored (no pool set has one); Leech Seed's drain is an expected
+  amount, not `trunc(max / 8)`.

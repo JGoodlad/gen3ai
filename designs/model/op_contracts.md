@@ -90,6 +90,14 @@ rules:
   `op_worst_proj`): the block's layout, `out_gain` and every slicer are mode-independent. Its one discrete op (`high
   > 0`, "this candidate damages this mon") is a declared MARGIN threshold (`selection_sites`, `zero_exact`).
 
+## OUR HP has ONE spelling, an exact integer (`gen3_our_hp_exact_v1`)
+
+Every HP of OUR side (max, current, a heal world, Endeavor's attacker) comes from `damage_kinds.our_max_hp` /
+`our_hp_points` / `our_healed_hp`; never write `fraction * maxhp` in a forward module (an fp32 product misses the
+integer by an ulp, and a discrete cut such as the fixed-damage KO then flips). `our_hp_exact_test.py` scans every
+`FORWARD_MODULES` file and fails on a new inline product; its two declared exceptions are amounts, not our HP
+(Leech Seed's expected drain, their percent bin). THEIR HP is an estimate and is never rounded.
+
 ## The op's READ contracts: an opponent's ability, and the status rules (`gen3_op_ability_status_gigo_v1`)
 
 Two input contracts every op kernel follows (2026-10-07; ARCHITECTURE §4 states the rules themselves):

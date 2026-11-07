@@ -271,6 +271,13 @@ Hidden-Power type belief (`trackers/hp_belief.rs`) reads a Ghost target under th
 Sleuth) without its Fighting immunity, as Showdown resolves the hit. `_migrate_config` stamps every past config through;
 `OBS_SEMANTICS_VERSION` rises to 163 with a `warn` row (an encode-time cell fix). No `ARCH_SIGNATURE` or floor change.
 
+**v165 (`gen3_our_hp_exact_v1`, 2026-11-06)** — a forward fix with NO field and no weight shape, versioned as v162:
+every HP of OUR side reaches the op as an exact integer (`damage_kinds.our_hp_points` / `our_healed_hp`; the fp32
+product read a fixed-damage move equal to our HP as not KO-ing). `_migrate_config` stamps every past config through;
+`OBS_SEMANTICS_VERSION` raised BY HAND to 165 (`warn`: an op-internal input the obs golden cannot see);
+`damage_tables.OP_SEMANTICS` → `gen3_our_hp_exact_v1`. No `ARCH_SIGNATURE` or floor change: every v144+ checkpoint
+(P*, the X60-T arms, the named baselines at or above the floor) loads unchanged and evaluates the fixed op.
+
 **The exact P(KO) (then `ko_ramp = 'exact'`; flagless since v156) is computed in CLOSED FORM (`gen3_ko_exact_closed_v1`,
 2026-10-10), with NO config, obs-semantics or signature bump.** The value `exact_closed` that carried the closed form beside the 16-roll sum was legal for one
 commit (`6e0a1a7a`, no bump: a new VALUE of an existing field, nothing to migrate, no parameter); the owner's "remove

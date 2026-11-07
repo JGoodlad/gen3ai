@@ -59,6 +59,7 @@ import torch
 from agents.observation.constants import (BOOSTS_DIM, POKEMON_CONDITION_OFFSET, POKEMON_COUNTER_OFFSET,
                                           POKEMON_ITEMS_OFFSET, POKEMON_SLEEP_BELIEF_OFFSET, POKEMON_SPREAD_OFFSET,
                                           TEAM_SIZE, WEATHER_ONEHOT_DIM)
+from agents.model.damage_kinds import our_max_hp
 from agents.model.damage_op_pairwise import toxic_next_tick
 from agents.model.extractor_ctx import ability_known, held_item_ids, revealed_ability1_ids
 from agents.observation.gen3_effects import VOLATILE_SLOTS
@@ -262,7 +263,7 @@ class EotResidualRule(torch.nn.Module):
         (2·base + 31 + 110); Shedinja (base HP 1) is 1 on both sides. The op's own convention."""
         base_hp = op.BASE_STATS[ctx.species_ids][..., 0].to(ctx.pokemon_part.dtype)          # [B,12]
         spread = ctx.pokemon_part[:, :TEAM_SIZE, POKEMON_SPREAD_OFFSET:POKEMON_SPREAD_OFFSET + 12]
-        ours = 2.0 * base_hp[:, :TEAM_SIZE] + spread[..., 0] * 31.0 + spread[..., 6] * 252.0 / 4.0 + 110.0
+        ours = our_max_hp(base_hp[:, :TEAM_SIZE], spread[..., 0] * 31.0, spread[..., 6] * 252.0)   # the one spelling
         theirs = 2.0 * base_hp[:, TEAM_SIZE:] + 31.0 + 110.0
         formula = torch.cat([ours, theirs], dim=1)
         shedinja = self.SHEDINJA_HP_ONE[ctx.species_ids]

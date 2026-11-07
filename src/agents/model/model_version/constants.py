@@ -649,7 +649,14 @@ from typing import Any, Dict
 #   ever built). No ARCH_SIGNATURE bump (256 builds nothing: every existing state dict and forward is unchanged; a wider
 #   build is gated by the field — the trunk_layers / trunk_ffn_by_kind precedent), no OBS_SEMANTICS or MIGRATION_FLOOR
 #   change.
-MODEL_CONFIG_VERSION = 164
+# v165 (gen3_our_hp_exact_v1, 2026-11-06): no field, no weight shape. Every HP the op computes for OUR side goes
+#   through `damage_kinds.our_max_hp` / `our_hp_points` / `our_healed_hp`: the current HP is round(fraction × max HP)
+#   (the fp32 product missed the integer by an ulp on ~8.5 % of pairs, so Seismic Toss / Night Shade read as NOT
+#   KO-ing a mon at exactly 100 HP on ~10 % of pool sets) and a heal world is min(max, hp + trunc(frac × max)).
+#   Production's op block changes only on rows whose fixed-damage cut sat on an exact tie (and by <= a few ulps of
+#   HP elsewhere). Every past config stamps through. No ARCH_SIGNATURE bump, no MIGRATION_FLOOR change; the marker
+#   rises to 165 by hand (`warn`: a model-internal op input, the stored observations are unchanged).
+MODEL_CONFIG_VERSION = 165
 
 # THE OBS-SEMANTICS MARKER (declared 2026-10-09, with v151): the FIRST config version whose OBSERVATION VALUES
 # (the vector the encoder writes, and the model-input cells derived from it) MEAN something different from every
@@ -691,6 +698,9 @@ OBS_SEMANTICS_HISTORY = (
     # gen3_hp_foresight_v1 (TECH_DEBT P3 closed): an encode-time fix of the Rust HP-type belief.
     (163, "the opponent's Hidden Power type belief reads a Ghost under Foresight or Odor Sleuth as hit by Fighting "
           "(no immunity), where it read every Ghost as immune", "warn"),
+    # gen3_our_hp_exact_v1: a model-INTERNAL op input (the obs golden cannot see it), raised by hand.
+    (165, "the damage operator reads our mon's HP as an exact integer (a fixed-damage move that equals our current "
+          "HP now KOs, where an fp32 rounding read it as surviving) and truncates a heal as Showdown does", "warn"),
 )
 OBS_SEMANTICS_VERSION = OBS_SEMANTICS_HISTORY[-1][0]
 
