@@ -28,9 +28,10 @@ retry (a new process replaying the battle) or an offline re-score of one decisio
    the I of the checkpoint the chain's lineage began at, so a state that fit before replays its kept tries), each new
    world on its own fresh dice (tag ``w<world id>:<attempt>``), as the cold builder's.
 3. *Shortfall.* The worlds that failed step 1 once more on rarer dice (``CHAIN_TRIES_MAX`` tries).
-4. *Compose and retire.* The fresh worlds, then the youngest survivors, to J: the oldest retire, so every decision draws
-   FRESH_MIN of its J worlds fresh whenever the chain yields them and no world serves more than ⌈J / FRESH_MIN⌉
-   decisions unless no fresh world could replace it (an OVERAGE, recorded): the CORRELATION BOUND (§9 of the design).
+4. *Compose and retire.* The fresh worlds (max(FRESH_MIN, J - the survivors)), then the youngest survivors, to J: the
+   oldest retire, so a world serves at most ⌈J / FRESH_MIN⌉ decisions while the battle draws fresh worlds every
+   decision; after a stretch that drew none, or with too few survivors, older ones stay (an OVERAGE, recorded): the
+   CORRELATION BOUND, soft (§9 of the design, C17, S'H-15).
 5. *Gate.* Every returned world passes the STRICT gate (one lean ``core_events`` replay over all of them,
    ``info_set.extract_many``) and the playout tool. Fewer than J worlds: an EXCLUSION (:class:`WorldError`), whose
    carry keeps EVERY world: the extended ones at this I, the rest PENDING at the I they last matched, so the next
@@ -66,8 +67,8 @@ from main.value_search.search import cpu_all
 from main.value_search.world_draws import WorldError
 
 CARRY_SCHEMA = "gen3_honest_inc_carry_v1"
-#: each decision draws FRESH_MIN of its J worlds fresh (when the chain yields them) and the oldest retire: a world's life
-#: <= ceil(J / FRESH_MIN) decisions unless no fresh world could replace it (an overage, recorded)
+#: each decision draws max(FRESH_MIN, J - the survivors) worlds fresh (when the chain yields them) and the oldest retire:
+#: a world's life <= ceil(J / FRESH_MIN) decisions while every decision draws fresh ones (else an overage, recorded)
 FRESH_MIN = 2
 #: a carried world's tries a new segment (one attempt: a failure is cheaper to replace from the chain than to retry
 #: on rarer dice)

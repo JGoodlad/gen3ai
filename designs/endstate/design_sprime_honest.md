@@ -375,7 +375,7 @@ functions of its I alone. At decision k, from the carry of the previous checkpoi
 
 | # | where | chosen | why |
 |---|---|---|---|
-| C17 | the correlation bound | each decision draws ≥ 2 of its 8 worlds fresh whenever the warm chain yields them, and the oldest retire: no world serves more than ⌈8 / 2⌉ = 4 decisions (its age ≤ 3) unless no fresh world could replace it, an OVERAGE the record counts (`inc.overage`, `inc.ages`) | a carried world ties consecutive decisions' worlds together; a rolling bound keeps the cost of fresh worlds level (2 a decision) where periodic rejuvenation would put a cold build, at its O(turns) cost and exclusion risk, on every P-th decision. FRESH FIRST, then retire: on a hard battle a fresh world must re-solve the whole history on its own dice and often cannot, and retiring the carried worlds regardless emptied the carry (§9.5's first run: a battle collapsed into a cold rebuild, excluded, at every later decision) |
+| C17 | the correlation bound | each decision draws max(2, 8 − the worlds that extended) fresh whenever the warm chain yields them, and the oldest retire: a world serves at most ⌈8 / 2⌉ = 4 decisions (its age ≤ 3) while the battle draws fresh worlds every decision; after a stretch that drew none (a stuck battle, a deferred chain) or with fewer than 6 survivors, older worlds stay: an OVERAGE the record counts (`inc.overage`, `inc.ages`). Measured (§9.5): 8.3 % of searched decisions hold one, mostly by one decision (age 4) | a carried world ties consecutive decisions' worlds together; a rolling bound keeps the cost of fresh worlds level (2 a decision) where periodic rejuvenation would put a cold build, at its O(turns) cost and exclusion risk, on every P-th decision. FRESH FIRST, then retire: on a hard battle a fresh world must re-solve the whole history on its own dice and often cannot, and retiring the carried worlds regardless emptied the carry (§9.5's first run: a battle collapsed into a cold rebuild, excluded, at every later decision) |
 | C18 | the checkpoints | the decisions the live searcher searches (turn ≥ 10, ≥ 2 legal actions), read off the replay that yields I (`extract_points`: each decision's line count, legal count, turn and row, all functions of the viewer's lines) | the carry must advance where the live searcher builds, and be rebuildable from I alone |
 | C19 | the carry store | per process, keyed by the I digest of the checkpoint it was built at (LRU, 64); a miss REBUILDS the missing checkpoints in order from the latest cached one (from the first when none is) | the live process plays a battle's decisions in order, so it hits; a unit retry is a new process replaying the battle from its start (it rebuilds as it goes); an offline re-score of one decision rebuilds the battle up to it. Every path computes the same bytes (the slow test `honest_inc_test.py` checks the rebuild) |
 | C20 | the boundary | the first earlier segment whose intent, onsets or hidden-HP hits differ under this I | an intent read past a mid-turn request (C4) can name the choice a stand-in guessed; the replay must re-match from there |
@@ -497,6 +497,9 @@ another key tag. The SMT probe: one builder workload pinned alone, on two physic
 - **Exclusions are the late F and P72 battles that hit a segment no world matches** (S′H-10): a battle stuck there
   excludes every later decision (F 64+ 15 %, P72 64+ 20.5 % of decisions; `r0s4_honest` excluded 10 of 18 and 9 of 18
   of those buckets' targets, the incremental builder 3 and 4).
+- **The correlation bound held in 91.7 % of searched decisions.** 8.3 % used a world older than 3 decisions (548
+  at age 4, 98 at 5, a tail to 36 in one long stretch with no fresh world); the warm chain fit in 7,787 decisions,
+  refit in 1,122, failed in 18 and waited in 62 (S′H-15).
 - **The picks.** Where both search, the incremental builder picks `r0s4_honest`'s action in 63 % of U decisions;
   `r0s4_honest` re-run under another key picks its own in 63 % (the incremental builder against itself: 62 %). The
   incremental worlds move the pick no more than re-drawing `r0s4_honest`'s own worlds does. It departs from π in
@@ -555,6 +558,12 @@ another key tag. The SMT probe: one builder workload pinned alone, on two physic
   up to it (pure, but ≈ the battle's world building so far); a re-score-sampled record keeps the carry it started from
   (`inc_carry_in`) so a re-score can seed it instead. `main.value_search.live_identity`'s re-score (and the reads'
   spec checks, which name the presets they accept) do not handle `r0s4_honest_inc` yet: the PREREG unit's to wire.
+
+- **S′H-15 (the bound is soft by more than a failed chain).** C17's rule draws max(2, 8 − survivors) fresh worlds, so a
+  battle whose survivors are all old (after a stuck stretch or a deferred chain) keeps them even when the chain could
+  give more: 8.3 % of stage 1b's searched decisions held a world past the bound. Counting the fresh worlds needed
+  against the survivors still within the bound (8 − the young ones) would retire them as soon as the chain yields
+  replacements, at ≈ 1 fresh world's cost each (≈ 0.5–2 CPU-s late); not built, not measured.
 
 ## Decision record
 

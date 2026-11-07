@@ -74,6 +74,10 @@ the last one returned). The rows here are all of the final code (engine stamp
 | P72 | 89 / 139 (64 %) | 43 / 57 (75 %) | 38 / 57 (67 %) | 32 / 49 (65 %) | 36.1 % / 38.9 % |
 | U | 258 / 411 (63 %) | 114 / 181 (63 %) | 119 / 185 (64 %) | 97 / 157 (62 %) | 38.6 % / 37.0 % |
 
+**The correlation bound** (the design's C17): 8.3 % of the 9,395 searched decisions held a world older than 3
+decisions (548 at age 4, 98 at 5, a tail to 36); the warm chain fit in 7,787, refit in 1,122, failed in 18, waited in
+62 (FINDING S′H-15 of the design doc).
+
 **The identity proofs** at the stamp: the stage-1 tooth PASS, 24 / 24 (`r0s4_honest`); S′-LIVE's identity re-score of
 `r0s4_rolls` PASS, 600 / 600, 0 mismatches (4,644 CPU-s).
 
