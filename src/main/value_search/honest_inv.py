@@ -22,8 +22,15 @@ PINNED to I's digest (a call-site choice, no patch) for every channel but L5, wh
 (the test's teeth: :func:`check` fails on it). THE CONTROL: the honest record at a DIFFERENT I (the same battle one
 decision earlier) must differ, so the test is not vacuous.
 
+SEQUENCE MODE (:func:`check_sequence`, the incremental builder ``r0s4_honest_inc``, whose worlds at a decision are
+carried from the battle's earlier ones): the WHOLE decision sequence of D and of D′ up to the case's decision
+(:func:`sequence`: every decision of the side the live searcher searches, cut from the case's own log), each truth on
+its OWN searcher (its own carry cache, so D′ never borrows a carry D built), and the records must be byte-identical
+at EVERY decision. D and D′ share every I: each earlier I is a prefix of the case's.
+
     python -m main.value_search.honest_inv build --selected F --scored F --out FIXTURE.json.gz
     python -m main.value_search.honest_inv check --fixture FIXTURE.json.gz --preset r0s4_honest
+    python -m main.value_search.honest_inv check --fixture FIXTURE.json.gz --preset r0s4_honest_inc --sequence
 """
 from __future__ import annotations
 
@@ -114,11 +121,17 @@ class Decision:
 def searcher(preset: str, forward=None):
     from main.anchors.search_presets import parse
     from main.anchors.search_side import LiveSearcher
+    from main.value_search.honest_inc import HonestIncSampler
     from main.value_search.honest_worlds import HonestSampler
     from main.value_search.worlds import WorldSampler
 
-    p, _t = parse(preset)
-    inner = HonestSampler() if p.dice == "fresh" else WorldSampler(reveal=p.reveal, max_tries=p.max_tries, dice=p.dice)
+    p, t = parse(preset)
+    if p.dice == "fresh":
+        inner: Any = HonestSampler()
+    elif p.dice == "fresh_inc":
+        inner = HonestIncSampler(from_turn=t)
+    else:
+        inner = WorldSampler(reveal=p.reveal, max_tries=p.max_tries, dice=p.dice)
     return LiveSearcher(None, _Greedy(), preset, Path("/dev/null"), sampler=_Recorder(inner),
                         forward=forward or stub_forward())
 
@@ -369,24 +382,100 @@ def check_case(case: Mapping[str, Any], preset: str, forward=None) -> Dict[str, 
     a, b = Decision(**case["d"]), Decision(**case["d_alt"])
     if not same_info(a, b):
         raise ValueError(f"case {case['name']}: D′ does not ship I")
-    honest = parse(preset)[0].dice == "fresh"
-    s = searcher(preset, forward)
-    try:
-        if honest or case["channel"] == "L5":
-            ka, kb = None, None
-            if case["channel"] == "L5" and not honest:
-                from main.anchors.search_side import KEY_SCHEMA
+    from main.anchors.search_side import HONEST_DICE
 
-                ka = f"{KEY_SCHEMA}|{deal_key(a)}|t{a.turn}|n{a.n}"
-                kb = f"{KEY_SCHEMA}|{deal_key(b)}|t{b.turn}|n{b.n}"
-        else:
-            pin = IS.extract(a.log, a.at, a.side)[0].key()
-            ka = kb = f"pinned|{pin}"
-        ra, rb = record(s, a, ka), record(s, b, kb)
+    honest = parse(preset)[0].dice in HONEST_DICE
+    # each truth on its OWN searcher: the incremental builder's carry cache is per searcher, and D′ must never borrow
+    # a carry D built
+    sa, sb = searcher(preset, forward), searcher(preset, forward)
+    try:
+        ka, kb = _keys(case["channel"], honest, a, b)
+        ra, rb = record(sa, a, ka), record(sb, b, kb)
     finally:
-        s.close()
+        sa.close()
+        sb.close()
     return {"name": case["name"], "channel": case["channel"], "preset": preset, "identical": ra == rb,
             "d": ra, "d_alt": rb}
+
+
+def _keys(channel: str, honest: bool, a: Decision, b: Decision):
+    """The record keys the two truths' searches are handed (module docstring): their own for an honest preset,
+    today's live key (the deal) for L5, else the key PINNED to I's digest."""
+    if honest:
+        return None, None
+    if channel == "L5":
+        from main.anchors.search_side import KEY_SCHEMA
+
+        return (f"{KEY_SCHEMA}|{deal_key(a)}|t{a.turn}|n{a.n}", f"{KEY_SCHEMA}|{deal_key(b)}|t{b.turn}|n{b.n}")
+    pin = f"pinned|{IS.extract(a.log, a.at, a.side)[0].key()}"
+    return pin, pin
+
+
+def sequence(dec: Decision, from_turn: int = 10, engine: Any = None) -> List[Decision]:
+    """The DECISION SEQUENCE of ``dec``'s battle up to and including ``dec``: every decision of its side the live
+    searcher searches (turn >= ``from_turn``, >= 2 legal actions), each cut from ``dec``'s own log at its own command,
+    its turn, index, mask and tokens read off ONE replay. ``engine`` (a ``LeafEngine``): also check each cut's root
+    against the playout tool's (its tokens, turn and decision index), as the live searcher's guards will."""
+    from agents.battle.core_replay import run_core
+    from agents.info_levers import revealed as RV
+
+    rec, cmds = IS._recorded(dec.log, dec.at, dec.side)
+    res = run_core([rec], trackers=True, obs=True)[0]
+    if not res["ok"]:
+        raise ValueError(f"{dec.key}: the log does not replay: {res.get('error')}")
+    viewer = 0 if dec.side == "p1" else 1
+    ent = [e for e in res["trackers"][viewer] if "obs" in e]
+    ours = [i for i, (s_, _t) in enumerate(cmds) if s_ == dec.side]
+    if len(ent) <= len(ours):
+        raise ValueError(f"{dec.key}: {len(ent)} decisions of the viewer, the root is decision {len(ours)}")
+    out: List[Decision] = []
+    for j in range(len(ours) + 1):
+        e = ent[j]
+        turn = IS.turn_of(RV.viewer_lines(res, viewer, int(e["after"])))
+        mask = [int(x) for x in e["mask"]]
+        if turn < from_turn or sum(mask) < 2:
+            continue
+        at = ours[j] if j < len(ours) else dec.at
+        d = Decision(log=dec.log, at=at, side=dec.side, turn=turn, n=j, mask=mask,
+                     tokens={str(k): str(v) for k, v in e["tokens"].items()}, key=f"{dec.key}|seq{j}")
+        if engine is not None:
+            root = engine.root(dec.log, at, dec.side)
+            got = {str(k): str(v) for k, v in (root.get("tokens") or {}).items()}
+            if got != d.tokens or int(root["turn"]) != turn or int(root["n"]) != j:
+                raise ValueError(f"{dec.key}: decision {j}'s cut is at turn {root['turn']} decision {root['n']} "
+                                 f"offering {got}, the replay's turn {turn} decision {j} offering {d.tokens}")
+        out.append(d)
+    if not out or out[-1].at != dec.at or (out[-1].turn, out[-1].n) != (dec.turn, dec.n):
+        raise ValueError(f"{dec.key}: the sequence does not end at the case's own decision (turn {dec.turn}, n {dec.n})")
+    return out
+
+
+def check_sequence(case: Mapping[str, Any], preset: str, forward=None, from_turn: int = 10) -> Dict[str, Any]:
+    """SEQUENCE MODE (module docstring): the records of D's and D′'s whole decision sequences, each truth on its own
+    searcher, compared decision by decision. ``identical`` iff every decision's record is."""
+    from main.anchors.search_presets import parse
+    from main.anchors.search_side import HONEST_DICE
+
+    honest = parse(preset)[0].dice in HONEST_DICE
+    a, b = Decision(**case["d"]), Decision(**case["d_alt"])
+    sa, sb = searcher(preset, forward), searcher(preset, forward)
+    try:
+        qa, qb = sequence(a, from_turn, sa.engine), sequence(b, from_turn, sb.engine)
+        if [(x.turn, x.n) for x in qa] != [(x.turn, x.n) for x in qb]:
+            raise ValueError(f"case {case['name']}: D and D′ have other decision sequences")
+        rows = []
+        for x, y in zip(qa, qb):
+            if not same_info(x, y):
+                raise ValueError(f"case {case['name']}: D′ does not ship I at turn {x.turn} decision {x.n}")
+            kx, ky = _keys(case["channel"], honest, x, y)
+            rx, ry = record(sa, x, kx), record(sb, y, ky)
+            rows.append({"turn": x.turn, "n": x.n, "identical": rx == ry, "d": rx, "d_alt": ry})
+    finally:
+        sa.close()
+        sb.close()
+    return {"name": case["name"], "channel": case["channel"], "preset": preset, "decisions": len(rows),
+            "identical": all(r["identical"] for r in rows),
+            "moved": [(r["turn"], r["n"]) for r in rows if not r["identical"]], "rows": rows}
 
 
 def deal_key(d: Decision) -> str:
@@ -518,6 +607,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     b = sub.add_parser("check")
     b.add_argument("--fixture", required=True, type=Path)
     b.add_argument("--preset", default="r0s4_honest@10")
+    b.add_argument("--sequence", action="store_true", help="SEQUENCE mode: every searched decision up to the case's")
     b.add_argument("--out", type=Path)
     a = ap.parse_args(argv)
     if a.cmd == "build":
@@ -525,9 +615,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         print(json.dumps({"cases": [c["name"] for c in fx["cases"]], "control": bool(fx["control"])}))
         return 0
     fx = load_fixture(a.fixture)
-    rows = [check_case(c, a.preset) for c in fx["cases"]]
+    rows = [(check_sequence if a.sequence else check_case)(c, a.preset) for c in fx["cases"]]
     for r in rows:
-        print(json.dumps({k: r[k] for k in ("name", "channel", "preset", "identical")}), flush=True)
+        print(json.dumps({k: r[k] for k in ("name", "channel", "preset", "identical", "decisions", "moved") if k in r}),
+              flush=True)
     if a.out:
         a.out.write_text(json.dumps(rows, indent=1, sort_keys=True))
     return 0

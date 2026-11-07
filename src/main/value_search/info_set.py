@@ -16,6 +16,10 @@ returned), and everything here is a function of I alone:
 * :func:`backtrack` — per segment, the earlier segments whose dice a failure there may RE-ROLL (D4): the onsets, in
   I's lines, of a hidden counter still running (a non-Rest sleep, confusion, Encore, Disable, a partial trap, an
   Outrage-family lock, Uproar, a pending Future Sight / Doom Desire).
+* :func:`extract_points` — I and, from the same replay, every EARLIER decision of the viewer (:class:`Point`: where
+  its I ends, its legal-action count, its turn, its row), each a function of the viewer's lines; :func:`checkpoints`
+  keeps the ones the live searcher searches (turn >= its first turn, >= 2 legal actions) and :func:`prefix` cuts I
+  at one. The incremental builder (``main.value_search.honest_inc``) carries its worlds from one to the next.
 """
 from __future__ import annotations
 
@@ -79,21 +83,23 @@ class InfoSet:
         return json.loads(self.canonical())
 
 
-def extract(log: dict, at: int, side: str) -> Tuple[InfoSet, str]:
-    """``(I, the viewer's root row)`` at command ``at`` of ``log``: ONE replay of the log through the core, of which
-    only the viewer's own lines, its own commands and its root observation row (a function of them) are kept. A log
-    that does not replay to a decision of ``side`` there is a :class:`ValueError`."""
-    from agents.battle.core_replay import RecordedBattle, run_core
+def _recorded(log: dict, at: int, side: str, label: str = "info_set"):
+    from agents.battle.core_replay import RecordedBattle
     from main.value_search.worlds import log_commands
 
     cmds = log_commands(log, at)
     viewer = 0 if side == "p1" else 1
-    rec = RecordedBattle(label="info_set", format_id=log["format_id"], seed=log["seed"],
+    rec = RecordedBattle(label=label, format_id=log["format_id"], seed=log["seed"],
                          p1={"name": log["names"][0], "team": log["teams"][0]},
                          p2={"name": log["names"][1], "team": log["teams"][1]}, commands=cmds,
                          rolls=({"viewer": viewer, "mode": "force", "force": log["rolls"]} if log.get("rolls") else None),
                          reseed=log.get("reseed"))
-    res = run_core([rec], trackers=True, obs=True)[0]
+    return rec, cmds
+
+
+def _read(log: dict, side: str, cmds, res: dict) -> Tuple[InfoSet, str, list]:
+    """I, the root row and the viewer's decision entries off ONE replay's result (:func:`extract`)."""
+    viewer = 0 if side == "p1" else 1
     if not res["ok"]:
         raise ValueError(f"the log does not replay: {res.get('error')}")
     ours = [t for s, t in cmds if s == side]
@@ -105,7 +111,93 @@ def extract(log: dict, at: int, side: str) -> Tuple[InfoSet, str]:
         raise ValueError("the viewer's lines do not end at its root request")
     info = InfoSet(format_id=str(log["format_id"]), names=(str(log["names"][0]), str(log["names"][1])), side=side,
                    team=str(log["teams"][viewer]), lines=tuple(lines), cmds=tuple(ours))
-    return info, ent[len(ours)]["obs"]["b64"]
+    return info, ent[len(ours)]["obs"]["b64"], ent
+
+
+def extract(log: dict, at: int, side: str) -> Tuple[InfoSet, str]:
+    """``(I, the viewer's root row)`` at command ``at`` of ``log``: ONE replay of the log through the core, of which
+    only the viewer's own lines, its own commands and its root observation row (a function of them) are kept. A log
+    that does not replay to a decision of ``side`` there is a :class:`ValueError`."""
+    from agents.battle.core_replay import run_core
+
+    rec, cmds = _recorded(log, at, side)
+    info, row, _ent = _read(log, side, cmds, run_core([rec], trackers=True, obs=True)[0])
+    return info, row
+
+
+def extract_many(logs: Sequence[dict], side: str, lines: Optional[Sequence[str]] = None) -> List[Tuple[InfoSet, str]]:
+    """:func:`extract` at the END of each log (its every command), all in ONE ``core_events`` process (the
+    incremental builder's strict gate over a decision's worlds). ``lines`` (the I every log must ship): the LEAN
+    replay (``core_events`` ``SCREEN``: the same replay with every check, the viewer's chunks and rows only, stopped
+    at a first differing line, which then fails here). A log that does not replay is a :class:`ValueError` naming its
+    index."""
+    from agents.battle.core_replay import run_core
+
+    recs = [_recorded(lg, len(lg["cmds"]), side, f"strict{i}") for i, lg in enumerate(logs)]
+    screen = None if lines is None else {"viewer": 0 if side == "p1" else 1, "lines": list(lines)}
+    out = []
+    got = run_core([r for r, _c in recs], trackers=True, obs=True, screen=screen)
+    for i, ((_r, cmds), res) in enumerate(zip(recs, got)):
+        try:
+            info, row, _e = _read(logs[i], side, cmds, res)
+        except ValueError as e:
+            raise ValueError(f"log {i}: {e}") from e
+        out.append((info, row))
+    return out
+
+
+@dataclass(frozen=True)
+class Point:
+    """An EARLIER decision of the viewer, as I shows it: its I is I's first ``lines`` lines and ``cmds`` commands;
+    ``n_legal`` its legal actions and ``turn`` its turn (the last ``|turn|`` line before it, 0 before any); ``row`` its
+    observation row. Each is a function of the viewer's lines."""
+
+    lines: int
+    cmds: int
+    n_legal: int
+    turn: int
+    row: str
+
+
+def turn_of(lines: Sequence[str]) -> int:
+    for ln in reversed(lines):
+        if ln.startswith("|turn|"):
+            return int(ln.split("|")[2])
+    return 0
+
+
+def extract_points(log: dict, at: int, side: str) -> Tuple[InfoSet, str, List[Point]]:
+    """:func:`extract` (the same ONE replay) plus every decision of the viewer BEFORE the root (:class:`Point`)."""
+    from agents.battle.core_replay import run_core
+
+    rec, cmds = _recorded(log, at, side)
+    res = run_core([rec], trackers=True, obs=True)[0]
+    info, row, ent = _read(log, side, cmds, res)
+    viewer = 0 if side == "p1" else 1
+    pts = []
+    for j in range(len(info.cmds)):
+        lines = RV.viewer_lines(res, viewer, int(ent[j]["after"]))
+        if tuple(lines) != info.lines[:len(lines)] or not lines or not lines[-1].startswith("|request|"):
+            raise ValueError(f"the viewer's decision {j} is not a prefix of I ending at a request")
+        pts.append(Point(lines=len(lines), cmds=j, n_legal=int(sum(int(x) for x in ent[j]["mask"])),
+                         turn=turn_of(lines), row=str(ent[j]["obs"]["b64"])))
+    if any(b.lines <= a.lines for a, b in zip(pts, pts[1:])) or (pts and pts[-1].lines >= len(info.lines)):
+        raise ValueError("the viewer's decisions do not ascend through I")
+    return info, row, pts
+
+
+def checkpoints(points: Sequence[Point], from_turn: int) -> List[Point]:
+    """The earlier decisions the live searcher SEARCHES (``main.anchors.search_side``: turn >= its first turn, >= 2
+    legal actions): the incremental builder's update points, a function of I."""
+    return [p for p in points if p.turn >= from_turn and p.n_legal >= 2]
+
+
+def prefix(info: InfoSet, lines: int, cmds: int) -> InfoSet:
+    """I cut at an earlier decision (:class:`Point`): its first ``lines`` lines and ``cmds`` commands."""
+    if not 0 < lines <= len(info.lines) or not 0 <= cmds <= len(info.cmds):
+        raise ValueError(f"a cut ({lines} lines, {cmds} commands) outside I ({len(info.lines)}, {len(info.cmds)})")
+    return InfoSet(format_id=info.format_id, names=info.names, side=info.side, team=info.team,
+                   lines=info.lines[:lines], cmds=info.cmds[:cmds])
 
 
 def _mon(tok: str) -> Optional[Tuple[str, str]]:

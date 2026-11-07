@@ -24,6 +24,12 @@ enters — its worlds replayed on fresh dice matched segment by segment (``pokes
 Same worlds count, leaf, rule and uniform weights as ``r0s4_rolls``; ``max_tries`` is unused (the builder's budgets are
 its own). ``r0s4`` and ``r0s4_rolls`` are unchanged.
 
+``r0s4_honest_inc`` is ``r0s4_honest`` with its worlds CARRIED through a battle's searched decisions
+(``main.value_search.honest_inc``, ``design_sprime_honest.md`` §9): ``dice="fresh_inc"``. Each world's trajectory is
+replayed and only the new segments matched; the oldest two of eight retire each decision and the shortfall comes from
+a warm chain. Still a function of I alone (the carry at a decision is a function of I's earlier decisions, each a
+prefix of it). Its first searched decision of a battle is ``r0s4_honest``'s, byte for byte.
+
 A searched decision is one of OUR side's decisions at turn >= ``from_turn`` with >= 2 legal actions; every other
 decision is the checkpoint's greedy choice, exactly the raw arm's.
 
@@ -50,7 +56,8 @@ class SearchPreset:
     """One registered configuration (module docstring). ``per_action`` playouts per legal action under the uniform
     allocation, each in its own world (``n_worlds`` of them); ``depth`` turns then the critic; the acting ``rule``
     (``pikl`` at ``pikl_lambda``); the world builder's information spec ``reveal`` (``off`` = honest), its ``dice`` and
-    its ``max_tries`` per world. ``dice="fresh"`` selects the leak-honest builder (``r0s4_honest``)."""
+    its ``max_tries`` per world. ``dice="fresh"`` selects the leak-honest builder (``r0s4_honest``), ``"fresh_inc"`` its
+    incremental form (``r0s4_honest_inc``)."""
 
     name: str
     n_worlds: int
@@ -73,6 +80,8 @@ PRESETS: Dict[str, SearchPreset] = {
                                reveal="off", dice="rolls", max_tries=60),
     "r0s4_honest": SearchPreset(name="r0s4_honest", n_worlds=8, per_action=8, depth=4, rule="pikl",
                                 pikl_lambda=0.015, reveal="off", dice="fresh", max_tries=60),
+    "r0s4_honest_inc": SearchPreset(name="r0s4_honest_inc", n_worlds=8, per_action=8, depth=4, rule="pikl",
+                                    pikl_lambda=0.015, reveal="off", dice="fresh_inc", max_tries=60),
 }
 
 

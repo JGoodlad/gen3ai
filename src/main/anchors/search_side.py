@@ -75,6 +75,9 @@ SCHEMA = "gen3_live_search_decision_v1"
 KEY_SCHEMA = "su_live_v1"
 #: the RE-SCORE SAMPLE: a searched-path decision whose key hashes to 0 mod this carries what an offline re-score needs
 RESCORE_MOD = 16
+#: the leak-honest builders' dice (``search_presets``): ``fresh`` rebuilds every decision cold (``r0s4_honest``),
+#: ``fresh_inc`` carries the worlds through a battle's decisions (``r0s4_honest_inc``)
+HONEST_DICE = ("fresh", "fresh_inc")
 
 
 def rescore_sampled(key: str) -> bool:
@@ -207,6 +210,10 @@ class LiveSearcher:
             from main.value_search.honest_worlds import HonestSampler
 
             self.sampler = HonestSampler()
+        elif self.preset.dice == "fresh_inc":
+            from main.value_search.honest_inc import HonestIncSampler
+
+            self.sampler = HonestIncSampler(from_turn=self.from_turn)
         else:
             self.sampler = WorldSampler(reveal=self.preset.reveal, max_tries=self.preset.max_tries,
                                         dice=self.preset.dice)
@@ -265,6 +272,12 @@ class LiveSearcher:
                        tokens={str(k): str(v) for k, v in (d.get("tokens") or {}).items()})
         out = await asyncio.to_thread(self._search, log, at, side, row, mask, d, key, int(argmax))
         rec.update(out)
+        if rec.get("rescore_sample") and self.preset.dice == "fresh_inc" and self.sampler.last_carry_in is not None:
+            # the carry this decision started from (``honest_inc.pack``): a re-score of it alone seeds a searcher
+            # with it, checked against the record's ``honest.inc.carry_in`` digest, instead of rebuilding the battle
+            from main.value_search.honest_inc import pack
+
+            rec["inc_carry_in"] = pack(self.sampler.last_carry_in)
         self._write(rec)
         return int(rec["played"]), int(argmax)
 
@@ -286,7 +299,9 @@ class LiveSearcher:
     def _check_root_honest(self, log: Dict[str, Any], at: int, side: str, d: Dict[str, Any], key: str) -> Any:
         """The honest path's root guards: the log's replay offers the live decision's tokens at its turn and index,
         and the information set read off it (:func:`main.value_search.info_set.extract`, the ONE replay whose lines
-        and commands the search sees) ends at the live core row, byte for byte. Returns I."""
+        and commands the search sees) ends at the live core row, byte for byte. Returns ``(I, its earlier decisions)``
+        (the latter, :func:`~main.value_search.info_set.extract_points` off the same replay, for the incremental
+        builder only; None otherwise)."""
         from main.value_search import info_set as IS
 
         root = self.engine.root(log, at, side)
@@ -298,12 +313,15 @@ class LiveSearcher:
             raise LiveSearchError(f"{key}: the log's replay is at turn {root.get('turn')} decision {root.get('n')}, "
                                   f"the live decision at turn {d.get('turn')} decision {d['n']}")
         try:
-            info, row = IS.extract(log, at, side)
+            if self.preset.dice == "fresh_inc":
+                info, row, points = IS.extract_points(log, at, side)
+            else:
+                (info, row), points = IS.extract(log, at, side), None
         except ValueError as exc:
             raise LiveSearchError(f"{key}: the information set cannot be read off the log: {exc}") from None
         if row != d["frame"]["b64"]:
             raise LiveSearchError(f"{key}: the information set's root row is not the live core frame's")
-        return info
+        return info, points
 
     def _search(self, log: Dict[str, Any], at: int, side: str, row: np.ndarray, mask: np.ndarray,
                 d: Dict[str, Any], key: str, argmax: int) -> Dict[str, Any]:
@@ -312,8 +330,8 @@ class LiveSearcher:
         from main.value_search.worlds import WorldError
 
         c0, k0, w0 = time.thread_time(), _children_cpu(), time.monotonic()
-        honest = self.preset.dice == "fresh"
-        info = self._check_root_honest(log, at, side, d, key) if honest else None
+        honest = self.preset.dice in HONEST_DICE
+        info, points = self._check_root_honest(log, at, side, d, key) if honest else (None, None)
         if not honest:
             self._check_root(log, at, side, d, key)
         out = np.asarray(self.forward(np.asarray(row, dtype=np.float32)[None],
@@ -333,7 +351,7 @@ class LiveSearcher:
                 # the LEAK-HONEST search: I alone, never the log (its digest keys every draw)
                 res = search_decision_honest(self.engine, info, np.asarray(row, dtype=np.float32),
                                              np.asarray(mask, dtype=np.uint8), self.cfg, self.sampler,
-                                             d["frame"]["b64"])
+                                             d["frame"]["b64"], points=points)
             else:
                 res = search_decision(self.engine, log, at, side, np.asarray(row, dtype=np.float32),
                                       np.asarray(mask, dtype=np.uint8), self.cfg, key, sampler=self.sampler,
@@ -348,6 +366,8 @@ class LiveSearcher:
                   "wall_s": round(time.monotonic() - w0, 3)}
             if info is not None:
                 ex["search_key"] = info.key()
+            if getattr(exc, "inc", None):
+                ex["honest"] = {"inc": exc.inc}          # the incremental builder's record of the excluded step
             return ex
         if sorted(res.q) != legal:
             raise LiveSearchError(f"{key}: the search valued {sorted(res.q)}, the legal actions are {legal}")
@@ -377,7 +397,8 @@ class LiveSearcher:
         if not h:
             return {}
         return {"search_key": h["key"], "honest": {"chain": h["chain"], "fails": h["fails"], "worlds": h["worlds"],
-                                                    "at": h["at"], "world_teams": list(res.world_teams)}}
+                                                    "at": h["at"], "world_teams": list(res.world_teams),
+                                                    **({"inc": h["inc"]} if "inc" in h else {})}}
 
     def _write(self, rec: Dict[str, Any]) -> None:
         with open(self.out, "a") as f:

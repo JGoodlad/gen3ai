@@ -1,9 +1,11 @@
 # S′-HONEST — does S′ still beat P\* against the real Kakuna when its worlds see nothing the live player cannot?
 
-**Status: STAGE 1 BUILT 2026-11-05 (the builder, its leak test, the timing and exclusion check: §8); STAGE 2 (the
-replication's PREREG, its reviews, its registration) NOT STARTED.** §1–§7 are the design as written before the build;
-§8 is the build as it stands, every choice the spec left open, and the checkpoint's measurements. No PREREG is written
-and nothing is registered. S′-LIVE's GO-LEAKY ([`design_sprime_live_play.md`](design_sprime_live_play.md)) licenses
+**Status: STAGE 1 BUILT 2026-11-05 (the builder, its leak test, the timing and exclusion check: §8); the INCREMENTAL
+builder `r0s4_honest_inc` BUILT 2026-11-06 with its stage 1b (§9: ≈ 6.2 CPU-min a searched game on U at K = 6, ≈ 4.9×
+below `r0s4_honest`; U exclusions ≈ 3.4 %); STAGE 2 (the replication's PREREG, its reviews, its registration) NOT
+STARTED.** §1–§7 are the design as written before the build; §8 is the build as it stands, every choice the spec left
+open, and the checkpoint's measurements; §9 is the incremental builder. No PREREG is written and nothing is
+registered. S′-LIVE's GO-LEAKY ([`design_sprime_live_play.md`](design_sprime_live_play.md)) licenses
 this replication and nothing else.
 
 **Abbreviations.**
@@ -329,6 +331,184 @@ Before the legality fix the base budget excluded F 19 %, H 9 %, P72 6 %.
 - **The replication's budget** (§5's 3,840 deals) at ≈ 8.6–13.0 CPU-min a searched game: ≈ 550–830 CPU-h for the
   searched units, against §4's estimate of 450–960.
 
+## 9. The incremental builder `r0s4_honest_inc` (2026-11-06)
+
+**Why.** `r0s4_honest` re-matches the whole of I at every decision and restarts its chain cold, so a battle's world
+building grows with the square of its length: the replication designer's late probe (144 S′-LIVE states, every turn
+bucket) measured late decisions at up to ≈ 330 CPU-s, exclusions of 50–56 % on F and P72 at turns 64+, ≈ 30 CPU-min a
+searched game at K = 6, and ≈ 14 days for the read locally, with a likely VOID from the 10-h watchdog. A fast honest
+builder is also what live play with a turn timer needs.
+
+**What exists.** The preset `r0s4_honest_inc@10` (`dice="fresh_inc"`); the builder `main.value_search.honest_inc`
+(`HonestIncSampler`, a subclass of `honest_worlds.HonestSampler` sharing its scaffold, chain, matcher and gates); in
+`info_set` the earlier decisions of I (`extract_points`, `checkpoints`, `prefix`); in Rust the matcher's CARRIED
+TRAJECTORY (`fresh_dice.rs` `prefix`, the report's `trail`; contract: `designs/rust_sim/search_and_replay_drivers.md`
+"Fresh dice"). `r0s4_honest`'s own path is unchanged: the new hooks in `honest_worlds` (a warm start for `_chain`, its
+dice key and starting tries, the per-world build lifted into `_one_world`, the samples and reports kept OUTSIDE the
+record) default to the cold builder's behaviour, and every Rust change is opt-in (§9.4).
+
+### 9.1 A step, and why it is still a function of I
+
+I at a decision extends I at every earlier one. Its CHECKPOINTS are the earlier decisions the live searcher searches
+(turn ≥ 10, ≥ 2 legal actions), each read off I (`info_set.checkpoints`); the CARRY at a checkpoint is a function of the
+carry at the one before and of its own I, the first built cold. So the carry at a decision, and its record, are
+functions of its I alone. At decision k, from the carry of the previous checkpoint:
+
+1. **Extend.** Every carried world is re-rendered under this I's scaffold and matched with its carried trajectory: the
+   segments of the I it last matched REPLAYED exactly (one attempt a segment: its seed, pick offset and commands) up
+   to the BOUNDARY — the first segment whose header this I changes (an opponent's intent first seen in a later
+   segment, an onset, a hidden-HP hit); the rest on this decision's fresh dice (tag `x<world>:<step>:<attempt>`, 128
+   tries, 24 re-rolls). A re-roll whose target is inside the replayed part UNFREEZES it from there. What a reveal
+   changed is redrawn first, keyed (4 attempts): a newly seen mon's coordinate (and the never-seen mons, one of which
+   it was); a seen mon's unrevealed moves when they lack a newly revealed one; a coordinate this I rules out.
+2. **Fresh.** At least `FRESH_MIN` = 2 worlds (more to fill J = 8) from the WARM chain: `honest_worlds`' joint chain
+   started at the carried chain state, sampling at once when it fits, on ONE set of chain dice for the battle (keyed by
+   the I of the checkpoint the chain's lineage began at, so a state that fit before replays its kept tries), each new
+   world on its own fresh dice (`w<world id>:<attempt>`, 2 attempts) as the cold builder's.
+3. **Shortfall.** Too few worlds: the carried ones that failed step 1 once more on rarer dice (1,024 tries).
+4. **Compose and retire.** The fresh worlds, then the youngest survivors, to 8; the rest retire.
+5. **Gate.** Every returned world passes the strict gate (one lean `core_events` replay over the decision's worlds)
+   and the playout tool. Fewer than 8: an EXCLUSION, whose carry keeps EVERY world: the extended ones at this I, the
+   others PENDING at the I they last matched. The battle is then STUCK (C28) until a decision is searched.
+
+### 9.2 The choices
+
+| # | where | chosen | why |
+|---|---|---|---|
+| C17 | the correlation bound | each decision draws ≥ 2 of its 8 worlds fresh whenever the warm chain yields them, and the oldest retire: no world serves more than ⌈8 / 2⌉ = 4 decisions (its age ≤ 3) unless no fresh world could replace it, an OVERAGE the record counts (`inc.overage`, `inc.ages`) | a carried world ties consecutive decisions' worlds together; a rolling bound keeps the cost of fresh worlds level (2 a decision) where periodic rejuvenation would put a cold build, at its O(turns) cost and exclusion risk, on every P-th decision. FRESH FIRST, then retire: on a hard battle a fresh world must re-solve the whole history on its own dice and often cannot, and retiring the carried worlds regardless emptied the carry (§9.5's first run: a battle collapsed into a cold rebuild, excluded, at every later decision) |
+| C18 | the checkpoints | the decisions the live searcher searches (turn ≥ 10, ≥ 2 legal actions), read off the replay that yields I (`extract_points`: each decision's line count, legal count, turn and row, all functions of the viewer's lines) | the carry must advance where the live searcher builds, and be rebuildable from I alone |
+| C19 | the carry store | per process, keyed by the I digest of the checkpoint it was built at (LRU, 64); a miss REBUILDS the missing checkpoints in order from the latest cached one (from the first when none is) | the live process plays a battle's decisions in order, so it hits; a unit retry is a new process replaying the battle from its start (it rebuilds as it goes); an offline re-score of one decision rebuilds the battle up to it. Every path computes the same bytes (the slow test `honest_inc_test.py` checks the rebuild) |
+| C20 | the boundary | the first earlier segment whose intent, onsets or hidden-HP hits differ under this I | an intent read past a mid-turn request (C4) can name the choice a stand-in guessed; the replay must re-match from there |
+| C21 | a reveal | the carried world's changed parts redrawn, keyed (4 attempts), the rest kept and the prefix re-verified by the replay itself | a carried world whose never-seen draw is not the revealed mon could never extend, and every reveal would empty the carry |
+| C22 | the chain's dice | one set per battle (reset to the next decision's key when the warm chain fails) | a state that fit on the chain's dice before fits the replayed segments again, so the warm chain samples at once; per-decision dice would re-solve the whole prefix's feasibility every decision (the cost this unit removes). The common-dice bias of S′H-11 now spans a battle (S′H-12) |
+| C23 | the warm chain's budget | stage 1's base budget (300 steps, 600,000 feeds) while a carried world survived; B3 when none did | with a survivor the decision is built from the carried worlds; a failed chain then costs its base budget (≈ 30 CPU-s), not B3's (≈ 200) |
+| C24 | an exclusion | its carry keeps EVERY world (extended ones at this I, the rest PENDING at the I they last matched: each world carries its own I) and the last chain state that fit (on new chain dice); the next decision retries the pending worlds over every segment they lack, on its own dice. Only a carry with no world at all (the battle's first decision excluded) is rebuilt COLD: `r0s4_honest`'s own build | a segment no world matched (a Beat Up with a crit and a wake-up, §9.5) sits in every later decision's history: dropping the carried worlds left only the cold rebuild, which must re-solve the whole history and failed at every later decision; a pending world needs only the segments it lacks, on new dice each decision |
+| C25 | the first decision | `r0s4_honest`'s own build, byte for byte (its record plus the `inc` block) | the slow test pins it |
+| C26 | the record | `honest.inc`: the step, the mode, the boundary, the worlds pending / extended / failed / escalated / new / retired, their ages and the overage, and the digests of the carry it started from and returned (`carry_in`, `carry_out`: a battle's records chain). A re-score-sampled record also keeps its starting carry (`inc_carry_in`, gzip + base64, ≈ tens of KB) | weighed for the identity re-score: without it a re-scored decision rebuilds its battle up to it (≈ the battle's building so far, §9.5); with it the re-score seeds a fresh searcher and re-runs the one decision (the slow test checks it needs no rebuild and reproduces the record), each link checked by the digests. Whether the replication's re-score uses it is its PREREG's to say (S′H-14) |
+| C27 | a shortfall | the worlds that failed their extension retried once on 1,024 tries (the new segment needs rarer dice); a fresh world gets 2 attempts on its own dice, not B3's 8; no clones | escalation costs a few feeds a world and only on a shortfall; a fresh world that cannot re-solve the history in 2 attempts is better replaced by a carried one than paid for; a clone (a survivor's seen mons on its own trajectory) would fill J with copies of one hypothesis |
+| C28 | a STUCK battle | after an exclusion, each next decision first PROBES (the carried worlds' extensions, one redraw of what a reveal changed) and goes on as usual only when a world extended, else it is excluded at once; the full attempt (every redraw, the warm chain with no survivor, the escalation) comes back at the 4th stuck decision and every doubling after it (8, 16, 32, …). A cold rebuild while no world was ever built retries in full at the next 3 decisions, then on the same doublings; a searched decision ends it | a segment no world can match (S′H-10: §9.5's Beat Up with a crit and a wake-up defeated the carried, revised, escalated and chain worlds, and the cold builder) sits in every later decision's history; the full attempt there cost ≈ 130–160 CPU-s a decision, every decision, for nothing. A first cut that skipped the chain whenever stuck needed all 8 pending worlds to extend, and kept recoverable stretches excluded; a full attempt every 4th stuck decision still cost ≈ 1,600 CPU-s over one battle's 51-decision stuck stretch |
+| C29 | a failing warm chain | after it fails, the chain WAITS on the same backoff (it runs again 4, 8, 16, … decisions later) while the carried worlds alone fill the decision; it runs whenever fresh worlds are needed to avoid an exclusion. Recorded as `inc.chain = "deferred"` and `inc.chain_fail` | the chain judges candidates by re-matching the whole history on its common dice; in a hard battle it failed at every decision (≈ 30–45 CPU-s each) while all 8 carried worlds extended on their own solved trajectories. Rejuvenation can wait (the soft bound counts the overage); feasibility cannot |
+
+### 9.3 The leak test in SEQUENCE mode, and determinism
+
+`honest_inv.check_sequence`: for each fixture case, the WHOLE decision sequence of D and of D′ from turn 10 up to the
+case's decision (`honest_inv.sequence`: every decision the live searcher searches, cut from the case's own log, each
+cut's root checked against the playout tool's), each truth on its OWN searcher (its own carry cache, so D′ never
+borrows a carry D built), records compared on `INV_FIELDS` at every decision. The single-decision check now also runs
+each truth on its own searcher.
+
+**Result (2026-11-06, at the build's stamp; `honest_inc_test.py`, slow):**
+
+| case | decisions in its sequence (turn 10 to the case's) | `r0s4_honest_inc`, D vs D′ | `r0s4_rolls`, D vs D′ |
+|---|---|---|---|
+| L1 the true seed (t16) | 7 | identical at every decision | moves |
+| L2 persisted dice (t12) | 3 | identical | moves |
+| L3 the true scaffold (t11) | 2 | identical | moves |
+| L4 private commands (t17) | 9 | identical | moves |
+| L5 keying (t11) | 2 | identical | moves |
+| L6 exclusions (t29) | 24 | identical | moves |
+
+**Determinism** (on L6's 24-decision sequence): a re-run from scratch on a fresh searcher reproduces every record; the
+case's decision run ALONE (a fresh cache, so its carry is rebuilt through all 23 earlier checkpoints) reproduces its
+record; each record's `carry_in` is the previous record's `carry_out`; a decision re-run on a fresh searcher seeded with
+the carry it started from needs no rebuild and reproduces its record; the first decision is `r0s4_honest`'s record plus
+the `inc` block; no searched decision uses a world older than 3 decisions and every warm step draws ≥ 2 fresh.
+
+### 9.4 `r0s4_honest` and `r0s4_rolls` unchanged
+
+The build moved the engine stamp to **`port=f0fe71f6c54757b2/95;env=c0b7c649acfb48d8/130`** (`fresh_dice.rs`: the carried
+trajectory, and the match loop reading its frame instead of cloning it, which changes no verdict). Every change is
+opt-in: `r0s4_rolls` arms none, and `r0s4_honest`'s Python path runs the lifted `_one_world` with the same draws and
+tags.
+
+- **The stage-1 tooth** (the replication designer's: 24 of stage 1's B3 states, `r0s4_honest@10` at its default
+  budget, every non-timing field equal to stage 1's): **PASS, 24 / 24** (F 15, H 6, P72 3; 20 searched, 4 excluded, 0
+  mismatched).
+- **S′-LIVE's identity re-score of `r0s4_rolls`** (its registered 600 decisions): **PASS, 600 / 600, 0 mismatches** (forum72 217, heldout72 204, p72 179; 4,644 CPU-s)
+- **The leak test** (`honest_inv_test.py`, each truth now on its own searcher): 14 passed. The slow tests of the touched
+  modules (`honest_worlds`, `search`, the world-screen parity, the anchors' live-search tests): 19 passed. `cargo test`
+  (both crates, debug, no fail-fast): every binary passes but `rust_env`'s `sim_bridge_parity_test`, which needs
+  `POKESIM_SIM_BRIDGE_BIN` (its Python wrapper sets it); the obs golden 991 / 991; the e2e capstone and core corpus 11
+  passed.
+
+### 9.5 Stage 1b: cost, exclusions and agreement
+
+**What ran** ([`measurements/sprime_honest_inc_stage1b_2026-11-06/`](../research_state/measurements/sprime_honest_inc_stage1b_2026-11-06/README.md),
+outcome-blind): the replication designer's 144 late-probe states (S′-LIVE's searched games, every turn bucket) and
+stage 1's 300 dlive states, each on its battle's WHOLE decision sequence from turn 10 (407 battles, 9,758 decisions),
+one live searcher a battle; the live searcher's own `_search` (P\*, the playouts) at each of the 444 targets, the
+builder step alone at every other decision; `r0s4_honest`'s records at the targets are stage 1's (B3) and the late
+probe's, unchanged at this stamp (§9.4). The noise floors: `r0s4_honest` re-run at 190 targets (stage 1's floor
+subset and the late states to turn 63) and the incremental builder's whole sequences at 162 of them, each under
+another key tag. The SMT probe: one builder workload pinned alone, on two physical cores and on two SMT siblings.
+
+**Per panel and turn bucket** (world CPU-s over EVERY decision of the sequences, exclusions included; "other" = the forward and playouts of the searched targets; exclusions over every decision; at the targets, both builders' exclusions and full-decision CPU-s):
+
+| panel / bucket | decisions | world CPU-s mean (median, p90, max) | other | excl. (all decisions) | targets | excl. at targets inc / honest | CPU-s at targets inc / honest | same pick inc vs honest |
+|---|---|---|---|---|---|---|---|---|
+| F/10-19 | 1242 | 4.31 (0.56, 3.83, 314.18) | 2.32 | 1.8 % | 62 | 1 / 3 | 7.82 / 19.79 | 36 / 59 (61 %) |
+| F/20-29 | 650 | 3.66 (0.57, 2.88, 297.04) | 2.21 | 2.9 % | 45 | 2 / 3 | 8.89 / 24.52 | 27 / 42 (64 %) |
+| F/30-63 | 752 | 3.37 (0.94, 3.34, 232.61) | 2.88 | 5.3 % | 23 | 1 / 2 | 4.57 / 27.8 | 15 / 21 (71 %) |
+| F/64+ | 692 | 7.45 (2.21, 4.85, 391.94) | 2.9 | 15.0 % | 18 | 3 / 10 | 4.46 / 116.83 | 5 / 8 (62 %) |
+| H/10-19 | 1240 | 1.19 (0.45, 1.94, 80.25) | 2.58 | 0.2 % | 56 | 0 / 0 | 3.32 / 4.15 | 32 / 56 (57 %) |
+| H/20-29 | 629 | 1.25 (0.54, 1.93, 51.31) | 2.6 | 0.2 % | 52 | 0 / 3 | 4.69 / 16.42 | 30 / 49 (61 %) |
+| H/30-63 | 764 | 1.7 (0.93, 2.77, 47.47) | 2.14 | 0.4 % | 22 | 0 / 1 | 3.23 / 30.2 | 14 / 21 (67 %) |
+| H/64+ | 696 | 5.05 (2.01, 7.88, 270.63) | 2.0 | 0.7 % | 18 | 0 / 2 | 5.97 / 77.75 | 10 / 16 (62 %) |
+| P72/10-19 | 1216 | 1.25 (0.46, 1.94, 307.75) | 2.4 | 0.3 % | 58 | 0 / 0 | 3.22 / 5.82 | 35 / 58 (60 %) |
+| P72/20-29 | 635 | 1.41 (0.53, 2.02, 115.16) | 2.32 | 0.8 % | 48 | 0 / 0 | 3.39 / 8.02 | 29 / 48 (60 %) |
+| P72/30-63 | 637 | 2.49 (0.84, 4.26, 56.17) | 2.82 | 5.2 % | 24 | 0 / 0 | 3.8 / 10.5 | 18 / 24 (75 %) |
+| P72/64+ | 605 | 7.85 (2.37, 9.95, 354.91) | 2.07 | 20.5 % | 18 | 4 / 9 | 4.2 / 113.71 | 7 / 9 (78 %) |
+
+**Projected per searched game** (S′-LIVE's search-path decisions a game by turn bucket × the bucket's mean decision CPU, plus S′-LIVE's per-game overhead; K = 6 with its κ by bucket: the replication designer's cost model, `sprime_honest_play_2026-11-06/inputs/cost_model.json`):
+
+| panel | CPU-min K = 2 inc / honest | CPU-min K = 6 inc / honest | projected exclusions inc / honest |
+|---|---|---|---|
+| F | 5.5 / 29.6 | 8.7 / 48.1 | 5.8 % / 14.8 % |
+| H | 2.9 / 14.6 | 4.6 / 23.4 | 0.3 % / 3.4 % |
+| P72 | 3.3 / 11.8 | 5.3 / 19.2 | 4.0 % / 4.9 % |
+| **U** | 3.9 / 18.7 | 6.2 / 30.3 | 3.4 % / 7.7 % |
+
+**The read** (3,840 searched games and their raw twins):
+
+| builder | CPU-h (K = 6) | wall days, agent cores K = 6 | wall days, whole box K = 14 |
+|---|---|---|---|
+| inc | 434 | 3.1 | 1.3 |
+| honest | 1976 | 14.2 | 6.1 |
+
+**Agreement at the targets** (both searched; the floors are each builder against its own replicate under another key tag, on the replicate subset):
+
+| panel | inc vs honest | honest vs honest′ | inc vs honest on that subset | inc vs inc′ | departs from π: inc / honest |
+|---|---|---|---|---|---|
+| H | 86 / 142 (61 %) | 33 / 63 (52 %) | 39 / 64 (61 %) | 34 / 56 (61 %) | 41.9 % / 37.3 % |
+| F | 83 / 130 (64 %) | 38 / 61 (62 %) | 42 / 64 (66 %) | 31 / 52 (60 %) | 37.6 % / 34.6 % |
+| P72 | 89 / 139 (64 %) | 43 / 57 (75 %) | 38 / 57 (67 %) | 32 / 49 (65 %) | 36.1 % / 38.9 % |
+| U | 258 / 411 (63 %) | 114 / 181 (63 %) | 119 / 185 (64 %) | 97 / 157 (62 %) | 38.6 % / 37.0 % |
+
+- **The checkpoint's criteria hold.** The projected cost is ≈ 4.9× below `r0s4_honest`'s (U 6.2 against 30.3
+  CPU-min a searched game at K = 6); U exclusions project to 3.4 % (against `r0s4_honest`'s 7.7 %); the leak test
+  passes by construction and in sequence mode (§9.3).
+- **Where the cost is.** A routine decision builds in ≈ 0.5–2 CPU-s (median); the means carry the tails: each
+  battle's first decision is `r0s4_honest`'s own cold build (up to ≈ 300 CPU-s), a refit after a reveal, and a stuck
+  battle's full attempts. Turns 64+ are 15–27 % of a game's CPU (H 0.7, F 2.4, P72 1.0 of 4.6, 8.7, 5.3 CPU-min).
+  At the late targets a decision costs 4.2–6.0 CPU-s against `r0s4_honest`'s 78–117.
+- **The watchdog.** S′-LIVE's longest searched games (≈ 245 decisions, 189 of them past turn 64) project to
+  ≈ 0.7–1.1 h at K = 6 at the bucket means, against `r0s4_honest`'s 7.4–10.9 h. The longest measured sequence (162
+  decisions) built its worlds in 2,098 CPU-s.
+- **Exclusions are the late F and P72 battles that hit a segment no world matches** (S′H-10): a battle stuck there
+  excludes every later decision (F 64+ 15 %, P72 64+ 20.5 % of decisions; `r0s4_honest` excluded 10 of 18 and 9 of 18
+  of those buckets' targets, the incremental builder 3 and 4).
+- **The picks.** Where both search, the incremental builder picks `r0s4_honest`'s action in 63 % of U decisions;
+  `r0s4_honest` re-run under another key picks its own in 63 % (the incremental builder against itself: 62 %). The
+  incremental worlds move the pick no more than re-drawing `r0s4_honest`'s own worlds does. It departs from π in
+  38.6 % of decisions, `r0s4_honest` in 37.0 %.
+- **The read's wall time** (§5's 3,840 deals): ≈ 434 CPU-h, ≈ 3.1 days on the agent cores at K = 6 (beside a pinned
+  trainer ×1.153: ≈ 3.6), ≈ 1.3 days on the whole box at K = 14 (each decision at its K = 6 CPU, κ ≈ 1.55–1.68: both
+  SMT siblings busy). **The SMT probe** (the builder alone, one fixed workload pinned, twice each): two workers on one
+  core's two siblings each run 1.23× slower than one alone (1.18× slower than on two physical cores), so a core with
+  both siblings busy gives ≈ 1.63× one worker's throughput, against κ's ≈ 1.2–1.3× for S′-LIVE's whole units (forward,
+  peer and all): at the probe's figure the box at K = 14 would take ≈ 1.0 day. UNVERIFIED for whole units: the probe
+  measured the builder only.
+
 ## FINDINGs
 
 - **S′H-1 (no bigger leak shown, none ruled out).** §1: the unlisted channels are small or absent in U, the listed
@@ -361,9 +541,25 @@ Before the legality fix the base budget excluded F 19 %, H 9 %, P72 6 %.
   common dice** (every candidate judged on the same keyed tries, so a fit can lean on a lucky path): a bias, not a
   leak, both functions of I; worlds stay uniformly weighted. Unmeasured.
 
+- **S′H-12 (the incremental builder's dice are shared across a battle).** Its chain judges every candidate on ONE set of
+  dice for the battle (§9.2 C22), so S′H-11's common-dice bias now spans a battle's decisions; and its carried worlds
+  keep their dice paths (a world's hidden counters and the opponent's exact HP) for up to 4 decisions, longer when no
+  fresh world can replace them (the record's `overage`). Both are functions of I; neither is measured beyond the pick
+  agreement (§9.5: 63 % against `r0s4_honest`, its own floor 63 %).
+- **S′H-13 (a segment no world matches stops a battle).** On battle `29ba92d0…` (F, turn 31) a Beat Up of three
+  strikes, a crit on the third, then our Snorlax waking defeated every carried world (revised, escalated), the warm
+  chain and the cold builder; every later decision of that battle is excluded. Whether the matcher can model it (a
+  Beat Up crit under the `seg` prediction, a sleep counter's onset outside `backtrack`) is not investigated; such
+  battles are most of the late F / P72 exclusions (§9.5).
+- **S′H-14 (the replication's identity re-score of the incremental builder).** A re-scored decision rebuilds its battle
+  up to it (pure, but ≈ the battle's world building so far); a re-score-sampled record keeps the carry it started from
+  (`inc_carry_in`) so a re-score can seed it instead. `main.value_search.live_identity`'s re-score (and the reads'
+  spec checks, which name the presets they accept) do not handle `r0s4_honest_inc` yet: the PREREG unit's to wire.
+
 ## Decision record
 
 | date | decision | chosen | rejected / alternatives | evidence |
 |---|---|---|---|---|
 | 2026-11-05 | **This doc CREATED** (S′-HONEST designer, orchestrator brief): the leak inventory, the design, the leak test, the measured cost inputs; the unit STOPPED before the build at its 2-day bound | the search as a function of I alone: fresh dice matched per segment (D3), persisted dice drawn on them (D4), a joint chain with no true background (D5), the opponent's commands from I (D6), keying by I (D7), preset `r0s4_honest@10`; INV pointwise; 3,840 fresh deals for 80 % at half the S′-LIVE effect | counters only; tier-B typed dice; a decoy truth; hidden live dice; a particle filter instead of D3–D5 (§6) | the code at `fcfe2575e` (§1); the 49-site draw census; `measurements/sprime_honest_2026-11-05/` (exposure, decision records, segment match, timing run, speed pins) |
 | 2026-11-06 | **STAGE 1 BUILT** (S′-HONEST builder, orchestrator brief + the coordinator's budget pre-decision): the builder, its leak test, the timing and exclusion check; no PREREG | §8: the fresh-dice matcher in Rust (`fresh_dice.rs`, `core_events` `INFOSET` / `MATCH`, the `seg` damage-roll mode, the reseed schedule in both replays); I and the builder in Python (`info_set`, `honest_worlds`, preset `r0s4_honest`, `search_decision_honest`); the choices C1–C16; budget B3 (the smallest of three measured meeting ≤ 10 % / ≤ 20 CPU-min); INV 14 passed (honest identical on every channel, `r0s4_rolls` moves on every one); `r0s4_rolls` byte-identical (600 / 600) at stamp `port=74eb0a3bc35bd465/95;env=87f06ac3ab0b911b/130`; K = 6 under a pinned training run (X65-F1); U seeds 600–674 kept free (X65-F3) | the base budget (F 19 % exclusions) and B2 (F 12 %); per-panel budgets (the rule: one setting); a linear stub network for INV (S′H-8); the moves outside the chain (§8.1 C9) | `measurements/sprime_honest_stage1_2026-11-05/` (`final_summary.json`, `budget_curve.json`, `agreement.json`, `rescore.json`, the rows); `src/main/value_search/honest_inv_test.py` |
+| 2026-11-06 | **The INCREMENTAL builder `r0s4_honest_inc` BUILT, with its stage 1b** (S′-HONEST incremental builder, orchestrator brief) | §9: the worlds carried through a battle's searched decisions (the Rust matcher's carried trajectory; each world extended over the new segments, a reveal redrawn, keyed), ≥ 2 of 8 fresh a decision from a warm chain on the battle's chain dice, an exclusion keeping every world pending, a stuck battle's probe and backoff; the carry a function of I (rebuilt from I's checkpoints on a cache miss), its digests in the record; choices C17–C29. Sequence-mode INV identical on every channel at every decision (fails on `r0s4_rolls` on every one); a sequence re-run and a decision alone reproduce every record; `r0s4_honest` (tooth 24 / 24) and `r0s4_rolls` (600 / 600) unchanged at stamp `port=f0fe71f6c54757b2/95;env=c0b7c649acfb48d8/130`. Stage 1b on 444 states' whole sequences: U 6.2 CPU-min a searched game at K = 6 (`r0s4_honest` 30.3), U exclusions 3.4 % (7.7 %), picks 63 % `r0s4_honest`'s (its own floor 63 %); the read ≈ 434 CPU-h, ≈ 3.1 days on the agent cores, ≈ 1.0–1.3 on the whole box | periodic rejuvenation (a cold build every P decisions); retiring before a fresh world replaced the carried one, dropping the carry on an exclusion, a full attempt every 4th stuck decision, a warm chain every decision (each measured and replaced: §9.2); clones of a survivor to fill J | `measurements/sprime_honest_inc_stage1b_2026-11-06/`; `src/main/value_search/honest_inc_test.py` |

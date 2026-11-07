@@ -214,7 +214,8 @@ def search_decision(engine: LeafEngine, log: dict, at: int, side: str, root_row:
 
 
 def search_decision_honest(engine: LeafEngine, info, root_row: np.ndarray, root_mask: np.ndarray,
-                           cfg: SearchConfig, sampler, root_frame: Optional[str] = None) -> SearchResult:
+                           cfg: SearchConfig, sampler, root_frame: Optional[str] = None,
+                           points: Optional[list] = None) -> SearchResult:
     """THE LEAK-HONEST SEARCH (``r0s4_honest``, ``designs/endstate/design_sprime_honest.md`` D1, D7): the decision of
     the searched side whose information set is ``info`` (:class:`main.value_search.info_set.InfoSet`), ``root_row`` /
     ``root_mask`` its live row and mask. It never reads a battle log: the worlds are built from I alone
@@ -222,7 +223,9 @@ def search_decision_honest(engine: LeafEngine, info, root_row: np.ndarray, root_
     playouts' dice — is keyed by I's digest, so an alternative truth that ships the same I gives this very result.
     ``root_frame`` (the live row's base64 frame): every world's strict replay must reproduce it. Uniform allocation and
     uniform world weights only (the live presets'); a :class:`~main.value_search.world_draws.WorldError` from the
-    builder is an exclusion, the caller's to record."""
+    builder is an exclusion, the caller's to record. ``points``: I's earlier decisions (``info_set.extract_points``),
+    which the INCREMENTAL builder (``honest_inc``, ``r0s4_honest_inc``) carries its worlds through; its build record
+    joins the result's ``honest`` block as ``inc``."""
     if cfg.oracle or cfg.proposals is not None or cfg.weights != "uniform" or cfg.allocation != "uniform":
         raise ValueError("the honest search takes uniform allocation and weights, no oracle and no resample")
     c0, w0 = _cpu(), time.monotonic()
@@ -233,7 +236,8 @@ def search_decision_honest(engine: LeafEngine, info, root_row: np.ndarray, root_
     legal = [int(a) for a in np.flatnonzero(root_mask)]
     root_turn = int(decode_turn(root_row[None], engine.off)[0])
     k0 = cpu_all()
-    w = sampler.sample_info(info, cfg.n_worlds, root_frame)
+    w = (sampler.sample_info(info, cfg.n_worlds, root_frame) if points is None
+         else sampler.sample_info(info, cfg.n_worlds, root_frame, points=points))
     k1 = cpu_all()
     action, q, visits, spent = _play_and_pick(engine, w.logs, w.at, info.side, root_turn, logits, legal, cfg, key, [])
     k2 = cpu_all()
@@ -244,4 +248,5 @@ def search_decision_honest(engine: LeafEngine, info, root_row: np.ndarray, root_
                         prior=rules.softmax_masked(logits, legal), spent=int(spent),
                         cpu_s=_cpu() - c0, wall_s=time.monotonic() - w0, world_tries=list(w.tries), leak=w.leak,
                         world_teams=list(w.teams), world_cpu_s=k1 - k0, playout_cpu_s=k2 - k1,
-                        honest={"key": key, "chain": w.chain, "fails": w.fails, "worlds": w.stats, "at": w.at})
+                        honest={"key": key, "chain": w.chain, "fails": w.fails, "worlds": w.stats, "at": w.at,
+                                **({"inc": w.inc} if getattr(w, "inc", None) else {})})

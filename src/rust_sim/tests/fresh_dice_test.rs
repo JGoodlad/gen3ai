@@ -7,6 +7,10 @@
 //! 2. A world that cannot ship those lines (another level: its switch line differs) is NOT kept, at segment 0.
 //! 3. The verdict is deterministic; `try_seed` is a valid, distinct seed per (segment, try); a reseed schedule is
 //!    refused by name when it is malformed.
+//! 4. A CARRIED trajectory (`prefix`, the incremental builder): a world kept at an earlier decision of the same battle
+//!    extends to a later one by replaying its trail exactly and matching only the new segments (its schedule then
+//!    rebuilds every line, for fewer feeds than a cold match); a trail that stops reproducing ends the replay there
+//!    and the rest is re-matched; `upto` bounds the replay; a malformed or misused prefix is refused by name.
 
 use std::collections::BTreeMap;
 use std::sync::Arc;
@@ -14,7 +18,7 @@ use std::sync::Arc;
 use pokesim::battle::{BattleOptions, PackedTeam, PlayerOptions};
 use pokesim::bridge::{parse_choice, BridgeSession, Cmd, RequestState};
 use pokesim::dex::Dex;
-use pokesim::fresh_dice::{match_world, offered, schedule_from_json, try_seed, InfoSet, MatchCfg, Report};
+use pokesim::fresh_dice::{match_world, offered, schedule_from_json, try_seed, InfoSet, MatchCfg, Prefix, Report};
 use pokesim::json::Json;
 use pokesim::prng::Prng;
 use pokesim::rolls::{Mode, RollCtl};
@@ -111,7 +115,7 @@ fn battle(t: &[String; 2], updates: usize, dex: &Dex) -> (InfoSet, Vec<String>) 
 
 fn cfg(theirs: &[String], rolls: bool) -> MatchCfg {
     MatchCfg { dice: "fresh_dice_test".into(), tries: 512, rerolls: 16, rolls, prev_backtrack: false, max_feeds: 500_000,
-               theirs: Some(theirs.to_vec()), from_segment: 0, seed0: None }
+               theirs: Some(theirs.to_vec()), from_segment: 0, seed0: None, prefix: None }
 }
 
 /// The report's schedule replayed in a bare session: the viewer's lines.
@@ -191,5 +195,98 @@ fn a_malformed_schedule_is_refused() {
     assert!(schedule_from_json(None).unwrap().is_empty());
     for bad in ["[[3,\"1,2,3,4\"],[1,\"1,2,3,4\"]]", "[[0,\"nope\"]]", "[[0]]", "{}"] {
         assert!(schedule_from_json(Some(&Json::parse(bad).unwrap())).is_err(), "{bad}");
+    }
+}
+
+/// The BUILDER's settings (no fixed commands: every opponent choice a stand-in, as `battle`'s intents say).
+fn builder(rolls: bool) -> MatchCfg {
+    MatchCfg { theirs: None, ..cfg(&[], rolls) }
+}
+
+fn carried(r: &Report, upto: usize) -> Prefix {
+    Prefix { seed: r.seed.clone().expect("a kept seed"), trail: r.trail.clone(), cmds: r.cmds.clone(), upto }
+}
+
+#[test]
+fn a_carried_trajectory_extends_to_a_later_decision() {
+    let dex = Dex::for_gen(3);
+    let t = teams();
+    let (early, _) = battle(&t, 8, &dex);
+    let (late, _) = battle(&t, 14, &dex);
+    let n0 = early.segments.len();
+    assert!(late.segments.len() > n0 && late.segments[..n0] == early.segments[..], "the later I extends the earlier");
+    let want: Vec<String> = late.segments.iter().flat_map(|s| s.iter().cloned()).collect();
+    for rolls in [false, true] {
+        let r0 = match_world(&opts(&t, "unused"), &early, &builder(rolls), &dex);
+        assert!(r0.ok, "rolls {rolls}: the early decision matches ({:?})", r0.error);
+        assert_eq!(r0.trail.len(), n0, "one trail entry a segment");
+        assert_eq!(r0.trail.iter().map(|x| x.2).sum::<usize>(), r0.cmds.len(), "the trail partitions the commands");
+        let ext = MatchCfg { dice: "fresh_dice_test:ext".into(), prefix: Some(carried(&r0, n0)), ..builder(rolls) };
+        let r = match_world(&opts(&t, "unused"), &late, &ext, &dex);
+        assert!(r.ok, "rolls {rolls}: the carried world extends ({:?} at {} of {})", r.error, r.matched, r.segments);
+        assert_eq!(r.fixed, n0, "every carried segment replayed");
+        assert_eq!(r.seed, r0.seed, "the carried START seed");
+        assert_eq!(r.trail[..n0], r0.trail[..], "the carried trail kept");
+        assert_eq!(r.cmds[..r0.cmds.len()], r0.cmds[..], "the carried commands kept");
+        assert_eq!(replay(&t, &r, &dex), want, "rolls {rolls}: the extended schedule rebuilds every line");
+        let cold = match_world(&opts(&t, "unused"), &late, &builder(rolls), &dex);
+        assert!(cold.ok);
+        // a carried segment costs one feed a command (its one attempt), the floor a cold match reaches only when every
+        // segment matches on its first try (here with the damage-roll control on); without it, damage segments retry
+        assert!(r.feeds <= cold.feeds, "rolls {rolls}: the extension costs {} feeds, a cold match {}", r.feeds, cold.feeds);
+        if !rolls {
+            assert!(r.feeds < cold.feeds, "non-vacuity: the cold match retried ({} feeds, the extension {})", cold.feeds, r.feeds);
+        }
+        let again = match_world(&opts(&t, "unused"), &late, &ext, &dex);
+        assert_eq!((again.seed, again.reseed, again.cmds, again.rolls, again.trail), (r.seed, r.reseed, r.cmds, r.rolls, r.trail),
+                   "deterministic");
+    }
+}
+
+#[test]
+fn a_trail_that_stops_reproducing_is_re_matched_from_there() {
+    let dex = Dex::for_gen(3);
+    let t = teams();
+    let (early, _) = battle(&t, 8, &dex);
+    let (late, _) = battle(&t, 14, &dex);
+    let n0 = early.segments.len();
+    let r0 = match_world(&opts(&t, "unused"), &early, &builder(true), &dex);
+    assert!(r0.ok);
+    // `upto` bounds the replay
+    let up = MatchCfg { prefix: Some(carried(&r0, 3)), ..builder(true) };
+    let r = match_world(&opts(&t, "unused"), &late, &up, &dex);
+    assert!(r.ok && r.fixed == 3, "upto 3: {} replayed ({:?})", r.fixed, r.error);
+    assert_eq!(r.trail[..3], r0.trail[..3]);
+    // a trail whose seeds no longer reproduce a segment (another seed at every update from segment 2 on): the replay
+    // stops at the first segment that differs and the match takes over there
+    let mut bad = carried(&r0, n0);
+    for x in bad.trail.iter_mut().skip(2) {
+        x.0 = Some(try_seed("another", 7, 7));
+    }
+    let r = match_world(&opts(&t, "unused"), &late, &MatchCfg { prefix: Some(bad.clone()), ..builder(true) }, &dex);
+    assert!(r.ok, "{:?}", r.error);
+    // a segment the other seed still reproduces (no die shows in it) is KEPT on it: only the lines decide
+    assert!((2..n0).contains(&r.fixed), "the replay stopped inside the trail ({} of {n0})", r.fixed);
+    assert_eq!(r.trail[..r.fixed], bad.trail[..r.fixed], "the segments before it are the carried ones");
+    assert_ne!(r.trail[r.fixed], bad.trail[r.fixed], "the first that did not reproduce is re-matched");
+    let want: Vec<String> = late.segments.iter().flat_map(|s| s.iter().cloned()).collect();
+    assert_eq!(replay(&t, &r, &dex), want);
+}
+
+#[test]
+fn a_malformed_or_misused_prefix_is_refused() {
+    let base = r#""dice":"d","tries":4"#;
+    let ok = format!(r#"{{{base},"prefix":{{"seed":"1,2,3,4","trail":[[null,0,0],["5,6,7,8",0,1]],"cmds":["CHOOSE p1 move 1"],"upto":2}}}}"#);
+    assert!(MatchCfg::from_json(&Json::parse(&ok).unwrap()).unwrap().prefix.is_some());
+    for bad in [
+        r#""prefix":{"seed":"nope","trail":[[null,0,0]],"cmds":[],"upto":1}"#,
+        r#""prefix":{"seed":"1,2,3,4","trail":[["5,6,7,8",0,0]],"cmds":[],"upto":1}"#,
+        r#""prefix":{"seed":"1,2,3,4","trail":[[null,0,0],[null,0,2]],"cmds":["CHOOSE p1 move 1"],"upto":2}"#,
+        r#""prefix":{"seed":"1,2,3,4","trail":[[null,0,0]],"cmds":["move 1"],"upto":1}"#,
+        r#""prefix":{"seed":"1,2,3,4","trail":[[null,0,0]],"cmds":[]}"#,
+        r#""theirs":["move 1"],"prefix":{"seed":"1,2,3,4","trail":[[null,0,0]],"cmds":[],"upto":1}"#,
+    ] {
+        let line = format!("{{{base},{bad}}}");
+        assert!(MatchCfg::from_json(&Json::parse(&line).unwrap()).is_err(), "{bad}");
     }
 }

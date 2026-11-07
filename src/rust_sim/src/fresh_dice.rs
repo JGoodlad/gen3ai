@@ -37,8 +37,19 @@
 //! THE DAMAGE-ROLL CONTROL (`rolls`, `crate::rolls::Mode::Seg`): each damage roll's VALUE is picked to
 //! print the segment's own HP line — an efficiency device; every line is still compared.
 //!
+//! A CARRIED TRAJECTORY (`prefix`, the incremental builder `r0s4_honest_inc`). A world kept at an
+//! EARLIER decision of the same battle carries its trajectory: the START seed, and per segment the
+//! seed its update was fed on, its damage-roll pick offset and the commands it fed (the report's
+//! `trail`). I at a later decision extends that decision's I, so the trajectory is REPLAYED
+//! exactly, one attempt a segment, up to `upto` segments, every segment's viewer lines compared
+//! (the first that differs — the world's team was edited, a stand-in now has an intent — ends the
+//! replay there); only the segments after it are matched on fresh dice. A re-roll whose target lies
+//! inside the replayed part UNFREEZES the trajectory from that segment on (it is re-matched on this
+//! match's own dice, from try 0). The carried trajectory is a function of the earlier I, which is a
+//! prefix of this one, so the verdict stays a function of I.
+//!
 //! DETERMINISTIC: a world's verdict, schedule and lines are a function of (its teams, I, `dice`,
-//! `tries`, `rerolls`, `rolls`). Draw-free outside the battle's own PRNG. Offline only.
+//! `tries`, `rerolls`, `rolls`, `prefix`). Draw-free outside the battle's own PRNG. Offline only.
 
 use std::sync::Arc;
 
@@ -93,6 +104,26 @@ pub struct MatchCfg {
     /// truth whose dice differ from one segment on. 0: every segment on fresh dice (the builder).
     pub from_segment: usize,
     pub seed0: Option<String>,
+    /// A CARRIED trajectory (module docs): replayed exactly up to its `upto` segments, the rest
+    /// matched. `None`: every segment matched from START (the cold builder; unchanged).
+    pub prefix: Option<Prefix>,
+}
+
+/// One kept segment of a trajectory: the seed its update's feeds were preceded by (`None`: the
+/// battle's own dice), its damage-roll PICK OFFSET, and how many commands it fed.
+pub type TrailSeg = (Option<String>, usize, usize);
+
+/// A carried trajectory (module docs, A CARRIED TRAJECTORY): an earlier match's report fields.
+#[derive(Clone, Debug)]
+pub struct Prefix {
+    /// The START seed kept.
+    pub seed: String,
+    /// Per segment (`[0]` is START: no seed, offset 0, no commands), what [`Report::trail`] reported.
+    pub trail: Vec<TrailSeg>,
+    /// The fed commands (`CHOOSE pN <tok>`), in order: segment s fed the next `trail[s].2` of them.
+    pub cmds: Vec<String>,
+    /// Replay at most this many segments (the earlier I's segments that this I's header leaves unchanged).
+    pub upto: usize,
 }
 
 /// The failing segment's best try: its new viewer lines and their common prefix with I's.
@@ -127,6 +158,10 @@ pub struct Report {
     pub log_w: Option<f64>,
     /// Per segment, the try kept.
     pub tries: Vec<u32>,
+    /// Per segment, the trajectory kept ([`TrailSeg`]): what a later match carries (`prefix`).
+    pub trail: Vec<TrailSeg>,
+    /// The segments replayed from a carried trajectory and kept (0 without one).
+    pub fixed: usize,
     pub feeds: u64,
     pub rerolls: u32,
     pub fail: Option<Fail>,
@@ -143,6 +178,8 @@ struct Frame {
     /// FIXED mode: the opponent's commands fed so far.
     theirs: usize,
     seed: String,
+    /// Per segment matched so far, its [`TrailSeg`].
+    trail: Vec<TrailSeg>,
 }
 
 /// FNV-1a over `bytes`.
@@ -342,11 +379,126 @@ impl Run<'_> {
             let lines = sess.side_lines(me);
             if lines[..] == want[..] {
                 sess.clear_chunks();
-                return Ok(Seg::Kept(Frame { sess, cmds: Vec::new(), reseed: Vec::new(), ours: 0, theirs: 0, seed }, t, 0));
+                let trail = vec![(None, 0, 0)];
+                return Ok(Seg::Kept(Frame { sess, cmds: Vec::new(), reseed: Vec::new(), ours: 0, theirs: 0, seed, trail }, t, 0));
             }
             self.note(0, lines, Vec::new());
         }
         Ok(Seg::NoMatch)
+    }
+
+    /// The segments a re-roll may target anywhere in I (every `backtrack` onset, every `hp_last` hit, and under
+    /// `prev_backtrack` every segment): the only carried frames the match may need besides the last.
+    fn reroll_targets(&self) -> std::collections::BTreeSet<usize> {
+        let mut t: std::collections::BTreeSet<usize> = self.info.backtrack.iter().flatten().copied().collect();
+        t.extend(self.info.hp_last.iter().flatten().flat_map(|(_, h)| h.iter().copied()));
+        if self.cfg.prev_backtrack {
+            t.extend(0..self.info.segments.len());
+        }
+        t
+    }
+
+    /// The START write on the carried seed: the frame at the start of segment 1, or None when it differs.
+    fn carried_start(&mut self, p: &Prefix) -> Result<Option<Frame>, String> {
+        let me = self.info.viewer;
+        self.spend()?;
+        let want0 = self.info.segments[0].clone();
+        let opts = BattleOptions { seed: Some(p.seed.clone()), ..self.base.clone() };
+        let mut sess = BridgeSession::new_construct_turn0(&opts, self.dex)?;
+        if self.cfg.rolls {
+            sess.set_roll_ctl(Some(RollCtl::new(me as u8, Mode::Seg { lines: want0.clone(), log_start: 0, offset: 0 })))?;
+        }
+        if sess.side_lines(me)[..] != want0[..] {
+            return Ok(None);
+        }
+        sess.clear_chunks();
+        Ok(Some(Frame { sess, cmds: Vec::new(), reseed: Vec::new(), ours: 0, theirs: 0, seed: p.seed.clone(), trail: vec![(None, 0, 0)] }))
+    }
+
+    /// Carried segment `s` replayed onto `f` IN PLACE (its seed, offset and commands): whether it reproduced
+    /// (when not, `f` is spent).
+    fn carried_seg(&mut self, f: &mut Frame, p: &Prefix, s: usize) -> Result<bool, String> {
+        let me = self.info.viewer;
+        let (seed, offset, k) = p.trail[s].clone();
+        let c = f.cmds.len();
+        let Some(fed) = p.cmds.get(c..c + k) else {
+            return Err(format!("prefix: segment {s} feeds {k} commands past the {} carried", p.cmds.len()));
+        };
+        let want = self.info.segments[s].clone();
+        for cmd in fed {
+            self.spend()?;
+            let rest = cmd.strip_prefix("CHOOSE p").ok_or_else(|| format!("prefix: a command {cmd:?}"))?;
+            let (tag, tok) = rest.split_once(' ').ok_or_else(|| format!("prefix: a command {cmd:?}"))?;
+            let side = match tag {
+                "1" => 0,
+                "2" => 1,
+                _ => return Err(format!("prefix: a command {cmd:?}")),
+            };
+            if side == me {
+                // the viewer's own commands are I's: a trajectory that fed another is not this I's
+                if self.info.ours.get(f.ours).map(String::as_str) != Some(tok) {
+                    return Ok(false);
+                }
+                f.ours += 1;
+            }
+            let choice = parse_choice(tok).ok_or_else(|| format!("prefix: an unparseable token {tok:?}"))?;
+            if let Some(sd) = &seed {
+                f.sess.reseed(sd);
+            }
+            if self.cfg.rolls {
+                f.sess.set_roll_segment(want.clone(), offset)?;
+            }
+            f.sess.feed_cmd(Cmd { side, choice }, self.dex);
+        }
+        if f.sess.fatal().is_some() || f.sess.side_lines(me)[..] != want[..] {
+            return Ok(false);
+        }
+        f.sess.clear_chunks();
+        if let Some(sd) = &seed {
+            f.reseed.extend((c..c + k).map(|j| (j, sd.clone())));
+        }
+        f.cmds.extend(fed.iter().cloned());
+        f.trail.push((seed, offset, k));
+        Ok(true)
+    }
+
+    /// A CARRIED trajectory replayed (module docs) IN PLACE, one attempt a segment. `frames[s]` is kept only where a
+    /// re-roll may later need it ([`Run::reroll_targets`]) and at the end: `frames[k]` is the frame at the start of
+    /// segment `k`, the first carried segment that did not reproduce (or `upto`); `frames[0]` is the construction
+    /// (`None`). On a mismatch the frame before it is rebuilt from the latest kept one (those segments reproduced).
+    fn replay_prefix(&mut self, p: &Prefix) -> Result<Vec<Option<Frame>>, String> {
+        let upto = p.upto.min(self.info.segments.len()).min(p.trail.len());
+        let mut frames: Vec<Option<Frame>> = vec![None];
+        if upto == 0 {
+            return Ok(frames);
+        }
+        let Some(mut f) = self.carried_start(p)? else {
+            return Ok(frames);
+        };
+        let need = self.reroll_targets();
+        frames.resize(upto + 1, None);
+        frames[1] = Some(f.clone());
+        for s in 1..upto {
+            if s > 1 && need.contains(&s) {
+                frames[s] = Some(f.clone());
+            }
+            if !self.carried_seg(&mut f, p, s)? {
+                // rebuild the frame at the start of s from the latest kept one
+                let a = (1..=s).rev().find(|&j| frames[j].is_some()).expect("frames[1] is kept");
+                let mut g = frames[a].clone().expect("kept");
+                for j in a..s {
+                    if !self.carried_seg(&mut g, p, j)? {
+                        return Err(format!("prefix: carried segment {j} reproduced once and not again"));
+                    }
+                }
+                frames.truncate(s);
+                frames.push(Some(g));
+                return Ok(frames);
+            }
+        }
+        frames.truncate(upto);
+        frames.push(Some(f));
+        Ok(frames)
     }
 
     fn update(&mut self, f: &Frame, s: usize, t0: u32, o0: usize) -> Result<Seg, String> {
@@ -450,8 +602,10 @@ impl Run<'_> {
                     if !own {
                         reseed.extend((cmds.len()..cmds.len() + fed.len()).map(|k| (k, seed.clone())));
                     }
+                    let mut trail = f.trail.clone();
+                    trail.push(((!own).then(|| seed.clone()), offset, fed.len()));
                     cmds.extend(fed);
-                    let frame = Frame { sess: w, cmds, reseed, ours: f.ours + usize::from(ours.is_some()), theirs, seed: f.seed.clone() };
+                    let frame = Frame { sess: w, cmds, reseed, ours: f.ours + usize::from(ours.is_some()), theirs, seed: f.seed.clone(), trail };
                     return Ok(Seg::Kept(frame, t, offset));
                 }
                 self.note(s, lines, fed);
@@ -473,7 +627,22 @@ pub fn match_world(base: &BattleOptions, info: &InfoSet, cfg: &MatchCfg, dex: &D
     let mut rerolls = cfg.rerolls;
     // HP re-rolls spent per (failing segment, mon): `HP_PER_HIT` at the latest hit, then the next, …
     let mut hp_depth: std::collections::HashMap<(usize, String), u32> = std::collections::HashMap::new();
-    let mut s = 0usize;
+    // a CARRIED trajectory: the segments before `fixed` are its own, replayed (module docs)
+    let mut fixed = 0usize;
+    if let Some(p) = &cfg.prefix {
+        match run.replay_prefix(p) {
+            Ok(fr) => {
+                fixed = fr.len() - 1;
+                frames = fr;
+            }
+            Err(e) => {
+                rep.feeds = run.feeds;
+                rep.error = Some(e);
+                return rep;
+            }
+        }
+    }
+    let mut s = fixed;
     let res: Result<Option<Frame>, String> = loop {
         if s == n {
             break Ok(frames.pop().flatten());
@@ -481,10 +650,9 @@ pub fn match_world(base: &BattleOptions, info: &InfoSet, cfg: &MatchCfg, dex: &D
         let got = match &frames[s] {
             None if s == 0 => run.start(next[0].0),
             None => Err(format!("segment {s}: no frame")),
-            Some(f) => {
-                let f = f.clone();
-                run.update(&f, s, next[s].0, next[s].1)
-            }
+            // borrowed, not cloned: `update` reads the frame and returns an owned verdict (a clone here copied the
+            // session and its growing command lists at every segment, quadratic in a battle's length)
+            Some(f) => run.update(f, s, next[s].0, next[s].1),
         };
         match got {
             Err(e) => break Err(e),
@@ -517,7 +685,15 @@ pub fn match_world(base: &BattleOptions, info: &InfoSet, cfg: &MatchCfg, dex: &D
                         rerolls -= 1;
                         rep.rerolls += 1;
                         let (t, o) = kept[b];
-                        next[b] = if is_hp && o + 1 < MAX_OFFSETS { (t, o + 1) } else { (t + 1, 0) };
+                        next[b] = if b < fixed {
+                            // inside the carried trajectory: UNFREEZE it from b (this match's own dice, try 0)
+                            fixed = b;
+                            (0, 0)
+                        } else if is_hp && o + 1 < MAX_OFFSETS {
+                            (t, o + 1)
+                        } else {
+                            (t + 1, 0)
+                        };
                         for x in next.iter_mut().take(s + 1).skip(b + 1) {
                             *x = (0, 0);
                         }
@@ -531,6 +707,7 @@ pub fn match_world(base: &BattleOptions, info: &InfoSet, cfg: &MatchCfg, dex: &D
     };
     rep.feeds = run.feeds;
     rep.tries = kept.iter().map(|(t, _)| *t).collect();
+    rep.fixed = fixed;
     match res {
         Err(e) => {
             rep.matched = s;
@@ -545,6 +722,7 @@ pub fn match_world(base: &BattleOptions, info: &InfoSet, cfg: &MatchCfg, dex: &D
                 rep.seed = Some(f.seed.clone());
                 rep.reseed = f.reseed.clone();
                 rep.cmds = f.cmds.clone();
+                rep.trail = f.trail.clone();
                 if let Some(ctl) = f.sess.roll_ctl() {
                     rep.rolls = ctl.sites.iter().filter(|x| x.r != x.r0).map(|x| (x.n, x.r)).collect();
                 }
@@ -569,6 +747,7 @@ pub fn match_world(base: &BattleOptions, info: &InfoSet, cfg: &MatchCfg, dex: &D
             rep.seed = Some(f.seed);
             rep.reseed = f.reseed;
             rep.cmds = f.cmds;
+            rep.trail = f.trail;
         }
     }
     rep
@@ -660,7 +839,9 @@ impl InfoSet {
 
 impl MatchCfg {
     /// A MATCH line's settings: `"dice"` (required), `"tries"`, `"rerolls"`, `"rolls"`, `"prev_backtrack"`,
-    /// `"max_feeds"`, and the leak test's `"theirs"`, `"from_segment"`, `"seed0"`.
+    /// `"max_feeds"`, the leak test's `"theirs"`, `"from_segment"`, `"seed0"`, and the incremental builder's
+    /// `"prefix"`: `{"seed": START seed, "trail": [[seed|null, offset, n], …], "cmds": [tok, …], "upto": n}` (an
+    /// earlier report's `seed`, `trail`, `cmds`; never with `theirs` or `from_segment`).
     pub fn from_json(v: &Json) -> Result<MatchCfg, String> {
         let dice = v.str_at("dice").ok_or("MATCH: `dice` (the try seeds' base) is required")?.to_string();
         let num = |k: &str, d: u32| -> Result<u32, String> {
@@ -682,6 +863,13 @@ impl MatchCfg {
         if let Some(s0) = &seed0 {
             Prng::validate_seed(s0).map_err(|e| format!("MATCH: seed0 {s0:?}: {e}"))?;
         }
+        let prefix = match v.get("prefix") {
+            None | Some(Json::Null) => None,
+            Some(p) => Some(Prefix::from_json(p)?),
+        };
+        if prefix.is_some() && (theirs.is_some() || from_segment > 0) {
+            return Err("MATCH: a carried `prefix` is the builder's: never with `theirs` or `from_segment`".into());
+        }
         Ok(MatchCfg {
             dice,
             tries,
@@ -692,7 +880,50 @@ impl MatchCfg {
             theirs,
             from_segment,
             seed0,
+            prefix,
         })
+    }
+}
+
+impl Prefix {
+    /// `{"seed", "trail", "cmds", "upto"}` (module docs, A CARRIED TRAJECTORY). Refused by name when malformed:
+    /// a seed the PRNG does not take, a trail whose START entry is not `[null, 0, 0]`, a trail that feeds more
+    /// commands than it carries, a command that is not `CHOOSE p1|p2 <tok>`.
+    pub fn from_json(v: &Json) -> Result<Prefix, String> {
+        let seed = v.str_at("seed").ok_or("prefix: `seed` (the START seed kept) is required")?.to_string();
+        Prng::validate_seed(&seed).map_err(|e| format!("prefix: seed {seed:?}: {e}"))?;
+        let cmds = strs(v.get("cmds"), "prefix.cmds")?;
+        for c in &cmds {
+            let ok = c.strip_prefix("CHOOSE p").and_then(|r| r.split_once(' ')).is_some_and(|(t, k)| (t == "1" || t == "2") && !k.is_empty());
+            if !ok {
+                return Err(format!("prefix: a command {c:?} is not `CHOOSE p1|p2 <tok>`"));
+            }
+        }
+        let count = |x: &Json, what: &str| -> Result<usize, String> {
+            x.as_f64().filter(|f| *f >= 0.0 && f.fract() == 0.0 && *f <= 1.0e9).map(|f| f as usize).ok_or(format!("prefix: `{what}` must be a count"))
+        };
+        let ta = v.get("trail").and_then(Json::as_array).ok_or("prefix: `trail` must be an array")?;
+        let mut trail: Vec<TrailSeg> = Vec::with_capacity(ta.len());
+        for e in ta {
+            let p = e.as_array().filter(|p| p.len() == 3).ok_or("prefix: a trail entry is [seed|null, offset, commands]")?;
+            let sd = match &p[0] {
+                Json::Null => None,
+                Json::Str(x) => {
+                    Prng::validate_seed(x).map_err(|e| format!("prefix: trail seed {x:?}: {e}"))?;
+                    Some(x.clone())
+                }
+                _ => return Err("prefix: a trail seed is a string or null".into()),
+            };
+            trail.push((sd, count(&p[1], "trail offset")?, count(&p[2], "trail commands")?));
+        }
+        if trail.first().is_some_and(|t| *t != (None, 0, 0)) {
+            return Err("prefix: the trail's START entry must be [null, 0, 0]".into());
+        }
+        if trail.iter().map(|t| t.2).sum::<usize>() > cmds.len() {
+            return Err(format!("prefix: the trail feeds more commands than the {} carried", cmds.len()));
+        }
+        let upto = count(v.get("upto").ok_or("prefix: `upto` is required")?, "upto")?;
+        Ok(Prefix { seed, trail, cmds, upto })
     }
 }
 
@@ -736,7 +967,19 @@ impl Report {
             Some(w) => o.push_str(&format!("{w:?}")),
             None => o.push_str("null"),
         }
-        o.push_str(&format!(",\"tries\":{:?},\"feeds\":{},\"rerolls\":{},\"fail\":", self.tries, self.feeds, self.rerolls));
+        o.push_str(&format!(",\"tries\":{:?},\"feeds\":{},\"rerolls\":{},\"fixed\":{},\"trail\":[", self.tries, self.feeds, self.rerolls, self.fixed));
+        for (i, (sd, off, k)) in self.trail.iter().enumerate() {
+            if i > 0 {
+                o.push(',');
+            }
+            o.push('[');
+            match sd {
+                Some(x) => q(o, x),
+                None => o.push_str("null"),
+            }
+            o.push_str(&format!(",{off},{k}]"));
+        }
+        o.push_str("],\"fail\":");
         match &self.fail {
             None => o.push_str("null"),
             Some(f) => {

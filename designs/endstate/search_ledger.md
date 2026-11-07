@@ -31,7 +31,13 @@ the owner's goal 5. It makes four points:
   information set alone, on fresh dice matched segment by segment. Its leak test passes on every channel and fails on
   `r0s4_rolls` on every one; `r0s4_rolls` is byte-identical at the new engine stamp (600 / 600). At its chosen budget it
   excludes 3 % of U decisions (F 5 %, `r0s4_rolls` 2.3 %) at ≈ 8.6–13.0 CPU-min a searched game; its picks match
-  `r0s4_rolls`'s in 61 % of U decisions, against 72 % for `r0s4_rolls` re-drawn under another key.
+  `r0s4_rolls`'s in 61 % of U decisions, against 72 % for `r0s4_rolls` re-drawn under another key. Late in a game it
+  is far dearer (the replication designer's late probe: up to ≈ 330 CPU-s a decision, ≈ 30 CPU-min a searched game at
+  K = 6). **Its INCREMENTAL form `r0s4_honest_inc` (2026-11-06, `design_sprime_honest.md` §9)** carries the worlds
+  through a battle's decisions, still a function of I (the leak test passes in sequence mode on every channel): on
+  444 states' whole-game sequences it costs ≈ 6.2 CPU-min a searched game at K = 6 (4.9× less), excludes ≈ 3.4 % of
+  U decisions (`r0s4_honest` 7.7 %) and picks `r0s4_honest`'s action as often as `r0s4_honest` picks its own under
+  another key (63 %). The replication's ≈ 434 CPU-h is ≈ 3 days on the agent cores.
 - **Beside it: X65 ExIt-0, search DISTILLATION from the banked labels, READ 2026-11-06: NOT-DELIVERED**
   ([`../research_state/measurements/x65_exit0_2026-11-05/README.md`](../research_state/measurements/x65_exit0_2026-11-05/README.md)).
   The three students agree with S′'s pick on their held-out panels LESS than P\* does: pooled Δagree −1.26 pp
@@ -1036,3 +1042,4 @@ limits:
 | 2026-11-05 | **X65 ExIt-0 REGISTERED** (research designer, orchestrator brief: one GPU experiment worth running whatever S′-HONEST finds) | the status block's "Registered beside it" bullet (with the measured label cost and the factory's CPU); Q18's row | fresh-label distillation (9.5 CPU-s a label on S′-HONEST's cores); the in-loop factory (≈ 32 cores); reading S′-LIVE's GO-LEAKY as a licence to train (it is not one; ExIt-0 is its own registration) | `design_x65_exit0_search_distillation.md`; `../research_state/measurements/x65_exit0_2026-11-05/PREREG.md` |
 | 2026-11-06 | **S′-HONEST STAGE 1 BUILT** (its builder, orchestrator brief; no PREREG) | the status block's "Next" and §6.1's two cures: `r0s4_honest` (fresh dice per segment, the search a function of I, keyed by I); INV 14 passed; `r0s4_rolls` 600 / 600 identical at stamp `port=74eb0a3bc35bd465/95;env=87f06ac3ab0b911b/130`; budget B3: U exclusions 3 % (F 5 %), ≈ 8.6–13.0 CPU-min a searched game | — | `design_sprime_honest.md` §8; `measurements/sprime_honest_stage1_2026-11-05/` |
 | 2026-11-06 | **X65 ExIt-0: NOT-DELIVERED** (its read operator, orchestrator brief; PREREG Amendments 1–3) | the status block's X65 bullet; Q18's row | reading it as "the network cannot absorb search" (one recipe; labels leak-inclusive) or as a verdict on S′ | `../research_state/measurements/x65_exit0_2026-11-05/README.md`; ledger 2026-11-06 |
+| 2026-11-06 | **S′-HONEST's INCREMENTAL builder BUILT, with its stage 1b** (its builder, orchestrator brief) | the status block's "Next" bullet: `r0s4_honest_inc` (worlds carried through a battle's searched decisions, ≥ 2 of 8 fresh a decision, still a function of I), INV in sequence mode on every channel, `r0s4_honest` and `r0s4_rolls` byte-identical at stamp `port=f0fe71f6c54757b2/95;env=c0b7c649acfb48d8/130`; stage 1b: U ≈ 6.2 CPU-min a searched game at K = 6 (`r0s4_honest` 30.3), U exclusions 3.4 % (7.7 %), the same pick as `r0s4_honest` in 63 % (its own floor 63 %) | rejuvenation by periodic cold rebuilds; the first cuts that emptied the carry or paid a full attempt every few decisions in a stuck battle (`design_sprime_honest.md` §9.2) | `design_sprime_honest.md` §9; `../research_state/measurements/sprime_honest_inc_stage1b_2026-11-06/README.md` |

@@ -1,0 +1,6 @@
+{"rep":1,"config":"alone","cpus":[6],"runs":["24.57 25.21"]}
+{"rep":1,"config":"physical","cpus":[6,7],"runs":["26.96 27.22","28.67 29.02"]}
+{"rep":1,"config":"siblings","cpus":[6,14],"runs":["32.91 33.40","33.08 33.59"]}
+{"rep":2,"config":"alone","cpus":[6],"runs":["27.80 28.34"]}
+{"rep":2,"config":"physical","cpus":[6,7],"runs":["27.28 27.45","26.62 26.84"]}
+{"rep":2,"config":"siblings","cpus":[6,14],"runs":["31.42 31.68","31.38 31.66"]}

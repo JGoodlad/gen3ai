@@ -267,6 +267,14 @@ class HonestWorlds:
     fails: Dict[str, int]
     chain: dict
     log_w: List[float] = field(default_factory=list)
+    #: NOT in the decision record: the chain's samples (per seen mon, its (state, moves)) the worlds took, in world
+    #: order, and each world's matcher report (its trajectory: ``seed``, ``trail``, ``cmds``). The incremental builder
+    #: (``main.value_search.honest_inc``) carries them to the next decision
+    samples: List[list] = field(default_factory=list)
+    reports: List[dict] = field(default_factory=list)
+    #: the incremental builder's record (``honest_inc``: the step, the carries' digests, the worlds' fates); empty for
+    #: the cold builder, whose record is unchanged
+    inc: dict = field(default_factory=dict)
 
 
 class HonestSampler:
@@ -414,11 +422,19 @@ class HonestSampler:
             raise WorldError(f"no prior move draw for {m.sid}")
         return got
 
-    def _chain(self, sc: Scaffold, key: str, need: int, rec: dict, match) -> List[List[Tuple[WS.State, List[str]]]]:
+    def _chain(self, sc: Scaffold, key: str, need: int, rec: dict, match, init: Optional[list] = None,
+               dice_key: Optional[str] = None, tries0: int = CHAIN_TRIES) -> List[List[Tuple[WS.State, List[str]]]]:
         """The joint chain (D5). A seen mon's coordinate is (item, ability, spread) AND its unrevealed moves (in slot
         order): a spread can be consistent with I only through a move it holds (a fast mon that chose a
         negative-priority move it never showed), so the two are sampled jointly. The never-seen mons are one keyed
-        background draw (they reach I only through a die over the party)."""
+        background draw (they reach I only through a die over the party).
+
+        ``init`` (the incremental builder's WARM start: the previous decision's chain state, one coordinate a seen mon):
+        no prior rounds; the chain starts there, sampling at once when it fits I, else searching from it. None: the
+        cold chain, unchanged. ``dice_key``: the key of the chain's common dice (default ``key``; the incremental
+        builder keeps ONE per battle, so a state that fit the earlier I replays its kept tries there); ``tries0`` its
+        tries to start from. A chain that finds no fit raises a :class:`WorldError` carrying its best state
+        (``.best``)."""
         rng = rng_of(key, "chain")
         ms = [self._sampler(key, i, m) for i, m in enumerate(sc.seen)]
         bg_rng = rng_of(key, "chain_background")
@@ -439,7 +455,8 @@ class HonestSampler:
             return st, self._fit(rng, sc.seen[i], st, c[1])
 
         verdicts: Dict[str, Tuple[bool, float, Optional[int], Optional[Tuple[str, int]]]] = {}
-        tries = [CHAIN_TRIES]
+        tries = [tries0]
+        dkey = key if dice_key is None else dice_key
 
         def judge(cands: List[List[Coord]]) -> List[Tuple[bool, float, Optional[int], Optional[Tuple[str, int]]]]:
             teams = [team(c) for c in cands]
@@ -451,7 +468,7 @@ class HonestSampler:
                     verdicts[t] = (False, -1.0, None, None)
                     rec["illegal"] = rec.get("illegal", 0) + 1
             todo = sorted({t for t in teams if t not in verdicts})
-            for t, r in zip(todo, match([self._job(sc, t, "chain", key, False, tries[0]) for t in todo])):
+            for t, r in zip(todo, match([self._job(sc, t, "chain", dkey, False, tries[0]) for t in todo])):
                 verdicts[t] = self._score(sc, r)
                 rec["feeds"] += int(r.get("feeds", 0))
             rec["evaluations"] += len(todo)
@@ -464,18 +481,26 @@ class HonestSampler:
             return [[] for _ in range(need)]
         samples: List[List[Coord]] = []
         best: Optional[Tuple[float, List[Coord], Optional[int], Optional[Tuple[str, int]]]] = None
-        for _ in range(REJECT_ROUNDS):
-            cands = [[fresh(i) for i in range(len(ms))] for _ in range(need - len(samples))]
-            for c, (ok, sc_, imp, hint) in zip(cands, judge(cands)):
-                if ok and len(samples) < need:
-                    samples.append(c)
-                elif not ok and (best is None or sc_ > best[0]):
-                    best = (sc_, c, imp, hint)
-            if len(samples) >= need:
-                rec["phase"] = "rejection"
-                return samples
+        warm = None
+        if init is not None:
+            w_ok, w_sc, w_imp, w_hint = judge([list(init)])[0]
+            rec["warm"] = "fit" if w_ok else "refit"
+            warm = (list(init), w_ok, float(len(sc.segments)) if w_ok else w_sc, w_imp, w_hint)
+        else:
+            for _ in range(REJECT_ROUNDS):
+                cands = [[fresh(i) for i in range(len(ms))] for _ in range(need - len(samples))]
+                for c, (ok, sc_, imp, hint) in zip(cands, judge(cands)):
+                    if ok and len(samples) < need:
+                        samples.append(c)
+                    elif not ok and (best is None or sc_ > best[0]):
+                        best = (sc_, c, imp, hint)
+                if len(samples) >= need:
+                    rec["phase"] = "rejection"
+                    return samples
         # the chain: hill-climb on the matched length until I fits, then Metropolis-Hastings, thinned
-        if samples:
+        if warm is not None:
+            cur, cur_ok, cur_score, imp, hint = warm
+        elif samples:
             cur, cur_ok, cur_score, imp, hint = samples[-1], True, float(len(sc.segments)), None, None
         else:
             assert best is not None
@@ -566,8 +591,10 @@ class HonestSampler:
             rec["phase"] = "exhausted"
         if samples:
             return samples
-        raise WorldError(f"{key}: no honest world fits I in {rec['steps']} chain steps ({rec['phase']}; best: "
+        err = WorldError(f"{key}: no honest world fits I in {rec['steps']} chain steps ({rec['phase']}; best: "
                          f"segment {best_ever[0]:.2f} of {len(sc.segments)})")
+        err.best = list(best_ever[1])                # type: ignore[attr-defined]
+        raise err
 
     # -- the strict gate ----------------------------------------------------------------------------------
     def _strict(self, sc: Scaffold, lg: dict, root_row: Optional[str], key: str) -> None:
@@ -609,6 +636,58 @@ class HonestSampler:
         with Matcher(sc.header) as m:
             return self._build(info, sc, key, J, root_row, rec, m)
 
+    def _one_world(self, info: IS.InfoSet, sc: Scaffold, key: str, j: int, st: list, root_row: Optional[str],
+                   rec: dict, fails: Dict[str, int], match, strict: bool = True) -> Optional[tuple]:
+        """World ``j`` on chain sample ``st`` (its seen mons whole): up to ``attempts`` draws of its never-seen mons,
+        each replayed on the world's OWN fresh dice (tag ``w<j>:<attempt>``). ``(log, team, attempts, stats, log_w,
+        report)``, or None (each failure counted in ``fails``). ``strict``: the strict gate here (the incremental
+        builder runs it once over a decision's worlds)."""
+        from main.value_search.worlds import team_problems
+
+        ents = [self._entry(m, st[i][0], st[i][1]) for i, m in enumerate(sc.seen)]
+        if not all(self.legality.set_ok(e) for e in ents):
+            fails["illegal_set"] = fails.get("illegal_set", 0) + 1
+            return None
+        for a in range(self.attempts):
+            rng = rng_of(key, "world", j, a)
+            never = self._never(rng, sc, legal=True)
+            if never is None:
+                fails["never_seen"] = fails.get("never_seen", 0) + 1
+                continue
+            tw = "]".join(ents + never)
+            if team_problems(tw) or self.legality.team_problems([tw])[0]:
+                fails["illegal_team"] = fails.get("illegal_team", 0) + 1
+                continue
+            # a world faces the dice its chain faced (the chain's escalated tries, at least WORLD_TRIES); a
+            # later attempt allows rarer dice (two exact Speed ties and a crit in one segment: ≈ 1 in 128)
+            base_t = max(WORLD_TRIES, int(rec.get("chain_tries", CHAIN_TRIES)))
+            r = match([self._job(sc, tw, f"w{j}:{a}", key, True,
+                                 base_t if a == 0 else max(base_t, CHAIN_TRIES_MAX))])[0]
+            rec["feeds"] += int(r.get("feeds", 0))
+            if not r["ok"]:
+                fails["world_replay"] = fails.get("world_replay", 0) + 1
+                continue
+            lg = self._world_log(info, sc, tw, r)
+            if strict:
+                self._strict(sc, lg, root_row, key)
+            why = self._playout_refusal(lg, info.side)
+            if why is not None:
+                fails["playout_refused"] = fails.get("playout_refused", 0) + 1
+                continue
+            return (lg, tw, a + 1, {"attempt": a, "rerolls": r["rerolls"], "feeds": r["feeds"],
+                                    "rolls": len(r["rolls"])}, r.get("log_w"), r)
+        return None
+
+    def _world_log(self, info: IS.InfoSet, sc: Scaffold, team_opp: str, r: dict) -> dict:
+        """A matched world's log: both teams, its START seed, commands, reseed schedule and damage-roll table."""
+        our = sc.our_team
+        lt = [our, team_opp] if info.viewer == 0 else [team_opp, our]
+        lg = {"format_id": info.format_id, "seed": r["seed"], "names": list(info.names), "teams": lt,
+              "cmds": list(r["cmds"]), "reseed": [list(x) for x in r["reseed"]]}
+        if r["rolls"]:
+            lg["rolls"] = [list(x) for x in r["rolls"]]
+        return lg
+
     def _build(self, info: IS.InfoSet, sc: Scaffold, key: str, J: int, root_row: Optional[str], rec: dict,
                match) -> HonestWorlds:
         samples = self._chain(sc, key, J + SPARES, rec, match)
@@ -618,53 +697,22 @@ class HonestSampler:
         tries: List[int] = []
         stats: List[dict] = []
         log_w: List[float] = []
+        took: List[list] = []
+        reports: List[dict] = []
         pool = list(range(len(samples)))
         for j in range(J):
             built = None
             while built is None and pool:
                 st = samples[pool.pop(0)]            # world j takes the next chain sample (a spare after a failure)
-                ents = [self._entry(m, st[i][0], st[i][1]) for i, m in enumerate(sc.seen)]
-                if not all(self.legality.set_ok(e) for e in ents):
-                    fails["illegal_set"] = fails.get("illegal_set", 0) + 1
-                    continue
-                for a in range(self.attempts):
-                    rng = rng_of(key, "world", j, a)
-                    never = self._never(rng, sc, legal=True)
-                    if never is None:
-                        fails["never_seen"] = fails.get("never_seen", 0) + 1
-                        continue
-                    tw = "]".join(ents + never)
-                    from main.value_search.worlds import team_problems
-
-                    if team_problems(tw) or self.legality.team_problems([tw])[0]:
-                        fails["illegal_team"] = fails.get("illegal_team", 0) + 1
-                        continue
-                    # a world faces the dice its chain faced (the chain's escalated tries, at least WORLD_TRIES); a
-                    # later attempt allows rarer dice (two exact Speed ties and a crit in one segment: ≈ 1 in 128)
-                    base_t = max(WORLD_TRIES, int(rec.get("chain_tries", CHAIN_TRIES)))
-                    r = match([self._job(sc, tw, f"w{j}:{a}", key, True,
-                                         base_t if a == 0 else max(base_t, CHAIN_TRIES_MAX))])[0]
-                    rec["feeds"] += int(r.get("feeds", 0))
-                    if not r["ok"]:
-                        fails["world_replay"] = fails.get("world_replay", 0) + 1
-                        continue
-                    our = sc.our_team
-                    lt = [our, tw] if info.viewer == 0 else [tw, our]
-                    lg = {"format_id": info.format_id, "seed": r["seed"], "names": list(info.names), "teams": lt,
-                          "cmds": list(r["cmds"]), "reseed": [list(x) for x in r["reseed"]]}
-                    if r["rolls"]:
-                        lg["rolls"] = [list(x) for x in r["rolls"]]
-                    self._strict(sc, lg, root_row, key)
-                    why = self._playout_refusal(lg, info.side)
-                    if why is not None:
-                        fails["playout_refused"] = fails.get("playout_refused", 0) + 1
-                        continue
-                    built = (lg, tw, a + 1, {"attempt": a, "rerolls": r["rerolls"], "feeds": r["feeds"],
-                                             "rolls": len(r["rolls"])}, r.get("log_w"))
-                    break
+                built = self._one_world(info, sc, key, j, st, root_row, rec, fails, match)
+                if built is not None:
+                    took.append(st)
             if built is None:
-                raise WorldError(f"{key}: {J - len(logs)} of {J} worlds not built ({fails})")
-            lg, tw, ntry, stt, lw = built
+                err = WorldError(f"{key}: {J - len(logs)} of {J} worlds not built ({fails})")
+                err.best = list(samples[-1])         # type: ignore[attr-defined]
+                raise err
+            lg, tw, ntry, stt, lw, r = built
+            reports.append(r)
             logs.append(lg)
             teams.append(tw)
             tries.append(ntry)
@@ -676,4 +724,4 @@ class HonestSampler:
         leak = {"builder": "honest", "key": key, "residual": [], "partial": []}
         return HonestWorlds(logs=logs, teams=teams, at=ats.pop(), tries=tries, leak=leak,
                             revealed={m.sid: list(m.moves) for m in sc.seen}, stats=stats, fails=fails, chain=rec,
-                            log_w=log_w)
+                            log_w=log_w, samples=took, reports=reports)

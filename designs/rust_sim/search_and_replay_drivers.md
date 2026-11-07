@@ -478,9 +478,11 @@ its segments, its commands, per segment the opponent's INTENT, the counters' re-
 opponent mons' rolled hits `hp_last`); each `MATCH <json>` (the world's format, names, teams, and `dice` — the try
 seeds' base — `tries`, `rerolls`, `rolls`, `prev_backtrack`, `max_feeds`) prints one line: `ok`, `matched` /
 `segments`, the kept START `seed`, the `reseed` schedule, the fed `cmds`, the damage-roll table `rolls`, `log_w`, the
-per-segment `tries`, `feeds`, `rerolls`, and on a failure the best try's `fail` (segment, common prefix, its lines,
+per-segment `tries`, `feeds`, `rerolls`, the kept `trail` (per segment: the seed its update was fed on, its pick
+offset, how many commands it fed), `fixed`, and on a failure the best try's `fail` (segment, common prefix, its lines,
 what it fed). The leak test's keys: `theirs` (FIXED opponent commands, in place of the intents), `from_segment` +
-`seed0` (the segments before it on the battle's own seed).
+`seed0` (the segments before it on the battle's own seed). The incremental builder's key (`r0s4_honest_inc`):
+`prefix` (below).
 
 **The algorithm.** Segment 0: the battle built on `try_seed(dice, 0, t)`, t = 0, 1, …. Segment s: the open requests
 say who chooses; the opponent's choice is its intent (resolved against its offered tokens: a typed Hidden Power for
@@ -494,6 +496,15 @@ drain); else the latest onset of a running counter in `backtrack` (and
 the previous segment under `prev_backtrack`, a Quick Claw on either team) at its next try; `rerolls` in all a world.
 Deterministic; draw-free outside the battle's PRNG.
 
+**A carried trajectory** (`"prefix": {"seed", "trail", "cmds", "upto"}`: an earlier report's kept START seed, trail and
+commands; `r0s4_honest_inc`, `design_sprime_honest.md` §9). A world kept at an earlier decision of the same battle is
+REPLAYED along its trail, one attempt a segment (its seed, offset and commands), up to `upto` segments, each segment's
+viewer lines compared; the first that differs (an edited team, a viewer command other than I's) ends the replay there
+and is matched as usual, as is every later segment. `fixed` reports how many carried segments were kept. A re-roll
+whose target lies inside the carried part UNFREEZES it from there (re-matched on this match's dice from try 0). Never
+with `theirs` or `from_segment`; a malformed prefix (a seed the PRNG refuses, a START entry other than `[null, 0, 0]`,
+a trail feeding more commands than it carries) is refused by name. Without `prefix`, not one byte changes.
+
 **The replays.** `core_events`' START `"reseed"` (`[[k, seed], …]`, ascending, `fresh_dice::schedule_from_json`) and the
 env crate's playout `Log.reseed` replace the PRNG immediately before command k; with the world's `rolls` table in
 `force` mode they rebuild the matched battle byte for byte. Absent or empty, not one byte changes (every log but a
@@ -501,11 +512,15 @@ leak-honest world's or an alternative truth's).
 
 **Gates.** `tests/fresh_dice_test.rs` (a battle's own teams and commands matched on fresh dice, with and without the
 damage-roll control, and the schedule replayed in a bare session to every viewer line; a world at another level fails
-at segment 0; deterministic; `try_seed` valid and distinct; a malformed schedule refused);
+at segment 0; deterministic; `try_seed` valid and distinct; a malformed schedule refused; a carried trajectory extends
+to a later decision of the same battle for no more feeds than a cold match and its schedule rebuilds every line, a
+trail that stops reproducing is re-matched from there, `upto` bounds the replay, a malformed or misused prefix
+refused);
 `src/rust_env/tests/search_reseed_test.rs` (a scheduled log replays as the battle branched onto that seed, a dropped
 schedule changes the battle, `log_from_json` refusals). The Python side: `main.value_search.honest_worlds` (its strict
-gate replays every kept world through `core_events` with every check) and the leak test
-`src/main/value_search/honest_inv_test.py`.
+gate replays every kept world through `core_events` with every check), the incremental builder
+`main.value_search.honest_inc`, and the leak tests `src/main/value_search/honest_inv_test.py` and (sequence mode)
+`honest_inc_test.py`.
 
 ## Why the clone-branch snapshot needs no byte format
 

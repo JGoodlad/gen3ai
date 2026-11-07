@@ -94,3 +94,24 @@ def test_hp_last_forgets_hits_once_the_exact_hp_is_known_again():
     t3 = ["|upkeep", "|turn|4", REQ_MOVE]
     hl = IS.hp_last(info(START + hit + full + t3))
     assert hl[2] == [["p2a: Gengar", [1]]] and hl[3] == []
+
+
+def test_prefix_cuts_I_at_an_earlier_decision_and_its_key_is_that_I():
+    t1 = ["|move|p2a: Gengar|Hypnosis|p1a: Snorlax", "|-status|p1a: Snorlax|slp", "|upkeep", "|turn|2", REQ_MOVE]
+    early, late = info(START, []), info(START + t1, ["move rest"])
+    cut = IS.prefix(late, len(START), 0)
+    assert cut == early and cut.key() == early.key()
+    for bad in ((0, 0), (len(late.lines) + 1, 0), (len(START), 2)):
+        try:
+            IS.prefix(late, *bad)
+        except ValueError:
+            continue
+        raise AssertionError(f"{bad}: a cut outside I is refused")
+
+
+def test_turn_of_and_checkpoints_follow_the_live_searchers_rule():
+    assert IS.turn_of(START) == 1 and IS.turn_of(START[:3]) == 0
+    pts = [IS.Point(lines=5, cmds=0, n_legal=2, turn=9, row="a"), IS.Point(lines=9, cmds=1, n_legal=1, turn=10, row="b"),
+           IS.Point(lines=14, cmds=2, n_legal=2, turn=10, row="c"), IS.Point(lines=20, cmds=3, n_legal=5, turn=11, row="d")]
+    assert [p.row for p in IS.checkpoints(pts, 10)] == ["c", "d"]       # turn >= 10 AND >= 2 legal actions
+    assert [p.row for p in IS.checkpoints(pts, 1)] == ["a", "c", "d"]
