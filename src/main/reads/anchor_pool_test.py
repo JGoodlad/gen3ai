@@ -311,7 +311,7 @@ def test_three_real_child_processes_run_at_once_on_distinct_ports(lane, tmp_path
     real_claim = KA.claim_port
     monkeypatch.setattr(KA, "preflight", lambda u: None)
     monkeypatch.setattr(KA, "claim_port", lambda *a, **k: real_claim(lock_dir=tmp_path / "ports"))
-    monkeypatch.setattr(KA, "unit_argv", lambda u, out, port, py=sys.executable, *, short=True: [
+    monkeypatch.setattr(KA, "unit_argv", lambda u, out, port, py=sys.executable, *, short=True, cores=None: [
         sys.executable, "-c", CHILD, str(out), str(port), json.dumps(_summary(u.name)), str(shared), "3"])
     assert RN.run(lane, "anchor", time.time() + 3600, sleep=lambda s: None, concurrency=3) == 0
     started = sorted(p.name for p in shared.glob("started.*"))

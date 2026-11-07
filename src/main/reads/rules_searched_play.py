@@ -24,9 +24,23 @@ imputed deal enters its unit's statistic like a pair. Every bar is compared as a
 (``search_headroom.cmp``); a bound within ``rule8_eps`` of its bar is ``near``, never a crossing (root rule 8), and the
 decision is flagged ``boundary``:
 
-* GO-LEAKY iff LB(G_U, GO-imputed) > 0 (leak-inclusive: the honest world builder replays the true seed);
-* NULL iff not GO-LEAKY and UB(G_U, NULL-imputed) < ``null_margin_pp`` / 100;
-* STOP otherwise. ``go_below_margin`` flags a GO-LEAKY whose NULL-imputed UB is also below the margin.
+* GO iff LB(G_U, GO-imputed) > 0, spelled by the registered preset's dice: **GO-HONEST** for a leak-honest preset
+  (:data:`HONEST_DICE`: ``r0s4_honest``, ``r0s4_honest_inc``: the search reads the searched side's information set
+  alone), **GO-LEAKY** for every other (its world builder replays the true seed);
+* NULL iff not GO and UB(G_U, NULL-imputed) < ``null_margin_pp`` / 100;
+* STOP (undecided) otherwise. ``go_below_margin`` flags a GO whose NULL-imputed UB is also below the margin.
+
+GOAL B (decided as a flag, ``goal_b``): the searched arm's pooled-U score (``strat_score``, a tie a non-win) with
+every POST-treatment unpaired deal's searched game at its worst case (a missing searched game a LOSS; a counted one at
+its result), peer drops excluded. ``reached`` iff the class is GO and that score's LB > 0.50 (exact fractions, rule 8:
+within ``rule8_eps`` is ``near``, never reached); its label is GOAL-B-REACHED for GO-HONEST and GOAL-B-REACHED (leaky)
+for GO-LEAKY.
+
+THE EXCLUSION FLAG (``max_excluded_frac``, optional, ``{panel: fraction}`` over exactly the ``u_panels``): per panel,
+the share of the searched arm's search-path decisions (searched + excluded, every COUNTED searched unit's search
+record) that were EXCLUSIONS. ``excess_exclusions`` is set iff any panel's share exceeds its bound or sits within
+``rule8_eps`` of it (a narrowing flag: near counts as set). It never VOIDs and never changes the class; the PREREG
+registers what it narrows.
 
 THE BOOTSTRAP (``search_headroom``'s scheme on the U panels), run once per estimate with a FRESH
 ``numpy.random.default_rng(seed)``: for each panel in ``u_panels`` order, its unit statistics in unit-seed order as a
@@ -48,7 +62,11 @@ hashed sample of the searched label's live decisions (``cells``) and writes ``re
 (its sha256 recorded), checks it was run on these cells, these panels, the registered engine and the raw label's
 bytes, re-derives the registered-order first N of the sampled records from the cells and requires the JSON's re-scored
 states to be exactly those (N = the registered ``max_rescored``; the JSON's own ``max`` must equal it), and needs its
-PASS with >= ``min_rescored`` states.
+PASS with >= ``min_rescored`` states. For a leak-honest preset the JSON must have compared ``search_key`` and the
+``honest`` build record too; for the INCREMENTAL one (``r0s4_honest_inc``) the spec registers ``identity.carry``
+(``rebuild``: each state's carry rebuilt from I; ``seeded``: the carry the live record kept) and the JSON must have
+re-scored with that mode (``live_identity``'s ``--carry``). A PINNED leak-honest read's JSON must record a clean
+re-scoring checkout whose play path is the pin's (``inputs.code``).
 
 VOID (named reasons, before any estimate): G-PREFIX not run on the group; a G-PREFIX mismatch not classed a peer drop;
 G-PREFIX checked != pairs + peer drops; counted units on two engines, an unknown engine, or another than ``engine``;
@@ -63,7 +81,9 @@ REPORTED, never decided: the three estimates with their intervals, G per panel (
 arm's pooled U score over the paired games (``strat_score``, a tie a non-win) and the searched arm's LB against 0.50;
 the discordance share (b + c only, never b − c); the counts per panel (pairs, pre- and post-treatment unpaired by
 cause, unfinished); the deviation rate, exclusions and search CPU-s per game (each searched unit's search record); the
-identity guard's summary.
+identity guard's summary; the DISTILLATION FIELDS (``distill``, X65-F2): per panel, the counted searched units'
+searched-path records and how many lack ``q``, ``log_pi``, ``root_v``, ``frame_sha256`` or ``log_sha256`` (and, for a
+leak-honest preset, ``search_key``), and the counted searched units with no capture file.
 """
 from __future__ import annotations
 
@@ -76,19 +96,33 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 SCHEMA = "gen3_read_searched_play_v1"
 KEYS = ("group", "searched", "raw", "u_panels", "expected_search", "engine", "null_margin_pp", "bootstrap",
         "rule8_eps", "max_post_unpaired_frac", "max_pre_unpaired_frac", "identity", "state")
+#: optional params (a spec registered without them reads as before)
+OPTIONAL = ("max_excluded_frac",)
 IDENTITY_KEYS = ("cells", "rescore_json", "min_rescored", "max_rescored")
+#: the identity block's key an INCREMENTAL preset (``r0s4_honest_inc``) must register, and only it: how its re-score
+#: gets each state's carry (``live_identity.CARRY_MODES``: ``rebuild`` or ``seeded``)
+IDENTITY_CARRY = "carry"
 RAW_REGIME = "greedy"
-GO_LEAKY, NULL, STOP, VOID = "GO-LEAKY", "NULL", "STOP", "VOID"
+GO_LEAKY, GO_HONEST, NULL, STOP, VOID = "GO-LEAKY", "GO-HONEST", "NULL", "STOP", "VOID"
+#: the preset dice of a LEAK-HONEST search (``main.anchors.search_presets``: ``fresh`` = ``r0s4_honest``, ``fresh_inc`` =
+#: ``r0s4_honest_inc``; the live searcher's own ``main.anchors.search_side.HONEST_DICE``, pinned equal by a test)
+HONEST_DICE: Tuple[str, ...] = ("fresh", "fresh_inc")
+#: the dice of the INCREMENTAL leak-honest builder (its re-score carries a carry mode)
+INC_DICE = "fresh_inc"
+#: the fields every searched-path record keeps for distillation (X65-F2; ``search_key`` too for a leak-honest preset)
+DISTILL_SEARCHED = ("q", "log_pi", "root_v", "frame_sha256", "log_sha256")
+DISTILL_EXCLUDED = ("frame_sha256", "log_sha256")
 PEER_DROP_CLASS = "peer_first"
 COUNTED, EXHAUSTED, PENDING = "counted", "exhausted", "pending"
 #: an unpaired deal's cause: PRE-treatment (a peer drop) or POST-treatment (the rest)
 PRE_CAUSES, POST_CAUSES = ("peer_drop",), ("searched_missing", "raw_missing", "neither")
 ESTIMATES = ("paired", "go_imputed", "null_imputed")
 RULE_DOCS = {"searched_play": "a searched label plays whole games live against its raw twin, paired by deal on U in "
-                              "ONE per_game group; G_U by a within-panel unit bootstrap; GO-LEAKY iff the GO-imputed "
-                              "LB > 0, NULL iff the NULL-imputed UB < the margin, else STOP; peer drops by AM-DL-PEER's "
-                              "classifier; VOID on G-PREFIX, engines, bytes, the search config, unpaired deals or the "
-                              "live identity guard"}
+                              "ONE per_game group; G_U by a within-panel unit bootstrap; GO (GO-HONEST for a "
+                              "leak-honest preset, else GO-LEAKY) iff the GO-imputed LB > 0, NULL iff the NULL-imputed "
+                              "UB < the margin, else STOP; goal b and excess exclusions as flags; peer drops by "
+                              "AM-DL-PEER's classifier; VOID on G-PREFIX, engines, bytes, the search config, unpaired "
+                              "deals or the live identity guard"}
 _UNIT_KEYS = ("unit", "label", "panel", "unit_seed", "game", "counted", "wins", "ties", "n", "our_regime", "search",
               "search_played", "model_sha256", "engine", "games")
 
@@ -111,6 +145,21 @@ def _abs(x: Any) -> bool:
     return isinstance(x, str) and bool(x) and os.path.isabs(x)
 
 
+def _incremental(expected: Any) -> Optional[bool]:
+    """Whether a registered search spelling names the incremental builder (None when it does not parse)."""
+    from main.anchors.search_presets import SearchSpecError, parse
+
+    try:
+        return parse(expected)[0].dice == INC_DICE
+    except SearchSpecError:
+        return None
+
+
+def go_class(preset: Mapping[str, Any]) -> str:
+    """The GO class's name for a registered preset (its ``as_dict()``): GO-HONEST for leak-honest dice."""
+    return GO_HONEST if (preset or {}).get("dice") in HONEST_DICE else GO_LEAKY
+
+
 def cells_dir(state: str, group: str, label: str) -> str:
     """The searched label's cells dir of a read state (``main.reads.layout``)."""
     from main.reads import layout as LY
@@ -124,7 +173,7 @@ def check(p: Mapping[str, Any], *, models: Any, anchor: Any, s: Any) -> List[str
     from main.reads.rules import _check_keys
     from main.reads.spec import SpecError, search_twins
 
-    probs = _check_keys(p, KEYS, KEYS)
+    probs = _check_keys(p, KEYS, KEYS + OPTIONAL)
     g = anchor.get(p.get("group"))
     if g is None:
         return probs + [f"group {p.get('group')!r} is not an anchor group"]
@@ -159,6 +208,11 @@ def check(p: Mapping[str, Any], *, models: Any, anchor: Any, s: Any) -> List[str
         probs.append("u_panels: a list of distinct team sets")
     elif set(u) != set(g.teamsets) or len(u) != len(g.teamsets):
         probs.append(f"u_panels {u} must be exactly group {g.name!r}'s team sets {list(g.teamsets)} (no home panel)")
+    if "max_excluded_frac" in p:
+        mx = p["max_excluded_frac"]
+        if not (isinstance(mx, dict) and isinstance(u, list) and set(mx) == set(u)
+                and all(_num(v) and 0 < v < 1 for v in mx.values())):
+            probs.append("max_excluded_frac: {panel: a fraction in (0, 1)} over exactly the u_panels")
     if not (isinstance(p.get("engine"), str) and p["engine"]):
         probs.append("engine: the registered engine stamp (port=..;env=..)")
     if not (_num(p.get("null_margin_pp")) and p["null_margin_pp"] > 0):
@@ -176,9 +230,18 @@ def check(p: Mapping[str, Any], *, models: Any, anchor: Any, s: Any) -> List[str
     if not _abs(p.get("state")):
         probs.append("state: the read's state dir, an absolute path")
     idn = p.get("identity")
-    if not (isinstance(idn, dict) and set(idn) == set(IDENTITY_KEYS)):
-        probs.append(f"identity: {{{', '.join(IDENTITY_KEYS)}}}")
+    inc = _incremental(p.get("expected_search"))
+    want_keys = set(IDENTITY_KEYS) | ({IDENTITY_CARRY} if inc else set())
+    if not (isinstance(idn, dict) and set(idn) == want_keys):
+        probs.append(f"identity: {{{', '.join(sorted(want_keys))}}}"
+                     + (f" ({IDENTITY_CARRY!r} for an incremental preset only)" if inc is False else
+                        f" ({IDENTITY_CARRY!r}: how the re-score gets an incremental record's carry)" if inc else ""))
     else:
+        if inc:
+            from main.value_search.live_identity import CARRY_MODES
+
+            if idn[IDENTITY_CARRY] not in CARRY_MODES:
+                probs.append(f"identity.{IDENTITY_CARRY}: one of {list(CARRY_MODES)}")
         probs += [f"identity.{k}: an absolute path" for k in ("cells", "rescore_json") if not _abs(idn[k])]
         if not (_int(idn["min_rescored"]) and idn["min_rescored"] >= 1):
             probs.append("identity.min_rescored: an int >= 1")
@@ -237,11 +300,13 @@ def classify_prefix(state: Path, group: str, searched: str, raw: str, mismatches
     return out
 
 
-def read_identity(idn: Mapping[str, Any], *, u_panels: Sequence[str], engine: str, model_sha256: str
-                  ) -> Dict[str, Any]:
+def read_identity(idn: Mapping[str, Any], *, u_panels: Sequence[str], engine: str, model_sha256: str,
+                  honest: bool = False, pin: Optional[str] = None) -> Dict[str, Any]:
     """The live identity guard's summary from its ``rescore`` JSON: its own verdict, the rule's consistency checks
     (``problems``: these cells, panels, engine and bytes; exactly the registered-order first N of the cells' sampled
-    records), the JSON's sha256 and counts."""
+    records; for a leak-honest preset the honest fields compared; for an incremental one the registered carry mode;
+    for a PINNED leak-honest read, a clean re-scoring checkout whose play path is the pin's), the JSON's sha256 and
+    counts."""
     from main.value_search import live_identity as LI
     from utils.hashing import sha256_file
 
@@ -264,6 +329,15 @@ def read_identity(idn: Mapping[str, Any], *, u_panels: Sequence[str], engine: st
     if inp.get("max") != idn["max_rescored"]:
         probs.append(f"it re-scored the first {inp.get('max')!r} sampled records, not the registered max_rescored "
                      f"{idn['max_rescored']}")
+    if honest:
+        miss = [f for f in LI.RESCORE_FIELDS + LI.HONEST_FIELDS if f not in (inp.get("fields") or ())]
+        if miss:
+            probs.append(f"a leak-honest preset's re-score must compare {list(LI.HONEST_FIELDS)} too; it did not "
+                         f"compare {miss}")
+    if inp.get("carry") != idn.get(IDENTITY_CARRY):
+        probs.append(f"it re-scored with carry {inp.get('carry')!r}, not the registered {idn.get(IDENTITY_CARRY)!r}")
+    if honest and pin:
+        probs += _rescore_at_pin(inp.get("code"), pin)
     try:
         order = LI.registered_order(Path(idn["cells"]), list(u_panels), int(inp.get("max") or 0))
         if order != doc.get("rescored"):
@@ -278,6 +352,32 @@ def read_identity(idn: Mapping[str, Any], *, u_panels: Sequence[str], engine: st
             "rescore_json": {"path": str(p), "sha256": sha256_file(p)}, "n_sampled": doc.get("n_sampled"),
             "n_rescored": n, "by_panel": doc.get("by_panel"), "mismatches": len(doc.get("mismatches") or ()),
             "cpu_s": doc.get("cpu_s")}
+
+
+#: the re-score's own code, OFF the play path: the comparator and the root guards it runs (byte-equal to the pin's)
+RESCORE_CODE = ("src/main/value_search/live_identity.py", "src/main/value_search/sign_gate.py")
+
+
+def _rescore_at_pin(code: Any, pin: str) -> List[str]:
+    """The re-score of a pinned leak-honest read ran the pin's search AND the pin's re-score: its recorded checkout is
+    clean, its play path (``main.reads.playpath``) is the pin's, and :data:`RESCORE_CODE` (off the play path) is
+    byte-equal to the pin's; the pin itself always passes."""
+    from main.reads import playpath as PP
+
+    if not (isinstance(code, Mapping) and code.get("commit")):
+        return ["a pinned leak-honest read's re-score must record its checkout (inputs.code); it did not"]
+    c = str(code["commit"])
+    if code.get("dirty"):
+        return [f"it re-scored from a DIRTY checkout of {c[:12]}"]
+    try:
+        diff = PP.compare(str(pin), c)[0]
+        repo = PP.default_repo()
+        blobs = [f for f in RESCORE_CODE if PP._git(repo, "rev-parse", f"{pin}:{f}") != PP._git(repo, "rev-parse", f"{c}:{f}")]
+    except PP.PlayPathError as exc:
+        return [f"its checkout {c[:12]} against the pin {pin}: {exc}"]
+    if diff:
+        return [f"it re-scored at {c[:12]}, whose play path differs from the pin {pin}'s: {diff[:4]}"]
+    return [f"it re-scored at {c[:12]}, whose re-score code differs from the pin {pin}'s: {blobs}"] if blobs else []
 
 
 def inputs(cells: Mapping[str, Any], p: Mapping[str, Any], spec: Any) -> Dict[str, Any]:
@@ -306,7 +406,60 @@ def inputs(cells: Mapping[str, Any], p: Mapping[str, Any], spec: Any) -> Dict[st
         "deals": planned_deals(state, p["group"], p["searched"], p["raw"], units, g.get("exhausted_units") or ()),
         "prefix_classes": (classify_prefix(state, p["group"], p["searched"], p["raw"], gp.get("mismatches") or (),
                                            from_turn) if gp else None),
-        "identity": read_identity(p["identity"], u_panels=p["u_panels"], engine=p["engine"], model_sha256=raw_sha)}
+        "identity": read_identity(p["identity"], u_panels=p["u_panels"], engine=p["engine"], model_sha256=raw_sha,
+                                  honest=preset.dice in HONEST_DICE, pin=getattr(spec, "pin", None)),
+        "distill": distill_report(state, p["group"], p["searched"], units, honest=preset.dice in HONEST_DICE)}
+
+
+def distill_cells(cells: Path, *, honest: bool, names: Optional[Sequence[str]] = None) -> Dict[str, Any]:
+    """X65-F2's distillation fields over a searched label's cells dir (REPORTED; outcome-blind): per panel (the cell
+    name's ``<label>__<panel>__…``), the searched-path records, those lacking a field (by field), and the cells with
+    no capture file. ``names``: only these cells (the counted units); None = every complete attempt dir (never a
+    ``.partial.<epoch>`` one), the checkpoint's form. Reads the decision logs and lists the capture dirs; never a
+    result, a summary or ``games.jsonl``."""
+    cells = Path(cells)
+    need_s = DISTILL_SEARCHED + (("search_key",) if honest else ())
+    need_x = DISTILL_EXCLUDED + (("search_key",) if honest else ())
+    if names is None:
+        names = sorted(d.name for d in cells.iterdir() if d.is_dir() and ".partial." not in d.name) \
+            if cells.is_dir() else []
+    out: Dict[str, Dict[str, Any]] = {}
+    for name in names:
+        panel = str(name).split("__")[1] if str(name).count("__") >= 3 else "?"
+        a = out.setdefault(panel, {"units": 0, "searched": 0, "excluded": 0, "lacking": 0, "by_field": {},
+                                   "units_without_capture": 0})
+        a["units"] += 1
+        d = cells / str(name)
+        cap = d / "capture"
+        if not (cap.is_dir() and any(cap.iterdir())):
+            a["units_without_capture"] += 1
+        log = d / "search_decisions.jsonl"
+        for x in (log.read_text().splitlines() if log.is_file() else ()):
+            if not x.strip():
+                continue
+            r = json.loads(x)
+            if r.get("searched") is True:
+                a["searched"] += 1
+                need = need_s
+            elif r.get("why") == "excluded":
+                a["excluded"] += 1
+                need = need_x
+            else:
+                continue
+            gone = [f for f in need if r.get(f) in (None, "", {})]
+            a["lacking"] += int(bool(gone))
+            for f in gone:
+                a["by_field"][f] = a["by_field"].get(f, 0) + 1
+    return {"fields_searched": list(need_s), "fields_excluded": list(need_x), "by_panel": out}
+
+
+def distill_report(state: Path, group: str, searched: str, units: Sequence[Mapping[str, Any]], *, honest: bool
+                   ) -> Dict[str, Any]:
+    """:func:`distill_cells` over every COUNTED searched unit of the group (the record's form)."""
+    from main.reads import layout as LY
+
+    names = [str(u["unit"]) for u in units if u["label"] == searched and u["counted"]]
+    return distill_cells(LY.anchor_state(state, group, searched) / "cells", honest=honest, names=names)
 
 
 # ------------------------------------------------------------------------------------------------ pairing
@@ -503,17 +656,18 @@ def bootstrap(stats: Mapping[str, Mapping[int, Fraction]], u_panels: Sequence[st
     return {"G": {ts: ci(reps[ts]) for ts in u_panels}, "G_U": ci(gu)}
 
 
-def classify(go_ci: Sequence[float], null_ci: Sequence[float], margin_pp: Any, eps: Any) -> Dict[str, Any]:
-    """GO-LEAKY / NULL / STOP from the GO-imputed LB and the NULL-imputed UB (proportions; the margin's pp / 100),
-    exact fractions, rule 8."""
+def classify(go_ci: Sequence[float], null_ci: Sequence[float], margin_pp: Any, eps: Any, go: str = GO_LEAKY
+             ) -> Dict[str, Any]:
+    """GO (``go``: GO-LEAKY or GO-HONEST) / NULL / STOP from the GO-imputed LB and the NULL-imputed UB (proportions;
+    the margin's pp / 100), exact fractions, rule 8."""
     from main.reads.rules_search_headroom import cmp
 
     margin = Fraction(str(margin_pp)) / 100
     t = {"LB(G_U go_imputed) > 0": cmp(go_ci[0], 0, eps, above=True),
          "UB(G_U null_imputed) < null_margin": cmp(null_ci[1], margin, eps, above=False)}
-    go, below = t["LB(G_U go_imputed) > 0"][0], t["UB(G_U null_imputed) < null_margin"][0]
-    cls = GO_LEAKY if go else NULL if below else STOP
-    return {"class": cls, "boundary": any(near for _c, near in t.values()), "go_below_margin": go and below,
+    up, below = t["LB(G_U go_imputed) > 0"][0], t["UB(G_U null_imputed) < null_margin"][0]
+    cls = go if up else NULL if below else STOP
+    return {"class": cls, "boundary": any(near for _c, near in t.values()), "go_below_margin": up and below,
             "tests": {k: {"crosses": v[0], "near": v[1]} for k, v in t.items()}}
 
 
@@ -542,6 +696,65 @@ def _search_report(doc: Mapping[str, Any], pairs_deals: set) -> Dict[str, Any]:
     return acc
 
 
+def exclusions(doc: Mapping[str, Any], bounds: Optional[Mapping[str, Any]], eps: Any) -> Dict[str, Any]:
+    """Per U panel and pooled: the searched arm's search-path decisions over EVERY counted searched unit, its
+    exclusions and their share (exact); with ``bounds``, each panel's test against its bound (a bound's ``near``
+    counts as exceeding) and ``excess`` = any panel over it."""
+    from main.reads.rules_search_headroom import cmp
+
+    acc: Dict[str, Dict[str, Any]] = {k: {"units": 0, "searched": 0, "excluded": 0} for k in [*doc["u_panels"], "U"]}
+    for u in doc["units"]:
+        if u["label"] != doc["searched"] or not u["counted"]:
+            continue
+        sp = u.get("search_played") or {}
+        for k in (str(u["panel"]), "U"):
+            acc[k]["units"] += 1
+            acc[k]["searched"] += int(sp.get("searched") or 0)
+            acc[k]["excluded"] += int(sp.get("excluded") or 0)
+    excess = False
+    for k, a in acc.items():
+        n = a["searched"] + a["excluded"]
+        share = Fraction(a["excluded"], n) if n else None
+        a["share"] = float(share) if share is not None else None
+        a["exact"] = str(share) if share is not None else None
+        if bounds is not None and k in bounds:
+            if share is None:
+                a["test"] = {"bound": bounds[k], "exceeds": None, "near": None}
+                continue
+            over, near = cmp(share, bounds[k], eps, above=True)        # exact: a Fraction of counts
+            a["test"] = {"bound": bounds[k], "exceeds": over or near, "near": near}
+            excess = excess or over or near
+    return {"by_panel": acc, "excess": excess if bounds is not None else None}
+
+
+def goal_b(pairs: Mapping[str, Mapping[int, Sequence[Tuple[Fraction, Fraction]]]], tally: Mapping[str, Mapping[str, Any]],
+           u_panels: Sequence[str], cls: str, eps: Any) -> Dict[str, Any]:
+    """The decided goal-b flag (module docstring): the searched arm's pooled-U score with every post-treatment unpaired
+    deal's searched game at its worst case, its LB against 0.50."""
+    from main.reads.rules import strat_score
+    from main.reads.rules_search_headroom import cmp
+    from main.x35.readout import ReadoutInputError
+
+    counts = {}
+    for ts in u_panels:
+        wins = sum(1 for v in pairs[ts].values() for pr in v if pr[1] == 1)
+        n = sum(len(v) for v in pairs[ts].values())
+        for e in tally[ts]["post_deals"]:
+            n += 1
+            wins += int(e["cause"] == "raw_missing" and Fraction(e["y"]) == 1)      # the searched game counted; else a loss
+        counts[ts] = (wins, n)
+    out: Dict[str, Any] = {"counts": {k: list(v) for k, v in counts.items()}, "imputation": "a missing searched game "
+                           "is a loss; a tie is a non-win", "reached": False, "label": None}
+    try:
+        sc = strat_score(counts, list(u_panels))
+    except ReadoutInputError as exc:
+        return dict(out, score=None, ci95=None, why=str(exc))
+    c, near = cmp(sc.ci[0], "0.5", eps, above=True)
+    reached = cls in (GO_HONEST, GO_LEAKY) and c
+    return dict(out, score=sc.mean, ci95=list(sc.ci), lb_above_0_50={"crosses": c, "near": near}, reached=reached,
+                label=("GOAL-B-REACHED" if cls == GO_HONEST else "GOAL-B-REACHED (leaky)") if reached else None)
+
+
 def decide(doc: Mapping[str, Any], p: Mapping[str, Any]) -> Dict[str, Any]:
     from main.reads.rules_search_headroom import _goal_b, cmp
 
@@ -562,7 +775,9 @@ def decide(doc: Mapping[str, Any], p: Mapping[str, Any]) -> Dict[str, Any]:
                                            "share": disc / len(flat) if flat else None},
                            "peer_drops": {"classes": doc.get("prefix_classes"),
                                           "by_panel": {ts: t["peer_drop"] for ts, t in tally.items()}},
-                           "identity": dict(doc.get("identity") or {})}
+                           "identity": dict(doc.get("identity") or {}),
+                           "distill": doc.get("distill"),
+                           "exclusions": exclusions(doc, p.get("max_excluded_frac"), p["rule8_eps"])}
     reasons = void_reasons(doc, pairs, tally, p)
     if reasons:
         return dict(out, decision={"class": VOID, "verdict": VOID, "reasons": reasons})
@@ -578,8 +793,11 @@ def decide(doc: Mapping[str, Any], p: Mapping[str, Any]) -> Dict[str, Any]:
                      "exact": {"G": {ts: str(g[ts]) for ts in g}, "G_U": str(gu)}}
     est["bootstrap"] = {"B": int(b["B"]), "seed": int(b["seed"]), "scheme": "numpy default_rng(seed), fresh per "
                         "estimate; u_panels in order; within-panel unit resampling; percentile 2.5 / 97.5"}
+    go = go_class(doc["expected_preset"])
     cls = classify(est["go_imputed"]["G_U"]["ci95"], est["null_imputed"]["G_U"]["ci95"], p["null_margin_pp"],
-                   p["rule8_eps"])
+                   p["rule8_eps"], go)
+    cls["goal_b"] = goal_b(pairs, tally, u, cls["class"], p["rule8_eps"])
+    cls["excess_exclusions"] = out["exclusions"]["excess"]
     goal = _goal_b({"u_panels": u}, pairs)
     lb = (goal["searched"].get("ci95") or [None])[0]
     if lb is not None:
@@ -592,10 +810,11 @@ def decide(doc: Mapping[str, Any], p: Mapping[str, Any]) -> Dict[str, Any]:
     out["score_u"] = goal
     out["search"] = _search_report(doc, pdeals)
     pp = lambda x: f"{100 * x:+.2f}"                                                  # noqa: E731
-    flags = [f for f in ("boundary", "go_below_margin") if cls[f]]
+    flags = [f for f in ("boundary", "go_below_margin", "excess_exclusions") if cls[f]]
     gi, ni, pa = est["go_imputed"]["G_U"], est["null_imputed"]["G_U"], est["paired"]["G_U"]
     verdict = (f"{cls['class']}: G_U (searched − raw, by deal, U) paired {pp(pa['point'])} pp "
-               f"[{pp(pa['ci95'][0])}, {pp(pa['ci95'][1])}]; GO-imputed LB {pp(gi['ci95'][0])} (GO-LEAKY iff > 0); "
+               f"[{pp(pa['ci95'][0])}, {pp(pa['ci95'][1])}]; GO-imputed LB {pp(gi['ci95'][0])} ({go} iff > 0); "
                f"NULL-imputed UB {pp(ni['ci95'][1])} (NULL iff < {p['null_margin_pp']} pp)"
+               + (f"; {cls['goal_b']['label']}" if cls["goal_b"]["reached"] else "")
                + (f"; flagged {', '.join(flags)}" if flags else ""))
     return dict(out, decision=dict(cls, verdict=verdict))

@@ -28,8 +28,24 @@ the first ``--max``, and re-runs S′ offline at THIS checkout exactly as the dl
 read's scorer did (``sign_gate.GateScorer``: its root guards, then ``LiveSearcher._search``; S′ only, no referee, no
 Speed marker; one torch / BLAS thread, as the live unit plays), on the registered engine and the model's checked
 bytes. Each state's ``searched``, ``why``, ``played``, ``q``, ``log_pi`` and ``root_v`` must equal the live record's
-exactly; a root guard that refuses is a mismatch too. PASS iff >= ``--min`` states were re-scored and none differs.
-Resumable: each re-scored state is appended to ``<out>.rows.jsonl`` and skipped on a restart.
+exactly; for a LEAK-HONEST preset (``main.anchors.search_side.HONEST_DICE``: ``r0s4_honest``, ``r0s4_honest_inc``)
+also ``search_key`` (I's digest) and the ``honest`` build record (the chain's counts, the fails, each world's attempt /
+re-rolls / feeds, the root command, the world teams; for ``r0s4_honest_inc`` its ``inc`` block too: the step, the
+digests of the carry it started from and returned, the worlds carried, extended, new and retired), so the re-score
+checks that the live builder drew the same worlds from the same information set; a root guard that refuses is a
+mismatch too. PASS iff >= ``--min`` states were re-scored and none differs. Resumable: each re-scored state is appended
+to ``<out>.rows.jsonl`` and skipped on a restart; ``--jobs N`` re-scores N states at once, each worker process its own
+scorer (the rows are the same, in any order).
+
+THE INCREMENTAL BUILDER'S CARRY (``--carry``, ``r0s4_honest_inc`` only; design_sprime_honest.md §9.2 C19, C26, FINDING
+S′H-14). Its decision is a function of I through the CARRY of its battle's earlier searched decisions.
+``rebuild`` (the default): every re-scored state runs on a searcher whose carry store is EMPTY, so the builder rebuilds
+the battle's earlier checkpoints from I alone (``honest_inc``'s cache-miss path) before the decision; the record's
+``honest.inc.carry_in`` then checks that the live carry was that same function of I, which the live process reached by
+its cache. It costs the battle's world building up to the decision. ``seeded``: the state runs from the carry the live
+record kept (``inc_carry_in``), refused as a mismatch (``inc_carry_in``) unless that carry hashes to the record's
+``honest.inc.carry_in``: the decision's last step only, at a decision's cost, and it does NOT check the carry itself.
+The mode is in the document's ``inputs.carry`` (None for any other preset).
 
 THE BANK TOOTH (``bank-tooth``): is THIS checkout's S′ the one a banked offline read scored? On a hashed sample of the
 bank's ``selected.jsonl`` (:func:`bank_sampled`: ``int(sha256(key)[:8], 16) % 64 == 0``), in sha256(key) order,
@@ -40,7 +56,7 @@ must equal the bank's ``scored.jsonl`` row's exactly on every field but the CPU 
 
     python -m main.value_search.live_identity check --cells DIR --selected F --scored F --min-matched N [--out F]
     python -m main.value_search.live_identity rescore --cells DIR --panels P[,P..] --model ZIP --model-sha256 H
-        --engine STAMP --out F [--max 600] [--min 300]
+        --engine STAMP --out F [--max 600] [--min 300] [--carry rebuild|seeded] [--jobs N]
     python -m main.value_search.live_identity bank-tooth --selected F --scored F --search PRESET@T --model ZIP
         --model-sha256 H --engine STAMP --out F [--max 80]
 
@@ -53,6 +69,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
@@ -61,7 +78,13 @@ SCHEMA = "gen3_live_identity_v1"
 RESCORE_SCHEMA = "gen3_live_rescore_v1"
 #: the fields a re-score compares (``pi_argmax`` is its input, guarded by the search's own forward check)
 RESCORE_FIELDS: Tuple[str, ...] = ("searched", "why", "played", "q", "log_pi", "root_v")
+#: what a LEAK-HONEST preset's re-score compares on top (every field is a count or a digest: no timing)
+HONEST_FIELDS: Tuple[str, ...] = ("search_key", "honest")
 RESCORE_MAX, RESCORE_MIN = 600, 300
+#: how an incremental leak-honest record's re-score gets its carry (module docstring); the first is the default
+CARRY_MODES: Tuple[str, ...] = ("rebuild", "seeded")
+#: the dice of the incremental builder (``main.anchors.search_presets``: ``r0s4_honest_inc``)
+INC_DICE = "fresh_inc"
 BANK_SCHEMA = "gen3_live_bank_tooth_v1"
 BANK_MOD, BANK_MAX = 64, 80
 #: a search block's timing fields: never compared (everything else a scored row's ``search`` holds is)
@@ -76,11 +99,30 @@ class IdentityInputError(ValueError):
     """An input the guard cannot read honestly (named; exit 2)."""
 
 
-def _jsonl(path: Path) -> List[Dict[str, Any]]:
+def _jsonl(path: Path, *, torn_tail_ok: bool = False) -> List[Dict[str, Any]]:
+    """The JSON lines of ``path``; ``torn_tail_ok``: a last line that does not parse AND has no newline (a write the
+    process died inside: a killed attempt, :func:`sampled`) is dropped (:func:`torn_tail`); any other bad line refuses."""
     try:
-        return [json.loads(x) for x in Path(path).read_text().splitlines() if x.strip()]
+        text = Path(path).read_text()
+        lines = [x for x in text.splitlines() if x.strip()]
+        if torn_tail_ok and torn_tail(path):
+            lines = lines[:-1]
+        return [json.loads(x) for x in lines]
     except (OSError, ValueError) as exc:
         raise IdentityInputError(f"{path}: unreadable ({exc})") from None
+
+
+def torn_tail(path: Path) -> bool:
+    """Whether ``path``'s last line is a TORN write: not newline-terminated and not valid JSON (the live searcher writes
+    each record whole and newline-terminated, so only a process killed mid-write leaves one)."""
+    text = Path(path).read_text()
+    if not text or text.endswith("\n"):
+        return False
+    try:
+        json.loads(text.rsplit("\n", 1)[-1])
+        return False
+    except ValueError:
+        return True
 
 
 def _by_key(rows: Sequence[Mapping[str, Any]], what: str) -> Dict[str, Mapping[str, Any]]:
@@ -203,9 +245,11 @@ def sampled(cells: Path, panels: Sequence[str]) -> List[Dict[str, Any]]:
         u = plan.get(_unit_of(d.name))
         if u is None or u.game is None:
             raise IdentityInputError(f"{d.name}: not a per-game unit of {cells.parent}'s plan")
+        # a killed attempt may end mid-line: a .partial dir, or the last attempt of a unit that never counted
+        killed = ".partial." in d.name or not KA.is_done(cells.parent, u)
         if u.teamset not in panels:
             raise IdentityInputError(f"{d.name}: panel {u.teamset!r} is not one of {list(panels)}")
-        for rec in _jsonl(d / LOG):
+        for rec in _jsonl(d / LOG, torn_tail_ok=killed):       # its torn last line is dropped (registered)
             if "key" not in rec:
                 continue
             flag = rec.get("rescore_sample") is True
@@ -237,8 +281,20 @@ def one_thread() -> None:
     torch.set_num_threads(1)
 
 
-def _scorer_for(model: str, model_sha256: str, engine: str, search: str) -> Any:
-    """``sign_gate.GateScorer`` on ``model`` (its sha256 checked), at this checkout's engine (checked), one thread."""
+def checkout_code() -> Dict[str, Any]:
+    """The re-scoring checkout: its commit and whether its tracked tree is dirty (the rule holds a pinned leak-honest
+    read's re-score to its pin, ``rules_searched_play.read_identity``)."""
+    from utils.paths import repo_root
+
+    r = str(repo_root())
+    commit = subprocess.run(["git", "-C", r, "rev-parse", "HEAD"], capture_output=True, text=True, check=True)
+    dirty = subprocess.run(["git", "-C", r, "status", "--porcelain", "--untracked-files=no"], capture_output=True,
+                           text=True, check=True)
+    return {"commit": commit.stdout.strip(), "dirty": bool(dirty.stdout.strip())}
+
+
+def _check_inputs(model: str, model_sha256: str, engine: str) -> None:
+    """This checkout builds the registered ``engine`` and ``model`` has the registered sha256 (named refusals)."""
     from main.anchors.server import engine_stamp
     from utils.hashing import sha256_file
 
@@ -248,19 +304,59 @@ def _scorer_for(model: str, model_sha256: str, engine: str, search: str) -> Any:
     got = sha256_file(Path(model)) if Path(model).is_file() else None
     if got != model_sha256:
         raise IdentityInputError(f"{model}: sha256 {str(got)[:12]} is not {model_sha256[:12]}")
+
+
+def _scorer_for(model: str, model_sha256: str, engine: str, search: str) -> Any:
+    """``sign_gate.GateScorer`` on ``model`` (its sha256 checked), at this checkout's engine (checked), one thread."""
+    _check_inputs(model, model_sha256, engine)
     one_thread()
     from main.value_search.sign_gate import GateScorer
 
     return GateScorer(model, search)
 
 
-def rescore_one(scorer: Any, rec: Mapping[str, Any]) -> Dict[str, Any]:
+class _CarryRefused(RuntimeError):
+    """A seeded re-score's kept carry is missing or does not hash to the record's ``honest.inc.carry_in``."""
+
+
+def _prepare_carry(scorer: Any, rec: Mapping[str, Any], carry: Optional[str]) -> None:
+    """Before an incremental record's re-score (``carry`` set and the searcher's sampler the incremental builder's):
+    EMPTY the sampler's carry store, so no state borrows a carry an earlier one built (each re-score is a function of
+    its record alone, in any order and across a resume); ``seeded``: then put the record's kept carry in it, checked
+    against its ``honest.inc.carry_in`` digest. Any other searcher is left as it is."""
+    sampler = getattr(getattr(scorer, "s", None), "sampler", None)
+    if carry is None or getattr(sampler, "dice", None) != INC_DICE:
+        return
+    sampler.store.clear()
+    if carry != "seeded":
+        return
+    from main.value_search.honest_inc import digest, unpack
+
+    want = ((rec.get("honest") or {}).get("inc") or {}).get("carry_in")
+    kept = rec.get("inc_carry_in")
+    if want is None and kept is None:
+        return                                     # the battle's first searched decision: built cold, nothing to seed
+    if want is None or kept is None:
+        raise _CarryRefused(f"the record keeps inc_carry_in {kept is not None} but honest.inc.carry_in {want!r}")
+    text = unpack(str(kept))
+    if digest(text) != want:
+        raise _CarryRefused(f"inc_carry_in hashes to {str(digest(text))[:12]}, honest.inc.carry_in is {str(want)[:12]}")
+    sampler.seed(text)
+
+
+def rescore_one(scorer: Any, rec: Mapping[str, Any], carry: Optional[str] = None) -> Dict[str, Any]:
     """S′ offline on one sampled live record (the dlive scorer's root guards, then the searcher's ``_search``):
-    ``{"search": the offline record}`` or ``{"error": the root guard's refusal}``."""
+    ``{"search": the offline record}`` or ``{"error": the root guard's refusal}`` (``{"error", "carry": True}`` when a
+    seeded carry is refused). ``carry``: an incremental record's carry mode (:data:`CARRY_MODES`; None for any other
+    preset); ``rebuilt`` reports how many earlier checkpoints the builder rebuilt (process history, never compared)."""
     import numpy as np
 
     from agents.battle.core_obs import wrap_row
 
+    try:
+        _prepare_carry(scorer, rec, carry)
+    except _CarryRefused as exc:
+        return {"error": str(exc), "carry": True}
     try:
         _truth, d = scorer.root(rec)
         row = np.array(wrap_row(d["frame"]), dtype=np.float32)
@@ -268,48 +364,123 @@ def rescore_one(scorer: Any, rec: Mapping[str, Any]) -> Dict[str, Any]:
                              rec["key"], int(rec["pi_argmax"]))
     except Exception as exc:          # a refused root or forward is a MISMATCH, named, never a skip
         return {"error": f"{type(exc).__name__}: {str(exc)[:400]}"}
-    return {"search": s}
+    out: Dict[str, Any] = {"search": s}
+    sampler = getattr(scorer.s, "sampler", None)
+    if carry is not None and getattr(sampler, "dice", None) == INC_DICE:
+        out["rebuilt"] = int(getattr(sampler, "last_rebuilt", 0) or 0)
+    return out
 
 
-def compare(live: Mapping[str, Any], got: Mapping[str, Any]) -> List[Dict[str, Any]]:
-    """The fields of a re-scored state that differ from the live record (``root_guard`` when it was refused)."""
+def _dice(search: Any) -> str:
+    from main.anchors.search_presets import SearchSpecError, parse
+
+    try:
+        return parse(str(search))[0].dice
+    except SearchSpecError as exc:
+        raise IdentityInputError(f"the sampled records' search {search!r}: {exc}") from None
+
+
+def is_honest(search: Any) -> bool:
+    """Whether a registered ``<preset>@<turn>`` is a leak-honest preset (its dice one of
+    ``main.anchors.search_side.HONEST_DICE``: ``r0s4_honest``, ``r0s4_honest_inc``)."""
+    from main.anchors.search_side import HONEST_DICE
+
+    return _dice(search) in HONEST_DICE
+
+
+def is_incremental(search: Any) -> bool:
+    """Whether a registered ``<preset>@<turn>`` builds its worlds incrementally (``r0s4_honest_inc``: a carry)."""
+    return _dice(search) == INC_DICE
+
+
+def compare_fields(search: Any) -> Tuple[str, ...]:
+    """The fields a re-score of records of ``search`` compares."""
+    return RESCORE_FIELDS + (HONEST_FIELDS if is_honest(search) else ())
+
+
+def compare(live: Mapping[str, Any], got: Mapping[str, Any], fields: Sequence[str] = RESCORE_FIELDS
+            ) -> List[Dict[str, Any]]:
+    """The ``fields`` of a re-scored state that differ from the live record (``root_guard`` when it was refused). The
+    offline record is compared as the live one was written (a JSON round trip: tuples become lists)."""
     if "error" in got:
-        return [{"field": "root_guard", "live": None, "offline": got["error"]}]
-    off = got["search"]
-    return [{"field": f, "live": live.get(f), "offline": off.get(f)} for f in RESCORE_FIELDS
-            if live.get(f) != off.get(f)]
+        return [{"field": "inc_carry_in" if got.get("carry") else "root_guard", "live": None, "offline": got["error"]}]
+    off = json.loads(json.dumps(got["search"], sort_keys=True, default=str))
+    return [{"field": f, "live": live.get(f), "offline": off.get(f)} for f in fields if live.get(f) != off.get(f)]
+
+
+#: a re-score worker process's scorer (``--jobs``; :func:`_worker_init`)
+_WORKER: Dict[str, Any] = {}
+
+
+def _worker_init(model: str, model_sha256: str, engine: str, search: str, factory: Any = None) -> None:
+    _WORKER["scorer"] = factory() if factory is not None else _scorer_for(model, model_sha256, engine, search)
+
+
+def _worker_one(rec: Mapping[str, Any], carry: Optional[str]) -> Dict[str, Any]:
+    """One state on this worker's own scorer, as plain JSON (what crosses the process boundary)."""
+    return json.loads(json.dumps(rescore_one(_WORKER["scorer"], rec, carry), sort_keys=True, default=str))
 
 
 def rescore(cells: Path, panels: Sequence[str], *, out: Path, model: str, model_sha256: str, engine: str,
-            max_n: int = RESCORE_MAX, min_n: int = RESCORE_MIN, scorer: Any = None) -> Dict[str, Any]:
-    """The re-score's document (module docstring); ``scorer``: a test's stand-in for ``sign_gate.GateScorer``."""
-    for k, v in (("max", max_n), ("min", min_n)):
+            max_n: int = RESCORE_MAX, min_n: int = RESCORE_MIN, scorer: Any = None, carry: str = CARRY_MODES[0],
+            jobs: int = 1, scorer_factory: Any = None, mp_context: str = "spawn") -> Dict[str, Any]:
+    """The re-score's document (module docstring); ``scorer``: a test's stand-in for ``sign_gate.GateScorer`` (one
+    process); ``jobs`` > 1: that many worker processes, each with its own scorer (``scorer_factory()``, a test's, else
+    :func:`_scorer_for`), started by ``mp_context``."""
+    for k, v in (("max", max_n), ("min", min_n), ("jobs", jobs)):
         if not isinstance(v, int) or isinstance(v, bool) or v < 1:
             raise IdentityInputError(f"--{k} {v!r}: an int >= 1")
+    if carry not in CARRY_MODES:
+        raise IdentityInputError(f"--carry {carry!r}: one of {list(CARRY_MODES)}")
+    if jobs > 1 and scorer is not None:
+        raise IdentityInputError("a scorer stand-in runs in one process (--jobs 1)")
     order = sampled(Path(cells), panels)[:max_n]
     searches = sorted({str(e["rec"].get("search")) for e in order})
     if len(searches) > 1:
         raise IdentityInputError(f"the sampled records name {len(searches)} searches {searches}")
-    if scorer is None and order:
-        scorer = _scorer_for(model, model_sha256, engine, searches[0])
+    fields = compare_fields(searches[0]) if searches else RESCORE_FIELDS
+    mode = carry if searches and is_incremental(searches[0]) else None
     rows_p = Path(str(out) + ".rows.jsonl")
     rows_p.parent.mkdir(parents=True, exist_ok=True)
     done = {(r["cell"], r["key"]): r for r in (_jsonl(rows_p) if rows_p.is_file() else [])}
-    try:
-        for e in order:
-            if (e["cell"], e["key"]) in done:
-                continue
-            got = rescore_one(scorer, e["rec"])
-            row = {"cell": e["cell"], "key": e["key"], "panel": e["panel"], "mismatches": compare(e["rec"], got),
-                   "cpu_s": (got.get("search") or {}).get("cpu_s")}
-            with open(rows_p, "a") as f:
-                f.write(json.dumps(row, sort_keys=True, default=str) + "\n")
-            done[(e["cell"], e["key"])] = row
-            print(f"[live_identity] rescored {len(done)} / {len(order)}", flush=True)     # counts only
-    finally:
-        if scorer is not None and hasattr(scorer, "close"):
-            scorer.close()
+    todo = [e for e in order if (e["cell"], e["key"]) not in done]
+
+    def put(e: Mapping[str, Any], got: Mapping[str, Any]) -> None:
+        row = {"cell": e["cell"], "key": e["key"], "panel": e["panel"], "mismatches": compare(e["rec"], got, fields),
+               "cpu_s": (got.get("search") or {}).get("cpu_s")}
+        if "rebuilt" in got:
+            row["rebuilt"] = got["rebuilt"]
+        with open(rows_p, "a") as f:
+            f.write(json.dumps(row, sort_keys=True, default=str) + "\n")
+        done[(e["cell"], e["key"])] = row
+        print(f"[live_identity] rescored {len(done)} / {len(order)}", flush=True)     # counts only
+
+    if todo and jobs > 1:
+        import multiprocessing as mp
+        from concurrent.futures import ProcessPoolExecutor, as_completed
+
+        if scorer_factory is None:
+            _check_inputs(model, model_sha256, engine)          # refuse here, named, before any worker starts
+        with ProcessPoolExecutor(max_workers=min(jobs, len(todo)), mp_context=mp.get_context(mp_context),
+                                 initializer=_worker_init,
+                                 initargs=(model, model_sha256, engine, searches[0], scorer_factory)) as ex:
+            futs = {ex.submit(_worker_one, e["rec"], mode): e for e in todo}
+            for f in as_completed(futs):
+                put(futs[f], f.result())
+    elif todo:
+        if scorer is None:
+            scorer = _scorer_for(model, model_sha256, engine, searches[0])
+        try:
+            for e in todo:
+                put(e, rescore_one(scorer, e["rec"], mode))
+        finally:
+            if hasattr(scorer, "close"):
+                scorer.close()
     rows = [done[(e["cell"], e["key"])] for e in order]
+    try:
+        code: Optional[Dict[str, Any]] = checkout_code()
+    except (OSError, subprocess.CalledProcessError):
+        code = None                                    # no git checkout: the rule refuses a pinned read's re-score
     mism = [dict(m, key=r["key"], cell=r["cell"]) for r in rows for m in r["mismatches"]]
     why = []
     if len(rows) < min_n:
@@ -322,11 +493,15 @@ def rescore(cells: Path, panels: Sequence[str], *, out: Path, model: str, model_
     doc = {"schema": RESCORE_SCHEMA,
            "inputs": {"cells": str(cells), "panels": list(panels), "model": str(model), "model_sha256": model_sha256,
                       "engine": engine, "max": max_n, "min": min_n, "search": searches[0] if searches else None,
-                      "fields": list(RESCORE_FIELDS), "rows": str(rows_p)},
+                      "fields": list(fields), "carry": mode, "rows": str(rows_p), "code": code},
            "n_sampled": len(sampled(Path(cells), panels)), "n_rescored": len(rows), "by_panel": by_panel,
            "rescored": [{"cell": r["cell"], "key": r["key"]} for r in rows],
            "cpu_s": round(sum(float(r["cpu_s"] or 0.0) for r in rows), 3), "mismatches": mism,
            "verdict": FAIL if why else PASS, "reason": "; ".join(why) or None}
+    if mode is not None:
+        doc["rebuilt"] = sum(int(r.get("rebuilt") or 0) for r in rows)
+    # a killed attempt's decision log may end inside a record: its torn last line is dropped (registered), and named
+    doc["torn_tails"] = [d.name for d in attempt_dirs(Path(cells)) if torn_tail(d / LOG)]
     Path(out).write_text(json.dumps(doc, indent=1, sort_keys=True, default=str) + "\n")
     return doc
 
@@ -424,6 +599,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     r.add_argument("--out", required=True, help="the document (JSON); <out>.rows.jsonl holds the re-scored states")
     r.add_argument("--max", type=int, default=RESCORE_MAX, help="re-score the first N of the registered order")
     r.add_argument("--min", type=int, default=RESCORE_MIN, help="PASS needs at least this many re-scored")
+    r.add_argument("--carry", choices=CARRY_MODES, default=CARRY_MODES[0],
+                   help="r0s4_honest_inc only: rebuild each state's carry from I (default) or seed the kept one")
+    r.add_argument("--jobs", type=int, default=1, help="re-score this many states at once (one process each)")
     t = sub.add_parser("bank-tooth", help="re-run S′ on a hashed sample of a bank's states and compare its rows")
     t.add_argument("--selected", required=True, help="the bank's selected.jsonl")
     t.add_argument("--scored", required=True, help="the bank's scored.jsonl")
@@ -448,7 +626,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     if a.verb == "rescore":
         try:
             doc = rescore(Path(a.cells), [x for x in a.panels.split(",") if x], out=Path(a.out), model=a.model,
-                          model_sha256=a.model_sha256, engine=a.engine, max_n=a.max, min_n=a.min)
+                          model_sha256=a.model_sha256, engine=a.engine, max_n=a.max, min_n=a.min, carry=a.carry,
+                          jobs=a.jobs)
         except IdentityInputError as exc:
             print(json.dumps({"schema": RESCORE_SCHEMA, "error": str(exc)}))
             return 2

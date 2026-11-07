@@ -123,6 +123,15 @@ UNFAMILIAR = ("heldout72_hpfix", "forum72", "p72")
 UNIT_SEEDS = tuple(range(7))
 UNIT_GAMES = 20
 CORES = "5-7,13-15"
+#: The supervisor's environment may name OTHER cores for its units (a cpu list, ``taskset -c``'s form): a read the
+#: owner gives the WHOLE box while no training run is live and the GPU is not leased (S′-HONEST's read,
+#: ``design_sprime_honest.md``), its K raised with ``$GEN3AI_HEAVY_SLOTS``. Whenever the heavy slots are wanted (a run
+#: live or a lease held: rule 5b) a NEW unit sets that shape aside (:func:`unit_shape`): it runs on :data:`CORES` and
+#: queues for the box's own slot count, so a run that starts mid-read meets at most the units already in flight and
+#: the box's usual two. Cores and slots are scheduling only: the same units, seeds and records on any set.
+CORES_ENV = "GEN3AI_ANCHOR_CORES"
+#: the heavy-slot count a unit inherits from its supervisor (``utils.heavy_slots``); dropped when the shape is set aside
+SLOTS_ENV = "GEN3AI_HEAVY_SLOTS"
 MEM_GB = "12"
 PORT_RANGE = (9540, 9599)
 #: The address a port probe binds (this queue's rule since FR-3: every interface, no ``SO_REUSEADDR``).
@@ -442,9 +451,11 @@ def config_side(teamset: str) -> str:
     return PANEL_CELLS[teamset].teamset if teamset in PANEL_CELLS else TEAMSETS[teamset]
 
 
-def unit_argv(u: Unit, out: Path, port: int, py: str = sys.executable, *, short: bool = True) -> List[str]:
+def unit_argv(u: Unit, out: Path, port: int, py: str = sys.executable, *, short: bool = True,
+              cores: Optional[str] = None) -> List[str]:
     """One unit's command. ``short``: the heavy slots' short lane (``--max-s``, hard-killed past it, exit
-    :data:`SHORT_LANE_OVERRUN`); otherwise a normal heavy-slot job bounded by ``timeout`` :data:`UNIT_LONG_S`."""
+    :data:`SHORT_LANE_OVERRUN`); otherwise a normal heavy-slot job bounded by ``timeout`` :data:`UNIT_LONG_S`.
+    ``cores``: :func:`unit_shape`'s (None: decided here)."""
     series = UNIT_GAMES if u.game is not None else u.games
     a = [py, "-m", "main.anchors", "--model", u.model, "--opponent", u.opponent, "--regime", "greedy",
          "--teamset", config_side(u.teamset), "--games", str(series), "--team-seed", str(u.unit_seed),
@@ -472,12 +483,44 @@ def unit_argv(u: Unit, out: Path, port: int, py: str = sys.executable, *, short:
         raise KakunaError(f"{u.name}: a searched unit never takes the short lane (one game is 25-75 min of wall)")
     long_s = UNIT_SEARCH_S + 600 if u.search is not None else UNIT_LONG_S
     cap = ["--max-s", str(UNIT_MAX_S), MEM_GB] if short else [MEM_GB, "timeout", str(long_s)]
-    return ["nice", "-n", "19", "taskset", "-c", CORES, str(repo_path("scripts/ops/mem_cap.sh")), "--name",
-            "x35kakuna", *cap, *a]
+    return ["nice", "-n", "19", "taskset", "-c", unit_cores() if cores is None else cores,
+            str(repo_path("scripts/ops/mem_cap.sh")), "--name", "x35kakuna", *cap, *a]
 
 
-def unit_env(base: Optional[Mapping[str, str]] = None, config: Path = CONFIG) -> Dict[str, str]:
+def unit_shape(env: Optional[Mapping[str, str]] = None, *, wanted: Any = None) -> Tuple[str, bool]:
+    """``(cores, set_aside)`` for a unit launched now: :data:`CORES`, or ``$GEN3AI_ANCHOR_CORES`` (:data:`CORES_ENV`)
+    while the heavy slots are not wanted (``utils.heavy_slots.wanted``: no run live, no GPU lease). ``set_aside``: the
+    supervisor named a box shape that rule 5b now refuses, so the unit runs on :data:`CORES` and :func:`unit_env` drops
+    the inherited ``$GEN3AI_HEAVY_SLOTS`` (it queues for the box's own count). A malformed list is refused. ``wanted``:
+    a test's stand-in for that check."""
+    import re
+
+    v = str((os.environ if env is None else env).get(CORES_ENV) or "").strip()
+    if not v:
+        return CORES, False
+    if not re.fullmatch(r"\d+(-\d+)?(,\d+(-\d+)?)*", v):
+        raise KakunaError(f"${CORES_ENV}={v!r}: a cpu list (e.g. 0-15 or 5-7,13-15)")
+    if wanted is None:
+        from utils.heavy_slots import wanted
+    why = wanted()
+    if why:
+        print(f"[kakuna] ${CORES_ENV}={v} set aside: {why}; this unit runs on the agent cores {CORES} and queues for "
+              "the box's own heavy slots", flush=True)
+        return CORES, True
+    return v, False
+
+
+def unit_cores(env: Optional[Mapping[str, str]] = None, *, wanted: Any = None) -> str:
+    """The cores of :func:`unit_shape`."""
+    return unit_shape(env, wanted=wanted)[0]
+
+
+def unit_env(base: Optional[Mapping[str, str]] = None, config: Path = CONFIG, *,
+             set_aside: bool = False) -> Dict[str, str]:
+    """A unit's environment; ``set_aside`` (:func:`unit_shape`): without the supervisor's ``$GEN3AI_HEAVY_SLOTS``."""
     env = dict(os.environ if base is None else base)
+    if set_aside:
+        env.pop(SLOTS_ENV, None)
     env.update({"PYTHONPATH": str(repo_path("src")), "CUDA_VISIBLE_DEVICES": "", "GEN3AI_ANCHORS_CONFIG": str(config),
                 "OMP_NUM_THREADS": "1", "MKL_NUM_THREADS": "1", "OPENBLAS_NUM_THREADS": "1",
                 "NUMEXPR_NUM_THREADS": "1", "PYTHONUNBUFFERED": "1"})
@@ -577,14 +620,15 @@ def _play(state: Path, u: Unit, *, short: bool) -> int:
         out.rename(out.with_name(f"{u.name}.partial.{int(time.time())}"))
     port, claim = claim_port()
     try:
-        argv = unit_argv(u, out, port, short=short)
+        cores, aside = unit_shape()                     # ONE decision for the unit's cores and its slot count
+        argv = unit_argv(u, out, port, short=short, cores=cores)
         _jl(state, {"event": "start", "unit": u.name, "port": port, "short": short, "argv": argv,
                     "load": os.getloadavg()})
         (state / "logs").mkdir(parents=True, exist_ok=True)
         t0 = time.time()
         with open(state / "logs" / f"{u.name}.log", "ab") as log:
             cfg = Path(u.config) if u.config is not None else config_of(u.teamset)
-            proc = subprocess.Popen(argv, cwd=str(repo_root()), env=unit_env(config=cfg),
+            proc = subprocess.Popen(argv, cwd=str(repo_root()), env=unit_env(config=cfg, set_aside=aside),
                                     stdout=log, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
                                     start_new_session=True)
             _jl(state, {"event": "pid", "unit": u.name, "pid": proc.pid})

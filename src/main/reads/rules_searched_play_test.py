@@ -394,6 +394,176 @@ def test_the_search_report_over_paired_games(st):
     assert s["U"]["search_cpu_s_per_game"] == 600.0
 
 
+# ------------------------------------------------------------------------------------------------ S′-HONEST
+HSEARCH = "r0s4_honest@10"
+HPRESET = PRESETS["r0s4_honest"].as_dict()
+
+
+def _honest(units: List[Dict[str, Any]]) -> None:
+    """Stamp every searched unit as the leak-honest preset played it."""
+    for u in units:
+        if u["label"] == "pstar_s":
+            u.update(our_regime=f"greedy+search={HSEARCH}", search=HSEARCH)
+            u["search_played"] = dict(u["search_played"], search=HSEARCH, our_search=HSEARCH, preset=HPRESET)
+
+
+def _honest_rescore(st: Path, fields: Any = None) -> None:
+    f = list(LI.RESCORE_FIELDS + LI.HONEST_FIELDS) if fields is None else fields
+    _rescore_json(st, inputs={"cells": str(_cells_dir(st)), "panels": U, "engine": ENGINE, "model_sha256": SHA,
+                              "max": 600, "min": 1, "fields": f})
+
+
+def test_a_leak_honest_preset_reads_go_honest_and_goal_b_reached(st):
+    _honest_rescore(st)
+    out = _read(st, _cells(_by_k(UP), mutate=_honest), expected_search=HSEARCH)
+    d = out["decision"]
+    assert d["class"] == SP.GO_HONEST and d["verdict"].startswith("GO-HONEST: ") and "(GO-HONEST iff > 0)" in d["verdict"]
+    assert d["goal_b"]["reached"] is True and d["goal_b"]["label"] == "GOAL-B-REACHED"
+    assert "GOAL-B-REACHED" in d["verdict"] and d["excess_exclusions"] is None
+    leaky = _read(st, _cells(_by_k(UP)))["decision"]                  # the same read on r0s4_rolls: GO-LEAKY, leaky goal b
+    assert leaky["class"] == SP.GO_LEAKY and leaky["goal_b"]["label"] == "GOAL-B-REACHED (leaky)"
+
+
+def test_a_null_never_reaches_goal_b(st):
+    _honest_rescore(st)
+    d = _read(st, _cells(_by_k(FLAT), mutate=_honest), expected_search=HSEARCH)["decision"]
+    assert d["class"] == SP.NULL and d["goal_b"]["reached"] is False and d["goal_b"]["label"] is None
+
+
+def test_a_leak_honest_rescore_that_skipped_the_build_record_voids(st):
+    _honest_rescore(st, fields=list(LI.RESCORE_FIELDS))
+    d = _read(st, _cells(_by_k(UP), mutate=_honest), expected_search=HSEARCH)["decision"]
+    assert d["class"] == SP.VOID and any("must compare" in r for r in d["reasons"]), d["reasons"]
+
+
+ISEARCH = "r0s4_honest_inc@10"
+IPRESET = PRESETS["r0s4_honest_inc"].as_dict()
+
+
+def _incremental(units: List[Dict[str, Any]]) -> None:
+    """Stamp every searched unit as the INCREMENTAL leak-honest preset played it."""
+    for u in units:
+        if u["label"] == "pstar_s":
+            u.update(our_regime=f"greedy+search={ISEARCH}", search=ISEARCH)
+            u["search_played"] = dict(u["search_played"], search=ISEARCH, our_search=ISEARCH, preset=IPRESET)
+
+
+def _inc_identity(st: Path, carry: Any = "rebuild") -> Dict[str, Any]:
+    return {"cells": str(_cells_dir(st)), "rescore_json": str(st / "rescore.json"), "min_rescored": 1,
+            "max_rescored": MAXR, "carry": carry}
+
+
+def _inc_rescore(st: Path, carry: Any = "rebuild") -> None:
+    _rescore_json(st, inputs={"cells": str(_cells_dir(st)), "panels": U, "engine": ENGINE, "model_sha256": SHA,
+                              "max": 600, "min": 1, "fields": list(LI.RESCORE_FIELDS + LI.HONEST_FIELDS),
+                              "carry": carry})
+
+
+def test_the_rule_and_the_live_searcher_name_the_same_leak_honest_dice():
+    from main.anchors.search_side import HONEST_DICE
+
+    assert tuple(SP.HONEST_DICE) == tuple(HONEST_DICE) and SP.INC_DICE in HONEST_DICE
+    assert SP.go_class(IPRESET) == SP.go_class(HPRESET) == SP.GO_HONEST and SP.go_class(PRESET) == SP.GO_LEAKY
+
+
+def test_an_incremental_preset_reads_go_honest_with_its_registered_carry(st):
+    """S′-HONEST on ``r0s4_honest_inc`` (S′H-14): GO-HONEST, and the identity guard holds the re-score to the
+    registered carry mode; a re-score in the other mode, or one that did not compare the build record, VOIDs."""
+    _inc_rescore(st)
+    d = _read(st, _cells(_by_k(UP), mutate=_incremental), expected_search=ISEARCH, identity=_inc_identity(st))
+    assert d["decision"]["class"] == SP.GO_HONEST and d["decision"]["goal_b"]["label"] == "GOAL-B-REACHED"
+    assert d["distill"]["fields_searched"][-1] == "search_key"
+    _inc_rescore(st, carry="seeded")
+    v = _read(st, _cells(_by_k(UP), mutate=_incremental), expected_search=ISEARCH, identity=_inc_identity(st))
+    assert v["decision"]["class"] == SP.VOID and any("carry 'seeded', not the registered 'rebuild'" in r
+                                                      for r in v["decision"]["reasons"]), v["decision"]["reasons"]
+    _honest_rescore(st)                                     # a re-score written before the carry existed: no mode
+    v = _read(st, _cells(_by_k(UP), mutate=_incremental), expected_search=ISEARCH, identity=_inc_identity(st))
+    assert v["decision"]["class"] == SP.VOID and any("carry None" in r for r in v["decision"]["reasons"])
+    # the cold builder's read never registers a carry, and its re-score never ran one
+    _honest_rescore(st)
+    assert _read(st, _cells(_by_k(UP), mutate=_honest), expected_search=HSEARCH)["decision"]["class"] == SP.GO_HONEST
+
+
+def test_goal_b_imputes_a_missing_searched_game_as_a_loss(st):
+    # forum72 seed 0 (k = 1): game 0 (raw loss, searched WIN) loses its searched unit -> a loss here; game 1
+    # (win, win) loses its raw unit -> its counted searched win stays a win
+    def both(units):
+        _miss("pstar_s", "forum72", 0, 0)(units)
+        _miss("pstar", "forum72", 0, 1)(units)
+    cells = _cells(_by_k(UP), mutate=both, exhausted=[_name("pstar_s", "forum72", 0, 0), _name("pstar", "forum72", 0, 1)])
+    out = _read(st, cells, max_post_unpaired_frac=0.2)
+    # paired searched wins on forum72: seed 0 keeps games 2 (loss) and 3 (win) -> 1; seeds 1-3 (k 3, 1, 3) -> 4 + 3 + 4
+    assert out["score_u"]["searched"]["counts"]["forum72"] == [12, 14]
+    assert out["decision"]["goal_b"]["counts"]["forum72"] == [13, 16]
+    assert out["decision"]["goal_b"]["counts"]["p72"] == out["score_u"]["searched"]["counts"]["p72"] == [14, 16]
+
+
+def test_goal_b_within_eps_of_half_is_never_reached(monkeypatch):
+    from main.reads import rules as R
+
+    fake = SimpleNamespace(mean=0.6, ci=(0.5004, 0.7))
+    monkeypatch.setattr(R, "strat_score", lambda counts, panels: fake)
+    pairs = {ts: {0: [(Fraction(0), Fraction(1))]} for ts in U}
+    tally = {ts: {"post_deals": []} for ts in U}
+    g = SP.goal_b(pairs, tally, U, SP.GO_HONEST, 0.0005)
+    assert g["reached"] is False and g["lb_above_0_50"] == {"crosses": False, "near": True}
+    fake.ci = (0.5006, 0.7)
+    assert SP.goal_b(pairs, tally, U, SP.GO_HONEST, 0.0005)["reached"] is True
+    assert SP.goal_b(pairs, tally, U, SP.STOP, 0.0005)["reached"] is False
+
+
+@pytest.mark.parametrize("bound, excess, near", [(0.05, False, False), (0.03, True, False), (0.0325, True, True)])
+def test_the_exclusion_flag_narrows_and_never_voids(st, bound, excess, near):
+    # every searched unit: 30 searched, 1 excluded -> a share of 1/31 = 0.03226 on every panel
+    out = _read(st, _cells(_by_k(UP)), max_excluded_frac={ts: bound for ts in U})
+    ex = out["exclusions"]["by_panel"]
+    assert ex["forum72"]["exact"] == "1/31" and ex["U"]["exact"] == "1/31" and ex["U"]["units"] == 48
+    assert ex["p72"]["test"] == {"bound": bound, "exceeds": excess, "near": near}
+    d = out["decision"]
+    assert d["class"] == SP.GO_LEAKY and d["excess_exclusions"] is excess
+    assert ("excess_exclusions" in d["verdict"]) is excess
+
+
+def test_the_exclusion_flag_reads_one_panel_alone(st):
+    def more(units):
+        for u in units:
+            if u["label"] == "pstar_s" and u["panel"] == "forum72":
+                u["search_played"] = dict(u["search_played"], searched=20, excluded=10)
+    out = _read(st, _cells(_by_k(UP), mutate=more), max_excluded_frac={"heldout72_hpfix": 0.05, "forum72": 0.30,
+                                                                       "p72": 0.05})
+    ex = out["exclusions"]["by_panel"]
+    assert ex["forum72"]["exact"] == "1/3" and ex["forum72"]["test"]["exceeds"] is True
+    assert ex["p72"]["test"]["exceeds"] is False and out["decision"]["excess_exclusions"] is True
+
+
+def test_the_distillation_fields_are_reported(st):
+    cell = _cells_dir(st) / _name("pstar_s", "p72", 2, 3)
+    cell.mkdir(parents=True)
+    full = {"searched": True, "q": {"1": 0.5}, "log_pi": {"1": -0.1}, "root_v": 0.5, "frame_sha256": "f",
+            "log_sha256": "l", "key": "k1"}
+    rows = [full, dict(full, q=None, key="k2"), {"searched": False, "why": "excluded", "frame_sha256": "f",
+                                                 "log_sha256": "l", "key": "k3"},
+            {"searched": False, "why": "before_turn"}]
+    (cell / "search_decisions.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows))
+    (cell / "capture").mkdir()
+    (cell / "capture" / "battle-gen3ou-1.json").write_text("{}")
+    out = _read(st, _cells(_by_k(UP)))
+    p72 = out["distill"]["by_panel"]["p72"]
+    assert (p72["units"], p72["searched"], p72["excluded"], p72["lacking"], p72["by_field"]) == (16, 2, 1, 1, {"q": 1})
+    assert p72["units_without_capture"] == 15 and out["distill"]["fields_searched"] == list(SP.DISTILL_SEARCHED)
+    _honest_rescore(st)
+    hon = _read(st, _cells(_by_k(UP), mutate=_honest), expected_search=HSEARCH)["distill"]
+    assert hon["fields_searched"][-1] == "search_key" and hon["by_panel"]["p72"]["by_field"] == {"q": 1, "search_key": 3}
+    # the checkpoint's form: every complete attempt dir on disk, counted or not, never a .partial one
+    part = _cells_dir(st) / (_name("pstar_s", "p72", 2, 3) + ".partial.1")
+    part.mkdir()
+    (part / "search_decisions.jsonl").write_text(json.dumps(dict(full, q=None)) + "\n")
+    disk = SP.distill_cells(_cells_dir(st), honest=False)
+    assert set(disk["by_panel"]) == {"forum72", "p72"} and disk["by_panel"]["p72"]["units"] == 1
+    assert disk["by_panel"]["p72"]["by_field"] == {"q": 1} and disk["by_panel"]["p72"]["units_without_capture"] == 0
+
+
 # ------------------------------------------------------------------------------------------------ the spec check
 def _spec(st: Path, **over: Any) -> Dict[str, Any]:
     ref = {"kind": "pinned", "path": "/x/checkpoint_280000170_steps.zip", "sha256": SHA}
@@ -428,11 +598,67 @@ def test_the_spec_check_accepts_the_registered_params(tmp_path):
     ({"identity": {"cells": "/x", "rescore_json": "/y"}}, "identity"),
     ({"identity": {"cells": "/x/cells", "rescore_json": "/y", "min_rescored": 1, "max_rescored": MAXR}}, "not the searched label's cells"),
     ({"identity": {"cells": "/x/cells", "rescore_json": "rel", "min_rescored": 0, "max_rescored": 1}}, "min_rescored"),
+    ({"max_excluded_frac": {"forum72": 0.1}}, "max_excluded_frac"),
+    ({"max_excluded_frac": {"heldout72_hpfix": 0.1, "forum72": 1.5, "p72": 0.1}}, "max_excluded_frac"),
+    ({"identity": {"cells": "/x/cells", "rescore_json": "/y", "min_rescored": 1, "max_rescored": 1,
+                   "carry": "rebuild"}}, "for an incremental preset only"),
 ])
 def test_the_spec_check_refuses(tmp_path, over, needle):
     with pytest.raises(SpecError, match="searched_play") as e:
         parse(_spec(tmp_path, **over))
     assert needle in str(e.value)
+
+
+def test_a_pinned_leak_honest_read_holds_its_rescore_to_the_pins_play_path(st):
+    """M5 (review): the re-score must have run a clean checkout whose play path is the pin's; a missing record, a dirty
+    tree or another play path is a problem (VOID). ``f7da935ab`` and ``335355e6f`` differ on the play path (S′H-15's
+    docstring edit to ``honest_inc.py``); a commit against itself does not."""
+    pin = "335355e6f"
+    assert SP._rescore_at_pin({"commit": pin, "dirty": False}, pin) == []
+    assert "DIRTY" in SP._rescore_at_pin({"commit": pin, "dirty": True}, pin)[0]
+    assert "must record its checkout" in SP._rescore_at_pin(None, pin)[0]
+    assert "play path differs" in SP._rescore_at_pin({"commit": "f7da935ab", "dirty": False}, pin)[0]
+    # the same play path but another comparator or root guard (live_identity / sign_gate are OFF the play path): refused
+    from main.reads import playpath as PP
+
+    real_compare, real_git = PP.compare, PP._git
+    try:
+        PP.compare = lambda a, b, repo=None: ([], "d", 1)
+        PP._git = lambda repo, *a, stdin=None: (b"x" if a[-1].startswith(pin) else b"y") \
+            if a[-1].endswith("live_identity.py") else b"same"
+        got = SP._rescore_at_pin({"commit": "abc123", "dirty": False}, pin)
+        assert got and "re-score code differs" in got[0] and "live_identity.py" in got[0] and "sign_gate" not in got[0]
+        PP._git = lambda repo, *a, stdin=None: b"same"
+        assert SP._rescore_at_pin({"commit": "abc123", "dirty": False}, pin) == []
+    finally:
+        PP.compare, PP._git = real_compare, real_git
+    _inc_rescore(st)                                   # no inputs.code: a pinned read VOIDs, an unpinned one reads
+    pinned = SimpleNamespace(models=SPEC.models, pin=pin)
+    cells = _cells(_by_k(UP), mutate=_incremental)
+    p = _params(st, expected_search=ISEARCH, identity=_inc_identity(st))
+    doc = json.loads(json.dumps(RU.inputs("searched_play", cells, p, pinned)))
+    assert any("must record its checkout" in x for x in doc["identity"]["problems"])
+    assert RU.decide("searched_play", doc, p)["decision"]["class"] == SP.VOID
+    assert _read(st, cells, expected_search=ISEARCH, identity=_inc_identity(st))["decision"]["class"] == SP.GO_HONEST
+
+
+def _inc_spec(st: Path, identity: Dict[str, Any]) -> Dict[str, Any]:
+    sp = _spec(st, expected_search=ISEARCH, identity=identity)
+    sp["models"]["pstar_s"]["load"] = {"search": ISEARCH}
+    return sp
+
+
+def test_the_spec_check_holds_an_incremental_preset_to_a_carry_mode(tmp_path):
+    """``r0s4_honest_inc`` registers how its re-score gets each state's carry (``identity.carry``), one of
+    ``live_identity.CARRY_MODES``; missing or unknown is refused."""
+    base = _inc_identity(tmp_path)
+    for mode in LI.CARRY_MODES:
+        assert parse(_inc_spec(tmp_path, dict(base, carry=mode))).params["identity"]["carry"] == mode
+    for bad, needle in (({k: v for k, v in base.items() if k != "carry"}, "how the re-score gets an incremental"),
+                        (dict(base, carry="cold"), "identity.carry: one of")):
+        with pytest.raises(SpecError, match="searched_play") as e:
+            parse(_inc_spec(tmp_path, bad))
+        assert needle in str(e.value)
 
 
 def test_the_rule_check_refuses_a_group_that_is_not_per_game(tmp_path):

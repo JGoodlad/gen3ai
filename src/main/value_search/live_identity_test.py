@@ -280,6 +280,203 @@ def test_the_rescore_resumes_without_rescoring_a_done_state(tmp_path, stub_rows)
     assert len(first.calls) == 2 and len(again.calls) == 3 and doc["n_rescored"] == 5
 
 
+HONEST = {"search_key": "b" * 64, "honest": {"chain": {"feeds": 1862, "steps": 18}, "fails": {}, "at": 1,
+                                              "worlds": [{"attempt": 0, "rerolls": 0, "feeds": 14, "rolls": 2}],
+                                              "world_teams": ["x1", "x2"]}}
+
+
+class _HonestStub(_Stub):
+    """A GateScorer stand-in for a leak-honest preset: the live record's search AND build fields, unless told
+    otherwise (the build record's lists come back as tuples, as an in-process search returns them)."""
+
+    def _search(self, log, at, side, row, mask, d, key, argmax):
+        out = {k: d["rec"].get(k) for k in LI.RESCORE_FIELDS + LI.HONEST_FIELDS}
+        h = dict(out["honest"] or {})
+        if h:
+            h["world_teams"] = tuple(h["world_teams"])
+            out["honest"] = h
+        out.update(self.change.get(key, {}))
+        return dict(out, cpu_s=2.0)
+
+
+def _honest_cells(tmp: Path, search: str = "r0s4_honest@10") -> Path:
+    cells = _plan_state(tmp, [("pstar_s__p72__701__g00", "p72", 701, 0), ("pstar_s__forum72__700__g01", "forum72", 700, 1)])
+    _w(cells / "pstar_s__p72__701__g00" / "search_decisions.jsonl", [_srec(_skey(0), search=search, **HONEST)])
+    _w(cells / "pstar_s__forum72__700__g01" / "search_decisions.jsonl", [_srec(_skey(1), search=search, **HONEST)])
+    return cells
+
+
+def test_an_honest_rescore_compares_the_build_record_and_the_key_too(tmp_path, stub_rows):
+    """S′-HONEST: a leak-honest preset's re-score also compares ``search_key`` and the ``honest`` build record (the
+    worlds drawn from I), after a JSON round trip of the offline record; a rolls re-score compares neither."""
+    cells = _honest_cells(tmp_path)
+    doc = _rescore(tmp_path / "a", cells, _HonestStub(), min_n=2)
+    assert doc["verdict"] == LI.PASS and doc["inputs"]["fields"] == list(LI.RESCORE_FIELDS + LI.HONEST_FIELDS)
+    other = dict(HONEST["honest"], world_teams=["x1", "x3"])
+    doc = _rescore(tmp_path / "b", cells, _HonestStub({_skey(0): {"honest": other}, _skey(1): {"search_key": "c" * 64}}),
+                   min_n=2)
+    assert doc["verdict"] == LI.FAIL and sorted(m["field"] for m in doc["mismatches"]) == ["honest", "search_key"]
+    rolls = _honest_cells(tmp_path / "r", search="r0s4_rolls@10")
+    doc = _rescore(tmp_path / "c", rolls, _HonestStub({_skey(0): {"honest": other}}), min_n=2)
+    assert doc["verdict"] == LI.PASS and doc["inputs"]["fields"] == list(LI.RESCORE_FIELDS)
+
+
+def test_compare_fields_by_preset():
+    assert LI.compare_fields("r0s4_rolls@10") == LI.RESCORE_FIELDS
+    assert LI.compare_fields("r0s4_honest@10") == LI.RESCORE_FIELDS + LI.HONEST_FIELDS
+    assert LI.compare_fields("r0s4_honest_inc@10") == LI.RESCORE_FIELDS + LI.HONEST_FIELDS
+    assert LI.is_incremental("r0s4_honest_inc@10") and not LI.is_incremental("r0s4_honest@10")
+    with pytest.raises(LI.IdentityInputError, match="search"):
+        LI.compare_fields("no_such_preset@10")
+
+
+# ------------------------------------------------------------------------------------------------ r0s4_honest_inc
+ISEARCH = "r0s4_honest_inc@10"
+CARRY = '{"key":"k-prev","schema":"gen3_honest_inc_carry_v1","step":3}'
+
+
+class _IncSampler:
+    """The incremental builder's sampler as the re-score sees it: its dice, its carry store, ``seed`` and the
+    checkpoints its last call rebuilt."""
+
+    dice = "fresh_inc"
+
+    def __init__(self):
+        from collections import OrderedDict
+
+        self.store, self.seeded, self.last_rebuilt = OrderedDict(), [], 0
+
+    def seed(self, carry):
+        self.seeded.append(carry)
+        self.store[json.loads(carry)["key"]] = carry
+
+
+class _IncStub(_HonestStub):
+    """A GateScorer stand-in for ``r0s4_honest_inc``: it records the carry store each search STARTED from, and a
+    search with an empty store 'rebuilds' 5 checkpoints (a seeded one none)."""
+
+    def __init__(self, change=None):
+        super().__init__(change)
+        self.sampler = _IncSampler()
+        self.store_at_search: List[List[str]] = []
+
+    def _search(self, log, at, side, row, mask, d, key, argmax):
+        self.store_at_search.append(list(self.sampler.store))
+        self.sampler.last_rebuilt = 0 if self.sampler.store else 5
+        self.sampler.store[f"k-{key}"] = "a carry this search left behind"
+        return super()._search(log, at, side, row, mask, d, key, argmax)
+
+
+def _inc_rec(i: int, *, first: bool = False, kept: Any = "same") -> Dict[str, Any]:
+    from main.value_search.honest_inc import digest, pack
+
+    inc = {"step": 0 if first else 4, "carry_in": None if first else digest(CARRY), "carry_out": "c" * 64}
+    rec = _srec(_skey(i), search=ISEARCH, search_key="b" * 64, honest=dict(HONEST["honest"], inc=inc))
+    if not first:
+        rec["inc_carry_in"] = pack(CARRY if kept == "same" else kept)
+    return rec
+
+
+def _inc_cells(tmp: Path, recs: List[Dict[str, Any]]) -> Path:
+    cells = _plan_state(tmp, [("pstar_s__p72__701__g00", "p72", 701, 0)])
+    _w(cells / "pstar_s__p72__701__g00" / "search_decisions.jsonl", recs)
+    return cells
+
+
+def test_an_incremental_rescore_rebuilds_each_carry_from_an_empty_store(tmp_path, stub_rows):
+    """S′H-14, ``--carry rebuild`` (the default): every state's search starts from an EMPTY carry store, whatever an
+    earlier state left in it, so its carry is rebuilt from I alone; the build record's ``inc`` block (its
+    ``carry_in`` digest) is compared; the rows report the checkpoints rebuilt."""
+    cells = _inc_cells(tmp_path, [_inc_rec(0), _inc_rec(1), _inc_rec(2, first=True)])
+    stub = _IncStub()
+    stub.sampler.store["stale"] = "a carry from before the re-score"
+    doc = _rescore(tmp_path, cells, stub, min_n=3, max_n=3)
+    assert doc["verdict"] == LI.PASS and doc["inputs"]["carry"] == "rebuild" and doc["n_rescored"] == 3
+    assert doc["inputs"]["fields"] == list(LI.RESCORE_FIELDS + LI.HONEST_FIELDS)
+    assert stub.store_at_search == [[], [], []] and stub.sampler.seeded == [] and doc["rebuilt"] == 15
+    other = dict(_inc_rec(0)["honest"], inc=dict(_inc_rec(0)["honest"]["inc"], carry_in="d" * 64))
+    doc = _rescore(tmp_path / "b", cells, _IncStub({_skey(0): {"honest": other}}), min_n=3, max_n=3)
+    assert doc["verdict"] == LI.FAIL and [m["field"] for m in doc["mismatches"]] == ["honest"]
+
+
+def test_a_seeded_rescore_runs_from_the_kept_carry_checked_by_its_digest(tmp_path, stub_rows):
+    """``--carry seeded``: a state runs from the carry its record kept (``inc_carry_in``), seeded into an otherwise
+    empty store, once it hashes to the record's ``honest.inc.carry_in``; a kept carry that does not (or a record that
+    lost it) is a mismatch named ``inc_carry_in`` and is never searched; a battle's first decision runs cold."""
+    cells = _inc_cells(tmp_path, [_inc_rec(0), _inc_rec(1, kept=CARRY.replace("3", "4")), _inc_rec(2, first=True)])
+    stub = _IncStub()
+    doc = _rescore(tmp_path, cells, stub, min_n=3, max_n=3, carry="seeded")
+    assert doc["inputs"]["carry"] == "seeded" and doc["verdict"] == LI.FAIL
+    assert [(m["key"], m["field"]) for m in doc["mismatches"]] == [(_skey(1), "inc_carry_in")]
+    assert stub.sampler.seeded == [CARRY] and len(stub.store_at_search) == 2
+    assert sorted(map(len, stub.store_at_search)) == [0, 1]          # the seeded state saw its carry alone
+    lost = _inc_rec(0)
+    lost.pop("inc_carry_in")
+    doc = _rescore(tmp_path / "b", _inc_cells(tmp_path / "b", [lost]), _IncStub(), min_n=1, carry="seeded")
+    assert [m["field"] for m in doc["mismatches"]] == ["inc_carry_in"]
+
+
+def test_the_carry_mode_is_none_for_any_other_preset_and_is_checked(tmp_path, stub_rows):
+    cells = _honest_cells(tmp_path)
+    stub = _IncStub()                                  # even a stub with a carry store: the cold builder never clears it
+    stub.sampler.store["x"] = "kept"
+    doc = _rescore(tmp_path, cells, stub, min_n=2)
+    assert doc["inputs"]["carry"] is None and "rebuilt" not in doc and stub.store_at_search[0] == ["x"]
+    with pytest.raises(LI.IdentityInputError, match="--carry"):
+        _rescore(tmp_path / "b", cells, _Stub(), carry="cold")
+    with pytest.raises(LI.IdentityInputError, match="one process"):
+        _rescore(tmp_path / "c", cells, _Stub(), jobs=2)
+
+
+def test_a_killed_attempts_torn_last_line_is_dropped_and_named(tmp_path, stub_rows):
+    """A KILLED attempt (a ``.partial`` dir, or the last attempt of a unit that never counted) may end inside a record:
+    its torn, newline-less last line is dropped and named in ``torn_tails``; the same in a COUNTED unit's dir, or a bad
+    line anywhere else, still refuses (exit 2)."""
+    from main.x35 import kakuna as KA
+
+    cells = _two_panel_cells(tmp_path)
+    counted = {"pstar_s__forum72__200__g00"}
+    orig = KA.is_done
+    KA.is_done = lambda state, u: u.name in counted                            # restored below
+    try:
+        part = cells / "pstar_s__forum72__200__g00.partial.1" / LI.LOG
+        part.write_text(part.read_text() + '{"key": "su_live_v1|torn')
+        last = cells / "pstar_s__p72__201__g00" / LI.LOG                       # an uncounted unit's last attempt
+        last.write_text(last.read_text() + '{"key": "su_live_v1|torn')
+        doc = _rescore(tmp_path, cells, _Stub(), min_n=1)
+        assert doc["verdict"] == LI.PASS
+        assert doc["torn_tails"] == ["pstar_s__forum72__200__g00.partial.1", "pstar_s__p72__201__g00"]
+        assert doc["inputs"]["code"]["commit"] and isinstance(doc["inputs"]["code"]["dirty"], bool)
+        whole = cells / "pstar_s__forum72__200__g00" / LI.LOG                  # a COUNTED unit: refused
+        whole.write_text(whole.read_text() + '{"key": "su_live_v1|torn')
+        with pytest.raises(LI.IdentityInputError, match="unreadable"):
+            LI.sampled(cells, ["forum72", "p72"])
+        whole.write_text(whole.read_text().rsplit("\n", 1)[0] + "\n")
+        part.write_text('{"broken\n' + part.read_text())
+        with pytest.raises(LI.IdentityInputError, match="unreadable"):     # a bad line that is not the torn tail
+            LI.sampled(cells, ["forum72", "p72"])
+    finally:
+        KA.is_done = orig
+
+
+def _inc_factory():
+    return _IncStub()
+
+
+def test_jobs_rescore_states_in_worker_processes_with_the_same_rows(tmp_path, stub_rows):
+    """``--jobs N``: N worker processes, each its own scorer; the document and its rows are those of one process."""
+    recs = [_inc_rec(i) for i in range(4)] + [_inc_rec(4, first=True)]
+    cells = _inc_cells(tmp_path, recs)
+    one = _rescore(tmp_path / "one", cells, _IncStub(), min_n=5, max_n=5)
+    many = LI.rescore(cells, ["forum72", "p72"], out=tmp_path / "many" / "rescore.json", model="/m",
+                      model_sha256="a" * 64, engine="E", min_n=5, max_n=5, jobs=2, scorer_factory=_inc_factory,
+                      mp_context="fork")
+    strip = lambda d: {k: v for k, v in d.items() if k != "inputs"}            # noqa: E731
+    assert many["verdict"] == LI.PASS and strip(many) == strip(one) and many["rebuilt"] == 25
+    rows = lambda p: sorted(map(json.dumps, LI._jsonl(Path(str(p) + ".rows.jsonl"))))      # noqa: E731
+    assert rows(tmp_path / "many" / "rescore.json") == rows(tmp_path / "one" / "rescore.json")
+
+
 # ------------------------------------------------------------------------------------------------ the bank tooth
 def _bkey(prefix: str, n: int, sampled: bool = True) -> List[str]:
     return [k for k in (f"su_live_v1|{prefix}{j}|t15|n16" for j in range(20000)) if LI.bank_sampled(k) == sampled][:n]

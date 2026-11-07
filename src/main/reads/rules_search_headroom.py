@@ -294,9 +294,9 @@ def bootstrap(stats: Mapping[str, Mapping[int, Fraction]], home: str, u_panels: 
             "I_by_panel": {ts: ci(reps[ts] - reps[home]) for ts in u_panels}}
 
 
-def cmp(stat: float, bar: Any, eps: Any, *, above: bool) -> Tuple[bool, bool]:
-    """``(crosses, near)`` by EXACT fractions: ``stat`` (a float, taken exactly) against ``bar`` (its decimal);
-    within ``eps`` of the bar is ``near`` and never a crossing (root rule 8)."""
+def cmp(stat: "float | Fraction", bar: Any, eps: Any, *, above: bool) -> Tuple[bool, bool]:
+    """``(crosses, near)`` by EXACT fractions: ``stat`` (a float, taken exactly, or a Fraction) against ``bar`` (its
+    decimal); within ``eps`` of the bar is ``near`` and never a crossing (root rule 8)."""
     d = Fraction(stat) - Fraction(str(bar))
     if abs(d) <= Fraction(str(eps)):
         return False, True

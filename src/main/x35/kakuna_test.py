@@ -78,6 +78,31 @@ def test_a_unit_counts_only_under_every_condition_of_the_rule(bad):
     assert not KA.counts({**GOOD, **bad}, 20)
 
 
+def test_the_supervisor_may_name_other_unit_cores_only_while_the_heavy_slots_are_not_wanted(monkeypatch):
+    """S′-HONEST's whole-box read: ``$GEN3AI_ANCHOR_CORES`` pins its units elsewhere while no run is live and the GPU
+    is not leased; whenever rule 5b's slots are wanted a NEW unit goes to the agent cores; a bad list is refused."""
+    assert KA.unit_cores({}, wanted=lambda: None) == KA.CORES == "5-7,13-15"
+    assert KA.unit_cores({KA.CORES_ENV: " 0-15 "}, wanted=lambda: None) == "0-15"
+    assert KA.unit_cores({KA.CORES_ENV: "0-4,8-12"}, wanted=lambda: None) == "0-4,8-12"
+    assert KA.unit_cores({KA.CORES_ENV: "0-15"}, wanted=lambda: "a training run is live (x): rule 5b") == KA.CORES
+    for bad in ("all", "0-15;", "0 - 15", "-3"):
+        with pytest.raises(KA.KakunaError, match="a cpu list"):
+            KA.unit_cores({KA.CORES_ENV: bad}, wanted=lambda: None)
+    monkeypatch.setenv(KA.CORES_ENV, "0-15")
+    import utils.heavy_slots as HS
+
+    monkeypatch.setattr(HS, "wanted", lambda: None)
+    u = KA.Unit(name="n", label="l", arm="A1", seed=3501, teamset="away", unit_seed=4, model="/m.zip", model_sha256="")
+    assert KA.unit_argv(u, Path("/o"), 9541, py="PY")[:6] == ["nice", "-n", "19", "taskset", "-c", "0-15"]
+    assert KA.unit_argv(u, Path("/o"), 9541, py="PY", cores="5-7")[5] == "5-7"
+    # set aside: the agent cores AND the box's own slot count (the supervisor's raised count is not inherited)
+    assert KA.unit_shape({KA.CORES_ENV: "0-15"}, wanted=lambda: "a lease") == (KA.CORES, True)
+    assert KA.unit_shape({KA.CORES_ENV: "0-15"}, wanted=lambda: None) == ("0-15", False)
+    assert KA.unit_shape({}, wanted=lambda: "a lease") == (KA.CORES, False)
+    base = {KA.SLOTS_ENV: "14", KA.CORES_ENV: "0-15", "X": "1"}
+    assert KA.SLOTS_ENV not in KA.unit_env(base, set_aside=True) and KA.unit_env(base)[KA.SLOTS_ENV] == "14"
+
+
 def test_equal_counts_of_DIFFERENT_team_content_no_longer_count():
     """F-DV-5: the rule is `main.anchors.results.unit_counts` (undeclared) — a 72-vs-72 unit whose two sides' content
     digests differ used to count on its equal file counts alone."""
@@ -85,7 +110,8 @@ def test_equal_counts_of_DIFFERENT_team_content_no_longer_count():
     assert not KA.counts({**GOOD, "team_content_asymmetry": True}, 20)
 
 
-def test_the_unit_argv_is_rule_5b_wrapped_and_greedy_from_the_root():
+def test_the_unit_argv_is_rule_5b_wrapped_and_greedy_from_the_root(monkeypatch):
+    monkeypatch.delenv(KA.CORES_ENV, raising=False)
     u = KA.Unit(name="n", label="l", arm="A1", seed=3501, teamset="away", unit_seed=4, model="/m.zip",
                 model_sha256="")
     a = KA.unit_argv(u, Path("/o"), 9541, py="PY")
