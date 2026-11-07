@@ -21,7 +21,7 @@ canonical flag order (the order carries no meaning to the trainer's parser):
   those finals as ``--stable-opponents`` at share 0.4 with ``--stable-opponent-pfsp`` (the registered round-1 B
   recipe), seeds 3501-3505, b-OFF = C0;
 * the G-E READERS (``main.x35.ge``, F27 closed for the readers, 2026-10-20; +5M): ``ge_a1`` / ``ge_a2`` / ``ge_d1`` /
-  ``ge_c0`` -- one fresh best responder of the arm's seed-3501 FINAL (``--model F --exploiter F --no-self-play``, the
+  ``ge_d3`` / ``ge_n1p`` / ``ge_x60t`` (AM-X60T-2) / ``ge_c0`` -- one fresh best responder of the arm's seed-3501 FINAL (``--model F --exploiter F --no-self-play``, the
   pinned offense 5-team archetype, ``--fork-lr 5.6e-05 --fork-lr-freeze``), launched only when the arm's primary reads
   GAIN (``stage-check``); the kit seed is the TARGET's, the reader trains at seed 3531;
 * toy (``--behaviour-check warn`` under X34's registered GIGO ceilings, C3, orchestrator 2026-10-19; +70M; the X34
@@ -320,9 +320,16 @@ def canonical_arm(name: str) -> str:
     return ARM_ALIASES.get(name, name)
 
 
-#: The G-E READERS (``main.x35.ge``): the kit seed is the TARGET's seed; the run is ``rb_x35_ge_<target tag>_s<seed>``.
-ARMS.update({r: Arm(r, ARMS[t].side, _GE.L_READER, _GE.TARGET_SEEDS,
-                    "rb_x35_ge_" + ARMS[t].run[len("rb_x35_"):], _GE.READER_PHASE, "warn")
+#: The G-E READERS (``main.x35.ge``): the kit seed is the TARGET's seed; the run is ``rb_x35_ge_<target tag>_s<seed>``
+#: (the tag after ``rb_x35_``, or after ``rb_`` for a target named outside X35's prefix: ``rb_x60t_s{seed}`` ->
+#: ``rb_x35_ge_x60t_s{seed}``).
+def _reader_run(target_run: str) -> str:
+    tag = target_run[len("rb_x35_"):] if target_run.startswith("rb_x35_") else target_run[len("rb_"):]
+    return "rb_x35_ge_" + tag
+
+
+ARMS.update({r: Arm(r, ARMS[t].side, _GE.L_READER, _GE.TARGET_SEEDS, _reader_run(ARMS[t].run), _GE.READER_PHASE,
+                    "warn")
              for r, t in _GE.READER_ARMS.items()})
 #: R0, the exploitability curve (``main.x35.r0``, AM-R0): the kit seed is the training seed.
 ARMS.update({r: Arm(r, side, _R0.L_R0, _R0.R0_SEEDS[r], "rb_x35t_r0_s{seed}" if side == "toy" else "rb_x35_r0_s{seed}",

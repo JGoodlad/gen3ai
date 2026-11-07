@@ -250,6 +250,30 @@ def verdict(look: int, primary: Optional[Mapping[str, Any]], *, i_f: Optional[Ma
     return ADOPT, ["Δ_F GAIN, I_F LB90 > 0, Δ_P NON-INFERIOR, goal (a), G-F / G-E / G-C PASS"]
 
 
+# ------------------------------------------------------------------------------------------------ the stage record
+#: The key of Δ_F's ``{final, class}`` at a record's top level (``main.x35.batch.PRIMARY_KEY["x60t"]``).
+STAGE_PRIMARY_KEY = "delta_f"
+
+
+def stage_keys(models: Mapping[str, Any], decision: Mapping[str, Any]) -> Dict[str, Any]:
+    """The X35 stage identity of an x60 record (``Rule.stage_keys``; AM-X60T-2): ``arm`` = the ON arm's registered
+    read label (``main.x35.batch.READ_LABEL``: X60T), ``look``, and Δ_F's ``{final, class}``: FINAL at a look-1 futility
+    stop or at look 2 whenever Δ_F has a class; NOT final at a look-1 CONTINUE or when Δ_F is INCONCLUSIVE (no class).
+    Read from the record's ``models`` and ``decision`` only, so the decision is never reshaped."""
+    from main.x35.batch import READ_LABEL
+
+    on = list((decision.get("sides") or {}).get("on") or ())
+    arms = sorted({str((models.get(lab) or {}).get("arm")) for lab in on})
+    if len(arms) != 1 or arms == ["None"]:
+        raise ValueError(f"the ON side {on} names arms {arms}, not one")
+    look = int(decision["look"])
+    dec = decision.get("decision") or {}
+    cls = dec.get("delta_f_class")
+    final = cls is not None and (bool(dec.get("stop_at_look1")) or (look == 2 and cls != CONTINUE))
+    return {"arm": READ_LABEL.get(arms[0], arms[0]), "look": look,
+            STAGE_PRIMARY_KEY: {"final": final, "class": cls}}
+
+
 # ------------------------------------------------------------------------------------------------ check (spec load)
 def _labels(name: str, labs: Any, models: Any) -> Tuple[List[str], List[str]]:
     if not (isinstance(labs, list) and labs and all(isinstance(v, str) for v in labs) and len(set(labs)) == len(labs)):

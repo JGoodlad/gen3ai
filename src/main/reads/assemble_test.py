@@ -8,6 +8,8 @@ import pytest
 
 from agents.training import eval_ledger as L
 from agents.training.eval_ledger import testkit as K
+from main import heldout_panels as HP
+from main.h2h import panel as PN
 from main.reads import assemble as AS
 from main.reads import engine as EN
 
@@ -281,6 +283,24 @@ def test_an_s_group_on_another_regime_or_panel_is_inconclusive(tmp_path):
     assert any("not panel home72" in w for w in g["inconclusive"])
     g = AS.s_group(tmp_path / "led", "fam", {"a": "q2"}, {"a": K.SHA_A}, MEMBERS)
     assert any("request q2" in w for w in g["inconclusive"]) and g["nodes"]["a"]["s_pp"] is None
+
+
+def test_a_play_pin_only_panel_is_checked_through_the_registered_regime(tmp_path):
+    """AM-X60T-2: a panel registered only at the play pin (X60-T's r72) has no entry on main; its group reads only with
+    the spec's ``regime_id`` (which digests the team set), else it is INCONCLUSIVE, fail closed."""
+    pc = (100, 100, 100, 100, 100)
+    rid = _ledger(tmp_path / "led", "fam", "q", [(K.SHA_A, K.SHA_B, pc), (K.SHA_A, K.SHA_C, pc)])
+    args = (tmp_path / "led", "fam", {"a": "q"}, {"a": K.SHA_A}, MEMBERS)
+    with pytest.raises(KeyError):
+        HP.panel_entry("r72")                                  # the precondition: main never registers it
+    g = AS.s_group(*args, panel="r72")
+    assert any("not registered on main" in w for w in g["inconclusive"]) and g["team_set"] is None
+    g = AS.s_group(*args, panel="r72", want_regime=rid)
+    assert g["inconclusive"] == [] and g["regime_id"] == rid and g["team_set"] == K.regime()["team_set"]
+    g = AS.s_group(*args, panel="r72", want_regime="0" * 16)
+    assert any("not the registered" in w for w in g["inconclusive"])
+    assert AS.panel_team_set("r72", rid, ["ts:a", "ts:b"])[1] != []      # one team set, or inconclusive
+    assert AS.panel_team_set("home72", None, [])[0] == PN.panel_team_set_id("home72")   # main's panels unchanged
 
 
 def test_a_short_cell_leaves_no_s(tmp_path):

@@ -51,6 +51,30 @@ def test_an_incomplete_record_is_refused(tmp_path, over, needle):
         REC.write(r, tmp_path / "r.json")
 
 
+def test_an_x60_record_carries_its_stage_identity_and_check_re_derives_it():
+    """AM-X60T-2: rule x60's decision keeps its own shape; the record carries ``arm`` / ``look`` / ``delta_f`` at the top
+    level (``Rule.stage_keys``) so ``main.x35.batch.read_record`` loads it, and check re-derives every one of them."""
+    from main.reads import rules as RU
+
+    models = {"x60t_s3501": {"arm": "x60t", "seed": 3501, "sha256": "a" * 64, "step": 1, "source": "/x"},
+              "c0_s3501": {"arm": "c0", "seed": 3501, "sha256": "b" * 64, "step": 1, "source": "/y"}}
+    dec = {"schema": "gen3_read_x60_v1", "look": 1, "sides": {"on": ["x60t_s3501"], "off": ["c0_s3501"]},
+           "decision": {"verdict": "CONTINUE", "delta_f_class": "CONTINUE", "stop_at_look1": False}}
+    keys = RU.RULES["x60"].stage_keys(models, dec)
+    assert keys == {"arm": "X60T", "look": 1, "delta_f": {"final": False, "class": "CONTINUE"}}
+    r = _rec(rule="x60", verdict="CONTINUE", models=models, decision=dec, **keys)
+    assert REC.check(r) == []
+    for k, v in (("arm", "X61P"), ("look", 2), ("delta_f", {"final": True, "class": "CONTINUE"})):
+        bad = dict(copy.deepcopy(r), **{k: v})
+        assert any(f"top-level {k!r}" in p for p in REC.check(bad)), k
+    missing = copy.deepcopy(r)
+    missing.pop("arm")
+    assert any("top-level 'arm'" in p for p in REC.check(missing))
+    two_arms = copy.deepcopy(r)
+    two_arms["decision"]["sides"]["on"] = ["x60t_s3501", "c0_s3501"]
+    assert any("cannot be derived" in p for p in REC.check(two_arms))
+
+
 def test_an_x35_record_must_carry_its_decisions_arm_and_look():
     dec = {"arm": "SPRT", "look": 1, "verdict": "NULL", "r1": {"class": "NULL"}}
     r = _rec(rule="x35_r1", verdict="NULL", decision=dec, arm="SPRT", look=1, void=VOID_PASS)

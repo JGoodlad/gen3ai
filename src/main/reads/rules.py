@@ -1436,6 +1436,11 @@ class Rule:
     #: the rule classifies its group's G-PREFIX mismatches itself (a PEER DROP, or a named VOID), so ``assemble`` does
     #: not mark the group inconclusive for them (``searched_play``); False = a mismatch blocks the record
     owns_g_prefix: bool = False
+    #: the X35 STAGE identity of a rule whose decision keeps its own shape (``x35_record`` False): ``(record models,
+    #: decision) -> {arm, look, <primary key>: {final, class}}``, which ``main.reads.record`` writes at the record's top
+    #: level and re-derives at check, so ``main.x35.batch.read_record`` / ``main.x35.ge.primary_class`` load the record
+    #: from ``<stage>/reads/<arm>_look<k>.json`` unchanged (``x60``: X60T, AM-X60T-2). None = not a stage record
+    stage_keys: Optional[Callable[[Mapping[str, Any], Mapping[str, Any]], Dict[str, Any]]] = None
 
     def verdict_of(self, decision: Mapping[str, Any]) -> str:
         v = decision.get("verdict") if self.x35_record else (decision.get("decision") or {}).get("verdict")
@@ -1505,7 +1510,8 @@ RULES["x63_kvk"] = Rule("x63_kvk", _X63.RULE_DOCS["x63_kvk"], _X63.check, _X63.i
 
 from main.reads import rules_x60 as _X60  # noqa: E402  (it imports this module lazily: no cycle at import)
 
-RULES["x60"] = Rule("x60", _X60.RULE_DOCS["x60"], _X60.check, _X60.inputs, _X60.decide, False, _X60.reported)
+RULES["x60"] = Rule("x60", _X60.RULE_DOCS["x60"], _X60.check, _X60.inputs, _X60.decide, False, _X60.reported,
+                     stage_keys=_X60.stage_keys)
 
 
 def inputs(rule: str, cells: Mapping[str, Any], params: Mapping[str, Any], spec: Any) -> Dict[str, Any]:

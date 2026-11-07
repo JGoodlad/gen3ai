@@ -11,7 +11,7 @@
 #   arms:  c0 a1 a2 d1 d3 n1p (production, +20M; d1 / d3 / n1p at their OWN corpus-only pins, batch.ARM_PINS) · a3_mx a6_lx
 #          (phase 1: exploiters, +5M) · a3 a6 (phase 2, +20M, read
 #          the phase-1 record) · toy_c0 toy_a1 toy_a2 toy_x47 (+70M; toy_x47 = depth growth, X47; the toy arms run K9(b)
-#          `warn`) · ge_a1 ge_a2 ge_d1 ge_d3 ge_n1p ge_c0 (the G-E READERS, main.x35.ge, +5M: <seed> = the TARGET's, 3501; a fresh
+#          `warn`) · ge_a1 ge_a2 ge_d1 ge_d3 ge_n1p ge_x60t ge_c0 (the G-E READERS, main.x35.ge, +5M: <seed> = the TARGET's, 3501; a fresh
 #          best responder of that arm's FINISHED final, launched only when the arm's primary reads GAIN (pre-check 9);
 #          ge_c0 is every arm's shared b-OFF reader) · BATCH 2 (STAGED_PLAN §4.1-§4.3, F-AS-8; each = the side's C0
 #          argv + ONE lever, at the side's written pin): sprt lrfloor (+20M) · toy_sprt toy_lrfloor (+70M)
@@ -32,7 +32,8 @@
 #          teams:hr_spec_v1.r3@0.5, run rb_x60t_s<seed>): x60t 3501-3503, then 3504-3508 on its look-1 CONTINUE, at its
 #          OWN pin batch.X60T_PIN (D1's pin + the switch + the corpus stub; pin-check / corpus-check also read the LOCAL
 #          corpus by sha256 and its two soak records) · C0's top-up c0 3506 3507 3508 (C0's argv, the side pin, on the
-#          same CONTINUE)
+#          same CONTINUE) · ge_x60t 3501 (X60-T's G-E reader, AM-X60T-2: launches at X60T_PIN, not the side pin, typing
+#          --human-data off; only on x60t's look-2 Δ_F GAIN)
 #                                                                             (main.x35.kit holds every argv)
 #   phase 1 → 2:  after the three exploiters END,
 #          python -m main.x35.kit phase1-record --arm a3 --call <R> --out <stage>/phase1_a3.json   (write-once)

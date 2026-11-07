@@ -20,8 +20,11 @@
 
 An X35-stage rule (``Rule.x35_record``: ``x35_r1``, ``d1``) also carries its decision's keys at the TOP level (``arm``,
 ``look``, ``verdict``, ``r1`` / ``h`` / ``p``, ``guards``, ``reasons``, ``reported``), so ``main.x35.batch.read_record``
-and ``final_class`` load the file unchanged when it is copied to ``<stage>/reads/<arm>_look<k>.json``. The research
-ledger cites a record by its path and :func:`summary_line`.
+and ``final_class`` load the file unchanged when it is copied to ``<stage>/reads/<arm>_look<k>.json``. A rule whose
+decision keeps its own shape but is still read by the stage (``Rule.stage_keys``: ``x60``) writes only its stage identity
+there (``arm``, ``look`` and its primary's ``{final, class}``), derived from the record's own ``models`` and ``decision``,
+so :func:`check` re-derives and compares it and the decision is untouched. The research ledger cites a record by its path
+and :func:`summary_line`.
 """
 from __future__ import annotations
 
@@ -98,6 +101,8 @@ def build(spec: Any, cells: Mapping[str, Any], inputs: Mapping[str, Any], decisi
         for k, v in decision.items():
             if k != "verdict":
                 rec[k] = v
+    if rule.stage_keys is not None:
+        rec.update(_stage_keys(rule, rec))
     probs = check(rec)
     if probs:
         raise RecordError(f"the record does not check: {probs}")
@@ -163,7 +168,26 @@ def check(rec: Mapping[str, Any]) -> List[str]:
         for k in ("arm", "look"):
             if k not in rec or rec[k] != rec["decision"].get(k):
                 probs.append(f"x35 record: top-level {k!r} is not the decision's")
+    if rule.stage_keys is not None:
+        try:
+            want = _stage_keys(rule, rec)
+        except (KeyError, TypeError, ValueError) as exc:
+            probs.append(f"stage record: its identity cannot be derived from the decision ({exc})")
+        else:
+            probs += [f"stage record: top-level {k!r} is not the decision's {v!r}" for k, v in want.items()
+                      if rec.get(k) != v]
     return probs
+
+
+def _stage_keys(rule: Any, rec: Mapping[str, Any]) -> Dict[str, Any]:
+    """The rule's X35 stage identity (``Rule.stage_keys``) of ``rec``, from its ``models`` and ``decision`` alone (so
+    :func:`check` re-derives exactly what :func:`build` wrote); it never names a key the record schema owns."""
+    keys = dict(rule.stage_keys(rec["models"], rec["decision"]))
+    clash = sorted(set(keys) & (set(REQUIRED) | {"completeness", "reported_incomplete", "void", "imports", "repins",
+                                                 "rederived_guards", "prereg"}))
+    if clash:
+        raise ValueError(f"rule {rule.name}: its stage keys {clash} are the record's own")
+    return keys
 
 
 def _check_completeness(comp: Any) -> List[str]:

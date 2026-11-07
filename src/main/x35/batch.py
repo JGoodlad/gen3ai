@@ -50,8 +50,10 @@ exposes each as a subcommand, and ``launch_x35.sh`` calls them as pre-checks (a 
   both counted, never deduplicated.
 
 THE READ RECORDS the stage rules read are ``<stage>/reads/<arm>_look<k>.json``: the saved JSON of
-``python -m main.x35.readout decide`` (A1 / A2 and the toy pair), ``decide-d1`` (D1) or ``python -m main.x35.x47
-decide`` (X47). The record names its arm and look; a record for another arm or look is a refusal.
+``python -m main.x35.readout decide`` (A1 / A2 and the toy pair), ``decide-d1`` (D1), ``python -m main.x35.x47
+decide`` (X47), or a ``main.reads`` record (``record --out``) whose rule writes the stage identity at its top level
+(``main.reads.record``: ``x35_record`` rules, and ``x60`` through ``Rule.stage_keys``). The record names its arm and
+look; a record for another arm or look is a refusal.
 
 * **BATCH 2 (F-AS-8, STAGED_PLAN §4.3)**: ``sprt`` / ``toy_sprt`` and ``lrfloor`` / ``toy_lrfloor``
   (:data:`BATCH2_ARMS`) launch at their SIDE'S written pin and share its C0. They are SIDE-PINNED
@@ -133,9 +135,11 @@ decide`` (X47). The record names its arm and look; a record for another arm or l
   :data:`N4_STAGES` holds the six forks in the PREREG's interleaved order, never :data:`STAGES`; :func:`stage_status`
   is PENDING until ``N4_PIN`` is set AND the PREREG names it in full (its pin NOTE), then ALLOWED (one look, no look
   2). Arm labels ``C0N4`` / ``N4``.
-* **THE G-E READERS** (``main.x35.ge``; launch sheet §0 "G-E readers"): ``ge_a1`` / ``ge_a2`` / ``ge_d1`` / ``ge_c0``
+* **THE G-E READERS** (``main.x35.ge``; launch sheet §0 "G-E readers"): ``ge_a1`` / ``ge_a2`` / ``ge_d1`` / ``ge_d3`` /
+  ``ge_n1p`` / ``ge_x60t`` / ``ge_c0``
   are not batch-1 ARMS (not in :data:`STAGES`, the disk count or AM-6's K9(b) pre-check) but they run at the SIDE'S
-  pin: :func:`pin_check` judges their recorded pins with the side's batch-1 runs, and :func:`stage_status` gives a
+  pin (``ge_x60t`` at X60-T's own, :data:`ARM_PINS`, typing ``--human-data off``): :func:`pin_check` judges their
+  recorded pins with the side's batch-1 runs, and :func:`stage_status` gives a
   reader the ``ge.trigger`` condition (ALLOWED only when its arm's primary reads GAIN; ``ge_c0`` when any does).
 
 DECLARED HERE (choices the rulings leave open; each a FINDING of this build):
@@ -337,11 +341,12 @@ N4_PIN_CARRIES: Dict[str, str] = {"T69 B-FFNW (--grow trunk_ffn_dim)": "c35ffab9
                                   "the n4_screen read rule": "a05a0ca2c110b870d0ebcda1c92774ddc03c5400"}
 #: The arms with their own pin (AM-D1-FIX, AM-D3, AM-N1P, AM-X63U, AM-N4-PIN): ``{arm: pin}``; None = a registered placeholder
 #: (every check of that arm refuses until it is filled).
+#: ``ge_x60t`` (AM-X60T-2) is the one G-E reader with its own pin: X60-T's, typing ``--human-data off`` (``main.x35.ge``).
 ARM_PINS: Dict[str, Optional[str]] = {"d1": D1_PIN, "d3": D3_PIN, "n1p": N1P_PIN, "x63u": X63U_PIN,
-                                      "toy_c0n4": N4_PIN, "toy_n4ffn": N4_PIN, "x60t": X60T_PIN}
+                                      "toy_c0n4": N4_PIN, "toy_n4ffn": N4_PIN, "x60t": X60T_PIN, "ge_x60t": X60T_PIN}
 #: The amendment that registered each own-pin arm (named in every line its checks print).
 ARM_PIN_AMENDMENT = {"d1": "AM-D1-FIX", "d3": "AM-D3", "n1p": "AM-N1P", "x63u": "AM-X63U", "toy_c0n4": "AM-N4-PIN",
-                     "toy_n4ffn": "AM-N4-PIN", "x60t": "AM-X60T"}
+                     "toy_n4ffn": "AM-N4-PIN", "x60t": "AM-X60T", "ge_x60t": "AM-X60T-2"}
 #: The own-pin arms whose run MAY also sit at the side's pin: D1's VOID pre-fix attempt (AM-D1-FIX-f) only.
 ARM_PIN_PREFIX_OK = ("d1",)
 #: Batch 2's stages (F-AS-8), in AM-RP-e's slots: (6) production SPRT, (8) production LR-F, (11) the toy pair; each
@@ -426,8 +431,9 @@ READ_LABEL = {"a1": "A1", "a2": "A2", "d1": "X38", "d3": "X41", "n1p": "X61P", "
               "x63u": "X63U", "toy_c0n4": "C0N4", "toy_n4ffn": "N4", "x60t": "X60T"}
 #: The toy arms whose look-1 CONTINUE licenses toy C0's look-2 seeds s3604-s3605 (their shared control).
 TOY_LOOK2_LICENSORS = ("toy_x47", "toy_a1", "toy_a2", "toy_lrfloor", "toy_sprt")
-#: Where a read record keeps its PRIMARY when it is not R1 (``d1.D1Verdict``: H).
-PRIMARY_KEY = {"d1": "h", "d3": "h", "n1p": "h"}
+#: Where a read record keeps its PRIMARY when it is not R1 (``d1.D1Verdict``: H; rule ``x60``'s stage identity: Δ_F,
+#: ``main.reads.rules_x60.STAGE_PRIMARY_KEY``).
+PRIMARY_KEY = {"d1": "h", "d3": "h", "n1p": "h", "x60t": "delta_f"}
 CONTROLS = ("c0", "toy_c0")
 LOOK2_SEEDS = {"production": (3504, 3505), "toy": (3604, 3605)}
 
@@ -685,7 +691,15 @@ def n4_pin_check(pin: str, side_pin: str, repo: str) -> Tuple[bool, List[str]]:
 def arm_pin_check(arm: str, pin: str, side_pin: str, repo: str) -> Tuple[bool, List[str]]:
     """The own-pin check of ``arm`` (:data:`ARM_PINS`)."""
     return {"d1": d1_pin_check, "d3": d3_pin_check, "n1p": n1p_pin_check, "x63u": x63u_pin_check,
-            "toy_c0n4": n4_pin_check, "toy_n4ffn": n4_pin_check, "x60t": x60t_pin_check}[arm](pin, side_pin, repo)
+            "toy_c0n4": n4_pin_check, "toy_n4ffn": n4_pin_check, "x60t": x60t_pin_check,
+            "ge_x60t": _ge_x60t_pin_check}[arm](pin, side_pin, repo)
+
+
+def _ge_x60t_pin_check(pin: str, side_pin: str, repo: str) -> Tuple[bool, List[str]]:
+    """AM-X60T-2: ``ge_x60t`` launches at X60-T's own pin (``main.x35.ge``), so it is :func:`x60t_pin_check`'s, each
+    line naming the reader."""
+    ok, lines = x60t_pin_check(pin, side_pin, repo)
+    return ok, [f"{ARM_PIN_AMENDMENT['ge_x60t']}: ge_x60t runs at X60-T's pin; {x}" for x in lines]
 
 
 def pin_check(pin: str, stage: str, models_dir: str, side: str, t62: Optional[str] = None,
@@ -994,7 +1008,9 @@ def read_g1(stage: str) -> Optional[str]:
 
 # ---------------------------------------------------------- AM-9 / AM-3 / AM-4 / AM-8: which fork may launch now
 def read_record(stage: str, arm: str, look: int) -> Optional[Dict[str, Any]]:
-    """The saved look-``look`` read of ``arm`` (``reads/<arm>_look<k>.json``), checked to be that arm's and look's."""
+    """The saved look-``look`` read of ``arm`` (``reads/<arm>_look<k>.json``), checked to be that arm's and look's. A
+    ``main.reads`` record (schema ``gen3_read_record_v1``) must also pass ``main.reads.record.check``, which re-derives
+    its top-level stage keys from its own decision, so a hand-edited or stale key never licenses a launch."""
     path = os.path.join(stage, READS_DIR, f"{arm}_look{look}.json")
     if not os.path.exists(path):
         return None
@@ -1003,6 +1019,12 @@ def read_record(stage: str, arm: str, look: int) -> Optional[Dict[str, Any]]:
     if str(doc.get("arm")) != want or int(doc.get("look", -1)) != look:
         raise BatchError(f"{path}: the record is arm {doc.get('arm')!r} look {doc.get('look')!r}, not {want} look "
                          f"{look}")
+    from main.reads import record as REC
+
+    if doc.get("schema") == REC.SCHEMA:
+        probs = REC.check(doc)
+        if probs:
+            raise BatchError(f"{path}: not a valid read record: {probs[:5]}")
     return dict(doc)
 
 

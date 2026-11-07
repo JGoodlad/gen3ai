@@ -11,11 +11,17 @@ population-loop round 1 read it). G-E FAILs iff the Newcombe 95 % LOWER bound of
 (``main.x35.readout.guard_e``): the arm is detected MORE exploitable than C0.
 
 THE ARMS (``kit.ARMS``, phase :data:`READER_PHASE`): ``ge_a1`` / ``ge_a2`` / ``ge_d1`` / ``ge_d3`` / ``ge_n1p`` read A1 /
-A2 / D1 / D3 / N1-P's final, and
+A2 / D1 / D3 / N1-P's final, ``ge_x60t`` X60-T's (PREREG ``x60t_h_teams_2026-11-06`` §11's fresh reader, AM-X60T-2), and
 ``ge_c0`` reads C0's, the b-OFF reader EVERY arm's G-E shares. The kit seed is the TARGET's seed (3501, the only one
 §5.6.4 registers); the reader trains at seed :data:`READER_SEED` (§5.6.1: "best-response readers 3531+"), the same on
 both sides so the two readers share the dice. Run ``rb_x35_ge_<target tag>_s<target seed>``, e.g.
-``rb_x35_ge_a1arch_s3501`` reads ``rb_x35_a1arch_s3501``.
+``rb_x35_ge_a1arch_s3501`` reads ``rb_x35_a1arch_s3501`` (a target not named ``rb_x35_*`` keeps its tag after ``rb_``:
+``rb_x35_ge_x60t_s3501`` reads ``rb_x60t_s3501``). Every reader runs at the SIDE's pin except ``ge_x60t``: its target's
+run carries a ``--human-data`` clause, so main's launcher refuses a fork of it that types none, and the side pin's
+trainer has no switch to type. It runs at X60-T's own pin (``batch.ARM_PINS``) typing ``--human-data off``
+(:func:`build_reader_argv`), where off is the side pin's path byte for byte (X60-T PREREG §14 checks 2-3: the learner
+golden and played-bits fixtures, and the team streams at ``@0`` against ``off``), so it best-responds in ``ge_c0``'s
+regime and only its target differs.
 
 THE ARGV (:func:`build_reader_argv`): ``--model F --exploiter F --no-self-play --trainee-teams <offense 5>
 --fork-lr 5.6e-05 --fork-lr-freeze --behaviour-check warn --steps <F's step + 5M> --checkpoint-every-steps 1000000
@@ -26,7 +32,8 @@ neither ``model_config.json`` nor the recipe surface (checked on X26's records, 
 in the SAME regime and only its TARGET differs.
 
 THE TRIGGER (:func:`trigger`, ``kit stage-check`` = ``launch_x35.sh`` pre-check 9). A reader of arm X is ALLOWED only
-when X's PRIMARY (A1 / A2: R1; D1 / D3 / N1-P: H) has a saved FINAL class GAIN (``reads/<arm>_look<k>.json``, the latest look);
+when X's PRIMARY (A1 / A2: R1; D1 / D3 / N1-P: H; X60-T: Δ_F, the stage identity rule ``x60`` writes at its record's top
+level, ``main.reads.rules_x60.stage_keys``) has a saved FINAL class GAIN (``reads/<arm>_look<k>.json``, the latest look);
 not read yet, CONTINUE, or an INCONCLUSIVE primary is PENDING; a final NULL / LOSS / UNDECIDED is REFUSED (G-E decides
 only between ADOPT-CANDIDATE and TRADE, so a reader of a non-GAIN arm buys nothing: launch sheet §0). ``ge_c0`` is
 ALLOWED as soon as ANY of A1 / A2 / D1 / D3 / N1-P reads GAIN. Production readers also wait for the side's FP32_ALT commit (AM-8),
@@ -62,9 +69,10 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 READER_PHASE = 3
 #: Reader arm -> the arm whose seed final it reads. ``ge_c0`` is every arm's shared b-OFF reader.
 READER_ARMS: Dict[str, str] = {"ge_a1": "a1", "ge_a2": "a2", "ge_d1": "d1", "ge_d3": "d3", "ge_n1p": "n1p",
-                               "ge_c0": "c0"}
-#: The arms whose PRIMARY GAIN needs G-E before a verdict (``readout.decide``: A1 / A2; ``d1.d1_verdict``: D1).
-GAIN_ARMS = ("a1", "a2", "d1", "d3", "n1p")
+                               "ge_x60t": "x60t", "ge_c0": "c0"}
+#: The arms whose PRIMARY GAIN needs G-E before a verdict (``readout.decide``: A1 / A2; ``d1.d1_verdict``: D1; rule
+#: ``x60``'s §11: X60-T, whose ``ge_x60t`` is the fresh reader its PREREG registers).
+GAIN_ARMS = ("a1", "a2", "d1", "d3", "n1p", "x60t")
 #: §5.6.4: "for each arm's seed-3501 final … 5M steps".
 L_READER = 5_000_000
 TARGET_SEEDS = (3501,)
@@ -75,7 +83,8 @@ READER_FORK_LR = "5.6e-05"
 ARCHETYPE = "offense"
 STAT = "pooled"
 GAIN = "GAIN"
-FINAL_PRIMARY = ("GAIN", "NULL", "LOSS", "UNDECIDED")
+#: A primary's FINAL classes: X35's (R1 / H) and rule ``x60``'s Δ_F (NO-USEFUL-GAIN, NOT-RESOLVED; PREREG §5).
+FINAL_PRIMARY = ("GAIN", "NULL", "LOSS", "UNDECIDED", "NO-USEFUL-GAIN", "NOT-RESOLVED")
 
 
 class ReaderError(ValueError):
@@ -137,14 +146,16 @@ def standin_target(path: str, step: int) -> Dict[str, Any]:
 def build_reader_argv(reader_arm: str, seed: int, target: Mapping[str, Any], *, behaviour: str = "warn",
                       ckpt_every: str = "1000000") -> List[str]:
     """The trainer argv (the launcher's own flags excluded) of one reader (module docs)."""
-    from main.x35.kit import _arm
+    from main.x35.kit import ARM_HUMAN_DATA, _arm
 
     _arm(reader_arm, seed)
     f = str(target["path"])
+    # a reader of a HUMAN-DATA arm drops the clause, typed (the launcher refuses an untyped fork of such a run)
+    off = ["--human-data", "off"] if READER_ARMS[reader_arm] in ARM_HUMAN_DATA else []
     return ["--model", f, "--exploiter", f, "--no-self-play", "--trainee-teams", offense_teams(),
             "--fork-lr", READER_FORK_LR, "--fork-lr-freeze", "--behaviour-check", behaviour,
             "--steps", str(int(target["step"]) + L_READER), "--checkpoint-every-steps", ckpt_every,
-            "--device", "cuda", "--seed", str(READER_SEED), "--run-name", reader_run(reader_arm, seed)]
+            "--device", "cuda", *off, "--seed", str(READER_SEED), "--run-name", reader_run(reader_arm, seed)]
 
 
 # ------------------------------------------------------------------------------------------------------ the trigger

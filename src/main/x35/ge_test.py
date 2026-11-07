@@ -58,7 +58,9 @@ def test_a_reader_best_responds_to_its_targets_final_on_the_offense_archetype_at
     assert f["--steps"] == str(FINAL_STEP + 5_000_000)                          # §5.6.4: 5M
     assert f["--fork-lr"] == "5.6e-05" and f["--fork-lr-freeze"] is True        # the dose, pinned by construction
     assert f["--seed"] == "3531"                                                # §5.6.1: readers 3531+
-    assert f["--run-name"] == "rb_x35_ge_" + GE.target_run(arm, 3501)[len("rb_x35_"):]
+    tr = GE.target_run(arm, 3501)
+    tag = tr[len("rb_x35_"):] if tr.startswith("rb_x35_") else tr[len("rb_"):]
+    assert f["--run-name"] == "rb_x35_ge_" + tag and tag and not tag.startswith("_")
     teams = str(f["--trainee-teams"]).split(",")
     offense = E.load_teamsets()["offense"]
     assert teams == offense["paths"] and len(teams) == 5
@@ -137,6 +139,30 @@ def test_a_reader_launches_only_on_its_arms_final_gain(tmp_path):
     assert B.stage_status(st, "ge_a2", 3501)[0] == B.PENDING                 # A2 has its own read
 
 
+def test_x60ts_reader_reads_delta_f_from_the_x60_records_stage_identity(tmp_path):
+    """AM-X60T-2: ``ge_x60t`` reads ``rb_x60t_s3501``'s final, runs as ``rb_x35_ge_x60t_s3501`` at X60-T's OWN pin
+    typing ``--human-data off`` (the launcher refuses an untyped fork of a human-data run; the side pin has no switch),
+    and triggers on Δ_F's FINAL class from the stage identity rule x60 writes (``delta_f``): a look-1 CONTINUE waits, a
+    look-2 GAIN launches it and the shared b-OFF reader."""
+    assert GE.target_run("ge_x60t", 3501) == "rb_x60t_s3501" and K.run_name("ge_x60t", 3501) == "rb_x35_ge_x60t_s3501"
+    assert B.ARM_PINS["ge_x60t"] == B.X60T_PIN and "rb_x35_ge_x60t_s3501" in B.side_pinned_run_names(readers=True)
+    assert B.side_of_run("rb_x35_ge_x60t_s3501") == "production"
+    st = _stage(tmp_path)
+    assert B.PRIMARY_KEY["x60t"] == "delta_f"
+    _save(st, "x60t", 1, "CONTINUE", final=False, verdict="CONTINUE")
+    assert B.stage_status(st, "ge_x60t", 3501)[0] == B.PENDING
+    _save(st, "x60t", 2, "NOT-RESOLVED", verdict="NOT-RESOLVED")
+    assert B.stage_status(st, "ge_x60t", 3501)[0] == B.REFUSED
+    _save(st, "x60t", 2, "GAIN", verdict="INCONCLUSIVE")                     # the guards are not read yet
+    assert B.stage_status(st, "ge_x60t", 3501)[0] == B.ALLOWED
+    assert B.stage_status(st, "ge_c0", 3501)[0] == B.ALLOWED
+    f = flags(K.build_argv("ge_x60t", 3501, _call(), target=_target("ge_x60t")))
+    assert f["--human-data"] == "off" and f["--run-name"] == "rb_x35_ge_x60t_s3501"
+    c0 = flags(K.build_argv("ge_c0", 3501, _call(), target=_target("ge_c0")))
+    assert "--human-data" not in c0                                           # only a human-data arm's reader types it
+    assert {k for k in f if f[k] != c0.get(k)} == {"--model", "--exploiter", "--run-name", "--human-data"}
+
+
 def test_d1s_reader_reads_its_primary_h_not_r1(tmp_path):
     st = _stage(tmp_path)
     _save(st, "d1", 1, "GAIN")
@@ -164,6 +190,8 @@ def test_the_shared_c0_reader_waits_for_any_gain_and_is_refused_when_none_can_co
     _save(st, "d3", 1, "NULL", verdict="NULL")
     assert B.stage_status(st, "ge_c0", 3501)[0] == B.PENDING                 # N1-P (AM-N1P) not read yet
     _save(st, "n1p", 1, "NULL", verdict="NULL")
+    assert B.stage_status(st, "ge_c0", 3501)[0] == B.PENDING                 # X60-T (AM-X60T-2) not read yet
+    _save(st, "x60t", 2, "NO-USEFUL-GAIN", verdict="NOT-DELIVERED")
     assert B.stage_status(st, "ge_c0", 3501)[0] == B.REFUSED
     _save(st, "d3", 1, "GAIN")
     assert B.stage_status(st, "ge_c0", 3501)[0] == B.ALLOWED
@@ -290,14 +318,14 @@ def test_r2_is_only_defined_for_the_gain_arms():
 VALIDATED = repo_path("designs/research_state/measurements/x35_breakers_stage_2026-10-17/ge_readers_validation_dfeb3d92")
 
 
-#: The readers validated at dfeb3d92. ``ge_d3`` (AM-D3, 2026-10-25) and ``ge_n1p`` (AM-N1P, 2026-10-26) came later: each
-#: argv is the same function's with that arm's final as the target, and neither has a transcript of its own (each
-#: PREREG's FINDING).
+#: The readers validated at dfeb3d92. ``ge_d3`` (AM-D3, 2026-10-25), ``ge_n1p`` (AM-N1P, 2026-10-26) and ``ge_x60t``
+#: (AM-X60T-2, 2026-11-07; its checkargs on the REAL s3501 final is in its PREREG §23) came later: each argv is the same
+#: function's with that arm's final as the target, and none has a transcript here (each PREREG's FINDING).
 VALIDATED_READERS = ("ge_a1", "ge_a2", "ge_c0", "ge_d1")
 
 
-def test_every_reader_but_d3s_and_n1ps_has_a_validation_transcript():
-    assert set(GE.READER_ARMS) - set(VALIDATED_READERS) == {"ge_d3", "ge_n1p"}
+def test_every_reader_but_d3s_n1ps_and_x60ts_has_a_validation_transcript():
+    assert set(GE.READER_ARMS) - set(VALIDATED_READERS) == {"ge_d3", "ge_n1p", "ge_x60t"}
 
 
 @pytest.mark.parametrize("arm", VALIDATED_READERS)

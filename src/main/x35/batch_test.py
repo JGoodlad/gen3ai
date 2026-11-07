@@ -1200,6 +1200,21 @@ def test_every_committed_read_record_carries_its_arms_registered_label():
     assert found >= 1, "no committed read record found: the precondition of this test does not hold"
 
 
+def test_a_main_reads_record_must_pass_its_own_check_before_it_licenses(tmp_path):
+    """REVIEW AM-2 m5: a ``gen3_read_record_v1`` file in ``reads/`` runs ``main.reads.record.check`` (its stage keys are
+    re-derived from its decision), so a committed record that does not check refuses instead of licensing a launch;
+    an old-schema X35 record is read as before."""
+    stage = tmp_path / "stage"
+    (stage / B.READS_DIR).mkdir(parents=True)
+    st = str(stage)
+    (stage / B.READS_DIR / "x48_look1.json").write_text(json.dumps(
+        {"schema": "gen3_read_record_v1", "arm": "X48", "look": 1, "verdict": "GO"}))
+    with pytest.raises(B.BatchError, match="not a valid read record"):
+        B.read_record(st, "x48", 1)
+    (stage / B.READS_DIR / "x48_look1.json").write_text(json.dumps({"arm": "X48", "look": 1, "verdict": "GO"}))
+    assert B.read_record(st, "x48", 1)["verdict"] == "GO"
+
+
 # ------------------------------------------------- X48 (PREREG x48_kffn_production_2026-10-27): one look, side-pinned
 def test_x48_is_side_pinned_and_one_look_on_the_side_gate_only(tmp_path):
     stage = tmp_path / "stage"

@@ -455,6 +455,28 @@ def test_look2_stops_where_look1_would_have():
     assert "should have stopped at look 1" in dec["decision"]["reasons"][-1]
 
 
+def test_the_stage_identity_is_final_only_at_a_stop_or_a_classed_look_2():
+    """AM-X60T-2: ``stage_keys`` (the record's top-level ``arm`` / ``look`` / ``delta_f``) on each branch of decide."""
+    def keys(dec: Dict[str, Any], spec: Any) -> Dict[str, Any]:
+        models = {lab: {"arm": m.arm} for lab, m in spec.models.items()}
+        return X.stage_keys(models, json.loads(json.dumps(dec)))
+
+    cells, p, spec = _look1([640, 650, 630])
+    assert keys(_decide(cells, p, spec), spec) == {"arm": "X60T", "look": 1,
+                                                    X.STAGE_PRIMARY_KEY: {"final": False, "class": X.CONTINUE}}
+    for f_on, cls in (([600, 620, 590], X.NUG), ([560, 570, 550], X.LOSS)):
+        cells, p, spec = _look1(f_on)
+        assert keys(_decide(cells, p, spec), spec)[X.STAGE_PRIMARY_KEY] == {"final": True, "class": cls}
+    cells, p, spec = _look2()
+    dec = _decide(cells, p, spec)
+    assert keys(dec, spec)[X.STAGE_PRIMARY_KEY] == {"final": True, "class": X.GAIN} and keys(dec, spec)["look"] == 2
+    cells, p, spec = _look2()
+    cells["anchor"]["primary"]["unplayed"] = 3                               # Δ_F INCONCLUSIVE: no class, not final
+    dec = _decide(cells, p, spec)
+    assert dec["decision"]["verdict"] == X.INCONCLUSIVE
+    assert keys(dec, spec)[X.STAGE_PRIMARY_KEY] == {"final": False, "class": None}
+
+
 def test_the_determinism_guard_compares_the_replayed_unit_with_the_imported_one():
     cells, p, spec = _look1([640, 650, 630])
     imp = _agroup(["forum72"], {OFF8[0]: {"forum72": (607, 1200)}}, imported_from="/x61p/look1")

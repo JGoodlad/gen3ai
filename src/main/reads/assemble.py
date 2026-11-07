@@ -6,7 +6,9 @@ checked by hand on the raw rows. Here:
 
 * an S group's regime is the eval-ledger READ's own (``LedgerRead.regime_id``: one family = one regime, a mixed
   family is the reader's typed refusal), recorded with the read's digest; a spec that registers a ``regime_id`` and a
-  ledger that holds another, or a panel whose team set is not the rows', makes the group INCONCLUSIVE;
+  ledger that holds another, or a panel whose team set is not the rows', makes the group INCONCLUSIVE; a panel
+  registered only at the play pin (``r72``) is checked through the group's registered ``regime_id``
+  (:func:`panel_team_set`);
 * an anchor unit's regime is :func:`anchor_regime_id` over the cell identity its ``summary.json`` stamps (opponent
   and version, both regimes, transport, server, format, forfeit limit, both team-content digests, the declared team
   cell, and the ENGINE, :mod:`main.reads.engine`): every counted unit of a (group, team set) must share ONE, else the
@@ -514,6 +516,35 @@ def cell_pairs(root: Path, family: str, request: str, sha: str, members: Mapping
     return {label_of[c.opponent]: c.n_pairs for c in cells if c.player == sha and c.opponent in label_of}
 
 
+def panel_team_set(panel: str, want_regime: Optional[str], team_sets: Sequence[str]
+                   ) -> Tuple[Optional[str], List[str]]:
+    """``(team set, reasons)`` of an S group on ``panel`` whose rows are on ``team_sets``.
+
+    * A panel MAIN registers (``heldout_panels.json`` or the diagnostic registry): its ``panel_team_set_id``, and rows on
+      any other team set are the reason.
+    * A panel registered only at a read's PLAY PIN (X60-T's ``r72``, PREREG §9 / AM-X60T-2: its team files are local and
+      their names reversible, so it never enters main's registry, which every corpus builder and contamination check
+      reads): main cannot derive its team set, so the group must REGISTER its ``regime_id``. That id digests the team
+      set (``eval_ledger.schema.REGIME_IDENTITY_V2``), so :func:`s_group`'s registered-regime check pins the panel; the
+      rows must also be on ONE team set. Without a registered id the group is INCONCLUSIVE (fail closed)."""
+    from main import heldout_panels as HP
+    from main.h2h import panel as PN
+
+    try:
+        HP.panel_entry(panel)
+    except KeyError:
+        if want_regime is None:
+            return None, [f"panel {panel} is not registered on main and the spec registers no regime_id for it: its "
+                          "team set cannot be checked here (a play-pin-only panel needs the group's regime_id)"]
+        if len(team_sets) > 1:
+            return None, [f"panel {panel} (registered only at the play pin): rows on {len(team_sets)} team sets "
+                          f"{list(team_sets)}"]
+        return (team_sets[0] if team_sets else None), []
+    want_ts = PN.panel_team_set_id(panel)
+    off = [t for t in team_sets if t != want_ts]
+    return want_ts, ([f"rows on team set(s) {off}, not panel {panel}'s {want_ts}"] if off else [])
+
+
 def s_group(root: Path, family: str, requests: Mapping[str, str], shas: Mapping[str, str],
             members: Mapping[str, str], *, panel: Optional[str] = None, want_regime: Optional[str] = None,
             refpop_content_sha256: Optional[str] = None, min_pairs: int = 500) -> Dict[str, Any]:
@@ -534,12 +565,8 @@ def s_group(root: Path, family: str, requests: Mapping[str, str], shas: Mapping[
     team_sets = sorted({str(r["regime"].get("team_set")) for r in got.rows})
     want_ts = None
     if panel is not None:
-        from main.h2h import panel as PN
-
-        want_ts = PN.panel_team_set_id(panel)
-        off = [t for t in team_sets if t != want_ts]
-        if off:
-            why.append(f"rows on team set(s) {off}, not panel {panel}'s {want_ts}")
+        want_ts, bad = panel_team_set(panel, want_regime, team_sets)
+        why += bad
     if not got.rows:
         why.append(f"family {family}: no row")
     if got.rows and got.regime_id is None:
