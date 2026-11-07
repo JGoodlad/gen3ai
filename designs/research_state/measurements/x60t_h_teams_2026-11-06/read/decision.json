@@ -1,0 +1,118 @@
+{
+ "decision": {
+  "delta_f_class": "CONTINUE",
+  "equivalent_reported": false,
+  "guards_not_read": "\u0394_F is not a GAIN",
+  "reasons": [
+   "look 1: \u0394\u0302 > 0, \u0394_F goes to look 2"
+  ],
+  "stop_at_look1": false,
+  "verdict": "CONTINUE"
+ },
+ "determinism_guard": {
+  "against": "primary",
+  "group": "determinism",
+  "passed": true,
+  "reasons": [],
+  "units": [
+   {
+    "banked": {
+     "imported_from": "/home/goodlad/gen3ai_archive/x61p_n1p_read/look1",
+     "unit": "c0_s3501__forum72__00"
+    },
+    "choices": "equal",
+    "choices_why": "",
+    "counted": true,
+    "tuple_equal": true,
+    "unit": "c0_s3501__forum72__00"
+   }
+  ]
+ },
+ "look": 1,
+ "primary": {
+  "class": "CONTINUE",
+  "equivalent": false,
+  "look1": {
+   "W": 0.00013032407407407385,
+   "b": 0.00020814168595679013,
+   "delta": 0.006388888888888888,
+   "df": 4,
+   "finals": 3,
+   "guard_near": false,
+   "halfwidth": 0.02809497853604501,
+   "halfwidth_registered": 0.02809497853604501,
+   "halfwidth_welch": 0.02588000950363428,
+   "hi": 0.034483867424933895,
+   "lo": -0.02170608964715612,
+   "look1_class": "NOT-RESOLVED",
+   "panels": 1,
+   "per_final_off": [
+    0.5058333333333334,
+    0.5208333333333334,
+    0.49833333333333335
+   ],
+   "per_final_on": [
+    0.5016666666666667,
+    0.5225,
+    0.52
+   ],
+   "pooled_off": [
+    0.5083333333333333
+   ],
+   "pooled_on": [
+    0.5147222222222222
+   ],
+   "sd_off": 0.01145643923738961,
+   "sd_on": 0.01137533068302401,
+   "sigma2_lb95": -0.00015319742118327247,
+   "sigma_hat": 0.0,
+   "sigma_hat_sq": -7.781761188271628e-05,
+   "vbin": 0.00013880939214677641,
+   "welch_df": 3.9997980977017846,
+   "welch_used": false
+  },
+  "look2": null,
+  "order": {
+   "off": [
+    "c0_s3501",
+    "c0_s3502",
+    "c0_s3503"
+   ],
+   "on": [
+    "x60t_s3501",
+    "x60t_s3502",
+    "x60t_s3503"
+   ]
+  },
+  "reasons": [],
+  "stop": false
+ },
+ "reported": {
+  "i_f": {
+   "read": false,
+   "reasons": [
+    "i_f: absent"
+   ]
+  },
+  "panels": {},
+  "r72": {
+   "read": false,
+   "reasons": [
+    "r72: absent"
+   ]
+  }
+ },
+ "schema": "gen3_read_x60_v1",
+ "sides": {
+  "off": [
+   "c0_s3501",
+   "c0_s3502",
+   "c0_s3503"
+  ],
+  "on": [
+   "x60t_s3501",
+   "x60t_s3502",
+   "x60t_s3503"
+  ]
+ }
+}

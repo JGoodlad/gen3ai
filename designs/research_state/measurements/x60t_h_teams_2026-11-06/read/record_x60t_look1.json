@@ -1,0 +1,594 @@
+{
+ "cells_inconclusive": [],
+ "code": {
+  "commit": "f564c333f9437f6a636e9daf890535c2c300aeb2",
+  "diff_sha": "e3b0c44298fc1c14",
+  "dirty": false,
+  "pin": "f564c333f9437f6a636e9daf890535c2c300aeb2",
+  "root": "/home/goodlad/dev/gen3ai-reads/x60t_play_de15dfc7"
+ },
+ "completeness": {
+  "class": "COMPLETE"
+ },
+ "created": "2026-11-07T00:44:40-0800",
+ "decision": {
+  "decision": {
+   "delta_f_class": "CONTINUE",
+   "equivalent_reported": false,
+   "guards_not_read": "\u0394_F is not a GAIN",
+   "reasons": [
+    "look 1: \u0394\u0302 > 0, \u0394_F goes to look 2"
+   ],
+   "stop_at_look1": false,
+   "verdict": "CONTINUE"
+  },
+  "determinism_guard": {
+   "against": "primary",
+   "group": "determinism",
+   "passed": true,
+   "reasons": [],
+   "units": [
+    {
+     "banked": {
+      "imported_from": "/home/goodlad/gen3ai_archive/x61p_n1p_read/look1",
+      "unit": "c0_s3501__forum72__00"
+     },
+     "choices": "equal",
+     "choices_why": "",
+     "counted": true,
+     "tuple_equal": true,
+     "unit": "c0_s3501__forum72__00"
+    }
+   ]
+  },
+  "look": 1,
+  "primary": {
+   "class": "CONTINUE",
+   "equivalent": false,
+   "look1": {
+    "W": 0.00013032407407407385,
+    "b": 0.00020814168595679013,
+    "delta": 0.006388888888888888,
+    "df": 4,
+    "finals": 3,
+    "guard_near": false,
+    "halfwidth": 0.02809497853604501,
+    "halfwidth_registered": 0.02809497853604501,
+    "halfwidth_welch": 0.02588000950363428,
+    "hi": 0.034483867424933895,
+    "lo": -0.02170608964715612,
+    "look1_class": "NOT-RESOLVED",
+    "panels": 1,
+    "per_final_off": [
+     0.5058333333333334,
+     0.5208333333333334,
+     0.49833333333333335
+    ],
+    "per_final_on": [
+     0.5016666666666667,
+     0.5225,
+     0.52
+    ],
+    "pooled_off": [
+     0.5083333333333333
+    ],
+    "pooled_on": [
+     0.5147222222222222
+    ],
+    "sd_off": 0.01145643923738961,
+    "sd_on": 0.01137533068302401,
+    "sigma2_lb95": -0.00015319742118327247,
+    "sigma_hat": 0.0,
+    "sigma_hat_sq": -7.781761188271628e-05,
+    "vbin": 0.00013880939214677641,
+    "welch_df": 3.9997980977017846,
+    "welch_used": false
+   },
+   "look2": null,
+   "order": {
+    "off": [
+     "c0_s3501",
+     "c0_s3502",
+     "c0_s3503"
+    ],
+    "on": [
+     "x60t_s3501",
+     "x60t_s3502",
+     "x60t_s3503"
+    ]
+   },
+   "reasons": [],
+   "stop": false
+  },
+  "reported": {
+   "i_f": {
+    "read": false,
+    "reasons": [
+     "i_f: absent"
+    ]
+   },
+   "panels": {},
+   "r72": {
+    "read": false,
+    "reasons": [
+     "r72: absent"
+    ]
+   }
+  },
+  "schema": "gen3_read_x60_v1",
+  "sides": {
+   "off": [
+    "c0_s3501",
+    "c0_s3502",
+    "c0_s3503"
+   ],
+   "on": [
+    "x60t_s3501",
+    "x60t_s3502",
+    "x60t_s3503"
+   ]
+  }
+ },
+ "imports": {
+  "anchor.primary": {
+   "code": {
+    "commit": "46b9e572cc0fa237f62ddd948fb5fa4d115e44a4",
+    "diff_sha": "e3b0c44298fc1c14",
+    "dirty": false,
+    "pin": null,
+    "root": "/home/goodlad/dev/gen3ai-reads/n1p_play_46b9e572"
+   },
+   "engine": "port=0d3d7629f16a0eaf/91;env=393631b886965b0c/126",
+   "group": "primary",
+   "labels": [
+    "c0_s3501",
+    "c0_s3502",
+    "c0_s3503"
+   ],
+   "read": "x61p_n1p_look1_2026-10-26",
+   "regime_ids": {
+    "forum72": [
+     "2118812c27885de3"
+    ]
+   },
+   "repins": [
+    {
+     "by": "N1-P look-1 reader",
+     "from_commit": "46b9e572cc0fa237f62ddd948fb5fa4d115e44a4",
+     "playpath_digest": "9822a30606cbd79aa160854a4826acdfc4c0e7ceb336928776015f3f24f6f9c8",
+     "playpath_files": 1537,
+     "playpath_schema": "gen3_read_playpath_v1",
+     "root": "/home/goodlad/dev/gen3ai-reads/n1p_play_sched_de15dfc7",
+     "schema": "gen3_read_repin_v1",
+     "t": 1793065264.6105964,
+     "time": "2026-10-26T18:41:04-0700",
+     "to_commit": "de15dfc7b6d19d6f0e4a3724f269e26e7aa22957",
+     "why": "anchor lane --concurrency 2; scheduling-only change, play path byte-identical to 46b9e572"
+    }
+   ],
+   "rows": 180,
+   "rows_sha256": "3450c4ab1634983e55030c7adc0dbfee4c1608f75808ddf33205037065c5eba5",
+   "sides": {
+    "peer_code": "their=legacy",
+    "policy_mode": "eval"
+   },
+   "spec_sha256": "1266daadeefe4142a2f2f339bbdedaf4e052c3f2ef3fb8a8b0d5550fb8729f03",
+   "state": "/home/goodlad/gen3ai_archive/x61p_n1p_read/look1"
+  }
+ },
+ "inputs": {
+  "determinism_guard": {
+   "against": "primary",
+   "group": "determinism",
+   "passed": true,
+   "reasons": [],
+   "units": [
+    {
+     "banked": {
+      "imported_from": "/home/goodlad/gen3ai_archive/x61p_n1p_read/look1",
+      "unit": "c0_s3501__forum72__00"
+     },
+     "choices": "equal",
+     "choices_why": "",
+     "counted": true,
+     "tuple_equal": true,
+     "unit": "c0_s3501__forum72__00"
+    }
+   ]
+  },
+  "guards": {
+   "registered": false
+  },
+  "look": 1,
+  "look1_seeds": [
+   3501,
+   3502,
+   3503
+  ],
+  "primary": {
+   "counts": {
+    "c0_s3501": {
+     "forum72": {
+      "n": 1200,
+      "skipped": 0,
+      "ties": 2,
+      "units": 60,
+      "wins": 607
+     }
+    },
+    "c0_s3502": {
+     "forum72": {
+      "n": 1200,
+      "skipped": 0,
+      "ties": 2,
+      "units": 60,
+      "wins": 625
+     }
+    },
+    "c0_s3503": {
+     "forum72": {
+      "n": 1200,
+      "skipped": 0,
+      "ties": 1,
+      "units": 60,
+      "wins": 598
+     }
+    },
+    "x60t_s3501": {
+     "forum72": {
+      "n": 1200,
+      "skipped": 0,
+      "ties": 0,
+      "units": 60,
+      "wins": 602
+     }
+    },
+    "x60t_s3502": {
+     "forum72": {
+      "n": 1200,
+      "skipped": 0,
+      "ties": 1,
+      "units": 60,
+      "wins": 627
+     }
+    },
+    "x60t_s3503": {
+     "forum72": {
+      "n": 1200,
+      "skipped": 0,
+      "ties": 0,
+      "units": 60,
+      "wins": 624
+     }
+    }
+   },
+   "engine": "port=0d3d7629f16a0eaf/91;env=393631b886965b0c/126",
+   "groups": [
+    "primary"
+   ],
+   "inconclusive": [],
+   "regime_ids": {
+    "forum72": [
+     "2118812c27885de3"
+    ]
+   },
+   "teamset": "forum72",
+   "units": 60
+  },
+  "recorded_seeds": {
+   "c0_s3501": {
+    "ok": true,
+    "recorded": 3501,
+    "run": "models/rb_x35_c0_s3501",
+    "spec": 3501
+   },
+   "c0_s3502": {
+    "ok": true,
+    "recorded": 3502,
+    "run": "models/rb_x35_c0_s3502",
+    "spec": 3502
+   },
+   "c0_s3503": {
+    "ok": true,
+    "recorded": 3503,
+    "run": "models/rb_x35_c0_s3503",
+    "spec": 3503
+   },
+   "x60t_s3501": {
+    "ok": true,
+    "recorded": 3501,
+    "run": "models/rb_x60t_s3501",
+    "spec": 3501
+   },
+   "x60t_s3502": {
+    "ok": true,
+    "recorded": 3502,
+    "run": "models/rb_x60t_s3502",
+    "spec": 3502
+   },
+   "x60t_s3503": {
+    "ok": true,
+    "recorded": 3503,
+    "run": "models/rb_x60t_s3503",
+    "spec": 3503
+   }
+  },
+  "schema": "gen3_read_x60_v1",
+  "seeds": {
+   "c0_s3501": 3501,
+   "c0_s3502": 3502,
+   "c0_s3503": 3503,
+   "x60t_s3501": 3501,
+   "x60t_s3502": 3502,
+   "x60t_s3503": 3503
+  },
+  "sides": {
+   "off": [
+    "c0_s3501",
+    "c0_s3502",
+    "c0_s3503"
+   ],
+   "on": [
+    "x60t_s3501",
+    "x60t_s3502",
+    "x60t_s3503"
+   ]
+  }
+ },
+ "ledgers": {},
+ "models": {
+  "c0_s3501": {
+   "arm": "c0",
+   "seed": 3501,
+   "sha256": "09a6a2df48509a59fd9aefe6d20d9722aad6717f1730c6dfd75274446b283303",
+   "source": "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3501/final_model.zip",
+   "step": 300061940
+  },
+  "c0_s3502": {
+   "arm": "c0",
+   "seed": 3502,
+   "sha256": "7e9a9890e2b397de6d8b87588c597d7f53e39b84efd3d1080305f77dbf22feec",
+   "source": "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3502/final_model.zip",
+   "step": 300061805
+  },
+  "c0_s3503": {
+   "arm": "c0",
+   "seed": 3503,
+   "sha256": "99096be8eccfc1cef4268ab4d6de15063a386cda475e72340212fdbf3a1b7e26",
+   "source": "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3503/final_model.zip",
+   "step": 300061491
+  },
+  "x60t_s3501": {
+   "arm": "x60t",
+   "seed": 3501,
+   "sha256": "d576e096b496bc913736db98c7885b66ca03eddb7cccb013b27ab824770b8bb9",
+   "source": "/home/goodlad/dev/gen3ai/models/rb_x60t_s3501/final_model.zip",
+   "step": 300078185
+  },
+  "x60t_s3502": {
+   "arm": "x60t",
+   "seed": 3502,
+   "sha256": "135017856da5939c56d4bcdf766d163d80439387851d4c3a5aafce4d18a68c6a",
+   "source": "/home/goodlad/dev/gen3ai/models/rb_x60t_s3502/final_model.zip",
+   "step": 300061763
+  },
+  "x60t_s3503": {
+   "arm": "x60t",
+   "seed": 3503,
+   "sha256": "5979dbb18d7a60222a0cbb1ac68fd6984f754c28d04dfa8c546d9d2e3082faad",
+   "source": "/home/goodlad/dev/gen3ai/models/rb_x60t_s3503/final_model.zip",
+   "step": 300061279
+  }
+ },
+ "prereg": "designs/research_state/measurements/x60t_h_teams_2026-11-06/PREREG.md",
+ "read": "x60t_look1_2026-11-06",
+ "rederived_guards": {
+  "held": false,
+  "hits": [],
+  "mode": "count",
+  "schema": "gen3_read_rederived_guards_v1",
+  "unavailable": [],
+  "units_checked": 361
+ },
+ "regimes": {
+  "anchor": {
+   "determinism": "00c8c0114bdf0836",
+   "primary": "00c8c0114bdf0836"
+  },
+  "s": {}
+ },
+ "repins": [],
+ "reported_incomplete": {},
+ "rule": "x60",
+ "schema": "gen3_read_record_v1",
+ "spec_sha256": "0f5d9a5fe18aa0b9545f66cc40759024d407618c0d7b389a13e27c7a94d0c57a",
+ "verdict": "CONTINUE",
+ "void": {
+  "c0_s3501": {
+   "batch2": null,
+   "dose": {
+    "got": {
+     "dose_rate": 2.0440550334496103e-08,
+     "lr_median": 0.00010046939300411524,
+     "updates_per_env_step": 0.00020345052083333334
+    },
+    "pass": true,
+    "reference": "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3501",
+    "rel_tol": 1e-06,
+    "want": {
+     "dose_rate": 2.0440550334496103e-08,
+     "lr_median": 0.00010046939300411524,
+     "updates_per_env_step": 0.00020345052083333334
+    },
+    "why": ""
+   },
+   "k9b": "PASS",
+   "k9b_file": "/home/goodlad/dev/gen3ai/designs/research_state/measurements/x35_breakers_stage_2026-10-17/k9b/rb_x35_c0_s3501.json",
+   "pass": true,
+   "pin": {
+    "pass": true,
+    "recorded": [
+     "f4b25238def57900c0305bb2a3a5a8f9edaef285"
+    ],
+    "want": "f4b25238d",
+    "why": ""
+   },
+   "run": "models/rb_x35_c0_s3501"
+  },
+  "c0_s3502": {
+   "batch2": null,
+   "dose": {
+    "got": {
+     "dose_rate": 2.0440550334496103e-08,
+     "lr_median": 0.00010046939300411524,
+     "updates_per_env_step": 0.00020345052083333334
+    },
+    "pass": true,
+    "reference": "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3501",
+    "rel_tol": 1e-06,
+    "want": {
+     "dose_rate": 2.0440550334496103e-08,
+     "lr_median": 0.00010046939300411524,
+     "updates_per_env_step": 0.00020345052083333334
+    },
+    "why": ""
+   },
+   "k9b": "PASS",
+   "k9b_file": "/home/goodlad/dev/gen3ai/designs/research_state/measurements/x35_breakers_stage_2026-10-17/k9b/rb_x35_c0_s3502.json",
+   "pass": true,
+   "pin": {
+    "pass": true,
+    "recorded": [
+     "f4b25238def57900c0305bb2a3a5a8f9edaef285"
+    ],
+    "want": "f4b25238d",
+    "why": ""
+   },
+   "run": "models/rb_x35_c0_s3502"
+  },
+  "c0_s3503": {
+   "batch2": null,
+   "dose": {
+    "got": {
+     "dose_rate": 2.0440550334496103e-08,
+     "lr_median": 0.00010046939300411524,
+     "updates_per_env_step": 0.00020345052083333334
+    },
+    "pass": true,
+    "reference": "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3501",
+    "rel_tol": 1e-06,
+    "want": {
+     "dose_rate": 2.0440550334496103e-08,
+     "lr_median": 0.00010046939300411524,
+     "updates_per_env_step": 0.00020345052083333334
+    },
+    "why": ""
+   },
+   "k9b": "PASS",
+   "k9b_file": "/home/goodlad/dev/gen3ai/designs/research_state/measurements/x35_breakers_stage_2026-10-17/k9b/rb_x35_c0_s3503.json",
+   "pass": true,
+   "pin": {
+    "pass": true,
+    "recorded": [
+     "f4b25238def57900c0305bb2a3a5a8f9edaef285"
+    ],
+    "want": "f4b25238d",
+    "why": ""
+   },
+   "run": "models/rb_x35_c0_s3503"
+  },
+  "x60t_s3501": {
+   "batch2": null,
+   "dose": {
+    "got": {
+     "dose_rate": 2.0440550334496103e-08,
+     "lr_median": 0.00010046939300411524,
+     "updates_per_env_step": 0.00020345052083333334
+    },
+    "pass": true,
+    "reference": "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3501",
+    "rel_tol": 1e-06,
+    "want": {
+     "dose_rate": 2.0440550334496103e-08,
+     "lr_median": 0.00010046939300411524,
+     "updates_per_env_step": 0.00020345052083333334
+    },
+    "why": ""
+   },
+   "k9b": "PASS",
+   "k9b_file": "/home/goodlad/dev/gen3ai/designs/research_state/measurements/x35_breakers_stage_2026-10-17/k9b/rb_x60t_s3501.json",
+   "pass": true,
+   "pin": {
+    "pass": true,
+    "recorded": [
+     "7fe15726c77cfa823aee78110444bf25c3c7370e"
+    ],
+    "want": "7fe15726c77cfa823aee78110444bf25c3c7370e",
+    "why": ""
+   },
+   "run": "models/rb_x60t_s3501"
+  },
+  "x60t_s3502": {
+   "batch2": null,
+   "dose": {
+    "got": {
+     "dose_rate": 2.0440550334496103e-08,
+     "lr_median": 0.00010046939300411524,
+     "updates_per_env_step": 0.00020345052083333334
+    },
+    "pass": true,
+    "reference": "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3501",
+    "rel_tol": 1e-06,
+    "want": {
+     "dose_rate": 2.0440550334496103e-08,
+     "lr_median": 0.00010046939300411524,
+     "updates_per_env_step": 0.00020345052083333334
+    },
+    "why": ""
+   },
+   "k9b": "PASS",
+   "k9b_file": "/home/goodlad/dev/gen3ai/designs/research_state/measurements/x35_breakers_stage_2026-10-17/k9b/rb_x60t_s3502.json",
+   "pass": true,
+   "pin": {
+    "pass": true,
+    "recorded": [
+     "7fe15726c77cfa823aee78110444bf25c3c7370e"
+    ],
+    "want": "7fe15726c77cfa823aee78110444bf25c3c7370e",
+    "why": ""
+   },
+   "run": "models/rb_x60t_s3502"
+  },
+  "x60t_s3503": {
+   "batch2": null,
+   "dose": {
+    "got": {
+     "dose_rate": 2.0440550334496103e-08,
+     "lr_median": 0.00010046939300411524,
+     "updates_per_env_step": 0.00020345052083333334
+    },
+    "pass": true,
+    "reference": "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3501",
+    "rel_tol": 1e-06,
+    "want": {
+     "dose_rate": 2.0440550334496103e-08,
+     "lr_median": 0.00010046939300411524,
+     "updates_per_env_step": 0.00020345052083333334
+    },
+    "why": ""
+   },
+   "k9b": "PASS",
+   "k9b_file": "/home/goodlad/dev/gen3ai/designs/research_state/measurements/x35_breakers_stage_2026-10-17/k9b/rb_x60t_s3503.json",
+   "pass": true,
+   "pin": {
+    "pass": true,
+    "recorded": [
+     "7fe15726c77cfa823aee78110444bf25c3c7370e"
+    ],
+    "want": "7fe15726c77cfa823aee78110444bf25c3c7370e",
+    "why": ""
+   },
+   "run": "models/rb_x60t_s3503"
+  }
+ }
+}

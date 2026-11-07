@@ -1,0 +1,50 @@
+{
+ "c0_s3501": {
+  "copied_at": "2026-11-06T09:38:27-0800",
+  "copy": "/home/goodlad/gen3ai_archive/x60t_read/look1/ckpts/c0_s3501/final_model.zip",
+  "label": "c0_s3501",
+  "sha256": "09a6a2df48509a59fd9aefe6d20d9722aad6717f1730c6dfd75274446b283303",
+  "source": "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3501/final_model.zip",
+  "step": 300061940
+ },
+ "c0_s3502": {
+  "copied_at": "2026-11-06T09:38:27-0800",
+  "copy": "/home/goodlad/gen3ai_archive/x60t_read/look1/ckpts/c0_s3502/final_model.zip",
+  "label": "c0_s3502",
+  "sha256": "7e9a9890e2b397de6d8b87588c597d7f53e39b84efd3d1080305f77dbf22feec",
+  "source": "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3502/final_model.zip",
+  "step": 300061805
+ },
+ "c0_s3503": {
+  "copied_at": "2026-11-06T09:38:27-0800",
+  "copy": "/home/goodlad/gen3ai_archive/x60t_read/look1/ckpts/c0_s3503/final_model.zip",
+  "label": "c0_s3503",
+  "sha256": "99096be8eccfc1cef4268ab4d6de15063a386cda475e72340212fdbf3a1b7e26",
+  "source": "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3503/final_model.zip",
+  "step": 300061491
+ },
+ "x60t_s3501": {
+  "copied_at": "2026-11-06T14:27:36-0800",
+  "copy": "/home/goodlad/gen3ai_archive/x60t_read/look1/ckpts/x60t_s3501/final_model.zip",
+  "label": "x60t_s3501",
+  "sha256": "d576e096b496bc913736db98c7885b66ca03eddb7cccb013b27ab824770b8bb9",
+  "source": "/home/goodlad/dev/gen3ai/models/rb_x60t_s3501/final_model.zip",
+  "step": 300078185
+ },
+ "x60t_s3502": {
+  "copied_at": "2026-11-06T19:03:36-0800",
+  "copy": "/home/goodlad/gen3ai_archive/x60t_read/look1/ckpts/x60t_s3502/final_model.zip",
+  "label": "x60t_s3502",
+  "sha256": "135017856da5939c56d4bcdf766d163d80439387851d4c3a5aafce4d18a68c6a",
+  "source": "/home/goodlad/dev/gen3ai/models/rb_x60t_s3502/final_model.zip",
+  "step": 300061763
+ },
+ "x60t_s3503": {
+  "copied_at": "2026-11-06T23:07:19-0800",
+  "copy": "/home/goodlad/gen3ai_archive/x60t_read/look1/ckpts/x60t_s3503/final_model.zip",
+  "label": "x60t_s3503",
+  "sha256": "5979dbb18d7a60222a0cbb1ac68fd6984f754c28d04dfa8c546d9d2e3082faad",
+  "source": "/home/goodlad/dev/gen3ai/models/rb_x60t_s3503/final_model.zip",
+  "step": 300061279
+ }
+}

@@ -1,0 +1,188 @@
+{
+ "c0_s3501": {
+  "batch2": null,
+  "dose": {
+   "got": {
+    "dose_rate": 2.0440550334496103e-08,
+    "lr_median": 0.00010046939300411524,
+    "updates_per_env_step": 0.00020345052083333334
+   },
+   "pass": true,
+   "reference": "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3501",
+   "rel_tol": 1e-06,
+   "want": {
+    "dose_rate": 2.0440550334496103e-08,
+    "lr_median": 0.00010046939300411524,
+    "updates_per_env_step": 0.00020345052083333334
+   },
+   "why": ""
+  },
+  "k9b": "PASS",
+  "k9b_file": "/home/goodlad/dev/gen3ai/designs/research_state/measurements/x35_breakers_stage_2026-10-17/k9b/rb_x35_c0_s3501.json",
+  "pass": true,
+  "pin": {
+   "pass": true,
+   "recorded": [
+    "f4b25238def57900c0305bb2a3a5a8f9edaef285"
+   ],
+   "want": "f4b25238d",
+   "why": ""
+  },
+  "run": "models/rb_x35_c0_s3501"
+ },
+ "c0_s3502": {
+  "batch2": null,
+  "dose": {
+   "got": {
+    "dose_rate": 2.0440550334496103e-08,
+    "lr_median": 0.00010046939300411524,
+    "updates_per_env_step": 0.00020345052083333334
+   },
+   "pass": true,
+   "reference": "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3501",
+   "rel_tol": 1e-06,
+   "want": {
+    "dose_rate": 2.0440550334496103e-08,
+    "lr_median": 0.00010046939300411524,
+    "updates_per_env_step": 0.00020345052083333334
+   },
+   "why": ""
+  },
+  "k9b": "PASS",
+  "k9b_file": "/home/goodlad/dev/gen3ai/designs/research_state/measurements/x35_breakers_stage_2026-10-17/k9b/rb_x35_c0_s3502.json",
+  "pass": true,
+  "pin": {
+   "pass": true,
+   "recorded": [
+    "f4b25238def57900c0305bb2a3a5a8f9edaef285"
+   ],
+   "want": "f4b25238d",
+   "why": ""
+  },
+  "run": "models/rb_x35_c0_s3502"
+ },
+ "c0_s3503": {
+  "batch2": null,
+  "dose": {
+   "got": {
+    "dose_rate": 2.0440550334496103e-08,
+    "lr_median": 0.00010046939300411524,
+    "updates_per_env_step": 0.00020345052083333334
+   },
+   "pass": true,
+   "reference": "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3501",
+   "rel_tol": 1e-06,
+   "want": {
+    "dose_rate": 2.0440550334496103e-08,
+    "lr_median": 0.00010046939300411524,
+    "updates_per_env_step": 0.00020345052083333334
+   },
+   "why": ""
+  },
+  "k9b": "PASS",
+  "k9b_file": "/home/goodlad/dev/gen3ai/designs/research_state/measurements/x35_breakers_stage_2026-10-17/k9b/rb_x35_c0_s3503.json",
+  "pass": true,
+  "pin": {
+   "pass": true,
+   "recorded": [
+    "f4b25238def57900c0305bb2a3a5a8f9edaef285"
+   ],
+   "want": "f4b25238d",
+   "why": ""
+  },
+  "run": "models/rb_x35_c0_s3503"
+ },
+ "x60t_s3501": {
+  "batch2": null,
+  "dose": {
+   "got": {
+    "dose_rate": 2.0440550334496103e-08,
+    "lr_median": 0.00010046939300411524,
+    "updates_per_env_step": 0.00020345052083333334
+   },
+   "pass": true,
+   "reference": "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3501",
+   "rel_tol": 1e-06,
+   "want": {
+    "dose_rate": 2.0440550334496103e-08,
+    "lr_median": 0.00010046939300411524,
+    "updates_per_env_step": 0.00020345052083333334
+   },
+   "why": ""
+  },
+  "k9b": "PASS",
+  "k9b_file": "/home/goodlad/dev/gen3ai/designs/research_state/measurements/x35_breakers_stage_2026-10-17/k9b/rb_x60t_s3501.json",
+  "pass": true,
+  "pin": {
+   "pass": true,
+   "recorded": [
+    "7fe15726c77cfa823aee78110444bf25c3c7370e"
+   ],
+   "want": "7fe15726c77cfa823aee78110444bf25c3c7370e",
+   "why": ""
+  },
+  "run": "models/rb_x60t_s3501"
+ },
+ "x60t_s3502": {
+  "batch2": null,
+  "dose": {
+   "got": {
+    "dose_rate": 2.0440550334496103e-08,
+    "lr_median": 0.00010046939300411524,
+    "updates_per_env_step": 0.00020345052083333334
+   },
+   "pass": true,
+   "reference": "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3501",
+   "rel_tol": 1e-06,
+   "want": {
+    "dose_rate": 2.0440550334496103e-08,
+    "lr_median": 0.00010046939300411524,
+    "updates_per_env_step": 0.00020345052083333334
+   },
+   "why": ""
+  },
+  "k9b": "PASS",
+  "k9b_file": "/home/goodlad/dev/gen3ai/designs/research_state/measurements/x35_breakers_stage_2026-10-17/k9b/rb_x60t_s3502.json",
+  "pass": true,
+  "pin": {
+   "pass": true,
+   "recorded": [
+    "7fe15726c77cfa823aee78110444bf25c3c7370e"
+   ],
+   "want": "7fe15726c77cfa823aee78110444bf25c3c7370e",
+   "why": ""
+  },
+  "run": "models/rb_x60t_s3502"
+ },
+ "x60t_s3503": {
+  "batch2": null,
+  "dose": {
+   "got": {
+    "dose_rate": 2.0440550334496103e-08,
+    "lr_median": 0.00010046939300411524,
+    "updates_per_env_step": 0.00020345052083333334
+   },
+   "pass": true,
+   "reference": "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3501",
+   "rel_tol": 1e-06,
+   "want": {
+    "dose_rate": 2.0440550334496103e-08,
+    "lr_median": 0.00010046939300411524,
+    "updates_per_env_step": 0.00020345052083333334
+   },
+   "why": ""
+  },
+  "k9b": "PASS",
+  "k9b_file": "/home/goodlad/dev/gen3ai/designs/research_state/measurements/x35_breakers_stage_2026-10-17/k9b/rb_x60t_s3503.json",
+  "pass": true,
+  "pin": {
+   "pass": true,
+   "recorded": [
+    "7fe15726c77cfa823aee78110444bf25c3c7370e"
+   ],
+   "want": "7fe15726c77cfa823aee78110444bf25c3c7370e",
+   "why": ""
+  },
+  "run": "models/rb_x60t_s3503"
+ }
+}

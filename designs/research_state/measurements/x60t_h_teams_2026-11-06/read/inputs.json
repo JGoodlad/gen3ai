@@ -1,0 +1,159 @@
+{
+ "determinism_guard": {
+  "against": "primary",
+  "group": "determinism",
+  "passed": true,
+  "reasons": [],
+  "units": [
+   {
+    "banked": {
+     "imported_from": "/home/goodlad/gen3ai_archive/x61p_n1p_read/look1",
+     "unit": "c0_s3501__forum72__00"
+    },
+    "choices": "equal",
+    "choices_why": "",
+    "counted": true,
+    "tuple_equal": true,
+    "unit": "c0_s3501__forum72__00"
+   }
+  ]
+ },
+ "guards": {
+  "registered": false
+ },
+ "look": 1,
+ "look1_seeds": [
+  3501,
+  3502,
+  3503
+ ],
+ "primary": {
+  "counts": {
+   "c0_s3501": {
+    "forum72": {
+     "n": 1200,
+     "skipped": 0,
+     "ties": 2,
+     "units": 60,
+     "wins": 607
+    }
+   },
+   "c0_s3502": {
+    "forum72": {
+     "n": 1200,
+     "skipped": 0,
+     "ties": 2,
+     "units": 60,
+     "wins": 625
+    }
+   },
+   "c0_s3503": {
+    "forum72": {
+     "n": 1200,
+     "skipped": 0,
+     "ties": 1,
+     "units": 60,
+     "wins": 598
+    }
+   },
+   "x60t_s3501": {
+    "forum72": {
+     "n": 1200,
+     "skipped": 0,
+     "ties": 0,
+     "units": 60,
+     "wins": 602
+    }
+   },
+   "x60t_s3502": {
+    "forum72": {
+     "n": 1200,
+     "skipped": 0,
+     "ties": 1,
+     "units": 60,
+     "wins": 627
+    }
+   },
+   "x60t_s3503": {
+    "forum72": {
+     "n": 1200,
+     "skipped": 0,
+     "ties": 0,
+     "units": 60,
+     "wins": 624
+    }
+   }
+  },
+  "engine": "port=0d3d7629f16a0eaf/91;env=393631b886965b0c/126",
+  "groups": [
+   "primary"
+  ],
+  "inconclusive": [],
+  "regime_ids": {
+   "forum72": [
+    "2118812c27885de3"
+   ]
+  },
+  "teamset": "forum72",
+  "units": 60
+ },
+ "recorded_seeds": {
+  "c0_s3501": {
+   "ok": true,
+   "recorded": 3501,
+   "run": "models/rb_x35_c0_s3501",
+   "spec": 3501
+  },
+  "c0_s3502": {
+   "ok": true,
+   "recorded": 3502,
+   "run": "models/rb_x35_c0_s3502",
+   "spec": 3502
+  },
+  "c0_s3503": {
+   "ok": true,
+   "recorded": 3503,
+   "run": "models/rb_x35_c0_s3503",
+   "spec": 3503
+  },
+  "x60t_s3501": {
+   "ok": true,
+   "recorded": 3501,
+   "run": "models/rb_x60t_s3501",
+   "spec": 3501
+  },
+  "x60t_s3502": {
+   "ok": true,
+   "recorded": 3502,
+   "run": "models/rb_x60t_s3502",
+   "spec": 3502
+  },
+  "x60t_s3503": {
+   "ok": true,
+   "recorded": 3503,
+   "run": "models/rb_x60t_s3503",
+   "spec": 3503
+  }
+ },
+ "schema": "gen3_read_x60_v1",
+ "seeds": {
+  "c0_s3501": 3501,
+  "c0_s3502": 3502,
+  "c0_s3503": 3503,
+  "x60t_s3501": 3501,
+  "x60t_s3502": 3502,
+  "x60t_s3503": 3503
+ },
+ "sides": {
+  "off": [
+   "c0_s3501",
+   "c0_s3502",
+   "c0_s3503"
+  ],
+  "on": [
+   "x60t_s3501",
+   "x60t_s3502",
+   "x60t_s3503"
+  ]
+ }
+}
