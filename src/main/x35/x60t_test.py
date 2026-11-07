@@ -202,3 +202,43 @@ def test_look2_and_c0s_top_up_run_only_on_x60ts_own_look1_continue(tmp_path):
     assert B.stage_status(st, "x60t", 3504)[0] == B.REFUSED and B.stage_status(st, "c0", 3506)[0] == B.REFUSED
     assert B.stage_status(st, "c0", 3504)[0] == B.PENDING                       # C0's batch-1 look 2 is still G1's
     assert "rb_x60t_s3501" in B.side_pinned_run_names() and "rb_x35_c0_s3508" in B.side_pinned_run_names()
+
+
+STAGE_DIR = "designs/research_state/measurements/x35_breakers_stage_2026-10-17"
+LOOK1_RECORD = "designs/research_state/measurements/x60t_h_teams_2026-11-06/read/record_x60t_look1.json"
+
+
+def test_the_stage_copy_of_look1_is_the_shipped_record_re_serialised():
+    """AM-X60T-2 (PREREG §23.1): ``reads/x60t_look1.json`` is ``record --out`` from the SAME look-1 state, after
+    ``Rule.stage_keys``: every key but ``created`` serialises byte-identically to the shipped record, the only additions
+    are the stage identity, and the kit reads it as look 1 CONTINUE (so X60Tb and the C0 top-up are licensed)."""
+    from main.reads import record as REC
+
+    root = repo_root()
+    shipped = json.loads((root / LOOK1_RECORD).read_text())
+    stage = json.loads((root / STAGE_DIR / B.READS_DIR / "x60t_look1.json").read_text())
+
+    def canon(v):
+        return json.dumps(v, indent=1, sort_keys=True, default=str)
+
+    assert set(stage) - set(shipped) == {"arm", "look", "delta_f"} and not set(shipped) - set(stage)
+    assert [k for k in shipped if k != "created" and canon(shipped[k]) != canon(stage[k])] == []
+    assert (stage["arm"], stage["look"], stage["delta_f"]) == ("X60T", 1, {"final": False, "class": "CONTINUE"})
+    assert REC.check(stage) == []
+    rec = B.read_record(str(root / STAGE_DIR), "x60t", 1)
+    assert rec is not None and rec["verdict"] == "CONTINUE"
+
+
+def test_read_record_refuses_a_stage_record_whose_identity_is_not_its_decisions(tmp_path):
+    """REVIEW AM-2 m5: a ``main.reads`` record in ``reads/`` passes ``record.check`` before it licenses anything, so a
+    hand-edited ``delta_f`` (a CONTINUE look 1 claimed final GAIN) refuses rather than trigger ``ge_x60t``."""
+    root = repo_root()
+    stage = tmp_path / "stage"
+    (stage / B.READS_DIR).mkdir(parents=True)
+    doc = json.loads((root / STAGE_DIR / B.READS_DIR / "x60t_look1.json").read_text())
+    (stage / B.READS_DIR / "x60t_look1.json").write_text(json.dumps(doc))
+    assert B.read_record(str(stage), "x60t", 1)["delta_f"] == {"final": False, "class": "CONTINUE"}
+    (stage / B.READS_DIR / "x60t_look1.json").write_text(json.dumps(dict(doc, delta_f={"final": True,
+                                                                                      "class": "GAIN"})))
+    with pytest.raises(B.BatchError, match="not a valid read record"):
+        B.read_record(str(stage), "x60t", 1)

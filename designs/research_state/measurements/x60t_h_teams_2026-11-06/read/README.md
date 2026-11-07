@@ -4,7 +4,9 @@ X60-T = C0 + `--human-data teams:hr_spec_v1.r3@0.5` (2,295 human-built ladder te
 + 20M at X60T_PIN `7fe15726`, s3501–s3503. Control: C0 s3501–s3503 (production pin `f4b25238`), IMPORTED from X61P look 1's
 `primary` group (§21.3). Rule `x60` ([`../PREREG.md`](../PREREG.md) §5, AM-X60T-1 §21). Record:
 [`record_x60t_look1.json`](record_x60t_look1.json), the verbatim `main.reads record --out` output (sha256
-`538700ee79b69778…`). It is NOT yet at the stage's `reads/x60t_look1.json`; see Hazard 1.
+`538700ee79b69778…`). The stage's copy is `../../x35_breakers_stage_2026-10-17/reads/x60t_look1.json`, re-recorded
+from the same state by AM-X60T-2 (PREREG §23.1): every key but `created` is byte-identical to this file, plus the stage
+identity `arm` / `look` / `delta_f`.
 Run record (aborted s3501, resume #1, §13 / §15 per seed, the queue at the read's start): PREREG §22, committed before
 `decide` ran.
 
@@ -61,17 +63,10 @@ under §13's ≥ 3 bar for a without-resumed report.
 
 ## Hazards (FINDINGS)
 
-1. **The kit cannot read this record, so it is not yet at `reads/x60t_look1.json`.**
-   - `main.x35.batch.read_record` requires a top-level `arm` (`X60T`) and `look`. Rule `x60` is not an `x35_record`
-     rule, so `record` writes neither.
-   - At `reads/x60t_look1.json`, `kit stage-check --arm x60t --seed 3504` REFUSED: "the record is arm None look None,
-     not X60T look 1". `batch_test.py::test_every_committed_read_record_carries_its_arms_registered_label` fails on
-     it.
-   - X60Tb (look 2) and the C0 top-up are gated on that file (`batch.py`: "look 2 and the top-up run only on x60t's
-     own look-1 CONTINUE (`reads/x60t_look1.json`)"). Until it is there, stage-check reads look 1 as not yet read,
-     which holds X60Tb (fails closed).
-   - The record is the module's output and is NOT hand-edited. A fix to `record` or `read_record` is a separate unit,
-     needed before X60Tb's GO. Then `record --out` writes it to `reads/` again from the same state.
+1. **RESOLVED by AM-X60T-2 (PREREG §23.1): the kit could not read this record.** Rule `x60` wrote no top-level `arm` /
+   `look`, so `main.x35.batch.read_record` refused it and `kit stage-check --arm x60t --seed 3504` held look 2 (fail
+   closed). `Rule.stage_keys` now writes the stage identity; the re-recorded `reads/x60t_look1.json` licenses X60Tb and
+   the C0 top-up (stage-check ALLOWED, "x60t look 1 is CONTINUE").
 2. **σ̂² came out negative (−7.8e-5),** so the 1.0 pp seed-SD floor sets the interval. Three finals a side cannot
    estimate the seed term (§5.1).
 3. **C0 is a shared control (§11, m7)** with X61P and D3. A lucky-low C0 would lift all three.

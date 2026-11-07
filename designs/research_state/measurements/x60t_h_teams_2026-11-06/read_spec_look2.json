@@ -1,0 +1,683 @@
+{
+ "schema": "gen3_read_spec_v1",
+ "read": "x60t_look2_2026-11-07",
+ "prereg": "designs/research_state/measurements/x60t_h_teams_2026-11-06/PREREG.md",
+ "note": "X60-T look 2 (AM-X60T-2, PREREG §23): 8 v 8. Δ_F on forum72 at 60 units (ON s3501-s3503 imported from look 1, C0 s3501-s3505 from X61P's two states, ON s3504-s3508 and C0 s3506-s3508 played); the determinism guard; goal (a) on home72; Δ_P (S home72, C0 s3501-s3505 imported), I_F (S forum72) and R72 (S r72, registered only at the play pin: main checks it through its regime id); REPORTED H / P72 / home72 at 7 units; T - D1 (5 v 5, D1 re-played at E3); the not-played guards stub; the VOID gate on all 21 finals with a pin per arm. Plan and play at the play pin; assemble / decide / record from a main checkout",
+ "pin": "f564c333f9437f6a636e9daf890535c2c300aeb2",
+ "models": {
+  "x60t_s3501": {
+   "arm": "x60t",
+   "seed": 3501,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x60t_s3501/final_model.zip",
+    "sha256": "d576e096b496bc913736db98c7885b66ca03eddb7cccb013b27ab824770b8bb9"
+   }
+  },
+  "x60t_s3502": {
+   "arm": "x60t",
+   "seed": 3502,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x60t_s3502/final_model.zip",
+    "sha256": "135017856da5939c56d4bcdf766d163d80439387851d4c3a5aafce4d18a68c6a"
+   }
+  },
+  "x60t_s3503": {
+   "arm": "x60t",
+   "seed": 3503,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x60t_s3503/final_model.zip",
+    "sha256": "5979dbb18d7a60222a0cbb1ac68fd6984f754c28d04dfa8c546d9d2e3082faad"
+   }
+  },
+  "x60t_s3504": {
+   "arm": "x60t",
+   "seed": 3504,
+   "ref": {
+    "kind": "final",
+    "run": "models/rb_x60t_s3504",
+    "min_step": 300000170,
+    "quiet_s": 300
+   }
+  },
+  "x60t_s3505": {
+   "arm": "x60t",
+   "seed": 3505,
+   "ref": {
+    "kind": "final",
+    "run": "models/rb_x60t_s3505",
+    "min_step": 300000170,
+    "quiet_s": 300
+   }
+  },
+  "x60t_s3506": {
+   "arm": "x60t",
+   "seed": 3506,
+   "ref": {
+    "kind": "final",
+    "run": "models/rb_x60t_s3506",
+    "min_step": 300000170,
+    "quiet_s": 300
+   }
+  },
+  "x60t_s3507": {
+   "arm": "x60t",
+   "seed": 3507,
+   "ref": {
+    "kind": "final",
+    "run": "models/rb_x60t_s3507",
+    "min_step": 300000170,
+    "quiet_s": 300
+   }
+  },
+  "x60t_s3508": {
+   "arm": "x60t",
+   "seed": 3508,
+   "ref": {
+    "kind": "final",
+    "run": "models/rb_x60t_s3508",
+    "min_step": 300000170,
+    "quiet_s": 300
+   }
+  },
+  "c0_s3501": {
+   "arm": "c0",
+   "seed": 3501,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x35_c0_s3501/final_model.zip",
+    "sha256": "09a6a2df48509a59fd9aefe6d20d9722aad6717f1730c6dfd75274446b283303"
+   }
+  },
+  "c0_s3502": {
+   "arm": "c0",
+   "seed": 3502,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x35_c0_s3502/final_model.zip",
+    "sha256": "7e9a9890e2b397de6d8b87588c597d7f53e39b84efd3d1080305f77dbf22feec"
+   }
+  },
+  "c0_s3503": {
+   "arm": "c0",
+   "seed": 3503,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x35_c0_s3503/final_model.zip",
+    "sha256": "99096be8eccfc1cef4268ab4d6de15063a386cda475e72340212fdbf3a1b7e26"
+   }
+  },
+  "c0_s3504": {
+   "arm": "c0",
+   "seed": 3504,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x35_c0_s3504/final_model.zip",
+    "sha256": "26835480f06840020880b3dd0e4de0558d9677ff1529360b99994dcf1dfa5fae"
+   }
+  },
+  "c0_s3505": {
+   "arm": "c0",
+   "seed": 3505,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x35_c0_s3505/final_model.zip",
+    "sha256": "bb10cd96b4c5f7e79fcc8256884685053c2ac3c142f6a14c996f809e0b2626a0"
+   }
+  },
+  "c0_s3506": {
+   "arm": "c0",
+   "seed": 3506,
+   "ref": {
+    "kind": "final",
+    "run": "models/rb_x35_c0_s3506",
+    "min_step": 300000170,
+    "quiet_s": 300
+   }
+  },
+  "c0_s3507": {
+   "arm": "c0",
+   "seed": 3507,
+   "ref": {
+    "kind": "final",
+    "run": "models/rb_x35_c0_s3507",
+    "min_step": 300000170,
+    "quiet_s": 300
+   }
+  },
+  "c0_s3508": {
+   "arm": "c0",
+   "seed": 3508,
+   "ref": {
+    "kind": "final",
+    "run": "models/rb_x35_c0_s3508",
+    "min_step": 300000170,
+    "quiet_s": 300
+   }
+  },
+  "d1_s3501": {
+   "arm": "d1",
+   "seed": 3501,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x35_d1wide_s3501/final_model.zip",
+    "sha256": "3d5c9d45ce367eb50034d2a66dd8a6b43a8c71d086872f9ae4bf9bb0bbd7940c"
+   }
+  },
+  "d1_s3502": {
+   "arm": "d1",
+   "seed": 3502,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x35_d1wide_s3502/final_model.zip",
+    "sha256": "dc3d5cd7d60a5f723f7323f73290fe673a893c3a6796d1428dcb38df066f8d39"
+   }
+  },
+  "d1_s3503": {
+   "arm": "d1",
+   "seed": 3503,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x35_d1wide_s3503/final_model.zip",
+    "sha256": "30e4e79a38d83c6066c37ddc93e1807135f6acfcb70b59ede0e3e589a0296aec"
+   }
+  },
+  "d1_s3504": {
+   "arm": "d1",
+   "seed": 3504,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x35_d1wide_s3504/final_model.zip",
+    "sha256": "fdaf6daa66a31c1559b034763d711607de652c4f693be91eaaef49e5e9eaf645"
+   }
+  },
+  "d1_s3505": {
+   "arm": "d1",
+   "seed": 3505,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x35_d1wide_s3505/final_model.zip",
+    "sha256": "2e36697e57bb0facf81cad5dd79ff8bd606ac81d0ea2a8b3398e65d6ab4f2450"
+   }
+  }
+ },
+ "anchor": {
+  "primary": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "forum72"
+   ],
+   "unit_seeds": "0-59",
+   "models": [
+    "x60t_s3501",
+    "x60t_s3502",
+    "x60t_s3503",
+    "x60t_s3504",
+    "x60t_s3505",
+    "x60t_s3506",
+    "x60t_s3507",
+    "x60t_s3508",
+    "c0_s3506",
+    "c0_s3507",
+    "c0_s3508"
+   ],
+   "import": {
+    "state": "~/gen3ai_archive/x60t_read/look1",
+    "spec_sha256": "0f5d9a5fe18aa0b9545f66cc40759024d407618c0d7b389a13e27c7a94d0c57a",
+    "group": "primary",
+    "models": [
+     "x60t_s3501",
+     "x60t_s3502",
+     "x60t_s3503"
+    ]
+   }
+  },
+  "primary_c0a": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "forum72"
+   ],
+   "unit_seeds": "0-59",
+   "models": [
+    "c0_s3501",
+    "c0_s3502",
+    "c0_s3503"
+   ],
+   "import": {
+    "state": "~/gen3ai_archive/x61p_n1p_read/look1",
+    "spec_sha256": "1266daadeefe4142a2f2f339bbdedaf4e052c3f2ef3fb8a8b0d5550fb8729f03",
+    "group": "primary",
+    "models": [
+     "c0_s3501",
+     "c0_s3502",
+     "c0_s3503"
+    ]
+   }
+  },
+  "primary_c0b": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "forum72"
+   ],
+   "unit_seeds": "0-59",
+   "models": [
+    "c0_s3504",
+    "c0_s3505"
+   ],
+   "import": {
+    "state": "~/gen3ai_archive/x61p_n1p_read/look2",
+    "spec_sha256": "f28654ccf31c3c3e6a0a3c3f9d61b904bf504f59d197b67baa3f17d510c2c620",
+    "group": "primary",
+    "models": [
+     "c0_s3504",
+     "c0_s3505"
+    ]
+   }
+  },
+  "determinism": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "forum72"
+   ],
+   "unit_seeds": "0",
+   "models": [
+    "c0_s3501"
+   ]
+  },
+  "home72": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "home72"
+   ],
+   "unit_seeds": "0-6",
+   "models": [
+    "x60t_s3501",
+    "x60t_s3502",
+    "x60t_s3503",
+    "x60t_s3504",
+    "x60t_s3505",
+    "x60t_s3506",
+    "x60t_s3507",
+    "x60t_s3508",
+    "c0_s3506",
+    "c0_s3507",
+    "c0_s3508"
+   ]
+  },
+  "p72": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "p72"
+   ],
+   "unit_seeds": "0-6",
+   "models": [
+    "x60t_s3501",
+    "x60t_s3502",
+    "x60t_s3503",
+    "x60t_s3504",
+    "x60t_s3505",
+    "x60t_s3506",
+    "x60t_s3507",
+    "x60t_s3508",
+    "c0_s3506",
+    "c0_s3507",
+    "c0_s3508"
+   ]
+  },
+  "h": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "heldout72_hpfix"
+   ],
+   "unit_seeds": "0-6",
+   "models": [
+    "x60t_s3506",
+    "x60t_s3507",
+    "x60t_s3508",
+    "c0_s3506",
+    "c0_s3507",
+    "c0_s3508"
+   ]
+  },
+  "h_contrast": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "heldout72_hpfix"
+   ],
+   "unit_seeds": "0-29",
+   "models": [
+    "x60t_s3501",
+    "x60t_s3502",
+    "x60t_s3503",
+    "x60t_s3504",
+    "x60t_s3505"
+   ]
+  },
+  "d1": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "heldout72_hpfix",
+    "forum72"
+   ],
+   "unit_seeds": "0-29",
+   "models": [
+    "d1_s3501",
+    "d1_s3502",
+    "d1_s3503",
+    "d1_s3504",
+    "d1_s3505"
+   ]
+  },
+  "reported_c0a": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "heldout72_hpfix",
+    "p72",
+    "home72"
+   ],
+   "unit_seeds": "0-6",
+   "models": [
+    "c0_s3501",
+    "c0_s3502",
+    "c0_s3503"
+   ],
+   "import": {
+    "state": "~/gen3ai_archive/x61p_n1p_read/look1",
+    "spec_sha256": "1266daadeefe4142a2f2f339bbdedaf4e052c3f2ef3fb8a8b0d5550fb8729f03",
+    "group": "reported",
+    "models": [
+     "c0_s3501",
+     "c0_s3502",
+     "c0_s3503"
+    ]
+   }
+  },
+  "reported_c0b": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "heldout72_hpfix",
+    "p72",
+    "home72"
+   ],
+   "unit_seeds": "0-6",
+   "models": [
+    "c0_s3504",
+    "c0_s3505"
+   ],
+   "import": {
+    "state": "~/gen3ai_archive/x61p_n1p_read/look2",
+    "spec_sha256": "f28654ccf31c3c3e6a0a3c3f9d61b904bf504f59d197b67baa3f17d510c2c620",
+    "group": "reported",
+    "models": [
+     "c0_s3504",
+     "c0_s3505"
+    ]
+   }
+  }
+ },
+ "s": {
+  "p": {
+   "refpop": "designs/research_state/measurements/x35_breakers_stage_2026-10-17/reference_population_production.json",
+   "refpop_content_sha256": "cef0960eac605f1dc026442d1089dc23654e23df91010feaaeea7890901e4519",
+   "panel": "home72",
+   "pairs": 500,
+   "batch_pairs": 100,
+   "family": "x60t_p_look2_2026-11-07",
+   "models": [
+    "x60t_s3501",
+    "x60t_s3502",
+    "x60t_s3503",
+    "x60t_s3504",
+    "x60t_s3505",
+    "x60t_s3506",
+    "x60t_s3507",
+    "x60t_s3508",
+    "c0_s3506",
+    "c0_s3507",
+    "c0_s3508"
+   ],
+   "regime_id": "d4de0fd7c16a2658"
+  },
+  "p_c0a": {
+   "refpop": "designs/research_state/measurements/x35_breakers_stage_2026-10-17/reference_population_production.json",
+   "refpop_content_sha256": "cef0960eac605f1dc026442d1089dc23654e23df91010feaaeea7890901e4519",
+   "panel": "home72",
+   "pairs": 500,
+   "batch_pairs": 100,
+   "family": "x60t_p_c0a_look2_2026-11-07",
+   "models": [
+    "c0_s3501",
+    "c0_s3502",
+    "c0_s3503"
+   ],
+   "regime_id": "d4de0fd7c16a2658",
+   "import": {
+    "state": "~/gen3ai_archive/x61p_n1p_read/look1",
+    "spec_sha256": "1266daadeefe4142a2f2f339bbdedaf4e052c3f2ef3fb8a8b0d5550fb8729f03",
+    "group": "p",
+    "models": [
+     "c0_s3501",
+     "c0_s3502",
+     "c0_s3503"
+    ]
+   }
+  },
+  "p_c0b": {
+   "refpop": "designs/research_state/measurements/x35_breakers_stage_2026-10-17/reference_population_production.json",
+   "refpop_content_sha256": "cef0960eac605f1dc026442d1089dc23654e23df91010feaaeea7890901e4519",
+   "panel": "home72",
+   "pairs": 500,
+   "batch_pairs": 100,
+   "family": "x60t_p_c0b_look2_2026-11-07",
+   "models": [
+    "c0_s3504",
+    "c0_s3505"
+   ],
+   "regime_id": "d4de0fd7c16a2658",
+   "import": {
+    "state": "~/gen3ai_archive/x61p_n1p_read/look2",
+    "spec_sha256": "f28654ccf31c3c3e6a0a3c3f9d61b904bf504f59d197b67baa3f17d510c2c620",
+    "group": "p",
+    "models": [
+     "c0_s3504",
+     "c0_s3505"
+    ]
+   }
+  },
+  "i_f": {
+   "refpop": "designs/research_state/measurements/x35_breakers_stage_2026-10-17/reference_population_production.json",
+   "refpop_content_sha256": "cef0960eac605f1dc026442d1089dc23654e23df91010feaaeea7890901e4519",
+   "panel": "forum72",
+   "pairs": 500,
+   "batch_pairs": 100,
+   "family": "x60t_i_f_look2_2026-11-07",
+   "models": [
+    "x60t_s3501",
+    "x60t_s3502",
+    "x60t_s3503",
+    "x60t_s3504",
+    "x60t_s3505",
+    "x60t_s3506",
+    "x60t_s3507",
+    "x60t_s3508",
+    "c0_s3501",
+    "c0_s3502",
+    "c0_s3503",
+    "c0_s3504",
+    "c0_s3505",
+    "c0_s3506",
+    "c0_s3507",
+    "c0_s3508"
+   ],
+   "regime_id": "0c972bc06eab468f"
+  },
+  "r72": {
+   "refpop": "designs/research_state/measurements/x35_breakers_stage_2026-10-17/reference_population_production.json",
+   "refpop_content_sha256": "cef0960eac605f1dc026442d1089dc23654e23df91010feaaeea7890901e4519",
+   "panel": "r72",
+   "pairs": 500,
+   "batch_pairs": 100,
+   "family": "x60t_r72_look2_2026-11-07",
+   "models": [
+    "x60t_s3501",
+    "x60t_s3502",
+    "x60t_s3503",
+    "x60t_s3504",
+    "x60t_s3505",
+    "x60t_s3506",
+    "x60t_s3507",
+    "x60t_s3508",
+    "c0_s3501",
+    "c0_s3502",
+    "c0_s3503",
+    "c0_s3504",
+    "c0_s3505",
+    "c0_s3506",
+    "c0_s3507",
+    "c0_s3508"
+   ],
+   "regime_id": "1bfe0b8a101ba8fb"
+  }
+ },
+ "decision": {
+  "rule": "x60",
+  "params": {
+   "look": 2,
+   "on": [
+    "x60t_s3501",
+    "x60t_s3502",
+    "x60t_s3503",
+    "x60t_s3504",
+    "x60t_s3505",
+    "x60t_s3506",
+    "x60t_s3507",
+    "x60t_s3508"
+   ],
+   "off": [
+    "c0_s3501",
+    "c0_s3502",
+    "c0_s3503",
+    "c0_s3504",
+    "c0_s3505",
+    "c0_s3506",
+    "c0_s3507",
+    "c0_s3508"
+   ],
+   "primary": {
+    "groups": [
+     "primary",
+     "primary_c0a",
+     "primary_c0b"
+    ],
+    "teamset": "forum72",
+    "units": 60
+   },
+   "determinism_guard": {
+    "group": "determinism",
+    "against": "primary_c0a"
+   },
+   "goal_a": {
+    "groups": [
+     "home72"
+    ],
+    "teamset": "home72",
+    "units": 7
+   },
+   "p": {
+    "groups": [
+     "p",
+     "p_c0a",
+     "p_c0b"
+    ],
+    "panel": "home72"
+   },
+   "i_f": {
+    "groups": [
+     "i_f"
+    ],
+    "panel": "forum72"
+   },
+   "r72": {
+    "groups": [
+     "r72"
+    ],
+    "panel": "r72"
+   },
+   "contrast": {
+    "on": [
+     "x60t_s3501",
+     "x60t_s3502",
+     "x60t_s3503",
+     "x60t_s3504",
+     "x60t_s3505"
+    ],
+    "off": [
+     "d1_s3501",
+     "d1_s3502",
+     "d1_s3503",
+     "d1_s3504",
+     "d1_s3505"
+    ],
+    "groups": [
+     "primary",
+     "h_contrast",
+     "d1"
+    ],
+    "panels": [
+     "heldout72_hpfix",
+     "forum72"
+    ],
+    "units": 30
+   },
+   "reported": [
+    "home72",
+    "p72",
+    "h",
+    "h_contrast",
+    "reported_c0a",
+    "reported_c0b"
+   ],
+   "guards": {
+    "path": "designs/research_state/measurements/x60t_h_teams_2026-11-06/read/guards_look2_not_played.json",
+    "sha256": "282f843c664ff16bf172d60b07ae3520e67e894d920a5543edefa68c91b8bc70"
+   },
+   "void": {
+    "k9b_dir": "designs/research_state/measurements/x35_breakers_stage_2026-10-17/k9b",
+    "runs": {
+     "x60t_s3501": "models/rb_x60t_s3501",
+     "x60t_s3502": "models/rb_x60t_s3502",
+     "x60t_s3503": "models/rb_x60t_s3503",
+     "x60t_s3504": "models/rb_x60t_s3504",
+     "x60t_s3505": "models/rb_x60t_s3505",
+     "x60t_s3506": "models/rb_x60t_s3506",
+     "x60t_s3507": "models/rb_x60t_s3507",
+     "x60t_s3508": "models/rb_x60t_s3508",
+     "c0_s3501": "models/rb_x35_c0_s3501",
+     "c0_s3502": "models/rb_x35_c0_s3502",
+     "c0_s3503": "models/rb_x35_c0_s3503",
+     "c0_s3504": "models/rb_x35_c0_s3504",
+     "c0_s3505": "models/rb_x35_c0_s3505",
+     "c0_s3506": "models/rb_x35_c0_s3506",
+     "c0_s3507": "models/rb_x35_c0_s3507",
+     "c0_s3508": "models/rb_x35_c0_s3508",
+     "d1_s3501": "models/rb_x35_d1wide_s3501",
+     "d1_s3502": "models/rb_x35_d1wide_s3502",
+     "d1_s3503": "models/rb_x35_d1wide_s3503",
+     "d1_s3504": "models/rb_x35_d1wide_s3504",
+     "d1_s3505": "models/rb_x35_d1wide_s3505"
+    },
+    "pin": {
+     "x60t": "7fe15726c77cfa823aee78110444bf25c3c7370e",
+     "c0": "f4b25238d",
+     "d1": "440b61c32"
+    },
+    "dose": {
+     "reference": "models/rb_x35_c0_s3501",
+     "rel_tol": 1e-06
+    }
+   }
+  }
+ }
+}

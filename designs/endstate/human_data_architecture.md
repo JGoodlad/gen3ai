@@ -28,7 +28,7 @@ STATUS
   snapshot hr_spec_v1                           : 376,410 logs; durable copy yes
   snapshot hr_arch_2026-10-24                   : 16,490 logs; durable copy yes
   rowsets / models registered                   : 3 / 0
-  H-TEAMS corpus (X60-T; local only)            : hr_spec_v1.r3, 2,295 teams / 812 accounts; built 11-06, no run reads it yet
+  H-TEAMS corpus (X60-T; local only)            : hr_spec_v1.r3, 2,295 teams / 812 accounts; built 11-06, trained on by rb_x60t_s3501-s3503 (look 1)
   rowset in use (X59-S)                         : hr_spec_v1.r2, 1,201,538 train / 29,904 validation rows
   informative rows, actor >= 1500               : 1.80M
   >= 1500 full-six sides unfamiliar to the pool (<= 2 fits; a lower bound) : 15.9 %
@@ -39,7 +39,7 @@ STATUS
   ≥ 1500 follow-up (Q-H15, in-house, N 270,260) : rating NOT-RESOLVED +1.33 pp [-2.76, +5.43]; ≥ 1500 vs self-play SELF-PLAY-DATA-BETTER -4.42 [-6.07, -2.76]
   evidence that human data helps goal (b)       : none; at matched volume human rows teach a fresh network LESS than our self-play rows
   switch values                                 : teams = more teams in the pool (BUILT) | bc = an extra loss term (NOT BUILT) | kl = a pull toward a human model (NOT BUILT)
-  open                                          : whether human TEAMS help (X60-T: X59-S closed nothing, routes H-TEAMS first); whether rating matters at fixed slice (the ≥ 1500 follow-up: NOT-RESOLVED, +1.33 pp [−2.76, +5.43]); does ONE human lever raise P* (X60-T: REGISTERED 11-06, not launched); how the spectator stream was selected (Q-H4)
+  open                                          : whether human TEAMS help (X60-T: X59-S closed nothing, routes H-TEAMS first); whether rating matters at fixed slice (the ≥ 1500 follow-up: NOT-RESOLVED, +1.33 pp [−2.76, +5.43]); does ONE human lever raise P* (X60-T: look 1 CONTINUE 11-07, F +0.64 pp [−2.17, +3.45]; look 2 at 8 v 8 registered, AM-X60T-2); how the spectator stream was selected (Q-H4)
 ```
 
 **What the box says, in words.** No human DECISION reaches a production run, an evaluation or play today. The one

@@ -1,0 +1,9 @@
+{
+ "schema": "gen3_x60t_guards_v1",
+ "read": "x60t_look2_2026-11-07",
+ "status": "NOT PLAYED",
+ "note": "AM-X60T-2 (PREREG §23.4): look 2's guards artefact as registered BEFORE any look-2 game. G-F, G-E and G-C are read only on a look-2 Δ_F GAIN (§11), and their inputs (the 8 x 8 head-to-head matrix, the ge_x60t / ge_c0 readers' r2, the 8-pair G-C record) are produced only then, so each is null here and rule x60 reads each INCONCLUSIVE. On a GAIN the look-2 verdict is then INCONCLUSIVE on the guards alone, or already TRADE / KAKUNA-SPECIFIC on the other meters (§11); the guards are produced and the read re-decided on the same cells with a filled artefact, nothing else changed (§23.4).",
+ "g_f": null,
+ "r2": null,
+ "g_c": null
+}

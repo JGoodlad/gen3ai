@@ -6,7 +6,8 @@ amendment and a mechanical filling rule (§20). None is a choice that X60 data c
 launches, nothing changes except by a dated amendment, written before the read, that says why.
 
 **Amendments:** AM-X60T-1 (§21, 2026-11-06, before any read game): the play pin `f564c333f`, §4's checks, look 1's spec,
-and G-C read over 8 pairs.
+and G-C read over 8 pairs. AM-X60T-2 (§23, 2026-11-07, after look 1's CONTINUE, before any X60Tb / X60T-C0b launch or
+look-2 game): the stage record, R72 at main, look 2's spec and guards stub, the `ge_x60t` reader, the validated launches.
 
 **Two adversarial reviews.**
 - **REVIEW F** reviewed design §6 ([`REVIEW_F_x60.md`](../human_replay_quality_2026-10-25/REVIEW_F_x60.md));
@@ -931,3 +932,252 @@ restarts.
 - §21.4 step 1: the operator read s3503's first unit as counted (it settled at 23:07; counted 23:11). s3501's and
   s3502's units were all counted (60 / 60 each) when that read was made; their first units were not read one by one.
 - 180 / 180 ON units counted (3,600 games); the determinism unit 1 / 1; C0's 180 units imported (§21.3).
+
+## 23. AMENDMENT AM-X60T-2 (2026-11-07, after look 1's CONTINUE, before any X60Tb / X60T-C0b launch or look-2 game)
+
+**Why, and when.** Look 1 read CONTINUE (`af57d4fd3`, §22). No `rb_x60t_s3504`–`s3508` or `rb_x35_c0_s3506`–`s3508`
+exists and no look-2 game has been played. This fills §21.6, closes FINDINGS 18 and 19, and fixes the stage-record
+defect look 1's read found. **Nothing in §5–§11 changes:** the rule `x60`'s check, inputs, decide and verdict are
+byte-for-byte as registered (`rules_x60.py`'s registered functions untouched; one new function, `stage_keys`, that no
+verdict reads). Look 2 reads the secondaries as registered (I_F, R72, Δ_P, goal (a), H / P72 / home72, T − D1).
+
+### 23.1 The stage record (the defect, the fix, and the re-serialisation proof)
+
+- **The defect.** Rule `x60`'s decision keeps its own shape (`decision.decision.verdict`), so its record had no top-level
+  `arm` / `look`. `main.x35.batch.read_record` refused it ("arm None look None, not X60T look 1"), so
+  `kit stage-check --arm x60t --seed 3504` read look 1 as not yet read (PENDING, fail closed), and the record could not
+  sit in `reads/` (`batch_test::test_every_committed_read_record_carries_its_arms_registered_label`).
+- **The fix, at the record's interface** (one contract for every stage reader, not an x60 special case in `batch`):
+  `Rule.stage_keys`. A rule whose decision keeps its own shape names its stage identity; `record.build` writes it at the
+  top level and `record.check` re-derives it from the record's own `models` and `decision`, so a hand-edited key fails.
+  For `x60`: `arm` = `READ_LABEL` of the ON arm (`X60T`), `look`, and `delta_f` = `{final, class}` (`batch.PRIMARY_KEY`):
+  final at a look-1 futility stop or at a classed look 2; not final at a look-1 CONTINUE or an INCONCLUSIVE Δ_F. The
+  decision is never reshaped, and `read_record` is unchanged.
+- **Re-recorded, not re-decided in substance.** `python -m main.reads record --state ~/gen3ai_archive/x60t_read/look1
+  --out <stage>/reads/x60t_look1.json`, run from the MAIN checkout once the fix had shipped (`80112244c`; the `void` block names the
+  K9(b) files by the recorder's checkout, so a worktree run would name worktree paths; the `--out` went to this
+  amendment's worktree, never into main's tree). Against `read/record_x60t_look1.json` (sha256 `538700ee…`): every key
+  but `created` is byte-identical in canonical serialisation (`decision`, `inputs`, `verdict`, `models`, `regimes`,
+  `imports`, `void`, `code`, …); the only additions are `arm` `X60T`, `look` 1, `delta_f` `{final: false, class:
+  CONTINUE}`. `x60t_test` holds exactly that.
+- **What it wrote in the registered state** (`record` re-assembles, re-decides and writes the state): `cells.json`,
+  `inputs.json`, `decision.json` and `void.json` byte-identical to before; `record.json` is now the stage copy (the
+  original `538700ee…` is the committed `read/record_x60t_look1.json`). All eight state files as they were before
+  are kept in `~/gen3ai_archive/x60t_read/look1_before_am2_rerecord/`. A trial run from the worktree before the fix
+  shipped had rewritten the same files; its `void.json` (worktree k9b paths) and `record.json` were restored from that
+  backup at once (timestamps preserved, `cmp`-equal; REVIEW AM-2 m2).
+- **`batch.read_record` now runs `record.check` on any `main.reads` record** (REVIEW AM-2 m5), so a hand-edited or
+  stale stage key refuses instead of licensing a launch.
+- **`kit stage-check`** (was PENDING): `x60t` s3504–s3508 and `c0` s3506–s3508 **ALLOWED** ("x60t look 1 is CONTINUE").
+
+### 23.2 R72 at main (FINDING 18, option (b), with a field both parsers already accept)
+
+- **Option (a) was not taken:** registering `r72` on main changes main-wide behaviour (every corpus builder, the
+  contamination checks and the registry's sha in every launch stamp would read a PRACTISED, local-only, reversible
+  panel), and the registry tests would need the local archive.
+- **Option (b), by the S group's existing `regime_id`.** The play pin's spec parser already accepts it, so the spec
+  plans there unchanged. `assemble.panel_team_set`: a panel main does not register is read ONLY when its group
+  registers a `regime_id`. That id digests the team set (`eval_ledger.schema.REGIME_IDENTITY_V2`), so the
+  registered-regime check pins R72's teams, and the rows must be on one team set. Without one the group is INCONCLUSIVE
+  (fail closed). Every panel main registers is checked exactly as before.
+- **The three registered S ids:** home72 `d4de0fd7c16a2658` (X61P's), forum72 `0c972bc06eab468f`, r72
+  `1bfe0b8a101ba8fb` (team set `ts:a81d977d7a44b6f4`). They were computed at the play pin by its own
+  `plan_regime(250, "off", panel)`. **Main re-derives all three from its own code**, R72's from §9's committed digest
+  `10364442…5501` and n 72 alone (`rules_x60_look2_test`).
+
+### 23.3 Look 2's spec (registered)
+
+[`read_spec_look2.json`](read_spec_look2.json), sha256 **`a5ad74116e9f140c878cd3698d06d81f4f0ba997806e91aa92111d8205cb8ed7`**,
+`pin` = the play pin `f564c333f`. `rules_x60_look2_test` holds the file equal to its builder byte for byte.
+
+**Models (21).** ON `x60t_s3501`–`s3503` pinned by sha256 (look 1's finals: `d576e096…`, `13501785…`, `5979dbb1…`);
+ON `x60t_s3504`–`s3508` and C0 `c0_s3506`–`s3508` by the settled `final` rule (`min_step` 300,000,170, quiet 300 s,
+§13.1), as look 1's ON were; C0 `c0_s3501`–`s3505` pinned (§4's sha256s); D1 `d1_s3501`–`s3505` pinned (`3d5c9d45…`,
+`dc3d5cd7…`, `30e4e79a…`, `fdaf6daa…`, `2e36697e…`, each equal to D1's own read inputs).
+
+**Anchor groups (Kakuna ckpt 34).**
+
+| group | team sets, units | models | import |
+|---|---|---|---|
+| `primary` | forum72, 0–59 | ON × 8, C0 s3506–s3508 | ON s3501–s3503 from X60-T look 1 (`0f5d9a5f…`) |
+| `primary_c0a` | forum72, 0–59 | C0 s3501–s3503 | X61P look 1 `primary` (`1266daad…`) |
+| `primary_c0b` | forum72, 0–59 | C0 s3504–s3505 | X61P look 2 `primary` (`f28654cc…`) |
+| `determinism` | forum72, 0 | c0_s3501 | played; the guard against `primary_c0a` (§4's unit) |
+| `home72` | home72, 0–6 | ON × 8, C0 s3506–s3508 | goal (a) (ON) and REPORTED Δ_home72 |
+| `p72` | p72, 0–6 | ON × 8, C0 s3506–s3508 | REPORTED Δ_P72 |
+| `h` | heldout72_hpfix, 0–6 | ON s3506–s3508, C0 s3506–s3508 | REPORTED Δ_H |
+| `h_contrast` | heldout72_hpfix, 0–29 | ON s3501–s3505 | T − D1's ON H; ON's Δ_H units 0–6 are nested in it (§12: "ON plays H 0–29 for §10") |
+| `d1` | heldout72_hpfix + forum72, 0–29 | D1 × 5 | T − D1, re-played at E3 (§4) |
+| `reported_c0a` / `reported_c0b` | H + p72 + home72, 0–6 | C0 s3501–s3503 / s3504–s3505 | X61P look 1 / look 2 `reported` |
+
+**S groups** (R = `reference_population_production.json`, content `cef0960e…`; 7 × 500 pairs; in this order, which is
+the S lane's play order: T1 before T2): `p` (home72; ON × 8 + C0 s3506–s3508), `p_c0a` / `p_c0b` (home72; C0
+s3501–s3503 / s3504–s3505 imported from X61P look 1 / look 2's `p`), `i_f` (forum72; ON × 8 + C0 × 8), `r72` (r72;
+ON × 8 + C0 × 8), each with its registered `regime_id` (§23.2).
+
+**Decision:** rule `x60`, `look` 2; `primary` = the three forum72 groups at 60 units; `determinism_guard`
+`{determinism, primary_c0a}`; `goal_a` `home72` at 7 units; `p` = `p` + `p_c0a` + `p_c0b`; `i_f`; `r72`; `contrast`
+ON s3501–s3505 v D1 on H + F at 30 units over `primary` + `h_contrast` + `d1`; `reported` = home72, p72, h,
+h_contrast, reported_c0a, reported_c0b; `guards` = the stub of §23.4; `void` = K9(b) from `x35_breakers_stage_2026-10-17/k9b`
+on all 21 runs, pin `{x60t: 7fe15726c…, c0: f4b25238d, d1: 440b61c32}`, dose against `models/rb_x35_c0_s3501` at
+relative 1e-6.
+
+**Every choice here is mechanical, and each is stated:**
+1. **ON s3501–s3503's F units are imported from look 1, not re-played:** the same play pin, the same bytes (pinned by
+   sha256). §17's plan counted them again (3,600 games).
+2. **C0 s3506–s3508 are read by the `final` rule, not pinned by sha256** (§21.6 asked for their sha256s): they do not
+   exist yet, and the spec must be registered before they launch. The rule resolves exactly one settled file; its
+   sha256 is fixed in `models.json` at settle and in the record's `models`. §3's "every C0 final is pinned by sha256"
+   holds for every C0 final that existed at registration.
+3. **The determinism guard re-plays §4's unit** (c0_s3501 forum72 unit 0) against its import. The rule takes one guard.
+   X61P look 2's units were played at `de15dfc7b`, on the same play path (§21.2 check 1).
+4. **Δ_H / Δ_P72 / Δ_home72 are reported per group** (rule `x60`'s `reported`), so C0's three groups and ON's are
+   separate rows, and `h_contrast` is reported over its 30 units. The pooled Δs at units 0–6 are summed from the
+   state's `cells.json` unit rows in the look-2 README. They are REPORTED only; no verdict reads them.
+5. **The S lane plays `p` first** (T1), then `i_f` and `r72` (T2), §17's ranking.
+
+### 23.4 The guards artefact, registered before any look-2 game
+
+[`read/guards_look2_not_played.json`](read/guards_look2_not_played.json), sha256
+`282f843c664ff16bf172d60b07ae3520e67e894d920a5543edefa68c91b8bc70`, holds `g_f`, `r2` and `g_c` all null.
+- **Why a stub:** §11 reads G-F / G-E / G-C only on a Δ_F GAIN, and their inputs can only be produced after one:
+  - the 8 × 8 ON × OFF head-to-head matrix;
+  - the `ge_x60t` / `ge_c0` readers' `r2` (§23.5, GPU, triggered by the GAIN);
+  - the 8-pair G-C record (§21.5).
+  But `LOOK2_REQUIRED` makes the spec carry an artefact, and a state is one spec, so its sha256 is fixed now.
+- **What it does:** rule `x60` reads each guard INCONCLUSIVE ("no head-to-head matrix", "no R2 read", "no G-C read").
+  - Off a GAIN, nothing reads it.
+  - On a GAIN, §11 resolves as registered: KAKUNA-SPECIFIC and TRADE are decided without the guards (TRADE as soon as
+    one of its conditions is known), and otherwise the verdict is INCONCLUSIVE on the guards alone. That is §11's
+    INCONCLUSIVE row: "the missing piece is played … and the read re-decided, with nothing else changed".
+- **The re-decision, on a GAIN only (AM-X60T-3, before any guard game):**
+  - the guards are produced and written to a filled artefact;
+  - the read is re-decided in a new state, whose spec imports every played cell from the look-1, look-2 and X61P
+    states and plays one unit: the determinism guard's (§4's c0_s3501 forum72 unit 0, 20 games), since rule `x60`'s
+    guard compares a unit played in its own state (`determinism_guard.group` takes no import; REVIEW AM-2 m3).
+  - Its producing commands are AM-X60T-3's.
+
+### 23.5 `ge_x60t`, §11's fresh G-E reader (FINDING 19)
+
+- **The arm:** `kit.ARMS["ge_x60t"]`. It reads `rb_x60t_s3501`'s final, as `ge_c0` reads `rb_x35_c0_s3501`'s. The run is
+  `rb_x35_ge_x60t_s3501`; the reader run name's tag rule was fixed for a target named outside `rb_x35_`.
+- **Its argv is `ge_c0`'s plus `--human-data off`,** with the target and the run name changed (`ge_test`).
+- **Its pin is X60-T's own, `7fe15726c`** (`batch.ARM_PINS`, amendment AM-X60T-2), not the side pin:
+  - Main's launcher refuses a fork of a human-data run that types no clause.
+  - The side pin's parser has no `--human-data` flag. `checkargs --pin f4b25238d` refuses the typed argv:
+    "NOT IN PINNED TREE".
+  - At `7fe15726c` with `off`, the training path is the side pin's byte for byte: §14 check 2 (learner golden and
+    played-bits fixtures identical at `440b61c3` and `f4b25238`) and check 3 (`@0` ≡ `off` team streams). So it
+    best-responds in `ge_c0`'s regime, at the same budget (+5M), dose (`--fork-lr 5.6e-05 --fork-lr-freeze`) and seed
+    (3531). `ge.r2_input` checks budget, dose and regime matched, as for every reader.
+- **Its trigger** (`ge.trigger`, `kit stage-check`): x60t's Δ_F FINAL class GAIN, from the stage record's `delta_f`
+  (§23.1). `ge_c0` is also ALLOWED by an x60t GAIN. Now both read PENDING (look 1 CONTINUE is not final).
+- **The launch:** `launch_x35.sh ge_x60t 3501 --pin 7fe15726c77cfa823aee78110444bf25c3c7370e --lease-owner <owner> GO`,
+  and `launch_x35.sh ge_c0 3501 --pin f4b25238def57900c0305bb2a3a5a8f9edaef285 --lease-owner <owner> GO` for its
+  b-OFF reader, each only once `kit stage-check` reads ALLOWED. A side-pin `ge_x60t` attempt HOLDs at pin-check.
+- **Validated on the REAL target** (CPU; FINDING 27):
+  - `checkargs --pin 7fe15726c` rc 0, human data "off (no human data)".
+  - `launcher --dry-run` refused ONLY by the CUDA-visibility preflight (this shell has no GPU). It reads FORK of
+    `rb_x60t_s3501`, +5,000,000 steps, `self_play False (TYPED)`.
+  - `kit pin-check --arm ge_x60t` and `corpus-check` PASS.
+- **Cost on a GAIN only:** ≈ 2.1 GPU-h for the two readers (5M steps each, ≈ 1.03 GPU-h at §17's 4.10 per 20M).
+
+### 23.6 The launches (validated now; each GO is the orchestrator's)
+
+Through `launch_x35.sh` (`x35_breakers_stage_2026-10-17/`), from the Training session that holds the lease.
+
+| stage | command | argv (kit `describe`) |
+|---|---|---|
+| X60Tb | `launch_x35.sh x60t <s> --pin 7fe15726c77cfa823aee78110444bf25c3c7370e --lease-owner <owner> GO`, s = 3504 … 3508 | `--model models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip --behaviour-check warn --steps 300000170 --checkpoint-every-steps 1000000 --device cuda --human-data teams:hr_spec_v1.r3@0.5 --seed <s> --run-name rb_x60t_s<s>` |
+| X60T-C0b | `launch_x35.sh c0 <s> --pin f4b25238def57900c0305bb2a3a5a8f9edaef285 --lease-owner <owner> GO`, s = 3506 … 3508 | the same less the clause, `--run-name rb_x35_c0_s<s>` |
+
+**Checks run here (CPU, `CUDA_VISIBLE_DEVICES=""`), all eight argvs:**
+- `checkargs --pin` rc 0.
+- `launcher --dry-run` refused ONLY by the CUDA-visibility preflight. Each reads FORK of `rb_x26_s2601`, +20,000,000
+  steps, 12.95 GiB REQUIRED.
+- `kit pin-check` PASS (x60t at `7fe15726c` with `corpus-check` PASS; c0 at the side pin); `kit stage-check` ALLOWED.
+
+The script's own pre-checks 1, 1b and 6 (no live run, the lease, the dry-run with the card visible) run at GO.
+
+### 23.7 How look 2 is played and read (the operator: Training Oct)
+
+The registered state is **`~/gen3ai_archive/x60t_read/look2`**.
+1. **Plan and run in the playing checkout** (`~/dev/gen3ai-reads/x60t_play_de15dfc7`, `export PYTHONPATH=$PWD/src`):
+   - `python -m main.reads plan --spec <main>/designs/research_state/measurements/x60t_h_teams_2026-11-06/read_spec_look2.json --state ~/gen3ai_archive/x60t_read/look2`
+   - the anchor lane: `python -m main.reads run --state ~/gen3ai_archive/x60t_read/look2 --lane anchor --hours 150 --concurrency 2`, detached;
+   - the S lane: `python -m main.reads run --state ~/gen3ai_archive/x60t_read/look2 --lane s --hours 150`, detached.
+2. **Plan may run before the finals exist.** The 13 existing finals' cells (ON s3501–s3503's home72 / p72 / H,
+   the determinism unit, D1, and their S nodes) can play at once, and the eight new finals wait for their settle.
+3. **Read from a main checkout,** after every unit and S node is played and the eight new runs' AM-6 K9(b) records
+   exist: `python -m main.reads assemble|decide|record --state ~/gen3ai_archive/x60t_read/look2`, then `record --out
+   <stage>/reads/x60t_look2.json`. Then §15's launch-log lines and the contamination check, by hand.
+
+### 23.8 Validated by executing (CPU, no game)
+
+- **`check-spec`** exit 0 at main (`rederived_guards: count`, `choices_guard: require`) and at the play pin.
+- **`plan` at the play pin into a scratch state** (`~/gen3ai_archive/x60t_read/scratch_am2_look2_plan_dryrun`, not the
+  registered path; removed after the review, 2.5 GB of copied finals and R members): exit 0, spec sha256 `a5ad7411…`.
+  - The 13 existing finals were copied, each matching its sha256.
+  - Every import passed `imports.check`.
+  - It planned 1 determinism unit, 7 units each for ON s3501–s3503's home72 and p72, 30 for their H, and 60 for each
+    D1 final.
+  - The eight new finals read `waiting` ("no final yet").
+- **Main's `assemble` of that state:** exit 0. All forum72 groups are on E3 (`port=0d3d7629f16a0eaf/91;env=393631b886965b0c/126`),
+  sides `their=legacy` / `eval`, group regime `00c8c0114bdf0836`.
+  - `primary` imports ON's 180 look-1 units; `primary_c0a` 180, `primary_c0b` 120; `reported_c0a` 63 and
+    `reported_c0b` 42 at `3d2cbdc0b1413bcb` (§4.3's reported id).
+  - S `p_c0a` / `p_c0b` hold 210 / 140 rows at `d4de0fd7c16a2658`.
+  - So every import pools as ONE cell before any game.
+
+### 23.9 Cost
+
+| | GPU-h | Kakuna games (lane-h at 25 s) | in-house sets (lane-h at 2.45) |
+|---|---:|---:|---:|
+| X60Tb (5 × ON) + X60T-C0b (3 × C0), §17 | 20.5 + 12.3 = **32.8** | | |
+| T1: F 9,600 (ON s3504–s3508, C0 s3506–s3508) + determinism 20 + goal (a) home72 1,120 (ON × 8) | | 10,740 (74.6) | P 11 (27.0) |
+| T2: I_F 16 + R72 16 | | | 32 (78.4) |
+| T3: P72 1,540 + H 840 + C0 s3506–s3508 home72 420 | | 2,800 (19.4) | |
+| T4: ON H 0–29 3,000 + D1 H + F 6,000 | | 9,000 (62.5) | |
+| **look 2** | **32.8** (+ 2.1 on a GAIN) | **22,540 (156.5)** | **43 (105.4)** |
+
+- Against §17: −3,600 Kakuna games (ON s3501–s3503's F imported) and +420 (ON H 0–6 at s3506–s3508, which §17's
+  plan omitted; FINDING 25).
+- **Wall:** the anchor lane runs 66–96 h at X61P's 234–344 games per wall hour. The S lane is ONE lane per state, so
+  ≈ 105 h at 2.45 lane-h a set, and it is the long pole. §17's "39 on 2 S lanes" assumed two (FINDING 26). Both
+  lanes take heavy slots, so the S′-HONEST read sharing the box stretches both.
+
+### 23.10 Review (REVIEW AM-2)
+
+An independent opus-high reviewer read the branch (code, spec, docs, the validation transcripts and the scratch state)
+and re-ran the tests, `check-spec` at main and the pin, the three regime ids at the pin, main's VOID gate on the 13
+existing finals (all PASS), `kit pin-check` (x60t, c0, ge_x60t, ge_c0, d3) and `stage-check`. **Verdict:
+READY-WITH-FIXES**; no verdict, class, threshold or seed set changes.
+
+| finding | fix |
+|---|---|
+| M1: the stage record, made from the worktree, names worktree k9b paths, so its own test failed and §23.1's identity claim was false | re-recorded from the main checkout after the code shipped (two ships), as the brief's `record --out` from the same state; §23.1 states what the re-record writes in the state. The reviewer's alternative (a pure transform of the shipped record) was not taken: the brief asks for `record --out` |
+| m2: the trial re-record's write to the look-1 state was undisclosed | §23.1 records it and the restore |
+| m3: a "plays nothing" re-decision cannot carry the determinism guard | §23.4: it re-plays the one guard unit |
+| m4: the record holds `h_contrast` over 30 units only | §23.3 choice 4: pooled from `cells.json` unit rows |
+| m5: nothing at launch time re-derives the stage keys | `batch.read_record` runs `record.check` on a `main.reads` record; a test edits `delta_f` and is refused |
+| m6: no `ge_x60t` launch line; its pin-check line named AM-X60T | the line in §23.5 and `launch_x35.sh`'s header; the check's lines name AM-X60T-2 |
+| F7: `ge_x60t`'s exploiter-mode equivalence across the two pins is unverified | FINDING 27 says so |
+| m8: the scratch state was not removed | removed |
+| m9: `design_beat_metamon_path.md` and `human_data_architecture.md` still said X60-T was not ready / not launched | updated |
+
+### 23.11 FINDINGS (this amendment)
+
+24. **C0 s3506–s3508 are read by the `final` rule, not pinned by sha256** (§23.3 choice 2): a departure from §21.6's
+    list, forced by registering before they train. The settled file's sha256 is fixed at settle.
+25. **§17's plan omitted ON's H 0–6 at s3506–s3508** (420 games; §12 needs them for Δ_H).
+26. **One S lane per state,** so the 43 in-house sets take ≈ 105 h of wall, not §17's 39 h on two lanes.
+27. **`ge_x60t` runs at X60-T's pin, not the side pin** (§23.5), with its off-path equivalence resting on §14's checks
+    2–3 at that pin. **Not verified:** those checks ran in self-play mode, not in the readers' exploiter mode
+    (`--exploiter --no-self-play --trainee-teams`), and `ge.r2_input`'s `check_matched` compares budget, dose and regime,
+    never the two pins (REVIEW AM-2 F7). Its dry-run's recipe surface matches `ge_c0`'s validated transcript
+    (`n_epochs` 10, `self_play` False). A CPU `--debug` exploiter comparison at both pins would close it; it is training,
+    so it was not run here. No reader transcript is committed in `ge_readers_validation_*` (as for `ge_d3` / `ge_n1p`);
+    the launcher dry-run with the card visible is the lease holder's, at the reader's GO.
+28. **Δ_H / Δ_P72 / Δ_home72 are per-group rows,** so the pooled reported Δs are summed by hand (§23.3 choice 4).
+29. **The guards stub makes a passing GAIN read INCONCLUSIVE at look 2** until the AM-X60T-3 re-decision (§23.4). That
+    is §11's registered INCONCLUSIVE path, not a new class.
