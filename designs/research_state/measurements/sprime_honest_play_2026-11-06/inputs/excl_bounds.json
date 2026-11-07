@@ -1,0 +1,52 @@
+{
+ "checkpoint": {
+  "F_P_over_bound": 0.132,
+  "F_share_p99": 0.2535,
+  "H_P_over_bound": 0.0,
+  "H_share_p99": 0.015,
+  "P72_P_over_bound": 0.2547,
+  "P72_share_p99": 0.2528,
+  "games_a_panel": 20,
+  "hold_above": 0.14,
+  "pooled_share_p50": 0.0228,
+  "pooled_share_p99": 0.1334
+ },
+ "inputs": {
+  "B": 4000,
+  "cost_model": "cost_model.json",
+  "rows": "/home/goodlad/dev/gen3ai/designs/research_state/measurements/sprime_honest_inc_stage1b_2026-11-06/inc_rows.jsonl.gz",
+  "seed": 20261106
+ },
+ "panels": {
+  "F": {
+   "battles": 138,
+   "battles_reaching_64": 14,
+   "bound": 0.13,
+   "projection": 0.0575,
+   "projection_ci95": [
+    0.0145,
+    0.1286
+   ]
+  },
+  "H": {
+   "battles": 136,
+   "battles_reaching_64": 14,
+   "bound": 0.05,
+   "projection": 0.0029,
+   "projection_ci95": [
+    0.0005,
+    0.0062
+   ]
+  },
+  "P72": {
+   "battles": 133,
+   "battles_reaching_64": 11,
+   "bound": 0.09,
+   "projection": 0.0402,
+   "projection_ci95": [
+    0.0058,
+    0.0859
+   ]
+  }
+ }
+}

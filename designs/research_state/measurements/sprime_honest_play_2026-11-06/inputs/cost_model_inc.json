@@ -1,0 +1,178 @@
+{
+ "U": {
+  "projected_excl": 0.0335,
+  "searched_game_cpu_min_k2": 3.9,
+  "searched_game_cpu_min_k6": 6.18
+ },
+ "by_panel": {
+  "F": {
+   "bound": 0.12,
+   "projected_excl": 0.0575,
+   "search_path_decisions_a_game": 42.82,
+   "searched_game_cpu_min_k2": 5.45,
+   "searched_game_cpu_min_k6": 8.67,
+   "watchdog": {
+    "games": 900,
+    "max_h_at_mean": 1.08,
+    "max_h_at_p90_world": 0.84,
+    "over_10h_at_mean_x3": 0,
+    "p99_h_at_mean": 0.76
+   }
+  },
+  "H": {
+   "bound": 0.05,
+   "projected_excl": 0.0029,
+   "search_path_decisions_a_game": 36.04,
+   "searched_game_cpu_min_k2": 2.91,
+   "searched_game_cpu_min_k6": 4.58,
+   "watchdog": {
+    "games": 900,
+    "max_h_at_mean": 0.72,
+    "max_h_at_p90_world": 1.0,
+    "over_10h_at_mean_x3": 0,
+    "p99_h_at_mean": 0.35
+   }
+  },
+  "P72": {
+   "bound": 0.09,
+   "projected_excl": 0.0402,
+   "search_path_decisions_a_game": 36.27,
+   "searched_game_cpu_min_k2": 3.34,
+   "searched_game_cpu_min_k6": 5.29,
+   "watchdog": {
+    "games": 900,
+    "max_h_at_mean": 1.0,
+    "max_h_at_p90_world": 1.22,
+    "over_10h_at_mean_x3": 0,
+    "p99_h_at_mean": 0.47
+   }
+  }
+ },
+ "inputs": {
+  "cost_model": "cost_model.json",
+  "excl_rate": {
+   "F/10-19": 0.0185,
+   "F/20-29": 0.0292,
+   "F/30-63": 0.0532,
+   "F/64+": 0.1503,
+   "H/10-19": 0.0016,
+   "H/20-29": 0.0016,
+   "H/30-63": 0.0039,
+   "H/64+": 0.0072,
+   "P72/10-19": 0.0033,
+   "P72/20-29": 0.0079,
+   "P72/30-63": 0.0518,
+   "P72/64+": 0.205
+  },
+  "kappa": {
+   "10-19": 1.545010665911269,
+   "20-29": 1.5368957909789922,
+   "30-63": 1.5940806735675561,
+   "64+": 1.6774521114902068
+  },
+  "overhead_s": {
+   "k2": 25.246374628344896,
+   "k6": 39.255410038610016
+  },
+  "per_decision_cpu_s": {
+   "F/10-19": {
+    "mean": 6.63,
+    "p90_world": 6.134
+   },
+   "F/20-29": {
+    "mean": 5.87,
+    "p90_world": 5.088
+   },
+   "F/30-63": {
+    "mean": 6.25,
+    "p90_world": 6.221
+   },
+   "F/64+": {
+    "mean": 10.35,
+    "p90_world": 7.755
+   },
+   "H/10-19": {
+    "mean": 3.77,
+    "p90_world": 4.516
+   },
+   "H/20-29": {
+    "mean": 3.85,
+    "p90_world": 4.529
+   },
+   "H/30-63": {
+    "mean": 3.84,
+    "p90_world": 4.911
+   },
+   "H/64+": {
+    "mean": 7.05,
+    "p90_world": 9.884
+   },
+   "P72/10-19": {
+    "mean": 3.65,
+    "p90_world": 4.34
+   },
+   "P72/20-29": {
+    "mean": 3.73,
+    "p90_world": 4.338
+   },
+   "P72/30-63": {
+    "mean": 5.31,
+    "p90_world": 7.083
+   },
+   "P72/64+": {
+    "mean": 9.92,
+    "p90_world": 12.017
+   }
+  },
+  "rows": "/home/goodlad/dev/gen3ai/designs/research_state/measurements/sprime_honest_inc_stage1b_2026-11-06/inc_rows.jsonl.gz",
+  "slive": "/home/goodlad/gen3ai_archive/sprime_live_play_2026-11-01",
+  "summary": "/home/goodlad/dev/gen3ai/designs/research_state/measurements/sprime_honest_inc_stage1b_2026-11-06/summary.json"
+ },
+ "read": {
+  "deals": 5100,
+  "games_with_a_departure_slive": {
+   "F": 0.9844,
+   "H": 0.9911,
+   "P72": 0.9944
+  },
+  "k6_cpu_h_per_wall_h": 5.8,
+  "raw_cpu_h_k6": 51.1,
+  "searched_cpu_h_k2": 331.3,
+  "searched_cpu_h_k6": 525.4,
+  "third_arm_cpu_h_k6": {
+   "full": 685.0,
+   "half": 342.5,
+   "third": 228.3
+  },
+  "total_cpu_h_k6": 576.5,
+  "wall_h_agent_k6": 99.4,
+  "wall_h_agent_k6_pinned_trainer": 114.6,
+  "wall_h_box_k14": 42.6,
+  "wall_h_box_k14_at_smt_probe": 33.8
+ },
+ "rescore": {
+  "rebuild_cpu_h_600": 16.2,
+  "rebuild_cpu_s_a_decision": {
+   "F": {
+    "max": 1613.2,
+    "mean": 169.6,
+    "median": 96.1,
+    "p90": 418.1
+   },
+   "H": {
+    "max": 1039.9,
+    "mean": 53.1,
+    "median": 25.8,
+    "p90": 90.5
+   },
+   "P72": {
+    "max": 1604.8,
+    "mean": 69.0,
+    "median": 27.5,
+    "p90": 120.5
+   }
+  },
+  "sampled_expected": 12232,
+  "seeded_cpu_h_600": 0.89
+ }
+}

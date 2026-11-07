@@ -1,0 +1,53 @@
+{
+ "by_panel": {
+  "home72": 4
+ },
+ "cpu_s": 460.451,
+ "inputs": {
+  "cells": "/home/goodlad/gen3ai_archive/sprime_honest_smoke_2026-11-06/anchor/smoke/pstar_s/cells",
+  "engine": "port=74eb0a3bc35bd465/95;env=87f06ac3ab0b911b/130",
+  "fields": [
+   "searched",
+   "why",
+   "played",
+   "q",
+   "log_pi",
+   "root_v",
+   "search_key",
+   "honest"
+  ],
+  "max": 600,
+  "min": 1,
+  "model": "/home/goodlad/gen3ai_archive/sprime_honest_smoke_2026-11-06/ckpts/pstar_s/checkpoint_280000170_steps.zip",
+  "model_sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed",
+  "panels": [
+   "home72"
+  ],
+  "rows": "/home/goodlad/gen3ai_archive/sprime_honest_smoke_2026-11-06/identity/rescore.json.rows.jsonl",
+  "search": "r0s4_honest@10"
+ },
+ "mismatches": [],
+ "n_rescored": 4,
+ "n_sampled": 4,
+ "reason": null,
+ "rescored": [
+  {
+   "cell": "pstar_s__home72__201__g00",
+   "key": "su_live_v1|5dcef08659810af65603|t23|n25"
+  },
+  {
+   "cell": "pstar_s__home72__200__g00",
+   "key": "su_live_v1|e7ad93ed12293896a35c|t44|n46"
+  },
+  {
+   "cell": "pstar_s__home72__200__g00",
+   "key": "su_live_v1|e7ad93ed12293896a35c|t54|n56"
+  },
+  {
+   "cell": "pstar_s__home72__201__g00",
+   "key": "su_live_v1|5dcef08659810af65603|t30|n33"
+  }
+ ],
+ "schema": "gen3_live_rescore_v1",
+ "verdict": "PASS"
+}

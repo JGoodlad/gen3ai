@@ -1,0 +1,23 @@
+{
+ "schema": "gen3_read_spec_v1",
+ "read": "sprime_honest_smoke_2026-11-06",
+ "note": "SMOKE (not a read): r0s4_honest@10 live against its raw twin P* on home72 unit seeds 200-201 game 0 (outside the S'-HONEST read's U panels and seeds; 200 g0 is S'-LIVE's smoke deal), the per-game searched lane end to end through the read's own rule (searched_play on home72: its record is not a result)",
+ "models": {
+  "pstar": {"arm": "pstar", "seed": 2601, "ref": {"kind": "pinned", "path": "models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip", "sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed"}},
+  "pstar_s": {"arm": "pstar_s", "seed": 2601, "ref": {"kind": "pinned", "path": "models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip", "sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed"}, "load": {"search": "r0s4_honest@10"}}
+ },
+ "anchor": {
+  "smoke": {"opponent": "metamon:Kakuna", "teamsets": ["home72"], "unit_seeds": "200-201", "per_game": true, "games": {"200": [0], "201": [0]}, "models": ["pstar", "pstar_s"]}
+ },
+ "decision": {
+  "rule": "searched_play",
+  "params": {
+   "group": "smoke", "searched": "pstar_s", "raw": "pstar", "u_panels": ["home72"], "expected_search": "r0s4_honest@10",
+   "engine": "port=74eb0a3bc35bd465/95;env=87f06ac3ab0b911b/130", "null_margin_pp": 3.0, "bootstrap": {"B": 2000, "seed": 20261106},
+   "rule8_eps": 0.0005, "max_post_unpaired_frac": 0.005, "max_pre_unpaired_frac": 0.02,
+   "max_excluded_frac": {"home72": 0.2},
+   "identity": {"cells": "/home/goodlad/gen3ai_archive/sprime_honest_smoke_2026-11-06/anchor/smoke/pstar_s/cells", "rescore_json": "/home/goodlad/gen3ai_archive/sprime_honest_smoke_2026-11-06/identity/rescore.json", "min_rescored": 1, "max_rescored": 600},
+   "state": "/home/goodlad/gen3ai_archive/sprime_honest_smoke_2026-11-06"
+  }
+ }
+}

@@ -25,7 +25,9 @@ the owner's goal 5. It makes four points:
 - **What it licenses, and only this.** Building and registering a LEAK-HONEST replication on fresh deals. S′'s worlds
   replay the true battle seed (§6.1: speed ties and hidden counters leak), so this is not deployable search and not
   goal (b) met; no training, league or public-server change follows.
-- **Next: the replication, S′-HONEST: its stage 1 is BUILT, its PREREG not written** (2026-11-06,
+- **Next: the replication, S′-HONEST: REGISTERED 2026-11-06, not yet played**
+  ([`sprime_honest_play_2026-11-06/PREREG.md`](../research_state/measurements/sprime_honest_play_2026-11-06/PREREG.md):
+  `r0s4_honest_inc@10` against P\* raw on 5,100 fresh U deals, pin `e46e3ddf8`). Its stage 1 (2026-11-06,
   [`design_sprime_honest.md`](design_sprime_honest.md) §8). Its inventory reads six channels from the code; none is
   shown bigger than §6.1 says. The leak-honest preset `r0s4_honest` searches as a function of the searched side's
   information set alone, on fresh dice matched segment by segment. Its leak test passes on every channel and fails on
@@ -37,7 +39,7 @@ the owner's goal 5. It makes four points:
   through a battle's decisions, still a function of I (the leak test passes in sequence mode on every channel): on
   444 states' whole-game sequences it costs ≈ 6.2 CPU-min a searched game at K = 6 (4.9× less), excludes ≈ 3.4 % of
   U decisions (`r0s4_honest` 7.7 %) and picks `r0s4_honest`'s action as often as `r0s4_honest` picks its own under
-  another key (63 %). The replication's ≈ 434 CPU-h is ≈ 3 days on the agent cores.
+  another key (63 %). The replication's ≈ 577 CPU-h is ≈ 1.8 days on the whole box (K = 14), ≈ 4.8 beside a pinned run.
 - **Beside it: X65 ExIt-0, search DISTILLATION from the banked labels, READ 2026-11-06: NOT-DELIVERED**
   ([`../research_state/measurements/x65_exit0_2026-11-05/README.md`](../research_state/measurements/x65_exit0_2026-11-05/README.md)).
   The three students agree with S′'s pick on their held-out panels LESS than P\* does: pooled Δagree −1.26 pp

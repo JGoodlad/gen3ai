@@ -1,0 +1,17 @@
+{
+ "by_panel": {
+  "F": 15,
+  "H": 6,
+  "P72": 3
+ },
+ "engine": [
+  "port=74eb0a3bc35bd465/95;env=87f06ac3ab0b911b/130"
+ ],
+ "excluded": 4,
+ "mismatched": [],
+ "n": 24,
+ "preset": "r0s4_honest@10",
+ "schema": "sprime_honest_stage1_tooth_v1",
+ "searched": 20,
+ "verdict": "PASS"
+}

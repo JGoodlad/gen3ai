@@ -1,0 +1,130 @@
+{
+ "deviation_rate": 0.3243,
+ "excluded": 8,
+ "from_turn_decisions": 82,
+ "g_prefix": {
+  "smoke": {
+   "checked": 2,
+   "mismatches": [],
+   "pairs": 2,
+   "pending": 0,
+   "schema": "gen3_read_prefix_v1"
+  }
+ },
+ "game_playout_cpu_min": {
+  "max": 1.546,
+  "mean": 1.032,
+  "median": 1.033,
+  "n": 2,
+  "p10": 0.622,
+  "p90": 1.443
+ },
+ "game_search_cpu_min": {
+  "max": 32.843,
+  "mean": 27.927,
+  "median": 27.927,
+  "n": 2,
+  "p10": 23.994,
+  "p90": 31.86
+ },
+ "game_wall_min": {
+  "max": 33.744,
+  "mean": 28.559,
+  "median": 28.559,
+  "n": 2,
+  "p10": 24.411,
+  "p90": 32.707
+ },
+ "game_world_cpu_min": {
+  "max": 31.096,
+  "mean": 26.769,
+  "median": 26.769,
+  "n": 2,
+  "p10": 23.307,
+  "p90": 30.231
+ },
+ "games": 2,
+ "ge2_legal_share": 1.0,
+ "per_game": [
+  {
+   "asked": 57,
+   "cell": "/home/goodlad/gen3ai_archive/sprime_honest_smoke_2026-11-06/anchor/smoke/pstar_s/cells/pstar_s__home72__200__g00",
+   "decisions": 66,
+   "deviation_rate": 0.2909,
+   "deviations": 16,
+   "excluded": 2,
+   "from_turn": 10,
+   "from_turn_decisions": 57,
+   "game_wall_min": 33.744,
+   "ge2_legal_share": 1.0,
+   "playout_cpu_min": 1.546,
+   "search": [
+    "r0s4_honest@10"
+   ],
+   "search_cpu_min": 32.843,
+   "searched": 55,
+   "status": "OK",
+   "turns": [
+    63
+   ],
+   "unit_cpu_min": 33.878,
+   "world_cpu_min": 31.096
+  },
+  {
+   "asked": 25,
+   "cell": "/home/goodlad/gen3ai_archive/sprime_honest_smoke_2026-11-06/anchor/smoke/pstar_s/cells/pstar_s__home72__201__g00",
+   "decisions": 34,
+   "deviation_rate": 0.4211,
+   "deviations": 8,
+   "excluded": 6,
+   "from_turn": 10,
+   "from_turn_decisions": 25,
+   "game_wall_min": 23.374,
+   "ge2_legal_share": 1.0,
+   "playout_cpu_min": 0.519,
+   "search": [
+    "r0s4_honest@10"
+   ],
+   "search_cpu_min": 23.011,
+   "searched": 19,
+   "status": "OK",
+   "turns": [
+    30
+   ],
+   "unit_cpu_min": 23.428,
+   "world_cpu_min": 22.442
+  }
+ ],
+ "resize": {
+  "above": false,
+  "median_game_cpu_min": 27.927,
+  "note": "REPORTED: design \u00a74.4 drops phase 2 when the median searched game costs more",
+  "threshold_cpu_min": 50.0
+ },
+ "schema": "gen3_search_cost_v1",
+ "searched": 74,
+ "searched_decision_cpu_s": {
+  "max": 177.532,
+  "mean": 27.04,
+  "median": 14.302,
+  "n": 74,
+  "p10": 3.066,
+  "p90": 71.067
+ },
+ "searched_decision_wall_s": {
+  "max": 178.075,
+  "mean": 27.493,
+  "median": 14.543,
+  "n": 74,
+  "p10": 3.115,
+  "p90": 72.376
+ },
+ "unit_cpu_min": {
+  "max": 33.878,
+  "mean": 28.653,
+  "median": 28.653,
+  "n": 2,
+  "p10": 24.473,
+  "p90": 32.833
+ }
+}

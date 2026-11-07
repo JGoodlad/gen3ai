@@ -1,0 +1,431 @@
+{
+ "by_panel": {
+  "F": {
+   "bound": 0.3,
+   "parts": {
+    "10-19": {
+     "cpu_s": 21.18,
+     "decisions_a_game": 10.95,
+     "excl": 0.05
+    },
+    "20-29": {
+     "cpu_s": 21.18,
+     "decisions_a_game": 9.49,
+     "excl": 0.05
+    },
+    "30-63": {
+     "cpu_s": 25.89,
+     "decisions_a_game": 14.25,
+     "excl": 0.0556
+    },
+    "64+": {
+     "cpu_s": 116.83,
+     "decisions_a_game": 8.13,
+     "excl": 0.5556
+    }
+   },
+   "projected_excl": 0.1479,
+   "search_path_decisions_a_game": 42.82,
+   "searched_game_cpu_min_k2": 29.62,
+   "searched_game_cpu_min_k6": 48.14,
+   "searched_game_cpu_min_k6_at_p90": 83.32,
+   "worst_game": {
+    "buckets": {
+     "10-19": 11,
+     "20-29": 11,
+     "30-63": 34,
+     "64+": 189
+    },
+    "wall_h_k6_at_max": 21.15,
+    "wall_h_k6_at_mean": 10.88,
+    "wall_h_k6_at_p90": 19.05
+   }
+  },
+  "H": {
+   "bound": 0.07,
+   "parts": {
+    "10-19": {
+     "cpu_s": 12.36,
+     "decisions_a_game": 10.93,
+     "excl": 0.04
+    },
+    "20-29": {
+     "cpu_s": 12.36,
+     "decisions_a_game": 9.53,
+     "excl": 0.04
+    },
+    "30-63": {
+     "cpu_s": 26.82,
+     "decisions_a_game": 12.02,
+     "excl": 0.0
+    },
+    "64+": {
+     "cpu_s": 77.75,
+     "decisions_a_game": 3.55,
+     "excl": 0.1111
+    }
+   },
+   "projected_excl": 0.0337,
+   "search_path_decisions_a_game": 36.04,
+   "searched_game_cpu_min_k2": 14.62,
+   "searched_game_cpu_min_k6": 23.44,
+   "searched_game_cpu_min_k6_at_p90": 59.7,
+   "worst_game": {
+    "buckets": {
+     "10-19": 10,
+     "20-29": 11,
+     "30-63": 34,
+     "64+": 189
+    },
+    "wall_h_k6_at_max": 32.54,
+    "wall_h_k6_at_mean": 7.36,
+    "wall_h_k6_at_p90": 23.26
+   }
+  },
+  "P72": {
+   "bound": 0.1,
+   "parts": {
+    "10-19": {
+     "cpu_s": 7.33,
+     "decisions_a_game": 11.04,
+     "excl": 0.0
+    },
+    "20-29": {
+     "cpu_s": 7.33,
+     "decisions_a_game": 9.69,
+     "excl": 0.0
+    },
+    "30-63": {
+     "cpu_s": 10.85,
+     "decisions_a_game": 12.01,
+     "excl": 0.0
+    },
+    "64+": {
+     "cpu_s": 113.71,
+     "decisions_a_game": 3.53,
+     "excl": 0.5
+    }
+   },
+   "projected_excl": 0.0487,
+   "search_path_decisions_a_game": 36.27,
+   "searched_game_cpu_min_k2": 11.82,
+   "searched_game_cpu_min_k6": 19.24,
+   "searched_game_cpu_min_k6_at_p90": 33.73,
+   "worst_game": {
+    "buckets": {
+     "10-19": 10,
+     "20-29": 11,
+     "30-63": 37,
+     "64+": 187
+    },
+    "wall_h_k6_at_max": 23.81,
+    "wall_h_k6_at_mean": 10.15,
+    "wall_h_k6_at_p90": 21.28
+   }
+  }
+ },
+ "inputs": {
+  "kappa_overhead": {
+   "kappa": {
+    "10-19": 1.545010665911269,
+    "20-29": 1.5368957909789922,
+    "30-63": 1.5940806735675561,
+    "64+": 1.6774521114902068
+   },
+   "life_k2": 1,
+   "life_k6": 4,
+   "overhead_s": {
+    "k2": 25.246374628344896,
+    "k6": 39.255410038610016
+   },
+   "rolls_k2_cpu_s": {
+    "10-19": 3.6020226190476192,
+    "20-29": 4.6918043385793275,
+    "30-63": 6.667346662000175,
+    "64+": 12.251491866311742
+   }
+  },
+  "probe": {
+   "F/10-19": {
+    "cpu_max": 201.679,
+    "cpu_mean": 37.76833333333333,
+    "cpu_p90": 201.679,
+    "excl": 1,
+    "n": 6,
+    "ratio": 9.21291214375737,
+    "rolls_cpu_mean": 4.0995,
+    "rolls_excl": 0,
+    "rolls_reproduces_live": 6,
+    "same_pick": [
+     4,
+     5
+    ]
+   },
+   "F/20-29": {
+    "cpu_max": 72.57600000000001,
+    "cpu_mean": 32.582,
+    "cpu_p90": 72.57600000000001,
+    "excl": 1,
+    "n": 6,
+    "ratio": 4.81495529666757,
+    "rolls_cpu_mean": 6.7668333333333335,
+    "rolls_excl": 1,
+    "rolls_reproduces_live": 6,
+    "same_pick": [
+     2,
+     5
+    ]
+   },
+   "F/30-63": {
+    "cpu_max": 188.151,
+    "cpu_mean": 25.889611111111112,
+    "cpu_p90": 67.34700000000001,
+    "excl": 1,
+    "n": 18,
+    "ratio": 3.11214772271938,
+    "rolls_cpu_mean": 8.318888888888889,
+    "rolls_excl": 1,
+    "rolls_reproduces_live": 18,
+    "same_pick": [
+     11,
+     16
+    ]
+   },
+   "F/64+": {
+    "cpu_max": 205.731,
+    "cpu_mean": 116.83244444444445,
+    "cpu_p90": 202.518,
+    "excl": 10,
+    "n": 18,
+    "ratio": 6.608585255483627,
+    "rolls_cpu_mean": 17.67888888888889,
+    "rolls_excl": 6,
+    "rolls_reproduces_live": 18,
+    "same_pick": [
+     3,
+     8
+    ]
+   },
+   "H/10-19": {
+    "cpu_max": 5.332,
+    "cpu_mean": 3.9713333333333334,
+    "cpu_p90": 5.332,
+    "excl": 0,
+    "n": 6,
+    "ratio": 0.9984077767535406,
+    "rolls_cpu_mean": 3.9776666666666665,
+    "rolls_excl": 0,
+    "rolls_reproduces_live": 6,
+    "same_pick": [
+     4,
+     6
+    ]
+   },
+   "H/20-29": {
+    "cpu_max": 6.166,
+    "cpu_mean": 4.7295,
+    "cpu_p90": 6.166,
+    "excl": 0,
+    "n": 6,
+    "ratio": 1.0445008833922262,
+    "rolls_cpu_mean": 4.528,
+    "rolls_excl": 0,
+    "rolls_reproduces_live": 6,
+    "same_pick": [
+     3,
+     6
+    ]
+   },
+   "H/30-63": {
+    "cpu_max": 183.951,
+    "cpu_mean": 26.821444444444445,
+    "cpu_p90": 87.389,
+    "excl": 0,
+    "n": 18,
+    "ratio": 3.8584912446152986,
+    "rolls_cpu_mean": 6.9512777777777774,
+    "rolls_excl": 1,
+    "rolls_reproduces_live": 18,
+    "same_pick": [
+     11,
+     17
+    ]
+   },
+   "H/64+": {
+    "cpu_max": 336.814,
+    "cpu_mean": 77.75311111111111,
+    "cpu_p90": 247.967,
+    "excl": 2,
+    "n": 18,
+    "ratio": 3.8791429917680644,
+    "rolls_cpu_mean": 20.043888888888887,
+    "rolls_excl": 1,
+    "rolls_reproduces_live": 18,
+    "same_pick": [
+     10,
+     15
+    ]
+   },
+   "P72/10-19": {
+    "cpu_max": 7.828,
+    "cpu_mean": 3.7455,
+    "cpu_p90": 7.828,
+    "excl": 0,
+    "n": 6,
+    "ratio": 1.326153664581612,
+    "rolls_cpu_mean": 2.824333333333333,
+    "rolls_excl": 0,
+    "rolls_reproduces_live": 6,
+    "same_pick": [
+     4,
+     6
+    ]
+   },
+   "P72/20-29": {
+    "cpu_max": 14.267000000000001,
+    "cpu_mean": 6.224333333333333,
+    "cpu_p90": 14.267000000000001,
+    "excl": 0,
+    "n": 6,
+    "ratio": 1.3405362719408451,
+    "rolls_cpu_mean": 4.643166666666667,
+    "rolls_excl": 0,
+    "rolls_reproduces_live": 6,
+    "same_pick": [
+     4,
+     6
+    ]
+   },
+   "P72/30-63": {
+    "cpu_max": 73.214,
+    "cpu_mean": 10.851333333333333,
+    "cpu_p90": 17.082,
+    "excl": 0,
+    "n": 18,
+    "ratio": 2.0224691179059193,
+    "rolls_cpu_mean": 5.365388888888889,
+    "rolls_excl": 0,
+    "rolls_reproduces_live": 18,
+    "same_pick": [
+     12,
+     18
+    ]
+   },
+   "P72/64+": {
+    "cpu_max": 258.786,
+    "cpu_mean": 113.706,
+    "cpu_p90": 240.288,
+    "excl": 9,
+    "n": 18,
+    "ratio": 8.95091817947249,
+    "rolls_cpu_mean": 12.703277777777778,
+    "rolls_excl": 1,
+    "rolls_reproduces_live": 18,
+    "same_pick": [
+     6,
+     8
+    ]
+   }
+  },
+  "slive": {
+   "games": {
+    "F": 900,
+    "H": 900,
+    "P72": 900
+   },
+   "k6_cpu_h_per_wall_h": {
+    "4": 5.79595208545072
+   },
+   "k6_searched_deals_per_h": {
+    "4": 40.15973680643861
+   },
+   "per_game": {
+    "F": {
+     "10-19": 10.948888888888888,
+     "20-29": 9.487777777777778,
+     "30-63": 14.252222222222223,
+     "64+": 8.133333333333333
+    },
+    "H": {
+     "10-19": 10.928888888888888,
+     "20-29": 9.532222222222222,
+     "30-63": 12.023333333333333,
+     "64+": 3.5533333333333332
+    },
+    "P72": {
+     "10-19": 11.037777777777778,
+     "20-29": 9.69,
+     "30-63": 12.01,
+     "64+": 3.531111111111111
+    }
+   },
+   "raw_unit_cpu_min": 0.49080772553375296,
+   "raw_unit_cpu_min_k6": 0.6015805041152263,
+   "rolls_searched_unit_cpu_min_k6": 8.058694144838212,
+   "worst_game": {
+    "F": {
+     "10-19": 11,
+     "20-29": 11,
+     "30-63": 34,
+     "64+": 189
+    },
+    "H": {
+     "10-19": 10,
+     "20-29": 11,
+     "30-63": 34,
+     "64+": 189
+    },
+    "P72": {
+     "10-19": 10,
+     "20-29": 11,
+     "30-63": 37,
+     "64+": 187
+    }
+   }
+  }
+ },
+ "read": {
+  "k6_cpu_h_per_wall_h": 5.8,
+  "raw_cpu_h_k6": 38.5,
+  "rent_box_h_at_30_45": [
+   27.3,
+   40.9
+  ],
+  "searched_cpu_h_k2": 1195.8,
+  "searched_cpu_h_k6": 1937.7,
+  "third_arm_cpu_h_k6": {
+   "full": 515.8,
+   "half": 257.9,
+   "third": 171.9
+  },
+  "total_cpu_h_k6": 1976.2,
+  "wall_days_free": 14.2,
+  "wall_days_pinned_trainer": 16.4
+ },
+ "watchdog": {
+  "F": {
+   "games": 900,
+   "max_h": 10.89,
+   "over_10h": 6,
+   "over_10h_at_x1.5": 14,
+   "over_8h": 8,
+   "p99_h": 7.35
+  },
+  "H": {
+   "games": 900,
+   "max_h": 7.37,
+   "over_10h": 0,
+   "over_10h_at_x1.5": 2,
+   "over_8h": 0,
+   "p99_h": 3.22
+  },
+  "P72": {
+   "games": 900,
+   "max_h": 10.3,
+   "over_10h": 2,
+   "over_10h_at_x1.5": 2,
+   "over_8h": 2,
+   "p99_h": 4.12
+  }
+ }
+}

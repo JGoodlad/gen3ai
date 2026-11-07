@@ -1,0 +1,82 @@
+{
+ "schema": "gen3_read_spec_v1",
+ "read": "sprime_honest_play_2026-11-06",
+ "pin": "e46e3ddf8",
+ "prereg": "designs/research_state/measurements/sprime_honest_play_2026-11-06/PREREG.md",
+ "note": "S'-HONEST: P* + S'h (r0s4_honest_inc@10: the INCREMENTAL leak-honest builder, the search a function of the searched side's information set alone, every eligible decision from turn 10) vs P* raw, both greedy, against Kakuna on U (heldout72_hpfix, forum72, p72; FRESH unit seeds 700-784, 5,100 deals), ONE per_game group, both arms lone one-game units deal by deal, G-PREFIX with pre-registered peer drops, the choice-level identity guard with the honest build record and each sampled decision's carry REBUILT from I (offline re-score of a hashed 1-in-16 sample, first 600 in registered order); searched_play: GO-HONEST iff LB(G_U) > 0, NULL iff not GO-HONEST and UB(G_U) < +3 pp (post-treatment drops imputed at their worst case for each class), else STOP; decided flags GOAL-B (the searched arm's U score LB > 0.50, missing searched games as losses) and excess_exclusions (H 0.05, F 0.13, P72 0.09)",
+ "models": {
+  "pstar": {
+   "arm": "pstar",
+   "seed": 2601,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip",
+    "sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed"
+   }
+  },
+  "pstar_s": {
+   "arm": "pstar_s",
+   "seed": 2601,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip",
+    "sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed"
+   },
+   "load": {
+    "search": "r0s4_honest_inc@10"
+   }
+  }
+ },
+ "anchor": {
+  "u": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "heldout72_hpfix",
+    "forum72",
+    "p72"
+   ],
+   "unit_seeds": "700-784",
+   "per_game": true,
+   "models": [
+    "pstar",
+    "pstar_s"
+   ]
+  }
+ },
+ "decision": {
+  "rule": "searched_play",
+  "params": {
+   "group": "u",
+   "searched": "pstar_s",
+   "raw": "pstar",
+   "u_panels": [
+    "heldout72_hpfix",
+    "forum72",
+    "p72"
+   ],
+   "expected_search": "r0s4_honest_inc@10",
+   "engine": "port=f0fe71f6c54757b2/95;env=c0b7c649acfb48d8/130",
+   "null_margin_pp": 3.0,
+   "bootstrap": {
+    "B": 2000,
+    "seed": 20261106
+   },
+   "rule8_eps": 0.0005,
+   "max_post_unpaired_frac": 0.005,
+   "max_pre_unpaired_frac": 0.02,
+   "max_excluded_frac": {
+    "heldout72_hpfix": 0.05,
+    "forum72": 0.13,
+    "p72": 0.09
+   },
+   "identity": {
+    "cells": "/home/goodlad/gen3ai_archive/sprime_honest_play_2026-11-06/anchor/u/pstar_s/cells",
+    "rescore_json": "/home/goodlad/gen3ai_archive/sprime_honest_play_2026-11-06/identity/rescore.json",
+    "min_rescored": 300,
+    "max_rescored": 600,
+    "carry": "rebuild"
+   },
+   "state": "/home/goodlad/gen3ai_archive/sprime_honest_play_2026-11-06"
+  }
+ }
+}

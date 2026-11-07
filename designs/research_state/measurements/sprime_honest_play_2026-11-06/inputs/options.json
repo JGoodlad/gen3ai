@@ -1,0 +1,330 @@
+{
+ "inputs": {
+  "ext_s": 0.4,
+  "incremental_guesses": {
+   "optimistic": [
+    {
+     "10-19": 0.3,
+     "20-29": 0.2,
+     "30-63": 0.1,
+     "64+": 0.05
+    },
+    0.2,
+    0.3
+   ],
+   "pessimistic": [
+    {
+     "10-19": 0.5,
+     "20-29": 0.4,
+     "30-63": 0.25,
+     "64+": 0.15
+    },
+    0.5,
+    1.0
+   ]
+  },
+  "k6_cpu_h_per_wall_h": 5.79595208545072,
+  "kappa": {
+   "10-19": 1.545010665911269,
+   "20-29": 1.5368957909789922,
+   "30-63": 1.5940806735675561,
+   "64+": 1.6774521114902068
+  },
+  "overhead_s": {
+   "k2": 25.246374628344896,
+   "k6": 39.255410038610016
+  },
+  "parts": {
+   "F/10-19": {
+    "excl_cost": 201.679,
+    "excl_rate": 0.16666666666666666,
+    "n": 6,
+    "other_searched": 2.1772,
+    "world_searched": 2.809
+   },
+   "F/20-29": {
+    "excl_cost": 72.57600000000001,
+    "excl_rate": 0.16666666666666666,
+    "n": 6,
+    "other_searched": 2.7512000000000003,
+    "world_searched": 21.832
+   },
+   "F/30-63": {
+    "excl_cost": 188.151,
+    "excl_rate": 0.05555555555555555,
+    "n": 18,
+    "other_searched": 2.1837647058823535,
+    "world_searched": 14.161058823529412
+   },
+   "F/64+": {
+    "excl_cost": 171.7626,
+    "excl_rate": 0.5555555555555556,
+    "n": 18,
+    "other_searched": 2.803249999999999,
+    "world_searched": 45.3665
+   },
+   "H/10-19": {
+    "excl_cost": null,
+    "excl_rate": 0.0,
+    "n": 6,
+    "other_searched": 2.3143333333333334,
+    "world_searched": 1.657
+   },
+   "H/20-29": {
+    "excl_cost": null,
+    "excl_rate": 0.0,
+    "n": 6,
+    "other_searched": 2.186833333333333,
+    "world_searched": 2.542666666666667
+   },
+   "H/30-63": {
+    "excl_cost": null,
+    "excl_rate": 0.0,
+    "n": 18,
+    "other_searched": 2.866944444444444,
+    "world_searched": 23.9545
+   },
+   "H/64+": {
+    "excl_cost": 242.2285,
+    "excl_rate": 0.1111111111111111,
+    "n": 18,
+    "other_searched": 2.167125000000003,
+    "world_searched": 55.0265625
+   },
+   "P72/10-19": {
+    "excl_cost": null,
+    "excl_rate": 0.0,
+    "n": 6,
+    "other_searched": 1.8073333333333332,
+    "world_searched": 1.9381666666666666
+   },
+   "P72/20-29": {
+    "excl_cost": null,
+    "excl_rate": 0.0,
+    "n": 6,
+    "other_searched": 2.0781666666666667,
+    "world_searched": 4.146166666666667
+   },
+   "P72/30-63": {
+    "excl_cost": null,
+    "excl_rate": 0.0,
+    "n": 18,
+    "other_searched": 2.1024444444444446,
+    "world_searched": 8.748888888888889
+   },
+   "P72/64+": {
+    "excl_cost": 194.086,
+    "excl_rate": 0.5,
+    "n": 18,
+    "other_searched": 3.062555555555556,
+    "world_searched": 30.263444444444445
+   }
+  },
+  "probe_states": 144
+ },
+ "modes": {
+  "as_is": {
+   "excl_share_U": 0.07673879964312968,
+   "game_cpu_min_k2_U": 18.684679421103414,
+   "game_cpu_min_k6_U": 30.276524058615735,
+   "per_panel": {
+    "F": {
+     "excl_share": 0.14787046647062216,
+     "game_cpu_min_k2": 29.621944670760477,
+     "game_cpu_min_k6": 48.14248147484896,
+     "watchdog": {
+      "games": 900,
+      "max_h": 10.889122039085237,
+      "over_10h": 6,
+      "over_10h_at_x1.5": 14,
+      "over_8h": 8
+     }
+    },
+    "H": {
+     "excl_share": 0.033666317239111225,
+     "game_cpu_min_k2": 14.615193274669945,
+     "game_cpu_min_k6": 23.442445259728206,
+     "watchdog": {
+      "games": 900,
+      "max_h": 7.37321928025969,
+      "over_10h": 0,
+      "over_10h_at_x1.5": 2,
+      "over_8h": 0
+     }
+    },
+    "P72": {
+     "excl_share": 0.04867961521965566,
+     "game_cpu_min_k2": 11.816900317879824,
+     "game_cpu_min_k6": 19.244645441270038,
+     "watchdog": {
+      "games": 900,
+      "max_h": 10.303666121868975,
+      "over_10h": 2,
+      "over_10h_at_x1.5": 2,
+      "over_8h": 2
+     }
+    }
+   }
+  },
+  "optimistic": {
+   "excl_share_U": 0.0230216398929389,
+   "game_cpu_min_k2_U": 5.110004705395721,
+   "game_cpu_min_k6_U": 8.240244471692336,
+   "per_panel": {
+    "F": {
+     "excl_share": 0.04436113994118664,
+     "game_cpu_min_k2": 8.036222085669198,
+     "game_cpu_min_k6": 13.051230131710705,
+     "watchdog": {
+      "games": 900,
+      "max_h": 2.9426801206358615,
+      "over_10h": 0,
+      "over_10h_at_x1.5": 0,
+      "over_8h": 0
+     }
+    },
+    "H": {
+     "excl_share": 0.010099895171733365,
+     "game_cpu_min_k2": 3.4656158765825875,
+     "game_cpu_min_k6": 5.47622114476025,
+     "watchdog": {
+      "games": 900,
+      "max_h": 1.0868889204775694,
+      "over_10h": 0,
+      "over_10h_at_x1.5": 0,
+      "over_8h": 0
+     }
+    },
+    "P72": {
+     "excl_share": 0.014603884565896697,
+     "game_cpu_min_k2": 3.828176153935378,
+     "game_cpu_min_k6": 6.193282138606052,
+     "watchdog": {
+      "games": 900,
+      "max_h": 2.935987539095339,
+      "over_10h": 0,
+      "over_10h_at_x1.5": 0,
+      "over_8h": 0
+     }
+    }
+   }
+  },
+  "pessimistic": {
+   "excl_share_U": 0.07673879964312968,
+   "game_cpu_min_k2_U": 12.3936907524957,
+   "game_cpu_min_k6_U": 20.164014469415694,
+   "per_panel": {
+    "F": {
+     "excl_share": 0.14787046647062216,
+     "game_cpu_min_k2": 21.7941419354112,
+     "game_cpu_min_k6": 35.595050140921145,
+     "watchdog": {
+      "games": 900,
+      "max_h": 9.018816912056977,
+      "over_10h": 0,
+      "over_10h_at_x1.5": 8,
+      "over_8h": 7
+     }
+    },
+    "H": {
+     "excl_share": 0.033666317239111225,
+     "game_cpu_min_k2": 7.100064054761921,
+     "game_cpu_min_k6": 11.280116942336264,
+     "watchdog": {
+      "games": 900,
+      "max_h": 3.0910343418897046,
+      "over_10h": 0,
+      "over_10h_at_x1.5": 0,
+      "over_8h": 0
+     }
+    },
+    "P72": {
+     "excl_share": 0.04867961521965566,
+     "game_cpu_min_k2": 8.286866267313979,
+     "game_cpu_min_k6": 13.616876324989672,
+     "watchdog": {
+      "games": 900,
+      "max_h": 8.941538925247146,
+      "over_10h": 0,
+      "over_10h_at_x1.5": 2,
+      "over_8h": 2
+     }
+    }
+   }
+  }
+ },
+ "table": [
+  {
+   "cpu_h_k6": 1976.0,
+   "deals": 3840,
+   "option": "local as-is",
+   "power_at_2.30": [
+    0.8,
+    0.68
+   ],
+   "wall_days_free": 14.2,
+   "wall_days_pinned_trainer": 16.4
+  },
+  {
+   "cpu_h_k6": 1667.0,
+   "deals": 3240,
+   "option": "local as-is, 3,240 deals",
+   "power_at_2.30": [
+    0.73,
+    0.61
+   ],
+   "wall_days_free": 12.0,
+   "wall_days_pinned_trainer": 13.8
+  },
+  {
+   "cpu_h_k6": 1390.0,
+   "deals": 2700,
+   "option": "local as-is, 2,700 deals",
+   "power_at_2.30": [
+    0.66,
+    0.53
+   ],
+   "wall_days_free": 10.0,
+   "wall_days_pinned_trainer": 11.5
+  },
+  {
+   "cpu_h_k6": 566.0,
+   "deals": 3840,
+   "option": "incremental builder, local (optimistic)",
+   "power_at_2.30": [
+    0.8,
+    0.68
+   ],
+   "wall_days_free": 4.1,
+   "wall_days_pinned_trainer": 4.7
+  },
+  {
+   "cpu_h_k6": 1329.0,
+   "deals": 3840,
+   "option": "incremental builder, local (pessimistic)",
+   "power_at_2.30": [
+    0.8,
+    0.68
+   ],
+   "wall_days_free": 9.6,
+   "wall_days_pinned_trainer": 11.0
+  },
+  {
+   "box_hours_at_45_30_games": [
+    27.3,
+    40.9
+   ],
+   "cpu_h_k2": 1227.0,
+   "deals": 3840,
+   "option": "rented 64-vCPU box, as-is",
+   "power_at_2.30": [
+    0.8,
+    0.68
+   ],
+   "usd_at_1.5_3.5": [
+    41,
+    143
+   ]
+  }
+ ]
+}
