@@ -267,6 +267,7 @@ with what it measures.
 | layer 1, the OS watcher | `scripts/ops/watch_run.sh <run> --pid-file … --launcher-log …` |
 | layer 2 between arms, the chain | `python -m main.ops.arm_chain plan / run / status / clear-hold / abandon / ship-records <chain.json>`; `live`, `canary`, `monitor` (the alert follower), `watch-files`, `monitor-filter`, `wait-pid`, `signal-if` ([`arm_chain.md`](arm_chain.md)) |
 | MARGINAL fps, from checkpoint mtimes | `scripts/ops/marginal_fps.sh <run> [--target N:label]` |
+| per-arm host RSS (a resume baselines after ITS first update) | `python -m main.ops.rss_watch --launcher-pid … --run … --fork-step … --status-file … --rows-dir …` |
 | the registered first-restart read | `scripts/ops/restart_read.sh <run> [--baseline …]` |
 | the registered scalars, at the SOURCE | `python -m main.ops.tb_read <run> --last 20` — 🚨 on a FORK every live-tier TB reader reads the ARM's steps only (> the lineage `fork_step`; the parent's inherited prefix is cut and the first line says where; `--include-inherited` shows it) |
 | the kill bars · the vf_coef framings | `python -m main.ops.killbar` · `python -m main.ops.vf_framings` |
