@@ -138,7 +138,7 @@ class OpStashes:
 
 from agents.model.damage_op_blocks import DamageOperatorBlocks
 from agents.model.damage_kinds import (beatup_base_def, beatup_party_opp, gather_beatup, gather_bp,
-                                       gather_nonformula, nonformula_rolls, our_hp_points, our_max_hp, override_rolls)
+                                       gather_nonformula, nonformula_rolls, our_hp_points, our_stats, override_rolls)
 from agents.model.damage_op_pairwise import DamageOperatorPairwise
 from agents.model.damage_op_speed import DamageOperatorSpeed
 from agents.model.extractor_ctx import held_item_ids, item_unrevealed
@@ -899,18 +899,14 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
         d_base = self.BASE_STATS[ctx.species_ids[:, :TEAM_SIZE]]          # [B,6,6]
         spread = ctx.pokemon_part[:, :TEAM_SIZE,
                                   POKEMON_SPREAD_OFFSET:POKEMON_SPREAD_OFFSET + POKEMON_SPREAD_DIM]
-        iv = spread[..., 0:6] * 31.0                                      # [B,6,6] [hp,atk,def,spa,spd,spe]
-        ev = spread[..., 6:12] * 252.0
-        nat = spread[..., 13:18]                                          # [B,6,5] [atk,def,spa,spd,spe]
-        def_stat = (2.0 * d_base[..., 2] + iv[..., 2] + ev[..., 2] / 4.0 + 5.0) * nat[..., 1]   # [B,6]
-        spd_stat = (2.0 * d_base[..., 4] + iv[..., 4] + ev[..., 4] / 4.0 + 5.0) * nat[..., 3]   # [B,6]
+        maxhp, d_st = our_stats(d_base, spread)                           # [B,6], [B,6,5] [atk,def,spa,spd,spe]
+        def_stat, spd_stat = d_st[..., 1], d_st[..., 3]                   # [B,6]
         # OUR ACTIVE defender's DEFENSIVE boosts (only the active mon carries boosts in gen3 — bench reset).
         our_b_atk, our_b_def, our_b_spa, our_b_spd, our_b_spe = self._boost_stages(ctx.our_ctx_raw)
         def_boost = torch.ones_like(def_stat); def_boost[ar, ctx.our_active_idx] = self._boost_mult(our_b_def)
         spd_boost = torch.ones_like(spd_stat); spd_boost[ar, ctx.our_active_idx] = self._boost_mult(our_b_spd)
         def_stat = def_stat * def_boost
         spd_stat = spd_stat * spd_boost
-        maxhp = our_max_hp(d_base[..., 0], iv[..., 0], ev[..., 0])                               # [B,6]
         hp_frac = ctx.hp_and_active[:, :TEAM_SIZE, 0]                     # [B,6]
         cur_hp = our_hp_points(hp_frac, maxhp)                               # [B,6] integer-exact
         defender_alive = (hp_frac > 0).float()                           # [B,6]

@@ -109,11 +109,40 @@ def effective_bp(bp: torch.Tensor, hp_scaled: torch.Tensor, flail: torch.Tensor,
 _HEAL_FLOOR_NUDGE = 1e-3
 
 
-def our_max_hp(base_hp: torch.Tensor, iv_hp: torch.Tensor, ev_hp: torch.Tensor) -> torch.Tensor:
-    """OUR mon's max HP at L100 from its species base HP and the obs spread's HP IV / EV (gen3_our_hp_exact_v1:
-    THE one spelling). Integer-exact for every pool set (its EVs are multiples of 4). FINDING, not fixed: an EV
-    that is not a multiple of 4 reads ``ev / 4`` where the game floors it (up to 0.75 HP high)."""
-    return 2.0 * base_hp + iv_hp + ev_hp / 4.0 + 110.0
+#: The observation's spread block as `encoder::slot::spread` writes it (`POKEMON_SPREAD_DIM` = 18): IV / 31 (×6),
+#: EV / 252 (×6), spread_known, the nature multiplier (×5: atk, def, spa, spd, spe).
+_OBS_IV_SCALE, _OBS_EV_SCALE = 31.0, 252.0
+_SPREAD_IV, _SPREAD_EV, _SPREAD_NATURE = slice(0, 6), slice(6, 12), slice(13, 18)
+
+
+def our_spread(spread: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """OUR mon's spread decoded from the observation's block ``[..., >= 18]`` (gen3_stat_ev_points_v1, THE one
+    decode): ``(iv [...,6], ev_points [...,6], nature [...,5])``. ``iv`` is the integer IV (``round(f32(iv/31) ·
+    31)``: the read-back misses the integer by an ulp); ``ev_points`` is what the stat formula ADDS, Showdown's
+    ``tr(ev / 4)`` (`sim/battle.ts` ``statModify``: ``tr(tr(2·base + iv + tr(evs / 4)) · level/100 + 5)``), so an
+    EV that is not a multiple of 4 (85 → 21 points, not 21.25) counts as the game counts it; ``nature`` the
+    multiplier column as observed."""
+    iv = (spread[..., _SPREAD_IV] * _OBS_IV_SCALE).round()
+    ev_points = ((spread[..., _SPREAD_EV] * _OBS_EV_SCALE).round() / 4.0).floor()
+    return iv, ev_points, spread[..., _SPREAD_NATURE]
+
+
+def our_max_hp(base_hp: torch.Tensor, iv_hp: torch.Tensor, ev_points_hp: torch.Tensor) -> torch.Tensor:
+    """OUR mon's max HP at L100 (gen3_our_hp_exact_v1: THE one spelling): ``2·base + IV + tr(EV/4) + 110``
+    (`sim/battle.ts` ``statModify``'s HP branch at level 100), integer-exact. ``iv_hp`` / ``ev_points_hp`` come from
+    `our_spread` (the EV already in stat points)."""
+    return 2.0 * base_hp + iv_hp + ev_points_hp + 110.0
+
+
+def our_stats(base: torch.Tensor, spread: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    """OUR mon's L100 ``(max_hp [...], stats [...,5])`` from its species base stats ``[..., 6]`` (hp, atk, def, spa,
+    spd, spe) and the observation's spread block: max HP integer-exact (`our_max_hp`), the five others
+    ``(2·base + IV + tr(EV/4) + 5) × nature`` — the EV floored as the game floors it (`our_spread`). FINDING, not
+    fixed: the nature multiplier is applied UNFLOORED (Showdown: ``tr(tr(stat · 110, 16) / 100)``, so a boosted /
+    hindered stat reads up to 0.9 of a point high); the speed path's `move_order.gen3_speed_stat` floors it."""
+    iv, ev_points, nature = our_spread(spread)
+    max_hp = our_max_hp(base[..., 0], iv[..., 0], ev_points[..., 0])
+    return max_hp, (2.0 * base[..., 1:6] + iv[..., 1:6] + ev_points[..., 1:6] + 5.0) * nature
 
 
 def our_hp_points(hp_frac: torch.Tensor, maxhp: torch.Tensor) -> torch.Tensor:

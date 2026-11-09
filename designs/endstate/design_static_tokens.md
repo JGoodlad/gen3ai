@@ -101,8 +101,9 @@ through the same two MLPs (the move network and the role encoder).
 **Actual stats (the owner's "nature / EVs / IVs → actual stats").** S reads the six level-100 stats, not
 base stats + a raw spread, divided by `STATIC_STAT_SCALE` (500):
 
-- **our team** (`spread_known` = 1): the smooth gen-3 formula on the observed spread, the same one the
-  damage operator uses for our mons: `HP = 2B + IV + EV/4 + 110`, `X = (2B + IV + EV/4 + 5) × nature`.
+- **our team** (`spread_known` = 1): the gen-3 formula on the observed spread, the same one the
+  damage operator uses for our mons (`damage_kinds.our_stats`): `HP = 2B + IV + ⌊EV/4⌋ + 110`,
+  `X = (2B + IV + ⌊EV/4⌋ + 5) × nature` (the EV floored as the game does, `gen3_stat_ev_points_v1`; the nature smooth).
   Its uncertainty column is 0.
 - **the opponent** (`spread_known` = 0): the Smogon usage-weighted mean and standard deviation of each
   realised stat (`gen3_data.priors.spreads`, the source of the operator's `SPECIES_SPREAD_PRIOR`, here
@@ -820,8 +821,9 @@ and **a timed weather deals no chip on its last turn** (the duration ends it bef
 are exact; an unrevealed item or ability is its species' format-filtered Smogon prior (Leftovers; Sand Veil, Rain Dish,
 Shed Skin, Liquid Ooze, Cloud Nine / Air Lock); game cliffs stay probabilities (Shed Skin's 1/3 cure before the tick,
 Nightmare × P(stays asleep) from the observation's sleep-wake belief, Cloud Nine suppression as a probability over both
-actives). Leech Seed's heal is the one cross-mon amount: min(the seeded mon's max HP / 8, its HP) / the recipient's max
-HP, max HP from the op's convention (ours exact from the spread, theirs `2·base + 31 + 110`, Shedinja 1), Liquid Ooze
+actives). Leech Seed's heal is the one cross-mon amount: Showdown's integer drain min(its HP, max(1, ⌊the seeded mon's
+max HP / 8⌋)) (`gen3_leech_seed_exact_v1`, config v166; the drain column is that amount over the seeded mon's own max
+HP) / the recipient's max HP, max HP from the op's convention (ours exact from the spread, theirs `2·base + 31 + 110`, Shedinja 1), Liquid Ooze
 inverting it; it assumes the seeded active stays in. Two of its inputs were GIGO and are fixed at their source
 (config v151): the Toxic tick reads the observation's counter, which saturated at 8 ticks while the engine ramps to 15
 (now `min(stage, 15) / 15`, the tick `min(n + 1, 15) / 16`, `gen3_toxic_stage_scale_v1`), and the board's Wish flag, the

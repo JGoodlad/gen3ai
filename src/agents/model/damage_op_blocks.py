@@ -63,7 +63,7 @@ from agents.gen3_data import format_spec
 
 from agents.model.damage_kinds import (beatup_base_def, beatup_opp_target_def, beatup_party_ours,
                                        beatup_party_opp, beatup_swap, gather_beatup, gather_bp,
-                                       gather_nonformula, is_priced, nonformula_rolls, our_hp_points, our_max_hp,
+                                       gather_nonformula, is_priced, nonformula_rolls, our_hp_points, our_stats,
                                        override_rolls, typeless_move_type)
 
 if TYPE_CHECKING:  # no runtime import — `ctx` is only ever passed in, never constructed here
@@ -231,12 +231,9 @@ class DamageOperatorBlocks:
         a_base = self.BASE_STATS[ctx.species_ids[ar, our_act]]     # [B,6] [hp,atk,def,spa,spd,spe]
         spread = ctx.pokemon_part[ar, our_act,
                                   POKEMON_SPREAD_OFFSET:POKEMON_SPREAD_OFFSET + POKEMON_SPREAD_DIM]
-        iv = spread[:, 0:6] * 31.0
-        ev = spread[:, 6:12] * 252.0
-        nat = spread[:, 13:18]                                     # [B,5] [atk,def,spa,spd,spe]
-        our_atk = (2.0 * a_base[:, 1] + iv[:, 1] + ev[:, 1] / 4.0 + 5.0) * nat[:, 0]   # [B]
-        our_spa = (2.0 * a_base[:, 3] + iv[:, 3] + ev[:, 3] / 4.0 + 5.0) * nat[:, 2]   # [B]
-        our_cur_hp = our_hp_points(our_hp_frac, our_max_hp(a_base[:, 0], iv[:, 0], ev[:, 0]))  # [B] (Endeavor)
+        our_mhp, our_st = our_stats(a_base, spread)                 # [B], [B,5] [atk,def,spa,spd,spe]
+        our_atk, our_spa = our_st[:, 0], our_st[:, 2]              # [B]
+        our_cur_hp = our_hp_points(our_hp_frac, our_mhp)           # [B] (Endeavor)
         # gen3_unified_op_physics_v1: OUR active's offensive stat-stage boosts (we attack here) + BURN (½ phys atk).
         # (Speed: `_p_first_vs_opp_active` below, the one rule.)
         o_b_atk, o_b_def, o_b_spa, o_b_spd, o_b_spe = self._boost_stages(ctx.our_ctx_raw)
@@ -388,10 +385,9 @@ class DamageOperatorBlocks:
         # --- our active attacker (real spread; CB ×1.5 phys, offensive boosts, burn) — same as _outgoing_block ---
         a_base = self.BASE_STATS[ctx.species_ids[ar, our_act]]
         spr = ctx.pokemon_part[ar, our_act, POKEMON_SPREAD_OFFSET:POKEMON_SPREAD_OFFSET + POKEMON_SPREAD_DIM]
-        iv = spr[:, 0:6] * 31.0; ev = spr[:, 6:12] * 252.0; nat = spr[:, 13:18]
-        our_atk = (2.0 * a_base[:, 1] + iv[:, 1] + ev[:, 1] / 4.0 + 5.0) * nat[:, 0]
-        our_spa = (2.0 * a_base[:, 3] + iv[:, 3] + ev[:, 3] / 4.0 + 5.0) * nat[:, 2]
-        our_cur_hp = our_hp_points(our_hp_frac, our_max_hp(a_base[:, 0], iv[:, 0], ev[:, 0]))  # [B] (Endeavor)
+        our_mhp, our_st = our_stats(a_base, spr)
+        our_atk, our_spa = our_st[:, 0], our_st[:, 2]
+        our_cur_hp = our_hp_points(our_hp_frac, our_mhp)                               # [B] (Endeavor)
         o_b_atk, _odf, o_b_spa, _osd, _ose = self._boost_stages(ctx.our_ctx_raw)
         if boost_delta is not None:
             # gen3_edge_bias_trunk_v1 (C1): price the HYPOTHETICAL post-setup world — advance the
@@ -546,12 +542,9 @@ class DamageOperatorBlocks:
         a_base = self.BASE_STATS[ctx.species_ids[:, our]]            # [B,6,6] [hp,atk,def,spa,spd,spe]
         spread = ctx.pokemon_part[:, our,
                                   POKEMON_SPREAD_OFFSET:POKEMON_SPREAD_OFFSET + POKEMON_SPREAD_DIM]   # [B,6,SPREAD]
-        iv = spread[..., 0:6] * 31.0
-        ev = spread[..., 6:12] * 252.0
-        nat = spread[..., 13:18]                                     # [B,6,5] [atk,def,spa,spd,spe]
-        our_atk = (2.0 * a_base[..., 1] + iv[..., 1] + ev[..., 1] / 4.0 + 5.0) * nat[..., 0]   # [B,6]
-        our_spa = (2.0 * a_base[..., 3] + iv[..., 3] + ev[..., 3] / 4.0 + 5.0) * nat[..., 2]   # [B,6]
-        our_cur_hp = our_hp_points(our_hp_frac, our_max_hp(a_base[..., 0], iv[..., 0], ev[..., 0]))  # [B,6]
+        our_mhp, our_st = our_stats(a_base, spread)                 # [B,6], [B,6,5] [atk,def,spa,spd,spe]
+        our_atk, our_spa = our_st[..., 0], our_st[..., 2]          # [B,6]
+        our_cur_hp = our_hp_points(our_hp_frac, our_mhp)           # [B,6]
         # Boosts: the ACTIVE row carries our_ctx_raw's stages; bench rows neutral (mult 1.0) — gen3 resets on
         # switch (mirrors _outgoing_matrix's defender-boost handling exactly). `inherit_stages`
         # (C5 Baton Pass) is the HYPOTHETICAL post-pass world: EVERY row gets the active's stages
@@ -1135,12 +1128,8 @@ class DamageOperatorBlocks:
         d_base = self.BASE_STATS[ctx.species_ids[:, :TEAM_SIZE]]                          # [B,6,6]
         spread = ctx.pokemon_part[:, :TEAM_SIZE,
                                   POKEMON_SPREAD_OFFSET:POKEMON_SPREAD_OFFSET + POKEMON_SPREAD_DIM]
-        iv = spread[..., 0:6] * 31.0
-        ev = spread[..., 6:12] * 252.0
-        nat = spread[..., 13:18]                                                          # [B,6,5]
-        def_stat = (2.0 * d_base[..., 2] + iv[..., 2] + ev[..., 2] / 4.0 + 5.0) * nat[..., 1]   # [B,6]
-        spd_stat = (2.0 * d_base[..., 4] + iv[..., 4] + ev[..., 4] / 4.0 + 5.0) * nat[..., 3]   # [B,6]
-        maxhp = our_max_hp(d_base[..., 0], iv[..., 0], ev[..., 0])                         # [B,6]
+        maxhp, d_st = our_stats(d_base, spread)                                           # [B,6], [B,6,5]
+        def_stat, spd_stat = d_st[..., 1], d_st[..., 3]                                   # [B,6]
         hp_frac = ctx.hp_and_active[:, :TEAM_SIZE, 0]                                     # [B,6]
         cur_hp = our_hp_points(hp_frac, maxhp)                                               # integer-exact
         defender_alive = (hp_frac > 0).float()                                           # [B,6]

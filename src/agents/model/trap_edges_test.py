@@ -157,12 +157,19 @@ def test_schedule_ledger_kernel_invariants():
     exp_chip = -(1.0 / 16.0) * alive[:, 1]
     assert torch.allclose(our_c[:, 1, 1], exp_chip, atol=1e-6), "Water mon bleeds 1/16 in sand"
     assert torch.allclose(our_c[:, 2, 0], (1.0 / 16.0) * alive[:, 2], atol=1e-6)
-    # Leech lands only at the active slot (channel 3): our seeded active drains −1/8; a benched mon carries no
+    # Leech lands only at the active slot (channel 3): our seeded active drains its integer amount; a benched mon carries no
     # volatile, and their active is unseeded, so no Leech heal reaches our side.
     nonactive = torch.ones(2, TEAM_SIZE, dtype=torch.bool)
     nonactive[ar, ctx.our_active_idx] = False
     assert float(our_c[:, :, 3][nonactive].abs().sum()) == 0.0
-    assert torch.allclose(our_c[ar, ctx.our_active_idx, 3], -(1.0 / 8.0) * alive[ar, ctx.our_active_idx], atol=1e-6)
+    # gen3_leech_seed_exact_v1: the drain is Showdown's integer min(hp, max(1, ⌊maxhp / 8⌋)), over the mon's max HP
+    # (no longer the nominal 1/8): rebuilt by hand from the rule's own max HP and our exact HP points.
+    from agents.model.damage_kinds import our_hp_points
+    maxhp = rule._max_hp(ctx, fe.damage_op)[ar, ctx.our_active_idx]
+    hp_pts = our_hp_points(ctx.hp_and_active[ar, ctx.our_active_idx, 0], maxhp)
+    exp_leech = -torch.minimum(hp_pts, torch.floor(maxhp / 8.0).clamp(min=1.0)) / maxhp
+    assert not torch.allclose(exp_leech, torch.full_like(exp_leech, -1.0 / 8.0), atol=1e-6)   # the pin has teeth
+    assert torch.allclose(our_c[ar, ctx.our_active_idx, 3], exp_leech * alive[ar, ctx.our_active_idx], atol=1e-6)
 
 
 def test_protect_consequence_kernel_invariants():

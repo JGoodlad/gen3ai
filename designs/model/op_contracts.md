@@ -95,8 +95,14 @@ rules:
 Every HP of OUR side (max, current, a heal world, Endeavor's attacker) comes from `damage_kinds.our_max_hp` /
 `our_hp_points` / `our_healed_hp`; never write `fraction * maxhp` in a forward module (an fp32 product misses the
 integer by an ulp, and a discrete cut such as the fixed-damage KO then flips). `our_hp_exact_test.py` scans every
-`FORWARD_MODULES` file and fails on a new inline product; its two declared exceptions are amounts, not our HP
-(Leech Seed's expected drain, their percent bin). THEIR HP is an estimate and is never rounded.
+`FORWARD_MODULES` file and fails on a new inline product; its one declared exception is an amount, not our HP
+(their percent bin). THEIR HP is an estimate and is never rounded.
+
+**Our spread has ONE decode (`gen3_stat_ev_points_v1`).** Every stat of OUR mon comes from `damage_kinds.our_spread` /
+`our_stats` / `our_max_hp`: the IV and EV back to their integers, the EV as ``⌊EV / 4⌋`` stat points (Showdown's
+`statModify`). Never write `* 252` or `ev / 4` in a forward module; `stat_ev_points_test.py` fails on a new site (its two
+declared exceptions: `damage_op_speed`'s call into `move_order.gen3_speed_stat`, which floors itself, and
+`SpreadBelief`'s believed stat, an expectation over stat-effective EVs).
 
 ## The op's READ contracts: an opponent's ability, and the status rules (`gen3_op_ability_status_gigo_v1`)
 

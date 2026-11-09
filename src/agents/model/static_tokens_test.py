@@ -296,6 +296,13 @@ def test_our_actual_stats_are_the_level_100_formula(static_model):
                          (2 * 60 + 31 + 5) * 0.9, 2 * 70 + 31 + 5, 2 * 110 + 31 + 63 + 5]) / 500.0
     assert torch.allclose(feat[:6], want, atol=1e-6)
     assert torch.equal(feat[6:12], torch.zeros(6)) and feat[12].item() == 1.0
+    # gen3_stat_ev_points_v1: an EV that is not a multiple of 4 adds ⌊EV/4⌋ points (`sim/battle.ts` statModify's
+    # tr(evs / 4)): 85 HP → 21, 87 Atk → 21, 3 Spe → 0. The old ev / 4 read 21.25 / 21.75 / 0.75 (fails on revert).
+    pp[0, 0, sp + 6:sp + 12] = torch.tensor([85., 87., 0., 0., 0., 3.]) / 252.0
+    feat = pe._actual_stats(pp, torch.zeros(1, 1, dtype=torch.long))[0, 0]
+    want = torch.tensor([2 * 80 + 31 + 21 + 110, (2 * 100 + 31 + 21 + 5) * 1.1, 2 * 90 + 31 + 5,
+                         (2 * 60 + 31 + 5) * 0.9, 2 * 70 + 31 + 5, 2 * 110 + 31 + 0 + 5]) / 500.0
+    assert torch.allclose(feat[:6], want, atol=1e-6)
 
 
 def _layout_containers(obj: Any, out: Dict[int, str], path: str = "layout") -> None:

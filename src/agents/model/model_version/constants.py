@@ -656,7 +656,15 @@ from typing import Any, Dict
 #   Production's op block changes only on rows whose fixed-damage cut sat on an exact tie (and by <= a few ulps of
 #   HP elsewhere). Every past config stamps through. No ARCH_SIGNATURE bump, no MIGRATION_FLOOR change; the marker
 #   rises to 165 by hand (`warn`: a model-internal op input, the stored observations are unchanged).
-MODEL_CONFIG_VERSION = 165
+# v166 (gen3_stat_ev_points_v1 + gen3_leech_seed_exact_v1, 2026-11-09): no field, no weight shape. Every stat of OUR
+#   spread reads an EV as Showdown's statModify does, ⌊EV / 4⌋ points (`damage_kinds.our_spread` / `our_stats`: the
+#   op, the end-of-turn rule, the static tokens' stat input and the effective-stat facts re-spelled ev / 4 unfloored;
+#   training rollouts carry such EVs, e.g. a Donphan's 90 Def / 166 SpD); the nature/EV belief's EV PRIOR is the
+#   usage mean of the stat-effective 4·⌊ev/4⌋ (its label's space); and Leech Seed drains Showdown's integer
+#   min(hp, max(1, ⌊maxhp / 8⌋)) (`eot_residual.leech_seed_drained`) where it drained the expected min(hp, 1/8) of max
+#   HP. Every past config stamps through. No ARCH_SIGNATURE bump, no MIGRATION_FLOOR change; the marker rises to 166 by
+#   hand (`warn`: model-internal inputs, the stored observations are unchanged).
+MODEL_CONFIG_VERSION = 166
 
 # THE OBS-SEMANTICS MARKER (declared 2026-10-09, with v151): the FIRST config version whose OBSERVATION VALUES
 # (the vector the encoder writes, and the model-input cells derived from it) MEAN something different from every
@@ -701,6 +709,10 @@ OBS_SEMANTICS_HISTORY = (
     # gen3_our_hp_exact_v1: a model-INTERNAL op input (the obs golden cannot see it), raised by hand.
     (165, "the damage operator reads our mon's HP as an exact integer (a fixed-damage move that equals our current "
           "HP now KOs, where an fp32 rounding read it as surviving) and truncates a heal as Showdown does", "warn"),
+    # gen3_stat_ev_points_v1 + gen3_leech_seed_exact_v1: model-INTERNAL inputs (the obs golden cannot see them), by hand.
+    (166, "our mon's stats read an EV that is not a multiple of 4 as the game does (floor of EV / 4), the opponent's "
+          "EV belief starts from stat-effective EVs, and Leech Seed drains (and heals) Showdown's integer amount, "
+          "floor(max HP / 8) capped at the HP left, where it read an expected 1/8", "warn"),
 )
 OBS_SEMANTICS_VERSION = OBS_SEMANTICS_HISTORY[-1][0]
 

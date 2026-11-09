@@ -479,6 +479,8 @@ class SpreadBelief(torch.nn.Module):
         ev = (self.ev_prior[opp_species_ids]
               + self.ev_head(read) * _EV_DELTA_SCALE).clamp(0.0, 252.0)                     # [B,6,5]
         base = self.base_nonhp[opp_species_ids]                                             # [B,6,5]
+        # `ev` is an EXPECTATION over stat-effective EVs (4·⌊ev/4⌋: the prior and the label both), so ev / 4 is
+        # E[⌊EV/4⌋] by linearity — no floor here (gen3_stat_ev_points_v1; a floor would kill the head's gradient).
         believed = ((2.0 * base + 31.0 + ev / 4.0 + 5.0) * e_mult).clamp(min=1.0)           # [B,6,5] DERIVED stat
         delta = (believed - mean) / std.clamp(min=1.0)                                      # std-unit residual
         enriched = opp_tokens + apply_mask.unsqueeze(-1) * self.reinject(pub(delta))

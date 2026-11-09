@@ -278,6 +278,12 @@ product read a fixed-damage move equal to our HP as not KO-ing). `_migrate_confi
 `damage_tables.OP_SEMANTICS` → `gen3_our_hp_exact_v1`. No `ARCH_SIGNATURE` or floor change: every v144+ checkpoint
 (P*, the X60-T arms, the named baselines at or above the floor) loads unchanged and evaluates the fixed op.
 
+**v166 (`gen3_stat_ev_points_v1` + `gen3_leech_seed_exact_v1`, 2026-11-09)** — forward fixes with NO field and no weight
+shape, versioned as v165: every stat of OUR spread floors the EV (`damage_kinds.our_spread` / `our_stats`), the
+nature/EV belief's EV prior is stat-effective, and the end-of-turn rule's Leech Seed drains Showdown's integer amount
+(`eot_residual.leech_seed_drained`). `_migrate_config` stamps every past config through; `OBS_SEMANTICS_VERSION` raised
+BY HAND to 166 (`warn`); `damage_tables.OP_SEMANTICS` → `gen3_stat_ev_points_v1`. No `ARCH_SIGNATURE` or floor change.
+
 **The exact P(KO) (then `ko_ramp = 'exact'`; flagless since v156) is computed in CLOSED FORM (`gen3_ko_exact_closed_v1`,
 2026-10-10), with NO config, obs-semantics or signature bump.** The value `exact_closed` that carried the closed form beside the 16-roll sum was legal for one
 commit (`6e0a1a7a`, no bump: a new VALUE of an existing field, nothing to migrate, no parameter); the owner's "remove

@@ -599,7 +599,10 @@ NONFORMULA_LEVEL = 100
 #: gen3_our_hp_exact_v1 (2026-11-06): our HP reaches every op read as an exact integer (a fixed-damage move equal to
 #: our current HP KOs; a heal world truncates). A recording made under gen3_op_ability_status_gigo_v1 is not
 #: reproducible here on those rows.
-OP_SEMANTICS = "gen3_our_hp_exact_v1"   # (was gen3_op_ability_status_gigo_v1)
+#: gen3_stat_ev_points_v1 (2026-11-09): every stat of our spread floors the EV (⌊EV / 4⌋ points, `damage_kinds.
+#: our_stats`); the end-of-turn rule's Leech Seed drains an integer (gen3_leech_seed_exact_v1). A recording made under
+#: gen3_our_hp_exact_v1 is not reproducible here on a row with a non-multiple-of-4 EV or a Leech Seed.
+OP_SEMANTICS = "gen3_stat_ev_points_v1"   # (was gen3_our_hp_exact_v1)
 DAMAGE_MODELS: Dict[str, Tuple[str, float, str]] = {
     # --- fixed / level: `getDamage` → `move.damage === 'level'` → source.level, else `move.damage` ---
     "seismictoss": ("fixed", float(NONFORMULA_LEVEL), "data/moves.ts seismictoss: damage 'level'"),

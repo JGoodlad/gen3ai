@@ -119,6 +119,7 @@ def effective_stat_features(op: Any, ctx: 'ExtractorContext', spread_belief: Opt
     probe_battery_2026-10-09/`): a stage's SIZE reads at R² ≤ 0.10 while "is boosted" reads at AUC 0.97 — the role
     network squashes the stage columns; this hands the magnitude over in the stat's own unit."""
     from agents.model.arch_constants import STATIC_STAT_SCALE
+    from agents.model.damage_kinds import our_stats
     from agents.model.damage_op_layout import _SB_ATK, _SB_DEF, _SB_SPA, _SB_SPD, _SB_SPE
     from agents.observation.constants import BOOSTS_DIM, POKEMON_SPREAD_DIM, POKEMON_SPREAD_OFFSET
     B = ctx.batch_size
@@ -140,8 +141,7 @@ def effective_stat_features(op: Any, ctx: 'ExtractorContext', spread_belief: Opt
     oa = ctx.our_active_idx
     a_base = op.BASE_STATS[ctx.species_ids[ar, oa]].to(dt)                               # [B,6] hp atk def spa spd spe
     spr = pp[ar, oa, POKEMON_SPREAD_OFFSET:POKEMON_SPREAD_OFFSET + POKEMON_SPREAD_DIM]
-    iv, ev, nat = spr[:, 0:6] * 31.0, spr[:, 6:12] * 252.0, spr[:, 13:18]
-    ours = (2.0 * a_base[:, 1:6] + iv[:, 1:6] + ev[:, 1:6] / 4.0 + 5.0) * nat              # [B,5]
+    _mhp, ours = our_stats(a_base, spr)                                                    # [B,5]
     ours_row = _row(ctx.our_ctx_raw, ours, pp[ar, oa, POKEMON_CONDITION_OFFSET:POKEMON_CONDITION_OFFSET + CONDITION_DIM])
     # theirs: the believed stats (the op's own spread belief; neutral where it is off)
     ta = ctx.opp_active_local

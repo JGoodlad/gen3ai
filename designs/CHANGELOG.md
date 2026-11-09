@@ -15608,3 +15608,33 @@ was downloaded or written under `data/`.
 - **Not fixed (FINDINGs).** Their HP's fixed-damage cut is a point estimate (the HP-candidate block is not read); an
   EV that is not a multiple of 4 reads EV/4 unfloored (no pool set has one); Leech Seed's drain is an expected
   amount, not `trunc(max / 8)`.
+
+## 2026-11-09 — our stats floor the EV, the EV prior is stat-effective, and Leech Seed drains an integer (`gen3_stat_ev_points_v1` + `gen3_leech_seed_exact_v1`; config v166, no field; `OBS_SEMANTICS_VERSION` 165 → 166 by hand, `warn`; `OP_SEMANTICS` bumped; no `ARCH_SIGNATURE` / floor change)
+
+- **Why.** Two of the three inexactnesses `gen3_our_hp_exact_v1` left open. (1) Every stat the model computed from OUR
+  observed spread re-spelled `ev / 4` unfloored (the op's attackers and defenders, the end-of-turn rule's max HP, the
+  static tokens' stat input, the effective-stat facts), where Showdown adds `tr(evs / 4)` (`sim/battle.ts`
+  `statModify`): 85 EVs read 21.25 points, not 21. The committed team files have none, but training rollouts carry
+  them (rb_x60t_s3502's K9 scan rows: Donphan 90 Def / 166 SpD, Dugtrio 185 SpD / 71 Spe, Magneton 193 Spe), and 61
+  of the 4,975 top-25 Smogon spreads do. The nature/EV belief's EV PRIOR averaged the raw EVs while its label is the stat-effective `4·⌊ev/4⌋`. (2) Leech
+  Seed's drain was the expected `min(hp, 1/8)` of max HP (the drain column an uncapped `−1/8`), where gen 3 drains
+  `this.damage(baseMaxhp / 8)` → `clampIntRange(·, 1)` → `Pokemon.damage` stopping at 0: `min(hp, max(1, ⌊max/8⌋))`,
+  and heals that amount (`data/moves.ts` leechseed; no Big Root in gen 3, `data/items.ts` bigroot `gen: 4`).
+- **What.** `damage_kinds.our_spread` (IV / EV back to integers, the EV as `⌊EV/4⌋` points) / `our_stats` /
+  `our_max_hp` at every site; `belief_tables.build_species_ev_prior` over `4·⌊ev/4⌋`;
+  `eot_residual.leech_seed_drained` for the drain and the heal (ours in exact HP points, theirs the percent × the
+  neutral estimate). The nature multiplier stays unfloored on the non-speed stats (FINDING).
+- **Item 3 (THEIR fixed-damage KO cut) is NOT a stamp-through fix.** Its dominant error is the op's neutral 0-HP-EV max
+  HP for their mon (the Smogon-mean HP is ≥ 20 HP higher for 60 % of species), not the percent bin; filed as
+  `endstate/obs_enrichment_backlog.md` E13 and documented as an intended estimate in ARCHITECTURE.
+- **Impact on P\*** (`pstar_plateau`, CPU eager, the 2026-11-06 tie-rate population of 16,785 rows): 604 rows (3.6 %)
+  move; 539 of them are Leech Seed boards (the `leech_drain` / `leech_gain` / `net` columns; TV median 9.4e-4, p99
+  0.027, max 0.091 — the max on the 16 rows whose seeded mon had < 1/8 HP, where the old drain column read −1/8; the
+  523 floor-only rows TV ≤ 0.018); 73 through the EV prior (|Δ log π| ≤ 9e-4); 7 rollout rows carry a
+  non-multiple-of-4 EV (|Δ log π| ≤ 3.6e-3). 3 top-action changes, each an exact near-tie (probabilities within 0.005);
+  |ΔV| ≤ 0.010.
+- **Guards.** `stat_ev_points_test.py` (the decode exhaustive over every IV / EV the encoder writes; the stats against
+  `priors.gen3_stat`; the EV prior in the label's space; a source guard: no forward module de-normalises the EV column
+  or divides an EV by 4 outside the helpers, two declared exceptions); `static_recovery_test.py` (Leech Seed's integer
+  drain exhaustive, end to end on a 1-HP mon, a 1-max-HP Shedinja and an 85-HP-EV Blissey); `static_tokens_test`'s
+  85 / 87 / 3-EV stat row. Each fails on revert. The K9 learner golden is IDENTICAL (no re-record).

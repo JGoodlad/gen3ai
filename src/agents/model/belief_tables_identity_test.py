@@ -97,7 +97,7 @@ def _ref_species_ev_prior(n_species: int) -> torch.Tensor:
         wsum = 0.0
         for _nature, evs, w in gen3_data.priors.spreads(sid):
             for j, stat in enumerate(SPREAD_STAT_COLS):
-                acc[j] += float(w) * float(evs[_SPREAD_BASE_IDX[stat]])
+                acc[j] += float(w) * float(int(evs[_SPREAD_BASE_IDX[stat]]) // 4 * 4)   # stat-effective (gen3_stat_ev_points_v1)
             wsum += float(w)
         if wsum > 0.0:
             ev[snum] = acc / wsum

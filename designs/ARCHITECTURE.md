@@ -630,7 +630,8 @@ whenever the damage op is) compose with either encoding: the **END-OF-TURN RESID
 side's field at the end of this turn — Leftovers (known item, else the species' Smogon prior), sand / hail chip (types,
 Sand Veil; none on a timed weather's last turn; × P(no Cloud Nine / Air Lock)), Rain Dish, the next status tick (burn /
 poison 1/8, Toxic min(n+1, 15)/16, × (1 − P(Shed Skin)/3)), Leech Seed's drain on the seeded active and its heal to every mon of
-the other side (scaled by max HP; Liquid Ooze inverts it), Wish +1/2 (half the RECIPIENT's max HP in gen 3), Ingrain,
+the other side (Showdown's integer `min(hp, max(1, ⌊max HP / 8⌋))`, `gen3_leech_seed_exact_v1`, config v166; scaled by
+max HP; Liquid Ooze inverts it), Wish +1/2 (half the RECIPIENT's max HP in gen 3), Ingrain,
 Curse, Nightmare × P(stays asleep), and the HP-clamped net (11 columns, `agents/model/eot_residual.py`'s
 `EotResidualRule`, on the op's context) — through a zero-init bias-free `IsolatedLinear(11, 128)` beside
 `mon_hazard_proj`; the **SWITCH-HAZARD COST** appends each switch target's [our side's Spikes layers / 3, its
@@ -1503,16 +1504,29 @@ Toss into a Ghost is 0) and a kind's KO is `acc · [the hit KOs]` (an OHKO alway
 the remaining HP — Showdown faints at `hp <= 0`, `sim/pokemon.ts` `damage`).
 
 **OUR HP is an exact integer (`gen3_our_hp_exact_v1`, config v165).** Every HP the op computes for OUR side goes
-through `damage_kinds.our_max_hp` (2·base + IV + EV/4 + 110), `our_hp_points` (`round(fraction × max HP)`) and
+through `damage_kinds.our_max_hp` (2·base + IV + ⌊EV/4⌋ + 110), `our_hp_points` (`round(fraction × max HP)`) and
 `our_healed_hp` (a heal world: `min(max, hp + trunc(frac × max))`, Showdown's gen-3 truncation). The plain fp32
 product `f32(hp/max) × max` missed the integer by an ulp on 21,764 of the 255,969 (max HP ≤ 714, HP) pairs, so the
 fixed-damage cut read Seismic Toss / Night Shade as NOT KO-ing our mon at exactly 100 HP on 497 of the pool's 4,961
 sets (a 714-HP Blissey among them; Dragon Rage / Sonic Boom at 40 / 20: 26 each) — measured 2026-11-06, CPU eager,
 exhaustively. THEIR HP stays the shown percent × the neutral 0-EV max HP (2·base + 141), a point estimate: it never
-lands within 0.01 HP of a fixed amount, so its cut is deterministic but not exact (the HP-candidate block is not
-read there). An EV that is not a multiple of 4 reads EV/4 unfloored (≤ 0.75 HP high; no pool set has one).
-Pinned by `our_hp_exact_test.py` (exhaustive, plus a source guard: no forward module re-spells our max HP or
-multiplies a fraction by a max HP outside the helpers).
+lands within 0.01 HP of a fixed amount, so its cut is deterministic but not exact — an intended estimate: the
+percent bin (≤ 1 % of max HP) is dwarfed by the unknown HP EVs (up to 63 HP), and pricing that needs a belief over
+their max HP the op does not carry (`endstate/obs_enrichment_backlog.md` E13). Pinned by `our_hp_exact_test.py`
+(exhaustive, plus a source guard: no forward module re-spells our max HP or multiplies a fraction by a max HP outside
+the helpers).
+
+**Our STATS read an EV as the game does (`gen3_stat_ev_points_v1`, config v166).** Every stat the model computes from
+OUR observed spread (the op's attackers and defenders, the end-of-turn rule's max HP, the static tokens' stat input,
+the effective-stat facts) goes through `damage_kinds.our_spread` / `our_stats`: the IV and EV are read back to their
+integers and the EV adds ``⌊EV / 4⌋`` points (`sim/battle.ts` `statModify`'s `tr(evs / 4)`), where each site re-spelled
+`ev / 4` unfloored (85 EVs read 21.25 points, not 21). The committed team files have no such EV, but training
+rollouts do (rb_x60t_s3502's K9 scan rows: a Donphan with 90 Def / 166 SpD, a Dugtrio with 185 SpD / 71 Spe), and 61 of
+the 4,975 top-25 Smogon spreads do. The nature multiplier stays UNFLOORED there (Showdown truncates `stat · 110 / 100`: up to 0.9 of a point high; the
+speed path, `move_order.gen3_speed_stat`, floors it). The nature/EV belief's EV prior is the usage mean of the
+stat-effective `4·⌊ev/4⌋`, its label's space. Pinned by `stat_ev_points_test.py` (exhaustive over every IV / EV the
+encoder writes, plus a source guard: no forward module de-normalises the EV column or divides an EV by 4 outside the
+helpers, two declared exceptions: the speed path, which floors, and the belief head's expectation).
 `MOVE_BP` holds the BP at the attacker's full HP for every formula-priced move, and every
 dex-damaging move rides its TYPE's gen-3 channel in `MOVE_PHYS` (Return is physical). 🚨 **The table
 build RAISES on a damaging (dex category ≠ Status) move with base power 0 and no row** — the

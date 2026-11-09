@@ -35,11 +35,12 @@ import dataclasses
 import json
 from typing import Any, Dict, List, Tuple
 
+import numpy as np
 import pytest
 import torch
 
 from agents.model.compile_parity_fixture import load_parity_rows
-from agents.model.eot_residual import EOT_DIM, EOT_FACTS
+from agents.model.eot_residual import EOT_DIM, EOT_FACTS, leech_seed_drained
 from agents.model.extractor_ctx import POKEMON_ABILITY_KNOWN_OFFSET, ExtractorContext
 from agents.model.identity_init_test import _build_real_policy
 from agents.model.static_facts import SWITCH_HAZARD_DIM, mon_hazard_features, switch_hazard_features
@@ -470,23 +471,71 @@ def test_the_toxic_tick_ramps_past_the_old_8_cap_to_the_engines_15(eot_fe: Any, 
 
 
 def test_leech_seed_drain_and_its_heal_to_the_other_side(eot_fe: Any, rows: torch.Tensor) -> None:
+    """gen3_leech_seed_exact_v1: the drain is Showdown's INTEGER ``min(hp, max(1, ⌊maxhp / 8⌋))`` (`data/moves.ts`
+    leechseed ``this.damage(baseMaxhp / 8)`` → ``clampIntRange(·, 1)``), and the other side heals that amount. Their
+    Snorlax's 461 / 8 = 57.625 drains 57 — the old expected amount (57.625) fails every assertion below."""
     ctx = _vol(_blank(eot_fe, rows), 1, "leechseed")                              # THEIR active (Snorlax) seeded
     ctx = _mon(ctx, 1, species="blissey")
     out = _eot(eot_fe, ctx)
-    drained = 461.0 * (1 / 8)                                                     # their Snorlax at HP 0.5
+    drained = 57.0                                                                # ⌊461 / 8⌋; their HP 230.5 > 57
     bliss = 2 * 255 + 31 + 110                                                    # our Blissey's exact max HP
     gain = {s: drained / 461.0 for s in range(TEAM_SIZE)}
     gain[1] = drained / bliss
-    assert float(out[TEAM_SIZE, _COL["leech_drain"]]) == pytest.approx(-1 / 8)
+    assert float(out[TEAM_SIZE, _COL["leech_drain"]]) == pytest.approx(-drained / 461.0, rel=1e-6)
     for s in range(2 * TEAM_SIZE):
         assert float(out[s, _COL["leech_gain"]]) == pytest.approx(gain.get(s, 0.0), rel=1e-6), s
         if s != TEAM_SIZE:
             assert float(out[s, _COL["leech_drain"]]) == 0.0, s
     low = _eot(eot_fe, _mon(ctx, TEAM_SIZE, hp=0.05))                              # less HP than 1/8 left: capped
     assert float(low[0, _COL["leech_gain"]]) == pytest.approx(0.05, rel=1e-6)
+    assert float(low[TEAM_SIZE, _COL["leech_drain"]]) == pytest.approx(-0.05, rel=1e-6)
     ooze = _eot(eot_fe, _mon(ctx, TEAM_SIZE, species="tentacruel", types=("WATER", "POISON"), ability="liquidooze"))
-    tenta = 2 * 80 + 31 + 110
-    assert float(ooze[0, _COL["leech_gain"]]) == pytest.approx(-(tenta / 8) / 461.0, rel=1e-6)
+    tenta = 2 * 80 + 31 + 110                                                     # 301: drains ⌊301 / 8⌋ = 37
+    assert float(ooze[0, _COL["leech_gain"]]) == pytest.approx(-(tenta // 8) / 461.0, rel=1e-6)
+
+
+def test_leech_seed_on_our_1_hp_mon_drains_exactly_1_hp(eot_fe: Any, rows: torch.Tensor) -> None:
+    """The brief's Showdown-verified case: OUR seeded active at 1 HP (a 714-HP Blissey, 252 HP EVs) loses exactly 1
+    HP — `sim/pokemon.ts` ``damage`` stops the HP at 0, so the amount dealt (and healed, `if (damage) this.heal`)
+    is 1 — and their slot heals 1 HP of its 461. The obs cell is ``f32(1 / 714)``; the HP points come from
+    `our_hp_points`, so the drain is the integer, not ``f32(1/714) · 714``."""
+    ctx = _vol(_mon(_blank(eot_fe, rows), 0, species="blissey", hp=float(np.float32(1.0 / 714.0))), 0, "leechseed")
+    pp = ctx.pokemon_part.clone()
+    pp[:, 0, POKEMON_SPREAD_OFFSET + 6] = 1.0                                    # 252 HP EVs → max HP 714
+    out = _eot(eot_fe, dataclasses.replace(ctx, pokemon_part=pp))
+    assert float(out[0, _COL["leech_drain"]]) == pytest.approx(-1.0 / 714.0, rel=1e-6)
+    for s in range(TEAM_SIZE, 2 * TEAM_SIZE):
+        assert float(out[s, _COL["leech_gain"]]) == pytest.approx(1.0 / 461.0, rel=1e-6), s
+    full = _eot(eot_fe, dataclasses.replace(_mon(ctx, 0, hp=1.0), pokemon_part=pp))    # full HP: ⌊714 / 8⌋ = 89
+    assert float(full[0, _COL["leech_drain"]]) == pytest.approx(-89.0 / 714.0, rel=1e-6)
+
+
+def test_leech_seed_drains_a_1_max_hp_shedinja_by_its_1_hp(eot_fe: Any, rows: torch.Tensor) -> None:
+    """``clampIntRange(1 / 8, 1)`` = 1: a seeded Shedinja (max HP 1) loses its one HP (the Rust engine's
+    `apply_leech_seed` ``(maxhp / 8).max(1)``, `gen3_wonder_guard_v1`), where the old 1/8 read it as surviving."""
+    ctx = _vol(_mon(_blank(eot_fe, rows), 0, species="shedinja", types=("BUG", "GHOST"), hp=1.0), 0, "leechseed")
+    out = _eot(eot_fe, ctx)
+    assert float(out[0, _COL["leech_drain"]]) == -1.0
+    assert float(out[TEAM_SIZE, _COL["leech_gain"]]) == pytest.approx(1.0 / 461.0, rel=1e-6)
+
+
+def test_an_85_hp_ev_blissey_reads_its_floored_max_hp(eot_fe: Any, rows: torch.Tensor) -> None:
+    """gen3_stat_ev_points_v1 end to end: our seeded Blissey at full HP with 85 HP EVs has max HP 672 (``tr(85 / 4)``
+    = 21), drains ⌊672 / 8⌋ = 84, i.e. exactly 1/8 of its max; the old ``ev / 4`` read 672.25 (-84 / 672.25)."""
+    ctx = _vol(_mon(_blank(eot_fe, rows), 0, species="blissey", hp=1.0), 0, "leechseed")
+    pp = ctx.pokemon_part.clone()
+    pp[:, 0, POKEMON_SPREAD_OFFSET + 6] = float(np.float32(85.0 / 252.0))
+    out = _eot(eot_fe, dataclasses.replace(ctx, pokemon_part=pp))
+    assert float(out[0, _COL["leech_drain"]]) == pytest.approx(-84.0 / 672.0, rel=1e-6)
+
+
+def test_leech_seed_drained_is_showdowns_integer_for_every_reachable_pair() -> None:
+    """EXHAUSTIVE over max HP 1..714 and HP 0..max HP: ``min(hp, max(1, maxhp // 8))`` in exact integers."""
+    for maxhp in range(1, 715):
+        hp = torch.arange(0, maxhp + 1, dtype=torch.float32)
+        got = leech_seed_drained(torch.tensor(float(maxhp)), hp)
+        want = torch.minimum(hp, torch.tensor(float(max(1, maxhp // 8))))
+        assert torch.equal(got, want), maxhp
 
 
 def test_wish_heals_every_mon_of_its_side_by_half(eot_fe: Any, rows: torch.Tensor) -> None:

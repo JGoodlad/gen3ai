@@ -17,7 +17,7 @@ import tokenize
 import numpy as np
 import torch
 
-from agents.model.damage_kinds import our_healed_hp, our_hp_points, our_max_hp
+from agents.model.damage_kinds import our_healed_hp, our_hp_points, our_max_hp, our_spread
 from agents.model.damage_op_layout import _DMG_IDX_PHYS_PKO
 from agents.model.damage_op_test import _T2I, _believe_op, _fake_ctx, _make_layout
 from agents.model.features_extractor import TEAM_SIZE, _DMG_PER_MON, DamageOperator
@@ -90,25 +90,26 @@ def test_healed_hp_is_showdowns_truncated_heal_for_every_reachable_pair():
         assert torch.equal(got, torch.from_numpy(want.astype(np.float32))), maxhp
 
 
-def test_our_max_hp_is_the_l100_formula_for_every_pool_spread():
-    """IV 0..31, EV 0..252 in steps of 4 (every pool set), base HP 1..255, read back through the obs cells (f64
-    quotient cast to f32, times 31 / 252) -> exactly ``2·B + IV + EV/4 + 110``."""
+def test_our_max_hp_is_the_l100_formula_for_every_spread():
+    """IV 0..31, EV 0..255 (every value the encoder can write: gen3_stat_ev_points_v1 floors a non-multiple of 4),
+    base HP 1..255, read back through the obs cells (f64 quotient cast to f32) by `our_spread` -> exactly
+    ``2·B + IV + EV // 4 + 110``."""
     b = torch.arange(1, 256, dtype=torch.float32)[:, None, None]
-    ivs, evs = np.arange(32), np.arange(0, 253, 4)
-    iv = torch.from_numpy((ivs / 31.0).astype(np.float32))[None, :, None] * 31.0
-    ev = torch.from_numpy((evs / 252.0).astype(np.float32))[None, None, :] * 252.0
+    ivs, evs = np.arange(32), np.arange(0, 256)
+    blk = torch.zeros(1, 32, 256, 18)
+    blk[..., 0] = torch.from_numpy((ivs / 31.0).astype(np.float32))[None, :, None]
+    blk[..., 6] = torch.from_numpy((evs / 252.0).astype(np.float32))[None, None, :]
+    iv, ev_points, _nat = our_spread(blk)
     want = 2 * np.arange(1, 256)[:, None, None] + ivs[None, :, None] + evs[None, None, :] // 4 + 110
-    assert torch.equal(our_max_hp(b, iv, ev), torch.from_numpy(want.astype(np.float32)))
+    assert torch.equal(our_max_hp(b, iv[..., 0], ev_points[..., 0]), torch.from_numpy(want.astype(np.float32)))
 
 
 #: An HP product or our max-HP formula spelled outside the helpers (comments and strings stripped first).
 _FORBIDDEN = (re.compile(r"/\s*4\.0\s*\+\s*110\.0"),                      # our max HP, re-spelled
               re.compile(r"\*\s*(our_)?maxhp\b"), re.compile(r"(?<!\w)(our_)?maxhp(\[[^\]]*\])?\s*\*(?!\*)"))
 #: Declared exceptions, (module, stripped line): an HP AMOUNT that is not our current HP and gates no threshold.
+#: (Leech Seed's drain left this list with gen3_leech_seed_exact_v1: `eot_residual.leech_seed_drained`.)
 _ALLOWED = {
-    # Leech Seed's drain as an expected amount for BOTH sides (`min(hp, 1/8)` of max HP, no floor): a continuous
-    # cell, never a cut. FINDING (gen3_our_hp_exact_v1): the game drains trunc(maxhp / 8).
-    ("eot_residual", "drained = maxhp * torch.minimum(hp, hp.new_full((), 1.0 / 8.0)) * seeded"),
     # THEIR HP's percent bin (HP Percentage Mod): an opponent's HP, never ours.
     ("ko_exact", "lo = cur_hp - (1.0 - full) * (OPP_HP_PERCENT * maxhp) - full * (0.5 * one_hp)"),
 }

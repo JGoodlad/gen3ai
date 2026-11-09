@@ -61,7 +61,7 @@ from agents.model.index_max import max_by_index
 from agents.model.op_reduction import believed_reduce, noisy_or
 from agents.model.damage_kinds import (beatup_base_def, beatup_party_opp, beatup_swap, gather_beatup,
                                        gather_bp, gather_nonformula, nonformula_rolls, our_healed_hp, our_hp_points,
-                                       our_max_hp, override_rolls)
+                                       our_stats, override_rolls)
 
 if TYPE_CHECKING:  # no runtime import — `ctx` is only ever passed in, never constructed here
     from agents.model.extractor_ctx import ExtractorContext
@@ -371,15 +371,11 @@ class DamageOperatorPairwise:
         d_base = self.BASE_STATS[ctx.species_ids[ar, ctx.our_active_idx]]            # [B,6]
         spr = ctx.pokemon_part[ar, ctx.our_active_idx,
                                POKEMON_SPREAD_OFFSET:POKEMON_SPREAD_OFFSET + POKEMON_SPREAD_DIM]
-        iv = spr[:, 0:6] * 31.0; ev = spr[:, 6:12] * 252.0; nat = spr[:, 13:18]
-        def_stat = (2.0 * d_base[:, _BS_DEF] + iv[:, _BS_DEF] + ev[:, _BS_DEF] / 4.0
-                    + 5.0) * nat[:, _NAT_DEF]
-        spd_stat = (2.0 * d_base[:, _BS_SPD] + iv[:, _BS_SPD] + ev[:, _BS_SPD] / 4.0
-                    + 5.0) * nat[:, _NAT_SPD]
+        maxhp, d_st = our_stats(d_base, spr)                                         # [B], [B,5]
+        def_stat, spd_stat = d_st[:, _NAT_DEF], d_st[:, _NAT_SPD]                    # [B]
         _ba, b_def, _bs2, b_spd, _be = self._boost_stages(ctx.our_ctx_raw)
         def_c = def_stat * self._boost_mult(b_def)
         spd_c = spd_stat * self._boost_mult(b_spd)
-        maxhp = our_max_hp(d_base[:, _BS_HP], iv[:, _BS_HP], ev[:, _BS_HP])
         cur_hp = our_hp_points(ctx.hp_and_active[ar, ctx.our_active_idx, 0], maxhp)    # integer-exact
         at1 = ctx.type1_ids[ar, ctx.our_active_idx]
         at2 = ctx.type2_ids[ar, ctx.our_active_idx]
@@ -660,12 +656,8 @@ class DamageOperatorPairwise:
         d_base = self.BASE_STATS[ctx.species_ids[ar, ctx.our_active_idx]]            # [B,6]
         spr = ctx.pokemon_part[ar, ctx.our_active_idx,
                                POKEMON_SPREAD_OFFSET:POKEMON_SPREAD_OFFSET + POKEMON_SPREAD_DIM]
-        iv = spr[:, 0:6] * 31.0; ev = spr[:, 6:12] * 252.0; nat = spr[:, 13:18]
-        def_stat = (2.0 * d_base[:, _BS_DEF] + iv[:, _BS_DEF] + ev[:, _BS_DEF] / 4.0
-                    + 5.0) * nat[:, _NAT_DEF]                                        # [B]
-        spd_stat = (2.0 * d_base[:, _BS_SPD] + iv[:, _BS_SPD] + ev[:, _BS_SPD] / 4.0
-                    + 5.0) * nat[:, _NAT_SPD]
-        maxhp = our_max_hp(d_base[:, _BS_HP], iv[:, _BS_HP], ev[:, _BS_HP])
+        maxhp, d_st = our_stats(d_base, spr)                                         # [B], [B,5]
+        def_stat, spd_stat = d_st[:, _NAT_DEF], d_st[:, _NAT_SPD]                    # [B]
         cur_hp = our_hp_points(ctx.hp_and_active[ar, ctx.our_active_idx, 0], maxhp)    # [B] integer-exact
         _ba, b_def, _bs, b_spd, _be = self._boost_stages(ctx.our_ctx_raw)            # current [B]
         # --- 5 worlds: current + the 4 slots' def/spd hypotheticals → divisors [B,W] ---
@@ -757,15 +749,11 @@ class DamageOperatorPairwise:
         d_base = self.BASE_STATS[ctx.species_ids[ar, ctx.our_active_idx]]            # [B,6]
         spr = ctx.pokemon_part[ar, ctx.our_active_idx,
                                POKEMON_SPREAD_OFFSET:POKEMON_SPREAD_OFFSET + POKEMON_SPREAD_DIM]
-        iv = spr[:, 0:6] * 31.0; ev = spr[:, 6:12] * 252.0; nat = spr[:, 13:18]
-        def_stat = (2.0 * d_base[:, _BS_DEF] + iv[:, _BS_DEF] + ev[:, _BS_DEF] / 4.0
-                    + 5.0) * nat[:, _NAT_DEF]
-        spd_stat = (2.0 * d_base[:, _BS_SPD] + iv[:, _BS_SPD] + ev[:, _BS_SPD] / 4.0
-                    + 5.0) * nat[:, _NAT_SPD]
+        maxhp, d_st = our_stats(d_base, spr)                                         # [B], [B,5]
+        def_stat, spd_stat = d_st[:, _NAT_DEF], d_st[:, _NAT_SPD]                    # [B]
         _ba, b_def, _bs2, b_spd, _be = self._boost_stages(ctx.our_ctx_raw)
         def_c = def_stat * self._boost_mult(b_def)                                   # [B]
         spd_c = spd_stat * self._boost_mult(b_spd)
-        maxhp = our_max_hp(d_base[:, _BS_HP], iv[:, _BS_HP], ev[:, _BS_HP])
         hp_frac = ctx.hp_and_active[ar, ctx.our_active_idx, 0]
         cur_hp = our_hp_points(hp_frac, maxhp)                                          # [B] integer-exact
         zero = torch.zeros(B, 1, device=device)
@@ -941,12 +929,8 @@ class DamageOperatorPairwise:
         d_base = self.BASE_STATS[ctx.species_ids[:, :TEAM_SIZE]]
         spread = ctx.pokemon_part[:, :TEAM_SIZE,
                                   POKEMON_SPREAD_OFFSET:POKEMON_SPREAD_OFFSET + POKEMON_SPREAD_DIM]
-        iv = spread[..., 0:6] * 31.0
-        ev = spread[..., 6:12] * 252.0
-        nat = spread[..., 13:18]
-        def_stat = (2.0 * d_base[..., 2] + iv[..., 2] + ev[..., 2] / 4.0 + 5.0) * nat[..., 1]  # [B,6]
-        spd_stat = (2.0 * d_base[..., 4] + iv[..., 4] + ev[..., 4] / 4.0 + 5.0) * nat[..., 3]
-        maxhp = our_max_hp(d_base[..., 0], iv[..., 0], ev[..., 0])
+        maxhp, d_st = our_stats(d_base, spread)                                        # [B,6], [B,6,5]
+        def_stat, spd_stat = d_st[..., _NAT_DEF], d_st[..., _NAT_SPD]                  # [B,6]
         hp_frac = ctx.hp_and_active[:, :TEAM_SIZE, 0]
         cur_hp = our_hp_points(hp_frac, maxhp)                                            # integer-exact
         def_alive = (hp_frac > 0).float()                                              # [B,6]

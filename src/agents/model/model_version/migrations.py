@@ -594,6 +594,11 @@ def _migrate_config(data: dict) -> dict:
     # is unchanged), so every past config stamps through.
     if version < 165:
         data["config_version"] = 165
+    # v166 (gen3_stat_ev_points_v1 + gen3_leech_seed_exact_v1) — no field: our stats floor the EV, the EV prior is
+    # stat-effective and Leech Seed drains an integer (forward fixes; the state_dict is unchanged), so every past config
+    # stamps through.
+    if version < 166:
+        data["config_version"] = 166
     #
     # ---- v97–v120 MIGRATION HISTORY — documentation, not code (floored away at v121) ---------
     # gen3_event_record_v2 (the observation-architecture batch: the E12 event-row reshape, the E4

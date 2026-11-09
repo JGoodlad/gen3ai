@@ -39,7 +39,9 @@ from agents.model.model_version import (
 # belief now honours Foresight / Odor Sleuth, a cell-value fix no golden battle reaches (991 / 991 unchanged).
 # Re-pinned 2026-11-06 (config v165, gen3_our_hp_exact_v1): the marker RAISED to 165 with the SAME hash — an op-internal
 # input (our HP as an exact integer), which the obs golden cannot see.
-_GOLDEN_PIN = ("ab3cdda779eb21b340170039667f9e63071d1549de1efbe2f43e3c6f1f897235", 165)
+# Re-pinned 2026-11-09 (config v166, gen3_stat_ev_points_v1 + gen3_leech_seed_exact_v1): RAISED to 166 with the SAME
+# hash — model-internal inputs (our stats' EV floor, the EV prior, Leech Seed's integer drain).
+_GOLDEN_PIN = ("ab3cdda779eb21b340170039667f9e63071d1549de1efbe2f43e3c6f1f897235", 166)
 
 _GOLDEN = Path(__file__).resolve().parents[1] / "training" / "golden_obs_fixture.json"
 

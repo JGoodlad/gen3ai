@@ -287,8 +287,10 @@ def build_species_nature_prior(n_species: int) -> torch.Tensor:
 
 def build_species_ev_prior(n_species: int) -> torch.Tensor:
     """``[n_species, 5]`` per-species usage-MEAN EV investment for {atk,def,spa,spd,spe} (the EV prior-fusion
-    base; the head adds a learned delta). From the Smogon spreads' EV lists. No data → 0 EV (neutral). The
-    head clamps the posterior EV to [0,252]. Non-persistent (data-derived).
+    base; the head adds a learned delta). From the Smogon spreads' EV lists, each EV at its stat-EFFECTIVE value
+    ``4·⌊ev/4⌋`` — the space the head's label lives in (`true_nature_ev_label`) and the only part of the EV the
+    stat formula reads (gen3_stat_ev_points_v1: 61 of the 4,975 top-25 spreads carry an EV that is not a multiple
+    of 4). No data → 0 EV (neutral). The head clamps the posterior EV to [0,252]. Non-persistent (data-derived).
 
     Relocated from `damage_tables.py` (`gen3_belief_tables_split_v1`, 2026-09-06)."""
     ev = torch.zeros(n_species, N_SPREAD_STATS, dtype=torch.float32)
@@ -303,7 +305,7 @@ def build_species_ev_prior(n_species: int) -> torch.Tensor:
         wsum = 0.0
         for _nature, evs, w in gen3_data.priors.spreads(sid):
             for j, evi in enumerate(_SPREAD_EV_IDX):
-                acc[j] = acc[j] + _F32(float(w) * float(evs[evi]))
+                acc[j] = acc[j] + _F32(float(w) * float(int(evs[evi]) // 4 * 4))      # stat-effective
             wsum += float(w)
         if wsum > 0.0:
             ev[snum] = torch.tensor(acc, dtype=torch.float32) / wsum

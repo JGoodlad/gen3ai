@@ -37,6 +37,7 @@ from agents.model.arch_constants import (MOVE_LATENT_DIM, MOVE_NET_HIDDEN, ROLE_
                                          ROLE_TOKEN_SIZE, STATIC_DYN_HIDDEN, STATIC_MOVE_POOL_DIM,
                                          STATIC_STAT_SCALE)
 from agents.model.belief_tables import build_static_stat_prior
+from agents.model.damage_kinds import our_stats
 from agents.model.encoders import MoveLatentEncoder
 from agents.model.extractor_ctx import (Embeddings, ExtractorContext, active_move_legality_sorted,
                                         slice_pokemon_categoricals)
@@ -56,8 +57,6 @@ TOKEN_ENCODING_MODES = ("legacy", "static")
 
 #: The base-stat columns of the per-mon slot are ``base / 255`` (`observation/species.py`).
 _BASE_STAT_DENOM = 255.0
-#: Level-100 stat offsets: HP = 2B + IV + EV/4 + 110; any other = (2B + IV + EV/4 + 5) × nature.
-_HP_OFFSET_L100, _STAT_OFFSET_L100 = 110.0, 5.0
 #: The stat input S reads: 6 means + 6 stds + spread_known.
 STAT_FEATURE_DIM = 13
 #: D's input, by part (the docstring's list): hp 1 · status · counters · sleep belief · recency · protect 1 ·
@@ -156,15 +155,14 @@ class StaticTokenEncoder(torch.nn.Module):
     # ------------------------------------------------------------------------------------------ parts
     def _actual_stats(self, pp: torch.Tensor, species_ids: torch.Tensor) -> torch.Tensor:
         """[...,13] the six level-100 stats (/ STATIC_STAT_SCALE), their std, spread_known. Known spread
-        (our team): the smooth formula on the observed IV / EV / nature (std 0). Unknown (the opponent): the
+        (our team): `damage_kinds.our_stats` on the observed IV / EV / nature (the EV floored as the game floors it,
+        the nature smooth; std 0). Unknown (the opponent): the
         Smogon prior row of the species."""
         base = pp[..., POKEMON_SPECIES_OFFSET + 1:POKEMON_SPECIES_OFFSET + 7] * _BASE_STAT_DENOM
         sp = pp[..., POKEMON_SPREAD_OFFSET:POKEMON_SPREAD_OFFSET + 18]
-        iv, ev, known, nat = sp[..., 0:6] * 31.0, sp[..., 6:12] * 252.0, sp[..., 12:13], sp[..., 13:18]
-        pre = 2.0 * base + iv + ev / 4.0
-        hp = pre[..., 0:1] + _HP_OFFSET_L100
-        rest = (pre[..., 1:] + _STAT_OFFSET_L100) * nat
-        exact = torch.cat([hp, rest], dim=-1)
+        known = sp[..., 12:13]
+        hp, rest = our_stats(base, sp)                                         # the EV floored as the game does
+        exact = torch.cat([hp[..., None], rest], dim=-1)
         prior = self.STAT_PRIOR[species_ids]                                   # [...,6,2]
         is_known = known > 0.5
         mean = torch.where(is_known, exact, prior[..., 0])

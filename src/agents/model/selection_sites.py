@@ -261,7 +261,13 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
                 # gen3_our_hp_exact_v1: OUR current HP = round(observed fraction × the exact integer max HP) — the
                 # product sits a few ulps from an integer, never near a .5 step — and a heal's trunc(frac · maxhp)
                 # (table fractions 1/4, 1/2, 2/3, 1: an exact product lands on its integer by the nudge)
-                "(hp_frac * maxhp).round()", "torch.floor(frac * maxhp + _HEAL_FLOOR_NUDGE)"),
+                "(hp_frac * maxhp).round()", "torch.floor(frac * maxhp + _HEAL_FLOOR_NUDGE)",
+                # gen3_stat_ev_points_v1: our spread's IV / EV back to their integers (the f32 read-back misses
+                # an integer by an ulp, never near a .5 step) and the EV's stat points ⌊EV / 4⌋ (statModify's
+                # tr(evs / 4)) — of an exact integer, so no operand sits near a step
+                "(spread[..., _SPREAD_IV] * _OBS_IV_SCALE).round()",
+                "(spread[..., _SPREAD_EV] * _OBS_EV_SCALE).round()",
+                "((spread[..., _SPREAD_EV] * _OBS_EV_SCALE).round() / 4.0).floor()"),
         "TABLE": ("fixed + target_frac + endeavor > 0", "hp_scaled > 0", "flail > 0", "eff > 0",
                   "nonformula > 0", "op.MOVE_BEATUP[move_ids] > 0", "target_frac >= 1.0"),
         # gen3_beatup_exact_v1: Beat Up's ally filter reads observed HP fractions and 0/1 condition flags
@@ -433,8 +439,10 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
         "OBS": ("s >= 0", "ctx.hp_and_active[:, :, 0] > 0"),
     },
     "eot_residual": {
+        # gen3_leech_seed_exact_v1: the drain's ⌊maxhp / 8⌋ of an INTEGER max HP (ours exact, theirs the integer
+        # neutral estimate) — a division by a power of two is exact, so no operand sits near a step.
         "OBS": ("hp > 0", "(w[:, _W_TURNS] * _WEATHER_MAX_TURNS).round()",
-                "(w[:, _W_TURNS] * _WEATHER_MAX_TURNS).round().long()"),
+                "(w[:, _W_TURNS] * _WEATHER_MAX_TURNS).round().long()", "torch.floor(maxhp / 8.0)"),
     },
     "t0_species": {
         "OBS": ("onehot > 0",),

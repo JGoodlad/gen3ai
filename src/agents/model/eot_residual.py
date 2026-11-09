@@ -25,12 +25,15 @@ gen4 over gen5 … over the base; `measurements/static_recovery_2026-10-09/READM
   to its cap of 15; it resets on a switch, so a benched toxic mon switching in ticks −1/16: `data/conditions.ts` tox
   `onSwitchIn`); × (1 − P(Shed Skin)/3) (Shed Skin's 33 % cure
   resolves at sub-order 3, before the tick at 6).
-* ``leech_drain`` −1/8 for the ACTIVE mon carrying Leech Seed (a volatile: cleared on switch-out).
+* ``leech_drain`` for the ACTIVE mon carrying Leech Seed (a volatile: cleared on switch-out): −(the INTEGER drain)
+  / its max HP, the drain ``min(hp, max(1, ⌊max HP / 8⌋))`` (`leech_seed_drained`, gen3_leech_seed_exact_v1:
+  `data/moves.ts` leechseed ``this.damage(baseMaxhp / 8)`` → ``clampIntRange(·, 1)``, the HP stopping at 0).
 * ``leech_gain`` for every mon of the side OPPOSITE a seeded active (the heal goes to whoever is in the seeder's slot):
-  + min(the seeded mon's max HP / 8, its current HP) / this mon's max HP, × (1 − 2·P(the seeded mon has Liquid Ooze))
-  (gen 3: the seeder TAKES that amount instead: `data/mods/gen4/abilities.ts` liquidooze). Max HP: ours EXACT (the
-  spread in the observation), theirs the op's neutral estimate (2·base + 31 + 110), Shedinja 1 — the op's own
-  convention. The one cross-mon quantity; it assumes the seeded active stays in.
+  + that drain / this mon's max HP, × (1 − 2·P(the seeded mon has Liquid Ooze)) (gen 3: the seeder TAKES that amount
+  instead: `data/mods/gen4/abilities.ts` liquidooze; no Big Root in gen 3). HP in points: ours EXACT (the spread in
+  the observation, `our_hp_points`), theirs the percent × the op's neutral max-HP estimate (2·base + 31 + 110),
+  Shedinja 1 — the op's own convention. The one cross-mon quantity; it assumes the seeded active stays in, and caps
+  the drain at the HP at the decision, not after the residuals sorted before it (Leftovers, sub-order 4).
 * ``wish`` +1/2 for every mon of a side whose Wish heals at the next end-of-turn residual (gen 3 heals HALF THE
   RECIPIENT'S max HP: `data/mods/gen4/moves.ts` wish replaces the condition; base gen 5+ stores the wisher's). The
   observation's board flag is exactly that event at 0.5 (`trackers/history.rs::WishFold`: a successful Wish cast one
@@ -41,7 +44,7 @@ gen4 over gen5 … over the base; `measurements/static_recovery_2026-10-09/READM
 * ``net`` the sum of the above, clamped to [−HP, 1 − HP] (a mon cannot lose more than it has nor heal past full): the
   clamp of the expected sum, not the expectation of a clamp.
 
-Every component is the NOMINAL fraction (Showdown floors each amount, minimum 1). Every column is alive-gated, and an
+Every component but Leech Seed's is the NOMINAL fraction (Showdown floors each amount, minimum 1: ≤ 1 HP). Every column is alive-gated, and an
 opponent slot with no species (the belief-off ablation only; X5 always holds a hypothesis) reads 0. EXCLUDED: partial
 trapping (−1/16 in gen 3, but its last turn ends without damage and the trap timer is an OBS-FACTS-only fact), Future
 Sight / Doom Desire (priced at cast, not in the observation), Dig / Dive's semi-invulnerable turn (no observation
@@ -57,9 +60,9 @@ from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple
 import torch
 
 from agents.observation.constants import (BOOSTS_DIM, POKEMON_CONDITION_OFFSET, POKEMON_COUNTER_OFFSET,
-                                          POKEMON_ITEMS_OFFSET, POKEMON_SLEEP_BELIEF_OFFSET, POKEMON_SPREAD_OFFSET,
-                                          TEAM_SIZE, WEATHER_ONEHOT_DIM)
-from agents.model.damage_kinds import our_max_hp
+                                          POKEMON_ITEMS_OFFSET, POKEMON_SLEEP_BELIEF_OFFSET, POKEMON_SPREAD_DIM,
+                                          POKEMON_SPREAD_OFFSET, TEAM_SIZE, WEATHER_ONEHOT_DIM)
+from agents.model.damage_kinds import our_hp_points, our_max_hp, our_spread
 from agents.model.damage_op_pairwise import toxic_next_tick
 from agents.model.extractor_ctx import ability_known, held_item_ids, revealed_ability1_ids
 from agents.observation.gen3_effects import VOLATILE_SLOTS
@@ -98,6 +101,19 @@ _WEATHER_MAX_TURNS = 5.0
 _TIMED_WEATHER_LIVE = (0.0, 0.0, 1.0, 1.0, 1.0, 1.0)
 
 _VOL = {name: BOOSTS_DIM + VOLATILE_SLOTS.index(name) for name in ("leechseed", "ingrain", "curse", "nightmare")}
+
+
+def leech_seed_drained(maxhp: torch.Tensor, cur_hp: torch.Tensor) -> torch.Tensor:
+    """The HP Leech Seed takes from the seeded mon at the residual, in HP points — and so what the seeder's slot
+    heals (gen3_leech_seed_exact_v1). `data/moves.ts` leechseed ``onResidual``: ``this.damage(pokemon.baseMaxhp / 8,
+    pokemon, target)`` → `sim/battle.ts` ``spreadDamage``: ``clampIntRange(damage, 1)`` = ``max(1, ⌊maxhp / 8⌋)``
+    → `sim/pokemon.ts` ``damage``: the HP stops at 0, so the amount DEALT is ``min(hp, max(1, ⌊maxhp / 8⌋))``;
+    ``if (damage) this.heal(damage, target, pokemon)`` heals that amount (`sim/battle.ts` ``heal`` truncates an
+    integer to itself; `sim/pokemon.ts` ``heal`` caps it at the recipient's missing HP — the rule's ``net`` clamp).
+    Big Root does not exist in gen 3 (`data/items.ts` bigroot ``gen: 4``). A max HP below 8 (Shedinja's 1) still
+    loses 1. ``maxhp`` is an integer for both sides (ours exact, theirs the integer neutral estimate), so the floor
+    of ``maxhp / 8`` (a division by a power of two) is exact."""
+    return torch.minimum(cur_hp, torch.floor(maxhp / 8.0).clamp(min=1.0))
 
 
 def _num(table: Any, ident: str) -> int:
@@ -230,15 +246,19 @@ class EotResidualRule(torch.nn.Module):
             v[ar, TEAM_SIZE + ctx.opp_active_local] = ctx.opp_ctx_raw[:, _VOL[name]].to(dt)
             return v * active
         seeded = _vol("leechseed")
-        leech_drain = -seeded / 8.0
         ingrain = _vol("ingrain") / 16.0
         curse = -_vol("curse") / 4.0
         p_stay_asleep = 1.0 - pp[..., POKEMON_SLEEP_BELIEF_OFFSET + _P_WAKE_COL]
         nightmare = -_vol("nightmare") * cond[..., _SLP] * p_stay_asleep * no_cure / 4.0
 
-        # --- Leech Seed's heal: to whoever is in the slot opposite a seeded active (Liquid Ooze inverts it) ---
+        # --- Leech Seed: the seeded active loses the INTEGER drain; whoever is in the slot opposite heals the amount
+        #     DEALT (Liquid Ooze inverts it). Ours in exact HP points; theirs percent × the neutral max-HP estimate ---
         maxhp = self._max_hp(ctx, op)                                                       # [B,12]
-        drained = maxhp * torch.minimum(hp, hp.new_full((), 1.0 / 8.0)) * seeded            # [B,12] HP points
+        opp_maxhp = maxhp[:, TEAM_SIZE:]
+        cur_hp = torch.cat([our_hp_points(hp[:, :TEAM_SIZE], maxhp[:, :TEAM_SIZE]),
+                            hp[:, TEAM_SIZE:] * opp_maxhp], dim=1)                           # [B,12] HP points
+        drained = leech_seed_drained(maxhp, cur_hp) * seeded                                # [B,12] HP points
+        leech_drain = -drained / maxhp
         ooze = 1.0 - 2.0 * ab[..., _A_LIQUID_OOZE]
         give = (drained * ooze)                                                             # [B,12]
         give_from_opp = give[:, TEAM_SIZE:].sum(1)                                          # [B] (one seeded active)
@@ -262,8 +282,9 @@ class EotResidualRule(torch.nn.Module):
         """[B,12] max HP: ours EXACT from the observation's spread, theirs the op's neutral estimate
         (2·base + 31 + 110); Shedinja (base HP 1) is 1 on both sides. The op's own convention."""
         base_hp = op.BASE_STATS[ctx.species_ids][..., 0].to(ctx.pokemon_part.dtype)          # [B,12]
-        spread = ctx.pokemon_part[:, :TEAM_SIZE, POKEMON_SPREAD_OFFSET:POKEMON_SPREAD_OFFSET + 12]
-        ours = our_max_hp(base_hp[:, :TEAM_SIZE], spread[..., 0] * 31.0, spread[..., 6] * 252.0)   # the one spelling
+        spread = ctx.pokemon_part[:, :TEAM_SIZE, POKEMON_SPREAD_OFFSET:POKEMON_SPREAD_OFFSET + POKEMON_SPREAD_DIM]
+        iv, ev_points, _nat = our_spread(spread)
+        ours = our_max_hp(base_hp[:, :TEAM_SIZE], iv[..., 0], ev_points[..., 0])          # the one spelling
         theirs = 2.0 * base_hp[:, TEAM_SIZE:] + 31.0 + 110.0
         formula = torch.cat([ours, theirs], dim=1)
         shedinja = self.SHEDINJA_HP_ONE[ctx.species_ids]
