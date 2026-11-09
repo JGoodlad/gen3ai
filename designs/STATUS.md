@@ -90,9 +90,10 @@ its GO.
   worse than the Smogon prior on unfamiliar opponents, ledger 2026-10-26 H3), read first by its CPU-minute meter P5
   (≈ 1–2 GPU-h).
 - **MF-4:** the value at the leaf on unfamiliar teams, V-RANK first (CPU).
-- **MF-5: the scale bet** (production width and 2× `D_MODEL` from scratch at BOUNDARY-1; ≈ 52–73 GPU-h to a 100M
-  look, ≈ 145–205 to the plateau), the one lever whose point reaches goal (b)'s gap without search; it waits on the
-  owner (§6.5).
+- **MF-5: the scale bet** (production width and 2× `D_MODEL` from scratch at BOUNDARY-1), the one lever whose point
+  reaches goal (b)'s gap without search; it waits on the owner (§6.5). Its DRAFT design sizes it at four seeds an arm,
+  ≈ 207 GPU-h to a 100M look
+  ([`research_state/measurements/boundary1_scratch_2026-11-09/DRAFT_DESIGN.md`](research_state/measurements/boundary1_scratch_2026-11-09/DRAFT_DESIGN.md)).
 - X60-T's verdict routes the next run's team mix (ADOPT-CANDIDATE ⇒ human teams in BOUNDARY-1's recipe).
 
 **Search engineering for goal (b): UN-PAUSED by S′-HONEST's GO-HONEST (2026-11-09), CPU-side and lower priority**
@@ -218,9 +219,13 @@ Every open owner question, in one place.
 
 5. **The scale bet: a network wider from step 0** (EXPERIMENT_BACKLOG §2.0 MF-5;
    [`endstate/strategy_if_levers_null_2026-10-26.md`](endstate/strategy_if_levers_null_2026-10-26.md) §5 question 3).
-   The ask: one seed of production width and one of 2× `D_MODEL`, both from scratch at the next retrain boundary,
-   ≈ 52–73 GPU-h to a registered 100M look and ≈ 145–205 GPU-h to the plateau (≈ 1–1.5 weeks of our card; a second card
-   would halve the wall), plus a width build. Its cheap support is gone (the N4 toy and X48 read NO-GO, growth at the
+   The ask as first priced: one seed of production width and one of 2× `D_MODEL`, both from scratch at the next retrain
+   boundary, ≈ 52–73 GPU-h to a registered 100M look and ≈ 145–205 GPU-h to the plateau, plus a width build. **Re-sized
+   2026-11-09 (DRAFT):** one seed an arm cannot clear the measured seed-to-seed spread; four seeds an arm can, at
+   ≈ 207 GPU-h to the 100M look (≈ 9 days of our card; a second card would halve the wall), as a bundle, as width
+   alone, or as both crossed
+   ([`research_state/measurements/boundary1_scratch_2026-11-09/DRAFT_DESIGN.md`](research_state/measurements/boundary1_scratch_2026-11-09/DRAFT_DESIGN.md)
+   §0). Its cheap support is gone (the N4 toy and X48 read NO-GO, growth at the
    plateau), and it is still the one lever whose point estimate reaches goal (b)'s gap without search. Recommendation:
    yes, staged, launched once X60-T's verdict and the boundary's fixes are in, so the owner's answer is needed before
    then.

@@ -1,0 +1,9 @@
+x5ab_look3_2026-10-07/result.json: 8x8 mean-50 -0.99 pp | SD of row means 2.45, of column means 0.69 | cell-noise SD 0.94 | noise-removed seed SD rows 2.43, columns 0.60
+x5ab_look3_2026-10-07/result.json: 8x8 mean-50 -5.91 pp | SD of row means 1.85, of column means 1.10 | cell-noise SD 1.08 | noise-removed seed SD rows 1.81, columns 1.03
+x5ab_look3_2026-10-07/result.json: 8x8 mean-50 -4.12 pp | SD of row means 1.60, of column means 0.77 | cell-noise SD 1.10 | noise-removed seed SD rows 1.55, columns 0.66
+static_screen_look3_2026-10-09/result.json: 8x8 mean-50 -2.32 pp | SD of row means 1.70, of column means 1.17 | cell-noise SD 0.98 | noise-removed seed SD rows 1.66, columns 1.12
+endstate_closing_test_2026-10-09/cross/verdict.json: 8x8 mean-50 +0.60 pp | SD of row means 1.63, of column means 1.35 | cell-noise SD 0.93 | noise-removed seed SD rows 1.60, columns 1.31
+bf16_strength_ab_2026-10-12/stage1_cross/result/verdict.json: 4x4 mean-50 -0.12 pp | SD of row means 1.66, of column means 3.11 | cell-noise SD 0.80 | noise-removed seed SD rows 1.61, columns 3.09
+bf16_strength_ab_2026-10-12/stage2_cross/result/verdict.json: 8x8 mean-50 +1.06 pp | SD of row means 2.92, of column means 2.13 | cell-noise SD 1.09 | noise-removed seed SD rows 2.89, columns 2.09
+arm groups 14: noise-removed seed SD min 0.60, max 3.09, pooled (df-weighted) 1.76 pp on 90 df
+toy_crosses_2026-10-16/RESULTS.md (3 T-ENT seeds x 8 production finals): per-seed means R-T5 (46-48M) +5.90/+6.34/+7.21 -> SD 0.67 pp; R-T6 (100M cap) +8.10/+11.24/+11.27 -> SD 1.82 pp (s4001b carries the canary hazard, RESULTS finding 2)

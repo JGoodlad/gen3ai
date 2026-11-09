@@ -63,7 +63,7 @@ range), mine, not a measurement; each card cites its evidence and labels what is
 | **MF-2** | **Fidelity of the op's opponent side (E13 + round 2 + E9) → BOUNDARY-1** | 0 now (rides MF-5's fresh pair) | ≈ 1–2 (census) | +0.3 (0, +1) | — | round 2 landed; E13 built |
 | **MF-3** | **The belief on never-seen mons, off-pool** (for the network and as search's sampler) | ≈ 1–2 (step b) | minutes (P5); 25–42 (a game read) | +0.5 (−1, +2) without search; search share UNVERIFIED | ≈ 0.15 | step a (P5 on X60-T's finals) first; human-data toggle and panel exclusion |
 | **MF-4** | **The value at the leaf on unfamiliar teams** | 0 until V-RANK fires; then ≈ 1–2 | ≈ 96 (V-RANK) + ≈ 300–600 (a searched game read; S′-LIVE took ≈ 315) | +0.3 (−0.5, +1.5), with search only | ≈ 0.05 after P(V-RANK fires) ≈ 0.3 | V-RANK's builds and PREREG |
-| **MF-5** | **BOUNDARY-1's fresh pair and the SCALE BET** (production width and 2× `D_MODEL`, from scratch) | ≈ 52–73 to the 100M look; ≈ 145–205 to the plateau | ≈ 42 (100M look); ≈ 107 (plateau) | wide − 1×: +1.5 (−1, +5) at the plateau | ≈ 0.01 | **the owner's word** (`../STATUS.md` §6.5); a width build; MF-2's version; X60-T's verdict |
+| **MF-5** | **BOUNDARY-1's from-scratch run**: REPLACED 2026-11-09 by the DRAFT design [`measurements/boundary1_scratch_2026-11-09/DRAFT_DESIGN.md`](measurements/boundary1_scratch_2026-11-09/DRAFT_DESIGN.md) (option B, a bundle; option S, width alone; the same eight runs crossed 2 × 2; the owner's answer picks one) | its §8 | its §8 | its §0, §2 | — | **the owner's word** (`../STATUS.md` §6.5); its §8 (the builds); MF-2's version; X60-T's verdict |
 | MF-6 | Breadth at the plateau: X62's recombined teams | ≈ 20.5 | ≈ 107 | +1.0 (−1, +3) | ≈ 0.05 | X60-T not NO-TRANSFER / LOSS; PR-1′'s place is the orchestrator's |
 | MF-7 | The league's main exploiters (X35-A3) | ≈ 15 | ≈ 107 | +0.5 (−1, +2) vs Kakuna | ≈ 0.03 | its two-phase kit (T55) |
 
@@ -170,25 +170,12 @@ time.
     ordering, AUC, equal on both sets); R-EVAL information-bound (search ledger N13); the 4-turn leaf keeps about half
     the oracle leaf's value (W3). WEAKER THAN IT READS: a level bias common to every sibling cancels in a one-ply
     argmax, so H-MID is not evidence that the leaf mis-ranks siblings on U; that is V-RANK's unmeasured question.
-- **MF-5 BOUNDARY-1's fresh pair, and the scale bet.**
-  - *Question:* does a network wider from step 0 plateau higher on unfamiliar teams than the production width, both
-    trained at BOUNDARY-1's code with X60-T's verdict applied to the team mix?
-  - *Meter:* wide − 1× against Kakuna on F (and U, reported) at a registered 100M look, then at each arm's plateau
-    (the PR rule); the 1× arm against X26 at matched steps, REPORTED (different code).
-  - *Cheapest decisive experiment:* one seed an arm to 100M (≈ 21 + 31–52 GPU-h: the 2× arm's 1.5–2.5× a step is the
-    X65 design's GUESS), a stop-or-continue rule at that look, then to the plateau (≈ 58 + 87–145 GPU-h). There is no
-    cheaper decisive screen: the toy's growth screens cannot answer from-scratch width (N4's own §6.2).
-  - *Unlocks:* the next production lineage (its 1× arm), whether the network's size binds the plateau, and a wider
-    student to re-ask MF-1's learnability if honest labels also read unlearnable.
-  - *Prerequisites:* the owner's word; a width build (`D_MODEL` is `ROLE_TOKEN_SIZE`, 128, an architecture constant in
-    `src/agents/model/arch_constants.py`, so a wide arm needs a per-run width: cost UNVERIFIED, GUESS 1–3 agent-days);
-    MF-2's version; X60-T's verdict; optionally the second card (`../ops/cloud_gpu_plan.md`).
-  - *Evidence, weaker than the strategy doc's +3 (−1, +8):* every cheap capacity screen missed (N4 toy NO-GO
-    +0.46 pp [−0.28, +1.20]; X48 NO-GO in-house, its Kakuna point +2.06 [−0.06, +4.19] UNDECIDED; X47 depth UNDECIDED,
-    Δ̂ ≤ 0), but all were growth at a plateau, not width from step 0. For it: at the plateaus P\* (2.61M) is 7.3–10.5 pp
-    above the 1.42M toy against Kakuna (UNDERSTANDING §4.9; DESCRIPTIVE, the two differ by more than width), and it is
-    the one lever whose point reaches goal (b)'s ≈ 4 pp without search
-    (`../endstate/strategy_if_levers_null_2026-10-26.md` §3, rank 12).
+- **MF-5 BOUNDARY-1's from-scratch run: a pointer.** The one-seed-an-arm scale bet that stood here is replaced by
+  [`measurements/boundary1_scratch_2026-11-09/DRAFT_DESIGN.md`](measurements/boundary1_scratch_2026-11-09/DRAFT_DESIGN.md)
+  and its [`DRAFT_PREREG.md`](measurements/boundary1_scratch_2026-11-09/DRAFT_PREREG.md): the arms, the seeds an arm
+  sized by the measured seed-to-seed spread, the meters, the rule, the costs, the builds and the launch dates are
+  there and nowhere else. DRAFT: nothing is registered, and the owner's answer on bundles (`../STATUS.md` §6.5)
+  picks the option.
 - **MF-6 X62** (`../endstate/design_x62_team_recombination.md`) and **MF-7 X35-A3** (§2.1's CE-3c) keep their own
   designs; they are here because they are model levers with a known price. X62's case rests on H-CTX SUPPORTED
   (`6f126c4af`) against four breadth misses at the plateau (D1, D3 UNDECIDED; N1-P NULL; X63 NOT PURSUED); A3's on

@@ -1,0 +1,45 @@
+(1) head-to-head cross; cell SD 1.05, variance floor 1.76 pp, NO-USEFUL bar +4.0 pp, 50000 reps
+k 2 sigma 1.76 (median half-width 5.52 pp) | +0: WIN 0.00 NO-USEFUL 0.16 LOSS 0.001 | +2: WIN 0.03 NO-USEFUL 0.02 LOSS 0.000 | +3: WIN 0.07 NO-USEFUL 0.01 LOSS 0.000 | +4: WIN 0.16 NO-USEFUL 0.00 LOSS 0.000 | +5: WIN 0.31 NO-USEFUL 0.00 LOSS 0.000 | +6: WIN 0.48 NO-USEFUL 0.00 LOSS 0.000 | +8: WIN 0.77 NO-USEFUL 0.00 LOSS 0.000
+k 2 sigma 2.50 (median half-width 6.84 pp) | +0: WIN 0.01 NO-USEFUL 0.15 LOSS 0.008 | +2: WIN 0.05 NO-USEFUL 0.05 LOSS 0.001 | +3: WIN 0.09 NO-USEFUL 0.02 LOSS 0.000 | +4: WIN 0.16 NO-USEFUL 0.01 LOSS 0.000 | +5: WIN 0.25 NO-USEFUL 0.00 LOSS 0.000 | +6: WIN 0.35 NO-USEFUL 0.00 LOSS 0.000 | +8: WIN 0.57 NO-USEFUL 0.00 LOSS 0.000
+k 2 sigma 3.10 (median half-width 8.11 pp) | +0: WIN 0.02 NO-USEFUL 0.13 LOSS 0.016 | +2: WIN 0.06 NO-USEFUL 0.05 LOSS 0.004 | +3: WIN 0.09 NO-USEFUL 0.03 LOSS 0.001 | +4: WIN 0.15 NO-USEFUL 0.02 LOSS 0.001 | +5: WIN 0.21 NO-USEFUL 0.01 LOSS 0.000 | +6: WIN 0.28 NO-USEFUL 0.00 LOSS 0.000 | +8: WIN 0.45 NO-USEFUL 0.00 LOSS 0.000
+k 3 sigma 1.76 (median half-width 3.35 pp) | +0: WIN 0.01 NO-USEFUL 0.59 LOSS 0.011 | +2: WIN 0.16 NO-USEFUL 0.16 LOSS 0.000 | +3: WIN 0.35 NO-USEFUL 0.05 LOSS 0.000 | +4: WIN 0.60 NO-USEFUL 0.01 LOSS 0.000 | +5: WIN 0.80 NO-USEFUL 0.00 LOSS 0.000 | +6: WIN 0.92 NO-USEFUL 0.00 LOSS 0.000 | +8: WIN 0.99 NO-USEFUL 0.00 LOSS 0.000
+k 3 sigma 2.50 (median half-width 4.26 pp) | +0: WIN 0.03 NO-USEFUL 0.40 LOSS 0.027 | +2: WIN 0.15 NO-USEFUL 0.15 LOSS 0.002 | +3: WIN 0.27 NO-USEFUL 0.07 LOSS 0.000 | +4: WIN 0.42 NO-USEFUL 0.03 LOSS 0.000 | +5: WIN 0.59 NO-USEFUL 0.01 LOSS 0.000 | +6: WIN 0.74 NO-USEFUL 0.00 LOSS 0.000 | +8: WIN 0.92 NO-USEFUL 0.00 LOSS 0.000
+k 3 sigma 3.10 (median half-width 5.14 pp) | +0: WIN 0.04 NO-USEFUL 0.30 LOSS 0.038 | +2: WIN 0.13 NO-USEFUL 0.13 LOSS 0.006 | +3: WIN 0.22 NO-USEFUL 0.07 LOSS 0.002 | +4: WIN 0.34 NO-USEFUL 0.04 LOSS 0.001 | +5: WIN 0.46 NO-USEFUL 0.02 LOSS 0.000 | +6: WIN 0.59 NO-USEFUL 0.01 LOSS 0.000 | +8: WIN 0.81 NO-USEFUL 0.00 LOSS 0.000
+k 4 sigma 1.76 (median half-width 2.64 pp) | +0: WIN 0.02 NO-USEFUL 0.80 LOSS 0.017 | +2: WIN 0.28 NO-USEFUL 0.28 LOSS 0.000 | +3: WIN 0.56 NO-USEFUL 0.09 LOSS 0.000 | +4: WIN 0.81 NO-USEFUL 0.02 LOSS 0.000 | +5: WIN 0.95 NO-USEFUL 0.00 LOSS 0.000 | +6: WIN 0.99 NO-USEFUL 0.00 LOSS 0.000 | +8: WIN 1.00 NO-USEFUL 0.00 LOSS 0.000
+k 4 sigma 2.50 (median half-width 3.39 pp) | +0: WIN 0.03 NO-USEFUL 0.57 LOSS 0.034 | +2: WIN 0.22 NO-USEFUL 0.22 LOSS 0.002 | +3: WIN 0.40 NO-USEFUL 0.10 LOSS 0.000 | +4: WIN 0.60 NO-USEFUL 0.04 LOSS 0.000 | +5: WIN 0.77 NO-USEFUL 0.01 LOSS 0.000 | +6: WIN 0.90 NO-USEFUL 0.00 LOSS 0.000 | +8: WIN 0.99 NO-USEFUL 0.00 LOSS 0.000
+k 4 sigma 3.10 (median half-width 4.12 pp) | +0: WIN 0.04 NO-USEFUL 0.43 LOSS 0.042 | +2: WIN 0.19 NO-USEFUL 0.18 LOSS 0.005 | +3: WIN 0.31 NO-USEFUL 0.09 LOSS 0.001 | +4: WIN 0.47 NO-USEFUL 0.04 LOSS 0.000 | +5: WIN 0.62 NO-USEFUL 0.02 LOSS 0.000 | +6: WIN 0.77 NO-USEFUL 0.01 LOSS 0.000 | +8: WIN 0.93 NO-USEFUL 0.00 LOSS 0.000
+k 5 sigma 1.76 (median half-width 2.24 pp) | +0: WIN 0.02 NO-USEFUL 0.90 LOSS 0.023 | +2: WIN 0.38 NO-USEFUL 0.38 LOSS 0.000 | +3: WIN 0.71 NO-USEFUL 0.13 LOSS 0.000 | +4: WIN 0.92 NO-USEFUL 0.02 LOSS 0.000 | +5: WIN 0.99 NO-USEFUL 0.00 LOSS 0.000 | +6: WIN 1.00 NO-USEFUL 0.00 LOSS 0.000 | +8: WIN 1.00 NO-USEFUL 0.00 LOSS 0.000
+k 5 sigma 2.50 (median half-width 2.92 pp) | +0: WIN 0.04 NO-USEFUL 0.68 LOSS 0.039 | +2: WIN 0.28 NO-USEFUL 0.28 LOSS 0.002 | +3: WIN 0.50 NO-USEFUL 0.12 LOSS 0.000 | +4: WIN 0.72 NO-USEFUL 0.04 LOSS 0.000 | +5: WIN 0.88 NO-USEFUL 0.01 LOSS 0.000 | +6: WIN 0.96 NO-USEFUL 0.00 LOSS 0.000 | +8: WIN 1.00 NO-USEFUL 0.00 LOSS 0.000
+k 5 sigma 3.10 (median half-width 3.56 pp) | +0: WIN 0.05 NO-USEFUL 0.53 LOSS 0.046 | +2: WIN 0.23 NO-USEFUL 0.22 LOSS 0.004 | +3: WIN 0.39 NO-USEFUL 0.11 LOSS 0.001 | +4: WIN 0.57 NO-USEFUL 0.04 LOSS 0.000 | +5: WIN 0.74 NO-USEFUL 0.02 LOSS 0.000 | +6: WIN 0.87 NO-USEFUL 0.00 LOSS 0.000 | +8: WIN 0.98 NO-USEFUL 0.00 LOSS 0.000
+k 8 sigma 1.76 (median half-width 1.66 pp) | +0: WIN 0.03 NO-USEFUL 0.94 LOSS 0.029 | +2: WIN 0.62 NO-USEFUL 0.37 LOSS 0.000 | +3: WIN 0.92 NO-USEFUL 0.07 LOSS 0.000 | +4: WIN 0.99 NO-USEFUL 0.01 LOSS 0.000 | +5: WIN 1.00 NO-USEFUL 0.00 LOSS 0.000 | +6: WIN 1.00 NO-USEFUL 0.00 LOSS 0.000 | +8: WIN 1.00 NO-USEFUL 0.00 LOSS 0.000
+k 8 sigma 2.50 (median half-width 2.19 pp) | +0: WIN 0.04 NO-USEFUL 0.86 LOSS 0.046 | +2: WIN 0.44 NO-USEFUL 0.39 LOSS 0.001 | +3: WIN 0.72 NO-USEFUL 0.15 LOSS 0.000 | +4: WIN 0.91 NO-USEFUL 0.04 LOSS 0.000 | +5: WIN 0.98 NO-USEFUL 0.00 LOSS 0.000 | +6: WIN 1.00 NO-USEFUL 0.00 LOSS 0.000 | +8: WIN 1.00 NO-USEFUL 0.00 LOSS 0.000
+k 8 sigma 3.10 (median half-width 2.69 pp) | +0: WIN 0.05 NO-USEFUL 0.73 LOSS 0.047 | +2: WIN 0.33 NO-USEFUL 0.32 LOSS 0.002 | +3: WIN 0.57 NO-USEFUL 0.14 LOSS 0.000 | +4: WIN 0.79 NO-USEFUL 0.05 LOSS 0.000 | +5: WIN 0.92 NO-USEFUL 0.01 LOSS 0.000 | +6: WIN 0.98 NO-USEFUL 0.00 LOSS 0.000 | +8: WIN 1.00 NO-USEFUL 0.00 LOSS 0.000
+(1b) the 2 x 2 at 2 seeds a cell: one factor's main effect (4 runs v 4), pooled within-cell variance, 4 df
+sigma 1.76 (median half-width 3.08 pp) | +0: WIN 0.01 NO-USEFUL 0.70 LOSS 0.010 | +2: WIN 0.19 NO-USEFUL 0.19 LOSS 0.000 | +3: WIN 0.44 NO-USEFUL 0.06 LOSS 0.000 | +4: WIN 0.70 NO-USEFUL 0.01 LOSS 0.000 | +5: WIN 0.89 NO-USEFUL 0.00 LOSS 0.000 | +6: WIN 0.97 NO-USEFUL 0.00 LOSS 0.000 | +8: WIN 1.00 NO-USEFUL 0.00 LOSS 0.000
+sigma 2.50 (median half-width 3.83 pp) | +0: WIN 0.02 NO-USEFUL 0.48 LOSS 0.026 | +2: WIN 0.17 NO-USEFUL 0.17 LOSS 0.002 | +3: WIN 0.32 NO-USEFUL 0.07 LOSS 0.000 | +4: WIN 0.50 NO-USEFUL 0.02 LOSS 0.000 | +5: WIN 0.68 NO-USEFUL 0.01 LOSS 0.000 | +6: WIN 0.83 NO-USEFUL 0.00 LOSS 0.000 | +8: WIN 0.97 NO-USEFUL 0.00 LOSS 0.000
+sigma 3.10 (median half-width 4.56 pp) | +0: WIN 0.03 NO-USEFUL 0.36 LOSS 0.033 | +2: WIN 0.15 NO-USEFUL 0.14 LOSS 0.004 | +3: WIN 0.26 NO-USEFUL 0.07 LOSS 0.001 | +4: WIN 0.40 NO-USEFUL 0.03 LOSS 0.000 | +5: WIN 0.55 NO-USEFUL 0.01 LOSS 0.000 | +6: WIN 0.69 NO-USEFUL 0.00 LOSS 0.000 | +8: WIN 0.89 NO-USEFUL 0.00 LOSS 0.000
+(2) Kakuna on U: SE of (new - control), pp; MDE = (1.645 + 0.842) SE (one-sided 5 %, power 0.80)
+k 2 games/final/panel 360 seed SD 0.0: SE 1.56, MDE 3.88 pp, Kakuna games both arms 4320
+k 2 games/final/panel 360 seed SD 1.0: SE 1.85, MDE 4.61 pp, Kakuna games both arms 4320
+k 2 games/final/panel 360 seed SD 1.5: SE 2.16, MDE 5.38 pp, Kakuna games both arms 4320
+k 2 games/final/panel 360 seed SD 2.5: SE 2.95, MDE 7.33 pp, Kakuna games both arms 4320
+k 2 games/final/panel 720 seed SD 0.0: SE 1.13, MDE 2.81 pp, Kakuna games both arms 8640
+k 2 games/final/panel 720 seed SD 1.0: SE 1.51, MDE 3.75 pp, Kakuna games both arms 8640
+k 2 games/final/panel 720 seed SD 1.5: SE 1.88, MDE 4.67 pp, Kakuna games both arms 8640
+k 2 games/final/panel 720 seed SD 2.5: SE 2.74, MDE 6.82 pp, Kakuna games both arms 8640
+k 3 games/final/panel 360 seed SD 0.0: SE 1.27, MDE 3.17 pp, Kakuna games both arms 6480
+k 3 games/final/panel 360 seed SD 1.0: SE 1.51, MDE 3.76 pp, Kakuna games both arms 6480
+k 3 games/final/panel 360 seed SD 1.5: SE 1.77, MDE 4.39 pp, Kakuna games both arms 6480
+k 3 games/final/panel 360 seed SD 2.5: SE 2.41, MDE 5.98 pp, Kakuna games both arms 6480
+k 3 games/final/panel 720 seed SD 0.0: SE 0.92, MDE 2.29 pp, Kakuna games both arms 12960
+k 3 games/final/panel 720 seed SD 1.0: SE 1.23, MDE 3.06 pp, Kakuna games both arms 12960
+k 3 games/final/panel 720 seed SD 1.5: SE 1.53, MDE 3.81 pp, Kakuna games both arms 12960
+k 3 games/final/panel 720 seed SD 2.5: SE 2.24, MDE 5.57 pp, Kakuna games both arms 12960
+k 4 games/final/panel 360 seed SD 0.0: SE 1.10, MDE 2.74 pp, Kakuna games both arms 8640
+k 4 games/final/panel 360 seed SD 1.0: SE 1.31, MDE 3.26 pp, Kakuna games both arms 8640
+k 4 games/final/panel 360 seed SD 1.5: SE 1.53, MDE 3.80 pp, Kakuna games both arms 8640
+k 4 games/final/panel 360 seed SD 2.5: SE 2.08, MDE 5.18 pp, Kakuna games both arms 8640
+k 4 games/final/panel 720 seed SD 0.0: SE 0.80, MDE 1.98 pp, Kakuna games both arms 17280
+k 4 games/final/panel 720 seed SD 1.0: SE 1.07, MDE 2.65 pp, Kakuna games both arms 17280
+k 4 games/final/panel 720 seed SD 1.5: SE 1.33, MDE 3.30 pp, Kakuna games both arms 17280
+k 4 games/final/panel 720 seed SD 2.5: SE 1.94, MDE 4.82 pp, Kakuna games both arms 17280
