@@ -455,6 +455,11 @@ matches its control at the SAME dose is its secondary read.
   - Owner, 2026-09-29: no direct adoption of a lower bonus. X23 runs after the architecture is stable,
     judged by Lane S.
   - **Inconsistency:** X23's backlog row says "0.02 → 0.005", but the lineage runs 0.05.
+  - **2026-11-09: a strength screen is REGISTERED, not run** (X67,
+    [`x67_entropy_screen_2026-11-09/PREREG.md`](../research_state/measurements/x67_entropy_screen_2026-11-09/PREREG.md)):
+    three P\* + 20M forks at 0.0125 against the banked no-lever forks, head to head. It reads no Lane S meter, so
+    it does not discharge the owner's 2026-09-29 condition: a PASS names 0.0125 for BOUNDARY-1's base recipe in that
+    registration, and this section and §3.22 move only there.
 - **Literature.**
   - Huang et al. 2022: 0.01 on Atari, 0 on MuJoCo, "no evidence that entropy term improves
     performance".

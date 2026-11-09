@@ -109,6 +109,12 @@ look; a record for another arm or look is a refusal.
   :data:`STAGES`. It is read by N4's ONE-look screen rule at s3501-s3503, so there is no look 2 and no look-2
   licence: :func:`stage_status` gives it the AM-8 side gate and nothing else. Its read record is
   ``reads/x48_look1.json``, arm label ``X48``.
+* **X67, THE ENTROPY SCREEN** (``x67_entropy_screen_2026-11-09/PREREG.md``, :data:`X67_PREREG`): ``x67``
+  (:data:`X67_ARMS`) is C0's argv + ``--ent-coef 0.0125`` at seeds 6701-6703, SIDE-PINNED at the production pin (the
+  banked C0 finals' pin, so the arm and its control differ by the lever alone), held by :data:`X67_STAGES`, never
+  :data:`STAGES`. ONE look, no look 2: :func:`stage_status` gives it the AM-8 side gate and its PREREG (PENDING until
+  the file exists). It is read by its PREREG's head-to-head cross (``screen_rule.py`` there), not by ``main.reads``,
+  so it has no ``reads/`` record and no :data:`READ_LABEL`.
 * **X63-C, THE X63 CONTROL REPLICATE** (``reviews/x63_review_2026-10-27.md`` B1 fix 3; PREREG
   ``x63c_control_replicate_2026-10-28/PREREG.md``, :data:`X63C_PREREG`): ``x63c`` (:data:`X63C_ARMS`) is X26c's
   recorded argv with only the seed (6302) and run name changed, a +100M continuation from X26 @380M (not P*), with no
@@ -240,6 +246,10 @@ D3_ARMS = ("d3",)
 N1P_ARMS = ("n1p",)
 #: X48, per-token-kind FFN experts (2026-10-27): one production arm at the side pin, read by N4's one-look screen.
 X48_ARMS = ("x48",)
+#: X67, the entropy screen (2026-11-09): one production arm at the side pin, C0's argv + ``--ent-coef 0.0125``.
+X67_ARMS = ("x67",)
+#: X67's registration: its stage-check is PENDING until this file exists (repo-relative, read in the kit's checkout).
+X67_PREREG = "designs/research_state/measurements/x67_entropy_screen_2026-11-09/PREREG.md"
 #: X60-T, H-TEAMS (AM-X60T, 2026-11-06): one production arm at its OWN pin (:data:`X60T_PIN`).
 X60T_ARMS = ("x60t",)
 #: X63-C, the X63 control replicate (2026-10-28): one production arm at the side pin (X26c's), forking X26 @380M.
@@ -257,9 +267,9 @@ N4_ARMS = ("toy_c0n4", "toy_n4ffn")
 #: N4's registration: its stage-check is PENDING until this file names N4_PIN in full (repo-relative, the kit's checkout).
 N4_PREREG = "designs/research_state/measurements/n4_capacity_screen_2026-10-27/PREREG.md"
 #: The arms whose stage-check is the side gate + their PREREG present (the orchestrator's GO): :func:`arm_prereg`.
-PREREG_GATED_ARMS = X63C_ARMS + X63U_ARMS
+PREREG_GATED_ARMS = X63C_ARMS + X63U_ARMS + X67_ARMS
 SIDE_PINNED_ARMS = (BATCH1_ARMS + BATCH2_ARMS + R0_ARMS + X52_ARMS + D3_ARMS + N1P_ARMS + X48_ARMS + X63C_ARMS
-                    + X63U_ARMS + N4_ARMS + X60T_ARMS)
+                    + X63U_ARMS + N4_ARMS + X60T_ARMS + X67_ARMS)
 #: AM-D1-FIX (launch sheet §0, 2026-10-22): D1's pin. The production pin ``f4b25238`` + the corpus label-guard commit
 #: (``fix(team corpora): refuse teams the env's label path cannot encode ...``), rebuilt onto it with only
 #: ``src/utils/team_corpora/`` replaced. Kept reachable by the local branch ``x35-d1-pin``.
@@ -398,6 +408,11 @@ X60T_LOOK2_SEEDS = tuple(range(3504, 3509))
 #: C0 s3501-s3503 (already run at the side pin) is the control. Never merged into STAGES.
 X48_STAGES: Tuple[Tuple[str, Tuple[Tuple[str, int], ...]], ...] = (
     ("X48", (("x48", 3501), ("x48", 3502), ("x48", 3503))),
+)
+#: X67's stage (2026-11-09, PREREG x67_entropy_screen_2026-11-09 §3): one look, three seeds, on the orchestrator's GO
+#: once its PREREG exists. Its control is the banked C0 finals at the side pin. Never merged into STAGES.
+X67_STAGES: Tuple[Tuple[str, Tuple[Tuple[str, int], ...]], ...] = (
+    ("X67", (("x67", 6701), ("x67", 6702), ("x67", 6703))),
 )
 #: X63-C's stage (2026-10-28, review B1 fix 3): one seed, on the orchestrator's GO once its PREREG exists. Its comparators
 #: are X26c (s2601) and X63's own continuation, not C0. Never merged into STAGES.
@@ -1052,7 +1067,7 @@ def _look2_licence(stage: str, arm: str) -> Tuple[str, str]:
 
 def stage_of(arm: str, seed: int) -> Optional[str]:
     for name, forks in (STAGES + BATCH2_STAGES + R0_STAGES + X52_STAGES + D3_STAGES + N1P_STAGES + X48_STAGES
-                        + X63C_STAGES + X63U_STAGES + N4_STAGES + X60T_STAGES):
+                        + X63C_STAGES + X63U_STAGES + N4_STAGES + X60T_STAGES + X67_STAGES):
         if (arm, seed) in forks:
             return name
     return None
@@ -1060,7 +1075,7 @@ def stage_of(arm: str, seed: int) -> Optional[str]:
 
 def arm_prereg(arm: str) -> Tuple[str, str]:
     """``(PREREG path, tag)`` of a PREREG-gated arm (:data:`PREREG_GATED_ARMS`), read from the constants now."""
-    return {"x63c": (X63C_PREREG, "X63-C"), "x63u": (X63U_PREREG, "X63-U")}[arm]
+    return {"x63c": (X63C_PREREG, "X63-C"), "x63u": (X63U_PREREG, "X63-U"), "x67": (X67_PREREG, "X67")}[arm]
 
 
 def stage_status(stage: str, arm: str, seed: int) -> Tuple[str, str]:
@@ -1092,7 +1107,7 @@ def stage_status(stage: str, arm: str, seed: int) -> Tuple[str, str]:
             return PENDING, f"{arm} s{seed}: the PREREG does not name N4_PIN {N4_PIN} in full yet (its pin NOTE)"
         return ALLOWED, (f"{arm} s{seed}: no unmet condition (stage {stage_of(arm, seed)}, N4 PREREG: one look, "
                          f"N4_PIN {N4_PIN[:12]}; the orchestrator's GO)")
-    if arm in PREREG_GATED_ARMS:             # X63-C / X63-U: the side gate, then its PREREG (the orchestrator's GO)
+    if arm in PREREG_GATED_ARMS:             # X63-C / X63-U / X67: the side gate, then its PREREG (the orchestrator's GO)
         filled, why = side_gate(stage, "production")
         if not filled:
             return PENDING, why

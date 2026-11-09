@@ -625,6 +625,95 @@ def test_the_verdict_fails_x48_transcripts_read_as_c0_or_as_x47s_growth():
     assert not ok and "dry-run exit 3" in line, line
 
 
+# ------------------------------------------------- X67 (PREREG x67_entropy_screen_2026-11-09): the entropy-coefficient screen
+X67_DIR = repo_path("designs/research_state/measurements/x67_entropy_screen_2026-11-09")
+X67_SEEDS = (6701, 6702, 6703)
+
+
+def _x67_transcripts(seed: int = 6701):
+    return ((X67_DIR / f"dryrun_x67_s{seed}.txt").read_text(), (X67_DIR / f"checkargs_x67_s{seed}.txt").read_text())
+
+
+@pytest.mark.parametrize("seed", X67_SEEDS)
+def test_x67_is_the_validated_argv_token_for_token(seed):
+    """The kit builds exactly the lines checkargs / the dry run validated at f4b25238 (PREREG §7)."""
+    want = (X67_DIR / f"argv_x67_s{seed}.txt").read_text().split()
+    assert K.build_argv("x67", seed, _real_production_call()) == want
+
+
+def test_x67_is_c0_plus_the_entropy_lever_and_nothing_else():
+    """The control is the banked C0 fork: the same argv less the lever, so the cross reads ONE difference."""
+    call = standin_call()
+    for seed in X67_SEEDS:
+        on, off = K.build_argv("x67", seed, call), K.build_argv("c0", 3501, call)
+        cut = off.index("--seed")
+        assert on[:-2] == off[:cut] + list(K.X67_LEVER) + ["--seed", str(seed)]
+        assert off[cut:cut + 2] == ["--seed", "3501"] and on[-2:] == ["--run-name", f"rb_x35_x67ent_s{seed}"]
+    assert K.X67_LEVER == ("--ent-coef", "0.0125") and K.X67_SEEDS == X67_SEEDS
+    assert K.ARM_TYPED_RECIPE == {"x67": ("ent_coef", "0.0125", "--ent-coef")} and "x67" not in K.ARM_GROWTH
+    d = K.describe("x67", 6702, call)
+    assert d["side"] == "production" and d["delta_text"] == "+20,000,000 steps" and d["behaviour"] == "warn"
+    assert d["parent_run_dir"].endswith("rb_x26_s2601") and d["k9b_ceilings"] is None
+
+
+def test_x67_seeds_are_disjoint_from_every_other_arm():
+    """A seed names a run and a pool RNG stream; X67's must be no sibling's (the PREREG's seed search, as a test)."""
+    others = {s for name, arm in K.ARMS.items() if name != "x67" for s in arm.seeds}
+    assert not others & set(X67_SEEDS), others & set(X67_SEEDS)
+
+
+@pytest.mark.parametrize("seed", [3501, 3506, 6700, 6704])
+def test_x67_refuses_every_seed_but_its_three(seed):
+    with pytest.raises(K.KitError, match="not registered"):
+        K.build_argv("x67", seed, standin_call())
+
+
+def test_x67_refuses_the_toy_call_and_no_alias_or_variant_reaches_it(capsys):
+    with pytest.raises(K.KitError, match="reads the production call record"):
+        K.build_argv("x67", 6701, toy_call())
+    for name in ("X67", "x67ent", "toy_x67", "x67b"):
+        assert K.canonical_arm(name) == name
+        with pytest.raises(K.KitError, match="is not one of"):
+            K.build_argv(name, 6701, standin_call())
+        with pytest.raises(SystemExit):
+            K.main(["describe", "--arm", name, "--seed", "6701", "--call", "/nonexistent"])
+        capsys.readouterr()
+
+
+@pytest.mark.parametrize("seed", X67_SEEDS)
+def test_the_verdict_passes_the_real_x67_transcripts_and_shows_the_typed_lever(seed):
+    dry, chk = _x67_transcripts(seed)
+    ok, line = K.check_validation(K.describe("x67", seed, _real_production_call()), _visible(dry), chk, 0, 0)
+    assert ok, line
+    assert "typed=[ent_coef 0.0125]" in line and "grow=[none]" in line and "human_data=[off]" in line
+
+
+def test_the_verdict_fails_x67_transcripts_whose_lever_did_not_reach_the_config():
+    """`It launches` is not `it is the experiment`: a transcript that resolves C0's 0.05, or another typed value, or
+    a lever that only one tool shows, FAILS; so does the hidden card's exit 3 and a C0 argv that types the flag."""
+    dry, chk = _x67_transcripts()
+    call = _real_production_call()
+    d = K.describe("x67", 6701, call)
+    typed = "ent_coef                 0.0125     (TYPED)"
+    assert typed in dry and typed in chk
+    for bad in ("ent_coef                 0.05       (restored from the record)", typed.replace("0.0125", "0.025")):
+        ok, line = K.check_validation(d, _visible(dry).replace(typed, bad), chk.replace(typed, bad), 0, 0)
+        assert not ok and "dry-run typed ent_coef" in line and "checkargs typed ent_coef" in line, line
+    ok, line = K.check_validation(d, _visible(dry), chk.replace(typed, "ent_coef                 0.05       (x)"), 0, 0)
+    assert not ok and "checkargs typed ent_coef [] != the arm's lever ['0.0125']" in line, line
+    ok, line = K.check_validation(d, dry, chk, 0, 3)
+    assert not ok and "dry-run exit 3" in line, line
+    c0 = dict(K.describe("c0", 3501, call))
+    ok, line = K.check_validation(c0, _visible(dry), chk, 0, 0)       # X67's transcripts are not C0's
+    assert not ok and "checkargs shows a TYPED ent_coef, but c0 declares none" in line and "typed=" not in line, line
+    c0_chk = chk.replace(typed, "ent_coef                 0.05       (restored from the record)")
+    ok, line = K.check_validation(c0, _visible(dry), c0_chk, 0, 0)
+    assert ok, line
+    c0["argv"] = list(c0["argv"]) + ["--ent-coef", "0.0125"]
+    ok, line = K.check_validation(c0, _visible(dry), c0_chk, 0, 0)
+    assert not ok and "types --ent-coef but the arm declares no typed ent_coef" in line, line
+
+
 # ------------------------------------------------- X63-C (X63 review B1 fix 3): the control replicate from X26 @380M
 #: X26c's RECORDED argv, the launcher's own flags (``--restart-interval-hours 24 --pin-commit f4b25238…``, which
 #: ``launch_x35.sh`` adds) removed: ``models/rb_x26c_s2601/metadata.json`` ``original_command`` (immutable; read

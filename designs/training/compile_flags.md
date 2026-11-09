@@ -948,9 +948,10 @@ own per-row bars). The bars are fixed, not drifting:
 
 Source: Training Oct's X35 job log (`~/.claude/jobs/x35/FINDINGS.md`, outside the repo) and the orchestrator's rulings
 there. The run-name map is `canary_decide.FAMILY_NAME_PATTERNS`: every production arm `rb_x35_{c0,a1*,sprt,lrfloor*,
-d1wide,x52*,d3mut,n1p,x48kffn}_s*` is a fork of P* (rb_x26_s2601 @280M) at production pins, the same family as C0, so it
+d1wide,x52*,d3mut,n1p,x48kffn,x67ent}_s*` is a fork of P* (rb_x26_s2601 @280M) at production pins, the same family as C0, so it
 takes the C0 bar (X48, per-token-kind FFN experts grown at the fork, by its PREREG's ruling:
-`designs/research_state/measurements/x48_kffn_production_2026-10-27/PREREG.md` §7); the toy `rb_x35t_c0_*` takes C0 and `rb_x35t_x47*_*` takes X47. The 2.64 was measured on the TOY C0 and
+`designs/research_state/measurements/x48_kffn_production_2026-10-27/PREREG.md` §7; X67, C0's graph under a smaller
+entropy coefficient, by `designs/research_state/measurements/x67_entropy_screen_2026-11-09/PREREG.md` §8); the toy `rb_x35t_c0_*` takes C0 and `rb_x35t_x47*_*` takes X47. The 2.64 was measured on the TOY C0 and
 KEPT for global-M runs by the 2026-10-28 ruling on production provenance (`canary_recalibration_2026-10-28.md` §6): 3 of
 91 healthy X35 passes read above it (maximum 5.0, D3 s3504 u200), so it errs to HOLD, and 1.25 x 5.0 would resume most
 real disagreements. Any other name (`rb_x35_r0_*`) HOLDs until `--family` or a typed

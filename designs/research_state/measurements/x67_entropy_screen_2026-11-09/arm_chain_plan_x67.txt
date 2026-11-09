@@ -1,0 +1,15 @@
+$ python -m main.ops.arm_chain plan <scratch chain: the three draft items, repo = this commit's tree> --check-pins --describe
+ 0. ARM x67 s6701 -> rb_x35_x67ent_s6701 at pin f4b25238def5 (GO by <orchestrator, date>: X67 entropy screen (PREREG x67_entropy_screen_2026-11-09, commit <sha>)); thin planner; flags --thinning; verify x0; banner yes; throughput 1000.0; on VOID STOP, on a throughput fail PAGE
+ 1. ARM x67 s6702 -> rb_x35_x67ent_s6702 at pin f4b25238def5 (GO by <orchestrator, date>: X67 entropy screen (PREREG x67_entropy_screen_2026-11-09, commit <sha>)); thin planner; flags --thinning; verify x0; banner yes; throughput 1000.0; on VOID STOP, on a throughput fail PAGE
+ 2. ARM x67 s6703 -> rb_x35_x67ent_s6703 at pin f4b25238def5 (GO by <orchestrator, date>: X67 entropy screen (PREREG x67_entropy_screen_2026-11-09, commit <sha>)); thin planner; flags --thinning; verify x0; banner yes; throughput 1000.0; on VOID STOP, on a throughput fail PAGE
+    arm:rb_x35_x67ent_s6701: the kit agrees — FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601, +20,000,000 steps, --steps 300,000,170
+    arm:rb_x35_x67ent_s6702: the kit agrees — FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601, +20,000,000 steps, --steps 300,000,170
+    arm:rb_x35_x67ent_s6703: the kit agrees — FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601, +20,000,000 steps, --steps 300,000,170
+PLAN OK
+rc=0
+
+# a variant: the third item at seed 6704 (no look 2 is registered)
+    arm:rb_x35_x67ent_s6702: the kit agrees — FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601, +20,000,000 steps, --steps 300,000,170
+REFUSED: arm:rb_x35_x67ent_s6704: the kit refuses arm 'x67' seed 6704 (rc 2): [x35 kit] REFUSED: seed 6704 is not registered for x67 ([6701, 6702, 6703])
+PLAN REFUSED (1 problem(s))
+rc=1

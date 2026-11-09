@@ -43,6 +43,11 @@ canonical flag order (the order carries no meaning to the trainer's parser):
   trunk_ffn_by_kind=on`` (B-KFFN, a DECLARED function-preserving growth at the fork), seeds 3501-3503 ONLY (N4's
   one-look screen rule: no look 2), side-pinned at the production pin (B-KFFN ``3f69e6e2e`` is an ancestor of
   ``f4b25238``), read against C0 s3501-s3503 at the same pin, re-played in X48's read;
+* X67, THE ENTROPY SCREEN (BOUNDARY-1's recipe-knob screen, ``boundary1_scratch_2026-11-09/DRAFT_DESIGN.md`` §9.1;
+  PREREG ``x67_entropy_screen_2026-11-09/PREREG.md``): ``x67`` -- C0's argv token for token + the ONE lever
+  ``--ent-coef 0.0125`` (:data:`X67_LEVER`; a typed recipe knob on a fork is applied, an untyped one is inherited from
+  P*'s run: 0.05), seeds 6701-6703 ONLY (one look), side-pinned at the production pin, read head to head against the
+  banked C0 finals at the same pin;
 * X63-C, THE X63 CONTROL REPLICATE (``design_x63_long_breadth_continuation.md``; ``reviews/x63_review_2026-10-27.md``
   B1 fix 3; PREREG ``x63c_control_replicate_2026-10-28/PREREG.md``): ``x63c`` -- X26c's recorded argv token for token
   with only ``--seed`` (6302) and ``--run-name`` changed, +100M, side-pinned at the production pin. It has NO lever:
@@ -200,6 +205,10 @@ X47_GROWTH = "trunk_layers 2 -> 4"
 X48_LEVER = ("--grow", "trunk_ffn_by_kind=on")
 #: What ``checkargs`` / ``--dry-run`` print for it (the 2026-10-27 transcripts at ``f4b25238``).
 X48_GROWTH = "trunk_ffn_by_kind 'off' -> 'on'"
+#: X67's ONE lever (PREREG ``x67_entropy_screen_2026-11-09`` §2): the entropy bonus's coefficient, a quarter of the
+#: 0.05 that P*'s run recorded and every C0 fork inherits. A fork applies a TYPED ``--ent-coef`` (``model_build``'s
+#: resume path sets ``model.ent_coef``); ``checkargs`` prints it as the arm's one recipe difference from its parent.
+X67_LEVER = ("--ent-coef", "0.0125")
 #: N4's ONE lever (``design_n4_capacity_screen.md`` §2; B-FFNW, T69; PREREG ``n4_capacity_screen_2026-10-27`` §2): every
 #: trunk round's FFN grows 256 -> 1,024 hidden units as a branch whose output weights start at ZERO, so the grown toy
 #: starts as T*'s function bit for bit at the 64-row gate (``FATAL_CONFIG`` otherwise). +394,752 parameters on the toy.
@@ -226,6 +235,10 @@ X63C_POOL_REFERENCE_RUN = X26C_POOL_REFERENCE_RUN
 POOL_REFERENCE_RUNS: Dict[str, str] = {"x63c": X26C_POOL_REFERENCE_RUN, "x63u": X26C_POOL_REFERENCE_RUN}
 #: The declared growth each growing arm's transcripts must show (in BOTH tools); every other arm must show none.
 ARM_GROWTH: Dict[str, str] = {"toy_x47": X47_GROWTH, "x48": X48_GROWTH, "toy_n4ffn": N4_GROWTH}
+#: The ONE recipe knob a recipe-lever arm TYPES, as ``checkargs`` / ``--dry-run`` name it on the RECIPE SURFACE: both
+#: transcripts must print ``<knob> <value> (TYPED)`` (the lever reached the resolved config), and no other arm's argv
+#: may type the flag. "It launches" is not "it is the experiment": without this, X67's transcripts pass as C0's.
+ARM_TYPED_RECIPE: Dict[str, Tuple[str, str, str]] = {"x67": ("ent_coef", X67_LEVER[1], X67_LEVER[0])}
 #: C3 (orchestrator, 2026-10-19): the toy arms run ``--behaviour-check warn`` (K9(b)), as T*'s own run X34 does
 #: (``x34_toy_deep_stage_2026-10-17/STAGED_LAUNCH.md`` §7, c9516bac / 96c663d4). The mechanism is the flag plus
 #: ceilings READ BY HAND (``main.ops.tb_read``, at every restart and daily); the trainer enforces none: STOP the arm on
@@ -256,6 +269,9 @@ PROD_SEEDS = tuple(range(3501, 3506))
 TOY_SEEDS = tuple(range(3601, 3606))
 #: X48: ONE look at three seeds under N4's screen rule (PREREG x48_kffn_production_2026-10-27 §3); more is a new registration
 X48_SEEDS = (3501, 3502, 3503)
+#: X67: ONE look at three NEW seeds (PREREG x67_entropy_screen_2026-11-09 §3: disjoint from every registered sibling's,
+#: C0's 3501-3508 included); more is a new registration
+X67_SEEDS = (6701, 6702, 6703)
 #: X63-C: one seed, the control replicate of X63 (review B1 fix 3); more is a new registration
 X63C_SEEDS = (6302,)
 #: X63-C's length: X63's +100M continuation from X26 @380M (X26c's own +100M).
@@ -287,6 +303,8 @@ ARMS: Dict[str, Arm] = {a.name: a for a in (
     Arm("x60t", "production", L_PROD, X60T_SEEDS, "rb_x60t_s{seed}", 0, "warn"),
     # X48, per-token-kind FFN experts (PREREG x48_kffn_production_2026-10-27): N4's one-look screen at s3501-s3503
     Arm("x48", "production", L_PROD, X48_SEEDS, "rb_x35_x48kffn_s{seed}", 0, "warn"),
+    # X67, the entropy screen (PREREG x67_entropy_screen_2026-11-09): C0 + --ent-coef 0.0125, one look at s6701-s6703
+    Arm("x67", "production", L_PROD, X67_SEEDS, "rb_x35_x67ent_s{seed}", 0, "warn"),
     # X63-C, the X63 control replicate (review B1 fix 3): X26c's argv, seed and run changed; start X26 @380M, not P*
     Arm("x63c", "production", L_X63C, X63C_SEEDS, "rb_x63c_s{seed}", 0, "warn"),
     # X63-U, the X63 treatment (PREREG x63_2026-10-29): X26c's argv + the union team mix; start X26 @380M; own pin
@@ -444,6 +462,8 @@ def build_argv(arm: str, seed: int, call: Mapping[str, Any], phase1: Optional[Ma
         lever = list(X47_LEVER)
     elif arm == "x48":
         lever = list(X48_LEVER)
+    elif arm == "x67":
+        lever = list(X67_LEVER)
     elif arm == "toy_n4ffn":
         lever = list(N4_LEVER)
     elif arm in ("sprt", "toy_sprt"):
@@ -582,7 +602,8 @@ def check_validation(d: Mapping[str, Any], dryrun: str, checkargs: str, rc_check
     both tools exited 0, the dry run says "would launch" as a FORK of the start node's run with the arm's +steps and
     the arm's K9(b) mode, ``checkargs`` prints the same mode, the trainer's own arch check passed, and the DECLARED
     growth line is the arm's own (:data:`ARM_GROWTH`: X47's, X48's, N4's; in BOTH tools) and absent for every other arm (the
-    always-printed "(child-only: a declared growth's …)" note is not a growth line)."""
+    always-printed "(child-only: a declared growth's …)" note is not a growth line); a recipe-lever arm's knob prints
+    TYPED at its value in BOTH tools (:data:`ARM_TYPED_RECIPE`: X67's)."""
     probs: List[str] = []
     if rc_checkargs != 0:
         probs.append(f"checkargs exit {rc_checkargs}")
@@ -608,6 +629,19 @@ def check_validation(d: Mapping[str, Any], dryrun: str, checkargs: str, rc_check
         got = g.group(1) if g else None
         if got != want:
             probs.append(f"{tool} declared growth {got!r} != {want!r}")
+    typed = ARM_TYPED_RECIPE.get(d["arm"])
+    for knob, _value, flag in ARM_TYPED_RECIPE.values():
+        rx = re.compile(rf"^\s+{re.escape(knob)}\s+(\S+)\s+\(TYPED\)", re.M)
+        if typed is not None and typed[0] == knob:
+            for tool, text in (("dry-run", dryrun), ("checkargs", checkargs)):
+                got_typed = [m.group(1) for m in rx.finditer(text)]
+                if got_typed != [typed[1]]:
+                    probs.append(f"{tool} typed {knob} {got_typed!r} != the arm's lever [{typed[1]!r}]")
+            continue
+        if flag in d["argv"]:
+            probs.append(f"{d['arm']}'s argv types {flag} but the arm declares no typed {knob} (ARM_TYPED_RECIPE)")
+        if rx.search(checkargs):        # checkargs marks TYPED only what the ARGV typed (the dry run also what it restored)
+            probs.append(f"checkargs shows a TYPED {knob}, but {d['arm']} declares none: another arm's transcript")
     hd_want = ARM_HUMAN_DATA.get(d["arm"])
     for tool, text in (("dry-run", dryrun), ("checkargs", checkargs)):
         hd = _HUMAN_DATA.search(text)
@@ -629,8 +663,8 @@ def check_validation(d: Mapping[str, Any], dryrun: str, checkargs: str, rc_check
             f"would_launch={dryrun.count('this command would launch')} delta=[{d['delta_text']}] "
             f"gib=[{gib.group(1) if gib else None}] role=[FORK of {d['parent_run_dir']}] k9b=[{d['behaviour']}] "
             f"grow=[{('DECLARED ' + gd.group(1)) if gd else 'none'}] human_data=[{hd_want or 'off'}] "
-            f"verdict=" + ("PASS" if not probs else
-                                                                                  "FAIL " + "; ".join(probs)))
+            + (f"typed=[{typed[0]} {typed[1]}] " if typed else "")
+            + "verdict=" + ("PASS" if not probs else "FAIL " + "; ".join(probs)))
     return not probs, line
 
 

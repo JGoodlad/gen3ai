@@ -1257,6 +1257,36 @@ def test_x63c_is_side_pinned_and_allowed_only_with_its_prereg(tmp_path, monkeypa
     assert {n for n, (a, _) in B.side_pinned_run_names().items() if a == "x63c"} == {"rb_x63c_s6302"}
 
 
+# ------------------------------------------------- X67 (PREREG x67_entropy_screen_2026-11-09): the entropy screen, side-pinned
+def test_x67_is_side_pinned_and_allowed_only_with_its_prereg(tmp_path, monkeypatch):
+    stage = tmp_path / "stage"
+    (stage / B.READS_DIR).mkdir(parents=True)
+    st = str(stage)
+    prereg = tmp_path / "x67" / "PREREG.md"
+    monkeypatch.setattr(B, "X67_PREREG", str(prereg))               # absolute: repo_path() returns it unchanged
+    assert "x67" in B.SIDE_PINNED_ARMS and "x67" in B.PREREG_GATED_ARMS and "x67" not in B.ARM_PINS
+    assert "x67" not in B.READ_LABEL                                # read by the PREREG's screen_rule.py, not main.reads
+    for seed in (6701, 6702, 6703):
+        assert B.stage_of("x67", seed) == "X67"
+    assert B.stage_of("x67", 6704) is None and B.stage_of("x67", 3501) is None
+    assert not {a for _, forks in B.STAGES for a, _ in forks} & {"x67"}                     # STAGES is closed
+    assert B.stage_status(st, "x67", 6701)[0] == B.PENDING                      # AM-8: no FP32_ALT named
+    _fill_fp32(stage)
+    status, why = B.stage_status(st, "x67", 6701)
+    assert status == B.PENDING and "PREREG" in why, why
+    prereg.parent.mkdir()
+    prereg.write_text("# X67\n")
+    for seed in (6701, 6702, 6703):
+        status, why = B.stage_status(st, "x67", seed)
+        assert status == B.ALLOWED and "X67 PREREG present" in why, why
+    assert {n for n, (a, _) in B.side_pinned_run_names().items() if a == "x67"} == \
+        {f"rb_x35_x67ent_s{s}" for s in (6701, 6702, 6703)}
+
+
+def test_the_committed_x67_prereg_is_where_the_batch_looks():
+    assert repo_path(B.X67_PREREG).is_file(), B.X67_PREREG
+
+
 def test_x63cs_run_is_judged_by_the_production_pin_check_though_not_named_rb_x35(tmp_path):
     models = tmp_path / "models"
     for d in ("rb_x63c_s6302", "rb_x63c_s6302.crashed-1", "rb_x63_s6301", "rb_x26c_s2601"):
