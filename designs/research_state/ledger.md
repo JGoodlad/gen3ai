@@ -30733,3 +30733,66 @@ View: `UNDERSTANDING.md`, `STATUS.md`, `endstate/search_ledger.md`, `endstate/de
 `endstate/README.md`, `designs/tools/reads.md` §4 (E6 row).
 
 Tag: **MEASUREMENT · S′-HONEST · GO-HONEST · GOAL-B-REACHED · G_U +2.00 [+0.34, +3.51] · GO-imputed LB +0.32 · searched U 0.5145 [0.5008, 0.5282] vs Kakuna ckpt 34 greedy · search un-paused for goal (b)**
+
+### 2026-11-06 · MEASUREMENT (DESCRIPTIVE) · **X65 LEARNABILITY PROBE: S′'s leak-inclusive departures from P\* are unlearnable at this scale — a control target of the same departure rate transfers to unseen teams (read precision 0.61, Δagree +11.70 pp [+11.05, +12.32]) and a no-anchor capacity arm memorises S′'s departures in-sample (train D 0.688, precision 0.67), but both curve arms never transfer (val and read Δagree ≤ 0 at every checkpoint, read precision 0.22–0.24; val-selected read Δagree −4.79 / −5.16 pp); the data match the note's reading 2; no PREREG, no verdict**
+
+**Question** (the README's design note, no registration; probe code `34fe4abe7`; it answers FINDING X65-R2 of the ExIt-0 read). X65's students recovered 4.0–5.6 % of S′'s
+departures from P\* and lost about twice as many keeps. Two explanations fit: (U) S′'s departures are not a function of what the player sees (the true-seed
+leaks S′-HONEST closes, S′'s own key noise, or lookahead a reactive network cannot amortise); (W) the registered recipe (β = 1, ≤ 916 steps, lr ≤ 3e-5) was too weak.
+Four GPU arms from P\* on X65's bank (manifest sha256 `d13fd55f…92b7a`), run 2026-11-06 03:57–05:35 from main `34fe4abe7` under the training lease (about 1.5 GPU-h), scored
+on CPU: `curve_h` (reads H; trains on F + P72, π′, lr 1e-4, β 0.1, 12 epochs), `ctrl_h` (the same rows, the target P\*'s ancestor at 100M, a policy of its own
+lineage that departs from P\* at S′'s rate), `cap_h` (reads H; F alone, lr 3e-4, β 0, 24 epochs), `curve_p` (reads P72; H + F).
+
+**Result.** The path check is exact (D = 0, K = 1 at step 0 on every set of every arm). Δagree on the read panel's unseen teams, 95 % deal bootstrap:
+- `curve_h` val-selected step 114: **−4.79 pp [−5.21, −4.38]** (read D 0.119, precision 0.23); last checkpoint −6.50, train D 0.312.
+- `curve_p` step 114: **−5.16 pp [−5.60, −4.71]**; last −8.10.
+- `cap_h` val-selected: −8.92 [−9.55, −8.25]; its last checkpoint fits its own rows (train D 0.688, precision 0.67, Δagree +17.01) and reads −13.79.
+- `ctrl_h` against its own target: precision **0.61**, Δagree **+11.70 pp [+11.05, +12.32]**; the same checkpoint scored against S′ reads precision 0.22, −8.04.
+- X65's registered students, re-scored by the probe: H −1.06 [−1.32, −0.79], P72 −1.78 [−2.05, −1.52].
+- Over every checkpoint of the three S′ arms `val` and `read` Δagree are ≤ 0 (the maximum is 0, at step 0); the best read precision is 0.24, at the chance level (about 0.2)
+  any unrelated policy change of this lineage reaches. Reading 3d's pattern also shows (D rises 0.119 → 0.167 on `read`, K falls 0.853 → 0.798, precision stays 0.23–0.24).
+
+**What it licenses.** "At 3–10× X65's recipe on about 60,000 label rows, S′'s leak-inclusive departures carry over to nothing the student did not see, not even new deals of
+familiar teams, while a learnable target of the same departure rate does." ExIt on S′-LIVE's labels stops here. NOT licensed: that S′-HONEST's honest labels are unlearnable
+(untested: ExIt-0H would need its own registration); that the cause is the leak — the probe cannot split the leak, S′'s key noise (re-run under another key, S′ keeps its
+pick on 72 % of 94 states) and real lookahead (FINDING X65L-3, the noise ceiling, not built, about 2 CPU-h); any verdict on X65, S′-LIVE or S′-HONEST.
+
+**FINDINGs** (README): X65L-1 the bank's exposure columns split nothing but L4's counters and L2 (L1, the true seed in the prefix, touches every decision: no bucket is leak-free);
+X65L-2 `main.x65.student` gains a `probe` subcommand, the registered path unchanged; X65L-3 above; X65L-4 the control shares P\*'s function class, so a pass is a lower bound on the
+recipe's reach; X65L-5 the GPU-minute figures project X65's measured step time.
+
+**Record:** `measurements/x65_learnability_probe_2026-11-06/README.md` and `results/` (`report.json`, per-arm logs, `probe.json`s); dumps and checkpoints stay in
+`~/gen3ai_archive/x65_learnability_2026-11-06/`. Measurement commit `0b9e6f354`.
+View: `UNDERSTANDING.md`, `STATUS.md`, `endstate/search_ledger.md`, `endstate/design_x65_exit0_search_distillation.md`, `EXPERIMENT_BACKLOG.md`.
+
+Tag: **MEASUREMENT (DESCRIPTIVE) · X65 learnability probe · reading 2, (U) unlearnable at this scale · control +11.70 pp [+11.05, +12.32] against the curve arms' read Δagree ≤ 0 at every checkpoint · no verdict**
+
+### 2026-11-07 · MEASUREMENT · **X60-T LOOK 1 reads CONTINUE: P\* + 20M with human-built ladder TEAMS in the pool (H-TEAMS, `--human-data teams:hr_spec_v1.r3@0.5`) scores F (forum72, Kakuna ckpt 34, greedy vs greedy) 0.5147 against the shared control C0's 0.5083, Δ_F +0.64 pp [−2.17, +3.45] on 3,600 games an arm; the look-1 class is NOT-RESOLVED with Δ̂ > 0, so the read is not ended and look 2 (8 v 8) decides; the determinism guard and every VOID gate PASS**
+
+**Question** (PREREG `measurements/x60t_h_teams_2026-11-06/PREREG.md`, AM-X60T-1 §21; rule `x60`, spec `read_spec_look1.json` byte for byte, sha256 `0f5d9a5f…`; playing code `f564c333f`, clean,
+no repins; assemble / decide / record ran once each from main `7880cd902`, regime `00c8c0114bdf0836`). Does adding 2,295 human-built ladder teams (share 0.50 on both sides) to P\*'s
+pool for 20M steps move F against Kakuna, a population it never trained on? X60-T = C0's argv + the human-teams clause, s3501–s3503 at the side pin `7fe15726`; C0 s3501–s3503 (pin
+`f4b25238`) is IMPORTED from X61P look 1's `primary` group (§21.3). Look 1 is a futility look only (§5): Δ̂ ≤ 0 would end the read, otherwise look 2 decides.
+
+**Verdict: CONTINUE.** Δ_F **+0.64 pp [−2.17, +3.45]** (95 %; X60-T 1,853 / 3,600 against C0 1,830 / 3,600). Per seed (X60-T / C0): s3501 0.5017 / 0.5058 (−0.42 pp), s3502 0.5225 /
+0.5208 (+0.17), s3503 0.5200 / 0.4983 (+2.17). σ̂² came out negative (−7.8e-5, σ̂ 0), so the registered 1.0 pp seed-SD floor sets the interval and the Welch interval is not used.
+Not read at look 1: I_F, R72, H, P72, home72; the guards are `guards_not_read` ("Δ_F is not a GAIN"). Against the registered guess (§16: Δ_F +1.5 pp, 80 % [−1.5, +4.5]) the read is inside.
+
+**Checks (every one PASS).** Determinism guard: c0_s3501 forum72 unit 0 re-played at the play pin against the unit imported from X61P look 1, tuple-equal, choices equal, counted.
+VOID (§13, §15): all six runs PASS K9(b), the pin (`pin_history` carries `7fe15726…` or `f4b25238…` alone) and the dose at a relative 1e-6 against `rb_x35_c0_s3501`. The operator's checks that
+no module reads (PREREG §22, written and committed BEFORE `decide`): every launch log's `[HUMAN-DATA]` stamp and `[TEAM-MIX]` banner, the held-out panels line (0 hits over 5 panels), no
+corpus FATAL, the T54 pool-seed check. s3501 was aborted once and resumed (the T2 parity near-tie, 875,048 steps re-trained; 1 of 3 ON seeds, under §13's ≥ 3 bar). 181 Kakuna units
+played (3,620 games), all counted, wall 2026-11-06 09:38 → 11-07 00:40.
+
+**What it licenses.** Look 2 (8 v 8 seeds) decides Δ_F; nothing is licensed beyond that. It is neither a GAIN nor a NULL, and says nothing about the in-house meter (I_F), R72, goal (a) or Δ_P.
+Look 2 was registered by AM-X60T-2 (`aea028c60`) and its guards by AM-X60T-3 (`9f80547b6`).
+
+**FINDINGs** (README): (1) rule `x60`'s record had no top-level `arm` / `look`, so `main.x35.batch.read_record` refused it and `kit stage-check` held look 2 (fail closed) — RESOLVED by
+AM-X60T-2 (`80112244c`, `Rule.stage_keys`; the stage's copy is re-recorded, every key but `created` byte-identical plus the stage identity); (2) σ̂² negative, three finals a side cannot
+estimate the seed term; (3) C0 is a shared control (X61P, D3): a lucky-low C0 would lift all three, so their GAINs are not independent replications.
+
+**Record:** `measurements/x60t_h_teams_2026-11-06/read/README.md` and `read/` (`record_x60t_look1.json` sha256 `538700ee…`, `cells.json`, `decision.json`, `void.json`); the stage copy
+`measurements/x35_breakers_stage_2026-10-17/reads/x60t_look1.json`; state `~/gen3ai_archive/x60t_read/look1`. Measurement commit `af57d4fd3`.
+View: `UNDERSTANDING.md`, `STATUS.md`, `EXPERIMENT_BACKLOG.md`.
+
+Tag: **MEASUREMENT · X60-T look 1 · CONTINUE · Δ_F +0.64 pp [−2.17, +3.45] (X60-T 0.515 vs C0 0.508, 3,600 games an arm) · determinism PASS · every VOID gate PASS · look 2 licensed**

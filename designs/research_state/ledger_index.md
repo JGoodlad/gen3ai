@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-30,736-line file. **The ledger itself is append-only and is never edited by this**;
+30,799-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**996 headings · 941 dated · 2026-08-01 → 2026-11-09 · ledger 30,736 lines.**
+**998 headings · 943 dated · 2026-08-01 → 2026-11-09 · ledger 30,799 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -1016,3 +1016,5 @@ rename.
   - `L30604` · `2026-11-05` · MEASUREMENT · **S′-LIVE: GO-LEAKY — P\* + S′ (`r0s4_rolls@10`, every eligible decision from turn 10) beats P\* against the REAL Kakuna on U by +4.60 pp [+2.66, +6.48] on 2,698 fresh paired deals (GO-imputed LB +2.57 > 0); the searched arm scores 0.545 [0.526, 0.564], "GOAL-B-REACHED (leaky)" at most; it licenses only a leak-honest replication**
   - `L30645` · `2026-11-06` · MEASUREMENT · **X65 ExIt-0: NOT-DELIVERED — the three P\* students distilled from S′'s banked choices agree with S′ on their held-out panels LESS than P\* does (pooled Δagree −1.26 pp [−1.40, −1.11]; H −1.06, F −0.94, p72 −1.78); no Kakuna game is played; ExIt-1 is not funded, X60-T is the GPU's next candidate**
   - `L30687` · `2026-11-09` · MEASUREMENT · **S′-HONEST: GO-HONEST, GOAL-B-REACHED — P\* + S′h (`r0s4_honest_inc@10`, a search whose worlds read only what the live player knows, every eligible decision from turn 10) beats P\* against the REAL Kakuna on U by +2.00 pp [+0.34, +3.51] on 5,097 fresh paired deals (GO-imputed LB +0.32 > 0); its pooled-U score 0.5145 [0.5008, 0.5282] over 5,100 deals: "goal (b) met with search", in that regime only; the search program for goal (b) is un-paused**
+  - `L30737` · `2026-11-06` · MEASUREMENT (DESCRIPTIVE) · **X65 LEARNABILITY PROBE: S′'s leak-inclusive departures from P\* are unlearnable at this scale — a control target of the same departure rate transfers to unseen teams (read precision 0.61, Δagree +11.70 pp [+11.05, +12.32]) and a no-anchor capacity arm memorises S′'s departures in-sample (train D 0.688, precision 0.67), but both curve arms never transfer (val and read Δagree ≤ 0 at every checkpoint, read precision 0.22–0.24; val-selected read Δagree −4.79 / −5.16 pp); the data match the note's reading 2; no PREREG, no verdict**
+  - `L30770` · `2026-11-07` · MEASUREMENT · **X60-T LOOK 1 reads CONTINUE: P\* + 20M with human-built ladder TEAMS in the pool (H-TEAMS, `--human-data teams:hr_spec_v1.r3@0.5`) scores F (forum72, Kakuna ckpt 34, greedy vs greedy) 0.5147 against the shared control C0's 0.5083, Δ_F +0.64 pp [−2.17, +3.45] on 3,600 games an arm; the look-1 class is NOT-RESOLVED with Δ̂ > 0, so the read is not ended and look 2 (8 v 8) decides; the determinism guard and every VOID gate PASS**
