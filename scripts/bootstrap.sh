@@ -518,16 +518,45 @@ if [ "$IS_WORKTREE" -eq 0 ]; then
 fi
 
 # ══════════════════════════════════════════════════════════════ 6. rust simulator (optional)
-# TWO build sets, each into its OWN crate's target/ (CARGO_TARGET_DIR forced, exactly as the resolvers
-# force it — never another checkout's target, the 2026-09-09 symlink incident):
-#   * RELEASE  — what training's resolver execs (sim_bridge, search_driver);
-#   * SELFCHECK — what EVERY pytest session execs (the root conftest sets POKESIM_EMISSION_SELFCHECK=1):
-#     rust_sim's sim_bridge / search_driver / core_events and rust_env's cdylib + rust_env_proc + its test
-#     binaries. Without these the routine gate's first Rust-backed tests build them MID-GATE, on the gate's
-#     own cores, while other workers wait on cargo's lock. Measured 2026-10-12, cold, on the 3 agent cores
-#     beside a live training run (nice 19): ~34 s per crate x profile, ~2.5 min for the whole set.
+# THE ENGINE-INPUT CHECK runs whatever you chose about the build, because it is about the SOURCES: the build stamp
+# (utils.rust_env.stamp) hashes each root crate's Cargo.lock, so the locks are TRACKED (until 2026-11-09 they were
+# git-ignored and only a `cargo` run wrote them: a fresh worktree bootstrapped without --with-rust stamped
+# `env=…/129` where main's `/130`, and a registered read, which pins the engine stamp, played on another engine).
+# `main.reads.engine --check-inputs` fails loudly when a stamp input is missing or untracked, or when the clean
+# crates' on-disk stamp is not the one HEAD's git objects give.
+#
+# THE BUILD SET is `utils.rebuild_main_rust.plan` — the four builds main gets after every ship, which is every Rust
+# artifact Python loads (`bootstrap_env_stamp_test` holds the two equal) — each into its OWN crate's target/
+# (CARGO_TARGET_DIR forced, exactly as the resolvers force it — never another checkout's target, the 2026-09-09 symlink
+# incident), all `--locked` (against the COMMITTED Cargo.lock, never rewriting it):
+#   * RELEASE   — training's resolver, `main.anchors` (sim_bridge, live_reader, search_driver, core_events, the offline
+#     tools), the searched-play path (`main.value_search.playout.release_lib`: rust_env's cdylib) and bot_reader;
+#   * SELFCHECK — what EVERY pytest session execs (the root conftest sets POKESIM_EMISSION_SELFCHECK=1), plus rust_env's
+#     test binaries. Without these the routine gate's first Rust-backed tests build them MID-GATE, on the gate's own
+#     cores, while other workers wait on cargo's lock. Measured 2026-10-12, cold, on the 3 agent cores beside a live
+#     training run (nice 19): ~34 s per crate x profile, ~2.5 min for the whole set.
 step "Rust simulator binaries (optional)" 6
 cost "~2.5 min on 3 busy cores (~30 s per crate x profile) on a cold build; seconds when warm"
+info "the engine stamp's inputs (the tracked Cargo.lock files) ..."
+if [ "$DRY_RUN" -eq 1 ]; then
+    printf '      %s[dry-run] %s -m main.reads.engine --check-inputs%s\n' "$DIM" "$PY" "$RST"
+elif [ ! -x "$PY" ]; then
+    warn "no interpreter at $PY (--skip-env on a machine without the env): the engine-input check did not run"
+else
+    engine_rc=0
+    engine_problems="$(env PYTHONPATH="$REPO_ROOT/src" "$PY" -m main.reads.engine --check-inputs 2>&1)" || engine_rc=$?
+    if [ "$engine_rc" -eq 0 ]; then
+        did "a fresh clone of this commit stamps this tree's engine: $(env PYTHONPATH="$REPO_ROOT/src" "$PY" -m main.reads.engine --engine)"
+    elif [ "$engine_rc" -eq 2 ]; then
+        warn "git could not answer, so the engine-input check did not run: $engine_problems"
+    else
+        printf '%s\n' "$engine_problems" | sed 's/^/      /'
+        printf '\n%sThis tree would stamp another engine than a fresh clone of its commit.%s A registered read pins the engine\n' "$RED" "$RST"
+        printf 'stamp, so fix it before building or playing (an OLD pin: designs/launcher/pinning_and_worktrees.md, "Building an old pin").\n'
+        exit 1
+    fi
+fi
+
 if [ "$WITH_RUST" = "ask" ]; then
     if [ -t 0 ] && [ "$DRY_RUN" -eq 0 ]; then
         info "Training runs on the in-process Rust bridge (the only transport), and the FIRST Rust-backed test builds"
@@ -552,21 +581,22 @@ elif ! command -v cargo >/dev/null 2>&1; then
     warn "--with-rust. Training and the Rust-backed tests need the binaries; only the offline tools keep a node transport (--bridge node)."
 else
     info "cargo is incremental — a warm tree finishes in seconds"
-    run env CARGO_TARGET_DIR="$SIM_CRATE/target" cargo build --release --bin sim_bridge --bin search_driver \
+    # ORDER and FLAGS are rebuild_main_rust.plan()'s: the port first (the env crate path-depends on it), release then selfcheck.
+    run env CARGO_TARGET_DIR="$SIM_CRATE/target" cargo build --release --locked \
         --manifest-path "$SIM_CRATE/Cargo.toml"
-    did "release: sim_bridge + search_driver built"
+    did "release: every rust_sim binary (sim_bridge, search_driver, core_events, live_reader, ab_replay, scan_move_probe, bridge_replay)"
+    run env CARGO_TARGET_DIR="$SIM_CRATE/target" cargo build "${SELFCHECK[@]}" --locked \
+        --manifest-path "$SIM_CRATE/Cargo.toml"
     # The searched-play path (`main.anchors --our-search`, S-U; `main.value_search`) loads rust_env's RELEASE cdylib
     # (`main.value_search.playout.release_lib`), and a selfcheck build is not it; the same build as `ensure_built("release")`.
-    run env CARGO_TARGET_DIR="$ENV_CRATE/target" cargo build --release --lib --bin rust_env_proc \
+    run env CARGO_TARGET_DIR="$ENV_CRATE/target" cargo build --release --locked --lib --bin rust_env_proc --bin bot_reader \
         --manifest-path "$ENV_CRATE/Cargo.toml"
-    did "release: rust_env cdylib (libpokesim_env.so, what --our-search loads) + rust_env_proc built"
-    run env CARGO_TARGET_DIR="$SIM_CRATE/target" cargo build "${SELFCHECK[@]}" \
-        --bin sim_bridge --bin search_driver --bin core_events --manifest-path "$SIM_CRATE/Cargo.toml"
-    run env CARGO_TARGET_DIR="$ENV_CRATE/target" cargo build "${SELFCHECK[@]}" --lib --bin rust_env_proc \
+    did "release: rust_env cdylib (libpokesim_env.so, what --our-search loads) + rust_env_proc + bot_reader built"
+    run env CARGO_TARGET_DIR="$ENV_CRATE/target" cargo build "${SELFCHECK[@]}" --locked --lib --bin rust_env_proc --bin bot_reader \
         --manifest-path "$ENV_CRATE/Cargo.toml"
-    run env CARGO_TARGET_DIR="$ENV_CRATE/target" cargo build "${SELFCHECK[@]}" --tests \
+    run env CARGO_TARGET_DIR="$ENV_CRATE/target" cargo build "${SELFCHECK[@]}" --locked --tests \
         --manifest-path "$ENV_CRATE/Cargo.toml"
-    did "selfcheck (every pytest session's build): rust_sim bins, rust_env cdylib + rust_env_proc + test binaries"
+    did "selfcheck (every pytest session's build): rust_sim bins, rust_env cdylib + rust_env_proc + bot_reader + test binaries"
 fi
 
 # ══════════════════════════════════════════════════════════════ 7. verify

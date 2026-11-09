@@ -336,3 +336,43 @@ restart re-reads it). Name a pin-stable file (an absolute path to a file that wi
 so anything else that needs the run archive must reach across rather than look beside itself.
 `utils.paths.main_models_dir()` is that reach (via git's shared `--git-common-dir`, the same fact
 `utils.git.get_main_repo_root()` reads); see `src/utils/paths.py`.
+
+## The engine a checkout stamps, and building an old pin (`Cargo.lock` tracked, 2026-11-09)
+
+**The hazard.** A registered read pins an ENGINE (`python -m main.anchors --dry-run` prints a checkout's; the table is
+`designs/tools/reads.md` "The engine"), and the build stamp (`utils.rust_env.stamp`) hashes each root crate's
+`Cargo.lock`. The locks were git-IGNORED, so only a `cargo` run wrote them: a fresh worktree bootstrapped without
+`--with-rust` stamped `port=…/94;env=…/129` where main's `/95` and `/130`, with a different hash. The same commit then
+played on another engine (E4's stamp "only when built `--with-rust`", dlive DL-4; the searched-cost build's FINDING 8).
+`bootstrap.sh --with-rust` was not at fault: cargo wrote the byte-identical locks (both crates are std-only, so a lock is a
+function of the manifest) and built the release library; it built only a subset of the artifacts Python loads, which it
+now no longer does (below).
+
+**The fix, for every commit from `track Cargo.lock` on.** Both locks are committed (`src/rust_sim/Cargo.lock` blob
+`676e633e…`, `src/rust_env/Cargo.lock` blob `3d00802e…`: the bytes every banked engine E0 to E6 hashed, so no registered
+engine changed). Every checkout of such a commit carries them whether or not it ever ran `cargo`.
+`python -m main.reads.engine --check-inputs` proves it for a tree (a stamp input missing or untracked; or clean crates whose
+on-disk stamp is not the one HEAD's git objects give), `bootstrap.sh` runs it at step 6, and `engine_test` exports HEAD
+with `git archive` and holds its stamp equal to `main.reads.engine.engine_at("HEAD")`. Builds run `--locked`
+(`bootstrap.sh`, `utils.rebuild_main_rust.plan`): a lock that would change fails the build instead of rewriting a tracked
+file, and `engine_test` runs `cargo metadata --locked` over both crates. `bootstrap.sh --with-rust` builds exactly
+`rebuild_main_rust.plan()` (`bootstrap_env_stamp_test` holds them equal). The locks are NOT on the play path
+(`main.reads.playpath`): `repin` refuses a changed lock through its engine check, and a tracked lock on the path would
+refuse every repin across the commit that added it.
+
+**Building an OLD pin** (a commit before the locks were tracked: its tree has none, so a fresh worktree stamps `/94` and
+`/129`). The pin's own scripts cannot be fixed; judge and repair it from a CURRENT checkout, whose code runs with
+`PYTHONPATH` set to its `src` and whose two locks are committed:
+
+```bash
+export PYTHONPATH=<current checkout>/src
+python -m main.reads.engine --engine --tree <pin worktree> --expect "<the engine the PREREG registered>"   # exit 1 + both stamps on a mismatch
+python -m main.reads.engine --install-locks --tree <pin worktree>   # copies the two committed locks; refuses to overwrite a different one
+python -m main.reads.engine --engine --tree <pin worktree> --expect "<the registered engine>"               # now equal (any `cargo build` there writes the same bytes)
+```
+
+The registered engine is the arbiter: a PREREG names its read's engine (`port=<src>/<n>;env=<src>/<n>`), the scorers take it
+as `--engine` (`main.value_search.live_branch score`, `live_identity`) and refuse another before any state, and a pin whose
+stamp is not that engine does not play.
+`engine_at(<pin sha>)` is what the pin's engine SHOULD be (it takes `LEGACY_LOCK_BLOBS` for the lock the pin lacks); a
+mismatch after installing the locks is a real difference in the Rust sources, never a lock artefact.

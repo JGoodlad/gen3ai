@@ -175,8 +175,9 @@ def test_the_real_play_path_holds_the_named_files_and_no_scheduling_code():
 
 def test_the_real_play_path_holds_every_rust_source_the_engine_stamp_hashes():
     """REVIEW F F-M2: a repin is sound only if an identical play path is an identical ENGINE. Every tracked file the
-    build stamp hashes for the ``sim_bridge`` (scope ``port``) or the env core (scope ``env``) is on the path; the
-    untracked ``Cargo.lock`` git cannot hold (``main.reads.engine.LEGACY_LOCK_BLOBS``)."""
+    build stamp hashes for the ``sim_bridge`` (scope ``port``) or the env core (scope ``env``) is on the path, except the
+    ``Cargo.lock`` files: tracked since 2026-11-09 and kept OFF the path on purpose (their bytes are
+    ``main.reads.engine.LEGACY_LOCK_BLOBS``, and ``repin``'s engine check reads the tracked blob; the module docstring)."""
     from utils.rust_env import stamp as ST
 
     try:
@@ -188,8 +189,9 @@ def test_the_real_play_path_holds_every_rust_source_the_engine_stamp_hashes():
     for scope in ("port", "env"):
         for tag, path in ST.source_listing(scope=scope):
             rel = str(path.relative_to(ST.src_path().parent))
-            if rel not in tracked:
-                assert rel.endswith("Cargo.lock"), f"{rel}: untracked yet in the {scope} stamp"
+            assert rel in tracked, f"{rel}: untracked yet in the {scope} stamp (a fresh clone would stamp another engine)"
+            if rel.endswith("Cargo.lock"):
+                assert rel not in got, f"{rel} is on the play path: every repin across the commit that added it would refuse"
                 continue
             assert rel in got, f"{rel} ({tag}) is hashed by the {scope} engine stamp but is off the play path"
 

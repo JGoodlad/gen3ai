@@ -54,6 +54,9 @@ PROFILE_FLAGS: Dict[str, Tuple[str, ...]] = {
     "release": ("--release",),
     "selfcheck": ("--profile", "selfcheck", "--features", "emission-selfcheck"),
 }
+#: Every build here runs against the COMMITTED ``Cargo.lock`` (the build stamp hashes it): a lock that would need to change
+#: fails the build instead of rewriting a tracked file, and a missing one fails it instead of stamping another engine.
+LOCKED = "--locked"
 #: The binaries that answer ``--build-stamp`` (port ``kind=port``; env ``kind=env``): every bin of the port build,
 #: the three offline tools (``ab_replay`` / ``scan_move_probe`` / ``bridge_replay``) included.
 PORT_STAMPED = ("sim_bridge", "search_driver", "core_events", "live_reader", "ab_replay", "scan_move_probe", "bridge_replay")
@@ -94,11 +97,11 @@ def plan(main: Path) -> List[Build]:
         for profile in ("release", "selfcheck"):
             sc = profile == "selfcheck"
             if kind == "port":
-                args = ("build", *PROFILE_FLAGS[profile])           # all bins, as `src/rust_sim/CLAUDE.md` § Builds
+                args = ("build", *PROFILE_FLAGS[profile], LOCKED)   # all bins, as `src/rust_sim/CLAUDE.md` § Builds
                 names = PORT_STAMPED
             else:
                 # bot_reader is its own bin: `build.py`'s `--lib --bin rust_env_proc` alone would leave it stale.
-                args = ("build", *PROFILE_FLAGS[profile], "--lib", "--bin", "rust_env_proc", "--bin", "bot_reader")
+                args = ("build", *PROFILE_FLAGS[profile], LOCKED, "--lib", "--bin", "rust_env_proc", "--bin", "bot_reader")
                 names = ENV_STAMPED
             tdir = cwd / "target" / profile
             arts = [Artifact(tdir / n, kind, sc) for n in names]

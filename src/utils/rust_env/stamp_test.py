@@ -208,9 +208,9 @@ def test_the_port_scope_ignores_the_env_crate_and_the_env_scope_does_not(tree):
 
 
 def test_only_the_root_crates_lock_file_is_hashed(tree):
-    """`Cargo.lock` is gitignored and cargo-written, and cargo writes the ROOT crate's only: the port's lock is in the
-    port scope, not the env scope (a later port build would otherwise flip the env core's hash), and the env's is in
-    the env scope. Fails on revert (hash every lock)."""
+    """`Cargo.lock` is tracked (2026-11-09; it was git-ignored and cargo-written), and cargo writes the ROOT crate's only:
+    the port's lock is in the port scope, not the env scope (a later port build would otherwise flip the env core's hash),
+    and the env's is in the env scope. Fails on revert (hash every lock)."""
     port_lock, env_lock = tree / "rust_sim" / "Cargo.lock", tree / "rust_env" / "Cargo.lock"
     had = {p: p.read_bytes() if p.exists() else None for p in (port_lock, env_lock)}
     try:

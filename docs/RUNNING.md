@@ -34,8 +34,8 @@ conda env update -f environment_torch28.yml   # after environment_torch28.yml ch
 
 git submodule update --init                             # deps/pokemon-showdown source
 cd deps/pokemon-showdown && npm ci && npm run build     # node_modules + dist/
-cargo build --release --bin sim_bridge --bin search_driver \
-    --manifest-path src/rust_sim/Cargo.toml             # the Rust simulator (recommended)
+cargo build --release --locked --bin sim_bridge --bin search_driver \
+    --manifest-path src/rust_sim/Cargo.toml             # the Rust simulator (recommended); ./scripts/bootstrap.sh --with-rust builds all of it
 ```
 
 Why Node is still needed: at run time, ONLY for **team validation** — every entry point that loads a

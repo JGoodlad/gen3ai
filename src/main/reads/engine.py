@@ -15,20 +15,29 @@ A summary written before the stamp existed has no ``engine_stamp``: its engine i
 commit its ``server_version`` names, reconstructed once from git (:func:`engine_at`) and FROZEN here. A commit not in
 the table has an UNKNOWN engine (``None``): it may pool within one state as before, and an import never accepts it.
 
-Cargo.lock is not tracked (both crates' ``.gitignore``), yet each build hashes its root's lock. :func:`engine_at` takes
-the lock blob :data:`LEGACY_LOCK_BLOBS` names; with it, the reconstruction reproduces the core stamps the eval ledger
-recorded at 6c428453 (``7c53280566d666ae``), 1ed71c9dd (``9ecb4249afb76504``) and 46b9e572 (``393631b886965b0c``).
+Each build hashes its root crate's Cargo.lock. It was NOT tracked until 2026-11-09 (both crates' ``.gitignore``), so a
+commit before that has no lock in git, and a checkout stamped the engine its own ``cargo`` runs had made: a fresh worktree
+that ran none stamped ``env=…/129`` where main's ``/130``. :func:`engine_at` takes the blob :data:`LEGACY_LOCK_BLOBS` names
+for such a commit (cargo wrote the same bytes in every build: both crates are std-only), and with it the reconstruction
+reproduces the core stamps the eval ledger recorded at 6c428453 (``7c53280566d666ae``), 1ed71c9dd (``9ecb4249afb76504``) and
+46b9e572 (``393631b886965b0c``). From the commit that tracks the locks, :func:`engine_at` reads the commit's own blob and
+a fresh clone stamps the engine the commit names: :func:`engine_input_problems` proves it for a checkout, and
+``python -m main.reads.engine`` is the command line (check, print, install the locks into an old pin;
+``designs/launcher/pinning_and_worktrees.md`` § Building an old pin).
 """
 from __future__ import annotations
 
+import hashlib
 import re
 import subprocess
+import sys
 from pathlib import Path
-from typing import Any, Dict, Iterable, Mapping, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
 
 SCHEMA = "gen3_read_engine_v1"
 
-#: The ``Cargo.lock`` blob ids every banked build hashed (``port``: ``src/rust_sim``'s, ``env``: ``src/rust_env``'s).
+#: The ``Cargo.lock`` blob ids every banked build hashed (``port``: ``src/rust_sim``'s, ``env``: ``src/rust_env``'s): the
+#: lock of a commit that does not track one, and the bytes of the tracked locks (``engine_test`` pins both).
 LEGACY_LOCK_BLOBS: Dict[str, str] = {"port": "676e633ed0f069788af9c039a35eb5ee194a632d",
                                      "env": "3d00802e5b8fb5f7466b8b90dc681025e845e51d"}
 
@@ -153,46 +162,201 @@ def require_same(what: str, here: Optional[str], there: Optional[str]) -> None:
 
 
 # ------------------------------------------------------------------------------------------------ reconstruction
-def engine_at(commit: str, repo: Optional[Path] = None, lock_blobs: Optional[Mapping[str, str]] = None) -> str:
-    """The anchor engine ``port=..;env=..`` of ``commit``'s tree, from git objects (never the working tree): the build
-    stamp's listing (``utils.rust_env.stamp.source_listing``) with each file's blob id, the untracked root
-    ``Cargo.lock`` taken as ``lock_blobs`` (default :data:`LEGACY_LOCK_BLOBS`)."""
+def committed_listing(commit: str, repo: Optional[Path] = None, scope: str = "env", *,
+                      lock_blobs: Optional[Mapping[str, str]] = None) -> List[Tuple[str, str]]:
+    """``(tag/rel, git blob id)`` of every file that reaches a non-test build of ``scope`` AT ``commit``, from git objects
+    (never the working tree), sorted: ``utils.rust_env.stamp.source_listing`` as a commit holds it. The root crate's
+    ``Cargo.lock`` is the commit's own tracked blob; a commit that predates the lock being tracked has none, and
+    ``lock_blobs`` (``{tag: blob}``) stands in for the one its builds hashed; without it the lock is absent."""
     from utils.rust_env import stamp as ST
 
-    locks = dict(LEGACY_LOCK_BLOBS if lock_blobs is None else lock_blobs)
-    out = []
+    tags = ST.SCOPES[scope]
+    out: List[Tuple[str, str]] = []
+    for tag in tags:
+        crate, extras = ST._CRATES[tag]
+        lock = None
+        for rec in _git(repo, "ls-tree", "-r", "-z", commit, "--", f"src/{crate}").split(b"\0"):
+            if not rec:
+                continue
+            meta, _, path = rec.partition(b"\t")
+            blob = meta.split()[2].decode()
+            rel = path.decode()[len(f"src/{crate}/"):]
+            if rel == "Cargo.lock":
+                lock = blob
+            elif ((rel.startswith("src/") and rel.endswith(".rs")) or rel in ("Cargo.toml", *extras)) \
+                    and not ST.is_test_only(rel):
+                out.append((f"{tag}/{rel}", blob))
+        if tag == tags[-1]:
+            lock = lock or (lock_blobs or {}).get(tag)
+            if lock:
+                out.append((f"{tag}/Cargo.lock", lock))
+    out.sort()
+    return out
+
+
+def _hash(listing: Sequence[Tuple[str, str]]) -> Tuple[str, int]:
+    from utils.rust_env import stamp as ST
+
+    return ST._fnv64("".join(f"{rel}\t{blob}\n" for rel, blob in listing).encode()), len(listing)
+
+
+def engine_at(commit: str, repo: Optional[Path] = None, lock_blobs: Optional[Mapping[str, str]] = None) -> str:
+    """The anchor engine ``port=..;env=..`` of ``commit``'s tree, from git objects (never the working tree): the build
+    stamp's listing (:func:`committed_listing`). The root ``Cargo.lock`` is the commit's own tracked blob; a commit that
+    predates the lock being tracked takes ``lock_blobs`` (default :data:`LEGACY_LOCK_BLOBS`)."""
+    fallback = LEGACY_LOCK_BLOBS if lock_blobs is None else lock_blobs
+    parts = []
     for scope in ("port", "env"):
-        tags = ST.SCOPES[scope]
-        lines = []
-        for tag in tags:
-            crate, extras = ST._CRATES[tag]
-            listing = _git(repo, "ls-tree", "-r", commit, "--", f"src/{crate}")
-            for ln in listing.splitlines():
-                meta, path = ln.split("\t", 1)
-                blob = meta.split()[2]
-                rel = path[len(f"src/{crate}/"):]
-                if ((rel.startswith("src/") and rel.endswith(".rs")) or rel in ("Cargo.toml", *extras)) \
-                        and not ST.is_test_only(rel):
-                    lines.append(f"{tag}/{rel}\t{blob}\n")
-            if tag == tags[-1]:
-                lines.append(f"{tag}/Cargo.lock\t{locks[tag]}\n")
-        lines.sort()
-        out.append(f"{scope}={ST._fnv64(''.join(lines).encode())}/{len(lines)}")
-    return ";".join(out)
+        h, n = _hash(committed_listing(commit, repo, scope, lock_blobs=fallback))
+        parts.append(f"{scope}={h}/{n}")
+    return ";".join(parts)
 
 
 def lock_blob(path: Path) -> str:
     """The git blob id of a file (a ``Cargo.lock`` on disk)."""
-    import hashlib
-
     data = Path(path).read_bytes()
     return hashlib.sha1(b"blob %d\0" % len(data) + data).hexdigest()
 
 
-def _git(repo: Optional[Path], *args: str) -> str:
+def _git(repo: Optional[Path], *args: str) -> bytes:
     from utils.paths import repo_root
 
-    r = subprocess.run(["git", "-C", str(repo or repo_root()), *args], capture_output=True, text=True, check=False)
+    try:
+        r = subprocess.run(["git", "-C", str(repo or repo_root()), *args], capture_output=True, check=False)
+    except OSError as e:
+        raise EngineError(f"git {' '.join(args[:3])}: {e}") from e
     if r.returncode != 0:
-        raise EngineError(f"git {' '.join(args[:3])}: {r.stderr.strip()[:300]}")
+        raise EngineError(f"git {' '.join(args[:3])}: {r.stderr.decode(errors='replace').strip()[:300]}")
     return r.stdout
+
+
+# ------------------------------------------------------------------------------------------------ a checkout
+def tree_engine(src: Optional[Path] = None) -> str:
+    """The engine ``port=..;env=..`` the checkout holding ``src`` (default: this one) stamps, from the files on disk: the
+    value of ``main.anchors.server.engine_stamp`` (``engine_test`` holds the two equal) for any tree, not only this one."""
+    from utils.rust_env import stamp as ST
+
+    port, n_port = ST.source_hash(src, "port")
+    env, n_env = ST.source_hash(src, "env")
+    return f"port={port}/{n_port};env={env}/{n_env}"
+
+
+def engine_input_problems(src: Optional[Path] = None) -> List[str]:
+    """Why the engine stamp of the checkout holding ``src`` (default: this one) is NOT the one its committed inputs give a
+    fresh clone; one line each, empty = it is. Three classes, all deterministic:
+
+    * a root crate's ``Cargo.lock`` is MISSING (a build without it stamps another engine: ``/129`` against ``/130``);
+    * a file the stamp hashes is not TRACKED by git (ignored or untracked: a fresh clone does not carry it);
+    * the crates are clean against ``HEAD`` and still the on-disk stamp differs from the one ``HEAD``'s git objects give
+      (a checkout filter, e.g. ``autocrlf``, rewrote a byte). With uncommitted edits to the crates only the first two apply.
+
+    Raises :class:`EngineError` when git cannot answer (not a checkout)."""
+    from utils.paths import src_path
+    from utils.rust_env import stamp as ST
+
+    src = Path(src) if src is not None else src_path()
+    repo = src.parent
+    problems: List[str] = []
+    for tag in ("port", "env"):
+        crate = ST._CRATES[tag][0]
+        if not (src / crate / "Cargo.lock").is_file():
+            problems.append(f"src/{crate}/Cargo.lock is missing and the engine stamp counts it (`git checkout -- "
+                            f"src/{crate}/Cargo.lock`; a commit that predates the lock being tracked: from a current checkout, "
+                            f"`python -m main.reads.engine --install-locks --tree <this checkout>`)")
+    tracked = {p.decode() for p in _git(repo, "ls-files", "-z", "--", "src/rust_sim", "src/rust_env").split(b"\0") if p}
+    for scope in ("port", "env"):
+        for _tag_rel, path in ST.source_listing(src, scope):
+            rel = path.relative_to(repo).as_posix()
+            if rel not in tracked:
+                problems.append(f"{rel}: the {scope} engine stamp hashes it and git does not track it (ignored or untracked), "
+                                f"so a fresh clone stamps another engine (`git add` it)")
+    if not problems and not _git(repo, "status", "--porcelain", "--", "src/rust_sim", "src/rust_env").strip():
+        for scope in ("port", "env"):
+            disk, git = ST.source_hash(src, scope), _hash(committed_listing("HEAD", repo, scope))
+            if disk != git:
+                problems.append(f"the {scope} stamp of the working tree, {disk[0]}/{disk[1]}, differs from HEAD's committed "
+                                f"{git[0]}/{git[1]} although the crates are clean (a checkout filter rewrote a file?)")
+    return problems
+
+
+def install_locks(tree: Path, repo: Optional[Path] = None) -> List[str]:
+    """Copy THIS checkout's two tracked ``Cargo.lock`` files into ``tree`` (a checkout of a commit that predates them being
+    tracked: an old PIN), one report line each. Refuses (:class:`EngineError`) a lock this checkout has not committed
+    unchanged and a destination that holds a different lock: the bytes are the ones every banked engine hashed
+    (:data:`LEGACY_LOCK_BLOBS`), which is the point."""
+    import shutil
+
+    from utils.paths import repo_root
+
+    repo = Path(repo) if repo is not None else repo_root()
+    lines: List[str] = []
+    for crate in ("rust_sim", "rust_env"):
+        rel = f"src/{crate}/Cargo.lock"
+        mine, dst = repo / rel, Path(tree) / rel
+        if not mine.is_file():
+            raise EngineError(f"this checkout has no {rel}")
+        listed = _git(repo, "ls-tree", "HEAD", "--", rel).decode().split()
+        blob, head = lock_blob(mine), (listed[2] if len(listed) >= 3 else "")
+        if blob != head:
+            raise EngineError(f"this checkout's {rel} is not committed unchanged at HEAD (disk {blob[:12]}, HEAD "
+                              f"{head[:12] or 'none'}): install from a checkout that has it")
+        if not dst.parent.is_dir():
+            raise EngineError(f"{dst.parent} does not exist: {tree} is not a gen3ai checkout")
+        if dst.is_file():
+            if dst.read_bytes() != mine.read_bytes():
+                raise EngineError(f"{dst} exists and differs from this checkout's (blob {blob}): not overwritten")
+            lines.append(f"{rel}: already there (blob {blob})")
+        else:
+            shutil.copyfile(mine, dst)
+            lines.append(f"{rel}: installed (blob {blob})")
+    return lines
+
+
+def main(argv: Optional[Sequence[str]] = None) -> int:
+    """``python -m main.reads.engine`` (``PYTHONPATH`` names the checkout whose code runs; ``--tree DIR`` the one judged):
+
+    * ``--check-inputs``: :func:`engine_input_problems`. Exit 0 = a fresh clone stamps this tree's engine, 1 = it would
+      not (a line each on stderr), 2 = git could not answer. ``scripts/bootstrap.sh`` runs it.
+    * ``--engine [--expect KEY]``: print the tree's engine; with ``--expect``, exit 1 unless it equals KEY (the engine a
+      PREREG registered): how a pin is judged before it plays.
+    * ``--install-locks --tree DIR``: put this checkout's tracked locks into an old pin's tree (:func:`install_locks`)."""
+    import argparse
+
+    ap = argparse.ArgumentParser(prog="python -m main.reads.engine", description=main.__doc__,
+                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    job = ap.add_mutually_exclusive_group(required=True)
+    job.add_argument("--check-inputs", action="store_true")
+    job.add_argument("--engine", action="store_true")
+    job.add_argument("--install-locks", action="store_true")
+    ap.add_argument("--tree", default=None, metavar="DIR", help="the checkout to judge (default: this one)")
+    ap.add_argument("--expect", default=None, metavar="KEY", help="with --engine: the engine the tree must stamp")
+    a = ap.parse_args(argv)
+    if a.install_locks and a.tree is None:
+        ap.error("--install-locks needs --tree DIR (the old pin's checkout)")
+    tree_src = (Path(a.tree) / "src") if a.tree else None
+    if tree_src is not None and not tree_src.is_dir():
+        ap.error(f"--tree {a.tree}: no src/ in it")
+    try:
+        if a.check_inputs:
+            problems = engine_input_problems(tree_src)
+            for ln in problems:
+                sys.stderr.write(f"{ln}\n")
+            return 1 if problems else 0
+        if a.engine:
+            key = tree_engine(tree_src)
+            print(key)
+            if a.expect is not None and key != a.expect:
+                sys.stderr.write(f"ENGINE MISMATCH: {a.tree or 'this checkout'} stamps {key}, expected {a.expect}\n")
+                return 1
+            return 0
+        for ln in install_locks(Path(a.tree)):
+            print(ln)
+        print(tree_engine(tree_src))
+    except EngineError as e:
+        sys.stderr.write(f"{e}\n")
+        return 2 if a.check_inputs else 1
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

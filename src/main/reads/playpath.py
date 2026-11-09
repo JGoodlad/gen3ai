@@ -15,6 +15,11 @@ THE PLAY PATH (a deliberate over-approximation: a false "differs" refuses, a fal
 * the exact files of :data:`EXACT` (``mem_cap.sh``, the registry ``anchors.json``, the committed cell configs and
   manifest, the panel registry, the Rust build inputs, the env file).
 
+The two crates' ``Cargo.lock`` (tracked since 2026-11-09, both std-only) are NOT on it: a tracked lock would add two files
+to the path of every commit after that one and refuse every repin across it, and the build stamp hashes the lock, so the
+ENGINE check ``repin`` makes as well (``main.reads.engine.engine_at``, which reads the tracked blob) already refuses a
+lock that changed. ``playpath_test`` pins both halves.
+
 Tests (``*_test.py``, ``conftest.py``) and prose (``*.md``) are never on it. NOT covered, because git does not hold
 them: the Metamon cache and weights, the panel team dirs outside the repo, the model copies, the toolchain. Each unit
 verifies those itself at play (the preflight's team digests, the weights pins, the model's sha256).
@@ -47,7 +52,7 @@ PREFIXES: Tuple[str, ...] = (
 )
 EXACT: Tuple[str, ...] = (
     "src/main/x35/kakuna.py", "scripts/ops/mem_cap.sh", "scripts/ops/_common.sh", "environment_torch28.yml",
-    ".gitmodules", "src/rust_sim/Cargo.toml", "src/rust_sim/Cargo.lock", "src/rust_sim/build.rs",
+    ".gitmodules", "src/rust_sim/Cargo.toml", "src/rust_sim/build.rs",
     "src/rust_sim/build_support.rs", "src/rust_env/Cargo.toml", "src/rust_env/build.rs", "designs/ops/anchors.json",
     "designs/research_state/heldout_panels.json", "designs/research_state/diagnostic_panels.json",
     "designs/research_state/measurements/hctx_rc72_2026-10-26/anchors_rc72_kakuna.json",

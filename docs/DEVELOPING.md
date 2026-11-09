@@ -24,7 +24,7 @@ skipped), it fails loudly, and it announces what each step costs before spending
 | 3 | `pip install -e .`, which puts `src/` on the import path for good | ~2 s |
 | 4 | `git submodule update --init`: the Pokémon Showdown reference engine | ~30 s |
 | 5 | the Showdown build artifacts (`npm ci` + `node build`), or worktree symlinks. At run time Node only validates teams; the rest is the dev / test oracle | ~3-6 min fresh |
-| 6 | *(optional)* `--with-rust`: the Rust simulator (release), rust_env's release library (what `main.anchors --our-search` loads) and the self-check set | ~3-10 min cold |
+| 6 | the engine-input check (always: `python -m main.reads.engine --check-inputs`), then *(optional)* `--with-rust`: the four builds main gets after every ship (`utils.rebuild_main_rust.plan`: every Rust artifact Python loads, release and self-check, all `--locked`) and rust_env's self-check test binaries | check instant; build ~3-10 min cold |
 | 7 | verify: the ruff and mypy gates, the two import-precedence gates, a ~10 s unit smoke | ~30-60 s |
 
 Useful flags: `--dry-run` (print the plan, change nothing), `--with-rust` / `--no-rust`,
@@ -34,6 +34,11 @@ Useful flags: `--dry-run` (print the plan, change nothing), `--with-rust` / `--n
 Piping it is safe: with stdout a pipe (`bootstrap.sh | head -40`), the script tees its output into
 `$TMPDIR/gen3ai-bootstrap-<pid>.log` (`GEN3AI_BOOTSTRAP_LOG` names it), so a reader that stops early cannot kill the run
 with SIGPIPE mid-step (that once read as "step 7 failed"; the log holds the rest).
+
+**The engine stamp does not depend on a build.** The build stamp hashes each root crate's `Cargo.lock`, so both locks
+are tracked (they were git-ignored until 2026-11-09, and a worktree that never ran `cargo` stamped `env=…/129` where
+main's `/130`); a fresh checkout stamps the engine its commit names (`python -m main.reads.engine --engine`), with or
+without `--with-rust`. A commit before that has no lock: `designs/launcher/pinning_and_worktrees.md`, "Building an old pin".
 
 **Say yes to the Rust build if you have ten minutes.** Training runs on the in-process Rust bridge,
 and the first Rust-backed test builds those binaries anyway: mid-test, saturating every core, which

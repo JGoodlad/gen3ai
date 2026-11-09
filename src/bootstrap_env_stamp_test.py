@@ -18,6 +18,10 @@ the stub is the executable it actually runs, and each test asserts on the log it
 * the main checkout keeps the old behaviour (it updates);
 * the LEGACY `gen3ai_stable` / `environment.yml` is never named by any conda call;
 * the newest legacy per-worktree stamp is adopted when it matches, so the migration refuses nothing;
+* **the Rust half (2026-11-09)**: the engine-input check (`main.reads.engine --check-inputs`) runs whatever was chosen about
+  the build and fails the bootstrap on drift, and `--with-rust` builds exactly `utils.rebuild_main_rust.plan`, `--locked`.
+  A worktree bootstrapped without `--with-rust` once stamped `env=…/129` where main's `/130` (the untracked `Cargo.lock` is
+  one hashed file);
 * a READER THAT STOPS EARLY (`bootstrap.sh | head -40`) cannot kill the run: SIGPIPE used to end it mid-step with
   exit 141 and no diagnosis, which is how a worktree bootstrap "failed in step 7" (2026-10-26) when `head -40`
   cut the output at "[7/7] Verifying". Reverting the `tee -p` guard makes the last test fail (exit -13).
@@ -368,3 +372,49 @@ def test_with_rust_builds_the_RELEASE_env_library_the_searched_play_path_loads(c
              and "src/rust_env/Cargo.toml" in ln and "--release" in ln]
     assert len(lines) == 1, "no release build of the env crate in the plan\n" + out
     assert "--lib" in lines[0] and "src/rust_env/target" in lines[0], lines[0]
+
+
+def _cargo_plan(out: str):
+    """``[(crate, args)]`` of every ``cargo build`` line of a dry run, the ``--manifest-path`` pair removed."""
+    plan = []
+    for ln in out.splitlines():
+        if "[dry-run]" not in ln or " cargo build " not in ln:
+            continue
+        tokens = ln.split(" cargo ", 1)[1].split()
+        at = tokens.index("--manifest-path")
+        manifest = tokens[at + 1]
+        plan.append((Path(manifest).parent.name, tuple(tokens[:at] + tokens[at + 2:])))
+    return plan
+
+
+def test_with_rust_builds_exactly_what_the_main_rebuild_builds_and_all_of_it_locked(clone):
+    """`--with-rust` built a subset of what Python loads (no `live_reader`, no release `core_events`, no `bot_reader`), so a
+    fresh worktree's play path built the rest lazily, mid-read. The set is `rebuild_main_rust.plan` (every artifact the
+    loaders resolve), in its order, every build `--locked` (the committed `Cargo.lock` is a stamp input and no build may
+    rewrite it); the one extra is rust_env's selfcheck test binaries, which only the pytest gate runs."""
+    from utils import rebuild_main_rust as R
+
+    _plant_stamp(clone["stamp_dir"], _ENV_YML)
+    rc, out, _calls = clone["run"](clone["wt"], "--with-rust", "--dry-run")
+    assert rc == 0, out
+    got = _cargo_plan(out)
+    extra = [g for g in got if "--tests" in g[1]]
+    assert extra == [("rust_env", ("build", "--profile", "selfcheck", "--features", "emission-selfcheck", "--locked", "--tests"))]
+    assert [g for g in got if g not in extra] == [(b.crate, b.cargo_args) for b in R.plan(Path("/main"))], out
+    assert all("--locked" in args for _crate, args in got)
+
+
+def test_the_engine_input_check_runs_with_or_without_rust_and_a_drift_fails_the_bootstrap(clone):
+    """Step 6 asks `main.reads.engine --check-inputs` before it decides about cargo. Exit 1 = the tree would stamp another
+    engine than a fresh clone of its commit: the bootstrap stops, naming the cause. Exit 2 = git could not answer: a
+    warning. Reverting the check makes all three assertions fail."""
+    _plant_stamp(clone["stamp_dir"], _ENV_YML)
+    rc, out, _calls = clone["run"](clone["wt"], "--dry-run")                      # no Rust asked for
+    assert rc == 0 and "main.reads.engine --check-inputs" in out, out
+    rc, out, _calls = clone["run"](clone["wt"])
+    assert rc == 0 and "a fresh clone of this commit stamps this tree's engine" in out, out
+    problem = "src/rust_env/Cargo.lock is missing and the engine stamp counts it"
+    rc, out, _calls = clone["run"](clone["wt"], extra_env={"FAKE_PY_RC": "1", "FAKE_PY_OUT": problem})
+    assert rc == 1 and problem in out and "would stamp another engine" in out and "Bootstrap complete" not in out, out
+    rc, out, _calls = clone["run"](clone["wt"], extra_env={"FAKE_PY_RC": "2", "FAKE_PY_OUT": "not a git checkout"})
+    assert rc == 0 and "the engine-input check did not run" in out and "Bootstrap complete" in out, out

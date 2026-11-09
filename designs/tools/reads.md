@@ -454,9 +454,12 @@ span two engines is INCONCLUSIVE.
 
 **The LEGACY rule, in code** (the SOP's § 0.1). A banked summary stamps no engine, so its id is unchanged, re-checked for
 every unit of D3 look 1 and the belief-prior-mix read. Its engine is `LEGACY_ENGINE` of its playing commit, a FROZEN
-table reconstructed from git (`engine_at`: the stamp's listing at that commit, plus the untracked `Cargo.lock` blob
-`LEGACY_LOCK_BLOBS` names); the reconstruction reproduces the core stamps the ledger RECORDED at 6c428453, 1ed71c9dd and
-46b9e572 (`engine_test`). A bank that names no engine per row is read by its registered `engines` or `LEGACY_BANK_ENGINE`
+table reconstructed from git (`engine_at`: the stamp's listing at that commit, plus the `Cargo.lock` blob
+`LEGACY_LOCK_BLOBS` names for a commit that predates the locks being tracked, 2026-11-09; a later commit's own blob
+otherwise); the reconstruction reproduces the core stamps the ledger RECORDED at 6c428453, 1ed71c9dd and
+46b9e572 (`engine_test`). `python -m main.reads.engine` is the command line: `--check-inputs` (a checkout stamps its
+commit's engine), `--engine --tree DIR [--expect KEY]` (print / judge any tree's engine), `--install-locks --tree DIR`
+(an old pin; `designs/launcher/pinning_and_worktrees.md`, "Building an old pin"). A bank that names no engine per row is read by its registered `engines` or `LEGACY_BANK_ENGINE`
 (by sha256).
 - Ids cannot tell two banked engines apart, so every import compares the engines themselves: the cross-state import,
   `import_off` (anchor and S), `prior_mix_ab`'s bank, the determinism guard (it must play on the bank's engine) and
@@ -470,7 +473,7 @@ table reconstructed from git (`engine_at`: the stamp's listing at that commit, p
 | **E1** | `7d932165…/90` / `7c532805…/125` | x26c (`e05c45eeb`); D1 H (`6c428453a`, `5e389ddac`) and P; X52 (`f4b25238d`); SPRT (`eb99ab362`) and G1 (`3f3a2ed41`) S; human-only vs P\* and metamon-strongest (`d32ffcee4`, `4b0ab220e`); PastaMittens (`62bb07c00`); belief prior mix (`4ee655648`; smoke `033fcbcd2`). D3 look 2 (`c4a5c37b6`, the hybrid pin). **The X35 stage's training engine** (`f4b25238`, D3_PIN `9e289ba4`) |
 | E2 | `806f97bd…/90` / `9ecb4249…/125` | D3 look 1 (anchor `2cc864f2f`, S `1ed71c9dd`) |
 | E3 | `0d3d7629…/91` / `393631b8…/126` | N1-P look 1 (`46b9e572c`; repin `de15dfc7b`) and N1-P look 2 (`de15dfc7b`, AM-N1P-2; look 1 imported): one engine throughout. X60-T (`f564c333f`, AM-X60T-1: `de15dfc7b`'s play path but the panel registry; C0's X61P cells import) |
-| E4 | `e00a212a…/94` / `3d0d5c9c…/129` | the S-U gate test (`835c6b4b2`), its re-gate (offline, scored on the gate's states) the deviation-only live read (`c01ae8ee5`; raw lane, scorer and branches) and S′-LIVE (pin `0c76b521e`, both arms, all 5,400 units and the identity re-score; 2026-11-01 to 11-05): one engine throughout. A checkout stamps it only when built `--with-rust` (the stamp hashes the untracked `src/rust_env/Cargo.lock`; dlive DL-4) |
+| E4 | `e00a212a…/94` / `3d0d5c9c…/129` | the S-U gate test (`835c6b4b2`), its re-gate (offline, scored on the gate's states) the deviation-only live read (`c01ae8ee5`; raw lane, scorer and branches) and S′-LIVE (pin `0c76b521e`, both arms, all 5,400 units and the identity re-score; 2026-11-01 to 11-05): one engine throughout. A checkout of a commit BEFORE the locks were tracked stamps it only once `cargo` wrote them or `python -m main.reads.engine --install-locks` copied them (the stamp hashes `src/rust_env/Cargo.lock`; dlive DL-4); from the commit that tracks them every checkout does |
 | E6 | `f0fe71f6…/95` / `c0b7c649…/130` | S′-HONEST (pin `e46e3ddf8`, both arms, all 10,200 units and both identity re-scores; 2026-11-06 to 11-09): one engine throughout. The stamp the fresh-dice matcher and its carried trajectory added (opt-in; `r0s4_rolls` re-scores S′-LIVE byte-identically on it) |
 | unbanked | `67a272e7…/93` / `d79c3a74…/128` | main after the 2026-10-26 full-parity batches (BF4, `2a877361a`), X59-S's registered engine. Any engine not listed is unbanked and enters the id; `main.anchors --dry-run` prints a checkout's |
 

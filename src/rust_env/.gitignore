@@ -1,2 +1,4 @@
 /target
-Cargo.lock
+# Cargo.lock is TRACKED (not ignored): the build stamp hashes the root crate's lock, so an untracked lock made
+# a fresh checkout stamp another engine than the one it was built from (engine stamp /129 vs /130, 2026-11-09).
+# Builds pass --locked, so a lock that needs changing fails loudly instead of rewriting.

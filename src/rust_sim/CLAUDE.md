@@ -75,8 +75,13 @@ target you run: `target/` is per checkout, and MAIN's is rebuilt by `/gen3ai-shi
 `*_test.rs` so an edit to it never stales a build (`stamp_test.py`). `POKESIM_ALLOW_STALE_BUILD=1` runs a stale
 build on purpose and logs loudly; never use it to get past a refusal.
 
+🚨 **`Cargo.lock` is TRACKED in both crates and the build stamp hashes it** (git-ignored until 2026-11-09: a worktree that never
+ran `cargo` stamped `env=…/129` against main's `/130`, and a registered read pins the engine). Build `--locked`; a changed lock
+is a dependency added to a std-only crate, hence a new engine. `python -m main.reads.engine --check-inputs` proves a checkout
+stamps its commit's engine (`bootstrap.sh` runs it); an OLD pin has no lock: `designs/launcher/pinning_and_worktrees.md`.
+
 ```bash
-cargo build --profile selfcheck --features emission-selfcheck     # self-check ON, optimized -> target/selfcheck/
+cargo build --locked --profile selfcheck --features emission-selfcheck   # self-check ON, optimized -> target/selfcheck/
 python3 -m pytest src/agents/battle/core_corpus_test.py -q        # the corpus through core_events
 python -m agents.training.golden_obs_core --check                 # the obs golden
 ```

@@ -66,10 +66,12 @@ def test_plan_is_the_four_builds_with_the_documented_cargo_flags(main_dir: Path)
     builds = R.plan(main_dir)
     assert [b.label for b in builds] == ["rust_sim/release", "rust_sim/selfcheck", "rust_env/release", "rust_env/selfcheck"]
     by = {b.label: b for b in builds}
-    assert by["rust_sim/release"].cargo_args == ("build", "--release")
-    assert by["rust_sim/selfcheck"].cargo_args == ("build", "--profile", "selfcheck", "--features", "emission-selfcheck")
+    assert by["rust_sim/release"].cargo_args == ("build", "--release", "--locked")
+    assert by["rust_sim/selfcheck"].cargo_args == ("build", "--profile", "selfcheck", "--features", "emission-selfcheck",
+                                                   "--locked")
     env = by["rust_env/selfcheck"].cargo_args
     assert "--lib" in env and "rust_env_proc" in env and "bot_reader" in env, "bot_reader is its own bin"
+    assert all("--locked" in b.cargo_args for b in builds), "the stamp hashes the committed Cargo.lock: no build rewrites it"
     assert all(b.cwd == main_dir / "src" / b.crate for b in builds)
     names = {a.path.name for a in by["rust_env/release"].artifacts}
     assert names == {"rust_env_proc", "bot_reader", "libpokesim_env.so"}
