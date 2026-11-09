@@ -124,7 +124,11 @@ def test_the_effective_stats_on_a_constructed_board(rows: torch.Tensor) -> None:
     assert out.shape == (B, 2 * TEAM_SIZE, EFFECTIVE_STATS_DIM)
     base = op.BASE_STATS[c.species_ids[ar, oa]]
     spr = pp[ar, oa, POKEMON_SPREAD_OFFSET:POKEMON_SPREAD_OFFSET + POKEMON_SPREAD_DIM]
-    raw = (2.0 * base[:, 1:6] + spr[:, 1:6] * 31.0 + spr[:, 7:12] * 252.0 / 4.0 + 5.0) * spr[:, 13:18]
+    # Showdown's integer stats (`priors.gen3_stat`: ⌊EV / 4⌋ and the truncated nature, gen3_nature_floor_v1)
+    from agents.gen3_data import priors
+    raw = torch.tensor([[float(priors.gen3_stat(int(base[b, 1 + k]), int(round(float(spr[b, 7 + k]) * 252)),
+                                               round(float(spr[b, 13 + k]), 2), iv=int(round(float(spr[b, 1 + k]) * 31))))
+                         for k in range(5)] for b in range(B)])
     ours = out[ar, oa]
     assert torch.allclose(ours[:, EI["atk"]], raw[:, 0] * 2.0 / 500.0, rtol=1e-5)
     assert torch.allclose(ours[:, EI["def"]], raw[:, 1] / 500.0, rtol=1e-5)

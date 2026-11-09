@@ -78,8 +78,14 @@ PAIRS, N_ENVS = 12, 8
 #: naive sum to the fp32 split residual, tau within <= 2 fp32 ulp): the BITS only (was a5cd83ef…); `OFF_OUTCOME_ALL` did not
 #: move. Read with `research_state/measurements/tau_fp32_alt_2026-10-20/reveal_off_digest.py` (this file's own OFF/OFF play
 #: alone, the solve forced): `fp32_alt` gives 7e97c03f…, and `fp64` reproduces a5cd83ef… exactly (the bisect).
-OFF_BITS = "7e97c03ffcf63f93dd8c4d012141ee5dc1e35d41d974dab1edb1ad2251010301"
-OFF_OUTCOME_ALL = "268772129d021a41524eebeca76ec6ead7191a847a3c9cfba396de26dc7aae6f"
+#: RE-RECORDED 2026-11-09 for gen3_nature_floor_v1 + gen3_residual_exact_v1 (config v167: our stats truncate the nature,
+#: our end-of-turn amounts are Showdown's integers applied in the gen-3 residual order — model inputs only; the engine,
+#: the observation (`golden_obs_core --check` 991 / 991) and the reveal path did not change): BOTH digests moved (was
+#: 7e97c03f… / 26877212…) — the checkpoints' decisions moved with their inputs. Read off this file's own failure line
+#: (2 failed, 3 passed: the off/off pin and the withheld == off pin, the same digest); the K9 learner golden and the
+#: played-bits sentinel were re-recorded for the same cause.
+OFF_BITS = "61480a8d6595b5697e0b23d27788976a30c5cc85cd06b19aab37a28621fbbef2"
+OFF_OUTCOME_ALL = "f14436da8ae44e78dab395e0d0397f9df80854d7bd59a630c0c72b74d2a5097a"
 
 
 def bits_digest(games):

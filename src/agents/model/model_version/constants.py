@@ -664,7 +664,16 @@ from typing import Any, Dict
 #   min(hp, max(1, ⌊maxhp / 8⌋)) (`eot_residual.leech_seed_drained`) where it drained the expected min(hp, 1/8) of max
 #   HP. Every past config stamps through. No ARCH_SIGNATURE bump, no MIGRATION_FLOOR change; the marker rises to 166 by
 #   hand (`warn`: model-internal inputs, the stored observations are unchanged).
-MODEL_CONFIG_VERSION = 166
+# v167 (gen3_nature_floor_v1 + gen3_residual_exact_v1, 2026-11-09): no field, no weight shape. Every stat of OUR
+#   spread truncates the nature as statModify does (`damage_kinds.gen3_nature_stat`: tr(stat · 110 / 100), so a boosted /
+#   hindered stat read up to 0.9 of a point high), our Speed reads the same decode, and our Shedinja's max HP is its
+#   species' 1; every end-of-turn amount of OUR mon (and a Shedinja's) is Showdown's integer max(1, ⌊maxhp / d⌋)
+#   (`damage_kinds.residual_points`: Leftovers, the weather, Rain Dish, burn / poison / Toxic, Wish, Ingrain, Curse,
+#   Nightmare), and the rule applies them as ONE HP chain in the gen-3 residual order, so Leech Seed's cap is the HP left
+#   after Wish, the weather, Ingrain, Rain Dish and Leftovers, and the net wastes a heal at full HP (it was the clamp of
+#   the sum). THEIR other amounts stay the nominal fraction of an estimated max HP (E13). Every past config stamps
+#   through. No ARCH_SIGNATURE bump, no MIGRATION_FLOOR change; the marker rises to 167 by hand (`warn`).
+MODEL_CONFIG_VERSION = 167
 
 # THE OBS-SEMANTICS MARKER (declared 2026-10-09, with v151): the FIRST config version whose OBSERVATION VALUES
 # (the vector the encoder writes, and the model-input cells derived from it) MEAN something different from every
@@ -713,6 +722,10 @@ OBS_SEMANTICS_HISTORY = (
     (166, "our mon's stats read an EV that is not a multiple of 4 as the game does (floor of EV / 4), the opponent's "
           "EV belief starts from stat-effective EVs, and Leech Seed drains (and heals) Showdown's integer amount, "
           "floor(max HP / 8) capped at the HP left, where it read an expected 1/8", "warn"),
+    # gen3_nature_floor_v1 + gen3_residual_exact_v1: model-INTERNAL inputs (the obs golden cannot see them), by hand.
+    (167, "our mon's stats truncate the nature as the game does (a boosted stat read up to 0.9 of a point high) and our "
+          "Shedinja has 1 max HP; our end-of-turn amounts are Showdown's integers, applied in the game's residual "
+          "order (Leech Seed drains the HP left after Leftovers; a heal at full HP is wasted)", "warn"),
 )
 OBS_SEMANTICS_VERSION = OBS_SEMANTICS_HISTORY[-1][0]
 

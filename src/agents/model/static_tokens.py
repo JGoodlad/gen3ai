@@ -155,13 +155,13 @@ class StaticTokenEncoder(torch.nn.Module):
     # ------------------------------------------------------------------------------------------ parts
     def _actual_stats(self, pp: torch.Tensor, species_ids: torch.Tensor) -> torch.Tensor:
         """[...,13] the six level-100 stats (/ STATIC_STAT_SCALE), their std, spread_known. Known spread
-        (our team): `damage_kinds.our_stats` on the observed IV / EV / nature (the EV floored as the game floors it,
-        the nature smooth; std 0). Unknown (the opponent): the
+        (our team): `damage_kinds.our_stats` on the observed base stats (rounded back to their integers) and IV / EV /
+        nature — Showdown's integers (the EV and the nature floored as the game floors them); std 0. Unknown (the opponent): the
         Smogon prior row of the species."""
-        base = pp[..., POKEMON_SPECIES_OFFSET + 1:POKEMON_SPECIES_OFFSET + 7] * _BASE_STAT_DENOM
+        base = (pp[..., POKEMON_SPECIES_OFFSET + 1:POKEMON_SPECIES_OFFSET + 7] * _BASE_STAT_DENOM).round()
         sp = pp[..., POKEMON_SPREAD_OFFSET:POKEMON_SPREAD_OFFSET + 18]
         known = sp[..., 12:13]
-        hp, rest = our_stats(base, sp)                                         # the EV floored as the game does
+        hp, rest = our_stats(base, sp)                                         # Showdown's integer stats
         exact = torch.cat([hp[..., None], rest], dim=-1)
         prior = self.STAT_PRIOR[species_ids]                                   # [...,6,2]
         is_known = known > 0.5

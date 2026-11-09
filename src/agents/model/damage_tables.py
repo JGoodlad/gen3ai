@@ -602,7 +602,11 @@ NONFORMULA_LEVEL = 100
 #: gen3_stat_ev_points_v1 (2026-11-09): every stat of our spread floors the EV (⌊EV / 4⌋ points, `damage_kinds.
 #: our_stats`); the end-of-turn rule's Leech Seed drains an integer (gen3_leech_seed_exact_v1). A recording made under
 #: gen3_our_hp_exact_v1 is not reproducible here on a row with a non-multiple-of-4 EV or a Leech Seed.
-OP_SEMANTICS = "gen3_stat_ev_points_v1"   # (was gen3_our_hp_exact_v1)
+#: gen3_nature_floor_v1 (2026-11-09, with gen3_residual_exact_v1): every stat of our spread truncates the nature
+#: (`damage_kinds.gen3_nature_stat`, our Speed included) and our Shedinja's max HP is 1; the end-of-turn rule (the `g`
+#: ledger) reads our residual amounts as Showdown's integers in the residual order. A recording made under
+#: gen3_stat_ev_points_v1 is not reproducible here on a row with a boosted / hindered stat or a residual of our mon.
+OP_SEMANTICS = "gen3_nature_floor_v1"   # (was gen3_stat_ev_points_v1)
 DAMAGE_MODELS: Dict[str, Tuple[str, float, str]] = {
     # --- fixed / level: `getDamage` → `move.damage === 'level'` → source.level, else `move.damage` ---
     "seismictoss": ("fixed", float(NONFORMULA_LEVEL), "data/moves.ts seismictoss: damage 'level'"),

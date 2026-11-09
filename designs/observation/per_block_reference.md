@@ -102,7 +102,7 @@ revealed opponent mons), `0.0` for unseen opponent slots. Sleep counter:
 is the sim's `tox` stage — the residual `[from] psn` chips since the switch-in, 0 while benched
 (`gen3_pe_reading_fixes_v1`; it used to tick at `|turn|`, one off the sim after a post-residual
 entry or before the next `|turn|`) — so the NEXT chip is `min(stage + 1, 15) / 16` exactly (Showdown's `tox.onResidual`:
-`if (stage < 15) stage++` BEFORE the damage `floor(maxhp/16) * stage`; `damage_op_pairwise.toxic_next_tick` decodes it).
+`if (stage < 15) stage++` BEFORE the damage `floor(maxhp/16) * stage`; `damage_op_pairwise.toxic_next_stage` decodes it).
 It was `min(stage, 8) / 8` until `gen3_toxic_stage_scale_v1` (config v151): every tick from the 9th on read as the 8th.
 `toxic_stage_core_test.py` pins stage 12 end to end through the real core; `obs_stage_truth_test.rs` holds the cell to
 the engine's `Toxic(n)` at every decision.

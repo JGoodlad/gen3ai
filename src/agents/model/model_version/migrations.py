@@ -599,6 +599,11 @@ def _migrate_config(data: dict) -> dict:
     # stamps through.
     if version < 166:
         data["config_version"] = 166
+    # v167 (gen3_nature_floor_v1 + gen3_residual_exact_v1) — no field: our stats truncate the nature, our end-of-turn
+    # amounts are Showdown's integers in the residual order (forward fixes; the state_dict is unchanged), so every past
+    # config stamps through.
+    if version < 167:
+        data["config_version"] = 167
     #
     # ---- v97–v120 MIGRATION HISTORY — documentation, not code (floored away at v121) ---------
     # gen3_event_record_v2 (the observation-architecture batch: the E12 event-row reshape, the E4

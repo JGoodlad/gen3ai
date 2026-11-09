@@ -68,19 +68,18 @@ if TYPE_CHECKING:  # no runtime import — `ctx` is only ever passed in, never c
 
 
 
-def toxic_next_tick(counter_cell: torch.Tensor) -> torch.Tensor:
-    """The fraction of MAX HP a badly-poisoned mon's NEXT residual tick costs, from the observation's toxic cell
+def toxic_next_stage(counter_cell: torch.Tensor) -> torch.Tensor:
+    """The Toxic STAGE a badly-poisoned mon's NEXT residual tick runs at, from the observation's toxic cell
     (``POKEMON_COUNTER_OFFSET + 1`` = ``min(stage, TOXIC_STAGE_MAX) / TOXIC_STAGE_MAX``, ``gen3_toxic_stage_scale_v1``).
 
     Gen 3 `tox.onResidual` (deps/pokemon-showdown data/conditions.ts): ``if (stage < 15) stage++`` BEFORE the damage
-    ``floor(maxhp/16) · stage`` — so with ``n`` ticks taken the next tick is ``min(n + 1, 15) / 16``: a fresh Toxic
-    reads 1/16, the 9th tick 9/16, and the 15th-and-later 15/16 (NOT 16/16). The cell is the engine's stage over its
-    true cap, so ``n`` is read exactly (it saturated at 8 before: every tick from the 9th on read as the 8th). The `g`
-    ledger and the per-mon residual (both `eot_residual.py` since the legacy deletion's U1) decode the cell with this one
-    function.
+    ``clampIntRange(maxhp / 16, 1) · stage`` — so with ``n`` ticks taken the next tick runs at stage ``min(n + 1, 15)``:
+    a fresh Toxic 1, the 9th tick 9, the 15th-and-later 15 (NOT 16). The cell is the engine's stage over its true cap,
+    so ``n`` is read exactly (``f32(n / 15) · 15`` is ``n`` bit-exactly for every n <= 15). The end-of-turn rule multiplies it
+    by `damage_kinds.residual_points(maxhp, 16, …)` (gen3_residual_exact_v1); this is the one decode of the cell.
     (It lives here, not in `damage_op_layout`: the forward's torch ops may only run from `selection_sites.FORWARD_MODULES`.)"""
     cap = float(TOXIC_STAGE_MAX)
-    return torch.clamp(counter_cell * cap + 1.0, max=cap) / 16.0
+    return torch.clamp(counter_cell * cap + 1.0, max=cap)
 
 
 class DamageOperatorPairwise:

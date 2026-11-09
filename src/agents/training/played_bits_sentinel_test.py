@@ -41,6 +41,11 @@ RE-RECORDED log (newest last):
   sum to the fp32 split residual (tau moves by <= 2 fp32 ulp). PLAYED_DIGEST only (was 6b2517a4…), PACKED_DIGEST
   unchanged. Verified: with every hypothesis builder forced to ``fp64`` the old 6b2517a4… reproduces exactly (and the
   K9 learner golden's T62 record with it), so the solve switch is the sole cause.
+  2026-11-09 — ``gen3_nature_floor_v1`` + ``gen3_residual_exact_v1`` (config v167): our stats truncate the nature and
+  our end-of-turn amounts are Showdown's integers applied in the gen-3 residual order (model inputs: the static
+  tokens' stat input, the op's our-stat cells, the end-of-turn rule). PLAYED_DIGEST only (was 41a35939…),
+  PACKED_DIGEST unchanged. Verified: the parent ``7a0153b46`` passed this file in its routine gate; the K9 learner
+  golden moved for the same cause and each of the two fixes reverted alone still moves it.
 """
 from __future__ import annotations
 
@@ -53,7 +58,7 @@ import pytest
 pytestmark = [pytest.mark.sim, pytest.mark.integration]
 
 PACKED_DIGEST = "94d96d5746b1a8e5402d940ba649787dbb5097e57f750ccc9abd2e970b6cf5f4"
-PLAYED_DIGEST = "41a3593909a5325610edb6d068013e0be014ada5edd69a2233e113c6e5b0b8f7"
+PLAYED_DIGEST = "c6aeda369bb74ecca6258dd3de70853fb834275c937cac2954b1df69746f16c7"
 
 N_GAMES = 2
 TURN_LIMIT = 4

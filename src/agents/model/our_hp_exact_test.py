@@ -93,7 +93,7 @@ def test_healed_hp_is_showdowns_truncated_heal_for_every_reachable_pair():
 def test_our_max_hp_is_the_l100_formula_for_every_spread():
     """IV 0..31, EV 0..255 (every value the encoder can write: gen3_stat_ev_points_v1 floors a non-multiple of 4),
     base HP 1..255, read back through the obs cells (f64 quotient cast to f32) by `our_spread` -> exactly
-    ``2·B + IV + EV // 4 + 110``."""
+    ``2·B + IV + EV // 4 + 110`` (1 for base HP 1, Shedinja)."""
     b = torch.arange(1, 256, dtype=torch.float32)[:, None, None]
     ivs, evs = np.arange(32), np.arange(0, 256)
     blk = torch.zeros(1, 32, 256, 18)
@@ -101,6 +101,7 @@ def test_our_max_hp_is_the_l100_formula_for_every_spread():
     blk[..., 6] = torch.from_numpy((evs / 252.0).astype(np.float32))[None, None, :]
     iv, ev_points, _nat = our_spread(blk)
     want = 2 * np.arange(1, 256)[:, None, None] + ivs[None, :, None] + evs[None, None, :] // 4 + 110
+    want[0] = 1                                         # base HP 1 is Shedinja: species maxHP 1 (gen3_nature_floor_v1)
     assert torch.equal(our_max_hp(b, iv[..., 0], ev_points[..., 0]), torch.from_numpy(want.astype(np.float32)))
 
 

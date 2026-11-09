@@ -5,31 +5,41 @@ from __future__ import annotations
 
 import itertools
 
+import numpy as np
 import pytest
 import torch
 
 from agents.gen3_data import priors
-from agents.model.move_order import (QUICK_CLAW_P, gen3_final_speed, gen3_para_speed, gen3_speed_stat,
-                                     gen3_stage_speed, p_first_quick_claw, p_first_same_priority,
+from agents.model.damage_kinds import our_stats
+from agents.model.move_order import (QUICK_CLAW_P, gen3_final_speed, gen3_para_speed, gen3_stage_speed, p_first_quick_claw, p_first_same_priority,
                                      p_outspeed_mixture, p_seat_first, quick_claw_live)
 
 T = torch.tensor
 
 
 # ------------------------------------------------------------------------------------------ the stat
+def _speed(base: float, iv: int, ev: int, mult: float) -> float:
+    """Our Speed STAT through the one decode (`damage_kinds.our_stats`), the spread fed as the encoder writes it."""
+    blk = torch.zeros(1, 18)
+    blk[0, 5] = float(np.float32(iv / 31.0))
+    blk[0, 11] = float(np.float32(ev / 252.0))
+    blk[0, 12] = 1.0
+    blk[0, 13:18] = 1.0
+    blk[0, 17] = float(np.float32(mult))
+    return float(our_stats(T([[100.0, 1.0, 1.0, 1.0, 1.0, base]]), blk)[1][0, 4])
+
+
 def test_speed_stat_is_showdowns_integer_formula() -> None:
-    """``statModify``: tr(2·base + iv + tr(ev/4)) + 5, then the nature tr(stat·110/100) — against the facade's
-    exact integer `priors.gen3_stat` over a grid, fed as the observation encodes them (iv/31, ev/252, the
-    nature multiplier in float32)."""
+    """``statModify``: tr(2·base + iv + tr(ev/4)) + 5, then the nature tr(stat·110/100) — our Speed reads
+    `damage_kinds.our_stats` (the one decode, gen3_nature_floor_v1) — against the facade's exact integer
+    `priors.gen3_stat` over a grid, fed as the observation encodes them (iv/31, ev/252, the nature multiplier in
+    float32)."""
     for base, ev, mult in itertools.product((5, 45, 80, 100, 130, 160), range(0, 253, 4), (0.9, 1.0, 1.1)):
-        iv_obs = T([31.0 / 31.0]) * 31.0
-        ev_obs = T([ev / 252.0]) * 252.0
-        got = gen3_speed_stat(T([float(base)]), iv_obs, ev_obs, T([mult], dtype=torch.float32))
-        assert int(got.item()) == priors.gen3_stat(base, ev, mult), (base, ev, mult)
+        assert int(_speed(float(base), 31, ev, mult)) == priors.gen3_stat(base, ev, mult), (base, ev, mult)
     # Jolteon, Timid 252: (260 + 31 + 63 + 5) · 1.1 = 394.9 → 394 (a FLOOR, not a round)
-    assert gen3_speed_stat(T([130.0]), T([31.0]), T([252.0]), T([1.1])).item() == 394.0
+    assert _speed(130.0, 31, 252, 1.1) == 394.0
     # an odd EV floors before the sum: 255/4 = 63.75 → 63
-    assert gen3_speed_stat(T([130.0]), T([31.0]), T([255.0]), T([1.0])).item() == 359.0
+    assert _speed(130.0, 31, 255, 1.0) == 359.0
 
 
 # ---------------------------------------------------------------------------------------- the stages

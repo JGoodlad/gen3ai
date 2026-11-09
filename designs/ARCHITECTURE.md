@@ -629,11 +629,18 @@ plus one zero matrix. Two more facts (config v150, `gen3_static_recovery_v1`; de
 whenever the damage op is) compose with either encoding: the **END-OF-TURN RESIDUAL** adds every mon's (both sides) END-OF-TURN HP change if it is the mon on its
 side's field at the end of this turn — Leftovers (known item, else the species' Smogon prior), sand / hail chip (types,
 Sand Veil; none on a timed weather's last turn; × P(no Cloud Nine / Air Lock)), Rain Dish, the next status tick (burn /
-poison 1/8, Toxic min(n+1, 15)/16, × (1 − P(Shed Skin)/3)), Leech Seed's drain on the seeded active and its heal to every mon of
+poison 1/8, Toxic min(n+1, 15) × 1/16, × (1 − P(Shed Skin)/3)), Leech Seed's drain on the seeded active and its heal to every mon of
 the other side (Showdown's integer `min(hp, max(1, ⌊max HP / 8⌋))`, `gen3_leech_seed_exact_v1`, config v166; scaled by
 max HP; Liquid Ooze inverts it), Wish +1/2 (half the RECIPIENT's max HP in gen 3), Ingrain,
-Curse, Nightmare × P(stays asleep), and the HP-clamped net (11 columns, `agents/model/eot_residual.py`'s
-`EotResidualRule`, on the op's context) — through a zero-init bias-free `IsolatedLinear(11, 128)` beside
+Curse, Nightmare × P(stays asleep), and the net (11 columns, `agents/model/eot_residual.py`'s
+`EotResidualRule`, on the op's context). Each amount of OUR mon (and of a Shedinja, max HP 1 on either side) is Showdown's
+integer `max(1, ⌊max HP / d⌋)` (`damage_kinds.residual_points`, `gen3_residual_exact_v1`, config v167); THEIR other
+mons' amounts stay the nominal `1/d` of the op's estimated max HP, an intended estimate (E13). The net is ONE HP
+chain in the gen-3 residual order — Wish, the weather, then Ingrain, Rain Dish, Leftovers, Leech Seed (whose cap is the
+HP LEFT after those), the status tick, Nightmare, Curse — each heal capped at max HP and void on a KO-ed mon (a
+poisoned full-HP Leftovers holder nets the whole poison tick); probabilistic amounts enter as expectations, and the
+two actives' speed order (which decides whose order-10 block runs first) is not modelled. It goes through a zero-init
+bias-free `IsolatedLinear(11, 128)` beside
 `mon_hazard_proj`; the **SWITCH-HAZARD COST** appends each switch target's [our side's Spikes layers / 3, its
 switch-in HP fraction] (the same `spikes_entry` values) LAST to the switch pointer cell (§3.3). Production also runs
 **`--trunk-layers 3`** (step 9). The named arm `--arch static_recovery` (the closing test's bisection rung C1, not run: the test passed) was
@@ -1522,11 +1529,15 @@ the effective-stat facts) goes through `damage_kinds.our_spread` / `our_stats`: 
 integers and the EV adds ``⌊EV / 4⌋`` points (`sim/battle.ts` `statModify`'s `tr(evs / 4)`), where each site re-spelled
 `ev / 4` unfloored (85 EVs read 21.25 points, not 21). The committed team files have no such EV, but training
 rollouts do (rb_x60t_s3502's K9 scan rows: a Donphan with 90 Def / 166 SpD, a Dugtrio with 185 SpD / 71 Spe), and 61 of
-the 4,975 top-25 Smogon spreads do. The nature multiplier stays UNFLOORED there (Showdown truncates `stat · 110 / 100`: up to 0.9 of a point high; the
-speed path, `move_order.gen3_speed_stat`, floors it). The nature/EV belief's EV prior is the usage mean of the
-stat-effective `4·⌊ev/4⌋`, its label's space. Pinned by `stat_ev_points_test.py` (exhaustive over every IV / EV the
-encoder writes, plus a source guard: no forward module de-normalises the EV column or divides an EV by 4 outside the
-helpers, two declared exceptions: the speed path, which floors, and the belief head's expectation).
+the 4,975 top-25 Smogon spreads do. The nature step is the game's truncation too (`gen3_nature_floor_v1`, config v167:
+`damage_kinds.gen3_nature_stat`, `tr(stat · 110 / 100)`, where the five non-Speed stats read up to 0.9 of a point
+high), our Speed reads the same decode, and our Shedinja's max HP is its species' 1 (`sim/pokemon.ts`
+`species.maxHP`). The nature/EV belief's EV prior is the usage mean of the stat-effective `4·⌊ev/4⌋`, its label's space.
+Pinned by `stat_ev_points_test.py` (exhaustive over every base / IV / EV / nature the encoder writes, plus a source
+guard: no forward module de-normalises the EV column, divides an EV by 4, reads or multiplies by a nature multiplier,
+or spells an end-of-turn amount (`/ 16`, `/ 8`, `maxhp / …`) outside the helpers; its declared exceptions: the belief
+head's expectation, their status-landing tick and the Spikes chip (nominal), Substitute's exact cost, the crit
+table).
 `MOVE_BP` holds the BP at the attacker's full HP for every formula-priced move, and every
 dex-damaging move rides its TYPE's gen-3 channel in `MOVE_PHYS` (Return is physical). 🚨 **The table
 build RAISES on a damaging (dex category ≠ Status) move with base power 0 and no row** — the

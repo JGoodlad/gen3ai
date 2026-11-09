@@ -267,8 +267,18 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
                 # tr(evs / 4)) — of an exact integer, so no operand sits near a step
                 "(spread[..., _SPREAD_IV] * _OBS_IV_SCALE).round()",
                 "(spread[..., _SPREAD_EV] * _OBS_EV_SCALE).round()",
-                "((spread[..., _SPREAD_EV] * _OBS_EV_SCALE).round() / 4.0).floor()"),
-        "TABLE": ("fixed + target_frac + endeavor > 0", "hp_scaled > 0", "flail > 0", "eff > 0",
+                "((spread[..., _SPREAD_EV] * _OBS_EV_SCALE).round() / 4.0).floor()",
+                # gen3_nature_floor_v1: the nature step of our stats, tr(stat · 110 / 100) — the observed multiplier
+                # rounded to its percentage (an f32 1.1 · 100 misses 110 by an ulp), then the floor of an integer
+                # product over 100 (a non-integer quotient sits >= 0.01 from the next integer)
+                "(nature_mult * 100.0).round()", "(raw * pct / 100.0).floor()",
+                # gen3_residual_exact_v1: an end-of-turn amount's ⌊maxhp / d⌋, d a power of two, of an INTEGER max
+                # HP (ours exact, theirs the integer neutral estimate) — exact, no operand near a step
+                "torch.floor(nominal)"),
+        "TABLE": ("fixed + target_frac + endeavor > 0",
+                  # gen3_nature_floor_v1: Shedinja's max HP of 1 — the species' base HP (an integer table value or
+                  # its exact obs read-back) against 1
+                  "base_hp == 1.0", "hp_scaled > 0", "flail > 0", "eff > 0",
                   "nonformula > 0", "op.MOVE_BEATUP[move_ids] > 0", "target_frac >= 1.0"),
         # gen3_beatup_exact_v1: Beat Up's ally filter reads observed HP fractions and 0/1 condition flags
         # (a fainted / hidden slot is exactly 0, a status flag exactly 0 or 1 — no near-tie), and the
@@ -318,8 +328,7 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
     "move_order": {
         "TABLE": ("prio_k > prio_m", "prio_k == prio_m"),
         "INT": ("their_final.unsqueeze(-2) < ours.unsqueeze(-1)", "their_final.unsqueeze(-2) <= ours.unsqueeze(-1)"),
-        "OBS": ("iv.round()", "ev.round()", "(ev.round() / 4.0).floor()", "(nature_mult * 100.0).round()",
-                "(inner * pct / 100.0).floor()", "stage.round()", "(stat * (2.0 + s.clamp(min=0.0)) / 2.0).floor()",
+        "OBS": ("stage.round()", "(stat * (2.0 + s.clamp(min=0.0)) / 2.0).floor()",
                 "(stat * 2.0 / (2.0 - s.clamp(max=0.0))).floor()", "s >= 0",
                 "((stat * PARA_SPEED_MOD_4096 + 2047.0) / 4096.0).floor()", "para > 0.5"),
     },
@@ -417,7 +426,9 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
     # reads; the Hidden Power slot test, the move-num identity match (our active's legality onto its sorted
     # slots) and the hypothesis species are integers.
     "static_tokens": {
-        "OBS": ("known > 0.5",),
+        # gen3_nature_floor_v1: the observed base stats (k / 255) rounded back to the integer k they encode, so
+        # `damage_kinds.our_stats`' floors read integers
+        "OBS": ("known > 0.5", "(pp[..., POKEMON_SPECIES_OFFSET + 1:POKEMON_SPECIES_OFFSET + 7] * _BASE_STAT_DENOM).round()"),
         "INT": ("ids['all_move_ids'] == HIDDEN_POWER_MOVE_NUM", "slot_species.long()"),
     },
     # gen3_static_recovery_v1 (built with the op): the alive gate (an observed HP fraction against 0) and the weather's
@@ -442,7 +453,9 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
         # gen3_leech_seed_exact_v1: the drain's ⌊maxhp / 8⌋ of an INTEGER max HP (ours exact, theirs the integer
         # neutral estimate) — a division by a power of two is exact, so no operand sits near a step.
         "OBS": ("hp > 0", "(w[:, _W_TURNS] * _WEATHER_MAX_TURNS).round()",
-                "(w[:, _W_TURNS] * _WEATHER_MAX_TURNS).round().long()", "torch.floor(maxhp / 8.0)"),
+                "(w[:, _W_TURNS] * _WEATHER_MAX_TURNS).round().long()"),
+        # gen3_residual_exact_v1: THEIR Shedinja (max HP 1, so its residual amounts are exact) — a 0/1 species table bit.
+        "TABLE": ("self.SHEDINJA_HP_ONE[ctx.species_ids[:, TEAM_SIZE:]] > 0.5",),
     },
     "t0_species": {
         "OBS": ("onehot > 0",),

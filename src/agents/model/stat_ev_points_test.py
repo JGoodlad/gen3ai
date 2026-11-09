@@ -9,9 +9,14 @@ no such EV, but training rollouts do (rb_x60t_s3502's K9 scan rows: a Donphan wi
 4,975 top-25 Smogon spreads. The belief head's EV PRIOR
 averaged the raw EVs while its label is the stat-effective ``4·⌊ev/4⌋`` — the prior now lives in the label's space.
 
+gen3_nature_floor_v1 (round 2): the nature step is Showdown's truncation too (`damage_kinds.gen3_nature_stat`: a Timid
+359 Speed is 394, not 394.9), our Speed reads the same decode (`damage_op_speed`; `move_order.gen3_speed_stat` is
+gone), and our Shedinja's max HP is its species' 1.
+
 Pins: the decode EXHAUSTIVELY over every IV and EV the encoder can write; the stats against `priors.gen3_stat` (the
-exact integer reference) at a neutral nature; the EV prior in the label's space; and a source guard that no forward
-module de-normalises the EV column or divides an EV by 4 outside the helpers.
+exact integer reference) at every nature; the EV prior in the label's space; and a source guard that no forward
+module computes a stat of our spread OR an end-of-turn residual amount (gen3_residual_exact_v1) outside the exact
+helpers.
 """
 import io
 import re
@@ -22,7 +27,7 @@ import torch
 
 from agents import gen3_data
 from agents.model.belief_tables import _SPREAD_EV_IDX, build_species_ev_prior
-from agents.model.damage_kinds import our_max_hp, our_spread, our_stats
+from agents.model.damage_kinds import gen3_nature_stat, our_max_hp, our_spread, our_stats
 from agents.model.selection_sites import FORWARD_MODULES
 from utils.paths import src_path
 
@@ -54,19 +59,58 @@ def test_our_spread_reads_every_iv_and_ev_as_its_integer_and_its_stat_points():
 def test_our_stats_are_showdowns_integers_at_a_neutral_nature_for_every_base_iv_and_ev():
     """EXHAUSTIVE over base 1..255, IV 0..31, EV 0..255 (one stat column at a time, neutral nature): the five
     non-HP stats equal `priors.gen3_stat` (the integer reference: ``2·B + IV + EV // 4 + 5``) and the max HP
-    equals ``2·B + IV + EV // 4 + 110``, bit-exactly. Fails on revert to ``ev / 4``: every EV % 4 != 0 reads high."""
+    equals ``2·B + IV + EV // 4 + 110`` (1 at base HP 1, Shedinja's ``species.maxHP``), bit-exactly. Fails on revert
+    to ``ev / 4``: every EV % 4 != 0 reads high."""
     b, iv, ev = np.meshgrid(np.arange(1, 256), np.arange(32), np.arange(256), indexing="ij")
     b, iv, ev = b.ravel(), iv.ravel(), ev.ravel()
     blk = _spread_block(np.repeat(iv[:, None], 6, 1), np.repeat(ev[:, None], 6, 1), np.ones((b.size, 5)))
     base = torch.from_numpy(np.repeat(b[:, None], 6, 1).astype(np.float32))
     max_hp, stats = our_stats(base, blk)
-    want_hp = 2 * b + iv + ev // 4 + 110
+    want_hp = np.where(b == 1, 1, 2 * b + iv + ev // 4 + 110)                       # Shedinja's species maxHP 1
     want = 2 * b + iv + ev // 4 + 5
     assert torch.equal(max_hp, torch.from_numpy(want_hp.astype(np.float32)))
     assert torch.equal(stats, torch.from_numpy(np.repeat(want[:, None], 5, 1).astype(np.float32)))
     spot = [(100, 31, 85), (255, 31, 3), (80, 0, 255)]                              # gen3_stat itself, spot-checked
     for sb, siv, sev in spot:
         assert gen3_data.priors.gen3_stat(sb, sev, 1.0, iv=siv) == 2 * sb + siv + sev // 4 + 5
+
+
+def test_our_stats_truncate_the_nature_as_showdown_does_for_every_raw_stat_and_nature():
+    """gen3_nature_floor_v1 — `sim/battle.ts` ``statModify``: ``stat = tr(tr(stat · 110, 16) / 100)`` (``· 90`` for
+    the hindered stat). EXHAUSTIVE over base 1..255 × EV 0..255 × IV {0, 31} × the three multipliers, fed exactly
+    as the encoder writes the spread (the nature column f32(0.9 / 1.0 / 1.1)): every non-HP stat equals the integer
+    reference `priors.gen3_stat` bit-exactly. The old ``(…) × nature`` read a Timid 359 Speed as 394.9, not 394 —
+    fails on revert at every boosted / hindered stat whose product is not a multiple of 10."""
+    b, ev, iv = np.meshgrid(np.arange(1, 256), np.arange(256), np.array([0, 31]), indexing="ij")
+    b, ev, iv = b.ravel(), ev.ravel(), iv.ravel()
+    base = torch.from_numpy(np.repeat(b[:, None], 6, 1).astype(np.float32))
+    for mult in (0.9, 1.0, 1.1):
+        blk = _spread_block(np.repeat(iv[:, None], 6, 1), np.repeat(ev[:, None], 6, 1), np.full((b.size, 5), mult))
+        _hp, stats = our_stats(base, blk)
+        want = np.array([gen3_data.priors.gen3_stat(int(x), int(e), mult, iv=int(i)) for x, e, i in zip(b, ev, iv)])
+        assert torch.equal(stats, torch.from_numpy(np.repeat(want[:, None], 5, 1).astype(np.float32))), mult
+    timid = _spread_block(np.full((1, 6), 31), np.full((1, 6), 252), np.array([[0.9, 1.0, 1.0, 1.0, 1.1]]))
+    _hp, jolteon = our_stats(torch.tensor([[65.0, 65.0, 60.0, 110.0, 95.0, 130.0]]), timid)
+    assert jolteon[0, 4].item() == 394.0 and jolteon[0, 0].item() == 206.0            # 394.9 / 206.1 before
+
+
+def test_gen3_nature_stat_is_the_one_nature_step():
+    """The helper alone, on the integer grid 5..700 × {90, 100, 110}: ``raw · pct // 100``."""
+    raw = torch.arange(5, 701, dtype=torch.float32)
+    for mult, pct in ((0.9, 90), (1.0, 100), (1.1, 110)):
+        got = gen3_nature_stat(raw, torch.full_like(raw, float(np.float32(mult))))
+        assert torch.equal(got, (raw.long() * pct // 100).float()), mult
+
+
+def test_our_shedinja_has_1_max_hp_whatever_its_spread():
+    """`sim/pokemon.ts` ``if (this.species.maxHP) stats.hp = this.species.maxHP`` (`data/pokedex.ts` shedinja
+    ``maxHP: 1``): the HP formula's 2·1 + 31 + 63 + 110 = 206 is not Shedinja's max HP."""
+    blk = _spread_block(np.full((1, 6), 31), np.array([[252, 0, 0, 0, 0, 0]]), np.ones((1, 5)))
+    iv, ev_points, _n = our_spread(blk)
+    assert our_max_hp(torch.tensor([1.0]), iv[:, 0], ev_points[:, 0]).item() == 1.0
+    sp = gen3_data.species.get("shedinja")
+    assert sp.base_stats["hp"] == 1 and all(gen3_data.species.get(s).base_stats["hp"] > 1
+                                           for s in gen3_data.species.base_form_ids() if s != "shedinja")
 
 
 def test_an_85_hp_ev_blissey_has_672_max_hp_not_672_25():
@@ -98,15 +142,35 @@ def test_the_ev_prior_lives_in_the_labels_stat_effective_space():
     assert checked > 0 and moved > 0, (checked, moved)
 
 
-#: De-normalising the observation's EV column, or dividing an EV by 4, outside the helpers (comments / strings
-#: stripped first).
-_FORBIDDEN = (re.compile(r"\*\s*252(\.0)?\b"), re.compile(r"(?<![\w.])ev\w*(\[[^\]]*\])?\s*/\s*4(\.0)?\b"))
+#: The forward-module spellings that bypass the exact helpers (comments / strings stripped first), each with the
+#: helper that owns it:
+#: * our spread's decode (`damage_kinds.our_spread` / `our_stats`): de-normalising the EV column (``* 252``), an
+#:   ``ev / 4``, reading the nature columns (``13 + _NAT…``, ``spread[..., 13…``, ``_SPREAD_NATURE``) or multiplying a
+#:   stat by a nature multiplier (gen3_stat_ev_points_v1, gen3_nature_floor_v1);
+#: * an end-of-turn amount (`damage_kinds.residual_points`): a residual's ``/ 16`` / ``/ 8`` fraction, or any amount
+#:   derived as ``maxhp / …`` (gen3_residual_exact_v1).
+_FORBIDDEN = {
+    "ev*252": re.compile(r"\*\s*252(\.0)?\b"),
+    "ev/4": re.compile(r"(?<![\w.])ev\w*(\[[^\]]*\])?\s*/\s*4(\.0)?\b"),
+    "nature column": re.compile(r"13\s*\+\s*_NAT|\[\s*\.\.\.\s*,\s*13\b|_SPREAD_NATURE"),
+    "* nature": re.compile(r"\*\s*\(?\s*(nat\w*|e_mult)\b"),
+    "residual 1/16, 1/8": re.compile(r"/\s*(16|8)(\.0?)?\b"),
+    "maxhp /": re.compile(r"max_?hp\w*\s*/"),
+}
 #: Declared exceptions, (module, stripped line).
 _ALLOWED = {
-    # our Speed: `move_order.gen3_speed_stat` rounds the EV and floors ev / 4 (and the nature) itself.
-    ("damage_op_speed", "stat = gen3_speed_stat(base, spread[..., _BS_SPE] * 31.0, spread[..., 6 + _BS_SPE] * 252.0,"),
-    # THEIR believed stat: an EXPECTATION over stat-effective EVs, E[⌊EV/4⌋] by linearity (a floor kills the gradient).
+    # THEIR believed stat: an EXPECTATION over stat-effective EVs and the nature posterior, E[⌊EV/4⌋] and E[mult] by
+    # linearity (a floor kills the gradient).
     ("belief_heads", "believed = ((2.0 * base + 31.0 + ev / 4.0 + 5.0) * e_mult).clamp(min=1.0)"),
+    # the status consequence of LANDING a status on THEIR mon: the nominal tick of an ESTIMATED max HP (E13).
+    ("damage_op_pairwise", "d_sched = (-(1.0 / 8.0) * (is_brn + is_psn) - (1.0 / 16.0) * is_tox)"),
+    # the Spikes ENTRY chip (a switch-in amount, not a residual): nominal (FINDING, gen3_residual_exact_v1's report).
+    ("damage_op_pairwise", "chip_table = torch.tensor([0.0, 1.0 / 8, 1.0 / 6, 1.0 / 4], device=ctx.device)"),
+    # Substitute's cost ⌊maxhp / 4⌋ of OUR exact max HP: already Showdown's integer (no minimum of 1 applies).
+    ("move_resolution", "sub_frac = torch.floor(o.our_maxhp / 4.0) / o.our_maxhp"),
+    # the crit-stage PROBABILITY table, not an HP amount.
+    ("ko_exact", "CRIT_P_BY_RATIO: Dict[int, float] = {1: 1.0 / 16.0, 2: 1.0 / 8.0, 3: 1.0 / 4.0, 4: 1.0 / 3.0, "
+                 "5: 1.0 / 2.0}"),
 }
 
 
@@ -125,18 +189,38 @@ def _flat(code: str) -> str:
                   .replace(" [", "[").replace("[ ", "[").replace(" ]", "]").replace(" ,", ","))
 
 
-def test_no_forward_module_decodes_an_ev_outside_the_helpers():
-    """Every forward module but `damage_kinds` (which owns the decode): no ``* 252`` de-normalisation of the EV
-    column and no ``ev / 4``. Fails on any new site, so every stat of our spread floors the EV by construction."""
-    hits = []
+def test_no_forward_module_computes_our_stat_or_a_residual_outside_the_exact_helpers():
+    """Every forward module but `damage_kinds` (which owns the helpers): none of `_FORBIDDEN`'s spellings, so every
+    stat of our spread floors the EV and the nature, and every end-of-turn amount is Showdown's integer, BY
+    CONSTRUCTION — a new stat or residual site that re-spells either fails here. The declared exceptions must each
+    still exist (a stale one fails too)."""
+    hits = {}
     for mod in FORWARD_MODULES:
         if mod == "damage_kinds":
             continue
         for n, code in _code_lines(src_path("agents", "model", f"{mod}.py")):
             flat = _flat(code)
-            if any(p.search(flat) for p in _FORBIDDEN):
-                hits.append((mod, n, flat))
+            names = [k for k, p in _FORBIDDEN.items() if p.search(flat)]
+            if names:
+                hits[(mod, n)] = (flat, names)
     allowed = {(m, re.sub(r"\s+", "", _flat(a))) for m, a in _ALLOWED}
-    bad = [h for h in hits if (h[0], re.sub(r"\s+", "", h[2])) not in allowed]
+    seen = {(mod, re.sub(r"\s+", "", flat)) for (mod, _n), (flat, _k) in hits.items()}
+    bad = [(mod, n, flat, k) for (mod, n), (flat, k) in hits.items() if (mod, re.sub(r"\s+", "", flat)) not in allowed]
     assert not bad, bad
-    assert len(hits) == len(_ALLOWED), ("a declared exception no longer exists", hits)
+    assert allowed <= seen, ("a declared exception no longer exists", sorted(allowed - seen))
+
+
+def test_the_guard_catches_each_bypass_it_names():
+    """The guard's teeth: one representative bypass per pattern (as `_flat` prints it) matches, so a regex that
+    rotted into matching nothing fails here rather than passing every module vacuously."""
+    samples = {
+        "ev*252": "ev = spread[..., 6] * 252.0",
+        "ev/4": "pts = ev / 4.0",
+        "nature column": "nat = spread[..., 13 + _NAT_SPE]",
+        "* nature": "stat = inner * nature_mult",
+        "residual 1/16, 1/8": "leftovers = p_lo / 16.0",
+        "maxhp /": "chip = maxhp / 16.0",
+    }
+    assert set(samples) == set(_FORBIDDEN)
+    for name, code in samples.items():
+        assert _FORBIDDEN[name].search(_flat(code)), name

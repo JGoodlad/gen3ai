@@ -129,20 +129,55 @@ def our_spread(spread: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.
 
 def our_max_hp(base_hp: torch.Tensor, iv_hp: torch.Tensor, ev_points_hp: torch.Tensor) -> torch.Tensor:
     """OUR mon's max HP at L100 (gen3_our_hp_exact_v1: THE one spelling): ``2·base + IV + tr(EV/4) + 110``
-    (`sim/battle.ts` ``statModify``'s HP branch at level 100), integer-exact. ``iv_hp`` / ``ev_points_hp`` come from
+    (`sim/battle.ts` ``statModify``'s HP branch at level 100), integer-exact; Shedinja (the one gen-3 species with base
+    HP 1) is 1 whatever its spread (`sim/pokemon.ts` ``if (this.species.maxHP) stats.hp = this.species.maxHP``;
+    `data/pokedex.ts` shedinja ``maxHP: 1``; gen3_nature_floor_v1). ``iv_hp`` / ``ev_points_hp`` come from
     `our_spread` (the EV already in stat points)."""
-    return 2.0 * base_hp + iv_hp + ev_points_hp + 110.0
+    return torch.where(base_hp == 1.0, torch.ones_like(base_hp), 2.0 * base_hp + iv_hp + ev_points_hp + 110.0)
+
+
+def gen3_nature_stat(raw: torch.Tensor, nature_mult: torch.Tensor) -> torch.Tensor:
+    """THE nature step of a non-HP stat (gen3_nature_floor_v1), every stat of OUR spread through it: `sim/battle.ts`
+    ``statModify`` ``stat = tr(tr(stat · 110, 16) / 100)`` (``· 90`` for the hindered stat), so a boosted / hindered
+    stat is an INTEGER (Timid 359 Speed → 394, not 394.9). ``raw`` = ``tr(2·base + IV + tr(EV/4)) + 5`` (an integer);
+    ``nature_mult`` = the observation's 0.9 / 1.0 / 1.1, rounded to its percentage so the f32 product cannot land a hair
+    under an integer. ``raw · pct`` is an integer < 2^24 and exact in f32; a non-integer quotient sits >= 0.01 from the
+    next integer, so the floor is exact. The 16-bit truncation never binds in gen 3 (the largest stat, 559, · 110 <
+    65,536)."""
+    pct = (nature_mult * 100.0).round()
+    return (raw * pct / 100.0).floor()
 
 
 def our_stats(base: torch.Tensor, spread: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
     """OUR mon's L100 ``(max_hp [...], stats [...,5])`` from its species base stats ``[..., 6]`` (hp, atk, def, spa,
-    spd, spe) and the observation's spread block: max HP integer-exact (`our_max_hp`), the five others
-    ``(2·base + IV + tr(EV/4) + 5) × nature`` — the EV floored as the game floors it (`our_spread`). FINDING, not
-    fixed: the nature multiplier is applied UNFLOORED (Showdown: ``tr(tr(stat · 110, 16) / 100)``, so a boosted /
-    hindered stat reads up to 0.9 of a point high); the speed path's `move_order.gen3_speed_stat` floors it."""
+    spd, spe) and the observation's spread block, each Showdown's integer: max HP via `our_max_hp`, the five others
+    `gen3_nature_stat` of ``2·base + IV + tr(EV/4) + 5`` (the EV floored as the game floors it, `our_spread`; the nature
+    truncated as the game truncates it). Our Speed comes from here too (`damage_op_speed`)."""
     iv, ev_points, nature = our_spread(spread)
     max_hp = our_max_hp(base[..., 0], iv[..., 0], ev_points[..., 0])
-    return max_hp, (2.0 * base[..., 1:6] + iv[..., 1:6] + ev_points[..., 1:6] + 5.0) * nature
+    return max_hp, gen3_nature_stat(2.0 * base[..., 1:6] + iv[..., 1:6] + ev_points[..., 1:6] + 5.0, nature)
+
+
+#: The gen-3 end-of-turn residual amounts, as the DENOMINATOR of the max-HP fraction Showdown passes to
+#: ``this.damage`` / ``this.heal`` (`eot_residual` cites each): Leftovers, Rain Dish, Ingrain, sand / hail and a Toxic
+#: stage 1/16; burn, poison and Leech Seed 1/8; Curse and Nightmare 1/4; Wish 1/2.
+RESIDUAL_DENOMS: Tuple[float, ...] = (16.0, 8.0, 4.0, 2.0)
+
+
+def residual_points(maxhp: torch.Tensor, denom: float, exact: torch.Tensor) -> torch.Tensor:
+    """THE gen-3 end-of-turn residual amount in HP points (gen3_residual_exact_v1), for a mon of max HP ``maxhp``:
+    `sim/battle.ts` ``spreadDamage`` ``clampIntRange(damage, 1)`` = ``max(1, ⌊maxhp / denom⌋)`` for a chip, and
+    ``heal``'s ``if (damage && damage <= 1) damage = 1; damage = trunc(damage)`` — the same integer — for a heal (the HP
+    clamps are the caller's: `sim/pokemon.ts` ``damage`` stops at 0, ``heal`` at max HP). Where ``exact`` (a bool
+    mask: OUR mon, whose max HP is the exact integer, and a Shedinja, whose max HP is 1 on either side) it is that
+    integer — a 1-max-HP Shedinja loses its one HP to a 1/16 sand chip; elsewhere (THEIR mon, whose max HP is the
+    op's neutral ESTIMATE) the nominal ``maxhp / denom``, the INTENDED estimate (their max HP is backlog E13). ``denom``
+    must be a power of two (`RESIDUAL_DENOMS`), so ``maxhp / denom`` of an integer is exact in f32."""
+    if denom not in RESIDUAL_DENOMS:
+        raise ValueError(f"residual_points: denominator {denom!r} is not a gen-3 residual's (one of {RESIDUAL_DENOMS}); "
+                         "a non-power-of-two quotient is not exact in f32 and the floor would read it wrong.")
+    nominal = maxhp / denom
+    return torch.where(exact, torch.floor(nominal).clamp(min=1.0), nominal)
 
 
 def our_hp_points(hp_frac: torch.Tensor, maxhp: torch.Tensor) -> torch.Tensor:

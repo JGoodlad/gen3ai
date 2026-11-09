@@ -7,7 +7,8 @@ outcome's paralysis severity, C1's boost Δ-outspeed, the status consequence's p
 its `off` code byte-for-byte and, under `on`, builds its inputs here and calls ONE rule
 (`move_order.p_first_same_priority`), so no site can fork the physics:
 
-* OUR six speeds are EXACT (`move_order.gen3_speed_stat` → stage → paralysis, Showdown's integer arithmetic) —
+* OUR six speeds are EXACT (`damage_kinds.our_stats`, the one decode of our spread → stage → paralysis, Showdown's
+  integer arithmetic) —
   our spread, item and condition are known;
 * THEIR six speeds are DISCRETE: the species' Smogon spreads mixture over the Speed STAT (`SPEED_MIX`,
   `belief_tables.build_species_speed_mix`, gen3_speed_mixture_v1 — real Speed investment is lumpy, max or none,
@@ -29,9 +30,10 @@ from typing import Any, Callable, Optional, Tuple, TYPE_CHECKING
 
 import torch
 
-from agents.model.damage_op_layout import (_BS_SPE, _COND_PAR_IDX, _NAT_SPE)
+from agents.model.damage_kinds import our_stats
+from agents.model.damage_op_layout import (_COND_PAR_IDX, _NAT_SPE)
 from agents.model.extractor_ctx import held_item_ids, item_unrevealed
-from agents.model.move_order import gen3_final_speed, gen3_speed_stat, p_first_same_priority
+from agents.model.move_order import gen3_final_speed, p_first_same_priority
 from agents.observation.constants import (POKEMON_CONDITION_OFFSET, POKEMON_SPREAD_DIM,
                                           POKEMON_SPREAD_OFFSET, TEAM_SIZE)
 
@@ -59,11 +61,10 @@ class DamageOperatorSpeed:
         stage on its row, 0 on the bench); ``para`` ``[B,6]`` 0/1 (None: each mon's own paralysis)."""
         B = ctx.batch_size
         ar = torch.arange(B, device=ctx.device)
-        base = self.BASE_STATS[ctx.species_ids[:, :TEAM_SIZE]][..., _BS_SPE]                 # [B,6]
+        base = self.BASE_STATS[ctx.species_ids[:, :TEAM_SIZE]]                               # [B,6,6]
         spread = ctx.pokemon_part[:, :TEAM_SIZE,
                                   POKEMON_SPREAD_OFFSET:POKEMON_SPREAD_OFFSET + POKEMON_SPREAD_DIM]
-        stat = gen3_speed_stat(base, spread[..., _BS_SPE] * 31.0, spread[..., 6 + _BS_SPE] * 252.0,
-                               spread[..., 13 + _NAT_SPE])                                    # [B,6]
+        stat = our_stats(base, spread)[1][..., _NAT_SPE]                                       # [B,6]
         if stage_rows is None:
             stage_rows = torch.zeros_like(stat)
             stage_rows[ar, ctx.our_active_idx] = self._boost_stages(ctx.our_ctx_raw)[4]

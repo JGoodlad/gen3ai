@@ -812,7 +812,7 @@ while `switch_proj` keeps its width and its init draw. Composes with either enco
 
 **13.3 The end-of-turn residual, `--eot-residual on`** (`agents/model/eot_residual.py`; ADD rank 2). For every mon on BOTH
 sides, the HP it gains or loses at the end of THIS turn if it is the mon on its side's field then (the active staying in,
-or a benched mon switching in), as 10 signed components + the HP-clamped net (fractions of its own max HP): Leftovers,
+or a benched mon switching in), as 10 signed components + the net (fractions of its own max HP): Leftovers,
 sand / hail chip, Rain Dish, the next status tick, Leech Seed drain, Leech Seed heal, Wish, Ingrain, Curse, Nightmare.
 Every component was VERIFIED in `deps/pokemon-showdown` before it was written (the table with file citations:
 `research_state/measurements/static_recovery_2026-10-09/README.md` §2), and two of the brief's expectations changed on
@@ -824,7 +824,10 @@ Nightmare × P(stays asleep) from the observation's sleep-wake belief, Cloud Nin
 actives). Leech Seed's heal is the one cross-mon amount: Showdown's integer drain min(its HP, max(1, ⌊the seeded mon's
 max HP / 8⌋)) (`gen3_leech_seed_exact_v1`, config v166; the drain column is that amount over the seeded mon's own max
 HP) / the recipient's max HP, max HP from the op's convention (ours exact from the spread, theirs `2·base + 31 + 110`, Shedinja 1), Liquid Ooze
-inverting it; it assumes the seeded active stays in. Two of its inputs were GIGO and are fixed at their source
+inverting it; it assumes the seeded active stays in. Every amount of OUR mon (and a Shedinja's) is Showdown's integer
+`max(1, ⌊max HP / d⌋)`, theirs the nominal `1/d` of the estimate (`gen3_residual_exact_v1`, config v167), and the net is
+one HP chain in the gen-3 residual order (Wish, weather, Ingrain, Rain Dish, Leftovers, Leech Seed — capped at the HP
+left after those —, status, Nightmare, Curse), where it was the clamp of the sum. Two of its inputs were GIGO and are fixed at their source
 (config v151): the Toxic tick reads the observation's counter, which saturated at 8 ticks while the engine ramps to 15
 (now `min(stage, 15) / 15`, the tick `min(n + 1, 15) / 16`, `gen3_toxic_stage_scale_v1`), and the board's Wish flag, the
 `wish` column's input, read the wrong phase at a replacement decision after the end-of-turn faint (now "a Wish lands at the

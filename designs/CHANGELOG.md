@@ -15638,3 +15638,39 @@ was downloaded or written under `data/`.
   or divides an EV by 4 outside the helpers, two declared exceptions); `static_recovery_test.py` (Leech Seed's integer
   drain exhaustive, end to end on a 1-HP mon, a 1-max-HP Shedinja and an 85-HP-EV Blissey); `static_tokens_test`'s
   85 / 87 / 3-EV stat row. Each fails on revert. The K9 learner golden is IDENTICAL (no re-record).
+
+## 2026-11-09 — our stats truncate the nature, our end-of-turn amounts are Showdown's integers in the residual order (`gen3_nature_floor_v1` + `gen3_residual_exact_v1`; config v167, no field; `OBS_SEMANTICS_VERSION` 166 → 167 by hand, `warn`; `OP_SEMANTICS` bumped; no `ARCH_SIGNATURE` / floor change)
+
+- **Why.** Round 2 of the mechanics-fidelity unit: the three inexactnesses `gen3_stat_ev_points_v1` left as FINDINGs.
+  (1) The five non-Speed stats of our spread applied the nature UNFLOORED, where `sim/battle.ts` `statModify` truncates
+  `tr(tr(stat · 110, 16) / 100)` (up to 0.9 of a point high); only the speed path floored. (2) Every end-of-turn amount
+  but Leech Seed's was the nominal fraction, where `spreadDamage` makes a chip `clampIntRange(maxhp / d, 1)` and `heal`
+  makes a heal `max(1, trunc)` — a 1-max-HP Shedinja read −1/16 in sand and survived. (3) Leech Seed's cap read the HP
+  at the decision, though gen 3 runs Wish (order 7), the weather (field order 8), Ingrain (10.1), Rain Dish (10.3) and
+  Leftovers (10.4) before it (10.5; `data/mods/gen4/*.ts`, `sim/battle.ts` `comparePriority`), and the net was the clamp
+  of the sum (a full-HP poisoned Leftovers holder read −1/16 where the heal is wasted and it loses 1/8).
+- **What.** `damage_kinds.gen3_nature_stat` inside `our_stats` (our Speed reads `our_stats` too;
+  `move_order.gen3_speed_stat` deleted); `our_max_hp` returns Shedinja's species `maxHP` 1. `damage_kinds.residual_points`
+  = `max(1, ⌊maxhp / d⌋)` for our mons and a Shedinja, the nominal `maxhp / d` for their other mons (an estimated max
+  HP, E13 — intended), refusing a non-power-of-two `d`; `damage_op_pairwise.toxic_next_stage` decodes the Toxic stage.
+  `EotResidualRule` applies every component as ONE HP chain in that order (`_residual_step`: heals capped at max HP and
+  void on a KO-ed mon, chips stop at 0); the Leech cap is the HP left after the earlier residuals; `net` is the chain's
+  change. Declared limits: probabilistic amounts enter as expectations; the two actives' order-10 blocks run fastest
+  first, which the chain does not model; the gen-3 residual Berries are not modelled.
+- **Impact on P\*** (`pstar_plateau`, CPU eager, the 2026-11-06 tie-rate population of 16,785 rows): 16,112 rows (96 %) move, because almost every
+  board carries one of our Leftovers / sand / status amounts (now `⌊max HP / d⌋`, ≤ 1 HP each). Policy TV median 6.5e-4,
+  p99 0.020, max 0.286; 421 rows over TV 0.01, 21 over 0.1. 54 top-action changes: 48 are near-ties (old top-two gap
+  < 0.05, median 0.0035); the 6 with a real gap are each a corrected mechanic, read row by row — Wish then Leftovers
+  wasted at full HP before Leech Seed / a status tick (the old clamp of the sum let the mon end full), a Leech drain
+  capped after Leftovers instead of at the decision HP (gain 0.014 → 0.103), and our one rollout Shedinja (max HP
+  143 → 1). |ΔV| ≤ 0.038. Feature max |Δ|: `eot.net` 0.198 (57 % of rows), `leech_gain` 0.092, `leech_drain` 0.0625
+  (16 rows), `status` 0.0145, `leftovers` / `weather` 0.0035; the op block 0.193 (the Shedinja row; otherwise exact
+  P(KO) steps from ≤ 0.9-point stat changes); static stat input 0.0018 (0.9 point) and 0.284 on the Shedinja row; the
+  effective-stat facts 0.0063; believed stats 0. Rows with no EOT change (the nature alone): 130, TV ≤ 0.014, no flip.
+- **Guards.** `stat_ev_points_test.py` (the nature exhaustive over base × EV × IV {0, 31} × the three multipliers
+  against `priors.gen3_stat`; the helper alone; our Shedinja's max HP; the SOURCE GUARD extended: no forward module
+  reads a nature column, multiplies by a nature multiplier, or spells a residual `/ 16`, `/ 8` or `maxhp / …` outside
+  `damage_kinds`, five declared exceptions, each pattern's teeth pinned); `static_recovery_test.py` (`residual_points`
+  exhaustive over max HP 1..714 × d; our integer amounts vs their nominal ones; the full-HP poisoned Leftovers holder;
+  the Leech cap after Leftovers and the sand KO before it; Wish before the weather; a Shedinja on either side KO-ed by
+  sand). Each fails on revert (mutation-checked).

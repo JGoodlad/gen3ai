@@ -9,8 +9,8 @@ layers, and both live here so no reader can fork either:
   `intent_conditional`'s rule); it moved here unchanged so the bracket and the speed physics are one module.
 * **within a bracket** (:func:`p_first_same_priority`) — P(our mon acts before theirs at equal priority): the
   DISCRETE speed mixture with the speed-tie coin flip (:func:`p_outspeed_mixture`), then the gen-3 Quick Claw
-  roll (:func:`p_first_quick_claw`). Our speed is EXACT (:func:`gen3_speed_stat` → :func:`gen3_stage_speed` →
-  :func:`gen3_para_speed`, Showdown's integer arithmetic); theirs is a DISCRETE distribution over the Speed STAT
+  roll (:func:`p_first_quick_claw`). Our speed is EXACT (`damage_kinds.our_stats`, the one decode of our spread →
+  :func:`gen3_stage_speed` → :func:`gen3_para_speed`, Showdown's integer arithmetic); theirs is a DISCRETE distribution over the Speed STAT
   (the Smogon spreads mixture, gen3_speed_mixture_v1), and each support point takes the SAME exact stage and
   paralysis arithmetic as ours (:func:`gen3_final_speed`), so no rounding is approximated on either side.
 
@@ -26,7 +26,8 @@ Every rule below is verified in `deps/pokemon-showdown` with the gen-3 inheritan
   ``onFractionalPriority: undefined``, the later-gen per-holder roll is not inherited). Two holders on a
   successful roll both read 65535: a tie, a coin flip.
 * STAT — `sim/battle.ts` ``statModify``: ``tr(tr(2·base + iv + tr(ev/4))·level/100 + 5)``, then the nature
-  ``tr(tr(stat·110, 16)/100)`` / ``·90``. Level 100 (gen3ou), so the level factor is exact.
+  ``tr(tr(stat·110, 16)/100)`` / ``·90``. Level 100 (gen3ou), so the level factor is exact. Computed for OUR mons by
+  `damage_kinds.our_stats` / `gen3_nature_stat` (every stat of our spread, gen3_nature_floor_v1).
 * STAGES — `sim/pokemon.ts` ``getStat``: ``boostTable = [1, 1.5, 2, 2.5, 3, 3.5, 4]``, ``floor(stat·t[b])`` for a
   boost, ``floor(stat / t[−b])`` for a drop, clamped to ±6 (no gen-3 override of the table).
 * PARALYSIS — `data/mods/gen4/conditions.ts` par ``onModifySpe``: ``chainModify(0.25)`` (Quick Feet is a gen-4
@@ -83,16 +84,7 @@ def p_seat_first(prio_m: Any, prio_k: Any, p_out: Any) -> Any:
     return (prio_k > prio_m).to(p_out.dtype) + (prio_k == prio_m).to(p_out.dtype) * (1.0 - p_out)
 
 
-# ------------------------------------------------------------------------------------ our EXACT speed stat
-def gen3_speed_stat(base: Any, iv: Any, ev: Any, nature_mult: Any) -> Any:
-    """Our mon's level-100 Speed STAT, exactly as Showdown's ``statModify`` computes it. ``iv`` / ``ev`` are the
-    observation's (de-normalised, so ROUNDED back to their integers first); ``nature_mult`` is 0.9 / 1.0 / 1.1
-    (the nature's percentage, rounded, so the float32 product cannot land a hair under an integer)."""
-    inner = 2.0 * base + iv.round() + (ev.round() / 4.0).floor() + 5.0
-    pct = (nature_mult * 100.0).round()
-    return (inner * pct / 100.0).floor()
-
-
+# ------------------------------------------------------------------------- the stage and paralysis arithmetic
 def gen3_stage_speed(stat: Any, stage: Any) -> Any:
     """``getStat``'s stage step: ``floor(stat · (2+s)/2)`` for a boost, ``floor(stat · 2/(2−s))`` for a drop, the
     stage clamped to ±6 (``stage`` is the observation's, rounded to its integer). Both quotients are of integers,

@@ -284,6 +284,14 @@ nature/EV belief's EV prior is stat-effective, and the end-of-turn rule's Leech 
 (`eot_residual.leech_seed_drained`). `_migrate_config` stamps every past config through; `OBS_SEMANTICS_VERSION` raised
 BY HAND to 166 (`warn`); `damage_tables.OP_SEMANTICS` → `gen3_stat_ev_points_v1`. No `ARCH_SIGNATURE` or floor change.
 
+**v167 (`gen3_nature_floor_v1` + `gen3_residual_exact_v1`, 2026-11-09)** — forward fixes with NO field and no weight
+shape, versioned as v166: our stats truncate the nature (`damage_kinds.gen3_nature_stat`; our Speed reads `our_stats`,
+`move_order.gen3_speed_stat` is gone) and our Shedinja's max HP is 1; the end-of-turn rule's amounts are Showdown's
+integers for our mons and a Shedinja (`damage_kinds.residual_points`), applied as one HP chain in the gen-3 residual
+order (Leech Seed's cap after Leftovers; the net wastes a heal at full HP). `_migrate_config` stamps every past config
+through; `OBS_SEMANTICS_VERSION` raised BY HAND to 167 (`warn`); `damage_tables.OP_SEMANTICS` → `gen3_nature_floor_v1`.
+No `ARCH_SIGNATURE` or floor change.
+
 **The exact P(KO) (then `ko_ramp = 'exact'`; flagless since v156) is computed in CLOSED FORM (`gen3_ko_exact_closed_v1`,
 2026-10-10), with NO config, obs-semantics or signature bump.** The value `exact_closed` that carried the closed form beside the 16-roll sum was legal for one
 commit (`6e0a1a7a`, no bump: a new VALUE of an existing field, nothing to migrate, no parameter); the owner's "remove

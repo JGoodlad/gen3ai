@@ -21,7 +21,7 @@ import torch
 
 from agents.battle.core_obs import wrap_row
 from agents.battle.core_replay import RecordedBattle, run_core
-from agents.model.damage_op_pairwise import toxic_next_tick
+from agents.model.damage_op_pairwise import toxic_next_stage
 from agents.observation import constants as C
 
 pytestmark = [pytest.mark.sim, pytest.mark.integration]
@@ -68,19 +68,20 @@ def test_the_row_the_trainee_reads_carries_toxic_stage_12_on_its_true_scale():
     [(slot, cell)] = _tox_cells(last, C.OFFSET_OUR_TEAM)
     assert cell == np.float32(12 / C.TOXIC_STAGE_MAX), cell
     assert cell != 1.0, "the cell is saturated: the old min(stage, 8) / 8 scale"
-    # the model's decoder, on the REAL row: the 13th tick is 13/16 of max HP (Showdown: stage 13, floor(maxhp/16) * 13)
-    nxt = toxic_next_tick(torch.tensor(last[C.OFFSET_OUR_TEAM + slot * C.POKEMON_FULL_DIM + C.POKEMON_COUNTER_OFFSET + 1]))
-    assert float(nxt) == pytest.approx(13 / 16, abs=1e-6), float(nxt)
+    # the model's decoder, on the REAL row: the 13th tick runs at stage 13 (Showdown: floor(maxhp/16) * 13)
+    nxt = toxic_next_stage(torch.tensor(last[C.OFFSET_OUR_TEAM + slot * C.POKEMON_FULL_DIM + C.POKEMON_COUNTER_OFFSET + 1]))
+    assert float(nxt) == 13.0, float(nxt)
     # the opponent's view of the same mon carries the same public counter
     o_stages = [(_tox_cells(r, C.OFFSET_OPP_TEAM) or [(0, 0.0)])[0][1] for r in opp]
     assert round(max(o_stages) * C.TOXIC_STAGE_MAX) == 12, o_stages
 
 
 def test_the_next_tick_decoder_reads_every_stage_to_the_engines_cap():
-    """``min(n + 1, 15) / 16`` for n = 0..20 ticks taken, from the cell the encoder writes (``min(n, 15) / 15``)."""
+    """``min(n + 1, 15)`` EXACTLY (bit-equal: the end-of-turn rule multiplies it by an integer amount,
+    gen3_residual_exact_v1) for n = 0..20 ticks taken, from the cell the encoder writes (``f32(min(n, 15) / 15)``)."""
     n = torch.arange(0, 21)
-    cell = torch.clamp(n, max=C.TOXIC_STAGE_MAX).float() / C.TOXIC_STAGE_MAX
-    want = torch.clamp(n + 1, max=15).float() / 16.0
-    assert torch.allclose(toxic_next_tick(cell), want, atol=1e-6)
-    assert float(toxic_next_tick(torch.tensor(8.0 / 15))) == pytest.approx(9 / 16, abs=1e-6), "the old cap read 9th as 8th"
-    assert float(toxic_next_tick(torch.tensor(1.0))) == pytest.approx(15 / 16, abs=1e-6), "never 16/16"
+    cell = torch.from_numpy((np.minimum(n.numpy(), C.TOXIC_STAGE_MAX) / C.TOXIC_STAGE_MAX).astype(np.float32))
+    want = torch.clamp(n + 1, max=15).float()
+    assert torch.equal(toxic_next_stage(cell), want)
+    assert float(toxic_next_stage(torch.tensor(8.0 / 15))) == 9.0, "the old cap read 9th as 8th"
+    assert float(toxic_next_stage(torch.tensor(1.0))) == 15.0, "never 16"

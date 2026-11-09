@@ -98,11 +98,16 @@ integer by an ulp, and a discrete cut such as the fixed-damage KO then flips). `
 `FORWARD_MODULES` file and fails on a new inline product; its one declared exception is an amount, not our HP
 (their percent bin). THEIR HP is an estimate and is never rounded.
 
-**Our spread has ONE decode (`gen3_stat_ev_points_v1`).** Every stat of OUR mon comes from `damage_kinds.our_spread` /
-`our_stats` / `our_max_hp`: the IV and EV back to their integers, the EV as ``⌊EV / 4⌋`` stat points (Showdown's
-`statModify`). Never write `* 252` or `ev / 4` in a forward module; `stat_ev_points_test.py` fails on a new site (its two
-declared exceptions: `damage_op_speed`'s call into `move_order.gen3_speed_stat`, which floors itself, and
-`SpreadBelief`'s believed stat, an expectation over stat-effective EVs).
+**Our spread has ONE decode (`gen3_stat_ev_points_v1`, `gen3_nature_floor_v1`).** Every stat of OUR mon, Speed
+included, comes from `damage_kinds.our_spread` / `our_stats` / `our_max_hp`: the IV and EV back to their integers, the EV
+as ``⌊EV / 4⌋`` stat points and the nature truncated (`gen3_nature_stat`, ``tr(stat · 110 / 100)``), as Showdown's
+`statModify` does; our Shedinja's max HP is 1. **Every end-of-turn amount has ONE spelling (`gen3_residual_exact_v1`):**
+`damage_kinds.residual_points(maxhp, d, exact)` = Showdown's integer ``max(1, ⌊maxhp / d⌋)`` for our mons and a
+Shedinja, the nominal ``maxhp / d`` for their other mons (an estimated max HP, E13). Never write `* 252`, `ev / 4`, a
+nature column or multiplier, a residual's `/ 16` / `/ 8`, or `maxhp / …` in a forward module; `stat_ev_points_test.py`
+fails on a new site (declared exceptions: `SpreadBelief`'s believed stat, an expectation; the status-landing
+consequence's tick on THEIR mon and the Spikes entry chip, both nominal; Substitute's `⌊maxhp / 4⌋`, already exact; the
+crit-probability table).
 
 ## The op's READ contracts: an opponent's ability, and the status rules (`gen3_op_ability_status_gigo_v1`)
 

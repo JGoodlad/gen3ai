@@ -40,6 +40,7 @@ import pytest
 import torch
 
 from agents.model.compile_parity_fixture import load_parity_rows
+from agents.model.damage_kinds import residual_points
 from agents.model.eot_residual import EOT_DIM, EOT_FACTS, leech_seed_drained
 from agents.model.extractor_ctx import POKEMON_ABILITY_KNOWN_OFFSET, ExtractorContext
 from agents.model.identity_init_test import _build_real_policy
@@ -279,6 +280,15 @@ def _types(*names: str) -> Tuple[int, int]:
     return _T2I[tt[0]], (_T2I[tt[1]] if len(tt) > 1 else 0)
 
 
+def _ours(name: str, d: int) -> float:
+    """OUR mon's exact end-of-turn amount as a fraction of its max HP (gen3_residual_exact_v1): Showdown's
+    ``max(1, ⌊maxhp / d⌋) / maxhp`` at HP IV 31, EV 0 (the `_blank` spread). THEIR mon keeps the nominal ``1 / d``."""
+    from agents import gen3_data
+    base = gen3_data.species.get(name).base_stats["hp"]
+    mhp = 1 if base == 1 else 2 * base + 31 + 110
+    return max(1, mhp // d) / mhp
+
+
 @pytest.fixture(scope="module")
 def eot_fe() -> Any:
     return _policy().features_extractor
@@ -400,8 +410,8 @@ def test_leftovers_known_consumed_and_by_the_species_prior(eot_fe: Any, rows: to
     out = _eot(eot_fe, ctx)
     p_bliss = float(eot_fe.eot_residual_rule.SPECIES_LEFTOVERS_PRIOR[_sp("blissey")])          # Smogon P(Leftovers)
     assert 0.5 < p_bliss < 1.0
-    _only(out, "leftovers", {1: 1 / 16, 7: 1 / 16, 8: p_bliss / 16})
-    assert float(out[1, _COL["net"]]) == pytest.approx(1 / 16)
+    _only(out, "leftovers", {1: _ours("snorlax", 16), 7: 1 / 16, 8: p_bliss / 16})    # ours ⌊461/16⌋ = 28 HP
+    assert float(out[1, _COL["net"]]) == pytest.approx(28 / 461)
 
 
 def test_sand_and_hail_chip_by_type_and_sand_veil(eot_fe: Any, rows: torch.Tensor) -> None:
@@ -411,17 +421,19 @@ def test_sand_and_hail_chip_by_type_and_sand_veil(eot_fe: Any, rows: torch.Tenso
     ctx = _mon(ctx, 3, species="cacturne", types=("GRASS", "DARK"), ability="sandveil")
     ctx = _mon(ctx, 9, species="dewgong", types=("WATER", "ICE"))
     out = _eot(eot_fe, ctx)
-    sand = {s: -1 / 16 for s in range(2 * TEAM_SIZE) if s not in (1, 2, 3)}
-    _only(out, "weather", sand)
+    sp = {1: "tyranitar", 2: "skarmory", 3: "cacturne"}
+    nominal = {s: (-_ours(sp.get(s, "snorlax"), 16) if s < TEAM_SIZE else -1 / 16) for s in range(2 * TEAM_SIZE)}
+    _only(out, "weather", {s: v for s, v in nominal.items() if s not in (1, 2, 3)})
     hail = _eot(eot_fe, _weather(ctx, 4, permanent=False, turns_left=3))
-    _only(hail, "weather", {s: -1 / 16 for s in range(2 * TEAM_SIZE) if s != 9})
+    _only(hail, "weather", {s: v for s, v in nominal.items() if s != 9})
 
 
 def test_a_timed_weathers_last_turn_has_no_chip(eot_fe: Any, rows: torch.Tensor) -> None:
     base = _blank(eot_fe, rows)
     for left, chip in ((5, True), (2, True), (1, False)):
         out = _eot(eot_fe, _weather(base, 3, permanent=False, turns_left=left))
-        _only(out, "weather", {s: -1 / 16 for s in range(2 * TEAM_SIZE)} if chip else {})
+        want = {s: (-_ours("snorlax", 16) if s < TEAM_SIZE else -1 / 16) for s in range(2 * TEAM_SIZE)}
+        _only(out, "weather", want if chip else {})
 
 
 def test_cloud_nine_on_the_field_suppresses_the_weather(eot_fe: Any, rows: torch.Tensor) -> None:
@@ -435,7 +447,7 @@ def test_cloud_nine_on_the_field_suppresses_the_weather(eot_fe: Any, rows: torch
     for s in range(2 * TEAM_SIZE):
         own = 1.0 if s == 2 else (p_c9 if s == TEAM_SIZE else 0.0)
         other = p_c9 if s < TEAM_SIZE else 0.0                                         # the OTHER side's active
-        want[s] = -(1 / 16) * (1 - own) * (1 - other)
+        want[s] = -(_ours("snorlax", 16) if s < TEAM_SIZE else 1 / 16) * (1 - own) * (1 - other)
     want[2] = 0.0
     _only(out, "weather", want)
 
@@ -443,7 +455,7 @@ def test_cloud_nine_on_the_field_suppresses_the_weather(eot_fe: Any, rows: torch
 def test_rain_dish(eot_fe: Any, rows: torch.Tensor) -> None:
     ctx = _weather(_blank(eot_fe, rows), 2, permanent=False, turns_left=4)
     ctx = _mon(ctx, 4, species="ludicolo", types=("WATER", "GRASS"), ability="raindish")
-    _only(_eot(eot_fe, ctx), "rain_dish", {4: 1 / 16})
+    _only(_eot(eot_fe, ctx), "rain_dish", {4: _ours("ludicolo", 16)})                # ⌊301/16⌋ = 18 HP
     _only(_eot(eot_fe, _weather(ctx, 2, permanent=False, turns_left=1)), "rain_dish", {})
 
 
@@ -456,7 +468,8 @@ def test_the_status_tick_burn_poison_toxic_and_shed_skin(eot_fe: Any, rows: torc
     ctx = _mon(ctx, 4, status="par")                                              # no tick
     ctx = _mon(ctx, 7, species="dragonair", types=("DRAGON",), ability="shedskin", status="psn")
     out = _eot(eot_fe, ctx)
-    _only(out, "status", {0: -4 / 16, 1: -1 / 16, 2: -1 / 8, 3: -1 / 8, 7: -(1 / 8) * (2 / 3)})
+    s16, s8 = _ours("snorlax", 16), _ours("snorlax", 8)                           # 28 and 57 of 461 HP
+    _only(out, "status", {0: -4 * s16, 1: -s16, 2: -s8, 3: -s8, 7: -(1 / 8) * (2 / 3)})
 
 
 def test_the_toxic_tick_ramps_past_the_old_8_cap_to_the_engines_15(eot_fe: Any, rows: torch.Tensor) -> None:
@@ -467,7 +480,8 @@ def test_the_toxic_tick_ramps_past_the_old_8_cap_to_the_engines_15(eot_fe: Any, 
     for slot, n in ((0, 8), (1, 11), (2, 13), (3, 14), (4, 15)):
         ctx = _mon(ctx, slot, status="tox", tox_ticks=n)
     out = _eot(eot_fe, ctx)
-    _only(out, "status", {0: -9 / 16, 1: -12 / 16, 2: -14 / 16, 3: -15 / 16, 4: -15 / 16})
+    s16 = _ours("snorlax", 16)                                                    # stage × ⌊461/16⌋
+    _only(out, "status", {0: -9 * s16, 1: -12 * s16, 2: -14 * s16, 3: -15 * s16, 4: -15 * s16})
 
 
 def test_leech_seed_drain_and_its_heal_to_the_other_side(eot_fe: Any, rows: torch.Tensor) -> None:
@@ -538,6 +552,86 @@ def test_leech_seed_drained_is_showdowns_integer_for_every_reachable_pair() -> N
         assert torch.equal(got, want), maxhp
 
 
+def test_residual_points_is_showdowns_integer_for_every_max_hp_and_denominator() -> None:
+    """gen3_residual_exact_v1, EXHAUSTIVE over max HP 1..714 and every gen-3 residual denominator: where exact,
+    ``max(1, maxhp // d)`` (`sim/battle.ts` ``spreadDamage`` ``clampIntRange(damage, 1)``; ``heal``'s ``<= 1 → 1`` then
+    ``trunc``); elsewhere the nominal ``maxhp / d``. A non-power-of-two denominator is REFUSED (its quotient is not
+    exact in f32)."""
+    m = torch.arange(1, 715, dtype=torch.float32)
+    for d in (16, 8, 4, 2):
+        want = torch.from_numpy(np.maximum(1, np.arange(1, 715) // d).astype(np.float32))
+        assert torch.equal(residual_points(m, float(d), torch.ones_like(m, dtype=torch.bool)), want), d
+        assert torch.equal(residual_points(m, float(d), torch.zeros_like(m, dtype=torch.bool)), m / d), d
+    with pytest.raises(ValueError, match="not a gen-3 residual"):
+        residual_points(m, 3.0, torch.ones_like(m, dtype=torch.bool))
+
+
+def test_our_amounts_are_showdowns_integers_and_theirs_the_nominal_fraction(eot_fe: Any, rows: torch.Tensor) -> None:
+    """Our 714-HP Blissey (252 HP EVs) under Toxic at stage 4 loses ``clampIntRange(714 / 16, 1) · 4`` = 44 · 4 = 176
+    (`data/conditions.ts` tox), with Leftovers it heals ⌊714/16⌋ = 44 (`data/mods/gen4/items.ts`), a Wish heals
+    ⌊714/2⌋ = 357 (`data/mods/gen4/moves.ts` wish ``target.baseMaxhp / 2``); their Snorlax (an ESTIMATED 461) keeps
+    the nominal 1/16 · 4. The old nominal fractions (178.5, 44.625, 357) fail the first two."""
+    ctx = _mon(_blank(eot_fe, rows), 0, species="blissey", status="tox", tox_ticks=3, item="leftovers", hp=0.25)
+    ctx = _mon(ctx, TEAM_SIZE, status="tox", tox_ticks=3)
+    pp = ctx.pokemon_part.clone()
+    pp[:, 0, POKEMON_SPREAD_OFFSET + 6] = 1.0                                    # 252 HP EVs → 714
+    nmr = ctx.non_matchup_rest.clone()
+    nmr[:, eot_fe.eot_residual_rule._wish_our] = 0.5
+    out = _eot(eot_fe, dataclasses.replace(ctx, pokemon_part=pp, non_matchup_rest=nmr))
+    assert float(out[0, _COL["status"]]) == pytest.approx(-176 / 714, rel=1e-6)
+    assert float(out[0, _COL["leftovers"]]) == pytest.approx(44 / 714, rel=1e-6)
+    assert float(out[0, _COL["wish"]]) == pytest.approx(357 / 714, rel=1e-6)
+    assert float(out[TEAM_SIZE, _COL["status"]]) == pytest.approx(-4 / 16, rel=1e-6)
+
+
+def test_a_full_hp_poisoned_leftovers_holder_wastes_the_heal(eot_fe: Any, rows: torch.Tensor) -> None:
+    """THE HP CHAIN: Leftovers (order 10 sub 4) runs before poison (sub 6), and at full HP it heals nothing
+    (`sim/battle.ts` ``heal``: ``if (target.hp >= target.maxhp) return false``), so our full-HP poisoned Snorlax nets
+    the whole −57 / 461; the clamp of the sum read −29 / 461. At half HP both apply (−29)."""
+    ctx = _mon(_blank(eot_fe, rows), 1, item="leftovers", status="psn", hp=1.0)
+    ctx = _mon(ctx, 2, item="leftovers", status="psn", hp=float(np.float32(230 / 461)))
+    out = _eot(eot_fe, ctx)
+    assert float(out[1, _COL["net"]]) == pytest.approx(-57 / 461, rel=1e-6)
+    assert float(out[2, _COL["net"]]) == pytest.approx(-29 / 461, rel=1e-6)
+
+
+def test_leech_seed_drains_the_hp_left_after_the_residuals_before_it(eot_fe: Any, rows: torch.Tensor) -> None:
+    """gen3 residual order (`data/mods/gen4/items.ts` leftovers sub 4, `data/mods/gen4/moves.ts` leechseed sub 5;
+    `sim/battle.ts` ``comparePriority`` sorts order, speed, then sub-order): our seeded Snorlax at 20 / 461 HP with
+    Leftovers heals to 48 and THEN loses min(48, 57) = 48 — their slot heals 48, not the decision-time 20. Under sand
+    (field order 8, before both) the 28 chip KOs it first: no Leftovers (a fainted mon heals nothing), no drain."""
+    ctx = _vol(_mon(_blank(eot_fe, rows), 0, item="leftovers", hp=float(np.float32(20 / 461))), 0, "leechseed")
+    out = _eot(eot_fe, ctx)
+    assert float(out[0, _COL["leech_drain"]]) == pytest.approx(-48 / 461, rel=1e-6)
+    assert float(out[TEAM_SIZE, _COL["leech_gain"]]) == pytest.approx(48 / 461, rel=1e-6)
+    assert float(out[0, _COL["net"]]) == pytest.approx(-20 / 461, rel=1e-6)
+    sand = _eot(eot_fe, _weather(ctx, 3, permanent=True))
+    assert float(sand[0, _COL["leech_drain"]]) == 0.0 and float(sand[TEAM_SIZE, _COL["leech_gain"]]) == 0.0
+    assert float(sand[0, _COL["net"]]) == pytest.approx(-20 / 461, rel=1e-6)
+
+
+def test_wish_heals_before_the_weather_chips(eot_fe: Any, rows: torch.Tensor) -> None:
+    """Wish (gen 4 mod order 7) before sand (field order 8): our Snorlax at 10 / 461 heals 230, then takes 28 —
+    net +202. The reverse order would KO it at the chip and void the Wish (net −10)."""
+    ctx = _weather(_mon(_blank(eot_fe, rows), 0, hp=float(np.float32(10 / 461))), 3, permanent=True)
+    nmr = ctx.non_matchup_rest.clone()
+    nmr[:, eot_fe.eot_residual_rule._wish_our] = 0.5
+    out = _eot(eot_fe, dataclasses.replace(ctx, non_matchup_rest=nmr))
+    assert float(out[0, _COL["net"]]) == pytest.approx(202 / 461, rel=1e-6)
+
+
+def test_a_shedinja_on_either_side_loses_its_one_hp_to_sand(eot_fe: Any, rows: torch.Tensor) -> None:
+    """``clampIntRange(1 / 16, 1)`` = 1: sand KOs a 1-max-HP Shedinja (Bug / Ghost, not sand-immune) at the residual,
+    ours AND theirs (its max HP is the species' 1 on either side, not an estimate); the old nominal −1/16 read it
+    surviving."""
+    ctx = _weather(_blank(eot_fe, rows), 3, permanent=True)
+    for slot in (1, TEAM_SIZE + 1):
+        ctx = _mon(ctx, slot, species="shedinja", types=("BUG", "GHOST"), ability="wonderguard", hp=1.0)
+    out = _eot(eot_fe, ctx)
+    for slot in (1, TEAM_SIZE + 1):
+        assert float(out[slot, _COL["weather"]]) == -1.0 and float(out[slot, _COL["net"]]) == -1.0, slot
+
+
 def test_wish_heals_every_mon_of_its_side_by_half(eot_fe: Any, rows: torch.Tensor) -> None:
     ctx = _blank(eot_fe, rows)
     nmr = ctx.non_matchup_rest.clone()
@@ -549,19 +643,22 @@ def test_wish_heals_every_mon_of_its_side_by_half(eot_fe: Any, rows: torch.Tenso
 
 def test_ingrain_curse_and_nightmare_on_the_active_only(eot_fe: Any, rows: torch.Tensor) -> None:
     base = _blank(eot_fe, rows)
-    _only(_eot(eot_fe, _vol(base, 0, "ingrain")), "ingrain", {0: 1 / 16})
-    _only(_eot(eot_fe, _vol(base, 1, "curse")), "curse", {TEAM_SIZE: -1 / 4})
+    _only(_eot(eot_fe, _vol(base, 0, "ingrain")), "ingrain", {0: _ours("snorlax", 16)})
+    _only(_eot(eot_fe, _vol(base, 1, "curse")), "curse", {TEAM_SIZE: -1 / 4})          # theirs: nominal
+    _only(_eot(eot_fe, _vol(base, 0, "curse")), "curse", {0: -_ours("snorlax", 4)})     # ours: ⌊461/4⌋ = 115 HP
     nm = _mon(_vol(base, 0, "nightmare"), 0, status="slp", p_wake=0.25)
-    _only(_eot(eot_fe, nm), "nightmare", {0: -(1 / 4) * 0.75})
+    _only(_eot(eot_fe, nm), "nightmare", {0: -_ours("snorlax", 4) * 0.75})
     _only(_eot(eot_fe, _vol(base, 0, "nightmare")), "nightmare", {})                # awake: no Nightmare
 
 
 def test_the_net_is_clamped_to_the_hp_the_mon_has_and_lacks(eot_fe: Any, rows: torch.Tensor) -> None:
-    ctx = _vol(_mon(_blank(eot_fe, rows), 0, hp=0.1), 0, "curse")
-    ctx = _mon(ctx, 1, item="leftovers", hp=0.98)
+    """Our Snorlax at 46 / 461 HP takes Curse's 115: it loses the 46 it has; at 452 / 461 Leftovers' 28 heals the 9
+    it lacks."""
+    ctx = _vol(_mon(_blank(eot_fe, rows), 0, hp=float(np.float32(46 / 461))), 0, "curse")
+    ctx = _mon(ctx, 1, item="leftovers", hp=float(np.float32(452 / 461)))
     out = _eot(eot_fe, ctx)
-    assert float(out[0, _COL["net"]]) == pytest.approx(-0.1)
-    assert float(out[1, _COL["net"]]) == pytest.approx(0.02, abs=1e-6)
+    assert float(out[0, _COL["net"]]) == pytest.approx(-46 / 461, rel=1e-6)
+    assert float(out[1, _COL["net"]]) == pytest.approx(9 / 461, rel=1e-6)
 
 
 def test_fainted_and_unknown_slots_read_zero(eot_fe: Any, rows: torch.Tensor) -> None:
@@ -572,7 +669,7 @@ def test_fainted_and_unknown_slots_read_zero(eot_fe: Any, rows: torch.Tensor) ->
         conc[:, 2] = 0.0
         out = eot_fe.eot_residual_rule(ctx, eot_fe.damage_op, conc)[0]
     assert float(out[3].abs().max()) == 0.0 and float(out[TEAM_SIZE + 2].abs().max()) == 0.0
-    assert float(out[4, _COL["weather"]]) == pytest.approx(-1 / 16)
+    assert float(out[4, _COL["weather"]]) == pytest.approx(-_ours("snorlax", 16))
 
 
 def test_the_residual_permutes_with_our_slots(eot_fe: Any, rows: torch.Tensor) -> None:

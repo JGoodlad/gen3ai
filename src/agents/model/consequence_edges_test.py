@@ -59,6 +59,10 @@ def _boost_ctx(fe, seed=71):
     ctx.our_active_req_move_legal[:, :] = 0.0
     ctx.our_active_req_move_legal[:, 0] = 1.0
     ctx.opp_believed_mask[:, :] = False
+    # a real observation's nature cells are 0.9 / 1.0 / 1.1 (the random obs' are U[0, 1): a cell under 0.005 makes our
+    # stat 0 once the nature is truncated as Showdown does, gen3_nature_floor_v1)
+    from agents.observation.constants import POKEMON_SPREAD_OFFSET
+    ctx.pokemon_part[:, :TEAM_SIZE, POKEMON_SPREAD_OFFSET + 13:POKEMON_SPREAD_OFFSET + 18] = 1.0
     return ctx
 
 
@@ -466,16 +470,20 @@ def test_toxic_and_sleep_consequences():
     ctx.hp_and_active[ar, 1, 0] = 1.0
     with torch.no_grad():
         our_g, _opp_g = fe.damage_op.pairwise_schedule(ctx)
-    assert abs(float(our_g[0, 1, 2]) - (-4.0 / 16.0)) < 1e-6, \
-        "the G ledger must charge the RAMPED next tick (3 ticks deep → −4/16)"
+    # gen3_residual_exact_v1: our mon's tick is the stage × Showdown's integer max(1, ⌊maxhp / 16⌋), over its max HP
+    mhp1 = float(fe.damage_op.eot_rule._max_hp(ctx, fe.damage_op)[0, 1])
+    s16 = max(1.0, mhp1 // 16) / mhp1
+    assert abs(s16 - 1.0 / 16.0) > 1e-5                                      # the pin has teeth
+    assert abs(float(our_g[0, 1, 2]) - (-4.0 * s16)) < 1e-6, \
+        "the G ledger must charge the RAMPED next tick (3 ticks deep → stage 4)"
     # GIGO (`gen3_toxic_stage_scale_v1`): the cell saturated at 8 ticks, so the 9th tick on read as the 9th. Showdown's
     # `tox.onResidual` runs the stage to 15 before the damage `floor(maxhp/16) · stage`: n ticks taken → min(n+1, 15)/16.
     for ticks, want in ((8, 9.0), (11, 12.0), (12, 13.0), (14, 15.0), (15, 15.0)):
         ctx.pokemon_part[ar, 1, POKEMON_COUNTER_OFFSET + 1] = ticks / TOXIC_STAGE_MAX
         with torch.no_grad():
             our_g, _opp_g = fe.damage_op.pairwise_schedule(ctx)
-        assert abs(float(our_g[0, 1, 2]) - (-want / 16.0)) < 1e-5, \
-            f"{ticks} ticks deep: the G ledger must charge −{want:g}/16 (the engine's stage, not the old 8-tick cap)"
+        assert abs(float(our_g[0, 1, 2]) - (-want * s16)) < 1e-5, \
+            f"{ticks} ticks deep: the G ledger must charge stage {want:g} (the engine's stage, not the old 8-tick cap)"
 
 
 def test_belly_drum_priced_with_cost_and_fail_gate():

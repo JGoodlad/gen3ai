@@ -120,7 +120,8 @@ def test_schedule_ledger_kernel_invariants():
     `sim/battle.ts` expires it before the chip), every ability is CONFIRMED neutral (ability id 0: no Sand Veil,
     no Cloud Nine / Air Lock on either active), mon 2's Leftovers is a known, unconsumed item, and the random obs'
     Wish flags and active volatiles (Ingrain lands in the heal column) are cleared. Then by hand: the Water mon's
-    weather column = −1/16, the Leftovers mon's heal column = +1/16, each × alive."""
+    weather column = −⌊maxhp/16⌋, the Leftovers mon's heal column = +⌊maxhp/16⌋ (our exact integers, over max HP), each
+    × alive."""
     fe = _make(**_T_TOGGLES).eval()
     obs = _obs(seed=51)
     with torch.no_grad():
@@ -154,9 +155,13 @@ def test_schedule_ledger_kernel_invariants():
         our_c, opp_c = fe.damage_op.pairwise_schedule(ctx)
     alive = (ctx.hp_and_active[:, :TEAM_SIZE, 0] > 0).float()
     assert float(our_c[:, 0, 1].abs().sum()) == 0.0, "Rock mon takes no sand chip"
-    exp_chip = -(1.0 / 16.0) * alive[:, 1]
-    assert torch.allclose(our_c[:, 1, 1], exp_chip, atol=1e-6), "Water mon bleeds 1/16 in sand"
-    assert torch.allclose(our_c[:, 2, 0], (1.0 / 16.0) * alive[:, 2], atol=1e-6)
+    # gen3_residual_exact_v1: OUR amounts are Showdown's integer max(1, ⌊maxhp / 16⌋) over the mon's exact max HP
+    our_mhp = rule._max_hp(ctx, fe.damage_op)[:, :TEAM_SIZE]
+    s16 = torch.floor(our_mhp / 16.0).clamp(min=1.0) / our_mhp
+    assert not torch.allclose(s16, torch.full_like(s16, 1.0 / 16.0), atol=1e-6)        # the pin has teeth
+    exp_chip = -s16[:, 1] * alive[:, 1]
+    assert torch.allclose(our_c[:, 1, 1], exp_chip, atol=1e-6), "Water mon bleeds ⌊maxhp/16⌋ in sand"
+    assert torch.allclose(our_c[:, 2, 0], s16[:, 2] * alive[:, 2], atol=1e-6)
     # Leech lands only at the active slot (channel 3): our seeded active drains its integer amount; a benched mon carries no
     # volatile, and their active is unseeded, so no Leech heal reaches our side.
     nonactive = torch.ones(2, TEAM_SIZE, dtype=torch.bool)
@@ -164,10 +169,18 @@ def test_schedule_ledger_kernel_invariants():
     assert float(our_c[:, :, 3][nonactive].abs().sum()) == 0.0
     # gen3_leech_seed_exact_v1: the drain is Showdown's integer min(hp, max(1, ⌊maxhp / 8⌋)), over the mon's max HP
     # (no longer the nominal 1/8): rebuilt by hand from the rule's own max HP and our exact HP points.
+    # The cap is the HP LEFT after the residuals Showdown runs first (Wish, the weather, Ingrain, Rain Dish, Leftovers;
+    # gen3_residual_exact_v1), applied in that order from the rule's own columns.
     from agents.model.damage_kinds import our_hp_points
+    from agents.model.eot_residual import EOT_FACTS
     maxhp = rule._max_hp(ctx, fe.damage_op)[ar, ctx.our_active_idx]
-    hp_pts = our_hp_points(ctx.hp_and_active[ar, ctx.our_active_idx, 0], maxhp)
-    exp_leech = -torch.minimum(hp_pts, torch.floor(maxhp / 8.0).clamp(min=1.0)) / maxhp
+    h = our_hp_points(ctx.hp_and_active[ar, ctx.our_active_idx, 0], maxhp)
+    with torch.no_grad():
+        eot = rule(ctx, fe.damage_op)[ar, ctx.our_active_idx]                          # [B, EOT_DIM]
+    for col in ("wish", "weather", "ingrain", "rain_dish", "leftovers"):
+        d = eot[:, EOT_FACTS.index(col)] * maxhp
+        h = (torch.minimum(h + d.clamp(min=0.0) * h.clamp(max=1.0), maxhp) + d.clamp(max=0.0)).clamp(min=0.0)
+    exp_leech = -torch.minimum(h, torch.floor(maxhp / 8.0).clamp(min=1.0)) / maxhp
     assert not torch.allclose(exp_leech, torch.full_like(exp_leech, -1.0 / 8.0), atol=1e-6)   # the pin has teeth
     assert torch.allclose(our_c[ar, ctx.our_active_idx, 3], exp_leech * alive[ar, ctx.our_active_idx], atol=1e-6)
 

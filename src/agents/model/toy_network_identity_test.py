@@ -10,7 +10,8 @@ pin that the network did not move:
    elements, recorded from `models/rb_toy_ent_s4002/final_model.zip`). Pure in-process; no archive needed.
 2. **Function.** The real checkpoint, loaded strictly into that HEAD build, gives the SAME logits and values on 64
    real Rust-core observation rows as the PIN's own build gave (recorded at `3899277a` on a `git archive` export;
-   bit-identical there on 2026-10-17). Skipped where the run archive is absent.
+   bit-identical there on 2026-10-17), with each DECLARED input-semantics change since the pin undone (v167's nature
+   truncation in the static tokens' stat input). Skipped where the run archive is absent.
 
 The evidence, the argvs and the script that recorded both fixtures:
 `designs/research_state/measurements/x34_toy_deep_stage_2026-10-17/`.
@@ -64,19 +65,11 @@ def test_the_head_toy_argv_builds_the_s4002_checkpoints_exact_structure():
     assert sum(int(np.prod(s)) for s in built.values()) == man["numel"] == 3_121_590
 
 
-def test_the_s4002_checkpoint_forwards_at_head_as_at_its_pin():
+def _forward(zp, ref):
     import torch
 
     from utils.torch_state_guard import torch_globals
 
-    root = main_models_dir()
-    zp = root / RUN / "final_model.zip" if root is not None else None
-    if zp is None or not zp.exists():
-        pytest.skip(f"no archived {RUN}/final_model.zip on this box")
-    man = _manifest()
-    assert hashlib.sha256(zp.read_bytes()).hexdigest() == man["source_sha256"], (
-        f"{zp} is not the file the fixtures were recorded from (models/ is read-only: who rewrote it?)")
-    ref = np.load(FORWARD_REF)
     with torch_globals(num_threads=1):
         model = _toy_model()
         with zipfile.ZipFile(zp) as z, z.open("policy.pth") as f:
@@ -92,9 +85,31 @@ def test_the_s4002_checkpoint_forwards_at_head_as_at_its_pin():
     assert logits.shape == ref["logits"].shape == (64, 11) and values.shape == ref["values"].shape == (64, 1)
     assert np.array_equal(np.isfinite(logits), np.isfinite(ref["logits"]))
     fin = np.isfinite(logits)
-    d_logits = float(np.abs(logits[fin] - ref["logits"][fin]).max())
-    d_values = float(np.abs(values - ref["values"]).max())
+    return float(np.abs(logits[fin] - ref["logits"][fin]).max()), float(np.abs(values - ref["values"]).max())
+
+
+def test_the_s4002_checkpoint_forwards_at_head_as_at_its_pin(monkeypatch):
+    """The NETWORK is the pin's: with the one DECLARED input-semantics change since the pin undone — v167's
+    `gen3_nature_floor_v1`, the static tokens' stat input truncating the nature as `statModify` does — HEAD reproduces
+    the pin's logits and values. That change reaches the toy (max |d logits| 1.5e-3, |d value| 5.6e-5 on these rows,
+    measured 2026-11-09): a toy fork run at HEAD reads Showdown's integer stats, not the pin's. A new difference fails
+    here until it is explained and declared the same way."""
+    import agents.model.damage_kinds as dk
+
+    root = main_models_dir()
+    zp = root / RUN / "final_model.zip" if root is not None else None
+    if zp is None or not zp.exists():
+        pytest.skip(f"no archived {RUN}/final_model.zip on this box")
+    man = _manifest()
+    assert hashlib.sha256(zp.read_bytes()).hexdigest() == man["source_sha256"], (
+        f"{zp} is not the file the fixtures were recorded from (models/ is read-only: who rewrote it?)")
+    ref = np.load(FORWARD_REF)
+    d_head = _forward(zp, ref)
+    assert max(d_head) > ATOL, "the nature truncation no longer reaches the toy: drop the declared undo below"
+    monkeypatch.setattr(dk, "gen3_nature_stat", lambda raw, nature_mult: raw * nature_mult)   # the v166 spelling
+    d_logits, d_values = _forward(zp, ref)
     assert d_logits <= ATOL and d_values <= ATOL, (
         f"rb_toy_ent_s4002 at HEAD no longer computes what it computed at its pin 3899277a: max |d logits| "
-        f"{d_logits:.3g}, max |d value| {d_values:.3g} (bar {ATOL}). X34 must not continue it at HEAD until the "
-        f"difference is explained (re-run the stage dir's identity.py at both checkouts).")
+        f"{d_logits:.3g}, max |d value| {d_values:.3g} (bar {ATOL}), beyond the declared gen3_nature_floor_v1 change. "
+        f"A toy fork at HEAD must not run until the difference is explained (re-run the stage dir's identity.py at "
+        f"both checkouts).")

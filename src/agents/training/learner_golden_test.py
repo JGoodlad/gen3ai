@@ -114,6 +114,10 @@ def test_the_default_slot_is_the_break_s_one_deliberate_re_record():
     Then `gen3_our_hp_exact_v1` (config v165, 2026-11-06: our HP reaches the op as an exact integer, a heal world
     truncates) kept the init and the buffer and moved the update through the op's our-HP cells (post `584de31c…` ->
     `5ac82095…`, fp32 opt-out `318c114b…` -> `d053756d…`, identical under +cu126 and +cu128).
+    Then `gen3_nature_floor_v1` + `gen3_residual_exact_v1` (config v167, 2026-11-09: our stats truncate the nature, our
+    end-of-turn amounts are Showdown's integers in the gen-3 residual order) kept the init and the buffer and moved the
+    update (post `5ac82095…` -> `ac6777d1…`, fp32 opt-out `d053756d…` -> `9b613b69…`, identical under +cu126 and
+    +cu128); each of the two reverted alone still moves it, and `7a0153b46` reproduces the v165 record.
     FAILS if anyone re-records the golden without a new reason row, or restores an arm block."""
     g = L.load_golden()
     e = g["entries"]["2.8.0+cu126"]
@@ -122,39 +126,41 @@ def test_the_default_slot_is_the_break_s_one_deliberate_re_record():
     hist = [h for h in g["history"] if h["torch"] == "2.8.0+cu126"]
     cu128 = g["entries"].get("2.8.0+cu128")
     if cu128 is not None:
-        assert [h["torch"] for h in g["history"]].count("2.8.0+cu128") == 7   # adoption + learnset + bf16 + U3 + T62 + FP32_ALT + our HP exact
+        assert [h["torch"] for h in g["history"]].count("2.8.0+cu128") == 8   # adoption + learnset + bf16 + U3 + T62 + FP32_ALT + our HP exact + v167
         assert cu128["post_params_sha256"] == e["post_params_sha256"] and cu128["init_params_sha256"] == e["init_params_sha256"], \
             "the CPU update is byte-identical across the two CUDA builds (verified 2026-10-12, bf16 2026-10-14): it no longer is"
         assert cu128["fp32_opt_out"]["post_params_sha256"] == e["fp32_opt_out"]["post_params_sha256"]
     assert e["init_params_sha256"] == "c44c7e52301adc82d3070fecc7b21c88e053aa351070811ea1ae43c46f775e3d"
-    assert e["post_params_sha256"] == "5ac82095c6740751a38200f7547d244d08061acbe53a2457738d2a11ed2208b9"
-    assert e["fp32_opt_out"]["post_params_sha256"] == "d053756d6238086d309aa2b0bb1272c663a337dc36147f30b61c518f01388be5"
+    assert e["post_params_sha256"] == "ac6777d1de6fb4900811386c04ceb3cfb3c886ed425f8d2c065900b5f497034a"
+    assert e["fp32_opt_out"]["post_params_sha256"] == "9b613b69a0e3a46d04ba6d7a1be15f2bf82cc6b95804b83393bb57bf1845c729"
     assert e["fp32_opt_out"]["init_params_sha256"] == e["init_params_sha256"]
     assert g["buffer_sha256"] == "a782af4451acec3f9403098980844493ba9f9df589501cfd60c3dea00e25cfd0"
     assert g["perturb"] == "name_keyed" and "arms" not in g
     assert L.RECORD_RUN_SEED == 22
-    assert "MOVED VERBATIM" in hist[-11]["reason"]
-    brk = hist[-10]["reason"]
+    assert "MOVED VERBATIM" in hist[-12]["reason"]
+    brk = hist[-11]["reason"]
     assert brk.startswith("gen3_x5_version_break_v1 (config v144)") and "obs-facts appended (2845)" in brk
     assert sum("gen3_x5_version_break_v1 (config v144)" in h["reason"] for h in hist) == 1
-    assert hist[-9]["reason"].startswith("gen3_mon_tied_gain_v1 (config v145)")
+    assert hist[-10]["reason"].startswith("gen3_mon_tied_gain_v1 (config v145)")
     assert sum(h["reason"].startswith("gen3_mon_tied_gain_v1") for h in hist) == 1
-    assert hist[-8]["reason"].startswith("gen3_toxic_stage_scale_v1 (config v151)")
+    assert hist[-9]["reason"].startswith("gen3_toxic_stage_scale_v1 (config v151)")
     assert sum(h["reason"].startswith("gen3_toxic_stage_scale_v1") for h in hist) == 1
-    assert hist[-7]["reason"].startswith("the END STATE adopted as production (closing test PASS 2026-10-12)")
+    assert hist[-8]["reason"].startswith("the END STATE adopted as production (closing test PASS 2026-10-12)")
     assert sum(h["reason"].startswith("the END STATE adopted as production") for h in hist) == 1
-    assert hist[-6]["reason"].startswith("gen3_learnset_prevo_chain_v1")
+    assert hist[-7]["reason"].startswith("gen3_learnset_prevo_chain_v1")
     assert sum(h["reason"].startswith("gen3_learnset_prevo_chain_v1") for h in hist) == 1
-    assert hist[-5]["reason"].startswith("the bf16 trunk adopted as production")
+    assert hist[-6]["reason"].startswith("the bf16 trunk adopted as production")
     assert sum(h["reason"].startswith("the bf16 trunk adopted as production") for h in hist) == 1
-    assert hist[-4]["reason"].startswith("legacy deletion U3 (D-LD7, config v157)")
+    assert hist[-5]["reason"].startswith("legacy deletion U3 (D-LD7, config v157)")
     assert sum(h["reason"].startswith("legacy deletion U3") for h in hist) == 1
-    assert hist[-3]["reason"].startswith("T62 (gen3_tau_fp64_solve_v1)")
+    assert hist[-4]["reason"].startswith("T62 (gen3_tau_fp64_solve_v1)")
     assert sum(h["reason"].startswith("T62 (gen3_tau_fp64_solve_v1)") for h in hist) == 1
-    assert hist[-2]["reason"].startswith("FP32_ALT (gen3_tau_fp32_alt_v1, config v160)")
+    assert hist[-3]["reason"].startswith("FP32_ALT (gen3_tau_fp32_alt_v1, config v160)")
     assert sum(h["reason"].startswith("FP32_ALT (gen3_tau_fp32_alt_v1") for h in hist) == 1
-    assert hist[-1]["reason"].startswith("gen3_our_hp_exact_v1 (config v165)")
+    assert hist[-2]["reason"].startswith("gen3_our_hp_exact_v1 (config v165)")
     assert sum(h["reason"].startswith("gen3_our_hp_exact_v1") for h in hist) == 1
+    assert hist[-1]["reason"].startswith("gen3_nature_floor_v1 + gen3_residual_exact_v1 (config v167)")
+    assert sum(h["reason"].startswith("gen3_nature_floor_v1 + gen3_residual_exact_v1") for h in hist) == 1
     assert hist[-1]["fp32_opt_out_post_params_sha256"] == e["fp32_opt_out"]["post_params_sha256"]
 
 
