@@ -32,14 +32,32 @@ THE OTHER METERS (look 2; at look 1 the S meters given are REPORTED only, X5):
   90 % LB (two-sided 80 %) > 0, else KAKUNA-SPECIFIC.
 * R72 (§9): Welch 95 % on S R72; DELIVERED iff LB > 0. Decides only at look 2.
 * goal (a) (§8): the ON finals' pooled Kakuna ``home72`` (``goal_a``), Wilson 95 % LB > 0.50, at the same floor form.
-* G-F / G-E / G-C (§11): read only on a Δ_F GAIN, from the ``guards`` artefact (``{path, sha256}``: ``g_f.h_pp`` the
-  ON × OFF matrix, ``r2`` ``{on, off}``, ``g_c`` the ``main.x35.gc`` record), each by ``main.x35.readout``'s own guard
-  arithmetic (G-F on whatever square matrix is given: the 3 / 5 size check of ``guard_f`` does not hold 8 v 8).
-  Absent: each INCONCLUSIVE, "not read"; not a GAIN: ``guards_not_read`` says why.
+* G-F / G-E / G-C (§11): read only on a Δ_F GAIN, from the ``guards`` artefact (``{path, sha256}``, schema
+  :data:`GUARDS_SCHEMA`, built by :mod:`main.reads.x60_guards`; AM-X60T-3, PREREG §24), each by ``main.x35.readout``'s
+  own guard arithmetic, and each INCONCLUSIVE unless its inputs are PROVABLY this read's finals (``finals``: every ON /
+  OFF label's sha256 from the state's resolved models):
+
+  - G-F (X35 §5.6.4, launch sheet §4.5): the look's n × n matrix (8 × 8 at look 2), rows the ON finals and columns the
+    OFF finals in seed order; every cell names its two finals by sha256, reads OK and holds ≥ ``readout.MIN_PAIRS``
+    (500) completed mirrored pairs; ``h_pp`` must equal 100 × each cell's pentanomial pair score (re-derived here).
+    ``cross_stat``; FAIL iff its two-sided 95 % upper bound < −2.0 (``guard_f``'s 3 / 5 size table does not hold 8 v 8,
+    so the size is checked here against :data:`LOOK_FINALS`).
+  - G-E (§23.5): ``r2`` = ``python -m main.x35.ge r2-input --arm x60t`` (pooled stat; readers ``rb_x35_ge_x60t_s3501``
+    and ``rb_x35_ge_c0_s3501``), whose ``targets`` name the ON / OFF seed-3501 finals by sha256. FAIL iff the Newcombe
+    95 % LOWER bound of gap(ON) − gap(OFF) > 0.
+  - G-C (§21.5): the ``main.x35.gc`` record over the look's seed pairs (``gc.check_record``), and every pair's ON / OFF
+    ``checkpoint_sha256`` is the read's final of that seed. FAIL iff B1's upper < −0.05 nats or B2's lower > 0.
+
+  The not-played stub (status ``NOT PLAYED``, each block null) reads each INCONCLUSIVE ("not read"); not a GAIN:
+  ``guards_not_read`` says why.
 * T − D1 (§10, ``contrast``): ON's first five finals against D1's five on H + F at equal weight, units
   0 .. ``units`` − 1 of each, :func:`x60_interval`, one look, always 5 v 5, only at look 2 (X9); LADDER-BETTER iff
   LB > TIE, FORUM-BETTER iff UB < −TIE, NO-DIFFERENCE-AT-3PP iff inside ±BAND by TIE, else NOT-RESOLVED (power.py's
   two-sided ``classes``). Its groups are REPORTED-only: a short contrast is NOT READ, never a blocked record.
+* REPORTED Δ_H / Δ_P72 / Δ_home72 (§12; AM-X60T-3, FINDING 28): per team set of the ``reported`` groups, every
+  ON and OFF final's counted units with unit seed < :data:`REPORTED_UNITS` (0-6), pooled across the groups that hold
+  that team set (:func:`pool_anchor`'s one-cell checks; ``h_contrast``'s units 7-29 are not read here), as Σwins / Σgames
+  per arm and its difference. ``reported.pooled``; no verdict reads it, and a short or split one is INCOMPLETE.
 
 THE VERDICT (§11) is :func:`verdict`, a pure function of the meters' classes (``rules_x60_test`` walks every
 combination). ADOPT-CANDIDATE / TRADE / KAKUNA-SPECIFIC / LOSS / NO-TRANSFER / IN-HOUSE-ONLY / NOT-DELIVERED /
@@ -106,6 +124,15 @@ NUG_LOOK1, CONTINUE, INCONCLUSIVE = "NO-USEFUL-GAIN (look 1)", "CONTINUE", "INCO
 LADDER, FORUM, NO_DIFF = "LADDER-BETTER", "FORUM-BETTER", "NO-DIFFERENCE-AT-3PP"
 PASS, FAIL = "PASS", "FAIL"
 GUARDS = ("G-F", "G-E", "G-C")
+#: The guards artefact (AM-X60T-2's stub, AM-X60T-3's filled one: :mod:`main.reads.x60_guards`).
+GUARDS_SCHEMA = "gen3_x60t_guards_v1"
+NOT_PLAYED, PLAYED = "NOT PLAYED", "PLAYED"
+GUARD_BLOCKS = ("g_f", "r2", "g_c")
+#: §23.5: G-E's two readers, each of its side's seed-3501 final (``main.x35.ge``).
+GE_READERS = {"on": "ge_x60t", "off": "ge_c0"}
+#: §12: the REPORTED Δ_H / Δ_P72 / Δ_home72 read units 0-6 of every final, both arms.
+REPORTED_UNITS = 7
+REPORTED_NAMES = {"heldout72_hpfix": "Δ_H", "p72": "Δ_P72", "home72": "Δ_home72"}
 VERDICTS = (ADOPT, TRADE, KSPEC, LOSS, NO_TRANSFER, IN_HOUSE_ONLY, NOT_DELIVERED, NUG_LOOK1, NOT_RESOLVED, CONTINUE,
             INCONCLUSIVE)
 
@@ -712,10 +739,35 @@ def inputs(cells: Mapping[str, Any], p: Mapping[str, Any], spec: Any) -> Dict[st
                                   "unplayed": int(grp.get("unplayed") or 0),
                                   "cells": {lab: {t: {"wins": x["wins"], "n": x["n"]} for t, x in by.items()}
                                             for lab, by in (grp.get("cells") or {}).items() if lab in on + off}}
+        doc["reported_pooled"] = _pool_reported(cells, p["reported"], on, off)
     if p.get("determinism_guard") is not None:
         doc["determinism_guard"] = _determinism(cells, p["determinism_guard"])
     doc["guards"] = _guard_doc(p.get("guards"))
+    if p.get("guards") is not None:
+        # the guards' provenance: each final as the state resolved it (``models.json``), never a path or a label
+        models = cells.get("models") or {}
+        doc["finals"] = {lab: (models.get(lab) or {}).get("sha256") for lab in on + off}
     return doc
+
+
+def _pool_reported(cells: Mapping[str, Any], groups: Sequence[str], on: Sequence[str], off: Sequence[str]
+                   ) -> Dict[str, Any]:
+    """§12's pooled REPORTED Δs (AM-X60T-3): per team set of ``groups``, every final's counted units with unit seed <
+    :data:`REPORTED_UNITS` across the groups holding that team set, and every reason they are not one cell."""
+    anchor = cells.get("anchor") or {}
+    labs = list(on) + list(off)
+    teamsets = sorted({str(t) for g in groups for t in (anchor.get(g) or {}).get("teamsets") or ()})
+    out: Dict[str, Any] = {}
+    for t in teamsets:
+        mine = [g for g in groups if t in ((anchor.get(g) or {}).get("teamsets") or ())]
+        pooled = pool_anchor(cells, mine, [t], labs)
+        counts = unit_counts(pooled["rows"], labs, [t], REPORTED_UNITS)
+        short = [f"{lab} {t}: {counts[lab][t]['units']} of {REPORTED_UNITS} units counted" for lab in labs
+                 if counts[lab][t]["units"] != REPORTED_UNITS]
+        out[t] = {"groups": mine, "units": REPORTED_UNITS, "counts": {lab: counts[lab][t] for lab in labs},
+                  "engine": pooled["engine"], "regime_ids": pooled["regime_ids"][t],
+                  "inconclusive": sorted(set(pooled["inconclusive"]) | set(short))}
+    return out
 
 
 # ------------------------------------------------------------------------------------------------ decide
@@ -838,37 +890,170 @@ def _goal_a(doc: Mapping[str, Any]) -> Dict[str, Any]:
             "near": near, "reasons": []}
 
 
-def _guards(doc: Mapping[str, Any]) -> Dict[str, Dict[str, Any]]:
-    """G-F / G-E / G-C by ``main.x35.readout``'s guard arithmetic, from the registered artefact."""
+def _by_seed(doc: Mapping[str, Any], side: str) -> List[str]:
+    seeds = doc["seeds"]
+    return sorted(doc["sides"][side], key=lambda lab: seeds[lab])
+
+
+def _final_sha(doc: Mapping[str, Any], lab: str, why: List[str]) -> Optional[str]:
+    sha = (doc.get("finals") or {}).get(lab)
+    if not sha:
+        why.append(f"{lab}: the state records no sha256 for its final")
+    return sha
+
+
+def _guard_f(doc: Mapping[str, Any], blk: Any) -> Any:
+    """G-F from the artefact's ``g_f`` block (module docstring): every reason it is not this look's matrix of this
+    read's finals is INCONCLUSIVE; else ``cross_stat`` on the matrix RE-DERIVED from the cells' pentanomials."""
+    from agents.training.mirrored_pairs import pair_score
     from main.h2h.cross import CrossInputError, cross_stat
     from main.x35 import readout as R
 
-    gd = doc["guards"]
-    if not gd.get("registered") or gd.get("error"):
-        why = gd.get("error") or "not read (no guards artefact registered)"
-        return {n: R.GuardResult(n, R.INCONCLUSIVE, reasons=(why,)).as_dict() for n in GUARDS}
-    g = gd["doc"]
-    h = (g.get("g_f") or {}).get("h_pp")
-    if h is None:
-        gf = R.GuardResult("G-F", R.INCONCLUSIVE, reasons=("no head-to-head matrix",))
-    else:
-        try:
-            st = cross_stat(h)
-            fail, near = R._clears(st.ci95[1], -R.BAR_PP, above=False)
-            gf = R.GuardResult("G-F", R.FAIL if fail else R.PASS, detail={"delta_hat_pp": st.delta_hat,
-                               "ci95_pp": list(st.ci95), "df": st.df, "size": len(h)},
-                               near=(f"upper {st.ci95[1]!r} within {R.RULE8_EPS} of {-R.BAR_PP}",) if near else ())
-        except CrossInputError as exc:
-            gf = R.GuardResult("G-F", R.INCONCLUSIVE, reasons=(str(exc),))
-    r2 = g.get("r2")
+    if blk is None:
+        return R.GuardResult("G-F", R.INCONCLUSIVE, reasons=("no head-to-head matrix",))
+    if not isinstance(blk, Mapping):
+        return R.GuardResult("G-F", R.INCONCLUSIVE, reasons=("g_f: an object",))
+    why: List[str] = [f"g_f: {w}" for w in blk.get("inconclusive") or ()]
+    rows, cols = _by_seed(doc, "on"), _by_seed(doc, "off")
+    n = LOOK_FINALS[int(doc.get("look", 2))]
+    if len(rows) != n or len(cols) != n:
+        why.append(f"g_f: look {doc.get('look')} registers {n} x {n}, the read has {len(rows)} x {len(cols)}")
+    if list(blk.get("rows") or ()) != rows:
+        why.append(f"g_f: rows {blk.get('rows')} are not the ON finals in seed order {rows}")
+    if list(blk.get("cols") or ()) != cols:
+        why.append(f"g_f: columns {blk.get('cols')} are not the OFF finals in seed order {cols}")
+    if blk.get("min_pairs") != R.MIN_PAIRS:
+        why.append(f"g_f: built at min_pairs {blk.get('min_pairs')!r}, the registered floor is {R.MIN_PAIRS}")
+    sha = {lab: _final_sha(doc, lab, why) for lab in rows + cols}
+    by: Dict[Tuple[Any, Any], Mapping[str, Any]] = {}
+    for c in blk.get("cells") or ():
+        k = (c.get("row"), c.get("col"))
+        if k in by:
+            why.append(f"g_f: cell {k} listed twice")
+        by[k] = c
+    extra = sorted(map(str, set(by) - {(r, c) for r in rows for c in cols}))
+    if extra:
+        why.append(f"g_f: {len(extra)} cell(s) outside the ON x OFF finals: {extra[:3]}")
+    h: List[List[float]] = []
+    for r in rows:
+        line: List[float] = []
+        for col in cols:
+            c = by.get((r, col))
+            if c is None:
+                why.append(f"g_f: no cell {r} vs {col}")
+                line.append(float("nan"))
+                continue
+            if c.get("player_sha256") != sha[r] or c.get("opponent_sha256") != sha[col]:
+                why.append(f"g_f: cell {r} vs {col} was played by other finals ({str(c.get('player_sha256'))[:12]} "
+                           f"vs {str(c.get('opponent_sha256'))[:12]})")
+            if c.get("verdict") != "OK":
+                why.append(f"g_f: cell {r} vs {col} reads {c.get('verdict')!r} {list(c.get('reasons') or ())}")
+            pc = c.get("pairs")
+            if not (isinstance(pc, list) and len(pc) == 5 and all(isinstance(x, int) and x >= 0 for x in pc)):
+                why.append(f"g_f: cell {r} vs {col}: pairs is not a pentanomial of 5 counts")
+                line.append(float("nan"))
+                continue
+            if sum(pc) < R.MIN_PAIRS:
+                why.append(f"g_f: cell {r} vs {col}: {sum(pc)} completed pairs < {R.MIN_PAIRS}")
+            sc = pair_score(pc)
+            line.append(100.0 * sc if sc is not None else float("nan"))
+        h.append(line)
+    if blk.get("h_pp") != h and not why:
+        why.append("g_f: h_pp is not its cells' pair scores (100 x the pentanomial score)")
+    if why:
+        return R.GuardResult("G-F", R.INCONCLUSIVE, reasons=tuple(why))
     try:
-        ge = R.guard_e(R.gap_diff(r2["on"], r2["off"])) if r2 else R.guard_e(None)
+        st = cross_stat(h)
+    except CrossInputError as exc:
+        return R.GuardResult("G-F", R.INCONCLUSIVE, reasons=(str(exc),))
+    fail, near = R._clears(st.ci95[1], -R.BAR_PP, above=False)
+    return R.GuardResult("G-F", R.FAIL if fail else R.PASS, detail={"delta_hat_pp": st.delta_hat,
+                         "ci95_pp": list(st.ci95), "df": st.df, "size": len(h), "rows": rows, "cols": cols},
+                         near=(f"upper {st.ci95[1]!r} within {R.RULE8_EPS} of {-R.BAR_PP}",) if near else ())
+
+
+def _guard_e(doc: Mapping[str, Any], r2: Any) -> Any:
+    """G-E from the artefact's ``r2`` block (module docstring): INCONCLUSIVE unless its readers are §23.5's and their
+    targets are this read's seed-3501 finals by sha256."""
+    from main.x35 import ge as GE
+    from main.x35 import readout as R
+
+    if not r2:
+        return R.guard_e(None)
+    if not isinstance(r2, Mapping):
+        return R.GuardResult("G-E", R.INCONCLUSIVE, reasons=("r2: an object",))
+    why: List[str] = []
+    if r2.get("stat") != GE.STAT:
+        why.append(f"r2: stat {r2.get('stat')!r}, the registered {GE.STAT!r}")
+    seed = GE.TARGET_SEEDS[0]
+    for side, arm in GE_READERS.items():
+        labs = [lab for lab in doc["sides"][side] if doc["seeds"][lab] == seed]
+        if len(labs) != 1:
+            why.append(f"r2: the {side} side has no single seed-{seed} final")
+            continue
+        want = GE.reader_run(arm, seed)
+        got = ((r2.get("readers") or {}).get(side) or {}).get("run")
+        if got != want:
+            why.append(f"r2: the {side} reader is {got!r}, not {want}")
+        tsha = ((r2.get("targets") or {}).get(side) or {}).get("sha256")
+        fsha = _final_sha(doc, labs[0], why)
+        if fsha and tsha != fsha:
+            why.append(f"r2: the {side} reader's target {str(tsha)[:12]} is not {labs[0]}'s final {fsha[:12]}")
+    if why:
+        return R.GuardResult("G-E", R.INCONCLUSIVE, reasons=tuple(why))
+    try:
+        return R.guard_e(R.gap_diff(r2["on"], r2["off"]))
     except (R.ReadoutInputError, KeyError, TypeError, IndexError) as exc:
-        ge = R.GuardResult("G-E", R.INCONCLUSIVE, reasons=(f"G-E input: {exc}",))
+        return R.GuardResult("G-E", R.INCONCLUSIVE, reasons=(f"G-E input: {exc}",))
+
+
+def _guard_c(doc: Mapping[str, Any], rec: Any) -> Any:
+    """G-C from the artefact's ``g_c`` record (module docstring): ``readout.guard_c_record``, then INCONCLUSIVE unless
+    every pair's ON / OFF checkpoint is this read's final of that seed by sha256."""
+    from main.x35 import readout as R
+
     seeds = doc["seeds"]
-    gc = R.guard_c_record(g.get("g_c"), [str(seeds[lab]) for lab in doc["sides"]["on"]],
+    gc = R.guard_c_record(rec, [str(seeds[lab]) for lab in doc["sides"]["on"]],
                           [str(seeds[lab]) for lab in doc["sides"]["off"]])
-    return {x.name: x.as_dict() for x in (gf, ge, gc)}
+    if gc.status == R.INCONCLUSIVE:
+        return gc
+    why: List[str] = []
+    shas = rec.get("checkpoint_sha256") or {}
+    pp = rec.get("per_pair") or {}
+    for side in ("on", "off"):
+        for lab in doc["sides"][side]:
+            pair = pp.get(str(seeds[lab])) or {}
+            got = shas.get(str(pair.get(side)))
+            fsha = _final_sha(doc, lab, why)
+            if fsha and got != fsha:
+                why.append(f"g_c: seed {seeds[lab]}'s {side} read {pair.get(side)!r} is checkpoint "
+                           f"{str(got)[:12]}, not {lab}'s final {fsha[:12]}")
+    if why:
+        return R.GuardResult("G-C", R.INCONCLUSIVE, detail=gc.detail, reasons=tuple(why))
+    return gc
+
+
+def _guards(doc: Mapping[str, Any]) -> Dict[str, Dict[str, Any]]:
+    """G-F / G-E / G-C by ``main.x35.readout``'s guard arithmetic, from the registered artefact (module docstring)."""
+    from main.x35 import readout as R
+
+    gd = doc["guards"]
+
+    def every(why: str) -> Dict[str, Dict[str, Any]]:
+        return {n: R.GuardResult(n, R.INCONCLUSIVE, reasons=(why,)).as_dict() for n in GUARDS}
+
+    if not gd.get("registered") or gd.get("error"):
+        return every(gd.get("error") or "not read (no guards artefact registered)")
+    g = gd["doc"]
+    if not isinstance(g, Mapping) or g.get("schema") != GUARDS_SCHEMA:
+        return every(f"the guards artefact is not schema {GUARDS_SCHEMA}")
+    status = g.get("status")
+    if status not in (NOT_PLAYED, PLAYED):
+        return every(f"the guards artefact's status {status!r} is neither {NOT_PLAYED!r} nor {PLAYED!r}")
+    if status == NOT_PLAYED and any(g.get(k) is not None for k in GUARD_BLOCKS):
+        return every(f"a {NOT_PLAYED} guards artefact carries a guard input")
+    return {x.name: x.as_dict() for x in (_guard_f(doc, g.get("g_f")), _guard_e(doc, g.get("r2")),
+                                          _guard_c(doc, g.get("g_c")))}
 
 
 def _contrast(doc: Mapping[str, Any]) -> Dict[str, Any]:
@@ -913,12 +1098,34 @@ def _reported(doc: Mapping[str, Any]) -> Dict[str, Any]:
     return out
 
 
+def _reported_pooled(doc: Mapping[str, Any]) -> Dict[str, Any]:
+    """§12's pooled Δ per team set (AM-X60T-3; module docstring): Σwins / Σgames per arm over units 0-6, REPORTED."""
+    out: Dict[str, Any] = {}
+    for t, blk in (doc.get("reported_pooled") or {}).items():
+        sides: Dict[str, Any] = {}
+        for s in ("on", "off"):
+            labs = list(doc["sides"][s])
+            w = sum(int(blk["counts"][lab]["wins"]) for lab in labs)
+            n = sum(int(blk["counts"][lab]["n"]) for lab in labs)
+            sides[s] = {"wins": w, "n": n, "p": w / n if n else None, "finals": len(labs),
+                        "per_final": {lab: (blk["counts"][lab]["wins"] / blk["counts"][lab]["n"]
+                                            if blk["counts"][lab]["n"] else None) for lab in labs}}
+        d = sides["on"]["p"] - sides["off"]["p"] if sides["on"]["p"] is not None and sides["off"]["p"] is not None \
+            else None
+        out[t] = dict(sides, name=REPORTED_NAMES.get(t, f"Δ_{t}"), delta=d, units=blk["units"], groups=blk["groups"],
+                      engine=blk["engine"], regime_ids=blk["regime_ids"],
+                      status="INCOMPLETE" if blk["inconclusive"] else "OK", reasons=list(blk["inconclusive"]))
+    return out
+
+
 def decide(doc: Mapping[str, Any], p: Mapping[str, Any]) -> Dict[str, Any]:
     look = int(doc["look"])
     base: Dict[str, Any] = {"schema": SCHEMA, "look": look, "sides": dict(doc["sides"])}
     prim = _primary(doc)
     det = doc.get("determinism_guard")
     rep: Dict[str, Any] = {"panels": _reported(doc)}
+    if doc.get("reported_pooled") is not None:
+        rep["pooled"] = _reported_pooled(doc)
     i_f: Dict[str, Any] = _inhouse(doc, "i_f") if doc.get("i_f") else {"read": False, "reasons": ["i_f: absent"]}
     r72: Dict[str, Any] = _inhouse(doc, "r72") if doc.get("r72") else {"read": False, "reasons": ["r72: absent"]}
     out = dict(base, primary=prim, determinism_guard=det, reported=rep)

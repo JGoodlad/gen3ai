@@ -39,7 +39,8 @@ Reading (cells, rules, the record):
   :mod:`main.reads.rules_distill_play`, :mod:`main.reads.rules_x63`, :mod:`main.reads.rules_x60` and
   :mod:`main.reads.rules_x59s`) --
   the registered interval and decision rules, by name (reusing ``main.x35.readout`` / ``main.x35.d1`` /
-  ``main.anchors.results``), and the registered VOID gate;
+  ``main.anchors.results``), and the registered VOID gate; :mod:`main.reads.x60_guards` -- X60-T's GAIN-to-ADOPT
+  guards artefact (G-F / G-E / G-C tied to the read's finals) and its re-decision spec (AM-X60T-3);
 * :mod:`main.reads.record` -- the schema-checked record (X35-stage records load in ``main.x35.batch.read_record``);
 * :mod:`main.reads.api` / :mod:`main.reads.cli` -- the verbs as functions / as a command line.
 

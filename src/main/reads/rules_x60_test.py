@@ -3,6 +3,7 @@ simulated inputs), §11's verdict over every class combination, the pooled group
 guard, the spec-load check, the ``dose`` VOID guard and the look-1 DRAFT spec. Synthetic cells, no game."""
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import itertools
 import json
@@ -234,6 +235,8 @@ OFF8 = [f"c0_s{s}" for s in range(3501, 3509)]
 D1 = [f"d1_s{s}" for s in range(3501, 3506)]
 SEED = {**{lab: 3501 + i for i, lab in enumerate(ON8)}, **{lab: 3501 + i for i, lab in enumerate(OFF8)},
         **{lab: 3501 + i for i, lab in enumerate(D1)}}
+#: Each synthetic final's sha256, as the state's ``models.json`` resolves it (the guards' provenance).
+SHA = {lab: hashlib.sha256(lab.encode()).hexdigest() for lab in SEED}
 #: The synthetic runs' dirs: absent, so no recorded seed is readable (``recorded_seeds`` "where readable").
 NO_RUNS = "/nonexistent/x60_rule_test"
 PINS = {"x60t": "7fe15726c77cfa823aee78110444bf25c3c7370e", "c0": "f4b25238d", "d1": "440b61c32"}
@@ -277,7 +280,8 @@ def _look2(*, p_on: float = 57.0, i_on: float = 52.0, r_on: float = 51.0, f_on: 
                                          **{lab: 50.0 + 0.2 * (i % 3) for i, lab in enumerate(OFF8)}}),
               "r72": _sgroup("r72", {**{lab: r_on + 0.2 * (i % 3) for i, lab in enumerate(ON8)},
                                      **{lab: 50.0 + 0.2 * (i % 3) for i, lab in enumerate(OFF8)}})},
-        "guards": {"rederived": "count", "choices": "require"}}
+        "guards": {"rederived": "count", "choices": "require"},
+        "models": {lab: {"label": lab, "sha256": SHA[lab]} for lab in ON8 + OFF8 + D1}}
     p = {"look": 2, "on": ON8, "off": OFF8,
          "primary": {"groups": ["primary", "c0_look1", "c0_look2"], "teamset": "forum72", "units": 60},
          "p": {"groups": ["p", "p_c0_look1", "p_c0_look2"], "panel": "home72"},
@@ -320,53 +324,249 @@ def test_look2_pools_c0_from_two_states_and_equals_rule_x60_on_the_same_counts(m
     assert dec["decision"]["contrast_class"] in (X.LADDER, X.FORUM, X.NO_DIFF, X.NOT_RESOLVED)
 
 
-def test_a_gain_with_every_meter_passing_is_adopt_only_with_the_guards_read(tmp_path, monkeypatch):
-    cells, p, spec = _look2(home_wins=95)
-    dec = _decide(cells, p, spec)
-    assert dec["decision"]["verdict"] == X.INCONCLUSIVE                      # no guards artefact: not read
-    assert all(g["status"] == "INCONCLUSIVE" for g in dec["guards"].values())
-    rng = np.random.default_rng(3)
-    art = tmp_path / "guards.json"
-    art.write_text(json.dumps({"g_f": {"h_pp": (50 + rng.normal(0, 1, (8, 8))).tolist()},
-                               "r2": {"on": [30, 200], "off": [31, 200]}, "g_c": {"schema": "not a record"}}))
+# ------------------------------------------------------------------------------------------------ the guards (AM-X60T-3)
+def _gf_cell(row: str, col: str, k: int, *, pairs: int = 500, sha: Optional[Dict[str, str]] = None) -> Any:
+    """One ledger cell of ``pairs`` mirrored pairs scoring 50 + k / 10 pp (``k`` pairs moved from index 1 to 3 of a
+    symmetric pentanomial)."""
+    from agents.training.eval_ledger.cells import Cell
+
+    sh = sha or SHA
+    q = pairs // 10
+    pc = (q, 2 * q - k * pairs // 500, pairs - 6 * q, 2 * q + k * pairs // 500, q)
+    return Cell(request_id="x60t_gf_look2", family="x60t_gf", opened="t0", player=sh[row], opponent=sh[col],
+                player_id=row, opponent_id=col, rows=1, w=0, l=0, d=0, aborted=0, pairs=pc, verdict="OK", reasons=())
+
+
+def _gf(delta_pp: float = 0.0, *, seed: int = 3, cells: Any = None) -> Dict[str, Any]:
+    """A ``g_f`` block through the builder (``x60_guards.gf_block_from_cells``): ON × OFF at Δ ≈ ``delta_pp``."""
+    from main.reads import x60_guards as XG
+
+    rng = np.random.default_rng(seed)
+    st = {"models": {lab: {"seed": SEED[lab]} for lab in ON8 + OFF8}, "decision": {"params": {"on": ON8, "off": OFF8}}}
+    ms = {lab: {"sha256": SHA[lab], "source": f"/x/{lab}.zip"} for lab in ON8 + OFF8}
+    if cells is None:
+        cells = [_gf_cell(r, c, int(round(10 * (delta_pp + rng.normal(0, 1.0))))) for r in ON8 for c in OFF8]
+    return XG.gf_block_from_cells(cells, st, ms, family="x60t_gf", request="x60t_gf_look2")
+
+
+def _r2(on: Sequence[int] = (30, 200), off: Sequence[int] = (31, 200)) -> Dict[str, Any]:
+    return {"on": list(on), "off": list(off), "stat": "pooled",
+            "readers": {"on": {"run": "rb_x35_ge_x60t_s3501"}, "off": {"run": "rb_x35_ge_c0_s3501"}},
+            "targets": {"on": {"sha256": SHA[ON8[0]]}, "off": {"sha256": SHA[OFF8[0]]}}}
+
+
+def _gc(b1: float = 0.0, b2: float = 0.0) -> Dict[str, Any]:
+    from main.x35 import gc as GC
+
+    eight = list(range(3501, 3509))
+    rec = GC.constructed_record("production", eight, [b1] * 8, [b2] * 8)
+    rec["checkpoint_sha256"] = {**{f"ON_s{s}": SHA[ON8[i]] for i, s in enumerate(eight)},
+                                **{f"OFF_s{s}": SHA[OFF8[i]] for i, s in enumerate(eight)}}
+    return rec
+
+
+def _artefact(tmp_path: Any, p: Dict[str, Any], *, g_f: Any = "pass", r2: Any = "pass", g_c: Any = "pass",
+              schema: str = X.GUARDS_SCHEMA, status: str = X.PLAYED) -> None:
     from utils.hashing import sha256_file
 
+    doc = {"schema": schema, "status": status, "g_f": _gf() if g_f == "pass" else g_f,
+           "r2": _r2() if r2 == "pass" else r2, "g_c": _gc() if g_c == "pass" else g_c}
+    art = tmp_path / "guards.json"
+    art.write_text(json.dumps(doc))
     p["guards"] = {"path": str(art), "sha256": sha256_file(art)}
-    dec = _decide(cells, p, spec)
-    assert dec["guards"]["G-F"]["status"] == "PASS" and dec["guards"]["G-E"]["status"] == "PASS"
-    assert dec["guards"]["G-C"]["status"] == "INCONCLUSIVE" and dec["decision"]["verdict"] == X.INCONCLUSIVE
-    from main.x35 import readout as R
 
-    monkeypatch.setattr(R, "guard_c_record", lambda rec, on, off: R.GuardResult("G-C", R.PASS))
-    assert _decide(cells, p, spec)["decision"]["verdict"] == X.ADOPT
+
+def _status(dec: Dict[str, Any]) -> Dict[str, str]:
+    return {n: g["status"] for n, g in dec["guards"].items()}
+
+
+def test_a_passing_gain_reads_adopt_only_with_every_guard_read_from_a_filled_artefact(tmp_path):
+    """§11: ADOPT-CANDIDATE needs G-F / G-E / G-C PASS, read from the filled artefact the builder writes; the
+    not-played stub, an unregistered or a tampered artefact reads INCONCLUSIVE."""
+    cells, p, spec = _look2(home_wins=95)
+    dec = _decide(cells, p, spec)
+    assert dec["decision"]["verdict"] == X.INCONCLUSIVE and set(_status(dec).values()) == {"INCONCLUSIVE"}
+    _artefact(tmp_path, p)
+    dec = _decide(cells, p, spec)
+    assert _status(dec) == {"G-F": "PASS", "G-E": "PASS", "G-C": "PASS"}
+    assert dec["decision"]["verdict"] == X.ADOPT and dec["guards"]["G-F"]["detail"]["size"] == 8
     p["guards"]["sha256"] = "0" * 64
     assert "sha256" in _decide(cells, p, spec)["guards"]["G-F"]["reasons"][0]
+    _artefact(tmp_path, p, g_f=None, r2=None, g_c=None, status=X.NOT_PLAYED)          # the stub's shape
+    dec = _decide(cells, p, spec)
+    assert set(_status(dec).values()) == {"INCONCLUSIVE"} and dec["decision"]["verdict"] == X.INCONCLUSIVE
 
 
-def test_an_eight_pair_g_c_record_lets_a_passing_gain_read_adopt(tmp_path):
-    """AM-X60T-1 (FINDING 2 of the build): G-C read from a REAL seed-pooled record over s3501-s3508, no monkeypatch.
-    Before the fix the production side held s3501-s3505 only, so no 8-pair record could be pooled or accepted, G-C was
-    INCONCLUSIVE at every 8 v 8 read, and an otherwise passing GAIN could never reach ADOPT-CANDIDATE."""
+@pytest.mark.parametrize("schema,status,blocks,needle", [
+    ("gen3_x60t_guards_v0", X.PLAYED, True, "schema"),
+    (X.GUARDS_SCHEMA, "DONE", True, "status"),
+    (X.GUARDS_SCHEMA, X.NOT_PLAYED, True, "carries a guard input"),
+])
+def test_an_artefact_of_another_schema_or_status_reads_every_guard_inconclusive(tmp_path, schema, status, blocks,
+                                                                                needle):
+    cells, p, spec = _look2(home_wins=95)
+    _artefact(tmp_path, p, schema=schema, status=status)
+    dec = _decide(cells, p, spec)
+    assert set(_status(dec).values()) == {"INCONCLUSIVE"} and dec["decision"]["verdict"] == X.INCONCLUSIVE
+    assert all(needle in g["reasons"][0] for g in dec["guards"].values())
+
+
+def _gf_mut(kind: str) -> Dict[str, Any]:
+    g = _gf()
+    if kind == "three_by_three":                       # a look-1-sized matrix: the old reader took any square one
+        keep_r, keep_c = ON8[:3], OFF8[:3]
+        g["cells"] = [c for c in g["cells"] if c["row"] in keep_r and c["col"] in keep_c]
+        g["rows"], g["cols"] = keep_r, keep_c
+        g["h_pp"] = [row[:3] for row in g["h_pp"][:3]]
+    elif kind == "other_final":                        # a cell played by a checkpoint that is not the read's final
+        g["cells"][9]["player_sha256"] = "f" * 64
+    elif kind == "seed_order":
+        g["rows"] = list(reversed(g["rows"]))
+    elif kind == "short_cell":                         # 490 pairs, its h_pp entry consistent: only the floor catches it
+        short = _gf_cell(ON8[2], OFF8[5], 0, pairs=490)
+        cell = next(c for c in g["cells"] if (c["row"], c["col"]) == (ON8[2], OFF8[5]))
+        cell["pairs"] = list(short.pairs)
+        g["h_pp"][2][5] = 100.0 * short.score
+    elif kind == "doctored_h":                         # h_pp no longer the cells' pair scores
+        g["h_pp"][0][0] += 5.0
+    elif kind == "missing_cell":
+        g["cells"] = g["cells"][1:]
+    elif kind == "min_pairs":
+        g["min_pairs"] = 1000
+    elif kind == "not_ok":
+        g["cells"][4]["verdict"] = "INCONCLUSIVE"
+    return g
+
+
+@pytest.mark.parametrize("kind", ["three_by_three", "other_final", "seed_order", "short_cell", "doctored_h",
+                                  "missing_cell", "min_pairs", "not_ok"])
+def test_g_f_is_inconclusive_unless_it_is_this_looks_matrix_of_this_reads_finals(tmp_path, kind):
+    cells, p, spec = _look2(home_wins=95)
+    _artefact(tmp_path, p, g_f=_gf_mut(kind))
+    dec = _decide(cells, p, spec)
+    assert _status(dec)["G-F"] == "INCONCLUSIVE" and dec["decision"]["verdict"] == X.INCONCLUSIVE, kind
+
+
+def test_g_f_fails_on_a_detected_head_to_head_loss_and_the_gain_is_a_trade(tmp_path):
+    cells, p, spec = _look2(home_wins=95)
+    _artefact(tmp_path, p, g_f=_gf(-6.0))
+    dec = _decide(cells, p, spec)
+    g = dec["guards"]["G-F"]
+    assert g["status"] == "FAIL" and g["detail"]["ci95_pp"][1] < -2.0
+    assert dec["decision"]["verdict"] == X.TRADE and "G-F FAIL" in dec["decision"]["reasons"][0]
+    _artefact(tmp_path, p, g_f=_gf(-1.0))                  # a small, undetected loss PASSes
+    assert _status(_decide(cells, p, spec))["G-F"] == "PASS"
+
+
+@pytest.mark.parametrize("kind", ["reader", "target", "stat", "no_targets"])
+def test_g_e_is_inconclusive_unless_its_readers_target_this_reads_seed_3501_finals(tmp_path, kind):
+    cells, p, spec = _look2(home_wins=95)
+    r2 = _r2()
+    if kind == "reader":
+        r2["readers"]["on"]["run"] = "rb_x35_ge_d1wide_s3501"
+    elif kind == "target":
+        r2["targets"]["off"]["sha256"] = SHA[OFF8[1]]        # C0 s3502's final, not s3501's
+    elif kind == "stat":
+        r2["stat"] = "endpoint"
+    else:
+        del r2["targets"]
+    _artefact(tmp_path, p, r2=r2)
+    dec = _decide(cells, p, spec)
+    assert _status(dec)["G-E"] == "INCONCLUSIVE" and dec["decision"]["verdict"] == X.INCONCLUSIVE, kind
+
+
+def test_g_e_fails_when_on_is_detected_more_exploitable(tmp_path):
+    cells, p, spec = _look2(home_wins=95)
+    _artefact(tmp_path, p, r2=_r2(on=(110, 200), off=(40, 200)))
+    dec = _decide(cells, p, spec)
+    assert _status(dec)["G-E"] == "FAIL" and dec["decision"]["verdict"] == X.TRADE
+
+
+@pytest.mark.parametrize("kind", ["other_on", "other_off", "no_shas", "five_pairs"])
+def test_g_c_is_inconclusive_unless_every_pair_reads_this_reads_finals(tmp_path, kind):
     from main.x35 import gc as GC
-    from utils.hashing import sha256_file
 
     cells, p, spec = _look2(home_wins=95)
-    rng = np.random.default_rng(3)
-    eight = list(range(3501, 3509))
-    art = tmp_path / "guards.json"
-    art.write_text(json.dumps({"g_f": {"h_pp": (50 + rng.normal(0, 1, (8, 8))).tolist()},
-                               "r2": {"on": [30, 200], "off": [31, 200]},
-                               "g_c": GC.constructed_record("production", eight, [0.0] * 8, [0.0] * 8)}))
-    p["guards"] = {"path": str(art), "sha256": sha256_file(art)}
+    rec = _gc()
+    if kind == "other_on":
+        rec["checkpoint_sha256"]["ON_s3504"] = "e" * 64
+    elif kind == "other_off":
+        rec["checkpoint_sha256"]["OFF_s3508"] = SHA[OFF8[0]]
+    elif kind == "no_shas":
+        del rec["checkpoint_sha256"]
+    else:                                              # an X35 five-pair record does not fit an 8 v 8 read
+        rec = GC.constructed_record("production", list(range(3501, 3506)), [0.0] * 5, [0.0] * 5)
+    _artefact(tmp_path, p, g_c=rec)
     dec = _decide(cells, p, spec)
-    assert {n: g["status"] for n, g in dec["guards"].items()} == {"G-F": "PASS", "G-E": "PASS", "G-C": "PASS"}
-    assert dec["decision"]["verdict"] == X.ADOPT
-    five = json.loads(art.read_text())
-    five["g_c"] = GC.constructed_record("production", eight[:5], [0.0] * 5, [0.0] * 5)
-    art.write_text(json.dumps(five))                      # an X35 five-pair record does not fit an 8 v 8 read
-    p["guards"]["sha256"] = sha256_file(art)
+    assert _status(dec)["G-C"] == "INCONCLUSIVE" and dec["decision"]["verdict"] == X.INCONCLUSIVE, kind
+
+
+def test_g_c_fails_on_a_collapse_and_the_gain_is_a_trade(tmp_path):
+    cells, p, spec = _look2(home_wins=95)
+    _artefact(tmp_path, p, g_c=_gc(b1=-0.2))
     dec = _decide(cells, p, spec)
-    assert dec["guards"]["G-C"]["status"] == "INCONCLUSIVE" and dec["decision"]["verdict"] == X.INCONCLUSIVE
+    assert _status(dec)["G-C"] == "FAIL" and dec["decision"]["verdict"] == X.TRADE
+
+
+def test_a_guard_reads_inconclusive_when_the_state_records_no_sha_for_a_final(tmp_path):
+    cells, p, spec = _look2(home_wins=95)
+    cells["models"][OFF8[0]].pop("sha256")
+    _artefact(tmp_path, p)
+    dec = _decide(cells, p, spec)
+    assert set(_status(dec).values()) == {"INCONCLUSIVE"}
+    assert any("no sha256" in w for w in dec["guards"]["G-E"]["reasons"])
+
+
+# ------------------------------------------------------------------------------------------------ REPORTED pooled (§12)
+def _reported_cells() -> Tuple[Dict, Dict, Any]:
+    cells, p, spec = _look2()
+    h_on_late = {lab: {"heldout72_hpfix": (75, 140)} for lab in ON8[5:]}
+    h_off_late = {lab: {"heldout72_hpfix": (60, 140)} for lab in OFF8[5:]}
+    cells["anchor"]["h"] = _agroup(["heldout72_hpfix"], {**h_on_late, **h_off_late})
+    cells["anchor"]["h_c0a"] = _agroup(["heldout72_hpfix"], {lab: {"heldout72_hpfix": (63, 140)} for lab in OFF8[:5]},
+                                      imported_from="/x61p/look1")
+    p["reported"] = ["h", "contrast_h", "h_c0a"]
+    spec.anchor["h"] = SimpleNamespace(name="h", teamsets=("heldout72_hpfix",), models=tuple(ON8[5:] + OFF8[5:]),
+                                       unit_seeds=tuple(range(7)), per_game=False, imports=None)
+    spec.anchor["h_c0a"] = SimpleNamespace(name="h_c0a", teamsets=("heldout72_hpfix",), models=tuple(OFF8[:5]),
+                                           unit_seeds=tuple(range(7)), per_game=False,
+                                           imports=SimpleNamespace(models=tuple(OFF8[:5])))
+    return cells, p, spec
+
+
+def test_the_reported_delta_h_pools_units_0_6_across_its_groups_in_code():
+    """FINDING 28 (AM-X60T-3): Δ_H pools ON s3506-s3508 (``h``) with ON s3501-s3505's units 0-6 of the 30-unit
+    ``contrast_h`` group, against C0's ``h`` and imported groups; units 7-29 are not read."""
+    cells, p, spec = _reported_cells()
+    dec = _decide(cells, p, spec)
+    h = dec["reported"]["pooled"]["heldout72_hpfix"]
+    # contrast_h: 320 wins of 600 over 30 units, spread as _agroup does (11 or 10 wins a unit) -> units 0-6 hold 77
+    want_on_w = 5 * sum(320 // 30 + (u < 320 % 30) for u in range(7)) + 3 * 75
+    assert h["status"] == "OK" and h["name"] == "Δ_H" and h["units"] == 7
+    assert (h["on"]["wins"], h["on"]["n"]) == (want_on_w, 8 * 140)
+    assert (h["off"]["wins"], h["off"]["n"]) == (5 * 63 + 3 * 60, 8 * 140)
+    assert h["delta"] == pytest.approx(want_on_w / 1120 - (5 * 63 + 3 * 60) / 1120, abs=1e-15)
+    assert h["groups"] == ["h", "contrast_h", "h_c0a"]
+
+
+@pytest.mark.parametrize("break_", ["regime", "short"])
+def test_a_split_or_short_pooled_delta_is_reported_incomplete_and_decides_nothing(break_):
+    cells, p, spec = _reported_cells()
+    if break_ == "regime":
+        cells["anchor"]["h_c0a"]["regime_ids"]["heldout72_hpfix"] = "q" * 16
+    else:
+        cells["anchor"]["h"]["units"] = [u for u in cells["anchor"]["h"]["units"]
+                                         if not (u["label"] == ON8[7] and u["unit_seed"] == 6)]
+    dec = _decide(cells, p, spec)
+    h = dec["reported"]["pooled"]["heldout72_hpfix"]
+    assert h["status"] == "INCOMPLETE" and h["reasons"]
+    assert dec["decision"]["verdict"] == _decide(*_reported_cells())["decision"]["verdict"]
+
+
+def test_look1_carries_no_pooled_reported_block_and_no_finals():
+    cells, p, spec = _look1([612, 640, 598])
+    doc = RU.inputs("x60", cells, p, spec)
+    assert "reported_pooled" not in doc and "finals" not in doc
 
 
 def test_kakuna_specific_trade_on_p_and_the_nug_branches():

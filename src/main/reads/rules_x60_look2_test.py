@@ -204,3 +204,21 @@ def test_the_guards_stub_reads_every_guard_inconclusive():
                      "sides": {"on": p["on"], "off": p["off"]}})
     assert {n: g["status"] for n, g in got.items()} == {"G-F": "INCONCLUSIVE", "G-E": "INCONCLUSIVE",
                                                        "G-C": "INCONCLUSIVE"}
+
+
+def test_every_final_has_units_0_6_on_h_p72_and_home72_among_the_reported_groups():
+    """FINDINGS 25 and 28 (AM-X60T-3, PREREG §24): §12's REPORTED Δ_H / Δ_P72 / Δ_home72 are 8 v 8 at units 0-6.
+    The spec plays ON's H 0-6 at s3506-s3508 (group ``h``; the 420 games §17 omitted) and ON s3501-s3505's inside
+    ``h_contrast``'s 0-29, and rule ``x60`` pools them per team set in code (``reported.pooled``), so every ON and OFF
+    final must hold units 0-6 of each panel in exactly one reported group."""
+    spec = look2_spec()
+    p = spec["decision"]["params"]
+    from main.x35.kakuna import parse_unit_seeds
+
+    for panel in ("heldout72_hpfix", "p72", "home72"):
+        for lab in p["on"] + p["off"]:
+            holders = [g for g in p["reported"] if panel in spec["anchor"][g]["teamsets"]
+                       and lab in spec["anchor"][g]["models"]]
+            assert len(holders) == 1, (panel, lab, holders)
+            assert set(range(7)) <= set(parse_unit_seeds(spec["anchor"][holders[0]]["unit_seeds"])), (panel, lab)
+    assert spec["anchor"]["h"]["models"][:3] == [f"x60t_s{s}" for s in (3506, 3507, 3508)]

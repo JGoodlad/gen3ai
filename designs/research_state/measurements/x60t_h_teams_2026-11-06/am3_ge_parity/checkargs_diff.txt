@@ -1,0 +1,20 @@
+1,4c1,4
+< checked 12 flags from --argv
+<   parser                         : the PINNED commit f4b25238's — --pin
+<   ✅ argv validated against PINNED parser @f4b25238 via the pinned build_parser() [mode=build_parser, 386 options, 2.0s]
+<   accepted by the PINNED parser  : 12
+---
+> checked 13 flags from --argv
+>   parser                         : the PINNED commit 7fe15726's — --pin
+>   ✅ argv validated against PINNED parser @7fe15726 via the pinned build_parser() [mode=build_parser, 387 options, 2.0s]
+>   accepted by the PINNED parser  : 13
+7c7
+<   resolved against the FORK PARENT: /home/goodlad/dev/gen3ai/models/rb_x35_c0_s3501/model_config.json
+---
+>   resolved against the FORK PARENT: /home/goodlad/dev/gen3ai/models/rb_x60t_s3501/model_config.json
+11a12
+>         ⚠️ the --model source carried teams:hr_spec_v1.r3@0.5 (metadata.json cli_args._human_data); this launch TYPED off: the lever changes here
+34c35
+<   ✓ fork arch  : compatible with /home/goodlad/dev/gen3ai/models/rb_x35_c0_s3501/model_config.json (check_compatible, the trainer's own check)
+---
+>   ✓ fork arch  : compatible with /home/goodlad/dev/gen3ai/models/rb_x60t_s3501/model_config.json (check_compatible, the trainer's own check)

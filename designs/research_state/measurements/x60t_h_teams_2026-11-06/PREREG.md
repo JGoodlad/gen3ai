@@ -8,6 +8,8 @@ launches, nothing changes except by a dated amendment, written before the read, 
 **Amendments:** AM-X60T-1 (§21, 2026-11-06, before any read game): the play pin `f564c333f`, §4's checks, look 1's spec,
 and G-C read over 8 pairs. AM-X60T-2 (§23, 2026-11-07, after look 1's CONTINUE, before any X60Tb / X60T-C0b launch or
 look-2 game): the stage record, R72 at main, look 2's spec and guards stub, the `ge_x60t` reader, the validated launches.
+AM-X60T-3 (§24, 2026-11-09, before any look-2 game is played or read): the GAIN-to-ADOPT guards tied to the read's
+finals in code, their producing commands and the re-decision, the pooled REPORTED Δs in code, FINDINGS 24, 25, 27, 28.
 
 **Two adversarial reviews.**
 - **REVIEW F** reviewed design §6 ([`REVIEW_F_x60.md`](../human_replay_quality_2026-10-25/REVIEW_F_x60.md));
@@ -1181,3 +1183,150 @@ READY-WITH-FIXES**; no verdict, class, threshold or seed set changes.
 28. **Δ_H / Δ_P72 / Δ_home72 are per-group rows,** so the pooled reported Δs are summed by hand (§23.3 choice 4).
 29. **The guards stub makes a passing GAIN read INCONCLUSIVE at look 2** until the AM-X60T-3 re-decision (§23.4). That
     is §11's registered INCONCLUSIVE path, not a new class.
+
+## 24. AMENDMENT AM-X60T-3 (2026-11-09, before any look-2 game is played or read)
+
+**Outcome-blind.** Written while X60Tb's first seed trains: `models/rb_x60t_s3504` exists with no final, no
+`rb_x60t_s3505`–`s3508` or `rb_x35_c0_s3506`–`s3508` exists, and no look-2 state exists
+(`~/gen3ai_archive/x60t_read/look2` is absent). No look-2 game has been played, assembled or read, and no guard input
+(G-F cell, G-E reader, G-C read) exists for any X60 final. This is the amendment §23.4 names: the guards' producing
+commands and the re-decision. It also closes FINDINGS 24, 25, 27 and 28.
+
+**Nothing registered changes.**
+- Rule `x60`'s seeds, cells, classes, thresholds, floor and §11's verdict table are as registered. Each guard's
+  statistic and bar is X35's (below).
+- [`read_spec_look2.json`](read_spec_look2.json) is unchanged (sha256 `a5ad7411…8ed7`; `check-spec` exit 0 at main),
+  and so is the stub `read/guards_look2_not_played.json` (`282f843c…bc70`), which still reads every guard
+  INCONCLUSIVE.
+- Look 1's record is untouched: `read/record_x60t_look1.json` is `538700ee…`, and the stage copy
+  `x35_breakers_stage_2026-10-17/reads/x60t_look1.json` is `ce971489…`.
+- The code changes only what `decide` reads from the guards artefact, and adds a REPORTED block.
+
+### 24.1 The guards as implemented (`rules_x60._guard_f` / `_guard_e` / `_guard_c`)
+
+**The gap.** AM-X60T-2's rule read whatever the artefact held:
+- a bare `h_pp` of any square size (so a 3 × 3 matrix would pass at 8 v 8);
+- an `r2` pair with no reader or target named;
+- a G-C record whose checkpoints it never compared.
+
+So a mis-built artefact could decide ADOPT-CANDIDATE or TRADE. That is a GIGO path, not a threshold. Now each guard is
+INCONCLUSIVE unless its inputs are provably this read's finals. The test is the sha256 the state resolved for each final
+(`cells.json` `models`; `inputs.finals` at look 2).
+
+| guard | registered source | statistic and bar (unchanged) | what must hold, else INCONCLUSIVE |
+|---|---|---|---|
+| **G-F** | `design_compute_efficiency.md` §5.6.4; launch sheet §4.5's settings (500 pairs, F-AMX-2) | `cross_stat` on the ON × OFF matrix (pp); FAIL iff its two-sided 95 % upper bound < −2.0 (within 1e-9: not a FAIL) | the matrix is 8 × 8 (`LOOK_FINALS[2]`; `readout.guard_f`'s 3 / 5 table does not hold 8 v 8); rows are the ON finals and columns the OFF finals, each in seed order; every cell names its two finals by sha256, reads OK and holds ≥ `readout.MIN_PAIRS` (500) completed mirrored pairs; the block was built at min_pairs 500; `h_pp` equals 100 × each cell's pentanomial pair score, RE-DERIVED by the rule |
+| **G-E** | §5.6.4 (R2 / G-E); launch sheet §4.4; §23.5 | Newcombe 95 % (z 1.96) on gap(ON) − gap(OFF); FAIL iff its LOWER bound > 0 | the stat is `pooled`; the readers are `rb_x35_ge_x60t_s3501` and `rb_x35_ge_c0_s3501`; each reader's target file hashes to its side's seed-3501 final (`ge.r2_input` already refuses unmatched budget, dose, regime or an unfinished reader) |
+| **G-C** | §5.6.5; AM-X47b-1, AM-X47b-2 / AM-X47c-2; §21.5 | B1 (entropy, nats) FAIL iff upper < −0.05; B2 (starved share) FAIL iff lower > 0; the crossed cluster bootstrap | `gc.check_record` (ON / OFF seeds 3501–3508, side `production`, truth X26@280M); every pair's ON and OFF `checkpoint_sha256` is that seed's final |
+| the artefact | §23.4 | — | schema `gen3_x60t_guards_v1`, status `PLAYED` (or the stub's `NOT PLAYED`, every block null). Any other schema or status, or a `NOT PLAYED` artefact that carries a block, reads all three INCONCLUSIVE |
+
+**Tests** (`rules_x60_test`, `x60_guards_test`):
+- one per guard condition above, plus a FAIL per guard (each reads TRADE) and the stub's INCONCLUSIVE;
+- a builder-built artefact reads ADOPT-CANDIDATE when every meter passes.
+- **They fail on revert:** against AM-X60T-2's `rules_x60.py`, 23 of the new tests fail; the FAIL cases are behaviour
+  kept, so those pass on both.
+
+### 24.2 How the guards are produced and read: on a look-2 Δ_F GAIN only
+
+**The trigger** is the look-2 stage record's `delta_f` FINAL class GAIN (`kit stage-check`, `ge.trigger`). On any other
+class nothing here runs, and `guards_not_read` records why. The module is `main.reads.x60_guards`. Every path below
+is outside the repo unless it is committed.
+1. **G-E.** §23.5's two readers (`launch_x35.sh ge_x60t 3501 …` and `ge_c0 3501 …`, each at its pin, each GO the
+   orchestrator's). Step 4 reads them through `ge.r2_input("x60t")`.
+2. **G-F**, at the play pin's checkout (`~/dev/gen3ai-reads/x60t_play_de15dfc7`, §4's one harness), at rule 5b:
+   - `python -m main.reads.x60_guards gf-cells --state ~/gen3ai_archive/x60t_read/look2 --out ~/gen3ai_archive/x60t_read/gf_look2/cells.json`
+     (run from main). It lists 64 cells, ON × OFF in seed order, by the state's resolved files.
+   - Once: `python -m main.eval_ledger family-register --root ~/gen3ai_archive/x60t_read/gf_look2/ledger --id x60t_gf_look2 --decision-kind ab_verdict --rule "x60t PREREG §24 AM-X60T-3 G-F" --protocol gen3_eval_protocol_v1_h2h --commit f564c333f9437f6a636e9daf890535c2c300aeb2`.
+   - Each cell is its own call, ≤ 45 min (X47's `play_cells.py` pattern):
+     `python -m main.h2h play-many --cells <one cell> --pairs 500 --purpose ab --family x60t_gf_look2 --request x60t_gf_look2 --label x60t_gf_look2 --seed 0 --out ~/gen3ai_archive/x60t_read/gf_look2/ledger`.
+     It plays greedy against greedy, and both sides draw from the default eval team builder (FINDING 30).
+3. **G-C**, from a main checkout:
+   - `python -m main.policy_spectrum read --bank designs/research_state/measurements/collapse_pilot_2026-10-17/bank_x26 --out ~/gen3ai_archive/x60t_read/gc_look2/reads --ckpt <final>=<label> …`
+     for the 16 finals, with each label the read's own;
+   - `python -m main.x35.gc pool --side production --bank <same> --truth designs/research_state/measurements/x35_prod_b2_truth_2026-10-20/rows_X26at280M_S32.compact.jsonl.gz --reads <same> --pair 3501=x60t_s3501:c0_s3501 … --pair 3508=x60t_s3508:c0_s3508 --out ~/gen3ai_archive/x60t_read/gc_look2/gc.json`.
+4. **The artefact:**
+   `python -m main.reads.x60_guards build --state ~/gen3ai_archive/x60t_read/look2 --gf-ledger ~/gen3ai_archive/x60t_read/gf_look2/ledger --gf-family x60t_gf_look2 --gf-request x60t_gf_look2 --gc ~/gen3ai_archive/x60t_read/gc_look2/gc.json --out designs/research_state/measurements/x60t_h_teams_2026-11-06/read/guards_look2.json`.
+   It refuses (exit 2, nothing written) on an unresolved final, an unmatched reader or a G-C input that is not a pooled
+   record.
+5. **The re-decision spec** (§23.4):
+   `python -m main.reads.x60_guards redecide-spec --state ~/gen3ai_archive/x60t_read/look2 --spec designs/research_state/measurements/x60t_h_teams_2026-11-06/read_spec_look2.json --guards designs/research_state/measurements/x60t_h_teams_2026-11-06/read/guards_look2.json --read x60t_look2_guards_<date> --out designs/research_state/measurements/x60t_h_teams_2026-11-06/read_spec_look2_guards.json`.
+   It refuses a `--spec` whose bytes are not the state's `spec.json`. Then `check-spec` at main and at the play pin,
+   and the spec and artefact are committed together before `plan`. The builder makes no choice:
+   - every group look 2 played is imported from the look-2 state;
+   - a group that imported keeps its import, and its look-2-played models become `<group>_l2` (`primary_l2`), since an
+     import is never transitive;
+   - only the determinism unit is re-played (§4's c0_s3501 forum72 unit 0, 20 games);
+   - every final is pinned by its look-2 sha256;
+   - the guards ref is the filled artefact; nothing else changes (`x60_guards_test`).
+6. **Plan and run** at the play pin: state `~/gen3ai_archive/x60t_read/look2_guards`, one anchor unit. Then
+   `assemble | decide | record` from main. `record --out <stage>/reads/x60t_look2.json` replaces the look-2 record,
+   since the stage reads one record a look. The first look-2 record is kept beside look 2's committed read files, as
+   §23.1 kept look 1's (FINDING 34).
+
+**Cost, on a GAIN only:**
+- G-E ≈ 2.1 GPU-h (§23.5);
+- G-F 64 cells × 500 pairs = 64,000 games, ≈ 22 lane-h at §17's 2.45 lane-h per 7,000-game set (FINDING 33);
+- G-C: 16 policy reads of minutes each;
+- the re-decision: 20 Kakuna games.
+
+### 24.3 The four FINDINGS AM-X60T-2 left open
+
+| FINDING | what it is | resolution |
+|---|---|---|
+| **24** | C0 s3506–s3508 are read by the `final` rule, not pinned by sha256 | **Handled in code.** The look-2 state fixes each settled final's sha256 in `models.json` and the record's `models`. Every guard input is checked against those sha256s (§24.1). The re-decision pins every final, these three included, by that sha256 (`redecide_spec`; `x60_guards_test`). A file that changes after settle can enter neither a guard nor the re-decision |
+| **25** | the "420 ON-H games": §17's plan omitted ON's H units 0–6 at s3506–s3508 (3 × 7 × 20), which §12's Δ_H needs | **Already in the registered spec** (group `h`) and priced in §23.9. ON s3501–s3505's H units 0–6 sit inside `h_contrast`'s 0–29. The pooled Δ_H now reads all eight in code (FINDING 28). `rules_x60_look2_test` holds every ON and OFF final to units 0–6 of H, P72 and home72 in exactly one reported group. No spec change |
+| **27** | `ge_x60t` runs at `7fe15726c` and `ge_c0` at `f4b25238d`; their parity in the readers' exploiter mode was unverified | **Established**, below |
+| **28** | look 2's pooled Δ_H / Δ_P72 / Δ_home72 were to be summed by hand from `cells.json` (§23.3 choice 4; look 1 read none, §21.3) | **Fixed in code:** `reported.pooled` (`rules_x60._pool_reported` / `_reported_pooled`). Per team set of the `reported` groups, it pools every ON and OFF final's counted units with unit seed < 7 across the groups that hold that set, with `pool_anchor`'s one-cell checks, as Σwins / Σgames per arm and its difference. A split or short block is INCOMPLETE and decides nothing. Look 1's inputs carry no such block |
+
+**FINDING 27, the parity argument.**
+- **(a) The code audit** ([`am3_ge_parity/pin_diff_paths.txt`](am3_ge_parity/pin_diff_paths.txt)): 25 paths differ
+  between `f4b25238d` and `7fe15726c`; every other file is byte-identical. Under a TYPED `--human-data off` with no
+  `--team-mix` (`ge_x60t`'s argv), each of the 25 is inert on the trainer's path:
+  - `matchup_spec.team_mix_from_args` returns None, as at the side pin;
+  - `human_data_setup.resolve` opens no corpus and only stamps the `[HUMAN-DATA] off` record;
+  - `run_io` adds lineage keys to the record only;
+  - the three new combination checks fire only on a non-`off` lever;
+  - `utils/team_corpora/*` is read only through `--team-mix` or a `teams` clause;
+  - the rest is the parser (`eval_subprocess`), `checkargs`, `dry_run`, path helpers, tests and a doc.
+
+  So the exploiter path is the side pin's code in either mode. §14's self-play checks 2–3 are not needed for it.
+- **(b) Executed:** `checkargs --pin` of both readers' REAL argvs (`am3_ge_parity/`). Both exit 0. The effective
+  resolution is identical except four things: the fork parent's path, the parser's size (12 vs 13 flags, 386 vs 387
+  options: `--human-data`), and the `[HUMAN-DATA] off` lines. The recipe and run flags restored from the parent, the
+  four recipe differences from `recipe.fork` and the arch check all match line for line.
+- **Not done:** a CPU `--debug` exploiter run at both pins. It is training, so out of this unit's scope.
+  `ge.r2_input`'s `check_matched` (budget, dose, regime) stays the run-time check.
+
+### 24.4 Validated by executing (CPU, rule 5b, no game)
+
+- `rules_x60_test`, `rules_x60_look2_test` and `x60_guards_test` pass. The revert check is §24.1's.
+- `check-spec` of `read_spec_look2.json`: exit 0 at main.
+- **A re-decision spec built from the registered look-2 spec** (synthetic sha256s for the eight unsettled finals;
+  sha256 `8f5f7865…`, not committed): `check-spec` exit 0 at main AND at the play pin `f564c333f`. So the playing
+  checkout's parser accepts its shape; its tree stayed clean.
+- Both readers' `checkargs --pin`, as above.
+
+### 24.5 FINDINGS (this amendment)
+
+30. **G-F's team source is X35's default, inherited.** X60's PREREG names no G-F panel. X35's §4.5 settings play both
+    sides from the player's default eval team builder (the default biased pool at the play pin's `data/teams`). Both
+    arms' runs record `eval_trainee_teams` `default_biased`, so `main.h2h` accepts each (checked on s3501's metadata).
+    ON trained half on human teams, so G-F is read on C0's training distribution. That is a property of X35's
+    registered guard, not a choice made here.
+31. **Where each guard is produced is operational, and stated here** (not in X35):
+    - G-F plays at the play pin (§4's one harness, E3);
+    - G-C's policy reads run at main, both arms under the same code, per-pair deltas on identical turns;
+    - G-E's readers run at their arms' pins (§23.5).
+32. **Not verified on real data** (no look-2 state exists):
+    - main's `cross.look_cells` reading a G-F ledger written at the play pin. Main's `assemble` already reads S ledgers
+      written there by the same `main.h2h` writer.
+    - The pooled REPORTED blocks' one-cell checks over the imported `reported_c0a` / `reported_c0b` groups. A
+      per-team-set regime id carries no unit seeds (`assemble.ANCHOR_REGIME_KEYS`), and X61P's two reported groups share
+      `28e65ac9…` (H), `2e756ff1…` (home72) and `b7547f90…` (P72). A mismatch reads INCOMPLETE, never a verdict.
+33. **G-F's 64,000 games (≈ 22 lane-h) are in neither §17 nor §23.9.** They are spent only on a GAIN, and they
+    hold the two heavy slots like the S lane.
+34. **The re-decision's record replaces look 2's at `reads/x60t_look2.json`.** `batch.read_record` reads one record a
+    look, and the first copy is kept outside `reads/`.
+35. **Observed, not read:** `models/rb_x60t_s3504` (training) holds `behaviour_violation_*` files and
+    `behaviour_violations.jsonl`. That is K9(b) `warn` mode logging; the AM-6 K9(b) arm-end record judges it at arm
+    end (§22's pattern). This unit opened none of them.
