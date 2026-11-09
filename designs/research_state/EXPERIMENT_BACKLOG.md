@@ -19,13 +19,21 @@ is still chipped at in parallel, because Q's opponent columns are BUILT FROM the
 becomes Q's generalization problem the day opponents switch to ladder teams. Pool memorization is a
 SUCCESS milestone, not a failure: report on-pool first, off-pool second.
 
+**THE CURRENT PRIORITY (owner, 2026-11-09): MODEL-FIRST.** "Our goal is to build the most performant model possible.
+Wherever possible, improve the model. If the model can drive search, more power to us; search is valuable. But this
+is an AI/ML project first and foremost, so there is a strong bias toward making the model better whenever possible,
+and that includes making the model support search." So the GPU's queue after X60-T is §2.0 (model levers, ranked by
+expected strength per GPU-h), and a lever that makes the network a better DRIVER of search (its beliefs about the
+opponent's hidden team, a value that ranks the leaves, search targets it can learn) counts as a model lever. Search
+ENGINEERING that changes no weight (SP-1: the cost read, the deployable player) is CPU-side and ranks below §2.0.
+
 **NORTH STARS (owner, 2026-09-27).** **Now → ~2 weeks: the Rust end state + architectural tech-debt
 pay-down**, including the switch to DISCRETE mons with OTHER tokens (X5), batched into ONE new retrain
 boundary. Q (X4) is NOT built yet; instead **A and B ride along for free** (X4a: detached heads on
 on-policy labels, BUILT 2026-09-30 as part of X26) to give the baseline a later Q must beat. **Next: search enablement**, on the main
-agent only if need be — gated on the leaf (carried since by L1, S-U and S′, `../endstate/search_ledger.md`; UN-PAUSED for goal (b) on 2026-11-09, §2 SP-1).
+agent only if need be — gated on the leaf (carried since by L1, S-U and S′, `../endstate/search_ledger.md`; UN-PAUSED for goal (b) on 2026-11-09, §2 SP-1, CPU-side and below the model-first queue §2.0).
 
-**GOALS (owner, 2026-09-27; `design_ladder_campaign.md` §0a).** Near term: beat Metamon's BEST model (`Kakuna`) on OUR teams at Metamon's strongest sampling temperature (lower CI bound > 0.50). Long term: beat Foul Play on shared teams. 🚨 **Status 2026-11-09 (`../STATUS.md` §1; the path: [`../endstate/design_beat_metamon_path.md`](../endstate/design_beat_metamon_path.md)):** (a) OUR teams: **MET** at the plateau P\*, 0.598 [0.549, 0.644] (X51); Kakuna ckpt 28 is not detectably stronger than the ckpt 34 we read. (b) UNFAMILIAR teams (symmetric heldout72_hpfix / forum72 / P72, equal weight): P\* alone **NOT MET**, 0.487 [0.459, 0.515], about 4 pp short; the deficit is PILOTING unseen teams (X37a, TSR), invisible in-house (X37b). **With the leak-honest search S′h on every eligible decision from turn 10, "goal (b) met with search"**: P\* + S′h 0.5145 [0.5008, 0.5282] on 5,100 fresh deals, in that regime only (S′-HONEST, `331f19cfe`; §3), so the search program is un-paused (§2 SP-1). No TRAINING lever clears 0.50: D1 +2.10 pp [−0.92, +5.11], D3 +2.33 [−0.69, +5.35], N1-P +0.55 [−1.26, +2.36], X52 +1.3 on the unpractised teams, X48 and N4 NO-GO (§3); human TEAMS (X60-T) are the live lever (§1, look 2 training). `away` is not held out (19 / 20 teams in the pool).
+**GOALS (owner, 2026-09-27; `design_ladder_campaign.md` §0a).** Near term: beat Metamon's BEST model (`Kakuna`) on OUR teams at Metamon's strongest sampling temperature (lower CI bound > 0.50). Long term: beat Foul Play on shared teams. 🚨 **Status 2026-11-09 (`../STATUS.md` §1; the path: [`../endstate/design_beat_metamon_path.md`](../endstate/design_beat_metamon_path.md)):** (a) OUR teams: **MET** at the plateau P\*, 0.598 [0.549, 0.644] (X51); Kakuna ckpt 28 is not detectably stronger than the ckpt 34 we read. (b) UNFAMILIAR teams (symmetric heldout72_hpfix / forum72 / P72, equal weight): P\* alone **NOT MET**, 0.487 [0.459, 0.515], about 4 pp short; the deficit is PILOTING unseen teams (X37a, TSR), invisible in-house (X37b). **With the leak-honest search S′h on every eligible decision from turn 10, "goal (b) met with search"**: P\* + S′h 0.5145 [0.5008, 0.5282] on 5,100 fresh deals, in that regime only (S′-HONEST, `331f19cfe`; §3), so the search program is un-paused (§2 SP-1, CPU-side, below §2.0). No TRAINING lever clears 0.50: D1 +2.10 pp [−0.92, +5.11], D3 +2.33 [−0.69, +5.35], N1-P +0.55 [−1.26, +2.36], X52 +1.3 on the unpractised teams, X48 and N4 NO-GO (§3); human TEAMS (X60-T) are the live lever (§1, look 2 training). `away` is not held out (19 / 20 teams in the pool).
 
 ---
 
@@ -38,9 +46,171 @@ agent only if need be — gated on the leaf (carried since by L1, S-U and S′, 
 
 ## 2. PROPOSED — ranked
 
+### 2.0 THE MODEL-FIRST GPU QUEUE after X60-T (owner, 2026-11-09), ranked
+
+**How it is ranked.** Expected strength per GPU-h to the lever's DECISIVE read, prerequisites respected. CPU-h are
+given beside it because the Kakuna lane, not the GPU, sets when anything is read: X60-T look 2's read (≈ 156 anchor
+lane-h + ≈ 105 S lane-h, PREREG §23.9) holds the agent cores from ≈ 11-12 for days, so a lever whose first decisive
+meter needs no Kakuna game ranks ahead of one that queues behind those lanes. Every effect below is a **GUESS** (80 %
+range), mine, not a measurement; each card cites its evidence and labels what is UNVERIFIED. Rates: a P\* + 20M fork
+≈ 4.1 GPU-h (X60-T PREREG §23.9); a fresh production run ≈ 0.21 GPU-h per M steps (X26's 380M ≈ 79 GPU-h,
+`../endstate/design_x65_exit0_search_distillation.md` option (iii)); ≈ 144 Kakuna games a lane-h (§23.9).
+
+| rank | lever | GPU-h to the decisive read | CPU-h | GUESS, pp (80 %) | ≈ pp per GPU-h | prerequisite |
+|---|---|---:|---:|---|---:|---|
+| **MF-1** | **ExIt-0H**: can P\* learn honest search's choices? | ≈ 3 | ≈ 2–5 (gate); 25–100 (look 1, only if DELIVERED) | +0.5 (0, +2) without search | ≈ 0.2 | a registration; the X65 bank built from S′-HONEST's records |
+| MF-1b | ExIt-1: honest search targets in the PPO loop | ≈ 35 | ≈ 107 | +1 (−1, +3) | ≈ 0.03 | MF-1 GO with its placebo SEARCH-INFO |
+| **MF-2** | **Fidelity of the op's opponent side (E13 + round 2 + E9) → BOUNDARY-1** | 0 now (rides MF-5's fresh pair) | ≈ 1–2 (census) | +0.3 (0, +1) | — | round 2 landed; E13 built |
+| **MF-3** | **The belief on never-seen mons, off-pool** (for the network and as search's sampler) | ≈ 1–2 (step b) | minutes (P5); 25–42 (a game read) | +0.5 (−1, +2) without search; search share UNVERIFIED | ≈ 0.15 | step a (P5 on X60-T's finals) first; human-data toggle and panel exclusion |
+| **MF-4** | **The value at the leaf on unfamiliar teams** | 0 until V-RANK fires; then ≈ 1–2 | ≈ 96 (V-RANK) + ≈ 300–600 (a searched game read; S′-LIVE took ≈ 315) | +0.3 (−0.5, +1.5), with search only | ≈ 0.05 after P(V-RANK fires) ≈ 0.3 | V-RANK's builds and PREREG |
+| **MF-5** | **BOUNDARY-1's fresh pair and the SCALE BET** (production width and 2× `D_MODEL`, from scratch) | ≈ 52–73 to the 100M look; ≈ 145–205 to the plateau | ≈ 42 (100M look); ≈ 107 (plateau) | wide − 1×: +1.5 (−1, +5) at the plateau | ≈ 0.01 | **the owner's word** (`../STATUS.md` §6.5); a width build; MF-2's version; X60-T's verdict |
+| MF-6 | Breadth at the plateau: X62's recombined teams | ≈ 20.5 | ≈ 107 | +1.0 (−1, +3) | ≈ 0.05 | X60-T not NO-TRANSFER / LOSS; PR-1′'s place is the orchestrator's |
+| MF-7 | The league's main exploiters (X35-A3) | ≈ 15 | ≈ 107 | +0.5 (−1, +2) vs Kakuna | ≈ 0.03 | its two-phase kit (T55) |
+
+**The recommendation.** Queue **MF-1** when X60-T's last final settles; queue **MF-3 step (b)** after it. Between
+and after them the GPU's fill is the orchestrator's (MF-6's or MF-7's training, whose reads can wait for the lanes);
+**MF-5** launches the day its four prerequisites hold, and the owner is asked about it NOW because a card has a lead
+time.
+
+- **Why MF-1 first.** It is the only lever whose target carries a MEASURED game gain: P\* + S′h beats P\* alone against
+  the real Kakuna on U by +2.00 pp [+0.34, +3.51] (S′-HONEST, `331f19cfe`). Distilling search into the network is
+  the classic route from "search helps" to "the network is stronger", and the X65 design already states ExIt-0H as
+  "this registration's recipe and folds on those labels; one lever: the label source" (its §4). X65 on the LEAKY
+  labels read NOT-DELIVERED (Δagree −1.26 pp [−1.40, −1.11]) and its probe matched "(U) unlearnable", but the probe
+  itself names honest labels as the cleanest test of the three causes it could not split (the leak, S′'s key noise,
+  lookahead a reactive network cannot amortise; `x65_learnability_probe_2026-11-06/README.md`), and S′-HONEST lost
+  about half of S′-LIVE's point to the honest builder, so the leak was a real share. It costs ≈ 3 GPU-h and no
+  Kakuna game before its gate, so it does not compete with X60-T's read for the lanes, and either answer steers:
+  DELIVERED opens ExIt-1 (the in-loop ladder to a stronger network); NOT-DELIVERED on HONEST labels is the evidence
+  the scale question (MF-5) is missing, because then the gain is honest lookahead a network of this size cannot
+  absorb from ≈ 188k labels.
+- **Why MF-3 step (b) second.** P\*'s species posterior on unfamiliar opponents is confidently WORSE than the Smogon
+  prior it is built on (H3, ledger 2026-10-26: the true hidden species' log-presence −6.2 / −4.6 / −10.0 against the
+  prior's −2.4 / −2.0 / −3.2 on F / H / P72), and the never-seen Pokémon carry most of the oracle edge search lacks
+  (search ledger §1, R3). Fixing it serves both halves of the owner's sentence: the network's own hypothesis tokens,
+  the damage operator and the critic read that belief at every decision, including every playout of S′h. Its
+  decisive first meter (P5, `../model/generalisation_review_2026-10-26.md` §3) runs in CPU minutes and needs no
+  Kakuna game, and its GPU cost is a short supervised job. X60-T's finals arrive with a free reading of the same meter
+  (step a), so the step-(b) registration is written knowing whether human teams in the pool already repaired it.
+
+**The cards** (each: the question; the meter; the cheapest decisive experiment; what it unlocks; the evidence).
+
+- **MF-1 ExIt-0H.**
+  - *Question:* does a P\* student fine-tuned toward S′h's honest piKL targets agree with S′h on panels it never saw
+    more than P\* does, and does it then beat P\* against Kakuna with no search at play time?
+  - *Meter:* the delivery gate (held-out Δagree, game-clustered LB > 0; `main.x65.delivery`), then G_X on the held-out
+    panel against Kakuna, paired with S′-HONEST's banked raw arm (X65 design §5's rule). The X65 probe's arms (curve,
+    control, capacity; `main.x65.learnability`) ride along as REPORTED, so a NOT-DELIVERED says which of (W) / (U) / 3a
+    it is.
+  - *Cheapest decisive experiment:* build the label bank from S′-HONEST's 188,297 honest searched records (`main.x65.bank`
+    pointed at `sprime_honest_play_2026-11-06`'s state; UNVERIFIED that it reads the incremental builder's records
+    unchanged, though `design_sprime_honest.md` C15 writes every field S′-LIVE wrote), three panel-fold students
+    (≈ 0.5–1 GPU-h) plus the probe arms (≈ 2 GPU-h; X65's four probe arms took 1 h 38 min), the gate before any
+    game.
+  - *Unlocks:* ExIt-1 (MF-1b, ≈ 35 GPU-h, X65 design option (i-d)), the in-loop label factory
+    (`../endstate/design_value_discrimination.md` §13: a fresh S′ label costs ≈ 9.5 CPU-s on the leaky builder, and the honest builders cost ×1.2–5.9 that), and a network that
+    carries search's gain where no search runs. Its NOT-DELIVERED is MF-5's missing evidence.
+  - *Evidence:* S′-HONEST GO-HONEST (`331f19cfe`, ledger 2026-11-09); X65 ExIt-0 NOT-DELIVERED (ledger 2026-11-06);
+    the probe's reading 2 (`0b9e6f354`: a same-rate control transfers +11.70 pp [+11.05, +12.32], the capacity arm
+    memorises in-sample, the curve arms' held-out Δagree ≤ 0). "Unlearnable at this scale" there means at ≈ 60k leaky
+    label rows and that recipe; the capacity arm fitting in-sample does NOT show the network's width binds.
+- **MF-2 Fidelity of the op's opponent side, batched as BOUNDARY-1.**
+  - *Question:* does pricing THEIR mons at their believed max HP (E13: today `2·base + 141`, 0 HP EVs, which over-states
+    every damage fraction against them, and the fixed-damage KO as P(true HP ≤ fixed)) change what P\* would play?
+  - *Meter:* the forward census on P\*'s 16,785-row population: rows whose op cells move, top-action changes, by kind
+    (the our-HP fix's precedent, `83272a8f9`: 6.7 % of rows moved, 0 top-action changes); then E13's own meters (K9
+    move-choice agreement on Seismic Toss / Night Shade users, the probe battery's KO-call calibration).
+  - *Cheapest decisive experiment:* that census, CPU only, once E13 is built (M: a per-species max-HP mixture from the
+    Smogon spreads, `../endstate/obs_enrichment_backlog.md` E13). A fix that moves no top action is correctness only
+    and rides the next fresh run without a strength read of its own; one that moves many earns a P\*-fork arm.
+  - *BOUNDARY-1, the one retrain boundary:* E13, round 2 of the mechanics fixes (the nature floor, the end-of-turn
+    integers; it joins where its landing commit says it is not a stamp-through), and E9 (damage-roll consistency, which
+    narrows E13's max-HP belief and the item / spread beliefs). Every other observation row (E1's "last HP the opponent
+    saw" half, E2 / E3 stall, E8, E11) and every JUDGMENT-class lever (the value pool's side embedding,
+    UNDERSTANDING §6; `--policy-readout trunk`) joins only on its own registered hypothesis (obs backlog §0 rule 3),
+    never as a passenger. The boundary is trained by MF-5's fresh pair, so it costs no GPU of its own.
+  - *Unlocks:* a production lineage whose operator is right about the opponent; the vehicle for X60-T's adoption.
+  - *Evidence:* E13's row (filed by `7a0153b46`: the Smogon-mean HP exceeds the neutral estimate by ≥ 20 HP for 60 %
+    of species with spreads); the census precedent `83272a8f9`. No strength effect of any fidelity fix has been read
+    (UNVERIFIED that any moves a game).
+- **MF-3 The belief on never-seen mons, off-pool.**
+  - *Question:* can the opponent belief be made right on teams outside our pool, and does a right belief make the
+    network (and S′h, if its sampler reads it) stronger?
+  - *Meter:* P5 (`../model/generalisation_review_2026-10-26.md` §3, `analyze_rows.py` in
+    `measurements/arch_generalisation_2026-10-26/scripts/`, ≈ 3 CPU-min a panel): unfamiliar species hit@k and
+    log-presence against the prior's (hit@k 0.30 / 0.39 / 0.16), familiar hit@k ≥ 0.60; the ROSTER meter per reveal
+    count k = 3 and k = 5 (obs backlog §1d); then games against Kakuna on U.
+  - *Cheapest decisive experiment:* (a) P5 on X60Tb's and C0b's finals (zero GPU; X60-T's PREREG §12 already reports
+    belief calibration on its Kakuna cells); (b) the review's lever 2, a supervised belief-only fine-tune on ladder teams
+    (the `hr_spec_v1` logs' revealed teams, the `hl_05_26` reconstructions) under the human-data toggle and its
+    manifest-driven panel exclusion (≈ 71 % of ≥ 1500 battles share a held-out 3-set core), ≈ 1–2 GPU-h, read by P5,
+    then a ≈ 3,600–6,000-game Kakuna read only if P5 passes; (c) for search, S′h's never-seen draws from the repaired
+    posterior instead of the Smogon usage marginals (`src/main/value_search/world_draws.py`'s `Prior` today), read
+    first by nearness on S′-HONEST's banked decisions (zero playouts, as stage 1c's phase A).
+  - *Unlocks:* the review's lever 1 (b) / (c) (delta dropout or a KL to the prior as a P\*-fork, ≈ 13 GPU-h) if
+    supervision alone does not hold; a network-driven world sampler for S′h.
+  - *Evidence:* H3 (ledger 2026-10-26); the play-time mix with the prior: λ = 0.25 +1.50 pp [−2.74, +5.74]
+    (`f299a7243`), λ = 1 −1.50 [−5.47, +2.47] (`71c76dfbb`), both NOT DETECTED; the knock-in forks (`ffd2280ee`: a
+    network TOLD the truth is no stronger, so the gain, if any, is search's, not the policy's); the network's belief as
+    a world sampler NOT DETECTED at LEAF-K8 (N15) and every open-population sampler NOT DETECTED (stage 1), but on the
+    continuous 4-turn leaf S′h uses partial truth pays smoothly from p = 0.05 (search ledger W9's red team). WEAKER
+    THAN IT READS: the "2.3× Smogon" species figure and the 0.31 exact-set mass were measured against POOL opponents
+    (search ledger §1, stage 0), not off-pool, where H3 reads the belief worse than the prior.
+- **MF-4 The value at the leaf on unfamiliar teams.**
+  - *Question:* does P\*'s critic rank the moves of ONE position as well on unfamiliar teams as on home72 (what a
+    one-ply argmax needs), and would a leaf value trained on non-self outcomes rank them better?
+  - *Meter:* V-RANK's within-node slope on U and its difference from home72
+    (`../endstate/design_v_rank_on_u.md`, DRAFT); then S′h with the new leaf in games.
+  - *Cheapest decisive experiment:* V-RANK itself (≈ 96 CPU-h central, builds B-V1–B-V4 and a PREREG; zero GPU). Only
+    if it shows a U-specific within-node deficit: a leaf critic fine-tuned on banked Kakuna outcomes, cross-fit by
+    panel (≈ 1–2 GPU-h). The X26 ride-along reads R1–R5 (§1, CPU) are the cheap prerequisite for any epistemic-value
+    or Q-head work.
+  - *Unlocks:* the Q head (`../endstate/design_q_head.md`) on evidence rather than on the 2026-09-27 framing.
+  - *Evidence:* H-MID CRITIC-MISCALIBRATED-ON-U (`f200258f6`: Δbias +0.076 [+0.016, +0.139] at turn 10, but V's
+    ordering, AUC, equal on both sets); R-EVAL information-bound (search ledger N13); the 4-turn leaf keeps about half
+    the oracle leaf's value (W3). WEAKER THAN IT READS: a level bias common to every sibling cancels in a one-ply
+    argmax, so H-MID is not evidence that the leaf mis-ranks siblings on U; that is V-RANK's unmeasured question.
+- **MF-5 BOUNDARY-1's fresh pair, and the scale bet.**
+  - *Question:* does a network wider from step 0 plateau higher on unfamiliar teams than the production width, both
+    trained at BOUNDARY-1's code with X60-T's verdict applied to the team mix?
+  - *Meter:* wide − 1× against Kakuna on F (and U, reported) at a registered 100M look, then at each arm's plateau
+    (the PR rule); the 1× arm against X26 at matched steps, REPORTED (different code).
+  - *Cheapest decisive experiment:* one seed an arm to 100M (≈ 21 + 31–52 GPU-h: the 2× arm's 1.5–2.5× a step is the
+    X65 design's GUESS), a stop-or-continue rule at that look, then to the plateau (≈ 58 + 87–145 GPU-h). There is no
+    cheaper decisive screen: the toy's growth screens cannot answer from-scratch width (N4's own §6.2).
+  - *Unlocks:* the next production lineage (its 1× arm), whether the network's size binds the plateau, and a wider
+    student to re-ask MF-1's learnability if honest labels also read unlearnable.
+  - *Prerequisites:* the owner's word; a width build (`D_MODEL` is `ROLE_TOKEN_SIZE`, 128, an architecture constant in
+    `src/agents/model/arch_constants.py`, so a wide arm needs a per-run width: cost UNVERIFIED, GUESS 1–3 agent-days);
+    MF-2's version; X60-T's verdict; optionally the second card (`../ops/cloud_gpu_plan.md`).
+  - *Evidence, weaker than the strategy doc's +3 (−1, +8):* every cheap capacity screen missed (N4 toy NO-GO
+    +0.46 pp [−0.28, +1.20]; X48 NO-GO in-house, its Kakuna point +2.06 [−0.06, +4.19] UNDECIDED; X47 depth UNDECIDED,
+    Δ̂ ≤ 0), but all were growth at a plateau, not width from step 0. For it: at the plateaus P\* (2.61M) is 7.3–10.5 pp
+    above the 1.42M toy against Kakuna (UNDERSTANDING §4.9; DESCRIPTIVE, the two differ by more than width), and it is
+    the one lever whose point reaches goal (b)'s ≈ 4 pp without search
+    (`../endstate/strategy_if_levers_null_2026-10-26.md` §3, rank 12).
+- **MF-6 X62** (`../endstate/design_x62_team_recombination.md`) and **MF-7 X35-A3** (§2.1's CE-3c) keep their own
+  designs; they are here because they are model levers with a known price. X62's case rests on H-CTX SUPPORTED
+  (`6f126c4af`) against four breadth misses at the plateau (D1, D3 UNDECIDED; N1-P NULL; X63 NOT PURSUED); A3's on
+  R0's best responder (+11.1 pp [+8.3, +13.8], `c456b6a09`), with no evidence it moves the Kakuna meter.
+
+**X60-T's outcome branches** (its verdicts, PREREG §11):
+- **ADOPT-CANDIDATE** (a GAIN on F, I_F LB90 > 0, P non-inferior, guards PASS) → the re-read at the production
+  checkpoint, then X54's sealed `forum216b` read; `--human-data teams:hr_spec_v1.r3@0.5` goes into BOUNDARY-1's
+  recipe on BOTH of MF-5's arms; MF-6 rises (team breadth then works at the plateau).
+- **TRADE** → the exchange rate to the owner; BOUNDARY-1 carries human teams only on the owner's ruling.
+- **KAKUNA-SPECIFIC** or **IN-HOUSE-ONLY** → nothing adopted; BOUNDARY-1 trains on the pool alone.
+- **NO-TRANSFER** or **LOSS** → H-TEAMS stops at the plateau; the breadth family's last live member at the plateau
+  is gone, MF-6 drops below MF-7, and MF-5's case gets stronger (data breadth does not move the plateau).
+- **NOT-DELIVERED** → a dose or fresh-run follow-up is its own registration, never a passenger on MF-5.
+- **NOT-RESOLVED** / **INCONCLUSIVE** → nothing licensed.
+- **Every class:** X60-T's REPORTED belief calibration and P5 on its finals feed MF-3 step (a).
+
+### 2.1 The rest of the queue (ranks set before 2026-11-09; SP-1, the search engineering, is CPU-side and below §2.0)
+
 | rank | # | experiment | question / hypothesis | meter(s) | prerequisite | cost |
 |---|---|---|---|---|---|---|
-| SP-1 | Q19 | **THE SEARCH PROGRAM FOR GOAL (b), UN-PAUSED 2026-11-09 by S′-HONEST's GO-HONEST** ([`../endstate/search_ledger.md`](../endstate/search_ledger.md) Q19; [`../endstate/design_sprime_honest.md`](../endstate/design_sprime_honest.md)). Two registrations: (i) **COST**, a cheaper S′h by budget or builder (the read's searched game cost 6.6 CPU-min whole-unit, 249 search CPU-s; 5,100 deals took 52 h of the whole box; exclusions U 5.6 %, F 10.0 %): **DRAFTED 2026-11-09, NOT registered** ([`measurements/searched_cost_2026-11-09/DRAFT_PREREG.md`](measurements/searched_cost_2026-11-09/DRAFT_PREREG.md): an offline stage-0 screen of K4 / CAP / an F-exclusion lever, then the cheapest passing preset against P\* raw on 6,900 fresh U deals, unit seeds 800–914, `searched_play` with a +2 pp NULL margin and a new `timer_safe` flag, about 540–765 CPU-h); (ii) **THE DEPLOYABLE PLAYER**, S′h within a game's clock: **DESIGNED 2026-11-09** ([`../endstate/design_searched_player.md`](../endstate/design_searched_player.md): replayed through Showdown's ladder timer, S′-HONEST's player would forfeit 16.2 % of its games, F 30.1 %; a bank-aware safety net makes it 0 at 3–9 % of searched decisions cut; the play path still needs an information-set equivalence gate from the wire, an async searched policy and the `|inactive|` clock) | Can P\* + S′h's +2.00 pp [+0.34, +3.51] against Kakuna on U be bought cheaper, and played as a live player? | to be registered; the claim is only ever "goal (b) met with search" in S′-HONEST's regime | the orchestrator's design; FRESH unit seeds disjoint from every registered block (200–244, 300–344, 600–674, 700–784, the draft's 800–914, and the 0–59 every X35-frame read shares: no machine check exists, the draft's own FINDING SC-5 says it is checked by grep, `../ops/TECH_DEBT_BACKLOG.md` "Unit-seed disjointness"); public play needs the owner's approval file and a green `ladder_drift_scan` | CPU (the rented-box question, `../STATUS.md` §6.2) |
+| SP-1 (CPU, below §2.0) | Q19 | **THE SEARCH PROGRAM FOR GOAL (b), UN-PAUSED 2026-11-09 by S′-HONEST's GO-HONEST; DEMOTED the same day to CPU-side, below §2.0 (owner direction, model-first): its stage-0 tooling goes on, its stage-1 games (540–765 CPU-h) wait until no model lever's read needs the lanes** ([`../endstate/search_ledger.md`](../endstate/search_ledger.md) Q19; [`../endstate/design_sprime_honest.md`](../endstate/design_sprime_honest.md)). Two registrations: (i) **COST**, a cheaper S′h by budget or builder (the read's searched game cost 6.6 CPU-min whole-unit, 249 search CPU-s; 5,100 deals took 52 h of the whole box; exclusions U 5.6 %, F 10.0 %): **DRAFTED 2026-11-09, NOT registered** ([`measurements/searched_cost_2026-11-09/DRAFT_PREREG.md`](measurements/searched_cost_2026-11-09/DRAFT_PREREG.md): an offline stage-0 screen of K4 / CAP / an F-exclusion lever, then the cheapest passing preset against P\* raw on 6,900 fresh U deals, unit seeds 800–914, `searched_play` with a +2 pp NULL margin and a new `timer_safe` flag, about 540–765 CPU-h); (ii) **THE DEPLOYABLE PLAYER**, S′h within a game's clock: **DESIGNED 2026-11-09** ([`../endstate/design_searched_player.md`](../endstate/design_searched_player.md): replayed through Showdown's ladder timer, S′-HONEST's player would forfeit 16.2 % of its games, F 30.1 %; a bank-aware safety net makes it 0 at 3–9 % of searched decisions cut; the play path still needs an information-set equivalence gate from the wire, an async searched policy and the `|inactive|` clock) | Can P\* + S′h's +2.00 pp [+0.34, +3.51] against Kakuna on U be bought cheaper, and played as a live player? | to be registered; the claim is only ever "goal (b) met with search" in S′-HONEST's regime | the orchestrator's design; FRESH unit seeds disjoint from every registered block (200–244, 300–344, 600–674, 700–784, the draft's 800–914, and the 0–59 every X35-frame read shares: no machine check exists, the draft's own FINDING SC-5 says it is checked by grep, `../ops/TECH_DEBT_BACKLOG.md` "Unit-seed disjointness"); public play needs the owner's approval file and a green `ladder_drift_scan` | CPU (the rented-box question, `../STATUS.md` §6.2) |
 | CE-1 | X33 | **The EQUAL-TIME CURVE from existing checkpoints** ([`../endstate/design_compute_efficiency.md`](../endstate/design_compute_efficiency.md) §5.4–§5.5; CPU only): each T-ENT seed at the step whose EFFECTIVE learn time (Σ `collect_ms` + `update_wall_s`, restart-aware — NOT SB3 `time_elapsed`, which counts X26's in-learn ladder games) equals X26's at ≈ 15M, ≈ 30M (≈ the toy's 100M cap) and each later X26 node a toy node can match; 3 × 1 cells × 500 mirrored pairs per budget; load1 + GPU wait recorded, ±1 SD time band | Does the toy's +6.5 pp equal-time lead (R-T5, one budget) survive larger budgets? The first "curve, not a point" read | toy − 50 pp per budget, seeds-as-units 90 % interval (T40 once built); DESCRIPTIVE | X26 checkpoints (exist, X26 past 45M); a short PREREG | 0 GPU-h; ≈ 2–3 h CPU per budget (rule 5b) |
 | CE-2 | X34 | **STAGED 2026-10-17, launch-ready after X26** ([`measurements/x34_toy_deep_stage_2026-10-17/STAGED_LAUNCH.md`](measurements/x34_toy_deep_stage_2026-10-17/STAGED_LAUNCH.md): a FORK at main, network identity PROVEN bit-identical to the pin, checkargs + dry-run pass, `launch_x34.sh` re-checks everything). **The TOY DEEP RUN to its own plateau** ([`../endstate/design_compute_efficiency.md`](../endstate/design_compute_efficiency.md) §4): continue `rb_toy_ent_s4002` from its 100M cap, T-ENT's recipe, 1M checkpoints; STOP on **X26's own Tier-1 rule** (Δ 10M, W 50M, two FLAT checks), CAP 500M; the continuation must carry T36's canary fixture (readiness F25) | The toy's ceiling: R-T2 re-read at each one's PLATEAU ("CEILING" wording becomes available); the start point of every toy-side plateau-breaker (X35) | Tier-1 checks (`main.plateau`) on the agent cores; R-T2 at plateau | AFTER X26 (owner 2026-10-16) unless the owner's Q (cloud in parallel) says otherwise | ≈ 6–24 GPU-h (≈ 5.8 GPU-h / 100M; plateau horizon UNKNOWN) |
 | CE-3 | X35 | **AMENDED 2026-10-20 (AM-8 / AM-9; the GPU battery DECIDED FP32_ALT, which does not exist yet): ONE PIN PER SIDE, the TOY block (T1 toy C0 + X47, T1b on X47's look-1 CONTINUE) runs FIRST, production waits for the FP32_ALT commit (a placeholder the kit refuses to launch on), the toy calibration stays last; the fork count, GPU-h and argvs below are unchanged.** **BATCH 1 LAUNCH SHEET 2026-10-19 ([`measurements/x35_breakers_stage_2026-10-17/BATCH1_LAUNCH_SHEET.md`](measurements/x35_breakers_stage_2026-10-17/BATCH1_LAUNCH_SHEET.md): 24 forks in GPU order (kit order of record), ≈ 108 GPU-h with X47, **all 32 argvs (AM-7's order) validated at `03b983be` with a PASS verdict each, the toy on the REAL T\* (X34 plateaued; T\* = 290,000,087; the toy R FROZEN 2026-10-19; the sheet is the record for the fork count and GPU-h)**; X47 is a KIT ARM; the orchestrator RULED C2 (X47 interleaved with its toy C0, toy A2 last), C3 (the toy arms run K9(b) `warn` under X34's ceilings) and C4 (launch without R0), and C1 / C5 / C6 are still open; NEEDS GO).** **STAGED ON PAPER 2026-10-17, launch-ready the day both plateaus are called ([`measurements/x35_breakers_stage_2026-10-17/STAGED_PLAN.md`](measurements/x35_breakers_stage_2026-10-17/STAGED_PLAN.md); every launch NEEDS THE ORCHESTRATOR'S GO).** **PLATEAU-BREAKERS on BOTH architectures, toy as a calibrated testbed** ([`../endstate/design_compute_efficiency.md`](../endstate/design_compute_efficiency.md) §5, the plan §5.6). Per breaker, b-ON forks from each plateau checkpoint (P\* = X26, T\* = X34) at ONE pin per batch, read against ONE shared control set C0 per (start, pin). The forks keep X26's own recipe (not `recipe.fork`) and type `--behaviour-check warn`. Production runs 20M per seed (≈ 4.4 GPU-h MEASURED), the toy 70M (equal effective learn time). Seeds 3501–3505 / 3601–3605, looks at 3 and 5. The ranked arms are CE-3a–CE-3g. The calibration pair is A1 + A2. Architecture-bound breakers skip the toy. Builds: `TASK_BACKLOG.md` T54–T59 (T54 before the first pin; T55 before the first read) | Do plateau-breakers lift either architecture, and does the production architecture still make a meaningful difference after them? (the owner's plan, steps 3–4) | **R1 PRIMARY:** Δ_pop, b-ON − b-OFF against a FROZEN reference population (own archive + another lineage, band-filtered), Welch over seed finals, 97.5 % per look, at the ±2.0 pp bar (GAIN / NULL / LOSS / UNDECIDED). **R2:** the best-response gap falls (A3 / A4 / A6). **Guards:** G-F (the head-to-head cross), G-E (exploitability), G-C (the collapse battery B1 / B2), G-K (Kakuna greedy on home72 AND away, n ≥ 420 per set per arm). Verdicts: ADOPT-CANDIDATE / TRADE / NULL / LOSS / UNDECIDED (§5.6.4) | X26 plateau; X34 plateau; T54 in the pin; R0 (the best responder of P\*) at the call | C0 ≈ 13 + 13 GPU-h once per batch; per breaker ≈ 14.6 (production) + ≈ 14.6 (toy, calibration pair only); the reads in GPU windows ≈ 0.3 GPU-h each; Kakuna ≈ 2.1 CPU-h per arm |
@@ -87,7 +257,7 @@ agent only if need be — gated on the leaf (carried since by L1, S-U and S′, 
 | 11b | X6 | **Branch successors train V too** (AlphaGo-style: one alternative action then on-policy to terminal). **DEFERRED (owner, 2026-09-30) with X4's playout labels**: it needs a continuation to terminal. When playouts return it rides on the SAME outcomes that label Q, and it is a PREREQUISITE for any V-bootstrapped TRAINING label: V's within-turn discrimination is the measured bottleneck (within-turn ρ ~0.23, paired RMS error 0.34–0.36 ≈ 3.5× the 0.1 near-best margin, blind to starved moves; spec §5.0) | Does off-path coverage improve V's WITHIN-TURN discrimination as a search leaf without hurting on-trajectory calibration? | leaf rows; NEW off-path calibration meter; within-turn ranking vs Lane S truth (the pre-read's reads, `main.policy_spectrum.qhat_report`); on-trajectory ECE non-inferiority | X4's playout labels (the same outcomes); V is trained only as the current π's value of off-path states — never a search / max value (spec §5.2 soundness rule) | ~0 extra labelling once X4's playouts exist (spec §8.1); the V loss on the successor rows is the add-on |
 | 4a | X13 | **DEPTH arm, then width** (HIGH PRIORITY in the Rust many-envs era, owner 2026-09-27) — 3–4 transformer layers vs today's 2 (d 128, 4 heads, ≈29 tokens) at matched GPU-hours; width 2× after | Does multi-hop reasoning (threat chains, checks and counters) need depth? Is the plateau capacity? (evidence so far favours optimization: multi-team distill +69 Elo) | strength per GPU-hour; leaf rows | M5 (cheap GPU) | GPU |
 | 12 | X14 | **BUILT 2026-10-19, NOT RUN — `--overlap-collect` (default OFF; `gen3_overlap_collect_v1`; [`../training/rust_collector.md`](../training/rust_collector.md) "Overlap (X14)"; measurements and the GPU A/B command: [`measurements/x14_overlap_2026-10-19/`](measurements/x14_overlap_2026-10-19/README.md)).** The worker plays the next rollout during each update from a process's 2nd update on, stopping at the trigger (deterministic; every row one version stale); the update runs DECOUPLED PPO (old_log_prob := log π_prox, advantage × min(π_prox/μ, 2)) because plain PPO's clip and KL→LR controller are centred on μ and X26's age-1 rows already start at KL 0.016 / 22.5 % clipped; K9(b) judges the stale rows on a behaviour snapshot. V-trace is NOT built (one version of lag; FINDING). The registered read below is still to run; the throughput A/B is first (≈ 1 GPU-h). **Off-policy overlap: the BIG throughput lever** — collect the next rollout WHILE the learner updates on the current one (1 version lag), with a decoupled PPO clip + truncated IS + V-trace. Today the two strictly alternate: during the ~36 s update (K8, 2.8) the Rust core and CPU mostly idle; during the rollout the learner side of the GPU idles. **(Orchestrator 2026-10-01, owner: "put it in the backlog, measured against the baseline once it exists … but we will also have low-priority GPU work like evals in the future, so maybe this is a little premature")** — so it is NOT the only claimant on the idle phases: the end state's background FILLER eval (Decision record, 2026-09-30 "Where a Rust eval cycle runs"), T15-style re-bakes and offline reads also want them. When it comes up, decide WHICH use of the idle capacity buys more — faster training (this arm) or free eval/labels (filler) — from a measured idle-phase budget, before building either. Distinct from the SIZING study's env-step / inference overlap (two env halves, settled per N there) | Does overlap buy throughput without hurting learning, and is that a better use of the idle phases than filler work? | strength per GPU-hour vs X26 at matched samples; IS effective sample size; lag distribution; the idle-phase budget (CPU and GPU) per update | X26 baseline exists; the sizing study's N; the filler-eval design | M |
-| 13 | X15 | **Expert iteration** — search-improved play distilled into the policy. **X65 ExIt-0 NOT-DELIVERED (2026-11-06) and its learnability probe reads (U) unlearnable at this scale (DESCRIPTIVE, §3)**: distilling S′'s leak-inclusive choices into P\* does not work at the registered recipe, nor at a 3–10× stronger one. ExIt-0H on S′-HONEST's 188k honest labels, or a stronger recipe, each need a NEW registration | Does search + distillation raise the ceiling? | strength; leaf rows | SP-1's cost read and a leak-honest label bank; a registration | L |
+| 13 | X15 | **Expert iteration** — search-improved play distilled into the policy. **X65 ExIt-0 NOT-DELIVERED (2026-11-06) and its learnability probe reads (U) unlearnable at this scale (DESCRIPTIVE, §3)**: distilling S′'s leak-inclusive choices into P\* does not work at the registered recipe, nor at a 3–10× stronger one. **Its next rung is §2.0 MF-1 (ExIt-0H on S′-HONEST's 188k honest labels) and MF-1b (ExIt-1)**, each a NEW registration | Does search + distillation raise the ceiling? | strength; leaf rows | a leak-honest label bank (banked by S′-HONEST); a registration | §2.0 |
 | 14 | X16 | **Bot floor 5% vs 10%** | Is the permanent bot slice worth its compute late in training? | untaught meter; bot WR | a fork point after the floor binds | GPU, small |
 | 15 | X17 | **Tactics probe analysis** (14,370 durable rows at `~/gen3ai_archive/tactics_probe_2026-09-24`) | (see its PREDICTION on main) | registered | none | CPU |
 | 16 | X18 | **E1 / E11 observation arms** (what the opponent knows about us; `[of]` attribution) | Do those facts move strength? | registered per arm | obs batch pattern | M each |

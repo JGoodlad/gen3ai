@@ -13,6 +13,22 @@ the owner's goal 5. It makes four points:
 - a ranked plan: E2, the bridge and R0's known hole; E1, an opponent-exact referee; E3, human identification and the
   human judge, zero playouts; E4, a live player against Kakuna, gated.
 
+**Priority (owner, 2026-11-09): MODEL-FIRST.** "This is an AI/ML project first and foremost, so there is a strong
+bias toward making the model better whenever possible, and that includes making the model support search." So:
+- **Search engineering that changes no weight is CPU-side and lower priority:** Q19's cost read and the deployable
+  player (`design_searched_player.md`) rank below the model-first GPU queue
+  ([`../research_state/EXPERIMENT_BACKLOG.md`](../research_state/EXPERIMENT_BACKLOG.md) §2.0). The cost read's stage-0
+  tooling goes on; its stage-1 games wait until no model lever's read needs the agent cores.
+- **What search needs from the MODEL is a model lever,** ranked there: whether the network can learn honest search's
+  choices (MF-1, ExIt-0H on S′-HONEST's 188,297 honest labels); a belief on the never-seen Pokémon that is right
+  off-pool (MF-3: P\*'s species posterior is worse than the Smogon prior on unfamiliar opponents, ledger 2026-10-26 H3,
+  and S′h's never-seen draws come from the Smogon usage marginals, not from the network); a leaf value that ranks
+  siblings on unfamiliar teams (MF-4, V-RANK first).
+- **No cheap offline meter is trusted for those levers yet.** The self-referee banks read search's gain at P\* as
+  +0.0001 [−0.0097, +0.0101] (L1) while the same kind of search won +2.00 pp in games, so a belief or value change
+  that is meant to help search is decided in games against Kakuna (≈ 5,000 paired deals, S′-HONEST's 52 h of the whole
+  box), or by a meter of the MODEL (P5, V-RANK) that does not claim a search gain.
+
 **Status (2026-11-09): S′-HONEST reads GO-HONEST, with GOAL-B-REACHED: a LEAK-HONEST search lifts P\* over the REAL
 Kakuna on unfamiliar teams.** ([`design_sprime_honest.md`](design_sprime_honest.md);
 [`../research_state/measurements/sprime_honest_play_2026-11-06/README.md`](../research_state/measurements/sprime_honest_play_2026-11-06/README.md);
@@ -359,7 +375,8 @@ comparator; the current-era re-measure is named beside it). Intervals are 95 % u
   against Kakuna on unfamiliar teams by +2.00 pp [+0.34, +3.51] (GO-HONEST), and its U score 0.5145 [0.5008, 0.5282]
   reaches goal (b) in that regime. The bank-level bullets below are per-decision and SELF-REFEREE: a different estimand,
   never pooled with it. Search is un-paused for goal (b): the deployable player is designed and its cost read drafted
-  (Q19, `design_searched_player.md`); as read, the player would forfeit 16.2 % of timed games.
+  (Q19, `design_searched_player.md`); as read, the player would forfeit 16.2 % of timed games. That engineering is
+  CPU-side, below the model-first GPU queue (owner, 2026-11-09; the Priority block above).
 - **The information ceiling is large and the critic cannot reach it.** Playing every action out in the TRUE battle (the
   ORACLE world) improves the policy's pick by **+0.081 (end-state) / +0.071 (production)** win probability per decision
   at 8 rollouts, against the critic's +0.026 / +0.012. PROVISIONAL.
@@ -1071,3 +1088,4 @@ limits:
 | 2026-11-06 | **S′-HONEST's INCREMENTAL builder BUILT, with its stage 1b** (its builder, orchestrator brief) | the status block's "Next" bullet: `r0s4_honest_inc` (worlds carried through a battle's searched decisions, ≥ 2 of 8 fresh a decision, still a function of I), INV in sequence mode on every channel, `r0s4_honest` and `r0s4_rolls` byte-identical at stamp `port=f0fe71f6c54757b2/95;env=c0b7c649acfb48d8/130`; stage 1b: U ≈ 6.2 CPU-min a searched game at K = 6 (`r0s4_honest` 30.3), U exclusions 3.4 % (7.7 %), the same pick as `r0s4_honest` in 63 % (its own floor 63 %) | rejuvenation by periodic cold rebuilds; the first cuts that emptied the carry or paid a full attempt every few decisions in a stuck battle (`design_sprime_honest.md` §9.2) | `design_sprime_honest.md` §9; `../research_state/measurements/sprime_honest_inc_stage1b_2026-11-06/README.md` |
 | 2026-11-09 | **S′-HONEST: GO-HONEST, GOAL-B-REACHED** (the result recorder, orchestrator brief) | the status block rewritten (S′-HONEST first; S′-LIVE compressed to "Before it"; X65 ExIt-0 and the X65 learnability probe's reading 2 folded into one distillation bullet; the incremental builder's stage 1b figures kept); §1's first bullet; W13; Q18's row (the probe); Q19 (cost, the deployable player) | quoting "goal (b) met" without its regime; reading the cross-read difference (+2.60 pp [+0.12, +5.07], unpaired, selected) as the leak's measured share; a panel claim (P72 carries the pooled point; panels are reported, never decided) | `../research_state/measurements/sprime_honest_play_2026-11-06/README.md`; ledger 2026-11-09 |
 | 2026-11-09 | **Q19 DESIGNED: the deployable searched player and the cost read's DRAFT** (the search-next designer, orchestrator brief; design and banked-data analysis, no game, no search run) | the status block's Q19 bullet; §1's first bullet; Q19's row: the timer replay (16.2 % forfeits as read, 0 under a bank-aware deadline at 3–9 % of searched decisions cut), the exclusions' CPU share (29 %), the envelope, the DRAFT's arms and rule | registering anything; non-inferiority against `r0s4_honest_inc@10` as the decided meter (≈ 27,000 deals at 1 pp); S′H-15's fix as a cost arm; quoting "goal (b) met" for a player with an envelope before its own read | `design_searched_player.md`; `../research_state/measurements/searched_cost_2026-11-09/` (`DRAFT_PREREG.md`, `inputs/timer_replay.json`) |
+| 2026-11-09 | **Search engineering DEMOTED to CPU-side, lower priority; what search needs from the model ranked as model levers** (the model-first roadmap planner, orchestrator brief, under the owner's 2026-11-09 direction "a strong bias toward making the model better whenever possible, and that includes making the model support search") | the Priority block above the status; §1's first bullet; the ranks live in `../research_state/EXPERIMENT_BACKLOG.md` §2.0 (MF-1 ExIt-0H, MF-3 the off-pool belief, MF-4 the leaf value on U) | keeping SP-1 (the cost read, the deployable player) ahead of the model levers on the CPU lanes; ranking belief or value work by the self-referee banks, which read +0.0001 at P\* while the search won +2.00 pp in games; stopping the cost read's stage-0 tooling (it goes on) | `../research_state/measurements/sprime_honest_play_2026-11-06/README.md`; `../research_state/measurements/search_l1_plateau_2026-10-25/`; ledger 2026-10-26 (H3) |

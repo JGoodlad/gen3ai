@@ -156,7 +156,7 @@ under `measurements/`. A number with no pointer is not a measurement.
 
 ## 1. The mission, the goals and the era
 
-**The mission.** A Generation 3 OverUsed (gen3 OU) generalist that keeps improving: not a specialist, and not a search-first agent: the trained network is the product and the yardstick for every training lever, and one-ply, leak-honest search at play time (only our action branched at the root, the network on both sides of every playout, inside the ladder's turn timer) is a separately measured layer on top of it, never a substitute for improving the network. The owner's
+**The mission.** A Generation 3 OverUsed (gen3 OU) generalist that keeps improving: not a specialist, and not a search-first agent: the trained network is the product and the yardstick for every training lever, and one-ply, leak-honest search at play time (only our action branched at the root, the network on both sides of every playout, inside the ladder's turn timer) is a separately measured layer on top of it, never a substitute for improving the network, while making the network a better driver of that search (its beliefs about the opponent's hidden team, a value that ranks the leaves) counts as improving the network. The owner's
 permanent side constraint is that it must be able to play the public ladder; no ladder campaign runs without the
 owner's approval (`designs/endstate/design_ladder_campaign.md`).
 
@@ -755,7 +755,8 @@ primary cannot be powered on the toy, and it costs more than the production read
 | Does Foul Play beat P\*? | a direct read; only the Kakuna proxy exists (§3.1) |
 | Do a human's choices identify a human's team (L3-H)? | the L3 read on ladder states with a human opponent model |
 | Does one-ply search add to a best responder, or defend its target? | R0's search cells, DEFERRED (S′-HONEST un-paused search for goal (b) only) |
-| Can P\* + S′h's gain be bought cheaper, and played as a deployable player? | the two registrations S′-HONEST's GO licenses (search ledger Q19): a cost read (a cheaper budget or builder; fewer exclusions) and the deployable player's design (S′h within a game clock). Nothing designed yet |
+| Can P\* + S′h's gain be bought cheaper, and played as a deployable player? | search ledger Q19: the player is designed (`../endstate/design_searched_player.md`) and its cost read DRAFTED, not registered; CPU-side, below the model-first GPU queue (owner, 2026-11-09; [`EXPERIMENT_BACKLOG.md`](EXPERIMENT_BACKLOG.md) §2.0) |
+| Can the network absorb honest search's gain? | **ExIt-0H** (EXPERIMENT_BACKLOG §2.0 MF-1): P\* students fine-tuned toward S′h's 188k banked honest labels, a delivery gate on held-out panels before any Kakuna game. X65 answered only for the leak-inclusive labels (NOT-DELIVERED) |
 | Does the value pool need an explicit SIDE embedding on the 12 entity tokens? Today it separates ours from theirs only through content asymmetry (a probe reads own-team identity at 0.97 from `value_pooled`); belief machinery that makes opponent tokens look like ours would erode that. UNVERIFIED as a defect | first a test that swapping the two sides' tokens flips the value pool's "who is winning"; then, if it fails, a learned side embedding behind a flag in a fresh arm (an ARCH-surface build) |
 
 ---
