@@ -90,18 +90,33 @@ def _load_doc():
 _DIST_CACHE: dict = {}
 
 
+def _git_distance(sha: str, cwd):
+    """How many commits HEAD is ahead of ``sha``; ``None`` when git does not know the commit OR
+    ``sha`` is not an ancestor of HEAD.
+
+    ``rev-list --count sha..HEAD`` alone is blind to the second case: for a side-branch commit it
+    counts HEAD's commits missing from that branch and reads as "N behind", so a row banked at a
+    commit that never reached main looked fresh (2026-11-09: 0 of 680 rows was a verified pass
+    within 25 commits). ``evaluate`` reports ``None`` as stale."""
+    try:
+        anc = subprocess.run(["git", "merge-base", "--is-ancestor", sha, "HEAD"], cwd=str(cwd),
+                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        if anc.returncode != 0:  # 1 = not an ancestor, 128 = unknown commit
+            return None
+        out = subprocess.check_output(
+            ["git", "rev-list", "--count", f"{sha}..HEAD"],
+            cwd=str(cwd), text=True, stderr=subprocess.DEVNULL).strip()
+        return int(out)
+    except Exception:
+        return None
+
+
 def _commit_distance(sha: str):
-    """How many commits HEAD is ahead of ``sha``; ``None`` when git does not know the commit."""
+    """Cached ``_git_distance`` against this checkout; ``None`` for an empty / ``unknown`` sha."""
     if not sha or sha == "unknown":
         return None
     if sha not in _DIST_CACHE:
-        try:
-            out = subprocess.check_output(
-                ["git", "rev-list", "--count", f"{sha}..HEAD"],
-                cwd=str(repo_path()), text=True, stderr=subprocess.DEVNULL).strip()
-            _DIST_CACHE[sha] = int(out)
-        except Exception:
-            _DIST_CACHE[sha] = None
+        _DIST_CACHE[sha] = _git_distance(sha, repo_path())
     return _DIST_CACHE[sha]
 
 
@@ -307,3 +322,24 @@ def test_the_env_override_points_the_reader_at_a_scratch_file(tmp_path, monkeypa
     assert status_path() == scratch
     monkeypatch.delenv("GEN3AI_SLOW_STATUS_FILE")
     assert status_path() == repo_path("designs", "ops", "slow_tier_status.json")
+
+
+def test_a_commit_that_is_not_an_ancestor_of_HEAD_is_stale_not_N_behind(tmp_path):
+    """Pins the blind spot: a row banked at a SIDE-branch commit must read as unknown (stale), not
+    as the count of HEAD's commits the side branch lacks. Fails on the old bare `rev-list --count`."""
+    def git(*a):
+        return subprocess.check_output(
+            ["git", "-c", "user.name=t", "-c", "user.email=t@t", *a], cwd=str(tmp_path),
+            text=True, stderr=subprocess.STDOUT).strip()
+    git("init", "-q", "-b", "main")
+    for i in range(3):
+        git("commit", "-q", "--allow-empty", "-m", f"m{i}")
+    base = git("rev-parse", "HEAD~2")
+    git("checkout", "-q", "-b", "side", base)
+    git("commit", "-q", "--allow-empty", "-m", "side")
+    side = git("rev-parse", "HEAD")
+    git("checkout", "-q", "main")
+    assert _git_distance(base, tmp_path) == 2          # an ancestor: honest distance
+    assert _git_distance(git("rev-parse", "HEAD"), tmp_path) == 0
+    assert _git_distance(side, tmp_path) is None       # not an ancestor: stale, never "2 behind"
+    assert _git_distance("0" * 40, tmp_path) is None   # unknown to git

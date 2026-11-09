@@ -873,7 +873,7 @@ reads it:
 | `fail` | the tier ran it and it failed | **FAILS the routine gate**, naming the test id and the commit it failed at |
 | `inconclusive` | it failed with a TIMEOUT signature, **or it never finished a CALL phase** (Ctrl-C, a SIGTERM'd xdist worker — killed in flight) | reported — *a timeout is never a semantic outcome* |
 | unrecorded | collected as `slow` this session, no row | reported — a new slow test is not a regression |
-| stale | the row is >25 commits behind HEAD, or its commit is unknown | reported |
+| stale | the row is >25 commits behind HEAD, or its commit is unknown **or not an ancestor of HEAD** (a row banked at a side-branch commit that never reached main; `_git_distance` checks `merge-base --is-ancestor` first, because a bare `git rev-list sha..HEAD` count reads such a commit as "N behind" and showed 74 of 680 rows fresh on 2026-11-09 when 0 were) | reported |
 
 The three non-fatal classes are emitted as **warnings**, so they survive `-q` in the warnings
 summary, plus a one-line census on `-s`.
