@@ -1,8 +1,20 @@
-r"""B1, THE LABEL BANK (PREREG §2): every decision of our side in S′-LIVE's COUNTED games, its observation row rebuilt
-from the game's capture, and on each SEARCHED decision S′'s piKL target π′, outcome-blind and guarded bit for bit.
+r"""B1, THE LABEL BANK (PREREG §2): every decision of our side in a searched read's COUNTED games, its observation row
+rebuilt from the game's capture, and on each SEARCHED decision the search's piKL target π′, outcome-blind and guarded
+bit for bit.
 
     python -m main.x65.bank build --state ~/gen3ai_archive/sprime_live_play_2026-11-01 --out <dir> [--workers 3]
+    python -m main.x65.bank build --source sprime_honest --state ~/gen3ai_archive/sprime_honest_play_2026-11-06 …
     python -m main.x65.bank check --out <dir>
+
+**The source** (:data:`SOURCES`): ``sprime_live`` (X65: S′-LIVE's leak-inclusive ``r0s4_rolls@10`` on E4) or
+``sprime_honest`` (X66 ExIt-0H: S′-HONEST's ``r0s4_honest_inc@10`` on E6). The checkout's engine must be the source's,
+and the record's own ``expected_search`` / ``engine_registered`` must name it. **An honest source admits no hidden
+information** (:func:`label_view`): every field of every decision record must be classified (:data:`RECORD_FIELDS`
+may shape a row, :data:`CHECK_FIELDS` and :data:`IGNORED_FIELDS` never do, :data:`HIDDEN_INFO_FIELDS` are computed
+against the truth the searched side never saw and are never read); an unclassified field, a searched record off the
+source's preset, a builder not leak-honest, a non-empty ``partial`` / ``residual`` leak list, a revealed opponent or
+another λ is a :class:`HiddenInfoError` that stops the build (it is never a dropped row). The row itself is the
+network's own live input by the identity guard below, so a label row holds our side's information only.
 
 **Source.** The counted units of S′-LIVE's ``record.json`` (``inputs.deals``: a deal's ``raw`` / ``searched`` unit
 whose status is ``counted``; only those structural fields are kept, never a unit's games), each read from its FINAL
@@ -71,9 +83,30 @@ GROUP = "u"
 MAX_DROP_FRAC = 0.005
 INNER_VAL_MOD = 10
 E4 = "port=e00a212a102f5ce2/94;env=3d0d5c9c0f5d3c23/129"
+E6 = "port=f0fe71f6c54757b2/95;env=c0b7c649acfb48d8/130"
 N_ACT = 11
 TIE_EPS = 1e-4
 KEY_SCHEMA = "su_live_v1"
+#: a bank's source: the engine its games were played on, the search preset of its searched arm, and whether every
+#: label must come from a leak-honest builder (module docstring)
+SOURCES: dict[str, dict[str, Any]] = {
+    "sprime_live": {"engine": E4, "search": "r0s4_rolls@10", "honest": False},
+    "sprime_honest": {"engine": E6, "search": "r0s4_honest_inc@10", "honest": True},
+}
+#: the leak block's ``builder`` of a leak-honest search (``main.value_search`` ``honest`` / ``honest_inc``)
+HONEST_BUILDERS = frozenset({"honest", "honest_inc"})
+#: the decision record's fields that may shape a bank row: the label, its keys and the identity guard's inputs
+RECORD_FIELDS = frozenset({"n", "side", "searched", "turn", "played", "pi_argmax", "frame_sha256", "key", "deal", "at",
+                           "update", "log_sha256", "rescore_sample", "log", "q", "log_pi", "leak", "deviation"})
+#: read only by the honesty check, never banked
+CHECK_FIELDS = frozenset({"schema", "search", "config", "why"})
+#: telemetry and the search's own working state (our side's information, or none), never read into a row
+IGNORED_FIELDS = frozenset({"battle", "index", "n_legal", "error", "cpu_s", "wall_s", "playout_cpu_s", "process_cpu_s",
+                            "world_cpu_s", "world_tries", "spent", "root_v", "search_key", "honest", "inc_carry_in",
+                            "mask", "tokens"})
+#: computed against the TRUE opponent team (``species_hit``: each world's species overlap with the truth, a
+#: diagnostic): never read into a bank, whatever the source
+HIDDEN_INFO_FIELDS = frozenset({"species_hit"})
 #: result-bearing files the builder never opens (outcome-blind, PREREG §2)
 FORBIDDEN = frozenset({"games.jsonl", "summary.json", "forced_ends.jsonl", "peer_acceptor_report.json",
                        "peer_acceptor.log", "ws_frontend.log", "decision.json", "cells.json", "inputs.json"})
@@ -92,6 +125,40 @@ class BankError(RuntimeError):
 
 class OutcomeBlindError(BankError):
     """An attempt to read a result-bearing file (PREREG §2: the builder is outcome-blind)."""
+
+
+class HiddenInfoError(RuntimeError):
+    """A field or record that could carry information the searched side never had, offered to an honest bank (never a
+    dropped row: the build stops)."""
+
+
+def source_of(source: str) -> dict[str, Any]:
+    if source not in SOURCES:
+        raise BankError(f"source {source!r}: one of {sorted(SOURCES)}")
+    return SOURCES[source]
+
+
+def label_view(rec: dict[str, Any], source: str) -> dict[str, Any]:
+    """The decision record as the bank may read it: :data:`RECORD_FIELDS` alone. On an honest source, every field must
+    be classified and a searched record must come from the source's leak-honest preset (module docstring)."""
+    if RECORD_FIELDS & HIDDEN_INFO_FIELDS:
+        raise HiddenInfoError(f"a hidden-information field is a bank field: {sorted(RECORD_FIELDS & HIDDEN_INFO_FIELDS)}")
+    src = source_of(source)
+    if src["honest"]:
+        unknown = set(rec) - RECORD_FIELDS - CHECK_FIELDS - IGNORED_FIELDS - HIDDEN_INFO_FIELDS
+        if unknown:
+            raise HiddenInfoError(f"unclassified decision-record field(s) {sorted(unknown)}: classify each before it "
+                                  "can reach an honest bank")
+        where = f"decision {rec.get('n')!r}"
+        if rec.get("search") != src["search"]:
+            raise HiddenInfoError(f"{where}: search {rec.get('search')!r}, not the source's {src['search']!r}")
+        if rec.get("searched"):
+            leak, cfg = rec.get("leak") or {}, rec.get("config") or {}
+            if leak.get("builder") not in HONEST_BUILDERS or leak.get("partial") or leak.get("residual"):
+                raise HiddenInfoError(f"{where}: leak block {leak!r} is not a leak-honest builder's")
+            if cfg.get("reveal") != "off" or float(cfg.get("pikl_lambda", -1)) != LAMBDA:
+                raise HiddenInfoError(f"{where}: config {cfg!r} reveals the opponent or is not λ {LAMBDA}")
+    return {k: v for k, v in rec.items() if k in RECORD_FIELDS}
 
 
 # ------------------------------------------------------------------------------------------------ reading
@@ -120,14 +187,20 @@ def sha256_file(p: Path) -> str:
     return h.hexdigest()
 
 
-def counted_units(record: Path) -> list[dict[str, Any]]:
-    """The counted units of S′-LIVE's record: ``{arm label, unit, panel, unit_seed, game}`` (only these fields)."""
+def counted_units(record: Path, source: str | None = None) -> list[dict[str, Any]]:
+    """The counted units of a searched_play record: ``{arm label, unit, panel, unit_seed, game}`` (only these fields).
+    With ``source``, the record must name that source's search and engine."""
     doc = read_json(record)
     if doc.get("rule") != "searched_play" or doc.get("void") is not None:
         raise BankError(f"{record}: not a valid searched_play record")
     ins = doc["inputs"]
     if ins.get("raw") != LABELS["raw"] or ins.get("searched") != LABELS["searched"]:
         raise BankError(f"{record}: arms {ins.get('raw')!r} / {ins.get('searched')!r}")
+    if source is not None:
+        src = source_of(source)
+        if ins.get("expected_search") != src["search"] or ins.get("engine_registered") != src["engine"]:
+            raise BankError(f"{record}: search {ins.get('expected_search')!r} on {ins.get('engine_registered')!r} is "
+                            f"not the {source} source's")
     out = []
     for d in ins["deals"]:
         for arm in ("raw", "searched"):
@@ -321,7 +394,7 @@ def rebuild_row(log: dict[str, Any], side: str, k: int, key: str) -> dict[str, A
 
 
 # ------------------------------------------------------------------------------------------------ one game
-def game_rows(cell: Path, label: str) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+def game_rows(cell: Path, label: str, source: str = "sprime_live") -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """Every decision of our side in one counted game, rebuilt and guarded (module docstring). Returns
     ``(rows, stats)``; a row is kept iff its guards pass. Raises :class:`BankError` for a game that cannot be
     placed at all."""
@@ -343,7 +416,7 @@ def game_rows(cell: Path, label: str) -> tuple[list[dict[str, Any]], dict[str, A
         raise BankError(f"{cell}: {len(arrival)} replayed decisions of ours for {len(ours)} commands")
     recs: list[dict[str, Any]] | None = None
     if label == LABELS["searched"]:
-        recs = read_jsonl(cell / "search_decisions.jsonl")
+        recs = [label_view(r, source) for r in read_jsonl(cell / "search_decisions.jsonl")]
         if [int(r["n"]) for r in recs] != list(range(len(ours))) or any(r["side"] != side for r in recs):
             raise BankError(f"{cell}: the decision records are not our decisions 0..{len(ours) - 1}")
     st: dict[str, Any] = {"decisions": len(ours), "labels_recorded": 0, "labels_kept": 0, "drop": {},
@@ -494,7 +567,7 @@ def shard_name(label: str, panel: str, seed: int) -> str:
 
 
 def build_shard(state: Path, out: Path, label: str, panel: str, seed: int, units: list[dict[str, Any]],
-                model_zip: Path | None, threads: int = 1) -> dict[str, Any]:
+                model_zip: Path | None, threads: int = 1, source: str = "sprime_live") -> dict[str, Any]:
     """One shard (an arm, a panel, a unit seed): every counted game's rows, the P\\* check, written atomically."""
     name = shard_name(label, panel, seed)
     js, npz = out / f"{name}.json", out / f"{name}.npz"
@@ -507,7 +580,7 @@ def build_shard(state: Path, out: Path, label: str, panel: str, seed: int, units
     for u in sorted(units, key=lambda x: x["game"]):
         cell = state / "anchor" / GROUP / label / "cells" / u["unit"]
         try:
-            g_rows, g_st = game_rows(cell, label)
+            g_rows, g_st = game_rows(cell, label, source)
         except BankError as exc:
             n_lab = 0
             if label == LABELS["searched"] and (cell / "search_decisions.jsonl").exists():
@@ -567,9 +640,10 @@ def pstar_logits(model_zip: Path, rows: list[dict[str, Any]], threads: int) -> n
 _MODEL_CACHE: dict[str, Any] = {}
 
 
-def _work(args: tuple[str, str, str, str, int, list[dict[str, Any]], str | None]) -> dict[str, Any]:
-    state, out, label, panel, seed, units, model = args
-    return build_shard(Path(state), Path(out), label, panel, seed, units, Path(model) if model else None)
+def _work(args: tuple[str, str, str, str, int, list[dict[str, Any]], str | None, str]) -> dict[str, Any]:
+    state, out, label, panel, seed, units, model, source = args
+    return build_shard(Path(state), Path(out), label, panel, seed, units, Path(model) if model else None,
+                       source=source)
 
 
 def summarize(shards: list[dict[str, Any]]) -> dict[str, Any]:
@@ -608,25 +682,27 @@ def summarize(shards: list[dict[str, Any]]) -> dict[str, Any]:
 
 
 def build(state: Path, out: Path, workers: int = 3, model: Path | None = None,
-          allow_dirty: bool = False) -> dict[str, Any]:
+          allow_dirty: bool = False, source: str = "sprime_live") -> dict[str, Any]:
     """The whole bank (module docstring); returns the manifest."""
     from main.anchors.server import engine_stamp
     from utils.git import get_git_hash
 
+    src = source_of(source)
     eng = engine_stamp()
-    if eng != E4:
-        raise BankError(f"this checkout's engine {eng!r} is not E4 {E4!r}: the rows would not be S′-LIVE's")
+    if eng != src["engine"]:
+        raise BankError(f"this checkout's engine {eng!r} is not the {source} source's {src['engine']!r}: the rows "
+                        "would not be its games'")
     commit = get_git_hash()
     dirty = _dirty()
     if dirty and not allow_dirty:
         raise BankError("the checkout is dirty: a bank names the commit that built it")
     out.mkdir(parents=True, exist_ok=True)
     record = state / "record.json"
-    units = counted_units(record)
+    units = counted_units(record, source)
     groups: dict[tuple[str, str, int], list[dict[str, Any]]] = {}
     for u in units:
         groups.setdefault((u["label"], u["panel"], u["unit_seed"]), []).append(u)
-    jobs = [(str(state), str(out), lab, pan, seed, us, str(model) if model else None)
+    jobs = [(str(state), str(out), lab, pan, seed, us, str(model) if model else None, source)
             for (lab, pan, seed), us in sorted(groups.items())]
     t0 = time.time()
     if workers <= 1:
@@ -641,8 +717,9 @@ def build(state: Path, out: Path, workers: int = 3, model: Path | None = None,
                 if i % 10 == 0:
                     print(f"[x65 bank] {i + 1}/{len(jobs)} shards, {time.time() - t0:.0f} s", flush=True)
     summ = summarize(shards)
-    man = {"schema": MANIFEST_SCHEMA, "what": "X65 ExIt-0's label bank (PREREG §2)", "commit": commit,
-           "dirty": dirty, "engine": eng, "source_state": str(state), "record_sha256": sha256_file(record),
+    man = {"schema": MANIFEST_SCHEMA, "what": f"X65's label bank (PREREG §2), source {source}", "commit": commit,
+           "dirty": dirty, "engine": eng, "source": source, "search": src["search"], "honest": src["honest"],
+           "source_state": str(state), "record_sha256": sha256_file(record),
            "lambda": LAMBDA, "from_turn": FROM_TURN, "inner_val": f"sha256(deal)[0] % {INNER_VAL_MOD} == 0",
            "max_drop_frac": MAX_DROP_FRAC, "tie_eps": TIE_EPS, "pstar": str(model) if model else None,
            "pstar_sha256": sha256_file(model) if model else None, "counted_units": len(units),
@@ -673,9 +750,10 @@ def load_manifest(out: Path) -> tuple[dict[str, Any], str]:
     return json.loads(p.read_text()), sha256_file(p)
 
 
-def check(out: Path, registered_sha256: str | None = None) -> dict[str, Any]:
+def check(out: Path, registered_sha256: str | None = None, source: str | None = None) -> dict[str, Any]:
     """The bank as the trainer will read it: the manifest's sha256 (``registered_sha256`` if given), not VOID, every
-    shard's sha256. Raises :class:`BankError`."""
+    shard's sha256, built on its source's engine (a manifest naming no source is X65's ``sprime_live``) and, with
+    ``source``, from that source. Raises :class:`BankError`."""
     man, sha = load_manifest(out)
     if man.get("schema") != MANIFEST_SCHEMA:
         raise BankError(f"{out}: schema {man.get('schema')!r}")
@@ -683,12 +761,15 @@ def check(out: Path, registered_sha256: str | None = None) -> dict[str, Any]:
         raise BankError(f"VOID: the bank manifest {sha[:12]} is not the registered {registered_sha256[:12]}")
     if man.get("void"):
         raise BankError(f"VOID bank: {man['void']}")
-    if man.get("engine") != E4 or man.get("dirty"):
-        raise BankError("the bank was not built on E4 from a clean commit")
+    have = man.get("source", "sprime_live")
+    if source is not None and have != source:
+        raise BankError(f"the bank's source is {have!r}, not {source!r}")
+    if man.get("engine") != source_of(have)["engine"] or man.get("dirty"):
+        raise BankError(f"the bank was not built on its {have} source's engine from a clean commit")
     for s in man["shards"]:
         if sha256_file(out / f"{s['name']}.npz") != s["sha256"]:
             raise BankError(f"{s['name']}: sha256 differs from the manifest")
-    return {"manifest_sha256": sha, "rows": man["rows"], "label_rows": man["label_rows"]}
+    return {"manifest_sha256": sha, "rows": man["rows"], "label_rows": man["label_rows"], "source": have}
 
 
 def load_rows(out: Path, panels: Iterable[str], fields: Sequence[str] = FIELDS,
@@ -717,7 +798,8 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="python -m main.x65.bank", description=__doc__.split("\n\n")[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
     b = sub.add_parser("build")
-    b.add_argument("--state", required=True, help="S′-LIVE's read state")
+    b.add_argument("--state", required=True, help="the searched read's state (S′-LIVE's or S′-HONEST's)")
+    b.add_argument("--source", default="sprime_live", choices=sorted(SOURCES))
     b.add_argument("--out", required=True)
     b.add_argument("--workers", type=int, default=3)
     b.add_argument("--pstar", default=None, help="P*'s zip: the anchor rows' greedy-action check")
@@ -729,7 +811,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if a.cmd == "build":
             man = build(Path(a.state).expanduser(), Path(a.out).expanduser(), a.workers,
-                        Path(a.pstar).expanduser() if a.pstar else None, a.allow_dirty)
+                        Path(a.pstar).expanduser() if a.pstar else None, a.allow_dirty, a.source)
             print(json.dumps({"rows": man["rows"], "label_rows": man["label_rows"], "void": man["void"],
                               "per_panel": {p: {k: v[k] for k in ("labels_recorded", "labels_kept",
                                                                   "label_drop_frac")}
@@ -737,7 +819,7 @@ def main(argv: list[str] | None = None) -> int:
             return 2 if man["void"] else 0
         print(json.dumps(check(Path(a.out).expanduser(), a.manifest_sha256)), flush=True)
         return 0
-    except BankError as exc:
+    except (BankError, HiddenInfoError) as exc:
         print(f"[x65 bank] REFUSED: {exc}", file=sys.stderr, flush=True)
         return 2
 

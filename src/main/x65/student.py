@@ -1,10 +1,15 @@
-r"""B2, THE FINE-TUNE (PREREG §3): one P\* student per panel fold, trained offline toward S′'s piKL targets on the two
-TRAINING panels' label rows with a KL anchor to P\* on their anchor rows; the inner validation picks among two learning
-rates and sixteen checkpoints each, blind to the read panel.
+r"""B2, THE FINE-TUNE (PREREG §3): one P\* student per panel fold, trained offline toward the search's piKL targets on
+the two TRAINING panels' label rows with a KL anchor to P\* on their anchor rows; the inner validation picks the
+checkpoint, blind to the read panel. Two registered recipes (:data:`RECIPES`): ``x65`` (X65 ExIt-0 on S′-LIVE's bank,
+the default) and ``x66`` (X66 ExIt-0H on S′-HONEST's honest bank; its PREREG
+``designs/research_state/measurements/x66_exit0h_2026-11-09/PREREG.md`` §3).
 
     python -m main.x65.student train --bank <bank> --bank-sha256 <registered> --fold heldout72_hpfix --lr 1e-5 \
         --init <P* zip> --out <dir>/s_h [--device cuda] [--budget-min 50]
     python -m main.x65.student pick --out <dir>/s_h
+    python -m main.x65.student train --recipe x66 --bank <honest bank> --bank-sha256 <registered> \
+        --fold heldout72_hpfix --lr 1e-4 --init <P* zip> --out <dir>/s_h [--device cuda] [--budget-min 50]
+    python -m main.x65.student pick --recipe x66 --out <dir>/s_h
     python -m main.x65.student probe --bank <bank> --bank-sha256 <registered> --fold heldout72_hpfix --name curve \
         --lr 1e-4 --beta 0.1 --epochs 12 --evals-per-epoch 2 --init <P* zip> --out <dir>/curve_h [--device cuda]
 
@@ -12,7 +17,7 @@ rates and sixteen checkpoints each, blind to the read panel.
 fixed (S_H 6511, S_F 6512, S_P 6513). No row of the read panel is loaded, and :func:`split` refuses a training or
 inner-validation row whose panel, or whose ``deal``, is the read panel's.
 
-**The recipe** (registered, nothing here is a knob): start from P\*'s weights and architecture; the loss is
+**The x65 recipe** (registered, nothing here is a knob): start from P\*'s weights and architecture; the loss is
 ``mean over label rows KL(π′ ‖ π_θ) + β · mean over anchor rows KL(π_P* ‖ π_θ)``, β = 1, both over the legal actions,
 π_θ the policy's masked log-softmax (``main.x50_r1.hom.policy_logits_t``), π_P\* computed here from P\*'s own bytes
 (a frozen copy, once, before the first step); every decision row is an anchor row (a label row too, when S′ searched
@@ -22,6 +27,13 @@ an epoch; an epoch is ``ceil(train label rows / 256)`` steps (the last label bat
 AdamW (weight decay 1e-5, eps 1e-5), lr linear warm-up over 200 steps then constant, gradient-norm clip 0.5, fp32
 (TF32 off on CUDA), eval mode. Only the parameters the policy logits depend on take gradient (found by one backward
 through ``policy_logits_t``; the rest, the value head's own among them, are frozen: ``requires_grad = False``).
+
+**The x66 recipe** (registered): the x65 loop at the probe's ``curve`` knobs, the honest bank (``bank.check`` refuses
+any other source), its own seeds (S_H 6611, S_F 6612, S_P 6613): one learning rate 1e-4, β 0.1, 12 epochs, a checkpoint
+every half epoch (24). At step 0 and every checkpoint it writes the learnability probe's dumps (``train`` / ``val`` /
+``read``: the read panel's label rows are scored, never batched), and ``pick`` takes the checkpoint after step 0 with
+the highest ``val`` Δagree (``learnability.report_arm``'s ``selected_on_val``: ties to the earlier), never a ``read``
+number.
 
 **The inner validation**: the training panels' rows whose deal is inner-validation (``bank.inner_val``) are withheld
 from training; at every quarter epoch (16 checkpoints per learning rate) the same L is computed on them in float64,
@@ -69,6 +81,15 @@ WEIGHT_DECAY = 1e-5
 EPS = 1e-5
 CLIP = 0.5
 EVALS_PER_EPOCH = 4
+#: the registered recipes (module docstring): the folds' students and seeds, the learning-rate grid, β, the epoch and
+#: checkpoint budget, the pick rule, the bank's source, the export's name prefix and its play pin
+RECIPES: dict[str, dict[str, Any]] = {
+    "x65": {"folds": FOLDS, "lrs": LRS, "beta": BETA, "epochs": EPOCHS, "evals_per_epoch": EVALS_PER_EPOCH,
+            "pick": "inner_val_L", "source": "sprime_live", "prefix": "x65", "play_pin": "320a535d4"},
+    "x66": {"folds": {"heldout72_hpfix": ("S_H", 6611), "forum72": ("S_F", 6612), "p72": ("S_P", 6613)},
+            "lrs": (1e-4,), "beta": 0.1, "epochs": 12, "evals_per_epoch": 2, "pick": "val_delta",
+            "source": "sprime_honest", "prefix": "x66", "play_pin": "e46e3ddf8"},
+}
 THREADS = 2
 SAVE_EVERY_S = 600.0
 #: P\*'s bytes (PREREG abbreviations)
@@ -230,35 +251,49 @@ def load_fold(bank: Path, fold: str, fields: Sequence[str] = FIELDS) -> tuple[di
     return z, split(z, fold, np.unique(read["deal"]).tolist())
 
 
+def recipe_of(recipe: str) -> dict[str, Any]:
+    if recipe not in RECIPES:
+        raise StudentError(f"recipe {recipe!r}: one of {sorted(RECIPES)}")
+    return RECIPES[recipe]
+
+
 def train(bank: Path, bank_sha256: str, fold: str, lr: float, init: Path, out: Path, device: str = "cpu",
           budget_min: float = 0.0, threads: int = THREADS, limit_steps: int | None = None,
-          init_sha256: str = PSTAR_SHA256, epochs: int = EPOCHS, probe: dict[str, Any] | None = None) -> int:
-    """One resumable chunk of the registered fine-tune of ``fold`` at learning rate ``lr`` (module docstring), or,
-    with ``probe`` (``learnability.check_probe``'s dict), of a DESCRIPTIVE probe arm. 0 = finished, 3 = budget
-    reached."""
+          init_sha256: str = PSTAR_SHA256, probe: dict[str, Any] | None = None, recipe: str = "x65") -> int:
+    """One resumable chunk of the registered fine-tune of ``fold`` at learning rate ``lr`` under ``recipe`` (module
+    docstring), or, with ``probe`` (``learnability.check_probe``'s dict), of a DESCRIPTIVE probe arm. 0 = finished,
+    3 = budget reached."""
     import torch as th
 
     from main.policy_spectrum.reader import inference_globals, load_checkpoint
     from main.x65 import learnability as LB
 
-    beta, evals = BETA, EVALS_PER_EPOCH
+    R = recipe_of(recipe)
+    epochs, beta, evals = R["epochs"], R["beta"], R["evals_per_epoch"]
+    scoring = None                          # the learnability dumps' meta: a probe arm's, or a scored recipe's
     if probe is None:
-        if lr not in LRS:
-            raise StudentError(f"learning rate {lr!r} is not one of the registered {LRS}")
+        if lr not in R["lrs"]:
+            raise StudentError(f"learning rate {lr!r} is not one of the {recipe} recipe's registered {R['lrs']}")
+        if R["pick"] == "val_delta":
+            scoring = {"schema": LB.SCHEMA, "name": f"{recipe}_{R['folds'][fold][0]}" if fold in R["folds"] else "",
+                       "beta": beta, "epochs": epochs, "evals_per_epoch": evals,
+                       "train_panels": list(train_panels(fold)), "target_model": None, "target_sha256": None,
+                       "recipe": recipe}
     else:
         probe = LB.check_probe(probe, fold, lr)
         epochs, beta, evals = probe["epochs"], probe["beta"], probe["evals_per_epoch"]
-    bk = BK.check(bank, bank_sha256)
+        scoring = probe
+    bk = BK.check(bank, bank_sha256, source=R["source"] if probe is None else None)
     if sha256_file(init) != init_sha256:
         raise StudentError(f"{init}: not P*'s bytes {init_sha256[:12]}")
-    name, seed = FOLDS[fold]
+    name, seed = R["folds"][fold]
     d = out / f"lr{lr:g}"
     d.mkdir(parents=True, exist_ok=True)
-    if probe is None:
+    if scoring is None:
         z, ix = load_fold(bank, fold)
     else:
         z, ix = load_fold(bank, fold, LB.TRAIN_FIELDS)
-        ix = LB.restrict(z, ix, probe["train_panels"])
+        ix = LB.restrict(z, ix, scoring["train_panels"])
     per, cks = plan(len(ix["train_label"]), len(ix["train_anchor"]), seed, epochs, evals)
     total = per * epochs
     ident = {"student": name, "fold": fold, "train_panels": list(train_panels(fold)), "seed": seed, "lr": lr,
@@ -267,6 +302,8 @@ def train(bank: Path, bank_sha256: str, fold: str, lr: float, init: Path, out: P
              "sizes": {k: len(v) for k, v in ix.items()}}
     if probe is not None:
         ident["probe"] = probe
+    if recipe != "x65":
+        ident["recipe"] = recipe
     t0 = time.monotonic()
     with inference_globals(threads, device):
         th.manual_seed(seed)
@@ -277,12 +314,12 @@ def train(bank: Path, bank_sha256: str, fold: str, lr: float, init: Path, out: P
         teacher.policy.eval()
         tlp = teacher_logp(teacher, z["obs"], z["mask"], device)
         sets = None
-        if probe is not None:               # the scoring rows and the control's target (learnability's docstring)
-            sets = LB.prepare(bank, fold, z, ix, tlp, teacher, probe, d, device)
+        if scoring is not None:             # the scoring rows and the control's target (learnability's docstring)
+            sets = LB.prepare(bank, fold, z, ix, tlp, teacher, scoring, d, device)
         del teacher
-        probe = ix["train_anchor"][:64]
-        names = logit_path_params(pol, th.from_numpy(z["obs"][probe]).to(device),
-                                  th.from_numpy(z["mask"][probe].astype(np.float32)).to(device))
+        first = ix["train_anchor"][:64]
+        names = logit_path_params(pol, th.from_numpy(z["obs"][first]).to(device),
+                                  th.from_numpy(z["mask"][first].astype(np.float32)).to(device))
         keep = set(names)
         for n, p in pol.named_parameters():
             p.requires_grad_(n in keep)
@@ -326,8 +363,8 @@ def train(bank: Path, bank_sha256: str, fold: str, lr: float, init: Path, out: P
                 g["lr"] = lr_at(step, lr)
             loss, kl_lab, kl_anc = loss_t(pol, z, tlp, ix["train_label"][lp_], ix["train_anchor"][ap_], device,
                                           beta=beta)
-            if probe is not None and not bool(th.isfinite(loss)):
-                raise StudentError(f"probe {probe['name']}: a non-finite loss at step {step}")
+            if scoring is not None and not bool(th.isfinite(loss)):
+                raise StudentError(f"{scoring['name']}: a non-finite loss at step {step}")
             opt.zero_grad(set_to_none=True)
             loss.backward()
             th.nn.utils.clip_grad_norm_(params, CLIP)
@@ -403,7 +440,45 @@ def choose(rows: list[dict[str, Any]]) -> dict[str, Any]:
     return min(rows, key=lambda r: (r["L"], r["lr"], r["checkpoint"]))
 
 
-def pick(out: Path) -> dict[str, Any]:
+def pick_val(out: Path, recipe: str) -> dict[str, Any]:
+    """A ``val_delta`` recipe's pick: the checkpoint after step 0 with the highest ``val`` Δagree, ties to the earlier
+    (``learnability.report_arm``); only ``val`` numbers are recorded."""
+    import torch as th
+
+    from main.x65 import learnability as LB
+
+    R = recipe_of(recipe)
+    (lr,) = R["lrs"]
+    d = out / f"lr{lr:g}"
+    st = th.load(d / "state.pt", weights_only=False, map_location="cpu")
+    if st.get("probe") is not None:
+        raise StudentError(f"{d}: a learnability probe arm, never a candidate student")
+    if st.get("recipe") != recipe or not st["done"]:
+        raise StudentError(f"{d}: not a finished {recipe} student (recipe {st.get('recipe')!r}, done {st['done']})")
+    rep = LB.report_arm(d)
+    sel = rep["at"]["selected_on_val"]
+    hist = {int(h["step"]): h for h in st["hist"] if h["checkpoint"] is not None}
+    want = len(R["lrs"]) * R["epochs"] * R["evals_per_epoch"]
+    if len(hist) != want or sorted(hist) != sorted(int(c["step"]) for c in rep["curve"] if c["step"]):
+        raise StudentError(f"{d}: {len(hist)} checkpoints and their dumps disagree with the registered {want}")
+    h = hist[int(sel["step"])]
+    picked = {"lr": lr, "checkpoint": int(h["checkpoint"]), "step": int(h["step"]),
+              "path": str(Path(f"lr{lr:g}") / h["path"]), "policy_sha256": h["policy_sha256"],
+              "val_delta": sel["val"]["meters"]["delta"], "val_ci": sel["val"]["ci"]["delta"]}
+    cands = [{"step": int(c["step"]), "checkpoint": int(hist[int(c["step"])]["checkpoint"]),
+              "val_delta": c["val"]["delta"], "val_D": c["val"]["D"], "val_K": c["val"]["K"],
+              "L": float(hist[int(c["step"])]["L"])} for c in rep["curve"] if c["step"]]
+    doc = {"schema": "gen3_x65_pick_v1", "recipe": recipe,
+           **{k: st[k] for k in ("student", "fold", "seed", "bank_manifest_sha256", "init_sha256", "epochs")},
+           "candidates": cands, "picked": picked,
+           "rule": "the highest inner-validation (val) Δagree over the checkpoints after step 0; ties to the earlier"}
+    (out / "pick.json").write_text(json.dumps(doc, indent=1))
+    return doc
+
+
+def pick(out: Path, recipe: str = "x65") -> dict[str, Any]:
+    if recipe_of(recipe)["pick"] == "val_delta":
+        return pick_val(out, recipe)
     rows, ident = candidates(out)
     best = choose(rows)
     doc = {"schema": "gen3_x65_pick_v1", **ident, "candidates": rows, "picked": best,
@@ -420,12 +495,14 @@ def main(argv: list[str] | None = None) -> int:
     t.add_argument("--bank", required=True)
     t.add_argument("--bank-sha256", required=True, help="the REGISTERED bank manifest sha256 (the pin amendment's)")
     t.add_argument("--fold", required=True, choices=sorted(FOLDS), help="the READ panel")
-    t.add_argument("--lr", type=float, required=True, choices=LRS)
+    t.add_argument("--lr", type=float, required=True, help="one of the recipe's registered learning rates")
     t.add_argument("--init", required=True, help="P*'s zip")
     t.add_argument("--device", default="cpu")
     t.add_argument("--budget-min", type=float, default=50.0)
     t.add_argument("--threads", type=int, default=THREADS)
     p = sub.add_parser("pick")
+    for q in (t, p):
+        q.add_argument("--recipe", default="x65", choices=sorted(RECIPES))
     r = sub.add_parser("probe", help="a DESCRIPTIVE learnability probe arm (module docstring); never picked")
     r.add_argument("--bank", required=True)
     r.add_argument("--bank-sha256", required=True)
@@ -453,8 +530,8 @@ def main(argv: list[str] | None = None) -> int:
                          a.budget_min, a.threads, limit_steps=a.limit_steps, probe=pr)
         if a.cmd == "train":
             return train(Path(a.bank), a.bank_sha256, a.fold, a.lr, Path(a.init), Path(a.out), a.device,
-                         a.budget_min, a.threads)
-        doc = pick(Path(a.out))
+                         a.budget_min, a.threads, recipe=a.recipe)
+        doc = pick(Path(a.out), a.recipe)
         print(json.dumps(doc["picked"]), flush=True)
         return 0
     except (StudentError, BK.BankError) as exc:

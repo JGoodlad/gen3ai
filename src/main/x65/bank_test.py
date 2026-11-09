@@ -14,6 +14,9 @@ import pytest
 from main.x65 import bank as B
 
 FIXTURE = Path(__file__).parent / "testdata" / "misordered_cell"
+#: an S′-HONEST searched game (``pstar_s__forum72__756__g11``, its chunks dropped): 8 searched decisions, 5 exclusions
+#: (one of them a re-score sample), 2 searched re-score samples
+HONEST = Path(__file__).parent / "testdata" / "honest_cell"
 #: the probe's miss: our decision n 23 (turn 23), the log handed to the search held 46 commands
 MISS_N, MISS_AT = 23, 46
 
@@ -288,7 +291,8 @@ def test_the_bank_builds_checks_and_never_opens_a_result_file(tmp_path, monkeypa
     shutil.copytree(FIXTURE, cells / "pstar_s__forum72__340__g10")
     (cells / "pstar_s__forum72__340__g10" / "games.jsonl").write_text("THE RESULT\n")
     (cells / "pstar_s__forum72__340__g10" / "summary.json").write_text("{}")
-    rec = {"rule": "searched_play", "void": None, "inputs": {"raw": "pstar", "searched": "pstar_s", "deals": [
+    rec = {"rule": "searched_play", "void": None, "inputs": {
+        "raw": "pstar", "searched": "pstar_s", "expected_search": "r0s4_rolls@10", "engine_registered": B.E4, "deals": [
         {"deal": "forum72:340:10", "game": 10, "panel": "forum72", "unit_seed": 340,
          "raw": {"status": "exhausted", "unit": "pstar__forum72__340__g10"},
          "searched": {"status": "counted", "unit": "pstar_s__forum72__340__g10"}}]}}
@@ -305,8 +309,11 @@ def test_the_bank_builds_checks_and_never_opens_a_result_file(tmp_path, monkeypa
     from main.anchors import server
 
     monkeypatch.setattr(server, "engine_stamp", lambda: "port=x/1;env=y/1")
-    with pytest.raises(B.BankError, match="not E4"):          # a bank is built on S′-LIVE's engine or not at all
+    with pytest.raises(B.BankError, match="not the sprime_live source's"):   # a bank is built on its games' engine
         B.build(state, tmp_path / "other", workers=1, model=None, allow_dirty=True)
+    monkeypatch.setattr(server, "engine_stamp", lambda: B.E4)
+    with pytest.raises(B.BankError, match="not the sprime_honest source's"):  # S′-HONEST played on E6, not E4
+        B.build(state, tmp_path / "other", workers=1, model=None, allow_dirty=True, source="sprime_honest")
     # the engine check itself is the line above; here it is E4 whatever this worktree's env stamp says (an
     # untracked env/Cargo.lock is part of that stamp: REVIEW R-m12)
     monkeypatch.setattr(server, "engine_stamp", lambda: B.E4)
@@ -321,6 +328,9 @@ def test_the_bank_builds_checks_and_never_opens_a_result_file(tmp_path, monkeypa
     (out / "bank_manifest.json").write_text(json.dumps(man, indent=1, sort_keys=True))
     sha = B.sha256_file(out / "bank_manifest.json")
     assert B.check(out, sha)["label_rows"] == man["label_rows"]
+    assert B.check(out, sha, source="sprime_live")["source"] == man["source"] == "sprime_live"
+    with pytest.raises(B.BankError, match="not 'sprime_honest'"):    # an honest trainer never reads a leaky bank
+        B.check(out, sha, source="sprime_honest")
     with pytest.raises(B.BankError):
         B.check(out, "f" * 64)
     z = B.load_rows(out, ["forum72"])
@@ -328,3 +338,114 @@ def test_the_bank_builds_checks_and_never_opens_a_result_file(tmp_path, monkeypa
     lab = z["label"]
     assert np.allclose(z["pi_prime"][lab].sum(1), 1.0) and (z["pi_prime"][~lab] == 0).all()
     assert ((z["pi_prime"] > 0) <= (z["mask"] == 1)).all()
+
+
+# ------------------------------------------------------------------------------------------------ the honest source
+def _honest_recs():
+    return [json.loads(x) for x in (HONEST / "search_decisions.jsonl").read_text().splitlines()]
+
+
+def test_an_honest_view_holds_bank_fields_only_never_a_hidden_one():
+    recs = _honest_recs()
+    assert any("species_hit" in r for r in recs)              # the live records carry the truth-scored diagnostic
+    for r in recs:
+        v = B.label_view(r, "sprime_honest")
+        assert set(v) <= B.RECORD_FIELDS and not set(v) & B.HIDDEN_INFO_FIELDS
+
+
+def test_a_hidden_information_field_can_never_become_a_bank_field(monkeypatch):
+    """The refusal itself: a field computed against the true team, listed as a bank field, stops every view."""
+    monkeypatch.setattr(B, "RECORD_FIELDS", B.RECORD_FIELDS | {"species_hit"})
+    for source in B.SOURCES:
+        with pytest.raises(B.HiddenInfoError, match="hidden-information field"):
+            B.label_view(_honest_recs()[12], source)
+
+
+def test_an_honest_bank_refuses_an_unclassified_field():
+    r = dict(_honest_recs()[12], true_species=["Tyranitar"])
+    with pytest.raises(B.HiddenInfoError, match="unclassified"):
+        B.label_view(r, "sprime_honest")
+    assert "true_species" not in B.label_view(r, "sprime_live")     # X65's leaky source: projected, never banked
+
+
+@pytest.mark.parametrize("edit", [
+    lambda r: r.update(search="r0s4_rolls@10"),
+    lambda r: r.update(leak={"attribution_miss": 3, "partial": ["spread:seen"], "residual": ["counters:seen"]}),
+    lambda r: r["leak"].update(builder="leaky"),
+    lambda r: r["leak"].update(partial=["item:seen"]),
+    lambda r: r["leak"].update(residual=["counters:seen"]),
+    lambda r: r["config"].update(reveal="on"),
+    lambda r: r["config"].update(pikl_lambda=0.03),
+], ids=["preset", "leaky_block", "builder", "partial", "residual", "reveal", "lambda"])
+def test_an_honest_bank_refuses_a_record_not_from_a_leak_honest_search(edit):
+    r = json.loads(json.dumps(_honest_recs()[12]))
+    assert r["searched"]
+    B.label_view(r, "sprime_honest")
+    edit(r)
+    with pytest.raises(B.HiddenInfoError):
+        B.label_view(r, "sprime_honest")
+
+
+def test_counted_units_refuse_a_record_of_another_source(tmp_path):
+    ins = {"raw": "pstar", "searched": "pstar_s", "deals": [], "expected_search": "r0s4_rolls@10",
+           "engine_registered": B.E4}
+    (tmp_path / "record.json").write_text(json.dumps({"rule": "searched_play", "void": None, "inputs": ins}))
+    assert B.counted_units(tmp_path / "record.json", "sprime_live") == []
+    with pytest.raises(B.BankError, match="not the sprime_honest source's"):
+        B.counted_units(tmp_path / "record.json", "sprime_honest")
+
+
+@pytest.mark.sim
+@pytest.mark.integration
+def test_the_honest_cell_banks_every_label_and_no_exclusion_as_a_label():
+    """S′-HONEST's records unchanged (roadmap FINDING 6): every searched decision is a verified label row; every
+    exclusion is an anchor row whose recorded frame is checked; no row is dropped."""
+    recs = _honest_recs()
+    rows, st = B.game_rows(HONEST, "pstar_s", "sprime_honest")
+    n_s = sum(1 for r in recs if r["searched"])
+    excl = {int(r["n"]) for r in recs if r.get("why") == "excluded"}
+    assert n_s == 8 and len(excl) == 5
+    assert st["drop"] == {} and st["labels_kept"] == st["labels_recorded"] == n_s and len(rows) == len(recs)
+    assert st["frame_ok"] == st["frame_checked"] == n_s + len(excl)
+    assert st["log_sha_bad"] == st["at_bad"] == st["turn_bad"] == st["xcheck_bad"] == st["rescore_log_bad"] == 0
+    assert st["mode_bad"] == 0
+    assert {r["n"] for r in rows if r["label"]} == {int(r["n"]) for r in recs if r["searched"]}
+    assert all(r["frame_checked"] and not r["label"] for r in rows if r["n"] in excl)
+    for r in rows:
+        if r["label"]:
+            assert r["leak"]["builder"] in B.HONEST_BUILDERS and not r["leak"]["partial"]
+
+
+@pytest.mark.sim
+@pytest.mark.integration
+def test_hidden_and_ignored_fields_never_shape_a_row(tmp_path):
+    """Moving every truth-scored and telemetry field of every record leaves the rows bit for bit."""
+    def move(recs):
+        for r in recs:
+            if "species_hit" in r:
+                r["species_hit"] = [1.0] * len(r["species_hit"])
+            if "world_teams" in r.get("honest", {}):
+                r["honest"]["world_teams"] = []
+            for k in ("root_v", "cpu_s", "wall_s"):
+                if k in r:
+                    r[k] = 0
+
+    cell = tmp_path / "cell"
+    shutil.copytree(HONEST, cell)
+    recs = _honest_recs()
+    move(recs)
+    (cell / "search_decisions.jsonl").write_text("".join(json.dumps(r) + "\n" for r in recs))
+    a, _ = B.game_rows(HONEST, "pstar_s", "sprime_honest")
+    b, _ = B.game_rows(cell, "pstar_s", "sprime_honest")
+    for rows in (a, b):
+        for r in rows:
+            r.update(arm=1, game=11, unit_seed=756, pstar_check=1)
+    za, zb = B._arrays(a), B._arrays(b)
+    assert all(np.array_equal(za[k], zb[k], equal_nan=za[k].dtype.kind == "f") for k in B.FIELDS)
+
+
+@pytest.mark.sim
+@pytest.mark.integration
+def test_an_honest_build_refuses_s_prime_live_s_leaky_records():
+    with pytest.raises(B.HiddenInfoError):
+        B.game_rows(FIXTURE, "pstar_s", "sprime_honest")

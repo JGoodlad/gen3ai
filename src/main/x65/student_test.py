@@ -18,7 +18,7 @@ def _deal(panel: int, i: int) -> str:
     return f"{panel:02d}{i:018x}"
 
 
-def _bank(tmp: Path, n_deals: int = 40, rows_per: int = 30, obs: np.ndarray = None) -> Path:
+def _bank(tmp: Path, n_deals: int = 40, rows_per: int = 30, obs: np.ndarray = None, source: str = "sprime_live") -> Path:
     """A constructed bank: three panels, ``n_deals`` deals each, every row an anchor row, every other row a label."""
     rng = np.random.default_rng(0)
     shards = []
@@ -54,7 +54,8 @@ def _bank(tmp: Path, n_deals: int = 40, rows_per: int = 30, obs: np.ndarray = No
         np.savez(tmp / f"{name}.npz", **arr)
         shards.append({"name": name, "label": "pstar_s", "panel": panel, "unit_seed": 300, "rows": n,
                        "labels": int(label.sum()), "sha256": BK.sha256_file(tmp / f"{name}.npz")})
-    man = {"schema": BK.MANIFEST_SCHEMA, "void": None, "engine": BK.E4, "dirty": False, "shards": shards,
+    man = {"schema": BK.MANIFEST_SCHEMA, "void": None, "engine": BK.SOURCES[source]["engine"], "dirty": False,
+           "source": source, "shards": shards,
            "rows": int(sum(s["rows"] for s in shards)), "label_rows": int(sum(s["labels"] for s in shards))}
     (tmp / "bank_manifest.json").write_text(json.dumps(man))
     return tmp
@@ -171,3 +172,66 @@ def test_the_trainer_refuses_an_unregistered_bank(tmp_path):
     with pytest.raises(ST.StudentError, match="registered"):
         ST.train(bank, BK.sha256_file(bank / "bank_manifest.json"), "forum72", 2e-5, tmp_path / "x.zip",
                  tmp_path / "out")
+
+
+# ------------------------------------------------------------------------------------------------ the x66 recipe
+def test_the_x66_recipe_trains_on_the_honest_bank_alone(tmp_path):
+    leaky = _bank(tmp_path)
+    sha = BK.sha256_file(leaky / "bank_manifest.json")
+    with pytest.raises(BK.BankError, match="not 'sprime_honest'"):
+        ST.train(leaky, sha, "forum72", 1e-4, tmp_path / "x.zip", tmp_path / "out", recipe="x66")
+    with pytest.raises(ST.StudentError, match="x66 recipe's registered"):
+        ST.train(leaky, sha, "forum72", 1e-5, tmp_path / "x.zip", tmp_path / "out", recipe="x66")
+    with pytest.raises(ST.StudentError, match="x65 recipe's registered"):      # and x65 keeps its own grid
+        ST.train(leaky, sha, "forum72", 1e-4, tmp_path / "x.zip", tmp_path / "out")
+    R = ST.RECIPES["x66"]
+    assert (R["lrs"], R["beta"], R["epochs"], R["evals_per_epoch"]) == ((1e-4,), 0.1, 12, 2)
+    assert [s for _, s in R["folds"].values()] == [6611, 6612, 6613]
+    assert {f: n for f, (n, _) in R["folds"].items()} == {f: n for f, (n, _) in ST.FOLDS.items()}
+
+
+def _x66_state(d: Path, steps: list[int], **over) -> None:
+    import torch as th
+
+    d.mkdir(parents=True)
+    hist = [{"step": 0, "checkpoint": None, "L": 1.0}] + [
+        {"step": s, "checkpoint": k, "path": f"ckpt_{k:02d}.pt", "policy_sha256": f"sha{k}", "L": 1.0 - k / 100}
+        for k, s in enumerate(steps)]
+    st = {"student": "S_H", "fold": "heldout72_hpfix", "seed": 6611, "bank_manifest_sha256": "b", "init_sha256": "i",
+          "epochs": 12, "recipe": "x66", "done": True, "hist": hist, **over}
+    th.save(st, d / "state.pt")
+
+
+def test_the_x66_pick_is_the_best_val_delta_never_a_read_number(tmp_path, monkeypatch):
+    from main.x65 import learnability as LB
+
+    steps = list(range(10, 250, 10))                                     # 24 checkpoints
+    val = {s: 0.0 for s in steps}
+    val.update({60: 0.02, 90: 0.02, 120: 0.01})                          # a tie at the best: the earlier wins
+    read = {s: 0.0 for s in steps}
+    read[240] = 0.5                                                      # the best on read is never the pick
+
+    def report_arm(d):
+        def m(x):
+            return {"delta": x, "D": x, "K": 1.0}
+        curve = [{"step": 0, "val": m(0.0), "read": m(0.0)}] + [{"step": s, "val": m(val[s]), "read": m(read[s])}
+                                                                for s in steps]
+        return {"curve": curve, "at": {"selected_on_val": {"step": 60, "val": {"meters": m(0.02),
+                                                                                 "ci": {"delta": [0.02, 0.0, 0.04]}}}}}
+
+    monkeypatch.setattr(LB, "report_arm", report_arm)
+    _x66_state(tmp_path / "s_h" / "lr0.0001", steps)
+    doc = ST.pick(tmp_path / "s_h", "x66")
+    assert doc["picked"]["step"] == 60 and doc["picked"]["path"] == "lr0.0001/ckpt_05.pt"
+    assert doc["picked"]["policy_sha256"] == "sha5" and doc["recipe"] == "x66"
+    assert "read" not in json.dumps(doc["candidates"]) and len(doc["candidates"]) == 24
+    for bad, match in (({"done": False}, "not a finished"), ({"recipe": None}, "not a finished"),
+                       ({"probe": {"name": "p"}}, "probe")):
+        d = tmp_path / f"bad{len(match)}{bad}"
+        _x66_state(d / "lr0.0001", steps, **bad)
+        with pytest.raises(ST.StudentError, match=match):
+            ST.pick(d, "x66")
+    d = tmp_path / "short"
+    _x66_state(d / "lr0.0001", steps[:-1])
+    with pytest.raises(ST.StudentError, match="registered 24"):
+        ST.pick(d, "x66")

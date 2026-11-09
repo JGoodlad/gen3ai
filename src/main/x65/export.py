@@ -1,8 +1,10 @@
 r"""B3, THE EXPORT AT THE PLAY PIN (PREREG §3): the picked student as P\*'s checkpoint with the student's policy
 weights, checked bit for bit at the commit that will play it.
 
-    python -m main.x65.export write --fold-dir <dir>/s_h --init <P* zip> --pin-root <worktree at 320a535d4>
-    python -m main.x65.export smoke --fold-dir <dir>/s_h --pin-root <worktree at 320a535d4> --teamset <read panel>
+    python -m main.x65.export write --fold-dir <dir>/s_h --init <P* zip> --pin-root <worktree at the play pin>
+    python -m main.x65.export smoke --fold-dir <dir>/s_h --pin-root <worktree at the play pin> --teamset <read panel>
+
+The play pin is the picked student's recipe's (``student.RECIPES``: X65 ``320a535d4``, X66 ``e46e3ddf8``).
 
 ``write``:
 
@@ -42,9 +44,10 @@ import numpy as np
 from main.x65 import student as ST
 
 SCHEMA = "gen3_x65_export_v1"
-#: the PLAY PIN (the pin amendment, REVIEW R-m7): the landed B5 commit, whose play path is byte-identical to S′-LIVE's
-#: ``0c76b521e`` (``main.reads.playpath.compare``: 0 of 1,732 files) and whose ``main.reads`` plans the X65 specs
-PLAY_PIN = "320a535d4"
+#: X65's PLAY PIN (the pin amendment, REVIEW R-m7): the landed B5 commit, whose play path is byte-identical to
+#: S′-LIVE's ``0c76b521e`` (``main.reads.playpath.compare``: 0 of 1,732 files) and whose ``main.reads`` plans the X65
+#: specs. A recipe names its own (``student.RECIPES``: X66's is S′-HONEST's play pin ``e46e3ddf8``)
+PLAY_PIN = ST.RECIPES["x65"]["play_pin"]
 SMOKE_SEED = 900
 THREADS = 1
 
@@ -170,38 +173,44 @@ def run_config(init: Path) -> Path:
 
 
 def write(fold_dir: Path, init: Path, pin_root: Path, init_sha256: str = ST.PSTAR_SHA256,
-          pin: str = PLAY_PIN) -> dict[str, Any]:
-    """The export (module docstring); raises :class:`ExportError` (VOID) unless the pin reproduces the trainer."""
+          pin: str | None = None) -> dict[str, Any]:
+    """The export (module docstring); raises :class:`ExportError` (VOID) unless the pin reproduces the trainer. The
+    pin and the zip's name are the picked student's recipe's (``pick.json``'s ``recipe``, X65's when absent)."""
     import torch as th
 
     from main.x65.bank import sha256_file
 
+    pdoc = json.loads((fold_dir / "pick.json").read_text())
+    recipe = str(pdoc.get("recipe", "x65"))
+    R = ST.recipe_of(recipe)
+    pin = R["play_pin"] if pin is None else pin
     if sha256_file(init) != init_sha256:
         raise ExportError(f"{init}: not P*'s bytes")
     head = subprocess.run(["git", "-C", str(pin_root), "rev-parse", "HEAD"], capture_output=True, text=True,
                           check=False).stdout
     if not head.strip().startswith(pin):
         raise ExportError(f"{pin_root} is at {head.strip()[:12]}, not the play pin {pin}")
-    pk = json.loads((fold_dir / "pick.json").read_text())["picked"]
+    pk = pdoc["picked"]
     sd = th.load(fold_dir / pk["path"], weights_only=True, map_location="cpu")
     if ST._state_digest(sd) != pk["policy_sha256"]:
         raise ExportError(f"{pk['path']}: its weights are not the picked checkpoint's")
     dst = fold_dir / "model"
     dst.mkdir(parents=True, exist_ok=True)
-    name = f"x65_{_student_of(fold_dir)}"
+    name = f"{R['prefix']}_{_student_of(fold_dir)}"
     zp = dst / f"{name}.zip"
     write_zip(init, sd, zp)
     shutil.copy(run_config(init), dst / "model_config.json")
     side = json.loads(init.with_suffix(".json").read_text()) if init.with_suffix(".json").exists() else {}
-    side["x65_student"] = {"student": _student_of(fold_dir), "picked": pk, "init_sha256": init_sha256,
-                           "note": "P*'s checkpoint with the X65 ExIt-0 student's policy weights; every other "
-                                   "field of this sidecar is P*'s"}
+    side["x65_student"] = {"student": _student_of(fold_dir), "recipe": recipe, "picked": pk,
+                           "init_sha256": init_sha256,
+                           "note": f"P*'s checkpoint with the {recipe} distillation student's policy weights; every "
+                                   "other field of this sidecar is P*'s"}
     zp.with_suffix(".json").write_text(json.dumps(side, indent=2))
     fx = fixture()
     tr = trainer_logits(init, sd, fx)
     pn = pin_logits(zp, pin_root, dst / "pin_logits.npz")
     bad = verify(tr, pn, fx["sha256"])
-    doc = {"schema": SCHEMA, "student": _student_of(fold_dir), "zip": str(zp), "zip_sha256": sha256_file(zp),
+    doc = {"schema": SCHEMA, "student": _student_of(fold_dir), "recipe": recipe, "zip": str(zp), "zip_sha256": sha256_file(zp),
            "picked": pk, "init_sha256": init_sha256, "fixture_sha256": fx["sha256"], "pin": pin,
            "pin_commit": pn.get("commit"), "pin_loader": pn.get("loader"), "bit_identical": not bad,
            "problems": bad, "smoke": None}
