@@ -81,8 +81,10 @@ order after REVIEW_2 of the all-null strategy (`69c7cd34d`) with the verdicts si
 its GO.
 
 **The GPU after X60-T's training (≈ 11-12): the model-first queue** (EXPERIMENT_BACKLOG §2.0; every effect a GUESS).
-- **MF-1, queued first: ExIt-0H**, P\* students fine-tuned toward S′h's 188k banked HONEST labels, a delivery gate on
-  held-out panels before any Kakuna game (≈ 3 GPU-h). It asks whether the network can carry search's measured +2.00 pp
+- **MF-1, queued first: ExIt-0H**, REGISTERED 2026-11-09 as X66
+  ([`research_state/measurements/x66_exit0h_2026-11-09/PREREG.md`](research_state/measurements/x66_exit0h_2026-11-09/PREREG.md)):
+  P\* students fine-tuned toward S′h's 188k banked HONEST labels, a delivery gate on held-out panels before any Kakuna
+  game (≈ 2.25 GPU-h). It asks whether the network can carry search's measured +2.00 pp
   where no search runs; X65 answered only for the leak-inclusive labels.
 - **MF-2: BOUNDARY-1**, one retrain boundary for E13 (their max HP as a belief), round 2 of the mechanics fixes and E9,
   each screened first by a forward census on P\*'s rows; trained by MF-5's fresh pair, no GPU of its own.

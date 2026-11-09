@@ -1,0 +1,313 @@
+{
+ "schema": "gen3_read_spec_v1",
+ "read": "x66_exit0h_look1_2026-11-09",
+ "prereg": "designs/research_state/measurements/x66_exit0h_2026-11-09/PREREG.md",
+ "note": "X66 ExIt-0H LOOK 1 (state /home/goodlad/gen3ai_archive/x66_exit0h_2026-11-09/look1; plays only on DELIVERED): each P* student distilled from S'-HONEST's honest labels on the other two panels (s_h / s_f / s_p) plays greedy, no search, lone one-game units vs Kakuna on its held-out panel's 900 S'-HONEST deals (U unit seeds 700-744, 20 a seed), paired by deal with S'-HONEST's BANKED P* raw unit (imported); G-BANK re-plays 135 banked raw deals (game (seed-700) mod 20 per panel and seed), >= 133 byte-identical or the banked control is VOID (read_spec_look1_fresh.json); distill_play: NOT-DELIVERED by the delivery gate's file, GO iff LB(z 2.576) > 0, NULL iff UB(1.96) < +2 pp, else CONTINUE (look 2). PENDING values are filled by the bank and students amendments.",
+ "models": {
+  "pstar": {
+   "arm": "pstar",
+   "seed": 2601,
+   "ref": {
+    "kind": "pinned",
+    "path": "models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip",
+    "sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed"
+   }
+  },
+  "s_h": {
+   "arm": "s_h",
+   "seed": 6611,
+   "ref": {
+    "kind": "pinned",
+    "path": "PENDING",
+    "sha256": "PENDING"
+   }
+  },
+  "s_f": {
+   "arm": "s_f",
+   "seed": 6612,
+   "ref": {
+    "kind": "pinned",
+    "path": "PENDING",
+    "sha256": "PENDING"
+   }
+  },
+  "s_p": {
+   "arm": "s_p",
+   "seed": 6613,
+   "ref": {
+    "kind": "pinned",
+    "path": "PENDING",
+    "sha256": "PENDING"
+   }
+  }
+ },
+ "anchor": {
+  "gbank": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "heldout72_hpfix",
+    "forum72",
+    "p72"
+   ],
+   "unit_seeds": "700-744",
+   "per_game": true,
+   "models": [
+    "pstar"
+   ],
+   "games": {
+    "700": [
+     0
+    ],
+    "701": [
+     1
+    ],
+    "702": [
+     2
+    ],
+    "703": [
+     3
+    ],
+    "704": [
+     4
+    ],
+    "705": [
+     5
+    ],
+    "706": [
+     6
+    ],
+    "707": [
+     7
+    ],
+    "708": [
+     8
+    ],
+    "709": [
+     9
+    ],
+    "710": [
+     10
+    ],
+    "711": [
+     11
+    ],
+    "712": [
+     12
+    ],
+    "713": [
+     13
+    ],
+    "714": [
+     14
+    ],
+    "715": [
+     15
+    ],
+    "716": [
+     16
+    ],
+    "717": [
+     17
+    ],
+    "718": [
+     18
+    ],
+    "719": [
+     19
+    ],
+    "720": [
+     0
+    ],
+    "721": [
+     1
+    ],
+    "722": [
+     2
+    ],
+    "723": [
+     3
+    ],
+    "724": [
+     4
+    ],
+    "725": [
+     5
+    ],
+    "726": [
+     6
+    ],
+    "727": [
+     7
+    ],
+    "728": [
+     8
+    ],
+    "729": [
+     9
+    ],
+    "730": [
+     10
+    ],
+    "731": [
+     11
+    ],
+    "732": [
+     12
+    ],
+    "733": [
+     13
+    ],
+    "734": [
+     14
+    ],
+    "735": [
+     15
+    ],
+    "736": [
+     16
+    ],
+    "737": [
+     17
+    ],
+    "738": [
+     18
+    ],
+    "739": [
+     19
+    ],
+    "740": [
+     0
+    ],
+    "741": [
+     1
+    ],
+    "742": [
+     2
+    ],
+    "743": [
+     3
+    ],
+    "744": [
+     4
+    ]
+   }
+  },
+  "h": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "heldout72_hpfix"
+   ],
+   "unit_seeds": "700-744",
+   "per_game": true,
+   "models": [
+    "pstar",
+    "s_h"
+   ],
+   "import": {
+    "state": "/home/goodlad/gen3ai_archive/sprime_honest_play_2026-11-06",
+    "spec_sha256": "9222393a14c79ff52e2a2bd315864626a9f6ea68ffeea709352c40e79d618afa",
+    "group": "u",
+    "models": [
+     "pstar"
+    ]
+   }
+  },
+  "f": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "forum72"
+   ],
+   "unit_seeds": "700-744",
+   "per_game": true,
+   "models": [
+    "pstar",
+    "s_f"
+   ],
+   "import": {
+    "state": "/home/goodlad/gen3ai_archive/sprime_honest_play_2026-11-06",
+    "spec_sha256": "9222393a14c79ff52e2a2bd315864626a9f6ea68ffeea709352c40e79d618afa",
+    "group": "u",
+    "models": [
+     "pstar"
+    ]
+   }
+  },
+  "p": {
+   "opponent": "metamon:Kakuna",
+   "teamsets": [
+    "p72"
+   ],
+   "unit_seeds": "700-744",
+   "per_game": true,
+   "models": [
+    "pstar",
+    "s_p"
+   ],
+   "import": {
+    "state": "/home/goodlad/gen3ai_archive/sprime_honest_play_2026-11-06",
+    "spec_sha256": "9222393a14c79ff52e2a2bd315864626a9f6ea68ffeea709352c40e79d618afa",
+    "group": "u",
+    "models": [
+     "pstar"
+    ]
+   }
+  }
+ },
+ "decision": {
+  "rule": "distill_play",
+  "params": {
+   "look": 1,
+   "u_panels": [
+    "heldout72_hpfix",
+    "forum72",
+    "p72"
+   ],
+   "students": {
+    "heldout72_hpfix": "s_h",
+    "forum72": "s_f",
+    "p72": "s_p"
+   },
+   "raw": "pstar",
+   "groups": {
+    "heldout72_hpfix": [
+     "h"
+    ],
+    "forum72": [
+     "f"
+    ],
+    "p72": [
+     "p"
+    ]
+   },
+   "seeds": {
+    "1": "700-744"
+   },
+   "control": "banked",
+   "gbank": {
+    "group": "gbank",
+    "origin": 700,
+    "min_identical": 133,
+    "n": 135
+   },
+   "engine": "port=f0fe71f6c54757b2/95;env=c0b7c649acfb48d8/130",
+   "z_go": {
+    "1": 2.576,
+    "2": 2.0
+   },
+   "z_null": 1.96,
+   "null_bar_pp": 2.0,
+   "bootstrap": {
+    "B": 4000,
+    "seed": 20261109
+   },
+   "rule8_eps": 0.0005,
+   "max_drop_frac": 0.005,
+   "delivery": {
+    "path": "/home/goodlad/gen3ai_archive/x66_exit0h_2026-11-09/delivery.json",
+    "B": 4000,
+    "seed": 20261105
+   },
+   "bank_manifest_sha256": "PENDING"
+  }
+ }
+}

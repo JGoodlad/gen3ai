@@ -1,0 +1,36 @@
+{
+ "source": "sprime_honest_inc_stage1b_2026-11-06 inc_rows vs inc_rep_rows (salt B), targets with q in both",
+ "pairs": 157,
+ "self_agreement": [
+  0.6178,
+  0.5399,
+  0.6902
+ ],
+ "departure_rate_run_a": [
+  0.3694,
+  0.2979,
+  0.4472
+ ],
+ "departure_rate_run_b": [
+  0.3758,
+  0.3039,
+  0.4537
+ ],
+ "both_depart_to_the_same_action": [
+  0.121,
+  0.0789,
+  0.1813
+ ],
+ "reproduced_share_of_run_a_departures": [
+  0.3276,
+  0.2208,
+  0.4558
+ ],
+ "counts": {
+  "same": 97,
+  "dep_a": 58,
+  "dep_b": 59,
+  "both_same": 19,
+  "either": 79
+ }
+}

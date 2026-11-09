@@ -58,8 +58,8 @@ range), mine, not a measurement; each card cites its evidence and labels what is
 
 | rank | lever | GPU-h to the decisive read | CPU-h | GUESS, pp (80 %) | ≈ pp per GPU-h | prerequisite |
 |---|---|---:|---:|---|---:|---|
-| **MF-1** | **ExIt-0H**: can P\* learn honest search's choices? | ≈ 3 | ≈ 2–5 (gate); 25–100 (look 1, only if DELIVERED) | +0.5 (0, +2) without search | ≈ 0.2 | a registration; the X65 bank built from S′-HONEST's records |
-| MF-1b | ExIt-1: honest search targets in the PPO loop | ≈ 35 | ≈ 107 | +1 (−1, +3) | ≈ 0.03 | MF-1 GO with its placebo SEARCH-INFO |
+| **MF-1** | **ExIt-0H**: can P\* learn honest search's choices? | ≈ 3 | ≈ 2–5 (gate); 25–100 (look 1, only if DELIVERED) | +0.5 (0, +2) without search | ≈ 0.2 | **REGISTERED 2026-11-09 as X66** ([`measurements/x66_exit0h_2026-11-09/PREREG.md`](measurements/x66_exit0h_2026-11-09/PREREG.md)); its bank amendment; the GPU lease |
+| MF-1b | ExIt-1: honest search targets in the PPO loop | ≈ 35 | ≈ 107 | +1 (−1, +3) | ≈ 0.03 | its own case, never X66 alone (X66 PREREG §8.3); an X66 GO with placebo SEARCH-INFO is necessary, not sufficient |
 | **MF-2** | **Fidelity of the op's opponent side (E13 + round 2 + E9) → BOUNDARY-1** | 0 now (rides MF-5's fresh pair) | ≈ 1–2 (census) | +0.3 (0, +1) | — | round 2 landed; E13 built |
 | **MF-3** | **The belief on never-seen mons, off-pool** (for the network and as search's sampler) | ≈ 1–2 (step b) | minutes (P5); 25–42 (a game read) | +0.5 (−1, +2) without search; search share UNVERIFIED | ≈ 0.15 | step a (P5 on X60-T's finals) first; human-data toggle and panel exclusion |
 | **MF-4** | **The value at the leaf on unfamiliar teams** | 0 until V-RANK fires; then ≈ 1–2 | ≈ 96 (V-RANK) + ≈ 300–600 (a searched game read; S′-LIVE took ≈ 315) | +0.3 (−0.5, +1.5), with search only | ≈ 0.05 after P(V-RANK fires) ≈ 0.3 | V-RANK's builds and PREREG |
@@ -81,10 +81,11 @@ time.
   itself names honest labels as the cleanest test of the three causes it could not split (the leak, S′'s key noise,
   lookahead a reactive network cannot amortise; `x65_learnability_probe_2026-11-06/README.md`), and S′-HONEST lost
   about half of S′-LIVE's point to the honest builder, so the leak was a real share. It costs ≈ 3 GPU-h and no
-  Kakuna game before its gate, so it does not compete with X60-T's read for the lanes, and either answer steers:
-  DELIVERED opens ExIt-1 (the in-loop ladder to a stronger network); NOT-DELIVERED on HONEST labels is the evidence
-  the scale question (MF-5) is missing, because then the gain is honest lookahead a network of this size cannot
-  absorb from ≈ 188k labels.
+  Kakuna game before its gate, so it does not compete with X60-T's read for the lanes. **What it can steer is
+  narrower than first written (the orchestrator's pre-commitments, X66 PREREG §0 / §8.3, after an independent
+  review):** its NOT-DELIVERED or NULL is NOT evidence for the scale bet (MF-5), because S′h's labels are only about a
+  third reproducible and the source gain is P72's alone (P72 +4.69, H +1.32 and F 0.00 spanning 0); and MF-1b
+  (ExIt-1) is not planned on X66 alone, whatever its class.
 - **Why MF-3 step (b) second.** P\*'s species posterior on unfamiliar opponents is confidently WORSE than the Smogon
   prior it is built on (H3, ledger 2026-10-26: the true hidden species' log-presence −6.2 / −4.6 / −10.0 against the
   prior's −2.4 / −2.0 / −3.2 on F / H / P72), and the never-seen Pokémon carry most of the oracle edge search lacks
@@ -103,14 +104,17 @@ time.
     panel against Kakuna, paired with S′-HONEST's banked raw arm (X65 design §5's rule). The X65 probe's arms (curve,
     control, capacity; `main.x65.learnability`) ride along as REPORTED, so a NOT-DELIVERED says which of (W) / (U) / 3a
     it is.
-  - *Cheapest decisive experiment:* build the label bank from S′-HONEST's 188,297 honest searched records (`main.x65.bank`
-    pointed at `sprime_honest_play_2026-11-06`'s state; UNVERIFIED that it reads the incremental builder's records
-    unchanged, though `design_sprime_honest.md` C15 writes every field S′-LIVE wrote), three panel-fold students
-    (≈ 0.5–1 GPU-h) plus the probe arms (≈ 2 GPU-h; X65's four probe arms took 1 h 38 min), the gate before any
-    game.
+  - *Cheapest decisive experiment:* **REGISTERED as X66** (2026-11-09,
+    [`measurements/x66_exit0h_2026-11-09/PREREG.md`](measurements/x66_exit0h_2026-11-09/PREREG.md)): the label bank
+    from S′-HONEST's honest searched records (`main.x65.bank build --source sprime_honest`: the records read
+    unchanged once the bank takes a source on E6 and an honesty guard that refuses any truth-scored field or leaky
+    record), three panel-fold students at the probe's `curve` recipe (≈ 2.25 GPU-h; X65's registered recipe, the
+    control and the capacity arm dropped on the probe's evidence), the gate before any game, at a side pin off
+    S′-HONEST's play pin (main's v166 model is not the function that played).
   - *Unlocks:* ExIt-1 (MF-1b, ≈ 35 GPU-h, X65 design option (i-d)), the in-loop label factory
     (`../endstate/design_value_discrimination.md` §13: a fresh S′ label costs ≈ 9.5 CPU-s on the leaky builder, and the honest builders cost ×1.2–5.9 that), and a network that
-    carries search's gain where no search runs. Its NOT-DELIVERED is MF-5's missing evidence.
+    carries search's gain where no search runs. Not on X66 alone: MF-1b needs its own case, and no class of X66 is
+    evidence for MF-5 (X66 PREREG §8.3).
   - *Evidence:* S′-HONEST GO-HONEST (`331f19cfe`, ledger 2026-11-09); X65 ExIt-0 NOT-DELIVERED (ledger 2026-11-06);
     the probe's reading 2 (`0b9e6f354`: a same-rate control transfers +11.70 pp [+11.05, +12.32], the capacity arm
     memorises in-sample, the curve arms' held-out Δagree ≤ 0). "Unlearnable at this scale" there means at ≈ 60k leaky

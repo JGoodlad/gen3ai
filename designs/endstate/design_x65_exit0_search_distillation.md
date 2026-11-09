@@ -11,6 +11,10 @@ fills the specs). **READ 2026-11-06: NOT-DELIVERED** ([`README.md`](../research_
 on their held-out panels the students agree with S′'s pick LESS than P\* does, pooled Δagree −1.26 pp [−1.40, −1.11]
 (H −1.06, F −0.94, p72 −1.78). No Kakuna game is played; ExIt-1 is not funded, and X60-T (REGISTERED 11-06) is the GPU's next job
 (§3). The read cannot separate labels the observation cannot support from a too-weak recipe (FINDING X65-R2).
+**ExIt-0H (§4.4) is REGISTERED 2026-11-09 as X66**
+([`../research_state/measurements/x66_exit0h_2026-11-09/PREREG.md`](../research_state/measurements/x66_exit0h_2026-11-09/PREREG.md)):
+S′-HONEST's honest labels, this design's folds and gate, the probe's `curve` recipe in place of §4.3's (which the probe
+showed never moved the network), trained at a side pin off S′-HONEST's play pin `e46e3ddf8`, where it plays.
 
 **Terms.**
 - **P\*** is X26 @280M (`pstar_plateau`).
@@ -316,3 +320,4 @@ from that check, root rule 8).
 | 2026-11-05 | **The pin amendment** (PREREG Amendment 2) | the bank `d13fd55f…2b7a` (97,395 / 97,395 label rows verified); the play pin `320a535d4`; every REVIEW finding disposed | pinning `0c76b521e` itself: its `main.reads` cannot plan the specs; a successor built on `0c76b521e`: not needed, since `320a535d4`'s play path is byte-identical | `playpath.compare`; the export check at `320a535d4`; `bank_manifest.json` |
 | 2026-11-06 | **The specs filled** (PREREG Amendment 3, the read operator) | the students' exported zips and sha256s, `pin: 320a535d4`, each earlier look's committed spec sha256 | — (it fills only what Amendment 2 listed) | `export.json` per student; `check-spec` exit 0 on all four |
 | 2026-11-06 | **READ: NOT-DELIVERED** (the read operator, orchestrator brief) | the status block: the class, Δagree per panel and pooled; ExIt-1 unfunded, X60-T next (§3, §5.1) | reading it as closing ExIt (§1: larger budgets, honest labels, in-loop forms stay open); running B3's smoke or any game after the class (X65-R1) | `../research_state/measurements/x65_exit0_2026-11-05/README.md`; `record/decision.json` |
+| 2026-11-09 | **ExIt-0H REGISTERED as X66** (the MF-1 registrar, orchestrator brief under the owner's model-first direction) | §4.4's switch, with two departures from "one lever: the label source": the recipe is the probe's `curve` (lr 1e-4, β 0.1, 12 epochs, the pick on inner-validation Δagree), and the play pin is S′-HONEST's `e46e3ddf8` with its banked raw arm as the control at both looks | §4.3's recipe (the probe's R0_H: Δagree −0.10 pp on its own training rows, so a NOT-DELIVERED there says nothing); fresh look-2 deals (S′-HONEST's 1,700 banked deals a panel already cover two looks); training at main (config v166 is not the function that played) | `../research_state/measurements/x66_exit0h_2026-11-09/PREREG.md`; the probe's `README.md` |
