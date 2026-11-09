@@ -30,6 +30,21 @@ replayed and only the new segments matched; the oldest two of eight retire each 
 a warm chain. Still a function of I alone (the carry at a decision is a function of I's earlier decisions, each a
 prefix of it). Its first searched decision of a battle is ``r0s4_honest``'s, byte for byte.
 
+THE ENVELOPE PRESETS (the cost read's DRAFT, ``measurements/searched_cost_2026-11-09/DRAFT_PREREG.md`` §3 / §7 R1;
+``designs/endstate/design_searched_player.md`` §3), each ``r0s4_honest_inc`` with ONE cost lever plus the SAFETY NET
+(``net_reserve_s``: the bank-aware deadline of :mod:`main.reads.timer_model`, applied by the live searcher to the
+PICK only, never inside the search, so an offline re-score of a decision is the same with or without it):
+
+* ``r0s4_honest_inc_k4`` (K4): the world count, ``n_worlds`` 4 and ``per_action`` 4 (a world serves ⌈4 / 2⌉ = 2
+  decisions; an exclusion is < 4 worlds);
+* ``r0s4_honest_inc_cap`` (CAP): the builder's COUNT budget profile ``cap`` (``honest_inc.BUDGETS``: stage 1's base
+  budget wherever ``r0s4_honest_inc`` builds at B3 — the cold first build, a battle's re-cold build, the warm chain
+  with no survivor — and the shortfall escalation at 256 tries instead of 1,024).
+
+The new fields default to today's values (``budget`` None = ``honest_inc.DEFAULT_BUDGET``, ``net_reserve_s`` None = no
+net) and :meth:`SearchPreset.as_dict` leaves a default field out, so the four earlier presets' dicts, stamps and
+records are byte-identical (``search_presets_test``).
+
 A searched decision is one of OUR side's decisions at turn >= ``from_turn`` with >= 2 legal actions; every other
 decision is the checkpoint's greedy choice, exactly the raw arm's.
 
@@ -57,7 +72,8 @@ class SearchPreset:
     allocation, each in its own world (``n_worlds`` of them); ``depth`` turns then the critic; the acting ``rule``
     (``pikl`` at ``pikl_lambda``); the world builder's information spec ``reveal`` (``off`` = honest), its ``dice`` and
     its ``max_tries`` per world. ``dice="fresh"`` selects the leak-honest builder (``r0s4_honest``), ``"fresh_inc"`` its
-    incremental form (``r0s4_honest_inc``)."""
+    incremental form (``r0s4_honest_inc``). ``budget``: the incremental builder's named COUNT budget profile
+    (``honest_inc.BUDGETS``; None = today's); ``net_reserve_s``: the live safety net's reserve (None = no net)."""
 
     name: str
     n_worlds: int
@@ -68,9 +84,24 @@ class SearchPreset:
     reveal: str
     dice: str
     max_tries: int
+    budget: Optional[str] = None
+    net_reserve_s: Optional[float] = None
 
     def as_dict(self) -> Dict[str, Any]:
-        return asdict(self)
+        """The registered dict; a field of :data:`ENVELOPE_FIELDS` at its default None is left out, so a preset that
+        sets none of them has the dict it had before they existed."""
+        d = asdict(self)
+        for k in ENVELOPE_FIELDS:
+            if d[k] is None:
+                del d[k]
+        return d
+
+
+#: the fields the envelope presets added (left out of :meth:`SearchPreset.as_dict` at their default None)
+ENVELOPE_FIELDS: Tuple[str, ...] = ("budget", "net_reserve_s")
+#: the budget profiles a preset may name (``main.value_search.honest_inc.BUDGETS``' keys beside the default, pinned
+#: equal by a test: this module stays light)
+BUDGET_NAMES: Tuple[str, ...] = ("cap",)
 
 
 PRESETS: Dict[str, SearchPreset] = {
@@ -82,7 +113,27 @@ PRESETS: Dict[str, SearchPreset] = {
                                 pikl_lambda=0.015, reveal="off", dice="fresh", max_tries=60),
     "r0s4_honest_inc": SearchPreset(name="r0s4_honest_inc", n_worlds=8, per_action=8, depth=4, rule="pikl",
                                     pikl_lambda=0.015, reveal="off", dice="fresh_inc", max_tries=60),
+    # the envelope presets (module docstring): one cost lever each against r0s4_honest_inc, and the safety net
+    "r0s4_honest_inc_k4": SearchPreset(name="r0s4_honest_inc_k4", n_worlds=4, per_action=4, depth=4, rule="pikl",
+                                       pikl_lambda=0.015, reveal="off", dice="fresh_inc", max_tries=60,
+                                       net_reserve_s=10.0),
+    "r0s4_honest_inc_cap": SearchPreset(name="r0s4_honest_inc_cap", n_worlds=8, per_action=8, depth=4, rule="pikl",
+                                        pikl_lambda=0.015, reveal="off", dice="fresh_inc", max_tries=60, budget="cap",
+                                        net_reserve_s=10.0),
 }
+
+
+def _check_presets() -> None:
+    """A budget profile is the incremental builder's and a known name; a reserve is >= 0."""
+    for p in PRESETS.values():
+        if p.budget is not None and (p.dice != "fresh_inc" or p.budget not in BUDGET_NAMES):
+            raise SearchSpecError(f"preset {p.name}: a budget profile is the incremental builder's, one of "
+                                  f"{list(BUDGET_NAMES)}")
+        if p.net_reserve_s is not None and not p.net_reserve_s >= 0:
+            raise SearchSpecError(f"preset {p.name}: net_reserve_s must be >= 0")
+
+
+_check_presets()
 
 
 def parse(text: Any) -> Tuple[SearchPreset, int]:

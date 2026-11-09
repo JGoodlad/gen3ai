@@ -42,6 +42,17 @@ record) that were EXCLUSIONS. ``excess_exclusions`` is set iff any panel's share
 ``rule8_eps`` of it (a narrowing flag: near counts as set). It never VOIDs and never changes the class; the PREREG
 registers what it narrows.
 
+THE TIMER FLAG (``timer``, optional: ``{reserve_s, overhead_s, max_cut_frac}``; the cost read's DRAFT §1 / §7 R3): every
+COUNTED searched unit's decision log replayed through Showdown's turn timer (:mod:`main.reads.timer_model`, every
+decision of ours in order, our response the decision's wall + ``overhead_s``) with the BANK-AWARE deadline
+min(bank, 150) − ``reserve_s`` − ``overhead_s``, the cut step running on (the design's safety net; for a preset that
+carries the live net the block must be that net, so the replay reproduces the cuts it played). ``timer_safe`` is set
+iff, pooled over U, the replay forfeits 0 games AND cuts ≤ ``max_cut_frac`` of the searched decisions (every decision
+whose search produced a pick; exact fractions; within ``rule8_eps`` of the bound is ``near`` and NOT safe). A decided
+flag: it never VOIDs and never changes the class; its label TIMER-SAFE (or NOT TIMER-SAFE) is in the verdict. The
+safety net's RECORDED cuts (``why: "deadline"``) are counted beside the exclusions (``exclusions.by_panel.net_cut``)
+and in the timer report; the prototype's policy table is REPORTED.
+
 THE BOOTSTRAP (``search_headroom``'s scheme on the U panels), run once per estimate with a FRESH
 ``numpy.random.default_rng(seed)``: for each panel in ``u_panels`` order, its unit statistics in unit-seed order as a
 float vector ``x`` of length n, ``idx = rng.integers(0, n, size=(B, n))`` and the panel's replicates
@@ -97,7 +108,11 @@ SCHEMA = "gen3_read_searched_play_v1"
 KEYS = ("group", "searched", "raw", "u_panels", "expected_search", "engine", "null_margin_pp", "bootstrap",
         "rule8_eps", "max_post_unpaired_frac", "max_pre_unpaired_frac", "identity", "state")
 #: optional params (a spec registered without them reads as before)
-OPTIONAL = ("max_excluded_frac",)
+OPTIONAL = ("max_excluded_frac", "timer")
+#: the TIMER block's keys (optional; the cost read's DRAFT §7 R3): the bank-aware replay's reserve and overhead and the
+#: decided flag's bound on the cut share
+TIMER_KEYS = ("reserve_s", "overhead_s", "max_cut_frac")
+TIMER_SAFE = "TIMER-SAFE"
 IDENTITY_KEYS = ("cells", "rescore_json", "min_rescored", "max_rescored")
 #: the identity block's key an INCREMENTAL preset (``r0s4_honest_inc``) must register, and only it: how its re-score
 #: gets each state's carry (``live_identity.CARRY_MODES``: ``rebuild`` or ``seeded``)
@@ -213,6 +228,8 @@ def check(p: Mapping[str, Any], *, models: Any, anchor: Any, s: Any) -> List[str
         if not (isinstance(mx, dict) and isinstance(u, list) and set(mx) == set(u)
                 and all(_num(v) and 0 < v < 1 for v in mx.values())):
             probs.append("max_excluded_frac: {panel: a fraction in (0, 1)} over exactly the u_panels")
+    if "timer" in p:
+        probs += _check_timer(p["timer"], p.get("expected_search"))
     if not (isinstance(p.get("engine"), str) and p["engine"]):
         probs.append("engine: the registered engine stamp (port=..;env=..)")
     if not (_num(p.get("null_margin_pp")) and p["null_margin_pp"] > 0):
@@ -251,6 +268,29 @@ def check(p: Mapping[str, Any], *, models: Any, anchor: Any, s: Any) -> List[str
                 os.path.normpath(idn["cells"]) != cells_dir(p["state"], g.name, srch):
             probs.append(f"identity.cells {idn['cells']} is not the searched label's cells dir "
                          f"{cells_dir(p['state'], g.name, srch)}")
+    return probs
+
+
+def _check_timer(t: Any, expected: Any) -> List[str]:
+    """The ``timer`` block: exactly :data:`TIMER_KEYS`, reserve and overhead >= 0, the bound in (0, 1); for a preset
+    carrying the live safety net, the net the units PLAYED (its reserve, ``timer_model.OVERHEAD_S``), so the replay
+    reproduces the net's own cuts."""
+    from main.anchors.search_presets import SearchSpecError, parse
+    from main.reads import timer_model as TM
+
+    if not (isinstance(t, dict) and set(t) == set(TIMER_KEYS)):
+        return [f"timer: {{{', '.join(TIMER_KEYS)}}}"]
+    probs = [f"timer.{k}: a number >= 0 (s)" for k in ("reserve_s", "overhead_s") if not (_num(t[k]) and t[k] >= 0)]
+    if not (_num(t["max_cut_frac"]) and 0 < t["max_cut_frac"] < 1):
+        probs.append("timer.max_cut_frac: a fraction in (0, 1)")
+    try:
+        net = parse(expected)[0].net_reserve_s
+    except SearchSpecError:
+        net = None
+    if net is not None and not probs and (Fraction(str(t["reserve_s"])) != Fraction(str(net))
+                                          or Fraction(str(t["overhead_s"])) != Fraction(str(TM.OVERHEAD_S))):
+        probs.append(f"timer: the preset's safety net played reserve {net} s, overhead {TM.OVERHEAD_S} s; the replay "
+                     f"must be that net (reserve_s {t['reserve_s']}, overhead_s {t['overhead_s']})")
     return probs
 
 
@@ -408,7 +448,48 @@ def inputs(cells: Mapping[str, Any], p: Mapping[str, Any], spec: Any) -> Dict[st
                                            from_turn) if gp else None),
         "identity": read_identity(p["identity"], u_panels=p["u_panels"], engine=p["engine"], model_sha256=raw_sha,
                                   honest=preset.dice in HONEST_DICE, pin=getattr(spec, "pin", None)),
-        "distill": distill_report(state, p["group"], p["searched"], units, honest=preset.dice in HONEST_DICE)}
+        "distill": distill_report(state, p["group"], p["searched"], units, honest=preset.dice in HONEST_DICE),
+        **({"timer": timer_report(state, p["group"], p["searched"], units, p["timer"])} if "timer" in p else {})}
+
+
+def timer_report(state: Path, group: str, searched: str, units: Sequence[Mapping[str, Any]], t: Mapping[str, Any]
+                 ) -> Dict[str, Any]:
+    """The TIMER REPLAY over every COUNTED searched unit's decision log (outcome-blind: never a result): per panel and
+    pooled U, the registered bank-aware replay's exact counts (``timer_model.tally``: the reserve and overhead of
+    ``t``, the cut step running on, the design §3's safety net), the safety-net cuts the units RECORDED, and the
+    REPORTED policy table (``timer_model.replay``)."""
+    from main.reads import layout as LY
+    from main.reads import timer_model as TM
+
+    cells = LY.anchor_state(state, group, searched) / "cells"
+    games: List[Tuple[str, List[Dict[str, Any]]]] = []
+    rec: Dict[str, Dict[str, int]] = {}
+    for u in units:
+        if u["label"] != searched or not u["counted"]:
+            continue
+        log = cells / str(u["unit"]) / "search_decisions.jsonl"
+        if not log.is_file():
+            raise _err(f"unit {u['unit']}: counted, but no decision log {log}")
+        recs = [json.loads(x) for x in log.read_text().splitlines() if x.strip()]
+        games.append((str(u["panel"]), TM.rows_of(recs)))
+        for k in (str(u["panel"]), "U"):
+            a = rec.setdefault(k, {"net_cut": 0, "net_cut_path": 0})
+            a["net_cut"] += sum(1 for r in recs if r.get("why") == "deadline")
+            a["net_cut_path"] += sum(1 for r in recs if (r.get("net") or {}).get("cut"))
+    kw = {"reserve": float(t["reserve_s"]), "overhead": float(t["overhead_s"]), "background": True}
+    acc: Dict[str, Dict[str, int]] = {}
+    for panel, rows in games:
+        sim = TM.simulate(rows, **kw)
+        n_s = sum(1 for r in rows if r["searched"])
+        for k in (panel, "U"):
+            a = acc.setdefault(k, {"games": 0, "searched": 0, "forfeit": 0, "cut": 0, "cut_searched": 0, "path": 0,
+                                   "battle_cut": 0})
+            a["games"] += 1
+            a["searched"] += n_s
+            for kk, v in sim.items():
+                a[kk] += v
+    return {"policy": {"reserve_s": t["reserve_s"], "overhead_s": t["overhead_s"], "background": True},
+            "by_panel": acc, "recorded": rec, "table": TM.replay(games)}
 
 
 def distill_cells(cells: Path, *, honest: bool, names: Optional[Sequence[str]] = None) -> Dict[str, Any]:
@@ -702,7 +783,8 @@ def exclusions(doc: Mapping[str, Any], bounds: Optional[Mapping[str, Any]], eps:
     counts as exceeding) and ``excess`` = any panel over it."""
     from main.reads.rules_search_headroom import cmp
 
-    acc: Dict[str, Dict[str, Any]] = {k: {"units": 0, "searched": 0, "excluded": 0} for k in [*doc["u_panels"], "U"]}
+    acc: Dict[str, Dict[str, Any]] = {k: {"units": 0, "searched": 0, "excluded": 0, "net_cut": 0}
+                                      for k in [*doc["u_panels"], "U"]}
     for u in doc["units"]:
         if u["label"] != doc["searched"] or not u["counted"]:
             continue
@@ -711,12 +793,16 @@ def exclusions(doc: Mapping[str, Any], bounds: Optional[Mapping[str, Any]], eps:
             acc[k]["units"] += 1
             acc[k]["searched"] += int(sp.get("searched") or 0)
             acc[k]["excluded"] += int(sp.get("excluded") or 0)
+            # the SAFETY NET's cuts (an envelope preset's summary ``net_cut``: searched decisions π played on the
+            # deadline), counted beside the exclusions; REPORTED, never part of the exclusion share
+            acc[k]["net_cut"] += int(sp.get("net_cut") or 0)
     excess = False
     for k, a in acc.items():
         n = a["searched"] + a["excluded"]
         share = Fraction(a["excluded"], n) if n else None
         a["share"] = float(share) if share is not None else None
         a["exact"] = str(share) if share is not None else None
+        a["net_cut_share_of_searched"] = (a["net_cut"] / a["searched"]) if a["searched"] else None
         if bounds is not None and k in bounds:
             if share is None:
                 a["test"] = {"bound": bounds[k], "exceeds": None, "near": None}
@@ -725,6 +811,27 @@ def exclusions(doc: Mapping[str, Any], bounds: Optional[Mapping[str, Any]], eps:
             a["test"] = {"bound": bounds[k], "exceeds": over or near, "near": near}
             excess = excess or over or near
     return {"by_panel": acc, "excess": excess if bounds is not None else None}
+
+
+def timer_flag(rep: Optional[Mapping[str, Any]], t: Optional[Mapping[str, Any]], eps: Any) -> Optional[Dict[str, Any]]:
+    """The decided ``timer_safe`` flag (module docstring) from :func:`timer_report`'s pooled-U counts: 0 games
+    forfeited AND the cut share of searched decisions ≤ ``max_cut_frac`` (exact; within ``rule8_eps`` of the bound is
+    ``near`` and NOT safe, root rule 8). None when no timer block is registered. Never VOIDs, never moves the class."""
+    from main.reads.rules_search_headroom import cmp
+
+    if t is None or rep is None:
+        return None
+    u = (rep.get("by_panel") or {}).get("U") or {}
+    games, searched = int(u.get("games") or 0), int(u.get("searched") or 0)
+    forfeits, cut = int(u.get("forfeit") or 0), int(u.get("cut_searched") or 0)
+    out: Dict[str, Any] = {"bound": t["max_cut_frac"], "games": games, "forfeits": forfeits, "searched": searched,
+                           "cut_searched": cut, "safe": False}
+    if not games or not searched:
+        return dict(out, share=None, exact=None, why="no counted searched decision")
+    share = Fraction(cut, searched)
+    over, near = cmp(share, t["max_cut_frac"], eps, above=True)
+    return dict(out, share=float(share), exact=str(share), cut_test={"exceeds": over, "near": near},
+                safe=forfeits == 0 and not over and not near)
 
 
 def goal_b(pairs: Mapping[str, Mapping[int, Sequence[Tuple[Fraction, Fraction]]]], tally: Mapping[str, Mapping[str, Any]],
@@ -777,7 +884,10 @@ def decide(doc: Mapping[str, Any], p: Mapping[str, Any]) -> Dict[str, Any]:
                                           "by_panel": {ts: t["peer_drop"] for ts, t in tally.items()}},
                            "identity": dict(doc.get("identity") or {}),
                            "distill": doc.get("distill"),
-                           "exclusions": exclusions(doc, p.get("max_excluded_frac"), p["rule8_eps"])}
+                           "exclusions": exclusions(doc, p.get("max_excluded_frac"), p["rule8_eps"]),
+                           **({"timer": dict(doc.get("timer") or {},
+                                             flag=timer_flag(doc.get("timer"), p["timer"], p["rule8_eps"]))}
+                              if "timer" in p else {})}
     reasons = void_reasons(doc, pairs, tally, p)
     if reasons:
         return dict(out, decision={"class": VOID, "verdict": VOID, "reasons": reasons})
@@ -798,6 +908,8 @@ def decide(doc: Mapping[str, Any], p: Mapping[str, Any]) -> Dict[str, Any]:
                    p["rule8_eps"], go)
     cls["goal_b"] = goal_b(pairs, tally, u, cls["class"], p["rule8_eps"])
     cls["excess_exclusions"] = out["exclusions"]["excess"]
+    if "timer" in p:
+        cls["timer_safe"] = bool(out["timer"]["flag"]["safe"])
     goal = _goal_b({"u_panels": u}, pairs)
     lb = (goal["searched"].get("ci95") or [None])[0]
     if lb is not None:
@@ -816,5 +928,6 @@ def decide(doc: Mapping[str, Any], p: Mapping[str, Any]) -> Dict[str, Any]:
                f"[{pp(pa['ci95'][0])}, {pp(pa['ci95'][1])}]; GO-imputed LB {pp(gi['ci95'][0])} ({go} iff > 0); "
                f"NULL-imputed UB {pp(ni['ci95'][1])} (NULL iff < {p['null_margin_pp']} pp)"
                + (f"; {cls['goal_b']['label']}" if cls["goal_b"]["reached"] else "")
+               + ((f"; {TIMER_SAFE}" if cls["timer_safe"] else f"; NOT {TIMER_SAFE}") if "timer" in p else "")
                + (f"; flagged {', '.join(flags)}" if flags else ""))
     return dict(out, decision=dict(cls, verdict=verdict))

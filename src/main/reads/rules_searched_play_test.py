@@ -696,3 +696,105 @@ def test_assemble_leaves_a_g_prefix_mismatch_to_a_rule_that_owns_it(tmp_path, mo
     assert grp["g_prefix"]["mismatches"][0]["deal"] == "forum72:0:0"
     assert not any(w.startswith("G-PREFIX") for w in grp["inconclusive"])
     assert RU.RULES["searched_play"].owns_g_prefix and not RU.RULES["search_headroom"].owns_g_prefix
+
+
+# ------------------------------------------------------------------------------------------------ the timer flag
+TIMER = {"reserve_s": 10.0, "overhead_s": 1.0, "max_cut_frac": 0.5}
+
+
+def _decision_logs(st: Path, slow: Optional[Dict[str, float]] = None) -> None:
+    """Every counted searched unit's decision log: turns 1-9 off the path, then 30 searched decisions of 3 s; a unit
+    named in ``slow`` spends that many seconds on its turn-12 decision. The state's one sampled record stays (last,
+    off the path) and the re-score JSON is re-derived."""
+    slow = slow or {}
+    for ts in U:
+        for s in SEEDS:
+            for g in GAMES:
+                name = _name("pstar_s", ts, s, g)
+                d = _cells_dir(st) / name
+                d.mkdir(parents=True, exist_ok=True)
+                p = d / "search_decisions.jsonl"
+                kept = [dict(json.loads(x), turn=40) for x in p.read_text().splitlines()] if p.is_file() else []
+                rows = [{"turn": t, "searched": False, "why": "before_turn"} for t in range(1, 10)]
+                rows += [{"turn": t, "searched": True, "wall_s": slow.get(name, 3.0) if t == 12 else 3.0}
+                         for t in range(10, 40)]
+                p.write_text("".join(json.dumps(r) + "\n" for r in rows + kept))
+    _rescore_json(st)
+
+
+def test_timer_safe_is_set_on_zero_forfeits_and_a_cut_share_under_its_bound(st):
+    # forum72 0/0's 145-s decision passes the bank-aware deadline (150 - 10 - 1 = 139 s): cut; its 6-s overrun fits the
+    # next decision's deadline, so one cut in 48 x 30 searched decisions; a 300-s one forfeits as played
+    _decision_logs(st, slow={_name("pstar_s", "forum72", 0, 0): 145.0, _name("pstar_s", "p72", 2, 2): 300.0})
+    out = _read(st, _cells(_by_k(UP)), timer=dict(TIMER, max_cut_frac=0.05))
+    f = out["timer"]["flag"]
+    p72 = out["timer"]["by_panel"]["p72"]["cut_searched"]
+    assert p72 > 2                                       # the 300-s step running on cuts its successors too
+    assert (f["games"], f["searched"], f["forfeits"], f["cut_searched"]) == (48, 1440, 0, 1 + p72)
+    assert f["safe"] is True and out["timer"]["by_panel"]["forum72"]["cut_searched"] == 1
+    assert out["timer"]["by_panel"]["heldout72_hpfix"]["cut_searched"] == 0
+    d = out["decision"]
+    assert d["class"] == SP.GO_LEAKY and d["timer_safe"] is True and d["verdict"].endswith("; TIMER-SAFE")
+    # the reported table: the prototype's policies; as played the 300-s decision forfeits its game, the 145-s one not
+    assert out["timer"]["table"]["policies"]["as_played"]["U"]["counts"]["forfeit"] == 1
+
+
+@pytest.mark.parametrize("bound, safe, near", [(0.002, True, False), (0.0001, False, False), (0.001, False, True),
+                                               (Fraction(1, 1440), False, True)])
+def test_timer_safe_holds_the_cut_share_to_its_bound_exactly_and_near_is_never_safe(st, bound, safe, near):
+    # one cut: the share is 1/1440 = 0.000694; within rule8_eps 0.0005 of the bound is near, never safe (rule 8)
+    _decision_logs(st, slow={_name("pstar_s", "forum72", 0, 0): 145.0})
+    out = _read(st, _cells(_by_k(UP)), timer=dict(TIMER, max_cut_frac=float(bound)))
+    f = out["timer"]["flag"]
+    assert f["exact"] == "1/1440" and f["safe"] is safe and f["cut_test"]["near"] is near
+    d = out["decision"]
+    assert d["class"] == SP.GO_LEAKY and d["timer_safe"] is safe                    # never moves the class
+    assert d["verdict"].endswith("; TIMER-SAFE" if safe else "; NOT TIMER-SAFE")
+
+
+def test_a_forfeit_in_the_replay_is_never_timer_safe(st):
+    # a reserve of 0 answers at the request's whole limit: the cut decision forfeits its game
+    _decision_logs(st, slow={_name("pstar_s", "p72", 1, 1): 300.0})
+    out = _read(st, _cells(_by_k(UP)), timer=dict(TIMER, reserve_s=0.0, max_cut_frac=0.9))
+    f = out["timer"]["flag"]
+    assert f["forfeits"] == 1 and f["safe"] is False and out["decision"]["timer_safe"] is False
+
+
+def test_no_timer_block_leaves_the_record_as_before(st):
+    out = _read(st, _cells(_by_k(UP)))
+    assert "timer" not in out and "timer_safe" not in out["decision"]
+    assert "TIMER-SAFE" not in out["decision"]["verdict"]
+
+
+def test_a_counted_searched_unit_without_a_decision_log_is_refused_when_a_timer_is_registered(st):
+    with pytest.raises(Exception, match="no decision log"):
+        _read(st, _cells(_by_k(UP)), timer=TIMER)
+
+
+def test_the_safety_nets_recorded_cuts_are_counted_beside_the_exclusions(st):
+    def net(units):
+        for u in units:
+            if u["label"] == "pstar_s" and u["panel"] == "p72":
+                u["search_played"] = dict(u["search_played"], net_cut=3)
+    ex = _read(st, _cells(_by_k(UP), mutate=net))["exclusions"]["by_panel"]
+    assert ex["p72"]["net_cut"] == 48 and ex["forum72"]["net_cut"] == 0 and ex["U"]["net_cut"] == 48
+    assert ex["p72"]["net_cut_share_of_searched"] == 48 / 480 and ex["p72"]["exact"] == "1/31"   # not an exclusion
+
+
+@pytest.mark.parametrize("timer, needle", [
+    ({"reserve_s": 10.0, "overhead_s": 1.0}, "timer: {reserve_s, overhead_s, max_cut_frac}"),
+    (dict(TIMER, reserve_s=-1), "timer.reserve_s"),
+    (dict(TIMER, max_cut_frac=1.0), "timer.max_cut_frac"),
+])
+def test_the_spec_check_refuses_a_malformed_timer_block(tmp_path, timer, needle):
+    with pytest.raises(SpecError, match="searched_play") as e:
+        parse(_spec(tmp_path, timer=timer))
+    assert needle in str(e.value)
+
+
+def test_a_preset_with_a_safety_net_registers_the_net_it_played():
+    assert SP._check_timer(dict(TIMER, max_cut_frac=0.02), "r0s4_honest_inc_k4@10") == []
+    for bad in (dict(TIMER, reserve_s=5.0), dict(TIMER, overhead_s=0.0)):
+        got = SP._check_timer(bad, "r0s4_honest_inc_cap@10")
+        assert got and "the replay must be that net" in got[0]
+    assert SP._check_timer(dict(TIMER, reserve_s=5.0), "r0s4_honest_inc@10") == []        # no net: any replay

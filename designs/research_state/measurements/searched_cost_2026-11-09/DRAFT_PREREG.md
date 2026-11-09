@@ -1,6 +1,6 @@
 # DRAFT — NOT REGISTERED. Searched-cost read (Q19): can S′h's gain be bought cheaper, as a player that fits the turn timer?
 
-> 🚧 **DRAFT (2026-11-09), NOT a registration.** Nothing here is registered, built or played. No spec, no pin, no
+> 🚧 **DRAFT (2026-11-09), NOT a registration.** Nothing here is registered or played; the code of §7 is BUILT (2026-11-09, §7's status). No spec, no pin, no
 > engine stamp, no lane. A registration needs the builds of §7, the orchestrator's go and a review. **Every candidate
 > below was chosen AFTER S′-HONEST's outcome** (GO-HONEST, GOAL-B-REACHED, 2026-11-09), as that read's PREREG §8 and
 > §10 require any new preset or builder to say. The design it serves is
@@ -178,7 +178,7 @@ CPU-h of units over ≈ 47 h of its two lives) → stage 1 ≈ 36–48 h. On the
 
 ---
 
-## 7. What the reads framework and the code need (none built)
+## 7. What the reads framework and the code need (BUILT 2026-11-09, except as the status below says)
 
 | # | change | where | gate |
 |---|---|---|---|
@@ -188,6 +188,33 @@ CPU-h of units over ≈ 47 h of its two lives) → stage 1 ≈ 36–48 h. On the
 | R4 | `search-cost` puts the search CPU INCLUDING exclusions first and splits searched / excluded (SP-2), and reports the timer replay (R2) | `src/main/reads/search_cost.py` | its test on a cell with an exclusion |
 | R5 | the live searched side records a safety-net cut with its own `why` (never `excluded`), and `searched_play` counts it beside the exclusions | `src/main/anchors/search_side.py` | — |
 | R6 | stage 0's harness: stage 1b's `seq_probe.py` taking any preset and S′-HONEST's captures | this folder (measurement code, frozen with it) | its first battle reproduces REF's banked records at REF |
+
+**Status (2026-11-09, the searched-cost builder).**
+- **R1 built in part.** `SearchPreset` gained `budget` (a named profile, `honest_inc.BUDGETS`) and `net_reserve_s` (the
+  live safety net), both left out of `as_dict` at their default None, so the four earlier presets' dicts are
+  byte-identical (pinned by `search_side_test`). Named: **K4** = `r0s4_honest_inc_k4` and **CAP** =
+  `r0s4_honest_inc_cap`, each with the net at 10 s. CAP is read as ONE profile, stage 1's base budget (300 chain steps,
+  600,000 feeds, 3 world attempts) wherever `r0s4_honest_inc` builds at B3 (the cold first build, a battle's re-cold
+  build after its first decisions were excluded, the warm chain with no survivor: the stuck full attempt) and the
+  shortfall escalation at 256 tries; the re-cold build is not named above (the registration confirms the reading).
+  **NOT built: `j_min` and the XR presets** (stage 0a chooses XR-J or XR-R first; XR-J's playout allocation over
+  4 ≤ k < 8 worlds and its carry after a partial decision, and XR-R's "the revised world's escalation", name no
+  parameter here), **nor S′H-15's fix** (§3 has stage 0 build it; it is not a §7 row). The gates: the leak test in
+  sequence mode runs on K4 and CAP (`honest_inc_test`); the 600-decision identity re-score at the new code is the
+  registration's (≈ 26 CPU-h), with a small banked sample re-scored identically at build time.
+- **R2 built:** `main.reads.timer_model` (`Clock`, `simulate`, `replay`, the policies); its test pins the constants to
+  `room-battle.ts`'s literals and reproduces the prototype on 90 banked games and on random ones; at build time it
+  reproduced `timer_replay.json` on all 5,100 games, all 80 (policy, panel) rows.
+- **R3 built:** `searched_play`'s optional `timer` block and decided `timer_safe` (TIMER-SAFE iff 0 forfeits and the
+  cut share ≤ `max_cut_frac`, exact, within `rule8_eps` never safe), on the bank-aware replay with the cut step
+  RUNNING ON (`bank_r10+bg`: the design §3's safety net, the one the live net plays; §1's row and §3's criterion (i)
+  are read that way; at REF it cuts 8.4 %, the dropped-step 3.2 %); a preset carrying the net must register the net it
+  played; the policy table REPORTED.
+- **R4 built:** `search-cost`'s `search_cpu_min` (exclusions included) split into `searched_cpu_min` /
+  `excluded_cpu_min`, the excluded decisions' distribution, `net_cut`, and the timer replay.
+- **R5 built:** the live net in `main.anchors.search_side` (`why: "deadline"`, the search's own pick in the record's
+  `net` block, `search_view` for the re-score); `searched_play` counts `net_cut` beside the exclusions.
+- **R6 built:** `stage0/` (the screen: sample, run, summarize, and the stage-0a diagnosis tool); smoke only.
 
 Nothing else in `searched_play` changes: one searched label and its raw twin, the same imputation, bootstrap, G-PREFIX
 and identity guard. A three-arm form (X, REF and raw on one set of deals) would need `searched_play` to accept two

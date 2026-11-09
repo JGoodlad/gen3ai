@@ -33,7 +33,8 @@ also ``search_key`` (I's digest) and the ``honest`` build record (the chain's co
 re-rolls / feeds, the root command, the world teams; for ``r0s4_honest_inc`` its ``inc`` block too: the step, the
 digests of the carry it started from and returned, the worlds carried, extended, new and retired), so the re-score
 checks that the live builder drew the same worlds from the same information set; a root guard that refuses is a
-mismatch too. PASS iff >= ``--min`` states were re-scored and none differs. Resumable: each re-scored state is appended
+mismatch too. A decision the SAFETY NET cut (an envelope preset's ``why: "deadline"``: π played, the search ran whole)
+is compared as its search returned it (:func:`search_view`), so it re-scores like any searched decision. PASS iff >= ``--min`` states were re-scored and none differs. Resumable: each re-scored state is appended
 to ``<out>.rows.jsonl`` and skipped on a restart; ``--jobs N`` re-scores N states at once, each worker process its own
 scorer (the rows are the same, in any order).
 
@@ -125,6 +126,13 @@ def torn_tail(path: Path) -> bool:
         return True
 
 
+def search_view(rec: Mapping[str, Any]) -> Mapping[str, Any]:
+    """A live record as its search returned it (``main.anchors.search_side.search_view``; imported lazily)."""
+    from main.anchors.search_side import search_view as view
+
+    return view(dict(rec))
+
+
 def _by_key(rows: Sequence[Mapping[str, Any]], what: str) -> Dict[str, Mapping[str, Any]]:
     out: Dict[str, Mapping[str, Any]] = {}
     for r in rows:
@@ -198,8 +206,9 @@ def check(cells: Path, selected: Path, scored: Path, *, min_matched: int) -> Dic
                 continue
             row["n_matched"] += 1
             by_panel.setdefault(str(b["panel"]), {"n_matched": 0, "n_key_only": 0})["n_matched"] += 1
+            view = search_view(rec)                    # a safety-net cut compared as its search returned it
             for f in FIELDS:
-                live, off = rec.get(f), b["offline"].get(f)
+                live, off = view.get(f), b["offline"].get(f)
                 if live != off:
                     row["mismatches"] += 1
                     mism.append({"key": rec["key"], "cell": d.name, "field": f, "live": live, "offline": off})
@@ -401,9 +410,11 @@ def compare_fields(search: Any) -> Tuple[str, ...]:
 def compare(live: Mapping[str, Any], got: Mapping[str, Any], fields: Sequence[str] = RESCORE_FIELDS
             ) -> List[Dict[str, Any]]:
     """The ``fields`` of a re-scored state that differ from the live record (``root_guard`` when it was refused). The
-    offline record is compared as the live one was written (a JSON round trip: tuples become lists)."""
+    offline record is compared as the live one was written (a JSON round trip: tuples become lists); the live one as
+    its SEARCH returned it (``search_side.search_view``: a safety-net cut's pick is the search's, which re-scores)."""
     if "error" in got:
         return [{"field": "inc_carry_in" if got.get("carry") else "root_guard", "live": None, "offline": got["error"]}]
+    live = search_view(live)
     off = json.loads(json.dumps(got["search"], sort_keys=True, default=str))
     return [{"field": f, "live": live.get(f), "offline": off.get(f)} for f in fields if live.get(f) != off.get(f)]
 

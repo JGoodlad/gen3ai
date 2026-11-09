@@ -129,7 +129,7 @@ def searcher(preset: str, forward=None):
     if p.dice == "fresh":
         inner: Any = HonestSampler()
     elif p.dice == "fresh_inc":
-        inner = HonestIncSampler(from_turn=t)
+        inner = HonestIncSampler(from_turn=t, budget=p.budget)
     else:
         inner = WorldSampler(reveal=p.reveal, max_tries=p.max_tries, dice=p.dice)
     return LiveSearcher(None, _Greedy(), preset, Path("/dev/null"), sampler=_Recorder(inner),

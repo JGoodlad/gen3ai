@@ -6,6 +6,7 @@ shipping the searched side exactly D's I), in SEQUENCE mode — every decision t
 up to the case's, each truth on its own searcher (its own carry cache):
 
 1. ``r0s4_honest_inc``'s records are byte-identical on D and D′ at EVERY decision, on every channel;
+   and so are the envelope presets' (``r0s4_honest_inc_k4``, ``r0s4_honest_inc_cap``: the cost read's R1);
 2. ``r0s4_rolls``'s move on every channel (the teeth: the sequence check fails on the leaky builder);
 3. DETERMINISM: a sequence re-run from scratch reproduces every record, and the case's decision run ALONE (a fresh
    searcher, so its carry is REBUILT from the earlier decisions of its I) reproduces the sequence's record;
@@ -45,6 +46,18 @@ def test_the_incremental_record_does_not_move_at_any_decision(fx, ch):
     r = INV.check_sequence(_case(fx, ch), INC)
     assert r["decisions"] >= 2, f"non-vacuity: {r['decisions']} decisions"
     assert r["identical"], f"{r['name']}: r0s4_honest_inc moved with hidden state at {r['moved']}"
+
+
+#: the envelope presets (the cost read's DRAFT §7 R1: the leak test in sequence mode on every new preset)
+ENVELOPE = ("r0s4_honest_inc_k4@10", "r0s4_honest_inc_cap@10")
+
+
+@pytest.mark.parametrize("preset", ENVELOPE)
+@pytest.mark.parametrize("ch", INV.CHANNELS)
+def test_an_envelope_presets_record_does_not_move_at_any_decision(fx, ch, preset):
+    r = INV.check_sequence(_case(fx, ch), preset)
+    assert r["decisions"] >= 2, f"non-vacuity: {r['decisions']} decisions"
+    assert r["identical"], f"{r['name']}: {preset} moved with hidden state at {r['moved']}"
 
 
 @pytest.mark.parametrize("ch", INV.CHANNELS)

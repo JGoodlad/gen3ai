@@ -12,9 +12,17 @@ It reads each searched game's per-decision log (``search_decisions.jsonl``, :mod
 * the share of our decisions from the search's first turn that have >= 2 legal actions (searched or excluded: the
   decisions the search is asked to make; S-6);
 * per game: the searched decisions, the exclusions (no consistent world), the deviation rate (the pick is not π's
-  greedy action), the search CPU-min (the decisions' own), its SPLIT into world building and playouts (``world_cpu_s``
-  / ``playout_cpu_s``; None for a log written before the split), the WHOLE unit's CPU-min (``kakuna``'s
+  greedy action), the SEARCH CPU-min — EVERY search-path decision's, the EXCLUSIONS INCLUDED (``search_cpu_min``; the
+  cost read's FINDING SP-2: S′-HONEST's exclusions are 29 % of it) — and its split into the searched decisions'
+  (``searched_cpu_min``) and the excluded ones' (``excluded_cpu_min``), its SPLIT into world building and playouts
+  (``world_cpu_s`` / ``playout_cpu_s``; None for a log written before the split), the safety net's cuts (``net_cut``:
+  an envelope preset's searched decisions π played on the deadline), the WHOLE unit's CPU-min (``kakuna``'s
   ``units.jsonl``, the conservative figure: model load, peer, every thread and child) and the game's wall-min;
+* the per-decision cost of an EXCLUDED decision (CPU-s and wall-s), beside the searched one's;
+* THE TIMER REPLAY (``timer``, :func:`main.reads.timer_model.replay`): every game's decisions through Showdown's turn
+  timer under each policy (as played, fixed deadlines, the bank-aware deadline with and without the cut step running
+  on), per panel (the cell name's ``<label>__<panel>__…``, else ``?``) and pooled U: the games forfeited, the
+  decisions cut;
 * the registered re-size input: the MEDIAN searched game's search CPU-min against the design's 2 × central (50 CPU-min;
   §4.4: above it, phase 2 is dropped). It is REPORTED here, decided by the read's rule.
 
@@ -27,10 +35,14 @@ import statistics
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
+from main.reads import timer_model
+
 REPORT_SCHEMA = "gen3_search_cost_v1"
 #: §4.4's re-size threshold: a median searched game above 2 × the central 25 CPU-min.
 RESIZE_CPU_MIN = 50.0
 LOG = "search_decisions.jsonl"
+#: a game row's per-decision lists (pooled, never printed per game)
+_BULK = ("decision_cpu_s", "decision_wall_s", "excluded_cpu_s", "excluded_wall_s", "timer_rows")
 
 
 def _q(xs: List[float], p: float) -> Optional[float]:
@@ -85,7 +97,9 @@ def game_report(cell: Path) -> Optional[Dict[str, Any]]:
     searched = [r for r in recs if r.get("searched")]
     excluded = [r for r in recs if r.get("why") == "excluded"]
     asked = [r for r in late if r.get("n_legal", 0) >= 2]
-    cpu = sum(float(r.get("cpu_s") or 0.0) for r in searched + excluded)
+    cpu_s = sum(float(r.get("cpu_s") or 0.0) for r in searched)
+    cpu_x = sum(float(r.get("cpu_s") or 0.0) for r in excluded)
+    cpu = cpu_s + cpu_x
     split = {k: (round(sum(float(r[k]) for r in searched + excluded) / 60.0, 3)
                  if searched + excluded and all(r.get(k) is not None for r in searched + excluded) else None)
              for k in ("world_cpu_s", "playout_cpu_s")}
@@ -98,13 +112,23 @@ def game_report(cell: Path) -> Optional[Dict[str, Any]]:
             "deviations": sum(1 for r in searched if r.get("deviation")),
             "deviation_rate": round(sum(1 for r in searched if r.get("deviation")) / len(searched), 4) if searched
             else None,
-            "search_cpu_min": round(cpu / 60.0, 3), "world_cpu_min": split["world_cpu_s"],
+            "search_cpu_min": round(cpu / 60.0, 3), "searched_cpu_min": round(cpu_s / 60.0, 3),
+            "excluded_cpu_min": round(cpu_x / 60.0, 3), "net_cut": sum(1 for r in recs if r.get("why") == "deadline"),
+            "world_cpu_min": split["world_cpu_s"],
             "playout_cpu_min": split["playout_cpu_s"], "game_wall_min": (round(float(peer["wall_s"]) / 60.0, 3)
                                                                       if peer.get("wall_s") is not None else None),
             "unit_cpu_min": None if whole_cpu_s is None else round(whole_cpu_s / 60.0, 3),
             "turns": [g.get("turns") for g in _games(cell)], "status": summary.get("status"),
             "decision_cpu_s": [float(r["cpu_s"]) for r in searched if r.get("cpu_s") is not None],
-            "decision_wall_s": [float(r["wall_s"]) for r in searched if r.get("wall_s") is not None]}
+            "decision_wall_s": [float(r["wall_s"]) for r in searched if r.get("wall_s") is not None],
+            "excluded_cpu_s": [float(r["cpu_s"]) for r in excluded if r.get("cpu_s") is not None],
+            "excluded_wall_s": [float(r["wall_s"]) for r in excluded if r.get("wall_s") is not None],
+            "timer_rows": timer_model.rows_of(recs)}
+
+
+def _panel(cell: str) -> str:
+    name = Path(cell).name
+    return name.split("__")[1] if name.count("__") >= 3 else "?"
 
 
 def _games(cell: Path) -> List[Dict[str, Any]]:
@@ -124,13 +148,20 @@ def report(cells: Iterable[Path], *, prefix: Optional[Dict[str, Any]] = None) ->
     searched = sum(g["searched"] for g in games)
     game_cpu = [g["search_cpu_min"] for g in games if g["status"] == "OK"]
     med = _q(game_cpu, 0.5)
-    rows = [{k: v for k, v in g.items() if k not in ("decision_cpu_s", "decision_wall_s")} for g in games]
+    rows = [{k: v for k, v in g.items() if k not in _BULK} for g in games]
     return {"schema": REPORT_SCHEMA, "games": len(games), "per_game": rows,
+            # the search's CPU INCLUDING the exclusions first (SP-2), then its two parts
+            "game_search_cpu_min": _dist(game_cpu),
+            "game_searched_cpu_min": _dist([g["searched_cpu_min"] for g in games if g["status"] == "OK"]),
+            "game_excluded_cpu_min": _dist([g["excluded_cpu_min"] for g in games if g["status"] == "OK"]),
             "searched_decision_cpu_s": _dist(cpu), "searched_decision_wall_s": _dist(wall),
+            "excluded_decision_cpu_s": _dist([x for g in games for x in g["excluded_cpu_s"]]),
+            "excluded_decision_wall_s": _dist([x for g in games for x in g["excluded_wall_s"]]),
+            "net_cut": sum(g["net_cut"] for g in games),
+            "timer": timer_model.replay([(_panel(g["cell"]), g["timer_rows"]) for g in games]),
             "ge2_legal_share": round(asked / late, 4) if late else None, "from_turn_decisions": late,
             "searched": searched, "excluded": sum(g["excluded"] for g in games),
             "deviation_rate": (round(sum(g["deviations"] for g in games) / searched, 4) if searched else None),
-            "game_search_cpu_min": _dist(game_cpu),
             "game_world_cpu_min": _dist([g["world_cpu_min"] for g in games if g["world_cpu_min"] is not None]),
             "game_playout_cpu_min": _dist([g["playout_cpu_min"] for g in games if g["playout_cpu_min"] is not None]),
             "game_wall_min": _dist([g["game_wall_min"] for g in games if g["game_wall_min"] is not None]),

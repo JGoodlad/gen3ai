@@ -24,6 +24,7 @@ Playing (the lanes and their claims):
 * :mod:`main.reads.playpath` / :mod:`main.reads.repin` -- the tracked play path at a commit, and ``repin`` (another
   playing commit, only when that path is byte-identical);
 * :mod:`main.reads.prefix` -- G-PREFIX, the paired-prefix tooth of a searched read; :mod:`main.reads.search_cost` -- its cost;
+  :mod:`main.reads.timer_model` -- Showdown's turn timer as a pure model, its replay and the safety net's clock;
   :mod:`main.reads.peer_divergence` -- AM-DL-PEER's classifier of a pair's divergence (a peer drop or not).
 
 Reading (cells, rules, the record):

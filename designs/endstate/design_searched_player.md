@@ -1,6 +1,7 @@
 # The searched player — P\* + S′h as a DEPLOYABLE player: the turn timer, the builder across a live battle, the play path
 
-**Status: DESIGN (2026-11-09), nothing built, nothing registered.** S′-HONEST read GO-HONEST and GOAL-B-REACHED
+**Status: DESIGN (2026-11-09); the cost read's code BUILT (2026-11-09: the timer model, the safety net, the envelope
+presets K4 and CAP, `searched_play`'s `timer_safe` flag, the stage-0 screen; §9); nothing registered.** S′-HONEST read GO-HONEST and GOAL-B-REACHED
 ([`../research_state/measurements/sprime_honest_play_2026-11-06/README.md`](../research_state/measurements/sprime_honest_play_2026-11-06/README.md)):
 P\* + `r0s4_honest_inc@10` beats P\* alone against Kakuna (checkpoint 34, greedy) on unfamiliar teams by +2.00 pp
 [+0.34, +3.51]. That read played on our own front end, which has no battle timer. **Replayed through Showdown's own
@@ -132,7 +133,16 @@ upper bound at today's budgets). So every searched pick stays a function of I an
 which play π, depend on the clock. A step that outlives a hard bound (a hang, not a slow step) is killed with its child
 and the battle's search goes OFF (§4). A safety-net cut is recorded (`why` naming the deadline, never an exclusion),
 and a read of the deployable player reports the net's firing share and treats a share above its registered bound as a
-defect, not a result. Which budget profile meets the timer, and what it costs in exclusions
+defect, not a result.
+
+**Built (2026-11-09).** The clock is `main.reads.timer_model` (its constants pinned by its test to `room-battle.ts`'s
+literals; it reproduces `timer_replay.json` on all 5,100 banked games, every policy). The safety net is the live
+searcher's (`main.anchors.search_side`), on for a preset that sets `net_reserve_s` (the envelope presets
+`r0s4_honest_inc_k4` and `r0s4_honest_inc_cap`, reserve 10 s): the search always runs whole and a searched decision
+whose need (the decision's wall plus a cut step's overrun) passes min(bank, 150) − 10 − 1 s plays π's pick, recorded
+`why: "deadline"` with the search's own pick in its `net` block, so the identity re-score compares the search's view.
+Our front end has no timer, so in a read the net plays as if Showdown's were on from turn 1, on the box's walls (SP-3).
+Which budget profile meets the timer, and what it costs in exclusions
 and in gain, is the cost read's stage 0 and stage 1 (DRAFT_PREREG §3–§4).
 
 **The bank the player believes.** When the timer is on, the server tells us: every request is followed by
@@ -253,14 +263,15 @@ one-ply, leak-honest search at play time is a separately measured layer that mus
 
 ---
 
-## 9. The cost read (DRAFT, not registered)
+## 9. The cost read (DRAFT, not registered; its code built)
 
 [`../research_state/measurements/searched_cost_2026-11-09/DRAFT_PREREG.md`](../research_state/measurements/searched_cost_2026-11-09/DRAFT_PREREG.md):
 stage 0 screens candidate presets offline on S′-HONEST's banked battles (zero games, outcome-blind: cost, the timer
 replay, exclusions, pick agreement); stage 1 plays the cheapest preset that passes, with its envelope, against P\* raw
 on 6,900 fresh U deals under `searched_play` (GO-HONEST iff LB > 0), with a new decided `timer_safe` flag. A
 non-inferiority read against `r0s4_honest_inc@10` at a margin that matters is unaffordable (≈ 27,000 deals at 1 pp,
-≈ 4,800 CPU-h; the DRAFT §2).
+≈ 4,800 CPU-h; the DRAFT §2). The DRAFT's §7 builds are in (its §7 says which, and what is not: the F-aimed XR
+presets, which stage 0a chooses, and S′H-15's fix).
 
 ---
 
@@ -298,3 +309,4 @@ non-inferiority read against `r0s4_honest_inc@10` at a margin that matters is un
 |---|---|---|---|---|
 | 2026-11-09 | **This doc CREATED** (the search-next designer, Q19, orchestrator brief; design and banked-data analysis only, no game, no search run) | a deployable player = P\* + S′h inside a timer-safe envelope: deterministic count budgets sized for the timer, a bank-aware deadline (min(bank, 150) − 10 s) only as a safety net that cuts the pick and lets the step finish (a hang kills the child and switches the battle's search off); one searcher child process per battle; I read from the wire with an equivalence gate against the true log on our own server; the bank read from the server's `\|inactive\|` line. The timer facts read at the source (§2). The mission sentence PROPOSED to the orchestrator, not written into `UNDERSTANDING.md`: "**The mission.** A Generation 3 OverUsed (gen3 OU) generalist that keeps improving: not a specialist, and not a search-first agent: the trained network is the product and the yardstick for every training lever, and one-ply, leak-honest search at play time (only our action branched at the root, the network on both sides of every playout, inside the ladder's turn timer) is a separately measured layer on top of it, never a substitute for improving the network." | a fixed per-decision deadline (§2: never safe past turn 100); a wall-clock deadline as the primary envelope (unreproducible picks; the identity guard cannot re-score a cut); dropping an overrun step (the carry would become a function of the clock); switching search off at every overrun (9.3 % lost against 8.4 %); the search in a thread (cannot be killed); deploying `r0s4_honest_inc@10` as read (16.2 % timer forfeits); editing `UNDERSTANDING.md` §1 here (the orchestrator decides) | `timer_replay.json` and `timer_replay.py` in `../research_state/measurements/searched_cost_2026-11-09/inputs/` (sha256 `842bb278…577c`); `deps/pokemon-showdown/server/room-battle.ts` (`e0551883f`); `../research_state/measurements/sprime_honest_play_2026-11-06/README.md` |
 | 2026-11-09 | **Mission sentence ADOPTED** into `UNDERSTANDING.md` §1 (the orchestrator, under the owner's 2026-11-09 "lead the ship, make reasonable decisions"), and with it the reading "one ply = only our action is branched at the root; playouts run the network on both sides" (`design_search_next.md` D-10) | the sentence proposed in the row above, verbatim; D-10's reading adopted, **OWNER-CONFIRMATION PENDING** (the owner may veto; SP-5's gate on building past P2 stands until confirmed) | "not a specialist, not a search agent" (goal (b) is met only with search); leaving D-10 unread by the owner | the owner's 2026-11-09 delegation; `design_search_next.md` D-10; FINDING SP-5 |
+| 2026-11-09 | **The cost read's code BUILT** (the searched-cost builder, orchestrator brief; no read registered, no game) | the DRAFT's §7: `SearchPreset` gains `budget` and `net_reserve_s` (left out of `as_dict` at their defaults, so the four earlier presets are byte-identical); presets `r0s4_honest_inc_k4` (K4) and `r0s4_honest_inc_cap` (CAP: stage 1's base budget wherever the builder builds at B3, a 256-try shortfall), each with the net at 10 s; the timer model `main.reads.timer_model`; the safety net in `main.anchors.search_side` as the RUNS-ON replay (`bank_r10+bg`, §3: the step finishes, its overrun delays the next decisions), cutting only the pick; `searched_play`'s optional `timer` block and decided `timer_safe` flag on that replay; `search-cost` with the exclusions' CPU split out and the timer replay; the stage-0 screen and the stage-0a diagnosis tool | the dropped-step replay (`bank_r10`, 3.2 % at REF) as the flag's policy: the incremental builder cannot drop a step (§4), so the player the flag licenses is the runs-on one (8.4 % at REF); a wall-clock deadline inside the search; `j_min` and the XR presets before stage 0a chooses one (XR-J's allocation over k < 8 worlds and XR-R's escalation are unspecified); S′H-15's fix (not in the DRAFT's §7) | `src/main/reads/timer_model_test.py` (the source pins; the prototype on 90 banked games and random ones); `search_side_test`, `rules_searched_play_test`, `honest_inc_unit_test`; the DRAFT's §7 |

@@ -41,6 +41,16 @@ disconnect the peer, and the front end would book the dropped peer's forfeit as 
 (``--first-game-timeout`` / ``--progress-timeout``) must be sized for a searched game (``main.x35.kakuna`` sets it);
 the front end has no battle timer.
 
+**The safety net** (a preset's ``net_reserve_s``, the envelope presets: ``design_searched_player.md`` §3). Our front
+end has no battle timer; the net plays as if Showdown's were on from turn 1: one clock per battle
+(:class:`main.reads.timer_model.Clock`, the bank-aware deadline min(bank, 150) − reserve − overhead) steps on every
+decision of ours with the search's wall, and a SEARCHED decision whose need passes the deadline plays π's pick
+(``why: "deadline"``, never ``excluded``; the search's own pick kept in the record's ``net`` block, which every
+search-path record carries). The search itself always runs whole, so the carry stays a function of I and the cut
+step's overrun delays the next decision (``timer_model.NET_POLICY``): only the PICK depends on the clock, and an
+offline re-score compares the search's view (:func:`search_view`). The summary counts ``net_cut`` (searched decisions
+cut) and ``net_cut_path`` (search-path decisions cut, exclusions included).
+
 **The record.** One JSON line per decision of ours (schema :data:`SCHEMA`) in ``<out>/search_decisions.jsonl``:
 whether it was searched (and why not), π's greedy action, the pick; on every decision that reaches the search (searched
 or excluded) its ``key``, its ``deal`` and the decision's IDENTITY: ``log_sha256``
@@ -78,6 +88,22 @@ RESCORE_MOD = 16
 #: the leak-honest builders' dice (``search_presets``): ``fresh`` rebuilds every decision cold (``r0s4_honest``),
 #: ``fresh_inc`` carries the worlds through a battle's decisions (``r0s4_honest_inc``)
 HONEST_DICE = ("fresh", "fresh_inc")
+
+
+#: a searched decision the safety net cut (its ``why``; never ``excluded``)
+NET_WHY = "deadline"
+
+
+def search_view(rec: Dict[str, Any]) -> Dict[str, Any]:
+    """A decision record as its SEARCH returned it: a safety-net cut's ``played``, ``deviation`` and ``why`` restored
+    from its ``net`` block (the search ran whole; only the pick it played was π's). Any other record is returned
+    unchanged. The re-score (:mod:`main.value_search.live_identity`) compares this view."""
+    net = rec.get("net") or {}
+    if rec.get("why") != NET_WHY or "search_played" not in net:
+        return rec
+    out = {k: v for k, v in rec.items() if k != "why"}
+    out.update(played=int(net["search_played"]), deviation=bool(net.get("search_deviation")))
+    return out
 
 
 def rescore_sampled(key: str) -> bool:
@@ -213,7 +239,7 @@ class LiveSearcher:
         elif self.preset.dice == "fresh_inc":
             from main.value_search.honest_inc import HonestIncSampler
 
-            self.sampler = HonestIncSampler(from_turn=self.from_turn)
+            self.sampler = HonestIncSampler(from_turn=self.from_turn, budget=self.preset.budget)
         else:
             self.sampler = WorldSampler(reveal=self.preset.reveal, max_tries=self.preset.max_tries,
                                         dice=self.preset.dice)
@@ -226,6 +252,13 @@ class LiveSearcher:
                                       "from_turn": self.from_turn, "decisions": 0, "from_turn_decisions": 0,
                                       "searched": 0, "excluded": 0, "deviations": 0, "search_cpu_s": 0.0,
                                       "search_wall_s": 0.0}
+        #: THE SAFETY NET (a preset's ``net_reserve_s``; module docstring): one timer clock per battle, fed every
+        #: decision of ours in order; None for a preset without a net (its records and summary are as before)
+        self.clocks: Optional[Dict[str, Any]] = None
+        if self.preset.net_reserve_s is not None:
+            self.clocks = {}
+            self.stats.update(net_reserve_s=float(self.preset.net_reserve_s), net_cut=0, net_cut_path=0,
+                              net_forfeit=0)
 
     def close(self) -> None:
         self.engine.close()
@@ -255,6 +288,7 @@ class LiveSearcher:
             self.stats["from_turn_decisions"] += 1
         if turn < self.from_turn or len(legal) < 2:
             rec.update(searched=False, why="before_turn" if turn < self.from_turn else "one_legal", played=int(argmax))
+            self._net(tag, rec, path=False)
             self._write(rec)
             return int(argmax), int(argmax)
         log, at, update = honest_log(battle, side)
@@ -272,6 +306,7 @@ class LiveSearcher:
                        tokens={str(k): str(v) for k, v in (d.get("tokens") or {}).items()})
         out = await asyncio.to_thread(self._search, log, at, side, row, mask, d, key, int(argmax))
         rec.update(out)
+        self._net(tag, rec, path=True)
         if rec.get("rescore_sample") and self.preset.dice == "fresh_inc" and self.sampler.last_carry_in is not None:
             # the carry this decision started from (``honest_inc.pack``): a re-score of it alone seeds a searcher
             # with it, checked against the record's ``honest.inc.carry_in`` digest, instead of rebuilding the battle
@@ -280,6 +315,34 @@ class LiveSearcher:
             rec["inc_carry_in"] = pack(self.sampler.last_carry_in)
         self._write(rec)
         return int(rec["played"]), int(argmax)
+
+    def _net(self, tag: str, rec: Dict[str, Any], *, path: bool) -> None:
+        """THE SAFETY NET on one decision's record (a no-op without a net): the battle's clock steps on it
+        (:class:`main.reads.timer_model.Clock`, the bank-aware deadline at the preset's reserve, the cut step running
+        on: ``timer_model.NET_POLICY``); a search-path record gets its ``net`` block, and a SEARCHED decision the
+        deadline cuts plays π's pick: ``why`` "deadline" (never "excluded"), ``played`` π's, ``deviation`` False, the
+        search's own pick and deviation kept in ``net`` (:func:`search_view` restores them for a re-score: the
+        search ran whole, so its pick is a function of I and re-scores)."""
+        if getattr(self, "clocks", None) is None:
+            return
+        from main.reads.timer_model import Clock
+
+        clock = self.clocks.get(tag)
+        if clock is None:
+            clock = self.clocks[tag] = Clock(reserve=float(self.preset.net_reserve_s), background=True)
+        st = clock.step(int(rec["turn"]), path, float(rec.get("wall_s") or 0.0) if path else 0.0)
+        self.stats["net_forfeit"] += int(st.forfeit)
+        if not path:
+            return
+        net = st.record()
+        if st.cut:
+            self.stats["net_cut_path"] += 1
+        if st.cut and rec.get("searched"):
+            self.stats["net_cut"] += 1
+            self.stats["deviations"] -= int(bool(rec.get("deviation")))
+            net.update(search_played=int(rec["played"]), search_deviation=bool(rec.get("deviation")))
+            rec.update(why=NET_WHY, played=int(rec["pi_argmax"]), deviation=False)
+        rec["net"] = net
 
     def _check_root(self, log: Dict[str, Any], at: int, side: str, d: Dict[str, Any], key: str) -> None:
         from main.value_search import worlds as W

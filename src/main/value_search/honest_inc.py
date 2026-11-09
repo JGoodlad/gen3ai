@@ -27,7 +27,8 @@ retry (a new process replaying the battle) or an offline re-score of one decisio
    started at the carried chain state, sampling at once when it fits, on ONE set of chain dice for the battle (keyed by
    the I of the checkpoint the chain's lineage began at, so a state that fit before replays its kept tries), each new
    world on its own fresh dice (tag ``w<world id>:<attempt>``), as the cold builder's.
-3. *Shortfall.* The worlds that failed step 1 once more on rarer dice (``CHAIN_TRIES_MAX`` tries).
+3. *Shortfall.* The worlds that failed step 1 once more on rarer dice (``CHAIN_TRIES_MAX`` tries; a budget
+   profile's ``shortfall_tries``, :data:`BUDGETS`).
 4. *Compose and retire.* The fresh worlds (max(FRESH_MIN, J - the survivors)), then the youngest survivors, to J: the
    oldest retire, so a world serves at most ⌈J / FRESH_MIN⌉ decisions while the battle draws fresh worlds every
    decision; after a stretch that drew none, or with too few survivors, older ones stay (an OVERAGE, recorded): the
@@ -58,6 +59,7 @@ import json
 import math
 import os
 from collections import OrderedDict
+from dataclasses import dataclass
 from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 from main.value_search import honest_worlds as HW
@@ -92,6 +94,37 @@ CACHE = 64
 #: then on the same doublings. A segment no world can match (S'H-10) then costs a few CPU-s a decision and a logarithmic
 #: number of full attempts (≈ 100-200 CPU-s each), not one every few decisions
 STUCK_FULL_EVERY = 4
+
+
+@dataclass(frozen=True)
+class Budget:
+    """A COUNT budget profile of the incremental builder (a preset's ``budget``; the cost read's DRAFT §3 CAP): the
+    builder's own budget (``honest_worlds``' chain steps, chain feeds and a world's attempts) wherever no carried
+    world survives — the cold first build, a battle's re-cold build, the warm chain with no survivor (C23) — and the
+    shortfall escalation's tries (step 3, C27)."""
+
+    max_steps: int
+    chain_feeds: int
+    attempts: int
+    shortfall_tries: int
+
+
+#: today's profile: B3 (``honest_worlds.MAX_STEPS``, ``CHAIN_FEEDS_MAX``, ``ATTEMPTS``) and a 1,024-try shortfall
+DEFAULT_BUDGET = Budget(HW.MAX_STEPS, HW.CHAIN_FEEDS_MAX, HW.ATTEMPTS, HW.CHAIN_TRIES_MAX)
+#: stage 1's BASE budget (300 chain steps, 600,000 feeds, 3 world attempts: ``sprime_honest_stage1_2026-11-05``'s
+#: budget curve, the warm chain's own WARM_STEPS / WARM_FEEDS)
+BASE_ATTEMPTS = 3
+#: the named profiles (``main.anchors.search_presets.BUDGET_NAMES`` lists the same names; a test pins them equal)
+BUDGETS: Dict[str, Budget] = {"cap": Budget(WARM_STEPS, WARM_FEEDS, BASE_ATTEMPTS, 256)}
+
+
+def budget_of(name: Optional[str]) -> Budget:
+    """A preset's ``budget`` -> its profile (None: :data:`DEFAULT_BUDGET`)."""
+    if name is None:
+        return DEFAULT_BUDGET
+    if name not in BUDGETS:
+        raise ValueError(f"budget profile {name!r} is none of {sorted(BUDGETS)}")
+    return BUDGETS[name]
 
 
 def chain_due(fails: int, short: bool) -> bool:
@@ -175,8 +208,15 @@ class HonestIncSampler(HW.HonestSampler):
 
     dice = "fresh_inc"
 
-    def __init__(self, *a, from_turn: int = 10, fresh_min: int = FRESH_MIN, cache: int = CACHE, **k) -> None:
+    def __init__(self, *a, from_turn: int = 10, fresh_min: int = FRESH_MIN, cache: int = CACHE,
+                 budget: Optional[str] = None, **k) -> None:
+        b = budget_of(budget)
+        for name, v in (("max_steps", b.max_steps), ("chain_feeds", b.chain_feeds), ("attempts", b.attempts)):
+            k.setdefault(name, v)
         super().__init__(*a, **k)
+        #: the budget profile's name (None: today's) and the shortfall escalation's tries (step 3)
+        self.budget = budget
+        self.shortfall_tries = int(b.shortfall_tries)
         self.from_turn = int(from_turn)
         self.fresh_min = int(fresh_min)
         self.cache = int(cache)
@@ -427,7 +467,7 @@ class HonestIncSampler(HW.HonestSampler):
                     continue
                 esc += 1
                 got = self._extend(info, sc, key, step, cw, scaffold_at(*_at(cw, carry)), rec, fails, m,
-                                   tries=HW.CHAIN_TRIES_MAX, tag="e", attempts=1)
+                                   tries=self.shortfall_tries, tag="e", attempts=1)
                 if got is not None:
                     survivors[int(cw["wid"])] = (cw,) + got[:3]
                     revised += int(got[3] > 0)

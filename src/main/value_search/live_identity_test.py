@@ -552,3 +552,16 @@ def test_one_thread_sets_the_blas_env_inside_the_function(monkeypatch):
         assert os.environ["CUDA_VISIBLE_DEVICES"] == "" and torch.get_num_threads() == 1
     finally:
         torch.set_num_threads(before)
+
+
+def test_a_safety_net_cut_is_compared_as_its_search_returned_it():
+    """An envelope preset's cut decision played π's pick (``why: "deadline"``) but its search ran whole: the re-score's
+    record (the search's pick, no ``why``) matches it; a real disagreement still mismatches."""
+    live = {"searched": True, "why": "deadline", "played": 3, "deviation": False, "q": {"3": 0.4, "6": 0.6},
+            "log_pi": {"3": -0.1, "6": -2.0}, "root_v": 0.5,
+            "net": {"cut": True, "search_played": 6, "search_deviation": True}}
+    got = {"search": {"searched": True, "played": 6, "deviation": True, "q": {"3": 0.4, "6": 0.6},
+                      "log_pi": {"3": -0.1, "6": -2.0}, "root_v": 0.5}}
+    assert LI.compare(live, got) == []
+    other = {"search": dict(got["search"], played=3)}
+    assert [m["field"] for m in LI.compare(live, other)] == ["played"]
