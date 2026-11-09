@@ -28,12 +28,17 @@ cost (designs/ops/testing.md "The SHIP GATE"), and the slow tier banks its verdi
 since its last banked run still reads green here; only running the slow tier closes that.
 
 USAGE
-    scripts/ops/ship_gate.sh run [-- <extra pytest args>]     # run the gate (queues on the gate lock)
-    scripts/ops/ship_gate.sh --dry-run [-- <extra pytest args>]  # print the resolved command, run nothing
+    scripts/ops/ship_gate.sh run [--max-run-s S] [-- <extra pytest args>]     # run the gate (queues on the gate lock)
+    scripts/ops/ship_gate.sh --dry-run [--max-run-s S] [-- <extra pytest args>]  # print the resolved command, run nothing
     scripts/ops/ship_gate.sh --help
 
+NEVER wrap ``ship_gate.sh run`` in ``timeout``: the gate QUEUES (the gate lock, then a heavy slot), an outer timeout counts
+that wait, and firing there it kills the gate and loses its place (2026-11-09). To bound the gate, pass ``--max-run-s S``:
+it goes to ``mem_cap.sh`` (``utils.mem_cap``, THE RUN-TIME BOUND), whose clock starts when pytest starts, after every
+queue; past it the gate is stopped and exits 89.
+
 No argument REFUSES (exit 2), like every scripts/ops/ entry point: a gate is never started by accident.
-Exit status: the gate's own; 2 = usage.
+Exit status: the gate's own; 89 = ``--max-run-s`` stopped it; 2 = usage.
 """
 from __future__ import annotations
 
@@ -46,6 +51,7 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional, Sequence
 
 from utils import heavy_slots as HS
+from utils import mem_cap
 from utils import procfs
 from utils.gate_lock_status import affinity_of, cpu_list
 from utils.paths import repo_path
@@ -104,14 +110,16 @@ def resolve_shape(runs: Optional[Dict[str, int]] = None, *, online: Optional[Seq
     return Shape(dict(runs), agent, 19, max(1, int(len(agent) * LIVE_WORKERS_PER_CPU)))
 
 
-def build_argv(shape: Shape, python: str, extra: Sequence[str] = ()) -> List[str]:
+def build_argv(shape: Shape, python: str, extra: Sequence[str] = (), *, max_run_s: Optional[float] = None) -> List[str]:
+    """``max_run_s``: mem_cap's run-time bound, on the INNERMOST wrapper so that neither queue (gate lock, heavy slot) counts."""
+    bound = [] if max_run_s is None else ["--max-run-s", f"{max_run_s:g}"]
     pre: List[str] = []
     if shape.nice:
         pre += ["nice", "-n", str(shape.nice)]
     if shape.cpus is not None:
         pre += ["taskset", "-c", cpu_list(shape.cpus)]
     return pre + [str(repo_path("scripts", "ops", "gate_lock.sh")),
-                  str(repo_path("scripts", "ops", "mem_cap.sh")), str(MEM_CAP_GB),
+                  str(repo_path("scripts", "ops", "mem_cap.sh")), *bound, str(MEM_CAP_GB),
                   python, "-m", "pytest", "src/", "-m", MARKERS, "-q", "-n", str(shape.workers), *extra]
 
 
@@ -122,13 +130,21 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         return 0
     head = args[: args.index("--")] if "--" in args else args
     extra = args[args.index("--") + 1:] if "--" in args else []
+    max_run_s: Optional[float] = None
+    if len(head) == 3 and head[1] == "--max-run-s":
+        try:
+            max_run_s = mem_cap.parse_max_run_s(head[2])
+        except ValueError as e:
+            print(f"REFUSING: --max-run-s: {e}", file=sys.stderr)
+            return 2
+        head = head[:1]
     if head not in (["run"], ["--dry-run"]):
-        print(f"REFUSING: ship_gate.sh needs `run` or `--dry-run` (got {head}); pytest options go after --. "
-              "See --help.", file=sys.stderr)
+        print(f"REFUSING: ship_gate.sh needs `run` or `--dry-run`, then optionally `--max-run-s S` (got {head}); pytest "
+              "options go after --. See --help.", file=sys.stderr)
         return 2
     dry = head == ["--dry-run"]
     shape = resolve_shape()
-    cmd = build_argv(shape, os.environ.get("GEN3AI_PYTHON") or sys.executable, extra)
+    cmd = build_argv(shape, os.environ.get("GEN3AI_PYTHON") or sys.executable, extra, max_run_s=max_run_s)
     print(f"[ship_gate] {shape.describe()}", file=sys.stderr)
     print(f"[ship_gate] CUDA_VISIBLE_DEVICES='' {shlex.join(cmd)}", file=sys.stderr)
     if dry:
@@ -138,6 +154,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                GEN3AI_SHIP_WARM="1")
     t0 = time.time()
     rc = subprocess.call(cmd, cwd=str(repo_path()), env=env)
+    if rc == mem_cap.EXIT_RUN_TIMEOUT and max_run_s is not None:
+        print(f"[ship_gate] the gate was STOPPED by --max-run-s {max_run_s:g} (counted from pytest's start, no queue wait): "
+              "its verdict is INCOMPLETE, never a red", file=sys.stderr)
     print(f"[ship_gate] exit {rc} after {(time.time() - t0) / 60:.1f} min wall (queue wait included; "
           "gate_lock's own line gives the held time)", file=sys.stderr)
     return rc

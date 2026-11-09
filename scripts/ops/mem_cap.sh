@@ -16,7 +16,7 @@ usage() {
 mem_cap.sh — run a command under a memory cap in its own scope (see src/utils/mem_cap.py)
 
 USAGE
-    scripts/ops/mem_cap.sh [--name N] [--slice-gb G] [--term-grace S] [--slot] [--no-wait] [--blocking WHY] [--max-s S] <GB> <cmd> [args...]
+    scripts/ops/mem_cap.sh [--name N] [--slice-gb G] [--term-grace S] [--slot] [--no-wait] [--blocking WHY] [--max-s S] [--max-run-s S] <GB> <cmd> [args...]
     scripts/ops/mem_cap.sh --status           # the heavy slice, every capped job, the HEAVY SLOTS
 
 HEAVY SLOTS (rule 5b, utils/heavy_slots.py): while a training run is live or the GPU is leased (or
@@ -34,20 +34,24 @@ a short job caps at 60 s). An overrun prints "SHORT-LANE OVERRUN ... re-queue it
 only a job that took a slot of its own: not one that needed none, bypassed (BLOCKING, gpu_lock) or runs
 inside a holder. A declaration above 600 s, or --term-grace above 60 s, is refused (exit 2).
 
+RUN-TIME BOUND: --max-run-s S (S > 0, any lane) stops the job S seconds after ITS COMMAND STARTS: the wait
+for a heavy slot (or the gate lock) is never counted. SIGTERM, then SIGKILL of the whole scope after
+--term-grace; prints "RUN-TIME BOUND ..." and exits 89. NEVER put `timeout N` OUTSIDE a job that may
+queue: it counts the queue wait, fires while the job is still waiting and loses its place. Use this.
+
 The command runs in gen3ai-capped-<name>-<pid>.scope (MemoryMax=<GB>G, MemorySwapMax=0,
 OOMPolicy=stop) inside gen3ai-heavy.slice ($GEN3AI_HEAVY_SLICE), whose aggregate MemoryMax is
 declared at every launch (default 64 GB; --slice-gb / $GEN3AI_HEAVY_SLICE_GB), with oom_score_adj
 +500. Prints the cap and unit at start; peak memory and whether it was OOM-killed at the end.
-STOPPING: a timeout INSIDE (mem_cap.sh 24 timeout 2h python ...) bounds the command alone; one OUTSIDE
-(timeout 2h mem_cap.sh 24 python ...) bounds the whole wrapper, slot wait included, and ALSO stops the job:
-SIGINT/SIGTERM/SIGHUP are forwarded to the command, and --term-grace S seconds (default 60;
+STOPPING: bound the run with --max-run-s (above), never an outer `timeout` (it counts the slot wait). A
+stop signal reaching the wrapper stops the job: SIGINT/SIGTERM/SIGHUP are forwarded to the command, and --term-grace S seconds (default 60;
 $GEN3AI_MEM_CAP_TERM_GRACE_S) after the first one everything left in the scope is SIGKILLed, a setsid-ed
 worker too. The wrapper dying by SIGKILL (timeout -k, kill -9) stops the job the same way. Exit 143 on
 SIGTERM, 137 once the grace killed it. Composes with gpu_lock.sh either way.
 Exit status: the command's own (128+N if signal N killed it); 86 = OOM-killed at its cap or the
 slice's; 85 = the cap could not be put in force (the command did NOT run); 87 = --no-wait and every
 heavy slot is held (the command did NOT run); 88 = a declared-short job overran its hard timeout and
-was killed; 2 = usage.
+was killed; 89 = --max-run-s stopped it; 2 = usage.
 USAGE_EOF
 }
 

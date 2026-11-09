@@ -348,7 +348,7 @@ or fails DETERMINISTICALLY):
 | just the bridge | `-m sim` | ~100 s |
 | just the browser views | `-m browser` | **~19 s** (2026-09-29) |
 | **anything on the GPU** (a `GEN3AI_TEST_ALLOW_GPU=1` test, a cuda benchmark) | **Only under a GPU LEASE** the orchestrator granted you in your brief (owner, 2026-10-03: nobody blocks on the GPU). `scripts/ops/gpu_lease.sh acquire --owner <name>` (immediate typed refusal if leased or busy) prints `export GEN3AI_GPU_LEASE_TOKEN=<token>`; an agent's Bash tool keeps no exports between calls, so put `GEN3AI_GPU_LEASE_TOKEN=<token>` (or `--token-file F` once + `GEN3AI_GPU_LEASE_TOKEN_FILE=F`) in front of each call; `release` when done. Then `scripts/ops/gpu_lock.sh <cmd>` — **never a bare `flock ~/.claude/jobs/gpu.lock`** — passes straight through on your token and runs WITHOUT queueing. Everyone else is refused AT ONCE: exit **6** `GpuLeased` (names the owner, holder pid, since when), exit **5** `GpuBusy` (a one-off holder), never a wait; `--wait` / `wait=True` (kernel-blocked, a lease appearing ends it) is for the orchestrator or a training launch. **An agent with no lease never sets `GEN3AI_TEST_ALLOW_GPU=1` and runs every test, gate and script with `CUDA_VISIBLE_DEVICES=""`** (GPU tests skip without the first, so the routine gate stays CPU-only; the second is because a "CPU-only" job can still create a CUDA context through an import or a default device, as one did during a leased window on 2026-10-15). The helper (`src/utils/gpu_lock.py`, `src/utils/gpu_lease.py`) also exports `GEN3AI_GPU_LOCK_HELD=<pid>`, so a command that takes the lock itself (`policy_spectrum truth --lock`) re-enters instead of deadlocking on its own ancestor (2026-09-30: 15 min at 0% CPU); a bare-`flock` ancestor raises `GpuLockSelfDeadlock` at once. **A wall timeout goes INSIDE the lock** — `scripts/ops/gpu_lock.sh timeout 3000 <cmd>`; a stale lease (dead holder, reused pid) is detected and cleared by `status` / `acquire`; a crashed owner's lease is ended by the orchestrator (`release --force`), or expires at `--max-hours` (default 12) / when `--watch-pid` dies. Tests: `src/utils/gpu_lease_test.py`, `src/utils/gpu_lock_test.py` | — |
-| **any exploratory or one-off HEAVY job** (a trace, a benchmark, a measurement driver, anything that loads many checkpoints) | `scripts/ops/mem_cap.sh <GB> <cmd>` (Python: `utils.mem_cap`), a timeout INSIDE (`mem_cap.sh 24 timeout 2h python …`: bounds the command, not the slot wait) or OUTSIDE (`timeout 3000 mem_cap.sh 24 python …`: bounds the wrapper too, and since 2026-10-19 it STOPS the job — SIGTERM forwarded, then `--term-grace` (default 60 s) later SIGKILL of everything left in the scope, a `setsid` worker included; `utils/mem_cap_test.py` runs real trees), composes with `gpu_lock.sh` in either order. The job gets its OWN scope (`MemoryMax=<GB>G`, swap 0, `OOMPolicy=stop`) inside `gen3ai-heavy.slice` (aggregate cap, default 64 GB of 89) at `oom_score_adj` +500, so an overrun kills only that job (exit 86). 2026-09-30: three global OOM kills of a 74-82 GB python3 each tore down the whole tmux scope (Claude + every agent). **While a training run is live OR the GPU is LEASED it also takes one of the box's 2 HEAVY SLOTS** (rule 5b is keyed to the lease too, so a leased measurement window is not flooded by the jobs queued behind a run; a job already running under `gpu_lock` takes none, so the lease owner's cells never queue; `src/utils/heavy_slots.py`, 2026-10-19), waiting visibly in FIFO order per LANE (`--no-wait`: exit 87; **a job of at most 10 min declares itself with `--max-s <S>` and rides the SHORT LANE**, killed past S + 30 s: § "The short lane" below); the routine gate holds one itself and everything inside it re-enters; `$GEN3AI_BLOCKING=<why>` (the orchestrator's mark) bypasses; **hold a slot per BOUNDED CHUNK (<= 45 min), never per run** (`--status` flags a holder past 60 min as `LONG HOLD`, the holder is warned once, nothing is killed); `mem_cap.sh --status` shows holders, queue, bypassers; `gate_lock.sh` goes OUTSIDE `mem_cap.sh` (the other order is refused when the gate is busy: exit 5) | — |
+| **any exploratory or one-off HEAVY job** (a trace, a benchmark, a measurement driver, anything that loads many checkpoints) | `scripts/ops/mem_cap.sh <GB> <cmd>` (Python: `utils.mem_cap`), bounded by **`--max-run-s <S>`** (`mem_cap.sh --max-run-s 3000 24 python …`: S seconds from the command's START, the slot wait never counted, exit 89), **never by a `timeout` OUTSIDE** (it counts the queue wait: § "A queued job: three rules" below). A stop signal that reaches the wrapper STOPS the job — SIGTERM forwarded, then `--term-grace` (default 60 s) later SIGKILL of everything left in the scope, a `setsid` worker included; `utils/mem_cap_test.py` runs real trees. It composes with `gpu_lock.sh` in either order. The job gets its OWN scope (`MemoryMax=<GB>G`, swap 0, `OOMPolicy=stop`) inside `gen3ai-heavy.slice` (aggregate cap, default 64 GB of 89) at `oom_score_adj` +500, so an overrun kills only that job (exit 86). 2026-09-30: three global OOM kills of a 74-82 GB python3 each tore down the whole tmux scope (Claude + every agent). **While a training run is live OR the GPU is LEASED it also takes one of the box's 2 HEAVY SLOTS** (rule 5b is keyed to the lease too, so a leased measurement window is not flooded by the jobs queued behind a run; a job already running under `gpu_lock` takes none, so the lease owner's cells never queue; `src/utils/heavy_slots.py`, 2026-10-19), waiting visibly in FIFO order per LANE (`--no-wait`: exit 87; **a job of at most 10 min declares itself with `--max-s <S>` and rides the SHORT LANE**, killed past S + 30 s: § "The short lane" below); the routine gate holds one itself and everything inside it re-enters; `$GEN3AI_BLOCKING=<why>` (the orchestrator's mark) bypasses; **hold a slot per BOUNDED CHUNK (<= 45 min), never per run** (`--status` flags a holder past 60 min as `LONG HOLD`, the holder is warned once, nothing is killed); `mem_cap.sh --status` shows holders, queue, bypassers; `gate_lock.sh` goes OUTSIDE `mem_cap.sh` (the other order is refused when the gate is busy: exit 5) | — |
 
 ```bash
 # THE SHIP GATE — the routine gate below, in the shape the box affords (rule 5b when a run is live), one command:
@@ -392,6 +392,29 @@ sample: a tree under 0.05 cores is flagged IDLE — a possible deadlock to `py-s
 kill someone else's gate), OVERDUE past 1.5x the ETA, and every blocked taker with its wait (flock wakes
 waiters in no guaranteed order, so the list is not a promise). `--json` for agents. The waiting log line
 every 60 s carries the holder's age and ETA. The records only REPORT: the flock alone is the lock.
+
+### A queued job: three rules (2026-11-09)
+
+`mem_cap.sh`, `gate_lock.sh` and `ship_gate.sh run` QUEUE (2 heavy slots, 1 gate slot); a wait of an hour is ordinary.
+
+1. **Never put an outer `timeout` around a job that queues** (`timeout N scripts/ops/mem_cap.sh …`, `timeout N
+   scripts/ops/ship_gate.sh run`). Its clock runs through the queue: on 2026-11-09 three agents' timeouts fired while
+   their jobs still WAITED for a slot, after 25-120 min, killing them and losing their place; killing such a `timeout`
+   to remove it kills the gate under it too. Bound the RUN instead: **`mem_cap.sh --max-run-s <S> <GB> <cmd>`** /
+   **`ship_gate.sh run --max-run-s <S>`**. The clock is the supervisor's and starts when the command is spawned, after
+   every queue (the heavy slot, and for the gate the gate lock); at S the job is stopped like a stop signal (SIGTERM,
+   then SIGKILL of the whole scope after `--term-grace`), labelled `[mem_cap] RUN-TIME BOUND`, and exits **89** (a
+   `run_timeout` line in `events.jsonl`). Its work is INCOMPLETE, never a red. No ceiling, any lane, and it binds with
+   or without a slot of its own; with `--max-s` too the earlier deadline fires and names itself (88 or 89). The watcher
+   an agent arms on the job's PID (`timeout 3300 bash -c "while [ -d /proc/<PID> ] …"`) bounds the WATCH, not the job.
+2. **A job of at most 10 minutes declares `--max-s <S>`** and rides the short lane (next section): a targeted re-check
+   in the long lane waited an hour behind 45-min chunks.
+3. **Each agent writes its logs only under its OWN scratchpad subdirectory** (`<scratchpad>/<unit>/…`), never a shared
+   name at the scratchpad root: one agent's `> scratchpad/ship_gate.log` truncated a log two others were writing.
+
+Tests: `src/utils/mem_cap_test.py` (a real job stopped at its bound, exit 89; a job that queued LONGER than its bound
+still runs to its own exit), `src/utils/heavy_slots_lane_test.py`, `src/utils/ship_gate_test.py` (the flag lands on the
+innermost wrapper).
 
 ### The short lane of the heavy slots (2026-10-23)
 
@@ -449,7 +472,8 @@ knob. Tests: `src/utils/heavy_slots_lane_test.py` (ordering, the bound, real wai
 ### The SHIP GATE — the routine gate in the shape the box affords (2026-10-19)
 
 **One command before every `/gen3ai-ship`: `scripts/ops/ship_gate.sh run`** (`src/utils/ship_gate.py`;
-`--dry-run` prints the resolved command, extra pytest options go after `--`, no argument refuses). It RUNS
+`--dry-run` prints the resolved command, `--max-run-s S` bounds the run from pytest's start and is the ONLY bound to put
+on it (never an outer `timeout`: § "A queued job: three rules"), extra pytest options go after `--`, no argument refuses). It RUNS
 EVERYTHING the routine gate runs — `-m "not slow and not e2e"` over all of `src/`, the static gates included
 (they deselect nothing) — and chooses only the SHAPE from the box: a live training run
 (`utils.procfs.live_training_runs`) ⇒ rule 5b, `nice -n 19`, pinned to every cpu the trainer is NOT pinned to,

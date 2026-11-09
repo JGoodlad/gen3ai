@@ -6,9 +6,10 @@
 # the measured -n); none ⇒ the quiet -n 6. It never selects tests by the change.
 #
 # USAGE (--help prints it)
-#     scripts/ops/ship_gate.sh run [-- <extra pytest args>]
-#     scripts/ops/ship_gate.sh --dry-run [-- <extra pytest args>]
-# No argument refuses (exit 2).
+#     scripts/ops/ship_gate.sh run [--max-run-s S] [-- <extra pytest args>]
+#     scripts/ops/ship_gate.sh --dry-run [--max-run-s S] [-- <extra pytest args>]
+# No argument refuses (exit 2). NEVER wrap it in `timeout` (it queues; the timeout counts the wait and
+# loses the gate's place): --max-run-s S bounds the run from pytest's start (exit 89).
 #
 # Detail: designs/ops/testing.md "The SHIP GATE"; the code is src/utils/ship_gate.py.
 set -u

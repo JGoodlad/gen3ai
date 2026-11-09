@@ -116,3 +116,29 @@ def test_a_held_gpu_lease_with_no_run_live_takes_the_rule_5b_shape(monkeypatch: 
     # the shape and the slots read ONE predicate: no lease and no run is quiet on both
     monkeypatch.setattr(HS, "lease_reason", lambda: None)
     assert HS.wanted(runs={}) is None and SG.resolve_shape({}, online=_ONLINE).cpus is None
+
+
+def test_max_run_s_goes_to_mem_cap_the_innermost_wrapper_so_no_queue_wait_counts(
+        monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture) -> None:
+    """2026-11-09: `timeout N ship_gate.sh run` fired while the gate still queued and lost its place. The gate's own bound is
+    mem_cap's `--max-run-s` (clock starts with pytest), placed INSIDE gate_lock.sh; with no flag the argv is unchanged."""
+    shape = SG.Shape({}, None, 0, 6)
+    plain = SG.build_argv(shape, "py")
+    assert "--max-run-s" not in plain
+    argv = SG.build_argv(shape, "py", max_run_s=2700.0)
+    cap = next(i for i, a in enumerate(argv) if a.endswith("mem_cap.sh"))
+    assert argv[cap + 1:cap + 4] == ["--max-run-s", "2700", str(SG.MEM_CAP_GB)]
+    assert argv[cap - 1].endswith("gate_lock.sh")
+    assert argv[:cap + 1] + argv[cap + 3:] == plain
+    seen: dict = {}
+    monkeypatch.setattr(SG, "resolve_shape", lambda: shape)
+    monkeypatch.setattr(SG.subprocess, "call", lambda cmd, cwd, env: seen.update(cmd=cmd) or SG.mem_cap.EXIT_RUN_TIMEOUT)
+    assert SG.main(["run", "--max-run-s", "2700", "--", "-x"]) == 89
+    assert seen["cmd"] == SG.build_argv(shape, SG.os.environ.get("GEN3AI_PYTHON") or SG.sys.executable, ["-x"],
+                                        max_run_s=2700.0)
+    assert "STOPPED by --max-run-s 2700" in capsys.readouterr().err
+    monkeypatch.setattr(SG.subprocess, "call", lambda *a, **k: pytest.fail("a refused or dry invocation ran the gate"))
+    assert SG.main(["--dry-run", "--max-run-s", "60"]) == 0 and "--max-run-s 60" in capsys.readouterr().err
+    for bad in (["run", "--max-run-s", "0"], ["run", "--max-run-s", "soon"], ["run", "--max-run-s"],
+                ["--max-run-s", "60", "run"]):
+        assert SG.main(bad) == 2, bad

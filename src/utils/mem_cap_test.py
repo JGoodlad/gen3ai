@@ -21,7 +21,10 @@ drop-ins ``set-property --runtime`` wrote). The load-bearing pins, each FAILS on
 * THE SHORT LANE (2026-10-23): a job declared short (``--max-s``) that runs past declared + margin is stopped (a job that
   DEFERS SIGTERM is SIGKILLed after the grace), labelled ``SHORT-LANE OVERRUN`` and exits 88 so the caller re-queues it as
   a long job; a declared job inside its bound passes with its own exit status. The queue's ordering is
-  ``heavy_slots_lane_test.py``.
+  ``heavy_slots_lane_test.py``;
+* THE RUN-TIME BOUND (2026-11-09): ``--max-run-s S`` stops a job S seconds after its COMMAND started (exit 89, labelled,
+  the process gone) - and a job that QUEUED for a heavy slot for longer than S is NOT stopped: the bound never counts
+  the wait (what an outer ``timeout`` got wrong).
 
 ``integration``: needs a systemd user manager with the memory controller delegated; SKIPS (with the
 reason) where there is none. ~15 s.
@@ -550,3 +553,67 @@ def test_a_long_job_is_not_given_a_deadline_by_the_short_lane(env, tmp_path):
     e = {**env, HS.SHORT_MARGIN_ENV: "1"}
     r = _run(["--slot", "0.5", sys.executable, "-c", _SLEEPER_PY, str(tmp_path / "p"), "3", "exit"], e, timeout=90.0)
     assert r.returncode == 0 and (tmp_path / "p.done").exists(), (r.returncode, r.stderr)
+
+
+# ── THE RUN-TIME BOUND (--max-run-s): counted from the command's start, never from the queue ─────────────────────
+
+def _run_bound_s() -> int:
+    """A bound the jobs below (`sleep`, no interpreter to start) beat by seconds on a starved box, scaled with the measured
+    contention so the verdict never rides on scheduling."""
+    return max(2, math.ceil(scale_timeout(2.0)))
+
+
+def test_max_run_s_stops_a_job_that_outlives_it_with_its_own_exit_code_and_label(env, tmp_path):
+    """A 120 s job under ``--max-run-s B`` (no ``--slot``: it is a bound on the RUN, not the price of a lane; with or
+    without a slot is pinned in ``heavy_slots_lane_test.py``) is stopped,
+    labelled RUN-TIME BOUND, exits 89 (not the short lane's 88, not a signal's 143) and is really gone. Fails on a revert
+    of the flag (exit 2) or of the supervisor's deadline (the job runs 120 s)."""
+    bound, pidfile, script = _run_bound_s(), tmp_path / "pid", tmp_path / "job.sh"
+    script.write_text(f"echo $$ > {pidfile}\nexec sleep 120\n")       # a file: systemd-run rewrites `$$` in an argv
+    t0 = time.monotonic()
+    r = _run(["--max-run-s", str(bound), "--term-grace", "3", "0.5", "sh", str(script)], env, timeout=90.0)
+    took = time.monotonic() - t0
+    assert r.returncode == M.EXIT_RUN_TIMEOUT == 89 != M.EXIT_SHORT_OVERRUN, (r.returncode, r.stderr)
+    assert "RUN-TIME BOUND" in r.stderr and "INCOMPLETE" in r.stderr and "SHORT-LANE" not in r.stderr, r.stderr
+    assert bound <= took < scale_timeout(60), f"stopped after {took:.1f} s for a {bound} s bound"
+    assert not _alive(int(pidfile.read_text())), "the job outlived its run-time bound"
+    rows = [json.loads(ln) for ln in (Path(env[HS.DIR_ENV]) / HS.EVENTS_FILE).read_text().splitlines()]
+    assert [x["max_run_s"] for x in rows if x["kind"] == "run_timeout"] == [float(bound)], rows
+
+
+def test_max_run_s_never_counts_the_wait_for_a_heavy_slot(env, tmp_path):
+    """THE lesson of 2026-11-09: an outer ``timeout`` fired while the job still queued for a slot. Here the only (fake)
+    slot is held while the job waits for LONGER than its whole ``--max-run-s``; once it gets the slot it runs a job far
+    shorter than the bound and must finish with its own exit status. Fails if the clock starts at the wrapper (exit 89)."""
+    bound = _run_bound_s()
+    e, held, go = {**env, HS.SLOTS_ENV: "1"}, tmp_path / "held", tmp_path / "go"
+    holder = subprocess.Popen([sys.executable, "-c",
+                               "import os, time\nfrom utils.heavy_slots import heavy_slot\n"
+                               "with heavy_slot(['holder'], force=True, log=lambda m: None):\n"
+                               f"    open({str(held)!r}, 'w').write('1')\n"
+                               f"    while not os.path.exists({str(go)!r}): time.sleep(0.05)\n"], env=e)
+    job = None
+    try:
+        deadline = time.monotonic() + scale_timeout(20)
+        while not held.exists() and time.monotonic() < deadline:
+            time.sleep(0.05)
+        assert held.exists(), "precondition: the holder has the only slot"
+        job = subprocess.Popen([_SH, "--slot", "--max-run-s", str(bound), "0.5", "sh", "-c", "sleep 0.2; exit 7"], env=e,
+                               stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        d = Path(e[HS.DIR_ENV])
+        while not list(d.glob("wait-*.json")) and time.monotonic() < deadline:
+            time.sleep(0.05)
+        assert list(d.glob("wait-*.json")), "precondition: the job is QUEUED for the slot"
+        time.sleep(bound + 0.5)                              # it has now waited longer than its whole run-time bound
+        assert job.poll() is None, ("the bound fired in the queue", job.stderr.read() if job.stderr else "")
+        go.write_text("1")
+        _out, err = job.communicate(timeout=scale_timeout(60))
+        assert job.returncode == 7, (job.returncode, err)
+        assert "RUN-TIME BOUND" not in err and "exit 7" in err, err
+    finally:
+        go.write_text("1")
+        for p in (job, holder):
+            if p is not None:
+                if p.poll() is None:
+                    p.kill()
+                p.wait()

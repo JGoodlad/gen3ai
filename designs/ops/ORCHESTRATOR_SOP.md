@@ -120,8 +120,12 @@ entries naming what they supersede) → **dispatch** the next probe or build to 
   `sonnet-medium` for fully specified routine edits, runs and inventories; `sonnet-high` for manifest-driven
   deletions, test additions and judgement-light docs; `sonnet-xhigh` where depth is needed at lower cost;
   `opus-*` for GIGO risk, parity-gated Rust crossings, pre-registrations and anything steering an era.
-- **Fable 5.2 tiers (owner request, 2026-11-09): `fable-{medium,high,xhigh}`** (`~/.claude/agents/fable-*.md`),
-  pinned to `model: claude-fable-5-2`. The `fable` alias in Claude Code 2.1.317 still resolves to 5.1, so the
+- **Fable 5.2 tiers (owner request, 2026-11-09): `fable-{low,medium,high,xhigh}`** (`~/.claude/agents/fable-*.md`),
+  pinned to `model: claude-fable-5-2`. Anthropic's guidance (its Fable 5.2 page, 2026-11-09; the vendor's claims, not
+  our measurement): **low** matches Opus 5.5's top HLE score at under a tenth of the cost (lookups, searches,
+  inventories, knowledge questions with no code risk); **medium** is the default; **high** scores about level with
+  Opus 5.5 at max effort for about half the cost per task; **xhigh** is the top agentic-coding score of any released
+  model. Price: $8 / $40 per M tokens. The `fable` alias in Claude Code 2.1.317 still resolves to 5.1, so the
   pin is the ID, not the alias; re-check it after a Claude Code upgrade. Fable draws on its OWN weekly quota
   window, separate from Opus and Sonnet. New agent files under `~/.claude/agents` are picked up by running
   sessions on their own (observed 2026-11-09: no restart needed). Capability and cost vs the other tiers: **UNVERIFIED**
@@ -136,8 +140,7 @@ entries naming what they supersede) → **dispatch** the next probe or build to 
   patch (2026-10-07) took watchdog aborts from 131 to 0 (§7). Size the fan-out by the RESOURCES that
   actually bind, each with its own guard: ONE GPU lease (standing rule 5); ONE routine gate at a
   time (`scripts/ops/gate_lock.sh`); while a training run is live, ≤ 2 heavy CPU jobs on ≤ 3 whole
-  physical cores (rule 5b; a job of ≤ 10 min declares `mem_cap.sh --max-s <S>` and rides the SHORT LANE instead of
-  waiting out 45-min chunks, killed past S + 30 s: `designs/ops/testing.md` > "The short lane"); no two agents on the same files (separate worktrees, disjoint scopes);
+  physical cores (rule 5b; the three rules for a queued job are the brief bullet below); no two agents on the same files (separate worktrees, disjoint scopes);
   and quota (frugal, not stingy). Re-impose a cap only if stalls return (check
   `cc_keepalive_patch.py self`) — then measure, do not guess.
 - **Quota: the account is on the Max 20x plan — plenty, and never to be wasted** (owner,
@@ -166,6 +169,16 @@ entries naming what they supersede) → **dispatch** the next probe or build to 
   constraints (no GPU unless the brief names a lease, and `CUDA_VISIBLE_DEVICES=""` on every command otherwise; no writes under `models/`, no training/launcher, no :8000/:8001, no git add/commit/push,
   never import a `__main__` module), the exact tests to run with counts to report, and the docs the
   change must update in the same pass (every touched leaf `CLAUDE.md`, `ARCHITECTURE.md`, `CHANGELOG`).
+- **A brief that runs a queued job (`mem_cap.sh`, `ship_gate.sh run`) carries three rules** (2026-11-09, each cost
+  agents an hour or more; detail: `designs/ops/testing.md` > "A queued job: three rules"):
+  (1) **never an outer `timeout` around it**: the timeout counts the queue wait, fires while the job still waits for a
+  slot and loses its place; bound the RUN with `mem_cap.sh --max-run-s <S>` / `ship_gate.sh run --max-run-s <S>`
+  (counted from the command's start, exit 89);
+  (2) **a job of ≤ 10 min declares `mem_cap.sh --max-s <S>`** and rides the short lane (killed past S + 30 s, exit 88)
+  instead of waiting out 45-min chunks;
+  (3) **the agent writes its logs only under its own scratchpad subdirectory**, which the brief NAMES
+  (`<scratchpad>/<unit>/`), never a shared file name at the scratchpad root (one agent's `>` truncated a gate log two
+  others were writing).
 - **Never put conditional git-state instructions in a brief** (pull / rebase / checkout / clean /
   stash) — spell out "make NO git state changes of any kind". On 2026-08-11 a resumed agent executed
   a destructive variant of "pull --rebase first if the worktree lacks <commit>" against a DIRTY
@@ -434,7 +447,7 @@ entries naming what they supersede) → **dispatch** the next probe or build to 
 **🚨 NEVER AN UNBOUNDED WAIT ON A SUB-AGENT (owner, 2026-10-07).** A completion notification can fail to arrive (a stall, a crash, a harness restart), and a session whose only wake source is that notification can hang forever. Every session that dispatches agents keeps a bounded wake source armed for as long as any agent it dispatched is live:
 - **The orchestrator and any other main session:** the `idle-keepalive` plugin (user-scope, `~/.claude/local-plugins/idle-keepalive`, installed 2026-10-19; it replaced the `:07 / :37` health-check cron) IS the bounded wake: after 55 min with no activity it wakes the session with a role-aware health prompt, and goes dormant only after the session answers exactly "ok" (nothing live). A main session arms no timer of its own; it never answers "ok" while an agent it dispatched is live. The Training session keeps its own 55-min cron while a run is live, with the plugin as a backstop.
 - **A sub-agent:** the plugin does not wake sub-agents. A sub-agent waiting on a job or on its own sub-agents keeps ONE bounded watcher. It prefers one on the job itself (below), which wakes it only when the job ends or at 55 min; otherwise `timeout 3300 sleep 3300`. On a wake it makes ONE cheap status read (its worktree's `git log -1` / `git status | wc -l`, or its artifact) and re-arms. **Every turn a sub-agent ends notifies its caller** (2026-10-20: agents that ran overlapping monitors or short polls woke the orchestrator about once a minute with "Waiting."), so it ends a turn only with a result, a blocker or a watcher wake. It never runs two watchers, and lets the last one lapse once its work has reported. This is written into all six agent definitions (`~/.claude/agents/*.md`, 2026-10-07; the no-chatter rule 2026-10-20).
-- **Waiting on a specific job:** `timeout 3300 bash -c "while [ -d /proc/<PID> ]; do sleep 30; done"`, never a self-matching `pgrep -f`, and never `kill -0` (inside a sandboxed agent shell it can read a live PID as dead: the D3 look-1 reader, 2026-10-26).
+- **Waiting on a specific job:** `timeout 3300 bash -c "while [ -d /proc/<PID> ]; do sleep 30; done"`, never a self-matching `pgrep -f`, and never `kill -0` (inside a sandboxed agent shell it can read a live PID as dead: the D3 look-1 reader, 2026-10-26). That `timeout` bounds the WATCH only: **never wrap the queued job itself (`mem_cap.sh …`, `ship_gate.sh run`) in `timeout`**; its run-time bound is `--max-run-s` (§2).
 - **Why 3300 s:** it is under the 1 h prompt-cache TTL, so a timer wake costs one cheap cached turn instead of a full context re-pay.
 
 **The rule behind all of it: the stream-idle timeout must be comfortably LESS than the stall
@@ -545,7 +558,7 @@ hourly LLM check caught them. Three layers now stand, cheapest first:
    measurement drivers, anything that loads many checkpoints) runs under
    `scripts/ops/mem_cap.sh <GB> <cmd>`** — its own scope with a hard cap, inside the shared
    `gen3ai-heavy.slice` (aggregate cap 64 GB by default), at `oom_score_adj` +500; an overrun kills
-   only that job (exit 86). Say so in every brief that runs one (`--max-s <S>` too, when the job is under 10 min). The owner set the user manager's
+   only that job (exit 86). Say so in every brief that runs one, with §2's three rules for a queued job. The owner set the user manager's
    `DefaultOOMPolicy=continue` the same day (`~/.config/systemd/user.conf.d/oom.conf`), so a scope
    now survives an OOM kill of one child — but a global OOM still kills whatever the kernel picks.
 2. **RETIRED as a cron (owner, 2026-10-04: *"more of a problem than a helper"*) — do NOT schedule it.** The script

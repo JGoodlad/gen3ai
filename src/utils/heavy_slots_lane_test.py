@@ -375,3 +375,34 @@ def test_a_short_holder_far_past_its_worst_case_is_flagged_overdue(slots):
         assert ok["lane"] == "short" and ok["overdue"] is False
         late = HS.collect(now=time.time() + 10 + HS.SHORT_MARGIN_S + HS.SHORT_GRACE_MAX_S + 60)
         assert late["slots"][0]["overdue"] is True and HS.OVERDUE_TAG in HS.format_human(late)
+
+
+# ── --max-run-s: mem_cap's RUN-TIME bound rides beside the lane's deadline, and binds with or without a slot ──────
+
+def test_max_run_s_reaches_the_run_whether_or_not_a_slot_was_taken_and_is_absent_by_default(slots, fake_run, monkeypatch):
+    assert M.main(["--slot", "1", "true"]) == 0 and fake_run.calls[-1]["max_run_s"] is None
+    assert M.main(["--slot", "--max-run-s", "2700", "1", "true"]) == 0
+    assert fake_run.calls[-1]["max_run_s"] == 2700 and fake_run.calls[-1]["deadline_s"] is None      # a LONG job: no ceiling
+    monkeypatch.setattr(procfs, "live_training_runs", lambda *a, **k: {})
+    monkeypatch.setattr(HS, "lease_reason", lambda: None)
+    assert M.main(["--max-run-s", "5", "1", "true"]) == 0                    # nothing wants a slot: the bound still binds
+    assert fake_run.calls[-1]["slot_fd"] is None and fake_run.calls[-1]["max_run_s"] == 5
+
+
+def test_with_both_bounds_the_earlier_deadline_binds_and_names_itself():
+    assert M.effective_deadline(None, None) == (None, M.DEADLINE_SHORT)
+    assert M.effective_deadline(130.0, None) == (130.0, M.DEADLINE_SHORT)
+    assert M.effective_deadline(None, 2700.0) == (2700.0, M.DEADLINE_RUN)
+    assert M.effective_deadline(130.0, 60.0) == (60.0, M.DEADLINE_RUN)
+    assert M.effective_deadline(130.0, 130.0) == (130.0, M.DEADLINE_SHORT)
+    assert M.effective_deadline(130.0, 900.0) == (130.0, M.DEADLINE_SHORT)
+    argv = M.capped_argv(["true"], 1 << 30, unit="u.scope", slice_="s.slice", slice_bytes=1 << 31, report="/r",
+                         deadline_s=60.0, deadline_kind=M.DEADLINE_RUN)
+    assert argv[argv.index("true") - 3:] == ["60.0", M.DEADLINE_RUN, "--", "true"], argv
+
+
+@pytest.mark.parametrize("bad", ["0", "-5", "nan", "inf", "soon"])
+def test_a_bad_max_run_s_is_refused_without_running_anything(slots, fake_run, capsys, bad):
+    assert M.main(["--max-run-s", bad, "1", "true"]) == 2
+    err = capsys.readouterr().err
+    assert "REFUSING" in err and "--max-run-s" in err and not fake_run.calls, err
