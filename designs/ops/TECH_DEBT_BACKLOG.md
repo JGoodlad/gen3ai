@@ -9,7 +9,7 @@ live in `designs/endstate/obs_enrichment_backlog.md` (observation facts) or `UND
 
 ## Next 5 (re-ranked 2026-11-09, a regroom of the 189 commits from `7660d7173` to `9f80547b6`)
 
-Ranked by value to the current goals ([`../STATUS.md`](../STATUS.md) §1), in this order: **goal (b), beat Metamon on unfamiliar teams** (P\* alone is NOT MET by about 4 pp; it is MET WITH SEARCH only,
+Ranked by value to the current goals ([`../STATUS.md`](../STATUS.md) §1), in this order: **goal (b), beat Metamon on unfamiliar teams** (P\* alone is NOT MET by about 4 pp; it is MET WITH SEARCH only, as registered and not established once clustered on teams,
 S′-HONEST 2026-11-09, so the search program is un-paused; its cost read (DRAFTED 2026-11-09, unit seeds 800–914) and the deployable player (DESIGNED) are its next registrations and need FRESH unit seeds; the live training lever is X60-T look 2:
 X60Tb s3504–s3508 then C0b s3506–s3508 on the GPU, its read lanes on the agent cores); then **measurement integrity** (what a read, a canary or a green gate may claim); then hygiene. Effort and tier
 are the cheapest that fit the risk. This is a value ranking for the orchestrator's pick; the burn-down rule below still orders a quota burn (tier, then size). Row 1 is a design question first, 2 is XS and

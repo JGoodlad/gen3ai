@@ -1,11 +1,16 @@
 # S′-HONEST — does S′ still beat P\* against the real Kakuna when its worlds see nothing the live player cannot?
 
-**Status: PLAYED and RECORDED (2026-11-09): GO-HONEST, GOAL-B-REACHED.** P\* + `r0s4_honest_inc@10` beats P\* alone
+**Status: PLAYED and RECORDED (2026-11-09): GO-HONEST, GOAL-B-REACHED as registered; the 0.50 clearance is NOT
+established once the games are clustered on teams.** P\* + `r0s4_honest_inc@10` beats P\* alone
 against Kakuna (checkpoint 34, greedy) on U by G_U +2.00 pp [+0.34, +3.51] (paired; GO-imputed LB +0.32) on 5,097
 fresh paired deals, and its pooled-U score is 0.5145 [0.5008, 0.5282] over 5,100 deals, ties as non-wins: "goal (b)
-met with search", in that regime only ([`README.md`](../research_state/measurements/sprime_honest_play_2026-11-06/README.md);
+met with search", in that regime only and under the registered interval, which treats the deals as independent
+([`README.md`](../research_state/measurements/sprime_honest_play_2026-11-06/README.md);
 registered [`PREREG.md`](../research_state/measurements/sprime_honest_play_2026-11-06/PREREG.md), pin `e46e3ddf8`, no
-amendment). §1–§7 are the design as written before the build; §8 is stage 1 (`r0s4_honest`) as built; §9 is the
+amendment). Clustered on teams (REPORTED [addendum](../research_state/measurements/sprime_honest_play_2026-11-06/addendum_clustering/README.md), verdict
+unchanged) the score reads [0.4942, 0.5353] on our team and [0.4973, 0.5317] with a team one cluster in either role:
+established for these panels' teams as registered, not for unfamiliar teams in general. The gain holds under every
+clustering (GO-imputed +1.98 pp, LB ≥ +0.31) but is detected on P72 alone (H + F +0.66 [−1.39, +2.67], post hoc). §1–§7 are the design as written before the build; §8 is stage 1 (`r0s4_honest`) as built; §9 is the
 incremental builder the read played (≈ 6.2 CPU-min a searched game on U at K = 6 in stage 1b, 6.6 live; U exclusions
 ≈ 3.4 % in stage 1b, 5.6 % live: FINDING S′HR-1). S′-LIVE's GO-LEAKY ([`design_sprime_live_play.md`](design_sprime_live_play.md))
 licensed this replication; this read's GO un-pauses the search program for goal (b) (cost, the deployable player).

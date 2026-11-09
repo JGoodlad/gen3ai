@@ -1,10 +1,12 @@
 # The searched player — P\* + S′h as a DEPLOYABLE player: the turn timer, the builder across a live battle, the play path
 
 **Status: DESIGN (2026-11-09); the cost read's code BUILT (2026-11-09: the timer model, the safety net, the envelope
-presets K4 and CAP, `searched_play`'s `timer_safe` flag, the stage-0 screen; §9); nothing registered.** S′-HONEST read GO-HONEST and GOAL-B-REACHED
+presets K4 and CAP, `searched_play`'s `timer_safe` flag, the stage-0 screen; §9); nothing registered.** S′-HONEST read GO-HONEST and GOAL-B-REACHED as registered
 ([`../research_state/measurements/sprime_honest_play_2026-11-06/README.md`](../research_state/measurements/sprime_honest_play_2026-11-06/README.md)):
 P\* + `r0s4_honest_inc@10` beats P\* alone against Kakuna (checkpoint 34, greedy) on unfamiliar teams by +2.00 pp
-[+0.34, +3.51]. That read played on our own front end, which has no battle timer. **Replayed through Showdown's own
+[+0.34, +3.51]. Clustered on teams (REPORTED [addendum](../research_state/measurements/sprime_honest_play_2026-11-06/addendum_clustering/README.md)) that gain
+holds (LB ≥ +0.31 pp) but is detected on the procedural panel P72 alone, and the searched score's 0.50 clearance is
+not established ([0.4942, 0.5353] on our team). That read played on our own front end, which has no battle timer. **Replayed through Showdown's own
 timer, the player as read is NOT deployable: 16.2 % of its searched games would have been forfeited on time** (§2).
 This doc is what a deployable player is: the per-decision budget the timer allows (§2), a timer-safe envelope (§3),
 how the builder's state lives across a live battle (§4), its failure modes (§5), what it needs from the play path
@@ -40,7 +42,9 @@ opponent command (the leak test `honest_inv` in sequence mode, `design_sprime_ho
 | D4 | **bounded resources and a clean failure path** (§5) | one searcher process per battle, killable by PID; memory capped; every failure falls back to π and is recorded | partly: the searched side runs in a worker thread of the read's own process |
 
 The read's player satisfies none of D1–D3. "Goal (b) met with search" is a statement about the read's regime (no
-timer, our front end, one CPU a game on the box); it is not a statement about a player that could sit a timed game.
+timer, our front end, one CPU a game on the box) and its registered interval (deals independent; team-clustered
+[0.4942, 0.5353], not established beyond these panels' teams); it is not a statement about a player that could sit a
+timed game.
 
 ---
 
@@ -233,7 +237,8 @@ replay (the front end has none), which is conservative because the box's walls a
 - **No information beyond I**: no true log, seed or opponent command reaches the search on any path (P2's gate, and the
   leak test in sequence mode on the deployable path's own code).
 - **No GPU, never ports 8000 / 8001, one battle at a time per searcher.** Live play is CPU-only (`main.live.policy`).
-- **No claim it was not measured for.** "Goal (b) met with search" is S′-HONEST's regime only; a preset with an envelope
+- **No claim it was not measured for.** "Goal (b) met with search" is S′-HONEST's regime only, as registered, and
+  quoted with its team-clustered interval ([0.4942, 0.5353]: not established); a preset with an envelope
   is a different player until its own read; nothing here licenses a training, league or distillation change.
 
 ---
@@ -241,14 +246,16 @@ replay (the front end has none), which is conservative because the box's walls a
 ## 8. The mission: what the evidence says the line should become
 
 **The tension (resolved 2026-11-09).** `UNDERSTANDING.md` §1 said the mission was a generalist "not a specialist, not
-a search agent", while goal (b), beating Kakuna on unfamiliar teams, is met only with search. The orchestrator, under the
+a search agent", while goal (b), beating Kakuna on unfamiliar teams, is met only with search, and that only as
+registered (not established once clustered on teams). The orchestrator, under the
 owner's 2026-11-09 delegation, adopted the mission sentence now in `UNDERSTANDING.md` §1 (Decision record, 2026-11-09
 mission row).
 
 **What the evidence says.**
 - **The network alone has stopped improving on goal (b).** P\* is at its plateau (the continuation to 480M read FLAT
   against Kakuna, +0.08 pp [−3.90, +4.06]); no training lever's interval clears 0.50 on U (STATUS §1, goal 2b).
-- **Search adds a measured, leak-honest gain on top of it**: +2.00 pp [+0.34, +3.51] (S′-HONEST).
+- **Search adds a measured, leak-honest gain on top of it**: +2.00 pp [+0.34, +3.51] (S′-HONEST; its LB stays above 0
+  under every team clustering, and it is detected on P72 alone: H + F +0.66 [−1.39, +2.67], post hoc).
 - **The network cannot yet absorb that gain**: X65 ExIt-0 read NOT-DELIVERED, and the learnability probe matches
   "S′'s departures unlearnable at this scale" (leak-inclusive labels; ExIt-0H on the honest labels is unregistered).
 - **The search that pays is ONE PLY** in the owner's sense (2026-09-30): only our action branches at the root, the
