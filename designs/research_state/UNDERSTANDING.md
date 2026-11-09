@@ -62,7 +62,7 @@ under `measurements/`. A number with no pointer is not a measurement.
    X26c) moves neither Kakuna U (+0.08 pp [−3.90, +4.06]) nor in-house S (−0.01 [−1.54, +1.52]). [FLAT · Kakuna and
    in-house S · one seed · `d172c10ed`, `204204bbf`; ledger 2026-10-25 · *X26c CONTINUATION vs KAKUNA*]
 2. **Goal (a) is met: P\* beats Kakuna on our own teams**, home72 **0.598 [0.549, 0.644]**. **Goal (b) is met only
-   WITH SEARCH.** P\* alone is level on unfamiliar teams, U **0.487 [0.459, 0.515]** (0.4948 on S′-HONEST's 5,097
+   WITH SEARCH, and only as registered: it is not established once games are clustered on teams (item 10).** P\* alone is level on unfamiliar teams, U **0.487 [0.459, 0.515]** (0.4948 on S′-HONEST's 5,097
    fresh deals), short of the ≈ 0.53 a lower bound above 0.50 needs; P\* + the leak-honest search S′h scores
    **0.5145 [0.5008, 0.5282]** against Kakuna (checkpoint 34, greedy) on U = H, F, P72 over 5,100 deals, ties as
    non-wins (item 10). The familiarity premium (home72 − U, ≈ 11 pp) has not moved from 161M to the plateau. No panel is shown
@@ -123,13 +123,21 @@ under `measurements/`. A number with no pointer is not a measurement.
     it still does not.** S′-HONEST (2026-11-09): P\* + S′h (`r0s4_honest_inc@10`, every eligible decision from turn
     10, its worlds built from our side's information set alone) against P\* alone on 5,097 fresh paired U deals wins
     **+2.00 pp [+0.34, +3.51]** (GO-HONEST; worst-case-imputed LB +0.32), and the searched arm's U score 0.5145
-    [0.5008, 0.5282] is GOAL-B-REACHED: "goal (b) met with search", in that regime only. Panels are reported, never
-    decided: P72 +4.7, H +1.3, F 0.0. The leak-inclusive S′-LIVE read +4.60 [+2.66, +6.48] on other deals; the
+    [0.5008, 0.5282] is GOAL-B-REACHED: "goal (b) met with search", in that regime only. That interval treats the
+    5,100 deals as independent. By §7's rule 10 (the team is the unit) the score reads [0.494, 0.535] clustered on our
+    team, [0.495, 0.534] on Kakuna's and [0.491, 0.538] on both (even on the matchup, with the teams held fixed, the LB
+    is 0.4992): the 0.50 clearance is a statement about these 216 teams, not about unfamiliar teams in general. The
+    GAIN is robust: its LB stays above 0 under every clustering (+0.31 pp at worst). Panels are reported, never
+    decided: P72 +4.7, H +1.3, F 0.0; the gain is detected on P72 alone (H + F +0.66 [−1.39, +2.67]; P72 − F +4.6
+    [+0.7, +8.6], post hoc, p ≈ 0.07 after correction). P72 is built from the same Smogon tables the search's sampler
+    draws from, but the sampled worlds match the truth no better there (species hit 0.842 against 0.862 and 0.866), so
+    the concentration is a caveat, not a shown artefact: the gain is not yet shown on human-built teams. The leak-inclusive S′-LIVE read +4.60 [+2.66, +6.48] on other deals; the
     unpaired, selected difference (+2.60 [+0.12, +5.07]) is reported only. On the self-referee banks the fully honest
     rollout leaf's edge is gone (it was hidden information about the opponent's team), the oracle − honest gap is flat
     to the plateau (−0.003 [−0.020, +0.015]) and the one replicating cell is nil at P\* (+0.0001): a per-decision
     estimand, never pooled with the game-level GO. [GO-HONEST (registered) · Kakuna ·
-    `measurements/sprime_honest_play_2026-11-06/`; GO-LEAKY · `measurements/sprime_live_play_2026-11-01/`;
+    `measurements/sprime_honest_play_2026-11-06/`, its `addendum_clustering/` REPORTED; GO-LEAKY ·
+    `measurements/sprime_live_play_2026-11-01/`;
     SELF-REFEREE banks · `e7048bb1d`, `f756019d7`, `015f00e20`] Distilling S′'s leak-inclusive choices into P\* does
     not deliver them on unseen teams (X65 NOT-DELIVERED, pooled Δagree −1.26 pp [−1.40, −1.11]), and the learnability
     probe reads them unlearnable at this scale (a same-rate control target transfers, S′'s departures do not).
@@ -162,8 +170,8 @@ owner's approval (`designs/endstate/design_ladder_campaign.md`).
 
 **The current goals (owner, 2026-10-17), in order**, each with its status in STATUS §1:
 1. the strongest baseline (P\*, at its plateau);
-2. beat Metamon: (a) on our teams (MET), (b) on unfamiliar teams (MET WITH SEARCH only, in S′-HONEST's regime; P\* alone
-   NOT MET; the programme's focus);
+2. beat Metamon: (a) on our teams (MET), (b) on unfamiliar teams (MET WITH SEARCH only, as registered in S′-HONEST's regime, and
+   not established once clustered on teams; P\* alone NOT MET; the programme's focus);
 3. know where we are (mapped: the piloting deficit, §3.1);
 4. AlphaStar-style improvement: league, prioritised fictitious self-play (PFSP), exploiters (§4.10–§4.11);
 5. what search needs, read as a trajectory across checkpoints (§4.7);
@@ -563,6 +571,13 @@ every search result updates it). The findings that steer it, all on search banks
   - **What it does not claim:** any public play, any training change, other opponents or budgets, a panel claim, or a
     measured leak share (S′-LIVE − this read +2.60 [+0.12, +5.07] is unpaired and selected). The GOAL-B LB clears 0.50
     by 0.0008, on these panels' teams.
+  - **Clustered on teams ([addendum](measurements/sprime_honest_play_2026-11-06/addendum_clustering/README.md), REPORTED; the verdict is unchanged):** the gain keeps its sign under
+    every dependence model (GO-imputed +1.98 pp; LB +0.31 on our team, +0.39 on Kakuna's, +0.38 two-way). The score
+    does not keep its clearance: [0.4942, 0.5353] on our team, [0.4954, 0.5337] on Kakuna's, [0.4908, 0.5382] two-way
+    with the roles independent, [0.4973, 0.5317] with a team one cluster in either role; one-sided mass at or below
+    0.50 is 0.05 to 0.12. Games g and g + 10 of a unit seed replay one matchup, so the deals are not independent even
+    with the teams fixed. By panel under team clustering: P72 +4.62 [+1.78, +7.52], H +1.32 [−1.70, +4.25], F 0.00
+    [−2.76, +2.66].
   - **Also measured:** departure rate 0.372; exclusions U 5.6 % (F 10.0 %), above stage 1b's 3.4 % projection, under
     every bound; 6.6 CPU-min of whole-unit CPU a searched game, ≈ 4.9× cheaper than the cold honest builder
     (stage 1b, `f7da935ab`). Every guard PASS (identity re-score 600 / 600 at the pin, rebuilding every carry).
@@ -571,7 +586,7 @@ every search result updates it). The findings that steer it, all on search banks
 
 **The view.** A leak-honest one-ply search pays against the real bot at the game level (S′-HONEST; its point is
 about half the leak-inclusive S′'s, on other deals, unpaired), and it carries P\* over the goal-(b) bar in that
-regime. The self-referee banks did not detect it, and the network cannot absorb S′'s choices by supervised distillation at this scale. The search
+regime as registered; clustered on teams the bar is not cleared, and the gain is detected on the procedural panel alone. The self-referee banks did not detect it, and the network cannot absorb S′'s choices by supervised distillation at this scale. The search
 program for goal (b) is un-paused: what it costs (6.6 CPU-min a searched game; a cheaper budget or builder is a new
 registration) and what a deployable player needs (a game clock, the hardware) are the next questions (§6).
 

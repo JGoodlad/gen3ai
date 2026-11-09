@@ -14,6 +14,12 @@ missing searched game counted a loss. Its LB clears 0.50 by 0.0008, outside the 
 interval treats the games as independent: it is a claim about these panels' teams, not a population beyond them.
 Never quote "goal (b) met" without that regime.
 
+**Clustering addendum (2026-11-09, REPORTED; the verdict above is unchanged):**
+[`addendum_clustering/`](addendum_clustering/README.md) recomputes both numbers with the team as the unit
+(`UNDERSTANDING.md` §7, rule 10). The gain survives every dependence model (LB +0.31 pp at worst). The score's 0.50
+clearance survives none but independence: [0.4942, 0.5353] clustered on our team, [0.4908, 0.5382] two-way. The gain is
+detected on P72 alone (H + F +0.66 [−1.39, +2.67]), post hoc.
+
 **What it licenses (PREREG §1), and only this:** search is a measured path to goal (b). The search program for goal
 (b) is un-paused, and its next registrations may be written: **cost** (a cheaper or faster S′h, or a budget study) and
 **the deployable player's design**. (The PREREG's third item, a confirmation read, is named for a GO-HONEST that

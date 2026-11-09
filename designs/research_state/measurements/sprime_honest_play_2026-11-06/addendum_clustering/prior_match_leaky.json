@@ -1,0 +1,67 @@
+{
+ "B": 2000,
+ "panels": {
+  "forum72": {
+   "first_species_hit": {
+    "ci95": [
+     0.6670365544786301,
+     0.6947472972470238
+    ],
+    "mean": 0.6814751955307262
+   },
+   "games": 895,
+   "games_without_a_searched_decision": 4,
+   "searched_decisions": 33192,
+   "species_hit": {
+    "ci95": [
+     0.8641877496204073,
+     0.8832568341522884
+    ],
+    "mean": 0.8738361315280974
+   },
+   "their_teams": 72
+  },
+  "heldout72_hpfix": {
+   "first_species_hit": {
+    "ci95": [
+     0.657912199064994,
+     0.6822859357698652
+    ],
+    "mean": 0.6708154861111113
+   },
+   "games": 900,
+   "games_without_a_searched_decision": 0,
+   "searched_decisions": 32020,
+   "species_hit": {
+    "ci95": [
+     0.8509932009734079,
+     0.869718493882918
+    ],
+    "mean": 0.8607091224011638
+   },
+   "their_teams": 72
+  },
+  "p72": {
+   "first_species_hit": {
+    "ci95": [
+     0.6216191050104661,
+     0.6457511256136417
+    ],
+    "mean": 0.6342414444444444
+   },
+   "games": 900,
+   "games_without_a_searched_decision": 0,
+   "searched_decisions": 32183,
+   "species_hit": {
+    "ci95": [
+     0.8258791999158448,
+     0.8462867289015757
+    ],
+    "mean": 0.8362962950199174
+   },
+   "their_teams": 72
+  }
+ },
+ "seed": 20261109,
+ "state": "/home/goodlad/gen3ai_archive/sprime_live_play_2026-11-01"
+}

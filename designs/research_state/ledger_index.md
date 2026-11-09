@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-30,799-line file. **The ledger itself is append-only and is never edited by this**;
+30,855-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**998 headings · 943 dated · 2026-08-01 → 2026-11-09 · ledger 30,799 lines.**
+**999 headings · 944 dated · 2026-08-01 → 2026-11-09 · ledger 30,855 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -1018,3 +1018,4 @@ rename.
   - `L30687` · `2026-11-09` · MEASUREMENT · **S′-HONEST: GO-HONEST, GOAL-B-REACHED — P\* + S′h (`r0s4_honest_inc@10`, a search whose worlds read only what the live player knows, every eligible decision from turn 10) beats P\* against the REAL Kakuna on U by +2.00 pp [+0.34, +3.51] on 5,097 fresh paired deals (GO-imputed LB +0.32 > 0); its pooled-U score 0.5145 [0.5008, 0.5282] over 5,100 deals: "goal (b) met with search", in that regime only; the search program for goal (b) is un-paused**
   - `L30737` · `2026-11-06` · MEASUREMENT (DESCRIPTIVE) · **X65 LEARNABILITY PROBE: S′'s leak-inclusive departures from P\* are unlearnable at this scale — a control target of the same departure rate transfers to unseen teams (read precision 0.61, Δagree +11.70 pp [+11.05, +12.32]) and a no-anchor capacity arm memorises S′'s departures in-sample (train D 0.688, precision 0.67), but both curve arms never transfer (val and read Δagree ≤ 0 at every checkpoint, read precision 0.22–0.24; val-selected read Δagree −4.79 / −5.16 pp); the data match the note's reading 2; no PREREG, no verdict**
   - `L30770` · `2026-11-07` · MEASUREMENT · **X60-T LOOK 1 reads CONTINUE: P\* + 20M with human-built ladder TEAMS in the pool (H-TEAMS, `--human-data teams:hr_spec_v1.r3@0.5`) scores F (forum72, Kakuna ckpt 34, greedy vs greedy) 0.5147 against the shared control C0's 0.5083, Δ_F +0.64 pp [−2.17, +3.45] on 3,600 games an arm; the look-1 class is NOT-RESOLVED with Δ̂ > 0, so the read is not ended and look 2 (8 v 8) decides; the determinism guard and every VOID gate PASS**
+  - `L30800` · `2026-11-09` · ADDENDUM · **S′-HONEST clustered on teams (REPORTED; the registered GO-HONEST + GOAL-B-REACHED is unchanged): the search GAIN survives every dependence model (+1.98 pp, LB ≥ +0.31), the searched score's 0.50 clearance survives none but independent deals ([0.4942, 0.5353] on our team, [0.4908, 0.5382] two-way), and the gain is detected on the procedural panel P72 alone**

@@ -30796,3 +30796,59 @@ estimate the seed term; (3) C0 is a shared control (X61P, D3): a lucky-low C0 wo
 View: `UNDERSTANDING.md`, `STATUS.md`, `EXPERIMENT_BACKLOG.md`.
 
 Tag: **MEASUREMENT · X60-T look 1 · CONTINUE · Δ_F +0.64 pp [−2.17, +3.45] (X60-T 0.515 vs C0 0.508, 3,600 games an arm) · determinism PASS · every VOID gate PASS · look 2 licensed**
+
+### 2026-11-09 · ADDENDUM · **S′-HONEST clustered on teams (REPORTED; the registered GO-HONEST + GOAL-B-REACHED is unchanged): the search GAIN survives every dependence model (+1.98 pp, LB ≥ +0.31), the searched score's 0.50 clearance survives none but independent deals ([0.4942, 0.5353] on our team, [0.4908, 0.5382] two-way), and the gain is detected on the procedural panel P72 alone**
+
+**Question** (an independent review of the research program, 2026-11-09; the statistics auditor's recompute from the banked cells, no game and no new
+verdict). S′-HONEST's GOAL-B interval, 0.5145 [0.5008, 0.5282], is a Wilson interval over 5,100 deals treated as independent, and its gain interval
+bootstraps the (panel, unit seed). `UNDERSTANDING.md` §7's rule 10 says "the team is the unit: cluster-bootstrap over teams". Do the read's two decided
+numbers survive that rule, and is the gain general across the three panels?
+
+**What the registered analysis did.** It followed its registration. PREREG §5 and the README disclose that the Wilson interval "treats the games as
+independent: it is a claim about these panels' teams, not a population beyond them" (review item m9). It did not follow rule 10: the gain's unit is a
+unit seed (not a team), the score's unit is the deal, and the two decided statistics used different units.
+
+**Result** (`clustering.py`, which first reproduces the record's three gain intervals, the Wilson interval and the win counts to 1e-9; one-way models
+are a percentile cluster bootstrap, B = 20,000, seed 20261109, checked against the cluster-robust sandwich to 0.02 pp; the crossed models are analytic;
+panels are fixed strata at equal weight).
+
+| dependence model | searched U score | P(≤ 0.50) | raw U score | gain G_U, pp (GO-imputed) |
+|---|---|---|---|---|
+| REGISTERED | 0.5145 [0.5008, 0.5282] | | 0.4948 | +1.98 [+0.32, +3.47] |
+| i.i.d. deals | 0.5145 [0.5008, 0.5280] | 0.018 | 0.4948 [0.4816, 0.5085] | +1.98 [+0.35, +3.57] |
+| matchup draw (850 a panel) | 0.5145 [0.4992, 0.5292] | 0.032 | 0.4948 [0.4798, 0.5097] | +1.98 [+0.33, +3.64] |
+| unit seed (85 a panel; the gain's registered unit) | 0.5145 [0.4976, 0.5312] | 0.046 | 0.4948 [0.4797, 0.5099] | +1.98 [+0.41, +3.56] |
+| our team (72 a panel) | 0.5145 [0.4942, 0.5353] | 0.082 | 0.4948 [0.4742, 0.5156] | +1.98 [+0.31, +3.63] |
+| Kakuna's team (72 a panel) | 0.5145 [0.4954, 0.5337] | 0.069 | 0.4948 [0.4765, 0.5135] | +1.98 [+0.39, +3.56] |
+| two-way, roles independent (Cameron, Gelbach & Miller) | 0.5145 [0.4908, 0.5382] | 0.115 | 0.4948 [0.4715, 0.5181] | +1.98 [+0.38, +3.58] |
+| two-way, a team one cluster in either role (dyadic) | 0.5145 [0.4973, 0.5317] | 0.049 | 0.4948 [0.4765, 0.5131] | +1.98 [+0.38, +3.58] |
+| pigeonhole bootstrap (known-conservative outer bracket) | 0.5145 [0.4827, 0.5469] | 0.185 | 0.4948 [0.4631, 0.5263] | +1.98 [−0.85, +4.84] |
+
+The gain has no team clustering (design effect 0.95 to 1.05); the score has (2.2 on our team, 2.0 on Kakuna's). By panel, clustered on our team, the
+gain is P72 +4.62 pp [+1.78, +7.52], H +1.32 [−1.70, +4.25], F 0.00 [−2.76, +2.66]; H and F together +0.66 [−1.39, +2.67]. POST HOC (the PREREG's §13
+predicted no ordering; three contrasts, unadjusted): P72 − F +4.62 [+0.65, +8.58] (p = 0.022, ≈ 0.07 after a Bonferroni factor of 3), P72 − H +3.29
+[−0.86, +7.45], omnibus p = 0.041 to 0.066 across the models. No panel's searched score clears 0.50 once clustered on a team.
+
+**P72 at source.** P72's generator (`src/rust_sim/harness/ou_random_teams.js`, frozen at `cb0f1769`) and the honest search's hidden-team sampler
+(`src/main/value_search/world_draws.py`) read the same seven Smogon usage files under `data/pokemon/`, with identical git blobs at the generator's
+freeze and at the read's pin (`e46e3ddf8`). That is no information leak (public priors and our side's own observations; the leak test passes), but
+the prior is correctly specified for P72 by construction. The simple mechanism is REFUTED by a measured covariate (`prior_match.py`): the sampled
+worlds hold fewer of the opponent's true species on P72 (0.842 [0.833, 0.850]) than on H (0.862) or F (0.866), and no more of its moves (0.676 against
+0.686 and 0.696) or items; the leak-inclusive S′-LIVE, with the same team sampler, gained no more on P72 (+4.11) than on H (+4.53) or F (+5.15).
+Untested: calibration, headroom (raw P\* is weakest on P72, 0.461), F's 10.0 % exclusions, chance.
+
+**What it licenses.** Quoting the gain as robust to clustering, with "detected on P72 only". Quoting the score as "0.5145; GOAL-B-REACHED as
+registered [0.5008, 0.5282]; team-clustered [0.494, 0.535] to [0.491, 0.538]". It does NOT license "goal (b) met with search" as a claim about
+unfamiliar teams in general, "search does not work on human-built teams" (H + F cannot exclude +2.7 pp), or "the P72 gain is a leak".
+
+**FINDINGs.** (1) Games g and g + 10 of a unit seed replay the same two teams (the two challenge halves): 850 matchup draws a panel, so the deals are
+not independent even with the teams held fixed, and the fixed-panel interval's LB is 0.4992. (2) Our team sequence at unit seed s + 1 is Kakuna's at
+seed s (252 of 252 adjacent pairs). (3) `record.json`'s game tuples carry our team and not the opponent's; the deals are joined to the cells' peer
+reports. (4) H's unrevealed fields are filled from the same usage tables (X61 REVIEW B1), so H is partly procedural at the set level. (5) The crossed
+intervals are analytic on 72 clusters a panel. (6) A future `searched_play` registration should name one unit for both statistics.
+
+**Record:** `measurements/sprime_honest_play_2026-11-06/addendum_clustering/` (`README.md`, `extract_deals.py`, `deals.csv`, `clustering.py`,
+`clustering.json`, `tables.md`, `prior_match.py`, `prior_match_honest.json`, `prior_match_leaky.json`).
+View: `UNDERSTANDING.md` (TL;DR items 2 and 10, §1, §4.7), `STATUS.md`, `../endstate/search_ledger.md`, `EXPERIMENT_BACKLOG.md`.
+
+Tag: **ADDENDUM · S′-HONEST clustering · REPORTED · gain +1.98 pp, LB ≥ +0.31 under every clustering · score [0.4942, 0.5353] our team, [0.4908, 0.5382] two-way · gain detected on P72 alone · registered verdict unchanged**
