@@ -30683,3 +30683,53 @@ View: `UNDERSTANDING.md`, `STATUS.md`, `endstate/search_ledger.md`, `endstate/de
 `EXPERIMENT_BACKLOG.md`.
 
 Tag: **MEASUREMENT · X65 ExIt-0 · NOT-DELIVERED · pooled Δagree −1.26 pp [−1.40, −1.11] · every panel negative · no game played · ExIt-1 not funded**
+
+### 2026-11-09 · MEASUREMENT · **S′-HONEST: GO-HONEST, GOAL-B-REACHED — P\* + S′h (`r0s4_honest_inc@10`, a search whose worlds read only what the live player knows, every eligible decision from turn 10) beats P\* against the REAL Kakuna on U by +2.00 pp [+0.34, +3.51] on 5,097 fresh paired deals (GO-imputed LB +0.32 > 0); its pooled-U score 0.5145 [0.5008, 0.5282] over 5,100 deals: "goal (b) met with search", in that regime only; the search program for goal (b) is un-paused**
+
+**Question** (PREREG `e81f80657`, pin `e46e3ddf8`, engine E6, no amendment). Does P\* + S′h, searching every eligible
+decision from turn 10 with a search that is a function of the searched side's information set alone, win more games
+against Kakuna (checkpoint 34, greedy) on U (H, F, P72 at equal weight) than P\* alone on the same deals? Two lone
+one-game units a deal, U unit seeds 700–784 (1,700 fresh deals a panel). S′-LIVE's rule, classes, imputation and
++3 pp margin; GOAL-B-REACHED iff GO-HONEST and the searched arm's pooled-U score LB > 0.50 (a missing searched game a
+loss, a tie a non-win).
+
+**Verdict: GO-HONEST, GOAL-B-REACHED.** G_U paired **+2.00 pp [+0.34, +3.51]**; GO-imputed +1.98 [**+0.32**, +3.47];
+NULL-imputed +2.04 [+0.38, **+3.53**]. GOAL-B score **0.5145 [0.5008, 0.5282]** (656/1275). Not at the boundary;
+`go_below_margin` false; `excess_exclusions` false. By hand (`record/by_hand.py`): every fraction, bound, the class
+and the GOAL-B point equal the rule's.
+
+**What it licenses (§1).** Search is a measured path to goal (b); the search program for goal (b) is un-paused, and
+its next registrations (cost; the deployable player's design) may be written. The claim, always with its regime:
+"**Goal (b) met with search:** P\* + S′h beats Kakuna (checkpoint 34, greedy) on unfamiliar teams (U = H, F, P72)",
+5,100 deals, ties as non-wins. NOT licensed: public-server or ladder play, any training or league change, other
+opponents, home72, other budgets, builders or presets, a size beyond the interval, a panel claim.
+
+**Reported (§12).** Panels (paired): P72 +4.69 [+2.00, +7.37], H +1.32 [−1.39, +4.00], F −0.005 [−2.98, +2.71].
+Pooled-U scores over the pairs: searched 0.5146 [0.5009, 0.5283], raw 0.4948 [0.4811, 0.5085]. Discordance 1,784 /
+5,097 (0.350); achieved SE 0.80 pp (iid 0.83), power ≈ 0.82 at +2.30 pp. Cross-read difference (S′-LIVE − this read,
+UNPAIRED, SELECTED) +2.60 pp [+0.12, +5.07]. Departure rate 0.372; exclusions U 5.55 % (H 2.57, F 10.02, P72 3.33;
+bounds 0.05 / 0.13 / 0.09); search 249 CPU-s a game, whole-unit 6.64 CPU-min a searched game (F 9.52). Builder: 92.6 %
+warm decisions, 4.8 % stuck, 810 of 5,099 battles with an exclusion, 7.7 % of searched decisions holding a world past
+the correlation bound. Distillation fields: 0 lacking (188,297 searched, 11,071 excluded honest records).
+
+**Against the GUESSES (§13).** G_U +2.5 (−0.5, +5.5) guessed, +2.00 measured; P(GO-HONEST) ≈ 0.6, P(GOAL-B) ≈ 0.35;
+d 0.35 guessed, 0.350; exclusions H 0.5 / F 6 / P72 4 % guessed, 2.6 / 10.0 / 3.3; the searched game 6–8 CPU-min
+guessed, 6.64.
+
+**Checks (every registered one PASS).** One engine E6 and P\* `814823c5…` on every counted unit; regimes as
+registered; G-PREFIX 5,097 checked, 0 mismatches; the identity guard re-scored 600 of 12,604 sampled live decisions at
+the pin in REBUILD mode (17,734 checkpoints rebuilt), 0 mismatches; post-treatment drops 1 a panel (cap 8), all
+`peer_long_tail_fault` (Kakuna's H5 / H21 at our turn-250 forfeit), imputed at the worst case; 0 unfinished; re-derived
+guards 10,200 units, 0 hits; COMPLETE, `check-record` OK. No HOLD rule fired (12 failed attempts, all the same class).
+
+**Operation.** 52 h wall on this box (11-06 23:02 → 11-09 03:00): life 0 the checkpoint (BOX, K = 12), life 1 the bulk
+(BOX, K = 14), both `systemd-run --user` services. ≈ 565 CPU-h of searched units, the registered re-score 25.8 CPU-h
+(S′HP-7's estimate 16.2). FINDINGs S′HR-1 (live exclusions above stage 1b's projection on H and F, under every bound)
+and S′HR-2 in the README.
+
+**Record:** `measurements/sprime_honest_play_2026-11-06/README.md` and `record/`; state
+`~/gen3ai_archive/sprime_honest_play_2026-11-06/record.json` (sha256 `b7b96569…1711`).
+View: `UNDERSTANDING.md`, `STATUS.md`, `endstate/search_ledger.md`, `endstate/design_sprime_honest.md`,
+`endstate/README.md`, `designs/tools/reads.md` §4 (E6 row).
+
+Tag: **MEASUREMENT · S′-HONEST · GO-HONEST · GOAL-B-REACHED · G_U +2.00 [+0.34, +3.51] · GO-imputed LB +0.32 · searched U 0.5145 [0.5008, 0.5282] vs Kakuna ckpt 34 greedy · search un-paused for goal (b)**

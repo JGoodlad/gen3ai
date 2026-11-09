@@ -1,0 +1,627 @@
+{
+ "cells_inconclusive": [],
+ "code": {
+  "commit": "e46e3ddf82b7ee842a9104d59e72b41c36398c56",
+  "diff_sha": "e3b0c44298fc1c14",
+  "dirty": false,
+  "pin": "e46e3ddf8",
+  "root": "/home/goodlad/dev/gen3ai-reads/sprime_honest_inc_e46e3ddf8"
+ },
+ "completeness": {
+  "class": "COMPLETE"
+ },
+ "created": "2026-11-09T03:00:50-0800",
+ "decision": {
+  "counts": {
+   "by_panel": {
+    "forum72": {
+     "pairs": 1699,
+     "planned": 1700,
+     "post_treatment": {
+      "neither": 0,
+      "raw_missing": 0,
+      "searched_missing": 1,
+      "total": 1
+     },
+     "pre_treatment": {
+      "peer_drop": 0,
+      "total": 0
+     },
+     "unfinished": 0
+    },
+    "heldout72_hpfix": {
+     "pairs": 1699,
+     "planned": 1700,
+     "post_treatment": {
+      "neither": 0,
+      "raw_missing": 1,
+      "searched_missing": 0,
+      "total": 1
+     },
+     "pre_treatment": {
+      "peer_drop": 0,
+      "total": 0
+     },
+     "unfinished": 0
+    },
+    "p72": {
+     "pairs": 1699,
+     "planned": 1700,
+     "post_treatment": {
+      "neither": 0,
+      "raw_missing": 1,
+      "searched_missing": 0,
+      "total": 1
+     },
+     "pre_treatment": {
+      "peer_drop": 0,
+      "total": 0
+     },
+     "unfinished": 0
+    }
+   },
+   "uncounted_units": {
+    "pstar": 2,
+    "pstar_s": 1
+   },
+   "units_with_pairs": {
+    "forum72": 85,
+    "heldout72_hpfix": 85,
+    "p72": 85
+   },
+   "unplayed_units": 0
+  },
+  "decision": {
+   "boundary": false,
+   "class": "GO-HONEST",
+   "excess_exclusions": false,
+   "go_below_margin": false,
+   "goal_b": {
+    "ci95": [
+     0.5007893328985898,
+     0.528208439413879
+    ],
+    "counts": {
+     "forum72": [
+      895,
+      1700
+     ],
+     "heldout72_hpfix": [
+      867,
+      1700
+     ],
+     "p72": [
+      862,
+      1700
+     ]
+    },
+    "imputation": "a missing searched game is a loss; a tie is a non-win",
+    "label": "GOAL-B-REACHED",
+    "lb_above_0_50": {
+     "crosses": true,
+     "near": false
+    },
+    "reached": true,
+    "score": 0.5145098039215686
+   },
+   "tests": {
+    "LB(G_U go_imputed) > 0": {
+     "crosses": true,
+     "near": false
+    },
+    "UB(G_U null_imputed) < null_margin": {
+     "crosses": false,
+     "near": false
+    }
+   },
+   "verdict": "GO-HONEST: G_U (searched − raw, by deal, U) paired +2.00 pp [+0.34, +3.51]; GO-imputed LB +0.32 (GO-HONEST iff > 0); NULL-imputed UB +3.53 (NULL iff < 3.0 pp); GOAL-B-REACHED"
+  },
+  "discordance": {
+   "discordant": 1784,
+   "pairs": 5097,
+   "share": 0.35000980969197565
+  },
+  "distill": {
+   "by_panel": {
+    "forum72": {
+     "by_field": {},
+     "excluded": 7346,
+     "lacking": 0,
+     "searched": 65996,
+     "units": 1699,
+     "units_without_capture": 0
+    },
+    "heldout72_hpfix": {
+     "by_field": {},
+     "excluded": 1581,
+     "lacking": 0,
+     "searched": 60004,
+     "units": 1700,
+     "units_without_capture": 0
+    },
+    "p72": {
+     "by_field": {},
+     "excluded": 2144,
+     "lacking": 0,
+     "searched": 62297,
+     "units": 1700,
+     "units_without_capture": 0
+    }
+   },
+   "fields_excluded": [
+    "frame_sha256",
+    "log_sha256",
+    "search_key"
+   ],
+   "fields_searched": [
+    "q",
+    "log_pi",
+    "root_v",
+    "frame_sha256",
+    "log_sha256",
+    "search_key"
+   ]
+  },
+  "engine": "port=f0fe71f6c54757b2/95;env=c0b7c649acfb48d8/130",
+  "estimates": {
+   "bootstrap": {
+    "B": 2000,
+    "scheme": "numpy default_rng(seed), fresh per estimate; u_panels in order; within-panel unit resampling; percentile 2.5 / 97.5",
+    "seed": 20261106
+   },
+   "go_imputed": {
+    "G": {
+     "forum72": {
+      "ci95": [
+       -0.02970588235294117,
+       0.027058823529411764
+      ],
+      "point": 0.0
+     },
+     "heldout72_hpfix": {
+      "ci95": [
+       -0.013823529411764707,
+       0.04000735294117643
+      ],
+      "point": 0.013235294117647059
+     },
+     "p72": {
+      "ci95": [
+       0.01911764705882353,
+       0.07235294117647058
+      ],
+      "point": 0.04617647058823529
+     }
+    },
+    "G_U": {
+     "ci95": [
+      0.0032328431372549006,
+      0.034708333333333334
+     ],
+     "point": 0.01980392156862745
+    },
+    "exact": {
+     "G": {
+      "forum72": "0",
+      "heldout72_hpfix": "9/680",
+      "p72": "157/3400"
+     },
+     "G_U": "101/5100"
+    }
+   },
+   "null_imputed": {
+    "G": {
+     "forum72": {
+      "ci95": [
+       -0.029117647058823526,
+       0.027647058823529407
+      ],
+      "point": 0.000588235294117647
+     },
+     "heldout72_hpfix": {
+      "ci95": [
+       -0.013529411764705882,
+       0.04058823529411764
+      ],
+      "point": 0.013823529411764707
+     },
+     "p72": {
+      "ci95": [
+       0.01970588235294118,
+       0.0735294117647059
+      ],
+      "point": 0.046764705882352944
+     }
+    },
+    "G_U": {
+     "ci95": [
+      0.0038210784313725482,
+      0.03529411764705883
+     ],
+     "point": 0.0203921568627451
+    },
+    "exact": {
+     "G": {
+      "forum72": "1/1700",
+      "heldout72_hpfix": "47/3400",
+      "p72": "159/3400"
+     },
+     "G_U": "26/1275"
+    }
+   },
+   "paired": {
+    "G": {
+     "forum72": {
+      "ci95": [
+       -0.029752321981424145,
+       0.027058823529411764
+      ],
+      "point": -4.6439628482972134e-05
+     },
+     "heldout72_hpfix": {
+      "ci95": [
+       -0.013854489164086686,
+       0.040007352941176424
+      ],
+      "point": 0.013204334365325077
+     },
+     "p72": {
+      "ci95": [
+       0.01998219814241486,
+       0.07371517027863778
+      ],
+      "point": 0.04685758513931888
+     }
+    },
+    "G_U": {
+     "ci95": [
+      0.003449045407636738,
+      0.035067466460268315
+     ],
+     "point": 0.02000515995872033
+    },
+    "exact": {
+     "G": {
+      "forum72": "-3/64600",
+      "heldout72_hpfix": "853/64600",
+      "p72": "3027/64600"
+     },
+     "G_U": "3877/193800"
+    }
+   }
+  },
+  "exclusions": {
+   "by_panel": {
+    "U": {
+     "exact": "11071/199368",
+     "excluded": 11071,
+     "searched": 188297,
+     "share": 0.05553047630512419,
+     "units": 5099
+    },
+    "forum72": {
+     "exact": "3673/36671",
+     "excluded": 7346,
+     "searched": 65996,
+     "share": 0.1001608900766273,
+     "test": {
+      "bound": 0.13,
+      "exceeds": false,
+      "near": false
+     },
+     "units": 1699
+    },
+    "heldout72_hpfix": {
+     "exact": "1581/61585",
+     "excluded": 1581,
+     "searched": 60004,
+     "share": 0.025671835674271334,
+     "test": {
+      "bound": 0.05,
+      "exceeds": false,
+      "near": false
+     },
+     "units": 1700
+    },
+    "p72": {
+     "exact": "2144/64441",
+     "excluded": 2144,
+     "searched": 62297,
+     "share": 0.03327074378113313,
+     "test": {
+      "bound": 0.09,
+      "exceeds": false,
+      "near": false
+     },
+     "units": 1700
+    }
+   },
+   "excess": false
+  },
+  "identity": {
+   "by_panel": {
+    "forum72": 208,
+    "heldout72_hpfix": 190,
+    "p72": 202
+   },
+   "cpu_s": 92867.498,
+   "mismatches": 0,
+   "n_rescored": 600,
+   "n_sampled": 12604,
+   "problems": [],
+   "reason": null,
+   "rescore_json": {
+    "path": "/home/goodlad/gen3ai_archive/sprime_honest_play_2026-11-06/identity/rescore.json",
+    "sha256": "5e043e6d3d09fc3a6a0ce77e20e6b63e45ed101776a1d7f65b68a35495aec2dc"
+   },
+   "verdict": "PASS"
+  },
+  "peer_drops": {
+   "by_panel": {
+    "forum72": 0,
+    "heldout72_hpfix": 0,
+    "p72": 0
+   },
+   "classes": []
+  },
+  "schema": "gen3_read_searched_play_v1",
+  "score_u": {
+   "newcombe_strat_searched_minus_raw": [
+    0.01981557779085724,
+    0.00042054237308236306,
+    0.03918952487351599
+   ],
+   "raw": {
+    "ci95": [
+     0.4811044067517359,
+     0.5085051276162169
+    ],
+    "counts": {
+     "forum72": [
+      896,
+      1699
+     ],
+     "heldout72_hpfix": [
+      843,
+      1699
+     ],
+     "p72": [
+      783,
+      1699
+     ]
+    },
+    "score": 0.4948008632528939
+   },
+   "searched": {
+    "ci95": [
+     0.5008919907044153,
+     0.5283188826098936
+    ],
+    "counts": {
+     "forum72": [
+      895,
+      1699
+     ],
+     "heldout72_hpfix": [
+      866,
+      1699
+     ],
+     "p72": [
+      862,
+      1699
+     ]
+    },
+    "score": 0.5146164410437511
+   },
+   "searched_lb_above_0_50": {
+    "crosses": true,
+    "lb": 0.5008919907044153,
+    "near": false
+   }
+  },
+  "search": {
+   "U": {
+    "deviation_rate": 0.3720371463047719,
+    "deviations": 69988,
+    "excluded": 11062,
+    "excluded_per_game": 2.1702962526976655,
+    "games": 5097,
+    "search_cpu_s": 1267697.3539999966,
+    "search_cpu_s_per_game": 248.71441122228694,
+    "searched": 188121
+   },
+   "forum72": {
+    "deviation_rate": 0.37076489484211167,
+    "deviations": 24469,
+    "excluded": 7346,
+    "excluded_per_game": 4.323719835197175,
+    "games": 1699,
+    "search_cpu_s": 524471.2069999997,
+    "search_cpu_s_per_game": 308.6940594467332,
+    "searched": 65996
+   },
+   "heldout72_hpfix": {
+    "deviation_rate": 0.3729687343588375,
+    "deviations": 22355,
+    "excluded": 1576,
+    "excluded_per_game": 0.9276044732195409,
+    "games": 1699,
+    "search_cpu_s": 359786.80600000004,
+    "search_cpu_s_per_game": 211.76386462625075,
+    "searched": 59938
+   },
+   "p72": {
+    "deviation_rate": 0.37248942705066973,
+    "deviations": 23164,
+    "excluded": 2140,
+    "excluded_per_game": 1.2595644496762801,
+    "games": 1699,
+    "search_cpu_s": 383439.3410000005,
+    "search_cpu_s_per_game": 225.68530959387903,
+    "searched": 62187
+   }
+  }
+ },
+ "imports": {},
+ "ledgers": {},
+ "models": {
+  "pstar": {
+   "arm": "pstar",
+   "seed": 2601,
+   "sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed",
+   "source": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip",
+   "step": 280000170
+  },
+  "pstar_s": {
+   "arm": "pstar_s",
+   "seed": 2601,
+   "sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed",
+   "source": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip",
+   "step": 280000170
+  }
+ },
+ "prereg": "designs/research_state/measurements/sprime_honest_play_2026-11-06/PREREG.md",
+ "read": "sprime_honest_play_2026-11-06",
+ "rederived_guards": {
+  "held": false,
+  "hits": [],
+  "mode": "count",
+  "schema": "gen3_read_rederived_guards_v1",
+  "unavailable": [],
+  "units_checked": 10200
+ },
+ "regimes": {
+  "anchor": {
+   "u": "ffaba444b2adbf4b"
+  },
+  "s": {}
+ },
+ "repins": [],
+ "reported_incomplete": {},
+ "rule": "searched_play",
+ "schema": "gen3_read_record_v1",
+ "spec_sha256": "9222393a14c79ff52e2a2bd315864626a9f6ea68ffeea709352c40e79d618afa",
+ "verdict": "GO-HONEST: G_U (searched − raw, by deal, U) paired +2.00 pp [+0.34, +3.51]; GO-imputed LB +0.32 (GO-HONEST iff > 0); NULL-imputed UB +3.53 (NULL iff < 3.0 pp); GOAL-B-REACHED",
+ "void": null,
+ "note": "record.json minus its 'inputs' block (9.4 MB; in the state, sha256 below)",
+ "state_files_sha256": {
+  "record.json": "b7b96569a6ee34265b3d471df4758b6a8a85d43803e24106f710e8482ff61711",
+  "decision.json": "1fe2e0f7f5b881d65ec9a6f44c65c2e8881df8a676ef6b39bf37b2b3c6e740b8",
+  "spec.json": "9222393a14c79ff52e2a2bd315864626a9f6ea68ffeea709352c40e79d618afa",
+  "cells.json": "4add0318ef5bdbb6e6dd0d8811ff5f0965985fedb3a8af14c3cbbaafb2a813f5",
+  "inputs.json": "47352065ebddf510a13c96471bf20c4f1332e80c1c7c2a4331ec12230563bde5",
+  "identity/rescore.json": "5e043e6d3d09fc3a6a0ce77e20e6b63e45ed101776a1d7f65b68a35495aec2dc",
+  "identity/checkpoint.json": "8aa637da92dbc9be17805fb61070e6e18ee2d416bdb8d87cd6deb6b9c59b873c"
+ },
+ "inputs_group": {
+  "engine": "port=f0fe71f6c54757b2/95;env=c0b7c649acfb48d8/130",
+  "exhausted_units": [
+   "pstar__heldout72_hpfix__762__g14",
+   "pstar__p72__780__g10",
+   "pstar_s__forum72__722__g14"
+  ],
+  "g_prefix": {
+   "checked": 5097,
+   "mismatches": [],
+   "pairs": 5100,
+   "pending": 3,
+   "schema": "gen3_read_prefix_v1"
+  },
+  "inconclusive": [],
+  "name": "u",
+  "regime_id": "ffaba444b2adbf4b",
+  "teamsets": [
+   "heldout72_hpfix",
+   "forum72",
+   "p72"
+  ],
+  "unit_seeds": [
+   700,
+   701,
+   702,
+   703,
+   704,
+   705,
+   706,
+   707,
+   708,
+   709,
+   710,
+   711,
+   712,
+   713,
+   714,
+   715,
+   716,
+   717,
+   718,
+   719,
+   720,
+   721,
+   722,
+   723,
+   724,
+   725,
+   726,
+   727,
+   728,
+   729,
+   730,
+   731,
+   732,
+   733,
+   734,
+   735,
+   736,
+   737,
+   738,
+   739,
+   740,
+   741,
+   742,
+   743,
+   744,
+   745,
+   746,
+   747,
+   748,
+   749,
+   750,
+   751,
+   752,
+   753,
+   754,
+   755,
+   756,
+   757,
+   758,
+   759,
+   760,
+   761,
+   762,
+   763,
+   764,
+   765,
+   766,
+   767,
+   768,
+   769,
+   770,
+   771,
+   772,
+   773,
+   774,
+   775,
+   776,
+   777,
+   778,
+   779,
+   780,
+   781,
+   782,
+   783,
+   784
+  ],
+  "unplayed": 0
+ }
+}

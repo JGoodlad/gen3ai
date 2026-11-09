@@ -1,0 +1,81 @@
+{
+ "deviation_rate": 0.3722,
+ "excluded": 11075,
+ "from_turn_decisions": 204617,
+ "g_prefix": {
+  "u": {
+   "checked": 5097,
+   "mismatches": [],
+   "pairs": 5100,
+   "pending": 3,
+   "schema": "gen3_read_prefix_v1"
+  }
+ },
+ "game_playout_cpu_min": {
+  "max": 16.165,
+  "mean": 2.031,
+  "median": 1.575,
+  "n": 5100,
+  "p10": 0.728,
+  "p90": 3.825
+ },
+ "game_search_cpu_min": {
+  "max": 99.589,
+  "mean": 5.831,
+  "median": 2.882,
+  "n": 5099,
+  "p10": 1.207,
+  "p90": 13.324
+ },
+ "game_wall_min": {
+  "max": 101.678,
+  "mean": 6.539,
+  "median": 3.521,
+  "n": 5100,
+  "p10": 1.787,
+  "p90": 14.21
+ },
+ "game_world_cpu_min": {
+  "max": 92.944,
+  "mean": 3.585,
+  "median": 0.865,
+  "n": 5100,
+  "p10": 0.248,
+  "p90": 9.489
+ },
+ "games": 5100,
+ "ge2_legal_share": 0.975,
+ "resize": {
+  "above": false,
+  "median_game_cpu_min": 2.882,
+  "note": "REPORTED: design \u00a74.4 drops phase 2 when the median searched game costs more",
+  "threshold_cpu_min": 50.0
+ },
+ "schema": "gen3_search_cost_v1",
+ "searched": 188429,
+ "searched_decision_cpu_s": {
+  "max": 433.023,
+  "mean": 6.744,
+  "median": 4.55,
+  "n": 188429,
+  "p10": 2.962,
+  "p90": 10.07
+ },
+ "searched_decision_wall_s": {
+  "max": 439.722,
+  "mean": 6.842,
+  "median": 4.598,
+  "n": 188429,
+  "p10": 2.996,
+  "p90": 10.199
+ },
+ "unit_cpu_min": {
+  "max": 102.002,
+  "mean": 6.643,
+  "median": 3.632,
+  "n": 5100,
+  "p10": 1.885,
+  "p90": 14.275
+ },
+ "note": "main.reads search-cost --state <state> at main 2026-11-09 (search_cost.py identical to the pin's), per_game rows dropped; it reads every searched unit's last attempt dir (the one exhausted unit's included)"
+}

@@ -13,54 +13,62 @@ the owner's goal 5. It makes four points:
 - a ranked plan: E2, the bridge and R0's known hole; E1, an opponent-exact referee; E3, human identification and the
   human judge, zero playouts; E4, a live player against Kakuna, gated.
 
-**Status (2026-11-05): S′-LIVE reads GO-LEAKY: P\* + S′ beats P\* against the REAL Kakuna on U, leak-inclusive.**
+**Status (2026-11-09): S′-HONEST reads GO-HONEST, with GOAL-B-REACHED: a LEAK-HONEST search lifts P\* over the REAL
+Kakuna on unfamiliar teams.** ([`design_sprime_honest.md`](design_sprime_honest.md);
+[`../research_state/measurements/sprime_honest_play_2026-11-06/README.md`](../research_state/measurements/sprime_honest_play_2026-11-06/README.md);
+ledger 2026-11-09.)
+- **What it measured.** P\* + S′h (`r0s4_honest_inc@10`: `r0s4_rolls`'s 8 worlds, TRUNC-4-K8 leaf and piKL λ 0.015,
+  every world built from the searched side's information set alone on fresh dice, carried through the battle;
+  every eligible decision from turn 10) against P\* greedy, both against the real Kakuna (checkpoint 34, greedy), on
+  5,097 FRESH paired U deals (unit seeds 700–784), each deal played by both arms as lone one-game units. Registered
+  `e81f80657`, pin `e46e3ddf8`, engine E6, no amendment.
+- **The verdict.** G_U = **+2.00 pp [+0.34, +3.51]** paired; the GO-imputed LB is +0.32 > 0, so GO-HONEST; the
+  NULL-imputed UB is +3.53. The searched arm's pooled-U score is **0.5145 [0.5008, 0.5282]** over 5,100 deals (ties as
+  non-wins, the one missing searched game a loss; raw P\* 0.4948 on the pairs), so GOAL-B-REACHED, quoted only as
+  "**Goal (b) met with search:** P\* + S′h beats Kakuna (checkpoint 34, greedy) on unfamiliar teams (U = H, F, P72)"
+  with that n. Panels, REPORTED only: P72 +4.69 [+2.00, +7.37], H +1.32 [−1.39, +4.00], F 0.00 [−2.98, +2.71].
+- **What it licenses.** Search is a measured path to goal (b), and the search program for goal (b) is UN-PAUSED. Its
+  next registrations may be written: **cost** (a cheaper S′h: the read's searched game cost 6.6 CPU-min of whole-unit
+  CPU, 249 search CPU-s, and 5,100 deals took 52 h of the whole box) and **the deployable player's design** (a live
+  player running S′h within a game's clock: searched decisions took 6.8 s of wall on average, 440 s at most, at one
+  CPU each; no timer has been checked against them, UNVERIFIED). NOT licensed: public-server or ladder play, any
+  training or league change, other opponents, home72, other budgets, builders or presets, a size beyond the interval.
+- **Against S′-LIVE** (the cross-read difference, REPORTED, UNPAIRED and SELECTED): +4.60 − +2.00 = +2.60 pp [+0.12,
+  +5.07]. About half of S′-LIVE's leak-inclusive point did not survive the honest builder; the difference is the
+  leak's share only if the two reads differ by the leaks alone (they also differ by the builder's budget, its
+  exclusions, its correlated worlds and the HP fix `83272a8f9`). Never pooled.
+- **Reported.** Departure rate 0.372. Exclusions (P\* plays where no consistent world was found) U 5.6 %: F 10.0 %,
+  H 2.6 %, P72 3.3 %, above stage 1b's projection (3.35 %) on H and F, under every registered bound (FINDING S′HR-1).
+  Every guard PASS (G-PREFIX 5,097 / 5,097 identical; the identity re-score at the pin 600 / 600 in REBUILD mode;
+  3 post-treatment drops, all Kakuna's turn-cap peer fault).
+- **The builder the read played** (`design_sprime_honest.md` §8–§9). Stage 1's `r0s4_honest` made the search a
+  function of the searched side's information set alone (fresh dice matched segment by segment; the leak test passes
+  on every channel and fails on `r0s4_rolls` on every one), at ≈ 30 CPU-min a searched game late. The INCREMENTAL form
+  `r0s4_honest_inc` (stage 1b, `f7da935ab`; S′H-15 `335355e6f`) carries the worlds through a battle, still a function
+  of I (the leak test passes in sequence mode): **4.9× cheaper** (6.2 against 30.3 CPU-min a searched game at K = 6),
+  exclusions 3.4 % against 7.7 % offline, the same pick as `r0s4_honest` in 63 % (its own floor 63 %).
+- **Distillation of S′'s LEAK-INCLUSIVE labels stops at this scale.** X65 ExIt-0 read NOT-DELIVERED (2026-11-06): the
+  students agree with S′ on their held-out panels LESS than P\* does (pooled Δagree −1.26 pp [−1.40, −1.11]); no game
+  was played, ExIt-1 is not funded ([`../research_state/measurements/x65_exit0_2026-11-05/README.md`](../research_state/measurements/x65_exit0_2026-11-05/README.md)).
+  The X65 learnability probe (2026-11-06, DESCRIPTIVE, no verdict;
+  [`../research_state/measurements/x65_learnability_probe_2026-11-06/README.md`](../research_state/measurements/x65_learnability_probe_2026-11-06/README.md))
+  matches its reading 2, **S′'s departures unlearnable at this scale**: a control target of the same departure rate
+  transfers (+11.70 pp [+11.05, +12.32]) and a capacity arm memorises S′'s departures in-sample, yet the curve arms'
+  Δagree on unseen deals and teams is ≤ 0 at every checkpoint (val-selected −4.79 / −5.16 pp). It cannot split the
+  leak, S′'s key noise and real lookahead; S′-HONEST's GO says honest lookahead carries a game gain, which a reactive
+  student may still be unable to absorb. S′-HONEST banked 188,297 honest searched records with every distillation
+  field: an ExIt-0H registration's input. A fresh S′ label costs **9.5 CPU-s** all-in (S′-LIVE's 258 search CPU-h ÷
+  97,601 labels), so the in-loop factory of `design_value_discrimination.md` §13 at f = 0.25 % would need ≈ 32 cores.
+
+**Before it (2026-11-05): S′-LIVE read GO-LEAKY.** P\* + S′ (`r0s4_rolls@10`, every eligible decision from turn 10)
+against P\* greedy on 2,698 fresh paired U deals (seeds 300–344): G_U **+4.60 pp [+2.66, +6.48]** (GO-imputed LB +2.57;
+H +4.5, F +5.2, p72 +4.1), searched-arm U score 0.545 [0.526, 0.564] (raw 0.498), at most "GOAL-B-REACHED (leaky)":
+S′'s worlds replay the true battle seed (§6.1: speed ties and hidden counters leak). It licensed only the leak-honest
+replication above. Departure rate 0.366; F excluded ≈ 12× as often as H and p72 (S′LIVE-R1); ≈ 315 CPU-h.
+dlive's per-departure +0.012 [−0.016, +0.039] (power ≈ 0.11) is a different estimand (every decision, composition,
+turns past 30), never pooled; the performance-difference bridge stays UNVERIFIED (S′L-3).
 ([`design_sprime_live_play.md`](design_sprime_live_play.md);
 `../research_state/measurements/sprime_live_play_2026-11-01/README.md`; ledger 2026-11-05.)
-- **What it measured.** P\* + S′ (`r0s4_rolls@10`, every eligible decision from turn 10) against P\* greedy, both
-  against the real Kakuna, on 2,698 FRESH paired U deals (seeds 300–344), each deal played by both arms as lone
-  one-game units. The truth is two real games a deal; no referee and no opponent model enter it.
-- **The verdict.** G_U = **+4.60 pp [+2.66, +6.48]** paired; the GO-imputed LB is +2.57 > 0, so GO-LEAKY. By panel:
-  H +4.5, F +5.2, p72 +4.1, every panel's interval above 0. The searched arm scores **0.545 [0.526, 0.564]** on
-  pooled U (raw 0.498), quoted at most as "GOAL-B-REACHED (leaky)".
-- **What it licenses, and only this.** Building and registering a LEAK-HONEST replication on fresh deals. S′'s worlds
-  replay the true battle seed (§6.1: speed ties and hidden counters leak), so this is not deployable search and not
-  goal (b) met; no training, league or public-server change follows.
-- **Next: the replication, S′-HONEST: REGISTERED 2026-11-06, not yet played**
-  ([`sprime_honest_play_2026-11-06/PREREG.md`](../research_state/measurements/sprime_honest_play_2026-11-06/PREREG.md):
-  `r0s4_honest_inc@10` against P\* raw on 5,100 fresh U deals, pin `e46e3ddf8`). Its stage 1 (2026-11-06,
-  [`design_sprime_honest.md`](design_sprime_honest.md) §8). Its inventory reads six channels from the code; none is
-  shown bigger than §6.1 says. The leak-honest preset `r0s4_honest` searches as a function of the searched side's
-  information set alone, on fresh dice matched segment by segment. Its leak test passes on every channel and fails on
-  `r0s4_rolls` on every one; `r0s4_rolls` is byte-identical at the new engine stamp (600 / 600). At its chosen budget it
-  excludes 3 % of U decisions (F 5 %, `r0s4_rolls` 2.3 %) at ≈ 8.6–13.0 CPU-min a searched game; its picks match
-  `r0s4_rolls`'s in 61 % of U decisions, against 72 % for `r0s4_rolls` re-drawn under another key. Late in a game it
-  is far dearer (the replication designer's late probe: up to ≈ 330 CPU-s a decision, ≈ 30 CPU-min a searched game at
-  K = 6). **Its INCREMENTAL form `r0s4_honest_inc` (2026-11-06, `design_sprime_honest.md` §9)** carries the worlds
-  through a battle's decisions, still a function of I (the leak test passes in sequence mode on every channel): on
-  444 states' whole-game sequences it costs ≈ 6.2 CPU-min a searched game at K = 6 (4.9× less), excludes ≈ 3.4 % of
-  U decisions (`r0s4_honest` 7.7 %) and picks `r0s4_honest`'s action as often as `r0s4_honest` picks its own under
-  another key (63 %). The replication's ≈ 577 CPU-h is ≈ 1.8 days on the whole box (K = 14), ≈ 4.8 beside a pinned run.
-- **Beside it: X65 ExIt-0, search DISTILLATION from the banked labels, READ 2026-11-06: NOT-DELIVERED**
-  ([`../research_state/measurements/x65_exit0_2026-11-05/README.md`](../research_state/measurements/x65_exit0_2026-11-05/README.md)).
-  The three students agree with S′'s pick on their held-out panels LESS than P\* does: pooled Δagree −1.26 pp
-  [−1.40, −1.11], every panel negative, so no game was played and ExIt-1 is not funded. At this recipe (one supervised
-  pass, β = 1, lr ≤ 3e-5) the held-out label KL fell ≈ 3 % even on the training panels' own deals. It does not close
-  ExIt: honest labels (ExIt-0H), larger budgets and in-loop forms stay open. The registration
-  ([`design_x65_exit0_search_distillation.md`](design_x65_exit0_search_distillation.md)) asked whether a P\* student
-  fine-tuned toward S′'s piKL targets on two panels' banked searched decisions beats P\* against Kakuna on the third
-  panel, with no search at play time. The labels cost no new search CPU: S′-LIVE's records keep Q̂ and log π, and a
-  probe rebuilt 976 / 977 frames bit for bit from the captures. The read is leak-free by construction.
-  - It is NOT a use of S′-LIVE's licence: it is its own registration and changes no production training.
-  - **Measured cost facts for any search-label plan:** a fresh S′ label costs **9.5 CPU-s** all-in (S′-LIVE's 258
-    search CPU-h ÷ 97,601 labels). So the in-loop factory of `design_value_discrimination.md` §13 at f = 0.25 % would
-    need ≈ 32 cores, against 3 agent cores. That section's ESTIMATE of 0.08 CPU-s a world is ≈ 60× below the measured
-    5.07 CPU-s of world building a search.
-- **Against dlive.** dlive's per-departure +0.012 [−0.016, +0.039] (power ≈ 0.11) is not re-read; the game-level total
-  is a different estimand (every decision, composition, turns past 30), never pooled. The performance-difference
-  bridge stays UNVERIFIED (S′L-3).
-- **Reported.** Departure rate 0.366; F excludes ≈ 12× as often as H and p72 (5.7 a game, S′LIVE-R1); 4.6 search
-  CPU-min a game; ≈ 315 CPU-h for the read. Every guard PASS (G-PREFIX 0 mismatches; the identity re-score 600 / 600;
-  2 post-treatment drops, Kakuna's turn-cap peer fault).
 
 **Before it (2026-11-01): the DEVIATION-ONLY LIVE READ read STOP: S′'s departures are not shown to beat π
 against the REAL Kakuna on U.**
@@ -338,6 +346,10 @@ comparator; the current-era re-measure is named beside it). Intervals are 95 % u
 
 ## 1. Where search stands today (one screen)
 
+- **Against the real bot, leak-honest search pays in GAMES (S′-HONEST, 2026-11-09; W13).** P\* + S′h beats P\* alone
+  against Kakuna on unfamiliar teams by +2.00 pp [+0.34, +3.51] (GO-HONEST), and its U score 0.5145 [0.5008, 0.5282]
+  reaches goal (b) in that regime. The bank-level bullets below are per-decision and SELF-REFEREE: a different estimand,
+  never pooled with it. Search is un-paused for goal (b): cost and the deployable player's design are next (Q19).
 - **The information ceiling is large and the critic cannot reach it.** Playing every action out in the TRUE battle (the
   ORACLE world) improves the policy's pick by **+0.081 (end-state) / +0.071 (production)** win probability per decision
   at 8 rollouts, against the critic's +0.026 / +0.012. PROVISIONAL.
@@ -569,6 +581,7 @@ comparator; the current-era re-measure is named beside it). Intervals are 95 % u
 | W10 | **An existence proof that determinised search wins here (PRE-ERA, a width meter).** Foul Play (decoupled UCT over a hand-written evaluator, Smogon-determinised sets) vs the 75M policy | MEASURED, PRE-ERA | our win rate **0.388** [0.288, 0.497], n = 80, ~1.4M visits per decision; width and opponent-set knowledge NOT SEPARABLE (width slope +0.027 per ln-visit, CI covers 0; knowledge delta +0.000 [−0.15, +0.15]). Later (PRE-ERA Kakuna, greedy vs Foul Play at 1000 ms): 0.490 [0.422, 0.559], NOT DETECTED | `UNDERSTANDING.md` §3.1; ledger 2026-09-14 L18248, 2026-09-17 L18964, 2026-09-29 L21447 |
 | W11 | **A rollout leaf out-ranks the learned critic head (PRE-ERA).** K = 1/2/4/8/16: 0.543 / 0.580 / 0.613 / 0.652 / 0.671 vs 0.574 | MEASURED, PRE-ERA | DETECTED at K ≥ 8 (+0.078 [+0.027, +0.128]); the single-rollout label itself mis-orders the top1\|top2 pair 39.7 % of the time (so any pairwise level is compressed toward 0.5) | ledger 2026-09-19 L19881, L19663 |
 | W12 | **Identifying the opponent's TEAM recovers most of the gap, on our closed pool.** Worlds drawn from the training-pool teams consistent with the observation (POOL), gated | MEASURED (Tier 1, R-RECOVER BELIEF-RECOVERABLE on this distribution) | r_POOL **0.80** [0.73, 0.87]: POOL IMP +0.063 vs oracle +0.076; the pool's per-species SETS alone (POOLSETS) recover −0.02: what pays is knowing WHICH TEAM, not the set priors. **At X26 225M (world sampler stage 1, registered): Δ over F +0.038 [+0.022, +0.055], r 0.72 [0.53, 0.92], on bots and own snapshots alike (a SELF-REFEREE read; on bots, E1-0's real-bot referee gives −0.006 [−0.034, +0.019] vs +0.027, UNDECIDED); its 4-turn leaf does not clear its own critic search (+0.016 [−0.001, +0.034]).** Not available on the ladder (an open population) | `design_hidden_info_binding.md` §16.8; `design_world_sampler.md` §6.2 |
+| W13 | **A leak-honest one-ply search wins GAMES against the real Kakuna on unfamiliar teams.** P\* + S′h (`r0s4_honest_inc@10`: 8 worlds built from our information set alone, TRUNC-4-K8, piKL λ 0.015) on every eligible decision from turn 10, against P\* alone, on 5,097 fresh paired U deals | MEASURED (registered `searched_play`, GO-HONEST + GOAL-B-REACHED; one network, one budget, Kakuna ckpt 34 greedy) | G_U **+2.00 pp** [+0.34, +3.51] (GO-imputed LB +0.32); searched U score **0.5145** [0.5008, 0.5282] vs raw 0.4948; panels REPORTED: P72 +4.69, H +1.32, F 0.00 | `../research_state/measurements/sprime_honest_play_2026-11-06/README.md`; ledger 2026-11-09 |
 
 ---
 
@@ -966,7 +979,8 @@ limits:
 | Q15 | Are the opponent's own past choices usable evidence about its hidden MOVES? | **L3**: the truth's rank among honest worlds by the likelihood of the opponent's observed choices under its policy, per opponent stratum | **ANSWERED 2026-10-20** (pre-registered `4d149799`): YES as a judge, PROVISIONAL-POOL. The truth out-ranks honest worlds, AUC 0.692 [0.655, 0.728] (WORKS), carried by the snapshot stratum (0.796; bots 0.588, WEAK alone); the confidence control reads 0.481, but pool familiarity is not ruled out by it (review F2). The familiarity counter-test (pre-registered, NOT-DETECTED): pool decoys beat honest worlds (0.575, clear), and the truth beats its decoys only inconclusively (0.578 [0.489, 0.664]), so part of L3 is pool-ness. **Off-pool at P\* (`search_offpool_bank_2026-10-20/`): REPLICATED-SELF-PLAY-ONLY** (snapshots 0.794, bots 0.472 NO-EVIDENCE), and an off-pool ladder decoy gets no lift (0.503): the pool lift was memory, not coherence; the truth beats its off-pool decoys (0.611). Re-weighting today's 8 honest worlds barely moves the moves (+0.005 pooled), so the next step is stage 1c with a bigger or team-level proposal set. **Stage 1c's PHASE A READ 2026-10-20** (`../research_state/measurements/search_1c_2026-10-20/`; 128 F + 128 C_ladder proposals per state weighted by dice × the likelihood): NEARER on all three primaries (ΔH +0.007 F, +0.019 corpus STRICT, +0.013 both), none MATERIAL, PROVISIONAL-POOL and SELF-PLAY-ONLY (bots NOT-DETECTED); the likelihood's own selection +0.008 on F (snapshot-only), not detected on the corpus; the exact-world mass ≈ 0 (≤ 0.0003). **Phase B READ 2026-10-21:** honest search over the resampled worlds with L1's anchor is NOT-DETECTED against the policy on every arm (C128L +0.007 [−0.003, +0.017], n 285; Holm: none pays): NEARER BUT NOT PAYING. Open: the same screen on E2, an off-pool bot bank rich in P\*'s losses, phase A / B on the off-pool bank (only the snapshot stratum can carry a gain there), and a HUMAN OPPONENT MODEL for the ladder (our network as the opponent model shows nothing against a non-self opponent off-pool). **That model is DESIGNED + PRE-REGISTERED 2026-10-23** ([`design_x50_rung1b_human_opponent_model.md`](design_x50_rung1b_human_opponent_model.md)): X26's network fine-tuned from P\* on ≈ 2M human (≥ 1500) ladder choices, the viewer's own side completed from Smogon sets, used ONLY as this likelihood's judge, never read by the policy. Decisive read R-b2: the off-pool bank re-scored with it as the judge; PASS (HOM-EVIDENCE) = the bot stratum WORKS (lower > 0.555) AND above P\* paired, which re-opens this route for non-self opponents (stage 1c on the off-pool bank); HOM-NONE closes it and leaves public-team proposals. ≈ 15–18 CPU-h, 0 GPU-h; the owner approved it 2026-10-23. **R-b2 READ 2026-10-24: HOM-NONE** (`../research_state/measurements/x50_r1b_hom_2026-10-23/`): the HOM is LEARNED on held-out humans (R-b1: −0.582 nats [−0.599, −0.565] against P\*), yet as the judge on the off-pool bank its bot stratum reads 0.459 [0.406, 0.510] (NO-EVIDENCE) and its paired ΔAUC against P\* −0.013 [−0.068, +0.045]; snapshots fall to 0.706 (P\* 0.794). The lever is CLOSED for search at P\*; the bot proxy (F-1b-3) leaves the ladder's own read (L3-H) unbuilt |
 | Q16 | Does anchored one-ply search ADD to an exploiter, or DEFEND its target against one (the robustness side)? | **R0's search cells** (X35 `R0_REGISTRATION.md` §4, registered 2026-10-20): L1's piKL (λ 0.015, TRUNC-4-K8, 8 honest worlds) on a best responder's final against its target, and the target + piKL against the best responder; 100 paired deals a cell, DESCRIPTIVE. Predicted: +1 pp added to the exploiter, +3 pp of defence (by unpredictability, not better play). L1's decision-level IMP cannot answer it (its referee plays the searched network on both sides) | ≈ 53 CPU-h a cell, 4 cells; needs a LIVE one-ply search player in games (not built; S0b's was never built) |
 | Q17 | Does one-ply search on P\* gain MORE where P\* pilots an unfamiliar team (U) than on its own (home72), and does it close goal (b)'s gap? | **S-U** (`design_search_u_headroom.md`, DRAFT): P\* vs P\* + piKL from turn 10 against Kakuna, home72 and pooled U, one engine, paired by deal; U-HEADROOM / U-LESS / NO-U-PREMIUM on the interaction, DOES-NOT-CLOSE-B on G_U (positives leak-inclusive). H-MID (2026-10-26) does not rule it out and does not motivate it (review M4: the search leaf is the self-play regime, where the premium cancels); S-U is an independent question. Its within-node premise (F5 of the 10-27 survey) is V-RANK's (`design_v_rank_on_u.md`, DRAFT), a filter that can turn S-U OFF. Its sign-accuracy gate reads GO on the leak-reduced S′ (`r0s4_rolls`): 0.599 [0.543, 0.649] on pooled U, under the self-referee only. The deviation-only live read asked the same of the real Kakuna and reads **STOP** (2026-11-01): pooled-U mean D +0.0120 [−0.0155, +0.0388] at 1,793 departures, so S-U stays unplayed on S′; the self-referee's own effect on those fresh departures is +0.0099, against the re-gate's +0.034. G_U alone was asked directly by **S′-LIVE** (`design_sprime_live_play.md`), which reads **GO-LEAKY** (2026-11-05): G_U +4.60 pp [+2.66, +6.48] on 2,698 fresh paired U deals (GO-imputed LB +2.57), searched-arm U score 0.545 [0.526, 0.564], leak-inclusive; it licenses a leak-honest replication only; the interaction I (home72) is still unplayed | ≈ 560 CPU-h central (480–640) at 1,200 deals a set on the lean world screen (ESTIMATE, one game; the old builder ≈ 2,000–3,000); the live search player is BUILT (§6.4); a rented-box read; registered, stage 0 HELD. V-RANK ≈ 96 CPU-h, not built |
-| Q18 | Can the network ABSORB search's gain: does a P\* student distilled from S′'s choices beat P\* without search? | **X65 ExIt-0** (`design_x65_exit0_search_distillation.md`): three panel-fold students, each fine-tuned on ≈ 65k banked S′ labels with a KL anchor to P\*. A delivery gate on held-out S′ decisions comes first; then a two-look read against Kakuna on the held-out panel (look 1 with S′-LIVE's banked raw arm as control; look 2 on 4,500 fresh deals). GO / NULL (< +2 pp) / UNDECIDED / NOT-DELIVERED. ExIt-0H re-runs it on S′-HONEST's honest labels; ExIt-1 (PPO + auxiliary KL) follows on a GO. **READ 2026-11-06: NOT-DELIVERED**, pooled Δagree −1.26 pp [−1.40, −1.11] (the students agree with S′ less than P\* does on every held-out panel); no game played, ExIt-1 not funded | answered at this recipe only; an honest-label or stronger-recipe distillation needs a new registration |
+| Q18 | Can the network ABSORB search's gain: does a P\* student distilled from S′'s choices beat P\* without search? | **X65 ExIt-0** (`design_x65_exit0_search_distillation.md`): three panel-fold students, each fine-tuned on ≈ 65k banked S′ labels with a KL anchor to P\*. A delivery gate on held-out S′ decisions comes first; then a two-look read against Kakuna on the held-out panel (look 1 with S′-LIVE's banked raw arm as control; look 2 on 4,500 fresh deals). GO / NULL (< +2 pp) / UNDECIDED / NOT-DELIVERED. ExIt-0H re-runs it on S′-HONEST's honest labels; ExIt-1 (PPO + auxiliary KL) follows on a GO. **READ 2026-11-06: NOT-DELIVERED**, pooled Δagree −1.26 pp [−1.40, −1.11] (the students agree with S′ less than P\* does on every held-out panel); no game played, ExIt-1 not funded | answered at this recipe; the learnability probe (2026-11-06, DESCRIPTIVE) matches reading 2, S′'s departures unlearnable at this scale (curve arms' held-out Δagree ≤ 0 at every checkpoint while a same-rate control transfers +11.70 pp). ExIt-0H on S′-HONEST's 188k honest labels needs a new registration |
+| Q19 | Can P\* + S′h's gain be bought cheaper, and played as a DEPLOYABLE player? | S′-HONEST's GO-HONEST (2026-11-09) licenses both registrations: a cost read (a budget or builder cheaper than `r0s4_honest_inc@10`: fewer exclusions, S′H-15's fix, a smaller K) and the deployable player's design (S′h within a game clock, on the hardware it would play from) | un-paused 2026-11-09; nothing designed or registered. A new preset or builder is a new registration that must say it was chosen after this read's outcome (PREREG §8, §10) |
 
 ---
 
@@ -1045,3 +1059,4 @@ limits:
 | 2026-11-06 | **S′-HONEST STAGE 1 BUILT** (its builder, orchestrator brief; no PREREG) | the status block's "Next" and §6.1's two cures: `r0s4_honest` (fresh dice per segment, the search a function of I, keyed by I); INV 14 passed; `r0s4_rolls` 600 / 600 identical at stamp `port=74eb0a3bc35bd465/95;env=87f06ac3ab0b911b/130`; budget B3: U exclusions 3 % (F 5 %), ≈ 8.6–13.0 CPU-min a searched game | — | `design_sprime_honest.md` §8; `measurements/sprime_honest_stage1_2026-11-05/` |
 | 2026-11-06 | **X65 ExIt-0: NOT-DELIVERED** (its read operator, orchestrator brief; PREREG Amendments 1–3) | the status block's X65 bullet; Q18's row | reading it as "the network cannot absorb search" (one recipe; labels leak-inclusive) or as a verdict on S′ | `../research_state/measurements/x65_exit0_2026-11-05/README.md`; ledger 2026-11-06 |
 | 2026-11-06 | **S′-HONEST's INCREMENTAL builder BUILT, with its stage 1b** (its builder, orchestrator brief) | the status block's "Next" bullet: `r0s4_honest_inc` (worlds carried through a battle's searched decisions, ≥ 2 of 8 fresh a decision, still a function of I), INV in sequence mode on every channel, `r0s4_honest` and `r0s4_rolls` byte-identical at stamp `port=f0fe71f6c54757b2/95;env=c0b7c649acfb48d8/130`; stage 1b: U ≈ 6.2 CPU-min a searched game at K = 6 (`r0s4_honest` 30.3), U exclusions 3.4 % (7.7 %), the same pick as `r0s4_honest` in 63 % (its own floor 63 %) | rejuvenation by periodic cold rebuilds; the first cuts that emptied the carry or paid a full attempt every few decisions in a stuck battle (`design_sprime_honest.md` §9.2) | `design_sprime_honest.md` §9; `../research_state/measurements/sprime_honest_inc_stage1b_2026-11-06/README.md` |
+| 2026-11-09 | **S′-HONEST: GO-HONEST, GOAL-B-REACHED** (the result recorder, orchestrator brief) | the status block rewritten (S′-HONEST first; S′-LIVE compressed to "Before it"; X65 ExIt-0 and the X65 learnability probe's reading 2 folded into one distillation bullet; the incremental builder's stage 1b figures kept); §1's first bullet; W13; Q18's row (the probe); Q19 (cost, the deployable player) | quoting "goal (b) met" without its regime; reading the cross-read difference (+2.60 pp [+0.12, +5.07], unpaired, selected) as the leak's measured share; a panel claim (P72 carries the pooled point; panels are reported, never decided) | `../research_state/measurements/sprime_honest_play_2026-11-06/README.md`; ledger 2026-11-09 |

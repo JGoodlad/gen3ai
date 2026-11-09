@@ -466,6 +466,7 @@ table reconstructed from git (`engine_at`: the stamp's listing at that commit, p
 | E2 | `806f97bd…/90` / `9ecb4249…/125` | D3 look 1 (anchor `2cc864f2f`, S `1ed71c9dd`) |
 | E3 | `0d3d7629…/91` / `393631b8…/126` | N1-P look 1 (`46b9e572c`; repin `de15dfc7b`) and N1-P look 2 (`de15dfc7b`, AM-N1P-2; look 1 imported): one engine throughout. X60-T (`f564c333f`, AM-X60T-1: `de15dfc7b`'s play path but the panel registry; C0's X61P cells import) |
 | E4 | `e00a212a…/94` / `3d0d5c9c…/129` | the S-U gate test (`835c6b4b2`), its re-gate (offline, scored on the gate's states) the deviation-only live read (`c01ae8ee5`; raw lane, scorer and branches) and S′-LIVE (pin `0c76b521e`, both arms, all 5,400 units and the identity re-score; 2026-11-01 to 11-05): one engine throughout. A checkout stamps it only when built `--with-rust` (the stamp hashes the untracked `src/rust_env/Cargo.lock`; dlive DL-4) |
+| E6 | `f0fe71f6…/95` / `c0b7c649…/130` | S′-HONEST (pin `e46e3ddf8`, both arms, all 10,200 units and both identity re-scores; 2026-11-06 to 11-09): one engine throughout. The stamp the fresh-dice matcher and its carried trajectory added (opt-in; `r0s4_rolls` re-scores S′-LIVE byte-identically on it) |
 | unbanked | `67a272e7…/93` / `d79c3a74…/128` | main after the 2026-10-26 full-parity batches (BF4, `2a877361a`), X59-S's registered engine. Any engine not listed is unbanked and enters the id; `main.anchors --dry-run` prints a checkout's |
 
 **Mixed-engine comparisons in shipped records.** Each was guarded game for game, and no verdict is shown to be affected.

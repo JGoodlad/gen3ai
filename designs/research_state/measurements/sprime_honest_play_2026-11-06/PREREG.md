@@ -836,3 +836,7 @@ subtracts the other lanes' K as the life script does.
   AGENT shape (K = 6), and a later life moves it to the BOX shape (hold, drain, resume).
 - **S′HP-10 (the exhaustion hold at K = 14).** "More than 2 exhaustions in 6 h" was set beside K = 6; at K = 14 it
   trips ≈ 2.3× as often at the same per-unit fault rate. Kept as the standing rule; a hold is a pause.
+- **The record's FINDINGs (2026-11-09, the result recorder):** S′HR-1 (live exclusions U 5.55 % against the projected
+  3.35 %, every panel under its bound, `excess_exclusions` false), S′HR-2 (quote GOAL-B's score, not `score_u`), and
+  S′HP-7 / S′HP-11 closed (the REBUILD re-score cost 25.8 CPU-h; both lives ran the BOX shape). The verdict, GO-HONEST
+  with GOAL-B-REACHED, and each FINDING in full: [`README.md`](README.md).
