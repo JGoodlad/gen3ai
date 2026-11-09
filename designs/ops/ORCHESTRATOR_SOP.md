@@ -106,8 +106,9 @@ entries naming what they supersede) → **dispatch** the next probe or build to 
   one-command read, a landing, or a ruling. Said after the orchestrator had run several analyses
   itself in one morning (a gradient decomposition, a ladder refit, a capacity battery, a per-bot
   table) — each correct, each a thing an agent should have carried.
-- **Every subagent runs on OPUS: pass `model: "opus"` on every `Agent` call. Never Fable — the
-  orchestrator's own model — unless the owner is asked and says yes (owner, 2026-09-06).** A `fork`
+- **Subagents run on Opus, Sonnet or the pinned Fable tiers below: pass `model: "opus"` on an `Agent` call that
+  names no tier. The old "never Fable" rule (owner, 2026-09-06) is lifted for the `fable-*` tiers by the owner's
+  2026-11-09 request; any other Fable use still needs the owner's yes.** A `fork`
   agent inherits the parent's model and ignores the override, so forks are off-limits too; write a
   brief instead. The reason is the split the owner wants explicit rather than left to defaults:
   Fable is the expensive tier and the orchestrator's judgement is what needs it, not the agents'
@@ -119,6 +120,12 @@ entries naming what they supersede) → **dispatch** the next probe or build to 
   `sonnet-medium` for fully specified routine edits, runs and inventories; `sonnet-high` for manifest-driven
   deletions, test additions and judgement-light docs; `sonnet-xhigh` where depth is needed at lower cost;
   `opus-*` for GIGO risk, parity-gated Rust crossings, pre-registrations and anything steering an era.
+- **Fable 5.2 tiers (owner request, 2026-11-09): `fable-{medium,high,xhigh}`** (`~/.claude/agents/fable-*.md`),
+  pinned to `model: claude-fable-5-2`. The `fable` alias in Claude Code 2.1.317 still resolves to 5.1, so the
+  pin is the ID, not the alias; re-check it after a Claude Code upgrade. Fable draws on its OWN weekly quota
+  window, separate from Opus and Sonnet. New agent files under `~/.claude/agents` are picked up by running
+  sessions on their own (observed 2026-11-09: no restart needed). Capability and cost vs the other tiers: **UNVERIFIED**
+  (no Artificial Analysis index value measured); the cheapest-tier-that-fits-the-risk rule applies unchanged.
 - **Dispatch is standing permission, not a question** (owner, 2026-08-22, reaffirmed 2026-08-28):
   follow-ups may be CHAINED autonomously as results land, including build agents that add live
   TensorBoard instrumentation so future runs surface what a post-hoc probe would otherwise have to

@@ -68,7 +68,7 @@ Briefs do not repeat these; an agent that breaks one has broken its brief.
 
 Mechanics: `designs/ops/ORCHESTRATOR_SOP.md` §2 (dispatch), §7 (stalls, waiting).
 
-- Dispatch a named type (`opus-*`, `sonnet-*`), the cheapest that fits the risk and never above your own effort;
+- Dispatch a named type (`opus-*`, `sonnet-*`, `fable-*`), the cheapest that fits the risk and never above your own effort;
   never a fork or a generic type, whose effort you do not control.
 - Never an unbounded wait on a sub-agent (its notification can fail to arrive). A main session is covered by the
   idle-keepalive plugin (it wakes the session after 55 min idle); a sub-agent arms ONE bounded watcher, preferably on
