@@ -4,7 +4,12 @@ panel), and the PROTOTYPE's timer block on them (timer_replay.py's simulate). Re
 into a scratch dir so the prototype's loader reads nothing else).
 
     python3 make_timer_fixture.py   # run from anywhere; WT below is the checkout"""
-import collections, gzip, importlib.util, json, os
+import collections
+import gzip
+import importlib.util
+import json
+import os
+
 WT = os.environ.get("WT", os.getcwd())
 spec = importlib.util.spec_from_file_location("proto", WT + "/designs/research_state/measurements/searched_cost_2026-11-09/inputs/timer_replay.py")
 P = importlib.util.module_from_spec(spec); spec.loader.exec_module(P)

@@ -293,8 +293,8 @@ git objects, not the working tree); otherwise it exits 2 naming the files that d
   `src/main/anchors/`, the front end, `src/agents/{model,inference,observation,gen3_data}/`, the Rust sources and build
   inputs that make `sim_bridge` (`src/rust_sim/src/`, `Cargo.*`, `build*.rs`), `data/`, the `deps/` pointers,
   `mem_cap.sh`, `anchors.json`, the panel registry and the committed cell configs and home72 teams. Tests and `*.md`
-  are never on it. Within `main/reads/` only `__init__.py` and `supervisors.py` are ON it (`kakuna` reaches them), so editing
-  either blocks a repin (the nested-supervisor claims and the package docstring edited both: a read pinned before them
+  are never on it. Within `main/reads/` only `__init__.py`, `supervisors.py` and `timer_model.py` (the searched player's safety-net
+  clock) are ON it (`kakuna` reaches them), so editing any blocks a repin (the nested-supervisor claims and the package docstring edited both: a read pinned before them
   repins only to a commit that leaves them as they were); every other module (`runner`, `api`, `cli`, `repin`, `playpath`, `anchor_pool`, `lanectl`,
   `speccheck`, …) is OFF it (`playpath_test` pins this). NOT covered, because git does not hold them: the Metamon cache and weights,
   panel team dirs outside the repo, the model copies, the toolchain. Each unit verifies those at play (team digests,

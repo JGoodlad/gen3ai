@@ -20,8 +20,9 @@ them: the Metamon cache and weights, the panel team dirs outside the repo, the m
 verifies those itself at play (the preflight's team digests, the weights pins, the model's sha256).
 
 ``main/reads/runner.py``, ``api.py``, ``cli.py``, ``repin.py``, ``anchor_pool.py``, ``lanectl.py``, ``speccheck.py`` and this
-module are NOT in the closure (only ``main/reads/__init__.py`` and ``supervisors.py`` are), which is what lets a scheduling
-change reach a running read; ``playpath_test`` pins that.
+module are NOT in the closure (only ``main/reads/__init__.py``, ``supervisors.py`` and ``timer_model.py`` are: the last is
+PLAY code, the live searched player's safety-net clock), which is what lets a scheduling change reach a running read;
+``playpath_test`` pins that.
 """
 from __future__ import annotations
 

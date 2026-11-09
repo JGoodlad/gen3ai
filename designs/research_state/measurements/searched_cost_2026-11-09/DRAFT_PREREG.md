@@ -214,7 +214,18 @@ CPU-h of units over ≈ 47 h of its two lives) → stage 1 ≈ 36–48 h. On the
   `excluded_cpu_min`, the excluded decisions' distribution, `net_cut`, and the timer replay.
 - **R5 built:** the live net in `main.anchors.search_side` (`why: "deadline"`, the search's own pick in the record's
   `net` block, `search_view` for the re-score); `searched_play` counts `net_cut` beside the exclusions.
-- **R6 built:** `stage0/` (the screen: sample, run, summarize, and the stage-0a diagnosis tool); smoke only.
+- **R6 built:** `stage0/screen.py` (`sample`, `run`, `summarize` with §3's rule as code, `selfcheck`), `stage0/run.sh`
+  (chunked) and `stage0/diagnose_f.py` (stage 0a's tool). The honest log is rebuilt from each capture and checked
+  against every banked search-path record's `log_sha256`, `at`, `update` and `key` (all 13,781 decisions of a 360-battle
+  smoke sample passed, no search). Smoke only: at REF its first three H battles reproduced the banked records exactly,
+  26 / 26 search-path decisions on every re-score field (5 exclusions included); K4 and CAP ran one battle each. The
+  registration must name what the harness takes as REQUIRED arguments: the sample's salt, the floor's salt,
+  `--cpu-meter` (criterion (ii): `cpu_all` or the records' `cpu_s`) and stage 0a's stuck share (`--stuck-denominator`,
+  `--stuck-scope`). **Criterion (ii) is confounded by the box's load:** in the smoke CAP's searched decisions did
+  REF's exact work (the same `spent`, chain modes and picks) at ≈ 1.5 × its CPU, run at a busier moment; arms must be
+  run interleaved per battle (or concurrently on the same battles, or on a quiet box), a choice for the registration.
+  Estimated stage 0 at the sample: ≈ 86–130 CPU-h (REF, a salted REF floor, K4, CAP); its wall is set by the heavy-slot
+  queue (each chunk waited 12–47 min for a slot beside the live run), not by the CPU.
 
 Nothing else in `searched_play` changes: one searched label and its raw twin, the same imputation, bootstrap, G-PREFIX
 and identity guard. A three-arm form (X, REF and raw on one set of deals) would need `searched_play` to accept two

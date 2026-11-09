@@ -157,7 +157,8 @@ def test_a_commit_that_is_not_a_gen3ai_tree_or_not_a_commit_is_a_named_error(min
 # ------------------------------------------------------------------------- the real repo
 def test_the_real_play_path_holds_the_named_files_and_no_scheduling_code():
     """What lets a scheduling fix reach a running read: the supervisor's verbs are OFF the path (``supervisors.py`` and
-    the package ``__init__`` are the two ``main.reads`` files ``main.x35.kakuna`` reaches, and stay on it)."""
+    the package ``__init__`` are the ``main.reads`` files ``main.x35.kakuna`` reaches, and stay on it; ``timer_model``
+    is PLAY code, the safety net's clock that ``main.anchors.search_side`` imports, so it is on it too)."""
     try:
         head = PP.resolve("HEAD")
     except PP.PlayPathError:
@@ -168,7 +169,7 @@ def test_the_real_play_path_holds_the_named_files_and_no_scheduling_code():
         assert must in got, must
     assert any(p.startswith("src/rust_sim/src/") for p in got) and any(p.startswith("data/") for p in got)
     on = sorted(p for p in got if p.startswith("src/main/reads/"))
-    assert on == ["src/main/reads/__init__.py", "src/main/reads/supervisors.py"], on
+    assert on == ["src/main/reads/__init__.py", "src/main/reads/supervisors.py", "src/main/reads/timer_model.py"], on
     assert not any(p.endswith(("_test.py", ".md")) or p.endswith("conftest.py") for p in got)
 
 
