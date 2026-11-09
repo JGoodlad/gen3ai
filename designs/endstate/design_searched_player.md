@@ -230,9 +230,10 @@ replay (the front end has none), which is conservative because the box's walls a
 
 ## 8. The mission: what the evidence says the line should become
 
-**The tension.** `UNDERSTANDING.md` §1 says the mission is "a Generation 3 OverUsed (gen3 OU) generalist that keeps
-improving: not a specialist, not a search agent". Goal (b), beating Kakuna on unfamiliar teams, is met only with
-search.
+**The tension (resolved 2026-11-09).** `UNDERSTANDING.md` §1 said the mission was a generalist "not a specialist, not
+a search agent", while goal (b), beating Kakuna on unfamiliar teams, is met only with search. The orchestrator, under the
+owner's 2026-11-09 delegation, adopted the mission sentence now in `UNDERSTANDING.md` §1 (Decision record, 2026-11-09
+mission row).
 
 **What the evidence says.**
 - **The network alone has stopped improving on goal (b).** P\* is at its plateau (the continuation to 480M read FLAT
@@ -247,10 +248,8 @@ search.
 - **The owner's side constraint (ladder-playable) binds the searched player more than the network**: as read it
   forfeits 16 % of timed games (§2).
 
-**What it should become** (a proposal for the orchestrator and the owner; this doc does not edit §1): keep the network
-as the product and the yardstick, and admit one-ply, leak-honest search at play time as a separately measured layer
-that must fit the turn timer. The proposed sentence is in the Decision record's 2026-11-09 row and the cost read's
-DRAFT §0; the orchestrator decides.
+**What it became** (adopted 2026-11-09, `UNDERSTANDING.md` §1): the network stays the product and the yardstick, and
+one-ply, leak-honest search at play time is a separately measured layer that must fit the turn timer.
 
 ---
 
@@ -298,3 +297,4 @@ non-inferiority read against `r0s4_honest_inc@10` at a margin that matters is un
 | date | decision | chosen | rejected / alternatives | evidence |
 |---|---|---|---|---|
 | 2026-11-09 | **This doc CREATED** (the search-next designer, Q19, orchestrator brief; design and banked-data analysis only, no game, no search run) | a deployable player = P\* + S′h inside a timer-safe envelope: deterministic count budgets sized for the timer, a bank-aware deadline (min(bank, 150) − 10 s) only as a safety net that cuts the pick and lets the step finish (a hang kills the child and switches the battle's search off); one searcher child process per battle; I read from the wire with an equivalence gate against the true log on our own server; the bank read from the server's `\|inactive\|` line. The timer facts read at the source (§2). The mission sentence PROPOSED to the orchestrator, not written into `UNDERSTANDING.md`: "**The mission.** A Generation 3 OverUsed (gen3 OU) generalist that keeps improving: not a specialist, and not a search-first agent: the trained network is the product and the yardstick for every training lever, and one-ply, leak-honest search at play time (only our action branched at the root, the network on both sides of every playout, inside the ladder's turn timer) is a separately measured layer on top of it, never a substitute for improving the network." | a fixed per-decision deadline (§2: never safe past turn 100); a wall-clock deadline as the primary envelope (unreproducible picks; the identity guard cannot re-score a cut); dropping an overrun step (the carry would become a function of the clock); switching search off at every overrun (9.3 % lost against 8.4 %); the search in a thread (cannot be killed); deploying `r0s4_honest_inc@10` as read (16.2 % timer forfeits); editing `UNDERSTANDING.md` §1 here (the orchestrator decides) | `timer_replay.json` and `timer_replay.py` in `../research_state/measurements/searched_cost_2026-11-09/inputs/` (sha256 `842bb278…577c`); `deps/pokemon-showdown/server/room-battle.ts` (`e0551883f`); `../research_state/measurements/sprime_honest_play_2026-11-06/README.md` |
+| 2026-11-09 | **Mission sentence ADOPTED** into `UNDERSTANDING.md` §1 (the orchestrator, under the owner's 2026-11-09 "lead the ship, make reasonable decisions"), and with it the reading "one ply = only our action is branched at the root; playouts run the network on both sides" (`design_search_next.md` D-10) | the sentence proposed in the row above, verbatim; D-10's reading adopted, **OWNER-CONFIRMATION PENDING** (the owner may veto; SP-5's gate on building past P2 stands until confirmed) | "not a specialist, not a search agent" (goal (b) is met only with search); leaving D-10 unread by the owner | the owner's 2026-11-09 delegation; `design_search_next.md` D-10; FINDING SP-5 |

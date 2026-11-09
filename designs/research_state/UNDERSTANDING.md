@@ -156,7 +156,7 @@ under `measurements/`. A number with no pointer is not a measurement.
 
 ## 1. The mission, the goals and the era
 
-**The mission.** A Generation 3 OverUsed (gen3 OU) generalist that keeps improving: not a specialist, not a search agent. The owner's
+**The mission.** A Generation 3 OverUsed (gen3 OU) generalist that keeps improving: not a specialist, and not a search-first agent: the trained network is the product and the yardstick for every training lever, and one-ply, leak-honest search at play time (only our action branched at the root, the network on both sides of every playout, inside the ladder's turn timer) is a separately measured layer on top of it, never a substitute for improving the network. The owner's
 permanent side constraint is that it must be able to play the public ladder; no ladder campaign runs without the
 owner's approval (`designs/endstate/design_ladder_campaign.md`).
 

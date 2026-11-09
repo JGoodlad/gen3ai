@@ -513,7 +513,9 @@ and every honest R is ≈ 0, the only open route is identification. On the ladde
 - **D-9.** E3's truth proxy (end-of-game reveals) is partial and selected. About half of all games end in a forfeit,
   and long games reveal more.
 - **D-10.** The scope reading (a 4-turn greedy-playout leaf as part of a one-ply evaluation, offline only; live only in
-  the gated E4) is an interpretation of the owner's 2026-09-30 rule. The owner should confirm it.
+  the gated E4) is an interpretation of the owner's 2026-09-30 rule. The owner should confirm it. **2026-11-09: the
+  orchestrator ADOPTED the reading "one ply = only our action is branched at the root; playouts run the network on both
+  sides" under the owner's delegation, OWNER-CONFIRMATION PENDING (the owner may veto).**
 - **D-11.** E2's POOL arm is legitimate only because R0's opponents draw from the pool, and the R0 transfer is within
   P\*'s lineage only. Neither transfers to the ladder.
 - **D-12.** Unread here: the BR's deviation rate against P\*, the paired discordance for E4's power, and every cost in
