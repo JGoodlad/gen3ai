@@ -98,3 +98,42 @@ def test_a_fold_trains_picks_and_exports_bit_identically(tmp_path):
     tr = EX.trainer_logits(init, th.load(out / doc["picked"]["path"], weights_only=True), EX.fixture())
     pn = EX.pin_logits(out / "model" / "bad.zip", repo_path(), tmp_path / "bad.npz")
     assert EX.verify(tr, pn, EX.fixture()["sha256"])
+
+
+@pytest.mark.slow
+def test_an_x66_fold_trains_on_an_honest_bank_picks_on_val_and_exports_bit_identically(tmp_path):
+    import json
+    import subprocess
+
+    import torch as th
+
+    from agents.model.compile_parity_fixture import FIXTURE_PATH
+    from utils.paths import repo_path
+
+    fx = np.load(FIXTURE_PATH)["obs"].astype(np.float32)
+    (tmp_path / "bank").mkdir()
+    bank = _bank(tmp_path / "bank", n_deals=48, rows_per=24, obs=fx, source="sprime_honest")
+    init = _fresh_zip(tmp_path / "init")
+    sha, bsha = BK.sha256_file(init), BK.sha256_file(bank / "bank_manifest.json")
+    out = tmp_path / "s_p"
+    assert ST.train(bank, bsha, "p72", 1e-4, init, out, limit_steps=3, init_sha256=sha, recipe="x66") == 3
+    assert ST.train(bank, bsha, "p72", 1e-4, init, out, init_sha256=sha, recipe="x66") == 0          # resumed
+    d = out / "lr0.0001"
+    st = th.load(d / "state.pt", weights_only=False)
+    assert st["recipe"] == "x66" and st["seed"] == 6613 and st.get("probe") is None
+    assert len([h for h in st["hist"] if h["checkpoint"] is not None]) == 24
+    assert len(list(d.glob("eval_s*.npz"))) == 25                       # step 0 and every checkpoint, scored
+    with np.load(d / "rows.npz") as z:
+        assert set(z["read__panel"].tolist()) == {BK.U_PANELS.index("p72")}
+    with pytest.raises(ST.StudentError, match="another bank"):          # an x65 resume of an x66 state is refused
+        ST.train(bank, bsha, "p72", 1e-4, init, out, init_sha256=sha, probe={
+            "name": "x", "beta": 0.1, "epochs": 12, "evals_per_epoch": 2, "train_panels": None,
+            "target_model": None})
+    doc = ST.pick(out, "x66")
+    assert doc["student"] == "S_P" and doc["picked"]["step"] > 0
+    head = subprocess.run(["git", "-C", str(repo_path()), "rev-parse", "HEAD"], capture_output=True,
+                          text=True, check=False).stdout.strip()
+    ex = EX.write(out, init, repo_path(), init_sha256=sha, pin=head)       # this checkout stands in for the pin
+    assert ex["bit_identical"] and ex["recipe"] == "x66" and Path(ex["zip"]).name == "x66_S_P.zip"
+    side = json.loads(Path(ex["zip"]).with_suffix(".json").read_text())
+    assert side["x65_student"]["recipe"] == "x66"
