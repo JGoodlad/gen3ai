@@ -416,9 +416,10 @@ def other_roster(ro: OpRoster, hs: HypothesisSet, hb: Any, move_belief: Any, bas
     priced by the blob's own AVERAGED construction, ``P_tail @ tables``:
 
     * defender: ``species_probs`` = ``P_tail`` — `_outgoing_matrix`'s expected-latent read (E[def], E[spd],
-      E[maxhp], E[type x ability multiplier]); ``concrete`` = 0 there, so P(KO) stays NULLED (the averaged
-      defender's KO is a threshold of averaged stats — exactly the blob);
-    * attacker: ``att_base`` = E[base stats] (atk / spa / max-HP are linear in them, so f(E[base]) = E[f]),
+      the max-HP belief's mixture, E[type x ability multiplier]); ``concrete`` = 0 there, so P(KO) stays NULLED
+      (the averaged defender's KO is a threshold of averaged stats — exactly the blob);
+    * attacker: ``att_base`` = E[base stats] (atk / spa are linear in them, so f(E[base]) = E[f]; its max HP is the
+      max-HP belief's mixture over the same ``P_tail``, `damage_kinds.their_hp_slots`),
       ``has_type`` = E[STAB indicator] per move type, ``spe`` = E over the spread prior's mean (audit F7a, completed
       at the version break's part 5: no speed-SPREAD average — the speed rule reads the tail's discrete
       Smogon speed mixture, `gen3_speed_mixture_v1`, and `off` the mean alone);

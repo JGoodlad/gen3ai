@@ -90,8 +90,9 @@ its GO.
   ([`research_state/measurements/x67_entropy_screen_2026-11-09/PREREG.md`](research_state/measurements/x67_entropy_screen_2026-11-09/PREREG.md)).
   Three P\* + 20M forks with a quarter of the entropy bonus (`ent_coef` 0.0125; ≈ 12.3 GPU-h) against the banked
   no-lever forks, head to head. A PASS names 0.0125 for the base recipe of BOTH BOUNDARY-1 arms.
-- **MF-2: BOUNDARY-1**, one retrain boundary for E13 (their max HP as a belief), round 2 of the mechanics fixes and E9,
-  each screened first by a forward census on P\*'s rows; trained by MF-5's fresh pair, no GPU of its own.
+- **MF-2: BOUNDARY-1**, one retrain boundary for E13 (their max HP as a belief; built, config v168), round 2 of the
+  mechanics fixes and E9, each screened first by a forward census on P\*'s rows; trained by MF-5's fresh pair, no GPU
+  of its own.
 - **MF-3 step (b), queued second:** the opponent belief retrained on the ladder population (P\*'s species posterior is
   worse than the Smogon prior on unfamiliar opponents, ledger 2026-10-26 H3), read first by its CPU-minute meter P5
   (≈ 1–2 GPU-h).

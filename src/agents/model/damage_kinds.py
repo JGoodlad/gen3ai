@@ -164,20 +164,204 @@ def our_stats(base: torch.Tensor, spread: torch.Tensor) -> Tuple[torch.Tensor, t
 RESIDUAL_DENOMS: Tuple[float, ...] = (16.0, 8.0, 4.0, 2.0)
 
 
-def residual_points(maxhp: torch.Tensor, denom: float, exact: torch.Tensor) -> torch.Tensor:
-    """THE gen-3 end-of-turn residual amount in HP points (gen3_residual_exact_v1), for a mon of max HP ``maxhp``:
-    `sim/battle.ts` ``spreadDamage`` ``clampIntRange(damage, 1)`` = ``max(1, ⌊maxhp / denom⌋)`` for a chip, and
-    ``heal``'s ``if (damage && damage <= 1) damage = 1; damage = trunc(damage)`` — the same integer — for a heal (the HP
-    clamps are the caller's: `sim/pokemon.ts` ``damage`` stops at 0, ``heal`` at max HP). Where ``exact`` (a bool
-    mask: OUR mon, whose max HP is the exact integer, and a Shedinja, whose max HP is 1 on either side) it is that
-    integer — a 1-max-HP Shedinja loses its one HP to a 1/16 sand chip; elsewhere (THEIR mon, whose max HP is the
-    op's neutral ESTIMATE) the nominal ``maxhp / denom``, the INTENDED estimate (their max HP is backlog E13). ``denom``
-    must be a power of two (`RESIDUAL_DENOMS`), so ``maxhp / denom`` of an integer is exact in f32."""
+def residual_points(maxhp: torch.Tensor, denom: float) -> torch.Tensor:
+    """THE gen-3 end-of-turn residual amount in HP points (gen3_residual_exact_v1), for a mon of EXACT max HP
+    ``maxhp`` (OUR mon; a Shedinja's 1): `sim/battle.ts` ``spreadDamage`` ``clampIntRange(damage, 1)`` = ``max(1,
+    ⌊maxhp / denom⌋)`` for a chip, and ``heal``'s ``if (damage && damage <= 1) damage = 1; damage = trunc(damage)`` —
+    the same integer — for a heal (the HP clamps are the caller's: `sim/pokemon.ts` ``damage`` stops at 0, ``heal``
+    at max HP). A 1-max-HP Shedinja loses its one HP to a 1/16 sand chip. THEIR mon's max HP is a belief, and its
+    amount the expectation of this rule over it: `their_residual_points`. ``denom`` must be a power of two
+    (`RESIDUAL_DENOMS`), so ``maxhp / denom`` of an integer is exact in f32."""
     if denom not in RESIDUAL_DENOMS:
         raise ValueError(f"residual_points: denominator {denom!r} is not a gen-3 residual's (one of {RESIDUAL_DENOMS}); "
                          "a non-power-of-two quotient is not exact in f32 and the floor would read it wrong.")
-    nominal = maxhp / denom
-    return torch.where(exact, torch.floor(nominal).clamp(min=1.0), nominal)
+    return torch.floor(maxhp / denom).clamp(min=1.0)
+
+
+# ------------------------------------------------------------------ gen3_their_max_hp_belief_v1 (backlog E13)
+class TheirHp:
+    """THE op's belief about an OPPONENT mon's max HP ``M`` (gen3_their_max_hp_belief_v1: THE one spelling of their
+    max HP; `designs/model/op_contracts.md`). Their max HP is hidden: ``2·base + IV + tr(EV / 4) + 110`` with an HP
+    EV the opponent chose. What the agent legitimately holds is the SPECIES and Smogon's usage spreads for it, so
+    the belief is the species' discrete Smogon distribution of ``M`` (`belief_tables.build_their_max_hp`), carried
+    as the three reads the op's arithmetic needs — each exact for the quantity it enters:
+
+    * ``inv`` = ``E[1 / M]``: a damage of ``d`` HP is the expected FRACTION ``d · inv`` of their max HP (`maxhp` =
+      ``1 / inv``, the harmonic mean, is the max HP to divide by; `frac_points` their HP on that scale);
+    * ``mean`` = ``E[M]``: their HP in POINTS, where it is an operand in points (their own Endeavor), is
+      ``fraction · mean`` (`points`);
+    * ``atoms`` / ``weights`` ``[..., K]``: the distribution as a K-atom mixture, over which P(KO) is taken — a KO
+      is a threshold in ``M``, so no single value prices it (`their_ko_given_hit`, `their_fixed_ko`).
+
+    Built ONLY by `their_max_hp` (species ids) and `expected_their_max_hp` (a species distribution): nothing of the
+    opponent's actual spread can reach it."""
+
+    __slots__ = ("inv", "mean", "atoms", "weights")
+
+    def __init__(self, inv: torch.Tensor, mean: torch.Tensor, atoms: torch.Tensor, weights: torch.Tensor) -> None:
+        self.inv, self.mean, self.atoms, self.weights = inv, mean, atoms, weights
+
+    @property
+    def maxhp(self) -> torch.Tensor:
+        """``1 / E[1 / M]``: the max HP a damage in HP divides by to give its EXPECTED fraction of their max HP."""
+        out: torch.Tensor = 1.0 / self.inv
+        return out
+
+    def frac_points(self, hp_frac: torch.Tensor) -> torch.Tensor:
+        """Their current HP on the scale of `maxhp` (``hp_frac · maxhp``): the operand of a damage read as a
+        fraction of their max HP."""
+        return hp_frac / self.inv
+
+    def points(self, hp_frac: torch.Tensor) -> torch.Tensor:
+        """Their current HP in HP POINTS, in expectation: ``hp_frac · E[M]``."""
+        return hp_frac * self.mean
+
+    def lift(self, *index: Any) -> "TheirHp":
+        """The same belief indexed by ``index`` on its leading (non-atom) dims — the broadcast axes a kernel adds
+        (``their.lift(slice(None), None)``: ``[B] → [B, 1]``, the atoms ``[B, K] → [B, 1, K]``)."""
+        tail = index + (slice(None),)
+        return TheirHp(self.inv[index], self.mean[index], self.atoms[tail], self.weights[tail])
+
+
+def their_max_hp(op: Any, species_ids: torch.Tensor) -> TheirHp:
+    """THEIR max-HP belief for the opponent mons of species ``species_ids`` (any shape, INTEGER dex nums): the
+    op's `THEIR_HP_*` rows. A Shedinja is exactly 1 (species-determined). The ONLY input is the species: a
+    non-integer tensor (a spread, a stat, an HP value) RAISES — their true spread must never price their max HP."""
+    if species_ids.is_floating_point() or species_ids.dtype == torch.bool:
+        raise TypeError(f"their_max_hp: species_ids must be integer dex nums, got {species_ids.dtype}. Their max HP "
+                        "is a belief from the SPECIES (Smogon's spreads); no spread, stat or HP value may enter it.")
+    return TheirHp(op.THEIR_HP_INV[species_ids], op.THEIR_HP_MEAN[species_ids],
+                   op.THEIR_HP_ATOMS[species_ids], op.THEIR_HP_WEIGHTS[species_ids])
+
+
+def expected_their_max_hp(op: Any, their: TheirHp, sp_probs: torch.Tensor, where: torch.Tensor) -> TheirHp:
+    """``their`` ``[B, 6]`` with the slots ``where`` ``[B, 6]`` (bool) — a slot whose SPECIES is itself a
+    distribution ``sp_probs`` (``[B, S]`` shared by the six slots, or ``[B, 6, S]``): the unrevealed defender under
+    the usage prior, X5's OTHER — read as the expectation over species: ``E[1 / M]`` and ``E[M]`` are the mixture's
+    (linear in the probabilities, so exact). The atoms there collapse to the one value ``1 / E[1 / M]``: the op
+    takes no P(KO) against an averaged defender (it is nulled), and a point is the honest content of that slot."""
+    if sp_probs.shape[-1] != op.THEIR_HP_INV.shape[0]:
+        raise ValueError(f"expected_their_max_hp: sp_probs' last dim {sp_probs.shape[-1]} is not the species axis "
+                         f"({op.THEIR_HP_INV.shape[0]}): only a distribution over SPECIES may average their max HP.")
+    # Mass the distribution places on NO species (an all-zero row: a slot with nothing to average) reads as the
+    # tables' row 0, the unowned num (a point mass) — so the belief is finite on every row, never 1 / 0.
+    missing = (1.0 - sp_probs.sum(dim=-1)).clamp(min=0.0)
+    inv_u = sp_probs @ op.THEIR_HP_INV.to(sp_probs.dtype) + missing * op.THEIR_HP_INV[0]
+    mean_u = sp_probs @ op.THEIR_HP_MEAN.to(sp_probs.dtype) + missing * op.THEIR_HP_MEAN[0]
+    if sp_probs.dim() == 2:                     # one marginal per battle: broadcast the RESULTS over the slots
+        inv_u, mean_u = inv_u[:, None], mean_u[:, None]
+    inv = torch.where(where, inv_u.to(their.inv.dtype), their.inv)
+    mean = torch.where(where, mean_u.to(their.mean.dtype), their.mean)
+    first = torch.zeros_like(their.weights)
+    first[..., 0] = 1.0
+    atoms = torch.where(where[..., None], (1.0 / inv)[..., None], their.atoms)
+    return TheirHp(inv, mean, atoms, torch.where(where[..., None], first, their.weights))
+
+
+def _their_averaged(op: Any, ctx: Any) -> torch.Tensor:
+    """``[B, 6]`` bool: THEIR slots whose species is AVERAGED by the caller's species distribution — hidden, and not
+    holding a concrete species (without X5 every hidden slot; under X5 only a slot holding OTHER: a hypothesis
+    slot's species is in the context)."""
+    believed: torch.Tensor = ctx.opp_believed_mask
+    x5 = op.stash.x5
+    return believed if x5 is None else believed & ~x5.concrete.bool()
+
+
+def their_hp_slots(op: Any, ctx: Any, sp_probs: Optional[torch.Tensor] = None) -> TheirHp:
+    """THEIR six slots' max-HP belief ``[B, 6]`` (atoms ``[B, 6, K]``) from the context the op prices with: each
+    slot's species (a revealed mon; under X5 a hidden slot's hypothesis species), and in X5's OTHER-mode pass the
+    OTHER slots as the tail's expectation (`expected_their_max_hp` over ``P_tail``, the speed mixture's rule).
+    ``sp_probs`` (`unrevealed_species_probs`: the defender kernels' species distribution): the slots it AVERAGES
+    (`_their_averaged`) read its expectation too."""
+    their = their_max_hp(op, ctx.species_ids[:, TEAM_SIZE:2 * TEAM_SIZE])
+    x5 = op.stash.x5
+    if x5 is not None and x5.override is not None:
+        their = expected_their_max_hp(op, their, x5.species_probs, x5.override)
+    if sp_probs is not None:
+        their = expected_their_max_hp(op, their, sp_probs, _their_averaged(op, ctx))
+    return their
+
+
+def _their_hp_interval(their: TheirHp, hp_frac: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    """``(lo, hi)`` ``[..., K]``: per max-HP atom, the HP-point interval their reported fraction ``hp_frac`` leaves
+    (`ko_exact.opp_hp_bounds`: HP Percentage Mod's (p − 1 %, p] of THAT max HP; a full mon exact)."""
+    from agents.model.ko_exact import opp_hp_bounds
+    f = hp_frac.unsqueeze(-1)
+    return opp_hp_bounds(f * their.atoms, f, their.atoms, 1.0)
+
+
+def _mix_atoms(weights: torch.Tensor, x: torch.Tensor) -> torch.Tensor:
+    """``Σ_k w_k · x_k`` over the atom axis, written about the first atom (``x_0 + Σ_{k>0} w_k · (x_k − x_0)``, the
+    same number since the weights sum to 1) so that atoms which AGREE return their value EXACTLY: a KO every max HP
+    grants reads 1.0 and one none grants 0.0, where the plain sum returned the fp32 weights' own sum (1 ± 1.2e-7)."""
+    first = x[..., :1]
+    out: torch.Tensor = (first.squeeze(-1) + (weights[..., 1:] * (x[..., 1:] - first)).sum(-1)).clamp(0.0, 1.0)
+    return out
+
+
+def their_ko_given_hit(mean_dmg: torch.Tensor, crit_mean_dmg: torch.Tensor, their: TheirHp, hp_frac: torch.Tensor,
+                       crit_p: Optional[torch.Tensor]) -> torch.Tensor:
+    """P(KO | hit) on THEIR mon: `ko_exact.ko_given_hit` (the 16 rolls + the crit over the reported percent bin)
+    for each max-HP atom, mixed by the atoms' weights — the KO probability over rolls, the percent bin AND their
+    max HP. ``mean_dmg`` / ``crit_mean_dmg`` in HP points; ``their`` / ``hp_frac`` / ``crit_p`` broadcast to them
+    (the atoms on one trailing axis)."""
+    from agents.model.ko_exact import ko_given_hit
+    lo, hi = _their_hp_interval(their, hp_frac)
+    ko = ko_given_hit(mean_dmg.unsqueeze(-1), crit_mean_dmg.unsqueeze(-1), lo, hi,
+                      None if crit_p is None else crit_p.unsqueeze(-1))
+    return _mix_atoms(their.weights, ko)
+
+
+def their_fixed_ko(their: TheirHp, hp_frac: torch.Tensor, fixed: torch.Tensor) -> torch.Tensor:
+    """P(a fixed damage of ``fixed`` HP KOs THEIR mon) = P(their remaining HP <= ``fixed``) (`sim/pokemon.ts`
+    ``damage``: faint at ``hp <= 0``), their HP uniform on each atom's interval and mixed over the atoms: Seismic
+    Toss into a 35 % Skarmory is P(max HP <= ~285), not the yes / no of one assumed max HP. Continuous in the
+    fraction (no cut on a product of estimates); 0 where the kind deals no fixed damage."""
+    lo, hi = _their_hp_interval(their, hp_frac)
+    p = ((fixed.unsqueeze(-1) - lo) / (hi - lo).clamp_min(1e-6)).clamp(0.0, 1.0)
+    out: torch.Tensor = _mix_atoms(their.weights, p) * (fixed > 0).to(p.dtype)
+    return out
+
+
+def _residual_col(denom: float) -> int:
+    if denom not in RESIDUAL_DENOMS:
+        raise ValueError(f"denominator {denom!r} is not a gen-3 residual's (one of {RESIDUAL_DENOMS}).")
+    return RESIDUAL_DENOMS.index(denom)
+
+
+def their_residual_frac(op: Any, species_ids: torch.Tensor, denom: float) -> torch.Tensor:
+    """The EXPECTED fraction of THEIR mon's max HP its ``1/denom`` end-of-turn residual moves: ``E[max(1, ⌊M /
+    denom⌋) / M]`` — Showdown's integer rule (`residual_points`) over the species' max-HP distribution (the op's
+    `THEIR_HP_RESIDUAL`). A Shedinja's is 1 (its one HP), exactly. Species ids only (`their_max_hp`'s refusal)."""
+    their_max_hp(op, species_ids)                               # the integer-ids refusal, in one place
+    out: torch.Tensor = op.THEIR_HP_RESIDUAL[species_ids][..., _residual_col(denom)]
+    return out
+
+
+def their_residual_points(op: Any, species_ids: torch.Tensor, denom: float) -> torch.Tensor:
+    """`their_residual_frac` in HP on the scale of `TheirHp.maxhp` (× ``1 / E[1 / M]``) — the amount an HP chain
+    in points carries, so that dividing by `maxhp` returns the expected fraction exactly."""
+    out: torch.Tensor = their_residual_frac(op, species_ids, denom) / their_max_hp(op, species_ids).inv
+    return out
+
+
+def their_residual_frac_slots(op: Any, ctx: Any, denom: float, sp_probs: Optional[torch.Tensor] = None) -> torch.Tensor:
+    """`their_residual_frac` for THEIR six slots ``[B, 6]``, under `their_hp_slots`' slot rule: the species where
+    it is concrete, the expectation over species where the slot is averaged (X5's OTHER over the tail; with
+    ``sp_probs``, a hidden slot over it; mass on no species reads as the unowned row 0)."""
+    table: torch.Tensor = op.THEIR_HP_RESIDUAL[:, _residual_col(denom)]
+    frac = their_residual_frac(op, ctx.species_ids[:, TEAM_SIZE:2 * TEAM_SIZE], denom)
+
+    def _mix(p: torch.Tensor) -> torch.Tensor:
+        e = p @ table.to(p.dtype) + (1.0 - p.sum(dim=-1)).clamp(min=0.0) * table[0]
+        out: torch.Tensor = (e[:, None] if p.dim() == 2 else e).to(frac.dtype)
+        return out
+    x5 = op.stash.x5
+    if x5 is not None and x5.override is not None:
+        frac = torch.where(x5.override, _mix(x5.species_probs), frac)
+    if sp_probs is not None:
+        frac = torch.where(_their_averaged(op, ctx), _mix(sp_probs), frac)
+    return frac
 
 
 def our_hp_points(hp_frac: torch.Tensor, maxhp: torch.Tensor) -> torch.Tensor:
@@ -186,7 +370,7 @@ def our_hp_points(hp_frac: torch.Tensor, maxhp: torch.Tensor) -> torch.Tensor:
     hp) pairs (e.g. 100 / 714 -> 100.0000076): the fixed-damage KO cut ``fixed >= hp`` then read Seismic Toss as
     NOT KO-ing a mon at exactly 100 HP, which Showdown faints (`sim/pokemon.ts` ``damage``: ``hp -= d; if
     (hp <= 0) faint``). The product is a few ulps from the integer (<< 1/2), so ``round`` returns ``hp`` exactly.
-    THEIR HP is a percent × an estimated max HP — not an integer — and never comes through here."""
+    THEIR HP is a percent of a max-HP BELIEF (`their_max_hp`) — not an integer — and never comes through here."""
     return (hp_frac * maxhp).round()
 
 
@@ -198,16 +382,9 @@ def our_healed_hp(cur_hp: torch.Tensor, frac: torch.Tensor, maxhp: torch.Tensor)
     return torch.minimum(maxhp, cur_hp + torch.floor(frac * maxhp + _HEAL_FLOOR_NUDGE))
 
 
-def nonformula_rolls(nf_tabs: Tuple[torch.Tensor, ...],
-                     tgt_cur_hp: torch.Tensor, tgt_maxhp: torch.Tensor, atk_cur_hp: torch.Tensor,
-                     eff: torch.Tensor, acc: torch.Tensor,
-                     eps: float = 1e-6) -> Tuple[torch.Tensor, ...]:
-    """→ ``(is_nf, high, crit, ko)`` broadcast to a common shape. ``is_nf`` marks the cells whose
-    rolls must be REPLACED; ``high`` (== low: no roll) and ``crit`` (no crit) are the damage as a
-    fraction of the target's max HP, clamped like the formula rolls; ``ko = acc · [the hit KOs a live
-    target]`` (an OHKO always; a fixed amount iff ≥ the remaining HP; Endeavor / Super Fang never). Every
-    output is 0 where the target is immune (``eff <= 0``). ``nf_tabs`` = ``(fixed, target_frac,
-    endeavor)`` as `gather_nonformula` returns them (each broadcastable to the output)."""
+def _nonformula_fracs(nf_tabs: Tuple[torch.Tensor, ...], tgt_cur_hp: torch.Tensor, tgt_maxhp: torch.Tensor,
+                      atk_cur_hp: torch.Tensor, eff: torch.Tensor, eps: float) -> Tuple[torch.Tensor, ...]:
+    """`nonformula_rolls`' damage arithmetic, shared by both target sides: ``(is_nf, high, crit, not_immune)``."""
     fixed, target_frac, endeavor = nf_tabs
     is_nf = (fixed + target_frac + endeavor) > 0
     dmg = fixed + target_frac * tgt_cur_hp + endeavor * (tgt_cur_hp - atk_cur_hp).clamp(min=0.0)
@@ -215,6 +392,22 @@ def nonformula_rolls(nf_tabs: Tuple[torch.Tensor, ...],
     frac = dmg / (tgt_maxhp + eps)
     high = frac.clamp(max=_DMG_CHIP_CAP) * not_immune
     crit = frac.clamp(max=_DMG_CRIT_CAP) * not_immune
+    return is_nf, high, crit, not_immune
+
+
+def nonformula_rolls(nf_tabs: Tuple[torch.Tensor, ...],
+                     tgt_cur_hp: torch.Tensor, tgt_maxhp: torch.Tensor, atk_cur_hp: torch.Tensor,
+                     eff: torch.Tensor, acc: torch.Tensor,
+                     eps: float = 1e-6) -> Tuple[torch.Tensor, ...]:
+    """→ ``(is_nf, high, crit, ko)`` broadcast to a common shape, for a target whose HP is EXACT (OUR mon; THEIR
+    target goes through `nonformula_rolls_their`). ``is_nf`` marks the cells whose
+    rolls must be REPLACED; ``high`` (== low: no roll) and ``crit`` (no crit) are the damage as a
+    fraction of the target's max HP, clamped like the formula rolls; ``ko = acc · [the hit KOs a live
+    target]`` (an OHKO always; a fixed amount iff ≥ the remaining HP; Endeavor / Super Fang never). Every
+    output is 0 where the target is immune (``eff <= 0``). ``nf_tabs`` = ``(fixed, target_frac,
+    endeavor)`` as `gather_nonformula` returns them (each broadcastable to the output)."""
+    fixed, target_frac, _endeavor = nf_tabs
+    is_nf, high, crit, not_immune = _nonformula_fracs(nf_tabs, tgt_cur_hp, tgt_maxhp, atk_cur_hp, eff, eps)
     # KO: a full-current-HP kind (OHKO, target_frac 1) KOs any live target BY CONSTRUCTION — tested on
     # the table, never as `dmg >= hp` (an exact equality is not a near-tie to be margined); a fixed kind
     # KOs iff it covers the remaining HP (the one genuine threshold — a declared MARGIN site); Endeavor
@@ -225,6 +418,24 @@ def nonformula_rolls(nf_tabs: Tuple[torch.Tensor, ...],
     covers = fixed >= tgt_cur_hp                            #  selection-site recorder reads lines)
     kills = full_hp_kind | covers
     ko = acc * kills.float() * alive * not_immune
+    return is_nf, high, crit, ko
+
+
+def nonformula_rolls_their(nf_tabs: Tuple[torch.Tensor, ...], their: "TheirHp", hp_frac: torch.Tensor,
+                           atk_cur_hp: torch.Tensor, eff: torch.Tensor, acc: torch.Tensor,
+                           eps: float = 1e-6) -> Tuple[torch.Tensor, ...]:
+    """`nonformula_rolls` into THEIR mon (gen3_their_max_hp_belief_v1): ``their`` its max-HP belief, ``hp_frac`` its
+    reported HP fraction (both broadcast to the cells). The damage fractions are the EXPECTED fractions of their
+    max HP (a fixed 100 HP is ``100 · E[1 / M]``; Super Fang half the reported fraction; Endeavor the fraction left
+    above OUR exact HP), and a fixed kind's KO is the PROBABILITY that it covers their remaining HP
+    (`their_fixed_ko`) — no hard cut on a percent × an assumed max HP; an OHKO still KOs any live target."""
+    fixed, target_frac, _endeavor = nf_tabs
+    is_nf, high, crit, not_immune = _nonformula_fracs(nf_tabs, their.frac_points(hp_frac), their.maxhp, atk_cur_hp,
+                                                      eff, eps)
+    alive = (hp_frac > 0).float()
+    full_hp_kind = (target_frac >= 1.0).float()
+    kills = torch.maximum(full_hp_kind, their_fixed_ko(their, hp_frac, fixed))
+    ko = acc * kills * alive * not_immune
     return is_nf, high, crit, ko
 
 

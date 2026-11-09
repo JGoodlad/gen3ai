@@ -589,7 +589,8 @@ change while both modes build.
 legacy deletion (`designs/ops/legacy_deletion_manifest_2026-10-12.md` lane LEG). Under `static` each mon's
 token is S + D. S, the static identity, reads only the mon's set fields: species, the six level-100 ACTUAL
 stats (our team from the observed spread; an opponent from the Smogon usage-weighted stat mean ± std,
-`belief_tables.build_static_stat_prior`), types (a SET: the two type embeddings SUMMED, so the obs's alphabetical
+`belief_tables.build_static_stat_prior`, whose HP is the mean and std of the operator's own max-HP belief,
+`their_max_hp_support`), types (a SET: the two type embeddings SUMMED, so the obs's alphabetical
 type order carries no weight — `gen3_static_port_v1`), item, abilities, species_known, the Hidden Power block, and
 the four moves through the move network (no context columns) and the within-mon self-attention, SUMMED as a
 set. D, the dynamic state, reads HP, status, the counters, the sleep-wake belief, recency, protect odds, the
@@ -635,8 +636,9 @@ max HP; Liquid Ooze inverts it), Wish +1/2 (half the RECIPIENT's max HP in gen 3
 Curse, Nightmare × P(stays asleep), and the net (11 columns, `agents/model/eot_residual.py`'s
 `EotResidualRule`, on the op's context). Each amount of OUR mon (and of a Shedinja, max HP 1 on either side) is Showdown's
 integer `max(1, ⌊max HP / d⌋)` (`damage_kinds.residual_points`, `gen3_residual_exact_v1`, config v167); THEIR other
-mons' amounts stay the nominal `1/d` of the op's estimated max HP, an intended estimate (E13). The net is ONE HP
-chain in the gen-3 residual order — Wish, the weather, then Ingrain, Rain Dish, Leftovers, Leech Seed (whose cap is the
+mons' amounts are that rule's EXPECTATION over the species' Smogon max-HP belief, `E[max(1, ⌊M / d⌋) / M]`
+(`their_residual_frac`, `gen3_their_max_hp_belief_v1`, config v168), and their max HP in the chain is
+`1 / E[1/M]`. The net is ONE HP chain in the gen-3 residual order — Wish, the weather, then Ingrain, Rain Dish, Leftovers, Leech Seed (whose cap is the
 HP LEFT after those), the status tick, Nightmare, Curse — each heal capped at max HP and void on a KO-ed mon (a
 poisoned full-HP Leftovers holder nets the whole poison tick); probabilistic amounts enter as expectations, and the
 two actives' speed order (which decides whose order-10 block runs first) is not modelled. It goes through a zero-init
@@ -1507,8 +1509,9 @@ refine, c1/c2/c3, the recovery cell and d4 — applies it through `damage_kinds.
 | `unmodelled` | Counter, Mirror Coat, Bide (need the turn's incoming damage), Low Kick (no weight in `data/`), Spit Up (no Stockpile count) | 0, BY DECLARATION |
 
 The `fixed` / `target_hp_frac` / `endeavor` kinds respect type / ability immunity (Fighting Seismic
-Toss into a Ghost is 0) and a kind's KO is `acc · [the hit KOs]` (an OHKO always, a fixed amount iff ≥
-the remaining HP — Showdown faints at `hp <= 0`, `sim/pokemon.ts` `damage`).
+Toss into a Ghost is 0) and a kind's KO is `acc · P(the hit KOs)`: an OHKO always; a fixed amount iff ≥ the
+remaining HP on OUR mon (Showdown faints at `hp <= 0`, `sim/pokemon.ts` `damage`), and on THEIR mon the probability
+that their remaining HP is at most the amount, over their max-HP belief (below).
 
 **OUR HP is an exact integer (`gen3_our_hp_exact_v1`, config v165).** Every HP the op computes for OUR side goes
 through `damage_kinds.our_max_hp` (2·base + IV + ⌊EV/4⌋ + 110), `our_hp_points` (`round(fraction × max HP)`) and
@@ -1516,12 +1519,26 @@ through `damage_kinds.our_max_hp` (2·base + IV + ⌊EV/4⌋ + 110), `our_hp_poi
 product `f32(hp/max) × max` missed the integer by an ulp on 21,764 of the 255,969 (max HP ≤ 714, HP) pairs, so the
 fixed-damage cut read Seismic Toss / Night Shade as NOT KO-ing our mon at exactly 100 HP on 497 of the pool's 4,961
 sets (a 714-HP Blissey among them; Dragon Rage / Sonic Boom at 40 / 20: 26 each) — measured 2026-11-06, CPU eager,
-exhaustively. THEIR HP stays the shown percent × the neutral 0-EV max HP (2·base + 141), a point estimate: it never
-lands within 0.01 HP of a fixed amount, so its cut is deterministic but not exact — an intended estimate: the
-percent bin (≤ 1 % of max HP) is dwarfed by the unknown HP EVs (up to 63 HP), and pricing that needs a belief over
-their max HP the op does not carry (`endstate/obs_enrichment_backlog.md` E13). Pinned by `our_hp_exact_test.py`
-(exhaustive, plus a source guard: no forward module re-spells our max HP or multiplies a fraction by a max HP outside
-the helpers).
+exhaustively. Pinned by `our_hp_exact_test.py` (exhaustive, plus a source guard: no forward module re-spells our
+max HP or multiplies a fraction by a max HP outside the helpers).
+
+**THEIR max HP is a belief from the species' Smogon spreads (`gen3_their_max_hp_belief_v1`, config v168).** Their HP
+EVs are hidden, so the op holds each opponent species' DISTRIBUTION of level-100 max HP: `2·base + 31 + ⌊EV/4⌋ +
+110` over every Smogon spread of the species (`belief_tables.their_max_hp_support`; Shedinja exactly 1, by its
+species; a species with no usage record uniform over the 64 possible values). Before, it read the 0-HP-EV point
+`2·base + 141`, which is at least 20 HP under the Smogon mean for 60 % of species with spreads (Skarmory 271 against
+a mean of 330), so every damage fraction on their side was over-stated and a 35 % Skarmory read as killed by Seismic
+Toss, which 95 % of Skarmory sets survive. Every site reads the belief through `damage_kinds.their_max_hp` /
+`their_hp_slots`, and each quantity takes the moment that is exact for it: a damage FRACTION is `d · E[1/M]`; their
+HP in points (an attacker's operand) is `fraction · E[M]`; P(KO), for formula hits and fixed amounts alike, is the
+op's closed-form P(KO) mixed over 8 atoms of the distribution (worst error against the full distribution 0.013 for a
+formula hit and 0.021 for a fixed amount, where the old point's was 0.93 and 0.99: `designs/model/op_contracts.md`
+has the table and the reasoning); an averaged slot (hidden under the usage prior, X5's OTHER) reads the species
+mixture of the moments. The inputs are the species and Smogon's statistics only: the helper raises on anything but
+integer species ids, and `their_max_hp_test.py` requires the op's and the end-of-turn rule's outputs bit-identical
+whatever the opponent's spread cells hold (the diagnostic oracle reveal writes their true spread there), plus a
+source guard: no forward module spells their max HP outside the helper. Not used: observed-damage narrowing (no
+tracker, backlog E9) and a learned HP belief (the spread belief head has no HP output).
 
 **Our STATS read an EV as the game does (`gen3_stat_ev_points_v1`, config v166).** Every stat the model computes from
 OUR observed spread (the op's attackers and defenders, the end-of-turn rule's max HP, the static tokens' stat input,
@@ -1536,8 +1553,7 @@ high), our Speed reads the same decode, and our Shedinja's max HP is its species
 Pinned by `stat_ev_points_test.py` (exhaustive over every base / IV / EV / nature the encoder writes, plus a source
 guard: no forward module de-normalises the EV column, divides an EV by 4, reads or multiplies by a nature multiplier,
 or spells an end-of-turn amount (`/ 16`, `/ 8`, `maxhp / …`) outside the helpers; its declared exceptions: the belief
-head's expectation, their status-landing tick and the Spikes chip (nominal), Substitute's exact cost, the crit
-table).
+head's expectation, the Spikes chip (nominal), Substitute's exact cost, the crit table).
 `MOVE_BP` holds the BP at the attacker's full HP for every formula-priced move, and every
 dex-damaging move rides its TYPE's gen-3 channel in `MOVE_PHYS` (Return is physical). 🚨 **The table
 build RAISES on a damaging (dex category ≠ Status) move with base power 0 and no row** — the

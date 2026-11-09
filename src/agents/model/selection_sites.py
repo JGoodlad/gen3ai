@@ -136,9 +136,10 @@ MARGIN: Dict[Tuple[str, str], Rule] = {
     # damages this mon" test, which its α-weighted accuracy / provenance read (0 exactly for a status / immune move)
     ("op_reduction", "high > 0"): Rule(
         "threshold", zero_exact=True, why="a damaging candidate on this mon (0 exactly for a status / immune move)"),
-    # --- THRESHOLDS on weight-free float arithmetic (the current HP is a product of an observed fraction
-    #     and a computed max HP; a fixed-damage KO at exactly the remaining HP is a genuine near-tie)
-    #     gen3_nonformula_damage_v1: ONE site now — every kernel reaches it through damage_kinds.
+    # --- THRESHOLDS on weight-free float arithmetic: a fixed-damage KO at exactly OUR remaining HP (an exact
+    #     integer, gen3_our_hp_exact_v1). gen3_nonformula_damage_v1: ONE site — every kernel reaches it through
+    #     damage_kinds. THEIR target has no cut: its fixed-damage KO is a probability over their max-HP belief
+    #     (`their_fixed_ko`, gen3_their_max_hp_belief_v1).
     ("damage_kinds", "fixed >= tgt_cur_hp"): Rule("threshold", zero_exact=True),
     # --- gen3_x5_belief_tokens_v1 (X5 U3): THE one stable order of
     #     the hypothesis set (species, and the active's move group — one source line). Since U3 log π
@@ -255,6 +256,8 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
         # gen3_nonformula_damage_v1: the declared non-formula / HP-dependent-BP kinds (the attacker's
         # and the target's HP are observed fractions × computed max HP; the kinds are table bits).
         "OBS": ("ctx.hp_and_active[:, sl, 0] > 0", "ratio < thr", "status < 0.5", "tgt_cur_hp > 0", "bp > 0",
+                # gen3_their_max_hp_belief_v1: THEIR target's alive gate, on the reported HP fraction itself
+                "hp_frac > 0",
                 # the Flail / Reversal ratio floor(48 · f): the attacker's observed HP fraction (+ a constant nudge
                 # that keeps an exact k/48 off the step) — the function spelling the 2026-10-10 scan fix exposed
                 "torch.floor(hp_frac * 48.0 + _FLAIL_FLOOR_NUDGE)",
@@ -272,10 +275,14 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
                 # rounded to its percentage (an f32 1.1 · 100 misses 110 by an ulp), then the floor of an integer
                 # product over 100 (a non-integer quotient sits >= 0.01 from the next integer)
                 "(nature_mult * 100.0).round()", "(raw * pct / 100.0).floor()",
-                # gen3_residual_exact_v1: an end-of-turn amount's ⌊maxhp / d⌋, d a power of two, of an INTEGER max
-                # HP (ours exact, theirs the integer neutral estimate) — exact, no operand near a step
-                "torch.floor(nominal)"),
+                # gen3_residual_exact_v1: an end-of-turn amount's ⌊maxhp / d⌋, d a power of two, of OUR exact
+                # INTEGER max HP — exact, no operand near a step (THEIR amounts are a table expectation of the same
+                # rule, `their_residual_frac`: no floor runs in the forward, gen3_their_max_hp_belief_v1)
+                "torch.floor(maxhp / denom)"),
         "TABLE": ("fixed + target_frac + endeavor > 0",
+                  # gen3_their_max_hp_belief_v1: "this kind deals a fixed damage" (a move-table amount against 0) —
+                  # the gate of the fixed-damage P(KO) on THEIR mon, itself continuous (no cut on their HP)
+                  "fixed > 0",
                   # gen3_nature_floor_v1: Shedinja's max HP of 1 — the species' base HP (an integer table value or
                   # its exact obs read-back) against 1
                   "base_hp == 1.0", "hp_scaled > 0", "flail > 0", "eff > 0",
@@ -450,12 +457,11 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
         "OBS": ("s >= 0", "ctx.hp_and_active[:, :, 0] > 0"),
     },
     "eot_residual": {
-        # gen3_leech_seed_exact_v1: the drain's ⌊maxhp / 8⌋ of an INTEGER max HP (ours exact, theirs the integer
-        # neutral estimate) — a division by a power of two is exact, so no operand sits near a step.
+        # The alive gate and the weather's turn counter (observation reads). The residual amounts carry no step
+        # here: OUR ⌊maxhp / d⌋ is `damage_kinds.residual_points`' (declared there), THEIR amounts are table
+        # expectations (gen3_their_max_hp_belief_v1; their Shedinja's row is 1).
         "OBS": ("hp > 0", "(w[:, _W_TURNS] * _WEATHER_MAX_TURNS).round()",
                 "(w[:, _W_TURNS] * _WEATHER_MAX_TURNS).round().long()"),
-        # gen3_residual_exact_v1: THEIR Shedinja (max HP 1, so its residual amounts are exact) — a 0/1 species table bit.
-        "TABLE": ("self.SHEDINJA_HP_ONE[ctx.species_ids[:, TEAM_SIZE:]] > 0.5",),
     },
     "t0_species": {
         "OBS": ("onehot > 0",),

@@ -15674,3 +15674,70 @@ was downloaded or written under `data/`.
   exhaustive over max HP 1..714 × d; our integer amounts vs their nominal ones; the full-HP poisoned Leftovers holder;
   the Leech cap after Leftovers and the sand KO before it; Wish before the weather; a Shedinja on either side KO-ed by
   sand). Each fails on revert (mutation-checked).
+
+## 2026-11-09 — THEIR max HP is a belief, and a KO on their mon a probability over it (`gen3_their_max_hp_belief_v1`; config v168, no field; `OBS_SEMANTICS_VERSION` 167 → 168 by hand, `warn`; `OP_SEMANTICS` bumped; no `ARCH_SIGNATURE` / floor change)
+
+- **Why.** Obs backlog E13, the last piece of BOUNDARY-1's fidelity base. The op priced every hit on THEIR mon against
+  `2·base + 141` (31 IV, 0 HP EVs), which `sim/battle.ts` `statModify` gives only to a set that invests nothing. The
+  Smogon spreads say otherwise for most of the tier (Skarmory 271 vs a mean of 330, Swampert 341 vs 388, Tyranitar 341
+  vs 380), so every damage fraction against them was overstated and every KO cut early: a Skarmory at 35 % read as
+  killed by Seismic Toss, where the usual set survives. Their Shedinja in the op's kernels was still 143, and round 2
+  left their end-of-turn amounts as nominal fractions pending this.
+- **What.** `belief_tables.build_their_max_hp`: per species, the Smogon distribution of max HP on the lattice
+  `2·base + 141 + ⌊EV/4⌋` (`priors.all_spreads`; Shedinja a point mass at 1; uniform over the lattice where Smogon has
+  no record). `damage_kinds` holds the only readers (`their_max_hp`, `their_hp_slots`, `their_ko_given_hit`,
+  `their_fixed_ko`, `their_residual_frac`), each reading the moment that is exact for its quantity: a damage FRACTION is
+  `d · E[1/M]`, their HP in points `hp_frac · E[M]`, P(KO) the mixture of the exact roll count over 8 atoms (optimal
+  1-D k-means, harmonic centroids), a fixed-damage KO `P(HP ≤ fixed)` across each atom's percent bin, their
+  end-of-turn amounts `E[max(1, ⌊M/d⌋)/M]` on the chain's max HP `1/E[1/M]`. A hidden or averaged slot carries the
+  species mixture as a point. The mixture is taken about its first atom (`_mix_atoms`), so a KO every max HP grants
+  reads exactly 1.0 and one none grants exactly 0.0. The helper takes species ids only and THROWS on a spread
+  argument. The static token's opponent HP stat (`build_static_stat_prior`) is now the mean and std of the SAME
+  distribution: it read the top-25 spread cut (Starmie 276 where the full list says 282) and a neutral no-record
+  fallback, a second estimate of their max HP in one forward. Chosen over a point
+  estimate because the op already counts KOs over the 16 rolls: worst |ΔP(KO)| against the full distribution is 0.93
+  at the neutral point, 0.26 at the best point (the harmonic mean), 0.013 at 8 atoms (0.994 / 0.66 / 0.021 for fixed
+  damage); 8 atoms cost nothing measurable on CPU (the table and the numbers: `designs/model/op_contracts.md`).
+  Declared limits: no narrowing from observed damage (E9, no tracker yet); their HP IV is 31 (a Hidden Power set is
+  ≤ 1 HP off); the belief head has no HP output, so the learned spread belief does not enter; their Def / SpD keep the
+  neutral estimate where no spread belief exists.
+- **Impact on P\*** (`pstar_plateau`, CPU eager, the 2026-11-06 tie-rate population of 16,785 rows): NOT a
+  stamp-through in effect. 16,112 rows (96 %) move; policy TV median 0.024, p90 0.151, p99 0.393, max 0.861; 11,480
+  rows over TV 0.01, 2,871 over 0.1, 610 over 0.25. **1,411 top-action changes (8.4 %)**: 614 near-ties (old top-two
+  gap < 0.05), 797 with a real gap, 306 with a gap ≥ 0.2; 889 move → move, 279 move → switch, 123 switch → move, 120
+  switch → switch (the top action is a move on 70.3 % → 69.3 % of rows). |ΔV| median 0.0025, p99 0.043, max 0.244;
+  mean ΔV −0.0056. The drift follows the dose: where their active's believed max HP is within 0.5 % of the old point
+  (781 rows) 2.2 % of top actions change, TV median 0.005; at +10–15 % (7,965 rows) 10.4 %, 0.038; at +20–30 % (1,570
+  rows) 14.0 %, 0.043. ATTRIBUTION, measured on the operator alone (before the static token's HP stat joined the
+  belief; that census read 1,409 changes): the same code with every belief forced to the old point moves 52 top
+  actions (51 near-ties; TV p99 0.013, |ΔV| ≤ 0.012: their end-of-turn integers and the fixed-damage percent bin),
+  so the values, not the code path, carry the drift, and the static token's share is the 2 changes between the two
+  censuses. Feature max |Δ|: the op block 1.21 (mean 0.030 over moved cells before the token moved), `eot.net`
+  0.039, `leech_gain` 0.037, `status` 0.013; the static stat input 0.023 (their HP mean and std, on the
+  1 / 500 scale; every row); the effective-stat facts 0.0003; the believed stats ≤ 0.12 except on 47 rows where two
+  hidden-slot hypotheses trade places under the moved token input (21 of them also move a hidden slot's
+  `eot.leftovers` / `weather` by up to 0.059 / 0.0625, against 0.0026 on every other row). The toy family moves
+  too, through the static token alone: `rb_toy_ent_s4002` on its 64 recorded rows, max |Δ logit| 8.4e-3
+  (`toy_network_identity_test` declares the change and reproduces the pin bit for bit with it undone). P\*'s weights were trained on the overstated fractions, so under this commit it
+  is a DIFFERENT policy of unmeasured strength (backlog MF-2: a fix that moves many top actions earns a P\*-fork arm);
+  a read of P\* at its own strength pins code before this commit.
+- **Goldens.** K9 learner golden re-recorded under +cu126 and +cu128 (post `ac6777d1…` → `e974ae5a…`, fp32 opt-out
+  `9b613b69…` → `82a10995…`, init kept), on a buffer REBUILT at the same run seed 22 (`a782af44…` → `fd7c3083…`): the
+  seeded learner's log-probs moved 3.0e-3 on the old one, past K9(b)'s 1e-4. The 64 actions and the coverage are
+  unchanged; the rebuild also picked up what had moved under the old buffer since 2026-10-15 (three IV cells
+  1 → 30/31 on 19 rows, three cells −0.23 → −0.24, 9 opponent-action labels that read UNKNOWN and now name the
+  move). The played-bits sentinel's `PLAYED_DIGEST` and the reveal file's off-path digests moved for the same cause; `a2dbc9616` reproduces
+  the sentinel's and the learner golden's old records. The obs golden is untouched (no encoder change).
+- **Guards.** `their_max_hp_test.py`: the lattice and the moments against `priors.all_spreads` and Showdown's stat
+  formula (Skarmory, Blissey, Shedinja, the 0-EV modal sets of Salamence and Blissey at their absolute values); the 8
+  atoms against the full distribution (the bounds above, every species); the Seismic Toss case end to end; their
+  end-of-turn integers and a Shedinja on their side; the helper refuses anything but integer species ids; with the
+  opponent's spread cells planted three ways, every kernel of the op and the end-of-turn rule are bit-identical; a SOURCE GUARD that no
+  forward module reads the belief's tables, builds one by hand, spells the L100 HP constant or reads a base HP outside
+  `damage_kinds`, each spelling's teeth pinned; a certain KO is exactly 1.0 for every species; the static token's
+  HP mean equals the op's `E[M]` on every species row; `ko_exact_test`'s site census names `their_ko_given_hit`.
+  Three older tests that spelled the nominal values now read the belief by hand: the burn and Toxic landing ticks
+  (`consequence_edges_test`: `E[⌊M/8⌋/M]`, `E[⌊M/16⌋/M]`), and the Beat Up sim parity's fraction-to-HP conversion
+  (`1 / E[1/M]`).
+  Each fails on revert (36 mutants, all killed on a green baseline; three survived the first pass and their tests were
+  strengthened).

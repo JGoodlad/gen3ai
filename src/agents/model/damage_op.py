@@ -43,7 +43,7 @@ from agents.model.arch_constants import (  # noqa: F401  (re-export)
 # `damage_op_layout.py` (split 2026-08-16); re-imported EXPLICITLY because this module is
 # the historical import surface and the operator uses nearly all of it.
 from agents.model.damage_op_layout import (  # noqa: F401
-    OpTensors, _BOOSTS_DIM, _BS_ATK, _BS_DEF, _BS_HP, _BS_SPA, _BS_SPD, _BS_SPE, _COND_BRN_IDX,
+    OpTensors, _BOOSTS_DIM, _BS_ATK, _BS_DEF, _BS_SPA, _BS_SPD, _BS_SPE, _COND_BRN_IDX,
     _COND_PAR_IDX, _COND_SLP_IDX, _DMG_CB, _DMG_CB_PER_MON, _DMG_CHANNEL_FEATS, _DMG_CHIP_CAP,
     _DMG_CRIT_CAP, _DMG_CRIT_P, _DMG_EFFECT, _DMG_IDX_OUTSPEED, _DMG_IDX_PHYS_ACC,
     _DMG_IDX_PHYS_CRIT, _DMG_IDX_PHYS_HIGH, _DMG_IDX_PHYS_LOW, _DMG_IDX_PHYS_PKO,
@@ -138,7 +138,8 @@ class OpStashes:
 
 from agents.model.damage_op_blocks import DamageOperatorBlocks
 from agents.model.damage_kinds import (beatup_base_def, beatup_party_opp, gather_beatup, gather_bp,
-                                       gather_nonformula, nonformula_rolls, our_hp_points, our_stats, override_rolls)
+                                       gather_nonformula, nonformula_rolls, our_hp_points, our_stats, override_rolls,
+                                       TheirHp, their_ko_given_hit, their_max_hp)
 from agents.model.damage_op_pairwise import DamageOperatorPairwise
 from agents.model.damage_op_speed import DamageOperatorSpeed
 from agents.model.extractor_ctx import held_item_ids, item_unrevealed
@@ -307,6 +308,12 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
         # replaced could not hold a max-or-none Speed investment). Non-persistent: no state_dict change.
         from agents.model.belief_tables import build_species_speed_mix
         self.register_buffer("SPEED_MIX", build_species_speed_mix(layout['max_species']), persistent=False)
+        # gen3_their_max_hp_belief_v1 (backlog E13): THEIR max HP as the species' DISCRETE Smogon distribution (the
+        # 0-HP-EV point it replaced understated 60 % of species' HP by >= 20). Read ONLY through
+        # `damage_kinds.their_max_hp` (a source guard). Non-persistent: no state_dict change.
+        from agents.model.belief_tables import build_their_max_hp
+        for _name, _table in build_their_max_hp(layout['max_species']).items():
+            self.register_buffer(_name, _table, persistent=False)
         if self.quick_claw_live:
             from agents.model.damage_tables import build_species_qc_prior
             self.register_buffer("SPECIES_QC_PRIOR", build_species_qc_prior(layout['max_species']),
@@ -582,10 +589,10 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
 
     def _rolls(self, dmg_ns: torch.Tensor, screen: Optional[torch.Tensor], maxhp: torch.Tensor,
                cur_hp: torch.Tensor, acc: torch.Tensor,
-               eps: float = 1e-6, crit_p: Optional[torch.Tensor] = None,
-               opp_hp_frac: Optional[torch.Tensor] = None) -> Tuple[torch.Tensor, ...]:
-        """The single source of the 3-roll + accuracy-folded-P(KO) physics — BOTH the incoming kernel
-        and the outgoing block call this (the DRY core). From pre-screen MEAN-roll damage ``dmg_ns`` + the
+               eps: float = 1e-6, crit_p: Optional[torch.Tensor] = None) -> Tuple[torch.Tensor, ...]:
+        """The single source of the 3-roll + accuracy-folded-P(KO) physics into OUR mon (its max HP and HP are
+        EXACT; a THEIR-side defender goes through `_rolls_their`, the same physics over the max-HP belief). From
+        pre-screen MEAN-roll damage ``dmg_ns`` + the
         DEFENDER's ``screen`` multiplier + ``maxhp``/``cur_hp`` + per-candidate ``acc`` (all broadcast-
         compatible) → ``(high_frac, low_frac, crit_frac, ko_ramp)``: the mean-roll / 0.85 × mean / ×2-crit
         damage as a fraction of MAX HP (gen3 crit ignores screens → ×2 the PRE-screen damage; clamped,
@@ -605,9 +612,23 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
         low = (_DMG_ROLL_MIN * dmg * inv).clamp(max=_DMG_CHIP_CAP)
         crit = (2.0 * dmg_ns * inv).clamp(max=_DMG_CRIT_CAP)
         # gen3_endstate_facts_v1 (`ko_exact.py`): the 16 rolls + the crit, each roll's KO resolved over the observed
-        # HP interval (ours ±½ HP; theirs the reported percentage bin) — the caller names a THEIR-side defender by
-        # its reported fraction ``opp_hp_frac``.
-        return high, low, crit, acc * self._ko_exact(dmg, 2.0 * dmg_ns, maxhp, cur_hp, crit_p, opp_hp_frac)
+        # HP interval (ours: ±½ HP).
+        return high, low, crit, acc * self._ko_exact(dmg, 2.0 * dmg_ns, cur_hp, crit_p)
+
+    def _rolls_their(self, dmg_ns: torch.Tensor, screen: Optional[torch.Tensor], their: TheirHp,
+                     hp_frac: torch.Tensor, acc: torch.Tensor,
+                     crit_p: Optional[torch.Tensor] = None) -> Tuple[torch.Tensor, ...]:
+        """`_rolls` into THEIR mon (gen3_their_max_hp_belief_v1): the same three fractions and accuracy-folded
+        P(KO), with their max HP the BELIEF ``their`` (`damage_kinds.their_max_hp`) and their HP the reported
+        fraction ``hp_frac`` (both broadcast to the cells). The fractions are the EXPECTED fractions of their max
+        HP (damage × ``E[1 / M]``); P(KO | hit) is `ko_exact.ko_given_hit` over the rolls, the crit and the
+        reported percent bin, MIXED over their max-HP atoms (`damage_kinds.their_ko_given_hit`) — a 35 % mon is a
+        different number of HP for every max HP it may have."""
+        dmg = dmg_ns if screen is None else dmg_ns * screen               # post-screen MEAN roll (× 0.925)
+        high = (dmg * their.inv).clamp(max=_DMG_CHIP_CAP)
+        low = (_DMG_ROLL_MIN * dmg * their.inv).clamp(max=_DMG_CHIP_CAP)
+        crit = (2.0 * dmg_ns * their.inv).clamp(max=_DMG_CRIT_CAP)
+        return high, low, crit, acc * their_ko_given_hit(dmg, 2.0 * dmg_ns, their, hp_frac, crit_p)
 
     def _crit_p(self, nums: Optional[torch.Tensor], batch: Optional[int] = None) -> Optional[torch.Tensor]:
         """gen3_endstate_facts_v1: the crit chance of each move num in ``nums`` (None ``nums`` → None, the base
@@ -624,16 +645,13 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
         c = self._crit_p(nums)
         return None if c is None else c.unsqueeze(dim)
 
-    def _ko_exact(self, dmg: torch.Tensor, crit_dmg: torch.Tensor, maxhp: torch.Tensor, cur_hp: torch.Tensor,
-                  crit_p: Optional[torch.Tensor], opp_hp_frac: Optional[torch.Tensor]) -> torch.Tensor:
-        """gen3_endstate_facts_v1: THE exact P(KO | hit) of `ko_exact.ko_given_hit` in HP points (``dmg`` the
-        post-screen mean-roll damage, ``crit_dmg`` 2 × the PRE-screen one). ``opp_hp_frac`` None = OUR defender
-        (exact HP, ±½ HP); else THEIR defender's reported HP fraction (HP Percentage Mod's bin)."""
-        from agents.model.ko_exact import ko_given_hit, opp_hp_bounds, ours_hp_bounds
-        if opp_hp_frac is None:
-            lo, hi = ours_hp_bounds(cur_hp, 1.0)
-        else:
-            lo, hi = opp_hp_bounds(cur_hp, opp_hp_frac, maxhp, 1.0)
+    def _ko_exact(self, dmg: torch.Tensor, crit_dmg: torch.Tensor, cur_hp: torch.Tensor,
+                  crit_p: Optional[torch.Tensor]) -> torch.Tensor:
+        """gen3_endstate_facts_v1: THE exact P(KO | hit) of `ko_exact.ko_given_hit` in HP points on OUR defender
+        (exact HP, ±½ HP; ``dmg`` the post-screen mean-roll damage, ``crit_dmg`` 2 × the PRE-screen one). THEIR
+        defender: `damage_kinds.their_ko_given_hit` (the reported percent bin, over the max-HP belief)."""
+        from agents.model.ko_exact import ko_given_hit, ours_hp_bounds
+        lo, hi = ours_hp_bounds(cur_hp, 1.0)
         return ko_given_hit(dmg, crit_dmg, lo, hi, crit_p)
 
     def _damage_rolls(self, atk: torch.Tensor, spa: torch.Tensor, at1: torch.Tensor, at2: torch.Tensor,
@@ -739,8 +757,8 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
         # gen3_endstate_facts_v1: the SAME exact rule (`_ko_exact`), its crit at 2 × the PRE-screen Band damage (a
         # crit ignores the screens).
         ko_cb = acc_all[:, None, :] * self._ko_exact(
-            dmg_cb, 2.0 * dmg_cb / screen[:, None, :], maxhp[:, :, None], cur_hp[:, :, None],
-            None if crit_all is None else crit_all[:, None, :], None)
+            dmg_cb, 2.0 * dmg_cb / screen[:, None, :], cur_hp[:, :, None],
+            None if crit_all is None else crit_all[:, None, :])
         # gen3_nonformula_damage_v1: the declared non-formula kinds (fixed / level, fraction of the
         # target's current HP, Endeavor) REPLACE the rolls — immunity-gated, CB- and screen-invariant.
         nf = nonformula_rolls(tuple(t[:, None, :] for t in nf_all),
@@ -922,9 +940,10 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, DamageOperato
         acc_all = self.MOVE_ACCURACY                                                            # [n_moves]
         # gen3_nonformula_damage_v1: every dex-damaging move carries its TYPE's gen-3 channel in MOVE_PHYS
         # (Seismic Toss / Return = Fighting / Normal = phys, Night Shade = Ghost = phys) — set at the table.
-        # The attacker (opp active) HP the HP-dependent kinds read: its obs fraction × the neutral max HP.
+        # The attacker (opp active) HP the HP-dependent kinds read: its obs fraction × its EXPECTED max HP
+        # (gen3_their_max_hp_belief_v1: an operand in HP points).
         opp_hp_frac = ctx.hp_and_active[ar, opp_act, 0]                                        # [B]
-        opp_cur_hp_att = opp_hp_frac * (2.0 * self.BASE_STATS[ctx.species_ids[ar, opp_act], 0] + 31.0 + 110.0)
+        opp_cur_hp_att = their_max_hp(self, ctx.species_ids[ar, opp_act]).points(opp_hp_frac)
         cand_all = torch.arange(bp_all.shape[0], device=bp_all.device)[None, :]                 # [1,n_moves]
         # gen3_unified_op_physics_v1: per-candidate WEATHER BP modifier (rain/sun × Water/Fire), [B,n_moves].
         # gen3_field_sport_slots_v1: × the field sports (Mud Sport Electric / Water Sport Fire).

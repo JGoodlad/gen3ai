@@ -7,6 +7,7 @@ cells — Swords Dance raises the best physical line, Agility raises P(outspeed)
 non-setup slots are exactly zero, and `boost_delta=None` leaves every existing caller byte-identical.
 """
 import inspect
+import math
 
 import gymnasium as gym
 import numpy as np
@@ -363,12 +364,20 @@ def test_recovery_flips_the_ko_threshold():
     assert float(full[:, 1:3, :, 1].abs().max()) < 1e-6, "at full HP a heal changes nothing"
 
 
+def _their_tick(species_id: str, denom: int) -> float:
+    """``E[max(1, ⌊M / denom⌋) / M]`` over THEIR max-HP belief, by hand from the helper's distribution: the expected
+    fraction of its max HP a ``1/denom`` residual takes from an opponent's mon (Showdown's integer rule)."""
+    from agents.model.belief_tables import their_max_hp_support
+    values, weights = their_max_hp_support(species_id)
+    return math.fsum(w * max(1, m // denom) / m for m, w in zip(values, weights))
+
+
 def test_status_consequence_channels():
     """C2 semantics: T-Wave on a slow Snorlax vs a fast revealed opponent flips
     d_their_outspeed POSITIVE (their para makes us effectively faster) and reads a
     ZERO burn/tick channel; Will-O-Wisp halves the worst believed PHYSICAL hit (negative
-    d_in_phys) and adds the −1/8 tick; a non-status slot stays exactly zero; Leech Seed is
-    deliberately NOT a C2 row."""
+    d_in_phys) and adds the 1/8 tick (Showdown's integer amount over their max-HP belief);
+    a non-status slot stays exactly zero; Leech Seed is deliberately NOT a C2 row."""
     fe = _make(**_C1_TOGGLES).eval()
     ctx = _c1b_ctx(fe, seed=103)
     ctx.species_ids[:, TEAM_SIZE] = gen3_data.species.get("aerodactyl").num   # fast attacker
@@ -408,7 +417,12 @@ def test_status_consequence_channels():
     assert float(cells[:, 1, 0, 4].abs().max()) < 1e-6, "para has no residual tick"
     # WoW: the believed EQ (physical) hit must shrink; the tick reads −1/8.
     assert float(cells[:, 2, 0, 3].max()) < -1e-4, "burn must shrink the worst physical hit"
-    assert float(cells[:, 2, 0, 4].max()) == -0.125, "brn tick −1/8 (flat v1)"
+    # The burn tick is Showdown's integer ⌊M / 8⌋ of their max HP M, as the EXPECTED fraction over the species'
+    # Smogon max-HP belief (gen3_their_max_hp_belief_v1): by hand from the helper's distribution, and strictly
+    # smaller than the nominal 1/8 (no Aerodactyl max HP is a multiple of 8 at every set).
+    want_tick = _their_tick("aerodactyl", 8)
+    assert 0.11 < want_tick < 0.125, "precondition: the integer tick is below the nominal 1/8"
+    assert cells[:, 2, 0, 4].tolist() == pytest.approx([-want_tick] * 2, abs=1e-7), "brn tick −E[⌊M/8⌋/M]"
     assert float(cells[:, 2, 0, 2].abs().max()) < 1e-6, "WoW has no para channel"
     assert float(cells[:, 1:3, :, 5:].abs().max()) < 1e-6, "para/burn have no sleep channels"
     # The land channel rides the validated per-pair kernel (nonzero on the gated pair).
@@ -451,7 +465,10 @@ def test_toxic_and_sleep_consequences():
     with torch.no_grad():
         cells = fe.damage_op.pairwise_status_consequence(
             ctx, _constructed_logits(fe, ctx, surf))
-    assert float(cells[:, 1, 0, 4].max()) == -1.0 / 16.0, "Toxic lands at its TRUE first tick"
+    want_tick = _their_tick("swampert", 16)                 # −E[⌊M/16⌋/M] over Swampert's max-HP belief, by hand
+    assert 0.055 < want_tick < 1.0 / 16.0, "precondition: the integer tick is below the nominal 1/16"
+    assert cells[:, 1, 0, 4].tolist() == pytest.approx([-want_tick] * 2, abs=1e-7), \
+        "Toxic lands at its TRUE first tick"
     assert float(cells[:, 1, 0, 5].abs().max()) < 1e-6, "Toxic has no sleep channels"
     assert float(cells[:, 2, 0, 5].max()) < -1e-4, \
         "sleep suspends the whole threat — the SPECIAL surf too (burn couldn't touch it)"
@@ -471,7 +488,7 @@ def test_toxic_and_sleep_consequences():
     with torch.no_grad():
         our_g, _opp_g = fe.damage_op.pairwise_schedule(ctx)
     # gen3_residual_exact_v1: our mon's tick is the stage × Showdown's integer max(1, ⌊maxhp / 16⌋), over its max HP
-    mhp1 = float(fe.damage_op.eot_rule._max_hp(ctx, fe.damage_op)[0, 1])
+    mhp1 = float(fe.damage_op.eot_rule._our_max_hp(ctx, fe.damage_op)[0, 1])
     s16 = max(1.0, mhp1 // 16) / mhp1
     assert abs(s16 - 1.0 / 16.0) > 1e-5                                      # the pin has teeth
     assert abs(float(our_g[0, 1, 2]) - (-4.0 * s16)) < 1e-6, \

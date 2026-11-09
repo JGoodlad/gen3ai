@@ -96,17 +96,77 @@ Every HP of OUR side (max, current, a heal world, Endeavor's attacker) comes fro
 `our_hp_points` / `our_healed_hp`; never write `fraction * maxhp` in a forward module (an fp32 product misses the
 integer by an ulp, and a discrete cut such as the fixed-damage KO then flips). `our_hp_exact_test.py` scans every
 `FORWARD_MODULES` file and fails on a new inline product; its one declared exception is an amount, not our HP
-(their percent bin). THEIR HP is an estimate and is never rounded.
+(their percent bin). THEIR HP is a belief and is never rounded (the next section).
+
+## THEIR max HP has ONE spelling, a Smogon belief (`gen3_their_max_hp_belief_v1`)
+
+An opponent's max HP is hidden (their HP EVs), so the op holds a DISTRIBUTION of it and every site reads that
+distribution through `damage_kinds.their_max_hp(op, species_ids)` / `their_hp_slots(op, ctx, sp_probs)`, which
+return a `TheirHp`. Never write `2·base + 141`, read a base HP, or index a `THEIR_HP_*` buffer in a forward module:
+`their_max_hp_test.py` scans every `FORWARD_MODULES` file (its two declared exceptions are OUR max HP in
+`eot_residual`). The one other place their max HP enters the forward, the static token's opponent HP stat
+(`STAT_PRIOR[:, 0]`, a network input), is the mean and std of the same `their_max_hp_support`
+(`build_static_stat_prior`; `static_tokens_test.py` holds it equal to the op's `E[M]`).
+
+* **The source** is `belief_tables.their_max_hp_support(species)`: Showdown's level-100 HP `2·base + IV +
+  ⌊EV/4⌋ + 110` (`sim/battle.ts` `statModify`) at IV 31 over EVERY Smogon chaos spread of the species
+  (`gen3_data.priors.all_spreads`), so a lattice of at most 64 values. Shedinja is the point mass 1 (`data/pokedex.ts`
+  `maxHP: 1`); a species with no usage record is uniform over the lattice. Nothing else enters: no team pool, and
+  nothing of the opponent's true spread (the helper RAISES on a non-integer input; a production-forward test plants
+  spreads into the opponent's observation cells and requires the op's and the end-of-turn rule's outputs
+  bit-identical).
+* **Each quantity reads the moment that is exact for it.** A damage as a FRACTION of their max HP is `d · E[1/M]`
+  (`TheirHp.inv`, `.maxhp`, `.frac_points`); their HP in POINTS, an attacker's operand (Flail, Endeavor, a
+  HP-scaled power), is `fraction · E[M]` (`.points`); an end-of-turn amount is `E[max(1, ⌊M/d⌋) / M]`
+  (`their_residual_frac`, Showdown's integer rule in expectation); their own max HP inside the end-of-turn HP
+  chain is `1 / E[1/M]`.
+* **P(KO) is a probability over their max HP too** (`their_ko_given_hit`, `their_fixed_ko`): the op already takes
+  P(KO) in closed form over the 16 rolls, the crit and the percent bin (`ko_exact.ko_given_hit`), so the max-HP
+  distribution is one more mixture axis, kept as 8 atoms per species (`belief_tables._max_hp_atoms`: the optimal
+  1-D k-means by dynamic programming, each run at its harmonic mean so `Σ w/atom = E[1/M]` exactly). A fixed
+  amount's KO is `P(their HP ≤ the amount)`, continuous in the shown fraction, where the point estimate was a yes /
+  no.
+* **A slot whose species is itself averaged** (hidden under the usage prior; X5's OTHER) reads the species mixture
+  of `E[1/M]` and `E[M]` (`expected_their_max_hp`, linear so exact) with its atoms collapsed to that point: the op
+  nulls P(KO) there.
+
+**Why a distribution for P(KO) and a moment for everything else.** A fraction enters its consumers linearly, so its
+expectation is the whole content and costs nothing. A KO is a step in max HP: Seismic Toss into a 35 % Skarmory
+kills the 271-HP set and not the 334-HP set that is Smogon's mode, so ANY point reads 0 or 1 where the answer is
+0.05 (the usage mass at 285 HP or less). Measured over every species with a usage record, shown HP 1 … 100 % and a grid of
+damages (worst |ΔP(KO)| against the full lattice, then the usage-weighted mean; formula hits / fixed amounts):
+
+| their max HP read as | formula: worst | mean | fixed: worst | mean |
+|---|---|---|---|---|
+| the neutral point `2·base + 141` (before) | 0.930 | 0.115 | 0.994 | 0.357 |
+| one harmonic-mean point | 0.262 | 0.026 | 0.658 | 0.133 |
+| 2 atoms | 0.095 | 0.003 | 0.433 | 0.026 |
+| 4 atoms | 0.024 | 0.0004 | 0.056 | 0.003 |
+| **8 atoms (adopted)** | 0.013 | 0.0001 | 0.021 | 0.0003 |
+| 16 atoms | 0.003 | 0.0000 | 0.001 | 0.0001 |
+
+Eight is the smallest count whose worst case sits inside the percent bin's own resolution (their HP is shown to 1 %);
+`their_max_hp_test` pins ≤ 0.03. The atom axis rides only the P(KO) reduction: the production extractor's CPU forward
+does not move measurably between 1, 8 and 16 atoms (the production features extractor on 256 rows, CPU eager, three
+interleaved runs under a live training run, median ms per forward: the tree before this change 1016 / 1029 / 1084, 1
+atom 1035 / 1085 / 1094, 8 atoms 1031 / 1079 / 1095, 16 atoms 1064 / 1106 / 1127, all inside the run-to-run spread;
+**UNVERIFIED:** the GPU cost, not measured, since the build held no lease).
+
+**Not used, by declaration.** The spread belief head predicts the five non-HP stats and has no HP output (adding one
+is a new head: an architecture decision, not this contract's). Their REVEALED information is the shown HP percent
+alone: narrowing max HP from observed damage (a hit of ours that moved their bar by a known amount) needs a tracker
+that does not exist (`endstate/obs_enrichment_backlog.md` E9). Their Def / SpD without the spread belief stay the
+neutral 0-EV estimate. The HP IV is taken as 31 (an HP-IV-30 Hidden Power set is 1 HP lower).
 
 **Our spread has ONE decode (`gen3_stat_ev_points_v1`, `gen3_nature_floor_v1`).** Every stat of OUR mon, Speed
 included, comes from `damage_kinds.our_spread` / `our_stats` / `our_max_hp`: the IV and EV back to their integers, the EV
 as ``⌊EV / 4⌋`` stat points and the nature truncated (`gen3_nature_stat`, ``tr(stat · 110 / 100)``), as Showdown's
 `statModify` does; our Shedinja's max HP is 1. **Every end-of-turn amount has ONE spelling (`gen3_residual_exact_v1`):**
-`damage_kinds.residual_points(maxhp, d, exact)` = Showdown's integer ``max(1, ⌊maxhp / d⌋)`` for our mons and a
-Shedinja, the nominal ``maxhp / d`` for their other mons (an estimated max HP, E13). Never write `* 252`, `ev / 4`, a
-nature column or multiplier, a residual's `/ 16` / `/ 8`, or `maxhp / …` in a forward module; `stat_ev_points_test.py`
-fails on a new site (declared exceptions: `SpreadBelief`'s believed stat, an expectation; the status-landing
-consequence's tick on THEIR mon and the Spikes entry chip, both nominal; Substitute's `⌊maxhp / 4⌋`, already exact; the
+`damage_kinds.residual_points(maxhp, d)` = Showdown's integer ``max(1, ⌊maxhp / d⌋)`` for OUR mon's exact max HP,
+and `their_residual_frac(op, species_ids, d)` = the same rule's expectation over THEIR max-HP belief (a Shedinja:
+its one HP). Never write `* 252`, `ev / 4`, a nature column or multiplier, a residual's `/ 16` / `/ 8`, or
+`maxhp / …` in a forward module; `stat_ev_points_test.py` fails on a new site (declared exceptions: `SpreadBelief`'s
+believed stat, an expectation; the Spikes entry chip, nominal; Substitute's `⌊maxhp / 4⌋`, already exact; the
 crit-probability table).
 
 ## The op's READ contracts: an opponent's ability, and the status rules (`gen3_op_ability_status_gigo_v1`)

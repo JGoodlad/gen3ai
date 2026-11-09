@@ -65,16 +65,17 @@ def test_the_table_has_every_cell_and_each_is_the_ruled_one():
     assert {(g, u): A.GAP_POLICY[g][u] for g in A.GAPS for u in A.USES} == _EXPECTED
 
 
-def test_config_v167_raises_the_marker_and_v163_to_v166_records_warn():
+def test_config_v168_raises_the_marker_and_v163_to_v167_records_warn():
     """v164 (`--grow trunk_ffn_dim`, config only) moved no cell; v165 (gen3_our_hp_exact_v1), v166
-    (gen3_stat_ev_points_v1 + gen3_leech_seed_exact_v1) and v167 (gen3_nature_floor_v1 + gen3_residual_exact_v1),
-    model-internal inputs, raised the marker by hand: a v167 record is a CURRENT verdict (no gap, no badge), and v166 /
-    v165 / v164 / v163 / v162 records warn, naming the rows newer than their marker (a replay `warn` on each)."""
-    assert OBS_SEMANTICS_VERSION == 167 and MODEL_CONFIG_VERSION >= 167
-    v = A.verdict_from_record(167, _HEAD_SIG)
+    (gen3_stat_ev_points_v1 + gen3_leech_seed_exact_v1), v167 (gen3_nature_floor_v1 + gen3_residual_exact_v1) and v168
+    (gen3_their_max_hp_belief_v1), model-internal inputs, raised the marker by hand: a v168 record is a CURRENT verdict
+    (no gap, no badge), and v167 / v166 / v165 / v164 / v163 / v162 records warn, naming the rows newer than their
+    marker (a replay `warn` on each)."""
+    assert OBS_SEMANTICS_VERSION == 168 and MODEL_CONFIG_VERSION >= 168
+    v = A.verdict_from_record(168, _HEAD_SIG)
     assert A.gap_of(v) == A.GAP_NONE and A.decide(v, A.USE_TRACE_REPLAY).badge is None
-    for cv, rows in ((166, [167]), (165, [166, 167]), (164, [165, 166, 167]), (163, [165, 166, 167]),
-                     (162, [163, 165, 166, 167])):
+    for cv, rows in ((167, [168]), (166, [167, 168]), (165, [166, 167, 168]), (164, [165, 166, 167, 168]),
+                     (163, [165, 166, 167, 168]), (162, [163, 165, 166, 167, 168])):
         d = A.decide(A.verdict_from_record(cv, _HEAD_SIG), A.USE_TRACE_REPLAY)
         assert d.action == A.WARN and [c["version"] for c in d.as_dict()["changes_since"]] == rows
         assert all(c["replay"] == "warn" for c in d.as_dict()["changes_since"])
@@ -147,9 +148,11 @@ def test_every_declared_marker_row_justifies_its_replay_action():
     an op read and the volatile cells, 36 of 991 golden decisions; v163 corrects the HP-type belief cells at encode
     time under Foresight; v165 changes an op read only, our HP as an exact integer; v166 model-internal reads only, the
     EV floor, the EV prior and Leech Seed's integer drain; v167 model-internal reads only, the nature truncation and our
-    end-of-turn integers in the residual order). A `refuse` is for a change that does not."""
+    end-of-turn integers in the residual order; v168 model-internal reads only, THEIR max HP as the species' Smogon
+    belief). A `refuse` is for a change that does not."""
     assert [(v, a) for v, _, a in OBS_SEMANTICS_HISTORY] == [(151, "warn"), (162, "warn"), (163, "warn"),
-                                                              (165, "warn"), (166, "warn"), (167, "warn")]
+                                                              (165, "warn"), (166, "warn"), (167, "warn"),
+                                                              (168, "warn")]
     assert {a for _, _, a in OBS_SEMANTICS_HISTORY} <= {A.WARN, A.REFUSE}
 
 

@@ -372,7 +372,8 @@ _POLICIES: Dict[str, Any] = {}
 #: adoption) prices the op's KO and move resolution's Pursuit / Substitute; the LEGACY base (`endstate_facts_test.
 #: _toggles`, the pre-adoption network) runs the same two since legacy deletion U3 made move resolution unconditional
 #: with its prerequisites (intent_threshold's `sub_break_given_hit`, its third site, was deleted there).
-SURFACE_SITES = {"endstate": {"_ko_exact", "_exact_ko_ours"}, "legacy": {"_ko_exact", "_exact_ko_ours"}}
+SURFACE_SITES = {"endstate": {"_ko_exact", "_exact_ko_ours", "their_ko_given_hit"},
+                 "legacy": {"_ko_exact", "_exact_ko_ours", "their_ko_given_hit"}}
 
 
 def _policy(surface: str) -> Any:
@@ -399,8 +400,9 @@ def test_every_ko_site_of_the_forward_meets_the_oracle_within_the_bound(
         surface: str, rows: torch.Tensor, monkeypatch: pytest.MonkeyPatch) -> None:
     """On the compile-parity fixture's real rows: every P(KO) call goes through `roll_ko_prob`
     (a spy on the module global `ko_given_hit` reads at call time), from every site the surface runs — the op's
-    `_ko_exact` (`_rolls` and the Choice-Band `ko_cb`) and move resolution's `_exact_ko_ours` (Pursuit, Substitute)
-    — and on each call's REAL operands
+    `_ko_exact` (`_rolls` and the Choice-Band `ko_cb`), `damage_kinds.their_ko_given_hit` (a hit into THEIR mon: the
+    same rule per max-HP atom, gen3_their_max_hp_belief_v1) and move resolution's `_exact_ko_ours` (Pursuit,
+    Substitute) — and on each call's REAL operands
     the value is within 8 eps32 k1 of the 16-roll ORACLE. Fails if a site prices its KO by anything else."""
     real = KE.roll_ko_prob
     calls: List[Tuple[str, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]] = []

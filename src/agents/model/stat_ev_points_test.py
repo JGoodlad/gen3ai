@@ -147,8 +147,9 @@ def test_the_ev_prior_lives_in_the_labels_stat_effective_space():
 #: * our spread's decode (`damage_kinds.our_spread` / `our_stats`): de-normalising the EV column (``* 252``), an
 #:   ``ev / 4``, reading the nature columns (``13 + _NAT…``, ``spread[..., 13…``, ``_SPREAD_NATURE``) or multiplying a
 #:   stat by a nature multiplier (gen3_stat_ev_points_v1, gen3_nature_floor_v1);
-#: * an end-of-turn amount (`damage_kinds.residual_points`): a residual's ``/ 16`` / ``/ 8`` fraction, or any amount
-#:   derived as ``maxhp / …`` (gen3_residual_exact_v1).
+#: * an end-of-turn amount (`damage_kinds.residual_points` for OUR mon, `their_residual_frac` over THEIR max-HP
+#:   belief): a residual's ``/ 16`` / ``/ 8`` fraction, or any amount derived as ``maxhp / …`` (gen3_residual_exact_v1,
+#:   gen3_their_max_hp_belief_v1).
 _FORBIDDEN = {
     "ev*252": re.compile(r"\*\s*252(\.0)?\b"),
     "ev/4": re.compile(r"(?<![\w.])ev\w*(\[[^\]]*\])?\s*/\s*4(\.0)?\b"),
@@ -162,8 +163,6 @@ _ALLOWED = {
     # THEIR believed stat: an EXPECTATION over stat-effective EVs and the nature posterior, E[⌊EV/4⌋] and E[mult] by
     # linearity (a floor kills the gradient).
     ("belief_heads", "believed = ((2.0 * base + 31.0 + ev / 4.0 + 5.0) * e_mult).clamp(min=1.0)"),
-    # the status consequence of LANDING a status on THEIR mon: the nominal tick of an ESTIMATED max HP (E13).
-    ("damage_op_pairwise", "d_sched = (-(1.0 / 8.0) * (is_brn + is_psn) - (1.0 / 16.0) * is_tox)"),
     # the Spikes ENTRY chip (a switch-in amount, not a residual): nominal (FINDING, gen3_residual_exact_v1's report).
     ("damage_op_pairwise", "chip_table = torch.tensor([0.0, 1.0 / 8, 1.0 / 6, 1.0 / 4], device=ctx.device)"),
     # Substitute's cost ⌊maxhp / 4⌋ of OUR exact max HP: already Showdown's integer (no minimum of 1 applies).

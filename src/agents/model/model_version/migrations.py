@@ -604,6 +604,10 @@ def _migrate_config(data: dict) -> dict:
     # config stamps through.
     if version < 167:
         data["config_version"] = 167
+    # v168 (gen3_their_max_hp_belief_v1) — no field: THEIR max HP is the species' Smogon belief, in non-persistent
+    # buffers (a forward fix; the state_dict is unchanged), so every past config stamps through.
+    if version < 168:
+        data["config_version"] = 168
     #
     # ---- v97–v120 MIGRATION HISTORY — documentation, not code (floored away at v121) ---------
     # gen3_event_record_v2 (the observation-architecture batch: the E12 event-row reshape, the E4

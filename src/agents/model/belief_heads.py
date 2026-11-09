@@ -414,8 +414,9 @@ class SpreadBelief(torch.nn.Module):
 
     Either way the output is the same `believed [B,6,5]` DERIVED stat the `DamageOperator` consumes at the opp
     ACTIVE slot (replacing its hand-coded constants), reinjected as a small residual so both heads see it. HP is
-    skipped (the op uses the obs HP fraction × a neutral maxhp). Zero-init heads → cold-start == the prior; the
-    prior buffers are non-persistent (data-derived) → OFF builds no module (reproduces nothing)."""
+    skipped (the op prices their max HP from the species' Smogon max-HP belief, `damage_kinds.their_max_hp`).
+    Zero-init heads → cold-start == the prior; the prior buffers are non-persistent (data-derived) → OFF builds no
+    module (reproduces nothing)."""
 
     spread_prior: torch.Tensor
     nature_logprior: torch.Tensor

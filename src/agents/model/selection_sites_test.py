@@ -261,7 +261,7 @@ def test_the_production_forward_runs_only_declared_modules_and_sites(production:
 #: direction test; a closed-form sum's run COUNT, continuous across its step). Their own tests pin that claim (`damage_op_index_max_test`, `hypothesis_set_test`).
 _VALUE_CONTINUOUS = ("MAX_VALUE", "BISECT", "COUNT_CONTINUOUS")
 #: FINDING (the X5 version break, 2026-10-07): until the break this test ran on the BLOB production surface,
-#: so X5's EXACT declarations were never jitter-tested here. On X5 (production now) these four EXACT sites'
+#: so X5's EXACT declarations were never jitter-tested here. On X5 (production now) these EXACT sites'
 #: OPERANDS move under the jitter on rows K9(b) does not exclude: X5's OTHER-mode pass prices a hidden slot
 #: on tail-AVERAGED tables (`eff` the expected type multiplier, `tgt_cur_hp` from averaged stats — both
 #: compared at 0, where a flip needs an exact 0) and its per-mon candidate order permutes within a
@@ -277,8 +277,11 @@ _VALUE_CONTINUOUS = ("MAX_VALUE", "BISECT", "COUNT_CONTINUOUS")
 #: * `pair_outcome`'s `set_nums.long()` LEAVES it — not re-judged: `--move-resolution on` retires pair_outcome on
 #:   the production policy, so the site no longer runs here (it moved on the legacy surface until the adoption).
 #: Both are the same open FINDING for the owner of K9(b)'s declarations.
+#: * `damage_kinds`' `tgt_cur_hp > 0` LEFT it at gen3_their_max_hp_belief_v1 (config v168): a hidden slot's HP in
+#:   points was `fraction x an averaged max HP` there; THEIR target's liveness is now read on the shown HP
+#:   FRACTION (`hp_frac > 0`, an observation), and `tgt_cur_hp > 0` runs only on OUR mon's exact HP.
 _X5_WEIGHT_DEPENDENT_EXACT = frozenset({
-    ("damage_kinds", "eff > 0"), ("damage_kinds", "tgt_cur_hp > 0"),
+    ("damage_kinds", "eff > 0"),
     ("damage_op_pairwise", "mty_k.long()"), ("move_resolution", "tm_a > 0")})
 
 

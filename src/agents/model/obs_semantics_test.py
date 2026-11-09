@@ -43,7 +43,9 @@ from agents.model.model_version import (
 # hash — model-internal inputs (our stats' EV floor, the EV prior, Leech Seed's integer drain).
 # Re-pinned 2026-11-09 (config v167, gen3_nature_floor_v1 + gen3_residual_exact_v1): RAISED to 167 with the SAME
 # hash — model-internal inputs (our stats' nature truncation, our end-of-turn integers and their residual order).
-_GOLDEN_PIN = ("ab3cdda779eb21b340170039667f9e63071d1549de1efbe2f43e3c6f1f897235", 167)
+# Re-pinned 2026-11-09 (config v168, gen3_their_max_hp_belief_v1): RAISED to 168 with the SAME hash — a model-internal
+# input (THEIR max HP as the species' Smogon belief, in the op and the end-of-turn rule).
+_GOLDEN_PIN = ("ab3cdda779eb21b340170039667f9e63071d1549de1efbe2f43e3c6f1f897235", 168)
 
 _GOLDEN = Path(__file__).resolve().parents[1] / "training" / "golden_obs_fixture.json"
 

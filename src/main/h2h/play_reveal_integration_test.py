@@ -84,8 +84,14 @@ PAIRS, N_ENVS = 12, 8
 #: 7e97c03f… / 26877212…) — the checkpoints' decisions moved with their inputs. Read off this file's own failure line
 #: (2 failed, 3 passed: the off/off pin and the withheld == off pin, the same digest); the K9 learner golden and the
 #: played-bits sentinel were re-recorded for the same cause.
-OFF_BITS = "61480a8d6595b5697e0b23d27788976a30c5cc85cd06b19aab37a28621fbbef2"
-OFF_OUTCOME_ALL = "f14436da8ae44e78dab395e0d0397f9df80854d7bd59a630c0c72b74d2a5097a"
+#: RE-RECORDED 2026-11-09 for gen3_their_max_hp_belief_v1 (config v168: the op prices THEIR mons at the species'
+#: Smogon max-HP belief instead of ``2·base + 141``, and the static token's opponent HP stat is that belief's mean and
+#: std — model inputs only; the engine, the observation (`golden_obs_core --check` 991 / 991) and the reveal path did
+#: not change): BOTH digests moved (was 61480a8d… / f14436da…) — the checkpoints' decisions moved with their inputs.
+#: Read with this file's own OFF/OFF play alone (the conftest's checkpoints, `run_engine`, `bits_digest`), then
+#: confirmed by the file itself; the K9 learner golden and the played-bits sentinel were re-recorded for the same cause.
+OFF_BITS = "14223be7ce9d5111678e2ce414db4a8ab0bd9971d3edd3368ac1b7ecfceee502"
+OFF_OUTCOME_ALL = "0c27cfd7a5fedcd33ede6324927ab9104c1f6a55fab9f97bd9504bb566f876af"
 
 
 def bits_digest(games):

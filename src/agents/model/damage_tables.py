@@ -606,7 +606,11 @@ NONFORMULA_LEVEL = 100
 #: (`damage_kinds.gen3_nature_stat`, our Speed included) and our Shedinja's max HP is 1; the end-of-turn rule (the `g`
 #: ledger) reads our residual amounts as Showdown's integers in the residual order. A recording made under
 #: gen3_stat_ev_points_v1 is not reproducible here on a row with a boosted / hindered stat or a residual of our mon.
-OP_SEMANTICS = "gen3_nature_floor_v1"   # (was gen3_stat_ev_points_v1)
+#: gen3_their_max_hp_belief_v1 (2026-11-09, backlog E13): THEIR max HP is the species' Smogon belief
+#: (`damage_kinds.their_max_hp`), where every opponent read as 0 HP EVs: every damage fraction against their mon, every
+#: P(KO) on it (now a mixture over their max HP), their HP in points and their end-of-turn amounts move. A recording
+#: made under gen3_nature_floor_v1 is not reproducible here on any row with a move into their mon.
+OP_SEMANTICS = "gen3_their_max_hp_belief_v1"   # (was gen3_nature_floor_v1)
 DAMAGE_MODELS: Dict[str, Tuple[str, float, str]] = {
     # --- fixed / level: `getDamage` → `move.damage === 'level'` → source.level, else `move.damage` ---
     "seismictoss": ("fixed", float(NONFORMULA_LEVEL), "data/moves.ts seismictoss: damage 'level'"),

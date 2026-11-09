@@ -305,9 +305,9 @@ _DMG_REFINE_K = 8
 # mons and injects the per-opp-mon summary onto the OPP token slice (so attention reasons over "how
 # threatened is each opp mon by us", not just "how threatened are we"). `_DMG_OUT_REFINE` = the same 4-feat
 # `[phys_high, spec_high, phys_pko, spec_pko]` per-opp-mon summary. REVEALED opp mons use real types/bulk +
-# full P(KO); UNREVEALED mons use the EXPECTED-LATENT read (E[mult] via SPECIES_EXP_MULT, E[bulk]/E[maxhp]
-# via SPECIES_SPREAD_PRIOR / E[base_hp], marginalized over the move-belief's P(species)) with P(KO) NULLED
-# (a full-HP switch-in is ~never OHKO'd — owner decision, drops the Jensen-threshold complexity).
+# full P(KO); UNREVEALED mons use the EXPECTED-LATENT read (E[mult] via SPECIES_EXP_MULT, E[bulk] via
+# SPECIES_SPREAD_PRIOR, the max-HP belief's species mixture, marginalized over the move-belief's P(species)) with
+# P(KO) NULLED (a full-HP switch-in is ~never OHKO'd — owner decision, drops the Jensen-threshold complexity).
 
 # gen3_status_trunk_v1: STATUS-LANDING into the trunk (the last CPU-obs deprecation gap). Status immunity
 # (type × ability × already-statused × Sleep-Clause × Substitute) is a deterministic MECHANICS fact — the

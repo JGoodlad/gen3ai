@@ -99,7 +99,9 @@ MODEL_SEED, PERTURB_SEED, UPDATE_SEED = 0, 1234, 123
 #: OTHER_move dead 1 row and seed 20 gave 0 (< MIN_CASE_ROWS); 21 met the coverage but K9(b) refused it (20 rule-8
 #: near-tie rows, excluded_frac 0.375 >= 0.15); 22, the next, gives OTHER_species live 37 / dead 27, OTHER_move live 59
 #: / dead 5, no near-tie row and K9(b) max |dlogp| 4.8e-07. Chosen on those two checks alone, before the post-U3
-#: golden was recorded.
+#: golden was recorded. STILL 22 at config v168 (`gen3_their_max_hp_belief_v1`, 2026-11-09: the learner's log-probs
+#: moved 3.0e-3 on the old buffer, so it was rebuilt): the 64 actions are the old buffer's, the coverage is unchanged
+#: and K9(b) reads 2.4e-07, so no other seed was tried.
 RECORD_N_STEPS, RECORD_RUN_SEED, RECORD_P2_SEED = 32, 22, 5
 #: design §6.4: each X5 case must hold at least this many rows of the buffer (`coverage`).
 MIN_CASE_ROWS = 2

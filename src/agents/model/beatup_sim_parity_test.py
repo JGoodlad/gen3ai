@@ -232,8 +232,11 @@ def _op_hp(op, party: List[str], target: str, expect_allies: List[str], screen: 
     ctx.opp_believed_mask = torch.zeros(1, TEAM_SIZE, dtype=torch.bool)
     ctx.screen_feature[:, 3] = 1.0 if screen == "light" else 0.0
     ctx.screen_feature[:, 1] = 1.0 if screen == "reflect" else 0.0
-    maxhp = 2.0 * _base(target, "hp") + 31.0 + 110.0
-    return op._outgoing_block(ctx)[0, 1].item() * maxhp
+    # The cell is the expected FRACTION of their max HP, d · E[1 / M] over the species' Smogon max-HP belief
+    # (gen3_their_max_hp_belief_v1), so the op's damage in HP is the cell over E[1 / M].
+    inv = float(op.THEIR_HP_INV[gen3_data.species.get(target).num])
+    assert 1.0 / (2.0 * _base(target, "hp") + 204.0) <= inv <= 1.0 / (2.0 * _base(target, "hp") + 141.0), (target, inv)
+    return op._outgoing_block(ctx)[0, 1].item() / inv
 
 
 def run_all() -> List[dict]:

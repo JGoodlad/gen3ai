@@ -673,7 +673,16 @@ from typing import Any, Dict
 #   after Wish, the weather, Ingrain, Rain Dish and Leftovers, and the net wastes a heal at full HP (it was the clamp of
 #   the sum). THEIR other amounts stay the nominal fraction of an estimated max HP (E13). Every past config stamps
 #   through. No ARCH_SIGNATURE bump, no MIGRATION_FLOOR change; the marker rises to 167 by hand (`warn`).
-MODEL_CONFIG_VERSION = 167
+# v168 (gen3_their_max_hp_belief_v1, 2026-11-09; backlog E13): no field, no weight shape, no new head. THEIR max HP is
+#   a BELIEF from the species' Smogon spreads (`belief_tables.build_their_max_hp`: the discrete distribution of
+#   2·base + 31 + ⌊EV / 4⌋ + 110 over the usage's HP EVs; a Shedinja's is exactly 1), read only through
+#   `damage_kinds.their_max_hp`, where the op assumed 0 HP EVs for every opponent (a Skarmory 271 for a usual 334).
+#   A damage FRACTION of their max HP is damage × E[1 / M]; P(KO) on their mon is a mixture over 8 max-HP atoms, each
+#   with its own reported-percent HP bin (a KO is a threshold in M, so no point prices it: Seismic Toss into a 35 %
+#   Skarmory read 1.0 and reads 0.05); their HP in points (their Endeavor) is fraction × E[M]; their end-of-turn
+#   amounts are E[max(1, ⌊M / d⌋) / M], on the same HP chain. Non-persistent buffers only: every past config stamps
+#   through. No ARCH_SIGNATURE bump, no MIGRATION_FLOOR change; the marker rises to 168 by hand (`warn`).
+MODEL_CONFIG_VERSION = 168
 
 # THE OBS-SEMANTICS MARKER (declared 2026-10-09, with v151): the FIRST config version whose OBSERVATION VALUES
 # (the vector the encoder writes, and the model-input cells derived from it) MEAN something different from every
@@ -726,6 +735,11 @@ OBS_SEMANTICS_HISTORY = (
     (167, "our mon's stats truncate the nature as the game does (a boosted stat read up to 0.9 of a point high) and our "
           "Shedinja has 1 max HP; our end-of-turn amounts are Showdown's integers, applied in the game's residual "
           "order (Leech Seed drains the HP left after Leftovers; a heal at full HP is wasted)", "warn"),
+    # gen3_their_max_hp_belief_v1: a model-INTERNAL op input (the obs golden cannot see it), raised by hand.
+    (168, "the opponent's max HP is a belief from the species' Smogon spreads (a Skarmory is usually 334 HP, where "
+          "every opponent read as carrying no HP EVs, 271): damage fractions against their mon are lower, a KO on "
+          "their mon is a probability over their plausible max HP, and their end-of-turn amounts follow the game's "
+          "integer rule in expectation", "warn"),
 )
 OBS_SEMANTICS_VERSION = OBS_SEMANTICS_HISTORY[-1][0]
 

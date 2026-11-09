@@ -156,7 +156,7 @@ def test_schedule_ledger_kernel_invariants():
     alive = (ctx.hp_and_active[:, :TEAM_SIZE, 0] > 0).float()
     assert float(our_c[:, 0, 1].abs().sum()) == 0.0, "Rock mon takes no sand chip"
     # gen3_residual_exact_v1: OUR amounts are Showdown's integer max(1, ⌊maxhp / 16⌋) over the mon's exact max HP
-    our_mhp = rule._max_hp(ctx, fe.damage_op)[:, :TEAM_SIZE]
+    our_mhp = rule._our_max_hp(ctx, fe.damage_op)
     s16 = torch.floor(our_mhp / 16.0).clamp(min=1.0) / our_mhp
     assert not torch.allclose(s16, torch.full_like(s16, 1.0 / 16.0), atol=1e-6)        # the pin has teeth
     exp_chip = -s16[:, 1] * alive[:, 1]
@@ -173,7 +173,7 @@ def test_schedule_ledger_kernel_invariants():
     # gen3_residual_exact_v1), applied in that order from the rule's own columns.
     from agents.model.damage_kinds import our_hp_points
     from agents.model.eot_residual import EOT_FACTS
-    maxhp = rule._max_hp(ctx, fe.damage_op)[ar, ctx.our_active_idx]
+    maxhp = rule._our_max_hp(ctx, fe.damage_op)[ar, ctx.our_active_idx]
     h = our_hp_points(ctx.hp_and_active[ar, ctx.our_active_idx, 0], maxhp)
     with torch.no_grad():
         eot = rule(ctx, fe.damage_op)[ar, ctx.our_active_idx]                          # [B, EOT_DIM]

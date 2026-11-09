@@ -48,7 +48,7 @@ from agents.training.hidden_power_tracker import HIDDEN_POWER_TYPE_ORDER
 
 
 # gen3_unified_spread_belief_v1: the 5 battle-relevant DERIVED stats the SpreadBelief predicts for the
-# hidden opponent (HP is skipped — the op uses the obs HP fraction × a neutral maxhp estimate). Order is
+# hidden opponent (HP is skipped — their max HP is the species' Smogon distribution, `build_their_max_hp`). Order is
 # the contract the op + the belief head index by. Index into BASE_STATS' [hp,atk,def,spa,spd,spe] layout.
 SPREAD_STAT_COLS = ("atk", "def", "spa", "spd", "spe")
 N_SPREAD_STATS = len(SPREAD_STAT_COLS)                       # 5
@@ -136,6 +136,142 @@ def _add_speed_rows(row_acc: List[float], rows: Sequence[Tuple[float, int, float
         row_acc[v] += w / tot
 
 
+#: THEIR max HP (gen3_their_max_hp_belief_v1; `build_their_max_hp`). The lattice is the HP stat points an EV buys,
+#: ``tr(EV / 4)`` = 0 … 63; the mixture the op's P(KO) reads keeps `THEIR_HP_ATOMS` atoms of it; the residual
+#: denominators are `damage_kinds.RESIDUAL_DENOMS`, in its order (a test pins the two equal).
+THEIR_HP_LATTICE = 64
+THEIR_HP_ATOMS = 8
+THEIR_HP_RESIDUAL_DENOMS = (16, 8, 4, 2)
+#: The max HP a species num NO species owns reads (0 = unknown / pad): 2·0 + 31 + 110, a point mass — the value the
+#: op read there before the belief (always gated: an unrevealed slot's cells are averaged or zeroed).
+THEIR_HP_UNOWNED = 141
+
+
+def their_max_hp_support(species_id: str) -> Tuple[List[int], List[float]]:
+    """``(max HP values ascending, weights summing to 1)`` — the species' DISCRETE Smogon distribution of its
+    level-100 max HP, the belief the op holds about an OPPONENT's mon (gen3_their_max_hp_belief_v1, backlog E13).
+
+    Showdown's HP stat at level 100 is ``2·base + IV + tr(EV / 4) + 110`` (`sim/battle.ts` ``statModify``'s HP
+    branch); the chaos spreads (`gen3_data.priors.all_spreads`: EVERY entry, not the top-25 cut) give the HP EV,
+    and the IV is taken as 31 (the usage stats publish no IVs; an HP-IV-30 Hidden Power set is 1 HP lower, a
+    declared residual). So the support is the lattice ``2·base + 141 + j`` for ``j = tr(EV / 4)`` in 0 … 63.
+    Shedinja is the point mass 1 (`data/pokedex.ts` shedinja ``maxHP: 1``; `sim/pokemon.ts` ``if
+    (this.species.maxHP) stats.hp = this.species.maxHP``), whatever its spread. A species with no chaos record:
+    uniform over the 64 lattice points (no usage, so no preference: `build_species_speed_mix`'s precedent).
+
+    The inputs are the SPECIES and Smogon's usage statistics, nothing else: no team pool, and nothing of the
+    opponent's actual spread (`their_max_hp_test`'s leak guard)."""
+    sd = gen3_data.species.get(species_id)
+    if sd is None:
+        raise ValueError(f"their_max_hp_support: {species_id!r} is not a gen-3 species")
+    base = int(sd.base_stats["hp"])
+    if (base == 1) != (sd.id == "shedinja"):
+        raise ValueError(f"their_max_hp_support: {species_id!r} has base HP {base}; base HP 1 is how the op knows "
+                         "Shedinja (the one species with `maxHP: 1`) — a second one, or a Shedinja without it, "
+                         "would read a wrong max HP silently.")
+    if base == 1:
+        return [1], [1.0]
+    acc = [0.0] * THEIR_HP_LATTICE
+    for _nature, evs, w in gen3_data.priors.all_spreads(species_id):
+        ev = int(evs[0])
+        if not (0 <= ev <= 255):
+            raise ValueError(f"their_max_hp_support: {species_id!r} has an HP EV of {ev} in its Smogon spreads")
+        acc[ev // 4] += float(w)
+    tot = sum(acc)
+    if tot <= 0.0:
+        acc, tot = [1.0] * THEIR_HP_LATTICE, float(THEIR_HP_LATTICE)
+    floor = 2 * base + 31 + 110
+    return ([floor + j for j, w in enumerate(acc) if w > 0.0], [w / tot for w in acc if w > 0.0])
+
+
+def _max_hp_atoms(values: Sequence[int], weights: Sequence[float], k: int) -> Tuple[List[float], List[float]]:
+    """``(atoms, weights)``, each of length ``k``: the distribution ``(values ascending, weights > 0)`` compressed
+    to at most ``k`` atoms — the CONTIGUOUS partition into ``k`` runs that minimises the weighted squared deviation
+    (the optimal 1-D k-means, by dynamic programming over the cut points: exact, no initialisation), each run
+    replaced by its total weight at its HARMONIC mean ``W / Σ (w / M)``. The harmonic centroid keeps ``Σ_k w_k /
+    atom_k`` = ``E[1 / M]`` exactly, so the mixture's expected damage FRACTION is the full distribution's. A support
+    of at most ``k`` points is kept as it is. Unused atoms repeat the last value at weight 0. Ties take the earliest
+    cut (``argmin``'s first minimum), so the table is a pure function of the data."""
+    m = numpy.asarray(values, dtype=numpy.float64)
+    w = numpy.asarray(weights, dtype=numpy.float64)
+    n = int(m.shape[0])
+    if n <= k:
+        runs = [(i, i + 1) for i in range(n)]
+    else:
+        zero = numpy.zeros(1)
+        cw = numpy.concatenate([zero, numpy.cumsum(w)])
+        cm = numpy.concatenate([zero, numpy.cumsum(w * m)])
+        cq = numpy.concatenate([zero, numpy.cumsum(w * m * m)])
+        tot_w = cw[None, :] - cw[:, None]                                 # [i, j]: the weight of the run [i, j)
+        valid = numpy.arange(n + 1)[None, :] > numpy.arange(n + 1)[:, None]
+        # A run whose weight vanishes beside the running total (a 1e-17 spread) costs nothing: it moves no moment.
+        held = valid & (tot_w > 0.0)
+        sse = (cq[None, :] - cq[:, None]) - (cm[None, :] - cm[:, None]) ** 2 / numpy.where(held, tot_w, 1.0)
+        cost = numpy.where(held, numpy.maximum(sse, 0.0), numpy.where(valid, 0.0, numpy.inf))
+        best = numpy.full(n + 1, numpy.inf)
+        best[0] = 0.0
+        back = []
+        for _ in range(k):
+            cand = best[:, None] + cost                                   # [i, j]: the last run is [i, j)
+            back.append(cand.argmin(axis=0))
+            best = cand.min(axis=0)
+        runs, j = [], n
+        for arg in reversed(back):
+            i = int(arg[j])
+            runs.append((i, j))
+            j = i
+        runs.reverse()
+    atoms = [float(w[i:j].sum() / (w[i:j] / m[i:j]).sum()) for i, j in runs]
+    mass = [float(w[i:j].sum()) for i, j in runs]
+    pad = k - len(atoms)
+    return atoms + [atoms[-1]] * pad, mass + [0.0] * pad
+
+
+def build_their_max_hp(n_species: int) -> Dict[str, torch.Tensor]:
+    """THE tables of the op's belief about an OPPONENT mon's max HP (gen3_their_max_hp_belief_v1, backlog E13), each
+    indexed by species num and a pure function of `their_max_hp_support` (the species + Smogon's spreads):
+
+    * ``THEIR_HP_INV`` ``[n_species]`` — ``E[1 / M]``: a damage of ``d`` HP is the expected FRACTION ``d · E[1 / M]``
+      of their max HP (exact; the mean ``E[M]`` would understate it, Jensen);
+    * ``THEIR_HP_MEAN`` ``[n_species]`` — ``E[M]``: their HP in POINTS is ``fraction · E[M]`` (exact in expectation);
+    * ``THEIR_HP_ATOMS`` / ``THEIR_HP_WEIGHTS`` ``[n_species, THEIR_HP_ATOMS]`` — the distribution as a mixture of at
+      most `THEIR_HP_ATOMS` atoms (`_max_hp_atoms`), over which the op takes its exact P(KO);
+    * ``THEIR_HP_RESIDUAL`` ``[n_species, 4]`` — ``E[max(1, ⌊M / d⌋) / M]`` for ``d`` in `THEIR_HP_RESIDUAL_DENOMS`:
+      the expected FRACTION of its max HP a ``1/d`` end-of-turn residual moves, by Showdown's integer rule
+      (`sim/battle.ts` ``spreadDamage`` ``clampIntRange(damage, 1)``; ``heal``'s truncation).
+
+    A Shedinja row is exact (1, 1, the atom 1, every residual its one HP). A num no species owns is the point mass
+    `THEIR_HP_UNOWNED`. Non-persistent buffers of the op: no parameter, no state_dict key."""
+    k = THEIR_HP_ATOMS
+    unowned = float(THEIR_HP_UNOWNED)
+    inv = [1.0 / unowned] * n_species
+    mean = [unowned] * n_species
+    atoms = [[unowned] * k for _ in range(n_species)]
+    mass = [[1.0] + [0.0] * (k - 1) for _ in range(n_species)]
+    resid = [[max(1, THEIR_HP_UNOWNED // d) / unowned for d in THEIR_HP_RESIDUAL_DENOMS] for _ in range(n_species)]
+    by_support: Dict[Tuple[Tuple[int, ...], Tuple[float, ...]], Tuple[List[float], List[float]]] = {}
+    for sid in gen3_data.species.base_form_ids():
+        snum = cast(SpeciesData, gen3_data.species.get(sid)).num
+        if not (0 <= snum < n_species):
+            continue
+        values, weights = their_max_hp_support(sid)
+        inv[snum] = math.fsum(w / m for m, w in zip(values, weights))
+        mean[snum] = math.fsum(w * m for m, w in zip(values, weights))
+        resid[snum] = [math.fsum(w * max(1, m // d) / m for m, w in zip(values, weights))
+                       for d in THEIR_HP_RESIDUAL_DENOMS]
+        key = (tuple(values), tuple(weights))                 # the ~170 no-record species share a handful of supports
+        if key not in by_support:
+            by_support[key] = _max_hp_atoms(values, weights, k)
+        atoms[snum], mass[snum] = (list(x) for x in by_support[key])
+    return {
+        "THEIR_HP_INV": torch.tensor(inv, dtype=torch.float64).to(torch.float32),
+        "THEIR_HP_MEAN": torch.tensor(mean, dtype=torch.float64).to(torch.float32),
+        "THEIR_HP_ATOMS": torch.tensor(atoms, dtype=torch.float64).to(torch.float32),
+        "THEIR_HP_WEIGHTS": torch.tensor(mass, dtype=torch.float64).to(torch.float32),
+        "THEIR_HP_RESIDUAL": torch.tensor(resid, dtype=torch.float64).to(torch.float32),
+    }
+
+
 def build_opp_spread_prior(n_species: int) -> torch.Tensor:
     """``[n_species, 5, 2]`` usage-weighted ``(mean, std)`` of each species' realized L100/IV31 stat VALUE
     for {atk,def,spa,spd,spe}, derived from the Smogon spread priors (`gen3_data.priors.spreads`). This is
@@ -203,35 +339,22 @@ def build_static_stat_prior(n_species: int) -> torch.Tensor:
     """``[n_species, 6, 2]`` the Smogon usage-weighted ``(mean, std)`` of each species' realised level-100
     stat [hp, atk, def, spa, spd, spe] at IV 31: `--token-encoding static`'s opponent stat prior
     (`static_tokens.StaticTokenEncoder.STAT_PRIOR`). The five non-HP stats are EXACTLY the damage operator's
-    `SPECIES_SPREAD_PRIOR` (`build_opp_spread_prior`, one source); HP is added here from the
-    same `gen3_data.priors.spreads` rows with the same no-data fallback (neutral-0-EV mean, a std spanning
-    up to max investment). Non-persistent (pure data-derived, recomputable); no committed table."""
+    `SPECIES_SPREAD_PRIOR` (`build_opp_spread_prior`, one source); HP is the mean and std of
+    `their_max_hp_support`, the SAME distribution the operator prices their max HP with (gen3_their_max_hp_belief_v1:
+    one belief of their max HP in the forward — before it this column read the top-25 spread cut and a neutral
+    no-record fallback, up to 6 HP from the operator's). The std is floored at 1. Non-persistent (pure data-derived,
+    recomputable); no committed table."""
     out = torch.zeros(n_species, 6, 2, dtype=torch.float32)
     out[:, 1:, :] = build_opp_spread_prior(n_species)
-
-    def hp_stat(base: int, ev: int) -> float:
-        return 1.0 if base == 1 else float(2 * base + 31 + ev // 4 + 110)   # Shedinja's HP is always 1
-
     for sid in gen3_data.species.base_form_ids():
-        sd = cast(SpeciesData, gen3_data.species.get(sid))
-        snum = sd.num
+        snum = cast(SpeciesData, gen3_data.species.get(sid)).num
         if not (0 <= snum < n_species):
             continue
-        base = int(sd.base_stats.get("hp", 0))
-        m1 = m2 = wsum = 0.0
-        for _nature, evs, w in gen3_data.priors.spreads(sid):
-            val = hp_stat(base, int(evs[0]))
-            m1 += w * val
-            m2 += w * val * val
-            wsum += float(w)
-        if wsum <= 0.0:
-            neutral, maxed = hp_stat(base, 0), hp_stat(base, 252)
-            out[snum, 0, 0] = neutral
-            out[snum, 0, 1] = max(1.0, (maxed - neutral) / 2.0)
-        else:
-            mean = m1 / wsum
-            out[snum, 0, 0] = mean
-            out[snum, 0, 1] = max(1.0, max(0.0, m2 / wsum - mean * mean) ** 0.5)
+        values, weights = their_max_hp_support(sid)
+        mean = math.fsum(w * m for m, w in zip(values, weights))
+        var = math.fsum(w * (m - mean) ** 2 for m, w in zip(values, weights))
+        out[snum, 0, 0] = mean
+        out[snum, 0, 1] = max(1.0, var ** 0.5)
     return out
 
 

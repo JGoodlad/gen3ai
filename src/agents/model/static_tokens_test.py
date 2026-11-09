@@ -279,6 +279,13 @@ def test_the_opponent_stat_prior_is_the_operators_and_adds_hp(static_model):
     valid[shedinja] = False
     # the L100 HP floor is 2·base + 31 + 110 >= 2·20 + 141 = 181 for every other gen-3 species
     assert (prior[valid, 0, 0] >= 181).all(), "an HP mean below the level-100 floor"
+    # ONE belief of their max HP in the forward (gen3_their_max_hp_belief_v1): the token's HP mean IS the operator's
+    # E[M], for every species the token has a row for (the top-25 spread cut this column read was up to 6 HP off).
+    has_row = prior[:, 0, 0] > 0
+    assert int(has_row.sum()) > 300
+    assert torch.allclose(prior[has_row, 0, 0], fe.damage_op.THEIR_HP_MEAN[has_row], rtol=0.0, atol=1e-3)
+    starmie = 121
+    assert abs(prior[starmie, 0, 0].item() - 282.19) < 0.05, "Starmie's HP mean is the full spread list's, not 276.26"
 
 
 def test_our_actual_stats_are_the_level_100_formula(static_model):

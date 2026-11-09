@@ -36,11 +36,14 @@ def op():
     return DamageOperator(_make_layout(), outgoing=True)
 
 
-def _neutral_maxhp(species: int) -> float:
-    """The op's estimate of an OPPONENT's max HP (neutral 0 EV, IV 31)."""
-    return 2.0 * gen3_data.species.get(
-        next(s for s in gen3_data.species.base_form_ids() if gen3_data.species.get(s).num == species)
-    ).base_stats["hp"] + 31.0 + 110.0
+def _their_maxhp(species: int) -> float:
+    """The scale the op's damage FRACTIONS against an OPPONENT divide by (gen3_their_max_hp_belief_v1): the harmonic
+    mean ``1 / E[1 / M]`` of the species' Smogon max-HP distribution, so ``fraction × this`` is the damage in HP.
+    (`their_max_hp_test` pins the belief itself; the neutral 0-EV ``2·base + 141`` it replaced is its minimum.)"""
+    from agents.model.belief_tables import their_max_hp_support
+    vals, ws = their_max_hp_support(
+        next(s for s in gen3_data.species.base_form_ids() if gen3_data.species.get(s).num == species))
+    return 1.0 / sum(w / m for m, w in zip(vals, ws))
 
 
 def _ctx(move: str, opp_species: int, opp_t1: str, opp_t2: str = "", *, our_species: int = _BLISSEY,
@@ -58,7 +61,7 @@ def _ctx(move: str, opp_species: int, opp_t1: str, opp_t2: str = "", *, our_spec
 def _out_hp(op, ctx, opp_species: int):
     """(high, low, crit, pko) of OUR move slot 0 into the opp active, high/low/crit in HP — read from
     ALL THREE outgoing blocks, which must agree."""
-    maxhp = _neutral_maxhp(opp_species)
+    maxhp = _their_maxhp(opp_species)
     blk = op._outgoing_block(ctx)[0, 0:4]                                  # [low, high, crit, pko]
     omx = op._outgoing_matrix(ctx)[0, 0:5]                                 # move 0 × opp slot 0
     oax = op._outgoing_attacker_matrix(ctx)[0, 0:_DMG_OAX_PER_MOVE]        # our slot 0 × move 0
@@ -84,9 +87,9 @@ def test_outgoing_dragon_rage_is_40(op):
 
 
 def test_outgoing_fixed_damage_ko_and_immunity(op):
-    maxhp = _neutral_maxhp(_SNORLAX)
+    maxhp = _their_maxhp(_SNORLAX)
     _h, _l, _c, pko = _out_hp(op, _ctx("seismictoss", _SNORLAX, "NORMAL", opp_hp=90.0 / maxhp), _SNORLAX)
-    assert pko == pytest.approx(1.0)                                          # 100 covers the last 90 HP, acc 100
+    assert pko == pytest.approx(1.0)                  # 18.5 % of even a 524-HP Snorlax is 97 HP: 100 covers it
     gh = _out_hp(op, _ctx("seismictoss", _GENGAR, "GHOST", "POISON"), _GENGAR)
     assert gh == (0.0, 0.0, 0.0, 0.0)                                         # Fighting into a Ghost
     ns = _out_hp(op, _ctx("nightshade", _SNORLAX, "NORMAL"), _SNORLAX)
@@ -94,7 +97,7 @@ def test_outgoing_fixed_damage_ko_and_immunity(op):
 
 
 def test_outgoing_super_fang_is_half_current_hp(op):
-    maxhp = _neutral_maxhp(_SNORLAX)
+    maxhp = _their_maxhp(_SNORLAX)
     high, _l, _c, pko = _out_hp(op, _ctx("superfang", _SNORLAX, "NORMAL", opp_hp=0.6), _SNORLAX)
     assert high == pytest.approx(0.5 * 0.6 * maxhp, abs=1e-2)
     assert pko == 0.0
@@ -104,14 +107,14 @@ def test_outgoing_endeavor_is_target_minus_attacker(op):
     our_maxhp = 2.0 * 255 + 31.0 + 110.0                                      # Blissey, IV 31 / EV 0
     # a REACHABLE HP (163 of 651; our HP is an exact integer, gen3_our_hp_exact_v1 — 0.25 x 651 is not one)
     high, _l, _c, pko = _out_hp(op, _ctx("endeavor", _SNORLAX, "NORMAL", our_hp=163.0 / our_maxhp), _SNORLAX)
-    assert high == pytest.approx(_neutral_maxhp(_SNORLAX) - 163.0, abs=1e-2)
+    assert high == pytest.approx(_their_maxhp(_SNORLAX) - 163.0, abs=1e-2)     # (their HP − ours) on their scale
     assert pko == 0.0
     hi_full, *_ = _out_hp(op, _ctx("endeavor", _SNORLAX, "NORMAL", our_hp=1.0), _SNORLAX)
     assert hi_full == 0.0                                                     # 651 HP Blissey ≥ Snorlax: it fails
 
 
 def test_outgoing_ohko_takes_the_current_bar_at_its_accuracy(op):
-    maxhp = _neutral_maxhp(_SNORLAX)
+    maxhp = _their_maxhp(_SNORLAX)
     high, _l, _c, pko = _out_hp(op, _ctx("fissure", _SNORLAX, "NORMAL", opp_hp=0.5), _SNORLAX)
     assert high == pytest.approx(0.5 * maxhp, abs=1e-2)
     assert pko == pytest.approx(0.30)                                         # gen-3 OHKO accuracy 30

@@ -36,7 +36,7 @@ from agents.model.arch_constants import (  # noqa: F401  (re-export)
 # `damage_op_layout.py` (split 2026-08-16); re-imported EXPLICITLY because this module is
 # the historical import surface and the operator uses nearly all of it.
 from agents.model.damage_op_layout import (  # noqa: F401
-    OpTensors, _BOOSTS_DIM, _BS_ATK, _BS_DEF, _BS_HP, _BS_SPA, _BS_SPD, _BS_SPE, _COND_BRN_IDX,
+    OpTensors, _BOOSTS_DIM, _BS_ATK, _BS_DEF, _BS_SPA, _BS_SPD, _BS_SPE, _COND_BRN_IDX,
     _COND_PAR_IDX, _COND_SLP_IDX, _DMG_CB, _DMG_CB_PER_MON, _DMG_CHANNEL_FEATS, _DMG_CHIP_CAP,
     _DMG_CRIT_CAP, _DMG_CRIT_P, _DMG_EFFECT, _DMG_IDX_OUTSPEED, _DMG_IDX_PHYS_ACC,
     _DMG_IDX_PHYS_CRIT, _DMG_IDX_PHYS_HIGH, _DMG_IDX_PHYS_LOW, _DMG_IDX_PHYS_PKO,
@@ -61,7 +61,8 @@ from agents.model.index_max import max_by_index
 from agents.model.op_reduction import believed_reduce, noisy_or
 from agents.model.damage_kinds import (beatup_base_def, beatup_party_opp, beatup_swap, gather_beatup,
                                        gather_bp, gather_nonformula, nonformula_rolls, our_healed_hp, our_hp_points,
-                                       our_stats, override_rolls)
+                                       our_stats, override_rolls, their_hp_slots, their_max_hp,
+                                       their_residual_frac_slots)
 
 if TYPE_CHECKING:  # no runtime import — `ctx` is only ever passed in, never constructed here
     from agents.model.extractor_ctx import ExtractorContext
@@ -76,7 +77,8 @@ def toxic_next_stage(counter_cell: torch.Tensor) -> torch.Tensor:
     ``clampIntRange(maxhp / 16, 1) · stage`` — so with ``n`` ticks taken the next tick runs at stage ``min(n + 1, 15)``:
     a fresh Toxic 1, the 9th tick 9, the 15th-and-later 15 (NOT 16). The cell is the engine's stage over its true cap,
     so ``n`` is read exactly (``f32(n / 15) · 15`` is ``n`` bit-exactly for every n <= 15). The end-of-turn rule multiplies it
-    by `damage_kinds.residual_points(maxhp, 16, …)` (gen3_residual_exact_v1); this is the one decode of the cell.
+    by the mon's 1/16 amount (`damage_kinds.residual_points` of OUR exact max HP, gen3_residual_exact_v1;
+    `their_residual_frac` over THEIR max-HP belief); this is the one decode of the cell.
     (It lives here, not in `damage_op_layout`: the forward's torch ops may only run from `selection_sites.FORWARD_MODULES`.)"""
     cap = float(TOXIC_STAGE_MAX)
     return torch.clamp(counter_cell * cap + 1.0, max=cap)
@@ -339,7 +341,7 @@ class DamageOperatorPairwise:
         off_const = 31.0 + 252.0 / 4.0 + 5.0
         atk_j = (2.0 * a_base[..., _BS_ATK] + off_const) * 1.1                       # de-timid
         spa_j = (2.0 * a_base[..., _BS_SPA] + off_const) * 1.1
-        atk_cur_j = hp_j * (2.0 * a_base[..., _BS_HP] + 31.0 + 110.0)                # neutral max HP
+        atk_cur_j = their_hp_slots(self, ctx).points(hp_j)                           # [B,6] × E[max HP]
         att_gate: torch.Tensor = ((1.0 - ctx.opp_believed_mask.float())
                                   * (hp_j > 0).float())                              # [B,6]
         if _x5 is not None:
@@ -401,8 +403,10 @@ class DamageOperatorPairwise:
             click it). Believed/neutral opp speed, named indices, current our-stage folded.
           * `d_in_phys_high` — BURN: Δ of mon j's worst believed PHYSICAL hit on our active
             with its Atk halved (≤ 0 — WoW as damage control; special candidates untouched).
-          * `d_sched` — the residual tick the landing adds: brn/psn −1/8 flat, TOXIC its TRUE
-            first tick −1/16 (the ramp thereafter is the G ledger's live fact via the public
+          * `d_sched` — the residual tick the landing adds, as the EXPECTED fraction of mon j's max HP
+            under Showdown's integer rule (`damage_kinds.their_residual_frac_slots`,
+            gen3_their_max_hp_belief_v1): brn/psn −E[⌊M/8⌋/M], TOXIC its TRUE first tick −E[⌊M/16⌋/M]
+            (a Shedinja: its one HP, −1; the ramp thereafter is the G ledger's live fact via the public
             toxic counter — owner-prioritized 2026-08-06; par/slp read 0).
           * `d_in_all_slp` / `e_slp_free_turns` — SLEEP's consequence: their whole believed
             threat suspended (−worst hit, any category) for E[free turns] from the VERIFIED
@@ -471,11 +475,14 @@ class DamageOperatorPairwise:
 
         d_in_phys = ((_worst(0.5, phys_mask) - _worst(1.0, phys_mask))[:, None, :]
                      * is_brn[:, :, None])                                           # [B,4,6] ≤0
-        # --- the residual-tick consequence: brn/psn flat −1/8; TOXIC lands at its TRUE first
-        # tick −1/16 (the ramp thereafter is the G ledger's live fact once the counter exists —
-        # owner-prioritized 2026-08-06, was a flat −1/8 that over-priced turn 1 and hid the ramp) ---
-        d_sched = (-(1.0 / 8.0) * (is_brn + is_psn) - (1.0 / 16.0) * is_tox)
-        d_sched = d_sched[:, :, None].expand(-1, -1, TEAM_SIZE)                      # [B,4,6]
+        # --- the residual-tick consequence: brn/psn −⌊M/8⌋/M; TOXIC lands at its TRUE first
+        # tick −⌊M/16⌋/M, in expectation over mon j's max-HP belief (the ramp thereafter is the
+        # G ledger's live fact once the counter exists — owner-prioritized 2026-08-06, was a flat
+        # −1/8 that over-priced turn 1 and hid the ramp) ---
+        _sp = self.unrevealed_species_probs(ctx, species_probs)
+        tick8 = their_residual_frac_slots(self, ctx, 8.0, _sp)[:, None, :]           # [B,1,6] of mon j's max HP
+        tick16 = their_residual_frac_slots(self, ctx, 16.0, _sp)[:, None, :]
+        d_sched = -((is_brn + is_psn)[:, :, None] * tick8 + is_tox[:, :, None] * tick16)   # [B,4,6]
         # --- SLEEP (owner-prioritized): the consequence of landing it — their whole believed
         # threat SUSPENDED (d_in_all = −worst hit of ANY category) for an EXPECTED number of
         # free turns from the VERIFIED hazard tables, Early-Bird-marginalised per mon (revealed
@@ -586,7 +593,7 @@ class DamageOperatorPairwise:
         phys_k = self.MOVE_PHYS[nums]
         acc_k = self.MOVE_ACCURACY[nums]
         nf_k = gather_nonformula(self, nums)                                         # 3×[B,K]
-        atk_cur = opp_hp_frac * (2.0 * a_base[:, 0] + 31.0 + 110.0)                  # [B] neutral max HP
+        atk_cur = their_max_hp(self, ctx.species_ids[ar, opp_act]).points(opp_hp_frac)   # [B] × E[max HP]
         weather_k = self._field_bp_mult(ctx, mty_k)                                  # [B,K] × sports
         reflect = ctx.screen_feature[:, 0:1]                                         # [B,1] OUR side
         light_screen = ctx.screen_feature[:, 2:3]
@@ -964,7 +971,7 @@ class DamageOperatorPairwise:
                                             acc_k[:, None, :, :], eps,
                                             crit_p=self._crit_p_at(topk_idx, 1))   # each [B,6i,6j,K]
         # gen3_nonformula_damage_v1: the declared non-formula damage per (defender i, attacker j, cand c).
-        atk_cur_j = hp_j * (2.0 * a_base[..., 0] + 31.0 + 110.0)                       # [B,6j] neutral max HP
+        atk_cur_j = their_hp_slots(self, ctx).points(hp_j)                             # [B,6j] × E[max HP]
         nf = nonformula_rolls(tuple(t[:, None] for t in nf_k), cur_hp[:, :, None, None],
                               maxhp[:, :, None, None], atk_cur_j[:, None, :, None],
                               eff, acc_k[:, None, :, :], eps)

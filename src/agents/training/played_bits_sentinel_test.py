@@ -46,6 +46,12 @@ RE-RECORDED log (newest last):
   tokens' stat input, the op's our-stat cells, the end-of-turn rule). PLAYED_DIGEST only (was 41a35939…),
   PACKED_DIGEST unchanged. Verified: the parent ``7a0153b46`` passed this file in its routine gate; the K9 learner
   golden moved for the same cause and each of the two fixes reverted alone still moves it.
+  2026-11-09 — ``gen3_their_max_hp_belief_v1`` (config v168): the op prices THEIR mons at the species' Smogon max-HP
+  belief instead of ``2·base + 141`` (model inputs: the op's damage fractions and P(KO) against their mons, their
+  end-of-turn amounts, and the static token's opponent HP stat, now that belief's mean and std). PLAYED_DIGEST only
+  (was c6aeda36…), PACKED_DIGEST unchanged. Verified: main ``a2dbc9616`` (the same tree without the change)
+  reproduces c6aeda36… and the K9 learner golden's v167 record; with the belief forced to the old point the
+  operator's census on P*'s 16,785 rows falls from 1,409 top-action changes to 52.
 """
 from __future__ import annotations
 
@@ -58,7 +64,7 @@ import pytest
 pytestmark = [pytest.mark.sim, pytest.mark.integration]
 
 PACKED_DIGEST = "94d96d5746b1a8e5402d940ba649787dbb5097e57f750ccc9abd2e970b6cf5f4"
-PLAYED_DIGEST = "c6aeda369bb74ecca6258dd3de70853fb834275c937cac2954b1df69746f16c7"
+PLAYED_DIGEST = "aa3c91561073deb900e9e9f55a8bde57e9900a2abf1b4103f8f3050b1b74df81"
 
 N_GAMES = 2
 TURN_LIMIT = 4

@@ -292,6 +292,19 @@ order (Leech Seed's cap after Leftovers; the net wastes a heal at full HP). `_mi
 through; `OBS_SEMANTICS_VERSION` raised BY HAND to 167 (`warn`); `damage_tables.OP_SEMANTICS` → `gen3_nature_floor_v1`.
 No `ARCH_SIGNATURE` or floor change.
 
+**v168 (`gen3_their_max_hp_belief_v1`, 2026-11-09)** — an op-INPUT change with NO field and no weight shape, versioned
+as v165: the op's max HP for an OPPONENT's mon is the species' Smogon max-HP distribution
+(`belief_tables.build_their_max_hp`: five NON-PERSISTENT buffers of the op, no parameter and no state_dict key),
+read through `damage_kinds.their_max_hp`, where it was the 0-HP-EV point `2·base + 141` (`op_contracts.md` "THEIR
+max HP has ONE spelling"). `_migrate_config` stamps every past config through; `OBS_SEMANTICS_VERSION` raised BY
+HAND to 168 (`warn`: the obs golden cannot see an op-internal input); `damage_tables.OP_SEMANTICS` →
+`gen3_their_max_hp_belief_v1`. No `ARCH_SIGNATURE` or floor change: every v144+ checkpoint loads unchanged and
+evaluates the new op, but its weights were trained on the over-stated fractions, so a checkpoint from before v168
+is a DIFFERENT policy under it: on P\*'s 16,785-row population 1,411 top actions change (8.4 %; 797 with an old
+top-two gap ≥ 0.05), against 54 at v167 (the census is in the CHANGELOG entry). The version precedent holds, its
+premise of a near-neutral stamp does not: read an older checkpoint at its own strength from a pin before v168; new
+training starts from v168.
+
 **The exact P(KO) (then `ko_ramp = 'exact'`; flagless since v156) is computed in CLOSED FORM (`gen3_ko_exact_closed_v1`,
 2026-10-10), with NO config, obs-semantics or signature bump.** The value `exact_closed` that carried the closed form beside the 16-roll sum was legal for one
 commit (`6e0a1a7a`, no bump: a new VALUE of an existing field, nothing to migrate, no parameter); the owner's "remove

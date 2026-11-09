@@ -12,10 +12,11 @@ THE COMPONENTS (`EOT_FACTS`), each VERIFIED in `deps/pokemon-showdown` at the pi
 gen4 over gen5 … over the base; `measurements/static_recovery_2026-10-09/README.md` §2 carries every citation). Each
 amount is a fraction ``1/d`` of the mon's max HP that Showdown hands ``this.damage`` / ``this.heal``, which make it the
 INTEGER ``max(1, ⌊maxhp / d⌋)`` (`sim/battle.ts` ``spreadDamage`` ``clampIntRange(damage, 1)``; ``heal`` ``if (damage
-&& damage <= 1) damage = 1; trunc``). gen3_residual_exact_v1: for OUR mons (exact max HP) and a Shedinja (max HP 1 on
-either side) the rule computes that integer (`damage_kinds.residual_points`); for THEIR other mons it keeps the nominal
-``1/d`` of the op's neutral max-HP ESTIMATE (2·base + 31 + 110) — intended: their max HP is not observed (backlog E13),
-and the floor of an estimate is not the game's floor. Below, ``⌊·/d⌋`` names that amount.
+&& damage <= 1) damage = 1; trunc``). gen3_residual_exact_v1: for OUR mons (exact max HP) the rule computes that
+integer (`damage_kinds.residual_points`). THEIR max HP ``M`` is not observed: it is the species' Smogon max-HP BELIEF
+(gen3_their_max_hp_belief_v1, `damage_kinds.their_max_hp`), and their amount is the EXPECTATION of the same integer
+rule over it, ``E[max(1, ⌊M / d⌋) / M]`` of their max HP (`damage_kinds.their_residual_points`) — a Shedinja's (max HP
+1, species-determined, on either side) its one HP, exactly. Below, ``⌊·/d⌋`` names that amount.
 
 * ``leftovers`` +⌊·/16⌋ × P(holds Leftovers): the item is EXACT where it is known (our team; a revealed opponent item,
   0 once consumed / removed), the species' format-filtered Smogon prior where it is not (an X5 hidden slot: its
@@ -41,8 +42,10 @@ and the floor of an estimate is not the game's floor. Below, ``⌊·/d⌋`` name
 * ``leech_gain`` for every mon of the side OPPOSITE a seeded active (the heal goes to whoever is in the seeder's slot):
   + that drain / this mon's max HP, × (1 − 2·P(the seeded mon has Liquid Ooze)) (gen 3: the seeder TAKES that amount
   instead: `data/mods/gen4/abilities.ts` liquidooze; no Big Root in gen 3). The drain is in HP points for both sides
-  (ours exact, theirs the percent × the estimate; round 1's precedent: Leech Seed floors their estimate too). The one
-  cross-mon quantity; it assumes the seeded active stays in.
+  (ours exact; theirs on the scale of their max-HP belief's harmonic mean, so THEIR fractions are the expected ones
+  and what OUR mon gains from their drain is the harmonic-scale amount, not E[⌊M / 8⌋] — at most 0.62 HP low
+  (Diglett; over 0.3 HP for 25 of the 216 species with usage)). The one cross-mon quantity; it assumes the seeded
+  active stays in.
 * ``wish`` +⌊·/2⌋ for every mon of a side whose Wish heals at the next end-of-turn residual (gen 3 heals HALF THE
   RECIPIENT'S max HP: `data/mods/gen4/moves.ts` wish ``onEnd`` ``this.heal(target.baseMaxhp / 2)``, order 7; base gen
   5+ stores the wisher's). The observation's board flag is exactly that event at 0.5 (`trackers/history.rs::WishFold`:
@@ -82,7 +85,8 @@ import torch
 from agents.observation.constants import (BOOSTS_DIM, POKEMON_CONDITION_OFFSET, POKEMON_COUNTER_OFFSET,
                                           POKEMON_ITEMS_OFFSET, POKEMON_SLEEP_BELIEF_OFFSET, POKEMON_SPREAD_DIM,
                                           POKEMON_SPREAD_OFFSET, TEAM_SIZE, WEATHER_ONEHOT_DIM)
-from agents.model.damage_kinds import our_hp_points, our_max_hp, our_spread, residual_points
+from agents.model.damage_kinds import (our_hp_points, our_max_hp, our_spread, residual_points, their_max_hp,
+                                       their_residual_points)
 from agents.model.damage_op_pairwise import toxic_next_stage
 from agents.model.extractor_ctx import ability_known, held_item_ids, revealed_ability1_ids
 from agents.observation.gen3_effects import VOLATILE_SLOTS
@@ -123,7 +127,7 @@ _TIMED_WEATHER_LIVE = (0.0, 0.0, 1.0, 1.0, 1.0, 1.0)
 _VOL = {name: BOOSTS_DIM + VOLATILE_SLOTS.index(name) for name in ("leechseed", "ingrain", "curse", "nightmare")}
 
 
-def leech_seed_drained(maxhp: torch.Tensor, cur_hp: torch.Tensor) -> torch.Tensor:
+def leech_seed_drained(eighth: torch.Tensor, cur_hp: torch.Tensor) -> torch.Tensor:
     """The HP Leech Seed takes from the seeded mon at the residual, in HP points — and so what the seeder's slot
     heals (gen3_leech_seed_exact_v1). `data/moves.ts` leechseed ``onResidual``: ``this.damage(pokemon.baseMaxhp / 8,
     pokemon, target)`` → `sim/battle.ts` ``spreadDamage``: ``clampIntRange(damage, 1)`` = ``max(1, ⌊maxhp / 8⌋)``
@@ -131,11 +135,11 @@ def leech_seed_drained(maxhp: torch.Tensor, cur_hp: torch.Tensor) -> torch.Tenso
     ``if (damage) this.heal(damage, target, pokemon)`` heals that amount (`sim/battle.ts` ``heal`` truncates an
     integer to itself; `sim/pokemon.ts` ``heal`` caps it at the recipient's missing HP — the rule's ``net`` clamp).
     Big Root does not exist in gen 3 (`data/items.ts` bigroot ``gen: 4``). A max HP below 8 (Shedinja's 1) still
-    loses 1. ``maxhp`` is an integer for both sides (ours exact, theirs the integer neutral estimate), so the floor
-    of ``maxhp / 8`` (a division by a power of two) is exact; the amount is `damage_kinds.residual_points` for both
-    sides (round 1's precedent: the drain floors their estimate too). ``cur_hp`` is the HP LEFT when the drain runs
-    (the forward's HP chain: after Wish, the weather, Ingrain, Rain Dish and Leftovers)."""
-    return torch.minimum(cur_hp, residual_points(maxhp, 8.0, torch.ones_like(maxhp, dtype=torch.bool)))
+    loses 1. ``eighth`` is the mon's 1/8 residual amount in HP points — `damage_kinds.residual_points` of OUR exact
+    max HP, `damage_kinds.their_residual_points` (the rule in expectation over their max-HP belief) for THEIR mon.
+    ``cur_hp`` is the HP LEFT when the drain runs (the forward's HP chain: after Wish, the weather, Ingrain, Rain
+    Dish and Leftovers)."""
+    return torch.minimum(cur_hp, eighth)
 
 
 def _residual_step(h: torch.Tensor, delta: torch.Tensor, maxhp: torch.Tensor) -> torch.Tensor:
@@ -235,11 +239,14 @@ class EotResidualRule(torch.nn.Module):
         ab = known * self.ABILITY_EOT[revealed_ability1_ids(ctx)] + (1.0 - known) * self.SPECIES_EOT_PRIOR[sp]
 
         # --- each amount in HP POINTS (gen3_residual_exact_v1): Showdown's integer max(1, ⌊maxhp / d⌋) for OUR mons
-        #     and a Shedinja (`damage_kinds.residual_points`), the nominal maxhp / d for theirs (an estimated max HP) ---
-        maxhp = self._max_hp(ctx, op)                                                       # [B,12]
-        their_shedinja = self.SHEDINJA_HP_ONE[ctx.species_ids[:, TEAM_SIZE:]] > 0.5          # [B,6] a table bit
-        exact = torch.cat([torch.ones_like(their_shedinja), their_shedinja], dim=1)        # [B,12] bool
-        p16, p8, p4, p2 = (residual_points(maxhp, d, exact) for d in (16.0, 8.0, 4.0, 2.0))
+        #     (`damage_kinds.residual_points`), its expectation over THEIR max-HP belief for theirs
+        #     (`damage_kinds.their_residual_points`, gen3_their_max_hp_belief_v1; a Shedinja's 1 either way) ---
+        their_ids = ctx.species_ids[:, TEAM_SIZE:]                                          # [B,6]
+        their = their_max_hp(op, their_ids)
+        maxhp = torch.cat([self._our_max_hp(ctx, op), their.maxhp.to(dt)], dim=1)           # [B,12]
+        p16, p8, p4, p2 = (torch.cat([residual_points(maxhp[:, :TEAM_SIZE], d),
+                                      their_residual_points(op, their_ids, d).to(dt)], dim=1)
+                           for d in (16.0, 8.0, 4.0, 2.0))
 
         # --- Leftovers: the item where known (0 once consumed / removed), the species prior where not ---
         item_known = pp[..., POKEMON_ITEMS_OFFSET + 1]
@@ -296,14 +303,13 @@ class EotResidualRule(torch.nn.Module):
 
         # --- THE HP CHAIN, in Showdown's residual order (module docstring): Wish, the weather, then this mon's
         #     Ingrain, Rain Dish, Leftovers; Leech Seed drains the HP LEFT after them; then the status, Nightmare,
-        #     Curse. Ours in exact HP points, theirs percent × the neutral max-HP estimate ---
-        opp_maxhp = maxhp[:, TEAM_SIZE:]
+        #     Curse. Ours in exact HP points, theirs the reported fraction × their max-HP belief's harmonic mean ---
         cur_hp = torch.cat([our_hp_points(hp[:, :TEAM_SIZE], maxhp[:, :TEAM_SIZE]),
-                            hp[:, TEAM_SIZE:] * opp_maxhp], dim=1)                           # [B,12] HP points
+                            their.frac_points(hp[:, TEAM_SIZE:]).to(dt)], dim=1)             # [B,12] HP points
         h = cur_hp
         for before_leech in (wish, weather, ingrain, rain_dish, leftovers):
             h = _residual_step(h, before_leech, maxhp)
-        drained = leech_seed_drained(maxhp, h) * seeded                                     # [B,12] HP points
+        drained = leech_seed_drained(p8, h) * seeded                                        # [B,12] HP points
         ooze = 1.0 - 2.0 * ab[..., _A_LIQUID_OOZE]
         give = (drained * ooze)                                                             # [B,12]
         give_from_opp = give[:, TEAM_SIZE:].sum(1)                                          # [B] (one seeded active)
@@ -321,17 +327,17 @@ class EotResidualRule(torch.nn.Module):
         out = torch.stack(parts + [net], dim=-1)                                            # [B,12,EOT_DIM]
         return out * gate[..., None]
 
-    def _max_hp(self, ctx: 'ExtractorContext', op: Any) -> torch.Tensor:
-        """[B,12] max HP: ours EXACT from the observation's spread, theirs the op's neutral estimate
-        (2·base + 31 + 110); Shedinja (base HP 1) is 1 on both sides. The op's own convention."""
-        base_hp = op.BASE_STATS[ctx.species_ids][..., 0].to(ctx.pokemon_part.dtype)          # [B,12]
+    def _our_max_hp(self, ctx: 'ExtractorContext', op: Any) -> torch.Tensor:
+        """[B,6] OUR max HP, EXACT from the observation's spread (our Shedinja, base HP 1, is 1). THEIR max HP is
+        never computed here: it is `damage_kinds.their_max_hp`'s belief (the forward divides their amounts by its
+        harmonic mean, so each fraction is the expected one; their Shedinja is exactly 1 there)."""
+        our_ids = ctx.species_ids[:, :TEAM_SIZE]
+        base_hp = op.BASE_STATS[our_ids][..., 0].to(ctx.pokemon_part.dtype)                  # [B,6]
         spread = ctx.pokemon_part[:, :TEAM_SIZE, POKEMON_SPREAD_OFFSET:POKEMON_SPREAD_OFFSET + POKEMON_SPREAD_DIM]
         iv, ev_points, _nat = our_spread(spread)
-        ours = our_max_hp(base_hp[:, :TEAM_SIZE], iv[..., 0], ev_points[..., 0])          # the one spelling
-        theirs = 2.0 * base_hp[:, TEAM_SIZE:] + 31.0 + 110.0
-        formula = torch.cat([ours, theirs], dim=1)
-        shedinja = self.SHEDINJA_HP_ONE[ctx.species_ids]
-        out: torch.Tensor = shedinja + (1.0 - shedinja) * formula
+        ours = our_max_hp(base_hp, iv[..., 0], ev_points[..., 0])                         # the one spelling
+        shedinja = self.SHEDINJA_HP_ONE[our_ids]
+        out: torch.Tensor = shedinja + (1.0 - shedinja) * ours
         return out
 
 

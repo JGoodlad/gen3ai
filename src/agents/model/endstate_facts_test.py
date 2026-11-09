@@ -190,10 +190,15 @@ def test_every_op_ko_site_reads_the_one_rule(rows: torch.Tensor) -> None:
     lo, hi = ours_hp_bounds(cur, 1.0)
     want = acc * ko_given_hit(dmg_ns * screen, 2.0 * dmg_ns, lo, hi, crit)
     assert torch.allclose(ko, want, atol=1e-6)
+    # THEIR defender (gen3_their_max_hp_belief_v1): a POINT-MASS max-HP belief is the reported percent bin of that
+    # one max HP — `_rolls_their` reduces to the same closed form
+    from agents.model.damage_kinds import TheirHp
     frac = cur / maxhp
-    _h, _l, _c, ko_o = op._rolls(dmg_ns, screen, maxhp, cur, acc, crit_p=crit, opp_hp_frac=frac)
+    point = TheirHp(1.0 / maxhp, maxhp, maxhp[..., None], torch.ones_like(maxhp)[..., None])
+    hi_o, _l, _c, ko_o = op._rolls_their(dmg_ns, screen, point, frac, acc, crit_p=crit)
     lo, hi = opp_hp_bounds(cur, frac, maxhp, 1.0)
     assert torch.allclose(ko_o, acc * ko_given_hit(dmg_ns * screen, 2.0 * dmg_ns, lo, hi, crit), atol=1e-6)
+    assert torch.allclose(hi_o, _h, atol=1e-5)          # and the same damage fraction as `_rolls`
     # the real forward: the stashed incoming KO column (acc · P(KO | hit)) is a live probability on real rows
     fe = _policy().features_extractor
     with torch.no_grad():

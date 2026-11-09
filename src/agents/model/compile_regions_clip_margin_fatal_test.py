@@ -4,9 +4,9 @@ so every clip decision is exact; the canary's B = 2,048 tiles the same rows and 
 
 THE ROWS ARE THE ONES THE FATAL JUDGED: `testdata/k9_golden_buffer_rb_toy_ent_s4001_pin.npz` is the K9 golden buffer
 at the run's pin `3899277a` (byte-identical through `ba8f59c1`, where the diagnosis ran). The committed buffer was
-rebuilt since (legacy deletion U3, `33a1c3b9`, run seed 22), and on THOSE rows these weights hold no boundary row as
-close (2 of 32 dithers switch a row, none reads above K) — the defect is a property of a (weights, rows) STATE, so the
-test pins both.
+rebuilt since (legacy deletion U3, `33a1c3b9`, run seed 22; again at config v168), and on U3's rows these weights
+hold no boundary row as close (2 of 32 dithers switch a row, none reads above K) — the defect is a property of a
+(weights, rows) STATE, so the test pins both.
 
 * THE NULL (the diagnostic's read, through PRODUCTION's own relocation): 32 seeded weight dithers (sigma 2^-9
   relative, `main.ops.diag_bf16_canary.dithered`), each read against its OWN fp32 reference. On the golden's raw rows

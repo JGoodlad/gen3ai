@@ -34,7 +34,7 @@ from agents.model.arch_constants import (  # noqa: F401  (re-export)
 # `damage_op_layout.py` (split 2026-08-16); re-imported EXPLICITLY because this module is
 # the historical import surface and the operator uses nearly all of it.
 from agents.model.damage_op_layout import (  # noqa: F401
-    OpTensors, _BOOSTS_DIM, _BS_ATK, _BS_DEF, _BS_HP, _BS_SPA, _BS_SPD, _BS_SPE, _COND_BRN_IDX,
+    OpTensors, _BOOSTS_DIM, _BS_ATK, _BS_DEF, _BS_SPA, _BS_SPD, _BS_SPE, _COND_BRN_IDX,
     _COND_PAR_IDX, _COND_SLP_IDX, _DMG_CB, _DMG_CB_PER_MON, _DMG_CHANNEL_FEATS, _DMG_CHIP_CAP,
     _DMG_CRIT_CAP, _DMG_CRIT_P, _DMG_EFFECT, _DMG_IDX_OUTSPEED, _DMG_IDX_PHYS_ACC,
     _DMG_IDX_PHYS_CRIT, _DMG_IDX_PHYS_HIGH, _DMG_IDX_PHYS_LOW, _DMG_IDX_PHYS_PKO,
@@ -63,7 +63,8 @@ from agents.gen3_data import format_spec
 
 from agents.model.damage_kinds import (beatup_base_def, beatup_opp_target_def, beatup_party_ours,
                                        beatup_party_opp, beatup_swap, gather_beatup, gather_bp,
-                                       gather_nonformula, is_priced, nonformula_rolls, our_hp_points, our_stats,
+                                       gather_nonformula, is_priced, nonformula_rolls,
+                                       nonformula_rolls_their, our_hp_points, our_stats, their_hp_slots, their_max_hp,
                                        override_rolls, typeless_move_type)
 
 if TYPE_CHECKING:  # no runtime import — `ctx` is only ever passed in, never constructed here
@@ -194,8 +195,9 @@ class DamageOperatorBlocks:
         head can compare move A vs B directly — the equal-effectiveness tie-break (Earthquake vs Meteor
         Mash into a Rock: same 2× multiplier, different resolved damage). Our moves are KNOWN (no belief —
         a hard one-hot), LEGALITY-MASKED via the action mask (Choice-lock / Disable / Taunt / no-PP); the
-        opp DEFENDER's bulk is hidden → a NEUTRAL 0-EV estimate (not max-bulk, which would under-price our
-        KOs); opp ability immunity is revealed-or-none; OPP-side screens apply. Output `[B, _DMG_OUTGOING]`:
+        opp DEFENDER's Def / SpD is hidden → a NEUTRAL 0-EV estimate (not max-bulk, which would under-price our
+        KOs), its max HP the species' Smogon belief (`damage_kinds.their_max_hp`); opp ability immunity is
+        revealed-or-none; OPP-side screens apply. Output `[B, _DMG_OUTGOING]`:
         per move `[low, high, crit, pko]` + one `p_outspeed`. Reuses the shared `_rolls` formula. Leak-safe
         (public obs only); gated to 0 when there is no opp active OR our active is fainted/absent. Our moves
         are certain → no move-belief gradient (correct: we don't learn our own moves), but differentiable
@@ -251,18 +253,18 @@ class DamageOperatorBlocks:
 
         # --- opp active defender (revealed species/types; ability revealed-exact else its Smogon prior) ---
         # Bulk: the SpreadBelief's learned def/spd if provided (gen3_unified_spread_belief_v1), else the
-        # legacy NEUTRAL 0-EV estimate (not max-bulk, which would under-price our KOs). maxhp stays the
-        # neutral estimate either way (HP EVs vary little + the obs HP fraction carries relative HP).
+        # legacy NEUTRAL 0-EV estimate (not max-bulk, which would under-price our KOs). Their max HP is the
+        # species' Smogon max-HP BELIEF (gen3_their_max_hp_belief_v1; the SpreadBelief predicts no HP).
         d_base = self.BASE_STATS[ctx.species_ids[ar, opp_act]]     # [B,6]
         bs = spread_belief[ar, ctx.opp_active_local] if spread_belief is not None else None  # [B,5] or None
         opp_def = bs[:, _SB_DEF] if bs is not None else (2.0 * d_base[:, 2] + 31.0 + 5.0)    # [B]
         opp_spd = bs[:, _SB_SPD] if bs is not None else (2.0 * d_base[:, 4] + 31.0 + 5.0)
-        opp_maxhp = 2.0 * d_base[:, 0] + 31.0 + 110.0
+        their = their_max_hp(self, ctx.species_ids[ar, opp_act]).lift(slice(None), None)     # [B,1] (atoms [B,1,K])
+        opp_hp_frac = ctx.hp_and_active[ar, opp_act, 0][:, None]                             # [B,1] reported HP
         # gen3_unified_op_physics_v1: OPP active's DEFENSIVE boosts (it's the defender here).
         p_b_atk, p_b_def, p_b_spa, p_b_spd, p_b_spe = self._boost_stages(ctx.opp_ctx_raw)
         opp_def = opp_def * self._boost_mult(p_b_def)
         opp_spd = opp_spd * self._boost_mult(p_b_spd)
-        opp_cur_hp = ctx.hp_and_active[ar, opp_act, 0] * opp_maxhp  # [B] obs HP frac × est. max HP
         t1d = ctx.type1_ids[ar, opp_act]                          # [B]
         t2d = ctx.type2_ids[ar, opp_act]
         # gen3_op_ability_known_v1: their ability — revealed exact, else the species' Smogon prior (never the
@@ -288,14 +290,13 @@ class DamageOperatorBlocks:
         opp_reflect = ctx.screen_feature[:, 1:2]                                      # OPP-side screens
         opp_ls = ctx.screen_feature[:, 3:4]
         screen = 1.0 - 0.5 * (opp_reflect * phys + opp_ls * (1.0 - phys))             # [B,4]
-        high, low, crit, ko = self._rolls(dmg_ns, screen, opp_maxhp[:, None], opp_cur_hp[:, None], acc, eps,
-                                          crit_p=self._crit_p(move_ids),
-                                          opp_hp_frac=ctx.hp_and_active[ar, opp_act, 0][:, None])
+        high, low, crit, ko = self._rolls_their(dmg_ns, screen, their, opp_hp_frac, acc,
+                                                crit_p=self._crit_p(move_ids))
         # gen3_nonformula_damage_v1: OUR non-formula moves (Seismic Toss / Night Shade 100, Super Fang ½,
         # Endeavor, OHKO …) replace the rolls — immunity-gated; × usable gates an illegal one (a formula
         # cell is already 0 there, so the multiply is exact for it).
-        nf = nonformula_rolls(gather_nonformula(self, move_ids), opp_cur_hp[:, None], opp_maxhp[:, None],
-                              our_cur_hp[:, None], eff, acc, eps)
+        nf = nonformula_rolls_their(gather_nonformula(self, move_ids), their, opp_hp_frac,
+                                    our_cur_hp[:, None], eff, acc, eps)
         high, low, crit, ko = (r * usable for r in override_rolls((high, low, crit, ko), nf))
         # gen3_speed_physics_v1: our active's EXACT speed vs their active's belief
         p_outspeed = self._p_first_vs_opp_active(
@@ -356,8 +357,9 @@ class DamageOperatorBlocks:
         defender (gen3_unrevealed_outgoing_prior_v1 — the Species-Clause-filtered usage prior, or the
         `species_probs` override): E[mult]/E[def/spd]/E[maxhp] marginals, forced-alive, P(KO) NULLED, the
         `revealed` bit still 0. Reuses the `_outgoing_block` physics
-        (attacker = our active with CB/boost/burn; OPP-side screens; per-defender bulk = SpreadBelief or the
-        neutral 0-EV estimate; only the opp ACTIVE carries boosts — bench is reset), broadcast over the 6
+        (attacker = our active with CB/boost/burn; OPP-side screens; per-defender Def / SpD = SpreadBelief or the
+        neutral 0-EV estimate, max HP = the species' Smogon belief; only the opp ACTIVE carries boosts — bench is
+        reset), broadcast over the 6
         defenders. Output `[B, _DMG_OMX]` (grouped by move, action-aligned). Gated to 0 with no opp / fainted
         or absent our active. Leak-safe (revealed species + the fixed usage prior + our known moves only)."""
         B, device, eps = ctx.batch_size, ctx.device, 1e-6
@@ -404,43 +406,44 @@ class DamageOperatorBlocks:
         at1 = ctx.type1_ids[ar, our_act]; at2 = ctx.type2_ids[ar, our_act]              # [B] (STAB)
         A = phys * our_atk[:, None] + (1.0 - phys) * our_spa[:, None]                   # [B,4]
 
-        # --- opp 6 defenders (bulk = SpreadBelief or neutral 0-EV; boosts only on the active slot) ---
+        # --- opp 6 defenders (Def / SpD = SpreadBelief or neutral 0-EV; boosts only on the active slot) ---
         d_base = self.BASE_STATS[ctx.species_ids[:, opp]]                               # [B,6,6]
         if spread_belief is not None:
             opp_def = spread_belief[:, :, _SB_DEF]; opp_spd = spread_belief[:, :, _SB_SPD]   # [B,6]
         else:
             opp_def = 2.0 * d_base[..., 2] + 31.0 + 5.0; opp_spd = 2.0 * d_base[..., 4] + 31.0 + 5.0
-        opp_maxhp = 2.0 * d_base[..., 0] + 31.0 + 110.0                                 # [B,6]
         # gen3_unrevealed_outgoing_prior_v1: UNREVEALED defender slots are priced against the
         # EXPECTED-LATENT defender instead of zeroed (design_conditional_opponent_cells §4.1 — a
         # revealed-gated read is misleading exactly when switching matters most, the typeless-HP-
         # immune bug class). The v36 `discrete_outgoing` marginals, at the Species-Clause-filtered
         # usage prior (or the `species_probs` override): E[mult] via SPECIES_EXP_MULT, E[def/spd]
-        # via the spread-prior means, E[maxhp] via E[base HP], forced-alive full-HP switch-in.
+        # via the spread-prior means, their max HP the species-mixture of the Smogon max-HP belief
+        # (`expected_their_max_hp`: E[1 / M] and E[M] over species), forced-alive full-HP switch-in.
         # P(KO) stays NULLED (owner rule: a full-HP switch-in is ~never OHKO'd) and the trailing
         # `revealed` channel stays 0 — magnitudes change, epistemics don't. REVEALED slots pass
         # through every `torch.where` untouched — byte-identical to the pre-fix kernel.
         believed = ctx.opp_believed_mask                                                # [B,6] bool
         sp_probs = self.unrevealed_species_probs(ctx, species_probs)                    # [B,S] | [B,6,S]
         e_bulk = sp_probs @ self.SPECIES_SPREAD_PRIOR[..., 0]                           # [B,5] | [B,6,5]
-        e_maxhp = 2.0 * (sp_probs @ self.BASE_STATS[:, 0]) + 31.0 + 110.0               # [B] | [B,6]
         if sp_probs.dim() == 2:
             # Prior path: one marginal per battle — broadcast the RESULTS over the 6 slots
             # (see unrevealed_species_probs: the [B,6,S] expand mis-vectorizes under Inductor).
-            e_def_u, e_spd_u, e_maxhp_u = (e_bulk[:, _SB_DEF, None], e_bulk[:, _SB_SPD, None],
-                                           e_maxhp[:, None])
+            e_def_u, e_spd_u = e_bulk[:, _SB_DEF, None], e_bulk[:, _SB_SPD, None]
         else:
-            e_def_u, e_spd_u, e_maxhp_u = e_bulk[..., _SB_DEF], e_bulk[..., _SB_SPD], e_maxhp
+            e_def_u, e_spd_u = e_bulk[..., _SB_DEF], e_bulk[..., _SB_SPD]
         opp_def = torch.where(believed, e_def_u, opp_def)
         opp_spd = torch.where(believed, e_spd_u, opp_spd)
-        opp_maxhp = torch.where(believed, e_maxhp_u, opp_maxhp)
+        # gen3_their_max_hp_belief_v1: each slot's max-HP belief by its species; a slot whose species is AVERAGED
+        # (hidden under the prior; X5's OTHER) holds the mixture over `sp_probs`. An X5 hypothesis slot is CONCRETE
+        # (its species is in the context), so it keeps its own species' atoms — the P(KO) it un-nulls is over them.
+        _x5 = self.stash.x5
+        their = their_hp_slots(self, ctx, sp_probs).lift(slice(None), None)             # [B,1,6] (atoms [B,1,6,K])
         _pa, p_b_def, _ps, p_b_spd, _pe = self._boost_stages(ctx.opp_ctx_raw)
         def_boost = torch.ones_like(opp_def); def_boost[ar, ctx.opp_active_local] = self._boost_mult(p_b_def)
         spd_boost = torch.ones_like(opp_spd); spd_boost[ar, ctx.opp_active_local] = self._boost_mult(p_b_spd)
         opp_def = opp_def * def_boost; opp_spd = opp_spd * spd_boost
         opp_hp_frac = ctx.hp_and_active[:, opp, 0]                                      # [B,6]
         opp_hp_frac = torch.where(believed, torch.ones_like(opp_hp_frac), opp_hp_frac)  # hidden = full-HP switch-in
-        opp_cur_hp = opp_hp_frac * opp_maxhp                                            # [B,6]
         t1d = ctx.type1_ids[:, opp]; t2d = ctx.type2_ids[:, opp]                        # [B,6]
         abl_mult = self.opp_ability_damage_mult(ctx)                                    # [B,6,T] known or prior
         revealed = (~ctx.opp_believed_mask).float()                                     # [B,6] species known
@@ -479,20 +482,17 @@ class DamageOperatorBlocks:
         dmg_ns = core * stab * eff * 0.925 * usable[:, :, None] * weather                 # [B,4,6]
         opp_reflect = ctx.screen_feature[:, 1:2]; opp_ls = ctx.screen_feature[:, 3:4]     # OPP-side screens
         screen = (1.0 - 0.5 * (opp_reflect * phys + opp_ls * (1.0 - phys)))[:, :, None]   # [B,4,1]
-        high, low, crit, ko = self._rolls(dmg_ns, screen, opp_maxhp[:, None, :],
-                                          opp_cur_hp[:, None, :], acc[:, :, None], eps,
-                                          crit_p=self._crit_p_at(move_ids, 2),
-                                          opp_hp_frac=opp_hp_frac[:, None, :])    # each [B,4,6]
+        high, low, crit, ko = self._rolls_their(dmg_ns, screen, their, opp_hp_frac[:, None, :], acc[:, :, None],
+                                                crit_p=self._crit_p_at(move_ids, 2))    # each [B,4,6]
         # gen3_nonformula_damage_v1: non-formula moves into each defender — immunity + legality gated, CB-invariant.
-        nf = nonformula_rolls(tuple(t[:, :, None] for t in gather_nonformula(self, move_ids)),
-                              opp_cur_hp[:, None, :], opp_maxhp[:, None, :], our_cur_hp[:, None, None],
-                              eff, acc[:, :, None], eps)
+        nf = nonformula_rolls_their(tuple(t[:, :, None] for t in gather_nonformula(self, move_ids)),
+                                    their, opp_hp_frac[:, None, :], our_cur_hp[:, None, None],
+                                    eff, acc[:, :, None], eps)
         high, low, crit, ko = (r * usable[:, :, None] for r in override_rolls((high, low, crit, ko), nf))
         # gen3_unrevealed_outgoing_prior_v1: P(KO) NULLED at hidden slots — the AVERAGED defender's KO is a
         # threshold of averaged stats (the Jensen gap is worst there). X5 fixed_mass (U3 part 3): a hidden
         # slot holds a CONCRETE pristine species (the per-slot one-hot `species_probs`), so P(KO | that
         # species, full HP) is defined and UN-nulled; only OTHER's averaged defender keeps the null.
-        _x5 = self.stash.x5
         ko = ko * (revealed if _x5 is None else _x5.concrete.to(ko.dtype))[:, None, :]
 
         cell = torch.stack([low, high, crit, ko, eff], dim=-1)                            # [B,4,6,_DMG_OMX_CELL]
@@ -574,11 +574,11 @@ class DamageOperatorBlocks:
         bs = spread_belief[ar, ctx.opp_active_local] if spread_belief is not None else None   # [B,5] or None
         opp_def = bs[:, _SB_DEF] if bs is not None else (2.0 * d_base[:, 2] + 31.0 + 5.0)     # [B]
         opp_spd = bs[:, _SB_SPD] if bs is not None else (2.0 * d_base[:, 4] + 31.0 + 5.0)
-        opp_maxhp = 2.0 * d_base[:, 0] + 31.0 + 110.0
+        their = their_max_hp(self, ctx.species_ids[ar, opp_act]).lift(slice(None), None, None)  # [B,1,1] (+ K atoms)
+        opp_hp_frac = ctx.hp_and_active[ar, opp_act, 0][:, None, None]                          # [B,1,1] reported HP
         _pa, p_b_def, _ps, p_b_spd, p_b_spe = self._boost_stages(ctx.opp_ctx_raw)
         opp_def = opp_def * self._boost_mult(p_b_def)
         opp_spd = opp_spd * self._boost_mult(p_b_spd)
-        opp_cur_hp = ctx.hp_and_active[ar, opp_act, 0] * opp_maxhp    # [B]
         t1d = ctx.type1_ids[ar, opp_act]; t2d = ctx.type2_ids[ar, opp_act]   # [B]
         abl_mult = self.opp_ability_damage_mult(ctx)[ar, ctx.opp_active_local]   # [B,T] known or prior
 
@@ -610,13 +610,11 @@ class DamageOperatorBlocks:
         dmg_ns = core * stab * eff * 0.925 * usable * weather                           # [B,6,4]
         opp_reflect = ctx.screen_feature[:, 1:2]; opp_ls = ctx.screen_feature[:, 3:4]   # OPP-side screens [B,1]
         screen = 1.0 - 0.5 * (opp_reflect[:, :, None] * phys + opp_ls[:, :, None] * (1.0 - phys))  # [B,6,4]
-        high, low, crit, ko = self._rolls(dmg_ns, screen, opp_maxhp[:, None, None],
-                                          opp_cur_hp[:, None, None], acc, eps,
-                                          crit_p=self._crit_p(move_ids),
-                                          opp_hp_frac=ctx.hp_and_active[ar, opp_act, 0][:, None, None])  # each [B,6,4]
+        high, low, crit, ko = self._rolls_their(dmg_ns, screen, their, opp_hp_frac, acc,
+                                                crit_p=self._crit_p(move_ids))          # each [B,6,4]
         # gen3_nonformula_damage_v1: non-formula moves into the opp active — immunity + legality gated, CB-invariant.
-        nf = nonformula_rolls(gather_nonformula(self, move_ids), opp_cur_hp[:, None, None],
-                              opp_maxhp[:, None, None], our_cur_hp[:, :, None], eff, acc, eps)
+        nf = nonformula_rolls_their(gather_nonformula(self, move_ids), their, opp_hp_frac,
+                                    our_cur_hp[:, :, None], eff, acc, eps)
         high, low, crit, ko = (r * usable for r in override_rolls((high, low, crit, ko), nf))
 
         # --- p_outspeed per attacker (each of our six vs their active's speed belief) ---
@@ -1176,9 +1174,9 @@ class DamageOperatorBlocks:
         high, _low, _crit, ko = self._rolls(dmg_ns, screen[:, None, :], maxhp[:, :, None],
                                             cur_hp[:, :, None], acc_k[:, None, :], eps,
                                             crit_p=self._crit_p_at(topk_idx, 1))   # each [B,6,K]
-        # gen3_nonformula_damage_v1: the non-formula kinds replace the rolls (attacker HP = obs fraction ×
-        # the neutral max HP, the op's opp-HP convention).
-        atk_cur = opp_hp_frac * (2.0 * a_base[:, 0] + 31.0 + 110.0)                        # [B]
+        # gen3_nonformula_damage_v1: the non-formula kinds replace the rolls (attacker HP in POINTS = its reported
+        # fraction × its EXPECTED max HP, gen3_their_max_hp_belief_v1).
+        atk_cur = their_max_hp(self, ctx.species_ids[ar, opp_act]).points(opp_hp_frac)     # [B]
         nf = nonformula_rolls(tuple(t[:, None, :] for t in gather_nonformula(self, topk_idx)),
                               cur_hp[:, :, None], maxhp[:, :, None], atk_cur[:, None, None],
                               eff, acc_k[:, None, :], eps)

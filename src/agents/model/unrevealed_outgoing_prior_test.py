@@ -149,11 +149,10 @@ def test_unrevealed_cell_matches_direct_table_recompute():
     atk = 2.0 * float(_SNORLAX.base_stats["atk"]) + 31.0 + 5.0   # neutral spread, no CB/burn/boost
     bp = float(op.MOVE_BP[_BODYSLAM.num])
     e_def = float(p @ op.SPECIES_SPREAD_PRIOR[:, _SB_DEF, 0])
-    e_maxhp = 2.0 * float(p @ op.BASE_STATS[:, 0]) + 31.0 + 110.0
     e_mult = float(p @ op.SPECIES_EXP_MULT[:, _T2I["NORMAL"]])
     core = 42.0 * bp * atk / (e_def + eps) / 50.0 + 2.0
     dmg = core * 1.5 * e_mult * 0.925                            # STAB, no weather/screens
-    inv = 1.0 / (e_maxhp + eps)
+    inv = float(p @ op.THEIR_HP_INV)                             # the species mixture of E[1 / max HP]
     want_high = min(dmg * inv, _DMG_CHIP_CAP)
     want_low = min(_DMG_ROLL_MIN * dmg * inv, _DMG_CHIP_CAP)
     for j in range(1, TEAM_SIZE):

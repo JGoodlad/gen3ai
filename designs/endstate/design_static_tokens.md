@@ -106,8 +106,9 @@ base stats + a raw spread, divided by `STATIC_STAT_SCALE` (500):
   `X = (2B + IV + ⌊EV/4⌋ + 5) × nature` (the EV floored as the game does, `gen3_stat_ev_points_v1`; the nature smooth).
   Its uncertainty column is 0.
 - **the opponent** (`spread_known` = 0): the Smogon usage-weighted mean and standard deviation of each
-  realised stat (`gen3_data.priors.spreads`, the source of the operator's `SPECIES_SPREAD_PRIOR`, here
-  with HP added), as a non-persistent buffer built from `data/` at construction. No new committed
+  realised stat (the five non-HP stats from `gen3_data.priors.spreads`, the source of the operator's
+  `SPECIES_SPREAD_PRIOR`; HP from `their_max_hp_support`, the distribution the operator prices their max HP
+  with), as a non-persistent buffer built from `data/` at construction. No new committed
   table; `data/` is untouched.
 
 S's stat input is therefore 13 numbers: six means, six standard deviations, `spread_known`.
@@ -823,9 +824,10 @@ Shed Skin, Liquid Ooze, Cloud Nine / Air Lock); game cliffs stay probabilities (
 Nightmare × P(stays asleep) from the observation's sleep-wake belief, Cloud Nine suppression as a probability over both
 actives). Leech Seed's heal is the one cross-mon amount: Showdown's integer drain min(its HP, max(1, ⌊the seeded mon's
 max HP / 8⌋)) (`gen3_leech_seed_exact_v1`, config v166; the drain column is that amount over the seeded mon's own max
-HP) / the recipient's max HP, max HP from the op's convention (ours exact from the spread, theirs `2·base + 31 + 110`, Shedinja 1), Liquid Ooze
+HP) / the recipient's max HP, max HP from the op's convention (ours exact from the spread, theirs the species' Smogon max-HP belief, `1 / E[1/M]`, Shedinja 1), Liquid Ooze
 inverting it; it assumes the seeded active stays in. Every amount of OUR mon (and a Shedinja's) is Showdown's integer
-`max(1, ⌊max HP / d⌋)`, theirs the nominal `1/d` of the estimate (`gen3_residual_exact_v1`, config v167), and the net is
+`max(1, ⌊max HP / d⌋)` (`gen3_residual_exact_v1`, config v167), theirs that rule's expectation over the belief,
+`E[max(1, ⌊M / d⌋) / M]` (`gen3_their_max_hp_belief_v1`, config v168), and the net is
 one HP chain in the gen-3 residual order (Wish, weather, Ingrain, Rain Dish, Leftovers, Leech Seed — capped at the HP
 left after those —, status, Nightmare, Curse), where it was the clamp of the sum. Two of its inputs were GIGO and are fixed at their source
 (config v151): the Toxic tick reads the observation's counter, which saturated at 8 ticks while the engine ramps to 15

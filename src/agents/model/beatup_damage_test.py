@@ -54,7 +54,7 @@ def _base(species: str, stat: str) -> int:
 # The six-mon party the tests use. Atks are PINNED below so a data change fails loudly, not silently.
 _PARTY = ["umbreon", "tyranitar", "salamence", "snorlax", "metagross", "gengar"]
 _PARTY_ATK = [65, 134, 135, 110, 135, 65]
-_BLISSEY_MAXHP = 2.0 * 255 + 31.0 + 110.0                  # the op's neutral 0-EV estimate: 651
+_BLISSEY_MAXHP = 2.0 * 255 + 31.0 + 110.0                  # OUR Blissey's exact max HP (31 IV, no HP EVs): 651
 
 
 def test_party_base_atk_is_pinned():
@@ -101,7 +101,8 @@ def _blocks(op, ctx):
 
 def _hp(op, ctx, target: str):
     blk, mult = _blocks(op, ctx)
-    maxhp = 2.0 * _base(target, "hp") + 31.0 + 110.0
+    # THEIR max HP is the Smogon belief: a damage of d HP reads d * E[1 / M] (gen3_their_max_hp_belief_v1)
+    maxhp = 1.0 / float(op.THEIR_HP_INV[_num(target)])
     return blk[1].item() * maxhp, blk[0].item() * maxhp, blk[2].item() * maxhp, mult
 
 
@@ -214,13 +215,13 @@ def test_unrevealed_defender_prices_the_expected_damage_exactly(op):
     ctx = _out_ctx("blissey", t1="NORMAL")
     ctx.opp_believed_mask = torch.ones(1, TEAM_SIZE, dtype=torch.bool)       # every opp slot hidden
     p = op.unrevealed_species_probs(ctx)[0]                                  # [S] the prior the op uses
-    want_hp, e_maxhp = 0.0, 0.0
+    want_hp, e_inv = 0.0, 0.0
     for s in torch.nonzero(p > 0).flatten().tolist():
         d = float(op.BASE_STATS[s, 2])
         want_hp += float(p[s]) * _expect_mean(_PARTY_ATK, d)
-        e_maxhp += float(p[s]) * (2.0 * float(op.BASE_STATS[s, 0]) + 31.0 + 110.0)
+        e_inv += float(p[s]) * float(op.THEIR_HP_INV[s])                      # the species mixture of E[1 / max HP]
     cell = op._outgoing_matrix(ctx)[0, 0:5]                                   # move 0 x opp slot 0 (hidden)
-    assert cell[1].item() * e_maxhp == pytest.approx(want_hp, rel=2e-3)
+    assert cell[1].item() / e_inv == pytest.approx(want_hp, rel=2e-3)
     # typeless: the E[mult] column is 1 up to fp32 SUMMATION rounding over the species axis — bounded by
     # n * 2^-24 (n terms, the fp32 unit roundoff), never a fixed 1e-6: the weighted species-usage marginal
     # (F-X5-47, 2026-10-04) reads 1 + 1.07e-6 here (9 ulps). A real defect (a type chart applied: Gengar's
