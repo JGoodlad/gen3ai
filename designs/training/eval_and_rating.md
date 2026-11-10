@@ -608,7 +608,7 @@ python -m main.eval_ledger verify <decision_id>       # re-derives a check's ver
   string carries every constant. `status` exits 2 on a CONFLICT. **Resumable at any batch**: a re-run never replays a banked
   batch and records a decided test without playing.
 - **Parallel batches (`--inflight-batches K`, default 4).** One WAVE of K batches is ONE eval cycle on the one engine in ONE
-  process (so rule 5b's ≤ 2 heavy jobs holds at any K); every batch keeps its own seed block (the executor's `seed_blocks`)
+  process (so the tick is one heavy job at any K); every batch keeps its own seed block (the executor's `seed_blocks`)
   and its own row and claim. The decision is unchanged (the rule folds batches in order and stops at the first crossing; an
   overshoot of ≤ K − 1 batches costs games, never the verdict). Proof: `design_evaluation.md` §8.1 "Parallel batches".
 - 🚨 **Where to run it.** Offline, by the operator after each 10M checkpoint (the deep run's training agent can call `tick` from

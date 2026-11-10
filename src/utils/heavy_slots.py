@@ -1,4 +1,4 @@
-"""The box's HEAVY-JOB SLOTS — at most N heavy agent jobs at once while a training run is live (rule 5b).
+"""The box's HEAVY-JOB SLOTS — which heavy agent jobs may run at once while a training run is live (rule 5b).
 
 USAGE
     scripts/ops/mem_cap.sh 24 <cmd>                 # takes a slot by itself while a run is live
@@ -8,8 +8,9 @@ USAGE
     GEN3AI_BLOCKING="X34 plateau tick" scripts/ops/mem_cap.sh 24 <cmd>   # orchestrator-marked: bypass
     scripts/ops/mem_cap.sh --status                 # the memory slice, then holders / queue / bypassers
     python -m utils.heavy_slots --status [--json]
+    python -m utils.heavy_slots --admission count   # THE SWITCH BACK to the fixed count of 2 (`memory` undoes it)
 
-WHY (2026-10-19). Rule 5b says "<= 2 heavy jobs at once" beside a live run, and nothing enforced it:
+WHY (2026-10-19). Rule 5b said "<= 2 heavy jobs at once" beside a live run, and nothing enforced it:
 separate agents each ran 1-6 heavy jobs on the 3 agent cores, load hit 29, the X34 plateau check (which
 BLOCKS the GPU's next work) was starved, and a 14-min ship gate took over an hour. Every heavy job
 already goes through ``scripts/ops/mem_cap.sh``, so that is where the slot is taken.
@@ -25,9 +26,16 @@ bypasses them too, whatever the wrapper order: ``gpu_lock.sh mem_cap.sh …`` wo
 while it queued for a CPU slot (D-3). The routine gate (``utils.gate_lock``) holds ONE
 slot itself for its whole run, taken AFTER its gate slot.
 
-HOW. ``N`` (:data:`HEAVY_SLOTS` = 2; ``$GEN3AI_HEAVY_SLOTS``) ``flock`` slot files
-``slot<i>.lock`` under ``~/.claude/jobs/heavy_slots/`` (``$GEN3AI_HEAVY_SLOT_DIR``; tests point it at a
-temp dir). A crashed holder's slot frees the instant it dies (the kernel drops its flock). The wait is visible:
+ADMISSION IS BY MEMORY (2026-11-09; ``utils.heavy_admission`` has the rule, its measurements and the switch back). A job
+that DECLARES its memory cap (``mem_cap.sh <GB>`` does; ``cap_gb`` here) is admitted while the caps of the running jobs
+plus its own fit the box's budget (``MemTotal`` less a reserve, at most the heavy slice's own cap) and fewer than
+``heavy_admission.max_slots()`` (4) slots are held. Anything unknown - no declared cap, an unreadable budget, a holder
+whose cap nobody knows - is the fixed count of :data:`HEAVY_SLOTS` (2) that this replaced, and so is the whole box after
+``python -m utils.heavy_slots --admission count`` (:func:`admission` reads the mode at every poll). An explicit
+``$GEN3AI_HEAVY_SLOTS=N`` is the fixed-count rule over N slots for that process tree, exactly as before.
+
+HOW. One ``flock`` slot file per job that may run (``slot<i>.lock``, :func:`slot_files` of them) under
+``~/.claude/jobs/heavy_slots/`` (``$GEN3AI_HEAVY_SLOT_DIR``; tests point it at a temp dir). A crashed holder's slot frees the instant it dies (the kernel drops its flock). The wait is visible:
 one line at once, one every :data:`REPORT_EVERY_S` naming the holders; ``--no-wait`` refuses instead
 (:class:`SlotsFull`, exit 87).
 
@@ -37,7 +45,8 @@ a lock held for that instant only) and a free slot goes to the waiter :func:`gra
 LONG tickets, FIFO among the SHORT ones, and a short job may jump ahead of a queued long one at most
 :func:`short_jumps` (= :data:`SHORT_JUMPS`) times - the count lives in the long ticket's own file, so the bound is per
 queued long job and an old-code long waiter is covered without cooperating. A waiter may take a free slot only when
-fewer polling tickets than there are free slots precede it in that order: the first gets the next free slot. A ticket of
+fewer polling tickets than there are free slots precede it in that order: the first gets the next free slot (under the
+memory rule: only when every job ahead of it in that order would be admitted with it). A ticket of
 a dead pid is skipped and removed; one whose owner has not polled for :data:`TICKET_STALE_S` (a gate blocked on the gate
 lock between two slot attempts) is skipped without losing its place. The ticket is dropped when the slot is taken or
 the wait ends; the flock alone is still the lock.
@@ -96,9 +105,11 @@ from pathlib import Path
 from typing import Callable, Iterator, List, Optional, Sequence, Tuple
 
 from utils import gpu_lock as GL
+from utils import heavy_admission as HA
 from utils import procfs
 
-HEAVY_SLOTS = 2
+#: the FIXED count: the rule before memory-aware admission, and what every unknown falls back to
+HEAVY_SLOTS = HA.BASE_SLOTS
 SLOTS_ENV = "GEN3AI_HEAVY_SLOTS"
 DIR_ENV = "GEN3AI_HEAVY_SLOT_DIR"
 HELD_ENV = "GEN3AI_HEAVY_SLOT_HELD"
@@ -108,6 +119,12 @@ POLL_S = 0.5
 #: lock): the queue skips it, and it keeps its place.
 TICKET_STALE_S = 20.0
 TICKET_LOCK = "ticket.seq.lock"
+#: held for the instant of one admission (decide, take the slot, write its record): the next job to decide sees it
+ADMIT_LOCK = "admit.lock"
+#: how long one poll tries for it. A holder is a few file reads long; one that is stopped or starved mid-admission must
+#: cost the others a poll, never a silent hang (``--no-wait``, ``timeout_s`` and the wait report all keep working).
+ADMIT_LOCK_WAIT_S = 2.0
+ADMIT_BUSY = "another job's admission is in progress (admit.lock is held)"
 #: POLICY (orchestrator 2026-10-20): hold a slot per BOUNDED CHUNK (<= CHUNK_MIN), never per run. --status flags a
 #: holder past LONG_HOLD_S and the holder is warned once; nothing is killed.
 CHUNK_MIN = 45
@@ -135,7 +152,9 @@ SHORT_JUMPS = 3
 SHORT_JUMPS_ENV = "GEN3AI_SHORT_JUMPS"
 EXIT_SHORT_OVERRUN = 88           # ``mem_cap``: the declared-short job overran its hard timeout and was killed
 EVENTS_FILE = "events.jsonl"
-EVENTS_MAX_BYTES = 1 << 20        # one rotation (events.jsonl.1) past this
+#: one rotation (events.jsonl.1) past this. 8 MiB is ~3 weeks: at 1 MiB the log held 5 days, and the queue's cost over
+#: two weeks (the 2026-11-09 admission study) had to be pieced together from job logs.
+EVENTS_MAX_BYTES = 8 << 20
 
 
 #: slot index -> the locked fd THIS process holds for it (set only while this process is the holder).
@@ -190,14 +209,31 @@ def short_deadline_s(slot: Optional[int], max_s: Optional[float]) -> Optional[fl
     return None if max_s is None or slot_fd(slot) is None else max_s + short_margin_s()
 
 
-def slot_count() -> int:
+def fixed_slots() -> Optional[int]:
+    """An explicit ``$GEN3AI_HEAVY_SLOTS``: the FIXED-COUNT rule over that many slots for this process tree (no memory
+    check, as before 2026-11-09). ``None``: the box's rule decides (:func:`admission`)."""
     raw = os.environ.get(SLOTS_ENV)
     if not raw:
-        return HEAVY_SLOTS
+        return None
     n = int(raw)
     if n < 1:
         raise ValueError(f"{SLOTS_ENV}={raw!r}: need at least one slot")
     return n
+
+
+def slot_files() -> int:
+    """How many slot files this process looks at: the explicit count, else the hard maximum of the box's rule."""
+    n = fixed_slots()
+    return HA.max_slots() if n is None else n
+
+
+def slot_count() -> int:
+    """The most heavy jobs this process's rule lets run at once (what a lane sizes its fan-out by): the explicit count,
+    else the hard maximum under memory admission, else (the box switched back to ``count``) the fixed 2."""
+    n = fixed_slots()
+    if n is not None:
+        return n
+    return HA.max_slots() if HA.mode(lock_dir())[0] == HA.MODE_MEMORY else HEAVY_SLOTS
 
 
 def lock_dir() -> Path:
@@ -287,12 +323,16 @@ class Record:
     schema: str = RECORD_SCHEMA
     lane: str = LANE_LONG        # added 2026-10-23; an older record has no field and reads as long
     max_s: float = 0.0           # the short lane's declared bound (0: a long job)
+    #: the job's declared memory cap in GiB (added 2026-11-09): 0 = it declared none; -1 = a record from before the
+    #: field (that code knows no caps). The code from before the field cannot parse a record that has it: its --status
+    #: shows such a holder as "(no record)" - the flock, not the record, is the lock.
+    cap_gb: float = -1.0
 
     @classmethod
     def mine(cls, kind: str, cmd: Sequence[str], note: str = "", slot: int = -1, *,
-             lane: str = LANE_LONG, max_s: float = 0.0) -> "Record":
+             lane: str = LANE_LONG, max_s: float = 0.0, cap_gb: Optional[float] = None) -> "Record":
         return cls(pid=os.getpid(), kind=kind, since=time.time(), cwd=os.getcwd(), cmd=list(cmd)[:48],
-                   note=note, slot=slot, lane=lane, max_s=max_s)
+                   note=note, slot=slot, lane=lane, max_s=max_s, cap_gb=float(cap_gb or 0.0))
 
 
 def _rec_path(d: Path, rec_kind: str, key: int) -> Path:
@@ -497,6 +537,83 @@ def entitled(d: Path, n: int, pid: Optional[int] = None, *, now: Optional[float]
     return ahead == 0 or ahead < free_count(d, n)
 
 
+def _cap_bytes(cap_gb: Optional[float]) -> Optional[int]:
+    return int(cap_gb * HA.GiB) if cap_gb is not None and cap_gb > 0 else None
+
+
+@contextlib.contextmanager
+def _admit_lock(d: Path, wait_s: Optional[float] = None) -> Iterator[bool]:
+    """Yields whether this process holds :data:`ADMIT_LOCK` (tried for ``wait_s``, default :data:`ADMIT_LOCK_WAIT_S`).
+    Held for the instant of one admission, never while waiting; ``False`` means: nobody is admitted on this poll."""
+    end = time.monotonic() + (ADMIT_LOCK_WAIT_S if wait_s is None else wait_s)
+    with open(d / ADMIT_LOCK, "a") as lk:
+        got = _try(lk.fileno())
+        while not got and time.monotonic() < end:
+            time.sleep(0.01)
+            got = _try(lk.fileno())
+        yield got
+
+
+def _slot_state(d: Path, n: int) -> Tuple[List[int], List[HA.Holder]]:
+    """``(free slot indices, holders)`` over ``n`` slot files; a holder's declared cap is its record's, when the record
+    is that holder's (``/proc/locks`` lists the record's pid on the slot)."""
+    locks = procfs.read_locks()
+    free: List[int] = []
+    holders: List[HA.Holder] = []
+    for i in range(n):
+        key = procfs.file_key(str(slot_path(i, d)))
+        pids = procfs.holders(key, locks) if key else []
+        if not pids:
+            free.append(i)
+            continue
+        rec = _read(_rec_path(d, "holder", i))
+        holders.append(HA.Holder(i, tuple(pids), _cap_bytes(rec.cap_gb) if rec is not None and rec.pid in pids else None))
+    return free, holders
+
+
+def _wait_caps(d: Path) -> dict:
+    """pid -> what its wait record declares: a cap in bytes, 0 (none), or ``None`` (a record from before the field)."""
+    out: dict = {}
+    for p in d.glob("wait-*.json") if d.is_dir() else ():
+        rec = _read(p)
+        if rec is not None and rec.kind == "wait":
+            out[rec.pid] = None if rec.cap_gb < 0 else int(rec.cap_gb * HA.GiB)
+    return out
+
+
+def admission(d: Path, n: int, cap_gb: Optional[float], pid: Optional[int] = None, *,
+              now: Optional[float] = None) -> HA.Decision:
+    """THE BOX'S RULE for ``pid`` (this process) right now: the slot it may take, or why it waits. Reads only (the caller
+    takes the slot, under :data:`ADMIT_LOCK`). ``utils.heavy_admission`` has the rule: by memory for a job that declares
+    its cap ``cap_gb`` while the box's mode is ``memory`` and everything it needs is known; else the fixed count of
+    :data:`HEAVY_SLOTS` over all ``n`` slot files."""
+    pid = os.getpid() if pid is None else pid
+    free, holders = _slot_state(d, n)
+    ahead: List[int] = []
+    for t in grant_order(d, pid, now=now):
+        if t.pid == pid:
+            break
+        ahead.append(t.pid)
+    cap = _cap_bytes(cap_gb)
+    mode, source = HA.mode(d)
+    if mode != HA.MODE_MEMORY or cap is None:
+        return HA.decide(cap, free=free, held=[None] * len(holders), other=0, budget=None, ahead=[None] * len(ahead),
+                         unknown=f"admission is `{mode}` ({source})")
+    if not free:
+        return HA.Decision(None, HA.RULE_MEMORY, f"all {n} heavy slots are held (the hard maximum)")
+    box = HA.read_box()
+    held, other = HA.charges(holders, box.scopes)
+    waits = _wait_caps(d)
+    return HA.decide(cap, free=free, held=held, other=other, budget=box.budget, ahead=[waits.get(p) for p in ahead],
+                     unknown=box.why)
+
+
+def _leave_queue(d: Path) -> None:
+    """Drop this process's ticket and wait record (a job that turned out to need no slot after :func:`await_free_slot`)."""
+    drop_ticket(d)
+    _drop(_rec_path(d, "wait", os.getpid()), os.getpid())
+
+
 def log_event(d: Path, kind: str, **fields: object) -> None:
     """Append one JSON line to ``events.jsonl`` (one rotation at :data:`EVENTS_MAX_BYTES`). Best effort: a log only reports,
     and a write error never fails a job. It is the measurement the next queue tuning is read from."""
@@ -522,12 +639,15 @@ def heavy_slot(cmd: Sequence[str] = (), *, force: bool = False, wait: bool = Tru
                timeout_s: Optional[float] = None, poll_s: float = POLL_S,
                report_every_s: float = REPORT_EVERY_S, log: Callable[[str], None] = _stderr,
                runs: Optional[dict] = None, keep_ticket: bool = False,
-               max_s: Optional[float] = None) -> Iterator[Optional[int]]:
+               max_s: Optional[float] = None, cap_gb: Optional[float] = None) -> Iterator[Optional[int]]:
     """Hold one heavy slot for the ``with`` body when the policy wants one; yields the slot index, or
     ``None`` when no slot was taken (bypass / not wanted). Raises :class:`SlotsFull` (``wait=False``)
     or ``TimeoutError`` (``timeout_s``) without running the body. FIFO per lane: a slot is taken only when this job is
-    entitled to it (:func:`entitled`); ``keep_ticket`` leaves the ticket in the queue when ``wait=False`` refuses
-    (the caller will wait with :func:`await_free_slot` and keep its place).
+    admitted (:func:`admission`; under an explicit ``$GEN3AI_HEAVY_SLOTS``, :func:`entitled`); ``keep_ticket`` leaves the
+    ticket in the queue when ``wait=False`` refuses (the caller will wait with :func:`await_free_slot` and keep its place).
+
+    ``cap_gb``: the memory cap this job runs under (``utils.mem_cap`` passes its ``<GB>``), which is what admits it by
+    memory; without one it is admitted by the fixed count of :data:`HEAVY_SLOTS`.
 
     ``max_s``: this job DECLARES itself short (0 < S <= :data:`SHORT_MAX_S`, else :class:`ShortLaneError`) and queues in the
     short lane. The declaration is a promise this function cannot keep: the caller must stop the body at
@@ -544,14 +664,16 @@ def heavy_slot(cmd: Sequence[str] = (), *, force: bool = False, wait: bool = Tru
         log(f"[heavy_slots] ignoring a STALE {HELD_ENV}={os.environ[HELD_ENV]} (not a live ancestor holding it)")
     why = wanted(force=force, runs=runs)
     if why is None:
+        _leave_queue(d)
         yield None
         return
     reason = blocking_reason()
     gpu = GL.gpu_job() if reason is None else None
     if reason is not None or gpu is not None:
         d.mkdir(parents=True, exist_ok=True)
+        _leave_queue(d)
         note = reason if reason is not None else f"GPU job (gpu_lock pid {gpu}): the GPU would idle behind a slot wait"
-        p = _write(d, Record.mine("bypass", cmd, note=note, lane=lane, max_s=max_s or 0.0))
+        p = _write(d, Record.mine("bypass", cmd, note=note, lane=lane, max_s=max_s or 0.0, cap_gb=cap_gb))
         if reason is not None:
             log(f"[heavy_slots] BLOCKING ({BLOCKING_ENV}={reason!r}): bypassing the {slot_count()} heavy slots")
         else:
@@ -562,47 +684,74 @@ def heavy_slot(cmd: Sequence[str] = (), *, force: bool = False, wait: bool = Tru
         finally:
             _drop(p, os.getpid())
         return
-    n = slot_count()
+    fixed = fixed_slots()
+    n = slot_files()
     d.mkdir(parents=True, exist_ok=True)
     paths = [slot_path(i, d) for i in range(n)]
     fds = [os.open(str(p), os.O_RDWR | os.O_CREAT | os.O_CLOEXEC, 0o666) for p in paths]
     wait_rec: Optional[Path] = None
     ticket = take_ticket(d, lane=lane)
     kept = False
+    rule = "fixed"
+    full = f"all {n} heavy slots are held or spoken for"
+    rec_p: Optional[Path] = None
+
+    def settle(taken: int) -> Optional[Path]:
+        """The slot is this job's: leave the queue and write the holder record."""
+        if lane == LANE_SHORT:
+            note_short_grant(d)                       # passed over the polling long head once more (the starvation bound)
+        drop_ticket(d)
+        return _write(d, Record.mine("holder", cmd, note=why, slot=taken, lane=lane, max_s=max_s or 0.0, cap_gb=cap_gb))
+
     try:
         t0 = time.monotonic()
         slot: Optional[int] = None
         next_report = t0
+        if fixed is None:
+            # the box's rule reads a queued job's cap from its wait record: written before the first attempt, and kept
+            # with the ticket (``keep_ticket``), so the jobs behind this one account for it from its first poll on
+            wait_rec = _write(d, Record.mine("wait", cmd, note=why, lane=lane, max_s=max_s or 0.0, cap_gb=cap_gb))
         while slot is None:
             _beat(ticket)
-            if entitled(d, n):
-                slot = next((i for i, fd in enumerate(fds) if _try(fd)), None)
+            if fixed is not None:
+                if entitled(d, n):
+                    slot = next((i for i, fd in enumerate(fds) if _try(fd)), None)
+                if slot is not None:
+                    rec_p = settle(slot)
+            else:
+                with _admit_lock(d) as mine:          # decide, take and record as one step (module docs: ADMISSION)
+                    if not mine:
+                        full = ADMIT_BUSY
+                    else:
+                        dec = admission(d, n, cap_gb)
+                        rule, full = dec.rule, dec.why
+                        if dec.slot is not None and _try(fds[dec.slot]):
+                            slot = dec.slot
+                            rec_p = settle(slot)
             if slot is not None:
                 break
             now = time.monotonic()
             if not wait:
                 kept = keep_ticket
-                raise SlotsFull(f"[heavy_slots] REFUSING (--no-wait): all {n} heavy slots are held or spoken for "
+                raise SlotsFull(f"[heavy_slots] REFUSING (--no-wait): {full} "
                                 f"({queue_ahead(d)} queued ahead, FIFO per lane) — " + compact_status(d, n))
             if wait_rec is None:
-                wait_rec = _write(d, Record.mine("wait", cmd, note=why, lane=lane, max_s=max_s or 0.0))
+                wait_rec = _write(d, Record.mine("wait", cmd, note=why, lane=lane, max_s=max_s or 0.0, cap_gb=cap_gb))
             if now >= next_report:
-                log(f"[heavy_slots] waiting {now - t0:.0f} s for one of {n} heavy slots ({why}; "
-                    f"{queue_ahead(d)} queued ahead, FIFO per lane, {lane} lane): "
+                log(f"[heavy_slots] waiting {now - t0:.0f} s for "
+                    + (f"one of {n} heavy slots ({why}; " if fixed is not None else f"a heavy slot ({why}; {full}; ")
+                    + f"{queue_ahead(d)} queued ahead, FIFO per lane, {lane} lane): "
                     + compact_status(d, n) + f" — `scripts/ops/mem_cap.sh --status`; the orchestrator "
                     f"marks a GPU-blocking job with {BLOCKING_ENV}=<reason>")
                 next_report = now + report_every_s
             if timeout_s is not None and now - t0 >= timeout_s:
                 raise TimeoutError(f"[heavy_slots] gave up after {now - t0:.0f} s: " + compact_status(d, n))
             time.sleep(poll_s)
-        if lane == LANE_SHORT:
-            note_short_grant(d)                       # passed over the polling long head once more (the starvation bound)
-        drop_ticket(d)
         waited = time.monotonic() - t0
         _drop(wait_rec, os.getpid())
         wait_rec = None
-        rec_p = _write(d, Record.mine("holder", cmd, note=why, slot=slot, lane=lane, max_s=max_s or 0.0))
         log(f"[heavy_slots] took heavy slot {slot} of {n} after waiting {waited:.1f} s ({why})"
+            + (f" [{full}]" if fixed is None else "")
             + (f" [SHORT lane: declared <= {max_s:g} s, hard timeout {max_s + short_margin_s():g} s]" if max_s else ""))
         before = os.environ.get(HELD_ENV)
         os.environ[HELD_ENV] = f"{os.getpid()}:{slot}"
@@ -627,10 +776,11 @@ def heavy_slot(cmd: Sequence[str] = (), *, force: bool = False, wait: bool = Tru
             held_s = time.monotonic() - t_acq
             log(f"[heavy_slots] released heavy slot {slot} after {held_s:.0f} s")
             log_event(d, "slot", lane=lane, max_s=max_s or 0.0, slot=slot, waited_s=round(waited, 1),
-                      held_s=round(held_s, 1), why=why, cmd=shlex.join(list(cmd))[:300], cwd=os.getcwd())
+                      held_s=round(held_s, 1), cap_gb=float(cap_gb or 0.0), rule=rule, why=why,
+                      cmd=shlex.join(list(cmd))[:300], cwd=os.getcwd())
     finally:
-        _drop(wait_rec, os.getpid())
         if not kept:
+            _drop(wait_rec, os.getpid())
             drop_ticket(d)
         for fd in fds:
             os.close(fd)
@@ -638,8 +788,10 @@ def heavy_slot(cmd: Sequence[str] = (), *, force: bool = False, wait: bool = Tru
 
 def await_free_slot(cmd: Sequence[str] = (), *, force: bool = False, timeout_s: Optional[float] = None,
                     poll_s: float = POLL_S, report_every_s: float = REPORT_EVERY_S,
-                    log: Callable[[str], None] = _stderr, runs: Optional[dict] = None) -> None:
-    """Return once a heavy slot is free AND this job is next in the FIFO queue, holding NO lock while it waits (a
+                    log: Callable[[str], None] = _stderr, runs: Optional[dict] = None,
+                    cap_gb: Optional[float] = None) -> None:
+    """Return once this job would be admitted to a heavy slot (:func:`admission` for its ``cap_gb``; under an explicit
+    ``$GEN3AI_HEAVY_SLOTS``: a slot is free AND it is next in the FIFO queue), holding NO lock while it waits (a
     visible ``wait`` record and a queue ticket, polled with jitter). The ticket STAYS on a normal return, so the
     caller's ``heavy_slot(wait=False, keep_ticket=True)`` keeps the place and, if a sibling got there first, waits
     again without losing its age; it is dropped on a timeout or when the slot is no longer wanted.
@@ -654,20 +806,30 @@ def await_free_slot(cmd: Sequence[str] = (), *, force: bool = False, timeout_s: 
         return
     if blocking_reason() is not None or GL.gpu_job() is not None:
         return
-    n = slot_count()
+    fixed = fixed_slots()
+    n = slot_files()
     ticket = take_ticket(d)
     wait_rec: Optional[Path] = None
     done = False
+    note = "queued for a heavy slot holding NO lock"
+    full = [f"one of {n} heavy slots"]     # what the wait report names: under the box's rule, the rule's own reason
 
     def ready() -> bool:
         _beat(ticket)
-        return free_count(d, n) > 0 and entitled(d, n)
+        if fixed is not None:
+            return free_count(d, n) > 0 and entitled(d, n)
+        dec = admission(d, n, cap_gb)
+        full[0] = f"a heavy slot ({dec.why})"
+        return dec.slot is not None
 
     try:
+        if fixed is None:                # the jobs behind this one read its cap from the record (see heavy_slot)
+            wait_rec = _write(d, Record.mine("wait", cmd, note=note, cap_gb=cap_gb))
         if ready():
             done = True
             return
-        wait_rec = _write(d, Record.mine("wait", cmd, note="queued for a heavy slot holding NO lock"))
+        if wait_rec is None:
+            wait_rec = _write(d, Record.mine("wait", cmd, note=note, cap_gb=cap_gb))
         t0 = time.monotonic()
         next_report = next_check = t0
         while not ready():
@@ -677,7 +839,7 @@ def await_free_slot(cmd: Sequence[str] = (), *, force: bool = False, timeout_s: 
                     return
                 next_check = now + 5.0
             if now >= next_report:
-                log(f"[heavy_slots] waiting {now - t0:.0f} s for one of {n} heavy slots (holding no other lock; "
+                log(f"[heavy_slots] waiting {now - t0:.0f} s for {full[0]} (holding no other lock; "
                     f"{queue_ahead(d)} queued ahead, FIFO): " + compact_status(d, n))
                 next_report = now + report_every_s
             if timeout_s is not None and now - t0 >= timeout_s:
@@ -685,7 +847,8 @@ def await_free_slot(cmd: Sequence[str] = (), *, force: bool = False, timeout_s: 
             time.sleep(poll_s * (0.5 + random.random()))
         done = True
     finally:
-        _drop(wait_rec, os.getpid())
+        if not (done and fixed is None):     # the box's rule: the record stays with the ticket, for the caller's take
+            _drop(wait_rec, os.getpid())
         if not done:
             drop_ticket(d)
 
@@ -701,7 +864,7 @@ def collect(d: Optional[Path] = None, n: Optional[int] = None, *, now: Optional[
     """Holders (from ``/proc/locks``, with their records when the pid matches), waiters and bypassers
     (records whose pid is alive)."""
     d = d or lock_dir()
-    n = slot_count() if n is None else n
+    n = slot_files() if n is None else n
     now = time.time() if now is None else now
     locks = procfs.read_locks()
     slots = []
@@ -710,11 +873,11 @@ def collect(d: Optional[Path] = None, n: Optional[int] = None, *, now: Optional[
         pids = procfs.holders(key, locks) if key else []
         rec = _read(_rec_path(d, "holder", i))
         row: dict = {"slot": i, "pids": pids, "held_s": None, "cmd": "", "cwd": "", "why": "", "lane": LANE_LONG,
-                     "max_s": 0.0}
+                     "max_s": 0.0, "cap_gb": -1.0}
         if pids:
             if rec is not None and rec.pid in pids:
                 row.update(held_s=now - rec.since, cmd=shlex.join(rec.cmd), cwd=rec.cwd, why=rec.note,
-                           lane=rec.lane, max_s=rec.max_s)
+                           lane=rec.lane, max_s=rec.max_s, cap_gb=rec.cap_gb)
                 row["long_hold"] = (now - rec.since) > LONG_HOLD_S
                 # a short job is stopped at declared + margin + its grace: well past that, the enforcement failed
                 row["overdue"] = (rec.lane == LANE_SHORT
@@ -736,16 +899,61 @@ def collect(d: Optional[Path] = None, n: Optional[int] = None, *, now: Optional[
                     p.unlink()     # a dead waiter's / bypasser's record
                 continue
             side[rec.kind].append({"pid": rec.pid, "for_s": now - rec.since, "cmd": shlex.join(rec.cmd),
-                                   "cwd": rec.cwd, "why": rec.note, "lane": rec.lane, "max_s": rec.max_s})
+                                   "cwd": rec.cwd, "why": rec.note, "lane": rec.lane, "max_s": rec.max_s,
+                                   "cap_gb": rec.cap_gb})
     # the grant order (the head of the line gets the next free slot); a silent (stale) waiter sorts after the polling ones
     order = {t.pid: i for i, t in enumerate(grant_order(d, -1, now=now))}
     for k in side:
         side[k].sort(key=lambda r: (order.get(r["pid"], 1 << 60), -r["for_s"]))
-    return {"dir": str(d), "n_slots": n, "slots": slots, "waiting": side["wait"], "bypassing": side["bypass"]}
+    return {"dir": str(d), "n_slots": n, "slots": slots, "waiting": side["wait"], "bypassing": side["bypass"],
+            "admission": admission_state(d, n)}
+
+
+def admission_state(d: Path, n: int) -> dict:
+    """What ``--status`` says about the rule in force: the mode and where it was set, the budget and what is committed.
+    Best effort (a status never fails over a read)."""
+    fixed = fixed_slots()
+    out: dict = {"fixed_slots": fixed, "mode": HA.MODE_COUNT, "source": f"${SLOTS_ENV}={fixed}", "base": HEAVY_SLOTS}
+    if fixed is not None:
+        return out
+    try:
+        mode, source = HA.mode(d)
+        out.update(mode=mode, source=source, max_slots=HA.max_slots())
+        box = HA.read_box()
+        held, other = HA.charges(_slot_state(d, n)[1], box.scopes)
+        out.update(total_gb=box.total / HA.GiB, reserve_gb=box.reserve / HA.GiB, slice_gb=box.slice_cap / HA.GiB,
+                   budget_gb=None if box.budget is None else box.budget / HA.GiB, unknown=box.why,
+                   unslotted_gb=other / HA.GiB, unknown_holders=sum(1 for c in held if c is None),
+                   committed_gb=(other + sum(c or 0 for c in held)) / HA.GiB)
+    except Exception as e:           # noqa: BLE001 — a status only reports
+        out["unknown"] = f"unreadable ({e!r})"
+    return out
 
 
 def _lane_tag(r: dict) -> str:
     return f"SHORT<={r['max_s']:g}s " if r.get("lane") == LANE_SHORT else ""
+
+
+def _cap_tag(r: dict) -> str:
+    return f"cap {r['cap_gb']:g}G " if r.get("cap_gb", 0) > 0 else ""
+
+
+def _admission_line(a: dict) -> str:
+    if a.get("fixed_slots") is not None:
+        return f"  admission: the fixed count of {a['fixed_slots']} ({a['source']}; no memory check)"
+    if a.get("mode") != HA.MODE_MEMORY:
+        return (f"  admission: COUNT - at most {a['base']} heavy jobs ({a.get('source')}); "
+                f"`python -m utils.heavy_slots --admission memory` returns to admission by memory")
+    if a.get("budget_gb") is None:
+        return (f"  admission: memory, but the budget is UNKNOWN ({a.get('unknown') or '?'}): the fixed count of "
+                f"{a['base']} applies")
+    line = (f"  admission: memory - a job that declares its cap runs while the caps sum to <= {a['budget_gb']:.1f} GiB "
+            f"(MemTotal {a['total_gb']:.1f} - reserve {a['reserve_gb']:.1f}, slice cap {a['slice_gb']:.1f}) and at most "
+            f"{a['max_slots']} run; committed {a['committed_gb']:.1f} GiB"
+            + (f" ({a['unslotted_gb']:.1f} of it by capped jobs holding no slot)" if a.get("unslotted_gb") else ""))
+    if a.get("unknown_holders"):
+        line += f"; {a['unknown_holders']} holder(s) with NO known cap: the fixed count of {a['base']} applies"
+    return line
 
 
 def _dur(s: Optional[float]) -> str:
@@ -757,6 +965,8 @@ def _dur(s: Optional[float]) -> str:
 
 def format_human(state: dict) -> str:
     out = [f"heavy slots ({state['n_slots']}, {state['dir']}):"]
+    if state.get("admission"):
+        out.append(_admission_line(state["admission"]))
     for r in state["slots"]:
         if not r["pids"]:
             out.append(f"  slot {r['slot']}: free")
@@ -764,10 +974,11 @@ def format_human(state: dict) -> str:
             flag = f"  <-- {LONG_HOLD_TAG}" if r.get("long_hold") else ""
             flag += f"  <-- {OVERDUE_TAG}" if r.get("overdue") else ""
             out.append(f"  slot {r['slot']}: pid {','.join(map(str, r['pids']))} held {_dur(r['held_s'])} "
-                       f"{_lane_tag(r)}[{r['why']}] {r['cmd'][:140]}  (cwd {r['cwd'] or '?'}){flag}")
+                       f"{_lane_tag(r)}{_cap_tag(r)}[{r['why']}] {r['cmd'][:140]}  (cwd {r['cwd'] or '?'}){flag}")
     out.append(f"  queue ({len(state['waiting'])}, grant order: the head gets the next free slot; a SHORT job may jump a "
                f"queued long one up to {short_jumps()} times):")
-    out += [f"    pid {w['pid']} waiting {_dur(w['for_s'])} {_lane_tag(w)}: {w['cmd'][:140]}" for w in state["waiting"]]
+    out += [f"    pid {w['pid']} waiting {_dur(w['for_s'])} {_lane_tag(w)}{_cap_tag(w)}: {w['cmd'][:140]}"
+            for w in state["waiting"]]
     out.append(f"  BLOCKING bypassers ({len(state['bypassing'])}):")
     out += [f"    pid {b['pid']} for {_dur(b['for_s'])} [{b['why']}]: {b['cmd'][:140]}" for b in state["bypassing"]]
     return "\n".join(out)
@@ -782,6 +993,14 @@ def compact_status(d: Optional[Path] = None, n: Optional[int] = None) -> str:
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
     args = list(sys.argv[1:] if argv is None else argv)
+    if args[:1] == ["--admission"]:
+        # THE SWITCH BACK (utils.heavy_admission): binds every job on this code at its next poll, queued ones included
+        try:
+            print(HA.set_mode(lock_dir(), args[1] if len(args) == 2 else ""))
+        except ValueError as e:
+            print(f"[heavy_slots] REFUSING: {e}", file=sys.stderr)
+            return 2
+        return 0
     if args[:1] != ["--status"]:
         print(__doc__)
         return 0 if args[:1] in (["-h"], ["--help"]) else 2

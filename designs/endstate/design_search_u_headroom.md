@@ -56,7 +56,8 @@ unit read committed artefacts only; it ran one arithmetic script (the power tabl
 
    **It resolves large effects only.** An interaction the size of a third of the gap (≈ 3.5 pp) would need ≈ 5,100
    deals a set.
-7. **When it can run.** Not on the local agent cores. Their 2 heavy slots are shared with the N1-P, H-CTX and X59-S
+7. **When it can run.** Not on the local agent cores. Their heavy slots (2 when this was sized; ≤ 4 by memory since 2026-11-09, on the
+   same 3 cores: `designs/ops/testing.md`) are shared with the N1-P, H-CTX and X59-S
    reads, and ≈ 560 CPU-h would take 3–7 weeks there. A rented CPU box (an owner question, strategy §3.1) makes it a
    1–2-day job for ≈ $15–50 (UNVERIFIED). The live player's build and stage 0 (≈ 4–5 CPU-h for the cost re-size) can
    go locally whenever a slot is free (§5).
@@ -310,7 +311,7 @@ policies from turn 1. S-U's pairs share nine turns, and a game with no deviation
 
 ## 5. When it can run
 
-**Locally, not now.** The 2 heavy slots on rule 5b's agent cores are shared with:
+**Locally, not now.** The heavy slots on rule 5b's agent cores (2 when this was sized) are shared with:
 - N1-P look 1 (≈ 60 h left at its start);
 - the H-CTX read (35–70 lane-h);
 - X59-S's reads;

@@ -469,7 +469,7 @@ does, the full leaf stays the reference and R-PAIR decides the RNG build.
   0.10–0.40 CPU-s ⇒ **≈ 4–15 CPU-hours**.
 - **CPU only. No GPU, no lease.** CP's forward runs on CPU (the playout loop batches every pending decision of a root
   into one forward).
-- Standing rule 5's heavy-job clause: under `scripts/ops/mem_cap.sh`, `nice -n 19`, ≤ 2 heavy jobs at once, detached
+- Standing rule 5's heavy-job clause: under `scripts/ops/mem_cap.sh` (the heavy slots admit it by its cap), `nice -n 19`, detached
   (`setsid nohup`), durable rows (one fsync'd JSONL row per state), resumable by state id, kill-and-resume tested once
   on a pilot subset (the `crn_label_refit` pattern). The live run's trainer and Rust core keep priority.
 - "Small GPU slices" belong to the LABEL FACTORY at scale (a T2-batched forward makes a playout's sim + encode the

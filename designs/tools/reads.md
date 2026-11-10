@@ -204,7 +204,7 @@ dir and log), started on a thread that only waits on the child. Nothing on the p
 `main.anchors`, the peers, model loading) knows about K.
 
 - **The cap.** K is clamped to the box's heavy-slot count (`utils.heavy_slots.slot_count()`; `$GEN3AI_HEAVY_SLOTS`;
-  2 by default, read at the supervisor's start) with a logged line. The supervisor log's `start` event records
+  4 under admission by memory, 2 in count mode, `designs/ops/testing.md`; read at the supervisor's start) with a logged line. The supervisor log's `start` event records
   `concurrency` (effective) and `concurrency_requested`. `--lane s` with K above 1 is refused.
 - **Order and results.** The queue order is unchanged (unit seeds outermost); the first K of it start together, and a
   unit is never in flight twice. Counting, the `MAX_ATTEMPTS` retry and the exit-88 long-lane fallback are the unit's
@@ -219,7 +219,7 @@ dir and log), started on a thread that only waits on the child. Nothing on the p
   gives the WHOLE box (no run live, no lease) names its cores in the supervisor's environment
   (`$GEN3AI_ANCHOR_CORES`, e.g. `0-15`, with `$GEN3AI_HEAVY_SLOTS` raised to K); a unit launched while the slots are
   wanted sets that shape aside (`kakuna.unit_shape`): it runs on the agent cores and queues for the box's own slot
-  count, so a run that starts mid-read meets only the units in flight and the usual two; the operator still holds the
+  admission, so a run that starts mid-read meets only the units in flight and the jobs the box's rule admits; the operator still holds the
   lane and drains it (`hold`) before such a run starts. **UNVERIFIED:** the
   throughput gain over K = 1 is not measured; read units/h from `units.jsonl` (`start` to `end` `wall_s`) at K = 1 and
   K = 2 before relying on it.

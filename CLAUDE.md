@@ -51,9 +51,10 @@ Briefs do not repeat these; an agent that breaks one has broken its brief.
    open a CUDA context).
 5b. **While a training run is live, agent CPU work runs at low priority on the agent cores**: `nice -n 19` and
    `taskset -c 5-7,13-15` (3 whole physical cores; CPU n and n+8 are SMT siblings), because nice alone did not protect
-   a live run. A heavy job goes under `scripts/ops/mem_cap.sh`, whose 2 heavy slots hold the box to ≤ 2 heavy jobs
-   (memory cannot be shared by priority); **a job of ≤ 10 min declares `--max-s <S>`** (short lane: jumps queued
-   chunks, killed past S + 30 s with exit 88). A unit the orchestrator marks BLOCKING the GPU's next work sets
+   a live run. A heavy job goes under `scripts/ops/mem_cap.sh <GB>`: its cap is enforced, and the heavy slots admit it
+   while the running caps fit the box's memory, at most 4 at once (memory cannot be shared by priority; declare the
+   cap the job needs); **a job of ≤ 10 min declares `--max-s <S>`** (short lane: jumps queued chunks, killed past
+   S + 30 s with exit 88). A unit the orchestrator marks BLOCKING the GPU's next work sets
    `GEN3AI_BLOCKING=<why>` (it skips the slots) and may run at nice 0 on the agent cores — launched that way, since
    renicing to a lower nice is refused.
 6. **`models/` is read-only** except your own new run dirs; **no `data/` change while a run pinned BEFORE

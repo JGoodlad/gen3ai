@@ -20,8 +20,10 @@ USAGE
     scripts/ops/mem_cap.sh --status           # the heavy slice, every capped job, the HEAVY SLOTS
 
 HEAVY SLOTS (rule 5b, utils/heavy_slots.py): while a training run is live or the GPU is leased (or
-with --slot) the job first takes one of the box's 2 heavy slots, waiting with a visible line; --no-wait
-refuses at once (exit 87). A job the orchestrator marks BLOCKING ($GEN3AI_BLOCKING=<why> or --blocking
+with --slot) the job first takes one of the box's heavy slots, waiting with a visible line; --no-wait
+refuses at once (exit 87). ADMISSION IS BY MEMORY (utils/heavy_admission.py): the job runs while the caps of
+the running jobs plus its own <GB> fit the box's memory less a reserve, at most 4 at once; so declare the cap
+the job needs, not a habit. `python -m utils.heavy_slots --admission count` is the fixed count of 2 again. A job the orchestrator marks BLOCKING ($GEN3AI_BLOCKING=<why> or --blocking
 <why>) bypasses them; a job inside a slot holder (the routine gate holds one) takes none. Lock order:
 gate_lock.sh OUTSIDE mem_cap.sh.
 

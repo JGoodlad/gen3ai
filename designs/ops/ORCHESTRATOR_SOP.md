@@ -150,8 +150,9 @@ entries naming what they supersede) → **dispatch** the next probe or build to 
   RETRIES — a retry restarts an agent from scratch — and that cause is gone: the keep-alive latch
   patch (2026-10-07) took watchdog aborts from 131 to 0 (§7). Size the fan-out by the RESOURCES that
   actually bind, each with its own guard: ONE GPU lease (standing rule 5); ONE routine gate at a
-  time (`scripts/ops/gate_lock.sh`); while a training run is live, ≤ 2 heavy CPU jobs on ≤ 3 whole
-  physical cores (rule 5b; the three rules for a queued job are the brief bullet below); no two agents on the same files (separate worktrees, disjoint scopes);
+  time (`scripts/ops/gate_lock.sh`); while a training run is live, the heavy CPU jobs whose declared caps fit the box's memory (≤ 4;
+  `designs/ops/testing.md` "The heavy slots admit by MEMORY"; `python -m utils.heavy_slots --admission count` is the
+  fixed count of 2 again) on ≤ 3 whole physical cores, which are the limit that binds (rule 5b; the three rules for a queued job are the brief bullet below); no two agents on the same files (separate worktrees, disjoint scopes);
   and quota (frugal, not stingy). Re-impose a cap only if stalls return (check
   `cc_keepalive_patch.py self`) — then measure, do not guess.
 - **Quota: the account is on the Max 20x plan — plenty, and never to be wasted** (owner,

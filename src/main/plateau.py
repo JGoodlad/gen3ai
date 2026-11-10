@@ -59,7 +59,7 @@ SCHEDULE_TAG = "gen3_plateau_t1_schedule_v1"
 SCHEDULE_SEED = 0
 #: PARALLEL BATCHES (T38, readiness F14 / T33-2): how many 40-pair batches ONE tick keeps in flight — one engine,
 #: one process, one cycle per wave (``main.h2h.play.play_waves``), so the knob costs no process and no model copy
-#: (rule 5b's ≤ 2 heavy jobs holds at any value). 4 is the measured knee (designs/endstate/design_x26_readiness.md
+#: (the tick is ONE heavy job at any value). 4 is the measured knee (designs/endstate/design_x26_readiness.md
 #: §2.6); 1 is the one-batch-per-cycle loop of before. The decision is the rule's, folded in batch order, at any
 #: value: a wave's batches past the decision are SURPLUS rows the rule never reads.
 DEFAULT_INFLIGHT = 4

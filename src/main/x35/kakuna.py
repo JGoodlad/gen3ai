@@ -127,8 +127,8 @@ CORES = "5-7,13-15"
 #: owner gives the WHOLE box while no training run is live and the GPU is not leased (S′-HONEST's read,
 #: ``design_sprime_honest.md``), its K raised with ``$GEN3AI_HEAVY_SLOTS``. Whenever the heavy slots are wanted (a run
 #: live or a lease held: rule 5b) a NEW unit sets that shape aside (:func:`unit_shape`): it runs on :data:`CORES` and
-#: queues for the box's own slot count, so a run that starts mid-read meets at most the units already in flight and
-#: the box's usual two. Cores and slots are scheduling only: the same units, seeds and records on any set.
+#: queues for the box's own admission (``utils.heavy_admission``), so a run that starts mid-read meets at most the units
+#: already in flight and the jobs the box's rule admits. Cores and slots are scheduling only: the same units, seeds and records on any set.
 CORES_ENV = "GEN3AI_ANCHOR_CORES"
 #: the heavy-slot count a unit inherits from its supervisor (``utils.heavy_slots``); dropped when the shape is set aside
 SLOTS_ENV = "GEN3AI_HEAVY_SLOTS"

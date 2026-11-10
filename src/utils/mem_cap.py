@@ -56,7 +56,9 @@ place the peak of a well-behaved job can be read; an OOM-killed scope stays load
 ``Result=oom-kill`` and ``MemoryPeak``, which this wrapper reads and then ``reset-failed``s.
 
 HEAVY-JOB SLOTS (2026-10-19, ``utils.heavy_slots``): while a training run is live (or with ``--slot``)
-the job first takes one of the box's 2 heavy slots — rule 5b's "<= 2 heavy jobs" — waiting with a
+the job first takes one of the box's heavy slots, admitted by ITS CAP: it runs while the caps of the running jobs
+fit the box's memory, at most 4 at once (``utils.heavy_admission``; ``python -m utils.heavy_slots --admission count``
+is the fixed count of 2 again), waiting with a
 visible line, FIFO (the oldest waiter gets the next free slot; ``--no-wait`` refuses at once, exit 87). A job the orchestrator marks BLOCKING
 (``$GEN3AI_BLOCKING=<reason>`` or ``--blocking <reason>``) bypasses them; a job inside a holder (the
 routine gate holds one) takes none. ``--status`` lists holders, the queue and the bypassers.
@@ -124,19 +126,23 @@ import tempfile
 from dataclasses import dataclass
 from typing import Callable, List, Optional, Sequence, Tuple
 
+from utils import heavy_admission as HA
 from utils import heavy_slots as HS
 
-SLICE_ENV = "GEN3AI_HEAVY_SLICE"
-SLICE_GB_ENV = "GEN3AI_HEAVY_SLICE_GB"
-DEFAULT_SLICE = "gen3ai-heavy.slice"
-DEFAULT_SLICE_GB = 64.0
+#: the heavy slice's names live in ``utils.heavy_admission`` (the slots read the running caps from the slice's cgroup)
+SLICE_ENV, SLICE_GB_ENV = HA.SLICE_ENV, HA.SLICE_GB_ENV
+DEFAULT_SLICE, DEFAULT_SLICE_GB = HA.DEFAULT_SLICE, HA.DEFAULT_SLICE_GB
+slice_name, slice_gb = HA.slice_name, HA.slice_gb
 OOM_SCORE_ADJ = 500
 TERM_GRACE_ENV = "GEN3AI_MEM_CAP_TERM_GRACE_S"
 #: Seconds from the FIRST stop signal to SIGKILL of everything left in the scope. A graceful stop
 #: (the trainer's checkpoint-and-exit, a pytest teardown, a cargo shutdown) takes seconds; a job that has
 #: not ended in a minute is not going to, and "a timeout that does not stop the job" was the hazard.
 DEFAULT_TERM_GRACE_S = 60.0
-UNIT_PREFIX = "gen3ai-capped-"
+UNIT_PREFIX = HA.UNIT_PREFIX
+#: every option ``main`` takes before ``<GB>`` (:func:`declared_cap_gb` reads a command line with the same two lists)
+VALUE_FLAGS = ("--name", "--slice-gb", "--term-grace", "--blocking", "--max-s", "--max-run-s")
+BARE_FLAGS = ("--slot", "--no-wait")
 EXIT_NOCAP = 85
 EXIT_OOM = 86
 EXIT_SHORT_OVERRUN = HS.EXIT_SHORT_OVERRUN       # 88
@@ -280,13 +286,27 @@ def fmt_gb(n: Optional[int]) -> str:
     return "?" if n is None else f"{n / GiB:.2f} GB"
 
 
-def slice_name() -> str:
-    return os.environ.get(SLICE_ENV) or DEFAULT_SLICE
-
-
-def slice_gb() -> float:
-    raw = os.environ.get(SLICE_GB_ENV)
-    return float(raw) if raw else DEFAULT_SLICE_GB
+def declared_cap_gb(cmd: Sequence[str]) -> Optional[float]:
+    """The cap a command line declares when it IS a capped job (``…/mem_cap.sh [options] <GB> <cmd…>``), else ``None``.
+    ``utils.gate_lock`` takes the routine gate's heavy slot before its ``mem_cap.sh`` child exists; this is how that slot
+    is admitted by the gate's own cap (``utils.heavy_admission``) and not by the fixed count."""
+    args = list(cmd)
+    if not args or os.path.basename(args[0]) != "mem_cap.sh":
+        return None
+    i = 1
+    while i < len(args) and args[i].startswith("--") and args[i] != "--":
+        if args[i] in VALUE_FLAGS:
+            i += 2
+        elif args[i] in BARE_FLAGS:
+            i += 1
+        else:
+            return None
+    try:
+        gb = float(args[i])
+        gb_to_bytes(gb)
+    except (IndexError, ValueError):
+        return None
+    return gb if gb < float("inf") else None
 
 
 def term_grace_s() -> float:
@@ -553,6 +573,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     max_run_s: Optional[float] = None
     while args and args[0].startswith("--") and args[0] != "--":
         flag = args.pop(0)
+        if flag not in VALUE_FLAGS + BARE_FLAGS:
+            print(f"[mem_cap] unknown option {flag!r}", file=sys.stderr)
+            return 2
         if flag == "--name" and args:
             name = args.pop(0)
         elif flag == "--slice-gb" and args:
@@ -614,9 +637,14 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
               f"${TERM_GRACE_ENV}, or drop the declaration and queue as a LONG job", file=sys.stderr)
         return 2
     try:
-        with HS.heavy_slot(args, force=force_slot, wait=wait, max_s=max_s) as slot:
-            return run_capped(args, gb, name=name, slice_gb_=sgb, term_grace=grace, slot_fd=HS.slot_fd(slot),
-                              deadline_s=HS.short_deadline_s(slot, max_s), declared_s=max_s, max_run_s=max_run_s).rc
+        with HS.heavy_slot(args, force=force_slot, wait=wait, max_s=max_s, cap_gb=gb) as slot:
+            res = run_capped(args, gb, name=name, slice_gb_=sgb, term_grace=grace, slot_fd=HS.slot_fd(slot),
+                             deadline_s=HS.short_deadline_s(slot, max_s), declared_s=max_s, max_run_s=max_run_s)
+            if slice_name() == DEFAULT_SLICE:
+                # the measurement the admission rule is tuned from: every capped job's cap and peak (a test slice logs none)
+                HS.log_event(HS.lock_dir(), "capped", unit=res.unit, cap_gb=gb, slot=slot, rc=res.rc, oom=res.oom,
+                             peak_gb=None if res.peak_bytes is None else round(res.peak_bytes / GiB, 3))
+            return res.rc
     except (HS.SlotsFull, TimeoutError) as e:
         print(str(e), file=sys.stderr)
         return HS.EXIT_SLOTS_FULL

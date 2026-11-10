@@ -9,8 +9,9 @@ the one-at-a-time lane did. At K = 1 the unit runs INLINE on the supervisor's ow
 thread. Nothing a unit reads depends on another unit or on K, so the units, the seeds and the per-unit records are the
 same at every K; only the wall clock moves.
 
-K is capped at the box's heavy-slot count (``utils.heavy_slots.slot_count``): every in-flight unit is a short-lane job,
-and while a training run is live or the GPU is leased each one takes a slot, so more units than slots would only queue.
+K is capped at the box's heavy-slot count (``utils.heavy_slots.slot_count``: 4 under admission by memory, 2 in count
+mode): every in-flight unit is a short-lane job, and while a training run is live or the GPU is leased each one takes a
+slot, so more units than slots would only queue.
 """
 from __future__ import annotations
 

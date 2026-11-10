@@ -64,6 +64,7 @@ from typing import Callable, Iterator, List, Optional, Sequence, Tuple
 
 from utils import gate_lock_status as GS
 from utils import heavy_slots as HS
+from utils import mem_cap
 from utils import procfs
 
 GATE_SLOTS = 1
@@ -242,6 +243,7 @@ def gate_slot(*, report_every_s: float = REPORT_EVERY_S, poll_s: float = POLL_S,
     paths = [slot_path(i, d) for i in range(n)]
     fds = [os.open(str(p), os.O_RDWR | os.O_CREAT | os.O_CLOEXEC, 0o666) for p in paths]
     what = f" ({what})" if what else ""
+    cap = mem_cap.declared_cap_gb(cmd)         # the gate's own cap (`mem_cap.sh 24 …`) admits its heavy slot by memory
     try:
         t_start = time.monotonic()
         while True:
@@ -252,13 +254,14 @@ def gate_slot(*, report_every_s: float = REPORT_EVERY_S, poll_s: float = POLL_S,
                 try:
                     # rule 5b: the gate holds one heavy slot itself - taken NON-BLOCKING: a gate must never wait
                     # for a heavy slot while holding the gate lock (the CONVOY of 2026-10-19/20)
-                    heavy.enter_context(HS.heavy_slot(cmd, log=log, wait=False, keep_ticket=True))
+                    heavy.enter_context(HS.heavy_slot(cmd, log=log, wait=False, keep_ticket=True, cap_gb=cap))
                 except HS.SlotsFull:
                     fcntl.flock(fds[slot], fcntl.LOCK_UN)
                     log(f"[gate_lock] no heavy slot is free: released gate slot {slot} of {n}{what}, waiting for a "
                         f"heavy slot holding NO lock (the queue behind this gate keeps moving)")
                     left = None if timeout_s is None else max(0.0, timeout_s - (time.monotonic() - t_start))
-                    HS.await_free_slot(cmd, log=log, timeout_s=left, poll_s=poll_s, report_every_s=report_every_s)
+                    HS.await_free_slot(cmd, log=log, timeout_s=left, poll_s=poll_s, report_every_s=report_every_s,
+                                       cap_gb=cap)
                     continue
                 t_acq = time.time()
                 log(f"[gate_lock] acquired slot {slot} of {n}{what} at "

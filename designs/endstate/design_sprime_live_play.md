@@ -134,7 +134,7 @@ watchdog, two identity fields on each searched decision, the choice-level identi
     games. Cost never changes n.
 
 **Wall time.**
-- **Locally**, on the 2 heavy slots with `--concurrency 2`: a searched game runs single-core (stage 0's wall / CPU
+- **Locally**, on 2 heavy slots with `--concurrency 2`: a searched game runs single-core (stage 0's wall / CPU
   was 1.06). With both slots ours that is **≈ 8–10 days** (≈ 13–15 at the smoke's ratio). Shared with the queue's
   other reads it is **≈ 2–5 weeks**.
 - **On a rented CPU box** (UNVERIFIED; needs the owner; CPU only, no human data, no GPU): a 64-vCPU / 128–192 GB
