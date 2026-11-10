@@ -108,8 +108,9 @@ def test_a_matched_look_takes_every_arm_at_one_step_and_eq_takes_the_wide_arms_e
 
 
 def test_the_spare_seed_replaces_a_registered_seed_in_its_own_arm_only():
-    assert K.design_seeds() == {"C": (5101, 5102), "W": (5103, 5104), "Br": (5105, 5106), "WB": (5107, 5108)}
-    assert K.design_seeds(5106)["Br"] == (5105, 5109)
+    assert K.design_seeds() == {"C": (5101, 5102, 5110), "W": (5103, 5104, 5111), "Br": (5105, 5106, 5112),
+                                "WB": (5107, 5108, 5113)}
+    assert K.design_seeds(5106)["Br"] == (5105, 5109, 5112) and K.design_seeds(5113)["WB"] == (5107, 5108, 5109)
     assert {a: s for a, s in K.design_seeds(5106).items() if a != "Br"} == \
         {a: s for a, s in K.design_seeds().items() if a != "Br"}
     # --replace names the REPLACED registered seed; the spare's own number is refused, and says what to give
@@ -138,11 +139,11 @@ def test_a_checkpoint_more_than_one_interval_late_or_missing_is_not_a_looks_chec
 
 
 # ---------------------------------------------------------------------------------------------- the guards
-def test_eight_clean_runs_plan_the_twenty_four_cells_the_later_arm_playing(tmp_path):
+def test_twelve_clean_runs_plan_the_fifty_four_cells_the_later_arm_playing(tmp_path):
     make_all(tmp_path)
     doc, probs = plan_of(tmp_path)
     assert probs == [] and doc is not None
-    assert len(doc["cells"]) == 24 and len({tuple(c) for c in doc["cells"]}) == 24
+    assert len(doc["cells"]) == 54 and len({tuple(c) for c in doc["cells"]}) == 54
     arm_of = {f["checkpoint"]: a for a in X.ARMS for f in doc["runs"][a]}
     for player, opponent in doc["cells"]:
         assert X.ARMS.index(arm_of[player]) > X.ARMS.index(arm_of[opponent])
@@ -152,7 +153,7 @@ def test_eight_clean_runs_plan_the_twenty_four_cells_the_later_arm_playing(tmp_p
     assert doc["survivor"] is None
     assert doc["names"]["forum72"]["pairs"] == 500
     shas = [f["sha256"] for a in X.ARMS for f in doc["runs"][a]]
-    assert len(set(shas)) == 8 and all(len(s) == 64 for s in shas)
+    assert len(set(shas)) == 12 and all(len(s) == 64 for s in shas)
 
 
 def _one_bad(tmp_path: Path, seed: int = 5105, **kw: Any) -> str:
@@ -259,7 +260,7 @@ def test_any_knob_that_moved_in_one_run_and_not_in_the_control_refuses_the_plan(
     make_all(tmp_path / "b", skip=(5101,))
     make_run(tmp_path / "b", "C", 5101, cli={"gamma": 0.99})
     probs = plan_of(tmp_path / "b")[1]
-    assert len(probs) == 7 and all("differs from the control's in ['gamma']" in x for x in probs)
+    assert len(probs) == 11 and all("differs from the control's in ['gamma']" in x for x in probs)
     assert not any(x.startswith("rb_b1c_s5101") for x in probs)
 
 
@@ -337,7 +338,7 @@ def test_the_replacement_plan_reads_the_spare_seeds_run_in_the_replaced_runs_arm
     assert plan_of(tmp_path)[0] is None
     doc, probs = plan_of(tmp_path, replace=5106)
     assert probs == [] and doc is not None and doc["replaced_seed"] == 5106
-    assert [f["run"] for f in doc["runs"]["Br"]] == ["rb_b1br_s5105", "rb_b1br_s5109"]
+    assert [f["run"] for f in doc["runs"]["Br"]] == ["rb_b1br_s5105", "rb_b1br_s5109", "rb_b1br_s5112"]
 
 
 def test_the_equal_compute_look_takes_the_wide_arms_at_the_earlier_step(tmp_path):
@@ -351,35 +352,35 @@ def test_the_equal_compute_look_takes_the_wide_arms_at_the_earlier_step(tmp_path
 
 # ------------------------------------------------------------------------------------- after a STOP-HARM
 def test_a_survivor_plan_is_the_surviving_arm_against_the_control_and_needs_only_those_runs(tmp_path):
-    for arm, seeds in (("C", (5101, 5102)), ("Br", (5105, 5106))):  # the wide arms were stopped: no folder at 100M
+    for arm, seeds in (("C", A.SEEDS["c"]), ("Br", A.SEEDS["br"])):  # the wide arms were stopped: no folder at 100M
         for seed in seeds:
             make_run(tmp_path, arm, seed, steps=(50_000_081, 100_000_044))
-    assert plan_of(tmp_path, "100M")[0] is None  # the full look still needs all eight
+    assert plan_of(tmp_path, "100M")[0] is None  # the full look still needs all twelve
     doc, probs = plan_of(tmp_path, "100M", survivor="breadth")
     assert probs == [] and doc is not None and doc["survivor"] == "breadth" and set(doc["runs"]) == {"C", "Br"}
     arm_of = {f["checkpoint"]: a for a in doc["runs"] for f in doc["runs"][a]}
-    assert len(doc["cells"]) == 4 and all((arm_of[p], arm_of[o]) == ("Br", "C") for p, o in doc["cells"])
+    assert len(doc["cells"]) == 9 and all((arm_of[p], arm_of[o]) == ("Br", "C") for p, o in doc["cells"])
     assert doc["names"]["forum72"]["request"] == "b1_100m_breadthonly_forum72"
     assert plan_of(tmp_path, "100M", survivor="width")[0] is None  # the other survivor's runs are not there
-    with pytest.raises(K.LookError, match="all eight"):
+    with pytest.raises(K.LookError, match="every registered run"):
         plan_of(tmp_path, "50M", survivor="breadth")
     with pytest.raises(K.LookError, match="not a registered seed of"):
         plan_of(tmp_path, "100M", survivor="breadth", replace=5103)  # a stopped arm's seed is not replaced
 
 
 def test_a_survivor_read_reports_the_simple_effect_and_classes_nothing(tmp_path):
-    for arm, seeds in (("C", (5101, 5102)), ("Br", (5105, 5106))):
+    for arm, seeds in (("C", A.SEEDS["c"]), ("Br", A.SEEDS["br"])):
         for seed in seeds:
             make_run(tmp_path, arm, seed, steps=(50_000_081, 100_000_044))
     doc, _ = plan_of(tmp_path, "100M", survivor="breadth")
     cells = {p: _cells(doc, p, {("Br", "C"): 0.70}) for p in X.PANELS}
     v = K.read(doc, cells)
     assert v["outcome"] == X.NO_CLASS and v["to_owner"] is True and v["survivor"] == "breadth"
-    assert v["views"]["forum72"]["estimate_pp"] == pytest.approx(20.0) and v["views"]["N"]["df"] == 2
-    assert "factors" not in v and len(v["checkpoints"]) == 4
+    assert v["views"]["forum72"]["estimate_pp"] == pytest.approx(20.0) and v["views"]["N"]["df"] == 4
+    assert "factors" not in v and len(v["checkpoints"]) == 6
     with pytest.raises(K.LookError, match="full 100M look alone"):
         K.read(doc, cells, {"width": X.KAKUNA_POSITIVE, "breadth": X.KAKUNA_POSITIVE})
-    # the full look's 24 cells are not a survivor look's: every extra cell is named, and nothing is read
+    # the full look's 54 cells are not a survivor look's: every extra cell is named, and nothing is read
     full = dict(cells)
     full["home72"] = cells["home72"] + [SimpleNamespace(player="f" * 64, opponent="e" * 64, score=0.5, n_pairs=1000,
                                                         verdict="OK", reasons=(), d=0, games=2000)]
@@ -468,7 +469,7 @@ def test_a_short_missing_or_foreign_cell_on_any_panel_makes_the_look_inconclusiv
     short["p72"] = _cells(doc, "p72", {}, n_pairs=499)
     v = K.read(doc, short)
     assert v["outcome"] == K.INCONCLUSIVE and "factors" not in v
-    assert len(v["reasons"]) == 24 and all(r.startswith("p72: cell ") and "499 completed pairs < the registered 500"
+    assert len(v["reasons"]) == 54 and all(r.startswith("p72: cell ") and "499 completed pairs < the registered 500"
                                            in r for r in v["reasons"])
     over = dict(cells)  # games added to a look after it was planned are no part of the registered read
     over["p72"] = _cells(doc, "p72", {}, n_pairs=1000)
@@ -476,7 +477,7 @@ def test_a_short_missing_or_foreign_cell_on_any_panel_makes_the_look_inconclusiv
     gone = dict(cells)
     gone["forum72"] = cells["forum72"][:-1]
     assert [r[:22] for r in K.read(doc, gone)["reasons"]] == ["forum72: missing cell "]
-    assert len(K.read(doc, {"home72": cells["home72"]})["reasons"]) == 72
+    assert len(K.read(doc, {"home72": cells["home72"]})["reasons"]) == 3 * 54
     foreign = dict(cells)
     foreign["home72"] = cells["home72"] + [SimpleNamespace(player="f" * 64, opponent="e" * 64, score=0.5,
                                                          n_pairs=1000, verdict="OK", reasons=(), d=0, games=2000)]
@@ -485,7 +486,7 @@ def test_a_short_missing_or_foreign_cell_on_any_panel_makes_the_look_inconclusiv
     aborted["home72"] = cells["home72"][:-1] + [SimpleNamespace(
         player=cells["home72"][-1].player, opponent=cells["home72"][-1].opponent, score=0.5, n_pairs=1000,
         verdict="INCONCLUSIVE", reasons=("30 % of its games aborted",), d=0, games=2000)]
-    assert K.read(doc, aborted)["reasons"] == ["home72: cell rb_b1wb_s5108 vs rb_b1br_s5106: 30 % of its games aborted"]
+    assert K.read(doc, aborted)["reasons"] == ["home72: cell rb_b1wb_s5113 vs rb_b1br_s5112: 30 % of its games aborted"]
 
 
 def test_drawn_games_are_reported_a_panel_and_more_than_a_quarter_of_a_cell_is_inconclusive(tmp_path):
@@ -493,13 +494,13 @@ def test_drawn_games_are_reported_a_panel_and_more_than_a_quarter_of_a_cell_is_i
     ok = dict(cells)
     ok["forum72"] = _cells(doc, "forum72", {}, draws=250)  # exactly 25 % of 1,000 games: read, and reported
     v = K.read(doc, ok)
-    assert "factors" in v and v["draws"]["forum72"] == {"games": 24_000, "draws": 6_000, "share": 0.25,
+    assert "factors" in v and v["draws"]["forum72"] == {"games": 54_000, "draws": 13_500, "share": 0.25,
                                                          "worst_cell_share": 0.25}
-    assert v["draws"]["home72"]["draws"] == 0 and v["draws"]["home72"]["games"] == 48_000
+    assert v["draws"]["home72"]["draws"] == 0 and v["draws"]["home72"]["games"] == 108_000
     bad = dict(cells)
     bad["forum72"] = _cells(doc, "forum72", {}, draws=251)
     v = K.read(doc, bad)
-    assert v["outcome"] == K.INCONCLUSIVE and len(v["reasons"]) == 24
+    assert v["outcome"] == K.INCONCLUSIVE and len(v["reasons"]) == 54
     assert all("251 of 1000 games drawn (the turn limit) > 25 %" in r for r in v["reasons"])
 
 
@@ -584,7 +585,7 @@ def _write_look(root: Path, doc: Dict[str, Any], *, commit: str = PIN, device: s
 
 @pytest.fixture()
 def survivor_doc(tmp_path):
-    for arm, seeds in (("C", (5101, 5102)), ("Br", (5105, 5106))):
+    for arm, seeds in (("C", A.SEEDS["c"]), ("Br", A.SEEDS["br"])):
         for seed in seeds:
             make_run(tmp_path / "models", arm, seed, steps=(50_000_081, 100_000_044))
     doc, probs = plan_of(tmp_path / "models", "100M", survivor="breadth")
@@ -603,11 +604,11 @@ def test_the_ledger_read_maps_real_rows_to_the_looks_cells_and_passes_rows_playe
     assert row_reasons == []
     shas = {f["sha256"] for a in survivor_doc["runs"] for f in survivor_doc["runs"][a]}
     for panel in X.PANELS:
-        assert len(cells[panel]) == 4 and {c.player for c in cells[panel]} | {c.opponent for c in cells[panel]} == shas
+        assert len(cells[panel]) == 9 and {c.player for c in cells[panel]} | {c.opponent for c in cells[panel]} == shas
         assert all(c.n_pairs == 2 and c.games == 4 and c.d == 0 and c.score == 0.5 for c in cells[panel])
     v = K.read(survivor_doc, cells, None, row_reasons)  # 2 pairs a cell is not the registered count: said, not read
     assert v["outcome"] == K.INCONCLUSIVE and all("< the registered" in r for r in v["reasons"])
-    assert v["draws"]["p72"] == {"games": 16, "draws": 0, "share": 0.0, "worst_cell_share": 0.0}
+    assert v["draws"]["p72"] == {"games": 36, "draws": 0, "share": 0.0, "worst_cell_share": 0.0}
 
 
 @pytest.mark.integration
@@ -644,10 +645,44 @@ def test_plan_writes_the_cells_file_play_many_takes_and_exits_three_when_refused
     assert not (tmp_path / "w").exists()
     make_run(tmp_path / "models", "WB", 5108)
     assert K.main(["plan", "--look", "50M", "--pin", PIN, "--out", str(tmp_path / "w")]) == 0
-    assert capsys.readouterr().out.strip() == "24"
+    assert capsys.readouterr().out.strip() == "54"
     cells = json.loads((tmp_path / "w" / "cells_plan.json").read_text())
-    assert len(cells) == 24 and all(len(c) == 2 and Path(c[0]).is_file() and Path(c[1]).is_file() for c in cells)
+    assert len(cells) == 54 and all(len(c) == 2 and Path(c[0]).is_file() and Path(c[1]).is_file() for c in cells)
     assert json.loads((tmp_path / "w" / "look.json").read_text())["pin"] == PIN
+
+
+def test_the_early_check_reads_one_run_at_its_first_checkpoint_and_exits_three_on_a_problem(tmp_path, monkeypatch,
+                                                                                            capsys):
+    """PREREG §10 (Amendment 1): a run is checked hours in, alone, with the plan's own per-run guard."""
+    models = tmp_path / "models"
+    monkeypatch.setenv("GEN3AI_MODELS_DIR", str(models))
+    monkeypatch.setattr(K, "expected_levers", lambda arm, seed, pin: LEVERS[arm])
+    first = dict(steps=(1_000_040,), last_step=1_000_040)
+    make_run(models, "W", 5103, **first)
+    assert K.main(["check-run", "--arm", "W", "--seed", "5103", "--pin", PIN]) == 0
+    got = json.loads(capsys.readouterr().out)
+    assert got["ok"] is True and got["problems"] == [] and got["run"] == "rb_b1w_s5103" and got["steps"] == 1_000_040
+    assert got["checkpoint"].endswith("checkpoint_1000040_steps.zip") and got["init_num_threads"] == 8
+    # The wide run typed WITHOUT its lever: the launch argv and the resolved width both name it.
+    make_run(models, "W", 5104, **first, cli={"d_model": 128, "trunk_ffn_dim": 256},
+             original_command=" ".join(["/x/launcher", *A.build_argv("c", 5101, PIN)]))
+    assert K.main(["check-run", "--arm", "W", "--seed", "5104", "--pin", PIN]) == 3
+    bad = json.loads(capsys.readouterr().out)
+    assert bad["ok"] is False and any("original_command is not the registered argv" in p for p in bad["problems"])
+    assert any(p.startswith("cli_args.d_model 128") for p in bad["problems"])
+    # Another pin, no checkpoint yet, no folder: each is a problem, never a pass.
+    assert K.main(["check-run", "--arm", "W", "--seed", "5103", "--pin", OTHER_PIN]) == 3
+    assert any("is not one entry at" in p for p in json.loads(capsys.readouterr().out)["problems"])
+    assert K.main(["check-run", "--arm", "W", "--seed", "5103", "--pin", PIN, "--step", "2000000"]) == 3
+    assert json.loads(capsys.readouterr().out)["checkpoint"] is None
+    assert K.main(["check-run", "--arm", "C", "--seed", "5101", "--pin", PIN]) == 3
+    assert json.loads(capsys.readouterr().out)["problems"] == [f"no run folder under {models}"]
+    # The spare is checked under the arm it replaced in; a seed of another arm is refused, not checked.
+    make_run(models, "Br", A.SPARE_SEED, **first)
+    assert K.main(["check-run", "--arm", "Br", "--seed", str(A.SPARE_SEED), "--pin", PIN]) == 0
+    capsys.readouterr()
+    assert K.main(["check-run", "--arm", "C", "--seed", "5103", "--pin", PIN]) == 2
+    assert "REFUSED: seed 5103 is not arm 'c'" in capsys.readouterr().err
 
 
 def test_names_prints_what_the_driver_registers_and_plays(capsys):

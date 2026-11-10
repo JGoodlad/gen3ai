@@ -1,4 +1,4 @@
-"""BOUNDARY-1's arms: eight fresh production runs, each one lever from the control, at one pin (``main.b1.arms``)."""
+"""BOUNDARY-1's arms: twelve fresh production runs, each one lever from the control, at one pin (``main.b1.arms``)."""
 import json
 import re
 import shlex
@@ -15,22 +15,27 @@ E = CURRENT_ERA.code
 RECORD = "designs/research_state/measurements/boundary1_scratch_2026-11-09"
 
 
-def test_the_design_is_a_two_by_two_with_two_seeds_a_cell_and_one_seed_per_run():
+def test_the_design_is_a_two_by_two_with_three_seeds_a_cell_and_one_seed_per_run():
     assert list(A.ARMS) == ["c", "w", "br", "wb"]
     assert A.ARMS["c"] == () and A.ARMS["wb"] == A.ARMS["w"] + A.ARMS["br"]
     assert A.ARMS["w"] == ("--d-model", "256", "--trunk-ffn-dim", "512", "--allow-nonproduction-arch")
     assert A.ARMS["br"] == ("--team-mix", "n1_proc_v1@ALL:0.5", "--team-mix-sides", "both")
-    assert A.SEEDS == {"c": (5101, 5102), "w": (5103, 5104), "br": (5105, 5106), "wb": (5107, 5108)}
+    assert A.SEEDS == {"c": (5101, 5102, 5110), "w": (5103, 5104, 5111), "br": (5105, 5106, 5112),
+                       "wb": (5107, 5108, 5113)}
+    assert {a: ss[:2] for a, ss in A.SEEDS.items()} == {
+        "c": (5101, 5102), "w": (5103, 5104), "br": (5105, 5106), "wb": (5107, 5108)}, \
+        "the two seeds an arm of the registration keep their numbers: Amendment 1 adds a third, it renames none"
     seeds = [s for ss in A.SEEDS.values() for s in ss]
-    assert len(set(seeds)) == len(seeds) == 8, "no two runs share a seed, within or across arms"
+    assert len(set(seeds)) == len(seeds) == 12, "no two runs share a seed, within or across arms"
     assert A.SPARE_SEED == 5109 and A.SPARE_SEED not in seeds
-    assert A.all_seeds() == tuple(range(5101, 5110))
+    assert A.all_seeds() == tuple(range(5101, 5114))
     assert A.PHASE_STEPS == (50_000_000, 100_000_000) and A.CHECKPOINT_EVERY == 1_000_000
 
 
-def test_the_launch_order_runs_one_seed_of_every_arm_before_any_arms_second():
+def test_the_launch_order_runs_one_seed_of_every_arm_before_any_arms_next():
     assert A.LAUNCH_ORDER == (("c", 5101), ("w", 5103), ("br", 5105), ("wb", 5107),
-                              ("c", 5102), ("w", 5104), ("br", 5106), ("wb", 5108))
+                              ("c", 5102), ("w", 5104), ("br", 5106), ("wb", 5108),
+                              ("c", 5110), ("w", 5111), ("br", 5112), ("wb", 5113))
     assert sorted(A.LAUNCH_ORDER) == sorted((a, s) for a, ss in A.SEEDS.items() for s in ss)
 
 
@@ -68,9 +73,9 @@ def test_a_lever_that_leaks_into_another_arm_is_named(monkeypatch):
 
 def test_run_names_carry_the_current_eras_prefix():
     names = A.all_run_names()
-    assert names[:8] == tuple(f"{E}_b1{a}_s{s}" for a, s in A.LAUNCH_ORDER)
-    assert names[8:] == tuple(f"{E}_b1{a}_s5109" for a in A.ARMS)
-    assert len(set(names)) == 12
+    assert names[:12] == tuple(f"{E}_b1{a}_s{s}" for a, s in A.LAUNCH_ORDER)
+    assert names[12:] == tuple(f"{E}_b1{a}_s5109" for a in A.ARMS)
+    assert len(set(names)) == len(names) == 16
     for n in names:
         assert era_of_name(n) == CURRENT_ERA and run_name_warning(n) is None
         assert re.fullmatch(r"[a-z]{2}_b1(c|w|br|wb)_s51\d\d", n)
@@ -139,30 +144,31 @@ def test_describe_prints_the_block_in_launch_order(capsys):
     lines = out.splitlines()
     cmds = [ln for ln in lines if ln.startswith("python -m main.launcher ")]
     dry = [ln for ln in lines if ln.startswith("#     dry run: python -m main.launcher --dry-run ")]
-    assert len(cmds) == len(dry) == 16
+    assert len(cmds) == len(dry) == 24
     for c, d in zip(cmds, dry):
         assert d == "#     dry run: " + c.replace("main.launcher ", "main.launcher --dry-run ", 1)
-    assert [shlex.split(c)[3:] for c in cmds[:8]] == [A.build_argv(a, s, PIN) for a, s in A.LAUNCH_ORDER]
-    assert [shlex.split(c)[3:] for c in cmds[8:]] == [A.resume_argv(a, s, PIN) for a, s in A.LAUNCH_ORDER]
+    assert [shlex.split(c)[3:] for c in cmds[:12]] == [A.build_argv(a, s, PIN) for a, s in A.LAUNCH_ORDER]
+    assert [shlex.split(c)[3:] for c in cmds[12:]] == [A.resume_argv(a, s, PIN) for a, s in A.LAUNCH_ORDER]
     assert cmds[3] == (
         f"python -m main.launcher --restart-interval-hours 6 --pin-commit {PIN} --arch production --d-model 256 "
         "--trunk-ffn-dim 512 --allow-nonproduction-arch --team-mix n1_proc_v1@ALL:0.5 --team-mix-sides both "
         f"--checkpoint-every-steps 1000000 --steps 50000000 --seed 5107 --device cuda --log-level periodic "
         f"--run-name {E}_b1wb_s5107")
-    assert cmds[8] == (
+    assert cmds[12] == (
         f"python -m main.launcher --restart-interval-hours 6 --pin-commit {PIN} --model "
         f"models/{E}_b1c_s5101/final_model.zip --steps 100000000 --device cuda --log-level periodic")
     look = lines.index("# THE 50,000,000 LOOK (the harm stop) is read here, before any phase-2 command.")
-    assert lines.index(cmds[7]) < look < lines.index(cmds[8]), "the look sits between the phases"
-    assert f"# {E}_b1c_s5101, {E}_b1c_s5102" not in out and f"# C control          {E}_b1c_s5101, {E}_b1c_s5102" in out
+    assert lines.index(cmds[11]) < look < lines.index(cmds[12]), "the look sits between the phases"
+    assert f"# C control          {E}_b1c_s5101, {E}_b1c_s5102, {E}_b1c_s5110" in out
+    assert "12 FRESH launches" in out
 
 
-def test_the_fallback_block_is_eight_fresh_launches_straight_to_the_second_target(capsys):
+def test_the_fallback_block_is_twelve_fresh_launches_straight_to_the_second_target(capsys):
     assert A.main(["describe", "--block", "fallback", "--pin", PIN]) == 0
     out = capsys.readouterr().out
     cmds = [ln for ln in out.splitlines() if ln.startswith("python -m main.launcher ")]
     assert [shlex.split(c)[3:] for c in cmds] == [A.build_argv(a, s, PIN, 100_000_000) for a, s in A.LAUNCH_ORDER]
-    assert "--model" not in out and "PHASE" not in out
+    assert len(cmds) == 12 and "--model" not in out and "PHASE" not in out
 
 
 def test_describe_one_run_prints_one_argv_line(capsys):
@@ -221,7 +227,7 @@ def test_the_scan_passes_a_tree_of_other_runs_and_counts_what_it_read(tmp_path):
     assert scan["hits"] == [] and scan["sidecars"] == 5 and scan["dirs"] == 7
 
 
-@pytest.mark.parametrize("seed", [5101, 5108, 5109])
+@pytest.mark.parametrize("seed", [5101, 5108, 5109, 5110, 5113])
 def test_the_scan_refuses_a_sidecar_that_recorded_one_of_our_seeds(tmp_path, seed):
     _run(tmp_path / "state" / "ckpts", "some_run", seed=seed)   # three directories down, as the archive nests them
     hits = A.scan_collisions([tmp_path])["hits"]

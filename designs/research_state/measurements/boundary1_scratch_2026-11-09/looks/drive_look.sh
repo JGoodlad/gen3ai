@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # BOUNDARY-1, the 2 x 2 from scratch: ONE LOOK of the registered head-to-head cross (PREREG §5), played and read.
-#   24 cells (every pair of runs from different arms, the later arm in C, W, Br, WB playing), the look's checkpoints
+#   54 cells at three runs an arm (every pair of runs from different arms, the later arm in C, W, Br, WB playing;
+#   PREREG §18 Amendment 1), the look's checkpoints
 #   (the first checkpoint each run saved at or after the look's step, never final_model.zip), both sides greedy,
 #   schedule seed 0, --oracle-reveal-mode off, purpose ab, on FOUR panels: home72 at 1,000 mirrored pairs a cell,
 #   heldout72_hpfix / forum72 / p72 at 500 (batches of 500). One ledger family a panel
@@ -12,7 +13,7 @@
 #   (cd "$PIN_DIR" && ./scripts/bootstrap.sh --skip-env --with-rust --no-check)   # once, under mem_cap, rule 5b
 # usage: drive_look.sh <PIN_DIR> <PIN> <WORK_DIR> <50M|75M|100M|EQ> cpu|cuda [plan options]
 #   plan options: --eq-step N (the EQ look) | --replace <the REGISTERED seed the spare replaced, e.g. 5103> |
-#                 --survivor width|breadth (after the OTHER factor's STOP-HARM: two arms, 4 cells, no class)
+#                 --survivor width|breadth (after the OTHER factor's STOP-HARM: two arms, 9 cells, no class)
 #   cuda: the caller holds the GPU lease (GEN3AI_GPU_LEASE_TOKEN or _FILE in the environment).
 #   cpu : rule 5b's shape (nice 19, the agent cores, CUDA hidden). No outer timeout: the job is slot-queued by mem_cap.
 #   ONE device a look: the read refuses a look whose rows name two devices or backends (INCONCLUSIVE).
@@ -20,7 +21,9 @@
 # Exit 0 = played and read (WORK_DIR/result/verdict.json); 3 = the plan REFUSED a run (a question for the
 # orchestrator, never a silent drop); 4 = a panel's play failed; 5 = no pin checkout; 6 = the read failed.
 # REPORTED in run.log beside the plan's own guards, never a gate: main.sidecar_audit --strict and main.checkargs
-# on every run of the look.
+# on every run of the look; and, after the read, the team-cluster bootstrap of each factor's statistic
+# (python -m main.b1.team_bootstrap -> WORK_DIR/result/team_bootstrap.json; PREREG §5.5: it decides nothing and
+# never changes this script's exit; a survivor look has none).
 # The 100M look's CONFIRMING meter is added afterwards, once the Kakuna read has its classes (PREREG §6):
 #   python -m main.b1.look read --work <WORK_DIR> --kakuna width=<class> --kakuna breadth=<class>
 set -u
@@ -69,4 +72,6 @@ for PANEL in home72 heldout72_hpfix forum72 p72; do
 done
 log "played; reading and applying the coded rule"
 V=$("$PY" -m main.b1.look read --work "$W" 2>>"$LOG") || { log "HOLD: read failed (see $LOG)"; exit 6; }
+"$PY" -m main.b1.team_bootstrap --work "$W" > /dev/null 2>>"$LOG"
+log "REPORTED, never a gate: main.b1.team_bootstrap exit $? (0 = $W/result/team_bootstrap.json; 2 = refused, as for a survivor look; 3 = the look is INCONCLUSIVE)"
 log "DONE: $(echo "$V" | cut -c1-600)"

@@ -5,8 +5,8 @@ is its rule and nothing else: pure functions over cell scores, no I/O, no ledger
 ``looks/`` scripts plan the cells, play them and call :func:`read_look`.
 
 **The design.** Four arms (:data:`ARMS`): ``C`` control, ``W`` wide, ``Br`` breadth, ``WB`` both; ``n`` runs an arm
-(2 as registered; any equal ``n >= 2`` is accepted, so a registered extension reads by the same code). A **cell** is
-one run against one run of ANOTHER arm (:meth:`Design.cells`, 24 at ``n = 2``), stored once, from the side of the arm
+(3 since Amendment 1, 2 at registration; any equal ``n >= 2`` is accepted by the same code). A **cell** is
+one run against one run of ANOTHER arm (:meth:`Design.cells`, 54 at ``n = 3``), stored once, from the side of the arm
 that comes later in :data:`ARMS`; the other side's score is ``100 - score`` (a mirrored pair is symmetric, a draw is
 half a point to each).
 
@@ -24,8 +24,8 @@ hold one breadth-trained arm and the overlap cancels). Every other view is REPOR
 * A run's row mean is its mean score against ALL the factor's OFF runs, so the other factor's effect is a constant
   within an arm and cancels in the arm's WITHIN-arm sample variance of the row means. ``s2_rows`` is the mean, over
   the two ON arms, of that within-arm variance, **each floored at** :data:`FLOOR_PP` ``** 2`` (the measured seed SD:
-  a lucky small variance at two seeds an arm must not pass). ``s2_cols`` the same over the OFF arms.
-* ``V = s2_rows / 2n + s2_cols / 2n``, ``df = 4 (n - 1)`` (one per within-arm variance at ``n = 2``), a two-sided
+  a lucky small variance at a few seeds an arm must not pass). ``s2_cols`` the same over the OFF arms.
+* ``V = s2_rows / 2n + s2_cols / 2n``, ``df = 4 (n - 1)`` (``n - 1`` per within-arm variance), a two-sided
   :data:`LEVEL` interval by Student's t. The floor makes ``V > 0`` always.
 
 **Classes** (:func:`classify`): the 100M look is WIN / LOSS / NO-USEFUL-GAIN / UNDECIDED on the factor's deciding

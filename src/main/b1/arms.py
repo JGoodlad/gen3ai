@@ -1,7 +1,7 @@
-"""BOUNDARY-1's ARMS: eight fresh production runs, trunk width x team breadth, two seeds a cell (the PREREG's §2-§4).
+"""BOUNDARY-1's ARMS: twelve fresh production runs, trunk width x team breadth, three seeds a cell (PREREG §2-§4).
 
     python -m main.b1.arms describe --pin <sha>                      # the launch block: phase 1, then phase 2
-    python -m main.b1.arms describe --pin <sha> --block fallback     # eight launches straight to 100M (no stop at 50M)
+    python -m main.b1.arms describe --pin <sha> --block fallback     # every launch straight to 100M (no stop at 50M)
     python -m main.b1.arms describe --pin <sha> --arm wb --seed 5107 # one launch argv (--phase 2: its resume argv)
     python -m main.b1.arms check --tree <a checkout of the pin> --pin <sha>   # seeds / names, corpus, levers; --params
 
@@ -22,8 +22,9 @@ THE ARMS (each one lever from the control; WB carries both):
   probability 0.5, else the side's usual pool draw (``gen3_team_mix_v1``). Eval stays on the pool.
 * ``wb`` -- wide + breadth: both levers.
 
-THE SEEDS are one per run (5101-5108), so no two runs share dice; :data:`SPARE_SEED` (5109) is the replacement
-rule's: the replaced run's own arm takes it, from step 0.
+THE SEEDS are one per run, so no two runs share dice: 5101-5108 are each arm's first two (the original
+registration's) and 5110-5113 each arm's third (Amendment 1: three runs an arm from the start). :data:`SPARE_SEED`
+(5109) is the replacement rule's: the replaced run's own arm takes it, from step 0.
 
 THE SCHEDULE is two phases in :data:`LAUNCH_ORDER`: every run to 50,000,000 steps, the 50M look, then every run
 RESUMED in its own folder to 100,000,000 (:func:`resume_argv`, the form ``main.b1.resume_check`` exercises). The
@@ -62,12 +63,14 @@ ARM_LABELS: Dict[str, str] = {"c": "C control", "w": "W wide", "br": "Br breadth
 LEVER_DESTS: Dict[str, Tuple[str, ...]] = {
     "c": (), "w": ("allow_nonproduction_arch", "d_model", "trunk_ffn_dim"), "br": ("team_mix", "team_mix_sides"),
     "wb": ("allow_nonproduction_arch", "d_model", "team_mix", "team_mix_sides", "trunk_ffn_dim")}
-SEEDS: Dict[str, Tuple[int, ...]] = {"c": (5101, 5102), "w": (5103, 5104), "br": (5105, 5106), "wb": (5107, 5108)}
+SEEDS: Dict[str, Tuple[int, ...]] = {
+    "c": (5101, 5102, 5110), "w": (5103, 5104, 5111), "br": (5105, 5106, 5112), "wb": (5107, 5108, 5113)}
 #: The replacement rule's seed: the replaced run's own arm takes it, from step 0.
 SPARE_SEED = 5109
-#: The order of launches within a phase (one seed of every arm before any arm's second).
-LAUNCH_ORDER: Tuple[Tuple[str, int], ...] = (
-    ("c", 5101), ("w", 5103), ("br", 5105), ("wb", 5107), ("c", 5102), ("w", 5104), ("br", 5106), ("wb", 5108))
+#: The order of launches within a phase: one seed of every arm before any arm's next (round k = every arm's k-th
+#: seed, the arms in :data:`ARMS` order), so a campaign cut short still holds whole rounds.
+LAUNCH_ORDER: Tuple[Tuple[str, int], ...] = tuple(
+    (arm, SEEDS[arm][k]) for k in range(len(SEEDS["c"])) for arm in ARMS)
 #: The step target of phase 1 and of phase 2.
 PHASE_STEPS: Tuple[int, int] = (50_000_000, 100_000_000)
 CHECKPOINT_EVERY = 1_000_000
@@ -91,7 +94,7 @@ def _pin(pin: Optional[str]) -> str:
 
 
 def run_name(arm: str, seed: int) -> str:
-    """``rb_b1<arm>_s<seed>``: the era prefix, the arm and the seed (its own two, or the spare)."""
+    """``rb_b1<arm>_s<seed>``: the era prefix, the arm and the seed (one of its own, or the spare)."""
     if arm not in ARMS:
         raise ArmError(f"unknown arm {arm!r} (known: {sorted(ARMS)})")
     if seed not in SEEDS[arm] and seed != SPARE_SEED:
@@ -201,7 +204,7 @@ def all_seeds() -> Tuple[int, ...]:
 
 
 def all_run_names() -> Tuple[str, ...]:
-    """The eight registered names, then each arm's replacement name."""
+    """The registered names in launch order, then each arm's replacement name."""
     return tuple([run_name(a, s) for a, s in LAUNCH_ORDER] + [run_name(a, SPARE_SEED) for a in ARMS])
 
 
@@ -320,7 +323,7 @@ def param_counts(pin: Optional[str] = None) -> Dict[str, int]:
 # ---------------------------------------------------------------------------------------------------------------
 
 def arms_table() -> List[str]:
-    """arm, its two runs, the lever it types (last: the WB lever is long)."""
+    """arm, its runs, the lever it types (last: the WB lever is long)."""
     runs = {arm: ", ".join(run_name(arm, s) for s in SEEDS[arm]) for arm in ARMS}
     w = max(len(v) for v in runs.values())
     rows = [f"{'arm':<18} {'runs':<{w}}  lever typed"]
@@ -350,12 +353,12 @@ def launch_block(pin: Optional[str] = None, block: str = "phased") -> str:
             f"(names {', '.join(run_name(a, SPARE_SEED) for a in ARMS)})"]
     if block == "fallback":
         return "\n".join(head + _commands(
-            f"# FALLBACK: eight FRESH launches straight to {p2:,} steps (the {p1:,} look reads each run's first "
+            f"# FALLBACK: {len(LAUNCH_ORDER)} FRESH launches straight to {p2:,} steps (the {p1:,} look reads each run's first "
             f"checkpoint at or after {p1:,})",
             [(a, s, build_argv(a, s, pin, p2)) for a, s in LAUNCH_ORDER])) + "\n"
     if block != "phased":
         raise ArmError(f"unknown block {block!r} (phased, fallback)")
-    body = _commands(f"# PHASE 1: eight FRESH launches to {p1:,} steps",
+    body = _commands(f"# PHASE 1: {len(LAUNCH_ORDER)} FRESH launches to {p1:,} steps",
                      [(a, s, build_argv(a, s, pin, p1)) for a, s in LAUNCH_ORDER])
     body += ["", f"# THE {p1:,} LOOK (the harm stop) is read here, before any phase-2 command."]
     body += _commands(f"# PHASE 2: each run RESUMED in its own folder to {p2:,} steps (no --run-name: a resume, not a "

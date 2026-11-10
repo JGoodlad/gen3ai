@@ -54,7 +54,7 @@ def test_the_static_check_passes_for_all_four_arms():
         assert f"arm {arm}: the resolved config at 50,000,000 and at 100,000,000 differs in 'steps' only" in text
         for dest, (want, _why) in R.TARGET_KNOBS.items():
             assert f"arm {arm}: {dest} = {want!r}" in text
-    assert "all 8 phase-2 commands: a same-run RESTART" in text
+    assert "all 12 phase-2 commands: a same-run RESTART" in text
 
 
 def test_the_target_knobs_are_the_production_recipes_values():
@@ -122,8 +122,8 @@ def test_a_phase_two_command_that_is_not_a_plain_same_run_resume_is_named(monkey
     monkeypatch.setattr(A, "resume_argv", lambda arm, seed, pin=None: edit(real(arm, seed, pin)))
     rep = R.Report()
     R.check_phase2_role(rep, PIN)
-    assert len(rep.differences) == 8 and all(said in d for d in rep.differences), rep.render()
-    assert sorted(d.split(":")[0] for d in rep.differences) == sorted(A.all_run_names()[:8])
+    assert len(rep.differences) == 12 and all(said in d for d in rep.differences), rep.render()
+    assert sorted(d.split(":")[0] for d in rep.differences) == sorted(A.run_name(a, s) for a, s in A.LAUNCH_ORDER)
 
 
 # ------------------------------------------------------------------------------------------------ the inventory

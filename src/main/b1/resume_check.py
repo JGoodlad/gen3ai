@@ -281,8 +281,9 @@ def check_phase2_role(rep: Report, pin: Optional[str] = None) -> None:
             if bad:
                 rep.diff(f"{name}: the phase-2 command {'; '.join(bad)}")
     if not rep.differences:
-        rep.ok("all 8 phase-2 commands: a same-run RESTART (fork_lr.is_same_run_checkpoint), no fresh-only flag, "
-               "no run name, no lever or seed typed, the pin held by --pin-commit")
+        rep.ok(f"all {len(arms.LAUNCH_ORDER)} phase-2 commands: a same-run RESTART "
+               "(fork_lr.is_same_run_checkpoint), no fresh-only flag, no run name, no lever or seed typed, the pin "
+               "held by --pin-commit")
 
 
 def static_report(tree: Optional[str] = None, pin: Optional[str] = None) -> Report:

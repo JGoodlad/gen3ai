@@ -5,6 +5,8 @@
     python -m main.b1.look read  --work <W>                          # W/result/verdict.json (and stdout)
     python -m main.b1.look read  --work <W> --kakuna width=POSITIVE --kakuna breadth=SPANS-ZERO   # the 100M look
     python -m main.b1.look plan  --look 100M --pin <sha> --out <W> --survivor breadth   # after width's STOP-HARM
+    python -m main.b1.team_bootstrap --work <W>                      # REPORTED: the panel's teams resampled
+    python -m main.b1.look check-run --arm W --seed 5103 --pin <sha>    # ONE run, after its first checkpoint
 
 The registration is ``designs/research_state/measurements/boundary1_scratch_2026-11-09/PREREG.md`` (§5, §8, §10);
 the pin is registered THERE (§3) and is an argument here, never a constant of this tree (a commit cannot name
@@ -12,7 +14,7 @@ itself). The statistic and every class are :mod:`main.b1.cross`; the measurement
 plays the plan.
 
 **After a STOP-HARM** (``--survivor <the factor still read>``): the look holds the two arms that went on (the
-surviving factor's ON arm and the control), 4 cells at two runs an arm, its own request names, and its read is
+surviving factor's ON arm and the control), 9 cells at three runs an arm, its own request names, and its read is
 :func:`main.b1.cross.read_survivor`: one simple effect on every view, NO class, to the owner.
 
 **A look** is one matched step: ``50M`` (the harm stop), ``75M`` (REPORTED), ``100M`` (the decision), and ``EQ``, the
@@ -34,7 +36,11 @@ they stand for at ``metadata.json``'s top level, :data:`TRUE_KEYS`), and all run
 and one ``init_num_threads``. Anything else REFUSES the plan: a run that exists and is
 not clean is a question for the orchestrator, never a silent drop.
 
-**The cells** are :meth:`main.b1.cross.Design.cells` in order (24 at two runs an arm), each ``[player .zip, opponent
+**The early check** (``check-run``, :func:`early_check`; PREREG §10) applies :func:`check_run` to ONE run at its
+first checkpoint, hours into the run and not at the 50M look, so a mistyped launch costs one checkpoint interval
+and not a phase. It is the per-run half only: the cross-run guards need every run and stay the plan's.
+
+**The cells** are :meth:`main.b1.cross.Design.cells` in order (54 at three runs an arm), each ``[player .zip, opponent
 .zip]``, the same list for every panel. One ledger FAMILY a panel, one REQUEST a look and panel (:func:`family`,
 :func:`request`), so a re-run resumes and a look never reads another look's games.
 
@@ -145,13 +151,13 @@ def look_steps(look: str, eq_step: Optional[int] = None, arms: Sequence[str] = X
 
 def look_arms(look: str, survivor: Optional[str] = None) -> Tuple[str, ...]:
     """The arms a look holds, in :data:`main.b1.cross.ARMS` order: all four, or a survivor look's two. A survivor
-    look exists only AFTER the 50M look (the stop is read there on all eight runs)."""
+    look exists only AFTER the 50M look (the stop is read there on every registered run)."""
     if survivor is None:
         return X.ARMS
     if survivor not in X.SURVIVOR_ARMS:
         raise LookError(f"--survivor {survivor!r} is not one of {sorted(X.SURVIVOR_ARMS)}")
     if look == "50M":
-        raise LookError("the 50M look is read on all eight runs; a survivor look comes after it")
+        raise LookError("the 50M look is read on every registered run; a survivor look comes after it")
     return tuple(a for a in X.ARMS if a in X.SURVIVOR_ARMS[survivor])
 
 
@@ -262,6 +268,20 @@ def check_run(run_dir: Path, arm: str, seed: int, pin: str, step: int, levers: M
                   "_cli": {k: v for k, v in cli.items() if not str(k).startswith("_")},
                   "_true": {k: md.get(k) for k in TRUE_KEYS}})
     return probs, facts
+
+
+def early_check(models: Path, arm: str, seed: int, pin: str, step: int = A.CHECKPOINT_EVERY) -> Dict[str, Any]:
+    """ONE run against its registered arm, seed and pin at the first checkpoint at or after ``step`` (module
+    docstring, "The early check"): ``ok`` iff :func:`check_run` names no problem. A seed that is neither the
+    arm's nor the spare raises :class:`main.b1.arms.ArmError`."""
+    run_dir = models / A.run_name(KIT_ARM[arm], seed)
+    if not run_dir.is_dir():
+        probs, facts = [f"no run folder under {models}"], {}
+    else:
+        probs, facts = check_run(run_dir, arm, seed, pin, step, expected_levers(arm, seed, pin))
+    return {"run": run_dir.name, "arm": arm, "seed": seed, "pin": pin, "step": step, "ok": not probs,
+            "problems": probs, "checkpoint": facts.get("checkpoint"), "steps": facts.get("steps"),
+            "torch_version": facts.get("torch_version"), "init_num_threads": facts.get("init_num_threads")}
 
 
 def process_kind(cli: Mapping[str, Any]) -> str:
@@ -424,11 +444,12 @@ LOOK_READ = L.ReaderDecl(
     decision_kind="ab_verdict")
 
 
-def ledger_cells(root: Path, look_doc: Mapping[str, Any]) -> Tuple[Dict[str, List[Any]], List[str]]:
-    """``(each panel's cells, row problems)`` of a planned look from the eval COUNT ledger; a family with no row yet
-    reads as no cells. The request ids are the plan's own (``look.json``'s ``names``)."""
-    from main.h2h import panel as PN
-
+def ledger_rows(root: Path, look_doc: Mapping[str, Any]) -> Tuple[Dict[str, List[Any]],
+                                                                  Dict[str, List[Mapping[str, Any]]]]:
+    """``(each panel's cells, each panel's rows)`` of a planned look from the eval COUNT ledger: THE look's one
+    ledger read (:data:`LOOK_READ`), which the verdict (:func:`ledger_cells`) and the REPORTED team bootstrap
+    (``main.b1.team_bootstrap``) both go through. A family with no row yet reads as no cells and no rows. The
+    request ids are the plan's own (``look.json``'s ``names``)."""
     cells: Dict[str, List[Any]] = {}
     rows: Dict[str, List[Mapping[str, Any]]] = {}
     for panel in X.PANELS:
@@ -440,6 +461,14 @@ def ledger_cells(root: Path, look_doc: Mapping[str, Any]) -> Tuple[Dict[str, Lis
         except (ValueError, OSError) as e:  # an unreadable family is named, and the look reads INCONCLUSIVE
             print(f"NOTE: {panel}: no cells read ({type(e).__name__}: {e})", file=sys.stderr)
             cells[panel], rows[panel] = [], []
+    return cells, rows
+
+
+def ledger_cells(root: Path, look_doc: Mapping[str, Any]) -> Tuple[Dict[str, List[Any]], List[str]]:
+    """``(each panel's cells, row problems)`` of a planned look (:func:`ledger_rows`, :func:`row_problems`)."""
+    from main.h2h import panel as PN
+
+    cells, rows = ledger_rows(root, look_doc)
     return cells, row_problems(rows, str(look_doc["pin"]), {p: PN.panel_team_set_id(p) for p in X.PANELS})
 
 
@@ -472,8 +501,18 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     r.add_argument("--ledger", help="the ledger root (default: <models>/_ledger)")
     r.add_argument("--kakuna", action="append", default=[], metavar="FACTOR=CLASS",
                    help="the 100M look: the class of each factor's confirming contrast (give both factors)")
+    c = sub.add_parser("check-run", help="ONE run against its registered arm, seed and pin (exit 3 = a problem)")
+    c.add_argument("--arm", required=True, choices=X.ARMS)
+    c.add_argument("--seed", required=True, type=int, help="the run's registered seed (or the spare's)")
+    c.add_argument("--pin", required=True, help="the registered pin (PREREG §3)")
+    c.add_argument("--step", type=int, default=A.CHECKPOINT_EVERY,
+                   help="read the first checkpoint at or after this step (default: the first checkpoint)")
     a = ap.parse_args(argv)
     try:
+        if a.cmd == "check-run":
+            got = early_check(_models(), a.arm, a.seed, a.pin, a.step)
+            print(json.dumps(got, indent=1, default=str))
+            return 0 if got["ok"] else 3
         if a.cmd == "names":
             look_arms(a.look, a.survivor)
             print(json.dumps(names(a.look, a.pin, eq_step=a.eq_step, survivor=a.survivor), indent=1))
