@@ -3365,6 +3365,46 @@
    "contention": 1.0,
    "detail": ""
   },
+  "src/main/b1/arms_test.py::test_the_fresh_learners_have_the_registered_parameter_counts": {
+   "status": "pass",
+   "commit": "0220f84086af37dc79b674de4a08642c1b17cd7c",
+   "at": "2026-11-10T05:35:11Z",
+   "duration_s": 2.1,
+   "contention": 1.0,
+   "detail": ""
+  },
+  "src/main/b1/resume_check_test.py::test_the_two_segment_smoke_finds_no_difference_between_phased_and_run_through": {
+   "status": "pass",
+   "commit": "0220f84086af37dc79b674de4a08642c1b17cd7c",
+   "at": "2026-11-10T05:35:11Z",
+   "duration_s": 1705.43,
+   "contention": 1.53,
+   "detail": ""
+  },
+  "src/main/b1/width_pairing_integration_test.py::test_every_cell_of_the_look_writes_one_valid_row_of_its_two_pairs": {
+   "status": "pass",
+   "commit": "0220f84086af37dc79b674de4a08642c1b17cd7c",
+   "at": "2026-11-10T04:00:00Z",
+   "duration_s": 0.0,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/main/b1/width_pairing_integration_test.py::test_one_engine_serves_both_widths_each_as_player_and_as_opponent": {
+   "status": "pass",
+   "commit": "0220f84086af37dc79b674de4a08642c1b17cd7c",
+   "at": "2026-11-10T04:00:00Z",
+   "duration_s": 0.0,
+   "contention": 1.81,
+   "detail": ""
+  },
+  "src/main/b1/width_pairing_integration_test.py::test_the_two_arms_checkpoints_record_the_two_registered_widths": {
+   "status": "pass",
+   "commit": "0220f84086af37dc79b674de4a08642c1b17cd7c",
+   "at": "2026-11-10T04:00:00Z",
+   "duration_s": 518.78,
+   "contention": 1.87,
+   "detail": ""
+  },
   "src/main/belief_roles/belief_roles_integration_test.py::test_a_pre_break_run_is_refused_by_the_read_with_the_loaders_reason": {
    "status": "pass",
    "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
@@ -5766,5 +5806,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-11-10T03:14:09Z"
+ "last_written": "2026-11-10T05:35:11Z"
 }

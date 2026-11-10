@@ -80,6 +80,9 @@ with its reasons (N1-P FINDING 7).
   ``x60_redesign_2026-10-26/power.py``'s interval and rule, ported (futility-only look 1 at 3 v 3, look 2 at 8 v 8), I_F's
   LB90 guard, Δ_P (D1's), goal (a), R72, T − D1 (5 v 5, reported) and §11's verdict; a meter may pool several groups
   that are ONE cell (C0's X61P cells sit in two states, one import each).
+* ``b1_kakuna`` -- BOUNDARY-1's Kakuna meter (:mod:`main.b1.kakuna_rule`): registered contrasts of arm means on
+  Kakuna panels, each with an analytic two-way (seeds x teams) interval on the clustering addendum's estimators
+  (``our_team`` and ``dyadic`` clusters, the wider decides); POSITIVE / NEGATIVE / SPANS-ZERO per contrast.
 """
 from __future__ import annotations
 
@@ -1512,6 +1515,10 @@ from main.reads import rules_x60 as _X60  # noqa: E402  (it imports this module 
 
 RULES["x60"] = Rule("x60", _X60.RULE_DOCS["x60"], _X60.check, _X60.inputs, _X60.decide, False, _X60.reported,
                      stage_keys=_X60.stage_keys)
+
+from main.b1 import kakuna_rule as _B1K  # noqa: E402  (it imports this module lazily: no cycle at import)
+
+RULES["b1_kakuna"] = Rule("b1_kakuna", _B1K.RULE_DOCS["b1_kakuna"], _B1K.check, _B1K.inputs, _B1K.decide, False)
 
 
 def inputs(rule: str, cells: Mapping[str, Any], params: Mapping[str, Any], spec: Any) -> Dict[str, Any]:

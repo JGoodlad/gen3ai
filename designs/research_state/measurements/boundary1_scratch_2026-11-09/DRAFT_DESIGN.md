@@ -1,15 +1,16 @@
 # BOUNDARY-1's from-scratch run: DRAFT design (2026-11-09)
 
-**Status: DRAFT. Nothing here is registered, launched or adopted.** It replaces `EXPERIMENT_BACKLOG.md` §2.0's MF-5
-card. The owner's answer to "one lever per A/B, or a bundle?" (`../../../STATUS.md` §6.5) picks an option; the
-registrable text is [`DRAFT_PREREG.md`](DRAFT_PREREG.md). Explicit-only: a later decision edits this file or
-supersedes it, nothing auto-updates it.
+**Status: the design behind a REGISTERED experiment. The orchestrator adopted §7's 2 × 2 on 2026-11-09 and the
+registration is [`PREREG.md`](PREREG.md), which wins any disagreement with this file** (breadth is decided on the
+in-house cross there, not on Kakuna; the seeds, looks and tooling are as built). This file replaced
+`EXPERIMENT_BACKLOG.md` §2.0's MF-5 card and stays as the argument for the options. Explicit-only: nothing
+auto-updates it. Rows whose facts moved before registration were corrected on 2026-11-09 and say so.
 
 Names used throughout. **P\*** is the plateau baseline (`rb_x26_s2601` at 280,000,170 steps, 2,609,183 parameters).
 **Kakuna** is Metamon's best public model. **home72** is our 72 training teams. **U** is the three unfamiliar
 panels at equal weight: **H** (`heldout72_hpfix`, ladder teams), **F** (`forum72`, forum teams) and **P72** (`p72`,
 procedural teams). **BOUNDARY-1** is the next retrain boundary: main's code after the opponent-side fidelity fixes
-(config v167, `566d878b2`; E13, "their max HP as a belief", `../../../endstate/obs_enrichment_backlog.md`). A
+(config v167, `566d878b2`; E13, "their max HP as a belief", `../../../endstate/obs_enrichment_backlog.md`, built since at `3b1733f50`, v168). A
 **head-to-head cross** is every seed of one arm against every seed of the other, mirrored pairs, both sides greedy
 (`python -m main.h2h play-many --cells`, statistic `main.h2h.cross.cross_stat`).
 
@@ -50,7 +51,7 @@ procedural teams). **BOUNDARY-1** is the next retrain boundary: main's code afte
 - **Why from scratch.** Six breadth reads and three capacity reads at the plateau are null or undecided (§2).
   Growth at a fork is a different intervention from width at step 0 (N4's own §6.2), so the fork frame has no test
   of the model's size.
-- **The base both arms share** is BOUNDARY-1: main at config v167, plus E13 when it lands (§8), plus whatever
+- **The base both arms share** is BOUNDARY-1: main at config v167, plus E13 (landed `3b1733f50`, v168), plus whatever
   X60-T's verdict routes into the team mix (`EXPERIMENT_BACKLOG.md` §2.0, "X60-T's outcome branches"). Both arms
   are `--arch production`, which supplies the architecture and the recipe; the new arm types only its lever.
 - **The comparator is a fresh control at the same code, not P\*.** Three reasons.
@@ -70,14 +71,14 @@ procedural teams). **BOUNDARY-1** is the next retrain boundary: main's code afte
 
 | lever | built? | evidence for | evidence against / hazard | in B | in S |
 |---|---|---|---|---|---|
-| **Width**: `--d-model 256 --trunk-ffn-dim 512` (6,258,079 parameters, 2.40×) | on branch `mf5-width-lever` (`536aed01b`), not main | At the plateaus P\* (2.61M) is 7.3–10.5 pp above the 1.42M toy against Kakuna (`UNDERSTANDING.md` §4.9; DESCRIPTIVE, the two differ by more than width). Kakuna is 142.8M parameters. | Every growth screen missed: N4 toy +0.46 pp [−0.28, +1.20]; X48 in-house −0.55 [−1.32, +0.21] (its Kakuna F point +2.06 [−0.06, +4.19]); all growth AT a plateau. No causal evidence for width from step 0 exists. | yes | **the lever** |
+| **Width**: `--d-model 256 --trunk-ffn-dim 512` (6,258,079 parameters, 2.40×) | **on main** since `0220f8408` (config v169; corrected 2026-11-09, it was on a branch at draft time) | At the plateaus P\* (2.61M) is 7.3–10.5 pp above the 1.42M toy against Kakuna (`UNDERSTANDING.md` §4.9; DESCRIPTIVE, the two differ by more than width). Kakuna is 142.8M parameters. | Every growth screen missed: N4 toy +0.46 pp [−0.28, +1.20]; X48 in-house −0.55 [−1.32, +0.21] (its Kakuna F point +2.06 [−0.06, +4.19]); all growth AT a plateau. No causal evidence for width from step 0 exists. | yes | **the lever** |
 | **Team breadth from step 0**: `--team-mix n1_proc_v1@ALL:0.5 --team-mix-sides both` (12,000 procedural teams; X61P's arm) | yes (`main.checkargs` passes at `0ecd1b4b4`) | Fork reads on U against Kakuna all point the same way: X61P U +2.52 [−0.02, +5.05], D1 +2.10 [−0.92, +5.11], D3 +2.33 [−0.69, +5.35], X52 +3.2 [−0.2, +6.8]. Familiarity travels with the team (H-CTX SUPPORTED). | None of those intervals excludes 0. X61P's clean panel F read +0.55 [−1.26, +2.36] (FINAL NULL) and its in-house strength fell −3.28 [−4.14, −2.43]. **Hazard M4:** 62 % of H's full sets and 56.5 % of P72's are in the corpus (F: 19 %), so H and P72 are generator-adjacent for this arm. | yes | no |
 | Depth: `--trunk-layers 4` | yes | none measured | X47 (toy, 2 → 4 rounds, growth) −0.88 [−3.20, +1.44], UNDECIDED with the point ≤ 0 | no | no |
-| A critic with a hidden layer (today `sigmoid(win_head(value_pooled))`, linear on 128) | **no** | The critic is miscalibrated on U at turn 10: Δbias +0.076 [+0.016, +0.139] (`f200258f6`). | Its ordering (AUC) is equal on both sets, and a level bias cancels in a one-ply argmax (backlog MF-4). Width already doubles the head's input. **UNVERIFIED** that a deeper head helps. | no | no |
+| A deeper critic (corrected 2026-11-09: the head is NOT linear on 128, it already has a hidden layer, which the architecture diagnosis `a8265f36b` found unused) | **no** | The critic is miscalibrated on U at turn 10: Δbias +0.076 [+0.016, +0.139] (`f200258f6`). | Its ordering (AUC) is equal on both sets, and a level bias cancels in a one-ply argmax (backlog MF-4). Width already doubles the head's input. **UNVERIFIED** that a deeper head helps. | no | no |
 | A non-saturating policy tower (today `[512, 512]` tanh) | **no** (removing the tower is built: `--policy-readout trunk`) | 84–92 % of layer-1 units sit at \|a\| > 0.99 (`UNDERSTANDING.md` §5, the plasticity probe). | The same probe read NO-LOSS of plasticity (`8bebdfe31`). **UNVERIFIED** that saturation costs strength. | no | no |
 | Entropy annealed 0.05 → 0.01 | **no** schedule; a typed `--ent-coef` on a fork works | Entropy is flat at ≈ 1.09 nats for 71M steps; top-action mass 0.56; greedy play beats sampled play by +23.0 pp [+9.5, +35.4] against Kakuna. The literature's range is 0–0.01. | No strength A/B at any dose. 0.05 was CHOSEN (2026-09-12) to reproduce the earlier era's entropy regime, against controls, on an entropy criterion. | no (§9) | no |
 | PPO epochs (10 fresh; 5 on forks) | yes (`--n-epochs`) | A 5-epoch update is 2.0× faster. | Fresh 5 epochs read −10.56 pp on untaught teams, one seed, with ≈ 60 % of the control's dose (confounded); the fork result that adopted 5 ran on the miscompiled learner. | no (§9) | no |
-| Fidelity (v166, v167, E13) | v167 on main; E13 not built | It is the base of BOTH arms, never a lever here. | forecast +0.3 pp (backlog MF-2) | base | base |
+| Fidelity (v166, v167, E13) | all on main (E13 at `3b1733f50`, v168; corrected 2026-11-09) | It is the base of BOTH arms, never a lever here. | forecast +0.3 pp (backlog MF-2) | base | base |
 
 **Why B is width + breadth and no more.** A bundle arm loses if ANY element hurts, and a bundle null cannot say
 which. So an element joins only if it is built and gated before the launch date, has a mechanism plus at least
@@ -287,16 +288,18 @@ Two runs in each of four cells: production, production + breadth, wide, wide + b
 
 | build | needed by | agent-days | state |
 |---|---|---|---|
-| Land per-run width: rebase `mf5-width-lever`, renumber its config version (it claims v167, which main now uses), gate, ship | B, S, 2 × 2 | 0.5–1 | one commit on a branch; its gate status is UNVERIFIED |
-| The GPU pilot of the wide arm (step time, bf16 compile, memory) and a check that the head-to-head engine pairs a 128 and a 256 model | B, S, 2 × 2 | 0.25 + a 15-minute GPU window | not started |
-| E13, their max HP as a belief (an operator-input change, a version bump) | the base of every option | 2–3 | PROPOSED, not built |
-| The fresh-run kit: arm describe / check (pin, seed, argv) in the shape of `src/main/x61/arms.py`, and the resume-at-50M check (§12 item 6) | all | 0.5 | not started |
-| The multi-panel cross: cells plan, N per cell, the floored `cross_stat` rule as code with its self-check | all | 0.5 | `cross_stat` and `closing_rule.py decide` exist; the panel average and the floor do not |
-| The Kakuna-on-U rule with the team × seed bootstrap (`main.reads`) | all | 0.5 | waits on the team-clustered re-analysis |
-| The 2 × 2 statistic (pooled within-cell variance) | 2 × 2 only | 0.5 | not started |
+| Land per-run width: rebase `mf5-width-lever`, renumber its config version (it claims v167, which main now uses), gate, ship | B, S, 2 × 2 | 0.5–1 | **DONE** `0220f8408` (config v169) |
+| The GPU pilot of the wide arm (step time, bf16 compile, memory) and a check that the head-to-head engine pairs a 128 and a 256 model | B, S, 2 × 2 | 0.25 + a 15-minute GPU window | not started: `PREREG.md` §13 items 4 and 5 |
+| E13, their max HP as a belief (an operator-input change, a version bump) | the base of every option | 2–3 | **DONE** `3b1733f50` (v168) |
+| The fresh-run kit: arm describe / check (pin, seed, argv) in the shape of `src/main/x61/arms.py`, and the resume-at-50M check (§12 item 6) | all | 0.5 | **DONE** `src/main/b1/arms.py`, `resume_check.py` |
+| The multi-panel cross: cells plan, N per cell, the floored `cross_stat` rule as code with its self-check | all | 0.5 | **DONE** `src/main/b1/cross.py`, `look.py` |
+| The Kakuna-on-U rule with the team × seed bootstrap (`main.reads`) | all | 0.5 | **DONE** rule `b1_kakuna` (`src/main/b1/kakuna_rule.py`); the registered interval is analytic, the bootstrap reported |
+| The 2 × 2 statistic (pooled within-cell variance) | 2 × 2 only | 0.5 | **DONE** `src/main/b1/cross.py` |
 | NOT needed by any option as drafted: a critic hidden layer (1–2), a policy-tower activation flag (0.5), an in-loop entropy schedule (1–1.5), E9 (2–4) | — | — | — |
 
-E13 is the long pole (2–3 agent-days). E9 joins only if it lands before the launch date; it does not hold it.
+E13 was the long pole and is built. The kits, the cross statistic, the Kakuna rule and the 2 × 2 statistic are built
+(`PREREG.md` §15); the GPU pilot is `PREREG.md` §13. E9 joins only if it lands before the launch date; it does not
+hold it.
 
 ## 9. The recipe knobs: screen them, do not fold them in
 
@@ -388,8 +391,7 @@ GPU-h, enough for MF-1 and MF-3 (≈ 5 GPU-h), the entropy fork (≈ 12) and the
 1. The seed SD at 100M, and any fresh run's seed SD against Kakuna, are unmeasured (§3). The rule's variance floor
    and the 2.5 / 3.1 pp power columns are the guard; the first four control runs measure both.
 2. The wide arm's GPU cost, bf16 compile and memory are unmeasured (§8); the 207 GPU-h figure moves with them.
-3. `mf5-width-lever` claims config v167, which main now uses for the nature / residual fix; its gate status is
-   unverified. Whether the head-to-head engine pairs a 128 and a 256 model is unverified.
+3. (Resolved 2026-11-09: width landed on main at `0220f8408` as config v169.) Whether the head-to-head engine pairs a 128 and a 256 model is unverified.
 4. Carrying the owner's r = 1 from the Kakuna meter to the head-to-head N is this draft's choice (§4.1).
 5. Hazard M4 makes H and P72 unclean for any arm trained on `n1_proc_v1`; set-level overlap of the other corpora
    with the panels is not stated in any doc found.

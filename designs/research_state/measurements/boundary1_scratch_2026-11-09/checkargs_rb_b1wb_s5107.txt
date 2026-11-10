@@ -1,0 +1,32 @@
+# python -m main.checkargs --argv "$(cat argv_rb_b1wb_s5107.txt)"   [CUDA_VISIBLE_DEVICES=""; a worktree whose HEAD is the pin 0220f84086af37dc79b674de4a08642c1b17cd7c, so this is the pin's own parser]
+checked 14 flags from --argv
+  parser                         : the CURRENT tree's — --pin-commit in the argv names HEAD (0220f840)
+  accepted by the trainer parser : 12
+  launcher-owned (not forwarded) : 2
+  unrecognized                   : 0
+  no --model: the argv IS the config (nothing to inherit) — the checks below read it with the launch path's own desugars applied
+  oracle reveal                  : off (the production observation)
+  human data                     : off (no human data)
+        [HUMAN-DATA] lever=off rowset=- rows_sha=- clause=off hash=afdf239a6c365adc
+  K9(b) behaviour check          : fatal  (the default: --behaviour-check is neither typed nor inherited)
+  [ForkLR] no --model: a fresh run has no parent LR to inherit
+  shaped-reward parent             : none (no --model, or its reward was the terminal alone)
+  retired-lever parent             : none (no --model, or no deleted lever was ON)
+  pre-break parent                 : none (no --model, or its config is this generation's)
+
+  ARCH SURFACE vs designs/production_config.json  [production_config@51496e4209fc]
+    --arch production applied the production surface (explicit flags still win)
+    ⚠️  NOT applied — by neither the ARCH surface nor the RECIPE surface (the RECIPE block below applies the critic mode and the supervision doses). These critic READOUTS are implied by the win-prob critic or sit at their defaults; type them yourself if you want them pinned:
+        --win-prob-mode 'shaping'  --belief-grad-mode 'shaping'  --ridealong-ensemble 0  --ridealong-rnd False  --ridealong-adv 0  --ridealong-opp 0  --ridealong-rnd-variants 'off'
+    2 of 42 ARCH-surface key(s) differ from production (42 of 51 registry toggles are the ARCH surface; 6 critic readouts + 3 non-structural rows are excluded by their own declaration):
+        trunk_ffn_dim                512            (this argv, argv)   production: 256
+        d_model                      256            (this argv, argv)   production: 128
+    ℹ️  --allow-nonproduction-arch — the drift above is an EXPLICIT choice and is recorded in model_config.json's arch_source.
+
+  RECIPE SURFACE vs designs/production_config.json recipe.fresh  [production_config@51496e4209fc]
+    --arch production applied recipe.fresh + recipe.sizing (every knob this argv did not type; explicit flags still win)
+    sizing      : N 256, n_steps max 384 — verdict SIZING 2026-10-02 (program_rust_core.md Decision record): N* = 256, Part L guard NO LOSS DETECTED (n = 1 flagged), fits at steady state on 07eebe13; recipe.fresh n_epochs stays 10
+    trunk       : bf16 — the learner's trunk rounds run under bf16 autocast in R1 (T2 / eval / the K9(b) probe stay fp32); `--trunk-precision fp32` is the explicit opt-out
+    ✓ every RECIPE knob matches recipe.fresh (31 knobs)
+  ✓ this command still launches
+exit 0

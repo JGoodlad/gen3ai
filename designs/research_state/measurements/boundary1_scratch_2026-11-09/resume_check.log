@@ -1,0 +1,206 @@
+BOUNDARY-1 resume check: is "phase 1 to N, then RESUME to 2N" the same training as "one launch to 2N"?
+transcript of `python -m main.b1.resume_check` (src/main/b1/resume_check.py), written 2026-11-10T04:39Z
+tree: branch boundary1-reg at 0220f84086af37dc79b674de4a08642c1b17cd7c plus the uncommitted kit (src/main/b1/)
+
+VERDICT: PASS on both halves below -> the PHASED block is the registered one (describe's default).
+
+What is and is not shown
+  shown   (static, the real 50M / 100M argv of all four arms at the pin): the resolved config differs in 'steps' only;
+          no schedule reads the step target; the phase-2 command is a same-run RESTART.
+  shown   (smoke, CPU --debug, WB arm): sidecars, lineage, pin history, recorded namespaces, optimizer and weights
+          tensor-equal across the stop, step continuity, schedule values, the team-mix share, checkpoints across the
+          stop, the checkpoint at the target, the launcher accepting a run that ended at its target.
+  NOT the same, by construction, and shared with every six-hour restart: a resume rebuilds the environments and
+          reseeds the collector from (--seed, the step the process starts at), so the games after the phase boundary
+          are not the games a run-through plays (nor are two run-throughs' after their first clock restart).
+  NOT exercised by the smoke: the GPU, compilation, the production rollout shape (98,304 rows, batch 2,048, ten
+          epochs), an evaluation cycle or a pool promotion (snapshots/ was empty at the stop), a real six-hour
+          interval restart (its child argv is DERIVED from launcher code and resolved, not run), --pin-commit's
+          worktree (dry run only), arms c / w / br (the smoke ran wb, which carries both levers).
+
+The smoke (one command: three training launches, one dry run, one repeat on the finished run; seed 5107,
+half = 4,000 steps), run under scripts/ops/mem_cap.sh with a 12 GB cap, CUDA_VISIBLE_DEVICES="":
+      python -m main.b1.resume_check smoke --models-dir <scratch>/cli_smoke_wb --arm wb --half 4000
+  heavy-slot queue 4,680 s, run 2,030 s, peak 8.15 GB of 12 GB; every segment exited 0.
+  each line below follows `python -m main.launcher`:
+    A  (run-through): --restart-interval-hours 6 --arch production --d-model 256 --trunk-ffn-dim 512 --allow-nonproduction-arch --team-mix n1_proc_v1@ALL:0.5 --team-mix-sides both --checkpoint-every-steps 2000 --steps 8000 --seed 5107 --device cpu --log-level periodic --run-name rb_b1smoke_a_wb --no-pin --debug --rollout-target-samples 4096 --batch-size 256 --n-epochs 1
+    B1 (phase 1)    : --restart-interval-hours 6 --arch production --d-model 256 --trunk-ffn-dim 512 --allow-nonproduction-arch --team-mix n1_proc_v1@ALL:0.5 --team-mix-sides both --checkpoint-every-steps 2000 --steps 4000 --seed 5107 --device cpu --log-level periodic --run-name rb_b1smoke_b_wb --no-pin --debug --rollout-target-samples 4096 --batch-size 256 --n-epochs 1
+    B2 (phase 2)    : --restart-interval-hours 6 --model '<models dir>/rb_b1smoke_b_wb/final_model.zip' --steps 8000 --device cpu --log-level periodic --no-pin --debug
+    B2 dry run      : the B2 argv + --dry-run, before B2
+    B3 (again)      : the B2 argv once more, on the finished run
+  Deviations from the registered commands: --no-pin for --pin-commit, --device cpu, --debug, steps 4,000 / 8,000
+  for 50M / 100M, a checkpoint every 2,000 for 1,000,000, smoke run names, A and B on one seed, an absolute --model
+  path, and a TYPED rollout shape (--rollout-target-samples 4096 --batch-size 256 --n-epochs 1) on the fresh
+  commands: without it a --debug run cannot be resumed at all (the automatic debug shape's 2,304-row target is
+  restored on the resume beside the parser's batch 4,096 and refused at parse time; real runs are unaffected,
+  98,304 = 24 x 4,096). The first smoke failed on exactly that and was re-run.
+
+================================================================================================================
+$ python -m main.b1.resume_check static --tree <worktree> --pin 0220f84086af37dc79b674de4a08642c1b17cd7c   (exit 0)
+================================================================================================================
+-- the resolved config of every arm at both phase targets
+  ok    arm c: the resolved config at 50,000,000 and at 100,000,000 differs in 'steps' only (198 keys)
+  ok    arm c: anneal_lr_start_steps = None
+  ok    arm c: adaptive_batch = 'off'
+  ok    arm c: clip_range = 0.15
+  ok    arm c: clip_range_vf = None
+  ok    arm c: ent_coef = 0.05
+  ok    arm c: n_epochs = 10
+  ok    arm c: overlap_collect = False
+  ok    arm c: checkpoint_every_steps = 1000000
+  ok    arm w: the resolved config at 50,000,000 and at 100,000,000 differs in 'steps' only (198 keys)
+  ok    arm w: anneal_lr_start_steps = None
+  ok    arm w: adaptive_batch = 'off'
+  ok    arm w: clip_range = 0.15
+  ok    arm w: clip_range_vf = None
+  ok    arm w: ent_coef = 0.05
+  ok    arm w: n_epochs = 10
+  ok    arm w: overlap_collect = False
+  ok    arm w: checkpoint_every_steps = 1000000
+  ok    arm br: the resolved config at 50,000,000 and at 100,000,000 differs in 'steps' only (198 keys)
+  ok    arm br: anneal_lr_start_steps = None
+  ok    arm br: adaptive_batch = 'off'
+  ok    arm br: clip_range = 0.15
+  ok    arm br: clip_range_vf = None
+  ok    arm br: ent_coef = 0.05
+  ok    arm br: n_epochs = 10
+  ok    arm br: overlap_collect = False
+  ok    arm br: checkpoint_every_steps = 1000000
+  ok    arm wb: the resolved config at 50,000,000 and at 100,000,000 differs in 'steps' only (198 keys)
+  ok    arm wb: anneal_lr_start_steps = None
+  ok    arm wb: adaptive_batch = 'off'
+  ok    arm wb: clip_range = 0.15
+  ok    arm wb: clip_range_vf = None
+  ok    arm wb: ent_coef = 0.05
+  ok    arm wb: n_epochs = 10
+  ok    arm wb: overlap_collect = False
+  ok    arm wb: checkpoint_every_steps = 1000000
+-- the phase-2 command's role
+  ok    all 8 phase-2 commands: a same-run RESTART (fork_lr.is_same_run_checkpoint), no fresh-only flag, no run name, no lever or seed typed, the pin held by --pin-commit
+-- the code at the pin 0220f84086af (objects read from /home/goodlad/dev/gen3ai-worktrees/boundary1_reg)
+  ok    the code that resolved the config (/home/goodlad/dev/gen3ai-worktrees/boundary1_reg: src/main/train, src/main/launcher, src/agents, src/main/checkargs.py, designs/production_config.json) is the pin's
+  ok    every module reading the step target (args.steps) is an audited one (8 found)
+  ok    every audited reader of the step target (args.steps) is still one
+  note  src/agents/training/capacity_overhead_benchmark.py: a benchmark's own learn() call; not a training path
+  note  src/agents/training/instrumented_ppo/loop.py: the loop's stop condition (num_timesteps < target), the progress fraction (below), and 'no overlap collection on the last iteration' (overlap_collect is off in every arm)
+  note  src/agents/training/metrics_exporter_callback.py: the metric NAME time/total_timesteps, whose value is num_timesteps; not the target
+  note  src/agents/training/rust_env_opponents_benchmark.py: a benchmark's own --steps; not a training path
+  note  src/main/train/callbacks.py: TwoPhaseLRCallback(total_steps=args.steps), built only in annealing mode (anneal_lr_start_steps set); off in every arm
+  note  src/main/train/combination_checks.py: a launch check (the anneal's start must be below --steps); no anneal in any arm
+  note  src/main/train/disk_preflight.py: the launch's disk estimate (checkpoints and eval cycles up to --steps): a preflight, read before anything trains
+  note  src/main/train/model_build.py: remaining = args.steps - num_timesteps, passed to learn(); the 'Continuing Training' / 'already complete' lines; the anneal's print
+  ok    every module reading the progress fraction is an audited one (5 found)
+  ok    every audited reader of the progress fraction is still one
+  note  src/agents/training/instrumented_ppo/loop.py: sets it each iteration (1 - num_timesteps / target)
+  note  src/agents/training/instrumented_ppo/ppo.py: clip_range(progress), clip_range_vf(progress): constant functions (model_build installs `lambda _: args.clip_range`)
+  note  src/agents/training/instrumented_ppo/train_setup.py: the same two calls, for the micro-step's statics
+  note  src/agents/training/learner_golden.py: sets it to 1.0 for the golden learner fixture (not a training path)
+  note  src/agents/training/rust_rollout/consistency.py: clip_range(progress), for the rollout consistency check
+-- what the phase boundary is that a six-hour restart is not (bookkeeping; none is a difference)
+  note  a target stop TRAINS on its last rollout and runs the end-of-training hooks (the cycle ledger shard is closed, the metrics pipe shut) before it saves final_model.zip; a six-hour restart saves final_model_interrupted.zip at a rollout end WITHOUT training on that rollout (agents/training/graceful_restart_callback.py) and skips the hooks. The stop is the cleaner boundary
+  note  the phase-2 launch starts a new six-hour clock, so the count of interval restarts over 100M steps can differ by one from a run-through's; a run-through's own restart points are wall-clock, so they are not reproducible either
+  note  every resume, of either kind, rebuilds the environments (battles in flight are dropped), reseeds the learner from --seed (gen3_learner_segment_seed_v1) and the collector from (--seed, the step the process starts at) (rust_env_setup.segment_seed: teams, battle seeds and keyed draws of the new segment), and reloads the optimizer from the zip; the phased run does this once more than a run-through, at a step fixed by the target instead of by the clock. No two launches of one argv play the same games past their first restart either
+  note  the phase-2 child argv is not token-equal to a restart's: the launcher passes every recorded recipe knob TYPED on a --model launch (recipe_surface.materialize_recorded_recipe) and a restart leaves them to the child's own resolver. `compare` shows both resolve to one namespace
+  note  the RESUME branch's final save writes final_model.zip, model_config.json, metadata.json and latest.txt but NOT a per-checkpoint final_model.json: the one phase 1 wrote (fresh branch) stays, describing the phase-1 stop. Read a finished run's step count from metadata.json, never from final_model.json
+  note  the step at which phase 1 stops is the first rollout end at or past the target, a step a run-through also passes; the checkpoint and the evaluation due at the target are taken inside phase 1, as in a run-through (both fire on GLOBAL multiples: main/train/constants.py checkpoint_due, selfplay_callback's eval cadence)
+PASS: no difference
+
+================================================================================================================
+$ python -m main.b1.resume_check compare --run-through <kit>/cli_smoke_wb/runs/rb_b1smoke_a_wb \
+      --phased <kit>/cli_smoke_wb/runs/rb_b1smoke_b_wb --stop <kit>/cli_smoke_wb/stop/rb_b1smoke_b_wb \
+      --logs <kit>/cli_smoke_wb/logs --arm wb                                                          (exit 0)
+  <kit> = /tmp/claude-1000/-home-goodlad-dev-gen3ai/4b7f33cf-798a-4092-8287-751835e7f926/scratchpad/boundary1_reg/kit
+  The smoke's own built-in comparison first printed FAIL with 5 differences; all five were wrong expectations in the
+  checker, corrected before this run and stated here so the PASS is not read as a first-try result:
+    1-2. it looked for the trainer's 'Continuing Training' / 'Training already complete' lines in the launcher's
+         event log; they are the child's stdout, in <run>/launcher_child.log;
+    3.   it compared private bookkeeping keys of cli_args (_recipe_record_* ...); only public keys are compared now;
+    4-5. checkpoint sidecars at 6,000 and 8,000 differ in env_core.run_seed / bot_seed: the per-process segment seed.
+         That IS a real property of every resume (see NOT the same, above); the checker now asserts the exact
+         expected seeds on each side instead of demanding equality.
+================================================================================================================
+-- the inputs
+  ok    run-through rb_b1smoke_a_wb to 8,000; phased rb_b1smoke_b_wb to 4,000 then 8,000; exit codes {"a": 0, "b1": 0, "b2": 0, "b2_dryrun": 0, "b3": 0}
+  ok    the phased run's second target is the run-through's, twice its first
+-- the launcher accepts the phase-2 command on a run that ENDED at its target
+  ok    segment a exited 0
+  ok    segment b1 exited 0
+  ok    segment b2 exited 0
+  ok    segment b3 exited 0
+  ok    the dry run of the phase-2 command resolves to a same-run RESTART and would launch
+  note  dry run: role        : RESTART of /tmp/claude-1000/-home-goodlad-dev-gen3ai/4b7f33cf-798a-4092-8287-751835e7f926/scratchpad/boundary1_reg/kit/cli_smoke_wb/runs/rb_b1smoke_b_wb
+  ok    launcher_child.log: what phase 1 wrote (365 lines) opens the phased run's (745 lines), unchanged
+  ok    phase 2 was ONE child: one 'Continuing Training' line in the run's child log, one 'Resuming at LR' event and 'Restarts : 0' in the launcher's
+  ok    phase 1 and the run-through trained from scratch (no resume line in either)
+  ok    the same command AGAIN on the finished run trains nothing: 'Training already complete (8,510 / 8,000 steps)', no environment built, exit 0
+-- num_timesteps across the stop
+  ok    phase 1 stopped at 4,346: at or past its target 4,000, short of 8,000
+  ok    phase 2 started at the stop's own count (8,000 - 3,654 remaining = 4,346)
+  ok    the dry run reads the same: --steps 8,000 vs checkpoint at 4,346 -> +3,654 steps
+  ok    update boundaries: phase 1's [4346] open the phased run's [4346, 8510]; the last is the stop (4,346), phase 2's follow it and end at the run's final count (8,510); the third launch added none
+  note  the run-through's update boundaries: [4346, 8203]
+  ok    run A ended at 8,203: the first update boundary at or past 8,000 (the one before: 4,346)
+  ok    run B ended at 8,510: the first update boundary at or past 8,000 (the one before: 4,346)
+  note  A ended at 8,203 and B at 8,510: an update boundary is a count of COMPLETED games' rows, so the two need not be the same step (nor would two run-throughs' be)
+-- the sidecars
+  ok    model_config.json: the phased run's equals the run-through's (109 keys)
+  ok    model_config.json: the phased run's equals its own phase-1 stop's (109 keys)
+  ok    metadata.json cli_args (213 keys; the LATEST process's namespace): the phased run's public keys equal the run-through's but for the volatile ['allow_nonproduction_arch', 'arch', 'batch_size', 'eval_mirrored_pairs_source', 'eval_sentinel_greedy_source', 'model', 'n_steps', 'promote_threshold_source', 'promotion_sprt_source', 'run_dir', 'run_name', 'unified_damage', 'unified_moves']
+  ok    lineage role of A: fresh, no fork parent
+  ok    lineage role of S: fresh, no fork parent
+  ok    lineage role of B: fresh, no fork parent
+  ok    the lineage block and original_command are, after phase 2, what phase 1 wrote (immutable)
+  ok    pin_history of A: ONE row, steps 0 to 8,203, the run's git_hash
+  ok    pin_history of B: ONE row, steps 0 to 8,510, the run's git_hash
+  ok    one code version in all three (0220f84086af)
+  ok    the era block: {"code": "rb", "name": "Rustboro", "order": 1}
+  ok    metadata.json's 32 scalar training fields (batch_size, clip_range, ent_coef, gamma, n_steps, optimizer, vf_coef, weight_decay, versions ...) are equal
+-- the recorded cli_args against the namespace the kit's argv resolves to (volatile keys: steps, model, run_dir, run_name, arch, unified_moves, unified_damage, allow_nonproduction_arch, eval_mirrored_pairs_source, eval_sentinel_greedy_source, promote_threshold_source, promotion_sprt_source, batch_size, n_steps)
+  ok    after the FRESH process (the stop's record): differs from the registered namespace in ['run_dir']
+  ok    after the PHASE-2 resume (the phased run's record): differs from the registered namespace in ['allow_nonproduction_arch', 'arch', 'batch_size', 'eval_mirrored_pairs_source', 'eval_sentinel_greedy_source', 'model', 'n_steps', 'promote_threshold_source', 'promotion_sprt_source', 'run_dir', 'run_name', 'steps', 'unified_damage', 'unified_moves']
+  ok    the run-through's record: differs from the registered namespace in ['run_dir', 'run_name', 'steps']
+  ok    a SIX-HOUR-RESTART child's namespace (resolved against the stop; not a recorded one): differs from the registered namespace in ['arch', 'eval_mirrored_pairs_source', 'eval_sentinel_greedy_source', 'model', 'n_steps', 'promote_threshold_source', 'promotion_sprt_source', 'run_dir', 'steps', 'unified_damage', 'unified_moves']
+  ok    the PHASE-2 child's namespace (resolved against the stop): differs from the registered namespace in ['allow_nonproduction_arch', 'arch', 'batch_size', 'eval_mirrored_pairs_source', 'eval_sentinel_greedy_source', 'model', 'n_steps', 'promote_threshold_source', 'promotion_sprt_source', 'run_dir', 'run_name', 'steps', 'unified_damage', 'unified_moves']
+  ok    the FRESH process's record differs in no more than ('run_dir', 'steps'): every other volatile key is a resume's doing
+  ok    the run's TRUE batch_size (metadata.json top level) is 256 in A, at the stop and after phase 2, whatever cli_args says after the resume (4096)
+  ok    the run's TRUE n_steps (metadata.json top level) is 4096 in A, at the stop and after phase 2, whatever cli_args says after the resume (2048)
+-- the phase-2 child argv against the launcher's own six-hour-restart child argv
+  ok    both resolve, against the stopped run's record, to one namespace (198 keys; target 8,000, model final_model.zip) but for ['allow_nonproduction_arch', 'batch_size', 'run_name']: a restart child still carries the fresh argv's --run-name beside the --run-dir that outranks it (run_io._resolve_model_dir and matchup_setup._planned_run_dir read --run-dir first) and, on a wide arm, the fresh run's typed consent --allow-nonproduction-arch, which only a FRESH run's arch report reads (main/train/config.py: arch_surface.report(fresh=not args.model, allowed=...)), and the smoke's typed ['batch_size'], inert on a resume, which a restart child keeps typed and the phase-2 command does not carry (no registered argv types an inert flag)
+  ok    the phase-2 command resolves to the run's OWN folder
+  note  token-different, as stated: the phase-2 child types 98 tokens, the restart child 32
+-- the optimizer and weights the resume LOADS against what the stop SAVED
+  ok    tensor-equal: 280 optimizer entries (840 tensors, Adam step [1.0]), 809 policy tensors, param groups [{"lr": 0.0003, "betas": [0.9, 0.999], "eps": 1e-05, "weight_decay": 1e-05}]
+  ok    the zip's num_timesteps is the sidecar's (4,346)
+  ok    phase 2 resumed at the saved optimizer LR, unclamped (3.00e-04 = saved 3.00e-04 = the zip's 0.0003)
+-- schedule values the runs recorded
+  ok    train/clip_range in run A: 0.15 in each of its 2 rows
+  ok    train/clip_range in run B: 0.15 in each of its 2 rows
+  ok    hparams/ent_coef in run A: 0.05 in each of its 1 rows
+  ok    hparams/ent_coef in run B: 0.05 in each of its 2 rows
+  ok    train/learning_rate in run A: 2 rows, every one at or above min_lr 1e-05 (range 0.0003000000142492354 .. 0.0003000000142492354; the KL controller moves it, no schedule does)
+  ok    train/learning_rate in run B: 2 rows, every one at or above min_lr 1e-05 (range 0.0003000000142492354 .. 0.0003000000142492354; the KL controller moves it, no schedule does)
+  ok    the 1 learning-rate rows phase 1 wrote open the phased run's record, unchanged
+  ok    checkpoint sidecars at steps both runs have: [2000, 4000, 6000, 8000]
+  ok    checkpoint_2000_steps.json: A's and B's are equal in 39 keys (ent_coef 0.05, clip_range 0.15, n_epochs 1, batch_size 256, n_steps 384, matchup '1059f10be5', env_core but for its segment seeds); differing: []; current_lr A 0.0003 B 0.0003
+  ok    checkpoint_2000_steps.json of A: the collector's seeds are segment_seed(--seed 5107, the process's start step 0) = 48553324080691
+  ok    checkpoint_2000_steps.json of B: the collector's seeds are segment_seed(--seed 5107, the process's start step 0) = 48553324080691
+  ok    checkpoint_4000_steps.json: A's and B's are equal in 39 keys (ent_coef 0.05, clip_range 0.15, n_epochs 1, batch_size 256, n_steps 384, matchup '1059f10be5', env_core but for its segment seeds); differing: []; current_lr A 0.0003 B 0.0003
+  ok    checkpoint_4000_steps.json of A: the collector's seeds are segment_seed(--seed 5107, the process's start step 0) = 48553324080691
+  ok    checkpoint_4000_steps.json of B: the collector's seeds are segment_seed(--seed 5107, the process's start step 0) = 48553324080691
+  ok    checkpoint_6000_steps.json: A's and B's are equal in 38 keys (ent_coef 0.05, clip_range 0.15, n_epochs 1, batch_size 256, n_steps 4096, matchup '1059f10be5', env_core but for its segment seeds); differing: ['pin_history']; current_lr A 0.0003 B 0.0003
+  ok    checkpoint_6000_steps.json of A: the collector's seeds are segment_seed(--seed 5107, the process's start step 0) = 48553324080691
+  ok    checkpoint_6000_steps.json of B: the collector's seeds are segment_seed(--seed 5107, the process's start step 4,346) = 133043299291741
+  ok    checkpoint_8000_steps.json: A's and B's are equal in 38 keys (ent_coef 0.05, clip_range 0.15, n_epochs 1, batch_size 256, n_steps 4096, matchup '1059f10be5', env_core but for its segment seeds); differing: ['pin_history']; current_lr A 0.0003 B 0.0003
+  ok    checkpoint_8000_steps.json of A: the collector's seeds are segment_seed(--seed 5107, the process's start step 0) = 48553324080691
+  ok    checkpoint_8000_steps.json of B: the collector's seeds are segment_seed(--seed 5107, the process's start step 4,346) = 133043299291741
+  ok    the matchup spec (who plays which teams, the team-mix share in it) has ONE hash in the run-through, phase 1 and phase 2: ['1059f10be5']
+  ok    phase 2 restored the run's recorded --team-mix (the '[TEAM-MIX] same-run resume' line)
+  note  b2.log: 🧬 [TEAM-MIX] same-run resume: restoring the run's recorded --team-mix n1_proc_v1@ALL:0.5 --team-mix-sides both (metadata.json:cli_args)
+  note  b2.log: 🧬 [TEAM-MIX] n1_proc_v1@ALL (12000 teams, tier sha d59f44f0b33b) share 0.50 on both sides; eval stays on the pool
+-- the self-play pool and the checkpoints across the stop
+  ok    snapshots/: the 0 file(s) the stop left are in the phased run, byte-identical (none)
+  ok    checkpoints/: the 2 file(s) the stop left are in the phased run, byte-identical (checkpoint_2000_steps.zip, checkpoint_4000_steps.zip)
+  ok    the stop left one checkpoint per multiple of 2,000 it crossed (at [2000, 4000]; the boundaries are GLOBAL multiples, named by the first callback step at or past each)
+  ok    the stop left checkpoints/checkpoint_4000_steps.zip, the first callback step at or past the target 4,000: the file the look reads exists before the run stops
+  note  that checkpoint was saved DURING the last rollout (step 4,000); the last update of phase 1 came after it (the stop is at 4,346), so it holds the policy one update before final_model.zip
+PASS: no difference

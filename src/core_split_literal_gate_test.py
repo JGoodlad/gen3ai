@@ -49,7 +49,8 @@ OWNER = ("src/utils/core_split.py", "src/utils/core_split_test.py", "src/core_sp
 #: FROZEN RECORDS: this tree keeps what it recorded.
 FROZEN_TREE = "designs/research_state/"
 #: Files under the frozen tree that are still tools (a launch kit in use): scanned like any other code.
-LIVE_KITS = ("designs/research_state/measurements/x35_breakers_stage_2026-10-17/launch_x35.sh",)
+LIVE_KITS = ("designs/research_state/measurements/x35_breakers_stage_2026-10-17/launch_x35.sh",
+             "designs/research_state/measurements/boundary1_scratch_2026-11-09/looks/drive_look.sh")
 APPEND_ONLY = ("designs/CHANGELOG.md",)
 _DATED = re.compile(r"_20\d\d-\d\d-\d\d(?:[._][^/]*)?$")
 #: Text files: by suffix, plus extensionless scripts. A binary or oversized file is not read.

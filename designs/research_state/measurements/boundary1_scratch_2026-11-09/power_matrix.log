@@ -1,0 +1,67 @@
+cell SD by view (pp): N 0.68, home72 1.05, U 0.86, heldout72_hpfix 1.48, forum72 1.48, p72 1.48, HF 0.91
+floor 1.76 pp, bar +4.0 pp, harm stop -2.0 pp, level 0.9, band 0.005 pp; 50000 draws a row, the first 1000 also through main.b1.cross
+
+(1) ONE FACTOR'S MAIN EFFECT at 100M, view N (the other factor at +3 pp, no interaction)
+n 2 sigma 1.76 (median half-width 3.04 pp) | +0: WIN 0.01 NUG 0.72 UND 0.27 LOSS 0.009 | +2: WIN 0.19 NUG 0.19 UND 0.62 LOSS 0.000 | +3: WIN 0.44 NUG 0.05 UND 0.50 LOSS 0.000 | +4: WIN 0.72 NUG 0.01 UND 0.27 LOSS 0.000 | +5: WIN 0.90 NUG 0.00 UND 0.10 LOSS 0.000 | +6: WIN 0.97 NUG 0.00 UND 0.03 LOSS 0.000 | +8: WIN 1.00 NUG 0.00 UND 0.00 LOSS 0.000
+n 2 sigma 2.50 (median half-width 3.80 pp) | +0: WIN 0.02 NUG 0.49 UND 0.46 LOSS 0.024 | +2: WIN 0.17 NUG 0.16 UND 0.67 LOSS 0.001 | +3: WIN 0.32 NUG 0.07 UND 0.61 LOSS 0.000 | +4: WIN 0.51 NUG 0.02 UND 0.46 LOSS 0.000 | +5: WIN 0.69 NUG 0.01 UND 0.30 LOSS 0.000 | +6: WIN 0.84 NUG 0.00 UND 0.16 LOSS 0.000 | +8: WIN 0.97 NUG 0.00 UND 0.03 LOSS 0.000
+n 2 sigma 3.10 (median half-width 4.53 pp) | +0: WIN 0.03 NUG 0.37 UND 0.57 LOSS 0.033 | +2: WIN 0.15 NUG 0.15 UND 0.70 LOSS 0.003 | +3: WIN 0.26 NUG 0.07 UND 0.67 LOSS 0.001 | +4: WIN 0.40 NUG 0.03 UND 0.57 LOSS 0.000 | +5: WIN 0.55 NUG 0.01 UND 0.44 LOSS 0.000 | +6: WIN 0.69 NUG 0.00 UND 0.30 LOSS 0.000 | +8: WIN 0.89 NUG 0.00 UND 0.11 LOSS 0.000
+n 3 sigma 1.76 (median half-width 2.13 pp) | +0: WIN 0.02 NUG 0.93 UND 0.03 LOSS 0.018 | +2: WIN 0.42 NUG 0.41 UND 0.17 LOSS 0.000 | +3: WIN 0.77 NUG 0.12 UND 0.11 LOSS 0.000 | +4: WIN 0.95 NUG 0.02 UND 0.03 LOSS 0.000 | +5: WIN 1.00 NUG 0.00 UND 0.00 LOSS 0.000 | +6: WIN 1.00 NUG 0.00 UND 0.00 LOSS 0.000 | +8: WIN 1.00 NUG 0.00 UND 0.00 LOSS 0.000
+n 3 sigma 2.50 (median half-width 2.72 pp) | +0: WIN 0.04 NUG 0.75 UND 0.18 LOSS 0.036 | +2: WIN 0.31 NUG 0.30 UND 0.39 LOSS 0.001 | +3: WIN 0.56 NUG 0.12 UND 0.32 LOSS 0.000 | +4: WIN 0.78 NUG 0.03 UND 0.18 LOSS 0.000 | +5: WIN 0.92 NUG 0.01 UND 0.07 LOSS 0.000 | +6: WIN 0.98 NUG 0.00 UND 0.02 LOSS 0.000 | +8: WIN 1.00 NUG 0.00 UND 0.00 LOSS 0.000
+n 3 sigma 3.10 (median half-width 3.27 pp) | +0: WIN 0.04 NUG 0.59 UND 0.32 LOSS 0.042 | +2: WIN 0.25 NUG 0.24 UND 0.51 LOSS 0.003 | +3: WIN 0.43 NUG 0.11 UND 0.45 LOSS 0.001 | +4: WIN 0.63 NUG 0.04 UND 0.33 LOSS 0.000 | +5: WIN 0.80 NUG 0.01 UND 0.18 LOSS 0.000 | +6: WIN 0.91 NUG 0.00 UND 0.08 LOSS 0.000 | +8: WIN 0.99 NUG 0.00 UND 0.01 LOSS 0.000
+
+(2) THE 50M HARM STOP, view N, n 2: P(STOP-HARM) at a true effect of
+sigma 1.76 | +0: 0.000 | -2: 0.009 | -4: 0.189 | -5: 0.446 | -6: 0.718 | -8: 0.975
+sigma 2.50 | +0: 0.001 | -2: 0.023 | -4: 0.168 | -5: 0.326 | -6: 0.512 | -8: 0.836
+sigma 3.10 | +0: 0.003 | -2: 0.032 | -4: 0.150 | -5: 0.262 | -6: 0.400 | -8: 0.699
+
+(3) THE INTERACTION (REPORTED), view N: P(SYNERGY) / P(ANTAGONISM) at a true interaction of
+n 2 sigma 1.76 (median half-width 6.09 pp) | +0: 0.01 / 0.008 | +4: 0.19 / 0.000 | +6: 0.45 / 0.000 | +8: 0.72 / 0.000 | +10: 0.90 / 0.000
+n 2 sigma 2.50 (median half-width 7.60 pp) | +0: 0.02 / 0.023 | +4: 0.16 / 0.001 | +6: 0.32 / 0.000 | +8: 0.51 / 0.000 | +10: 0.70 / 0.000
+n 3 sigma 1.76 (median half-width 4.27 pp) | +0: 0.02 / 0.018 | +4: 0.42 / 0.000 | +6: 0.77 / 0.000 | +8: 0.95 / 0.000 | +10: 1.00 / 0.000
+n 3 sigma 2.50 (median half-width 5.43 pp) | +0: 0.04 / 0.036 | +4: 0.31 / 0.001 | +6: 0.56 / 0.000 | +8: 0.79 / 0.000 | +10: 0.92 / 0.000
+
+(4) ONE FACTOR ON A SINGLE VIEW at 100M, n 2 (forum72 DECIDES breadth; U and home72 are REPORTED)
+forum72 sigma 1.76 (median half-width 3.14 pp) | +0: WIN 0.01 NUG 0.67 | +2: WIN 0.18 NUG 0.18 | +4: WIN 0.69 NUG 0.01 | +6: WIN 0.96 NUG 0.00 | +8: WIN 1.00 NUG 0.00
+forum72 sigma 2.50 (median half-width 3.90 pp) | +0: WIN 0.02 NUG 0.47 | +2: WIN 0.16 NUG 0.16 | +4: WIN 0.49 NUG 0.02 | +6: WIN 0.82 NUG 0.00 | +8: WIN 0.97 NUG 0.00
+forum72 sigma 3.10 (median half-width 4.60 pp) | +0: WIN 0.03 NUG 0.36 | +2: WIN 0.15 NUG 0.14 | +4: WIN 0.39 NUG 0.03 | +6: WIN 0.68 NUG 0.00 | +8: WIN 0.88 NUG 0.00
+U sigma 1.76 (median half-width 3.06 pp) | +0: WIN 0.01 NUG 0.70 | +2: WIN 0.19 NUG 0.19 | +4: WIN 0.71 NUG 0.01 | +6: WIN 0.97 NUG 0.00 | +8: WIN 1.00 NUG 0.00
+U sigma 2.50 (median half-width 3.82 pp) | +0: WIN 0.02 NUG 0.49 | +2: WIN 0.17 NUG 0.17 | +4: WIN 0.51 NUG 0.02 | +6: WIN 0.83 NUG 0.00 | +8: WIN 0.97 NUG 0.00
+U sigma 3.10 (median half-width 4.53 pp) | +0: WIN 0.03 NUG 0.37 | +2: WIN 0.14 NUG 0.15 | +4: WIN 0.40 NUG 0.03 | +6: WIN 0.69 NUG 0.00 | +8: WIN 0.89 NUG 0.00
+home72 sigma 1.76 (median half-width 3.08 pp) | +0: WIN 0.01 NUG 0.70 | +2: WIN 0.19 NUG 0.19 | +4: WIN 0.70 NUG 0.01 | +6: WIN 0.97 NUG 0.00 | +8: WIN 1.00 NUG 0.00
+home72 sigma 2.50 (median half-width 3.83 pp) | +0: WIN 0.02 NUG 0.47 | +2: WIN 0.17 NUG 0.16 | +4: WIN 0.50 NUG 0.02 | +6: WIN 0.83 NUG 0.00 | +8: WIN 0.97 NUG 0.00
+home72 sigma 3.10 (median half-width 4.54 pp) | +0: WIN 0.03 NUG 0.36 | +2: WIN 0.14 NUG 0.14 | +4: WIN 0.39 NUG 0.03 | +6: WIN 0.69 NUG 0.00 | +8: WIN 0.89 NUG 0.00
+
+(5) AN INTERACTION DOES NOT BIAS A MAIN EFFECT'S INTERVAL: width +4 with interaction +6 reads as +7 (4 + 6/2); P(WIN), n 2, sigma 1.76
+mean estimate +6.99 pp, median half-width 3.04 pp, P(WIN) 1.00
+
+(6) BREADTH AS REGISTERED at 100M, n 2: its class on forum72, then the net rule (home72 + forum72 > 0). P(WIN = adoptable) / P(WIN-NET-NEGATIVE) at a true (home72, forum72) effect of
+sigma 1.76 rho 1 | (+0.00, +0): 0.01 / 0.00 | (+0.00, +4): 0.68 / 0.00 | (-2.00, +4): 0.66 / 0.02 | (-4.00, +4): 0.47 / 0.21 | (-6.00, +4): 0.21 / 0.48 | (-3.28, +2): 0.18 / 0.01 | (-3.00, +6): 0.87 / 0.09 | (-6.00, +6): 0.50 / 0.46 | (-9.00, +6): 0.12 / 0.84 | (-6.00, +0): 0.01 / 0.00
+sigma 1.76 rho 0 | (+0.00, +0): 0.01 / 0.00 | (+0.00, +4): 0.68 / 0.00 | (-2.00, +4): 0.65 / 0.03 | (-4.00, +4): 0.43 / 0.25 | (-6.00, +4): 0.13 / 0.56 | (-3.28, +2): 0.11 / 0.07 | (-3.00, +6): 0.93 / 0.04 | (-6.00, +6): 0.50 / 0.47 | (-9.00, +6): 0.05 / 0.92 | (-6.00, +0): 0.00 / 0.01
+sigma 2.50 rho 1 | (+0.00, +0): 0.02 / 0.00 | (+0.00, +4): 0.49 / 0.00 | (-2.00, +4): 0.49 / 0.01 | (-4.00, +4): 0.41 / 0.09 | (-6.00, +4): 0.26 / 0.23 | (-3.28, +2): 0.16 / 0.00 | (-3.00, +6): 0.74 / 0.08 | (-6.00, +6): 0.49 / 0.33 | (-9.00, +6): 0.20 / 0.62 | (-6.00, +0): 0.02 / 0.00
+sigma 2.50 rho 0 | (+0.00, +0): 0.02 / 0.00 | (+0.00, +4): 0.49 / 0.00 | (-2.00, +4): 0.46 / 0.03 | (-4.00, +4): 0.35 / 0.14 | (-6.00, +4): 0.18 / 0.31 | (-3.28, +2): 0.11 / 0.05 | (-3.00, +6): 0.76 / 0.05 | (-6.00, +6): 0.48 / 0.35 | (-9.00, +6): 0.12 / 0.70 | (-6.00, +0): 0.00 / 0.02
+
+(7) BREADTH'S 50M HARM STOP on the net view HF = 1/2 home72 + 1/2 forum72 (cell SD 0.91 pp), n 2: P(STOP-HARM) at a true (home72, forum72) effect of
+sigma 1.76 rho 1 | (+0, +0): 0.000 | (-4, +4): 0.000 | (-4, +0): 0.009 | (-8, +0): 0.190 | (-12, +0): 0.708 | (-16, +0): 0.973 | (-6, -6): 0.710 | (-12, +4): 0.189
+sigma 1.76 rho 0 | (+0, +0): 0.000 | (-4, +4): 0.000 | (-4, +0): 0.001 | (-8, +0): 0.186 | (-12, +0): 0.886 | (-16, +0): 0.999 | (-6, -6): 0.884 | (-12, +4): 0.183
+sigma 2.50 rho 1 | (+0, +0): 0.001 | (-4, +4): 0.001 | (-4, +0): 0.022 | (-8, +0): 0.166 | (-12, +0): 0.503 | (-16, +0): 0.834 | (-6, -6): 0.509 | (-12, +4): 0.167
+sigma 2.50 rho 0 | (+0, +0): 0.000 | (-4, +4): 0.000 | (-4, +0): 0.009 | (-8, +0): 0.188 | (-12, +0): 0.709 | (-16, +0): 0.972 | (-6, -6): 0.712 | (-12, +4): 0.190
+
+(8) AFTER A 50M STOP-HARM OF THE OTHER FACTOR: the surviving factor is one arm against one arm (2 v 2, 2 df), n 2. REPORTED: the registration reads NO class there (PREREG §8); what the +4 pp bar WOULD give, P(WIN) / P(NO-USEFUL-GAIN), at a true effect of
+N sigma 1.76 (median half-width 5.39 pp) | +0: 0.00 / 0.17 | +4: 0.17 / 0.00 | +6: 0.50 / 0.00 | +8: 0.80 / 0.00 | +10: 0.94 / 0.00
+N sigma 2.50 (median half-width 6.74 pp) | +0: 0.01 / 0.15 | +4: 0.16 / 0.01 | +6: 0.36 / 0.00 | +8: 0.59 / 0.00 | +10: 0.76 / 0.00
+forum72 sigma 1.76 (median half-width 5.77 pp) | +0: 0.00 / 0.16 | +4: 0.16 / 0.00 | +6: 0.44 / 0.00 | +8: 0.73 / 0.00 | +10: 0.89 / 0.00
+forum72 sigma 2.50 (median half-width 7.08 pp) | +0: 0.01 / 0.14 | +4: 0.15 / 0.01 | +6: 0.33 / 0.00 | +8: 0.55 / 0.00 | +10: 0.72 / 0.00
+
+(9) UNEQUAL SEED SPREADS (the interval assumes one spread for every arm), view N, n 2, NO true effect: P(false WIN) / P(false LOSS) / P(NO-USEFUL-GAIN) at a seed SD (pp) of (C, W, Br, WB)
+(1.76, 1.76, 1.76, 1.76) | width: 0.008 / 0.009 / 0.71 (median half-width 3.03 pp)
+(1.0, 6.0, 1.0, 1.0) | width: 0.051 / 0.050 / 0.40 (median half-width 3.87 pp)
+(0.5, 8.0, 0.5, 0.5) | width: 0.076 / 0.072 / 0.30 (median half-width 4.68 pp)
+(1.0, 6.0, 1.0, 6.0) | width: 0.055 / 0.053 / 0.25 (median half-width 5.71 pp)
+(6.0, 1.0, 6.0, 1.0) | width: 0.056 / 0.054 / 0.25 (median half-width 5.71 pp)
+(1.0, 1.0, 6.0, 6.0) | width: 0.055 / 0.056 / 0.25 (median half-width 5.73 pp)
+
+(10) THE EXTENSION (PREREG §9: an UNDECIDED factor may get a third run an arm, and the three-run class then replaces the two-run one), view N: P(WIN at two runs) + P(UNDECIDED at two, WIN at three) at a true effect of
+sigma 1.76 | +0: 0.009 + 0.013 = 0.022 (false LOSS 0.009) | +2: 0.191 + 0.248 = 0.439 (false LOSS 0.000) | +4: 0.719 + 0.233 = 0.952 (false LOSS 0.000)
+sigma 2.50 | +0: 0.023 + 0.024 = 0.047 (false LOSS 0.023) | +2: 0.169 + 0.171 = 0.340 (false LOSS 0.001) | +4: 0.507 + 0.293 = 0.799 (false LOSS 0.000)
+
+RULE CODE vs THIS FILE'S FORMULA: 0 mismatches in 624800 classes
