@@ -2999,50 +2999,50 @@
   },
   "src/agents/training/rust_rollout/overlap_integration_test.py::test_a_whole_learn_with_overlap_trains_through_overlapped_updates_and_is_deterministic": {
    "status": "pass",
-   "commit": "44fdd078c95ee8bd4c7a291cf088f8ea8e363b2e",
-   "at": "2026-11-10T19:05:12Z",
-   "duration_s": 152.19,
-   "contention": 1.66,
+   "commit": "55334e88a65384d5cedad51a4aca0a1d2ec0be20",
+   "at": "2026-11-10T23:28:41Z",
+   "duration_s": 167.03,
+   "contention": 1.89,
    "detail": ""
   },
   "src/agents/training/rust_rollout/overlap_integration_test.py::test_flag_off_trains_the_same_bytes_as_before_the_overlap_existed": {
    "status": "pass",
-   "commit": "d8d674b9902472a5b3536c50a9504cc902f3273e",
-   "at": "2026-10-26T03:25:54Z",
-   "duration_s": 12.91,
-   "contention": 1.03,
+   "commit": "55334e88a65384d5cedad51a4aca0a1d2ec0be20",
+   "at": "2026-11-10T23:28:41Z",
+   "duration_s": 31.9,
+   "contention": 2.35,
    "detail": ""
   },
   "src/agents/training/rust_rollout/overlap_integration_test.py::test_flag_off_under_the_T62_float64_tau_solve_trains_the_pre_X14_bytes": {
    "status": "pass",
-   "commit": "d8d674b9902472a5b3536c50a9504cc902f3273e",
-   "at": "2026-10-26T03:25:54Z",
-   "duration_s": 12.12,
-   "contention": 1.0,
+   "commit": "55334e88a65384d5cedad51a4aca0a1d2ec0be20",
+   "at": "2026-11-10T23:28:41Z",
+   "duration_s": 23.27,
+   "contention": 1.84,
    "detail": ""
   },
   "src/agents/training/rust_rollout/overlap_integration_test.py::test_k9b_judges_the_overlapped_rows_under_their_behaviour_snapshot": {
    "status": "pass",
-   "commit": "44fdd078c95ee8bd4c7a291cf088f8ea8e363b2e",
-   "at": "2026-11-10T19:05:12Z",
-   "duration_s": 3.05,
-   "contention": 1.74,
+   "commit": "55334e88a65384d5cedad51a4aca0a1d2ec0be20",
+   "at": "2026-11-10T23:28:41Z",
+   "duration_s": 3.66,
+   "contention": 2.29,
    "detail": ""
   },
   "src/agents/training/rust_rollout/overlap_integration_test.py::test_overlapped_rows_are_one_version_stale_and_the_serial_control_is_not": {
    "status": "pass",
-   "commit": "44fdd078c95ee8bd4c7a291cf088f8ea8e363b2e",
-   "at": "2026-11-10T19:05:12Z",
-   "duration_s": 47.94,
-   "contention": 1.67,
+   "commit": "55334e88a65384d5cedad51a4aca0a1d2ec0be20",
+   "at": "2026-11-10T23:28:41Z",
+   "duration_s": 58.77,
+   "contention": 1.85,
    "detail": ""
   },
   "src/agents/training/rust_rollout/overlap_integration_test.py::test_the_fill_serves_the_proximal_log_probs_from_t2_at_the_learners_weights": {
    "status": "pass",
-   "commit": "44fdd078c95ee8bd4c7a291cf088f8ea8e363b2e",
-   "at": "2026-11-10T19:05:12Z",
+   "commit": "55334e88a65384d5cedad51a4aca0a1d2ec0be20",
+   "at": "2026-11-10T23:28:41Z",
    "duration_s": 0.0,
-   "contention": 1.83,
+   "contention": 2.69,
    "detail": ""
   },
   "src/agents/training/rust_rollout/stall_forfeit_row_integration_test.py::test_the_decision_the_core_forfeited_instead_of_playing_is_not_a_training_row": {
@@ -3887,42 +3887,42 @@
   },
   "src/main/h2h/play_reveal_integration_test.py::test_both_sided_reaches_both_sides_and_the_oracle_side_reads_what_it_reads_one_sided": {
    "status": "pass",
-   "commit": "35b30bd9fb246c61b0de9e4a13f2478e54b1207b",
-   "at": "2026-11-09T23:40:58Z",
+   "commit": "a00b476f99b6564ce24ae319543c1985d1584725",
+   "at": "2026-11-10T23:06:43Z",
    "duration_s": 0.0,
-   "contention": 1.25,
+   "contention": 1.6,
    "detail": ""
   },
   "src/main/h2h/play_reveal_integration_test.py::test_every_row_is_stamped_with_its_protocol_and_per_side_levels": {
    "status": "pass",
-   "commit": "35b30bd9fb246c61b0de9e4a13f2478e54b1207b",
-   "at": "2026-11-09T23:40:58Z",
-   "duration_s": 0.03,
-   "contention": 1.35,
+   "commit": "a00b476f99b6564ce24ae319543c1985d1584725",
+   "at": "2026-11-10T23:06:43Z",
+   "duration_s": 0.04,
+   "contention": 1.62,
    "detail": ""
   },
   "src/main/h2h/play_reveal_integration_test.py::test_off_off_plays_the_engine_of_before_bit_for_bit": {
    "status": "pass",
-   "commit": "35b30bd9fb246c61b0de9e4a13f2478e54b1207b",
-   "at": "2026-11-09T23:40:58Z",
-   "duration_s": 1568.23,
-   "contention": 1.39,
+   "commit": "a00b476f99b6564ce24ae319543c1985d1584725",
+   "at": "2026-11-10T23:06:43Z",
+   "duration_s": 1798.97,
+   "contention": 1.57,
    "detail": ""
   },
   "src/main/h2h/play_reveal_integration_test.py::test_one_sided_reaches_only_the_oracle_side_in_either_seat": {
    "status": "pass",
-   "commit": "35b30bd9fb246c61b0de9e4a13f2478e54b1207b",
-   "at": "2026-11-09T23:40:58Z",
+   "commit": "a00b476f99b6564ce24ae319543c1985d1584725",
+   "at": "2026-11-10T23:06:43Z",
    "duration_s": 0.0,
-   "contention": 1.19,
+   "contention": 1.45,
    "detail": ""
   },
   "src/main/h2h/play_reveal_integration_test.py::test_withheld_plays_the_oracle_checkpoint_exactly_as_off_does_in_either_seat": {
    "status": "pass",
-   "commit": "35b30bd9fb246c61b0de9e4a13f2478e54b1207b",
-   "at": "2026-11-09T23:40:58Z",
+   "commit": "a00b476f99b6564ce24ae319543c1985d1584725",
+   "at": "2026-11-10T23:06:43Z",
    "duration_s": 0.03,
-   "contention": 1.4,
+   "contention": 1.58,
    "detail": ""
   },
   "src/main/h2h/recorded_version_cross_test.py::test_an_endstate_checkpoint_is_its_own_groups_architecture": {
@@ -5862,5 +5862,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-11-10T23:04:50Z"
+ "last_written": "2026-11-10T23:28:44Z"
 }
