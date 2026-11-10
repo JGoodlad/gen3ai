@@ -129,7 +129,8 @@ entries naming what they supersede) → **dispatch** the next probe or build to 
   Sonnet 5.5 xhigh 63 · high 55 · medium 46 · low 42. Pick the CHEAPEST tier that fits the risk:
   `sonnet-medium` for fully specified routine edits, runs and inventories; `sonnet-high` for manifest-driven
   deletions, test additions and judgement-light docs; `sonnet-xhigh` where depth is needed at lower cost;
-  `opus-*` for GIGO risk, parity-gated Rust crossings, pre-registrations and anything steering an era.
+  `opus-*` or `fable-high`+ for GIGO risk, parity-gated Rust crossings, full pre-registrations and anything steering an
+  era; a light-screen registration (`designs/research_state/README.md`) may go to `fable-medium` or `sonnet-high`.
 - **Fable 5.2 tiers (owner request, 2026-11-09): `fable-{low,medium,high,xhigh}`** (`~/.claude/agents/fable-*.md`),
   pinned to `model: claude-fable-5-2`. Anthropic's guidance (its Fable 5.2 page, 2026-11-09; the vendor's claims, not
   our measurement): **low** matches Opus 5.5's top HLE score at under a tenth of the cost (lookups, searches,
