@@ -255,7 +255,8 @@ REGISTRY: Tuple[ModelFlag, ...] = (
     ModelFlag("belief_grad_mode", "shaping", Tier.CLI, Klass.RESUME_IMMUTABLE, 41,
               "which gradient arrow between the belief heads and the trunk is cut",
               note="detach() is value-preserving => the forward is bit-identical in every mode, so "
-                   "check_belief_grad_mode on the resume path only."),
+                   "check_belief_grad_mode on the resume path only. 'move_label_only' cuts the consumer "
+                   "(policy / value) gradient into the MOVE head alone."),
     ModelFlag("damage_candidate_k", 0, Tier.CLI, Klass.STRUCTURAL, 49,
               "cap the op's incoming candidate sweep at the K most-believed opponent moves",
               requires=("damage_op",)),

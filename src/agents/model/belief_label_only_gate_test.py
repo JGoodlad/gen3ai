@@ -251,8 +251,8 @@ def test_supervision_view_is_live_while_the_stash_is_published():
 
 
 def test_shaping_and_detached_publish_the_identical_object():
-    """No mode but label_only may introduce a copy — otherwise "byte-identical" is a claim about a
-    different tensor than the one consumers read."""
+    """No mode but the two label-only ones may introduce a copy — otherwise "byte-identical" is a claim
+    about a different tensor than the one consumers read."""
     for mode in ("shaping", "detached"):
         model, enc = _build_real_policy(belief_grad_mode=mode)
         fe = model.policy.features_extractor
@@ -260,19 +260,106 @@ def test_shaping_and_detached_publish_the_identical_object():
         assert fe.belief_supervision("move_belief_logits") is fe.last_move_belief_logits
 
 
-def test_forward_is_bit_identical_across_all_three_modes():
+def test_forward_is_bit_identical_across_every_mode():
     """`detach()` changes the graph, never a value — so the same weights must produce the same
     forward in every mode. This is what makes the flip weight-safe on a converged checkpoint."""
     model, enc = _build_real_policy(belief_grad_mode="shaping")
     fe, obs = model.policy.features_extractor, _obs(enc)
     with torch.no_grad():
         ref = [t.clone() for t in fe(obs)]
-    for mode in ("detached", "label_only"):
+    for mode in BELIEF_GRAD_MODES[1:]:
         fe.set_belief_grad_mode(mode)
         with torch.no_grad():
             got = fe(obs)
         for a, b in zip(ref, got):
             assert torch.equal(a, b), f"forward changed under {mode}"
+
+
+# --------------------------------------------------------------------------------------------
+# `move_label_only` (gen3_move_label_only_v1): the same cut, on the MOVE head alone
+# --------------------------------------------------------------------------------------------
+
+_MOVE_HEAD = ("move_belief.move_head",)
+
+
+def _live_heads(model):
+    """The protected prefixes that hold any policy/value gradient after `_ppo_backward`."""
+    return {s for s in _PROTECTED if _grad_mass(model, (s,)) > 0.0}
+
+
+def test_move_label_only_cuts_the_ppo_gradient_into_the_move_head_and_into_nothing_else():
+    """THE gate for the mode, with its own control: under `shaping` the policy/value objective reaches
+    `move_head` (and its Hidden-Power row 237, the one that leaves through the type reinjection's `presence`),
+    under `move_label_only` it reaches no parameter of it, and every OTHER head that was live stays live.
+
+    Fails on revert: publish the move posterior through `_publish_belief` again (or hand the type reinjection
+    the raw `presence`) and `move_head` is back in the PPO objective under a mode whose record says it is not."""
+    shaping, enc = _build_real_policy(belief_grad_mode="shaping")
+    _ppo_backward(shaping, enc)
+    live = _live_heads(shaping)
+    w = shaping.policy.features_extractor.move_belief.move_head.weight.grad
+    assert _MOVE_HEAD[0] in live and w is not None, "no PPO gradient reaches move_head under `shaping`: vacuous"
+    assert w[237].abs().sum().item() > 0.0, (
+        "the Hidden-Power presence row carries no PPO gradient under `shaping`, so this fixture cannot see the "
+        "route through the type reinjection that the mode has to cut")
+    assert len(live) > 1, "move_head is the only live head in this fixture: 'the others stay live' is vacuous"
+
+    model, enc = _build_real_policy(belief_grad_mode="move_label_only")
+    _ppo_backward(model, enc)
+    leaked = {n: p.grad.abs().sum().item() for n, p in model.policy.features_extractor.named_parameters()
+              if n.startswith(_MOVE_HEAD) and p.grad is not None and p.grad.abs().sum().item() > 0.0}
+    assert not leaked, f"move_label_only leaked policy/value gradient into the move head: {sorted(leaked)}"
+    assert _live_heads(model) == live - set(_MOVE_HEAD), (
+        "move_label_only changed which OTHER belief heads the policy/value objective trains: "
+        f"shaping {sorted(live)}, move_label_only {sorted(_live_heads(model))}")
+    for name in _ADAPTERS:
+        assert _grad_mass(model, (name,)) > 0.0, f"{name} (a consumer-side adapter) stopped training"
+    assert _grad_mass(model, ("team_transformer", "pokemon_encoder")) > 0.0, "the trunk stopped training"
+
+
+def test_move_label_only_keeps_the_label_path_and_publishes_only_the_move_posterior_as_a_copy():
+    """The supervised direction, and the scope: the move loss still trains `move_head` through the live
+    supervision view; the published move posterior is a stop-grad copy of the same values; the HP-type head's
+    own publication is the identical live object, exactly as under `shaping`."""
+    model, enc = _build_real_policy(belief_grad_mode="move_label_only")
+    fe = model.policy.features_extractor
+    model.policy.zero_grad(set_to_none=True)
+    fe(_obs(enc))
+    live, published = fe.belief_supervision("move_belief_logits"), fe.last_move_belief_logits
+    assert live.requires_grad and not published.requires_grad and torch.equal(live, published)
+    assert fe.belief_supervision("hp_type_logits") is fe.last_hp_type_logits, (
+        "move_label_only published the HP-type head's logits as a copy: the mode cuts one head, not two")
+    live.float().sum().backward()
+    assert _grad_mass(model, _MOVE_HEAD) > 0.0, "the move label loss no longer trains move_head"
+
+
+def test_the_runtime_setter_applies_move_label_only_to_a_checkpoint_built_under_shaping():
+    """The FORK path. SB3 rebuilds a loaded extractor from the zip's `policy_kwargs` (the parent's `shaping`)
+    and `resume_reapply` then calls the setter, so the cut has to hold on an extractor that was BUILT live:
+    every flag the mode owns flips, the policy/value gradient into `move_head` goes to zero, and the setter
+    back to `shaping` restores it."""
+    model, enc = _build_real_policy(belief_grad_mode="shaping")
+    fe = model.policy.features_extractor
+    fe.set_belief_grad_mode("move_label_only")
+    assert fe.belief_grad_mode == "move_label_only" and fe._move_publish_cut and not fe._belief_label_only
+    assert fe.move_belief.publish_detach is True
+    assert fe.spread_belief.publish_detach is False and fe.hp_type_belief_head.publish_detach is False
+    _ppo_backward(model, enc)
+    assert _grad_mass(model, _MOVE_HEAD) == 0.0
+    fe.set_belief_grad_mode("shaping")
+    assert not fe._move_publish_cut and fe.move_belief.publish_detach is False
+    _ppo_backward(model, enc)
+    assert _grad_mass(model, _MOVE_HEAD) > 0.0
+
+
+def test_label_only_still_cuts_the_move_head_through_the_move_boundary():
+    """`label_only` routes the move posterior through the same boundary as `move_label_only`, so the wider
+    mode must keep its cut there (the gate above covers `_PROTECTED` as a set; this names the head)."""
+    model, enc = _build_real_policy(belief_grad_mode="label_only")
+    fe = model.policy.features_extractor
+    assert fe._move_publish_cut and fe._belief_label_only
+    _ppo_backward(model, enc)
+    assert _grad_mass(model, _MOVE_HEAD) == 0.0
 
 
 # --------------------------------------------------------------------------------------------

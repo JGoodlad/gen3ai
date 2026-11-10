@@ -171,7 +171,7 @@ class BeliefHead(torch.nn.Module):
 # The legal `--belief-grad-mode` values — the SINGLE SOURCE for the CLI `choices=`, the extractor's
 # ValueError, and `model_version._BELIEF_GRAD_MODE_EFFECT` (pinned to agree by a test). What each one
 # cuts is the four-route table in `Gen3FeaturesExtractor.__init__`.
-BELIEF_GRAD_MODES = ("shaping", "detached", "label_only")
+BELIEF_GRAD_MODES = ("shaping", "detached", "label_only", "move_label_only")
 
 # gen3_belief_label_only_v1 — the stashes of the FORWARD-CONSUMED belief heads. These are exactly the
 # supervised heads whose output reaches pi/vf, and therefore the only ones a policy/value gradient can

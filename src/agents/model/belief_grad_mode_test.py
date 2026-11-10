@@ -170,6 +170,15 @@ def test_set_belief_grad_mode_updates_all_three_places():
     fe.set_belief_grad_mode("detached")
     assert fe._belief_detach is True and all(h.detach_read is True for h in heads)
 
+    # gen3_move_label_only_v1: the per-head publication cut is one more place the setter owns
+    fe.set_belief_grad_mode("move_label_only")
+    assert fe._move_publish_cut is True and fe._belief_label_only is False and fe._belief_detach is False
+    assert heads[0].publish_detach is True and heads[1].publish_detach is False
+    fe.set_belief_grad_mode("label_only")
+    assert fe._move_publish_cut is True and heads[0].publish_detach is True and heads[1].publish_detach is True
+    fe.set_belief_grad_mode("shaping")
+    assert fe._move_publish_cut is False and heads[0].publish_detach is False
+
     import pytest
     with pytest.raises(ValueError):
         fe.set_belief_grad_mode("bogus")
